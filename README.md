@@ -66,15 +66,31 @@ You do NOT need any of this on the lab laptop — it is already set up. This is 
 a teammate's PC or a re-install. Steps 1–2 and 4–6 are copy-paste; step 3 needs files from an
 existing machine.
 
+**1. Download the code — pick ONE of the two sources:**
+
+**Option A — CMU's repo** (freshest code, but it is a personal branch that CMU may change or
+delete; needs the submodule and patch steps):
+
 ```bash
-# 1. Download CMU's code. daniel/diffaero_ground_control is the ONLY branch with the
-#    ground controller + mocap pipeline (main/develop do not have it).
+# daniel/diffaero_ground_control is the ONLY branch with the ground controller +
+# mocap pipeline (main/develop do not have it).
 git clone -b daniel/diffaero_ground_control https://github.com/castacks/AirStack.git ~/AirStack-diffaero
 cd ~/AirStack-diffaero
 git submodule update --init
 #   (submodules = sub-folders that are their own git repos, downloaded separately.
 #    Do NOT use "git clone --recurse-submodules": other branches reference private
 #    repos and the recursive download fails.)
+```
+
+**Option B — our lab snapshot** ([JChiaHH/AirStack-starling-max2](https://github.com/JChiaHH/AirStack-starling-max2)):
+the exact code Milestone 1 succeeded on, frozen 2026-07-20, with **both bug fixes already
+applied and submodules already included** — use this if CMU's branch has changed/vanished, or
+when you just want the known-good version:
+
+```bash
+git clone https://github.com/JChiaHH/AirStack-starling-max2.git ~/AirStack-diffaero
+cd ~/AirStack-diffaero
+# no submodule step needed, and SKIP step 4 (patches) below — already applied.
 ```
 
 ```bash
@@ -93,7 +109,7 @@ them out of git on purpose). Get them from an existing lab machine, or create th
 - `simulation/isaac-sim/docker/user.config.json`
 
 ```bash
-# 4. Apply our two bug fixes (the patches in this repo — see table above).
+# 4. Apply our two bug fixes — ONLY for Option A (the Option B snapshot already has them).
 #    EDIT the NOTES path if you cloned this repo somewhere else:
 NOTES=~/Documents/GitHub/starling-airstack-notes
 git -C simulation/isaac-sim/extensions/PegasusSimulator apply "$NOTES/patches/0001-zed-camera-info-init-race.patch"

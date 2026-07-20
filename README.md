@@ -154,17 +154,42 @@ echo "both fixes applied"
 #    (other images — isaac-sim, gcs — download automatically on first "up";
 #     isaac-sim additionally needs the Omniverse credentials from step 3)
 
-# 6. Check the settings file, then start the stack and compile the code:
+# 6. Final setup check — the settings file must read like this:
 grep -E '^(COMPOSE_PROFILES|AUTOLAUNCH|NUM_ROBOTS)' .env
 #   want: COMPOSE_PROFILES="desktop,isaac-sim"  AUTOLAUNCH="false"  NUM_ROBOTS="1"
-./airstack.sh up
-./airstack.sh connect robot --command=bash
-#   then INSIDE the container:  cd ~/AirStack/robot/ros_ws && bws     (first build ~4 min)
 ```
 
-From here, follow the Milestone 1 runbook in [MILESTONES.md](MILESTONES.md) §5 to fly the
-simulator, or CMU's own guide (`robot/ros_ws/src/svg_ground_control/experiment.md`) for
-everything else.
+**Setup is now complete.** You never need to repeat steps 1–6 on this machine (except step 5's
+image rebuild if the Dockerfile ever changes). Starting and using the stack is a separate,
+every-session routine — next section.
+
+## Running AirStack (after setup, and at the start of every session)
+
+```bash
+cd ~/AirStack-diffaero        # always run airstack commands from this folder
+./airstack.sh up              # start the containers (robot, isaac-sim, gcs) — takes ~1 min
+./airstack.sh status          # all three should say "Up"
+
+# open a shell INSIDE the robot container — this is where ALL ros2/build commands run
+# (rule of thumb: prompt "root@..." = inside, correct; "yourname@..." = your laptop, wrong)
+./airstack.sh connect robot --command=bash
+
+# inside the container, compile the workspace:
+cd ~/AirStack/robot/ros_ws && bws && sws
+#   first ever build ~4 min; later sessions it finishes in seconds unless code changed
+```
+
+**At this point the stack is running and compiled — but nothing is flying yet.** What you do
+next depends on your goal:
+
+- **Fly in simulation** (recommended first) → follow the **Milestone 1 runbook** in
+  [MILESTONES.md](MILESTONES.md) §5, which continues from exactly this point: spawn the drones
+  in Isaac Sim → start the per-drone interfaces → launch the ground controller → open RViz →
+  call the takeoff/start/land services.
+- **Real-drone work** (props off, drone on the bench) → Milestones 3+ in
+  [MILESTONES.md](MILESTONES.md) §6, backed by CMU's guide
+  ([`AirStack/robot/ros_ws/src/svg_ground_control/experiment.md`](AirStack/robot/ros_ws/src/svg_ground_control/experiment.md), Part B).
+- **Done for the day** → `./airstack.sh down` (from the same folder) stops everything.
 
 **These files become unnecessary** once CMU merges the fixes into their repo — fix 1 is
 already on their `fix/camera-init` branch awaiting review; fix 2 we still need to report to

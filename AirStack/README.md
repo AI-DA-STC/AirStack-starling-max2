@@ -22,6 +22,6 @@ our Milestone 1 sim rehearsal succeeded on, so the lab can always rebuild a know
   `simulation/isaac-sim/docker/user.config.json`.
 
 **How to use it:** follow "Setting up AirStack on a NEW machine" in the
-[repo README](../README.md) one level up and pick **Option B** — it copies this folder out to
-`~/AirStack-diffaero` and continues from there (the submodule and patch steps don't apply to
-this snapshot).
+[repo README](../README.md) one level up and pick **Option B** — it links this folder to
+`~/AirStack-diffaero` (a shortcut, so all documented commands work unchanged) and continues
+from there (the submodule and patch steps don't apply to this snapshot).

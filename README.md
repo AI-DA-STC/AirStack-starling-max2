@@ -117,13 +117,19 @@ when you just want the known-good version:
 
 ```bash
 git clone https://github.com/AI-DA-STC/AirStack-starling-max2.git ~/AirStack-starling-max2
-cp -r ~/AirStack-starling-max2/AirStack ~/AirStack-diffaero    # code snapshot → its own folder
+ln -s ~/AirStack-starling-max2/AirStack ~/AirStack-diffaero    # shortcut — NOT a second copy
 cd ~/AirStack-diffaero
 ```
 
+The `ln -s` line creates `~/AirStack-diffaero` as a **shortcut (symlink)** pointing into the
+clone — only ONE copy of the code exists on disk, but every command in these docs (they all
+use `~/AirStack-diffaero`) works unchanged on every machine.
+
 With Option B: **skip step 4 entirely** (fixes already in the code — running it anyway just
 prints path errors), and ignore the `git hooks … No such file or directory` message in step 2
-(the snapshot copy is not a git repo, so there is nowhere to install hooks — harmless).
+(the snapshot folder is not its own git repo, so there is nowhere to install hooks — harmless).
+Note that build artifacts and generated config files will appear as untracked/ignored noise in
+GitHub Desktop after you start using the stack — that is expected.
 
 ```bash
 # 2. One-time host setup (skip any part already on the machine).

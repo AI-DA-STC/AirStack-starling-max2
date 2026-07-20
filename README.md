@@ -35,6 +35,24 @@ guides, well worth reading:
 When our runbooks and CMU's guide disagree, trust CMU's `experiment.md` for commands and our
 documents for lab-specific substitutions and lessons learned.
 
+## The milestones, in brief
+
+The project is split into six milestones. Each one adds and proves **one new piece** of the
+flight-day system before the next builds on it — so when something fails, we always know
+which piece broke. Simulation proves the software, props-off stages prove the connections,
+hand-carry proves the position tracking, and only then do propellers spin.
+
+| # | Milestone | One-line goal | Status |
+|---|---|---|---|
+| 1 | Sim rehearsal | Fly simulated drones with the exact software and commands used on the real drone | ✅ Done (2026-07-20) |
+| 2 | Ground-station prep | Laptop networking, Motive/OptiTrack settings, clock sync — no drone needed | Partial |
+| 3 | Drone comms (props off) | Real drone's PX4 talking to the laptop over WiFi | To do |
+| 4 | Mocap → drone (props off) | OptiTrack position fused into the drone's state estimator, axes verified | To do |
+| 5 | Hand-carry preflight | Carry the drone around; the software's belief must track reality | To do |
+| 6 | First flight | Takeoff, hover, land inside the net under AirStack command | To do |
+
+Full plan with commands and exit criteria: [MILESTONES.md](MILESTONES.md).
+
 ## Milestone 1 at a glance
 
 ![Takeoff and land](assets/takeoff_and_land.gif)

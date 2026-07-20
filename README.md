@@ -189,24 +189,30 @@ every-session routine — next section.
 
 ## Running AirStack (after setup, and at the start of every session)
 
+**A — on your laptop** (safe to paste as one block):
+
 ```bash
 cd ~/AirStack-starling-max2/AirStack     # your working folder (original lab laptop: ~/AirStack-diffaero)
 ./airstack.sh up              # start the containers (robot, isaac-sim, gcs) — takes ~1 min
 ./airstack.sh status          # all three should say "Up"
+./airstack.sh connect robot --command=bash   # opens a shell INSIDE the robot container
+```
 
-# open a shell INSIDE the robot container — this is where ALL ros2/build commands run
-# (rule of thumb: prompt "root@..." = inside, correct; "yourname@..." = your laptop, wrong)
-./airstack.sh connect robot --command=bash
+After `connect`, your prompt changes to `root@...` — you are now inside the container.
+(Rule of thumb forever: `root@...` = inside, correct; `yourname@...` = your laptop, wrong
+place for any `ros2`/build command.)
 
-# inside the container, compile the workspace:
+**B — inside the container** (paste this only AFTER the prompt shows `root@`; it will not work
+if pasted together with block A — the `connect` command swallows anything after it):
+
+```bash
 cd ~/AirStack/robot/ros_ws && bws && sws
 #   first ever build ~4 min; later sessions it finishes in seconds unless code changed
 ```
 
 **Why is compiling here and not in setup?** The code can only be compiled *inside* the robot
 container (that is where ROS 2 lives — your laptop has none of it). So `bws` necessarily comes
-after `up` and `connect`. Do not paste this whole block at once: `connect` opens an interactive
-shell and swallows the lines after it — **type the `bws` line yourself at the `root@` prompt.**
+after `up` and `connect`.
 
 **Two messages that look like errors but are NORMAL on a fresh machine:**
 

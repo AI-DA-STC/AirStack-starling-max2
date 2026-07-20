@@ -14,23 +14,25 @@ Max 2** live under **CMU AirStack** (branch `daniel/diffaero_ground_control`) wi
 
 ## Whose document is whose
 
-**Mine (this repo — lab-specific, maintained by me/Jeremy):**
+There are two separate places documentation lives, written by two different groups:
 
-- `README.md`, `MILESTONES.md`, `CLAUDE_NOTES.md`, `patches/`, `tools/` — our objective, our
-  milestone structure, our lab's IPs/hardware, our session findings and fixes.
+**1. Written by us — stored here in `starling-airstack-notes` (everything you see in this
+repo):** `README.md`, `MILESTONES.md`, `CLAUDE_NOTES.md`, `patches/`, `tools/`. Our objective,
+our milestone structure, our lab's IPs/hardware, our findings and fixes.
 
-**CMU's (upstream, live in the AirStack checkout — NOT in this repo):**
+**2. Written by CMU — stored inside the AirStack code itself** (they are part of the code you
+clone from CMU; on the lab laptop that means inside `~/AirStack-diffaero/`, and they are not
+copied into `starling-airstack-notes`):
 
-- `robot/ros_ws/src/svg_ground_control/experiment.md` — **CMU's maintained command reference**
-  for the SVG ground-control experiments (Parts A–D: sim, real-drone bring-up, tasks, first
-  flight). The upstream source of truth for command-level detail; written for CMU's rig, so
-  substitute our IPs/names.
-- `robot/ros_ws/src/svg_ground_control/README.md` — CMU's package overview (architecture,
-  scenarios, CBF, safety notes).
+- `~/AirStack-diffaero/robot/ros_ws/src/svg_ground_control/experiment.md` — **CMU's maintained
+  command reference** for the SVG ground-control experiments (Parts A–D: sim, real-drone
+  bring-up, tasks, first flight). The source of truth for command-level detail; written for
+  CMU's rig, so substitute our IPs/names.
+- `~/AirStack-diffaero/robot/ros_ws/src/svg_ground_control/README.md` — CMU's package overview
+  (architecture, scenarios, CBF, safety notes).
 
-Full paths on the lab laptop: `~/AirStack-diffaero/robot/ros_ws/src/svg_ground_control/…`.
-When my runbooks and CMU's guide disagree, trust CMU's `experiment.md` for commands and this
-repo for lab-specific substitutions and lessons learned.
+When our runbooks and CMU's guide disagree, trust CMU's `experiment.md` for commands and
+`starling-airstack-notes` for lab-specific substitutions and lessons learned.
 
 ## Milestone 1 at a glance
 

@@ -58,27 +58,66 @@ re-debugging them.
 | `0001-zed-camera-info-init-race.patch` | Camera startup race in the Isaac Sim Pegasus extension | The drone's right stereo camera randomly never publishes → navigation flies "blind" and becomes erratic (took us days to diagnose) |
 | `0002-swarm-commander-logger-severity-crash.patch` | Logging crash in the SVG ground controller | The ground-controller process **dies mid-flight** the first time any drone command fails |
 
-### When would anyone use these? (not on the lab laptop)
+### Setting up AirStack on a NEW machine (clone → fixes → build)
 
-**Only when setting up AirStack on a NEW machine** (a teammate's PC, a re-install, a fresh
-`git clone`). After cloning AirStack's `daniel/diffaero_ground_control` branch (and its
-submodules), run this — **edit only the two paths on the first two lines**, the rest is
-copy-paste:
+You do NOT need any of this on the lab laptop — it is already set up. This is the recipe for
+a teammate's PC or a re-install. Steps 1–2 and 4–6 are copy-paste; step 3 needs files from an
+existing machine.
 
 ```bash
-# EDIT THESE TWO LINES to match your machine:
-NOTES=~/Documents/GitHub/starling-airstack-notes   # where you cloned THIS repo
-cd ~/AirStack-diffaero                             # your fresh AirStack clone
+# 1. Download CMU's code. daniel/diffaero_ground_control is the ONLY branch with the
+#    ground controller + mocap pipeline (main/develop do not have it).
+git clone -b daniel/diffaero_ground_control https://github.com/castacks/AirStack.git ~/AirStack-diffaero
+cd ~/AirStack-diffaero
+git submodule update --init
+#   (submodules = sub-folders that are their own git repos, downloaded separately.
+#    Do NOT use "git clone --recurse-submodules": other branches reference private
+#    repos and the recursive download fails.)
+```
 
-# then run as-is:
+```bash
+# 2. One-time host setup (skip any part already on the machine).
+#    Requires: Ubuntu 22.04+, an NVIDIA GPU with a recent driver (Isaac Sim needs it).
+./airstack.sh setup      # puts the "airstack" command on your PATH — open a NEW terminal after
+airstack install         # installs Docker Engine + NVIDIA Container Toolkit (asks for sudo)
+docker info              # verify Docker runs (start it with: sudo systemctl start docker)
+```
+
+**3. Copy two config files git does not carry** (credentials / machine config — CMU keeps
+them out of git on purpose). Get them from an existing lab machine, or create them from the
+`*_TEMPLATE` files sitting next to them:
+
+- `simulation/isaac-sim/docker/omni_pass.env`
+- `simulation/isaac-sim/docker/user.config.json`
+
+```bash
+# 4. Apply our two bug fixes (the patches in this repo — see table above).
+#    EDIT the NOTES path if you cloned this repo somewhere else:
+NOTES=~/Documents/GitHub/starling-airstack-notes
 git -C simulation/isaac-sim/extensions/PegasusSimulator apply "$NOTES/patches/0001-zed-camera-info-init-race.patch"
 git apply "$NOTES/patches/0002-swarm-commander-logger-severity-crash.patch"
 echo "both fixes applied"
+#   (fix 1 uses "git -C <folder>" because PegasusSimulator is a submodule — the patch
+#    must be applied from inside that folder. Both patches verified against the branch
+#    as of 2026-07-20.)
+
+# 5. Build the robot Docker image. REQUIRED on this branch: it bakes in MicroXRCEAgent
+#    (the real-drone link) and pins the ROS domain — a plain "up" without this is broken.
+./airstack.sh image-build robot-desktop
+#    (other images — isaac-sim, gcs — download automatically on first "up";
+#     isaac-sim additionally needs the Omniverse credentials from step 3)
+
+# 6. Check the settings file, then start the stack and compile the code:
+grep -E '^(COMPOSE_PROFILES|AUTOLAUNCH|NUM_ROBOTS)' .env
+#   want: COMPOSE_PROFILES="desktop,isaac-sim"  AUTOLAUNCH="false"  NUM_ROBOTS="1"
+./airstack.sh up
+./airstack.sh connect robot --command=bash
+#   then INSIDE the container:  cd ~/AirStack/robot/ros_ws && bws     (first build ~4 min)
 ```
 
-(Fix 1 targets the PegasusSimulator sub-folder because it is its own git repo — a
-"submodule" — so the patch must be applied from inside it; the `git -C` flag does that.)
-Both patch files are verified to apply cleanly against the branch as of 2026-07-20.
+From here, follow the Milestone 1 runbook in [MILESTONES.md](MILESTONES.md) §5 to fly the
+simulator, or CMU's own guide (`robot/ros_ws/src/svg_ground_control/experiment.md`) for
+everything else.
 
 **These files become unnecessary** once CMU merges the fixes into their repo — fix 1 is
 already on their `fix/camera-init` branch awaiting review; fix 2 we still need to report to

@@ -61,20 +61,24 @@ re-debugging them.
 ### When would anyone use these? (not on the lab laptop)
 
 **Only when setting up AirStack on a NEW machine** (a teammate's PC, a re-install, a fresh
-`git clone`). After cloning AirStack's `daniel/diffaero_ground_control` branch, run these four
-commands from the new AirStack folder — they copy our two fixes into the fresh code:
+`git clone`). After cloning AirStack's `daniel/diffaero_ground_control` branch (and its
+submodules), run this — **edit only the two paths on the first two lines**, the rest is
+copy-paste:
 
 ```bash
-# fix 1 goes inside the PegasusSimulator sub-folder (it is a separate git repo, a "submodule"):
-cd simulation/isaac-sim/extensions/PegasusSimulator
-git apply <this-repo>/patches/0001-zed-camera-info-init-race.patch
+# EDIT THESE TWO LINES to match your machine:
+NOTES=~/Documents/GitHub/starling-airstack-notes   # where you cloned THIS repo
+cd ~/AirStack-diffaero                             # your fresh AirStack clone
 
-# fix 2 goes in the main AirStack folder:
-cd ../../../..
-git apply <this-repo>/patches/0002-swarm-commander-logger-severity-crash.patch
+# then run as-is:
+git -C simulation/isaac-sim/extensions/PegasusSimulator apply "$NOTES/patches/0001-zed-camera-info-init-race.patch"
+git apply "$NOTES/patches/0002-swarm-commander-logger-severity-crash.patch"
+echo "both fixes applied"
 ```
 
-(`<this-repo>` = wherever you cloned starling-airstack-notes.)
+(Fix 1 targets the PegasusSimulator sub-folder because it is its own git repo — a
+"submodule" — so the patch must be applied from inside it; the `git -C` flag does that.)
+Both patch files are verified to apply cleanly against the branch as of 2026-07-20.
 
 **These files become unnecessary** once CMU merges the fixes into their repo — fix 1 is
 already on their `fix/camera-init` branch awaiting review; fix 2 we still need to report to

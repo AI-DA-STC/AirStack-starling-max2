@@ -12,6 +12,26 @@ Max 2** live under **CMU AirStack** (branch `daniel/diffaero_ground_control`) wi
 | [tools/make_milestones_doc.py](tools/make_milestones_doc.py) | Generates the Word (.docx) export of the milestone plan (`pip install python-docx`) |
 | [assets/](assets/) · [videos/](videos/) | GIFs (embedded in MILESTONES.md) and source screen recordings of Milestone 1 |
 
+## Whose document is whose
+
+**Mine (this repo — lab-specific, maintained by me/Jeremy):**
+
+- `README.md`, `MILESTONES.md`, `CLAUDE_NOTES.md`, `patches/`, `tools/` — our objective, our
+  milestone structure, our lab's IPs/hardware, our session findings and fixes.
+
+**CMU's (upstream, live in the AirStack checkout — NOT in this repo):**
+
+- `robot/ros_ws/src/svg_ground_control/experiment.md` — **CMU's maintained command reference**
+  for the SVG ground-control experiments (Parts A–D: sim, real-drone bring-up, tasks, first
+  flight). The upstream source of truth for command-level detail; written for CMU's rig, so
+  substitute our IPs/names.
+- `robot/ros_ws/src/svg_ground_control/README.md` — CMU's package overview (architecture,
+  scenarios, CBF, safety notes).
+
+Full paths on the lab laptop: `~/AirStack-diffaero/robot/ros_ws/src/svg_ground_control/…`.
+When my runbooks and CMU's guide disagree, trust CMU's `experiment.md` for commands and this
+repo for lab-specific substitutions and lessons learned.
+
 ## Milestone 1 at a glance
 
 ![Takeoff and land](assets/takeoff_and_land.gif)

@@ -1,7 +1,9 @@
 # AirStack + Starling Max 2 Live Flight — Milestones & Runbook
 
-> Canonical (markdown) version. The Word export is generated with
-> `python3 tools/make_milestones_doc.py`. Last updated: 2026-07-20.
+> Canonical (markdown) version — **our lab's own document** (see "Whose document is whose" in
+> the README; CMU's upstream guide is `experiment.md` inside the AirStack checkout).
+> The Word export is generated with `python3 tools/make_milestones_doc.py`.
+> Last updated: 2026-07-20.
 > Branch: `daniel/diffaero_ground_control` · Working copy: `~/AirStack-diffaero`
 
 ## 1. Objective
@@ -126,7 +128,9 @@ ros2 service call /swarm_commander/land    std_srvs/srv/Trigger
 
 ## 6. Milestones 2–6 (to do)
 
-Full details: `robot/ros_ws/src/svg_ground_control/experiment.md` Parts B & D.
+Full details: `robot/ros_ws/src/svg_ground_control/experiment.md` Parts B & D — **that file is
+CMU's own maintained guide** (lives in the AirStack checkout, written by the package authors
+for their rig); this document is our lab-specific overlay of it.
 Substitute `<LAPTOP_IP>` / `<MOTIVE_IP>`.
 
 ### M2 — Ground station prep (desk)

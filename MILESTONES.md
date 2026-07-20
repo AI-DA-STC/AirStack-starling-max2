@@ -126,39 +126,113 @@ Source videos: [`videos/`](videos/) (`takeoff_and_land.mp4`, `teleop_with_geofen
 
 ## 5. Milestone 1 re-run runbook
 
-All "inside container" shells: `cd ~/AirStack-starling-max2/AirStack && ./airstack.sh connect <name> --command=bash`
-(prompt must become `root@`). Paste one line at a time.
+Five terminals, one job each. Every terminal follows the same pattern: a **laptop block**
+(ends with `connect`, safe to paste whole), then — after the prompt changes to `root@` — an
+**inside-the-container block**. Never paste across that boundary.
+
+### Terminal 1 — start the stack + spawn the sim drones
+
+On your laptop:
 
 ```bash
-# T1 (host): stack up
-cd ~/AirStack-starling-max2/AirStack && ./airstack.sh up && ./airstack.sh status
+cd ~/AirStack-starling-max2/AirStack
+./airstack.sh up
+./airstack.sh status                              # all three containers "Up"
+./airstack.sh connect isaac-sim --command=bash
+```
 
-# T1 → isaac-sim container: spawn drones (single command, safe to paste whole)
+Inside the Isaac container (`root@` prompt) — this is ONE command, safe to paste whole:
+
+```bash
 NUM_ROBOTS=3 SVG_DOMAIN_ID=1 PLAY_SIM_ON_START=true ISAAC_SIM_HEADLESS=true \
 PYTHONPATH="$ISAAC_SIM_PYTHONPATH" \
 /isaac-sim/python.sh /isaac-sim/AirStack/simulation/isaac-sim/launch_scripts/svg_multi_drone_single_domain.py \
   --ext-folder ~/.local/share/ov/data/documents/Kit/shared/exts
-# wait: "Spawning 3 drone(s) on ROS domain 1" + "Ready for takeoff!" x3
+```
 
-# T2 → robot container: interfaces
-cd ~/AirStack/robot/ros_ws && bws && sws        # bws only if code changed
+Wait for `Spawning 3 drone(s) on ROS domain 1` and `Ready for takeoff!` ×3. **Leave running.**
+
+### Terminal 2 — per-drone interfaces
+
+On your laptop:
+
+```bash
+cd ~/AirStack-starling-max2/AirStack
+./airstack.sh connect robot --command=bash
+```
+
+Inside the robot container:
+
+```bash
+cd ~/AirStack/robot/ros_ws && bws && sws          # bws needed only if code changed
 ./src/svg_ground_control/scripts/launch_sim_interfaces.sh 3
-# verify elsewhere: ros2 topic echo /drone_1/interface/mavros/state --once  → connected: true
+```
 
-# T3 → robot container: commander
+**Leave running.** Verify from any other robot-container shell:
+`ros2 topic echo /drone_1/interface/mavros/state --once` → `connected: true`.
+
+### Terminal 3 — ground controller
+
+On your laptop:
+
+```bash
+cd ~/AirStack-starling-max2/AirStack
+./airstack.sh connect robot --command=bash
+```
+
+Inside the robot container:
+
+```bash
 ros2 launch svg_ground_control ground_control.launch.py
+```
 
-# T4 → robot container: RViz
+**Leave running** — this is the swarm commander (the brain).
+
+### Terminal 4 — RViz (watch the drones)
+
+On your laptop:
+
+```bash
+cd ~/AirStack-starling-max2/AirStack
+./airstack.sh connect robot --command=bash
+```
+
+Inside the robot container:
+
+```bash
 rviz2 -d $(ros2 pkg prefix svg_ground_control)/share/svg_ground_control/config/svg_drones.rviz
+```
 
-# T5 → robot container: cockpit
-ros2 service call /swarm_commander/takeoff std_srvs/srv/Trigger
-ros2 service call /swarm_commander/start   std_srvs/srv/Trigger
-ros2 service call /swarm_commander/hold    std_srvs/srv/Trigger    # panic freeze
-ros2 service call /swarm_commander/land    std_srvs/srv/Trigger
-# teleop (needs start; click its terminal for focus):
-#   ros2 run svg_ground_control keyboard_teleop --ros-args -p drone:=drone_3
-# fence recovery: land → /swarm_commander/reset_fence → takeoff → start
+An RViz window opens: cyan spheres = sim drones, yellow = teleop drone, green box = geofence.
+
+### Terminal 5 — cockpit (fly)
+
+On your laptop:
+
+```bash
+cd ~/AirStack-starling-max2/AirStack
+./airstack.sh connect robot --command=bash
+```
+
+Inside the robot container, one service call at a time:
+
+```bash
+ros2 service call /swarm_commander/takeoff std_srvs/srv/Trigger   # arm + climb + hold
+ros2 service call /swarm_commander/start   std_srvs/srv/Trigger   # scenario live
+ros2 service call /swarm_commander/hold    std_srvs/srv/Trigger   # panic freeze
+ros2 service call /swarm_commander/land    std_srvs/srv/Trigger   # descend + disarm
+```
+
+Optional extras (same terminal or a sixth):
+
+```bash
+# drive the teleop drone (needs "start" first; click THIS terminal for keyboard focus):
+ros2 run svg_ground_control keyboard_teleop --ros-args -p drone:=drone_3
+
+# geofence-breach recovery (fence red, drones frozen orange):
+ros2 service call /swarm_commander/land        std_srvs/srv/Trigger
+ros2 service call /swarm_commander/reset_fence std_srvs/srv/Trigger
+# then takeoff + start again
 ```
 
 ## 6. Milestones 2–6 (to do)

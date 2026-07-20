@@ -1,0 +1,24 @@
+{
+  "name": "Robot Container",
+  "runServices": [
+    "robot"
+  ],
+  "dockerComposeFile": [
+    "../../docker-compose.yaml"
+  ],
+  "service": "robot",
+  "workspaceFolder": "/home/robot/AirStack",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "Ranch-Hand-Robotics.rde-pack",
+        "ms-vscode.cpptools",
+        "ms-python.black-formatter",
+        "ms-vscode.cmake-tools"
+      ],
+    }
+  },
+  "containerEnv": {
+    "AUTOLAUNCH": "false"
+  }
+}

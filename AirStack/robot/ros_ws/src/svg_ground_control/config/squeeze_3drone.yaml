@@ -1,0 +1,96 @@
+# SVG ground control — SQUEEZE test profile (3 drones, simulation topics).
+#
+#   ros2 launch svg_ground_control ground_control.launch.py \
+#       config:=<share>/config/squeeze_3drone.yaml
+#
+# Setup: drone_1 and drone_2 ("holders") goal-track the two
+# squeeze_holder_positions. drone_3 (the "intruder") shuttles back and forth
+# between squeeze_intruder_waypoints A and B (starts at A, flies toward B).
+#
+# Geometry rules of thumb (r = cbf_safety_radius_m):
+#   - holder posts must be > 2r apart, or they can't both reach their posts
+#     (the commander refuses such configs at startup);
+#   - for the demo to show yielding, the intruder's A->B line must pass
+#     closer than 2r to a post — e.g. through the midpoint of the gap.
+# Defaults: posts 1.38 m apart (2.5r) along y, intruder crossing along x
+# through the midpoint at the same altitude.
+#
+# Expected: as the intruder approaches, the CBF pushes the holders apart;
+# the intruder passes; the holders' nominal pulls them back to their posts.
+# Set teleop_drones: "drone_3" to squeeze by hand instead.
+#
+# For hardware, change the three topic templates to the /{name}/fmu/... ones
+# (see swarm_real.yaml) and fit all coordinates to your capture volume.
+
+swarm_commander:
+  ros__parameters:
+    # squeeze requires exactly this ordering: [holder, holder, intruder]
+    drone_names: ["drone_1", "drone_2", "drone_3"]
+    # ---- Per-drone axes (any drone, any combination) -------------------
+    # mode   : drone_modes       "sim"/"real" per drone (interface vs fmu)
+    # role   : teleop_drones (operator-driven), external_drones (tracked but
+    #          never commanded); unlisted = auto (scenario-driven)
+    # safety : cbf_exempt_drones  CBF leaves these uncorrected (still obstacles)
+    # The intruder (drone_3) is CBF-exempt so it presses through the gap and
+    # the holders alone yield. Drive it by hand instead with
+    # teleop_drones: "drone_3" (it stays exempt — it's in cbf_exempt_drones).
+    drone_modes: "sim,sim,sim"
+    teleop_drones: ""          # "drone_3" = squeeze by hand
+    external_drones: ""
+    cbf_exempt_drones: "drone_3"
+
+    scenario: "squeeze"
+    scenario_speed_mps: 0.6
+    scenario_seed: 7
+    arena_low: [-2.0, -2.0, 0.8]
+    arena_high: [2.0, 2.0, 2.0]
+
+    # SIM ONLY: each PX4 SITL's local origin is its own spawn point, so the
+    # raw odometries are in different frames. These offsets (= the spawn
+    # positions from svg_multi_drone_single_domain.py: x = 2*(i-1) - 2 for
+    # 3 drones) are ADDED to bring all drones into one world frame.
+    # On hardware with mocap-anchored EKFs set all zeros.
+    drone_position_offsets: [-2.0, 0.0, 0.0,
+                              0.0, 0.0, 0.0,
+                              2.0, 0.0, 0.0]
+
+    # The two steady drones' posts: flat [x1,y1,z1,  x2,y2,z2] (ENU, m).
+    squeeze_holder_positions: [0.0, -0.69, 1.2,
+                               0.0,  0.69, 1.2]
+    # The moving drone's two endpoints: flat [ax,ay,az,  bx,by,bz].
+    # It takes off at A and shuttles A -> B -> A -> ...
+    # A is on the +x side: drone_3 spawns at x=+2 in sim, and the takeoff
+    # ascent is NOT CBF-exempt, so A must not require crossing the gap.
+    squeeze_intruder_waypoints: [ 1.5, 0.0, 1.2,
+                                 -1.5, 0.0, 1.2]
+    # Keep true: the intruder is the deliberate obstacle. If false it gets
+    # CBF-filtered like everyone else and the filter pushes it BACK from the
+    # gap (stall/retreat) instead of letting it force the holders to yield.
+    squeeze_intruder_cbf_exempt: true
+
+    hover_positions: [0.0, 0.0, 1.2, 0.0, 0.0, 1.2, 0.0, 0.0, 1.2]  # unused by squeeze
+
+    # Routing is per-drone via drone_modes (sim -> /{name}/interface/*,
+    # real -> /{name}/fmu/*). State topic is the same for both. Flip holders
+    # to real + keep a sim intruder = hybrid_squeeze.yaml.
+    state_topic_template: "/{name}/odometry_conversion/odometry"
+    teleop_topic_template: "/svg/{name}/teleop_command"
+
+    control_rate_hz: 20.0
+    state_timeout_s: 0.5
+    teleop_timeout_s: 0.5
+
+    hover_kp: 1.0
+    arrival_threshold_m: 0.15
+    land_speed_mps: 0.3
+    land_complete_altitude_m: 0.15
+
+    cbf_safety_radius_m: 0.55
+    cbf_max_speed_mps: 1.2
+    cbf_alpha: 2.5
+    teleop_max_speed_mps: 1.2
+
+    # Geofence: breach -> all drones hold, ~/reset_fence to clear
+    fence_enabled: true
+    fence_min: [-4.0, -2.0, 0.0]
+    fence_max: [4.0, 2.0, 3.0]

@@ -1,0 +1,222 @@
+---
+copyright: Copyright &copy; 2024 - 2030 AirLab CMU
+docs_dir: .
+site_name: AirStack
+site_dir: ../site
+site_url: "https://docs.theairlab.org/docs/" # Trailing slash is recommended
+exclude_docs: |
+  **/ros_ws/build
+  **/docker/Foxglove
+  **/macvo
+  **/ros_ws/install
+  **/kit-app-template/**
+  **/isaac_sim_data/**
+extra:
+  version:
+    provider: mike
+  generator: false
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/castacks
+    - icon: fontawesome/brands/x-twitter
+      link: https://x.com/airlabcmu
+extra_css:
+  - stylesheets/extra.css
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - def_list
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.magiclink
+  - pymdownx.critic
+  - pymdownx.caret
+  - pymdownx.keys
+  - pymdownx.mark
+  - pymdownx.tilde
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - toc:
+      permalink: true
+nav:
+  - Home: docs/index.md
+  - Getting Started:
+    - docs/getting_started/index.md
+    - docs/getting_started/tutorials_reference.md
+  - Development:
+      - docs/development/index.md
+      - Beginner Tutorials:
+          - Key Concepts:
+              - Overview: docs/development/beginner/key_concepts.md
+              - CLI Introduction: docs/development/beginner/airstack-cli/info.md
+              - Docker Workflow: docs/development/beginner/airstack-cli/docker_usage.md
+          - docs/development/beginner/development_environment.md
+          - docs/development/beginner/vscode/vscode_debug.md
+          - docs/development/beginner/fork_your_own_project.md
+      - Intermediate Tutorials:
+          - Testing:
+              - tests/README.md
+              - tests/ci-cd-orchestrator.md
+          - Frame Conventions: docs/development/intermediate/frame_conventions.md
+          - Contributing: 
+              - docs/development/intermediate/contributing.md
+              - docs/development/intermediate/documentation.md
+      - Advanced Tutorials:
+          - AI Agent Guide: docs/development/advanced/ai_agent_guide.md
+          - AirStack CLI Tool:
+              - Extending: docs/development/advanced/airstack-cli/extending.md
+              - Architecture: docs/development/advanced/airstack-cli/architecture.md
+  - Simulation:
+      - docs/simulation/index.md
+      - Isaac Sim:
+          - docs/simulation/isaac_sim/index.md
+          - Docker: docs/simulation/isaac_sim/docker.md
+          - docs/simulation/isaac_sim/pegasus_scene_setup.md
+          - Spawning Drones: docs/simulation/isaac_sim/spawning_drones.md
+          - Overhead Camera: docs/simulation/isaac_sim/overhead_camera.md
+          - docs/simulation/isaac_sim/ascent_sitl_extension.md
+          - docs/simulation/isaac_sim/export_stages_from_unreal.md
+      - Microsoft AirSim (legacy):
+          - docs/simulation/ms-airsim/index.md
+          - Docker: docs/simulation/ms-airsim/docker.md
+      - Simple Sim:
+          - docs/simulation/simple_sim/index.md
+          - Docker: docs/simulation/simple_sim/docker.md
+  - Robot:
+      - docs/robot/index.md
+      - Configuration:
+          - docs/robot/configuration/index.md
+      - Docker:
+          - docs/robot/docker/index.md
+          - Robot Identity: docs/robot/docker/robot_identity.md
+      - Autonomy Modules:
+          - Overview: docs/robot/autonomy/index.md
+          - System Architecture: docs/robot/autonomy/system_architecture.md
+          - Tasks and Task Executors: docs/robot/autonomy/tasks.md
+          - Interface:
+              - docs/robot/autonomy/interface/index.md
+          - Sensors:
+              - docs/robot/autonomy/sensors/index.md
+              - Gimbal: docs/robot/autonomy/sensors/gimbal.md
+          - Perception:
+              - docs/robot/autonomy/perception/index.md
+              - State Estimation: docs/robot/autonomy/perception/state_estimation.md
+          - Local:
+              - docs/robot/autonomy/local/index.md
+              - World Model:
+                  - docs/robot/autonomy/local/world_model/index.md
+                  - DROAN Obstacle Avoidance:
+                      - Disparity Expansion: robot/ros_ws/src/local/world_models/disparity_expansion/README.md
+                      - Disparity Graph: robot/ros_ws/src/local/world_models/disparity_graph/README.md
+                      - Disparity Graph Cost Map: robot/ros_ws/src/local/world_models/disparity_graph_cost_map/README.md
+              - Planning:
+                  - docs/robot/autonomy/local/planning/index.md
+                  - Trajectory Library: robot/ros_ws/src/local/planners/trajectory_library/README.md
+                  - Takeoff Landing Planner:
+                      - Overview: robot/ros_ws/src/local/planners/takeoff_landing_planner/README.md
+                      - Testing: robot/ros_ws/src/local/planners/takeoff_landing_planner/test/README.md
+                  - DROAN Local Planner: robot/ros_ws/src/local/planners/droan_local_planner/README.md
+                  - DROAN GL: robot/ros_ws/src/local/planners/droan_gl/README.md
+              - Controls:
+                  - docs/robot/autonomy/local/controls/index.md
+                  - Trajectory Controller: robot/ros_ws/src/local/controls/trajectory_controller/README.md
+          - Global:
+              - docs/robot/autonomy/global/index.md
+              - World Model:
+                  - docs/robot/autonomy/global/world_model/index.md
+                  - VDB Mapping: robot/ros_ws/src/global/world_models/vdb_mapping_ros2/README.md
+              - Planning:
+                  - docs/robot/autonomy/global/planning/index.md
+                  - Random Walk: robot/ros_ws/src/global/planners/random_walk/README.md
+                  - Exploration: robot/ros_ws/src/global/planners/exploration/README.md
+          - Behavior:
+              - docs/robot/autonomy/behavior/index.md
+          - Integration Guide: docs/robot/autonomy/integration_checklist.md
+          - Coordination:
+              - Overview: docs/robot/autonomy/coordination/index.md
+              - Payloads & Foxglove: docs/robot/autonomy/coordination/payloads.md
+      - Autonomy Modes: docs/robot/autonomy_modes.md
+      - DDS Router: docs/robot/autonomy/dds_router.md
+      - Static Transforms:
+          - docs/robot/static_transforms/index.md
+      - Logging:
+          - docs/robot/logging/index.md
+          - ROS Bags: docs/robot/logging/rosbags.md
+          - Data Offloading: docs/robot/logging/data_offloading.md
+          - Bag Recorder: common/ros_packages/bag_recorder_pid/README.md
+  - Ground Control Station:
+      - docs/gcs/index.md
+      - Docker:
+          - docs/gcs/docker/index.md
+      - Usage:
+          - User Interface: docs/gcs/usage/user_interface.md
+      - Foxglove:
+          - Visualization: docs/gcs/foxglove.md
+          - Adding Waypoints & Geofences: docs/gcs/waypoints_and_geofences.md
+      - Command Center:
+          - docs/gcs/command_center/command_center.md
+      - Casualty Assessment:
+          - docs/gcs/casualty_assessment/casualty_assessment.md
+      - WinTAK Installation:
+          - docs/gcs/wintak/installation.md
+  - Real World:
+      - docs/real_world/index.md
+      - Deploying to Hardware: docs/real_world/deploying_to_hardware.md
+      - Installation on Hardware:
+          - docs/real_world/installation/index.md
+      - HITL Testing:
+          - docs/real_world/HITL/index.md
+      - Data Offloading:
+          - docs/real_world/data_offloading/index.md    
+  - About: docs/about.md
+plugins:
+  - search
+  # the same-dir plugin lets mkdocs point to README.md files under our source code, not just the docs directory
+  - same-dir
+  # redirects is necessary with the same-dir plugin to ensure that the home page index.md file redirects to the correct location
+  - redirects:
+      redirect_maps:
+        'index.md': 'docs/index.md'
+repo_name: castacks/AirStack
+repo_url: https://github.com/castacks/AirStack
+theme:
+  favicon: docs/assets/StackedWhite.png
+  custom_dir: docs/overrides
+  features:
+    - navigation.indexes
+    - navigation.path
+    - navigation.tabs
+    # - navigation.expand
+    - navigation.footer
+    - navigation.top
+    - navigation.sections
+    - search.highlight
+    - search.suggest
+    - toc.integrate
+    - toc.follow
+    - content.code.copy
+  logo: docs/assets/airstack_white.png
+  name: material
+  palette:
+    - accent: pink
+      primary: custom
+      scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - accent: pink
+      primary: custom
+      scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode

@@ -1,0 +1,6 @@
+robot/ros_ws/build/
+robot/ros_ws/install/
+robot/ros_ws/log/
+omni_pass.env
+user.config.json
+__pycache__/

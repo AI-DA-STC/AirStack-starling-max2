@@ -1,14 +1,16 @@
-# Starling Max 2 × AirStack — Lab Notes
+# AirStack-starling-max2 — Starling Max 2 × AirStack lab repo
 
-Working notes, milestone plan, runbooks, and local patches for flying a ModalAI **Starling
-Max 2** live under **CMU AirStack** (branch `daniel/diffaero_ground_control`) with
-**OptiTrack + Motive** mocap.
+Everything for flying a ModalAI **Starling Max 2** live under **CMU AirStack** (branch
+`daniel/diffaero_ground_control`) with **OptiTrack + Motive** mocap: our notes, milestone
+plan, bug-fix patches, demo recordings, **and a complete known-good snapshot of the AirStack
+code itself**.
 
-| File | What it is |
+| File / folder | What it is |
 |---|---|
 | [MILESTONES.md](MILESTONES.md) | Canonical milestone plan + runbooks + troubleshooting (source of truth) |
 | [CLAUDE_NOTES.md](CLAUDE_NOTES.md) | Full session handoff for AI-assisted sessions: history, findings, machine state, gotchas |
-| [patches/](patches/) | Local fixes not yet upstream (apply to a fresh AirStack checkout with `git apply`) |
+| [AirStack/](AirStack/) | **Full AirStack code snapshot** (2026-07-20, bug fixes applied, submodules included) — see its own [README](AirStack/README.md) |
+| [patches/](patches/) | Our two bug fixes as patch files (for applying to a fresh CMU clone; already applied in `AirStack/`) |
 | [tools/make_milestones_doc.py](tools/make_milestones_doc.py) | Generates the Word (.docx) export of the milestone plan (`pip install python-docx`) |
 | [assets/](assets/) · [videos/](videos/) | GIFs (embedded in MILESTONES.md) and source screen recordings of Milestone 1 |
 
@@ -16,23 +18,22 @@ Max 2** live under **CMU AirStack** (branch `daniel/diffaero_ground_control`) wi
 
 There are two separate places documentation lives, written by two different groups:
 
-**1. Written by us — stored here in `starling-airstack-notes` (everything you see in this
-repo):** `README.md`, `MILESTONES.md`, `CLAUDE_NOTES.md`, `patches/`, `tools/`. Our objective,
-our milestone structure, our lab's IPs/hardware, our findings and fixes.
+**1. Written by us:** `README.md`, `MILESTONES.md`, `CLAUDE_NOTES.md`, `patches/`, `tools/`
+— our objective, our milestone structure, our lab's IPs/hardware, our findings and fixes.
 
-**2. Written by CMU — stored inside the AirStack code itself** (they are part of the code you
-clone from CMU; on the lab laptop that means inside `~/AirStack-diffaero/`, and they are not
-copied into `starling-airstack-notes`):
+**2. Written by CMU — everything inside the [`AirStack/`](AirStack/) folder** (it is a
+snapshot of their code; on the lab laptop the live copy is `~/AirStack-diffaero/`). Their key
+guides, well worth reading:
 
-- `~/AirStack-diffaero/robot/ros_ws/src/svg_ground_control/experiment.md` — **CMU's maintained
-  command reference** for the SVG ground-control experiments (Parts A–D: sim, real-drone
-  bring-up, tasks, first flight). The source of truth for command-level detail; written for
-  CMU's rig, so substitute our IPs/names.
-- `~/AirStack-diffaero/robot/ros_ws/src/svg_ground_control/README.md` — CMU's package overview
-  (architecture, scenarios, CBF, safety notes).
+- [`AirStack/robot/ros_ws/src/svg_ground_control/experiment.md`](AirStack/robot/ros_ws/src/svg_ground_control/experiment.md)
+  — **CMU's maintained command reference** for the SVG ground-control experiments (Parts A–D:
+  sim, real-drone bring-up, tasks, first flight). The source of truth for command-level
+  detail; written for CMU's rig, so substitute our IPs/names.
+- [`AirStack/robot/ros_ws/src/svg_ground_control/README.md`](AirStack/robot/ros_ws/src/svg_ground_control/README.md)
+  — CMU's package overview (architecture, scenarios, CBF, safety notes).
 
-When our runbooks and CMU's guide disagree, trust CMU's `experiment.md` for commands and
-`starling-airstack-notes` for lab-specific substitutions and lessons learned.
+When our runbooks and CMU's guide disagree, trust CMU's `experiment.md` for commands and our
+documents for lab-specific substitutions and lessons learned.
 
 ## Milestone 1 at a glance
 
@@ -82,13 +83,14 @@ git submodule update --init
 #    repos and the recursive download fails.)
 ```
 
-**Option B — our lab snapshot** ([JChiaHH/AirStack-starling-max2](https://github.com/JChiaHH/AirStack-starling-max2)):
+**Option B — our lab snapshot (the [`AirStack/`](AirStack/) folder of THIS repo):**
 the exact code Milestone 1 succeeded on, frozen 2026-07-20, with **both bug fixes already
 applied and submodules already included** — use this if CMU's branch has changed/vanished, or
 when you just want the known-good version:
 
 ```bash
-git clone https://github.com/JChiaHH/AirStack-starling-max2.git ~/AirStack-diffaero
+git clone https://github.com/AI-DA-STC/AirStack-starling-max2.git ~/AirStack-starling-max2
+cp -r ~/AirStack-starling-max2/AirStack ~/AirStack-diffaero    # code snapshot → its own folder
 cd ~/AirStack-diffaero
 # no submodule step needed, and SKIP step 4 (patches) below — already applied.
 ```
@@ -111,7 +113,7 @@ them out of git on purpose). Get them from an existing lab machine, or create th
 ```bash
 # 4. Apply our two bug fixes — ONLY for Option A (the Option B snapshot already has them).
 #    EDIT the NOTES path if you cloned this repo somewhere else:
-NOTES=~/Documents/GitHub/starling-airstack-notes
+NOTES=~/Documents/GitHub/AirStack-starling-max2
 git -C simulation/isaac-sim/extensions/PegasusSimulator apply "$NOTES/patches/0001-zed-camera-info-init-race.patch"
 git apply "$NOTES/patches/0002-swarm-commander-logger-severity-crash.patch"
 echo "both fixes applied"

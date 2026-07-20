@@ -94,7 +94,7 @@ You do NOT need any of this on the lab laptop — it is already set up. This is 
 a teammate's PC or a re-install. Steps 1–2 and 4–6 are copy-paste; step 3 needs files from an
 existing machine.
 
-**1. Download the code — pick ONE of the two sources:**
+#### Step 1 — Download the code (pick ONE of the two sources)
 
 **Option A — CMU's repo** (freshest code, but it is a personal branch that CMU may change or
 delete; needs the submodule and patch steps):
@@ -125,30 +125,35 @@ The `ln -s` line creates `~/AirStack-diffaero` as a **shortcut (symlink)** point
 clone — only ONE copy of the code exists on disk, but every command in these docs (they all
 use `~/AirStack-diffaero`) works unchanged on every machine.
 
-With Option B: **skip step 4 entirely** (fixes already in the code — running it anyway just
-prints path errors), and ignore the `git hooks … No such file or directory` message in step 2
-(the snapshot folder is not its own git repo, so there is nowhere to install hooks — harmless).
-Note that build artifacts and generated config files will appear as untracked/ignored noise in
-GitHub Desktop after you start using the stack — that is expected.
+Note: after you start using the stack, build artifacts and generated config files will appear
+as untracked/ignored noise in GitHub Desktop — that is expected.
+
+#### Step 2 — One-time host setup
+
+Requires Ubuntu 22.04+ and an NVIDIA GPU with a recent driver (Isaac Sim needs it). Skip any
+part already installed on the machine. (Option B users: a `git hooks … No such file or
+directory` message here is harmless — the snapshot folder is not its own git repo.)
 
 ```bash
-# 2. One-time host setup (skip any part already on the machine).
-#    Requires: Ubuntu 22.04+, an NVIDIA GPU with a recent driver (Isaac Sim needs it).
 ./airstack.sh setup      # puts the "airstack" command on your PATH — open a NEW terminal after
 airstack install         # installs Docker Engine + NVIDIA Container Toolkit (asks for sudo)
 docker info              # verify Docker runs (start it with: sudo systemctl start docker)
 ```
 
-**3. Copy two config files git does not carry** (credentials / machine config — CMU keeps
-them out of git on purpose). Get them from an existing lab machine, or create them from the
-`*_TEMPLATE` files sitting next to them:
+#### Step 3 — Copy two config files git does not carry
+
+Credentials / machine config — CMU keeps them out of git on purpose. Get them from an existing
+lab machine, or create them from the `*_TEMPLATE` files sitting next to them:
 
 - `simulation/isaac-sim/docker/omni_pass.env`
 - `simulation/isaac-sim/docker/user.config.json`
 
+#### Step 4 — Apply the two bug fixes  ⚠️ Option A ONLY — Option B users SKIP this step
+
+The Option B snapshot already contains both fixes; running this on it just prints path errors.
+
 ```bash
-# 4. Apply our two bug fixes — ONLY for Option A (the Option B snapshot already has them).
-#    EDIT the NOTES path if you cloned this repo somewhere else:
+# EDIT the NOTES path if you cloned this repo somewhere else:
 NOTES=~/AirStack-starling-max2
 git -C simulation/isaac-sim/extensions/PegasusSimulator apply "$NOTES/patches/0001-zed-camera-info-init-race.patch" \
   && git apply "$NOTES/patches/0002-swarm-commander-logger-severity-crash.patch" \
@@ -156,19 +161,26 @@ git -C simulation/isaac-sim/extensions/PegasusSimulator apply "$NOTES/patches/00
 #   (fix 1 uses "git -C <folder>" because PegasusSimulator is a submodule — the patch
 #    must be applied from inside that folder. Both patches verified against the branch
 #    as of 2026-07-20.)
+```
 
-# 5. Build the robot Docker image. REQUIRED on this branch: it bakes in MicroXRCEAgent
-#    (the real-drone link) and pins the ROS domain — a plain "up" without this is broken.
+#### Step 5 — Build the robot Docker image
+
+REQUIRED on this branch: it bakes in MicroXRCEAgent (the real-drone link) and pins the ROS
+domain — a plain `up` without this is broken. The other images (isaac-sim, gcs) download
+automatically on first `up`; isaac-sim additionally needs the credentials from Step 3.
+
+```bash
 ./airstack.sh image-build robot-desktop
-#    (other images — isaac-sim, gcs — download automatically on first "up";
-#     isaac-sim additionally needs the Omniverse credentials from step 3)
+```
 
-# 6. Final setup check — the settings file must read like this:
+#### Step 6 — Final setup check
+
+```bash
 grep -E '^(COMPOSE_PROFILES|AUTOLAUNCH|NUM_ROBOTS)' .env
 #   want: COMPOSE_PROFILES="desktop,isaac-sim"  AUTOLAUNCH="false"  NUM_ROBOTS="1"
 ```
 
-**Setup is now complete.** You never need to repeat steps 1–6 on this machine (except step 5's
+**Setup is now complete.** You never need to repeat Steps 1–6 on this machine (except Step 5's
 image rebuild if the Dockerfile ever changes). Starting and using the stack is a separate,
 every-session routine — next section.
 

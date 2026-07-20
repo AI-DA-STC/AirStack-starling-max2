@@ -22,7 +22,7 @@ There are two separate places documentation lives, written by two different grou
 — our objective, our milestone structure, our lab's IPs/hardware, our findings and fixes.
 
 **2. Written by CMU — everything inside the [`AirStack/`](AirStack/) folder** (it is a
-snapshot of their code; on the lab laptop the live copy is `~/AirStack-diffaero/`). Their key
+snapshot of their code; the live working copy is `~/AirStack-starling-max2/AirStack/`). Their key
 guides, well worth reading:
 
 - [`AirStack/robot/ros_ws/src/svg_ground_control/experiment.md`](AirStack/robot/ros_ws/src/svg_ground_control/experiment.md)
@@ -73,7 +73,7 @@ the full runbook.*
 ## Patches — bug fixes we made to AirStack (backup copies)
 
 While getting AirStack working, we found and fixed **two bugs in CMU's code**. The fixed code
-runs on the lab laptop (in `~/AirStack-diffaero`) — **nothing in this folder needs to be run
+runs on the lab machines (in `~/AirStack-starling-max2/AirStack`) — **nothing in this folder needs to be run
 for the lab laptop; it is already fixed there.**
 
 The `patches/` folder holds a **backup copy of each fix** as a small text file (a git
@@ -192,7 +192,7 @@ every-session routine — next section.
 **A — on your laptop** (safe to paste as one block):
 
 ```bash
-cd ~/AirStack-starling-max2/AirStack     # your working folder (original lab laptop: ~/AirStack-diffaero)
+cd ~/AirStack-starling-max2/AirStack     # your working folder — same path on every machine
 ./airstack.sh up              # start the containers (robot, isaac-sim, gcs) — takes ~1 min
 ./airstack.sh status          # all three should say "Up"
 ./airstack.sh connect robot --command=bash   # opens a shell INSIDE the robot container

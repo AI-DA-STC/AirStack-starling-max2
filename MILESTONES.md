@@ -4,7 +4,7 @@
 > the README; CMU's upstream guide is `experiment.md` inside the AirStack checkout).
 > The Word export is generated with `python3 tools/make_milestones_doc.py`.
 > Last updated: 2026-07-20.
-> Branch: `daniel/diffaero_ground_control` · Working copy: `~/AirStack-diffaero`
+> Branch: `daniel/diffaero_ground_control` · Working folder: `~/AirStack-starling-max2/AirStack`
 
 ## 1. Objective
 
@@ -121,14 +121,12 @@ Source videos: [`videos/`](videos/) (`takeoff_and_land.mp4`, `teleop_with_geofen
 
 ## 5. Milestone 1 re-run runbook
 
-All "inside container" shells: `cd ~/AirStack-diffaero && ./airstack.sh connect <name> --command=bash`
+All "inside container" shells: `cd ~/AirStack-starling-max2/AirStack && ./airstack.sh connect <name> --command=bash`
 (prompt must become `root@`). Paste one line at a time.
-*(Path note: `~/AirStack-diffaero` is the working folder on the original lab laptop. Machines
-installed from this repo use `~/AirStack-starling-max2/AirStack` — substitute accordingly.)*
 
 ```bash
 # T1 (host): stack up
-cd ~/AirStack-diffaero && ./airstack.sh up && ./airstack.sh status
+cd ~/AirStack-starling-max2/AirStack && ./airstack.sh up && ./airstack.sh status
 
 # T1 → isaac-sim container: spawn drones (single command, safe to paste whole)
 NUM_ROBOTS=3 SVG_DOMAIN_ID=1 PLAY_SIM_ON_START=true ISAAC_SIM_HEADLESS=true \

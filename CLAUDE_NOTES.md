@@ -16,13 +16,22 @@ indoor position source. CBF/swarm scenarios are OUT of scope for now — single-
 takeoff / hover / land under mocap is the goal. User: Jeremy (robotics lab, Legion Pro 7 laptop,
 RTX 5070 Ti 12 GB).
 
-## 2. Repos / checkouts on this machine (IMPORTANT — three copies exist)
+## 2. Repos / checkouts on this machine (layout as of 2026-07-20, post-migration)
 
-| Path | Branch | Role |
+| Path | What it is | Role |
 |---|---|---|
-| `~/AirStack` | `main` (castacks/AirStack) | Original working copy. Has the camera-race fix + a new `airstack restart` CLI command (both uncommitted). |
-| `~/AirStack-diffaero` | `daniel/diffaero_ground_control` | **THE ACTIVE PROJECT CHECKOUT.** CMU's flight-tested ground-controller branch. All milestone work happens here. |
-| `~/airstack-branches/{diffaero_ground_control,svg_ground_control}` | worktrees of the two SVG branches | Redundant now (user cloned `~/AirStack-diffaero` separately). Can be removed with `git -C ~/AirStack worktree remove <path>`. |
+| `~/AirStack-starling-max2` | this git repo (remote: AI-DA-STC/AirStack-starling-max2) | **THE ACTIVE SETUP.** Docs + patches + media at the root; `AirStack/` inside it is the **working folder** — the fixed code snapshot the stack actually runs from. Same path on every lab machine. |
+| `~/AirStack-cmu` | real git clone of castacks/AirStack, branch `jeremy/local-fixes` (formerly at `~/AirStack-diffaero`) | Kept ONLY for the upstream PR to CMU: has the fix commits (`jeremy/local-fixes`; submodule branch `jeremy/camera-init-fix`) on top of `daniel/diffaero_ground_control` with full history. Not used to run the stack. |
+| `~/AirStack` | clone of castacks/AirStack, `main` | Original pre-project copy. Camera-race fix + custom `airstack restart` CLI command (both uncommitted). Mostly historical. |
+| `~/airstack-branches/{...}` | worktrees of the two SVG branches | Redundant. Removable with `git -C ~/AirStack worktree remove <path>`. |
+
+**Migration note (2026-07-20, evening):** the working folder used to be `~/AirStack-diffaero`
+(a CMU clone). Everything was consolidated: code snapshot + docs merged into the single
+`AirStack-starling-max2` repo, the working folder became `~/AirStack-starling-max2/AirStack`,
+and the old clone was renamed `~/AirStack-cmu`. Older narrative below may say
+`~/AirStack-diffaero` — read it as "the folder now called `~/AirStack-cmu`". After the
+migration the workspace must be recompiled once (`bws`) since build artifacts stayed in the
+old folder.
 
 **Why this branch:** `daniel/diffaero_ground_control` is the ONLY branch line containing the
 real-drone + mocap pipeline: `svg_ground_control` (swarm commander, CBF filter, mocap_bridge,
@@ -31,7 +40,7 @@ geofence, takeoff/start/hold/land services), `natnet_ros2` (OptiTrack NatNet dri
 `yikuan/SVG_ground_control` is the older base of the same work.
 The separate `modalai_interface` branch has a VOXL2 interface package but NO ground controller.
 
-**Canonical guide (read it):** `~/AirStack-diffaero/robot/ros_ws/src/svg_ground_control/experiment.md`
+**Canonical guide (read it):** `~/AirStack-starling-max2/AirStack/robot/ros_ws/src/svg_ground_control/experiment.md`
 — Part A (sim), Part B (real drone bring-up), Part C (tasks), Part D (first flight), Geofence,
 Troubleshooting. Our milestones follow it.
 
@@ -52,7 +61,7 @@ Troubleshooting. Our milestones follow it.
   this fix re-applied** (done in both `~/AirStack` and `~/AirStack-diffaero`).
 - Also added an `airstack restart <container>` command to `~/AirStack/airstack.sh` (docker restart
   one container in seconds while isaac-sim stays up; partial-name matching via find_container).
-  Note: `~/AirStack-diffaero/airstack.sh` does NOT have this command (different checkout).
+  Note: the active working folder’s `airstack.sh` does NOT have this command (it exists only in `~/AirStack`).
 - Debugging subagent definitions were created in `~/AirStack/.claude/agents/` (ros-topic-debugger,
   container-stack-debugger, state-estimation-debugger, planner-debugger, sim-interface-debugger,
   build-debugger, system-test-runner).
@@ -91,7 +100,7 @@ During breach recovery, drone_3's land command failed → first-ever FAILED serv
 call-site, one line at two severities raises
 `ValueError: Logger severity cannot be changed between calls` → **commander process died with an
 aircraft still airborne**. Fixed in
-`~/AirStack-diffaero/robot/ros_ws/src/svg_ground_control/svg_ground_control/swarm_commander.py`
+`AirStack/robot/ros_ws/src/svg_ground_control/svg_ground_control/swarm_commander.py` (in the working folder)
 by splitting into separate `if ok: ...info(...) else: ...error(...)` call-sites.
 Rebuild with `bws --packages-select svg_ground_control`.
 **TODO: send traceback + 4-line patch to CMU (branch owner) / open PR.**

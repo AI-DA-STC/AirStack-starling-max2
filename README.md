@@ -179,6 +179,15 @@ cd ~/AirStack/robot/ros_ws && bws && sws
 #   first ever build ~4 min; later sessions it finishes in seconds unless code changed
 ```
 
+**Two messages that look like errors but are NORMAL on a fresh machine:**
+
+- `Workspace not built yet. Please make sure to build first with 'bws'` — printed by every new
+  container shell until the first `bws` has run. It is the shell telling you to do the very
+  next command above, not a failure.
+- `ROBOT_NAME: unknown-robot` in `./airstack.sh status` — harmless on this branch. The SVG
+  ground-control stack names its drones `drone_1/2/3` from config files and never uses
+  ROBOT_NAME. What matters is `ROS_DOMAIN_ID: 1` next to it, which should read 1.
+
 **At this point the stack is running and compiled — but nothing is flying yet.** What you do
 next depends on your goal:
 

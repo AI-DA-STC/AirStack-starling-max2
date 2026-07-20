@@ -22,6 +22,6 @@ our Milestone 1 sim rehearsal succeeded on, so the lab can always rebuild a know
   `simulation/isaac-sim/docker/user.config.json`.
 
 **How to use it:** follow "Setting up AirStack on a NEW machine" in the
-[repo README](../README.md) one level up and pick **Option B** — this folder itself is your
-working folder (`~/AirStack-starling-max2/AirStack`); the submodule and patch steps don't
-apply to this snapshot.
+[repo README](../README.md) one level up — this folder itself is your working folder
+(`~/AirStack-starling-max2/AirStack`). No submodule or patch steps are needed; the snapshot
+is complete and already fixed.

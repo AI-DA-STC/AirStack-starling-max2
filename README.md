@@ -88,56 +88,72 @@ re-debugging them.
 | `0001-zed-camera-info-init-race.patch` | Camera startup race in the Isaac Sim Pegasus extension | The drone's right stereo camera randomly never publishes → navigation flies "blind" and becomes erratic (took us days to diagnose) |
 | `0002-swarm-commander-logger-severity-crash.patch` | Logging crash in the SVG ground controller | The ground-controller process **dies mid-flight** the first time any drone command fails |
 
-### Setting up AirStack on a NEW machine (clone → fixes → build)
+### Reference: using CMU's repo directly (advanced — not the normal install)
 
-You do NOT need any of this on the lab laptop — it is already set up. This is the recipe for
-a teammate's PC or a re-install. Steps 1–2 and 4–6 are copy-paste; step 3 needs files from an
-existing machine.
-
-#### Step 1 — Download the code (pick ONE of the two sources)
-
-**Option A — CMU's repo** (freshest code, but it is a personal branch that CMU may change or
-delete; needs the submodule and patch steps):
+The normal install (next section) never needs these patches — the code in `AirStack/` already
+contains the fixes. This is only for when you want CMU's **newer** commits than our snapshot:
 
 ```bash
-# daniel/diffaero_ground_control is the ONLY branch with the ground controller +
-# mocap pipeline (main/develop do not have it).
-git clone -b daniel/diffaero_ground_control https://github.com/castacks/AirStack.git ~/AirStack-diffaero
-cd ~/AirStack-diffaero
-git submodule update --init
-#   (submodules = sub-folders that are their own git repos, downloaded separately.
-#    Do NOT use "git clone --recurse-submodules": other branches reference private
-#    repos and the recursive download fails.)
+# clone CMU's branch + its submodules:
+git clone -b daniel/diffaero_ground_control https://github.com/castacks/AirStack.git ~/AirStack-cmu
+cd ~/AirStack-cmu
+git submodule update --init     # (NOT --recurse-submodules — other branches reference
+                                #  private repos and the recursive download fails)
+
+# re-apply our two fixes on top (assumes this repo is cloned at ~/AirStack-starling-max2):
+git -C simulation/isaac-sim/extensions/PegasusSimulator apply ~/AirStack-starling-max2/patches/0001-zed-camera-info-init-race.patch \
+  && git apply ~/AirStack-starling-max2/patches/0002-swarm-commander-logger-severity-crash.patch \
+  && echo "both fixes applied" || echo "PATCH FAILED — a fix may already be merged upstream, check the errors"
 ```
 
-**Option B — our lab snapshot (the [`AirStack/`](AirStack/) folder of THIS repo):**
-the exact code Milestone 1 succeeded on, frozen 2026-07-20, with **both bug fixes already
-applied and submodules already included** — use this if CMU's branch has changed/vanished, or
-when you just want the known-good version:
+If a patch fails, CMU may have merged that fix upstream (good — skip it) or changed the
+surrounding code (the patch needs regenerating — see below).
+
+### Reference: how a patch file is made
+
+A patch is just saved `git diff` output. To make one: edit the code in any git checkout, then:
+
+```bash
+git diff > my-fix.patch          # records exactly which lines of which files changed
+```
+
+That is how these two were produced — `git diff` run in the AirStack checkout (fix 2) and
+inside the PegasusSimulator submodule folder (fix 1). Anyone can then replay the change onto
+another copy of the same code with `git apply my-fix.patch`.
+
+### Setting up AirStack on a NEW machine
+
+You do NOT need any of this on the lab laptop — it is already set up. This is the recipe for
+a teammate's PC or a re-install. Steps 1–2 and 4–5 are copy-paste; Step 3 needs files from an
+existing machine.
+
+#### Step 1 — Download the code
+
+This repo contains everything, including the fixed AirStack code — one clone is the whole
+install:
 
 ```bash
 git clone https://github.com/AI-DA-STC/AirStack-starling-max2.git ~/AirStack-starling-max2
-cd ~/AirStack-starling-max2/AirStack      # the code folder — this is your working folder
+cd ~/AirStack-starling-max2/AirStack      # ← your WORKING FOLDER — all airstack commands run from here
 ```
 
-**Know your working folder — you will `cd` into it constantly:**
+No submodule step, no patch step — the code snapshot is complete and already fixed.
 
-| You chose | Your working folder |
-|---|---|
-| Option A | `~/AirStack-diffaero` |
-| Option B | `~/AirStack-starling-max2/AirStack` |
+> **Reference — where this code originally came from:** CMU's branch
+> [`daniel/diffaero_ground_control`](https://github.com/castacks/AirStack/tree/daniel/diffaero_ground_control)
+> of castacks/AirStack (the only branch with the ground-controller + mocap pipeline; snapshot
+> taken 2026-07-20 at commit `f544c743`). You only need CMU's repo if you want their *newer*
+> commits — in that case see the [Patches](#patches--bug-fixes-we-made-to-airstack-backup-copies)
+> section for how to re-apply our fixes on top.
 
-Docs and runbooks write `~/AirStack-diffaero` in commands — **Option B users substitute their
-working folder** (it is the same stack, just a different location on disk).
-
-Option B note: after you start using the stack, build artifacts and generated config files
-will appear as untracked/ignored noise in GitHub Desktop — that is expected.
+Note: after you start using the stack, build artifacts and generated config files will appear
+as untracked/ignored noise in GitHub Desktop — that is expected.
 
 #### Step 2 — One-time host setup
 
 Requires Ubuntu 22.04+ and an NVIDIA GPU with a recent driver (Isaac Sim needs it). Skip any
-part already installed on the machine. (Option B users: a `git hooks … No such file or
-directory` message here is harmless — the snapshot folder is not its own git repo.)
+part already installed on the machine. (A `git hooks … No such file or directory` message
+here is harmless — the code folder is not its own git repo.)
 
 ```bash
 ./airstack.sh setup      # puts the "airstack" command on your PATH — open a NEW terminal after
@@ -153,22 +169,7 @@ lab machine, or create them from the `*_TEMPLATE` files sitting next to them:
 - `simulation/isaac-sim/docker/omni_pass.env`
 - `simulation/isaac-sim/docker/user.config.json`
 
-#### Step 4 — Apply the two bug fixes  ⚠️ Option A ONLY — Option B users SKIP this step
-
-The Option B snapshot already contains both fixes; running this on it just prints path errors.
-
-```bash
-# EDIT the NOTES path if you cloned this repo somewhere else:
-NOTES=~/AirStack-starling-max2
-git -C simulation/isaac-sim/extensions/PegasusSimulator apply "$NOTES/patches/0001-zed-camera-info-init-race.patch" \
-  && git apply "$NOTES/patches/0002-swarm-commander-logger-severity-crash.patch" \
-  && echo "both fixes applied" || echo "PATCH FAILED — check the NOTES path and errors above"
-#   (fix 1 uses "git -C <folder>" because PegasusSimulator is a submodule — the patch
-#    must be applied from inside that folder. Both patches verified against the branch
-#    as of 2026-07-20.)
-```
-
-#### Step 5 — Build the robot Docker image
+#### Step 4 — Build the robot Docker image
 
 REQUIRED on this branch: it bakes in MicroXRCEAgent (the real-drone link) and pins the ROS
 domain — a plain `up` without this is broken. The other images (isaac-sim, gcs) download
@@ -178,21 +179,21 @@ automatically on first `up`; isaac-sim additionally needs the credentials from S
 ./airstack.sh image-build robot-desktop
 ```
 
-#### Step 6 — Final setup check
+#### Step 5 — Final setup check
 
 ```bash
 grep -E '^(COMPOSE_PROFILES|AUTOLAUNCH|NUM_ROBOTS)' .env
 #   want: COMPOSE_PROFILES="desktop,isaac-sim"  AUTOLAUNCH="false"  NUM_ROBOTS="1"
 ```
 
-**Setup is now complete.** You never need to repeat Steps 1–6 on this machine (except Step 5's
+**Setup is now complete.** You never need to repeat Steps 1–5 on this machine (except Step 4's
 image rebuild if the Dockerfile ever changes). Starting and using the stack is a separate,
 every-session routine — next section.
 
 ## Running AirStack (after setup, and at the start of every session)
 
 ```bash
-cd ~/AirStack-diffaero        # YOUR WORKING FOLDER (Option B: ~/AirStack-starling-max2/AirStack)
+cd ~/AirStack-starling-max2/AirStack     # your working folder (original lab laptop: ~/AirStack-diffaero)
 ./airstack.sh up              # start the containers (robot, isaac-sim, gcs) — takes ~1 min
 ./airstack.sh status          # all three should say "Up"
 

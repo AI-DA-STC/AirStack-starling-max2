@@ -40,29 +40,45 @@ repo for lab-specific substitutions and lessons learned.
 (RViz view, 2× speed). See [MILESTONES.md](MILESTONES.md) for the geofence-breach clip and
 the full runbook.*
 
-## Patches
+## Patches — bug fixes we made to AirStack (backup copies)
 
-**What these are:** recorded diffs (`git diff` output) of our two local fixes to AirStack —
-documentation artifacts, not code that runs in this repo. **They are already applied on the
-lab laptop** (live in `~/AirStack-diffaero`, committed on branches `jeremy/local-fixes` and,
-inside the PegasusSimulator submodule, `jeremy/camera-init-fix`). You only need the apply
-commands below when setting up a **fresh AirStack checkout** (new machine / teammate /
-re-clone) — a clone from CMU still contains the bugs until the fixes merge upstream, at which
-point these patches can be deleted.
+While getting AirStack working, we found and fixed **two bugs in CMU's code**. The fixed code
+runs on the lab laptop (in `~/AirStack-diffaero`) — **nothing in this folder needs to be run
+for the lab laptop; it is already fixed there.**
 
-| Patch | Applies in | Status upstream |
+The `patches/` folder holds a **backup copy of each fix** as a small text file (a git
+"patch" — a file that records exactly which lines of which file were changed, so git can
+re-apply the same change to another copy of the code). We keep them because anyone who
+downloads AirStack fresh from CMU's GitHub **gets the bugs again** — CMU has not merged the
+fixes yet. With these files, a new setup re-applies both fixes in seconds instead of
+re-debugging them.
+
+| Patch file | Bug it fixes | Symptom without the fix |
 |---|---|---|
-| `0001-zed-camera-info-init-race.patch` | PegasusSimulator **submodule** (`simulation/isaac-sim/extensions/PegasusSimulator`) | CMU branch `fix/camera-init`, PR pending — drop patch once merged |
-| `0002-swarm-commander-logger-severity-crash.patch` | AirStack repo root | **Not yet reported** — commander process dies on first failed service report (rclpy per-call-site severity cache) |
+| `0001-zed-camera-info-init-race.patch` | Camera startup race in the Isaac Sim Pegasus extension | The drone's right stereo camera randomly never publishes → navigation flies "blind" and becomes erratic (took us days to diagnose) |
+| `0002-swarm-commander-logger-severity-crash.patch` | Logging crash in the SVG ground controller | The ground-controller process **dies mid-flight** the first time any drone command fails |
 
-Apply:
+### When would anyone use these? (not on the lab laptop)
+
+**Only when setting up AirStack on a NEW machine** (a teammate's PC, a re-install, a fresh
+`git clone`). After cloning AirStack's `daniel/diffaero_ground_control` branch, run these four
+commands from the new AirStack folder — they copy our two fixes into the fresh code:
 
 ```bash
-cd <airstack-checkout>/simulation/isaac-sim/extensions/PegasusSimulator
-git apply /path/to/patches/0001-zed-camera-info-init-race.patch
-cd <airstack-checkout>
-git apply /path/to/patches/0002-swarm-commander-logger-severity-crash.patch
+# fix 1 goes inside the PegasusSimulator sub-folder (it is a separate git repo, a "submodule"):
+cd simulation/isaac-sim/extensions/PegasusSimulator
+git apply <this-repo>/patches/0001-zed-camera-info-init-race.patch
+
+# fix 2 goes in the main AirStack folder:
+cd ../../../..
+git apply <this-repo>/patches/0002-swarm-commander-logger-severity-crash.patch
 ```
+
+(`<this-repo>` = wherever you cloned starling-airstack-notes.)
+
+**These files become unnecessary** once CMU merges the fixes into their repo — fix 1 is
+already on their `fix/camera-init` branch awaiting review; fix 2 we still need to report to
+them. When both are merged upstream, delete this folder.
 
 ## Security note
 

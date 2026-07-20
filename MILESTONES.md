@@ -161,10 +161,17 @@ cd ~/AirStack-starling-max2/AirStack
 ./airstack.sh connect robot --command=bash
 ```
 
-Inside the robot container:
+Inside the robot container — **first, compile the workspace** (needed on the first run and
+after any code change; first build ~4 min, otherwise seconds):
 
 ```bash
-cd ~/AirStack/robot/ros_ws && bws && sws          # bws needed only if code changed
+cd ~/AirStack/robot/ros_ws && bws && sws
+```
+
+Wait for the build summary (`Summary: N packages finished`), **then** start the per-drone
+interfaces:
+
+```bash
 ./src/svg_ground_control/scripts/launch_sim_interfaces.sh 3
 ```
 

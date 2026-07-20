@@ -10,6 +10,15 @@ Max 2** live under **CMU AirStack** (branch `daniel/diffaero_ground_control`) wi
 | [CLAUDE_NOTES.md](CLAUDE_NOTES.md) | Full session handoff for AI-assisted sessions: history, findings, machine state, gotchas |
 | [patches/](patches/) | Local fixes not yet upstream (apply to a fresh AirStack checkout with `git apply`) |
 | [tools/make_milestones_doc.py](tools/make_milestones_doc.py) | Generates the Word (.docx) export of the milestone plan (`pip install python-docx`) |
+| [assets/](assets/) · [videos/](videos/) | GIFs (embedded in MILESTONES.md) and source screen recordings of Milestone 1 |
+
+## Milestone 1 at a glance
+
+![Takeoff and land](assets/takeoff_and_land.gif)
+
+*Three SITL drones under the SVG ground controller: `takeoff` → hover scenario → `land`
+(RViz view, 2× speed). See [MILESTONES.md](MILESTONES.md) for the geofence-breach clip and
+the full runbook.*
 
 ## Patches
 

@@ -54,6 +54,20 @@ Takeoff/hover/land of 3 SITL drones via the commander services; keyboard teleop 
 an accidental geofence breach with correct latch behavior and full recovery; RViz markers as
 the operational viewport (sim headless).
 
+### What it looks like
+
+**Takeoff → hover → land** (RViz `/svg/viz/markers` view; cyan = auto sim drones, yellow =
+teleop drone, green box = geofence; played at 2× speed):
+
+![Takeoff and land](assets/takeoff_and_land.gif)
+
+**Teleop + geofence breach and latch** (drone_3 driven by keyboard through the fence wall —
+all drones freeze orange, fence turns red; recover with `land` → `reset_fence`; 1.5× speed):
+
+![Teleop with geofence breach](assets/teleop_with_geofence.gif)
+
+Source videos: [`videos/`](videos/) (`takeoff_and_land.mp4`, `teleop_with_geofence.mp4`).
+
 ### Incidents & findings
 - **Commander state machine:** IDLE —takeoff→ HOLDING —start→ ACTIVE —hold→ HOLDING.
   HOLDING ignores nominal inputs (that IS the freeze). Teleop only acts in ACTIVE, and

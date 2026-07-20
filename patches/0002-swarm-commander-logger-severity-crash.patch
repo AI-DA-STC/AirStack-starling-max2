@@ -1,0 +1,19 @@
+diff --git a/robot/ros_ws/src/svg_ground_control/svg_ground_control/swarm_commander.py b/robot/ros_ws/src/svg_ground_control/svg_ground_control/swarm_commander.py
+index c4115d43..57293674 100644
+--- a/robot/ros_ws/src/svg_ground_control/svg_ground_control/swarm_commander.py
++++ b/robot/ros_ws/src/svg_ground_control/svg_ground_control/swarm_commander.py
+@@ -585,8 +585,12 @@ class SwarmCommander(Node):
+             except Exception as e:  # noqa: BLE001 - log any service failure
+                 self.get_logger().error(f'{name}: {label} failed: {e}')
+                 return
+-            level = self.get_logger().info if ok else self.get_logger().error
+-            level(f'{name}: {label} -> success={ok}')
++            # rclpy caches log severity per call-site: one shared line logging at
++            # two severities raises "Logger severity cannot be changed between calls."
++            if ok:
++                self.get_logger().info(f'{name}: {label} -> success={ok}')
++            else:
++                self.get_logger().error(f'{name}: {label} -> success={ok}')
+ 
+         future.add_done_callback(report)
+ 

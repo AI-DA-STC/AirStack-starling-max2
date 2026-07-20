@@ -42,6 +42,14 @@ the full runbook.*
 
 ## Patches
 
+**What these are:** recorded diffs (`git diff` output) of our two local fixes to AirStack —
+documentation artifacts, not code that runs in this repo. **They are already applied on the
+lab laptop** (live in `~/AirStack-diffaero`, committed on branches `jeremy/local-fixes` and,
+inside the PegasusSimulator submodule, `jeremy/camera-init-fix`). You only need the apply
+commands below when setting up a **fresh AirStack checkout** (new machine / teammate /
+re-clone) — a clone from CMU still contains the bugs until the fixes merge upstream, at which
+point these patches can be deleted.
+
 | Patch | Applies in | Status upstream |
 |---|---|---|
 | `0001-zed-camera-info-init-race.patch` | PegasusSimulator **submodule** (`simulation/isaac-sim/extensions/PegasusSimulator`) | CMU branch `fix/camera-init`, PR pending — drop patch once merged |

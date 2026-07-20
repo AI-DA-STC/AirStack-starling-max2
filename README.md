@@ -124,8 +124,8 @@ another copy of the same code with `git apply my-fix.patch`.
 ### Setting up AirStack on a NEW machine
 
 You do NOT need any of this on the lab laptop — it is already set up. This is the recipe for
-a teammate's PC or a re-install. Steps 1–2 and 4–5 are copy-paste; Step 3 needs files from an
-existing machine.
+a teammate's PC or a re-install. Every step is copy-paste; Step 2 asks one question (just
+press Enter).
 
 #### Step 1 — Download the code
 
@@ -161,32 +161,29 @@ airstack install         # installs Docker Engine + NVIDIA Container Toolkit (as
 docker info              # verify Docker runs (start it with: sudo systemctl start docker)
 ```
 
-#### Step 3 — Copy two config files git does not carry
+`setup` asks one interactive question — **"API Token:" for the AirLab Nucleus login. Just
+press Enter to leave it blank** (that login is for CMU's asset server; we don't use it).
+Despite the "Skipping" message, `setup` still generates the two config files Isaac Sim needs
+(`omni_pass.env`, `user.config.json`), so nothing further is required.
 
-Credentials / machine config — CMU keeps them out of git on purpose. Get them from an existing
-lab machine, or create them from the `*_TEMPLATE` files sitting next to them:
-
-- `simulation/isaac-sim/docker/omni_pass.env`
-- `simulation/isaac-sim/docker/user.config.json`
-
-#### Step 4 — Build the robot Docker image
+#### Step 3 — Build the robot Docker image
 
 REQUIRED on this branch: it bakes in MicroXRCEAgent (the real-drone link) and pins the ROS
 domain — a plain `up` without this is broken. The other images (isaac-sim, gcs) download
-automatically on first `up`; isaac-sim additionally needs the credentials from Step 3.
+automatically on first `up`.
 
 ```bash
 ./airstack.sh image-build robot-desktop
 ```
 
-#### Step 5 — Final setup check
+#### Step 4 — Final setup check
 
 ```bash
 grep -E '^(COMPOSE_PROFILES|AUTOLAUNCH|NUM_ROBOTS)' .env
 #   want: COMPOSE_PROFILES="desktop,isaac-sim"  AUTOLAUNCH="false"  NUM_ROBOTS="1"
 ```
 
-**Setup is now complete.** You never need to repeat Steps 1–5 on this machine (except Step 4's
+**Setup is now complete.** You never need to repeat Steps 1–4 on this machine (except Step 3's
 image rebuild if the Dockerfile ever changes). Starting and using the stack is a separate,
 every-session routine — next section.
 

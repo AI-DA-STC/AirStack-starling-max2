@@ -16,10 +16,9 @@ our Milestone 1 sim rehearsal succeeded on, so the lab can always rebuild a know
   — no `git submodule update` needed, and no `.gitmodules` file. Fully self-contained.
 - Our two bug fixes are already in the code — do **NOT** re-apply the patches from
   [`../patches/`](../patches/) on top of this snapshot.
-- Two machine-specific config files are excluded (credentials / per-machine config) and must
-  be copied from an existing lab machine or created from their `*_TEMPLATE` neighbours:
-  `simulation/isaac-sim/docker/omni_pass.env` and
-  `simulation/isaac-sim/docker/user.config.json`.
+- Two machine-specific config files are excluded (`simulation/isaac-sim/docker/omni_pass.env`
+  and `user.config.json`) — `./airstack.sh setup` generates both automatically (press Enter at
+  its "API Token" prompt to skip the CMU-only Nucleus login).
 
 **How to use it:** follow "Setting up AirStack on a NEW machine" in the
 [repo README](../README.md) one level up — this folder itself is your working folder

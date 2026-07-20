@@ -27,14 +27,44 @@ are observed facts, and each milestone is a re-entry point.
 
 ## 3. Status
 
-| Milestone | Goal | Status |
-|---|---|---|
-| M1 Sim rehearsal | 3 SITL drones fly under the ground controller; teleop + geofence exercised | **COMPLETE 2026-07-20** |
-| M2 Ground-station hardware prep | Host networking, Motive config, time sync, port checks | Partial |
-| M3 Drone comms (props off) | Real PX4 topics on the laptop over WiFi (uXRCE-DDS) | Not started |
-| M4 Mocap → EKF2 (props off) | OptiTrack pose fused by EKF2; frames verified | Not started |
-| M5 Hand-carry preflight | RViz marker tracks the hand-carried drone | Not started |
-| M6 First flight | Stable mocap-fused hover + landing | Not started |
+| Milestone | Goal | Code exists? | Validated by us? |
+|---|---|---|---|
+| M1 Sim rehearsal | 3 SITL drones fly under the ground controller; teleop + geofence exercised | ✅ CMU | ✅ **2026-07-20** |
+| M2 Ground-station hardware prep | Host networking, Motive config, time sync, port checks | 🟡 networking yes; time-sync tooling absent (manual) | Partial |
+| M3 Drone comms (props off) | Real PX4 topics on the laptop over WiFi (uXRCE-DDS) | ✅ CMU (audited, see §3b) | Not yet |
+| M4 Mocap → EKF2 (props off) | OptiTrack pose fused by EKF2; frames verified | ✅ CMU + manual EKF2 params via QGC | Not yet |
+| M5 Hand-carry preflight | RViz marker tracks the hand-carried drone | ✅ CMU (audited) | Not yet |
+| M6 First flight | Stable mocap-fused hover + landing | ✅ CMU + single-drone config trim + manual PX4 failsafes | Not yet |
+
+CMU flight-tested all of M3–M6 on their own Starling 2 Max — our work is **validation and
+replication on our rig**, not development.
+
+## 3b. Code-readiness audit (2026-07-20)
+
+Verified by direct inspection of the `AirStack/` snapshot. Everything below EXISTS with
+file:line evidence:
+
+| Capability | Where in the code |
+|---|---|
+| Host networking for robot container | `robot/docker/docker-compose.yaml:48` — `network_mode: host` **already active** (no edit needed; the commented block is the old bridge config) |
+| VOXL2 comms one-shot provisioner | `svg_ground_control/scripts/voxl_setup_real_drone.sh` (points PX4 DDS client at ground PC, pins domain, disables onboard agent) |
+| uXRCE-DDS agent in the robot image | `robot/docker/Dockerfile.robot:198-210, 364-367` (Micro-XRCE-DDS-Agent v2.4.3 → `MicroXRCEAgent` on PATH) |
+| Real-drone flight interface | `robot/ros_ws/src/interface/px4_interface/` + `launch/px4_interface.launch.xml` |
+| OptiTrack NatNet driver | `robot/ros_ws/src/perception/natnet_ros2/` — `serverIP`/`clientIP` launch args at `launch/natnet_ros2.launch.py:100-101` |
+| Mocap → PX4 external vision | `svg_ground_control/mocap_bridge.py:85,126` → `/{name}/fmu/in/vehicle_visual_odometry`; frame modes `enu_to_ned`/`modalai_flip` (`:83,103-105,141-153`) |
+| Real-run config | `config/swarm_real.yaml` — mocap topic template `:74`, vio mode/frame `:82,86`, speed cap 1.0 m/s `:59`, fence `:64-66` (note: ships as 3 real drones `:14,:21` — trim to `drone_1` for our first flight) |
+| Per-drone real interfaces launcher | `launch/real_interfaces.launch.py:38-40` (`drones:=` arg) |
+| Mocap-gated commander launch | `launch/ground_control.launch.py:57-66` (`config:=`, `use_mocap:=` → mocap_bridge) |
+| Flight services | `swarm_commander.py:386-389` (takeoff/start/hold/land) |
+| Geofence latch + reset | `swarm_commander.py:204-206, 275, 533-565, 390/517` (`~/reset_fence`) |
+| Hover scenario | `scenarios.py:135-155` |
+| RViz view | `config/svg_drones.rviz` + marker publisher `swarm_commander.py:395` |
+| Procedures documented by CMU | `experiment.md` Part B `:299` (B0–B6) and Part D `:745` (D1–D2) |
+
+**Genuinely NOT in code (manual, by design):** machine clock sync (no chrony/NTP tooling
+anywhere in the repo); PX4 EKF2 external-vision parameters (`EKF2_EV_CTRL` etc. — set once via
+QGC/`px4-param`, the VOXL script deliberately excludes them); PX4 failsafes and RC kill switch
+(QGC); Motive-side configuration.
 
 ## 4. Milestone 1 — record (2026-07-20)
 
@@ -134,8 +164,10 @@ for their rig); this document is our lab-specific overlay of it.
 Substitute `<LAPTOP_IP>` / `<MOTIVE_IP>`.
 
 ### M2 — Ground station prep (desk)
-- robot container → `network_mode: host` (edit `robot/docker/docker-compose.yaml`: comment
-  `networks:`/`ports:` of robot-desktop). Then `down` + `up robot-desktop`.
+- robot container networking: **already `network_mode: host` on this branch**
+  (`robot/docker/docker-compose.yaml:48` — no edit needed, despite experiment.md's older
+  prerequisite note). Verify with `./airstack.sh status`: robot-desktop shows an empty PORTS
+  column in host mode.
 - Motive: rigid body named `drone_1`, **Up Axis = Z**, Broadcast ON, correct Local Interface.
 - chrony/NTP: laptop + Motive PC (+ VOXL in M3).
 - `ss -ulpn | grep -E '1510|1511'` must be clear (past lab outage = orphan on 1511).

@@ -44,12 +44,21 @@ hand-carry proves the position tracking, and only then do propellers spin.
 
 | # | Milestone | One-line goal | Status |
 |---|---|---|---|
-| 1 | Sim rehearsal | Fly simulated drones with the exact software and commands used on the real drone | ✅ Done (2026-07-20) |
-| 2 | Ground-station prep | Laptop networking, Motive/OptiTrack settings, clock sync — no drone needed | Partial |
-| 3 | Drone comms (props off) | Real drone's PX4 talking to the laptop over WiFi | To do |
-| 4 | Mocap → drone (props off) | OptiTrack position fused into the drone's state estimator, axes verified | To do |
-| 5 | Hand-carry preflight | Carry the drone around; the software's belief must track reality | To do |
-| 6 | First flight | Takeoff, hover, land inside the net under AirStack command | To do |
+| 1 | Sim rehearsal | Fly simulated drones with the exact software and commands used on the real drone | ✅ **Validated by us** (2026-07-20) |
+| 2 | Ground-station prep | Laptop networking, Motive/OptiTrack settings, clock sync — no drone needed | 🟡 Networking already in the code; Motive + clock-sync are lab tasks |
+| 3 | Drone comms (props off) | Real drone's PX4 talking to the laptop over WiFi | 🔵 Code ready (CMU) — awaiting our validation |
+| 4 | Mocap → drone (props off) | OptiTrack position fused into the drone's state estimator, axes verified | 🔵 Code ready (CMU) — plus a manual PX4-settings step (QGC) |
+| 5 | Hand-carry preflight | Carry the drone around; the software's belief must track reality | 🔵 Code ready (CMU) — awaiting our validation |
+| 6 | First flight | Takeoff, hover, land inside the net under AirStack command | 🔵 Code ready (CMU) — config trim + manual PX4 safety settings, then fly |
+
+**Important context on the statuses:** CMU already built AND flight-tested all of this on their
+own Starling 2 Max — our project is **replication and validation**, not development. A code
+audit (2026-07-20, details in [MILESTONES.md](MILESTONES.md) §3b) confirmed every mechanism for
+M3–M6 exists in the `AirStack/` code: the VOXL comms script, the uXRCE-DDS agent, the OptiTrack
+driver and mocap→PX4 bridge, the real-drone interfaces, the geofence, and all flight services.
+The only things NOT in code (manual, by design) are: clock sync between machines, the
+OptiTrack/Motive settings, and PX4-side parameters set through QGroundControl (EKF2
+external-vision settings, RC kill switch, failsafes).
 
 Full plan with commands and exit criteria: [MILESTONES.md](MILESTONES.md).
 

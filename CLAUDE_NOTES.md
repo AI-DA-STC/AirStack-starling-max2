@@ -4,7 +4,7 @@
 > everything established so far: the objective, what was found and fixed, what succeeded,
 > the exact current state of every checkout on this machine, and what comes next.
 > Written 2026-07-20 after a long working session. Companion document (human-oriented plan):
-> `~/AirStack_Starling_Milestones.docx` (regenerate via `python3 ~/.make_milestones_doc.py`).
+> the Word export (legacy, pre-migration content) can be regenerated via `python3 tools/make_milestones_doc.py`, but MILESTONES.md is canonical.
 
 ---
 

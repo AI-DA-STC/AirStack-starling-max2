@@ -11,7 +11,7 @@ code itself**.
 | [CLAUDE_NOTES.md](CLAUDE_NOTES.md) | Full session handoff for AI-assisted sessions: history, findings, machine state, gotchas |
 | [AirStack/](AirStack/) | **Full AirStack code snapshot** (2026-07-20, bug fixes applied, submodules included) — see its own [README](AirStack/README.md) |
 | [patches/](patches/) | Our two bug fixes as patch files (for applying to a fresh CMU clone; already applied in `AirStack/`) |
-| [tools/make_milestones_doc.py](tools/make_milestones_doc.py) | Generates the Word (.docx) export of the milestone plan (`pip install python-docx`) |
+| [tools/make_milestones_doc.py](tools/make_milestones_doc.py) | Word (.docx) export generator — **legacy** (pre-migration paths); [MILESTONES.md](MILESTONES.md) is canonical |
 | [assets/](assets/) · [videos/](videos/) | GIFs (embedded in MILESTONES.md) and source screen recordings of Milestone 1 |
 
 ## Whose document is whose
@@ -243,5 +243,6 @@ them. When both are merged upstream, delete this folder.
 ## Security note
 
 `omni_pass.env` (Omniverse credentials) and `user.config.json` are deliberately **not** in this
-repo — they are machine-local and gitignored upstream for a reason. Copy them between checkouts
-by hand.
+repo — they are machine-local and gitignored upstream for a reason. They are generated on each
+machine by `./airstack.sh setup` (press Enter at the API Token prompt) and must never be
+committed.

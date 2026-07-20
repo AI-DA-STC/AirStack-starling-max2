@@ -69,6 +69,11 @@ QGC/`px4-param`, the VOXL script deliberately excludes them); PX4 failsafes and 
 ## 4. Milestone 1 — record (2026-07-20)
 
 ### One-time setup performed
+
+> **Historical record — do NOT follow as instructions.** This describes the original
+> pre-snapshot setup (CMU clone at the then-path `~/AirStack-diffaero`). The current install
+> (README, Steps 1–4) needs no submodule step, no patch step, and no config-file copying —
+> the snapshot is pre-fixed and `setup` generates the configs.
 1. Cloned branch; `git submodule update --init`.
 2. Copied gitignored `simulation/isaac-sim/docker/omni_pass.env` and `user.config.json` from the
    old checkout (trap: a failed `up` creates the missing mount source as a root-owned
@@ -222,8 +227,8 @@ ros2 bag record /drone_1/pose /drone_1/odometry_conversion/odometry
 | Symptom | Cause / fix |
 |---|---|
 | `ros2` not found / empty topics / service call hangs | Host shell. `./airstack.sh connect robot --command=bash` first (`root@` prompt). |
-| `omni_pass.env not found` on up | Gitignored file — copy from another checkout / template. |
-| "mounting … user.config.json … not a directory" | Failed up made a directory; `rmdir` + copy the real file. |
+| `omni_pass.env not found` on up | Re-run `./airstack.sh setup` to (re)generate it (press Enter at the API Token prompt). |
+| "mounting … user.config.json … not a directory" | Failed up made a directory; `rmdir` it, then re-run `./airstack.sh setup`. |
 | `bws: command not found` | Wrong container (Isaac) or host shell. |
 | `/fmu/*` looks dead | Best-effort QoS: add `--qos-reliability best_effort`. |
 | PX4 won't arm indoors ("fuse failure") | No fused position source — mocap feed / EKF2 params missing. |

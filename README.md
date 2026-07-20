@@ -117,16 +117,21 @@ when you just want the known-good version:
 
 ```bash
 git clone https://github.com/AI-DA-STC/AirStack-starling-max2.git ~/AirStack-starling-max2
-ln -s ~/AirStack-starling-max2/AirStack ~/AirStack-diffaero    # shortcut — NOT a second copy
-cd ~/AirStack-diffaero
+cd ~/AirStack-starling-max2/AirStack      # the code folder — this is your working folder
 ```
 
-The `ln -s` line creates `~/AirStack-diffaero` as a **shortcut (symlink)** pointing into the
-clone — only ONE copy of the code exists on disk, but every command in these docs (they all
-use `~/AirStack-diffaero`) works unchanged on every machine.
+**Know your working folder — you will `cd` into it constantly:**
 
-Note: after you start using the stack, build artifacts and generated config files will appear
-as untracked/ignored noise in GitHub Desktop — that is expected.
+| You chose | Your working folder |
+|---|---|
+| Option A | `~/AirStack-diffaero` |
+| Option B | `~/AirStack-starling-max2/AirStack` |
+
+Docs and runbooks write `~/AirStack-diffaero` in commands — **Option B users substitute their
+working folder** (it is the same stack, just a different location on disk).
+
+Option B note: after you start using the stack, build artifacts and generated config files
+will appear as untracked/ignored noise in GitHub Desktop — that is expected.
 
 #### Step 2 — One-time host setup
 
@@ -187,7 +192,7 @@ every-session routine — next section.
 ## Running AirStack (after setup, and at the start of every session)
 
 ```bash
-cd ~/AirStack-diffaero        # always run airstack commands from this folder
+cd ~/AirStack-diffaero        # YOUR WORKING FOLDER (Option B: ~/AirStack-starling-max2/AirStack)
 ./airstack.sh up              # start the containers (robot, isaac-sim, gcs) — takes ~1 min
 ./airstack.sh status          # all three should say "Up"
 

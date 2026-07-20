@@ -123,6 +123,8 @@ Source videos: [`videos/`](videos/) (`takeoff_and_land.mp4`, `teleop_with_geofen
 
 All "inside container" shells: `cd ~/AirStack-diffaero && ./airstack.sh connect <name> --command=bash`
 (prompt must become `root@`). Paste one line at a time.
+*(Path note: `~/AirStack-diffaero` is the working folder on the lab laptop / Option A setups.
+On an Option B machine — code from our own repo — substitute `~/AirStack-starling-max2/AirStack`.)*
 
 ```bash
 # T1 (host): stack up

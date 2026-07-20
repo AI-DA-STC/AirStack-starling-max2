@@ -119,8 +119,11 @@ when you just want the known-good version:
 git clone https://github.com/AI-DA-STC/AirStack-starling-max2.git ~/AirStack-starling-max2
 cp -r ~/AirStack-starling-max2/AirStack ~/AirStack-diffaero    # code snapshot → its own folder
 cd ~/AirStack-diffaero
-# no submodule step needed, and SKIP step 4 (patches) below — already applied.
 ```
+
+With Option B: **skip step 4 entirely** (fixes already in the code — running it anyway just
+prints path errors), and ignore the `git hooks … No such file or directory` message in step 2
+(the snapshot copy is not a git repo, so there is nowhere to install hooks — harmless).
 
 ```bash
 # 2. One-time host setup (skip any part already on the machine).
@@ -140,10 +143,10 @@ them out of git on purpose). Get them from an existing lab machine, or create th
 ```bash
 # 4. Apply our two bug fixes — ONLY for Option A (the Option B snapshot already has them).
 #    EDIT the NOTES path if you cloned this repo somewhere else:
-NOTES=~/Documents/GitHub/AirStack-starling-max2
-git -C simulation/isaac-sim/extensions/PegasusSimulator apply "$NOTES/patches/0001-zed-camera-info-init-race.patch"
-git apply "$NOTES/patches/0002-swarm-commander-logger-severity-crash.patch"
-echo "both fixes applied"
+NOTES=~/AirStack-starling-max2
+git -C simulation/isaac-sim/extensions/PegasusSimulator apply "$NOTES/patches/0001-zed-camera-info-init-race.patch" \
+  && git apply "$NOTES/patches/0002-swarm-commander-logger-severity-crash.patch" \
+  && echo "both fixes applied" || echo "PATCH FAILED — check the NOTES path and errors above"
 #   (fix 1 uses "git -C <folder>" because PegasusSimulator is a submodule — the patch
 #    must be applied from inside that folder. Both patches verified against the branch
 #    as of 2026-07-20.)
@@ -179,11 +182,17 @@ cd ~/AirStack/robot/ros_ws && bws && sws
 #   first ever build ~4 min; later sessions it finishes in seconds unless code changed
 ```
 
+**Why is compiling here and not in setup?** The code can only be compiled *inside* the robot
+container (that is where ROS 2 lives — your laptop has none of it). So `bws` necessarily comes
+after `up` and `connect`. Do not paste this whole block at once: `connect` opens an interactive
+shell and swallows the lines after it — **type the `bws` line yourself at the `root@` prompt.**
+
 **Two messages that look like errors but are NORMAL on a fresh machine:**
 
 - `Workspace not built yet. Please make sure to build first with 'bws'` — printed by every new
-  container shell until the first `bws` has run. It is the shell telling you to do the very
-  next command above, not a failure.
+  container shell until the **first successful `bws`** has completed. It is the shell telling
+  you to do the very next command, not a build failure. If you keep seeing it across sessions,
+  it means `bws` has still never actually run to completion.
 - `ROBOT_NAME: unknown-robot` in `./airstack.sh status` — harmless on this branch. The SVG
   ground-control stack names its drones `drone_1/2/3` from config files and never uses
   ROBOT_NAME. What matters is `ROS_DOMAIN_ID: 1` next to it, which should read 1.

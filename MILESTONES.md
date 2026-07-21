@@ -30,7 +30,7 @@ are observed facts, and each milestone is a re-entry point.
 | Milestone | Goal | Code exists? | Validated by us? |
 |---|---|---|---|
 | M1 Sim rehearsal | 3 SITL drones fly under the ground controller; teleop + geofence exercised | ✅ CMU | ✅ **2026-07-20** |
-| M2 Ground-station hardware prep | Host networking, Motive config, time sync, port checks | 🟡 networking yes; time-sync tooling absent (manual) | Partial |
+| M2 Ground-station hardware prep | Host networking, Motive config, time sync, port checks | 🟡 networking yes; time-sync tooling absent (manual) | **Desk half ✅ 2026-07-21**; mocap-room half pending |
 | M3 Drone comms (props off) | Real PX4 topics on the laptop over WiFi (uXRCE-DDS) | ✅ CMU (audited, see §3b) | Not yet |
 | M4 Mocap → EKF2 (props off) | OptiTrack pose fused by EKF2; frames verified | ✅ CMU + manual EKF2 params via QGC | Not yet |
 | M5 Hand-carry preflight | RViz marker tracks the hand-carried drone | ✅ CMU (audited) | Not yet |
@@ -249,11 +249,23 @@ CMU's own maintained guide** (lives in the AirStack checkout, written by the pac
 for their rig); this document is our lab-specific overlay of it.
 Substitute `<LAPTOP_IP>` / `<MOTIVE_IP>`.
 
-### M2 — Ground station prep (desk)
-- robot container networking: **already `network_mode: host` on this branch**
-  (`robot/docker/docker-compose.yaml:48` — no edit needed, despite experiment.md's older
-  prerequisite note). Verify with `./airstack.sh status`: robot-desktop shows an empty PORTS
-  column in host mode.
+### M2 — Ground station prep (desk half ✅ VALIDATED 2026-07-21)
+
+Desk items, all verified on the lab laptop:
+- ✅ Host networking live: `docker inspect --format '{{.HostConfig.NetworkMode}}'` → `host`;
+  robot-desktop shows an empty PORTS column in `./airstack.sh status`. (Already
+  `network_mode: host` in `robot/docker/docker-compose.yaml:48` — no edit needed, despite
+  experiment.md's older prerequisite note.)
+- ✅ Laptop clock: `timedatectl` → `System clock synchronized: yes` (NTP active). Note: the
+  mocap→PX4 fusion is clock-independent (mocap_bridge sends timestamp=0; PX4 restamps), so
+  machine clock sync only matters for post-flight log comparison — ordinary NTP on both
+  machines is sufficient, chrony not required.
+- ✅ NatNet ports 1510/1511 clear (`ss -ulpn`) — recheck at the start of every mocap session.
+- ✅ NatNet SDK already vendored in the snapshot (`natnet_ros2/deps/NatNetSDK`) — no internet
+  needed on lab day.
+- ✅ Workspace rebuilt post-migration (59 packages).
+
+Mocap-room items (remaining — needs Motive PC + drone with markers, no flying):
 - Motive: rigid body named `drone_1`, **Up Axis = Z**, Broadcast ON, correct Local Interface.
 - chrony/NTP: laptop + Motive PC (+ VOXL in M3).
 - `ss -ulpn | grep -E '1510|1511'` must be clear (past lab outage = orphan on 1511).

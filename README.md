@@ -62,6 +62,72 @@ external-vision settings, RC kill switch, failsafes).
 
 Full plan with commands and exit criteria: [MILESTONES.md](MILESTONES.md).
 
+## How the system actually works (read once — it makes everything else make sense)
+
+**The one-liner: PX4 is the pilot, AirStack is mission control, and the RC kill switch
+outranks both.**
+
+### Who does what
+
+The Starling's onboard **PX4 autopilot** does all the *flying*: keeping the aircraft level,
+tracking commanded motion, motor control, state estimation (its EKF2), and failsafes. It has
+no opinion about the mission. **AirStack on the ground laptop** does all the *deciding*:
+when to take off, where to hover, when to land — but never touches stabilization. Nothing on
+the laptop replaces or imitates PX4; AirStack sits **above** it.
+
+In our setup we use only a thin slice of AirStack: the mocap driver (`natnet_ros2`), the
+mocap→PX4 bridge (`mocap_bridge`), the uXRCE-DDS transport (`MicroXRCEAgent` +
+`px4_interface`), and the **swarm commander** (takeoff/hold/land services, scenario policy,
+CBF safety filter, geofence). The famous autonomy layers (planners, perception, mapping)
+exist in the code but are never launched here — they are for the *outdoor* form of AirStack,
+where the deciding moves onto the drone's own computer.
+
+### The two data streams (both over the lab LAN/WiFi — why host networking matters)
+
+```
+POSITION IN:   Motive ─► natnet_ros2 ─► mocap_bridge ─► WiFi ─► PX4's EKF2 (fused ONBOARD —
+               the laptop does no state estimation; it is only the courier)
+
+COMMANDS OUT:  scenario/policy ─► CBF safety filter ─► velocity setpoint (20 Hz) ─► WiFi ─► PX4
+```
+
+### Offboard mode — the contract that makes this work
+
+PX4 flight modes split by *who generates the goal*:
+
+- **Onboard modes** (Position, Hold, Mission, Land…): PX4 generates its own goals — from RC
+  sticks, waypoints, or built-in logic. Fully self-contained.
+- **Offboard mode** (what we use): PX4 outsources goal-generation to an external computer,
+  which must stream setpoints continuously (≥2 Hz, ours streams at 20 Hz). If the stream
+  stops, PX4 declares offboard-loss and falls back to a failsafe — it never just tumbles.
+
+(Naming collision warning: AirStack's `AUTONOMY_ROLE=onboard/offboard` in the compose files
+is about *which computer runs autonomy software* — unrelated to PX4's flight modes.)
+
+### Inner and outer control loops — what the laptop takes over, and what it never touches
+
+PX4's control is a cascade of four loops, each one's output feeding the next, each inner one
+faster: **position (~50 Hz) → velocity (~50 Hz) → attitude (~250 Hz) → rate (~1000 Hz) →
+motors**. Offboard setpoints inject at ONE level: everything *above* the injection point is
+bypassed, everything at/below keeps running onboard.
+
+We inject at the **velocity** level: the laptop's policy + CBF replace only PX4's outermost
+(position/guidance) loop, while velocity, attitude, and rate loops all keep running onboard
+at full speed. That is why WiFi latency and dropouts are survivable — everything that keeps
+the aircraft upright never leaves the drone; only the slow "where to next" decision crosses
+the network. (It also bounds agility: velocity-level control is responsive, not acrobatic —
+truly aggressive flight would need attitude/rate-level streaming, which WiFi cannot support.)
+
+### The safety chain (in order of authority)
+
+1. **RC kill switch** — motor cutoff, outranks everything, the only true stop.
+2. **PX4 onboard failsafes** — offboard-loss action, low battery, RC-override to an onboard
+   mode. One mode-switch away at all times; PX4 can always fly itself.
+3. **Commander geofence + hold** — software freeze-in-place, first line, not a motor cutoff.
+
+The drone "not deciding where to go" is true only while everything is healthy — the moment
+anything isn't (link loss, kill switch, mode switch), deciding snaps back onboard by design.
+
 ## Milestone 1 at a glance
 
 ![Takeoff and land](assets/takeoff_and_land.gif)

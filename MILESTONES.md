@@ -265,11 +265,47 @@ Desk items, all verified on the lab laptop:
   needed on lab day.
 - ✅ Workspace rebuilt post-migration (59 packages).
 
-Mocap-room items (remaining — needs Motive PC + drone with markers, no flying):
-- Motive: rigid body named `drone_1`, **Up Axis = Z**, Broadcast ON, correct Local Interface.
-- chrony/NTP: laptop + Motive PC (+ VOXL in M3).
-- `ss -ulpn | grep -E '1510|1511'` must be clear (past lab outage = orphan on 1511).
-- Done already: QGC AppImage; `~/PX4-Autopilot` SITL build.
+**Mocap-room half (remaining — needs the Motive PC and the drone with markers, no flying):**
+
+1. **Markers on the Starling:** attach 4–5 reflective markers in an **asymmetric** pattern
+   (no two spacings alike — symmetric layouts let Motive flip the orientation 180°).
+2. **Rigid body in Motive:** place the drone in the volume, select its markers, create a
+   rigid body named **exactly `drone_1`** (lowercase + underscore — topic names come from it).
+3. **Motive streaming settings** (View → Data Streaming pane): NatNet streaming ENABLED,
+   **Up Axis = Z** (Motive defaults to Y — the classic frame bug), Broadcast Frame Data ON,
+   Local Interface = the Motive PC's LAN IP → write it down as `<MOTIVE_IP>`.
+4. **Network + clock sanity** — on the LAPTOP (`jeremychia@` prompt):
+   ```bash
+   ip addr                     # note your IP on the lab subnet → <LAPTOP_IP>
+   ping -c3 <MOTIVE_IP>        # must answer
+   ss -ulpn | grep -E ':(1510|1511)' || echo "ports clear"   # per-session recheck
+   ```
+   On the Motive PC: Windows Settings → Time — internet time sync ON.
+5. **Start the mocap driver** — laptop first, then inside the container:
+   ```bash
+   cd ~/AirStack-starling-max2/AirStack
+   ./airstack.sh up robot-desktop
+   ./airstack.sh connect robot --command=bash
+   ```
+   Inside (`root@` prompt), with YOUR two IPs substituted:
+   ```bash
+   ros2 launch natnet_ros2 natnet_ros2.launch.py serverIP:=<MOTIVE_IP> clientIP:=<LAPTOP_IP>
+   ```
+   Leave running.
+6. **EXIT TEST** — second container shell (`connect robot` again from the laptop):
+   ```bash
+   ros2 topic hz   /drone_1/pose        # want ≈ Motive's rate (typically 120–180 Hz)
+   ros2 topic echo /drone_1/pose --once # sane x,y,z for where the drone sits
+   ```
+   Hand-carry the drone around the volume — position must change smoothly, no jumps/NaNs.
+   **Streaming + smooth = M2 complete.**
+
+Troubleshooting: no topic / 0 Hz → Motive not streaming, wrong `serverIP`, rigid body not
+named `drone_1`, or an orphan process on 1510/1511. Only `/tf` and no `/drone_1/pose` →
+`pub_rigid_body` is false (the vendored launch defaults it true).
+
+(Done in earlier sessions: QGC AppImage on the laptop; standalone PX4 SITL build at
+`~/PX4-Autopilot` for optional desk rehearsals.)
 
 ### M3 — Drone comms (props off)
 ```bash

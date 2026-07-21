@@ -47,15 +47,16 @@ hand-carry proves the position tracking, and only then do propellers spin.
 | 1 | Sim rehearsal | Fly simulated drones with the exact software and commands used on the real drone | ✅ **Validated by us** (2026-07-20) |
 | 2 | Ground-station prep | Laptop networking, Motive/OptiTrack settings, clock sync — no drone needed | 🟡 Networking already in the code; Motive + clock-sync are lab tasks |
 | 3 | Drone comms (props off) | Real drone's PX4 talking to the laptop over WiFi | 🔵 Code ready (CMU) — awaiting our validation |
-| 4 | Mocap → drone (props off) | OptiTrack position fused into the drone's state estimator, axes verified | 🔵 Code ready (CMU) — plus a manual PX4-settings step (QGC) |
+| 4 | Mocap → drone (props off) | OptiTrack position fused into the drone's state estimator, axes verified | 🔵 Code ready (CMU) — plus a manual PX4-settings step (via QGroundControl) |
 | 5 | Hand-carry preflight | Carry the drone around; the software's belief must track reality | 🔵 Code ready (CMU) — awaiting our validation |
 | 6 | First flight | Takeoff, hover, land inside the net under AirStack command | 🔵 Code ready (CMU) — config trim + manual PX4 safety settings, then fly |
 
 **Important context on the statuses:** CMU already built AND flight-tested all of this on their
 own Starling 2 Max — our project is **replication and validation**, not development. A code
 audit (2026-07-20, details in [MILESTONES.md](MILESTONES.md) §3b) confirmed every mechanism for
-M3–M6 exists in the `AirStack/` code: the VOXL comms script, the uXRCE-DDS agent, the OptiTrack
-driver and mocap→PX4 bridge, the real-drone interfaces, the geofence, and all flight services.
+M3–M6 exists in the `AirStack/` code — the drone-comms setup script, the laptop↔drone link,
+the mocap driver and bridge, the flight services, and the geofence (each explained in the
+primer below).
 The only things NOT in code (manual, by design) are: clock sync between machines, the
 OptiTrack/Motive settings, and PX4-side parameters set through QGroundControl (EKF2
 external-vision settings, RC kill switch, failsafes).
@@ -72,9 +73,11 @@ Full plan with commands and exit criteria: [MILESTONES.md](MILESTONES.md).
 | **PX4 autopilot** | *how to fly* — stabilization, motors, EKF2 state estimation, failsafes | on the drone |
 | **RC pilot** | emergency veto — kill switch, mode override | your hands |
 
-We use a **thin slice** of AirStack: mocap driver, mocap→PX4 bridge, uXRCE-DDS transport,
-swarm commander (+ CBF filter and geofence). The planner/perception layers stay dormant —
-they are AirStack's *outdoor* form, where deciding moves onto the drone's own computer.
+We use a **thin slice** of AirStack: the mocap driver (`natnet_ros2`), the mocap→PX4 bridge,
+the laptop↔PX4 link (uXRCE-DDS), and the swarm commander with its CBF safety filter
+(Control Barrier Function — a math filter that clips unsafe velocity commands) and geofence.
+The planner/perception layers stay dormant here; those belong to AirStack's outdoor missions,
+where planning runs on the drone's own computer.
 
 ```mermaid
 flowchart LR
@@ -82,8 +85,8 @@ flowchart LR
     M["OptiTrack"]
   end
   subgraph LAPTOP["Ground laptop — AirStack"]
-    N["natnet_ros2"] --> B["mocap_bridge"]
-    P["scenario / policy"] --> C["CBF safety filter"]
+    N["natnet_ros2 — mocap driver"] --> B["mocap_bridge"]
+    P["swarm commander — scenario / policy"] --> C["CBF safety filter"]
   end
   subgraph DRONE["Starling — PX4 onboard"]
     E["EKF2 — fuses mocap ONBOARD"] --> L["control loops"] --> R["motors"]
@@ -94,8 +97,8 @@ flowchart LR
 ```
 
 The laptop does **no state estimation and no stabilization** — it is a courier for mocap
-poses and a source of velocity goals. (Both streams cross the lab LAN — that is why the robot
-container must run in host networking, verified in M2.)
+poses and a source of velocity goals. (Both streams cross the lab LAN — networking
+preconditions verified in M2.)
 
 **Offboard mode** = PX4 outsources goal-generation to an external computer that must stream
 setpoints continuously (≥2 Hz; ours: 20 Hz). Stream stops → PX4 failsafes; it never tumbles.
@@ -128,7 +131,8 @@ snaps back onboard by design.
 
 ![Takeoff and land](assets/takeoff_and_land.gif)
 
-*Three SITL drones under the SVG ground controller: `takeoff` → hover scenario → `land`
+*Three simulated PX4 drones (SITL — real autopilot firmware, simulated aircraft) under the
+ground controller: `takeoff` → hover scenario → `land`
 (RViz view, 2× speed). See [MILESTONES.md](MILESTONES.md) for the geofence-breach clip and
 the full runbook.*
 
@@ -173,17 +177,18 @@ surrounding code (the patch needs regenerating — see below).
 
 ### Reference: how a patch file is made
 
-A patch is just saved `git diff` output. To make one: edit the code in any git checkout, then:
-
 ```bash
-git diff > my-fix.patch          # records exactly which lines of which files changed
+git diff > my-fix.patch    # save your edits as a patch (run in the repo you edited)
+git apply my-fix.patch     # replay them onto another copy of the same code
 ```
 
-That is how these two were produced — `git diff` run in the AirStack checkout (fix 2) and
-inside the PegasusSimulator submodule folder (fix 1). Anyone can then replay the change onto
-another copy of the same code with `git apply my-fix.patch`.
+Fix 1 was made inside the PegasusSimulator submodule folder, fix 2 in the AirStack root.
 
-### Setting up AirStack on a NEW machine
+**Lifecycle:** the `patches/` folder becomes unnecessary once CMU merges both fixes upstream —
+fix 1 is on their `fix/camera-init` branch awaiting review; fix 2 we still need to report to
+them. When both are merged, delete the folder.
+
+## Setting up AirStack on a NEW machine
 
 You do NOT need any of this on the lab laptop — it is already set up. This is the recipe for
 a teammate's PC or a re-install. Every step is copy-paste; Step 2 asks one question (just
@@ -269,6 +274,7 @@ if pasted together with block A — the `connect` command swallows anything afte
 
 ```bash
 cd ~/AirStack/robot/ros_ws && bws && sws
+#   bws = compile the workspace, sws = load the result into this shell
 #   first ever build ~4 min; later sessions it finishes in seconds unless code changed
 ```
 
@@ -297,10 +303,6 @@ next depends on your goal:
   [MILESTONES.md](MILESTONES.md) §6, backed by CMU's guide
   ([`AirStack/robot/ros_ws/src/svg_ground_control/experiment.md`](AirStack/robot/ros_ws/src/svg_ground_control/experiment.md), Part B).
 - **Done for the day** → `./airstack.sh down` (from the same folder) stops everything.
-
-**These files become unnecessary** once CMU merges the fixes into their repo — fix 1 is
-already on their `fix/camera-init` branch awaiting review; fix 2 we still need to report to
-them. When both are merged upstream, delete this folder.
 
 ## Security note
 

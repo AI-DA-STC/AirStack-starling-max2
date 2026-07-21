@@ -292,6 +292,14 @@ Desk items, all verified on the lab laptop:
    ros2 launch natnet_ros2 natnet_ros2.launch.py serverIP:=<MOTIVE_IP> clientIP:=<LAPTOP_IP>
    ```
    Leave running.
+
+   > **About this driver:** it is the upstream
+   > [L2S-lab/natnet_ros2](https://github.com/L2S-lab/natnet_ros2) package, vendored into
+   > AirStack byte-identical (verified 2026-07-21 against upstream `883b095`) except three
+   > launch defaults CMU changed: `serverIP`/`clientIP` are CMU's rig (192.168.50.5/.2 —
+   > which is WHY the override above is mandatory), and `pub_rigid_body` defaults `true`
+   > (required — it makes the driver publish `/drone_1/pose`). No separate install or clone
+   > of the driver is needed; it builds with `bws` and runs inside the robot container.
 6. **EXIT TEST** — second container shell (`connect robot` again from the laptop):
    ```bash
    ros2 topic hz   /drone_1/pose        # want ≈ Motive's rate (typically 120–180 Hz)

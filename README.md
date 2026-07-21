@@ -73,7 +73,9 @@ Full plan with commands and exit criteria: [MILESTONES.md](MILESTONES.md).
 | **PX4 autopilot** | *how to fly* — stabilization, motors, EKF2 state estimation, failsafes | on the drone |
 | **RC pilot** | emergency veto — kill switch, mode override | your hands |
 
-We use a **thin slice** of AirStack: the mocap driver (`natnet_ros2`), the mocap→PX4 bridge,
+We use a **thin slice** of AirStack: the mocap driver
+([`natnet_ros2`](https://github.com/L2S-lab/natnet_ros2), vendored into AirStack — no separate
+install), the mocap→PX4 bridge,
 the laptop↔PX4 link (uXRCE-DDS), and the swarm commander with its CBF safety filter
 (Control Barrier Function — a math filter that clips unsafe velocity commands) and geofence.
 The planner/perception layers stay dormant here; those belong to AirStack's outdoor missions,

@@ -367,8 +367,25 @@ flowchart LR
 
 #### M3-A · ONE-TIME drone setup — already done for D0012, repeat only for a NEW drone or NEW laptop IP
 
-**1. Join the drone to the lab WiFi.** ⚠️ Do NOT use `voxl-wifi station` — on this image it
-corrupts the config when the SSID contains spaces. Proven manual method (drone, adb shell):
+**1. Join the drone to the lab WiFi.**
+> ✅ **ALREADY CONFIGURED on D0012 (2026-07-22):** the drone's WiFi role was **changed from
+> factory default to lab-network client**:
+> - **Before (factory):** the drone only acted as its own hotspot (`VOXL-1856926599`) — you
+>   had to connect the laptop TO the drone.
+> - **Now:** the drone **connects to the lab router itself**, auto-joining
+>   **`AI.R STC Hangar-5G`** on every boot (config in
+>   `/etc/wpa_supplicant/wpa_supplicant-mlan0.conf`, started by the auto-enabled
+>   `wpa_supplicant@mlan0` service) — so drone and laptop meet on the same network, like any
+>   two devices on the LAN.
+> - Technically it's dual mode: the old hotspot **still broadcasts** (on `uap0`,
+>   192.168.8.1) — ignore it and **never connect the laptop to it** (its subnet collides
+>   with the mocap LAN).
+>
+> Nothing to do per session — only redo this step if the lab SSID/password changes or for a
+> new drone.
+
+⚠️ When you DO need it: do NOT use `voxl-wifi station` — on this image it corrupts the config
+when the SSID contains spaces. Proven manual method (drone, adb shell):
 
 ```bash
 printf 'ctrl_interface=/var/run/wpa_supplicant\nupdate_config=0\n' > /etc/wpa_supplicant/wpa_supplicant-mlan0.conf

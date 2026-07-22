@@ -365,7 +365,7 @@ flowchart LR
 `uap0` — never connect the laptop to it) · drone **192.168.10.155**, laptop WiFi
 **192.168.10.107** — DHCP leases, re-check each lab day.
 
-#### M3-A · ONE-TIME drone setup — already done for D0012, repeat only for a NEW drone or NEW laptop IP
+#### M3-A · ONE-TIME drone setup (per drone) — D0012 status: step 1 ✅ done · steps 2–3 ⏳ NOT yet run (as of 2026-07-22)
 
 **1. Join the drone to the lab WiFi.**
 > ✅ **ALREADY CONFIGURED on D0012 (2026-07-22):** the drone's WiFi role was **changed from
@@ -410,7 +410,10 @@ adb pull /usr/bin/voxl-px4-start ~/AirStack-starling-max2/drone-backups/voxl-px4
 ```
 (Commit that pulled file to this repo afterwards — the drone's factory state, versioned.)
 
-**3. Point PX4's client at the laptop:**
+**3. Point PX4's client at the laptop** *(⏳ pending on D0012 — do step 2's backups FIRST).*
+⚠️ Understand what this does before running: the script **rewrites the drone's PX4 startup
+file** (`/usr/bin/voxl-px4-start`) so PX4 streams to our laptop. It is reversible — see the
+undo recipe below the code blocks.
 
 ```bash
 # on the LAPTOP:
@@ -425,10 +428,20 @@ px4-microdds_client status        # want: connected, Agent IP = 192.168.10.107
 ```
 
 The script rewrites the `microdds_client start` line of `/usr/bin/voxl-px4-start` (keeps a
-timestamped `.bak` and self-restores if its edit fails verification), pins the DDS domain,
-disables the drone's own agent. Idempotent — re-run any time with a new IP.
-Undo = restore the FACTORY-ORIGINAL copy + `systemctl enable voxl-microdds-agent` +
-`systemctl restart voxl-px4`.
+timestamped `.bak` and self-restores if its edit fails verification), pins the DDS domain
+**both** in the startup file **and as a flash-saved PX4 parameter**, and disables the drone's
+own agent. Idempotent — re-run any time with a new IP.
+
+**Full revert to factory** (on the drone; note the param step — restoring the file alone
+does NOT undo the flash-saved domain):
+
+```bash
+cp /usr/bin/voxl-px4-start.FACTORY-ORIGINAL /usr/bin/voxl-px4-start
+px4-param reset UXRCE_DDS_DOM_ID 2>/dev/null || px4-param reset XRCE_DDS_DOM_ID
+px4-param save
+systemctl enable --now voxl-microdds-agent     # --now: the script STOPPED it, not just disabled
+systemctl restart voxl-px4
+```
 
 #### M3-B · EVERY session — laptop only, nothing to do on the drone
 

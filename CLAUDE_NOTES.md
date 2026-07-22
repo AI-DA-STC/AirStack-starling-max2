@@ -148,7 +148,10 @@ log comparisons. Drone hostname `starling2-max (D0012)`, image 1.8.08, voxl-suit
 on-drone `cp /usr/bin/voxl-px4-start /usr/bin/voxl-px4-start.FACTORY-ORIGINAL` + `adb pull` a
 copy to `drone-backups/voxl-px4-start.original-D0012` in this repo. Script edits ONLY the
 `microdds_client start` line (-h/-p/-n), pins domain, disables onboard agent; makes its own
-timestamped .bak; restore = copy back + re-enable voxl-microdds-agent + restart voxl-px4.
+timestamped .bak. FULL revert = restore FACTORY-ORIGINAL copy + `px4-param reset
+UXRCE_DDS_DOM_ID` (or XRCE_DDS_DOM_ID) + `px4-param save` (the script ALSO flash-saves the
+domain param — file restore alone doesn't undo it) + `systemctl enable --now
+voxl-microdds-agent` + `systemctl restart voxl-px4`.
 **M3 NOT yet banked: script push/run + agent + `vehicle_status` check still to do.**
 
 **Architecture teachings from today (for onboarding):** drone needs NO ROS (PX4's built-in XRCE
@@ -182,6 +185,9 @@ laptop = gathers + repackages + shuttles, never fuses (EKF2 fuses onboard).
    (`ss -ulpn | grep -E '1510|1511'`) — a past lab outage was exactly this.
 
 ## 5. The milestone plan (details + commands in the docx and experiment.md)
+
+> Statuses below are from the original 2026-07-20 write-up — for CURRENT state see §3.5 and
+> the MILESTONES.md status table (as of 2026-07-22: M2 desk ✅ / room nearly; M3 in progress).
 
 - **M1 Sim rehearsal — DONE** (see 3.3).
 - **M2 Ground-station hardware prep — NEXT (desk, no drone):** robot container to

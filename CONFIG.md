@@ -46,7 +46,7 @@
 | Working folder (laptop) | `~/AirStack-starling-max2/AirStack` |
 | Real-run config | `<workspace>/src/svg_ground_control/config/swarm_real.yaml` (⚠️ still 3-drone as shipped — trim to `drone_1` before first flight, MILESTONES M6) |
 | Drone identity | `starling2-max (D0012)` · image 1.8.08 · voxl-suite 1.6.4~beta5 |
-| Drone factory backup | `/usr/bin/voxl-px4-start.FACTORY-ORIGINAL` (on drone) + `drone-backups/` in this repo (⏳ both pending — take before running the setup script) |
+| Drone factory backup | `/usr/bin/voxl-px4-start.FACTORY-ORIGINAL` (on drone) + `drone-backups/voxl-px4-start.original-D0012` in this repo (✅ both taken 2026-07-22, before the setup script ran) |
 
 ## 60-second fixes for the usual suspects
 

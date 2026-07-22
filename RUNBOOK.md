@@ -63,11 +63,11 @@ then takeoff + start again.
 
 ## B · REAL DRONE session (mocap room)
 
-> **Maturity (2026-07-22):** steps 1–2 validated · step 3 pending the one-time M3-A work
-> (backups + `voxl_setup_real_drone.sh`) · step 4's driver launch validated, its exit test
-> pending the `drone_1` rigid body in Motive · steps 5–8 pending M4/M5/M6 — including the
-> one-time M4-A drone setup (EKF2 params + onboard VIO off) and the `swarm_real.yaml`
-> single-drone trim. No Isaac Sim needed — do NOT start it.
+> **Maturity (2026-07-22):** steps 1–3 validated (M3 complete — 24 `/drone_1/fmu/*` topics
+> live) · step 4's driver launch validated, its exit test pending the `drone_1` rigid body in
+> Motive · steps 5–8 pending M4/M5/M6 — including the one-time M4-A drone setup (EKF2 params
+> + onboard VIO off) and the `swarm_real.yaml` single-drone trim. No Isaac Sim needed — do
+> NOT start it.
 
 **1 — Check today's IPs** (everything is DHCP; addresses drift). Laptop:
 ```bash
@@ -98,6 +98,8 @@ Wait for `session established`. Leave running. Verify in another container shell
 ros2 topic echo /drone_1/fmu/out/vehicle_status --qos-reliability best_effort --once
 ```
 ⚠️ Every `/fmu/*` echo/hz needs `--qos-reliability best_effort` or it looks dead.
+(Before the agent starts, the drone-side `px4-microdds_client status` shows `Running,
+disconnected` — that's normal, the drone is dialing out waiting for this agent.)
 
 **4 — Mocap driver.** *Prereq: the `drone_1` rigid body exists in Motive BEFORE launching —
 the driver reads the body list only at startup (create/rename later → Ctrl+C and relaunch).*
@@ -116,14 +118,16 @@ Leave running.
 
 **6 — Commander + mocap bridge.** *One-time prereqs (MILESTONES M4-A/M6, pending on D0012):
 EKF2 params set, onboard VIO disabled, and `swarm_real.yaml` trimmed to `drone_1` only —
-with the shipped 3-drone config, takeoff is refused.* New container shell, inside:
+with the shipped 3-drone config the commander still launches `drone_1` while configured for
+phantom drone_2/3 (their hover slots, teleop/CBF roles) — trim BEFORE flying.* New container
+shell, inside:
 ```bash
 ros2 launch svg_ground_control ground_control.launch.py \
   config:=$(ros2 pkg prefix svg_ground_control)/share/svg_ground_control/config/swarm_real.yaml use_mocap:=true
 ```
 Leave running. Verify fusion (another shell):
 ```bash
-ros2 topic hz  /drone_1/fmu/in/vehicle_visual_odometry
+ros2 topic hz  /drone_1/fmu/in/vehicle_visual_odometry --qos-reliability best_effort
 ros2 topic echo /drone_1/fmu/out/vehicle_odometry --once --qos-reliability best_effort --qos-durability volatile
 ```
 `out/…` producing positions = EKF2 fusing. Then the **frame hand-check** (before the day's

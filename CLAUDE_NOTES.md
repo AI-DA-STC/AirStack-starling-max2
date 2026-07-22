@@ -123,7 +123,7 @@ are non-negotiable before real flight.
 Analog frame rate` = harmless; old Crazyflie bodies cf1–cf10 listed). **`drone_1` rigid body not
 yet created in Motive** → exit test (`/drone_1/pose` hz + hand-carry) still PENDING.
 
-**M3 drone bring-up (in progress):** PX4 healthy (101 uORB topics, actuators 820 Hz).
+**M3 drone bring-up (COMPLETE ✅ same day, second half):** PX4 healthy (101 uORB topics, actuators 820 Hz).
 CONFIRMED for M4: `voxl-open-vins-server` (~67% CPU) + `voxl-vision-hub` running = onboard VIO
 feeding PX4 — must be stopped for mocap sessions. VOXL clock is years off (no NTP) — fix before
 log comparisons. Drone hostname `starling2-max (D0012)`, image 1.8.08, voxl-suite 1.6.4~beta5
@@ -144,7 +144,7 @@ log comparisons. Drone hostname `starling2-max (D0012)`, image 1.8.08, voxl-suit
 4. adb quirks: Ctrl+C not forwarded (use `-c2 -w4` deadlines or `adb shell pkill`); old `iw`
    needs explicit `iw dev mlan0 link`; drone is headless (cat/less/vi only).
 
-**Before running `voxl_setup_real_drone.sh` (where the session stands):** backups agreed —
+**The `voxl_setup_real_drone.sh` plan (as agreed — executed same day, see next paragraph):** backups agreed —
 on-drone `cp /usr/bin/voxl-px4-start /usr/bin/voxl-px4-start.FACTORY-ORIGINAL` + `adb pull` a
 copy to `drone-backups/voxl-px4-start.original-D0012` in this repo. Script edits ONLY the
 `microdds_client start` line (-h/-p/-n), pins domain, disables onboard agent; makes its own
@@ -152,7 +152,20 @@ timestamped .bak. FULL revert = restore FACTORY-ORIGINAL copy + `px4-param reset
 UXRCE_DDS_DOM_ID` (or XRCE_DDS_DOM_ID) + `px4-param save` (the script ALSO flash-saves the
 domain param — file restore alone doesn't undo it) + `systemctl enable --now
 voxl-microdds-agent` + `systemctl restart voxl-px4`.
-**M3 NOT yet banked: script push/run + agent + `vehicle_status` check still to do.**
+**M3 COMPLETE ✅ (2026-07-22, second half of lab day 1):** backups taken exactly as above
+(FACTORY-ORIGINAL on drone + `drone-backups/voxl-px4-start.original-D0012` committed), script
+pushed via `adb push` and run: `voxl_setup_real_drone.sh drone_1 192.168.10.107 1 8888`.
+Notes from the run: `voxl-microdds-agent` unit doesn't exist on this image (script warns +
+skips — nothing to disable, and the revert recipe's `enable --now` line will just no-op);
+immediately after, `px4-microdds_client status` says `PX4 server not running` = PX4 still
+rebooting (~30 s); then `Running, disconnected` with correct Agent IP/port = correct pre-agent
+state (drone dials out). Agent started in the robot container → `session established
+address: 192.168.10.155`, all 24 `/drone_1/fmu/*` topics appeared,
+`/drone_1/fmu/out/vehicle_odometry` echoed live messages (`quality: 0`, no position — normal,
+EKF2 has no source until M4; corrected the old "stays silent" claim in MILESTONES).
+Evidence screenshots in `pictures/`: `voxel_setup_px4_restart_and_client_status.png`,
+`successful_airstack_connected_to_drone_microuxre.png`,
+`successful_read_of_drone_1_vehicle_odom.png`.
 
 **Architecture teachings from today (for onboarding):** drone needs NO ROS (PX4's built-in XRCE
 client → laptop agent creates the `/drone_1/fmu/*` topics laptop-side; drone's dormant ROS Foxy
@@ -187,7 +200,7 @@ laptop = gathers + repackages + shuttles, never fuses (EKF2 fuses onboard).
 ## 5. The milestone plan (details + commands in the docx and experiment.md)
 
 > Statuses below are from the original 2026-07-20 write-up — for CURRENT state see §3.5 and
-> the MILESTONES.md status table (as of 2026-07-22: M2 desk ✅ / room nearly; M3 in progress).
+> the MILESTONES.md status table (as of 2026-07-22: M2 desk ✅ / room nearly; M3 ✅ banked).
 
 - **M1 Sim rehearsal — DONE** (see 3.3).
 - **M2 Ground-station hardware prep — NEXT (desk, no drone):** robot container to
@@ -199,8 +212,9 @@ laptop = gathers + repackages + shuttles, never fuses (EKF2 fuses onboard).
   `voxl_setup_real_drone.sh drone_1 <LAPTOP_IP> 1 8888` on the VOXL (points PX4 uXRCE client at
   laptop, disables onboard agent); ground: `MicroXRCEAgent udp4 -p 8888 -v4`; verify
   `/drone_1/fmu/out/vehicle_status` arrives (best_effort QoS).
-- **M4 Mocap → EKF2, props off:** `bws --packages-select natnet_ros2` (first build downloads
-  NatNet SDK, needs internet); launch with lab IPs; verify `/drone_1/pose` ~180 Hz smooth;
+- **M4 Mocap → EKF2, props off:** `bws --packages-select natnet_ros2` (SDK is vendored in the
+  repo — no internet needed, see MILESTONES §3b); launch with lab IPs; verify `/drone_1/pose`
+  ~50 Hz smooth (our Motive rate);
   PX4 params `EKF2_EV_CTRL=11, EKF2_HGT_REF=3, EKF2_GPS_CTRL=0, EKF2_EV_DELAY≈50`
   (**mandatory — indoors PX4 refuses to arm without a fused position source**); check
   voxl-vision-hub isn't a second EV source; commander with `swarm_real.yaml use_mocap:=true`;
@@ -216,7 +230,7 @@ laptop = gathers + repackages + shuttles, never fuses (EKF2 fuses onboard).
 ## 6. Mocap data path (the two packages that matter)
 
 ```
-Motive ──NatNet UDP 1510/1511──► natnet_ros2 ──► /drone_1/pose (PoseStamped, ~180 Hz)
+Motive ──NatNet UDP 1510/1511──► natnet_ros2 ──► /drone_1/pose (PoseStamped, ~50 Hz — our Motive rate)
                                                      │
                                                mocap_bridge  (svg_ground_control; launched by
                                                      │        ground_control.launch.py use_mocap:=true;
@@ -233,7 +247,7 @@ Motive ──NatNet UDP 1510/1511──► natnet_ros2 ──► /drone_1/pose (
 - [ ] Report the swarm_commander logging crash + fix upstream to CMU (traceback in docx §4.4).
 - [ ] Ask CMU to confirm `daniel/diffaero_ground_control` is the branch behind their report
       (assumed from code archaeology; high confidence, unconfirmed by authors).
-- [ ] M2 tasks (see §5). M3+ need the drone and the mocap room.
+- [ ] M2 room half (`drone_1` rigid body in Motive + exit test); M4–M6 need the drone and the mocap room. M3 ✅ done 2026-07-22.
 - [ ] Optional cleanup: remove redundant worktrees under `~/airstack-branches/`.
 - [ ] When CMU's `fix/camera-init` merges: pull + submodule update makes our camera fix redundant.
 

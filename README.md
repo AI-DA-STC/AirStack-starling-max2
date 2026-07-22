@@ -48,7 +48,7 @@ hand-carry proves the position tracking, and only then do propellers spin.
 |---|---|---|---|
 | 1 | Sim rehearsal | Fly simulated drones with the exact software and commands used on the real drone | ✅ **Validated by us** (2026-07-20) |
 | 2 | Ground-station prep | Laptop networking, Motive/OptiTrack settings, clock sync — no drone needed | 🟡 Desk half ✅ 2026-07-21; mocap-room half (`drone_1` rigid body + exit test) pending |
-| 3 | Drone comms (props off) | Real drone's PX4 talking to the laptop over WiFi | 🟡 In progress (2026-07-22: drone on lab WiFi, prechecks done; setup script + topic check pending) |
+| 3 | Drone comms (props off) | Real drone's PX4 talking to the laptop over WiFi | ✅ **Validated by us** (2026-07-22: setup script run, 24 `/drone_1/fmu/*` topics live on the laptop) |
 | 4 | Mocap → drone (props off) | OptiTrack position fused into the drone's state estimator, axes verified | 🔵 Code ready (CMU) — plus a manual PX4-settings step (via QGroundControl) |
 | 5 | Hand-carry preflight | Carry the drone around; the software's belief must track reality | 🔵 Code ready (CMU) — awaiting our validation |
 | 6 | First flight | Takeoff, hover, land inside the net under AirStack command | 🔵 Code ready (CMU) — config trim + manual PX4 safety settings, then fly |

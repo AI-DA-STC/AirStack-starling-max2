@@ -31,7 +31,7 @@ are observed facts, and each milestone is a re-entry point.
 |---|---|---|---|
 | M1 Sim rehearsal | 3 SITL drones fly under the ground controller; teleop + geofence exercised | ✅ CMU | ✅ **2026-07-20** |
 | M2 Ground-station hardware prep | Host networking, Motive config, time sync, port checks | 🟡 networking yes; time-sync tooling absent (manual) | **Desk half ✅ 2026-07-21**; mocap-room half pending |
-| M3 Drone comms (props off) | Real PX4 topics on the laptop over WiFi (uXRCE-DDS) | ✅ CMU (audited, see §3b) | 🟡 In progress 2026-07-22 (WiFi + drone prechecks done; setup script + topic check pending) |
+| M3 Drone comms (props off) | Real PX4 topics on the laptop over WiFi (uXRCE-DDS) | ✅ CMU (audited, see §3b) | ✅ **2026-07-22** (24 `/drone_1/fmu/*` topics live on the laptop) |
 | M4 Mocap → EKF2 (props off) | OptiTrack pose fused by EKF2; frames verified | ✅ CMU + manual EKF2 params via QGC | Not yet |
 | M5 Hand-carry preflight | RViz marker tracks the hand-carried drone | ✅ CMU (audited) | Not yet |
 | M6 First flight | Stable mocap-fused hover + landing | ✅ CMU + single-drone config trim + manual PX4 failsafes | Not yet |
@@ -245,7 +245,7 @@ ros2 service call /swarm_commander/reset_fence std_srvs/srv/Trigger
 # then takeoff + start again
 ```
 
-## 6. Milestones 2–6 (to do)
+## 6. Milestones 2–6 (procedures + validation records)
 
 Full details: `robot/ros_ws/src/svg_ground_control/experiment.md` Parts B & D — **that file is
 CMU's own maintained guide** (lives in the AirStack checkout, written by the package authors
@@ -404,7 +404,15 @@ written manually via `wpa_passphrase` — after which the auto-enabled service J
 explaining every earlier boot failure. Result: drone auto-joins on boot, ping laptop↔drone
 verified (7–22 ms). Full narrative: CLAUDE_NOTES.md §3.5; symptom→fix pairs in §7 below.
 
-#### M3-A · ONE-TIME drone setup (per drone) — D0012 status: step 1 ✅ done · steps 2–3 ⏳ NOT yet run (as of 2026-07-22)
+**Same day, second half — M3 done:** backups taken (drone `.FACTORY-ORIGINAL` copy + factory
+file pulled to `drone-backups/voxl-px4-start.original-D0012`, committed), script pushed and
+run (`voxl_setup_real_drone.sh drone_1 192.168.10.107 1 8888` — clean run, `.bak` created,
+`voxl-microdds-agent` unit not present on this image so nothing to disable). Two red herrings
+hit during the run — both explained under M3-A step 3's screenshot below. Agent started on
+the laptop → session established, all 24 `/drone_1/fmu/*` topics materialized in the
+container. **M3 exit passed.**
+
+#### M3-A · ONE-TIME drone setup (per drone) — D0012 status: ✅ ALL DONE 2026-07-22
 
 What a **working USB link** looks like — `adb devices` lists the drone, `adb shell` lands in
 the MODAL AI banner (drone identity, image version, current IPs):
@@ -459,7 +467,7 @@ adb pull /usr/bin/voxl-px4-start ~/AirStack-starling-max2/drone-backups/voxl-px4
 ```
 (Commit that pulled file to this repo afterwards — the drone's factory state, versioned.)
 
-**3. Point PX4's client at the laptop** *(⏳ pending on D0012 — do step 2's backups FIRST).*
+**3. Point PX4's client at the laptop** *(✅ done on D0012 2026-07-22 — do step 2's backups FIRST).*
 ⚠️ Understand what this does before running: the script **rewrites the drone's PX4 startup
 file** (`/usr/bin/voxl-px4-start`) so PX4 streams to our laptop. It is reversible — see the
 undo recipe below the code blocks.
@@ -481,6 +489,14 @@ timestamped `.bak` and self-restores if its edit fails verification), pins the D
 **both** in the startup file **and as a flash-saved PX4 parameter**, and disables the drone's
 own agent. Idempotent — re-run any time with a new IP.
 
+What a **successful run** looks like (D0012, 2026-07-22) — note the two red herrings: the
+script's own verification prints `PX4 server not running` because PX4 is still rebooting
+(~30 s — just retry `px4-microdds_client status`), and the final `Running, disconnected` is
+CORRECT at this point (the drone is dialing out; "connected" only happens once the laptop
+agent is up, M3-B):
+
+<img src="pictures/voxel_setup_px4_restart_and_client_status.png" alt="voxl_setup_real_drone.sh run and px4-microdds_client status on the drone" width="700">
+
 **Full revert to factory** (on the drone; note the param step — restoring the file alone
 does NOT undo the flash-saved domain):
 
@@ -488,7 +504,9 @@ does NOT undo the flash-saved domain):
 cp /usr/bin/voxl-px4-start.FACTORY-ORIGINAL /usr/bin/voxl-px4-start
 px4-param reset UXRCE_DDS_DOM_ID 2>/dev/null || px4-param reset XRCE_DDS_DOM_ID
 px4-param save
-systemctl enable --now voxl-microdds-agent     # --now: the script STOPPED it, not just disabled
+systemctl enable --now voxl-microdds-agent     # no-op on D0012 (unit doesn't exist on image
+                                               # 1.8.08); on images that HAVE it, --now matters:
+                                               # the script stops it, not just disables
 systemctl restart voxl-px4
 ```
 
@@ -516,14 +534,29 @@ MicroXRCEAgent udp4 -p 8888 -v4      # inside the robot container; wait for "ses
                                      # established"; LEAVE RUNNING (topics exist only while it runs)
 ```
 
+What it looks like when the drone connects — the `session established` line names the drone's
+IP:port, then a burst of `create_topic / create_publisher / create_datawriter` lines is the
+drone building its `/drone_1/fmu/*` topics on the laptop:
+
+<img src="pictures/successful_airstack_connected_to_drone_microuxre.png" alt="MicroXRCEAgent session established with the drone" width="700">
+
 Verify in a second container shell (⚠️ the QoS flag is mandatory on all `/fmu/*` topics):
 
 ```bash
 ros2 topic echo /drone_1/fmu/out/vehicle_status --qos-reliability best_effort --once
 ```
 
-✅ **M3 exit:** `vehicle_status` messages arrive. (`/fmu/out/vehicle_odometry` stays SILENT
-until M4 gives EKF2 a position source — that silence is normal here.)
+✅ **M3 exit:** `vehicle_status` messages arrive. (`/fmu/out/vehicle_odometry` already
+publishes too, but with `quality: 0` and no usable position — EKF2 has no position source
+until M4. Messages-with-no-position is the normal M3 state, not a fault.)
+**Passed 2026-07-22** — session established, all 24 `/drone_1/fmu/*` topics on the laptop:
+
+<img src="pictures/drone_topics.png" alt="ros2 topic list showing all /drone_1/fmu topics in the container" width="650">
+
+…and `vehicle_odometry` echoing live (position-less) messages, as expected pre-M4. The full
+picture (drone shell left, agent top right, odometry echo bottom right):
+
+<img src="pictures/successful_read_of_drone_1_vehicle_odom.png" alt="M3 exit: setup script on the drone, agent creating topics, vehicle_odometry echo" width="700">
 
 ### M4 — Mocap → EKF2 (props off)
 
@@ -589,7 +622,7 @@ ros2 launch svg_ground_control ground_control.launch.py \
 **3. Verify the fusion chain, in → out** (third container shell):
 
 ```bash
-ros2 topic hz  /drone_1/fmu/in/vehicle_visual_odometry     # bridge feeding (~50 Hz, our Motive rate)
+ros2 topic hz  /drone_1/fmu/in/vehicle_visual_odometry --qos-reliability best_effort   # bridge feeding (~50 Hz, our Motive rate)
 ros2 topic echo /drone_1/fmu/out/vehicle_odometry --once --qos-reliability best_effort --qos-durability volatile
 ```
 

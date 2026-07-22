@@ -265,12 +265,19 @@ Desk items, all verified on the lab laptop:
   needed on lab day.
 - ✅ Workspace rebuilt post-migration (59 packages).
 
+**Our lab's values (recorded 2026-07-22 — reuse unless the lab network changes):**
+`MOTIVE_IP = 192.168.8.190` · `LAPTOP_IP = 192.168.8.112` · Motive streams at **50 Hz**.
+
 **Mocap-room half (remaining — needs the Motive PC and the drone with markers, no flying):**
 
 1. **Markers on the Starling:** attach 4–5 reflective markers in an **asymmetric** pattern
    (no two spacings alike — symmetric layouts let Motive flip the orientation 180°).
 2. **Rigid body in Motive:** place the drone in the volume, select its markers, create a
    rigid body named **exactly `drone_1`** (lowercase + underscore — topic names come from it).
+   ⚠️ Do this BEFORE launching the driver (step 5): the driver reads the rigid-body list once
+   at startup — if you create/rename the body afterwards, Ctrl+C and re-launch the driver.
+   Old rigid bodies from other projects (our Crazyflie `cf1…cf10`) will also appear in the
+   driver's log — harmless, ignore them.
 3. **Motive streaming settings** (View → Data Streaming pane): NatNet streaming ENABLED,
    **Up Axis = Z** (Motive defaults to Y — the classic frame bug), Broadcast Frame Data ON,
    Local Interface = the Motive PC's LAN IP → write it down as `<MOTIVE_IP>`.
@@ -287,11 +294,20 @@ Desk items, all verified on the lab laptop:
    ./airstack.sh up robot-desktop
    ./airstack.sh connect robot --command=bash
    ```
-   Inside (`root@` prompt), with YOUR two IPs substituted:
+   Inside (`root@` prompt) — ready to paste with our lab's IPs:
    ```bash
-   ros2 launch natnet_ros2 natnet_ros2.launch.py serverIP:=<MOTIVE_IP> clientIP:=<LAPTOP_IP>
+   ros2 launch natnet_ros2 natnet_ros2.launch.py serverIP:=192.168.8.190 clientIP:=192.168.8.112
    ```
-   Leave running.
+   Leave running. A GOOD startup log looks like (2026-07-22 session, real output):
+   ```
+   Connected at 192.168.8.190 ...
+   Mocap Framerate : 50.00
+   [ERROR] Error getting Analog frame rate.   ← HARMLESS (no analog devices in our rig)
+   Received N Data/Devices Descriptions:
+   RigidBody found : drone_1                  ← must appear; cf1…cf10 leftovers are ignorable
+   Configured! / Activated!
+   ```
+   If `drone_1` is missing from the list: create it in Motive, then Ctrl+C and re-launch.
 
    > **About this driver:** it is the upstream
    > [L2S-lab/natnet_ros2](https://github.com/L2S-lab/natnet_ros2) package, vendored into
@@ -300,13 +316,27 @@ Desk items, all verified on the lab laptop:
    > which is WHY the override above is mandatory), and `pub_rigid_body` defaults `true`
    > (required — it makes the driver publish `/drone_1/pose`). No separate install or clone
    > of the driver is needed; it builds with `bws` and runs inside the robot container.
-6. **EXIT TEST** — second container shell (`connect robot` again from the laptop):
+6. **EXIT TEST** — open a SECOND container shell (new terminal on the laptop, then):
    ```bash
-   ros2 topic hz   /drone_1/pose        # want ≈ Motive's rate (typically 120–180 Hz)
+   cd ~/AirStack-starling-max2/AirStack
+   ./airstack.sh connect robot --command=bash
+   ```
+   (This opens another shell into the SAME running container — both shells see the same
+   topics.) Inside it:
+   ```bash
+   ros2 topic list | grep pose          # want: /drone_1/pose
+   ros2 topic hz   /drone_1/pose        # want ≈ 50 Hz (our Motive's configured rate)
    ros2 topic echo /drone_1/pose --once # sane x,y,z for where the drone sits
    ```
    Hand-carry the drone around the volume — position must change smoothly, no jumps/NaNs.
    **Streaming + smooth = M2 complete.**
+
+**What "running the full AirStack with mocap" means from here:** at M2, mocap-into-AirStack
+is just the driver above — nothing else consumes `/drone_1/pose` yet, because the consumers
+need the DRONE connected. The full chain (driver → `mocap_bridge` → drone's EKF2 → commander
+→ RViz) lights up piece by piece: M3 connects the drone, M4 launches the commander with
+`use_mocap:=true` (which starts `mocap_bridge` and feeds the pose to the drone), and M5's
+hand-carry shows the whole loop in RViz. Nothing extra to run at M2.
 
 Troubleshooting: no topic / 0 Hz → Motive not streaming, wrong `serverIP`, rigid body not
 named `drone_1`, or an orphan process on 1510/1511. Only `/tf` and no `/drone_1/pose` →
@@ -370,6 +400,9 @@ ros2 bag record /drone_1/pose /drone_1/odometry_conversion/odometry
 | `/fmu/*` looks dead | Best-effort QoS: add `--qos-reliability best_effort`. |
 | PX4 won't arm indoors ("fuse failure") | No fused position source — mocap feed / EKF2 params missing. |
 | Mocap topic silent | Motive not streaming, wrong serverIP, body not named `drone_N`, or orphan on UDP 1510/1511. |
+| natnet log: `Error getting Analog frame rate` | Harmless — our rig has no analog devices (force plates). Ignore. |
+| natnet lists `cf1…cf10` but no `drone_1` | Rigid body not created/named yet in Motive; create it, then Ctrl+C and re-launch the driver (it reads the body list only at startup). |
+| `/drone_1/pose` at ~50 Hz, not 120+ | Normal — our Motive is configured at 50 Hz (adjustable in Motive's camera settings if ever needed). |
 | Continuous `[timesync]` warnings (sim) | Sim below real-time; reduce load. |
 | Teleop publishes but drone doesn't move | Commander HOLDING — call `start`; click teleop terminal for focus. |
 | GEOFENCE BREACH, all frozen | By design: `land` → `reset_fence` → `takeoff` → `start`. |

@@ -36,7 +36,8 @@
 |---|---|---|
 | Rigid body name | `drone_1` (⏳ not yet created as of 2026-07-22) | Must match everywhere — it names the topics (`/drone_1/pose`, `/drone_1/fmu/*`) and the swarm config. Rename → update Motive AND `swarm_real.yaml` `drone_names`; relaunch natnet (it reads the body list only at startup) |
 | Motive frame rate | `50 Hz` | Informational — expected rate for `ros2 topic hz /drone_1/pose` |
-| Streaming settings | Up Axis = Z · Broadcast ON · Local Interface = Motive IP | Re-check in Motive's Data Streaming pane whenever poses look wrong |
+| Streaming settings | Up Axis = Z · Broadcast ON · Local Interface = Motive IP | Re-check in Motive's Data Streaming pane whenever poses look wrong — reference photo: `pictures/check_motive_ip_address.jpg` |
+| World frame | red = x ("East") · green = y ("North") · z up; origin = floor marker | Photos: `pictures/mocap_axis_1.png`, `pictures/mocap_axis_2.png` — used by the M4 frame hand-check |
 
 ## Files & identities
 

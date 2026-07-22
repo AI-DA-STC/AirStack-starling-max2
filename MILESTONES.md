@@ -292,6 +292,11 @@ CLAUDE_NOTES.md §3.5.
 3. **Motive streaming settings** (View → Data Streaming pane): NatNet streaming ENABLED,
    **Up Axis = Z** (Motive defaults to Y — the classic frame bug), Broadcast Frame Data ON,
    Local Interface = the Motive PC's LAN IP → write it down as `<MOTIVE_IP>`.
+
+   What it should look like (our Motive PC, 2026-07-22 — read `<MOTIVE_IP>` off the
+   **Local Interface** row; note **Up Axis: Z-Axis** and **Rigid Bodies: ON**):
+
+   ![Motive Data Streaming pane — correct settings](pictures/check_motive_ip_address.jpg)
 4. **Network + clock sanity** — on the LAPTOP (`jeremychia@` prompt):
    ```bash
    ip addr                     # note your IP on the lab subnet → <LAPTOP_IP>
@@ -320,6 +325,15 @@ CLAUDE_NOTES.md §3.5.
    Configured! / Activated!
    ```
    If `drone_1` is missing from the list: create it in Motive, then Ctrl+C and re-launch.
+
+   Real screenshots from the 2026-07-22 session — the full launch and successful connection:
+
+   ![natnet launch and connection to Motive](pictures/airstack_natnet_working_1.png)
+
+   …and the data descriptions arriving (`Configured!` / `Activated!` — note only the old
+   `cf*` Crazyflie bodies were listed that day, `drone_1` not yet created):
+
+   ![natnet descriptions received — cf bodies only, drone_1 pending](pictures/airstack_natnet_working_2.png)
 
    > **About this driver:** it is the upstream
    > [L2S-lab/natnet_ros2](https://github.com/L2S-lab/natnet_ros2) package, vendored into
@@ -390,6 +404,11 @@ verified (7–22 ms). Full narrative: CLAUDE_NOTES.md §3.5; symptom→fix pairs
 
 #### M3-A · ONE-TIME drone setup (per drone) — D0012 status: step 1 ✅ done · steps 2–3 ⏳ NOT yet run (as of 2026-07-22)
 
+What a **working USB link** looks like — `adb devices` lists the drone, `adb shell` lands in
+the MODAL AI banner (drone identity, image version, current IPs):
+
+![adb detects the drone and opens a shell](pictures/computer_detects_drone_and_awb_shell_working.png)
+
 **1. Join the drone to the lab WiFi.**
 > ✅ **ALREADY CONFIGURED on D0012 (2026-07-22):** the drone's WiFi role was **changed from
 > factory default to lab-network client**:
@@ -419,6 +438,11 @@ dhcpcd mlan0 && ip addr show mlan0
 ```
 
 Survives reboots (the `wpa_supplicant@mlan0` service auto-starts).
+
+For reference, the **factory state before this change** — `voxl-wifi getmode` showing
+`Mode: softap`, `Station: Disabled`, hotspot active (right pane; natnet running on the left):
+
+![factory softap state via voxl-wifi getmode](pictures/awbshell_with_airstack_natnet_working.png)
 
 **2. Back up the file the setup script will edit:**
 
@@ -569,13 +593,22 @@ ros2 topic echo /drone_1/fmu/out/vehicle_odometry --once --qos-reliability best_
 
 `out/vehicle_odometry` producing positions = **EKF2 is fusing**.
 
-**4. FRAME HAND-CHECK — repeat before the FIRST flight of every lab day.** Carry the drone
-1 m and watch `out/vehicle_odometry` (positions are NED — z is DOWN):
+**4. FRAME HAND-CHECK — repeat before the FIRST flight of every lab day.**
+
+Our mocap volume's world frame (photos, 2026-07-22): **red = x-axis ("East"), green = y-axis
+("North" — the agreed forward for the hand-check), blue = z-axis up.** The floor marker is
+the origin:
+
+![mocap volume world axes](pictures/mocap_axis_1.png)
+
+![floor origin marker, top-down](pictures/mocap_axis_2.png)
+
+Carry the drone 1 m and watch `out/vehicle_odometry` (positions are NED — z is DOWN):
 
 | Carry the drone… | `position[…]` must… |
 |---|---|
-| toward North (agreed forward) | `[0]` **increase** |
-| toward East | `[1]` **increase** |
+| toward North (= the GREEN y-axis in the photos) | `[0]` **increase** |
+| toward East (= the RED x-axis in the photos) | `[1]` **increase** |
 | straight up | `[2]` **decrease** |
 
 Mirrored or swapped → set `px4_vio_frame: "modalai_flip"` in `swarm_real.yaml` and re-check.

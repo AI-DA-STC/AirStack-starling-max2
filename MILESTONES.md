@@ -471,8 +471,9 @@ systemctl restart voxl-px4
 **First — check today's IPs (the router is DHCP, addresses drift between sessions):**
 
 ```bash
-# LAPTOP's WiFi address — the one that MUST still match what the drone dials:
-ip addr | grep 192.168.10        # want .107; if changed → re-run M3-A step 3 with the new IP
+# LAPTOP's addresses — the WiFi one MUST still match what the drone dials:
+ip -4 -brief addr                # wlp* (WiFi) want 192.168.10.107 — if changed → re-run M3-A
+                                 # step 3 with the new IP; enp* (Ethernet) = mocap-side clientIP
 
 # DRONE's address (needed only for diagnostics like ping — the drone dials the laptop,
 # never the other way around). Two ways to read it:

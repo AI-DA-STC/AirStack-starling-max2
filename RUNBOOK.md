@@ -71,11 +71,16 @@ then takeoff + start again.
 
 **1 — Check today's IPs** (everything is DHCP; addresses drift). Laptop:
 ```bash
-ip addr | grep 192.168.10      # laptop WiFi — want .107; if changed → re-run MILESTONES M3-A step 3
-ip addr | grep 192.168.8       # laptop Ethernet (mocap side) — want .112
+ip -4 -brief addr              # every interface + its IPv4, one line each
 ping -c2 192.168.8.190         # Motive PC answers over the wire
 ss -ulpn | grep -E ':(1510|1511)' || echo "ports clear"
 ```
+Reading the `ip` output (our recorded values — DHCP, may drift):
+
+| Interface | Network | Expected | If different |
+|---|---|---|---|
+| `wlp…` (WiFi) | Hangar — drone side | 192.168.10.**107** | drone dials a dead IP → re-run MILESTONES M3-A step 3 with the new one |
+| `enp…`/`eth…` (Ethernet) | mocap LAN | 192.168.8.**112** | use the new value as `clientIP:=` in step 4 |
 Drone's IP if needed (diagnostics only): `adb shell ip -4 addr show mlan0`, or read it from
 the agent's `session established` log line. The drone auto-joins `AI.R STC Hangar-5G` at boot
 — nothing to do. (WiFi missing after reboot + dmesg `Firmware Init Failed` → cold power

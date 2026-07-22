@@ -330,8 +330,10 @@ CLAUDE_NOTES.md §3.5.
 
    <img src="pictures/airstack_natnet_working_1.png" alt="natnet launch and connection to Motive" width="550">
 
-   …and the data descriptions arriving (`Configured!` / `Activated!` — note only the old
-   `cf*` Crazyflie bodies were listed that day, `drone_1` not yet created):
+   …and the data descriptions arriving (`Configured!` / `Activated!`). **The rigid bodies the
+   driver lists are exactly the ones defined in Motive** — that day only the old `cf*`
+   Crazyflie bodies existed in Motive's project, so that's what appears; `drone_1` will show
+   up here once it's created in Motive:
 
    <img src="pictures/airstack_natnet_working_2.png" alt="natnet descriptions received — cf bodies only, drone_1 pending" width="550">
 

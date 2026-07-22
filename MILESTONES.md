@@ -346,6 +346,22 @@ named `drone_1`, or an orphan process on 1510/1511. Only `/tf` and no `/drone_1/
 `~/PX4-Autopilot` for optional desk rehearsals.)
 
 ### M3 — Drone comms (props off)
+
+**Our lab's drone-WiFi record (2026-07-22):** drone `starling2-max D0012` joins SSID
+**`AI.R STC Hangar-5G`** (the 2.4 GHz sibling is inaudible from the bench) on interface
+**`mlan0`** (NOT wlan0 — this VOXL is concurrent AP+STA: hotspot on `uap0`). Drone IP
+**192.168.10.155**, laptop WiFi **192.168.10.107** (both DHCP — re-check each lab day).
+⚠️ `voxl-wifi station` on this legacy image (suite 1.6.4~beta5) has a **quoting bug with
+spaced SSIDs** — it writes a broken config. Working method used instead:
+```bash
+printf 'ctrl_interface=/var/run/wpa_supplicant\nupdate_config=0\n' > /etc/wpa_supplicant/wpa_supplicant-mlan0.conf
+wpa_passphrase 'AI.R STC Hangar-5G' '<PASSWORD>' >> /etc/wpa_supplicant/wpa_supplicant-mlan0.conf
+systemctl restart wpa_supplicant@mlan0
+sleep 15; iw dev mlan0 link      # association can take >10 s on 5 GHz
+dhcpcd mlan0 && ip addr show mlan0
+```
+This survives reboots (the `wpa_supplicant@mlan0` unit already auto-starts; it only failed
+before because the broken config was unparseable).
 ```bash
 adb shell ip addr show wlan0                     # drone on the router subnet (udhcpc / voxl-wifi station)
 adb push robot/ros_ws/src/svg_ground_control/scripts/voxl_setup_real_drone.sh /usr/bin/
@@ -415,3 +431,7 @@ ros2 bag record /drone_1/pose /drone_1/odometry_conversion/odometry
 | GEOFENCE BREACH, all frozen | By design: `land` → `reset_fence` → `takeoff` → `start`. |
 | Commander dies: "Logger severity cannot be changed" | CMU bug — apply patch 0002, rebuild `svg_ground_control`. Report upstream. |
 | Sim "Battery unhealthy", won't arm | SITL battery drained — restart the Isaac spawn script. |
+| Drone WiFi: `voxl-wifi station` "succeeds" but never connects | Legacy voxl-wifi mangles SSIDs with spaces — it writes an error string into the config instead of a network block. Write `/etc/wpa_supplicant/wpa_supplicant-mlan0.conf` manually with `wpa_passphrase` (see M3 record). |
+| Drone WiFi: `mlan0`/`uap0` vanish after reboot; dmesg `Firmware Init Failed` / `Card is removed: -2` | WLAN chip firmware wedged — warm reboots don't reset it. **Cold power cycle** (battery + USB out, 10 s). |
+| Drone `iw` prints usage instead of link info | Old iw (4.14) needs explicit syntax: `iw dev mlan0 link`. |
+| Ctrl+C does nothing in `adb shell` | VOXL adbd doesn't forward signals. Kill from a second shell (`adb shell pkill <cmd>`) or use self-terminating commands (`ping -c2 -w4`). |

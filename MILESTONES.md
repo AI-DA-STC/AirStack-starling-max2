@@ -366,7 +366,14 @@ ros2 launch natnet_ros2 natnet_ros2.launch.py serverIP:=<MOTIVE_IP> clientIP:=<L
 ros2 topic hz /drone_1/pose                      # ~ Motive rate, smooth under hand-carry
 # PX4 params (QGC / px4-param) — MANDATORY (arm blocker indoors):
 #   EKF2_EV_CTRL=11  EKF2_HGT_REF=3  EKF2_GPS_CTRL=0  EKF2_EV_DELAY≈50
-# check voxl-vision-hub is not a second EV source (voxl-inspect-services)
+# DISABLE onboard VIO feed first — CONFIRMED needed on our drone (2026-07-22 audit of
+# starling2-max D0012): voxl-open-vins-server (~67% CPU) + voxl-vision-hub are RUNNING,
+# i.e. ModalAI VIO is live and feeding PX4 as external vision. Two EV sources (VIO+mocap)
+# would fight in EKF2. For mocap sessions, on the VOXL (adb):
+#   systemctl stop voxl-open-vins-server voxl-vision-hub     # re-start later for outdoor VIO
+# (or permanently: systemctl disable ...; or turn off vision-hub's PX4 odometry output in
+#  its config). Also noticed: VOXL clock is years off (no NTP; voxl-time-sync disabled) —
+#  harmless for flight, but sync it before comparing ulog vs mocap logs.
 ros2 launch svg_ground_control ground_control.launch.py \
   config:=$(ros2 pkg prefix svg_ground_control)/share/svg_ground_control/config/swarm_real.yaml use_mocap:=true
 ros2 topic hz  /drone_1/fmu/in/vehicle_visual_odometry

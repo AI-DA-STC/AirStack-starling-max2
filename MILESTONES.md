@@ -432,8 +432,20 @@ Undo = restore the FACTORY-ORIGINAL copy + `systemctl enable voxl-microdds-agent
 
 #### M3-B · EVERY session — laptop only, nothing to do on the drone
 
-**First:** confirm the laptop still holds its lease — `ip addr | grep 192.168.10` should show
-**.107**. If DHCP gave it a new address, re-run M3-A step 3 with the new IP before anything else.
+**First — check today's IPs (the router is DHCP, addresses drift between sessions):**
+
+```bash
+# LAPTOP's WiFi address — the one that MUST still match what the drone dials:
+ip addr | grep 192.168.10        # want .107; if changed → re-run M3-A step 3 with the new IP
+
+# DRONE's address (needed only for diagnostics like ping — the drone dials the laptop,
+# never the other way around). Two ways to read it:
+adb shell ip -4 addr show mlan0  # via the USB cable (always works)
+```
+
+No cable plugged in? The drone's IP also appears in the **agent's own log** the moment it
+connects — the `session established` line in the `MicroXRCEAgent -v4` output names the
+client's address.
 
 ```bash
 MicroXRCEAgent udp4 -p 8888 -v4      # inside the robot container; wait for "session

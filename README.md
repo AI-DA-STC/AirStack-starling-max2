@@ -89,18 +89,24 @@ flowchart LR
   subgraph LAPTOP["Ground laptop — AirStack"]
     N["natnet_ros2 — mocap driver"] --> B["mocap_bridge"]
     P["swarm commander — scenario / policy"] --> C["CBF safety filter"]
+    B --> X["MicroXRCEAgent — translator:<br/>ROS 2 topics ↔ PX4-native messages"]
+    C --> X
   end
   subgraph DRONE["Starling — PX4 onboard"]
-    E["EKF2 — fuses mocap ONBOARD"] --> L["control loops"] --> R["motors"]
+    K["PX4's built-in XRCE client"] -- "pose → " --> E["EKF2 — fuses mocap ONBOARD"]
+    K -- "velocity setpoint, 20 Hz" --> L["control loops"]
+    E --> L --> R["motors"]
   end
   M -- "NatNet (LAN)" --> N
-  B -- "pose (WiFi)" --> E
-  C -- "velocity setpoint, 20 Hz (WiFi)" --> L
+  X == "WiFi · UDP 8888 · px4_msgs over uXRCE-DDS" ==> K
 ```
 
-The laptop does **no state estimation and no stabilization** — it is a courier for mocap
-poses and a source of velocity goals. (Both streams cross the lab LAN — networking
-preconditions verified in M2.)
+**How the laptop↔drone leg works:** the laptop repackages everything into PX4's native
+message format (`px4_msgs`), and the **MicroXRCEAgent** program ships those messages over
+WiFi to a tiny **client built into PX4 itself** — so no ROS runs on the drone, and there is
+nothing to install on it. The laptop does **no state estimation and no stabilization** — it
+is a courier for mocap poses and a source of velocity goals. (Both streams cross the lab
+LAN — networking preconditions verified in M2.)
 
 **Offboard mode** = PX4 outsources goal-generation to an external computer that must stream
 setpoints continuously (≥2 Hz; ours: 20 Hz). Stream stops → PX4 failsafes; it never tumbles.

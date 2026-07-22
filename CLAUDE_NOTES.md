@@ -107,6 +107,57 @@ Rebuild with `bws --packages-select svg_ground_control`.
 Hardware lesson: commander is a single point of failure → PX4 `COM_OBL_RC_ACT` + RC kill switch
 are non-negotiable before real flight.
 
+### 3.5 Lab day 1 (2026-07-22) — M2 room half + M3 comms bring-up (the WiFi saga)
+
+**Network topology discovered (TWO routers — laptop is the bridge):**
+- Mocap LAN (wired): Motive PC **192.168.8.190**, laptop Ethernet **192.168.8.112**. NatNet rides this.
+- Hangar WiFi: SSID `AI.R STC Hangar` = **192.168.10.x** (laptop WiFi **.10.107**); drone joined
+  the **-5G** sibling (2.4 GHz inaudible from bench) as **.10.155** on interface **mlan0**.
+- Drone's own hotspot (`uap0`, `VOXL-1856926599`) is **192.168.8.1/24 — same digits as the mocap
+  LAN**: never connect the laptop to it (subnet clash). Forget it in Ubuntu WiFi settings.
+- The two networks never route to each other; ROS in the container (host networking) sees both
+  laptop interfaces and is the junction. natnet `clientIP:=192.168.8.112` (ETHERNET), uXRCE agent
+  IP for the drone = **192.168.10.107** (WiFi). All DHCP — re-check every lab day.
+
+**M2 room half:** natnet driver connected to Motive first try (50 Hz framerate; `Error getting
+Analog frame rate` = harmless; old Crazyflie bodies cf1–cf10 listed). **`drone_1` rigid body not
+yet created in Motive** → exit test (`/drone_1/pose` hz + hand-carry) still PENDING.
+
+**M3 drone bring-up (in progress):** PX4 healthy (101 uORB topics, actuators 820 Hz).
+CONFIRMED for M4: `voxl-open-vins-server` (~67% CPU) + `voxl-vision-hub` running = onboard VIO
+feeding PX4 — must be stopped for mocap sessions. VOXL clock is years off (no NTP) — fix before
+log comparisons. Drone hostname `starling2-max (D0012)`, image 1.8.08, voxl-suite 1.6.4~beta5
+(LEGACY wpa_supplicant path, no NetworkManager).
+
+**The WiFi saga (2 hours — all now in MILESTONES troubleshooting):**
+1. `voxl-wifi station` on this legacy image has a **quoting bug with spaced SSIDs**: it wrote the
+   wpa_passphrase ERROR STRING ("Passphrase must be 8..63 characters") into
+   `/etc/wpa_supplicant/wpa_supplicant-mlan0.conf` instead of a network block. Root cause of
+   every "won't connect" symptom, including the boot-time service failure (unit was enabled;
+   it died parsing garbage).
+2. Mid-saga the WLAN chip firmware **wedged** (`Firmware Init Failed`, `Card is removed: -2`,
+   interfaces vanished): warm reboots don't reset the chip — **cold power cycle** (battery+USB
+   out 10 s) fixed it.
+3. Working fix: write the conf manually (`printf` header + `wpa_passphrase 'AI.R STC Hangar-5G'
+   '<pw>' >>`), `systemctl restart wpa_supplicant@mlan0`, association takes >10 s, then
+   `dhcpcd mlan0`. Survives reboots now that the conf parses.
+4. adb quirks: Ctrl+C not forwarded (use `-c2 -w4` deadlines or `adb shell pkill`); old `iw`
+   needs explicit `iw dev mlan0 link`; drone is headless (cat/less/vi only).
+
+**Before running `voxl_setup_real_drone.sh` (where the session stands):** backups agreed —
+on-drone `cp /usr/bin/voxl-px4-start /usr/bin/voxl-px4-start.FACTORY-ORIGINAL` + `adb pull` a
+copy to `drone-backups/voxl-px4-start.original-D0012` in this repo. Script edits ONLY the
+`microdds_client start` line (-h/-p/-n), pins domain, disables onboard agent; makes its own
+timestamped .bak; restore = copy back + re-enable voxl-microdds-agent + restart voxl-px4.
+**M3 NOT yet banked: script push/run + agent + `vehicle_status` check still to do.**
+
+**Architecture teachings from today (for onboarding):** drone needs NO ROS (PX4's built-in XRCE
+client → laptop agent creates the `/drone_1/fmu/*` topics laptop-side; drone's dormant ROS Foxy
+must never share the domain — cross-distro RTPS crash); MAVROS is sim-only, uXRCE-DDS is the
+hardware path (native px4_msgs 1:1, needed for the vehicle_visual_odometry timestamp=0 trick);
+offboard mode is entered automatically by the commander's takeoff service, never manually;
+laptop = gathers + repackages + shuttles, never fuses (EKF2 fuses onboard).
+
 ## 4. Key operational gotchas (bite repeatedly)
 
 1. **ros2 anything only works INSIDE the robot container.** `./airstack.sh connect robot

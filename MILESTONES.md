@@ -372,7 +372,8 @@ flowchart LR
   PX4 == "WiFi, UDP port 8888" ==> AG
 ```
 
-**Our lab's record (2026-07-22):** drone `starling2-max D0012` · WiFi SSID
+**Live values now maintained in [CONFIG.md](CONFIG.md) — check there first.** Record at time
+of writing (2026-07-22): drone `starling2-max D0012` · WiFi SSID
 **`AI.R STC Hangar-5G`** on interface **`mlan0`** (this VOXL has no `wlan0`; its hotspot is
 `uap0` — never connect the laptop to it) · drone **192.168.10.155**, laptop WiFi
 **192.168.10.107** — DHCP leases, re-check each lab day.

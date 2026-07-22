@@ -8,6 +8,7 @@ code itself**.
 | File / folder | What it is |
 |---|---|
 | [RUNBOOK.md](RUNBOOK.md) | **START HERE each session** — the fast path: run the sim, or connect + run the real drone, commands only, no background |
+| [CONFIG.md](CONFIG.md) | **Single source of truth for lab values** (IPs, SSID, ports, names — all DHCP-drifty until static leases) + what to do when one changes + 60-second fixes |
 | [MILESTONES.md](MILESTONES.md) | The plan **and the work log**: per-milestone status, what was done & debugged so far, one-time setup procedures, troubleshooting table |
 | [CLAUDE_NOTES.md](CLAUDE_NOTES.md) | Full session handoff for AI-assisted sessions: complete history, findings, machine state, gotchas |
 | [AirStack/](AirStack/) | **Full AirStack code snapshot** (2026-07-20, bug fixes applied, submodules included) — see its own [README](AirStack/README.md) |

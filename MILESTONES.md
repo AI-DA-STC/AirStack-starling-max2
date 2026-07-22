@@ -296,7 +296,7 @@ CLAUDE_NOTES.md §3.5.
    What it should look like (our Motive PC, 2026-07-22 — read `<MOTIVE_IP>` off the
    **Local Interface** row; note **Up Axis: Z-Axis** and **Rigid Bodies: ON**):
 
-   ![Motive Data Streaming pane — correct settings](pictures/check_motive_ip_address.jpg)
+   <img src="pictures/check_motive_ip_address.jpg" alt="Motive Data Streaming pane — correct settings" width="420">
 4. **Network + clock sanity** — on the LAPTOP (`jeremychia@` prompt):
    ```bash
    ip addr                     # note your IP on the lab subnet → <LAPTOP_IP>
@@ -328,12 +328,12 @@ CLAUDE_NOTES.md §3.5.
 
    Real screenshots from the 2026-07-22 session — the full launch and successful connection:
 
-   ![natnet launch and connection to Motive](pictures/airstack_natnet_working_1.png)
+   <img src="pictures/airstack_natnet_working_1.png" alt="natnet launch and connection to Motive" width="550">
 
    …and the data descriptions arriving (`Configured!` / `Activated!` — note only the old
    `cf*` Crazyflie bodies were listed that day, `drone_1` not yet created):
 
-   ![natnet descriptions received — cf bodies only, drone_1 pending](pictures/airstack_natnet_working_2.png)
+   <img src="pictures/airstack_natnet_working_2.png" alt="natnet descriptions received — cf bodies only, drone_1 pending" width="550">
 
    > **About this driver:** it is the upstream
    > [L2S-lab/natnet_ros2](https://github.com/L2S-lab/natnet_ros2) package, vendored into
@@ -407,7 +407,7 @@ verified (7–22 ms). Full narrative: CLAUDE_NOTES.md §3.5; symptom→fix pairs
 What a **working USB link** looks like — `adb devices` lists the drone, `adb shell` lands in
 the MODAL AI banner (drone identity, image version, current IPs):
 
-![adb detects the drone and opens a shell](pictures/computer_detects_drone_and_awb_shell_working.png)
+<img src="pictures/computer_detects_drone_and_awb_shell_working.png" alt="adb detects the drone and opens a shell" width="700">
 
 **1. Join the drone to the lab WiFi.**
 > ✅ **ALREADY CONFIGURED on D0012 (2026-07-22):** the drone's WiFi role was **changed from
@@ -442,7 +442,7 @@ Survives reboots (the `wpa_supplicant@mlan0` service auto-starts).
 For reference, the **factory state before this change** — `voxl-wifi getmode` showing
 `Mode: softap`, `Station: Disabled`, hotspot active (right pane; natnet running on the left):
 
-![factory softap state via voxl-wifi getmode](pictures/awbshell_with_airstack_natnet_working.png)
+<img src="pictures/awbshell_with_airstack_natnet_working.png" alt="factory softap state via voxl-wifi getmode" width="700">
 
 **2. Back up the file the setup script will edit:**
 
@@ -599,9 +599,9 @@ Our mocap volume's world frame (photos, 2026-07-22): **red = x-axis ("East"), gr
 ("North" — the agreed forward for the hand-check), blue = z-axis up.** The floor marker is
 the origin:
 
-![mocap volume world axes](pictures/mocap_axis_1.png)
+<img src="pictures/mocap_axis_1.png" alt="mocap volume world axes" width="650">
 
-![floor origin marker, top-down](pictures/mocap_axis_2.png)
+<img src="pictures/mocap_axis_2.png" alt="floor origin marker, top-down" width="500">
 
 Carry the drone 1 m and watch `out/vehicle_odometry` (positions are NED — z is DOWN):
 

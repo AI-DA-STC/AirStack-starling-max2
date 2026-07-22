@@ -82,19 +82,19 @@ The planner/perception layers stay dormant here; those belong to AirStack's outd
 where planning runs on the drone's own computer.
 
 ```mermaid
-flowchart LR
+flowchart TD
   subgraph MOTIVE["Motive PC"]
     M["OptiTrack"]
   end
   subgraph LAPTOP["Ground laptop — AirStack"]
-    N["natnet_ros2 — mocap driver"] --> B["mocap_bridge"]
-    P["swarm commander — scenario / policy"] --> C["CBF safety filter"]
-    B --> X["MicroXRCEAgent — translator:<br/>ROS 2 topics ↔ PX4-native messages"]
-    C --> X
+    direction LR
+    N["natnet_ros2<br/>mocap driver"] --> B["mocap_bridge"] --> X["MicroXRCEAgent<br/>ROS 2 ↔ PX4 messages"]
+    P["swarm commander<br/>scenario / policy"] --> C["CBF safety filter"] --> X
   end
   subgraph DRONE["Starling — PX4 onboard"]
-    K["PX4's built-in XRCE client"] -- "pose → " --> E["EKF2 — fuses mocap ONBOARD"]
-    K -- "velocity setpoint, 20 Hz" --> L["control loops"]
+    direction LR
+    K["XRCE client<br/>built into PX4"] -- "pose" --> E["EKF2<br/>fuses ONBOARD"]
+    K -- "velocity, 20 Hz" --> L["control loops"]
     E --> L --> R["motors"]
   end
   M -- "NatNet (LAN)" --> N

@@ -145,6 +145,15 @@ same four service calls as sim T5.
 cd ~/AirStack-starling-max2/AirStack && ./airstack.sh down
 ```
 
+**Drone shutdown** (real-drone sessions — power down cleanly, don't just yank the battery).
+Laptop, USB-C connected:
+```bash
+adb shell shutdown now
+```
+Wait ~10 s for it to power down, then unplug USB and disconnect the battery. (Already in the
+drone's own shell — `starling2-max` prompt? Just `shutdown now` there. NOT in a laptop or
+container shell — that would shut down the wrong machine.)
+
 ---
 
 ## Pocket reference
@@ -158,3 +167,4 @@ cd ~/AirStack-starling-max2/AirStack && ./airstack.sh down
 | Panic, in order | `hold` service → `land` service → **RC kill switch** |
 | Container messages to ignore | `Workspace not built yet` (pre-bws) · `groups: … 992` · `unknown-robot` |
 | Drone hotspot `VOXL-…` | never connect the laptop to it |
+| Drone power-off | `adb shell shutdown now` (laptop) → wait ~10 s → unplug USB, then battery |

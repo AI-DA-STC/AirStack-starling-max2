@@ -31,7 +31,7 @@ are observed facts, and each milestone is a re-entry point.
 |---|---|---|---|
 | M1 Sim rehearsal | 3 SITL drones fly under the ground controller; teleop + geofence exercised | ✅ CMU | ✅ **2026-07-20** |
 | M2 Ground-station hardware prep | Host networking, Motive config, time sync, port checks | 🟡 networking yes; time-sync tooling absent (manual) | **Desk half ✅ 2026-07-21**; mocap-room half pending |
-| M3 Drone comms (props off) | Real PX4 topics on the laptop over WiFi (uXRCE-DDS) | ✅ CMU (audited, see §3b) | Not yet |
+| M3 Drone comms (props off) | Real PX4 topics on the laptop over WiFi (uXRCE-DDS) | ✅ CMU (audited, see §3b) | 🟡 In progress 2026-07-22 (WiFi + drone prechecks done; setup script + topic check pending) |
 | M4 Mocap → EKF2 (props off) | OptiTrack pose fused by EKF2; frames verified | ✅ CMU + manual EKF2 params via QGC | Not yet |
 | M5 Hand-carry preflight | RViz marker tracks the hand-carried drone | ✅ CMU (audited) | Not yet |
 | M6 First flight | Stable mocap-fused hover + landing | ✅ CMU + single-drone config trim + manual PX4 failsafes | Not yet |
@@ -347,56 +347,174 @@ named `drone_1`, or an orphan process on 1510/1511. Only `/tf` and no `/drone_1/
 
 ### M3 — Drone comms (props off)
 
-**Our lab's drone-WiFi record (2026-07-22):** drone `starling2-max D0012` joins SSID
-**`AI.R STC Hangar-5G`** (the 2.4 GHz sibling is inaudible from the bench) on interface
-**`mlan0`** (NOT wlan0 — this VOXL is concurrent AP+STA: hotspot on `uap0`). Drone IP
-**192.168.10.155**, laptop WiFi **192.168.10.107** (both DHCP — re-check each lab day).
-⚠️ `voxl-wifi station` on this legacy image (suite 1.6.4~beta5) has a **quoting bug with
-spaced SSIDs** — it writes a broken config. Working method used instead:
+**Goal:** the drone's PX4 streams its topics to the laptop over WiFi.
+
+```mermaid
+flowchart LR
+  subgraph DRONE["Starling (192.168.10.155)"]
+    PX4["PX4 — built-in XRCE client<br/>(configured ONCE by the setup script)"]
+  end
+  subgraph LAPTOP["Laptop (192.168.10.107)"]
+    AG["MicroXRCEAgent<br/>(started EVERY session)"] --> T["/drone_1/fmu/* topics"]
+  end
+  PX4 == "WiFi, UDP port 8888" ==> AG
+```
+
+**Our lab's record (2026-07-22):** drone `starling2-max D0012` · WiFi SSID
+**`AI.R STC Hangar-5G`** on interface **`mlan0`** (this VOXL has no `wlan0`; its hotspot is
+`uap0` — never connect the laptop to it) · drone **192.168.10.155**, laptop WiFi
+**192.168.10.107** — DHCP leases, re-check each lab day.
+
+#### M3-A · ONE-TIME drone setup — already done for D0012, repeat only for a NEW drone or NEW laptop IP
+
+**1. Join the drone to the lab WiFi.** ⚠️ Do NOT use `voxl-wifi station` — on this image it
+corrupts the config when the SSID contains spaces. Proven manual method (drone, adb shell):
+
 ```bash
 printf 'ctrl_interface=/var/run/wpa_supplicant\nupdate_config=0\n' > /etc/wpa_supplicant/wpa_supplicant-mlan0.conf
 wpa_passphrase 'AI.R STC Hangar-5G' '<PASSWORD>' >> /etc/wpa_supplicant/wpa_supplicant-mlan0.conf
 systemctl restart wpa_supplicant@mlan0
-sleep 15; iw dev mlan0 link      # association can take >10 s on 5 GHz
+sleep 15; iw dev mlan0 link      # want: Connected (5 GHz association takes >10 s)
 dhcpcd mlan0 && ip addr show mlan0
 ```
-This survives reboots (the `wpa_supplicant@mlan0` unit already auto-starts; it only failed
-before because the broken config was unparseable).
+
+Survives reboots (the `wpa_supplicant@mlan0` service auto-starts).
+
+**2. Back up the file the setup script will edit:**
+
 ```bash
-adb shell ip addr show wlan0                     # drone on the router subnet (udhcpc / voxl-wifi station)
+# on the DRONE (adb shell):
+cp /usr/bin/voxl-px4-start /usr/bin/voxl-px4-start.FACTORY-ORIGINAL
+```
+```bash
+# on the LAPTOP:
+mkdir -p ~/AirStack-starling-max2/drone-backups
+adb pull /usr/bin/voxl-px4-start ~/AirStack-starling-max2/drone-backups/voxl-px4-start.original-D0012
+```
+(Commit that pulled file to this repo afterwards — the drone's factory state, versioned.)
+
+**3. Point PX4's client at the laptop:**
+
+```bash
+# on the LAPTOP:
+cd ~/AirStack-starling-max2/AirStack
 adb push robot/ros_ws/src/svg_ground_control/scripts/voxl_setup_real_drone.sh /usr/bin/
-adb shell                                        # then on the VOXL:
-  chmod +x /usr/bin/voxl_setup_real_drone.sh
-  voxl_setup_real_drone.sh drone_1 <LAPTOP_IP> 1 8888
-  px4-microdds_client status                     # connected, Agent IP = <LAPTOP_IP>
-# robot container (leave running):
-MicroXRCEAgent udp4 -p 8888 -v4
-# verify:
+```
+```bash
+# on the DRONE (adb shell):
+chmod +x /usr/bin/voxl_setup_real_drone.sh
+voxl_setup_real_drone.sh drone_1 192.168.10.107 1 8888
+px4-microdds_client status        # want: connected, Agent IP = 192.168.10.107
+```
+
+The script rewrites the `microdds_client start` line of `/usr/bin/voxl-px4-start` (keeps a
+timestamped `.bak` and self-restores if its edit fails verification), pins the DDS domain,
+disables the drone's own agent. Idempotent — re-run any time with a new IP.
+Undo = restore the FACTORY-ORIGINAL copy + `systemctl enable voxl-microdds-agent` +
+`systemctl restart voxl-px4`.
+
+#### M3-B · EVERY session — laptop only, nothing to do on the drone
+
+**First:** confirm the laptop still holds its lease — `ip addr | grep 192.168.10` should show
+**.107**. If DHCP gave it a new address, re-run M3-A step 3 with the new IP before anything else.
+
+```bash
+MicroXRCEAgent udp4 -p 8888 -v4      # inside the robot container; wait for "session
+                                     # established"; LEAVE RUNNING (topics exist only while it runs)
+```
+
+Verify in a second container shell (⚠️ the QoS flag is mandatory on all `/fmu/*` topics):
+
+```bash
 ros2 topic echo /drone_1/fmu/out/vehicle_status --qos-reliability best_effort --once
 ```
 
+✅ **M3 exit:** `vehicle_status` messages arrive. (`/fmu/out/vehicle_odometry` stays SILENT
+until M4 gives EKF2 a position source — that silence is normal here.)
+
 ### M4 — Mocap → EKF2 (props off)
+
+**Goal:** the drone's own state estimator (EKF2) fuses OptiTrack position — the arm-enabler
+indoors (without a position source PX4 refuses to arm: "fuse failure").
+
+```mermaid
+flowchart LR
+  MO["Motive PC<br/>192.168.8.190"] -- "Ethernet" --> NA["natnet_ros2"]
+  subgraph LAPTOP["Laptop (per session)"]
+    NA --> BR["mocap_bridge"] --> AG["MicroXRCEAgent<br/>(from M3-B)"]
+  end
+  subgraph DRONE["Starling — onboard"]
+    EK["EKF2 fuses the pose"] --> OUT["/drone_1/fmu/out/vehicle_odometry<br/>= proof of fusion"]
+  end
+  AG -- "WiFi" --> EK
+```
+
+#### M4-A · ONE-TIME drone setup — per drone, stored permanently in PX4 / systemd
+
+**1. EKF2 parameters** — set once via QGroundControl (QGC runs on the laptop host, not the
+container; or use `px4-param` over adb); saved permanently in PX4:
+
+| Param | Value | Meaning |
+|---|---|---|
+| `EKF2_EV_CTRL` | 11 | fuse external-vision horiz pos + vert pos + yaw |
+| `EKF2_HGT_REF` | 3 | height reference = vision |
+| `EKF2_GPS_CTRL` | 0 | no GPS indoors |
+| `EKF2_EV_DELAY` | ≈50 | ms; mocap-over-WiFi latency (tune later if needed) |
+
+**2. Turn off the onboard VIO feed** (confirmed needed on D0012: `voxl-open-vins-server` +
+`voxl-vision-hub` are running = a competing external-vision source that would fight the mocap
+inside EKF2). On the drone:
+
 ```bash
-bws --packages-select natnet_ros2 && sws         # first build downloads NatNet SDK (internet)
-ros2 launch natnet_ros2 natnet_ros2.launch.py serverIP:=<MOTIVE_IP> clientIP:=<LAPTOP_IP>
-ros2 topic hz /drone_1/pose                      # ~ Motive rate, smooth under hand-carry
-# PX4 params (QGC / px4-param) — MANDATORY (arm blocker indoors):
-#   EKF2_EV_CTRL=11  EKF2_HGT_REF=3  EKF2_GPS_CTRL=0  EKF2_EV_DELAY≈50
-# DISABLE onboard VIO feed first — CONFIRMED needed on our drone (2026-07-22 audit of
-# starling2-max D0012): voxl-open-vins-server (~67% CPU) + voxl-vision-hub are RUNNING,
-# i.e. ModalAI VIO is live and feeding PX4 as external vision. Two EV sources (VIO+mocap)
-# would fight in EKF2. For mocap sessions, on the VOXL (adb):
-#   systemctl stop voxl-open-vins-server voxl-vision-hub     # re-start later for outdoor VIO
-# (or permanently: systemctl disable ...; or turn off vision-hub's PX4 odometry output in
-#  its config). Also noticed: VOXL clock is years off (no NTP; voxl-time-sync disabled) —
-#  harmless for flight, but sync it before comparing ulog vs mocap logs.
+systemctl disable --now voxl-open-vins-server voxl-vision-hub
+```
+
+(Re-enable with `systemctl enable --now …` when the drone returns to outdoor/VIO work.)
+
+**3. Housekeeping:** the VOXL clock is years off (no NTP). Harmless for flight; sync it before
+ever comparing drone logs against mocap recordings.
+
+#### M4-B · EVERY session — laptop only
+
+**Prereq: the M3-B agent must already be running** (in its own container shell) — without it
+there are no `/fmu/*` topics and every check below is silent.
+
+**1. Mocap driver** (container; `clientIP` = the laptop's ETHERNET address — NatNet arrives
+over the wire, not WiFi). Leave running:
+
+```bash
+ros2 launch natnet_ros2 natnet_ros2.launch.py serverIP:=192.168.8.190 clientIP:=192.168.8.112
+```
+
+**2. Commander + mocap bridge** (second container shell). Leave running:
+
+```bash
 ros2 launch svg_ground_control ground_control.launch.py \
   config:=$(ros2 pkg prefix svg_ground_control)/share/svg_ground_control/config/swarm_real.yaml use_mocap:=true
-ros2 topic hz  /drone_1/fmu/in/vehicle_visual_odometry
-ros2 topic echo /drone_1/fmu/out/vehicle_odometry --once --qos-reliability best_effort --qos-durability volatile
-# FRAME HAND-CHECK: North → position[0]↑, East → position[1]↑, lift → position[2]↓ (NED).
-# Mirrored → px4_vio_frame: "modalai_flip" in swarm_real.yaml. Wrong frame = wall.
 ```
+
+**3. Verify the fusion chain, in → out** (third container shell):
+
+```bash
+ros2 topic hz  /drone_1/fmu/in/vehicle_visual_odometry     # bridge feeding (~50 Hz, our Motive rate)
+ros2 topic echo /drone_1/fmu/out/vehicle_odometry --once --qos-reliability best_effort --qos-durability volatile
+```
+
+`out/vehicle_odometry` producing positions = **EKF2 is fusing**.
+
+**4. FRAME HAND-CHECK — repeat before the FIRST flight of every lab day.** Carry the drone
+1 m and watch `out/vehicle_odometry` (positions are NED — z is DOWN):
+
+| Carry the drone… | `position[…]` must… |
+|---|---|
+| toward North (agreed forward) | `[0]` **increase** |
+| toward East | `[1]` **increase** |
+| straight up | `[2]` **decrease** |
+
+Mirrored or swapped → set `px4_vio_frame: "modalai_flip"` in `swarm_real.yaml` and re-check.
+**A wrong frame flies the drone into a wall.**
+
+✅ **M4 exit:** fusion verified + hand-check passes with correct axes.
 
 ### M5 — Hand-carry preflight (nothing armed)
 ```bash

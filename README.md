@@ -7,8 +7,9 @@ code itself**.
 
 | File / folder | What it is |
 |---|---|
-| [MILESTONES.md](MILESTONES.md) | Canonical milestone plan + runbooks + troubleshooting (source of truth) |
-| [CLAUDE_NOTES.md](CLAUDE_NOTES.md) | Full session handoff for AI-assisted sessions: history, findings, machine state, gotchas |
+| [RUNBOOK.md](RUNBOOK.md) | **START HERE each session** — the fast path: run the sim, or connect + run the real drone, commands only, no background |
+| [MILESTONES.md](MILESTONES.md) | The plan **and the work log**: per-milestone status, what was done & debugged so far, one-time setup procedures, troubleshooting table |
+| [CLAUDE_NOTES.md](CLAUDE_NOTES.md) | Full session handoff for AI-assisted sessions: complete history, findings, machine state, gotchas |
 | [AirStack/](AirStack/) | **Full AirStack code snapshot** (2026-07-20, bug fixes applied, submodules included) — see its own [README](AirStack/README.md) |
 | [patches/](patches/) | Our two bug fixes as patch files (for applying to a fresh CMU clone; already applied in `AirStack/`) |
 | [tools/make_milestones_doc.py](tools/make_milestones_doc.py) | Word (.docx) export generator — **legacy** (pre-migration paths); [MILESTONES.md](MILESTONES.md) is canonical |
@@ -45,8 +46,8 @@ hand-carry proves the position tracking, and only then do propellers spin.
 | # | Milestone | One-line goal | Status |
 |---|---|---|---|
 | 1 | Sim rehearsal | Fly simulated drones with the exact software and commands used on the real drone | ✅ **Validated by us** (2026-07-20) |
-| 2 | Ground-station prep | Laptop networking, Motive/OptiTrack settings, clock sync — no drone needed | 🟡 Networking already in the code; Motive + clock-sync are lab tasks |
-| 3 | Drone comms (props off) | Real drone's PX4 talking to the laptop over WiFi | 🟡 In progress (2026-07-22: drone on lab WiFi, prechecks done; final topic check pending) |
+| 2 | Ground-station prep | Laptop networking, Motive/OptiTrack settings, clock sync — no drone needed | 🟡 Desk half ✅ 2026-07-21; mocap-room half (`drone_1` rigid body + exit test) pending |
+| 3 | Drone comms (props off) | Real drone's PX4 talking to the laptop over WiFi | 🟡 In progress (2026-07-22: drone on lab WiFi, prechecks done; setup script + topic check pending) |
 | 4 | Mocap → drone (props off) | OptiTrack position fused into the drone's state estimator, axes verified | 🔵 Code ready (CMU) — plus a manual PX4-settings step (via QGroundControl) |
 | 5 | Hand-carry preflight | Carry the drone around; the software's belief must track reality | 🔵 Code ready (CMU) — awaiting our validation |
 | 6 | First flight | Takeoff, hover, land inside the net under AirStack command | 🔵 Code ready (CMU) — config trim + manual PX4 safety settings, then fly |
@@ -263,6 +264,9 @@ image rebuild if the Dockerfile ever changes). Starting and using the stack is a
 every-session routine — next section.
 
 ## Running AirStack (after setup, and at the start of every session)
+
+> **Fast path each session: [RUNBOOK.md](RUNBOOK.md)** — commands only, sim (§A) and real
+> drone (§B). Below is the same start-up routine explained for first-timers.
 
 **A — on your laptop** (safe to paste as one block):
 

@@ -1,9 +1,9 @@
-# AirStack + Starling Max 2 Live Flight — Milestones & Runbook
+# AirStack + Starling Max 2 — Milestones: plan, work log, setup & troubleshooting
 
 > Canonical (markdown) version — **our lab's own document** (see "Whose document is whose" in
 > the README; CMU's upstream guide is `experiment.md` inside the AirStack checkout).
-> The Word export is generated with `python3 tools/make_milestones_doc.py`.
-> Last updated: 2026-07-20.
+> Per-session commands only? → [RUNBOOK.md](RUNBOOK.md).
+> Last updated: 2026-07-22.
 > Branch: `daniel/diffaero_ground_control` · Working folder: `~/AirStack-starling-max2/AirStack`
 
 ## 1. Objective
@@ -125,6 +125,9 @@ Source videos: [`videos/`](videos/) (`takeoff_and_land.mp4`, `teleop_with_geofen
   feedback item).
 
 ## 5. Milestone 1 re-run runbook
+
+> Condensed per-session version: [RUNBOOK.md](RUNBOOK.md) §A — **keep that one current**;
+> this section keeps the fuller explanations and verify steps.
 
 Five terminals, one job each. Every terminal follows the same pattern: a **laptop block**
 (ends with `connect`, safe to paste whole), then — after the prompt changes to `root@` — an
@@ -268,6 +271,14 @@ Desk items, all verified on the lab laptop:
 **Our lab's values (recorded 2026-07-22 — reuse unless the lab network changes):**
 `MOTIVE_IP = 192.168.8.190` · `LAPTOP_IP = 192.168.8.112` · Motive streams at **50 Hz**.
 
+**Work log — what was actually done & debugged:** desk half validated 2026-07-21 (~10 min,
+all checks passed first try). Room half attempted 2026-07-22: natnet connected to Motive on
+the first launch (50 Hz; the `Analog frame rate` error proved benign; old Crazyflie bodies
+cf1–cf10 visible); discovered the **two-router topology** (mocap LAN 192.168.8.x on Ethernet
+vs Hangar WiFi 192.168.10.x — laptop bridges both, see M3 record). Remaining: the `drone_1`
+rigid body was never created in Motive, so the exit test is still open. Full narrative:
+CLAUDE_NOTES.md §3.5.
+
 **Mocap-room half (remaining — needs the Motive PC and the drone with markers, no flying):**
 
 1. **Markers on the Starling:** attach 4–5 reflective markers in an **asymmetric** pattern
@@ -304,7 +315,8 @@ Desk items, all verified on the lab laptop:
    Mocap Framerate : 50.00
    [ERROR] Error getting Analog frame rate.   ← HARMLESS (no analog devices in our rig)
    Received N Data/Devices Descriptions:
-   RigidBody found : drone_1                  ← must appear; cf1…cf10 leftovers are ignorable
+   RigidBody found : drone_1                  ← must appear (EXPECTED once the body is created;
+                                                the 07-22 log showed only cf1…cf10 — see work log)
    Configured! / Activated!
    ```
    If `drone_1` is missing from the list: create it in Motive, then Ctrl+C and re-launch.
@@ -364,6 +376,16 @@ flowchart LR
 **`AI.R STC Hangar-5G`** on interface **`mlan0`** (this VOXL has no `wlan0`; its hotspot is
 `uap0` — never connect the laptop to it) · drone **192.168.10.155**, laptop WiFi
 **192.168.10.107** — DHCP leases, re-check each lab day.
+
+**Work log — what was actually done & debugged (2026-07-22):** drone prechecked healthy (PX4
+running, 101 uORB topics; onboard VIO found ACTIVE → became M4's disable task; VOXL clock
+unsynced). Getting the drone onto lab WiFi took the bulk of the session: `voxl-wifi station`
+silently wrote a **corrupt config** (quoting bug with spaced SSIDs), the WLAN chip then
+**wedged** (`Firmware Init Failed` — cured only by cold power cycle), the 2.4 GHz SSID proved
+inaudible from the bench (joined the **-5G** sibling instead), and the config was finally
+written manually via `wpa_passphrase` — after which the auto-enabled service Just Worked,
+explaining every earlier boot failure. Result: drone auto-joins on boot, ping laptop↔drone
+verified (7–22 ms). Full narrative: CLAUDE_NOTES.md §3.5; symptom→fix pairs in §7 below.
 
 #### M3-A · ONE-TIME drone setup (per drone) — D0012 status: step 1 ✅ done · steps 2–3 ⏳ NOT yet run (as of 2026-07-22)
 
@@ -444,6 +466,7 @@ systemctl restart voxl-px4
 ```
 
 #### M3-B · EVERY session — laptop only, nothing to do on the drone
+*(Per-session condensation of this + M4-B: [RUNBOOK.md](RUNBOOK.md) §B.)*
 
 **First — check today's IPs (the router is DHCP, addresses drift between sessions):**
 

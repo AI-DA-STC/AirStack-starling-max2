@@ -67,12 +67,11 @@ Required values for mocap flight — cross-reference MILESTONES M4-A.
 ## Drone-side voxl-mavlink-server config (`/etc/modalai/voxl-mavlink-server.conf`) — QGC link
 
 The drone PUSHES MAVLink to a fixed GCS IP; QGC itself needs no configuration (it listens on
-UDP 14550). ⏳ Still at factory default as of 2026-08-11 — QGC cannot connect over the new
-network until this is set.
+UDP 14550). ✅ Set 2026-08-11 (drone→Mocap PC ping verified 3–7 ms).
 
 | Value | Current | If it changes → do this |
 |---|---|---|
-| `"primary_static_gcs_ip"` | `192.168.8.10` (factory default = first hotspot DHCP lease — WRONG for our setup) | Set to the Mocap PC's IP on `Mocap_QCGroundControl`, then `systemctl restart voxl-mavlink-server`; QGC connects within seconds |
+| `"primary_static_gcs_ip"` | `192.168.0.190` (the Mocap PC; factory default was `192.168.8.10` = hotspot lease) | Set to the Mocap PC's current IP, then `systemctl restart voxl-mavlink-server`; QGC connects within seconds |
 | `"primary_static_gcs_ip_port"` | `14550` | QGC's default listen port — leave it |
 
 ## Files & identities

@@ -3,7 +3,7 @@
 > Canonical (markdown) version — **our lab's own document** (see "Whose document is whose" in
 > the README; CMU's upstream guide is `experiment.md` inside the AirStack checkout).
 > Per-session commands only? → [RUNBOOK.md](RUNBOOK.md).
-> Last updated: 2026-07-22.
+> Last updated: 2026-08-11.
 > Branch: `daniel/diffaero_ground_control` · Working folder: `~/AirStack-starling-max2/AirStack`
 
 ## 1. Objective
@@ -32,7 +32,7 @@ are observed facts, and each milestone is a re-entry point.
 | M1 Sim rehearsal | 3 SITL drones fly under the ground controller; teleop + geofence exercised | ✅ CMU | ✅ **2026-07-20** |
 | M2 Ground-station hardware prep | Host networking, Motive config, time sync, port checks | 🟡 networking yes; time-sync tooling absent (manual) | **Desk half ✅ 2026-07-21**; mocap-room half pending |
 | M3 Drone comms (props off) | Real PX4 topics on the laptop over WiFi (uXRCE-DDS) | ✅ CMU (audited, see §3b) | ✅ **2026-07-22** (24 `/drone_1/fmu/*` topics live on the laptop) |
-| M4 Mocap → EKF2 (props off) | OptiTrack pose fused by EKF2; frames verified | ✅ CMU + manual EKF2 params via QGC | Not yet |
+| M4 Mocap → EKF2 (props off) | OptiTrack pose fused by EKF2; frames verified | ✅ CMU + manual EKF2 params via QGC | Not yet (QGC params partially applied **2026-07-29**; fusion + frame check pending) |
 | M5 Hand-carry preflight | RViz marker tracks the hand-carried drone | ✅ CMU (audited) | Not yet |
 | M6 First flight | Stable mocap-fused hover + landing | ✅ CMU + single-drone config trim + manual PX4 failsafes | Not yet |
 
@@ -436,8 +436,22 @@ the MODAL AI banner (drone identity, image version, current IPs):
 > Nothing to do per session — only redo this step if the lab SSID/password changes or for a
 > new drone.
 
-⚠️ When you DO need it: do NOT use `voxl-wifi station` — on this image it corrupts the config
-when the SSID contains spaces. Proven manual method (drone, adb shell):
+> ✅ **UPDATE 2026-08-11 — network changed:** the drone's station WiFi was moved to SSID
+> **`Mocap_QCGroundControl`** using the stock helper, which WORKED:
+> ```bash
+> voxl-wifi station 'Mocap_QCGroundControl' '<PASSWORD>'
+> ```
+> The known `voxl-wifi` corruption bug only bites SSIDs containing SPACES — for space-free
+> SSIDs `voxl-wifi station` is fine (proven this session). Read the drone's IP after joining
+> with `ip addr show mlan0` or `voxl-my-ip` (VOXL helper).
+> ⚠️ Consequence: changing networks changes the **LAPTOP's** IP too — re-run
+> `voxl_setup_real_drone.sh drone_1 <new laptop IP> 1 8888` (step 3 below) and update
+> [CONFIG.md](CONFIG.md) with the new addresses.
+
+⚠️ When you DO need this step for an SSID **with spaces**: do NOT use `voxl-wifi station` —
+on this image it corrupts the config when the SSID contains spaces (space-free SSIDs are safe
+with the helper, see the 2026-08-11 update above). Proven manual method for spaced SSIDs
+(drone, adb shell):
 
 ```bash
 printf 'ctrl_interface=/var/run/wpa_supplicant\nupdate_config=0\n' > /etc/wpa_supplicant/wpa_supplicant-mlan0.conf
@@ -488,6 +502,10 @@ The script rewrites the `microdds_client start` line of `/usr/bin/voxl-px4-start
 timestamped `.bak` and self-restores if its edit fails verification), pins the DDS domain
 **both** in the startup file **and as a flash-saved PX4 parameter**, and disables the drone's
 own agent. Idempotent — re-run any time with a new IP.
+
+⚠️ **Multi-drone rule:** when provisioning MORE THAN ONE drone, give each drone a **unique
+DDS domain ID** (the script's 3rd argument) and its own distinct IP on the subnet —
+`drone_1` uses domain 1.
 
 What a **successful run** looks like (D0012, 2026-07-22) — note the two red herrings: the
 script's own verification prints `PX4 server not running` because PX4 is still rebooting
@@ -577,25 +595,52 @@ flowchart LR
 
 #### M4-A · ONE-TIME drone setup — per drone, stored permanently in PX4 / systemd
 
-**1. EKF2 parameters** — set once via QGroundControl (QGC runs on the laptop host, not the
-container; or use `px4-param` over adb); saved permanently in PX4:
+**1. EKF2 parameters** — set once via QGroundControl (QGC is installed and run on the
+**Mocap PC (Windows)**, not the laptop; `px4-param` over adb also works); saved permanently
+in PX4. Confirmed set (applied in the **2026-07-29** QGC session):
 
 | Param | Value | Meaning |
 |---|---|---|
-| `EKF2_EV_CTRL` | 11 | fuse external-vision horiz pos + vert pos + yaw |
-| `EKF2_HGT_REF` | 3 | height reference = vision |
+| `EKF2_EV_CTRL` | 11 | fuse external-vision horizontal pos + vertical pos + yaw; 3D-velocity bit deliberately OFF (bits 0+1+3) |
 | `EKF2_GPS_CTRL` | 0 | no GPS indoors |
-| `EKF2_EV_DELAY` | ≈50 | ms; mocap-over-WiFi latency (tune later if needed) |
+| `SYS_HAS_MAG` | 0 | ignore magnetometers entirely (lab notes: "HAS_MAG = 0") |
+| `EKF2_HGT_REF` | 3 | height reference = vision |
+
+Indoor-mocap extras (set for mocap flights):
+
+| Param | Value | Meaning |
+|---|---|---|
+| `EKF2_BARO_CTRL` | 0 | barometer fusion off indoors |
+| `EKF2_MAG_TYPE` | None (0) | magnetometer fusion off indoors |
+
+⚠️ **OUTDOOR revert:** when the drone returns to outdoor/GPS/VIO work, RE-ENABLE
+`EKF2_BARO_CTRL` and `EKF2_MAG_TYPE` (and revert `SYS_HAS_MAG` / `EKF2_GPS_CTRL` as
+appropriate).
+
+Observed in the 2026-07-29 QGC session: `EKF2_EV_CTRL=11` and `EKF2_MAG_TYPE=None` already
+applied; `EKF2_EV_DELAY` read **0.0 ms** — the earlier ≈50 ms suggestion was NOT applied
+(tune later if fusion lags).
 
 **2. Turn off the onboard VIO feed** (confirmed needed on D0012: `voxl-open-vins-server` +
 `voxl-vision-hub` are running = a competing external-vision source that would fight the mocap
-inside EKF2). On the drone:
+inside EKF2). **Adopted method — CONFIG-BASED**, via the vision-hub config file on the drone
+(`/etc/modalai/voxl-vision-hub.conf`). First check the defaults (`en_vio` was `true`,
+`offboard_mode` at its default), then set:
+
+- `"en_vio": false` — EKF2 uses the mocap state estimate instead of VIO;
+- `"offboard_mode": "off"` — vision-hub must not inject offboard commands (AirStack's
+  `px4_interface` commands the drone).
+
+Edit with `vi` over adb shell or with `voxl-configure-vision-hub`, then:
 
 ```bash
-systemctl disable --now voxl-open-vins-server voxl-vision-hub
+systemctl restart voxl-vision-hub
 ```
 
-(Re-enable with `systemctl enable --now …` when the drone returns to outdoor/VIO work.)
+*Alternative / legacy (NOT the adopted method):* disabling the services wholesale also
+removes the competing source — `systemctl disable --now voxl-open-vins-server
+voxl-vision-hub` (re-enable with `systemctl enable --now …` when the drone returns to
+outdoor/VIO work). The config-file method above is what we use.
 
 **3. Housekeeping:** the VOXL clock is years off (no NTP). Harmless for flight; sync it before
 ever comparing drone logs against mocap recordings.
@@ -684,7 +729,7 @@ ros2 bag record /drone_1/pose /drone_1/odometry_conversion/odometry
 | GEOFENCE BREACH, all frozen | By design: `land` → `reset_fence` → `takeoff` → `start`. |
 | Commander dies: "Logger severity cannot be changed" | CMU bug — apply patch 0002, rebuild `svg_ground_control`. Report upstream. |
 | Sim "Battery unhealthy", won't arm | SITL battery drained — restart the Isaac spawn script. |
-| Drone WiFi: `voxl-wifi station` "succeeds" but never connects | Legacy voxl-wifi mangles SSIDs with spaces — it writes an error string into the config instead of a network block. Write `/etc/wpa_supplicant/wpa_supplicant-mlan0.conf` manually with `wpa_passphrase` (see M3 record). |
+| Drone WiFi: `voxl-wifi station` "succeeds" but never connects | Legacy voxl-wifi mangles SSIDs **with spaces** — it writes an error string into the config instead of a network block. For spaced SSIDs write `/etc/wpa_supplicant/wpa_supplicant-mlan0.conf` manually with `wpa_passphrase` (see M3 record); space-free SSIDs work fine with `voxl-wifi station` (proven 2026-08-11). |
 | Drone WiFi: `mlan0`/`uap0` vanish after reboot; dmesg `Firmware Init Failed` / `Card is removed: -2` | WLAN chip firmware wedged — warm reboots don't reset it. **Cold power cycle** (battery + USB out, 10 s). |
 | Drone `iw` prints usage instead of link info | Old iw (4.14) needs explicit syntax: `iw dev mlan0 link`. |
 | Ctrl+C does nothing in `adb shell` | VOXL adbd doesn't forward signals. Kill from a second shell (`adb shell pkill <cmd>`) or use self-terminating commands (`ping -c2 -w4`). |

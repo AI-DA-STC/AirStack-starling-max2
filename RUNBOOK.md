@@ -66,7 +66,8 @@ then takeoff + start again.
 > **Maturity (2026-07-22):** steps 1–3 validated (M3 complete — 24 `/drone_1/fmu/*` topics
 > live) · step 4's driver launch validated, its exit test pending the `drone_1` rigid body in
 > Motive · steps 5–8 pending M4/M5/M6 — including the one-time M4-A drone setup (EKF2 params
-> + onboard VIO off) and the `swarm_real.yaml` single-drone trim. No Isaac Sim needed — do
+> via QGC on the Mocap PC, applied 2026-07-29 + `voxl-vision-hub.conf`: `en_vio` false,
+> `offboard_mode` off — detail in MILESTONES M4-A) and the `swarm_real.yaml` single-drone trim. No Isaac Sim needed — do
 > NOT start it.
 
 **1 — Check today's IPs** (everything is DHCP; addresses drift). Laptop:
@@ -78,9 +79,12 @@ ss -ulpn | grep -E ':(1510|1511)' || echo "ports clear"
 Compare against the current values in **[CONFIG.md](CONFIG.md)** (the single source of truth
 for every IP/SSID/name — including *what to do* when one has drifted). Quick version:
 `wlp…` (WiFi) must match what the drone dials; `enp…` (Ethernet) feeds `clientIP:=` in step 4.
-Drone's IP if needed (diagnostics only): `adb shell ip -4 addr show mlan0`, or read it from
-the agent's `session established` log line. The drone auto-joins `AI.R STC Hangar-5G` at boot
-— nothing to do. (WiFi missing after reboot + dmesg `Firmware Init Failed` → cold power
+Drone's IP if needed (diagnostics only): `adb shell ip -4 addr show mlan0` or `voxl-my-ip`
+(drone shell), or read it from the agent's `session established` log line. The drone
+auto-joins `Mocap_QCGroundControl` at boot — nothing to do. ⚠️ After the 2026-08-11 network
+change the laptop's WiFi IP changed too — re-provision the drone's dialed agent IP once (see
+CONFIG.md network table) or step 3 will never get a session. (WiFi missing after reboot +
+dmesg `Firmware Init Failed` → cold power
 cycle: battery + USB out 10 s.)
 
 **2 — Stack up (robot container only).** Laptop:
@@ -117,7 +121,8 @@ ros2 launch svg_ground_control real_interfaces.launch.py drones:=drone_1
 Leave running.
 
 **6 — Commander + mocap bridge.** *One-time prereqs (MILESTONES M4-A/M6, pending on D0012):
-EKF2 params set, onboard VIO disabled, and `swarm_real.yaml` trimmed to `drone_1` only —
+EKF2 params set via QGC (Mocap PC, ✅ 2026-07-29), vision-hub conf set (`en_vio` false /
+`offboard_mode` off), and `swarm_real.yaml` trimmed to `drone_1` only —
 with the shipped 3-drone config the commander still launches `drone_1` while configured for
 phantom drone_2/3 (their hover slots, teleop/CBF roles) — trim BEFORE flying.* New container
 shell, inside:

@@ -3,22 +3,22 @@
 > **Single source of truth for every value that can drift.** Other docs reference values by
 > name; the numbers live HERE. When something changes: update this file, do the "If it
 > changes" action, commit.
-> Last verified: **2026-07-22**.
+> Last verified: **2026-08-11**.
 
 ## Network (all DHCP until we get static leases — requested from Wayne/Ryzal)
 
 | Value | Current | How to check | Used by | If it changes → do this |
 |---|---|---|---|---|
-| **Laptop WiFi IP** | `192.168.10.107` | `ip -4 -brief addr` (the `wlp…` row) | Baked into the DRONE's dialer by the setup script | **The critical one.** Re-run on the drone: `voxl_setup_real_drone.sh drone_1 <new IP> 1 8888` |
+| **Laptop WiFi IP** | ⏳ TBD as of 2026-08-11 (old lease `192.168.10.107` is STALE — that was the Hangar network; re-check on `Mocap_QCGroundControl`) | `ip -4 -brief addr` (the `wlp…` row) | Baked into the DRONE's dialer by the setup script | **The critical one.** Once the new IP is known, re-run on the drone: `voxl_setup_real_drone.sh drone_1 <new IP> 1 8888` |
 | Laptop Ethernet IP | `192.168.8.112` | `ip -4 -brief addr` (the `enp…` row) | `clientIP:=` arg of every natnet launch | Just use the new value in the launch command |
 | Motive PC IP | `192.168.8.190` | `ipconfig` on the Motive PC | `serverIP:=` arg of every natnet launch; ping test | Use the new value in the launch command |
-| Drone WiFi IP | `192.168.10.155` | `adb shell ip -4 addr show mlan0`, or the agent's `session established` log line | Diagnostics only (ping) — the drone dials the laptop, nothing dials the drone | Nothing to reconfigure |
+| Drone WiFi IP | ⏳ TBD as of 2026-08-11 (old lease `192.168.10.155` is STALE — that was the Hangar network; re-check on `Mocap_QCGroundControl`) | `adb shell ip -4 addr show mlan0` or `voxl-my-ip`, or the agent's `session established` log line | Diagnostics only (ping) — the drone dials the laptop, nothing dials the drone | Nothing to reconfigure |
 
 ## Lab WiFi
 
 | Value | Current | If it changes → do this |
 |---|---|---|
-| SSID (drone joins) | `AI.R STC Hangar-5G` | Rewrite the drone's WiFi config — MILESTONES M3-A step 1 (manual `wpa_passphrase` method; do NOT use `voxl-wifi station`, it corrupts spaced SSIDs) |
+| SSID (drone joins) | `Mocap_QCGroundControl` (changed 2026-08-11; previously `AI.R STC Hangar-5G`) | SSID **without** spaces → `voxl-wifi station '<SSID>' '<PASSWORD>'` works (proven 2026-08-11). SSID **with** spaces → manual `wpa_passphrase` method, MILESTONES M3-A step 1 (`voxl-wifi station` corrupts spaced SSIDs) |
 | Password | (not stored in this repo) | Same as above |
 | Drone WiFi interface | `mlan0` (station) / `uap0` (its own hotspot — never connect the laptop to it) | Hardware fact, won't change |
 
@@ -27,7 +27,7 @@
 | Value | Current | Used by |
 |---|---|---|
 | uXRCE agent port | `8888` | Setup script arg **and** `MicroXRCEAgent udp4 -p 8888` — must match |
-| DDS domain | `1` | Setup script arg; container `.bashrc` pins it; sim uses the same |
+| DDS domain | `1` (= drone_1) | Setup script arg; container `.bashrc` pins it; sim uses the same. Each ADDITIONAL drone must get a UNIQUE domain ID and its own subnet IP when provisioned |
 | NatNet ports | `1510` (cmd) / `1511` (data) | Motive defaults; per-session check: `ss -ulpn \| grep -E ':(1510\|1511)'` must be clear |
 
 ## Mocap / Motive
@@ -38,6 +38,31 @@
 | Motive frame rate | `50 Hz` | Informational — expected rate for `ros2 topic hz /drone_1/pose` |
 | Streaming settings | Up Axis = Z · Broadcast ON · Local Interface = Motive IP | Re-check in Motive's Data Streaming pane whenever poses look wrong — reference photo: `pictures/check_motive_ip_address.jpg` |
 | World frame | red = x ("East") · green = y ("North") · z up; origin = floor marker | Photos: `pictures/mocap_axis_1.png`, `pictures/mocap_axis_2.png` — used by the M4 frame hand-check |
+
+## PX4 / EKF2 parameters (set once via QGC — QGC runs on the MOCAP PC)
+
+Confirmed parameter set — applied in the 2026-07-29 QGC session, recorded here 2026-08-11.
+
+| Value | Current | Why / If it changes → do this |
+|---|---|---|
+| `EKF2_EV_CTRL` | `11` | Always for mocap flight — horiz pos + vert pos + yaw; 3D-velocity bit OFF |
+| `EKF2_GPS_CTRL` | `0` | Always for mocap flight |
+| `SYS_HAS_MAG` | `0` | Always for mocap flight |
+| `EKF2_HGT_REF` | `3` | Always for mocap flight |
+| `EKF2_BARO_CTRL` | `0` | Indoor mocap only |
+| `EKF2_MAG_TYPE` | `None` | Indoor mocap only |
+| `EKF2_EV_DELAY` | `0.0 ms` | Tune ≈50 ms later if fusion lags |
+
+> ⚠️ **Outdoor revert:** re-enable `EKF2_BARO_CTRL` and `EKF2_MAG_TYPE` (and GPS/mag params) before any outdoor/GPS flight.
+
+## Drone-side voxl-vision-hub config (`/etc/modalai/voxl-vision-hub.conf` on the drone)
+
+Required values for mocap flight — cross-reference MILESTONES M4-A.
+
+| Value | Required | Why / If it changes → do this |
+|---|---|---|
+| `"en_vio"` | `false` | EKF2 must use mocap, not VIO. After editing the file: `systemctl restart voxl-vision-hub` |
+| `"offboard_mode"` | `"off"` | vision-hub must not inject offboard commands. Same restart after editing |
 
 ## Files & identities
 

@@ -82,7 +82,7 @@ QGC/`px4-param`, the VOXL script deliberately excludes them); PX4 failsafes and 
 | 4 | Drone on lab WiFi, survives reboot | manual `wpa_passphrase` config | auto-joins on boot; ping laptop↔drone 7–22 ms | 2026-07-22 |
 | 5 | **M3 exit:** PX4 topics on laptop over WiFi | `MicroXRCEAgent` → `session established` | all 24 `/drone_1/fmu/*` topics live | 2026-07-22 |
 | 6 | EKF2 params applied via QGC (QGC on the Mocap PC) | QGC Parameters pane | `EKF2_EV_CTRL=11`, `EKF2_MAG_TYPE=None`, etc. (full set: M4-A) | 2026-07-29 |
-| 7 | Onboard VIO off via vision-hub conf | `/etc/modalai/voxl-vision-hub.conf` | `en_vio=false`, `offboard_mode="off"` | 2026-07-29 |
+| 7 | Onboard VIO off via vision-hub conf | `/etc/modalai/voxl-vision-hub.conf` edited via sed, verified by read-back | `en_vio=false`, `offboard_mode="off"` (⚠️ the 2026-07-29 edit was never saved — live file still read `true`/`"figure_eight"` until today; lesson: only a read-back counts) + `systemctl restart voxl-vision-hub` to take effect | 2026-08-11 |
 | 8 | Drone WiFi moved to `Mocap_QCGroundControl` | `voxl-wifi station` (space-free SSID → helper safe) | associated, DHCP lease obtained | 2026-08-11 |
 | 9 | Drone re-pointed at laptop's new IP | `voxl_setup_real_drone.sh drone_1 192.168.0.192 1 8888` | `px4-microdds_client status`: `Running, connected`, Agent IP correct, payload tx ≈ 60 kB/s | 2026-08-11 |
 | 10 | **M3 re-verified on the new network** | agent `session established`; `ros2 topic list` | all 24 topics back; `vehicle_odometry` echoes (inertial-only, `quality: 0` = normal pre-M4) | 2026-08-11 |

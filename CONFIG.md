@@ -9,9 +9,9 @@
 
 | Value | Current | How to check | Used by | If it changes → do this |
 |---|---|---|---|---|
-| **Laptop WiFi IP** | ⏳ TBD as of 2026-08-11 (old lease `192.168.10.107` is STALE — that was the Hangar network; re-check on `Mocap_QCGroundControl`) | `ip -4 -brief addr` (the `wlp…` row) | Baked into the DRONE's dialer by the setup script | **The critical one.** Once the new IP is known, re-run on the drone: `voxl_setup_real_drone.sh drone_1 <new IP> 1 8888` |
-| Laptop Ethernet IP | `192.168.8.112` | `ip -4 -brief addr` (the `enp…` row) | `clientIP:=` arg of every natnet launch | Just use the new value in the launch command |
-| Motive PC IP | `192.168.8.190` | `ipconfig` on the Motive PC | `serverIP:=` arg of every natnet launch; ping test | Use the new value in the launch command |
+| **Laptop WiFi IP** | `192.168.0.192` (on `Mocap_QCGroundControl`, verified 2026-08-11; drone re-provisioned to it same day) | `ip -4 -brief addr` (the `wlp…` row) | Baked into the DRONE's dialer by the setup script | **The critical one.** Re-run on the drone: `voxl_setup_real_drone.sh drone_1 <new IP> 1 8888` |
+| Laptop Ethernet IP | `192.168.8.112` ⚠️ cable currently UNPLUGGED (2026-08-11) — Motive-network topology undecided, see MILESTONES §3c open issues | `ip -4 -brief addr` (the `enp…` row) | `clientIP:=` arg of every natnet launch (if NatNet stays on Ethernet) | Just use the new value in the launch command |
+| Motive PC IP | `192.168.8.190` (old Ethernet LAN — may move to `Mocap_QCGroundControl`, then re-check) | `ipconfig` on the Motive PC | `serverIP:=` arg of every natnet launch; ping test; QGC runs on this PC | Use the new value in the launch command; update Motive's Data Streaming → Local Interface |
 | Drone WiFi IP | ⏳ TBD as of 2026-08-11 (old lease `192.168.10.155` is STALE — that was the Hangar network; re-check on `Mocap_QCGroundControl`) | `adb shell ip -4 addr show mlan0` or `voxl-my-ip`, or the agent's `session established` log line | Diagnostics only (ping) — the drone dials the laptop, nothing dials the drone | Nothing to reconfigure |
 
 ## Lab WiFi
@@ -63,6 +63,17 @@ Required values for mocap flight — cross-reference MILESTONES M4-A.
 |---|---|---|
 | `"en_vio"` | `false` | EKF2 must use mocap, not VIO. After editing the file: `systemctl restart voxl-vision-hub` |
 | `"offboard_mode"` | `"off"` | vision-hub must not inject offboard commands. Same restart after editing |
+
+## Drone-side voxl-mavlink-server config (`/etc/modalai/voxl-mavlink-server.conf`) — QGC link
+
+The drone PUSHES MAVLink to a fixed GCS IP; QGC itself needs no configuration (it listens on
+UDP 14550). ⏳ Still at factory default as of 2026-08-11 — QGC cannot connect over the new
+network until this is set.
+
+| Value | Current | If it changes → do this |
+|---|---|---|
+| `"primary_static_gcs_ip"` | `192.168.8.10` (factory default = first hotspot DHCP lease — WRONG for our setup) | Set to the Mocap PC's IP on `Mocap_QCGroundControl`, then `systemctl restart voxl-mavlink-server`; QGC connects within seconds |
+| `"primary_static_gcs_ip_port"` | `14550` | QGC's default listen port — leave it |
 
 ## Files & identities
 

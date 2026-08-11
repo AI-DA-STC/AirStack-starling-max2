@@ -66,6 +66,50 @@ anywhere in the repo); PX4 EKF2 external-vision parameters (`EKF2_EV_CTRL` etc. 
 QGC/`px4-param`, the VOXL script deliberately excludes them); PX4 failsafes and RC kill switch
 (QGC); Motive-side configuration.
 
+## 3c. Test ledger — what's proven, what's next
+
+> Updated after every lab/bench session. One row per discrete test: what was checked, how,
+> the observed result, and the date it last passed. "Next up" is ordered — do the top row
+> first. Detail lives in each milestone's section; this table is the at-a-glance state.
+
+### ✅ Tests passed
+
+| # | Test | How (command / evidence) | Result | Date |
+|---|---|---|---|---|
+| 1 | Sim: takeoff/hover/land, teleop, geofence latch + recovery | commander services, keyboard teleop, RViz | 3 SITL drones flew; breach froze all; recovery clean | 2026-07-20 |
+| 2 | Desk prep: host networking, NTP, NatNet ports clear | `docker inspect` · `timedatectl` · `ss -ulpn` | all pass | 2026-07-21 |
+| 3 | natnet ↔ Motive connection | `natnet_ros2.launch.py serverIP:=… clientIP:=…` | connected @ 50 Hz (only old `cf*` bodies existed then) | 2026-07-22 |
+| 4 | Drone on lab WiFi, survives reboot | manual `wpa_passphrase` config | auto-joins on boot; ping laptop↔drone 7–22 ms | 2026-07-22 |
+| 5 | **M3 exit:** PX4 topics on laptop over WiFi | `MicroXRCEAgent` → `session established` | all 24 `/drone_1/fmu/*` topics live | 2026-07-22 |
+| 6 | EKF2 params applied via QGC (QGC on the Mocap PC) | QGC Parameters pane | `EKF2_EV_CTRL=11`, `EKF2_MAG_TYPE=None`, etc. (full set: M4-A) | 2026-07-29 |
+| 7 | Onboard VIO off via vision-hub conf | `/etc/modalai/voxl-vision-hub.conf` | `en_vio=false`, `offboard_mode="off"` | 2026-07-29 |
+| 8 | Drone WiFi moved to `Mocap_QCGroundControl` | `voxl-wifi station` (space-free SSID → helper safe) | associated, DHCP lease obtained | 2026-08-11 |
+| 9 | Drone re-pointed at laptop's new IP | `voxl_setup_real_drone.sh drone_1 192.168.0.192 1 8888` | `px4-microdds_client status`: `Running, connected`, Agent IP correct, payload tx ≈ 60 kB/s | 2026-08-11 |
+| 10 | **M3 re-verified on the new network** | agent `session established`; `ros2 topic list` | all 24 topics back; `vehicle_odometry` echoes (inertial-only, `quality: 0` = normal pre-M4) | 2026-08-11 |
+| 11 | `vehicle_status` streaming | `ros2 topic hz` | ~30 Hz (but see open issue: echo silent) | 2026-08-11 |
+
+### ⚠️ Open issues (none block the mocap work)
+
+| Issue | Details | Matters for |
+|---|---|---|
+| `vehicle_status` **echo prints nothing** despite 30 Hz on `hz` | Suspected px4_msgs message-definition mismatch drone↔container — compare `ros2 interface show px4_msgs/msg/VehicleStatus` against the drone's PX4 version. `vehicle_odometry` echoes fine. | **M6** — `px4_interface` reads arming state from this message; resolve before first flight |
+| QGC can't connect over the new network | Drone's `/etc/modalai/voxl-mavlink-server.conf` still dials factory `192.168.8.10` (its own hotspot). Set `primary_static_gcs_ip` to the Mocap PC's IP on the new subnet, then `systemctl restart voxl-mavlink-server`. | QGC telemetry/params from the Mocap PC |
+| WiFi reboot-persistence unverified | The 08-11 config was written by `voxl-wifi station` (not the proven manual method). Reboot the drone once; check `iw dev mlan0 link`. | every session |
+| CONFIG.md drone-IP row still TBD | Laptop `192.168.0.192` recorded; read the drone's lease with `voxl-my-ip` and record it. | diagnostics (ping) |
+| Motive network topology undecided | Old mocap LAN was Ethernet `192.168.8.x`; the laptop currently has **no Ethernet link**. Either move the Motive PC onto `Mocap_QCGroundControl` (single subnet — check `ipconfig`, update Motive's Local Interface) or re-plug Ethernet and keep `192.168.8.x` for NatNet. WiFi NatNet caveat: bursty 802.11 stalled our Crazyflie rig — wire the Motive leg if poses stutter. | **M2/M4** — the `serverIP:=`/`clientIP:=` launch args |
+
+### ⏭ Next up (in order)
+
+| # | Task | Where | Gated by |
+|---|---|---|---|
+| 1 | Decide the Motive network (single-router vs Ethernet); record final IPs in [CONFIG.md](CONFIG.md) | Motive PC + laptop | — |
+| 2 | Create the `drone_1` rigid body in Motive (asymmetric markers, exact lowercase name, BEFORE launching the driver) | mocap room | — |
+| 3 | **M2 exit:** launch natnet → `/drone_1/pose` @ ~50 Hz, smooth during hand-carry | container | 1, 2 |
+| 4 | **M4-B:** agent + natnet + `ground_control.launch.py … use_mocap:=true` → `fmu/in/vehicle_visual_odometry` ~50 Hz, `fmu/out/vehicle_odometry` real positions | container | 3 |
+| 5 | **M4 exit:** frame hand-check (North → `pos[0]`↑, East → `pos[1]`↑, up → `pos[2]`↓) | mocap room | 4 |
+| 6 | **M5:** RViz tracks the hand-carried drone; bag recording | container | 5 |
+| 7 | **M6 prereqs:** trim `swarm_real.yaml` to `drone_1` · RC kill + failsafes in QGC · resolve the `vehicle_status` echo issue | laptop + QGC | 5 |
+
 ## 4. Milestone 1 — record (2026-07-20)
 
 ### One-time setup performed
@@ -412,6 +456,17 @@ hit during the run — both explained under M3-A step 3's screenshot below. Agen
 the laptop → session established, all 24 `/drone_1/fmu/*` topics materialized in the
 container. **M3 exit passed.**
 
+**Re-verification after the network change (2026-08-11):** WiFi moved to
+`Mocap_QCGroundControl` (see M3-A step 1's update note); the laptop's new lease
+`192.168.0.192` was baked into the drone with a clean re-run of the setup script; agent
+restarted → `session established`, all 24 topics back, `px4-microdds_client status` =
+`Running, connected` (payload tx ≈ 60 kB/s). **M3 exit re-passed.** Session findings:
+`vehicle_status` streams at ~30 Hz but `ros2 topic echo` prints nothing (suspected px4_msgs
+definition mismatch — §3c open issues); this container's `ros2 topic hz` does NOT accept
+`--qos-reliability` (only `echo` does); prompt garbage `[:refused refused reached]` after
+`connect` = the container .bashrc's robot-name DNS lookup failing against the new router —
+cosmetic, `ROS_DOMAIN_ID` is still force-set to 1, ignore it.
+
 #### M3-A · ONE-TIME drone setup (per drone) — D0012 status: ✅ ALL DONE 2026-07-22
 
 What a **working USB link** looks like — `adb devices` lists the drone, `adb shell` lands in
@@ -425,7 +480,8 @@ the MODAL AI banner (drone identity, image version, current IPs):
 > - **Before (factory):** the drone only acted as its own hotspot (`VOXL-1856926599`) — you
 >   had to connect the laptop TO the drone.
 > - **Now:** the drone **connects to the lab router itself**, auto-joining
->   **`AI.R STC Hangar-5G`** on every boot (config in
+>   **`AI.R STC Hangar-5G`** (→ `Mocap_QCGroundControl` since 2026-08-11, see the update
+>   note below) on every boot (config in
 >   `/etc/wpa_supplicant/wpa_supplicant-mlan0.conf`, started by the auto-enabled
 >   `wpa_supplicant@mlan0` service) — so drone and laptop meet on the same network, like any
 >   two devices on the LAN.

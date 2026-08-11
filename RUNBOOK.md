@@ -99,9 +99,13 @@ MicroXRCEAgent udp4 -p 8888 -v4
 ```
 Wait for `session established`. Leave running. Verify in another container shell:
 ```bash
-ros2 topic echo /drone_1/fmu/out/vehicle_status --qos-reliability best_effort --once
+ros2 topic hz /drone_1/fmu/out/vehicle_status              # want ~30 Hz
+ros2 topic echo /drone_1/fmu/out/vehicle_odometry --qos-reliability best_effort --once
 ```
-⚠️ Every `/fmu/*` echo/hz needs `--qos-reliability best_effort` or it looks dead.
+⚠️ Every `/fmu/*` **echo** needs `--qos-reliability best_effort` or it looks dead — but this
+container's `ros2 topic hz` does NOT accept that flag (run hz bare). Known issue (2026-08-11):
+`vehicle_status` echo prints nothing even though hz shows 30 Hz — suspected px4_msgs
+definition mismatch, see MILESTONES §3c; use `vehicle_odometry` for the echo check.
 (Before the agent starts, the drone-side `px4-microdds_client status` shows `Running,
 disconnected` — that's normal, the drone is dialing out waiting for this agent.)
 
@@ -132,7 +136,7 @@ ros2 launch svg_ground_control ground_control.launch.py \
 ```
 Leave running. Verify fusion (another shell):
 ```bash
-ros2 topic hz  /drone_1/fmu/in/vehicle_visual_odometry --qos-reliability best_effort
+ros2 topic hz  /drone_1/fmu/in/vehicle_visual_odometry     # hz takes no QoS flag here
 ros2 topic echo /drone_1/fmu/out/vehicle_odometry --once --qos-reliability best_effort --qos-durability volatile
 ```
 `out/…` producing positions = EKF2 fusing. Then the **frame hand-check** (before the day's
@@ -167,9 +171,9 @@ container shell — that would shut down the wrong machine.)
 |---|---|
 | `ros2` / `bws` / `rviz2` | container only (`root@`) |
 | `docker` / `airstack.sh` / `adb` / `ip addr` | laptop only (`jeremychia@`) |
-| `/fmu/*` topics | always `--qos-reliability best_effort` |
+| `/fmu/*` topics | `echo` always needs `--qos-reliability best_effort`; `hz` takes no QoS flag in this ros2 |
 | Long-running (leave open) | Isaac spawn · interfaces · agent · natnet · commander |
 | Panic, in order | `hold` service → `land` service → **RC kill switch** |
-| Container messages to ignore | `Workspace not built yet` (pre-bws) · `groups: … 992` · `unknown-robot` |
+| Container messages to ignore | `Workspace not built yet` (pre-bws) · `groups: … 992` · `unknown-robot` · prompt garbage `[:refused refused reached]` (robot-name DNS lookup fails on the router; domain still forced to 1) |
 | Drone hotspot `VOXL-…` | never connect the laptop to it |
 | Drone power-off | `adb shell shutdown now` (laptop) → wait ~10 s → unplug USB, then battery |

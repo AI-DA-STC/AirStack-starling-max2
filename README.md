@@ -5,6 +5,26 @@ Everything for flying a ModalAI **Starling Max 2** live under **CMU AirStack** (
 plan, bug-fix patches, demo recordings, **and a complete known-good snapshot of the AirStack
 code itself**.
 
+## Flight-lab network architecture
+
+<img src="pictures/Flight_lab_architecture.jpg" alt="Flight laboratory network architecture — mocap → Motive → ground control workstation → drone" width="850">
+
+Rough pipeline, mocap to motors: the **8 OptiTrack cameras** feed (via the OptiTrack mocap
+router) the **Motive workstation** — the mocap server, capable of up to 240 Hz (ours streams
+at 50 Hz). Motive pushes the **NatNet pose stream over wired LAN** through the hangar's
+unmanaged Ethernet switch to the **D-Link router**, which broadcasts the 5 GHz Wi-Fi SSID
+**`Mocap_QCGroundControl`**. The **ground-control workstation** (the AirStack / Crazyswarm2
+laptop) and the **drone** both live on that router's network — so laptop ↔ Starling Max 2 is
+two-way discovery on the same subnet (uXRCE-DDS agent link, QGC MAVLink). Crazyflies are the
+exception: they are commanded over a **Crazyradio USB dongle** rather than Wi-Fi, with a
+software E-stop via Crazyswarm2; a **hardware E-stop remote** (safety pilot) covers drones
+that support it. Two footnotes from the diagram worth remembering: the main office router and
+the D-Link router are **different subnets**, and IPs are assigned **by router port, not by
+machine**.
+
+More detail on the router itself (configuration, ports, access):
+[AI-DA-STC/Mocap_QC_Ground_Control_Router_Information](https://github.com/AI-DA-STC/Mocap_QC_Ground_Control_Router_Information).
+
 | File / folder | What it is |
 |---|---|
 | [RUNBOOK.md](RUNBOOK.md) | **START HERE each session** — the fast path: run the sim, or connect + run the real drone, commands only, no background |

@@ -10,8 +10,8 @@
 | Value | Current | How to check | Used by | If it changes → do this |
 |---|---|---|---|---|
 | **Laptop WiFi IP** | `192.168.0.192` (on `Mocap_QCGroundControl`, verified 2026-08-11; drone re-provisioned to it same day) | `ip -4 -brief addr` (the `wlp…` row) | Baked into the DRONE's dialer by the setup script | **The critical one.** Re-run on the drone: `voxl_setup_real_drone.sh drone_1 <new IP> 1 8888` |
-| Laptop Ethernet IP | `192.168.8.112` ⚠️ cable currently UNPLUGGED (2026-08-11) — Motive-network topology undecided, see MILESTONES §3c open issues | `ip -4 -brief addr` (the `enp…` row) | `clientIP:=` arg of every natnet launch (if NatNet stays on Ethernet) | Just use the new value in the launch command |
-| Motive PC IP | `192.168.8.190` (old Ethernet LAN — may move to `Mocap_QCGroundControl`, then re-check) | `ipconfig` on the Motive PC | `serverIP:=` arg of every natnet launch; ping test; QGC runs on this PC | Use the new value in the launch command; update Motive's Data Streaming → Local Interface |
+| Laptop Ethernet IP | not in use since 2026-08-11 (single-network topology; NatNet arrives over WiFi). Fallback if poses stutter: wire laptop to the router's LAN port and use that IP as `clientIP:=` | `ip -4 -brief addr` (the `enp…` row) | — | — |
+| Motive PC IP | `192.168.0.190` (on `Mocap_QCGroundControl` since 2026-08-11; was `192.168.8.190` on the old Ethernet LAN) | `ipconfig` on the Motive PC | `serverIP:=` arg of every natnet launch; ping test; QGC runs on this PC | Use the new value in the launch command; update Motive's Data Streaming → Local Interface |
 | Drone WiFi IP | ⏳ TBD as of 2026-08-11 (old lease `192.168.10.155` is STALE — that was the Hangar network; re-check on `Mocap_QCGroundControl`) | `adb shell ip -4 addr show mlan0` or `voxl-my-ip`, or the agent's `session established` log line | Diagnostics only (ping) — the drone dials the laptop, nothing dials the drone | Nothing to reconfigure |
 
 ## Lab WiFi

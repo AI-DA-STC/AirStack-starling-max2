@@ -92,17 +92,17 @@ QGC/`px4-param`, the VOXL script deliberately excludes them); PX4 failsafes and 
 
 | Issue | Details | Matters for |
 |---|---|---|
-| `vehicle_status` **echo prints nothing** despite 30 Hz on `hz` | Suspected px4_msgs message-definition mismatch drone↔container — compare `ros2 interface show px4_msgs/msg/VehicleStatus` against the drone's PX4 version. `vehicle_odometry` echoes fine. | **M6** — `px4_interface` reads arming state from this message; resolve before first flight |
+| `vehicle_status` **echo prints nothing** despite 30 Hz on `hz` | Suspected px4_msgs message-definition mismatch drone↔container. CONFIRMED still silent after a 10 s run (2026-08-11). Container = ROS Jazzy with a recent px4_msgs (`ARMING_STATE_DISARMED = 1` layout — newer than a stock voxl-px4 build); compare against the drone's PX4 version. `vehicle_odometry` echoes fine. (`BrokenPipeError` when piping `interface show` through `head` is harmless.) | **M6** — `px4_interface` reads arming state from this message; resolve before first flight |
 | QGC can't connect over the new network | Drone's `/etc/modalai/voxl-mavlink-server.conf` still dials factory `192.168.8.10` (its own hotspot). Set `primary_static_gcs_ip` to the Mocap PC's IP on the new subnet, then `systemctl restart voxl-mavlink-server`. | QGC telemetry/params from the Mocap PC |
 | WiFi reboot-persistence unverified | The 08-11 config was written by `voxl-wifi station` (not the proven manual method). Reboot the drone once; check `iw dev mlan0 link`. | every session |
 | CONFIG.md drone-IP row still TBD | Laptop `192.168.0.192` recorded; read the drone's lease with `voxl-my-ip` and record it. | diagnostics (ping) |
-| Motive network topology undecided | Old mocap LAN was Ethernet `192.168.8.x`; the laptop currently has **no Ethernet link**. Either move the Motive PC onto `Mocap_QCGroundControl` (single subnet — check `ipconfig`, update Motive's Local Interface) or re-plug Ethernet and keep `192.168.8.x` for NatNet. WiFi NatNet caveat: bursty 802.11 stalled our Crazyflie rig — wire the Motive leg if poses stutter. | **M2/M4** — the `serverIP:=`/`clientIP:=` launch args |
+| NatNet now rides WiFi on the laptop leg | Topology DECIDED 2026-08-11: single network — Motive PC on `Mocap_QCGroundControl` at `192.168.0.190`, laptop `clientIP:=192.168.0.192` (WiFi; Ethernet unused). Verify Motive's Data Streaming → Local Interface = `192.168.0.190`. Caveat: bursty 802.11 stalled our Crazyflie NatNet rig — if `/drone_1/pose` stutters, wire the laptop to the router's LAN port and use that IP as `clientIP:=`. | **M2/M4** — pose-stream quality |
 
 ### ⏭ Next up (in order)
 
 | # | Task | Where | Gated by |
 |---|---|---|---|
-| 1 | Decide the Motive network (single-router vs Ethernet); record final IPs in [CONFIG.md](CONFIG.md) | Motive PC + laptop | — |
+| 1 | ✅ done 2026-08-11 — Motive network decided (single router: Motive `.0.190`, laptop `.0.192`, in [CONFIG.md](CONFIG.md)); remaining: verify Motive's Local Interface setting on next mocap visit | Motive PC | — |
 | 2 | Create the `drone_1` rigid body in Motive (asymmetric markers, exact lowercase name, BEFORE launching the driver) | mocap room | — |
 | 3 | **M2 exit:** launch natnet → `/drone_1/pose` @ ~50 Hz, smooth during hand-carry | container | 1, 2 |
 | 4 | **M4-B:** agent + natnet + `ground_control.launch.py … use_mocap:=true` → `fmu/in/vehicle_visual_odometry` ~50 Hz, `fmu/out/vehicle_odometry` real positions | container | 3 |
@@ -313,7 +313,9 @@ Desk items, all verified on the lab laptop:
 - ✅ Workspace rebuilt post-migration (59 packages).
 
 **Our lab's values (recorded 2026-07-22 — reuse unless the lab network changes):**
-`MOTIVE_IP = 192.168.8.190` · `LAPTOP_IP = 192.168.8.112` · Motive streams at **50 Hz**.
+`MOTIVE_IP = 192.168.0.190` · `LAPTOP_IP = 192.168.0.192` — both on `Mocap_QCGroundControl`
+since **2026-08-11** (the 2026-07-22 session ran on the old Ethernet LAN, 192.168.8.190/.112)
+· Motive streams at **50 Hz**.
 
 **Work log — what was actually done & debugged:** desk half validated 2026-07-21 (~10 min,
 all checks passed first try). Room half attempted 2026-07-22: natnet connected to Motive on
@@ -356,7 +358,7 @@ CLAUDE_NOTES.md §3.5.
    ```
    Inside (`root@` prompt) — ready to paste with our lab's IPs:
    ```bash
-   ros2 launch natnet_ros2 natnet_ros2.launch.py serverIP:=192.168.8.190 clientIP:=192.168.8.112
+   ros2 launch natnet_ros2 natnet_ros2.launch.py serverIP:=192.168.0.190 clientIP:=192.168.0.192
    ```
    Leave running. A GOOD startup log looks like (2026-07-22 session, real output):
    ```
@@ -639,7 +641,7 @@ indoors (without a position source PX4 refuses to arm: "fuse failure").
 
 ```mermaid
 flowchart LR
-  MO["Motive PC<br/>192.168.8.190"] -- "Ethernet" --> NA["natnet_ros2"]
+  MO["Motive PC<br/>192.168.0.190"] -- "Mocap_QCGroundControl network" --> NA["natnet_ros2"]
   subgraph LAPTOP["Laptop (per session)"]
     NA --> BR["mocap_bridge"] --> AG["MicroXRCEAgent<br/>(from M3-B)"]
   end
@@ -706,11 +708,12 @@ ever comparing drone logs against mocap recordings.
 **Prereq: the M3-B agent must already be running** (in its own container shell) — without it
 there are no `/fmu/*` topics and every check below is silent.
 
-**1. Mocap driver** (container; `clientIP` = the laptop's ETHERNET address — NatNet arrives
-over the wire, not WiFi). Leave running:
+**1. Mocap driver** (container; since 2026-08-11 everything is on the single
+`Mocap_QCGroundControl` network — `clientIP` = the laptop's WiFi address; if poses ever
+stutter, wire the laptop to the router's LAN port and use that IP instead). Leave running:
 
 ```bash
-ros2 launch natnet_ros2 natnet_ros2.launch.py serverIP:=192.168.8.190 clientIP:=192.168.8.112
+ros2 launch natnet_ros2 natnet_ros2.launch.py serverIP:=192.168.0.190 clientIP:=192.168.0.192
 ```
 
 **2. Commander + mocap bridge** (second container shell). Leave running:

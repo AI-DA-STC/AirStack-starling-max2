@@ -73,7 +73,7 @@ then takeoff + start again.
 **1 — Check today's IPs** (everything is DHCP; addresses drift). Laptop:
 ```bash
 ip -4 -brief addr              # every interface + its IPv4, one line each
-ping -c2 192.168.8.190         # Motive PC answers over the wire
+ping -c2 192.168.0.190         # Motive PC answers (same Mocap_QCGroundControl network)
 ss -ulpn | grep -E ':(1510|1511)' || echo "ports clear"
 ```
 Compare against the current values in **[CONFIG.md](CONFIG.md)** (the single source of truth
@@ -113,7 +113,7 @@ disconnected` — that's normal, the drone is dialing out waiting for this agent
 the driver reads the body list only at startup (create/rename later → Ctrl+C and relaunch).*
 New container shell, inside (clientIP = laptop **Ethernet** IP):
 ```bash
-ros2 launch natnet_ros2 natnet_ros2.launch.py serverIP:=192.168.8.190 clientIP:=192.168.8.112
+ros2 launch natnet_ros2 natnet_ros2.launch.py serverIP:=192.168.0.190 clientIP:=192.168.0.192
 ```
 Leave running. Verify: `ros2 topic hz /drone_1/pose` (~50 Hz, our Motive rate).
 

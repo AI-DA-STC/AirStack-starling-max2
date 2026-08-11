@@ -87,7 +87,7 @@ QGC/`px4-param`, the VOXL script deliberately excludes them); PX4 failsafes and 
 | 9 | Drone re-pointed at laptop's new IP | `voxl_setup_real_drone.sh drone_1 192.168.0.192 1 8888` | `px4-microdds_client status`: `Running, connected`, Agent IP correct, payload tx ≈ 60 kB/s | 2026-08-11 |
 | 10 | **M3 re-verified on the new network** | agent `session established`; `ros2 topic list` | all 24 topics back; `vehicle_odometry` echoes (inertial-only, `quality: 0` = normal pre-M4) | 2026-08-11 |
 | 11 | `vehicle_status` streaming | `ros2 topic hz` | ~30 Hz (but see open issue: echo silent) | 2026-08-11 |
-| 12 | QGC link configured (drone → Mocap PC) | `primary_static_gcs_ip` → `192.168.0.190` in `voxl-mavlink-server.conf`, service restarted; drone→PC ping 3–7 ms | config verified; QGC "Connected" banner to be eyeballed on the Mocap PC | 2026-08-11 |
+| 12 | QGC connected (drone → Mocap PC) | `primary_static_gcs_ip` → `192.168.0.190` in `voxl-mavlink-server.conf`, service restarted; drone→PC ping 3–7 ms | ✅ QGC live: PX4 detected, telemetry + battery showing; "Not Ready" = correct pre-arm state (no position source until M4) | 2026-08-11 |
 
 ### ⚠️ Open issues (none block the mocap work)
 

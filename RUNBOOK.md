@@ -63,6 +63,13 @@ then takeoff + start again.
 
 ## B · REAL DRONE session (mocap room)
 
+> **Fast path (added 2026-08-28): `./ops.sh`** from this repo's root opens every
+> long-running piece below in its own terminal window — [agent] + [interfaces] +
+> [cockpit] in the container, [mocap bridge] + [QGroundControl] on the laptop — and
+> brings the robot container up first if needed. `DRONES="drone_1,drone_2" ./ops.sh`
+> for more drones; `./ops.sh stop` to tear down. Steps 1 (IP check) and 6–8
+> (commander → fly) remain manual. The numbered steps below are the same flow by hand.
+
 > **Maturity (2026-07-22):** steps 1–3 validated (M3 complete — 24 `/drone_1/fmu/*` topics
 > live) · step 4's driver launch validated, its exit test pending the `drone_1` rigid body in
 > Motive · steps 5–8 pending M4/M5/M6 — including the one-time M4-A drone setup (EKF2 params

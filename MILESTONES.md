@@ -32,8 +32,8 @@ are observed facts, and each milestone is a re-entry point.
 | M1 Sim rehearsal | 3 SITL drones fly under the ground controller; teleop + geofence exercised | ✅ CMU | ✅ **2026-07-20** |
 | M2 Ground-station hardware prep | Host networking, Motive config, time sync, port checks | 🟡 networking yes; time-sync tooling absent (manual) | **Desk half ✅ 2026-07-21**; mocap-room half pending |
 | M3 Drone comms (props off) | Real PX4 topics on the laptop over WiFi (uXRCE-DDS) | ✅ CMU (audited, see §3b) | ✅ **2026-07-22** (24 `/drone_1/fmu/*` topics live on the laptop) |
-| M4 Mocap → EKF2 (props off) | OptiTrack pose fused by EKF2; frames verified | ✅ CMU + manual EKF2 params via QGC | **M4-B fusion ✅ 2026-08-28** (EKF2 fusing mocap on D0012, RViz tracks hand-carry); frame hand-check pending |
-| M5 Hand-carry preflight | RViz marker tracks the hand-carried drone | ✅ CMU (audited) | Not yet |
+| M4 Mocap → EKF2 (props off) | OptiTrack pose fused by EKF2; frames verified | ✅ CMU + manual EKF2 params via QGC | **✅ VALIDATED 2026-08-28** — fusion (ledger #14) + frame hand-check, drone_1 / D0012 |
+| M5 Hand-carry preflight | RViz marker tracks the hand-carried drone | ✅ CMU (audited) | **✅ VALIDATED 2026-08-28** — RViz tracks the carried drone (ledger #15; GIF + video in repo) |
 | M6 First flight | Stable mocap-fused hover + landing | ✅ CMU + single-drone config trim + manual PX4 failsafes | Not yet |
 
 CMU flight-tested all of M3–M6 on their own Starling 2 Max — our work is **validation and
@@ -90,7 +90,8 @@ QGC/`px4-param`, the VOXL script deliberately excludes them); PX4 failsafes and 
 | 12 | QGC connected (drone → Mocap PC) | `primary_static_gcs_ip` → `192.168.0.190` in `voxl-mavlink-server.conf`, service restarted; drone→PC ping 3–7 ms | ✅ QGC live: PX4 detected, telemetry + battery showing; "Not Ready" = correct pre-arm state (no position source until M4) | 2026-08-11 |
 | 13 | **M2 exit:** mocap poses on the laptop | `./mocap.sh` bridge (Motive broadcasts; natnet_ros2 replaced — see [MOCAP.md](MOCAP.md)) → `ros2 topic hz /drone_1/pose` in the robot container | 50 Hz, tracks the hand-carried drone | 2026-08-28 |
 | 14 | **M4-B: EKF2 fuses the mocap pose** | `ground_control.launch.py … use_mocap:=true` → `fmu/in/vehicle_visual_odometry` (pose-only, quality 100, velocities NaN by design); echo `fmu/out/vehicle_odometry` | out positions match mocap in within ~2 cm (sample: in `[0.454, -0.093, -0.071]` vs out `[0.454, -0.094, -0.086]`); velocities ≈ 0 at rest | 2026-08-28 |
-| 15 | RViz tracks the hand-carried drone | `svg_drones.rviz` (Fixed Frame `map`→`world`) + `real_interfaces.launch.py`; GIF `assets/rviz_tracks_hand_carried_drone.gif`, full video `videos/SVG_check_if_rviz_moves_by_movingdrone_manually.mp4` | marker follows the carried drone live | 2026-08-28 |
+| 15 | **M5: RViz tracks the hand-carried drone** | `svg_drones.rviz` (Fixed Frame `map`→`world`) + `real_interfaces.launch.py`; GIF `assets/rviz_tracks_hand_carried_drone.gif`, full video `videos/SVG_check_if_rviz_moves_by_movingdrone_manually.mp4` | marker follows the carried drone live | 2026-08-28 |
+| 16 | **M4 exit: frame hand-check** | carry the drone North / East / up, watch `fmu/out/vehicle_odometry` | axes correct (N → `pos[0]`↑, E → `pos[1]`↑, up → `pos[2]`↓) — confirmed by Jeremy in the hangar | 2026-08-28 |
 
 ### ⚠️ Open issues (none block the mocap work)
 
@@ -109,9 +110,9 @@ QGC/`px4-param`, the VOXL script deliberately excludes them); PX4 failsafes and 
 | 2 | Create the `drone_1` rigid body in Motive (asymmetric markers, exact lowercase name, BEFORE launching the driver) | mocap room | — |
 | 3 | ✅ done 2026-08-28 — **M2 exit:** `/drone_1/pose` @ 50 Hz via the new `./mocap.sh` bridge (natnet replaced — see [MOCAP.md](MOCAP.md)) | container | — |
 | 4 | ✅ done 2026-08-28 — **M4-B:** fusion chain verified in → out (`fmu/out/vehicle_odometry` matches mocap within ~2 cm; ledger #14) | container | — |
-| 5 | **M4 exit:** frame hand-check (North → `pos[0]`↑, East → `pos[1]`↑, up → `pos[2]`↓) | mocap room | 4 |
-| 6 | **M5:** RViz tracks the hand-carried drone; bag recording | container | 5 |
-| 7 | **M6 prereqs:** trim `swarm_real.yaml` to `drone_1` · RC kill + failsafes in QGC · resolve the `vehicle_status` echo issue | laptop + QGC | 5 |
+| 5 | ✅ done 2026-08-28 — **M4 exit:** frame hand-check passed (axes correct; ledger #16) | mocap room | — |
+| 6 | ✅ done 2026-08-28 — **M5:** RViz tracks the hand-carried drone (ledger #15) | container | — |
+| 7 | **M6 prereqs:** trim `swarm_real.yaml` to `drone_1` · RC kill + failsafes in QGC · resolve the `vehicle_status` echo issue | laptop + QGC | — |
 
 ## 4. Milestone 1 — record (2026-07-20)
 
@@ -637,7 +638,7 @@ picture (drone shell left, agent top right, odometry echo bottom right):
 
 <img src="pictures/successful_read_of_drone_1_vehicle_odom.png" alt="M3 exit: setup script on the drone, agent creating topics, vehicle_odometry echo" width="700">
 
-### M4 — Mocap → EKF2 (props off) (M4-B fusion ✅ VALIDATED 2026-08-28; frame hand-check pending)
+### M4 — Mocap → EKF2 (props off) (✅ VALIDATED 2026-08-28 — fusion + frame hand-check)
 
 **Goal:** the drone's own state estimator (EKF2) fuses OptiTrack position — the arm-enabler
 indoors (without a position source PX4 refuses to arm: "fuse failure").
@@ -775,9 +776,9 @@ Carry the drone 1 m and watch `out/vehicle_odometry` (positions are NED — z is
 Mirrored or swapped → set `px4_vio_frame: "modalai_flip"` in `swarm_real.yaml` and re-check.
 **A wrong frame flies the drone into a wall.**
 
-✅ **M4 exit:** fusion verified + hand-check passes with correct axes.
+✅ **M4 exit:** fusion verified + hand-check passes with correct axes. **MET 2026-08-28** (ledger #14, #16).
 
-### M5 — Hand-carry preflight (nothing armed)
+### M5 — Hand-carry preflight (nothing armed) (✅ VALIDATED 2026-08-28 — ledger #15; evidence GIF/video in repo)
 ```bash
 ros2 launch svg_ground_control real_interfaces.launch.py drones:=drone_1
 # commander idle (from M4) — do NOT call takeoff; RViz red sphere must track the carried drone

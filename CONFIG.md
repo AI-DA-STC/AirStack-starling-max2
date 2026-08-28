@@ -3,15 +3,20 @@
 > **Single source of truth for every value that can drift.** Other docs reference values by
 > name; the numbers live HERE. When something changes: update this file, do the "If it
 > changes" action, commit.
-> Last verified: **2026-08-11**.
+> Last verified: **2026-08-28** (mocap rows) / 2026-08-11 (drone/WiFi rows).
+>
+> ⚠️ **2026-08-27 network change:** the lab moved to the **AI.R STC hangar wired LAN**
+> (`192.168.9.x`) for mocap — the 08-11 single-WiFi-network topology below is superseded
+> for the mocap path. Mocap now runs through `./mocap.sh` on the laptop ([MOCAP.md](MOCAP.md));
+> drone/WiFi rows still describe the 08-11 state and need re-verification on the new network.
 
 ## Network (all DHCP until we get static leases — requested from Wayne/Ryzal)
 
 | Value | Current | How to check | Used by | If it changes → do this |
 |---|---|---|---|---|
 | **Laptop WiFi IP** | `192.168.0.192` (on `Mocap_QCGroundControl`, verified 2026-08-11; drone re-provisioned to it same day) | `ip -4 -brief addr` (the `wlp…` row) | Baked into the DRONE's dialer by the setup script | **The critical one.** Re-run on the drone: `voxl_setup_real_drone.sh drone_1 <new IP> 1 8888` |
-| Laptop Ethernet IP | not in use since 2026-08-11 (single-network topology; NatNet arrives over WiFi). Fallback if poses stutter: wire laptop to the router's LAN port and use that IP as `clientIP:=` | `ip -4 -brief addr` (the `enp…` row) | — | — |
-| Motive PC IP | `192.168.0.190` (on `Mocap_QCGroundControl` since 2026-08-11; was `192.168.8.190` on the old Ethernet LAN) | `ipconfig` on the Motive PC | `serverIP:=` arg of every natnet launch; ping test; QGC runs on this PC | Use the new value in the launch command; update Motive's Data Streaming → Local Interface |
+| Laptop Ethernet IP | `192.168.9.107` (AI.R STC hangar wired LAN — **back in use since 2026-08-27, this is the mocap path**; laptop WiFi sits on `192.168.10.x`) | `ip -4 -brief addr` (the `enp…` row) | mocap bridge listens here; `clientIP:=` if natnet_ros2 is ever used | Nothing to reconfigure for `./mocap.sh` (it listens on all interfaces); update `clientIP:=` only for natnet_ros2 |
+| Motive PC IP | `192.168.9.124` (hangar wired LAN, verified 2026-08-28; was `.9.100` earlier on 08-27 — **the hangar assigns IPs by switch port**, so re-check each session; `192.168.0.190` was the 08-11 WiFi-era value) | `ipconfig` on the Motive PC, or `ping` from laptop | `mocap/motion_capture.yaml` `hostname:`; `serverIP:=` for natnet_ros2; QGC runs on this PC | Update `mocap/motion_capture.yaml` in this repo (and commit); `./mocap.sh check` to confirm packets flow |
 | Drone WiFi IP | ⏳ TBD as of 2026-08-11 (old lease `192.168.10.155` is STALE — that was the Hangar network; re-check on `Mocap_QCGroundControl`) | `adb shell ip -4 addr show mlan0` or `voxl-my-ip`, or the agent's `session established` log line | Diagnostics only (ping) — the drone dials the laptop, nothing dials the drone | Nothing to reconfigure |
 
 ## Lab WiFi
@@ -34,9 +39,10 @@
 
 | Value | Current | If it changes → do this |
 |---|---|---|
-| Rigid body name | `drone_1` (⏳ not yet created as of 2026-07-22) | Must match everywhere — it names the topics (`/drone_1/pose`, `/drone_1/fmu/*`) and the swarm config. Rename → update Motive AND `swarm_real.yaml` `drone_names`; relaunch natnet (it reads the body list only at startup) |
-| Motive frame rate | `50 Hz` | Informational — expected rate for `ros2 topic hz /drone_1/pose` |
-| Streaming settings | Up Axis = Z · Broadcast ON · Local Interface = Motive IP | Re-check in Motive's Data Streaming pane whenever poses look wrong — reference photo: `pictures/check_motive_ip_address.jpg` |
+| Rigid body name | `drone_1` (✅ exists — streaming confirmed 2026-08-27, alongside `cf1`/`cf8`) | Must match everywhere — it names the topics (`/drone_1/pose`, `/drone_1/fmu/*`), `MOCAP_BODIES` for `./mocap.sh`, and the swarm config. Rename → update Motive AND `swarm_real.yaml` `drone_names`; restart the bridge (body list read only at startup) |
+| Motive frame rate | `50 Hz` (2026-08-28; briefly 240 Hz on 08-27 after a profile edit — it drifts with profile changes) | Informational — expected rate for `ros2 topic hz /drone_1/pose` |
+| Streaming settings | Up Axis = Z · Local Interface = Motive IP · **transmission is effectively BROADCAST** (`BroadcastInsteadOfMulticast="true"` in the Motive profile overrides the GUI's "Multicast" — discovered 2026-08-27) | This is WHY natnet_ros2 gets no data and `./mocap.sh` is the receiver — full story [MOCAP.md](MOCAP.md) §3. Re-check the pane whenever poses look wrong: `pictures/check_motive_ip_address.jpg` |
+| Pose receiver | `./mocap.sh` on the laptop ([MOCAP.md](MOCAP.md)) — NOT natnet_ros2 in the container | Diagnose with `./mocap.sh check` (6-second wire test with plain-English verdict) |
 | World frame | red = x ("East") · green = y ("North") · z up; origin = floor marker | Photos: `pictures/mocap_axis_1.png`, `pictures/mocap_axis_2.png` — used by the M4 frame hand-check |
 
 ## PX4 / EKF2 parameters (set once via QGC — QGC runs on the MOCAP PC)
@@ -89,7 +95,7 @@ UDP 14550). ✅ Set 2026-08-11 (drone→Mocap PC ping verified 3–7 ms).
 |---|---|
 | Drone WiFi gone after reboot (`dmesg`: `Firmware Init Failed`) | Cold power cycle: battery + USB out 10 s (warm reboot won't clear a wedged chip) |
 | `/fmu/*` topics look dead | Add `--qos-reliability best_effort` to echo/hz; and is the agent running? |
-| `/drone_1/pose` missing / 0 Hz | Motive streaming? body named `drone_1`? port 1511 squatter? wrong `clientIP` (must be the Ethernet IP)? |
+| `/drone_1/pose` missing / 0 Hz | Is `./mocap.sh` running on the laptop? Then `./mocap.sh check` — its verdict names the culprit (Motive not streaming / wrong network / port 1511 squatter). Full table: [MOCAP.md](MOCAP.md) §5 |
 | `ros2` empty / service call hangs "waiting" | You're in a laptop shell — `./airstack.sh connect robot --command=bash` first (`root@` prompt) |
 | Everything else | Full symptom→fix table: [MILESTONES.md](MILESTONES.md) §7 |
 

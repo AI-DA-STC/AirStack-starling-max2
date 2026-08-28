@@ -1,0 +1,17 @@
+# Config for motion_capture_tracking (the open-source OptiTrack receiver).
+# Used by ../mocap.sh — see ../MOCAP.md for the full story.
+#
+# "hostname" is the Motive PC's IP. It is DHCP-assigned and can drift —
+# check CONFIG.md for the current value and `ping` it before a session.
+/motion_capture_tracking:
+  ros__parameters:
+    type: "optitrack"            # open parser — works with Motive Broadcast AND Multicast
+    hostname: "192.168.9.124"    # Motive PC, AI.R STC hangar wired LAN — CONFIG.md is authoritative
+
+    topics:
+      frame_id: "world"          # frame stamped on /poses (matches natnet_ros2's default)
+      poses:
+        qos:
+          mode: "sensor"         # best-effort, latest-wins — right for a high-rate stream
+          deadline: 50.0         # Hz — Motive's rate drifts (50 Hz 2026-08-28, 240 Hz 08-27);
+                                 # only a QoS hint, the bridge follows the actual rate either way

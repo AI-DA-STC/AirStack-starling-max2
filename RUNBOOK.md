@@ -73,12 +73,13 @@ then takeoff + start again.
 **1 — Check today's IPs** (everything is DHCP; addresses drift). Laptop:
 ```bash
 ip -4 -brief addr              # every interface + its IPv4, one line each
-ping -c2 192.168.0.190         # Motive PC answers (same Mocap_QCGroundControl network)
+ping -c2 192.168.9.124         # Motive PC answers (hangar wired LAN — IP drifts, see CONFIG.md)
 ss -ulpn | grep -E ':(1510|1511)' || echo "ports clear"
 ```
 Compare against the current values in **[CONFIG.md](CONFIG.md)** (the single source of truth
 for every IP/SSID/name — including *what to do* when one has drifted). Quick version:
-`wlp…` (WiFi) must match what the drone dials; `enp…` (Ethernet) feeds `clientIP:=` in step 4.
+`wlp…` (WiFi) must match what the drone dials; `enp…` (Ethernet) is the mocap LAN (step 4
+listens on it automatically).
 Drone's IP if needed (diagnostics only): `adb shell ip -4 addr show mlan0` or `voxl-my-ip`
 (drone shell), or read it from the agent's `session established` log line. The drone
 auto-joins `Mocap_QCGroundControl` at boot — nothing to do. ⚠️ After the 2026-08-11 network
@@ -109,13 +110,16 @@ definition mismatch, see MILESTONES §3c; use `vehicle_odometry` for the echo ch
 (Before the agent starts, the drone-side `px4-microdds_client status` shows `Running,
 disconnected` — that's normal, the drone is dialing out waiting for this agent.)
 
-**4 — Mocap driver.** *Prereq: the `drone_1` rigid body exists in Motive BEFORE launching —
-the driver reads the body list only at startup (create/rename later → Ctrl+C and relaunch).*
-New container shell, inside (clientIP = laptop **Ethernet** IP):
+**4 — Mocap bridge** (✅ replaced natnet_ros2 on 2026-08-27 — our Motive broadcasts and the
+old driver can't hear it; story + troubleshooting in [MOCAP.md](MOCAP.md)). *Prereq: the
+`drone_1` rigid body exists in Motive BEFORE launching — the body list is read only at
+startup (create/rename later → Ctrl+C and relaunch).* **Laptop** terminal (NOT a container
+shell; one-time `./mocap.sh setup` first if this machine never ran it):
 ```bash
-ros2 launch natnet_ros2 natnet_ros2.launch.py serverIP:=192.168.0.190 clientIP:=192.168.0.192
+cd ~/AirStack-starling-max2 && ./mocap.sh      # this repo's root (wherever you cloned it)
 ```
-Leave running. Verify: `ros2 topic hz /drone_1/pose` (~50 Hz, our Motive rate).
+Leave running. Verify (container shell): `ros2 topic hz /drone_1/pose` (Motive's rate —
+50 Hz as of 2026-08-28). Poses missing → `./mocap.sh check` (laptop) names the culprit.
 
 **5 — Per-drone interfaces** (turns `/fmu` traffic into the odometry the commander needs —
 without this, RViz shows nothing and takeoff is refused). New container shell, inside:
@@ -172,7 +176,7 @@ container shell — that would shut down the wrong machine.)
 | `ros2` / `bws` / `rviz2` | container only (`root@`) |
 | `docker` / `airstack.sh` / `adb` / `ip addr` | laptop only (`jeremychia@`) |
 | `/fmu/*` topics | `echo` always needs `--qos-reliability best_effort`; `hz` takes no QoS flag in this ros2 |
-| Long-running (leave open) | Isaac spawn · interfaces · agent · natnet · commander |
+| Long-running (leave open) | Isaac spawn · interfaces · agent · mocap bridge (`./mocap.sh`, laptop) · commander |
 | Panic, in order | `hold` service → `land` service → **RC kill switch** |
 | Container messages to ignore | `Workspace not built yet` (pre-bws) · `groups: … 992` · `unknown-robot` · prompt garbage `[:refused refused reached]` (robot-name DNS lookup fails on the router; domain still forced to 1) |
 | Drone hotspot `VOXL-…` | never connect the laptop to it |

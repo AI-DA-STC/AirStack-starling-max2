@@ -14,10 +14,13 @@
 
 | Value | Current | How to check | Used by | If it changes → do this |
 |---|---|---|---|---|
-| **Laptop WiFi IP** | `192.168.0.192` (on `Mocap_QCGroundControl`, verified 2026-08-11; drone re-provisioned to it same day) | `ip -4 -brief addr` (the `wlp…` row) | Baked into the DRONE's dialer by the setup script | **The critical one.** Re-run on the drone: `voxl_setup_real_drone.sh drone_1 <new IP> 1 8888` |
+| **Laptop IP the drone dials** | on the hangar LAN this is the laptop **Ethernet** IP `192.168.9.107` (08-11 WiFi-era value was `192.168.0.192`) | `ip -4 -brief addr` | Baked into the DRONE's dialer by the setup script | **The critical one.** Re-provision every drone: [RUNBOOK](RUNBOOK.md) §B step 0 (`ssh root@<DRONE_IP>` → `voxl_setup_real_drone.sh <body> <laptop IP> <domain> 8888`) |
 | Laptop Ethernet IP | `192.168.9.107` (AI.R STC hangar wired LAN — **back in use since 2026-08-27, this is the mocap path**; laptop WiFi sits on `192.168.10.x`) | `ip -4 -brief addr` (the `enp…` row) | mocap bridge listens here; `clientIP:=` if natnet_ros2 is ever used | Nothing to reconfigure for `./mocap.sh` (it listens on all interfaces); update `clientIP:=` only for natnet_ros2 |
 | Motive PC IP | `192.168.9.124` (hangar wired LAN, verified 2026-08-28; was `.9.100` earlier on 08-27 — **the hangar assigns IPs by switch port**, so re-check each session; `192.168.0.190` was the 08-11 WiFi-era value) | `ipconfig` on the Motive PC, or `ping` from laptop | `mocap/motion_capture.yaml` `hostname:`; `serverIP:=` for natnet_ros2; QGC runs on this PC | Update `mocap/motion_capture.yaml` in this repo (and commit); `./mocap.sh check` to confirm packets flow |
 | Drone WiFi IP | ⏳ TBD as of 2026-08-11 (old lease `192.168.10.155` is STALE — that was the Hangar network; re-check on `Mocap_QCGroundControl`) | `adb shell ip -4 addr show mlan0` or `voxl-my-ip`, or the agent's `session established` log line | Diagnostics only (ping) — the drone dials the laptop, nothing dials the drone | Nothing to reconfigure |
+| **Starling 1 IP (hangar network)** | `192.168.9.10` (2026-08-28) | ping it; or router admin page (row below) | SSH target for re-provisioning ([RUNBOOK](RUNBOOK.md) §B step 0) | IPs are assigned by the router — check the admin page or ask Jeremy Chia |
+| Drone SSH login | user `root` · password `AI.DA@STEngineering` (⚠️ lab-LAN device credential stored here deliberately — keep this repo private) | `ssh root@<DRONE_IP>` | RUNBOOK §B step 0 re-provisioning | Update here if the image/password ever changes |
+| Router admin page | `http://192.168.9.1:8080` (hangar router — shows every device's current IP) | open in a browser on the hangar LAN | The authority for ALL drifting IPs; alternatively contact **Jeremy Chia** | — |
 
 ## Lab WiFi
 

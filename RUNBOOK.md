@@ -63,12 +63,9 @@ then takeoff + start again.
 
 ## B · REAL DRONE session (mocap room)
 
-> **Fast path (added 2026-08-28): `./ops.sh`** from this repo's root opens every
-> long-running piece below in its own terminal window — [agent] + [interfaces] +
-> [cockpit] in the container, [mocap bridge] + [QGroundControl] on the laptop — and
-> brings the robot container up first if needed. `DRONES="drone_1,drone_2" ./ops.sh`
-> for more drones; `./ops.sh stop` to tear down. Steps 1 (IP check) and 6–8
-> (commander → fly) remain manual. The numbered steps below are the same flow by hand.
+> **One terminal per numbered step** — every long-running piece (agent, mocap bridge,
+> QGC, interfaces, commander) gets its own terminal and stays open while you fly.
+> Each step says whether its terminal is a **laptop** shell or a **container** shell.
 
 > **Maturity (2026-07-22):** steps 1–3 validated (M3 complete — 24 `/drone_1/fmu/*` topics
 > live) · step 4's driver launch validated, its exit test pending the `drone_1` rigid body in
@@ -77,6 +74,23 @@ then takeoff + start again.
 > `offboard_mode` off — detail in MILESTONES M4-A) and the `swarm_real.yaml` single-drone trim. No Isaac Sim needed — do
 > NOT start it.
 
+**0 — Re-provision the drone(s) after a ground-control laptop change** (needed once per
+drone every time the GC laptop — or its IP — changes; the drone *dials the laptop*, so a
+stale IP means step 3 never gets a session). SSH to each drone and re-run its setup script
+(credentials + all current IPs: [CONFIG.md](CONFIG.md) network table; if an IP has drifted →
+router admin `http://192.168.9.1:8080`, or contact **Jeremy Chia**):
+```bash
+ssh root@<DRONE_IP>            # e.g. Starling 1 — IP in CONFIG.md; password in CONFIG.md
+```
+Then, on the drone:
+```bash
+voxl_setup_real_drone.sh <BODY_NAME> <LAPTOP_IP> <DOMAIN_ID> <AGENT_PORT>
+# Starling 1:  voxl_setup_real_drone.sh drone_1 <LAPTOP_IP> 1 8888
+```
+`<BODY_NAME>` = the Motive rigid-body name (`drone_1`), `<DOMAIN_ID>` = the drone's DDS
+domain (`1` for drone_1 — unique per drone), `<AGENT_PORT>` = `8888` (must match step 3's
+agent). Skip this step entirely if nothing about the laptop changed since last session.
+
 **1 — Check today's IPs** (everything is DHCP; addresses drift). Laptop:
 ```bash
 ip -4 -brief addr              # every interface + its IPv4, one line each
@@ -84,9 +98,9 @@ ping -c2 192.168.9.124         # Motive PC answers (hangar wired LAN — IP drif
 ss -ulpn | grep -E ':(1510|1511)' || echo "ports clear"
 ```
 Compare against the current values in **[CONFIG.md](CONFIG.md)** (the single source of truth
-for every IP/SSID/name — including *what to do* when one has drifted). Quick version:
-`wlp…` (WiFi) must match what the drone dials; `enp…` (Ethernet) is the mocap LAN (step 4
-listens on it automatically).
+for every IP/SSID/name — including *what to do* when one has drifted). Quick version: `enp…`
+(Ethernet, hangar LAN) is both the mocap LAN (step 4 listens on it automatically) AND the IP
+the drone dials — if it drifted, redo step 0.
 Drone's IP if needed (diagnostics only): `adb shell ip -4 addr show mlan0` or `voxl-my-ip`
 (drone shell), or read it from the agent's `session established` log line. The drone
 auto-joins `Mocap_QCGroundControl` at boot — nothing to do. ⚠️ After the 2026-08-11 network
@@ -117,6 +131,14 @@ definition mismatch, see MILESTONES §3c; use `vehicle_odometry` for the echo ch
 (Before the agent starts, the drone-side `px4-microdds_client status` shows `Running,
 disconnected` — that's normal, the drone is dialing out waiting for this agent.)
 
+**3b — QGroundControl** (ground-station display: battery, arming status, params, kill
+switch). **Laptop** terminal (NOT a container shell), its own window — leave running:
+```bash
+~/QGroundControl-x86_64.AppImage
+```
+No vehicle appears? The drone pushes MAVLink to the GCS IP configured on it
+(`voxl-mavlink-server.conf`, see CONFIG.md) — it must point at this laptop.
+
 **4 — Mocap bridge** (✅ replaced natnet_ros2 on 2026-08-27 — our Motive broadcasts and the
 old driver can't hear it; story + troubleshooting in [MOCAP.md](MOCAP.md)). *Prereq: the
 `drone_1` rigid body exists in Motive BEFORE launching — the body list is read only at
@@ -124,6 +146,7 @@ startup (create/rename later → Ctrl+C and relaunch).* **Laptop** terminal (NOT
 shell; one-time `./mocap.sh setup` first if this machine never ran it):
 ```bash
 cd ~/AirStack-starling-max2 && ./mocap.sh      # this repo's root (wherever you cloned it)
+# equivalent if a built bridge workspace already exists:  ~/mocap_ws/start_mocap_bridge.sh
 ```
 Leave running. Verify (container shell): `ros2 topic hz /drone_1/pose` (Motive's rate —
 50 Hz as of 2026-08-28). Poses missing → `./mocap.sh check` (laptop) names the culprit.
@@ -131,7 +154,7 @@ Leave running. Verify (container shell): `ros2 topic hz /drone_1/pose` (Motive's
 **5 — Per-drone interfaces** (turns `/fmu` traffic into the odometry the commander needs —
 without this, RViz shows nothing and takeoff is refused). New container shell, inside:
 ```bash
-ros2 launch svg_ground_control real_interfaces.launch.py drones:=drone_1
+ros2 launch svg_ground_control real_interfaces.launch.py drones:=drone_1   # more drones: drones:=drone_1,drone_2,...
 ```
 Leave running.
 
@@ -183,7 +206,7 @@ container shell — that would shut down the wrong machine.)
 | `ros2` / `bws` / `rviz2` | container only (`root@`) |
 | `docker` / `airstack.sh` / `adb` / `ip addr` | laptop only (`jeremychia@`) |
 | `/fmu/*` topics | `echo` always needs `--qos-reliability best_effort`; `hz` takes no QoS flag in this ros2 |
-| Long-running (leave open) | Isaac spawn · interfaces · agent · mocap bridge (`./mocap.sh`, laptop) · commander |
+| Long-running (leave open) | Isaac spawn · interfaces · agent · mocap bridge (`./mocap.sh`, laptop) · QGC (laptop) · commander — **one terminal each** |
 | Panic, in order | `hold` service → `land` service → **RC kill switch** |
 | Container messages to ignore | `Workspace not built yet` (pre-bws) · `groups: … 992` · `unknown-robot` · prompt garbage `[:refused refused reached]` (robot-name DNS lookup fails on the router; domain still forced to 1) |
 | Drone hotspot `VOXL-…` | never connect the laptop to it |

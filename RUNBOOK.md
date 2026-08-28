@@ -67,11 +67,11 @@ then takeoff + start again.
 > QGC, interfaces, commander) gets its own terminal and stays open while you fly.
 > Each step says whether its terminal is a **laptop** shell or a **container** shell.
 
-> **Maturity (2026-07-22):** steps 1–3 validated (M3 complete — 24 `/drone_1/fmu/*` topics
-> live) · step 4's driver launch validated, its exit test pending the `drone_1` rigid body in
-> Motive · steps 5–8 pending M4/M5/M6 — including the one-time M4-A drone setup (EKF2 params
-> via QGC on the Mocap PC, applied 2026-07-29 + `voxl-vision-hub.conf`: `en_vio` false,
-> `offboard_mode` off — detail in MILESTONES M4-A) and the `swarm_real.yaml` single-drone trim. No Isaac Sim needed — do
+> **Maturity (2026-08-28):** steps 3–7 validated **end-to-end** — agent link, mocap bridge,
+> commander + mocap_bridge, EKF2 fusing mocap, RViz tracking a hand-carried drone. One-time
+> M4-A drone setup done (EKF2 params via QGC on the Mocap PC ✅ 2026-07-29 +
+> `voxl-vision-hub.conf`: `en_vio` false, `offboard_mode` off — detail in MILESTONES M4-A).
+> Still pending: the `swarm_real.yaml` 3-drone → `drone_1` trim (M6). No Isaac Sim needed — do
 > NOT start it.
 
 **0 — Re-provision the drone(s) after a ground-control laptop change** (needed once per
@@ -103,11 +103,10 @@ for every IP/SSID/name — including *what to do* when one has drifted). Quick v
 the drone dials — if it drifted, redo step 0.
 Drone's IP if needed (diagnostics only): `adb shell ip -4 addr show mlan0` or `voxl-my-ip`
 (drone shell), or read it from the agent's `session established` log line. The drone
-auto-joins `Mocap_QCGroundControl` at boot — nothing to do. ⚠️ After the 2026-08-11 network
-change the laptop's WiFi IP changed too — re-provision the drone's dialed agent IP once (see
-CONFIG.md network table) or step 3 will never get a session. (WiFi missing after reboot +
-dmesg `Firmware Init Failed` → cold power
-cycle: battery + USB out 10 s.)
+auto-joins the hangar WiFi (`motive` — see CONFIG.md) at boot — nothing to do. If the
+network or laptop IP changed since last session, redo step 0 or step 3 will never get a
+session. (WiFi missing after reboot + dmesg `Firmware Init Failed` → cold power cycle:
+battery + USB out 10 s.)
 
 **2 — Stack up (robot container only).** Laptop:
 ```bash
@@ -158,7 +157,8 @@ ros2 launch svg_ground_control real_interfaces.launch.py drones:=drone_1   # mor
 ```
 Leave running.
 
-**6 — Commander + mocap bridge.** *One-time prereqs (MILESTONES M4-A/M6, pending on D0012):
+**6 — Commander + mocap bridge.** *One-time prereqs (MILESTONES M4-A/M6 — only the trim
+still pending):
 EKF2 params set via QGC (Mocap PC, ✅ 2026-07-29), vision-hub conf set (`en_vio` false /
 `offboard_mode` off), and `swarm_real.yaml` trimmed to `drone_1` only —
 with the shipped 3-drone config the commander still launches `drone_1` while configured for
@@ -168,17 +168,38 @@ shell, inside:
 ros2 launch svg_ground_control ground_control.launch.py \
   config:=$(ros2 pkg prefix svg_ground_control)/share/svg_ground_control/config/swarm_real.yaml use_mocap:=true
 ```
-Leave running. Verify fusion (another shell):
+On launch, expect a WARN that `drone_position_offsets` are all zero plus a 3-drone list
+(drone_1 auto/real, drone_2 auto/real, drone_3 teleop/real/cbf-exempt) — normal until the M6
+trim; **zero offsets are CORRECT for mocap**. Leave running.
+
+**Verify fusion** (another container shell). ⚠️ Copy-paste these — arrow-key-editing `in/`
+into `out/` keeps producing a nonexistent `/fmu/inout/…` topic that looks "dead":
 ```bash
-ros2 topic hz  /drone_1/fmu/in/vehicle_visual_odometry     # hz takes no QoS flag here
+ros2 topic hz   /drone_1/fmu/in/vehicle_visual_odometry     # ~mocap rate = mocap_bridge alive
 ros2 topic echo /drone_1/fmu/out/vehicle_odometry --once --qos-reliability best_effort --qos-durability volatile
 ```
-`out/…` producing positions = EKF2 fusing. Then the **frame hand-check** (before the day's
+The `in/…` message shows velocities as `.nan` — **by design** (pose-only feed; NaN = "don't
+fuse this field"), not a fault. **Success = `out/…` position matches `in/…` to within a few
+cm** (EKF2 is fusing). `in/` streams but `out/` silent → EKF2 params ([CONFIG.md](CONFIG.md))
+not applied on the drone. These checks only pass AFTER this step — the commander launch is
+what starts mocap_bridge (CMU's experiment.md §B4b lists them earlier; see
+[MOCAP.md](MOCAP.md) corrections table). Then the **frame hand-check** (before the day's
 first flight — MILESTONES M4-B step 4): carry North → `position[0]`↑, East → `[1]`↑, up →
 `[2]`↓.
 
 **7 — RViz preflight (no arming).** New container shell: same `rviz2` command as sim T4.
+The shipped `svg_drones.rviz` has **Fixed Frame `map`** (sim leftover) → "Global Status:
+Error" + empty view on the real rig: in Displays → Global Options set Fixed Frame to
+**`world`**. Step 5's `real_interfaces` must be running or
+`/drone_1/odometry_conversion/odometry` is silent and nothing draws. Quick health check:
+`ros2 node list` — expect the interface nodes + swarm_commander + mocap_bridge (+ the
+laptop's motion_capture_tracking and mocap_pose_relay visible on domain 1).
 Hand-carry the drone — its red sphere must track. Do NOT call takeoff during this check.
+
+<img src="assets/rviz_tracks_hand_carried_drone.gif" alt="RViz marker tracking the hand-carried drone" width="600">
+
+Step 7 succeeding (✅ 2026-08-28) — full recording:
+`videos/SVG_check_if_rviz_moves_by_movingdrone_manually.mp4`.
 
 **8 — Fly** (only after M6's safety setup: fence fitted, RC kill tested, thumb on it):
 same four service calls as sim T5.

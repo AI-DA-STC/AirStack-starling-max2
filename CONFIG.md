@@ -26,9 +26,9 @@
 
 | Value | Current | If it changes → do this |
 |---|---|---|
-| SSID (drone joins) | `Mocap_QCGroundControl` (changed 2026-08-11; previously `AI.R STC Hangar-5G`) | SSID **without** spaces → `voxl-wifi station '<SSID>' '<PASSWORD>'` works (proven 2026-08-11). SSID **with** spaces → manual `wpa_passphrase` method, MILESTONES M3-A step 1 (`voxl-wifi station` corrupts spaced SSIDs) |
+| SSID (drone joins) | `motive` (hangar network — observed on Starling 1 via `voxl-wifi getmode` 2026-08-28; previously `Mocap_QCGroundControl` 08-11, `AI.R STC Hangar-5G` before that) | SSID **without** spaces → `voxl-wifi station '<SSID>' '<PASSWORD>'` works (proven 2026-08-11). SSID **with** spaces → manual `wpa_passphrase` method, MILESTONES M3-A step 1 (`voxl-wifi station` corrupts spaced SSIDs) |
 | Password | (not stored in this repo) | Same as above |
-| Drone WiFi interface | `mlan0` (station) / `uap0` (its own hotspot — never connect the laptop to it) | Hardware fact, won't change |
+| Drone WiFi interface | `mlan0` (station) / `uap0` (its own hotspot, SSID `Starling_1_demo_mode` on Starling 1 — never connect the laptop to it) | Hardware fact, won't change |
 
 ## Protocol constants (change only if deliberately reconfigured everywhere)
 

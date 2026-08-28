@@ -32,7 +32,7 @@ are observed facts, and each milestone is a re-entry point.
 | M1 Sim rehearsal | 3 SITL drones fly under the ground controller; teleop + geofence exercised | ✅ CMU | ✅ **2026-07-20** |
 | M2 Ground-station hardware prep | Host networking, Motive config, time sync, port checks | 🟡 networking yes; time-sync tooling absent (manual) | **Desk half ✅ 2026-07-21**; mocap-room half pending |
 | M3 Drone comms (props off) | Real PX4 topics on the laptop over WiFi (uXRCE-DDS) | ✅ CMU (audited, see §3b) | ✅ **2026-07-22** (24 `/drone_1/fmu/*` topics live on the laptop) |
-| M4 Mocap → EKF2 (props off) | OptiTrack pose fused by EKF2; frames verified | ✅ CMU + manual EKF2 params via QGC | Not yet (QGC params partially applied **2026-07-29**; fusion + frame check pending) |
+| M4 Mocap → EKF2 (props off) | OptiTrack pose fused by EKF2; frames verified | ✅ CMU + manual EKF2 params via QGC | **M4-B fusion ✅ 2026-08-28** (EKF2 fusing mocap on D0012, RViz tracks hand-carry); frame hand-check pending |
 | M5 Hand-carry preflight | RViz marker tracks the hand-carried drone | ✅ CMU (audited) | Not yet |
 | M6 First flight | Stable mocap-fused hover + landing | ✅ CMU + single-drone config trim + manual PX4 failsafes | Not yet |
 
@@ -88,6 +88,9 @@ QGC/`px4-param`, the VOXL script deliberately excludes them); PX4 failsafes and 
 | 10 | **M3 re-verified on the new network** | agent `session established`; `ros2 topic list` | all 24 topics back; `vehicle_odometry` echoes (inertial-only, `quality: 0` = normal pre-M4) | 2026-08-11 |
 | 11 | `vehicle_status` streaming | `ros2 topic hz` | ~30 Hz (but see open issue: echo silent) | 2026-08-11 |
 | 12 | QGC connected (drone → Mocap PC) | `primary_static_gcs_ip` → `192.168.0.190` in `voxl-mavlink-server.conf`, service restarted; drone→PC ping 3–7 ms | ✅ QGC live: PX4 detected, telemetry + battery showing; "Not Ready" = correct pre-arm state (no position source until M4) | 2026-08-11 |
+| 13 | **M2 exit:** mocap poses on the laptop | `./mocap.sh` bridge (Motive broadcasts; natnet_ros2 replaced — see [MOCAP.md](MOCAP.md)) → `ros2 topic hz /drone_1/pose` in the robot container | 50 Hz, tracks the hand-carried drone | 2026-08-28 |
+| 14 | **M4-B: EKF2 fuses the mocap pose** | `ground_control.launch.py … use_mocap:=true` → `fmu/in/vehicle_visual_odometry` (pose-only, quality 100, velocities NaN by design); echo `fmu/out/vehicle_odometry` | out positions match mocap in within ~2 cm (sample: in `[0.454, -0.093, -0.071]` vs out `[0.454, -0.094, -0.086]`); velocities ≈ 0 at rest | 2026-08-28 |
+| 15 | RViz tracks the hand-carried drone | `svg_drones.rviz` (Fixed Frame `map`→`world`) + `real_interfaces.launch.py`; GIF `assets/rviz_tracks_hand_carried_drone.gif`, full video `videos/SVG_check_if_rviz_moves_by_movingdrone_manually.mp4` | marker follows the carried drone live | 2026-08-28 |
 
 ### ⚠️ Open issues (none block the mocap work)
 
@@ -104,8 +107,8 @@ QGC/`px4-param`, the VOXL script deliberately excludes them); PX4 failsafes and 
 |---|---|---|---|
 | 1 | ✅ done 2026-08-11 — Motive network decided (single router: Motive `.0.190`, laptop `.0.192`, in [CONFIG.md](CONFIG.md)); remaining: verify Motive's Local Interface setting on next mocap visit | Motive PC | — |
 | 2 | Create the `drone_1` rigid body in Motive (asymmetric markers, exact lowercase name, BEFORE launching the driver) | mocap room | — |
-| 3 | **M2 exit:** launch natnet → `/drone_1/pose` @ ~50 Hz, smooth during hand-carry | container | 1, 2 |
-| 4 | **M4-B:** agent + natnet + `ground_control.launch.py … use_mocap:=true` → `fmu/in/vehicle_visual_odometry` ~50 Hz, `fmu/out/vehicle_odometry` real positions | container | 3 |
+| 3 | ✅ done 2026-08-28 — **M2 exit:** `/drone_1/pose` @ 50 Hz via the new `./mocap.sh` bridge (natnet replaced — see [MOCAP.md](MOCAP.md)) | container | — |
+| 4 | ✅ done 2026-08-28 — **M4-B:** fusion chain verified in → out (`fmu/out/vehicle_odometry` matches mocap within ~2 cm; ledger #14) | container | — |
 | 5 | **M4 exit:** frame hand-check (North → `pos[0]`↑, East → `pos[1]`↑, up → `pos[2]`↓) | mocap room | 4 |
 | 6 | **M5:** RViz tracks the hand-carried drone; bag recording | container | 5 |
 | 7 | **M6 prereqs:** trim `swarm_real.yaml` to `drone_1` · RC kill + failsafes in QGC · resolve the `vehicle_status` echo issue | laptop + QGC | 5 |
@@ -634,7 +637,7 @@ picture (drone shell left, agent top right, odometry echo bottom right):
 
 <img src="pictures/successful_read_of_drone_1_vehicle_odom.png" alt="M3 exit: setup script on the drone, agent creating topics, vehicle_odometry echo" width="700">
 
-### M4 — Mocap → EKF2 (props off)
+### M4 — Mocap → EKF2 (props off) (M4-B fusion ✅ VALIDATED 2026-08-28; frame hand-check pending)
 
 **Goal:** the drone's own state estimator (EKF2) fuses OptiTrack position — the arm-enabler
 indoors (without a position source PX4 refuses to arm: "fuse failure").
@@ -708,9 +711,9 @@ ever comparing drone logs against mocap recordings.
 **Prereq: the M3-B agent must already be running** (in its own container shell) — without it
 there are no `/fmu/*` topics and every check below is silent.
 
-**1. Mocap driver** (container; since 2026-08-11 everything is on the single
-`Mocap_QCGroundControl` network — `clientIP` = the laptop's WiFi address; if poses ever
-stutter, wire the laptop to the router's LAN port and use that IP instead). Leave running:
+**1. Mocap driver** — **since 2026-08-28 this is the `./mocap.sh` bridge** (Motive set to
+broadcast; natnet_ros2 replaced — see [MOCAP.md](MOCAP.md) for how to run and troubleshoot
+it). Leave running. *Legacy natnet launch (superseded, kept for reference):*
 
 ```bash
 ros2 launch natnet_ros2 natnet_ros2.launch.py serverIP:=192.168.0.190 clientIP:=192.168.0.192
@@ -731,6 +734,25 @@ ros2 topic echo /drone_1/fmu/out/vehicle_odometry --once --qos-reliability best_
 ```
 
 `out/vehicle_odometry` producing positions = **EKF2 is fusing**.
+
+**✅ VALIDATED 2026-08-28 (AI.R STC hangar, drone_1 / D0012)** — the chain above ran
+end-to-end:
+
+- `./mocap.sh` bridge → `/drone_1/pose` @ 50 Hz in the robot container (step 1);
+- `mocap_bridge` (step 2) forwarding to `fmu/in/vehicle_visual_odometry` — pose-only,
+  quality 100, velocities NaN by design;
+- **EKF2 IS FUSING** (step 3): `fmu/out/vehicle_odometry` positions match the mocap input
+  within ~2 cm (verified sample: in `[0.454, -0.093, -0.071]` vs out
+  `[0.454, -0.094, -0.086]`), velocities ≈ 0 at rest;
+- RViz (`svg_drones.rviz`, Fixed Frame changed `map` → `world`; needs
+  `real_interfaces.launch.py` running — see §7) tracks the hand-carried drone:
+
+<img src="assets/rviz_tracks_hand_carried_drone.gif" alt="RViz marker tracking the hand-carried drone" width="650">
+
+Full recording: [`videos/SVG_check_if_rviz_moves_by_movingdrone_manually.mp4`](videos/SVG_check_if_rviz_moves_by_movingdrone_manually.mp4).
+
+Still pending before flight (unchanged): the frame hand-check below, `swarm_real.yaml`
+3-drone → `drone_1` trim (M6), fence/RC-kill safety setup.
 
 **4. FRAME HAND-CHECK — repeat before the FIRST flight of every lab day.**
 
@@ -783,6 +805,8 @@ ros2 bag record /drone_1/pose /drone_1/odometry_conversion/odometry
 | natnet log: `Error getting Analog frame rate` | Harmless — our rig has no analog devices (force plates). Ignore. |
 | natnet lists `cf1…cf10` but no `drone_1` | Rigid body not created/named yet in Motive; create it, then Ctrl+C and re-launch the driver (it reads the body list only at startup). |
 | `/drone_1/pose` at ~50 Hz, not 120+ | Normal — our Motive is configured at 50 Hz (adjustable in Motive's camera settings if ever needed). |
+| RViz empty + Global Status Error on the real rig | `svg_drones.rviz` ships with Fixed Frame `map` (sim default) — set it to `world`. |
+| RViz shows no drone marker; `/drone_1/odometry_conversion/odometry` missing | `real_interfaces.launch.py` not running — without it the commander publishes no markers. Launch it (M5 command). |
 | Continuous `[timesync]` warnings (sim) | Sim below real-time; reduce load. |
 | Teleop publishes but drone doesn't move | Commander HOLDING — call `start`; click teleop terminal for focus. |
 | GEOFENCE BREACH, all frozen | By design: `land` → `reset_fence` → `takeoff` → `start`. |

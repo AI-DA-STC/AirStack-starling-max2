@@ -151,6 +151,7 @@ differ on our setup (checked 2026-08-27):
 | `ros2 topic hz /drone_1/pose` → ~180 Hz | Whatever Motive's capture rate is — **50 Hz** as of 2026-08-28 (it briefly ran at 240 Hz on 08-27 after a profile edit; the rate lives in Motive's camera settings and drifts when profiles change). |
 | `pub_rigid_body:=true` "(now the default)" | True as documented — but note if it's ever `false` the driver publishes **nothing at all** (no `/…/pose`, no `/tf`) while still logging "Configured!/Activated!" happily. That cost us hours. |
 | Motive body streams as `drone1` (implied by some notes) | The body is **`drone_1`** — underscore. Topic names copy Motive's body name letter-for-letter. |
+| §B4b lists its two verify commands (`hz in/vehicle_visual_odometry`, `echo out/vehicle_odometry`) *before* the §B5 commander launch | They can only pass **after** `ground_control.launch.py … use_mocap:=true` is up — that launch is what starts `mocap_bridge`, the publisher of `in/vehicle_visual_odometry` (true on CMU's branch too, verified 2026-08-28). Only §B4b's EKF2 *params* are a genuine before-hand (one-time) prereq. |
 | — (not covered) | If Motive assets are added/renamed mid-session: restart the bridge (and never rename while `natnet_ros2` runs — it can crash on the next frame). |
 
 `natnet_ros2` stays in the tree untouched — it is still the right tool on a rig

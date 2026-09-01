@@ -113,8 +113,16 @@ battery + USB out 10 s.)
 cd ~/AirStack-starling-max2/AirStack
 ./airstack.sh up robot-desktop
 ```
+Then, for **every container step below (3, 5, 6, 7, and step 8's cockpit)**: open a fresh
+laptop terminal and enter the container with:
+```bash
+cd ~/AirStack-starling-max2/AirStack
+./airstack.sh connect robot --command=bash
+```
+Prompt turns to `root@…#` — you're inside. (Run the step's command as a separate paste —
+never paste across the `connect` line.)
 
-**3 — Agent** (the drone link). Container shell (`./airstack.sh connect robot --command=bash`), inside:
+**3 — Agent** (the drone link). New container shell (connect command above), inside:
 ```bash
 MicroXRCEAgent udp4 -p 8888 -v4
 ```
@@ -151,7 +159,7 @@ Leave running. Verify (container shell): `ros2 topic hz /drone_1/pose` (Motive's
 50 Hz as of 2026-08-28). Poses missing → `./mocap.sh check` (laptop) names the culprit.
 
 **5 — Per-drone interfaces** (turns `/fmu` traffic into the odometry the commander needs —
-without this, RViz shows nothing and takeoff is refused). New container shell, inside:
+without this, RViz shows nothing and takeoff is refused). New container shell (connect command in step 2), inside:
 ```bash
 ros2 launch svg_ground_control real_interfaces.launch.py drones:=drone_1   # more drones: drones:=drone_1,drone_2,...
 ```
@@ -187,7 +195,7 @@ what starts mocap_bridge (CMU's experiment.md §B4b lists them earlier; see
 first flight — MILESTONES M4-B step 4): carry North → `position[0]`↑, East → `[1]`↑, up →
 `[2]`↓.
 
-**7 — RViz preflight (no arming).** New container shell, inside:
+**7 — RViz preflight (no arming).** New container shell (connect command in step 2), inside:
 ```bash
 rviz2 -d $(ros2 pkg prefix svg_ground_control)/share/svg_ground_control/config/svg_drones.rviz
 ```

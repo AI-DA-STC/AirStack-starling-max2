@@ -187,7 +187,10 @@ what starts mocap_bridge (CMU's experiment.md §B4b lists them earlier; see
 first flight — MILESTONES M4-B step 4): carry North → `position[0]`↑, East → `[1]`↑, up →
 `[2]`↓.
 
-**7 — RViz preflight (no arming).** New container shell: same `rviz2` command as sim T4.
+**7 — RViz preflight (no arming).** New container shell, inside:
+```bash
+rviz2 -d $(ros2 pkg prefix svg_ground_control)/share/svg_ground_control/config/svg_drones.rviz
+```
 The shipped `svg_drones.rviz` has **Fixed Frame `map`** (sim leftover) → "Global Status:
 Error" + empty view on the real rig: in Displays → Global Options set Fixed Frame to
 **`world`**. Step 5's `real_interfaces` must be running or

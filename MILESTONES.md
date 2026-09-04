@@ -167,9 +167,11 @@ all drones freeze orange, fence turns red; recover with `land` → `reset_fence`
 Source videos: [`videos/`](videos/) (`takeoff_and_land.mp4`, `teleop_with_geofence.mp4`).
 
 ### Incidents & findings
-- **Commander state machine:** IDLE —takeoff→ HOLDING —start→ ACTIVE —hold→ HOLDING.
-  HOLDING ignores nominal inputs (that IS the freeze). Teleop only acts in ACTIVE, and
-  keypresses go to the teleop node's own terminal (focus!).
+- **Commander state machine:** IDLE —takeoff→ ARMING → ASCEND → ACTIVE; —start→ scenario
+  live; —hold→ back to ACTIVE-holding; —land→ LANDING → IDLE. There is no HOLDING state
+  (the FlightState enum has none) — "holding" is simply ACTIVE with `mission_active=False`,
+  and that IS the freeze: holding ignores nominal inputs. Teleop only acts while the
+  scenario is live, and keypresses go to the teleop node's own terminal (focus!).
 - **Geofence breach:** teleop-flew drone_3 through y<min → all drones froze (orange), fence red,
   `start` refused. Recovery: `land` (fence-exempt) → `reset_fence` → `takeoff` → `start`.
   The fence freezes only — the RC kill switch is the only true motor cutoff.
@@ -342,7 +344,11 @@ vs Hangar WiFi 192.168.10.x — laptop bridges both, see M3 record). Remaining: 
 rigid body was never created in Motive, so the exit test is still open. Full narrative:
 CLAUDE_NOTES.md §3.5.
 
-**Mocap-room half (remaining — needs the Motive PC and the drone with markers, no flying):**
+**Mocap-room half — doubles as the Motive-PC setup procedure (rigid-body creation, steps
+1–3, + the Data Streaming pane) that [RUNBOOK.md](RUNBOOK.md) §B step 4 sends you here for
+(needs the Motive PC and the drone with markers, no flying).** The Motive-side steps 1–4
+below are current; only the natnet driver launch (step 5) and its exit test (step 6) are
+superseded — see their banners.
 
 1. **Markers on the Starling:** attach 4–5 reflective markers in an **asymmetric** pattern
    (no two spacings alike — symmetric layouts let Motive flip the orientation 180°).
@@ -367,7 +373,10 @@ CLAUDE_NOTES.md §3.5.
    ss -ulpn | grep -E ':(1510|1511)' || echo "ports clear"   # per-session recheck
    ```
    On the Motive PC: Windows Settings → Time — internet time sync ON.
-5. **Start the mocap driver** — laptop first, then inside the container:
+5. **Start the mocap driver** — **since 2026-08-27 this is the `./mocap.sh` bridge on the
+   LAPTOP** (Motive set to broadcast; natnet_ros2 replaced — see [MOCAP.md](MOCAP.md) for
+   how to run and troubleshoot it). *Legacy natnet launch below (superseded, kept for
+   reference)* — laptop first, then inside the container:
    ```bash
    cd ~/AirStack-starling-max2/AirStack
    ./airstack.sh up robot-desktop
@@ -403,11 +412,15 @@ CLAUDE_NOTES.md §3.5.
    > **About this driver:** it is the upstream
    > [L2S-lab/natnet_ros2](https://github.com/L2S-lab/natnet_ros2) package, vendored into
    > AirStack byte-identical (verified 2026-07-21 against upstream `883b095`) except three
-   > launch defaults CMU changed: `serverIP`/`clientIP` are CMU's rig (192.168.50.5/.2 —
-   > which is WHY the override above is mandatory), and `pub_rigid_body` defaults `true`
+   > launch defaults changed: `serverIP`/`clientIP` originally shipped as CMU's rig
+   > (192.168.50.5/.2), but **since 2026-08-28 the vendored defaults ARE our hangar values
+   > (192.168.9.124 / 192.168.9.107)** — the explicit override above is belt-and-braces,
+   > not mandatory — and `pub_rigid_body` defaults `true`
    > (required — it makes the driver publish `/drone_1/pose`). No separate install or clone
    > of the driver is needed; it builds with `bws` and runs inside the robot container.
-6. **EXIT TEST** — open a SECOND container shell (new terminal on the laptop, then):
+6. **EXIT TEST** — *superseded 2026-08-27 along with step 5: with `./mocap.sh` running, do
+   the equivalent checks per [MOCAP.md](MOCAP.md). Legacy natnet-based test below (kept for
+   reference).* Open a SECOND container shell (new terminal on the laptop, then):
    ```bash
    cd ~/AirStack-starling-max2/AirStack
    ./airstack.sh connect robot --command=bash
@@ -743,7 +756,7 @@ ros2 launch svg_ground_control ground_control.launch.py \
 **3. Verify the fusion chain, in → out** (third container shell):
 
 ```bash
-ros2 topic hz  /drone_1/fmu/in/vehicle_visual_odometry --qos-reliability best_effort   # bridge feeding (~50 Hz, our Motive rate)
+ros2 topic hz  /drone_1/fmu/in/vehicle_visual_odometry   # bridge feeding (~50 Hz, our Motive rate)
 ros2 topic echo /drone_1/fmu/out/vehicle_odometry --once --qos-reliability best_effort --qos-durability volatile
 ```
 
@@ -806,6 +819,25 @@ Original plan (kept for reference):
 - PX4: RC kill mapped + tested; `COM_OBL_RC_ACT`; low-battery action.
 - Preflight (mocap hz, odometry tracks reality, thumb on kill) → `takeoff` → hover → `land`.
 - Post-flight: PlotJuggler diff `/drone_1/pose` vs `/drone_1/fmu/out/vehicle_odometry`.
+
+#### M6-A · ONE-TIME RC transmitter setup (safety-critical)
+
+The RC kill switch is the only true motor cutoff (the geofence only freezes — see §4).
+Stored in the transmitter + PX4 params, so once per drone/transmitter pairing — but the
+ground check in step 4 must be repeated per step 5.
+
+1. **Bind the transmitter to the drone's receiver** — hardware-specific (record the lab's
+   transmitter model here: TODO).
+2. **Calibrate sticks:** QGC → Vehicle Setup → Radio → run the stick calibration.
+3. **PX4 parameters** (QGC → Parameters; cross-check the PX4 table in
+   [CONFIG.md](CONFIG.md)):
+   - `RC_MAP_KILL_SW = 8` — kill switch on channel 8 (✅ set + flight-verified 2026-09-01);
+   - `COM_RC_OVERRIDE = 1` — sticks override AUTO modes only, NOT offboard;
+   - `COM_OBL_RC_ACT = 1` — offboard-link loss → Position mode.
+4. **Ground test — props OFF, drone strapped down:** arm via a software `takeoff`, flip the
+   kill switch — motors must cut instantly.
+5. ⚠️ **Never fly without repeating the kill ground-check (step 4) after ANY transmitter or
+   receiver change** (rebind, model swap, channel remap).
 
 **Work log — 2026-09-01 → 09-03 flight-test campaign (AI.R STC hangar, drone_1 / D0012,
 single Starling):**

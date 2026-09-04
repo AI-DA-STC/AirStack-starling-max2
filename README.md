@@ -22,12 +22,17 @@ that support it. Two footnotes from the diagram worth remembering: the main offi
 the D-Link router are **different subnets**, and IPs are assigned **by router port, not by
 machine**.
 
+> **Update (2026-08-27):** since this date the lab uses the **AI.R STC hangar wired LAN**
+> (`192.168.9.x`) for both mocap and drone — the drone joins the WiFi SSID **`motive`**. The
+> `Mocap_QCGroundControl` description above is the historical 2026-08-11 topology; current
+> values live in [CONFIG.md](CONFIG.md)'s network table.
+
 More detail on the router itself (configuration, ports, access):
 [AI-DA-STC/Mocap_QC_Ground_Control_Router_Information](https://github.com/AI-DA-STC/Mocap_QC_Ground_Control_Router_Information).
 
 | File / folder | What it is |
 |---|---|
-| [RUNBOOK.md](RUNBOOK.md) | **START HERE each session** — the fast path: run the sim, or connect + run the real drone, commands only, no background |
+| [RUNBOOK.md](RUNBOOK.md) | **START HERE each session** — the fast path, commands only, no background: sim (§A), real drone (§B), goal flights (§C ✅ validated 09-01→03) |
 | [CONFIG.md](CONFIG.md) | **Single source of truth for lab values** (IPs, SSID, ports, names — all DHCP-drifty until static leases) + what to do when one changes + 60-second fixes |
 | [MOCAP.md](MOCAP.md) · [mocap.sh](mocap.sh) · [mocap/](mocap/) | **How the drone knows where it is** — layman's guide to our OptiTrack pipeline, and the `./mocap.sh` bridge that replaced natnet_ros2 (our Motive broadcasts; the official SDK can't hear it — full story inside, verified 2026-08-27) |
 | [MILESTONES.md](MILESTONES.md) | The plan **and the work log**: per-milestone status, what was done & debugged so far, one-time setup procedures, troubleshooting table |
@@ -68,11 +73,13 @@ hand-carry proves the position tracking, and only then do propellers spin.
 | # | Milestone | One-line goal | Status |
 |---|---|---|---|
 | 1 | Sim rehearsal | Fly simulated drones with the exact software and commands used on the real drone | ✅ **Validated by us** (2026-07-20) |
-| 2 | Ground-station prep | Laptop networking, Motive/OptiTrack settings, clock sync — no drone needed | 🟡 Desk half ✅ 2026-07-21; mocap-room half (`drone_1` rigid body + exit test) pending |
-| 3 | Drone comms (props off) | Real drone's PX4 talking to the laptop over WiFi | ✅ **Validated by us** (2026-07-22: setup script run, 24 `/drone_1/fmu/*` topics live on the laptop) |
-| 4 | Mocap → drone (props off) | OptiTrack position fused into the drone's state estimator, axes verified | 🔵 Code ready (CMU) — plus a manual PX4-settings step (via QGroundControl) |
-| 5 | Hand-carry preflight | Carry the drone around; the software's belief must track reality | 🔵 Code ready (CMU) — awaiting our validation |
-| 6 | First flight | Takeoff, hover, land inside the net under AirStack command | 🔵 Code ready (CMU) — config trim + manual PX4 safety settings, then fly |
+| 2 | Ground-station prep | Laptop networking, Motive/OptiTrack settings, clock sync — no drone needed | ✅ Desk half 2026-07-21; mocap-room half 2026-08-27/28 (via the `mocap.sh` bridge) |
+| 3 | Drone comms (props off) | Real drone's PX4 talking to the laptop over WiFi | ✅ **Validated by us** (2026-07-22; re-verified 2026-08-11) |
+| 4 | Mocap → drone (props off) | OptiTrack position fused into the drone's state estimator, axes verified | ✅ **Validated by us** (2026-08-28) |
+| 5 | Hand-carry preflight | Carry the drone around; the software's belief must track reality | ✅ **Validated by us** (2026-08-28) |
+| 6 | First flight | Takeoff, hover, land inside the net under AirStack command | 🟡 **FLOWN** 2026-09-01 — first offboard takeoff + hover; goal flights + in-flight geofence ✅ 2026-09-03; sign-off = one clean untethered cycle |
+
+Live status: [MILESTONES.md](MILESTONES.md) §3.
 
 **Important context on the statuses:** CMU already built AND flight-tested all of this on their
 own Starling 2 Max — our project is **replication and validation**, not development. A code
@@ -96,13 +103,15 @@ Full plan with commands and exit criteria: [MILESTONES.md](MILESTONES.md).
 | **PX4 autopilot** | *how to fly* — stabilization, motors, EKF2 state estimation, failsafes | on the drone |
 | **RC pilot** | emergency veto — kill switch, mode override | your hands |
 
-We use a **thin slice** of AirStack: the mocap driver
-([`natnet_ros2`](https://github.com/L2S-lab/natnet_ros2), vendored into AirStack — no separate
-install), the mocap→PX4 bridge,
+We use a **thin slice** of AirStack: our **`./mocap.sh bridge`** (runs on the laptop —
+see [MOCAP.md](MOCAP.md)) feeding the mocap→PX4 bridge,
 the laptop↔PX4 link (uXRCE-DDS), and the swarm commander with its CBF safety filter
 (Control Barrier Function — a math filter that clips unsafe velocity commands) and geofence.
 The planner/perception layers stay dormant here; those belong to AirStack's outdoor missions,
 where planning runs on the drone's own computer.
+*(AirStack's own mocap driver, [`natnet_ros2`](https://github.com/L2S-lab/natnet_ros2), stays
+vendored in the snapshot but is unused on our rig — our Motive broadcasts, which it can't
+hear; full story in [MOCAP.md](MOCAP.md) §3.)*
 
 ```mermaid
 flowchart TD
@@ -111,7 +120,7 @@ flowchart TD
   end
   subgraph LAPTOP["Ground laptop — AirStack"]
     direction LR
-    N["natnet_ros2<br/>mocap driver"] --> B["mocap_bridge"] --> X["MicroXRCEAgent<br/>ROS 2 ↔ PX4 messages"]
+    N["./mocap.sh bridge<br/>(laptop)"] --> B["mocap_bridge"] --> X["MicroXRCEAgent<br/>ROS 2 ↔ PX4 messages"]
     P["swarm commander<br/>scenario / policy"] --> C["CBF safety filter"] --> X
   end
   subgraph DRONE["Starling — PX4 onboard"]
@@ -249,7 +258,8 @@ as untracked/ignored noise in GitHub Desktop — that is expected.
 
 #### Step 2 — One-time host setup
 
-Requires Ubuntu 22.04+ and an NVIDIA GPU with a recent driver (Isaac Sim needs it). Skip any
+Requires Ubuntu 24.04 (required — the host mocap bridge in Step 5 needs ROS 2 Jazzy) + an
+NVIDIA GPU with a recent driver (Isaac Sim needs it). Skip any
 part already installed on the machine. (A `git hooks … No such file or directory` message
 here is harmless — the code folder is not its own git repo.)
 
@@ -281,14 +291,40 @@ grep -E '^(COMPOSE_PROFILES|AUTOLAUNCH|NUM_ROBOTS)' .env
 #   want: COMPOSE_PROFILES="desktop,isaac-sim"  AUTOLAUNCH="false"  NUM_ROBOTS="1"
 ```
 
-**Setup is now complete.** You never need to repeat Steps 1–4 on this machine (except Step 3's
+#### Step 5 — one-time mocap bridge + ground-station tools (needs internet — do BEFORE your first hangar session)
+
+The mocap bridge runs **on the laptop itself, not in the container** — the container's ROS
+does not count. So the host needs its own ROS 2 Jazzy, which is why Step 2 requires
+Ubuntu 24.04 + `ros-jazzy-desktop`.
+
+```bash
+# a) host ROS 2 Jazzy + build deps + ADB + AppImage runtime — one line:
+sudo apt install ros-jazzy-desktop python3-colcon-common-extensions build-essential cmake git libpcl-dev libeigen3-dev libfmt-dev ros-jazzy-eigen3-cmake-module android-tools-adb libfuse2
+
+# b) build the mocap bridge (clones + patches + builds ~/mocap_ws, ~5 min):
+cd ~/AirStack-starling-max2 && ./mocap.sh setup
+```
+
+**QGroundControl:** download the AppImage from <https://qgroundcontrol.com> (daily or
+stable), save it as `~/QGroundControl-x86_64.AppImage`, then:
+
+```bash
+chmod +x ~/QGroundControl-x86_64.AppImage
+sudo usermod -aG dialout $USER    # serial-port access (log out/in to take effect)
+sudo apt remove modemmanager      # it grabs the serial ports QGC needs
+```
+
+Then [RUNBOOK.md](RUNBOOK.md) §B runs offline — no internet needed in the hangar.
+
+**Setup is now complete.** You never need to repeat Steps 1–5 on this machine (except Step 3's
 image rebuild if the Dockerfile ever changes). Starting and using the stack is a separate,
 every-session routine — next section.
 
 ## Running AirStack (after setup, and at the start of every session)
 
-> **Fast path each session: [RUNBOOK.md](RUNBOOK.md)** — commands only, sim (§A) and real
-> drone (§B). Below is the same start-up routine explained for first-timers.
+> **Fast path each session: [RUNBOOK.md](RUNBOOK.md)** — commands only, sim (§A), real
+> drone (§B), and goal flights (§C — ✅ validated 2026-09-01→03). Below is the same start-up
+> routine explained for first-timers.
 
 **A — on your laptop** (safe to paste as one block):
 
@@ -313,8 +349,9 @@ cd ~/AirStack/robot/ros_ws && bws && sws
 ```
 
 **Why is compiling here and not in setup?** The code can only be compiled *inside* the robot
-container (that is where ROS 2 lives — your laptop has none of it). So `bws` necessarily comes
-after `up` and `connect`.
+container (that is where ROS 2 lives — your laptop has none of it *for AirStack's workspace* —
+but the mocap bridge (Step 5) needs ROS 2 Jazzy on the host; see [MOCAP.md](MOCAP.md)). So
+`bws` necessarily comes after `up` and `connect`.
 
 **Two messages that look like errors but are NORMAL on a fresh machine:**
 
@@ -340,6 +377,8 @@ next depends on your goal:
 - **Real-drone work** (props off, drone on the bench) → Milestones 3+ in
   [MILESTONES.md](MILESTONES.md) §6, backed by CMU's guide
   ([`AirStack/robot/ros_ws/src/svg_ground_control/experiment.md`](AirStack/robot/ros_ws/src/svg_ground_control/experiment.md), Part B).
+- **Flight-ready** (setup + milestones already behind you) → [RUNBOOK.md](RUNBOOK.md) §B
+  (real-drone bring-up) and §C (goal flights — ✅ validated 2026-09-01→03).
 - **Done for the day** → `./airstack.sh down` (from the same folder) stops everything.
 
 ## Security note

@@ -3,7 +3,7 @@
 > **Single source of truth for every value that can drift.** Other docs reference values by
 > name; the numbers live HERE. When something changes: update this file, do the "If it
 > changes" action, commit.
-> Last verified: **2026-08-28** (mocap rows) / 2026-08-11 (drone/WiFi rows).
+> Last verified: **2026-09-03** (flight rows) / 2026-08-28 (mocap rows) / 2026-08-11 (drone/WiFi rows).
 >
 > ⚠️ **2026-08-27 network change:** the lab moved to the **AI.R STC hangar wired LAN**
 > (`192.168.9.x`) for mocap — the 08-11 single-WiFi-network topology below is superseded
@@ -16,7 +16,7 @@
 |---|---|---|---|---|
 | **Laptop IP the drone dials** | on the hangar LAN this is the laptop **Ethernet** IP `192.168.9.107` (08-11 WiFi-era value was `192.168.0.192`) | `ip -4 -brief addr` | Baked into the DRONE's dialer by the setup script | **The critical one.** Re-provision every drone: [RUNBOOK](RUNBOOK.md) §B step 0 (`ssh root@<DRONE_IP>` → `voxl_setup_real_drone.sh <body> <laptop IP> <domain> 8888`) |
 | Laptop Ethernet IP | `192.168.9.107` (AI.R STC hangar wired LAN — **back in use since 2026-08-27, this is the mocap path**; laptop WiFi sits on `192.168.10.x`) | `ip -4 -brief addr` (the `enp…` row) | mocap bridge listens here; `clientIP:=` if natnet_ros2 is ever used | Nothing to reconfigure for `./mocap.sh` (it listens on all interfaces); update `clientIP:=` only for natnet_ros2 |
-| Motive PC IP | `192.168.9.124` (hangar wired LAN, verified 2026-08-28; was `.9.100` earlier on 08-27 — **the hangar assigns IPs by switch port**, so re-check each session; `192.168.0.190` was the 08-11 WiFi-era value) | `ipconfig` on the Motive PC, or `ping` from laptop | `mocap/motion_capture.yaml` `hostname:`; `serverIP:=` for natnet_ros2; QGC runs on this PC | Update `mocap/motion_capture.yaml` in this repo (and commit); `./mocap.sh check` to confirm packets flow |
+| Motive PC IP | `192.168.9.124` (hangar wired LAN, verified 2026-08-28; was `.9.100` earlier on 08-27 — **the hangar assigns IPs by switch port**, so re-check each session; `192.168.0.190` was the 08-11 WiFi-era value) | `ipconfig` on the Motive PC, or `ping` from laptop | `mocap/motion_capture.yaml` `hostname:`; `serverIP:=` for natnet_ros2 | Update `mocap/motion_capture.yaml` in this repo (and commit); `./mocap.sh check` to confirm packets flow |
 | Drone WiFi IP | ⏳ TBD as of 2026-08-11 (old lease `192.168.10.155` is STALE — that was the Hangar network; re-check on `Mocap_QCGroundControl`) | `adb shell ip -4 addr show mlan0` or `voxl-my-ip`, or the agent's `session established` log line | Diagnostics only (ping) — the drone dials the laptop, nothing dials the drone | Nothing to reconfigure |
 | **Starling 1 IP (hangar network)** | `192.168.9.10` (2026-08-28) | ping it; or router admin page (row below) | SSH target for re-provisioning ([RUNBOOK](RUNBOOK.md) §B step 0) | IPs are assigned by the router — check the admin page or ask Jeremy Chia |
 | Drone SSH login | user `root` · password `oelinux123` (ModalAI factory default — **verified by login 2026-09-01**; the previously-noted `AI.DA@STEngineering` is REJECTED by Starling 1, that credential belongs to something else) (⚠️ lab-LAN device credential stored here deliberately — keep this repo private) | `ssh root@<DRONE_IP>` | RUNBOOK §B step 0 re-provisioning; pulling `.ulg` flight logs from `/data/px4/log/` | Update here if the image/password ever changes |
@@ -48,7 +48,7 @@
 | Pose receiver | `./mocap.sh` on the laptop ([MOCAP.md](MOCAP.md)) — NOT natnet_ros2 in the container | Diagnose with `./mocap.sh check` (6-second wire test with plain-English verdict) |
 | World frame | red = x ("East") · green = y ("North") · z up; origin = floor marker | Photos: `pictures/mocap_axis_1.png`, `pictures/mocap_axis_2.png` — used by the M4 frame hand-check |
 
-## PX4 / EKF2 parameters (set once via QGC — QGC runs on the MOCAP PC)
+## PX4 / EKF2 parameters (set once via QGC — since 2026-09-01 QGC runs on the LAPTOP; it ran on the Mocap PC before that)
 
 Confirmed parameter set — applied in the 2026-07-29 QGC session, recorded here 2026-08-11.
 
@@ -78,8 +78,8 @@ Flight-log-verified additions (2026-09-01/03 sessions):
 | Value | Current | Why / If it changes → do this |
 |---|---|---|
 | `land_speed_mps` | **`0.6`** in goal_single/goal_tracking (**validated 2026-09-03**) | The shipped `0.3` caused **armed-on-ground landings**: slow touchdown bounces past PX4's land-detector window, auto-disarm never fires. 0.6 plants the gear firmly. If landings ever stay armed again → RC arm-switch down + see MILESTONES backlog (LANDED_SETTLE fix) |
-| `hover_positions` z | `0.5` m (low-and-safe test height) | Takeoff target AND initial goal. Raise toward 1.0–1.2 m if station-keeping wobbles in ground effect |
-| `fence` in `goal_single.yaml` | tight **±0.7 m** box (deliberate safe default) | Widen to your arena before bigger goal flights — floats only, inside the net |
+| `hover_positions` z | `0.5` m in the goal configs AND drone_1's `swarm_real.yaml` slot (drone_2/3 slots stay 1.2) — low-and-safe test height | Takeoff target AND initial goal. Raise toward 1.0–1.2 m if station-keeping wobbles in ground effect |
+| `fence` in `goal_single.yaml` | tight **±0.7 m in X/Y** (ceiling 2.8 m) — deliberate safe default | Widen to your arena before bigger goal flights (`goal_tracking.yaml` uses ±2 m XY / 0–2 m Z) — floats only, inside the net |
 | After every landing | confirm **DISARMED in QGC** | The commander's "landed, disarmed" log is optimistic; QGC is the only arming truth on this v1.14 drone |
 
 ## Drone-side voxl-vision-hub config (`/etc/modalai/voxl-vision-hub.conf` on the drone)
@@ -98,7 +98,7 @@ UDP 14550). ✅ Set 2026-08-11 (drone→Mocap PC ping verified 3–7 ms).
 
 | Value | Current | If it changes → do this |
 |---|---|---|
-| `"primary_static_gcs_ip"` | `192.168.0.190` (the Mocap PC; factory default was `192.168.8.10` = hotspot lease) | Set to the Mocap PC's current IP, then `systemctl restart voxl-mavlink-server`; QGC connects within seconds |
+| `"primary_static_gcs_ip"` | the **laptop's** hangar-LAN IP, `192.168.9.107` (QGC moved to the laptop for the 09-01→03 flight sessions and connected — ⚠️ value inferred from that, verify by read-back on the drone; history: `192.168.0.190` = Mocap PC 08-11, factory `192.168.8.10`) | Set to the QGC machine's current IP, then `systemctl restart voxl-mavlink-server`; QGC connects within seconds |
 | `"primary_static_gcs_ip_port"` | `14550` | QGC's default listen port — leave it |
 
 ## Files & identities
@@ -106,7 +106,7 @@ UDP 14550). ✅ Set 2026-08-11 (drone→Mocap PC ping verified 3–7 ms).
 | Value | Current |
 |---|---|
 | Working folder (laptop) | `~/AirStack-starling-max2/AirStack` |
-| Real-run config | `<workspace>/src/svg_ground_control/config/swarm_real.yaml` (⚠️ still 3-drone as shipped — trim to `drone_1` before first flight, MILESTONES M6) |
+| Real-run config | `<workspace>/src/svg_ground_control/config/swarm_real.yaml` (still 3-drone; trim to `drone_1` is OPTIONAL — deferred 2026-09-03, phantom drone_2/3 WARNs are harmless. Goal flights use `goal_single.yaml`/`goal_tracking.yaml`, already single-drone) |
 | Drone identity | `starling2-max (D0012)` · image 1.8.08 · voxl-suite 1.6.4~beta5 |
 | Drone factory backup | `/usr/bin/voxl-px4-start.FACTORY-ORIGINAL` (on drone) + `drone-backups/voxl-px4-start.original-D0012` in this repo (✅ both taken 2026-07-22, before the setup script ran) |
 

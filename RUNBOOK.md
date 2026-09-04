@@ -71,8 +71,8 @@ then takeoff + start again.
 > commander + mocap_bridge, EKF2 fusing mocap, RViz tracking a hand-carried drone. One-time
 > M4-A drone setup done (EKF2 params via QGC on the Mocap PC ✅ 2026-07-29 +
 > `voxl-vision-hub.conf`: `en_vio` false, `offboard_mode` off — detail in MILESTONES M4-A).
-> Still pending: the `swarm_real.yaml` 3-drone → `drone_1` trim (M6). No Isaac Sim needed — do
-> NOT start it.
+> `swarm_real.yaml` trim: deferred by lab decision 2026-09-03 (optional — phantom drone_2/3
+> WARNs are harmless; MILESTONES M6). No Isaac Sim needed — do NOT start it.
 
 **0 — Re-provision the drone(s) after a ground-control laptop change** (needed once per
 drone every time the GC laptop — or its IP — changes; the drone *dials the laptop*, so a
@@ -90,6 +90,8 @@ voxl_setup_real_drone.sh <BODY_NAME> <LAPTOP_IP> <DOMAIN_ID> <AGENT_PORT>
 `<BODY_NAME>` = the Motive rigid-body name (`drone_1`), `<DOMAIN_ID>` = the drone's DDS
 domain (`1` for drone_1 — unique per drone), `<AGENT_PORT>` = `8888` (must match step 3's
 agent). Skip this step entirely if nothing about the laptop changed since last session.
+⚠️ **First time on this drone?** SSH + this script only exist after the one-time provisioning:
+MILESTONES M3-A steps 1–3 (WiFi join → backups → `adb push` the script) / CMU `experiment.md` §B0–B1.
 
 **1 — Check today's IPs** (everything is DHCP; addresses drift). Laptop:
 ```bash
@@ -144,12 +146,15 @@ switch). **Laptop** terminal (NOT a container shell), its own window — leave r
 ~/QGroundControl-x86_64.AppImage
 ```
 No vehicle appears? The drone pushes MAVLink to the GCS IP configured on it
-(`voxl-mavlink-server.conf`, see CONFIG.md) — it must point at this laptop.
+(`voxl-mavlink-server.conf`, see CONFIG.md) — it must point at this laptop. (QGC moved from
+the Mocap PC to the laptop for the 09-01→03 flight sessions; older docs mentioning the
+Mocap PC are historical.)
 
 **4 — Mocap bridge** (✅ replaced natnet_ros2 on 2026-08-27 — our Motive broadcasts and the
 old driver can't hear it; story + troubleshooting in [MOCAP.md](MOCAP.md)). *Prereq: the
 `drone_1` rigid body exists in Motive BEFORE launching — the body list is read only at
-startup (create/rename later → Ctrl+C and relaunch).* **Laptop** terminal (NOT a container
+startup (create/rename later → Ctrl+C and relaunch); creating it + Motive streaming-pane
+settings: MILESTONES M2 mocap-room steps 1–3.* **Laptop** terminal (NOT a container
 shell; one-time `./mocap.sh setup` first if this machine never ran it):
 ```bash
 cd ~/AirStack-starling-max2 && ./mocap.sh      # this repo's root (wherever you cloned it)
@@ -167,13 +172,11 @@ ros2 launch svg_ground_control real_interfaces.launch.py drones:=drone_1   # mor
 ```
 Leave running.
 
-**6 — Commander + mocap bridge.** *One-time prereqs (MILESTONES M4-A/M6 — only the trim
-still pending):
-EKF2 params set via QGC (Mocap PC, ✅ 2026-07-29), vision-hub conf set (`en_vio` false /
-`offboard_mode` off), and `swarm_real.yaml` trimmed to `drone_1` only —
-with the shipped 3-drone config the commander still launches `drone_1` while configured for
-phantom drone_2/3 (their hover slots, teleop/CBF roles) — trim BEFORE flying.* New container
-shell, inside:
+**6 — Commander + mocap bridge.** *One-time prereqs (MILESTONES M4-A — all done):
+EKF2 params set via QGC (✅ 2026-07-29), vision-hub conf set (`en_vio` false /
+`offboard_mode` off). The `swarm_real.yaml` 3-drone → `drone_1` trim is OPTIONAL (deferred
+2026-09-03): the commander flies `drone_1` fine while WARNing about phantom drone_2/3 —
+expected and harmless.* New container shell, inside:
 ```bash
 ros2 launch svg_ground_control ground_control.launch.py \
   config:=$(ros2 pkg prefix svg_ground_control)/share/svg_ground_control/config/swarm_real.yaml use_mocap:=true
@@ -215,7 +218,7 @@ Step 7 succeeding (✅ 2026-08-28) — full recording:
 `videos/SVG_check_if_rviz_moves_by_movingdrone_manually.mp4`.
 
 **8 — Fly** (✅ validated 2026-09-01→03). First flights: the same four service calls as
-sim T5 (takeoff / hold / land) — but `start` begins the scenario and is **REQUIRED** before
+sim T5 (takeoff / start / hold / land) — `start` begins the scenario and is **REQUIRED** before
 goals or teleop respond. Goal/waypoint flights → **§C** below.
 ⚠️ M6 safety status: RC kill switch IS mapped + tested (2026-09-01); geofence validated in
 flight on all configs (2026-09-03). Remaining judgment items every flight: fence fits the
@@ -244,8 +247,8 @@ Same session bring-up as §B steps 0–7 — **only step 6's config changes**. P
 | Config | Behaviour |
 |---|---|
 | `swarm_real.yaml` | hover + teleop (shipped 3-drone config; phantom drone_2/3 WARNs are normal) |
-| `goal_single.yaml` | 1 drone, runtime waypoints, **TIGHT ±0.7 m fence** default (widen for bigger flights) |
-| `goal_tracking.yaml` | 1 drone, waypoints, ±2 m fence, 0.6 m/s |
+| `goal_single.yaml` | 1 drone, runtime waypoints, **TIGHT fence: ±0.7 m XY** (ceiling 2.8 m) — deliberate safe default, widen for bigger flights |
+| `goal_tracking.yaml` | 1 drone, waypoints, fence ±2 m XY / 0–2 m Z, 0.6 m/s |
 
 **C1 — Launch.** Container shell (this replaces step 6's launch command):
 ```bash
@@ -279,7 +282,9 @@ ros2 service call /swarm_commander/land std_srvs/srv/Trigger
 in place — still ARMED, not a motor cut.** Recover: `land` → `/swarm_commander/reset_fence`
 → `takeoff` → `start`.
 
-**C5 — Landing / disarm.** `land` descends at `land_speed_mps` then auto-disarms.
+**C5 — Landing / disarm.** `land` descends at `land_speed_mps`; on touchdown **PX4's own
+land detector + auto-disarm** finish the job (the commander's disarm command is the cosmetic
+early one).
 `land_speed_mps: 0.6` is the validated value — 0.3 caused armed-on-ground (slow touchdown
 bounces past PX4's land detector). One red QGC "Disarming denied, not landed" per landing =
 cosmetic (commander's early shot). ⚠️ ALWAYS confirm **DISARMED** in QGC before approaching.

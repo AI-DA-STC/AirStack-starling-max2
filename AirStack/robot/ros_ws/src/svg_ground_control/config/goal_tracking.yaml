@@ -1,13 +1,15 @@
-# SVG ground control — MULTI-DRONE goal-tracking test (simulation).
+# SVG ground control — SINGLE-DRONE goal tracking, REAL drone (drone_1).
+# Converted from CMU's 3-drone sim test 2026-09-03; flight-validated same day
+# (multi-goal square, RUNBOOK §C). Pristine 3-drone original: git history /
+# goal_tracking_original.yaml in the live tree.
 #
 #   ros2 launch svg_ground_control ground_control.launch.py \
-#       config:=<share>/config/goal_tracking.yaml
+#       config:=<share>/config/goal_tracking.yaml use_mocap:=true
 #
-# Three drones, 'goal' scenario. After takeoff + start, retarget each drone
-# independently (the CBF keeps them apart while they cross):
+# 'goal' scenario: after takeoff + start, retarget at runtime:
 #   ros2 topic pub --once /svg/drone_1/goal_command geometry_msgs/msg/PoseStamped \
-#     "{header: {frame_id: map}, pose: {position: {x: 1.5, y: 1.5, z: 1.4}}}"
-#   ros2 topic pub --once /svg/drone_2/speed_command std_msgs/msg/Float32 "{data: 1.0}"
+#     "{header: {frame_id: map}, pose: {position: {x: 0.5, y: 0.0, z: 1.0}}}"
+#   ros2 topic pub --once /svg/drone_1/speed_command std_msgs/msg/Float32 "{data: 0.8}"
 
 swarm_commander:
   ros__parameters:

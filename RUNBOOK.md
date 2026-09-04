@@ -63,9 +63,17 @@ then takeoff + start again.
 
 ## B · REAL DRONE session (mocap room)
 
-> **One terminal per numbered step** — every long-running piece (agent, mocap bridge,
-> QGC, interfaces, commander) gets its own terminal and stays open while you fly.
-> Each step says whether its terminal is a **laptop** shell or a **container** shell.
+> **One terminal per numbered step** — every long-running piece gets its own terminal and
+> stays open while you fly. Three KINDS of terminal exist; each step names its kind:
+>
+> | Kind | Prompt looks like | How you get one | Runs |
+> |---|---|---|---|
+> | **Laptop (host)** — outside docker | `jeremychia@…$` | just open a terminal | step 0 ssh entry · step 1 IP checks · step 2 airstack.sh up · **step 3b QGC** · **step 4 mocap bridge** — these do NOT run in docker |
+> | **Container** — inside docker | `root@…#` | step 2's `connect` command | step 3 agent · step 5 interfaces · step 6 commander · step 7 RViz · step 8 cockpit |
+> | **Drone (ssh/adb)** | `starling2-max…$` | `ssh root@<DRONE_IP>` (step 0) or `adb shell` | one-time provisioning · clean shutdown |
+>
+> A full session = ~7 terminals. If a `ros2` command says "command not found" you're in a
+> host shell; if `./mocap.sh` complains about ROS you're in the container — swap kinds.
 
 > **Maturity (2026-08-28):** steps 3–7 validated **end-to-end** — agent link, mocap bridge,
 > commander + mocap_bridge, EKF2 fusing mocap, RViz tracking a hand-carried drone. One-time
@@ -217,7 +225,8 @@ Hand-carry the drone — its red sphere must track. Do NOT call takeoff during t
 Step 7 succeeding (✅ 2026-08-28) — full recording:
 `videos/SVG_check_if_rviz_moves_by_movingdrone_manually.mp4`.
 
-**8 — Fly** (✅ validated 2026-09-01→03). First flights: the same four service calls as
+**8 — Fly** (✅ validated 2026-09-01→03). New container shell (the "cockpit"). First
+flights: the same four service calls as
 sim T5 (takeoff / start / hold / land) — `start` begins the scenario and is **REQUIRED** before
 goals or teleop respond. Goal/waypoint flights → **§C** below.
 ⚠️ M6 safety status: RC kill switch IS mapped + tested (2026-09-01); geofence validated in

@@ -115,22 +115,30 @@ hear; full story in [MOCAP.md](MOCAP.md) §3.)*
 
 ```mermaid
 flowchart TD
-  subgraph MOTIVE["Motive PC"]
-    M["OptiTrack"]
+  subgraph MOTIVE["Motive PC (Windows)"]
+    M["OptiTrack — 8 ceiling cameras"]
   end
-  subgraph LAPTOP["Ground laptop — AirStack"]
-    direction LR
-    N["./mocap.sh bridge<br/>(laptop)"] --> B["mocap_bridge"] --> X["MicroXRCEAgent<br/>ROS 2 ↔ PX4 messages"]
-    P["swarm commander<br/>scenario / policy"] --> C["CBF safety filter"] --> X
+  subgraph LAPTOP["Ground laptop"]
+    N["./mocap.sh bridge<br/>HOST terminal — outside docker<br/>(MOCAP.md)"]
+    Q["QGroundControl<br/>HOST terminal — outside docker<br/>(arming truth · params · kill visibility)"]
+    subgraph CONT["robot container (docker) — one terminal per node, RUNBOOK §B"]
+      direction LR
+      B["mocap_bridge"] --> X["MicroXRCEAgent<br/>ROS 2 ↔ PX4"]
+      P["swarm commander<br/>takeoff/goals/geofence"] --> C["CBF safety filter"] --> X
+    end
+    N -- "/drone_1/pose · 50 Hz" --> B
   end
-  subgraph DRONE["Starling — PX4 onboard"]
+  subgraph DRONE["Starling Max 2 — PX4 onboard"]
     direction LR
     K["XRCE client<br/>built into PX4"] -- "pose" --> E["EKF2<br/>fuses ONBOARD"]
     K -- "velocity, 20 Hz" --> L["control loops"]
     E --> L --> R["motors"]
   end
-  M -- "NatNet (LAN)" --> N
-  X == "WiFi · UDP 8888 · px4_msgs over uXRCE-DDS" ==> K
+  RC["RC transmitter — kill switch<br/>OUTRANKS EVERYTHING"]
+  M -- "NatNet broadcast · wired LAN 192.168.9.x · 50 Hz" --> N
+  X == "WiFi (SSID motive) · UDP 8888 · uXRCE-DDS" ==> K
+  K -. "MAVLink telemetry" .-> Q
+  RC -. "kill / MANUAL takeover" .-> K
 ```
 
 **How the laptop↔drone leg works:** the laptop repackages everything into PX4's native

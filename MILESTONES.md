@@ -683,8 +683,21 @@ flowchart LR
 
 #### M4-A · ONE-TIME drone setup — per drone, stored permanently in PX4 / systemd
 
-**1. EKF2 parameters** — set once via QGroundControl (QGC is installed and run on the
-**Mocap PC (Windows)**, not the laptop; `px4-param` over adb also works); saved permanently
+> **⏩ FAST PATH (since 2026-09-04): load the whole parameter set from a file.** This repo
+> ships [`starling_1_indoor_params.params`](starling_1_indoor_params.params) — a full QGC
+> export of Starling 1's validated indoor setup (872 params, PX4 v1.14; includes the EKF2
+> external-vision set, `RC_MAP_KILL_SW=8`, `COM_RC_OVERRIDE=1`, and the `MPC_THR_HOVER=0.165`
+> retune). In **QGC (runs on the LAPTOP, outside docker)**: Vehicle Setup → Parameters →
+> **Tools ⋮ (top-right) → Load from file** → pick the file → accept → **reboot PX4** (power
+> cycle or QGC reboot). Then verify by read-back: spot-check `EKF2_EV_CTRL=11`,
+> `RC_MAP_KILL_SW=8`, `EKF2_BARO_CTRL=0` in the Parameters search box — only a read-back
+> counts (see ledger #7's lesson). The param-by-param steps below remain as reference and
+> for understanding WHAT the file sets. ⚠️ The vision-hub conf step (`en_vio` false) is a
+> drone-side file, NOT in the .params — still do it separately.
+
+**1. EKF2 parameters** — set once via QGroundControl (**QGC runs on the laptop since
+2026-09-01**, outside docker; it ran on the Mocap PC for the 2026-07-29 session below;
+`px4-param` over adb also works); saved permanently
 in PX4. Confirmed set (applied in the **2026-07-29** QGC session):
 
 | Param | Value | Meaning |
@@ -706,8 +719,8 @@ Indoor-mocap extras (set for mocap flights):
 appropriate).
 
 Observed in the 2026-07-29 QGC session: `EKF2_EV_CTRL=11` and `EKF2_MAG_TYPE=None` already
-applied; `EKF2_EV_DELAY` read **0.0 ms** — the earlier ≈50 ms suggestion was NOT applied
-(tune later if fusion lags).
+applied; `EKF2_EV_DELAY` read **0.0 ms** then — subsequently set to **50 ms** in the
+2026-09-04 `.params` export (the current canonical value).
 
 **2. Turn off the onboard VIO feed** (confirmed needed on D0012: `voxl-open-vins-server` +
 `voxl-vision-hub` are running = a competing external-vision source that would fight the mocap

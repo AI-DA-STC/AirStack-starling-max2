@@ -60,9 +60,14 @@ Confirmed parameter set — applied in the 2026-07-29 QGC session, recorded here
 | `EKF2_HGT_REF` | `3` | Always for mocap flight |
 | `EKF2_BARO_CTRL` | `0` | Indoor mocap only |
 | `EKF2_MAG_TYPE` | `None` | Indoor mocap only |
-| `EKF2_EV_DELAY` | `0.0 ms` | Tune ≈50 ms later if fusion lags |
+| `EKF2_EV_DELAY` | `50 ms` (✅ applied — in the .params export 2026-09-04; was 0.0) | Mocap-over-network latency compensation |
 
 > ⚠️ **Outdoor revert:** re-enable `EKF2_BARO_CTRL` and `EKF2_MAG_TYPE` (and GPS/mag params) before any outdoor/GPS flight.
+
+**📦 The canonical full parameter set lives in this repo: [`starling_1_indoor_params.params`](starling_1_indoor_params.params)**
+(872-param QGC export from Starling 1, PX4 v1.14, 2026-09-04 — includes every row in the tables above and below).
+To set up a drone: QGC → Vehicle Setup → Parameters → **Tools ⋮ → Load from file** → this file
+→ reboot PX4 → spot-check `EKF2_EV_CTRL=11` and `RC_MAP_KILL_SW=8` by read-back. Procedure: MILESTONES M4-A.
 
 Flight-log-verified additions (2026-09-01/03 sessions):
 
@@ -71,7 +76,7 @@ Flight-log-verified additions (2026-09-01/03 sessions):
 | `RC_MAP_KILL_SW` | `8` | Kill switch on ch8 — mapped + verified 2026-09-01. NEVER fly without it |
 | `COM_RC_OVERRIDE` | `1` | Stick override for auto modes only — sticks do NOT kick offboard out (takeover = flip to MANUAL, see RUNBOOK §C) |
 | `COM_OBL_RC_ACT` | `1` | Offboard-loss → Position mode when RC present |
-| `MPC_THR_HOVER` | `0.13` (measured true hover ≈ 0.165–0.17) | Retune candidate — improves takeoff crispness + landing detection |
+| `MPC_THR_HOVER` | `0.165` (✅ retuned 2026-09-04 — was factory 0.13; true hover measured 0.165–0.17 from flight logs) | Improves takeoff crispness + landing detection |
 
 ## Ground-side flight parameters (svg_ground_control config yamls — lab-validated values)
 

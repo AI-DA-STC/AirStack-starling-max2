@@ -181,6 +181,13 @@ whose Motive genuinely multicasts, and its command channel remains a handy probe
 | `patches/0003-…-modeldef-segfault.patch` | this repo | our NatNet 4.2 fix to libmotioncapture |
 | built receiver | `~/mocap_ws` (created by `setup`; override with `MOCAP_WS=…`) | `motion_capture_tracking` @ commit `64d3af2` + patch, built against system ROS Jazzy |
 
+**About `~/mocap_ws`:** it is *generated build output*, not a source tree — any machine
+recreates it from this repo with `./mocap.sh setup` (clone → patch → build). Don't hand-edit
+it or version it; edit `mocap/` here and commit. The legacy `~/mocap_ws/start_mocap_bridge.sh`
+from the original 08-27 debugging still works but is **not** identical to `./mocap.sh`: it
+hardcodes extra bodies (`cf1`, `cf8`) and carries a stale copy of the config. Prefer
+`./mocap.sh`; delete `~/mocap_ws` any time and re-run `setup` to get a clean rebuild.
+
 Bridge environment (set automatically by `mocap.sh`): `ROS_DOMAIN_ID=1` (the
 lab-wide domain, see CONFIG.md), discovery range SUBNET, Fast DDS profile as above.
 The robot container runs with host networking, which is why a laptop-side publisher

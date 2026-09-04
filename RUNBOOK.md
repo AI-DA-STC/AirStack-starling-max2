@@ -153,8 +153,10 @@ startup (create/rename later → Ctrl+C and relaunch).* **Laptop** terminal (NOT
 shell; one-time `./mocap.sh setup` first if this machine never ran it):
 ```bash
 cd ~/AirStack-starling-max2 && ./mocap.sh      # this repo's root (wherever you cloned it)
-# equivalent if a built bridge workspace already exists:  ~/mocap_ws/start_mocap_bridge.sh
 ```
+⚠️ `~/mocap_ws/start_mocap_bridge.sh` is **legacy, NOT identical** (hardcodes extra cf1/cf8
+bodies, stale config) — `./mocap.sh` is canonical; `~/mocap_ws` is just its generated build
+output (see [MOCAP.md](MOCAP.md)).
 Leave running. Verify (container shell): `ros2 topic hz /drone_1/pose` (Motive's rate —
 50 Hz as of 2026-08-28). Poses missing → `./mocap.sh check` (laptop) names the culprit.
 
@@ -212,8 +214,12 @@ Hand-carry the drone — its red sphere must track. Do NOT call takeoff during t
 Step 7 succeeding (✅ 2026-08-28) — full recording:
 `videos/SVG_check_if_rviz_moves_by_movingdrone_manually.mp4`.
 
-**8 — Fly** (only after M6's safety setup: fence fitted, RC kill tested, thumb on it):
-same four service calls as sim T5.
+**8 — Fly** (✅ validated 2026-09-01→03). First flights: the same four service calls as
+sim T5 (takeoff / hold / land) — but `start` begins the scenario and is **REQUIRED** before
+goals or teleop respond. Goal/waypoint flights → **§C** below.
+⚠️ M6 safety status: RC kill switch IS mapped + tested (2026-09-01); geofence validated in
+flight on all configs (2026-09-03). Remaining judgment items every flight: fence fits the
+net, thumb on kill, QGC visible.
 
 **Shutdown** (either session type). Ctrl+C the launches, `exit` the containers, then laptop:
 ```bash
@@ -231,6 +237,65 @@ container shell — that would shut down the wrong machine.)
 
 ---
 
+## C · GOAL FLIGHTS (fly to commanded waypoints) — ✅ validated 2026-09-01→03
+
+Same session bring-up as §B steps 0–7 — **only step 6's config changes**. Pick one:
+
+| Config | Behaviour |
+|---|---|
+| `swarm_real.yaml` | hover + teleop (shipped 3-drone config; phantom drone_2/3 WARNs are normal) |
+| `goal_single.yaml` | 1 drone, runtime waypoints, **TIGHT ±0.7 m fence** default (widen for bigger flights) |
+| `goal_tracking.yaml` | 1 drone, waypoints, ±2 m fence, 0.6 m/s |
+
+**C1 — Launch.** Container shell (this replaces step 6's launch command):
+```bash
+ros2 launch svg_ground_control ground_control.launch.py \
+  config:=$(ros2 pkg prefix svg_ground_control)/share/svg_ground_control/config/goal_tracking.yaml use_mocap:=true
+```
+
+**C2 — Fly.** Container shell — takeoff (climbs to `hover_positions` — which is BOTH the
+takeoff target AND the initial goal), then `start`, then publish waypoints:
+```bash
+ros2 service call /swarm_commander/takeoff std_srvs/srv/Trigger
+ros2 service call /swarm_commander/start   std_srvs/srv/Trigger
+ros2 topic pub --once /svg/drone_1/goal_command geometry_msgs/msg/PoseStamped \
+  "{header: {frame_id: map}, pose: {position: {x: 0.5, y: 0.0, z: 1.0}}}"
+ros2 topic pub --once /svg/drone_1/speed_command std_msgs/msg/Float32 "{data: 0.8}"
+```
+- Coordinates are **ABSOLUTE** in the mocap/world frame (same numbers as `/drone_1/pose`).
+- Each publish **REPLACES** the goal — no queue.
+- The publisher exiting does NOT cancel the goal — the commander holds it (`hold`/`land` to stop).
+- Yaw stays at the takeoff heading — point the drone before takeoff.
+- Keep goals inside the fence.
+
+**C3 — Square / multi-goal loop** (✅ validated). Container shell, after C2's takeoff + start:
+```bash
+G() { ros2 topic pub --once /svg/drone_1/goal_command geometry_msgs/msg/PoseStamped "{header: {frame_id: map}, pose: {position: {x: $1, y: $2, z: $3}}}"; }
+for lap in 1 2; do for c in "-0.5 -0.5" "0.5 -0.5" "0.5 0.5" "-0.5 0.5"; do G $c 1.0; sleep 5; done; done
+ros2 service call /swarm_commander/land std_srvs/srv/Trigger
+```
+
+**C4 — Geofence** (✅ validated in flight, all configs). Breach ⇒ **ALL drones freeze-hover
+in place — still ARMED, not a motor cut.** Recover: `land` → `/swarm_commander/reset_fence`
+→ `takeoff` → `start`.
+
+**C5 — Landing / disarm.** `land` descends at `land_speed_mps` then auto-disarms.
+`land_speed_mps: 0.6` is the validated value — 0.3 caused armed-on-ground (slow touchdown
+bounces past PX4's land detector). One red QGC "Disarming denied, not landed" per landing =
+cosmetic (commander's early shot). ⚠️ ALWAYS confirm **DISARMED** in QGC before approaching.
+
+**C6 — RC takeover rules** (from 09-01 log forensics). While the commander runs, its
+setpoints leak into POSCTL/ALTCTL — takeover is ONLY clean flipping straight to **MANUAL**,
+or the **kill switch**. After ANY RC takeover the commander is stuck non-IDLE → call `land`
+once (drone on floor) to reset before the next takeoff.
+
+**C7 — Config editing rules.** yaml is read once at launch: edit → Ctrl-C the commander →
+relaunch (no rebuild). Every number in a list must be a float (`0.0` not `0` — an integer
+kills both nodes at launch). ⚠️ Never run `test/functional_*.py` while the real stack is up —
+they publish FAKE odometry onto the real topics (flyaway risk).
+
+---
+
 ## Pocket reference
 
 | Thing | Rule |
@@ -240,6 +305,10 @@ container shell — that would shut down the wrong machine.)
 | `/fmu/*` topics | `echo` always needs `--qos-reliability best_effort`; `hz` takes no QoS flag in this ros2 |
 | Long-running (leave open) | Isaac spawn · interfaces · agent · mocap bridge (`./mocap.sh`, laptop) · QGC (laptop) · commander — **one terminal each** |
 | Panic, in order | `hold` service → `land` service → **RC kill switch** |
+| Goal topics | `/svg/drone_1/goal_command` (PoseStamped, `map` frame, ABSOLUTE) · `/svg/drone_1/speed_command` (Float32) — after `start` only |
+| RC takeover | straight to **MANUAL** or **kill switch** ONLY (POSCTL/ALTCTL leak commander setpoints) |
+| After landing | confirm **DISARMED** in QGC before approaching |
+| After RC takeover | call `land` once (drone on floor) to reset the commander |
 | Container messages to ignore | `Workspace not built yet` (pre-bws) · `groups: … 992` · `unknown-robot` · prompt garbage `[:refused refused reached]` (robot-name DNS lookup fails on the router; domain still forced to 1) |
 | Drone hotspot `VOXL-…` | never connect the laptop to it |
 | Drone power-off | `adb shell shutdown now` (laptop) → wait ~10 s → unplug USB, then battery |

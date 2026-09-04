@@ -26,7 +26,7 @@
 
 swarm_commander:
   ros__parameters:
-    drone_names: ["drone_2"]
+    drone_names: ["drone_1"]
     # ---- Per-drone axes (any drone, any combination) -------------------
     # mode   : drone_modes       "sim"  -> /{name}/interface/* (MAVROS/SITL)
     #                            "real" -> /{name}/fmu/*        (px4_interface/HW)
@@ -38,7 +38,7 @@ swarm_commander:
     drone_modes: "real"
     teleop_drones: ""
     external_drones: ""
-    cbf_exempt_drones: "drone_2"
+    cbf_exempt_drones: "drone_1"
 
     scenario: "goal"
     scenario_speed_mps: 0.6          # default per-drone speed (override live)
@@ -48,7 +48,7 @@ swarm_commander:
     # anchors the EKF to the shared origin. offset 0 is correct for both.
     drone_position_offsets: [0.0, 0.0, 0.0]
     # goal scenario: takeoff target = initial goal
-    hover_positions: [-3.6, -4.7, 1.0]
+    hover_positions: [-0.5,0.0,0.5] #[-3.6, -4.7, 1.0]
 
     # State topic is identical for sim & real. Command/service routing is
     # picked per drone by drone_modes via the built-in mode templates
@@ -58,7 +58,10 @@ swarm_commander:
     control_rate_hz: 20.0
     hover_kp: 1.0
     arrival_threshold_m: 0.15
-    land_speed_mps: 0.3
+    # 0.6 validated 2026-09-03: the shipped 0.3 caused armed-on-ground landings on
+    # the Starling (slow touchdown bounces past PX4's land-detector window; 0.6
+    # plants it firmly and auto-disarm fires reliably). See MILESTONES 09-01/03.
+    land_speed_mps: 0.6
     land_complete_altitude_m: 0.15
 
     cbf_safety_radius_m: 0.55
@@ -67,15 +70,17 @@ swarm_commander:
 
     # Geofence: a generous box around the arena; breach -> all hold.
     fence_enabled: true
-    fence_min: [-4.0, -5.0, 0.0]
-    fence_max: [4.0, 5.0, 2.8]
+    # deliberately TIGHT test box (safe default) — widen to your arena before
+    # flying goals outside +/-0.7 m; keep well inside the net (floats only!)
+    fence_min: [-0.7, -0.7, 0.0]
+    fence_max: [0.7, 0.7, 2.8]
 # Mocap -> PX4 external-vision bridge (used when launched with use_mocap:=true).
 # REAL: feeds /drone_1/fmu/in/vehicle_visual_odometry so EKF2 fuses a position
 # and the drone can arm (mirrors the proven model_ai_tfpub.cpp). SIM: no
 # /drone_1/pose publisher exists, so this node idles (harmless).
 mocap_bridge:
   ros__parameters:
-    drone_names: ["drone_2"]
+    drone_names: ["drone_1"]
     # Mocap pose topic per drone (natnet_ros2 / Motive body named drone_1).
     # Check the exact prefix with `ros2 topic list | grep pose`.
     mocap_topic_template: "/{name}/pose"

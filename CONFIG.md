@@ -64,6 +64,24 @@ Confirmed parameter set — applied in the 2026-07-29 QGC session, recorded here
 
 > ⚠️ **Outdoor revert:** re-enable `EKF2_BARO_CTRL` and `EKF2_MAG_TYPE` (and GPS/mag params) before any outdoor/GPS flight.
 
+Flight-log-verified additions (2026-09-01/03 sessions):
+
+| Value | Current | Why / If it changes → do this |
+|---|---|---|
+| `RC_MAP_KILL_SW` | `8` | Kill switch on ch8 — mapped + verified 2026-09-01. NEVER fly without it |
+| `COM_RC_OVERRIDE` | `1` | Stick override for auto modes only — sticks do NOT kick offboard out (takeover = flip to MANUAL, see RUNBOOK §C) |
+| `COM_OBL_RC_ACT` | `1` | Offboard-loss → Position mode when RC present |
+| `MPC_THR_HOVER` | `0.13` (measured true hover ≈ 0.165–0.17) | Retune candidate — improves takeoff crispness + landing detection |
+
+## Ground-side flight parameters (svg_ground_control config yamls — lab-validated values)
+
+| Value | Current | Why / If it changes → do this |
+|---|---|---|
+| `land_speed_mps` | **`0.6`** in goal_single/goal_tracking (**validated 2026-09-03**) | The shipped `0.3` caused **armed-on-ground landings**: slow touchdown bounces past PX4's land-detector window, auto-disarm never fires. 0.6 plants the gear firmly. If landings ever stay armed again → RC arm-switch down + see MILESTONES backlog (LANDED_SETTLE fix) |
+| `hover_positions` z | `0.5` m (low-and-safe test height) | Takeoff target AND initial goal. Raise toward 1.0–1.2 m if station-keeping wobbles in ground effect |
+| `fence` in `goal_single.yaml` | tight **±0.7 m** box (deliberate safe default) | Widen to your arena before bigger goal flights — floats only, inside the net |
+| After every landing | confirm **DISARMED in QGC** | The commander's "landed, disarmed" log is optimistic; QGC is the only arming truth on this v1.14 drone |
+
 ## Drone-side voxl-vision-hub config (`/etc/modalai/voxl-vision-hub.conf` on the drone)
 
 Required values for mocap flight — cross-reference MILESTONES M4-A.

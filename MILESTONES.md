@@ -3,7 +3,7 @@
 > Canonical (markdown) version — **our lab's own document** (see "Whose document is whose" in
 > the README; CMU's upstream guide is `experiment.md` inside the AirStack checkout).
 > Per-session commands only? → [RUNBOOK.md](RUNBOOK.md).
-> Last updated: 2026-08-11.
+> Last updated: 2026-09-04.
 > Branch: `daniel/diffaero_ground_control` · Working folder: `~/AirStack-starling-max2/AirStack`
 
 ## 1. Objective
@@ -34,10 +34,12 @@ are observed facts, and each milestone is a re-entry point.
 | M3 Drone comms (props off) | Real PX4 topics on the laptop over WiFi (uXRCE-DDS) | ✅ CMU (audited, see §3b) | ✅ **2026-07-22** (24 `/drone_1/fmu/*` topics live on the laptop) |
 | M4 Mocap → EKF2 (props off) | OptiTrack pose fused by EKF2; frames verified | ✅ CMU + manual EKF2 params via QGC | **✅ VALIDATED 2026-08-28** — fusion (ledger #14) + frame hand-check, drone_1 / D0012 |
 | M5 Hand-carry preflight | RViz marker tracks the hand-carried drone | ✅ CMU (audited) | **✅ VALIDATED 2026-08-28** — RViz tracks the carried drone (ledger #15; GIF + video in repo) |
-| M6 First flight | Stable mocap-fused hover + landing | ✅ CMU + single-drone config trim + manual PX4 failsafes | Not yet |
+| M6 First flight | Stable mocap-fused hover + landing | ✅ CMU + goal configs + `land_speed` fix | 🟡 **FLOWN 2026-09-01** — first offboard takeoff+hover; RC kill (ch8) mapped + takeover exercised; goal flights + **in-flight geofence ✅ 2026-09-03** (ledger #17–21). Remaining for sign-off: one clean untethered takeoff→hover→land cycle (+ optional `swarm_real` trim, deferred — see M6) |
 
 CMU flight-tested all of M3–M6 on their own Starling 2 Max — our work is **validation and
-replication on our rig**, not development.
+replication on our rig**, not development. Scope note (2026-09-03): the lab has **one**
+Starling — multi-drone operation is out of scope for now; single-drone goal configs are the
+operative path.
 
 ## 3b. Code-readiness audit (2026-07-20)
 
@@ -92,11 +94,20 @@ QGC/`px4-param`, the VOXL script deliberately excludes them); PX4 failsafes and 
 | 14 | **M4-B: EKF2 fuses the mocap pose** | `ground_control.launch.py … use_mocap:=true` → `fmu/in/vehicle_visual_odometry` (pose-only, quality 100, velocities NaN by design); echo `fmu/out/vehicle_odometry` | out positions match mocap in within ~2 cm (sample: in `[0.454, -0.093, -0.071]` vs out `[0.454, -0.094, -0.086]`); velocities ≈ 0 at rest | 2026-08-28 |
 | 15 | **M5: RViz tracks the hand-carried drone** | `svg_drones.rviz` (Fixed Frame `map`→`world`) + `real_interfaces.launch.py`; GIF `assets/rviz_tracks_hand_carried_drone.gif`, full video `videos/SVG_check_if_rviz_moves_by_movingdrone_manually.mp4` | marker follows the carried drone live | 2026-08-28 |
 | 16 | **M4 exit: frame hand-check** | carry the drone North / East / up, watch `fmu/out/vehicle_odometry` | axes correct (N → `pos[0]`↑, E → `pos[1]`↑, up → `pos[2]`↓) — confirmed by Jeremy in the hangar | 2026-08-28 |
+| 17 | **M6: FIRST OFFBOARD FLIGHT — takeoff + hover under the commander** | `swarm_commander` `takeoff` service, mocap→EKF2 fused (AI.R STC hangar, drone_1 / D0012); RC kill switch mapped (ch8) + RC takeover exercised in flight | stable takeoff + hover under software control; manual landing | 2026-09-01 |
+| 18 | Single-goal flight (`goal_single.yaml`) | runtime waypoint sent via `/svg/drone_1/goal_command` | drone flew to the commanded goal and held | 2026-09-03 |
+| 19 | Multi-goal square (`goal_tracking.yaml`) | 4 corners commanded via a `ros2 topic pub` loop | 2 full laps of the square, all corners tracked | 2026-09-03 |
+| 20 | **GEOFENCE VALIDATED IN FLIGHT** (all configs) | deliberate in-flight breach | breach ⇒ freeze-hover (stays armed); recovery clean via `land` → `reset_fence` → `takeoff` | 2026-09-03 |
+| 21 | Landing auto-disarm made reliable | `land_speed_mps` 0.3 → 0.6 in the configs (committed) | 0.3 = slow bouncy touchdown that misses PX4's land-detector window → armed-on-ground; 0.6 plants firmly and PX4 auto-disarm fires every landing | 2026-09-03 |
 
-### ⚠️ Open issues (none block the mocap work)
+### ⚠️ Open issues (none block flying — but brief every pilot on the flight-ops rows)
 
 | Issue | Details | Matters for |
 |---|---|---|
+| **Control-authority leak: RC takeover only clean into MANUAL** | Commander setpoints keep being consumed by PX4 v1.14 even after the pilot switches to POSCTL/ALTCTL — the stream fights the sticks. Clean takeover = switch to **MANUAL** (or hit the kill switch). Designed fix (a `~/release` Trigger service) is shelved — see the M6 backlog. | **every flight** — brief the pilot: takeover means MANUAL or kill, never POSCTL/ALTCTL |
+| Commander touchdown disarm is a premature one-shot | Fires once at ~15 cm altitude, always denied → QGC shows a red "Disarming denied, not landed" **once per landing**. Cosmetic: PX4's own auto-disarm does the real work, reliable since `land_speed_mps` 0.6 (ledger #21). | landings — expect + ignore exactly one red QGC message |
+| Commander stuck non-IDLE after any RC takeover | After a takeover the commander never returns to IDLE on its own, so the next `takeoff` is refused. Reset: call `land` once → back to IDLE. | every session with an RC takeover |
+| `test/functional_*.py` publishes fake odometry on real topics | **Never run these tests with the real stack up** — they inject fake odometry onto the live topics. Bench/sim only. | safety — pre-flight discipline |
 | **PX4 version mismatch: drone v1.14 vs workspace v1.15** (symptom: `vehicle_status` 30 Hz on `hz` but echo silent) | **FULL AUDIT 2026-08-11 (two-agent verification):** the vendored px4_msgs (`src/local/controls/px4_msgs`) is a byte-exact snapshot of upstream px4_msgs **main @ `9e35651` (2024-06-26) — effectively release/1.15** for all flight-critical messages (pkg version 2.0.1; diffed against every upstream commit since 2023). The rest of the workspace agrees: **sim containers build PX4 v1.16.1 SITL** (`Dockerfile.isaac-ros:3`, ms-airsim `Dockerfile:13`), agent v2.4.3 is version-agnostic, and the ONLY v1.14 artifacts are drone-side (factory `microdds_client` name; the setup script auto-detects both names). Per-message audit vs release/1.14: `VehicleOdometry`, `TrajectorySetpoint`, `BatteryStatus` **wire-identical** (mocap feed + setpoints safe — which MASKS the problem); `OffboardControlMode` benign for position/velocity offboard; `VehicleStatus`, `VehicleCommand` (arm/mode commands — `source_component` u8→u16 shifts everything after it), `VehicleLocalPosition`, `VehicleControlMode` **DANGEROUS** (mid-message inserts/reorder → silent garbage both directions). **REVISED after CMU input (same day): CMU confirms THEY also flew a v1.14 drone — with this exact px4_msgs** (git history in ~/AirStack-cmu: px4_msgs added 2026-03-09 in the Jazzy-upgrade commit, untouched since, i.e. before their flight tests). Code audit explains why it works: the SVG workflow's exercised path is wire-compatible — `px4_interface` subscribes ONLY to `VehicleStatus` + `VehicleOdometry`; odometry + `TrajectorySetpoint` are byte-identical to 1.14; `OffboardControlMode`'s first 6 flags (all we use) are identical; `VehicleCommand`'s corruption is confined to trailing metadata after `source_component` (command/params/targets decode correctly on the drone) — and crucially the commander's ARMING sequence is **time-staged fire-and-forget** (offboard @1.0s, arm @1.5s, ascend @2.5s — `swarm_commander.py:77-80`) and **nothing in svg_ground_control reads `is_armed`**, so the undecodable `VehicleStatus` is never consumed. `VehicleLocalPosition`/`VehicleControlMode` aren't subscribed at all. **Conclusion: flying on v1.14 is evidenced-OK for THIS workflow (CMU did it).** Residual risks to respect at M6: the software is BLIND to arming/nav state (QGC + RC kill are the only arming visibility — both already mandated), and any future use of the onboard `takeoff_landing_planner` path (which DOES gate on `is_armed`) would break. Optional clean-up remains upgrading the drone to the voxl-px4 1.15 line. Worth asking CMU their exact voxl-px4 build to fully close this. | **M6 caution, not a blocker** — fly with QGC visible + thumb on RC kill (already required); don't trust any software arming indication |
 | WiFi reboot-persistence unverified | The 08-11 config was written by `voxl-wifi station` (not the proven manual method). Reboot the drone once; check `iw dev mlan0 link`. | every session |
 | CONFIG.md drone-IP row still TBD | Laptop `192.168.0.192` recorded; read the drone's lease with `voxl-my-ip` and record it. | diagnostics (ping) |
@@ -112,7 +123,9 @@ QGC/`px4-param`, the VOXL script deliberately excludes them); PX4 failsafes and 
 | 4 | ✅ done 2026-08-28 — **M4-B:** fusion chain verified in → out (`fmu/out/vehicle_odometry` matches mocap within ~2 cm; ledger #14) | container | — |
 | 5 | ✅ done 2026-08-28 — **M4 exit:** frame hand-check passed (axes correct; ledger #16) | mocap room | — |
 | 6 | ✅ done 2026-08-28 — **M5:** RViz tracks the hand-carried drone (ledger #15) | container | — |
-| 7 | **M6 prereqs:** trim `swarm_real.yaml` to `drone_1` · RC kill + failsafes in QGC · resolve the `vehicle_status` echo issue | laptop + QGC | — |
+| 7 | ✅ done 2026-09-01 — **M6 prereqs:** RC kill mapped (ch8) + takeover exercised in flight; flown on single-drone goal configs instead of a `swarm_real.yaml` trim (trim deferred — row 9) | laptop + QGC | — |
+| 8 | **M6 sign-off:** one clean untethered takeoff → hover → land cycle end-to-end (auto-disarm on touchdown, no RC intervention) | hangar | — |
+| 9 | *(optional — recommended for single-drone ops)* trim `swarm_real.yaml` to `drone_1` — lab decided 2026-09-03 to defer; until then the phantom `drone_2`/`drone_3` WARNs are expected and harmless | laptop | — |
 
 ## 4. Milestone 1 — record (2026-07-20)
 
@@ -785,12 +798,55 @@ ros2 launch svg_ground_control real_interfaces.launch.py drones:=drone_1
 ros2 bag record /drone_1/pose /drone_1/odometry_conversion/odometry
 ```
 
-### M6 — First flight
+### M6 — First flight (🟡 IN PROGRESS — FLOWN 2026-09-01; goal flights + fence ✅ 2026-09-03; sign-off pending)
+
+Original plan (kept for reference):
 - `swarm_real.yaml`: `drone_names: ["drone_1"]`, `drone_modes: "real"`, hover, fence inside the
   net, ≤ 1.0 m/s.
 - PX4: RC kill mapped + tested; `COM_OBL_RC_ACT`; low-battery action.
 - Preflight (mocap hz, odometry tracks reality, thumb on kill) → `takeoff` → hover → `land`.
 - Post-flight: PlotJuggler diff `/drone_1/pose` vs `/drone_1/fmu/out/vehicle_odometry`.
+
+**Work log — 2026-09-01 → 09-03 flight-test campaign (AI.R STC hangar, drone_1 / D0012,
+single Starling):**
+
+- **2026-09-01 — FIRST OFFBOARD FLIGHT** (ledger #17): takeoff + hover under
+  `swarm_commander` with the mocap→EKF2 chain; RC kill switch mapped to **ch8** and RC
+  takeover exercised in flight; manual landing.
+- **2026-09-03 — goal flights** (ledger #18–19): `goal_single.yaml` single-goal flight
+  (runtime waypoint via `/svg/drone_1/goal_command`), then `goal_tracking.yaml` multi-goal
+  square — 4 corners via a `ros2 topic pub` loop, 2 laps.
+- **2026-09-03 — GEOFENCE VALIDATED IN FLIGHT** on all configs (ledger #20): breach ⇒
+  freeze-hover (stays armed); recovery via `land` → `reset_fence` → `takeoff`.
+- **2026-09-03 — landing auto-disarm made reliable** (ledger #21): `land_speed_mps`
+  0.3 → 0.6 (0.3 = slow bouncy touchdown that misses PX4's land-detector window →
+  armed-on-ground; 0.6 plants firmly and auto-disarm fires). Configs committed.
+
+Deviation from plan: the `swarm_real.yaml` 3-drone → `drone_1` trim was **deferred by lab
+decision (2026-09-03)** — flights ran on the single-drone goal configs instead; the phantom
+`drone_2`/`drone_3` WARNs are expected and harmless. Only **one** Starling exists, so
+multi-drone is out of scope for now (the trim stays optional-but-recommended for
+single-drone ops).
+
+**Remaining for M6 sign-off:** one clean untethered takeoff → hover → land cycle end-to-end
+(auto-disarm on touchdown, no RC intervention), plus the optional trim above.
+
+**Flight logs:** live on the drone at `/data/px4/log/sessNNN/` (`ssh root@<drone>` —
+password in [CONFIG.md](CONFIG.md)); pulled copies in `~/flight_logs/2026-09-01/`. ⚠️ The
+drone clock can be unsynced, so QGC's log dates are wrong — match logs by **size**, not date.
+
+#### M6 backlog — designed but NOT implemented (deliberately shelved 2026-09-03)
+
+Three `swarm_commander.py` fixes were designed, then shelved after the `land_speed` 0.6 fix
+proved sufficient:
+
+| # | Fix (designed, not implemented) | Would give |
+|---|---|---|
+| 1 | `LANDED_SETTLE` state + retried disarm | deterministic landing disarm (vs. today's premature one-shot, see open issues) |
+| 2 | `~/release` Trigger service | clean RC handover (stops the setpoint stream) + IDLE reset |
+| 3 | Param-gated yaw control (goal orientation → yaw-rate via `angular.z`; interface already wired) | yaw tracking on goals |
+
+**Revisit trigger:** any landing that stays armed, or the start of multi-drone ops.
 
 ## 7. Troubleshooting quick table
 
@@ -817,3 +873,10 @@ ros2 bag record /drone_1/pose /drone_1/odometry_conversion/odometry
 | Drone WiFi: `mlan0`/`uap0` vanish after reboot; dmesg `Firmware Init Failed` / `Card is removed: -2` | WLAN chip firmware wedged — warm reboots don't reset it. **Cold power cycle** (battery + USB out, 10 s). |
 | Drone `iw` prints usage instead of link info | Old iw (4.14) needs explicit syntax: `iw dev mlan0 link`. |
 | Ctrl+C does nothing in `adb shell` | VOXL adbd doesn't forward signals. Kill from a second shell (`adb shell pkill <cmd>`) or use self-terminating commands (`ping -c2 -w4`). |
+| QGC red "Disarming denied, not landed" once per landing | Cosmetic — the commander's premature one-shot disarm (fires ~15 cm up, always denied). PX4's own auto-disarm does the real work; reliable since `land_speed_mps` 0.6. |
+| Drone stays ARMED on the ground after landing | Touchdown too soft/bouncy for PX4's land detector — `land_speed_mps` too low (0.3 did this). Set 0.6 (committed default); until disarmed, treat as live. |
+| RC takeover into POSCTL/ALTCTL fights the sticks | Control-authority leak: commander setpoints are still consumed by PX4 v1.14 in those modes. Take over into **MANUAL** (or kill) only. |
+| Commander refuses `takeoff` after an RC takeover | Stuck non-IDLE. Call `land` once → resets to IDLE, then `takeoff`. |
+| Weird/fake odometry appears on real topics | A `test/functional_*.py` is running — they publish fake odometry on the real topic names. **Never run them with the real stack up.** Kill it, restart the stack. |
+| Startup WARNs about `drone_2`/`drone_3` (only 1 drone flying) | Phantom drones from the un-trimmed 3-drone `swarm_real.yaml` — expected and harmless (trim deferred 2026-09-03; see M6). |
+| QGC shows wrong dates on the drone's flight logs | Drone clock unsynced (no NTP). Match logs by **size**. Logs live at `/data/px4/log/sessNNN/` on the drone (ssh root@ — password in CONFIG.md); pulled copies in `~/flight_logs/2026-09-01/`. |

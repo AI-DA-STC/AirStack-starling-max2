@@ -37,7 +37,7 @@ swarm_commander:
                              0.0, 0.0, 0.0]
     squeeze_holder_positions: [0.0, -0.69, 1.2, 0.0, 0.69, 1.2]
     squeeze_intruder_waypoints: [-1.2, 0.0, 1.2, 1.2, 0.0, 1.2]
-    hover_positions: [-1.2, 0.0, 1.2,
+    hover_positions: [-1.2, 0.0, 0.5,
                        1.2, 0.0, 1.2,
                        0.0, -1.2, 1.2]
 

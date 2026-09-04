@@ -287,6 +287,9 @@ for lap in 1 2; do for c in "-0.5 -0.5" "0.5 -0.5" "0.5 0.5" "-0.5 0.5"; do G $c
 ros2 service call /swarm_commander/land std_srvs/srv/Trigger
 ```
 
+What success looks like: the 09-03 recordings — [drone POV](videos/Starling_goal_tracking_drone.mp4)
+· [RViz POV](videos/Starling_goal_tracking_RVIZ.mp4) (GIFs embedded in the README showcase).
+
 **C4 — Geofence** (✅ validated in flight, all configs). Breach ⇒ **ALL drones freeze-hover
 in place — still ARMED, not a motor cut.** Recover: `land` → `/swarm_commander/reset_fence`
 → `takeoff` → `start`.

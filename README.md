@@ -5,6 +5,30 @@ Everything for flying a ModalAI **Starling Max 2** live under **CMU AirStack** (
 plan, bug-fix patches, demo recordings, **and a complete known-good snapshot of the AirStack
 code itself**.
 
+## ✈️ Showcase — autonomous waypoint flight, validated 2026-09-03
+
+The drone below is flying itself. No pilot is touching sticks: ceiling cameras track it,
+the ground laptop fuses that into PX4's state estimator, and the swarm commander flies it
+through operator-published waypoints — takeoff, goal tracking, geofence, landing, and
+auto-disarm all under software control (RC kill switch armed in hand throughout).
+
+| Drone's-eye view (12× speed) | What the software sees — RViz (4× speed) |
+|---|---|
+| <img src="assets/starling_goal_tracking_drone_8x.gif" alt="Starling Max 2 flying commanded waypoints in the hangar" width="420"> | <img src="assets/starling_goal_tracking_rviz_4x.gif" alt="RViz view of the same goal-tracking flight" width="420"> |
+| [full video](videos/Starling_goal_tracking_drone.mp4) | [full video](videos/Starling_goal_tracking_RVIZ.mp4) |
+
+**What's been achieved so far** (details: [MILESTONES.md](MILESTONES.md)):
+
+- **2026-09-01 — first offboard flight**: takeoff + hover fully under AirStack command,
+  position from OptiTrack mocap (no GPS, no VIO), RC kill switch verified in flight.
+- **2026-09-03 — waypoint flights**: runtime goals published over ROS 2 (single goal +
+  a multi-goal square, 2 laps), **in-flight geofence** validated (breach ⇒ freeze-hover,
+  clean recovery), reliable landing auto-disarm.
+- The full toolchain to reproduce it is in this repo: mocap bridge ([MOCAP.md](MOCAP.md)),
+  session runbook ([RUNBOOK.md](RUNBOOK.md) §B/§C), drone parameter set
+  ([`starling_1_indoor_params.params`](starling_1_indoor_params.params)), and every
+  lesson learned along the way ([MILESTONES.md](MILESTONES.md)).
+
 ## Flight-lab network architecture
 
 <img src="pictures/Flight_lab_architecture.jpg" alt="Flight laboratory network architecture — mocap → Motive → ground control workstation → drone" width="850">
@@ -40,7 +64,7 @@ More detail on the router itself (configuration, ports, access):
 | [AirStack/](AirStack/) | **Full AirStack code snapshot** (2026-07-20, bug fixes applied, submodules included) — see its own [README](AirStack/README.md) |
 | [patches/](patches/) | Our bug fixes as patch files — two AirStack fixes (already applied in `AirStack/`) + the libmotioncapture NatNet-4.2 fix (`mocap.sh setup` applies it) |
 | [tools/make_milestones_doc.py](tools/make_milestones_doc.py) | Word (.docx) export generator — **legacy** (pre-migration paths); [MILESTONES.md](MILESTONES.md) is canonical |
-| [assets/](assets/) · [videos/](videos/) | GIFs (embedded in MILESTONES.md) and source screen recordings of Milestone 1 |
+| [assets/](assets/) · [videos/](videos/) | GIFs (embedded here + in MILESTONES.md) and source recordings — M1 sim demos, the M5 hand-carry tracking check, and the 09-03 goal-tracking flight (drone + RViz POV) |
 
 ## Whose document is whose
 

@@ -1,5 +1,86 @@
 # AirStack / Starling Max 2 — Claude Session Handoff Notes
 
+> ⚠️ **Sections below §0 describe the pre-2026-08-27 state — superseded where they conflict
+> with §0 / MILESTONES / MOCAP / RUNBOOK.** They are kept as the archive (the how-we-got-here
+> narrative); do not delete them, and do not act on their network/mocap specifics.
+
+---
+
+## §0 · CURRENT STATE (2026-09-04)
+
+Read order for a new session — this section is the digest, those files are canonical:
+
+| Doc | Use it for |
+|---|---|
+| [RUNBOOK.md](RUNBOOK.md) | running a session (§B real-drone bring-up, §C goal flights) |
+| [MILESTONES.md](MILESTONES.md) | state: status table §3, test ledger §3c, M6 record, troubleshooting §7 |
+| [MOCAP.md](MOCAP.md) | the pose pipeline + `./mocap.sh` |
+| [CONFIG.md](CONFIG.md) | every live value (IPs, SSIDs, PX4 params, credentials) |
+| MILESTONES § "M6 backlog" | deferred/shelved designs (full designs now in [BACKLOG.md](BACKLOG.md)) |
+
+**Network (since 2026-08-27 — all values live in CONFIG.md, they drift):**
+- **AI.R STC hangar wired LAN `192.168.9.x`**: laptop Ethernet `.9.107`, Motive PC `.9.124`
+  (hangar assigns by switch port — re-check each session), Starling 1 `.9.10`,
+  router admin `http://192.168.9.1:8080`.
+- Drone WiFi SSID **`motive`**; the drone dials the laptop (uXRCE port 8888, domain 1).
+- The 08-11 `Mocap_QCGroundControl` / `192.168.0.x` topology and the two-router
+  `192.168.8.x`/`10.x` topology in §3.5 below are both DEAD.
+
+**Mocap (2026-08-27 rewrite — MOCAP.md is the doc):**
+- **`./mocap.sh` bridge runs on the laptop HOST** (normal terminal, NOT the container).
+- natnet_ros2 is SUPERSEDED: our Motive **broadcasts** (`BroadcastInsteadOfMulticast="true"`
+  profile flag overrides the GUI); the closed NatNet SDK is multicast-only → connects,
+  lists bodies, publishes nothing forever. Bridge = patched `motion_capture_tracking`
+  (NatNet-4.2 modeldef segfault, `patches/0003`) + `mocap/pose_relay.py` →
+  `/drone_1/pose` @ Motive's rate (50 Hz).
+- Something wrong → `./mocap.sh check` FIRST (6-s wire test, plain-English verdict).
+
+**Flight state (MILESTONES §3/§3c canonical):**
+- M1–M5 ✅ done (M4 fusion + frame hand-check, M5 hand-carry RViz: 2026-08-28).
+- **M6 FLOWN 2026-09-01** — first offboard takeoff + hover under `swarm_commander`;
+  RC kill (ch8) mapped + RC takeover exercised in flight.
+- 2026-09-03: single-goal + multi-goal-square flights (`goal_single.yaml` /
+  `goal_tracking.yaml`, runtime waypoints via `/svg/drone_1/goal_command`) and
+  **in-flight geofence validated** (breach ⇒ freeze-hover; `land` → `reset_fence` → `takeoff`).
+- **Sign-off pending: one clean untethered takeoff → hover → land cycle** (auto-disarm on
+  touchdown, no RC intervention). `swarm_real.yaml` 3→1-drone trim deferred by lab decision
+  (phantom drone_2/3 WARNs are harmless); one Starling only — multi-drone out of scope.
+
+**Canonical drone params:** `starling_1_indoor_params.params` at repo root (872-param QGC
+export, PX4 v1.14, 2026-09-04). Provision a drone: QGC → Parameters → Tools → **Load from
+file** → reboot PX4 → spot-check `EKF2_EV_CTRL=11`, `RC_MAP_KILL_SW=8` by read-back
+(procedure: MILESTONES M4-A).
+
+**Key operational rules (brief every pilot):**
+1. **RC takeover = MANUAL or kill switch ONLY** — setpoint-authority leak on PX4 v1.14:
+   POSCTL/ALTCTL keep consuming commander setpoints and fight the sticks.
+2. **Confirm DISARMED in QGC after every landing** — the commander's "disarmed" log is
+   optimistic; QGC is the only arming truth on this drone.
+3. Commander stuck non-IDLE after any RC takeover → call `land` once to reset, then `takeoff`.
+4. `land_speed_mps` = **0.6, not 0.3** (0.3 ⇒ bouncy touchdown, missed land detector,
+   armed-on-ground).
+5. **Never run `test/functional_*.py` with the real stack up** — they publish fake odometry
+   on the live topic names.
+
+**Known blind spot:** the software CANNOT read PX4 arming/nav state (workspace px4_msgs
+≈ v1.15 vs drone v1.14 → `VehicleStatus` undecodable; full audit + why it's evidenced-OK for
+this workflow: MILESTONES §3c open issues). Fly with QGC visible + thumb on RC kill.
+
+**Deferred designs:** three `swarm_commander.py` fixes designed then shelved 2026-09-03 —
+`LANDED_SETTLE` retried disarm, `~/release` RC-handover service, param-gated yaw-on-goals —
+in MILESTONES "M6 backlog". Revisit trigger: any armed-on-ground landing, or multi-drone ops.
+
+**Flight logs:** on the drone at `/data/px4/log/sessNNN/` (`ssh root@<drone IP>`, password in
+CONFIG.md); pulled copies in `~/flight_logs/` (e.g. `2026-09-01/`). Drone clock is unsynced —
+match logs by **size**, not date.
+
+**⚠️ Two-copy git workflow currently INVERTED:** new commits live in
+`~/Documents/GitHub/AirStack-starling-max2` (this copy); the live working copy
+`~/AirStack-starling-max2` is PENDING SYNC. Check `git log` in both before assuming either
+is current; restore the normal flow (work in the live copy, push from there) after syncing.
+
+---
+
 > **Purpose of this file:** a new Claude (or human) session can read this one file and know
 > everything established so far: the objective, what was found and fixed, what succeeded,
 > the exact current state of every checkout on this machine, and what comes next.

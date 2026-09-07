@@ -60,6 +60,11 @@ More detail on the router itself (configuration, ports, access):
 | [CONFIG.md](CONFIG.md) | **Single source of truth for lab values** (IPs, SSID, ports, names — all DHCP-drifty until static leases) + what to do when one changes + 60-second fixes |
 | [MOCAP.md](MOCAP.md) · [mocap.sh](mocap.sh) · [mocap/](mocap/) | **How the drone knows where it is** — layman's guide to our OptiTrack pipeline, and the `./mocap.sh` bridge that replaced natnet_ros2 (our Motive broadcasts; the official SDK can't hear it — full story inside, verified 2026-08-27) |
 | [MILESTONES.md](MILESTONES.md) | The plan **and the work log**: per-milestone status, what was done & debugged so far, one-time setup procedures, troubleshooting table |
+| [PREFLIGHT.md](PREFLIGHT.md) | **Print + laminate for the hangar** — pre-flight checklist, emergency ladder (hold → land → KILL), iron rules |
+| [MOTIVE.md](MOTIVE.md) | Motive-PC operator guide — calibration, rigid bodies, streaming pane, and why the mocap origin must be treated with respect |
+| [DRONE_SETUP.md](DRONE_SETUP.md) | Provision a NEW Starling from the box — one ordered checklist (WiFi → comms script → params file → Motive body → kill test) |
+| [BACKLOG.md](BACKLOG.md) | Designed-but-shelved `swarm_commander.py` fixes (landing-disarm settle, `release` service, yaw control) — full implementation designs + revisit triggers |
+| [`starling_1_indoor_params.params`](starling_1_indoor_params.params) | Canonical drone parameter set (872-param QGC export, 2026-09-04) — load via QGC, procedure in MILESTONES M4-A |
 | [CLAUDE_NOTES.md](CLAUDE_NOTES.md) | Full session handoff for AI-assisted sessions: complete history, findings, machine state, gotchas |
 | [AirStack/](AirStack/) | **Full AirStack code snapshot** (2026-07-20, bug fixes applied, submodules included) — see its own [README](AirStack/README.md) |
 | [patches/](patches/) | Our bug fixes as patch files — two AirStack fixes (already applied in `AirStack/`) + the libmotioncapture NatNet-4.2 fix (`mocap.sh setup` applies it) |

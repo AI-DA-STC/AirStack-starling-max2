@@ -313,6 +313,23 @@ they publish FAKE odometry onto the real topics (flyaway risk).
 
 ---
 
+## D · POST-FLIGHT — pull & review the PX4 logs
+
+Every arming writes a `.ulg` on the drone. **Laptop** terminal (password: CONFIG.md):
+```bash
+ssh root@<DRONE_IP> "ls -lt /data/px4/log/ | head -3"        # newest session dir
+scp root@<DRONE_IP>:/data/px4/log/sessNNN/logNNN.ulg ~/flight_logs/$(date +%F)/
+```
+⚠️ The drone's clock is often unsynced — **match logs by SIZE, not date** (QGC's Onboard
+Logs dates are wrong the same way; a "8/20" entry may be today's flight). Sessions increment
+per boot; log numbers per arming.
+
+Review: drag the `.ulg` onto **logs.px4.io** (Flight Review). Look at: EKF vision-fusion
+health (innovations flat = mocap trusted), actuator outputs (persistent motor asymmetry in
+hover = CG/trim issue), and the mode/arming timeline (every takeover and disarm is recorded
+— it settles any "what actually happened" debate; see MILESTONES ledger #17-21 for examples).
+PlotJuggler alternative: diff `/drone_1/pose` vs `fmu/out/vehicle_odometry`.
+
 ## Pocket reference
 
 | Thing | Rule |

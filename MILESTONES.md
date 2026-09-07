@@ -835,6 +835,23 @@ Original plan (kept for reference):
 
 #### M6-A · ONE-TIME RC transmitter setup (safety-critical)
 
+**RC configuration as flown — extracted from [`starling_1_indoor_params.params`](starling_1_indoor_params.params) (2026-09-04, 16 channels, `COM_RC_IN_MODE=3`):**
+
+| Channel | Function (PX4 param) | Notes |
+|---|---|---|
+| ch1 | Roll stick (`RC_MAP_ROLL`) | |
+| ch2 | Pitch stick (`RC_MAP_PITCH`) | |
+| ch3 | Throttle stick (`RC_MAP_THROTTLE`) | |
+| ch4 | Yaw stick (`RC_MAP_YAW`) | |
+| ch5 | **ARM switch** (`RC_MAP_ARM_SW`) | flipping it arms/disarms ("Armed/Disarmed by RC (switch)" in the PX4 console) |
+| ch6 | **Flight-mode switch** (`RC_MAP_FLTMODE`, 3-position) | low = **MANUAL** (slot1=0) · mid = **POSITION** (slots3/4=2) · high = **OFFBOARD** (slot6=7) |
+| ch8 | **KILL switch** (`RC_MAP_KILL_SW`) | the true motor cutoff — outranks everything |
+| — | Offboard switch (`RC_MAP_OFFB_SW=0`) | deliberately UNMAPPED since 2026-09-04 (was ch8 — the kill-switch double-booking is resolved; offboard entry is now the ch6 high position or the software takeoff) |
+
+⚠️ TODO (fill in — hardware-side, not in any param file): transmitter **make/model**, which
+physical switch is ch5/ch6/ch8 (a labeled photo in `pictures/` is ideal), binding procedure,
+transmitter battery care.
+
 The RC kill switch is the only true motor cutoff (the geofence only freezes — see §4).
 Stored in the transmitter + PX4 params, so once per drone/transmitter pairing — but the
 ground check in step 4 must be repeated per step 5.

@@ -70,9 +70,9 @@
 
 ## 7 · Motive rigid body
 
-- [ ] Attach 4–5 reflective markers in an **asymmetric** pattern (no two spacings alike) — [MOTIVE.md](MOTIVE.md) §3 (detail: MILESTONES M2 step 1).
-- [ ] In Motive create a rigid body named **exactly `drone_N`** (lowercase + underscore — topic names come from it), with the drone's forward axis on global **+X** — [MOTIVE.md](MOTIVE.md) §3 / CONFIG.md §Mocap.
-- [ ] Check the Data Streaming pane: Up Axis = Z, streaming enabled, Local Interface = Motive PC IP — [MOTIVE.md](MOTIVE.md) §4 / `pictures/check_motive_ip_address.jpg`.
+- [ ] Attach 4–5 reflective markers in an **asymmetric** pattern (no two spacings alike) — [MOCAP.md](MOCAP.md) §6.3 (detail: MILESTONES M2 step 1).
+- [ ] In Motive create a rigid body named **exactly `drone_N`** (lowercase + underscore — topic names come from it), with the drone's forward axis on global **+X** — [MOCAP.md](MOCAP.md) §6.3 / CONFIG.md §Mocap.
+- [ ] Check the Data Streaming pane: Up Axis = Z, streaming enabled, Local Interface = Motive PC IP — [MOCAP.md](MOCAP.md) §6.4 / `pictures/check_motive_ip_address.jpg`.
 - [ ] Add the body to `MOCAP_BODIES` for `./mocap.sh` and restart the bridge (body list is read only at startup); verify per [MOCAP.md](MOCAP.md) — CONFIG.md "Rigid body name" row.
 
 ## 8 · RC transmitter + kill switch (safety-critical)

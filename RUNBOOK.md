@@ -3,7 +3,7 @@
 > **Who this is for:** anyone whose machine is already set up (README → "Setting up AirStack
 > on a NEW machine") and who just wants to **run** things. No background, no debugging — that
 > lives in [MILESTONES.md](MILESTONES.md) (plan + work log) and
-> [CLAUDE_NOTES.md](CLAUDE_NOTES.md) (full history).
+> [TROUBLESHOOTING.md](TROUBLESHOOTING.md) (symptom → fix).
 > Every code block says where it runs. **Never paste across a `connect` line** — it opens a
 > new shell and swallows what follows.
 
@@ -174,7 +174,7 @@ Mocap PC are historical.)
 old driver can't hear it; story + troubleshooting in [MOCAP.md](MOCAP.md)). *Prereq: the
 `drone_1` rigid body exists in Motive BEFORE launching — the body list is read only at
 startup (create/rename later → Ctrl+C and relaunch); creating it + Motive streaming-pane
-settings: [MOTIVE.md](MOTIVE.md) §3–§4.* **Laptop** terminal (NOT a container
+settings: [MOCAP.md](MOCAP.md) §6.* **Laptop** terminal (NOT a container
 shell; one-time `./mocap.sh setup` first if this machine never ran it):
 ```bash
 cd ~/AirStack-starling-max2 && ./mocap.sh      # this repo's root (wherever you cloned it)

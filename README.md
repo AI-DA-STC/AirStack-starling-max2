@@ -36,7 +36,7 @@ auto-disarm all under software control (RC kill switch armed in hand throughout)
 >   ([RUNBOOK.md](RUNBOOK.md) §B) with a trained person.
 > - **Flying today** → [RUNBOOK.md](RUNBOOK.md)
 > - **Setting up a new drone** → [DRONE_SETUP.md](DRONE_SETUP.md)
-> - **At the Motive PC** → [MOTIVE.md](MOTIVE.md)
+> - **At the Motive PC** → [MOCAP.md](MOCAP.md) §6
 > - **Something's broken** → [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
 > - **Starting an AI-assisted session** → [CLAUDE.md](CLAUDE.md)
 > - **Any unfamiliar term** → [GLOSSARY.md](GLOSSARY.md)
@@ -141,15 +141,12 @@ this file.
 | [CONFIG.md](CONFIG.md) | **Single source of truth for lab values** (IPs, SSID, ports, names — all DHCP-drifty until static leases) + what to do when one changes |
 | [TROUBLESHOOTING.md](TROUBLESHOOTING.md) | **Symptom-indexed fixes — start here when something misbehaves** |
 | [GLOSSARY.md](GLOSSARY.md) | Plain-English definitions of every recurring term (mocap, EKF2, offboard, DDS domain…) — linked from every doc |
-| [MOCAP.md](MOCAP.md) · [mocap.sh](mocap.sh) · [mocap/](mocap/) | **How the drone knows where it is** — layman's guide to our OptiTrack pipeline, and the `./mocap.sh` bridge that replaced natnet_ros2 (our Motive broadcasts; the official SDK can't hear it — full story inside, verified 2026-08-27) |
-| [MILESTONES.md](MILESTONES.md) | The plan **and the work log**: per-milestone status, what was done & debugged so far, one-time setup procedures |
+| [MOCAP.md](MOCAP.md) · [mocap.sh](mocap.sh) · [mocap/](mocap/) | **How the drone knows where it is** — layman's guide to the whole OptiTrack pipeline: the laptop `./mocap.sh` bridge that replaced natnet_ros2 (our Motive broadcasts; the official SDK can't hear it) **and** the Motive-PC operator guide (§6: calibration, rigid bodies, streaming pane) |
+| [MILESTONES.md](MILESTONES.md) | The plan **and the work log**: per-milestone status, what was done & debugged so far, one-time setup procedures, and §8 the shelved-fix designs |
 | [PREFLIGHT.md](PREFLIGHT.md) | **Print + laminate for the hangar** — pre-flight checklist, emergency ladder (hold → land → KILL), iron rules |
-| [MOTIVE.md](MOTIVE.md) | Motive-PC operator guide — calibration, rigid bodies, streaming pane, and why the mocap origin must be treated with respect |
 | [DRONE_SETUP.md](DRONE_SETUP.md) | Provision a NEW Starling from the box — one ordered checklist (WiFi → comms script → params file → Motive body → kill test) |
-| [BACKLOG.md](BACKLOG.md) | Designed-but-shelved `swarm_commander.py` fixes (landing-disarm settle, `release` service, yaw control) — full implementation designs + revisit triggers |
 | [`starling_1_indoor_params.params`](starling_1_indoor_params.params) | Canonical drone parameter set (872-param QGC export, 2026-09-04) — load via QGC, procedure in MILESTONES M4-A |
 | [CLAUDE.md](CLAUDE.md) | AI-session entry point — read order, iron flight rules, two-clone warning |
-| [CLAUDE_NOTES.md](CLAUDE_NOTES.md) | Full session handoff for AI-assisted sessions: complete history, findings, machine state, gotchas |
 | [AirStack/](AirStack/) | **Full AirStack code snapshot** (2026-07-20, bug fixes applied, submodules included) — see its own [README](AirStack/README.md) |
 | [patches/](patches/) | Our bug fixes as patch files — two AirStack fixes (already applied in `AirStack/`) + the libmotioncapture NatNet-4.2 fix (`mocap.sh setup` applies it); full story in the [appendix](#appendix--historical-reference) |
 | [tools/make_milestones_doc.py](tools/make_milestones_doc.py) | Word (.docx) export generator — **legacy** (pre-migration paths); [MILESTONES.md](MILESTONES.md) is canonical |
@@ -160,9 +157,9 @@ this file.
 
 There are two separate places documentation lives, written by two different groups:
 
-**1. Written by us:** `README.md`, `RUNBOOK.md`, `CONFIG.md`, `MOCAP.md`, `MOTIVE.md`,
-`PREFLIGHT.md`, `DRONE_SETUP.md`, `TROUBLESHOOTING.md`, `GLOSSARY.md`, `MILESTONES.md`,
-`BACKLOG.md`, `CLAUDE.md`, `CLAUDE_NOTES.md`, `patches/`, `tools/`
+**1. Written by us:** `README.md`, `RUNBOOK.md`, `CONFIG.md`, `MOCAP.md`, `PREFLIGHT.md`,
+`DRONE_SETUP.md`, `TROUBLESHOOTING.md`, `GLOSSARY.md`, `MILESTONES.md`, `CLAUDE.md`,
+`patches/`, `tools/`
 — our objective, our milestone structure, our lab's IPs/hardware, our findings and fixes.
 
 **2. Written by CMU — everything inside the [`AirStack/`](AirStack/) folder** (it is a

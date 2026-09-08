@@ -18,6 +18,7 @@
 | No odometry reaching the commander / RViz shows no drone marker | Per-drone interfaces not running — [RUNBOOK.md](RUNBOOK.md) §B step 5 (`real_interfaces.launch.py drones:=drone_1`) must be up |
 | RViz empty + "Global Status: Error" on the real rig | `svg_drones.rviz` ships with Fixed Frame `map` (sim default) — set it to `world` |
 | Weird/fake odometry on real topics | A `test/functional_*.py` is running — they publish fake odometry on the real topic names. **Never run them with the real stack up.** Kill it, restart the stack |
+| A tool you `apt install`ed in the container is gone | Container apt installs (e.g. `apt install -y ros-jazzy-plotjuggler-ros`) **vanish on `airstack.sh down`/`up`** — that builds a fresh container — but survive a `restart`. Re-install it, or add it to the image if you need it every session |
 | Commander dies: "Logger severity cannot be changed" | CMU bug — apply patch 0002 (`patches/`), rebuild `svg_ground_control` |
 
 ## Mocap
@@ -26,9 +27,9 @@
 |---|---|
 | `/drone_1/pose` missing / 0 Hz | Is `./mocap.sh` running (laptop host terminal, NOT docker)? Then `./mocap.sh check` — its verdict names the culprit (Motive not streaming / wrong network / port 1511 squatter). Full table: [MOCAP.md](MOCAP.md) §5 |
 | **Poses stop while the drone is AIRBORNE** | **Land or kill FIRST** ([PREFLIGHT.md](PREFLIGHT.md)), debug after — EKF2 drifts within seconds without vision |
-| Bridge lists `cf1…` bodies but no `drone_1` | Rigid body not created/named yet in Motive — [MOTIVE.md](MOTIVE.md) §3; then restart the bridge (body list read once at startup) |
+| Bridge lists `cf1…` bodies but no `drone_1` | Rigid body not created/named yet in Motive — [MOCAP.md](MOCAP.md) §6.3; then restart the bridge (body list read once at startup) |
 | `/drone_1/pose` at ~50 Hz, not 120+ | Normal — our Motive runs 50 Hz ([CONFIG.md](CONFIG.md); adjustable in Motive's camera settings) |
-| Floor z reads ~1 m with the drone on the ground | Motive origin/ground-plane problem — STOP, recalibrate + frame hand-check ([MOTIVE.md](MOTIVE.md) §1) |
+| Floor z reads ~1 m with the drone on the ground | Motive origin/ground-plane problem — STOP, recalibrate + frame hand-check ([MOCAP.md](MOCAP.md) §6.1) |
 | natnet log: `Error getting Analog frame rate` | Harmless (legacy driver; no force plates on our rig). Ignore |
 
 ## Flight / arming
@@ -38,7 +39,7 @@
 | PX4 won't arm indoors ("fuse failure" / "Not Ready") | No fused position source — mocap feed down or EKF2 params missing ([CONFIG.md](CONFIG.md) §PX4/EKF2, the `.params` file) |
 | Takeoff refused: "no drone eligible (missing odometry or not IDLE)" | In order: **1.** commander stuck non-IDLE after an RC takeover / Ctrl-C → call `land` once (drone on floor); **2.** interfaces not running — RUNBOOK §B step 5; **3.** mocap bridge down → `./mocap.sh check` |
 | Landed but QGC still shows ARMED | Flip KILL (ch8 — harmless on the ground) or arm switch (ch5) down. History: the `land_speed_mps=0.3` era symptom — retuned to `0.6` ([CONFIG.md](CONFIG.md)); investigate if it recurs |
-| QGC red "Disarming denied, not landed" once per landing | Cosmetic — the commander's premature one-shot disarm (fires ~15 cm up, always denied). PX4's auto-disarm does the real work ([BACKLOG.md](BACKLOG.md) Fix 1 if it ever stops sufficing) |
+| QGC red "Disarming denied, not landed" once per landing | Cosmetic — the commander's premature one-shot disarm (fires ~15 cm up, always denied). PX4's auto-disarm does the real work ([MILESTONES.md](MILESTONES.md) §8 Fix 1 if it ever stops sufficing) |
 | RC sticks ignored / fighting in Position/Altitude mode | Control-authority leak: PX4 v1.14 still consumes commander setpoints in those modes. Take over into **MANUAL** (or kill) only |
 | Geofence breach → everything frozen mid-air | By design: freeze-hover, **still armed**, not a motor cut. Recover: `land` → `reset_fence` → `takeoff` → `start` |
 | Teleop publishes but drone doesn't move | Commander holding — call `start`; click the teleop terminal for keyboard focus |

@@ -61,6 +61,10 @@ where planning runs on the drone's own computer.
 vendored in the snapshot but is unused on our rig — our Motive broadcasts, which it can't
 hear; full story in [MOCAP.md](MOCAP.md) §3.)*
 
+<img src="pictures/Starling_Airstack_architecture.png" alt="Starling Max 2 × AirStack control-flow diagram — Motive PC to mocap bridge to robot container (mocap_bridge, swarm commander, CBF safety filter, MicroXRCEAgent) to PX4 onboard (EKF2, control loops, motors), with the RC kill switch outranking everything" width="850">
+
+*The same flow in text form (searchable):*
+
 ```mermaid
 flowchart TD
   subgraph MOTIVE["Motive PC (Windows)"]
@@ -125,18 +129,47 @@ snaps back onboard by design.
 
 ## Flight-lab network architecture
 
-**Current topology (since 2026-08-27):** everything lives on the **AI.R STC hangar wired
-LAN** (`192.168.9.x`). The Motive PC broadcasts the NatNet pose stream on that wired
-network, the ground laptop picks it up there and runs `./mocap.sh bridge`, and the drone
-joins the hangar WiFi SSID **`motive`** — mocap, laptop, and drone all on one subnet. The
-concrete values (IPs, SSID, ports, machine names) live in [CONFIG.md](CONFIG.md)'s network
-table — treat that as the single source of truth, since several are DHCP-drifty until
-static leases land. The data path across this network (cameras → Motive → bridge → EKF2)
-is exactly what the mermaid diagram in the primer above draws.
+<img src="pictures/Flight_lab_architecture.png" alt="Flight lab network topology — isolated OptiTrack camera network to Mocap PC to GL-MT6000 router splitting the lab LAN 192.168.9.0/24 and a secondary drone-WiFi segment 10.40.2.0/23" width="850">
 
-The earlier two-router topology (the `Mocap_QCGroundControl` D-Link setup, 2026-08-11,
-with its architecture photo and router-repo link) is preserved in the
-[appendix](#appendix--historical-reference) at the bottom of this file.
+**Current topology (since 2026-08-27):** the OptiTrack camera rig sits on its own
+**isolated camera network** — the overhead camera rig runs wall-trunking up the pillar to an
+unmanaged LiteWave LS105G switch that talks only to the cameras and the **Mocap PC**; that
+traffic never touches the lab LAN. The Mocap PC runs Motive and bridges the cameras to the
+lab LAN, broadcasting the NatNet pose stream there (≤240 Hz; ours runs at 50 Hz). A
+**GL.iNet GL-MT6000 router at `192.168.9.1`** creates and routes between two subnets: the
+**lab LAN `192.168.9.0/24`** — where the ground-control laptop is wired in on LAN port 4
+(`192.168.9.107`), the Mocap PC lives, and our flight drone **Starling1** (`drone_1`)
+currently sits with its static lease `192.168.9.10` on WiFi SSID **`motive`** — and a
+secondary **`10.40.2.0/23` segment**, which today holds the laptop's own WiFi NIC
+(`10.40.2.107`) and the separate "Starling 2 Max demo" drone on SSID **`StarlingMax2`**.
+
+> ⚠️ **The diagram's drone-subnet grouping is forward-looking, not current.** The picture
+> above groups the Starlings loosely against the `10.40.2.x` segment — that reflects a
+> **planned future move**, not today's wiring. As of this writing (verified by SSH), our
+> flight drone **Starling1 stays on SSID `motive`, `192.168.9.10`, on the lab LAN** — the
+> same subnet as the laptop and Mocap PC. Do not reconfigure the drone off the diagram; if
+> the migration to `10.40.2.x` happens, [CONFIG.md](CONFIG.md) will be updated first and is
+> always the tie-breaker over this picture.
+
+The router serves both drone SSIDs open on 5 GHz **channel 36**. Crazyflies (also
+`192.168.9.x`, SSID `motive`) are commanded over a **Crazyradio 2.4 GHz USB dongle** with a
+Crazyswarm2 **software kill switch**, independent of WiFi; Starlings are commanded over
+WiFi (uXRCE-DDS / MAVLink) with an **RC-remote hardware kill switch** plus QGroundControl
+on the laptop. Exact per-device values (IPs, ports, static leases, SSIDs) live in
+[CONFIG.md](CONFIG.md)'s network table — treat that as the single source of truth, since
+several are DHCP-drifty until static leases land. The data path across this network
+(cameras → Motive → bridge → EKF2) is exactly what the mermaid diagram in the primer above
+draws.
+
+**Security note:** both SSIDs are open (no WPA) — keep the lab network offline / air-gapped
+from the internet and any untrusted network.
+
+Router configuration and how to reproduce this setup:
+[AI-DA-STC/ground-control-network-setup](https://github.com/AI-DA-STC/ground-control-network-setup).
+
+The earlier two-router topology (the `Mocap_QCGroundControl` D-Link setup, 2026-08-11) is
+preserved, prose-only, in the [appendix](#appendix--historical-reference) at the bottom of
+this file.
 
 | File / folder | What it is |
 |---|---|
@@ -157,6 +190,7 @@ with its architecture photo and router-repo link) is preserved in the
 | [patches/](patches/) | Our bug fixes as patch files — two AirStack fixes (already applied in `AirStack/`) + the libmotioncapture NatNet-4.2 fix (`mocap.sh setup` applies it); full story in the [appendix](#appendix--historical-reference) |
 | [tools/make_milestones_doc.py](tools/make_milestones_doc.py) | Word (.docx) export generator — **legacy** (pre-migration paths); [MILESTONES.md](MILESTONES.md) is canonical |
 | [assets/](assets/) · [videos/](videos/) | GIFs (embedded here + in MILESTONES.md) and source recordings — M1 sim demos, the M5 hand-carry tracking check, and the 09-03 goal-tracking flight (drone + RViz POV) |
+| [pictures/](pictures/) | The two current architecture diagrams (control-flow, network topology — both embedded above) plus bring-up evidence screenshots (NatNet working, drone topics, MicroXRCEAgent connection, mocap axis checks) |
 
 ## Whose document is whose
 
@@ -381,7 +415,10 @@ normal session.
 <details>
 <summary><strong>Historical network topology (pre-2026-08-27)</strong> — the two-router <code>Mocap_QCGroundControl</code> setup</summary>
 
-<img src="pictures/Flight_lab_architecture.jpg" alt="Flight laboratory network architecture — mocap → Motive → ground control workstation → drone" width="850">
+*(The diagram that used to illustrate this section has been retired — it depicted the
+`Mocap_QCGroundControl` D-Link setup below and no longer exists as a separate file. The
+current network diagram lives in the [Flight-lab network architecture](#flight-lab-network-architecture)
+section above.)*
 
 Rough pipeline, mocap to motors: the **8 OptiTrack cameras** feed (via the OptiTrack mocap
 router) the **Motive workstation** — the mocap server, capable of up to 240 Hz (ours streams

@@ -20,13 +20,24 @@ Read order for a new session — this section is the digest, those files are can
 | [CONFIG.md](CONFIG.md) | every live value (IPs, SSIDs, PX4 params, credentials) |
 | MILESTONES § "M6 backlog" | deferred/shelved designs (full designs now in [BACKLOG.md](BACKLOG.md)) |
 
-**Network (since 2026-08-27 — all values live in CONFIG.md, they drift):**
-- **AI.R STC hangar wired LAN `192.168.9.x`**: laptop Ethernet `.9.107`, Motive PC `.9.124`
-  (hangar assigns by switch port — re-check each session), Starling 1 `.9.10`,
-  router admin `http://192.168.9.1:8080`.
+**Network (GL-MT6000 router, since 2026-09-08 — all values live in CONFIG.md, they drift):**
+- **Lab LAN `192.168.9.0/24`** (router `GL.iNet GL-MT6000`, OpenWrt, gateway/admin
+  `http://192.168.9.1:8080`): laptop Ethernet **static** `.9.107`, Starling 1 **static**
+  `.9.10` (SSID `motive`), Mocap PC **static-leased** `.9.100` but currently answering
+  `.9.124` via a second NIC (known MAC-mismatch issue — companion repo `docs/05-known-issues.md`).
+- Secondary segment **`STARLING 10.40.2.0/23`** (gw `10.40.2.1`): laptop's **WiFi** NIC
+  static `10.40.2.107`; the separate "Starling 2 Max demo" drone (SSID `StarlingMax2`) is
+  DHCP here — NOT our flight drone. ⚠️ Starlings are **planned** to migrate here in future —
+  Starling 1 has NOT moved yet, still on the lab LAN as above.
+- Both drone SSIDs (`motive`, `StarlingMax2`) are **OPEN** (no encryption) — keep the lab
+  network offline, never bridge to the internet.
+- Full router config + reproduction steps: companion repo
+  [ground-control-network-setup](https://github.com/AI-DA-STC/ground-control-network-setup).
+  Diagrams: `pictures/Flight_lab_architecture.png` (network), `pictures/Starling_Airstack_architecture.png` (control flow).
 - Drone WiFi SSID **`motive`**; the drone dials the laptop (uXRCE port 8888, domain 1).
-- The 08-11 `Mocap_QCGroundControl` / `192.168.0.x` topology and the two-router
-  `192.168.8.x`/`10.x` topology in §3.5 below are both DEAD.
+- The 08-11 `Mocap_QCGroundControl` / `192.168.0.x` topology, the AI.R STC hangar-era
+  `192.168.9.x`-with-.124-by-switch-port framing, and the two-router `192.168.8.x`/`10.x`
+  topology in §3.5 below are all DEAD/superseded by the GL-MT6000 topology above.
 
 **Mocap (2026-08-27 rewrite — MOCAP.md is the doc):**
 - **`./mocap.sh` bridge runs on the laptop HOST** (normal terminal, NOT the container).

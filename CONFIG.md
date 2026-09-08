@@ -3,7 +3,8 @@
 > **Single source of truth for every value that can drift.** Other docs reference values by
 > name; the numbers live HERE. When something changes: update this file, do the "If it
 > changes" action, commit.
-> Last verified: **2026-09-03** (flight rows) / 2026-08-28 (mocap rows) / 2026-08-11 (drone/WiFi rows).
+> Last verified: **2026-09-03** (flight rows) / 2026-08-28 (mocap rows) / 2026-08-11 (drone/WiFi rows) /
+> **2026-09-08** (network rows, GL-MT6000 topology).
 >
 > ⚠️ **2026-08-27 network change:** the lab moved to the **AI.R STC hangar wired LAN**
 > (`192.168.9.x`) for mocap — the 08-11 single-WiFi-network topology below is superseded
@@ -12,10 +13,19 @@
 
 *(Unfamiliar term? → [GLOSSARY.md](GLOSSARY.md))*
 
-## Network (all DHCP until we get static leases — requested from Wayne/Ryzal)
+## Network (router static leases for the key machines — see the leases row; other values still drift)
+
+> 📖 Full router configuration and reproduction steps live in the companion repo
+> [ground-control-network-setup](https://github.com/AI-DA-STC/ground-control-network-setup)
+> (local clone: `~/Documents/GitHub/ground-control-network-setup`). Topology picture:
+> [`pictures/Flight_lab_architecture.png`](pictures/Flight_lab_architecture.png) (embedded in README).
 
 | Value | Current | How to check | Used by | If it changes → do this |
 |---|---|---|---|---|
+| Router hardware | **GL.iNet GL-MT6000, OpenWrt** — LAN gateway `192.168.9.1` (also `10.40.0.1` / `10.40.2.1` on its other bridges); admin page row below | companion repo `docs/02-router-setup.md` | Base of the whole lab network (mocap LAN + drone WiFi) | Reproduction steps live in the companion repo |
+| Lab LAN subnet | `192.168.9.0/24` (`br-lan`) — the flight network: laptop wired `.107`, Starling1 `.10`, Mocap PC `.100`-lease-but-answers-`.124` (see rows above and static-lease row below) | `ip -4 -brief addr`; router admin page | GCS ↔ Starling1 discovery, NatNet pose stream | — |
+| Secondary segment `STARLING` | `10.40.2.0/23` (gw `10.40.2.1`, `br-lan3`) — currently holds the laptop's **WiFi** NIC (static lease `10.40.2.107`) and the separate "Starling 2 Max demo" drone (SSID `StarlingMax2`, DHCP) — **NOT our flight drone**. ⚠️ Starlings (incl. Starling1) are **planned to migrate here in future — NOT done yet**: Starling1 today is still on the lab LAN `192.168.9.10`, SSID `motive` (verified by SSH 2026-09-01) | `ip -4 -brief addr` (WiFi interface) | Nothing on the current flight path — informational only, don't confuse with the laptop's wired `192.168.9.107` | **When Starling1 actually migrates here:** its IP, the drone-dialed laptop IP (the "Laptop IP the drone dials" row above), and RUNBOOK §B step 0's `voxl_setup_real_drone.sh` re-provisioning args all change together — update all three plus this row |
+| Static leases (router-side) | The laptop's wired `.9.107`, Starling1's `.9.10`, and the Mocap PC's `.9.100` are all router **static leases** — should NOT drift | Router admin page → DHCP static leases | Re-provisioning scripts; `mocap/motion_capture.yaml` | ⚠️ The Mocap PC currently answers on `.9.124` via a second NIC instead of its leased `.100` — a known MAC-mismatch issue (the lease is pinned to a NIC that isn't the one on the lab LAN), see companion repo `docs/05-known-issues.md#static-lease-mac-mismatch-mocap-pc`. This is exactly why the Motive PC IP row below says `.124`, not `.100` |
 | **Laptop IP the drone dials** | on the hangar LAN this is the laptop **Ethernet** IP `192.168.9.107` (08-11 WiFi-era value was `192.168.0.192`) | `ip -4 -brief addr` | Baked into the DRONE's dialer by the setup script | **The critical one.** Re-provision every drone: [RUNBOOK](RUNBOOK.md) §B step 0 (`ssh root@<DRONE_IP>` → `voxl_setup_real_drone.sh <body> <laptop IP> <domain> 8888`) |
 | Laptop Ethernet IP | `192.168.9.107` (AI.R STC hangar wired LAN — **back in use since 2026-08-27, this is the mocap path**; laptop WiFi sits on `192.168.10.x`) | `ip -4 -brief addr` (the `enp…` row) | mocap bridge listens here; `clientIP:=` if natnet_ros2 is ever used | Nothing to reconfigure for `./mocap.sh` (it listens on all interfaces); update `clientIP:=` only for natnet_ros2 |
 | Motive PC IP | `192.168.9.124` (hangar wired LAN, verified 2026-08-28; was `.9.100` earlier on 08-27 — **the hangar assigns IPs by switch port**, so re-check each session; `192.168.0.190` was the 08-11 WiFi-era value) | `ipconfig` on the Motive PC, or `ping` from laptop | `mocap/motion_capture.yaml` `hostname:`; `serverIP:=` for natnet_ros2 | Update `mocap/motion_capture.yaml` in this repo (and commit); `./mocap.sh check` to confirm packets flow |
@@ -31,6 +41,8 @@
 | SSID (drone joins) | `motive` (hangar network — observed on Starling 1 via `voxl-wifi getmode` 2026-08-28; previously `Mocap_QCGroundControl` 08-11, `AI.R STC Hangar-5G` before that) | SSID **without** spaces → `voxl-wifi station '<SSID>' '<PASSWORD>'` works (proven 2026-08-11). SSID **with** spaces → manual `wpa_passphrase` method, MILESTONES M3-A step 1 (`voxl-wifi station` corrupts spaced SSIDs) |
 | Password | (not stored in this repo) | Same as above |
 | Drone WiFi interface | `mlan0` (station) / `uap0` (its own hotspot, SSID `Starling_1_demo_mode` on Starling 1 — never connect the laptop to it) | Hardware fact, won't change |
+| Band / channel | 5 GHz channel 36 (5.180 GHz), 802.11ax — both SSIDs served by the same radio. 2.4 GHz radio is deliberately **disabled** to keep the band clean for Crazyradio | Router admin page → Wireless | Hardware fact, won't change |
+| Security | ⚠️ Both `motive` (Starling1 + Crazyflies) and `StarlingMax2` (separate Starling 2 Max demo drone, not ours) are **OPEN networks — no encryption** | Router admin page → Wireless | ⚠️ **Keep the lab network offline — never bridge it to the internet.** WAN port is deliberately unplugged; adding encryption is the fix if that ever changes (companion repo `docs/05-known-issues.md`) |
 
 ## Protocol constants (change only if deliberately reconfigured everywhere)
 

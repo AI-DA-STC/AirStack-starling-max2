@@ -63,36 +63,6 @@ hear; full story in [MOCAP.md](MOCAP.md) §3.)*
 
 <img src="pictures/Starling_Airstack_architecture.png" alt="Starling Max 2 × AirStack control-flow diagram — Motive PC to mocap bridge to robot container (mocap_bridge, swarm commander, CBF safety filter, MicroXRCEAgent) to PX4 onboard (EKF2, control loops, motors), with the RC kill switch outranking everything" width="850">
 
-*The same flow in text form (searchable):*
-
-```mermaid
-flowchart TD
-  subgraph MOTIVE["Motive PC (Windows)"]
-    M["OptiTrack — 8 ceiling cameras"]
-  end
-  subgraph LAPTOP["Ground laptop"]
-    N["./mocap.sh bridge<br/>HOST terminal — outside docker<br/>(MOCAP.md)"]
-    Q["QGroundControl<br/>HOST terminal — outside docker<br/>(arming truth · params · kill visibility)"]
-    subgraph CONT["robot container (docker) — one terminal per node, RUNBOOK §B"]
-      direction LR
-      B["mocap_bridge"] --> X["MicroXRCEAgent<br/>ROS 2 ↔ PX4"]
-      P["swarm commander<br/>takeoff/goals/geofence"] --> C["CBF safety filter"] --> X
-    end
-    N -- "/drone_1/pose · 50 Hz" --> B
-  end
-  subgraph DRONE["Starling Max 2 — PX4 onboard"]
-    direction LR
-    K["XRCE client<br/>built into PX4"] -- "pose" --> E["EKF2<br/>fuses ONBOARD"]
-    K -- "velocity, 20 Hz" --> L["control loops"]
-    E --> L --> R["motors"]
-  end
-  RC["RC transmitter — kill switch<br/>OUTRANKS EVERYTHING"]
-  M -- "NatNet broadcast · wired LAN 192.168.9.x · 50 Hz" --> N
-  X == "WiFi (SSID motive) · UDP 8888 · uXRCE-DDS" ==> K
-  K -. "MAVLink telemetry" .-> Q
-  RC -. "kill / MANUAL takeover" .-> K
-```
-
 **How the laptop↔drone leg works:** the laptop repackages everything into PX4's native
 message format (`px4_msgs`), and the **MicroXRCEAgent** program ships those messages over
 WiFi to a tiny **client built into PX4 itself** — so no ROS runs on the drone, and there is
@@ -106,16 +76,11 @@ Onboard modes (Position/Hold/Mission…) = PX4 makes its own goals, fully self-c
 *(Unrelated naming collision: `AUTONOMY_ROLE=onboard/offboard` in the compose files means
 "which computer runs the software".)*
 
-```mermaid
-flowchart TD
-  SP["laptop velocity setpoint — 20 Hz over WiFi"] --> V
-  POS["POSITION loop ~50 Hz — BYPASSED (laptop does this job)"] -.-> V
-  V["VELOCITY loop ~50 Hz — onboard"] --> A["ATTITUDE loop ~250 Hz — onboard"]
-  A --> RT["RATE loop ~1000 Hz — onboard"] --> MO["motors"]
-```
-
-PX4's control is this 4-loop cascade; an offboard setpoint injects at ONE level, bypassing
-only what is above it. We inject **velocity**, so everything that keeps the aircraft upright
+PX4's control is a 4-loop cascade —
+`laptop velocity setpoint 20 Hz → VELOCITY ~50 Hz → ATTITUDE ~250 Hz → RATE ~1000 Hz → motors`,
+everything after the first arrow running **onboard**, with the POSITION loop (~50 Hz)
+bypassed because the laptop is doing that job. An offboard setpoint injects at ONE level,
+bypassing only what is above it. We inject **velocity**, so everything that keeps the aircraft upright
 stays onboard — WiFi hiccups are survivable, and agility is bounded (responsive, not
 acrobatic; aerobatics would need attitude/rate streaming, which WiFi can't support).
 
@@ -138,18 +103,17 @@ traffic never touches the lab LAN. The Mocap PC runs Motive and bridges the came
 lab LAN, broadcasting the NatNet pose stream there (≤240 Hz; ours runs at 50 Hz). A
 **GL.iNet GL-MT6000 router at `192.168.9.1`** creates and routes between two subnets: the
 **lab LAN `192.168.9.0/24`** — where the ground-control laptop is wired in on LAN port 4
-(`192.168.9.107`), the Mocap PC lives, and our flight drone **Starling1** (`drone_1`)
-currently sits with its static lease `192.168.9.10` on WiFi SSID **`motive`** — and a
-secondary **`10.40.2.0/23` segment**, which today holds the laptop's own WiFi NIC
-(`10.40.2.107`) and the separate "Starling 2 Max demo" drone on SSID **`StarlingMax2`**.
+(`192.168.9.107`) and the Mocap PC lives — and the **`10.40.2.0/23` drone segment**
+(gateway `10.40.2.1`), where the **Starlings** sit on WiFi SSID **`StarlingMax2`**
+alongside the laptop's own WiFi NIC (`10.40.2.107`). Crazyflies stay on the lab LAN
+(`192.168.9.x`, SSID `motive`).
 
-> ⚠️ **The diagram's drone-subnet grouping is forward-looking, not current.** The picture
-> above groups the Starlings loosely against the `10.40.2.x` segment — that reflects a
-> **planned future move**, not today's wiring. As of this writing (verified by SSH), our
-> flight drone **Starling1 stays on SSID `motive`, `192.168.9.10`, on the lab LAN** — the
-> same subnet as the laptop and Mocap PC. Do not reconfigure the drone off the diagram; if
-> the migration to `10.40.2.x` happens, [CONFIG.md](CONFIG.md) will be updated first and is
-> always the tie-breaker over this picture.
+> ⚠️ **Check the drone's actual address before every session** — [CONFIG.md](CONFIG.md) is
+> the tie-breaker over this picture. The drone *dials the laptop*, so the laptop IP baked
+> into it must be reachable from the drone's segment: the laptop's WiFi NIC
+> (`10.40.2.107`) is same-subnet, and the router also routes to its wired `192.168.9.107`.
+> Confirm with a ping from the drone before flying — a stale or unreachable value means
+> [RUNBOOK](RUNBOOK.md) §B step 3 never gets `session established`.
 
 The router serves both drone SSIDs open on 5 GHz **channel 36**. Crazyflies (also
 `192.168.9.x`, SSID `motive`) are commanded over a **Crazyradio 2.4 GHz USB dongle** with a
@@ -158,8 +122,8 @@ WiFi (uXRCE-DDS / MAVLink) with an **RC-remote hardware kill switch** plus QGrou
 on the laptop. Exact per-device values (IPs, ports, static leases, SSIDs) live in
 [CONFIG.md](CONFIG.md)'s network table — treat that as the single source of truth, since
 several are DHCP-drifty until static leases land. The data path across this network
-(cameras → Motive → bridge → EKF2) is exactly what the mermaid diagram in the primer above
-draws.
+(cameras → Motive → bridge → EKF2) is exactly what the control-flow diagram in the primer
+above draws.
 
 **Security note:** both SSIDs are open (no WPA) — keep the lab network offline / air-gapped
 from the internet and any untrusted network.

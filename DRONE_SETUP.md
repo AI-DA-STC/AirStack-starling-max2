@@ -31,7 +31,7 @@
 
 ## 2 · Join the drone to the lab WiFi
 
-- [ ] Current SSID is `motive` (no spaces) → on the drone: `voxl-wifi station 'motive' '<PASSWORD>'` — CONFIG.md §Lab WiFi; password not stored in the repo, ask Jeremy Chia.
+- [ ] Starlings join **`StarlingMax2`** (no spaces) → on the drone: `voxl-wifi station 'StarlingMax2' '<PASSWORD>'` — CONFIG.md §Lab WiFi. (`motive` is the lab-LAN SSID for the Crazyflies — don't use it here.) Password not stored in the repo, ask Jeremy Chia.
 - [ ] ⚠️ If the SSID ever has SPACES do NOT use `voxl-wifi station` (it corrupts the config) — use the manual `wpa_passphrase` method — MILESTONES M3-A step 1.
 - [ ] Verify association: `iw dev mlan0 link` shows Connected (5 GHz can take >10 s) — MILESTONES M3-A step 1.
 - [ ] Reboot the drone once and re-check `iw dev mlan0 link` — WiFi must survive reboot (`wpa_supplicant@mlan0` auto-starts) — MILESTONES §3c open issue "WiFi reboot-persistence".

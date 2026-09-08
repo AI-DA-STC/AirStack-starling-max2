@@ -92,8 +92,11 @@ router admin `http://192.168.9.1:8080`, or contact **Jeremy Chia**). Laptop:
 ```bash
 ssh root@<DRONE_IP>            # e.g. Starling 1 — IP in CONFIG.md; password in CONFIG.md
 ```
-Then, on the drone (get today's `<LAPTOP_IP>` from step 1's `ip -4 -brief addr` BEFORE
-pasting it here — don't reuse a stale value):
+Then, on the drone. `<LAPTOP_IP>` = **the laptop's `wlp…` address on the drone segment
+(`10.40.2.107`)** — same subnet as the drone, so no routing needed. (The wired
+`192.168.9.107` also works, since the router routes between segments — but only use it
+deliberately.) Get today's value from step 1's `ip -4 -brief addr`; don't reuse a stale one,
+and confirm the drone can `ping` it before you fly:
 ```bash
 voxl_setup_real_drone.sh <BODY_NAME> <LAPTOP_IP> <DOMAIN_ID> <AGENT_PORT>
 # Starling 1:  voxl_setup_real_drone.sh drone_1 <LAPTOP_IP> 1 8888
@@ -116,13 +119,15 @@ Ports NOT clear → `./mocap.sh stop` (laptop) then re-check; full table:
 [TROUBLESHOOTING.md](TROUBLESHOOTING.md).
 Compare against the current values in **[CONFIG.md](CONFIG.md)** (the single source of truth
 for every IP/SSID/name — including *what to do* when one has drifted). Quick version: `enp…`
-(Ethernet, hangar LAN) is both the mocap LAN (step 4 listens on it automatically) AND the IP
-the drone dials — if it drifted, redo step 0.
-Drone's IP if needed (diagnostics only): `adb shell ip -4 addr show mlan0` or `voxl-my-ip`
-(drone shell), or read it from the agent's `session established` log line. The drone
-auto-joins the hangar WiFi (`motive` — see CONFIG.md) at boot — nothing to do. If the
-network or laptop IP changed since last session, redo step 0 or step 3 will never get a
-session. (WiFi missing after reboot + dmesg `Firmware Init Failed` → cold power cycle:
+(Ethernet, lab LAN `192.168.9.x`) is the mocap path — step 4 listens on it automatically.
+`wlp…` (`10.40.2.x`) is the drone segment. The drone dials whichever laptop IP was baked
+into it at step 0 — if that IP changed or isn't reachable from the drone, redo step 0.
+**The drone's IP** (needed for step 0's `ssh`, and for pulling logs in §D): it is not a
+pinned static lease, so look it up — router admin page (`http://192.168.9.1:8080`, DHCP
+leases), or `adb shell voxl-my-ip`, or read it from the agent's `session established` log
+line. The drone auto-joins SSID `StarlingMax2` (the `10.40.2.x` drone segment — CONFIG.md)
+at boot; nothing to do. If the network or the laptop IP changed since last session, redo
+step 0 or step 3 will never get a session. (WiFi missing after reboot + dmesg `Firmware Init Failed` → cold power cycle:
 battery + USB out 10 s.)
 
 **2 — Stack up (robot container only).** Laptop:

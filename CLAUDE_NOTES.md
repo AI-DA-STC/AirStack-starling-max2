@@ -22,19 +22,20 @@ Read order for a new session — this section is the digest, those files are can
 
 **Network (GL-MT6000 router, since 2026-09-08 — all values live in CONFIG.md, they drift):**
 - **Lab LAN `192.168.9.0/24`** (router `GL.iNet GL-MT6000`, OpenWrt, gateway/admin
-  `http://192.168.9.1:8080`): laptop Ethernet **static** `.9.107`, Starling 1 **static**
-  `.9.10` (SSID `motive`), Mocap PC **static-leased** `.9.100` but currently answering
-  `.9.124` via a second NIC (known MAC-mismatch issue — companion repo `docs/05-known-issues.md`).
-- Secondary segment **`STARLING 10.40.2.0/23`** (gw `10.40.2.1`): laptop's **WiFi** NIC
-  static `10.40.2.107`; the separate "Starling 2 Max demo" drone (SSID `StarlingMax2`) is
-  DHCP here — NOT our flight drone. ⚠️ Starlings are **planned** to migrate here in future —
-  Starling 1 has NOT moved yet, still on the lab LAN as above.
+  `http://192.168.9.1:8080`): laptop Ethernet **static** `.9.107`, Mocap PC **static-leased**
+  `.9.100` but currently answering `.9.124` via a second NIC (known MAC-mismatch issue —
+  companion repo `docs/05-known-issues.md`); Crazyflies (SSID `motive`).
+- Drone segment **`STARLING 10.40.2.0/23`** (gw `10.40.2.1`): the **Starlings** (SSID
+  `StarlingMax2`) + the laptop's **WiFi** NIC (static `10.40.2.107`). The drone's own address
+  is not pinned — read it per session (router admin page / `voxl-my-ip`). The laptop IP baked
+  into the drone must be reachable from this segment (`10.40.2.107` same-subnet; the router
+  also routes to `.9.107`) — ping from the drone to confirm.
 - Both drone SSIDs (`motive`, `StarlingMax2`) are **OPEN** (no encryption) — keep the lab
   network offline, never bridge to the internet.
 - Full router config + reproduction steps: companion repo
   [ground-control-network-setup](https://github.com/AI-DA-STC/ground-control-network-setup).
   Diagrams: `pictures/Flight_lab_architecture.png` (network), `pictures/Starling_Airstack_architecture.png` (control flow).
-- Drone WiFi SSID **`motive`**; the drone dials the laptop (uXRCE port 8888, domain 1).
+- Drone WiFi SSID **`StarlingMax2`**; the drone dials the laptop (uXRCE 8888, domain 1).
 - The 08-11 `Mocap_QCGroundControl` / `192.168.0.x` topology, the AI.R STC hangar-era
   `192.168.9.x`-with-.124-by-switch-port framing, and the two-router `192.168.8.x`/`10.x`
   topology in §3.5 below are all DEAD/superseded by the GL-MT6000 topology above.

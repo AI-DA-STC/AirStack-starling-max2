@@ -6,7 +6,12 @@
 > receiver (`./mocap.sh`), and how to run and troubleshoot it.
 > First verified working at the AI.R STC hangar **2026-08-27** (re-verified 08-28).
 
+This doc = the LAPTOP side. Motive-PC side (calibration, rigid bodies, streaming
+pane) → [MOTIVE.md](MOTIVE.md).
+
 ---
+
+*(Unfamiliar term? → [GLOSSARY.md](GLOSSARY.md))*
 
 ## 1 · Why motion capture, in plain terms
 
@@ -167,6 +172,7 @@ whose Motive genuinely multicasts, and its command channel remains a handy probe
 | Rate differs from CONFIG.md's value | Motive's capture rate was changed — fine, but update [CONFIG.md](CONFIG.md) so the next person expects the right number. |
 | Bridge worked, then poses froze | Restart the bridge (`Ctrl+C`, rerun). If it recurs, run `check` while frozen: packets still arriving → software side; none → Motive/network side. |
 | Renamed/added a rigid body in Motive | Restart the bridge — the body list is read once at startup. |
+| Poses stop while the drone is FLYING | `land` or kill FIRST ([PREFLIGHT.md](PREFLIGHT.md)), debug after — EKF2 drifts within seconds without vision. |
 | Setup fails building | Make sure no conda env is active (the script strips miniconda automatically, but exotic Python setups can still interfere); needs ROS 2 Jazzy at `/opt/ros/jazzy`. |
 
 ## 6 · What exactly is where (technical appendix)

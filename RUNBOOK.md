@@ -7,6 +7,8 @@
 > Every code block says where it runs. **Never paste across a `connect` line** — it opens a
 > new shell and swallows what follows.
 
+*(Unfamiliar term? → [GLOSSARY.md](GLOSSARY.md))*
+
 **Prompt rule:** `jeremychia@…$` = laptop · `root@…#` = inside the robot container ·
 `starling2-max…$` = on the drone (adb).
 
@@ -86,11 +88,12 @@ then takeoff + start again.
 drone every time the GC laptop — or its IP — changes; the drone *dials the laptop*, so a
 stale IP means step 3 never gets a session). SSH to each drone and re-run its setup script
 (credentials + all current IPs: [CONFIG.md](CONFIG.md) network table; if an IP has drifted →
-router admin `http://192.168.9.1:8080`, or contact **Jeremy Chia**):
+router admin `http://192.168.9.1:8080`, or contact **Jeremy Chia**). Laptop:
 ```bash
 ssh root@<DRONE_IP>            # e.g. Starling 1 — IP in CONFIG.md; password in CONFIG.md
 ```
-Then, on the drone:
+Then, on the drone (get today's `<LAPTOP_IP>` from step 1's `ip -4 -brief addr` BEFORE
+pasting it here — don't reuse a stale value):
 ```bash
 voxl_setup_real_drone.sh <BODY_NAME> <LAPTOP_IP> <DOMAIN_ID> <AGENT_PORT>
 # Starling 1:  voxl_setup_real_drone.sh drone_1 <LAPTOP_IP> 1 8888
@@ -98,15 +101,19 @@ voxl_setup_real_drone.sh <BODY_NAME> <LAPTOP_IP> <DOMAIN_ID> <AGENT_PORT>
 `<BODY_NAME>` = the Motive rigid-body name (`drone_1`), `<DOMAIN_ID>` = the drone's DDS
 domain (`1` for drone_1 — unique per drone), `<AGENT_PORT>` = `8888` (must match step 3's
 agent). Skip this step entirely if nothing about the laptop changed since last session.
+Unsure whether anything changed? Proceed to step 3 — `session established` means step 0
+wasn't needed; if it never comes, return here.
 ⚠️ **First time on this drone?** SSH + this script only exist after the one-time provisioning:
 MILESTONES M3-A steps 1–3 (WiFi join → backups → `adb push` the script) / CMU `experiment.md` §B0–B1.
 
 **1 — Check today's IPs** (everything is DHCP; addresses drift). Laptop:
 ```bash
 ip -4 -brief addr              # every interface + its IPv4, one line each
-ping -c2 192.168.9.124         # Motive PC answers (hangar wired LAN — IP drifts, see CONFIG.md)
+ping -c2 <MOTIVE_IP>           # Motive PC answers (hangar wired LAN) — current value: CONFIG.md network table
 ss -ulpn | grep -E ':(1510|1511)' || echo "ports clear"
 ```
+Ports NOT clear → `./mocap.sh stop` (laptop) then re-check; full table:
+[TROUBLESHOOTING.md](TROUBLESHOOTING.md).
 Compare against the current values in **[CONFIG.md](CONFIG.md)** (the single source of truth
 for every IP/SSID/name — including *what to do* when one has drifted). Quick version: `enp…`
 (Ethernet, hangar LAN) is both the mocap LAN (step 4 listens on it automatically) AND the IP
@@ -162,7 +169,7 @@ Mocap PC are historical.)
 old driver can't hear it; story + troubleshooting in [MOCAP.md](MOCAP.md)). *Prereq: the
 `drone_1` rigid body exists in Motive BEFORE launching — the body list is read only at
 startup (create/rename later → Ctrl+C and relaunch); creating it + Motive streaming-pane
-settings: MILESTONES M2 mocap-room steps 1–3.* **Laptop** terminal (NOT a container
+settings: [MOTIVE.md](MOTIVE.md) §3–§4.* **Laptop** terminal (NOT a container
 shell; one-time `./mocap.sh setup` first if this machine never ran it):
 ```bash
 cd ~/AirStack-starling-max2 && ./mocap.sh      # this repo's root (wherever you cloned it)
@@ -178,7 +185,10 @@ without this, RViz shows nothing and takeoff is refused). New container shell (c
 ```bash
 ros2 launch svg_ground_control real_interfaces.launch.py drones:=drone_1   # more drones: drones:=drone_1,drone_2,...
 ```
-Leave running.
+Leave running. Verify (another container shell):
+```bash
+ros2 topic hz /drone_1/odometry_conversion/odometry   # silent here = takeoff will be refused later
+```
 
 **6 — Commander + mocap bridge.** *One-time prereqs (MILESTONES M4-A — all done):
 EKF2 params set via QGC (✅ 2026-07-29), vision-hub conf set (`en_vio` false /
@@ -225,10 +235,17 @@ Hand-carry the drone — its red sphere must track. Do NOT call takeoff during t
 Step 7 succeeding (✅ 2026-08-28) — full recording:
 `videos/SVG_check_if_rviz_moves_by_movingdrone_manually.mp4`.
 
-**8 — Fly** (✅ validated 2026-09-01→03). New container shell (the "cockpit"). First
-flights: the same four service calls as
-sim T5 (takeoff / start / hold / land) — `start` begins the scenario and is **REQUIRED** before
-goals or teleop respond. Goal/waypoint flights → **§C** below.
+**8 — Fly** (✅ validated 2026-09-01→03). ⚠️ Do not call `takeoff` until every box on
+[PREFLIGHT.md](PREFLIGHT.md) is checked and a briefed safety pilot holds the transmitter.
+New container shell (the "cockpit") — one call at a time:
+```bash
+ros2 service call /swarm_commander/takeoff std_srvs/srv/Trigger   # arm + climb + hold
+ros2 service call /swarm_commander/start   std_srvs/srv/Trigger   # scenario live
+ros2 service call /swarm_commander/hold    std_srvs/srv/Trigger   # PANIC freeze
+ros2 service call /swarm_commander/land    std_srvs/srv/Trigger   # descend + disarm
+```
+`start` begins the scenario and is **REQUIRED** before goals or teleop respond.
+Goal/waypoint flights → **§C** below.
 ⚠️ M6 safety status: RC kill switch IS mapped + tested (2026-09-01); geofence validated in
 flight on all configs (2026-09-03). Remaining judgment items every flight: fence fits the
 net, thumb on kill, QGC visible.
@@ -251,6 +268,11 @@ container shell — that would shut down the wrong machine.)
 
 ## C · GOAL FLIGHTS (fly to commanded waypoints) — ✅ validated 2026-09-01→03
 
+> **🚨 EMERGENCY** — `ros2 service call /swarm_commander/hold  std_srvs/srv/Trigger`
+> · `ros2 service call /swarm_commander/land  std_srvs/srv/Trigger`
+> · **KILL = ch8 on the RC — instant motor cut**
+> · **takeover = flip ch6 to MANUAL, never Position/Altitude**
+
 Same session bring-up as §B steps 0–7 — **only step 6's config changes**. Pick one:
 
 | Config | Behaviour |
@@ -266,7 +288,10 @@ ros2 launch svg_ground_control ground_control.launch.py \
 ```
 
 **C2 — Fly.** Container shell — takeoff (climbs to `hover_positions` — which is BOTH the
-takeoff target AND the initial goal), then `start`, then publish waypoints:
+takeoff target AND the initial goal), then `start`, then publish waypoints.
+Before takeoff, place the drone on the floor at/near the config's `hover_positions` x,y —
+takeoff flies to that ABSOLUTE point, so a drone placed elsewhere translates sideways while
+climbing.
 ```bash
 ros2 service call /swarm_commander/takeoff std_srvs/srv/Trigger
 ros2 service call /swarm_commander/start   std_srvs/srv/Trigger
@@ -307,7 +332,11 @@ or the **kill switch**. After ANY RC takeover the commander is stuck non-IDLE �
 once (drone on floor) to reset before the next takeoff.
 
 **C7 — Config editing rules.** yaml is read once at launch: edit → Ctrl-C the commander →
-relaunch (no rebuild). Every number in a list must be a float (`0.0` not `0` — an integer
+relaunch (no rebuild). Edit the **SOURCE** yaml at
+`AirStack/robot/ros_ws/src/svg_ground_control/config/` — the workspace is symlink-installed,
+so the launch reads it live. Verify once:
+`readlink $(ros2 pkg prefix svg_ground_control)/share/svg_ground_control/config/<file>.yaml`
+should point back at the source; if readlink shows no symlink, rebuild with `bws`. Every number in a list must be a float (`0.0` not `0` — an integer
 kills both nodes at launch). ⚠️ Never run `test/functional_*.py` while the real stack is up —
 they publish FAKE odometry onto the real topics (flyaway risk).
 
@@ -318,6 +347,7 @@ they publish FAKE odometry onto the real topics (flyaway risk).
 Every arming writes a `.ulg` on the drone. **Laptop** terminal (password: CONFIG.md):
 ```bash
 ssh root@<DRONE_IP> "ls -lt /data/px4/log/ | head -3"        # newest session dir
+mkdir -p ~/flight_logs/$(date +%F)
 scp root@<DRONE_IP>:/data/px4/log/sessNNN/logNNN.ulg ~/flight_logs/$(date +%F)/
 ```
 ⚠️ The drone's clock is often unsynced — **match logs by SIZE, not date** (QGC's Onboard
@@ -338,7 +368,8 @@ PlotJuggler alternative: diff `/drone_1/pose` vs `fmu/out/vehicle_odometry`.
 | `docker` / `airstack.sh` / `adb` / `ip addr` | laptop only (`jeremychia@`) |
 | `/fmu/*` topics | `echo` always needs `--qos-reliability best_effort`; `hz` takes no QoS flag in this ros2 |
 | Long-running (leave open) | Isaac spawn · interfaces · agent · mocap bridge (`./mocap.sh`, laptop) · QGC (laptop) · commander — **one terminal each** |
-| Panic, in order | `hold` service → `land` service → **RC kill switch** |
+| Panic, in order | `hold` service → `land` service → **RC kill switch** — exact syntax: [PREFLIGHT.md](PREFLIGHT.md) |
+| Troubleshooting | [TROUBLESHOOTING.md](TROUBLESHOOTING.md) |
 | Goal topics | `/svg/drone_1/goal_command` (PoseStamped, `map` frame, ABSOLUTE) · `/svg/drone_1/speed_command` (Float32) — after `start` only |
 | RC takeover | straight to **MANUAL** or **kill switch** ONLY (POSCTL/ALTCTL leak commander setpoints) |
 | After landing | confirm **DISARMED** in QGC before approaching |

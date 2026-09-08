@@ -10,6 +10,8 @@
 > for the mocap path. Mocap now runs through `./mocap.sh` on the laptop ([MOCAP.md](MOCAP.md));
 > drone/WiFi rows still describe the 08-11 state and need re-verification on the new network.
 
+*(Unfamiliar term? → [GLOSSARY.md](GLOSSARY.md))*
+
 ## Network (all DHCP until we get static leases — requested from Wayne/Ryzal)
 
 | Value | Current | How to check | Used by | If it changes → do this |
@@ -77,13 +79,14 @@ Flight-log-verified additions (2026-09-01/03 sessions):
 | `COM_RC_OVERRIDE` | `1` | Stick override for auto modes only — sticks do NOT kick offboard out (takeover = flip to MANUAL, see RUNBOOK §C) |
 | `COM_OBL_RC_ACT` | `1` | Offboard-loss → Position mode when RC present |
 | `MPC_THR_HOVER` | `0.165` (✅ retuned 2026-09-04 — was factory 0.13; true hover measured 0.165–0.17 from flight logs) | Improves takeoff crispness + landing detection |
+| `RC_MAP_ARM_SW` | `5` | Arm/disarm switch on ch5 (from `starling_1_indoor_params.params`) — flip down to force disarm on the ground |
 
 ## Ground-side flight parameters (svg_ground_control config yamls — lab-validated values)
 
 | Value | Current | Why / If it changes → do this |
 |---|---|---|
 | `land_speed_mps` | **`0.6`** in goal_single/goal_tracking (**validated 2026-09-03**) | The shipped `0.3` caused **armed-on-ground landings**: slow touchdown bounces past PX4's land-detector window, auto-disarm never fires. 0.6 plants the gear firmly. If landings ever stay armed again → RC arm-switch down + see MILESTONES backlog (LANDED_SETTLE fix) |
-| `hover_positions` z | `0.5` m in the goal configs AND drone_1's `swarm_real.yaml` slot (drone_2/3 slots stay 1.2) — low-and-safe test height | Takeoff target AND initial goal. Raise toward 1.0–1.2 m if station-keeping wobbles in ground effect |
+| `hover_positions` | `goal_single`: `(-0.5, 0.0, 0.5)` · `goal_tracking`: `(-0.5, 0.5, 0.5)` — z = `0.5` m in both, low-and-safe test height (drone_1's `swarm_real.yaml` slot also uses z=0.5; drone_2/3 slots stay 1.2) | Takeoff target AND initial goal — **takeoff flies to the ABSOLUTE point**, so place the drone at/near this x,y before takeoff. Raise z toward 1.0–1.2 m if station-keeping wobbles in ground effect |
 | `fence` in `goal_single.yaml` | tight **±0.7 m in X/Y** (ceiling 2.8 m) — deliberate safe default | Widen to your arena before bigger goal flights (`goal_tracking.yaml` uses ±2 m XY / 0–2 m Z) — floats only, inside the net |
 | After every landing | confirm **DISARMED in QGC** | The commander's "landed, disarmed" log is optimistic; QGC is the only arming truth on this v1.14 drone |
 
@@ -103,7 +106,7 @@ UDP 14550). ✅ Set 2026-08-11 (drone→Mocap PC ping verified 3–7 ms).
 
 | Value | Current | If it changes → do this |
 |---|---|---|
-| `"primary_static_gcs_ip"` | the **laptop's** hangar-LAN IP, `192.168.9.107` (QGC moved to the laptop for the 09-01→03 flight sessions and connected — ⚠️ value inferred from that, verify by read-back on the drone; history: `192.168.0.190` = Mocap PC 08-11, factory `192.168.8.10`) | Set to the QGC machine's current IP, then `systemctl restart voxl-mavlink-server`; QGC connects within seconds |
+| `"primary_static_gcs_ip"` | the **laptop's** hangar-LAN IP, `192.168.9.107` (QGC moved to the laptop for the 09-01→03 flight sessions and connected — ⚠️ value inferred from that, verify by read-back on the drone; history: `192.168.0.190` = Mocap PC 08-11, factory `192.168.8.10`) | Set to the QGC machine's current IP, then `systemctl restart voxl-mavlink-server`; QGC connects within seconds. Read-back: `ssh root@<DRONE_IP> "grep gcs_ip /etc/modalai/voxl-mavlink-server.conf"` |
 | `"primary_static_gcs_ip_port"` | `14550` | QGC's default listen port — leave it |
 
 ## Files & identities
@@ -117,13 +120,7 @@ UDP 14550). ✅ Set 2026-08-11 (drone→Mocap PC ping verified 3–7 ms).
 
 ## 60-second fixes for the usual suspects
 
-| Symptom | Fix |
-|---|---|
-| Drone WiFi gone after reboot (`dmesg`: `Firmware Init Failed`) | Cold power cycle: battery + USB out 10 s (warm reboot won't clear a wedged chip) |
-| `/fmu/*` topics look dead | Add `--qos-reliability best_effort` to echo/hz; and is the agent running? |
-| `/drone_1/pose` missing / 0 Hz | Is `./mocap.sh` running on the laptop? Then `./mocap.sh check` — its verdict names the culprit (Motive not streaming / wrong network / port 1511 squatter). Full table: [MOCAP.md](MOCAP.md) §5 |
-| `ros2` empty / service call hangs "waiting" | You're in a laptop shell — `./airstack.sh connect robot --command=bash` first (`root@` prompt) |
-| Everything else | Full symptom→fix table: [MILESTONES.md](MILESTONES.md) §7 |
+Moved to [TROUBLESHOOTING.md](TROUBLESHOOTING.md).
 
 ## When static leases arrive (Wayne/Ryzal)
 

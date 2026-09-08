@@ -1,5 +1,7 @@
 # AirStack / Starling Max 2 — Claude Session Handoff Notes
 
+*(AI sessions: [CLAUDE.md](CLAUDE.md) is the entry point; this file is the §0 digest + deep archive.)*
+
 > ⚠️ **Sections below §0 describe the pre-2026-08-27 state — superseded where they conflict
 > with §0 / MILESTONES / MOCAP / RUNBOOK.** They are kept as the archive (the how-we-got-here
 > narrative); do not delete them, and do not act on their network/mocap specifics.
@@ -13,7 +15,7 @@ Read order for a new session — this section is the digest, those files are can
 | Doc | Use it for |
 |---|---|
 | [RUNBOOK.md](RUNBOOK.md) | running a session (§B real-drone bring-up, §C goal flights) |
-| [MILESTONES.md](MILESTONES.md) | state: status table §3, test ledger §3c, M6 record, troubleshooting §7 |
+| [MILESTONES.md](MILESTONES.md) | state: status table §3, test ledger §3c, M6 record (symptoms → [TROUBLESHOOTING.md](TROUBLESHOOTING.md)) |
 | [MOCAP.md](MOCAP.md) | the pose pipeline + `./mocap.sh` |
 | [CONFIG.md](CONFIG.md) | every live value (IPs, SSIDs, PX4 params, credentials) |
 | MILESTONES § "M6 backlog" | deferred/shelved designs (full designs now in [BACKLOG.md](BACKLOG.md)) |

@@ -7,6 +7,8 @@
 > tracking looks wrong**. For the laptop-side receiver (`./mocap.sh`), see
 > [MOCAP.md](MOCAP.md) — this doc is everything *upstream* of that.
 
+*(Unfamiliar term? → [GLOSSARY.md](GLOSSARY.md))*
+
 ---
 
 ## 1 · THE GOLDEN RULE — the origin IS the map

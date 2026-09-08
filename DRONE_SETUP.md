@@ -14,6 +14,8 @@
 > check earns a row in the [MILESTONES.md](MILESTONES.md) §3c test ledger. Throughout,
 > `drone_N` = this drone's number (drone_1 is taken by Starling 1 / D0012).
 
+*(Unfamiliar term? → [GLOSSARY.md](GLOSSARY.md))*
+
 ## 0 · Prerequisites (before touching the drone)
 
 - [ ] Laptop fully set up: README Steps 1–5 done once (clone, host setup, robot image build, setup check, host mocap bridge) — README §"Setting up AirStack on a NEW machine".
@@ -33,7 +35,7 @@
 - [ ] ⚠️ If the SSID ever has SPACES do NOT use `voxl-wifi station` (it corrupts the config) — use the manual `wpa_passphrase` method — MILESTONES M3-A step 1.
 - [ ] Verify association: `iw dev mlan0 link` shows Connected (5 GHz can take >10 s) — MILESTONES M3-A step 1.
 - [ ] Reboot the drone once and re-check `iw dev mlan0 link` — WiFi must survive reboot (`wpa_supplicant@mlan0` auto-starts) — MILESTONES §3c open issue "WiFi reboot-persistence".
-- [ ] If `mlan0` vanishes after reboot (dmesg `Firmware Init Failed`): cold power cycle, battery + USB out 10 s — CONFIG.md §60-second fixes.
+- [ ] If `mlan0` vanishes after reboot (dmesg `Firmware Init Failed`): cold power cycle, battery + USB out 10 s — [TROUBLESHOOTING.md](TROUBLESHOOTING.md).
 - [ ] Never connect the laptop to the drone's own hotspot `uap0` (SSID like `Starling_N_demo_mode`) — CONFIG.md §Lab WiFi.
 
 ## 3 · Record the drone's IP
@@ -91,7 +93,7 @@
 - [ ] RViz (Fixed Frame `world`, `real_interfaces.launch.py drones:=drone_N`) tracks the hand-carried drone — MILESTONES M5.
 - [ ] Ledger + CONFIG.md rows updated for everything above. **Only now do props go on** — first flight follows MILESTONES M6 + RUNBOOK §B.
 
-## Snags you're most likely to hit (full tables: MILESTONES §7, CONFIG.md §60-second fixes)
+## Snags you're most likely to hit (full table: [TROUBLESHOOTING.md](TROUBLESHOOTING.md))
 
 | Symptom during provisioning | Fix |
 |---|---|

@@ -6,6 +6,26 @@
 > Last updated: 2026-09-04.
 > Branch: `daniel/diffaero_ground_control` · Working folder: `~/AirStack-starling-max2/AirStack`
 
+*(Unfamiliar term? → [GLOSSARY.md](GLOSSARY.md))*
+
+## Table of contents
+
+- [1. Objective](#1-objective)
+- [2. Why milestones](#2-why-milestones)
+- [3. Status](#3-status)
+- [3b. Code-readiness audit](#3b-code-readiness-audit-2026-07-20)
+- [3c. Test ledger — what's proven, what's next](#3c-test-ledger--whats-proven-whats-next)
+- [3d. PX4 v1.14 vs v1.15 px4_msgs — compatibility audit](#3d-px4-v114-vs-v115-px4_msgs--compatibility-audit-2026-08-11)
+- [4. Milestone 1 — record (2026-07-20, M1)](#4-milestone-1--record-2026-07-20)
+- [5. Milestone 1 re-run runbook](#5-milestone-1-re-run-runbook)
+- [6. Milestones 2–6 (procedures + validation records)](#6-milestones-26-procedures--validation-records)
+  - [M2 — Ground station prep](#m2--ground-station-prep-desk-half--validated-2026-07-21)
+  - [M3 — Drone comms (props off)](#m3--drone-comms-props-off)
+  - [M4 — Mocap → EKF2 (props off)](#m4--mocap--ekf2-props-off--validated-2026-08-28--fusion--frame-hand-check)
+  - [M5 — Hand-carry preflight](#m5--hand-carry-preflight-nothing-armed--validated-2026-08-28--ledger-15-evidence-gifvideo-in-repo)
+  - [M6 — First flight](#m6--first-flight--in-progress--flown-2026-09-01-goal-flights--fence--2026-09-03-sign-off-pending)
+- [7. Troubleshooting quick table](#7-troubleshooting-quick-table)
+
 ## 1. Objective
 
 Replicate CMU AirLab's ground-controller workflow on our hardware: fly a ModalAI **Starling
@@ -108,7 +128,7 @@ QGC/`px4-param`, the VOXL script deliberately excludes them); PX4 failsafes and 
 | Commander touchdown disarm is a premature one-shot | Fires once at ~15 cm altitude, always denied → QGC shows a red "Disarming denied, not landed" **once per landing**. Cosmetic: PX4's own auto-disarm does the real work, reliable since `land_speed_mps` 0.6 (ledger #21). | landings — expect + ignore exactly one red QGC message |
 | Commander stuck non-IDLE after any RC takeover | After a takeover the commander never returns to IDLE on its own, so the next `takeoff` is refused. Reset: call `land` once → back to IDLE. | every session with an RC takeover |
 | `test/functional_*.py` publishes fake odometry on real topics | **Never run these tests with the real stack up** — they inject fake odometry onto the live topics. Bench/sim only. | safety — pre-flight discipline |
-| **PX4 version mismatch: drone v1.14 vs workspace v1.15** (symptom: `vehicle_status` 30 Hz on `hz` but echo silent) | **FULL AUDIT 2026-08-11 (two-agent verification):** the vendored px4_msgs (`src/local/controls/px4_msgs`) is a byte-exact snapshot of upstream px4_msgs **main @ `9e35651` (2024-06-26) — effectively release/1.15** for all flight-critical messages (pkg version 2.0.1; diffed against every upstream commit since 2023). The rest of the workspace agrees: **sim containers build PX4 v1.16.1 SITL** (`Dockerfile.isaac-ros:3`, ms-airsim `Dockerfile:13`), agent v2.4.3 is version-agnostic, and the ONLY v1.14 artifacts are drone-side (factory `microdds_client` name; the setup script auto-detects both names). Per-message audit vs release/1.14: `VehicleOdometry`, `TrajectorySetpoint`, `BatteryStatus` **wire-identical** (mocap feed + setpoints safe — which MASKS the problem); `OffboardControlMode` benign for position/velocity offboard; `VehicleStatus`, `VehicleCommand` (arm/mode commands — `source_component` u8→u16 shifts everything after it), `VehicleLocalPosition`, `VehicleControlMode` **DANGEROUS** (mid-message inserts/reorder → silent garbage both directions). **REVISED after CMU input (same day): CMU confirms THEY also flew a v1.14 drone — with this exact px4_msgs** (git history in ~/AirStack-cmu: px4_msgs added 2026-03-09 in the Jazzy-upgrade commit, untouched since, i.e. before their flight tests). Code audit explains why it works: the SVG workflow's exercised path is wire-compatible — `px4_interface` subscribes ONLY to `VehicleStatus` + `VehicleOdometry`; odometry + `TrajectorySetpoint` are byte-identical to 1.14; `OffboardControlMode`'s first 6 flags (all we use) are identical; `VehicleCommand`'s corruption is confined to trailing metadata after `source_component` (command/params/targets decode correctly on the drone) — and crucially the commander's ARMING sequence is **time-staged fire-and-forget** (offboard @1.0s, arm @1.5s, ascend @2.5s — `swarm_commander.py:77-80`) and **nothing in svg_ground_control reads `is_armed`**, so the undecodable `VehicleStatus` is never consumed. `VehicleLocalPosition`/`VehicleControlMode` aren't subscribed at all. **Conclusion: flying on v1.14 is evidenced-OK for THIS workflow (CMU did it).** Residual risks to respect at M6: the software is BLIND to arming/nav state (QGC + RC kill are the only arming visibility — both already mandated), and any future use of the onboard `takeoff_landing_planner` path (which DOES gate on `is_armed`) would break. Optional clean-up remains upgrading the drone to the voxl-px4 1.15 line. Worth asking CMU their exact voxl-px4 build to fully close this. | **M6 caution, not a blocker** — fly with QGC visible + thumb on RC kill (already required); don't trust any software arming indication |
+| **PX4 version mismatch: drone v1.14 vs workspace v1.15** (symptom: `vehicle_status` 30 Hz on `hz` but echo silent) | **Verdict (full audit: §3d):** vendored px4_msgs is effectively release/1.15; drone runs v1.14. The paths this workflow actually exercises (odometry, setpoints, offboard flags) are wire-compatible, and CMU flew the same v1.14 + px4_msgs combination — **flying on v1.14 is evidenced-OK for this workflow.** | **M6 caution, not a blocker** — fly with QGC visible + thumb on RC kill (already required); don't trust any software arming indication |
 | WiFi reboot-persistence unverified | The 08-11 config was written by `voxl-wifi station` (not the proven manual method). Reboot the drone once; check `iw dev mlan0 link`. | every session |
 | CONFIG.md drone-IP row still TBD | Laptop `192.168.0.192` recorded; read the drone's lease with `voxl-my-ip` and record it. | diagnostics (ping) |
 | NatNet now rides WiFi on the laptop leg | Topology DECIDED 2026-08-11: single network — Motive PC on `Mocap_QCGroundControl` at `192.168.0.190`, laptop `clientIP:=192.168.0.192` (WiFi; Ethernet unused). Verify Motive's Data Streaming → Local Interface = `192.168.0.190`. Caveat: bursty 802.11 stalled our Crazyflie NatNet rig — if `/drone_1/pose` stutters, wire the laptop to the router's LAN port and use that IP as `clientIP:=`. | **M2/M4** — pose-stream quality |
@@ -126,6 +146,51 @@ QGC/`px4-param`, the VOXL script deliberately excludes them); PX4 failsafes and 
 | 7 | ✅ done 2026-09-01 — **M6 prereqs:** RC kill mapped (ch8) + takeover exercised in flight; flown on single-drone goal configs instead of a `swarm_real.yaml` trim (trim deferred — row 9) | laptop + QGC | — |
 | 8 | **M6 sign-off:** one clean untethered takeoff → hover → land cycle end-to-end (auto-disarm on touchdown, no RC intervention) | hangar | — |
 | 9 | *(optional — recommended for single-drone ops)* trim `swarm_real.yaml` to `drone_1` — lab decided 2026-09-03 to defer; until then the phantom `drone_2`/`drone_3` WARNs are expected and harmless | laptop | — |
+
+## 3d. PX4 v1.14 vs v1.15 px4_msgs — compatibility audit (2026-08-11)
+
+**Symptom that triggered this:** `vehicle_status` streams at ~30 Hz per `ros2 topic hz`, but
+`ros2 topic echo` prints nothing — suspected px4_msgs definition mismatch between the drone's
+PX4 v1.14 and the workspace's message definitions.
+
+**FULL AUDIT 2026-08-11 (two-agent verification):** the vendored px4_msgs
+(`src/local/controls/px4_msgs`) is a byte-exact snapshot of upstream px4_msgs **main @
+`9e35651` (2024-06-26) — effectively release/1.15** for all flight-critical messages (pkg
+version 2.0.1; diffed against every upstream commit since 2023). The rest of the workspace
+agrees: **sim containers build PX4 v1.16.1 SITL** (`Dockerfile.isaac-ros:3`, ms-airsim
+`Dockerfile:13`), agent v2.4.3 is version-agnostic, and the ONLY v1.14 artifacts are
+drone-side (factory `microdds_client` name; the setup script auto-detects both names).
+
+**Per-message audit vs release/1.14:** `VehicleOdometry`, `TrajectorySetpoint`,
+`BatteryStatus` **wire-identical** (mocap feed + setpoints safe — which MASKS the problem);
+`OffboardControlMode` benign for position/velocity offboard; `VehicleStatus`,
+`VehicleCommand` (arm/mode commands — `source_component` u8→u16 shifts everything after it),
+`VehicleLocalPosition`, `VehicleControlMode` **DANGEROUS** (mid-message inserts/reorder →
+silent garbage both directions).
+
+**REVISED after CMU input (same day):** CMU confirms THEY also flew a v1.14 drone — with
+this exact px4_msgs (git history in `~/AirStack-cmu`: px4_msgs added 2026-03-09 in the
+Jazzy-upgrade commit, untouched since, i.e. before their flight tests).
+
+**Code audit explains why it works:** the SVG workflow's exercised path is wire-compatible —
+`px4_interface` subscribes ONLY to `VehicleStatus` + `VehicleOdometry`; odometry +
+`TrajectorySetpoint` are byte-identical to 1.14; `OffboardControlMode`'s first 6 flags (all
+we use) are identical; `VehicleCommand`'s corruption is confined to trailing metadata after
+`source_component` (command/params/targets decode correctly on the drone) — and crucially the
+commander's ARMING sequence is **time-staged fire-and-forget** (offboard @1.0s, arm @1.5s,
+ascend @2.5s — `swarm_commander.py:77-80`) and **nothing in svg_ground_control reads
+`is_armed`**, so the undecodable `VehicleStatus` is never consumed.
+`VehicleLocalPosition`/`VehicleControlMode` aren't subscribed at all.
+
+**Conclusion: flying on v1.14 is evidenced-OK for THIS workflow (CMU did it).** Residual
+risks to respect at M6: the software is BLIND to arming/nav state (QGC + RC kill are the only
+arming visibility — both already mandated), and any future use of the onboard
+`takeoff_landing_planner` path (which DOES gate on `is_armed`) would break. Optional clean-up
+remains upgrading the drone to the voxl-px4 1.15 line. Worth asking CMU their exact voxl-px4
+build to fully close this.
+
+**Matters for:** M6 caution, not a blocker — fly with QGC visible + thumb on RC kill (already
+required); don't trust any software arming indication.
 
 ## 4. Milestone 1 — record (2026-07-20)
 
@@ -189,124 +254,18 @@ Source videos: [`videos/`](videos/) (`takeoff_and_land.mp4`, `teleop_with_geofen
 
 ## 5. Milestone 1 re-run runbook
 
-> Condensed per-session version: [RUNBOOK.md](RUNBOOK.md) §A — **keep that one current**;
-> this section keeps the fuller explanations and verify steps.
+Superseded as a procedure: the maintained per-session commands are
+[RUNBOOK.md](RUNBOOK.md) §A (this section previously duplicated them). MILESTONES keeps the
+validation record below.
 
-Five terminals, one job each. Every terminal follows the same pattern: a **laptop block**
-(ends with `connect`, safe to paste whole), then — after the prompt changes to `root@` — an
-**inside-the-container block**. Never paste across that boundary.
-
-### Terminal 1 — start the stack + spawn the sim drones
-
-On your laptop:
-
-```bash
-cd ~/AirStack-starling-max2/AirStack
-./airstack.sh up
-./airstack.sh status                              # all three containers "Up"
-./airstack.sh connect isaac-sim --command=bash
-```
-
-Inside the Isaac container (`root@` prompt) — this is ONE command, safe to paste whole:
-
-```bash
-NUM_ROBOTS=3 SVG_DOMAIN_ID=1 PLAY_SIM_ON_START=true ISAAC_SIM_HEADLESS=true \
-PYTHONPATH="$ISAAC_SIM_PYTHONPATH" \
-/isaac-sim/python.sh /isaac-sim/AirStack/simulation/isaac-sim/launch_scripts/svg_multi_drone_single_domain.py \
-  --ext-folder ~/.local/share/ov/data/documents/Kit/shared/exts
-```
-
-Wait for `Spawning 3 drone(s) on ROS domain 1` and `Ready for takeoff!` ×3. **Leave running.**
-
-### Terminal 2 — per-drone interfaces
-
-On your laptop:
-
-```bash
-cd ~/AirStack-starling-max2/AirStack
-./airstack.sh connect robot --command=bash
-```
-
-Inside the robot container — **first, compile the workspace** (needed on the first run and
-after any code change; first build ~4 min, otherwise seconds):
-
-```bash
-cd ~/AirStack/robot/ros_ws && bws && sws
-```
-
-Wait for the build summary (`Summary: N packages finished`), **then** start the per-drone
-interfaces:
-
-```bash
-./src/svg_ground_control/scripts/launch_sim_interfaces.sh 3
-```
-
-**Leave running.** Verify from any other robot-container shell:
-`ros2 topic echo /drone_1/interface/mavros/state --once` → `connected: true`.
-
-### Terminal 3 — ground controller
-
-On your laptop:
-
-```bash
-cd ~/AirStack-starling-max2/AirStack
-./airstack.sh connect robot --command=bash
-```
-
-Inside the robot container:
-
-```bash
-ros2 launch svg_ground_control ground_control.launch.py
-```
-
-**Leave running** — this is the swarm commander (the brain).
-
-### Terminal 4 — RViz (watch the drones)
-
-On your laptop:
-
-```bash
-cd ~/AirStack-starling-max2/AirStack
-./airstack.sh connect robot --command=bash
-```
-
-Inside the robot container:
-
-```bash
-rviz2 -d $(ros2 pkg prefix svg_ground_control)/share/svg_ground_control/config/svg_drones.rviz
-```
-
-An RViz window opens: cyan spheres = sim drones, yellow = teleop drone, green box = geofence.
-
-### Terminal 5 — cockpit (fly)
-
-On your laptop:
-
-```bash
-cd ~/AirStack-starling-max2/AirStack
-./airstack.sh connect robot --command=bash
-```
-
-Inside the robot container, one service call at a time:
-
-```bash
-ros2 service call /swarm_commander/takeoff std_srvs/srv/Trigger   # arm + climb + hold
-ros2 service call /swarm_commander/start   std_srvs/srv/Trigger   # scenario live
-ros2 service call /swarm_commander/hold    std_srvs/srv/Trigger   # panic freeze
-ros2 service call /swarm_commander/land    std_srvs/srv/Trigger   # descend + disarm
-```
-
-Optional extras (same terminal or a sixth):
-
-```bash
-# drive the teleop drone (needs "start" first; click THIS terminal for keyboard focus):
-ros2 run svg_ground_control keyboard_teleop --ros-args -p drone:=drone_3
-
-# geofence-breach recovery (fence red, drones frozen orange):
-ros2 service call /swarm_commander/land        std_srvs/srv/Trigger
-ros2 service call /swarm_commander/reset_fence std_srvs/srv/Trigger
-# then takeoff + start again
-```
+**Unique to this section (not in RUNBOOK §A):**
+- Terminal 2 verify, after launching the sim interfaces: `ros2 topic echo
+  /drone_1/interface/mavros/state --once` → expect `connected: true`.
+- Terminal 4 RViz legend: cyan spheres = sim drones, yellow = teleop drone, green box =
+  geofence.
+- Terminal 5 optional extras: keyboard teleop —
+  `ros2 run svg_ground_control keyboard_teleop --ros-args -p drone:=drone_3` (needs `start`
+  first; click that terminal for keyboard focus).
 
 ## 6. Milestones 2–6 (procedures + validation records)
 
@@ -377,6 +336,10 @@ superseded — see their banners.
    LAPTOP** (Motive set to broadcast; natnet_ros2 replaced — see [MOCAP.md](MOCAP.md) for
    how to run and troubleshoot it). *Legacy natnet launch below (superseded, kept for
    reference)* — laptop first, then inside the container:
+
+<details>
+<summary>Legacy natnet_ros2 procedure (superseded 2026-08-27 — kept for the record)</summary>
+
    ```bash
    cd ~/AirStack-starling-max2/AirStack
    ./airstack.sh up robot-desktop
@@ -418,9 +381,16 @@ superseded — see their banners.
    > not mandatory — and `pub_rigid_body` defaults `true`
    > (required — it makes the driver publish `/drone_1/pose`). No separate install or clone
    > of the driver is needed; it builds with `bws` and runs inside the robot container.
+
+</details>
+
 6. **EXIT TEST** — *superseded 2026-08-27 along with step 5: with `./mocap.sh` running, do
    the equivalent checks per [MOCAP.md](MOCAP.md). Legacy natnet-based test below (kept for
    reference).* Open a SECOND container shell (new terminal on the laptop, then):
+
+<details>
+<summary>Legacy natnet_ros2 procedure (superseded 2026-08-27 — kept for the record)</summary>
+
    ```bash
    cd ~/AirStack-starling-max2/AirStack
    ./airstack.sh connect robot --command=bash
@@ -434,6 +404,8 @@ superseded — see their banners.
    ```
    Hand-carry the drone around the volume — position must change smoothly, no jumps/NaNs.
    **Streaming + smooth = M2 complete.**
+
+</details>
 
 **What "running the full AirStack with mocap" means from here:** at M2, mocap-into-AirStack
 is just the driver above — nothing else consumes `/drone_1/pose` yet, because the consumers
@@ -698,21 +670,12 @@ flowchart LR
 **1. EKF2 parameters** — set once via QGroundControl (**QGC runs on the laptop since
 2026-09-01**, outside docker; it ran on the Mocap PC for the 2026-07-29 session below;
 `px4-param` over adb also works); saved permanently
-in PX4. Confirmed set (applied in the **2026-07-29** QGC session):
+in PX4. Confirmed set (applied in the **2026-07-29** QGC session).
 
-| Param | Value | Meaning |
-|---|---|---|
-| `EKF2_EV_CTRL` | 11 | fuse external-vision horizontal pos + vertical pos + yaw; 3D-velocity bit deliberately OFF (bits 0+1+3) |
-| `EKF2_GPS_CTRL` | 0 | no GPS indoors |
-| `SYS_HAS_MAG` | 0 | ignore magnetometers entirely (lab notes: "HAS_MAG = 0") |
-| `EKF2_HGT_REF` | 3 | height reference = vision |
-
-Indoor-mocap extras (set for mocap flights):
-
-| Param | Value | Meaning |
-|---|---|---|
-| `EKF2_BARO_CTRL` | 0 | barometer fusion off indoors |
-| `EKF2_MAG_TYPE` | None (0) | magnetometer fusion off indoors |
+Full set + rationale: CONFIG.md §PX4/EKF2 + the .params file. Per-param notes CONFIG doesn't
+spell out: `EKF2_EV_CTRL=11` sums bits 0+1+3 (horizontal pos + vertical pos + yaw; the
+3D-velocity bit is deliberately left OFF); `EKF2_HGT_REF=3` selects vision as the height
+reference source.
 
 ⚠️ **OUTDOOR revert:** when the drone returns to outdoor/GPS/VIO work, RE-ENABLE
 `EKF2_BARO_CTRL` and `EKF2_MAG_TYPE` (and revert `SYS_HAS_MAG` / `EKF2_GPS_CTRL` as
@@ -755,9 +718,14 @@ there are no `/fmu/*` topics and every check below is silent.
 broadcast; natnet_ros2 replaced — see [MOCAP.md](MOCAP.md) for how to run and troubleshoot
 it). Leave running. *Legacy natnet launch (superseded, kept for reference):*
 
+<details>
+<summary>Legacy natnet_ros2 procedure (superseded 2026-08-27 — kept for the record)</summary>
+
 ```bash
 ros2 launch natnet_ros2 natnet_ros2.launch.py serverIP:=192.168.0.190 clientIP:=192.168.0.192
 ```
+
+</details>
 
 **2. Commander + mocap bridge** (second container shell). Leave running:
 
@@ -912,33 +880,4 @@ proved sufficient:
 
 ## 7. Troubleshooting quick table
 
-| Symptom | Cause / fix |
-|---|---|
-| `ros2` not found / empty topics / service call hangs | Host shell. `./airstack.sh connect robot --command=bash` first (`root@` prompt). |
-| `omni_pass.env not found` on up | Re-run `./airstack.sh setup` to (re)generate it (press Enter at the API Token prompt). |
-| "mounting … user.config.json … not a directory" | Failed up made a directory; `rmdir` it, then re-run `./airstack.sh setup`. |
-| `bws: command not found` | Wrong container (Isaac) or host shell. |
-| `/fmu/*` looks dead | Best-effort QoS: add `--qos-reliability best_effort`. |
-| PX4 won't arm indoors ("fuse failure") | No fused position source — mocap feed / EKF2 params missing. |
-| Mocap topic silent | Motive not streaming, wrong serverIP, body not named `drone_N`, or orphan on UDP 1510/1511. |
-| natnet log: `Error getting Analog frame rate` | Harmless — our rig has no analog devices (force plates). Ignore. |
-| natnet lists `cf1…cf10` but no `drone_1` | Rigid body not created/named yet in Motive; create it, then Ctrl+C and re-launch the driver (it reads the body list only at startup). |
-| `/drone_1/pose` at ~50 Hz, not 120+ | Normal — our Motive is configured at 50 Hz (adjustable in Motive's camera settings if ever needed). |
-| RViz empty + Global Status Error on the real rig | `svg_drones.rviz` ships with Fixed Frame `map` (sim default) — set it to `world`. |
-| RViz shows no drone marker; `/drone_1/odometry_conversion/odometry` missing | `real_interfaces.launch.py` not running — without it the commander publishes no markers. Launch it (M5 command). |
-| Continuous `[timesync]` warnings (sim) | Sim below real-time; reduce load. |
-| Teleop publishes but drone doesn't move | Commander HOLDING — call `start`; click teleop terminal for focus. |
-| GEOFENCE BREACH, all frozen | By design: `land` → `reset_fence` → `takeoff` → `start`. |
-| Commander dies: "Logger severity cannot be changed" | CMU bug — apply patch 0002, rebuild `svg_ground_control`. Report upstream. |
-| Sim "Battery unhealthy", won't arm | SITL battery drained — restart the Isaac spawn script. |
-| Drone WiFi: `voxl-wifi station` "succeeds" but never connects | Legacy voxl-wifi mangles SSIDs **with spaces** — it writes an error string into the config instead of a network block. For spaced SSIDs write `/etc/wpa_supplicant/wpa_supplicant-mlan0.conf` manually with `wpa_passphrase` (see M3 record); space-free SSIDs work fine with `voxl-wifi station` (proven 2026-08-11). |
-| Drone WiFi: `mlan0`/`uap0` vanish after reboot; dmesg `Firmware Init Failed` / `Card is removed: -2` | WLAN chip firmware wedged — warm reboots don't reset it. **Cold power cycle** (battery + USB out, 10 s). |
-| Drone `iw` prints usage instead of link info | Old iw (4.14) needs explicit syntax: `iw dev mlan0 link`. |
-| Ctrl+C does nothing in `adb shell` | VOXL adbd doesn't forward signals. Kill from a second shell (`adb shell pkill <cmd>`) or use self-terminating commands (`ping -c2 -w4`). |
-| QGC red "Disarming denied, not landed" once per landing | Cosmetic — the commander's premature one-shot disarm (fires ~15 cm up, always denied). PX4's own auto-disarm does the real work; reliable since `land_speed_mps` 0.6. |
-| Drone stays ARMED on the ground after landing | Touchdown too soft/bouncy for PX4's land detector — `land_speed_mps` too low (0.3 did this). Set 0.6 (committed default); until disarmed, treat as live. |
-| RC takeover into POSCTL/ALTCTL fights the sticks | Control-authority leak: commander setpoints are still consumed by PX4 v1.14 in those modes. Take over into **MANUAL** (or kill) only. |
-| Commander refuses `takeoff` after an RC takeover | Stuck non-IDLE. Call `land` once → resets to IDLE, then `takeoff`. |
-| Weird/fake odometry appears on real topics | A `test/functional_*.py` is running — they publish fake odometry on the real topic names. **Never run them with the real stack up.** Kill it, restart the stack. |
-| Startup WARNs about `drone_2`/`drone_3` (only 1 drone flying) | Phantom drones from the un-trimmed 3-drone `swarm_real.yaml` — expected and harmless (trim deferred 2026-09-03; see M6). |
-| QGC shows wrong dates on the drone's flight logs | Drone clock unsynced (no NTP). Match logs by **size**. Logs live at `/data/px4/log/sessNNN/` on the drone (ssh root@ — password in CONFIG.md); pulled copies in `~/flight_logs/2026-09-01/`. |
+Moved to [TROUBLESHOOTING.md](TROUBLESHOOTING.md) (unified symptom index, 2026-09-07).

@@ -53,9 +53,9 @@ if first:
           f"{msg.get(first[0], 'other')}")
 if count == 0:
     print("VERDICT: nothing on the wire. Check: Motive streaming enabled? "
-          "Laptop cable in the mocap LAN? Right subnet (see CONFIG.md)?")
+          "Laptop cable in the mocap LAN? Right subnet (see docs/CONFIG.md)?")
 elif any(d == "255.255.255.255" for d in dests):
     print("VERDICT: Motive is BROADCASTING - use ./mocap.sh (natnet_ros2 "
-          "cannot hear this, see MOCAP.md).")
+          "cannot hear this, see docs/MOCAP.md).")
 else:
     print("VERDICT: data is arriving as multicast - either receiver works.")

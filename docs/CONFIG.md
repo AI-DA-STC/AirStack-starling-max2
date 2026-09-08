@@ -18,7 +18,7 @@
 > 📖 Full router configuration and reproduction steps live in the companion repo
 > [ground-control-network-setup](https://github.com/AI-DA-STC/ground-control-network-setup)
 > (local clone: `~/Documents/GitHub/ground-control-network-setup`). Topology picture:
-> [`pictures/Flight_lab_architecture.png`](pictures/Flight_lab_architecture.png) (embedded in README).
+> [`pictures/Flight_lab_architecture.png`](../pictures/Flight_lab_architecture.png) (embedded in README).
 
 | Value | Current | How to check | Used by | If it changes → do this |
 |---|---|---|---|---|
@@ -78,7 +78,7 @@ Confirmed parameter set — applied in the 2026-07-29 QGC session, recorded here
 
 > ⚠️ **Outdoor revert:** re-enable `EKF2_BARO_CTRL` and `EKF2_MAG_TYPE` (and GPS/mag params) before any outdoor/GPS flight.
 
-**📦 The canonical full parameter set lives in this repo: [`starling_1_indoor_params.params`](starling_1_indoor_params.params)**
+**📦 The canonical full parameter set lives in this repo: [`starling_1_indoor_params.params`](../starling_1_indoor_params.params)**
 (872-param QGC export from Starling 1, PX4 v1.14, 2026-09-04 — includes every row in the tables above and below).
 To set up a drone: QGC → Vehicle Setup → Parameters → **Tools ⋮ → Load from file** → this file
 → reboot PX4 → spot-check `EKF2_EV_CTRL=11` and `RC_MAP_KILL_SW=8` by read-back. Procedure: MILESTONES M4-A.

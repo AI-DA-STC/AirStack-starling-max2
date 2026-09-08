@@ -235,7 +235,7 @@ Error" + empty view on the real rig: in Displays → Global Options set Fixed Fr
 laptop's motion_capture_tracking and mocap_pose_relay visible on domain 1).
 Hand-carry the drone — its red sphere must track. Do NOT call takeoff during this check.
 
-<img src="assets/rviz_tracks_hand_carried_drone.gif" alt="RViz marker tracking the hand-carried drone" width="600">
+<img src="../assets/rviz_tracks_hand_carried_drone.gif" alt="RViz marker tracking the hand-carried drone" width="600">
 
 Step 7 succeeding (✅ 2026-08-28) — full recording:
 `videos/SVG_check_if_rviz_moves_by_movingdrone_manually.mp4`.
@@ -317,8 +317,8 @@ for lap in 1 2; do for c in "-0.5 -0.5" "0.5 -0.5" "0.5 0.5" "-0.5 0.5"; do G $c
 ros2 service call /swarm_commander/land std_srvs/srv/Trigger
 ```
 
-What success looks like: the 09-03 recordings — [drone POV](videos/Starling_goal_tracking_drone.mp4)
-· [RViz POV](videos/Starling_goal_tracking_RVIZ.mp4) (GIFs embedded in the README showcase).
+What success looks like: the 09-03 recordings — [drone POV](../videos/Starling_goal_tracking_drone.mp4)
+· [RViz POV](../videos/Starling_goal_tracking_RVIZ.mp4) (GIFs embedded in the README showcase).
 
 **C4 — Geofence** (✅ validated in flight, all configs). Breach ⇒ **ALL drones freeze-hover
 in place — still ARMED, not a motor cut.** Recover: `land` → `/swarm_commander/reset_fence`

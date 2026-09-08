@@ -17,29 +17,29 @@ auto-disarm all under software control (RC kill switch armed in hand throughout)
 | <img src="assets/starling_goal_tracking_drone_8x.gif" alt="Starling Max 2 flying commanded waypoints in the hangar" width="420"> | <img src="assets/starling_goal_tracking_rviz_4x.gif" alt="RViz view of the same goal-tracking flight" width="420"> |
 | [full video](videos/Starling_goal_tracking_drone.mp4) | [full video](videos/Starling_goal_tracking_RVIZ.mp4) |
 
-**What's been achieved so far** (details: [MILESTONES.md](MILESTONES.md)):
+**What's been achieved so far** (details: [MILESTONES.md](docs/MILESTONES.md)):
 
 - **2026-09-01 — first offboard flight**: takeoff + hover fully under AirStack command,
   position from OptiTrack mocap (no GPS, no VIO), RC kill switch verified in flight.
 - **2026-09-03 — waypoint flights**: runtime goals published over ROS 2 (single goal +
   a multi-goal square, 2 laps), **in-flight geofence** validated (breach ⇒ freeze-hover,
   clean recovery), reliable landing auto-disarm.
-- The full toolchain to reproduce it is in this repo: mocap bridge ([MOCAP.md](MOCAP.md)),
-  session runbook ([RUNBOOK.md](RUNBOOK.md) §B/§C), drone parameter set
+- The full toolchain to reproduce it is in this repo: mocap bridge ([MOCAP.md](docs/MOCAP.md)),
+  session runbook ([RUNBOOK.md](docs/RUNBOOK.md) §B/§C), drone parameter set
   ([`starling_1_indoor_params.params`](starling_1_indoor_params.params)), and every
-  lesson learned along the way ([MILESTONES.md](MILESTONES.md)).
+  lesson learned along the way ([MILESTONES.md](docs/MILESTONES.md)).
 
 > **New here? Read in this order:**
 >
-> - **Newcomer** → the one-page primer (next section) → run the sim ([RUNBOOK.md](RUNBOOK.md) §A)
->   → [MOCAP.md](MOCAP.md) → [PREFLIGHT.md](PREFLIGHT.md) → shadow a real session
->   ([RUNBOOK.md](RUNBOOK.md) §B) with a trained person.
-> - **Flying today** → [RUNBOOK.md](RUNBOOK.md)
-> - **Setting up a new drone** → [DRONE_SETUP.md](DRONE_SETUP.md)
-> - **At the Motive PC** → [MOCAP.md](MOCAP.md) §6
-> - **Something's broken** → [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
+> - **Newcomer** → the one-page primer (next section) → run the sim ([RUNBOOK.md](docs/RUNBOOK.md) §A)
+>   → [MOCAP.md](docs/MOCAP.md) → [PREFLIGHT.md](docs/PREFLIGHT.md) → shadow a real session
+>   ([RUNBOOK.md](docs/RUNBOOK.md) §B) with a trained person.
+> - **Flying today** → [RUNBOOK.md](docs/RUNBOOK.md)
+> - **Setting up a new drone** → [DRONE_SETUP.md](docs/DRONE_SETUP.md)
+> - **At the Motive PC** → [MOCAP.md](docs/MOCAP.md) §6
+> - **Something's broken** → [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)
 > - **Starting an AI-assisted session** → [CLAUDE.md](CLAUDE.md)
-> - **Any unfamiliar term** → [GLOSSARY.md](GLOSSARY.md)
+> - **Any unfamiliar term** → [GLOSSARY.md](docs/GLOSSARY.md)
 
 ## How the system works (one-page primer)
 
@@ -52,14 +52,14 @@ auto-disarm all under software control (RC kill switch armed in hand throughout)
 | **RC pilot** | emergency veto — kill switch, mode override | your hands |
 
 We use a **thin slice** of AirStack: our **`./mocap.sh bridge`** (runs on the laptop —
-see [MOCAP.md](MOCAP.md)) feeding the mocap→PX4 bridge,
+see [MOCAP.md](docs/MOCAP.md)) feeding the mocap→PX4 bridge,
 the laptop↔PX4 link (uXRCE-DDS), and the swarm commander with its CBF safety filter
 (Control Barrier Function — a math filter that clips unsafe velocity commands) and geofence.
 The planner/perception layers stay dormant here; those belong to AirStack's outdoor missions,
 where planning runs on the drone's own computer.
 *(AirStack's own mocap driver, [`natnet_ros2`](https://github.com/L2S-lab/natnet_ros2), stays
 vendored in the snapshot but is unused on our rig — our Motive broadcasts, which it can't
-hear; full story in [MOCAP.md](MOCAP.md) §3.)*
+hear; full story in [MOCAP.md](docs/MOCAP.md) §3.)*
 
 <img src="pictures/Starling_Airstack_architecture.png" alt="Starling Max 2 × AirStack control-flow diagram — Motive PC to mocap bridge to robot container (mocap_bridge, swarm commander, CBF safety filter, MicroXRCEAgent) to PX4 onboard (EKF2, control loops, motors), with the RC kill switch outranking everything" width="850">
 
@@ -108,19 +108,19 @@ lab LAN, broadcasting the NatNet pose stream there (≤240 Hz; ours runs at 50 H
 alongside the laptop's own WiFi NIC (`10.40.2.107`). Crazyflies stay on the lab LAN
 (`192.168.9.x`, SSID `motive`).
 
-> ⚠️ **Check the drone's actual address before every session** — [CONFIG.md](CONFIG.md) is
+> ⚠️ **Check the drone's actual address before every session** — [CONFIG.md](docs/CONFIG.md) is
 > the tie-breaker over this picture. The drone *dials the laptop*, so the laptop IP baked
 > into it must be reachable from the drone's segment: the laptop's WiFi NIC
 > (`10.40.2.107`) is same-subnet, and the router also routes to its wired `192.168.9.107`.
 > Confirm with a ping from the drone before flying — a stale or unreachable value means
-> [RUNBOOK](RUNBOOK.md) §B step 3 never gets `session established`.
+> [RUNBOOK](docs/RUNBOOK.md) §B step 3 never gets `session established`.
 
 The router serves both drone SSIDs open on 5 GHz **channel 36**. Crazyflies (also
 `192.168.9.x`, SSID `motive`) are commanded over a **Crazyradio 2.4 GHz USB dongle** with a
 Crazyswarm2 **software kill switch**, independent of WiFi; Starlings are commanded over
 WiFi (uXRCE-DDS / MAVLink) with an **RC-remote hardware kill switch** plus QGroundControl
 on the laptop. Exact per-device values (IPs, ports, static leases, SSIDs) live in
-[CONFIG.md](CONFIG.md)'s network table — treat that as the single source of truth, since
+[CONFIG.md](docs/CONFIG.md)'s network table — treat that as the single source of truth, since
 several are DHCP-drifty until static leases land. The data path across this network
 (cameras → Motive → bridge → EKF2) is exactly what the control-flow diagram in the primer
 above draws.
@@ -135,21 +135,24 @@ The earlier two-router topology (the `Mocap_QCGroundControl` D-Link setup, 2026-
 preserved, prose-only, in the [appendix](#appendix--historical-reference) at the bottom of
 this file.
 
+*(Paths written in prose — `pictures/…`, `patches/…` — are relative to the repo root.
+Clickable links inside `docs/` use `../` because they resolve from that folder.)*
+
 | File / folder | What it is |
 |---|---|
-| [RUNBOOK.md](RUNBOOK.md) | **START HERE each session** — the fast path, commands only, no background: sim (§A), real drone (§B), goal flights (§C ✅ validated 09-01→03), post-flight (§D) |
-| [CONFIG.md](CONFIG.md) | **Single source of truth for lab values** (IPs, SSID, ports, names — all DHCP-drifty until static leases) + what to do when one changes |
-| [TROUBLESHOOTING.md](TROUBLESHOOTING.md) | **Symptom-indexed fixes — start here when something misbehaves** |
-| [GLOSSARY.md](GLOSSARY.md) | Plain-English definitions of every recurring term (mocap, EKF2, offboard, DDS domain…) — linked from every doc |
-| [MOCAP.md](MOCAP.md) · [mocap.sh](mocap.sh) · [mocap/](mocap/) | **How the drone knows where it is** — layman's guide to the whole OptiTrack pipeline: the laptop `./mocap.sh` bridge that replaced natnet_ros2 (our Motive broadcasts; the official SDK can't hear it) **and** the Motive-PC operator guide (§6: calibration, rigid bodies, streaming pane) |
-| [MILESTONES.md](MILESTONES.md) | The plan **and the work log**: per-milestone status, what was done & debugged so far, one-time setup procedures, and §8 the shelved-fix designs |
-| [PREFLIGHT.md](PREFLIGHT.md) | **Print + laminate for the hangar** — pre-flight checklist, emergency ladder (hold → land → KILL), iron rules |
-| [DRONE_SETUP.md](DRONE_SETUP.md) | Provision a NEW Starling from the box — one ordered checklist (WiFi → comms script → params file → Motive body → kill test) |
+| [RUNBOOK.md](docs/RUNBOOK.md) | **START HERE each session** — the fast path, commands only, no background: sim (§A), real drone (§B), goal flights (§C ✅ validated 09-01→03), post-flight (§D) |
+| [CONFIG.md](docs/CONFIG.md) | **Single source of truth for lab values** (IPs, SSID, ports, names — all DHCP-drifty until static leases) + what to do when one changes |
+| [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | **Symptom-indexed fixes — start here when something misbehaves** |
+| [GLOSSARY.md](docs/GLOSSARY.md) | Plain-English definitions of every recurring term (mocap, EKF2, offboard, DDS domain…) — linked from every doc |
+| [MOCAP.md](docs/MOCAP.md) · [mocap.sh](mocap.sh) · [mocap/](mocap/) | **How the drone knows where it is** — layman's guide to the whole OptiTrack pipeline: the laptop `./mocap.sh` bridge that replaced natnet_ros2 (our Motive broadcasts; the official SDK can't hear it) **and** the Motive-PC operator guide (§6: calibration, rigid bodies, streaming pane) |
+| [MILESTONES.md](docs/MILESTONES.md) | The plan **and the work log**: per-milestone status, what was done & debugged so far, one-time setup procedures, and §8 the shelved-fix designs |
+| [PREFLIGHT.md](docs/PREFLIGHT.md) | **Print + laminate for the hangar** — pre-flight checklist, emergency ladder (hold → land → KILL), iron rules |
+| [DRONE_SETUP.md](docs/DRONE_SETUP.md) | Provision a NEW Starling from the box — one ordered checklist (WiFi → comms script → params file → Motive body → kill test) |
 | [`starling_1_indoor_params.params`](starling_1_indoor_params.params) | Canonical drone parameter set (872-param QGC export, 2026-09-04) — load via QGC, procedure in MILESTONES M4-A |
 | [CLAUDE.md](CLAUDE.md) | AI-session entry point — read order, iron flight rules, two-clone warning |
 | [AirStack/](AirStack/) | **Full AirStack code snapshot** (2026-07-20, bug fixes applied, submodules included) — see its own [README](AirStack/README.md) |
 | [patches/](patches/) | Our bug fixes as patch files — two AirStack fixes (already applied in `AirStack/`) + the libmotioncapture NatNet-4.2 fix (`mocap.sh setup` applies it); full story in the [appendix](#appendix--historical-reference) |
-| [tools/make_milestones_doc.py](tools/make_milestones_doc.py) | Word (.docx) export generator — **legacy** (pre-migration paths); [MILESTONES.md](MILESTONES.md) is canonical |
+| [tools/make_milestones_doc.py](tools/make_milestones_doc.py) | Word (.docx) export generator — **legacy** (pre-migration paths); [MILESTONES.md](docs/MILESTONES.md) is canonical |
 | [assets/](assets/) · [videos/](videos/) | GIFs (embedded here + in MILESTONES.md) and source recordings — M1 sim demos, the M5 hand-carry tracking check, and the 09-03 goal-tracking flight (drone + RViz POV) |
 | [pictures/](pictures/) | The two current architecture diagrams (control-flow, network topology — both embedded above) plus bring-up evidence screenshots (NatNet working, drone topics, MicroXRCEAgent connection, mocap axis checks) |
 
@@ -157,9 +160,9 @@ this file.
 
 There are two separate places documentation lives, written by two different groups:
 
-**1. Written by us:** `README.md`, `RUNBOOK.md`, `CONFIG.md`, `MOCAP.md`, `PREFLIGHT.md`,
-`DRONE_SETUP.md`, `TROUBLESHOOTING.md`, `GLOSSARY.md`, `MILESTONES.md`, `CLAUDE.md`,
-`patches/`, `tools/`
+**1. Written by us:** `README.md` and `CLAUDE.md` at the root, everything in
+[`docs/`](docs/) (`RUNBOOK`, `CONFIG`, `MOCAP`, `PREFLIGHT`, `DRONE_SETUP`,
+`TROUBLESHOOTING`, `GLOSSARY`, `MILESTONES`), plus `patches/` and `tools/`
 — our objective, our milestone structure, our lab's IPs/hardware, our findings and fixes.
 
 **2. Written by CMU — everything inside the [`AirStack/`](AirStack/) folder** (it is a
@@ -192,11 +195,11 @@ hand-carry proves the position tracking, and only then do propellers spin.
 | 5 | Hand-carry preflight | Carry the drone around; the software's belief must track reality | ✅ **Validated by us** (2026-08-28) |
 | 6 | First flight | Takeoff, hover, land inside the net under AirStack command | 🟡 **FLOWN** 2026-09-01 — first offboard takeoff + hover; goal flights + in-flight geofence ✅ 2026-09-03; sign-off = one clean untethered cycle |
 
-Live status: [MILESTONES.md](MILESTONES.md) §3.
+Live status: [MILESTONES.md](docs/MILESTONES.md) §3.
 
 **Important context on the statuses:** CMU already built AND flight-tested all of this on their
 own Starling 2 Max — our project is **replication and validation**, not development. A code
-audit (2026-07-20, details in [MILESTONES.md](MILESTONES.md) §3b) confirmed every mechanism for
+audit (2026-07-20, details in [MILESTONES.md](docs/MILESTONES.md) §3b) confirmed every mechanism for
 M3–M6 exists in the `AirStack/` code — the drone-comms setup script, the laptop↔drone link,
 the mocap driver and bridge, the flight services, and the geofence (each explained in the
 primer above).
@@ -204,7 +207,7 @@ The only things NOT in code (manual, by design) are: clock sync between machines
 OptiTrack/Motive settings, and PX4-side parameters set through QGroundControl (EKF2
 external-vision settings, RC kill switch, failsafes).
 
-Full plan with commands and exit criteria: [MILESTONES.md](MILESTONES.md).
+Full plan with commands and exit criteria: [MILESTONES.md](docs/MILESTONES.md).
 
 ## Milestone 1 at a glance
 
@@ -212,7 +215,7 @@ Full plan with commands and exit criteria: [MILESTONES.md](MILESTONES.md).
 
 *Three simulated PX4 drones (SITL — real autopilot firmware, simulated aircraft) under the
 ground controller: `takeoff` → hover scenario → `land`
-(RViz view, 2× speed). See [MILESTONES.md](MILESTONES.md) for the geofence-breach clip and
+(RViz view, 2× speed). See [MILESTONES.md](docs/MILESTONES.md) for the geofence-breach clip and
 the full runbook.*
 
 ## Setting up AirStack on a NEW machine
@@ -324,7 +327,7 @@ sudo usermod -aG dialout $USER    # serial-port access (log out/in to take effec
 sudo apt remove modemmanager      # it grabs the serial ports QGC needs
 ```
 
-Then [RUNBOOK.md](RUNBOOK.md) §B runs offline — no internet needed in the hangar.
+Then [RUNBOOK.md](docs/RUNBOOK.md) §B runs offline — no internet needed in the hangar.
 
 **Setup is now complete.** You never need to repeat Steps 1–5 on this machine (except Step 3's
 image rebuild if the Dockerfile ever changes). Starting and using the stack is a separate,
@@ -332,7 +335,7 @@ every-session routine — next section.
 
 ## Running AirStack (after setup, and at the start of every session)
 
-> **Fast path each session: [RUNBOOK.md](RUNBOOK.md)** — commands only, sim (§A), real
+> **Fast path each session: [RUNBOOK.md](docs/RUNBOOK.md)** — commands only, sim (§A), real
 > drone (§B), goal flights (§C — ✅ validated 2026-09-01→03), post-flight (§D). Follow it
 > verbatim; the two notes below cover what the commands themselves don't say.
 
@@ -344,7 +347,7 @@ compiles the workspace and `sws` loads the result into that shell — the first 
 takes ~4 min, later sessions finish in seconds unless code changed. Compiling lives here and
 not in setup because the code can only be compiled *inside* the robot container (that is
 where ROS 2 lives — your laptop has none of it *for AirStack's workspace* — but the mocap
-bridge (Step 5) needs ROS 2 Jazzy on the host; see [MOCAP.md](MOCAP.md)). So `bws`
+bridge (Step 5) needs ROS 2 Jazzy on the host; see [MOCAP.md](docs/MOCAP.md)). So `bws`
 necessarily comes after `up` and `connect`.
 
 **Two messages that look like errors but are NORMAL on a fresh machine:**
@@ -396,7 +399,7 @@ machine**.
 
 This was the lab topology as of 2026-08-11; since **2026-08-27** the lab uses the AI.R STC
 hangar wired LAN instead (see the network-architecture section above, and
-[CONFIG.md](CONFIG.md) for current values).
+[CONFIG.md](docs/CONFIG.md) for current values).
 
 More detail on the D-Link router itself (configuration, ports, access):
 [AI-DA-STC/Mocap_QC_Ground_Control_Router_Information](https://github.com/AI-DA-STC/Mocap_QC_Ground_Control_Router_Information).

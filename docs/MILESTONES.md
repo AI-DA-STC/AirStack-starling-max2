@@ -117,7 +117,7 @@ QGC/`px4-param`, the VOXL script deliberately excludes them); PX4 failsafes and 
 | 16 | **M4 exit: frame hand-check** | carry the drone North / East / up, watch `fmu/out/vehicle_odometry` | axes correct (N → `pos[0]`↑, E → `pos[1]`↑, up → `pos[2]`↓) — confirmed by Jeremy in the hangar | 2026-08-28 |
 | 17 | **M6: FIRST OFFBOARD FLIGHT — takeoff + hover under the commander** | `swarm_commander` `takeoff` service, mocap→EKF2 fused (AI.R STC hangar, drone_1 / D0012); RC kill switch mapped (ch8) + RC takeover exercised in flight | stable takeoff + hover under software control; manual landing | 2026-09-01 |
 | 18 | Single-goal flight (`goal_single.yaml`) | runtime waypoint sent via `/svg/drone_1/goal_command` | drone flew to the commanded goal and held | 2026-09-03 |
-| 19 | Multi-goal square (`goal_tracking.yaml`) | 4 corners commanded via a `ros2 topic pub` loop | 2 full laps of the square, all corners tracked — video: [drone POV](videos/Starling_goal_tracking_drone.mp4) · [RViz POV](videos/Starling_goal_tracking_RVIZ.mp4) (GIFs in README showcase) | 2026-09-03 |
+| 19 | Multi-goal square (`goal_tracking.yaml`) | 4 corners commanded via a `ros2 topic pub` loop | 2 full laps of the square, all corners tracked — video: [drone POV](../videos/Starling_goal_tracking_drone.mp4) · [RViz POV](../videos/Starling_goal_tracking_RVIZ.mp4) (GIFs in README showcase) | 2026-09-03 |
 | 20 | **GEOFENCE VALIDATED IN FLIGHT** (all configs) | deliberate in-flight breach | breach ⇒ freeze-hover (stays armed); recovery clean via `land` → `reset_fence` → `takeoff` | 2026-09-03 |
 | 21 | Landing auto-disarm made reliable | `land_speed_mps` 0.3 → 0.6 in the configs (committed) | 0.3 = slow bouncy touchdown that misses PX4's land-detector window → armed-on-ground; 0.6 plants firmly and PX4 auto-disarm fires every landing | 2026-09-03 |
 
@@ -223,14 +223,14 @@ the operational viewport (sim headless).
 **Takeoff → hover → land** (RViz `/svg/viz/markers` view; cyan = auto sim drones, yellow =
 teleop drone, green box = geofence; played at 2× speed):
 
-![Takeoff and land](assets/takeoff_and_land.gif)
+![Takeoff and land](../assets/takeoff_and_land.gif)
 
 **Teleop + geofence breach and latch** (drone_3 driven by keyboard through the fence wall —
 all drones freeze orange, fence turns red; recover with `land` → `reset_fence`; 1.5× speed):
 
-![Teleop with geofence breach](assets/teleop_with_geofence.gif)
+![Teleop with geofence breach](../assets/teleop_with_geofence.gif)
 
-Source videos: [`videos/`](videos/) (`takeoff_and_land.mp4`, `teleop_with_geofence.mp4`).
+Source videos: [`videos/`](../videos/) (`takeoff_and_land.mp4`, `teleop_with_geofence.mp4`).
 
 ### Incidents & findings
 - **Commander state machine:** IDLE —takeoff→ ARMING → ASCEND → ACTIVE; —start→ scenario
@@ -325,7 +325,7 @@ superseded — see their banners.
    What it should look like (our Motive PC, 2026-07-22 — read `<MOTIVE_IP>` off the
    **Local Interface** row; note **Up Axis: Z-Axis** and **Rigid Bodies: ON**):
 
-   <img src="pictures/check_motive_ip_address.jpg" alt="Motive Data Streaming pane — correct settings" width="420">
+   <img src="../pictures/check_motive_ip_address.jpg" alt="Motive Data Streaming pane — correct settings" width="420">
 4. **Network + clock sanity** — on the LAPTOP (`jeremychia@` prompt):
    ```bash
    ip addr                     # note your IP on the lab subnet → <LAPTOP_IP>
@@ -364,14 +364,14 @@ superseded — see their banners.
 
    Real screenshots from the 2026-07-22 session — the full launch and successful connection:
 
-   <img src="pictures/airstack_natnet_working_1.png" alt="natnet launch and connection to Motive" width="550">
+   <img src="../pictures/airstack_natnet_working_1.png" alt="natnet launch and connection to Motive" width="550">
 
    …and the data descriptions arriving (`Configured!` / `Activated!`). **The rigid bodies the
    driver lists are exactly the ones defined in Motive** — that day only the old `cf*`
    Crazyflie bodies existed in Motive's project, so that's what appears; `drone_1` will show
    up here once it's created in Motive:
 
-   <img src="pictures/airstack_natnet_working_2.png" alt="natnet descriptions received — cf bodies only, drone_1 pending" width="550">
+   <img src="../pictures/airstack_natnet_working_2.png" alt="natnet descriptions received — cf bodies only, drone_1 pending" width="550">
 
    > **About this driver:** it is the upstream
    > [L2S-lab/natnet_ros2](https://github.com/L2S-lab/natnet_ros2) package, vendored into
@@ -477,7 +477,7 @@ cosmetic, `ROS_DOMAIN_ID` is still force-set to 1, ignore it.
 What a **working USB link** looks like — `adb devices` lists the drone, `adb shell` lands in
 the MODAL AI banner (drone identity, image version, current IPs):
 
-<img src="pictures/computer_detects_drone_and_awb_shell_working.png" alt="adb detects the drone and opens a shell" width="700">
+<img src="../pictures/computer_detects_drone_and_awb_shell_working.png" alt="adb detects the drone and opens a shell" width="700">
 
 **1. Join the drone to the lab WiFi.**
 > ✅ **ALREADY CONFIGURED on D0012 (2026-07-22):** the drone's WiFi role was **changed from
@@ -527,7 +527,7 @@ Survives reboots (the `wpa_supplicant@mlan0` service auto-starts).
 For reference, the **factory state before this change** — `voxl-wifi getmode` showing
 `Mode: softap`, `Station: Disabled`, hotspot active (right pane; natnet running on the left):
 
-<img src="pictures/awbshell_with_airstack_natnet_working.png" alt="factory softap state via voxl-wifi getmode" width="700">
+<img src="../pictures/awbshell_with_airstack_natnet_working.png" alt="factory softap state via voxl-wifi getmode" width="700">
 
 **2. Back up the file the setup script will edit:**
 
@@ -574,7 +574,7 @@ script's own verification prints `PX4 server not running` because PX4 is still r
 CORRECT at this point (the drone is dialing out; "connected" only happens once the laptop
 agent is up, M3-B):
 
-<img src="pictures/voxel_setup_px4_restart_and_client_status.png" alt="voxl_setup_real_drone.sh run and px4-microdds_client status on the drone" width="700">
+<img src="../pictures/voxel_setup_px4_restart_and_client_status.png" alt="voxl_setup_real_drone.sh run and px4-microdds_client status on the drone" width="700">
 
 **Full revert to factory** (on the drone; note the param step — restoring the file alone
 does NOT undo the flash-saved domain):
@@ -617,7 +617,7 @@ What it looks like when the drone connects — the `session established` line na
 IP:port, then a burst of `create_topic / create_publisher / create_datawriter` lines is the
 drone building its `/drone_1/fmu/*` topics on the laptop:
 
-<img src="pictures/successful_airstack_connected_to_drone_microuxre.png" alt="MicroXRCEAgent session established with the drone" width="700">
+<img src="../pictures/successful_airstack_connected_to_drone_microuxre.png" alt="MicroXRCEAgent session established with the drone" width="700">
 
 Verify in a second container shell (⚠️ the QoS flag is mandatory on all `/fmu/*` topics):
 
@@ -630,12 +630,12 @@ publishes too, but with `quality: 0` and no usable position — EKF2 has no posi
 until M4. Messages-with-no-position is the normal M3 state, not a fault.)
 **Passed 2026-07-22** — session established, all 24 `/drone_1/fmu/*` topics on the laptop:
 
-<img src="pictures/drone_topics.png" alt="ros2 topic list showing all /drone_1/fmu topics in the container" width="650">
+<img src="../pictures/drone_topics.png" alt="ros2 topic list showing all /drone_1/fmu topics in the container" width="650">
 
 …and `vehicle_odometry` echoing live (position-less) messages, as expected pre-M4. The full
 picture (drone shell left, agent top right, odometry echo bottom right):
 
-<img src="pictures/successful_read_of_drone_1_vehicle_odom.png" alt="M3 exit: setup script on the drone, agent creating topics, vehicle_odometry echo" width="700">
+<img src="../pictures/successful_read_of_drone_1_vehicle_odom.png" alt="M3 exit: setup script on the drone, agent creating topics, vehicle_odometry echo" width="700">
 
 ### M4 — Mocap → EKF2 (props off) (✅ VALIDATED 2026-08-28 — fusion + frame hand-check)
 
@@ -657,7 +657,7 @@ flowchart LR
 #### M4-A · ONE-TIME drone setup — per drone, stored permanently in PX4 / systemd
 
 > **⏩ FAST PATH (since 2026-09-04): load the whole parameter set from a file.** This repo
-> ships [`starling_1_indoor_params.params`](starling_1_indoor_params.params) — a full QGC
+> ships [`starling_1_indoor_params.params`](../starling_1_indoor_params.params) — a full QGC
 > export of Starling 1's validated indoor setup (872 params, PX4 v1.14; includes the EKF2
 > external-vision set, `RC_MAP_KILL_SW=8`, `COM_RC_OVERRIDE=1`, and the `MPC_THR_HOVER=0.165`
 > retune). In **QGC (runs on the LAPTOP, outside docker)**: Vehicle Setup → Parameters →
@@ -756,9 +756,9 @@ end-to-end:
 - RViz (`svg_drones.rviz`, Fixed Frame changed `map` → `world`; needs
   `real_interfaces.launch.py` running — see §7) tracks the hand-carried drone:
 
-<img src="assets/rviz_tracks_hand_carried_drone.gif" alt="RViz marker tracking the hand-carried drone" width="650">
+<img src="../assets/rviz_tracks_hand_carried_drone.gif" alt="RViz marker tracking the hand-carried drone" width="650">
 
-Full recording: [`videos/SVG_check_if_rviz_moves_by_movingdrone_manually.mp4`](videos/SVG_check_if_rviz_moves_by_movingdrone_manually.mp4).
+Full recording: [`videos/SVG_check_if_rviz_moves_by_movingdrone_manually.mp4`](../videos/SVG_check_if_rviz_moves_by_movingdrone_manually.mp4).
 
 Still pending before flight (unchanged): the frame hand-check below, `swarm_real.yaml`
 3-drone → `drone_1` trim (M6), fence/RC-kill safety setup.
@@ -769,9 +769,9 @@ Our mocap volume's world frame (photos, 2026-07-22): **red = x-axis ("East"), gr
 ("North" — the agreed forward for the hand-check), blue = z-axis up.** The floor marker is
 the origin:
 
-<img src="pictures/mocap_axis_1.png" alt="mocap volume world axes" width="650">
+<img src="../pictures/mocap_axis_1.png" alt="mocap volume world axes" width="650">
 
-<img src="pictures/mocap_axis_2.png" alt="floor origin marker, top-down" width="500">
+<img src="../pictures/mocap_axis_2.png" alt="floor origin marker, top-down" width="500">
 
 Carry the drone 1 m and watch `out/vehicle_odometry` (positions are NED — z is DOWN):
 
@@ -804,7 +804,7 @@ Original plan (kept for reference):
 
 #### M6-A · ONE-TIME RC transmitter setup (safety-critical)
 
-**RC configuration as flown — extracted from [`starling_1_indoor_params.params`](starling_1_indoor_params.params) (2026-09-04, 16 channels, `COM_RC_IN_MODE=3`):**
+**RC configuration as flown — extracted from [`starling_1_indoor_params.params`](../starling_1_indoor_params.params) (2026-09-04, 16 channels, `COM_RC_IN_MODE=3`):**
 
 | Channel | Function (PX4 param) | Notes |
 |---|---|---|

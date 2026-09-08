@@ -56,7 +56,7 @@
 ## 5 · PX4 parameters (QGC fast path)
 
 - [ ] Connect QGC on the laptop (drone pushes MAVLink to `primary_static_gcs_ip` — set the laptop's IP in `/etc/modalai/voxl-mavlink-server.conf` + `systemctl restart voxl-mavlink-server`) — CONFIG.md §voxl-mavlink-server.
-- [ ] Load the full validated set: QGC → Vehicle Setup → Parameters → Tools ⋮ → **Load from file** → [`starling_1_indoor_params.params`](starling_1_indoor_params.params) — MILESTONES M4-A fast path / CONFIG.md §PX4 params.
+- [ ] Load the full validated set: QGC → Vehicle Setup → Parameters → Tools ⋮ → **Load from file** → [`starling_1_indoor_params.params`](../starling_1_indoor_params.params) — MILESTONES M4-A fast path / CONFIG.md §PX4 params.
 - [ ] ⚠️ drone_2+ note: the file is Starling **1**'s export — review per-drone params (calibrations, `MPC_THR_HOVER` trim, RC binding-specific values) before accepting wholesale — MILESTONES M4-A.
 - [ ] Reboot PX4 (power cycle or QGC reboot) so everything takes effect — MILESTONES M4-A fast path.
 - [ ] **Spot-check by READ-BACK** in the Parameters search box: `EKF2_EV_CTRL=11`, `RC_MAP_KILL_SW=8`, `EKF2_BARO_CTRL=0` — only a read-back counts (ledger #7's lesson) — MILESTONES M4-A / CONFIG.md §PX4 params.

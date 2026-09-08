@@ -2,18 +2,18 @@
 
 AirStack ground-control workspace flying a ModalAI Starling Max 2 indoors under OptiTrack mocap (no GPS/VIO for nav).
 
-**Read first:** [MILESTONES.md](MILESTONES.md) §3 (status table) / §3c (test ledger) — current state — then the table below.
+**Read first:** [MILESTONES.md](docs/MILESTONES.md) §3 (status table) / §3c (test ledger) — current state — then the table below.
 
 | Doc | Use it for |
 |---|---|
-| [MILESTONES.md](MILESTONES.md) | current state: status table, test ledger, open issues |
-| [RUNBOOK.md](RUNBOOK.md) | running a session |
-| [CONFIG.md](CONFIG.md) | live values (IPs, params, credentials) |
-| [MOCAP.md](MOCAP.md) | laptop-side mocap bridge |
-| [DRONE_SETUP.md](DRONE_SETUP.md) | drone provisioning |
-| [TROUBLESHOOTING.md](TROUBLESHOOTING.md) | symptom → fix index |
-| [MILESTONES.md](MILESTONES.md) §8 | deferred designs (shelved commander fixes) |
-| [PREFLIGHT.md](PREFLIGHT.md) | safety card |
+| [MILESTONES.md](docs/MILESTONES.md) | current state: status table, test ledger, open issues |
+| [RUNBOOK.md](docs/RUNBOOK.md) | running a session |
+| [CONFIG.md](docs/CONFIG.md) | live values (IPs, params, credentials) |
+| [MOCAP.md](docs/MOCAP.md) | laptop-side mocap bridge |
+| [DRONE_SETUP.md](docs/DRONE_SETUP.md) | drone provisioning |
+| [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | symptom → fix index |
+| [MILESTONES.md](docs/MILESTONES.md) §8 | deferred designs (shelved commander fixes) |
+| [PREFLIGHT.md](docs/PREFLIGHT.md) | safety card |
 
 Architecture pictures: `pictures/Starling_Airstack_architecture.png` (control flow),
 `pictures/Flight_lab_architecture.png` (network topology). Network/router details live in

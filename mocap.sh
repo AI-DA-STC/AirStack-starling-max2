@@ -7,7 +7,7 @@
 # parser (motion_capture_tracking), which hears broadcast and multicast alike,
 # plus a small relay that republishes each rigid body as /<name>/pose — the
 # exact topics the AirStack pipeline (mocap_bridge.py -> PX4 EKF2) expects.
-# Full story, diagrams and troubleshooting: MOCAP.md in this repo.
+# Full story, diagrams and troubleshooting: docs/MOCAP.md in this repo.
 #
 # Runs on the LAPTOP (not inside the robot container). Publishes on
 # ROS_DOMAIN_ID=1 with shared-memory transport disabled, so the host-network
@@ -21,7 +21,7 @@
 #   ./mocap.sh status   show whether the bridge processes are up
 #
 # Config lives in mocap/ next to this script:
-#   motion_capture.yaml  Motive PC IP (drifts with DHCP -> see CONFIG.md)
+#   motion_capture.yaml  Motive PC IP (drifts with DHCP -> see docs/CONFIG.md)
 #   pose_relay.py        /poses -> /<body>/pose republisher
 #   fastdds.xml          UDP-only DDS profile (same one the container uses)
 # Rigid bodies to relay (space-separated, must match Motive's body names):
@@ -92,7 +92,7 @@ cmd_setup() {
     if git -C "$lmc" apply --reverse --check "$PATCH_FILE" 2>/dev/null; then
         echo ">> NatNet 4.2 patch already applied"
     else
-        echo ">> applying NatNet 4.2 model-definition patch (see patches/, MOCAP.md)"
+        echo ">> applying NatNet 4.2 model-definition patch (see patches/, docs/MOCAP.md)"
         git -C "$lmc" apply "$PATCH_FILE"
     fi
 

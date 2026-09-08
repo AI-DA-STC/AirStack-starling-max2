@@ -43,7 +43,7 @@ Drone's flight controller (PX4 EKF2 — the autopilot's sensor-fusion estimator)
 ```
 
 Everything below the laptop row is unchanged CMU AirStack (their
-[`experiment.md`](AirStack/robot/ros_ws/src/svg_ground_control/experiment.md) §B4b
+[`experiment.md`](../AirStack/robot/ros_ws/src/svg_ground_control/experiment.md) §B4b
 onward still applies). What this repo adds is the **laptop row**: our own receiver
 that actually works with our hangar's Motive configuration.
 
@@ -138,12 +138,12 @@ its stock version crashes against our Motive: our Motive speaks a newer dialect
 (NatNet 4.2), and the receiver mis-reads the "table of contents" Motive sends at
 startup and walks off the end of its memory. We patched it to use the length
 labels NatNet 4.2 puts on every entry —
-[`patches/0003-libmotioncapture-natnet-4.2-modeldef-segfault.patch`](patches/0003-libmotioncapture-natnet-4.2-modeldef-segfault.patch)
+[`patches/0003-libmotioncapture-natnet-4.2-modeldef-segfault.patch`](../patches/0003-libmotioncapture-natnet-4.2-modeldef-segfault.patch)
 (worth contributing upstream). `./mocap.sh setup` applies this patch automatically.
 
 Finally, the open receiver publishes all bodies bundled into one topic (`/poses`),
 while the AirStack pipeline expects one topic per drone (`/drone_1/pose`). A ~40-line
-relay ([`mocap/pose_relay.py`](mocap/pose_relay.py)) converts between the two.
+relay ([`mocap/pose_relay.py`](../mocap/pose_relay.py)) converts between the two.
 Receiver + relay together are "the bridge" that `./mocap.sh` runs.
 
 **Why not just switch Motive to multicast?** We tried (2026-08-27): the GUI already
@@ -238,8 +238,8 @@ the human steps are:
    and apply the ground-plane step. This single action fixes the origin, the floor
    height, and the axis directions — it is the moment the Golden Rule (§6.1) is made.
 
-**Our axis convention** (photos: [`pictures/mocap_axis_1.png`](pictures/mocap_axis_1.png),
-[`pictures/mocap_axis_2.png`](pictures/mocap_axis_2.png)):
+**Our axis convention** (photos: [`pictures/mocap_axis_1.png`](../pictures/mocap_axis_1.png),
+[`pictures/mocap_axis_2.png`](../pictures/mocap_axis_2.png)):
 
 | Axis | Calibration-square arm | Means |
 |---|---|---|
@@ -279,7 +279,7 @@ recognises as a single thing. Rules that have each cost someone an afternoon:
 ### 6.4 · Data Streaming pane checklist
 
 Reference photo of ours set correctly:
-[`pictures/check_motive_ip_address.jpg`](pictures/check_motive_ip_address.jpg).
+[`pictures/check_motive_ip_address.jpg`](../pictures/check_motive_ip_address.jpg).
 In the streaming pane, confirm:
 
 - [ ] **Broadcast Frame Data: ON** (streaming enabled at all)

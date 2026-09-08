@@ -1,7 +1,7 @@
 # Glossary
 
 **Who this is for:** anyone new to the project (or new to drones/mocap/ROS) who hits an
-unfamiliar term in [README.md](README.md), [RUNBOOK.md](RUNBOOK.md), [MOCAP.md](MOCAP.md), or
+unfamiliar term in [README.md](../README.md), [RUNBOOK.md](RUNBOOK.md), [MOCAP.md](MOCAP.md), or
 any other doc here. Plain-English, lab-specific — not a general robotics reference. Linked
 from every doc; add a term here rather than re-explaining it inline elsewhere.
 
@@ -24,7 +24,7 @@ from every doc; add a term here rather than re-explaining it inline elsewhere.
   bridge exactly like a vision system reporting position, not like GPS.
 - **Offboard mode** — a PX4 flight mode where an external computer (our laptop) streams
   setpoints (we stream velocity) that PX4 must receive continuously (≥2 Hz; we send 20 Hz) or
-  it fails safe. See the primer in [README.md](README.md) for the full control-loop picture.
+  it fails safe. See the primer in [README.md](../README.md) for the full control-loop picture.
 - **MANUAL mode** — the RC pilot flies with raw stick input; no autopilot assistance. The
   only mode to flip into for a manual takeover — never Position or Altitude (see below).
 - **POSITION mode** — PX4 holds/moves to a position using its own state estimate and sticks
@@ -54,7 +54,7 @@ from every doc; add a term here rather than re-explaining it inline elsewhere.
   onboard Linux computer (which runs a VOXL/Android-derived stack) over USB or network.
 - **Geofence** — a software position boundary enforced by the ground-station commander. A
   breach **freezes the drone in a hover at its current position** — it is a hold, not a
-  motor cutoff. See the safety chain in [README.md](README.md)'s primer.
+  motor cutoff. See the safety chain in [README.md](../README.md)'s primer.
 - **CBF (Control Barrier Function)** — a math safety filter sitting between the commanded
   velocity and what actually gets sent to the drone; it clips/adjusts unsafe commands (e.g.
   ones that would breach the geofence) rather than passing them through unmodified.

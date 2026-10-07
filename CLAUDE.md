@@ -39,7 +39,7 @@ topology). Network/router details live in the companion repo
 7. **On this airframe, after `voxl_setup_real_drone.sh`: REBOOT** — `systemctl restart voxl-px4` leaves the SLPI flight core dead ("params missing", sensors never publish).
 8. The shipped configs are NOT ours: `goal_single.yaml` targets `drone_2`, `goal_tracking.yaml` runs `random_goals` (ignores goal commands), real configs carry `cbf_max_speed_mps: 10.0`. Trim/derive before flying — [MIGRATION.md](docs/MIGRATION.md) §6–7.
 
-**Two clones:** `~/AirStack-starling-max2` (live, docker-mounted) vs `~/Documents/GitHub/AirStack-starling-max2` (git mirror) — workflow currently INVERTED, check `git log` in both before editing. **Never push** — the user pushes via GitHub Desktop. ⚠️ As of 2026-10-07 the **live clone still holds the OLD branch** with uncommitted config edits; the mirror holds the new snapshot. Sync the live clone deliberately (MIGRATION §6), don't let docker mount a half-state.
+**Two clones:** `~/AirStack-starling-max2` (live, docker-mounted) vs `~/Documents/GitHub/AirStack-starling-max2` (git mirror) — workflow currently INVERTED, check `git log` in both before editing. **Never push** — the user pushes via GitHub Desktop. Both clones were put on the new `main` on 2026-10-07 (live clone reset to the mirror's commit; its old-branch config edits are backed up in `~/AirStack-starling-max2-local-edits-2026-10-07/`). Keep them in step: commit in the mirror, `git pull ~/Documents/GitHub/AirStack-starling-max2 main` in the live clone.
 
 **Session history:** pre-2026-09 session-by-session narrative used to live in `CLAUDE_NOTES.md`
 (retired 2026-09-08 — superseded by the docs above). Recover it with `git log --follow CLAUDE_NOTES.md`.

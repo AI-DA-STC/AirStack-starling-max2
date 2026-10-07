@@ -188,7 +188,7 @@ UDP 14550). ✅ Set 2026-08-11 (drone→Mocap PC ping verified 3–7 ms).
 
 | Value | Current |
 |---|---|
-| Working folder (laptop) | `~/AirStack-starling-max2/AirStack` — ⚠️ as of 2026-10-07 the live clone still holds the OLD branch; sync it from the git mirror deliberately ([MIGRATION.md](MIGRATION.md) §6) |
+| Working folder (laptop) | `~/AirStack-starling-max2/AirStack` — on the new `main` since 2026-10-07 18:30 (container recreated, workspace rebuilt clean; old-branch config edits backed up in `~/AirStack-starling-max2-local-edits-2026-10-07/`) |
 | **AirStack branch / snapshot** | CMU `yikuan/SVG_ground_control` @ **`cf719f0`**, vendored into `AirStack/` on **2026-10-07** (repo commit `91376aa`). Sibling of the previous `daniel/diffaero_ground_control` @ `f544c743` (common ancestor `a46f04b`), frozen at tag `airstack-starling-max2` / branch `archive/airstack-starling-max2`. Patch 0001 applied in-tree; patch 0002 fixed upstream; NatNet SDK NOT vendored (`install_sdk.sh`). **How to check:** `git log -1 -- AirStack` in this repo. **If it changes:** read [MIGRATION.md](MIGRATION.md), do its §6 re-do list, restart the MILESTONES ladder |
 | Real-run configs | hover/first flight: **`swarm_real_ours.yaml`** · goals: **`goal_single_ours.yaml`** · gamepad: `teleop_real.yaml` (still CMU's values — derive `teleop_real_ours.yaml` before M5) — all under `<workspace>/src/svg_ground_control/config/`. The shipped 3-drone files are M7 material |
 | Gamepad | ⏳ model unknown — identify with `joy_map`, record the `teleop_controller` profile name here |

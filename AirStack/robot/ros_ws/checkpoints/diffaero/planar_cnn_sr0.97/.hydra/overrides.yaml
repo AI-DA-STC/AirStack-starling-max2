@@ -1,5 +1,0 @@
-- algo=sha2c
-- env=oa_planar
-- dynamics=pmv_planar
-- sensor=camera
-- network=cnn

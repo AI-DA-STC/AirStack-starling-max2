@@ -31,12 +31,29 @@
 
 ## 2 · Join the drone to the lab WiFi
 
+> **FIRST: which WiFi hardware does this unit have?** `ip -br link | grep -E 'wlan0|mlan0'`
+> · **`mlan0`** = newer Starling Max 2, WiFi **integrated on the VOXL board** — follow this
+>   section as written, nothing extra to do.
+> · **`wlan0`** = older Starling Max 2 with **no integrated chip**, running a USB TP-Link
+>   Archer TX20U Nano (RTL8852BU) dongle — read `mlan0` as `wlan0` throughout, and do the
+>   extra dongle steps at the end of this section or it will boot on `169.254.x.x`.
+
 - [ ] Starlings join **`StarlingMax2`** (no spaces) → on the drone: `voxl-wifi station 'StarlingMax2' '<PASSWORD>'` — CONFIG.md §Lab WiFi. (`motive` is the lab-LAN SSID for the Crazyflies — don't use it here.) Password not stored in the repo, ask Jeremy Chia.
 - [ ] ⚠️ If the SSID ever has SPACES do NOT use `voxl-wifi station` (it corrupts the config) — use the manual `wpa_passphrase` method — MILESTONES M3-A step 1.
 - [ ] Verify association: `iw dev mlan0 link` shows Connected (5 GHz can take >10 s) — MILESTONES M3-A step 1.
 - [ ] Reboot the drone once and re-check `iw dev mlan0 link` — WiFi must survive reboot (`wpa_supplicant@mlan0` auto-starts) — MILESTONES §3c open issue "WiFi reboot-persistence".
 - [ ] If `mlan0` vanishes after reboot (dmesg `Firmware Init Failed`): cold power cycle, battery + USB out 10 s — [TROUBLESHOOTING.md](TROUBLESHOOTING.md).
 - [ ] Never connect the laptop to the drone's own hotspot `uap0` (SSID like `Starling_N_demo_mode`) — CONFIG.md §Lab WiFi.
+
+### 2b · Extra steps for OLDER units on the USB dongle (`wlan0`) — skip if you have `mlan0`
+
+Two independent boot races will otherwise leave the drone with no WiFi. Full writeup and
+evidence: [CLAUDE.md](../CLAUDE.md).
+
+- [ ] **Stop `option` stealing the dongle.** Append `NoDriverLoading=1` to `/etc/usb_modeswitch.d/0bda:1a2b`. Without it the kernel-builtin `option` serial driver claims the stick and exports it as `/dev/ttyUSB0`, so no `wlan0` ever appears.
+- [ ] **Stop `wpa_supplicant` quitting before `wlan0` exists.** Create `/etc/systemd/system/wpa_supplicant.service.d/10-wait-for-wlan0.conf` with `StartLimitIntervalSec=0` under `[Unit]` and `RestartSec=5` under `[Service]`, then `systemctl daemon-reload`. The stock unit burns 5 starts in under a second; the dongle only enumerates at t≈8 s.
+- [ ] **Verify by REBOOTING** (this is a boot race — a live test proves nothing): `readlink /sys/bus/usb/devices/1-1.4:1.0/driver` = `rtl8852bu`, `systemctl is-active wpa_supplicant` = `active`, `iw dev wlan0 link` = Connected, and `ip -4 -br addr show wlan0` shows a real lease, **not** `169.254.x.x`.
+- [ ] If the drone sits on a different subnet from the GCS, add the GCS-side route (`sudo ip route add <drone_subnet> via 192.168.9.1 dev <gcs_nic>`, persist via `nmcli`). ⚠️ Unicast only — **NatNet mocap is multicast and will not cross the router**, so a drone that must fly under OptiTrack has to sit on `192.168.9.x`.
 
 ## 3 · Record the drone's IP
 
@@ -99,6 +116,8 @@
 |---|---|
 | `voxl-wifi station` "succeeds" but never connects | Spaced SSID corrupted the config — manual `wpa_passphrase` method, MILESTONES M3-A step 1 |
 | `mlan0` gone after reboot, dmesg `Firmware Init Failed` | WLAN chip wedged — cold power cycle (battery + USB out 10 s) |
+| Older unit (USB dongle): boots on `169.254.x.x` | `wpa_supplicant` hit its systemd start limit before `wlan0` existed — §2b drop-in; recover with `systemctl reset-failed wpa_supplicant && systemctl start wpa_supplicant` |
+| Older unit (USB dongle): no `wlan0` at all | `option` driver stole the stick — §2b `NoDriverLoading=1` |
 | Setup script prints "PX4 server not running" | PX4 still rebooting (~30 s) — retry `px4-microdds_client status` |
 | `px4-microdds_client` stuck `Running, disconnected` | Laptop agent not running yet, or wrong laptop IP/domain — re-run RUNBOOK §B steps 0 + 3 |
 | `/fmu/*` topics look dead | Add `--qos-reliability best_effort` to echo/hz |

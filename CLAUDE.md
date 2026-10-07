@@ -2,35 +2,48 @@
 
 AirStack ground-control workspace flying a ModalAI Starling Max 2 indoors under OptiTrack mocap (no GPS/VIO for nav).
 
-**Read first:** [MILESTONES.md](docs/MILESTONES.md) §3 (status table) / §3c (test ledger) — current state — then the table below.
+**Branch (since 2026-10-07):** CMU `yikuan/SVG_ground_control` @ `cf719f0`, vendored in `AirStack/`.
+The previous branch (`daniel/diffaero_ground_control`, flown 09-01→03) is frozen on tag
+`airstack-starling-max2` / branch `archive/airstack-starling-max2`. The two are **siblings**, not
+parent/child. Milestones were RESET; nothing on this branch is validated yet (⏳ STE).
+Delta and the ordered re-do list: [MIGRATION.md](docs/MIGRATION.md).
+
+**Read first:** [MILESTONES.md](docs/MILESTONES.md) §3 (status table) / §3c (test ledger + carried-over issues) — current state — then the table below.
 
 | Doc | Use it for |
 |---|---|
-| [MILESTONES.md](docs/MILESTONES.md) | current state: status table, test ledger, open issues |
-| [RUNBOOK.md](docs/RUNBOOK.md) | running a session |
-| [CONFIG.md](docs/CONFIG.md) | live values (IPs, params, credentials) |
-| [MOCAP.md](docs/MOCAP.md) | laptop-side mocap bridge |
-| [DRONE_SETUP.md](docs/DRONE_SETUP.md) | drone provisioning |
-| [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | symptom → fix index |
-| [MILESTONES.md](docs/MILESTONES.md) §8 | deferred designs (shelved commander fixes) |
+| [MILESTONES.md](docs/MILESTONES.md) | current state: M0–M7 status, code audit, test ledger (reset), carried-over issues, backlog |
+| [MIGRATION.md](docs/MIGRATION.md) | old branch → this branch: removed/added, behaviours to unlearn, re-do list, archived-doc pointers |
+| [RUNBOOK.md](docs/RUNBOOK.md) | running a session (tmux `bringup` panes, Basestation instead of RViz) |
+| [BASESTATION.md](docs/BASESTATION.md) | the Foxglove SVG Basestation panel, `/svg/commander_status` fields, LED strips |
+| [TELEOP.md](docs/TELEOP.md) | gamepad teleop, the two fences, controller profiles, CMU `teleop.md` corrections |
+| [SCENARIOS.md](docs/SCENARIOS.md) | CBF filter, runtime gains, formations / random goals / RC-intruder squeeze (sim now, real at M7) |
+| [CONFIG.md](docs/CONFIG.md) | live values (IPs, params, credentials, branch/commit, flight parameters per config) |
+| [MOCAP.md](docs/MOCAP.md) | laptop-side mocap bridge — unchanged by the branch switch |
+| [DRONE_SETUP.md](docs/DRONE_SETUP.md) | drone provisioning (new script + watchdog, `target_system`, optional LEDs) |
+| [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | symptom → fix index; first move on this branch = `ros2 topic echo /svg/commander_status --once` |
 | [PREFLIGHT.md](docs/PREFLIGHT.md) | safety card |
 
-Architecture pictures: `pictures/Starling_Airstack_architecture.png` (control flow),
-`pictures/Flight_lab_architecture.png` (network topology). Network/router details live in
-the companion repo [ground-control-network-setup](https://github.com/AI-DA-STC/ground-control-network-setup).
+Architecture pictures: `pictures/Starling_Airstack_architecture.png` (control flow — drawn for
+the previous branch, boxes unchanged), `pictures/Flight_lab_architecture.png` (network
+topology). Network/router details live in the companion repo
+[ground-control-network-setup](https://github.com/AI-DA-STC/ground-control-network-setup).
 
 ## Iron rules
-1. RC takeover = flip to MANUAL or KILL only — Position/Altitude still obey the commander's setpoints.
-2. Confirm **DISARMED in QGC** after every landing — the commander's log is optimistic.
+1. RC takeover = flip to MANUAL or KILL only — Position/Altitude still obey the commander's setpoints (expected to persist on this branch: the trajectory setpoint is still consumed in POSCTL/ALTCTL; re-test at M3).
+2. Confirm **DISARMED in QGC** after every landing — the commander's log is optimistic, and the Basestation's Interface column is an ACK log, not an arming display.
 3. Commander stuck non-IDLE after a takeover → call `land` once to reset it.
-4. Never run `test/functional_*.py` with the real stack up — they publish fake odometry on live topics.
-5. Software is BLIND to PX4 arming state (v1.14 px4_msgs mismatch) — fly with QGC visible.
+4. Never run `test/functional_*.py` with the real stack up — they publish fake odometry on live topics (six of them now: `squeeze`, `squeeze_lag`, `fence`, `single_goal`, `multi_goal`, `hybrid`).
+5. Software is still BLIND to PX4 arming state (v1.14 px4_msgs mismatch) — fly with QGC visible. **New on this branch:** `px4_interface` logs command ACKs (`ACCEPTED`/`DENIED`); treat them as "PX4 heard me", never as "armed". **No ACK at all = `target_system` ≠ the drone's `MAV_SYS_ID`** — fix before retrying. The ACK message itself is unaudited against v1.14 until MILESTONES §3d is re-run.
 6. Lab WiFi SSIDs (`motive`, `StarlingMax2`) are OPEN (no encryption) — never bridge the lab network to the internet.
+7. **On this airframe, after `voxl_setup_real_drone.sh`: REBOOT** — `systemctl restart voxl-px4` leaves the SLPI flight core dead ("params missing", sensors never publish).
+8. The shipped configs are NOT ours: `goal_single.yaml` targets `drone_2`, `goal_tracking.yaml` runs `random_goals` (ignores goal commands), real configs carry `cbf_max_speed_mps: 10.0`. Trim/derive before flying — [MIGRATION.md](docs/MIGRATION.md) §6–7.
 
-**Two clones:** `~/AirStack-starling-max2` (live, docker-mounted) vs `~/Documents/GitHub/AirStack-starling-max2` (git mirror) — workflow currently INVERTED, check `git log` in both before editing. **Never push** — the user pushes via GitHub Desktop.
+**Two clones:** `~/AirStack-starling-max2` (live, docker-mounted) vs `~/Documents/GitHub/AirStack-starling-max2` (git mirror) — workflow currently INVERTED, check `git log` in both before editing. **Never push** — the user pushes via GitHub Desktop. ⚠️ As of 2026-10-07 the **live clone still holds the OLD branch** with uncommitted config edits; the mirror holds the new snapshot. Sync the live clone deliberately (MIGRATION §6), don't let docker mount a half-state.
 
 **Session history:** pre-2026-09 session-by-session narrative used to live in `CLAUDE_NOTES.md`
 (retired 2026-09-08 — superseded by the docs above). Recover it with `git log --follow CLAUDE_NOTES.md`.
+The old-branch docs in full: `git show airstack-starling-max2:docs/MILESTONES.md` etc.
 
 ## WiFi: drone comes up on 169.254.x.x instead of its DHCP address (2026-09-16)
 

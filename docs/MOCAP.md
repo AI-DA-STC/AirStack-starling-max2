@@ -65,14 +65,15 @@ container):
 
 Verify inside the robot container — if the stack isn't up yet:
 `cd ~/AirStack-starling-max2/AirStack && ./airstack.sh up robot-desktop`, then
-`./airstack.sh connect robot --command=bash` (details: [RUNBOOK.md](RUNBOOK.md) §B):
+`./airstack.sh connect robot` (lands in a tmux pane — details: [RUNBOOK.md](RUNBOOK.md) §B):
 
 ```bash
 ros2 topic hz /drone_1/pose        # want Motive's rate — 50 Hz as of 2026-08-28
 ```
 
 If that shows a steady rate matching Motive's, mocap is done — continue with the normal
-[RUNBOOK](RUNBOOK.md) §B flow (interfaces, commander, RViz).
+[RUNBOOK](RUNBOOK.md) §B flow (interfaces, commander, Basestation). *(The mocap chain is
+unchanged by the 2026-10-07 branch switch — nothing in this doc moved.)*
 
 A second sanity check, especially after any calibration change at the Motive PC (§6.1):
 with the drone **on the floor**,
@@ -199,9 +200,10 @@ everything *upstream* of the laptop bridge covered in §1-§5.
 ### 6.1 · THE GOLDEN RULE — the origin IS the map
 
 **The mocap origin and ground plane define every coordinate the drone flies to.**
-Every `hover_positions` entry, every goal, every geofence limit in the config yamls
-([CONFIG.md](CONFIG.md) ground-side table) is a position *in the frame you set during
-calibration*. There is no second reference — if you recalibrate, or nudge the
+Every `hover_positions` entry, every goal, every geofence limit — `fence_min/max` **and**
+the smaller `teleop_fence_min/max`, and the `arena_low/high` box the random-goal scenario
+samples in — in the config yamls ([CONFIG.md](CONFIG.md) ground-side table) is a position
+*in the frame you set during calibration*. There is no second reference — if you recalibrate, or nudge the
 calibration square, the "same numbers" now mean different places in the room.
 A 30 cm origin shift moves the takeoff spot, every waypoint, AND the fence by 30 cm.
 
@@ -262,7 +264,7 @@ recognises as a single thing. Rules that have each cost someone an afternoon:
 
 - **Markers must be ASYMMETRIC.** 4–5 markers, no two spacings alike. A symmetric
   pattern (square, evenly spaced line) looks identical rotated 180° — Motive will
-  happily flip the drone's orientation mid-flight. (MILESTONES M2 step 1.)
+  happily flip the drone's orientation mid-flight. ([DRONE_SETUP.md](DRONE_SETUP.md) §7.)
 - **Create the body with the drone facing +X.** Place the drone in the volume with
   its forward axis along the red/x/"East" axis, *then* select its markers and create
   the rigid body. Motive defines "this body's forward" from that moment. A body
@@ -327,4 +329,5 @@ Data-format notes: `/drone_1/pose` is `geometry_msgs/PoseStamped` in frame
 `world`, published reliable/volatile at Motive's rate; `/poses` (bundled, all
 bodies) uses sensor-data QoS. Downstream, `svg_ground_control/mocap_bridge.py`
 consumes `/{name}/pose` per its `swarm_real.yaml` `mocap_topic_template` — no
-changes needed there.
+changes needed there (verified unchanged on `yikuan/SVG_ground_control`, 2026-10-07: the
+only diff in `mocap_bridge.py` is a shutdown guard).

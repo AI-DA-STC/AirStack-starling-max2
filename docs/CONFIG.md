@@ -3,8 +3,14 @@
 > **Single source of truth for every value that can drift.** Other docs reference values by
 > name; the numbers live HERE. When something changes: update this file, do the "If it
 > changes" action, commit.
-> Last verified: **2026-09-03** (flight rows) / 2026-08-28 (mocap rows) / 2026-08-11 (drone/WiFi rows) /
-> **2026-09-08** (network rows, GL-MT6000 topology).
+> Last verified: **2026-10-07** (branch/snapshot + ground-side flight parameters — values read from
+> the new configs, ⏳ STE for flight) / 2026-09-03 (PX4 flight rows) / 2026-08-28 (mocap rows) /
+> 2026-08-11 (drone/WiFi rows) / **2026-09-08** (network rows, GL-MT6000 topology).
+>
+> ⚠️ **2026-10-07 branch switch:** the ground-side flight-parameter section below was rewritten
+> for `yikuan/SVG_ground_control`. Values marked **validated** were proven on the previous
+> branch and are our starting point; every shipped value that differs is listed so nobody
+> flies a CMU bench number by accident. Details: [MIGRATION.md](MIGRATION.md) §7.
 >
 > ⚠️ **2026-08-27 network change:** the lab moved to the **AI.R STC hangar wired LAN**
 > (`192.168.9.x`) for mocap — the 08-11 single-WiFi-network topology below is superseded
@@ -27,20 +33,19 @@
 | **Drone segment `STARLING`** | `10.40.2.0/23` (gw `10.40.2.1`, `br-lan3`) — the **Starlings** (SSID `StarlingMax2`) plus the laptop's **WiFi** NIC (static lease `10.40.2.107`) | `ip -4 -brief addr` (the `wlp…` row, laptop side); router admin page for drones | The uXRCE-DDS agent link (drone → laptop, UDP 8888); SSH/`scp` to the drone | The drone must be able to reach the laptop IP baked into it — see the "Laptop IP the drone dials" row. Verify with a ping **from the drone** after any network change |
 | Static leases (router-side) | The laptop's wired `.9.107`, the laptop's WiFi `10.40.2.107`, and the Mocap PC's `.9.100` are router **static leases** — should NOT drift (the Starlings' addresses on `10.40.2.x` are not pinned yet — read them per session) | Router admin page → DHCP static leases | Re-provisioning scripts; `mocap/motion_capture.yaml` | ⚠️ The Mocap PC currently answers on `.9.124` via a second NIC instead of its leased `.100` — a known MAC-mismatch issue (the lease is pinned to a NIC that isn't the one on the lab LAN), see companion repo `docs/05-known-issues.md#static-lease-mac-mismatch-mocap-pc`. This is exactly why the Motive PC IP row below says `.124`, not `.100` |
 | **Laptop IP the drone dials** | must be reachable **from the drone's segment** (`10.40.2.0/23`): the laptop's **WiFi** NIC `10.40.2.107` is same-subnet; its wired `192.168.9.107` also works because the GL-MT6000 routes between the segments. ⚠️ Whichever you bake in, **prove it with a ping from the drone** before flying. (Historical: `192.168.9.107` when the drone was on the lab LAN; `192.168.0.192` in the 08-11 WiFi era) | `ip -4 -brief addr` on the laptop; `ping <laptop IP>` **on the drone** | Baked into the DRONE's dialer by the setup script | **The critical one.** Re-provision the drone: [RUNBOOK](RUNBOOK.md) §B step 0 (`ssh root@<DRONE_IP>` → `voxl_setup_real_drone.sh <body> <laptop IP> <domain> 8888`). Wrong/unreachable value ⇒ step 3 never gets `session established` |
-| Laptop Ethernet IP | `192.168.9.107` (AI.R STC hangar wired LAN — **back in use since 2026-08-27, this is the mocap path**; laptop WiFi sits on `192.168.10.x`) | `ip -4 -brief addr` (the `enp…` row) | mocap bridge listens here; `clientIP:=` if natnet_ros2 is ever used | Nothing to reconfigure for `./mocap.sh` (it listens on all interfaces); update `clientIP:=` only for natnet_ros2 |
+| Laptop Ethernet IP | `192.168.9.107` (AI.R STC hangar wired LAN — **back in use since 2026-08-27, this is the mocap path**; laptop WiFi is `10.40.2.107` on the drone segment) | `ip -4 -brief addr` (the `enp…` row) | mocap bridge listens here; `clientIP:=` if natnet_ros2 is ever used | Nothing to reconfigure for `./mocap.sh` (it listens on all interfaces); update `clientIP:=` only for natnet_ros2 |
 | Motive PC IP | `192.168.9.124` (hangar wired LAN, verified 2026-08-28; was `.9.100` earlier on 08-27 — **the hangar assigns IPs by switch port**, so re-check each session; `192.168.0.190` was the 08-11 WiFi-era value) | `ipconfig` on the Motive PC, or `ping` from laptop | `mocap/motion_capture.yaml` `hostname:`; `serverIP:=` for natnet_ros2 | Update `mocap/motion_capture.yaml` in this repo (and commit); `./mocap.sh check` to confirm packets flow |
-| Drone WiFi IP | ⏳ TBD as of 2026-08-11 (old lease `192.168.10.155` is STALE — that was the Hangar network; re-check on `Mocap_QCGroundControl`) | `adb shell ip -4 addr show mlan0` or `voxl-my-ip`, or the agent's `session established` log line | Diagnostics only (ping) — the drone dials the laptop, nothing dials the drone | Nothing to reconfigure |
-| **Starling 1 IP** | **designated lease `10.40.2.10`** on the `10.40.2.0/23` drone segment (SSID `StarlingMax2`, MAC `8C:1F:64:69:DD:32`) — ⚠️ **the router config may lag the docs: verify the live IP in LuCI (or `voxl-my-ip` on the drone) before relying on it**, and use the live value for `<DRONE_IP>`. (Historical: `192.168.9.10` static lease while the drone sat on the lab LAN under SSID `motive`.) | Router admin page → DHCP leases; or `adb shell voxl-my-ip`; or the agent's `session established` log line | SSH target for re-provisioning ([RUNBOOK](RUNBOOK.md) §B step 0); ping checks | Record the value here once it is a static lease. If it drifts, `ssh root@<DRONE_IP>` and the pull-logs commands in RUNBOOK §D both need the new value |
+| **Starling 1 IP** | **designated lease `10.40.2.10`** on the `10.40.2.0/23` drone segment (SSID `StarlingMax2`, MAC `8C:1F:64:69:DD:32`) — but a reboot on 2026-09-16 came up as **`10.40.2.11`** ([CLAUDE.md](../CLAUDE.md) WiFi writeup), so the lease is not pinned to this MAC yet — ⚠️ **the router config may lag the docs: verify the live IP in LuCI (or `voxl-my-ip` on the drone) before relying on it**, and use the live value for `<DRONE_IP>`. (Historical: `192.168.9.10` static lease while the drone sat on the lab LAN under SSID `motive`.) | Router admin page → DHCP leases; or `adb shell voxl-my-ip`; or the agent's `session established` log line | SSH target for re-provisioning ([RUNBOOK](RUNBOOK.md) §B step 0); ping checks | Record the value here once it is a static lease. If it drifts, `ssh root@<DRONE_IP>` and the pull-logs commands in RUNBOOK §D both need the new value |
 | Drone SSH login | user `root` · password `oelinux123` (ModalAI factory default — **verified by login 2026-09-01**; the previously-noted `AI.DA@STEngineering` is REJECTED by Starling 1, that credential belongs to something else) (⚠️ lab-LAN device credential stored here deliberately — keep this repo private) | `ssh root@<DRONE_IP>` | RUNBOOK §B step 0 re-provisioning; pulling `.ulg` flight logs from `/data/px4/log/` | Update here if the image/password ever changes |
 | Router admin page | `http://192.168.9.1:8080` (hangar router — shows every device's current IP) | open in a browser on the hangar LAN | The authority for ALL drifting IPs; alternatively contact **Jeremy Chia** | — |
 
 ## Lab WiFi
 
-| Value | Current | If it changes → do this |
-|---|---|---|
-| SSID (Starling joins) | **`StarlingMax2`** → puts the drone on the `10.40.2.0/23` segment. (`motive` is the lab-LAN SSID used by the Crazyflies; the Starling sat there historically. Earlier eras: `Mocap_QCGroundControl` 08-11, `AI.R STC Hangar-5G` before that) | SSID **without** spaces → `voxl-wifi station '<SSID>' '<PASSWORD>'` works (proven 2026-08-11). SSID **with** spaces → manual `wpa_passphrase` method, MILESTONES M3-A step 1 (`voxl-wifi station` corrupts spaced SSIDs). Check the drone's current SSID with `voxl-wifi getmode` |
-| Password | (not stored in this repo) | Same as above |
-| Drone WiFi interface | `mlan0` (station) / `uap0` (its own hotspot, SSID `Starling_1_demo_mode` on Starling 1 — never connect the laptop to it) | Hardware fact, won't change |
+| Value | Current | How to check | If it changes → do this |
+|---|---|---|---|
+| SSID (Starling joins) | **`StarlingMax2`** → puts the drone on the `10.40.2.0/23` segment. (`motive` is the lab-LAN SSID used by the Crazyflies; the Starling sat there historically. Earlier eras: `Mocap_QCGroundControl` 08-11, `AI.R STC Hangar-5G` before that) | `voxl-wifi getmode` on the drone | SSID **without** spaces → `voxl-wifi station '<SSID>' '<PASSWORD>'` works (proven 2026-08-11). SSID **with** spaces → manual `wpa_passphrase` method, archived MILESTONES M3-A (`git show airstack-starling-max2:docs/MILESTONES.md`) step 1 (`voxl-wifi station` corrupts spaced SSIDs). Check the drone's current SSID with `voxl-wifi getmode` |
+| Password | (not stored in this repo) | — | Same as above |
+| Drone WiFi interface | `mlan0` (station) / `uap0` (its own hotspot, SSID `Starling_1_demo_mode` on Starling 1 — never connect the laptop to it) | `ip -br link` on the drone | Hardware fact, won't change |
 | Band / channel | 5 GHz channel 36 (5.180 GHz), 802.11ax — both SSIDs served by the same radio. 2.4 GHz radio is deliberately **disabled** to keep the band clean for Crazyradio | Router admin page → Wireless | Hardware fact, won't change |
 | Security | ⚠️ Both `StarlingMax2` (the Starlings, `10.40.2.x`) and `motive` (lab LAN, Crazyflies) are **OPEN networks — no encryption** | Router admin page → Wireless | ⚠️ **Keep the lab network offline — never bridge it to the internet.** WAN port is deliberately unplugged; adding encryption is the fix if that ever changes (companion repo `docs/05-known-issues.md`) |
 
@@ -51,16 +56,21 @@
 | uXRCE agent port | `8888` | Setup script arg **and** `MicroXRCEAgent udp4 -p 8888` — must match |
 | DDS domain | `1` (= drone_1) | Setup script arg; container `.bashrc` pins it; sim uses the same. Each ADDITIONAL drone must get a UNIQUE domain ID and its own subnet IP when provisioned |
 | NatNet ports | `1510` (cmd) / `1511` (data) | Motive defaults; per-session check: `ss -ulpn \| grep -E ':(1510\|1511)'` must be clear |
+| **`target_system` = `MAV_SYS_ID`** (new 2026-10-07) | ⏳ **read `MAV_SYS_ID` back in QGC before the first arm** — the 2026-09-04 params export says **1**, a 2026-09-18 session note on this airframe says it was set to **2**; whichever it is, `target_systems:=` must match | `px4_interface` stamps it on every command; `real_interfaces.launch.py` derives it from the drone name (`drone_2` → 2) or takes `target_systems:=1,2,…`. **Mismatch ⇒ PX4 silently drops every arm/takeoff/land and sends no ACK.** Each additional drone needs a unique `MAV_SYS_ID` |
+| Foxglove bridge port | `8765` (`foxglove_port:=` on the commander launch; `address 0.0.0.0`) | Foxglove Studio connects to `ws://localhost:8765` — robot container is host-networked, so "localhost" on the laptop works ([BASESTATION.md](BASESTATION.md) §2) |
+| LED daemon ports | drone → laptop **udp/47901** (heartbeat, 1 Hz) · laptop → drone udp/47900 | `led_controller` binds 47901 (one instance only); open it in `ufw` if strips are used ([BASESTATION.md](BASESTATION.md) §8) |
+| Commander status snapshot | `/svg/commander_status`, JSON, `status_rate_hz` **5** | the Basestation's only source of mission truth; `NO COMMANDER` after 2 s silence — keep ≥ 1 Hz |
+| Foxglove panel version | `airlab-cmu.svg-basestation-1.0.0` (`foxglove/svg-basestation/package.json`) | `ls ~/.foxglove-studio/extensions` on the laptop. After any panel edit or snapshot bump: re-run `foxglove/install.py` on the laptop, restart Studio, re-import `svg_basestation.json` |
 
 ## Mocap / Motive
 
 | Value | Current | If it changes → do this |
 |---|---|---|
-| Rigid body name | `drone_1` (✅ exists — streaming confirmed 2026-08-27, alongside `cf1`/`cf8`) | Must match everywhere — it names the topics (`/drone_1/pose`, `/drone_1/fmu/*`), `MOCAP_BODIES` for `./mocap.sh`, and the swarm config. Rename → update Motive AND `swarm_real.yaml` `drone_names`; restart the bridge (body list read only at startup) |
+| Rigid body name | `drone_1` (✅ exists — streaming confirmed 2026-08-27, alongside `cf1`/`cf8`) | Must match everywhere — it names the topics (`/drone_1/pose`, `/drone_1/fmu/*`), `MOCAP_BODIES` for `./mocap.sh`, and the swarm config. Rename → update Motive AND every config's `drone_names` (+ `led_controller.drone_names`); restart the bridge (body list read only at startup) |
 | Motive frame rate | `50 Hz` (2026-08-28; briefly 240 Hz on 08-27 after a profile edit — it drifts with profile changes) | Informational — expected rate for `ros2 topic hz /drone_1/pose` |
 | Streaming settings | Up Axis = Z · Local Interface = Motive IP · **transmission is effectively BROADCAST** (`BroadcastInsteadOfMulticast="true"` in the Motive profile overrides the GUI's "Multicast" — discovered 2026-08-27) | This is WHY natnet_ros2 gets no data and `./mocap.sh` is the receiver — full story [MOCAP.md](MOCAP.md) §3. Re-check the pane whenever poses look wrong: `pictures/check_motive_ip_address.jpg` |
 | Pose receiver | `./mocap.sh` on the laptop ([MOCAP.md](MOCAP.md)) — NOT natnet_ros2 in the container | Diagnose with `./mocap.sh check` (6-second wire test with plain-English verdict) |
-| World frame | red = x ("East") · green = y ("North") · z up; origin = floor marker | Photos: `pictures/mocap_axis_1.png`, `pictures/mocap_axis_2.png` — used by the M4 frame hand-check |
+| World frame | red = x ("East") · green = y ("North") · z up; origin = floor marker | Photos: `pictures/mocap_axis_1.png`, `pictures/mocap_axis_2.png` — used by the M2 frame hand-check |
 
 ## PX4 / EKF2 parameters (set once via QGC — since 2026-09-01 QGC runs on the LAPTOP; it ran on the Mocap PC before that)
 
@@ -81,7 +91,7 @@ Confirmed parameter set — applied in the 2026-07-29 QGC session, recorded here
 **📦 The canonical full parameter set lives in this repo: [`starling_1_indoor_params.params`](../starling_1_indoor_params.params)**
 (872-param QGC export from Starling 1, PX4 v1.14, 2026-09-04 — includes every row in the tables above and below).
 To set up a drone: QGC → Vehicle Setup → Parameters → **Tools ⋮ → Load from file** → this file
-→ reboot PX4 → spot-check `EKF2_EV_CTRL=11` and `RC_MAP_KILL_SW=8` by read-back. Procedure: MILESTONES M4-A.
+→ reboot PX4 → spot-check `EKF2_EV_CTRL=11` and `RC_MAP_KILL_SW=8` by read-back. Procedure: archived MILESTONES M4-A — now [DRONE_SETUP.md](DRONE_SETUP.md) §5.
 
 Flight-log-verified additions (2026-09-01/03 sessions):
 
@@ -93,18 +103,71 @@ Flight-log-verified additions (2026-09-01/03 sessions):
 | `MPC_THR_HOVER` | `0.165` (✅ retuned 2026-09-04 — was factory 0.13; true hover measured 0.165–0.17 from flight logs) | Improves takeoff crispness + landing detection |
 | `RC_MAP_ARM_SW` | `5` | Arm/disarm switch on ch5 (from `starling_1_indoor_params.params`) — flip down to force disarm on the ground |
 
-## Ground-side flight parameters (svg_ground_control config yamls — lab-validated values)
+## Ground-side flight parameters (svg_ground_control config yamls)
 
-| Value | Current | Why / If it changes → do this |
+> Config source: `AirStack/robot/ros_ws/src/svg_ground_control/config/`. Read once at launch
+> ([RUNBOOK.md](RUNBOOK.md) §C7). **The shipped files are CMU's bench values** — the "Shipped"
+> column is what the file says on 2026-10-07; the "Ours" column is what we fly (validated on
+> the previous branch where marked, otherwise the deliberate starting point, ⏳ STE).
+> Parameters marked **live** change in flight with `ros2 param set /swarm_commander …` or the
+> Basestation's CBF row ([SCENARIOS.md](SCENARIOS.md) §3).
+
+**Which config for what** (⚠️ none is flyable as shipped — [MIGRATION.md](MIGRATION.md) §7):
+
+| File | Shipped as | Ours |
 |---|---|---|
-| `land_speed_mps` | **`0.6`** in goal_single/goal_tracking (**validated 2026-09-03**) | The shipped `0.3` caused **armed-on-ground landings**: slow touchdown bounces past PX4's land-detector window, auto-disarm never fires. 0.6 plants the gear firmly. If landings ever stay armed again → RC arm-switch down + see MILESTONES backlog (LANDED_SETTLE fix) |
-| `hover_positions` | `goal_single`: `(-0.5, 0.0, 0.5)` · `goal_tracking`: `(-0.5, 0.5, 0.5)` — z = `0.5` m in both, low-and-safe test height (drone_1's `swarm_real.yaml` slot also uses z=0.5; drone_2/3 slots stay 1.2) | Takeoff target AND initial goal — **takeoff flies to the ABSOLUTE point**, so place the drone at/near this x,y before takeoff. Raise z toward 1.0–1.2 m if station-keeping wobbles in ground effect |
-| `fence` in `goal_single.yaml` | tight **±0.7 m in X/Y** (ceiling 2.8 m) — deliberate safe default | Widen to your arena before bigger goal flights (`goal_tracking.yaml` uses ±2 m XY / 0–2 m Z) — floats only, inside the net |
-| After every landing | confirm **DISARMED in QGC** | The commander's "landed, disarmed" log is optimistic; QGC is the only arming truth on this v1.14 drone |
+| `swarm_real.yaml` | 3 real drones, `hover`, `hold_all` fence, hover z 1.2, `land_speed_mps` **0.3** | trim to `drone_1`, z 0.5, `land_speed_mps` 0.6 → the hover / first-flight config (M3) |
+| `goal_single.yaml` | **`drone_2`**, `goal`, `keep_in`, teleop fence on, speeds 10.0, `land_speed_mps` 0.8 | copy to `goal_single_ours.yaml`: `drone_1`, fences to our net, speeds 1.0, `land_speed_mps` 0.6 → the goal-flight config (M4) |
+| `teleop_real.yaml` | 1 real drone, `keep_in` + teleop fence, `dragonrise_usb`, `land_speed_mps` 0.3 | fences to our net, controller to ours, `land_speed_mps` 0.6 → the gamepad config (M5) |
+| `goal_tracking.yaml` | 3 real drones, **`random_goals`** (ignores goal commands), 10 m/s | M7 only |
+| `cbf_sim.yaml`, `swarm_sim.yaml`, `teleop_single.yaml`, `squeeze_3drone.yaml`, `squeeze_rc_intruder.yaml` | sim / 3-drone | as shipped for M1 sim; `squeeze_rc_intruder` is M7 |
+
+**Every shipped config at a glance** (read from the yamls at `cf719f0`, 2026-10-07; ⚠️ = a CMU bench value we must not fly as-is; commander defaults when a key is absent: `fence_behavior hold_all`, α 2.5, r 0.55, vmax 1.2, `goal_accel` 3.0, arena `[-2,-2,0.8]..[2,2,2]`):
+
+| Config | drones | `scenario` | α / r / vmax | `scenario_speed` | `fence_behavior` | `fence_min..max` | teleop fence | `cbf_exempt` |
+|---|---|---|---|---|---|---|---|---|
+| `swarm_real.yaml` | 3 real | `hover` | 2.5 / 0.55 / 1.0 | 0.5 | `hold_all` | `[-4,-2,0]..[4,2,3]` | — | — |
+| `goal_single.yaml` | 1 real **`drone_2`** ⚠️ | `goal` | 2.5 / 0.55 / **10.0** ⚠️ | **10.0** ⚠️ | `keep_in` (brake 8, gain 2) | `[-4.5,-5.2,0]..[5.5,4.5,3]` | `[-3.5,-4.2,0.5]..[4.5,3.5,2.5]` | `drone_2` ⚠️ |
+| `goal_tracking.yaml` | 3 real | **`random_goals`** ⚠️ | 2.5 / 0.55 / **10.0** ⚠️ | **10.0** ⚠️ | `keep_in` (8, 2) | `[-4.5,-5.2,0]..[5.5,5.0,3]` | — | — |
+| `teleop_real.yaml` | 1 real | `hover` | 2.5 / 0.55 / 0.7 | 0.5 | `keep_in` (4, 2) | `[-4,-2,0]..[4,2,3]` | `[-3,-1.5,0.3]..[3,1.5,2.5]` | — |
+| `squeeze_rc_intruder.yaml` | 3 real | `squeeze` | 2.5 / 0.55 / **10.0** ⚠️ | **10.0** ⚠️ | `keep_in` (8, 2) | `[-4.5,-5.2,0]..[5.5,5.0,3]` | `[-3.3,-4.0,1.0]..[4.3,4.2,2.8]` | `drone_3` |
+| `hybrid_squeeze.yaml` | real,real,sim | `squeeze` | 2.5 / 0.55 / 1.0 | 0.5 | `hold_all` | `[-4,-2,0]..[4,2,3]` | — | `drone_3` |
+| `cbf_sim.yaml` | 3 sim | `antipodal` | 2.5 / 0.55 / 1.2 | 0.6 | *(absent → `hold_all`)* | `[-3,-6,0]..[5,5,3]` | — | — |
+| `swarm_sim.yaml` | 3 sim | `hover` | 2.5 / 0.55 / 2.0 | 0.6 | `hold_all` | `[-4,-2,0]..[4,2,3]` | — | — |
+| `squeeze_3drone.yaml` | 3 sim | `squeeze` | 2.5 / 0.55 / 1.2 | 0.6 | `hold_all` | `[-4,-2,0]..[4,2,3]` | — | `drone_3` |
+| `teleop_single.yaml` | 1 sim | `hover` | 2.5 / 0.55 / 2.0 | 0.6 | `keep_in` (2, 0.7) | `[-4,-2,0]..[4,2,3]` | `[-3,-1.5,0.3]..[3,1.5,2.5]` | — |
+
+All fence/arena boxes are **CMU's room** — redraw to our net before any real flight ([MOCAP.md](MOCAP.md) §6.1).
+
+| Value | Shipped (2026-10-07) | Ours | Live? | Why / If it changes → do this |
+|---|---|---|---|---|
+| `land_speed_mps` | 0.3 (`swarm_real`, `teleop_real`, `swarm_sim`) · 0.5 (`cbf_sim`) · 0.8 (`goal_single`) · 1.0 (`goal_tracking`) | **`0.6`** (**validated 2026-09-03**, previous branch) | no | 0.3 caused **armed-on-ground landings** (slow touchdown bounces past PX4's land detector). Set 0.6 in every config we fly; re-confirm at M3 |
+| `land_complete_altitude_m` | 0.15 · `goal_single` **0.1** | 0.15 | no | the height at which the commander calls the landing done; lower = later disarm shot |
+| `hover_positions` | `swarm_real` z **1.2** · `goal_single` `(0, 0, 1.0)` for drone_2 | `(-0.5, 0.0, 0.5)` — z 0.5 low-and-safe (previous-branch value) | no | takeoff target AND initial goal — **takeoff flies to the ABSOLUTE point**; place the drone there. Raise toward 1.0–1.2 if ground effect wobbles |
+| `takeoff_speed_mps` | 0.5 (most) · 1.0 (`goal_*`) | 0.5 | **yes** | new on this branch |
+| `fence_enabled` / `fence_min` / `fence_max` | `goal_tracking`: `[-4.5,-5.2,0]..[5.5,5.0,3.0]` · `goal_single`: `[-4.5,-5.2,0]..[5.5,4.5,3.0]` (CMU's room) · `swarm_real`: shipped box · `goal_single` old branch was ±0.7 | **draw to OUR net** before every config is flown; floats only | no (geometry) | the fence is in the mocap frame — [MOCAP.md](MOCAP.md) §6.1 golden rule |
+| `fence_behavior` | `hold_all` (`swarm_*`, `squeeze_3drone`, `hybrid`) · `keep_in` (`goal_*`, `teleop_*`, `squeeze_rc_intruder`) | `hold_all` for M3, `keep_in` from M4 | no | `hold_all` = everyone freezes until `reset_fence` (now also on an airborne RC drone); `keep_in` = brake at the wall, nobody freezes — [TELEOP.md](TELEOP.md) §6 |
+| `fence_brake_accel_mps2` | 4.0 · `goal_*`/`squeeze_rc` **8.0** | 4.0 to start | **yes** | the keep_in braking envelope; keep ≥ `goal_accel_mps2` or the wall caps cruise speed; **0 silently reverts to the old gain×distance barrier** |
+| `fence_keep_in_gain` | 1.0 · `goal_*`, `teleop_real` 2.0 · `teleop_single` 0.7 | 1.0 | **yes** (must stay > 0) | near-wall gain; `1/gain` = lag margin |
+| `fence_margin_m` | 0.0 | 0.0 | **yes** | inset from the wall |
+| `teleop_fence_enabled/min/max` | on in `goal_single`, `teleop_*`, `squeeze_rc_intruder` (CMU boxes) | **draw inside OUR geofence** — launch raises if it isn't | no | the smaller amber box only hand-flown drones see — [TELEOP.md](TELEOP.md) §6 |
+| `cbf_alpha` | 2.5 | 2.5 | **yes** (> 0) | how early the CBF yields (bigger = later, harder) — [SCENARIOS.md](SCENARIOS.md) §1 |
+| `cbf_safety_radius_m` | 0.55 | 0.55 | **yes** (> 0) | half the minimum centre-to-centre distance; the scenario keeps its launch-time value for spacing |
+| `cbf_max_speed_mps` | 1.0 (`swarm_real`) · 1.2 (`cbf_sim`, `squeeze_3drone`) · 0.7 (`teleop_real`) · 2.0 (`swarm_sim`, `teleop_single`) · **10.0** (`goal_*`, `squeeze_rc_intruder`) | **1.0** for M3/M4, raise deliberately | **yes** (> 0) | the hard cap on anything the commander sends — 10.0 is 10 m/s of dodge authority indoors |
+| `cbf_exempt_drones` / `external_drones` | `""` · `drone_3` in `squeeze_rc_intruder` · **`drone_2` in `goal_single`** | `""` | no | an exempt drone's command goes out unfiltered and the others absorb 100 % of the dodge; two exempt/external drones get **no** mutual protection |
+| `scenario_speed_mps` | 0.6 · **10.0** (`goal_*`, `squeeze_rc`) | 1.0 | **yes** | goal-law cruise speed; `speed_command` overrides per drone |
+| `goal_accel_mps2` / `goal_settle_s` | 3.0 / 0.3 · `goal_*` 10.0 / 0.2 | 3.0 / 0.3 | **yes** | the acceleration-limited go-to-goal profile; also caps the CBF feedforward |
+| `goal_lead_m` / `hold_lead_m` / `teleop_lead_m` | 2.0 / 0.2 / 0.5 | as shipped | **yes** | reference-point leashes; **keep `hold_lead_m` small** (0.2) — a 1.3 m lead above a grounded drone doubled its hover height in a CMU bag |
+| `teleop_max_speed_mps` / `teleop_accel_mps2` | `teleop_real` **0.7** / 5.0 · `swarm_sim` 2.0 · `goal_*` 8.0 · `squeeze_rc` 3.0 | **0.5** / 5.0 for M5 | **yes** | stick full-scale velocity and its ramp (fed forward to PX4). The commander clamps to the smallest of this, `safe_teleop`'s `max_speed_mps` and `cbf_max_speed_mps` |
+| `teleop_controller` (`safe_teleop` block) | `dragonrise_usb` in every shipped config | ⏳ **identify ours** with `ros2 run svg_ground_control joy_map` → record here | no | config beats the node default (`xbox_usb`); wrong profile + a trigger pad = full stick on an untouched axis (the axis guard refuses) — [TELEOP.md](TELEOP.md) §3. ⚠️ `./svg_teleop.sh` passes no config and starts `joy_node` bare, so it always runs `xbox_usb` with stock joy settings |
+| `yaw_sign` (`safe_teleop` block) | `1.0` | ⏳ verify at M5, slow and low | no | unverifiable in sim (`px4_interface` negates yaw rate) — flip if the drone turns the wrong way |
+| `real_command_mode` | `trajectory` | `trajectory` | no | real drones get position + velocity + acceleration on `/{name}/fmu/trajectory_command`; `velocity` restores the old bare-velocity topic |
+| `use_led` / `led_controller.brightness` | true / 80 | true (harmless with no strip) / 80 | no | keep brightness low near the mocap cameras |
+| After every landing | — | confirm **DISARMED in QGC** | — | the commander's "landed, disarmed" log is optimistic; the Basestation Interface column is an ACK log, not an arming display |
 
 ## Drone-side voxl-vision-hub config (`/etc/modalai/voxl-vision-hub.conf` on the drone)
 
-Required values for mocap flight — cross-reference MILESTONES M4-A.
+Required values for mocap flight — cross-reference archived MILESTONES M4-A — now [DRONE_SETUP.md](DRONE_SETUP.md) §5.
 
 | Value | Required | Why / If it changes → do this |
 |---|---|---|
@@ -125,8 +188,11 @@ UDP 14550). ✅ Set 2026-08-11 (drone→Mocap PC ping verified 3–7 ms).
 
 | Value | Current |
 |---|---|
-| Working folder (laptop) | `~/AirStack-starling-max2/AirStack` |
-| Real-run config | `<workspace>/src/svg_ground_control/config/swarm_real.yaml` (still 3-drone; trim to `drone_1` is OPTIONAL — deferred 2026-09-03, phantom drone_2/3 WARNs are harmless. Goal flights use `goal_single.yaml`/`goal_tracking.yaml`, already single-drone) |
+| Working folder (laptop) | `~/AirStack-starling-max2/AirStack` — ⚠️ as of 2026-10-07 the live clone still holds the OLD branch; sync it from the git mirror deliberately ([MIGRATION.md](MIGRATION.md) §6) |
+| **AirStack branch / snapshot** | CMU `yikuan/SVG_ground_control` @ **`cf719f0`**, vendored into `AirStack/` on **2026-10-07** (repo commit `91376aa`). Sibling of the previous `daniel/diffaero_ground_control` @ `f544c743` (common ancestor `a46f04b`), frozen at tag `airstack-starling-max2` / branch `archive/airstack-starling-max2`. Patch 0001 applied in-tree; patch 0002 fixed upstream; NatNet SDK NOT vendored (`install_sdk.sh`). **How to check:** `git log -1 -- AirStack` in this repo. **If it changes:** read [MIGRATION.md](MIGRATION.md), do its §6 re-do list, restart the MILESTONES ladder |
+| Real-run configs | hover/first flight: `swarm_real.yaml` **trimmed to `drone_1`** · goals: `goal_single_ours.yaml` (derived — see the table above) · gamepad: `teleop_real.yaml` — all under `<workspace>/src/svg_ground_control/config/`. The shipped 3-drone files are M7 material |
+| Gamepad | ⏳ model unknown — identify with `joy_map`, record the `teleop_controller` profile name here |
+| uXRCE client keeper on the drone | ⏳ decide: `svg-microdds-watchdog` (installed by the new provisioning script) **or** our `voxl-dds-retry.service` — not both |
 | Drone identity | `starling2-max (D0012)` · image 1.8.08 · voxl-suite 1.6.4~beta5 |
 | Drone factory backup | `/usr/bin/voxl-px4-start.FACTORY-ORIGINAL` (on drone) + `drone-backups/voxl-px4-start.original-D0012` in this repo (✅ both taken 2026-07-22, before the setup script ran) |
 

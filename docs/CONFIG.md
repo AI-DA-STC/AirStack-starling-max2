@@ -116,8 +116,8 @@ Flight-log-verified additions (2026-09-01/03 sessions):
 
 | File | Shipped as | Ours |
 |---|---|---|
-| `swarm_real.yaml` | 3 real drones, `hover`, `hold_all` fence, hover z 1.2, `land_speed_mps` **0.3** | trim to `drone_1`, z 0.5, `land_speed_mps` 0.6 → the hover / first-flight config (M3) |
-| `goal_single.yaml` | **`drone_2`**, `goal`, `keep_in`, teleop fence on, speeds 10.0, `land_speed_mps` 0.8 | copy to `goal_single_ours.yaml`: `drone_1`, fences to our net, speeds 1.0, `land_speed_mps` 0.6 → the goal-flight config (M4) |
+| `swarm_real.yaml` | 3 real drones, `hover`, `hold_all` fence, hover z 1.2, `land_speed_mps` **0.3** | **`swarm_real_ours.yaml`** (added 2026-10-07): `drone_1`, z 0.5, `land_speed_mps` 0.6, fence `[-2,-2,0]..[2,2,2]`, vmax 1.0, `hold_all` → the hover / first-flight config (M3) |
+| `goal_single.yaml` | **`drone_2`**, `goal`, `keep_in`, teleop fence on, speeds 10.0, `land_speed_mps` 0.8 | **`goal_single_ours.yaml`** (added 2026-10-07): `drone_1`, same fence box, `keep_in` brake 4 / gain 2, speeds 1.0, `goal_accel` 3.0, `land_speed_mps` 0.6, teleop fence off → the goal-flight config (M4) |
 | `teleop_real.yaml` | 1 real drone, `keep_in` + teleop fence, `dragonrise_usb`, `land_speed_mps` 0.3 | fences to our net, controller to ours, `land_speed_mps` 0.6 → the gamepad config (M5) |
 | `goal_tracking.yaml` | 3 real drones, **`random_goals`** (ignores goal commands), 10 m/s | M7 only |
 | `cbf_sim.yaml`, `swarm_sim.yaml`, `teleop_single.yaml`, `squeeze_3drone.yaml`, `squeeze_rc_intruder.yaml` | sim / 3-drone | as shipped for M1 sim; `squeeze_rc_intruder` is M7 |
@@ -190,7 +190,7 @@ UDP 14550). ✅ Set 2026-08-11 (drone→Mocap PC ping verified 3–7 ms).
 |---|---|
 | Working folder (laptop) | `~/AirStack-starling-max2/AirStack` — ⚠️ as of 2026-10-07 the live clone still holds the OLD branch; sync it from the git mirror deliberately ([MIGRATION.md](MIGRATION.md) §6) |
 | **AirStack branch / snapshot** | CMU `yikuan/SVG_ground_control` @ **`cf719f0`**, vendored into `AirStack/` on **2026-10-07** (repo commit `91376aa`). Sibling of the previous `daniel/diffaero_ground_control` @ `f544c743` (common ancestor `a46f04b`), frozen at tag `airstack-starling-max2` / branch `archive/airstack-starling-max2`. Patch 0001 applied in-tree; patch 0002 fixed upstream; NatNet SDK NOT vendored (`install_sdk.sh`). **How to check:** `git log -1 -- AirStack` in this repo. **If it changes:** read [MIGRATION.md](MIGRATION.md), do its §6 re-do list, restart the MILESTONES ladder |
-| Real-run configs | hover/first flight: `swarm_real.yaml` **trimmed to `drone_1`** · goals: `goal_single_ours.yaml` (derived — see the table above) · gamepad: `teleop_real.yaml` — all under `<workspace>/src/svg_ground_control/config/`. The shipped 3-drone files are M7 material |
+| Real-run configs | hover/first flight: **`swarm_real_ours.yaml`** · goals: **`goal_single_ours.yaml`** · gamepad: `teleop_real.yaml` (still CMU's values — derive `teleop_real_ours.yaml` before M5) — all under `<workspace>/src/svg_ground_control/config/`. The shipped 3-drone files are M7 material |
 | Gamepad | ⏳ model unknown — identify with `joy_map`, record the `teleop_controller` profile name here |
 | uXRCE client keeper on the drone | ⏳ decide: `svg-microdds-watchdog` (installed by the new provisioning script) **or** our `voxl-dds-retry.service` — not both |
 | Drone identity | `starling2-max (D0012)` · image 1.8.08 · voxl-suite 1.6.4~beta5 |

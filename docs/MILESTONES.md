@@ -318,9 +318,9 @@ watchdog decision made, §3d re-audit done (Next-up row 7).
 **Goal:** takeoff → hover → land under the **trajectory** output with the `hold_all` fence,
 RC kill in hand, and every iron rule re-observed.
 
-**Prereqs:** M2 exit. [PREFLIGHT.md](PREFLIGHT.md) every box. `swarm_real.yaml` **trimmed to
-`drone_1`** (the shipped file lists three drones and its hover z moved from our 0.5 m to
-1.2 m — start at our validated 0.5 m). `land_speed_mps` left at our validated `0.6`.
+**Prereqs:** M2 exit. [PREFLIGHT.md](PREFLIGHT.md) every box. Config **`swarm_real_ours.yaml`**
+(`drone_1` only, hover z 0.5 m, `land_speed_mps` 0.6, the validated ±2 m fence, `hold_all` —
+added 2026-10-07; the shipped `swarm_real.yaml` is three drones at 1.2 m).
 
 **Procedure** — [RUNBOOK.md](RUNBOOK.md) §B step 8 with the Basestation open:
 
@@ -347,10 +347,9 @@ verdicts.
 **Goal:** waypoints flown on the acceleration-limited profile; the `keep_in` wall braking
 seen and measured; gains changed in flight.
 
-**Prereqs:** M3 exit. A config derived from `goal_single.yaml` with `drone_2` → `drone_1`,
-fence and teleop fence re-drawn to **our** net, `cbf_max_speed_mps` and
-`scenario_speed_mps` reduced from the shipped `10.0` to something the room can hold
-(start 1.0). Record the values in [CONFIG.md](CONFIG.md).
+**Prereqs:** M3 exit. Config **`goal_single_ours.yaml`** (`drone_1`, validated ±2 m fence,
+`keep_in` brake 4 / gain 2, speeds 1.0, `goal_accel_mps2` 3.0 — added 2026-10-07; the shipped
+`goal_single.yaml` is `drone_2` at 10 m/s). Values in [CONFIG.md](CONFIG.md).
 
 **Procedure** — [RUNBOOK.md](RUNBOOK.md) §C:
 

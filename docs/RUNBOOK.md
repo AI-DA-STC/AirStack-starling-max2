@@ -232,17 +232,19 @@ Leave running. Verify (pane 4):
 ros2 topic hz /drone_1/odometry_conversion/odometry   # silent here = takeoff will be refused later
 ```
 
-**6 — Commander + mocap bridge + Foxglove bridge.** *One-time prereqs (all done on the
-previous branch, unchanged): EKF2 params via QGC, vision-hub conf (`en_vio` false /
-`offboard_mode` off).* Use a config **trimmed to `drone_1`** — the shipped
-`swarm_real.yaml` lists three real drones, moved its hover height to 1.2 m and still
-carries `land_speed_mps: 0.3` (the value that left the drone armed on the ground); our
-validated single-drone values (z 0.5 m, `land_speed_mps` 0.6) are in [CONFIG.md](CONFIG.md)
-and the trim is on the [MIGRATION.md](MIGRATION.md) §6 list. Pane 3:
+**6 — Commander + mocap bridge + Foxglove bridge (+ Studio).** *One-time prereqs (all done
+on the previous branch, unchanged): EKF2 params via QGC, vision-hub conf (`en_vio` false /
+`offboard_mode` off).* Use **our** config `swarm_real_ours.yaml` (added 2026-10-07: `drone_1`
+only, hover z 0.5, `land_speed_mps` 0.6, the validated ±2 m fence, `hold_all`) — the shipped
+`swarm_real.yaml` lists three real drones at 1.2 m with `land_speed_mps: 0.3`. Values:
+[CONFIG.md](CONFIG.md). Pane 3:
 ```bash
 ros2 launch svg_ground_control ground_control.launch.py \
-  config:=$(ros2 pkg prefix svg_ground_control)/share/svg_ground_control/config/swarm_real.yaml use_mocap:=true
+  config:=$(ros2 pkg prefix svg_ground_control)/share/svg_ground_control/config/swarm_real_ours.yaml \
+  use_mocap:=true use_foxglove_studio:=true
 ```
+`use_foxglove_studio:=true` opens Foxglove Studio inside the container already pointed at the
+bridge; leave it off if you run Studio on the laptop (step 7).
 On launch expect: a WARN that `drone_position_offsets` are all zero (**correct for mocap**),
 `LED daemon` warnings if no strip is fitted (harmless, or add `use_led:=false`), and
 `foxglove_bridge` listening on 8765. If a previous commander is still alive the new one
@@ -319,17 +321,19 @@ goal configs are **not usable as-is on our rig** ([MIGRATION.md](MIGRATION.md) �
 
 | Config | Shipped as | What to do |
 |---|---|---|
-| `swarm_real.yaml` | 3 real drones, hover scenario, `hold_all` fence, z 1.2 m | trim to `drone_1`, z 0.5 — the §B hover config |
-| `goal_single.yaml` | **`drone_2`**, `goal` scenario, `keep_in` fence `[-4.5,-5.2,0]..[5.5,4.5,3.0]`, teleop fence on, `cbf_max_speed_mps` **10.0** | copy → `goal_single_ours.yaml`: `drone_1`, fence + teleop fence drawn to **our net**, speeds down to 1.0, `land_speed_mps` 0.6 — the §C config |
+| `swarm_real.yaml` | 3 real drones, hover scenario, `hold_all` fence, z 1.2 m | use **`swarm_real_ours.yaml`** (`drone_1`, z 0.5, `land_speed_mps` 0.6, ±2 m fence) — the §B hover config |
+| `goal_single.yaml` | **`drone_2`**, `goal` scenario, `keep_in` fence `[-4.5,-5.2,0]..[5.5,4.5,3.0]`, teleop fence on, `cbf_max_speed_mps` **10.0** | use **`goal_single_ours.yaml`** (`drone_1`, ±2 m fence, speeds 1.0, `goal_accel` 3.0, `keep_in` brake 4 / gain 2, `land_speed_mps` 0.6) — the §C config |
 | `goal_tracking.yaml` | 3 real drones, **`random_goals`** scenario (ignores goal commands!), 10 m/s | not for one drone — M7 material ([SCENARIOS.md](SCENARIOS.md) §7) |
 
-Edit the SOURCE yaml under `AirStack/robot/ros_ws/src/svg_ground_control/config/`
-(rules in C7) and record the values in [CONFIG.md](CONFIG.md).
+Both `*_ours.yaml` files live beside CMU's under
+`AirStack/robot/ros_ws/src/svg_ground_control/config/` (rules in C7); any change to them
+goes into [CONFIG.md](CONFIG.md).
 
 **C1 — Launch.** Pane 3 (replaces step 6's launch command):
 ```bash
 ros2 launch svg_ground_control ground_control.launch.py \
-  config:=$(ros2 pkg prefix svg_ground_control)/share/svg_ground_control/config/goal_single_ours.yaml use_mocap:=true
+  config:=$(ros2 pkg prefix svg_ground_control)/share/svg_ground_control/config/goal_single_ours.yaml \
+  use_mocap:=true use_foxglove_studio:=true
 ```
 
 **C2 — Fly.** Takeoff (climbs to `hover_positions` — BOTH the takeoff target AND the initial

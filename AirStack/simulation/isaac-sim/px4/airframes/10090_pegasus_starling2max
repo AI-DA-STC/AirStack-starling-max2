@@ -32,6 +32,33 @@ param set-default CA_ROTOR3_KM -0.0136
 
 param set-default MPC_THR_HOVER 0.36
 
+# Attitude / rate / position gains: the REAL Starling 1's values (starling_1_indoor_params.params,
+# ModalAI tuning for this airframe). rc.mc_defaults (Iris gains) made the sim oscillate and run
+# away on the first flights: with CMU's inertia (~15x below the Iris) and short arms the control
+# effectiveness is ~7x higher, and the 72 ms motor lag adds phase.
+param set-default MC_ROLLRATE_P 0.064
+param set-default MC_ROLLRATE_I 0.1
+param set-default MC_ROLLRATE_D 0.0013
+param set-default MC_ROLLRATE_K 1.0
+param set-default MC_PITCHRATE_P 0.064
+param set-default MC_PITCHRATE_I 0.096
+param set-default MC_PITCHRATE_D 0.0011
+param set-default MC_PITCHRATE_K 1.0
+param set-default MC_YAWRATE_P 0.07
+param set-default MC_YAWRATE_I 0.5
+param set-default MC_YAWRATE_D 0.0
+param set-default MC_YAWRATE_K 1.0
+param set-default MC_ROLL_P 8.0
+param set-default MC_PITCH_P 8.0
+param set-default MC_YAW_P 2.8
+param set-default MPC_XY_P 0.95
+param set-default MPC_Z_P 5.0
+param set-default MPC_XY_VEL_P_ACC 1.8
+param set-default MPC_Z_VEL_P_ACC 8.0
+param set-default MPC_ACC_HOR_MAX 3.0
+param set-default MPC_XY_VEL_MAX 3.0
+param set-default THR_MDL_FAC 0.9
+
 param set-default PWM_MAIN_FUNC1 101
 param set-default PWM_MAIN_FUNC2 102
 param set-default PWM_MAIN_FUNC3 103

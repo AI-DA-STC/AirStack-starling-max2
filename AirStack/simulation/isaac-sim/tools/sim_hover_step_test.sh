@@ -22,6 +22,7 @@ print(d['state'], d['position'][0], d['position'][1], d['position'][2])"; }
 svc(){ timeout 20 ros2 service call /swarm_commander/$1 std_srvs/srv/Trigger 2>/dev/null | grep -o "success=[A-Za-z]*, message='[^']*'"; }
 echo "[$(date +%T)] pre-takeoff: $(pos)"
 echo "[$(date +%T)] takeoff: $(svc takeoff)"
+timeout 25 ros2 topic echo /$D/odometry_conversion/odometry --field pose.pose.position 2>/dev/null > /tmp/ascent.txt   # climb trace for post-mortems
 for i in $(seq 1 30); do          # up to ~90 s for all drones to reach their takeoff points
   wait_s 3
   r=$(svc start)
@@ -46,4 +47,4 @@ echo "[$(date +%T)] after steps: $(pos)"
 echo "[$(date +%T)] land: $(svc land)"
 wait_s 15
 echo "[$(date +%T)] landed: $(pos)"
-echo "traces: /tmp/step_x.txt /tmp/step_z.txt  (analyse with /tmp/analyze_step.py)"
+echo "traces: /tmp/ascent.txt /tmp/step_x.txt /tmp/step_z.txt  (analyse with /tmp/analyze_step.py)"

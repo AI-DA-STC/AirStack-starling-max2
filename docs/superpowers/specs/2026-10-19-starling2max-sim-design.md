@@ -39,7 +39,7 @@ into SITL (follow-up once hover is clean), rebuilding the Isaac image.
 | Spin directions | [−1, −1, +1, +1] | Iris convention, matches the rotor order above |
 | Rotor speed ceiling | 1450 rad/s (derived) | hover needs √(0.557·9.81/4 / k_f) = 587 rad/s; with PX4 throttle → ω = 1350·u + 100, hover sits at u ≈ 0.36 |
 | PX4 `KM` | 0.0136 = k_m / k_f | derived |
-| PX4 `MPC_THR_HOVER` | 0.36 | derived from the ceiling above |
+| PX4 `MPC_THR_HOVER` | 0.165 (thrust setpoint; the actuator then sits near 0.36 through `THR_MDL_FAC` 0.9) | measured 0.155 in sim; real drone 0.165 (was 0.36 in the first draft — see §6b) |
 
 Decision recorded: the real drone's PX4 params carry rotor positions ±0.085/±0.0625 that
 contradict CMU's CAD. The user chose CMU's values; the sim and the sim airframe use the USD
@@ -106,7 +106,8 @@ param set-default CA_ROTOR2_KM -0.0136
 param set-default CA_ROTOR3_PX -0.095
 param set-default CA_ROTOR3_PY  0.13
 param set-default CA_ROTOR3_KM -0.0136
-param set-default MPC_THR_HOVER 0.36
+param set-default MPC_THR_HOVER 0.165   # thrust setpoint, see §2
+param set-default MC_*RATE_* / MC_*_P / MPC_* …  # Starling 1's real gains, see §6b
 param set-default PWM_MAIN_FUNC1 101 … FUNC4 104
 ```
 
@@ -205,7 +206,12 @@ setpoints back through MAVROS → PX4 → actuator controls → thrust curve.
 - **Airframe mount target.** Pegasus starts SITL from the ROMFS *source* tree, which PX4 copies
   to a temp root; the mount targets `ROMFS/px4fmu_common/init.d-posix/airframes/`.
 - **Rotor-speed scaling.** `input_scaling` 1350 is passed to the PX4 node for the Starling so
-  the 1450 rad/s ceiling and the 0.36 hover throttle actually apply.
+  the 1450 rad/s ceiling and the 0.36 hover actuator actually apply.
+- **`MPC_THR_HOVER` is a thrust setpoint, not an actuator value.** PX4's `THR_MDL_FAC` 0.9 maps
+  the measured 0.155 hover thrust setpoint to an actuator of ~0.36. The airframe carries 0.165
+  (the real drone's value); the first draft's 0.36 was in the wrong units.
+- **No `multirotors/__init__.py` edit.** The selector lives in a new `registry.py`; the package
+  init was not touched.
 
 ## 7. Files touched
 
@@ -214,7 +220,7 @@ New: `assets/robots/starling2max.usd`, `px4/airframes/10090_pegasus_starling2max
 `pegasus/simulator/logic/vehicles/multirotors/starling2max.py`, lag-curve test,
 `isaac_sim/Starling 2 Max Sys ID Results - Slite.pdf` (committed), `isaac_sim/.gitignore`.
 
-Modified: `OgnPegasusMultirotorNodeBase.py`, `multirotors/__init__.py`,
+Modified: `OgnPegasusMultirotorNodeBase.py`,
 `svg_multi_drone_single_domain.py`, `simulation/isaac-sim/docker/docker-compose.yaml`,
 `docs/RUNBOOK.md`, `docs/CONFIG.md`, `docs/MILESTONES.md`, `docs/SCENARIOS.md`,
 `AirStack/README.md`.

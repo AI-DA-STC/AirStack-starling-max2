@@ -52,10 +52,14 @@ front of the same command:
 ```bash
 DRONE_USD=/isaac-sim/AirStack/simulation/isaac-sim/assets/robots/starling2max.usd PX4_VEHICLE_MODEL=pegasus_starling2max \
 ```
-That selects CMU's sys-ID dynamics (0.557 kg, k_f 3.96e-6, 72 ms motor lag, `Starling2MaxConfig`
-in the launch log) and our bind-mounted PX4 airframe `10090_pegasus_starling2max`. Both vars
-unset = Iris exactly as before. Values and sources: [CONFIG.md](CONFIG.md) "Sim airframe".
-⏳ STE: hover throttle and step response per MILESTONES M1.
+That selects CMU's sys-ID dynamics (0.557 kg, k_f 3.96e-6; motor lag **off** by default —
+`STARLING_MOTOR_TAU=0.072` in front re-enables CMU's measured lag, which tumbles the attitude
+loop; `Starling2MaxConfig` in the launch log) and our bind-mounted PX4 airframe
+`10090_pegasus_starling2max` with Starling 1's real gains. Both vars unset = Iris exactly as
+before. Values and sources: [CONFIG.md](CONFIG.md) "Sim airframe". ✅ Validated in sim
+2026-10-19: hover, 1 m steps and the CBF crossing — [MILESTONES.md](MILESTONES.md) §3c ledger
+#1–#4; acceptance tools in `simulation/isaac-sim/tools/` (`docker cp` them into the robot
+container, run with `bash -ic`).
 
 **T2 — the `bringup` session.** New laptop terminal:
 ```bash

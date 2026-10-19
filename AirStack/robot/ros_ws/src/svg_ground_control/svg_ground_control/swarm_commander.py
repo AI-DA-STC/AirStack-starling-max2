@@ -265,6 +265,9 @@ class DroneHandle:
         self.odom_loss_counter = 'unsupported'
         self.arming_start = None          # rclpy Time
         self.arming_steps_done = set()
+        # LANDING: when z first dropped below land_complete_altitude_m (rclpy
+        # Time); None = still above it. The disarm waits land_settle_s past it.
+        self.touchdown_time = None
         self.cmd_pub = None
         self.robot_command_client = None
         self.teleop_twist = np.zeros(3)
@@ -512,6 +515,12 @@ class SwarmCommander(Node):
         # Landing
         self.declare_parameter('land_speed_mps', 0.3)
         self.declare_parameter('land_complete_altitude_m', 0.15)
+        # Time to keep commanding the descent after z <= land_complete_altitude_m
+        # before the one-shot DISARM. PX4 only accepts a disarm once its land
+        # detector has tripped (~1 s of near-zero velocity at minimum thrust);
+        # disarming at the threshold instant was DENIED ("not landed") and the
+        # offboard timeout left the drone hovering, armed (sim, 2026-10-19).
+        self.declare_parameter('land_settle_s', 2.0)
 
         # CBF safety filter
         self.declare_parameter('cbf_safety_radius_m', 0.55)
@@ -625,6 +634,7 @@ class SwarmCommander(Node):
         self.hold_lead = float(self.get_parameter('hold_lead_m').value)
         self.land_complete_alt = float(
             self.get_parameter('land_complete_altitude_m').value)
+        self.land_settle = float(self.get_parameter('land_settle_s').value)
         self.cbf_safety_radius = float(self.get_parameter('cbf_safety_radius_m').value)
         self.cbf_max_speed = float(self.get_parameter('cbf_max_speed_mps').value)
         self.cbf_alpha = float(self.get_parameter('cbf_alpha').value)
@@ -931,6 +941,7 @@ class SwarmCommander(Node):
         'hover_kp': 'hover_kp',
         'hold_lead_m': 'hold_lead',
         'takeoff_speed_mps': 'takeoff_speed',
+        'land_settle_s': 'land_settle',
         # keep_in / teleop fence dynamics (the boxes themselves are geometry:
         # startup only). Read by keep_in() on every control tick.
         'fence_keep_in_gain': 'fence_keep_in_gain',
@@ -1431,6 +1442,7 @@ class SwarmCommander(Node):
             if d.commanded and d.state in (FlightState.ASCEND, FlightState.ACTIVE):
                 d.state = FlightState.LANDING
                 d.ref = None
+                d.touchdown_time = None
                 landing.append(d.name)
         response.success = bool(landing)
         response.message = ('landing: ' + ', '.join(landing)) if landing \
@@ -1505,6 +1517,32 @@ class SwarmCommander(Node):
         fresh = (d.last_odom_time is not None
                  and (now - d.last_odom_time) < Duration(seconds=self.state_timeout))
         return fresh and d.position[2] > self.land_complete_alt
+
+    def landing_done(self, d: DroneHandle, now) -> bool:
+        """True once a LANDING drone has sat below land_complete_altitude_m
+        for land_settle_s: time to send the one-shot DISARM and go IDLE.
+
+        Until then the drone stays LANDING and the control loop keeps
+        publishing the descent, so PX4's land detector sees a vehicle pressed
+        onto the ground at minimum thrust and trips (its own auto-disarm may
+        beat ours; either is fine). A bounce back above the threshold
+        restarts the timer.
+        """
+        if d.state != FlightState.LANDING or d.position is None:
+            return False
+        if d.position[2] > self.land_complete_alt:
+            d.touchdown_time = None
+            return False
+        if d.touchdown_time is None:
+            d.touchdown_time = now
+            self.get_logger().info(
+                f'{d.name}: touchdown at z={d.position[2]:.2f} m, settling '
+                f'{self.land_settle:.1f} s before disarm')
+            return False
+        if (now - d.touchdown_time) < Duration(seconds=self.land_settle):
+            return False
+        d.touchdown_time = None
+        return True
 
     def report_keep_in(self, now):
         """keep_in mode: nothing to latch, but say who is out and unsteerable."""
@@ -1931,8 +1969,7 @@ class SwarmCommander(Node):
                 self.publish_command(d, np.zeros(3), np.zeros(3), now)
                 continue
 
-            if d.state == FlightState.LANDING \
-                    and d.position[2] <= self.land_complete_alt:
+            if self.landing_done(d, now):
                 self.send_robot_command(d, RobotCommand.Request.DISARM, 'disarm')
                 d.state = FlightState.IDLE
                 if all(o.state == FlightState.IDLE

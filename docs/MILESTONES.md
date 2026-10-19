@@ -157,6 +157,7 @@ must be remembered; details in the corrections tables of the linked docs):
 | 2 | Sim: Iris regression (env vars unset) | same script, `MultirotorConfig` / `gazebo-classic_iris` | hover thrust setpoint 0.58 steady; x step ~0.14 m overshoot, z step 3.6 s settle | 2026-10-19 |
 | 3 | **M1: Starling hover + 1 m steps** (`tools/sim_hover_step_test.sh`, `cbf_sim.yaml scenario:=goal`) | hover thrust from `…/setpoint_raw/target_attitude`; odometry traces; rotors 20 g, motor lag off, real-drone gains | hover thrust setpoint **0.155** steady (real drone 0.165); x step overshoot 0.002 m, settled 2.75 s; z step overshoot 0.001 m, settled 0.75 s; takeoff climb overshoot 0.31 m (settled 7.9 s) | 2026-10-19 |
 | 4 | **M1: CBF crossing on the Starling model** (`tools/sim_cbf_crossing_test.sh`, `cbf_sim.yaml` antipodal) | 45 s of `/svg/commander_status` | all three drones CBF-corrected, no emergency push-apart, no fence breach, min pairwise distance **1.02 m** (nominal 2r = 1.10 m — 8 cm inside the barrier, CBF soft margin) | 2026-10-19 |
+| 5 | **Landing disarm fix** (`land_settle_s`, [§6 Fix 1](#6-backlog--carried-over-re-evaluate-on-this-branch)) — unit level only | observed: `land` → pane log `landed, disarmed` then `disarm -> success=False` ×3, mavros `armed: true mode: OFFBOARD`, props spinning (failsafe hover). Fix: commander keeps commanding the descent 2 s past the threshold, then disarms | `test/test_landing_settle.py` 4 tests, suite 144/144 in the robot container. **Sim end-to-end ⏳**: next `land` must end with mavros `armed: false` within ~3 s of touchdown | 2026-10-19 |
 | — | *Sim-only so far: nothing in this ledger has touched the real drone (M2+ ⏳ STE)* | | | |
 
 ### ⚠️ Carried-over issues — re-test before trusting (none copied as verdicts)
@@ -447,7 +448,7 @@ be applied as written. Status on this branch:
 
 | Old backlog item | What it fixed | On this branch |
 |---|---|---|
-| Fix 1 — `LANDED_SETTLE` state (settle on the ground before the one-shot disarm) | premature "Disarming denied" | **Still absent** — the disarm is still a timed one-shot; the ack is now logged. Re-evaluate after M3 if landings ever stay armed again |
+| Fix 1 — `LANDED_SETTLE` state (settle on the ground before the one-shot disarm) | premature "Disarming denied" | **Implemented 2026-10-19** (ours, not upstream) as `land_settle_s` (default 2.0 s, live) + `SwarmCommander.landing_done()`: the drone stays LANDING and keeps commanding the descent for the settle time after z ≤ `land_complete_altitude_m`, then DISARM → IDLE; a bounce restarts the timer. Trigger: in sim the instant disarm was DENIED and the offboard timeout left all three drones armed in failsafe hover. Unit tests `test/test_landing_settle.py`; sim/real validation ⏳ (ledger) |
 | Fix 2 — `~/release` service (stop streaming setpoints so POSCTL takeover is clean) | control-authority leak | **Still absent** — no release service (`swarm_commander.py:813-817` lists five). Leak expected to persist; MANUAL-or-KILL rule stands |
 | Fix 3 — param-gated yaw passthrough | yaw stayed at takeoff heading | **Subsumed** — the trajectory output carries an absolute yaw for scenario drones and yaw-rate for teleop (`swarm_commander.py:2008-2028`); the old "CBF is 3-DOF linear" premise is unchanged (yaw bypasses the CBF) |
 

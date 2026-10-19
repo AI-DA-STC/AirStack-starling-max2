@@ -191,6 +191,22 @@ setpoints back through MAVROS → PX4 → actuator controls → thrust curve.
   as the Iris does → PhysX resolves both to the same rigid body; verify the propeller spin
   visual works, otherwise retarget `body0` to `/vehicle/body/body` in the cleaned USD.
 
+## 6b. Deviations found during execution (2026-10-19)
+
+- **Rotor masses.** The delivered USD's rotor rigid bodies carried no `MassAPI`; PhysX gave them
+  collider-density mass (4 × ~95 g), so the vehicle weighed 941 g and hovered at 0.49 throttle.
+  The cleaner now sets 20 g per rotor and 477 g on the body (total 557 g). 5 g rotors were tried
+  first and did not help the instability below.
+- **Motor lag default = 0.** With CMU's 72 ms first-order lag and either gain set the attitude
+  loop tumbled (roll ±100°, ~0.8 s period); with the lag off it hovers within ±2° roll. The
+  `LaggedQuadraticThrustCurve` stays, selectable with `STARLING_MOTOR_TAU=<s>`.
+- **PX4 gains.** `rc.mc_defaults` (Iris) ran away on this airframe; the airframe file carries
+  Starling 1's real rate/attitude/position gains instead of deferring them.
+- **Airframe mount target.** Pegasus starts SITL from the ROMFS *source* tree, which PX4 copies
+  to a temp root; the mount targets `ROMFS/px4fmu_common/init.d-posix/airframes/`.
+- **Rotor-speed scaling.** `input_scaling` 1350 is passed to the PX4 node for the Starling so
+  the 1450 rad/s ceiling and the 0.36 hover throttle actually apply.
+
 ## 7. Files touched
 
 New: `assets/robots/starling2max.usd`, `px4/airframes/10090_pegasus_starling2max`,

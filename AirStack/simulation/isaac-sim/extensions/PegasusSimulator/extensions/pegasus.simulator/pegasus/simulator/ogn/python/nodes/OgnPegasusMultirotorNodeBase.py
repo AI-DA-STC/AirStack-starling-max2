@@ -202,12 +202,13 @@ class OgnPegasusMultirotorNodeBase:
     @staticmethod
     def create_multirotor(db, backend):
         """Create multirotor vehicle with the given backend without validation for scalability"""
-        # Create multirotor configuration
-        multirotor_config = MultirotorConfig()
-        multirotor_config.backends = [backend]
-
-        # Get USD file from input parameter
+        # Get USD file from input parameter — it also selects the dynamics config
         selected_usd_file = db.inputs.usdFile
+        from pegasus.simulator.logic.vehicles.multirotors.registry import select_vehicle_config
+        config_class = select_vehicle_config(selected_usd_file)
+        print(f"Vehicle config for {os.path.basename(str(selected_usd_file))}: {config_class.__name__}")
+        multirotor_config = config_class()
+        multirotor_config.backends = [backend]
 
         print(f"Creating multirotor with USD file: {selected_usd_file}")
         # Create multirotor vehicle directly without validation

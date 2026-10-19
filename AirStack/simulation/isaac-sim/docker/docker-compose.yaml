@@ -68,8 +68,10 @@ services:
       - $HOME/docker/isaac-sim/pkg:/isaac-sim/.local/share/ov/pkg:rw \
       # pegasus integration
       - ../extensions/PegasusSimulator/extensions/pegasus.simulator:/isaac-sim/.local/share/ov/data/documents/Kit/shared/exts/pegasus.simulator/:rw
-      # our PX4 SITL airframes (read by rcS at SITL start; no image rebuild needed)
-      - ../px4/airframes/10090_pegasus_starling2max:/isaac-sim/PX4-Autopilot/build/px4_sitl_default/etc/init.d-posix/airframes/10090_pegasus_starling2max:ro
+      # our PX4 SITL airframes. Pegasus launches `px4 ROMFS/px4fmu_common/ -s rcS`, which copies
+      # the ROMFS SOURCE tree into a per-instance temp root — so the file must sit in the source
+      # airframes dir (not build/…/etc). No image rebuild needed.
+      - ../px4/airframes/10090_pegasus_starling2max:/isaac-sim/PX4-Autopilot/ROMFS/px4fmu_common/init.d-posix/airframes/10090_pegasus_starling2max:ro
       # omniverse
       - ./omniverse.toml:/isaac-sim/.nvidia-omniverse/config/omniverse.toml:rw
       - ./user.config.json:/isaac-sim/.local/share/ov/data/Kit/Isaac-Sim Full/5.1/user.config.json:rw # enables pegasus extension; IMPORTANT: set the version number without the trailing .0

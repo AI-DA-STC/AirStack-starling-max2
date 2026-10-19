@@ -115,11 +115,14 @@ flights. The file is a plain shell script read by `rcS` at SITL start, so it is 
 into the container by one line in `simulation/isaac-sim/docker/docker-compose.yaml`:
 
 ```
-- ../px4/airframes/10090_pegasus_starling2max:/isaac-sim/PX4-Autopilot/build/px4_sitl_default/etc/init.d-posix/airframes/10090_pegasus_starling2max:ro
+- ../px4/airframes/10090_pegasus_starling2max:/isaac-sim/PX4-Autopilot/ROMFS/px4fmu_common/init.d-posix/airframes/10090_pegasus_starling2max:ro
 ```
 
-Verified 2026-10-19: `rcS:51-61` resolves `PX4_SIM_MODEL` by listing that directory, which is
-a plain directory (not a symlink) in image `v0.18.0_isaac-sim` (PX4 v1.16.1).
+Verified 2026-10-19 (corrected during execution): Pegasus's `PX4LaunchTool` runs
+`px4 ROMFS/px4fmu_common/ -s …/rcS -i N -d`, and PX4 copies that **source** ROMFS tree into a
+per-instance temp root (`/tmp/tmpXXXX/etc/…`) which `rcS:51-61` then lists. A file mounted
+into `build/px4_sitl_default/etc/…` is never seen; the mount must target the ROMFS source
+airframes directory.
 
 ### 3.4 Launch wiring — `simulation/isaac-sim/launch_scripts/svg_multi_drone_single_domain.py`
 

@@ -8,7 +8,8 @@
 # r2 +0.095,+0.13 | r3 -0.095,-0.13), written here in PX4 FRD (y negated).
 # KM = k_m / k_f = 5.38697e-8 / 3.964738e-6 = 0.0136. Hover throttle 0.36 follows from the
 # Pegasus rotor-speed ceiling (1450 rad/s) and k_f. Rate/position gains: rc.mc_defaults.
-# Bind-mounted into the SITL airframes dir by simulation/isaac-sim/docker/docker-compose.yaml.
+# Bind-mounted into PX4's ROMFS source airframes dir (ROMFS/px4fmu_common/init.d-posix/airframes) by
+# simulation/isaac-sim/docker/docker-compose.yaml — Pegasus copies that tree into a temp root at SITL start.
 #
 
 . ${R}etc/init.d/rc.mc_defaults

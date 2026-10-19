@@ -5,3 +5,4 @@
 
 from .thrust_curve import ThrustCurve
 from .quadratic_thrust_curve import QuadraticThrustCurve
+from .lagged_quadratic_thrust_curve import LaggedQuadraticThrustCurve

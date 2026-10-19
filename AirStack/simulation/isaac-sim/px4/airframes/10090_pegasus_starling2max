@@ -1,0 +1,37 @@
+#!/bin/sh
+#
+# @name ModalAI Starling 2 Max (Pegasus / Isaac Sim SITL)
+#
+# @type Quadrotor x
+#
+# Rotor geometry from CMU's sys-ID USD (body FLU: r0 +0.095,-0.13 | r1 -0.095,+0.13 |
+# r2 +0.095,+0.13 | r3 -0.095,-0.13), written here in PX4 FRD (y negated).
+# KM = k_m / k_f = 5.38697e-8 / 3.964738e-6 = 0.0136. Hover throttle 0.36 follows from the
+# Pegasus rotor-speed ceiling (1450 rad/s) and k_f. Rate/position gains: rc.mc_defaults.
+# Bind-mounted into the SITL airframes dir by simulation/isaac-sim/docker/docker-compose.yaml.
+#
+
+. ${R}etc/init.d/rc.mc_defaults
+
+param set-default CA_AIRFRAME 0
+
+param set-default CA_ROTOR_COUNT 4
+param set-default CA_ROTOR0_PX 0.095
+param set-default CA_ROTOR0_PY 0.13
+param set-default CA_ROTOR0_KM 0.0136
+param set-default CA_ROTOR1_PX -0.095
+param set-default CA_ROTOR1_PY -0.13
+param set-default CA_ROTOR1_KM 0.0136
+param set-default CA_ROTOR2_PX 0.095
+param set-default CA_ROTOR2_PY -0.13
+param set-default CA_ROTOR2_KM -0.0136
+param set-default CA_ROTOR3_PX -0.095
+param set-default CA_ROTOR3_PY 0.13
+param set-default CA_ROTOR3_KM -0.0136
+
+param set-default MPC_THR_HOVER 0.36
+
+param set-default PWM_MAIN_FUNC1 101
+param set-default PWM_MAIN_FUNC2 102
+param set-default PWM_MAIN_FUNC3 103
+param set-default PWM_MAIN_FUNC4 104

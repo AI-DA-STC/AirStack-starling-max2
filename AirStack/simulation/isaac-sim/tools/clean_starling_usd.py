@@ -6,7 +6,11 @@ Changes made (and nothing else):
     primvars:st) dropped, extent recomputed; the convexHull collider and the material
     binding are untouched.
   * /vehicle/defaultLight removed (it would be instanced once per spawned drone).
-Mass, inertia, centre of mass, rotors, joints and colliders are byte-identical.
+  * Rotor rigid bodies get an explicit MassAPI mass (ROTOR_MASS_KG each) and the body mass is
+    reduced by the same total, so the vehicle still weighs CMU's 0.557 kg. Without this PhysX
+    derives each rotor's mass from its collider volume (~95 cm^3 x 1000 kg/m^3 = ~95 g each,
+    +384 g total) and the sim hovers at ~0.49 throttle instead of ~0.36.
+Inertia, centre of mass, rotor positions, joints and colliders are byte-identical.
 
 Usage (host):
   ISAAC_PIP=fast_simplification AirStack/simulation/isaac-sim/tools/isaac_python.sh \
@@ -16,11 +20,14 @@ Usage (host):
 import sys
 import numpy as np
 import trimesh
-from pxr import Usd, UsdGeom, Vt, Gf
+from pxr import Usd, UsdGeom, UsdPhysics, Vt, Gf
 
 TARGET_FACES = 50_000
 BODY_MESH = "/vehicle/body/body"
+BODY = "/vehicle/body"
+ROTORS = [f"/vehicle/rotor{i}" for i in range(4)]
 LIGHT = "/vehicle/defaultLight"
+ROTOR_MASS_KG = 0.005          # a prop; CMU's 0.557 kg is the whole drone
 
 src, dst = sys.argv[1], sys.argv[2]
 stage = Usd.Stage.Open(src)
@@ -54,6 +61,15 @@ for name in ("displayColor", "displayOpacity"):   # keep only if constant (one v
             pv.RemovePrimvar(name)
 lo, hi = dec.vertices.min(axis=0), dec.vertices.max(axis=0)
 mesh.GetExtentAttr().Set(Vt.Vec3fArray([Gf.Vec3f(*lo), Gf.Vec3f(*hi)]))
+
+body_mass = UsdPhysics.MassAPI(stage.GetPrimAtPath(BODY))
+total = body_mass.GetMassAttr().Get()
+for r in ROTORS:
+    rp = stage.GetPrimAtPath(r)
+    assert rp and rp.HasAPI(UsdPhysics.RigidBodyAPI), f"{r} missing"
+    UsdPhysics.MassAPI.Apply(rp).CreateMassAttr().Set(ROTOR_MASS_KG)
+body_mass.GetMassAttr().Set(total - ROTOR_MASS_KG * len(ROTORS))
+print(f"masses: body {total - ROTOR_MASS_KG*len(ROTORS):.3f} kg + 4 x {ROTOR_MASS_KG} kg rotors = {total:.3f} kg")
 
 if stage.GetPrimAtPath(LIGHT):
     stage.RemovePrim(LIGHT)

@@ -153,7 +153,11 @@ must be remembered; details in the corrections tables of the linked docs):
 
 | # | Test | How (command / evidence) | Result | Date |
 |---|---|---|---|---|
-| — | *(nothing on this branch yet — first row lands at M0)* | | | |
+| 1 | **M0 partial / M1: Starling 2 Max model spawns in Isaac Sim** (CMU sys-ID inertials, `Starling2MaxConfig`, PX4 airframe 10090) | `DRONE_USD=… PX4_VEHICLE_MODEL=pegasus_starling2max`, 3 drones headless (RUNBOOK §A) | `Starling2MaxConfig` ×3 in the launch log, `SYS_AUTOSTART=10090` ×3, 3× Ready for takeoff, MAVROS connected ×3, no PhysX cooking warnings | 2026-10-19 |
+| 2 | Sim: Iris regression (env vars unset) | same script, `MultirotorConfig` / `gazebo-classic_iris` | hover thrust setpoint 0.58 steady; x step ~0.14 m overshoot, z step 3.6 s settle | 2026-10-19 |
+| 3 | **M1: Starling hover + 1 m steps** (`tools/sim_hover_step_test.sh`, `cbf_sim.yaml scenario:=goal`) | hover thrust from `…/setpoint_raw/target_attitude`; odometry traces; rotors 20 g, motor lag off, real-drone gains | hover thrust setpoint **0.155** steady (real drone 0.165); x step overshoot 0.002 m, settled 2.75 s; z step overshoot 0.001 m, settled 0.75 s; takeoff climb overshoot 0.31 m (settled 7.9 s) | 2026-10-19 |
+| 4 | **M1: CBF crossing on the Starling model** (`tools/sim_cbf_crossing_test.sh`, `cbf_sim.yaml` antipodal) | 45 s of `/svg/commander_status` | all three drones CBF-corrected, no emergency push-apart, no fence breach, min pairwise distance **1.02 m** (nominal 2r = 1.10 m — 8 cm inside the barrier, CBF soft margin) | 2026-10-19 |
+| — | *Sim-only so far: nothing in this ledger has touched the real drone (M2+ ⏳ STE)* | | | |
 
 ### ⚠️ Carried-over issues — re-test before trusting (none copied as verdicts)
 
@@ -272,8 +276,8 @@ line:
 | Random goals | `cbf_sim.yaml scenario:=random_goals` | continuous crossings; note any deadlock near a goal | [SCENARIOS.md](SCENARIOS.md) §7 |
 | Live gains | panel slider `CBF α` 2.5 → 4.0 → `live ✓`; then from a shell `ros2 param set /swarm_commander cbf_alpha 0` must be **refused** (gains must stay > 0) | `live` readout follows the slider; the refusal names the reason | [BASESTATION.md](BASESTATION.md) §3 |
 | Unit tests | container, package dir: `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python3 -m pytest -q -p no:cacheprovider test/` | **0 failed** (CMU's README says ~140 tests; 126 `def test_` plus parametrisation — record what you see) | [SCENARIOS.md](SCENARIOS.md) §11 |
-| **Starling model: spawn + hover + steps** | `DRONE_USD=… PX4_VEHICLE_MODEL=pegasus_starling2max` (RUNBOOK §A), `cbf_sim.yaml scenario:=goal`; hover thrust from `/drone_1/interface/mavros/setpoint_raw/target_attitude`; 1 m steps in x and z | `Starling2MaxConfig` ×3 in the launch log, PX4 on airframe 10090; hover thrust 0.30–0.45; steps settle < 2 s, overshoot < 0.15 m, no ringing | [CONFIG.md](CONFIG.md) "Sim airframe" |
-| **Starling model: CBF crossing** | `cbf_sim.yaml` (antipodal) with the two env vars | as the CBF-crossing row above, on the Starling dynamics | [SCENARIOS.md](SCENARIOS.md) §5 |
+| **Starling model: spawn + hover + steps** ✅ 2026-10-19 (ledger #3) | `DRONE_USD=… PX4_VEHICLE_MODEL=pegasus_starling2max` (RUNBOOK §A), `cbf_sim.yaml scenario:=goal`; `docker cp` `simulation/isaac-sim/tools/{sim_hover_step_test.sh,analyze_step.py}` into the robot container, run with `bash -ic` | `Starling2MaxConfig` ×3 in the launch log, PX4 on airframe 10090; hover thrust setpoint 0.12–0.20 (real drone 0.165); steps settle < 3 s, overshoot < 0.15 m, no ringing | [CONFIG.md](CONFIG.md) "Sim airframe" |
+| **Starling model: CBF crossing** ✅ 2026-10-19 (ledger #4) | `cbf_sim.yaml` (antipodal) with the two env vars; `tools/sim_cbf_crossing_test.sh` | all drones corrected, no emergency, min distance ≥ ~1.0 m | [SCENARIOS.md](SCENARIOS.md) §5 |
 
 **Exit criterion:** every row above has a ledger line with a date, and the operator can
 bring the sim up and down from the tmux session without the manual terminal list.

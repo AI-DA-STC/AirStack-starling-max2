@@ -7,7 +7,7 @@
 # Rotor geometry from CMU's sys-ID USD (body FLU: r0 +0.095,-0.13 | r1 -0.095,+0.13 |
 # r2 +0.095,+0.13 | r3 -0.095,-0.13), written here in PX4 FRD (y negated).
 # KM = k_m / k_f = 5.38697e-8 / 3.964738e-6 = 0.0136. Hover throttle 0.36 follows from the
-# Pegasus rotor-speed ceiling (1450 rad/s) and k_f. Rate/position gains: rc.mc_defaults.
+# hover thrust setpoint (what MPC_THR_HOVER means) measured 0.155, real drone 0.165.
 # Bind-mounted into PX4's ROMFS source airframes dir (ROMFS/px4fmu_common/init.d-posix/airframes) by
 # simulation/isaac-sim/docker/docker-compose.yaml — Pegasus copies that tree into a temp root at SITL start.
 #
@@ -30,7 +30,7 @@ param set-default CA_ROTOR3_PX -0.095
 param set-default CA_ROTOR3_PY 0.13
 param set-default CA_ROTOR3_KM -0.0136
 
-param set-default MPC_THR_HOVER 0.36
+param set-default MPC_THR_HOVER 0.165   # thrust SETPOINT (pre THR_MDL_FAC); measured 0.155 in sim, real drone 0.165 — actuator sits ~0.36
 
 # Attitude / rate / position gains: the REAL Starling 1's values (starling_1_indoor_params.params,
 # ModalAI tuning for this airframe). rc.mc_defaults (Iris gains) made the sim oscillate and run

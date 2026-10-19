@@ -47,6 +47,16 @@ PYTHONPATH="$ISAAC_SIM_PYTHONPATH" \
 Wait for `Ready for takeoff!` ×3. Leave running. (Optional: `ENABLE_CAMERA=true
 CAMERA_DRONES=drone_3` in front spawns a ZED camera on one drone — costly, skip unless needed.)
 
+**Starling 2 Max model** (added 2026-10-19; the default stays the Iris) — put these two in
+front of the same command:
+```bash
+DRONE_USD=/isaac-sim/AirStack/simulation/isaac-sim/assets/robots/starling2max.usd PX4_VEHICLE_MODEL=pegasus_starling2max \
+```
+That selects CMU's sys-ID dynamics (0.557 kg, k_f 3.96e-6, 72 ms motor lag, `Starling2MaxConfig`
+in the launch log) and our bind-mounted PX4 airframe `10090_pegasus_starling2max`. Both vars
+unset = Iris exactly as before. Values and sources: [CONFIG.md](CONFIG.md) "Sim airframe".
+⏳ STE: hover throttle and step response per MILESTONES M1.
+
 **T2 — the `bringup` session.** New laptop terminal:
 ```bash
 cd ~/AirStack-starling-max2/AirStack && ./airstack.sh connect robot

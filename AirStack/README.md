@@ -28,6 +28,13 @@ parent and child — see [`../docs/MIGRATION.md`](../docs/MIGRATION.md) for what
 - Two machine-specific config files are excluded (`simulation/isaac-sim/docker/omni_pass.env`
   and `user.config.json`) — `./airstack.sh setup` generates both automatically (press Enter at
   its "API Token" prompt to skip the CMU-only Nucleus login).
+- **Our additions on top of CMU's branch (2026-10-19, Starling 2 Max sim model):**
+  `simulation/isaac-sim/assets/robots/starling2max.usd`, `simulation/isaac-sim/px4/airframes/`,
+  `simulation/isaac-sim/tools/`, `launch_scripts/launch_env.py`, Pegasus
+  `logic/thrusters/lagged_quadratic_thrust_curve.py`, `logic/vehicles/multirotors/{registry,starling2max}.py`,
+  the config selector in `OgnPegasusMultirotorNodeBase.create_multirotor`, one compose volume line,
+  the `DRONE_USD` / `PX4_VEHICLE_MODEL` env handling in `svg_multi_drone_single_domain.py`, and
+  the lidar-import fix there. Not upstream; re-apply on a fresh CMU clone.
 - The OptiTrack NatNet SDK is **not** included (it is a binary download CMU's `.gitignore`
   excludes). Run `robot/ros_ws/src/perception/natnet_ros2/install_sdk.sh` once before the
   first build, or `natnet_ros2` will not compile. Our `./mocap.sh` bridge does not need it,

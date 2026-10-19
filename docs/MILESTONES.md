@@ -122,6 +122,7 @@ Verified by direct inspection of the `AirStack/` snapshot (paths relative to
 | Fence-clipped ground grid in the 3D view | `swarm_commander.py:2240-2292` (`fence_grid_cell_m` 0.5 m) |
 | Flight services | `swarm_commander.py:813-817` (`~/takeoff ~/start ~/hold ~/land ~/reset_fence`) |
 | Procedures documented by CMU | `experiment.md` Part A (sim), B (real-drone bring-up, B1 includes LEDs), C (tasks: C0 interfaces + `target_system`, C1 single goal, …), `teleop.md`, `foxglove/svg-basestation/README.md` |
+| **Starling 2 Max sim model** (ours, 2026-10-19) | `simulation/isaac-sim/assets/robots/starling2max.usd`; Pegasus `logic/vehicles/multirotors/starling2max.py` + `registry.py` (config picked by USD file name in `OgnPegasusMultirotorNodeBase.create_multirotor`); `logic/thrusters/lagged_quadratic_thrust_curve.py`; PX4 airframe `simulation/isaac-sim/px4/airframes/10090_pegasus_starling2max` (compose-mounted into SITL); `launch_scripts/launch_env.py` (`DRONE_USD`, `PX4_VEHICLE_MODEL`); unit tests in Pegasus `tests/unit/` + `tools/test_launch_env.py` |
 
 **Genuinely NOT in code (manual, by design):** machine clock sync; PX4 EKF2 external-vision
 parameters (the `.params` file via QGC); PX4 failsafes and the RC kill switch (QGC);
@@ -271,6 +272,8 @@ line:
 | Random goals | `cbf_sim.yaml scenario:=random_goals` | continuous crossings; note any deadlock near a goal | [SCENARIOS.md](SCENARIOS.md) §7 |
 | Live gains | panel slider `CBF α` 2.5 → 4.0 → `live ✓`; then from a shell `ros2 param set /swarm_commander cbf_alpha 0` must be **refused** (gains must stay > 0) | `live` readout follows the slider; the refusal names the reason | [BASESTATION.md](BASESTATION.md) §3 |
 | Unit tests | container, package dir: `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python3 -m pytest -q -p no:cacheprovider test/` | **0 failed** (CMU's README says ~140 tests; 126 `def test_` plus parametrisation — record what you see) | [SCENARIOS.md](SCENARIOS.md) §11 |
+| **Starling model: spawn + hover + steps** | `DRONE_USD=… PX4_VEHICLE_MODEL=pegasus_starling2max` (RUNBOOK §A), `cbf_sim.yaml scenario:=goal`; hover thrust from `/drone_1/interface/mavros/setpoint_raw/target_attitude`; 1 m steps in x and z | `Starling2MaxConfig` ×3 in the launch log, PX4 on airframe 10090; hover thrust 0.30–0.45; steps settle < 2 s, overshoot < 0.15 m, no ringing | [CONFIG.md](CONFIG.md) "Sim airframe" |
+| **Starling model: CBF crossing** | `cbf_sim.yaml` (antipodal) with the two env vars | as the CBF-crossing row above, on the Starling dynamics | [SCENARIOS.md](SCENARIOS.md) §5 |
 
 **Exit criterion:** every row above has a ledger line with a date, and the operator can
 bring the sim up and down from the tmux session without the manual terminal list.

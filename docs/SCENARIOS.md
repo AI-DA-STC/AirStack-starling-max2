@@ -333,6 +333,7 @@ Paths relative to `AirStack/robot/ros_ws/src/svg_ground_control/`.
 
 | Piece | Location | Role |
 |---|---|---|
+| Sim airframe (Starling 2 Max) | `simulation/isaac-sim/assets/robots/starling2max.usd` + Pegasus `Starling2MaxConfig` + PX4 `10090_pegasus_starling2max` | CMU sys-ID dynamics in Isaac Sim; numbers and how to select it: [CONFIG.md](CONFIG.md) "Sim airframe", [RUNBOOK.md](RUNBOOK.md) §A |
 | CBF solver | `svg_ground_control/cbf_filter.py` | `filter_velocities` → barrier constraints + pruning + parallel/Gauss-Seidel Dykstra + push-apart. `fixed` rows: `:140`, `:183`, `:198-216`, `:242`, `:322-379`, `:512-549` |
 | Commander | `svg_ground_control/swarm_commander.py` | External→fixed row `:1810-1825` · exempt rows `:1865-1889` · runtime params `:920-1033` · formations `:775-810`, `:1312-1338` · fence latch `:1493-1507` |
 | Scenario policies | `svg_ground_control/scenarios.py` | `_random_positions :172` · `RandomGoalsScenario :238-274` · `GoalScenario.set_goal :488`, `set_all_speeds :496` · registry `_SCENARIOS :518` |

@@ -27,7 +27,9 @@ BODY_MESH = "/vehicle/body/body"
 BODY = "/vehicle/body"
 ROTORS = [f"/vehicle/rotor{i}" for i in range(4)]
 LIGHT = "/vehicle/defaultLight"
-ROTOR_MASS_KG = 0.005          # a prop; CMU's 0.557 kg is the whole drone
+ROTOR_MASS_KG = 0.020          # motor + prop assembly (~20 g on a Starling 2 Max); CMU's 0.557 kg is the whole drone.
+                               # 5 g made the PhysX articulation unstable (body:rotor 107:1 -> attitude tumbling at ~1.3 Hz);
+                               # 20 g keeps the ratio near the Iris (1.5 kg : 32 g).
 
 src, dst = sys.argv[1], sys.argv[2]
 stage = Usd.Stage.Open(src)

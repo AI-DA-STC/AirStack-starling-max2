@@ -119,7 +119,7 @@ swarm_commander:
     control_rate_hz: 20.0
     hover_kp: 1.0
     arrival_threshold_m: 0.15
-    land_speed_mps: 0.5
+    land_speed_mps: 1.0          # PX4 caps descent at MPC_Z_VEL_MAX_DN = 1.0 m/s; higher values are clipped
     land_complete_altitude_m: 0.15
 
     cbf_safety_radius_m: 0.55

@@ -52,6 +52,7 @@ from pegasus.simulator.ogn.api.spawn_multirotor import spawn_px4_multirotor_node
 # The lidar API is imported lazily where it is used, so a Pegasus version that
 # names it differently only breaks ENABLE_LIDAR runs rather than every run.
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "utils")))
 from scene_prep import scale_stage_prim, add_colliders, add_dome_light
 
@@ -59,7 +60,9 @@ from scene_prep import scale_stage_prim, add_colliders, add_dome_light
 # --------------------- CONFIGURATION ---------------------
 ENV_URL = SIMULATION_ENVIRONMENTS["Default Environment"]
 STAGE_SCALE = 1.0
-DRONE_USD = "~/.local/share/ov/data/documents/Kit/shared/exts/pegasus.simulator/pegasus/simulator/assets/Robots/Iris/iris.usd"
+from launch_env import resolve_vehicle   # DRONE_USD / PX4_VEHICLE_MODEL env overrides (defaults = Iris)
+DRONE_USD, PX4_VEHICLE_MODEL, ZED_CAMERA_OFFSET = resolve_vehicle()
+print(f"[svg_multi_drone] vehicle USD: {DRONE_USD}  PX4 model: {PX4_VEHICLE_MODEL}")
 
 NUM_ROBOTS = int(os.environ.get("NUM_ROBOTS", "3"))
 SVG_DOMAIN_ID = int(os.environ.get("SVG_DOMAIN_ID", "0"))
@@ -142,6 +145,7 @@ def spawn_drone(index: int):
         vehicle_id=index,
         domain_id=SVG_DOMAIN_ID,
         usd_file=DRONE_USD,
+        px4_vehicle_model=PX4_VEHICLE_MODEL,
         init_pos=[init_x, 0.0, 0.07],
         init_orient=[0.0, 0.0, 0.0, 1.0],
     )
@@ -156,14 +160,13 @@ def spawn_drone(index: int):
             drone_prim=drone_prim,
             robot_name=robot_name,
             camera_name=f"ZEDCamera_{index}",
-            camera_offset=[0.2, 0.0, -0.05],
+            camera_offset=ZED_CAMERA_OFFSET,
             camera_rotation_offset=[0.0, 0.0, 0.0],
         )
 
     if ENABLE_LIDAR:
-        from pegasus.simulator.ogn.api.spawn_ouster_lidar import (
-            add_ouster_lidar_subgraph)
-        add_ouster_lidar_subgraph(
+        from pegasus.simulator.ogn.api.spawn_rtx_lidar import add_rtx_lidar_subgraph
+        add_rtx_lidar_subgraph(
             parent_graph_handle=graph_handle,
             drone_prim=drone_prim,
             robot_name=robot_name,
@@ -171,7 +174,7 @@ def spawn_drone(index: int):
             lidar_topic_name="point_cloud_raw",
             lidar_offset=[0.0, 0.0, 0.025],
             lidar_rotation_offset=[0.0, 0.0, 0.0],
-            lidar_min_range=0.75,
+            min_range=0.75,
         )
 
 

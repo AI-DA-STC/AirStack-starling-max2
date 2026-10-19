@@ -61,7 +61,7 @@ from scene_prep import scale_stage_prim, add_colliders, add_dome_light
 ENV_URL = SIMULATION_ENVIRONMENTS["Default Environment"]
 STAGE_SCALE = 1.0
 from launch_env import resolve_vehicle   # DRONE_USD / PX4_VEHICLE_MODEL env overrides (defaults = Iris)
-DRONE_USD, PX4_VEHICLE_MODEL, ZED_CAMERA_OFFSET = resolve_vehicle()
+DRONE_USD, PX4_VEHICLE_MODEL, ZED_CAMERA_OFFSET, INPUT_SCALING = resolve_vehicle()
 print(f"[svg_multi_drone] vehicle USD: {DRONE_USD}  PX4 model: {PX4_VEHICLE_MODEL}")
 
 NUM_ROBOTS = int(os.environ.get("NUM_ROBOTS", "3"))
@@ -146,6 +146,8 @@ def spawn_drone(index: int):
         domain_id=SVG_DOMAIN_ID,
         usd_file=DRONE_USD,
         px4_vehicle_model=PX4_VEHICLE_MODEL,
+        input_scaling_0=INPUT_SCALING, input_scaling_1=INPUT_SCALING,
+        input_scaling_2=INPUT_SCALING, input_scaling_3=INPUT_SCALING,
         init_pos=[init_x, 0.0, 0.07],
         init_orient=[0.0, 0.0, 0.0, 1.0],
     )

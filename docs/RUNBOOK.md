@@ -31,6 +31,18 @@ say "pane N" where the old runbook said "new container shell".
 GPU required (Isaac Sim). One laptop terminal for Isaac, one tmux session for everything else,
 Foxglove Studio for the view.
 
+**T0 — all four tabs with one command (no tmux, added 2026-10-20).** Laptop:
+```bash
+~/AirStack-starling-max2/tools/sim_terminals.sh
+```
+Brings the containers up if needed and opens ONE Terminator window with tabs **Isaac Sim ·
+Interfaces · Commander · Cockpit**, each already inside the right container with that tab's
+commands printed at the top (`tools/sim_tab.sh <role>` per tab). Then follow T1–T4 below in
+those tabs instead of opening terminals by hand. Everything you start lives in its tab — keep
+the window open (Terminator's `exit_action = hold` keeps a tab whose shell dies from closing the
+window). Full tmux-free command list: [TROUBLESHOOTING.md](TROUBLESHOOTING.md) is not needed —
+the hints in each tab are the list.
+
 **T1 — stack + sim drones.** Laptop:
 ```bash
 cd ~/AirStack-starling-max2/AirStack

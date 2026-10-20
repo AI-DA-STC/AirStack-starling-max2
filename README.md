@@ -180,6 +180,7 @@ Clickable links inside `docs/` use `../` because they resolve from that folder.)
 | [`starling_1_indoor_params.params`](starling_1_indoor_params.params) | Canonical drone parameter set (872-param QGC export, 2026-09-04) — load via QGC, procedure in DRONE_SETUP §5 |
 | [CLAUDE.md](CLAUDE.md) | AI-session entry point — read order, iron flight rules, two-clone warning |
 | [AirStack/](AirStack/) | **Full AirStack code snapshot** (`yikuan/SVG_ground_control` @ `cf719f0`, 2026-10-07, bumped to `yikuan/SVG_ground_control_dev` @ `b21d28c` on 2026-10-20; patch 0001 applied, submodules included) — see its own [README](AirStack/README.md) |
+| [tools/](tools/) | lab helpers: `sim_terminals.sh` (one Terminator window, four tabs inside the containers — the no-tmux sim session, RUNBOOK §A T0), `sim_tab.sh`, `make_milestones_doc.py` |
 | [patches/](patches/) | Our bug fixes as patch files — 0001 (still needed, applied in `AirStack/`), 0002 (now fixed upstream — kept for the archive branch), 0003 libmotioncapture (`mocap.sh setup` applies it); story in the [appendix](#appendix--historical-reference) |
 | [tools/make_milestones_doc.py](tools/make_milestones_doc.py) | Word (.docx) export generator — **legacy**; [MILESTONES.md](docs/MILESTONES.md) is canonical |
 | [assets/](assets/) · [videos/](videos/) | GIFs and source recordings — all from the previous branch (M1 sim demos, the hand-carry tracking check, the 09-03 goal-tracking flight) |

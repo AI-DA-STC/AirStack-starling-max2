@@ -272,6 +272,10 @@ class DroneHandle:
         # LANDING: when z first dropped below land_complete_altitude_m (rclpy
         # Time); None = still above it. The disarm waits land_settle_s past it.
         self.touchdown_time = None
+        # DISARM retry after the settle: when the last request went out
+        # (commander clock, s) and how many were sent. None = not sent yet.
+        self.disarm_sent_s = None
+        self.disarm_attempts = 0
         self.cmd_pub = None
         self.robot_command_client = None
         self.teleop_twist = np.zeros(3)
@@ -558,6 +562,13 @@ class SwarmCommander(Node):
         # disarming at the threshold instant was DENIED ("not landed") and the
         # offboard timeout left the drone hovering, armed (sim, 2026-10-19).
         self.declare_parameter('land_settle_s', 2.0)
+        # A DISARM the interface rejects (PX4: "not landed") is resent every
+        # land_disarm_retry_s while the descent is still commanded, up to
+        # land_disarm_retries times; then the drone is declared IDLE anyway
+        # (PX4's own COM_DISARM_LAND usually beat us by then — confirm in QGC).
+        # 2026-10-20: 2 s settle alone was accepted on 1 of 3 sim drones.
+        self.declare_parameter('land_disarm_retry_s', 1.0)
+        self.declare_parameter('land_disarm_retries', 5)
 
         # CBF safety filter
         self.declare_parameter('cbf_safety_radius_m', 0.55)
@@ -672,6 +683,8 @@ class SwarmCommander(Node):
         self.land_complete_alt = float(
             self.get_parameter('land_complete_altitude_m').value)
         self.land_settle = float(self.get_parameter('land_settle_s').value)
+        self.land_disarm_retry = float(self.get_parameter('land_disarm_retry_s').value)
+        self.land_disarm_retries = int(self.get_parameter('land_disarm_retries').value)
         self.cbf_safety_radius = float(self.get_parameter('cbf_safety_radius_m').value)
         self.cbf_max_speed = float(self.get_parameter('cbf_max_speed_mps').value)
         self.cbf_alpha = float(self.get_parameter('cbf_alpha').value)
@@ -1055,6 +1068,8 @@ class SwarmCommander(Node):
         'hold_lead_m': 'hold_lead',
         'takeoff_speed_mps': 'takeoff_speed',
         'land_settle_s': 'land_settle',
+        'land_disarm_retry_s': 'land_disarm_retry',
+        'land_disarm_retries': 'land_disarm_retries',
         # keep_in / teleop fence dynamics (the boxes themselves are geometry:
         # startup only). Read by keep_in() on every control tick.
         'fence_keep_in_gain': 'fence_keep_in_gain',
@@ -1593,6 +1608,8 @@ class SwarmCommander(Node):
                 d.state = FlightState.LANDING
                 d.ref = None
                 d.touchdown_time = None
+                d.disarm_sent_s = None
+                d.disarm_attempts = 0
                 landing.append(d.name)
         response.success = bool(landing)
         response.message = ('landing: ' + ', '.join(landing)) if landing \
@@ -1689,10 +1706,48 @@ class SwarmCommander(Node):
                 f'{d.name}: touchdown at z={d.position[2]:.2f} m, settling '
                 f'{self.land_settle:.1f} s before disarm')
             return False
-        if (now - d.touchdown_time) < Duration(seconds=self.land_settle):
+        return (now - d.touchdown_time) >= Duration(seconds=self.land_settle)
+
+    def land_disarm_step(self, d: DroneHandle, now) -> bool:
+        """After the settle: send DISARM and retry while the interface rejects
+        it. True once a request was accepted, or the retry budget is spent
+        (the caller then declares the drone IDLE either way).
+
+        The drone stays LANDING meanwhile, so the descent keeps being
+        commanded and PX4's land detector gets the ground contact it needs.
+        Replies arrive asynchronously in ``last_robot_command``; only a reply
+        stamped after our last send counts (a stale ``ok`` from an earlier
+        landing must not).
+        """
+        now_s = now.nanoseconds * 1e-9
+
+        def send():
+            self.send_robot_command(d, RobotCommand.Request.DISARM, 'disarm')
+            d.disarm_sent_s = now_s
+            d.disarm_attempts += 1
+
+        if d.disarm_sent_s is None:
+            send()
             return False
-        d.touchdown_time = None
-        return True
+        last = d.last_robot_command
+        if (last and last.get('label') == 'disarm'
+                and last.get('stamp', -1.0) >= d.disarm_sent_s):
+            if last['result'] == 'ok':
+                self.get_logger().info(
+                    f'{d.name}: landed, disarmed (attempt {d.disarm_attempts})')
+                return True
+            if last['result'] == 'pending':
+                return False
+        if now_s - d.disarm_sent_s < self.land_disarm_retry:
+            return False
+        if d.disarm_attempts >= self.land_disarm_retries:
+            self.get_logger().error(
+                f'{d.name}: disarm not accepted after {d.disarm_attempts} tries '
+                f'({self.land_disarm_retry:g} s apart) — declaring IDLE; '
+                'confirm DISARMED in QGC / mavros state')
+            return True
+        send()
+        return False
 
     def report_keep_in(self, now):
         """keep_in mode: nothing to latch, but say who is out and unsteerable."""
@@ -2120,13 +2175,14 @@ class SwarmCommander(Node):
                 self.publish_command(d, np.zeros(3), np.zeros(3), now)
                 continue
 
-            if self.landing_done(d, now):
-                self.send_robot_command(d, RobotCommand.Request.DISARM, 'disarm')
+            if self.landing_done(d, now) and self.land_disarm_step(d, now):
                 d.state = FlightState.IDLE
+                d.touchdown_time = None
+                d.disarm_sent_s = None
+                d.disarm_attempts = 0
                 if all(o.state == FlightState.IDLE
                        for o in self.drones if o.commanded):
                     self.mission_ever_started = False
-                self.get_logger().info(f'{d.name}: landed, disarmed')
                 continue
 
             row = index[d.name]

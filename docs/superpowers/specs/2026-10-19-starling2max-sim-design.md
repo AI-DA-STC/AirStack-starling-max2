@@ -52,7 +52,10 @@ The sys-ID page is committed as `isaac_sim/Starling 2 Max Sys ID Results - Slite
 ### 3.1 Asset — `AirStack/simulation/isaac-sim/assets/robots/starling2max.usd`
 
 - Derived from `isaac_sim/starlingmax2.usd` (CMU's file, 98 MB, body mesh 1.2 M faces).
-- Body mesh decimated to ≈ 50 k faces with `trimesh` (quadric decimation) run under the
+- ~~Body mesh decimated to ≈ 50 k faces~~ **Superseded 2026-10-20:** decimation deleted most of the
+  48,981-part body (21 % of the surface left, body plates gone). Now: cull parts whose largest
+  extent is under 2 mm, keep the rest untouched (564 k faces, 8 MB) — MILESTONES ledger #9.
+- (original text) Body mesh decimated to ≈ 50 k faces with `trimesh` (quadric decimation) run under the
   Isaac image's Python; points/faces written back into the same `Mesh` prim so the
   `PhysicsMeshCollisionAPI` (convex hull) and material binding are untouched.
 - `/vehicle/defaultLight` removed (it would be instanced once per drone).

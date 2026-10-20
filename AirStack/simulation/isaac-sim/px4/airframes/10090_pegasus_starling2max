@@ -63,3 +63,12 @@ param set-default PWM_MAIN_FUNC1 101
 param set-default PWM_MAIN_FUNC2 102
 param set-default PWM_MAIN_FUNC3 103
 param set-default PWM_MAIN_FUNC4 104
+
+# SIM-ONLY land-detector relief (2026-10-20, MILESTONES ledger #9). On the Isaac floor the
+# body keeps rocking at ~10 Hz (gyro xy median 70-115 deg/s, peaks 200+) once it has
+# touched down with some sideways speed: a PhysX-contact vs rate-controller limit cycle,
+# not a real-vehicle behaviour. PX4's maybe_landed gate |gyro_xy| <= LNDMC_ROT_MAX (20)
+# then never passes, every DISARM is "denied: not landed" and the drone sits armed for
+# 30 s+. The other gates (descent setpoint, |vz|, |vxy|, minimum thrust) stay as they
+# are. The real Starling keeps the PX4 default — never copy this to a flight parameter set.
+param set-default LNDMC_ROT_MAX 300.0

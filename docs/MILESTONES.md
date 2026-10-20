@@ -332,6 +332,13 @@ watchdog decision made, §3d re-audit done (Next-up row 7).
 
 ### M3 — First flight on the new branch
 
+> **Landing sub-test (added 2026-10-20):** fly the first landings with `land_settle_s: 0.0` (as
+> flown 2026-09-03). Once two landings end DISARMED in QGC, set `land_settle_s` 2.0 live
+> (`ros2 param set`) and land twice more: expect `touchdown … settling 2.0 s` then `landed,
+> disarmed (attempt 1)` and QGC DISARMED within ~3 s, no re-climb. Then put 2.0 in the config.
+> The disarm retry cannot engage on real (`px4_interface.disarm()` returns true on send) — the
+> ACK in the `px4_interface` log is the only real evidence.
+
 **Goal:** takeoff → hover → land under the **trajectory** output with the `hold_all` fence,
 RC kill in hand, and every iron rule re-observed.
 

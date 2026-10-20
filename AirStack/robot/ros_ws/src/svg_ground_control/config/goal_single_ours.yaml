@@ -37,6 +37,11 @@ swarm_commander:
     takeoff_speed_mps: 0.5
     hold_lead_m: 0.2
     land_complete_altitude_m: 0.15
+    # 0.0 = the landing exactly as flown 2026-09-03 (one DISARM at 0.15 m, then
+    # silence; PX4's auto-disarm finishes). The 2 s settle + disarm retry
+    # (sim default, cbf_sim.yaml) is UNFLOWN on the real drone — enable it as
+    # its own M3 sub-test once the baseline landing is reconfirmed (MILESTONES).
+    land_settle_s: 0.0
 
     cbf_safety_radius_m: 0.55
     cbf_max_speed_mps: 1.0

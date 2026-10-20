@@ -5,7 +5,8 @@
 ## Before EVERY session
 
 - [ ] Net rigged; BOTH fence boxes in the config fit INSIDE it (`fence_min`/`fence_max`, and `teleop_fence_*` inside those); `fence_behavior` known (`hold_all` freezes · `keep_in` brakes)
-- [ ] Config is OURS, not CMU's: `drone_1` (not `drone_2`), `land_speed_mps` 0.6, `cbf_max_speed_mps` ≤ 1.0 for now, `scenario` is `hover`/`goal` (not `random_goals`)
+- [ ] Config is OURS, not CMU's: `drone_1` (not `drone_2`), `land_speed_mps` 0.6, `cbf_max_speed_mps` ≤ 1.0 for now, `scenario` is `hover`/`goal` (not `random_goals`), `land_settle_s` **0.0** (the flown landing) until the settle is its own M3 sub-test
+- [ ] Drone on the floor: mocap z of the rigid body **< 0.15 m** (`land_complete_altitude_m`) — a floor offset above that and the commander never calls a landing done (PX4 still lands and auto-disarms; relaunch the commander)
 - [ ] RC transmitter ON, bound, battery OK — thumb finds KILL (ch8) blind (RC: ch5 arm · ch6 mode MANUAL/POSITION/OFFBOARD · ch8 KILL)
 - [ ] Mode switch (ch6) at **MANUAL** (low) until told otherwise
 - [ ] QGroundControl open, showing the vehicle — the ONLY trustworthy arming display (the Basestation's Interface column is an ACK log, not an arming display)
@@ -45,7 +46,7 @@ ros2 service call /swarm_commander/land  std_srvs/srv/Trigger
 ## Iron rules (numbered as in CLAUDE.md)
 
 1. **RC takeover = flip ch6 to MANUAL (low), or KILL** — never expect Position/Altitude to obey while the commander runs (its setpoints leak into those modes)
-2. A landing is not over until **QGC says DISARMED**. Check before anyone approaches. Landed but still ARMED after ~10 s → flip KILL (harmless on the ground) or arm switch (ch5) down.
+2. A landing is not over until **QGC says DISARMED**. Check before anyone approaches. The commander's disarm is a *normal* PX4 disarm (no force code) — PX4 refuses it unless its land detector says landed, so neither the one-shot nor the retry can drop a flying drone; the real interface also answers `success` on send, not on PX4's ACK, so the retry only ever fires in sim. Landed but still ARMED after ~10 s → flip KILL (harmless on the ground) or arm switch (ch5) down.
 3. After ANY manual takeover: call `land` once (drone on floor) to reset the commander, or `takeoff` will refuse ("not IDLE").
 4. Never run `test/functional_*.py` with the real stack up — fake odometry on live topics.
 5. Software still cannot see arming. A `PX4 ack: ACCEPTED` means "PX4 heard me", never "armed"; **no ack at all** = `target_system` wrong — do not fly until fixed.

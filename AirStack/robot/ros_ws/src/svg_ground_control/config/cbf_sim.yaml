@@ -121,6 +121,11 @@ swarm_commander:
     arrival_threshold_m: 0.15
     land_speed_mps: 1.0          # PX4 caps descent at MPC_Z_VEL_MAX_DN = 1.0 m/s; higher values are clipped
     land_complete_altitude_m: 0.15
+    # Sit on the floor 2 s after touchdown, then DISARM; a denied disarm (PX4
+    # 'not landed') is resent every 1 s up to 5 times. Ledger #5/#8.
+    land_settle_s: 2.0
+    land_disarm_retry_s: 1.0
+    land_disarm_retries: 5
 
     cbf_safety_radius_m: 0.55
     cbf_max_speed_mps: 1.2

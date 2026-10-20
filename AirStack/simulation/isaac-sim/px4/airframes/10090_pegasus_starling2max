@@ -36,14 +36,25 @@ param set-default MPC_THR_HOVER 0.165   # thrust SETPOINT (pre THR_MDL_FAC); mea
 # ModalAI tuning for this airframe). rc.mc_defaults (Iris gains) made the sim oscillate and run
 # away on the first flights: with CMU's inertia (~15x below the Iris) and short arms the control
 # effectiveness is ~7x higher, and the 72 ms motor lag adds phase.
-param set-default MC_ROLLRATE_P 0.064
-param set-default MC_ROLLRATE_I 0.1
-param set-default MC_ROLLRATE_D 0.0013
+# Rate loops: Starling 1's REAL gains are ROLLRATE P 0.064 / I 0.1 / D 0.0013 and
+# PITCHRATE P 0.064 / I 0.096 / D 0.0011. In the sim they are x0.5 (2026-10-20, MILESTONES
+# ledger #10): with the real values every drone carried a 9 Hz pitch limit cycle (pitch rate
+# +-270 deg/s, +-5 deg, front/rear motor pairs swinging 2-29 %) because the sim plant
+# (instantaneous motors, 250 Hz IMU, CMU arm geometry) has more loop gain than the real
+# one and the pitch inertia is 37 % below roll. Live sweep in hover, pitch-rate std:
+# x1.0 164 deg/s, x0.7 9.4 (8.5 Hz residual), x0.5 0.4 (= roll), x0.35 0.4. Yaw untouched.
+# SIM-ONLY: never copy these to the real drone's parameter set.
+param set-default MC_ROLLRATE_P 0.032
+param set-default MC_ROLLRATE_I 0.05
+param set-default MC_ROLLRATE_D 0.00065
 param set-default MC_ROLLRATE_K 1.0
-param set-default MC_PITCHRATE_P 0.064
-param set-default MC_PITCHRATE_I 0.096
-param set-default MC_PITCHRATE_D 0.0011
+param set-default MC_PITCHRATE_P 0.032
+param set-default MC_PITCHRATE_I 0.048
+param set-default MC_PITCHRATE_D 0.00055
 param set-default MC_PITCHRATE_K 1.0
+# Gyro filtering as on the real drone (SITL defaults are 40 / 30 Hz; part of the same sweep).
+param set-default IMU_GYRO_CUTOFF 80
+param set-default IMU_DGYRO_CUTOFF 40
 param set-default MC_YAWRATE_P 0.07
 param set-default MC_YAWRATE_I 0.5
 param set-default MC_YAWRATE_D 0.0

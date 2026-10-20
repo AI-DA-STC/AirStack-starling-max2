@@ -66,8 +66,14 @@ param set-default MPC_XY_P 0.95
 param set-default MPC_Z_P 5.0
 param set-default MPC_XY_VEL_P_ACC 1.8
 param set-default MPC_Z_VEL_P_ACC 8.0
-param set-default MPC_ACC_HOR_MAX 3.0
-param set-default MPC_XY_VEL_MAX 3.0
+# Outer-loop limits = the REAL Starling 1's parameter set (~/RCC_Starling_1 backup), so the
+# sim can fly the 2-6 m/s legs CMU demos (2026-10-20; were 3.0 / 3.0 / default 3 / default 1):
+param set-default MPC_XY_VEL_MAX 20.0
+param set-default MPC_ACC_HOR 6.0
+param set-default MPC_ACC_HOR_MAX 1000.0
+param set-default MPC_JERK_AUTO 4.0
+param set-default MPC_Z_VEL_MAX_UP 10.0
+param set-default MPC_Z_VEL_MAX_DN 4.0
 param set-default THR_MDL_FAC 0.9
 
 param set-default PWM_MAIN_FUNC1 101

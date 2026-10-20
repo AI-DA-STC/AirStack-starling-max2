@@ -67,7 +67,10 @@ swarm_commander:
     cbf_exempt_drones: ""   # CBF filters ALL drones — that is the point
 
     scenario: "antipodal"
-    scenario_speed_mps: 0.6
+    # 2026-10-20: 2.0 (was CMU's 0.6) so the sim flies like the real demos (2-6 m/s);
+    # the sim PX4 airframe now carries the real drone's speed/accel limits too.
+    scenario_speed_mps: 2.0
+    goal_accel_mps2: 6.0       # real Starling: MPC_ACC_HOR 6 (commander default 3.0)
     arena_low: [-3.0, -3.0, 0.5]
     arena_high: [3.0, 3.0, 2.5]
     # PER-DRONE offset added to that drone's local odometry -> shared world:
@@ -128,7 +131,7 @@ swarm_commander:
     land_disarm_retries: 5
 
     cbf_safety_radius_m: 0.55
-    cbf_max_speed_mps: 1.2
+    cbf_max_speed_mps: 4.0     # 2026-10-20: was 1.2 — caps every command incl. dodges
     cbf_alpha: 2.5
 
     fence_enabled: true

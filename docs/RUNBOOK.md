@@ -40,8 +40,7 @@ Interfaces · Commander · Cockpit**, each already inside the right container wi
 commands printed at the top (`tools/sim_tab.sh <role>` per tab). Then follow T1–T4 below in
 those tabs instead of opening terminals by hand. Everything you start lives in its tab — keep
 the window open (Terminator's `exit_action = hold` keeps a tab whose shell dies from closing the
-window). Full tmux-free command list: [TROUBLESHOOTING.md](TROUBLESHOOTING.md) is not needed —
-the hints in each tab are the list.
+window). The hints printed in each tab are the complete tmux-free command list.
 
 **T1 — stack + sim drones.** Laptop:
 ```bash

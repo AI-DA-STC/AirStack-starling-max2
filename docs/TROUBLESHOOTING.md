@@ -21,6 +21,7 @@
 | tmux pane shows a bare `bash` prompt with no workspace / `sws_after_build` never returns | pane 0's `bws` never ran or failed — run `cd ~/AirStack/robot/ros_ws && bws && sws` in pane 0; the others source when `.build.lock` is released |
 | Everything on the wrong DDS domain after a `./svg_teleop.sh` run | a tmux *server* inherits the env of the shell that started it — `./svg_teleop.sh stop`, then `tmux kill-server` inside the container, then relaunch (the script re-exports `ROS_DOMAIN_ID` per session) |
 | `bws: command not found` | Wrong container (Isaac) or host shell |
+| Basestation panel looks like the OLD one after a snapshot bump (3-gain dropdown, Agents roster still there) | The panel is copied into `~/.foxglove-studio` at container start only. `docker exec airstack-robot-desktop-1 python3 /root/AirStack/robot/ros_ws/src/svg_ground_control/foxglove/install.py`, then quit and relaunch Studio (`use_foxglove_studio:=true` → relaunch the commander) |
 | `omni_pass.env not found` on `up` | Re-run `./airstack.sh setup` to (re)generate it (press Enter at the API Token prompt) |
 | "mounting … user.config.json … not a directory" | A failed `up` created a directory; `rmdir` it, then re-run `./airstack.sh setup` |
 | `/fmu/*` topics look dead | `echo` needs `--qos-reliability best_effort` (`hz` takes no QoS flag here); and is the uXRCE agent running? |

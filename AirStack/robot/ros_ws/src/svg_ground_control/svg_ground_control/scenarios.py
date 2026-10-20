@@ -20,6 +20,15 @@ Scenarios:
 - ``squeeze``: 3-drone CBF demo -- two "holder" drones goal-track posts
   separated by ``gap_factor * safety_radius`` while the third drone flies
   straight through the gap between them; the holders must yield and return.
+- ``goal_sequence``: a scripted, automatically played sequence of goal
+  sets (one x,y,z per drone per step, like the goal scenario's formation
+  profiles): every drone flies straight at its goal, the sets are laid out
+  so the straight lines cross, and the CBF intervenes; the next set plays
+  when everyone has arrived and dwelt (or on a timer), looping.
+- ``figure_eight``: 3-drone CBF demo -- drones 0 and 1 fly the same
+  collision-negligent figure-eight (two touching circles) half a lap apart,
+  meeting at the crossing every half period, while the third drone hovers
+  or is hand-flown into them; the CBF alone keeps everyone apart.
 
 Any drone listed in the commander's ``teleop_drones`` has its scenario row
 replaced by operator input, so e.g. the squeeze intruder can be hand-flown.
@@ -167,6 +176,11 @@ class Scenario(ABC):
     def cbf_exempt_indices(self) -> list:
         """Drone indices whose commands bypass the CBF while the scenario
         runs (deliberate obstacles — everyone else dodges them)."""
+        return []
+
+    @property
+    def paths(self) -> list:
+        """Reference paths to draw, as a list of (M, 3) polylines (or [])."""
         return []
 
     def _random_positions(self, min_separation: float) -> np.ndarray:
@@ -461,6 +475,337 @@ class SqueezeScenario(Scenario):
             [self._holder_posts, self._intruder_ends[self._intruder_goal_index]])
 
 
+class GoalSequenceScenario(Scenario):
+    """A scripted sequence of goal sets, played automatically.
+
+    ``steps`` is (K, N, 3): K sets of one goal per drone (drone_names order),
+    ``step_names`` their labels. All drones are sent to set k at once and fly
+    the plain go-to-goal law straight at their goals -- the choreography is
+    in the sets (swap ends, rotate a triangle, cross the centre), and the
+    CBF alone deconflicts the straight lines. Set k+1 plays when every
+    drone has been within ``arrival_m`` of its goal for ``dwell_s`` seconds
+    (``advance='arrival'``), or every ``period_s`` seconds (``'timer'``);
+    after the last set the sequence wraps (``loop``) or stays on it.
+
+    Validation: every goal inside the arena ``bounds`` and every pair in a
+    set at least ``2 * safety_radius`` apart (else the set can never be
+    reached by everyone at once). ``next_step`` / ``set_step`` / ``paused``
+    are the operator hooks (``/svg/sequence_command``); ``on_step`` is
+    called with ``(index, name, goals)`` whenever the set changes. The
+    intruder of the other showcases is absent: any drone may be hand-flown
+    (``teleop_drones``) and its row is then ignored.
+    """
+
+    def __init__(self, *args, steps: np.ndarray, step_names=None,
+                 dwell_s: float = 2.0, arrival_m: float = 0.3,
+                 loop: bool = True, advance: str = 'arrival',
+                 period_s: float = 8.0, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        steps = np.asarray(steps, dtype=float)
+        if steps.ndim != 3 or steps.shape[1:] != (self.num_drones, 3) or steps.shape[0] < 1:
+            raise ValueError(
+                f'goal_sequence steps must be (K, {self.num_drones}, 3) with K >= 1, '
+                f'got {steps.shape}')
+        self._steps = steps.copy()
+        k = steps.shape[0]
+        names = list(step_names) if step_names is not None else [f'step{i}' for i in range(k)]
+        if len(names) != k:
+            raise ValueError(f'{len(names)} step names for {k} steps')
+        self._names = [str(n) for n in names]
+        low, high = self.bounds.low, self.bounds.high
+        for i, g in enumerate(self._steps):
+            outside = np.flatnonzero(np.any((g < low - 1e-9) | (g > high + 1e-9), axis=1))
+            if len(outside):
+                raise ValueError(
+                    f'goal_sequence step "{self._names[i]}": goal of drone index '
+                    f'{outside.tolist()} outside the arena {low.tolist()}..{high.tolist()}')
+            for a in range(self.num_drones):
+                for b in range(a + 1, self.num_drones):
+                    dist = float(np.linalg.norm(g[a] - g[b]))
+                    if dist < 2.0 * self.safety_radius:
+                        raise ValueError(
+                            f'goal_sequence step "{self._names[i]}": goals of drone '
+                            f'indices {a} and {b} are {dist:.2f} m apart, inside the '
+                            f'2r keep-out ({2 * self.safety_radius:.2f} m)')
+        if advance not in ('arrival', 'timer'):
+            raise ValueError("goal_sequence advance must be 'arrival' or 'timer'")
+        self._dwell_s = max(0.0, float(dwell_s))
+        self._arrival_m = max(0.0, float(arrival_m))
+        self._loop = bool(loop)
+        self._advance = advance
+        self._period_s = max(0.1, float(period_s))
+        self.on_step = None
+        self._k = 0
+        self._dwell = 0.0
+        self._elapsed = 0.0
+        self._finished = False
+        self.paused = False
+
+    # ---- introspection / operator hooks
+    @property
+    def num_steps(self) -> int:
+        return self._steps.shape[0]
+
+    @property
+    def step_index(self) -> int:
+        return self._k
+
+    @property
+    def step_name(self) -> str:
+        return self._names[self._k]
+
+    @property
+    def step_names(self) -> list:
+        return list(self._names)
+
+    @property
+    def finished(self) -> bool:
+        return self._finished
+
+    def _enter(self, k: int) -> None:
+        self._k = int(k) % self.num_steps
+        self._dwell = 0.0
+        self._elapsed = 0.0
+        if self.on_step is not None:
+            self.on_step(self._k, self._names[self._k], self._steps[self._k].copy())
+
+    def next_step(self) -> str:
+        """Advance now (wrapping); returns the new step name."""
+        self._finished = False
+        self._enter(self._k + 1)
+        return self.step_name
+
+    def set_step(self, step) -> str:
+        """Jump to a step by name or index; returns its name."""
+        if isinstance(step, str):
+            if step not in self._names:
+                raise KeyError(step)
+            step = self._names.index(step)
+        self._finished = False
+        self._enter(int(step))
+        return self.step_name
+
+    def initial_positions(self) -> np.ndarray:
+        return self._steps[0].copy()
+
+    def reset_tracking(self) -> None:
+        """Mission start: play from the first set (= the takeoff layout)."""
+        super().reset_tracking()
+        self._k = 0
+        self._dwell = 0.0
+        self._elapsed = 0.0
+        self._finished = False
+
+    def _auto_advance(self) -> None:
+        if self._k + 1 >= self.num_steps and not self._loop:
+            self._finished = True
+            return
+        self._enter(self._k + 1)
+
+    def nominal_velocity(self, positions, references=None, applied=None,
+                         dt: float = DEFAULT_DT) -> np.ndarray:
+        positions = np.asarray(positions, dtype=float).reshape(self.num_drones, 3)
+        goals = self._steps[self._k]
+        if not self.paused and not self._finished:
+            if self._advance == 'timer':
+                self._elapsed += float(dt)
+                if self._elapsed >= self._period_s:
+                    self._auto_advance()
+            else:
+                arrived = np.all(
+                    np.linalg.norm(positions - goals, axis=1) < self._arrival_m)
+                if arrived:
+                    self._dwell += float(dt)
+                    if self._dwell >= self._dwell_s:
+                        self._auto_advance()
+                else:
+                    self._dwell = 0.0
+        return self.seek(positions, self._steps[self._k], self.nominal_speed,
+                         references, applied, dt)
+
+    @property
+    def goals(self) -> Optional[np.ndarray]:
+        return self._steps[self._k].copy()
+
+    @property
+    def paths(self) -> list:
+        """The straight lines of the current set, from the previous set's
+        goals (where the drones are coming from) to the current goals."""
+        prev = self._steps[(self._k - 1) % self.num_steps]
+        cur = self._steps[self._k]
+        return [np.vstack([prev[i], cur[i]]) for i in range(self.num_drones)]
+
+
+class FigureEightScenario(Scenario):
+    """3-drone CBF showcase: two drones fly the SAME figure-eight, half a lap apart.
+
+    The eight is two circles of radius ``radius`` whose centers lie
+    ``center_distance`` apart along the horizontal heading ``axis_deg``
+    (0 = +X, 90 = +Y, CCW positive), touching when ``center_distance ==
+    2 * radius``, and its plane is rolled about the center line by
+    ``tilt_deg`` (0 flat; 30 keeps a 1 m eight in a low room and gives the
+    CBF a vertical way out). Path phase ``s`` runs 0..4*pi: lobe A (toward
+    -axis) is traversed CCW in-plane for s in [0, 2*pi), then the drone passes
+    through the crossing onto lobe B, traversed CW for s in [2*pi, 4*pi), and
+    comes back through the crossing -- one smooth figure-eight, both passes
+    through the crossing along the lobes' common tangent.
+
+    Drone 0 starts at the far end of lobe A (s = pi), drone 1 at the far end
+    of lobe B (s = 3*pi): half the eight apart, so they reach the crossing at
+    the same instant every half period and swap lobes there. ``senses``
+    gives each drone's direction along the eight: ``[+1, -1]`` (default) has
+    the two run the eight in opposite senses -- they leave their far ends
+    heading opposite ways and meet HEAD-ON at the crossing; ``[+1, +1]`` has
+    them arrive side by side with parallel velocities (a merge).
+
+    The path is TIME-parametrized (``s = s0 +/- omega * t``, ``omega =
+    nominal_speed / radius``): the carrot keeps moving while the CBF pushes a
+    drone off the eight, so it is pulled back into the same conflict at the
+    next crossing (collision-negligent by design). A lobe drone's nominal is
+    the carrot's velocity plus a pull toward it (``track_gain`` per second,
+    capped at ``nominal_speed``); the feedforward is the carrot's own
+    centripetal acceleration ``v^2/R`` (keep ``nominal_speed`` <=
+    sqrt(a_max * R): 2.8 m/s at R = 1 m for a 45-deg airframe). Drone 2 (the
+    intruder) hovers at ``intruder_start`` unless it is in ``teleop_drones``;
+    it is CBF-EXEMPT by default (the pair alone dodges it), like the squeeze
+    intruder.
+    """
+
+    def __init__(self, *args, center: np.ndarray, radius: float = 1.0,
+                 center_distance: float = 2.0, axis_deg: float = 90.0,
+                 tilt_deg: float = 30.0, senses=(1.0, -1.0),
+                 track_gain: float = 1.0, intruder_start: np.ndarray,
+                 intruder_cbf_exempt: bool = True, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        if self.num_drones != 3:
+            raise ValueError(
+                f'figure_eight scenario requires exactly 3 drones, got {self.num_drones}')
+        self._center = np.asarray(center, dtype=float).reshape(3)
+        self._radius = float(radius)
+        self._gap = float(center_distance)
+        if self._radius <= 0.0 or self._gap <= 0.0:
+            raise ValueError('figure_eight radius and center_distance must be > 0')
+        self._senses = np.sign(np.asarray(senses, dtype=float).reshape(2))
+        self._senses[self._senses == 0.0] = 1.0
+        self._track_gain = max(0.0, float(track_gain))
+        self._intruder_start = np.asarray(intruder_start, dtype=float).reshape(3)
+        self._intruder_cbf_exempt = bool(intruder_cbf_exempt)
+        axis = np.radians(float(axis_deg))
+        tilt = np.radians(float(tilt_deg))
+        # In-plane basis: d along the center line (horizontal), n rolled
+        # about d by the tilt (n = horizontal normal when tilt = 0).
+        self._d = np.array([np.cos(axis), np.sin(axis), 0.0])
+        self._n = np.array([-np.sin(axis) * np.cos(tilt),
+                            np.cos(axis) * np.cos(tilt), np.sin(tilt)])
+        self._centers = np.vstack([self._center - 0.5 * self._gap * self._d,
+                                   self._center + 0.5 * self._gap * self._d])
+        # Start phases: far end of lobe A (s = pi) and of lobe B (s = 3 pi).
+        self._phase0 = np.array([np.pi, 3.0 * np.pi])
+        self._t = 0.0
+        self._omega = self.nominal_speed / self._radius
+
+    # ---- geometry
+    @property
+    def centers(self) -> np.ndarray:
+        return self._centers.copy()
+
+    @property
+    def radius(self) -> float:
+        return self._radius
+
+    @property
+    def touching_point(self) -> np.ndarray:
+        """Midpoint of the center line (the crossing when the circles touch)."""
+        return self._center.copy()
+
+    def eight_point(self, s: float) -> np.ndarray:
+        """Point of the eight at path phase ``s`` (rad, 0..4 pi, 0 = crossing)."""
+        return self._carrot(s, 1.0)[0]
+
+    def _carrot(self, s: float, sense: float):
+        """Position, velocity, acceleration at path phase ``s`` for a drone
+        moving along the eight in ``sense`` (+1: increasing s)."""
+        s = float(s) % (4.0 * np.pi)
+        if s < 2.0 * np.pi:            # lobe A, CCW in-plane: angle from +d
+            lobe, phi, dphi = 0, s, 1.0
+        else:                          # lobe B, CW in-plane: angle from +d
+            lobe, phi, dphi = 1, 3.0 * np.pi - s, -1.0
+        radial = np.cos(phi) * self._d + np.sin(phi) * self._n
+        tangent = -np.sin(phi) * self._d + np.cos(phi) * self._n
+        pos = self._centers[lobe] + self._radius * radial
+        vel = sense * dphi * self._omega * self._radius * tangent
+        acc = -self._omega * self._omega * self._radius * radial
+        return pos, vel, acc
+
+    def lobe_of(self, s: float) -> int:
+        """0 while on lobe A, 1 on lobe B."""
+        return 0 if (float(s) % (4.0 * np.pi)) < 2.0 * np.pi else 1
+
+    @property
+    def phases(self) -> np.ndarray:
+        """Current path phase of the two lobe drones' carrots (rad, 0..4 pi)."""
+        return (self._phase0 + self._senses * self._omega * self._t) % (4.0 * np.pi)
+
+    @property
+    def cbf_exempt_indices(self) -> list:
+        return [2] if self._intruder_cbf_exempt else []
+
+    @property
+    def paths(self) -> list:
+        s = np.linspace(0.0, 4.0 * np.pi, 145)
+        return [np.array([self.eight_point(v) for v in s])]
+
+    def initial_positions(self) -> np.ndarray:
+        return np.vstack([self.eight_point(self._phase0[0]),
+                          self.eight_point(self._phase0[1]),
+                          self._intruder_start])
+
+    def reset_tracking(self) -> None:
+        """Mission start: the carrots restart at the far ends (= the takeoff
+        points), so the first meeting is half a lobe in."""
+        super().reset_tracking()
+        self._t = 0.0
+
+    def nominal_velocity(self, positions, references=None, applied=None,
+                         dt: float = DEFAULT_DT) -> np.ndarray:
+        positions = np.asarray(positions, dtype=float).reshape(self.num_drones, 3)
+        self._omega = self.nominal_speed / self._radius   # live speed changes
+        self._t += float(dt)
+        refs = None
+        if references is not None:
+            refs = np.asarray(references, dtype=float).reshape(self.num_drones, 3)
+        v = np.zeros((self.num_drones, 3))
+        self._acceleration[:] = 0.0
+        goals = np.zeros((self.num_drones, 3))
+        phases = self.phases
+        for i in (0, 1):
+            pos, vel, acc = self._carrot(phases[i], self._senses[i])
+            goals[i] = pos
+            tracked = refs is not None and bool(np.isfinite(refs[i]).all())
+            at = refs[i] if tracked else positions[i]
+            pull = self._track_gain * (pos - at)
+            pull_norm = float(np.linalg.norm(pull))
+            if pull_norm > self.nominal_speed > 0.0:
+                pull *= self.nominal_speed / pull_norm
+            v[i] = vel + pull
+            if tracked:
+                self._acceleration[i] = acc
+        # The intruder holds its start (a teleop intruder's row is ignored).
+        goals[2] = self._intruder_start
+        v[2] = seek_velocity(positions[2][None], self._intruder_start[None],
+                             self.nominal_speed, self.tracker.accel,
+                             self.velocity_only_settle)[0]
+        self._goals = goals
+        return v
+
+    @property
+    def goals(self) -> Optional[np.ndarray]:
+        goals = getattr(self, '_goals', None)
+        if goals is None:
+            return self.initial_positions()
+        return goals
+
+
 class GoalScenario(Scenario):
     """Each drone seeks a per-drone goal that can be retargeted live.
 
@@ -523,6 +868,8 @@ _SCENARIOS = {
     'head_on': HeadOnScenario,
     'antipodal': AntipodalScenario,
     'squeeze': SqueezeScenario,
+    'figure_eight': FigureEightScenario,
+    'goal_sequence': GoalSequenceScenario,
 }
 
 
@@ -539,7 +886,7 @@ def make_scenario(
 
     Args:
         name: one of ``hover``, ``random_walk``, ``random_goals``, ``head_on``,
-            ``antipodal``, ``squeeze``.
+            ``antipodal``, ``squeeze``, ``figure_eight``, ``goal_sequence``.
         num_drones: number of drones (scenario rows match drone_names order).
         nominal_speed: nominal flight speed (m/s).
         bounds: arena box.
@@ -547,7 +894,12 @@ def make_scenario(
         seed: RNG seed for the randomized scenarios.
         **kwargs: scenario-specific options (``hover_positions`` for hover,
             ``initial_goals`` for goal, ``holder_positions`` /
-            ``intruder_waypoints`` for squeeze) and the go-to-goal law's
+            ``intruder_waypoints`` for squeeze, ``center`` / ``radius`` /
+            ``center_distance`` / ``axis_deg`` / ``tilt_deg`` /
+            ``senses`` / ``track_gain`` / ``intruder_start`` for
+            figure_eight, ``steps`` / ``step_names`` / ``dwell_s`` /
+            ``arrival_m`` / ``loop`` / ``advance`` / ``period_s`` for
+            goal_sequence) and the go-to-goal law's
             ``accel`` (m/s^2), ``settle_s`` and ``velocity_only_settle_s``
             (s) — see trajectory.py.
 

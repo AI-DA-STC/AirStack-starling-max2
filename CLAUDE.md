@@ -2,7 +2,7 @@
 
 AirStack ground-control workspace flying a ModalAI Starling Max 2 indoors under OptiTrack mocap (no GPS/VIO for nav).
 
-**Branch (since 2026-10-07):** CMU `yikuan/SVG_ground_control` @ `cf719f0`, vendored in `AirStack/`.
+**Branch (since 2026-10-20):** CMU `yikuan/SVG_ground_control_dev` @ `b21d28c` (their *working* branch; `yikuan/SVG_ground_control` is its squash-release line, last cut `cf719f0` = our 2026-10-07 snapshot), vendored in `AirStack/`. The 10-20 bump brought the 6-gain Foxglove dropdown (goal accel/settle, teleop vmax), `goal_sequence` + `figure_eight` scenarios and the rosbag switch — [MIGRATION.md](docs/MIGRATION.md) §11.
 The previous branch (`daniel/diffaero_ground_control`, flown 09-01→03) is frozen on tag
 `airstack-starling-max2` / branch `archive/airstack-starling-max2`. The two are **siblings**, not
 parent/child. Milestones were RESET; nothing on this branch is validated yet (⏳ STE).

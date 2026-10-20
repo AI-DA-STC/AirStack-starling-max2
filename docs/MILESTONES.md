@@ -4,7 +4,7 @@
 > the README; CMU's upstream guide is `experiment.md` inside the AirStack checkout).
 > Per-session commands only? → [RUNBOOK.md](RUNBOOK.md).
 > Last updated: 2026-10-07.
-> Branch: `yikuan/SVG_ground_control` @ `cf719f0` · Working folder: `~/AirStack-starling-max2/AirStack`
+> Branch: `yikuan/SVG_ground_control_dev` @ `b21d28c` (since 2026-10-20; was `yikuan/SVG_ground_control` @ `cf719f0` from 10-07) · Working folder: `~/AirStack-starling-max2/AirStack`
 >
 > ⚠️ **This ladder was RESET on 2026-10-07** when the repo moved to the new AirStack branch.
 > The previous ladder (M1–M6, ledger #1–#21, flights of 2026-09-01→03 on
@@ -92,6 +92,12 @@ table is trusted until the "Validated by us?" cell carries a date.
 
 ## 3b. Code-readiness audit (2026-10-07)
 
+> **2026-10-20:** the audit below was done on `cf719f0`. The bump to `b21d28c` changed
+> `swarm_commander.py` (+180: `tuning` status block, `sequence_*`, teleop-speed sync),
+> `scenarios.py` (+356: `GoalSequenceScenario`, `FigureEightScenario`), `teleop_node.py`
+> (+198: `sync_max_speed`), the launch file (bag recorder args) and the panel. Findings below
+> are unchanged unless marked; the new code is **unaudited** (⏳ STE) — [MIGRATION.md](MIGRATION.md) §11.
+
 Verified by direct inspection of the `AirStack/` snapshot (paths relative to
 `AirStack/robot/ros_ws/src/svg_ground_control/` unless stated). Everything below EXISTS:
 
@@ -159,6 +165,7 @@ must be remembered; details in the corrections tables of the linked docs):
 | 4 | **M1: CBF crossing on the Starling model** (`tools/sim_cbf_crossing_test.sh`, `cbf_sim.yaml` antipodal) | 45 s of `/svg/commander_status` | all three drones CBF-corrected, no emergency push-apart, no fence breach, min pairwise distance **1.02 m** (nominal 2r = 1.10 m — 8 cm inside the barrier, CBF soft margin) | 2026-10-19 |
 | 5 | **Landing disarm fix** (`land_settle_s`, [§6 Fix 1](#6-backlog--carried-over-re-evaluate-on-this-branch)) — unit level only | observed: `land` → pane log `landed, disarmed` then `disarm -> success=False` ×3, mavros `armed: true mode: OFFBOARD`, props spinning (failsafe hover). Fix: commander keeps commanding the descent 2 s past the threshold, then disarms | `test/test_landing_settle.py` 4 tests, suite 144/144 in the robot container. **Sim end-to-end ⏳**: next `land` must end with mavros `armed: false` within ~3 s of touchdown | 2026-10-19 |
 | 6 | **Isaac Stop ▶ Play as a drone reset — FAILS** (negative result, recorded so nobody retries it) | Stop at 07:09:19Z: `Attempting to kill PX4` ×3, `Timeline STOP: cleared 3 drone(s)`; Play 1 s later: `Vehicle config … Starling2MaxConfig` ×3, 3 new `px4` processes | From the first physics step after Play the Isaac log floods with `multirotor.py:166 backend.update → poll_mavlink_messages → 'NoneType' object has no attribute 'recv_match'` (**66,530** tracebacks in 2 min) — the old vehicles' `/update` physics callbacks were NOT removed by the STOP handler. MAVROS ×3 `connected: false` (`VER: unicast request timeout`), panel `NO DATA`, commander still publishing status at 5 Hz. Only a full sim + interfaces + commander restart recovered. Backlog §6 | 2026-10-20 |
+| 7 | **Snapshot bump to CMU dev branch `b21d28c`** (user decision 2026-10-20: the Foxglove gain dropdown seen at the CMU demo lives there) | `git diff cf719f0 b21d28c` (26 files, +3,699/−278, all in `svg_ground_control/` + one agent skill) applied with `git apply --directory=AirStack` — clean, zero conflicts; our `land_settle_s` and `cbf_sim.yaml` edits untouched; `bws` for the new `bag_recorder` entry point + config symlinks; panel `install.py` re-run | **181/181** tests in the robot container (144 ours + 37 new dev tests). ⏳ NOT yet flown in sim after the bump: re-run #3 (hover/steps) and #4 (CBF crossing) and the landing check before trusting the new commander | 2026-10-20 |
 | — | *Sim-only so far: nothing in this ledger has touched the real drone (M2+ ⏳ STE)* | | | |
 
 ### ⚠️ Carried-over issues — re-test before trusting (none copied as verdicts)

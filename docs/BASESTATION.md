@@ -8,7 +8,9 @@
 > Foxglove tutorial.
 > ⚠️ **Nothing here has been validated by us yet.** The repo switched its vendored AirStack
 > snapshot to CMU branch `yikuan/SVG_ground_control` @ `cf719f0` on **2026-10-07** and the
-> panel came with it. `✅ CMU` = CMU's claim; `⏳ STE` = ours to prove at STE (M0-M3).
+> panel came with it; **2026-10-20** the snapshot moved to `yikuan/SVG_ground_control_dev` @
+> `b21d28c`, whose panel adds three gains to the dropdown, a Rosbag switch, an agent picker in
+> the Goal card and a Teleop · Sticks card (§3.4, §3.7, §3.12). `✅ CMU` = CMU's claim; `⏳ STE` = ours to prove at STE (M0-M3).
 
 ---
 
@@ -114,11 +116,17 @@ watching `command_seq` advance *and* the expected effect appear in the snapshot,
 `TIMEOUT` then `✓ confirmed by commander` means it ran. **The snapshot is the verdict**;
 never click Takeoff twice because a reply was slow.
 
-### 3.4 · CBF gain row
+### 3.4 · Runtime gain row (was "CBF gain row")
 
-A dropdown picks one of `cbf_alpha` / `cbf_safety_radius_m` / `cbf_max_speed_mps`
-(`:188-206`); slider and number box share one draft per gain; **Apply** sends it via
-`<commander>/set_parameters`, **↻** re-reads all three with `get_parameters`. The fixed-width
+A dropdown picks one of **six** live parameters (since the 2026-10-20 bump): `cbf_alpha` /
+`cbf_safety_radius_m` / `cbf_max_speed_mps` (the filter), **`teleop_max_speed_mps`** (Teleop
+vmax — also pushed to `safe_teleop`'s `max_speed_mps`, with a `pad ✓/✗/--` readout showing
+whether the pad agrees), **`goal_accel_mps2`** (Goal accel — acceleration *and* braking of the
+go-to-goal profile; there is no separate deceleration) and **`goal_settle_s`** (Goal settle —
+the exponential tail into the goal, `0` allowed). The first three read from the snapshot's `cbf`
+block, the other three from its new `tuning` block. Slider and number box share one draft per
+gain; **Apply** sends it via `<commander>/set_parameters`, **↻** re-reads all six with
+`get_parameters`. The fixed-width
 `live` readout is what the commander is actually running, marked `✓` confirmed / `…` waiting /
 `✗` rejected-or-not-taken (`:2380-2462`). Our values: `alpha 2.5`, `r 0.55 m`, `vmax 1.0 m/s`
 (`swarm_real.yaml`, [CONFIG.md](CONFIG.md)). Below it, an activity line: red **`CBF EMERGENCY
@@ -145,7 +153,13 @@ snapshot (`:1346-1358`). Before any snapshot the card's note says the frame is
 formation commands. For M4 pass `scenario:=goal`, or use `goal_single.yaml` — which ships
 `drone_names: ["drone_2"]` and must be retargeted to `drone_1` first.
 
-### 3.7 · Agents roster and Wiring card
+### 3.7 · Agents roster and Wiring card — REMOVED on the 2026-10-20 bump
+
+> The dev-branch panel drops the roster and the Wiring card: the Goal card now starts with a
+> row of **agent buttons** (`drone_1` `drone_2` …) that picks the drone the x/y/z/speed fields
+> and **Send Goal** target, and highlights that drone's rows in Agent State / Link Safety and
+> its power card. Clicking a table row selects too. The text below describes the `cf719f0`
+> panel and stays for the archive.
 
 The roster lists the configured agents; **clicking one selects it**, and the Goal and
 Wiring cards follow. The **Wiring** card spells out the resolved topics for that agent and
@@ -208,6 +222,29 @@ One card per agent: SoC bar with ticks at the two return-to-base thresholds (`rt
 session, mission time, and a distance-to-pad energy budget that fires `RTB NOW`. Its action
 button is **Land All** behind a confirm — there is no per-agent land service. Real-hardware
 SoC comes from `/{name}/fmu/out/battery_status`, blank in simulation.
+
+### 3.12 · Rosbag switch (new 2026-10-20)
+
+A toggle at the top right of the banner (beside the clock) that records **every topic on the
+domain** to an mcap bag. It talks to the new `bag_recorder` node, started by
+`ground_control.launch.py` (`use_bag_recorder`, default true): on = `std_srvs/SetBool data:
+true` on `/bag_recorder/record`, which spawns `ros2 bag record --all-topics --storage mcap` at
+`<bag_dir>/<bag_prefix>_<YYYYmmdd_HHMMSS>` (default `bag_dir` = the bind-mounted
+`~/AirStack/robot/ros_ws/bags`, so the bag is on the laptop; our compose also mounts
+`AirStack/robot/bags` as `/bags`); off = `data: false`, a SIGINT so `metadata.yaml` gets
+written (a bag killed hard is unreadable). The switch follows the recorder's own status
+(`/svg/bag_recorder/status`, JSON at 2 Hz), so a bag started from a shell shows as on and a
+recorder that dies (disk full) drops it back to off. Chip states: `NO RECORDER` / `IDLE` / red
+`REC 1:23 · 12.4 MB`. Shell equivalent:
+
+```bash
+ros2 service call /bag_recorder/record std_srvs/srv/SetBool "{data: true}"    # start
+ros2 service call /bag_recorder/record std_srvs/srv/SetBool "{data: false}"   # stop
+ros2 topic echo /svg/bag_recorder/status --once
+```
+
+`record_bag:=true` on the commander launch records from launch to Ctrl-C, still switchable.
+⏳ STE: not yet exercised by us.
 
 ## 4 · The `/svg/commander_status` snapshot
 

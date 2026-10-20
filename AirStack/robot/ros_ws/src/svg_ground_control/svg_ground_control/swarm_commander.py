@@ -17,7 +17,7 @@ on hardware — only the topic templates in the config YAML differ):
     services:    {robot_command_service_template}  airstack_msgs/srv/RobotCommand
 
 Nominal commands come from a *scenario* (hover, random_walk, random_goals,
-head_on, antipodal, squeeze — see scenarios.py, ported from ~/drone_soccer).
+head_on, antipodal, squeeze, figure_eight, goal_sequence — see scenarios.py, ported from ~/drone_soccer).
 Drones listed in ``teleop_drones`` are operator-driven instead (one teleop
 topic per drone); an empty list means every drone follows the scenario.
 Drones in ``external_drones`` are tracked for the safety filter but never
@@ -94,7 +94,11 @@ the safety radius it was built with for its own spacing checks (holder posts,
 random goals) — only the filter, the speed cap and the viz spheres follow.
 The speed and tracking gains (``SwarmCommander.RUNTIME_PARAMS``) are live
 as well; anything else is read once at startup and a runtime set is
-refused with a reason.
+refused with a reason. The snapshot's ``tuning`` block reports the live
+``teleop_max_speed_mps``, ``goal_accel_mps2``, ``goal_settle_s`` and
+``scenario_speed_mps``, so the panel can show them, and so ``safe_teleop``
+can keep its stick scaling (``max_speed_mps``) equal to
+``teleop_max_speed_mps`` whoever changed it.
 
 Lifecycle (std_srvs/Trigger services):
     ~/takeoff — arm + offboard + ascend everyone to the scenario's initial
@@ -374,6 +378,39 @@ class SwarmCommander(Node):
         # presses through and the holders alone yield (filtering it makes
         # the filter push it backwards as it approaches the gap).
         self.declare_parameter('squeeze_intruder_cbf_exempt', True)
+        # figure_eight scenario geometry (ENU, meters / degrees): two circles
+        # of radius r whose centers are center_distance apart along the
+        # horizontal heading axis_deg (90 = along +Y), the plane rolled about
+        # that line by tilt_deg. drone_1 and drone_2 both fly the whole eight
+        # (lobe A CCW, through the crossing, lobe B CW, back), starting at the
+        # two far ends; senses: +1 / -1 = each drone's direction along the
+        # eight ([1,-1] head-on at the crossing, [1,1] a side-by-side merge).
+        # drone_3 holds intruder_start unless hand-flown.
+        self.declare_parameter('figure_eight_center', [0.0, 0.0, 1.5])
+        self.declare_parameter('figure_eight_radius_m', 1.0)
+        self.declare_parameter('figure_eight_center_distance_m', 2.0)
+        self.declare_parameter('figure_eight_axis_deg', 90.0)
+        self.declare_parameter('figure_eight_tilt_deg', 30.0)
+        self.declare_parameter('figure_eight_senses', [1.0, -1.0])
+        self.declare_parameter('figure_eight_track_gain', 1.0)
+        self.declare_parameter('figure_eight_intruder_start', [-2.0, 0.0, 1.5])
+        self.declare_parameter('figure_eight_intruder_cbf_exempt', True)
+        # goal_sequence scenario: 'sequence_steps' lists step names; each name
+        # needs a matching 'sequence_<name>' flat array [x1,y1,z1, x2,y2,z2,
+        # ...] (one goal per drone in drone_names order, INSIDE arena_low..
+        # arena_high, pairs >= 2*cbf_safety_radius_m apart). All drones fly
+        # straight at set k; set k+1 plays once everyone has been within
+        # sequence_arrival_m of its goal for sequence_dwell_s (advance
+        # 'arrival') or every sequence_period_s ('timer'); loop wraps.
+        #   ros2 topic pub --once /svg/sequence_command std_msgs/msg/String "{data: next}"
+        #   (also: a step name, pause, resume)
+        self.declare_parameter('sequence_steps', '')
+        self.declare_parameter('sequence_dwell_s', 2.0)
+        self.declare_parameter('sequence_arrival_m', 0.3)
+        self.declare_parameter('sequence_loop', True)
+        self.declare_parameter('sequence_advance', 'arrival')
+        self.declare_parameter('sequence_period_s', 8.0)
+        self.declare_parameter('sequence_command_topic', '/svg/sequence_command')
         # Used by the 'hover' scenario only: flat [x1,y1,z1, ...] per drone.
         self.declare_parameter('hover_positions',
                                [-1.5, 0.0, 1.2, 1.5, 0.0, 1.2, 0.0, -1.5, 1.2])
@@ -673,6 +710,51 @@ class SwarmCommander(Node):
                 self.get_parameter('squeeze_intruder_waypoints').value)
             scenario_kwargs['intruder_cbf_exempt'] = bool(
                 self.get_parameter('squeeze_intruder_cbf_exempt').value)
+        elif scenario_name == 'figure_eight':
+            scenario_kwargs.update(
+                center=np.array(self.get_parameter('figure_eight_center').value),
+                radius=float(self.get_parameter('figure_eight_radius_m').value),
+                center_distance=float(
+                    self.get_parameter('figure_eight_center_distance_m').value),
+                axis_deg=float(self.get_parameter('figure_eight_axis_deg').value),
+                tilt_deg=float(self.get_parameter('figure_eight_tilt_deg').value),
+                senses=np.array(
+                    self.get_parameter('figure_eight_senses').value),
+                track_gain=float(self.get_parameter('figure_eight_track_gain').value),
+                intruder_start=np.array(
+                    self.get_parameter('figure_eight_intruder_start').value),
+                intruder_cbf_exempt=bool(
+                    self.get_parameter('figure_eight_intruder_cbf_exempt').value))
+        elif scenario_name == 'goal_sequence':
+            step_names = [t.strip() for t in
+                          str(self.get_parameter('sequence_steps').value).replace(
+                              ',', ' ').split() if t.strip()]
+            if not step_names:
+                raise ValueError(
+                    'goal_sequence needs sequence_steps (step names) and one '
+                    'sequence_<name> array per step')
+            steps = []
+            for sname in step_names:
+                if not re.fullmatch(r'[a-zA-Z][a-zA-Z0-9_]*', sname) \
+                        or sname in ('next', 'pause', 'resume'):
+                    raise ValueError(
+                        f'sequence step "{sname}" is not a valid name (letters/'
+                        'digits/underscore, starting with a letter; next/pause/'
+                        'resume are reserved)')
+                self.declare_parameter(f'sequence_{sname}', [0.0])
+                flat = list(self.get_parameter(f'sequence_{sname}').value)
+                if len(flat) != 3 * len(names):
+                    raise ValueError(
+                        f'sequence_{sname} needs {3 * len(names)} values '
+                        f'(x,y,z per drone in drone_names order), got {len(flat)}')
+                steps.append(np.array(flat, dtype=float).reshape(-1, 3))
+            scenario_kwargs.update(
+                steps=np.stack(steps), step_names=step_names,
+                dwell_s=float(self.get_parameter('sequence_dwell_s').value),
+                arrival_m=float(self.get_parameter('sequence_arrival_m').value),
+                loop=bool(self.get_parameter('sequence_loop').value),
+                advance=str(self.get_parameter('sequence_advance').value),
+                period_s=float(self.get_parameter('sequence_period_s').value))
         self.scenario = make_scenario(
             scenario_name,
             num_drones=len(names),
@@ -707,6 +789,37 @@ class SwarmCommander(Node):
                 f'(2r keep-out = {2 * self.cbf_safety_radius:.2f} m), '
                 f'intruder A={self.scenario.intruder_waypoints[0]} '
                 f'B={self.scenario.intruder_waypoints[1]}')
+        if scenario_name == 'figure_eight':
+            sc = self.scenario
+            speed = float(self.get_parameter('scenario_speed_mps').value)
+            self.get_logger().info(
+                f'figure_eight geometry: centers {sc.centers[0].round(2).tolist()} / '
+                f'{sc.centers[1].round(2).tolist()}, radius {sc.radius:.2f} m, '
+                f'crossing at {sc.touching_point.round(2).tolist()}; '
+                f'{speed:.2f} m/s -> eight {4 * np.pi * sc.radius / max(speed, 1e-6):.1f} s, '
+                f'meeting every {2 * np.pi * sc.radius / max(speed, 1e-6):.1f} s, '
+                f'centripetal {speed * speed / sc.radius:.1f} m/s2 '
+                f'(2r keep-out = {2 * self.cbf_safety_radius:.2f} m)')
+        if scenario_name == 'goal_sequence':
+            sc = self.scenario
+            self.get_logger().info(
+                f'goal_sequence: {sc.num_steps} steps ({", ".join(sc.step_names)}), '
+                f'advance {self.get_parameter("sequence_advance").value} '
+                f'(dwell {self.get_parameter("sequence_dwell_s").value} s / '
+                f'period {self.get_parameter("sequence_period_s").value} s), '
+                f'loop {bool(self.get_parameter("sequence_loop").value)}; '
+                f'next / <name> / pause / resume on '
+                f'{self.get_parameter("sequence_command_topic").value}')
+
+            def on_step(k, name, goals, _names=names):
+                self.get_logger().info(
+                    f'sequence step {k + 1}/{sc.num_steps} "{name}": '
+                    + '; '.join(f'{n} -> {g.round(2).tolist()}'
+                                for n, g in zip(_names, goals)))
+            sc.on_step = on_step
+            self.create_subscription(
+                String, str(self.get_parameter('sequence_command_topic').value),
+                self.sequence_callback, 10)
 
         state_tmpl = str(self.get_parameter('state_topic_template').value)
         default_cmd_tmpl = str(
@@ -948,8 +1061,12 @@ class SwarmCommander(Node):
         'fence_brake_accel_mps2': 'fence_brake_accel',
         'fence_margin_m': 'fence_margin',
     }
-    # Must stay > 0 (1/gain is the envelope's lag; 0 would divide by it).
-    POSITIVE_PARAMS = CBF_PARAMS + ('fence_keep_in_gain',)
+    # Must stay > 0 (1/gain is the envelope's lag; 0 would divide by it;
+    # a zero stick cap or profile acceleration would freeze the drone).
+    POSITIVE_PARAMS = CBF_PARAMS + ('fence_keep_in_gain', 'teleop_max_speed_mps',
+                                    'goal_accel_mps2')
+    # Must be finite and >= 0 (0 = no exponential tail into the goal).
+    NON_NEGATIVE_PARAMS = ('goal_settle_s',)
     # Applied through the scenario (its speeds / go-to-goal tracker).
     _SCENARIO_PARAMS = ('scenario_speed_mps', 'goal_accel_mps2', 'goal_settle_s',
                         'goal_velocity_only_settle_s')
@@ -975,6 +1092,11 @@ class SwarmCommander(Node):
                 return SetParametersResult(
                     successful=False,
                     reason=f'{p.name} must be finite and > 0, got {p.value}')
+            if p.name in self.NON_NEGATIVE_PARAMS and (
+                    not math.isfinite(value) or value < 0.0):
+                return SetParametersResult(
+                    successful=False,
+                    reason=f'{p.name} must be finite and >= 0, got {p.value}')
         if self._apply_in_validate:
             self._apply_parameters(params)
         return SetParametersResult(successful=True)
@@ -1115,6 +1237,15 @@ class SwarmCommander(Node):
                 'external_velocity_gain': self.cbf_external_velocity_gain,
                 'active': list(self._cbf_active_names),
                 'emergency': self._cbf_emergency,
+            },
+            # Live speed / tracking gains (RUNTIME_PARAMS). The panel's gain
+            # row reads them from here; safe_teleop mirrors
+            # teleop_max_speed_mps into its own max_speed_mps.
+            'tuning': {
+                'teleop_max_speed_mps': self.teleop_max_speed,
+                'goal_accel_mps2': self.scenario.tracker.accel,
+                'goal_settle_s': self.scenario.tracker.settle,
+                'scenario_speed_mps': self.scenario.nominal_speed,
             },
             'command_seq': self._command_seq,
             'last_command': self._last_command,
@@ -1347,6 +1478,25 @@ class SwarmCommander(Node):
             self.scenario.set_goal(i, profile[i])
             moved.append(f'{d.name} -> {profile[i].tolist()}')
         self.get_logger().info(f'formation "{name}": ' + '; '.join(moved))
+
+    def sequence_callback(self, msg: String):
+        """goal_sequence: "next", a step name, "pause" or "resume"."""
+        cmd = msg.data.strip()
+        sc = self.scenario
+        if cmd == 'pause':
+            sc.paused = True
+            self.get_logger().info(f'sequence paused on step "{sc.step_name}"')
+        elif cmd == 'resume':
+            sc.paused = False
+            self.get_logger().info(f'sequence resumed on step "{sc.step_name}"')
+        elif cmd == 'next':
+            sc.next_step()
+        elif cmd in sc.step_names:
+            sc.set_step(cmd)
+        else:
+            self.get_logger().warn(
+                f'unknown sequence command "{cmd}" (available: next, pause, '
+                'resume, ' + ', '.join(sc.step_names) + ')')
 
     # ------------------------------------------------------------------
     # Operator services
@@ -1675,8 +1825,9 @@ class SwarmCommander(Node):
             self.get_logger().warn(
                 f'{drone.name}: stick velocity {speed:.2f} m/s capped to '
                 f'teleop_max_speed_mps={self.teleop_max_speed} (raise it in the '
-                'commander block or: ros2 param set /swarm_commander '
-                'teleop_max_speed_mps X)', throttle_duration_sec=2.0)
+                'commander block, the panel\'s Teleop vmax row, or: ros2 param '
+                'set /swarm_commander teleop_max_speed_mps X — safe_teleop\'s '
+                'max_speed_mps follows it)', throttle_duration_sec=2.0)
         return cmd
 
     def teleop_command(self, drone: DroneHandle, now):
@@ -2221,6 +2372,23 @@ class SwarmCommander(Node):
                 goal.color = ColorRGBA(r=r, g=g, b=b,
                                        a=0.6 if self.mission_active else 0.25)
                 arr.markers.append(goal)
+
+        # Scenario reference paths (figure_eight lobes), one line strip each.
+        for pi, path in enumerate(getattr(self.scenario, 'paths', [])):
+            m = Marker()
+            m.header.frame_id = self.viz_frame
+            m.header.stamp = stamp
+            m.ns = 'path'
+            m.id = pi
+            m.type = Marker.LINE_STRIP
+            m.action = Marker.ADD
+            m.pose.orientation.w = 1.0
+            m.scale.x = 0.02
+            m.color = ColorRGBA(r=0.9, g=0.9, b=0.9,
+                                a=0.7 if self.mission_active else 0.35)
+            for pt in np.asarray(path, dtype=float):
+                m.points.append(Point(x=float(pt[0]), y=float(pt[1]), z=float(pt[2])))
+            arr.markers.append(m)
 
         if self.fence_enabled:
             arr.markers.append(self._fence_marker(stamp))

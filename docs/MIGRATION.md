@@ -31,7 +31,7 @@ configurations · `848be9b` added tof visualization · `868b365` implemented vel
 position publisher · `ac1acc4` removed cbf filter.
 
 **`yikuan/SVG_ground_control`** (the new snapshot, tip `cf719f0`, vendored here on
-2026-10-07 as commit `91376aa`) **kept** the CBF and built the ground-station side out
+2026-10-07 as commit `91376aa`; **bumped 2026-10-20 to the dev branch `b21d28c` — §11**) **kept** the CBF and built the ground-station side out
 instead — gamepad teleop, a geofence braking envelope, trajectory output with acceleration
 feedforward, onboard LEDs, a Foxglove basestation. Four commits past the ancestor:
 
@@ -297,3 +297,44 @@ detail in the doc that owns the topic; this table is only an index.
 | `svg_ground_control/experiment.md` (Parts B/C) | scenarios, fence behaviours, run configs | [SCENARIOS.md](SCENARIOS.md) §9 |
 | `svg_ground_control/foxglove/svg-basestation/README.md` | panel install + layout import | [BASESTATION.md](BASESTATION.md) §6 |
 | `experiment.md` Part B4 (mocap) | unchanged from the old branch — our corrections still stand | [MOCAP.md](MOCAP.md) §4 |
+
+## 11 · 2026-10-20 — snapshot bumped to `yikuan/SVG_ground_control_dev` @ `b21d28c`
+
+**Why.** CMU keeps two branches (their `.agents/skills/svg-release-branches` skill, now in the
+snapshot): daily work on **`yikuan/SVG_ground_control_dev`**, releases cut to
+`yikuan/SVG_ground_control` as ONE squash commit per verified batch, never merged. Our 10-07
+snapshot `cf719f0` was the 2026-09-27 release. The Foxglove gain dropdown with goal accel /
+settle / teleop vmax that the lab saw at the CMU demo exists only on dev (merged from
+`cindy/svg_foxglove` on 09-28) and depends on commander + teleop changes there, so the panel
+could not be ported alone. User decision 2026-10-20: take dev.
+
+**How.** `git diff --binary cf719f0 b21d28c` (54 commits; 26 files, +3,699/−278, all inside
+`robot/ros_ws/src/svg_ground_control/` except `AGENTS.md` and the new skill) applied with
+`git apply --directory=AirStack` onto the 10-07 snapshot. Clean apply, no conflicts: dev does
+not touch `simulation/` (our whole Starling sim model) and its commander hunks do not overlap
+our `land_settle_s` fix. No container rebuild (the three new deps `rcl_interfaces`, `ros2bag`,
+`rosbag2_storage_mcap` were already in the image); `bws --packages-select svg_ground_control`
+for the new `bag_recorder` entry point and config symlinks; panel re-installed with
+`python3 …/foxglove/install.py` (normally runs at container start) and Studio restarted.
+Tests 181/181. Reversible: one commit, `git revert`.
+
+**What changed (dev `README.md` "Since the 2026-09-27 release" + our diff):**
+
+| Area | Delta | Our doc |
+|---|---|---|
+| Foxglove panel | gain dropdown → 6 params (+ `teleop_max_speed_mps` with pad mirror, `goal_accel_mps2`, `goal_settle_s`); **Rosbag switch**; Goal card gets an **agent picker**, the Agents roster and Wiring card are gone; Teleop · Sticks card beside the battery card while `safe_teleop` runs; `view` gains `teleop`; cards stack in one column | [BASESTATION.md](BASESTATION.md) §3.4, §3.7, §3.12, §5 |
+| Commander | status snapshot gains a `tuning` block (`teleop_max_speed_mps`, `goal_accel_mps2`, `goal_settle_s`, `scenario_speed_mps`); `goal_settle_s` may be 0 (`NON_NEGATIVE_PARAMS`); `sequence_*` params + `/svg/sequence_command`; pushes/accepts the teleop speed sync | [CONFIG.md](CONFIG.md) |
+| Scenarios | `GoalSequenceScenario` (scripted crossing goal sets), `FigureEightScenario` (collision-negligent pair + intruder), both with `path` markers | [SCENARIOS.md](SCENARIOS.md) §4 |
+| Teleop | `safe_teleop` `max_speed_mps` is live and kept equal to the commander's `teleop_max_speed_mps` both ways (`sync_max_speed`, `commander_status_topic`, `commander_ns`) | [TELEOP.md](TELEOP.md) |
+| Launch | `use_bag_recorder` (true), `record_bag`, `bag_dir`, `bag_prefix`, `bag_include_hidden`; `bag_recorder` node always started | [RUNBOOK.md](RUNBOOK.md) §A |
+| Configs | new `goal_sequence.yaml`, `figure_eight_rc_intruder.yaml`; one-line touches to `goal_single`, `goal_tracking`, `squeeze_rc_intruder`, `swarm_sim`, `teleop_real`, `teleop_single` (not our `_ours` files) | [CONFIG.md](CONFIG.md) |
+| Docs | `experiment.md` C2–C7 (C3 goal sequence, C7 figure-eight; squeeze moved to C4–C6), "Recording rosbags"; panel README; `teleop.md` | — |
+| Tests | +37 (`test_safe_teleop_sync.py`, sequence/figure-eight rollouts, runtime params) | — |
+
+**Unchanged by the bump:** everything under `simulation/` (Starling model, airframe, tools),
+`px4_interface`, `mocap_bridge`, the LED daemon, the fence and CBF maths, our `_ours.yaml`
+configs, `cbf_sim.yaml` (dev did not touch it), `land_settle_s`.
+
+**Re-do after the bump (⏳):** MILESTONES ledger #3 (hover/steps) and #4 (CBF crossing) on the
+new commander; the landing-disarm check; first look at the new panel rows and the Rosbag switch
+in sim. Everything real-drone stays ⏳ STE as before.

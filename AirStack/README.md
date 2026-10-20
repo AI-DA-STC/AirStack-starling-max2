@@ -1,7 +1,10 @@
 # AirStack — Starling Max 2 lab snapshot (code folder)
 
 **What this folder is:** a frozen, working copy of CMU AirStack, taken 2026-10-07 from branch
-`yikuan/SVG_ground_control` (commit `cf719f0`) of
+`yikuan/SVG_ground_control` (commit `cf719f0`) and **bumped 2026-10-20 to
+`yikuan/SVG_ground_control_dev` @ `b21d28c`** (the delta `cf719f0..b21d28c`, 26 files in
+`robot/ros_ws/src/svg_ground_control/` + one agent skill, applied as a patch; our own edits in
+`simulation/` and the commander's `land_settle_s` kept) of
 [castacks/AirStack](https://github.com/castacks/AirStack), **with our one still-needed local
 bug fix already applied** (camera-info init race in PegasusSimulator — patch file and
 explanation in [`../patches/`](../patches/), one level up in this repo). The second patch from

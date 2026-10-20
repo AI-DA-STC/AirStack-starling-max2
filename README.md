@@ -179,7 +179,7 @@ Clickable links inside `docs/` use `../` because they resolve from that folder.)
 | [DRONE_SETUP.md](docs/DRONE_SETUP.md) | Provision a NEW Starling from the box — one ordered checklist (WiFi → comms script → params file → Motive body → kill test → optional LEDs) |
 | [`starling_1_indoor_params.params`](starling_1_indoor_params.params) | Canonical drone parameter set (872-param QGC export, 2026-09-04) — load via QGC, procedure in DRONE_SETUP §5 |
 | [CLAUDE.md](CLAUDE.md) | AI-session entry point — read order, iron flight rules, two-clone warning |
-| [AirStack/](AirStack/) | **Full AirStack code snapshot** (`yikuan/SVG_ground_control` @ `cf719f0`, 2026-10-07, patch 0001 applied, submodules included) — see its own [README](AirStack/README.md) |
+| [AirStack/](AirStack/) | **Full AirStack code snapshot** (`yikuan/SVG_ground_control` @ `cf719f0`, 2026-10-07, bumped to `yikuan/SVG_ground_control_dev` @ `b21d28c` on 2026-10-20; patch 0001 applied, submodules included) — see its own [README](AirStack/README.md) |
 | [patches/](patches/) | Our bug fixes as patch files — 0001 (still needed, applied in `AirStack/`), 0002 (now fixed upstream — kept for the archive branch), 0003 libmotioncapture (`mocap.sh setup` applies it); story in the [appendix](#appendix--historical-reference) |
 | [tools/make_milestones_doc.py](tools/make_milestones_doc.py) | Word (.docx) export generator — **legacy**; [MILESTONES.md](docs/MILESTONES.md) is canonical |
 | [assets/](assets/) · [videos/](videos/) | GIFs and source recordings — all from the previous branch (M1 sim demos, the hand-carry tracking check, the 09-03 goal-tracking flight) |
@@ -294,7 +294,8 @@ cd ~/AirStack-starling-max2/AirStack/robot/ros_ws/src/perception/natnet_ros2 && 
 
 > **Reference — where this code originally came from:** CMU's branch
 > [`yikuan/SVG_ground_control`](https://github.com/castacks/AirStack/tree/yikuan/SVG_ground_control)
-> of castacks/AirStack (snapshot taken 2026-10-07 at commit `cf719f0`). It is a **sibling**
+> of castacks/AirStack (snapshot taken 2026-10-07 at commit `cf719f0`, bumped 2026-10-20 to the
+> working branch `yikuan/SVG_ground_control_dev` @ `b21d28c`). It is a **sibling**
 > of the previous branch, not its successor — [MIGRATION.md](docs/MIGRATION.md) §1. You only
 > need CMU's repo if you want their *newer* commits — see the
 > [patches appendix](#appendix--historical-reference) for how to re-apply our fix on top.

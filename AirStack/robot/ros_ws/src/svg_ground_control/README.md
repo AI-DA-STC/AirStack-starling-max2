@@ -48,6 +48,25 @@ Ported from drone_soccer plus goal-tracking and a squeeze profile:
 - `squeeze` — **3-drone CBF showcase** ([config/squeeze_3drone.yaml](config/squeeze_3drone.yaml)):
   two holders goal-track explicit posts; the intruder shuttles through the
   gap; the holders must yield and return. Order: `[holder, holder, intruder]`.
+- `goal_sequence` — **scripted, automatically played goal sets**
+  ([config/goal_sequence.yaml](config/goal_sequence.yaml)): K sets of one
+  goal per drone (`sequence_steps` + `sequence_<name>` arrays, all inside
+  the arena, pairs ≥ 2r), every drone flying straight at its goal; the sets
+  cross (ends swap head-on, a three-way crossing, a rotating triangle) and
+  the CBF deconflicts. Next set on everyone's arrival + dwell (or a timer),
+  looping; `/svg/sequence_command` takes `next`, a step name, `pause`,
+  `resume`. experiment.md C3.
+- `figure_eight` — **collision-negligent pair + intruder**
+  ([config/figure_eight_rc_intruder.yaml](config/figure_eight_rc_intruder.yaml)):
+  drones 0 and 1 both fly the same figure-eight (two touching circles along
+  Y by default; radius / center distance / heading / plane tilt / sense per
+  drone all parameters), starting at the two far ends half the eight apart,
+  meeting at the crossing every half period (head-on by default) and
+  swapping lobes there, with nothing but the CBF between them; drone 2
+  hovers at its start or is hand-flown into them. The carrots are
+  time-parametrized, so a pushed drone is pulled back into the next meeting.
+  The eight is drawn as a `path` marker. Order: `[starts on lobe A, starts
+  on lobe B, intruder]`; experiment.md C7.
 
 `teleop_drones` (comma-separated string) lists operator-driven drones — empty
 = fully autonomous. Teleop is a control-source role, not a safety exemption:
@@ -134,10 +153,43 @@ velocity, no altitude hold) remains as an ad-hoc utility.
   values are rejected. The speed and tracking gains (`scenario_speed_mps`,
   `teleop_max_speed_mps`, `goal_accel_mps2`, `goal_settle_s`, `goal_lead_m`,
   `goal_velocity_only_settle_s`, `teleop_kp`, `teleop_lead_m`, `hover_kp`,
-  `hold_lead_m`, `takeoff_speed_mps`) are live too. Everything else is read
-  once at startup; a `ros2 param set` on it is refused with a reason.
+  `hold_lead_m`, `takeoff_speed_mps`) are live too, and the snapshot's
+  `tuning` block reports `teleop_max_speed_mps`, `goal_accel_mps2`,
+  `goal_settle_s` and `scenario_speed_mps` so the panel's gain dropdown can
+  edit the first three next to the CBF gains. `teleop_max_speed_mps` and
+  `safe_teleop`'s `max_speed_mps` are one number kept equal at runtime:
+  the pad follows the commander's snapshot, a `ros2 param set
+  /safe_teleop max_speed_mps` is pushed to the commander, and the panel's
+  Teleop vmax row sets both. Everything else is read once at startup; a
+  `ros2 param set` on it is refused with a reason.
+
+- **Rosbag switch**: the `bag_recorder` node (started by
+  `ground_control.launch.py`) records every published topic on the domain
+  (mcap, `ros2 bag record --all-topics`) on demand: the **Rosbag** toggle in
+  the Foxglove panel, or `ros2 service call /bag_recorder/record
+  std_srvs/srv/SetBool "{data: true}"`, starts a bag at
+  `<bag_dir>/<bag_prefix>_<YYYYmmdd_HHMMSS>` (`bag_dir` defaults to the
+  bind-mounted `~/AirStack/robot/ros_ws/bags`, so the bag is on the host);
+  `data: false` closes it (SIGINT, so `metadata.yaml` is written). Its
+  status (`/svg/bag_recorder/status`, JSON: recording, path, duration, size)
+  is what the panel's switch shows. `record_bag:=true` records from launch
+  to Ctrl-C as before, still switchable in between. See experiment.md
+  "Recording rosbags".
 
 Full how-to for all of the above: **[experiment.md](experiment.md)**.
+
+## Since the 2026-09-27 release
+
+- **`goal_sequence` scenario** (2026-09-28): scripted goal sets played
+  automatically with crossing legs for the CBF to resolve — `GoalSequenceScenario`,
+  `sequence_*` parameters, `/svg/sequence_command`, per-leg `path` markers,
+  config `goal_sequence.yaml`, experiment.md C3 (the squeeze and figure-eight
+  sections moved to C4–C7), four tests including a kinematic rollout.
+- **`figure_eight` scenario** (2026-09-28): collision-negligent pair on two
+  touching circles with a hand-flown intruder — `FigureEightScenario`,
+  `figure_eight_*` parameters, lobe `path` markers, config
+  `figure_eight_rc_intruder.yaml`, experiment.md C6, five tests including a
+  kinematic rollout where the nominal carrots coincide and the CBF holds 2r.
 
 ## Update 2026-09-27 — what the squash onto `yikuan/SVG_ground_control` contains
 

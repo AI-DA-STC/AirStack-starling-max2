@@ -279,7 +279,7 @@ holding [x, y, z] until moved`, so nothing is chased from before takeoff.
 | Name | Default | Live? | Our value |
 |---|---|---|---|
 | `teleop_controller` | `xbox_usb` | no | **`dragonrise_usb`** — `teleop_real.yaml:140` ⏳ verify §3 |
-| `max_speed_mps` | `1.0` | no | shipped `0.7` (`teleop_real.yaml:141`) — ours **0.5** for M5 ([CONFIG.md](CONFIG.md)) |
+| `max_speed_mps` | `1.0` | **yes** (since 2026-10-20) | shipped `0.7` (`teleop_real.yaml:141`) — ours **0.5** for M5 ([CONFIG.md](CONFIG.md)). Kept equal to the commander's `teleop_max_speed_mps` in both directions (`sync_max_speed`); the panel's Teleop vmax row sets both |
 | `max_climb_speed_mps` | `0.8` | no | `0.5` (`:142`) |
 | `deadzone` · `joy_timeout_s` · `yaw_rate_rad_s` | `0.15` · `0.5` · `1.0` | no | unset → defaults |
 | `print_hz` | `0.0` (`teleop.launch.py`: `1.0`) | no | launch arg |

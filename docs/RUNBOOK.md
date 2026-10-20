@@ -80,7 +80,9 @@ Pane 1 — interfaces (leave running):
 ./src/svg_ground_control/scripts/launch_sim_interfaces.sh 3
 ```
 Pane 2 — commander (leave running). Pick the config for what you want to see
-([SCENARIOS.md](SCENARIOS.md) §4 has the catalogue):
+([SCENARIOS.md](SCENARIOS.md) §4 has the catalogue). Since 2026-10-20 the launch also starts the
+`bag_recorder` node; add `record_bag:=true` to record the whole run, or use the panel's Rosbag
+switch mid-run ([BASESTATION.md](BASESTATION.md) §3.12):
 ```bash
 ros2 launch svg_ground_control ground_control.launch.py                                   # default: hover, all-auto, foxglove_bridge on
 # CBF crossing demo:

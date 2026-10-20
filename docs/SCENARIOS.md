@@ -8,7 +8,8 @@
 > corrections to CMU's write-ups. ⚠️ The lab has **ONE** Starling, so every multi-drone scenario
 > is a **SIM procedure** with a "Real flight" subsection marked `⏳ blocked on a 2nd Starling (M7)`.
 > All of it comes from CMU branch `yikuan/SVG_ground_control` @ `cf719f0`, vendored
-> **2026-10-07**, and **none of it is validated by this lab yet** — validation happens at STE.
+> **2026-10-07** (bumped 2026-10-20 to `yikuan/SVG_ground_control_dev` @ `b21d28c`, which added
+> `goal_sequence` and `figure_eight` — rows below, experiment.md C3 / C7), and **none of it is validated by this lab yet** — validation happens at STE.
 > Read every ✅ below as "CMU says so", not "we flew it".
 
 ---
@@ -124,6 +125,8 @@ needs a second Starling.
 | `head_on` | Two facing rows swap sides, repeatedly. | — (`scenario:=head_on`) | even N | ✅ CMU · ⏳ STE sim |
 | `squeeze` | Two "holder" drones sit on posts; a third pushes through the gap between them and the holders yield. | `squeeze_3drone.yaml` (sim), `hybrid_squeeze.yaml`, `squeeze_rc_intruder.yaml` (real) | 3 | ✅ CMU · ⏳ STE sim · ⏳ M7 real |
 | `random_goals` | Uniform random goals inside the arena; resample on arrival. The unsupervised collision stress test. **Has a known defect — §7.** | `goal_tracking.yaml` | 3 | ✅ CMU · ⏳ STE sim · ⏳ M7 real |
+| `goal_sequence` (new 2026-10-20) | **Scripted goal sets** played automatically: K sets of one goal per drone (`sequence_steps` + `sequence_<name>` arrays, all inside the arena, pairs ≥ 2r), laid out so the straight legs cross (ends swap head-on, three-way crossing, rotating triangle) and the CBF alone deconflicts. Next set once everyone has been within `sequence_arrival_m` for `sequence_dwell_s` (or on a `sequence_period_s` timer), looping. `/svg/sequence_command` (`std_msgs/String`) takes `next`, a step name, `pause`, `resume`. Legs drawn as `path` markers. | `goal_sequence.yaml` (3 real, `keep_in`) — `scenario:=goal_sequence` on `cbf_sim.yaml` needs the `sequence_*` keys copied in | 3 | ✅ CMU · ⏳ STE sim · ⏳ M7 real |
+| `figure_eight` (new 2026-10-20) | **Collision-negligent pair + intruder**: drones 0 and 1 fly the SAME figure-eight (two touching circles; radius / centre distance / heading / plane tilt / sense per drone are `figure_eight_*` params), start at the far ends half a period apart, meet head-on at the crossing every half period and swap lobes — nothing but the CBF between them. Drone 2 hovers at `figure_eight_intruder_start` or is hand-flown into them (CBF-exempt). Carrots are time-parametrised, so a pushed drone is pulled back into the next meeting. Order `[lobe A, lobe B, intruder]`. | `figure_eight_rc_intruder.yaml` (3 real + pad) | 3 | ✅ CMU · ⏳ STE sim · ⏳ M7 real |
 
 **Override the scenario without editing the yaml** — how you get `goal` or `head_on` out of a
 config that ships something else. Container shell:

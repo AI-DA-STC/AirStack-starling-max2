@@ -158,6 +158,7 @@ must be remembered; details in the corrections tables of the linked docs):
 | 3 | **M1: Starling hover + 1 m steps** (`tools/sim_hover_step_test.sh`, `cbf_sim.yaml scenario:=goal`) | hover thrust from `…/setpoint_raw/target_attitude`; odometry traces; rotors 20 g, motor lag off, real-drone gains | hover thrust setpoint **0.155** steady (real drone 0.165); x step overshoot 0.002 m, settled 2.75 s; z step overshoot 0.001 m, settled 0.75 s; takeoff climb overshoot 0.31 m (settled 7.9 s) | 2026-10-19 |
 | 4 | **M1: CBF crossing on the Starling model** (`tools/sim_cbf_crossing_test.sh`, `cbf_sim.yaml` antipodal) | 45 s of `/svg/commander_status` | all three drones CBF-corrected, no emergency push-apart, no fence breach, min pairwise distance **1.02 m** (nominal 2r = 1.10 m — 8 cm inside the barrier, CBF soft margin) | 2026-10-19 |
 | 5 | **Landing disarm fix** (`land_settle_s`, [§6 Fix 1](#6-backlog--carried-over-re-evaluate-on-this-branch)) — unit level only | observed: `land` → pane log `landed, disarmed` then `disarm -> success=False` ×3, mavros `armed: true mode: OFFBOARD`, props spinning (failsafe hover). Fix: commander keeps commanding the descent 2 s past the threshold, then disarms | `test/test_landing_settle.py` 4 tests, suite 144/144 in the robot container. **Sim end-to-end ⏳**: next `land` must end with mavros `armed: false` within ~3 s of touchdown | 2026-10-19 |
+| 6 | **Isaac Stop ▶ Play as a drone reset — FAILS** (negative result, recorded so nobody retries it) | Stop at 07:09:19Z: `Attempting to kill PX4` ×3, `Timeline STOP: cleared 3 drone(s)`; Play 1 s later: `Vehicle config … Starling2MaxConfig` ×3, 3 new `px4` processes | From the first physics step after Play the Isaac log floods with `multirotor.py:166 backend.update → poll_mavlink_messages → 'NoneType' object has no attribute 'recv_match'` (**66,530** tracebacks in 2 min) — the old vehicles' `/update` physics callbacks were NOT removed by the STOP handler. MAVROS ×3 `connected: false` (`VER: unicast request timeout`), panel `NO DATA`, commander still publishing status at 5 Hz. Only a full sim + interfaces + commander restart recovered. Backlog §6 | 2026-10-20 |
 | — | *Sim-only so far: nothing in this ledger has touched the real drone (M2+ ⏳ STE)* | | | |
 
 ### ⚠️ Carried-over issues — re-test before trusting (none copied as verdicts)
@@ -460,3 +461,11 @@ New candidates found 2026-10-07 (not ours to fix — report upstream):
 - `svg_teleop.sh real` gates on `natnet_ros2` — our rig uses `./mocap.sh` (the gate on
   `/drone_1/pose` may still pass; untested);
 - `svg-microdds-watchdog` duplicates our `voxl-dds-retry.service`.
+- **Pegasus (our vendored ext) — Isaac timeline Stop/Play leaks the old vehicles** (ledger #6,
+  2026-10-20): `OgnPegasusMultirotorNodeBase.timeline_callback` removes `/state`, `/update`,
+  `/Sensors`, `/mav_state` physics callbacks by `_stage_prefix`, yet `Multirotor.update` of the
+  stopped vehicles keeps firing after Play. Two fix candidates, not yet tried: (a) guard
+  `PX4MavlinkBackend.update()` with `if not self._is_running: return` (one line, stops the flood;
+  may be enough for the new PX4s to connect); (b) find why the removal misses (prefix mismatch or
+  `World.remove_physics_callback` name) and remove the right ones. Until then Stop/Play is
+  forbidden in RUNBOOK §A; the reset is a script relaunch.

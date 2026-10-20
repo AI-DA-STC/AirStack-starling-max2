@@ -84,6 +84,7 @@
 | `hold` makes the drone continue forward before stopping | by design now — it brakes to a predicted stop point ahead instead of flying back to the call position |
 | Startup WARNs about `drone_2`/`drone_3` (only 1 drone); Basestation roster shows two phantom agents with every cell `--` | the config still lists three drones — trim to `drone_1` ([MIGRATION.md](MIGRATION.md) §6) |
 | Sim: "Battery unhealthy", won't arm | SITL battery drained — restart the Isaac spawn script |
+| **Sim: pressed Stop ▶ Play in the Isaac window to reset the drones → everything dead** (MAVROS `connected: false`, `VER: unicast request timeout`, panel `LINK/EKF/POWER NO DATA`, commander alive but blind) | **Not a reset — don't.** Pegasus kills PX4 ×3 on Stop and relaunches on Play, but the OLD vehicles' physics callbacks survive and call the closed MAVLink link every step (Isaac log floods with `'NoneType' object has no attribute 'recv_match'`); the new PX4s never connect (observed 2026-10-20, [MILESTONES.md](MILESTONES.md) §3c #6). Recover = full restart: Ctrl-C the sim (its tmux), relaunch (RUNBOOK §A T1), then Ctrl-C + relaunch pane 1 (interfaces) and pane 2 (commander) in that order. To get drones home without a restart: `hold` → formation `home` → wait → `land` |
 | Sim: continuous `[timesync]` warnings | Sim below real-time; reduce load |
 
 ## Drone-side / network

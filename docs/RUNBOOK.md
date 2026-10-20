@@ -61,6 +61,12 @@ before. Values and sources: [CONFIG.md](CONFIG.md) "Sim airframe". ✅ Validated
 #1–#4; acceptance tools in `simulation/isaac-sim/tools/` (`docker cp` them into the robot
 container, run with `bash -ic`).
 
+> ⚠️ **Never press Stop / Play in the Isaac window** to reset the drones (observed 2026-10-20):
+> Pegasus kills and relaunches PX4 but leaks the old vehicles' physics callbacks, the new PX4s
+> never connect, and the whole stack has to be restarted — [TROUBLESHOOTING.md](TROUBLESHOOTING.md).
+> The only reset is Ctrl-C + relaunch of this script, then panes 1 and 2. To bring landed drones
+> back to their pads without a restart: `hold` → formation `home` → `land`.
+
 **T2 — the `bringup` session.** New laptop terminal:
 ```bash
 cd ~/AirStack-starling-max2/AirStack && ./airstack.sh connect robot

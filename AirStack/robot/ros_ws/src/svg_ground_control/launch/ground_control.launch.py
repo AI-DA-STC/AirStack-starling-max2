@@ -158,6 +158,11 @@ def launch_setup(context, *args, **kwargs):
             respawn=True,
             respawn_delay=1.0,
             parameters=[{
+                # Skip the laptop mocap receiver's raw '/poses' (motion_capture_tracking_interfaces,
+                # a package this container lacks): without this the bridge logs
+                # 'Failed to load schemaDefinition for topic /poses' every 0.5 s while
+                # ./mocap.sh runs. The per-body /<name>/pose topics still pass (2026-10-21).
+                'topic_whitelist': ['^(?!/poses$).*'],
                 'port': foxglove_port,
                 'address': '0.0.0.0',
                 'include_hidden': True,

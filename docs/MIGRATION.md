@@ -1,4 +1,4 @@
-# MIGRATION — from `daniel/diffaero_ground_control` to `yikuan/SVG_ground_control` (2026-10-07)
+# MIGRATION — from `daniel/diffaero_ground_control` to `yikuan/SVG_ground_control` (2026-10-07) → `_dev` @ `b21d28c` (2026-10-20, §11)
 
 > **Who this is for:** anyone who flew this rig on 2026-09-01→03, or who reads the archived
 > docs and wonders why they no longer match the tree. It is the bridge between the two
@@ -41,6 +41,7 @@ feedforward, onboard LEDs, a Foxglove basestation. Four commits past the ancesto
 | `60a90bf` | Onboard LED strips, `px4_interface` `target_system`, 5-over-3 (8-pane) tmux bringup |
 | `b9f4107` | gitignore local Micro-XRCE-DDS-Agent clone and `led_ws` reference workspace |
 | `cf719f0` | svg_ground_control: teleop, trajectory output, fence envelope, CBF feedforward, foxglove basestation (dev 2026-08-24..09-27) |
+| dev `b21d28c` | **+54 commits** on `yikuan/SVG_ground_control_dev` past `cf719f0` (six-gain panel dropdown, rosbag switch, `goal_sequence` / `figure_eight` scenarios, teleop speed sync) — §11 |
 
 **Consequence for us:** September's flights were validated on a branch *without* half of this
 and *with* a different commander output. The CBF our docs describe is back (and now reacts to
@@ -140,7 +141,8 @@ Changed, not added — the four that matter:
 ## 6 · Re-do list before the first session
 
 Ordered. Everything here was done once on the old snapshot and is void or must be
-re-checked. ⏳ = decide at STE.
+re-checked. ⏳ = decide at STE. ✅ = done, with the date and the MILESTONES ledger row.
+**Post-bump (10-20) and sim re-dos are NOT here** → §11 and MILESTONES "Next up".
 
 - [ ] **NatNet SDK** — `natnet_ros2` is in the tree and the workspace **build** needs its SDK
       headers. Our `./mocap.sh` bridge still does **not** use it ([MOCAP.md](MOCAP.md) §3 is
@@ -155,8 +157,10 @@ re-checked. ⏳ = decide at STE.
       `patches/0003` is unrelated (libmotioncapture).
 - [ ] **Robot image** — `robot/docker/Dockerfile.robot` is **byte-identical** to the old
       snapshot (that path's `git diff` against the tag is empty). **No image rebuild needed.**
-- [ ] **Full workspace rebuild** — not optional. `px4_interface` is C++ and gained a
-      `trajectory_msgs` dependency; `airstack_msgs` gained `SetLedColor.srv`.
+- [x] **Full workspace rebuild** — ✅ 2026-10-20 (full `bws`, then `bws --packages-select
+      svg_ground_control` after the bump; pytest 185/185 — ledger #7/#8). Not optional on a
+      fresh machine: `px4_interface` is C++ and gained a `trajectory_msgs` dependency;
+      `airstack_msgs` gained `SetLedColor.srv`.
       ```bash
       # in the robot container
       bws        # full colcon build, then `sws`
@@ -166,9 +170,10 @@ re-checked. ⏳ = decide at STE.
       and `/dev/input` → `/dev/input`. A `restart` does **not** add mounts; you need a
       `down`/`up`. (Reminder from TROUBLESHOOTING: container `apt install`s vanish on
       `down`/`up` — re-do any by hand.)
-- [ ] **Install the Foxglove panel on the host** — the compose `command` runs
-      `svg_ground_control/foxglove/install.py` non-fatally at container start; verify it
-      actually landed and import `svg_basestation.json` as the layout.
+- [x] **Install the Foxglove panel on the host** — ✅ 2026-10-20 (`install.py` re-run after
+      the bump, Studio restarted, six-gain dropdown visible — ledger #7). The compose `command`
+      runs `svg_ground_control/foxglove/install.py` non-fatally at container start; after any
+      bump re-run it by hand and import `svg_basestation.json` as the layout.
 - [ ] **Re-run `voxl_setup_real_drone.sh` on the drone** — the script changed substantially
       (px4- wrapper, retry loop, watchdog). 🚨 **The script ends with
       `systemctl restart voxl-px4` (`:250`), which on THIS drone (`m0054` / D0012) leaves the
@@ -234,6 +239,10 @@ longer applies to the shipped value.
 🚨 **Speed caps of `10.0 m/s` and a ~10 m fence are CMU's STE arena.** Our net is nothing
 like that. Trim both before the first powered flight at any site.
 
+This table is **CMU-old vs CMU-shipped only.** The values we actually fly (`swarm_real_ours.yaml`,
+`goal_single_ours.yaml`, our `cbf_sim.yaml`) are in [CONFIG.md](CONFIG.md) "Ground-side flight
+parameters".
+
 ## 8 · Old-doc statements that are now wrong
 
 Locations are in the **archived** docs (`git show airstack-starling-max2:<path>`).
@@ -261,7 +270,7 @@ Locations are in the **archived** docs (`git show airstack-starling-max2:<path>`
 | TROUBLESHOOTING "phantom `drone_2`/`drone_3` WARNs harmless" (archive `:46`) | Still true for `swarm_real.yaml`, but a `drone_2`-targeted `goal_single.yaml` is a real misconfiguration, not a phantom. |
 | TROUBLESHOOTING geofence row (archive `:44`) | Same `hold_all`-only caveat. |
 | MILESTONES §3d px4_msgs audit | ⚠️ **Re-audit needed.** The conclusion rests on *which* `TrajectorySetpoint`/`OffboardControlMode` fields are exercised. Acceleration feedforward now populates `acceleration[]` and `yaw`/`yawspeed`, and `VehicleCommandAck` is a newly-subscribed message. The old per-message verdicts do not cover that set. |
-| archived MILESTONES §8 (now [MILESTONES.md](MILESTONES.md) §6) shelved fixes | Line numbers are stale. **Fix 1** (`LANDED_SETTLE`): re-check — the touchdown branch moved and `land_complete_altitude_m` is now 0.1 in one config. **Fix 2** (`~/release`): still absent — the design stands. **Fix 3** (yaw): largely **subsumed** — the trajectory output carries absolute yaw (`px4_interface.cpp:371-387`), with an all-zero quaternion meaning "no yaw setpoint → yaw-rate control". The §8 claim "CBF is 3-DOF linear" also predates `564d43e`'s external-velocity reactivity. |
+| archived MILESTONES §8 (now [MILESTONES.md](MILESTONES.md) §6) shelved fixes | Line numbers are stale. **Fix 1** (`LANDED_SETTLE`): **implemented 2026-10-19/10-20** as `land_settle_s` + the disarm retry → [MILESTONES.md](MILESTONES.md) §6 (real `_ours` configs keep 0.0). **Fix 2** (`~/release`): still absent — the design stands. **Fix 3** (yaw): largely **subsumed** — the trajectory output carries an absolute yaw (details: MILESTONES §6 Fix 3). The old "CBF is 3-DOF linear" claim predates `564d43e` |
 
 ## 9 · Iron rules — what changed
 
@@ -335,6 +344,18 @@ Tests 181/181. Reversible: one commit, `git revert`.
 `px4_interface`, `mocap_bridge`, the LED daemon, the fence and CBF maths, our `_ours.yaml`
 configs, `cbf_sim.yaml` (dev did not touch it), `land_settle_s`.
 
-**Re-do after the bump (⏳):** MILESTONES ledger #3 (hover/steps) and #4 (CBF crossing) on the
-new commander; the landing-disarm check; first look at the new panel rows and the Rosbag switch
-in sim. Everything real-drone stays ⏳ STE as before.
+**Re-do after the bump.** Our own sim changes made right after the bump also invalidate the
+10-19 sim results, so the re-runs are forced twice over:
+
+- asset rebuilt, cull < 2 mm instead of decimation (`7032af4`, ledger #9);
+- sim airframe: rate gains ×0.5 + gyro filters 80/40 (`2a70731`, ledger #10),
+  `LNDMC_ROT_MAX` 300 (`7032af4`), MPC speed/accel limits = the real drone's (`d739a73`,
+  ledger #12);
+- `cbf_sim.yaml` speeds 2.0 / 4.0 / 6.0 (`d739a73`);
+- MAVROS respawn in the sim interfaces launch (`6191d8c`, ledger #11).
+
+Status 2026-10-21: the **fresh-launch and landing-end-to-end checks are closed** by ledger #13
+(new asset loaded, PhysX clean, three clean landings with DISARM accepted first time). Still
+⏳: ledger #3 (hover/steps) and #4 (CBF crossing at 2.0/4.0, with a rosbag), first use of the
+six-gain dropdown and the Rosbag switch — ordered in [MILESTONES.md](MILESTONES.md) "Next up".
+Everything real-drone stays ⏳ STE as before.

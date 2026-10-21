@@ -1,15 +1,24 @@
 # TROUBLESHOOTING — something misbehaves, find your symptom
 
-> Unified symptom index for the whole rig (merged from the per-doc tables, 2026-09-07;
-> updated for `yikuan/SVG_ground_control` 2026-10-07).
+> **What this is:** one symptom → fix index for the whole rig, by layer: ground software,
+> mocap, flight/arming, simulation, drone/network. **Who reads it:** whoever is at the laptop
+> when something goes wrong — pick the section for the layer that misbehaves, find the row,
+> apply the fix, then add a row if you learned something new.
+> Merged from the per-doc tables 2026-09-07; updated for `yikuan/SVG_ground_control_dev` @
+> `b21d28c`, 2026-10-21.
 > Safety first: if the drone is AIRBORNE and misbehaving →
 > [PREFLIGHT.md](PREFLIGHT.md) emergencies table FIRST, debug after.
 >
 > **First move on this branch, for anything ground-side:** `ros2 topic echo /svg/commander_status --once`
 > — one JSON message with every drone's state, odometry freshness, the fence status, the
 > live CBF gains and the last command's outcome ([BASESTATION.md](BASESTATION.md) §4).
-> Panel-specific symptoms: [BASESTATION.md](BASESTATION.md) §7 · gamepad: [TELEOP.md](TELEOP.md) §10 ·
-> CBF/scenarios: [SCENARIOS.md](SCENARIOS.md) §10.
+> Where else to look: the panel: [BASESTATION.md](BASESTATION.md) §7 · gamepad: [TELEOP.md](TELEOP.md) §10 ·
+> CBF/scenarios: [SCENARIOS.md](SCENARIOS.md) §10 · **Sim (Isaac / PX4 SITL / MAVROS) →
+> [§ Simulation](#simulation-isaac-sim--px4-sitl--mavros) below.**
+> Names used here: "the commander" = `swarm_commander` (the ground-side node that flies the
+> drones); "the panel" = the Foxglove SVG Basestation panel; "the real drone" = our Starling
+> `drone_1`; the sim's four terminal tabs are the **Isaac Sim / Interfaces / Commander /
+> Cockpit tabs** opened by `tools/sim_terminals.sh` ([RUNBOOK.md](RUNBOOK.md) §A T0).
 
 *(Unfamiliar term? → [GLOSSARY.md](GLOSSARY.md))*
 
@@ -21,7 +30,6 @@
 | tmux pane shows a bare `bash` prompt with no workspace / `sws_after_build` never returns | pane 0's `bws` never ran or failed — run `cd ~/AirStack/robot/ros_ws && bws && sws` in pane 0; the others source when `.build.lock` is released |
 | Everything on the wrong DDS domain after a `./svg_teleop.sh` run | a tmux *server* inherits the env of the shell that started it — `./svg_teleop.sh stop`, then `tmux kill-server` inside the container, then relaunch (the script re-exports `ROS_DOMAIN_ID` per session) |
 | `bws: command not found` | Wrong container (Isaac) or host shell |
-| Basestation panel looks like the OLD one after a snapshot bump (3-gain dropdown, Agents roster still there) | The panel is copied into `~/.foxglove-studio` at container start only. `docker exec airstack-robot-desktop-1 python3 /root/AirStack/robot/ros_ws/src/svg_ground_control/foxglove/install.py`, then quit and relaunch Studio (`use_foxglove_studio:=true` → relaunch the commander) |
 | `omni_pass.env not found` on `up` | Re-run `./airstack.sh setup` to (re)generate it (press Enter at the API Token prompt) |
 | "mounting … user.config.json … not a directory" | A failed `up` created a directory; `rmdir` it, then re-run `./airstack.sh setup` |
 | `/fmu/*` topics look dead | `echo` needs `--qos-reliability best_effort` (`hz` takes no QoS flag here); and is the uXRCE agent running? |
@@ -32,6 +40,7 @@
 | Two Basestation instances show different numbers | independent subscribers with their own settings — compare each one's `View` / `Drones` / `Modes` (gear icon) |
 | Basestation's Cellular / Tailscale section appeared | something publishes `*/comms/cellular` or `*/cellular/odometry` on domain 1 — we have no cellular; find it before flying |
 | Basestation panel missing from Studio's panel list | extensions load only at Studio start — run `foxglove/install.py` (host) then **restart Studio**; in-container Studio: the installer runs at `up` |
+| The panel looks like the OLD one after a snapshot bump (3-gain dropdown, an "Agents" roster card still there) | the panel is copied into `~/.foxglove-studio` at container start only. Re-run `docker exec airstack-robot-desktop-1 python3 /root/AirStack/robot/ros_ws/src/svg_ground_control/foxglove/install.py`, then quit and relaunch Studio (with `use_foxglove_studio:=true` → relaunch the commander) |
 | Basestation layout cut off / everything stacked left | old single-panel layout — Layouts → Import `svg_basestation.json` again |
 | Basestation Goal card says frame "unconfirmed" | no status snapshot received yet — wait for the commander; goals sent before that may be offset by `drone_position_offsets` |
 | Agent State `Cmd stream` reads `--` on a real drone that is clearly flying | the column watches `velocity_command` topics only; real drones on this branch publish `trajectory_command` — panel limitation, not the drone. Check `ros2 topic hz /drone_1/fmu/trajectory_command` instead ([BASESTATION.md](BASESTATION.md) §6) |
@@ -45,7 +54,6 @@
 | Commander launch: "external drone may not also be CBF-exempt" | a name is in both `external_drones` and `cbf_exempt_drones` — pick one |
 | A new commander launch killed the one that was running | `takeover_twins` (default true) — intended; it refuses only if the old one had a drone airborne. Add `takeover:=false` to keep both |
 | `ros2 param set /swarm_commander …` refused | only the live list is settable (CBF gains, fence dynamics, goal law, teleop gains — [SCENARIOS.md](SCENARIOS.md) §3); gains must be > 0; everything else needs a relaunch |
-| Isaac: no camera / `add_rtx_lidar_subgraph` import error | the Pegasus submodule renamed the lidar/camera APIs; only `ENABLE_LIDAR`/`ENABLE_CAMERA` runs are affected — run without them, or update the launch script's lazy imports |
 
 ## Mocap
 
@@ -73,8 +81,7 @@
 | Drone slows or refuses to approach a goal / another drone | the CBF is correcting it — Basestation CBF column `correcting`, LEDs red. Normal; raise `cbf_alpha` for later/harder yielding, or check `cbf_safety_radius_m` |
 | Drone stops short of a goal that sits near the fence wall | `keep_in` braking envelope — the wall caps outward speed; a goal *past* the wall is clamped to it. Keep `fence_brake_accel_mps2 ≥ goal_accel_mps2` or the wall also caps cruise speed |
 | Real drone hovers but never moves to a goal after the branch switch | `px4_interface` not rebuilt — it does not subscribe `trajectory_command` until rebuilt (`bws`), then relaunch the interfaces ([MIGRATION.md](MIGRATION.md) §6) |
-| Landed but QGC still shows ARMED | Flip KILL (ch8 — harmless on the ground) or arm switch (ch5) down. History: the `land_speed_mps=0.3` era symptom — retuned to `0.6` ([CONFIG.md](CONFIG.md)); investigate if it recurs |
-| QGC red "Disarming denied, not landed" once per landing / **drone stays armed and hovering after `land`** (sim: `armed: true`, `OFFBOARD`, props spinning) | Was the commander's instant one-shot disarm at `land_complete_altitude_m` followed by silence → PX4 denied it, offboard timeout, failsafe hover. **Fixed 2026-10-19**: `land_settle_s` (default 2.0, live) keeps the descent commanded on the ground before the disarm ([MILESTONES.md](MILESTONES.md) §6 Fix 1). Since 2026-10-20 a denied disarm is also **retried** every `land_disarm_retry_s` (1 s) up to `land_disarm_retries` (5) while the drone is pressed down — the log reads `landed, disarmed (attempt N)`, or an ERROR `disarm not accepted after N tries` (then confirm DISARMED in QGC / `mavros/state`). Still armed? `ros2 param set /swarm_commander land_settle_s 4.0` and land again |
+| **Landing ends with the drone still armed** — QGC shows ARMED after touchdown, or the log says `Disarming denied` / `disarm -> success=False`; in sim `mavros/state` `armed: true`, props spinning | Real drone and sim differ — read the REAL / SIM bullets right under this table. Real: flip KILL (ch8 — harmless on the ground) or the arm switch (ch5) down first, then read on |
 | RC sticks ignored / fighting in Position/Altitude mode | Control-authority leak: PX4 v1.14 still consumes commander setpoints in those modes. Take over into **MANUAL** (or kill) only |
 | Fence breach → everything frozen mid-air (`FENCE BREACH` chip) | `hold_all` behaviour, by design: freeze-hover, **still armed**, not a motor cut. Recover: `land` → `reset_fence` (or panel **Reset Fence**) → `takeoff` → `start`. Now also triggers when an **RC-flown** drone is airborne outside the box. `keep_in` configs never latch |
 | Gamepad sticks do nothing | in order: `start` not called; drone not in `teleop_drones`; `safe_teleop` log says `REFUSING TO COMMAND` (axis guard — wrong controller profile, [TELEOP.md](TELEOP.md) §3); `/joy` stale (pad asleep/unplugged); container created before the `/dev/input` mount — recreate it |
@@ -83,15 +90,67 @@
 | Hand-flown drone hovers ~30 cm up on `land` and never touches down | a reference clamped to the teleop-fence floor (`teleop_fence_min` z) — should not happen (only ACTIVE drones are clipped); if it does, `hold` → `land` again → kill if it persists, and note the bag |
 | Drone drifts/sinks slowly during hand-flying, or keeps going after release | should be fixed on this branch (separate horizontal/vertical leash, ramp re-attaches to the published command) — if seen, note the bag and check `teleop_lead_m` / `teleop_accel_mps2` ([TELEOP.md](TELEOP.md) §7) |
 | `hold` makes the drone continue forward before stopping | by design now — it brakes to a predicted stop point ahead instead of flying back to the call position |
-| Startup WARNs about `drone_2`/`drone_3` (only 1 drone); Basestation roster shows two phantom agents with every cell `--` | the config still lists three drones — trim to `drone_1` ([MIGRATION.md](MIGRATION.md) §6) |
-| Sim: "Battery unhealthy", won't arm | SITL battery drained — restart the Isaac spawn script |
-| Sim: Starling wobbles / shivers in pitch while hovering (props visibly rocking fore-aft) | A rate-loop limit cycle, not a scene problem: pitch rate ±270 deg/s at 9 Hz. Fixed 2026-10-20 by halving the sim airframe's rate gains (ledger #10). If it is back, the airframe mount is stale (`param show MC_PITCHRATE_P` in the PX4 shell should read 0.032) |
-| Sim: Starling looks hollow — props, legs and electronics visible, no body | The committed asset was built by a decimation that deleted whole parts (10-19). Rebuild it: `AirStack/simulation/isaac-sim/tools/isaac_python.sh AirStack/simulation/isaac-sim/tools/clean_starling_usd.py /repo/isaac_sim/starlingmax2.usd /repo/AirStack/simulation/isaac-sim/assets/robots/starling2max.usd` (needs CMU's 98 MB `isaac_sim/starlingmax2.usd`, gitignored) and relaunch the sim. Fixed in the repo 2026-10-20 (ledger #9) |
-| Sim: `disarm -> success=False` ×5 then `disarm not accepted after 5 tries`, drone sits armed 30 s after touchdown, log shows `touchdown … settling` | PX4's land detector sees the body rocking on the floor (sim contact artefact, gyro xy ≫ 20 deg/s) and refuses the disarm — ledger #9. The sim airframe carries `LNDMC_ROT_MAX 300` since 2026-10-20; if it recurs, check the airframe mount (`param show LNDMC_ROT_MAX` in the PX4 shell) and that the drone touched down slowly (`land` from a hover, not mid-leg at 2 m/s). Never port that parameter to the real drone |
-| Sim: interfaces tab shows `[ERROR] [mavros_node-N]: process has died … exit code -11` (or -6), commander repeats `drone_N: odometry stale, commanding zero velocity` | That drone's MAVROS crashed (2026-10-20: twice on drone_3 — one unexplained segfault mid-flight, one abort during forced `param/set` writes). **Since 2026-10-20 the sim launch respawns mavros_node after 2 s** (`interface_bringup/launch/mavros_px4.launch.xml`, sim-only — the real drones run px4_interface, no MAVROS): odometry and the panel come back on their own. PX4 is already on its offboard-loss failsafe (1 s) by then and ignores the commander, so still: `ros2 topic echo /drone_N/interface/mavros/state --once`; if `mode` is not OFFBOARD → `ros2 service call /drone_N/interface/mavros/set_mode mavros_msgs/srv/SetMode "{custom_mode: AUTO.LAND}"`, then the commander's `land` once to reset it (iron rule 3). A MAVROS that dies every 2 s at startup = a config error; read the first death's lines. Never use `force_set` on MAVROS param writes (it aborted mavros_node) |
-| Sim: kernel log / dmesg shows `robot_interface[...]: segfault ... in libstdc++` | Only on Ctrl-C of the interfaces launch (observed 15:10 and 15:13 on 2026-10-20, each at a SIGINT): a shutdown race in CMU's `robot_interface_node` destructor. Harmless — nothing was flying through it at that moment. Not fixed; the node is shared with the real-drone path (px4_interface plugin) and the crash is cosmetic |
-| **Sim: pressed Stop ▶ Play in the Isaac window to reset the drones → everything dead** (MAVROS `connected: false`, `VER: unicast request timeout`, panel `LINK/EKF/POWER NO DATA`, commander alive but blind) | **Not a reset — don't.** Pegasus kills PX4 ×3 on Stop and relaunches on Play, but the OLD vehicles' physics callbacks survive and call the closed MAVLink link every step (Isaac log floods with `'NoneType' object has no attribute 'recv_match'`); the new PX4s never connect (observed 2026-10-20, [MILESTONES.md](MILESTONES.md) §3c #6). Recover = full restart: Ctrl-C the sim (its tmux), relaunch (RUNBOOK §A T1), then Ctrl-C + relaunch pane 1 (interfaces) and pane 2 (commander) in that order. To get drones home without a restart: `hold` → formation `home` → wait → `land` |
-| Sim: continuous `[timesync]` warnings | Sim below real-time; reduce load |
+| Startup WARNs about `drone_2`/`drone_3` with only one drone; the panel's Agent State / 3D view carry drones that never get odometry | the loaded config lists three drones (CMU's shipped real configs do). Our `swarm_real_ours.yaml` / `goal_single_ours.yaml` are single-drone (`drone_1`) — fly those ([MIGRATION.md](MIGRATION.md) §6). (The old "Agents roster" card is gone since the 10-20 bump) |
+
+**Landing ends with the drone still armed — detail**
+
+- **REAL drone** — fly the `_ours` configs: `land_settle_s` 0.0 (the landing flown 2026-09-03)
+  and `land_speed_mps` 0.6 (0.3 left the drone armed on the ground — archive ledger #21, the
+  reason CMU's shipped `swarm_real.yaml` 0.3 must not be flown). One red "Disarming denied" per
+  landing was the known one-shot behaviour; PX4's own `COM_DISARM_LAND` finishes the job. Still
+  armed after that: KILL or arm switch down, then investigate — never approach a spinning
+  drone. Confirm **DISARMED in QGC** every time (iron rule 2). The settle/retry code path is
+  exercised on the real drone only through the M3 landing sub-test
+  ([MILESTONES.md](MILESTONES.md) M3); the retry is inert there (`px4_interface.disarm()` reports
+  success on send) — the ACK in the `px4_interface` log is the only evidence.
+- **SIM** — `cbf_sim.yaml` runs the settle + retry: `land_settle_s` 2.0 keeps the descent
+  commanded on the ground, then DISARM; a denied DISARM is resent every `land_disarm_retry_s`
+  (1 s) up to `land_disarm_retries` (5). Expected log: `touchdown … settling 2.0 s` →
+  `landed, disarmed (attempt 1)`; failure: ERROR `disarm not accepted after 5 tries`. The 10-20
+  refusals came from PX4's land detector seeing the body rock on the floor (a PhysX contact
+  artefact — ledger #9); the sim airframe carries **`LNDMC_ROT_MAX` 300 since 2026-10-20**
+  (the real drone's params set 30 — never port 300 to it). If it recurs: `param show
+  LNDMC_ROT_MAX` in the PX4 shell (airframe mount stale?), land from a hover rather than
+  mid-leg, and use the knob `ros2 param set /swarm_commander land_settle_s 4.0` before landing
+  again. Three clean landings with DISARM accepted first time: ledger #13.
+
+## Simulation (Isaac Sim / PX4 SITL / MAVROS)
+
+Sim-only rows. Isaac Sim runs the physics, PX4 SITL is the real flight firmware running on
+the laptop, MAVROS is the sim-only bridge between PX4 SITL and ROS 2 (the real drone uses
+`px4_interface` instead). The sim airframe's values are sim-only — never port them to the
+drone (iron rule 9). The most destructive mistake comes first.
+
+| Symptom | Cause / fix |
+|---|---|
+| **Pressed Stop ▶ Play in the Isaac window to reset the drones → everything dead** (MAVROS `connected: false`, `VER: unicast request timeout`, panel `LINK/EKF/POWER NO DATA`, commander alive but blind) | **Not a reset — don't** ([MILESTONES.md](MILESTONES.md) §3c #6). Recover = full restart: Ctrl-C in the **Isaac Sim tab**, relaunch (RUNBOOK §A T1), then Ctrl-C + relaunch the **Interfaces tab**, then the **Commander tab**, in that order. Why, and how to bring drones home without a restart: detail below |
+| Interfaces tab shows `[ERROR] [mavros_node-N]: process has died … exit code -11` (or -6); commander repeats `drone_N: odometry stale, commanding zero velocity` | that drone's MAVROS crashed. **Since 2026-10-20 the sim launch respawns `mavros_node` after 2 s** (`interface_bringup/launch/mavros_px4.launch.xml`, sim-only) — odometry and the panel come back on their own, but PX4 is already on its offboard-loss failsafe: two-command recovery in the detail below |
+| Drone sits armed after touchdown: `disarm -> success=False` ×5, `disarm not accepted after 5 tries`, log shows `touchdown … settling` | → "Landing ends with the drone still armed", SIM bullet (Flight / arming above). Quick check: `param show LNDMC_ROT_MAX` in the PX4 shell must read 300 (sim airframe since 10-20) |
+| Starling looks hollow — props, legs and electronics visible, no body | your checkout has the 10-19 asset, built by a decimation that deleted whole body parts. Fixed in the repo 2026-10-20 (ledger #9) — `git pull`, relaunch the sim. To rebuild the asset yourself: command in the detail below |
+| Starling wobbles / shivers in pitch while hovering (props visibly rocking fore-aft) | a rate-loop limit cycle (pitch rate ±270 deg/s at 9 Hz), not a scene problem. Fixed 2026-10-20 by halving the sim airframe's rate gains (ledger #10). If it is back, the airframe mount is stale: `param show MC_PITCHRATE_P` in the PX4 shell should read 0.032 |
+| "Battery unhealthy", won't arm | SITL battery drained — restart the Isaac spawn script (Isaac Sim tab) |
+| Continuous `[timesync]` warnings | sim below real-time; reduce load |
+| No camera / `add_rtx_lidar_subgraph` import error at launch | the Pegasus submodule renamed the lidar/camera APIs; only `ENABLE_LIDAR`/`ENABLE_CAMERA` runs are affected — run without them, or update the launch script's lazy imports |
+| dmesg shows `robot_interface[...]: segfault ... in libstdc++` after Ctrl-C of the Interfaces tab | a shutdown race in CMU's `robot_interface_node` destructor, seen only at SIGINT (2026-10-20). Cosmetic — nothing was flying through it. Not fixed; the node is shared with the real-drone path, so it is reported, not patched (MILESTONES §6 "Sim debt") |
+
+**Hollow drone — rebuilding the asset.** Needs CMU's 98 MB `isaac_sim/starlingmax2.usd`
+(gitignored); run from the repo root, then relaunch the sim:
+`AirStack/simulation/isaac-sim/tools/isaac_python.sh AirStack/simulation/isaac-sim/tools/clean_starling_usd.py /repo/isaac_sim/starlingmax2.usd /repo/AirStack/simulation/isaac-sim/assets/robots/starling2max.usd`
+
+**Stop ▶ Play — detail.** Pegasus kills PX4 ×3 on Stop and relaunches on Play, but the OLD
+vehicles' physics callbacks survive and call the closed MAVLink link every step (the Isaac log
+floods with `'NoneType' object has no attribute 'recv_match'`); the new PX4s never connect
+(observed 2026-10-20). To get drones home without a restart: `hold` → formation `home` → wait
+→ `land`.
+
+**MAVROS died — detail.** 2026-10-20: twice on drone_3 — one unexplained segfault mid-flight,
+one abort during forced `param/set` writes (never use `force_set` on MAVROS param writes).
+After the respawn PX4 ignores the commander (offboard-loss failsafe, 1 s), so:
+`ros2 topic echo /drone_N/interface/mavros/state --once`; if `mode` is not OFFBOARD →
+`ros2 service call /drone_N/interface/mavros/set_mode mavros_msgs/srv/SetMode "{custom_mode: AUTO.LAND}"`,
+then the commander's `land` once to reset it (iron rule 3). A MAVROS that dies every 2 s at
+startup is a config error — read the first death's lines. Root cause of the segfault is still
+open (no core dumps: the host's `core_pattern` is apport) — MILESTONES §6 "Sim debt".
 
 ## Drone-side / network
 

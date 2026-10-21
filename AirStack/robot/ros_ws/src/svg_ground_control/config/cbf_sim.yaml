@@ -122,7 +122,7 @@ swarm_commander:
     control_rate_hz: 20.0
     hover_kp: 1.0
     arrival_threshold_m: 0.15
-    land_speed_mps: 1.0          # PX4 caps descent at MPC_Z_VEL_MAX_DN = 1.0 m/s; higher values are clipped
+    land_speed_mps: 1.0          # our choice (sim); since 2026-10-20 the sim airframe allows MPC_Z_VEL_MAX_DN = 4.0 m/s, so 1.0 is no longer the PX4 cap
     land_complete_altitude_m: 0.15
     # Sit on the floor 2 s after touchdown, then DISARM; a denied disarm (PX4
     # 'not landed') is resent every 1 s up to 5 times. Ledger #5/#8.

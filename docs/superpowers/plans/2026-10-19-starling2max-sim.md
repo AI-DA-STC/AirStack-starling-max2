@@ -1,5 +1,26 @@
 # Starling 2 Max in the SVG Isaac Sim — Implementation Plan
 
+> **Status 2026-10-21 (preface — the body below is the 2026-10-19 plan, kept as written; the
+> checkboxes were never ticked in the file).** Executed 2026-10-19: MILESTONES ledger #1–#4. Since
+> then, what the body says has been superseded in these places:
+>
+> - **Asset method:** cull parts < 2 mm, **no decimation** (decimation deleted whole body parts
+>   and left the drone hollow) — ledger #9.
+> - **Rate gains:** the fix for in-flight ringing was rate gains **×0.5 + IMU gyro filters
+>   80/40 Hz** written into the airframe (ledger #10), **not** the `MC_*RATE_K` 0.5 scaling the
+>   risks/fallback text mentions. Attitude/position gains stay equal to the real drone's.
+> - **`LNDMC_ROT_MAX` 300** in the sim airframe (sim-only; the real drone's params set 30) —
+>   ledger #9.
+> - **MPC speed/accel limits** in the sim airframe now equal the real drone's (XY 20, ACC_HOR 6,
+>   Z up/down 10/4) and `cbf_sim.yaml` runs 2.0 cruise / 4.0 cap / 6.0 accel — ledger #12.
+> - **MAVROS respawn** (2 s) in the sim interfaces launch — ledger #11.
+> - **`MPC_THR_HOVER` is 0.165** (a thrust *setpoint*, the real drone's value; measured 0.155 in
+>   sim), **not 0.36** — 0.36 is the actuator value after `THR_MDL_FAC`.
+> - **CBF crossing acceptance:** the measured minimum distance was **1.02 m** (CBF soft margin),
+>   not the "≥ 1.1 m" the plan asks for; ≈ 1.0 m is the accepted pass.
+> - **Authoritative values:** [CONFIG.md](../../CONFIG.md) "Sim airframe — Starling 2 Max", not
+>   this document. Results: [MILESTONES.md](../../MILESTONES.md) ledger #9–#13.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Make the SVG Isaac Sim spawn Starling 2 Max drones with CMU's sys-ID dynamics instead of the Iris, through the unchanged launch → Pegasus → PX4 SITL → MAVROS → swarm-commander path.

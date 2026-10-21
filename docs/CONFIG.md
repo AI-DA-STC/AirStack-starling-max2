@@ -3,14 +3,25 @@
 > **Single source of truth for every value that can drift.** Other docs reference values by
 > name; the numbers live HERE. When something changes: update this file, do the "If it
 > changes" action, commit.
-> Last verified: **2026-10-07** (branch/snapshot + ground-side flight parameters — values read from
-> the new configs, ⏳ STE for flight) / 2026-09-03 (PX4 flight rows) / 2026-08-28 (mocap rows) /
-> 2026-08-11 (drone/WiFi rows) / **2026-09-08** (network rows, GL-MT6000 topology).
+> Last verified: **2026-10-21** (branch/snapshot, sim airframe, ground-side flight parameters —
+> values read from the config yamls and the commander source at `b21d28c`; flight validation
+> ⏳ STE) / 2026-09-03 (PX4 flight rows) / 2026-08-28 (mocap rows) / 2026-08-11 (drone/WiFi
+> rows) / **2026-09-08** (network rows, GL-MT6000 topology).
 >
-> ⚠️ **2026-10-07 branch switch:** the ground-side flight-parameter section below was rewritten
-> for `yikuan/SVG_ground_control`. Values marked **validated** were proven on the previous
-> branch and are our starting point; every shipped value that differs is listed so nobody
-> flies a CMU bench number by accident. Details: [MIGRATION.md](MIGRATION.md) §7.
+> **Who reads this:** anyone about to launch, re-provision or tune anything. **Read first:**
+> [GLOSSARY.md](GLOSSARY.md) for the words, [MILESTONES.md](MILESTONES.md) §3 for what is
+> proven. "The commander" below = the `swarm_commander` node; "the panel" = the Foxglove SVG
+> Basestation ([BASESTATION.md](BASESTATION.md)); "the real drone" = our Starling 2 Max.
+>
+> ⚠️ **Branch switches:** **2026-10-07** the vendored AirStack moved to CMU
+> `yikuan/SVG_ground_control` @ `cf719f0`; **2026-10-20** it moved again to CMU's working branch
+> `yikuan/SVG_ground_control_dev` @ `b21d28c` (six-gain panel dropdown, `goal_sequence` /
+> `figure_eight` scenarios, rosbag switch, live `teleop_max_speed_mps` sync). The ground-side
+> section below is read from `b21d28c` — two cf719f0 "traps" are **gone** there
+> (`goal_tracking.yaml` ships `goal` again, `goal_single.yaml` targets `drone_1`). Values marked
+> **validated** were proven on the previous (`daniel/diffaero`) branch and are our starting
+> point; every shipped value that differs is listed so nobody flies a CMU bench number by
+> accident. Details: [MIGRATION.md](MIGRATION.md) §7, §11.
 >
 > ⚠️ **2026-08-27 network change:** the lab moved to the **AI.R STC hangar wired LAN**
 > (`192.168.9.x`) for mocap — the 08-11 single-WiFi-network topology below is superseded
@@ -60,8 +71,37 @@
 | Foxglove bridge port | `8765` (`foxglove_port:=` on the commander launch; `address 0.0.0.0`) | Foxglove Studio connects to `ws://localhost:8765` — robot container is host-networked, so "localhost" on the laptop works ([BASESTATION.md](BASESTATION.md) §2) |
 | LED daemon ports | drone → laptop **udp/47901** (heartbeat, 1 Hz) · laptop → drone udp/47900 | `led_controller` binds 47901 (one instance only); open it in `ufw` if strips are used ([BASESTATION.md](BASESTATION.md) §8) |
 | Commander status snapshot | `/svg/commander_status`, JSON, `status_rate_hz` **5** | the Basestation's only source of mission truth; `NO COMMANDER` after 2 s silence — keep ≥ 1 Hz |
-| **Sim airframe — Starling 2 Max** (2026-10-19) | USD `AirStack/simulation/isaac-sim/assets/robots/starling2max.usd` (CMU sys-ID inertials: 0.557 kg, I = 0.00294/0.00186/0.00465 kg·m², CoM 1 mm fwd / 7.4 mm up; body mesh: CMU's 1.2 M faces = 48,981 separate parts; **since 2026-10-20 parts under 2 mm are culled, nothing decimated** — 564 k faces, 99.9 % of the surface, 8 MB; the 10-19 quadric decimation to 50 k faces had deleted the body plates, ledger #9) · `LNDMC_ROT_MAX 300` **sim-only** land-detector relief (floor rocking, ledger #9) (rotor rigid bodies 4 × 20 g explicit, body 477 g — without explicit rotor masses PhysX added 384 g of collider mass) · Pegasus `Starling2MaxConfig`: k_f 3.964738e-6 N/(rad/s)², k_m 5.38697e-8 N·m/(rad/s)², ω_max 1450 rad/s via input scaling 1350 (hover ≈ 0.36 throttle), **motor lag OFF by default** (CMU's 72 ms first-order lag tumbles the attitude loop in sim — `STARLING_MOTOR_TAU=0.072` re-enables it for experiments) · PX4 airframe `10090_pegasus_starling2max`: rotors ±0.095/±0.13 m, KM 0.0136, `MPC_THR_HOVER` 0.165 (thrust setpoint, as on the real drone; measured 0.155 in sim — the actuator sits near 0.36), **speed/accel limits = the real drone's since 2026-10-20** (`MPC_XY_VEL_MAX` 20, `MPC_ACC_HOR` 6, `MPC_ACC_HOR_MAX` 1000, `MPC_JERK_AUTO` 4, `MPC_Z_VEL_MAX_UP/DN` 10/4 — were 3/3 and PX4 defaults, which clipped the sim at 3 m/s), attitude/position gains = Starling 1's real PX4 params (`rc.mc_defaults` Iris gains ran away); **rate gains = 0.5 × the real ones + gyro filters 80/40 Hz since 2026-10-20** (the real rate gains gave a 9 Hz pitch limit cycle in sim, ledger #10 — sim-only, never port) | Source: `isaac_sim/Starling 2 Max Sys ID Results - Slite.pdf` (CMU AirLab). ⚠️ Rotor geometry follows CMU's CAD, not the real drone's `CA_ROTOR*` params (±0.085/±0.0625) — user decision 2026-10-19. Select with `DRONE_USD` + `PX4_VEHICLE_MODEL` ([RUNBOOK.md](RUNBOOK.md) §A). Drag not identified (Pegasus default) |
+| **Sim airframe — Starling 2 Max** (2026-10-19, re-tuned 2026-10-20) | PX4 airframe `10090_pegasus_starling2max` + USD `simulation/isaac-sim/assets/robots/starling2max.usd` + Pegasus `Starling2MaxConfig` — a **sim-only file**; every number is in the sub-section "Sim airframe" right below this table, with a "sim-only?" column | Select with `DRONE_USD` + `PX4_VEHICLE_MODEL` ([RUNBOOK.md](RUNBOOK.md) §A T1). Rows marked **sim-only — never port to the drone** must never reach a real parameter set |
 | Foxglove panel version | `airlab-cmu.svg-basestation-1.0.0` (`foxglove/svg-basestation/package.json`) | `ls ~/.foxglove-studio/extensions` on the laptop. After any panel edit or snapshot bump: re-run `foxglove/install.py` on the laptop, restart Studio, re-import `svg_basestation.json` |
+
+
+### Sim airframe (Starling 2 Max, sim-only) — `10090_pegasus_starling2max`
+
+The Isaac Sim model of our drone. Three pieces: the **USD** (geometry + mass), the **Pegasus
+vehicle config** (motor model) and the **PX4 airframe file** (parameters PX4 SITL boots with).
+Most PX4 values are copied **from** the real Starling 1 so the sim flies like the drone; the
+rows marked **sim-only — never port to the drone** are deliberate deviations that make the sim
+plant behave, and would be wrong on hardware. Real-side values are quoted so a reader can tell
+them apart. Source for the identified numbers: `isaac_sim/Starling 2 Max Sys ID Results - Slite.pdf`
+(CMU AirLab); airframe comments carry the reasoning.
+
+| Area | In the sim | On the real drone | Sim-only? | Why |
+|---|---|---|---|---|
+| Inertials / mesh | mass **0.557 kg** = body 477 g + 4 × 20 g rotor rigid bodies (explicit — without them PhysX added 384 g of collider mass) · I = 0.002943 / 0.001857 / 0.004649 kg·m² · CoM (0.00102, 0.00016, 0.00741) m ≈ 1 mm fwd, 7.4 mm up · body mesh = CMU's 1.2 M-face mesh with parts < 2 mm **culled, nothing decimated** → 564 k faces, 99.9 % of the surface, 8 MB (since 2026-10-20) | the thing being modelled (CMU sys-ID of this airframe) | n/a — a model of the drone | the 10-19 quadric-decimated 50 k-face asset was **hollow** (body plates deleted, ledger #9) |
+| Thrust / motors (Pegasus `Starling2MaxConfig`) | k_f 3.964738e-6 N/(rad/s)² · k_m 5.38697e-8 N·m/(rad/s)² · ω_max 1450 rad/s via input scaling 1350 (hover ≈ 0.36 actuator) · **motor lag OFF** (`STARLING_MOTOR_TAU=0.072` re-enables CMU's 72 ms first-order lag) · drag = Pegasus default (not identified) | — | sim-only (a motor model) | the 72 ms lag **tumbles** the attitude loop in sim — experiments only |
+| Rotor geometry (`CA_ROTOR*_PX/PY`, `_KM`) | ±0.095 / ±0.13 m (CMU CAD), KM 0.0136 | `CA_ROTOR*` ±0.085 / ±0.0625 | **sim-only — never port to the drone** | user decision 2026-10-19: follow CMU's CAD, not the drone's params |
+| PX4 outer loops (attitude + position) | `MC_ROLL_P` / `MC_PITCH_P` 8 · `MC_YAW_P` 2.8 · `MPC_XY_P` 0.95 · `MPC_Z_P` 5 · `MPC_XY_VEL_P_ACC` 1.8 · `MPC_Z_VEL_P_ACC` 8 · `MPC_THR_HOVER` 0.165 (thrust **setpoint**; sim measures 0.155) · `THR_MDL_FAC` 0.9 | **identical** (Starling 1's `starling_1_indoor_params.params`) | no — copied FROM the drone | `rc.mc_defaults` (Iris gains) oscillated and ran away on the first sim flights |
+| PX4 inner (rate) loops | **×0.5**: `MC_ROLLRATE_P/I/D` 0.032 / 0.05 / 0.00065 · `MC_PITCHRATE_P/I/D` 0.032 / 0.048 / 0.00055 · `MC_YAWRATE` 0.07 / 0.5 / 0 (unchanged) · `IMU_GYRO_CUTOFF` 80 · `IMU_DGYRO_CUTOFF` 40 | ROLLRATE 0.064 / 0.1 / 0.0013 · PITCHRATE 0.064 / 0.096 / 0.0011 (kept in the airframe comments); the 80 / 40 Hz filters ARE the real ones | **sim-only ×0.5 — never port to the drone** | with the real gains every sim drone carried a **9 Hz pitch limit cycle** (±270 °/s); the sim plant has more loop gain (instant motors, 250 Hz IMU, CMU arms) — ledger #10, 2026-10-20 |
+| Land detector | `LNDMC_ROT_MAX` **300** °/s | **30** (`starling_1_indoor_params.params`; PX4 default 20) | **sim-only — never port to the drone** | Isaac floor rocking (~10 Hz) kept PX4's `maybe_landed` gate from passing → every DISARM "denied: not landed" — ledger #9 |
+| Speed / accel limits | `MPC_XY_VEL_MAX` 20 · `MPC_ACC_HOR` 6 · `MPC_ACC_HOR_MAX` 1000 · `MPC_JERK_AUTO` 4 · `MPC_Z_VEL_MAX_UP` 10 / `_DN` **4** | **identical** (Starling 1 backup, `~/RCC_Starling_1`) | no — copied from the drone 2026-10-20 | were 3 / 3 / PX4 defaults, which **clipped the sim at 3 m/s**; raised in the same commit that put `cbf_sim.yaml` at 4.0 / 2.0 |
+| Selection / source | `DRONE_USD=/isaac-sim/AirStack/simulation/isaac-sim/assets/robots/starling2max.usd PX4_VEHICLE_MODEL=pegasus_starling2max` on the Isaac launch ([RUNBOOK.md](RUNBOOK.md) §A T1); the airframe file is bind-mounted into PX4's ROMFS source airframes dir by `simulation/isaac-sim/docker/docker-compose.yaml` | — | the whole file is sim-only | env vars unset ⇒ the Iris regression model |
+
+**Validation so far** ([MILESTONES.md](MILESTONES.md) §3c): ledger #1–#4 passed 2026-10-19 on the
+*old* asset / gains / speed limits (#3 steps: x overshoot 0.002 m, settled 2.75 s; z 0.001 m,
+0.75 s · #4 antipodal crossing min distance 1.02 m at 0.6 / 1.2 m/s). 2026-10-21 fresh launch on the
+current asset = ledger #13: asset complete, no PhysX warnings, 2.0 m/s commanded / ~1.7 flown,
+landing DISARM accepted first try ×3. ⏳ **Pending:** re-run #3 (`scenario:=goal`) and the #4
+distances at the new 2.0 / 4.0 speeds.
 
 ## Mocap / Motive
 
@@ -106,71 +146,110 @@ Flight-log-verified additions (2026-09-01/03 sessions):
 
 ## Ground-side flight parameters (svg_ground_control config yamls)
 
-> Config source: `AirStack/robot/ros_ws/src/svg_ground_control/config/`. Read once at launch
-> ([RUNBOOK.md](RUNBOOK.md) §C7). **The shipped files are CMU's bench values** — the "Shipped"
-> column is what the file says on 2026-10-07; the "Ours" column is what we fly (validated on
-> the previous branch where marked, otherwise the deliberate starting point, ⏳ STE).
-> Parameters marked **live** change in flight with `ros2 param set /swarm_commander …` or the
-> Basestation's CBF row ([SCENARIOS.md](SCENARIOS.md) §3).
+> Config source: `AirStack/robot/ros_ws/src/svg_ground_control/config/`. A yaml is read **once
+> at launch** ([RUNBOOK.md](RUNBOOK.md) §C7); the parameters marked **live** below can also be
+> changed in flight with `ros2 param set /swarm_commander <name> <value>` or from the panel's
+> runtime-gain dropdown ([BASESTATION.md](BASESTATION.md) §3.4, [SCENARIOS.md](SCENARIOS.md) §3).
+> **The shipped files are CMU's bench values** (read at `b21d28c`, 2026-10-21). Files marked
+> **ours** are what we fly; "validated" = proven on the previous branch, everything else is the
+> deliberate starting point, ⏳ STE. ⚠️ = a CMU value we must not fly as-is.
 
-**Which config for what** (⚠️ none is flyable as shipped — [MIGRATION.md](MIGRATION.md) §7):
+**Which config for what** (⚠️ no shipped CMU file is flyable as-is — [MIGRATION.md](MIGRATION.md) §7):
 
-| File | Shipped as | Ours |
+| Purpose | File | Notes |
 |---|---|---|
-| `swarm_real.yaml` | 3 real drones, `hover`, `hold_all` fence, hover z 1.2, `land_speed_mps` **0.3** | **`swarm_real_ours.yaml`** (added 2026-10-07): `drone_1`, z 0.5, `land_speed_mps` 0.6, fence `[-2,-2,0]..[2,2,2]`, vmax 1.0, `hold_all` → the hover / first-flight config (M3) |
-| `goal_single.yaml` | **`drone_2`**, `goal`, `keep_in`, teleop fence on, speeds 10.0, `land_speed_mps` 0.8 | **`goal_single_ours.yaml`** (added 2026-10-07): `drone_1`, same fence box, `keep_in` brake 4 / gain 2, speeds 1.0, `goal_accel` 3.0, `land_speed_mps` 0.6, teleop fence off → the goal-flight config (M4) |
-| `teleop_real.yaml` | 1 real drone, `keep_in` + teleop fence, `dragonrise_usb`, `land_speed_mps` 0.3 | fences to our net, controller to ours, `land_speed_mps` 0.6 → the gamepad config (M5) |
-| `goal_tracking.yaml` | 3 real drones, **`random_goals`** (ignores goal commands), 10 m/s | M7 only |
-| `cbf_sim.yaml`, `swarm_sim.yaml`, `teleop_single.yaml`, `squeeze_3drone.yaml`, `squeeze_rc_intruder.yaml` | sim / 3-drone | as shipped for M1 sim, except `cbf_sim.yaml` since 2026-10-20: `scenario_speed_mps` **2.0**, `cbf_max_speed_mps` **4.0**, `goal_accel_mps2` **6.0**, `land_speed_mps` 1.0 + settle/retry (real-demo speeds; `ros2 param set` overrides live); `squeeze_rc_intruder` is M7 |
-| `goal_sequence.yaml`, `figure_eight_rc_intruder.yaml` (new 2026-10-20, dev branch) | 3 real drones, `keep_in`, scripted crossings / collision-negligent pair + pad intruder | M7 only; sim rehearsal = copy the `sequence_*` / `figure_eight_*` blocks into a `cbf_sim`-style config with `drone_modes: "sim,sim,sim"` |
+| Hover / first real flight (M3) | **`swarm_real_ours.yaml`** (ours, 2026-10-07) | `drone_1` only, hover z 0.5, `land_speed_mps` 0.6, fence `[-2,-2,0]..[2,2,2]`, vmax 1.0, `hold_all`, `land_settle_s` 0.0. Derived from `swarm_real.yaml` (3 real drones, z 1.2, `land_speed_mps` 0.3 ⚠️) |
+| Goal flights (M4) | **`goal_single_ours.yaml`** (ours, 2026-10-07) | `drone_1`, `goal`, `keep_in` (brake 4, gain 2), speeds 1.0, `goal_accel` 3.0, `land_speed_mps` 0.6, teleop fence off, nobody exempt. Derived from `goal_single.yaml` (speeds **10.0** ⚠️, `land_speed_mps` 0.8, `drone_1` **exempt** — at `cf719f0` it targeted `drone_2`; fixed upstream at `b21d28c`) |
+| Gamepad (M5) | `teleop_real.yaml` (still CMU's) | 1 real drone, `keep_in` + teleop fence, `dragonrise_usb`, `land_speed_mps` 0.3 ⚠️ → derive `teleop_real_ours.yaml` before M5: fences to our net, controller to ours, `land_speed_mps` 0.6 ([TELEOP.md](TELEOP.md)) |
+| Sim CBF demo (M1) | **`cbf_sim.yaml`** (ours since 2026-10-19/20) | 3 sim, `antipodal` (override with `scenario:=`), `scenario_speed_mps` **2.0**, `cbf_max_speed_mps` **4.0**, `goal_accel_mps2` **6.0**, `land_speed_mps` 1.0, settle 2.0 s + disarm retry 1.0 s × 5. Real-demo speeds; `ros2 param set` overrides live |
+| Other sim files | `swarm_sim.yaml`, `teleop_single.yaml`, `squeeze_3drone.yaml`, `goal_tracking_original.yaml` | as shipped, for M1 sim rehearsals (`goal_tracking_original.yaml` is CMU's pre-mocap 3-drone sim file, new 2026-10-20, reference only) |
+| Multi-drone real (M7 only) | `goal_tracking.yaml`, `squeeze_rc_intruder.yaml`, `hybrid_squeeze.yaml`, `goal_sequence.yaml`, `figure_eight_rc_intruder.yaml` | 3 real drones, 10 m/s caps ⚠️. `goal_tracking.yaml` ships **`goal`** again at `b21d28c` (it was `random_goals` at `cf719f0`); `goal_sequence` / `figure_eight` are new 2026-10-20 — sim rehearsal = copy their `sequence_*` / `figure_eight_*` blocks into a `cbf_sim`-style config with `drone_modes: "sim,sim,sim"` |
 
-**Every shipped config at a glance** (read from the yamls at `cf719f0`, 2026-10-07; ⚠️ = a CMU bench value we must not fly as-is; commander defaults when a key is absent: `fence_behavior hold_all`, α 2.5, r 0.55, vmax 1.2, `goal_accel` 3.0, arena `[-2,-2,0.8]..[2,2,2]`):
+**Config × parameter matrix** — every file, read from the yamls at `b21d28c` (2026-10-21). A dash
+means the key is absent and the commander's default applies (defaults: `fence_behavior hold_all`,
+α 2.5, r 0.55, vmax 1.2, `scenario_speed` 0.6, `goal_accel` 3.0 / `goal_settle` 0.3,
+`teleop_max_speed` 1.2 / `teleop_accel` 0, `land_speed` 0.3, `land_settle_s` 2.0,
+`land_disarm_retry_s` 1.0 × `land_disarm_retries` 5, `takeoff_speed` 0.5, arena
+`[-2,-2,0.8]..[2,2,2]`). **Ours** rows in bold.
 
-| Config | drones | `scenario` | α / r / vmax | `scenario_speed` | `fence_behavior` | `fence_min..max` | teleop fence | `cbf_exempt` |
-|---|---|---|---|---|---|---|---|---|
-| `swarm_real.yaml` | 3 real | `hover` | 2.5 / 0.55 / 1.0 | 0.5 | `hold_all` | `[-4,-2,0]..[4,2,3]` | — | — |
-| `goal_single.yaml` | 1 real **`drone_2`** ⚠️ | `goal` | 2.5 / 0.55 / **10.0** ⚠️ | **10.0** ⚠️ | `keep_in` (brake 8, gain 2) | `[-4.5,-5.2,0]..[5.5,4.5,3]` | `[-3.5,-4.2,0.5]..[4.5,3.5,2.5]` | `drone_2` ⚠️ |
-| `goal_tracking.yaml` | 3 real | **`random_goals`** ⚠️ | 2.5 / 0.55 / **10.0** ⚠️ | **10.0** ⚠️ | `keep_in` (8, 2) | `[-4.5,-5.2,0]..[5.5,5.0,3]` | — | — |
-| `teleop_real.yaml` | 1 real | `hover` | 2.5 / 0.55 / 0.7 | 0.5 | `keep_in` (4, 2) | `[-4,-2,0]..[4,2,3]` | `[-3,-1.5,0.3]..[3,1.5,2.5]` | — |
-| `squeeze_rc_intruder.yaml` | 3 real | `squeeze` | 2.5 / 0.55 / **10.0** ⚠️ | **10.0** ⚠️ | `keep_in` (8, 2) | `[-4.5,-5.2,0]..[5.5,5.0,3]` | `[-3.3,-4.0,1.0]..[4.3,4.2,2.8]` | `drone_3` |
-| `hybrid_squeeze.yaml` | real,real,sim | `squeeze` | 2.5 / 0.55 / 1.0 | 0.5 | `hold_all` | `[-4,-2,0]..[4,2,3]` | — | `drone_3` |
-| `cbf_sim.yaml` | 3 sim | `antipodal` | 2.5 / 0.55 / 1.2 | 0.6 | *(absent → `hold_all`)* | `[-3,-6,0]..[5,5,3]` | — | — |
-| `swarm_sim.yaml` | 3 sim | `hover` | 2.5 / 0.55 / 2.0 | 0.6 | `hold_all` | `[-4,-2,0]..[4,2,3]` | — | — |
-| `squeeze_3drone.yaml` | 3 sim | `squeeze` | 2.5 / 0.55 / 1.2 | 0.6 | `hold_all` | `[-4,-2,0]..[4,2,3]` | — | `drone_3` |
-| `teleop_single.yaml` | 1 sim | `hover` | 2.5 / 0.55 / 2.0 | 0.6 | `keep_in` (2, 0.7) | `[-4,-2,0]..[4,2,3]` | `[-3,-1.5,0.3]..[3,1.5,2.5]` | — |
+*A — mission, CBF and speeds* (α / r / vmax = `cbf_alpha` / `cbf_safety_radius_m` / `cbf_max_speed_mps`):
 
-All fence/arena boxes are **CMU's room** — redraw to our net before any real flight ([MOCAP.md](MOCAP.md) §6.1).
+| Config | Drones · modes | `scenario` | α / r / vmax | `scenario_speed` | `goal_accel` / `goal_settle` | `teleop_max_speed` / `teleop_accel` | exempt · teleop · takeoff speed |
+|---|---|---|---|---|---|---|---|
+| `swarm_real.yaml` | 3 real | `hover` | 2.5 / 0.55 / 1.0 | 0.5 | — / — | 1.0 / — | — · — · 0.5 |
+| **`swarm_real_ours.yaml`** | **`drone_1` real** | `hover` | 2.5 / 0.55 / 1.0 | 0.5 | — / — | **0.5** / — | — · — · 0.5 |
+| `goal_single.yaml` | `drone_1` real | `goal` | 2.5 / 0.55 / **10.0** ⚠️ | **10.0** ⚠️ | **10.0** ⚠️ / 0.2 | **8.0** ⚠️ / 5.0 | exempt **`drone_1`** ⚠️ (filter off) · — · 0.5 |
+| **`goal_single_ours.yaml`** | **`drone_1` real** | `goal` | 2.5 / 0.55 / 1.0 | 1.0 | 3.0 / 0.3 | 0.5 / 5.0 | — · — · 0.5 |
+| `goal_tracking.yaml` | 3 real | **`goal`** (was `random_goals` at cf719f0) | 2.5 / 0.55 / **10.0** ⚠️ | **10.0** ⚠️ | **10.0** ⚠️ / 0.2 | **8.0** ⚠️ / 5.0 | — · — · 1.0 |
+| `goal_tracking_original.yaml` | 3 (no `drone_modes` → sim) | `goal` | CMU's pre-mocap sim original — reference only | | | | |
+| `teleop_real.yaml` | `drone_1` real | `hover` | 2.5 / 0.55 / 0.7 | 0.5 | — / — | 0.7 / 5.0 | — · teleop `drone_1` · 0.5 |
+| **`cbf_sim.yaml`** (ours since 10-19) | 3 sim | `antipodal` | 2.5 / 0.55 / **4.0** | **2.0** | **6.0** / — | — / — | — · — · 0.5 |
+| `swarm_sim.yaml` | 3 sim | `hover` | 2.5 / 0.55 / 2.0 | 0.6 | — / — | 2.0 / — | — · — · 0.5 |
+| `squeeze_3drone.yaml` | 3 sim | `squeeze` | 2.5 / 0.55 / 1.2 | 0.6 | — / — | 1.2 / — | exempt `drone_3` · — · 0.5 |
+| `teleop_single.yaml` | `drone_1` sim | `hover` | 2.5 / 0.55 / 2.0 | 0.6 | — / — | 2.0 / 5.0 | — · teleop `drone_1` · 0.5 |
+| `hybrid_squeeze.yaml` | real, real, sim | `squeeze` | 2.5 / 0.55 / 1.0 | 0.5 | — / — | — / — | exempt `drone_3` · — · 0.5 |
+| `squeeze_rc_intruder.yaml` | 3 real | `squeeze` | 2.5 / 0.55 / **10.0** ⚠️ | **10.0** ⚠️ | **10.0** ⚠️ / 0.2 | 3.0 / 5.0 | exempt + teleop `drone_3` · 1.0 |
+| `goal_sequence.yaml` (new 10-20) | 3 real | `goal_sequence` | 2.5 / 0.55 / **10.0** ⚠️ | **6.0** ⚠️ | **10.0** ⚠️ / 0.2 | 3.0 / 5.0 | — · — · 1.0 |
+| `figure_eight_rc_intruder.yaml` (new 10-20) | 3 real | `figure_eight` | 2.5 / 0.55 / **10.0** ⚠️ | 2.0 | **10.0** ⚠️ / 0.2 | 3.0 / 5.0 | exempt + teleop `drone_3` · 1.0 |
 
-| Value | Shipped (2026-10-07) | Ours | Live? | Why / If it changes → do this |
+*B — landing, hover height and fences* (brake, gain = `fence_brake_accel_mps2`, `fence_keep_in_gain`):
+
+| Config | `land_speed` | `land_settle_s` / retry | `land_complete_alt` | `hover_positions` z | `fence_behavior` (brake, gain) | `fence_min..max` | teleop fence |
+|---|---|---|---|---|---|---|---|
+| `swarm_real.yaml` | 0.3 ⚠️ | — / — | 0.15 | 1.2 | `hold_all` (4, 1) | `[-4,-2,0]..[4,2,3]` | — |
+| **`swarm_real_ours.yaml`** | **0.6** ✅ | **0.0** / — | 0.15 | **0.5** at `(-0.5, 0, 0.5)` | `hold_all` (4, 1) | **`[-2,-2,0]..[2,2,2]`** | off |
+| `goal_single.yaml` | 0.8 | — / — | **0.1** | 1.0 | `keep_in` (8, 2) | `[-4.5,-5.2,0]..[5.5,4.5,3]` | `[-3.5,-4.2,0.5]..[4.5,3.5,2.5]` |
+| **`goal_single_ours.yaml`** | **0.6** ✅ | **0.0** / — | 0.15 | **0.5** at `(-0.5, 0, 0.5)` | `keep_in` (4, 2) | **`[-2,-2,0]..[2,2,2]`** | off |
+| `goal_tracking.yaml` | 1.0 | — / — | 0.15 | 1.2 | `keep_in` (8, 2) | `[-4.5,-5.2,0]..[5.5,5,3]` | — |
+| `teleop_real.yaml` | 0.3 ⚠️ | — / — | 0.15 | 1.2 | `keep_in` (4, 2) | `[-4,-2,0]..[4,2,3]` | `[-3,-1.5,0.3]..[3,1.5,2.5]` |
+| **`cbf_sim.yaml`** | 1.0 | **2.0** / **1.0 s × 5** | 0.15 | 1.2 | — (→ `hold_all`) | `[-3,-6,0]..[5,5,3]` | — |
+| `swarm_sim.yaml` | 0.3 | — / — | 0.15 | 1.2 | `hold_all` (4, 1) | `[-4,-2,0]..[4,2,3]` | — |
+| `squeeze_3drone.yaml` | 0.3 | — / — | 0.15 | 1.2 | `hold_all` (4, 1) | `[-4,-2,0]..[4,2,3]` | — |
+| `teleop_single.yaml` | 0.3 | — / — | 0.15 | 1.2 | `keep_in` (2, 0.7) | `[-4,-2,0]..[4,2,3]` | `[-3,-1.5,0.3]..[3,1.5,2.5]` |
+| `hybrid_squeeze.yaml` | 0.3 | — / — | 0.15 | 1.2 | `hold_all` (4, 1) | `[-4,-2,0]..[4,2,3]` | — |
+| `squeeze_rc_intruder.yaml` | 1.0 | — / — | 0.15 | 1.2 | `keep_in` (8, 2) | `[-4.5,-5.2,0]..[5.5,5,3]` | `[-3.3,-4.0,1.0]..[4.3,4.2,2.8]` |
+| `goal_sequence.yaml` | 1.0 | — / — | 0.15 | 1.2 | `keep_in` (8, 2) | `[-4.5,-5.2,0]..[5.5,5,3]` | `[-3.3,-4.0,0.7]..[4.3,4.2,2.8]` |
+| `figure_eight_rc_intruder.yaml` | 1.0 | — / — | 0.15 | 1.2 | `keep_in` (8, 2) | `[-4.5,-5.2,0]..[5.5,5,3]` | `[-3.3,-4.0,0.7]..[4.3,4.2,2.8]` |
+
+All CMU fence/arena boxes are **CMU's room** — redraw to our net before any real flight
+([MOCAP.md](MOCAP.md) §6.1). Only the `_ours` files are drawn to ours (and even those ⏳ re-check
+against the net on the day).
+
+**What each parameter means** — meaning, whether it is live, and what we fly. "Live" = settable
+in flight (`_RUNTIME_ATTRS` + `_SCENARIO_PARAMS` in `SwarmCommander`); everything else is refused
+with a reason naming what *is* live (`SwarmCommander.on_parameter_change`), yaml + relaunch.
+
+| Parameter | Meaning | Live? | Ours | Why / If it changes → do this |
 |---|---|---|---|---|
-| `land_speed_mps` | 0.3 (`swarm_real`, `teleop_real`, `swarm_sim`) · 0.5 (`cbf_sim`) · 0.8 (`goal_single`) · 1.0 (`goal_tracking`) | **`0.6`** (**validated 2026-09-03**, previous branch) | no | 0.3 caused **armed-on-ground landings** (slow touchdown bounces past PX4's land detector). Set 0.6 in every config we fly; re-confirm at M3 |
-| `land_complete_altitude_m` | 0.15 · `goal_single` **0.1** | 0.15 | no | the height at which the commander calls the landing done; lower = later disarm shot |
-| `land_disarm_retry_s` / `land_disarm_retries` | — (**ours**, added 2026-10-20) | 1.0 s / 5 (code defaults) | **yes** | after the settle a DISARM the interface rejects (PX4 "not landed") is resent every `land_disarm_retry_s` while the descent is still commanded, up to `land_disarm_retries` times, then IDLE anyway with an ERROR log. Observed 2026-10-20: settle alone was accepted on 1 of 3 sim drones; PX4's own `COM_DISARM_LAND` finished the other two |
-| `land_settle_s` | — (**ours**, added 2026-10-19) | code default 2.0; **`cbf_sim.yaml` 2.0 · real `_ours` configs 0.0** (2026-10-20: real keeps the landing exactly as flown 09-03 until the settle is its own M3 sub-test; the retry is inert on real — `px4_interface.disarm()` returns true on send) | **yes** | how long the drone stays LANDING (descent still commanded) after z ≤ `land_complete_altitude_m` before the one-shot DISARM. 0 = CMU's original instant disarm, which PX4 DENIED in sim (not landed yet) → offboard timeout → armed failsafe hover. Raise if QGC still shows "Disarming denied"; PX4's own auto-disarm (`COM_DISARM_LAND`) may fire first — fine |
-| `hover_positions` | `swarm_real` z **1.2** · `goal_single` `(0, 0, 1.0)` for drone_2 | `(-0.5, 0.0, 0.5)` — z 0.5 low-and-safe (previous-branch value) | no | takeoff target AND initial goal — **takeoff flies to the ABSOLUTE point**; place the drone there. Raise toward 1.0–1.2 if ground effect wobbles |
-| `takeoff_speed_mps` | 0.5 (most) · 1.0 (`goal_*`) | 0.5 | **yes** | new on this branch |
-| `fence_enabled` / `fence_min` / `fence_max` | `goal_tracking`: `[-4.5,-5.2,0]..[5.5,5.0,3.0]` · `goal_single`: `[-4.5,-5.2,0]..[5.5,4.5,3.0]` (CMU's room) · `swarm_real`: shipped box · `goal_single` old branch was ±0.7 | **draw to OUR net** before every config is flown; floats only | no (geometry) | the fence is in the mocap frame — [MOCAP.md](MOCAP.md) §6.1 golden rule |
-| `fence_behavior` | `hold_all` (`swarm_*`, `squeeze_3drone`, `hybrid`) · `keep_in` (`goal_*`, `teleop_*`, `squeeze_rc_intruder`) | `hold_all` for M3, `keep_in` from M4 | no | `hold_all` = everyone freezes until `reset_fence` (now also on an airborne RC drone); `keep_in` = brake at the wall, nobody freezes — [TELEOP.md](TELEOP.md) §6 |
-| `fence_brake_accel_mps2` | 4.0 · `goal_*`/`squeeze_rc` **8.0** | 4.0 to start | **yes** | the keep_in braking envelope; keep ≥ `goal_accel_mps2` or the wall caps cruise speed; **0 silently reverts to the old gain×distance barrier** |
-| `fence_keep_in_gain` | 1.0 · `goal_*`, `teleop_real` 2.0 · `teleop_single` 0.7 | 1.0 | **yes** (must stay > 0) | near-wall gain; `1/gain` = lag margin |
-| `fence_margin_m` | 0.0 | 0.0 | **yes** | inset from the wall |
-| `teleop_fence_enabled/min/max` | on in `goal_single`, `teleop_*`, `squeeze_rc_intruder` (CMU boxes) | **draw inside OUR geofence** — launch raises if it isn't | no | the smaller amber box only hand-flown drones see — [TELEOP.md](TELEOP.md) §6 |
-| `cbf_alpha` | 2.5 | 2.5 | **yes** (> 0) | how early the CBF yields (bigger = later, harder) — [SCENARIOS.md](SCENARIOS.md) §1 |
-| `cbf_safety_radius_m` | 0.55 | 0.55 | **yes** (> 0) | half the minimum centre-to-centre distance; the scenario keeps its launch-time value for spacing |
-| `cbf_max_speed_mps` | 1.0 (`swarm_real`) · 1.2 (`cbf_sim`, `squeeze_3drone`) · 0.7 (`teleop_real`) · 2.0 (`swarm_sim`, `teleop_single`) · **10.0** (`goal_*`, `squeeze_rc_intruder`) | **1.0** for M3/M4, raise deliberately | **yes** (> 0) | the hard cap on anything the commander sends — 10.0 is 10 m/s of dodge authority indoors |
-| `cbf_exempt_drones` / `external_drones` | `""` · `drone_3` in `squeeze_rc_intruder` · **`drone_2` in `goal_single`** | `""` | no | an exempt drone's command goes out unfiltered and the others absorb 100 % of the dodge; two exempt/external drones get **no** mutual protection |
-| `scenario_speed_mps` | 0.6 · **10.0** (`goal_*`, `squeeze_rc`) | 1.0 | **yes** | goal-law cruise speed; `speed_command` overrides per drone |
-| `goal_accel_mps2` / `goal_settle_s` | 3.0 / 0.3 · `goal_*` 10.0 / 0.2 | 3.0 / 0.3 | **yes** | the acceleration-limited go-to-goal profile; also caps the CBF feedforward. Since 2026-10-20 editable from the Basestation gain dropdown (reported in the status `tuning` block) |
-| `teleop_max_speed_mps` ↔ `safe_teleop` `max_speed_mps` | 1.2 / 1.0 | 0.5 (M5) | **yes** | since 2026-10-20 ONE number kept equal both ways (`sync_max_speed`); the panel's Teleop vmax row sets both |
-| `sequence_steps`, `sequence_<name>`, `sequence_dwell_s` 2.0, `sequence_arrival_m` 0.3, `sequence_loop` true, `sequence_advance` arrival\|timer, `sequence_period_s` 8.0 | `goal_sequence.yaml` only | — | no | the `goal_sequence` scenario (new 2026-10-20); the commander refuses a set outside the arena or with two goals closer than 2r |
-| launch `use_bag_recorder` true, `record_bag` false, `bag_dir`, `bag_prefix` svg, `bag_include_hidden` false | launch args | as shipped | — | the switchable rosbag recorder (new 2026-10-20, [BASESTATION.md](BASESTATION.md) §3.12) |
-| `goal_lead_m` / `hold_lead_m` / `teleop_lead_m` | 2.0 / 0.2 / 0.5 | as shipped | **yes** | reference-point leashes; **keep `hold_lead_m` small** (0.2) — a 1.3 m lead above a grounded drone doubled its hover height in a CMU bag |
-| `teleop_max_speed_mps` / `teleop_accel_mps2` | `teleop_real` **0.7** / 5.0 · `swarm_sim` 2.0 · `goal_*` 8.0 · `squeeze_rc` 3.0 | **0.5** / 5.0 for M5 | **yes** | stick full-scale velocity and its ramp (fed forward to PX4). The commander clamps to the smallest of this, `safe_teleop`'s `max_speed_mps` and `cbf_max_speed_mps` |
-| `teleop_controller` (`safe_teleop` block) | `dragonrise_usb` in every shipped config | ⏳ **identify ours** with `ros2 run svg_ground_control joy_map` → record here | no | config beats the node default (`xbox_usb`); wrong profile + a trigger pad = full stick on an untouched axis (the axis guard refuses) — [TELEOP.md](TELEOP.md) §3. ⚠️ `./svg_teleop.sh` passes no config and starts `joy_node` bare, so it always runs `xbox_usb` with stock joy settings |
-| `yaw_sign` (`safe_teleop` block) | `1.0` | ⏳ verify at M5, slow and low | no | unverifiable in sim (`px4_interface` negates yaw rate) — flip if the drone turns the wrong way |
-| `real_command_mode` | `trajectory` | `trajectory` | no | real drones get position + velocity + acceleration on `/{name}/fmu/trajectory_command`; `velocity` restores the old bare-velocity topic |
-| `use_led` / `led_controller.brightness` | true / 80 | true (harmless with no strip) / 80 | no | keep brightness low near the mocap cameras |
-| After every landing | — | confirm **DISARMED in QGC** | — | the commander's "landed, disarmed" log is optimistic; the Basestation Interface column is an ACK log, not an arming display |
+| `land_speed_mps` | descent speed while LANDING | no | **`0.6`** (**validated 2026-09-03**, previous branch) for the real drone; 1.0 in `cbf_sim` | 0.3 caused **armed-on-ground landings** (slow touchdown bounces past PX4's land detector). Re-confirm at M3. ⚠️ The comment beside this key in `cbf_sim.yaml` ("PX4 caps descent at `MPC_Z_VEL_MAX_DN` = 1.0 m/s") is **stale since 2026-10-20** — the sim airframe now sets 4.0; the yaml comment is left as-is |
+| `land_complete_altitude_m` | height at which the commander calls the descent done and starts the settle | no | 0.15 | lower = later disarm shot (`goal_single` ships 0.1) |
+| `land_settle_s` | **ours, 2026-10-19.** How long the drone stays LANDING (descent still commanded) after z ≤ `land_complete_altitude_m` before the DISARM | **yes** | code default 2.0; **`cbf_sim.yaml` 2.0 · real `_ours` configs 0.0** | 0 = CMU's original instant disarm, which PX4 **DENIED** in sim (not landed yet) → offboard timeout → armed failsafe hover. CMU's shipped real configs omit the key → inherit 2.0 → **use the `_ours` files**, which keep the landing exactly as flown 09-03 until the settle is its own M3 sub-test. Raise if QGC still shows "Disarming denied"; PX4's own `COM_DISARM_LAND` may fire first — fine |
+| `land_disarm_retry_s` / `land_disarm_retries` | **ours, 2026-10-20.** A DISARM the interface rejects is resent every `land_disarm_retry_s` while the descent is still commanded, up to `land_disarm_retries` times, then IDLE anyway with an ERROR log (`SwarmCommander.land_disarm_step`) | **yes** | 1.0 s / 5 (code defaults, also written in `cbf_sim.yaml`) | Sim 2026-10-20 (ledger #8): settle alone was accepted on 1 of 3 drones; 2026-10-21 (ledger #13): accepted first try ×3. **Inert on the real drone**: `px4_interface`'s `disarm()` returns true on send, so there is never a rejection to retry — the settle + retry is **unflown** on real |
+| `hover_positions` | takeoff target AND initial goal — **takeoff flies to the ABSOLUTE point**; place the drone there | no | `(-0.5, 0.0, 0.5)` — z 0.5 low-and-safe (previous-branch value) | CMU ships z 1.2 (`swarm_real`) / 1.0 (`goal_single`). Raise toward 1.0–1.2 if ground effect wobbles |
+| `takeoff_speed_mps` | climb speed of the takeoff | **yes** | 0.5 | CMU's 3-drone real files ship 1.0 |
+| `fence_enabled` / `fence_min` / `fence_max` | the geofence box, mocap frame, floats only | no (geometry) | **draw to OUR net** before every config is flown (`_ours`: `[-2,-2,0]..[2,2,2]`) | [MOCAP.md](MOCAP.md) §6.1 golden rule |
+| `fence_behavior` | what a breach does: `hold_all` = everyone freezes until `reset_fence` (also latched by an airborne RC/external drone); `keep_in` = brake at the wall, nobody freezes — [TELEOP.md](TELEOP.md) §6 | no | `hold_all` for M3, `keep_in` from M4 | — |
+| `fence_brake_accel_mps2` | the `keep_in` braking envelope | **yes** | 4.0 to start | keep ≥ `goal_accel_mps2` or the wall caps cruise speed; **0 silently reverts to the old gain × distance barrier**. CMU's `goal_*` / `squeeze_rc` / `goal_sequence` / `figure_eight` ship **8.0** against accel 10 — violates their own rule |
+| `fence_keep_in_gain` | near-wall gain; `1/gain` = lag margin | **yes** (must stay > 0) | 1.0 (`_ours` goal config: 2.0) | — |
+| `fence_margin_m` | inset from the wall | **yes** | 0.0 | — |
+| `teleop_fence_enabled/min/max` | the smaller amber box only hand-flown drones see — [TELEOP.md](TELEOP.md) §6 | no | **draw inside OUR geofence** — launch raises if it isn't | off in both `_ours` files |
+| `cbf_alpha` | how early the CBF yields (bigger = later, harder) — [SCENARIOS.md](SCENARIOS.md) §1 | **yes** (> 0) | 2.5 | — |
+| `cbf_safety_radius_m` | half the minimum centre-to-centre distance | **yes** (> 0) | 0.55 | the scenario keeps its launch-time value for spacing (SCENARIOS §3) |
+| `cbf_max_speed_mps` | the hard cap on anything the commander sends — also the dodge authority | **yes** (> 0) | **1.0** for M3/M4, raise deliberately; **4.0** in `cbf_sim` (sim only) | 10.0 (five CMU real files) is 10 m/s of dodge authority indoors. Panel slider ends at `cbfSpeedMax` = 3 by default — type 4.0 in the number box or raise the setting ([BASESTATION.md](BASESTATION.md) §3.4) |
+| `cbf_exempt_drones` / `external_drones` | an exempt drone's command goes out unfiltered and the others absorb 100 % of the dodge; two exempt/external drones get **no** mutual protection | no | `""` | `drone_3` in the squeeze / figure-eight files; **`drone_1` in `goal_single.yaml`** (harmless with one drone — but the filter is then off) |
+| `scenario_speed_mps` | goal-law cruise speed; `speed_command` overrides per drone | **yes** | 1.0 real; **2.0** `cbf_sim` | — |
+| `goal_accel_mps2` / `goal_settle_s` | the acceleration-limited go-to-goal profile (accel AND braking) + exponential tail; `goal_accel` also caps the CBF feedforward | **yes** (accel > 0, settle ≥ 0) | 3.0 / 0.3 real; **6.0** / 0.3 `cbf_sim` | editable from the panel's gain dropdown since 2026-10-20; reported in the status `tuning` block |
+| `teleop_max_speed_mps` ↔ `safe_teleop` `max_speed_mps` | stick full-scale velocity. Since 2026-10-20 **ONE number kept equal both ways** (`sync_max_speed`); the panel's Teleop vmax row sets both. The commander clamps to the smallest of this and `cbf_max_speed_mps` | **yes** (> 0) | **0.5** (M5) | CMU ships 0.7 (`teleop_real`) · 2.0 (sim) · 3.0 (`squeeze_rc`, `goal_sequence`, `figure_eight`) · **8.0** ⚠️ (`goal_*`) |
+| `teleop_accel_mps2` | stick ramp, fed forward to PX4 (0 = off) | **yes** | 5.0 for M5 | — |
+| `goal_lead_m` / `hold_lead_m` / `teleop_lead_m` | reference-point leashes | **yes** | 2.0 / 0.2 / 0.5 as shipped | **keep `hold_lead_m` small** (0.2) — a 1.3 m lead above a grounded drone doubled its hover height in a CMU bag |
+| `sequence_steps`, `sequence_<name>`, `sequence_dwell_s` 2.0, `sequence_arrival_m` 0.3, `sequence_loop` true, `sequence_advance` arrival\|timer, `sequence_period_s` 8.0 | the `goal_sequence` scenario (new 2026-10-20) | no | `goal_sequence.yaml` only | the commander refuses a set outside the arena or with two goals closer than 2r |
+| `figure_eight_center/radius_m/center_distance_m/axis_deg/tilt_deg/senses/track_gain/intruder_start/intruder_cbf_exempt` | the `figure_eight` scenario (new 2026-10-20) | no | `figure_eight_rc_intruder.yaml` only | — |
+| launch `use_bag_recorder` true, `record_bag` false, `bag_dir`, `bag_prefix` svg, `bag_include_hidden` false | the switchable rosbag recorder (new 2026-10-20) | — | as shipped | [BASESTATION.md](BASESTATION.md) §3.12 |
+| `teleop_controller` (`safe_teleop` block) | which gamepad profile | no | ⏳ **identify ours** with `ros2 run svg_ground_control joy_map` → record here | `dragonrise_usb` in every shipped config; config beats the node default (`xbox_usb`); wrong profile + a trigger pad = full stick on an untouched axis (the axis guard refuses) — [TELEOP.md](TELEOP.md) §3. ⚠️ `./svg_teleop.sh` passes no config, so it always runs `xbox_usb` |
+| `yaw_sign` (`safe_teleop` block) | flips the yaw stick | no | `1.0` ⏳ verify at M5, slow and low | unverifiable in sim (`px4_interface` negates yaw rate) |
+| `real_command_mode` | `trajectory` = position + velocity + acceleration on `/{name}/fmu/trajectory_command`; `velocity` = the old bare-velocity topic | no | `trajectory` | `px4_interface` must be rebuilt for it |
+| `use_led` / `led_controller.brightness` | LED strips | no | true (harmless with no strip) / 80 | keep brightness low near the mocap cameras |
+| After every landing | — | — | confirm **DISARMED in QGC** | the commander's "landed, disarmed" log is optimistic; the panel's Interface column is an ACK log, not an arming display |
 
 ## Drone-side voxl-vision-hub config (`/etc/modalai/voxl-vision-hub.conf` on the drone)
 
@@ -196,7 +275,7 @@ UDP 14550). ✅ Set 2026-08-11 (drone→Mocap PC ping verified 3–7 ms).
 | Value | Current |
 |---|---|
 | Working folder (laptop) | `~/AirStack-starling-max2/AirStack` — on the new `main` since 2026-10-07 18:30 (container recreated, workspace rebuilt clean; old-branch config edits backed up in `~/AirStack-starling-max2-local-edits-2026-10-07/`) |
-| **AirStack branch / snapshot** | CMU `yikuan/SVG_ground_control_dev` @ **`b21d28c`** since **2026-10-20** (patch `cf719f0..b21d28c` applied over the 10-07 snapshot; tests 181/181; robot container NOT rebuilt — only `bws` + panel `install.py`). Before that `yikuan/SVG_ground_control` @ `cf719f0`, vendored into `AirStack/` on **2026-10-07** (repo commit `91376aa`). Sibling of the previous `daniel/diffaero_ground_control` @ `f544c743` (common ancestor `a46f04b`), frozen at tag `airstack-starling-max2` / branch `archive/airstack-starling-max2`. Patch 0001 applied in-tree; patch 0002 fixed upstream; NatNet SDK NOT vendored (`install_sdk.sh`). **How to check:** `git log -1 -- AirStack` in this repo. **If it changes:** read [MIGRATION.md](MIGRATION.md), do its §6 re-do list, restart the MILESTONES ladder |
+| **AirStack branch / snapshot** | CMU `yikuan/SVG_ground_control_dev` @ **`b21d28c`** since **2026-10-20** (patch `cf719f0..b21d28c` applied over the 10-07 snapshot; tests 181/181 at the bump, **185 passed** 2026-10-20 with our landing tests; robot container NOT rebuilt — only `bws` + panel `install.py`). Before that `yikuan/SVG_ground_control` @ `cf719f0`, vendored into `AirStack/` on **2026-10-07** (repo commit `91376aa`). Sibling of the previous `daniel/diffaero_ground_control` @ `f544c743` (common ancestor `a46f04b`), frozen at tag `airstack-starling-max2` / branch `archive/airstack-starling-max2`. Patch 0001 applied in-tree; patch 0002 fixed upstream; NatNet SDK NOT vendored (`install_sdk.sh`). **How to check:** `git log -1 -- AirStack` in this repo. **If it changes:** read [MIGRATION.md](MIGRATION.md), do its §6 re-do list, restart the MILESTONES ladder |
 | Real-run configs | hover/first flight: **`swarm_real_ours.yaml`** · goals: **`goal_single_ours.yaml`** · gamepad: `teleop_real.yaml` (still CMU's values — derive `teleop_real_ours.yaml` before M5) — all under `<workspace>/src/svg_ground_control/config/`. The shipped 3-drone files are M7 material |
 | Gamepad | ⏳ model unknown — identify with `joy_map`, record the `teleop_controller` profile name here |
 | uXRCE client keeper on the drone | ⏳ decide: `svg-microdds-watchdog` (installed by the new provisioning script) **or** our `voxl-dds-retry.service` — not both |

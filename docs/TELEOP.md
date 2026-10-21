@@ -2,12 +2,20 @@
 
 > **Who this is for:** anyone in the AI.R / STC lab who wants to hand-fly the Starling with a
 > game controller instead of publishing waypoints. No robotics background needed.
+> **Read first:** [GLOSSARY.md](GLOSSARY.md) for the words, [RUNBOOK.md](RUNBOOK.md) §A (sim) or
+> §B (real drone) for the bring-up this sits on top of. "The commander" = the `swarm_commander`
+> node; "the panel" = the Foxglove SVG Basestation ([BASESTATION.md](BASESTATION.md)); "the real
+> drone" = our Starling 2 Max.
 > It covers the **new** gamepad teleop (`safe_teleop`) that arrived with the
-> `yikuan/SVG_ground_control` snapshot on **2026-10-07**: what the sticks do, what happens
-> when you let go, the two fences that bound you, and bring-up on sim and on the real drone.
+> `yikuan/SVG_ground_control` snapshot on **2026-10-07** — snapshot now
+> `yikuan/SVG_ground_control_dev` @ `b21d28c` (**2026-10-20**), which made the pad's
+> `max_speed_mps` **live and kept equal to the commander's `teleop_max_speed_mps` both ways**
+> and gave the panel a **Teleop · Sticks** card (§5, §8, [BASESTATION.md](BASESTATION.md) §3.13):
+> what the sticks do, what happens when you let go, the two fences that bound you, and bring-up
+> on sim and on the real drone.
 > It is **NOT** a replacement for [RUNBOOK.md](RUNBOOK.md) — you still need the whole §B
 > bring-up (agent, mocap, interfaces, QGC) underneath — and **NOT** the old keyboard teleop,
-> which CMU deleted (`AirStack/robot/ros_ws/src/svg_ground_control/README.md:70`).
+> which CMU deleted (its `svg_ground_control/README.md` says so in the teleop section).
 > It is also **NOT validated by us**: ⏳ **nothing below has flown at STE.** Treat every
 > ⏳ STE mark as "read this line, then go prove it".
 
@@ -32,7 +40,7 @@ position hold on all three axes, the same idea as PX4's own Position mode.
 
 Two things that surprise people. **It is room-fixed, not nose-relative** — "forward" on the
 right stick means one fixed direction in the hangar (mocap +x, our "East"), whatever way the
-nose points; turn the drone 180° and forward is still the *same* wall (`teleop.md:60-61`; the
+nose points; turn the drone 180° and forward is still the *same* wall (CMU `teleop.md`, Controls section; the
 command is published as world-frame ENU velocity). And **the sticks do nothing until you call
 `start`** — `takeoff` climbs to `hover_positions` and holds there; only
 `/swarm_commander/start` hands the drone to the pad, and only for drones listed in the
@@ -55,8 +63,8 @@ gamepad → joy_node → /joy → safe_teleop → /svg/drone_1/teleop_command
   keeps holding the drone on it — it does **not** descend or drift. To come down you must call
   `land` (or `hold`, then `land`), or kill.
 - **A stale pad is benign — by design.** Unplug it, flat battery, whatever: `safe_teleop`
-  publishes zero velocity (`safe_teleop/teleop_node.py:198-201`), and Ctrl-C publishes one
-  last zero on the way out (`:298`). A **dead teleop node** is benign too: `teleop_timeout_s`
+  publishes zero velocity (`SafeTeleopNode.tick`), and Ctrl-C publishes one
+  last zero on the way out (`main()` in `safe_teleop/teleop_node.py`). A **dead teleop node** is benign too: `teleop_timeout_s`
   (0.5 s) makes the commander treat a silent topic as zero, and that staleness path is what
   `./svg_teleop.sh stop` (a `pkill -9`) relies on.
 - **None of that brings the drone down.** Benign ≠ safe. The RC **kill switch (ch8)** is
@@ -64,9 +72,10 @@ gamepad → joy_node → /joy → safe_teleop → /svg/drone_1/teleop_command
   [PREFLIGHT.md](PREFLIGHT.md). There is also **no per-drone land**: `hold` and `land` are
   swarm-wide Triggers (academic with one drone, not at M7).
 - **Yaw sign cannot be proven in sim.** The real path negates the yaw rate ENU→NED
-  (`interface/px4_interface/src/px4_interface.cpp:378-382`); the sim path does not, so a sim
+  (`PX4Interface::trajectory_callback` in `interface/px4_interface/src/px4_interface.cpp` sends
+  `-angular.z` as `yawspeed`); the sim path does not, so a sim
   session proves every axis *except* yaw. ⏳ STE **First real flight: yaw slowly, low, thumb
-  on kill.** If it turns the wrong way, flip `yaw_sign` (`teleop_real.yaml:22-24`).
+  on kill.** If it turns the wrong way, flip `yaw_sign` (the `safe_teleop` block of `teleop_real.yaml`).
 - **Takeoff is open-loop** fixed-time staging ("request control → arm → ascend") and never
   checks `vehicle_status` — if PX4 refuses to arm, the drone just sits there looking broken.
   The new `vehicle_command_ack` logging in `px4_interface` prints PX4's verdict (ACCEPTED /
@@ -83,19 +92,20 @@ in axis numbers:
 
 | Profile | Device | Right stick | Left stick | Lock button |
 |---|---|---|---|---|
-| `xbox_usb` (`:90`) | Xbox 360 wired pad (Linux `xpad`) | axes **4 / 3** | 1 / 0 | button **4** |
-| `dragonrise_usb` (`:127`) | generic DragonRise / SHANWAN "Android gamepad" (`hid-generic`) | axes **3 / 2** | 1 / 0 | button **6** |
+| `xbox_usb` | Xbox 360 wired pad (Linux `xpad`) | axes **4 / 3** | 1 / 0 | button **4** |
+| `dragonrise_usb` | generic DragonRise / SHANWAN "Android gamepad" (`hid-generic`) | axes **3 / 2** | 1 / 0 | button **6** |
 
 **Which one do we have?** ⏳ **Unknown — nobody has written it down.** Every shipped config
-pins `dragonrise_usb` (`teleop_real.yaml:140`, `teleop_single.yaml:108`) and the config beats
-the node default (`safe_teleop/launch_helpers.py:49-55`), so a real Xbox pad needs
+pins `dragonrise_usb` (the `safe_teleop` block of `teleop_real.yaml`, `teleop_single.yaml` and
+every other shipped yaml) and the config beats the node default (`resolve_controller` in
+`safe_teleop/launch_helpers.py`: launch arg > config block > node default), so a real Xbox pad needs
 `teleop_controller:=xbox_usb` on the launch line or a yaml edit.
 ⏳ **STE: record which pad the lab has in [CONFIG.md](CONFIG.md)** and stop guessing.
 
 **The wrong-axis-map guard.** On the DragonRise layout axes 4 and 5 are analog triggers that
 **rest at full scale**, so flying that pad on the `xbox_usb` map would read an untouched
 trigger as a fully pushed forward stick. `safe_teleop` refuses to command any axis resting
-past ±0.9, and says so (`teleop_node.py:146-184`):
+past ±0.9, and says so (`SafeTeleopNode.check_axis_map`):
 
 ```
 [safe_teleop] REFUSING TO COMMAND: forward (axis 4) rests at +1.00. ... probably the
@@ -125,22 +135,29 @@ cd ~/AirStack-starling-max2/AirStack/robot/ros_ws/src/svg_ground_control/scripts
 ```
 
 ⚠️ **The script does not pass `teleop_controller`.** Both its sim and real modes start the node
-with **no config file** (`svg_teleop.sh:189`, `:305`), so it falls back to `xbox_usb` — *not*
+with **no config file** (the `ros2 run svg_ground_control safe_teleop --ros-args -p drone:=…` lines
+in its `bringup` and `bringup_real` functions), so it falls back to `xbox_usb` — *not*
 the `dragonrise_usb` the yamls pin — and on a DragonRise pad the §3 guard then fires and the
 drone will not move at all. ✅ CMU (their pad), ⏳ STE for ours.
 
-So the **manual two-pane form is the one to learn** — identical to §5's, with
-`teleop_single.yaml` for `teleop_real.yaml` and no `use_mocap:=true`. On top of
-[RUNBOOK.md](RUNBOOK.md) §A T1 (Isaac) and T2's `bringup` session with pane 1 running
-`launch_sim_interfaces.sh 1`, in the **container** (`root@…#`):
+So the **manual two-terminal form is the one to learn** — identical to §5's, with
+`teleop_single.yaml` for `teleop_real.yaml` and no `use_mocap:=true`. Open the sim session with
+[RUNBOOK.md](RUNBOOK.md) §A **T0** (`tools/sim_terminals.sh` opens one Terminator window with the
+tabs **Isaac Sim · Interfaces · Commander · Cockpit**, each already inside the right container);
+start Isaac with **1** drone in the Isaac Sim tab and `launch_sim_interfaces.sh 1` in the
+Interfaces tab. Then, both in the **container** (`root@…#`) — tmux alternative: T2's `bringup`
+session, pad in pane 5, commander in pane 2:
 
 ```bash
 CFG=$(ros2 pkg prefix svg_ground_control)/share/svg_ground_control/config/teleop_single.yaml
-# pane 5 — the pad, FIRST (prints the stick reading once a second)
+# Cockpit tab — the pad, FIRST (prints the stick reading once a second)
 ros2 launch svg_ground_control teleop.launch.py config:=$CFG
-# pane 2 — the commander, SAME config
+# Commander tab — the commander, SAME config
 ros2 launch svg_ground_control ground_control.launch.py config:=$CFG
 ```
+
+(`takeoff` / `start` / `land` then go in any extra container shell — a new Terminator tab,
+`Ctrl-Shift-T`, dropped into the robot container the way RUNBOOK §A T0 describes.)
 
 M1's teleop gate, all checkable in sim: right stick forward moves it one consistent direction
 · left stick up climbs and the height **holds** on release instead of sagging · release the
@@ -165,6 +182,10 @@ ros2 launch svg_ground_control ground_control.launch.py config:=$CFG use_mocap:=
 Pane 5 prints `pad: fwd … left … climb … yaw … | cmd vx … vy … vz …` once a second — move each
 stick and watch the numbers follow. `NO /joy` = the driver cannot see the pad (gotcha below);
 `NO odometry` is normal until interfaces and mocap are up — only `vz` waits for the height.
+The panel shows the same thing graphically: the **Teleop · Sticks** card appears beside the
+battery card as soon as `safe_teleop` publishes — Joy chip, `STICKS LIVE → drone_1` /
+`STICKS PARKED (press Start)`, raw-vs-mapped stick bars, the published `vx vy vz yaw`
+([BASESTATION.md](BASESTATION.md) §3.13). ⏳ STE.
 
 Either launch restarts without the other. One pane instead? Add `use_teleop:=true` to the
 commander launch and skip the pad pane (`false|true|auto`) — but you lose the pre-arm pad
@@ -181,7 +202,7 @@ pad and every velocity goes to zero; carry the drone and its Basestation mesh fo
 **⚠️ The pad-in-container gotcha.** `joy_node` runs inside the container, and `privileged`
 populates `/dev` only at container start — a pad plugged in later would stay invisible
 forever. The compose file therefore bind-mounts the *directory*
-(`AirStack/robot/docker/robot-base-docker-compose.yaml:51`, `/dev/input:/dev/input`), which
+(the `/dev/input:/dev/input` volume in `AirStack/robot/docker/robot-base-docker-compose.yaml`), which
 tracks hotplug. A container created **before** that line existed needs **recreating**:
 
 ```bash
@@ -204,7 +225,7 @@ forever). Our laptop is 24.04 / Jazzy, so that failure does not apply here, but 
 pad driver in the container is still the only path these docs describe.
 
 **⏳ STE — `./svg_teleop.sh real` is NOT our recipe.** It *launches `natnet_ros2`* and
-hard-fails if that package is not built (`svg_teleop.sh:254-259`). On our rig `natnet_ros2`
+hard-fails if that package is not built (its `bringup_real` function). On our rig `natnet_ros2`
 receives nothing (our Motive broadcasts — [MOCAP.md](MOCAP.md) §3) **and** it binds the same
 NatNet ports as our bridge, which is the documented way to starve `./mocap.sh` (MOCAP.md §5,
 the port-1511 squatter). Its `/drone_1/pose` gate would *pass* if `./mocap.sh` is already
@@ -217,21 +238,22 @@ for every drone; `fence_behavior` picks what a breach does:
 
 - `hold_all` (the default): any **active** drone outside the box latches the whole swarm —
   everyone freeze-hovers, **still armed**, until `/swarm_commander/reset_fence`. New on this
-  branch: it also latches on a merely airborne **external** (RC-flown) drone (`:1493-1507`).
+  branch: it also latches on a merely airborne **external** (RC-flown) drone (`SwarmCommander.enforce_fence`).
 - `keep_in` (what both teleop configs use): nobody stops. Outward speed is clipped to a
   braking envelope — cruise until the true braking distance for `fence_brake_accel_mps2`,
   then a firm brake fed forward to PX4, then `fence_keep_in_gain` × distance in the last
-  stretch (`fence.py:88`, `:111`, `:136`). Fly at a wall and you slow to a stop on it.
+  stretch (`wall_speed`, `keep_in_velocity`, `keep_in_acceleration` in `fence.py`). Fly at a wall and you slow to a stop on it.
 
 **The teleop fence** — `teleop_fence_enabled`, `teleop_fence_min/max`
-(`teleop_real.yaml:107-109`: ±3.0 / ±1.5 / 0.3–2.5 m). A **smaller box inside** the geofence
+(`teleop_real.yaml`: ±3.0 / ±1.5 / 0.3–2.5 m). A **smaller box inside** the geofence
 that **only hand-flown drones** see, as the same soft wall whatever `fence_behavior` says,
-drawn **amber** in the Basestation's 3D panel (`swarm_commander.py:2205-2207`;
+drawn **amber** in the panel's 3D view (`SwarmCommander._teleop_fence_marker`;
 [BASESTATION.md](BASESTATION.md)). It must lie inside the geofence or the commander raises a
-`ValueError` at launch and dies (`:607-618`) — a feature.
+`ValueError` at launch and dies (the `box_contains` check in `SwarmCommander.__init__`) — a feature.
 
 Two details that matter on the ground. **Only ACTIVE drones are clipped**
-(`:1949-1953`, `:1709-1712`) — takeoff and landing cross the fence floor on purpose; without
+(`SwarmCommander.advance_reference` for the teleop box, `keep_in` for the geofence) — takeoff and
+landing cross the fence floor on purpose; without
 that carve-out a reference clamped to `teleop_fence_min` z = 0.3 m becomes a position setpoint
 PX4's stiff altitude loop holds, and the drone hovers 30 cm up and never touches down. And
 **setting `fence_brake_accel_mps2` to 0 in flight** silently reverts the wall to the plain
@@ -248,14 +270,14 @@ Three numbers shape how the drone feels; all three were added to fix a specific 
 - **`teleop_lead_m` (0.5 m) — the leash.** How far the reference may run ahead of the drone.
   Without it, a drone held back by the CBF or a fence banks up unbounded error and lunges when
   released. It is applied to the **horizontal and vertical parts separately**
-  (`position_hold.py:62-80`): pulling the reference back along the 3-D vector scaled its z
+  (`leash` in `position_hold.py`): pulling the reference back along the 3-D vector scaled its z
   with the horizontal lag and walked the altitude reference into every sag — 1.1 m lost on
   pure x-y stick (bag `run_060352`).
 - **`hold_lead_m` (0.2 m)** — the same leash while taking off, landing or holding. **Keep it
   small**: PX4's `MPC_Z_P` is 5, and in bag `C1_0920_203148` a reference 1.3 m above a
   grounded drone shot it to twice hover height.
-- **`teleop_accel_mps2` (0.0 = off by default, **5.0** in `teleop_real.yaml:80` and
-  `teleop_single.yaml:64`) — the ramp.** Stick velocity is ramped at this rate with the
+- **`teleop_accel_mps2` (0.0 = off by default, **5.0** in `teleop_real.yaml` and
+  `teleop_single.yaml`) — the ramp.** Stick velocity is ramped at this rate with the
   acceleration fed **forward** to PX4, like `MPC_ACC_HOR_MAX`, so the drone banks with the
   command instead of waiting for its velocity loop (a bare step is followed at only ~4 m/s²).
   The ramp re-attaches to what was last **published**, never to measured velocity — that was
@@ -267,58 +289,66 @@ before it holds.** At our 0.5 m/s start cap it is far shorter; ⏳ STE **measure
 criterion). Raise `teleop_accel_mps2` for a sharper stop.
 
 **`~/hold` now brakes to a predicted stop point *ahead*** of where you called it, not back to
-the call position (`swarm_commander.py:1409-1425`); the log says how far —
+the call position (`SwarmCommander.handle_hold` → `stop_point`); the log says how far —
 `holding: drone_1 (braking, stops 0.6 m ahead)`. The reference is **re-seeded from measured
-position** at `/start` and after any `hold`/`land` (`:1697-1724`), logging `sticks live,
+position** at `/start` and after any `hold`/`land` (`SwarmCommander.advance_reference`), logging `sticks live,
 holding [x, y, z] until moved`, so nothing is chased from before takeoff.
 
 ## 8 · Parameters
 
-`safe_teleop` block — read **once at launch**, none of it live:
+`safe_teleop` block — read **once at launch, except `max_speed_mps`**, which is live and
+synced with the commander (2026-10-20). The old statement "none of it live" is wrong since then:
 
 | Name | Default | Live? | Our value |
 |---|---|---|---|
-| `teleop_controller` | `xbox_usb` | no | **`dragonrise_usb`** — `teleop_real.yaml:140` ⏳ verify §3 |
-| `max_speed_mps` | `1.0` | **yes** (since 2026-10-20) | shipped `0.7` (`teleop_real.yaml:141`) — ours **0.5** for M5 ([CONFIG.md](CONFIG.md)). Kept equal to the commander's `teleop_max_speed_mps` in both directions (`sync_max_speed`); the panel's Teleop vmax row sets both |
-| `max_climb_speed_mps` | `0.8` | no | `0.5` (`:142`) |
+| `drone` | `drone_1` | no | `drone_1` (launch arg `drone:=`) |
+| `teleop_controller` | `xbox_usb` | no | **`dragonrise_usb`** in every shipped `safe_teleop` block ⏳ verify §3 |
+| `max_speed_mps` | `1.0` | **yes** (since 2026-10-20) | shipped `0.7` (`teleop_real.yaml`) — ours **0.5** for M5 ([CONFIG.md](CONFIG.md)). Kept equal to the commander's `teleop_max_speed_mps` **in both directions**: the node follows the commander's status snapshot (`SafeTeleopNode.commander_status_callback`), and a `ros2 param set /safe_teleop max_speed_mps …` is pushed to the commander (`push_max_speed`). The panel's Teleop vmax row sets both. Only `cbf_max_speed_mps` is still a separate cap |
+| `sync_max_speed` | `true` | no | default. `false` turns both directions off |
+| `commander_status_topic` | `/svg/commander_status` | no | default (= the commander's `status_topic`) |
+| `commander_ns` | `/swarm_commander` | no | default (where the commander's `set_parameters` lives) |
+| `max_climb_speed_mps` | `0.8` | no | `0.5` (`teleop_real.yaml`) |
 | `deadzone` · `joy_timeout_s` · `yaw_rate_rad_s` | `0.15` · `0.5` · `1.0` | no | unset → defaults |
+| `joy_topic` · `odometry_topic_template` · `publish_rate_hz` | from the profile (`/joy`) · `/{name}/odometry_conversion/odometry` · `20.0` | no | defaults; odometry is display-only here (the altitude readout) |
 | `print_hz` | `0.0` (`teleop.launch.py`: `1.0`) | no | launch arg |
 | `forward/left/climb/yaw_axis`, `lock_button`, `*_sign` | from the profile | no | profile (all signs `+1.0`) |
 
 `swarm_commander` block — the live ones take `ros2 param set /swarm_commander <name> <value>`
-**in flight**; the rest are refused at runtime with a reason (`swarm_commander.py:920-1033`):
+**in flight**; the rest are refused at runtime with a reason naming what *is* live
+(`SwarmCommander.on_parameter_change`):
 
 | Name | Default | Live? | Our value (`teleop_real.yaml`) |
 |---|---|---|---|
-| `teleop_drones` | `""` | **no** | `drone_1` (`:30`) |
-| `teleop_timeout_s` | `0.5` | **no** | `0.5` (`:54`) |
-| `teleop_max_speed_mps` | `1.2` | ✅ yes | shipped `0.7` (`:70`) — ours **0.5** for M5; clamps with a throttled warn |
-| `teleop_kp` | `1.0` | ✅ yes | `1.0` (`:75`) — sim/velocity output only; a real drone on the trajectory output is held by PX4's `MPC_XY_P` |
-| `teleop_lead_m` | `0.5` | ✅ yes | `0.5` (`:76`) |
-| `teleop_accel_mps2` | `0.0` (off) | ✅ yes | **`5.0`** (`:80`) |
-| `hold_lead_m` | `0.2` | ✅ yes | `0.2` (`:60`) |
-| `fence_behavior` | `hold_all` | no | **`keep_in`** (`:92`) |
-| `fence_min` / `fence_max` | ±1000 | no | `[-4,-2,0]` / `[4,2,3]` (`:101-102`) ⏳ shrink |
-| `fence_brake_accel_mps2` · `fence_keep_in_gain` · `fence_margin_m` | `4.0` · `1.0` · `0.0` | ✅ yes (gain **must stay > 0**) | `4.0` · `2.0` · `0.0` (`:98-100`) |
-| `teleop_fence_enabled` / `_min` / `_max` | `false` / ±1000 | no | `true`, `[-3,-1.5,0.3]` / `[3,1.5,2.5]` (`:107-109`) ⏳ shrink |
+| `teleop_drones` | `""` | **no** | `drone_1` |
+| `teleop_timeout_s` | `0.5` | **no** | `0.5` |
+| `teleop_max_speed_mps` | `1.2` | ✅ yes (> 0) | shipped `0.7` — ours **0.5** for M5; clamps with a throttled warn. Reported in the status snapshot's `tuning` block — which is what `safe_teleop` and the panel's Teleop vmax readout follow |
+| `teleop_kp` | `1.0` | ✅ yes | `1.0` — sim/velocity output only; a real drone on the trajectory output is held by PX4's `MPC_XY_P` |
+| `teleop_lead_m` | `0.5` | ✅ yes | `0.5` |
+| `teleop_accel_mps2` | `0.0` (off) | ✅ yes | **`5.0`** |
+| `hold_lead_m` | `0.2` | ✅ yes | `0.2` |
+| `fence_behavior` | `hold_all` | no | **`keep_in`** |
+| `fence_min` / `fence_max` | ±1000 | no | `[-4,-2,0]` / `[4,2,3]` ⏳ shrink |
+| `fence_brake_accel_mps2` · `fence_keep_in_gain` · `fence_margin_m` | `4.0` · `1.0` · `0.0` | ✅ yes (gain **must stay > 0**) | `4.0` · `2.0` · `0.0` |
+| `teleop_fence_enabled` / `_min` / `_max` | `false` / ±1000 | no | `true`, `[-3,-1.5,0.3]` / `[3,1.5,2.5]` ⏳ shrink |
 
 yaml editing rules are unchanged — read once at launch, floats only, edit the **source** copy:
 [RUNBOOK.md](RUNBOOK.md) §C7.
 
 ## 9 · Corrections to CMU's `teleop.md` for OUR rig
 
-CMU's `teleop.md` (463 lines, in `AirStack/robot/ros_ws/src/svg_ground_control/`) is the
-source of truth for everything not listed here. These lines are wrong, or wrong for us
-(code survey 2026-10-07):
+CMU's `teleop.md` (471 lines, in `AirStack/robot/ros_ws/src/svg_ground_control/`) is the
+source of truth for everything not listed here — and since 2026-10-20 it documents the
+`max_speed_mps` ↔ `teleop_max_speed_mps` sync correctly in its Parameters section. These
+points are wrong, or wrong for us (code survey 2026-10-07, re-checked 2026-10-21 at `b21d28c`):
 
 | CMU's `teleop.md` says | On our rig / in the code |
 |---|---|
-| `left_sign = -1.0` for `xbox_usb` (`:320`, `:399`, the Axis signs table `:409`) | **Wrong.** `controllers.py` has `left_sign=1.0` for **both** profiles (`:112`, `:142`), and the comment at `:38-40` records a bench check on **2026-09-19** that `left_sign = -1.0` moved the drone the **wrong way**. The code wins. Don't "fix" a sideways stick by copying that table. |
-| `odometry_timeout_s` is a `safe_teleop` parameter (`:394`) | **It does not exist.** The node declares only `joy_timeout_s` (`teleop_node.py:61`); odometry is display-only there (it supplies the altitude readout). Stale *odometry* is the commander's concern, via `state_timeout_s`. That same table is also split in half by a prose paragraph — the four rows after it belong to the table above. |
-| The device "today" is `xbox_usb` (`:16-17`, `:382`) | Every shipped config pins **`dragonrise_usb`** (`teleop_real.yaml:140`, `teleop_single.yaml:108`), and the config beats the node default (`launch_helpers.py:49-55`). Which pad **we** own is ⏳ unrecorded — §3. |
-| The altitude prose (`:25`, "release and the drone holds that height") describes `velocity.py`'s target-altitude mode | The node runs `direct_vertical=True` (`teleop_node.py:81`), so the left stick **is** the vertical velocity (`velocity.py:138-153`) and there is **no altitude hold inside the node at all**. The hold you feel is entirely the **commander's** reference point. Correct behaviour, wrong mechanism — matters when you debug it. |
-| Commander teleop params are "tuned in the commander's block" (`:390-393`) without saying which are live | Only `teleop_max_speed_mps`, `teleop_kp`, `teleop_lead_m`, `teleop_accel_mps2`, `hold_lead_m` and the three fence *dynamics* are live. `teleop_drones`, `teleop_timeout_s`, `fence_behavior` and **both fence boxes** are startup-only and setting them is refused — §8. |
-| — (not covered) | `teleop_real.yaml:58` sets `land_speed_mps: 0.3`. Our lab **validated 0.6** — 0.3 bounces past PX4's land detector and leaves the drone **armed on the ground** ([CONFIG.md](CONFIG.md)). Change it before flying. Its `hover_positions` z is `1.2` where our goal configs use the low-and-safe `0.5`. It has **no `led_controller` block** (node defaults → `drone_1`, fine for us), and its `px4_vio_frame` comment says verify with the **B4b hand-check** — that is our [PREFLIGHT.md](PREFLIGHT.md) frame hand-check, not optional. |
+| `left_sign = -1.0` for `xbox_usb` (the `left_sign` row of its Parameters table and the Axis signs table) | **Wrong.** `controllers.py` has `left_sign=1.0` for **both** profiles (`XBOX_USB`, `DRAGONRISE_USB`), and its header comment records a bench check on **2026-09-19** that `left_sign = -1.0` moved the drone the **wrong way**. The code wins. Don't "fix" a sideways stick by copying that table. |
+| `odometry_timeout_s` is a `safe_teleop` parameter (its Parameters table) | **It does not exist.** `SafeTeleopNode.__init__` declares only `joy_timeout_s`; odometry is display-only there (it supplies the altitude readout). Stale *odometry* is the commander's concern, via `state_timeout_s`. That same table is also split in half by a prose paragraph — the rows after it belong to the table above. |
+| The device "today" is `xbox_usb` (the Controls intro and the Parameters table) | Every shipped config pins **`dragonrise_usb`** (`safe_teleop` block of `teleop_real.yaml`, `teleop_single.yaml`, …), and the config beats the node default (`resolve_controller` in `launch_helpers.py`). Which pad **we** own is ⏳ unrecorded — §3. |
+| The altitude prose in the Controls table ("release and the drone holds that height") describes `velocity.py`'s target-altitude mode | The node builds its `VelocityMapper` with `direct_vertical=True`, so the left stick **is** the vertical velocity (`VelocityMapper.update` → `_direct`) and there is **no altitude hold inside the node at all**. The hold you feel is entirely the **commander's** reference point. Correct behaviour, wrong mechanism — matters when you debug it. |
+| Commander teleop params are "tuned in the commander's block" (the paragraph after its Parameters table) without saying which are live | Only `teleop_max_speed_mps`, `teleop_kp`, `teleop_lead_m`, `teleop_accel_mps2`, `hold_lead_m` and the three fence *dynamics* are live. `teleop_drones`, `teleop_timeout_s`, `fence_behavior` and **both fence boxes** are startup-only and setting them is refused — §8. |
+| — (not covered) | `teleop_real.yaml` sets `land_speed_mps: 0.3`. Our lab **validated 0.6** — 0.3 bounces past PX4's land detector and leaves the drone **armed on the ground** ([CONFIG.md](CONFIG.md)). Change it before flying. Its `hover_positions` z is `1.2` where our goal configs use the low-and-safe `0.5`. It has **no `led_controller` block** (node defaults → `drone_1`, fine for us), and its `px4_vio_frame` comment says verify with the **B4b hand-check** — that is our [PREFLIGHT.md](PREFLIGHT.md) frame hand-check, not optional. |
 
 ## 10 · Troubleshooting
 
@@ -333,7 +363,7 @@ source of truth for everything not listed here. These lines are wrong, or wrong 
 | Drone coasts after you let go, or travels forward after `hold` | Both by design (§7): the `teleop_accel_mps2` release ramp plus the leash, and `hold` braking to a predicted stop point ahead (the log prints the distance). Raise `teleop_accel_mps2` live for a sharper stop. |
 | Drone hovers ~30 cm up on `land` and never touches down | A reference clamped to the teleop fence floor. Only ACTIVE drones should be clipped; if this happens, the drone is not transitioning to LANDING — `hold`, then `land`, then kill if it persists. |
 | Yaw turns the wrong way | Expected risk — sim cannot prove it. Land, flip `yaw_sign` in the config's `safe_teleop` block, relaunch. |
-| Commander dies: "Logger severity cannot be changed" | **Fixed upstream** on this snapshot (`swarm_commander.py:1612-1614`) — `patches/0002` is no longer needed. If you see it, you are on an older tree. |
+| Commander dies: "Logger severity cannot be changed" | **Fixed upstream** on this snapshot (`SwarmCommander.send_robot_command` keeps one severity per call site) — `patches/0002` is no longer needed. If you see it, you are on an older tree. |
 
 Everything else: [TROUBLESHOOTING.md](TROUBLESHOOTING.md).
 
@@ -341,13 +371,13 @@ Everything else: [TROUBLESHOOTING.md](TROUBLESHOOTING.md).
 
 | Piece | Location (under `AirStack/robot/ros_ws/src/svg_ground_control/`) | Role |
 |---|---|---|
-| `safe_teleop` node | `svg_ground_control/safe_teleop/teleop_node.py` | `/joy` → `/svg/{drone}/teleop_command`; params `:42-75`, axis guard `:146-184`, stale-joy zeros `:198-201`, Ctrl-C zero `:298`. Mapping: `velocity.py:124-156`, `direct_vertical=True`. Left-stick lock: `latch.py` — a left-bumper **toggle** that zeros climb + yaw, not a held snapshot |
-| device registry | `safe_teleop/controllers.py` | `XBOX_USB` `:90`, `DRAGONRISE_USB` `:127` — driver nodes + axis map + signs. Resolution order (`launch_helpers.py:49-55`): launch arg > config block > node default |
-| pad diagnostics | `safe_teleop/{view,velocity,joy_view,monitor}.py`, `svg_ground_control/joy_map.py` | console scripts `pad_view`, `velocity_preview`, `joy_topic_view`, `teleop_monitor`, `joy_map` (`setup.py:35-40`); all flag triggers resting past ±0.9 |
+| `safe_teleop` node | `svg_ground_control/safe_teleop/teleop_node.py` | `/joy` → `/svg/{drone}/teleop_command`; params declared in `SafeTeleopNode.__init__`, axis guard `check_axis_map`, stale-joy zeros `tick`, Ctrl-C zero `main`; speed-cap sync `commander_status_callback` (follow the commander) + `push_max_speed` (push to it). Mapping: `VelocityMapper.update` in `velocity.py`, `direct_vertical=True`. Left-stick lock: `latch.py` (`ButtonToggle`) — a left-bumper **toggle** that zeros climb + yaw, not a held snapshot |
+| device registry | `safe_teleop/controllers.py` | `XBOX_USB`, `DRAGONRISE_USB` — driver nodes + axis map + signs. Resolution order (`resolve_controller` in `launch_helpers.py`): launch arg > config block > node default |
+| pad diagnostics | `safe_teleop/{view,velocity,joy_view,monitor}.py`, `svg_ground_control/joy_map.py` | console scripts `pad_view`, `velocity_preview`, `joy_topic_view`, `teleop_monitor`, `joy_map` (entry points in `setup.py`); all flag triggers resting past ±0.9. The panel's Teleop · Sticks card is the graphical twin of `teleop_monitor` ([BASESTATION.md](BASESTATION.md) §3.13) |
 | launches | `launch/teleop.launch.py`, `launch/ground_control.launch.py` | pad-only: args `config` (default `swarm_sim.yaml`), `drone`, `teleop_controller`, `print_hz` (1.0). Bundled: `use_teleop:=false\|true\|auto`, `teleop_drones:=` |
-| reference point + fences | `svg_ground_control/position_hold.py`, `fence.py` | `leash` `:62-80`, `advance_reference` `:85`; `fence.py` is wholly new — `wall_speed` `:88`, `keep_in_velocity` `:111`, `keep_in_acceleration` `:136` |
-| commander glue | `svg_ground_control/swarm_commander.py` | teleop-fence validation `:607-618`, live-param set `:915-960`, hold `:1409-1425`, hold_all on external `:1493-1507`, reseed `:1697-1724`, fence clip `:1949-1953`, yaw `:2008-2028`, amber marker `:2205-2207` |
-| yaw ENU→NED | `../../interface/px4_interface/src/px4_interface.cpp:378-382` | negates the yaw rate — why yaw sign is unverifiable in sim; `vehicle_command_ack` logging `:680-706` |
-| host bring-up script | `scripts/svg_teleop.sh` (452 lines) | `solo\|squeeze\|hover [--headless]`, `real`, `takeoff\|start\|land\|hold\|reset-fence\|monitor\|status\|stop`, `logs <isaac\|agent\|natnet\|iface\|commander\|teleop\|joy\|rviz>`; tmux inside the containers (`docker exec -it airstack-robot-desktop-1 tmux attach -t commander`), re-exports `ROS_DOMAIN_ID` per session `:45-57` |
-| pad into the container | `AirStack/robot/docker/robot-base-docker-compose.yaml:51` | `/dev/input:/dev/input` bind mount (not `devices:`) so hotplug works |
-| legacy node · CMU doc | `svg_ground_control/xbox_teleop.py` · `teleop.md` (463 lines) | `xbox_teleop` is a simpler direct stick→velocity utility, **not** the documented path. Read `teleop.md` with §9 in hand |
+| reference point + fences | `svg_ground_control/position_hold.py`, `fence.py` | `leash`, `advance_reference`, `ramp_velocity`; `fence.py` is wholly new — `wall_speed`, `keep_in_velocity`, `keep_in_acceleration`, `box_contains` |
+| commander glue | `svg_ground_control/swarm_commander.py` | teleop-fence validation = the `box_contains` check in `__init__` · live-param set `on_parameter_change` / `_apply_parameters` · hold `handle_hold` + `stop_point` · hold_all on external `enforce_fence` · reseed + teleop-fence clip `advance_reference` · geofence clip `keep_in` · yaw `publish_command` / `desired_heading` · amber marker `_teleop_fence_marker` |
+| yaw ENU→NED | `../../interface/px4_interface/src/px4_interface.cpp` | `PX4Interface::trajectory_callback` sends `-angular.z` as `yawspeed` — why yaw sign is unverifiable in sim; `PX4Interface::on_vehicle_command_ack` logs ACCEPTED / DENIED |
+| host bring-up script | `scripts/svg_teleop.sh` (452 lines) | `solo\|squeeze\|hover [--headless]`, `real`, `takeoff\|start\|land\|hold\|reset-fence\|monitor\|status\|stop`, `logs <isaac\|agent\|natnet\|iface\|commander\|teleop\|joy\|rviz>`; tmux inside the containers (`docker exec -it airstack-robot-desktop-1 tmux attach -t commander`), re-exports `ROS_DOMAIN_ID` per session (`detect_domain`) |
+| pad into the container | `AirStack/robot/docker/robot-base-docker-compose.yaml` | `/dev/input:/dev/input` bind mount (not `devices:`) so hotplug works |
+| legacy node · CMU doc | `svg_ground_control/xbox_teleop.py` · `teleop.md` (471 lines) | `xbox_teleop` is a simpler direct stick→velocity utility, **not** the documented path. Read `teleop.md` with §9 in hand |

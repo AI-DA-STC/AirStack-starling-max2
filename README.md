@@ -35,50 +35,6 @@ before the next one are the box at the top of MILESTONES.
 
 ## What is in this repo
 
-## Flight-lab network architecture
-
-<img src="pictures/Flight_lab_architecture.png" alt="Flight lab network topology — isolated OptiTrack camera network to Mocap PC to GL-MT6000 router splitting the lab LAN 192.168.9.0/24 and a secondary drone-WiFi segment 10.40.2.0/23" width="850">
-
-**Current topology (since 2026-08-27, unchanged by the branch switch):** the OptiTrack camera
-rig sits on its own **isolated camera network** — the overhead camera rig runs wall-trunking
-up the pillar to an unmanaged LiteWave LS105G switch that talks only to the cameras and the
-**Mocap PC**; that traffic never touches the lab LAN. The Mocap PC runs Motive and bridges
-the cameras to the lab LAN, broadcasting the NatNet pose stream there (≤240 Hz; ours runs
-at 50 Hz). A **GL.iNet GL-MT6000 router at `192.168.9.1`** creates and routes between two
-subnets: the **lab LAN `192.168.9.0/24`** — where the ground-control laptop is wired in on
-LAN port 4 (`192.168.9.107`) and the Mocap PC lives — and the **`10.40.2.0/23` drone
-segment** (gateway `10.40.2.1`), where the **Starlings** sit on WiFi SSID **`StarlingMax2`**
-alongside the laptop's own WiFi NIC (`10.40.2.107`). Crazyflies stay on the lab LAN
-(`192.168.9.x`, SSID `motive`).
-
-> ⚠️ **Check the drone's actual address before every session** — [CONFIG.md](docs/CONFIG.md) is
-> the tie-breaker over this picture. The drone *dials the laptop*, so the laptop IP baked
-> into it must be reachable from the drone's segment: the laptop's WiFi NIC
-> (`10.40.2.107`) is same-subnet, and the router also routes to its wired `192.168.9.107`.
-> Confirm with a ping from the drone before flying — a stale or unreachable value means
-> [RUNBOOK](docs/RUNBOOK.md) §B step 3 never gets `session established`.
-
-The router serves both drone SSIDs open on 5 GHz **channel 36**. Crazyflies (also
-`192.168.9.x`, SSID `motive`) are commanded over a **Crazyradio 2.4 GHz USB dongle** with a
-Crazyswarm2 **software kill switch**, independent of WiFi; Starlings are commanded over
-WiFi (uXRCE-DDS / MAVLink) with an **RC-remote hardware kill switch** plus QGroundControl
-on the laptop. Exact per-device values (IPs, ports, static leases, SSIDs) live in
-[CONFIG.md](docs/CONFIG.md)'s network table — treat that as the single source of truth, since
-several are DHCP-drifty until static leases land.
-
-**Security note:** both SSIDs are open (no WPA) — keep the lab network offline / air-gapped
-from the internet and any untrusted network.
-
-Router configuration and how to reproduce this setup:
-[AI-DA-STC/ground-control-network-setup](https://github.com/AI-DA-STC/ground-control-network-setup).
-
-The earlier two-router topology (the `Mocap_QCGroundControl` D-Link setup, 2026-08-11) is
-preserved, prose-only, in the [appendix](docs/MIGRATION.md#12--moved-from-readme-showcase-milestones-in-brief-historical-appendix) at the bottom of
-this file.
-
-*(Paths written in prose — `pictures/…`, `patches/…` — are relative to the repo root.
-Clickable links inside `docs/` use `../` because they resolve from that folder.)*
-
 | File / folder | What it is |
 |---|---|
 | [SETUP.md](docs/SETUP.md) | **New laptop** — install, both clones, first build; the messages that look like errors but are normal |

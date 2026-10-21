@@ -1,0 +1,8 @@
+# safety_registry.txt — phrases that must stay byte-identical wherever they are required.
+# Format (tab-separated):  <exact phrase>	<min count across README/CLAUDE/docs>	<files that must each contain it>
+# Prefix "?" = optional (WARN instead of FAIL).  Prefix "!" = free whitelist entry for check 8 (a ⚠️ line
+# containing this text counts as registered; no count/file check).
+sim-only — never port to the drone	15	CLAUDE.md,docs/PREFLIGHT.md,docs/CONFIG.md,docs/RUNBOOK.md,docs/TROUBLESHOOTING.md,docs/AI_ASSIST.md
+never `systemctl restart voxl-px4`	2	CLAUDE.md,docs/PREFLIGHT.md
+Stop / Play	1	docs/RUNBOOK.md
+?land from the hover	1	docs/RUNBOOK.md

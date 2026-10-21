@@ -36,6 +36,8 @@ tab or pane. §B/§C say "pane N"; §A says "<name> tab".
 
 ## A · Fly in SIMULATION — sim validated in part on this branch (MILESTONES §3c)
 
+> **WORLD: SIMULATION — nothing on this page touches the drone.** Step 0, before anything else: the drone's battery is OUT and `./mocap.sh` is NOT running on the laptop (the sim shares DDS domain 1 and the `/drone_1` topic names with the real drone). ⚠️ Sim-only — never port to the drone: the sim airframe values and `cbf_sim.yaml` speeds/landing settle (iron rule 9).
+
 GPU required (Isaac Sim is NVIDIA's GPU simulator). Four long-running things, one per tab:
 the Isaac Sim spawn, the **interfaces** (one MAVROS node per drone — MAVROS turns PX4's
 MAVLink into ROS topics), the **commander** (the ROS node that flies the swarm) and a
@@ -154,7 +156,7 @@ One call at a time — or the panel's buttons, which call the same services:
 ros2 service call /swarm_commander/takeoff std_srvs/srv/Trigger   # arm + climb; wait for "holding takeoff position" ×3 (~30 s)
 ros2 service call /swarm_commander/start   std_srvs/srv/Trigger   # scenario live
 ros2 service call /swarm_commander/hold    std_srvs/srv/Trigger   # freeze in a hover (also the PANIC button)
-ros2 service call /swarm_commander/land    std_srvs/srv/Trigger   # from the hover — never mid-leg
+ros2 service call /swarm_commander/land    std_srvs/srv/Trigger   # land from the hover — never mid-leg
 ros2 topic echo /drone_1/interface/mavros/state --once           # expect armed: false
 ```
 Expected landing log in the Commander tab, per drone: `touchdown at z=… settling 2.0 s
@@ -197,6 +199,10 @@ Details and the gamepad: [TELEOP.md](TELEOP.md) §4. RViz still works as a fallb
 ---
 
 ## B · REAL DRONE session (mocap room) — ⏳ STE on this branch
+
+> **WORLD: REAL DRONE — [PREFLIGHT.md](PREFLIGHT.md) gates every takeoff.** Gates before the next real flight: the box at the top of [MILESTONES.md](MILESTONES.md) (MAV_SYS_ID 1 vs 2, one watchdog only, §3d ACK audit, props-off kill test, M3 landing sub-test, mocap chain after the camera upgrade).
+>
+> **Step 0 — which world am I in:** Isaac container NOT running (`docker ps | grep isaac` → empty), no `mavros_node` and no `svg_teleop` in `ros2 node list`, and the `px4_interface … target_system=N` startup line present. ⚠️ Never start Isaac Sim during a real session: the sim publishes on the real drone's topic names.
 
 > **Where things run.** Three KINDS of shell exist; each step names its kind:
 >
@@ -506,6 +512,10 @@ radius it was launched with for its own spacing; only the filter follows a live 
 
 ---
 
+### C8 — parameters you must NEVER set live (they look harmless and are not)
+
+> ⚠️ `fence_brake_accel_mps2` **0** silently reverts the keep_in wall to the old gain×distance barrier · keep `hold_lead_m` at **0.2** (a 1.3 m lead above a grounded drone doubled its hover height, bag C1_0920_203148) · keep `fence_brake_accel_mps2` **≥ `goal_accel_mps2`** or the wall caps cruise speed · `cbf_max_speed_mps` is the ONLY speed limit on the real drone (its PX4 allows 20 m/s). Details: [CONFIG.md](CONFIG.md).
+
 ## D · POST-FLIGHT — pull & review the PX4 logs
 
 Every arming writes a `.ulg` on the drone. **Laptop** terminal (password: CONFIG.md):
@@ -538,7 +548,7 @@ the first thing to run when "this flight behaved differently".
 | Troubleshooting | [TROUBLESHOOTING.md](TROUBLESHOOTING.md) |
 | Goal topics | `/svg/drone_1/goal_command` (PoseStamped, `map` frame, ABSOLUTE) · `/svg/drone_1/speed_command` (Float32) · `/svg/drone_1/goal_xyzt` (x,y,z,θ°) — after `start`, `goal` scenario only |
 | Live params | `ros2 param set /swarm_commander <name> <value>` — CBF gains, fence dynamics, goal law, teleop; others refused |
-| **sim-only — never port to the drone** (iron rule 9) | sim airframe rate gains ×0.5, gyro filters 80/40, `LNDMC_ROT_MAX` 300 (real 30), motor lag off, MAVROS respawn, `cbf_sim.yaml` speeds 2.0 / 4.0 / 6.0 + landing settle 2.0 s / retry. Real `_ours` configs: `drone_1`, `land_settle_s` 0.0, `land_speed_mps` 0.6, `cbf_max_speed_mps` 1.0 |
+| [SIM] **sim-only — never port to the drone** (iron rule 9) | sim airframe rate gains ×0.5, gyro filters 80/40, `LNDMC_ROT_MAX` 300 (real 30), motor lag off, MAVROS respawn, `cbf_sim.yaml` speeds 2.0 / 4.0 / 6.0 + landing settle 2.0 s / retry. Real `_ours` configs: `drone_1`, `land_settle_s` 0.0, `land_speed_mps` 0.6, `cbf_max_speed_mps` 1.0 |
 | `target_system` | must equal the drone's `MAV_SYS_ID` — check the `px4_interface` startup line; no ACK = mismatch |
 | RC takeover | straight to **MANUAL** or **kill switch** ONLY (POSCTL/ALTCTL leak commander setpoints) |
 | After landing | confirm **DISARMED** in QGC before approaching — the panel's Interface column is an ACK log, not an arming display |

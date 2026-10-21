@@ -1,0 +1,8 @@
+# values_registry.txt — flown values the docs quote. Format (tab-separated): <key>	<source file>	<expected value>
+# yaml: first "key: value" at any indent (comments stripped). .params: PX4 export, 4th tab column parsed as float.
+land_speed_mps	AirStack/robot/ros_ws/src/svg_ground_control/config/swarm_real_ours.yaml	0.6
+land_settle_s	AirStack/robot/ros_ws/src/svg_ground_control/config/swarm_real_ours.yaml	0.0
+cbf_max_speed_mps	AirStack/robot/ros_ws/src/svg_ground_control/config/swarm_real_ours.yaml	1.0
+land_speed_mps	AirStack/robot/ros_ws/src/svg_ground_control/config/goal_single_ours.yaml	0.6
+land_settle_s	AirStack/robot/ros_ws/src/svg_ground_control/config/goal_single_ours.yaml	0.0
+LNDMC_ROT_MAX	starling_1_indoor_params.params	30

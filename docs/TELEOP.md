@@ -168,13 +168,15 @@ height stops moving · Ctrl-C publishes a zero. Sim proves all of it — but **n
 
 ## 5 · Quick start — REAL drone (M5)
 
+> **WORLD: REAL DRONE — [PREFLIGHT.md](PREFLIGHT.md) gates every takeoff.** ⚠️ Fly `teleop_real_ours.yaml` (added 2026-10-21: our ±2 m net, `land_speed_mps` 0.6, `land_settle_s` 0.0, `teleop_max_speed_mps` 0.5, teleop fence inside the geofence) — never CMU's `teleop_real.yaml` (`land_speed_mps` 0.3 left the drone armed on the ground; room-sized fences). ⏳ unflown: the pad model is still unrecorded — set `teleop_controller` on the launch line.
+
 Do the **whole** [RUNBOOK.md](RUNBOOK.md) §B bring-up first — steps 0–7: agent, QGC,
 `./mocap.sh`, `real_interfaces`, Basestation hand-carry preflight. Then swap step 6's config
-for `teleop_real.yaml` and add the pad; pad first, deliberately, so the sticks are proven
+for `teleop_real_ours.yaml` and add the pad; pad first, deliberately, so the sticks are proven
 before anything is armed. Both in the **container** (`root@…#`), in the `bringup` session:
 
 ```bash
-CFG=$(ros2 pkg prefix svg_ground_control)/share/svg_ground_control/config/teleop_real.yaml
+CFG=$(ros2 pkg prefix svg_ground_control)/share/svg_ground_control/config/teleop_real_ours.yaml
 # pane 5 — the pad, FIRST
 ros2 launch svg_ground_control teleop.launch.py config:=$CFG
 # pane 3 — the commander (replaces step 6's launch), SAME config

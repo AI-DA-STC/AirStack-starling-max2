@@ -10,6 +10,14 @@
 > Last updated: 2026-10-21.
 > Branch: `yikuan/SVG_ground_control_dev` @ `b21d28c` (since 2026-10-20; was `yikuan/SVG_ground_control` @ `cf719f0` from 10-07) · Working folder: `~/AirStack-starling-max2/AirStack`
 >
+> ### Gates before the next real flight (read this box first — never below a fold)
+> - **Last validated on the real drone: nothing on this branch.** §B/§C were last flown 2026-09-01→03 on the previous branch (`daniel/diffaero_ground_control`). Sim: ledger #1–#14 (#3/#4 re-run pending).
+> - **Open M2 gates:** `MAV_SYS_ID` 1 vs 2 unresolved (read back in QGC; `target_system` must match, no ACK = mismatch) · `svg-microdds-watchdog` vs `voxl-dds-retry.service` — run ONE, both together untested · §3d ACK-message audit against PX4 v1.14 not re-run · props-off KILL ground test on this branch.
+> - **Carried-over issues (§3c table) are verdicts the pilot assumes until re-observed:** control-authority leak in POSCTL/ALTCTL, software blind to arming, commander stuck non-IDLE after a takeover, `land_speed` 0.3 leaves the drone armed.
+> - **M3 landing sub-test:** fly `land_settle_s` 0.0 (the flown behaviour) until two landings end DISARMED in QGC; then set 2.0 live, land twice, expect `landed, disarmed (attempt 1)`; only then put 2.0 in the real config. The disarm retry cannot engage on real — the `px4_interface` ACK log is the only evidence.
+> - **Mocap chain unproven since the camera upgrade:** `./mocap.sh check` → `./mocap.sh` → `ros2 topic hz /drone_1/pose` → EKF `EV FUSED` on the panel, before any arming (MOCAP.md).
+> - Next-up rows 5–8 (M2 → §3d → M3) carry the "gated by" column.
+>
 > ⚠️ **This ladder was RESET on 2026-10-07** when the repo moved to the new AirStack branch.
 > The previous ladder (M1–M6, ledger #1–#21, flights of 2026-09-01→03 on
 > `daniel/diffaero_ground_control`) is preserved on tag `airstack-starling-max2` / branch

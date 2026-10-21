@@ -5,6 +5,8 @@ Everything for flying a ModalAI **Starling Max 2** (the real drone) live under *
 notes, milestone plan, bug-fix patches, demo recordings, **and a complete known-good snapshot of
 the AirStack code itself**.
 
+> **Any unfamiliar term** (the commander, the panel, the interfaces, mocap bridge…) → [GLOSSARY.md](docs/GLOSSARY.md), one line each.
+>
 > **Who this README is for:** anyone new to the project — it explains what the system is, how
 > the pieces fit, and where every other document lives. To *run* things, go straight to
 > [RUNBOOK.md](docs/RUNBOOK.md).
@@ -86,13 +88,14 @@ auto-disarm all under software control (RC kill switch armed in hand throughout)
 | **PX4 autopilot** | *how to fly* — position hold, stabilization, motors, EKF2 state estimation, failsafes | on the drone |
 | **RC pilot** | emergency veto — kill switch, mode override; or hand-flying through the commander's gamepad path | your hands |
 
-We use a **thin slice** of AirStack: our **`./mocap.sh bridge`** (runs on the laptop —
-see [MOCAP.md](docs/MOCAP.md)) feeding the mocap→PX4 bridge, the laptop↔PX4 link
+We use a **thin slice** of AirStack: our **`./mocap.sh`** pose bridge (runs on the laptop —
+see [MOCAP.md](docs/MOCAP.md)) feeding AirStack's `mocap_bridge` node (mocap → PX4 EKF2), the laptop↔PX4 link
 (uXRCE-DDS), and the swarm commander with its two safety layers: the **CBF collision
 filter** (Control Barrier Function — a math filter that rewrites the velocity command so
 drones keep a safety radius from each other; it is tunable in flight) and the **fence**
-(either freeze-everyone `hold_all`, or a `keep_in` wall the drone brakes against). The
-planner/perception layers stay dormant here; those belong to AirStack's outdoor missions,
+(either freeze-everyone `hold_all`, or a `keep_in` wall the drone brakes against).
+
+The planner/perception layers stay dormant here; those belong to AirStack's outdoor missions,
 where planning runs on the drone's own computer. The operator watches all of it in the
 **Foxglove SVG Basestation** panel, fed by a 5 Hz status snapshot the commander publishes.
 *(AirStack's own mocap driver, [`natnet_ros2`](https://github.com/L2S-lab/natnet_ros2), stays
@@ -119,7 +122,9 @@ Onboard modes (Position/Hold/Mission…) = PX4 makes its own goals, fully self-c
 `POSITION ~50 Hz → VELOCITY ~50 Hz → ATTITUDE ~250 Hz → RATE ~1000 Hz → motors`, all
 onboard. The previous branch streamed a bare **velocity** setpoint, bypassing PX4's position
 loop and leaving the laptop to close it over WiFi (~0.7 s lag; the drone overshot goals and
-fence walls). This branch streams a **trajectory setpoint** — a reference position, the
+fence walls).
+
+This branch streams a **trajectory setpoint** — a reference position, the
 velocity to get there, *and* the acceleration — so PX4's own position loop runs onboard
 (~50 Hz, with the attitude loop below it at ~250 Hz) with feedforward, exactly like its Position flight mode. Tracking lag drops to
 ~0.1 s, a drone with the sticks released is held by PX4 rather than by the laptop, and a
@@ -243,7 +248,7 @@ proves the position tracking, and only then do propellers spin.
 | # | Milestone | One-line goal | Status |
 |---|---|---|---|
 | 0 | Bring-up on the new branch | Build, containers, Foxglove panel — three sim drones visible in the Basestation | ⏳ STE |
-| 1 | Sim rehearsal | CBF crossing, braking fence, gamepad, formations, random goals in Isaac Sim; pytest green | ⏳ partly — Starling model, CBF crossing, random goals + landing pass in sim ([MILESTONES.md](docs/MILESTONES.md) §3c); step / crossing re-runs pending |
+| 1 | Sim rehearsal | CBF crossing, braking fence, gamepad, formations, random goals in Isaac Sim; pytest green | ⏳ partly — Starling model, CBF crossing, random goals + landing pass in sim; re-runs pending — the one to-do list is [MILESTONES.md](docs/MILESTONES.md) §3c "Next up" |
 | 2 | Drone provisioning + hand-carry | New provisioning script + watchdog; `target_system`; Basestation tracks the carried drone; EKF2 fusing | ⏳ STE |
 | 3 | First flight | Takeoff, hover, land under the trajectory output; command ACKs seen; iron rules re-verified | ⏳ STE |
 | 4 | Goal flights + braking fence | Acceleration-limited goal legs; keep-in wall braking measured; live gains | ⏳ STE |
@@ -266,7 +271,7 @@ QGroundControl, and which physical gamepad the lab owns.
 ![Takeoff and land](assets/takeoff_and_land.gif)
 
 *Three simulated PX4 drones (SITL — real autopilot firmware, simulated aircraft) under the
-ground controller: `takeoff` → hover scenario → `land` (RViz view, 2× speed). The same
+commander: `takeoff` → hover scenario → `land` (RViz view, 2× speed). The same
 rehearsal on this branch is M1, watched in the Basestation instead.*
 
 ## Setting up AirStack on a NEW machine
@@ -498,7 +503,7 @@ CMU's code**. On this branch one is still needed and one has been fixed upstream
 | Patch file | Bug it fixes | Symptom without the fix | Status on `yikuan/SVG_ground_control_dev` |
 |---|---|---|---|
 | `0001-zed-camera-info-init-race.patch` | Camera startup race in the Isaac Sim Pegasus extension | The drone's right stereo camera randomly never publishes → navigation flies "blind" and becomes erratic | **Still needed** — upstream lacks it; **applied in `AirStack/`** (2026-10-07). Only matters for `ENABLE_CAMERA=true` runs |
-| `0002-swarm-commander-logger-severity-crash.patch` | Logging crash in the SVG ground controller | The ground-controller process **dies mid-flight** the first time any drone command fails | **Fixed upstream** (same fix: the `report` done-callback of the service-call helper in `swarm_commander.py` now logs `info` and `error` on separate call sites). Do NOT apply; kept for the archive branch |
+| `0002-swarm-commander-logger-severity-crash.patch` | Logging crash in the commander (`swarm_commander`) | The commander process **dies mid-flight** the first time any drone command fails | **Fixed upstream** (same fix: the `report` done-callback of the service-call helper in `swarm_commander.py` now logs `info` and `error` on separate call sites). Do NOT apply; kept for the archive branch |
 | `0003-libmotioncapture-natnet-4.2-modeldef-segfault.patch` | NatNet 4.2 modeldef segfault in libmotioncapture | the laptop mocap bridge crashes on connect | Unchanged — `./mocap.sh setup` applies it |
 
 The `patches/` folder holds a **backup copy of each fix** as a small text file (a git

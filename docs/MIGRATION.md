@@ -33,7 +33,7 @@ position publisher · `ac1acc4` removed cbf filter.
 **`yikuan/SVG_ground_control`** (the new snapshot, tip `cf719f0`, vendored here on
 2026-10-07 as commit `91376aa`; **bumped 2026-10-20 to the dev branch `b21d28c` — §11**) **kept** the CBF and built the ground-station side out
 instead — gamepad teleop, a geofence braking envelope, trajectory output with acceleration
-feedforward, onboard LEDs, a Foxglove basestation. Four commits past the ancestor:
+feedforward, onboard LEDs, the Foxglove SVG Basestation panel. Four commits past the ancestor:
 
 | | |
 |---|---|
@@ -129,9 +129,9 @@ Changed, not added — the four that matter:
 |---|---|---|
 | Geofence breach ⇒ **freeze-hover for everyone**, always | Two behaviours chosen per config by `fence_behavior`: `"hold_all"` (the old latch) or `"keep_in"` — **nobody stops**, each commanded drone is held inside by a braking velocity envelope. `goal_single.yaml` and `goal_tracking.yaml` now ship `keep_in`; `swarm_real.yaml` ships `hold_all` | [SCENARIOS.md](SCENARIOS.md) |
 | One fence | Plus a **separate, smaller teleop fence** (`teleop_fence_min/max`) that only polices the hand-flown drone and must sit INSIDE the geofence or the commander refuses to start | [TELEOP.md](TELEOP.md) |
-| `hold_all` latched on commanded drones | `hold_all` also latches on an **airborne external (RC-flown) drone** — fresh odometry and z above `land_complete_altitude_m` is enough (`swarm_commander.py:1493-1507`). An RC pilot can now trip the fence for the whole swarm | [SCENARIOS.md](SCENARIOS.md) |
+| `hold_all` latched on commanded drones | `hold_all` also latches on an **airborne external (RC-flown) drone** — fresh odometry and z above `land_complete_altitude_m` is enough (`SwarmCommander.enforce_fence`). An RC pilot can now trip the fence for the whole swarm | [SCENARIOS.md](SCENARIOS.md) |
 | Commander published a **bare velocity setpoint** | Commander publishes a **trajectory setpoint — position + velocity + acceleration feedforward** — on `/{name}/fmu/trajectory_command`; PX4 closes the position loop onboard. ~0.1 s tracking lag instead of ~0.7 s, and it holds position when velocity is zero. **`px4_interface` REBUILD required** (`bws`) | [SCENARIOS.md](SCENARIOS.md) |
-| `hold` pinned the target to the position **at the instant of the call** | `hold` brakes to a **predicted stop point ahead** (`stop_point()`, `swarm_commander.py:1673-1694`): `v²/(2a) + v/hover_kp` along the current velocity, clamped into the fence. The log says "braking, stops N m ahead". Pinning on the spot overshot ~1.5 m from 6 m/s and flew back | [SCENARIOS.md](SCENARIOS.md) |
+| `hold` pinned the target to the position **at the instant of the call** | `hold` brakes to a **predicted stop point ahead** (`SwarmCommander.stop_point()`, called from `handle_hold`): `v²/(2a) + v/hover_kp` along the current velocity, clamped into the fence. The log says "braking, stops N m ahead". Pinning on the spot overshot ~1.5 m from 6 m/s and flew back | [SCENARIOS.md](SCENARIOS.md) |
 | **Keyboard** teleop (click the terminal for focus) | **Gamepad** `safe_teleop` — dead-man latch, pad auto-detection, acceleration ramp. `keyboard_teleop.py` is gone. The container needs the `/dev/input` bind mount | [TELEOP.md](TELEOP.md) |
 | **RViz** hand-carry preflight (Fixed Frame `world`) | **Foxglove** + the `svg-basestation` panel 3D view (fence boxes, teleop box amber, per-drone markers). RViz still exists for replay via `scripts/rviz_for_run.py` | [BASESTATION.md](BASESTATION.md) |
 | **~7 hand-opened terminals**, one per numbered step | One **8-pane (5-over-3) tmux `bringup` session** inside the container; every pane is already workspace-sourced | [RUNBOOK.md](RUNBOOK.md) §B |
@@ -194,9 +194,10 @@ re-checked. ⏳ = decide at STE. ✅ = done, with the date and the MILESTONES le
       the ground PC on that port.
       `sudo ufw allow 47901/udp` on the LAPTOP (host) — see [BASESTATION.md](BASESTATION.md) §8.
 - [ ] **Trim the configs** — the shipped values are CMU's STE arena, not ours. At minimum:
-      `goal_single.yaml` targets **`drone_2`** (we fly `drone_1`); `swarm_real.yaml` hover z is
+      `goal_single.yaml` targeted **`drone_2`** at `cf719f0` (at `b21d28c`: `drone_1` again — but
+      still CBF-exempt, 10 m/s, `land_speed_mps` 0.8); `swarm_real.yaml` hover z is
       **1.2** not our validated 0.5; `land_speed_mps` differs from our validated **0.6**
-      everywhere. Full list in §7.
+      everywhere. Full list in §7; what we fly instead: the `_ours` files ([CONFIG.md](CONFIG.md)).
 - [ ] **Verify `target_system` == the drone's `MAV_SYS_ID`** before the first arm attempt —
       ⏳ **read `MAV_SYS_ID` back in QGC before the first arm** — the 2026-09-04 params export says **1**, a 2026-09-18 session note on this airframe says it was set to **2**; whichever it is, `target_systems:=` must match. A silent no-ack is the symptom of getting this wrong.
 
@@ -204,6 +205,9 @@ re-checked. ⏳ = decide at STE. ✅ = done, with the date and the MILESTONES le
 
 `AirStack/robot/ros_ws/src/svg_ground_control/config/`. ⚠️ = our September validation no
 longer applies to the shipped value.
+
+*Shipped values as read at `cf719f0` (2026-10-07) — kept as history. At `b21d28c` (2026-10-20):
+`goal_single` → `drone_1`, `goal_tracking` → `goal` ([CONFIG.md](CONFIG.md)); the other rows are unchanged.*
 
 | File | Key | Old (validated) | New (shipped) | |
 |---|---|---|---|---|
@@ -215,14 +219,14 @@ longer applies to the shipped value.
 | `swarm_sim.yaml` | `cbf_max_speed_mps` | `1.2` | `2.0` | sim only |
 | | `teleop_max_speed_mps` | `1.2` | `2.0` | sim only |
 | `goal_tracking.yaml` | `drone_names` | `["drone_1"]` | 3 drones, `"real,real,real"` | ⚠️ needs a trim for single-drone ops |
-| | `scenario` | `"goal"` | `"random_goals"` | ⚠️ autonomous random targeting, not hand-sent goals |
+| | `scenario` | `"goal"` | `"random_goals"` | ⚠️ autonomous random targeting, not hand-sent goals — at `b21d28c`: back to `"goal"` (CONFIG.md) |
 | | `scenario_speed_mps` | `0.6` | `10.0` | 🚨 ⚠️ |
 | | `cbf_max_speed_mps` | `1.2` | `10.0` | 🚨 ⚠️ |
 | | `fence_min`/`max` | `[-2,-2,0]` / `[2,2,2]` | `[-4.5,-5.2,0]` / `[5.5,5.0,3.0]` | 🚨 ⚠️ bigger than our net |
 | | `fence_behavior` | *(latch)* | `"keep_in"`, brake `8.0`, gain `2.0` | ⚠️ new behaviour, unflown here |
 | | `land_speed_mps` | `0.6` ✅ validated 2026-09-03 | `1.0` | ⚠️ |
 | | `takeoff_speed_mps` | *(absent)* | `1.0` | new key |
-| `goal_single.yaml` | `drone_names` | `["drone_1"]` | `["drone_2"]` | ⚠️ wrong drone for us |
+| `goal_single.yaml` | `drone_names` | `["drone_1"]` | `["drone_2"]` | ⚠️ wrong drone for us — at `b21d28c`: `["drone_1"]` again, still CBF-exempt (CONFIG.md) |
 | | `scenario_speed_mps` | `0.6` | `10.0` | 🚨 ⚠️ |
 | | `cbf_max_speed_mps` | `1.2` | `10.0` | 🚨 ⚠️ |
 | | `fence_min`/`max` | `±0.7` XY, z `0..2.8` | `[-4.5,-5.2,0]` / `[5.5,4.5,3.0]` | 🚨 ⚠️ |
@@ -258,23 +262,23 @@ Locations are in the **archived** docs (`git show airstack-starling-max2:<path>`
 | Pocket-reference row `` `ros2` / `bws` / `rviz2` `` (archive `RUNBOOK.md:372`) | `rviz2` is no longer part of a session. |
 | C7 (archive `RUNBOOK.md:339-347`) | ✅ **still valid** — listed here only so nobody re-checks it. |
 | Fence checklist line naming `fence_min`/`fence_max` only (archive `PREFLIGHT.md:7`) | Must now also cover `fence_behavior`, `teleop_fence_min`/`max`, and "teleop fence inside the geofence". |
-| "RViz tracking the hand-carried drone (Fixed Frame `world`)" (archive `PREFLIGHT.md:17`) | Foxglove basestation 3D view. |
+| "RViz tracking the hand-carried drone (Fixed Frame `world`)" (archive `PREFLIGHT.md:17`) | The panel's (Foxglove SVG Basestation) 3D view. |
 | "Geofence breach = freeze-hover, still armed" (archive `PREFLIGHT.md:45-46`) | True for `hold_all` only; say which behaviour the loaded config uses. |
 | GLOSSARY **Offboard mode** "(we stream velocity)" (archive `:25-27`) | We stream a trajectory setpoint. |
 | GLOSSARY **Geofence** "breach freezes the drone in a hover" + **CBF** "clips … velocity" (archive `:55-60`) | Both need the two-behaviour wording; add `hold_all` / `keep_in` / teleop fence as terms. |
 | CONFIG `` `fence` in goal_single.yaml `` = tight ±0.7 m (archive `:102`) | Ships `[-4.5,-5.2,0]..[5.5,4.5,3.0]` with `keep_in`. |
 | CONFIG `land_speed_mps` **`0.6`** "in goal_single/goal_tracking (validated)" (archive `:100`) | Ships 0.8 / 1.0 / 0.3. Keep the 0.6 finding as the lab's validated value and re-flag the files as needing a trim. |
-| CONFIG "`swarm_real.yaml` still 3-drone; trim OPTIONAL" (archive `:129`) | Still 3-drone, but `goal_single.yaml` now points at **`drone_2`** — the trim is no longer optional for single-drone ops. |
+| CONFIG "`swarm_real.yaml` still 3-drone; trim OPTIONAL" (archive `:129`) | Still 3-drone, and at `cf719f0` `goal_single.yaml` pointed at **`drone_2`** — the trim is no longer optional for single-drone ops (at `b21d28c`: `goal_single` → `drone_1`, `goal_tracking` → `goal` — CONFIG.md; we fly the `_ours` files regardless). |
 | TROUBLESHOOTING RViz rows (archive `:18-19`) | Foxglove equivalents needed. |
 | TROUBLESHOOTING "click the teleop terminal for **keyboard focus**" (archive `:45`) | Gamepad now — the equivalent failure is an undetected pad / the dead-man latch not held. |
-| TROUBLESHOOTING "phantom `drone_2`/`drone_3` WARNs harmless" (archive `:46`) | Still true for `swarm_real.yaml`, but a `drone_2`-targeted `goal_single.yaml` is a real misconfiguration, not a phantom. |
+| TROUBLESHOOTING "phantom `drone_2`/`drone_3` WARNs harmless" (archive `:46`) | Still true for `swarm_real.yaml`, but a `drone_2`-targeted `goal_single.yaml` (as at `cf719f0`) is a real misconfiguration, not a phantom (at `b21d28c`: `goal_single` → `drone_1` — CONFIG.md). |
 | TROUBLESHOOTING geofence row (archive `:44`) | Same `hold_all`-only caveat. |
 | MILESTONES §3d px4_msgs audit | ⚠️ **Re-audit needed.** The conclusion rests on *which* `TrajectorySetpoint`/`OffboardControlMode` fields are exercised. Acceleration feedforward now populates `acceleration[]` and `yaw`/`yawspeed`, and `VehicleCommandAck` is a newly-subscribed message. The old per-message verdicts do not cover that set. |
 | archived MILESTONES §8 (now [MILESTONES.md](MILESTONES.md) §6) shelved fixes | Line numbers are stale. **Fix 1** (`LANDED_SETTLE`): **implemented 2026-10-19/10-20** as `land_settle_s` + the disarm retry → [MILESTONES.md](MILESTONES.md) §6 (real `_ours` configs keep 0.0). **Fix 2** (`~/release`): still absent — the design stands. **Fix 3** (yaw): largely **subsumed** — the trajectory output carries an absolute yaw (details: MILESTONES §6 Fix 3). The old "CBF is 3-DOF linear" claim predates `564d43e` |
 
 ## 9 · Iron rules — what changed
 
-CLAUDE.md now has **8** iron rules (7 = reboot, never `systemctl restart voxl-px4`, after provisioning; 8 = the shipped configs are not ours) and PREFLIGHT.md numbers its bullets to match. Rules **1, 2, 3, 4, 6** keep their wording but are all **unvalidated on this branch** pending
+CLAUDE.md now has **9** iron rules (7 = reboot, never `systemctl restart voxl-px4`, after provisioning; 8 = the shipped configs are not ours; 9, added 2026-10-20 = sim-only values never go to the drone) and PREFLIGHT.md numbers its bullets to match. Rules **1, 2, 3, 4, 6** keep their wording but are all **unvalidated on this branch** pending
 the STE re-test — especially rule 1: the control-authority leak is a property of what PX4
 consumes, and we now send a different setpoint type.
 
@@ -356,6 +360,6 @@ configs, `cbf_sim.yaml` (dev did not touch it), `land_settle_s`.
 
 Status 2026-10-21: the **fresh-launch and landing-end-to-end checks are closed** by ledger #13
 (new asset loaded, PhysX clean, three clean landings with DISARM accepted first time). Still
-⏳: ledger #3 (hover/steps) and #4 (CBF crossing at 2.0/4.0, with a rosbag), first use of the
-six-gain dropdown and the Rosbag switch — ordered in [MILESTONES.md](MILESTONES.md) "Next up".
+⏳: the sim re-runs and first-use checks — the ordered list lives **only** in
+[MILESTONES.md](MILESTONES.md) §3c "Next up" (this page keeps no copy).
 Everything real-drone stays ⏳ STE as before.

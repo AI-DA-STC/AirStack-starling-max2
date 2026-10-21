@@ -144,8 +144,8 @@ Verified by direct inspection of the `AirStack/` snapshot (paths relative to
 | **MAVROS respawn** (ours, 2026-10-20, sim-only) | `robot/ros_ws/src/interface/interface_bringup/launch/mavros_px4.launch.xml` — `mavros_node` declared with `respawn="true"`, `respawn_delay="2.0"`; real drones use `px4_interface` and never load this file |
 
 Parts of the Starling 2 Max sim model (all under `AirStack/simulation/isaac-sim/` or the
-vendored Pegasus extension; values in [CONFIG.md](CONFIG.md) "Sim airframe — Starling 2 Max",
-which is authoritative):
+vendored Pegasus extension; values in [CONFIG.md](CONFIG.md) "Sim airframe", which is
+authoritative):
 
 - asset `assets/robots/starling2max.usd` — CMU's sys-ID masses/inertia; body mesh culled of
   parts < 2 mm, no decimation (10-20 rebuild, ledger #9);
@@ -172,8 +172,8 @@ must be remembered; details in the corrections tables of the linked docs):
 
 | Defect | Effect | Where documented |
 |---|---|---|
-| `goal_tracking.yaml` ships `scenario: random_goals` | goal / speed / formation commands are **silently ignored**; CMU's C2 recipe does nothing | [SCENARIOS.md](SCENARIOS.md) §9 |
-| `goal_single.yaml` targets `drone_2`, not `drone_1` | commander waits for a drone we don't have — trim before use | [MIGRATION.md](MIGRATION.md) §6 |
+| `goal_tracking.yaml` ships `scenario: random_goals` (at `cf719f0`) | goal / speed / formation commands were **silently ignored**; CMU's C2 recipe did nothing — resolved upstream at b21d28c (goal / drone_1); remaining: 10 m/s, exempt drone_1 | [SCENARIOS.md](SCENARIOS.md) §9 |
+| `goal_single.yaml` targets `drone_2`, not `drone_1` (at `cf719f0`) | commander waited for a drone we don't have — resolved upstream at b21d28c (goal / drone_1); remaining: 10 m/s, exempt drone_1 | [MIGRATION.md](MIGRATION.md) §6 |
 | CMU `teleop.md` sign table says `left_sign = -1.0` | code has `+1.0` and records that `-1.0` flew the wrong way on the bench — **trust the code** | [TELEOP.md](TELEOP.md) §9 |
 | Two CBF-exempt / external drones get **no** mutual protection | pairs with no movable drone are pruned from the solve | [SCENARIOS.md](SCENARIOS.md) §2 |
 | `random_goals` samples goals with no separation | CMU bag: 100 of 221 legs had a drone within 1.5 m of a goal; one arrival took 68 s | [SCENARIOS.md](SCENARIOS.md) §7 |
@@ -377,7 +377,7 @@ line:
 
 **Exit criterion:** every row above has a ledger line with a date, and the operator can
 bring the sim up and down from `tools/sim_terminals.sh` (the four tabs: Isaac Sim, Interfaces,
-Commander, Cockpit — RUNBOOK §A T0) without the manual terminal list.
+Commander, Cockpit — RUNBOOK §A0) without the manual terminal list.
 
 **Validation record:** partial — ledger #1–#13; #3/#4 re-run pending, teleop and formations ⏳.
 
@@ -467,7 +467,7 @@ seen and measured; gains changed in flight.
 
 **Prereqs:** M3 exit. Config **`goal_single_ours.yaml`** (`drone_1`, validated ±2 m fence,
 `keep_in` brake 4 / gain 2, speeds 1.0, `goal_accel_mps2` 3.0 — added 2026-10-07; the shipped
-`goal_single.yaml` is `drone_2` at 10 m/s). Values in [CONFIG.md](CONFIG.md).
+`goal_single.yaml` was `drone_2` at 10 m/s at `cf719f0` — resolved upstream at b21d28c (goal / drone_1); remaining: 10 m/s, exempt drone_1). Values in [CONFIG.md](CONFIG.md).
 
 **Procedure** — [RUNBOOK.md](RUNBOOK.md) §C:
 
@@ -583,8 +583,8 @@ be applied as written. Status on this branch:
 New candidates found 2026-10-07 (not ours to fix — report upstream):
 
 - `random_goals` samples goals with no separation from other drones (deadlock on a goal);
-- `goal_single.yaml` / `goal_tracking.yaml` ship values (drone_2, `random_goals`, 10 m/s)
-  that contradict CMU's own `experiment.md` recipes;
+- `goal_single.yaml` / `goal_tracking.yaml` shipped values (drone_2, `random_goals`, 10 m/s)
+  that contradict CMU's own `experiment.md` recipes — resolved upstream at b21d28c (goal / drone_1); remaining: 10 m/s, exempt drone_1;
 - `svg_teleop.sh real` gates on `natnet_ros2` — our rig uses `./mocap.sh` (the gate on
   `/drone_1/pose` may still pass; untested);
 - `svg-microdds-watchdog` duplicates our `voxl-dds-retry.service`.

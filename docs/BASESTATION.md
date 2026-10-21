@@ -7,8 +7,10 @@
 > safety card ([PREFLIGHT.md](PREFLIGHT.md) stays the authority on emergencies), **NOT** the
 > session walkthrough ([RUNBOOK.md](RUNBOOK.md) §A sim / §B real drone), **NOT** a Foxglove
 > tutorial.
+>
 > **Read first:** [GLOSSARY.md](GLOSSARY.md), then RUNBOOK §A or §B up to the point where
 > Foxglove Studio opens. "The real drone" below = our Starling 2 Max.
+>
 > ⚠️ **Validation:** the panel arrived with the `yikuan/SVG_ground_control` @ `cf719f0`
 > snapshot (**2026-10-07**); **2026-10-20** the snapshot moved to `yikuan/SVG_ground_control_dev`
 > @ `b21d28c`, whose panel adds three gains to the dropdown (six in all), a **Rosbag** switch in
@@ -71,7 +73,7 @@ python3 robot/ros_ws/src/svg_ground_control/foxglove/install.py
 
 It copies the panel to `~/.foxglove-studio/extensions/airlab-cmu.svg-basestation-1.0.0`.
 **Restart Studio afterwards** — extensions load only at start-up. Then, with the stack up
-([RUNBOOK.md](RUNBOOK.md) §A T3 for sim, §B for the real drone; the commander launch starts the
+([RUNBOOK.md](RUNBOOK.md) §A3 for sim, §B for the real drone; the commander launch starts the
 WebSocket bridge for you):
 
 1. In Studio: **Open connection → Foxglove WebSocket → `ws://localhost:8765`** (the robot
@@ -168,7 +170,7 @@ any positive value.
 
 **Our values** with the real configs (`swarm_real_ours.yaml` / `goal_single_ours.yaml`,
 [CONFIG.md](CONFIG.md)): `alpha 2.5` · `r 0.55 m` · `vmax 1.0 m/s` · teleop vmax `0.5` · goal
-accel `3.0` · settle `0.3`. In the sim (`cbf_sim.yaml`): vmax **4.0**, accel **6.0** — **sim-only,
+accel `3.0` · settle `0.3`. In the sim (`cbf_sim.yaml`): vmax **4.0**, accel **6.0** — **sim-only —
 never port to the drone**.
 
 Below the row, an activity line: red **`CBF EMERGENCY push-apart engaged`** (solver infeasible —
@@ -320,7 +322,8 @@ reading "Teleop off — safe_teleop is not publishing."
 | **Joy chip** | `/joy 20 Hz` when `sensor_msgs/Joy` is arriving; red `NO /joy` / `STALE` otherwise (joy_node down or pad unplugged — `safe_teleop` publishes zero meanwhile) |
 | **safe_teleop chip** | which drone(s) the stick velocity is streaming for, and at what rate |
 | **Sticks chip** | whether the sticks reach the drone: green `STICKS LIVE → drone_1` (listed in `teleop_drones`, `ACTIVE`, Start called); amber `STICKS PARKED` with the reason (`press Start`, `not in teleop_drones`, `is ASCEND`); grey `NO COMMANDER` |
-| **Sticks table** | four fixed-width rows — `fwd / back`, `left / right` (right stick), `up / down`, `yaw` (left stick). **Raw** = the `/joy` axis value as the driver reports it (−1 … +1); **Mapped** = what `safe_teleop` makes of it after its deadzone (inside `deadzone` reads 0, the rest rescaled so full deflection is still 1.0) and sign flip — the fraction of full stick the drone will fly, × `max_speed_mps`; then a centred bar. Hover a row for the `/joy` axis index and why it reads 0 (`inside the deadzone`, `LOCKED`, `axis missing` = the pad has fewer axes than the map → wrong `teleop_controller`). Mapped is greyed inside the deadzone, `locked` in amber when the lock is engaged, red when the axis is missing |
+| **Sticks table** | four fixed-width rows — `fwd / back`, `left / right` (right stick), `up / down`, `yaw` (left stick). **Raw** = the `/joy` axis value as the driver reports it (−1 … +1); **Mapped** = what `safe_teleop` makes of it after its deadzone (inside `deadzone` reads 0, the rest rescaled so full deflection is still 1.0) and sign flip — the fraction of full stick the drone will fly, × `max_speed_mps`; then a centred bar |
+| **Sticks table — hover and colours** | Hover a row for the `/joy` axis index and why it reads 0 (`inside the deadzone`, `LOCKED`, `axis missing` = the pad has fewer axes than the map → wrong `teleop_controller`). Mapped is greyed inside the deadzone, `locked` in amber when the lock is engaged, red when the axis is missing |
 | **Lock line** | the lock button's state, whether the left stick is locked (mirrors `safe_teleop`'s edge-triggered latch from presses seen since the panel opened) and which controller profile the map came from |
 | **Published** | `vx vy vz yaw` from the last `teleop_command`, each as a bar against `max_speed_mps` / `max_climb_speed_mps` / `yaw_rate_rad_s` (hover the title for topic and scales) |
 
@@ -403,7 +406,7 @@ is the source of truth for the panel's internals. These points differ for us (co
 
 | CMU's README says | On our rig |
 |---|---|
-| Three drones in the demo | **One** real drone, `drone_1`. Our real configs (`swarm_real_ours.yaml`, `goal_single_ours.yaml`) list `drone_1` only, so the panel shows **one** agent button and **one** Agent State row — `0 sim · 1 real`, `0/1 airborne`. (On the `cf719f0` panel with CMU's 3-drone `swarm_real.yaml` the roster showed two phantom agents with every cell `--`; the roster is gone and the config is trimmed, so this no longer happens.) The shipped 3-drone files are M7 material |
+| Three drones in the demo | **One** real drone, `drone_1`. Our real configs (`swarm_real_ours.yaml`, `goal_single_ours.yaml`) list `drone_1` only, so the panel shows **one** agent button and **one** Agent State row — `0 sim · 1 real`, `0/1 airborne`. (The `cf719f0` panel's phantom-agent roster is gone — §9 appendix.) The shipped 3-drone files are M7 material |
 | Mode is auto-detected from the wire (`/{name}/fmu/` ⇒ real) | True, and it works — but detection needs the drone's `fmu` topics to already be publishing. Before [RUNBOOK.md](RUNBOOK.md) §B's interfaces are up, an agent can read as neither. Set **Modes** to `real` if you want it pinned. In the **sim** the same rule misfires the other way (`0 sim · 3 real`, §2) — cosmetic; `Modes = sim,sim,sim` fixes the banner |
 | `Cmd stream` is "~20 Hz while the commander drives it" and "the proof that Start reached the drone" | Only if commands go out as `velocity_command`. This branch defaults real drones to **`trajectory_command`**, which the panel does not subscribe to — expect `--` on the real drone (§3.8). Works in sim. `⏳ STE` |
 | Cellular / Tailscale VPN section, 4G/5G path | **Not on our rig** — no cellular, no Tailscale. The section stays hidden, by design |

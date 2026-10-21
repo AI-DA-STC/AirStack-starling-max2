@@ -55,7 +55,7 @@ a fresh CMU clone). "Sim" = only the Isaac Sim path loads it; "real" = flown on 
 | Path | What | Since | Sim / real |
 |---|---|---|---|
 | `simulation/isaac-sim/assets/robots/starling2max.usd` | Starling 2 Max asset — CMU sys-ID masses; body parts < 2 mm culled, no decimation | 10-19, rebuilt 10-20 | sim |
-| `simulation/isaac-sim/px4/airframes/10090_pegasus_starling2max` | PX4 SITL airframe: real attitude/position gains; rate gains ×0.5 + gyro filters 80/40; `LNDMC_ROT_MAX` 300; MPC speed/accel limits = the real drone's | 10-19, 10-20 | sim |
+| `simulation/isaac-sim/px4/airframes/10090_pegasus_starling2max` | PX4 SITL airframe: real attitude/position gains; rate gains ×0.5 + gyro filters 80/40; `LNDMC_ROT_MAX` 300 (real 30); motor lag off; MPC speed/accel limits = the real drone's — the deviations are **sim-only — never port to the drone** | 10-19, 10-20 | sim |
 | `simulation/isaac-sim/docker/docker-compose.yaml` | one volume line: airframe bind-mounted into PX4's ROMFS source dir | 10-19 | sim |
 | `simulation/isaac-sim/launch_scripts/launch_env.py`, `svg_multi_drone_single_domain.py` | `DRONE_USD` / `PX4_VEHICLE_MODEL` env handling; lidar-import fix | 10-19 | sim |
 | `simulation/isaac-sim/tools/*` | asset cleaner, hover/step and CBF-crossing test scripts, step analysis, `launch_env` tests | 10-19, 10-20 | sim |
@@ -66,7 +66,7 @@ a fresh CMU clone). "Sim" = only the Isaac Sim path loads it; "real" = flown on 
 | `robot/ros_ws/src/interface/interface_bringup/launch/mavros_px4.launch.xml` | `mavros_node` declared with `respawn="true"`, 2 s delay | 10-20 | sim only — real drones use `px4_interface`, never this file |
 | `robot/ros_ws/src/svg_ground_control/svg_ground_control/swarm_commander.py` | `land_settle_s` (settle on the ground before DISARM) + `land_disarm_step` (retry a denied DISARM) | 10-19, 10-20 | shared code — the real `_ours` configs set `land_settle_s` 0.0, so real landings are unchanged |
 | `robot/ros_ws/src/svg_ground_control/test/test_landing_settle.py` | tests for the two landing changes | 10-19, 10-20 | — |
-| `robot/ros_ws/src/svg_ground_control/config/cbf_sim.yaml` | our sim run config: speeds 2.0 / 4.0 / 6.0, settle 2.0 s + disarm retry | 10-19, 10-20 | sim |
+| `robot/ros_ws/src/svg_ground_control/config/cbf_sim.yaml` | our sim run config: speeds 2.0 / 4.0 / 6.0, settle 2.0 s + disarm retry — **sim-only — never port to the drone** | 10-19, 10-20 | sim |
 | `robot/ros_ws/src/svg_ground_control/config/swarm_real_ours.yaml`, `goal_single_ours.yaml` | our real-drone configs: `drone_1`, hover 0.5 m, `land_speed_mps` 0.6, ±2 m fence, `land_settle_s` 0.0 | 10-07, 10-20 | real |
 | `README.md` (this file) | snapshot README | 10-07 | — |
 | `PEG/ogn/api/spawn_zed_camera.py` (patch 0001) | ZED camera-info init race fix (`../patches/0001-*.patch`) | 2026-09 | sim |

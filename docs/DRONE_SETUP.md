@@ -11,7 +11,7 @@
 >
 > ⚠️ **Branch note (2026-10-07):** §4 (provisioning script, now with a watchdog, and
 > `target_system`), §9 (Basestation replaces RViz) and the new §8b (LED strips, optional)
-> changed with the move to `yikuan/SVG_ground_control`; everything else is unchanged.
+> changed with the move to `yikuan/SVG_ground_control` (`_dev` @ `b21d28c` since 2026-10-20); everything else is unchanged.
 > All of §4/§9 is ⏳ STE on this branch — [MIGRATION.md](MIGRATION.md) §6.
 >
 > **"archived MILESTONES M3-A / M4-A"** below = the previous branch's one-time procedures

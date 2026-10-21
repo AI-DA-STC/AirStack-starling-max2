@@ -15,10 +15,11 @@
 > Where else to look: the panel: [BASESTATION.md](BASESTATION.md) §7 · gamepad: [TELEOP.md](TELEOP.md) §10 ·
 > CBF/scenarios: [SCENARIOS.md](SCENARIOS.md) §10 · **Sim (Isaac / PX4 SITL / MAVROS) →
 > [§ Simulation](#simulation-isaac-sim--px4-sitl--mavros) below.**
+>
 > Names used here: "the commander" = `swarm_commander` (the ground-side node that flies the
 > drones); "the panel" = the Foxglove SVG Basestation panel; "the real drone" = our Starling
 > `drone_1`; the sim's four terminal tabs are the **Isaac Sim / Interfaces / Commander /
-> Cockpit tabs** opened by `tools/sim_terminals.sh` ([RUNBOOK.md](RUNBOOK.md) §A T0).
+> Cockpit tabs** opened by `tools/sim_terminals.sh` ([RUNBOOK.md](RUNBOOK.md) §A0).
 
 *(Unfamiliar term? → [GLOSSARY.md](GLOSSARY.md))*
 
@@ -71,11 +72,11 @@
 | Symptom | Cause / fix |
 |---|---|
 | PX4 won't arm indoors ("fuse failure" / "Not Ready") | No fused position source — mocap feed down or EKF2 params missing ([CONFIG.md](CONFIG.md) §PX4/EKF2, the `.params` file) |
-| Takeoff refused: "no drone eligible (missing odometry or not IDLE)" | In order: **1.** commander stuck non-IDLE after an RC takeover / Ctrl-C → call `land` once (drone on floor); **2.** interfaces not running — RUNBOOK §B step 5; **3.** mocap bridge down → `./mocap.sh check`; **4.** config names a drone you don't have (`goal_single.yaml` ships as `drone_2`) |
+| Takeoff refused: "no drone eligible (missing odometry or not IDLE)" | In order: **1.** commander stuck non-IDLE after an RC takeover / Ctrl-C → call `land` once (drone on floor); **2.** interfaces not running — RUNBOOK §B step 5; **3.** mocap bridge down → `./mocap.sh check`; **4.** config names a drone you don't have (CMU's 3-drone real configs; `goal_single.yaml` targeted `drone_2` at `cf719f0`, `drone_1` since `b21d28c`) |
 | `takeoff` accepted, Interface column / `px4_interface` log shows **nothing** (no ack), drone sits | `target_system` ≠ the drone's `MAV_SYS_ID` — PX4 drops the command silently. Check the `px4_interface` startup line; `target_systems:=` on the interface launch ([CONFIG.md](CONFIG.md) §Protocol constants) |
 | `takeoff` accepted, ack says **`DENIED`** | PX4 preflight refused (no fused position, EKF not ready, kill switch engaged) — QGC's message bar names it |
-| Goal / speed / formation commands do nothing, no error | the running scenario has no retargetable goals — `goal_tracking.yaml` ships `scenario: random_goals`; use a `goal`-scenario config or `scenario:=goal` ([SCENARIOS.md](SCENARIOS.md) §9) |
-| Startup WARN `formation_profiles set but scenario "X" has no retargetable goals; profiles ignored` | expected on `cbf_sim.yaml` (`antipodal`) and `goal_tracking.yaml` (`random_goals`) — add `scenario:=goal` to the launch ([SCENARIOS.md](SCENARIOS.md) §6) |
+| Goal / speed / formation commands do nothing, no error | the running scenario has no retargetable goals — `cbf_sim.yaml` ships `antipodal`, and `scenario:=random_goals` / `head_on` / `random_walk` ignore goals (`goal_tracking.yaml` did too at `cf719f0`; it ships `goal` at `b21d28c`); use a `goal`-scenario config or `scenario:=goal` ([SCENARIOS.md](SCENARIOS.md) §10) |
+| Startup WARN `formation_profiles set but scenario "X" has no retargetable goals; profiles ignored` | expected on `cbf_sim.yaml` (`antipodal`) or any launch with `scenario:=random_goals` (`goal_tracking.yaml` ships `goal` at `b21d28c`) — add `scenario:=goal` to the launch ([SCENARIOS.md](SCENARIOS.md) §6) |
 | `CBF emergency push-apart engaged` in the log / every LED red at once | drones already inside each other's safety bubbles — the solve is infeasible. **Land and investigate** ([SCENARIOS.md](SCENARIOS.md) §1) |
 | An exempt / RC-flown drone is pushed backwards instead of through the gap | its exemption is not in effect: check the startup roster for `/cbf-exempt` on that name, that it is **ACTIVE** (climb-out and landing are never exempt), and the spelling in `cbf_exempt_drones` |
 | Drone slows or refuses to approach a goal / another drone | the CBF is correcting it — Basestation CBF column `correcting`, LEDs red. Normal; raise `cbf_alpha` for later/harder yielding, or check `cbf_safety_radius_m` |
@@ -90,7 +91,7 @@
 | Hand-flown drone hovers ~30 cm up on `land` and never touches down | a reference clamped to the teleop-fence floor (`teleop_fence_min` z) — should not happen (only ACTIVE drones are clipped); if it does, `hold` → `land` again → kill if it persists, and note the bag |
 | Drone drifts/sinks slowly during hand-flying, or keeps going after release | should be fixed on this branch (separate horizontal/vertical leash, ramp re-attaches to the published command) — if seen, note the bag and check `teleop_lead_m` / `teleop_accel_mps2` ([TELEOP.md](TELEOP.md) §7) |
 | `hold` makes the drone continue forward before stopping | by design now — it brakes to a predicted stop point ahead instead of flying back to the call position |
-| Startup WARNs about `drone_2`/`drone_3` with only one drone; the panel's Agent State / 3D view carry drones that never get odometry | the loaded config lists three drones (CMU's shipped real configs do). Our `swarm_real_ours.yaml` / `goal_single_ours.yaml` are single-drone (`drone_1`) — fly those ([MIGRATION.md](MIGRATION.md) §6). (The old "Agents roster" card is gone since the 10-20 bump) |
+| Startup WARNs about `drone_2`/`drone_3` with only one drone; the panel's Agent State / 3D view carry drones that never get odometry | the loaded config lists three drones (CMU's 3-drone real configs — `swarm_real`, `goal_tracking`, `goal_sequence`, …; `goal_single.yaml` is single-drone `drone_1` at `b21d28c`). Our `swarm_real_ours.yaml` / `goal_single_ours.yaml` are single-drone (`drone_1`) — fly those ([MIGRATION.md](MIGRATION.md) §6). (The old "Agents roster" card is gone since the 10-20 bump) |
 
 **Landing ends with the drone still armed — detail**
 
@@ -109,7 +110,7 @@
   `landed, disarmed (attempt 1)`; failure: ERROR `disarm not accepted after 5 tries`. The 10-20
   refusals came from PX4's land detector seeing the body rock on the floor (a PhysX contact
   artefact — ledger #9); the sim airframe carries **`LNDMC_ROT_MAX` 300 since 2026-10-20**
-  (the real drone's params set 30 — never port 300 to it). If it recurs: `param show
+  (**sim-only — never port to the drone**; the real drone's params set 30). If it recurs: `param show
   LNDMC_ROT_MAX` in the PX4 shell (airframe mount stale?), land from a hover rather than
   mid-leg, and use the knob `ros2 param set /swarm_commander land_settle_s 4.0` before landing
   again. Three clean landings with DISARM accepted first time: ledger #13.
@@ -118,12 +119,14 @@
 
 Sim-only rows. Isaac Sim runs the physics, PX4 SITL is the real flight firmware running on
 the laptop, MAVROS is the sim-only bridge between PX4 SITL and ROS 2 (the real drone uses
-`px4_interface` instead). The sim airframe's values are sim-only — never port them to the
-drone (iron rule 9). The most destructive mistake comes first.
+`px4_interface` instead). The sim airframe's deviations (rate gains ×0.5, gyro filters 80/40,
+`LNDMC_ROT_MAX` 300, motor lag off), the MAVROS respawn and `cbf_sim.yaml`'s speeds / landing
+settle + retry are **sim-only — never port to the drone** (iron rule 9). The most destructive
+mistake comes first.
 
 | Symptom | Cause / fix |
 |---|---|
-| **Pressed Stop ▶ Play in the Isaac window to reset the drones → everything dead** (MAVROS `connected: false`, `VER: unicast request timeout`, panel `LINK/EKF/POWER NO DATA`, commander alive but blind) | **Not a reset — don't** ([MILESTONES.md](MILESTONES.md) §3c #6). Recover = full restart: Ctrl-C in the **Isaac Sim tab**, relaunch (RUNBOOK §A T1), then Ctrl-C + relaunch the **Interfaces tab**, then the **Commander tab**, in that order. Why, and how to bring drones home without a restart: detail below |
+| **Pressed Stop ▶ Play in the Isaac window to reset the drones → everything dead** (MAVROS `connected: false`, `VER: unicast request timeout`, panel `LINK/EKF/POWER NO DATA`, commander alive but blind) | **Not a reset — don't** ([MILESTONES.md](MILESTONES.md) §3c #6). Recover = full restart: Ctrl-C in the **Isaac Sim tab**, relaunch (RUNBOOK §A1), then Ctrl-C + relaunch the **Interfaces tab**, then the **Commander tab**, in that order. Why, and how to bring drones home without a restart: detail below |
 | Interfaces tab shows `[ERROR] [mavros_node-N]: process has died … exit code -11` (or -6); commander repeats `drone_N: odometry stale, commanding zero velocity` | that drone's MAVROS crashed. **Since 2026-10-20 the sim launch respawns `mavros_node` after 2 s** (`interface_bringup/launch/mavros_px4.launch.xml`, sim-only) — odometry and the panel come back on their own, but PX4 is already on its offboard-loss failsafe: two-command recovery in the detail below |
 | Drone sits armed after touchdown: `disarm -> success=False` ×5, `disarm not accepted after 5 tries`, log shows `touchdown … settling` | → "Landing ends with the drone still armed", SIM bullet (Flight / arming above). Quick check: `param show LNDMC_ROT_MAX` in the PX4 shell must read 300 (sim airframe since 10-20) |
 | Starling looks hollow — props, legs and electronics visible, no body | your checkout has the 10-19 asset, built by a decimation that deleted whole body parts. Fixed in the repo 2026-10-20 (ledger #9) — `git pull`, relaunch the sim. To rebuild the asset yourself: command in the detail below |
@@ -161,7 +164,7 @@ open (no core dumps: the host's `core_pattern` is apport) — MILESTONES §6 "Si
 | uXRCE client keeps dying / two things restarting it | both `svg-microdds-watchdog` (new script) and our `voxl-dds-retry.service` are active — keep one (`systemctl disable --now` the other), record in CONFIG.md |
 | Drone WiFi: `voxl-wifi station` "succeeds" but never connects | Legacy voxl-wifi mangles SSIDs **with spaces**. Spaced SSID → write `wpa_supplicant-mlan0.conf` manually with `wpa_passphrase` (archived MILESTONES M3-A (`git show airstack-starling-max2:docs/MILESTONES.md`)); space-free SSIDs are fine |
 | Drone WiFi gone after reboot; dmesg `Firmware Init Failed` / `Card is removed` | WLAN chip wedged — warm reboots don't clear it. **Cold power cycle** (battery + USB out, 10 s) |
-| **Older Starling Max 2 only** (USB dongle, `wlan0`): boots on **`169.254.x.x`** instead of its DHCP address | Link-local fallback = never associated, *not* a DHCP fault. `wpa_supplicant` burns its 5 systemd starts in <1 s while `wlan0` doesn't exist until t≈9 s, then quits for good (`Start request repeated too quickly`). Fix = drop-in `/etc/systemd/system/wpa_supplicant.service.d/10-wait-for-wlan0.conf` with `StartLimitIntervalSec=0` + `RestartSec=5`. Recover now: `systemctl reset-failed wpa_supplicant && systemctl start wpa_supplicant` (plain `restart` will NOT work). Full writeup: [CLAUDE.md](../CLAUDE.md) |
+| **Older Starling Max 2 only** (USB dongle, `wlan0`): boots on **`169.254.x.x`** instead of its DHCP address | Link-local fallback = never associated, *not* a DHCP fault: `wpa_supplicant` burns its 5 systemd starts in <1 s while `wlan0` doesn't exist until t≈9 s, then quits for good. Fix = the `10-wait-for-wlan0.conf` drop-in (`StartLimitIntervalSec=0` + `RestartSec=5`). Recover now: `systemctl reset-failed wpa_supplicant && systemctl start wpa_supplicant` (plain `restart` will NOT work). Full writeup: [CLAUDE.md](../CLAUDE.md) |
 | **Older Starling Max 2 only**: no `wlan0` at all, `lsmod` shows `8852bu` with refcount `0` | Kernel-builtin `option` serial driver stole the dongle and made it `/dev/ttyUSB0` (usb_modeswitch poisons `option1/new_id`). Check `readlink /sys/bus/usb/devices/1-1.4:1.0/driver` → must be `rtl8852bu`. Fix = `NoDriverLoading=1` in `/etc/usb_modeswitch.d/0bda:1a2b`. Live: unbind from `option`, bind to `rtl8852bu` — [CLAUDE.md](../CLAUDE.md) |
 | Drone pings the router but **not the GCS**, firewall already off | Asymmetric routing, not a firewall. Laptop replies leave via the wrong NIC when the drone is on a different subnet. `sudo ip route add <drone_subnet> via 192.168.9.1 dev <gcs_nic>`; persist with `nmcli ... +ipv4.routes`. Proof trick with no root: `/proc/net/snmp` Icmp `InEchos`/`OutEchoReps` both rise ⇒ packets arrive and are answered — [CLAUDE.md](../CLAUDE.md) |
 | Drone `iw` prints usage instead of link info | Old iw needs explicit syntax: `iw dev mlan0 link` |

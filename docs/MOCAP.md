@@ -329,5 +329,6 @@ Data-format notes: `/drone_1/pose` is `geometry_msgs/PoseStamped` in frame
 `world`, published reliable/volatile at Motive's rate; `/poses` (bundled, all
 bodies) uses sensor-data QoS. Downstream, `svg_ground_control/mocap_bridge.py`
 consumes `/{name}/pose` per its `swarm_real.yaml` `mocap_topic_template` — no
-changes needed there (verified unchanged on `yikuan/SVG_ground_control`, 2026-10-07: the
-only diff in `mocap_bridge.py` is a shutdown guard).
+changes needed there (verified unchanged on `yikuan/SVG_ground_control`, 2026-10-07, and
+untouched by the 2026-10-20 bump to `_dev` @ `b21d28c`: the only diff in `mocap_bridge.py` is a
+shutdown guard).

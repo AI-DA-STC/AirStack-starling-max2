@@ -5,8 +5,8 @@
 ## Before EVERY session
 
 - [ ] Net rigged; BOTH fence boxes in the config fit INSIDE it (`fence_min`/`fence_max`, and `teleop_fence_*` inside those); `fence_behavior` known (`hold_all` freezes · `keep_in` brakes)
-- [ ] Config is OURS, not CMU's: `drone_1` (not `drone_2`), `land_speed_mps` 0.6, `cbf_max_speed_mps` ≤ 1.0 for now, `scenario` is `hover`/`goal` (not `random_goals`), `land_settle_s` **0.0** (the flown landing) until the settle is its own M3 sub-test
-- [ ] Drone params come from `starling_1_indoor_params.params` / QGC ONLY — never from the sim airframe (`10090_pegasus_starling2max`: rate gains ×0.5, gyro filters 80/40, `LNDMC_ROT_MAX` 300 are sim-only; the real drone keeps `LNDMC_ROT_MAX` 30)
+- [ ] Config is OURS, not CMU's (`swarm_real_ours.yaml` / `goal_single_ours.yaml`): `drone_1`, nobody CBF-exempt, `land_speed_mps` 0.6, `cbf_max_speed_mps` ≤ 1.0 for now, `scenario` is `hover`/`goal`, `land_settle_s` **0.0** (the flown landing) until the settle is its own M3 sub-test
+- [ ] Drone params come from `starling_1_indoor_params.params` / QGC ONLY — never from the sim airframe (`10090_pegasus_starling2max`: rate gains ×0.5, gyro filters 80/40, `LNDMC_ROT_MAX` 300 are **sim-only — never port to the drone**; the real drone keeps `LNDMC_ROT_MAX` 30)
 - [ ] Drone on the floor: mocap z of the rigid body **< 0.15 m** (`land_complete_altitude_m`) — a floor offset above that and the commander never calls a landing done (PX4 still lands and auto-disarms; relaunch the commander)
 - [ ] RC transmitter ON, bound, battery OK — thumb finds KILL (ch8) blind (RC: ch5 arm · ch6 mode MANUAL/POSITION/OFFBOARD · ch8 KILL)
 - [ ] Mode switch (ch6) at **MANUAL** (low) until told otherwise
@@ -53,7 +53,7 @@ ros2 service call /swarm_commander/land  std_srvs/srv/Trigger
 5. Software still cannot see arming. A `PX4 ack: ACCEPTED` means "PX4 heard me", never "armed"; **no ack at all** = `target_system` wrong — do not fly until fixed.
 6. Lab WiFi is OPEN — never bridge the lab network to the internet.
 7. After re-provisioning the drone: **reboot it**, never `systemctl restart voxl-px4`.
-8. The shipped configs are CMU's, not ours — fly the `_ours` yamls: `drone_1` (not `drone_2`), `land_speed_mps` 0.6, `land_settle_s` 0.0, fences to our net, `cbf_max_speed_mps` 1.0 (CMU's `goal_single` / `goal_tracking` / `goal_sequence` carry 10.0).
-9. Sim airframe / launch values are **sim-only** — never port them to the drone. The drone's params come from `starling_1_indoor_params.params` / QGC.
+8. The shipped configs are CMU's bench values, not ours — fly the `_ours` yamls. Traps at b21d28c: `goal_single.yaml` still exempts drone_1 from the CBF, flies 10 m/s and lands at 0.8; `goal_tracking.yaml`/`goal_sequence.yaml` carry `cbf_max_speed_mps 10.0`; CMU's real configs leave `land_settle_s` unset (→ 2.0 s default). The 10-07 traps (drone_2, random_goals) are gone since the 10-20 bump.
+9. **Sim-only — never port to the drone:** sim airframe rate gains ×0.5, gyro filters 80/40, `LNDMC_ROT_MAX` 300 (real 30), motor lag off, MAVROS respawn, `cbf_sim.yaml` speeds 2.0 / 4.0 / 6.0, landing settle 2.0 s + retry. The drone's params come from `starling_1_indoor_params.params` / QGC; the real `_ours` configs fly `drone_1`, `land_settle_s` 0.0, `land_speed_mps` 0.6, `cbf_max_speed_mps` 1.0.
 - Fence `hold_all` breach = freeze-hover, **still armed** — recover: `land` → `reset_fence`; `keep_in` = brakes at the wall, nothing latches. Neither is a motor cut.
 - One person's job during flight is watching QGC + holding the transmitter. Only theirs.

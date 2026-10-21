@@ -135,7 +135,7 @@ from every doc; add a term here rather than re-explaining it inline elsewhere.
 - **ROS 2 service / parameter** — a *service* is a request/reply call to a node
   (`takeoff`, `land` — each gets an accept/reject answer, which can itself be lost on a bad
   link); a *parameter* is a named runtime value on a node (`cbf_alpha`), settable live with
-  `ros2 param set` or, for the CBF gains, from the Basestation's slider.
+  `ros2 param set` or, for the six live gains, from the panel's runtime-gain dropdown.
 - **Status snapshot (`/svg/commander_status`)** — a JSON message the commander publishes at
   5 Hz with every drone's state, position, odometry freshness and last command outcome, the
   fence and CBF settings, and the last lifecycle command. The Basestation's only source of
@@ -211,6 +211,31 @@ from every doc; add a term here rather than re-explaining it inline elsewhere.
   ways, neither containing the other's work. Our previous and current AirStack branches are
   siblings (common ancestor `a46f04b`), which is why the docs forked rather than updated.
   [MIGRATION.md](MIGRATION.md) §1.
+- **Snapshot / bump** — the `AirStack/` folder is a flat copy ("snapshot") of one CMU commit,
+  not a git checkout. A **bump** replaces it with a newer commit (2026-10-07 → `cf719f0`,
+  2026-10-20 → `b21d28c`) and is followed by `bws` and a panel re-install. [MIGRATION.md](MIGRATION.md) §11.
+- **Mocap bridge — two things share the name.** (1) **`./mocap.sh`**, our script on the laptop
+  (host, not docker) that receives Motive's broadcast NatNet stream and publishes `/drone_1/pose`
+  ([MOCAP.md](MOCAP.md)). (2) AirStack's **`mocap_bridge` node**, started inside the container by the
+  commander launch (`use_mocap:=true`), which forwards that pose to PX4 as external vision
+  (`/drone_1/fmu/in/vehicle_visual_odometry`). Both must run for a real flight; RUNBOOK §B step 4
+  is (1), step 6 includes (2).
+- **Interfaces** — the per-drone nodes that turn the autopilot's traffic into the odometry the
+  commander needs and carry its commands back: on the **real drone** `px4_interface`
+  (`real_interfaces.launch.py`, uXRCE-DDS, carries `target_system`), in the **sim** one MAVROS per
+  drone (`launch_sim_interfaces.sh`, the Interfaces tab). Not running ⇒ `odom none`, takeoff refused.
+- **QGC (QGroundControl)** — the standard PX4 ground-station app, run on the laptop and fed by the
+  drone's MAVLink push (udp/14550). The **only trustworthy arming display** (iron rules 2 and 5)
+  and where PX4 parameters are loaded (`starling_1_indoor_params.params`).
+- **`_ours` configs** — `swarm_real_ours.yaml` (hover, M3) and `goal_single_ours.yaml` (goals, M4):
+  our single-drone versions of CMU's shipped yamls — `drone_1`, nobody CBF-exempt, speeds 1.0,
+  `land_speed_mps` 0.6, `land_settle_s` 0.0, ±2 m fence. The only real-drone configs to fly
+  ([CONFIG.md](CONFIG.md)); `cbf_sim.yaml` is our sim counterpart and sim-only.
+- **Iron rules** — the nine numbered flight rules in [CLAUDE.md](../CLAUDE.md), mirrored word for
+  word in [PREFLIGHT.md](PREFLIGHT.md). Quoted by number ("iron rule 9") across the docs.
+- **Ledger (test ledger, "ledger #N")** — the numbered table of every test result on this branch,
+  [MILESTONES.md](MILESTONES.md) §3c (#1–#13 so far, restarted at #1 on 2026-10-07). Its "Next up"
+  table is the **only** to-do list; "archive ledger #N" means the previous branch's ledger.
 
 - **IDLE / ARMING / ASCEND / ACTIVE / LANDING** — the swarm commander's per-drone flight
   states (shown as chips in the Basestation). `takeoff` only accepts drones in IDLE; after an

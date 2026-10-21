@@ -83,18 +83,20 @@ bind-mounted PX4 airframe `10090_pegasus_starling2max`. Values and sources:
 |---|---|
 | Attitude + position gains | = the real Starling 1's PX4 params |
 | MPC speed/accel limits (`MPC_XY_VEL_MAX` 20, `MPC_ACC_HOR` 6, `MPC_ACC_HOR_MAX` 1000, `MPC_Z_VEL_MAX_UP/DN` 10/4) | = the real drone's |
-| Rate gains × 0.5 + gyro filters `IMU_GYRO_CUTOFF` 80 / `IMU_DGYRO_CUTOFF` 40 | **sim-only** — the real gains give a 9 Hz pitch limit cycle in sim (ledger #10) |
-| `LNDMC_ROT_MAX` 300 | **sim-only** — the real drone has 30 (`starling_1_indoor_params.params`) |
-| Motor lag off · MAVROS respawn | **sim-only** |
+| Rate gains × 0.5 + gyro filters `IMU_GYRO_CUTOFF` 80 / `IMU_DGYRO_CUTOFF` 40 | **sim-only — never port to the drone** — the real gains give a 9 Hz pitch limit cycle in sim (ledger #10) |
+| `LNDMC_ROT_MAX` 300 | **sim-only — never port to the drone** — the real drone has 30 (`starling_1_indoor_params.params`) |
+| Motor lag off · MAVROS respawn | **sim-only — never port to the drone** |
 
-⚠️ **Never port a sim-only value to the drone** (iron rule 9). The drone's parameters come
-from `starling_1_indoor_params.params` via QGC.
+⚠️ Everything marked **sim-only — never port to the drone** stays in the sim (iron rule 9) — so
+do `cbf_sim.yaml`'s speeds 2.0 / 4.0 / 6.0 and its landing settle 2.0 s + disarm retry (the real
+`_ours` configs fly `drone_1`, `land_settle_s` 0.0, `land_speed_mps` 0.6, `cbf_max_speed_mps` 1.0).
+The drone's parameters come from `starling_1_indoor_params.params` via QGC.
 
-**Validation state.** Ledger #1–#4 passed 2026-10-19 on the OLD asset, gains and speeds.
-A fresh launch on 2026-10-21 (ledger #13) passed: asset complete, no PhysX warnings,
-2.0 m/s commanded / ~1.7 flown, all three landed and disarm accepted first try. **Still
-pending:** re-run of the 1 m step test (#3) with `scenario:=goal`, and the CBF crossing
-distances (#4) at the new speeds. Acceptance tools live in `simulation/isaac-sim/tools/`
+**Validation state.** Ledger #1–#4 passed 2026-10-19 on the OLD asset, gains and speeds; the
+fresh launch of 2026-10-21 (ledger #13) passed on the current ones: asset complete, no PhysX
+warnings, 2.0 m/s commanded / ~1.7 flown, all three landed and disarm accepted first try.
+Re-runs are pending — the ordered list is **[MILESTONES.md](MILESTONES.md) §3c "Next up"**, the
+only to-do list (this page keeps no copy). Acceptance tools live in `simulation/isaac-sim/tools/`
 (`docker cp` them into the robot container, run with `bash -ic`).
 
 > ⚠️ **Never press Stop / Play in the Isaac window** to reset the drones (observed 2026-10-20):
@@ -116,7 +118,7 @@ and set `ROS_DOMAIN_ID=1`. Leave running.
 - **Rebuild** (`bws && sws` — build the workspace, then source it) is needed only after NEW
   entry points or files, e.g. right after a snapshot bump. Edits to existing `.py`/`.yaml`
   need no rebuild (symlink install).
-- **MAVROS respawn (sim only):** a MAVROS node that dies comes back after 2 s, but PX4 has
+- **MAVROS respawn (sim-only — never port to the drone):** a MAVROS node that dies comes back after 2 s, but PX4 has
   meanwhile dropped to its offboard-loss failsafe. Recovery, in the Cockpit tab:
   `ros2 topic echo /drone_N/interface/mavros/state --once`; if `mode` ≠ `OFFBOARD`:
   `ros2 service call /drone_N/interface/mavros/set_mode mavros_msgs/srv/SetMode "{custom_mode: AUTO.LAND}"`,
@@ -142,8 +144,8 @@ Leave running.
 - The launch also starts the `bag_recorder` node (since 2026-10-20); add `record_bag:=true`
   to record the whole run, or use the panel's Rosbag switch mid-run
   ([BASESTATION.md](BASESTATION.md) §3.12).
-- **Speeds:** `cbf_sim.yaml` flies 2.0 m/s cruise with a 4.0 m/s CBF cap. The real-drone
-  configs stay ≤ 1.0 m/s — never copy sim speeds into them.
+- **Speeds:** `cbf_sim.yaml` flies 2.0 m/s cruise with a 4.0 m/s CBF cap and 6.0 m/s² goal
+  accel — **sim-only — never port to the drone**; the real `_ours` configs stay at 1.0 m/s.
 
 ### A4 — Cockpit tab: fly
 
@@ -158,7 +160,8 @@ ros2 topic echo /drone_1/interface/mavros/state --once           # expect armed:
 Expected landing log in the Commander tab, per drone: `touchdown at z=… settling 2.0 s
 before disarm` then `landed, disarmed (attempt 1)`. If PX4 refuses, up to 5 retries 1 s
 apart, then ERROR `disarm not accepted after 5 tries` → see the MAVROS note in A2 and
-[TROUBLESHOOTING.md](TROUBLESHOOTING.md).
+[TROUBLESHOOTING.md](TROUBLESHOOTING.md). (The 2.0 s settle and the retry are **sim-only — never
+port to the drone**; the real `_ours` configs set `land_settle_s` 0.0.)
 
 **Live parameters** (no relaunch): `ros2 param set /swarm_commander scenario_speed_mps 1.0`
 — the live list is in [SCENARIOS.md](SCENARIOS.md) §3 and §C8 below.
@@ -314,7 +317,9 @@ Leave running. Verify (pane 4):
 ros2 topic hz /drone_1/odometry_conversion/odometry   # silent here = takeoff will be refused later
 ```
 
-**6 — Commander + mocap bridge + Foxglove bridge (+ Studio).** *One-time prereqs (all done
+**6 — Commander launch** (one launch starts the commander, AirStack's `mocap_bridge` node —
+the in-container half of the mocap chain, not `./mocap.sh` — the Foxglove bridge and, optionally,
+Studio). *One-time prereqs (all done
 on the previous branch, unchanged): EKF2 params via QGC, vision-hub conf (`en_vio` false /
 `offboard_mode` off).* Use **our** config `swarm_real_ours.yaml` (added 2026-10-07: `drone_1`
 only, hover z 0.5, `land_speed_mps` 0.6, the validated ±2 m fence, `hold_all`) — the shipped
@@ -404,8 +409,8 @@ goal configs are **not usable as-is on our rig** ([MIGRATION.md](MIGRATION.md) �
 | Config | Shipped as | What to do |
 |---|---|---|
 | `swarm_real.yaml` | 3 real drones, hover scenario, `hold_all` fence, z 1.2 m | use **`swarm_real_ours.yaml`** (`drone_1`, z 0.5, `land_speed_mps` 0.6, ±2 m fence) — the §B hover config |
-| `goal_single.yaml` | **`drone_2`**, `goal` scenario, `keep_in` fence `[-4.5,-5.2,0]..[5.5,4.5,3.0]`, teleop fence on, `cbf_max_speed_mps` **10.0** | use **`goal_single_ours.yaml`** (`drone_1`, ±2 m fence, speeds 1.0, `goal_accel` 3.0, `keep_in` brake 4 / gain 2, `land_speed_mps` 0.6) — the §C config |
-| `goal_tracking.yaml` | 3 real drones, **`random_goals`** scenario (ignores goal commands!), 10 m/s | not for one drone — M7 material ([SCENARIOS.md](SCENARIOS.md) §7) |
+| `goal_single.yaml` | `drone_1`, `goal` scenario, **`drone_1` CBF-exempt** (filter off), `keep_in` fence `[-4.5,-5.2,0]..[5.5,4.5,3.0]`, teleop fence on, `cbf_max_speed_mps` **10.0**, `land_speed_mps` 0.8 (targeted `drone_2` at `cf719f0`; `drone_1` since the 10-20 bump) | use **`goal_single_ours.yaml`** (`drone_1`, ±2 m fence, speeds 1.0, `goal_accel` 3.0, `keep_in` brake 4 / gain 2, `land_speed_mps` 0.6) — the §C config |
+| `goal_tracking.yaml` | 3 real drones, `goal` scenario (`random_goals` at `cf719f0`; `goal` again since the 10-20 bump), `keep_in`, 10 m/s | not for one drone — M7 material ([SCENARIOS.md](SCENARIOS.md) §6–7) |
 
 Both `*_ours.yaml` files live beside CMU's under
 `AirStack/robot/ros_ws/src/svg_ground_control/config/` (rules in C7); any change to them
@@ -533,7 +538,7 @@ the first thing to run when "this flight behaved differently".
 | Troubleshooting | [TROUBLESHOOTING.md](TROUBLESHOOTING.md) |
 | Goal topics | `/svg/drone_1/goal_command` (PoseStamped, `map` frame, ABSOLUTE) · `/svg/drone_1/speed_command` (Float32) · `/svg/drone_1/goal_xyzt` (x,y,z,θ°) — after `start`, `goal` scenario only |
 | Live params | `ros2 param set /swarm_commander <name> <value>` — CBF gains, fence dynamics, goal law, teleop; others refused |
-| Sim-only values | sim airframe rate gains ×0.5, gyro filters 80/40, `LNDMC_ROT_MAX` 300, motor lag off, MAVROS respawn — **never port to the drone** (iron rule 9) |
+| **sim-only — never port to the drone** (iron rule 9) | sim airframe rate gains ×0.5, gyro filters 80/40, `LNDMC_ROT_MAX` 300 (real 30), motor lag off, MAVROS respawn, `cbf_sim.yaml` speeds 2.0 / 4.0 / 6.0 + landing settle 2.0 s / retry. Real `_ours` configs: `drone_1`, `land_settle_s` 0.0, `land_speed_mps` 0.6, `cbf_max_speed_mps` 1.0 |
 | `target_system` | must equal the drone's `MAV_SYS_ID` — check the `px4_interface` startup line; no ACK = mismatch |
 | RC takeover | straight to **MANUAL** or **kill switch** ONLY (POSCTL/ALTCTL leak commander setpoints) |
 | After landing | confirm **DISARMED** in QGC before approaching — the panel's Interface column is an ACK log, not an arming display |

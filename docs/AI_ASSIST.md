@@ -59,7 +59,7 @@ Each of these cost an afternoon to learn. Ask for them by name.
 | Never | Why |
 |---|---|
 | `git push`, force pushes, rewriting history | the user pushes; the mirror and GitHub must stay in step |
-| Port a sim airframe value to the real drone (`starling_1_indoor_params.params`, QGC) | rate gains ×0.5, `LNDMC_ROT_MAX 300`, motor lag off are sim-only — iron rule 9 |
+| Port a sim value to the real drone (`starling_1_indoor_params.params`, QGC, or an `_ours` yaml) | sim airframe rate gains ×0.5, gyro filters 80/40, `LNDMC_ROT_MAX` 300, motor lag off, the MAVROS respawn, `cbf_sim.yaml`'s speeds 2.0 / 4.0 / 6.0 and its landing settle 2.0 s + retry are **sim-only — never port to the drone** — iron rule 9 |
 | `force_set` on MAVROS parameter writes | it aborted `mavros_node` mid-flight (ledger #11) |
 | Press Stop ▶ Play in the Isaac window, or script it | Pegasus leaks the old vehicles; full relaunch needed ([TROUBLESHOOTING](TROUBLESHOOTING.md)) |
 | Run `test/functional_*.py` with the real stack up | they publish fake odometry on live topics — iron rule 4 |

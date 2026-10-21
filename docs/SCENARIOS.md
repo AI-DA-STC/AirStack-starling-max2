@@ -7,9 +7,11 @@
 > and services): it is the **background, procedure and exit criteria** per scenario, plus our
 > corrections to CMU's write-ups. ⚠️ The lab has **ONE** Starling, so every multi-drone scenario
 > is a **SIM procedure** with a "Real flight" subsection marked `⏳ blocked on a 2nd Starling (M7)`.
+>
 > **Read first:** [GLOSSARY.md](GLOSSARY.md) (CBF, scenario, fence…), then [RUNBOOK.md](RUNBOOK.md)
 > §A for the sim session this runs in. "The commander" = the `swarm_commander` node; "the panel" =
 > the Foxglove SVG Basestation ([BASESTATION.md](BASESTATION.md)); "the real drone" = our Starling 2 Max.
+>
 > All of it comes from CMU branch `yikuan/SVG_ground_control` @ `cf719f0`, vendored
 > **2026-10-07**, bumped **2026-10-20** to `yikuan/SVG_ground_control_dev` @ `b21d28c` (added
 > `goal_sequence` and `figure_eight` — rows below, experiment.md C3 / C7 — and put
@@ -144,8 +146,19 @@ sim rehearsal, M1, not yet run · **⏳ M7 real** = needs a second Starling.
 | `random_walk` | Each drone wanders on a random heading inside the arena, bouncing off the arena walls; no goals at all. The simplest "everything moves" smoke test. | — (`scenario:=random_walk`) | any | ✅ CMU · ⏳ STE sim |
 | `squeeze` | Two "holder" drones sit on posts; a third pushes through the gap between them and the holders yield. | `squeeze_3drone.yaml` (sim), `hybrid_squeeze.yaml`, `squeeze_rc_intruder.yaml` (real) | 3 | ✅ CMU · ⏳ STE sim · ⏳ M7 real |
 | `random_goals` | Uniform random goals inside the arena; resample on arrival. The unsupervised collision stress test. **Has a known defect — §7.** | — (`scenario:=random_goals`; `goal_tracking.yaml` shipped it at `cf719f0`, ships `goal` again at `b21d28c`) | 3 | ✅ CMU · ✅ STE sim 2026-10-20/21 (ledger #8, video §7) · ⏳ M7 real |
-| `goal_sequence` (new 2026-10-20) | **Scripted goal sets** played automatically: K sets of one goal per drone (`sequence_steps` + `sequence_<name>` arrays, all inside the arena, pairs ≥ 2r), laid out so the straight legs cross (ends swap head-on, three-way crossing, rotating triangle) and the CBF alone deconflicts. Next set once everyone has been within `sequence_arrival_m` for `sequence_dwell_s` (or on a `sequence_period_s` timer), looping. `/svg/sequence_command` (`std_msgs/String`) takes `next`, a step name, `pause`, `resume`. Legs drawn as `path` markers. | `goal_sequence.yaml` (3 real, `keep_in`) — `scenario:=goal_sequence` on `cbf_sim.yaml` needs the `sequence_*` keys copied in | 3 | ✅ CMU · ⏳ STE sim · ⏳ M7 real |
-| `figure_eight` (new 2026-10-20) | **Collision-negligent pair + intruder**: drones 0 and 1 fly the SAME figure-eight (two touching circles; radius / centre distance / heading / plane tilt / sense per drone are `figure_eight_*` params), start at the far ends half a period apart, meet head-on at the crossing every half period and swap lobes — nothing but the CBF between them. Drone 2 hovers at `figure_eight_intruder_start` or is hand-flown into them (CBF-exempt). Carrots are time-parametrised, so a pushed drone is pulled back into the next meeting. Order `[lobe A, lobe B, intruder]`. | `figure_eight_rc_intruder.yaml` (3 real + pad) | 3 | ✅ CMU · ⏳ STE sim · ⏳ M7 real |
+| `goal_sequence` (new 2026-10-20) | **Scripted goal sets** played automatically: K sets of one goal per drone, laid out so the straight legs cross; the CBF alone deconflicts. Advances when everyone has arrived (or on a timer), loops. `/svg/sequence_command` takes `next` / a step name / `pause` / `resume`. Detail below the table. | `goal_sequence.yaml` (3 real, `keep_in`) — `scenario:=goal_sequence` on `cbf_sim.yaml` needs the `sequence_*` keys copied in | 3 | ✅ CMU · ⏳ STE sim · ⏳ M7 real |
+| `figure_eight` (new 2026-10-20) | **Collision-negligent pair + intruder**: drones 0 and 1 fly the SAME figure-eight half a period apart, meet head-on at the crossing every half period and swap lobes — nothing but the CBF between them. Drone 2 hovers as, or is hand-flown as, a CBF-exempt intruder. Detail below the table. | `figure_eight_rc_intruder.yaml` (3 real + pad) | 3 | ✅ CMU · ⏳ STE sim · ⏳ M7 real |
+
+**`goal_sequence` detail.** Sets are `sequence_steps` + one `sequence_<name>` array each, all inside
+the arena, pairs ≥ 2r (ends swap head-on, three-way crossing, rotating triangle). The next set
+starts once everyone has been within `sequence_arrival_m` for `sequence_dwell_s`, or on a
+`sequence_period_s` timer (`sequence_advance`); `/svg/sequence_command` is `std_msgs/String`. Legs
+are drawn as `path` markers.
+
+**`figure_eight` detail.** Two touching circles; radius / centre distance / heading / plane tilt /
+sense per drone are the `figure_eight_*` params. Drone 2 starts at `figure_eight_intruder_start`.
+Carrots are time-parametrised, so a pushed drone is pulled back into the next meeting. Order
+`[lobe A, lobe B, intruder]`.
 
 **Override the scenario without editing the yaml** — how you get `goal` or `head_on` out of a
 config that ships something else. Container shell:
@@ -183,17 +196,18 @@ failsafe hover (ledger #5); 2026-10-20 the settle alone was accepted on 1 of 3 d
 2026-10-21 first try ×3 (ledger #13). Values per config and the real-drone caveat (the retry is
 inert there): [CONFIG.md](CONFIG.md) ground-side table.
 
-**Procedure (sim — M1).** Open the session with RUNBOOK §A **T0** (`tools/sim_terminals.sh` →
+**Procedure (sim — M1).** Open the session with RUNBOOK §A0 (`tools/sim_terminals.sh` →
 tabs **Isaac Sim · Interfaces · Commander · Cockpit**), spawn 3 Starling drones in the Isaac Sim
-tab (T1, with `DRONE_USD` + `PX4_VEHICLE_MODEL`), interfaces in the Interfaces tab, then in the
-**Commander tab** (tmux alternative: T2's `bringup` session, pane 2):
+tab (§A1, with `DRONE_USD` + `PX4_VEHICLE_MODEL`), interfaces in the Interfaces tab (§A2), then in
+the **Commander tab** (tmux alternative — RUNBOOK §A "Alternatives to the tabs" — pane 2 of the
+`bringup` session):
 
 ```bash
 ros2 launch svg_ground_control ground_control.launch.py \
   config:=$(ros2 pkg prefix svg_ground_control)/share/svg_ground_control/config/cbf_sim.yaml
 ```
 
-Foxglove Studio next (RUNBOOK §A T3, [BASESTATION.md](BASESTATION.md) §2), then in the
+Foxglove Studio next (RUNBOOK §A3, [BASESTATION.md](BASESTATION.md) §2), then in the
 **Cockpit tab** (tmux: pane 3): `takeoff`, wait for `holding takeoff position` ×3, `start`.
 
 **Watch for.** In the Basestation 3D view the three drones head for the centre and each visibly
@@ -207,7 +221,8 @@ never drops below **1.1 m** (`2r`), (b) every drone keeps reaching the far side 
 (c) **`CBF emergency push-apart engaged` never appears**. Then repeat with `scenario:=head_on`. A
 push-apart in sim means the geometry or the gains are wrong — fix it here, not in the hangar.
 **Status:** ✅ ledger #4 (2026-10-19) at 0.6 / 1.2 with the old gains — min distance **1.02 m**
-(8 cm inside the barrier, the CBF's soft margin) · ⏳ **re-run at 2.0 / 4.0** with
+(8 cm inside the barrier, the CBF's soft margin) · ⏳ **re-run at 2.0 / 4.0** pending
+([MILESTONES.md](MILESTONES.md) §3c "Next up" — the only to-do list) with
 `AirStack/simulation/isaac-sim/tools/sim_cbf_crossing_test.sh` (45 s of `/svg/commander_status`,
 prints min pairwise distance, corrections, emergencies).
 
@@ -275,7 +290,7 @@ it run. This is the stress test that produced CMU's flight bags.
 > `[-4.5,-5.2,0]..[5.5,5,3]` — *by hand*. Shrink the arena to your net every time; a 10 % inset
 > of a too-big arena is still too big.
 
-**Procedure (sim — M1).** RUNBOOK §A T0/T1 to spawn and wire 3 Isaac drones (or
+**Procedure (sim — M1).** RUNBOOK §A0–A2 to spawn and wire 3 Isaac drones (or
 `./svg_teleop.sh hover`, which brings up 3 sim drones in tmux), then in the Commander tab:
 
 ```bash
@@ -284,7 +299,7 @@ ros2 launch svg_ground_control ground_control.launch.py \
   scenario:=random_goals
 ```
 
-This runs at `cbf_sim.yaml`'s speeds — cruise 2.0 m/s, cap 4.0, accel 6 (sim-only values).
+This runs at `cbf_sim.yaml`'s speeds — cruise 2.0 m/s, cap 4.0, accel 6 (**sim-only — never port to the drone**).
 `takeoff` → `start`, then leave it running and watch. **Exit criterion (M1):** ≥ 5 minutes with
 (a) no push-apart, (b) minimum pair distance never below 1.1 m, (c) every drone completing a few
 legs — one sitting still for a minute is the defect above; record it and restart. There is **no
@@ -362,9 +377,11 @@ rows that `b21d28c` fixed say so).
 | `experiment.md` "Automated tests" lists 3 pytest files | There are **20** test files (**14** pytest + 6 `functional_*`). Full list in §11. CMU's `README.md` still says "140 tests"; the files hold **158** `def test_` functions and the suite reports **185 passed** (2026-10-20), so some are parametrized — do not treat any count as the pass target, treat "0 failed" as the pass target. |
 | `fence_behavior: hold_all` latching | Now latched by any **ACTIVE** drone of **any role**, including an airborne **external** drone (`SwarmCommander.enforce_fence`). A behaviour change CMU does not call out. Brief the intruder's pilot (§2). |
 | — (stated nowhere) | **There is no protection between two fixed rows.** Pairs with no movable drone are pruned from the solve and skipped by the push-apart. Two exempt or external drones are on their own. |
-| `experiment.md` (geofence analysis) "10 m/s needs ~15.5 m even at 8 m/s² — not in this room" | Agreed — and yet `goal_tracking.yaml`, `goal_single.yaml`, `squeeze_rc_intruder.yaml`, `goal_sequence.yaml` and `figure_eight_rc_intruder.yaml` all ship `cbf_max_speed_mps: 10.0` **and** `goal_accel_mps2: 10.0` (cruise 10.0 / 10.0 / 10.0 / 6.0 / 2.0). Our net is far smaller than CMU's 10 × 9.7 m box. **Lower all three before flying.** Also honour its own rule: keep `fence_brake_accel_mps2 ≥ goal_accel_mps2`, or the wall envelope caps the cruise first — those real configs ship brake **8** against accel **10**, which violates it. |
+| `experiment.md` (geofence analysis) "10 m/s needs ~15.5 m even at 8 m/s² — not in this room" | Agreed — and yet `goal_tracking.yaml`, `goal_single.yaml`, `squeeze_rc_intruder.yaml`, `goal_sequence.yaml` and `figure_eight_rc_intruder.yaml` all ship `cbf_max_speed_mps: 10.0` **and** `goal_accel_mps2: 10.0` (cruise 10.0 / 10.0 / 10.0 / 6.0 / 2.0). Our net is far smaller than CMU's 10 × 9.7 m box. **Lower all three before flying.** |
+| `experiment.md` rule: keep `fence_brake_accel_mps2 ≥ goal_accel_mps2` | Those same five real configs ship brake **8** against accel **10**, which violates it — the wall envelope then caps the cruise first. Lower both together. |
 | `goal_single.yaml` is "the single-drone goal config" | At `cf719f0` it targeted **`drone_2`**; **`b21d28c` puts it back on `drone_1`** — but it still **exempts** that drone (`cbf_exempt_drones: "drone_1"`: harmless with one drone, yet the filter is then off), ships speeds **10.0** and `land_speed_mps` `0.8` (not the `0.6` we validated), `land_complete_altitude_m` 0.1. Fly **`goal_single_ours.yaml`** instead ([CONFIG.md](CONFIG.md)). |
-| Real drones take velocity commands | Default is now **`real_command_mode: trajectory`** → `/{name}/fmu/trajectory_command` (`MultiDOFJointTrajectory`; declared in `SwarmCommander.__init__`, published by `publish_command`). **`px4_interface` must be rebuilt** (`bws --packages-select px4_interface`) or the drone just hovers; `real_command_mode: velocity` restores the old `TwistStamped`. Also new and undocumented in our docs: `/svg/{name}/goal_xyzt` (`Float64MultiArray [x,y,z,theta_deg]`), the first way to command **yaw**. |
+| Real drones take velocity commands | Default is now **`real_command_mode: trajectory`** → `/{name}/fmu/trajectory_command` (`MultiDOFJointTrajectory`; declared in `SwarmCommander.__init__`, published by `publish_command`). **`px4_interface` must be rebuilt** (`bws --packages-select px4_interface`) or the drone just hovers; `real_command_mode: velocity` restores the old `TwistStamped`. |
+| — (goal yaw not documented) | New and undocumented by CMU: `/svg/{name}/goal_xyzt` (`Float64MultiArray [x,y,z,theta_deg]`), the first way to command **yaw** with a goal. |
 
 ## 10 · Troubleshooting
 
@@ -397,7 +414,7 @@ Paths relative to `AirStack/robot/ros_ws/src/svg_ground_control/`.
 | The key configs | `config/cbf_sim.yaml` (3 sim, `antipodal`, nobody exempt, **ours**: cruise 2.0 / vmax 4.0 / accel 6 — sim-only) · `config/goal_tracking.yaml` (3 **real**, `goal` at `b21d28c`, speed/vmax/accel 10.0 ⚠️, `keep_in`) · `config/squeeze_rc_intruder.yaml` (3 real, `drone_3` teleop + exempt, own teleop fence) · `config/goal_sequence.yaml`, `config/figure_eight_rc_intruder.yaml` (new 10-20) | Per-scenario parameters; read once at launch — full matrix in [CONFIG.md](CONFIG.md) |
 | CBF telemetry | `/svg/cbf_active` · `/svg/commander_status` | `cbf_active` = `std_msgs/String`, comma-separated names, **every tick** (end of `control_loop`), drives the LEDs and the panel. The status snapshot carries `cbf{alpha, safety_radius_m, max_speed_mps, external_velocity_gain, active, emergency}` and `tuning{teleop_max_speed_mps, goal_accel_mps2, goal_settle_s, scenario_speed_mps}` |
 | Goal inputs | `/svg/{name}/goal_command` (PoseStamped) · `/svg/{name}/goal_xyzt` (Float64MultiArray `[x,y,z,theta_deg]`) · `/svg/{name}/speed_command` (Float32) · `/svg/formation_command` (String) | All after `start` only |
-| Operator tooling | `scripts/svg_teleop.sh` · `foxglove/svg-basestation/` · `tools/sim_terminals.sh` | `svg_teleop.sh solo\|squeeze\|hover` brings up Isaac + agent + interfaces + commander + pad in tmux; `tools/sim_terminals.sh` is our four-tab session (RUNBOOK §A T0). The panel has the six-gain runtime dropdown (α / r / vmax / teleop vmax / goal accel / goal settle), the per-drone CBF chip, the mission chip and the Rosbag switch ([BASESTATION.md](BASESTATION.md)) |
+| Operator tooling | `scripts/svg_teleop.sh` · `foxglove/svg-basestation/` · `tools/sim_terminals.sh` | `svg_teleop.sh solo\|squeeze\|hover` brings up Isaac + agent + interfaces + commander + pad in tmux; `tools/sim_terminals.sh` is our four-tab session (RUNBOOK §A0). The panel has the six-gain runtime dropdown (α / r / vmax / teleop vmax / goal accel / goal settle), the per-drone CBF chip, the mission chip and the Rosbag switch ([BASESTATION.md](BASESTATION.md)) |
 
 **Tests** — inside the robot container, at the package directory:
 

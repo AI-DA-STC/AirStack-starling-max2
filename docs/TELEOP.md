@@ -6,6 +6,7 @@
 > §B (real drone) for the bring-up this sits on top of. "The commander" = the `swarm_commander`
 > node; "the panel" = the Foxglove SVG Basestation ([BASESTATION.md](BASESTATION.md)); "the real
 > drone" = our Starling 2 Max.
+>
 > It covers the **new** gamepad teleop (`safe_teleop`) that arrived with the
 > `yikuan/SVG_ground_control` snapshot on **2026-10-07** — snapshot now
 > `yikuan/SVG_ground_control_dev` @ `b21d28c` (**2026-10-20**), which made the pad's
@@ -13,6 +14,7 @@
 > and gave the panel a **Teleop · Sticks** card (§5, §8, [BASESTATION.md](BASESTATION.md) §3.13):
 > what the sticks do, what happens when you let go, the two fences that bound you, and bring-up
 > on sim and on the real drone.
+>
 > It is **NOT** a replacement for [RUNBOOK.md](RUNBOOK.md) — you still need the whole §B
 > bring-up (agent, mocap, interfaces, QGC) underneath — and **NOT** the old keyboard teleop,
 > which CMU deleted (its `svg_ground_control/README.md` says so in the teleop section).
@@ -142,11 +144,11 @@ drone will not move at all. ✅ CMU (their pad), ⏳ STE for ours.
 
 So the **manual two-terminal form is the one to learn** — identical to §5's, with
 `teleop_single.yaml` for `teleop_real.yaml` and no `use_mocap:=true`. Open the sim session with
-[RUNBOOK.md](RUNBOOK.md) §A **T0** (`tools/sim_terminals.sh` opens one Terminator window with the
+[RUNBOOK.md](RUNBOOK.md) §A0 (`tools/sim_terminals.sh` opens one Terminator window with the
 tabs **Isaac Sim · Interfaces · Commander · Cockpit**, each already inside the right container);
 start Isaac with **1** drone in the Isaac Sim tab and `launch_sim_interfaces.sh 1` in the
-Interfaces tab. Then, both in the **container** (`root@…#`) — tmux alternative: T2's `bringup`
-session, pad in pane 5, commander in pane 2:
+Interfaces tab. Then, both in the **container** (`root@…#`) — tmux alternative (RUNBOOK §A
+"Alternatives to the tabs"): the `bringup` session, pad in pane 5, commander in pane 2:
 
 ```bash
 CFG=$(ros2 pkg prefix svg_ground_control)/share/svg_ground_control/config/teleop_single.yaml
@@ -157,7 +159,7 @@ ros2 launch svg_ground_control ground_control.launch.py config:=$CFG
 ```
 
 (`takeoff` / `start` / `land` then go in any extra container shell — a new Terminator tab,
-`Ctrl-Shift-T`, dropped into the robot container the way RUNBOOK §A T0 describes.)
+`Ctrl-Shift-T`, dropped into the robot container the way RUNBOOK §A0 describes.)
 
 M1's teleop gate, all checkable in sim: right stick forward moves it one consistent direction
 · left stick up climbs and the height **holds** on release instead of sagging · release the
@@ -303,7 +305,7 @@ synced with the commander (2026-10-20). The old statement "none of it live" is w
 |---|---|---|---|
 | `drone` | `drone_1` | no | `drone_1` (launch arg `drone:=`) |
 | `teleop_controller` | `xbox_usb` | no | **`dragonrise_usb`** in every shipped `safe_teleop` block ⏳ verify §3 |
-| `max_speed_mps` | `1.0` | **yes** (since 2026-10-20) | shipped `0.7` (`teleop_real.yaml`) — ours **0.5** for M5 ([CONFIG.md](CONFIG.md)). Kept equal to the commander's `teleop_max_speed_mps` **in both directions**: the node follows the commander's status snapshot (`SafeTeleopNode.commander_status_callback`), and a `ros2 param set /safe_teleop max_speed_mps …` is pushed to the commander (`push_max_speed`). The panel's Teleop vmax row sets both. Only `cbf_max_speed_mps` is still a separate cap |
+| `max_speed_mps` | `1.0` | **yes** (since 2026-10-20) | shipped `0.7` (`teleop_real.yaml`) — ours **0.5** for M5 ([CONFIG.md](CONFIG.md)). Kept equal to the commander's `teleop_max_speed_mps` **both ways** (`commander_status_callback` follows the snapshot; `push_max_speed` pushes a local `ros2 param set` to the commander); the panel's Teleop vmax row sets both. `cbf_max_speed_mps` is still a separate cap |
 | `sync_max_speed` | `true` | no | default. `false` turns both directions off |
 | `commander_status_topic` | `/svg/commander_status` | no | default (= the commander's `status_topic`) |
 | `commander_ns` | `/swarm_commander` | no | default (where the commander's `set_parameters` lives) |
@@ -348,7 +350,8 @@ points are wrong, or wrong for us (code survey 2026-10-07, re-checked 2026-10-21
 | The device "today" is `xbox_usb` (the Controls intro and the Parameters table) | Every shipped config pins **`dragonrise_usb`** (`safe_teleop` block of `teleop_real.yaml`, `teleop_single.yaml`, …), and the config beats the node default (`resolve_controller` in `launch_helpers.py`). Which pad **we** own is ⏳ unrecorded — §3. |
 | The altitude prose in the Controls table ("release and the drone holds that height") describes `velocity.py`'s target-altitude mode | The node builds its `VelocityMapper` with `direct_vertical=True`, so the left stick **is** the vertical velocity (`VelocityMapper.update` → `_direct`) and there is **no altitude hold inside the node at all**. The hold you feel is entirely the **commander's** reference point. Correct behaviour, wrong mechanism — matters when you debug it. |
 | Commander teleop params are "tuned in the commander's block" (the paragraph after its Parameters table) without saying which are live | Only `teleop_max_speed_mps`, `teleop_kp`, `teleop_lead_m`, `teleop_accel_mps2`, `hold_lead_m` and the three fence *dynamics* are live. `teleop_drones`, `teleop_timeout_s`, `fence_behavior` and **both fence boxes** are startup-only and setting them is refused — §8. |
-| — (not covered) | `teleop_real.yaml` sets `land_speed_mps: 0.3`. Our lab **validated 0.6** — 0.3 bounces past PX4's land detector and leaves the drone **armed on the ground** ([CONFIG.md](CONFIG.md)). Change it before flying. Its `hover_positions` z is `1.2` where our goal configs use the low-and-safe `0.5`. It has **no `led_controller` block** (node defaults → `drone_1`, fine for us), and its `px4_vio_frame` comment says verify with the **B4b hand-check** — that is our [PREFLIGHT.md](PREFLIGHT.md) frame hand-check, not optional. |
+| — (not covered) | `teleop_real.yaml` sets `land_speed_mps: 0.3`. Our lab **validated 0.6** — 0.3 bounces past PX4's land detector and leaves the drone **armed on the ground** ([CONFIG.md](CONFIG.md)). Change it before flying. Its `hover_positions` z is `1.2` where our goal configs use the low-and-safe `0.5`. |
+| — (not covered) | `teleop_real.yaml` has **no `led_controller` block** (node defaults → `drone_1`, fine for us), and its `px4_vio_frame` comment says verify with the **B4b hand-check** — that is our [PREFLIGHT.md](PREFLIGHT.md) frame hand-check, not optional. |
 
 ## 10 · Troubleshooting
 

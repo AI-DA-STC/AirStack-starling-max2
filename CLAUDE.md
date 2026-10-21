@@ -25,6 +25,7 @@ part** ([MILESTONES.md](docs/MILESTONES.md) §3c). Delta and the ordered re-do l
 | [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | symptom → fix index; first move on this branch = `ros2 topic echo /svg/commander_status --once` |
 | [PREFLIGHT.md](docs/PREFLIGHT.md) | safety card — mirrors the iron rules below; keep the two in sync |
 | [GLOSSARY.md](docs/GLOSSARY.md) | plain-English definitions of every recurring term (commander, panel, CBF, scenarios, tabs/panes…) |
+| [AI_ASSIST.md](docs/AI_ASSIST.md) | for humans: how to work with the assistant here (recipes, phrasing, never-do list) — keep its never-do table in step with the iron rules |
 | [tools/](tools/) | `sim_terminals.sh` + `sim_tab.sh` (the sim session), `make_milestones_doc.py` (legacy .docx export) |
 
 Architecture pictures: `pictures/Starling_Airstack_architecture.png` (control flow — drawn for

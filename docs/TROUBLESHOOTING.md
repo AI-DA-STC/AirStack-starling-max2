@@ -171,3 +171,5 @@ open (no core dumps: the host's `core_pattern` is apport) — MILESTONES §6 "Si
 | Drone `iw` prints usage instead of link info | Old iw needs explicit syntax: `iw dev mlan0 link` |
 | Ctrl+C does nothing in `adb shell` | VOXL adbd doesn't forward signals — kill from a second shell (`adb shell pkill <cmd>`) or use self-terminating commands (`ping -c2 -w4`) |
 | QGC shows wrong dates on the drone's flight logs | Drone clock unsynced (no NTP). Match logs by **size**; logs at `/data/px4/log/sessNNN/` (ssh — password in CONFIG.md), pull procedure: [RUNBOOK.md](RUNBOOK.md) §D |
+| Need the drone's IP (RUNBOOK §B step 0's `ssh`, §D `scp`) | router admin page (`http://192.168.9.1:8080`), or `adb shell voxl-my-ip`, or the agent's `session established` line. The drone auto-joins SSID `StarlingMax2` at boot (moved from RUNBOOK §B step 1, 2026-10-21) |
+| WiFi missing after reboot + dmesg `Firmware Init Failed` | cold power cycle: battery + USB out 10 s (moved from RUNBOOK §B step 1, 2026-10-21 — same fix as the `Card is removed` row above) |

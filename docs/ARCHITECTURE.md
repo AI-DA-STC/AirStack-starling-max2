@@ -147,3 +147,58 @@ When our runbooks and CMU's guide disagree, trust CMU's `experiment.md` for comm
 documents for lab-specific substitutions and lessons learned — **except** where our
 corrections tables show CMU's doc disagreeing with CMU's code; there the code wins.
 
+## Moved from RUNBOOK (2026-10-21)
+
+Explanation paragraphs lifted **verbatim** out of [RUNBOOK.md](RUNBOOK.md) §A / §B so the
+runbook reads as commands and consequences; each RUNBOOK step keeps a "(why: …)" pointer here.
+
+### Sim session anatomy
+
+*(RUNBOOK §A intro)* GPU required (Isaac Sim is NVIDIA's GPU simulator). Four long-running things, one per tab:
+the Isaac Sim spawn, the **interfaces** (one MAVROS node per drone — MAVROS turns PX4's
+MAVLink into ROS topics), the **commander** (the ROS node that flies the swarm) and a
+**cockpit** shell for the service calls. The **panel** (the Foxglove SVG Basestation) is the
+operator view.
+
+*(RUNBOOK §A0 — `~/AirStack-starling-max2/tools/sim_terminals.sh`)* It brings the containers up (`./airstack.sh up`) if they are not running, then opens ONE
+Terminator window with the four tabs. Each tab is already inside the right container and
+prints its commands at the top (that is `tools/sim_tab.sh <role>`). Work the tabs left to
+right: **A1 = Isaac Sim tab, A2 = Interfaces tab, A3 = Commander tab, A4 = Cockpit tab.**
+Whatever you start lives in its tab — keep the window open. (A tab stays open even if its
+shell exits, because `sim_tab.sh` ends in `exec bash`.)
+
+### Workspace build and sourcing
+
+*(RUNBOOK §A2)* You are already in `~/AirStack/robot/ros_ws`; the container's bashrc sourced the workspace
+and set `ROS_DOMAIN_ID=1`.
+
+- **Rebuild** (`bws && sws` — build the workspace, then source it) is needed only after NEW
+  entry points or files, e.g. right after a snapshot bump. Edits to existing `.py`/`.yaml`
+  need no rebuild (symlink install).
+
+*(RUNBOOK §B step 2, tmux `bringup`)* Pane 0, only after NEW entry points or files (e.g. right after a snapshot bump):
+`cd ~/AirStack/robot/ros_ws && bws && sws` — `bws` builds the workspace, `sws` sources it;
+the other panes auto-source when it finishes. Edits to existing `.py`/`.yaml` need no
+rebuild (symlink install). Every container step below names a pane. Need a shell outside
+tmux? `./airstack.sh connect robot --command=bash` still works.
+
+### Mocap receiver note
+
+*(RUNBOOK §B step 4)* The mocap bridge is unchanged by the branch switch — our Motive broadcasts and the stock
+driver can't hear it; story + troubleshooting in [MOCAP.md](MOCAP.md).
+
+### Where things run (real-drone session)
+
+*(RUNBOOK §B header — step numbers are §B's)*
+
+> **Where things run.** Three KINDS of shell exist; each step names its kind:
+>
+> | Kind | Prompt looks like | How you get one | Runs |
+> |---|---|---|---|
+> | **Laptop (host)** — outside docker | `jeremychia@…$` | just open a terminal | step 0 ssh entry · step 1 IP checks · step 2 `airstack.sh up` · **step 3b QGC** · **step 4 mocap bridge** · **step 7 Foxglove Studio (if on the host)** — these do NOT run in docker |
+> | **Container pane** — inside docker | `root@…#` | step 2's `connect` → tmux `bringup`, panes 0–7 | step 3 agent · step 5 interfaces · step 6 commander · step 8 cockpit · verify commands |
+> | **Drone (ssh/adb)** | `starling2-max…$` | `ssh root@<DRONE_IP>` (step 0) or `adb shell` | one-time provisioning · clean shutdown |
+>
+> A full session = 3–4 laptop terminals + one tmux session. If a `ros2` command says
+> "command not found" you're in a host shell; if `./mocap.sh` complains about ROS you're in
+> the container — swap kinds.

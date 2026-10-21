@@ -50,6 +50,14 @@
 | Drone SSH login | user `root` · password `oelinux123` (ModalAI factory default — **verified by login 2026-09-01**; the previously-noted `AI.DA@STEngineering` is REJECTED by Starling 1, that credential belongs to something else) (⚠️ lab-LAN device credential stored here deliberately — keep this repo private) | `ssh root@<DRONE_IP>` | RUNBOOK §B step 0 re-provisioning; pulling `.ulg` flight logs from `/data/px4/log/` | Update here if the image/password ever changes |
 | Router admin page | `http://192.168.9.1:8080` (hangar router — shows every device's current IP) | open in a browser on the hangar LAN | The authority for ALL drifting IPs; alternatively contact **Jeremy Chia** | — |
 
+**Moved from RUNBOOK §B step 1 (2026-10-21) — reading today's IPs.** Compare against **CONFIG.md** (the single source of truth for every IP/SSID/name
+— including *what to do* when one has drifted). Quick version: `enp…` (Ethernet, lab LAN
+`192.168.9.x`) is the mocap path — step 4 listens on it automatically. `wlp…` (`10.40.2.x`)
+is the drone segment. **The drone's IP** (for step 0's `ssh` and §D): router admin page
+(`http://192.168.9.1:8080`), or `adb shell voxl-my-ip`, or the agent's `session established`
+line. The drone auto-joins SSID `StarlingMax2` at boot. (WiFi missing after reboot + dmesg
+`Firmware Init Failed` → cold power cycle: battery + USB out 10 s.) *(Step numbers are RUNBOOK §B's.)*
+
 ## Lab WiFi
 
 | Value | Current | How to check | If it changes → do this |
@@ -73,6 +81,15 @@
 | Commander status snapshot | `/svg/commander_status`, JSON, `status_rate_hz` **5** | the Basestation's only source of mission truth; `NO COMMANDER` after 2 s silence — keep ≥ 1 Hz |
 | **Sim airframe — Starling 2 Max** (2026-10-19, re-tuned 2026-10-20) | PX4 airframe `10090_pegasus_starling2max` + USD `simulation/isaac-sim/assets/robots/starling2max.usd` + Pegasus `Starling2MaxConfig` — a **sim-only file**; every number is in the sub-section "Sim airframe" right below this table, with a "sim-only?" column | Select with `DRONE_USD` + `PX4_VEHICLE_MODEL` ([RUNBOOK.md](RUNBOOK.md) §A1). Rows marked **sim-only — never port to the drone** must never reach a real parameter set |
 | Foxglove panel version | `airlab-cmu.svg-basestation-1.0.0` (`foxglove/svg-basestation/package.json`) | `ls ~/.foxglove-studio/extensions` on the laptop. After any panel edit or snapshot bump: re-run `foxglove/install.py` on the laptop, restart Studio, re-import `svg_basestation.json` |
+
+
+**Moved from RUNBOOK §B step 3 (2026-10-21) — `/fmu/*` echo and px4_msgs.** Every `/fmu/*` **echo**
+needs `--qos-reliability best_effort` or it looks dead — but the robot container's `ros2 topic hz`
+does NOT accept that flag (run hz bare). `vehicle_status` echo
+prints nothing even though hz shows 30 Hz — px4_msgs mismatch, [MILESTONES.md](MILESTONES.md) §3d; use
+`vehicle_odometry` for the echo check. (Before the agent starts, the drone-side
+`px4-microdds_client status` shows `Running, disconnected` — normal; the new watchdog keeps
+retrying.)
 
 
 ### Sim airframe (Starling 2 Max, sim-only) — `10090_pegasus_starling2max`
@@ -102,6 +119,26 @@ them apart. Source for the identified numbers: `isaac_sim/Starling 2 Max Sys ID 
 current asset = ledger #13: asset complete, no PhysX warnings, 2.0 m/s commanded / ~1.7 flown,
 landing DISARM accepted first try ×3. ⏳ Re-runs pending — the ordered list lives only in
 [MILESTONES.md](MILESTONES.md) §3c "Next up".
+
+**Moved from RUNBOOK §A1 (2026-10-21) — what the two Starling variables select** (added 2026-10-19): CMU's sys-ID dynamics
+(0.557 kg, k_f 3.96e-6, motor lag off — `Starling2MaxConfig` in the launch log) and our
+bind-mounted PX4 airframe `10090_pegasus_starling2max`. Values and sources: the table above
+("Sim airframe"). What in that airframe is real and what is sim-only:
+
+| Sim airframe value | Status |
+|---|---|
+| Attitude + position gains | = the real Starling 1's PX4 params |
+| MPC speed/accel limits (`MPC_XY_VEL_MAX` 20, `MPC_ACC_HOR` 6, `MPC_ACC_HOR_MAX` 1000, `MPC_Z_VEL_MAX_UP/DN` 10/4) | = the real drone's |
+| Rate gains × 0.5 + gyro filters `IMU_GYRO_CUTOFF` 80 / `IMU_DGYRO_CUTOFF` 40 | **sim-only — never port to the drone** — the real gains give a 9 Hz pitch limit cycle in sim (ledger #10) |
+| `LNDMC_ROT_MAX` 300 | **sim-only — never port to the drone** — the real drone has 30 (`starling_1_indoor_params.params`) |
+| Motor lag off · MAVROS respawn | **sim-only — never port to the drone** |
+
+**Moved from RUNBOOK §A (2026-10-21) — validation state.** Ledger #1–#4 passed 2026-10-19 on the OLD asset, gains and speeds; the
+fresh launch of 2026-10-21 (ledger #13) passed on the current ones: asset complete, no PhysX
+warnings, 2.0 m/s commanded / ~1.7 flown, all three landed and disarm accepted first try.
+Re-runs are pending — the ordered list is **[MILESTONES.md](MILESTONES.md) §3c "Next up"**, the
+only to-do list (this page keeps no copy). Acceptance tools live in `simulation/isaac-sim/tools/`
+(`docker cp` them into the robot container, run with `bash -ic`).
 
 ## Mocap / Motive
 
@@ -164,6 +201,14 @@ Flight-log-verified additions (2026-09-01/03 sessions):
 | Sim CBF demo (M1) | **`cbf_sim.yaml`** (ours since 2026-10-19/20) | 3 sim, `antipodal` (override with `scenario:=`), `scenario_speed_mps` **2.0**, `cbf_max_speed_mps` **4.0**, `goal_accel_mps2` **6.0**, `land_speed_mps` 1.0, settle 2.0 s + disarm retry 1.0 s × 5 — all of it **sim-only — never port to the drone**. Real-demo speeds; `ros2 param set` overrides live |
 | Other sim files | `swarm_sim.yaml`, `teleop_single.yaml`, `squeeze_3drone.yaml`, `goal_tracking_original.yaml` | as shipped, for M1 sim rehearsals (`goal_tracking_original.yaml` is CMU's pre-mocap 3-drone sim file, new 2026-10-20, reference only) |
 | Multi-drone real (M7 only) | `goal_tracking.yaml`, `squeeze_rc_intruder.yaml`, `hybrid_squeeze.yaml`, `goal_sequence.yaml`, `figure_eight_rc_intruder.yaml` | 3 real drones, 10 m/s caps ⚠️. `goal_tracking.yaml` ships **`goal`** again at `b21d28c` (it was `random_goals` at `cf719f0`); `goal_sequence` / `figure_eight` are new 2026-10-20 — sim rehearsal = copy their `sequence_*` / `figure_eight_*` blocks into a `cbf_sim`-style config with `drone_modes: "sim,sim,sim"` |
+
+**Moved from RUNBOOK §B step 6 (2026-10-21) — the commander launch.** One launch starts the commander, AirStack's `mocap_bridge` node —
+the in-container half of the mocap chain, not `./mocap.sh` — the Foxglove bridge and, optionally,
+Studio. *One-time prereqs (all done
+on the previous branch, unchanged): EKF2 params via QGC, vision-hub conf (`en_vio` false /
+`offboard_mode` off).* Use **our** config `swarm_real_ours.yaml` (added 2026-10-07: `drone_1`
+only, hover z 0.5, `land_speed_mps` 0.6, the validated ±2 m fence, `hold_all`) — the shipped
+`swarm_real.yaml` lists three real drones at 1.2 m with `land_speed_mps: 0.3`.
 
 **Config × parameter matrix** — every file, read from the yamls at `b21d28c` (2026-10-21). A dash
 means the key is absent and the commander's default applies (defaults: `fence_behavior hold_all`,

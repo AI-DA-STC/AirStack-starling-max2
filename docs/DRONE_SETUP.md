@@ -82,6 +82,15 @@ evidence: [CLAUDE.md](../CLAUDE.md).
 - [ ] Start the agent in the robot container (`MicroXRCEAgent udp4 -p 8888 -v4`) and verify on the drone: `px4-microdds_client status` → **Running, connected**, Agent IP = laptop; and on the laptop the interface startup line `PX4Interface initialized (uXRCE-DDS), target_system=N` — RUNBOOK §B steps 3 + 5.
 - [ ] Revert recipe exists if anything goes wrong (restore `.FACTORY-ORIGINAL` + reset the flash-saved domain param) — archived MILESTONES M3-A "Full revert to factory" (`git show airstack-starling-max2:docs/MILESTONES.md`).
 
+**Moved from RUNBOOK §B step 0 (2026-10-21) — when, and the script's arguments.** Re-provisioning is
+needed once per drone every time the GC laptop (or its IP) changes, **and once after switching
+to this branch** (the script is rewritten: `px4-` wrapper, boot retry loop, and a new
+`svg-microdds-watchdog` service). `<BODY_NAME>` = the Motive rigid-body name (`drone_1`),
+`<DOMAIN_ID>` = the drone's DDS domain (`1` for drone_1 — unique per drone), `<AGENT_PORT>` =
+`8888` (must match step 3's agent — RUNBOOK §B step 3). Push the *new* script first if the drone
+still has the old one
+(`adb push AirStack/robot/ros_ws/src/svg_ground_control/scripts/voxl_setup_real_drone.sh /usr/bin/`).
+
 ## 5 · PX4 parameters (QGC fast path)
 
 - [ ] Connect QGC on the laptop (drone pushes MAVLink to `primary_static_gcs_ip` — set the laptop's IP in `/etc/modalai/voxl-mavlink-server.conf` + `systemctl restart voxl-mavlink-server`) — CONFIG.md §voxl-mavlink-server.

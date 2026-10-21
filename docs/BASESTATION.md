@@ -99,6 +99,14 @@ reads as "real" — set the panel's **Modes** setting to `sim,sim,sim` if it bot
 With no host Studio you can run one *inside* the container, pre-connected with
 `ground_control.launch.py use_foxglove_studio:=true` (default `false`).
 
+**Moved from RUNBOOK §A3 (2026-10-21):** `use_foxglove_studio:=true` opens Foxglove Studio **inside the container, already
+connected** to `ws://localhost:8765`. First time only, import the layout (this section):
+container path
+`/root/AirStack/robot/ros_ws/src/svg_ground_control/foxglove/svg_basestation.json`
+(laptop path `~/AirStack-starling-max2/AirStack/robot/ros_ws/src/svg_ground_control/foxglove/svg_basestation.json`).
+Running Studio on the laptop instead: drop the flag, connect to `ws://localhost:8765`,
+import from the laptop path.
+
 ## 3 · Reading the panel
 
 ### 3.1 · Banner chips
@@ -439,6 +447,8 @@ runtime gains** are editable from the dropdown, not just alpha.
 | Teleop · Sticks card absent although the pad is plugged in | The card needs `safe_teleop` to be **publishing** `/svg/{name}/teleop_command` (20 Hz, zeros included) — start the pad launch ([TELEOP.md](TELEOP.md) §4/§5). `Sections → Show all` forces an empty card. `main` view never shows it: look at the `power` instance |
 | Banner `0 sim · 3 real`, `LINK DEGRADED`, `EKF NO DATA` in the sim | Cosmetic (§2). Set **Modes** to `sim,sim,sim` for the first; the other two are the derived-ping grading and missing EKF topics |
 | CBF vmax slider will not reach 4.0 | Slider max is the `cbfSpeedMax` setting (3). Type the value in the number box or raise the setting (§3.4) |
+| Phantom `drone_2`/`drone_3` rows with no data during the RUNBOOK §B step 7 preflight | Normal if the config is still 3-drone (moved from RUNBOOK §B step 7, 2026-10-21) |
+| Need a view without Studio | RViz still works — `rviz2 -d …/svg_drones.rviz`, Fixed Frame → `world` — as a fallback (moved from RUNBOOK §B step 7, 2026-10-21) |
 
 ## 8 · LED strips
 

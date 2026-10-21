@@ -38,11 +38,8 @@ tab or pane. §B/§C say "pane N"; §A says "<name> tab".
 
 > **WORLD: SIMULATION — nothing on this page touches the drone.** Step 0, before anything else: the drone's battery is OUT and `./mocap.sh` is NOT running on the laptop (the sim shares DDS domain 1 and the `/drone_1` topic names with the real drone). ⚠️ Sim-only — never port to the drone: the sim airframe values and `cbf_sim.yaml` speeds/landing settle (iron rule 9).
 
-GPU required (Isaac Sim is NVIDIA's GPU simulator). Four long-running things, one per tab:
-the Isaac Sim spawn, the **interfaces** (one MAVROS node per drone — MAVROS turns PX4's
-MAVLink into ROS topics), the **commander** (the ROS node that flies the swarm) and a
-**cockpit** shell for the service calls. The **panel** (the Foxglove SVG Basestation) is the
-operator view.
+GPU required. Four long-running things, one per tab — Isaac spawn · interfaces (MAVROS) ·
+commander · cockpit; the panel is the operator view (why: [ARCHITECTURE.md](ARCHITECTURE.md#sim-session-anatomy)).
 
 **What success looks like:** [videos/random_CBF_sim_edited.mp4](../videos/random_CBF_sim_edited.mp4)
 — three Starling 2 Max models flying `random_goals` under the CBF in Isaac Sim, 2026-10-21
@@ -54,12 +51,10 @@ Laptop:
 ```bash
 ~/AirStack-starling-max2/tools/sim_terminals.sh
 ```
-It brings the containers up (`./airstack.sh up`) if they are not running, then opens ONE
-Terminator window with the four tabs. Each tab is already inside the right container and
-prints its commands at the top (that is `tools/sim_tab.sh <role>`). Work the tabs left to
-right: **A1 = Isaac Sim tab, A2 = Interfaces tab, A3 = Commander tab, A4 = Cockpit tab.**
-Whatever you start lives in its tab — keep the window open. (A tab stays open even if its
-shell exits, because `sim_tab.sh` ends in `exec bash`.)
+Opens ONE Terminator window, four tabs, each already inside its container (brings the
+containers up first if needed). Work left to right: **A1 = Isaac Sim tab, A2 = Interfaces
+tab, A3 = Commander tab, A4 = Cockpit tab.** Keep the window open (why:
+[ARCHITECTURE.md](ARCHITECTURE.md#sim-session-anatomy)).
 
 ### A1 — Isaac Sim tab: spawn the sim drones
 
@@ -69,37 +64,18 @@ DRONE_USD=/isaac-sim/AirStack/simulation/isaac-sim/assets/robots/starling2max.us
 ```
 Wait for `Ready for takeoff!` ×3. Leave running.
 
-| Variant | Change to the line above |
-|---|---|
-| No Isaac window (lighter) | `ISAAC_SIM_HEADLESS=true` |
-| CMU's Iris quad instead of the Starling | drop `DRONE_USD=…` and `PX4_VEHICLE_MODEL=…` |
-| ZED camera on one drone (costly — skip unless needed) | add `ENABLE_CAMERA=true CAMERA_DRONES=drone_3` in front |
-| CMU's measured 72 ms motor lag (experiments only — it tumbles the attitude loop) | add `STARLING_MOTOR_TAU=0.072` in front |
+Variants: no Isaac window → `ISAAC_SIM_HEADLESS=true` · CMU's Iris quad → drop `DRONE_USD=…`
+and `PX4_VEHICLE_MODEL=…` · ZED camera / 72 ms motor lag → [§ Sim launch variants](#sim-launch-variants).
 
-**What the two Starling variables select** (added 2026-10-19): CMU's sys-ID dynamics
-(0.557 kg, k_f 3.96e-6, motor lag off — `Starling2MaxConfig` in the launch log) and our
-bind-mounted PX4 airframe `10090_pegasus_starling2max`. Values and sources:
-[CONFIG.md](CONFIG.md) "Sim airframe". What in that airframe is real and what is sim-only:
-
-| Sim airframe value | Status |
-|---|---|
-| Attitude + position gains | = the real Starling 1's PX4 params |
-| MPC speed/accel limits (`MPC_XY_VEL_MAX` 20, `MPC_ACC_HOR` 6, `MPC_ACC_HOR_MAX` 1000, `MPC_Z_VEL_MAX_UP/DN` 10/4) | = the real drone's |
-| Rate gains × 0.5 + gyro filters `IMU_GYRO_CUTOFF` 80 / `IMU_DGYRO_CUTOFF` 40 | **sim-only — never port to the drone** — the real gains give a 9 Hz pitch limit cycle in sim (ledger #10) |
-| `LNDMC_ROT_MAX` 300 | **sim-only — never port to the drone** — the real drone has 30 (`starling_1_indoor_params.params`) |
-| Motor lag off · MAVROS respawn | **sim-only — never port to the drone** |
+`DRONE_USD` + `PX4_VEHICLE_MODEL` select CMU's sys-ID Starling model and our bind-mounted PX4
+airframe; what in it is real and what is sim-only: [CONFIG.md](CONFIG.md#sim-airframe-starling-2-max-sim-only--10090_pegasus_starling2max) "Sim airframe".
 
 ⚠️ Everything marked **sim-only — never port to the drone** stays in the sim (iron rule 9) — so
 do `cbf_sim.yaml`'s speeds 2.0 / 4.0 / 6.0 and its landing settle 2.0 s + disarm retry (the real
 `_ours` configs fly `drone_1`, `land_settle_s` 0.0, `land_speed_mps` 0.6, `cbf_max_speed_mps` 1.0).
 The drone's parameters come from `starling_1_indoor_params.params` via QGC.
 
-**Validation state.** Ledger #1–#4 passed 2026-10-19 on the OLD asset, gains and speeds; the
-fresh launch of 2026-10-21 (ledger #13) passed on the current ones: asset complete, no PhysX
-warnings, 2.0 m/s commanded / ~1.7 flown, all three landed and disarm accepted first try.
-Re-runs are pending — the ordered list is **[MILESTONES.md](MILESTONES.md) §3c "Next up"**, the
-only to-do list (this page keeps no copy). Acceptance tools live in `simulation/isaac-sim/tools/`
-(`docker cp` them into the robot container, run with `bash -ic`).
+Validation: [MILESTONES.md](MILESTONES.md) §3c (state + acceptance tools: [CONFIG.md](CONFIG.md#sim-airframe-starling-2-max-sim-only--10090_pegasus_starling2max) "Sim airframe").
 
 > ⚠️ **Never press Stop / Play in the Isaac window** to reset the drones (observed 2026-10-20):
 > Pegasus kills and relaunches PX4 but leaks the old vehicles' physics callbacks, the new PX4s
@@ -114,12 +90,11 @@ After `Ready for takeoff!` ×3:
 ```bash
 ./src/svg_ground_control/scripts/launch_sim_interfaces.sh 3
 ```
-You are already in `~/AirStack/robot/ros_ws`; the container's bashrc sourced the workspace
-and set `ROS_DOMAIN_ID=1`. Leave running.
+Leave running (you are already in `~/AirStack/robot/ros_ws`, workspace sourced — why:
+[ARCHITECTURE.md](ARCHITECTURE.md#workspace-build-and-sourcing)).
 
-- **Rebuild** (`bws && sws` — build the workspace, then source it) is needed only after NEW
-  entry points or files, e.g. right after a snapshot bump. Edits to existing `.py`/`.yaml`
-  need no rebuild (symlink install).
+- **Rebuild** (`bws && sws`) only after NEW entry points or files (e.g. a snapshot bump);
+  `.py`/`.yaml` edits need none (why: [ARCHITECTURE.md](ARCHITECTURE.md#workspace-build-and-sourcing)).
 - **MAVROS respawn (sim-only — never port to the drone):** a MAVROS node that dies comes back after 2 s, but PX4 has
   meanwhile dropped to its offboard-loss failsafe. Recovery, in the Cockpit tab:
   `ros2 topic echo /drone_N/interface/mavros/state --once`; if `mode` ≠ `OFFBOARD`:
@@ -136,13 +111,9 @@ Leave running.
 - `scenario:=` overrides the yaml's own `antipodal`. Choices: `hover`, `goal`, `random_walk`,
   `random_goals`, `head_on`, `antipodal`, `squeeze`, `goal_sequence`, `figure_eight` —
   catalogue in [SCENARIOS.md](SCENARIOS.md) §4.
-- `use_foxglove_studio:=true` opens Foxglove Studio **inside the container, already
-  connected** to `ws://localhost:8765`. First time only, import the layout ([BASESTATION.md](BASESTATION.md) §2):
-  container path
-  `/root/AirStack/robot/ros_ws/src/svg_ground_control/foxglove/svg_basestation.json`
-  (laptop path `~/AirStack-starling-max2/AirStack/robot/ros_ws/src/svg_ground_control/foxglove/svg_basestation.json`).
-  Running Studio on the laptop instead: drop the flag, connect to `ws://localhost:8765`,
-  import from the laptop path. What "healthy" looks like: [BASESTATION.md](BASESTATION.md) §2.
+- `use_foxglove_studio:=true` = Studio inside the container, already connected. First time
+  only: import the layout — paths, the laptop-Studio alternative and what "healthy" looks
+  like: [BASESTATION.md](BASESTATION.md#2--quick-start) §2.
 - The launch also starts the `bag_recorder` node (since 2026-10-20); add `record_bag:=true`
   to record the whole run, or use the panel's Rosbag switch mid-run
   ([BASESTATION.md](BASESTATION.md) §3.12).
@@ -175,26 +146,14 @@ the wall instead.
 
 ### Alternatives to the tabs
 
-**tmux instead of Terminator.** Same commands, different windows. Laptop:
+tmux instead of Terminator — same commands. Laptop:
 ```bash
 cd ~/AirStack-starling-max2/AirStack && ./airstack.sh up && ./airstack.sh connect isaac-sim --command=bash
 ```
 → run A1 there. New laptop terminal: `cd ~/AirStack-starling-max2/AirStack && ./airstack.sh connect robot`
 → tmux `bringup`: pane 1 = A2 (after `cd ~/AirStack/robot/ros_ws`), pane 2 = A3, pane 3 = A4.
-The old `./airstack.sh connect robot --command=bash` still gives a throw-away container shell
-outside tmux.
-
-**One-command teleop session** (laptop, from the package's `scripts/` folder — brings up
-Isaac, interfaces, commander, an RViz window and a gamepad in tmux sessions of its own — ⏳ STE;
-it passes no `teleop_controller`, so it always assumes an Xbox pad; the panel still connects
-to its commander):
-```bash
-cd ~/AirStack-starling-max2/AirStack/robot/ros_ws/src/svg_ground_control/scripts
-./svg_teleop.sh solo        # 1 sim drone + gamepad   (squeeze = 3 drones, hover = 3 drones)
-./svg_teleop.sh takeoff && ./svg_teleop.sh start      # later: land | hold | reset-fence | stop
-```
-Details and the gamepad: [TELEOP.md](TELEOP.md) §4. RViz still works as a fallback view
-(`rviz2 -d $(ros2 pkg prefix svg_ground_control)/share/svg_ground_control/config/svg_drones.rviz`).
+`Ctrl-b d` detaches; `connect robot` again re-attaches. One-command teleop session, RViz
+fallback and the throw-away shell: [§ Sim launch variants](#sim-launch-variants).
 
 ---
 
@@ -204,17 +163,10 @@ Details and the gamepad: [TELEOP.md](TELEOP.md) §4. RViz still works as a fallb
 >
 > **Step 0 — which world am I in:** Isaac container NOT running (`docker ps | grep isaac` → empty), no `mavros_node` and no `svg_teleop` in `ros2 node list`, and the `px4_interface … target_system=N` startup line present. ⚠️ Never start Isaac Sim during a real session: the sim publishes on the real drone's topic names.
 
-> **Where things run.** Three KINDS of shell exist; each step names its kind:
->
-> | Kind | Prompt looks like | How you get one | Runs |
-> |---|---|---|---|
-> | **Laptop (host)** — outside docker | `jeremychia@…$` | just open a terminal | step 0 ssh entry · step 1 IP checks · step 2 `airstack.sh up` · **step 3b QGC** · **step 4 mocap bridge** · **step 7 Foxglove Studio (if on the host)** — these do NOT run in docker |
-> | **Container pane** — inside docker | `root@…#` | step 2's `connect` → tmux `bringup`, panes 0–7 | step 3 agent · step 5 interfaces · step 6 commander · step 8 cockpit · verify commands |
-> | **Drone (ssh/adb)** | `starling2-max…$` | `ssh root@<DRONE_IP>` (step 0) or `adb shell` | one-time provisioning · clean shutdown |
->
-> A full session = 3–4 laptop terminals + one tmux session. If a `ros2` command says
-> "command not found" you're in a host shell; if `./mocap.sh` complains about ROS you're in
-> the container — swap kinds.
+> **Where things run:** laptop `jeremychia@…$` = steps 0 (ssh), 1, 2 (`up`), 3b, 4, 7 (host Studio) ·
+> container pane `root@…#` = steps 3, 5, 6, 8 + verify commands · drone `starling2-max…$` = provisioning, shutdown.
+> `ros2: command not found` ⇒ host shell; `./mocap.sh` complaining about ROS ⇒ container — swap.
+> Full table: [ARCHITECTURE.md](ARCHITECTURE.md#where-things-run-real-drone-session).
 
 > **Maturity (2026-10-07):** nothing in §B has run on this branch yet. The mocap chain
 > (steps 1, 3b, 4) is unchanged from the previous branch. Steps 0, 5, 6, 7 are changed —
@@ -222,8 +174,7 @@ Details and the gamepad: [TELEOP.md](TELEOP.md) §4. RViz still works as a fallb
 > MILESTONES M2-A. No Isaac Sim needed — do NOT start it.
 
 **0 — Re-provision the drone(s)** — needed once per drone every time the GC laptop (or its
-IP) changes, **and once after switching to this branch** (the script is rewritten:
-`px4-` wrapper, boot retry loop, and a new `svg-microdds-watchdog` service). The drone
+IP) changes, **and once after switching to this branch** (why: [DRONE_SETUP.md](DRONE_SETUP.md#4--point-px4-at-the-laptop-uxrce-dds-provisioning) §4). The drone
 *dials the laptop*, so a stale IP means step 3 never gets a session. Laptop:
 ```bash
 ssh root@<DRONE_IP>            # Starling 1 — IP + password in CONFIG.md
@@ -236,10 +187,8 @@ voxl_setup_real_drone.sh <BODY_NAME> <LAPTOP_IP> <DOMAIN_ID> <AGENT_PORT>
 # Starling 1:  voxl_setup_real_drone.sh drone_1 <LAPTOP_IP> 1 8888
 reboot                         # ⚠️ ALWAYS reboot — never `systemctl restart voxl-px4` on this airframe (it kills the flight core)
 ```
-`<BODY_NAME>` = the Motive rigid-body name (`drone_1`), `<DOMAIN_ID>` = the drone's DDS
-domain (`1` for drone_1 — unique per drone), `<AGENT_PORT>` = `8888` (must match step 3's
-agent). Push the *new* script first if the drone still has the old one
-(`adb push AirStack/robot/ros_ws/src/svg_ground_control/scripts/voxl_setup_real_drone.sh /usr/bin/`).
+Arguments (`<BODY_NAME>` / `<DOMAIN_ID>` / `<AGENT_PORT>` — the port must match step 3's agent)
+and the `adb push` of the new script: [DRONE_SETUP.md](DRONE_SETUP.md#4--point-px4-at-the-laptop-uxrce-dds-provisioning) §4.
 Skip this step if nothing changed since the last session **on this branch**. Unsure?
 Proceed to step 3 — `session established` means step 0 wasn't needed.
 ⚠️ **First time on this drone?** [DRONE_SETUP.md](DRONE_SETUP.md).
@@ -252,13 +201,9 @@ ss -ulpn | grep -E ':(1510|1511)' || echo "ports clear"
 ```
 Ports NOT clear → `./mocap.sh stop` (laptop) then re-check; full table:
 [TROUBLESHOOTING.md](TROUBLESHOOTING.md).
-Compare against **[CONFIG.md](CONFIG.md)** (the single source of truth for every IP/SSID/name
-— including *what to do* when one has drifted). Quick version: `enp…` (Ethernet, lab LAN
-`192.168.9.x`) is the mocap path — step 4 listens on it automatically. `wlp…` (`10.40.2.x`)
-is the drone segment. **The drone's IP** (for step 0's `ssh` and §D): router admin page
-(`http://192.168.9.1:8080`), or `adb shell voxl-my-ip`, or the agent's `session established`
-line. The drone auto-joins SSID `StarlingMax2` at boot. (WiFi missing after reboot + dmesg
-`Firmware Init Failed` → cold power cycle: battery + USB out 10 s.)
+Compare against **[CONFIG.md](CONFIG.md)** (source of truth for every IP/SSID/name). `enp…`
+(`192.168.9.x`) = mocap path · `wlp…` (`10.40.2.x`) = drone segment. Finding the drone's IP,
+its SSID, WiFi missing after reboot: [TROUBLESHOOTING.md](TROUBLESHOOTING.md#drone-side--network) rows.
 
 **2 — Stack up (robot container only).** Laptop:
 ```bash
@@ -267,10 +212,8 @@ cd ~/AirStack-starling-max2/AirStack
 ./airstack.sh connect robot          # → tmux "bringup", 8 panes, prompt root@…#
 ```
 Pane 0, only after NEW entry points or files (e.g. right after a snapshot bump):
-`cd ~/AirStack/robot/ros_ws && bws && sws` — `bws` builds the workspace, `sws` sources it;
-the other panes auto-source when it finishes. Edits to existing `.py`/`.yaml` need no
-rebuild (symlink install). Every container step below names a pane. Need a shell outside
-tmux? `./airstack.sh connect robot --command=bash` still works.
+`cd ~/AirStack/robot/ros_ws && bws && sws` (why, and why `.py`/`.yaml` edits need no rebuild:
+[ARCHITECTURE.md](ARCHITECTURE.md#workspace-build-and-sourcing)). Every container step below names a pane.
 ⚠️ If this container was created **before** the branch switch, recreate it once
 (`./airstack.sh down` first) — the new `/dev/input` and `./Foxglove` mounts only exist on a
 fresh container ([MIGRATION.md](MIGRATION.md) §6).
@@ -286,10 +229,8 @@ ros2 topic echo /drone_1/fmu/out/vehicle_odometry --qos-reliability best_effort 
 ```
 ⚠️ Every `/fmu/*` **echo** needs `--qos-reliability best_effort` or it looks dead — but this
 container's `ros2 topic hz` does NOT accept that flag (run hz bare). `vehicle_status` echo
-prints nothing even though hz shows 30 Hz — px4_msgs mismatch, MILESTONES §3d; use
-`vehicle_odometry` for the echo check. (Before the agent starts, the drone-side
-`px4-microdds_client status` shows `Running, disconnected` — normal; the new watchdog keeps
-retrying.)
+prints nothing even though hz shows 30 Hz — use `vehicle_odometry` for the echo check (why:
+[CONFIG.md](CONFIG.md#protocol-constants-change-only-if-deliberately-reconfigured-everywhere) "Protocol constants").
 
 **3b — QGroundControl** (battery, arming status, params, kill switch). **Laptop** terminal
 (NOT a container shell), its own window — leave running:
@@ -299,8 +240,8 @@ retrying.)
 No vehicle appears? The drone pushes MAVLink to the GCS IP configured on it
 (`voxl-mavlink-server.conf`, see CONFIG.md) — it must point at this laptop.
 
-**4 — Mocap bridge** (unchanged by the branch switch — our Motive broadcasts and the stock
-driver can't hear it; story + troubleshooting in [MOCAP.md](MOCAP.md)). *Prereq: the
+**4 — Mocap bridge** (why `./mocap.sh` and not the stock driver: [MOCAP.md](MOCAP.md),
+[ARCHITECTURE.md](ARCHITECTURE.md#mocap-receiver-note)). *Prereq: the
 `drone_1` rigid body exists in Motive BEFORE launching — the body list is read only at
 startup.* **Laptop** terminal (NOT a container shell):
 ```bash
@@ -323,14 +264,9 @@ Leave running. Verify (pane 4):
 ros2 topic hz /drone_1/odometry_conversion/odometry   # silent here = takeoff will be refused later
 ```
 
-**6 — Commander launch** (one launch starts the commander, AirStack's `mocap_bridge` node —
-the in-container half of the mocap chain, not `./mocap.sh` — the Foxglove bridge and, optionally,
-Studio). *One-time prereqs (all done
-on the previous branch, unchanged): EKF2 params via QGC, vision-hub conf (`en_vio` false /
-`offboard_mode` off).* Use **our** config `swarm_real_ours.yaml` (added 2026-10-07: `drone_1`
-only, hover z 0.5, `land_speed_mps` 0.6, the validated ±2 m fence, `hold_all`) — the shipped
-`swarm_real.yaml` lists three real drones at 1.2 m with `land_speed_mps: 0.3`. Values:
-[CONFIG.md](CONFIG.md). Pane 3:
+**6 — Commander launch.** Use **our** config `swarm_real_ours.yaml`, never the shipped
+`swarm_real.yaml` (which config and why, what the launch starts, one-time prereqs:
+[CONFIG.md](CONFIG.md#ground-side-flight-parameters-svg_ground_control-config-yamls) "Which config for what"). Pane 3:
 ```bash
 ros2 launch svg_ground_control ground_control.launch.py \
   config:=$(ros2 pkg prefix svg_ground_control)/share/svg_ground_control/config/swarm_real_ours.yaml \
@@ -361,9 +297,8 @@ step 6 launch (opens Studio inside the container). Import the layout the first t
 ([BASESTATION.md](BASESTATION.md) §2). Healthy = banner `EKF EV FUSED`, mission chip
 `ON GROUND`, Agent State row for `drone_1` reads `IDLE · odom fresh · x y z tagged cmdr`,
 and the drone mesh in the 3D view **follows the hand-carried drone**. Step 5 must be
-running or the row says `odom none`. Phantom `drone_2`/`drone_3` rows with no data are
-normal if the config is still 3-drone. Do NOT call takeoff during this check.
-*(RViz still works — `rviz2 -d …/svg_drones.rviz`, Fixed Frame → `world` — as a fallback.)*
+running or the row says `odom none`. Do NOT call takeoff during this check. Phantom rows,
+RViz fallback: [BASESTATION.md](BASESTATION.md#7--troubleshooting) §7.
 
 **8 — Fly** (⏳ STE on this branch — MILESTONES M3). ⚠️ Do not call `takeoff` until every
 box on [PREFLIGHT.md](PREFLIGHT.md) is checked and a briefed safety pilot holds the
@@ -557,3 +492,36 @@ the first thing to run when "this flight behaved differently".
 | Drone hotspot (`uap0`, SSID `Starling_1_demo_mode` on Starling 1) | never connect the laptop to it |
 | Drone power-off | `adb shell shutdown now` (laptop) → wait ~10 s → unplug USB, then battery |
 | Drone after re-provisioning | **reboot**, never `systemctl restart voxl-px4` |
+
+### Sim launch variants
+
+*(Moved verbatim from §A1 and §A "Alternatives to the tabs" on 2026-10-21. "The line above" =
+the §A1 Isaac spawn line.)*
+
+| Variant | Change to the line above |
+|---|---|
+| No Isaac window (lighter) | `ISAAC_SIM_HEADLESS=true` |
+| CMU's Iris quad instead of the Starling | drop `DRONE_USD=…` and `PX4_VEHICLE_MODEL=…` |
+| ZED camera on one drone (costly — skip unless needed) | add `ENABLE_CAMERA=true CAMERA_DRONES=drone_3` in front |
+| CMU's measured 72 ms motor lag (experiments only — it tumbles the attitude loop) | add `STARLING_MOTOR_TAU=0.072` in front |
+
+**tmux instead of Terminator.** Same commands, different windows. Laptop:
+```bash
+cd ~/AirStack-starling-max2/AirStack && ./airstack.sh up && ./airstack.sh connect isaac-sim --command=bash
+```
+→ run A1 there. New laptop terminal: `cd ~/AirStack-starling-max2/AirStack && ./airstack.sh connect robot`
+→ tmux `bringup`: pane 1 = A2 (after `cd ~/AirStack/robot/ros_ws`), pane 2 = A3, pane 3 = A4.
+The old `./airstack.sh connect robot --command=bash` still gives a throw-away container shell
+outside tmux.
+
+**One-command teleop session** (laptop, from the package's `scripts/` folder — brings up
+Isaac, interfaces, commander, an RViz window and a gamepad in tmux sessions of its own — ⏳ STE;
+it passes no `teleop_controller`, so it always assumes an Xbox pad; the panel still connects
+to its commander):
+```bash
+cd ~/AirStack-starling-max2/AirStack/robot/ros_ws/src/svg_ground_control/scripts
+./svg_teleop.sh solo        # 1 sim drone + gamepad   (squeeze = 3 drones, hover = 3 drones)
+./svg_teleop.sh takeoff && ./svg_teleop.sh start      # later: land | hold | reset-fence | stop
+```
+Details and the gamepad: [TELEOP.md](TELEOP.md) §4. RViz still works as a fallback view
+(`rviz2 -d $(ros2 pkg prefix svg_ground_control)/share/svg_ground_control/config/svg_drones.rviz`).

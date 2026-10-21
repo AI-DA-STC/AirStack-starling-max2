@@ -32,7 +32,7 @@ set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MOCAP_WS="${MOCAP_WS:-$HOME/mocap_ws}"
-MOCAP_BODIES="${MOCAP_BODIES:-drone_1}"
+MOCAP_BODIES="${MOCAP_BODIES-drone_1}"   # unset -> drone_1; empty -> relay every body
 ROS_DISTRO_EXPECTED=jazzy
 
 # Pinned upstream versions (what we tested on 2026-08-27):

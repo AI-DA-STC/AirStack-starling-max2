@@ -65,7 +65,7 @@ Milestone by milestone, with evidence: [MILESTONES.md](docs/MILESTONES.md) §3c.
 | [AirStack/](AirStack/) | CMU AirStack snapshot, `yikuan/SVG_ground_control_dev` @ `b21d28c` ([its README](AirStack/README.md)) |
 | [`starling_1_indoor_params.params`](starling_1_indoor_params.params) | The drone's parameter set (QGC export) |
 | [tools/](tools/) · [patches/](patches/) | Sim session launcher, docs checker · our bug-fix patches |
-| [assets/](assets/) · [videos/](videos/) · [pictures/](pictures/) | GIFs, recordings, diagrams |
+| [assets/](assets/) · [videos/](videos/) · [pictures/](pictures/) | GIFs, recordings, diagrams — [pictures/README.md](pictures/README.md) says which are current |
 | [drone-backups/](drone-backups/) | Starling 1's factory `voxl-px4-start` |
 
 ## Clone, commit, push

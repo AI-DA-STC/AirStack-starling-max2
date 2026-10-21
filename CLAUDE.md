@@ -29,7 +29,8 @@ part** ([MILESTONES.md](docs/MILESTONES.md) §3c). Delta and the ordered re-do l
 | [tools/](tools/) | `sim_terminals.sh` + `sim_tab.sh` (the sim session), `make_milestones_doc.py` (legacy .docx export) |
 
 Architecture pictures: `pictures/Starling_Airstack_architecture.png` (control flow — drawn for
-the previous branch, boxes unchanged), `pictures/Flight_lab_architecture.png` (network
+the previous branch; README lists the four corrections: `./mocap.sh`, `px4_interface` box,
+trajectory setpoint, Foxglove panel as operator view), `pictures/Flight_lab_architecture.png` (network
 topology). Network/router details live in the companion repo
 [ground-control-network-setup](https://github.com/AI-DA-STC/ground-control-network-setup).
 

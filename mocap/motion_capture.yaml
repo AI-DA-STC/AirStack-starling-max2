@@ -3,10 +3,15 @@
 #
 # "hostname" is the Motive PC's IP. It is DHCP-assigned and can drift —
 # check docs/CONFIG.md for the current value and `ping` it before a session.
+# 2026-10-21: merged from the copy that flew (~/mocap_ws/bridge/, 2026-09-18). Its
+# Crazyflie marker/dynamics blocks were left out (other project; the receiver ignores
+# them unless a rigid_bodies entry references them). Re-verify after the OptiTrack
+# camera upgrade: `./mocap.sh check`, then `./mocap.sh` and `ros2 topic hz /drone_1/pose`.
 /motion_capture_tracking:
   ros__parameters:
     type: "optitrack"            # open parser — works with Motive Broadcast AND Multicast
-    hostname: "192.168.9.124"    # Motive PC, AI.R STC hangar wired LAN — docs/CONFIG.md is authoritative
+    hostname: "192.168.9.152"    # Motive PC, AI.R STC hangar wired LAN — seen 2026-09-10 (was .124 on
+                                 # 08-28, .100 on 08-27: the hangar assigns by switch port). CONFIG.md.
 
     topics:
       frame_id: "world"          # frame stamped on /poses (matches natnet_ros2's default)
@@ -15,3 +20,5 @@
           mode: "sensor"         # best-effort, latest-wins — right for a high-rate stream
           deadline: 50.0         # Hz — Motive's rate drifts (50 Hz 2026-08-28, 240 Hz 08-27);
                                  # only a QoS hint, the bridge follows the actual rate either way
+      tf:
+        child_frame_id: "{}_mocap"   # TF frame per body (flown setting); not used by AirStack

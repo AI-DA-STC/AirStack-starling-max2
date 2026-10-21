@@ -26,6 +26,7 @@
 #   fastdds.xml          UDP-only DDS profile (same one the container uses)
 # Rigid bodies to relay (space-separated, must match Motive's body names):
 #   MOCAP_BODIES="drone_1 drone_2" ./mocap.sh
+#   MOCAP_BODIES="" ./mocap.sh          relay EVERY body Motive publishes (names sanitised)
 
 set -euo pipefail
 
@@ -117,19 +118,24 @@ cmd_run() {
     fi
     bridge_env
     # body names become quoted python-list entries — restrict to safe charset
-    if ! echo "$MOCAP_BODIES" | grep -qE '^[A-Za-z0-9_ ]+$'; then
+    if [ -n "$MOCAP_BODIES" ] && ! echo "$MOCAP_BODIES" | grep -qE '^[A-Za-z0-9_ ]+$'; then
         echo "ERROR: MOCAP_BODIES may only contain letters, digits, _ and spaces (got: $MOCAP_BODIES)" >&2
         exit 1
     fi
-    local bodies_py
-    bodies_py="[$(echo "$MOCAP_BODIES" | sed "s/[^ ]*/'&'/g; s/ /,/g")]"
-    echo ">> starting mocap bridge (bodies: $MOCAP_BODIES) — Ctrl+C stops both nodes"
+    local bodies_py relay_args
+    if [ -n "$MOCAP_BODIES" ]; then
+        bodies_py="[$(echo "$MOCAP_BODIES" | sed "s/[^ ]*/'&'/g; s/ /,/g")]"
+        relay_args=(--ros-args -p "bodies:=$bodies_py")
+        echo ">> starting mocap bridge (bodies: $MOCAP_BODIES) — Ctrl+C stops both nodes"
+    else
+        relay_args=()
+        echo ">> starting mocap bridge (ALL bodies Motive publishes) — Ctrl+C stops both nodes"
+    fi
     trap 'kill 0' EXIT
     ros2 run motion_capture_tracking motion_capture_tracking_node --ros-args \
         -r __node:=motion_capture_tracking \
         --params-file "$REPO_DIR/mocap/motion_capture.yaml" &
-    /usr/bin/python3 "$REPO_DIR/mocap/pose_relay.py" --ros-args \
-        -p "bodies:=$bodies_py" &
+    /usr/bin/python3 "$REPO_DIR/mocap/pose_relay.py" "${relay_args[@]}" &
     wait
 }
 

@@ -314,11 +314,20 @@ running `ros2 topic hz` expects the right number.
 | built receiver | `~/mocap_ws` (created by `setup`; override with `MOCAP_WS=…`) | `motion_capture_tracking` @ commit `64d3af2` + patch, built against system ROS Jazzy |
 
 **About `~/mocap_ws`:** it is *generated build output*, not a source tree — any machine
-recreates it from this repo with `./mocap.sh setup` (clone → patch → build). Don't hand-edit
-it or version it; edit `mocap/` here and commit. The legacy `~/mocap_ws/start_mocap_bridge.sh`
-from the original 08-27 debugging still works but is **not** identical to `./mocap.sh`: it
-hardcodes extra bodies (`cf1`, `cf8`) and carries a stale copy of the config. Prefer
-`./mocap.sh`; delete `~/mocap_ws` any time and re-run `setup` to get a clean rebuild.
+recreates it from this repo with `./mocap.sh setup` (clone → patch → build). Edit `mocap/`
+here and commit; delete `~/mocap_ws` any time and re-run `setup` for a clean rebuild.
+**History (2026-10-21):** the relay and config that actually flew lived only in
+`~/mocap_ws/bridge/` (edited 2026-09-18, after the 08-28 commit) and were merged back into
+`mocap/` on 2026-10-21: the relay now relays every body when no list is given
+(`MOCAP_BODIES=""`), sanitises Motive names into legal topic names, and declares the body
+list the way Jazzy needs. The legacy `~/mocap_ws/start_mocap_bridge.sh` is now equivalent to
+`./mocap.sh` with `MOCAP_BODIES=""`; prefer `./mocap.sh`.
+
+> ⚠️ **OptiTrack camera upgrade pending.** The receiver (`motion_capture_tracking` + our
+> NatNet 4.2 patch) is the only part that talks to Motive. After the upgrade, before any
+> flight: `./mocap.sh check` (raw packets arriving?), then `./mocap.sh` and
+> `ros2 topic hz /drone_1/pose` (≈ Motive's rate). A new Motive may change the NatNet
+> version and the PC's IP (`mocap/motion_capture.yaml` `hostname`). The relay is unaffected.
 
 Bridge environment (set automatically by `mocap.sh`): `ROS_DOMAIN_ID=1` (the
 lab-wide domain, see CONFIG.md), discovery range SUBNET, Fast DDS profile as above.

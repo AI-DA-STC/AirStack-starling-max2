@@ -104,9 +104,13 @@ hear; full story in [MOCAP.md](docs/MOCAP.md) §3.)*
 
 <img src="pictures/Starling_Airstack_architecture.png" alt="Starling Max 2 × AirStack control-flow diagram — Motive PC to mocap bridge to robot container (mocap_bridge, swarm commander, CBF safety filter, MicroXRCEAgent) to PX4 onboard (EKF2, control loops, motors), with the RC kill switch outranking everything" width="850">
 
-*(Diagram drawn for the previous branch — the boxes are the same; the arrow from the
-commander to PX4 now carries a trajectory setpoint rather than a bare velocity, and the
-Foxglove Basestation sits beside the commander as the operator view.)*
+*(Diagram drawn for the previous branch; four things moved since — read it with these
+corrections: the laptop box is `./mocap.sh` (there is no `bridge` subcommand); between the
+CBF and the MicroXRCEAgent sits `px4_interface`, which turns the command into PX4 messages
+and carries arm/disarm/offboard; the commander→PX4 arrow is a **trajectory setpoint**
+(position + velocity + acceleration), so PX4's chain is position → velocity → attitude → rate;
+and the operator view is the Foxglove panel (plus the gamepad through the same CBF), with
+QGC kept for arming truth. In sim the right-hand box is Isaac Sim + PX4 SITL over MAVROS.)*
 
 **How the laptop↔drone leg works:** the laptop repackages everything into PX4's native
 message format (`px4_msgs`), and the **MicroXRCEAgent** program ships those messages over

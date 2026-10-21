@@ -8,8 +8,8 @@
 #
 # How: writes a layout named `airstack-sim` into ~/.config/terminator/config
 # (replacing an older copy) and runs `terminator -l airstack-sim`. Each tab
-# runs tools/sim_tab.sh <role>; with Terminator's exit_action=hold a tab whose
-# shell exits stays open instead of closing the window.
+# runs tools/sim_tab.sh <role>, which ends in `exec bash` — so a tab stays open
+# (as a laptop shell) even after its container shell exits.
 set -euo pipefail
 repo="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cfg="${HOME}/.config/terminator/config"

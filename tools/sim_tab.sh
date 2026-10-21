@@ -31,24 +31,30 @@ interfaces) cat <<'TXT'
 After the sim says Ready for takeoff x3:
 
 ./src/svg_ground_control/scripts/launch_sim_interfaces.sh 3
+
+Only after NEW entry points/files (e.g. a snapshot bump), rebuild first: bws && sws
+(.py/.yaml edits need no rebuild — symlink install).
 TXT
 ;;
 commander) cat <<'TXT'
-Commander + Foxglove Studio (scenario:=antipodal|random_goals|head_on|goal ...):
+Commander + Foxglove Studio (scenario:= hover|goal|random_walk|random_goals|head_on|antipodal|squeeze|goal_sequence|figure_eight):
 
 ros2 launch svg_ground_control ground_control.launch.py \
   config:=$(ros2 pkg prefix svg_ground_control)/share/svg_ground_control/config/cbf_sim.yaml \
   scenario:=random_goals use_foxglove_studio:=true
 
-Studio: Open connection -> Foxglove WebSocket -> ws://localhost:8765; layout foxglove/svg_basestation.json
+Studio opens already connected to ws://localhost:8765. First time: import the layout
+/root/AirStack/robot/ros_ws/src/svg_ground_control/foxglove/svg_basestation.json (BASESTATION.md §2).
 TXT
 ;;
 cockpit) cat <<'TXT'
-ros2 service call /swarm_commander/takeoff std_srvs/srv/Trigger    # wait for "holding takeoff position" x3
+ros2 service call /swarm_commander/takeoff std_srvs/srv/Trigger    # wait for "holding takeoff position" x3 (~30 s)
 ros2 service call /swarm_commander/start   std_srvs/srv/Trigger
-ros2 service call /swarm_commander/land    std_srvs/srv/Trigger
+ros2 service call /swarm_commander/hold    std_srvs/srv/Trigger    # freeze in a hover first
+ros2 service call /swarm_commander/land    std_srvs/srv/Trigger    # from the hover, never mid-leg
+#   commander log per drone: "touchdown at z=... settling 2.0 s before disarm" -> "landed, disarmed (attempt 1)"
 ros2 topic echo /drone_1/interface/mavros/state --once             # expect armed: false
-ros2 param set /swarm_commander scenario_speed_mps 2.0             # live gains; see SCENARIOS.md §3
+ros2 param set /swarm_commander scenario_speed_mps 1.0             # live gains (yaml default 2.0); see SCENARIOS.md §3
 TXT
 ;;
 esac

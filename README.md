@@ -1,18 +1,28 @@
 # AirStack-starling-max2 — Starling Max 2 × AirStack lab repo
 
-Everything for flying a ModalAI **Starling Max 2** live under **CMU AirStack** (branch
-`yikuan/SVG_ground_control`) with **OptiTrack + Motive** mocap: our notes, milestone
-plan, bug-fix patches, demo recordings, **and a complete known-good snapshot of the AirStack
-code itself**.
+Everything for flying a ModalAI **Starling Max 2** (the real drone) live under **CMU AirStack**
+(branch `yikuan/SVG_ground_control_dev` @ `b21d28c`) with **OptiTrack + Motive** mocap: our
+notes, milestone plan, bug-fix patches, demo recordings, **and a complete known-good snapshot of
+the AirStack code itself**.
 
-> **2026-10-07 — branch switch.** This `main` now documents CMU's `yikuan/SVG_ground_control`
-> branch: a wired-in CBF collision filter, a braking keep-in fence, trajectory setpoints to
-> PX4, gamepad teleop, LED strips and a **Foxglove "SVG Basestation"** operator console.
-> Nothing on it has flown here yet — the milestone ladder restarts at M0 and every stage is
-> re-validated at STE. Everything about the *previous* branch (`daniel/diffaero_ground_control`,
-> flown 2026-09-01→03) is frozen on tag **`airstack-starling-max2`** / branch
+> **Who this README is for:** anyone new to the project — it explains what the system is, how
+> the pieces fit, and where every other document lives. To *run* things, go straight to
+> [RUNBOOK.md](docs/RUNBOOK.md).
+
+> **2026-10-07 — branch switch.** This `main` documents CMU's `yikuan/SVG_ground_control`
+> line: a wired-in CBF collision filter, a braking keep-in fence, trajectory setpoints to
+> PX4, gamepad teleop, LED strips and a **Foxglove "SVG Basestation"** operator console (the
+> panel). The milestone ladder restarted at M0 and every stage is re-validated at STE.
+> Everything about the *previous* branch (`daniel/diffaero_ground_control`, flown
+> 2026-09-01→03) is frozen on tag **`airstack-starling-max2`** / branch
 > **`archive/airstack-starling-max2`**. What changed, and what to re-do before the first
 > session: [MIGRATION.md](docs/MIGRATION.md).
+>
+> **2026-10-20 — snapshot bumped** to CMU's working branch `yikuan/SVG_ground_control_dev` @
+> `b21d28c` (the panel's live-gain dropdown now covers goal accel/settle and teleop vmax too, `goal_sequence` + `figure_eight`
+> scenarios, the rosbag switch) — [MIGRATION.md](docs/MIGRATION.md) §11. **Status:** sim
+> validated in part ([MILESTONES.md](docs/MILESTONES.md) §3c); **no real flight on this branch
+> yet**.
 
 ## ✈️ Showcase — autonomous waypoint flight, validated 2026-09-03 (previous branch)
 
@@ -37,9 +47,14 @@ auto-disarm all under software control (RC kill switch armed in hand throughout)
 - **2026-09-03 — waypoint flights** (previous branch): runtime goals published over ROS 2
   (single goal + a multi-goal square, 2 laps), **in-flight geofence** validated, reliable
   landing auto-disarm.
-- **2026-10-07 — moved to `yikuan/SVG_ground_control`**: the mocap chain, drone
-  provisioning and network setup carry over unchanged; the flight software is re-validated
-  from M0 ([MILESTONES.md](docs/MILESTONES.md) §3).
+- **2026-10-07 — moved to `yikuan/SVG_ground_control`** (bumped to `_dev @ b21d28c`
+  2026-10-20): the mocap chain, drone provisioning and network setup carry over unchanged;
+  the flight software is re-validated from M0 ([MILESTONES.md](docs/MILESTONES.md) §3).
+- **2026-10-21 — random goals under the CBF, in sim (Starling 2 Max model):**
+  [videos/random_CBF_sim_edited.mp4](videos/random_CBF_sim_edited.mp4) — three simulated
+  Starlings cross paths at 2.0 m/s and the CBF alone keeps them apart (`cbf_sim.yaml`: cap
+  4.0 m/s, r 0.55 m, α 2.5; a 47 s excerpt of a 3.5 min run). **Sim only — real re-check
+  pending** (M3+).
 - The full toolchain is in this repo: mocap bridge ([MOCAP.md](docs/MOCAP.md)), session
   runbook ([RUNBOOK.md](docs/RUNBOOK.md) §B/§C), drone parameter set
   ([`starling_1_indoor_params.params`](starling_1_indoor_params.params)), and every lesson
@@ -165,7 +180,7 @@ Clickable links inside `docs/` use `../` because they resolve from that folder.)
 
 | File / folder | What it is |
 |---|---|
-| [RUNBOOK.md](docs/RUNBOOK.md) | **START HERE each session** — the fast path, commands only, no background: sim (§A), real drone (§B), goal flights (§C), post-flight (§D) — ⏳ STE on this branch |
+| [RUNBOOK.md](docs/RUNBOOK.md) | **START HERE each session** — the fast path, commands only, no background: sim (§A, via `tools/sim_terminals.sh`), real drone (§B), goal flights (§C), post-flight (§D) — sim validated in part, real ⏳ STE on this branch |
 | [MIGRATION.md](docs/MIGRATION.md) | **Old branch → this branch**: what was removed/added, what to unlearn, the ordered re-do list, where the archived docs live |
 | [BASESTATION.md](docs/BASESTATION.md) | **What you are looking at** — the Foxglove SVG Basestation panel, the `/svg/commander_status` snapshot, the LED strips |
 | [TELEOP.md](docs/TELEOP.md) | Hand-flying through the commander with a gamepad: position mode, the two fences, the controller profiles, CMU-doc corrections |
@@ -179,11 +194,10 @@ Clickable links inside `docs/` use `../` because they resolve from that folder.)
 | [DRONE_SETUP.md](docs/DRONE_SETUP.md) | Provision a NEW Starling from the box — one ordered checklist (WiFi → comms script → params file → Motive body → kill test → optional LEDs) |
 | [`starling_1_indoor_params.params`](starling_1_indoor_params.params) | Canonical drone parameter set (872-param QGC export, 2026-09-04) — load via QGC, procedure in DRONE_SETUP §5 |
 | [CLAUDE.md](CLAUDE.md) | AI-session entry point — read order, iron flight rules, two-clone warning |
-| [AirStack/](AirStack/) | **Full AirStack code snapshot** (`yikuan/SVG_ground_control` @ `cf719f0`, 2026-10-07, bumped to `yikuan/SVG_ground_control_dev` @ `b21d28c` on 2026-10-20; patch 0001 applied, submodules included) — see its own [README](AirStack/README.md) |
-| [tools/](tools/) | lab helpers: `sim_terminals.sh` (one Terminator window, four tabs inside the containers — the no-tmux sim session, RUNBOOK §A T0), `sim_tab.sh`, `make_milestones_doc.py` |
+| [AirStack/](AirStack/) | **Full AirStack code snapshot** — `yikuan/SVG_ground_control_dev` @ `b21d28c` since 2026-10-20 (was `yikuan/SVG_ground_control` @ `cf719f0`, 2026-10-07); patch 0001 applied, submodules included — see its own [README](AirStack/README.md) |
+| [tools/](tools/) | lab helpers: `sim_terminals.sh` (the sim session — one Terminator window, four tabs inside the containers, RUNBOOK §A0) and `sim_tab.sh` (one tab of it); `make_milestones_doc.py` (Word export of the milestones — **legacy**, [MILESTONES.md](docs/MILESTONES.md) is canonical) |
 | [patches/](patches/) | Our bug fixes as patch files — 0001 (still needed, applied in `AirStack/`), 0002 (now fixed upstream — kept for the archive branch), 0003 libmotioncapture (`mocap.sh setup` applies it); story in the [appendix](#appendix--historical-reference) |
-| [tools/make_milestones_doc.py](tools/make_milestones_doc.py) | Word (.docx) export generator — **legacy**; [MILESTONES.md](docs/MILESTONES.md) is canonical |
-| [assets/](assets/) · [videos/](videos/) | GIFs and source recordings — all from the previous branch (M1 sim demos, the hand-carry tracking check, the 09-03 goal-tracking flight) |
+| [assets/](assets/) · [videos/](videos/) | GIFs and source recordings: the previous branch's M1 sim demos, hand-carry tracking check and 09-03 goal-tracking flight, plus this branch's `random_CBF_sim_edited.mp4` (2026-10-21, sim) |
 | [pictures/](pictures/) | The two architecture diagrams plus bring-up evidence screenshots (previous branch) |
 | [drone-backups/](drone-backups/) | Starling 1's factory `voxl-px4-start` (pulled 2026-07-22, before any script ran) |
 
@@ -228,7 +242,7 @@ proves the position tracking, and only then do propellers spin.
 | # | Milestone | One-line goal | Status |
 |---|---|---|---|
 | 0 | Bring-up on the new branch | Build, containers, Foxglove panel — three sim drones visible in the Basestation | ⏳ STE |
-| 1 | Sim rehearsal | CBF crossing, braking fence, gamepad, formations, random goals in Isaac Sim; pytest green | ⏳ STE |
+| 1 | Sim rehearsal | CBF crossing, braking fence, gamepad, formations, random goals in Isaac Sim; pytest green | ⏳ partly — Starling model, CBF crossing, random goals + landing pass in sim ([MILESTONES.md](docs/MILESTONES.md) §3c); step / crossing re-runs pending |
 | 2 | Drone provisioning + hand-carry | New provisioning script + watchdog; `target_system`; Basestation tracks the carried drone; EKF2 fusing | ⏳ STE |
 | 3 | First flight | Takeoff, hover, land under the trajectory output; command ACKs seen; iron rules re-verified | ⏳ STE |
 | 4 | Goal flights + braking fence | Acceleration-limited goal legs; keep-in wall braking measured; live gains | ⏳ STE |
@@ -293,13 +307,14 @@ which the workspace build requires even though our mocap bridge doesn't use it:
 cd ~/AirStack-starling-max2/AirStack/robot/ros_ws/src/perception/natnet_ros2 && ./install_sdk.sh
 ```
 
-> **Reference — where this code originally came from:** CMU's branch
-> [`yikuan/SVG_ground_control`](https://github.com/castacks/AirStack/tree/yikuan/SVG_ground_control)
-> of castacks/AirStack (snapshot taken 2026-10-07 at commit `cf719f0`, bumped 2026-10-20 to the
-> working branch `yikuan/SVG_ground_control_dev` @ `b21d28c`). It is a **sibling**
-> of the previous branch, not its successor — [MIGRATION.md](docs/MIGRATION.md) §1. You only
-> need CMU's repo if you want their *newer* commits — see the
-> [patches appendix](#appendix--historical-reference) for how to re-apply our fix on top.
+> **Reference — where this code originally came from:** CMU's working branch
+> [`yikuan/SVG_ground_control_dev`](https://github.com/castacks/AirStack/tree/yikuan/SVG_ground_control_dev)
+> of castacks/AirStack, snapshot at `b21d28c` (2026-10-20); its squash-release line is
+> [`yikuan/SVG_ground_control`](https://github.com/castacks/AirStack/tree/yikuan/SVG_ground_control),
+> whose `cf719f0` was our 2026-10-07 snapshot. It is a **sibling** of the previous branch,
+> not its successor — [MIGRATION.md](docs/MIGRATION.md) §1. You only need CMU's repo if you
+> want their *newer* commits — see the [patches appendix](#appendix--historical-reference)
+> for how to re-apply our fix on top.
 
 Note: after you start using the stack, build artifacts and generated config files will appear
 as untracked/ignored noise in GitHub Desktop — that is expected.
@@ -399,18 +414,24 @@ container.)
 > drone (§B), goal flights (§C), post-flight (§D). Follow it verbatim; the notes below cover
 > what the commands themselves don't say.
 
-**One tmux session instead of seven terminals.** `./airstack.sh connect robot` attaches to a
-session called `bringup` that the container creates at `up`: 8 panes, every one a container
-shell (`root@…#`) with the workspace sourced. Put each long-running launch in its own pane;
-the session survives closing the terminal. `Ctrl-b` + arrow moves between panes, `Ctrl-b d`
-detaches. The old per-step `connect robot --command=bash` still works for a throw-away shell.
+**Two ways into the containers.** For the **sim**, `~/AirStack-starling-max2/tools/sim_terminals.sh`
+(laptop) brings the containers up and opens one Terminator window with four tabs — **Isaac
+Sim · Interfaces · Commander · Cockpit** — each already inside its container with that tab's
+commands printed ([RUNBOOK.md](docs/RUNBOOK.md) §A0). For the **real drone** (and as the sim
+alternative), `./airstack.sh connect robot` attaches to a tmux session called `bringup` that
+the container creates at `up`: 8 panes, every one a container shell (`root@…#`) with the
+workspace sourced; `Ctrl-b` + arrow moves between panes, `Ctrl-b d` detaches, the session
+survives closing the terminal. Put each long-running launch in its own tab or pane. The old
+per-step `connect robot --command=bash` still works for a throw-away shell.
 
-**What `bws` / `sws` are, and why compiling happens where it does:** inside the container,
-`bws` compiles the workspace and `sws` loads the result into that shell — the first ever
-build takes ~4 min, later sessions finish in seconds unless code changed. The code can only
-be compiled *inside* the robot container (that is where ROS 2 Jazzy for the workspace lives
-— the host's ROS 2 Jazzy from Step 5 is for the mocap bridge only). Run `bws` in pane 0; the
-other panes wait for it and source automatically.
+**What `bws` / `sws` are, and when you need them:** inside the container, `bws` builds the
+workspace and `sws` sources the result into that shell. The first ever build takes ~4 min.
+After that you rebuild **only after NEW entry points or files** (e.g. right after a snapshot
+bump) — edits to existing `.py`/`.yaml` files take effect on the next launch with no rebuild,
+because the install is symlinked. The code can only be compiled *inside* the robot container
+(that is where ROS 2 Jazzy for the workspace lives — the host's ROS 2 Jazzy from Step 5 is
+for the mocap bridge only). In tmux, run `bws` in pane 0; the other panes wait for it and
+source automatically.
 
 **Messages that look like errors but are NORMAL:**
 
@@ -473,10 +494,10 @@ More detail on the D-Link router itself (configuration, ports, access):
 While getting AirStack working on the previous branch, we found and fixed **two bugs in
 CMU's code**. On this branch one is still needed and one has been fixed upstream:
 
-| Patch file | Bug it fixes | Symptom without the fix | Status on `yikuan/SVG_ground_control` |
+| Patch file | Bug it fixes | Symptom without the fix | Status on `yikuan/SVG_ground_control_dev` |
 |---|---|---|---|
 | `0001-zed-camera-info-init-race.patch` | Camera startup race in the Isaac Sim Pegasus extension | The drone's right stereo camera randomly never publishes → navigation flies "blind" and becomes erratic | **Still needed** — upstream lacks it; **applied in `AirStack/`** (2026-10-07). Only matters for `ENABLE_CAMERA=true` runs |
-| `0002-swarm-commander-logger-severity-crash.patch` | Logging crash in the SVG ground controller | The ground-controller process **dies mid-flight** the first time any drone command fails | **Fixed upstream** (same fix, different lines — `swarm_commander.py` `:1612-1620`). Do NOT apply; kept for the archive branch |
+| `0002-swarm-commander-logger-severity-crash.patch` | Logging crash in the SVG ground controller | The ground-controller process **dies mid-flight** the first time any drone command fails | **Fixed upstream** (same fix: the `report` done-callback of the service-call helper in `swarm_commander.py` now logs `info` and `error` on separate call sites). Do NOT apply; kept for the archive branch |
 | `0003-libmotioncapture-natnet-4.2-modeldef-segfault.patch` | NatNet 4.2 modeldef segfault in libmotioncapture | the laptop mocap bridge crashes on connect | Unchanged — `./mocap.sh setup` applies it |
 
 The `patches/` folder holds a **backup copy of each fix** as a small text file (a git
@@ -487,7 +508,7 @@ Only for when you want CMU's **newer** commits than our snapshot:
 
 ```bash
 # clone CMU's branch + its submodules:
-git clone -b yikuan/SVG_ground_control https://github.com/castacks/AirStack.git ~/AirStack-cmu
+git clone -b yikuan/SVG_ground_control_dev https://github.com/castacks/AirStack.git ~/AirStack-cmu
 cd ~/AirStack-cmu
 git submodule update --init     # (NOT --recurse-submodules — other branches reference
                                 #  private repos and the recursive download fails)

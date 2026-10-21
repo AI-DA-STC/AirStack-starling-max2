@@ -122,9 +122,16 @@ from every doc; add a term here rather than re-explaining it inline elsewhere.
   `takeoff`/`start`/`hold`/`land`/`reset_fence` services. Everything the operator commands
   goes through it.
 - **Scenario** — the behaviour the commander runs after `start`: `hover`, `goal`,
-  `antipodal`, `head_on`, `squeeze`, `random_goals`. Set in the config yaml or with
-  `scenario:=` on the launch. A scenario that does not read goal commands ignores them
-  **silently**. [SCENARIOS.md](SCENARIOS.md) §4.
+  `random_walk`, `antipodal`, `head_on`, `squeeze`, `random_goals`, and (since 2026-10-20)
+  `goal_sequence`, `figure_eight`. Set in the config yaml or with `scenario:=` on the launch.
+  A scenario that does not read goal commands ignores them **silently**.
+  [SCENARIOS.md](SCENARIOS.md) §4.
+- **`goal_sequence`** — scenario (new 2026-10-20): scripted sets of one goal per drone, laid
+  out so the straight legs cross; the CBF alone deconflicts. Advances when everyone has
+  arrived (or on a timer), loops; `/svg/sequence_command` takes `next`/`pause`/`resume`.
+- **`figure_eight`** — scenario (new 2026-10-20): two drones fly the same figure-eight half a
+  period apart and meet head-on at the crossing every half period, with nothing but the CBF
+  between them; a third drone hovers as (or is hand-flown as) an intruder.
 - **ROS 2 service / parameter** — a *service* is a request/reply call to a node
   (`takeoff`, `land` — each gets an accept/reject answer, which can itself be lost on a bad
   link); a *parameter* is a named runtime value on a node (`cbf_alpha`), settable live with
@@ -133,9 +140,23 @@ from every doc; add a term here rather than re-explaining it inline elsewhere.
   5 Hz with every drone's state, position, odometry freshness and last command outcome, the
   fence and CBF settings, and the last lifecycle command. The Basestation's only source of
   mission truth, and the first thing to `ros2 topic echo` when something is odd.
-- **tmux `bringup` session** — the one container tmux session `./airstack.sh connect robot`
+- **Sim session (Terminator tabs)** — what `tools/sim_terminals.sh` (laptop) opens: ONE
+  Terminator window with four tabs — **Isaac Sim tab** (spawns the sim drones), **Interfaces
+  tab** (one MAVROS per drone), **Commander tab** (the commander + the panel), **Cockpit tab**
+  (the takeoff/start/hold/land service calls). Each tab is already inside its container and
+  prints its commands (`tools/sim_tab.sh <role>`); a tab stays open after its shell exits
+  because the script ends in `exec bash`. The primary way to run RUNBOOK §A.
+- **tmux `bringup` session** — the container tmux session `./airstack.sh connect robot`
   attaches to: 8 panes, pane 0 top-left for the main launch, 1–7 pre-sourced shells. It
-  survives closing the terminal and replaces the old "one terminal per step".
+  survives closing the terminal. The way into the container for real-drone sessions
+  (RUNBOOK §B/§C) and the alternative to the Terminator tabs for the sim.
+- **MAVROS** — the ROS node that translates PX4's MAVLink into ROS 2 topics and services
+  (`/drone_N/interface/mavros/...`). In **sim** it is the per-drone "interface" started by
+  `launch_sim_interfaces.sh`; the real drone uses uXRCE-DDS instead. In sim a dead MAVROS
+  respawns after 2 s (sim-only).
+- **`bws` / `sws`** — container aliases: **b**uild the **w**ork**s**pace (`colcon build`) and
+  **s**ource it. Needed only after NEW entry points or files; `.py`/`.yaml` edits take effect
+  on relaunch because the install is symlinked.
 - **`safe_teleop`** — the gamepad teleop node that replaced `keyboard_teleop`: controller
   profiles (`xbox_usb`, `dragonrise_usb`), a wrong-axis-map guard, a left-stick lock, stale-pad
   → zero command. It moves the commander's reference point; the hold is the commander's.
@@ -194,7 +215,10 @@ from every doc; add a term here rather than re-explaining it inline elsewhere.
 - **IDLE / ARMING / ASCEND / ACTIVE / LANDING** — the swarm commander's per-drone flight
   states (shown as chips in the Basestation). `takeoff` only accepts drones in IDLE; after an
   RC takeover the commander is stuck non-IDLE until you call `land` once. Only ACTIVE drones
-  are fence-clipped or CBF-exempt-able.
+  are fence-clipped or CBF-exempt-able. **LANDING** now means: descend at `land_speed_mps`,
+  on touchdown wait `land_settle_s` (sim 2.0 s, our real configs 0.0), send DISARM, retry up
+  to `land_disarm_retries` times `land_disarm_retry_s` apart if PX4 refuses, then IDLE.
+  Log: `touchdown at z=… settling …` → `landed, disarmed (attempt N)`.
 - **hover_positions** — per-drone x,y,z in the config yaml: the takeoff destination AND the
   initial goal, in absolute mocap coordinates. Place the drone at/near its x,y before takeoff.
   (Ignored by `random_goals`, which picks its own layout.)

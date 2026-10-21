@@ -5,8 +5,9 @@ AirStack ground-control workspace flying a ModalAI Starling Max 2 indoors under 
 **Branch (since 2026-10-20):** CMU `yikuan/SVG_ground_control_dev` @ `b21d28c` (their *working* branch; `yikuan/SVG_ground_control` is its squash-release line, last cut `cf719f0` = our 2026-10-07 snapshot), vendored in `AirStack/`. The 10-20 bump brought the 6-gain Foxglove dropdown (goal accel/settle, teleop vmax), `goal_sequence` + `figure_eight` scenarios and the rosbag switch — [MIGRATION.md](docs/MIGRATION.md) §11.
 The previous branch (`daniel/diffaero_ground_control`, flown 09-01→03) is frozen on tag
 `airstack-starling-max2` / branch `archive/airstack-starling-max2`. The two are **siblings**, not
-parent/child. Milestones were RESET; nothing on this branch is validated yet (⏳ STE).
-Delta and the ordered re-do list: [MIGRATION.md](docs/MIGRATION.md).
+parent/child. Milestones were RESET; **no real flight validated on this branch; sim validated in
+part** ([MILESTONES.md](docs/MILESTONES.md) §3c). Delta and the ordered re-do list:
+[MIGRATION.md](docs/MIGRATION.md).
 
 **Read first:** [MILESTONES.md](docs/MILESTONES.md) §3 (status table) / §3c (test ledger + carried-over issues) — current state — then the table below.
 
@@ -14,7 +15,7 @@ Delta and the ordered re-do list: [MIGRATION.md](docs/MIGRATION.md).
 |---|---|
 | [MILESTONES.md](docs/MILESTONES.md) | current state: M0–M7 status, code audit, test ledger (reset), carried-over issues, backlog |
 | [MIGRATION.md](docs/MIGRATION.md) | old branch → this branch: removed/added, behaviours to unlearn, re-do list, archived-doc pointers |
-| [RUNBOOK.md](docs/RUNBOOK.md) | running a session (tmux `bringup` panes, Basestation instead of RViz) |
+| [RUNBOOK.md](docs/RUNBOOK.md) | running a session — sim: `tools/sim_terminals.sh` (four Terminator tabs: Isaac Sim · Interfaces · Commander · Cockpit); real drone: tmux `bringup` panes; the panel instead of RViz |
 | [BASESTATION.md](docs/BASESTATION.md) | the Foxglove SVG Basestation panel, `/svg/commander_status` fields, LED strips |
 | [TELEOP.md](docs/TELEOP.md) | gamepad teleop, the two fences, controller profiles, CMU `teleop.md` corrections |
 | [SCENARIOS.md](docs/SCENARIOS.md) | CBF filter, runtime gains, formations / random goals / RC-intruder squeeze (sim now, real at M7) |
@@ -22,7 +23,9 @@ Delta and the ordered re-do list: [MIGRATION.md](docs/MIGRATION.md).
 | [MOCAP.md](docs/MOCAP.md) | laptop-side mocap bridge — unchanged by the branch switch |
 | [DRONE_SETUP.md](docs/DRONE_SETUP.md) | drone provisioning (new script + watchdog, `target_system`, optional LEDs) |
 | [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | symptom → fix index; first move on this branch = `ros2 topic echo /svg/commander_status --once` |
-| [PREFLIGHT.md](docs/PREFLIGHT.md) | safety card |
+| [PREFLIGHT.md](docs/PREFLIGHT.md) | safety card — mirrors the iron rules below; keep the two in sync |
+| [GLOSSARY.md](docs/GLOSSARY.md) | plain-English definitions of every recurring term (commander, panel, CBF, scenarios, tabs/panes…) |
+| [tools/](tools/) | `sim_terminals.sh` + `sim_tab.sh` (the sim session), `make_milestones_doc.py` (legacy .docx export) |
 
 Architecture pictures: `pictures/Starling_Airstack_architecture.png` (control flow — drawn for
 the previous branch, boxes unchanged), `pictures/Flight_lab_architecture.png` (network
@@ -37,9 +40,10 @@ topology). Network/router details live in the companion repo
 5. Software is still BLIND to PX4 arming state (v1.14 px4_msgs mismatch) — fly with QGC visible. **New on this branch:** `px4_interface` logs command ACKs (`ACCEPTED`/`DENIED`); treat them as "PX4 heard me", never as "armed". **No ACK at all = `target_system` ≠ the drone's `MAV_SYS_ID`** — fix before retrying. The ACK message itself is unaudited against v1.14 until MILESTONES §3d is re-run.
 6. Lab WiFi SSIDs (`motive`, `StarlingMax2`) are OPEN (no encryption) — never bridge the lab network to the internet.
 7. **On this airframe, after `voxl_setup_real_drone.sh`: REBOOT** — `systemctl restart voxl-px4` leaves the SLPI flight core dead ("params missing", sensors never publish).
-8. The shipped configs are NOT ours: `goal_single.yaml` targets `drone_2`, `goal_tracking.yaml` runs `random_goals` (ignores goal commands), real configs carry `cbf_max_speed_mps: 10.0`. Trim/derive before flying — [MIGRATION.md](docs/MIGRATION.md) §6–7.
+8. The shipped configs are NOT ours: `goal_single.yaml` targets `drone_2`, `goal_tracking.yaml` runs `random_goals` (ignores goal commands), and `goal_single.yaml` / `goal_tracking.yaml` / `goal_sequence.yaml` carry `cbf_max_speed_mps: 10.0` (`swarm_real` 1.0, `teleop_real` 0.7). CMU's real configs also leave `land_settle_s` unset (code default 2.0 s). Fly the `_ours` configs — [MIGRATION.md](docs/MIGRATION.md) §6–7.
+9. **Sim airframe / launch values are sim-only — never port them to the drone.** The sim PX4 airframe `10090_pegasus_starling2max` carries rate gains × 0.5, gyro filters 80/40 Hz, `LNDMC_ROT_MAX` 300 (real drone: 30), motor lag off; the sim stack respawns MAVROS. The drone's parameters come from `starling_1_indoor_params.params` / QGC only. (Attitude/position gains and the MPC speed limits in the sim airframe *equal* the real drone's — that direction is fine; the other is not.)
 
-**Two clones:** `~/AirStack-starling-max2` (live, docker-mounted) vs `~/Documents/GitHub/AirStack-starling-max2` (git mirror) — workflow currently INVERTED, check `git log` in both before editing. **Never push** — the user pushes via GitHub Desktop. Both clones were put on the new `main` on 2026-10-07 (live clone reset to the mirror's commit; its old-branch config edits are backed up in `~/AirStack-starling-max2-local-edits-2026-10-07/`). Keep them in step: commit in the mirror, `git pull ~/Documents/GitHub/AirStack-starling-max2 main` in the live clone.
+**Two clones, one workflow:** `~/AirStack-starling-max2` is the **live** clone (docker-mounted) — **edit and commit HERE**, on `main`. `~/Documents/GitHub/AirStack-starling-max2` is the **mirror** GitHub Desktop pushes from — update it with `git -C ~/Documents/GitHub/AirStack-starling-max2 pull ~/AirStack-starling-max2 main`. **Never push from Claude** — the user pushes via GitHub Desktop. (Every 10-19/10-20 commit was made in the live clone; the older note "commit in the mirror, pull in the live clone" was wrong.) Both clones were put on the new `main` on 2026-10-07; the live clone's old-branch config edits are backed up in `~/AirStack-starling-max2-local-edits-2026-10-07/`.
 
 **Session history:** pre-2026-09 session-by-session narrative used to live in `CLAUDE_NOTES.md`
 (retired 2026-09-08 — superseded by the docs above). Recover it with `git log --follow CLAUDE_NOTES.md`.

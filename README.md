@@ -23,6 +23,16 @@ before the next one are the box at the top of MILESTONES.
 | **see what is proven and what is next** | [MILESTONES.md](docs/MILESTONES.md) |
 | **work with the AI assistant on this repo** | [AI_ASSIST.md](docs/AI_ASSIST.md) |
 
+## What we have achieved so far
+
+| | |
+|---|---|
+| <img src="assets/starling_goal_tracking_drone_8x.gif" alt="Starling Max 2 flying commanded waypoints, drone view" width="400"><br>**2026-09-03 · autonomous waypoint flight, real drone.** No sticks: mocap → PX4 → commander → goals, geofence, landing, auto-disarm. [full video](videos/Starling_goal_tracking_drone.mp4) | <img src="assets/starling_goal_tracking_rviz_4x.gif" alt="RViz view of the same flight" width="400"><br>**The same flight as the software saw it.** [full video](videos/Starling_goal_tracking_RVIZ.mp4) · operator view is now the Foxglove panel |
+| <img src="assets/random_cbf_sim_8fps.gif" alt="Three simulated Starlings under the CBF collision filter" width="400"><br>**2026-10-21 · random goals under the CBF, Isaac Sim.** Three Starling 2 Max models cross at 2 m/s; the collision filter alone keeps them apart. Sim only. [full video](videos/random_CBF_sim_edited.mp4) | <img src="assets/teleop_with_geofence.gif" alt="Gamepad teleop braking at the geofence" width="400"><br>**Gamepad teleop with the braking geofence** (previous branch, sim). [full video](videos/teleop_with_geofence.mp4) |
+| <img src="assets/takeoff_and_land.gif" alt="Takeoff and landing under software control" width="400"><br>**2026-09-01 · first offboard takeoff + landing**, position from mocap only, kill switch verified in flight. [full video](videos/takeoff_and_land.mp4) | <img src="assets/rviz_tracks_hand_carried_drone.gif" alt="RViz tracking a hand-carried drone" width="400"><br>**The mocap chain proven by hand-carry** before any flight. [full video](videos/SVG_check_if_rviz_moves_by_movingdrone_manually.mp4) |
+
+Milestone by milestone, with evidence: [MILESTONES.md](docs/MILESTONES.md) §3c. History of the previous branch: [MIGRATION.md](docs/MIGRATION.md) §12.
+
 <img src="pictures/Starling_Airstack_architecture.png" alt="Starling Max 2 × AirStack control-flow diagram" width="820">
 
 *(Drawn for the previous branch; four things moved since — the corrections are listed in
@@ -37,29 +47,26 @@ before the next one are the box at the top of MILESTONES.
 
 | File / folder | What it is |
 |---|---|
-| [SETUP.md](docs/SETUP.md) | **New laptop** — install, both clones, first build; the messages that look like errors but are normal |
-| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | **How it works** — one-page primer, the flight-lab network, whose document is whose |
-| [RUNBOOK.md](docs/RUNBOOK.md) | **START HERE each session** — the fast path, commands only, no background: sim (§A, via `tools/sim_terminals.sh`), real drone (§B), goal flights (§C), post-flight (§D) — sim validated in part, real ⏳ STE on this branch |
-| [MIGRATION.md](docs/MIGRATION.md) | **Old branch → this branch**: what was removed/added, what to unlearn, the ordered re-do list, where the archived docs live |
-| [BASESTATION.md](docs/BASESTATION.md) | **What you are looking at** — the Foxglove SVG Basestation panel, the `/svg/commander_status` snapshot, the LED strips |
-| [TELEOP.md](docs/TELEOP.md) | Hand-flying through the commander with a gamepad: position mode, the two fences, the controller profiles, CMU-doc corrections |
-| [SCENARIOS.md](docs/SCENARIOS.md) | The CBF filter and the multi-drone scenarios (formations, random-goal stress test, RC-intruder squeeze) — sim procedures now, real flight at M7 |
-| [CONFIG.md](docs/CONFIG.md) | **Single source of truth for lab values** (IPs, SSID, ports, names, flight parameters, AirStack branch/commit) + what to do when one changes |
-| [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | **Symptom-indexed fixes — start here when something misbehaves** |
-| [GLOSSARY.md](docs/GLOSSARY.md) | Plain-English definitions of every recurring term — linked from every doc |
-| [AI_ASSIST.md](docs/AI_ASSIST.md) | Using Claude Code on this repo: what it already knows, the debugging recipes that work here, and what never to let it do |
-| [MOCAP.md](docs/MOCAP.md) · [mocap.sh](mocap.sh) · [mocap/](mocap/) | **How the drone knows where it is** — the laptop `./mocap.sh` bridge that replaced natnet_ros2 **and** the Motive-PC operator guide (§6). Unchanged by the branch switch |
-| [MILESTONES.md](docs/MILESTONES.md) | The plan **and the work log**: M0–M7 status, code audit, test ledger (reset 2026-10-07), carried-over issues, backlog |
-| [PREFLIGHT.md](docs/PREFLIGHT.md) | **Print + laminate for the hangar** — pre-flight checklist, emergency ladder (hold → land → KILL), iron rules |
-| [DRONE_SETUP.md](docs/DRONE_SETUP.md) | Provision a NEW Starling from the box — one ordered checklist (WiFi → comms script → params file → Motive body → kill test → optional LEDs) |
-| [`starling_1_indoor_params.params`](starling_1_indoor_params.params) | Canonical drone parameter set (872-param QGC export, 2026-09-04) — load via QGC, procedure in DRONE_SETUP §5 |
-| [CLAUDE.md](CLAUDE.md) | AI-session entry point — read order, iron flight rules, two-clone warning |
-| [AirStack/](AirStack/) | **Full AirStack code snapshot** — `yikuan/SVG_ground_control_dev` @ `b21d28c` since 2026-10-20 (was `yikuan/SVG_ground_control` @ `cf719f0`, 2026-10-07); patch 0001 applied, submodules included — see its own [README](AirStack/README.md) |
-| [tools/](tools/) | lab helpers: `sim_terminals.sh` (the sim session — one Terminator window, four tabs inside the containers, RUNBOOK §A0) and `sim_tab.sh` (one tab of it); `make_milestones_doc.py` (Word export of the milestones — **legacy**, [MILESTONES.md](docs/MILESTONES.md) is canonical) |
-| [patches/](patches/) | Our bug fixes as patch files — 0001 (still needed, applied in `AirStack/`), 0002 (now fixed upstream — kept for the archive branch), 0003 libmotioncapture (`mocap.sh setup` applies it); story in [MIGRATION.md §12](docs/MIGRATION.md#12--moved-from-readme-showcase-milestones-in-brief-historical-appendix) |
-| [assets/](assets/) · [videos/](videos/) | GIFs and source recordings: the previous branch's M1 sim demos, hand-carry tracking check and 09-03 goal-tracking flight, plus this branch's `random_CBF_sim_edited.mp4` (2026-10-21, sim) |
-| [pictures/](pictures/) | The two architecture diagrams plus bring-up evidence screenshots (previous branch) |
-| [drone-backups/](drone-backups/) | Starling 1's factory `voxl-px4-start` (pulled 2026-07-22, before any script ran) |
+| [SETUP.md](docs/SETUP.md) | New laptop: install, both clones, first build |
+| [RUNBOOK.md](docs/RUNBOOK.md) | Session commands — sim §A, real drone §B, goal flights §C |
+| [PREFLIGHT.md](docs/PREFLIGHT.md) | The laminated card: checklist, emergencies, iron rules |
+| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | How it fits together, the lab network, whose doc is whose |
+| [CONFIG.md](docs/CONFIG.md) | Every value we fly: IPs, parameters, which config, sim airframe |
+| [SCENARIOS.md](docs/SCENARIOS.md) | The CBF filter and the swarm scenarios |
+| [BASESTATION.md](docs/BASESTATION.md) | The Foxglove panel, chip by chip |
+| [TELEOP.md](docs/TELEOP.md) | Gamepad flying through the commander |
+| [MOCAP.md](docs/MOCAP.md) · [mocap.sh](mocap.sh) | The mocap bridge and the Motive PC |
+| [DRONE_SETUP.md](docs/DRONE_SETUP.md) | Provisioning a Starling from the box |
+| [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Symptom → first check → fix |
+| [MILESTONES.md](docs/MILESTONES.md) | Gates, status, test ledger, backlog |
+| [MIGRATION.md](docs/MIGRATION.md) | Branch history and what changed |
+| [GLOSSARY.md](docs/GLOSSARY.md) · [AI_ASSIST.md](docs/AI_ASSIST.md) | Terms · working with the assistant |
+| [CLAUDE.md](CLAUDE.md) | The assistant's brief and the iron rules |
+| [AirStack/](AirStack/) | CMU AirStack snapshot, `yikuan/SVG_ground_control_dev` @ `b21d28c` ([its README](AirStack/README.md)) |
+| [`starling_1_indoor_params.params`](starling_1_indoor_params.params) | The drone's parameter set (QGC export) |
+| [tools/](tools/) · [patches/](patches/) | Sim session launcher, docs checker · our bug-fix patches |
+| [assets/](assets/) · [videos/](videos/) · [pictures/](pictures/) | GIFs, recordings, diagrams |
+| [drone-backups/](drone-backups/) | Starling 1's factory `voxl-px4-start` |
 
 ## Clone, commit, push
 

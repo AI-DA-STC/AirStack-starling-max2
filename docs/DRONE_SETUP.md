@@ -28,7 +28,7 @@
 
 ## 0 · Prerequisites (before touching the drone)
 
-- [ ] Laptop fully set up: README Steps 1–5 done once (clone, host setup, robot image build, setup check, host mocap bridge) — README §"Setting up AirStack on a NEW machine".
+- [ ] Laptop fully set up: [SETUP.md](SETUP.md) Steps 1–5 done once (clone, host setup, robot image build, setup check, host mocap bridge) — README §"Setting up AirStack on a NEW machine".
 - [ ] Battery charged and clicked in; USB-C cable to hand; RC transmitter charged.
 - [ ] Know today's lab values before you start: SSID, router admin page, laptop Ethernet IP — CONFIG.md Network + Lab WiFi tables.
 

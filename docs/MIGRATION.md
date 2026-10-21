@@ -363,3 +363,179 @@ Status 2026-10-21: the **fresh-launch and landing-end-to-end checks are closed**
 ⏳: the sim re-runs and first-use checks — the ordered list lives **only** in
 [MILESTONES.md](MILESTONES.md) §3c "Next up" (this page keeps no copy).
 Everything real-drone stays ⏳ STE as before.
+
+## 12 · Moved from README: showcase, milestones in brief, historical appendix
+
+> Moved verbatim from the front-page README on 2026-10-21 (the README is now a 400-word front
+> door). Everything below describes the PREVIOUS branch's results and history.
+
+## ✈️ Showcase — autonomous waypoint flight, validated 2026-09-03 (previous branch)
+
+The drone below is flying itself. No pilot is touching sticks: ceiling cameras track it,
+the ground laptop fuses that into PX4's state estimator, and the swarm commander flies it
+through operator-published waypoints — takeoff, goal tracking, geofence, landing, and
+auto-disarm all under software control (RC kill switch armed in hand throughout).
+
+| Drone's-eye view (12× speed) | What the software saw — RViz, previous branch (4× speed) |
+|---|---|
+| <img src="../assets/starling_goal_tracking_drone_8x.gif" alt="Starling Max 2 flying commanded waypoints in the hangar" width="420"> | <img src="../assets/starling_goal_tracking_rviz_4x.gif" alt="RViz view of the same goal-tracking flight" width="420"> |
+| [full video](../videos/Starling_goal_tracking_drone.mp4) | [full video](../videos/Starling_goal_tracking_RVIZ.mp4) |
+
+*(Recorded on the previous branch. The operator view is now the Foxglove Basestation —
+[BASESTATION.md](BASESTATION.md); RViz remains available as a fallback.)*
+
+**What's been achieved so far** (details: [MILESTONES.md](MILESTONES.md)):
+
+- **2026-09-01 — first offboard flight** (previous branch): takeoff + hover fully under
+  AirStack command, position from OptiTrack mocap (no GPS, no VIO), RC kill switch verified
+  in flight.
+- **2026-09-03 — waypoint flights** (previous branch): runtime goals published over ROS 2
+  (single goal + a multi-goal square, 2 laps), **in-flight geofence** validated, reliable
+  landing auto-disarm.
+- **2026-10-07 — moved to `yikuan/SVG_ground_control`** (bumped to `_dev @ b21d28c`
+  2026-10-20): the mocap chain, drone provisioning and network setup carry over unchanged;
+  the flight software is re-validated from M0 ([MILESTONES.md](MILESTONES.md) §3).
+- **2026-10-21 — random goals under the CBF, in sim (Starling 2 Max model):**
+  [videos/random_CBF_sim_edited.mp4](../videos/random_CBF_sim_edited.mp4) — three simulated
+  Starlings cross paths at 2.0 m/s and the CBF alone keeps them apart (`cbf_sim.yaml`: cap
+  4.0 m/s, r 0.55 m, α 2.5; a 47 s excerpt of a 3.5 min run). **Sim only — real re-check
+  pending** (M3+).
+- The full toolchain is in this repo: mocap bridge ([MOCAP.md](MOCAP.md)), session
+  runbook ([RUNBOOK.md](RUNBOOK.md) §B/§C), drone parameter set
+  ([`starling_1_indoor_params.params`](../starling_1_indoor_params.params)), and every lesson
+  learned along the way.
+
+> **New here? Read in this order:**
+>
+> - **Newcomer** → the one-page primer (next section) → run the sim ([RUNBOOK.md](RUNBOOK.md) §A)
+>   → [BASESTATION.md](BASESTATION.md) (what you are looking at) → [MOCAP.md](MOCAP.md)
+>   → [PREFLIGHT.md](PREFLIGHT.md) → shadow a real session ([RUNBOOK.md](RUNBOOK.md) §B)
+>   with a trained person.
+> - **Flew the old branch** → [MIGRATION.md](MIGRATION.md) first.
+> - **Flying today** → [RUNBOOK.md](RUNBOOK.md)
+> - **Hand-flying with the gamepad** → [TELEOP.md](TELEOP.md)
+> - **CBF, formations, squeeze, random goals** → [SCENARIOS.md](SCENARIOS.md)
+> - **Setting up a new drone** → [DRONE_SETUP.md](DRONE_SETUP.md)
+> - **At the Motive PC** → [MOCAP.md](MOCAP.md) §6
+> - **Something's broken** → [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
+> - **Starting an AI-assisted session** → [CLAUDE.md](../CLAUDE.md)
+> - **Any unfamiliar term** → [GLOSSARY.md](GLOSSARY.md)
+
+
+## The milestones, in brief
+
+The ladder restarts at **M0** on this branch. Each milestone adds and proves **one new
+piece** before the next builds on it — so when something fails, we always know which piece
+broke. Simulation proves the software, props-off stages prove the connections, hand-carry
+proves the position tracking, and only then do propellers spin.
+
+| # | Milestone | One-line goal | Status |
+|---|---|---|---|
+| 0 | Bring-up on the new branch | Build, containers, Foxglove panel — three sim drones visible in the Basestation | ⏳ STE |
+| 1 | Sim rehearsal | CBF crossing, braking fence, gamepad, formations, random goals in Isaac Sim; pytest green | ⏳ partly — Starling model, CBF crossing, random goals + landing pass in sim; re-runs pending — the one to-do list is [MILESTONES.md](MILESTONES.md) §3c "Next up" |
+| 2 | Drone provisioning + hand-carry | New provisioning script + watchdog; `target_system`; Basestation tracks the carried drone; EKF2 fusing | ⏳ STE |
+| 3 | First flight | Takeoff, hover, land under the trajectory output; command ACKs seen; iron rules re-verified | ⏳ STE |
+| 4 | Goal flights + braking fence | Acceleration-limited goal legs; keep-in wall braking measured; live gains | ⏳ STE |
+| 5 | Gamepad teleop, real | Yaw sign verified; teleop fence; release-to-hold | ⏳ STE |
+| 6 | LED strips (optional) | Green default, red on CBF; ESC arm LEDs muted — acknowledged | ⏳ STE |
+| 7 | Multi-drone | Formations, random-goal CBF test, RC-intruder squeeze | ⏳ blocked — one Starling |
+
+Live status: [MILESTONES.md](MILESTONES.md) §3. The previous branch's ladder (M1–M5 validated 2026-07-20→08-28, M6 flown
+2026-09-01→03 without final sign-off) is on the archive tag.
+
+**Important context on the statuses:** CMU built AND flight-tested all of this on their own
+three Starlings — our project is **replication and validation**, not development. A code
+audit (2026-10-07, [MILESTONES.md](MILESTONES.md) §3b) confirmed every mechanism for
+M0–M7 exists in the `AirStack/` code. The things NOT in code (manual, by design) are: clock
+sync between machines, the OptiTrack/Motive settings, PX4-side parameters set through
+QGroundControl, and which physical gamepad the lab owns.
+
+## Milestone 1 at a glance (previous branch, 2026-07-20)
+
+![Takeoff and land](../assets/takeoff_and_land.gif)
+
+*Three simulated PX4 drones (SITL — real autopilot firmware, simulated aircraft) under the
+commander: `takeoff` → hover scenario → `land` (RViz view, 2× speed). The same
+rehearsal on this branch is M1, watched in the Basestation instead.*
+
+
+## Appendix — historical reference
+
+Superseded or reference-only material, kept for the record. Nothing here is needed for a
+normal session.
+
+<details>
+<summary><strong>Historical network topology (pre-2026-08-27)</strong> — the two-router <code>Mocap_QCGroundControl</code> setup</summary>
+
+*(The diagram that used to illustrate this section has been retired. The current network
+diagram lives in the [Flight-lab network architecture](ARCHITECTURE.md#flight-lab-network-architecture)
+section above.)*
+
+Rough pipeline, mocap to motors: the **8 OptiTrack cameras** feed (via the OptiTrack mocap
+router) the **Motive workstation** — the mocap server, capable of up to 240 Hz (ours streams
+at 50 Hz). Motive pushes the **NatNet pose stream over wired LAN** through the hangar's
+unmanaged Ethernet switch to the **D-Link router**, which broadcasts the 5 GHz Wi-Fi SSID
+**`Mocap_QCGroundControl`**. The **ground-control workstation** (the AirStack / Crazyswarm2
+laptop) and the **drone** both live on that router's network — so laptop ↔ Starling Max 2 is
+two-way discovery on the same subnet (uXRCE-DDS agent link, QGC MAVLink). Crazyflies are the
+exception: they are commanded over a **Crazyradio USB dongle** rather than Wi-Fi, with a
+software E-stop via Crazyswarm2; a **hardware E-stop remote** (safety pilot) covers drones
+that support it. Two footnotes from the diagram worth remembering: the main office router and
+the D-Link router are **different subnets**, and IPs are assigned **by router port, not by
+machine**.
+
+This was the lab topology as of 2026-08-11; since **2026-08-27** the lab uses the AI.R STC
+hangar wired LAN instead (see the network-architecture section above, and
+[CONFIG.md](CONFIG.md) for current values).
+
+More detail on the D-Link router itself (configuration, ports, access):
+[AI-DA-STC/Mocap_QC_Ground_Control_Router_Information](https://github.com/AI-DA-STC/Mocap_QC_Ground_Control_Router_Information).
+
+</details>
+
+<details>
+<summary><strong>Patches — bug fixes we made to AirStack (backup copies)</strong> — what lives in <code>patches/</code> and when you'd need it</summary>
+
+While getting AirStack working on the previous branch, we found and fixed **two bugs in
+CMU's code**. On this branch one is still needed and one has been fixed upstream:
+
+| Patch file | Bug it fixes | Symptom without the fix | Status on `yikuan/SVG_ground_control_dev` |
+|---|---|---|---|
+| `0001-zed-camera-info-init-race.patch` | Camera startup race in the Isaac Sim Pegasus extension | The drone's right stereo camera randomly never publishes → navigation flies "blind" and becomes erratic | **Still needed** — upstream lacks it; **applied in `AirStack/`** (2026-10-07). Only matters for `ENABLE_CAMERA=true` runs |
+| `0002-swarm-commander-logger-severity-crash.patch` | Logging crash in the commander (`swarm_commander`) | The commander process **dies mid-flight** the first time any drone command fails | **Fixed upstream** (same fix: the `report` done-callback of the service-call helper in `swarm_commander.py` now logs `info` and `error` on separate call sites). Do NOT apply; kept for the archive branch |
+| `0003-libmotioncapture-natnet-4.2-modeldef-segfault.patch` | NatNet 4.2 modeldef segfault in libmotioncapture | the laptop mocap bridge crashes on connect | Unchanged — `./mocap.sh setup` applies it |
+
+The `patches/` folder holds a **backup copy of each fix** as a small text file (a git
+"patch"). Anyone who downloads AirStack fresh from CMU's GitHub **gets bug 1 again**.
+
+**Reference: using CMU's repo directly (advanced — not the normal install).**
+Only for when you want CMU's **newer** commits than our snapshot:
+
+```bash
+# clone CMU's branch + its submodules:
+git clone -b yikuan/SVG_ground_control_dev https://github.com/castacks/AirStack.git ~/AirStack-cmu
+cd ~/AirStack-cmu
+git submodule update --init     # (NOT --recurse-submodules — other branches reference
+                                #  private repos and the recursive download fails)
+
+# re-apply our remaining fix on top (assumes this repo is cloned at ~/AirStack-starling-max2):
+git -C simulation/isaac-sim/extensions/PegasusSimulator apply ~/AirStack-starling-max2/patches/0001-zed-camera-info-init-race.patch \
+  && echo "fix applied" || echo "PATCH FAILED — CMU may have merged it, or changed the surrounding code"
+# the NatNet SDK binary download, as in Step 1:
+robot/ros_ws/src/perception/natnet_ros2/install_sdk.sh
+```
+
+**Reference: how a patch file is made.**
+
+```bash
+git diff > my-fix.patch    # save your edits as a patch (run in the repo you edited)
+git apply my-fix.patch     # replay them onto another copy of the same code
+```
+
+Fix 1 was made inside the PegasusSimulator submodule folder.
+
+**Lifecycle:** delete `0001` once CMU merges it (it is on their `fix/camera-init` branch
+awaiting review); `0002` is retired on this branch.
+
+</details>
+

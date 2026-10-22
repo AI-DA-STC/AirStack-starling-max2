@@ -5,3 +5,4 @@ data/cuVSLAM-src/
 results/*.mcap
 results/*/
 __pycache__/
+foxglove/studio-data/

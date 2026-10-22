@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 660" width="1200" height="660" font-family="Segoe UI, Helvetica Neue, Arial, sans-serif">
+  <!-- sim_two_networks.svg · 2026-10-23 · summarises docs/TROUBLESHOOTING "ENABLE_CAMERA … no /clock" row, localisation/docker/up.sh, localisation/scripts/slam_up.sh, foxglove_bridge_isaac.sh · redraw if ports 8765/8766, IP 172.31.0.200, container names, or the DDS fix in MILESTONES §6 change -->
+  <defs>
+    <marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1a7f37"/></marker>
+    <marker id="agrey" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#57606a"/></marker>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%"><feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#000" flood-opacity="0.15"/></filter>
+  </defs>
+
+  <rect x="0" y="0" width="1200" height="660" rx="18" fill="#ffffff"/>
+  <rect x="0.5" y="0.5" width="1199" height="659" rx="18" fill="none" stroke="#d0d7de"/>
+
+  <!-- left zone: Isaac docker network -->
+  <rect x="30" y="30" width="540" height="420" rx="16" fill="#f0f7ff" stroke="#54aeff" stroke-width="2" stroke-dasharray="8 6"/>
+  <text x="54" y="62" font-size="17" font-weight="700" fill="#0969da">Docker network  airstack_airstack_network</text>
+  <text x="54" y="84" font-size="14" fill="#57606a">172.31.0.x · Isaac's ROS 2 topics live only here</text>
+
+  <!-- right zone: host network -->
+  <rect x="630" y="30" width="540" height="420" rx="16" fill="#fff8f0" stroke="#fb8f44" stroke-width="2" stroke-dasharray="8 6"/>
+  <text x="654" y="62" font-size="17" font-weight="700" fill="#bc4c00">Host network</text>
+  <text x="654" y="84" font-size="14" fill="#57606a">the laptop's own network · robot and GCS containers</text>
+
+  <!-- isaac-sim card -->
+  <g filter="url(#shadow)"><rect x="70" y="110" width="460" height="120" rx="14" fill="#ffffff" stroke="#54aeff" stroke-width="2"/></g>
+  <rect x="70" y="110" width="12" height="120" rx="6" fill="#0969da"/>
+  <text x="100" y="146" font-size="19" font-weight="700" fill="#0a3069">isaac-sim container</text>
+  <text x="100" y="174" font-size="15" fill="#24292f">Isaac Sim + PX4 SITL × 3 drones</text>
+  <text x="100" y="198" font-size="15" fill="#24292f">ZED stereo camera on drone_1</text>
+  <text x="100" y="220" font-size="13" fill="#57606a">fixed IP 172.31.0.200</text>
+
+  <!-- exploration card -->
+  <g filter="url(#shadow)"><rect x="70" y="300" width="460" height="120" rx="14" fill="#ffffff" stroke="#8250df" stroke-width="2"/></g>
+  <rect x="70" y="300" width="12" height="120" rx="6" fill="#8250df"/>
+  <text x="100" y="336" font-size="19" font-weight="700" fill="#3e1f79">exploration container</text>
+  <text x="100" y="364" font-size="15" fill="#24292f">cuVSLAM node · bag recorder</text>
+  <text x="100" y="388" font-size="15" fill="#24292f">Foxglove bridge on port 8766</text>
+  <text x="100" y="410" font-size="13" fill="#57606a">joined to Isaac's network (--network container:isaac-sim)</text>
+
+  <!-- robot card -->
+  <g filter="url(#shadow)"><rect x="670" y="110" width="460" height="120" rx="14" fill="#ffffff" stroke="#fb8f44" stroke-width="2"/></g>
+  <rect x="670" y="110" width="12" height="120" rx="6" fill="#bc4c00"/>
+  <text x="700" y="146" font-size="19" font-weight="700" fill="#762c00">robot container</text>
+  <text x="700" y="174" font-size="15" fill="#24292f">MAVROS × 3 · swarm commander</text>
+  <text x="700" y="198" font-size="15" fill="#24292f">Foxglove bridge on port 8765</text>
+  <text x="700" y="220" font-size="13" fill="#57606a">flies the drones through MAVROS</text>
+
+  <!-- isaac -> exploration (DDS inside the zone) -->
+  <path d="M300,230 L300,292" stroke="#1a7f37" stroke-width="4" fill="none" marker-end="url(#ag)"/>
+  <rect x="316" y="246" width="196" height="30" rx="15" fill="#dafbe1" stroke="#4ac26b"/>
+  <text x="414" y="266" text-anchor="middle" font-size="14" font-weight="600" fill="#1a7f37">✓ camera images (DDS)</text>
+
+  <!-- isaac -> robot: MAVLink crosses -->
+  <path d="M530,156 L662,156" stroke="#1a7f37" stroke-width="4" fill="none" marker-end="url(#ag)"/>
+  <rect x="535" y="114" width="130" height="26" rx="13" fill="#dafbe1" stroke="#4ac26b"/>
+  <text x="600" y="132" text-anchor="middle" font-size="13" font-weight="600" fill="#1a7f37">✓ MAVLink / UDP</text>
+
+  <!-- isaac -> robot: DDS blocked -->
+  <path d="M530,198 L596,198" stroke="#cf222e" stroke-width="4" stroke-dasharray="7 5" fill="none"/>
+  <circle cx="600" cy="198" r="14" fill="#ffebe9" stroke="#cf222e" stroke-width="3"/>
+  <path d="M593,191 L607,205 M607,191 L593,205" stroke="#cf222e" stroke-width="3"/>
+  <rect x="535" y="216" width="130" height="26" rx="13" fill="#ffebe9" stroke="#ff8182"/>
+  <text x="600" y="234" text-anchor="middle" font-size="13" font-weight="600" fill="#cf222e">✗ DDS blocked</text>
+
+  <!-- note in the right zone -->
+  <rect x="670" y="300" width="460" height="120" rx="14" fill="#fffbf0" stroke="#d4a72c"/>
+  <text x="690" y="332" font-size="15" font-weight="700" fill="#7d4e00">Why it matters</text>
+  <text x="690" y="358" font-size="14" fill="#24292f">The robot container never sees /clock or the camera.</text>
+  <text x="690" y="380" font-size="14" fill="#24292f">So camera nodes run in the exploration container.</text>
+  <text x="690" y="402" font-size="14" fill="#57606a">A node needing both sides: open item, MILESTONES §6.</text>
+
+  <!-- studios -->
+  <g filter="url(#shadow)"><rect x="70" y="510" width="460" height="110" rx="14" fill="#fbefff" stroke="#c297ff" stroke-width="2"/></g>
+  <rect x="70" y="510" width="460" height="36" rx="14" fill="#8250df"/><rect x="70" y="530" width="460" height="16" fill="#8250df"/>
+  <text x="300" y="534" text-anchor="middle" font-size="17" font-weight="700" fill="#ffffff">SLAM Studio</text>
+  <text x="300" y="572" text-anchor="middle" font-size="15" font-family="DejaVu Sans Mono, Consolas, monospace" fill="#3e1f79">ws://172.31.0.200:8766</text>
+  <text x="300" y="598" text-anchor="middle" font-size="14" fill="#57606a">VO odometry · TF · debug image</text>
+
+  <g filter="url(#shadow)"><rect x="670" y="510" width="460" height="110" rx="14" fill="#fff1e5" stroke="#fb8f44" stroke-width="2"/></g>
+  <rect x="670" y="510" width="460" height="36" rx="14" fill="#bc4c00"/><rect x="670" y="530" width="460" height="16" fill="#bc4c00"/>
+  <text x="900" y="534" text-anchor="middle" font-size="17" font-weight="700" fill="#ffffff">Basestation Studio</text>
+  <text x="900" y="572" text-anchor="middle" font-size="15" font-family="DejaVu Sans Mono, Consolas, monospace" fill="#762c00">ws://localhost:8765</text>
+  <text x="900" y="598" text-anchor="middle" font-size="14" fill="#57606a">SVG Basestation panel · takeoff, start, land</text>
+
+  <path d="M300,420 L300,502" stroke="#57606a" stroke-width="3" fill="none" marker-end="url(#agrey)"/>
+  <path d="M1130,170 L1152,170 L1152,470 L900,470 L900,502" stroke="#57606a" stroke-width="3" fill="none" marker-end="url(#agrey)"/>
+</svg>

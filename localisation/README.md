@@ -110,15 +110,7 @@ The SLAM Studio clock reads `1970-01-01`: that is sim time, not a fault.
 
 ## How a run is scored
 
-<!-- F2 · 2026-10-23 · summarises: scripts/record_sim_bag.sh, scripts/score_run.sh, scripts/score_vs_ulog.py · redraw if: topics, ulog location or the scorer's outputs change -->
-```mermaid
-flowchart LR
-  BAG["bag: /drone_1/cuvslam/odometry<br/>record_sim_bag.sh (exploration container)"] --> EVO["evo_traj → .tum"]
-  ULOG["PX4 ulog from isaac-sim<br/>/tmp/tmp*/log · MAV_SYS_ID = idx+1"] --> SCORE
-  EVO --> SCORE["score_vs_ulog.py<br/>clock offset · SE(3) align"]
-  SCORE --> APE["*_vs_ulog.json<br/>APE / RPE"]
-  SCORE --> DIAG["cuvslam_drone_1_diag.png<br/>top-down x-y · xyz vs t"]
-```
+<img src="../pictures/vo_scoring_flow.svg" alt="How a run is scored: the cuVSLAM odometry bag and the PX4 flight log go into score_vs_ulog.py, which converts, lines up the clocks, aligns the paths and measures the error, producing a scores json and a top-down plot" width="850">
 *Reference = PX4 EKF2 on simulated GPS, not ground truth.* One command: `scripts/score_run.sh <run> 1` (laptop).
 
 ## Why the construction site

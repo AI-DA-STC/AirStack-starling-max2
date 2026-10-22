@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 560" width="1200" height="560" font-family="Segoe UI, Helvetica Neue, Arial, sans-serif">
+  <!-- vo_scoring_flow.svg · 2026-10-23 · summarises localisation/scripts/record_sim_bag.sh, score_run.sh, score_vs_ulog.py · redraw if topics, the ulog location or the scorer's outputs change -->
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#57606a"/>
+    </marker>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#000" flood-opacity="0.15"/>
+    </filter>
+  </defs>
+
+  <!-- slide background -->
+  <rect x="0" y="0" width="1200" height="560" rx="18" fill="#ffffff"/>
+  <rect x="0.5" y="0.5" width="1199" height="559" rx="18" fill="none" stroke="#d0d7de"/>
+
+  <!-- column headings -->
+  <g font-size="15" font-weight="700" letter-spacing="2" fill="#57606a" text-anchor="middle">
+    <text x="185" y="48">INPUTS</text>
+    <text x="600" y="48">SCORER</text>
+    <text x="1010" y="48">OUTPUTS</text>
+  </g>
+  <line x1="40" y1="64" x2="1160" y2="64" stroke="#eaeef2" stroke-width="2"/>
+
+  <!-- input 1: VO odometry -->
+  <g filter="url(#shadow)">
+    <rect x="40" y="96" width="290" height="140" rx="14" fill="#ddf4ff" stroke="#54aeff" stroke-width="2"/>
+  </g>
+  <rect x="40" y="96" width="290" height="40" rx="14" fill="#0969da"/>
+  <rect x="40" y="120" width="290" height="16" fill="#0969da"/>
+  <text x="185" y="122" text-anchor="middle" font-size="18" font-weight="700" fill="#ffffff">cuVSLAM odometry</text>
+  <text x="185" y="166" text-anchor="middle" font-size="15" fill="#0a3069">ROS bag of</text>
+  <text x="185" y="188" text-anchor="middle" font-size="15" font-family="DejaVu Sans Mono, Consolas, monospace" fill="#0a3069">/drone_1/cuvslam/odometry</text>
+  <text x="185" y="218" text-anchor="middle" font-size="13" fill="#57606a">record_sim_bag.sh · exploration container</text>
+
+  <!-- input 2: PX4 log -->
+  <g filter="url(#shadow)">
+    <rect x="40" y="300" width="290" height="140" rx="14" fill="#ddf4ff" stroke="#54aeff" stroke-width="2"/>
+  </g>
+  <rect x="40" y="300" width="290" height="40" rx="14" fill="#0969da"/>
+  <rect x="40" y="324" width="290" height="16" fill="#0969da"/>
+  <text x="185" y="326" text-anchor="middle" font-size="18" font-weight="700" fill="#ffffff">PX4 flight log</text>
+  <text x="185" y="370" text-anchor="middle" font-size="15" fill="#0a3069">ulog inside the isaac-sim container</text>
+  <text x="185" y="392" text-anchor="middle" font-size="15" font-family="DejaVu Sans Mono, Consolas, monospace" fill="#0a3069">/tmp/tmp*/log/…/*.ulg</text>
+  <text x="185" y="422" text-anchor="middle" font-size="13" fill="#57606a">drone_1 = MAV_SYS_ID 2 (index + 1)</text>
+
+  <!-- scorer -->
+  <g filter="url(#shadow)">
+    <rect x="420" y="96" width="360" height="344" rx="16" fill="#fbefff" stroke="#c297ff" stroke-width="2"/>
+  </g>
+  <rect x="420" y="96" width="360" height="44" rx="16" fill="#8250df"/>
+  <rect x="420" y="124" width="360" height="16" fill="#8250df"/>
+  <text x="600" y="125" text-anchor="middle" font-size="19" font-weight="700" fill="#ffffff" font-family="DejaVu Sans Mono, Consolas, monospace">score_vs_ulog.py</text>
+
+  <g font-size="16" fill="#3e1f79">
+    <circle cx="462" cy="183" r="15" fill="#8250df"/><text x="462" y="189" text-anchor="middle" font-weight="700" fill="#fff">1</text>
+    <text x="490" y="180" font-weight="700">Convert</text>
+    <text x="490" y="201" font-size="14" fill="#57606a">odometry bag → trajectory file (evo)</text>
+
+    <circle cx="462" cy="253" r="15" fill="#8250df"/><text x="462" y="259" text-anchor="middle" font-weight="700" fill="#fff">2</text>
+    <text x="490" y="250" font-weight="700">Line up the clocks</text>
+    <text x="490" y="271" font-size="14" fill="#57606a">search the time offset between bag and log</text>
+
+    <circle cx="462" cy="323" r="15" fill="#8250df"/><text x="462" y="329" text-anchor="middle" font-weight="700" fill="#fff">3</text>
+    <text x="490" y="320" font-weight="700">Align the paths</text>
+    <text x="490" y="341" font-size="14" fill="#57606a">best rotation + shift (SE(3)), no scale</text>
+
+    <circle cx="462" cy="393" r="15" fill="#8250df"/><text x="462" y="399" text-anchor="middle" font-weight="700" fill="#fff">4</text>
+    <text x="490" y="390" font-weight="700">Measure the error</text>
+    <text x="490" y="411" font-size="14" fill="#57606a">APE (whole path) · RPE (drift per metre)</text>
+  </g>
+
+  <!-- output 1: scores -->
+  <g filter="url(#shadow)">
+    <rect x="870" y="96" width="290" height="140" rx="14" fill="#dafbe1" stroke="#4ac26b" stroke-width="2"/>
+  </g>
+  <rect x="870" y="96" width="290" height="40" rx="14" fill="#1a7f37"/>
+  <rect x="870" y="120" width="290" height="16" fill="#1a7f37"/>
+  <text x="1015" y="122" text-anchor="middle" font-size="18" font-weight="700" fill="#ffffff">Scores</text>
+  <text x="1015" y="168" text-anchor="middle" font-size="15" font-family="DejaVu Sans Mono, Consolas, monospace" fill="#044f1e">*_vs_ulog.json</text>
+  <text x="1015" y="194" text-anchor="middle" font-size="15" fill="#044f1e">APE · RPE · path length</text>
+  <text x="1015" y="218" text-anchor="middle" font-size="13" fill="#57606a">results/bags/&lt;run&gt;/</text>
+
+  <!-- output 2: plot -->
+  <g filter="url(#shadow)">
+    <rect x="870" y="300" width="290" height="140" rx="14" fill="#dafbe1" stroke="#4ac26b" stroke-width="2"/>
+  </g>
+  <rect x="870" y="300" width="290" height="40" rx="14" fill="#1a7f37"/>
+  <rect x="870" y="324" width="290" height="16" fill="#1a7f37"/>
+  <text x="1015" y="326" text-anchor="middle" font-size="18" font-weight="700" fill="#ffffff">Plot</text>
+  <text x="1015" y="372" text-anchor="middle" font-size="15" font-family="DejaVu Sans Mono, Consolas, monospace" fill="#044f1e">cuvslam_drone_1_diag.png</text>
+  <text x="1015" y="398" text-anchor="middle" font-size="15" fill="#044f1e">top-down x-y · x, y, z vs time</text>
+  <text x="1015" y="422" text-anchor="middle" font-size="13" fill="#57606a">PX4 in blue, VO in orange</text>
+
+  <!-- arrows -->
+  <g stroke="#57606a" stroke-width="3" fill="none" marker-end="url(#arrow)">
+    <path d="M330,166 L410,166"/>
+    <path d="M330,370 L410,370"/>
+    <path d="M780,166 L860,166"/>
+    <path d="M780,370 L860,370"/>
+  </g>
+
+  <!-- footer -->
+  <rect x="40" y="472" width="1120" height="60" rx="12" fill="#f6f8fa" stroke="#d0d7de"/>
+  <text x="62" y="508" font-size="16" fill="#24292f"><tspan font-weight="700">One command, on the laptop:</tspan>
+    <tspan font-family="DejaVu Sans Mono, Consolas, monospace" fill="#0969da">scripts/score_run.sh &lt;run&gt; 1</tspan></text>
+  <text x="1138" y="508" text-anchor="end" font-size="15" fill="#9a6700" font-weight="700">⚠ Reference = PX4 EKF2 on simulated GPS, not ground truth</text>
+</svg>

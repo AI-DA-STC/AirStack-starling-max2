@@ -169,22 +169,7 @@ shell exits, because `sim_tab.sh` ends in `exec bash`.)
 
 **Two networks in a sim session (2026-10-22).**
 
-<!-- F1 · 2026-10-23 · summarises: TROUBLESHOOTING "ENABLE_CAMERA … no /clock" row, localisation/docker/up.sh, localisation/scripts/slam_up.sh, localisation/scripts/foxglove_bridge_isaac.sh · redraw if: ports 8765/8766, IP 172.31.0.200, container names, or the DDS fix in MILESTONES §6 change -->
-```mermaid
-flowchart LR
-  subgraph isaacnet["docker network airstack_airstack_network · 172.31.0.x"]
-    ISAAC["isaac-sim container<br/>Isaac Sim + PX4 SITL ×3<br/>ZED stereo on drone_1"]
-    SLAM["exploration container<br/>(--network container:isaac-sim)<br/>cuVSLAM node · bridge :8766 · bag record"]
-    ISAAC -- "images + camera_info (DDS)" --> SLAM
-  end
-  subgraph hostnet["host network"]
-    ROBOT["robot container<br/>MAVROS ×3 · swarm commander · bridge :8765"]
-  end
-  ISAAC -- "MAVLink/UDP: crosses" --> ROBOT
-  ISAAC -. "DDS: does NOT cross" .-> ROBOT
-  SLAM --> FGA["SLAM Studio<br/>ws://172.31.0.200:8766<br/>odometry · TF · debug image"]
-  ROBOT --> FGB["Basestation Studio<br/>ws://localhost:8765<br/>SVG Basestation panel"]
-```
+<img src="../pictures/sim_two_networks.svg" alt="Two networks in a sim session: the isaac-sim and exploration containers share a docker network where camera images flow over DDS; MAVLink crosses to the robot container on the host network but DDS does not; each side has its own Foxglove Studio, SLAM Studio on 8766 and Basestation Studio on 8765" width="850">
 *Two bridges because DDS never crosses the docker boundary; MAVLink does.* What you should see: SLAM Studio
 shows `/drone_1/cuvslam/debug_image`, Basestation Studio shows the panel. Running it:
 [localisation/README.md](../localisation/README.md) · open fix: [TROUBLESHOOTING.md](TROUBLESHOOTING.md#simulation-isaac-sim--px4-sitl--mavros).

@@ -24,6 +24,8 @@ plot crops. Full-size originals live outside git in `~/Pictures/airstack-origina
 | `drones_in_construction_site.jpg` | The three simulated Starling 2 Max drones over the sand patch beside the containers | `localisation/README.md` | Current (sim, 2026-10-23) |
 | `vo_flat_frame.png`, `vo_site_frame.png` | drone_1's left camera at 640×480: the flat default world (sky, horizon, grid) vs the construction site | `localisation/README.md` (flat vs site figure) | Current (sim, 2026-10-22) |
 | `vo_flat_xy_cam_run3.png`, `vo_site_xy_site_run1.png` | Top-down x-y, PX4 reference (blue) vs cuVSLAM (orange): `sim_cam_run3` jumps away; `sim_site_run1` stays on the reference | `localisation/README.md` (flat vs site figure) | Frozen copies of the runs named in the file |
+| `sim_two_networks.svg` | Diagram: the isaac docker network vs the host network; DDS stays inside, MAVLink crosses; the two Foxglove Studios (8766, 8765) | ARCHITECTURE "Sim session anatomy" | Current 2026-10-23; hand-written SVG, the comment inside names what to redraw it from |
+| `vo_scoring_flow.svg` | Diagram: bag + PX4 ulog → `score_vs_ulog.py` (convert, clock offset, SE(3) align, APE/RPE) → json + plot | `localisation/README.md` "How a run is scored" | Current 2026-10-23; hand-written SVG |
 | `randompos_construction_sheet.jpg` | Six frames, 8 s apart, of the 2026-10-23 random-goals flight in the site (both Studio windows, Isaac, terminals) | `localisation/README.md` | Current (sim, unscored flight; source video `~/Videos/randompos_construction.mp4`, not in git) |
 
 ## Pictures this branch still needs

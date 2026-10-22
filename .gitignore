@@ -1,0 +1,7 @@
+data/downloads/*.whl
+data/downloads/*.tar.gz
+data/downloads/*.zip
+data/cuVSLAM-src/
+results/*.mcap
+results/*/
+__pycache__/

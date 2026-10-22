@@ -1,0 +1,43 @@
+# 0005 · ENV_USD: load a custom world USD instead of the Pegasus default environment · our commit 158204e, 2026-10-22
+# File: AirStack/simulation/isaac-sim/launch_scripts/svg_multi_drone_single_domain.py (CMU tree; sim only)
+# Why: stereo VO needs a textured world (localisation/scenes/construction_site/). Unset = unchanged behaviour.
+# Already in this repo's AirStack/ - record only, do not re-apply on this snapshot.
+
+diff --git a/simulation/isaac-sim/launch_scripts/svg_multi_drone_single_domain.py b/simulation/isaac-sim/launch_scripts/svg_multi_drone_single_domain.py
+index a7dce36..7347ac8 100755
+--- a/simulation/isaac-sim/launch_scripts/svg_multi_drone_single_domain.py
++++ b/simulation/isaac-sim/launch_scripts/svg_multi_drone_single_domain.py
+@@ -21,6 +21,11 @@ Env:
+    NOTE: Isaac's ROS 2 topics live on the isaac-sim docker network; a host-network
+    container (the CMU robot container) does not discover them — see
+    docs/TROUBLESHOOTING.md "Simulation".
++ - ENV_USD (default: Pegasus "Default Environment"): path, inside the isaac-sim container,
++   of a USD to load as the world instead. Its defaultPrim lands at /World/stage (Pegasus
++   load_asset), gets STAGE_SCALE and colliders like the default. Example: the construction-site
++   arena from the localisation exploration (~/docker/isaac-sim/data/scenes/... on the laptop =
++   /isaac-sim/.local/share/ov/data/scenes/... in the container). Big scenes get a 90 s stage wait.
+  - PLAY_SIM_ON_START (default true): autoplay timeline
+  - DRONE_MODES (default all "sim"): comma-separated 'sim'|'real' per drone,
+    length NUM_ROBOTS. 'sim' spawns a PX4 SITL body as usual; 'real' spawns a
+@@ -63,7 +68,11 @@ from scene_prep import scale_stage_prim, add_colliders, add_dome_light
+ 
+ 
+ # --------------------- CONFIGURATION ---------------------
+-ENV_URL = SIMULATION_ENVIRONMENTS["Default Environment"]
++ENV_USD = os.environ.get("ENV_USD", "").strip()
++if ENV_USD and not os.path.exists(ENV_USD):
++    raise FileNotFoundError(f"ENV_USD={ENV_USD} not found inside the isaac-sim container")
++ENV_URL = ENV_USD or SIMULATION_ENVIRONMENTS["Default Environment"]
++print(f"[svg_multi_drone] environment: {ENV_URL}")
+ STAGE_SCALE = 1.0
+ from launch_env import resolve_vehicle   # DRONE_USD / PX4_VEHICLE_MODEL env overrides (defaults = Iris)
+ DRONE_USD, PX4_VEHICLE_MODEL, ZED_CAMERA_OFFSET, INPUT_SCALING = resolve_vehicle()
+@@ -283,7 +292,7 @@ class PegasusApp:
+         if stage is None:
+             raise RuntimeError("Stage failed to load")
+ 
+-        if not wait_for_stage(stage):
++        if not wait_for_stage(stage, timeout_s=90.0 if ENV_USD else 10.0):
+             carb.log_warn("Stage load timed out — continuing anyway.")
+ 
+         stage_prim = stage.GetPrimAtPath("/World/stage")

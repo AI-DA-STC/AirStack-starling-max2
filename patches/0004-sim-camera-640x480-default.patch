@@ -1,0 +1,48 @@
+# 0004 · sim camera 640x480 default (CAMERA_WIDTH / CAMERA_HEIGHT env) · our commit 10b85b5, 2026-10-22
+# File: AirStack/simulation/isaac-sim/launch_scripts/svg_multi_drone_single_domain.py (CMU tree; sim only)
+# Why: the 480x300 default gave cuVSLAM a very wide, low-res camera; the real D435i will be 848x480.
+# Already in this repo's AirStack/ - record only, do not re-apply on this snapshot.
+
+diff --git a/simulation/isaac-sim/launch_scripts/svg_multi_drone_single_domain.py b/simulation/isaac-sim/launch_scripts/svg_multi_drone_single_domain.py
+index 2a5432a..a7dce36 100755
+--- a/simulation/isaac-sim/launch_scripts/svg_multi_drone_single_domain.py
++++ b/simulation/isaac-sim/launch_scripts/svg_multi_drone_single_domain.py
+@@ -16,6 +16,11 @@ Env:
+  - NUM_ROBOTS (default 3): how many drones to spawn
+  - SVG_DOMAIN_ID (default 0): the shared ROS domain
+  - ENABLE_LIDAR (default false): attach an Ouster lidar to each drone
++ - ENABLE_CAMERA / CAMERA_DRONES / CAMERA_WIDTH x CAMERA_HEIGHT (default 640x480):
++   ZED stereo subgraph on the named drones (default: the last drone only).
++   NOTE: Isaac's ROS 2 topics live on the isaac-sim docker network; a host-network
++   container (the CMU robot container) does not discover them — see
++   docs/TROUBLESHOOTING.md "Simulation".
+  - PLAY_SIM_ON_START (default true): autoplay timeline
+  - DRONE_MODES (default all "sim"): comma-separated 'sim'|'real' per drone,
+    length NUM_ROBOTS. 'sim' spawns a PX4 SITL body as usual; 'real' spawns a
+@@ -68,11 +73,15 @@ NUM_ROBOTS = int(os.environ.get("NUM_ROBOTS", "3"))
+ SVG_DOMAIN_ID = int(os.environ.get("SVG_DOMAIN_ID", "0"))
+ ENABLE_LIDAR = os.environ.get("ENABLE_LIDAR", "false").lower() == "true"
+ ENABLE_CAMERA = os.environ.get("ENABLE_CAMERA", "false").lower() == "true"
+-# Which drones get a stereo camera. Each one is four render products, and they
+-# dominate the step time, so this defaults to the last drone (the intruder)
++# Which drones get a stereo camera. Each one is two render products (left/right)
++# that dominate the step time, so this defaults to the last drone (the intruder)
+ # rather than all of them.
+ CAMERA_DRONES = [n.strip() for n in os.environ.get("CAMERA_DRONES", "").split(",")
+                  if n.strip()]
++# Stereo image size (CAMERA_WIDTH x CAMERA_HEIGHT). Default 640x480 since 2026-10-22
++# (was the subgraph's 480x300); the camera_info follows automatically.
++CAMERA_WIDTH = int(os.environ.get("CAMERA_WIDTH", "640"))
++CAMERA_HEIGHT = int(os.environ.get("CAMERA_HEIGHT", "480"))
+ 
+ 
+ def _parse_drone_modes():
+@@ -164,6 +173,8 @@ def spawn_drone(index: int):
+             camera_name=f"ZEDCamera_{index}",
+             camera_offset=ZED_CAMERA_OFFSET,
+             camera_rotation_offset=[0.0, 0.0, 0.0],
++            frame_width=CAMERA_WIDTH,
++            frame_height=CAMERA_HEIGHT,
+         )
+ 
+     if ENABLE_LIDAR:

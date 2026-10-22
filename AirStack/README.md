@@ -57,7 +57,7 @@ a fresh CMU clone). "Sim" = only the Isaac Sim path loads it; "real" = flown on 
 | `simulation/isaac-sim/assets/robots/starling2max.usd` | Starling 2 Max asset — CMU sys-ID masses; body parts < 2 mm culled, no decimation | 10-19, rebuilt 10-20 | sim |
 | `simulation/isaac-sim/px4/airframes/10090_pegasus_starling2max` | PX4 SITL airframe: real attitude/position gains; rate gains ×0.5 + gyro filters 80/40; `LNDMC_ROT_MAX` 300 (real 30); motor lag off; MPC speed/accel limits = the real drone's — the deviations are **sim-only — never port to the drone** | 10-19, 10-20 | sim |
 | `simulation/isaac-sim/docker/docker-compose.yaml` | one volume line: airframe bind-mounted into PX4's ROMFS source dir | 10-19 | sim |
-| `simulation/isaac-sim/launch_scripts/launch_env.py`, `svg_multi_drone_single_domain.py` | `DRONE_USD` / `PX4_VEHICLE_MODEL` env handling; lidar-import fix | 10-19 | sim |
+| `simulation/isaac-sim/launch_scripts/launch_env.py`, `svg_multi_drone_single_domain.py` | `DRONE_USD` / `PX4_VEHICLE_MODEL` env handling; lidar-import fix; camera 640×480 default (`../patches/0004-*.patch`); `ENV_USD` world (`../patches/0005-*.patch`) | 10-19, 10-22 | sim |
 | `simulation/isaac-sim/tools/*` | asset cleaner, hover/step and CBF-crossing test scripts, step analysis, `launch_env` tests | 10-19, 10-20 | sim |
 | `PEG/logic/thrusters/lagged_quadratic_thrust_curve.py` | motor-lag thrust curve (default lag 0 = off) | 10-19 | sim |
 | `PEG/logic/vehicles/multirotors/registry.py`, `starling2max.py` | `Starling2MaxConfig` + the name → config registry | 10-19 | sim |
@@ -73,7 +73,7 @@ a fresh CMU clone). "Sim" = only the Isaac Sim path loads it; "real" = flown on 
 
 Everything else in this folder is CMU's as of `b21d28c`. The values the sim airframe and the
 configs carry are listed in [`../docs/CONFIG.md`](../docs/CONFIG.md); what each change fixed is
-in [`../docs/MILESTONES.md`](../docs/MILESTONES.md) §3c (ledger #1–#13).
+in [`../docs/MILESTONES.md`](../docs/MILESTONES.md) §3c (ledger #1–#16).
 
 **How to use it:** follow "Setting up AirStack on a NEW machine" in the
 [repo README](../README.md) one level up — this folder itself is your working folder

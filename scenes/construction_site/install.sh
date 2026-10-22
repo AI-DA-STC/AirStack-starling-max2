@@ -26,5 +26,13 @@ H="$HOME/docker/isaac-sim/data/scenes/construction_site/environments/constructio
 VENV="$HOME/.venvs/usd"      # persistent (not /tmp: wiped on reboot)
 [ -x "$VENV/bin/python" ] || { python3 -m venv "$VENV" && "$VENV/bin/pip" install -q usd-core scipy numpy; }
 "$VENV/bin/python" -I fix_abs_paths.py "$H/Landscape2_asset.usd" "$H/Landscape_asset.usd" || { echo "terrain asset fix FAILED"; exit 1; }
+# flattened derivatives (crop_site.py: one copy per unique material, textures beside the file). Default = full site
+# (all 5.5k objects, 25k prims, 137 materials: 3 drones + camera at 4.3 GB VRAM / RTF 1.4 headless on 2026-10-22);
+# r40 = 40 m around the flight spot (4.8k prims, 68 materials) as the light fallback.
+ARENA="$HOME/docker/isaac-sim/data/scenes/construction_site/construction_site_arena.usda"
+[ -f build/construction_site_r40.usdc ] || "$VENV/bin/python" -I crop_site.py "$ARENA" build --radius 40
+[ -f build/construction_site_full.usdc ] || { "$VENV/bin/python" -I crop_site.py "$ARENA" build --radius 1000 && mv build/construction_site_r1000.usdc build/construction_site_full.usdc; }
+docker cp build/construction_site_r40.usdc "isaac-sim:$D/"; docker cp build/construction_site_full.usdc "isaac-sim:$D/"
+docker exec isaac-sim rm -rf "$D/textures"; docker cp build/textures "isaac-sim:$D/"
 docker exec isaac-sim bash -c "du -sh $D && ls $D"
-echo "launch with:  ENV_USD=$D/construction_site_arena.usda  (plus the usual Isaac tab line)"
+echo "launch with:  ENV_USD=$D/construction_site_full.usdc  (or construction_site_r40.usdc for the 40 m crop; plus the usual Isaac tab line)"

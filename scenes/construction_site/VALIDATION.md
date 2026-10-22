@@ -5,6 +5,9 @@ next step until the current one passes. Written 2026-10-22 after two "laptop han
 WiFi firmware crashing within 30 s of an Isaac start/stop (kernel log: `iwlwifi ... Error sending SYSTEM_STATISTICS_CMD`,
 then `kworker blocked for more than 122 seconds`), which drops the remote-desktop session while Isaac keeps running.
 
+## Results 2026-10-22
+Steps 1–7 all passed on the laptop over WiFi, 9 Isaac starts/stops, 0 WiFi firmware alerts. Flight score in `results/sim_site_run1_record.md`.
+
 ## Step 0: network (blocks everything else)
 - Work on the laptop directly, or plug in Ethernet and connect the remote desktop to the Ethernet IP. WiFi must not be
   the session's only link while Isaac starts.
@@ -34,7 +37,7 @@ Stop the sim: Ctrl-C in the Isaac tab (or `docker exec isaac-sim pkill -INT -f s
 | 4 | + 3 drones | step 3 with `NUM_ROBOTS=3` | ready x3; RTF >= 0.5; image >= 15 Hz; 10 min soak | |
 | 5 | + cuVSLAM node | `scripts/slam_up.sh` (exploration container) | status rate >= 10 Hz; at rest, odom drift < 0.05 m over 60 s | |
 | 6 | + flight + scoring | Interfaces/Commander/Cockpit tabs, `random_goals` | no odom jump > 1 m between consecutive poses; `scripts/score_run.sh` runs | |
-| 7 | full scene instead of cropped | `ENV_USD=...construction_site_arena.usda` | same as 4 | only if 1-6 pass and more backdrop is wanted |
+| 7 | full site (flattened, all objects) | `ENV_USD=/isaac-sim/.local/share/ov/data/scenes/construction_site/construction_site_full.usdc` | same as 4 | PASSED 2026-10-22 23:15: 1 drone RTF 2.2 / 4.9 GB; 3 drones + camera RTF 1.4 / 4.3 GB, 41 Hz, 1987 corners, 0 WiFi alerts. Now the default world. |
 
 ## Resource notes from the reviews (2026-10-22)
 - The site's meshes arrive through payloads after `wait_for_stage` returns, so the launcher's `add_colliders` never

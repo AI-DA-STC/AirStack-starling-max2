@@ -21,7 +21,11 @@ Files here
 - `install.sh` — copies wrapper + Scene02 + its Assets folder (143 MB) into `~/docker/isaac-sim/data/scenes/construction_site`,
   which is mounted into the isaac-sim container at `/isaac-sim/.local/share/ov/data/scenes/construction_site`.
 
-Launch: add `ENV_USD=/isaac-sim/.local/share/ov/data/scenes/construction_site/construction_site_arena.usda` in front of the
+Derivatives built by `crop_site.py` (flatten by hand, one copy per unique material, textures beside the file; the raw wrapper is
+too heavy to be worth loading): `build/construction_site_full.usdc` (all objects, 25k prims, 137 materials, DEFAULT) and
+`build/construction_site_r40.usdc` (40 m around the flight spot, 4.8k prims, 68 materials).
+
+Launch: add `ENV_USD=/isaac-sim/.local/share/ov/data/scenes/construction_site/construction_site_full.usdc` in front of the
 usual Isaac tab line (launcher support added 2026-10-22 in `svg_multi_drone_single_domain.py`; 90 s stage wait when set).
 
 Known texture limitation: the UE4 export baked 672 of 682 textures at 128 × 128 px (only the landscape sets are 1024²),

@@ -70,7 +70,8 @@ for prim in Usd.PrimRange(src.GetPseudoRoot(), Usd.TraverseInstanceProxies(Usd.P
         if prim.HasAuthoredMetadata(key): spec.SetInfo(key, prim.GetMetadata(key))
     for attr in prim.GetAttributes():
         conns = attr.GetConnections()
-        if not attr.HasAuthoredValue() and not conns: continue
+        # shader outputs (outputs:surface, outputs:rgb, ...) carry neither a value nor a connection but must exist
+        if not attr.HasAuthoredValue() and not conns and not attr.GetName().startswith("outputs:"): continue
         aspec = Sdf.AttributeSpec(spec, attr.GetName(), attr.GetTypeName(), attr.GetVariability()); aspec.custom = attr.IsCustom()
         if conns: aspec.connectionPathList.explicitItems = conns
         if attr.HasAuthoredValue():
@@ -88,8 +89,11 @@ for prim in Usd.PrimRange(src.GetPseudoRoot(), Usd.TraverseInstanceProxies(Usd.P
                 elif rp:
                     v = Sdf.AssetPath(rp)                                                  # e.g. MDL modules: keep absolute resolved path
             aspec.default = v; n_attrs += 1
-        md = attr.GetMetadata("colorSpace")
-        if md: aspec.SetInfo("colorSpace", md)
+        # authored attribute metadata: interpolation (primvars!), elementSize, colorSpace, displayName, ...
+        for key, val in attr.GetAllAuthoredMetadata().items():
+            if key in ("default", "typeName", "variability", "custom", "timeSamples", "connectionPaths"): continue
+            try: aspec.SetInfo(key, val)
+            except Exception: pass
     for rel in prim.GetRelationships():
         tg = rel.GetTargets()
         if tg:

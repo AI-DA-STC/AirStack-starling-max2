@@ -11,7 +11,8 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 ./docker/up.sh
 C=localisation-exploration
-ex() { docker exec -w /exploration "$C" bash -lc "$*" 2>&1 | grep -v '^Sourcing'; }
+# ex: run a command in the container; return ITS exit code (not grep's), hide the "Sourcing ..." banner lines
+ex() { local out rc; out=$(docker exec -w /exploration "$C" bash -lc "$*" 2>&1); rc=$?; [ -n "$out" ] && grep -v '^Sourcing' <<<"$out"; return $rc; }
 exd() { docker exec -d -w /exploration "$C" bash -lc "$*"; }
 
 if ! ex 'pgrep -f "[c]uvslam_stereo_node.py" >/dev/null'; then
@@ -39,20 +40,10 @@ echo
 echo "================ SLAM side running — Ctrl-C here stops node + bridge + Studio ================"
 trap 'echo; echo "Ctrl-C: shutting the SLAM side down..."; ./scripts/slam_down.sh; exit 0' INT TERM
 docker exec -d -w /exploration "$C" bash -lc 'tail -n 0 -F results/cuvslam_node.log > /tmp/node_follow.log 2>&1' || true
+set +e   # a failed status probe must not kill the loop (the trap above must stay armed)
 while true; do
   docker ps --format '{{.Names}}' | grep -qx "$C" || { echo "container gone"; exit 1; }
-  line=$(docker exec -w /exploration "$C" bash -lc '
-    st="node:$(pgrep -f "[c]uvslam_stereo_node.py" >/dev/null && echo up || echo DOWN) bridge:$(pgrep -f "[f]oxglove_bridge.*8766" >/dev/null && echo up || echo DOWN) studio:$(pgrep -f "[f]oxglove-studio.*studio-data" >/dev/null && echo up || echo closed) bag:$(pgrep -f "[r]os2 bag record" >/dev/null && echo REC || echo idle)"
-    js=$(timeout 2.5 ros2 topic echo --no-daemon --once /drone_1/cuvslam/status 2>/dev/null | head -1 | sed "s/^data: //; s/^'//; s/'$//")
-    if [ -n "$js" ]; then python3 - "$st" "$js" <<PY
-import json,sys
-st,js=sys.argv[1],sys.argv[2]
-try:
-    d=json.loads(js); print(f"{st}  frames:{d[\"frames\"]} tracked:{d[\"tracked\"]} lost:{d[\"lost\"]} rate:{d[\"rate_hz\"]}Hz track_ms:{d[\"track_ms_p50\"]}")
-except Exception: print(st, "status: (parse error)")
-PY
-    else echo "$st  (no tracker status yet)"; fi
-    grep -vE "^\s*$" /tmp/node_follow.log 2>/dev/null | tail -n 3; : > /tmp/node_follow.log' 2>/dev/null | grep -v '^Sourcing')
-  printf "%s  %s\n" "$(date +%H:%M:%S)" "$line"
+  line=$(docker exec -w /exploration "$C" bash -lc 'scripts/slam_status_line.sh' 2>/dev/null | grep -v '^Sourcing')
+  printf "%s  %s\n" "$(date +%H:%M:%S)" "${line:-(status probe failed)}"
   sleep 3
 done

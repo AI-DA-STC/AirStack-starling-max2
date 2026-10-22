@@ -14,6 +14,10 @@ docker exec isaac-sim mkdir -p "$D/AI_training/Construction_site" "$D/environmen
 docker cp construction_site_arena.usda "isaac-sim:$D/"
 if ! docker exec isaac-sim test -d "$D/environments/construction_site/Assets"; then
   docker cp "$SRC/environments/construction_site/Assets" "isaac-sim:$D/environments/construction_site/"
+  # Scene02's /World/construction_site_withrobot is itself a reference to this file (and Map_draft1 may be referenced too)
+  for f in construction_site_withrobot.usd construction_site_raw.usd Map_draft1; do
+    [ -e "$SRC/environments/construction_site/$f" ] && docker cp "$SRC/environments/construction_site/$f" "isaac-sim:$D/environments/construction_site/"
+  done
   for f in Scene02_nohumans.usd Scene02.usd; do docker cp "$SRC/AI_training/Construction_site/$f" "isaac-sim:$D/AI_training/Construction_site/"; done
 fi
 docker exec isaac-sim bash -c "du -sh $D && ls $D"

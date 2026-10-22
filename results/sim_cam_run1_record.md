@@ -1,5 +1,7 @@
 # Run record — sim_cam_run1 (2026-10-22): cuVSLAM stereo VO on the simulated Starling, end to end
 
+> **Camera note (2026-10-23):** this run used the pre-10-22 default **480×300, fx 184**. The launcher default is 640×480 (fx 245) since 2026-10-22, so do not compare these numbers with later runs.
+
 **Status: pipeline works end to end in sim.** Not an accuracy claim (see caveats).
 
 ## Setup

@@ -1,2 +1,0 @@
-[INFO] [1792666441.314949918] [cuvslam_stereo_node]: waiting for /drone_1/sensors/front_stereo/{left,right}/{image_rect,camera_info}
-[INFO] [1792666446.512292872] [cuvslam_stereo_node]: tracker ready: 640x480 fx=245.3 cx,cy=320.0,240.0 baseline=0.1200 m frames camera_left/camera_right

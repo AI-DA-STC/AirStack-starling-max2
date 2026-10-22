@@ -24,7 +24,7 @@ NUM_ROBOTS=<N> SVG_DOMAIN_ID=1 PLAY_SIM_ON_START=true ISAAC_SIM_HEADLESS=true \
 PYTHONPATH="$ISAAC_SIM_PYTHONPATH" /isaac-sim/python.sh /isaac-sim/AirStack/simulation/isaac-sim/launch_scripts/svg_multi_drone_single_domain.py \
   --ext-folder ~/.local/share/ov/data/documents/Kit/shared/exts
 ```
-Pass checks run from the exploration container (`cd ~/localisation-exploration && ./docker/run.sh`):
+Pass checks run from the exploration container (`cd ~/AirStack-starling-max2/localisation && ./docker/run.sh`):
 - real-time factor and image rate: `python3 scripts/sim_check.py` (prints RTF over 10 s, image Hz, saves a frame, ORB corners, sky mean)
 - camera frame: `python3 scripts/grab_frame.py drone_1 results/frame_stepN.png`
 Stop the sim: Ctrl-C in the Isaac tab (or `docker exec isaac-sim pkill -INT -f svg_multi_drone`), wait 10 s, check the watch log for a WIFI-ALERT.

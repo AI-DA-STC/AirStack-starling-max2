@@ -4,7 +4,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 NAME=localisation-exploration
-docker ps --format '{{.Names}}' | grep -qx isaac-sim || { echo "isaac-sim container is not up — run tools/sim_terminals.sh (or ./airstack.sh up) first"; exit 1; }
+docker ps --format '{{.Names}}' | grep -qx isaac-sim || { echo "isaac-sim container is not up — run ~/AirStack-starling-max2/tools/sim_terminals.sh (or ./airstack.sh up) first"; exit 1; }
 if docker ps --format '{{.Names}}' | grep -qx "$NAME"; then echo "$NAME already running"; exit 0; fi
 docker rm -f "$NAME" >/dev/null 2>&1 || true
 docker run -d --name "$NAME" --gpus all --network container:isaac-sim --ipc host \

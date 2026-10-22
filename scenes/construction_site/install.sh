@@ -20,5 +20,11 @@ if ! docker exec isaac-sim test -d "$D/environments/construction_site/Assets"; t
   done
   for f in Scene02_nohumans.usd Scene02.usd; do docker cp "$SRC/AI_training/Construction_site/$f" "isaac-sim:$D/AI_training/Construction_site/"; done
 fi
+# Landscape2_asset.usd / Landscape_asset.usd carry ABSOLUTE /home/... paths from the UE4 export -> rewrite to relative in the
+# installed copy (needs usd-core: python3 -m venv /tmp/usdenv && /tmp/usdenv/bin/pip install usd-core). The user's originals are untouched.
+H="$HOME/docker/isaac-sim/data/scenes/construction_site/environments/construction_site/Assets"
+if PY=$(ls /tmp/usdenv/bin/python /tmp/claude-*/*/*/scratchpad/usdenv/bin/python 2>/dev/null | head -1); [ -n "$PY" ]; then
+  "$PY" -I fix_abs_paths.py "$H/Landscape2_asset.usd" "$H/Landscape_asset.usd"
+else echo "WARN: no usd-core python found; run fix_abs_paths.py on $H/Landscape*_asset.usd by hand (else the terrain is missing)"; fi
 docker exec isaac-sim bash -c "du -sh $D && ls $D"
 echo "launch with:  ENV_USD=$D/construction_site_arena.usda  (plus the usual Isaac tab line)"

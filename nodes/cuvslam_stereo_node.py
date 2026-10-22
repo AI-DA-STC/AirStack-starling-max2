@@ -26,11 +26,16 @@ from rclpy.node import Node
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
 from message_filters import Subscriber, ApproximateTimeSynchronizer
 from sensor_msgs.msg import Image, CameraInfo
-from nav_msgs.msg import Odometry
+from nav_msgs.msg import Odometry, Path
+from geometry_msgs.msg import PoseStamped
 from std_msgs.msg import String
 from scipy.spatial.transform import Rotation as R
 
 import cuvslam
+try:
+    import cv2
+except ImportError:  # debug image still works without cv2 (no circles)
+    cv2 = None
 
 # body (FLU) from optical (RDF): x_b = z_o, y_b = -x_o, z_b = -y_o
 R_BODY_FROM_OPT = np.array([[0.0, 0.0, 1.0],
@@ -84,6 +89,8 @@ class CuvslamStereoNode(Node):
         self.declare_parameter("odom_frame", "")
         self.declare_parameter("child_frame", "")
         self.declare_parameter("status_period_s", 1.0)
+        self.declare_parameter("publish_debug_image", True)   # left image with tracked features drawn
+        self.declare_parameter("path_max_poses", 6000)        # nav_msgs/Path for the 3D panel
 
         drone = self.get_parameter("drone").value
         ns = self.get_parameter("stereo_ns").value
@@ -107,6 +114,11 @@ class CuvslamStereoNode(Node):
 
         self.pub_odom = self.create_publisher(Odometry, f"/{drone}/cuvslam/odometry", 10)
         self.pub_status = self.create_publisher(String, f"/{drone}/cuvslam/status", 10)
+        self.pub_path = self.create_publisher(Path, f"/{drone}/cuvslam/path", 5)
+        self.pub_debug = self.create_publisher(Image, f"/{drone}/cuvslam/debug_image", 5)
+        self.debug_on = bool(self.get_parameter("publish_debug_image").value)
+        self.path = Path(); self.path.header.frame_id = self.odom_frame
+        self.path_max = int(self.get_parameter("path_max_poses").value)
         self.create_timer(float(self.get_parameter("status_period_s").value), self._status_tick)
 
         self.tracker = None
@@ -200,6 +212,37 @@ class CuvslamStereoNode(Node):
         od.pose.pose.orientation.x, od.pose.pose.orientation.y, od.pose.pose.orientation.z, od.pose.pose.orientation.w = map(float, q_b)
         # covariance from cuVSLAM is not exposed in this first version; leave unknown (0)
         self.pub_odom.publish(od)
+
+        ps = PoseStamped(); ps.header = od.header; ps.pose = od.pose.pose
+        self.path.poses.append(ps)
+        if len(self.path.poses) > self.path_max:
+            del self.path.poses[: len(self.path.poses) - self.path_max]
+        self.path.header.stamp = od.header.stamp
+        self.pub_path.publish(self.path)
+
+        if self.debug_on:
+            self._publish_debug(left_msg, imgs[0])
+
+    # --- debug image: tracked features on the left frame ---------------------
+    def _publish_debug(self, left_msg: Image, left_img: np.ndarray):
+        try:
+            obs = self.tracker.get_last_observations(0)
+        except Exception:
+            obs = []
+        img = np.ascontiguousarray(left_img if left_img.ndim == 3 else np.stack([left_img] * 3, axis=-1)).copy()
+        if cv2 is not None:
+            for o in obs:
+                c = ((o.id * 17) % 256, (o.id * 31) % 256, (o.id * 47) % 256)
+                cv2.circle(img, (int(o.u), int(o.v)), 3, c, -1)
+            cv2.putText(img, f"features {len(obs)}  frame {self.n_frames}  lost {self.n_lost}",
+                        (6, 16), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (255, 255, 0), 1, cv2.LINE_AA)
+        else:
+            for o in obs:
+                u, v = int(o.u), int(o.v)
+                img[max(v-1,0):v+2, max(u-1,0):u+2] = (0, 255, 0)
+        m = Image(); m.header = left_msg.header; m.height, m.width = img.shape[:2]
+        m.encoding = "rgb8"; m.is_bigendian = 0; m.step = m.width * 3; m.data = img.tobytes()
+        self.pub_debug.publish(m)
 
     # --- status ------------------------------------------------------------
     def _status_tick(self):

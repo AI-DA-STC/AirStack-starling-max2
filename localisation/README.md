@@ -14,25 +14,83 @@
 |---|---|---|
 | `jeremychia@…$` | laptop terminal | `scripts/slam_up.sh` · `scripts/score_run.sh` · `scripts/sim_resources_watch.sh` · `scenes/construction_site/install.sh` |
 | `root@…:/exploration#` | exploration container (`./docker/run.sh`) | `scripts/record_sim_bag.sh` · `scripts/sim_check.py` · `scripts/grab_frame.py` |
-| Isaac Sim tab | isaac-sim container | the launch line with `ENV_USD` (step 1 below) |
+| Isaac Sim tab | isaac-sim container | the launch line with `ENV_USD` (step 3 below) |
 | Interfaces · Commander · Cockpit tabs | robot container | unchanged — [RUNBOOK §A2–A4](../docs/RUNBOOK.md) |
 
 ## Run it
 
-Start from a cold laptop: `~/AirStack-starling-max2/tools/sim_terminals.sh` opens the four tabs. Paths below are relative to this folder (`cd ~/AirStack-starling-max2/localisation`).
+Every command, from a cold laptop. Pick a new run name each time (`sim_site_run3`, `sim_site_run4`, …) and use it in steps 7 and 9.
 
-| Step | Where | Command | Expect |
-|---|---|---|---|
-| 0 | laptop | `scripts/sim_resources_watch.sh results/site_ladder/res_$(date +%m%d).log` | one line per second; `WIFI-ALERT` if the WiFi firmware crashes ([why](../docs/TROUBLESHOOTING.md#simulation-isaac-sim--px4-sitl--mavros)) |
-| 1 | Isaac Sim tab | the tab's printed line with `ENV_USD=/isaac-sim/.local/share/ov/data/scenes/construction_site/construction_site_full.usdc ENABLE_CAMERA=true CAMERA_DRONES=drone_1` in front | `Ready for takeoff!` ×3 (the stage takes ~90 s longer) |
-| 2 | Interfaces, Commander tabs | RUNBOOK §A2, §A3 with `scenario:=random_goals` | Basestation Studio on `:8765` |
-| 3 | laptop | `scripts/slam_up.sh` | `tracker ready`, status line ≥ 10 Hz, SLAM Studio opens on `:8766`. First time only: Layouts → Import → `foxglove/cuvslam_slam_view.json` |
-| 4 | exploration container | `./docker/run.sh`, then `scripts/record_sim_bag.sh <run>` (a new name each run) | `Recording...` |
-| 5 | Cockpit tab | takeoff → start → ~3 min → hold → land (RUNBOOK §A4) | `landed, disarmed` ×3; then Ctrl-C the recorder |
-| 6 | laptop | `scripts/score_run.sh <run> 1` | `results/bags/<run>/cuvslam_drone_1_vs_ulog.json` + `cuvslam_drone_1_diag.png` |
-| 7 | laptop | Ctrl-C in the `slam_up.sh` terminal (= `scripts/slam_down.sh`), then RUNBOOK shutdown | SLAM Studio closes, container removed |
+**1 · Laptop terminal — open the four tabs** (starts the containers if needed)
+```bash
+cd ~/AirStack-starling-max2 && tools/sim_terminals.sh
+```
 
-Lighter world: `construction_site_r40.usdc` (40 m crop) in place of `_full.usdc`. One change at a time for anything new: [VALIDATION.md](scenes/construction_site/VALIDATION.md).
+**2 · New laptop terminal — resource and WiFi watch** (leave it running)
+```bash
+cd ~/AirStack-starling-max2/localisation && scripts/sim_resources_watch.sh results/site_ladder/res_$(date +%m%d).log
+```
+Expect one line per second; `WIFI-ALERT` means the WiFi firmware crashed ([why](../docs/TROUBLESHOOTING.md#simulation-isaac-sim--px4-sitl--mavros)).
+
+**3 · Isaac Sim tab — the sim with the camera, in the construction site** (one line)
+```bash
+ENV_USD=/isaac-sim/.local/share/ov/data/scenes/construction_site/construction_site_full.usdc ENABLE_CAMERA=true CAMERA_DRONES=drone_1 DRONE_USD=/isaac-sim/AirStack/simulation/isaac-sim/assets/robots/starling2max.usd PX4_VEHICLE_MODEL=pegasus_starling2max NUM_ROBOTS=3 SVG_DOMAIN_ID=1 PLAY_SIM_ON_START=true ISAAC_SIM_HEADLESS=false PYTHONPATH="$ISAAC_SIM_PYTHONPATH" /isaac-sim/python.sh /isaac-sim/AirStack/simulation/isaac-sim/launch_scripts/svg_multi_drone_single_domain.py --ext-folder ~/.local/share/ov/data/documents/Kit/shared/exts
+```
+Wait for `Ready for takeoff!` ×3 (about 90 s longer than the flat world). Lighter world: `construction_site_r40.usdc`. Never press Stop/Play in the Isaac window.
+
+**4 · Interfaces tab — MAVROS for the three drones**
+```bash
+./src/svg_ground_control/scripts/launch_sim_interfaces.sh 3
+```
+
+**5 · Commander tab — the swarm commander + Basestation Studio**
+```bash
+ros2 launch svg_ground_control ground_control.launch.py config:=$(ros2 pkg prefix svg_ground_control)/share/svg_ground_control/config/cbf_sim.yaml scenario:=random_goals use_foxglove_studio:=true
+```
+Basestation Studio opens on `ws://localhost:8765`. First time only: import `/root/AirStack/robot/ros_ws/src/svg_ground_control/foxglove/svg_basestation.json`.
+
+**6 · New laptop terminal — the SLAM side** (stays in the foreground; Ctrl-C stops it)
+```bash
+cd ~/AirStack-starling-max2/localisation && scripts/slam_up.sh
+```
+Expect `tracker ready`, a status line at ≥ 10 Hz, and SLAM Studio on `ws://172.31.0.200:8766`. First time only: Layouts → Import from file → `/exploration/foxglove/cuvslam_slam_view.json`.
+
+**7 · New laptop terminal — record the run** (two commands: the second runs inside the container)
+```bash
+cd ~/AirStack-starling-max2/localisation && ./docker/run.sh
+scripts/record_sim_bag.sh sim_site_run3
+```
+
+**8 · Cockpit tab — fly**
+```bash
+ros2 service call /swarm_commander/takeoff std_srvs/srv/Trigger
+```
+Wait for `holding takeoff position` ×3 in the Commander tab (~30 s), then:
+```bash
+ros2 service call /swarm_commander/start std_srvs/srv/Trigger
+```
+Fly about 3 minutes, then:
+```bash
+ros2 service call /swarm_commander/hold std_srvs/srv/Trigger
+ros2 service call /swarm_commander/land std_srvs/srv/Trigger
+```
+Wait for `landed, disarmed` ×3 in the Commander tab. Then press Ctrl-C in the step 7 terminal to close the bag.
+
+**9 · Laptop terminal — score it** (same run name as step 7)
+```bash
+cd ~/AirStack-starling-max2/localisation && scripts/score_run.sh sim_site_run3 1
+```
+Writes `results/bags/sim_site_run3/cuvslam_drone_1_vs_ulog.json` (APE/RPE) and `cuvslam_drone_1_diag.png` (top-down plot).
+
+**10 · Shut down**
+
+Press Ctrl-C in the step 6 terminal (that runs `scripts/slam_down.sh`), then in the Commander, Interfaces and Isaac Sim tabs. Close the Foxglove windows, then:
+```bash
+cd ~/AirStack-starling-max2/AirStack && ./airstack.sh down
+```
+Finally press Ctrl-C in the step 2 watch.
+
+New to a change (a different world, more cameras)? Test one change at a time: [VALIDATION.md](scenes/construction_site/VALIDATION.md).
 
 ## What you should see
 

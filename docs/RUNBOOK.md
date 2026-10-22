@@ -19,7 +19,8 @@
 *(Unfamiliar term? → [GLOSSARY.md](GLOSSARY.md))*
 
 **Prompt rule:** `jeremychia@…$` = laptop · `root@…#` = inside the robot container (the docker
-container that holds the ROS 2 workspace) · `starling2-max…$` = on the drone (adb/ssh).
+container that holds the ROS 2 workspace) · `starling2-max…$` = on the drone (adb/ssh) ·
+`root@…:/exploration#` = the exploration container (camera-world runs — [localisation/README.md](../localisation/README.md)).
 
 **Two ways into the containers.** Pick one per session:
 
@@ -42,7 +43,8 @@ GPU required. Four long-running things, one per tab — Isaac spawn · interface
 commander · cockpit; the panel is the operator view (why: [ARCHITECTURE.md](ARCHITECTURE.md#sim-session-anatomy)).
 
 **What success looks like:** [videos/random_CBF_sim_edited.mp4](../videos/random_CBF_sim_edited.mp4)
-— three Starling 2 Max models flying `random_goals` under the CBF in Isaac Sim, 2026-10-21
+— three Starling 2 Max models flying `random_goals` under the CBF in Isaac Sim, 2026-10-21 ·
+camera world: [localisation/README.md](../localisation/README.md)
 (`cbf_sim.yaml`: 2.0 m/s cruise, cap 4.0, r 0.55, α 2.5; a 47 s excerpt of a 3.5 min run).
 
 ### A0 — open the session (one command)
@@ -65,7 +67,7 @@ DRONE_USD=/isaac-sim/AirStack/simulation/isaac-sim/assets/robots/starling2max.us
 Wait for `Ready for takeoff!` ×3. Leave running.
 
 Variants: no Isaac window → `ISAAC_SIM_HEADLESS=true` · CMU's Iris quad → drop `DRONE_USD=…`
-and `PX4_VEHICLE_MODEL=…` · ZED camera / 72 ms motor lag → [§ Sim launch variants](#sim-launch-variants).
+and `PX4_VEHICLE_MODEL=…` · ZED camera / construction-site world / 72 ms motor lag → [§ Sim launch variants](#sim-launch-variants).
 
 `DRONE_USD` + `PX4_VEHICLE_MODEL` select CMU's sys-ID Starling model and our bind-mounted PX4
 airframe; what in it is real and what is sim-only: [CONFIG.md](CONFIG.md#sim-airframe-starling-2-max-sim-only--10090_pegasus_starling2max) "Sim airframe".
@@ -154,6 +156,9 @@ cd ~/AirStack-starling-max2/AirStack && ./airstack.sh up && ./airstack.sh connec
 → tmux `bringup`: pane 1 = A2 (after `cd ~/AirStack/robot/ros_ws`), pane 2 = A3, pane 3 = A4.
 `Ctrl-b d` detaches; `connect robot` again re-attaches. One-command teleop session, RViz
 fallback and the throw-away shell: [§ Sim launch variants](#sim-launch-variants).
+
+*Optional fifth terminal* (laptop, not a tab — Ctrl-Shift-T is fine): `localisation/scripts/slam_up.sh` after
+`Ready for takeoff!` ×3 starts the SLAM side of a camera-world run ([localisation/README.md](../localisation/README.md)).
 
 ---
 
@@ -502,7 +507,8 @@ the §A1 Isaac spawn line.)*
 |---|---|
 | No Isaac window (lighter) | `ISAAC_SIM_HEADLESS=true` |
 | CMU's Iris quad instead of the Starling | drop `DRONE_USD=…` and `PX4_VEHICLE_MODEL=…` |
-| ZED stereo camera on one drone (costly — skip unless needed) | add `ENABLE_CAMERA=true CAMERA_DRONES=drone_1` in front; size `CAMERA_WIDTH=640 CAMERA_HEIGHT=480` (default since 2026-10-22). The images are visible only from a container on the Isaac network — [TROUBLESHOOTING](TROUBLESHOOTING.md#simulation-isaac-sim--px4-sitl--mavros) |
+| ZED stereo camera on drone_1 (needed for the camera world / stereo VO runs; costs GPU) | add `ENABLE_CAMERA=true CAMERA_DRONES=drone_1` in front; size `CAMERA_WIDTH=640 CAMERA_HEIGHT=480` (default since 2026-10-22). The images are visible only from a container on the Isaac network — [TROUBLESHOOTING](TROUBLESHOOTING.md#simulation-isaac-sim--px4-sitl--mavros) |
+| Construction-site world (textured — stereo VO needs it) | add `ENV_USD=…/construction_site_full.usdc` (`_r40.usdc` = lighter 40 m crop) plus the ZED row's env in front; the stage takes ~90 s longer. Isaac start/stop has crashed the laptop's WiFi firmware ([TROUBLESHOOTING](TROUBLESHOOTING.md#simulation-isaac-sim--px4-sitl--mavros)) — run `localisation/scripts/sim_resources_watch.sh`. Full path, install, SLAM side, scoring: [localisation/README.md](../localisation/README.md) |
 | CMU's measured 72 ms motor lag (experiments only — it tumbles the attitude loop) | add `STARLING_MOTOR_TAU=0.072` in front |
 
 **tmux instead of Terminator.** Same commands, different windows. Laptop:

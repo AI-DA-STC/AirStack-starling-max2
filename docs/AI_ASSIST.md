@@ -39,6 +39,11 @@ Each of these cost an afternoon to learn. Ask for them by name.
 6. **Live parameters before file edits.** Most commander gains and all PX4 parameters can be
    set live (`ros2 param set /swarm_commander …`, MAVROS `param/set`). Sweep first, write the
    winning value into the YAML or airframe after. Ledger #10 was a five-setting sweep in hover.
+7. **"Score the run."** After a camera-world flight, `localisation/scripts/score_run.sh <run> 1` (laptop;
+   isaac-sim and exploration containers up) writes APE/RPE and a top-down plot to
+   `localisation/results/bags/<run>/`. The pipeline is drawn in [localisation/README.md](../localisation/README.md).
+8. **"One change per step."** For a heavy sim change (new world, more cameras), ask for the validation ladder:
+   one change, one pass test, stop and report. [VALIDATION.md](../localisation/scenes/construction_site/VALIDATION.md).
 
 ## 3 · How to ask so it stays safe
 
@@ -65,6 +70,8 @@ Each of these cost an afternoon to learn. Ask for them by name.
 | Run `test/functional_*.py` with the real stack up | they publish fake odometry on live topics — iron rule 4 |
 | Edit files under `~/AirStack` (the raw CMU clone) | nothing runs from there; the live tree is `~/AirStack-starling-max2/AirStack` |
 | Treat a commander log line as proof of a hardware state | iron rules 2 and 5: QGC decides armed/disarmed, ACKs are not arming |
+| Start or stop Isaac with nothing watching the laptop's WiFi | Isaac start/stop crashed the WiFi firmware twice (2026-10-22) and dropped the remote desktop. Keep `localisation/scripts/sim_resources_watch.sh` running ([TROUBLESHOOTING](TROUBLESHOOTING.md#simulation-isaac-sim--px4-sitl--mavros)) |
+| Call a sim VO score "ground truth" | the reference is PX4's EKF2 on simulated GPS; say "vs EKF2" (the run records do) |
 
 ## 5 · Known limits
 

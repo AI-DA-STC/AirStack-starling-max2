@@ -161,6 +161,9 @@ workspace sourced; `Ctrl-b` + arrow moves between panes, `Ctrl-b d` detaches, th
 survives closing the terminal. Put each long-running launch in its own tab or pane. The old
 per-step `connect robot --command=bash` still works for a throw-away shell.
 
+**Optional camera world (sim stereo VO).** The construction-site files and the exploration docker image are
+**not in git** and exist only on the lab laptop. Install and prerequisites: [localisation/README.md](../localisation/README.md).
+
 **What `bws` / `sws` are, and when you need them:** inside the container, `bws` builds the
 workspace and `sws` sources the result into that shell. The first ever build takes ~4 min.
 After that you rebuild **only after NEW entry points or files** (e.g. right after a snapshot

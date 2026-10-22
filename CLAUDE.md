@@ -29,6 +29,7 @@ part** ([MILESTONES.md](docs/MILESTONES.md) §3c). Delta and the ordered re-do l
 | [SETUP.md](docs/SETUP.md) | new-laptop install + first build + the normal-looking error messages (moved from README 2026-10-21) |
 | [ARCHITECTURE.md](docs/ARCHITECTURE.md) | one-page primer, flight-lab network, whose document is whose (moved from README 2026-10-21) |
 | [tools/](tools/) | `sim_terminals.sh` + `sim_tab.sh` (the sim session), `make_milestones_doc.py` (legacy .docx export) |
+| [localisation/](localisation/README.md) | camera-world sim runs: construction-site world (`ENV_USD`), stereo VO with cuVSLAM, scoring vs the PX4 ulog, validation ladder — **sim-only exploration, nothing flies**. A sibling of `AirStack/` (git subtree, 2026-10-23), never inside CMU's tree |
 
 Architecture pictures: `pictures/Starling_Airstack_architecture.png` (control flow — drawn for
 the previous branch; README lists the four corrections: `./mocap.sh`, `px4_interface` box,

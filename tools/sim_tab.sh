@@ -25,6 +25,10 @@ PYTHONPATH="$ISAAC_SIM_PYTHONPATH" \
   --ext-folder ~/.local/share/ov/data/documents/Kit/shared/exts
 
 Wait for "Ready for takeoff!" x3. NEVER press Stop/Play in the Isaac window (TROUBLESHOOTING).
+
+Camera world (optional, stereo VO runs - localisation/README.md): put this in front of the line above:
+ENV_USD=/isaac-sim/.local/share/ov/data/scenes/construction_site/construction_site_full.usdc ENABLE_CAMERA=true CAMERA_DRONES=drone_1
+Keep localisation/scripts/sim_resources_watch.sh running on the laptop (Isaac start/stop has crashed the WiFi firmware).
 TXT
 ;;
 interfaces) cat <<'TXT'

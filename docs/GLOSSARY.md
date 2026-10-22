@@ -116,7 +116,24 @@ from every doc; add a term here rather than re-explaining it inline elsewhere.
   the fence boxes. Together they replace RViz as the operator view. [BASESTATION.md](BASESTATION.md).
 - **Foxglove bridge** — the ROS 2 node (`foxglove_bridge`, port 8765) that serves every topic
   and service on the domain to Foxglove Studio over a WebSocket, so Studio never has to speak
-  DDS. Started by the commander launch; Studio connects to `ws://localhost:8765`.
+  DDS. Started by the commander launch; Studio connects to `ws://localhost:8765`. Camera-world
+  runs start a **second** bridge in the exploration container on `ws://172.31.0.200:8766`
+  (SLAM Studio); the commander's stays on 8765 (Basestation Studio).
+- **cuVSLAM** — NVIDIA's GPU visual-SLAM library. Our node (`localisation/nodes/`) runs it
+  stereo-only on drone_1's simulated ZED camera. [localisation/README.md](../localisation/README.md).
+- **Visual odometry (VO) / VIO** — VO = the drone's pose from camera frames alone; VIO adds an
+  IMU (not yet: the node has no IMU input). Sim scores are against PX4's EKF2, a reference, not ground truth.
+- **APE / RPE** — absolute / relative pose error from the `evo` tool after SE(3) alignment: APE =
+  how far the whole path is off, RPE per 1 m = how fast it drifts.
+- **`ENV_USD`** — launcher env var that loads a world USD instead of Pegasus' flat grid;
+  `construction_site_full.usdc` is the default, `_r40.usdc` the lighter 40 m crop.
+- **Construction-site world** — the lab's UE4 construction site flattened for Isaac; textured, so
+  stereo VO has structure to track. Files exist only on the lab laptop (not in git).
+- **Exploration container** — `localisation-exploration`, joined to the Isaac network
+  (`--network container:isaac-sim`); runs the cuVSLAM node, the 8766 bridge and the bag recorder.
+  `slam_up.sh` starts it from the optional fifth (laptop) terminal; prompt `root@…:/exploration#`.
+- **Validation ladder** — the one-change-per-step sim checks in
+  [VALIDATION.md](../localisation/scenes/construction_site/VALIDATION.md), each with a pass test.
 - **Swarm commander** — the ground-side node (`swarm_commander`) that owns every drone's
   flight state, publishes their setpoints, enforces the fence and the CBF, and exposes the
   `takeoff`/`start`/`hold`/`land`/`reset_fence` services. Everything the operator commands
@@ -145,7 +162,8 @@ from every doc; add a term here rather than re-explaining it inline elsewhere.
   tab** (one MAVROS per drone), **Commander tab** (the commander + the panel), **Cockpit tab**
   (the takeoff/start/hold/land service calls). Each tab is already inside its container and
   prints its commands (`tools/sim_tab.sh <role>`); a tab stays open after its shell exits
-  because the script ends in `exec bash`. The primary way to run RUNBOOK §A.
+  because the script ends in `exec bash`. The primary way to run RUNBOOK §A. Camera-world runs
+  add an optional fifth *laptop* terminal for the SLAM side (`slam_up.sh`), not a tab.
 - **tmux `bringup` session** — the container tmux session `./airstack.sh connect robot`
   attaches to: 8 panes, pane 0 top-left for the main launch, 1–7 pre-sourced shells. It
   survives closing the terminal. The way into the container for real-drone sessions

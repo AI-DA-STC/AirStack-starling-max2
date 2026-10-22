@@ -167,7 +167,27 @@ right: **A1 = Isaac Sim tab, A2 = Interfaces tab, A3 = Commander tab, A4 = Cockp
 Whatever you start lives in its tab — keep the window open. (A tab stays open even if its
 shell exits, because `sim_tab.sh` ends in `exec bash`.)
 
-**Two networks in a sim session (2026-10-22).** The isaac-sim container sits on its own docker network (`airstack_airstack_network`, fixed IP 172.31.0.200); the robot and GCS containers use the host network. PX4 SITL ↔ MAVROS is MAVLink over UDP to that IP and works across the boundary. Isaac's own ROS 2 topics (`/clock`, the ZED stereo images and `camera_info`, the lidar) are DDS and are **only discoverable from inside the Isaac network** — the robot container never sees them. Sensor-processing nodes for the sim (cuVSLAM, ground-truth scoring) therefore run in a container joined to the Isaac network namespace (`--network container:isaac-sim`), and the commander keeps flying on MAVROS as before. Details and the open fix: [TROUBLESHOOTING.md](TROUBLESHOOTING.md#simulation-isaac-sim--px4-sitl--mavros).
+**Two networks in a sim session (2026-10-22).**
+
+<!-- F1 · 2026-10-23 · summarises: TROUBLESHOOTING "ENABLE_CAMERA … no /clock" row, localisation/docker/up.sh, localisation/scripts/slam_up.sh, localisation/scripts/foxglove_bridge_isaac.sh · redraw if: ports 8765/8766, IP 172.31.0.200, container names, or the DDS fix in MILESTONES §6 change -->
+```mermaid
+flowchart LR
+  subgraph isaacnet["docker network airstack_airstack_network · 172.31.0.x"]
+    ISAAC["isaac-sim container<br/>Isaac Sim + PX4 SITL ×3<br/>ZED stereo on drone_1"]
+    SLAM["exploration container<br/>(--network container:isaac-sim)<br/>cuVSLAM node · bridge :8766 · bag record"]
+    ISAAC -- "images + camera_info (DDS)" --> SLAM
+  end
+  subgraph hostnet["host network"]
+    ROBOT["robot container<br/>MAVROS ×3 · swarm commander · bridge :8765"]
+  end
+  ISAAC -- "MAVLink/UDP: crosses" --> ROBOT
+  ISAAC -. "DDS: does NOT cross" .-> ROBOT
+  SLAM --> FGA["SLAM Studio<br/>ws://172.31.0.200:8766<br/>odometry · TF · debug image"]
+  ROBOT --> FGB["Basestation Studio<br/>ws://localhost:8765<br/>SVG Basestation panel"]
+```
+*Two bridges because DDS never crosses the docker boundary; MAVLink does.* What you should see: SLAM Studio
+shows `/drone_1/cuvslam/debug_image`, Basestation Studio shows the panel. Running it:
+[localisation/README.md](../localisation/README.md) · open fix: [TROUBLESHOOTING.md](TROUBLESHOOTING.md#simulation-isaac-sim--px4-sitl--mavros).
 
 ### Workspace build and sourcing
 

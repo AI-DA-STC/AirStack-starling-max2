@@ -22,6 +22,7 @@ before the next one are the box at the top of MILESTONES.
 | **fix something** | [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) — symptom → fix |
 | **see what is proven and what is next** | [MILESTONES.md](docs/MILESTONES.md) |
 | **work with the AI assistant on this repo** | [AI_ASSIST.md](docs/AI_ASSIST.md) |
+| **fly in the construction site with the camera** (sim stereo VO) | [localisation/README.md](localisation/README.md) |
 
 ## What we have achieved so far
 
@@ -30,6 +31,7 @@ before the next one are the box at the top of MILESTONES.
 | <img src="assets/starling_goal_tracking_drone_8x.gif" alt="Starling Max 2 flying commanded waypoints, drone view" width="400"><br>**2026-09-03 · autonomous waypoint flight, real drone.** No sticks: mocap → PX4 → commander → goals, geofence, landing, auto-disarm. [full video](videos/Starling_goal_tracking_drone.mp4) | <img src="assets/starling_goal_tracking_rviz_4x.gif" alt="RViz view of the same flight" width="400"><br>**The same flight as the software saw it.** [full video](videos/Starling_goal_tracking_RVIZ.mp4) · operator view is now the Foxglove panel |
 | <img src="assets/random_cbf_sim_8fps.gif" alt="Three simulated Starlings under the CBF collision filter" width="400"><br>**2026-10-21 · random goals under the CBF, Isaac Sim.** Three Starling 2 Max models cross at 2 m/s; the collision filter alone keeps them apart. Sim only. [full video](videos/random_CBF_sim_edited.mp4) | <img src="assets/teleop_with_geofence.gif" alt="Gamepad teleop braking at the geofence" width="400"><br>**Gamepad teleop with the braking geofence** (previous branch, sim). [full video](videos/teleop_with_geofence.mp4) |
 | <img src="assets/takeoff_and_land.gif" alt="Takeoff and landing under software control" width="400"><br>**2026-09-01 · first offboard takeoff + landing**, position from mocap only, kill switch verified in flight. [full video](videos/takeoff_and_land.mp4) | <img src="assets/rviz_tracks_hand_carried_drone.gif" alt="RViz tracking a hand-carried drone" width="400"><br>**The mocap chain proven by hand-carry** before any flight. [full video](videos/SVG_check_if_rviz_moves_by_movingdrone_manually.mp4) |
+| <img src="assets/randompos_construction_10fps.gif" alt="Left: cuVSLAM debug image from drone_1 in the construction site; right: the three drones in the Basestation 3D view" width="400"><br>**2026-10-23 · random goals in the construction site, Isaac Sim.** Stereo VO (cuVSLAM) tracking on drone_1 while three Starlings fly. Sim only; scored run and numbers: [localisation/README.md](localisation/README.md) | <img src="pictures/drones_in_construction_site.jpg" alt="Three simulated Starling 2 Max drones over the sand in the construction-site world" width="400"><br>**The construction-site world.** The lab's UE4 site, flattened for Isaac and loaded with `ENV_USD`. [What it is](localisation/scenes/construction_site/README.md) |
 
 Milestone by milestone, with evidence: [MILESTONES.md](docs/MILESTONES.md) §3c. History of the previous branch: [MIGRATION.md](docs/MIGRATION.md) §12.
 
@@ -62,6 +64,7 @@ Milestone by milestone, with evidence: [MILESTONES.md](docs/MILESTONES.md) §3c.
 | [MIGRATION.md](docs/MIGRATION.md) | Branch history and what changed |
 | [GLOSSARY.md](docs/GLOSSARY.md) · [AI_ASSIST.md](docs/AI_ASSIST.md) | Terms · working with the assistant |
 | [CLAUDE.md](CLAUDE.md) | The assistant's brief and the iron rules |
+| [localisation/](localisation/README.md) | Camera-world sim runs: construction-site world, stereo VO (cuVSLAM), scoring. A sibling of `AirStack/`, never inside CMU's tree |
 | [AirStack/](AirStack/) | CMU AirStack snapshot, `yikuan/SVG_ground_control_dev` @ `b21d28c` ([its README](AirStack/README.md)) |
 | [`starling_1_indoor_params.params`](starling_1_indoor_params.params) | The drone's parameter set (QGC export) |
 | [tools/](tools/) · [patches/](patches/) | Sim session launcher, docs checker · our bug-fix patches |

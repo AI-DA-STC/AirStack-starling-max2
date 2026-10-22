@@ -502,7 +502,7 @@ the §A1 Isaac spawn line.)*
 |---|---|
 | No Isaac window (lighter) | `ISAAC_SIM_HEADLESS=true` |
 | CMU's Iris quad instead of the Starling | drop `DRONE_USD=…` and `PX4_VEHICLE_MODEL=…` |
-| ZED camera on one drone (costly — skip unless needed) | add `ENABLE_CAMERA=true CAMERA_DRONES=drone_3` in front |
+| ZED stereo camera on one drone (costly — skip unless needed) | add `ENABLE_CAMERA=true CAMERA_DRONES=drone_1` in front; size `CAMERA_WIDTH=640 CAMERA_HEIGHT=480` (default since 2026-10-22). The images are visible only from a container on the Isaac network — [TROUBLESHOOTING](TROUBLESHOOTING.md#simulation-isaac-sim--px4-sitl--mavros) |
 | CMU's measured 72 ms motor lag (experiments only — it tumbles the attitude loop) | add `STARLING_MOTOR_TAU=0.072` in front |
 
 **tmux instead of Terminator.** Same commands, different windows. Laptop:

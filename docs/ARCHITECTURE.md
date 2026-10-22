@@ -167,6 +167,8 @@ right: **A1 = Isaac Sim tab, A2 = Interfaces tab, A3 = Commander tab, A4 = Cockp
 Whatever you start lives in its tab — keep the window open. (A tab stays open even if its
 shell exits, because `sim_tab.sh` ends in `exec bash`.)
 
+**Two networks in a sim session (2026-10-22).** The isaac-sim container sits on its own docker network (`airstack_airstack_network`, fixed IP 172.31.0.200); the robot and GCS containers use the host network. PX4 SITL ↔ MAVROS is MAVLink over UDP to that IP and works across the boundary. Isaac's own ROS 2 topics (`/clock`, the ZED stereo images and `camera_info`, the lidar) are DDS and are **only discoverable from inside the Isaac network** — the robot container never sees them. Sensor-processing nodes for the sim (cuVSLAM, ground-truth scoring) therefore run in a container joined to the Isaac network namespace (`--network container:isaac-sim`), and the commander keeps flying on MAVROS as before. Details and the open fix: [TROUBLESHOOTING.md](TROUBLESHOOTING.md#simulation-isaac-sim--px4-sitl--mavros).
+
 ### Workspace build and sourcing
 
 *(RUNBOOK §A2)* You are already in `~/AirStack/robot/ros_ws`; the container's bashrc sourced the workspace

@@ -1,11 +1,20 @@
-[INFO] [1792663413.412597478] [foxglove_bridge]: Starting foxglove_bridge (jazzy, 3.2.6@)
-[INFO] [1792663413.414546895] [foxglove_bridge]: Server listening on port 8766
-[INFO] [1792663413.414996324] [foxglove_bridge]: Advertising new channel 1 for topic "/clock"
-[INFO] [1792663413.920649252] [foxglove_bridge]: Advertising new channel 2 for topic "/drone_1/sensors/front_stereo/right/image_rect"
-[INFO] [1792663413.920721057] [foxglove_bridge]: Advertising new channel 3 for topic "/drone_1/sensors/front_stereo/left/image_rect"
-[INFO] [1792663413.921005956] [foxglove_bridge]: Advertising new channel 4 for topic "/drone_1/sensors/front_stereo/right/camera_info"
-[INFO] [1792663413.921047436] [foxglove_bridge]: Advertising new channel 5 for topic "/drone_1/sensors/front_stereo/left/camera_info"
-[INFO] [1792663414.421502331] [foxglove_bridge]: Advertising new channel 6 for topic "/drone_1/cuvslam/status"
-[INFO] [1792663414.422006709] [foxglove_bridge]: Advertising new channel 7 for topic "/drone_1/cuvslam/odometry"
-[INFO] [1792663414.422121900] [foxglove_bridge]: Advertising new channel 8 for topic "/drone_1/cuvslam/path"
-[INFO] [1792663414.422135034] [foxglove_bridge]: Advertising new channel 9 for topic "/drone_1/cuvslam/debug_image"
+[INFO] [1792666210.423185929] [foxglove_bridge]: Starting foxglove_bridge (jazzy, 3.2.6@)
+[INFO] [1792666210.426173534] [foxglove_bridge]: Server listening on port 8766
+[INFO] [1792666210.427626982] [foxglove_bridge]: Advertising new channel 1 for topic "/clock"
+[INFO] [1792666210.939590752] [foxglove_bridge]: Advertising new channel 2 for topic "/drone_1/sensors/front_stereo/right/image_rect"
+[INFO] [1792666210.939706172] [foxglove_bridge]: Advertising new channel 3 for topic "/drone_1/sensors/front_stereo/left/image_rect"
+[INFO] [1792666210.940546037] [foxglove_bridge]: Advertising new channel 4 for topic "/drone_1/sensors/front_stereo/right/camera_info"
+[INFO] [1792666210.940585249] [foxglove_bridge]: Advertising new channel 5 for topic "/drone_1/sensors/front_stereo/left/camera_info"
+[INFO] [1792666211.441149771] [foxglove_bridge]: Advertising new channel 6 for topic "/drone_1/cuvslam/status"
+[INFO] [1792666211.441934819] [foxglove_bridge]: Advertising new channel 7 for topic "/drone_1/cuvslam/odometry"
+[INFO] [1792666211.442130944] [foxglove_bridge]: Advertising new channel 8 for topic "/drone_1/cuvslam/path"
+[INFO] [1792666211.442153488] [foxglove_bridge]: Advertising new channel 9 for topic "/drone_1/cuvslam/debug_image"
+[INFO] [1792666277.945833529] [foxglove_bridge]: received connection graph subscribe request
+[INFO] [1792666278.433237154] [foxglove_bridge]: publishing connection graph
+[INFO] [1792666279.457106490] [foxglove_bridge]: publishing connection graph
+[INFO] [1792666279.458264429] [foxglove_bridge]: Client ID 1 is advertising "/move_base_simple/goal" (geometry_msgs/PoseStamped) on channel 1 with encoding "cdr"
+[INFO] [1792666279.460767515] [foxglove_bridge]: Client ID 1 is advertising "/clicked_point" (geometry_msgs/PointStamped) on channel 2 with encoding "cdr"
+[INFO] [1792666279.463041647] [foxglove_bridge]: Client ID 1 is advertising "/initialpose" (geometry_msgs/PoseWithCovarianceStamped) on channel 3 with encoding "cdr"
+[INFO] [1792666279.542440011] [foxglove_bridge]: received subscribe request for channel 9 from client 1 (sink 1)
+[INFO] [1792666279.545894309] [foxglove_bridge]: created ROS subscription on /drone_1/cuvslam/debug_image (sensor_msgs/msg/Image) successfully for channel 9 (client 1, sink 1)
+[INFO] [1792666279.957852281] [foxglove_bridge]: publishing connection graph

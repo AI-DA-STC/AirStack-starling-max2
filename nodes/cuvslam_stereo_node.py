@@ -27,7 +27,8 @@ from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
 from message_filters import Subscriber, ApproximateTimeSynchronizer
 from sensor_msgs.msg import Image, CameraInfo
 from nav_msgs.msg import Odometry, Path
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, TransformStamped
+from tf2_ros import TransformBroadcaster, StaticTransformBroadcaster
 from std_msgs.msg import String
 from scipy.spatial.transform import Rotation as R
 
@@ -115,6 +116,10 @@ class CuvslamStereoNode(Node):
         self.pub_odom = self.create_publisher(Odometry, f"/{drone}/cuvslam/odometry", 10)
         self.pub_status = self.create_publisher(String, f"/{drone}/cuvslam/status", 10)
         self.pub_path = self.create_publisher(Path, f"/{drone}/cuvslam/path", 5)
+        # TF so Foxglove/rviz always know the frames: odom -> base (dynamic) and base -> camera_left (static, optical)
+        self.tf_dyn = TransformBroadcaster(self)
+        self.tf_static = StaticTransformBroadcaster(self)
+        self._cam_static_sent = False
         self.pub_debug = self.create_publisher(Image, f"/{drone}/cuvslam/debug_image", 5)
         self.debug_on = bool(self.get_parameter("publish_debug_image").value)
         self.path = Path(); self.path.header.frame_id = self.odom_frame
@@ -212,6 +217,18 @@ class CuvslamStereoNode(Node):
         od.pose.pose.orientation.x, od.pose.pose.orientation.y, od.pose.pose.orientation.z, od.pose.pose.orientation.w = map(float, q_b)
         # covariance from cuVSLAM is not exposed in this first version; leave unknown (0)
         self.pub_odom.publish(od)
+
+        tf = TransformStamped(); tf.header = od.header; tf.child_frame_id = self.child_frame
+        tf.transform.translation.x, tf.transform.translation.y, tf.transform.translation.z = map(float, t_b)
+        tf.transform.rotation = od.pose.pose.orientation
+        self.tf_dyn.sendTransform(tf)
+        if not self._cam_static_sent and self.left_info is not None:
+            # base (FLU) -> left camera optical frame (RDF): the inverse of R_BODY_FROM_OPT, zero offset
+            q = R.from_matrix(R_BODY_FROM_OPT).as_quat()
+            st = TransformStamped(); st.header.stamp = od.header.stamp
+            st.header.frame_id = self.child_frame; st.child_frame_id = self.left_info.header.frame_id
+            st.transform.rotation.x, st.transform.rotation.y, st.transform.rotation.z, st.transform.rotation.w = map(float, q)
+            self.tf_static.sendTransform(st); self._cam_static_sent = True
 
         ps = PoseStamped(); ps.header = od.header; ps.pose = od.pose.pose
         self.path.poses.append(ps)

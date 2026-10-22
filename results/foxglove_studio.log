@@ -1,22 +1,22 @@
-[410:1022/100354.662244:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[466:1022/105032.217092:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
 Could not set app as handler for foxglove://
 Checking for beta autoupdate feature for deb/rpm distributions
 Found package-type: deb
-Gtk-Message: 10:03:55.080: Failed to load module "canberra-gtk-module"
-Gtk-Message: 10:03:55.081: Failed to load module "canberra-gtk-module"
-[410:1022/100355.094462:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
-[410:1022/100355.094524:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
-[410:1022/100355.096147:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
-[410:1022/100355.112085:ERROR:dbus/object_proxy.cc:573] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
-[410:1022/100355.112237:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
-[410:1022/100355.112277:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
-[410:1022/100355.112286:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
-[410:1022/100355.112294:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
-[410:1022/100355.112303:ERROR:dbus/object_proxy.cc:573] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
-[410:1022/100355.152607:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
-[410:1022/100355.177399:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
-[410:1022/100355.209370:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
-[410:1022/100355.947709:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+Gtk-Message: 10:50:32.693: Failed to load module "canberra-gtk-module"
+Gtk-Message: 10:50:32.694: Failed to load module "canberra-gtk-module"
+[466:1022/105032.714002:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[466:1022/105032.714110:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[466:1022/105032.716211:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[466:1022/105032.736874:ERROR:dbus/object_proxy.cc:573] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[466:1022/105032.737081:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[466:1022/105032.737127:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[466:1022/105032.737139:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[466:1022/105032.737148:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[466:1022/105032.737158:ERROR:dbus/object_proxy.cc:573] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[466:1022/105032.778314:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[466:1022/105032.812316:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[466:1022/105032.853834:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[466:1022/105033.821170:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
 /usr/bin/xdg-open: 882: x-www-browser: not found
 /usr/bin/xdg-open: 882: firefox: not found
 /usr/bin/xdg-open: 882: iceweasel: not found
@@ -33,7 +33,8 @@ Gtk-Message: 10:03:55.081: Failed to load module "canberra-gtk-module"
 /usr/bin/xdg-open: 882: links: not found
 /usr/bin/xdg-open: 882: lynx: not found
 /usr/bin/xdg-open: 882: w3m: not found
-xdg-open: no method available for opening 'https://app.foxglove.dev/activate?user_code=HLBC-CGCM'
+xdg-open: no method available for opening 'https://app.foxglove.dev/activate?user_code=WSGF-MNQS'
+[466:1022/105038.780627:ERROR:ui/gfx/x/atom_cache.cc:232] Add chromium/from-privileged to kAtomsToCache
 /usr/bin/xdg-open: 882: x-www-browser: not found
 /usr/bin/xdg-open: 882: firefox: not found
 /usr/bin/xdg-open: 882: iceweasel: not found
@@ -50,12 +51,374 @@ xdg-open: no method available for opening 'https://app.foxglove.dev/activate?use
 /usr/bin/xdg-open: 882: links: not found
 /usr/bin/xdg-open: 882: lynx: not found
 /usr/bin/xdg-open: 882: w3m: not found
-xdg-open: no method available for opening 'https://app.foxglove.dev/activate?user_code=LRCJ-QZWC'
-817:1022/100442.893940:ERROR:dbus/object_proxy.cc:573] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
-[817:1022/100442.894208:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
-[817:1022/100442.894243:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
-[817:1022/100442.894253:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
-[817:1022/100442.894259:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
-[817:1022/100442.894266:ERROR:dbus/object_proxy.cc:573] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
-Checking for beta autoupdate feature for deb/rpm distributions
-Found package-type: deb
+xdg-open: no method available for opening 'https://app.foxglove.dev/activate?user_code=WSGF-MNQS'
+/usr/bin/xdg-open: 882: x-www-browser: not found
+/usr/bin/xdg-open: 882: firefox: not found
+/usr/bin/xdg-open: 882: iceweasel: not found
+/usr/bin/xdg-open: 882: seamonkey: not found
+/usr/bin/xdg-open: 882: mozilla: not found
+/usr/bin/xdg-open: 882: epiphany: not found
+/usr/bin/xdg-open: 882: konqueror: not found
+/usr/bin/xdg-open: 882: chromium: not found
+/usr/bin/xdg-open: 882: chromium-browser: not found
+/usr/bin/xdg-open: 882: google-chrome: not found
+/usr/bin/xdg-open: 882: www-browser: not found
+/usr/bin/xdg-open: 882: links2: not found
+/usr/bin/xdg-open: 882: elinks: not found
+/usr/bin/xdg-open: 882: links: not found
+/usr/bin/xdg-open: 882: lynx: not found
+/usr/bin/xdg-open: 882: w3m: not found
+xdg-open: no method available for opening 'https://app.foxglove.dev/activate?user_code=WSGF-MNQS'
+/usr/bin/xdg-open: 882: x-www-browser: not found
+/usr/bin/xdg-open: 882: firefox: not found
+/usr/bin/xdg-open: 882: iceweasel: not found
+/usr/bin/xdg-open: 882: seamonkey: not found
+/usr/bin/xdg-open: 882: mozilla: not found
+/usr/bin/xdg-open: 882: epiphany: not found
+/usr/bin/xdg-open: 882: konqueror: not found
+/usr/bin/xdg-open: 882: chromium: not found
+/usr/bin/xdg-open: 882: chromium-browser: not found
+/usr/bin/xdg-open: 882: google-chrome: not found
+/usr/bin/xdg-open: 882: www-browser: not found
+/usr/bin/xdg-open: 882: links2: not found
+/usr/bin/xdg-open: 882: elinks: not found
+/usr/bin/xdg-open: 882: links: not found
+/usr/bin/xdg-open: 882: lynx: not found
+/usr/bin/xdg-open: 882: w3m: not found
+xdg-open: no method available for opening 'https://app.foxglove.dev/activate?user_code=WSGF-MNQS'
+/usr/bin/xdg-open: 882: x-www-browser: not found
+/usr/bin/xdg-open: 882: firefox: not found
+/usr/bin/xdg-open: 882: iceweasel: not found
+/usr/bin/xdg-open: 882: seamonkey: not found
+/usr/bin/xdg-open: 882: mozilla: not found
+/usr/bin/xdg-open: 882: epiphany: not found
+/usr/bin/xdg-open: 882: konqueror: not found
+/usr/bin/xdg-open: 882: chromium: not found
+/usr/bin/xdg-open: 882: chromium-browser: not found
+/usr/bin/xdg-open: 882: google-chrome: not found
+/usr/bin/xdg-open: 882: www-browser: not found
+/usr/bin/xdg-open: 882: links2: not found
+/usr/bin/xdg-open: 882: elinks: not found
+/usr/bin/xdg-open: 882: links: not found
+/usr/bin/xdg-open: 882: lynx: not found
+/usr/bin/xdg-open: 882: w3m: not found
+xdg-open: no method available for opening 'https://app.foxglove.dev/activate?user_code=WSGF-MNQS'
+/usr/bin/xdg-open: 882: x-www-browser: not found
+/usr/bin/xdg-open: 882: firefox: not found
+/usr/bin/xdg-open: 882: iceweasel: not found
+/usr/bin/xdg-open: 882: seamonkey: not found
+/usr/bin/xdg-open: 882: mozilla: not found
+/usr/bin/xdg-open: 882: epiphany: not found
+/usr/bin/xdg-open: 882: konqueror: not found
+/usr/bin/xdg-open: 882: chromium: not found
+/usr/bin/xdg-open: 882: chromium-browser: not found
+/usr/bin/xdg-open: 882: google-chrome: not found
+/usr/bin/xdg-open: 882: www-browser: not found
+/usr/bin/xdg-open: 882: links2: not found
+/usr/bin/xdg-open: 882: elinks: not found
+/usr/bin/xdg-open: 882: links: not found
+/usr/bin/xdg-open: 882: lynx: not found
+/usr/bin/xdg-open: 882: w3m: not found
+xdg-open: no method available for opening 'https://app.foxglove.dev/activate?user_code=WSGF-MNQS'
+/usr/bin/xdg-open: 882: x-www-browser: not found
+/usr/bin/xdg-open: 882: firefox: not found
+/usr/bin/xdg-open: 882: iceweasel: not found
+/usr/bin/xdg-open: 882: seamonkey: not found
+/usr/bin/xdg-open: 882: mozilla: not found
+/usr/bin/xdg-open: 882: epiphany: not found
+/usr/bin/xdg-open: 882: konqueror: not found
+/usr/bin/xdg-open: 882: chromium: not found
+/usr/bin/xdg-open: 882: chromium-browser: not found
+/usr/bin/xdg-open: 882: google-chrome: not found
+/usr/bin/xdg-open: 882: www-browser: not found
+/usr/bin/xdg-open: 882: links2: not found
+/usr/bin/xdg-open: 882: elinks: not found
+/usr/bin/xdg-open: 882: links: not found
+/usr/bin/xdg-open: 882: lynx: not found
+/usr/bin/xdg-open: 882: w3m: not found
+xdg-open: no method available for opening 'https://app.foxglove.dev/activate?user_code=WSGF-MNQS'
+/usr/bin/xdg-open: 882: x-www-browser: not found
+/usr/bin/xdg-open: 882: firefox: not found
+/usr/bin/xdg-open: 882: iceweasel: not found
+/usr/bin/xdg-open: 882: seamonkey: not found
+/usr/bin/xdg-open: 882: mozilla: not found
+/usr/bin/xdg-open: 882: epiphany: not found
+/usr/bin/xdg-open: 882: konqueror: not found
+/usr/bin/xdg-open: 882: chromium: not found
+/usr/bin/xdg-open: 882: chromium-browser: not found
+/usr/bin/xdg-open: 882: google-chrome: not found
+/usr/bin/xdg-open: 882: www-browser: not found
+/usr/bin/xdg-open: 882: links2: not found
+/usr/bin/xdg-open: 882: elinks: not found
+/usr/bin/xdg-open: 882: links: not found
+/usr/bin/xdg-open: 882: lynx: not found
+/usr/bin/xdg-open: 882: w3m: not found
+xdg-open: no method available for opening 'https://app.foxglove.dev/activate?user_code=WSGF-MNQS'
+/usr/bin/xdg-open: 882: x-www-browser: not found
+/usr/bin/xdg-open: 882: firefox: not found
+/usr/bin/xdg-open: 882: iceweasel: not found
+/usr/bin/xdg-open: 882: seamonkey: not found
+/usr/bin/xdg-open: 882: mozilla: not found
+/usr/bin/xdg-open: 882: epiphany: not found
+/usr/bin/xdg-open: 882: konqueror: not found
+/usr/bin/xdg-open: 882: chromium: not found
+/usr/bin/xdg-open: 882: chromium-browser: not found
+/usr/bin/xdg-open: 882: google-chrome: not found
+/usr/bin/xdg-open: 882: www-browser: not found
+/usr/bin/xdg-open: 882: links2: not found
+/usr/bin/xdg-open: 882: elinks: not found
+/usr/bin/xdg-open: 882: links: not found
+/usr/bin/xdg-open: 882: lynx: not found
+/usr/bin/xdg-open: 882: w3m: not found
+xdg-open: no method available for opening 'https://app.foxglove.dev/activate?user_code=WSGF-MNQS'
+/usr/bin/xdg-open: 882: x-www-browser: not found
+/usr/bin/xdg-open: 882: firefox: not found
+/usr/bin/xdg-open: 882: iceweasel: not found
+/usr/bin/xdg-open: 882: seamonkey: not found
+/usr/bin/xdg-open: 882: mozilla: not found
+/usr/bin/xdg-open: 882: epiphany: not found
+/usr/bin/xdg-open: 882: konqueror: not found
+/usr/bin/xdg-open: 882: chromium: not found
+/usr/bin/xdg-open: 882: chromium-browser: not found
+/usr/bin/xdg-open: 882: google-chrome: not found
+/usr/bin/xdg-open: 882: www-browser: not found
+/usr/bin/xdg-open: 882: links2: not found
+/usr/bin/xdg-open: 882: elinks: not found
+/usr/bin/xdg-open: 882: links: not found
+/usr/bin/xdg-open: 882: lynx: not found
+/usr/bin/xdg-open: 882: w3m: not found
+xdg-open: no method available for opening 'https://app.foxglove.dev/activate?user_code=WSGF-MNQS'
+/usr/bin/xdg-open: 882: x-www-browser: not found
+/usr/bin/xdg-open: 882: firefox: not found
+/usr/bin/xdg-open: 882: iceweasel: not found
+/usr/bin/xdg-open: 882: seamonkey: not found
+/usr/bin/xdg-open: 882: mozilla: not found
+/usr/bin/xdg-open: 882: epiphany: not found
+/usr/bin/xdg-open: 882: konqueror: not found
+/usr/bin/xdg-open: 882: chromium: not found
+/usr/bin/xdg-open: 882: chromium-browser: not found
+/usr/bin/xdg-open: 882: google-chrome: not found
+/usr/bin/xdg-open: 882: www-browser: not found
+/usr/bin/xdg-open: 882: links2: not found
+/usr/bin/xdg-open: 882: elinks: not found
+/usr/bin/xdg-open: 882: links: not found
+/usr/bin/xdg-open: 882: lynx: not found
+/usr/bin/xdg-open: 882: w3m: not found
+xdg-open: no method available for opening 'https://app.foxglove.dev/activate?user_code=WSGF-MNQS'
+/usr/bin/xdg-open: 882: x-www-browser: not found
+/usr/bin/xdg-open: 882: firefox: not found
+/usr/bin/xdg-open: 882: iceweasel: not found
+/usr/bin/xdg-open: 882: seamonkey: not found
+/usr/bin/xdg-open: 882: mozilla: not found
+/usr/bin/xdg-open: 882: epiphany: not found
+/usr/bin/xdg-open: 882: konqueror: not found
+/usr/bin/xdg-open: 882: chromium: not found
+/usr/bin/xdg-open: 882: chromium-browser: not found
+/usr/bin/xdg-open: 882: google-chrome: not found
+/usr/bin/xdg-open: 882: www-browser: not found
+/usr/bin/xdg-open: 882: links2: not found
+/usr/bin/xdg-open: 882: elinks: not found
+/usr/bin/xdg-open: 882: links: not found
+/usr/bin/xdg-open: 882: lynx: not found
+/usr/bin/xdg-open: 882: w3m: not found
+xdg-open: no method available for opening 'https://app.foxglove.dev/activate?user_code=WSGF-MNQS'
+/usr/bin/xdg-open: 882: x-www-browser: not found
+/usr/bin/xdg-open: 882: firefox: not found
+/usr/bin/xdg-open: 882: iceweasel: not found
+/usr/bin/xdg-open: 882: seamonkey: not found
+/usr/bin/xdg-open: 882: mozilla: not found
+/usr/bin/xdg-open: 882: epiphany: not found
+/usr/bin/xdg-open: 882: konqueror: not found
+/usr/bin/xdg-open: 882: chromium: not found
+/usr/bin/xdg-open: 882: chromium-browser: not found
+/usr/bin/xdg-open: 882: google-chrome: not found
+/usr/bin/xdg-open: 882: www-browser: not found
+/usr/bin/xdg-open: 882: links2: not found
+/usr/bin/xdg-open: 882: elinks: not found
+/usr/bin/xdg-open: 882: links: not found
+/usr/bin/xdg-open: 882: lynx: not found
+/usr/bin/xdg-open: 882: w3m: not found
+xdg-open: no method available for opening 'https://app.foxglove.dev/activate?user_code=WSGF-MNQS'
+/usr/bin/xdg-open: 882: x-www-browser: not found
+/usr/bin/xdg-open: 882: firefox: not found
+/usr/bin/xdg-open: 882: iceweasel: not found
+/usr/bin/xdg-open: 882: seamonkey: not found
+/usr/bin/xdg-open: 882: mozilla: not found
+/usr/bin/xdg-open: 882: epiphany: not found
+/usr/bin/xdg-open: 882: konqueror: not found
+/usr/bin/xdg-open: 882: chromium: not found
+/usr/bin/xdg-open: 882: chromium-browser: not found
+/usr/bin/xdg-open: 882: google-chrome: not found
+/usr/bin/xdg-open: 882: www-browser: not found
+/usr/bin/xdg-open: 882: links2: not found
+/usr/bin/xdg-open: 882: elinks: not found
+/usr/bin/xdg-open: 882: links: not found
+/usr/bin/xdg-open: 882: lynx: not found
+/usr/bin/xdg-open: 882: w3m: not found
+xdg-open: no method available for opening 'https://app.foxglove.dev/activate?user_code=WSGF-MNQS'
+/usr/bin/xdg-open: 882: x-www-browser: not found
+/usr/bin/xdg-open: 882: firefox: not found
+/usr/bin/xdg-open: 882: iceweasel: not found
+/usr/bin/xdg-open: 882: seamonkey: not found
+/usr/bin/xdg-open: 882: mozilla: not found
+/usr/bin/xdg-open: 882: epiphany: not found
+/usr/bin/xdg-open: 882: konqueror: not found
+/usr/bin/xdg-open: 882: chromium: not found
+/usr/bin/xdg-open: 882: chromium-browser: not found
+/usr/bin/xdg-open: 882: google-chrome: not found
+/usr/bin/xdg-open: 882: www-browser: not found
+/usr/bin/xdg-open: 882: links2: not found
+/usr/bin/xdg-open: 882: elinks: not found
+/usr/bin/xdg-open: 882: links: not found
+/usr/bin/xdg-open: 882: lynx: not found
+/usr/bin/xdg-open: 882: w3m: not found
+xdg-open: no method available for opening 'https://app.foxglove.dev/activate?user_code=WSGF-MNQS'
+/usr/bin/xdg-open: 882: x-www-browser: not found
+/usr/bin/xdg-open: 882: firefox: not found
+/usr/bin/xdg-open: 882: iceweasel: not found
+/usr/bin/xdg-open: 882: seamonkey: not found
+/usr/bin/xdg-open: 882: mozilla: not found
+/usr/bin/xdg-open: 882: epiphany: not found
+/usr/bin/xdg-open: 882: konqueror: not found
+/usr/bin/xdg-open: 882: chromium: not found
+/usr/bin/xdg-open: 882: chromium-browser: not found
+/usr/bin/xdg-open: 882: google-chrome: not found
+/usr/bin/xdg-open: 882: www-browser: not found
+/usr/bin/xdg-open: 882: links2: not found
+/usr/bin/xdg-open: 882: elinks: not found
+/usr/bin/xdg-open: 882: links: not found
+/usr/bin/xdg-open: 882: lynx: not found
+/usr/bin/xdg-open: 882: w3m: not found
+xdg-open: no method available for opening 'https://app.foxglove.dev/activate?user_code=WSGF-MNQS'
+/usr/bin/xdg-open: 882: x-www-browser: not found
+/usr/bin/xdg-open: 882: firefox: not found
+/usr/bin/xdg-open: 882: iceweasel: not found
+/usr/bin/xdg-open: 882: seamonkey: not found
+/usr/bin/xdg-open: 882: mozilla: not found
+/usr/bin/xdg-open: 882: epiphany: not found
+/usr/bin/xdg-open: 882: konqueror: not found
+/usr/bin/xdg-open: 882: chromium: not found
+/usr/bin/xdg-open: 882: chromium-browser: not found
+/usr/bin/xdg-open: 882: google-chrome: not found
+/usr/bin/xdg-open: 882: www-browser: not found
+/usr/bin/xdg-open: 882: links2: not found
+/usr/bin/xdg-open: 882: elinks: not found
+/usr/bin/xdg-open: 882: links: not found
+/usr/bin/xdg-open: 882: lynx: not found
+/usr/bin/xdg-open: 882: w3m: not found
+xdg-open: no method available for opening 'https://app.foxglove.dev/activate?user_code=WSGF-MNQS'
+/usr/bin/xdg-open: 882: x-www-browser: not found
+/usr/bin/xdg-open: 882: firefox: not found
+/usr/bin/xdg-open: 882: iceweasel: not found
+/usr/bin/xdg-open: 882: seamonkey: not found
+/usr/bin/xdg-open: 882: mozilla: not found
+/usr/bin/xdg-open: 882: epiphany: not found
+/usr/bin/xdg-open: 882: konqueror: not found
+/usr/bin/xdg-open: 882: chromium: not found
+/usr/bin/xdg-open: 882: chromium-browser: not found
+/usr/bin/xdg-open: 882: google-chrome: not found
+/usr/bin/xdg-open: 882: www-browser: not found
+/usr/bin/xdg-open: 882: links2: not found
+/usr/bin/xdg-open: 882: elinks: not found
+/usr/bin/xdg-open: 882: links: not found
+/usr/bin/xdg-open: 882: lynx: not found
+/usr/bin/xdg-open: 882: w3m: not found
+xdg-open: no method available for opening 'https://app.foxglove.dev/activate?user_code=WSGF-MNQS'
+/usr/bin/xdg-open: 882: x-www-browser: not found
+/usr/bin/xdg-open: 882: firefox: not found
+/usr/bin/xdg-open: 882: iceweasel: not found
+/usr/bin/xdg-open: 882: seamonkey: not found
+/usr/bin/xdg-open: 882: mozilla: not found
+/usr/bin/xdg-open: 882: epiphany: not found
+/usr/bin/xdg-open: 882: konqueror: not found
+/usr/bin/xdg-open: 882: chromium: not found
+/usr/bin/xdg-open: 882: chromium-browser: not found
+/usr/bin/xdg-open: 882: google-chrome: not found
+/usr/bin/xdg-open: 882: www-browser: not found
+/usr/bin/xdg-open: 882: links2: not found
+/usr/bin/xdg-open: 882: elinks: not found
+/usr/bin/xdg-open: 882: links: not found
+/usr/bin/xdg-open: 882: lynx: not found
+/usr/bin/xdg-open: 882: w3m: not found
+xdg-open: no method available for opening 'https://app.foxglove.dev/activate?user_code=WSGF-MNQS'
+/usr/bin/xdg-open: 882: x-www-browser: not found
+/usr/bin/xdg-open: 882: firefox: not found
+/usr/bin/xdg-open: 882: iceweasel: not found
+/usr/bin/xdg-open: 882: seamonkey: not found
+/usr/bin/xdg-open: 882: mozilla: not found
+/usr/bin/xdg-open: 882: epiphany: not found
+/usr/bin/xdg-open: 882: konqueror: not found
+/usr/bin/xdg-open: 882: chromium: not found
+/usr/bin/xdg-open: 882: chromium-browser: not found
+/usr/bin/xdg-open: 882: google-chrome: not found
+/usr/bin/xdg-open: 882: www-browser: not found
+/usr/bin/xdg-open: 882: links2: not found
+/usr/bin/xdg-open: 882: elinks: not found
+/usr/bin/xdg-open: 882: links: not found
+/usr/bin/xdg-open: 882: lynx: not found
+/usr/bin/xdg-open: 882: w3m: not found
+xdg-open: no method available for opening 'https://app.foxglove.dev/activate?user_code=WSGF-MNQS'
+/usr/bin/xdg-open: 882: x-www-browser: not found
+/usr/bin/xdg-open: 882: firefox: not found
+/usr/bin/xdg-open: 882: iceweasel: not found
+/usr/bin/xdg-open: 882: seamonkey: not found
+/usr/bin/xdg-open: 882: mozilla: not found
+/usr/bin/xdg-open: 882: epiphany: not found
+/usr/bin/xdg-open: 882: konqueror: not found
+/usr/bin/xdg-open: 882: chromium: not found
+/usr/bin/xdg-open: 882: chromium-browser: not found
+/usr/bin/xdg-open: 882: google-chrome: not found
+/usr/bin/xdg-open: 882: www-browser: not found
+/usr/bin/xdg-open: 882: links2: not found
+/usr/bin/xdg-open: 882: elinks: not found
+/usr/bin/xdg-open: 882: links: not found
+/usr/bin/xdg-open: 882: lynx: not found
+/usr/bin/xdg-open: 882: w3m: not found
+xdg-open: no method available for opening 'https://app.foxglove.dev/activate?user_code=WSGF-MNQS'
+/usr/bin/xdg-open: 882: x-www-browser: not found
+/usr/bin/xdg-open: 882: firefox: not found
+/usr/bin/xdg-open: 882: iceweasel: not found
+/usr/bin/xdg-open: 882: seamonkey: not found
+/usr/bin/xdg-open: 882: mozilla: not found
+/usr/bin/xdg-open: 882: epiphany: not found
+/usr/bin/xdg-open: 882: konqueror: not found
+/usr/bin/xdg-open: 882: chromium: not found
+/usr/bin/xdg-open: 882: chromium-browser: not found
+/usr/bin/xdg-open: 882: google-chrome: not found
+/usr/bin/xdg-open: 882: www-browser: not found
+/usr/bin/xdg-open: 882: links2: not found
+/usr/bin/xdg-open: 882: elinks: not found
+/usr/bin/xdg-open: 882: links: not found
+/usr/bin/xdg-open: 882: lynx: not found
+/usr/bin/xdg-open: 882: w3m: not found
+xdg-open: no method available for opening 'https://app.foxglove.dev/activate?user_code=WSGF-MNQS'
+/usr/bin/xdg-open: 882: x-www-browser: not found
+/usr/bin/xdg-open: 882: firefox: not found
+/usr/bin/xdg-open: 882: iceweasel: not found
+/usr/bin/xdg-open: 882: seamonkey: not found
+/usr/bin/xdg-open: 882: mozilla: not found
+/usr/bin/xdg-open: 882: epiphany: not found
+/usr/bin/xdg-open: 882: konqueror: not found
+/usr/bin/xdg-open: 882: chromium: not found
+/usr/bin/xdg-open: 882: chromium-browser: not found
+/usr/bin/xdg-open: 882: google-chrome: not found
+/usr/bin/xdg-open: 882: www-browser: not found
+/usr/bin/xdg-open: 882: links2: not found
+/usr/bin/xdg-open: 882: elinks: not found
+/usr/bin/xdg-open: 882: links: not found
+/usr/bin/xdg-open: 882: lynx: not found
+/usr/bin/xdg-open: 882: w3m: not found
+xdg-open: no method available for opening 'https://app.foxglove.dev/activate?user_code=WSGF-MNQS'
+[466:1022/105112.715805:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[466:1022/105117.426793:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[466:1022/105120.125692:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[466:1022/105147.736321:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[466:1022/105151.116786:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[466:1022/105152.849459:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[466:1022/105153.811772:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[466:1022/105224.309596:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[466:1022/105230.618289:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[466:1022/105240.650728:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[466:1022/105249.677262:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[466:1022/105251.126778:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[466:1022/105322.597944:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")

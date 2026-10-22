@@ -6,3 +6,6 @@ results/*.mcap
 results/*/
 __pycache__/
 foxglove/studio-data/
+
+# Unreal source project for the construction-site scene (1.6 GB, not ours to version)
+ConstructionSite(UE4)/

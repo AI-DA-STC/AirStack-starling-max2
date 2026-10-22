@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Score one recorded sim run against the drone's PX4 ulog. Run on the HOST (it uses docker cp + docker exec).
-# Usage: scripts/score_run.sh <run_name> [drone_index]   e.g. scripts/score_run.sh sim_cam_run2 1
+# Usage: scripts/score_run.sh <run_name> [drone_index] [ulog_path_in_isaac]   e.g. scripts/score_run.sh sim_cam_run2 1
 # Needs: the isaac-sim container still up (the ulog lives there) and the exploration container running
 # (./docker/run.sh in another terminal).
 set -euo pipefail
@@ -10,11 +10,16 @@ idx=${2:-1}
 sysid=$((idx + 1))
 bag=results/bags/$run
 [ -d "$bag" ] || { echo "no bag at $bag"; exit 1; }
-# newest ulog whose MAV_SYS_ID matches this drone
-ulog=$(docker exec isaac-sim bash -c 'for d in /tmp/tmp*/log/*; do f=$(ls -t "$d"/*.ulg 2>/dev/null | head -1); [ -n "$f" ] && echo "$(stat -c %Y "$f") $f"; done | sort -rn | cut -d" " -f2' | while read -r f; do
-  s=$(docker exec isaac-sim python3 -c "from pyulog import ULog; print(ULog('$f', message_name_filter_list=['vehicle_local_position']).initial_parameters.get('MAV_SYS_ID'))")
-  [ "$s" = "$sysid" ] && { echo "$f"; break; }
-done)
+# ulog: 3rd arg if given, else the sysid-matching ulog whose end time is closest to the bag's end time
+# (several flights per sim session -> several ulogs; "newest" would score every bag against the last flight)
+ulog=${3:-}
+if [ -z "$ulog" ]; then
+  bag_end=$(stat -c %Y "$bag"/*.mcap | sort -n | tail -1)
+  ulog=$(docker exec isaac-sim bash -c 'for f in /tmp/tmp*/log/*/*.ulg; do echo "$(stat -c %Y "$f") $f"; done'     | awk -v b="$bag_end" '{d=$1-b; if(d<0)d=-d; print d, $2}' | sort -n | head -8 | cut -d" " -f2 | while read -r f; do
+    s=$(docker exec isaac-sim python3 -c "from pyulog import ULog; print(ULog('$f', message_name_filter_list=['vehicle_local_position']).initial_parameters.get('MAV_SYS_ID'))")
+    [ "$s" = "$sysid" ] && { echo "$f"; break; }
+  done)
+fi
 [ -n "$ulog" ] || { echo "no ulog with MAV_SYS_ID=$sysid found in isaac-sim"; exit 1; }
 echo "ulog for drone_$idx (sysid $sysid): $ulog"
 docker cp "isaac-sim:$ulog" - | docker cp - "localisation-exploration:/exploration/$bag/"

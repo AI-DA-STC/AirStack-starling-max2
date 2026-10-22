@@ -35,4 +35,4 @@ ARENA="$HOME/docker/isaac-sim/data/scenes/construction_site/construction_site_ar
 docker cp build/construction_site_r40.usdc "isaac-sim:$D/"; docker cp build/construction_site_full.usdc "isaac-sim:$D/"
 docker exec isaac-sim rm -rf "$D/textures"; docker cp build/textures "isaac-sim:$D/"
 docker exec isaac-sim bash -c "du -sh $D && ls $D"
-echo "launch with:  ENV_USD=$D/construction_site_full.usdc  (or construction_site_r40.usdc for the 40 m crop; plus the usual Isaac tab line)"
+echo "launch with:  ENV_USD=$D/construction_site_full.usdc  (or construction_site_r40.usdc for the 40 m crop; plus the usual Isaac Sim tab line)"

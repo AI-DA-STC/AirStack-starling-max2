@@ -1,10 +1,14 @@
-# Construction-site arena (textured world for the camera/VIO sim runs)
+# Construction-site arena (textured world for the camera / stereo-VO sim runs)
 
 Why: the Pegasus default environment is a flat grid plane with no walls. cuVSLAM teleported 5–10 m in
 sim_cam_run2–4 every time drone_1 faced outward at the fence edge, pitched up, seeing only sky, horizon and a
 repeating grid (see `results/sim_cam_run*_record.md`). A world with nearby structure fixes the input, not the tracker.
 
-Source: the user's UE4-exported scene `~/Documents/Meerkat_robot_JAZZY/Simulation Files/AI_training/Construction_site/Scene02_nohumans.usd`
+<img src="../../../pictures/construction_site.jpg" alt="The construction-site world from above: building frames and tower cranes, the excavation, containers and plant" width="850">
+
+*The site from above. ① cranes and building frames, ② the excavation (the spot picker keeps 8 m away), ③ containers and plant: the near structure stereo VO tracks.*
+
+Source: the lab's UE4-exported scene `~/Documents/Meerkat_robot_JAZZY/Simulation Files/AI_training/Construction_site/Scene02_nohumans.usd`
 (546 × 575 m site, 5.3 k objects, 12 k UsdPreviewSurface materials, all references resolve). Not modified.
 
 Files here
@@ -26,8 +30,9 @@ too heavy to be worth loading): `build/construction_site_full.usdc` (all objects
 `build/construction_site_r40.usdc` (40 m around the flight spot, 4.8k prims, 68 materials).
 
 Launch: add `ENV_USD=/isaac-sim/.local/share/ov/data/scenes/construction_site/construction_site_full.usdc` in front of the
-usual Isaac tab line (launcher support added 2026-10-22 in `svg_multi_drone_single_domain.py`; 90 s stage wait when set).
+usual **Isaac Sim tab** line (RUNBOOK §A1). `_full.usdc` is the default; `_r40.usdc` is the lighter fallback. Launcher support
+added 2026-10-22 in `svg_multi_drone_single_domain.py` (`patches/0005`); 90 s stage wait when set.
 
 Known texture limitation: the UE4 export baked 672 of 682 textures at 128 × 128 px (only the landscape sets are 1024²),
-so surfaces look soft up close. Geometry (edges, props) is what VIO tracks, so this is accepted for now. Fixing it means
+so surfaces look soft up close. Geometry (edges, props) is what stereo VO tracks, so this is accepted for now. Fixing it means
 re-exporting from UE 4.21 with a larger texture size, or extracting the originals from the project's uassets.

@@ -16,7 +16,7 @@ Steps 1–7 all passed on the laptop over WiFi, 9 Isaac starts/stops, 0 WiFi fir
 - In every later step keep `scripts/sim_resources_watch.sh results/res_stepN.log` running in a laptop terminal.
   It prints `WIFI-ALERT` the moment the firmware crashes, and VRAM/load alerts. It never kills anything.
 
-## Common launch line (Isaac tab, inside the isaac-sim container)
+## Common launch line (Isaac Sim tab, inside the isaac-sim container)
 ```
 DRONE_USD=/isaac-sim/AirStack/simulation/isaac-sim/assets/robots/starling2max.usd PX4_VEHICLE_MODEL=pegasus_starling2max \
 NUM_ROBOTS=<N> SVG_DOMAIN_ID=1 PLAY_SIM_ON_START=true ISAAC_SIM_HEADLESS=true \
@@ -27,7 +27,7 @@ PYTHONPATH="$ISAAC_SIM_PYTHONPATH" /isaac-sim/python.sh /isaac-sim/AirStack/simu
 Pass checks run from the exploration container (`cd ~/AirStack-starling-max2/localisation && ./docker/run.sh`):
 - real-time factor and image rate: `python3 scripts/sim_check.py` (prints RTF over 10 s, image Hz, saves a frame, ORB corners, sky mean)
 - camera frame: `python3 scripts/grab_frame.py drone_1 results/frame_stepN.png`
-Stop the sim: Ctrl-C in the Isaac tab (or `docker exec isaac-sim pkill -INT -f svg_multi_drone`), wait 10 s, check the watch log for a WIFI-ALERT.
+Stop the sim: Ctrl-C in the Isaac Sim tab (or `docker exec isaac-sim pkill -INT -f svg_multi_drone`), wait 10 s, check the watch log for a WIFI-ALERT.
 
 | Step | Single change | Extra env | Pass | Cap |
 |---|---|---|---|---|
@@ -35,7 +35,7 @@ Stop the sim: Ctrl-C in the Isaac tab (or `docker exec isaac-sim pkill -INT -f s
 | 2 | + cropped world | `ENV_USD=/isaac-sim/.local/share/ov/data/scenes/construction_site/construction_site_r40.usdc NUM_ROBOTS=1` | ready < 2 min; RTF >= 0.6; VRAM <= V0 + 2.5 GB; 10 min soak with no WIFI-ALERT | load1 < 16 after 2 min |
 | 3 | + camera | step 2 + `ENABLE_CAMERA=true CAMERA_DRONES=drone_1` | image >= 15 Hz; frame ORB >= 500; sky rows mean > 40; VRAM <= step 2 + 1.5 GB | |
 | 4 | + 3 drones | step 3 with `NUM_ROBOTS=3` | ready x3; RTF >= 0.5; image >= 15 Hz; 10 min soak | |
-| 5 | + cuVSLAM node | `scripts/slam_up.sh` (exploration container) | status rate >= 10 Hz; at rest, odom drift < 0.05 m over 60 s | |
+| 5 | + cuVSLAM node | `scripts/slam_up.sh` (laptop) | status rate >= 10 Hz; at rest, odom drift < 0.05 m over 60 s | |
 | 6 | + flight + scoring | Interfaces/Commander/Cockpit tabs, `random_goals` | no odom jump > 1 m between consecutive poses; `scripts/score_run.sh` runs | |
 | 7 | full site (flattened, all objects) | `ENV_USD=/isaac-sim/.local/share/ov/data/scenes/construction_site/construction_site_full.usdc` | same as 4 | PASSED 2026-10-22 23:15: 1 drone RTF 2.2 / 4.9 GB; 3 drones + camera RTF 1.4 / 4.3 GB, 41 Hz, 1987 corners, 0 WiFi alerts. Now the default world. |
 

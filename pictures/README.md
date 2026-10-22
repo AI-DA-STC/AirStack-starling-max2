@@ -1,7 +1,11 @@
 # pictures/ — what each image shows, and whether it is still current
 
 > **RECORD.** Nothing here is deleted; this index says what each picture proves, which docs use
-> it, and whether it needs re-shooting. Last reviewed 2026-10-21.
+> it, and whether it needs re-shooting. Last reviewed 2026-10-23.
+
+**Size policy (2026-10-23):** ≤ 1600 px wide and ≤ 500 KB. JPG q85 for renders and desktop screenshots, PNG for small UI or
+plot crops. Full-size originals live outside git in `~/Pictures/airstack-originals/`. GIFs ≤ 3 MB go in `../assets/`.
+**No new mp4 in git** (the six in `../videos/` stay); a screen recording becomes a GIF plus a contact sheet.
 
 | File | What it shows | Used by | Status |
 |---|---|---|---|
@@ -15,12 +19,19 @@
 | `computer_detects_drone_and_awb_shell_working.png` | adb sees the drone + `voxl` shell (previous branch) | — | Still valid (adb path unchanged); replace at M2 if convenient |
 | `airstack_natnet_working_1.png`, `airstack_natnet_working_2.png`, `awbshell_with_airstack_natnet_working.png` | CMU's `natnet_ros2` receiver streaming (August 2026) | — | **Obsolete**: replaced by the `./mocap.sh` bridge on 2026-08-27 (MOCAP.md §3). Kept for the archive; do not use as a reference |
 | `voxel_setup_px4_restart_and_client_status.png` | `systemctl restart voxl-px4` output (August 2026) | — | **Obsolete and misleading**: that restart is forbidden by iron rule 7 (reboot instead). Kept for the archive only |
+| `full_sim_run.jpg` | The whole camera-world sim session after landing, numbered ①–⑤: SLAM Studio `:8766`, the cuVSLAM debug image, the `slam_up.sh` status line, the bag recorder, Basestation Studio `:8765` | `localisation/README.md` | Current (sim, construction site, 2026-10-23) |
+| `construction_site.jpg` | The construction-site world from above, numbered ①–③: cranes and building frames, the excavation, containers and plant | `localisation/scenes/construction_site/README.md` | Current (sim, 2026-10-23) |
+| `drones_in_construction_site.jpg` | The three simulated Starling 2 Max drones over the sand patch beside the containers | `localisation/README.md` | Current (sim, 2026-10-23) |
+| `vo_flat_frame.png`, `vo_site_frame.png` | drone_1's left camera at 640×480: the flat default world (sky, horizon, grid) vs the construction site | `localisation/README.md` (flat vs site figure) | Current (sim, 2026-10-22) |
+| `vo_flat_xy_cam_run3.png`, `vo_site_xy_site_run1.png` | Top-down x-y, PX4 reference (blue) vs cuVSLAM (orange): `sim_cam_run3` jumps away; `sim_site_run1` stays on the reference | `localisation/README.md` (flat vs site figure) | Frozen copies of the runs named in the file |
+| `randompos_construction_sheet.jpg` | Six frames, 8 s apart, of the 2026-10-23 random-goals flight in the site (both Studio windows, Isaac, terminals) | `localisation/README.md` | Current (sim, unscored flight; source video `~/Videos/randompos_construction.mp4`, not in git) |
 
 ## Pictures this branch still needs
 
-1. **Now, in sim:** the four-tab Terminator session (`tools/sim_terminals.sh`), Isaac with the Starling 2 Max model, the panel in its healthy sim state (`0 sim · 3 real` is the known cosmetic mis-detection).
+1. **Now, in sim:** the four-tab Terminator session (`tools/sim_terminals.sh`), Isaac with the Starling 2 Max model, the panel in its healthy sim state (`0 sim · 3 real` is the known cosmetic mis-detection). *Partly done 2026-10-23: `full_sim_run.jpg` shows Isaac, the panel and SLAM Studio after landing; a clean shot of the four tabs is still open.*
 2. **M2 hand-carry:** panel `EKF EV FUSED`, QGC local position following the carried drone, the `px4_interface … target_system=N` startup line with the matching `MAV_SYS_ID`, the new topic list — these replace the four previous-branch evidence shots above.
 3. **After the camera upgrade:** Motive streaming pane + IP, replacing the three Motive shots.
 4. **After M3:** the redrawn control-flow diagram as an SVG next to the PNG.
 
-GIFs used by the README gallery live in `../assets/` and are all current (one per video in `../videos/`).
+GIFs used by the README gallery live in `../assets/` and are all current (one per video in `../videos/`, except
+`randompos_construction_10fps.gif`: cuVSLAM debug image + Basestation 3D side by side, from a screen recording kept outside git).

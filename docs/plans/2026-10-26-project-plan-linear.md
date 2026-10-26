@@ -200,29 +200,36 @@ time: hand-carry, first flight, goal flights, gamepad, then several drones.
 re-earned on it. Each step only starts when the previous one passes, and every flight follows the preflight card. Mocap
 returns around 9 Nov after the camera upgrade.
 
-**Dates:** 9 Nov 2026 → 31 Jan 2027. M0–M1 (bring-up and sim rehearsal) are covered by Project 1.
+**Dates:** 9 Nov 2026 → 31 Jan 2027. Sim rehearsal is covered by Project 1; the September flights on the previous
+software are history and not tracked here.
 
-### R0 · Earlier flights on the previous software · 3 Sep · ✅ done
-First takeoff and landing under software control with position from mocap only (1 Sep), then autonomous waypoint
-flights with a fence and automatic landing (3 Sep). Kept here as history: the move to the new software on 7 Oct
-restarted the ladder.
+### R1 · New mocap and network pipeline · 12 Nov
+Bring the upgraded OptiTrack system online and rebuild the full path from the mocap cameras to the drone over the lab
+network, before the drone is set up for flight. The camera upgrade changes Motive, its settings and possibly its IP; the
+laptop must sit on the mocap PC's 192.168.9.x subnet because mocap streams as multicast, which does not cross the
+router; the drone sits on a separate subnet reached by a route.
+
+**Done when:** Motive is calibrated with the ground plane, axis convention and the drone's rigid body; the laptop receives
+the stream at full rate for 10 minutes with no stalls; laptop and drone reach each other both ways; the mocap position
+reaches the drone's PX4 and moves the right way on every axis; the new Motive settings are written into the lab docs.
 
 | Issue | Status |
 |---|---|
-| First software takeoff and landing on mocap | Done |
-| Autonomous waypoint flight | Done |
+| Set up the upgraded Motive: calibrate (wand, ground plane, axis convention) and create the Starling rigid body | Backlog |
+| Network: laptop on the mocap subnet (192.168.9.x) with the route to the drone subnet; drone gets its WiFi address; both ping each other | Backlog |
+| Mocap stream end to end: laptop receives it at full rate for 10 min with no stalls, it reaches the drone's PX4, and moving the drone by hand moves the position the same way on every axis | Backlog |
+| Record the new Motive version, IP and streaming settings in the lab docs and pictures | Backlog |
 
 ### M2 · Drone setup and hand-carry, propellers off · 15 Nov
 Set the drone up for the new software and carry it by hand, propellers off, to check that position flows end to end
 before anything spins.
 
-**Done when:** mocap matches Motive after the camera upgrade; the drone's ID matches the controller's target; only one
+**Done when:** the drone's ID matches the controller's target; only one
 connection watchdog runs; the drone's estimator fuses mocap; the hand-carried drone moves correctly in the panel's 3D
 view; the kill switch is checked with props off.
 
 | Issue | Status |
 |---|---|
-| Mocap back: check the laptop receiver against Motive after the camera upgrade | Backlog |
 | Re-run the drone setup script, then reboot the drone (never restart the flight software service) | Backlog |
 | Confirm the drone ID matches the controller's target | Backlog |
 | Confirm only one connection watchdog runs on the drone | Backlog |
@@ -377,6 +384,6 @@ Check the alignment still holds with a bigger swarm.
 
 ---
 
-*Totals: Project 1 has 12 milestones and 33 issues; Project 2 has 7 milestones and 27 issues; Project 3 has 6 milestones
+*Totals: Project 1 has 12 milestones and 33 issues; Project 2 has 7 milestones and 28 issues; Project 3 has 6 milestones
 and 17 issues. Results so far live in the repo under `localisation/results/`; the real-drone procedures in
 `docs/RUNBOOK.md` and `docs/PREFLIGHT.md`.*

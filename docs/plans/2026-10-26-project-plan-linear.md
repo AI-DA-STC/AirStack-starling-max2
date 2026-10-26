@@ -1,389 +1,389 @@
 # Starling swarm: project plan (Linear milestones and issues)
 
-*NEAR Lab · prepared 26 Oct 2026 by Jeremy Chia · mirrors the three projects in Linear*
+NEAR Lab · Linear snapshot: 26 October 2026 11:53 Asia/Singapore
+
+Linear is the source of truth: this file mirrors the three projects in Linear as of the snapshot above. Only completed milestones carry target dates. Each issue links to its Linear page. The "Done when" lines describe the acceptance test, not progress made.
+
+## Reconciliation notes
+
+- 3 projects, 25 milestones, 78 issues: 6 Done, 1 In Progress, 71 Backlog.
+- Project 1 has 33 issues; redundant NEAR-799 removed.
+- All three projects have no target date in Linear. Only S1–S4 and L0 have milestone target dates; other milestone targets are unset.
 
 ## How the work is split
 
-Three Linear projects under the HTX swarm work. Each has milestones with target dates; each milestone has issues.
-A milestone counts as finished in Linear when all its issues are Done.
-
-| Project | Question it answers | Where it runs |
+| Project | Question | Where |
 |---|---|---|
-| **1 · Swarm Sim Validation (Isaac)** | Does a candidate flight pipeline (position source → PX4 → swarm controller with collision avoidance) work, and how does it fail? | Isaac Sim on the lab laptop |
-| **2 · Starling Flight Bring-up (M2–M7)** | Does the same software fly the real Starling 2 Max safely under mocap, one drone and then several? | Mocap room |
-| **3 · Multi-Drone Localisation (VO + UWB)** | Without mocap, which approach keeps every drone's position correct relative to the others? | Literature, sim, then real drones |
+| HTX-R1 Swarm Sim Validation (Isaac) | Does the candidate position source → PX4 → swarm controller and collision-avoidance pipeline work, and how does it fail? | Isaac Sim on the lab laptop |
+| HTX-R2 Starling Flight Bring-up (M2–M7) | Does the same software fly real Starling 2 Max drones safely under mocap? | Mocap room |
+| HTX-R3 Multi-Drone Localisation (VO + UWB) | Without mocap, which approach keeps drones positioned correctly relative to one another? | Literature, simulation, then real drones |
 
-The sim project is ahead of the real drone on purpose. In sim a failure points at the idea or the software; on a real
-drone it could also be the drone, the network or the mocap. The real-drone milestones repeat what the sim already showed.
+Simulation precedes real flight to distinguish software/algorithm failures from hardware, network and mocap problems. Real-drone milestones repeat capabilities rehearsed in simulation.
 
-### Words used below
+### Terms
 
-| Term | Meaning |
-|---|---|
-| **Mocap** | OptiTrack motion capture in the lab: cameras that track markers on the drone to millimetres. Indoors, the drone gets its position from mocap, not GPS. |
-| **PX4** | The flight controller software on the drone. Its estimator fuses sensors into the drone's position. |
-| **Swarm controller / commander** | Our ground software that sends each drone its targets and keeps them apart (collision avoidance, CBF). |
-| **cuVSLAM** | NVIDIA's camera-based position tracking. **VO** = from camera images alone; **VIO** = camera plus the drone's IMU. |
-| **Sim mocap** | In simulation, the simulator's true drone position fed to PX4 the way mocap is on the real drone. |
-| **UWB** | Ultra-wideband radios that measure the distance between drones. |
-| **Teleop** | Flying a drone by hand with a gamepad through the swarm controller. |
+- Mocap: OptiTrack motion capture; indoor position source rather than GPS.
+- PX4: drone flight-controller software, including its position estimator.
+- Swarm controller / commander: ground software sending targets and applying collision avoidance (CBF).
+- cuVSLAM: NVIDIA camera-based tracking. VO uses camera images; VIO combines camera and IMU.
+- Sim mocap: simulator ground-truth position supplied to PX4 as mocap-style input.
+- UWB: ultra-wideband radios measuring inter-drone distances.
+- Teleop: gamepad flying through the swarm controller.
 
 ---
 
-## Project 1 · Swarm Sim Validation (Isaac)
+## Project 1 · HTX-R1 Swarm Sim Validation (Isaac)
 
-**Summary.** Test a candidate swarm flight pipeline in Isaac Sim (position source → PX4 → swarm controller and collision
-avoidance) to find out what works before deciding what goes onto the real Starlings.
+[Linear project](https://linear.app/nearlab/project/htx-r1-swarm-sim-validation-isaac-649103a747b1)
 
-**Why.** Sim makes research cheap: no batteries, no crashes, and a failure points at the idea, not the hardware. Mocap
-is down until about 9 Nov. The sim must match the indoor drone (no GPS, mocap-style position) for its results to mean
-anything. Handing a drone's position to cuVSLAM is the riskiest open question, so it is rehearsed here with a fallback
-first. The HTX demo is mid-February and the strategy teams need a multi-drone test bed from December.
+**Status:** In Progress. **Start:** 2026-10-19. **Target:** not set. **Inventory:** 12 milestones, 33 issues (5 Done, 1 In Progress, 27 Backlog).
 
-**Dates:** 19 Oct → 20 Dec 2026.
+Test a candidate swarm flight pipeline in Isaac Sim: position source → PX4 → commander and CBF. Find out what works before deciding what goes onto the real Starlings. Simulation makes failures cheaper to investigate and must match indoor flight with GPS off. Mocap is expected back around 9 Nov; the HTX demo is mid-February and strategy teams need a multi-drone test bed from December. Real flight belongs to Project 2; shared-frame research belongs to Project 3.
 
-### S1 · Starling 2 Max sim drones · 21 Oct · ✅ done
-Built the Starling 2 Max model in Isaac Sim from CMU's measured mass, inertia and motor data, using the real drone's
-controller gains. Fixed a pitch wobble by softening the sim's rate control. Three drones flew random goals with collision
-avoidance and landed cleanly.
+### S1 Starling 2 Max sim drones
 
-| Issue | Status |
-|---|---|
-| Build and fly the Starling 2 Max sim model | Done |
+**Linear target:** 2026-10-21. **Progress:** 100%.
 
-### S2 · Stereo camera on a sim drone · 22 Oct · ✅ done
-Added a simulated ZED stereo camera to drone_1 at 640×480. Found that the camera images can't reach the main robot
-container because they sit on a separate network; worked around it with a dedicated container on the simulator's network.
+Built the model from CMU's measured mass, inertia and motor data using real-drone controller gains. Fixed a 9 Hz pitch wobble by halving sim rate gains. Three drones flew random goals under CBF and landed cleanly.
 
-| Issue | Status |
-|---|---|
-| Add a stereo camera to drone_1 and route its images | Done |
+| Issue | Exact Linear title | Status |
+|---|---|---|
+| [NEAR-782](https://linear.app/nearlab/issue/NEAR-782) | Build and fly the Starling 2 Max sim model | Done |
 
-### S3 · Evaluate cuVSLAM in sim · 22 Oct · ✅ done
-Ran cuVSLAM on drone_1 and compared it with PX4's own position estimate. The pipeline works end to end. In the empty
-default world it jumped 5–10 m whenever the camera saw only sky and a flat grid.
+### S2 Stereo camera on a sim drone
 
-| Issue | Status |
-|---|---|
-| Run cuVSLAM on drone_1 and score it | Done |
+**Linear target:** 2026-10-22. **Progress:** 100%.
 
-### S4 · Construction-site environment · 23 Oct · ✅ done
-Converted the lab's Unreal construction site into an Isaac Sim world, in a full version and a lighter 40 m version.
-Tested step by step on the laptop: 3 drones plus a camera ran fine. With structures in view, cuVSLAM stayed within 8 cm
-over a 162 m flight, with no jumps.
+Added a simulated ZED stereo camera to drone_1 at 640×480. Camera topics could not reach the robot container across networks; a container on Isaac's network provided the workaround.
 
-| Issue | Status |
-|---|---|
-| Convert the construction site into an Isaac Sim world | Done |
-| Fly 3 drones with cuVSLAM in the construction site and score it | Done |
+| Issue | Exact Linear title | Status |
+|---|---|---|
+| [NEAR-783](https://linear.app/nearlab/issue/NEAR-783) | S2 Add a stereo camera to drone_1 and route its images | Done |
 
-### S5 · Finish basic sim flight checks · 5 Nov · in progress
-Re-run the core flight tests on the updated Starling sim model, and get one-drone gamepad flying working in the
-construction site. Hand-flying is how S5b builds its map, so this milestone prepares it.
+### S3 Evaluate cuVSLAM in sim
 
-**Done when:** hover and 1 m steps are re-run and recorded; the three-drone crossing with collision avoidance is re-run
-and recorded; live gain tuning from the panel is tried in sim; drone_1 is hand-flown by gamepad in the construction site
-with cuVSLAM running, recorded with its camera images, and scored.
+**Linear target:** 2026-10-22. **Progress:** 100%.
 
-| Issue | Status |
-|---|---|
-| Re-run hover and 1 m step test on the updated sim drone | Backlog |
-| Re-run three-drone crossing with collision avoidance and record it | Backlog |
-| Try live gain tuning from the panel in sim | Backlog |
-| Set up one-drone gamepad teleop in the construction site (pad detected, sticks move the drone, release holds) | In Progress |
-| Record the stereo camera images so a flight can be replayed through cuVSLAM | Backlog |
-| Hand-fly drone_1 with cuVSLAM running, record and score the flight | Backlog |
+Ran cuVSLAM on drone_1 and scored it against PX4's estimate. The pipeline worked end to end, but the empty default world produced 5–10 m jumps when only sky and a grid floor were visible.
 
-### S5b · Map the construction site with cuVSLAM · 12 Nov
-Fly drone_1 around the site by gamepad with cuVSLAM in mapping mode, save the map, and check whether a drone can find its
-position in that saved map later. If it can, every drone could share one coordinate frame without UWB.
+| Issue | Exact Linear title | Status |
+|---|---|---|
+| [NEAR-784](https://linear.app/nearlab/issue/NEAR-784) | S3 Run cuVSLAM on drone_1 and score it | Done |
 
-**Done when:** a map is saved after a hand-flown loop; a fresh run localises in it from several starting points and
-headings, with success rate and time recorded; the localised position agrees with the simulator's view of the drone.
+### S4 Construction-site environment
 
-| Issue | Status |
-|---|---|
-| Add a mapping mode to the cuVSLAM node (save the map at the end of a flight) | Backlog |
-| Hand-fly a mapping loop around the site and save the map | Backlog |
-| Localise in the saved map from 5+ starting points and record success rate and time | Backlog |
-| Compare the localised position with the simulator's drone position | Backlog |
+**Linear target:** 2026-10-23. **Progress:** 100%.
 
-### S5c · Choose the camera for cuVSLAM · 12 Nov
-Find out which camera cuVSLAM should use on the real Starling before anything is built or ordered around it. The mono
-test uses the simulated ZED camera, so it shows whether one camera is enough in principle; whether the Starling's own
-camera works is answered separately, first by research.
+Converted the lab's UE4 construction site into an Isaac world, loaded with `ENV_USD`, with a full version and 40 m crop. Three drones plus a camera used 4.3 GB GPU memory. cuVSLAM recorded 0.08 m error over 162 m, with no jumps.
 
-**Questions.** Does cuVSLAM work well enough with one camera (monocular), or does it need a stereo pair? A single camera
-cannot measure distance on its own, so scale and drift are the risk. Can we use the Starling 2 Max's built-in cameras:
-which cameras, what lens and resolution, where do they point, does cuVSLAM support that lens, and does the drone's own
-visual odometry already use them? If neither works, the fallback is an added stereo camera (RealSense D435i class), at
-the cost of weight and a Jetson.
+| Issue | Exact Linear title | Status |
+|---|---|---|
+| [NEAR-785](https://linear.app/nearlab/issue/NEAR-785) | S4 Convert the construction site into an Isaac Sim world | Done |
+| [NEAR-859](https://linear.app/nearlab/issue/NEAR-859) | Fly 3 drones with cuVSLAM in the construction site and score it | Done |
 
-**Done when:** mono vs stereo is compared on the same replayed flight, scored the same way; the built-in camera option is
-answered yes or no with the reason; the choice is written down and shared before the hardware order.
+### S5 Finish basic sim flight checks
 
-| Issue | Status |
-|---|---|
-| Run cuVSLAM in monocular mode on a replayed flight and score it against stereo | Backlog |
-| List the Starling 2 Max's built-in cameras and check whether cuVSLAM can use them | Backlog |
-| Decide the camera (built-in mono / built-in stereo / added stereo) and write down why | Backlog |
+**Linear target:** not set. **Progress:** 4%.
 
-### S6 · Sim mocap · 19 Nov
-Make the sim drones get their position the way the real indoor drones do: the simulator's true position is fed to PX4 as
-if it were mocap, with GPS off and the real drone's estimator settings.
+Re-run core flight checks on the updated model and prepare gamepad flying for S5b mapping.
 
-**Done when:** three drones take off, fly random goals and land on sim mocap.
+**Done when:** hover and 1 m steps, three-drone collision-avoidance crossing and live gain tuning are tried and recorded; drone_1 is hand-flown in the construction site with cuVSLAM, camera recording and scoring.
 
-| Issue | Status |
-|---|---|
-| Publish the simulator's true drone positions | Backlog |
-| Send them into PX4 as mocap-style position | Backlog |
-| Sim setting that turns GPS off and uses the real drone's estimator values | Backlog |
-| Fly three drones on sim mocap: takeoff, random goals, land | Backlog |
+| Issue | Exact Linear title | Status |
+|---|---|---|
+| [NEAR-786](https://linear.app/nearlab/issue/NEAR-786) | Re-run hover and 1 m step test on the updated sim drone | Backlog |
+| [NEAR-787](https://linear.app/nearlab/issue/NEAR-787) | Re-run three-drone crossing with collision avoidance and record it | Backlog |
+| [NEAR-788](https://linear.app/nearlab/issue/NEAR-788) | Try live gain tuning from the panel in sim | Backlog |
+| [NEAR-789](https://linear.app/nearlab/issue/NEAR-789) | Set up one-drone gamepad teleop in the construction site (pad detected, sticks move the drone, release holds) | In Progress |
+| [NEAR-790](https://linear.app/nearlab/issue/NEAR-790) | Hand-fly drone_1 with cuVSLAM running, record and score the flight | Backlog |
+| [NEAR-860](https://linear.app/nearlab/issue/NEAR-860) | Record the stereo camera images so a flight can be replayed through cuVSLAM | Backlog |
 
-### S7 · drone_1 flies on cuVSLAM · 26 Nov
-Hand drone_1's position over from sim mocap to cuVSLAM, with automatic fallback, and check the drone still holds and
-flies where it should.
+### S5b · Map the construction site with cuVSLAM
 
-**Done when:** drone_1 switches to cuVSLAM and back automatically if tracking fails; the hand-flown hold, out-and-back,
-spin, open-view and hard-stick tests pass; a scripted flight is scored against the simulator's true position.
+**Linear target:** not set. **Progress:** 0%.
 
-| Issue | Status |
-|---|---|
-| Position source switch: sim mocap or cuVSLAM, with automatic fallback | Backlog |
-| Hand-flown handover tests (hold, out-and-back, spin, open view, hard stick) | Backlog |
-| Scripted flight on cuVSLAM, scored against true position | Backlog |
+Hand-fly a mapping loop, save the map and test whether a fresh drone run can localise in it. A shared map could give every drone one coordinate frame without UWB.
 
-### S8 · Model the chosen camera and payload · 3 Dec
-Make the sim drone match the real one: the camera chosen in S5c, its IMU feeding cuVSLAM, and the Jetson and camera
-weight it will carry.
+**Done when:** a map is saved; fresh runs localise from several starts/headings with success rate and time recorded; positions agree with simulator ground truth.
 
-**Done when:** the chosen camera is modelled on drone_1 and feeds cuVSLAM; cuVSLAM uses camera + IMU, scored against
-camera-only; the heavier model (300–360 g added) flies the hover, step and crossing tests.
+| Issue | Exact Linear title | Status |
+|---|---|---|
+| [NEAR-791](https://linear.app/nearlab/issue/NEAR-791) | Add a mapping mode to the cuVSLAM node | Backlog |
+| [NEAR-792](https://linear.app/nearlab/issue/NEAR-792) | Hand-fly a mapping loop and save the map | Backlog |
+| [NEAR-793](https://linear.app/nearlab/issue/NEAR-793) | Localise in the saved map from 5+ starting points | Backlog |
+| [NEAR-794](https://linear.app/nearlab/issue/NEAR-794) | Compare the localised position with the simulator’s position | Backlog |
 
-| Issue | Status |
-|---|---|
-| Model the chosen camera on drone_1 in sim | Backlog |
-| Feed drone_1's IMU into cuVSLAM (camera-only → camera + IMU) and compare the scores | Backlog |
-| Add Jetson and camera weight to the Starling sim model | Backlog |
-| Re-run hover, step and crossing tests on the heavier model | Backlog |
+### S5c · Choose the camera for cuVSLAM
 
-### S9 · Safe failover · 13 Dec
-Make sure the swarm controller stays safe when a drone's position goes stale, drops out or switches source mid-flight.
+**Linear target:** not set. **Progress:** 0%.
 
-**Done when:** stale and dropped positions are handled without unsafe moves; switching position source mid-flight moves
-the drone less than 30 cm.
+Determine the real Starling camera before hardware decisions. Compare mono and stereo; investigate built-in camera lenses, resolution, direction, compatibility and existing VO use. Added stereo (RealSense D435i class) is a fallback with weight and Jetson costs. Monocular scale and drift are risks.
 
-| Issue | Status |
-|---|---|
-| Controller handles stale or missing positions (tests first) | Backlog |
-| Measure and reduce the jump when the position source switches | Backlog |
+**Done when:** mono/stereo results are comparable, built-in camera suitability has a reasoned yes/no answer, and the decision is written and shared before ordering.
 
-### S10 · Scale test · 20 Dec
-Check the stack copes with a bigger swarm.
+| Issue | Exact Linear title | Status |
+|---|---|---|
+| [NEAR-800](https://linear.app/nearlab/issue/NEAR-800) | Run cuVSLAM in monocular mode on a replayed flight and score it against stereo | Backlog |
+| [NEAR-801](https://linear.app/nearlab/issue/NEAR-801) | List the Starling 2 Max’s built-in cameras and check whether cuVSLAM can use them | Backlog |
+| [NEAR-802](https://linear.app/nearlab/issue/NEAR-802) | Decide the camera (built-in mono / built-in stereo / added stereo) and write down why | Backlog |
 
-**Done when:** 6–10 sim drones run together without cameras; controller load and recording size are measured.
+### S6 Sim mocap
 
-| Issue | Status |
-|---|---|
-| Run 6 then 10 headless sim drones | Backlog |
-| Record controller load and recording size | Backlog |
+**Linear target:** not set. **Progress:** 0%.
+
+Make the sim drones get their position the way the real indoor drones do: the simulator's true position is fed to PX4 as if it were mocap, with GPS off and the real drone's estimator settings. Done when: three drones take off, fly random goals and land on sim mocap.
+
+| Issue | Exact Linear title | Status |
+|---|---|---|
+| [NEAR-803](https://linear.app/nearlab/issue/NEAR-803) | Publish the simulator’s true drone positions | Backlog |
+| [NEAR-804](https://linear.app/nearlab/issue/NEAR-804) | Send them into PX4 as mocap-style position | Backlog |
+| [NEAR-805](https://linear.app/nearlab/issue/NEAR-805) | Sim setting that turns GPS off and uses the real drone’s estimator values | Backlog |
+| [NEAR-806](https://linear.app/nearlab/issue/NEAR-806) | Fly three drones on sim mocap: takeoff, random goals, land | Backlog |
+
+### S7 drone_1 flies on cuVSLAM
+
+**Linear target:** not set. **Progress:** 0%.
+
+Hand over position from sim mocap to cuVSLAM with automatic fallback. **Done when:** source switching/fallback works; hand-flown hold, out-and-back, spin, open-view and hard-stick tests pass; a scripted flight is scored against true position.
+
+| Issue | Exact Linear title | Status |
+|---|---|---|
+| [NEAR-795](https://linear.app/nearlab/issue/NEAR-795) | Position source switch: sim mocap or cuVSLAM, with automatic fallback | Backlog |
+| [NEAR-796](https://linear.app/nearlab/issue/NEAR-796) | Hand-flown handover tests (hold, out-and-back, spin, open view, hard stick) | Backlog |
+| [NEAR-797](https://linear.app/nearlab/issue/NEAR-797) | Scripted flight on cuVSLAM, scored against true position | Backlog |
+
+### S8 Model the chosen camera and payload
+
+**Linear target:** not set. **Progress:** 0%.
+
+Model the chosen camera, its IMU input and Jetson/camera weight. **Done when:** the camera feeds cuVSLAM; camera+IMU is scored against camera-only; the model with 300–360 g added passes hover, step and crossing checks.
+
+| Issue | Exact Linear title | Status |
+|---|---|---|
+| [NEAR-798](https://linear.app/nearlab/issue/NEAR-798) | Add Jetson and camera weight to the Starling sim model | Backlog |
+| [NEAR-807](https://linear.app/nearlab/issue/NEAR-807) | Re-run hover, step and crossing tests on the heavier model | Backlog |
+| [NEAR-808](https://linear.app/nearlab/issue/NEAR-808) | Feed drone_1’s IMU into cuVSLAM (camera-only → camera + IMU) and compare the scores | Backlog |
+| [NEAR-809](https://linear.app/nearlab/issue/NEAR-809) | Model the chosen camera on drone_1 in sim | Backlog |
+
+### S9 Safe failover
+
+**Linear target:** not set. **Progress:** 0%.
+
+Keep the controller safe through stale, missing or switched position. **Done when:** no unsafe movement follows stale/missing positions, and source switching moves the drone less than 30 cm.
+
+| Issue | Exact Linear title | Status |
+|---|---|---|
+| [NEAR-810](https://linear.app/nearlab/issue/NEAR-810) | Controller handles stale or missing positions (tests first) | Backlog |
+| [NEAR-811](https://linear.app/nearlab/issue/NEAR-811) | Measure and reduce the jump when the position source switches | Backlog |
+
+### S10 Scale test
+
+**Linear target:** not set. **Progress:** 0%.
+
+**Done when:** 6–10 simulated drones run without cameras; controller load and recording size are measured.
+
+| Issue | Exact Linear title | Status |
+|---|---|---|
+| [NEAR-812](https://linear.app/nearlab/issue/NEAR-812) | Run 6 then 10 headless sim drones | Backlog |
+| [NEAR-813](https://linear.app/nearlab/issue/NEAR-813) | Record controller load and recording size | Backlog |
 
 ---
 
-## Project 2 · Starling Flight Bring-up (M2–M7)
+## Project 2 · HTX-R2 Starling Flight Bring-up (M2–M7)
 
-**Summary.** Fly the real Starling 2 Max on the new ground-control software under mocap, one safety-checked step at a
-time: hand-carry, first flight, goal flights, gamepad, then several drones.
+[Linear project](https://linear.app/nearlab/project/htx-r2-starling-flight-bring-up-m2-m7-269b3d72d5ce)
 
-**Why.** The lab switched to CMU's newer ground-control software on 7 Oct, so the flights proven in September have to be
-re-earned on it. Each step only starts when the previous one passes, and every flight follows the preflight card. Mocap
-returns around 9 Nov after the camera upgrade.
+**Status:** Backlog. **Start:** 2026-11-09. **Target:** not set. **Inventory:** 7 milestones, 28 issues, all Backlog.
 
-**Dates:** 9 Nov 2026 → 31 Jan 2027. Sim rehearsal is covered by Project 1; the September flights on the previous
-software are history and not tracked here.
+Fly real Starling 2 Max drones on the new ground-control software under mocap, one safety-checked step at a time. The software changed on 7 Oct, so September's flight capabilities must be re-earned. Each step begins only after the previous one passes; every flight follows the preflight card. Mocap is expected back around 9 Nov. Simulation and flight without mocap are outside this project's scope.
 
-### R1 · New mocap and network pipeline · 12 Nov
-Bring the upgraded OptiTrack system online and rebuild the full path from the mocap cameras to the drone over the lab
-network, before the drone is set up for flight. The camera upgrade changes Motive, its settings and possibly its IP; the
-laptop must sit on the mocap PC's 192.168.9.x subnet because mocap streams as multicast, which does not cross the
-router; the drone sits on a separate subnet reached by a route.
+### R1 · New mocap and network pipeline
 
-**Done when:** Motive is calibrated with the ground plane, axis convention and the drone's rigid body; the laptop receives
-the stream at full rate for 10 minutes with no stalls; laptop and drone reach each other both ways; the mocap position
-reaches the drone's PX4 and moves the right way on every axis; the new Motive settings are written into the lab docs.
+**Linear target:** not set. **Progress:** 0%.
 
-| Issue | Status |
-|---|---|
-| Set up the upgraded Motive: calibrate (wand, ground plane, axis convention) and create the Starling rigid body | Backlog |
-| Network: laptop on the mocap subnet (192.168.9.x) with the route to the drone subnet; drone gets its WiFi address; both ping each other | Backlog |
-| Mocap stream end to end: laptop receives it at full rate for 10 min with no stalls, it reaches the drone's PX4, and moving the drone by hand moves the position the same way on every axis | Backlog |
-| Record the new Motive version, IP and streaming settings in the lab docs and pictures | Backlog |
+Bring upgraded OptiTrack online and rebuild the camera-to-drone network path. The laptop needs the mocap PC's 192.168.9.x subnet because multicast does not cross the router; the drone uses a separate routed subnet.
 
-### M2 · Drone setup and hand-carry, propellers off · 15 Nov
-Set the drone up for the new software and carry it by hand, propellers off, to check that position flows end to end
-before anything spins.
+**Done when:** Motive calibration, ground plane, axes and rigid body are configured; full-rate streaming lasts 10 minutes without stalls; laptop/drone communicate both ways; PX4 receives correct-axis mocap; settings are documented.
 
-**Done when:** the drone's ID matches the controller's target; only one
-connection watchdog runs; the drone's estimator fuses mocap; the hand-carried drone moves correctly in the panel's 3D
-view; the kill switch is checked with props off.
+| Issue | Exact Linear title | Status |
+|---|---|---|
+| [NEAR-814](https://linear.app/nearlab/issue/NEAR-814) | Network: laptop on the mocap subnet (192.168.9.x) with the route to the drone subnet; drone gets its WiFi address; both ping each other | Backlog |
+| [NEAR-815](https://linear.app/nearlab/issue/NEAR-815) | Set up the upgraded Motive: calibrate (wand, ground plane, axis convention) and create the Starling rigid body | Backlog |
+| [NEAR-816](https://linear.app/nearlab/issue/NEAR-816) | Mocap stream end to end: laptop receives it at full rate for 10 min with no stalls, it reaches the drone’s PX4, and moving the drone by hand moves the position the same way on every axis | Backlog |
+| [NEAR-817](https://linear.app/nearlab/issue/NEAR-817) | Record the new Motive version, IP and streaming settings in the lab docs and pictures | Backlog |
 
-| Issue | Status |
-|---|---|
-| Re-run the drone setup script, then reboot the drone (never restart the flight software service) | Backlog |
-| Confirm the drone ID matches the controller's target | Backlog |
-| Confirm only one connection watchdog runs on the drone | Backlog |
-| Check the controller's messages match the drone's PX4 version | Backlog |
-| Hand-carry with props off: panel tracks the drone, estimator fuses mocap | Backlog |
-| Props-off kill switch test | Backlog |
+### M2 · Drone setup and hand-carry, propellers off
 
-### M3 · First flight on the new software · 22 Nov
-Takeoff, hover and land under software control, inside the fence, with the safety rules re-verified.
+**Linear target:** not set. **Progress:** 0%.
 
-**Done when:** takeoff → hover → land works with the fence holding; every command is acknowledged; the landing settles
-and disarms cleanly; a hover with the dummy payload gives hover throttle and flight time.
+Set up the drone and check end-to-end position with propellers off. **Done when:** drone ID matches controller target, only one watchdog runs, estimator fuses mocap, the panel tracks the hand-carried drone correctly, and kill switch is checked props-off.
 
-| Issue | Status |
-|---|---|
-| Preflight card dry run with the new software | Backlog |
-| First flight: takeoff, hover, land | Backlog |
-| Landing test: settle on the ground, then disarm | Backlog |
-| Weigh the flight-ready drone and fit a dummy payload mass | Backlog |
-| Dummy-payload hover: hover throttle and flight time to 20 % battery | Backlog |
+| Issue | Exact Linear title | Status |
+|---|---|---|
+| [NEAR-818](https://linear.app/nearlab/issue/NEAR-818) | Re-run the drone setup script, then reboot the drone (never restart the flight software service) | Backlog |
+| [NEAR-819](https://linear.app/nearlab/issue/NEAR-819) | Confirm the drone ID matches the controller’s target | Backlog |
+| [NEAR-820](https://linear.app/nearlab/issue/NEAR-820) | Confirm only one connection watchdog runs on the drone | Backlog |
+| [NEAR-821](https://linear.app/nearlab/issue/NEAR-821) | Check the controller’s messages match the drone’s PX4 version | Backlog |
+| [NEAR-822](https://linear.app/nearlab/issue/NEAR-822) | Hand-carry with props off: panel tracks the drone, estimator fuses mocap | Backlog |
+| [NEAR-823](https://linear.app/nearlab/issue/NEAR-823) | Props-off kill switch test | Backlog |
 
-### M4 · Goal flights with the braking fence · 29 Nov
-Fly commanded goals on the smooth, speed-limited profile and check the fence brakes the drone before the walls.
+### M3 · First flight on the new software
 
-**Done when:** goal legs fly on the limited profile; wall braking distance is measured; gains are changed live from the
-panel; a hold stops the drone where expected.
+**Linear target:** not set. **Progress:** 0%.
 
-| Issue | Status |
-|---|---|
-| Goal legs on the speed-limited profile | Backlog |
-| Measure braking at the fence walls | Backlog |
-| Change gains live from the panel in flight | Backlog |
-| Check where a hold stops the drone | Backlog |
+Take off, hover and land under software control inside the fence. **Done when:** every command is acknowledged; landing settles and disarms; dummy-payload hover yields hover throttle and flight time.
 
-### M5 · Gamepad flying on the real drone · 6 Dec
-Fly the real drone by gamepad through the controller.
+| Issue | Exact Linear title | Status |
+|---|---|---|
+| [NEAR-824](https://linear.app/nearlab/issue/NEAR-824) | Preflight card dry run with the new software | Backlog |
+| [NEAR-825](https://linear.app/nearlab/issue/NEAR-825) | First flight: takeoff, hover, land | Backlog |
+| [NEAR-826](https://linear.app/nearlab/issue/NEAR-826) | Landing test: settle on the ground, then disarm | Backlog |
+| [NEAR-827](https://linear.app/nearlab/issue/NEAR-827) | Weigh the flight-ready drone and fit a dummy payload mass | Backlog |
+| [NEAR-828](https://linear.app/nearlab/issue/NEAR-828) | Dummy-payload hover: hover throttle and flight time to 20 % battery | Backlog |
 
-**Done when:** the yaw direction is correct (the sim cannot prove it); the gamepad fence holds; releasing the sticks
-holds position; coast distance after release is measured.
+NEAR-824 description: walk through the preflight card on the ground, props off, QGC visible; fix steps that no longer match.
 
-| Issue | Status |
-|---|---|
-| Check the yaw stick turns the drone the right way, slowly and low | Backlog |
-| Gamepad fence test | Backlog |
-| Release-to-hold test and coast distance | Backlog |
+### M4 · Goal flights with the braking fence
 
-### M6 · LED strips (optional hardware) · when the strip arrives (target Dec)
-Show each drone's state on an LED strip.
+**Linear target:** not set. **Progress:** 0%.
 
-**Done when:** the LED service runs on the drone; green by default, red when collision avoidance acts; the motor LEDs
-are muted.
+**Done when:** goal legs use the smooth speed-limited profile; wall braking distance is measured; gains change live; hold stops the drone where expected.
 
-| Issue | Status |
-|---|---|
-| Fit the LED strip and start the LED service on the drone | Backlog |
-| Check green / red behaviour in flight | Backlog |
+| Issue | Exact Linear title | Status |
+|---|---|---|
+| [NEAR-829](https://linear.app/nearlab/issue/NEAR-829) | Goal legs on the speed-limited profile | Backlog |
+| [NEAR-830](https://linear.app/nearlab/issue/NEAR-830) | Measure braking at the fence walls | Backlog |
+| [NEAR-831](https://linear.app/nearlab/issue/NEAR-831) | Change gains live from the panel in flight | Backlog |
+| [NEAR-832](https://linear.app/nearlab/issue/NEAR-832) | Check where a hold stops the drone | Backlog |
 
-### M7 · Multi-drone · 31 Jan
-Fly two, then three real drones together under mocap.
+### M5 · Gamepad flying on the real drone
 
-**Done when:** formations, random goals with collision avoidance, and the intruder-squeeze test fly with real drones.
-Blocked until the new Starlings arrive.
+**Linear target:** not set. **Progress:** 0%.
 
-| Issue | Status |
-|---|---|
-| Check the hardware order went out (Starlings, 2 stereo cameras, LED strip, 2.4 GHz radio) | Backlog |
-| Set up each new Starling (one at a time, setup guide) | Backlog |
-| Two drones: formation and random goals with collision avoidance | Backlog |
-| Three drones: intruder-squeeze test | Backlog |
+**Done when:** yaw direction is correct (not proved by sim), the gamepad fence holds, stick release holds position, and coast distance is measured.
+
+| Issue | Exact Linear title | Status |
+|---|---|---|
+| [NEAR-833](https://linear.app/nearlab/issue/NEAR-833) | Check the yaw stick turns the drone the right way, slowly and low | Backlog |
+| [NEAR-834](https://linear.app/nearlab/issue/NEAR-834) | Gamepad fence test | Backlog |
+| [NEAR-835](https://linear.app/nearlab/issue/NEAR-835) | Release-to-hold test and coast distance | Backlog |
+
+### M6 · LED strips
+
+**Linear target:** not set. **Progress:** 0%.
+
+Optional hardware; starts when the strip arrives. **Done when:** LED service runs on the drone; green by default, red when collision avoidance acts; motor LEDs muted.
+
+| Issue | Exact Linear title | Status |
+|---|---|---|
+| [NEAR-836](https://linear.app/nearlab/issue/NEAR-836) | Fit the LED strip and start the LED service on the drone | Backlog |
+| [NEAR-837](https://linear.app/nearlab/issue/NEAR-837) | Check green / red behaviour in flight | Backlog |
+
+### M7 · Multi-drone
+
+**Linear target:** not set. **Progress:** 0%.
+
+Fly two, then three real drones under mocap. **Done when:** formations, random goals with collision avoidance and intruder-squeeze tests fly. The plan states this depends on the new Starlings arriving; issue status remains Backlog.
+
+| Issue | Exact Linear title | Status |
+|---|---|---|
+| [NEAR-838](https://linear.app/nearlab/issue/NEAR-838) | Check the hardware order went out (Starlings, 2 stereo cameras, LED strip, 2.4 GHz radio) | Backlog |
+| [NEAR-839](https://linear.app/nearlab/issue/NEAR-839) | Set up each new Starling (one at a time, setup guide) | Backlog |
+| [NEAR-840](https://linear.app/nearlab/issue/NEAR-840) | Two drones: formation and random goals with collision avoidance | Backlog |
+| [NEAR-841](https://linear.app/nearlab/issue/NEAR-841) | Three drones: intruder-squeeze test | Backlog |
 
 ---
 
-## Project 3 · Multi-Drone Localisation (VO + UWB)
+## Project 3 · HTX-R3 Multi-Drone Localisation (VO + UWB)
 
-**Summary.** Find out which approach keeps every drone's position correct relative to the other drones without mocap, and
-what each approach costs, before the hardware design is fixed.
+[Linear project](https://linear.app/nearlab/project/htx-r3-multi-drone-localisation-vo-uwb-b4a877b2fd7c)
 
-**Why.** Mocap only exists in the lab. For the HTX venue each drone must know where it is on its own, and the swarm must
-agree on one shared frame. Three families are compared: (A) collaborative SLAM, where drones share map pieces; (B) each
-drone localises in one pre-built shared map (tested in Project 1, S5b); (C) each drone runs its own visual odometry and
-UWB distances between drones keep the frames lined up. Heading is the known weak point of C.
+**Status:** Backlog. **Start:** 2026-10-22. **Target:** not set. **Inventory:** 6 milestones, 17 issues (1 Done, 16 Backlog).
 
-**Dates:** 22 Oct 2026 → March 2027.
+Find which approach keeps drones positioned correctly relative to one another without mocap, and its costs, before hardware design is fixed. Compare collaborative SLAM, individual localisation in a shared pre-built map (Project 1 S5b), and individual VO aligned by inter-drone UWB distances. Heading is the known weak point of the third approach.
 
-### L0 · Literature review · 22 Oct · ✅ done
-Reviewed 13 methods (Omni-swarm, D²SLAM, Swarm-SLAM, Kimera-Multi, COVINS and others) for evidence of use on real drones.
-Verdicts: collaborative SLAM is not ready for us now; a shared map is worth a one-day trial; own VO + UWB alignment is the
-recommended baseline, but heading needs an extra source such as a second UWB tag per drone.
+### L0 · Literature review
 
-| Issue | Status |
-|---|---|
-| Literature review with validation evidence | Done |
+**Linear target:** 2026-10-22. **Progress:** 100%.
 
-### L1 · Team review pack · 3 Nov
-Bring the evidence so far to the team review.
+Reviewed 13 methods including Omni-swarm, D²SLAM, Swarm-SLAM, Kimera-Multi and COVINS for real-drone evidence. Collaborative SLAM is not ready for this effort; shared maps merit a one-day trial; own VO + UWB alignment is the recommended baseline, with an extra heading source such as two UWB tags per drone.
 
-**Done when:** the review has the literature table, the flat-world vs construction-site cuVSLAM result, the effort log,
-and a recommendation with open questions.
+| Issue | Exact Linear title | Status |
+|---|---|---|
+| [NEAR-842](https://linear.app/nearlab/issue/NEAR-842) | Literature review with validation evidence | Done |
 
-| Issue | Status |
-|---|---|
-| Results table: what was tested, what it showed | Backlog |
-| Recommendation and open questions | Backlog |
-| Update the effort log | Backlog |
-| Slides for the review | Backlog |
+### L1 · Team review pack
 
-### L2 · Three-drone dataset and UWB emulator · 13 Dec
-Record the flights every approach will be compared on, and simulate the UWB distances between drones.
+**Linear target:** not set. **Progress:** 0%.
 
-**Done when:** cameras run on all three sim drones; hover, formation, crossing and a 10–15 min figure-8 are recorded with
-true positions; the UWB emulator produces distances with realistic noise, bias and blocked-line errors from the papers.
+**Done when:** the review includes the literature table, flat-world versus construction-site cuVSLAM result, effort log, recommendation and open questions.
 
-| Issue | Status |
-|---|---|
-| Cameras on all three sim drones, added one at a time with a GPU check | Backlog |
-| Record hover, formation, crossing and long figure-8 with true positions | Backlog |
-| UWB distance emulator between drones (noise, bias, blocked-line errors) | Backlog |
-| Drift injector to test many drones without many cameras | Backlog |
-| Run one public multi-drone dataset (MILUV) for a real-data result | Backlog |
+| Issue | Exact Linear title | Status |
+|---|---|---|
+| [NEAR-843](https://linear.app/nearlab/issue/NEAR-843) | Results table: what was tested, what it showed | Backlog |
+| [NEAR-844](https://linear.app/nearlab/issue/NEAR-844) | Recommendation and open questions | Backlog |
+| [NEAR-845](https://linear.app/nearlab/issue/NEAR-845) | Update the effort log | Backlog |
+| [NEAR-846](https://linear.app/nearlab/issue/NEAR-846) | Slides for the review | Backlog |
 
-### L3 · Own VO + UWB alignment · 3 Jan
-Build the aligner that keeps every drone's frame lined up using UWB distances, and measure it.
+### L2 · Three-drone dataset and UWB emulator
 
-**Done when:** relative position error per drone pair over time, heading error and time to converge are measured; one vs
-two UWB tags per drone is compared.
+**Linear target:** not set. **Progress:** 0%.
 
-| Issue | Status |
-|---|---|
-| Aligner: continuous frame alignment from positions and UWB distances | Backlog |
-| Measure pair error, heading error and convergence time | Backlog |
-| Compare one vs two UWB tags per drone | Backlog |
+Record comparison flights and emulate inter-drone UWB distances. **Done when:** cameras run on all three drones; hover, formation, crossing and a 10–15 min figure-8 are recorded with true positions; the emulator includes realistic noise, bias and blocked-line errors from the papers.
 
-### L4 · First real-hardware number · 27 Feb
-Carry the chosen camera by hand under mocap with cuVSLAM running, and compare against Motive.
+| Issue | Exact Linear title | Status |
+|---|---|---|
+| [NEAR-847](https://linear.app/nearlab/issue/NEAR-847) | Cameras on all three sim drones, added one at a time with a GPU check | Backlog |
+| [NEAR-848](https://linear.app/nearlab/issue/NEAR-848) | Record hover, formation, crossing and long figure-8 with true positions | Backlog |
+| [NEAR-849](https://linear.app/nearlab/issue/NEAR-849) | UWB distance emulator between drones (noise, bias, blocked-line errors) | Backlog |
+| [NEAR-850](https://linear.app/nearlab/issue/NEAR-850) | Drift injector to test many drones without many cameras | Backlog |
+| [NEAR-851](https://linear.app/nearlab/issue/NEAR-851) | Run one public multi-drone dataset (MILUV) for a real-data result | Backlog |
 
-**Done when:** cuVSLAM's path is scored against mocap for a hand-carried camera.
+### L3 · Own visual odometry + UWB alignment
 
-| Issue | Status |
-|---|---|
-| Hand-carry the chosen camera under mocap with cuVSLAM on the laptop | Backlog |
-| Score cuVSLAM against Motive | Backlog |
+**Linear target:** not set. **Progress:** 0%.
 
-### L5 · Scale to 10 sim drones · March
-Check the alignment still holds with a bigger swarm.
+Build and measure continuous UWB frame alignment. **Done when:** pairwise relative-position error over time, heading error and convergence time are measured; one versus two UWB tags per drone are compared.
 
-**Done when:** UWB alignment runs on 10 sim drones; error and radio bandwidth are measured.
+| Issue | Exact Linear title | Status |
+|---|---|---|
+| [NEAR-852](https://linear.app/nearlab/issue/NEAR-852) | Aligner: continuous frame alignment from positions and UWB distances | Backlog |
+| [NEAR-853](https://linear.app/nearlab/issue/NEAR-853) | Measure pair error, heading error and convergence time | Backlog |
+| [NEAR-854](https://linear.app/nearlab/issue/NEAR-854) | Compare one vs two UWB tags per drone | Backlog |
 
-| Issue | Status |
-|---|---|
-| Run the aligner on 10 sim drones | Backlog |
-| Measure error and UWB/WiFi bandwidth | Backlog |
+### L4 · First real-hardware number
+
+**Linear target:** not set. **Progress:** 0%.
+
+Hand-carry the selected camera under mocap with cuVSLAM. **Done when:** its trajectory is scored against Motive/mocap.
+
+| Issue | Exact Linear title | Status |
+|---|---|---|
+| [NEAR-855](https://linear.app/nearlab/issue/NEAR-855) | Hand-carry the chosen camera under mocap with cuVSLAM on the laptop | Backlog |
+| [NEAR-856](https://linear.app/nearlab/issue/NEAR-856) | Score cuVSLAM against Motive | Backlog |
+
+### L5 · Scale to 10 sim drones
+
+**Linear target:** not set. **Progress:** 0%.
+
+**Done when:** alignment runs on 10 simulated drones; error and UWB/WiFi bandwidth are measured.
+
+| Issue | Exact Linear title | Status |
+|---|---|---|
+| [NEAR-857](https://linear.app/nearlab/issue/NEAR-857) | Run the aligner on 10 sim drones | Backlog |
+| [NEAR-858](https://linear.app/nearlab/issue/NEAR-858) | Measure error and UWB/WiFi bandwidth | Backlog |
 
 ---
 
-*Totals: Project 1 has 12 milestones and 33 issues; Project 2 has 7 milestones and 28 issues; Project 3 has 6 milestones
-and 17 issues. Results so far live in the repo under `localisation/results/`; the real-drone procedures in
-`docs/RUNBOOK.md` and `docs/PREFLIGHT.md`.*
+## Where things live in the repo
+
+Sim results and run records: `localisation/results/`. How to run the camera-world sim: `localisation/README.md`. Real-drone procedures: `docs/RUNBOOK.md` and `docs/PREFLIGHT.md`. Milestone ladder and test history: `docs/MILESTONES.md`.
+
+## Inventory check
+
+| Project | Milestones | Issues | Done | In Progress | Backlog |
+|---|---:|---:|---:|---:|---:|
+| HTX-R1 | 12 | 33 | 5 | 1 | 27 |
+| HTX-R2 | 7 | 28 | 0 | 0 | 28 |
+| HTX-R3 | 6 | 17 | 1 | 0 | 16 |
+| Total | 25 | 78 | 6 | 1 | 71 |

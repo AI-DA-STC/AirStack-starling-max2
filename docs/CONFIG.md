@@ -140,7 +140,7 @@ bind-mounted PX4 airframe `10090_pegasus_starling2max`. Values and sources: the 
 **Moved from RUNBOOK §A (2026-10-21) — validation state.** Ledger #1–#4 passed 2026-10-19 on the OLD asset, gains and speeds; the
 fresh launch of 2026-10-21 (ledger #13) passed on the current ones: asset complete, no PhysX
 warnings, 2.0 m/s commanded / ~1.7 flown, all three landed and disarm accepted first try.
-Re-runs are pending — the ordered list is **the next issue in Linear (snapshot: [MILESTONES.md](MILESTONES.md) "Where each project is")**, the
+Re-runs are pending — the next re-run is **the next issue in Linear (snapshot: [MILESTONES.md](MILESTONES.md) "Where each project is")**, the
 only to-do list (this page keeps no copy). Acceptance tools live in `simulation/isaac-sim/tools/`
 (`docker cp` them into the robot container, run with `bash -ic`).
 

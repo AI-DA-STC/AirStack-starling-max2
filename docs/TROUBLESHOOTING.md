@@ -102,7 +102,7 @@
   armed after that: KILL or arm switch down, then investigate — never approach a spinning
   drone. Confirm **DISARMED in QGC** every time (iron rule 2). The settle/retry code path is
   exercised on the real drone only through the landing test
-  (NEAR-825, [projects/HTX-R2.md](projects/HTX-R2.md)); the retry is inert there (`px4_interface.disarm()` reports
+  (NEAR-826, [projects/HTX-R2.md](projects/HTX-R2.md)); the retry is inert there (`px4_interface.disarm()` reports
   success on send) — the ACK in the `px4_interface` log is the only evidence.
 - **SIM** — `cbf_sim.yaml` runs the settle + retry: `land_settle_s` 2.0 keeps the descent
   commanded on the ground, then DISARM; a denied DISARM is resent every `land_disarm_retry_s`

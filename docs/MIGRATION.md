@@ -539,3 +539,98 @@ awaiting review); `0002` is retired on this branch.
 
 </details>
 
+
+## Appendix — code-readiness audit of the `cf719f0` snapshot (moved from MILESTONES §3b)
+
+> **2026-10-20:** the audit below was done on `cf719f0`. The bump to `b21d28c` changed
+> `swarm_commander.py` (+180: `tuning` status block, `sequence_*`, teleop-speed sync),
+> `scenarios.py` (+356: `GoalSequenceScenario`, `FigureEightScenario`), `teleop_node.py`
+> (+198: `sync_max_speed`), the launch file (bag recorder args) and the panel. Findings below
+> are unchanged unless marked; the new code is **unaudited** (⏳ STE) — §11.
+> Line numbers in this table are those of `cf719f0`; in `swarm_commander.py` they are stale
+> after the bump — find the named function instead.
+>
+> **Our own code edits since the audit** (not CMU's, all listed in `AirStack/README.md`
+> "Ours vs CMU"): `swarm_commander.py` `landing_done()` (settle, 10-19) and
+> `land_disarm_step()` (disarm retry, 10-20) + `test/test_landing_settle.py`;
+> `interface_bringup/launch/mavros_px4.launch.xml` (mavros respawn, sim-only, 10-20); the
+> sim airframe's 10-20 parameters (rate gains ×0.5, `LNDMC_ROT_MAX` 300, MPC limits = real).
+
+Verified by direct inspection of the `AirStack/` snapshot (paths relative to
+`AirStack/robot/ros_ws/src/svg_ground_control/` unless stated). Everything below EXISTS:
+
+| Capability | Where in the code |
+|---|---|
+| Host networking for robot container | `robot/docker/docker-compose.yaml:50` — `network_mode: host` (unchanged) |
+| Foxglove installers run at container start | `robot/docker/docker-compose.yaml:34-35` (general panels + SVG panel, non-fatal) |
+| Studio config persistence + gamepad visibility | `robot/docker/robot-base-docker-compose.yaml:42` (`./Foxglove` mount), `:51` (`/dev/input` bind mount) |
+| 8-pane (5-over-3) tmux `bringup` session | `common/.tmux.conf:16-55`; `robot/docker/.bashrc:33-46` (`sws_after_build`) |
+| VOXL2 comms provisioner (rewritten) | `scripts/voxl_setup_real_drone.sh:129-146` (`px4-` wrapper + 60 s retry), `:193-240` (`svg-microdds-watchdog` unit) |
+| uXRCE-DDS agent in the robot image | `robot/docker/Dockerfile.robot` — **unchanged** vs the previous snapshot (no image rebuild needed for the agent) |
+| Real-drone flight interface, `target_system` | `robot/ros_ws/src/interface/px4_interface/src/px4_interface.cpp:161-163` (param), `:661` (stamped on every VehicleCommand), `:680-706` (`vehicle_command_ack` logging) |
+| Trajectory setpoint input (position + velocity + acceleration) | `px4_interface.cpp:225-234` (subscriber), `:333-392` (handler, ENU→NED, NaN = not commanded), `:371-387` (absolute yaw vs yaw-rate) |
+| Per-drone `target_systems:=` launch arg | `launch/real_interfaces.launch.py:54-57` (`_default_target_system`: the trailing number of the drone name) |
+| Mocap → PX4 external vision | `svg_ground_control/mocap_bridge.py` — **unchanged** except a shutdown guard (`:211-215`) |
+| Commander: trajectory output for real drones | `svg_ground_control/swarm_commander.py:415-418` (`real_command_mode: trajectory`), `:1982-2052` (`publish_command`), `:189-220` (`command_feedforward`) |
+| Commander: status snapshot | `swarm_commander.py:1037-1118` (`/svg/commander_status`, 5 Hz), `:491` (`takeover_twins`) |
+| Commander: runtime parameters | `swarm_commander.py:920-1033` (CBF gains, fence dynamics, goal law, teleop; others refused with a reason) |
+| CBF filter with fixed rows | `svg_ground_control/cbf_filter.py:140` (`fixed`), `:198-216` (pruning), `:512-549` (emergency push-apart); wiring `swarm_commander.py:1810-1889`; `/svg/cbf_active` `:1909-1917` |
+| Keep-in fence braking envelope + teleop fence | `svg_ground_control/fence.py:88` (`wall_speed`), `:111`, `:136`; `swarm_commander.py:1455-1581`, `:1952-1953`; teleop fence must sit inside the geofence `:607-618` |
+| Position-hold leash, stick ramp, predicted stop point | `svg_ground_control/position_hold.py:62` (`leash`), `:116` (`ramp_velocity`); `swarm_commander.py:1695-1722`, `:1673-1693` (`stop_point`) |
+| Go-to-goal profile | `svg_ground_control/trajectory.py:53` (`brake_speed`), `:92` (`ReferenceTracker`); `scenarios.py:123-156` |
+| Gamepad teleop | `svg_ground_control/safe_teleop/teleop_node.py:42-75` (params), `:146-184` (wrong-axis-map guard); `controllers.py:90`, `:127` (profiles); `launch/teleop.launch.py`; `scripts/svg_teleop.sh` |
+| Formation profiles | `swarm_commander.py:775-810`, `:1312-1338`; `config/goal_tracking.yaml:99-113`, `config/cbf_sim.yaml:101-113` |
+| Random-goal scenario | `svg_ground_control/scenarios.py:238-274` (`RandomGoalsScenario`), `:172` (initial layout) |
+| LED strips | `svg_ground_control/led_controller.py:100`; `scripts/svg_led_daemon.py`; `scripts/voxl_push_led.sh`; `common/ros_packages/msgs/airstack_msgs/srv/SetLedColor.srv` |
+| Foxglove SVG Basestation panel + layout | `foxglove/svg-basestation/dist/extension.js` (3220 lines); `foxglove/svg_basestation.json`; `foxglove/install.py`; bridge in `launch/ground_control.launch.py:105-127` |
+| Fence-clipped ground grid in the 3D view | `swarm_commander.py:2240-2292` (`fence_grid_cell_m` 0.5 m) |
+| Flight services | `swarm_commander.py:813-817` (`~/takeoff ~/start ~/hold ~/land ~/reset_fence`) |
+| Procedures documented by CMU | `experiment.md` Part A (sim), B (real-drone bring-up, B1 includes LEDs), C (tasks: C0 interfaces + `target_system`, C1 single goal, …), `teleop.md`, `foxglove/svg-basestation/README.md` |
+| **Starling 2 Max sim model** (ours, 2026-10-19, updated 10-20) | sim-only — the parts are listed right below this table |
+| **MAVROS respawn** (ours, 2026-10-20, sim-only) | `robot/ros_ws/src/interface/interface_bringup/launch/mavros_px4.launch.xml` — `mavros_node` declared with `respawn="true"`, `respawn_delay="2.0"`; real drones use `px4_interface` and never load this file |
+
+Parts of the Starling 2 Max sim model (all under `AirStack/simulation/isaac-sim/` or the
+vendored Pegasus extension; values in [CONFIG.md](CONFIG.md) "Sim airframe", which is
+authoritative):
+
+- asset `assets/robots/starling2max.usd` — CMU's sys-ID masses/inertia; body mesh culled of
+  parts < 2 mm, no decimation (10-20 rebuild, [LEDGER](record/LEDGER.md) #9);
+- Pegasus `logic/vehicles/multirotors/starling2max.py` + `registry.py` — the vehicle config,
+  picked by USD file name in `OgnPegasusMultirotorNodeBase.create_multirotor`;
+- Pegasus `logic/thrusters/lagged_quadratic_thrust_curve.py` — motor-lag capability, default
+  0 (off);
+- PX4 airframe `px4/airframes/10090_pegasus_starling2max`, bind-mounted into PX4's ROMFS
+  source dir by `docker/docker-compose.yaml` — the real drone's attitude/position gains; rate
+  gains ×0.5 + gyro filters 80/40 (sim-only, [LEDGER](record/LEDGER.md) #10); `LNDMC_ROT_MAX` 300 (sim-only,
+  [LEDGER](record/LEDGER.md) #9); MPC speed/accel limits = the real drone's ([LEDGER](record/LEDGER.md) #12);
+- `launch_scripts/launch_env.py` + `svg_multi_drone_single_domain.py` — `DRONE_USD`,
+  `PX4_VEHICLE_MODEL` env vars;
+- unit tests in Pegasus `tests/unit/` + `tools/test_launch_env.py`; test scripts
+  `tools/sim_hover_step_test.sh`, `tools/sim_cbf_crossing_test.sh`.
+
+**Genuinely NOT in code (manual, by design):** machine clock sync; PX4 EKF2 external-vision
+parameters (the `.params` file via QGC); PX4 failsafes and the RC kill switch (QGC);
+Motive-side configuration; which physical gamepad the lab owns (identify with `joy_map`,
+record in [CONFIG.md](CONFIG.md)).
+
+**Known defects on arrival** (found in the 2026-10-07 code survey — none block M0–M3, all
+must be remembered; details in the corrections tables of the linked docs):
+
+| Defect | Effect | Where documented |
+|---|---|---|
+| `goal_tracking.yaml` ships `scenario: random_goals` (at `cf719f0`) | goal / speed / formation commands were **silently ignored**; CMU's C2 recipe did nothing — resolved upstream at b21d28c (goal / drone_1); remaining: 10 m/s, exempt drone_1 | [SCENARIOS.md](SCENARIOS.md) §9 |
+| `goal_single.yaml` targets `drone_2`, not `drone_1` (at `cf719f0`) | commander waited for a drone we don't have — resolved upstream at b21d28c (goal / drone_1); remaining: 10 m/s, exempt drone_1 | [MIGRATION.md](MIGRATION.md) §6 |
+| CMU `teleop.md` sign table says `left_sign = -1.0` | code has `+1.0` and records that `-1.0` flew the wrong way on the bench — **trust the code** | [TELEOP.md](TELEOP.md) §9 |
+| Two CBF-exempt / external drones get **no** mutual protection | pairs with no movable drone are pruned from the solve | [SCENARIOS.md](SCENARIOS.md) §2 |
+| `random_goals` samples goals with no separation | CMU bag: 100 of 221 legs had a drone within 1.5 m of a goal; one arrival took 68 s | [SCENARIOS.md](SCENARIOS.md) §7 |
+| Patch 0001 (ZED camera-info race) absent upstream | re-applied in our snapshot; re-apply on any fresh CMU clone | `AirStack/README.md` |
+| Stale `foxglove/svg-basestation/dist/nvm.js` | copied into every panel install; unused, harmless | [BASESTATION.md](BASESTATION.md) §9 |
+
+### Upstream candidates (found 2026-10-07, not ours to fix)
+
+- `random_goals` samples goals with no separation from other drones (deadlock on a goal);
+- `goal_single.yaml` / `goal_tracking.yaml` shipped values (drone_2, `random_goals`, 10 m/s)
+  that contradict CMU's own `experiment.md` recipes — resolved upstream at b21d28c (goal / drone_1); remaining: 10 m/s, exempt drone_1;
+- `svg_teleop.sh real` gates on `natnet_ros2` — our rig uses `./mocap.sh` (the gate on
+  `/drone_1/pose` may still pass; untested);
+- `svg-microdds-watchdog` duplicates our `voxl-dds-retry.service`.

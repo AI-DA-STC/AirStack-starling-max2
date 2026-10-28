@@ -1,0 +1,13 @@
+groups: cannot find name for group ID 992
+[07:42:52] pre-takeoff: IDLE -2.001 0.016 0.042
+[07:42:53] takeoff: success=True, message='takeoff: drone_1, drone_2, drone_3'
+[07:43:26] start: success=True, message='scenario "goal" running'
+[07:43:34] hover: ACTIVE -0.009 -1.014 1.2
+--- hover thrust samples (/drone_1/interface/mavros/setpoint_raw/target_attitude .thrust) ---
+0.15271395444869995 0.1529669165611267 0.15263888239860535 0.1528586596250534 0.15335741639137268 0.15343771874904633 0.15357202291488647 0.1534709483385086 0.153335303068161 0.1535290777683258 
+[07:43:44] step x: goal (0.989, -0.996, 1.203)
+[07:43:53] step z: goal (1.006, -0.999, 2.201)
+[07:44:01] after steps: ACTIVE 1.021 -0.984 2.204
+[07:44:05] land: success=True, message='landing: drone_1, drone_2, drone_3'
+[07:44:23] landed: IDLE 0.959 -0.965 0.041
+traces: /tmp/ascent.txt /tmp/step_x.txt /tmp/step_z.txt  (analyse with /tmp/analyze_step.py)

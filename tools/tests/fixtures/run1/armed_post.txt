@@ -1,0 +1,3 @@
+drone_1 armed: groups: cannot find name for group ID 992
+drone_2 armed: groups: cannot find name for group ID 992
+drone_3 armed: groups: cannot find name for group ID 992

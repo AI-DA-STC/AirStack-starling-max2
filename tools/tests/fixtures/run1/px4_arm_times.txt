@@ -1,0 +1,2 @@
+# PX4 arm/disarm from drone_2 (sysid 3) ulog of ledger #17 — drone_1 ulog was lost; same session, same lockstep clock
+arm_s=293.840613 disarm_s=394.710525 interval_s=100.869912 source=drone_2_sysid3_07_39_26.ulg sysid=3

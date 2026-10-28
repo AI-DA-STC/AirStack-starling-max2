@@ -106,7 +106,8 @@ def _draw_panel(top, bot, ev, title, odom, cmd, time_scale):
 
 
 def render(run_dir: pathlib.Path, out: pathlib.Path | None = None) -> pathlib.Path:
-    j = json.load(open(run_dir / "bag_analysis.json"))
+    with open(run_dir / "bag_analysis.json") as fh:
+        j = json.load(fh)
     odom, cmd = _load_xyz(run_dir / "drone_1_odom.csv"), _load_xyz(run_dir / "drone_1_cmd.csv")
     events = {e["name"]: e for e in j["events"]}
     order = panel_order(j["events"])

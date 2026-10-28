@@ -36,7 +36,10 @@ PARAM_KEYS="SYS_AUTOSTART MAV_SYS_ID MC_PITCHRATE_P MC_ROLLRATE_P LNDMC_ROT_MAX 
 say()  { echo "[$(date '+%T %Z')] $*" | tee -a "$OUT/run.log"; }
 note() { echo "$*" >> "$OUT/commands.sh"; }                # the exact commands used, for the record
 nx()   { note "$*"; "$@"; }                                 # note + run a host command
-fail() { say "FAIL ($PHASE): $*"; exit 1; }
+fail() { say "FAIL ($PHASE): $*"
+  if [ "${ALL_MODE:-0}" = 1 ] && [ "${STACK_UP:-0}" = 1 ] && [ "$PHASE" != down ]; then
+    say "all: stack is up after a FAIL in $PHASE -> running down (ulogs + logs are copied, bag kept if present)"; STACK_UP=0; PHASE=down; down || true; fi
+  exit 1; }
 caveat() { echo "$*" >> "$OUT/caveats.txt"; say "CAVEAT: $*"; }
 rx()   { docker exec "$R" bash -ic "$*" 2>&1 | grep -v -E "$NOISE" || true; }      # robot container, profile noise dropped
 ix()   { docker exec "$I" bash -ic "$*" 2>&1 | grep -v -E "$NOISE" || true; }      # isaac container
@@ -55,6 +58,7 @@ mavros_connected() { rx "timeout 10 ros2 topic echo --once /drone_$1/interface/m
 # phase_begin <phase> [files…]: marker in run.log + commands.sh ("(re-run)" when this phase ran before in this run
 # dir), then truncate the phase's own output files. Never truncates run.log, commands.sh, verdicts.log, caveats.txt.
 phase_begin() { local p=$1 tag="== phase $1 =="; shift
+  [ "$p" = isaac ] && rm -f "$OUT/ulogs_copied.ok"
   grep -qF -- "$tag" "$OUT/run.log" 2>/dev/null && tag="== phase $p (re-run) =="
   say "$tag"; note "# $tag  $(date '+%F %T %Z')"
   local f; for f in "$@"; do : > "$OUT/$f"; done; }
@@ -68,7 +72,7 @@ isaac_evidence() {   # counts from isaac.log → isaac_evidence.txt (the report 
 precheck() {
   phase_begin precheck
   say "precheck: no real-drone bridge on the laptop, port 8765 free, drone battery out (sim shares domain 1)"
-  pgrep -af 'mocap\.sh|MicroXRCEAgent|natnet' && fail "a real-drone/mocap bridge is running on the laptop" || true
+  { pgrep -x MicroXRCEAgent || pgrep -f '^(bash|sh) .*mocap\.sh' || pgrep -x natnet_ros2 ; } 2>/dev/null && fail "a real-drone/mocap bridge is running on the laptop" || true
   ss -ltnp 2>/dev/null | grep -q ':8765 ' && fail "port 8765 already in use (stray foxglove_bridge)" || true
   nvidia-smi --query-gpu=name,memory.used --format=csv,noheader | tee -a "$OUT/run.log"
 }
@@ -239,7 +243,7 @@ collect() {   # echo-trace analysis (#3's method), ulogs, PX4 params from the ul
     docker exec "$R" python3 /tmp/analyze_step.py "/tmp/$f.txt" "$ax" "$d" 40    2>&1 | sed 's/^/hz=40 /'   >> "$OUT/analyze.txt" || true
     docker exec "$R" python3 /tmp/analyze_step.py "/tmp/$f.txt" "$ax" "$d" "$HZ" 2>&1 | sed "s/^/hz=$HZ /" >> "$OUT/analyze.txt" || true
     docker cp "$R:/tmp/$f.txt" "$OUT/$f.txt" 2>/dev/null || say "WARN: no trace /tmp/$f.txt in the robot container"
-    echo "$f samples: $(grep -c "^$ax:" "$OUT/$f.txt" 2>/dev/null || echo 0)" >> "$OUT/analyze.txt"; done
+    echo "$f samples: $(grep -c "^$ax:" "$OUT/$f.txt" 2>/dev/null)" >> "$OUT/analyze.txt"; done
   tee -a "$OUT/run.log" < "$OUT/analyze.txt"
   copy_ulogs
   local U1 USE SID="2" WHO="drone_1"; U1=$(awk '$1==2{print $2}' "$OUT/ulog_sysid_map.txt" | tail -1)
@@ -276,15 +280,16 @@ down() {   # commander -> bag out -> interfaces -> ulogs (if not yet) -> Isaac -
   # the rosbag: written root-owned under the repo (AirStack/robot/ros_ws/bags, gitignored) -> heavy dir, CSVs out, then (and only then) removed
   note "docker exec $R bash -c 'ls -d $BAGS/hover_step_* | tail -1'; docker cp $R:<bag> $HEAVY/"
   b=$(docker exec "$R" bash -c "ls -d $BAGS/hover_step_* 2>/dev/null | tail -1")
-  [ -n "$b" ] || fail "no hover_step bag in the robot container ($BAGS)"
-  echo "$b" > "$OUT/bag_path.txt"
-  if docker cp "$R:$b" "$HEAVY/" && [ -f "$HEAVY/$(basename "$b")/metadata.yaml" ]; then
+  [ -n "$b" ] && echo "$b" > "$OUT/bag_path.txt"
+  local bagfail=0
+  if [ -z "$b" ]; then caveat "no hover_step bag found in the robot container ($BAGS)"
+  elif docker cp "$R:$b" "$HEAVY/" && [ -f "$HEAVY/$(basename "$b")/metadata.yaml" ]; then
     say "bag copied to $HEAVY/$(basename "$b")"
     nx docker cp "$TOOLS/hover_step_bag.py" "$R:/tmp/"
     note "docker exec $R bash -ic 'python3 /tmp/hover_step_bag.py $b drone_1 /tmp/drone_1'; docker cp $R:/tmp/drone_1_{odom,cmd,state}.csv $OUT/"
-    rx "python3 /tmp/hover_step_bag.py $b drone_1 /tmp/drone_1" | grep '^{' | tee -a "$OUT/run.log" || fail "bag reader failed (bag left in the container at $b)"
-    for f in odom cmd state; do docker cp "$R:/tmp/drone_1_$f.csv" "$OUT/drone_1_$f.csv" || fail "csv copy $f (bag left in the container at $b)"; done
-    nx docker exec "$R" rm -rf "$b"
+    rx "python3 /tmp/hover_step_bag.py $b drone_1 /tmp/drone_1" | grep '^{' | tee -a "$OUT/run.log" || { bagfail=1; caveat "bag reader failed; bag left in the container at $b"; }
+    for f in odom cmd state; do [ "$bagfail" = 1 ] || docker cp "$R:/tmp/drone_1_$f.csv" "$OUT/drone_1_$f.csv" || { bagfail=1; caveat "csv copy $f failed; bag left in the container at $b"; }; done
+    [ "$bagfail" = 1 ] || nx docker exec "$R" rm -rf "$b"
   else say "WARN: bag copy failed — bag LEFT in the container at $b"; echo "bag copy failed; bag left at $b" >> "$OUT/caveats.txt"; fi
   nx docker exec "$R" pkill -INT -f launch_sim_interfaces.sh || true
   for i in $(seq 1 25); do alive "$R" mavros_node || break; sleep 1; done
@@ -354,6 +359,6 @@ case "$PHASE" in
 esac
 [ "$PHASE" = status ] || mkdir -p "$OUT" "$HEAVY"
 case "$PHASE" in
-  all) for p in $ALL; do PHASE=$p; "$p"; done; say "all: done (report rc=$REPORT_RC)"; exit "$REPORT_RC" ;;
+  all) ALL_MODE=1; for p in $ALL; do PHASE=$p; [ "$p" = isaac ] && STACK_UP=1; "$p"; [ "$p" = down ] && STACK_UP=0; done; say "all: done (report rc=$REPORT_RC)"; exit "$REPORT_RC" ;;
   *) "$PHASE" ;;
 esac

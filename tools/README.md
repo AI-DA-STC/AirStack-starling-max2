@@ -55,7 +55,7 @@ dir, dumped to CSV, and only then removed from the container.
 
 ## Time scale
 
-Sim real-time factor: see [ISAAC_REALTIME_NOTE.md](ISAAC_REALTIME_NOTE.md) — the sim ran 1.34× wall clock in #17; the tools measure the scale per run from drone_1's PX4 ulog.
+Sim real-time factor: see [ISAAC_REALTIME_NOTE.md](ISAAC_REALTIME_NOTE.md) — the sim ran ≈1.32–1.34× wall clock in #17 (1 Hz MAVROS state limits the resolution); the tools measure the scale per run from drone_1's PX4 ulog.
 
 ## Tests
 

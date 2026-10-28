@@ -264,6 +264,8 @@ Landing:
 - Timing gates use the rosbag (real receive timestamps); the `ros2 topic echo` traces are kept because that is how #3 was measured.
 - The `ulog thrust_setpoint median` line in analyze.txt is not meaningful (wrong field); the MAVROS `target_attitude` samples are the hover-thrust evidence.
 - wait_s() in the copied test tool patched to a real sleep: /clock is not visible in the robot container, so the original (ros2 topic echo /clock under timeout) returned instantly
+- Four-expert review 2026-10-28: the driver's own verdict at 15:45:58 was FAIL on three gates (`Starling2MaxConfig x3: 0`, `z step settle 3.05 s` by the echo method, `post-flight armed` unreadable); the PASS above comes from the rosbag re-analysis done afterwards. `all` aborted at `interfaces`; `commander` → `report` were run by hand; the bag and ulogs were recovered manually; drone_1's ulog was lost; this record was generated at `76cd405`, a commit made after the flight.
+- Every timing in this record is wall clock. PX4 ran 1.336× faster (lockstep; drone_2 ulog arm→disarm 100.87 s vs 75.5 s wall): x settle 1.86 s → 2.49 s, z 1.62 s → 2.16 s in vehicle time (both still < 3 s). The re-run (#18) gates in vehicle time.
 
 ## Ledger row draft (MILESTONES.md §3c)
 

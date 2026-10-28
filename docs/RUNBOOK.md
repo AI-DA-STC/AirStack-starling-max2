@@ -58,6 +58,8 @@ containers up first if needed). Work left to right: **A1 = Isaac Sim tab, A2 = I
 tab, A3 = Commander tab, A4 = Cockpit tab.** Keep the window open (why:
 [ARCHITECTURE.md](ARCHITECTURE.md#sim-session-anatomy)).
 
+> **No-terminal variant for the hover + 1 m step acceptance only:** `tools/sim_hover_step_run.sh all` runs A1–A4 for that one test from the laptop and writes `docs/record/<run>_record.md` — see [tools/README.md](../tools/README.md). Everything else in §A is done in the tabs.
+
 ### A1 — Isaac Sim tab: spawn the sim drones
 
 Paste as one block (Starling 2 Max model, Isaac window on):

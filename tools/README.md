@@ -73,6 +73,8 @@ The gates `hover_step_report.py` applies to a sim hover + 1 m step run (S5 / NEA
 
 Sim-only: these characterise the sim loop (TwistStamped → MAVROS → PX4 SITL), never the drone.
 
+Results: [docs/record/LEDGER.md](../docs/record/LEDGER.md), [docs/projects/HTX-R1.md](../docs/projects/HTX-R1.md) S5.
+
 ## Tests
 
 ```bash

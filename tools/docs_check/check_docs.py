@@ -572,6 +572,71 @@ def check_images(files):
                    f"{len(missing)} missing image(s)")
 
 
+TOP_PAGE_LINES, PROJECT_PAGE_LINES, MILESTONE_SECTION_LINES, CELL_CHARS = 60, 250, 40, 120
+TOP_PAGE = "docs/MILESTONES.md"
+
+
+def section_lines(text):
+    """(heading, n) per '### ' section; image lines and an italic caption right after one are not counted."""
+    out, cur, n, prev_img = [], None, 0, False
+    for line in text.splitlines():
+        if line.startswith("### ") or line.startswith("## ") or line.startswith("# "):
+            if cur is not None:
+                out.append((cur, n))
+            cur, n, prev_img = (line if line.startswith("### ") else None), 1, False
+            continue
+        if cur is None:
+            continue
+        if line.startswith("!["):
+            prev_img = True
+            continue
+        if prev_img and line.startswith("*"):
+            prev_img = False
+            continue
+        prev_img = False
+        n += 1
+    if cur is not None:
+        out.append((cur, n))
+    return out
+
+
+def long_cells(text):
+    """(lineno, cell_index, length) for table cells > CELL_CHARS; the Linear title cell of a NEAR row is exempt."""
+    out = []
+    for i, line in enumerate(text.splitlines(), 1):
+        cells = _table_cells(line)
+        if cells is None:
+            continue
+        for j, c in enumerate(cells):
+            if j == 1 and re.match(r"\[?NEAR-\d+", cells[0]):
+                continue
+            if len(c) > CELL_CHARS:
+                out.append((i, j, len(c)))
+    return out
+
+
+def check_page_budgets():
+    """Line budgets for the top page and project pages; cell budget on those pages only (never LEDGER)."""
+    fails = []
+    pages = [(ROOT / TOP_PAGE, read(ROOT / TOP_PAGE), TOP_PAGE_LINES)]
+    pages += [(f, read(f), PROJECT_PAGE_LINES) for f in sorted((ROOT / PROJECT_DIR).glob("*.md"))]
+    for f, text, limit in pages:
+        if text is None:
+            continue
+        n = len(text.splitlines())
+        if n > limit:
+            fails.append(f"{rel(f)}: {n}/{limit} lines")
+        if limit == PROJECT_PAGE_LINES:
+            for h, k in section_lines(text):
+                if k > MILESTONE_SECTION_LINES:
+                    fails.append(f"{rel(f)}: '{h}': {k}/{MILESTONE_SECTION_LINES} lines (figures excluded)")
+        for ln, ci, length in long_cells(text):
+            fails.append(f"{rel(f)}:{ln}: cell {ci + 1} is {length} chars (max {CELL_CHARS})")
+    return verdict("page-budgets", fails, [],
+                   f"{TOP_PAGE} ≤ {TOP_PAGE_LINES} lines; {len(pages) - 1} project page(s) ≤ {PROJECT_PAGE_LINES} lines, sections ≤ {MILESTONE_SECTION_LINES}, cells ≤ {CELL_CHARS} chars",
+                   f"{len(fails)} budget breach(es)")
+
+
 # ----------------------------------------------------------------- selftest / main
 def selftest():
     """Prove the dead-link check works on a temp corpus: one good link, one dead file, one dead fragment."""
@@ -605,7 +670,7 @@ def main():
     checks = [lambda: check_links(link_files()), check_section_refs, check_iron_rules, check_safety_registry,
               check_values_registry, check_banners, check_real_page_hygiene, check_warnings_registered,
               check_budget, check_preflight_date, check_headings_stable, check_hashes,
-              check_linear_parity, lambda: check_images(corpus())]
+              check_linear_parity, lambda: check_images(corpus()), check_page_budgets]
     results = []
     for fn in checks:
         try:

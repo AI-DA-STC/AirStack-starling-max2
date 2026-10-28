@@ -83,3 +83,48 @@ class Images(unittest.TestCase):
             (root / "docs/record/figures").mkdir(); (root / "docs/record/figures/ok.png").write_bytes(b"x")
             r = C.check_images([root / "docs/projects/HTX-R1.md"])
             self.assertEqual(r.status, "FAIL"); self.assertEqual(len(r.details), 1); self.assertIn("nope.png", r.details[0])
+
+class PageBudgets(unittest.TestCase):
+    def setUp(self):
+        self._root = C.ROOT
+        self.addCleanup(setattr, C, "ROOT", self._root)
+
+    def test_top_page_61_lines_fails(self):
+        with tempfile.TemporaryDirectory() as d:
+            fixture(d, "", milestones_lines=61)
+            r = C.check_page_budgets(); self.assertEqual(r.status, "FAIL"); self.assertTrue(any("MILESTONES.md: 61/60 lines" in x for x in r.details))
+
+    def test_top_page_60_lines_passes(self):
+        with tempfile.TemporaryDirectory() as d:
+            fixture(d, "", milestones_lines=60); self.assertEqual(C.check_page_budgets().status, "PASS")
+
+    def test_project_page_251_lines_fails(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = fixture(d, "")
+            (root / "docs/projects/HTX-R2.md").write_text("\n".join(f"l{i}" for i in range(251)) + "\n")
+            r = C.check_page_budgets(); self.assertEqual(r.status, "FAIL"); self.assertTrue(any("HTX-R2.md: 251/250 lines" in x for x in r.details))
+        with tempfile.TemporaryDirectory() as d:
+            root = fixture(d, "")
+            (root / "docs/projects/HTX-R2.md").write_text("\n".join(f"l{i}" for i in range(250)) + "\n")
+            self.assertEqual(C.check_page_budgets().status, "PASS")
+
+    def test_milestone_section_counts_exclude_figures(self):
+        body = "\n".join(f"line {i}" for i in range(37)) + "\n![fig](x.png)\n*caption*\n"
+        with tempfile.TemporaryDirectory() as d:
+            fixture(d, "", extra=body); self.assertEqual(C.check_page_budgets().status, "PASS")
+        with tempfile.TemporaryDirectory() as d:
+            fixture(d, "", extra=body + "one more\n")
+            r = C.check_page_budgets(); self.assertEqual(r.status, "FAIL"); self.assertTrue(any("41/40 lines (figures excluded)" in x for x in r.details))
+
+    def test_long_cell_fails_except_title_column(self):
+        long = "x" * 121
+        with tempfile.TemporaryDirectory() as d:
+            fixture(d, f"| NEAR-786 | {long} | — | — |\n"); self.assertEqual(C.check_page_budgets().status, "PASS")
+        with tempfile.TemporaryDirectory() as d:
+            fixture(d, f"| NEAR-786 | t | {long} | — |\n"); r = C.check_page_budgets(); self.assertEqual(r.status, "FAIL"); self.assertIn("cell 3", r.details[0])
+        with tempfile.TemporaryDirectory() as d:
+            fixture(d, f"| [NEAR-786](x) | {long} | — | — |\n"); self.assertEqual(C.check_page_budgets().status, "PASS")
+
+    def test_ledger_cells_not_budgeted(self):
+        with tempfile.TemporaryDirectory() as d:
+            fixture(d, "", ledger="| # |\n|---|\n| " + "y" * 200 + " |\n"); self.assertEqual(C.check_page_budgets().status, "PASS")

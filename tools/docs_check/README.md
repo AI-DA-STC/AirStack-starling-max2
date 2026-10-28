@@ -18,6 +18,7 @@ Run from anywhere: `tools/docs_check/check_docs.sh [--warn-only] [--json] [--sel
 | headings-stable | headings with dates, `⏳`, `✅`, `(STE` churn anchors | WARN |
 | linear-parity | every NEAR-nnn on docs/projects/*.md (and bare ids on MILESTONES, LEDGER, PX4_MSGS_AUDIT) exists in docs/plans/2026-10-26-project-plan-linear.md with the identical title; PASS records (docs/record, localisation/results) cited by LEDGER and an issue row; PASS result on a Backlog issue | FAIL / WARN |
 | images | every relative ![…](…) / <img src> target exists | FAIL |
+| page-budgets | docs/MILESTONES.md ≤ 60 lines; docs/projects/*.md ≤ 250 lines and each ### milestone ≤ 40 lines (image + caption lines excluded); every table cell ≤ 120 chars on those pages except the Linear title column | FAIL |
 | hashes | MOVE-phase hook; prints SKIP until `corpus_hashes.txt` / `retired.txt` exist | SKIP |
 
 Output: one `[PASS|FAIL|WARN|SKIP] check: summary` line per check, indented details (max 25, then "… N more"),

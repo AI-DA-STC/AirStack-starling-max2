@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Write the record for a sim hover + 1 m step run (S5 / NEAR-786; ledger #18 = re-run of #17 with fixed tooling).
+"""Write the record for a sim hover + 1 m step run (S5 / NEAR-786; lineage ledger #3 → #17 → #18 → …; the number of the
+NEW row is given with --ledger N, otherwise the draft row carries a `?` placeholder).
 
     tools/hover_step_report.py docs/record/<run>/ [--heavy DIR] [--record PATH] [--no-verdict-log]
 
@@ -425,7 +426,7 @@ def _fmt(v, spec=".3f", suffix=""):
     return "n/a" if v is None else f"{v:{spec}}{suffix}"
 
 
-def ledger_row(ctx, rows, verdict, today) -> str:
+def ledger_row(ctx, rows, verdict, today, ledger=None) -> str:
     run, bag, steps, events = ctx["run"], ctx["bag"], ctx["steps"], ctx["events"]
     ev = parse_kv(ctx["isaac_evidence"])
     parts = [f"`Starling2MaxConfig` ×{ev.get('starling_cfg', '?')}, `SYS_AUTOSTART` 10090 ×{ev.get('autostart', '?')}, `Ready for takeoff` ×{ev.get('ready', '?')}",
@@ -466,7 +467,8 @@ def ledger_row(ctx, rows, verdict, today) -> str:
         tail += "; UNVERIFIED: " + ", ".join(unv)
     if fails:
         tail += "; FAIL: " + ", ".join(fails)
-    return (f"`| 18 | **M1 re-run of #17 with the fixed tooling: Starling hover + 1 m steps, {steps.get('x', {}).get('n', '?') if isinstance(steps, dict) else '?'} per axis (±1 m alternating), "
+    num = "?" if ledger is None else str(ledger)
+    return (f"`| {num} | **M1 Starling hover + 1 m steps on the fixed tooling (lineage #3 → #17 → #18), {steps.get('x', {}).get('n', '?') if isinstance(steps, dict) else '?'} per axis (±1 m alternating), "
             f"gated in PX4 vehicle time** — `tools/sim_hover_step_run.sh all {run}`, `cbf_sim.yaml scenario:=goal`, `record_bag:=true` | Isaac launch log; PX4 ulog header (pyulog); "
             f"MAVROS `target_attitude` thrust samples; rosbag → `tools/hover_step_analysis.py` (commanded axis, goal-referenced, time scale from the ulog arm/disarm vs MAVROS state); "
             f"`tools/hover_step_report.py` fail-closed; record `docs/record/{run}_record.md` (link it from MILESTONES as `record/{run}_record.md`), artefacts `docs/record/{run}/`, bag + 3 ulogs (sysid 2/3/4 = drone_1/2/3) "
@@ -474,7 +476,7 @@ def ledger_row(ctx, rows, verdict, today) -> str:
             f"Sim-only (iron rule 9) | {today} |`")
 
 
-def render_md(out: pathlib.Path, rows, ctx, verdict: str, history: list) -> str:
+def render_md(out: pathlib.Path, rows, ctx, verdict: str, history: list, ledger=None) -> str:
     out = pathlib.Path(out)
     run = ctx["run"]
     meta = ctx.get("meta", {})
@@ -493,7 +495,7 @@ def render_md(out: pathlib.Path, rows, ctx, verdict: str, history: list) -> str:
     n_steps = {ax: (ctx["steps"].get(ax) or {}).get("n", 0) for ax in ("x", "z")} if isinstance(ctx["steps"], dict) else {}
     L = [f"RECORD · SIM — {run}. Sim-only (iron rule 9): none of these values is ported to the drone.", "",
          f"# {run} — Starling hover + 1 m steps (sim, {n_steps.get('x', 0)} per axis), gated in PX4 vehicle time ({when})", "",
-         f"**Verdict: {verdict}.** Re-run of ledger #17 with the fixed tooling, for Linear NEAR-786 (milestone S5). Gates are the M1 criteria in "
+         f"**Verdict: {verdict}.** Hover + 1 m step run on the fixed tooling (lineage: ledger #3 → #17 → #18), for Linear NEAR-786 (milestone S5). Gates are the M1 criteria in "
          f"[MILESTONES.md](../MILESTONES.md) §4 (\"Starling model: spawn + hover + steps\"); PASS = every gate PASS, INCOMPLETE = no FAIL but "
          f"≥ 1 gate UNVERIFIED (evidence missing or unreadable), FAIL = any gate FAIL. Report generated {today} at repo `{ctx.get('report_head', '?')}`.", "",
          "## Setup", "",
@@ -537,7 +539,8 @@ def render_md(out: pathlib.Path, rows, ctx, verdict: str, history: list) -> str:
           "", "## Caveats", ""]
     L += [f"- {c}" for c in FIXED_CAVEATS]
     L += [f"- {c}" for c in ctx.get("caveats", [])]
-    L += ["", "## Ledger row draft (MILESTONES.md §3c, #18)", "", ledger_row(ctx, rows, verdict, today), ""]
+    which = "next free number" if ledger is None else f"#{ledger}"
+    L += ["", f"## Ledger row draft (MILESTONES.md §3c, {which})", "", ledger_row(ctx, rows, verdict, today, ledger), ""]
     return "\n".join(L)
 
 
@@ -548,6 +551,7 @@ def main(argv=None) -> int:
     ap.add_argument("--heavy", default=None, help="bag + ulog folder (default ~/flight_logs/sim/<run>)")
     ap.add_argument("--record", default=None, help="markdown path (default <run_dir>/../<run>_record.md)")
     ap.add_argument("--no-verdict-log", action="store_true", help="do not append this verdict to <run_dir>/verdicts.log")
+    ap.add_argument("--ledger", type=int, default=None, help="number of the NEW MILESTONES §3c row this run will get (default: a ? placeholder)")
     a = ap.parse_args(argv)
     out = pathlib.Path(a.run_dir).resolve()
     if not out.is_dir():
@@ -560,7 +564,7 @@ def main(argv=None) -> int:
     history = list(ctx.get("history", []))
     if not a.no_verdict_log:
         history.append(append_verdict(out, verdict, rows, ctx.get("meta", {}).get("head_short", "?")))
-    rec.write_text(render_md(out, rows, ctx, verdict, history))
+    rec.write_text(render_md(out, rows, ctx, verdict, history, a.ledger))
     print(f"{verdict}: {rec}")
     for r in rows:
         if r.gate and r.verdict != "PASS":

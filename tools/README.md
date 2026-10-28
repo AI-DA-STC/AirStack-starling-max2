@@ -10,7 +10,7 @@
 | `sim_terminals.sh` / `sim_tab.sh` | the four-tab sim session (Isaac Sim · Interfaces · Commander · Cockpit) — [RUNBOOK §A](../docs/RUNBOOK.md) |
 | `make_milestones_doc.py` | legacy `.docx` export of MILESTONES.md |
 | `docs_check/` | the documentation checker — `tools/docs_check/check_docs.sh` (0 FAIL required before a docs commit) |
-| `sim_hover_step_run.sh` | **orchestrator** for the hover + 1 m step acceptance (MILESTONES §4 "Starling model: spawn + hover + steps"), no terminal needed. Phases, in `all` order: `precheck up watch isaac interfaces commander params fly collect down analyse report`; extra: `all`, `status`, `ifgates` (odometry gates only). Env: `STEPS_PER_AXIS` (default 3, alternating +1/−1 m), `ISAAC_KIT_ARGS` (opt-in extra Isaac Kit args, default none) |
+| `sim_hover_step_run.sh` | **orchestrator** for the hover + 1 m step acceptance (MILESTONES §4 "Starling model: spawn + hover + steps"), no terminal needed. Phases, in `all` order: `precheck up watch isaac interfaces commander params fly collect down analyse report`; extra: `all`, `status`, `ifgates` (odometry gates only). Env: `STEPS_PER_AXIS` (default 3, alternating +1/−1 m), `LEDGER` (number of the new MILESTONES §3c row the record drafts; unset = `?` placeholder), `ISAAC_KIT_ARGS` (opt-in extra Isaac Kit args, default none) |
 | `sim_hover_step_test.sh` | the flight script (ours — moved out of CMU's tree; `wait_s` is a real sleep because `/clock` is not visible in the robot container). Takeoff → hover → `STEPS_PER_AXIS` steps in x, then z → land. Copied into the robot container by the orchestrator |
 | `analyze_step.py` | echo-trace analyser — ledger #3's method (`ros2 topic echo` traces). **Info only**, never a gate |
 | `hover_step_bag.py` | container-only rosbag → CSV dumper (`drone_1_{odom,cmd,state}.csv`); needs `rosbag2_py`, so it runs inside the robot container |
@@ -35,12 +35,12 @@
 
 ```bash
 cd ~/AirStack-starling-max2
-tools/sim_hover_step_run.sh all sim_hover_step_run2     # the twelve phases; stops at the first FAIL, containers left up
-tools/sim_hover_step_run.sh status sim_hover_step_run2  # what is up, last verdict, commit that ran
+LEDGER=19 tools/sim_hover_step_run.sh all sim_hover_step_run3   # NEW run name every time; LEDGER = the ledger row this run will get
+tools/sim_hover_step_run.sh status sim_hover_step_run3  # what is up, last verdict, commit that ran
 ```
 
-The record lands at `docs/record/sim_hover_step_run2_record.md` (its verdict line is the result). A single phase
-can be re-run by name (`… down sim_hover_step_run2`); re-runs are marked in `run.log` / `commands.sh`.
+The record lands at `docs/record/sim_hover_step_run3_record.md` (its verdict line is the result). A single phase
+can be re-run by name (`… down sim_hover_step_run3`); re-runs are marked in `run.log` / `commands.sh`.
 
 ## Where things go
 

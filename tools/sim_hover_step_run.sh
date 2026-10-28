@@ -23,6 +23,7 @@ R=airstack-robot-desktop-1; I=isaac-sim; S=/tmp/hover_step
 OUT=$REPO/docs/record/$RUN; HEAVY=$HOME/flight_logs/sim/$RUN
 TOOLS=$REPO/tools
 STEPS_PER_AXIS=${STEPS_PER_AXIS:-3}          # alternating +1/-1 m steps per axis (tools/sim_hover_step_test.sh)
+LEDGER=${LEDGER:-}                            # number of the NEW MILESTONES §3c row (passed to hover_step_report.py --ledger); empty = ? placeholder
 ISAAC_KIT_ARGS=${ISAAC_KIT_ARGS:-}           # opt-in extra Kit args appended to the Isaac launch (default none)
 NOISE='^(bash: cannot set terminal|bash: no job control|Sourcing|groups: cannot find name)'
 BAGS=/root/AirStack/robot/ros_ws/bags        # inside $R; host path AirStack/robot/ros_ws/bags (gitignored)
@@ -329,8 +330,8 @@ for ax, s in sorted((j.get('steps') or {}).items()): print(' ', ax, json.dumps(s
 REPORT_RC=0
 report() {   # the record; exit 0 PASS / 2 INCOMPLETE (both let `all` finish) / 1 FAIL / other = crash
   phase_begin report
-  note "python3 $TOOLS/hover_step_report.py $OUT --heavy $HEAVY"
-  python3 "$TOOLS/hover_step_report.py" "$OUT" --heavy "$HEAVY" 2>&1 | tee -a "$OUT/run.log"; REPORT_RC=${PIPESTATUS[0]}
+  note "python3 $TOOLS/hover_step_report.py $OUT --heavy $HEAVY${LEDGER:+ --ledger $LEDGER}"
+  python3 "$TOOLS/hover_step_report.py" "$OUT" --heavy "$HEAVY" ${LEDGER:+--ledger "$LEDGER"} 2>&1 | tee -a "$OUT/run.log"; REPORT_RC=${PIPESTATUS[0]}
   case "$REPORT_RC" in
     0) say "report: PASS" ;;
     2) say "report: INCOMPLETE (>= 1 gate UNVERIFIED — see the record)" ;;

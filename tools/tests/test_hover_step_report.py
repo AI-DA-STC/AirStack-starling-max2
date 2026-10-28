@@ -126,3 +126,24 @@ class VerdictLog(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             out, heavy = make_run(d, **{"isaac_evidence.txt": "starling_cfg=0 autostart=3 unknown_model=0 cooking=0 ready=3\n"})
             self.assertEqual(R.main([str(out), "--heavy", str(heavy), "--record", str(pathlib.Path(d) / "r.md"), "--no-verdict-log"]), 2)
+
+class LedgerNumber(unittest.TestCase):
+    def test_ledger_option_numbers_the_draft_row(self):
+        with tempfile.TemporaryDirectory() as d:
+            out, heavy = make_run(d)
+            rec = pathlib.Path(d) / "rec.md"
+            self.assertEqual(R.main([str(out), "--heavy", str(heavy), "--record", str(rec), "--no-verdict-log", "--ledger", "19"]), 0)
+            md = rec.read_text()
+            self.assertIn("## Ledger row draft (MILESTONES.md §3c, #19)", md)
+            self.assertIn("`| 19 | **", md)
+            self.assertNotIn("| 18 |", md)                      # no number is hard-coded into the record
+
+    def test_no_ledger_option_leaves_a_placeholder(self):
+        with tempfile.TemporaryDirectory() as d:
+            out, heavy = make_run(d)
+            rec = pathlib.Path(d) / "rec.md"
+            R.main([str(out), "--heavy", str(heavy), "--record", str(rec), "--no-verdict-log"])
+            md = rec.read_text()
+            self.assertIn("## Ledger row draft (MILESTONES.md §3c, next free number)", md)
+            self.assertIn("`| ? | **", md)
+            self.assertNotIn("| 18 |", md)

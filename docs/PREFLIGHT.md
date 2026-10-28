@@ -1,8 +1,8 @@
-# PRE-FLIGHT & EMERGENCY CARD — v2026-10-21 — print this, laminate it, keep it in the hangar
+# PRE-FLIGHT & EMERGENCY CARD — v2026-10-29 — print this, laminate it, keep it in the hangar
 
 > **DO · WORLD: REAL DRONE — this card gates every takeoff.** This stack bypasses AirStack's `drone_safety_monitor`: **PX4's failsafes plus the RC kill switch are the entire safety net.** Reprint the card whenever the version above changes.
 
-*(Starling Max 2 · AirStack `yikuan/SVG_ground_control_dev` @ `b21d28c` · OptiTrack mocap — details: RUNBOOK.md §B/§C · no real flight on this branch yet, ⏳ STE since 2026-10-07)*
+*(Starling Max 2 · AirStack `yikuan/SVG_ground_control_dev` @ `b21d28c` · OptiTrack mocap — details: RUNBOOK.md §B/§C · nothing on this software has flown; hazards: docs/projects/HTX-R2.md "Before the next real flight")*
 
 ## Before EVERY session
 
@@ -52,11 +52,11 @@ ros2 service call /swarm_commander/land  std_srvs/srv/Trigger
 
 <!-- IRON_RULES:BEGIN -->
 <!-- canonical text lives in docs/PREFLIGHT.md; CLAUDE.md carries a byte-identical copy; tools/docs_check/check_docs.sh diffs the two blocks -->
-1. **RC takeover = flip ch6 to MANUAL (low), or KILL (ch8) — never Position/Altitude.** The commander's setpoints leak into those modes (its trajectory setpoint is still consumed in POSCTL/ALTCTL; re-test at M3).
+1. **RC takeover = flip ch6 to MANUAL (low), or KILL (ch8) — never Position/Altitude.** The commander's setpoints leak into those modes (its trajectory setpoint is still consumed in POSCTL/ALTCTL; re-observed at the first flight, NEAR-825 — docs/projects/HTX-R2.md).
 2. **A landing is not over until QGC says DISARMED** — check before anyone approaches. The commander's log and the panel's Interface column are ACK logs, not arming displays. Landed but still ARMED after ~10 s → flip KILL (harmless on the ground) or arm switch (ch5) down. (The commander's disarm is a normal PX4 disarm — PX4 refuses it unless its land detector says landed, so it cannot drop a flying drone.)
-3. **After ANY manual takeover: call `land` once** (drone on the floor) to reset the commander, or `takeoff` will refuse ("not IDLE").
+3. **After ANY manual takeover: call `land` once** (drone on the floor) to reset the commander, or `takeoff` will refuse ("not IDLE") (re-observed at NEAR-825).
 4. **Never run `test/functional_*.py` with the real stack up** — they publish fake odometry on live topics (`squeeze`, `squeeze_lag`, `fence`, `single_goal`, `multi_goal`, `hybrid`).
-5. **Software is BLIND to PX4 arming state** (v1.14 px4_msgs mismatch) — fly with QGC visible. A `PX4 ack: ACCEPTED` means "PX4 heard me", never "armed"; **no ACK at all = `target_system` ≠ the drone's `MAV_SYS_ID`** — do not fly until fixed. The ACK message itself is unaudited against v1.14 until MILESTONES §3d is re-run.
+5. **Software is BLIND to PX4 arming state** (v1.14 px4_msgs mismatch) — fly with QGC visible. A `PX4 ack: ACCEPTED` means "PX4 heard me", never "armed"; **no ACK at all = `target_system` ≠ the drone's `MAV_SYS_ID`** — do not fly until fixed. The ACK message itself is unaudited against v1.14 until docs/PX4_MSGS_AUDIT.md is re-run (NEAR-821).
 6. **Lab WiFi SSIDs (`motive`, `StarlingMax2`) are OPEN** — never bridge the lab network to the internet.
 7. **After re-provisioning the drone (`voxl_setup_real_drone.sh`): REBOOT it** — never `systemctl restart voxl-px4` (it leaves the SLPI flight core dead: "params missing", sensors never publish).
 8. The shipped configs are CMU's bench values, not ours — fly the `_ours` yamls. Traps at b21d28c: `goal_single.yaml` still exempts drone_1 from the CBF, flies 10 m/s and lands at 0.8; `goal_tracking.yaml`/`goal_sequence.yaml` carry `cbf_max_speed_mps 10.0`; CMU's real configs leave `land_settle_s` unset (→ 2.0 s default). The 10-07 traps (drone_2, random_goals) are gone since the 10-20 bump.

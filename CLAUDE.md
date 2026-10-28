@@ -5,15 +5,17 @@ AirStack ground-control workspace flying a ModalAI Starling Max 2 indoors under 
 **Branch (since 2026-10-20):** CMU `yikuan/SVG_ground_control_dev` @ `b21d28c` (their *working* branch; `yikuan/SVG_ground_control` is its squash-release line, last cut `cf719f0` = our 2026-10-07 snapshot), vendored in `AirStack/`. The 10-20 bump brought the 6-gain Foxglove dropdown (goal accel/settle, teleop vmax), `goal_sequence` + `figure_eight` scenarios and the rosbag switch — [MIGRATION.md](docs/MIGRATION.md) §11.
 The previous branch (`daniel/diffaero_ground_control`, flown 09-01→03) is frozen on tag
 `airstack-starling-max2` / branch `archive/airstack-starling-max2`. The two are **siblings**, not
-parent/child. Milestones were RESET; **no real flight validated on this branch; sim validated in
-part** ([MILESTONES.md](docs/MILESTONES.md) §3c). Delta and the ordered re-do list:
+parent/child. Milestones were RESET; **nothing on this software has flown; sim results in [record/LEDGER.md](docs/record/LEDGER.md)** (one screen: [MILESTONES.md](docs/MILESTONES.md)). Delta and the ordered re-do list:
 [MIGRATION.md](docs/MIGRATION.md).
 
-**Read first:** [MILESTONES.md](docs/MILESTONES.md) §3 (status table) / §3c (test ledger + carried-over issues) — current state — then the table below.
+**Read first:** [MILESTONES.md](docs/MILESTONES.md) (one screen: where each Linear project is, the hazards before the next real flight) → the project page you are working on — then the table below.
 
 | Doc | Use it for |
 |---|---|
-| [MILESTONES.md](docs/MILESTONES.md) | current state: M0–M7 status, code audit, test ledger (reset), carried-over issues, backlog |
+| [MILESTONES.md](docs/MILESTONES.md) | one screen: where each project is (HTX-R1/R2/R3), before-the-next-real-flight hazards, links to the pages below |
+| [projects/](docs/projects/HTX-R1.md) | per Linear project — [HTX-R1](docs/projects/HTX-R1.md) sim validation, [HTX-R2](docs/projects/HTX-R2.md) real-drone bring-up (pilot's hazards box + carried-over table), [HTX-R3](docs/projects/HTX-R3.md) localization research; every milestone and issue by Linear id and verbatim title, results from the records |
+| [record/LEDGER.md](docs/record/LEDGER.md) | append-only test ledger: table 1 this software (#1–#19, sim), table 2 the previous software (A1–A21, archived) |
+| [PX4_MSGS_AUDIT.md](docs/PX4_MSGS_AUDIT.md) | PX4 v1.14 vs px4_msgs audit + re-run method (NEAR-821; iron rule 5) |
 | [MIGRATION.md](docs/MIGRATION.md) | old branch → this branch: removed/added, behaviours to unlearn, re-do list, archived-doc pointers |
 | [RUNBOOK.md](docs/RUNBOOK.md) | running a session — sim: `tools/sim_terminals.sh` (four Terminator tabs: Isaac Sim · Interfaces · Commander · Cockpit); real drone: tmux `bringup` panes; the panel instead of RViz |
 | [BASESTATION.md](docs/BASESTATION.md) | the Foxglove SVG Basestation panel, `/svg/commander_status` fields, LED strips |
@@ -40,11 +42,11 @@ topology). Network/router details live in the companion repo
 ## Iron rules
 <!-- IRON_RULES:BEGIN -->
 <!-- canonical text lives in docs/PREFLIGHT.md; CLAUDE.md carries a byte-identical copy; tools/docs_check/check_docs.sh diffs the two blocks -->
-1. **RC takeover = flip ch6 to MANUAL (low), or KILL (ch8) — never Position/Altitude.** The commander's setpoints leak into those modes (its trajectory setpoint is still consumed in POSCTL/ALTCTL; re-test at M3).
+1. **RC takeover = flip ch6 to MANUAL (low), or KILL (ch8) — never Position/Altitude.** The commander's setpoints leak into those modes (its trajectory setpoint is still consumed in POSCTL/ALTCTL; re-observed at the first flight, NEAR-825 — docs/projects/HTX-R2.md).
 2. **A landing is not over until QGC says DISARMED** — check before anyone approaches. The commander's log and the panel's Interface column are ACK logs, not arming displays. Landed but still ARMED after ~10 s → flip KILL (harmless on the ground) or arm switch (ch5) down. (The commander's disarm is a normal PX4 disarm — PX4 refuses it unless its land detector says landed, so it cannot drop a flying drone.)
-3. **After ANY manual takeover: call `land` once** (drone on the floor) to reset the commander, or `takeoff` will refuse ("not IDLE").
+3. **After ANY manual takeover: call `land` once** (drone on the floor) to reset the commander, or `takeoff` will refuse ("not IDLE") (re-observed at NEAR-825).
 4. **Never run `test/functional_*.py` with the real stack up** — they publish fake odometry on live topics (`squeeze`, `squeeze_lag`, `fence`, `single_goal`, `multi_goal`, `hybrid`).
-5. **Software is BLIND to PX4 arming state** (v1.14 px4_msgs mismatch) — fly with QGC visible. A `PX4 ack: ACCEPTED` means "PX4 heard me", never "armed"; **no ACK at all = `target_system` ≠ the drone's `MAV_SYS_ID`** — do not fly until fixed. The ACK message itself is unaudited against v1.14 until MILESTONES §3d is re-run.
+5. **Software is BLIND to PX4 arming state** (v1.14 px4_msgs mismatch) — fly with QGC visible. A `PX4 ack: ACCEPTED` means "PX4 heard me", never "armed"; **no ACK at all = `target_system` ≠ the drone's `MAV_SYS_ID`** — do not fly until fixed. The ACK message itself is unaudited against v1.14 until docs/PX4_MSGS_AUDIT.md is re-run (NEAR-821).
 6. **Lab WiFi SSIDs (`motive`, `StarlingMax2`) are OPEN** — never bridge the lab network to the internet.
 7. **After re-provisioning the drone (`voxl_setup_real_drone.sh`): REBOOT it** — never `systemctl restart voxl-px4` (it leaves the SLPI flight core dead: "params missing", sensors never publish).
 8. The shipped configs are CMU's bench values, not ours — fly the `_ours` yamls. Traps at b21d28c: `goal_single.yaml` still exempts drone_1 from the CBF, flies 10 m/s and lands at 0.8; `goal_tracking.yaml`/`goal_sequence.yaml` carry `cbf_max_speed_mps 10.0`; CMU's real configs leave `land_settle_s` unset (→ 2.0 s default). The 10-07 traps (drone_2, random_goals) are gone since the 10-20 bump.

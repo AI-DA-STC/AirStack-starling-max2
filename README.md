@@ -6,9 +6,7 @@ One real ModalAI **Starling Max 2**, flown indoors under **OptiTrack** motion ca
 **AirStack** ground-control stack (a known-good snapshot lives in [`AirStack/`](AirStack/)), with
 three-drone swarms rehearsed in **Isaac Sim** before anything flies for real.
 
-**Status:** snapshot `yikuan/SVG_ground_control_dev` @ `b21d28c` · sim validated in part
-([MILESTONES.md](docs/MILESTONES.md) §3c) · **no real flight on this branch yet** — the gates
-before the next one are the box at the top of MILESTONES.
+**Status:** snapshot `yikuan/SVG_ground_control_dev` @ `b21d28c` · sim results in [record/LEDGER.md](docs/record/LEDGER.md) · **nothing on this software has flown** — the hazards before the next real flight are the first section of [MILESTONES.md](docs/MILESTONES.md).
 
 ## I want to…
 
@@ -20,7 +18,7 @@ before the next one are the box at the top of MILESTONES.
 | **understand how it fits together** | [ARCHITECTURE.md](docs/ARCHITECTURE.md), one page |
 | **find a value** (IP, parameter, which config we fly) | [CONFIG.md](docs/CONFIG.md) |
 | **fix something** | [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) — symptom → fix |
-| **see what is proven and what is next** | [MILESTONES.md](docs/MILESTONES.md) |
+| **see where each project is, what passed, what is next** | [MILESTONES.md](docs/MILESTONES.md) (one screen) → [docs/projects/](docs/projects/HTX-R1.md) |
 | **work with the AI assistant on this repo** | [AI_ASSIST.md](docs/AI_ASSIST.md) |
 | **fly in the construction site with the camera** (sim stereo VO) | [localisation/README.md](localisation/README.md) |
 
@@ -33,7 +31,7 @@ before the next one are the box at the top of MILESTONES.
 | <img src="assets/takeoff_and_land.gif" alt="Takeoff and landing under software control" width="400"><br>**2026-09-01 · first offboard takeoff + landing**, position from mocap only, kill switch verified in flight. [full video](videos/takeoff_and_land.mp4) | <img src="assets/rviz_tracks_hand_carried_drone.gif" alt="RViz tracking a hand-carried drone" width="400"><br>**The mocap chain proven by hand-carry** before any flight. [full video](videos/SVG_check_if_rviz_moves_by_movingdrone_manually.mp4) |
 | <img src="assets/randompos_construction_10fps.gif" alt="Left: cuVSLAM debug image from drone_1 in the construction site; right: the three drones in the Basestation 3D view" width="400"><br>**2026-10-23 · random goals in the construction site, Isaac Sim.** Stereo VO (cuVSLAM) tracking on drone_1 while three Starlings fly. Sim only; scored run and numbers: [localisation/README.md](localisation/README.md) | <img src="pictures/drones_in_construction_site.jpg" alt="Three simulated Starling 2 Max drones over the sand in the construction-site world" width="400"><br>**The construction-site world.** The lab's UE4 site, flattened for Isaac and loaded with `ENV_USD`. [What it is](localisation/scenes/construction_site/README.md) |
 
-Milestone by milestone, with evidence: [MILESTONES.md](docs/MILESTONES.md) §3c. History of the previous branch: [MIGRATION.md](docs/MIGRATION.md) §12.
+Milestone by milestone, with evidence: [record/LEDGER.md](docs/record/LEDGER.md) and the [project pages](docs/projects/HTX-R1.md). History of the previous branch: [MIGRATION.md](docs/MIGRATION.md) §12.
 
 <img src="pictures/Starling_Airstack_architecture.png" alt="Starling Max 2 × AirStack control-flow diagram" width="820">
 
@@ -60,7 +58,7 @@ Milestone by milestone, with evidence: [MILESTONES.md](docs/MILESTONES.md) §3c.
 | [MOCAP.md](docs/MOCAP.md) · [mocap.sh](mocap.sh) | The mocap bridge and the Motive PC |
 | [DRONE_SETUP.md](docs/DRONE_SETUP.md) | Provisioning a Starling from the box |
 | [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Symptom → first check → fix |
-| [MILESTONES.md](docs/MILESTONES.md) | Gates, status, test ledger, backlog |
+| [MILESTONES.md](docs/MILESTONES.md) | One screen: where each Linear project is; then [projects/](docs/projects/HTX-R1.md) and [record/LEDGER.md](docs/record/LEDGER.md) |
 | [MIGRATION.md](docs/MIGRATION.md) | Branch history and what changed |
 | [GLOSSARY.md](docs/GLOSSARY.md) · [AI_ASSIST.md](docs/AI_ASSIST.md) | Terms · working with the assistant |
 | [CLAUDE.md](CLAUDE.md) | The assistant's brief and the iron rules |

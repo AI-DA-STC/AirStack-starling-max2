@@ -80,5 +80,5 @@ Each of these cost an afternoon to learn. Ask for them by name.
 - It cannot relaunch things in **your** terminal tabs. It will tell you which tab to Ctrl-C and
   what to paste.
 - Its memory of earlier sessions can be stale after a branch bump; the repo and `git log` are
-  the record. `MILESTONES.md` §3c is where it should look first, and where you should check its
+  the record. `docs/record/LEDGER.md` and the project page are where it should look first, and where you should check its
   claims.

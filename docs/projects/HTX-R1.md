@@ -38,11 +38,12 @@ Done when (Linear): not stated in the snapshot — milestone at 100 %
 |---|---|---|---|
 | NEAR-785 | S4 Convert the construction site into an Isaac Sim world | world loads (`ENV_USD`, 40 m crop); VO 0.081 m RMSE / 162 m, no jumps (2026-10-22) | [#16](../record/LEDGER.md) → [record](../../localisation/results/sim_site_run1_record.md) |
 | NEAR-859 | Fly 3 drones with cuVSLAM in the construction site and score it | 3 drones `random_goals`, 0.081 m RMSE over 162 m (sim_site_run1, 2026-10-22) | [#16](../record/LEDGER.md) → [record](../../localisation/results/sim_site_run1_record.md) |
+
 S3/S4 result (sim only; reference = PX4 EKF2, not ground truth):
 
 | | flat default world (`sim_cam_run2–4`) | construction site (`sim_site_run1`) |
 |---|---|---|
-| APE RMSE, SE(3)-aligned | 0.88–5.3 m, 1–4 jumps > 1 m per run | 0.081 m over 162 m, no jumps |
+| APE RMSE, SE(3)-aligned | 0.88–5.3 m, 2 jumps > 1 m per run (per sim_site_run1 record) | 0.081 m over 162 m, no jumps |
 
 ![flat world: VO jumps away from the reference](../../pictures/vo_flat_xy_cam_run3.png) ![construction site: VO stays on the reference](../../pictures/vo_site_xy_site_run1.png)
 *Top-down x-y, PX4 (blue) vs cuVSLAM (orange); `localisation/scripts/score_run.sh <run> 1` → `score_vs_ulog.py`; ledger #15, #16. The flat-world picture is `sim_cam_run3` (no record file; #15 is `sim_cam_run1`, same world, same behaviour).*
@@ -53,7 +54,7 @@ Done when (Linear, verbatim): hover and 1 m steps, three-drone collision-avoidan
 
 | Issue | Title (Linear, verbatim) | Result | Evidence |
 |---|---|---|---|
-| NEAR-786 | Re-run hover and 1 m step test on the updated sim drone | PASS ×2, 2026-10-28/29 | [#18, #19](../record/LEDGER.md) → [run3 record](../record/sim_hover_step_run3_record.md) |
+| NEAR-786 | Re-run hover and 1 m step test on the updated sim drone | PASS ×2 — x 0.095 m / 2.47 s, 2026-10-29 | [#18, #19](../record/LEDGER.md) → [run3 record](../record/sim_hover_step_run3_record.md) |
 | NEAR-787 | Re-run three-drone crossing with collision avoidance and record it | — | baseline [#4](../record/LEDGER.md): 1.02 m, old asset, no bag |
 | NEAR-788 | Try live gain tuning from the panel in sim | — | — |
 | NEAR-789 | Set up one-drone gamepad teleop in the construction site (pad detected, sticks move the drone, release holds) | — | — |
@@ -65,7 +66,7 @@ NEAR-786 — results (sim only; gates 0.15 m / 3.0 s PX4 vehicle time / 0 re-ent
 | | gate | #3 (19 Oct, old asset, 0.6 m/s, wall time) | #17 (28 Oct, n=1) | #18 (28 Oct, n=3) | #19 (29 Oct, n=3) |
 |---|---|---|---|---|---|
 | hover thrust | 0.12–0.20 (real 0.165) | 0.155 | 0.153 | 0.153 | 0.153 |
-| PX4 s per wall s | — | — | ≈1.33 (est.) | 1.324 | 1.333 |
+| PX4 s per wall s | — | — | 1.336 (est., overlay scale) | 1.324 | 1.333 |
 | x overshoot, m | < 0.15 | 0.002 | 0.054 | 0.085 | 0.095 |
 | x settle, s | < 3.0 | 2.75 | 2.49 | 2.47 | 2.47 |
 | z overshoot, m | < 0.15 | 0.001 | 0.001 | 0.033 | 0.020 |

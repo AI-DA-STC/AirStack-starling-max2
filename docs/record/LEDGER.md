@@ -2,7 +2,7 @@ RECORD · SIM + REAL — append-only test ledger. Rows are never rewritten or dr
 
 # Test ledger
 
-**Every row is simulation unless its third column says REAL.** Table 1 is this software (`yikuan/SVG_ground_control_dev` @ `b21d28c`, since 2026-10-07; nothing in it has touched the real drone). Table 2 is what was observed on the previous software (2026-07-20 → 2026-09-03, branch `archive/airstack-starling-max2`); those are observations to re-earn, never results on this software. Negative results stay (#5, #6, #9, #17). New rows: one line, in this format, drafted by `tools/hover_step_report.py --ledger N --issue NEAR-nnn` for the sim hover test. Results by milestone: `docs/projects/HTX-R1.md`, `HTX-R2.md`, `HTX-R3.md` (plain text until those pages exist; link them then).
+**Every row is simulation unless its third column says REAL.** Table 1 is this software (`yikuan/SVG_ground_control_dev` @ `b21d28c`, since 2026-10-07; nothing in it has touched the real drone). Table 2 is what was observed on the previous software (2026-07-20 → 2026-09-03, branch `archive/airstack-starling-max2`); those are observations to re-earn, never results on this software. Negative results stay (#5, #6, #9, #17). New rows: one line, in this format, drafted by `tools/hover_step_report.py --ledger N --issue NEAR-nnn` for the sim hover test. Results by milestone: [HTX-R1.md](../projects/HTX-R1.md), [HTX-R2.md](../projects/HTX-R2.md), [HTX-R3.md](../projects/HTX-R3.md).
 
 ## Table 1 · This software (sim only so far)
 

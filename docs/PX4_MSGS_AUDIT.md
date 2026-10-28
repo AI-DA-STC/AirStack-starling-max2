@@ -1,4 +1,4 @@
-KNOW · REAL DRONE — PX4 v1.14 (the drone) vs the vendored `px4_msgs` (effectively release/1.15): which messages are wire-compatible, which are not, and how to re-run the check. Moved whole from MILESTONES.md §3d on 2026-10-29. Re-earned at NEAR-821 (`docs/projects/HTX-R2.md`, created in a later task; becomes a link then).
+KNOW · REAL DRONE — PX4 v1.14 (the drone) vs the vendored `px4_msgs` (effectively release/1.15): which messages are wire-compatible, which are not, and how to re-run the check. Moved whole from MILESTONES.md §3d on 2026-10-29. Re-earned at NEAR-821 ([HTX-R2.md](projects/HTX-R2.md)).
 
 # PX4 v1.14 vs px4_msgs — compatibility audit (needs re-run)
 

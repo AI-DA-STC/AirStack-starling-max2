@@ -1,0 +1,3 @@
+drone_1 armed: false
+drone_2 armed: false
+drone_3 armed: false

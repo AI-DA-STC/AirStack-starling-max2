@@ -1,0 +1,3 @@
+/drone_1/interface/mavros/setpoint_raw/target_attitude
+/drone_2/interface/mavros/setpoint_raw/target_attitude
+/drone_3/interface/mavros/setpoint_raw/target_attitude

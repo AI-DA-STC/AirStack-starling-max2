@@ -244,7 +244,7 @@ def overlay(runs, scales: dict[str, float], labels: dict[str, str], out: pathlib
         for axis, item in last.items():                  # one direct label per run per axis (its last step's last sample)
             ends.setdefault(axis, []).append(item)
         est = " (est.)" if name in estimated else ""
-        text = f"{label} · {name} · n={len(evs)} · scale {scales[name]:.3f}{est}"
+        text = f"{label} · {name} · n={"+".join(str(sum(1 for ax, _ in evs if ax == k)) for k in "xz")} (x+z) · scale {scales[name]:.3f}{est}"
         handles.append(plt.Line2D([], [], color=colour, lw=2, label=text))
     fig.canvas.draw()                                    # axes size is final: place the direct labels, then spread them apart
     for axis, items in ends.items():                     # one label per run at its last sample, >= LABEL_GAP_PT apart

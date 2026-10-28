@@ -30,6 +30,22 @@ RECORD · SIM + REAL — append-only test ledger. Rows are never rewritten or dr
 
 Notes: the Fix 1 detail (the landing path as it is now — `land_settle_s`, `SwarmCommander.landing_done()`, the disarm retry `land_disarm_step()` with `land_disarm_retry_s` 1 s × `land_disarm_retries` 5; sim closed by #13; the real `_ours` configs set `land_settle_s` 0.0 and the retry is inert there because `px4_interface.disarm()` returns true on send; re-observe at NEAR-826 and confirm DISARMED in QGC, iron rule 2) is copied from the old MILESTONES.md "Sim debt" section as the three bullets below this line.
 
+- `land_settle_s` (live parameter; `SwarmCommander.landing_done()`): after z ≤
+  `land_complete_altitude_m` the drone stays LANDING and keeps commanding the descent for the
+  settle time, then DISARM → IDLE; a bounce restarts the timer. Trigger: in sim the instant
+  disarm was DENIED and the offboard timeout left all three drones armed in failsafe hover
+  (#5). Unit tests `test/test_landing_settle.py`.
+- Disarm retry (2026-10-20, `SwarmCommander.land_disarm_step()`): a rejected DISARM is resent
+  every `land_disarm_retry_s` (1 s) up to `land_disarm_retries` (5) times while the descent is
+  still commanded (#8: settle alone was accepted on 1 of 3). The sim refusals came from
+  PX4's land detector seeing the body rock on the floor (#9) → sim airframe
+  `LNDMC_ROT_MAX` 300. Closed in sim by #13 (DISARM accepted first time ×3).
+- **Real drones:** the `_ours` configs set `land_settle_s: 0.0`, so the landing is the one flown
+  2026-09-03; CMU's shipped real configs lack the key and inherit 2.0 → fly the `_ours` files.
+  The retry is inert on real: `px4_interface.disarm()` returns true on send, and a normal
+  disarm (no force code) is refused by PX4 unless landed — nothing can drop a flying drone.
+  Re-observe at M3 (NEAR-826) (landing sub-test) and confirm DISARMED in QGC (iron rule 2).
+
 ## Table 2 · Observed on the previous software (archived)
 
 Branch `archive/airstack-starling-max2` (`daniel/diffaero_ground_control`), 2026-07-20 → 2026-09-03. The archive's own milestone labels are not carried (they would collide with Linear's M2–M7). Desk and network rows carry no evidence file, only the archived ledger number; the flight rows A17–A21 cite the folder `~/flight_logs/2026-09-01/` (four ulogs, no per-row mapping known). No curve is drawn from these logs.
@@ -57,19 +73,3 @@ Branch `archive/airstack-starling-max2` (`daniel/diffaero_ground_control`), 2026
 | A19 | REAL: multi-goal square (`goal_tracking.yaml`), 2 laps, all corners tracked (videos in `videos/`) | 2026-09-03 | `~/flight_logs/2026-09-01/` | NEAR-829 |
 | A20 | REAL: deliberate in-flight geofence breach → freeze-hover (armed); recovery `land` → `reset_fence` → `takeoff` | 2026-09-03 | `~/flight_logs/2026-09-01/` | NEAR-830 |
 | A21 | REAL: landing auto-disarm reliable at `land_speed_mps` 0.6; 0.3 bounced and left the drone armed on the ground | 2026-09-03 | `~/flight_logs/2026-09-01/` | NEAR-826 |
-
-- `land_settle_s` (live parameter; `SwarmCommander.landing_done()`): after z ≤
-  `land_complete_altitude_m` the drone stays LANDING and keeps commanding the descent for the
-  settle time, then DISARM → IDLE; a bounce restarts the timer. Trigger: in sim the instant
-  disarm was DENIED and the offboard timeout left all three drones armed in failsafe hover
-  (#5). Unit tests `test/test_landing_settle.py`.
-- Disarm retry (2026-10-20, `SwarmCommander.land_disarm_step()`): a rejected DISARM is resent
-  every `land_disarm_retry_s` (1 s) up to `land_disarm_retries` (5) times while the descent is
-  still commanded (#8: settle alone was accepted on 1 of 3). The sim refusals came from
-  PX4's land detector seeing the body rock on the floor (#9) → sim airframe
-  `LNDMC_ROT_MAX` 300. Closed in sim by #13 (DISARM accepted first time ×3).
-- **Real drones:** the `_ours` configs set `land_settle_s: 0.0`, so the landing is the one flown
-  2026-09-03; CMU's shipped real configs lack the key and inherit 2.0 → fly the `_ours` files.
-  The retry is inert on real: `px4_interface.disarm()` returns true on send, and a normal
-  disarm (no force code) is refused by PX4 unless landed — nothing can drop a flying drone.
-  Re-observe at M3 (landing sub-test) and confirm DISARMED in QGC (iron rule 2).

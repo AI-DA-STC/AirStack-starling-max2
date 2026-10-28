@@ -136,7 +136,7 @@ mistake comes first.
 | "Battery unhealthy", won't arm | SITL battery drained — restart the Isaac spawn script (Isaac Sim tab) |
 | Continuous `[timesync]` warnings | sim below real-time; reduce load |
 | No camera / `add_rtx_lidar_subgraph` import error at launch | the Pegasus submodule renamed the lidar/camera APIs; only `ENABLE_LIDAR`/`ENABLE_CAMERA` runs are affected — run without them, or update the launch script's lazy imports |
-| `ENABLE_CAMERA=true` but the robot container sees no `/clock` or camera topics (isaac-sim does) | DDS never crosses the isaac docker network; MAVROS (UDP) does ([diagram](ARCHITECTURE.md#sim-session-anatomy)). Use `localisation/docker/run.sh`. Both at once: [record/LEDGER.md](record/LEDGER.md) note under table 1 |
+| `ENABLE_CAMERA=true` but the robot container sees no `/clock` or camera topics (isaac-sim does) | DDS never crosses the isaac docker network; MAVROS (UDP) does ([diagram](ARCHITECTURE.md#sim-session-anatomy)). Use `localisation/docker/run.sh`. Both at once: [projects/HTX-R1.md](projects/HTX-R1.md) "Sim debt" (row 3) |
 | Stereo VO pose jumps 5–10 m whenever drone_1 faces the arena edge (sky and grid in view) | The flat default world starves the tracker. Launch with `ENV_USD` (construction site): [site README](../localisation/scenes/construction_site/README.md) |
 | VO odometry / TF flips between two poses in SLAM Studio | Two `cuvslam_stereo_node` instances (one started by hand beside `slam_up.sh`). `localisation/scripts/slam_status.sh`, then `slam_down.sh` → `slam_up.sh` |
 | `ENV_USD` set but the world loads flat or empty | The world files are laptop-only and not built here: run `localisation/scenes/construction_site/install.sh` ([site README](../localisation/scenes/construction_site/README.md)) |

@@ -9,7 +9,7 @@ Question: Does the same software fly real Starling 2 Max drones safely with moti
 Hazards the pilot assumes until the named issue re-earns them (iron rules in [PREFLIGHT.md](../PREFLIGHT.md)):
 
 1. Software is blind to PX4 arming; the command-ACK message is unaudited against PX4 v1.14 — [PX4_MSGS_AUDIT.md](../PX4_MSGS_AUDIT.md), re-run at NEAR-821. Fly with QGC visible.
-2. `land_speed_mps` must stay 0.6 — 0.3 left the drone armed on the ground ([A21](../record/LEDGER.md#table-2--observed-on-the-previous-software-archived)); the landing is re-earned at NEAR-826.
+2. fly `_ours` configs (shipped real ones carry 0.3); `land_speed_mps` must stay 0.6 — 0.3 left the drone armed on the ground ([A21](../record/LEDGER.md#table-2--observed-on-the-previous-software-archived)); the landing is re-earned at NEAR-826.
 3. Drone ID must equal the controller target (`MAV_SYS_ID` = `target_system`; no ACK at all = mismatch) — NEAR-819; exactly one uXRCE watchdog on the drone — NEAR-820.
 4. After `voxl_setup_real_drone.sh`: reboot, never `systemctl restart voxl-px4` — NEAR-818.
 5. RC takeover is MANUAL or KILL only: setpoints leak into POSCTL/ALTCTL (confirmed in the code 2026-10-29, accepted; iron rule 1), and the commander stays non-IDLE after a takeover (`land` once; iron rule 3). No issue of their own; re-observed at NEAR-825 ([PX4_MSGS_AUDIT.md](../PX4_MSGS_AUDIT.md)).

@@ -70,7 +70,7 @@ arming visibility — both already mandated), and any future use of the onboard
 remains upgrading the drone to the voxl-px4 1.15 line. Worth asking CMU their exact voxl-px4
 build to fully close this.
 
-**Matters for:** M6 caution, not a blocker — fly with QGC visible + thumb on RC kill (already
+**Matters for:** first flight (NEAR-825) caution, not a blocker — fly with QGC visible + thumb on RC kill (already
 required); don't trust any software arming indication.
 
 ## Re-run method

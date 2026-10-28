@@ -166,7 +166,7 @@ fallback and the throw-away shell: [§ Sim launch variants](#sim-launch-variants
 
 ## B · REAL DRONE session (mocap room) — ⏳ STE on this branch
 
-> **WORLD: REAL DRONE — [PREFLIGHT.md](PREFLIGHT.md) gates every takeoff.** Gates before the next real flight: [MILESTONES.md](MILESTONES.md) "Before the next real flight" (MAV_SYS_ID 1 vs 2, one watchdog only, [PX4_MSGS_AUDIT.md](PX4_MSGS_AUDIT.md) ACK audit, props-off kill test, NEAR-826 landing test, mocap chain after the camera upgrade).
+> **WORLD: REAL DRONE — [PREFLIGHT.md](PREFLIGHT.md) gates every takeoff.** Gates before the next real flight: [MILESTONES.md](MILESTONES.md) "Before the next real flight" (MAV_SYS_ID 1 vs 2, one watchdog only, [PX4_MSGS_AUDIT.md](PX4_MSGS_AUDIT.md) ACK audit, NEAR-826 landing test); props-off kill test: [PREFLIGHT.md](PREFLIGHT.md) / [DRONE_SETUP.md](DRONE_SETUP.md) §8 (NEAR-823); mocap chain after the camera upgrade: [projects/HTX-R2.md](projects/HTX-R2.md) R1.
 >
 > **Step 0 — which world am I in:** Isaac container NOT running (`docker ps | grep isaac` → empty), no `mavros_node` and no `svg_teleop` in `ros2 node list`, and the `px4_interface … target_system=N` startup line present. ⚠️ Never start Isaac Sim during a real session: the sim publishes on the real drone's topic names.
 
@@ -318,7 +318,7 @@ ros2 service call /swarm_commander/hold    std_srvs/srv/Trigger   # PANIC: brake
 ros2 service call /swarm_commander/land    std_srvs/srv/Trigger   # descend + disarm
 ```
 In hover, confirm the setpoint stream from a pane: `ros2 topic hz /drone_1/fmu/trajectory_command` ≈ 20 Hz (the panel's `Cmd stream` column watches velocity topics only and reads `--` on a real drone — [BASESTATION.md](BASESTATION.md) §6).
-`start` begins the scenario and is **REQUIRED** before goals or teleop respond.
+`start` begins the scenario and is **REQUIRED** before goals or teleop respond. Hover about 20 s before `land`; at touchdown on this software the Interface column shows `disarm ✗` and QGC one red "Disarming denied" until the landing test (NEAR-826) is re-observed — expected, not a fault.
 Watch the panel's command log: `sent → accepted → ✓ confirmed`, and the Interface column:
 `request offboard ✓ · arm ✓`. **`DENIED`** = PX4 refused (preflight) · **no entry at all** =
 `target_system` mismatch — fix before retrying. Goal/waypoint flights → **§C**. Gamepad →

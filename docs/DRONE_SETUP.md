@@ -118,7 +118,7 @@ still has the old one
 - [ ] Bind the transmitter to the drone's receiver (hardware-specific).
 - [ ] Calibrate sticks: QGC → Vehicle Setup → Radio.
 - [ ] Confirm the safety params (loaded in §5, re-check): `RC_MAP_KILL_SW=8`, `COM_RC_OVERRIDE=1`, `COM_OBL_RC_ACT=1` — CONFIG.md §PX4 params.
-- [ ] **Kill ground test — props OFF, drone strapped down:** arm via a software `takeoff`, flip the kill switch, motors must cut instantly. On this branch, also watch the laptop's `px4_interface` log: `arm` must get an `ACCEPTED` ack (no ack = `target_system` mismatch, §4) — NEAR-825 ([projects/HTX-R2.md](projects/HTX-R2.md)).
+- [ ] **Kill ground test — props OFF, drone strapped down:** arm via a software `takeoff`, flip the kill switch, motors must cut instantly. On this branch, also watch the laptop's `px4_interface` log: `arm` must get an `ACCEPTED` ack (no ack = `target_system` mismatch, §4) — NEAR-823 ([projects/HTX-R2.md](projects/HTX-R2.md)).
 - [ ] Repeat the kill ground test after ANY transmitter/receiver change **and after any AirStack branch change**, forever.
 - [ ] Brief every pilot: RC takeover = MANUAL or kill only, never POSCTL/ALTCTL — [projects/HTX-R2.md](projects/HTX-R2.md) "Carried over".
 

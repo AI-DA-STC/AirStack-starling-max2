@@ -9,7 +9,7 @@ Three Linear projects ([plan snapshot 2026-10-26](plans/2026-10-26-project-plan-
 Hazards the pilot assumes until the named issue re-earns them (detail: [HTX-R2.md](projects/HTX-R2.md)):
 
 1. Software is blind to PX4 arming; the command-ACK message is unaudited against PX4 v1.14 — [PX4_MSGS_AUDIT.md](PX4_MSGS_AUDIT.md), re-run at NEAR-821.
-2. `land_speed_mps` must stay 0.6 — 0.3 left the drone armed on the ground ([A21](record/LEDGER.md)); landing re-earned at NEAR-826.
+2. fly `_ours` configs (shipped real ones carry 0.3); `land_speed_mps` must stay 0.6 — 0.3 left the drone armed on the ground ([A21](record/LEDGER.md)); landing re-earned at NEAR-826.
 3. Drone ID must equal the controller target (`MAV_SYS_ID` = `target_system`; no ACK = mismatch) — NEAR-819; one uXRCE watchdog only — NEAR-820.
 4. After `voxl_setup_real_drone.sh`: reboot, never `systemctl restart voxl-px4` — NEAR-818.
 5. RC-takeover leak into POSCTL/ALTCTL confirmed in the current code 2026-10-29 and accepted: takeover = MANUAL or KILL ([HTX-R2.md](projects/HTX-R2.md)); `land` once after any takeover; re-observed at NEAR-825.

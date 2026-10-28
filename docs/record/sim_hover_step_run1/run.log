@@ -1,0 +1,123 @@
+[15:38:49] precheck: no real-drone bridge on the laptop, port 8765 free, drone battery out (sim shares domain 1)
+NVIDIA GeForce RTX 5070 Ti Laptop GPU, 1135 MiB
+[15:39:01] == phase precheck ==
+[15:39:01] precheck: no real-drone bridge on the laptop, port 8765 free, drone battery out (sim shares domain 1)
+NVIDIA GeForce RTX 5070 Ti Laptop GPU, 1123 MiB
+[15:39:01] == phase up ==
+ Container isaac-sim Starting 
+ Container airstack-gcs-1 Started 
+ Container airstack-robot-desktop-1 Started 
+ Container isaac-sim Started 
+[0;32m[INFO][0m Services brought up successfully
+[15:39:09] up: containers running, domain 1 clean
+[15:39:09] == phase watch ==
+[15:39:13] watch: running (pid 30265)
+[15:39:13] == phase isaac ==
+[15:39:28] Ready for takeoff: 3 (after 15s)
+model_line=0 starling_cfg=0 autostart=3 unknown_model=0 cooking=1 ready=3
+[15:39:28] == phase interfaces ==
+[15:39:34] MAVROS heartbeats: 3 (after 6s)
+[15:39:34] WARN: mavros segfault(s) in interfaces.log
+[15:39:36] FAIL (interfaces): no odometry for drone_2
+average rate: 44.530
+/drone_1/interface/mavros/setpoint_raw/target_attitude
+/drone_2/interface/mavros/setpoint_raw/target_attitude
+/drone_3/interface/mavros/setpoint_raw/target_attitude
+[15:41:15] interfaces: 3 drones with odometry
+[15:41:17] SwarmCommander up: 1 (after 2s)
+[15:42:20] commander already up (scenario goal); not relaunching
+[15:42:20] SwarmCommander up: 1 (after 0s)
+scenario goal states ['IDLE', 'IDLE', 'IDLE'] fresh [True, True, True] tuning {'teleop_max_speed_mps': 1.2, 'goal_accel_mps2': 6.0, 'goal_settle_s': 0.3, 'scenario_speed_mps': 2.0}
+{"stamp": 1793173345.8674452, "node": "/bag_recorder", "recording": true, "path": "/root/AirStack/robot/ros_ws/bags/hover_step_20261028_074116", "started_at": 1793173276.392899, "duration_s": 69.47454619407654, "size_bytes": 85606400, "topic_count": 295, "bag_dir": "/root/AirStack/robot/ros_ws/bags", "bag_prefix": "hover_step", "storage": "mcap", "include_hidden": false, "last_bag": null, "last_result": null, "error": null}
+
+SYS_AUTOSTART: groups: cannot find name for group ID 992
+SYS_AUTOSTART: Integer value is: 10090
+MC_PITCHRATE_P: groups: cannot find name for group ID 992
+MC_PITCHRATE_P: Double value is: 0.03200000151991844
+MC_ROLLRATE_P: groups: cannot find name for group ID 992
+MC_ROLLRATE_P: Double value is: 0.03200000151991844
+LNDMC_ROT_MAX: groups: cannot find name for group ID 992
+LNDMC_ROT_MAX: Double value is: 300.0
+MPC_XY_VEL_MAX: groups: cannot find name for group ID 992
+MPC_XY_VEL_MAX: Double value is: 20.0
+MPC_THR_HOVER: groups: cannot find name for group ID 992
+MPC_THR_HOVER: Double value is: 0.16500000655651093
+IMU_GYRO_CUTOFF: groups: cannot find name for group ID 992
+IMU_GYRO_CUTOFF: Double value is: 80.0
+IMU_DGYRO_CUTOFF: groups: cannot find name for group ID 992
+IMU_DGYRO_CUTOFF: Double value is: 40.0
+MPC_Z_VEL_MAX_DN: groups: cannot find name for group ID 992
+MPC_Z_VEL_MAX_DN: Double value is: 4.0
+MPC_ACC_HOR: groups: cannot find name for group ID 992
+MPC_ACC_HOR: Double value is: 6.0
+[15:42:50] params: 10-20 airframe confirmed via MAVROS
+[15:42:51] wait_s patched to sleep
+[15:42:51] fly: takeoff -> start -> hover thrust -> +1 m x -> +1 m z -> land (about 3-4 min)
+drone_1 armed: groups: cannot find name for group ID 992
+drone_2 armed: groups: cannot find name for group ID 992
+drone_3 armed: groups: cannot find name for group ID 992
+[swarm_commander-2] [0m[INFO] [1793173449.212127137] [swarm_commander]: drone_2: touchdown at z=0.14 m, settling 2.0 s before disarm[0m
+[swarm_commander-2] [0m[INFO] [1793173449.262255270] [swarm_commander]: drone_3: touchdown at z=0.05 m, settling 2.0 s before disarm[0m
+[swarm_commander-2] [0m[INFO] [1793173449.961802305] [swarm_commander]: drone_1: touchdown at z=0.14 m, settling 2.0 s before disarm[0m
+[swarm_commander-2] [0m[INFO] [1793173451.312097249] [swarm_commander]: drone_2: landed, disarmed (attempt 1)[0m
+[swarm_commander-2] [0m[INFO] [1793173451.312526679] [swarm_commander]: drone_3: landed, disarmed (attempt 1)[0m
+[swarm_commander-2] [0m[INFO] [1793173452.011927909] [swarm_commander]: drone_1: landed, disarmed (attempt 1)[0m
+hz=40 /tmp/ascent.txt axis=z: 931 samples (23.3 s) | moved +1.176 m of +1.2 commanded (trace starts after the command, so this is a lower bound) | peak +1.219 | overshoot past settled +0.013 m | settled (±0.1 m) after 4.58 s
+hz=44.530 /tmp/ascent.txt axis=z: 931 samples (20.9 s) | moved +1.176 m of +1.2 commanded (trace starts after the command, so this is a lower bound) | peak +1.219 | overshoot past settled +0.013 m | settled (±0.1 m) after 4.11 s
+ascent samples: 931
+hz=40 /tmp/step_x.txt axis=x: 191 samples (4.8 s) | moved +0.925 m of +1.0 commanded (trace starts after the command, so this is a lower bound) | peak +3.058 | overshoot past settled +0.031 m | settled (±0.1 m) after 1.52 s
+hz=44.530 /tmp/step_x.txt axis=x: 191 samples (4.3 s) | moved +0.925 m of +1.0 commanded (trace starts after the command, so this is a lower bound) | peak +3.058 | overshoot past settled +0.031 m | settled (±0.1 m) after 1.37 s
+step_x samples: 191
+hz=40 /tmp/step_z.txt axis=z: 285 samples (7.1 s) | moved +0.983 m of +1.0 commanded (trace starts after the command, so this is a lower bound) | peak +2.195 | overshoot past settled +0.001 m | settled (±0.1 m) after 3.05 s
+hz=44.530 /tmp/step_z.txt axis=z: 285 samples (6.4 s) | moved +0.983 m of +1.0 commanded (trace starts after the command, so this is a lower bound) | peak +2.195 | overshoot past settled +0.001 m | settled (±0.1 m) after 2.74 s
+step_z samples: 285
+2 /tmp/tmpjssq28_p/log/2026-10-28/07_39_26.ulg 106171670
+3 /tmp/tmpzbe_3skm/log/2026-10-28/07_39_26.ulg 105313839
+4 /tmp/tmpsllknn4o/log/2026-10-28/07_39_26.ulg 105271043
+SYS_AUTOSTART 10090
+MAV_SYS_ID 2
+MC_PITCHRATE_P 0.03200000151991844
+MC_ROLLRATE_P 0.03200000151991844
+LNDMC_ROT_MAX 300.0
+MPC_XY_VEL_MAX 20.0
+MPC_THR_HOVER 0.16500000655651093
+IMU_GYRO_CUTOFF 80.0
+IMU_DGYRO_CUTOFF 40.0
+MPC_Z_VEL_MAX_DN 4.0
+MPC_ACC_HOR 6.0
+ulog thrust_setpoint median(mid-third) 0.001
+total 102804
+-rw-r--r-- 1 jeremychia jeremychia 105271043 Oct 28 15:44 07_39_26.ulg
+[15:45:58] no WIFI-ALERT during the run
+[15:45:58] WARN: no hover_step bag found
+[15:45:58] down: stack stopped, containers left up
+FAIL: /home/jeremychia/AirStack-starling-max2/docs/record/sim_hover_step_run1_record.md
+  FAIL       Isaac launch: Starling2MaxConfig x3: 0
+  PASS       Isaac launch: SYS_AUTOSTART=10090 x3: 3
+  PASS       Isaac launch: Ready for takeoff x3: 3
+  PASS       Isaac launch: no 'Unknown model': 0
+  PASS       Isaac launch: no PhysX cooking warnings: 0
+  PASS       PX4 SYS_AUTOSTART (ulog header): 10090
+  PASS       PX4 MC_PITCHRATE_P (ulog header): 0.032
+  PASS       PX4 LNDMC_ROT_MAX (ulog header): 300
+  PASS       PX4 MPC_XY_VEL_MAX (ulog header): 20
+  PASS       PX4 MPC_THR_HOVER (ulog header): 0.165
+  PASS       PX4 IMU_GYRO_CUTOFF (ulog header): 80
+  PASS       takeoff accepted: yes
+  PASS       start accepted (scenario goal): yes
+  PASS       hover thrust setpoint (MAVROS target_attitude): median 0.153 of 10 samples
+  PASS       land accepted + final state IDLE: yes
+  PASS       x step +1 m: overshoot: +0.031 m (191 samples)
+  PASS       x step +1 m: settle (±0.1 m): 1.52 s
+  PASS       x step +1 m: ringing: 0 re-entries
+  PASS       x step +1 m: vs #3: overshoot +0.029 m, settle -1.23 s vs #3
+  PASS       z step +1 m: overshoot: +0.001 m (285 samples)
+  FAIL       z step +1 m: settle (±0.1 m): 3.05 s
+  PASS       z step +1 m: ringing: 0 re-entries
+  note       z step +1 m: vs #3: overshoot +0.000 m, settle +2.30 s vs #3
+  PASS       takeoff climb to 1.2 m: overshoot +0.013 m, settled after 4.58 s
+  PASS       landing: disarmed x3: 3 disarmed (3 on attempt 1)
+  FAIL       post-flight armed=false x3 (MAVROS state): 0 false / 0 true
+  PASS       WiFi firmware alerts during the run: 0
+  note       rosbag (first live use of record_bag): not confirmed
+  PASS       PX4 ulogs, one per drone (sysid 2/3/4): 3 files, sysids ['2', '3', '4']

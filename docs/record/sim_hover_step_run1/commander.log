@@ -1,0 +1,597 @@
+[INFO] [launch]: All log files can be found below /root/.ros/log/2026-10-28-07-41-15-952392-jeremychia-Legion-Pro-7-16IAX10H-2222
+[INFO] [launch]: Default logging verbosity is set to INFO
+[INFO] [bag_recorder-1]: process started with pid [2225]
+[INFO] [swarm_commander-2]: process started with pid [2226]
+[INFO] [mocap_bridge-3]: process started with pid [2227]
+[INFO] [led_controller-4]: process started with pid [2228]
+[INFO] [foxglove_bridge-5]: process started with pid [2229]
+[foxglove_bridge-5] [0m[INFO] [1793173276.082693606] [foxglove_bridge]: Starting foxglove_bridge (jazzy, 3.2.6@)[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.088003742] [foxglove_bridge]: Server listening on port 8765[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.092338569] [foxglove_bridge]: Advertising new channel 1 for topic "/rosout"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.093871497] [foxglove_bridge]: Advertising new channel 2 for topic "/parameter_events"[0m
+[led_controller-4] [0m[INFO] [1793173276.376596163] [led_controller]: led_controller up: drones ['drone_1'], heartbeat udp/47901, default green, CBF -> red (hold 0.5s), brightness 80/255[0m
+[bag_recorder-1] [0m[INFO] [1793173276.391795610] [bag_recorder]: bag recorder ready: bag_dir=/root/AirStack/robot/ros_ws/bags prefix=hover_step — switch with bag_recorder/record (std_srvs/SetBool)[0m
+[bag_recorder-1] [0m[INFO] [1793173276.393269443] [bag_recorder]: recording all topics to /root/AirStack/robot/ros_ws/bags/hover_step_20261028_074116[0m
+[swarm_commander-2] [0m[INFO] [1793173276.445084669] [swarm_commander]: formation profiles: diagonal, home, line, triangle[0m
+[swarm_commander-2] [0m[INFO] [1793173276.463414765] [swarm_commander]: SwarmCommander up | scenario=goal | drone_1(auto/sim), drone_2(auto/sim), drone_3(auto/sim) | speed=2.0 m/s (accel 6.0 m/s2, settle 0.3 s, lead 2.0 m) | real output: none | CBF r=0.55 m, vmax=4.0 m/s, alpha=2.5, ext_vel_gain=1.0 | FENCE hold_all [-3. -6.  0.]..[5. 5. 3.][0m
+[swarm_commander-2] [0m[INFO] [1793173276.465635736] [swarm_commander]: position offsets (local->world): drone_1: [-2.  0.  0.], drone_2: [0. 0. 0.], drone_3: [2. 0. 0.][0m
+[mocap_bridge-3] [0m[INFO] [1793173276.619915606] [mocap_bridge]: MocapBridge [direct/enu_to_ned] forwarding 3 drone(s): /drone_1/pose -> /drone_1/fmu/in/vehicle_visual_odometry, /drone_2/pose -> /drone_2/fmu/in/vehicle_visual_odometry, /drone_3/pose -> /drone_3/fmu/in/vehicle_visual_odometry[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.665779385] [foxglove_bridge]: Advertising new channel 3 for topic "/uas3/mavlink_sink"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.670853354] [foxglove_bridge]: Advertising new channel 4 for topic "/tf"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.672706732] [foxglove_bridge]: Advertising new channel 5 for topic "/svg/drone_2/goal_xyzt"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.673188636] [foxglove_bridge]: Advertising new channel 6 for topic "/svg/drone_1/speed_command"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.673626870] [foxglove_bridge]: Advertising new channel 7 for topic "/svg/drone_1/led_command"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.675639922] [foxglove_bridge]: Advertising new channel 8 for topic "/svg/drone_1/goal_command"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.675656043] [foxglove_bridge]: Advertising new channel 9 for topic "/svg/cbf_active"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.676933917] [foxglove_bridge]: Advertising new channel 10 for topic "/drone_3/trajectory_controller/tracking_point"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.678692202] [foxglove_bridge]: Advertising new channel 11 for topic "/drone_3/odometry_conversion/odometry"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.678706920] [foxglove_bridge]: Advertising new channel 12 for topic "/drone_3/interface/pose_command"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.679359110] [foxglove_bridge]: Advertising new channel 13 for topic "/drone_3/interface/mavros/statustext/send"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.679977318] [foxglove_bridge]: Advertising new channel 14 for topic "/drone_3/interface/mavros/state"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.680327888] [foxglove_bridge]: Advertising new channel 15 for topic "/drone_3/interface/mavros/setpoint_velocity/cmd_vel_unstamped"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.682459833] [foxglove_bridge]: Advertising new channel 16 for topic "/drone_3/interface/mavros/setpoint_trajectory/local"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.683103080] [foxglove_bridge]: Advertising new channel 17 for topic "/drone_3/interface/mavros/setpoint_raw/global"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.683122382] [foxglove_bridge]: Advertising new channel 18 for topic "/svg/drone_2/goal_command"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.683130073] [foxglove_bridge]: Advertising new channel 19 for topic "/drone_3/pose"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.683137251] [foxglove_bridge]: Advertising new channel 20 for topic "/drone_3/interface/mavros/setpoint_position/local"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.685229216] [foxglove_bridge]: Advertising new channel 21 for topic "/drone_3/interface/mavros/setpoint_position/global"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.685885215] [foxglove_bridge]: Advertising new channel 22 for topic "/drone_3/interface/mavros/rc/override"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.686453525] [foxglove_bridge]: Advertising new channel 23 for topic "/drone_3/interface/mavros/rc/out"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.686995342] [foxglove_bridge]: Advertising new channel 24 for topic "/drone_3/interface/mavros/rc/in"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.687543656] [foxglove_bridge]: Advertising new channel 25 for topic "/drone_3/interface/mavros/param/event"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.688187202] [foxglove_bridge]: Advertising new channel 26 for topic "/drone_3/interface/mavros/nav_controller_output/output"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.689236093] [foxglove_bridge]: Advertising new channel 27 for topic "/drone_3/interface/mavros/manual_control/control"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.689793405] [foxglove_bridge]: Advertising new channel 28 for topic "/drone_3/interface/mavros/local_position/velocity_local"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.690342199] [foxglove_bridge]: Advertising new channel 29 for topic "/drone_3/interface/mavros/local_position/velocity_body_cov"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.690359772] [foxglove_bridge]: Advertising new channel 30 for topic "/drone_3/interface/mavros/local_position/velocity_body"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.690368167] [foxglove_bridge]: Advertising new channel 31 for topic "/drone_3/interface/mavros/local_position/pose"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.690375207] [foxglove_bridge]: Advertising new channel 32 for topic "/drone_3/interface/mavros/local_position/odom"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.691292775] [foxglove_bridge]: Advertising new channel 33 for topic "/drone_3/interface/mavros/imu/temperature_imu"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.691310900] [foxglove_bridge]: Advertising new channel 34 for topic "/drone_3/interface/mavros/imu/temperature_baro"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.691318174] [foxglove_bridge]: Advertising new channel 35 for topic "/drone_3/interface/mavros/setpoint_attitude/cmd_vel"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.691891612] [foxglove_bridge]: Advertising new channel 36 for topic "/drone_3/interface/mavros/imu/diff_pressure"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.692543659] [foxglove_bridge]: Advertising new channel 37 for topic "/drone_3/interface/mavros/imu/data"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.693148249] [foxglove_bridge]: Advertising new channel 38 for topic "/drone_3/interface/mavros/setpoint_attitude/thrust"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.694313445] [foxglove_bridge]: Advertising new channel 39 for topic "/drone_3/interface/mavros/rallypoint/rallypoints"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.694880291] [foxglove_bridge]: Advertising new channel 40 for topic "/drone_3/interface/mavros/home_position/home"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.695356035] [foxglove_bridge]: Advertising new channel 41 for topic "/drone_3/interface/mavros/global_position/set_gp_origin"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.695848892] [foxglove_bridge]: Advertising new channel 42 for topic "/drone_3/interface/mavros/global_position/raw/satellites"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.695884205] [foxglove_bridge]: Advertising new channel 43 for topic "/drone_3/interface/mavros/global_position/local"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.695890837] [foxglove_bridge]: Advertising new channel 44 for topic "/drone_3/interface/mavros/global_position/gp_origin"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.696637965] [foxglove_bridge]: Advertising new channel 45 for topic "/drone_3/interface/mavros/target_actuator_control"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.696656250] [foxglove_bridge]: Advertising new channel 46 for topic "/drone_3/interface/mavros/global_position/gp_lp_offset"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.697083299] [foxglove_bridge]: Advertising new channel 47 for topic "/drone_3/interface/mavros/altitude"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.697547283] [foxglove_bridge]: Advertising new channel 48 for topic "/drone_3/interface/is_armed"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.698491018] [foxglove_bridge]: Advertising new channel 49 for topic "/drone_3/interface/cmd_torque_thrust"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.698519555] [foxglove_bridge]: Advertising new channel 50 for topic "/drone_3/interface/mavros/setpoint_velocity/cmd_vel"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.698934683] [foxglove_bridge]: Advertising new channel 51 for topic "/drone_3/interface/attitude_thrust_command"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.699736548] [foxglove_bridge]: Advertising new channel 52 for topic "/drone_3/global_plan"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.699747613] [foxglove_bridge]: Advertising new channel 53 for topic "/drone_3/interface/mavros/actuator_control"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.699753354] [foxglove_bridge]: Advertising new channel 54 for topic "/drone_3/cross_track_error"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.700051043] [foxglove_bridge]: Advertising new channel 55 for topic "/drone_3/control/reset_integrators"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.700057963] [foxglove_bridge]: Advertising new channel 56 for topic "/drone_2/pose"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.700069593] [foxglove_bridge]: Advertising new channel 57 for topic "/svg/drone_1/goal_xyzt"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.700074537] [foxglove_bridge]: Advertising new channel 58 for topic "/drone_2/odometry_conversion/odometry"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.700080736] [foxglove_bridge]: Advertising new channel 59 for topic "/drone_2/interface/velocity_command"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.700085569] [foxglove_bridge]: Advertising new channel 60 for topic "/drone_2/interface/torque_thrust_command"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.700495592] [foxglove_bridge]: Advertising new channel 61 for topic "/drone_2/interface/rate_thrust_command"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.700504337] [foxglove_bridge]: Advertising new channel 62 for topic "/drone_2/interface/pose_command"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.700509184] [foxglove_bridge]: Advertising new channel 63 for topic "/drone_2/interface/mavros/statustext/send"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.700514081] [foxglove_bridge]: Advertising new channel 64 for topic "/drone_2/interface/mavros/state"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.700532847] [foxglove_bridge]: Advertising new channel 65 for topic "/drone_2/interface/mavros/setpoint_velocity/cmd_vel"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.700538150] [foxglove_bridge]: Advertising new channel 66 for topic "/svg/formation_command"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.700548462] [foxglove_bridge]: Advertising new channel 67 for topic "/drone_3/interface/mavros/setpoint_position/global_to_local"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.700556925] [foxglove_bridge]: Advertising new channel 68 for topic "/drone_2/interface/mavros/setpoint_trajectory/local"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.700563572] [foxglove_bridge]: Advertising new channel 69 for topic "/drone_2/interface/mavros/setpoint_raw/global"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.701020035] [foxglove_bridge]: Advertising new channel 70 for topic "/drone_3/interface/mavros/setpoint_raw/attitude"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.701053790] [foxglove_bridge]: Advertising new channel 71 for topic "/drone_3/interface/mavros/global_position/raw/gps_vel"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.701073270] [foxglove_bridge]: Advertising new channel 72 for topic "/drone_2/interface/mavros/setpoint_raw/attitude"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.701079921] [foxglove_bridge]: Advertising new channel 73 for topic "/drone_2/interface/mavros/setpoint_position/local"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.701085567] [foxglove_bridge]: Advertising new channel 74 for topic "/drone_2/interface/mavros/setpoint_position/global_to_local"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.701090872] [foxglove_bridge]: Advertising new channel 75 for topic "/drone_2/interface/mavros/setpoint_position/global"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.701096472] [foxglove_bridge]: Advertising new channel 76 for topic "/drone_3/interface/cmd_pose"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.701102080] [foxglove_bridge]: Advertising new channel 77 for topic "/drone_2/interface/mavros/setpoint_attitude/cmd_vel"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.701621442] [foxglove_bridge]: Advertising new channel 78 for topic "/drone_2/interface/mavros/setpoint_accel/accel"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.701654485] [foxglove_bridge]: Advertising new channel 79 for topic "/drone_2/interface/mavros/rc/override"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.701663798] [foxglove_bridge]: Advertising new channel 80 for topic "/uas3/mavlink_source"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.701671157] [foxglove_bridge]: Advertising new channel 81 for topic "/drone_2/interface/mavros/manual_control/send"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.701678533] [foxglove_bridge]: Advertising new channel 82 for topic "/svg/drone_3/goal_xyzt"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.701684860] [foxglove_bridge]: Advertising new channel 83 for topic "/drone_2/interface/mavros/local_position/pose"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.701691487] [foxglove_bridge]: Advertising new channel 84 for topic "/drone_2/interface/mavros/home_position/set"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.702227078] [foxglove_bridge]: Advertising new channel 85 for topic "/drone_3/interface/mavros/global_position/rel_alt"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.702242926] [foxglove_bridge]: Advertising new channel 86 for topic "/drone_2/interface/mavros/home_position/home"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.702250611] [foxglove_bridge]: Advertising new channel 87 for topic "/drone_2/interface/mavros/global_position/local"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.703266358] [foxglove_bridge]: Advertising new channel 88 for topic "/drone_2/interface/mavros/global_position/global"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.703778145] [foxglove_bridge]: Advertising new channel 89 for topic "/drone_3/interface/mavros/imu/mag"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.703791068] [foxglove_bridge]: Advertising new channel 90 for topic "/drone_2/interface/cmd_torque_thrust"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.704290291] [foxglove_bridge]: Advertising new channel 91 for topic "/drone_2/interface/cmd_roll_pitch_yawrate_thrust"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.704319013] [foxglove_bridge]: Advertising new channel 92 for topic "/svg/led_command"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.704328582] [foxglove_bridge]: Advertising new channel 93 for topic "/drone_3/interface/rate_thrust_command"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.704338940] [foxglove_bridge]: Advertising new channel 94 for topic "/drone_2/interface/cmd_rate_thrust"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.704346739] [foxglove_bridge]: Advertising new channel 95 for topic "/drone_3/trajectory_controller/projected_drone_pose"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.704371383] [foxglove_bridge]: Advertising new channel 96 for topic "/drone_2/interface/cmd_attitude_thrust"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.704379429] [foxglove_bridge]: Advertising new channel 97 for topic "/uas2/mavlink_sink"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.704391916] [foxglove_bridge]: Advertising new channel 98 for topic "/drone_3/interface/mavros/setpoint_accel/accel"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.704399356] [foxglove_bridge]: Advertising new channel 99 for topic "/drone_2/interface/attitude_thrust_command"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.704410918] [foxglove_bridge]: Advertising new channel 100 for topic "/drone_2/global_plan"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.704425555] [foxglove_bridge]: Advertising new channel 101 for topic "/drone_3/interface/cmd_rate_thrust"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.705579977] [foxglove_bridge]: Advertising new channel 102 for topic "/drone_2/fmu/in/vehicle_visual_odometry"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.705603460] [foxglove_bridge]: Advertising new channel 103 for topic "/drone_2/cross_track_error"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.705611140] [foxglove_bridge]: Advertising new channel 104 for topic "/drone_2/interface/mavros/setpoint_attitude/thrust"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.705618597] [foxglove_bridge]: Advertising new channel 105 for topic "/drone_2/control/reset_integrators"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.705626271] [foxglove_bridge]: Advertising new channel 106 for topic "/drone_1/trajectory_controller/tracking_point"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.706152145] [foxglove_bridge]: Advertising new channel 107 for topic "/drone_3/interface/mavros/local_position/pose_cov"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.706165651] [foxglove_bridge]: Advertising new channel 108 for topic "/drone_3/interface/mavros/imu/static_pressure"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.706173407] [foxglove_bridge]: Advertising new channel 109 for topic "/drone_1/trajectory_controller/projected_drone_pose"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.706180677] [foxglove_bridge]: Advertising new channel 110 for topic "/svg/drone_2/speed_command"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.706187281] [foxglove_bridge]: Advertising new channel 111 for topic "/drone_2/interface/has_control"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.706194264] [foxglove_bridge]: Advertising new channel 112 for topic "/drone_1/pose"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.706215082] [foxglove_bridge]: Advertising new channel 113 for topic "/drone_1/odometry_conversion/odometry"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.706846593] [foxglove_bridge]: Advertising new channel 114 for topic "/drone_2/interface/mavros/setpoint_raw/local"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.706861153] [foxglove_bridge]: Advertising new channel 115 for topic "/drone_1/interface/velocity_command"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.706869094] [foxglove_bridge]: Advertising new channel 116 for topic "/drone_1/interface/roll_pitch_yawrate_thrust_command"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.706876571] [foxglove_bridge]: Advertising new channel 117 for topic "/drone_1/interface/rate_thrust_command"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.706883439] [foxglove_bridge]: Advertising new channel 118 for topic "/drone_3/interface/has_control"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.706890955] [foxglove_bridge]: Advertising new channel 119 for topic "/drone_1/interface/pose_command"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.706898529] [foxglove_bridge]: Advertising new channel 120 for topic "/drone_1/interface/mavros/wind_estimation"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.706906021] [foxglove_bridge]: Advertising new channel 121 for topic "/drone_2/trajectory_controller/tracking_point"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.707447326] [foxglove_bridge]: Advertising new channel 122 for topic "/drone_1/interface/mavros/timesync_status"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.707459344] [foxglove_bridge]: Advertising new channel 123 for topic "/svg/drone_3/speed_command"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.707466335] [foxglove_bridge]: Advertising new channel 124 for topic "/drone_3/interface/cmd_velocity"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.707944003] [foxglove_bridge]: Advertising new channel 125 for topic "/drone_1/interface/mavros/time_reference"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.708458268] [foxglove_bridge]: Advertising new channel 126 for topic "/drone_1/interface/mavros/sys_status"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.708471705] [foxglove_bridge]: Advertising new channel 127 for topic "/drone_1/interface/mavros/statustext/send"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.708480018] [foxglove_bridge]: Advertising new channel 128 for topic "/drone_1/interface/mavros/statustext/recv"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.708996383] [foxglove_bridge]: Advertising new channel 129 for topic "/drone_1/interface/mavros/status_event"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.709009178] [foxglove_bridge]: Advertising new channel 130 for topic "/drone_3/interface/mavros/setpoint_raw/local"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.709017301] [foxglove_bridge]: Advertising new channel 131 for topic "/drone_1/interface/mavros/state"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.709025634] [foxglove_bridge]: Advertising new channel 132 for topic "/drone_1/interface/mavros/setpoint_trajectory/local"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.709033230] [foxglove_bridge]: Advertising new channel 133 for topic "/drone_3/interface/mavros/home_position/set"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.709040465] [foxglove_bridge]: Advertising new channel 134 for topic "/drone_1/interface/mavros/setpoint_trajectory/desired"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.709047313] [foxglove_bridge]: Advertising new channel 135 for topic "/drone_3/fmu/in/vehicle_visual_odometry"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.709054632] [foxglove_bridge]: Advertising new channel 136 for topic "/drone_1/interface/mavros/setpoint_raw/target_global"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.709061669] [foxglove_bridge]: Advertising new channel 137 for topic "/drone_3/interface/cmd_attitude_thrust"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.709068471] [foxglove_bridge]: Advertising new channel 138 for topic "/drone_1/interface/mavros/setpoint_raw/target_attitude"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.709075210] [foxglove_bridge]: Advertising new channel 139 for topic "/drone_1/interface/mavros/setpoint_raw/global"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.709086294] [foxglove_bridge]: Advertising new channel 140 for topic "/drone_2/interface/roll_pitch_yawrate_thrust_command"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.709098828] [foxglove_bridge]: Advertising new channel 141 for topic "/drone_1/interface/torque_thrust_command"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.709105653] [foxglove_bridge]: Advertising new channel 142 for topic "/drone_1/interface/mavros/setpoint_raw/attitude"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.709115194] [foxglove_bridge]: Advertising new channel 143 for topic "/drone_1/interface/mavros/setpoint_position/local"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.709125306] [foxglove_bridge]: Advertising new channel 144 for topic "/uas4/mavlink_source"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.709139984] [foxglove_bridge]: Advertising new channel 145 for topic "/drone_1/interface/mavros/setpoint_position/global_to_local"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.709150429] [foxglove_bridge]: Advertising new channel 146 for topic "/drone_1/interface/mavros/setpoint_position/global"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.709157508] [foxglove_bridge]: Advertising new channel 147 for topic "/svg/commander_status"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.709167127] [foxglove_bridge]: Advertising new channel 148 for topic "/drone_2/interface/mavros/global_position/set_gp_origin"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.709174154] [foxglove_bridge]: Advertising new channel 149 for topic "/drone_1/interface/mavros/setpoint_attitude/thrust"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.709181210] [foxglove_bridge]: Advertising new channel 150 for topic "/drone_1/interface/mavros/rc/out"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.709190832] [foxglove_bridge]: Advertising new channel 151 for topic "/drone_1/interface/mavros/rc/in"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.709198137] [foxglove_bridge]: Advertising new channel 152 for topic "/drone_1/interface/mavros/rallypoint/rallypoints"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.709207956] [foxglove_bridge]: Advertising new channel 153 for topic "/drone_3/interface/mavros/global_position/global"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.709217671] [foxglove_bridge]: Advertising new channel 154 for topic "/drone_1/interface/mavros/setpoint_attitude/cmd_vel"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.709227843] [foxglove_bridge]: Advertising new channel 155 for topic "/drone_1/interface/mavros/param/event"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.709235091] [foxglove_bridge]: Advertising new channel 156 for topic "/drone_1/interface/mavros/nav_controller_output/output"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.709244937] [foxglove_bridge]: Advertising new channel 157 for topic "/tf_static"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.709254409] [foxglove_bridge]: Advertising new channel 158 for topic "/drone_1/interface/mavros/mission/waypoints"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.709787775] [foxglove_bridge]: Advertising new channel 159 for topic "/drone_1/interface/mavros/mission/reached"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.709800606] [foxglove_bridge]: Advertising new channel 160 for topic "/drone_1/interface/mavros/setpoint_accel/accel"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.709808465] [foxglove_bridge]: Advertising new channel 161 for topic "/drone_1/interface/mavros/manual_control/control"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.709815683] [foxglove_bridge]: Advertising new channel 162 for topic "/drone_3/interface/torque_thrust_command"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.709823281] [foxglove_bridge]: Advertising new channel 163 for topic "/drone_1/interface/mavros/local_position/velocity_local"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.709830508] [foxglove_bridge]: Advertising new channel 164 for topic "/drone_1/interface/mavros/setpoint_raw/target_local"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.709837790] [foxglove_bridge]: Advertising new channel 165 for topic "/drone_1/interface/mavros/local_position/velocity_body_cov"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.709844693] [foxglove_bridge]: Advertising new channel 166 for topic "/uas4/mavlink_sink"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.709851045] [foxglove_bridge]: Advertising new channel 167 for topic "/uas2/mavlink_source"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.709857432] [foxglove_bridge]: Advertising new channel 168 for topic "/drone_3/interface/mavros/geofence/fences"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.709864194] [foxglove_bridge]: Advertising new channel 169 for topic "/drone_1/interface/mavros/local_position/velocity_body"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.709875826] [foxglove_bridge]: Advertising new channel 170 for topic "/drone_1/interface/mavros/local_position/pose_cov"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.709886857] [foxglove_bridge]: Advertising new channel 171 for topic "/drone_2/interface/mavros/setpoint_velocity/cmd_vel_unstamped"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.709893932] [foxglove_bridge]: Advertising new channel 172 for topic "/drone_1/interface/mavros/setpoint_raw/local"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.709903527] [foxglove_bridge]: Advertising new channel 173 for topic "/drone_1/interface/mavros/local_position/pose"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.709915007] [foxglove_bridge]: Advertising new channel 174 for topic "/drone_1/interface/mavros/local_position/odom"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.709925110] [foxglove_bridge]: Advertising new channel 175 for topic "/drone_2/trajectory_controller/projected_drone_pose"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.709932604] [foxglove_bridge]: Advertising new channel 176 for topic "/drone_1/interface/mavros/imu/temperature_baro"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.709942300] [foxglove_bridge]: Advertising new channel 177 for topic "/drone_1/interface/mavros/imu/static_pressure"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.709952156] [foxglove_bridge]: Advertising new channel 178 for topic "/drone_1/interface/mavros/manual_control/send"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.709959705] [foxglove_bridge]: Advertising new channel 179 for topic "/drone_1/interface/mavros/imu/mag"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.709972166] [foxglove_bridge]: Advertising new channel 180 for topic "/drone_2/interface/mavros/actuator_control"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.709979398] [foxglove_bridge]: Advertising new channel 181 for topic "/drone_1/interface/mavros/imu/diff_pressure"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.709989926] [foxglove_bridge]: Advertising new channel 182 for topic "/drone_1/interface/mavros/imu/data_raw"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.709999778] [foxglove_bridge]: Advertising new channel 183 for topic "/drone_1/interface/mavros/target_actuator_control"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.710007054] [foxglove_bridge]: Advertising new channel 184 for topic "/drone_1/interface/mavros/global_position/rel_alt"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.710017034] [foxglove_bridge]: Advertising new channel 185 for topic "/drone_3/interface/roll_pitch_yawrate_thrust_command"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.710024383] [foxglove_bridge]: Advertising new channel 186 for topic "/drone_3/interface/mavros/manual_control/send"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.710034334] [foxglove_bridge]: Advertising new channel 187 for topic "/drone_1/interface/mavros/setpoint_velocity/cmd_vel"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.710044191] [foxglove_bridge]: Advertising new channel 188 for topic "/drone_1/interface/mavros/home_position/home"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.710051439] [foxglove_bridge]: Advertising new channel 189 for topic "/drone_1/interface/mavros/global_position/raw/satellites"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.710068273] [foxglove_bridge]: Advertising new channel 190 for topic "/svg/drone_3/goal_command"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.710079327] [foxglove_bridge]: Advertising new channel 191 for topic "/drone_1/interface/mavros/global_position/raw/fix"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.710089566] [foxglove_bridge]: Advertising new channel 192 for topic "/drone_1/interface/mavros/global_position/local"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.710099788] [foxglove_bridge]: Advertising new channel 193 for topic "/drone_1/interface/mavros/global_position/gp_origin"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.710107165] [foxglove_bridge]: Advertising new channel 194 for topic "/drone_1/interface/mavros/global_position/gp_lp_offset"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.710120151] [foxglove_bridge]: Advertising new channel 195 for topic "/drone_1/interface/mavros/global_position/global"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.710127822] [foxglove_bridge]: Advertising new channel 196 for topic "/drone_3/interface/mavros/global_position/compass_hdg"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.710145057] [foxglove_bridge]: Advertising new channel 197 for topic "/drone_1/interface/mavros/geofence/fences"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.710152951] [foxglove_bridge]: Advertising new channel 198 for topic "/drone_2/interface/cmd_velocity"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.711267118] [foxglove_bridge]: Advertising new channel 199 for topic "/drone_1/interface/mavros/extended_state"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.711809261] [foxglove_bridge]: Advertising new channel 200 for topic "/drone_1/interface/mavros/estimator_status"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.711825110] [foxglove_bridge]: Advertising new channel 201 for topic "/drone_2/interface/is_armed"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.711833711] [foxglove_bridge]: Advertising new channel 202 for topic "/drone_1/interface/mavros/imu/data"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.712352363] [foxglove_bridge]: Advertising new channel 203 for topic "/drone_1/interface/mavros/battery"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.712367011] [foxglove_bridge]: Advertising new channel 204 for topic "/drone_1/interface/mavros/global_position/set_gp_origin"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.712375717] [foxglove_bridge]: Advertising new channel 205 for topic "/drone_1/interface/mavros/global_position/raw/gps_vel"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.712383992] [foxglove_bridge]: Advertising new channel 206 for topic "/drone_1/interface/mavros/altitude"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.712392634] [foxglove_bridge]: Advertising new channel 207 for topic "/drone_1/interface/mavros/actuator_control"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.715913284] [foxglove_bridge]: Advertising new channel 208 for topic "/svg/viz/markers"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.715961240] [foxglove_bridge]: Advertising new channel 209 for topic "/drone_1/interface/is_armed"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.715972261] [foxglove_bridge]: Advertising new channel 210 for topic "/drone_3/interface/cmd_roll_pitch_yawrate_thrust"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.715982106] [foxglove_bridge]: Advertising new channel 211 for topic "/drone_1/interface/has_control"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.715991088] [foxglove_bridge]: Advertising new channel 212 for topic "/drone_3/interface/velocity_command"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.717524323] [foxglove_bridge]: Advertising new channel 213 for topic "/drone_3/interface/mavros/local_position/accel"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.717567150] [foxglove_bridge]: Advertising new channel 214 for topic "/drone_1/interface/cmd_velocity"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.717579048] [foxglove_bridge]: Advertising new channel 215 for topic "/drone_3/interface/mavros/imu/data_raw"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.717588608] [foxglove_bridge]: Advertising new channel 216 for topic "/drone_1/interface/mavros/home_position/set"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.717607015] [foxglove_bridge]: Advertising new channel 217 for topic "/drone_1/interface/cmd_roll_pitch_yawrate_thrust"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.717616804] [foxglove_bridge]: Advertising new channel 218 for topic "/drone_2/interface/cmd_pose"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.717625262] [foxglove_bridge]: Advertising new channel 219 for topic "/drone_1/interface/mavros/setpoint_velocity/cmd_vel_unstamped"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.717634242] [foxglove_bridge]: Advertising new channel 220 for topic "/drone_1/interface/cmd_rate_thrust"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.717663602] [foxglove_bridge]: Advertising new channel 221 for topic "/drone_1/interface/mavros/local_position/accel"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.717673482] [foxglove_bridge]: Advertising new channel 222 for topic "/drone_1/interface/mavros/imu/temperature_imu"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.717684700] [foxglove_bridge]: Advertising new channel 223 for topic "/drone_1/interface/cmd_pose"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.717696022] [foxglove_bridge]: Advertising new channel 224 for topic "/drone_1/interface/cmd_attitude_thrust"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.717743562] [foxglove_bridge]: Advertising new channel 225 for topic "/drone_1/interface/mavros/rc/override"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.717752515] [foxglove_bridge]: Advertising new channel 226 for topic "/drone_1/interface/attitude_thrust_command"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.717773329] [foxglove_bridge]: Advertising new channel 227 for topic "/drone_1/global_plan"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.717785423] [foxglove_bridge]: Advertising new channel 228 for topic "/drone_3/interface/mavros/global_position/raw/fix"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.717794115] [foxglove_bridge]: Advertising new channel 229 for topic "/drone_1/interface/mavros/global_position/compass_hdg"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.717805065] [foxglove_bridge]: Advertising new channel 230 for topic "/drone_1/fmu/in/vehicle_visual_odometry"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.717814632] [foxglove_bridge]: Advertising new channel 231 for topic "/drone_1/interface/cmd_torque_thrust"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.717824457] [foxglove_bridge]: Advertising new channel 232 for topic "/drone_1/cross_track_error"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.717835165] [foxglove_bridge]: Advertising new channel 233 for topic "/drone_2/interface/mavros/local_position/odom"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.717843166] [foxglove_bridge]: Advertising new channel 234 for topic "/drone_1/control/reset_integrators"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173276.719623386] [foxglove_bridge]: Advertising new channel 235 for topic "/diagnostics"[0m
+[bag_recorder-1] stdin is not a terminal device. Keyboard handling disabled.[0m[INFO] [1793173276.721573000] [rosbag2_recorder]: Press SPACE for pausing/resuming[0m
+[bag_recorder-1] [0m[INFO] [1793173276.721585044] [rosbag2_recorder]: Event publisher thread: Started[0m
+[bag_recorder-1] [0m[INFO] [1793173276.725829339] [rosbag2_recorder]: Starting recording to '/root/AirStack/robot/ros_ws/bags/hover_step_20261028_074116'[0m
+[bag_recorder-1] [0m[INFO] [1793173276.730910668] [rosbag2_recorder]: Subscribed to topic '/rosout'[0m
+[bag_recorder-1] [0m[INFO] [1793173276.732746391] [rosbag2_recorder]: Subscribed to topic '/events/write_split'[0m
+[bag_recorder-1] [0m[INFO] [1793173276.732920535] [rosbag2_recorder]: Listening for topics...[0m
+[bag_recorder-1] [0m[INFO] [1793173276.732939779] [rosbag2_recorder]: Recording...[0m
+[bag_recorder-1] [0m[INFO] [1793173276.732962563] [rosbag2_recorder]: Topics discovery started.[0m
+[bag_recorder-1] [0m[INFO] [1793173276.826678058] [rosbag2_recorder]: Subscribed to topic '/parameter_events'[0m
+[bag_recorder-1] [0m[INFO] [1793173276.917765623] [rosbag2_recorder]: Subscribed to topic '/drone_1/fmu/in/vehicle_visual_odometry'[0m
+[bag_recorder-1] [0m[INFO] [1793173276.918777520] [rosbag2_recorder]: Subscribed to topic '/drone_2/fmu/in/vehicle_visual_odometry'[0m
+[bag_recorder-1] [0m[INFO] [1793173276.919693808] [rosbag2_recorder]: Subscribed to topic '/drone_3/fmu/in/vehicle_visual_odometry'[0m
+[bag_recorder-1] [0m[INFO] [1793173276.931683887] [rosbag2_recorder]: Subscribed to topic '/svg/bag_recorder/status'[0m
+[bag_recorder-1] [0m[INFO] [1793173276.969242118] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/velocity_command'[0m
+[bag_recorder-1] [0m[INFO] [1793173276.970336522] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/velocity_command'[0m
+[bag_recorder-1] [0m[INFO] [1793173276.971297604] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/velocity_command'[0m
+[bag_recorder-1] [0m[INFO] [1793173276.978955119] [rosbag2_recorder]: Subscribed to topic '/svg/cbf_active'[0m
+[bag_recorder-1] [0m[INFO] [1793173276.979994366] [rosbag2_recorder]: Subscribed to topic '/svg/commander_status'[0m
+[bag_recorder-1] [0m[INFO] [1793173276.988385493] [rosbag2_recorder]: Subscribed to topic '/svg/viz/markers'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.536832781] [rosbag2_recorder]: Subscribed to topic '/drone_1/odometry_conversion/odometry'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.541945688] [rosbag2_recorder]: Subscribed to topic '/tf'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.566466724] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/setpoint_position/local'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.569832813] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/setpoint_position/global'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.593359234] [rosbag2_recorder]: Subscribed to topic '/tf_static'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.598807924] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/setpoint_raw/local'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.600560439] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/setpoint_raw/attitude'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.602256999] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/home_position/set'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.603793601] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/is_armed'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.605101827] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/has_control'[0m
+[bag_recorder-1] [33m[WARN] [1793173277.605560713] [rosbag2_cpp]: Message definition for topic '/drone_1/control/reset_integrators' with type 'std_msgs/msg/Empty' not found. Message definition will be left empty in bag.[0m
+[bag_recorder-1] [0m[INFO] [1793173277.606701223] [rosbag2_recorder]: Subscribed to topic '/drone_1/control/reset_integrators'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.608729047] [rosbag2_recorder]: Subscribed to topic '/uas2/mavlink_source'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.611462284] [rosbag2_recorder]: Subscribed to topic '/diagnostics'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.631732686] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/local_position/accel'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.633643438] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/imu/static_pressure'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.634968952] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/imu/temperature_imu'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.636434916] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/local_position/velocity_body_cov'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.637865425] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/local_position/pose_cov'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.639495145] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/global_position/global'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.640758520] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/target_actuator_control'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.641698736] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/home_position/home'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.642593182] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/global_position/local'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.643733416] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/global_position/raw/fix'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.645030348] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/local_position/velocity_body'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.646474870] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/param/event'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.647734949] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/global_position/gp_origin'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.648615390] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/local_position/velocity_local'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.649958215] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/manual_control/control'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.651343388] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/rc/in'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.652778359] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/nav_controller_output/output'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.654049529] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/altitude'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.655688733] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/geofence/fences'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.656901066] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/local_position/odom'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.658162613] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/rc/out'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.659515682] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/global_position/compass_hdg'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.660462672] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/global_position/rel_alt'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.662016145] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/imu/data_raw'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.663880293] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/global_position/raw/satellites'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.665452288] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/imu/diff_pressure'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.666813856] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/rallypoint/rallypoints'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.668584920] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/global_position/raw/gps_vel'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.670036851] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/local_position/pose'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.671401606] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/imu/data'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.672767954] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/imu/temperature_baro'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.674470153] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/imu/mag'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.675560587] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/global_position/gp_lp_offset'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.726693871] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/state'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.727745705] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/setpoint_raw/target_local'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.729423051] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/setpoint_raw/target_global'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.730571416] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/setpoint_raw/target_attitude'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.731958845] [rosbag2_recorder]: Subscribed to topic '/uas2/mavlink_sink'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.760531623] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/timesync_status'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.762886207] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/wind_estimation'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.765366573] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/time_reference'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.767565826] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/sys_status'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.769374751] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/status_event'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.771203817] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/setpoint_trajectory/desired'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.773405345] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/mission/reached'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.775115123] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/estimator_status'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.777413544] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/battery'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.779581239] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/statustext/recv'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.780892988] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/mission/waypoints'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.782807879] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/extended_state'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.984356362] [rosbag2_recorder]: Subscribed to topic '/drone_1/cross_track_error'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.985659652] [rosbag2_recorder]: Subscribed to topic '/drone_1/global_plan'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.986843096] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/cmd_velocity'[0m
+[bag_recorder-1] [0m[INFO] [1793173277.988048118] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/cmd_pose'[0m
+[bag_recorder-1] [0m[INFO] [1793173278.499968789] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/setpoint_position/global'[0m
+[bag_recorder-1] [0m[INFO] [1793173278.501527417] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/global_position/global'[0m
+[bag_recorder-1] [0m[INFO] [1793173278.502920560] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/home_position/home'[0m
+[bag_recorder-1] [33m[WARN] [1793173278.503063131] [rosbag2_cpp]: Message definition for topic '/drone_2/control/reset_integrators' with type 'std_msgs/msg/Empty' not found. Message definition will be left empty in bag.[0m
+[bag_recorder-1] [0m[INFO] [1793173278.504654818] [rosbag2_recorder]: Subscribed to topic '/drone_2/control/reset_integrators'[0m
+[bag_recorder-1] [0m[INFO] [1793173278.506172017] [rosbag2_recorder]: Subscribed to topic '/drone_2/odometry_conversion/odometry'[0m
+[bag_recorder-1] [0m[INFO] [1793173278.507682771] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/has_control'[0m
+[bag_recorder-1] [0m[INFO] [1793173278.508925819] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/global_position/local'[0m
+[bag_recorder-1] [0m[INFO] [1793173278.510045601] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/setpoint_position/local'[0m
+[bag_recorder-1] [0m[INFO] [1793173278.511109700] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/setpoint_raw/attitude'[0m
+[bag_recorder-1] [0m[INFO] [1793173278.512201003] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/home_position/set'[0m
+[bag_recorder-1] [0m[INFO] [1793173278.513320673] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/is_armed'[0m
+[bag_recorder-1] [0m[INFO] [1793173278.514498969] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/setpoint_raw/local'[0m
+[bag_recorder-1] [0m[INFO] [1793173278.549102810] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/nav_controller_output/output'[0m
+[bag_recorder-1] [0m[INFO] [1793173278.550645560] [rosbag2_recorder]: Subscribed to topic '/uas3/mavlink_source'[0m
+[bag_recorder-1] [0m[INFO] [1793173278.551920099] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/imu/temperature_baro'[0m
+[bag_recorder-1] [0m[INFO] [1793173278.553042598] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/local_position/velocity_local'[0m
+[bag_recorder-1] [0m[INFO] [1793173278.554492356] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/altitude'[0m
+[bag_recorder-1] [0m[INFO] [1793173278.555724279] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/local_position/velocity_body'[0m
+[bag_recorder-1] [0m[INFO] [1793173278.562919454] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/rc/in'[0m
+[bag_recorder-1] [0m[INFO] [1793173278.564864131] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/imu/static_pressure'[0m
+[bag_recorder-1] [0m[INFO] [1793173278.566625781] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/global_position/raw/fix'[0m
+[bag_recorder-1] [0m[INFO] [1793173278.568600056] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/imu/data_raw'[0m
+[bag_recorder-1] [0m[INFO] [1793173278.570267591] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/param/event'[0m
+[bag_recorder-1] [0m[INFO] [1793173278.571812372] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/local_position/pose_cov'[0m
+[bag_recorder-1] [0m[INFO] [1793173278.573620539] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/rallypoint/rallypoints'[0m
+[bag_recorder-1] [0m[INFO] [1793173278.575396747] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/geofence/fences'[0m
+[bag_recorder-1] [0m[INFO] [1793173278.577143891] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/local_position/accel'[0m
+[bag_recorder-1] [0m[INFO] [1793173278.578893518] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/imu/data'[0m
+[bag_recorder-1] [0m[INFO] [1793173278.580397592] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/rc/out'[0m
+[bag_recorder-1] [0m[INFO] [1793173278.581887338] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/local_position/odom'[0m
+[bag_recorder-1] [0m[INFO] [1793173278.583582043] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/imu/mag'[0m
+[bag_recorder-1] [0m[INFO] [1793173278.585236692] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/imu/temperature_imu'[0m
+[bag_recorder-1] [0m[INFO] [1793173278.586771474] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/global_position/gp_origin'[0m
+[bag_recorder-1] [0m[INFO] [1793173278.588456501] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/global_position/raw/gps_vel'[0m
+[bag_recorder-1] [0m[INFO] [1793173278.590144549] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/imu/diff_pressure'[0m
+[bag_recorder-1] [0m[INFO] [1793173278.591576117] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/global_position/rel_alt'[0m
+[bag_recorder-1] [0m[INFO] [1793173278.592859220] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/local_position/pose'[0m
+[bag_recorder-1] [0m[INFO] [1793173278.594093985] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/manual_control/control'[0m
+[bag_recorder-1] [0m[INFO] [1793173278.595414487] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/global_position/raw/satellites'[0m
+[bag_recorder-1] [0m[INFO] [1793173278.596587033] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/global_position/compass_hdg'[0m
+[bag_recorder-1] [0m[INFO] [1793173278.597708317] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/target_actuator_control'[0m
+[bag_recorder-1] [0m[INFO] [1793173278.599116416] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/local_position/velocity_body_cov'[0m
+[bag_recorder-1] [0m[INFO] [1793173278.600288636] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/global_position/gp_lp_offset'[0m
+[bag_recorder-1] [0m[INFO] [1793173278.689766710] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/timesync_status'[0m
+[bag_recorder-1] [0m[INFO] [1793173278.690783950] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/wind_estimation'[0m
+[bag_recorder-1] [0m[INFO] [1793173278.691769318] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/statustext/recv'[0m
+[bag_recorder-1] [0m[INFO] [1793173278.692752156] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/setpoint_raw/target_local'[0m
+[bag_recorder-1] [0m[INFO] [1793173278.693965508] [rosbag2_recorder]: Subscribed to topic '/uas3/mavlink_sink'[0m
+[bag_recorder-1] [0m[INFO] [1793173278.695273186] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/time_reference'[0m
+[bag_recorder-1] [0m[INFO] [1793173278.696498474] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/state'[0m
+[bag_recorder-1] [0m[INFO] [1793173278.697913321] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/mission/reached'[0m
+[bag_recorder-1] [0m[INFO] [1793173278.699245167] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/setpoint_raw/target_global'[0m
+[bag_recorder-1] [0m[INFO] [1793173278.700637564] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/mission/waypoints'[0m
+[bag_recorder-1] [0m[INFO] [1793173278.702206640] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/sys_status'[0m
+[bag_recorder-1] [0m[INFO] [1793173278.703805858] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/estimator_status'[0m
+[bag_recorder-1] [0m[INFO] [1793173278.705260573] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/extended_state'[0m
+[bag_recorder-1] [0m[INFO] [1793173278.706802836] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/battery'[0m
+[bag_recorder-1] [0m[INFO] [1793173278.708369585] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/setpoint_trajectory/desired'[0m
+[bag_recorder-1] [0m[INFO] [1793173278.709997903] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/setpoint_raw/target_attitude'[0m
+[bag_recorder-1] [0m[INFO] [1793173278.711467461] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/status_event'[0m
+[bag_recorder-1] [0m[INFO] [1793173278.875888971] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/cmd_pose'[0m
+[bag_recorder-1] [0m[INFO] [1793173278.877434245] [rosbag2_recorder]: Subscribed to topic '/drone_2/cross_track_error'[0m
+[bag_recorder-1] [0m[INFO] [1793173278.879187270] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/cmd_velocity'[0m
+[bag_recorder-1] [0m[INFO] [1793173278.881387989] [rosbag2_recorder]: Subscribed to topic '/drone_2/global_plan'[0m
+[bag_recorder-1] [0m[INFO] [1793173279.532968583] [rosbag2_recorder]: Subscribed to topic '/drone_3/odometry_conversion/odometry'[0m
+[bag_recorder-1] [0m[INFO] [1793173279.594571713] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/imu/static_pressure'[0m
+[bag_recorder-1] [0m[INFO] [1793173279.596258157] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/imu/data'[0m
+[bag_recorder-1] [0m[INFO] [1793173279.597951437] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/imu/temperature_imu'[0m
+[bag_recorder-1] [0m[INFO] [1793173279.599397743] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/global_position/gp_origin'[0m
+[bag_recorder-1] [0m[INFO] [1793173279.601001676] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/local_position/velocity_body'[0m
+[bag_recorder-1] [0m[INFO] [1793173279.602522099] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/global_position/local'[0m
+[bag_recorder-1] [0m[INFO] [1793173279.604323233] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/local_position/odom'[0m
+[bag_recorder-1] [0m[INFO] [1793173279.605688830] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/global_position/global'[0m
+[bag_recorder-1] [0m[INFO] [1793173279.607375138] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/global_position/gp_lp_offset'[0m
+[bag_recorder-1] [0m[INFO] [1793173279.609119977] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/manual_control/control'[0m
+[bag_recorder-1] [0m[INFO] [1793173279.611306493] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/target_actuator_control'[0m
+[bag_recorder-1] [0m[INFO] [1793173279.614449074] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/home_position/home'[0m
+[bag_recorder-1] [0m[INFO] [1793173279.616510821] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/local_position/velocity_local'[0m
+[bag_recorder-1] [0m[INFO] [1793173279.618079745] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/local_position/velocity_body_cov'[0m
+[bag_recorder-1] [0m[INFO] [1793173279.619411386] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/imu/diff_pressure'[0m
+[bag_recorder-1] [0m[INFO] [1793173279.620764335] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/local_position/pose'[0m
+[bag_recorder-1] [0m[INFO] [1793173279.622099823] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/rc/out'[0m
+[bag_recorder-1] [0m[INFO] [1793173279.623644149] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/global_position/raw/gps_vel'[0m
+[bag_recorder-1] [0m[INFO] [1793173279.625384062] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/global_position/raw/satellites'[0m
+[bag_recorder-1] [0m[INFO] [1793173279.626864794] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/setpoint_position/global'[0m
+[bag_recorder-1] [0m[INFO] [1793173279.628287627] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/setpoint_raw/attitude'[0m
+[bag_recorder-1] [0m[INFO] [1793173279.629674619] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/setpoint_position/local'[0m
+[bag_recorder-1] [33m[WARN] [1793173279.629835903] [rosbag2_cpp]: Message definition for topic '/drone_3/control/reset_integrators' with type 'std_msgs/msg/Empty' not found. Message definition will be left empty in bag.[0m
+[bag_recorder-1] [0m[INFO] [1793173279.631205587] [rosbag2_recorder]: Subscribed to topic '/drone_3/control/reset_integrators'[0m
+[bag_recorder-1] [0m[INFO] [1793173279.632772426] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/rc/in'[0m
+[bag_recorder-1] [0m[INFO] [1793173279.634371153] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/altitude'[0m
+[bag_recorder-1] [0m[INFO] [1793173279.642568050] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/nav_controller_output/output'[0m
+[bag_recorder-1] [0m[INFO] [1793173279.648142146] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/setpoint_raw/local'[0m
+[bag_recorder-1] [0m[INFO] [1793173279.650224032] [rosbag2_recorder]: Subscribed to topic '/uas4/mavlink_source'[0m
+[bag_recorder-1] [0m[INFO] [1793173279.652111812] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/local_position/accel'[0m
+[bag_recorder-1] [0m[INFO] [1793173279.653873867] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/rallypoint/rallypoints'[0m
+[bag_recorder-1] [0m[INFO] [1793173279.655838619] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/imu/temperature_baro'[0m
+[bag_recorder-1] [0m[INFO] [1793173279.657603359] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/imu/data_raw'[0m
+[bag_recorder-1] [0m[INFO] [1793173279.659299111] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/imu/mag'[0m
+[bag_recorder-1] [0m[INFO] [1793173279.660922911] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/home_position/set'[0m
+[bag_recorder-1] [0m[INFO] [1793173279.662790047] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/global_position/rel_alt'[0m
+[bag_recorder-1] [0m[INFO] [1793173279.664601113] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/local_position/pose_cov'[0m
+[bag_recorder-1] [0m[INFO] [1793173279.666349852] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/global_position/raw/fix'[0m
+[bag_recorder-1] [0m[INFO] [1793173279.667928950] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/global_position/compass_hdg'[0m
+[bag_recorder-1] [0m[INFO] [1793173279.669800865] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/param/event'[0m
+[bag_recorder-1] [0m[INFO] [1793173279.671822332] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/geofence/fences'[0m
+[bag_recorder-1] [0m[INFO] [1793173279.673940602] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/has_control'[0m
+[bag_recorder-1] [0m[INFO] [1793173279.675695260] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/is_armed'[0m
+[foxglove_bridge-5] [0m[INFO] [1793173279.689357806] [foxglove_bridge]: Advertising new channel 236 for topic "/svg/bag_recorder/status"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173279.689933882] [foxglove_bridge]: Advertising new channel 237 for topic "/events/write_split"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173279.689972290] [foxglove_bridge]: Advertising new channel 238 for topic "/drone_3/interface/mavros/timesync_status"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173279.689994564] [foxglove_bridge]: Advertising new channel 239 for topic "/drone_3/interface/mavros/time_reference"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173279.690017900] [foxglove_bridge]: Advertising new channel 240 for topic "/drone_3/interface/mavros/status_event"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173279.690036208] [foxglove_bridge]: Advertising new channel 241 for topic "/drone_3/interface/mavros/setpoint_trajectory/desired"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173279.690055906] [foxglove_bridge]: Advertising new channel 242 for topic "/drone_3/interface/mavros/setpoint_raw/target_local"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173279.690072581] [foxglove_bridge]: Advertising new channel 243 for topic "/drone_3/interface/mavros/setpoint_raw/target_global"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173279.690100420] [foxglove_bridge]: Advertising new channel 244 for topic "/drone_3/interface/mavros/mission/waypoints"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173279.690174969] [foxglove_bridge]: Advertising new channel 245 for topic "/drone_2/interface/mavros/timesync_status"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173279.690193870] [foxglove_bridge]: Advertising new channel 246 for topic "/drone_2/interface/mavros/time_reference"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173279.690212080] [foxglove_bridge]: Advertising new channel 247 for topic "/drone_2/interface/mavros/target_actuator_control"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173279.690234835] [foxglove_bridge]: Advertising new channel 248 for topic "/drone_2/interface/mavros/statustext/recv"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173279.690260483] [foxglove_bridge]: Advertising new channel 249 for topic "/drone_3/interface/mavros/statustext/recv"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173279.690280292] [foxglove_bridge]: Advertising new channel 250 for topic "/drone_2/interface/mavros/setpoint_raw/target_local"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173279.690297081] [foxglove_bridge]: Advertising new channel 251 for topic "/drone_2/interface/mavros/setpoint_raw/target_global"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173279.690343674] [foxglove_bridge]: Advertising new channel 252 for topic "/drone_2/interface/mavros/rc/out"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173279.690386633] [foxglove_bridge]: Advertising new channel 253 for topic "/drone_2/interface/mavros/rc/in"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173279.690408989] [foxglove_bridge]: Advertising new channel 254 for topic "/drone_2/interface/mavros/param/event"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173279.690428492] [foxglove_bridge]: Advertising new channel 255 for topic "/drone_2/interface/mavros/nav_controller_output/output"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173279.690452530] [foxglove_bridge]: Advertising new channel 256 for topic "/drone_2/interface/mavros/mission/waypoints"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173279.690474361] [foxglove_bridge]: Advertising new channel 257 for topic "/drone_2/interface/mavros/rallypoint/rallypoints"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173279.690493357] [foxglove_bridge]: Advertising new channel 258 for topic "/drone_2/interface/mavros/local_position/velocity_local"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173279.690516120] [foxglove_bridge]: Advertising new channel 259 for topic "/drone_3/interface/mavros/wind_estimation"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173279.690539625] [foxglove_bridge]: Advertising new channel 260 for topic "/drone_2/interface/mavros/local_position/velocity_body_cov"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173279.690559119] [foxglove_bridge]: Advertising new channel 261 for topic "/drone_2/interface/mavros/local_position/velocity_body"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173279.690578227] [foxglove_bridge]: Advertising new channel 262 for topic "/drone_2/interface/mavros/setpoint_trajectory/desired"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173279.690600265] [foxglove_bridge]: Advertising new channel 263 for topic "/drone_2/interface/mavros/local_position/accel"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173279.690618981] [foxglove_bridge]: Advertising new channel 264 for topic "/drone_2/interface/mavros/imu/temperature_baro"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173279.690638825] [foxglove_bridge]: Advertising new channel 265 for topic "/drone_2/interface/mavros/imu/diff_pressure"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173279.690658347] [foxglove_bridge]: Advertising new channel 266 for topic "/drone_2/interface/mavros/imu/data_raw"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173279.690678230] [foxglove_bridge]: Advertising new channel 267 for topic "/drone_3/interface/mavros/extended_state"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173279.690698441] [foxglove_bridge]: Advertising new channel 268 for topic "/drone_2/interface/mavros/global_position/rel_alt"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173279.690717693] [foxglove_bridge]: Advertising new channel 269 for topic "/drone_3/interface/mavros/mission/reached"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173279.690736190] [foxglove_bridge]: Advertising new channel 270 for topic "/drone_2/interface/mavros/global_position/raw/satellites"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173279.690754827] [foxglove_bridge]: Advertising new channel 271 for topic "/drone_2/interface/mavros/global_position/raw/gps_vel"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173279.690774566] [foxglove_bridge]: Advertising new channel 272 for topic "/drone_2/interface/mavros/global_position/raw/fix"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173279.690793669] [foxglove_bridge]: Advertising new channel 273 for topic "/drone_2/interface/mavros/global_position/gp_origin"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173279.690811975] [foxglove_bridge]: Advertising new channel 274 for topic "/drone_2/interface/mavros/global_position/compass_hdg"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173279.690830049] [foxglove_bridge]: Advertising new channel 275 for topic "/drone_2/interface/mavros/status_event"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173279.690849754] [foxglove_bridge]: Advertising new channel 276 for topic "/drone_2/interface/mavros/geofence/fences"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173279.690866588] [foxglove_bridge]: Advertising new channel 277 for topic "/drone_2/interface/mavros/extended_state"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173279.690884191] [foxglove_bridge]: Advertising new channel 278 for topic "/drone_2/interface/mavros/estimator_status"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173279.690903506] [foxglove_bridge]: Advertising new channel 279 for topic "/drone_2/interface/mavros/battery"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173279.690927619] [foxglove_bridge]: Advertising new channel 280 for topic "/drone_2/interface/mavros/mission/reached"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173279.690951123] [foxglove_bridge]: Advertising new channel 281 for topic "/drone_2/interface/mavros/setpoint_raw/target_attitude"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173279.690970821] [foxglove_bridge]: Advertising new channel 282 for topic "/drone_2/interface/mavros/altitude"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173279.691001402] [foxglove_bridge]: Advertising new channel 283 for topic "/drone_2/interface/mavros/local_position/pose_cov"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173279.691030935] [foxglove_bridge]: Advertising new channel 284 for topic "/drone_2/interface/mavros/imu/static_pressure"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173279.691054499] [foxglove_bridge]: Advertising new channel 285 for topic "/drone_2/interface/mavros/imu/temperature_imu"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173279.691104347] [foxglove_bridge]: Advertising new channel 286 for topic "/drone_3/interface/mavros/battery"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173279.691123981] [foxglove_bridge]: Advertising new channel 287 for topic "/drone_2/interface/mavros/imu/mag"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173279.691156456] [foxglove_bridge]: Advertising new channel 288 for topic "/drone_2/interface/mavros/wind_estimation"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173279.691196717] [foxglove_bridge]: Advertising new channel 289 for topic "/drone_2/interface/mavros/global_position/gp_lp_offset"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173279.691219517] [foxglove_bridge]: Advertising new channel 290 for topic "/drone_3/interface/mavros/estimator_status"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173279.691242061] [foxglove_bridge]: Advertising new channel 291 for topic "/drone_2/interface/mavros/sys_status"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173279.691268184] [foxglove_bridge]: Advertising new channel 292 for topic "/drone_2/interface/mavros/manual_control/control"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173279.691299888] [foxglove_bridge]: Advertising new channel 293 for topic "/drone_2/interface/mavros/imu/data"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173279.691322514] [foxglove_bridge]: Advertising new channel 294 for topic "/drone_3/interface/mavros/sys_status"[0m
+[foxglove_bridge-5] [0m[INFO] [1793173279.691369310] [foxglove_bridge]: Advertising new channel 295 for topic "/drone_3/interface/mavros/setpoint_raw/target_attitude"[0m
+[bag_recorder-1] [0m[INFO] [1793173279.783797954] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/setpoint_raw/target_global'[0m
+[bag_recorder-1] [0m[INFO] [1793173279.786694204] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/timesync_status'[0m
+[bag_recorder-1] [0m[INFO] [1793173279.789169269] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/setpoint_trajectory/desired'[0m
+[bag_recorder-1] [0m[INFO] [1793173279.791131206] [rosbag2_recorder]: Subscribed to topic '/uas4/mavlink_sink'[0m
+[bag_recorder-1] [0m[INFO] [1793173279.793157174] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/state'[0m
+[bag_recorder-1] [0m[INFO] [1793173279.795177754] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/sys_status'[0m
+[bag_recorder-1] [0m[INFO] [1793173279.797044191] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/statustext/recv'[0m
+[bag_recorder-1] [0m[INFO] [1793173279.799188265] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/setpoint_raw/target_local'[0m
+[bag_recorder-1] [0m[INFO] [1793173279.801217505] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/extended_state'[0m
+[bag_recorder-1] [0m[INFO] [1793173279.803669834] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/estimator_status'[0m
+[bag_recorder-1] [0m[INFO] [1793173279.805635501] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/setpoint_raw/target_attitude'[0m
+[bag_recorder-1] [0m[INFO] [1793173279.807550274] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/battery'[0m
+[bag_recorder-1] [0m[INFO] [1793173279.809348996] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/wind_estimation'[0m
+[bag_recorder-1] [0m[INFO] [1793173279.811012320] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/mission/reached'[0m
+[bag_recorder-1] [0m[INFO] [1793173279.812729294] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/status_event'[0m
+[bag_recorder-1] [0m[INFO] [1793173279.814854272] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/mission/waypoints'[0m
+[bag_recorder-1] [0m[INFO] [1793173279.816615037] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/time_reference'[0m
+[bag_recorder-1] [0m[INFO] [1793173279.885133087] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/cmd_pose'[0m
+[bag_recorder-1] [0m[INFO] [1793173279.887186501] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/cmd_velocity'[0m
+[bag_recorder-1] [0m[INFO] [1793173279.955255681] [rosbag2_recorder]: Subscribed to topic '/drone_3/cross_track_error'[0m
+[bag_recorder-1] [0m[INFO] [1793173279.956892805] [rosbag2_recorder]: Subscribed to topic '/drone_3/global_plan'[0m
+[led_controller-4] [33m[WARN] [1793173281.355537518] [led_controller]: drone_1: no LED heartbeat yet — is svg-led running on the VOXL, does its ground IP point here, is udp/47901 open in the firewall?[0m
+[led_controller-4] [33m[WARN] [1793173312.355532975] [led_controller]: drone_1: no LED heartbeat yet — is svg-led running on the VOXL, does its ground IP point here, is udp/47901 open in the firewall?[0m
+[led_controller-4] [33m[WARN] [1793173343.355518048] [led_controller]: drone_1: no LED heartbeat yet — is svg-led running on the VOXL, does its ground IP point here, is udp/47901 open in the firewall?[0m
+[swarm_commander-2] [0m[INFO] [1793173374.235871795] [swarm_commander]: takeoff: goals reset to the takeoff points (drone_1 [0.0, -1.0, 1.2], drone_2 [-1.0, 1.0, 1.2], drone_3 [0.0, 3.0, 1.2])[0m
+[led_controller-4] [33m[WARN] [1793173374.355515873] [led_controller]: drone_1: no LED heartbeat yet — is svg-led running on the VOXL, does its ground IP point here, is udp/47901 open in the firewall?[0m
+[swarm_commander-2] [0m[INFO] [1793173375.264863146] [swarm_commander]: drone_1: request offboard -> success=True[0m
+[swarm_commander-2] [0m[INFO] [1793173375.265184738] [swarm_commander]: drone_2: request offboard -> success=True[0m
+[swarm_commander-2] [0m[INFO] [1793173375.265479553] [swarm_commander]: drone_3: request offboard -> success=True[0m
+[swarm_commander-2] [0m[INFO] [1793173375.777289732] [swarm_commander]: drone_1: arm -> success=True[0m
+[swarm_commander-2] [0m[INFO] [1793173375.778916130] [swarm_commander]: drone_2: arm -> success=True[0m
+[swarm_commander-2] [0m[INFO] [1793173375.780361080] [swarm_commander]: drone_3: arm -> success=True[0m
+[swarm_commander-2] [0m[INFO] [1793173376.761482840] [swarm_commander]: drone_1: ascending to [ 0.  -1.   1.2][0m
+[swarm_commander-2] [0m[INFO] [1793173376.761953070] [swarm_commander]: drone_2: ascending to [-1.   1.   1.2][0m
+[swarm_commander-2] [0m[INFO] [1793173376.762316653] [swarm_commander]: drone_3: ascending to [0.  3.  1.2][0m
+[swarm_commander-2] [0m[INFO] [1793173380.211762783] [swarm_commander]: drone_2: holding takeoff position[0m
+[swarm_commander-2] [0m[INFO] [1793173381.561618980] [swarm_commander]: drone_1: holding takeoff position[0m
+[swarm_commander-2] [0m[INFO] [1793173383.411643705] [swarm_commander]: drone_3: holding takeoff position[0m
+[led_controller-4] [33m[WARN] [1793173405.355429311] [led_controller]: drone_1: no LED heartbeat yet — is svg-led running on the VOXL, does its ground IP point here, is udp/47901 open in the firewall?[0m
+[swarm_commander-2] [0m[INFO] [1793173406.224617312] [swarm_commander]: scenario "goal" running[0m
+[swarm_commander-2] [0m[INFO] [1793173427.103598773] [swarm_commander]: drone_1: goal -> [0.99, -1.00, 1.20] heading 0 deg (0 = +X, clockwise)[0m
+[led_controller-4] [33m[WARN] [1793173435.355530497] [led_controller]: drone_1: no LED heartbeat yet — is svg-led running on the VOXL, does its ground IP point here, is udp/47901 open in the firewall?[0m
+[swarm_commander-2] [0m[INFO] [1793173436.132681689] [swarm_commander]: drone_1: goal -> [1.01, -1.00, 2.20] heading 0 deg (0 = +X, clockwise)[0m
+[swarm_commander-2] [0m[INFO] [1793173449.212127137] [swarm_commander]: drone_2: touchdown at z=0.14 m, settling 2.0 s before disarm[0m
+[swarm_commander-2] [0m[INFO] [1793173449.262255270] [swarm_commander]: drone_3: touchdown at z=0.05 m, settling 2.0 s before disarm[0m
+[swarm_commander-2] [0m[INFO] [1793173449.961802305] [swarm_commander]: drone_1: touchdown at z=0.14 m, settling 2.0 s before disarm[0m
+[swarm_commander-2] [0m[INFO] [1793173451.270941970] [swarm_commander]: drone_3: disarm -> success=True[0m
+[swarm_commander-2] [0m[INFO] [1793173451.284598762] [swarm_commander]: drone_2: disarm -> success=True[0m
+[swarm_commander-2] [0m[INFO] [1793173451.312097249] [swarm_commander]: drone_2: landed, disarmed (attempt 1)[0m
+[swarm_commander-2] [0m[INFO] [1793173451.312526679] [swarm_commander]: drone_3: landed, disarmed (attempt 1)[0m
+[swarm_commander-2] [0m[INFO] [1793173451.982453748] [swarm_commander]: drone_1: disarm -> success=True[0m
+[swarm_commander-2] [0m[INFO] [1793173452.011927909] [swarm_commander]: drone_1: landed, disarmed (attempt 1)[0m
+[led_controller-4] [33m[WARN] [1793173466.355535981] [led_controller]: drone_1: no LED heartbeat yet — is svg-led running on the VOXL, does its ground IP point here, is udp/47901 open in the firewall?[0m
+[led_controller-4] [33m[WARN] [1793173497.355553401] [led_controller]: drone_1: no LED heartbeat yet — is svg-led running on the VOXL, does its ground IP point here, is udp/47901 open in the firewall?[0m
+[WARNING] [launch]: user interrupted with ctrl-c (SIGINT)
+[INFO] [foxglove_bridge-5]: sending signal 'SIGINT' to process[foxglove_bridge-5]
+[INFO] [led_controller-4]: sending signal 'SIGINT' to process[led_controller-4]
+[INFO] [mocap_bridge-3]: sending signal 'SIGINT' to process[mocap_bridge-3]
+[INFO] [swarm_commander-2]: sending signal 'SIGINT' to process[swarm_commander-2]
+[INFO] [bag_recorder-1]: sending signal 'SIGINT' to process[bag_recorder-1]
+[foxglove_bridge-5] [0m[INFO] [1793173497.935058358] [rclcpp]: signal_handler(SIGINT/SIGTERM)[0m
+[bag_recorder-1] [0m[INFO] [1793173497.937360258] [bag_recorder]: stopping recording /root/AirStack/robot/ros_ws/bags/hover_step_20261028_074116[0m
+[bag_recorder-1] Failed to publish log message to rosout: publisher's context is invalid, at ./src/rcl/publisher.c:423
+[foxglove_bridge-5] [0m[INFO] [1793173497.944734146] [foxglove_bridge]: Shutting down foxglove_bridge[0m
+[foxglove_bridge-5] [0m[INFO] [1793173497.944855522] [foxglove_bridge]: Shutdown complete[0m
+[bag_recorder-1] [0m[INFO] [1793173498.068218364] [rosbag2_recorder]: Topics discovery stopped.[0m
+[bag_recorder-1] [0m[INFO] [1793173498.068480944] [rosbag2_recorder]: Pausing recording.[0m
+[bag_recorder-1] [0m[INFO] [1793173498.069792777] [rosbag2_cpp]: Writing remaining messages from cache to the bag. It may take a while[0m
+[INFO] [swarm_commander-2]: process has finished cleanly [pid 2226]
+[INFO] [led_controller-4]: process has finished cleanly [pid 2228]
+[INFO] [mocap_bridge-3]: process has finished cleanly [pid 2227]
+[bag_recorder-1] [0m[INFO] [1793173498.184450537] [rosbag2_recorder]: Recording stopped[0m
+[bag_recorder-1] [0m[INFO] [1793173498.211114351] [rosbag2_recorder]: Event publisher thread: Exited[0m
+[bag_recorder-1] Traceback (most recent call last):
+[bag_recorder-1]   File "/root/AirStack/robot/ros_ws/install/svg_ground_control/lib/svg_ground_control/bag_recorder", line 33, in <module>
+[bag_recorder-1]     sys.exit(load_entry_point('svg-ground-control', 'console_scripts', 'bag_recorder')())
+[bag_recorder-1]              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[bag_recorder-1]   File "/root/AirStack/robot/ros_ws/build/svg_ground_control/svg_ground_control/bag_recorder.py", line 294, in main
+[bag_recorder-1]     node.destroy_node()
+[bag_recorder-1]   File "/root/AirStack/robot/ros_ws/build/svg_ground_control/svg_ground_control/bag_recorder.py", line 282, in destroy_node
+[bag_recorder-1]     self.stop()
+[bag_recorder-1]   File "/root/AirStack/robot/ros_ws/build/svg_ground_control/svg_ground_control/bag_recorder.py", line 198, in stop
+[bag_recorder-1]     self.publish_status()
+[bag_recorder-1]   File "/root/AirStack/robot/ros_ws/build/svg_ground_control/svg_ground_control/bag_recorder.py", line 275, in publish_status
+[bag_recorder-1]     self.status_pub.publish(msg)
+[bag_recorder-1]   File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/publisher.py", line 70, in publish
+[bag_recorder-1]     self.__publisher.publish(msg)
+[bag_recorder-1] rclpy._rclpy_pybind11.RCLError: Failed to publish: publisher's context is invalid, at ./src/rcl/publisher.c:423
+[ERROR] [bag_recorder-1]: process has died [pid 2225, exit code 1, cmd '/root/AirStack/robot/ros_ws/install/svg_ground_control/lib/svg_ground_control/bag_recorder --ros-args -r __node:=bag_recorder --params-file /tmp/launch_params_izdncd7h'].
+[INFO] [foxglove_bridge-5]: process has finished cleanly [pid 2229]

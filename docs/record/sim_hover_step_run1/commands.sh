@@ -1,0 +1,8 @@
+cd /home/jeremychia/AirStack-starling-max2/AirStack && ./airstack.sh up
+nohup /home/jeremychia/AirStack-starling-max2/localisation/scripts/sim_resources_watch.sh /home/jeremychia/AirStack-starling-max2/docs/record/sim_hover_step_run1/res_watch.log &
+docker exec -d isaac-sim bash -ic 'DRONE_USD=/isaac-sim/AirStack/simulation/isaac-sim/assets/robots/starling2max.usd PX4_VEHICLE_MODEL=pegasus_starling2max NUM_ROBOTS=3 SVG_DOMAIN_ID=1 PLAY_SIM_ON_START=true ISAAC_SIM_HEADLESS=true PYTHONPATH="$ISAAC_SIM_PYTHONPATH" /isaac-sim/python.sh /isaac-sim/AirStack/simulation/isaac-sim/launch_scripts/svg_multi_drone_single_domain.py --ext-folder ~/.local/share/ov/data/documents/Kit/shared/exts > /tmp/hover_step/isaac.log 2>&1'
+docker exec -d airstack-robot-desktop-1 bash -ic 'cd ~/AirStack/robot/ros_ws && ./src/svg_ground_control/scripts/launch_sim_interfaces.sh 3 > /tmp/hover_step/interfaces.log 2>&1'
+docker exec -d airstack-robot-desktop-1 bash -ic 'cd ~/AirStack/robot/ros_ws && ros2 launch svg_ground_control ground_control.launch.py config:=$(ros2 pkg prefix svg_ground_control)/share/svg_ground_control/config/cbf_sim.yaml scenario:=goal record_bag:=true bag_prefix:=hover_step > /tmp/hover_step/commander.log 2>&1'
+docker cp /home/jeremychia/AirStack-starling-max2/AirStack/simulation/isaac-sim/tools/{sim_hover_step_test.sh,analyze_step.py} airstack-robot-desktop-1:/tmp/  (wait_s patched to sleep in the copy)
+docker exec airstack-robot-desktop-1 bash -ic '/tmp/sim_hover_step_test.sh drone_1'
+docker exec airstack-robot-desktop-1 pkill -INT -f ground_control.launch.py; … launch_sim_interfaces.sh; docker exec isaac-sim pkill -INT -f svg_multi_drone_single_domain.py

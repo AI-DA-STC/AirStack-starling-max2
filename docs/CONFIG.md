@@ -117,7 +117,10 @@ them apart. Source for the identified numbers: `isaac_sim/Starling 2 Max Sys ID 
 *old* asset / gains / speed limits (#3 steps: x overshoot 0.002 m, settled 2.75 s; z 0.001 m,
 0.75 s · #4 antipodal crossing min distance 1.02 m at 0.6 / 1.2 m/s). 2026-10-21 fresh launch on the
 current asset = ledger #13: asset complete, no PhysX warnings, 2.0 m/s commanded / ~1.7 flown,
-landing DISARM accepted first try ×3. ⏳ Re-runs pending — the ordered list lives only in
+landing DISARM accepted first try ×3. 2026-10-28 hover + 1 m steps re-run on the current asset / gains /
+speed limits = ledger #17 ([record](record/sim_hover_step_run1_record.md)): hover thrust setpoint 0.153, x step
+overshoot 0.054 m settled 1.86 s, z step 0.001 m / 1.62 s (rosbag timing), no ringing, disarm first try ×3 —
+passed. ⏳ The CBF-crossing re-run (#4) is still pending — the ordered list lives only in
 [MILESTONES.md](MILESTONES.md) §3c "Next up".
 
 **Moved from RUNBOOK §A1 (2026-10-21) — what the two Starling variables select** (added 2026-10-19): CMU's sys-ID dynamics

@@ -1,0 +1,1 @@
+wait_s() in the copied test tool patched to a real sleep: /clock is not visible in the robot container, so the original (ros2 topic echo /clock under timeout) returned instantly

@@ -1,0 +1,20 @@
+SYS_AUTOSTART: groups: cannot find name for group ID 992
+SYS_AUTOSTART: Integer value is: 10090
+MC_PITCHRATE_P: groups: cannot find name for group ID 992
+MC_PITCHRATE_P: Double value is: 0.03200000151991844
+MC_ROLLRATE_P: groups: cannot find name for group ID 992
+MC_ROLLRATE_P: Double value is: 0.03200000151991844
+LNDMC_ROT_MAX: groups: cannot find name for group ID 992
+LNDMC_ROT_MAX: Double value is: 300.0
+MPC_XY_VEL_MAX: groups: cannot find name for group ID 992
+MPC_XY_VEL_MAX: Double value is: 20.0
+MPC_THR_HOVER: groups: cannot find name for group ID 992
+MPC_THR_HOVER: Double value is: 0.16500000655651093
+IMU_GYRO_CUTOFF: groups: cannot find name for group ID 992
+IMU_GYRO_CUTOFF: Double value is: 80.0
+IMU_DGYRO_CUTOFF: groups: cannot find name for group ID 992
+IMU_DGYRO_CUTOFF: Double value is: 40.0
+MPC_Z_VEL_MAX_DN: groups: cannot find name for group ID 992
+MPC_Z_VEL_MAX_DN: Double value is: 4.0
+MPC_ACC_HOR: groups: cannot find name for group ID 992
+MPC_ACC_HOR: Double value is: 6.0

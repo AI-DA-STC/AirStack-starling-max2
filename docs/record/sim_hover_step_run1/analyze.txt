@@ -1,0 +1,10 @@
+hz=40 /tmp/ascent.txt axis=z: 931 samples (23.3 s) | moved +1.176 m of +1.2 commanded (trace starts after the command, so this is a lower bound) | peak +1.219 | overshoot past settled +0.013 m | settled (±0.1 m) after 4.58 s
+hz=44.530 /tmp/ascent.txt axis=z: 931 samples (20.9 s) | moved +1.176 m of +1.2 commanded (trace starts after the command, so this is a lower bound) | peak +1.219 | overshoot past settled +0.013 m | settled (±0.1 m) after 4.11 s
+ascent samples: 931
+hz=40 /tmp/step_x.txt axis=x: 191 samples (4.8 s) | moved +0.925 m of +1.0 commanded (trace starts after the command, so this is a lower bound) | peak +3.058 | overshoot past settled +0.031 m | settled (±0.1 m) after 1.52 s
+hz=44.530 /tmp/step_x.txt axis=x: 191 samples (4.3 s) | moved +0.925 m of +1.0 commanded (trace starts after the command, so this is a lower bound) | peak +3.058 | overshoot past settled +0.031 m | settled (±0.1 m) after 1.37 s
+step_x samples: 191
+hz=40 /tmp/step_z.txt axis=z: 285 samples (7.1 s) | moved +0.983 m of +1.0 commanded (trace starts after the command, so this is a lower bound) | peak +2.195 | overshoot past settled +0.001 m | settled (±0.1 m) after 3.05 s
+hz=44.530 /tmp/step_z.txt axis=z: 285 samples (6.4 s) | moved +0.983 m of +1.0 commanded (trace starts after the command, so this is a lower bound) | peak +2.195 | overshoot past settled +0.001 m | settled (±0.1 m) after 2.74 s
+step_z samples: 285
+ulog thrust_setpoint median(mid-third) 0.001

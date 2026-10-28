@@ -171,7 +171,7 @@ bump) — edits to existing `.py`/`.yaml` files take effect on the next launch w
 because the install is symlinked. The code can only be compiled *inside* the robot container
 (that is where ROS 2 Jazzy for the workspace lives — the host's ROS 2 Jazzy from Step 5 is
 for the mocap bridge only). In tmux, run `bws` in pane 0; the other panes wait for it and
-source automatically.
+source automatically. After the first `bws`, `tmux attach -t bringup` — expect pane 0 = launch, panes 1–7 = shells titled "shell".
 
 **Messages that look like errors but are NORMAL:**
 

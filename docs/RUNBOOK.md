@@ -317,6 +317,7 @@ ros2 service call /swarm_commander/start   std_srvs/srv/Trigger   # scenario liv
 ros2 service call /swarm_commander/hold    std_srvs/srv/Trigger   # PANIC: brake to a stop point ahead, hold there
 ros2 service call /swarm_commander/land    std_srvs/srv/Trigger   # descend + disarm
 ```
+In hover, confirm the setpoint stream from a pane: `ros2 topic hz /drone_1/fmu/trajectory_command` ≈ 20 Hz (the panel's `Cmd stream` column watches velocity topics only and reads `--` on a real drone — [BASESTATION.md](BASESTATION.md) §6).
 `start` begins the scenario and is **REQUIRED** before goals or teleop respond.
 Watch the panel's command log: `sent → accepted → ✓ confirmed`, and the Interface column:
 `request offboard ✓ · arm ✓`. **`DENIED`** = PX4 refused (preflight) · **no entry at all** =

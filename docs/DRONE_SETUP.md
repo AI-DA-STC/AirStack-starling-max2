@@ -21,7 +21,7 @@
 >
 > **📝 Record as you go:** every value you discover (IP, image version, domain ID, rigid-body
 > name) goes into [CONFIG.md](CONFIG.md)'s tables the moment you learn it, and each passed
-> check earns a row in the [MILESTONES.md](MILESTONES.md) §3c test ledger. Throughout,
+> check earns a row in the [record/LEDGER.md](record/LEDGER.md) test ledger. Throughout,
 > `drone_N` = this drone's number (drone_1 is taken by Starling 1 / D0012).
 
 *(Unfamiliar term? → [GLOSSARY.md](GLOSSARY.md))*
@@ -51,7 +51,7 @@
 - [ ] Starlings join **`StarlingMax2`** (no spaces) → on the drone: `voxl-wifi station 'StarlingMax2' '<PASSWORD>'` — CONFIG.md §Lab WiFi. (`motive` is the lab-LAN SSID for the Crazyflies — don't use it here.) Password not stored in the repo, ask Jeremy Chia.
 - [ ] ⚠️ If the SSID ever has SPACES do NOT use `voxl-wifi station` (it corrupts the config) — use the manual `wpa_passphrase` method — archived MILESTONES M3-A step 1.
 - [ ] Verify association: `iw dev mlan0 link` shows Connected (5 GHz can take >10 s) — archived MILESTONES M3-A step 1.
-- [ ] Reboot the drone once and re-check `iw dev mlan0 link` — WiFi must survive reboot (`wpa_supplicant@mlan0` auto-starts) — MILESTONES §3c open issue "WiFi reboot-persistence".
+- [ ] Reboot the drone once and re-check `iw dev mlan0 link` — WiFi must survive reboot (`wpa_supplicant@mlan0` auto-starts) — [projects/HTX-R2.md](projects/HTX-R2.md) "Carried over" (WiFi reboot-persistence).
 - [ ] If `mlan0` vanishes after reboot (dmesg `Firmware Init Failed`): cold power cycle, battery + USB out 10 s — [TROUBLESHOOTING.md](TROUBLESHOOTING.md).
 - [ ] Never connect the laptop to the drone's own hotspot `uap0` (SSID like `Starling_N_demo_mode`) — CONFIG.md §Lab WiFi.
 
@@ -118,9 +118,9 @@ still has the old one
 - [ ] Bind the transmitter to the drone's receiver (hardware-specific).
 - [ ] Calibrate sticks: QGC → Vehicle Setup → Radio.
 - [ ] Confirm the safety params (loaded in §5, re-check): `RC_MAP_KILL_SW=8`, `COM_RC_OVERRIDE=1`, `COM_OBL_RC_ACT=1` — CONFIG.md §PX4 params.
-- [ ] **Kill ground test — props OFF, drone strapped down:** arm via a software `takeoff`, flip the kill switch, motors must cut instantly. On this branch, also watch the laptop's `px4_interface` log: `arm` must get an `ACCEPTED` ack (no ack = `target_system` mismatch, §4) — MILESTONES M3.
+- [ ] **Kill ground test — props OFF, drone strapped down:** arm via a software `takeoff`, flip the kill switch, motors must cut instantly. On this branch, also watch the laptop's `px4_interface` log: `arm` must get an `ACCEPTED` ack (no ack = `target_system` mismatch, §4) — NEAR-825 ([projects/HTX-R2.md](projects/HTX-R2.md)).
 - [ ] Repeat the kill ground test after ANY transmitter/receiver change **and after any AirStack branch change**, forever.
-- [ ] Brief every pilot: RC takeover = MANUAL or kill only, never POSCTL/ALTCTL — MILESTONES §3c carried-over issues.
+- [ ] Brief every pilot: RC takeover = MANUAL or kill only, never POSCTL/ALTCTL — [projects/HTX-R2.md](projects/HTX-R2.md) "Carried over".
 
 ## 8b · LED strip (optional — skip if no strip is fitted)
 
@@ -143,8 +143,8 @@ command the vehicle. Full guide: [BASESTATION.md](BASESTATION.md) §8.
 - [ ] EKF2 fusion in → out: `fmu/in/vehicle_visual_odometry` feeding, `fmu/out/vehicle_odometry` positions match mocap within ~2 cm — RUNBOOK §B step 6.
 - [ ] Frame hand-check: carry North/East/up, `pos[0]`↑ / `pos[1]`↑ / `pos[2]`↓ (NED) — a wrong frame flies into a wall — RUNBOOK §B step 6.
 - [ ] `ros2 topic echo /svg/commander_status --once` shows `drone_N` with `"odom_fresh": true`, `"state": "IDLE"` — [BASESTATION.md](BASESTATION.md) §4.
-- [ ] **Basestation** 3D view tracks the hand-carried drone; Agent State row `IDLE · odom fresh` (`real_interfaces.launch.py drones:=drone_N` running) — MILESTONES M2 / RUNBOOK §B step 7. (RViz, Fixed Frame `world`, still works as a fallback.)
-- [ ] Ledger + CONFIG.md rows updated for everything above. **Only now do props go on** — first flight follows MILESTONES M3 + RUNBOOK §B.
+- [ ] **Basestation** 3D view tracks the hand-carried drone; Agent State row `IDLE · odom fresh` (`real_interfaces.launch.py drones:=drone_N` running) — NEAR-818–823 ([projects/HTX-R2.md](projects/HTX-R2.md)) / RUNBOOK §B step 7. (RViz, Fixed Frame `world`, still works as a fallback.)
+- [ ] Ledger + CONFIG.md rows updated for everything above. **Only now do props go on** — first flight follows NEAR-825 ([projects/HTX-R2.md](projects/HTX-R2.md)) + RUNBOOK §B.
 
 ## Snags you're most likely to hit (full table: [TROUBLESHOOTING.md](TROUBLESHOOTING.md))
 

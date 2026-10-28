@@ -28,7 +28,7 @@ RECORD · SIM + REAL — append-only test ledger. Rows are never rewritten or dr
 | 18 | 2026-10-28 | SIM | Hover + 1 m steps, fixed tooling, 3 per axis, PX4 vehicle time: PASS — x 0.085 m / 2.47 s, z 0.033 m / 2.50 s, thrust 0.153, scale 1.324, landed + DISARMED ×3 | [sim_hover_step_run2_record.md](sim_hover_step_run2_record.md) | NEAR-786 |
 | 19 | 2026-10-29 | SIM | Repeat of #18, 9 min later, same commit: PASS — x 0.095 m / 2.47 s, z 0.020 m / 2.42 s, thrust 0.153, scale 1.333, landed + DISARMED ×3 | [sim_hover_step_run3_record.md](sim_hover_step_run3_record.md) | NEAR-786 |
 
-Notes: the Fix 1 detail (the landing path as it is now — `land_settle_s`, `SwarmCommander.landing_done()`, the disarm retry `land_disarm_step()` with `land_disarm_retry_s` 1 s × `land_disarm_retries` 5; sim closed by #13; the real `_ours` configs set `land_settle_s` 0.0 and the retry is inert there because `px4_interface.disarm()` returns true on send; re-observe at NEAR-826 and confirm DISARMED in QGC, iron rule 2) is copied from MILESTONES.md §6 lines 579–595 as the three bullets below this line.
+Notes: the Fix 1 detail (the landing path as it is now — `land_settle_s`, `SwarmCommander.landing_done()`, the disarm retry `land_disarm_step()` with `land_disarm_retry_s` 1 s × `land_disarm_retries` 5; sim closed by #13; the real `_ours` configs set `land_settle_s` 0.0 and the retry is inert there because `px4_interface.disarm()` returns true on send; re-observe at NEAR-826 and confirm DISARMED in QGC, iron rule 2) is copied from the old MILESTONES.md "Sim debt" section as the three bullets below this line.
 
 ## Table 2 · Observed on the previous software (archived)
 

@@ -4,7 +4,7 @@
 > real drone (§B), goal flights (§C), post-flight logs (§D).
 > **Who should read it:** anyone whose machine is already set up (README → "Setting up AirStack
 > on a NEW machine") and who just wants to **run** things. No background, no debugging — that
-> lives in [MILESTONES.md](MILESTONES.md) (plan + work log) and
+> lives in the project pages ([MILESTONES.md](MILESTONES.md) is the index) and
 > [TROUBLESHOOTING.md](TROUBLESHOOTING.md) (symptom → fix).
 > Every code block says where it runs. **Never paste across a `connect` line** — it opens a
 > new shell and swallows what follows.
@@ -12,7 +12,7 @@
 > ⚠️ **Branch note (2026-10-21):** this runbook describes CMU's `yikuan/SVG_ground_control_dev`
 > @ `b21d28c` (vendored 2026-10-20 — [MIGRATION.md](MIGRATION.md) §11; the release line
 > `yikuan/SVG_ground_control` @ `cf719f0` was our 2026-10-07 snapshot). **Sim (§A) is validated
-> in part** — ledger in [MILESTONES.md](MILESTONES.md) §3c. **No real flight on this branch
+> in part** — ledger in [record/LEDGER.md](record/LEDGER.md). **No real flight on this branch
 > yet:** §B/§C were last flown on the *previous* branch (2026-09-01→03) and stay **⏳ STE until
 > re-validated**. What changed for a pilot: [MIGRATION.md](MIGRATION.md) §5.
 
@@ -35,7 +35,7 @@ tab or pane. §B/§C say "pane N"; §A says "<name> tab".
 
 ---
 
-## A · Fly in SIMULATION — sim validated in part on this branch (MILESTONES §3c)
+## A · Fly in SIMULATION — sim validated in part on this branch ([record/LEDGER.md](record/LEDGER.md))
 
 > **WORLD: SIMULATION — nothing on this page touches the drone.** Step 0, before anything else: the drone's battery is OUT and `./mocap.sh` is NOT running on the laptop (the sim shares DDS domain 1 and the `/drone_1` topic names with the real drone). ⚠️ Sim-only — never port to the drone: the sim airframe values and `cbf_sim.yaml` speeds/landing settle (iron rule 9).
 
@@ -79,7 +79,7 @@ do `cbf_sim.yaml`'s speeds 2.0 / 4.0 / 6.0 and its landing settle 2.0 s + disarm
 `_ours` configs fly `drone_1`, `land_settle_s` 0.0, `land_speed_mps` 0.6, `cbf_max_speed_mps` 1.0).
 The drone's parameters come from `starling_1_indoor_params.params` via QGC.
 
-Validation: [MILESTONES.md](MILESTONES.md) §3c (state + acceptance tools: [CONFIG.md](CONFIG.md#sim-airframe-starling-2-max-sim-only--10090_pegasus_starling2max) "Sim airframe").
+Validation: [record/LEDGER.md](record/LEDGER.md) (state + acceptance tools: [CONFIG.md](CONFIG.md#sim-airframe-starling-2-max-sim-only--10090_pegasus_starling2max) "Sim airframe").
 
 > ⚠️ **Never press Stop / Play in the Isaac window** to reset the drones (observed 2026-10-20):
 > Pegasus kills and relaunches PX4 but leaks the old vehicles' physics callbacks, the new PX4s
@@ -166,7 +166,7 @@ fallback and the throw-away shell: [§ Sim launch variants](#sim-launch-variants
 
 ## B · REAL DRONE session (mocap room) — ⏳ STE on this branch
 
-> **WORLD: REAL DRONE — [PREFLIGHT.md](PREFLIGHT.md) gates every takeoff.** Gates before the next real flight: the box at the top of [MILESTONES.md](MILESTONES.md) (MAV_SYS_ID 1 vs 2, one watchdog only, §3d ACK audit, props-off kill test, M3 landing sub-test, mocap chain after the camera upgrade).
+> **WORLD: REAL DRONE — [PREFLIGHT.md](PREFLIGHT.md) gates every takeoff.** Gates before the next real flight: [MILESTONES.md](MILESTONES.md) "Before the next real flight" (MAV_SYS_ID 1 vs 2, one watchdog only, [PX4_MSGS_AUDIT.md](PX4_MSGS_AUDIT.md) ACK audit, props-off kill test, NEAR-826 landing test, mocap chain after the camera upgrade).
 >
 > **Step 0 — which world am I in:** Isaac container NOT running (`docker ps | grep isaac` → empty), no `mavros_node` and no `svg_teleop` in `ros2 node list`, and the `px4_interface … target_system=N` startup line present. ⚠️ Never start Isaac Sim during a real session: the sim publishes on the real drone's topic names.
 
@@ -178,7 +178,7 @@ fallback and the throw-away shell: [§ Sim launch variants](#sim-launch-variants
 > **Maturity (2026-10-07):** nothing in §B has run on this branch yet. The mocap chain
 > (steps 1, 3b, 4) is unchanged from the previous branch. Steps 0, 5, 6, 7 are changed —
 > read them, don't skim. One-time drone work (new provisioning script, watchdog decision):
-> MILESTONES M2-A. No Isaac Sim needed — do NOT start it.
+> NEAR-818–823 ([projects/HTX-R2.md](projects/HTX-R2.md)). No Isaac Sim needed — do NOT start it.
 
 **0 — Re-provision the drone(s)** — needed once per drone every time the GC laptop (or its
 IP) changes, **and once after switching to this branch** (why: [DRONE_SETUP.md](DRONE_SETUP.md#4--point-px4-at-the-laptop-uxrce-dds-provisioning) §4). The drone
@@ -307,7 +307,7 @@ and the drone mesh in the 3D view **follows the hand-carried drone**. Step 5 mus
 running or the row says `odom none`. Do NOT call takeoff during this check. Phantom rows,
 RViz fallback: [BASESTATION.md](BASESTATION.md#7--troubleshooting) §7.
 
-**8 — Fly** (⏳ STE on this branch — MILESTONES M3). ⚠️ Do not call `takeoff` until every
+**8 — Fly** (⏳ STE on this branch — NEAR-825 ([projects/HTX-R2.md](projects/HTX-R2.md))). ⚠️ Do not call `takeoff` until every
 box on [PREFLIGHT.md](PREFLIGHT.md) is checked and a briefed safety pilot holds the
 transmitter. Pane 4 (the "cockpit") — one call at a time — **or the Basestation buttons**
 (Takeoff and Start ask for confirmation; Safety Stop needs two clicks within 4 s):
@@ -343,7 +343,7 @@ Wait ~10 s, then unplug USB and disconnect the battery. (Already in the drone's 
 
 ---
 
-## C · GOAL FLIGHTS (fly to commanded waypoints) — ⏳ STE on this branch (MILESTONES M4)
+## C · GOAL FLIGHTS (fly to commanded waypoints) — ⏳ STE on this branch (NEAR-829–832, [projects/HTX-R2.md](projects/HTX-R2.md))
 
 > **🚨 EMERGENCY** — `ros2 service call /swarm_commander/hold  std_srvs/srv/Trigger`
 > · `ros2 service call /swarm_commander/land  std_srvs/srv/Trigger`

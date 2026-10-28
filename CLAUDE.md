@@ -1,6 +1,6 @@
 # CLAUDE.md — AirStack Starling Max 2 (indoor OptiTrack mocap flight stack)
 
-AirStack ground-control workspace flying a ModalAI Starling Max 2 indoors under OptiTrack mocap (no GPS/VIO for nav).
+AirStack ground-control workspace flying a ModalAI Starling Max 2 indoors with OptiTrack motion-capture positioning (mocap) (no GPS/VIO for nav).
 
 **Branch (since 2026-10-20):** CMU `yikuan/SVG_ground_control_dev` @ `b21d28c` (their *working* branch; `yikuan/SVG_ground_control` is its squash-release line, last cut `cf719f0` = our 2026-10-07 snapshot), vendored in `AirStack/`. The 10-20 bump brought the 6-gain Foxglove dropdown (goal accel/settle, teleop vmax), `goal_sequence` + `figure_eight` scenarios and the rosbag switch — [MIGRATION.md](docs/MIGRATION.md) §11.
 The previous branch (`daniel/diffaero_ground_control`, flown 09-01→03) is frozen on tag
@@ -20,7 +20,7 @@ parent/child. Milestones were RESET; **nothing on this software has flown; sim r
 | [RUNBOOK.md](docs/RUNBOOK.md) | running a session — sim: `tools/sim_terminals.sh` (four Terminator tabs: Isaac Sim · Interfaces · Commander · Cockpit); real drone: tmux `bringup` panes; the panel instead of RViz |
 | [BASESTATION.md](docs/BASESTATION.md) | the Foxglove SVG Basestation panel, `/svg/commander_status` fields, LED strips |
 | [TELEOP.md](docs/TELEOP.md) | gamepad teleop, the two fences, controller profiles, CMU `teleop.md` corrections |
-| [SCENARIOS.md](docs/SCENARIOS.md) | CBF filter, runtime gains, formations / random goals / RC-intruder squeeze (sim now, real at M7) |
+| [SCENARIOS.md](docs/SCENARIOS.md) | CBF filter, runtime gains, formations / random goals / RC-intruder squeeze (sim now, real at M7 (HTX-R2, NEAR-840/841)) |
 | [CONFIG.md](docs/CONFIG.md) | live values (IPs, params, credentials, branch/commit, flight parameters per config) |
 | [MOCAP.md](docs/MOCAP.md) | laptop-side mocap bridge — unchanged by the branch switch |
 | [DRONE_SETUP.md](docs/DRONE_SETUP.md) | drone provisioning (new script + watchdog, `target_system`, optional LEDs) |

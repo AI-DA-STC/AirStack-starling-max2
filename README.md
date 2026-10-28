@@ -2,7 +2,7 @@
 
 > **Any unfamiliar term** (the commander, the panel, the interfaces, mocap bridge…) → [GLOSSARY.md](docs/GLOSSARY.md), one line each.
 
-One real ModalAI **Starling Max 2**, flown indoors under **OptiTrack** motion capture by CMU's
+One real ModalAI **Starling Max 2**, flown indoors with **OptiTrack** motion-capture positioning (mocap) by CMU's
 **AirStack** ground-control stack (a known-good snapshot lives in [`AirStack/`](AirStack/)), with
 three-drone swarms rehearsed in **Isaac Sim** before anything flies for real.
 

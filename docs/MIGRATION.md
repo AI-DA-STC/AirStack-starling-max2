@@ -5,7 +5,7 @@
 > AirStack snapshots: what changed, what must be re-done, which old statements are now wrong,
 > and where the old material lives. **This is NOT a runbook** — read it once, then work from
 > [RUNBOOK.md](RUNBOOK.md), [PREFLIGHT.md](PREFLIGHT.md) and the new
-> [MILESTONES.md](MILESTONES.md) ladder. Delete it once M0–M7 are signed off at STE.
+> [MILESTONES.md](MILESTONES.md) index. Delete it once HTX-R2 M2–M7 are re-earned.
 
 *(Unfamiliar term? → [GLOSSARY.md](GLOSSARY.md))*
 
@@ -46,7 +46,7 @@ feedforward, onboard LEDs, the Foxglove SVG Basestation panel. Four commits past
 **Consequence for us:** September's flights were validated on a branch *without* half of this
 and *with* a different commander output. The CBF our docs describe is back (and now reacts to
 external velocities); the diffaero machinery our docs never used is gone. Flight validation
-restarts — see the M0–M7 ladder in [MILESTONES.md](MILESTONES.md) §3.
+restarts — see [MILESTONES.md](MILESTONES.md) "Where each project is".
 
 ## 2 · Where the old material lives
 
@@ -68,7 +68,7 @@ git diff airstack-starling-max2 HEAD -- AirStack/             # the whole snapsh
 On GitHub: pick `archive/airstack-starling-max2` (or the tag) from the branch dropdown, or
 append `/tree/airstack-starling-max2/docs` to the repo URL.
 
-⚠️ **The old test ledger #1–#21 is NOT carried over.** The new MILESTONES.md ledger restarts
+⚠️ **The old test ledger #1–#21 is NOT carried over.** The new [record/LEDGER.md](record/LEDGER.md) table 1 restarts
 at **#1** — when citing a September result, say "archive ledger #19", never bare "#19". The
 *lab facts* those flights produced (EKF2 params, RC mapping, frame hand-check,
 `MPC_THR_HOVER 0.165`, network values) do live on in [CONFIG.md](CONFIG.md) and
@@ -105,7 +105,7 @@ pointed at anything above. The one real loss is **keyboard teleop**; §5 covers 
 | `foxglove/` — `svg-basestation` panel, `svg_basestation.json` layout, `install.py` | the 3D view + command panel that replaces RViz | [BASESTATION.md](BASESTATION.md) |
 | `config/teleop_real.yaml`, `teleop_single.yaml`, `squeeze_rc_intruder.yaml`, `cbf_sim.yaml` | new run configs (teleop, C5 RC-intruder, CBF sim) | [SCENARIOS.md](SCENARIOS.md) |
 | `scripts/rviz_for_run.py`, `ulog_param_diff.py` | post-flight replay + `.ulg` param diffing | [RUNBOOK.md](RUNBOOK.md) §D |
-| 8 new `test/` files (`test_trajectory`, `test_fence_and_position_hold`, `test_feedforward`, `test_formations`, `test_teleop_controllers`, `test_led_packet`, `test_live_speed`, `test_runtime_params`) | unit tests — safe to run anywhere, unlike `functional_*.py` (iron rule 4) | [MILESTONES.md](MILESTONES.md) |
+| 8 new `test/` files (`test_trajectory`, `test_fence_and_position_hold`, `test_feedforward`, `test_formations`, `test_teleop_controllers`, `test_led_packet`, `test_live_speed`, `test_runtime_params`) | unit tests — safe to run anywhere, unlike `functional_*.py` (iron rule 4) | [record/LEDGER.md](record/LEDGER.md) |
 | `robot/docker/Foxglove/` | host mount dir for `/root/.config/Foxglove` (layouts survive container recreation) | [BASESTATION.md](BASESTATION.md) |
 
 Changed, not added — the four that matter:
@@ -141,8 +141,8 @@ Changed, not added — the four that matter:
 ## 6 · Re-do list before the first session
 
 Ordered. Everything here was done once on the old snapshot and is void or must be
-re-checked. ⏳ = decide at STE. ✅ = done, with the date and the MILESTONES ledger row.
-**Post-bump (10-20) and sim re-dos are NOT here** → §11 and MILESTONES "Next up".
+re-checked. ⏳ = decide at STE. ✅ = done, with the date and the [LEDGER](record/LEDGER.md) row.
+**Post-bump (10-20) and sim re-dos are NOT here** → §11 and the next issue in Linear.
 
 - [ ] **NatNet SDK** — `natnet_ros2` is in the tree and the workspace **build** needs its SDK
       headers. Our `./mocap.sh` bridge still does **not** use it ([MOCAP.md](MOCAP.md) §3 is
@@ -273,8 +273,8 @@ Locations are in the **archived** docs (`git show airstack-starling-max2:<path>`
 | TROUBLESHOOTING "click the teleop terminal for **keyboard focus**" (archive `:45`) | Gamepad now — the equivalent failure is an undetected pad / the dead-man latch not held. |
 | TROUBLESHOOTING "phantom `drone_2`/`drone_3` WARNs harmless" (archive `:46`) | Still true for `swarm_real.yaml`, but a `drone_2`-targeted `goal_single.yaml` (as at `cf719f0`) is a real misconfiguration, not a phantom (at `b21d28c`: `goal_single` → `drone_1` — CONFIG.md). |
 | TROUBLESHOOTING geofence row (archive `:44`) | Same `hold_all`-only caveat. |
-| MILESTONES §3d px4_msgs audit | ⚠️ **Re-audit needed.** The conclusion rests on *which* `TrajectorySetpoint`/`OffboardControlMode` fields are exercised. Acceleration feedforward now populates `acceleration[]` and `yaw`/`yawspeed`, and `VehicleCommandAck` is a newly-subscribed message. The old per-message verdicts do not cover that set. |
-| archived MILESTONES §8 (now [MILESTONES.md](MILESTONES.md) §6) shelved fixes | Line numbers are stale. **Fix 1** (`LANDED_SETTLE`): **implemented 2026-10-19/10-20** as `land_settle_s` + the disarm retry → [MILESTONES.md](MILESTONES.md) §6 (real `_ours` configs keep 0.0). **Fix 2** (`~/release`): still absent — the design stands. **Fix 3** (yaw): largely **subsumed** — the trajectory output carries an absolute yaw (details: MILESTONES §6 Fix 3). The old "CBF is 3-DOF linear" claim predates `564d43e` |
+| [PX4_MSGS_AUDIT.md](PX4_MSGS_AUDIT.md) px4_msgs audit | ⚠️ **Re-audit needed.** The conclusion rests on *which* `TrajectorySetpoint`/`OffboardControlMode` fields are exercised. Acceleration feedforward now populates `acceleration[]` and `yaw`/`yawspeed`, and `VehicleCommandAck` is a newly-subscribed message. The old per-message verdicts do not cover that set. |
+| archived MILESTONES §8 (now [record/LEDGER.md](record/LEDGER.md) note under table 1) shelved fixes | Line numbers are stale. **Fix 1** (`LANDED_SETTLE`): **implemented 2026-10-19/10-20** as `land_settle_s` + the disarm retry → [record/LEDGER.md](record/LEDGER.md) note under table 1 (real `_ours` configs keep 0.0). **Fix 2** (`~/release`): still absent — the design stands. **Fix 3** (yaw): largely **subsumed** — the trajectory output carries an absolute yaw (details: [projects/HTX-R2.md](projects/HTX-R2.md) "Carried over"). The old "CBF is 3-DOF linear" claim predates `564d43e` |
 
 ## 9 · Iron rules — what changed
 
@@ -361,7 +361,7 @@ configs, `cbf_sim.yaml` (dev did not touch it), `land_settle_s`.
 Status 2026-10-21: the **fresh-launch and landing-end-to-end checks are closed** by ledger #13
 (new asset loaded, PhysX clean, three clean landings with DISARM accepted first time). Still
 ⏳: the sim re-runs and first-use checks — the ordered list lives **only** in
-[MILESTONES.md](MILESTONES.md) §3c "Next up" (this page keeps no copy).
+the next issue in Linear (snapshot: [MILESTONES.md](MILESTONES.md) "Where each project is"; this page keeps no copy).
 Everything real-drone stays ⏳ STE as before.
 
 ## 12 · Moved from README: showcase, milestones in brief, historical appendix
@@ -384,7 +384,7 @@ auto-disarm all under software control (RC kill switch armed in hand throughout)
 *(Recorded on the previous branch. The operator view is now the Foxglove Basestation —
 [BASESTATION.md](BASESTATION.md); RViz remains available as a fallback.)*
 
-**What's been achieved so far** (details: [MILESTONES.md](MILESTONES.md)):
+**What's been achieved so far** (details: [record/LEDGER.md](record/LEDGER.md)):
 
 - **2026-09-01 — first offboard flight** (previous branch): takeoff + hover fully under
   AirStack command, position from OptiTrack mocap (no GPS, no VIO), RC kill switch verified
@@ -394,7 +394,7 @@ auto-disarm all under software control (RC kill switch armed in hand throughout)
   landing auto-disarm.
 - **2026-10-07 — moved to `yikuan/SVG_ground_control`** (bumped to `_dev @ b21d28c`
   2026-10-20): the mocap chain, drone provisioning and network setup carry over unchanged;
-  the flight software is re-validated from M0 ([MILESTONES.md](MILESTONES.md) §3).
+  the flight software is re-validated from the start ([MILESTONES.md](MILESTONES.md) "Where each project is").
 - **2026-10-21 — random goals under the CBF, in sim (Starling 2 Max model):**
   [videos/random_CBF_sim_edited.mp4](../videos/random_CBF_sim_edited.mp4) — three simulated
   Starlings cross paths at 2.0 m/s and the CBF alone keeps them apart (`cbf_sim.yaml`: cap
@@ -432,7 +432,7 @@ proves the position tracking, and only then do propellers spin.
 | # | Milestone | One-line goal | Status |
 |---|---|---|---|
 | 0 | Bring-up on the new branch | Build, containers, Foxglove panel — three sim drones visible in the Basestation | ⏳ STE |
-| 1 | Sim rehearsal | CBF crossing, braking fence, gamepad, formations, random goals in Isaac Sim; pytest green | ⏳ partly — Starling model, CBF crossing, random goals + landing pass in sim; re-runs pending — the one to-do list is [MILESTONES.md](MILESTONES.md) §3c "Next up" |
+| 1 | Sim rehearsal | CBF crossing, braking fence, gamepad, formations, random goals in Isaac Sim; pytest green | ⏳ partly — Starling model, CBF crossing, random goals + landing pass in sim; re-runs pending — the one to-do list is the next issue in Linear (snapshot: [MILESTONES.md](MILESTONES.md) "Where each project is") |
 | 2 | Drone provisioning + hand-carry | New provisioning script + watchdog; `target_system`; Basestation tracks the carried drone; EKF2 fusing | ⏳ STE |
 | 3 | First flight | Takeoff, hover, land under the trajectory output; command ACKs seen; iron rules re-verified | ⏳ STE |
 | 4 | Goal flights + braking fence | Acceleration-limited goal legs; keep-in wall braking measured; live gains | ⏳ STE |
@@ -440,12 +440,12 @@ proves the position tracking, and only then do propellers spin.
 | 6 | LED strips (optional) | Green default, red on CBF; ESC arm LEDs muted — acknowledged | ⏳ STE |
 | 7 | Multi-drone | Formations, random-goal CBF test, RC-intruder squeeze | ⏳ blocked — one Starling |
 
-Live status: [MILESTONES.md](MILESTONES.md) §3. The previous branch's ladder (M1–M5 validated 2026-07-20→08-28, M6 flown
+Live status: Linear; snapshot in [MILESTONES.md](MILESTONES.md). The previous branch's ladder (M1–M5 validated 2026-07-20→08-28, M6 flown
 2026-09-01→03 without final sign-off) is on the archive tag.
 
 **Important context on the statuses:** CMU built AND flight-tested all of this on their own
 three Starlings — our project is **replication and validation**, not development. A code
-audit (2026-10-07, [MILESTONES.md](MILESTONES.md) §3b) confirmed every mechanism for
+audit (2026-10-07, the appendix below) confirmed every mechanism for
 M0–M7 exists in the `AirStack/` code. The things NOT in code (manual, by design) are: clock
 sync between machines, the OptiTrack/Motive settings, PX4-side parameters set through
 QGroundControl, and which physical gamepad the lab owns.
@@ -540,7 +540,7 @@ awaiting review); `0002` is retired on this branch.
 </details>
 
 
-## Appendix — code-readiness audit of the `cf719f0` snapshot (moved from MILESTONES §3b)
+## Appendix — code-readiness audit of the `cf719f0` snapshot (moved from the old MILESTONES.md)
 
 > **2026-10-20:** the audit below was done on `cf719f0`. The bump to `b21d28c` changed
 > `swarm_commander.py` (+180: `tuning` status block, `sequence_*`, teleop-speed sync),

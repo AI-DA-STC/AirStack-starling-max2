@@ -101,8 +101,8 @@
   landing was the known one-shot behaviour; PX4's own `COM_DISARM_LAND` finishes the job. Still
   armed after that: KILL or arm switch down, then investigate — never approach a spinning
   drone. Confirm **DISARMED in QGC** every time (iron rule 2). The settle/retry code path is
-  exercised on the real drone only through the M3 landing sub-test
-  ([MILESTONES.md](MILESTONES.md) M3); the retry is inert there (`px4_interface.disarm()` reports
+  exercised on the real drone only through the landing test
+  (NEAR-825, [projects/HTX-R2.md](projects/HTX-R2.md)); the retry is inert there (`px4_interface.disarm()` reports
   success on send) — the ACK in the `px4_interface` log is the only evidence.
 - **SIM** — `cbf_sim.yaml` runs the settle + retry: `land_settle_s` 2.0 keeps the descent
   commanded on the ground, then DISARM; a denied DISARM is resent every `land_disarm_retry_s`
@@ -127,7 +127,7 @@ mistake comes first.
 | Symptom | Cause / fix |
 |---|---|
 | Commander tab spams red `[foxglove_bridge] Failed to load schemaDefinition for topic "/poses" (motion_capture_tracking_interfaces/msg/NamedPoseArray): package not found` while `./mocap.sh` runs | Harmless, and silenced since 2026-10-21: `ground_control.launch.py` gives the Foxglove bridge a `topic_whitelist` that skips `/poses`. Why it was harmless: `/poses` is the laptop receiver's raw topic in a message type the container lacks; nothing in the container reads it — the relay turns it into the per-body `/drone_N/pose`, which is what `mocap_bridge` (→ PX4) and the panel use. If the spam is back, the commander was launched from an older launch file |
-| **Pressed Stop ▶ Play in the Isaac window to reset the drones → everything dead** (MAVROS `connected: false`, `VER: unicast request timeout`, panel `LINK/EKF/POWER NO DATA`, commander alive but blind) | **Not a reset — don't** ([MILESTONES.md](MILESTONES.md) §3c #6). Recover = full restart: Ctrl-C in the **Isaac Sim tab**, relaunch (RUNBOOK §A1), then Ctrl-C + relaunch the **Interfaces tab**, then the **Commander tab**, in that order. Why, and how to bring drones home without a restart: detail below |
+| **Pressed Stop ▶ Play in the Isaac window to reset the drones → everything dead** (MAVROS `connected: false`, `VER: unicast request timeout`, panel `LINK/EKF/POWER NO DATA`, commander alive but blind) | **Not a reset — don't** ([record/LEDGER.md](record/LEDGER.md) #6). Recover = full restart: Ctrl-C in the **Isaac Sim tab**, relaunch (RUNBOOK §A1), then Ctrl-C + relaunch the **Interfaces tab**, then the **Commander tab**, in that order. Why, and how to bring drones home without a restart: detail below |
 | **Laptop "hangs" or the remote desktop drops within 30 s of an Isaac start or stop** | Not a hang: the Intel WiFi firmware crashed (`journalctl -k \| grep iwlwifi`); Isaac keeps running. Run `localisation/scripts/sim_resources_watch.sh` (prints `WIFI-ALERT`); Ethernet avoids it |
 | Interfaces tab shows `[ERROR] [mavros_node-N]: process has died … exit code -11` (or -6); commander repeats `drone_N: odometry stale, commanding zero velocity` | that drone's MAVROS crashed. **Since 2026-10-20 the sim launch respawns `mavros_node` after 2 s** (`interface_bringup/launch/mavros_px4.launch.xml`, sim-only) — odometry and the panel come back on their own, but PX4 is already on its offboard-loss failsafe: two-command recovery in the detail below |
 | Drone sits armed after touchdown: `disarm -> success=False` ×5, `disarm not accepted after 5 tries`, log shows `touchdown … settling` | → "Landing ends with the drone still armed", SIM bullet (Flight / arming above). Quick check: `param show LNDMC_ROT_MAX` in the PX4 shell must read 300 (sim airframe since 10-20) |
@@ -136,11 +136,11 @@ mistake comes first.
 | "Battery unhealthy", won't arm | SITL battery drained — restart the Isaac spawn script (Isaac Sim tab) |
 | Continuous `[timesync]` warnings | sim below real-time; reduce load |
 | No camera / `add_rtx_lidar_subgraph` import error at launch | the Pegasus submodule renamed the lidar/camera APIs; only `ENABLE_LIDAR`/`ENABLE_CAMERA` runs are affected — run without them, or update the launch script's lazy imports |
-| `ENABLE_CAMERA=true` but the robot container sees no `/clock` or camera topics (isaac-sim does) | DDS never crosses the isaac docker network; MAVROS (UDP) does ([diagram](ARCHITECTURE.md#sim-session-anatomy)). Use `localisation/docker/run.sh`. Both at once: MILESTONES §6 |
+| `ENABLE_CAMERA=true` but the robot container sees no `/clock` or camera topics (isaac-sim does) | DDS never crosses the isaac docker network; MAVROS (UDP) does ([diagram](ARCHITECTURE.md#sim-session-anatomy)). Use `localisation/docker/run.sh`. Both at once: [record/LEDGER.md](record/LEDGER.md) note under table 1 |
 | Stereo VO pose jumps 5–10 m whenever drone_1 faces the arena edge (sky and grid in view) | The flat default world starves the tracker. Launch with `ENV_USD` (construction site): [site README](../localisation/scenes/construction_site/README.md) |
 | VO odometry / TF flips between two poses in SLAM Studio | Two `cuvslam_stereo_node` instances (one started by hand beside `slam_up.sh`). `localisation/scripts/slam_status.sh`, then `slam_down.sh` → `slam_up.sh` |
 | `ENV_USD` set but the world loads flat or empty | The world files are laptop-only and not built here: run `localisation/scenes/construction_site/install.sh` ([site README](../localisation/scenes/construction_site/README.md)) |
-| dmesg shows `robot_interface[...]: segfault ... in libstdc++` after Ctrl-C of the Interfaces tab | a shutdown race in CMU's `robot_interface_node` destructor, seen only at SIGINT (2026-10-20). Cosmetic — nothing was flying through it. Not fixed; the node is shared with the real-drone path, so it is reported, not patched (MILESTONES §6 "Sim debt") |
+| dmesg shows `robot_interface[...]: segfault ... in libstdc++` after Ctrl-C of the Interfaces tab | a shutdown race in CMU's `robot_interface_node` destructor, seen only at SIGINT (2026-10-20). Cosmetic — nothing was flying through it. Not fixed; the node is shared with the real-drone path, so it is reported, not patched ([projects/HTX-R1.md](projects/HTX-R1.md) "Sim debt") |
 
 **Hollow drone — rebuilding the asset.** Needs CMU's 98 MB `isaac_sim/starlingmax2.usd`
 (gitignored); run from the repo root, then relaunch the sim:
@@ -159,7 +159,7 @@ After the respawn PX4 ignores the commander (offboard-loss failsafe, 1 s), so:
 `ros2 service call /drone_N/interface/mavros/set_mode mavros_msgs/srv/SetMode "{custom_mode: AUTO.LAND}"`,
 then the commander's `land` once to reset it (iron rule 3). A MAVROS that dies every 2 s at
 startup is a config error — read the first death's lines. Root cause of the segfault is still
-open (no core dumps: the host's `core_pattern` is apport) — MILESTONES §6 "Sim debt".
+open (no core dumps: the host's `core_pattern` is apport) — [projects/HTX-R1.md](projects/HTX-R1.md) "Sim debt".
 
 ## Drone-side / network
 

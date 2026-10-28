@@ -252,8 +252,8 @@ from every doc; add a term here rather than re-explaining it inline elsewhere.
 - **Iron rules** — the nine numbered flight rules in [CLAUDE.md](../CLAUDE.md), mirrored word for
   word in [PREFLIGHT.md](PREFLIGHT.md). Quoted by number ("iron rule 9") across the docs.
 - **Ledger (test ledger, "ledger #N")** — the numbered table of every test result on this branch,
-  [MILESTONES.md](MILESTONES.md) §3c (#1–#13 so far, restarted at #1 on 2026-10-07). Its "Next up"
-  table is the **only** to-do list; "archive ledger #N" means the previous branch's ledger.
+  [record/LEDGER.md](record/LEDGER.md) (restarted at #1 on 2026-10-07). The next issue in Linear
+  is the **only** to-do list; "archive ledger #N" means the previous branch's ledger.
 
 - **IDLE / ARMING / ASCEND / ACTIVE / LANDING** — the swarm commander's per-drone flight
   states (shown as chips in the Basestation). `takeoff` only accepts drones in IDLE; after an

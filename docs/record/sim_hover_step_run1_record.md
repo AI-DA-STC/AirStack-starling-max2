@@ -2,7 +2,7 @@ RECORD · SIM — sim_hover_step_run1. Sim-only (iron rule 9): none of these val
 
 # sim_hover_step_run1 — Starling hover + 1 m steps on the rebuilt asset + 10-20 airframe (2026-10-28, 07:42:52–07:44:23)
 
-**Verdict: PASS.** Re-run of ledger #3 for Linear NEAR-786 (milestone S5). Gates are the M1 criteria in [MILESTONES.md](../MILESTONES.md) §4; the #3 numbers are shown for comparison only (see Caveats).
+**Verdict: PASS.** Re-run of ledger #3 for Linear NEAR-786 (milestone S5). Gates are the S5 hover + step thresholds in [tools/README.md](../../tools/README.md#thresholds); the #3 numbers are shown for comparison only (see Caveats).
 
 ## Setup
 
@@ -267,6 +267,6 @@ Landing:
 - Four-expert review 2026-10-28: the driver's own verdict at 15:45:58 was FAIL on three gates (`Starling2MaxConfig x3: 0`, `z step settle 3.05 s` by the echo method, `post-flight armed` unreadable); the PASS above comes from the rosbag re-analysis done afterwards. `all` aborted at `interfaces`; `commander` → `report` were run by hand; the bag and ulogs were recovered manually; drone_1's ulog was lost; this record was generated at `76cd405`, a commit made after the flight.
 - Every timing in this record is wall clock. PX4 ran ≈1.32–1.34× faster (lockstep; drone_2 ulog arm→disarm 100.87 s vs 75.5 s wall from the commander log, 76.3 s from the 1 Hz MAVROS state — `tools/hover_step_analysis.py` uses the latter and gives 1.32): x settle 1.86 s → ≈2.45 s, z 1.62 s → 2.16 s in vehicle time (both still < 3 s). The re-run (#18) gates in vehicle time.
 
-## Ledger row draft (MILESTONES.md §3c)
+## Ledger row draft (as filed in docs/record/LEDGER.md table 1, #17 — old multi-cell format kept as written)
 
 `| 17 | **M1 re-run of #3: Starling hover + 1 m steps on the rebuilt asset + 10-20 airframe + dev commander** (`tools/sim_hover_step_run.sh`, `cbf_sim.yaml scenario:=goal`, `record_bag:=true`) | Isaac launch log, PX4 ulog header (pyulog), MAVROS thrust setpoint, rosbag step timing (`tools/hover_step_bag.py`) + echo traces (`analyze_step.py`); record docs/record/sim_hover_step_run1_record.md (link it from MILESTONES as record/sim_hover_step_run1_record.md) | `Starling2MaxConfig` x3 (indirect: airframe 10090 x3 + Starling thrust); `SYS_AUTOSTART` 10090, `MC_PITCHRATE_P` 0.032, `LNDMC_ROT_MAX` 300, `MPC_XY_VEL_MAX` 20 from the ulog header; hover thrust setpoint **0.153** (#3: 0.155, real 0.165); x step overshoot +0.054 m settled 1.86 s (bag; #3 echo method: 0.002 / 2.75); z step +0.001 m / 1.62 s (#3: 0.001 / 0.75); takeoff climb +0.012 m / 4.25 s (#3: 0.31 / 7.9); `landed, disarmed (attempt 1)` x3; 0 WiFi alerts. **PASS** against the M1 gates (#3 comparison informational: speeds differ) | 2026-10-28 |`

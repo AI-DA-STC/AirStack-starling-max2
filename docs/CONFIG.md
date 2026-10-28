@@ -9,7 +9,7 @@
 > rows) / **2026-09-08** (network rows, GL-MT6000 topology).
 >
 > **Who reads this:** anyone about to launch, re-provision or tune anything. **Read first:**
-> [GLOSSARY.md](GLOSSARY.md) for the words, [MILESTONES.md](MILESTONES.md) §3 for what is
+> [GLOSSARY.md](GLOSSARY.md) for the words, [MILESTONES.md](MILESTONES.md) "Where each project is" for what is
 > proven. "The commander" below = the `swarm_commander` node; "the panel" = the Foxglove SVG
 > Basestation ([BASESTATION.md](BASESTATION.md)); "the real drone" = our Starling 2 Max.
 >
@@ -86,7 +86,7 @@ line. The drone auto-joins SSID `StarlingMax2` at boot. (WiFi missing after rebo
 **Moved from RUNBOOK §B step 3 (2026-10-21) — `/fmu/*` echo and px4_msgs.** Every `/fmu/*` **echo**
 needs `--qos-reliability best_effort` or it looks dead — but the robot container's `ros2 topic hz`
 does NOT accept that flag (run hz bare). `vehicle_status` echo
-prints nothing even though hz shows 30 Hz — px4_msgs mismatch, [MILESTONES.md](MILESTONES.md) §3d; use
+prints nothing even though hz shows 30 Hz — px4_msgs mismatch, [PX4_MSGS_AUDIT.md](PX4_MSGS_AUDIT.md); use
 `vehicle_odometry` for the echo check. (Before the agent starts, the drone-side
 `px4-microdds_client status` shows `Running, disconnected` — normal; the new watchdog keeps
 retrying.)
@@ -113,7 +113,7 @@ them apart. Source for the identified numbers: `isaac_sim/Starling 2 Max Sys ID 
 | Speed / accel limits | `MPC_XY_VEL_MAX` 20 · `MPC_ACC_HOR` 6 · `MPC_ACC_HOR_MAX` 1000 · `MPC_JERK_AUTO` 4 · `MPC_Z_VEL_MAX_UP` 10 / `_DN` **4** | **identical** (Starling 1 backup, `~/RCC_Starling_1`) | no — copied from the drone 2026-10-20 | were 3 / 3 / PX4 defaults, which **clipped the sim at 3 m/s**; raised in the same commit that put `cbf_sim.yaml` at 4.0 / 2.0 |
 | Selection / source | `DRONE_USD=/isaac-sim/AirStack/simulation/isaac-sim/assets/robots/starling2max.usd PX4_VEHICLE_MODEL=pegasus_starling2max` on the Isaac launch ([RUNBOOK.md](RUNBOOK.md) §A1); the airframe file is bind-mounted into PX4's ROMFS source airframes dir by `simulation/isaac-sim/docker/docker-compose.yaml` | — | the whole file is sim-only | env vars unset ⇒ the Iris regression model |
 
-**Validation so far** ([MILESTONES.md](MILESTONES.md) §3c): ledger #1–#4 passed 2026-10-19 on the
+**Validation so far** ([record/LEDGER.md](record/LEDGER.md)): ledger #1–#4 passed 2026-10-19 on the
 *old* asset / gains / speed limits (#3 steps: x overshoot 0.002 m, settled 2.75 s; z 0.001 m,
 0.75 s · #4 antipodal crossing min distance 1.02 m at 0.6 / 1.2 m/s). 2026-10-21 fresh launch on the
 current asset = ledger #13: asset complete, no PhysX warnings, 2.0 m/s commanded / ~1.7 flown,
@@ -122,7 +122,7 @@ gains / speed limits = ledger #17 ([record](record/sim_hover_step_run1_record.md
 0.153, x step overshoot 0.054 m, z 0.001 m, no ringing, disarm first try ×3 — passed the hover + step row
 of M1 with wall-clock timings (x 1.86 s / z 1.62 s; PX4 ran ≈1.32–1.34× wall, so ≈2.45 s / 2.15 s in vehicle
 time) and manual recovery of the driver; the clean re-run with vehicle-time gates is ledger #18 (2026-10-28, PASS end to end with no manual steps: x settle max 2.47 s / z 2.50 s vehicle time over 3 steps per axis, overshoot max 0.085 / 0.033 m, 0 re-entries, time scale 1.32); repeated as ledger #19 nine minutes later with the same result (x 2.47 s / z 2.42 s, overshoot 0.095 / 0.020 m, time scale 1.33) — the gains are repeatable in sim, still **sim-only**. ⏳ The CBF-crossing re-run (#4) is still pending — the ordered list lives only in
-[MILESTONES.md](MILESTONES.md) §3c "Next up".
+the next issue in Linear (snapshot: [MILESTONES.md](MILESTONES.md) "Where each project is").
 
 **Moved from RUNBOOK §A1 (2026-10-21) — what the two Starling variables select** (added 2026-10-19): CMU's sys-ID dynamics
 (0.557 kg, k_f 3.96e-6, motor lag off — `Starling2MaxConfig` in the launch log) and our
@@ -140,7 +140,7 @@ bind-mounted PX4 airframe `10090_pegasus_starling2max`. Values and sources: the 
 **Moved from RUNBOOK §A (2026-10-21) — validation state.** Ledger #1–#4 passed 2026-10-19 on the OLD asset, gains and speeds; the
 fresh launch of 2026-10-21 (ledger #13) passed on the current ones: asset complete, no PhysX
 warnings, 2.0 m/s commanded / ~1.7 flown, all three landed and disarm accepted first try.
-Re-runs are pending — the ordered list is **[MILESTONES.md](MILESTONES.md) §3c "Next up"**, the
+Re-runs are pending — the ordered list is **the next issue in Linear (snapshot: [MILESTONES.md](MILESTONES.md) "Where each project is")**, the
 only to-do list (this page keeps no copy). Acceptance tools live in `simulation/isaac-sim/tools/`
 (`docker cp` them into the robot container, run with `bash -ic`).
 
@@ -324,7 +324,7 @@ UDP 14550). ✅ Set 2026-08-11 (drone→Mocap PC ping verified 3–7 ms).
 | Value | Current |
 |---|---|
 | Working folder (laptop) | `~/AirStack-starling-max2/AirStack` — on the new `main` since 2026-10-07 18:30 (container recreated, workspace rebuilt clean; old-branch config edits backed up in `~/AirStack-starling-max2-local-edits-2026-10-07/`) |
-| **AirStack branch / snapshot** | CMU `yikuan/SVG_ground_control_dev` @ **`b21d28c`** since **2026-10-20** (patch `cf719f0..b21d28c` applied over the 10-07 snapshot; tests 181/181 at the bump, **185 passed** 2026-10-20 with our landing tests; robot container NOT rebuilt — only `bws` + panel `install.py`). **How to check:** `git log -1 -- AirStack` in this repo. **If it changes:** read [MIGRATION.md](MIGRATION.md), do its §6 re-do list, restart the MILESTONES ladder. History: note below this table |
+| **AirStack branch / snapshot** | CMU `yikuan/SVG_ground_control_dev` @ **`b21d28c`** since **2026-10-20** (patch `cf719f0..b21d28c` applied over the 10-07 snapshot; tests 181/181 at the bump, **185 passed** 2026-10-20 with our landing tests; robot container NOT rebuilt — only `bws` + panel `install.py`). **How to check:** `git log -1 -- AirStack` in this repo. **If it changes:** read [MIGRATION.md](MIGRATION.md), do its §6 re-do list, restart the sim ladder ([projects/HTX-R1.md](projects/HTX-R1.md)). History: note below this table |
 | Real-run configs | hover/first flight: **`swarm_real_ours.yaml`** · goals: **`goal_single_ours.yaml`** · gamepad: **`teleop_real_ours.yaml`** (added 2026-10-21, unflown) — all under `<workspace>/src/svg_ground_control/config/`. The shipped 3-drone files are M7 material |
 | Gamepad | ⏳ model unknown — identify with `joy_map`, record the `teleop_controller` profile name here |
 | uXRCE client keeper on the drone | ⏳ decide: `svg-microdds-watchdog` (installed by the new provisioning script) **or** our `voxl-dds-retry.service` — not both |

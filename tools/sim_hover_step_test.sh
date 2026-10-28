@@ -1,6 +1,6 @@
 #!/bin/bash
 # OURS (lives in tools/, not in CMU's AirStack/ tree). Sim acceptance test for a vehicle model
-# (MILESTONES §4 "Starling model: spawn + hover + steps"): takeoff, wait until the commander
+# (S5 / NEAR-786; thresholds in tools/README.md): takeoff, wait until the commander
 # accepts `start` (all drones holding), sample hover thrust, STEPS_PER_AXIS alternating ±1 m
 # steps in x then in z, land. Prints the hover-thrust samples and writes odometry traces to
 # /tmp/ascent.txt, /tmp/step_x_<k>.txt and /tmp/step_z_<k>.txt.

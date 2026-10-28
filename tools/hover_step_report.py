@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Write the record for a sim hover + 1 m step run (S5 / NEAR-786; lineage ledger #3 → #17 → #18 → …; the number of the
-NEW row is given with --ledger N, otherwise the draft row carries a `?` placeholder).
+NEW LEDGER row is given with --ledger N and its Linear issue with --issue NEAR-nnn, otherwise the draft row carries ? placeholders).
 
     tools/hover_step_report.py docs/record/<run>/ [--heavy DIR] [--record PATH] [--no-verdict-log]
 
@@ -14,7 +14,7 @@ isaac_evidence.txt, params_ulog.txt, test_stdout.log, analyze.txt, landing_evide
 ulog_sysid_map.txt, status_pre.json, caveats.txt, step_response.png (figure, optional); heavy dir: hover_step_*/metadata.yaml.
 Writes: <record>.md and one appended line in <run>/verdicts.log.
 
-Thresholds come from MILESTONES §4 ("Starling model: spawn + hover + steps"): hover thrust setpoint 0.12-0.20,
+Thresholds come from tools/README.md ("Thresholds"): hover thrust setpoint 0.12-0.20,
 steps settle < 3 s (+/-0.1 m, PX4 vehicle time), overshoot < 0.15 m, no ringing (0 band re-entries).
 Sim-only (CLAUDE.md iron rule 9): nothing measured here is ported to the drone."""
 from __future__ import annotations
@@ -39,7 +39,7 @@ GATED_PARAMS = ["SYS_AUTOSTART", "MC_PITCHRATE_P", "LNDMC_ROT_MAX", "MPC_XY_VEL_
 OVERSHOOT_MAX, SETTLE_MAX, THRUST_LO, THRUST_HI = 0.15, 3.0, 0.12, 0.20
 SCALE_LO, SCALE_HI = 0.5, 3.0
 MIN_THRUST_SAMPLES = 5
-THRESHOLDS_LINE = ("**Thresholds:** 0.15 m / 3.0 s / 0 re-entries / thrust 0.12–0.20 come from MILESTONES §4 (set 2026-10-19 in "
+THRESHOLDS_LINE = ("**Thresholds:** 0.15 m / 3.0 s / 0 re-entries / thrust 0.12–0.20 come from tools/README.md \"Thresholds\" (set 2026-10-19 in "
                    "docs/superpowers/plans/2026-10-19-starling2max-sim.md, bracketed by the Iris reading of ledger #2 — 0.14 m / 3.6 s — "
                    "not derived from a flight requirement). Gated values are PX4 vehicle time; wall-clock values in brackets.")
 FIXED_CAVEATS = [
@@ -426,57 +426,29 @@ def _fmt(v, spec=".3f", suffix=""):
     return "n/a" if v is None else f"{v:{spec}}{suffix}"
 
 
-def ledger_row(ctx, rows, verdict, today, ledger=None) -> str:
-    run, bag, steps, events = ctx["run"], ctx["bag"], ctx["steps"], ctx["events"]
-    ev = parse_kv(ctx["isaac_evidence"])
-    parts = [f"`Starling2MaxConfig` ×{ev.get('starling_cfg', '?')}, `SYS_AUTOSTART` 10090 ×{ev.get('autostart', '?')}, `Ready for takeoff` ×{ev.get('ready', '?')}",
-             "ulog `MC_PITCHRATE_P` 0.032 / `LNDMC_ROT_MAX` 300 / `MPC_XY_VEL_MAX` 20 / `MPC_THR_HOVER` 0.165" if ctx["params_txt"] else "ulog params n/a",
-             f"hover thrust setpoint **{_fmt(ctx.get('thrust_median'))}** (#17: 0.153, real 0.165)",
-             f"time scale **{_fmt(ctx.get('time_scale'), '.4f')}** PX4 s per wall s ({ctx.get('time_scale_source') or 'n/a'})",
-             f"odometry {bag.get('odom_rate_hz', 'n/a')} Hz"]
-    for ax in ("x", "z"):
-        s = steps.get(ax) if isinstance(steps, dict) else None
-        if not s or not s.get("n"):
-            parts.append(f"{ax} steps: n/a")
-            continue
-        evs = [events[n] for n in s.get("names", []) if n in events]
-        worst = max((e for e in evs if e.get("vehicle_time", {}).get("settle_0p1_s") is not None), key=lambda e: e["vehicle_time"]["settle_0p1_s"], default=None)
-        wall = worst["goal"]["settle_0p1_s"] if worst else None
-        m05 = statistics.median([e["vehicle_time"]["settle_0p05_s"] for e in evs if e.get("vehicle_time", {}).get("settle_0p05_s") is not None] or [None]) if evs else None
-        vt = [e["velocity_tracking"] for e in evs if e.get("velocity_tracking")]
-        lag = statistics.median([e["vehicle_time"]["lag_s"] for e in evs if e.get("vehicle_time", {}).get("lag_s") is not None] or [None]) if evs else None
-        parts.append(f"{ax} steps ({s['n']}): overshoot max {s['overshoot_max_m']:.3f} m, settle ±0.1 m vs goal max **{_fmt(s.get('settle_0p1_max_veh_s'), '.2f', ' s')}** vehicle "
-                     f"[{_fmt(wall, '.2f', ' s')} wall], median {_fmt(s.get('settle_0p1_median_veh_s'), '.2f', ' s')}, ±0.05 m median {_fmt(m05, '.2f', ' s')}, "
-                     f"steady-state error max {s.get('steady_state_error_max_m', 0):.3f} m, velocity lag {_fmt(lag, '.2f', ' s')} / gain {_fmt(statistics.median([v['gain'] for v in vt]) if vt else None, '.2f')} / "
-                     f"residual {_fmt(statistics.median([v['residual_rms_mps'] for v in vt]) if vt else None, '.3f', ' m/s')}; {s['reentries_0p1_max']} band re-entries max"
-                     + ("; axis mismatch" if s.get("any_axis_mismatch") else ""))
-    tc = events.get("takeoff")
-    if tc:
-        parts.append(f"takeoff climb {tc['tail']['overshoot_m']:+.3f} m / {_fmt(tc['vehicle_time'].get('settle_s'), '.2f', ' s')} vehicle")
-    landing_row = next((r for r in rows if r.check.startswith("landing: 'landed, disarmed'")), None)
-    armed_row = next((r for r in rows if r.check.startswith("post-flight armed")), None)
-    parts.append(f"{landing_row.measured if landing_row else 'n/a'} (ACK log); MAVROS {armed_row.measured if armed_row else 'n/a'} ({armed_row.verdict if armed_row else 'n/a'})")
-    wifi_row = next((r for r in rows if r.check.startswith("WiFi")), None)
-    parts.append(f"{wifi_row.measured if wifi_row else 'n/a'} WiFi alerts")
-    gens = len(ctx["history"]) + 1
-    parts.append(f"driver verdict history: {gens} generation{'s' if gens != 1 else ''}, latest `{verdict}`")
+def ledger_row(ctx, rows, verdict, today, ledger=None, issue=None) -> str:
+    """One markdown row in the docs/record/LEDGER.md table-1 format (6 cells)."""
+    run, steps = ctx["run"], ctx["steps"]
+    st = steps if isinstance(steps, dict) else {}
+    def ax(a, key):
+        return (st.get(a) or {}).get(key)
+    k = (st.get("x") or {}).get("n", "?")
     unv = [r.check for r in rows if r.gate and r.verdict == "UNVERIFIED"]
     fails = [r.check for r in rows if r.gate and r.verdict == "FAIL"]
-    tail = f"**{verdict}** on the hover + step row of M1 (sim path, n = {steps.get('x', {}).get('n', '?') if isinstance(steps, dict) else '?'} per axis, one launch)"
+    result = (f"Hover + 1 m steps, {k} per axis, PX4 vehicle time: {verdict} — "
+              f"x {_fmt(ax('x', 'overshoot_max_m'))} m / {_fmt(ax('x', 'settle_0p1_max_veh_s'), '.2f')} s, "
+              f"z {_fmt(ax('z', 'overshoot_max_m'))} m / {_fmt(ax('z', 'settle_0p1_max_veh_s'), '.2f')} s, "
+              f"thrust {_fmt(ctx.get('thrust_median'))}, scale {_fmt(ctx.get('time_scale'))}")
     if unv:
-        tail += "; UNVERIFIED: " + ", ".join(unv)
+        result += "; UNVERIFIED: " + ", ".join(unv)
     if fails:
-        tail += "; FAIL: " + ", ".join(fails)
+        result += "; FAIL: " + ", ".join(fails)
     num = "?" if ledger is None else str(ledger)
-    return (f"`| {num} | **M1 Starling hover + 1 m steps on the fixed tooling (lineage #3 → #17 → #18), {steps.get('x', {}).get('n', '?') if isinstance(steps, dict) else '?'} per axis (±1 m alternating), "
-            f"gated in PX4 vehicle time** — `tools/sim_hover_step_run.sh all {run}`, `cbf_sim.yaml scenario:=goal`, `record_bag:=true` | Isaac launch log; PX4 ulog header (pyulog); "
-            f"MAVROS `target_attitude` thrust samples; rosbag → `tools/hover_step_analysis.py` (commanded axis, goal-referenced, time scale from the ulog arm/disarm vs MAVROS state); "
-            f"`tools/hover_step_report.py` fail-closed; record `docs/record/{run}_record.md` (link it from MILESTONES as `record/{run}_record.md`), artefacts `docs/record/{run}/`, bag + 3 ulogs (sysid 2/3/4 = drone_1/2/3) "
-            f"in `~/flight_logs/sim/{run}/` | " + "; ".join(parts) + f". {tail}. Thresholds 0.15 m / 3 s / 0 re-entries are MILESTONES §4's (bracketed by the Iris #2 reading, not derived). "
-            f"Sim-only (iron rule 9) | {today} |`")
+    iss = "?" if issue is None else issue
+    return f"| {num} | {today} | SIM | {result} | [{run}_record.md]({run}_record.md) | {iss} |"
 
 
-def render_md(out: pathlib.Path, rows, ctx, verdict: str, history: list, ledger=None) -> str:
+def render_md(out: pathlib.Path, rows, ctx, verdict: str, history: list, ledger=None, issue=None) -> str:
     out = pathlib.Path(out)
     run = ctx["run"]
     meta = ctx.get("meta", {})
@@ -495,8 +467,8 @@ def render_md(out: pathlib.Path, rows, ctx, verdict: str, history: list, ledger=
     n_steps = {ax: (ctx["steps"].get(ax) or {}).get("n", 0) for ax in ("x", "z")} if isinstance(ctx["steps"], dict) else {}
     L = [f"RECORD · SIM — {run}. Sim-only (iron rule 9): none of these values is ported to the drone.", "",
          f"# {run} — Starling hover + 1 m steps (sim, {n_steps.get('x', 0)} per axis), gated in PX4 vehicle time ({when})", "",
-         f"**Verdict: {verdict}.** Hover + 1 m step run on the fixed tooling (lineage: ledger #3 → #17 → #18), for Linear NEAR-786 (milestone S5). Gates are the M1 criteria in "
-         f"[MILESTONES.md](../MILESTONES.md) §4 (\"Starling model: spawn + hover + steps\"); PASS = every gate PASS, INCOMPLETE = no FAIL but "
+         f"**Verdict: {verdict}.** Hover + 1 m step run on the fixed tooling (lineage: ledger #3 → #17 → #18), for Linear NEAR-786 (milestone S5). Gates are the S5 hover + step thresholds in "
+         f"[tools/README.md](../../tools/README.md#thresholds); PASS = every gate PASS, INCOMPLETE = no FAIL but "
          f"≥ 1 gate UNVERIFIED (evidence missing or unreadable), FAIL = any gate FAIL. Report generated {today} at repo `{ctx.get('report_head', '?')}`.", "",
          "## Setup", "",
          "| Item | Value |", "|---|---|",
@@ -540,18 +512,25 @@ def render_md(out: pathlib.Path, rows, ctx, verdict: str, history: list, ledger=
     L += [f"- {c}" for c in FIXED_CAVEATS]
     L += [f"- {c}" for c in ctx.get("caveats", [])]
     which = "next free number" if ledger is None else f"#{ledger}"
-    L += ["", f"## Ledger row draft (MILESTONES.md §3c, {which})", "", ledger_row(ctx, rows, verdict, today, ledger), ""]
+    L += ["", f"## Ledger row draft (docs/record/LEDGER.md table 1, {which}, {issue if issue else 'issue ?'})", "", ledger_row(ctx, rows, verdict, today, ledger, issue), ""]
     return "\n".join(L)
 
 
 # ----------------------------------------------------------------------------- CLI
+def issue_id(s: str) -> str:
+    if not re.fullmatch(r"NEAR-\d+", s):
+        raise argparse.ArgumentTypeError(f"{s!r} is not a Linear issue id of the form NEAR-nnn")
+    return s
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0], formatter_class=argparse.RawDescriptionHelpFormatter, epilog=__doc__)
     ap.add_argument("run_dir", help="docs/record/<run>/ with the driver's artefacts and bag_analysis.json")
     ap.add_argument("--heavy", default=None, help="bag + ulog folder (default ~/flight_logs/sim/<run>)")
     ap.add_argument("--record", default=None, help="markdown path (default <run_dir>/../<run>_record.md)")
     ap.add_argument("--no-verdict-log", action="store_true", help="do not append this verdict to <run_dir>/verdicts.log")
-    ap.add_argument("--ledger", type=int, default=None, help="number of the NEW MILESTONES §3c row this run will get (default: a ? placeholder)")
+    ap.add_argument("--ledger", type=int, default=None, help="number of the NEW docs/record/LEDGER.md table-1 row this run will get (default: a ? placeholder)")
+    ap.add_argument("--issue", type=issue_id, default=None, help="Linear issue id (NEAR-nnn) for the LEDGER row draft (default: ?)")
     a = ap.parse_args(argv)
     out = pathlib.Path(a.run_dir).resolve()
     if not out.is_dir():
@@ -564,7 +543,7 @@ def main(argv=None) -> int:
     history = list(ctx.get("history", []))
     if not a.no_verdict_log:
         history.append(append_verdict(out, verdict, rows, ctx.get("meta", {}).get("head_short", "?")))
-    rec.write_text(render_md(out, rows, ctx, verdict, history, a.ledger))
+    rec.write_text(render_md(out, rows, ctx, verdict, history, a.ledger, a.issue))
     print(f"{verdict}: {rec}")
     for r in rows:
         if r.gate and r.verdict != "PASS":

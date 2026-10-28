@@ -120,7 +120,7 @@ class VerdictLog(unittest.TestCase):
             md = rec.read_text()
             self.assertIn("verdict=FAIL fail=3", md)            # the earlier generation is visible in the record
             self.assertIn("UTC (container clock)", md); self.assertIn("+08", md)
-            self.assertIn("MILESTONES §4", md)
+            self.assertIn("tools/README.md", md); self.assertNotIn("MILESTONES", md)
 
     def test_exit_codes(self):
         with tempfile.TemporaryDirectory() as d:
@@ -132,18 +132,26 @@ class LedgerNumber(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             out, heavy = make_run(d)
             rec = pathlib.Path(d) / "rec.md"
-            self.assertEqual(R.main([str(out), "--heavy", str(heavy), "--record", str(rec), "--no-verdict-log", "--ledger", "19"]), 0)
+            self.assertEqual(R.main([str(out), "--heavy", str(heavy), "--record", str(rec), "--no-verdict-log", "--ledger", "19", "--issue", "NEAR-786"]), 0)
             md = rec.read_text()
-            self.assertIn("## Ledger row draft (MILESTONES.md §3c, #19)", md)
-            self.assertIn("`| 19 | **", md)
-            self.assertNotIn("| 18 |", md)                      # no number is hard-coded into the record
+            self.assertIn("## Ledger row draft (docs/record/LEDGER.md table 1, #19, NEAR-786)", md)
+            line = next(l for l in md.splitlines() if l.startswith("| 19 |"))
+            self.assertRegex(line, r"^\| 19 \| \d{4}-\d\d-\d\d \| SIM \| Hover \+ 1 m steps, 1 per axis, PX4 vehicle time: PASS — x 0\.\d{3} m / \d\.\d\d s, z 0\.\d{3} m / \d\.\d\d s, thrust 0\.\d{3}, scale 1\.\d{3} \| \[sim_hover_step_runX_record\.md\]\(sim_hover_step_runX_record\.md\) \| NEAR-786 \|$")
+            self.assertEqual(line.count("|"), 7)                 # one line, six cells
+            self.assertNotIn("| 18 |", md)
 
-    def test_no_ledger_option_leaves_a_placeholder(self):
+    def test_no_ledger_or_issue_leaves_placeholders(self):
         with tempfile.TemporaryDirectory() as d:
             out, heavy = make_run(d)
             rec = pathlib.Path(d) / "rec.md"
             R.main([str(out), "--heavy", str(heavy), "--record", str(rec), "--no-verdict-log"])
             md = rec.read_text()
-            self.assertIn("## Ledger row draft (MILESTONES.md §3c, next free number)", md)
-            self.assertIn("`| ? | **", md)
-            self.assertNotIn("| 18 |", md)
+            self.assertIn("## Ledger row draft (docs/record/LEDGER.md table 1, next free number, issue ?)", md)
+            self.assertTrue(any(l.startswith("| ? |") and l.endswith("| ? |") for l in md.splitlines()))
+
+    def test_issue_option_rejects_malformed_id(self):           # Review Focus 4
+        with tempfile.TemporaryDirectory() as d:
+            out, heavy = make_run(d)
+            for bad in ("786", "near-786", "NEAR-786x"):
+                with self.assertRaises(SystemExit):
+                    R.main([str(out), "--heavy", str(heavy), "--record", str(pathlib.Path(d) / "r.md"), "--no-verdict-log", "--issue", bad])

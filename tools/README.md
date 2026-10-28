@@ -8,9 +8,9 @@
 | File | What it does |
 |---|---|
 | `sim_terminals.sh` / `sim_tab.sh` | the four-tab sim session (Isaac Sim · Interfaces · Commander · Cockpit) — [RUNBOOK §A](../docs/RUNBOOK.md) |
-| `make_milestones_doc.py` | legacy `.docx` export of MILESTONES.md |
+| `make_milestones_doc.py` | legacy `.docx` export (hard-coded content from the first MILESTONES.md; not regenerated) |
 | `docs_check/` | the documentation checker — `tools/docs_check/check_docs.sh` (0 FAIL required before a docs commit) |
-| `sim_hover_step_run.sh` | **orchestrator** for the hover + 1 m step acceptance (MILESTONES §4 "Starling model: spawn + hover + steps"), no terminal needed. Phases, in `all` order: `precheck up watch isaac interfaces commander params fly collect down analyse report`; extra: `all`, `status`, `ifgates` (odometry gates only). Env: `STEPS_PER_AXIS` (default 3, alternating +1/−1 m), `LEDGER` (number of the new MILESTONES §3c row the record drafts; unset = `?` placeholder), `ISAAC_KIT_ARGS` (opt-in extra Isaac Kit args, default none) |
+| `sim_hover_step_run.sh` | **orchestrator** for the hover + 1 m step acceptance (thresholds: [Thresholds](#thresholds)), no terminal needed. Phases, in `all` order: `precheck up watch isaac interfaces commander params fly collect down analyse report`; extra: `all`, `status`, `ifgates` (odometry gates only). Env: `STEPS_PER_AXIS` (default 3, alternating +1/−1 m), `LEDGER` (number of the new docs/record/LEDGER.md row the record drafts; unset = `?`), `ISSUE` (its Linear id, `NEAR-nnn`; unset = `?`), `ISAAC_KIT_ARGS` (opt-in extra Isaac Kit args, default none) |
 | `sim_hover_step_test.sh` | the flight script (ours — moved out of CMU's tree; `wait_s` is a real sleep because `/clock` is not visible in the robot container). Takeoff → hover → `STEPS_PER_AXIS` steps in x, then z → land. Copied into the robot container by the orchestrator |
 | `analyze_step.py` | echo-trace analyser — ledger #3's method (`ros2 topic echo` traces). **Info only**, never a gate |
 | `hover_step_bag.py` | container-only rosbag → CSV dumper (`drone_1_{odom,cmd,state}.csv`); needs `rosbag2_py`, so it runs inside the robot container |
@@ -36,7 +36,7 @@
 
 ```bash
 cd ~/AirStack-starling-max2
-LEDGER=19 tools/sim_hover_step_run.sh all sim_hover_step_run3   # NEW run name every time; LEDGER = the ledger row this run will get
+LEDGER=19 ISSUE=NEAR-786 tools/sim_hover_step_run.sh all sim_hover_step_run3   # NEW run name every time; LEDGER = the ledger row this run will get
 tools/sim_hover_step_run.sh status sim_hover_step_run3  # what is up, last verdict, commit that ran
 ```
 
@@ -58,6 +58,20 @@ dir, dumped to CSV, and only then removed from the container.
 ## Time scale
 
 Sim real-time factor: see [ISAAC_REALTIME_NOTE.md](ISAAC_REALTIME_NOTE.md) — the sim ran ≈1.32–1.34× wall clock in #17 (1 Hz MAVROS state limits the resolution); the tools measure the scale per run from drone_1's PX4 ulog.
+
+## Thresholds
+
+The gates `hover_step_report.py` applies to a sim hover + 1 m step run (S5 / NEAR-786), set 2026-10-19 and unchanged since:
+
+| Gate | Value | Why this value |
+|---|---|---|
+| hover thrust setpoint (MAVROS `target_attitude`) | 0.12–0.20 | brackets the real drone's `MPC_THR_HOVER` 0.165; Iris reads ≈ 0.58 |
+| step overshoot | < 0.15 m | brackets the Iris regression reading of ledger #2 (0.14 m) |
+| step settle to ±0.1 m of the goal | < 3.0 s, PX4 vehicle time | brackets the Iris reading (3.6 s); not derived from a flight requirement |
+| ringing | 0 band re-entries | a clean first-order approach |
+| landing | `landed, disarmed` ×3 (ACK log) and MAVROS `armed: false` ×3 | iron rules 2 and 5: the ACK log is not an arming display |
+
+Sim-only: these characterise the sim loop (TwistStamped → MAVROS → PX4 SITL), never the drone.
 
 ## Tests
 

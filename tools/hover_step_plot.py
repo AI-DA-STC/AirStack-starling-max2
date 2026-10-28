@@ -35,6 +35,7 @@ _STEP_ANY = re.compile(r"^step_([xz])(?:_(\d+))?$")      # also the older run1 n
 RECORD_DIR = pathlib.Path(__file__).resolve().parents[1] / "docs" / "record"
 RUN_COLOURS = ["#0072B2", "#E69F00", "#009E73"]          # Okabe-Ito blue / orange / bluish green: colour-blind safe, fixed run order
 GATE_S = 3.0
+LABEL_GAP_PT = 10.0   # minimum vertical gap between direct labels on one axis
 
 
 def panel_order(events: list[dict]) -> list[tuple[str, str]]:
@@ -193,6 +194,24 @@ def relative_trace(odom, ev: dict, time_scale: float, window_s: float = WIN) -> 
     return [(r[0] - t0) * time_scale for r in seg], [(r[k] - p0) * sign for r in seg]
 
 
+def spread_labels(pos: list[float], gap: float) -> list[float]:
+    """Move 1-D label positions (any unit) apart to at least `gap`, keeping their order; returns positions in input order.
+    Sorted ascending, each is pushed up to clear the one below, then the block is re-centred on its original mean."""
+    order = sorted(range(len(pos)), key=lambda i: pos[i])
+    new = []
+    for i in order:
+        new.append(pos[i] if not new else max(pos[i], new[-1] + gap))
+    if new:
+        shift = (sum(pos[i] for i in order) - sum(new)) / len(new)
+        new = [v + shift for v in new]
+        for a in range(1, len(new)):                     # re-centring can only widen gaps to the original side; re-check
+            new[a] = max(new[a], new[a - 1] + gap)
+    out = [0.0] * len(pos)
+    for v, i in zip(new, order):
+        out[i] = v
+    return out
+
+
 def overlay(runs, scales: dict[str, float], labels: dict[str, str], out: pathlib.Path,
             estimated: frozenset | set = frozenset()) -> pathlib.Path:
     """One figure, x steps left and z steps right, one hue per run (in the given order). runs = [(name, run_dir)]."""
@@ -209,25 +228,33 @@ def overlay(runs, scales: dict[str, float], labels: dict[str, str], out: pathlib
     axes[0].set_title("x steps", fontsize=10, color=INK, loc="left")
     axes[1].set_title("z steps", fontsize=10, color=INK, loc="left")
     axes[0].set_ylabel("position along the commanded axis, relative to onset (m)", fontsize=9, color=MUTED)
-    handles = []
+    handles, ends = [], {}
     for i, (name, run_dir) in enumerate(runs):
         colour = RUN_COLOURS[i % len(RUN_COLOURS)]
         j = json.loads((pathlib.Path(run_dir) / "bag_analysis.json").read_text())
         odom = _load_xyz(pathlib.Path(run_dir) / "drone_1_odom.csv")
         evs = step_events(j["events"])
-        label = labels.get(name, name)
         last = {}
+        label = labels.get(name, name)
         for axis, ev in evs:
             t, y = relative_trace(odom, ev, scales[name])
             if t:
                 axes["xz".index(axis)].plot(t, y, color=colour, lw=1.3, alpha=0.8)
-                last[axis] = (t[-1], y[-1])
-        for axis, (tx, yx) in last.items():              # direct label at the run's last sample on each axis
-            axes["xz".index(axis)].annotate(label, (tx, yx), xytext=(4, 9 * (1 - i)), textcoords="offset points",
-                                            fontsize=8, color=colour, va="center", annotation_clip=False)
+                last[axis] = (t[-1], y[-1], label, colour)
+        for axis, item in last.items():                  # one direct label per run per axis (its last step's last sample)
+            ends.setdefault(axis, []).append(item)
         est = " (est.)" if name in estimated else ""
         text = f"{label} · {name} · n={len(evs)} · scale {scales[name]:.3f}{est}"
         handles.append(plt.Line2D([], [], color=colour, lw=2, label=text))
+    fig.canvas.draw()                                    # axes size is final: place the direct labels, then spread them apart
+    for axis, items in ends.items():                     # one label per run at its last sample, >= LABEL_GAP_PT apart
+        ax = axes["xz".index(axis)]
+        y0, y1 = ax.get_ylim()
+        h_pt = ax.get_window_extent().height * 72.0 / fig.dpi
+        ypt = [(y - y0) / (y1 - y0) * h_pt for _, y, _, _ in items]
+        for (tx, y, label, colour), yp, yn in zip(items, ypt, spread_labels(ypt, LABEL_GAP_PT)):
+            ax.annotate(label, (tx, y), xytext=(4, yn - yp), textcoords="offset points",
+                        fontsize=8, color=colour, va="center", annotation_clip=False)
     axes[0].legend(handles=handles, loc="lower right", fontsize=8, frameon=False, labelcolor=INK)
     fig.text(0.01, 0.004, "Sim only. tools/hover_step_plot.py --overlay … ; onset/settle definitions in tools/hover_step_analysis.py",
              fontsize=7.5, color=MUTED)
@@ -271,6 +298,11 @@ def _main_overlay(argv) -> int:
             if was_est:
                 est.add(p.name)
             runs.append((p.name, p))
+        known = {n for n, _ in runs}
+        for what, d in (("--time-scale", ts), ("--label", labels)):
+            bad = sorted(set(d) - known)
+            if bad:
+                raise ValueError(f"{what}: unknown run name(s) {', '.join(bad)} (runs given: {', '.join(sorted(known))})")
     except (ValueError, OSError) as e:
         print(e, file=sys.stderr)
         return 2

@@ -66,6 +66,23 @@ class Overlay(unittest.TestCase):
                 rc = P.main(["--overlay", str(REC / "sim_hover_step_run1"), str(REC / "sim_hover_step_run2"), "-o", str(out)])
             self.assertEqual(rc, 2); self.assertIn("sim_hover_step_run1", err.getvalue()); self.assertFalse(out.exists())
 
+    def test_spread_labels_enforces_min_gap_and_keeps_order(self):
+        out = P.spread_labels([100.0, 101.0, 100.5, 40.0], 10.0)
+        self.assertEqual(len(out), 4)
+        order = sorted(range(4), key=lambda i: [100.0, 101.0, 100.5, 40.0][i])
+        s = [out[i] for i in order]
+        self.assertTrue(all(b - a >= 10.0 - 1e-9 for a, b in zip(s, s[1:])), out)
+        self.assertEqual(P.spread_labels([5.0, 50.0], 10.0), [5.0, 50.0])          # already apart: untouched
+
+    def test_overlay_unknown_keys_exit_2_naming_the_key(self):
+        for flag, key in (("--time-scale", "sim_hover_step_run9=1.2"), ("--label", "nope=#1")):
+            with tempfile.TemporaryDirectory() as d:
+                out = pathlib.Path(d) / "overlay.png"
+                err = io.StringIO()
+                with contextlib.redirect_stderr(err):
+                    rc = P.main(["--overlay", str(REC / "sim_hover_step_run2"), str(REC / "sim_hover_step_run3"), flag, key, "-o", str(out)])
+                self.assertEqual(rc, 2); self.assertIn(key.split("=")[0], err.getvalue()); self.assertFalse(out.exists())
+
     def test_single_run_mode_unchanged(self):
         with tempfile.TemporaryDirectory() as d:
             out = pathlib.Path(d)

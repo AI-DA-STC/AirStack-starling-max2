@@ -18,6 +18,7 @@
 | `hover_step_timescale.py` | prints PX4 arm/disarm times from a ulog (`pyulog`, runs in the isaac-sim container) — the vehicle-time scale for the report |
 | `hover_step_report.py` | writes `docs/record/<run>_record.md`; exit **0 PASS / 2 INCOMPLETE / 1 FAIL**; appends every verdict to `<run>/verdicts.log`; info rows never PASS a gate |
 | `hover_step_plot.py` | `step_response.png` (one panel per step, goal line, vehicle-time scale in the axis label) |
+| `make_figures.sh` | regenerates the committed figures in `docs/record/figures/` (today: the S5 overlay of #17/#18/#19); run by hand when a figure should change |
 | `tests/` | host unit tests for the five hover-step tools (fixtures = ledger #17 artefacts) |
 
 ## Prerequisites
@@ -48,6 +49,7 @@ can be re-run by name (`… down sim_hover_step_run3`); re-runs are marked in `r
 |---|---|
 | `docs/record/<run>/` (tracked, small text) | `run.log`, `commands.sh` (every command used), `run_meta.txt` (commit that ran), `isaac_evidence.txt`, `params_ulog.txt`, `px4_arm_times.txt`, `drone_1_{odom,cmd,state}.csv`, `bag_analysis.json`, `step_response.png`, `verdicts.log`, `caveats.txt`, container logs |
 | `~/flight_logs/sim/<run>/` (never the repo) | the rosbag `hover_step_<stamp>/` and the three ulogs `drone_<n>_sysid<s>_<basename>.ulg` (MAV_SYS_ID 2/3/4 = drone_1/2/3) |
+| `docs/record/figures/` (tracked) | figures the project pages embed; fixed filenames, made only by `tools/make_figures.sh` |
 | `docs/record/<run>_record.md` | the record written by `hover_step_report.py` |
 
 Bags are written root-owned to `AirStack/robot/ros_ws/bags/` inside the robot container, copied to the heavy

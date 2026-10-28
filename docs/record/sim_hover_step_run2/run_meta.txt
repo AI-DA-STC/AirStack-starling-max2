@@ -1,0 +1,7 @@
+head=24efe0211b4db6e0da7e89ef4d50ce33234c973a
+head_short=24efe02
+dirty_tools=0
+started=2026-10-28T23:21:00+08:00
+tz=+08
+run=sim_hover_step_run2
+steps_per_axis=3

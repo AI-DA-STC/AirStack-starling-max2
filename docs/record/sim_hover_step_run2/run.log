@@ -1,0 +1,127 @@
+[23:20:54 +08] == phase precheck ==
+[23:20:54 +08] precheck: no real-drone bridge on the laptop, port 8765 free, drone battery out (sim shares domain 1)
+NVIDIA GeForce RTX 5070 Ti Laptop GPU, 1217 MiB
+[23:20:54 +08] == phase up ==
+[0;32m[INFO][0m Starting services...
+ Container isaac-sim Running 
+ Container airstack-robot-desktop-1 Running 
+ Container airstack-gcs-1 Running 
+[0;32m[INFO][0m Services brought up successfully
+head=24efe0211b4db6e0da7e89ef4d50ce33234c973a
+head_short=24efe02
+dirty_tools=0
+started=2026-10-28T23:21:00+08:00
+tz=+08
+run=sim_hover_step_run2
+steps_per_axis=3
+[23:21:00 +08] up: containers running, domain 1 clean
+[23:21:00 +08] == phase watch ==
+[23:21:03 +08] watch: running (pid 249563)
+[23:21:03 +08] == phase isaac ==
+[23:21:19 +08] Ready for takeoff: 3 (after 15s)
+model_line=1 starling_cfg=6 autostart=3 unknown_model=0 cooking=0 ready=3
+[23:21:19 +08] == phase interfaces ==
+[23:21:24 +08] drone_1 MAVROS connected (after ~5s)
+[23:21:26 +08] drone_2 MAVROS connected (after ~2s)
+[23:21:28 +08] drone_3 MAVROS connected (after ~2s)
+[23:21:29 +08] drone_1 odometry: ok (after 1 s)
+[23:21:30 +08] drone_2 odometry: ok (after 1 s)
+[23:21:32 +08] drone_3 odometry: ok (after 2 s)
+average rate: 44.039
+/drone_1/interface/mavros/setpoint_raw/target_attitude
+/drone_2/interface/mavros/setpoint_raw/target_attitude
+/drone_3/interface/mavros/setpoint_raw/target_attitude
+clock_rc=1
+[23:21:49 +08] interfaces: 3 drones with odometry
+[23:21:49 +08] == phase commander ==
+[23:21:51 +08] SwarmCommander up: 1 (after 2s)
+scenario goal states ['IDLE', 'IDLE', 'IDLE'] fresh [True, True, True] tuning {'teleop_max_speed_mps': 1.2, 'goal_accel_mps2': 6.0, 'goal_settle_s': 0.3, 'scenario_speed_mps': 2.0}
+{"stamp": 1793200917.0931516, "node": "/bag_recorder", "recording": true, "path": "/root/AirStack/robot/ros_ws/bags/hover_step_20261028_152150", "started_at": 1793200910.6122873, "duration_s": 6.4808642864227295, "size_bytes": 5046272, "topic_count": 295, "bag_dir": "/root/AirStack/robot/ros_ws/bags", "bag_prefix": "hover_step", "storage": "mcap", "include_hidden": false, "last_bag": null, "last_result": null, "error": null}
+[23:21:57 +08] == phase params ==
+
+SYS_AUTOSTART: Integer value is: 10090
+MC_PITCHRATE_P: Double value is: 0.03200000151991844
+MC_ROLLRATE_P: Double value is: 0.03200000151991844
+LNDMC_ROT_MAX: Double value is: 300.0
+MPC_XY_VEL_MAX: Double value is: 20.0
+MPC_THR_HOVER: Double value is: 0.16500000655651093
+IMU_GYRO_CUTOFF: Double value is: 80.0
+IMU_DGYRO_CUTOFF: Double value is: 40.0
+MPC_Z_VEL_MAX_DN: Double value is: 4.0
+MPC_ACC_HOR: Double value is: 6.0
+[23:22:20 +08] params: 10-20 airframe confirmed via MAVROS
+[23:22:20 +08] == phase fly ==
+[23:22:20 +08] fly: takeoff -> start -> hover thrust -> 3 alternating +/-1 m steps in x, then in z -> land (about 3-5 min)
+drone_1 armed: false
+drone_2 armed: false
+drone_3 armed: false
+[swarm_commander-2] [0m[INFO] [1793201056.547658481] [swarm_commander]: drone_2: touchdown at z=0.12 m, settling 2.0 s before disarm[0m
+[swarm_commander-2] [0m[INFO] [1793201056.548187470] [swarm_commander]: drone_3: touchdown at z=0.11 m, settling 2.0 s before disarm[0m
+[swarm_commander-2] [0m[INFO] [1793201057.297852822] [swarm_commander]: drone_1: touchdown at z=0.11 m, settling 2.0 s before disarm[0m
+[swarm_commander-2] [0m[INFO] [1793201058.598007193] [swarm_commander]: drone_2: landed, disarmed (attempt 1)[0m
+[swarm_commander-2] [0m[INFO] [1793201058.598387640] [swarm_commander]: drone_3: landed, disarmed (attempt 1)[0m
+[swarm_commander-2] [0m[INFO] [1793201059.347639592] [swarm_commander]: drone_1: landed, disarmed (attempt 1)[0m
+[23:25:04 +08] == phase collect ==
+hz=40 /tmp/ascent.txt axis=z: 985 samples (24.6 s) | moved +1.202 m of +1.2 commanded (trace starts after the command, so this is a lower bound) | peak +1.212 | overshoot past settled +0.009 m | settled (±0.1 m) after 5.90 s
+hz=44.039 /tmp/ascent.txt axis=z: 985 samples (22.4 s) | moved +1.202 m of +1.2 commanded (trace starts after the command, so this is a lower bound) | peak +1.212 | overshoot past settled +0.009 m | settled (±0.1 m) after 5.36 s
+ascent samples: 985
+hz=40 /tmp/step_x_1.txt axis=x: 285 samples (7.1 s) | moved +1.006 m of +1.0 commanded (trace starts after the command, so this is a lower bound) | peak +3.063 | overshoot past settled +0.055 m | settled (±0.1 m) after 1.82 s
+hz=44.039 /tmp/step_x_1.txt axis=x: 285 samples (6.5 s) | moved +1.006 m of +1.0 commanded (trace starts after the command, so this is a lower bound) | peak +3.063 | overshoot past settled +0.055 m | settled (±0.1 m) after 1.66 s
+step_x_1 samples: 285
+hz=40 /tmp/step_z_1.txt axis=z: 244 samples (6.1 s) | moved +1.023 m of +1.0 commanded (trace starts after the command, so this is a lower bound) | peak +2.235 | overshoot past settled +0.000 m | settled (±0.1 m) after 2.33 s
+hz=44.039 /tmp/step_z_1.txt axis=z: 244 samples (5.5 s) | moved +1.023 m of +1.0 commanded (trace starts after the command, so this is a lower bound) | peak +2.235 | overshoot past settled +0.000 m | settled (±0.1 m) after 2.11 s
+step_z_1 samples: 244
+hz=40 /tmp/step_x_2.txt axis=x: 287 samples (7.2 s) | moved -1.018 m of -1.0 commanded (trace starts after the command, so this is a lower bound) | peak +1.957 | overshoot past settled +0.024 m | settled (±0.1 m) after 3.70 s
+hz=44.039 /tmp/step_x_2.txt axis=x: 287 samples (6.5 s) | moved -1.018 m of -1.0 commanded (trace starts after the command, so this is a lower bound) | peak +1.957 | overshoot past settled +0.024 m | settled (±0.1 m) after 3.36 s
+step_x_2 samples: 287
+hz=40 /tmp/step_z_2.txt axis=z: 286 samples (7.2 s) | moved -0.991 m of -1.0 commanded (trace starts after the command, so this is a lower bound) | peak +1.224 | overshoot past settled +0.001 m | settled (±0.1 m) after 3.35 s
+hz=44.039 /tmp/step_z_2.txt axis=z: 286 samples (6.5 s) | moved -0.991 m of -1.0 commanded (trace starts after the command, so this is a lower bound) | peak +1.224 | overshoot past settled +0.001 m | settled (±0.1 m) after 3.04 s
+step_z_2 samples: 286
+hz=40 /tmp/step_x_3.txt axis=x: 288 samples (7.2 s) | moved +1.014 m of +1.0 commanded (trace starts after the command, so this is a lower bound) | peak +3.085 | overshoot past settled +0.070 m | settled (±0.1 m) after 1.85 s
+hz=44.039 /tmp/step_x_3.txt axis=x: 288 samples (6.5 s) | moved +1.014 m of +1.0 commanded (trace starts after the command, so this is a lower bound) | peak +3.085 | overshoot past settled +0.070 m | settled (±0.1 m) after 1.68 s
+step_x_3 samples: 288
+hz=40 /tmp/step_z_3.txt axis=z: 284 samples (7.1 s) | moved +0.993 m of +1.0 commanded (trace starts after the command, so this is a lower bound) | peak +2.236 | overshoot past settled +0.001 m | settled (±0.1 m) after 3.42 s
+hz=44.039 /tmp/step_z_3.txt axis=z: 284 samples (6.4 s) | moved +0.993 m of +1.0 commanded (trace starts after the command, so this is a lower bound) | peak +2.236 | overshoot past settled +0.001 m | settled (±0.1 m) after 3.11 s
+step_z_3 samples: 284
+2 /tmp/tmpyib8219u/log/2026-10-28/15_21_15.ulg 67824770
+3 /tmp/tmp7nz4n03_/log/2026-10-28/15_21_15.ulg 67565505
+4 /tmp/tmpw8no6jn0/log/2026-10-28/15_21_15.ulg 67519837
+[23:25:07 +08] ulogs copied for sysids 2 3 4 -> /home/jeremychia/flight_logs/sim/sim_hover_step_run2
+SYS_AUTOSTART 10090
+MAV_SYS_ID 2
+MC_PITCHRATE_P 0.03200000151991844
+MC_ROLLRATE_P 0.03200000151991844
+LNDMC_ROT_MAX 300.0
+MPC_XY_VEL_MAX 20.0
+MPC_THR_HOVER 0.16500000655651093
+IMU_GYRO_CUTOFF 80.0
+IMU_DGYRO_CUTOFF 40.0
+MPC_Z_VEL_MAX_DN 4.0
+MPC_ACC_HOR 6.0
+# PX4 arm/disarm times of drone_1, MAV_SYS_ID 2, ulog /tmp/tmpyib8219u/log/2026-10-28/15_21_15.ulg (vehicle time, s since PX4 boot)
+arm_s=99.520047 disarm_s=250.134984 interval_s=150.614937 source=15_21_15.ulg sysid=2
+total 198160
+-rw-r--r-- 1 jeremychia jeremychia 67824770 Oct 28 23:24 drone_1_sysid2_15_21_15.ulg
+-rw-r--r-- 1 jeremychia jeremychia 67565505 Oct 28 23:24 drone_2_sysid3_15_21_15.ulg
+-rw-r--r-- 1 jeremychia jeremychia 67519837 Oct 28 23:24 drone_3_sysid4_15_21_15.ulg
+[23:25:08 +08] == phase down ==
+[23:25:11 +08] bag copied to /home/jeremychia/flight_logs/sim/sim_hover_step_run2/hover_step_20261028_152150
+{"bag": "/root/AirStack/robot/ros_ws/bags/hover_step_20261028_152150", "drone": "drone_1", "odom_msgs": 7783, "cmd_msgs": 2301, "state_msgs": 269, "t0_unix": 1793200913.6415634, "csv": ["/tmp/drone_1_odom.csv", "/tmp/drone_1_cmd.csv", "/tmp/drone_1_state.csv"]}
+[23:25:38 +08] WARN: interface nodes still alive 25 s after SIGINT — TERM
+[23:25:38 +08] ulogs already copied (collect)
+[23:25:41 +08] orphaned PX4 SITL instances killed (Isaac's exit leaves them)
+model_line=1 starling_cfg=6 autostart=3 unknown_model=0 cooking=0 ready=3
+[23:26:11 +08] no WIFI-ALERT during the run
+[23:26:11 +08] down: stack stopped, containers left up
+[23:26:11 +08] == phase analyse ==
+/home/jeremychia/AirStack-starling-max2/docs/record/sim_hover_step_run2/bag_analysis.json: 10 events, time_scale 1.3237 (px4_arm_times.txt (sysid 2))
+  step x: n=3 settle0p1 max 2.467 veh-s, overshoot max 0.085 m, reentries max 0, mismatch False
+  step z: n=3 settle0p1 max 2.498 veh-s, overshoot max 0.033 m, reentries max 0, mismatch False
+/home/jeremychia/AirStack-starling-max2/docs/record/sim_hover_step_run2/step_response.png
+time_scale 1.3237 (px4_arm_times.txt (sysid 2))  events 10
+  x {"any_axis_mismatch": false, "any_saturated": false, "n": 3, "names": ["step_x_1", "step_x_2", "step_x_3"], "overshoot_max_m": 0.085, "reentries_0p1_max": 0, "settle_0p1_max_veh_s": 2.467, "settle_0p1_median_veh_s": 2.404, "steady_state_error_max_m": 0.012}
+  z {"any_axis_mismatch": false, "any_saturated": false, "n": 3, "names": ["step_z_1", "step_z_2", "step_z_3"], "overshoot_max_m": 0.033, "reentries_0p1_max": 0, "settle_0p1_max_veh_s": 2.498, "settle_0p1_median_veh_s": 2.031, "steady_state_error_max_m": 0.018}
+[23:26:12 +08] == phase report ==
+PASS: /home/jeremychia/AirStack-starling-max2/docs/record/sim_hover_step_run2_record.md
+[23:26:12 +08] report: PASS
+[23:26:12 +08] all: done (report rc=0)

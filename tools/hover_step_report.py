@@ -469,7 +469,7 @@ def ledger_row(ctx, rows, verdict, today) -> str:
     return (f"`| 18 | **M1 re-run of #17 with the fixed tooling: Starling hover + 1 m steps, {steps.get('x', {}).get('n', '?') if isinstance(steps, dict) else '?'} per axis (±1 m alternating), "
             f"gated in PX4 vehicle time** — `tools/sim_hover_step_run.sh all {run}`, `cbf_sim.yaml scenario:=goal`, `record_bag:=true` | Isaac launch log; PX4 ulog header (pyulog); "
             f"MAVROS `target_attitude` thrust samples; rosbag → `tools/hover_step_analysis.py` (commanded axis, goal-referenced, time scale from the ulog arm/disarm vs MAVROS state); "
-            f"`tools/hover_step_report.py` fail-closed; record [docs/record/{run}_record.md](record/{run}_record.md), artefacts `docs/record/{run}/`, bag + 3 ulogs (sysid 2/3/4 = drone_1/2/3) "
+            f"`tools/hover_step_report.py` fail-closed; record `docs/record/{run}_record.md` (link it from MILESTONES as `record/{run}_record.md`), artefacts `docs/record/{run}/`, bag + 3 ulogs (sysid 2/3/4 = drone_1/2/3) "
             f"in `~/flight_logs/sim/{run}/` | " + "; ".join(parts) + f". {tail}. Thresholds 0.15 m / 3 s / 0 re-entries are MILESTONES §4's (bracketed by the Iris #2 reading, not derived). "
             f"Sim-only (iron rule 9) | {today} |`")
 

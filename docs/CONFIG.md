@@ -121,8 +121,7 @@ landing DISARM accepted first try ×3. 2026-10-28 hover + 1 m steps on the curre
 gains / speed limits = ledger #17 ([record](record/sim_hover_step_run1_record.md)): hover thrust setpoint
 0.153, x step overshoot 0.054 m, z 0.001 m, no ringing, disarm first try ×3 — passed the hover + step row
 of M1 with wall-clock timings (x 1.86 s / z 1.62 s; PX4 ran ≈1.32–1.34× wall, so ≈2.45 s / 2.15 s in vehicle
-time) and manual recovery of the driver; the clean re-run with vehicle-time gates is ledger #18 ⏳ (Next up
-row 1). ⏳ The CBF-crossing re-run (#4) is still pending — the ordered list lives only in
+time) and manual recovery of the driver; the clean re-run with vehicle-time gates is ledger #18 (2026-10-28, PASS end to end with no manual steps: x settle max 2.47 s / z 2.50 s vehicle time over 3 steps per axis, overshoot max 0.085 / 0.033 m, 0 re-entries, time scale 1.32). ⏳ The CBF-crossing re-run (#4) is still pending — the ordered list lives only in
 [MILESTONES.md](MILESTONES.md) §3c "Next up".
 
 **Moved from RUNBOOK §A1 (2026-10-21) — what the two Starling variables select** (added 2026-10-19): CMU's sys-ID dynamics

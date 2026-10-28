@@ -1,0 +1,489 @@
+{
+ "drone": "drone_1",
+ "odom_msgs": 7783,
+ "cmd_msgs": 2301,
+ "duration_s": 195.34,
+ "odom_rate_hz": 39.84,
+ "armed_at_s": [
+  32.42
+ ],
+ "disarmed_at_s": [
+  146.205
+ ],
+ "armed_at_end": false,
+ "time_scale": 1.3237,
+ "time_scale_source": "px4_arm_times.txt (sysid 2)",
+ "px4_arm_interval_s": 150.615,
+ "bag_arm_interval_s": 113.785,
+ "events": [
+  {
+   "name": "takeoff_lateral_x",
+   "axis": "x",
+   "onset_s_from_bag_start": 33.158,
+   "moved_most_axis": "x",
+   "axis_mismatch": false,
+   "onset_s_after_arming": 0.738,
+   "commanded_peak_speed_mps": 0.432,
+   "commanded_delta_m": null,
+   "commander_ramp_s": 5.298,
+   "start_m": 0.002,
+   "final_m": 2.039,
+   "peak_m": 2.064,
+   "moved_m": 2.037,
+   "samples": 324,
+   "window_s": 7.985,
+   "tail": {
+    "overshoot_m": 0.026,
+    "settle_s": 5.063,
+    "band_reentries": 0,
+    "saturated": false
+   },
+   "goal": null,
+   "velocity_tracking": {
+    "lag_s": 0.525,
+    "gain": 0.88,
+    "residual_rms_mps": 0.072
+   },
+   "vehicle_time": {
+    "settle_s": 6.702,
+    "commander_ramp_s": 7.013,
+    "settle_0p1_s": null,
+    "settle_0p05_s": null,
+    "settle_0p02_s": null,
+    "lag_s": 0.695
+   }
+  },
+  {
+   "name": "takeoff_lateral_y",
+   "axis": "y",
+   "onset_s_from_bag_start": 33.158,
+   "moved_most_axis": "x",
+   "axis_mismatch": true,
+   "onset_s_after_arming": 0.738,
+   "commanded_peak_speed_mps": 0.219,
+   "commanded_delta_m": null,
+   "commander_ramp_s": 5.298,
+   "start_m": -0.009,
+   "final_m": -1.02,
+   "peak_m": -1.028,
+   "moved_m": -1.01,
+   "samples": 324,
+   "window_s": 7.985,
+   "tail": {
+    "overshoot_m": 0.008,
+    "settle_s": 4.817,
+    "band_reentries": 0,
+    "saturated": false
+   },
+   "goal": null,
+   "velocity_tracking": {
+    "lag_s": 0.575,
+    "gain": 0.895,
+    "residual_rms_mps": 0.039
+   },
+   "vehicle_time": {
+    "settle_s": 6.376,
+    "commander_ramp_s": 7.013,
+    "settle_0p1_s": null,
+    "settle_0p05_s": null,
+    "settle_0p02_s": null,
+    "lag_s": 0.761
+   }
+  },
+  {
+   "name": "takeoff",
+   "axis": "z",
+   "onset_s_from_bag_start": 33.158,
+   "moved_most_axis": "x",
+   "axis_mismatch": true,
+   "onset_s_after_arming": 0.738,
+   "commanded_peak_speed_mps": 0.241,
+   "commanded_delta_m": null,
+   "commander_ramp_s": 5.049,
+   "start_m": -0.028,
+   "final_m": 1.203,
+   "peak_m": 1.21,
+   "moved_m": 1.231,
+   "samples": 324,
+   "window_s": 7.985,
+   "tail": {
+    "overshoot_m": 0.007,
+    "settle_s": 4.323,
+    "band_reentries": 0,
+    "saturated": false
+   },
+   "goal": null,
+   "velocity_tracking": {
+    "lag_s": 0.375,
+    "gain": 1.403,
+    "residual_rms_mps": 0.026
+   },
+   "vehicle_time": {
+    "settle_s": 5.722,
+    "commander_ramp_s": 6.683,
+    "settle_0p1_s": null,
+    "settle_0p05_s": null,
+    "settle_0p02_s": null,
+    "lag_s": 0.496
+   }
+  },
+  {
+   "name": "step_x_1",
+   "axis": "x",
+   "onset_s_from_bag_start": 77.156,
+   "moved_most_axis": "x",
+   "axis_mismatch": false,
+   "onset_s_after_arming": 44.736,
+   "commanded_peak_speed_mps": 0.928,
+   "commanded_delta_m": 1.0,
+   "commander_ramp_s": 2.2,
+   "start_m": 2.001,
+   "final_m": 3.006,
+   "peak_m": 3.063,
+   "moved_m": 1.005,
+   "samples": 319,
+   "window_s": 7.981,
+   "tail": {
+    "overshoot_m": 0.056,
+    "settle_s": 1.886,
+    "band_reentries": 0,
+    "saturated": false
+   },
+   "goal": {
+    "goal_m": 3.001,
+    "overshoot_m": 0.062,
+    "steady_state_error_m": 0.005,
+    "settle_0p1_s": 1.864,
+    "reentries_0p1": 0,
+    "saturated_0p1": false,
+    "settle_0p05_s": 4.946,
+    "reentries_0p05": 1,
+    "settle_0p02_s": 6.051,
+    "reentries_0p02": 1
+   },
+   "velocity_tracking": {
+    "lag_s": 0.35,
+    "gain": 0.598,
+    "residual_rms_mps": 0.126
+   },
+   "vehicle_time": {
+    "settle_s": 2.496,
+    "commander_ramp_s": 2.912,
+    "settle_0p1_s": 2.467,
+    "settle_0p05_s": 6.547,
+    "settle_0p02_s": 8.01,
+    "lag_s": 0.463
+   }
+  },
+  {
+   "name": "step_x_2",
+   "axis": "x",
+   "onset_s_from_bag_start": 90.656,
+   "moved_most_axis": "x",
+   "axis_mismatch": false,
+   "onset_s_after_arming": 58.236,
+   "commanded_peak_speed_mps": 0.908,
+   "commanded_delta_m": -1.0,
+   "commander_ramp_s": 2.1,
+   "start_m": 2.99,
+   "final_m": 2.003,
+   "peak_m": 1.957,
+   "moved_m": -0.988,
+   "samples": 297,
+   "window_s": 7.486,
+   "tail": {
+    "overshoot_m": 0.046,
+    "settle_s": 1.752,
+    "band_reentries": 0,
+    "saturated": false
+   },
+   "goal": {
+    "goal_m": 1.99,
+    "overshoot_m": 0.033,
+    "steady_state_error_m": -0.012,
+    "settle_0p1_s": 1.8,
+    "reentries_0p1": 0,
+    "saturated_0p1": false,
+    "settle_0p05_s": 2.009,
+    "reentries_0p05": 0,
+    "settle_0p02_s": 6.824,
+    "reentries_0p02": 2
+   },
+   "velocity_tracking": {
+    "lag_s": 0.325,
+    "gain": 0.617,
+    "residual_rms_mps": 0.115
+   },
+   "vehicle_time": {
+    "settle_s": 2.319,
+    "commander_ramp_s": 2.78,
+    "settle_0p1_s": 2.383,
+    "settle_0p05_s": 2.659,
+    "settle_0p02_s": 9.033,
+    "lag_s": 0.43
+   }
+  },
+  {
+   "name": "step_x_3",
+   "axis": "x",
+   "onset_s_from_bag_start": 98.156,
+   "moved_most_axis": "x",
+   "axis_mismatch": false,
+   "onset_s_after_arming": 65.736,
+   "commanded_peak_speed_mps": 0.94,
+   "commanded_delta_m": 1.0,
+   "commander_ramp_s": 2.15,
+   "start_m": 2.001,
+   "final_m": 3.012,
+   "peak_m": 3.085,
+   "moved_m": 1.011,
+   "samples": 322,
+   "window_s": 7.997,
+   "tail": {
+    "overshoot_m": 0.073,
+    "settle_s": 1.86,
+    "band_reentries": 0,
+    "saturated": false
+   },
+   "goal": {
+    "goal_m": 3.001,
+    "overshoot_m": 0.085,
+    "steady_state_error_m": 0.011,
+    "settle_0p1_s": 1.816,
+    "reentries_0p1": 0,
+    "saturated_0p1": false,
+    "settle_0p05_s": 4.98,
+    "reentries_0p05": 1,
+    "settle_0p02_s": 6.57,
+    "reentries_0p02": 1
+   },
+   "velocity_tracking": {
+    "lag_s": 0.35,
+    "gain": 0.56,
+    "residual_rms_mps": 0.127
+   },
+   "vehicle_time": {
+    "settle_s": 2.462,
+    "commander_ramp_s": 2.846,
+    "settle_0p1_s": 2.404,
+    "settle_0p05_s": 6.592,
+    "settle_0p02_s": 8.697,
+    "lag_s": 0.463
+   }
+  },
+  {
+   "name": "step_z_1",
+   "axis": "z",
+   "onset_s_from_bag_start": 111.657,
+   "moved_most_axis": "z",
+   "axis_mismatch": false,
+   "onset_s_after_arming": 79.237,
+   "commanded_peak_speed_mps": 0.948,
+   "commanded_delta_m": 1.0,
+   "commander_ramp_s": 2.599,
+   "start_m": 1.203,
+   "final_m": 2.213,
+   "peak_m": 2.236,
+   "moved_m": 1.009,
+   "samples": 318,
+   "window_s": 7.966,
+   "tail": {
+    "overshoot_m": 0.023,
+    "settle_s": 1.418,
+    "band_reentries": 0,
+    "saturated": false
+   },
+   "goal": {
+    "goal_m": 2.203,
+    "overshoot_m": 0.033,
+    "steady_state_error_m": 0.009,
+    "settle_0p1_s": 1.373,
+    "reentries_0p1": 0,
+    "saturated_0p1": false,
+    "settle_0p05_s": 1.656,
+    "reentries_0p05": 0,
+    "settle_0p02_s": 7.103,
+    "reentries_0p02": 1
+   },
+   "velocity_tracking": {
+    "lag_s": 0.175,
+    "gain": 1.013,
+    "residual_rms_mps": 0.032
+   },
+   "vehicle_time": {
+    "settle_s": 1.877,
+    "commander_ramp_s": 3.44,
+    "settle_0p1_s": 1.817,
+    "settle_0p05_s": 2.192,
+    "settle_0p02_s": 9.402,
+    "lag_s": 0.232
+   }
+  },
+  {
+   "name": "step_z_2",
+   "axis": "z",
+   "onset_s_from_bag_start": 120.656,
+   "moved_most_axis": "z",
+   "axis_mismatch": false,
+   "onset_s_after_arming": 88.236,
+   "commanded_peak_speed_mps": 0.921,
+   "commanded_delta_m": -1.0,
+   "commander_ramp_s": 3.2,
+   "start_m": 2.221,
+   "final_m": 1.239,
+   "peak_m": 1.224,
+   "moved_m": -0.982,
+   "samples": 319,
+   "window_s": 7.978,
+   "tail": {
+    "overshoot_m": 0.015,
+    "settle_s": 1.76,
+    "band_reentries": 0,
+    "saturated": false
+   },
+   "goal": {
+    "goal_m": 1.221,
+    "overshoot_m": 0.0,
+    "steady_state_error_m": -0.018,
+    "settle_0p1_s": 1.887,
+    "reentries_0p1": 0,
+    "saturated_0p1": false,
+    "settle_0p05_s": 2.455,
+    "reentries_0p05": 0,
+    "settle_0p02_s": 4.082,
+    "reentries_0p02": 0
+   },
+   "velocity_tracking": {
+    "lag_s": 0.225,
+    "gain": 1.026,
+    "residual_rms_mps": 0.057
+   },
+   "vehicle_time": {
+    "settle_s": 2.33,
+    "commander_ramp_s": 4.236,
+    "settle_0p1_s": 2.498,
+    "settle_0p05_s": 3.25,
+    "settle_0p02_s": 5.403,
+    "lag_s": 0.298
+   }
+  },
+  {
+   "name": "step_z_3",
+   "axis": "z",
+   "onset_s_from_bag_start": 132.656,
+   "moved_most_axis": "z",
+   "axis_mismatch": false,
+   "onset_s_after_arming": 100.236,
+   "commanded_peak_speed_mps": 0.931,
+   "commanded_delta_m": 1.0,
+   "commander_ramp_s": 2.5,
+   "start_m": 1.23,
+   "final_m": 2.225,
+   "peak_m": 2.236,
+   "moved_m": 0.995,
+   "samples": 319,
+   "window_s": 7.971,
+   "tail": {
+    "overshoot_m": 0.012,
+    "settle_s": 1.498,
+    "band_reentries": 0,
+    "saturated": false
+   },
+   "goal": {
+    "goal_m": 2.23,
+    "overshoot_m": 0.007,
+    "steady_state_error_m": -0.005,
+    "settle_0p1_s": 1.534,
+    "reentries_0p1": 0,
+    "saturated_0p1": false,
+    "settle_0p05_s": 1.94,
+    "reentries_0p05": 0,
+    "settle_0p02_s": 2.375,
+    "reentries_0p02": 0
+   },
+   "velocity_tracking": {
+    "lag_s": 0.15,
+    "gain": 1.1,
+    "residual_rms_mps": 0.032
+   },
+   "vehicle_time": {
+    "settle_s": 1.983,
+    "commander_ramp_s": 3.309,
+    "settle_0p1_s": 2.031,
+    "settle_0p05_s": 2.568,
+    "settle_0p02_s": 3.144,
+    "lag_s": 0.199
+   }
+  },
+  {
+   "name": "landing",
+   "axis": "z",
+   "onset_s_from_bag_start": 141.857,
+   "moved_most_axis": "z",
+   "axis_mismatch": false,
+   "onset_s_after_arming": 109.437,
+   "commanded_peak_speed_mps": 1.0,
+   "commanded_delta_m": null,
+   "commander_ramp_s": 3.812,
+   "start_m": 2.239,
+   "final_m": 0.024,
+   "peak_m": -0.04,
+   "moved_m": -2.215,
+   "samples": 324,
+   "window_s": 7.964,
+   "tail": {
+    "overshoot_m": 0.064,
+    "settle_s": 1.771,
+    "band_reentries": 0,
+    "saturated": false
+   },
+   "goal": null,
+   "velocity_tracking": {
+    "lag_s": 0.275,
+    "gain": 1.113,
+    "residual_rms_mps": 0.879
+   },
+   "vehicle_time": {
+    "settle_s": 2.344,
+    "commander_ramp_s": 5.046,
+    "settle_0p1_s": null,
+    "settle_0p05_s": null,
+    "settle_0p02_s": null,
+    "lag_s": 0.364
+   }
+  }
+ ],
+ "skipped_events": [],
+ "steps": {
+  "x": {
+   "n": 3,
+   "names": [
+    "step_x_1",
+    "step_x_2",
+    "step_x_3"
+   ],
+   "settle_0p1_max_veh_s": 2.467,
+   "settle_0p1_median_veh_s": 2.404,
+   "overshoot_max_m": 0.085,
+   "steady_state_error_max_m": 0.012,
+   "reentries_0p1_max": 0,
+   "any_axis_mismatch": false,
+   "any_saturated": false
+  },
+  "z": {
+   "n": 3,
+   "names": [
+    "step_z_1",
+    "step_z_2",
+    "step_z_3"
+   ],
+   "settle_0p1_max_veh_s": 2.498,
+   "settle_0p1_median_veh_s": 2.031,
+   "overshoot_max_m": 0.033,
+   "steady_state_error_max_m": 0.018,
+   "reentries_0p1_max": 0,
+   "any_axis_mismatch": false,
+   "any_saturated": false
+  }
+ }
+}

@@ -1,0 +1,21 @@
+hz=40 /tmp/ascent.txt axis=z: 985 samples (24.6 s) | moved +1.202 m of +1.2 commanded (trace starts after the command, so this is a lower bound) | peak +1.212 | overshoot past settled +0.009 m | settled (±0.1 m) after 5.90 s
+hz=44.039 /tmp/ascent.txt axis=z: 985 samples (22.4 s) | moved +1.202 m of +1.2 commanded (trace starts after the command, so this is a lower bound) | peak +1.212 | overshoot past settled +0.009 m | settled (±0.1 m) after 5.36 s
+ascent samples: 985
+hz=40 /tmp/step_x_1.txt axis=x: 285 samples (7.1 s) | moved +1.006 m of +1.0 commanded (trace starts after the command, so this is a lower bound) | peak +3.063 | overshoot past settled +0.055 m | settled (±0.1 m) after 1.82 s
+hz=44.039 /tmp/step_x_1.txt axis=x: 285 samples (6.5 s) | moved +1.006 m of +1.0 commanded (trace starts after the command, so this is a lower bound) | peak +3.063 | overshoot past settled +0.055 m | settled (±0.1 m) after 1.66 s
+step_x_1 samples: 285
+hz=40 /tmp/step_z_1.txt axis=z: 244 samples (6.1 s) | moved +1.023 m of +1.0 commanded (trace starts after the command, so this is a lower bound) | peak +2.235 | overshoot past settled +0.000 m | settled (±0.1 m) after 2.33 s
+hz=44.039 /tmp/step_z_1.txt axis=z: 244 samples (5.5 s) | moved +1.023 m of +1.0 commanded (trace starts after the command, so this is a lower bound) | peak +2.235 | overshoot past settled +0.000 m | settled (±0.1 m) after 2.11 s
+step_z_1 samples: 244
+hz=40 /tmp/step_x_2.txt axis=x: 287 samples (7.2 s) | moved -1.018 m of -1.0 commanded (trace starts after the command, so this is a lower bound) | peak +1.957 | overshoot past settled +0.024 m | settled (±0.1 m) after 3.70 s
+hz=44.039 /tmp/step_x_2.txt axis=x: 287 samples (6.5 s) | moved -1.018 m of -1.0 commanded (trace starts after the command, so this is a lower bound) | peak +1.957 | overshoot past settled +0.024 m | settled (±0.1 m) after 3.36 s
+step_x_2 samples: 287
+hz=40 /tmp/step_z_2.txt axis=z: 286 samples (7.2 s) | moved -0.991 m of -1.0 commanded (trace starts after the command, so this is a lower bound) | peak +1.224 | overshoot past settled +0.001 m | settled (±0.1 m) after 3.35 s
+hz=44.039 /tmp/step_z_2.txt axis=z: 286 samples (6.5 s) | moved -0.991 m of -1.0 commanded (trace starts after the command, so this is a lower bound) | peak +1.224 | overshoot past settled +0.001 m | settled (±0.1 m) after 3.04 s
+step_z_2 samples: 286
+hz=40 /tmp/step_x_3.txt axis=x: 288 samples (7.2 s) | moved +1.014 m of +1.0 commanded (trace starts after the command, so this is a lower bound) | peak +3.085 | overshoot past settled +0.070 m | settled (±0.1 m) after 1.85 s
+hz=44.039 /tmp/step_x_3.txt axis=x: 288 samples (6.5 s) | moved +1.014 m of +1.0 commanded (trace starts after the command, so this is a lower bound) | peak +3.085 | overshoot past settled +0.070 m | settled (±0.1 m) after 1.68 s
+step_x_3 samples: 288
+hz=40 /tmp/step_z_3.txt axis=z: 284 samples (7.1 s) | moved +0.993 m of +1.0 commanded (trace starts after the command, so this is a lower bound) | peak +2.236 | overshoot past settled +0.001 m | settled (±0.1 m) after 3.42 s
+hz=44.039 /tmp/step_z_3.txt axis=z: 284 samples (6.4 s) | moved +0.993 m of +1.0 commanded (trace starts after the command, so this is a lower bound) | peak +2.236 | overshoot past settled +0.001 m | settled (±0.1 m) after 3.11 s
+step_z_3 samples: 284

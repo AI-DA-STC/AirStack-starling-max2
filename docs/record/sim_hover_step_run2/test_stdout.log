@@ -1,0 +1,16 @@
+[15:22:21] pre-takeoff: IDLE -1.988 -0.007 -0.002
+[15:22:22] takeoff: success=True, message='takeoff: drone_1, drone_2, drone_3'
+[15:22:54] start: success=True, message='scenario "goal" running'
+[15:23:02] hover: ACTIVE 0.0 -0.987 1.205
+--- hover thrust samples (/drone_1/interface/mavros/setpoint_raw/target_attitude .thrust) ---
+0.15303875505924225 0.15316402912139893 0.15347890555858612 0.15326336026191711 0.1533837765455246 0.15351614356040955 0.15318569540977478 0.1530720293521881 0.1534132957458496 0.1535298228263855 
+[15:23:09] step x1: goal (1.0, -0.989, 1.214) delta 1.0
+[15:23:21] step x2: goal (0.014, -0.977, 1.213) delta -1.0
+[15:23:30] step x3: goal (1.014, -0.983, 1.219) delta 1.0
+[15:23:42] step z1: goal (1.038, -0.979, 2.226) delta 1.0
+[15:23:51] step z2: goal (1.03, -0.98, 1.23) delta -1.0
+[15:24:03] step z3: goal (1.022, -0.973, 2.233) delta 1.0
+[15:24:11] after steps: ACTIVE 1.026 -0.969 2.235
+[15:24:12] land: success=True, message='landing: drone_1, drone_2, drone_3'
+[15:24:30] landed: IDLE 1.032 -0.943 -0.034
+traces: /tmp/ascent.txt /tmp/step_x_*.txt /tmp/step_z_*.txt  (analyse with /tmp/analyze_step.py <trace> <axis> <delta>)

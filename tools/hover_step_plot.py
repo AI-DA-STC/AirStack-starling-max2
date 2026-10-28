@@ -2,6 +2,9 @@
 """Step-response figure for a sim hover + step run (S5 / NEAR-786, ledger #18).
 
     tools/hover_step_plot.py <run_dir>          -> <run_dir>/step_response.png
+    tools/hover_step_plot.py --overlay RUN [RUN...] [--time-scale RUN=X]... [--label RUN=TEXT]... -o PNG
+        every x / z step of several runs on one figure, goal-relative, in PX4 vehicle time (RUN = run dir, or a bare
+        name under docs/record/; a run whose JSON has no time scale needs --time-scale RUN=X and is marked "(est.)")
 
 Reads bag_analysis.json (tools/hover_step_analysis.py) and the two CSVs tools/hover_step_bag.py dumps
 (drone_1_odom.csv, drone_1_cmd.csv). One panel per event in panel_order(): the takeoff climb, every x step, every
@@ -11,6 +14,7 @@ value, the settle time); underneath the commander's own velocity command (a sepa
 More than four panels wrap onto two rows. Bag times are wall seconds; the axis label carries the vehicle-time scale."""
 from __future__ import annotations
 
+import argparse
 import csv
 import json
 import math
@@ -27,6 +31,10 @@ WIN = 8.0            # shared time axis length (s, wall); matches WINDOW_S in ho
 MAX_COLS = 4         # panels per row before wrapping
 PANEL_W, PANEL_H = 3.4, 5.6
 _STEP = re.compile(r"^step_([xz])_(\d+)$")
+_STEP_ANY = re.compile(r"^step_([xz])(?:_(\d+))?$")      # also the older run1 names step_x / step_z
+RECORD_DIR = pathlib.Path(__file__).resolve().parents[1] / "docs" / "record"
+RUN_COLOURS = ["#0072B2", "#E69F00", "#009E73"]          # Okabe-Ito blue / orange / bluish green: colour-blind safe, fixed run order
+GATE_S = 3.0
 
 
 def panel_order(events: list[dict]) -> list[tuple[str, str]]:
@@ -151,8 +159,129 @@ def render(run_dir: pathlib.Path, out: pathlib.Path | None = None) -> pathlib.Pa
     return out
 
 
+def step_events(events: list[dict]) -> list[tuple[str, dict]]:
+    """(axis, event) for every step event, x steps then z steps, each by step index (a bare step_x counts as index 0)."""
+    found = []
+    for e in events:
+        m = _STEP_ANY.match(e.get("name", ""))
+        if m:
+            found.append((m.group(1), int(m.group(2) or 0), e))
+    found.sort(key=lambda f: ("xz".index(f[0]), f[1]))
+    return [(a, e) for a, _, e in found]
+
+
+def run_time_scale(j: dict, override: float | None, run: str = "run") -> tuple[float, bool]:
+    """(scale, estimated). An override wins and is marked estimated; a JSON scale whose source is 'assumed ...' is refused."""
+    if override is not None:
+        return float(override), True
+    ts, src = j.get("time_scale"), str(j.get("time_scale_source") or "")
+    if ts and not src.startswith("assumed"):
+        return float(ts), False
+    raise ValueError(f"{run}: no time scale (pass --time-scale {run}=<x>)")
+
+
+def relative_trace(odom, ev: dict, time_scale: float, window_s: float = WIN) -> tuple[list[float], list[float]]:
+    """(t_vehicle, y): position on the step's axis relative to its start, signed so the step reads as a +1 m command."""
+    k = "xyz".index(ev["axis"]) + 1                      # odom rows are (t, x, y, z)
+    t0 = ev["onset_s_from_bag_start"]
+    window_s = min(window_s, float(ev.get("window_s") or window_s))      # the analysis stops a step where the next command starts
+    seg = [r for r in odom if t0 <= r[0] <= t0 + window_s]
+    if not seg:
+        return [], []
+    p0 = ev["start_m"] if ev.get("start_m") is not None else seg[0][k]
+    sign = 1.0 if (ev.get("commanded_delta_m") or ev.get("moved_m") or 1.0) >= 0 else -1.0
+    return [(r[0] - t0) * time_scale for r in seg], [(r[k] - p0) * sign for r in seg]
+
+
+def overlay(runs, scales: dict[str, float], labels: dict[str, str], out: pathlib.Path,
+            estimated: frozenset | set = frozenset()) -> pathlib.Path:
+    """One figure, x steps left and z steps right, one hue per run (in the given order). runs = [(name, run_dir)]."""
+    fig, axes = plt.subplots(1, 2, figsize=(11.5, 5.6), dpi=170, sharey=True, layout="constrained")
+    fig.patch.set_facecolor("white")
+    for ax in axes:
+        _style(ax)
+        ax.axhspan(0.9, 1.1, color=MUTED, alpha=0.12, lw=0)
+        ax.axhline(1.0, color=INK, lw=0.9, ls=":")
+        ax.axvline(GATE_S, color=INK, lw=0.8, ls="--")
+        ax.text(GATE_S + 0.1, 0.3, "3 s gate", fontsize=8, color=INK, va="bottom", transform=ax.get_xaxis_transform())
+        ax.text(0.2, 1.0, "goal 1.0 m", fontsize=8, color=INK, va="bottom")
+        ax.set_xlabel("time since step onset (PX4 vehicle s)", fontsize=9, color=MUTED)
+    axes[0].set_title("x steps", fontsize=10, color=INK, loc="left")
+    axes[1].set_title("z steps", fontsize=10, color=INK, loc="left")
+    axes[0].set_ylabel("position along the commanded axis, relative to onset (m)", fontsize=9, color=MUTED)
+    handles = []
+    for i, (name, run_dir) in enumerate(runs):
+        colour = RUN_COLOURS[i % len(RUN_COLOURS)]
+        j = json.loads((pathlib.Path(run_dir) / "bag_analysis.json").read_text())
+        odom = _load_xyz(pathlib.Path(run_dir) / "drone_1_odom.csv")
+        evs = step_events(j["events"])
+        label = labels.get(name, name)
+        last = {}
+        for axis, ev in evs:
+            t, y = relative_trace(odom, ev, scales[name])
+            if t:
+                axes["xz".index(axis)].plot(t, y, color=colour, lw=1.3, alpha=0.8)
+                last[axis] = (t[-1], y[-1])
+        for axis, (tx, yx) in last.items():              # direct label at the run's last sample on each axis
+            axes["xz".index(axis)].annotate(label, (tx, yx), xytext=(4, 9 * (1 - i)), textcoords="offset points",
+                                            fontsize=8, color=colour, va="center", annotation_clip=False)
+        est = " (est.)" if name in estimated else ""
+        text = f"{label} · {name} · n={len(evs)} · scale {scales[name]:.3f}{est}"
+        handles.append(plt.Line2D([], [], color=colour, lw=2, label=text))
+    axes[0].legend(handles=handles, loc="lower right", fontsize=8, frameon=False, labelcolor=INK)
+    fig.text(0.01, 0.004, "Sim only. tools/hover_step_plot.py --overlay … ; onset/settle definitions in tools/hover_step_analysis.py",
+             fontsize=7.5, color=MUTED)
+    fig.get_layout_engine().set(rect=(0, 0.03, 1, 0.97))
+    fig.savefig(out, facecolor="white")
+    plt.close(fig)
+    return out
+
+
+def _kv(items, what, parser) -> dict[str, str]:
+    d = {}
+    for it in items or []:
+        key, sep, val = it.partition("=")
+        if not sep or not key:
+            parser.error(f"{what} expects RUN=VALUE, got {it!r}")
+        d[key] = val
+    return d
+
+
+def _main_overlay(argv) -> int:
+    ap = argparse.ArgumentParser(prog="hover_step_plot.py --overlay", description="Overlay the step responses of several runs.")
+    ap.add_argument("runs", nargs="+", help="run directory, or a bare name under docs/record/")
+    ap.add_argument("--time-scale", action="append", metavar="RUN=X", help="vehicle/wall time scale for a run (marked est.)")
+    ap.add_argument("--label", action="append", metavar="RUN=TEXT", help="legend label for a run")
+    ap.add_argument("-o", "--out", required=True, type=pathlib.Path)
+    try:
+        a = ap.parse_args(argv)
+    except SystemExit as e:
+        return int(e.code or 0) if e.code in (0, None) else 2
+    ts, labels = _kv(a.time_scale, "--time-scale", ap), _kv(a.label, "--label", ap)
+    runs, scales, est = [], {}, set()
+    try:
+        for r in a.runs:
+            p = pathlib.Path(r)
+            if not p.exists() and p.name == r:
+                p = RECORD_DIR / r
+            p = p.resolve()
+            j = json.loads((p / "bag_analysis.json").read_text())
+            override = float(ts[p.name]) if p.name in ts else None
+            scales[p.name], was_est = run_time_scale(j, override, p.name)
+            if was_est:
+                est.add(p.name)
+            runs.append((p.name, p))
+    except (ValueError, OSError) as e:
+        print(e, file=sys.stderr)
+        return 2
+    print(overlay(runs, scales, labels, a.out, est))
+    return 0
+
+
 def main(argv=None) -> int:
     argv = sys.argv[1:] if argv is None else argv
+    if argv and argv[0] == "--overlay":
+        return _main_overlay(argv[1:])
     if len(argv) != 1 or argv[0] in ("-h", "--help"):
         print(__doc__.splitlines()[2].strip(), file=sys.stderr)
         return 2

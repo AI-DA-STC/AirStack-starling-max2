@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# pre-commit guard for the live clone (install: tools/git-hooks/install.sh).
+# Blocks a commit when the docs checker reports a FAIL or the host unit tests fail.
+# Skip once with:  git commit --no-verify   (say why in the commit message).
+set -u
+root=$(git rev-parse --show-toplevel)
+staged=$(git diff --cached --name-only)
+[ -z "$staged" ] && exit 0
+rc=0
+if echo "$staged" | grep -qE '^(docs/|README\.md|CLAUDE\.md|tools/|pictures/|localisation/.*\.md)'; then
+  out=$("$root/tools/docs_check/check_docs.sh" 2>&1); r=$?
+  echo "$out" | tail -1
+  if [ $r -ne 0 ]; then echo "$out" | grep -E '^\[FAIL\]|^    ' | head -30; echo "pre-commit: docs check FAIL — fix or commit --no-verify with a reason"; rc=1; fi
+fi
+if echo "$staged" | grep -qE '^tools/.*\.(py|sh)$'; then
+  if ! (cd "$root" && python3 -m unittest discover -s tools/tests >/dev/null 2>&1); then
+    echo "pre-commit: tools/tests FAIL — run: python3 -m unittest discover -s tools/tests"; rc=1
+  else echo "tools/tests OK"; fi
+fi
+exit $rc

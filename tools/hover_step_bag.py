@@ -21,6 +21,7 @@ from rclpy.serialization import deserialize_message
 from rosidl_runtime_py.utilities import get_message
 
 bag, drone = sys.argv[1], (sys.argv[2] if len(sys.argv) > 2 else "drone_1")
+csv_prefix = sys.argv[3] if len(sys.argv) > 3 else None      # optional: write <prefix>_odom.csv and <prefix>_cmd.csv for plotting
 T_ODOM, T_SP, T_STATE = f"/{drone}/odometry_conversion/odometry", f"/{drone}/interface/mavros/setpoint_raw/local", f"/{drone}/interface/mavros/state"
 BAND, MIN_STEP = 0.1, 0.5
 
@@ -126,4 +127,10 @@ for k, e in enumerate(named):
                     "band_reentries": max(reentries, 0), "samples": len(seg), "window_s": round(seg[-1][0], 2),
                     "saturated": settle >= seg[-1][0] - 0.3})
 out["events"] = results
+if csv_prefix:
+    with open(csv_prefix + "_odom.csv", "w") as f:
+        f.write("t_s,x,y,z\n"); f.writelines(f"{t - t0:.3f},{x:.4f},{y:.4f},{z:.4f}\n" for t, x, y, z in odom)
+    with open(csv_prefix + "_cmd.csv", "w") as f:
+        f.write("t_s,vx,vy,vz\n"); f.writelines(f"{s[0] - t0:.3f},{s[4]:.4f},{s[5]:.4f},{s[6]:.4f}\n" for s in sp)
+    out["csv"] = [csv_prefix + "_odom.csv", csv_prefix + "_cmd.csv"]
 print(json.dumps(out, indent=1))

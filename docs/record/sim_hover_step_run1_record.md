@@ -12,7 +12,7 @@ RECORD · SIM — sim_hover_step_run1. Sim-only (iron rule 9): none of these val
 | Airframe | `10090_pegasus_starling2max` (10-20: rate gains x0.5, gyro filters 80/40, `LNDMC_ROT_MAX` 300, MPC limits 20/10/4) |
 | Commander | CMU dev `b21d28c`, `cbf_sim.yaml scenario:=goal`, tuning {"teleop_max_speed_mps": 1.2, "goal_accel_mps2": 6.0, "goal_settle_s": 0.3, "scenario_speed_mps": 2.0}, `record_bag:=true` |
 | Odometry rate | 40.2 Hz (bag count), so the echo traces' 40 Hz time axis holds |
-| Driver | `tools/sim_hover_step_run.sh` at repo `97106fc`; flight tool `AirStack/simulation/isaac-sim/tools/sim_hover_step_test.sh` + `analyze_step.py` (copied, unchanged in the tree) |
+| Driver | `tools/sim_hover_step_run.sh` at repo `76cd405`; flight tool `AirStack/simulation/isaac-sim/tools/sim_hover_step_test.sh` + `analyze_step.py` (copied, unchanged in the tree) |
 | Host | laptop on WiFi, `sim_resources_watch.sh` running; peak VRAM 3558 MB |
 
 ## Pass/fail
@@ -51,6 +51,10 @@ RECORD · SIM — sim_hover_step_run1. Sim-only (iron rule 9): none of these val
 | PX4 ulogs, one per drone (sysid 2/3/4) | 3 files | 3 files, sysids ['2', '3', '4'] | - | PASS |
 
 Rows marked *note* are informational and never fail the run.
+
+![drone_1 step responses from the rosbag](sim_hover_step_run1/step_response.png)
+
+*Figure: measured position (blue) per event against time since the commander's first non-zero velocity command, with the ±0.1 m settle band and the settle time; below each, the commander's own velocity command and the end of its ramp. Made by `tools/hover_step_plot.py` from `drone_1_odom.csv` / `drone_1_cmd.csv`.*
 
 ## Evidence
 
@@ -229,6 +233,10 @@ Bag analysis (`tools/hover_step_bag.py`, real timestamps):
    "window_s": 8.0,
    "saturated": false
   }
+ ],
+ "csv": [
+  "drone_1_odom.csv",
+  "drone_1_cmd.csv"
  ]
 }
 ```
@@ -245,7 +253,7 @@ Landing:
 
 ## Files
 
-- Repo (this folder, `docs/record/sim_hover_step_run1/`): `commands.sh` (every command used), `run.log`, `test_stdout.log`, `analyze.txt`, `step_x.txt` / `step_z.txt` / `ascent.txt` (odometry traces), `isaac_evidence.txt`, `params_ulog.txt`, `status_pre.json` / `status_post.json`, `landing_evidence.txt`, `res_watch.log`, the three container logs.
+- Repo (this folder, `docs/record/sim_hover_step_run1/`): `commands.sh` (every command used), `run.log`, `test_stdout.log`, `analyze.txt`, `step_x.txt` / `step_z.txt` / `ascent.txt` (odometry traces), `isaac_evidence.txt`, `params_ulog.txt`, `status_pre.json` / `status_post.json`, `landing_evidence.txt`, `res_watch.log`, the three container logs; `bag_analysis.json` + `drone_1_odom.csv` / `drone_1_cmd.csv` (from the bag) and `step_response.png`.
 - Not in the repo (`~/flight_logs/sim/sim_hover_step_run1/`): drone_2_sysid3_07_39_26.ulg (105 MB), drone_3_sysid4_07_39_26.ulg (105 MB), hover_step_20261028_074116 (280 MB).
 
 ## Caveats

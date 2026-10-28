@@ -222,7 +222,13 @@ def md():
          "| Check | Criterion | Measured | #3 / expected | Verdict |", "|---|---|---|---|---|"]
     for c, cr, me, ba, v, g in rows:
         L.append(f"| {c} | {cr} | {me} | {ba} | {'**' + v + '**' if v in ('FAIL',) else v} |")
-    L += ["", "Rows marked *note* are informational and never fail the run.", "", "## Evidence", "",
+    L += ["", "Rows marked *note* are informational and never fail the run.", ""]
+    if (OUT / "step_response.png").exists():
+        L += [f"![drone_1 step responses from the rosbag]({RUN}/step_response.png)", "",
+              "*Figure: measured position (blue) per event against time since the commander's first non-zero velocity command, "
+              "with the ±0.1 m settle band and the settle time; below each, the commander's own velocity command and the end of its "
+              "ramp. Made by `tools/hover_step_plot.py` from `drone_1_odom.csv` / `drone_1_cmd.csv`.*", ""]
+    L += ["## Evidence", "",
           "```", read("isaac_evidence.txt").strip(), "```", "",
           "PX4 parameters (" + src + "):", "```", ptxt.strip() or "n/a", "```", "",
           "Flight tool stdout:", "```", t.strip() or "n/a", "```", "",
@@ -232,7 +238,8 @@ def md():
           "## Files", "",
           f"- Repo (this folder, `docs/record/{RUN}/`): `commands.sh` (every command used), `run.log`, `test_stdout.log`, `analyze.txt`, "
           "`step_x.txt` / `step_z.txt` / `ascent.txt` (odometry traces), `isaac_evidence.txt`, `params_ulog.txt`, `status_pre.json` / "
-          "`status_post.json`, `landing_evidence.txt`, `res_watch.log`, the three container logs.",
+          "`status_post.json`, `landing_evidence.txt`, `res_watch.log`, the three container logs; `bag_analysis.json` + "
+          "`drone_1_odom.csv` / `drone_1_cmd.csv` (from the bag) and `step_response.png`.",
           f"- Not in the repo (`~/flight_logs/sim/{RUN}/`): " + (", ".join(heavy_files) if heavy_files else "nothing copied") + ".",
           "", "## Caveats", "",
           "- #3 (2026-10-19) flew CMU's shipped goal profile, 0.6 m/s / 3.0 m/s²; `cbf_sim.yaml` now flies 2.0 m/s / 6.0 m/s² (ledger #12). "

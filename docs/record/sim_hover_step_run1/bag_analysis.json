@@ -121,5 +121,9 @@
    "window_s": 8.0,
    "saturated": false
   }
+ ],
+ "csv": [
+  "drone_1_odom.csv",
+  "drone_1_cmd.csv"
  ]
 }

@@ -6,6 +6,7 @@ registries or files: a missing input is reported as FAIL/WARN, not a crash.
 Run via tools/docs_check/check_docs.sh (which cd's to the repo root).
 """
 import argparse, difflib, json, os, re, subprocess, sys, tempfile
+from urllib.parse import unquote
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -20,6 +21,11 @@ BUDGETS = {"README": 450, "CLAUDE": 1000, "START_HERE": 1500, "SETUP": 1200, "RU
            "PREFLIGHT": 1100, "DRONE_SETUP": 1800, "ARCHITECTURE": 1500, "CONFIG": 2500,
            "SCENARIOS": 2500, "TELEOP": 2000, "BASESTATION": 2500, "MOCAP": 2000,
            "GLOSSARY": 3000, "AI_ASSIST": 800, "MILESTONES": 1200}
+PLAN_FILE = "docs/plans/2026-10-26-project-plan-linear.md"
+PROJECT_DIR = "docs/projects"
+LEDGER_FILE = "docs/record/LEDGER.md"
+ID_PAGES = ("docs/MILESTONES.md", "docs/record/LEDGER.md", "docs/PX4_MSGS_AUDIT.md")   # plus docs/projects/*.md
+NEAR_RE = re.compile(r"\bNEAR-\d+\b")
 RECORD_FILES = {"MILESTONES", "MIGRATION"}  # plus docs/record/*, docs/reference/*
 
 
@@ -369,7 +375,8 @@ def check_warnings_registered():
 # ----------------------------------------------------------------- 9. budget
 def is_record(f):
     r = rel(f)
-    return f.stem in RECORD_FILES or r.startswith("docs/record/") or r.startswith("docs/reference/")
+    return f.stem in RECORD_FILES or r.startswith("docs/record/") or r.startswith("docs/reference/") \
+        or r.startswith("docs/projects/")
 
 
 def check_budget():
@@ -440,6 +447,131 @@ def check_hashes():
     return Result("hashes", "WARN", f"snapshot has {n} entries; coverage check not implemented yet (MOVE phase)")
 
 
+# ----------------------------------------------------------------- 13/14. linear parity, images
+def norm(s):
+    """Whitespace normalisation: the only change allowed before comparing Linear titles."""
+    return " ".join(s.split())
+
+
+def _table_cells(line):
+    """Cells of a markdown table row; None for non-rows and |---| separators."""
+    s = line.strip()
+    if not s.startswith("|"):
+        return None
+    cells = [c.strip() for c in s.strip("|").split("|")] if s.endswith("|") else [c.strip() for c in s[1:].split("|")]
+    if all(re.fullmatch(r":?-{3,}:?", c) for c in cells if c) and any(cells):
+        return None
+    return cells
+
+
+def plan_issues(text):
+    """{id: (title, status)} from plan rows '| [NEAR-nnn](url) | title | Done|In Progress|Backlog |'."""
+    out = {}
+    for line in text.splitlines():
+        c = _table_cells(line)
+        if c and len(c) >= 3 and c[-1] in ("Done", "In Progress", "Backlog"):
+            m = re.fullmatch(r"\[(NEAR-\d+)\]\(.*\)", c[0])
+            if m:
+                out[m.group(1)] = (c[1], c[-1])
+    return out
+
+
+def page_issue_rows(text):
+    """(lineno, id, title, result_cell) for table rows whose first cell is a NEAR id (plain or linked)."""
+    out = []
+    for i, line in enumerate(text.splitlines(), 1):
+        c = _table_cells(line)
+        if c and len(c) >= 2:
+            m = re.match(r"^\[?(NEAR-\d+)\]?(\(.*\))?$", c[0])
+            if m:
+                out.append((i, m.group(1), c[1], c[2] if len(c) > 2 else ""))
+    return out
+
+
+def pass_records(root):
+    """docs/record/*_record.md + localisation/results/*_record.md whose first 10 lines carry 'Verdict: PASS'."""
+    out = []
+    for d in ("docs/record", "localisation/results"):
+        for f in sorted((Path(root) / d).glob("*_record.md")):
+            head = "\n".join((read(f) or "").splitlines()[:10])
+            if re.search(r"Verdict:\**\s*PASS\b", head):
+                out.append(f)
+    return out
+
+
+def check_linear_parity():
+    """NEAR ids on project pages/ID pages exist in the plan file with identical titles; PASS records cited."""
+    plan_text = read(ROOT / PLAN_FILE)
+    if plan_text is None:
+        return Result("linear-parity", "FAIL", f"{PLAN_FILE} missing")
+    plan = plan_issues(plan_text)
+    projects = sorted((ROOT / PROJECT_DIR).glob("*.md"))
+    fails, warns, nrows, page_text = [], [], 0, ""
+    for f in projects:
+        text = read(f) or ""
+        page_text += text + "\n"
+        snap = re.search(r"Linear snapshot:\s*(\d{4}-\d\d-\d\d)", text)
+        date = snap.group(1) if snap else "(no snapshot line)"
+        row_lines = set()
+        for i, nid, title, result in page_issue_rows(text):
+            nrows += 1
+            row_lines.add(i)
+            if nid not in plan:
+                fails.append(f"{rel(f)}:{i}: {nid} not in {PLAN_FILE}")
+                continue
+            if norm(title) != norm(plan[nid][0]):
+                fails.append(f"{rel(f)}:{i}: {nid} title differs — page: '{norm(title)}' / plan: '{norm(plan[nid][0])}'")
+            if re.match(r"PASS\b", result) and plan[nid][1] == "Backlog":
+                warns.append(f"{rel(f)}:{i}: {nid} Result says PASS but the snapshot {date} lists it Backlog — tick it in Linear")
+        for i, line in enumerate(text.splitlines(), 1):
+            if i not in row_lines:
+                for nid in NEAR_RE.findall(line):
+                    if nid not in plan:
+                        fails.append(f"{rel(f)}:{i}: {nid} not in the plan file")
+    for name in ID_PAGES:
+        text = read(ROOT / name)
+        for i, line in enumerate((text or "").splitlines(), 1):
+            for nid in dict.fromkeys(NEAR_RE.findall(line)):
+                if nid not in plan:
+                    fails.append(f"{name}:{i}: {nid} not in the plan file")
+    ledger = read(ROOT / LEDGER_FILE) or ""
+    recs = pass_records(ROOT)
+    for r in recs:
+        if r.name not in ledger:
+            warns.append(f"{rel(r)}: Verdict PASS but not cited in {LEDGER_FILE}")
+        if projects and r.name not in page_text:
+            warns.append(f"{rel(r)}: Verdict PASS but not cited on any docs/projects page")
+    return verdict("linear-parity", fails, warns,
+                   f"{nrows} issue rows on {len(projects)} project pages match the plan file; {len(recs)} PASS records cited",
+                   f"{len(fails)} Linear id/title mismatch(es)", f"{len(warns)} parity warning(s)")
+
+
+IMG_MD_RE = re.compile(r"!\[[^\]]*\]\(<?([^)\s>]+)")
+IMG_HTML_RE = re.compile(r"<img\b[^>]*?\bsrc\s*=\s*[\"']([^\"']+)[\"']", re.I)
+
+
+def check_images(files):
+    """Every relative ![..](path) / <img src> must point at an existing file."""
+    missing, n = [], 0
+    for f in files:
+        text = read(f)
+        if text is None:
+            continue
+        for i, line in enumerate(text.splitlines(), 1):
+            for m in list(IMG_MD_RE.finditer(line)) + list(IMG_HTML_RE.finditer(line)):
+                tgt = m.group(1)
+                if re.match(r"^[a-z][a-z0-9+.-]*:", tgt):
+                    continue
+                path = re.split(r"[#?]", tgt, maxsplit=1)[0]
+                if not path:
+                    continue
+                n += 1
+                if not (Path(f).parent / unquote(path)).is_file():
+                    missing.append(f"{rel(f)}:{i}: missing image → {tgt}")
+    return verdict("images", missing, [], f"all {n} relative image references in {len(files)} files exist",
+                   f"{len(missing)} missing image(s)")
+
+
 # ----------------------------------------------------------------- selftest / main
 def selftest():
     """Prove the dead-link check works on a temp corpus: one good link, one dead file, one dead fragment."""
@@ -472,13 +604,14 @@ def main():
         sys.exit(selftest())
     checks = [lambda: check_links(link_files()), check_section_refs, check_iron_rules, check_safety_registry,
               check_values_registry, check_banners, check_real_page_hygiene, check_warnings_registered,
-              check_budget, check_preflight_date, check_headings_stable, check_hashes]
+              check_budget, check_preflight_date, check_headings_stable, check_hashes,
+              check_linear_parity, lambda: check_images(corpus())]
     results = []
     for fn in checks:
         try:
             r = fn()
         except Exception as e:                            # a check bug must never hide the other checks
-            r = Result(getattr(fn, "__name__", "check").replace("check_", "").replace("_", "-"), "FAIL", f"checker crashed: {e!r}")
+            r = Result(("check_images" if fn.__name__ == "<lambda>" and "images" in repr(fn.__code__.co_names) else getattr(fn, "__name__", "check")).replace("check_", "").replace("_", "-"), "FAIL", f"checker crashed: {e!r}")
         if args.warn_only and r.status == "FAIL":
             r.status = "WARN"
         results.append(r)

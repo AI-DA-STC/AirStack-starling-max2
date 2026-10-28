@@ -16,6 +16,8 @@ Run from anywhere: `tools/docs_check/check_docs.sh [--warn-only] [--json] [--sel
 | budget | prose words (no fenced code, no `⚠️` lines) vs per-page budgets in `check_docs.py`; TROUBLESHOOTING rows ≤40 words; non-RECORD total | WARN |
 | preflight-date | PREFLIGHT first line has `vYYYY-MM-DD`; an uncommitted PREFLIGHT edit must change it | WARN / FAIL |
 | headings-stable | headings with dates, `⏳`, `✅`, `(STE` churn anchors | WARN |
+| linear-parity | every NEAR-nnn on docs/projects/*.md (and bare ids on MILESTONES, LEDGER, PX4_MSGS_AUDIT) exists in docs/plans/2026-10-26-project-plan-linear.md with the identical title; PASS records (docs/record, localisation/results) cited by LEDGER and an issue row; PASS result on a Backlog issue | FAIL / WARN |
+| images | every relative ![…](…) / <img src> target exists | FAIL |
 | hashes | MOVE-phase hook; prints SKIP until `corpus_hashes.txt` / `retired.txt` exist | SKIP |
 
 Output: one `[PASS|FAIL|WARN|SKIP] check: summary` line per check, indented details (max 25, then "… N more"),

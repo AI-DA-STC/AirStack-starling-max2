@@ -14,7 +14,6 @@ TOOLS = HERE.parent
 for p in (HERE, TOOLS, TOOLS / "live", TOOLS / "lib"):
     sys.path.insert(0, str(p))
 import make_layout as L  # noqa: E402
-import metrics_core as M  # noqa: E402
 import report as R  # noqa: E402
 import synth_crossing as synth  # noqa: E402
 

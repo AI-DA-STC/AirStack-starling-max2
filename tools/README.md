@@ -39,7 +39,6 @@ The old hover + step driver still works and moves under the front door later.
 | `docs_check/` | the documentation checker — `tools/docs_check/check_docs.sh` (0 FAIL required before a docs commit) |
 | `git-hooks/` | the pre-commit guard: docs check, unit tests, `tools/sim.sh check` |
 | `make_figures.sh` | regenerates the committed figures in `docs/record/figures/`; run by hand when a figure should change |
-| `make_milestones_doc.py` | legacy `.docx` export (not regenerated) |
 | `tests/` | host unit tests |
 
 ## Run a test

@@ -9,7 +9,7 @@ NOT ground truth, until the Isaac ground-truth publisher exists. Both clocks are
 Usage (inside the exploration container, pyulog + evo installed):
   python3 scripts/score_vs_ulog.py <estimate.tum> <drone.ulg> [--takeoff-thresh 0.15]
 """
-import argparse, json, os, sys
+import argparse, json, os
 import numpy as np
 from scipy.spatial.transform import Rotation as R
 

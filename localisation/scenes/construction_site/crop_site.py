@@ -12,7 +12,7 @@ Flattening is done by hand (prim/attribute/relationship copy) because Usd.Stage.
 inputs (emissiveColor etc.) that this USD build cannot decode from the UE4-exported crate files; those are skipped.
 """
 import argparse, hashlib, os, shutil, sys
-from pxr import Usd, UsdGeom, UsdShade, UsdPhysics, Sdf, Gf
+from pxr import Usd, UsdGeom, UsdShade, UsdPhysics, Sdf
 
 ap = argparse.ArgumentParser(); ap.add_argument("arena"); ap.add_argument("out_dir"); ap.add_argument("--radius", type=float, default=40.0)
 a = ap.parse_args()

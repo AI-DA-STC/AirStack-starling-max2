@@ -5,7 +5,7 @@ Usage: build_arena_usda2.py <Scene02_nohumans.usd> <out.usda> [--spot X Y]
 The wrapper's default prim is /stage (what Pegasus references to /World/stage). The launcher clears
 /World/stage's xform ops (scale_stage_prim), so the translation lives on the child /stage/site.
 """
-import sys, os, argparse, numpy as np
+import os, argparse, numpy as np
 from pxr import Usd, UsdGeom, Sdf, Gf
 from scipy.ndimage import distance_transform_edt, maximum_filter, minimum_filter
 

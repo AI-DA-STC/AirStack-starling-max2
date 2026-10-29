@@ -60,7 +60,7 @@ def build_rows(out, heavy, env):
     rows, ctx = [], {"headline": "minimum pairwise distance", "headline_row": "min pairwise distance", "crosscheck": None, "values": {}}
     R.isaac_rows(rows, out)
     live, why = _load(out / "metrics.csv")
-    bag, bag_why = _load(out / "metrics_bag.csv")
+    bag, _ = _load(out / "metrics_bag.csv")
     run = _Run(live[1], live[2]) if live else None
     V = ctx["values"]
 

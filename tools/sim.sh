@@ -21,7 +21,7 @@ SIM_TESTS_DIR=${SIM_TESTS_DIR:-$REPO/tools/sim_tests}     # overridable for the 
 usage() {
   cat <<'USAGE'
 usage: tools/sim.sh <setup|doctor|up|down|status|tabs|test|figures|check> [flags]
-  setup                                  one-time preparation (Foxglove layouts, tool copies)
+  setup                                  one-time preparation (checks, optional Foxglove layout file)
   doctor                                 read-only health check
   up [--headless]                        start the sim stack (Isaac window unless --headless)
   down                                   stop the sim stack
@@ -73,7 +73,6 @@ stack_env() {   # stack_env [nomk]
 }
 
 no_args() { [ $# -eq 0 ] || { usage_line >&2; echo "error: $SUB takes no arguments (got $1)" >&2; exit 2; }; }
-not_yet() { echo "$1: not implemented yet ($2)" >&2; exit 2; }
 
 # cmd_figures <name> <run>: the record figure (plot 1 of the test's plots.json) from the run's metrics.csv
 cmd_figures() {

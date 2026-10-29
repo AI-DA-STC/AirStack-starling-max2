@@ -139,9 +139,6 @@ def isaac_rows(rows, out):
 
 def landing_rows(rows, out):
     """The raw ACK log is printed in the record's Evidence block; only the MAVROS arming state is a row."""
-    land = read(out, "landing_evidence.txt")
-    n1 = len(re.findall(r"landed, disarmed \(attempt 1\)", land))
-    nany = len(re.findall(r"landed, disarmed", land))
     armed = parse_armed_post(read(out, "armed_post.txt"))
     if armed is None:
         row(rows, "post-flight armed=false x3 (MAVROS state)", "armed: false for drone_1, drone_2, drone_3",

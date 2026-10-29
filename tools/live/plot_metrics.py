@@ -21,7 +21,7 @@ import numpy as np
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 import metrics_core as M  # noqa: E402
 
-from plot_style import (INK, MUTED, GRID, SPINE, COLOURS, STYLES, MIN_COLOUR, PHASE_SPAN, PHASE_NAME,  # noqa: E402
+from plot_style import (INK, MUTED, GRID, SPINE, PHASE_SPAN, PHASE_NAME,  # noqa: E402
                         FOOTER, series_colour, series_style, ref_value)
 LABEL_GAP_FRAC = 0.045
 

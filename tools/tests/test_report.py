@@ -149,7 +149,7 @@ class Report(unittest.TestCase):
         md = R.render(self.env, rows, ctx, self.out, self.heavy, "PASS", [], 20, "NEAR-800")
         self.assertNotIn("NEAR-787", md)
         self.assertIn("For Linear NEAR-800 (milestone", md); self.assertIn("NEAR-800 |", md.splitlines()[-2])
-        rc = R.main([str(self.td), str(self.out), "--heavy", str(self.heavy), "--issue", "NEAR-800", "--no-verdict-log"])
+        R.main([str(self.td), str(self.out), "--heavy", str(self.heavy), "--issue", "NEAR-800", "--no-verdict-log"])
         self.assertNotIn("NEAR-787", (self.out.parent / f"{self.out.name}_record.md").read_text())
         md = R.render(self.env, rows, ctx, self.out, self.heavy, "PASS", [], 20, None)   # no flag: test.env
         self.assertIn("For Linear NEAR-787 (milestone", md)
@@ -199,7 +199,7 @@ class FinalFixes(unittest.TestCase):
 
     def test_caveats_txt_lines_join_the_record_after_the_gates_caveats(self):
         (self.out / "caveats.txt").write_text("landing timed out; stack left up; bag left in the container\none fake caveat\n\nsecond run caveat\n")
-        rc = R.main([str(self.td), str(self.out), "--heavy", str(self.heavy), "--no-verdict-log"])
+        R.main([str(self.td), str(self.out), "--heavy", str(self.heavy), "--no-verdict-log"])
         md = (self.out.parent / f"{self.out.name}_record.md").read_text()
         cav = md.split("## Caveats", 1)[1].split("## Ledger", 1)[0]
         lines = [l for l in cav.splitlines() if l.startswith("- ")]

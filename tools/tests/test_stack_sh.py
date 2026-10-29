@@ -104,7 +104,7 @@ class AbortPath(unittest.TestCase):
         body = ('L=$(mktemp); pre(){ echo PRE >> $L; }; PRE_LAND_HOOK=pre; '
                 'rx(){ echo RX >> $L; case "$*" in *"topic list"*) echo "/drone_1/interface/mavros/state";; esac; }; '
                 'land_all_and_wait(){ echo LAND >> $L; return 0; }; copy_ulogs(){ :; }; down(){ echo DOWN >> $L; }; '
-                'trap "cat \$L" EXIT; arm_abort_trap; kill -INT $$; sleep 1')
+                'trap "cat \\$L" EXIT; arm_abort_trap; kill -INT $$; sleep 1')
         r = run_stub(body)
         self.assertEqual(r.returncode, 3, r.stdout + r.stderr)
         seq = [l for l in r.stdout.splitlines() if l in ("PRE", "RX", "LAND", "DOWN")]

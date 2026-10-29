@@ -1,5 +1,5 @@
 # tools/tests/test_hover_step_analysis.py
-import json, math, pathlib, sys, tempfile, unittest
+import json, pathlib, sys, tempfile, unittest
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 import hover_step_analysis as A
 FX = pathlib.Path(__file__).resolve().parent / "fixtures" / "run1"

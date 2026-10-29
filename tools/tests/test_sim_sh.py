@@ -14,7 +14,9 @@ GUARD_MARK = os.path.join(_GUARD, "docker_called")
 
 def guarded_env(env=None):
     e = dict(os.environ if env is None else env)
-    e["PATH"] = _GUARD_BIN + ":" + e.get("PATH", "")          # the caller's own fake docker (earlier on its PATH) still wins
+    parts, system = e.get("PATH", "").split(":"), set(os.environ.get("PATH", "").split(":"))
+    k = next((i for i, d in enumerate(parts) if d in system), len(parts))   # after the caller's own dirs, before the system's
+    e["PATH"] = ":".join(parts[:k] + [_GUARD_BIN] + parts[k:])               # so a test's own fake docker still wins
     if env is None or e.get("HOME") == os.environ.get("HOME"):
         e["HOME"] = os.path.join(_GUARD, "home"); os.makedirs(e["HOME"], exist_ok=True)
     return e
@@ -331,3 +333,61 @@ class LedgerNumber(unittest.TestCase):
 
     def test_usage_shows_ledger_as_optional(self):
         self.assertIn("[--ledger N]", run().stdout)
+
+
+class KeysSubcommand(unittest.TestCase):
+    """tools/sim.sh keys: the keyboard teleop window in the robot container (NEAR-789, sim)."""
+
+    def test_usage_lists_keys(self):
+        self.assertIn("keys", run().stdout)
+
+    def test_copies_both_files_and_starts_the_window_in_the_robot_container(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            os.makedirs(os.path.join(tmp, "bin")); log = os.path.join(tmp, "docker.log")
+            fake = os.path.join(tmp, "bin", "docker")
+            open(fake, "w").write('#!/bin/sh\necho "$@" >> %s\ncase "$*" in *pgrep*) exit 1;; esac\nexit 0\n' % log); os.chmod(fake, 0o755)
+            env = dict(os.environ, HOME=tmp, PATH=os.path.join(tmp, "bin") + ":" + os.environ["PATH"], SIM_KEYS_NO_TTY_OK="1")
+            r = run("keys", "--profile", "xbox_usb", env=env)
+            self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+            calls = open(log).read()
+            self.assertRegex(calls, r"cp \S+/tools/teleop/keymap\.py airstack-robot-desktop-1:/tmp/svg_keys/")
+            self.assertRegex(calls, r"cp \S+/tools/teleop/key_teleop\.py airstack-robot-desktop-1:/tmp/svg_keys/")
+            self.assertIn("python3 /tmp/svg_keys/key_teleop.py --profile xbox_usb", calls)
+            self.assertIn("pkill -TERM -f /tmp/svg_keys/key_teleop.py", calls.splitlines()[-1])   # cleanup runs last
+
+    def _fake(self, tmp, body):
+        os.makedirs(os.path.join(tmp, "bin"), exist_ok=True); fake = os.path.join(tmp, "bin", "docker")
+        open(fake, "w").write("#!/bin/sh\n" + body); os.chmod(fake, 0o755)
+        return dict(os.environ, HOME=tmp, PATH=os.path.join(tmp, "bin") + ":" + os.environ["PATH"])
+
+    def test_refuses_without_a_terminal_so_ctrl_c_always_reaches_the_window(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            env = self._fake(tmp, 'echo "$@" >> %s/log\nexit 0\n' % tmp)
+            r = run("keys", env=env)                                              # subprocess: stdin is not a TTY
+            self.assertEqual(r.returncode, 2); self.assertIn("terminal", r.stderr)
+            self.assertFalse(os.path.exists(os.path.join(tmp, "log")))           # nothing touched the container
+
+    def test_refuses_a_second_window(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            env = self._fake(tmp, 'echo "$@" >> %s/log\ncase "$*" in *pgrep*) exit 0;; esac\nexit 0\n' % tmp)
+            env["SIM_KEYS_NO_TTY_OK"] = "1"
+            r = run("keys", env=env)
+            self.assertEqual(r.returncode, 2); self.assertIn("already running", r.stderr)
+            self.assertNotIn("key_teleop.py --profile", open(os.path.join(tmp, "log")).read())
+
+    def test_without_the_robot_container_it_says_so(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            os.makedirs(os.path.join(tmp, "bin"))
+            fake = os.path.join(tmp, "bin", "docker")
+            open(fake, "w").write('#!/bin/sh\nexit 1\n'); os.chmod(fake, 0o755)
+            env = dict(os.environ, HOME=tmp, PATH=os.path.join(tmp, "bin") + ":" + os.environ["PATH"], SIM_KEYS_NO_TTY_OK="1")
+            r = run("keys", env=env)
+            self.assertNotEqual(r.returncode, 0); self.assertIn("robot container", r.stderr)
+
+    def test_the_guard_lets_a_tests_own_fake_docker_win(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            os.makedirs(os.path.join(tmp, "bin")); fake = os.path.join(tmp, "bin", "docker")
+            open(fake, "w").write("#!/bin/sh\necho OWN_FAKE\n"); os.chmod(fake, 0o755)
+            env = guarded_env(dict(os.environ, PATH=os.path.join(tmp, "bin") + ":" + os.environ["PATH"]))
+            r = subprocess.run(["bash", "-c", "docker ps"], capture_output=True, text=True, env=env)
+            self.assertIn("OWN_FAKE", r.stdout)

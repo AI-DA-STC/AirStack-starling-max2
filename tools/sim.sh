@@ -27,6 +27,7 @@ usage: tools/sim.sh <setup|doctor|up|down|status|tabs|test|figures|check> [flags
   down                                   stop the sim stack
   status                                 what is running
   tabs                                   open the terminal tabs
+  keys [--profile xbox_usb]              keyboard teleop window (arrows move, W/S up/down, A/D turn) for safe_teleop; sim only
   test <name> [--headless] [--no-pause] [--ledger N] --issue NEAR-nnn <run>
                                          run tools/sim_tests/<name>; --issue = Linear id; ledger # = next free unless --ledger N
   figures                                make the record figures of a run
@@ -294,6 +295,26 @@ print(next((s for s in p if 'running' in s), p[0]))" "$TD/plots.json") || FIRST=
   exit "$REPORT_RC"
 }
 
+# cmd_keys: the keyboard teleop window (tools/teleop/key_teleop.py) inside the robot container, where ROS and the
+# container's display are. It publishes /joy like a gamepad; CMU's safe_teleop must already be running (TELEOP.md).
+cmd_keys() {
+  local R=airstack-robot-desktop-1 D=/tmp/svg_keys a tty=""   # D: no regex characters (pgrep/pkill pattern)
+  for a in "$@"; do [[ "$a" =~ ^[A-Za-z0-9_./-]+$ ]] || { usage_line >&2; echo "error: keys: bad argument '$a'" >&2; return 2; }; done
+  # without a terminal, docker exec -i does not pass Ctrl-C on: the window would outlive this command
+  if [ -t 0 ]; then tty=-t; elif [ "${SIM_KEYS_NO_TTY_OK:-0}" != 1 ]; then    # SIM_KEYS_NO_TTY_OK: unit tests only
+    echo "error: keys needs a terminal (Ctrl-C must reach the window); run it in a terminal tab" >&2; return 2; fi
+  docker exec "$R" true 2>/dev/null || { echo "error: keys: the robot container ($R) is not running — tools/sim.sh up first" >&2; return 2; }
+  if docker exec "$R" pgrep -f "$D/key_teleop.py" >/dev/null 2>&1; then
+    echo "error: keys: a keyboard window is already running in $R — close it first (two windows would both publish /joy)" >&2; return 2; fi
+  docker exec "$R" mkdir -p "$D" \
+    && docker cp "$REPO/tools/teleop/keymap.py" "$R:$D/" >/dev/null \
+    && docker cp "$REPO/tools/teleop/key_teleop.py" "$R:$D/" >/dev/null \
+    || { echo "error: keys: could not copy the teleop files into $R" >&2; return 2; }
+  echo "keyboard teleop: click the window; arrows move (pitch/roll), W/S up/down, A/D turn, 1/2/3 = speed; close it or Ctrl-C to stop"
+  trap "docker exec $R pkill -TERM -f $D/key_teleop.py >/dev/null 2>&1" EXIT    # however this ends, the window goes too
+  docker exec -i $tty "$R" bash -ic "python3 $D/key_teleop.py $*"
+}
+
 # ----------------------------------------------------------------------------------------------- setup / doctor / check
 cmd_check() {
   no_args "$@"
@@ -370,7 +391,7 @@ cmd_doctor() { DRY=1 cmd_setup "$@"; }
 SUB=${1:-}
 case "$SUB" in
   ""|-h|--help) usage; exit 2 ;;
-  setup|doctor|up|down|status|tabs|test|figures|check) shift ;;
+  setup|doctor|up|down|status|tabs|keys|test|figures|check) shift ;;
   *) usage; exit 2 ;;
 esac
 
@@ -383,6 +404,7 @@ case "$SUB" in
   down)   no_args "$@"; HEADLESS=false; stack_env; PHASE=down; down ;;
   status) no_args "$@"; HEADLESS=false; stack_env nomk; PHASE=status; status ;;
   tabs)   no_args "$@"; exec "$REPO/tools/sim_terminals.sh" ;;
+  keys)   cmd_keys "$@"; exit $? ;;
   test)   parse_test_args "$@"; cmd_test ;;
   figures) cmd_figures "$@" ;;
   setup)  cmd_setup "$@" ;;

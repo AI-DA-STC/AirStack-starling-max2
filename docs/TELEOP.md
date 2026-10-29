@@ -124,6 +124,32 @@ ros2 run svg_ground_control joy_map     # wiggle ONE control at a time, read its
 It prints only on change, reports every axis's rest position, flags anything resting past ±0.9
 as a trigger, and its numbers go straight into the table above.
 
+### 3b · Keyboard instead of a pad (sim only, ours)
+
+No pad? `tools/sim.sh keys` opens a small window that turns key presses into the same `/joy` stream a pad
+sends. `safe_teleop` then flies the drone unchanged, with its fences, hold and speed cap. Start `safe_teleop`
+first (§4), then run `keys` in a terminal tab and click the window.
+
+| Key | Does | Pad equivalent |
+|---|---|---|
+| ↑ / ↓ | forward / back (pitch) | right stick |
+| ← / → | slide left / right (roll) | right stick |
+| W / S | up / down | left stick |
+| A / D | turn left / right | left stick |
+| Shift / Ctrl, Q / E | same as W / S and A / D | left stick |
+| 1 / 2 / 3 | 25 / 50 / 100 % of top speed (default 50 %) | — |
+
+`safe_teleop` commands velocities, so roll slides the drone sideways and pitch moves it forward or back.
+Two arrow keys together fly no faster than one. There is no stick lock on the keyboard.
+
+Let go of every key and the drone holds. A key also counts as let go when the window loses focus, when it is
+minimised, or after 1 s with no key event (a held key keeps auto-repeating). Closing the window or Ctrl-C
+publishes zeros first. If the window dies, `safe_teleop` stops the drone after 0.5 s without `/joy`.
+
+Only one source may publish `/joy`. The window warns while another one does, such as a plugged-in pad.
+It reads `safe_teleop`'s controller profile and refuses a mismatch; `teleop_single.yaml` pins
+`dragonrise_usb`, the default. Sim only: it has not flown the real drone.
+
 ## 4 · Quick start — SIM (M1 rehearsal)
 
 Needs a GPU and Isaac Sim, same as [RUNBOOK.md](RUNBOOK.md) §A. One command, on the

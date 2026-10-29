@@ -57,14 +57,14 @@ S3/S4 result (sim only; reference = PX4 EKF2, not ground truth). [Figure 1](#fig
 
 ### S5 Finish basic sim flight checks — SIM ONLY (Isaac)
 **Purpose:** the drone model, gains, airframe and commander all changed after S1. Before anything new is built on top, the basic flight behaviour is re-checked: does the drone still take off, hold, move 1 m cleanly and land (NEAR-786), still avoid the others (787), still take live gain changes (788)? The site items (789, 790, 860) prepare S5b, because hand-flying is how the map gets built.
-Linear (snapshot 2026-10-26): 4 % · last ledger row #21 (2026-10-30)
+Linear (snapshot 2026-10-26): 4 % · last ledger row #22 (2026-10-30)
 
 **Done when** (Linear's target, verbatim; a target, not a result): hover and 1 m steps, three-drone collision-avoidance crossing and live gain tuning are tried and recorded; drone_1 is hand-flown in the construction site with cuVSLAM, camera recording and scoring.
 
 | Issue | Title (Linear, verbatim) | Result | Evidence |
 |---|---|---|---|
 | NEAR-786 | Re-run hover and 1 m step test on the updated sim drone | PASS ×2 — x 0.095 m / 2.47 s, 2026-10-29 | [#18, #19](../record/LEDGER.md) → [run3 record](../record/sim_hover_step_run3_record.md) |
-| NEAR-787 | Re-run three-drone crossing with collision avoidance and record it | FAIL ×2 — min 0.95 m, 2026-10-30 | [#20, #21](../record/LEDGER.md) → [record](../record/sim_crossing_run1_record.md), [video](../../videos/cbf_test.mp4) |
+| NEAR-787 | Re-run three-drone crossing with collision avoidance and record it | FAIL ×3 — min 1.00 m (#22), 2026-10-30 | [#20–#22](../record/LEDGER.md) → [record](../record/sim_crossing_run2_record.md), [#21 video](../../videos/cbf_test.mp4) |
 | NEAR-788 | Try live gain tuning from the panel in sim | — | — |
 | NEAR-789 | Set up one-drone gamepad teleop in the construction site (pad detected, sticks move the drone, release holds) | — | — |
 | NEAR-790 | Hand-fly drone_1 with cuVSLAM running, record and score the flight | — | — |
@@ -91,13 +91,13 @@ Reading [Figure 2](#fig-2): every step is inside the settle band within 2.5 s an
 ![x and z step responses, #17–#19 overlaid, PX4 vehicle time](../record/figures/s5_hover_step_overlay.png)
 *Figure 2. Step response of drone_1 to 1 m commands, x (left) and z (right), #17–#19 overlaid, PX4 time. Dotted: goal. Shaded: ±0.1 m band. Dashed: 3 s gate. Backward steps sign-flipped. `tools/make_figures.sh`; records [#17](../record/sim_hover_step_run1_record.md), [#18](../record/sim_hover_step_run2_record.md), [#19](../record/sim_hover_step_run3_record.md).*
 
-NEAR-787 — results (sim only; PX4's own sim state estimate positions the drones, flat world, camera and cuVSLAM not in the loop; gate 1.10 m = 2r, cbf_sim.yaml 2.0 / 4.0 m/s) — Min pairwise distance against the 1.10 m gate: [#4](../record/LEDGER.md) 1.02 m, #20 0.99 m (headless), #21 0.95 m (window + video; its panel re-fly 0.99 m); emergency and fence breach 0 and peak speed at most 1.11 m/s in #20 and #21. Reading [Figure 3](#fig-3): every run put the closest pair inside the gate, so the shortfall repeats; the pairs swing between about 1.0 and 1.5 m while the CBF is active, and the margin to the 0.55 m radius stays above 0.4 m. #21's bag stopped before the flight, so its gates rest on the live data alone ([record](../record/sim_crossing_run1_record.md#caveats)).
+NEAR-787 — results (sim only; PX4's own sim state estimate positions the drones, flat world, camera and cuVSLAM not in the loop; gate 1.10 m = 2r, cbf_sim.yaml 2.0 / 4.0 m/s) — Min pairwise distance against the 1.10 m gate: [#4](../record/LEDGER.md) 1.02 m, #20 0.99 m (headless), #21 0.95 m (window; a second, panel-flown crossing and an early bag stop), #22 1.00 m (window, clean: every other gate PASS, live and bag agree within 0.003 m). Reading [Figure 3](#fig-3): every run put the closest pair inside the gate by 0.08–0.15 m, so the shortfall repeats; the pairs swing between about 1.0 and 1.5 m while the CBF is active, and the margin to the 0.55 m radius stays above 0.4 m. The 1.10 m gate is the CBF's own keep-out (`cbf_filter.py`: barrier = d² − (2r)²); CMU's tests accept 1.5 r = 0.825 m for non-ideal flight, which every run meets.
 
 <a id="fig-3"></a>
 ![pairwise distances of the three-drone crossing against the 1.10 m gate](../record/figures/s5_crossing_distances.png)
 *Figure 3. Pairwise distances d_12, d_13, d_23 and their running minimum against time (wall clock), with the 1.10 m (2r) gate and 0.55 m (r) lines and the closest approach marked; shaded: takeoff and land. Live 40 Hz odometry, PX4 estimate. `tools/make_figures.sh`; record [#20](../record/sim_crossing_dry1_record.md).*
 
-Open: nothing hand-flown yet — NEAR-789/790 count only with a video the owner has watched (2026-10-29). NEAR-787 was re-run with the window and a video (#21) and failed the 1.10 m gate again; widening the arena, changing the gate or accepting the result is the owner's call. During a test run, leave the panel's Rosbag switch alone: #21's bag was stopped from the panel side before the flight.
+Open: nothing hand-flown yet — NEAR-789/790 count only with a video the owner has watched (2026-10-29). NEAR-787 failed the 1.10 m gate in four runs (0.95–1.02 m, no contact); keeping the gate and tuning the CBF, gating at 1.5 r, or accepting the result is the owner's call. During a test run, leave the panel alone: in #21 it flew a second crossing and stopped the bag.
 
 ### S5b · Map the construction site with cuVSLAM — SIM ONLY (Isaac)
 **Purpose:** if a saved map of the site lets a fresh drone find its own position in it, every drone can share one coordinate frame without extra hardware (UWB). This tests that idea in sim first.

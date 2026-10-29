@@ -1,0 +1,8 @@
+head=3b28e16628816cbd77e113d610ff7c59adc8e471
+head_short=3b28e16
+dirty_tools=0
+started=2026-10-30T02:32:03+08:00
+tz=+08
+run=sim_crossing_run2
+steps_per_axis=
+offsets=-2,0,0,0,0,0,2,0,0

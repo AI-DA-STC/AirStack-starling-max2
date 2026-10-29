@@ -1,0 +1,6 @@
+[swarm_commander-2] [0m[INFO] [1793298937.610075738] [swarm_commander]: drone_3: touchdown at z=0.11 m, settling 2.0 s before disarm[0m
+[swarm_commander-2] [0m[INFO] [1793298938.559112164] [swarm_commander]: drone_1: touchdown at z=0.14 m, settling 2.0 s before disarm[0m
+[swarm_commander-2] [0m[INFO] [1793298938.908870261] [swarm_commander]: drone_2: touchdown at z=0.10 m, settling 2.0 s before disarm[0m
+[swarm_commander-2] [0m[INFO] [1793298939.709555380] [swarm_commander]: drone_3: landed, disarmed (attempt 1)[0m
+[swarm_commander-2] [0m[INFO] [1793298940.658653495] [swarm_commander]: drone_1: landed, disarmed (attempt 1)[0m
+[swarm_commander-2] [0m[INFO] [1793298940.958385268] [swarm_commander]: drone_2: landed, disarmed (attempt 1)[0m

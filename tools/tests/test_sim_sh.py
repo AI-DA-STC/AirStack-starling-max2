@@ -2,8 +2,26 @@
 import os, pathlib, subprocess, tempfile, unittest
 SIM = pathlib.Path(__file__).resolve().parents[1] / "sim.sh"
 
+# Guard (2026-10-30): a test once reached a real `sim.sh test` and started headless Isaac. Every call here runs with a
+# fake `docker` first on PATH (it refuses and leaves a marker) and a throwaway HOME, unless the test brings its own.
+_GUARD = tempfile.mkdtemp(prefix="simsh_guard_")
+_GUARD_BIN = os.path.join(_GUARD, "bin"); os.makedirs(_GUARD_BIN, exist_ok=True)
+with open(os.path.join(_GUARD_BIN, "docker"), "w") as _fh:
+    _fh.write("#!/bin/sh\necho \"$@\" >> %s/docker_called\necho 'test guard: real docker blocked' >&2\nexit 97\n" % _GUARD)
+os.chmod(os.path.join(_GUARD_BIN, "docker"), 0o755)
+GUARD_MARK = os.path.join(_GUARD, "docker_called")
+
+
+def guarded_env(env=None):
+    e = dict(os.environ if env is None else env)
+    e["PATH"] = _GUARD_BIN + ":" + e.get("PATH", "")          # the caller's own fake docker (earlier on its PATH) still wins
+    if env is None or e.get("HOME") == os.environ.get("HOME"):
+        e["HOME"] = os.path.join(_GUARD, "home"); os.makedirs(e["HOME"], exist_ok=True)
+    return e
+
+
 def run(*args, env=None):
-    return subprocess.run(["bash", str(SIM), *args], capture_output=True, text=True, timeout=20, env=env)
+    return subprocess.run(["bash", str(SIM), *args], capture_output=True, text=True, timeout=20, env=guarded_env(env))
 
 class SimSh(unittest.TestCase):
     def test_parses(self):
@@ -299,8 +317,17 @@ class LedgerNumber(unittest.TestCase):
                 holder.kill(); holder.wait()
 
     def test_cli_rejects_a_ledger_number_already_used(self):
-        r = run("test", "crossing", "--headless", "--ledger", "20", "--issue", "NEAR-787", "r_unused_name")
-        self.assertEqual(r.returncode, 2); self.assertIn("--ledger 20 is already used", r.stderr)
+        with tempfile.TemporaryDirectory() as tmp:
+            os.makedirs(os.path.join(tmp, "tests", "foo"))
+            env = dict(os.environ, HOME=tmp, SIM_TESTS_DIR=os.path.join(tmp, "tests"))
+            r = run("test", "foo", "--headless", "--ledger", "20", "--issue", "NEAR-787", "r_unused_name", env=env)   # 20 is a real LEDGER row
+            self.assertEqual(r.returncode, 2, r.stdout + r.stderr); self.assertIn("--ledger 20 is already used", r.stderr)
+            self.assertFalse(os.path.exists(os.path.join(tmp, "flight_logs", "sim", ".sim_test.lock")))
+            self.assertFalse((SIM.parents[1] / "docs" / "record" / "r_unused_name").exists())
+
+    def test_the_guard_blocks_real_docker(self):
+        r = subprocess.run(["bash", "-c", "docker ps"], capture_output=True, text=True, env=guarded_env())
+        self.assertEqual(r.returncode, 97); self.assertIn("test guard", r.stderr)
 
     def test_usage_shows_ledger_as_optional(self):
         self.assertIn("[--ledger N]", run().stdout)

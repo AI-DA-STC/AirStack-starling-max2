@@ -8,7 +8,7 @@
 ```bash
 cd ~/AirStack-starling-max2
 AirStack/airstack.sh setup && AirStack/airstack.sh up   # CMU's install + containers (two steps)
-tools/sim.sh setup                                      # our tool copies + Foxglove layouts
+tools/sim.sh setup                                      # our checks + an optional Foxglove layout file
 ```
 
 First run, once the install is done:
@@ -30,7 +30,7 @@ The old hover + step driver still works and moves under the front door later.
 | `tools/lib/report.py` | writes `docs/record/<run>_record.md` and the drafted LEDGER row from a test's `gates.py`; exit 0 PASS / 1 FAIL / 2 INCOMPLETE / 3 ABORTED |
 | `tools/lib/contract_check.py` | what `sim.sh check` runs on each test folder |
 | `tools/live/metrics_core.py` | the one metrics formulas module: live node, bag recompute and figures all import it |
-| `tools/live/` (others) | `metrics_node.py` (publishes `/svg/test/*`, writes `metrics.csv`), `bag_recompute.py`, `make_layout.py`, `plot_metrics.py` |
+| `tools/live/` (others) | `metrics_node.py` (publishes `/svg/test/*`, writes `metrics.csv`), `bag_recompute.py`, `make_layout.py`, `plot_metrics.py` (record figure), `live_plot.py` (live plot window) |
 | `sim_tests/<name>/` | one test = five files: `test.env`, `fly.sh`, `metrics.py`, `gates.py`, `plots.json` (+ generated `layout.json`) |
 | `sim_tests/crossing/` | NEAR-787, the three-drone crossing: the worked example |
 | `sim_tests/_template/` | the copy-me folder |
@@ -50,8 +50,8 @@ tools/sim.sh test crossing [--headless] [--no-pause] --ledger 20 --issue NEAR-78
 
 `--ledger` is the number of the new LEDGER row, `--issue` its Linear id; both are required, and the run name must be new.
 
-- **Window mode (default)** opens the Isaac window and the in-container Foxglove Studio. The driver prints the
-  layout path (`tools/sim_tests/crossing/layout.json`); `setup` installs it, and Studio shows it after a restart.
+- **Window mode (default)** opens the Isaac window, the in-container Foxglove Studio with the SVG Basestation panel,
+  and a live plot window with the test's distance plot. Drag the plot window where OBS can see it, then click back into the terminal.
 - **Pause 1**, before the flight: start OBS (the screen recorder), then press Enter.
   **Pause 2**, after landing with the plots still live: type the video's path, repo-relative, e.g. `videos/<file>.mkv` (Enter skips); it goes into the record.
   `--no-pause` skips both.
@@ -154,6 +154,6 @@ No pytest, no ROS on the host: the tests add `tools/`, `tools/live` and `tools/l
 - The Isaac launcher's prints (`Starling2MaxConfig`) are lost without `PYTHONUNBUFFERED=1` — the orchestrator sets it;
   a `starling_cfg=0` in `isaac_evidence.txt` makes the run INCOMPLETE, never an indirect PASS.
 - Timings: the laptop logs in SGT, the containers in UTC; the report labels every time it prints.
-- Foxglove layouts: the store is `layouts-local` inside the robot container; `setup` writes `lay_svgtest_<name>` there,
-  but Studio only lists it after a restart. No store (or no container): import `tools/sim_tests/<name>/layout.json` once via Layouts → Import.
+- Plots in Foxglove too (optional): `setup` copies the layout to `/root/svg_test_<name>_layout.json` in the robot container.
+  Import it once from Studio's layout menu (Import from file); a signed-in Studio keeps it.
 - No `DISPLAY` (ssh, remote session): use `--headless`; window mode needs the laptop's screen.

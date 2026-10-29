@@ -10,7 +10,7 @@ DURATION_S BASELINE); <test_dir>/gates.py gives the rows:
     ledger_sentence(rows, ctx, verdict) -> str
     figure_caption(ctx) -> str            # 2-4 sentences, <= 380 chars, without the leading "Figure 1."
 
-ctx keys read here: headline, crosscheck (list[CrossRow] | None), node_log_tail, test_stdout, caveats, tuning.
+ctx keys read here: headline, reading (2-3 sentences of results text above the figure, linking [Figure 1](#fig-1)), crosscheck (list[CrossRow] | None), node_log_tail, test_stdout, caveats, tuning.
 Every gate row is PASS / FAIL / UNVERIFIED; an info row never passes or fails the run; missing evidence is UNVERIFIED.
 Exit: 0 PASS, 2 INCOMPLETE, 1 FAIL, 3 ABORTED (<run_dir>/aborted.txt exists). Writes <record>.md and one line in
 <run_dir>/verdicts.log. Sim-only (CLAUDE.md iron rule 9)."""
@@ -135,12 +135,10 @@ def isaac_rows(rows, out):
 
 
 def landing_rows(rows, out):
+    """The raw ACK log is printed in the record's Evidence block; only the MAVROS arming state is a row."""
     land = read(out, "landing_evidence.txt")
     n1 = len(re.findall(r"landed, disarmed \(attempt 1\)", land))
     nany = len(re.findall(r"landed, disarmed", land))
-    row(rows, "landing: 'landed, disarmed' x3 (commander ACK log, not an arming display)", "informational",
-        f"{nany} 'landed, disarmed' ({n1} on attempt 1)" + ("; 'disarm not accepted' seen" if "disarm not accepted" in land else "") if land else "n/a",
-        "#13: attempt 1 x3", None, gate=False)
     armed = parse_armed_post(read(out, "armed_post.txt"))
     if armed is None:
         row(rows, "post-flight armed=false x3 (MAVROS state)", "armed: false for drone_1, drone_2, drone_3",
@@ -180,9 +178,6 @@ def evidence_rows(rows, out, heavy, bag_prefix, extra_files=()):
     if not meta:
         code = f"n/a — no run_meta.txt; report at {now}"
     row(rows, "code that ran", "informational (run_meta.txt head vs git HEAD at report time)", code, "-", None, gate=False)
-    history = [l for l in read(out, "verdicts.log").splitlines() if l.strip()]
-    row(rows, "driver verdict history", "informational (every earlier generation of this record, newest last)",
-        "<br>".join(f"`{l}`" for l in history) if history else "none — first generation", "-", None, gate=False)
 
 
 def crosscheck_rows(rows, cr, headline: str):
@@ -210,6 +205,7 @@ def append_verdict(out, verdict: str, rows, head_short: str) -> str:
 
 
 def ledger_row(num, today, sentence, run, issue) -> str:
+    sentence = str(sentence).replace("|", "\\|").replace("\n", " ")
     return f"| {'?' if num is None else num} | {today} | SIM | {sentence} | [{run}_record.md]({run}_record.md) | {issue or '?'} |"
 
 
@@ -219,6 +215,22 @@ def _cell(s) -> str:
 
 def _size_mb(p: pathlib.Path) -> int:
     return (sum(q.stat().st_size for q in p.rglob("*") if q.is_file()) if p.is_dir() else p.stat().st_size) // 1_000_000
+
+
+CAPTION_MAX = 400
+
+
+def effective_issue(issue, env):
+    return issue or env.get("ISSUE") or "?"
+
+
+def fit_caption(caption: str) -> str:
+    """Whole line `*Figure 1. <caption>*` must be <= 400 chars (DOCS_STANDARD §4): trim loudly, never emit it long."""
+    room = CAPTION_MAX - len("*Figure 1. *")
+    if len(caption) <= room:
+        return caption
+    print(f"warning: figure caption is {len(caption)} chars (room {room}); trimmed", file=sys.stderr)
+    return caption[:room - 1].rstrip() + "…"
 
 
 def render(env, rows, ctx, out, heavy, verdict, history, ledger, issue) -> str:
@@ -235,14 +247,16 @@ def render(env, rows, ctx, out, heavy, verdict, history, ledger, issue) -> str:
     video = read(out, "video.txt").strip() or "none recorded"
     tuning = ctx.get("tuning") or {}
     ledger_sentence = ctx.get("ledger_sentence") or f"{title}: {verdict}"   # main() fills both from gates.py
-    caption = ctx.get("figure_caption") or "Caption missing: the test's gates.py returned none."
+    caption = fit_caption(ctx.get("figure_caption") or "Caption missing: the test's gates.py returned none.")
+    issue = effective_issue(issue, env)
+    reading = ctx.get("reading") or f"[Figure 1](#fig-1) plots the run's headline metric against time; headline: {ctx.get('headline') or 'n/a'}."
     repo_files = sorted(p.name for p in out.iterdir() if p.is_file()) if out.is_dir() else []
     heavy_files = []
     if heavy is not None and pathlib.Path(heavy).is_dir():
         heavy_files = [f"`{p.name}` ({_size_mb(p)} MB)" for p in sorted(pathlib.Path(heavy).iterdir())]
     L = [f"RECORD · SIM — {run}. Sim-only (iron rule 9): {env.get('SIM_ONLY_LINE', 'none of these values is ported to the drone.')}", "",
          f"# {run} — {title} ({when})", "",
-         f"**Verdict: {verdict}.** {env.get('PURPOSE', '')} For Linear {env.get('ISSUE', issue or '?')} (milestone {env.get('MILESTONE', '?')}). "
+         f"**Verdict: {verdict}.** {env.get('PURPOSE', '')} For Linear {issue} (milestone {env.get('MILESTONE', '?')}). "
          f"{VERDICT_DEF} Report generated {today} at repo `{head}`.", "",
          f"**Scope:** {env.get('SCOPE', '')}", "",
          "## Setup", "", "| Item | Value |", "|---|---|",
@@ -259,7 +273,7 @@ def render(env, rows, ctx, out, heavy, verdict, history, ledger, issue) -> str:
         L.append("| " + " | ".join(_cell(x) for x in (r.check, r.criterion, r.measured, r.baseline, v)) + " |")
     L += ["", "Rows marked info are informational and never pass or fail the run.", ""]
     if (out / "fig-1.png").exists():
-        L += ['<a id="fig-1"></a>', f"![{title}]({run}/fig-1.png)", "", f"*Figure 1. {caption}*", ""]
+        L += [reading, "", '<a id="fig-1"></a>', f"![{title}]({run}/fig-1.png)", "", f"*Figure 1. {caption}*", ""]
     armed = parse_armed_post(read(out, "armed_post.txt"))
     L += ["## Driver verdict history", "",
           "Every generation of this record (`verdicts.log`, newest last; the last line is this one):", "", "```",
@@ -284,7 +298,7 @@ def render(env, rows, ctx, out, heavy, verdict, history, ledger, issue) -> str:
           "", "## Caveats", ""]
     L += [f"- {c}" for c in (ctx.get("caveats") or [])] or ["- none recorded."]
     which = "next free number" if ledger is None else f"#{ledger}"
-    L += ["", f"## Ledger row draft (docs/record/LEDGER.md table 1, {which}, {issue if issue else 'issue ?'})", "",
+    L += ["", f"## Ledger row draft (docs/record/LEDGER.md table 1, {which}, {issue})", "",
           ledger_row(ledger, today, ledger_sentence, run, issue), "", ""]
     return "\n".join(L)
 
@@ -326,14 +340,21 @@ def main(argv=None) -> int:
     gates = load_gates(test_dir)
     heavy = pathlib.Path(a.heavy).expanduser() if a.heavy else pathlib.Path.home() / "flight_logs" / "sim" / out.name
     rec = pathlib.Path(a.record) if a.record else out.parent / f"{out.name}_record.md"
-    rows, ctx = gates.build_rows(out, heavy, env)
+    try:
+        rows, ctx = gates.build_rows(out, heavy, env)
+    except Exception as e:   # a broken gates.py still leaves a record: INCOMPLETE with the error as a row
+        rows, ctx = [], {}
+        row(rows, "gates.py build_rows", "returns the gate rows", f"{type(e).__name__}: {e}", "-", None)
     verdict = overall_verdict(rows, aborted=(out / "aborted.txt").exists())
     history = [l for l in read(out, "verdicts.log").splitlines() if l.strip()]
     if not a.no_verdict_log:
         history.append(append_verdict(out, verdict, rows, parse_kv(read(out, "run_meta.txt")).get("head_short", "?")))
-    issue = a.issue or env.get("ISSUE")
-    ctx["ledger_sentence"] = gates.ledger_sentence(rows, ctx, verdict)
-    ctx["figure_caption"] = gates.figure_caption(ctx)
+    issue = effective_issue(a.issue, env)
+    for key, fn in (("ledger_sentence", lambda: gates.ledger_sentence(rows, ctx, verdict)), ("figure_caption", lambda: gates.figure_caption(ctx))):
+        try:
+            ctx[key] = fn()
+        except Exception as e:
+            ctx[key] = f"{key} unavailable ({type(e).__name__})"
     rec.write_text(render(env, rows, ctx, out, heavy, verdict, history, a.ledger, issue))
     print(f"{verdict}: {rec}")
     for r in rows:

@@ -26,6 +26,7 @@ COLOURS = ["#0072B2", "#E69F00", "#009E73"]          # Okabe-Ito blue / orange /
 STYLES = ["-", "--", ":"]                            # a 4th+ series repeats the hues with another dash
 PHASE_SPAN = {1: "#8A8F94", 3: "#C9A66B"}
 PHASE_NAME = {1: "takeoff", 3: "land"}
+LABEL_GAP_FRAC = 0.045
 FOOTER = "Sim only (iron rule 9): not a drone result."
 
 
@@ -52,7 +53,8 @@ def _spans(t, phase, want):
     return out
 
 
-def plot(columns, rows, meta, plot_spec, out_png, title=None):
+def plot(columns, rows, meta, plot_spec, out_png=None, title=None):
+    """Draw and (when out_png is given) save; returns (fig, ax) so tests can inspect it. The caller closes the figure."""
     idx = {c: i for i, c in enumerate(columns)}
     series = list(plot_spec.get("series", []))
     missing = [s for s in series if s not in idx]
@@ -87,24 +89,26 @@ def plot(columns, rows, meta, plot_spec, out_png, title=None):
         ax.axhline(v, color=INK, ls="--", lw=1.0, alpha=0.8, label="%s = %g" % (name, v))
         ax.annotate("%s %g" % (name, v), (1.0, v), xycoords=("axes fraction", "data"), xytext=(-4, 3),
                     textcoords="offset points", ha="right", va="bottom", fontsize=7, color=INK)
-    last, gap = None, 0.0
     yr = plot_spec.get("y_range")
     if yr:
         ax.set_ylim(yr[0], yr[1])
     lo, hi = ax.get_ylim()
-    gap = (hi - lo) * 0.045
-    for y, x, name, colour in sorted(ends):                 # direct labels, nudged apart
+    gap = (hi - lo) * LABEL_GAP_FRAC
+    last = None
+    for y, x, name, colour in sorted(ends):                 # direct labels, nudged apart (data units)
         yy = y if last is None or y - last >= gap else last + gap
-        ax.annotate(name, (x, y), xytext=(4, 0), textcoords="offset points", fontsize=7, color=colour, va="center")
+        ax.annotate(name, (x, yy), xytext=(4, 0), textcoords="offset points", fontsize=7, color=colour, va="center")
         last = yy
+    ax.label_gap = gap
     ax.set_xlabel("t [s, wall]", color=INK, fontsize=9)
     ax.set_ylabel(title, color=INK, fontsize=9)
-    ax.set_title(title, color=INK, fontsize=10, loc="left")
+    ax.set_title("%s against time" % title, color=INK, fontsize=10, loc="left")
     ax.legend(fontsize=7, frameon=False, loc="upper center", bbox_to_anchor=(0.5, -0.16), ncol=3)
     fig.text(0.01, 0.01, FOOTER, fontsize=7, color=MUTED)
     fig.tight_layout(rect=(0, 0.03, 1, 1))
-    fig.savefig(out_png, facecolor="white")
-    plt.close(fig)
+    if out_png:
+        fig.savefig(out_png, facecolor="white")
+    return fig, ax
 
 
 def main(argv=None) -> int:
@@ -120,7 +124,8 @@ def main(argv=None) -> int:
     if spec is None:
         print("no such plot: %s" % (a.plot or "(plots.json is empty)"), file=sys.stderr)
         return 2
-    plot(columns, rows, meta, spec, a.out, spec.get("title"))
+    fig, _ = plot(columns, rows, meta, spec, a.out, spec.get("title"))
+    plt.close(fig)
     print("wrote %s" % a.out)
     return 0
 

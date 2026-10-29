@@ -105,6 +105,52 @@ class Report(unittest.TestCase):
         self.assertEqual(R.ledger_row(None, "2026-10-29", "S", "r", None), "| ? | 2026-10-29 | SIM | S | [r_record.md](r_record.md) | ? |")
         line = R.append_verdict(self.out, "PASS", [], "abc"); self.assertIn("head=abc verdict=PASS fail=0 unverified=0", line)
 
+    def test_reading_sits_directly_above_the_figure_anchor_and_links_it(self):
+        rows, ctx = self.G.build_rows(self.out, self.heavy, self.env)
+        (self.out / "fig-1.png").write_bytes(b"x")
+        ctx["reading"] = "[Figure 1](#fig-1) shows the minimum distance stayed at 1.25 m."
+        L = R.render(self.env, rows, ctx, self.out, self.heavy, "PASS", [], 20, None).splitlines()
+        i = L.index('<a id="fig-1"></a>'); self.assertEqual(L[i - 2], ctx["reading"]); self.assertEqual(L[i - 1], "")
+        del ctx["reading"]; ctx["headline"] = "min 1.25 m"
+        L = R.render(self.env, rows, ctx, self.out, self.heavy, "PASS", [], 20, None).splitlines()
+        i = L.index('<a id="fig-1"></a>'); self.assertIn("[Figure 1](#fig-1)", L[i - 2]); self.assertIn("min 1.25 m", L[i - 2])
+
+    def test_long_caption_is_trimmed_with_a_warning(self):
+        rows, ctx = self.G.build_rows(self.out, self.heavy, self.env)
+        (self.out / "fig-1.png").write_bytes(b"x"); ctx["figure_caption"] = "word " * 200
+        import contextlib, io
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            md = R.render(self.env, rows, ctx, self.out, self.heavy, "PASS", [], 20, None)
+        cap = next(l for l in md.splitlines() if l.startswith("*Figure 1."))
+        self.assertLessEqual(len(cap), 400); self.assertTrue(cap.endswith("*")); self.assertIn("warning", err.getvalue())
+
+    def test_issue_flag_beats_test_env_everywhere(self):
+        rows, ctx = self.G.build_rows(self.out, self.heavy, self.env)
+        md = R.render(self.env, rows, ctx, self.out, self.heavy, "PASS", [], 20, "NEAR-800")
+        self.assertNotIn("NEAR-787", md)
+        self.assertIn("For Linear NEAR-800 (milestone", md); self.assertIn("NEAR-800 |", md.splitlines()[-2])
+        rc = R.main([str(self.td), str(self.out), "--heavy", str(self.heavy), "--issue", "NEAR-800", "--no-verdict-log"])
+        self.assertNotIn("NEAR-787", (self.out.parent / f"{self.out.name}_record.md").read_text())
+        md = R.render(self.env, rows, ctx, self.out, self.heavy, "PASS", [], 20, None)   # no flag: test.env
+        self.assertIn("For Linear NEAR-787 (milestone", md)
+
+    def test_ledger_sentence_pipe_is_escaped(self):
+        self.assertIn("a \\| b", R.ledger_row(1, "d", "a | b", "r", "NEAR-1"))
+
+    def test_history_and_landing_log_appear_once(self):
+        rows, ctx = self.G.build_rows(self.out, self.heavy, self.env)
+        md = R.render(self.env, rows, ctx, self.out, self.heavy, "PASS", ["2026 head=x verdict=PASS fail=0 unverified=0"], 20, None)
+        self.assertEqual(md.count("verdict=PASS fail=0"), 1)
+        self.assertEqual(md.count("landed, disarmed (attempt 1)"), 3)   # the three lines of the one log block
+
+    def test_broken_gates_still_leaves_an_incomplete_record(self):
+        (self.td / "gates.py").write_text("def build_rows(out, heavy, env):\n    raise RuntimeError('boom')\ndef ledger_sentence(r, c, v):\n    return 'x'\ndef figure_caption(c):\n    return 'y'\n")
+        rc = R.main([str(self.td), str(self.out), "--heavy", str(self.heavy), "--no-verdict-log"])
+        self.assertEqual(rc, 2)
+        md = (self.out.parent / f"{self.out.name}_record.md").read_text()
+        self.assertIn("**Verdict: INCOMPLETE.**", md); self.assertIn("RuntimeError: boom", md)
+
     def test_parse_env_strips_quotes_and_comments(self):
         e = self.env; self.assertEqual(e["TITLE"], "Fake crossing"); self.assertEqual(e["ISSUE"], "NEAR-787")
 

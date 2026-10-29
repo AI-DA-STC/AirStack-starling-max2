@@ -42,7 +42,33 @@ Sim-only labelling (iron rule 9); DOCS_STANDARD for every page the run writes; n
 7. **Stale layout on re-vendor.** Intended: a re-vendor of CMU's base layout must regenerate `layout.json`; `sim.sh check` prints the `make_layout.py` command to run.
 8. **Hover-driver reuse.** The shared phases are EXTRACTED into `tools/lib/stack.sh` and the hover driver is changed to source them, behaviour unchanged, its tests green, in the same plan. Only the hover test's migration to the five-file contract (its report becoming `gates.py`) is deferred.
 9. **Tests.** `metrics_core` and `make_layout` unit tests live in `tools/tests/` like every other unit test ("untouched" meant not repurposed as the sim-test directory). The pre-commit hook calls `tools/sim.sh check` on any change under `tools/`.
-10. **Studio and screen.** Owner's answer pending: in-container Studio (`use_foxglove_studio:=true`) or laptop Studio. Both connect to `ws://localhost:8765`; the layout import is manual either way. The Isaac-start WiFi firmware hazard is a `precheck` WARN line, not a block.
+10. **Studio and screen.** Owner's decision 2026-10-29: the in-container Studio (`use_foxglove_studio:=true`), already connected to `ws://localhost:8765`. `tools/sim.sh setup` installs the generated layouts into the container Studio's layout store when one is found (the builder locates it: Foxglove's per-user data dir inside the robot container), otherwise the driver prints the path for a one-time manual import. The Isaac-start WiFi firmware hazard is a `precheck` WARN line, not a block.
+
+## Architecture (owner's ask: unified, easy to install, like AirStack)
+
+Everything of ours lives under `tools/`; CMU's `AirStack/` is consumed, never edited. One front door, one install step, one place per kind of file.
+
+| Where it runs | Component | Role |
+|---|---|---|
+| laptop | `tools/sim.sh` | front door: `setup · doctor · up · down · status · tabs · test <name> … · figures · check` |
+| laptop | `tools/lib/stack.sh` | shared phases: precheck, up, watch, isaac (window or headless), interfaces, commander, params, collect, down; the Ctrl-C trap |
+| laptop | `tools/lib/report.py` | renders any test's gate rows + evidence into the DOCS_STANDARD record shape; verdict history; LEDGER row draft |
+| laptop | `tools/live/make_layout.py` | generates `layout.json` from `plots.json` + CMU's base layout |
+| laptop | `tools/sim_tests/<name>/` | the five test files (+ generated `layout.json`); `_template/` to copy |
+| laptop | `tools/tests/`, `tools/docs_check/`, `tools/git-hooks/` | unit tests, docs checker, pre-commit guard (unchanged roles) |
+| robot container | commander, MAVROS ×3, Foxglove bridge `:8765`, in-container Studio, bag recorder | CMU's stack, launched by the `commander` / `interfaces` phases exactly as today |
+| robot container, copied in at `test` start (`/tmp/svg_test/`) | `metrics_node.py`, `metrics_core.py`, the test's `metrics.py`, `fly.sh`, `analyze_step.py` where a test needs it | our live node and flight script; removed by `down` |
+| isaac-sim container | Isaac Sim (window on by default), PX4 SITL ×3, ulogs | CMU's sim, launched by the `isaac` phase |
+| laptop files | `docs/record/<run>/`, `docs/record/<run>_record.md`, `~/flight_logs/sim/<run>/` | small artefacts + record in git; bag + ulogs outside |
+
+Data flow for one test: odometry (40 Hz) + `/svg/cbf_active` (20 Hz) + `/svg/commander_status` (5 Hz) → `metrics_node` → `/svg/test/*` (10 Hz) → Studio plots; → `metrics.csv` (40 Hz) → `gates.py` → `report.py` → record + LEDGER draft. Bag (`--all-topics`) → `metrics_core` recompute → cross-check row. Ulogs → PX4 params + vehicle-time scale rows, as today.
+
+Install (`tools/sim.sh setup`, idempotent, prints what it did and what it could not):
+1. Checks: docker, the three containers exist (else says to run CMU's `AirStack/airstack.sh setup`), host `python3` with numpy + matplotlib, `ffmpeg`/OBS presence (informational), Foxglove extension present inside the robot container.
+2. Installs the pre-commit guard (`tools/git-hooks/install.sh`).
+3. Generates every `tools/sim_tests/*/layout.json` and installs them into the in-container Studio's layout store when found.
+4. Runs `tools/sim.sh check` and the unit tests.
+`tools/sim.sh doctor` re-runs the checks without changing anything. `tools/README.md` opens with "Install in three commands: `AirStack/airstack.sh setup` (CMU) → `tools/sim.sh setup` → `tools/sim.sh test crossing --ledger N --issue NEAR-787 <run>`".
 
 ## Left to the builder
 Exact Float64 topic names per series (documented in `plots.json`); the Plot panel JSON fields; the phase-marker rendering; how `stack.sh` reuses the hover-step driver's proven phase code (copy, then the hover driver migrates in a later plan); the CSV schema (`t_s` first, one column per series, same names as topics); the far-goal threshold source (the scenario's antipodal offsets in `cbf_sim.yaml`).

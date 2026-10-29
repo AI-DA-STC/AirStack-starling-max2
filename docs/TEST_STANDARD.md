@@ -20,6 +20,10 @@ A test is one command, watched live, recorded, and gated by the same numbers the
 12. **Nothing under `AirStack/`.** Our code lives in `tools/`; flight logic needed from CMU's scripts is copied into `fly.sh` unchanged in behaviour.
 13. **Contract in pre-commit.** `tools/sim.sh check` verifies every test directory has the five files, `gates.py` imports `metrics_core`, `layout.json` matches `plots.json`, and the unit tests for `metrics_core` pass.
 
+## 1b. Where things run
+
+Laptop: `tools/sim.sh` and everything under `tools/`. Robot container: CMU's commander, MAVROS, the Foxglove bridge and the in-container Studio, plus our metrics node and flight script copied in for the run. Isaac container: the sim and PX4. One install: `AirStack/airstack.sh setup` (CMU's) then `tools/sim.sh setup`; `tools/sim.sh doctor` says what is missing. The Foxglove you watch is the in-container Studio (`use_foxglove_studio:=true`), with the test layout installed by setup.
+
 ## 2. Adding a test
 
 Copy `tools/sim_tests/_template/` to `tools/sim_tests/<name>/`, fill the five files, run `tools/sim.sh check`, run the test once in window mode, then follow [DOCS_STANDARD.md](DOCS_STANDARD.md) §7 to record it. The project page's results block for the issue opens with the scope line (position source, world, what is not in the loop).

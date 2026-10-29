@@ -127,3 +127,45 @@ def write_csv(path, columns, rows, meta=None):
         for row in rows:
             vals = dict(zip(columns, row))
             fh.write(M.format_row(vals["t_s"], vals["phase"], vals, columns) + "\n")
+
+
+# ---- asymmetric world: three straight lines through the arena centre (breaks the triangle's symmetry)
+_STRAIGHT = {  # start (world), unit direction of travel, progress warp
+    "drone_1": (np.array([-0.9, 0.0, 1.5]), np.array([1.0, 0.0, 0.0]), lambda s: s),
+    "drone_2": (np.array([0.0, -0.9, 1.5]), np.array([0.0, 1.0, 0.0]), lambda s: s * s),
+    "drone_3": (np.array([0.0, 0.0, 2.4]), np.array([0.0, 0.0, -1.0]), lambda s: 1.0 - (1.0 - s) ** 3),
+}
+
+
+def straight_world(t):
+    """(pos, vel) per drone in the world frame; every drone starts at T_START and ends on its antipode."""
+    s = _s(t)
+    pos, vel = {}, {}
+    for d, (p0, u, warp) in _STRAIGHT.items():
+        span = 2.0 * np.linalg.norm(p0 - _CENTER)
+        pos[d] = p0 + u * span * warp(s)
+        ds = 1.0 / (T_END - T_START) if 0.0 < s < 1.0 else 0.0
+        h = 1e-6
+        dw = (warp(min(1.0, s + h)) - warp(max(0.0, s - h))) / (min(1.0, s + h) - max(0.0, s - h))
+        vel[d] = u * span * dw * ds
+    return pos, vel
+
+
+def straight_status(t):
+    return {"drones": [{"state": x} for x in _states(t)], "mission_active": t >= T_START,
+            "cbf": {"emergency": False}, "fence_breached": False}
+
+
+def straight_frames(n=400, dt=0.025):
+    tr = make_tracker()
+    cols = M.csv_columns(SERIES)
+    rows = []
+    for i in range(n):
+        t = i * dt
+        tr.update_status(straight_status(t))
+        pos, vel = straight_world(t)
+        for d in reversed(DRONES):
+            tr.update_odom(d, t, pos[d] - tr.offsets[d], vel[d])
+        r = tr.row(t)
+        rows.append([t] + [r[c] for c in cols[1:]])
+    return cols, np.array(rows, dtype=float)

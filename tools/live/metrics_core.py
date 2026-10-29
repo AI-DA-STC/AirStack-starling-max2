@@ -106,7 +106,10 @@ def pair_distance(frame, a, b):
 
 
 def min_pair_distance(frame):
-    vals = [v for v in pairwise_distances(frame.pos, frame.stale).values() if not math.isnan(v)]
+    # A stale (or never seen) drone makes the whole row NaN, not a minimum over the remaining pairs.
+    if frame.stale:
+        return math.nan
+    vals = list(pairwise_distances(frame.pos).values())
     return min(vals) if vals else math.nan
 
 
@@ -261,7 +264,7 @@ class Tracker:
                 if not math.isnan(v):
                     self._runmin[s.name] = min(self._runmin[s.name], v)
                 r = self._runmin[s.name]
-                out[s.name + "_running"] = math.nan if math.isinf(r) else r
+                out[s.name + "_running"] = math.nan if (math.isinf(r) or math.isnan(v)) else r
         return out
 
 
@@ -351,7 +354,7 @@ def crosscheck(live_cols, live, bag_cols, bag, series, t_tol=0.05):
     li, bi = _pair_rows(live[:, live_cols.index("t_s")], bag[:, bag_cols.index("t_s")], t_tol)
     n_live = len(live)
     unpaired = 1.0 - (len(li) / n_live if n_live else 0.0)
-    fail_all = unpaired > UNPAIRED_MAX
+    fail_all = (n_live - len(li)) > UNPAIRED_MAX * n_live
     specs = [(s.name, s.tol, s.kind) for s in series] + [(s.name + "_running", s.tol, "continuous") for s in series if s.running_min]
     out = []
     for name, tol, kind in specs:

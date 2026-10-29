@@ -13,7 +13,8 @@ Linear (snapshot 2026-10-26): target 2026-10-22 · 100 % · no ledger row (deliv
 
 ### L1 · Team review pack — DESK
 Linear (snapshot 2026-10-26): 0 % · last ledger row feeding it: #16 (2026-10-22)
-Done when (Linear, verbatim): the review includes the literature table, flat-world versus construction-site cuVSLAM result, effort log, recommendation and open questions.
+
+**Done when** (Linear's target, verbatim; a target, not a result): the review includes the literature table, flat-world versus construction-site cuVSLAM result, effort log, recommendation and open questions.
 
 | Issue | Title (Linear, verbatim) | Result | Evidence |
 |---|---|---|---|
@@ -24,7 +25,8 @@ Done when (Linear, verbatim): the review includes the literature table, flat-wor
 
 ### L2 · Three-drone dataset and UWB emulator — SIM ONLY (Isaac)
 Linear (snapshot 2026-10-26): 0 % · no ledger row yet
-Done when (Linear, verbatim): cameras run on all three drones; hover, formation, crossing and a 10–15 min figure-8 are recorded with true positions; the emulator includes realistic noise, bias and blocked-line errors from the papers.
+
+**Done when** (Linear's target, verbatim; a target, not a result): cameras run on all three drones; hover, formation, crossing and a 10–15 min figure-8 are recorded with true positions; the emulator includes realistic noise, bias and blocked-line errors from the papers.
 
 | Issue | Title (Linear, verbatim) | Result | Evidence |
 |---|---|---|---|
@@ -36,7 +38,8 @@ Done when (Linear, verbatim): cameras run on all three drones; hover, formation,
 
 ### L3 · Own visual odometry + UWB alignment — SIM ONLY (Isaac)
 Linear (snapshot 2026-10-26): 0 % · no ledger row yet
-Done when (Linear, verbatim): pairwise relative-position error over time, heading error and convergence time are measured; one versus two UWB tags per drone are compared.
+
+**Done when** (Linear's target, verbatim; a target, not a result): pairwise relative-position error over time, heading error and convergence time are measured; one versus two UWB tags per drone are compared.
 
 | Issue | Title (Linear, verbatim) | Result | Evidence |
 |---|---|---|---|
@@ -46,7 +49,8 @@ Done when (Linear, verbatim): pairwise relative-position error over time, headin
 
 ### L4 · First real-hardware number — REAL HARDWARE, hand-carried (no flight)
 Linear (snapshot 2026-10-26): 0 % · no ledger row yet
-Done when (Linear, verbatim): its trajectory is scored against Motive/mocap.
+
+**Done when** (Linear's target, verbatim; a target, not a result): its trajectory is scored against Motive/mocap.
 
 | Issue | Title (Linear, verbatim) | Result | Evidence |
 |---|---|---|---|
@@ -55,7 +59,8 @@ Done when (Linear, verbatim): its trajectory is scored against Motive/mocap.
 
 ### L5 · Scale to 10 sim drones — SIM ONLY (Isaac)
 Linear (snapshot 2026-10-26): 0 % · no ledger row yet
-Done when (Linear, verbatim): alignment runs on 10 simulated drones; error and UWB/WiFi bandwidth are measured.
+
+**Done when** (Linear's target, verbatim; a target, not a result): alignment runs on 10 simulated drones; error and UWB/WiFi bandwidth are measured.
 
 | Issue | Title (Linear, verbatim) | Result | Evidence |
 |---|---|---|---|

@@ -38,6 +38,8 @@ Milestone, then its issues, then the results of those issues. Evidence sits besi
 
 - **Result** holds only a record's verdict word, the headline number and the date, and is filled only when a record exists (`docs/record/*_record.md`, `localisation/results/*_record.md`, or a LEDGER row). Otherwise `—`. Never "done", never a percentage, never copied from Linear.
 - **Evidence** links the record and names the LEDGER rows. A path with spaces is written as code, not a link.
+- **"Done when"** is Linear's target, printed on its own line and labelled as a target. It is never evidence that anything happened; only the Result and Evidence cells say what happened.
+- **Hand-flown results** (teleop, gamepad, any flight a person steered) count only with a link to a video the owner has watched. No video, no result.
 - No status column anywhere. No status pills.
 - Negative and superseded results stay in the table.
 - Every figure caption names the generating command and the ledger rows it draws.

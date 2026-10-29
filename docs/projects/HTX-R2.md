@@ -30,7 +30,8 @@ Leak detail: `px4_interface` publishes the trajectory setpoint ungated, and PX4 
 
 ### R1 · New mocap and network pipeline — REAL DRONE, mocap hardware, no flight
 Linear (snapshot 2026-10-26): 0 % · no ledger row on this software
-Done when (Linear, verbatim): Motive calibration, ground plane, axes and rigid body are configured; full-rate streaming lasts 10 minutes without stalls; laptop/drone communicate both ways; PX4 receives correct-axis mocap; settings are documented.
+
+**Done when** (Linear's target, verbatim; a target, not a result): Motive calibration, ground plane, axes and rigid body are configured; full-rate streaming lasts 10 minutes without stalls; laptop/drone communicate both ways; PX4 receives correct-axis mocap; settings are documented.
 
 | Issue | Title (Linear, verbatim) | Result | Evidence |
 |---|---|---|---|
@@ -54,7 +55,8 @@ Decisive check: `./mocap.sh check` → `./mocap.sh` → `ros2 topic hz /drone_1/
 
 ### M2 · Drone setup and hand-carry, propellers off — REAL DRONE, props off
 Linear (snapshot 2026-10-26): 0 % · no ledger row on this software
-Done when (Linear, verbatim): drone ID matches controller target, only one watchdog runs, estimator fuses mocap, the panel tracks the hand-carried drone correctly, and kill switch is checked props-off.
+
+**Done when** (Linear's target, verbatim; a target, not a result): drone ID matches controller target, only one watchdog runs, estimator fuses mocap, the panel tracks the hand-carried drone correctly, and kill switch is checked props-off.
 
 | Issue | Title (Linear, verbatim) | Result | Evidence |
 |---|---|---|---|
@@ -85,7 +87,8 @@ Observed on the previous software (archived branch `archive/airstack-starling-ma
 
 ### M3 · First flight on the new software — REAL DRONE
 Linear (snapshot 2026-10-26): 0 % · no ledger row on this software
-Done when (Linear, verbatim): every command is acknowledged; landing settles and disarms; dummy-payload hover yields hover throttle and flight time.
+
+**Done when** (Linear's target, verbatim; a target, not a result): every command is acknowledged; landing settles and disarms; dummy-payload hover yields hover throttle and flight time.
 
 | Issue | Title (Linear, verbatim) | Result | Evidence |
 |---|---|---|---|
@@ -109,7 +112,8 @@ Decisive check in hover: `ros2 topic hz /drone_1/fmu/trajectory_command` ≈ 20 
 
 ### M4 · Goal flights with the braking fence — REAL DRONE
 Linear (snapshot 2026-10-26): 0 % · no ledger row on this software
-Done when (Linear, verbatim): goal legs use the smooth speed-limited profile; wall braking distance is measured; gains change live; hold stops the drone where expected.
+
+**Done when** (Linear's target, verbatim; a target, not a result): goal legs use the smooth speed-limited profile; wall braking distance is measured; gains change live; hold stops the drone where expected.
 
 | Issue | Title (Linear, verbatim) | Result | Evidence |
 |---|---|---|---|
@@ -130,7 +134,8 @@ Decisive check: wall test — goal 0.5 m past the `keep_in` wall at low speed: c
 
 ### M5 · Gamepad flying on the real drone — REAL DRONE
 Linear (snapshot 2026-10-26): 0 % · no ledger row on this software
-Done when (Linear, verbatim): yaw direction is correct (not proved by sim), the gamepad fence holds, stick release holds position, and coast distance is measured.
+
+**Done when** (Linear's target, verbatim; a target, not a result): yaw direction is correct (not proved by sim), the gamepad fence holds, stick release holds position, and coast distance is measured.
 
 | Issue | Title (Linear, verbatim) | Result | Evidence |
 |---|---|---|---|
@@ -142,7 +147,8 @@ Decisive check: yaw stick 10 % for one second, low, thumb on KILL; wrong way →
 
 ### M6 · LED strips — REAL DRONE, cosmetic
 Linear (snapshot 2026-10-26): 0 % · no ledger row on this software · starts when the strip arrives
-Done when (Linear, verbatim): LED service runs on the drone; green by default, red when collision avoidance acts; motor LEDs muted.
+
+**Done when** (Linear's target, verbatim; a target, not a result): LED service runs on the drone; green by default, red when collision avoidance acts; motor LEDs muted.
 
 | Issue | Title (Linear, verbatim) | Result | Evidence |
 |---|---|---|---|
@@ -153,7 +159,8 @@ Decisive check: `scripts/voxl_push_led.sh drone_1 <DRONE_IP>` then on the drone 
 
 ### M7 · Multi-drone — REAL DRONE, needs the new Starlings
 Linear (snapshot 2026-10-26): 0 % · no ledger row on this software
-Done when (Linear, verbatim): formations, random goals with collision avoidance and intruder-squeeze tests fly.
+
+**Done when** (Linear's target, verbatim; a target, not a result): formations, random goals with collision avoidance and intruder-squeeze tests fly.
 
 | Issue | Title (Linear, verbatim) | Result | Evidence |
 |---|---|---|---|

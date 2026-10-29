@@ -50,7 +50,8 @@ S3/S4 result (sim only; reference = PX4 EKF2, not ground truth):
 
 ### S5 Finish basic sim flight checks — SIM ONLY (Isaac)
 Linear (snapshot 2026-10-26): 4 % · last ledger row #19 (2026-10-29)
-Done when (Linear, verbatim): hover and 1 m steps, three-drone collision-avoidance crossing and live gain tuning are tried and recorded; drone_1 is hand-flown in the construction site with cuVSLAM, camera recording and scoring.
+
+**Done when** (Linear's target, verbatim; a target, not a result): hover and 1 m steps, three-drone collision-avoidance crossing and live gain tuning are tried and recorded; drone_1 is hand-flown in the construction site with cuVSLAM, camera recording and scoring.
 
 | Issue | Title (Linear, verbatim) | Result | Evidence |
 |---|---|---|---|
@@ -77,11 +78,12 @@ NEAR-786 — results (sim only; gates 0.15 m / 3.0 s PX4 vehicle time / 0 re-ent
 ![x and z step responses, #17–#19 overlaid, PX4 vehicle time](../record/figures/s5_hover_step_overlay.png)
 *`tools/make_figures.sh` → `tools/hover_step_plot.py --overlay sim_hover_step_run1 sim_hover_step_run2 sim_hover_step_run3 --time-scale sim_hover_step_run1=1.336`; ledger #17–#19 ([#17 record](../record/sim_hover_step_run1_record.md), [#18](../record/sim_hover_step_run2_record.md), [#19](../record/sim_hover_step_run3_record.md)).*
 
-Open: NEAR-787 at 2.0 / 4.0 m/s with a bag (`tools/sim_cbf_crossing_test.sh`, SCENARIOS §5). Re-run: `LEDGER=20 ISSUE=NEAR-786 tools/sim_hover_step_run.sh all <new_run>`.
+Open: nothing hand-flown yet — NEAR-789/790 count only with a video of the hand-flown flight the owner has watched (owner's rule, 2026-10-29); NEAR-787 at 2.0 / 4.0 m/s with a bag (`tools/sim_cbf_crossing_test.sh`, SCENARIOS §5). Re-run: `LEDGER=20 ISSUE=NEAR-786 tools/sim_hover_step_run.sh all <new_run>`.
 
 ### S5b · Map the construction site with cuVSLAM — SIM ONLY (Isaac)
 Linear (snapshot 2026-10-26): 0 % · no ledger row yet
-Done when (Linear, verbatim): a map is saved; fresh runs localise from several starts/headings with success rate and time recorded; positions agree with simulator ground truth.
+
+**Done when** (Linear's target, verbatim; a target, not a result): a map is saved; fresh runs localise from several starts/headings with success rate and time recorded; positions agree with simulator ground truth.
 
 | Issue | Title (Linear, verbatim) | Result | Evidence |
 |---|---|---|---|
@@ -92,7 +94,8 @@ Done when (Linear, verbatim): a map is saved; fresh runs localise from several s
 
 ### S5c · Choose the camera for cuVSLAM — DESK (decision)
 Linear (snapshot 2026-10-26): 0 % · no ledger row yet
-Done when (Linear, verbatim): mono/stereo results are comparable, built-in camera suitability has a reasoned yes/no answer, and the decision is written and shared before ordering.
+
+**Done when** (Linear's target, verbatim; a target, not a result): mono/stereo results are comparable, built-in camera suitability has a reasoned yes/no answer, and the decision is written and shared before ordering.
 
 | Issue | Title (Linear, verbatim) | Result | Evidence |
 |---|---|---|---|
@@ -102,7 +105,8 @@ Done when (Linear, verbatim): mono/stereo results are comparable, built-in camer
 
 ### S6 Sim mocap — SIM ONLY (Isaac)
 Linear (snapshot 2026-10-26): 0 % · no ledger row yet
-Done when (Linear, verbatim): three drones take off, fly random goals and land on sim mocap.
+
+**Done when** (Linear's target, verbatim; a target, not a result): three drones take off, fly random goals and land on sim mocap.
 
 | Issue | Title (Linear, verbatim) | Result | Evidence |
 |---|---|---|---|
@@ -115,7 +119,8 @@ Related: the laptop-side mocap bridge loopback, [#14](../record/LEDGER.md) (fake
 
 ### S7 drone_1 flies on cuVSLAM — SIM ONLY (Isaac)
 Linear (snapshot 2026-10-26): 0 % · no ledger row yet
-Done when (Linear, verbatim): source switching/fallback works; hand-flown hold, out-and-back, spin, open-view and hard-stick tests pass; a scripted flight is scored against true position.
+
+**Done when** (Linear's target, verbatim; a target, not a result): source switching/fallback works; hand-flown hold, out-and-back, spin, open-view and hard-stick tests pass; a scripted flight is scored against true position.
 
 | Issue | Title (Linear, verbatim) | Result | Evidence |
 |---|---|---|---|
@@ -125,7 +130,8 @@ Done when (Linear, verbatim): source switching/fallback works; hand-flown hold, 
 
 ### S8 Model the chosen camera and payload — SIM ONLY (Isaac)
 Linear (snapshot 2026-10-26): 0 % · no ledger row yet
-Done when (Linear, verbatim): the camera feeds cuVSLAM; camera+IMU is scored against camera-only; the model with 300–360 g added passes hover, step and crossing checks.
+
+**Done when** (Linear's target, verbatim; a target, not a result): the camera feeds cuVSLAM; camera+IMU is scored against camera-only; the model with 300–360 g added passes hover, step and crossing checks.
 
 | Issue | Title (Linear, verbatim) | Result | Evidence |
 |---|---|---|---|
@@ -136,7 +142,8 @@ Done when (Linear, verbatim): the camera feeds cuVSLAM; camera+IMU is scored aga
 
 ### S9 Safe failover — SIM ONLY (Isaac)
 Linear (snapshot 2026-10-26): 0 % · no ledger row yet
-Done when (Linear, verbatim): no unsafe movement follows stale/missing positions, and source switching moves the drone less than 30 cm.
+
+**Done when** (Linear's target, verbatim; a target, not a result): no unsafe movement follows stale/missing positions, and source switching moves the drone less than 30 cm.
 
 | Issue | Title (Linear, verbatim) | Result | Evidence |
 |---|---|---|---|
@@ -145,7 +152,8 @@ Done when (Linear, verbatim): no unsafe movement follows stale/missing positions
 
 ### S10 Scale test — SIM ONLY (Isaac)
 Linear (snapshot 2026-10-26): 0 % · no ledger row yet
-Done when (Linear, verbatim): 6–10 simulated drones run without cameras; controller load and recording size are measured.
+
+**Done when** (Linear's target, verbatim; a target, not a result): 6–10 simulated drones run without cameras; controller load and recording size are measured.
 
 | Issue | Title (Linear, verbatim) | Result | Evidence |
 |---|---|---|---|

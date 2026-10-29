@@ -88,3 +88,9 @@ class SimSh(unittest.TestCase):
     def test_figures_needs_two_args(self):
         self.assertEqual(run("figures", "crossing").returncode, 2)
         self.assertEqual(run("figures").returncode, 2)
+
+    def test_check_passes_on_the_repo(self):
+        r = subprocess.run(["bash", str(SIM), "check"], capture_output=True, text=True, timeout=120); self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+
+    def test_precommit_calls_check(self):
+        self.assertIn("sim.sh\" check", (SIM.parent / "git-hooks" / "pre-commit").read_text())

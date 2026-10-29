@@ -11,7 +11,7 @@
 #   test <name> [--headless] [--no-pause] --ledger N --issue NEAR-nnn <run>
 #                          run tools/sim_tests/<name> end to end; records land in docs/record/<run>/
 #   figures                make the record figures of a finished run
-#   check                  verify a finished run's record
+#   check                  contract check of every tools/sim_tests/<dir> + the metrics_core tests
 #
 # No argument, -h or an unknown subcommand prints this usage and exits 2; nothing is run.
 set -o pipefail
@@ -30,7 +30,7 @@ usage: tools/sim.sh <setup|doctor|up|down|status|tabs|test|figures|check> [flags
   test <name> [--headless] [--no-pause] --ledger N --issue NEAR-nnn <run>
                                          run tools/sim_tests/<name>; --ledger N = new LEDGER row, --issue = Linear id
   figures                                make the record figures of a run
-  check                                  verify a run's record
+  check                                  contract check of tools/sim_tests/* + metrics_core tests
 sim only; flags, not environment variables.
 USAGE
 }
@@ -244,9 +244,82 @@ print(next((s for s in p if 'running' in s), p[0]))" "$TD/plots.json") || FIRST=
   render_report
   exit "$REPORT_RC"
 }
-cmd_setup()   { not_yet setup "Task 9"; }
-cmd_doctor()  { not_yet doctor "Task 9"; }
-cmd_check()   { not_yet check "Task 9"; }
+
+# ----------------------------------------------------------------------------------------------- setup / doctor / check
+cmd_check() {
+  no_args "$@"
+  python3 "$REPO/tools/lib/contract_check.py" || return 1
+  python3 -m unittest discover -s "$REPO/tools/tests" -p 'test_metrics_core*.py' 2>&1 | tail -3
+  [ "${PIPESTATUS[0]}" = 0 ]
+}
+
+STUDIO_STORE=/root/.config/Foxglove/studio-datastores/layouts-local
+# install_layout <name>: the test's layout as a Studio layouts-local file in the robot container (or the import path)
+install_layout() {
+  local n=$1 R=airstack-robot-desktop-1 tmp
+  if docker exec "$R" test -d "$STUDIO_STORE" 2>/dev/null; then
+    if [ "${DRY:-0}" = 1 ]; then
+      if docker exec "$R" test -f "$STUDIO_STORE/lay_svgtest_$n" 2>/dev/null; then ok "layout present: $STUDIO_STORE/lay_svgtest_$n"
+      else warn "layout $n not installed in $STUDIO_STORE (setup installs it)"; fi
+      return 0
+    fi
+    tmp=$(mktemp)
+    python3 "$REPO/tools/live/make_layout.py" "$SIM_TESTS_DIR/$n" --studio-envelope > "$tmp" \
+      && docker cp "$tmp" "$R:$STUDIO_STORE/lay_svgtest_$n" >/dev/null \
+      && ok "layout installed: $STUDIO_STORE/lay_svgtest_$n — appears in Studio's Layouts menu after Studio restarts" \
+      || bad "layout install failed for $n"
+    rm -f "$tmp"
+  else
+    warn "no Studio layout store in the container — import tools/sim_tests/$n/layout.json once via Layouts → Import"
+  fi
+}
+
+N_OK=0; N_WARN=0; N_FAIL=0
+ok()   { echo "  OK    $*"; N_OK=$((N_OK+1)); }
+warn() { echo "  WARN  $*"; N_WARN=$((N_WARN+1)); }
+bad()  { echo "  FAIL  $*"; N_FAIL=$((N_FAIL+1)); }
+
+# cmd_setup: idempotent preparation; with DRY=1 (doctor) it only reports and changes nothing
+cmd_setup() {
+  no_args "$@"
+  local R=airstack-robot-desktop-1 c t n have_docker=1
+  echo "sim.sh ${SUB} (sim only)$([ "${DRY:-0}" = 1 ] && echo ' — read-only')"
+  if command -v docker >/dev/null; then ok "docker on PATH"; else bad "docker not on PATH"; have_docker=0; fi
+  if [ $have_docker = 1 ]; then
+    local all; all=$(docker ps -a --format '{{.Names}}' 2>/dev/null)
+    for c in isaac-sim airstack-robot-desktop-1 airstack-gcs-1; do
+      if echo "$all" | grep -qx "$c"; then ok "container $c exists"; else bad "container $c missing — run: cd AirStack && ./airstack.sh setup && ./airstack.sh up"; fi
+    done
+  fi
+  if python3 -c 'import numpy, matplotlib' 2>/dev/null; then ok "host python: numpy, matplotlib"; else bad "host python lacks numpy/matplotlib (pip install numpy matplotlib)"; fi
+  for t in ffmpeg obs; do if command -v $t >/dev/null; then ok "$t on PATH"; else warn "$t not on PATH (needed only for video)"; fi; done
+  if [ $have_docker = 1 ] && docker exec "$R" true 2>/dev/null; then
+    if docker exec "$R" bash -c 'command -v foxglove-studio' >/dev/null 2>&1; then ok "foxglove-studio in $R"; else warn "foxglove-studio not found in $R"; fi
+    if docker exec "$R" bash -c 'ls ~/.foxglove-studio/extensions 2>/dev/null | grep -qi svg'; then ok "Studio SVG extension installed"; else warn "Studio SVG extension not found in ~/.foxglove-studio/extensions"; fi
+  elif [ $have_docker = 1 ]; then warn "$R not running — Studio checks and layout install skipped"; fi
+  if [ "${DRY:-0}" = 1 ]; then
+    [ -x "$REPO/.git/hooks/pre-commit" ] && cmp -s "$REPO/tools/git-hooks/pre-commit" "$REPO/.git/hooks/pre-commit" \
+      && ok "pre-commit hook installed and current" || warn "pre-commit hook missing or stale (setup installs it)"
+  else
+    bash "$REPO/tools/git-hooks/install.sh" >/dev/null && ok "pre-commit hook installed" || bad "hook install failed"
+  fi
+  for t in "$SIM_TESTS_DIR"/*/; do
+    n=$(basename "$t")
+    if [ "${DRY:-0}" = 1 ]; then
+      python3 "$REPO/tools/live/make_layout.py" "$t" --check >/dev/null 2>&1 && ok "layout.json current: $n" || warn "layout.json stale or missing: $n"
+    else
+      python3 "$REPO/tools/live/make_layout.py" "$t" && ok "layout.json regenerated: $n" || bad "make_layout failed for $n"
+    fi
+  done
+  if [ $have_docker = 1 ] && docker exec "$R" true 2>/dev/null; then
+    for t in "$SIM_TESTS_DIR"/*/; do n=$(basename "$t"); [ "$n" = _template ] || install_layout "$n"; done
+  fi
+  if cmd_check >/dev/null 2>&1; then ok "sim.sh check (contract + metrics_core tests)"; else bad "sim.sh check FAILS — run tools/sim.sh check"; fi
+  if python3 -m unittest discover -s "$REPO/tools/tests" >/dev/null 2>&1; then ok "unit tests"; else bad "unit tests FAIL — python3 -m unittest discover -s tools/tests"; fi
+  echo "$SUB: $N_OK OK, $N_WARN WARN, $N_FAIL FAIL"
+  [ "$N_FAIL" = 0 ]
+}
+cmd_doctor() { DRY=1 cmd_setup "$@"; }
 
 SUB=${1:-}
 case "$SUB" in

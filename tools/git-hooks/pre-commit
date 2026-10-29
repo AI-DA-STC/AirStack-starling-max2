@@ -17,4 +17,7 @@ if echo "$staged" | grep -qE '^tools/.*\.(py|sh)$'; then
     echo "pre-commit: tools/tests FAIL — run: python3 -m unittest discover -s tools/tests"; rc=1
   else echo "tools/tests OK"; fi
 fi
+if echo "$staged" | grep -qE '^tools/'; then
+  "$root/tools/sim.sh" check >/dev/null 2>&1 || { echo "pre-commit: tools/sim.sh check FAIL — run it"; rc=1; }
+fi
 exit $rc

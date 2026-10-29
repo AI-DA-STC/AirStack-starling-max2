@@ -159,14 +159,21 @@ commander() {
   else docker exec "$R" bash -c ": > $S/commander.log"; note "docker exec -d $R bash -ic '$CMD_CMD > $S/commander.log 2>&1'"; docker exec -d "$R" bash -ic "$CMD_CMD > $S/commander.log 2>&1"; fi   # stale log -> stale count
   NEED=1 wait_for 60 2 "SwarmCommander up" count_log "$R" "SwarmCommander up | scenario=$SCENARIO" "$S/commander.log" || fail "commander not up with scenario=$SCENARIO"
   docker exec "$R" grep -E 'REFUSED|took over|Traceback' "$S/commander.log" && fail "commander refused/crashed (see commander.log)" || true
-  note "docker exec $R bash -ic 'timeout 15 ros2 topic echo --once /svg/commander_status --field data'  # -> status_pre.json"
-  json1 /svg/commander_status > "$OUT/status_pre.json" || fail "no commander_status JSON"
-  python3 - "$OUT/status_pre.json" <<PY | tee -a "$OUT/run.log" || fail "commander_status is not scenario=$SCENARIO with 3 IDLE, odom-fresh drones (see status_pre.json)"
+  note "poll <= 30 s every 2 s: docker exec $R bash -ic 'timeout 8 ros2 topic echo --once /svg/commander_status --field data'  # last snapshot -> status_pre.json"
+  local t0=$SECONDS ok=0
+  while :; do
+    rx 'timeout 8 ros2 topic echo --once /svg/commander_status --field data' | grep -m1 '^{' > "$OUT/status_pre.json" || : > "$OUT/status_pre.json"
+    if [ -s "$OUT/status_pre.json" ] && python3 - "$OUT/status_pre.json" "$SCENARIO" <<'PY' | tee -a "$OUT/run.log"
 import json, sys
 j = json.load(open(sys.argv[1])); st = [d["state"] for d in j["drones"]]; fr = [d.get("odom_fresh") for d in j["drones"]]
 print("scenario", j["scenario"], "states", st, "fresh", fr, "tuning", j.get("tuning"))
-sys.exit(0 if j["scenario"] == "$SCENARIO" and st == ["IDLE"] * 3 and all(fr) else 1)
+sys.exit(0 if j["scenario"] == sys.argv[2] and st == ["IDLE"] * 3 and all(fr) else 1)
 PY
+    then ok=1; break; fi
+    [ $((SECONDS - t0)) -ge 30 ] && break
+    sleep 2
+  done
+  [ "$ok" = 1 ] || fail "commander_status is not scenario=$SCENARIO with 3 IDLE, odom-fresh drones after 30 s (see status_pre.json)"
   json1 /svg/bag_recorder/status | tee "$OUT/bag_status_pre.json" | tee -a "$OUT/run.log" || true
 }
 
@@ -279,9 +286,10 @@ px4_arm_times_of() {   # $1 = ulog path in $I, $2 = MAV_SYS_ID, $3 = who -> $OUT
     else rm -f "$OUT/px4_arm_times.txt"; say "WARN: no PX4 arm times (hover_step_timescale.py rc=$rc) — time-scale gate will be UNVERIFIED"; fi
 }
 
-no_flight_established() {   # 0 ONLY when positively no flight: drone_1's MAVROS state topic has no publisher. Anything else (timeout, error, a publisher) = assume flying
-  local info; info=$(rx 'timeout 10 ros2 topic info /drone_1/interface/mavros/state')
-  echo "$info" | grep -qE "^Publisher count: 0|^Unknown topic"
+no_flight_established() {   # 0 ONLY when positively no flight: a non-empty topic list (no daemon) without drone_1's MAVROS state topic. Present, empty list, error or timeout = assume flying
+  local l; l=$(rx 'timeout 25 ros2 topic list --no-daemon --spin-time 5')
+  [ -n "$l" ] || return 1
+  ! echo "$l" | grep -q '^/drone_1/interface/mavros/state$'
 }
 
 land_all_and_wait() {   # $1 = bound (s), real: land via the commander, poll MAVROS armed (drones 1-3); 0 = all false, 1 = bound hit (overshoot <= one 10 s read)

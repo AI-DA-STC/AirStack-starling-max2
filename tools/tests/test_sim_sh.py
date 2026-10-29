@@ -41,5 +41,17 @@ class SimSh(unittest.TestCase):
                 self.assertIn(msg, r.stderr, args)
                 self.assertNotIn("docker", (r.stdout + r.stderr).lower(), args)   # failed before any container call; the usage text never says "docker"
                 self.assertNotRegex(r.stdout, r"^\[\d\d:\d\d:\d\d")             # no `say` line: no phase ran
-            r = run("test", "foo", "--headless", "--no-pause", *ok, env=env)       # everything valid: parsing passes, stub answers
-            self.assertEqual(r.returncode, 2); self.assertIn("not implemented yet", r.stderr); self.assertNotIn("usage:", r.stderr)
+            # everything valid is NOT run here: it would start the real stack (the flow is covered statically below)
+
+    def test_test_flow_wires_the_pieces(self):
+        src = SIM.read_text()
+        for n in ("source", "lib/stack.sh", "arm_abort_trap", "ABORT_HOOK=metrics_stop", "metrics_node.py", "bag_recompute.py", "metrics_node: ready", "ros2 topic hz /svg/test/",
+                  "tail -n0 -f", "fly.sh", "armed_post.txt", "video.txt", "copy_ulogs", "bag_dump_hook", "report.py", "plot_metrics.py", "VERDICT:", "read -r"):
+            self.assertIn(n, src, n)
+        self.assertNotIn("sed -i", src); self.assertNotIn("AirStack/simulation/isaac-sim/tools", src)
+        self.assertLess(src.index("commander"), src.index("arm_abort_trap"))        # trap armed only from the commander phase on
+        self.assertLess(src.index('cmd_figures "$NAME" "$RUN"'), src.rindex("render_report"))   # figure exists before the record is rendered
+
+    def test_figures_needs_two_args(self):
+        self.assertEqual(run("figures", "crossing").returncode, 2)
+        self.assertEqual(run("figures").returncode, 2)

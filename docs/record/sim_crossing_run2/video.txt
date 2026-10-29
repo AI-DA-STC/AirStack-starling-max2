@@ -1,1 +1,1 @@
-none recorded (the typed path matched no file; no OBS file was saved during this run)
+none of this flight; the scenario's video is videos/cbf_test.mp4, filmed in run #21 (sim_crossing_run1, same setup, its panel-flown crossing)

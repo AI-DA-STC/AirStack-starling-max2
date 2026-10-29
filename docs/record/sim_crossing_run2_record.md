@@ -2,7 +2,7 @@ RECORD · SIM — sim_crossing_run2. Sim-only (iron rule 9): none of these value
 
 # sim_crossing_run2 — three-drone CBF crossing, antipodal, live metrics (started 2026-10-30T02:32:03+08:00 +08; flight 18:34:26–18:35:51 UTC)
 
-**Verdict: FAIL.** Re-run of the three-drone crossing with collision avoidance on the rebuilt asset at cbf_sim.yaml's 2.0 / 4.0 m/s, gated on live 40 Hz odometry (ledger #4 sampled the 5 Hz status string). For Linear NEAR-787 (milestone S5). PASS = every gate PASS; INCOMPLETE = no FAIL but ≥ 1 gate UNVERIFIED; FAIL = any gate FAIL; ABORTED = Ctrl-C landing, never a result. Report generated 2026-10-30 at repo `3b28e16`.
+**Verdict: FAIL.** Re-run of the three-drone crossing with collision avoidance on the rebuilt asset at cbf_sim.yaml's 2.0 / 4.0 m/s, gated on live 40 Hz odometry (ledger #4 sampled the 5 Hz status string). For Linear NEAR-787 (milestone S5). PASS = every gate PASS; INCOMPLETE = no FAIL but ≥ 1 gate UNVERIFIED; FAIL = any gate FAIL; ABORTED = Ctrl-C landing, never a result. Report generated 2026-10-30 at repo `814c774`.
 
 **Scope:** PX4's own sim state estimate positions the drones (no mocap, no camera); flat default world; camera and cuVSLAM not in the loop; speeds are cbf_sim.yaml's sim-only values.
 
@@ -15,7 +15,7 @@ RECORD · SIM — sim_crossing_run2. Sim-only (iron rule 9): none of these value
 | Commander | `cbf_sim.yaml scenario:=antipodal`, tuning {"teleop_max_speed_mps": 1.2, "goal_accel_mps2": 6.0, "goal_settle_s": 0.3, "scenario_speed_mps": 2.0} |
 | Driver | `tools/sim.sh test crossing`, repo commit `3b28e16628816cbd77e113d610ff7c59adc8e471` (tools/ uncommitted changes: 0) |
 | Started | 2026-10-30T02:32:03+08:00 +08 (laptop clock, `run_meta.txt`); flight 18:34:26–18:35:51 UTC (container clock) |
-| Video | none recorded (the typed path matched no file; no OBS file was saved during this run) |
+| Video | none of this flight; the scenario's video is videos/cbf_test.mp4, filmed in run #21 (sim_crossing_run1, same setup, its panel-flown crossing) |
 
 ## Pass/fail
 
@@ -41,7 +41,7 @@ RECORD · SIM — sim_crossing_run2. Sim-only (iron rule 9): none of these value
 | rosbag copied + readable | bag dir crossing_* with metadata.yaml under the heavy folder, and metrics.csv, metrics_bag.csv in the run folder | crossing_20261029_183259: 246 MB, metadata.yaml present | - | PASS |
 | PX4 ulogs one per sysid 2/3/4 | ulog_sysid_map.txt lists sysids 2, 3, 4 (drone_1/2/3) | 3 files, sysids ['2', '3', '4'] | - | PASS |
 | WiFi firmware alerts | 0 during the run | 0 | - | PASS |
-| code that ran | informational (run_meta.txt head vs git HEAD at report time) | ran at 3b28e16 | - | info |
+| code that ran | informational (run_meta.txt head vs git HEAD at report time) | ran at 3b28e16, report at 814c774 | - | info |
 | metrics node offsets (read once at start) | informational (CSV header) | offsets -2,0,0,0,0,0,2,0,0; t0_unix 1793298840.1852098 | - | info |
 | window / samples | informational (phase 2) | 46.8 s, 1202 rows (5476 total), 25.7 Hz | - | info |
 
@@ -61,6 +61,7 @@ Every generation of this record (`verdicts.log`, newest last; the last line is t
 ```
 2026-10-30T02:38:44+08:00 head=3b28e16 verdict=FAIL fail=1 unverified=0
 2026-10-30T02:41:12+08:00 head=3b28e16 verdict=FAIL fail=1 unverified=0
+2026-10-30T02:42:49+08:00 head=3b28e16 verdict=FAIL fail=1 unverified=0
 ```
 
 ## Evidence

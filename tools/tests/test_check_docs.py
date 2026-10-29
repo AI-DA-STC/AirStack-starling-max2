@@ -89,6 +89,26 @@ class PageBudgets(unittest.TestCase):
         self._root = C.ROOT
         self.addCleanup(setattr, C, "ROOT", self._root)
 
+    def test_caption_over_400_chars_fails(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = pathlib.Path(d); (root / "docs" / "projects").mkdir(parents=True)
+            (root / "docs" / "MILESTONES.md").write_text("# top\n")
+            page = "### S1 x — SIM ONLY\n![f](../record/figures/x.png)\n*" + "caption word " * 40 + "*\n"
+            (root / "docs" / "projects" / "HTX-R1.md").write_text(page)
+            C.ROOT = root
+            r = C.check_page_budgets()
+            self.assertEqual(r.status, "FAIL")
+            self.assertTrue(any("caption is" in x and "(max 400)" in x for x in r.details), r.details)
+
+    def test_caption_under_400_chars_passes(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = pathlib.Path(d); (root / "docs" / "projects").mkdir(parents=True)
+            (root / "docs" / "MILESTONES.md").write_text("# top\n")
+            page = "### S1 x — SIM ONLY\n![f](../record/figures/x.png)\n*Figure 1. Short caption.*\n"
+            (root / "docs" / "projects" / "HTX-R1.md").write_text(page)
+            C.ROOT = root
+            self.assertEqual(C.check_page_budgets().status, "PASS")
+
     def test_top_page_61_lines_fails(self):
         with tempfile.TemporaryDirectory() as d:
             fixture(d, "", milestones_lines=61)

@@ -48,7 +48,7 @@ S3/S4 result (sim only; reference = PX4 EKF2, not ground truth):
 | APE RMSE, SE(3)-aligned | 0.88–5.3 m, 2 jumps > 1 m per run (per sim_site_run1 record) | 0.081 m over 162 m, no jumps |
 
 ![flat world: VO jumps away from the reference](../../pictures/vo_flat_xy_cam_run3.png) ![construction site: VO stays on the reference](../../pictures/vo_site_xy_site_run1.png)
-*Top-down x-y, PX4 (blue) vs cuVSLAM (orange); `localisation/scripts/score_run.sh <run> 1` → `score_vs_ulog.py`; ledger #15, #16. The flat-world picture is `sim_cam_run3` (no record file; #15 is `sim_cam_run1`, same world, same behaviour).*
+*Figure 2. Top-down path of drone_1, PX4 (blue) vs cuVSLAM (orange): flat world (left, sim_cam_run3, no record file) and construction site (right, sim_site_run1). `localisation/scripts/score_run.sh <run> 1`; ledger #15, #16.*
 
 ### S5 Finish basic sim flight checks — SIM ONLY (Isaac)
 Linear (snapshot 2026-10-26): 4 % · last ledger row #19 (2026-10-29)
@@ -79,8 +79,10 @@ NEAR-786 — results (sim only; gates 0.15 m / 3.0 s PX4 vehicle time / 0 re-ent
 | landed, DISARMED ×3 | yes | — | yes | yes | yes |
 | verdict | | superseded | driver FAIL ×3, re-analysed PASS; drone_1 ulog lost | PASS | PASS |
 
+Reading Figure 1: every step is inside the settle band within 2.5 s and stays there; x overshoots by up to 0.095 m, z by almost nothing. The three runs lie on top of each other, so the result is repeatable. The settle time is set as much by the commander's braking ramp as by PX4: it describes the loop, not the airframe.
+
 ![x and z step responses, #17–#19 overlaid, PX4 vehicle time](../record/figures/s5_hover_step_overlay.png)
-*Figure: how drone_1 answers a 1 m step command. Each curve is one step: the drone's position along the commanded axis (x left, z right), measured from where it was when the command started (0 m) toward the goal (1 m); steps commanded in the negative direction are flipped so every step reads as +1 m. Time runs from the moment the command started, in PX4's own clock (the sim ran about 1.33× faster than the wall clock; #17's factor is estimated because its drone_1 log was lost). One colour per run: #17 one step per axis, #18 and #19 three each, so 1 + 3 + 3 curves per panel. Dotted line = the goal; grey band = ±0.1 m, "settled" means inside the band and staying there; dashed line = the 3 s gate the curve must have entered the band by. What good looks like: a smooth rise, inside the band by about 2.5 s, no bounce back out, no oscillation. What it shows: on x all seven steps enter the band by 2.5 s with a small overshoot (largest 0.095 m, #19) and stay in; on z they enter by 2.4 s with almost no overshoot (≤ 0.03 m) and creep the last centimetres. The three runs lie on top of each other, so the behaviour is repeatable, and #17's single steps sit inside the spread of #18/#19. Caveat: the settle time is shaped as much by the commander's braking law (its velocity command ramps down over the same 2.5 s) as by PX4, so this is the whole loop, not the airframe alone. Made by `tools/make_figures.sh` → `tools/hover_step_plot.py --overlay sim_hover_step_run1 sim_hover_step_run2 sim_hover_step_run3 --time-scale sim_hover_step_run1=1.336`; ledger #17–#19 ([#17 record](../record/sim_hover_step_run1_record.md), [#18](../record/sim_hover_step_run2_record.md), [#19](../record/sim_hover_step_run3_record.md)).*
+*Figure 1. Step response of drone_1 to 1 m commands, x (left) and z (right), runs #17–#19 overlaid, PX4 time since the command. Dotted: goal. Shaded: ±0.1 m settle band. Dashed: 3 s gate. Backward steps are sign-flipped. `tools/make_figures.sh`; records [#17](../record/sim_hover_step_run1_record.md), [#18](../record/sim_hover_step_run2_record.md), [#19](../record/sim_hover_step_run3_record.md).*
 
 Open: nothing hand-flown yet — NEAR-789/790 count only with a video of the hand-flown flight the owner has watched (owner's rule, 2026-10-29); NEAR-787 at 2.0 / 4.0 m/s with a bag (`tools/sim_cbf_crossing_test.sh`, SCENARIOS §5). Re-run: `LEDGER=20 ISSUE=NEAR-786 tools/sim_hover_step_run.sh all <new_run>`.
 

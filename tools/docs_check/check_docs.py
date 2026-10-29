@@ -573,6 +573,17 @@ def check_images(files):
 
 
 TOP_PAGE_LINES, PROJECT_PAGE_LINES, MILESTONE_SECTION_LINES, CELL_CHARS = 60, 250, 40, 120
+CAPTION_CHARS = 400   # a caption is 2–4 sentences; the interpretation goes in the results text
+
+
+def long_captions(text):
+    """(lineno, length) for the italic caption line right under an image when it exceeds CAPTION_CHARS."""
+    out, prev_img = [], False
+    for i, line in enumerate(text.splitlines(), 1):
+        if prev_img and line.startswith("*") and len(line) > CAPTION_CHARS:
+            out.append((i, len(line)))
+        prev_img = line.startswith("![")
+    return out
 TOP_PAGE = "docs/MILESTONES.md"
 
 
@@ -632,8 +643,10 @@ def check_page_budgets():
                     fails.append(f"{rel(f)}: '{h}': {k}/{MILESTONE_SECTION_LINES} lines (figures excluded)")
         for ln, ci, length in long_cells(text):
             fails.append(f"{rel(f)}:{ln}: cell {ci + 1} is {length} chars (max {CELL_CHARS})")
+        for ln, length in long_captions(text):
+            fails.append(f"{rel(f)}:{ln}: caption is {length} chars (max {CAPTION_CHARS})")
     return verdict("page-budgets", fails, [],
-                   f"{TOP_PAGE} ≤ {TOP_PAGE_LINES} lines; {len(pages) - 1} project page(s) ≤ {PROJECT_PAGE_LINES} lines, sections ≤ {MILESTONE_SECTION_LINES}, cells ≤ {CELL_CHARS} chars",
+                   f"{TOP_PAGE} ≤ {TOP_PAGE_LINES} lines; {len(pages) - 1} project page(s) ≤ {PROJECT_PAGE_LINES} lines, sections ≤ {MILESTONE_SECTION_LINES}, cells ≤ {CELL_CHARS} chars, captions ≤ {CAPTION_CHARS} chars",
                    f"{len(fails)} budget breach(es)")
 
 

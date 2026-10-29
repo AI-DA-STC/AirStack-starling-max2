@@ -37,7 +37,7 @@ class ScriptSyntax(unittest.TestCase):
         r = subprocess.run(["bash", str(p), "no_such_phase"], capture_output=True, text=True)
         self.assertEqual(r.returncode, 2)
         for ph in ("analyse", "status", "report", "collect", "down"): self.assertIn(ph, r.stdout + r.stderr)
-        src = p.read_text()
+        src = p.read_text() + (TOOLS / "lib" / "stack.sh").read_text()
         self.assertNotIn("sed -i", src)                       # no in-container patching
         self.assertNotIn("isaac-sim/tools", src)              # copies come from tools/
         self.assertIn("set -o pipefail", src); self.assertNotIn("set -eo pipefail", src)
@@ -47,5 +47,5 @@ class ScriptSyntax(unittest.TestCase):
     def test_shellcheck_if_present(self):
         import shutil
         if not shutil.which("shellcheck"): self.skipTest("shellcheck not installed")
-        r = subprocess.run(["shellcheck", "-S", "warning", str(TOOLS / "sim_hover_step_run.sh"), str(TOOLS / "sim_hover_step_test.sh")], capture_output=True, text=True)
+        r = subprocess.run(["shellcheck", "-S", "warning", str(TOOLS / "sim_hover_step_run.sh"), str(TOOLS / "lib" / "stack.sh"), str(TOOLS / "sim_hover_step_test.sh")], capture_output=True, text=True)
         self.assertEqual(r.returncode, 0, r.stdout)

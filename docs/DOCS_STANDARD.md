@@ -2,7 +2,7 @@ KNOW · SIM + REAL — how this repo's documentation is organised and changed. R
 
 # Documentation standard
 
-One idea per page, one place per fact, every number traceable to a record. Status lives in Linear; the repo holds evidence.
+One idea per page, one place per fact, every number traceable to a record. Status lives in Linear; the repo copies it from a dated snapshot and holds the evidence.
 
 ## 1. Where things live
 
@@ -28,7 +28,7 @@ One idea per page, one place per fact, every number traceable to a record. Statu
 **Purpose:** 2–3 sentences a student can follow: the question this milestone answers, why it comes now, what breaks if it is skipped.
 Linear: <status> · <progress> (snapshot <date>) · last ledger row #<n>
 Done when (Linear, verbatim): …
-| Issue | Title (Linear, verbatim) | Result | Evidence |
+| Issue | Title (Linear, verbatim) | Linear status | Result | Evidence |
 <results table and figure for each issue that has data, evidence links inline>
 Open: <one line>. Re-run: <one command>.
 ```
@@ -45,7 +45,8 @@ Write for a student who joined today. Every section first says why it exists in 
 - **Hand-flown results** (teleop, gamepad, any flight a person steered) count only with a link to a video the owner has watched. No video, no result.
 - **Issue blocks:** every explanation or result about one issue opens with its bold Linear id and verbatim title, `**NEAR-nnn: <title>.**`, then what the issue checks and why, then the scope line, then the results. One block per issue, under its milestone.
 - **Scope line:** every results block opens with one sentence saying what was in the loop (which position source flew the drone, which world) and what was not (for example "camera and cuVSLAM not running"). Nobody should have to infer what a test measured from its name; the hover + step test is a control-loop check, not a perception test, and the page says so.
-- No status column anywhere. No status pills.
+- **Linear status** is copied verbatim from the Linear snapshot named in the page header (the plan file in `docs/plans/`), never typed by hand. `linear-parity` fails a cell that differs from it. To update it, refresh the whole snapshot; never edit one cell. It answers "is the issue closed?"; the Result cell says what the tests measured (owner, 2026-10-30, [design](superpowers/specs/2026-10-30-linear-status-column-design.md)).
+- No other status column and no status pills.
 - Negative and superseded results stay in the table.
 - Every figure has a numbered caption in italics right under it, 2–4 sentences and at most 400 characters: what is plotted and on which axes, what each line, band and mark means, then the generating command and the ledger rows. The reading of the figure (what it shows, what good looks like, the caveat) is 2–3 sentences of results text above the figure, never in the caption.
 - Figures are numbered in page order, `Figure 1` first. The line before the image is `<a id="fig-N"></a>`, and every mention in the text is a link to that anchor (written as `[Figure N]` followed by `(#fig-N)`) so a reader can jump to it. Enforced by `figure-refs`, caption length by `page-budgets`.

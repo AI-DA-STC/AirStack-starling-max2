@@ -11,9 +11,9 @@ Question (Linear): Does the candidate position source → PX4 → swarm controll
 Linear (snapshot 2026-10-26): target 2026-10-21 · 100 % · last ledger row #13 (2026-10-21)
 Done when (Linear): not stated in the snapshot — milestone at 100 %
 
-| Issue | Title (Linear, verbatim) | Result | Evidence |
-|---|---|---|---|
-| NEAR-782 | Build and fly the Starling 2 Max sim model | spawns ×3 (#1, 2026-10-19); 3 drones random goals, 3 clean landings (#13, 2026-10-21) | [#1, #9, #10, #13](../record/LEDGER.md); `videos/random_CBF_sim_edited.mp4` |
+| Issue | Title (Linear, verbatim) | Linear status | Result | Evidence |
+|---|---|---|---|---|
+| NEAR-782 | Build and fly the Starling 2 Max sim model | Done | spawns ×3 (#1, 2026-10-19); 3 drones random goals, 3 clean landings (#13, 2026-10-21) | [#1, #9, #10, #13](../record/LEDGER.md); `videos/random_CBF_sim_edited.mp4` |
 
 Open: none. Re-run: `tools/sim_terminals.sh` with `DRONE_USD=… PX4_VEHICLE_MODEL=pegasus_starling2max` (RUNBOOK §A).
 
@@ -22,28 +22,28 @@ Open: none. Re-run: `tools/sim_terminals.sh` with `DRONE_USD=… PX4_VEHICLE_MOD
 Linear (snapshot 2026-10-26): target 2026-10-22 · 100 % · last ledger row #15 (2026-10-22)
 Done when (Linear): not stated in the snapshot — milestone at 100 %
 
-| Issue | Title (Linear, verbatim) | Result | Evidence |
-|---|---|---|---|
-| NEAR-783 | S2 Add a stereo camera to drone_1 and route its images | pipeline works end to end (sim_cam_run1, 2026-10-22) | [#15](../record/LEDGER.md) → [record](../../localisation/results/sim_cam_run1_record.md) |
+| Issue | Title (Linear, verbatim) | Linear status | Result | Evidence |
+|---|---|---|---|---|
+| NEAR-783 | S2 Add a stereo camera to drone_1 and route its images | Done | pipeline works end to end (sim_cam_run1, 2026-10-22) | [#15](../record/LEDGER.md) → [record](../../localisation/results/sim_cam_run1_record.md) |
 
 ### S3 Evaluate cuVSLAM in sim — SIM ONLY (Isaac)
 **Purpose:** before trusting cuVSLAM as a position source we need to know how good it is against something we trust. This scored it against PX4's own estimate and found that the empty world (sky plus a grid floor) breaks it.
 Linear (snapshot 2026-10-26): target 2026-10-22 · 100 % · last ledger row #15 (2026-10-22)
 Done when (Linear): not stated in the snapshot — milestone at 100 %
 
-| Issue | Title (Linear, verbatim) | Result | Evidence |
-|---|---|---|---|
-| NEAR-784 | S3 Run cuVSLAM on drone_1 and score it | APE RMSE 0.252 m, flat world, 480×300 — pipeline result, not accuracy (2026-10-22) | [#15](../record/LEDGER.md) → [record](../../localisation/results/sim_cam_run1_record.md) |
+| Issue | Title (Linear, verbatim) | Linear status | Result | Evidence |
+|---|---|---|---|---|
+| NEAR-784 | S3 Run cuVSLAM on drone_1 and score it | Done | APE RMSE 0.252 m, flat world, 480×300 — pipeline result, not accuracy (2026-10-22) | [#15](../record/LEDGER.md) → [record](../../localisation/results/sim_cam_run1_record.md) |
 
 ### S4 Construction-site environment — SIM ONLY (Isaac)
 **Purpose:** S3 showed cuVSLAM needs texture to look at. This brought the lab's construction site into Isaac so the sim looks like the place the drones will fly, and showed cuVSLAM holds 0.08 m there.
 Linear (snapshot 2026-10-26): target 2026-10-23 · 100 % · last ledger row #16 (2026-10-22)
 Done when (Linear): not stated in the snapshot — milestone at 100 %
 
-| Issue | Title (Linear, verbatim) | Result | Evidence |
-|---|---|---|---|
-| NEAR-785 | S4 Convert the construction site into an Isaac Sim world | world loads (`ENV_USD`, 40 m crop); VO 0.081 m RMSE / 162 m, no jumps (2026-10-22) | [#16](../record/LEDGER.md) → [record](../../localisation/results/sim_site_run1_record.md) |
-| NEAR-859 | Fly 3 drones with cuVSLAM in the construction site and score it | 3 drones `random_goals`, 0.081 m RMSE over 162 m (sim_site_run1, 2026-10-22) | [#16](../record/LEDGER.md) → [record](../../localisation/results/sim_site_run1_record.md) |
+| Issue | Title (Linear, verbatim) | Linear status | Result | Evidence |
+|---|---|---|---|---|
+| NEAR-785 | S4 Convert the construction site into an Isaac Sim world | Done | world loads (`ENV_USD`, 40 m crop); VO 0.081 m RMSE / 162 m, no jumps (2026-10-22) | [#16](../record/LEDGER.md) → [record](../../localisation/results/sim_site_run1_record.md) |
+| NEAR-859 | Fly 3 drones with cuVSLAM in the construction site and score it | Done | 3 drones `random_goals`, 0.081 m RMSE over 162 m (sim_site_run1, 2026-10-22) | [#16](../record/LEDGER.md) → [record](../../localisation/results/sim_site_run1_record.md) |
 
 S3/S4 result (sim only; reference = PX4 EKF2, not ground truth). [Figure 1](#fig-1) shows why the site matters: on the flat world cuVSLAM drifts and jumps away from the reference; in the construction site its track lies on top of it.
 
@@ -61,14 +61,14 @@ Linear (snapshot 2026-10-26): 4 % · last ledger row #23 (2026-10-30)
 
 **Done when** (Linear's target, verbatim; a target, not a result): hover and 1 m steps, three-drone collision-avoidance crossing and live gain tuning are tried and recorded; drone_1 is hand-flown in the construction site with cuVSLAM, camera recording and scoring.
 
-| Issue | Title (Linear, verbatim) | Result | Evidence |
-|---|---|---|---|
-| NEAR-786 | Re-run hover and 1 m step test on the updated sim drone | PASS ×2 — x 0.095 m / 2.47 s, 2026-10-29 | [#18, #19](../record/LEDGER.md) → [run3 record](../record/sim_hover_step_run3_record.md) |
-| NEAR-787 | Re-run three-drone crossing with collision avoidance and record it | FAIL ×3 — min 1.00 m (#22), 2026-10-30 | [#20–#22](../record/LEDGER.md) → [record](../record/sim_crossing_run2_record.md), [#21 video](../../videos/cbf_test.mp4) |
-| NEAR-788 | Try live gain tuning from the panel in sim | Works — 5 of 5 changes applied, 2026-10-30 | [#23](../record/LEDGER.md) → [record](../record/sim_gains_run1_record.md) |
-| NEAR-789 | Set up one-drone gamepad teleop in the construction site (pad detected, sticks move the drone, release holds) | — | — |
-| NEAR-790 | Hand-fly drone_1 with cuVSLAM running, record and score the flight | — | — |
-| NEAR-860 | Record the stereo camera images so a flight can be replayed through cuVSLAM | — | — |
+| Issue | Title (Linear, verbatim) | Linear status | Result | Evidence |
+|---|---|---|---|---|
+| NEAR-786 | Re-run hover and 1 m step test on the updated sim drone | Backlog | PASS ×2 — x 0.095 m / 2.47 s, 2026-10-29 | [#18, #19](../record/LEDGER.md) → [run3 record](../record/sim_hover_step_run3_record.md) |
+| NEAR-787 | Re-run three-drone crossing with collision avoidance and record it | Backlog | FAIL ×3 — min 1.00 m (#22), 2026-10-30 | [#20–#22](../record/LEDGER.md) → [record](../record/sim_crossing_run2_record.md), [#21 video](../../videos/cbf_test.mp4) |
+| NEAR-788 | Try live gain tuning from the panel in sim | Backlog | Works — 5 of 5 changes applied, 2026-10-30 | [#23](../record/LEDGER.md) → [record](../record/sim_gains_run1_record.md) |
+| NEAR-789 | Set up one-drone gamepad teleop in the construction site (pad detected, sticks move the drone, release holds) | In Progress | — | — |
+| NEAR-790 | Hand-fly drone_1 with cuVSLAM running, record and score the flight | Backlog | — | — |
+| NEAR-860 | Record the stereo camera images so a flight can be replayed through cuVSLAM | Backlog | — | — |
 
 **NEAR-786: Re-run hover and 1 m step test on the updated sim drone.** This test checks that one drone still hovers, moves 1 m and settles cleanly after the rebuild. It tests the control loop only, so the camera and cuVSLAM are off and the world makes no difference. The gates are set as a sanity bar, not a flight requirement ([thresholds](../../tools/README.md#thresholds)).
 
@@ -105,12 +105,12 @@ Linear (snapshot 2026-10-26): 0 % · no ledger row yet
 
 **Done when** (Linear's target, verbatim; a target, not a result): a map is saved; fresh runs localise from several starts/headings with success rate and time recorded; positions agree with simulator ground truth.
 
-| Issue | Title (Linear, verbatim) | Result | Evidence |
-|---|---|---|---|
-| NEAR-791 | Add a mapping mode to the cuVSLAM node | — | — |
-| NEAR-792 | Hand-fly a mapping loop and save the map | — | — |
-| NEAR-793 | Localise in the saved map from 5+ starting points | — | — |
-| NEAR-794 | Compare the localised position with the simulator’s position | — | — |
+| Issue | Title (Linear, verbatim) | Linear status | Result | Evidence |
+|---|---|---|---|---|
+| NEAR-791 | Add a mapping mode to the cuVSLAM node | Backlog | — | — |
+| NEAR-792 | Hand-fly a mapping loop and save the map | Backlog | — | — |
+| NEAR-793 | Localise in the saved map from 5+ starting points | Backlog | — | — |
+| NEAR-794 | Compare the localised position with the simulator’s position | Backlog | — | — |
 
 ### S5c · Choose the camera for cuVSLAM — DESK (decision)
 **Purpose:** the camera the real Starling will carry has to be chosen before hardware is ordered. Mono versus stereo and the built-in camera are compared so the decision rests on measured results, not guesses.
@@ -118,11 +118,11 @@ Linear (snapshot 2026-10-26): 0 % · no ledger row yet
 
 **Done when** (Linear's target, verbatim; a target, not a result): mono/stereo results are comparable, built-in camera suitability has a reasoned yes/no answer, and the decision is written and shared before ordering.
 
-| Issue | Title (Linear, verbatim) | Result | Evidence |
-|---|---|---|---|
-| NEAR-800 | Run cuVSLAM in monocular mode on a replayed flight and score it against stereo | — | — |
-| NEAR-801 | List the Starling 2 Max’s built-in cameras and check whether cuVSLAM can use them | — | — |
-| NEAR-802 | Decide the camera (built-in mono / built-in stereo / added stereo) and write down why | — | — |
+| Issue | Title (Linear, verbatim) | Linear status | Result | Evidence |
+|---|---|---|---|---|
+| NEAR-800 | Run cuVSLAM in monocular mode on a replayed flight and score it against stereo | Backlog | — | — |
+| NEAR-801 | List the Starling 2 Max’s built-in cameras and check whether cuVSLAM can use them | Backlog | — | — |
+| NEAR-802 | Decide the camera (built-in mono / built-in stereo / added stereo) and write down why | Backlog | — | — |
 
 ### S6 Sim mocap — SIM ONLY (Isaac)
 **Purpose:** the real indoor drones get their position from mocap, not GPS. Making the sim drones do the same (true position fed to PX4 as mocap, GPS off, the real estimator settings) means every later sim test exercises the real position path.
@@ -130,12 +130,12 @@ Linear (snapshot 2026-10-26): 0 % · no ledger row yet
 
 **Done when** (Linear's target, verbatim; a target, not a result): three drones take off, fly random goals and land on sim mocap.
 
-| Issue | Title (Linear, verbatim) | Result | Evidence |
-|---|---|---|---|
-| NEAR-803 | Publish the simulator’s true drone positions | — | — |
-| NEAR-804 | Send them into PX4 as mocap-style position | — | — |
-| NEAR-805 | Sim setting that turns GPS off and uses the real drone’s estimator values | — | — |
-| NEAR-806 | Fly three drones on sim mocap: takeoff, random goals, land | — | — |
+| Issue | Title (Linear, verbatim) | Linear status | Result | Evidence |
+|---|---|---|---|---|
+| NEAR-803 | Publish the simulator’s true drone positions | Backlog | — | — |
+| NEAR-804 | Send them into PX4 as mocap-style position | Backlog | — | — |
+| NEAR-805 | Sim setting that turns GPS off and uses the real drone’s estimator values | Backlog | — | — |
+| NEAR-806 | Fly three drones on sim mocap: takeoff, random goals, land | Backlog | — | — |
 
 Related: the laptop-side mocap bridge loopback, [#14](../record/LEDGER.md) (fake Motive, 49.998 Hz into the PX4 message — not sim mocap).
 
@@ -145,11 +145,11 @@ Linear (snapshot 2026-10-26): 0 % · no ledger row yet
 
 **Done when** (Linear's target, verbatim; a target, not a result): source switching/fallback works; hand-flown hold, out-and-back, spin, open-view and hard-stick tests pass; a scripted flight is scored against true position.
 
-| Issue | Title (Linear, verbatim) | Result | Evidence |
-|---|---|---|---|
-| NEAR-795 | Position source switch: sim mocap or cuVSLAM, with automatic fallback | — | — |
-| NEAR-796 | Hand-flown handover tests (hold, out-and-back, spin, open view, hard stick) | — | — |
-| NEAR-797 | Scripted flight on cuVSLAM, scored against true position | — | — |
+| Issue | Title (Linear, verbatim) | Linear status | Result | Evidence |
+|---|---|---|---|---|
+| NEAR-795 | Position source switch: sim mocap or cuVSLAM, with automatic fallback | Backlog | — | — |
+| NEAR-796 | Hand-flown handover tests (hold, out-and-back, spin, open view, hard stick) | Backlog | — | — |
+| NEAR-797 | Scripted flight on cuVSLAM, scored against true position | Backlog | — | — |
 
 ### S8 Model the chosen camera and payload — SIM ONLY (Isaac)
 **Purpose:** the chosen camera and its computer add 300 to 360 g and change the drone. The model has to carry that weight and still pass hover, step and crossing before the real build is trusted.
@@ -157,12 +157,12 @@ Linear (snapshot 2026-10-26): 0 % · no ledger row yet
 
 **Done when** (Linear's target, verbatim; a target, not a result): the camera feeds cuVSLAM; camera+IMU is scored against camera-only; the model with 300–360 g added passes hover, step and crossing checks.
 
-| Issue | Title (Linear, verbatim) | Result | Evidence |
-|---|---|---|---|
-| NEAR-798 | Add Jetson and camera weight to the Starling sim model | — | — |
-| NEAR-807 | Re-run hover, step and crossing tests on the heavier model | — | — |
-| NEAR-808 | Feed drone_1’s IMU into cuVSLAM (camera-only → camera + IMU) and compare the scores | — | — |
-| NEAR-809 | Model the chosen camera on drone_1 in sim | — | — |
+| Issue | Title (Linear, verbatim) | Linear status | Result | Evidence |
+|---|---|---|---|---|
+| NEAR-798 | Add Jetson and camera weight to the Starling sim model | Backlog | — | — |
+| NEAR-807 | Re-run hover, step and crossing tests on the heavier model | Backlog | — | — |
+| NEAR-808 | Feed drone_1’s IMU into cuVSLAM (camera-only → camera + IMU) and compare the scores | Backlog | — | — |
+| NEAR-809 | Model the chosen camera on drone_1 in sim | Backlog | — | — |
 
 ### S9 Safe failover — SIM ONLY (Isaac)
 **Purpose:** a position source can go stale, drop out or switch. The controller must not move the drone unsafely when that happens, and sim is where that is checked at no risk.
@@ -170,10 +170,10 @@ Linear (snapshot 2026-10-26): 0 % · no ledger row yet
 
 **Done when** (Linear's target, verbatim; a target, not a result): no unsafe movement follows stale/missing positions, and source switching moves the drone less than 30 cm.
 
-| Issue | Title (Linear, verbatim) | Result | Evidence |
-|---|---|---|---|
-| NEAR-810 | Controller handles stale or missing positions (tests first) | — | — |
-| NEAR-811 | Measure and reduce the jump when the position source switches | — | — |
+| Issue | Title (Linear, verbatim) | Linear status | Result | Evidence |
+|---|---|---|---|---|
+| NEAR-810 | Controller handles stale or missing positions (tests first) | Backlog | — | — |
+| NEAR-811 | Measure and reduce the jump when the position source switches | Backlog | — | — |
 
 ### S10 Scale test — SIM ONLY (Isaac)
 **Purpose:** the demo needs more drones than the lab has. Running 6 to 10 simulated drones shows where the controller and the recording hit their limits.
@@ -181,10 +181,10 @@ Linear (snapshot 2026-10-26): 0 % · no ledger row yet
 
 **Done when** (Linear's target, verbatim; a target, not a result): 6–10 simulated drones run without cameras; controller load and recording size are measured.
 
-| Issue | Title (Linear, verbatim) | Result | Evidence |
-|---|---|---|---|
-| NEAR-812 | Run 6 then 10 headless sim drones | — | — |
-| NEAR-813 | Record controller load and recording size | — | — |
+| Issue | Title (Linear, verbatim) | Linear status | Result | Evidence |
+|---|---|---|---|---|
+| NEAR-812 | Run 6 then 10 headless sim drones | Backlog | — | — |
+| NEAR-813 | Record controller load and recording size | Backlog | — | — |
 
 ## Sim debt (ours; none of it gates a milestone)
 

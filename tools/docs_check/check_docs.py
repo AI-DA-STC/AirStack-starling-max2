@@ -477,14 +477,19 @@ def plan_issues(text):
 
 
 def page_issue_rows(text):
-    """(lineno, id, title, result_cell) for table rows whose first cell is a NEAR id (plain or linked)."""
+    """(lineno, id, title, status_cell, result_cell) for table rows whose first cell is a NEAR id (plain or linked).
+    Issue tables are | Issue | Title | Linear status | Result | Evidence | (owner, 2026-10-30); a shorter row has
+    status None, and check_linear_parity fails it."""
     out = []
     for i, line in enumerate(text.splitlines(), 1):
         c = _table_cells(line)
         if c and len(c) >= 2:
             m = re.match(r"^\[?(NEAR-\d+)\]?(\(.*\))?$", c[0])
             if m:
-                out.append((i, m.group(1), c[1], c[2] if len(c) > 2 else ""))
+                if len(c) >= 5:
+                    out.append((i, m.group(1), c[1], c[2], c[3]))
+                else:
+                    out.append((i, m.group(1), c[1], None, c[2] if len(c) > 2 else ""))
     return out
 
 
@@ -513,7 +518,7 @@ def check_linear_parity():
         snap = re.search(r"Linear snapshot:\s*(\d{4}-\d\d-\d\d)", text)
         date = snap.group(1) if snap else "(no snapshot line)"
         row_lines = set()
-        for i, nid, title, result in page_issue_rows(text):
+        for i, nid, title, status, result in page_issue_rows(text):
             nrows += 1
             row_lines.add(i)
             if nid not in plan:
@@ -521,6 +526,10 @@ def check_linear_parity():
                 continue
             if norm(title) != norm(plan[nid][0]):
                 fails.append(f"{rel(f)}:{i}: {nid} title differs — page: '{norm(title)}' / plan: '{norm(plan[nid][0])}'")
+            if status is None:
+                fails.append(f"{rel(f)}:{i}: {nid} row has no Linear status column (Issue | Title | Linear status | Result | Evidence)")
+            elif status != plan[nid][1]:
+                fails.append(f"{rel(f)}:{i}: {nid} Linear status '{status}' differs from the snapshot {date}: '{plan[nid][1]}' — copy it from {PLAN_FILE}")
             if re.match(r"PASS\b", result) and plan[nid][1] == "Backlog":
                 warns.append(f"{rel(f)}:{i}: {nid} Result says PASS but the snapshot {date} lists it Backlog — tick it in Linear")
         for i, line in enumerate(text.splitlines(), 1):

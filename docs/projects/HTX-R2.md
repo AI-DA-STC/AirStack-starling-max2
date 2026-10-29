@@ -34,12 +34,12 @@ Linear (snapshot 2026-10-26): 0 % · no ledger row on this software
 
 **Done when** (Linear's target, verbatim; a target, not a result): Motive calibration, ground plane, axes and rigid body are configured; full-rate streaming lasts 10 minutes without stalls; laptop/drone communicate both ways; PX4 receives correct-axis mocap; settings are documented.
 
-| Issue | Title (Linear, verbatim) | Result | Evidence |
-|---|---|---|---|
-| NEAR-814 | Network: laptop on the mocap subnet (192.168.9.x) with the route to the drone subnet; drone gets its WiFi address; both ping each other | — | — |
-| NEAR-815 | Set up the upgraded Motive: calibrate (wand, ground plane, axis convention) and create the Starling rigid body | — | — |
-| NEAR-816 | Mocap stream end to end: laptop receives it at full rate for 10 min with no stalls, it reaches the drone’s PX4, and moving the drone by hand moves the position the same way on every axis | — | laptop-side loopback with a fake Motive: [#14](../record/LEDGER.md) (sim, not the real stream) |
-| NEAR-817 | Record the new Motive version, IP and streaming settings in the lab docs and pictures | — | — |
+| Issue | Title (Linear, verbatim) | Linear status | Result | Evidence |
+|---|---|---|---|---|
+| NEAR-814 | Network: laptop on the mocap subnet (192.168.9.x) with the route to the drone subnet; drone gets its WiFi address; both ping each other | Backlog | — | — |
+| NEAR-815 | Set up the upgraded Motive: calibrate (wand, ground plane, axis convention) and create the Starling rigid body | Backlog | — | — |
+| NEAR-816 | Mocap stream end to end: laptop receives it at full rate for 10 min with no stalls, it reaches the drone’s PX4, and moving the drone by hand moves the position the same way on every axis | Backlog | — | laptop-side loopback with a fake Motive: [#14](../record/LEDGER.md) (sim, not the real stream) |
+| NEAR-817 | Record the new Motive version, IP and streaming settings in the lab docs and pictures | Backlog | — | — |
 
 Observed on the previous software (archived branch `archive/airstack-starling-max2`, 2026-07-20 → 09-03) — observations, not results on this software ([LEDGER table 2](../record/LEDGER.md#table-2--observed-on-the-previous-software-archived)):
 
@@ -60,14 +60,14 @@ Linear (snapshot 2026-10-26): 0 % · no ledger row on this software
 
 **Done when** (Linear's target, verbatim; a target, not a result): drone ID matches controller target, only one watchdog runs, estimator fuses mocap, the panel tracks the hand-carried drone correctly, and kill switch is checked props-off.
 
-| Issue | Title (Linear, verbatim) | Result | Evidence |
-|---|---|---|---|
-| NEAR-818 | Re-run the drone setup script, then reboot the drone (never restart the flight software service) | — | — |
-| NEAR-819 | Confirm the drone ID matches the controller’s target | — | — |
-| NEAR-820 | Confirm only one connection watchdog runs on the drone | — | — |
-| NEAR-821 | Check the controller’s messages match the drone’s PX4 version | — | [PX4_MSGS_AUDIT.md](../PX4_MSGS_AUDIT.md) (2026-08-11 audit; re-run method) |
-| NEAR-822 | Hand-carry with props off: panel tracks the drone, estimator fuses mocap | — | — |
-| NEAR-823 | Props-off kill switch test | — | — |
+| Issue | Title (Linear, verbatim) | Linear status | Result | Evidence |
+|---|---|---|---|---|
+| NEAR-818 | Re-run the drone setup script, then reboot the drone (never restart the flight software service) | Backlog | — | — |
+| NEAR-819 | Confirm the drone ID matches the controller’s target | Backlog | — | — |
+| NEAR-820 | Confirm only one connection watchdog runs on the drone | Backlog | — | — |
+| NEAR-821 | Check the controller’s messages match the drone’s PX4 version | Backlog | — | [PX4_MSGS_AUDIT.md](../PX4_MSGS_AUDIT.md) (2026-08-11 audit; re-run method) |
+| NEAR-822 | Hand-carry with props off: panel tracks the drone, estimator fuses mocap | Backlog | — | — |
+| NEAR-823 | Props-off kill switch test | Backlog | — | — |
 
 **NEAR-818: Re-run the drone setup script, then reboot the drone (never restart the flight software service).** Gate: `voxl_setup_real_drone.sh drone_1 <LAPTOP_IP> 1 8888` then `reboot` (never `systemctl restart voxl-px4`: it leaves the SLPI flight core dead) — [DRONE_SETUP.md](../DRONE_SETUP.md) §4.
 
@@ -95,13 +95,13 @@ Linear (snapshot 2026-10-26): 0 % · no ledger row on this software
 
 **Done when** (Linear's target, verbatim; a target, not a result): every command is acknowledged; landing settles and disarms; dummy-payload hover yields hover throttle and flight time.
 
-| Issue | Title (Linear, verbatim) | Result | Evidence |
-|---|---|---|---|
-| NEAR-824 | Preflight card dry run with the new software | — | — |
-| NEAR-825 | First flight: takeoff, hover, land | — | — |
-| NEAR-826 | Landing test: settle on the ground, then disarm | — | — |
-| NEAR-827 | Weigh the flight-ready drone and fit a dummy payload mass | — | — |
-| NEAR-828 | Dummy-payload hover: hover throttle and flight time to 20 % battery | — | — |
+| Issue | Title (Linear, verbatim) | Linear status | Result | Evidence |
+|---|---|---|---|---|
+| NEAR-824 | Preflight card dry run with the new software | Backlog | — | — |
+| NEAR-825 | First flight: takeoff, hover, land | Backlog | — | — |
+| NEAR-826 | Landing test: settle on the ground, then disarm | Backlog | — | — |
+| NEAR-827 | Weigh the flight-ready drone and fit a dummy payload mass | Backlog | — | — |
+| NEAR-828 | Dummy-payload hover: hover throttle and flight time to 20 % battery | Backlog | — | — |
 
 **NEAR-825: First flight: takeoff, hover, land.** Also re-observes: RC takeover to MANUAL mid-hover, land by hand, `land` once to reset the commander (iron rules 1, 3); every command ACK seen in the Interface column; a `DENIED` = PX4 refused, no entry = `target_system` mismatch.
 
@@ -122,12 +122,12 @@ Linear (snapshot 2026-10-26): 0 % · no ledger row on this software
 
 **Done when** (Linear's target, verbatim; a target, not a result): goal legs use the smooth speed-limited profile; wall braking distance is measured; gains change live; hold stops the drone where expected.
 
-| Issue | Title (Linear, verbatim) | Result | Evidence |
-|---|---|---|---|
-| NEAR-829 | Goal legs on the speed-limited profile | — | — |
-| NEAR-830 | Measure braking at the fence walls | — | — |
-| NEAR-831 | Change gains live from the panel in flight | — | — |
-| NEAR-832 | Check where a hold stops the drone | — | — |
+| Issue | Title (Linear, verbatim) | Linear status | Result | Evidence |
+|---|---|---|---|---|
+| NEAR-829 | Goal legs on the speed-limited profile | Backlog | — | — |
+| NEAR-830 | Measure braking at the fence walls | Backlog | — | — |
+| NEAR-831 | Change gains live from the panel in flight | Backlog | — | — |
+| NEAR-832 | Check where a hold stops the drone | Backlog | — | — |
 
 Observed on the previous software (archived branch `archive/airstack-starling-max2`, 2026-09-03; freeze-fence, not the braking fence) — observations, not results on this software ([LEDGER table 2](../record/LEDGER.md#table-2--observed-on-the-previous-software-archived)):
 
@@ -145,11 +145,11 @@ Linear (snapshot 2026-10-26): 0 % · no ledger row on this software
 
 **Done when** (Linear's target, verbatim; a target, not a result): yaw direction is correct (not proved by sim), the gamepad fence holds, stick release holds position, and coast distance is measured.
 
-| Issue | Title (Linear, verbatim) | Result | Evidence |
-|---|---|---|---|
-| NEAR-833 | Check the yaw stick turns the drone the right way, slowly and low | — | — |
-| NEAR-834 | Gamepad fence test | — | — |
-| NEAR-835 | Release-to-hold test and coast distance | — | — |
+| Issue | Title (Linear, verbatim) | Linear status | Result | Evidence |
+|---|---|---|---|---|
+| NEAR-833 | Check the yaw stick turns the drone the right way, slowly and low | Backlog | — | — |
+| NEAR-834 | Gamepad fence test | Backlog | — | — |
+| NEAR-835 | Release-to-hold test and coast distance | Backlog | — | — |
 
 Decisive check: yaw stick 10 % for one second, low, thumb on KILL; wrong way → land, flip `yaw_sign`, relaunch ([TELEOP.md](../TELEOP.md) §2, §5). Config `teleop_real_ours.yaml`.
 
@@ -159,10 +159,10 @@ Linear (snapshot 2026-10-26): 0 % · no ledger row on this software · starts wh
 
 **Done when** (Linear's target, verbatim; a target, not a result): LED service runs on the drone; green by default, red when collision avoidance acts; motor LEDs muted.
 
-| Issue | Title (Linear, verbatim) | Result | Evidence |
-|---|---|---|---|
-| NEAR-836 | Fit the LED strip and start the LED service on the drone | — | — |
-| NEAR-837 | Check green / red behaviour in flight | — | — |
+| Issue | Title (Linear, verbatim) | Linear status | Result | Evidence |
+|---|---|---|---|---|
+| NEAR-836 | Fit the LED strip and start the LED service on the drone | Backlog | — | — |
+| NEAR-837 | Check green / red behaviour in flight | Backlog | — | — |
 
 Decisive check: `scripts/voxl_push_led.sh drone_1 <DRONE_IP>` then on the drone `systemctl status svg-led` → `opened … sink`, `PX4 ESC LED bits muted` ([BASESTATION.md](../BASESTATION.md) §8). The ESC LEDs then no longer show arm state — QGC is the arming display.
 
@@ -172,11 +172,11 @@ Linear (snapshot 2026-10-26): 0 % · no ledger row on this software
 
 **Done when** (Linear's target, verbatim; a target, not a result): formations, random goals with collision avoidance and intruder-squeeze tests fly.
 
-| Issue | Title (Linear, verbatim) | Result | Evidence |
-|---|---|---|---|
-| NEAR-838 | Check the hardware order went out (Starlings, 2 stereo cameras, LED strip, 2.4 GHz radio) | — | — |
-| NEAR-839 | Set up each new Starling (one at a time, setup guide) | — | — |
-| NEAR-840 | Two drones: formation and random goals with collision avoidance | — | — |
-| NEAR-841 | Three drones: intruder-squeeze test | — | — |
+| Issue | Title (Linear, verbatim) | Linear status | Result | Evidence |
+|---|---|---|---|---|
+| NEAR-838 | Check the hardware order went out (Starlings, 2 stereo cameras, LED strip, 2.4 GHz radio) | Backlog | — | — |
+| NEAR-839 | Set up each new Starling (one at a time, setup guide) | Backlog | — | — |
+| NEAR-840 | Two drones: formation and random goals with collision avoidance | Backlog | — | — |
+| NEAR-841 | Three drones: intruder-squeeze test | Backlog | — | — |
 
 Each airframe: unique `MAV_SYS_ID` / `target_system`, DDS domain and Motive body ([DRONE_SETUP.md](../DRONE_SETUP.md)); procedures and safety briefs in [SCENARIOS.md](../SCENARIOS.md) §6–8 (sim-validated in HTX-R1 only).

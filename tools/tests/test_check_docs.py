@@ -15,7 +15,7 @@ def fixture(tmp, page_rows, records=(), ledger="| # |\n|---|\n", milestones_line
     root = pathlib.Path(tmp)
     (root / "docs/plans").mkdir(parents=True); (root / "docs/projects").mkdir(); (root / "docs/record").mkdir(); (root / "localisation/results").mkdir(parents=True)
     (root / "docs/plans/2026-10-26-project-plan-linear.md").write_text(PLAN)
-    (root / "docs/projects/HTX-R1.md").write_text("# HTX-R1\nLinear snapshot: 2026-10-26\n\n### S5 x — SIM ONLY\n| Issue | Title | Result | Evidence |\n|---|---|---|---|\n" + page_rows + extra)
+    (root / "docs/projects/HTX-R1.md").write_text("# HTX-R1\nLinear snapshot: 2026-10-26\n\n### S5 x — SIM ONLY\n| Issue | Title | Linear status | Result | Evidence |\n|---|---|---|---|---|\n" + page_rows + extra)
     for name, head in records: (root / name).write_text(head)
     (root / "docs/record/LEDGER.md").write_text(ledger)
     (root / "docs/MILESTONES.md").write_text("\n".join(f"line {i}" for i in range(milestones_lines)) + "\n")
@@ -30,42 +30,59 @@ class LinearParity(unittest.TestCase):
 
     def test_wrong_title_is_fail_and_names_the_id(self):
         with tempfile.TemporaryDirectory() as d:
-            fixture(d, "| NEAR-786 | Re-run hover and 1m step test | PASS, 2026-10-29 | #19 |\n")
+            fixture(d, "| NEAR-786 | Re-run hover and 1m step test | Backlog | PASS, 2026-10-29 | #19 |\n")
             r = C.check_linear_parity()
             self.assertEqual(r.status, "FAIL"); self.assertTrue(any("NEAR-786" in x and "title differs" in x for x in r.details))
 
     def test_unknown_id_is_fail(self):
         with tempfile.TemporaryDirectory() as d:
-            fixture(d, "| NEAR-999 | Anything | — | — |\n")
+            fixture(d, "| NEAR-999 | Anything | Backlog | — | — |\n")
             self.assertEqual(C.check_linear_parity().status, "FAIL")
 
     def test_parity_title_apostrophe_and_whitespace(self):          # Review Focus 2
         with tempfile.TemporaryDirectory() as d:
-            fixture(d, "| NEAR-808 | Feed drone_1's IMU into cuVSLAM (camera-only → camera + IMU) and compare the scores | — | — |\n")
+            fixture(d, "| NEAR-808 | Feed drone_1's IMU into cuVSLAM (camera-only → camera + IMU) and compare the scores | Backlog | — | — |\n")
             self.assertEqual(C.check_linear_parity().status, "FAIL")
         with tempfile.TemporaryDirectory() as d:
-            fixture(d, "| NEAR-808 | Feed  drone_1’s IMU into cuVSLAM (camera-only → camera + IMU)  and compare the scores | — | — |\n")
+            fixture(d, "| NEAR-808 | Feed  drone_1’s IMU into cuVSLAM (camera-only → camera + IMU)  and compare the scores | Backlog | — | — |\n")
             self.assertEqual(C.check_linear_parity().status, "PASS")
 
     def test_uncited_pass_record_is_warn_naming_it(self):
         with tempfile.TemporaryDirectory() as d:
-            fixture(d, "| NEAR-786 | Re-run hover and 1 m step test on the updated sim drone | — | — |\n",
+            fixture(d, "| NEAR-786 | Re-run hover and 1 m step test on the updated sim drone | Backlog | — | — |\n",
                     records=[("docs/record/a_record.md", "RECORD\n# a\n**Verdict: PASS.** x\n")])
             r = C.check_linear_parity()
             self.assertEqual(r.status, "WARN"); self.assertTrue(any("a_record.md" in x for x in r.details))
 
     def test_pass_but_backlog_is_warn(self):
         with tempfile.TemporaryDirectory() as d:
-            fixture(d, "| NEAR-786 | Re-run hover and 1 m step test on the updated sim drone | PASS ×2, 2026-10-28/29 | [a](../record/a_record.md) |\n",
+            fixture(d, "| NEAR-786 | Re-run hover and 1 m step test on the updated sim drone | Backlog | PASS ×2, 2026-10-28/29 | [a](../record/a_record.md) |\n",
                     records=[("docs/record/a_record.md", "**Verdict: PASS.**\n")], ledger="| 19 | [a_record.md](a_record.md) |\n")
             r = C.check_linear_parity()
             self.assertEqual(r.status, "WARN"); self.assertTrue(any("Backlog" in x and "NEAR-786" in x for x in r.details))
 
     def test_parity_only_pass_records_count(self):                   # Review Focus 3
         with tempfile.TemporaryDirectory() as d:
-            fixture(d, "| NEAR-786 | Re-run hover and 1 m step test on the updated sim drone | FAIL ×3, 2026-10-28 | — |\n",
+            fixture(d, "| NEAR-786 | Re-run hover and 1 m step test on the updated sim drone | Backlog | FAIL ×3, 2026-10-28 | — |\n",
                     records=[("docs/record/b_record.md", "**Verdict: FAIL.**\n"), ("localisation/results/c_record.md", "**Status: pipeline works**\n")])
             self.assertEqual(C.check_linear_parity().status, "PASS")
+
+    def test_status_cell_must_equal_the_named_snapshot(self):           # owner 2026-10-30: Linear status column
+        with tempfile.TemporaryDirectory() as d:
+            fixture(d, "| NEAR-786 | Re-run hover and 1 m step test on the updated sim drone | Done | — | — |\n")
+            r = C.check_linear_parity()
+            self.assertEqual(r.status, "FAIL"); self.assertTrue(any("NEAR-786" in x and "status" in x and "Backlog" in x for x in r.details))
+
+    def test_status_cell_matching_the_snapshot_passes(self):
+        with tempfile.TemporaryDirectory() as d:
+            fixture(d, "| NEAR-786 | Re-run hover and 1 m step test on the updated sim drone | Backlog | — | — |\n")
+            self.assertEqual(C.check_linear_parity().status, "PASS")
+
+    def test_issue_row_without_a_status_column_fails(self):
+        with tempfile.TemporaryDirectory() as d:
+            fixture(d, "| NEAR-786 | Re-run hover and 1 m step test on the updated sim drone | — | — |\n")
+            r = C.check_linear_parity()
+            self.assertEqual(r.status, "FAIL"); self.assertTrue(any("Linear status" in x for x in r.details))
 
     def test_no_project_pages_passes_vacuously(self):
         with tempfile.TemporaryDirectory() as d:

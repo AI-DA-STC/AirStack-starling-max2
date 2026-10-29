@@ -17,7 +17,8 @@ class ScriptSyntax(unittest.TestCase):
         self.assertEqual(subprocess.run(["bash", "-n", str(p)]).returncode, 0)
         src = p.read_text()
         for needle in ("set -euo pipefail", "--overlay", "docs/record/sim_hover_step_run1", "docs/record/sim_hover_step_run2",
-                       "docs/record/sim_hover_step_run3", "sim_hover_step_run1=1.336", "docs/record/figures/s5_hover_step_overlay.png"):
+                       "docs/record/sim_hover_step_run3", "sim_hover_step_run1=1.336", "docs/record/figures/s5_hover_step_overlay.png",
+                       "sim_crossing_dry1", "s5_crossing_distances.png"):
             self.assertIn(needle, src, needle)
 
     def test_analyze_step_is_identical_copy(self):

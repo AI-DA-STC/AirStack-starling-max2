@@ -1,0 +1,102 @@
+[22:51:56 +08] == phase precheck ==
+[22:51:56 +08] precheck: no real-drone bridge on the laptop, port 8765 free, drone battery out (sim shares domain 1)
+[22:51:56 +08] WARN: Isaac start/stop can crash the WiFi firmware (iwlwifi) — use Ethernet or sit at the laptop
+NVIDIA GeForce RTX 5070 Ti Laptop GPU, 1187 MiB
+[22:51:56 +08] == phase up ==
+[0;32m[INFO][0m Starting services...
+ Container airstack-gcs-1 Running 
+ Container airstack-robot-desktop-1 Running 
+ Container isaac-sim Running 
+[0;32m[INFO][0m Services brought up successfully
+head=05635f76b037b1e7e81ac6294206f63e0b50f49d
+head_short=05635f7
+dirty_tools=0
+started=2026-10-29T22:52:02+08:00
+tz=+08
+run=sim_crossing_dry1
+steps_per_axis=
+[22:52:02 +08] up: containers running, domain 1 clean
+[22:52:02 +08] == phase watch ==
+[22:52:05 +08] watch: running (pid 95123)
+[22:52:05 +08] == phase isaac ==
+[22:52:21 +08] Ready for takeoff: 3 (after 15s)
+model_line=1 starling_cfg=6 autostart=3 unknown_model=0 cooking=0 ready=3
+[22:52:21 +08] == phase interfaces ==
+[22:52:26 +08] drone_1 MAVROS connected (after ~5s)
+[22:52:29 +08] drone_2 MAVROS connected (after ~3s)
+[22:52:31 +08] drone_3 MAVROS connected (after ~2s)
+[22:52:33 +08] drone_1 odometry: ok (after 2 s)
+[22:52:35 +08] drone_2 odometry: ok (after 2 s)
+[22:52:36 +08] drone_3 odometry: ok (after 1 s)
+average rate: 43.735
+/drone_1/interface/mavros/setpoint_raw/target_attitude
+/drone_2/interface/mavros/setpoint_raw/target_attitude
+/drone_3/interface/mavros/setpoint_raw/target_attitude
+clock_rc=1
+[22:52:53 +08] interfaces: 3 drones with odometry
+[22:52:53 +08] == phase commander ==
+[22:52:56 +08] SwarmCommander up: 1 (after 2s)
+scenario antipodal states ['IDLE', 'IDLE', 'IDLE'] fresh [True, True, True] tuning {'teleop_max_speed_mps': 1.2, 'goal_accel_mps2': 6.0, 'goal_settle_s': 0.3, 'scenario_speed_mps': 2.0}
+{"stamp": 1793285580.6619647, "node": "/bag_recorder", "recording": true, "path": "/root/AirStack/robot/ros_ws/bags/crossing_20261029_145255", "started_at": 1793285575.1813128, "duration_s": 5.48065185546875, "size_bytes": 5074944, "topic_count": 285, "bag_dir": "/root/AirStack/robot/ros_ws/bags", "bag_prefix": "crossing", "storage": "mcap", "include_hidden": false, "last_bag": null, "last_result": null, "error": null}
+[22:53:00 +08] == phase params ==
+
+SYS_AUTOSTART: Integer value is: 10090
+MC_PITCHRATE_P: Double value is: 0.03200000151991844
+MC_ROLLRATE_P: Double value is: 0.03200000151991844
+LNDMC_ROT_MAX: Double value is: 300.0
+MPC_XY_VEL_MAX: Double value is: 20.0
+MPC_THR_HOVER: Double value is: 0.16500000655651093
+IMU_GYRO_CUTOFF: Double value is: 80.0
+IMU_DGYRO_CUTOFF: Double value is: 40.0
+MPC_Z_VEL_MAX_DN: Double value is: 4.0
+MPC_ACC_HOR: Double value is: 6.0
+[22:53:31 +08] params: 10-20 airframe confirmed via MAVROS
+[22:53:31 +08] == phase metrics ==
+[22:53:52 +08] metrics node ready: 1 (after 20s)
+[22:54:02 +08] metrics liveness: /svg/test/min_pair_distance_running 10.000 Hz
+[22:54:02 +08] layout: tools/sim_tests/crossing/layout.json (import once in Studio if not installed by setup)
+[22:54:02 +08] == phase fly ==
+[22:54:02 +08] fly: tools/sim_tests/crossing/fly.sh 45 s window (takeoff -> start -> window -> land)
+drone_1 armed: false
+drone_2 armed: false
+drone_3 armed: false
+[swarm_commander-2] [0m[INFO] [1793285706.889475975] [swarm_commander]: drone_3: touchdown at z=0.12 m, settling 2.0 s before disarm[0m
+[swarm_commander-2] [0m[INFO] [1793285707.589655979] [swarm_commander]: drone_1: touchdown at z=0.11 m, settling 2.0 s before disarm[0m
+[swarm_commander-2] [0m[INFO] [1793285707.590148677] [swarm_commander]: drone_2: touchdown at z=0.09 m, settling 2.0 s before disarm[0m
+[swarm_commander-2] [0m[INFO] [1793285708.940011509] [swarm_commander]: drone_3: landed, disarmed (attempt 1)[0m
+[swarm_commander-2] [0m[INFO] [1793285709.689965485] [swarm_commander]: drone_1: landed, disarmed (attempt 1)[0m
+[swarm_commander-2] [0m[INFO] [1793285709.690321232] [swarm_commander]: drone_2: landed, disarmed (attempt 1)[0m
+[22:55:57 +08] metrics.csv copied (4923 lines)
+[22:55:57 +08] == phase collect ==
+2 /tmp/tmp70scry7m/log/2026-10-29/14_52_16.ulg 62361806
+3 /tmp/tmpa4m0dw44/log/2026-10-29/14_52_16.ulg 62134941
+4 /tmp/tmpv8pgjvjd/log/2026-10-29/14_52_16.ulg 61735475
+[22:55:59 +08] ulogs copied for sysids 2 3 4 -> /home/jeremychia/flight_logs/sim/sim_crossing_dry1
+SYS_AUTOSTART 10090
+MAV_SYS_ID 2
+MC_PITCHRATE_P 0.03200000151991844
+MC_ROLLRATE_P 0.03200000151991844
+LNDMC_ROT_MAX 300.0
+MPC_XY_VEL_MAX 20.0
+MPC_THR_HOVER 0.16500000655651093
+IMU_GYRO_CUTOFF 80.0
+IMU_DGYRO_CUTOFF 40.0
+MPC_Z_VEL_MAX_DN 4.0
+MPC_ACC_HOR 6.0
+# PX4 arm/disarm times of drone_1, MAV_SYS_ID 2, ulog /tmp/tmp70scry7m/log/2026-10-29/14_52_16.ulg (vehicle time, s since PX4 boot)
+arm_s=153.124686 disarm_s=231.596838 interval_s=78.472152 source=14_52_16.ulg sysid=2
+[22:56:00 +08] == phase down ==
+[22:56:03 +08] bag copied to /home/jeremychia/flight_logs/sim/sim_crossing_dry1/crossing_20261029_145255
+{"rows": 5086, "odom_msgs": {"drone_1": 7215, "drone_2": 7222, "drone_3": 7219}, "status_msgs": 925, "cbf_msgs": 3701}
+[22:56:06 +08] metrics_bag.csv copied
+[22:56:32 +08] WARN: interface nodes still alive 25 s after SIGINT — TERM
+[22:56:32 +08] ulogs already copied (collect)
+[22:56:36 +08] orphaned PX4 SITL instances killed (Isaac's exit leaves them)
+model_line=1 starling_cfg=6 autostart=3 unknown_model=0 cooking=0 ready=3
+[22:57:06 +08] no WIFI-ALERT during the run
+[22:57:06 +08] down: stack stopped, containers left up
+wrote /home/jeremychia/AirStack-starling-max2/docs/record/sim_crossing_dry1/fig-1.png
+FAIL: /home/jeremychia/AirStack-starling-max2/docs/record/sim_crossing_dry1_record.md
+HEADLINE: 0.99 m (margin -0.11 m to the gate; pair d_13 at t=39.1 s)
+  FAIL       min pairwise distance ≥ 1.10 m (2r): 0.99 m (margin -0.11 m to the gate; pair d_13 at t=39.1 s)
+[22:57:06 +08] ========  VERDICT: FAIL — 0.99 m (margin -0.11 m to the gate; pair d_13 at t=39.1 s)  ========

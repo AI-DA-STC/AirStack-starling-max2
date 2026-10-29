@@ -17,7 +17,7 @@
 # run.log, commands.sh, verdicts.log and caveats.txt are only ever appended to.
 # Clocks: this script logs in the laptop's zone (SGT, labelled); container output (test_stdout.log, *.log) is UTC.
 set -o pipefail            # no -e: every failure that matters is an explicit `|| fail`
-PHASE=${1:-all}; RUN=${2:-sim_hover_step_run1}
+PHASE=${1:-}; RUN=${2:-sim_hover_step_run1}            # no phase = usage (never an accidental `all`)
 REPO=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 R=airstack-robot-desktop-1; I=isaac-sim; S=/tmp/hover_step
 OUT=$REPO/docs/record/$RUN; HEAVY=$HOME/flight_logs/sim/$RUN
@@ -26,10 +26,13 @@ STEPS_PER_AXIS=${STEPS_PER_AXIS:-3}          # alternating +1/-1 m steps per axi
 LEDGER=${LEDGER:-}   # number of the NEW docs/record/LEDGER.md table-1 row (hover_step_report.py --ledger); empty = ? placeholder
 ISSUE=${ISSUE:-}    # Linear issue id for that row (hover_step_report.py --issue NEAR-nnn); empty = ? placeholder
 ISAAC_KIT_ARGS=${ISAAC_KIT_ARGS:-}           # opt-in extra Kit args appended to the Isaac launch (default none)
+ISAAC_GUI=${ISAAC_GUI:-0}                    # 1 = open the Isaac Sim window (ISAAC_SIM_HEADLESS=false) so the flight can be watched / recorded
+PAUSE_BEFORE_FLY=${PAUSE_BEFORE_FLY:-0}      # 1 = wait for Enter before the fly phase (start OBS / the screen recorder first)
+HEADLESS=true; [ "$ISAAC_GUI" = 1 ] && HEADLESS=false
 NOISE='^(bash: cannot set terminal|bash: no job control|Sourcing|groups: cannot find name)'
 BAGS=/root/AirStack/robot/ros_ws/bags        # inside $R; host path AirStack/robot/ros_ws/bags (gitignored)
 
-ISAAC_CMD='PYTHONUNBUFFERED=1 DRONE_USD=/isaac-sim/AirStack/simulation/isaac-sim/assets/robots/starling2max.usd PX4_VEHICLE_MODEL=pegasus_starling2max NUM_ROBOTS=3 SVG_DOMAIN_ID=1 PLAY_SIM_ON_START=true ISAAC_SIM_HEADLESS=true PYTHONPATH="$ISAAC_SIM_PYTHONPATH" /isaac-sim/python.sh /isaac-sim/AirStack/simulation/isaac-sim/launch_scripts/svg_multi_drone_single_domain.py --ext-folder ~/.local/share/ov/data/documents/Kit/shared/exts'"${ISAAC_KIT_ARGS:+ $ISAAC_KIT_ARGS}"
+ISAAC_CMD='PYTHONUNBUFFERED=1 DRONE_USD=/isaac-sim/AirStack/simulation/isaac-sim/assets/robots/starling2max.usd PX4_VEHICLE_MODEL=pegasus_starling2max NUM_ROBOTS=3 SVG_DOMAIN_ID=1 PLAY_SIM_ON_START=true ISAAC_SIM_HEADLESS='"$HEADLESS"' PYTHONPATH="$ISAAC_SIM_PYTHONPATH" /isaac-sim/python.sh /isaac-sim/AirStack/simulation/isaac-sim/launch_scripts/svg_multi_drone_single_domain.py --ext-folder ~/.local/share/ov/data/documents/Kit/shared/exts'"${ISAAC_KIT_ARGS:+ $ISAAC_KIT_ARGS}"
 IF_CMD='cd ~/AirStack/robot/ros_ws && ./src/svg_ground_control/scripts/launch_sim_interfaces.sh 3'
 CMD_CMD='cd ~/AirStack/robot/ros_ws && ros2 launch svg_ground_control ground_control.launch.py config:=$(ros2 pkg prefix svg_ground_control)/share/svg_ground_control/config/cbf_sim.yaml scenario:=goal record_bag:=true bag_prefix:=hover_step'
 PARAM_KEYS="SYS_AUTOSTART MAV_SYS_ID MC_PITCHRATE_P MC_ROLLRATE_P LNDMC_ROT_MAX MPC_XY_VEL_MAX MPC_THR_HOVER IMU_GYRO_CUTOFF IMU_DGYRO_CUTOFF MPC_Z_VEL_MAX_DN MPC_ACC_HOR"
@@ -201,6 +204,10 @@ fly() {
   nx docker cp "$TOOLS/analyze_step.py" "$R:/tmp/"
   nx docker exec "$R" bash -c 'rm -f /tmp/ascent.txt /tmp/step_x_*.txt /tmp/step_z_*.txt /tmp/drone_1_*.csv'   # no stale traces from an earlier flight
   note "timeout 720 docker exec $R bash -ic 'STEPS_PER_AXIS=$STEPS_PER_AXIS /tmp/sim_hover_step_test.sh drone_1'  # -> test_stdout.log (container clock, UTC)"
+  if [ "$PAUSE_BEFORE_FLY" = 1 ]; then
+    say "PAUSE_BEFORE_FLY=1: the stack is up and the drones are on their pads. Start the screen recorder now, then press Enter to fly."
+    read -r _ < /dev/tty || fail "no terminal to wait on (PAUSE_BEFORE_FLY needs an interactive run)"
+  fi
   say "fly: takeoff -> start -> hover thrust -> $STEPS_PER_AXIS alternating +/-1 m steps in x, then in z -> land (about 3-5 min)"
   timeout 720 docker exec "$R" bash -ic "STEPS_PER_AXIS=$STEPS_PER_AXIS /tmp/sim_hover_step_test.sh drone_1" 2>&1 | grep -v -E "$NOISE" | tee "$OUT/test_stdout.log" || true
   grep -q 'landed:' "$OUT/test_stdout.log" || fail "test tool did not reach 'landed' (see test_stdout.log)"
@@ -357,7 +364,7 @@ case "$PHASE" in
   precheck|up|watch|isaac|interfaces|ifgates|commander|params|fly|collect|down|analyse|report|all|status) ;;
   *) echo "usage: $0 precheck|up|watch|isaac|interfaces|commander|params|fly|collect|down|analyse|report | all | status | ifgates  [run_name]"
      echo "  all = the twelve phases in that order (stops at the first FAIL, containers left up); run_name default sim_hover_step_run1"
-     echo "  env: STEPS_PER_AXIS (default 3), ISAAC_KIT_ARGS (extra Isaac Kit args, default none)"; exit 2 ;;
+     echo "  env: STEPS_PER_AXIS (default 3), LEDGER, ISSUE, ISAAC_GUI=1 (Isaac window on), PAUSE_BEFORE_FLY=1 (Enter before the flight), ISAAC_KIT_ARGS"; exit 2 ;;
 esac
 [ "$PHASE" = status ] || mkdir -p "$OUT" "$HEAVY"
 case "$PHASE" in

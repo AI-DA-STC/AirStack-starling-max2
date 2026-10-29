@@ -25,6 +25,12 @@ class ScriptSyntax(unittest.TestCase):
         theirs = (TOOLS.parent / "AirStack/simulation/isaac-sim/tools/analyze_step.py").read_bytes()
         self.assertEqual(ours, theirs)
 
+    def test_wrapper_without_a_phase_prints_usage_and_exits_2(self):
+        import subprocess
+        r = subprocess.run(["bash", str(TOOLS / "sim_hover_step_run.sh")], capture_output=True, text=True, timeout=20)
+        self.assertEqual(r.returncode, 2, r.stdout + r.stderr)
+        self.assertIn("usage:", r.stdout + r.stderr)
+
     def test_wrapper_parses_and_usage(self):
         p = TOOLS / "sim_hover_step_run.sh"
         self.assertEqual(subprocess.run(["bash", "-n", str(p)]).returncode, 0)
@@ -35,7 +41,7 @@ class ScriptSyntax(unittest.TestCase):
         self.assertNotIn("sed -i", src)                       # no in-container patching
         self.assertNotIn("isaac-sim/tools", src)              # copies come from tools/
         self.assertIn("set -o pipefail", src); self.assertNotIn("set -eo pipefail", src)
-        for needle in ("ulogs_copied.ok", "run_meta.txt", "clock_check.txt", "hover_step_timescale.py", "hover_step_analysis.py", "connected: true", "^armed: (true|false)", "ISSUE", "--issue"):
+        for needle in ("ulogs_copied.ok", "run_meta.txt", "clock_check.txt", "hover_step_timescale.py", "hover_step_analysis.py", "connected: true", "^armed: (true|false)", "ISSUE", "--issue", "ISAAC_GUI", "PAUSE_BEFORE_FLY", "ISAAC_SIM_HEADLESS='\"$HEADLESS\"'"):
             self.assertIn(needle, src, needle)
 
     def test_shellcheck_if_present(self):

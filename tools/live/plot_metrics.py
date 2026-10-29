@@ -34,6 +34,14 @@ def _ref_value(meta, name):
     refs = meta.get("refs")
     if isinstance(refs, dict) and name in refs:
         return float(refs[name])
+    if isinstance(refs, str):                       # the CSV header form: refs=ref_2r:1.1;ref_r:0.55
+        for part in refs.split(";"):
+            k, _, val = part.partition(":")
+            if k.strip() == name:
+                try:
+                    return float(val)
+                except ValueError:
+                    return None
     v = meta.get(name)
     try:
         return float(v)

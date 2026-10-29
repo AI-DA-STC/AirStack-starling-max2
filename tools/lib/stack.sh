@@ -300,10 +300,14 @@ land_all_and_wait() {   # $1 = bound (s), real: land via the commander, poll MAV
   local bound=$1 deadline=$((SECONDS + $1)) N all
   note "docker exec $R bash -ic 'ros2 service call /swarm_commander/land std_srvs/srv/Trigger'"
   rx 'timeout 4 ros2 service call /swarm_commander/land std_srvs/srv/Trigger' | tail -1 | tee -a "$OUT/run.log"
-  while :; do all=1
+  local st pass
+  while :; do all=1; pass=""
     for N in 1 2 3; do
       [ "$SECONDS" -ge "$deadline" ] && return 1
-      rx "timeout 10 ros2 topic echo --once /drone_$N/interface/mavros/state" | grep -qE '^armed: false' || all=0; done
+      st=$(rx "timeout 10 ros2 topic echo --once /drone_$N/interface/mavros/state" | grep -oE '^armed: (true|false)')
+      [ "$st" = "armed: false" ] || all=0
+      pass+="drone_$N $st"$'\n'; done
+    printf '%s' "$pass" > "$OUT/armed_post.txt"                    # the last complete pass is the abort run's MAVROS evidence
     [ "$all" = 1 ] && return 0
     [ "$SECONDS" -ge "$deadline" ] && return 1
     sleep 1; done

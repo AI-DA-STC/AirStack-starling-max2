@@ -564,3 +564,40 @@ class NanFraction(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class CsvLineParserStream(unittest.TestCase):
+    LINES = ["# offsets=-2,0,0,0,0,0,2,0,0", "# refs=ref_2r:1.1;ref_r:0.55", "t_s,phase,d_12",
+             "0.0,0,2.0", "0.1,2,1.5"]
+
+    def test_feed_line_by_line_gives_meta_columns_rows(self):
+        p = M.CsvLineParser()
+        for ln in self.LINES:
+            p.feed(ln)
+        self.assertEqual(p.meta["offsets"], "-2,0,0,0,0,0,2,0,0")
+        self.assertEqual(p.columns, ["t_s", "phase", "d_12"])
+        self.assertEqual(p.rows, [[0.0, 0.0, 2.0], [0.1, 2.0, 1.5]])
+        self.assertEqual(M.meta_refs(p.meta), {"ref_2r": 1.1, "ref_r": 0.55})
+
+    def test_lenient_mode_skips_and_counts_a_torn_row(self):
+        p = M.CsvLineParser(strict=False)
+        for ln in self.LINES + ["0.2,2", "0.3,2,x", "0.4,2,1.4"]:
+            p.feed(ln)
+        self.assertEqual([r[0] for r in p.rows], [0.0, 0.1, 0.4])
+        self.assertEqual(p.skipped, 2)
+
+    def test_strict_mode_raises_on_a_torn_row(self):
+        p = M.CsvLineParser()
+        for ln in self.LINES:
+            p.feed(ln)
+        with self.assertRaises(M.MetricsCsvError):
+            p.feed("0.2,2")
+
+    def test_read_metrics_csv_matches_the_line_parser(self):
+        with tempfile.TemporaryDirectory() as d:
+            f = pathlib.Path(d) / "m.csv"; f.write_text("\n".join(self.LINES) + "\n")
+            meta, cols, rows = M.read_metrics_csv(f)
+        p = M.CsvLineParser()
+        for ln in self.LINES:
+            p.feed(ln)
+        self.assertEqual((meta, cols, rows.tolist()), (p.meta, p.columns, p.rows))

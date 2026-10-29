@@ -1,9 +1,67 @@
 {
   "plots": [
-    {"id": "distances", "title": "Pairwise distances", "series": ["d_12", "d_13", "d_23", "min_pair_distance_running"], "refs": ["ref_2r", "ref_r"], "y_range": [0, 4]},
-    {"id": "speeds", "title": "Speed per drone", "series": ["speed_drone_1", "speed_drone_2", "speed_drone_3"], "refs": ["ref_speed_cap"], "y_range": [0, 5]},
-    {"id": "cbf", "title": "CBF active / emergency", "series": ["cbf_drone_1", "cbf_drone_2", "cbf_drone_3", "emergency"], "refs": [], "y_range": [-0.1, 1.1]},
-    {"id": "fence", "title": "Fence margin", "series": ["fence_margin"], "refs": [], "y_range": [0, 3]}
+    {
+      "id": "distances",
+      "title": "Pairwise distances",
+      "series": [
+        "d_12",
+        "d_13",
+        "d_23",
+        "min_pair_distance_running"
+      ],
+      "refs": [
+        "ref_2r",
+        "ref_r"
+      ],
+      "y_range": [
+        0,
+        4
+      ],
+      "unit": "m"
+    },
+    {
+      "id": "speeds",
+      "title": "Speed per drone",
+      "series": [
+        "speed_drone_1",
+        "speed_drone_2",
+        "speed_drone_3"
+      ],
+      "refs": [
+        "ref_speed_cap"
+      ],
+      "y_range": [
+        0,
+        5
+      ]
+    },
+    {
+      "id": "cbf",
+      "title": "CBF active / emergency",
+      "series": [
+        "cbf_drone_1",
+        "cbf_drone_2",
+        "cbf_drone_3",
+        "emergency"
+      ],
+      "refs": [],
+      "y_range": [
+        -0.1,
+        1.1
+      ]
+    },
+    {
+      "id": "fence",
+      "title": "Fence margin",
+      "series": [
+        "fence_margin"
+      ],
+      "refs": [],
+      "y_range": [
+        0,
+        3
+      ]
+    }
   ],
   "phase_series": "phase",
   "panel_width_pct": 50

@@ -21,26 +21,9 @@ import numpy as np
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 import metrics_core as M  # noqa: E402
 
-INK, MUTED, GRID, SPINE = "#404040", "#5F6368", "#E6E8EA", "#D0D3D6"
-COLOURS = ["#0072B2", "#E69F00", "#009E73"]          # Okabe-Ito blue / orange / bluish green, fixed series order
-STYLES = ["-", "--", ":"]                            # a 4th+ series repeats the hues with another dash
-MIN_COLOUR = "#CC79A7"                               # Okabe-Ito reddish purple: the running minimum is not d_12
-PHASE_SPAN = {1: "#8A8F94", 3: "#C9A66B"}
-PHASE_NAME = {1: "takeoff", 3: "land"}
+from plot_style import (INK, MUTED, GRID, SPINE, COLOURS, STYLES, MIN_COLOUR, PHASE_SPAN, PHASE_NAME,  # noqa: E402
+                        FOOTER, series_colour, series_style, ref_value)
 LABEL_GAP_FRAC = 0.045
-FOOTER = "Sim only (iron rule 9): not a drone result."
-
-
-def _ref_value(meta, name):
-    refs = meta.get("refs")
-    if isinstance(refs, dict) and name in refs:
-        return float(refs[name])
-    if name in M.meta_refs(meta):                    # the CSV header's string form, parsed by metrics_core
-        return M.meta_refs(meta)[name]
-    try:
-        return float(meta.get(name))
-    except (TypeError, ValueError):
-        return None
 
 
 def _spans(t, phase, want):
@@ -80,8 +63,8 @@ def plot(columns, rows, meta, plot_spec, out_png=None, title=None):
     ends = []
     for i, name in enumerate(series):
         y = rows[:, idx[name]]
-        col = MIN_COLOUR if name.endswith("_running") else COLOURS[i % 3]
-        ln, = ax.plot(t, y, color=col, ls=STYLES[(i // 3) % 3], lw=1.6, label=name)
+        col = series_colour(i, name)
+        ln, = ax.plot(t, y, color=col, ls=series_style(i), lw=1.6, label=name)
         ok = np.where(~np.isnan(y))[0]
         if len(ok):
             ends.append((y[ok[-1]], t[ok[-1]], name, col))
@@ -94,7 +77,7 @@ def plot(columns, rows, meta, plot_spec, out_png=None, title=None):
             ax.annotate("%.2f m @ %.1f s" % (d[k], t[k]), (t[k], d[k]), xytext=(8, -16), textcoords="offset points",
                         fontsize=8, color=INK, arrowprops=dict(arrowstyle="-", color=INK, lw=0.8))
     for name in plot_spec.get("refs", []):
-        v = _ref_value(meta, name)
+        v = ref_value(meta, name)
         if v is None:
             continue
         ax.axhline(v, color=INK, ls="--", lw=1.0, alpha=0.8, label="%s = %g" % (name, v))

@@ -168,3 +168,84 @@ class SimSh(unittest.TestCase):
 
     def test_precommit_calls_check(self):
         self.assertIn("sim.sh\" check", (SIM.parent / "git-hooks" / "pre-commit").read_text())
+
+
+class LivePlotWindow(unittest.TestCase):
+    """The live plot window (design 2026-10-30): opened before pause 1 in window mode, closed by metrics_stop."""
+
+    def _fn(self, name, nxt):
+        src = SIM.read_text()
+        return src[src.index(name + "() {"):src.index(nxt)]
+
+    def _start(self, headless, display):
+        fn = self._fn("start_live_plot", "stop_live_plot() {")
+        with tempfile.TemporaryDirectory() as tmp:
+            body = (f'python3(){{ echo "PY $*" > {tmp}/py; sleep 5; }}; say(){{ echo "SAY $*"; }}; ' + fn +
+                    f'\nREPO=/repo; TD=/repo/tools/sim_tests/crossing; R=robot; S=/tmp/svg_test; OUT={tmp}; NAME=crossing; RUN=r9; '
+                    f'HEADLESS={headless}; DISPLAY="{display}"; start_live_plot; echo "PID=$LIVE_PID"; sleep 0.5; '
+                    f'[ -n "$LIVE_PID" ] && kill $LIVE_PID 2>/dev/null; cat {tmp}/py 2>/dev/null; true')
+            return subprocess.run(["bash", "-c", body], capture_output=True, text=True, timeout=20).stdout
+
+    def test_opens_in_window_mode_with_a_display(self):
+        out = self._start("false", ":1")
+        self.assertRegex(out, r"PID=\d+")
+        self.assertIn("PY /repo/tools/live/live_plot.py --plots /repo/tools/sim_tests/crossing/plots.json --docker robot --csv /tmp/svg_test/metrics.csv", out)
+
+    def test_headless_run_opens_no_window(self):
+        out = self._start("true", ":1")
+        self.assertIn("PID=\n", out + "\n"); self.assertNotIn("PY ", out)
+
+    def test_no_display_opens_no_window_and_says_so(self):
+        out = self._start("false", "")
+        self.assertNotIn("PY ", out); self.assertIn("no DISPLAY", out)
+
+    def test_stop_kills_only_its_own_window_and_the_container_tail(self):
+        fn = self._fn("stop_live_plot", "# stop_fly")
+        body = ('D=$(mktemp); docker(){ echo "DOCKER $*" >> $D; }; ' + fn +
+                '\nsleep 30 & MINE=$!; sleep 30 & OTHER=$!; LIVE_PID=$MINE; R=robot; S=/tmp/svg_test; stop_live_plot; sleep 0.3; '
+                'kill -0 $MINE 2>/dev/null && echo MINE_ALIVE; kill -0 $OTHER 2>/dev/null && echo OTHER_ALIVE; echo "LIVE=[$LIVE_PID]"; '
+                'stop_live_plot; echo again=$?; kill $OTHER; cat $D; rm -f $D')
+        out = subprocess.run(["bash", "-c", body], capture_output=True, text=True, timeout=20).stdout
+        self.assertNotIn("MINE_ALIVE", out); self.assertIn("OTHER_ALIVE", out); self.assertIn("LIVE=[]", out)
+        self.assertIn("DOCKER exec robot pkill -f", out); self.assertIn("/tmp/svg_test/metrics[.]csv", out)
+        self.assertIn("again=0", out)
+
+    def test_metrics_stop_closes_the_window_on_every_path(self):
+        fn = self._fn("metrics_stop", "metrics_collect() {")
+        self.assertLess(fn.index("stop_live_plot"), fn.index("METRICS_STARTED"))   # before any early return
+
+    def test_window_opens_after_the_liveness_check_and_before_pause_1(self):
+        src = SIM.read_text()
+        a = src.index("metrics node is not publishing"); b = src.index("start_live_plot\n", a); c = src.index("Start OBS now")
+        self.assertLess(a, b); self.assertLess(b, c)
+
+
+class OptionalFoxgloveLayout(unittest.TestCase):
+    """setup leaves the layout as an optional import file; it never claims Studio has it (Studio clears its local store)."""
+
+    def _run(self, dry, present):
+        src = SIM.read_text()
+        fn = src[src.index("install_layout() {"):src.index("N_OK=0;")]
+        body = ('D=$(mktemp); docker(){ echo "DOCKER $*" >> $D; case "$*" in *" test -f "*) return ' + ("0" if present else "1") + ';; esac; return 0; }; '
+                'ok(){ echo "OK $*"; }; warn(){ echo "WARN $*"; }; bad(){ echo "BAD $*"; }; ' + fn +
+                f'\nREPO=/repo; SIM_TESTS_DIR=/repo/tools/sim_tests; DRY={dry}; install_layout crossing; cat $D; rm -f $D')
+        return subprocess.run(["bash", "-c", body], capture_output=True, text=True, timeout=20).stdout
+
+    def test_setup_copies_the_plain_layout_as_an_import_file(self):
+        out = self._run(0, False)
+        self.assertIn("DOCKER cp /repo/tools/sim_tests/crossing/layout.json airstack-robot-desktop-1:/root/svg_test_crossing_layout.json", out)
+        self.assertIn("optional", out); self.assertNotIn("studio-datastores", out); self.assertNotIn("installed in Studio", out)
+
+    def test_doctor_reports_the_import_file_without_changing_anything(self):
+        out = self._run(1, True)
+        self.assertNotIn("DOCKER cp", out); self.assertIn("OK", out); self.assertIn("/root/svg_test_crossing_layout.json", out)
+        self.assertIn("WARN", self._run(1, False))
+
+    def test_exit_trap_also_closes_the_window(self):
+        src = SIM.read_text()
+        self.assertIn("trap 'stop_live_plot; rm -f \"$SIM_LOCK\"' EXIT", src)
+
+    def test_pause_2_reminds_to_click_back_into_the_terminal(self):
+        src = SIM.read_text()
+        seg = src[src.index("Landed. Plots still live"):src.index("PHASE=metrics_stop")]
+        self.assertIn("click back into this terminal", seg)

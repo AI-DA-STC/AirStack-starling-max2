@@ -105,9 +105,9 @@ class RefHeaderForm(unittest.TestCase):
     def test_refs_string_from_the_csv_header_is_parsed(self):
         import plot_metrics as P
         meta = {"refs": "ref_2r:1.1;ref_r:0.55;ref_speed_cap:4.0"}
-        self.assertEqual(P._ref_value(meta, "ref_2r"), 1.1)
-        self.assertEqual(P._ref_value(meta, "ref_speed_cap"), 4.0)
-        self.assertIsNone(P._ref_value(meta, "nope"))
+        self.assertEqual(P.ref_value(meta, "ref_2r"), 1.1)
+        self.assertEqual(P.ref_value(meta, "ref_speed_cap"), 4.0)
+        self.assertIsNone(P.ref_value(meta, "nope"))
         import metrics_core as M
         self.assertEqual(M.meta_refs(meta), {"ref_2r": 1.1, "ref_r": 0.55, "ref_speed_cap": 4.0})
 

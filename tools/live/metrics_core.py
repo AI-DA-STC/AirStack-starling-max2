@@ -303,26 +303,48 @@ def format_row(t_s, phase, values, columns):
     return ",".join(cells)
 
 
+class CsvLineParser:
+    """The one metrics.csv parser, fed one line at a time (a file, or a live `tail -F` of a growing file).
+
+    strict=True raises MetricsCsvError on a torn or non-numeric row; strict=False skips it and counts it in `skipped`
+    (a live tail can show a row the writer has not finished)."""
+
+    def __init__(self, strict=True, source="metrics.csv"):
+        self.meta, self.columns, self.rows, self.skipped = {}, None, [], 0
+        self.strict, self.source = strict, source
+
+    def feed(self, raw):
+        line = raw.strip()
+        if not line:
+            return
+        if line.startswith("#"):
+            k, _, v = line[1:].strip().partition("=")
+            self.meta[k.strip()] = v.strip()
+        elif self.columns is None:
+            self.columns = line.split(",")
+        else:
+            cells = line.split(",")
+            try:
+                if len(cells) != len(self.columns):
+                    raise MetricsCsvError("%s: ragged row (%d cells, %d columns)" % (self.source, len(cells), len(self.columns)))
+                try:
+                    row = [float(c) for c in cells]
+                except ValueError as e:
+                    raise MetricsCsvError("%s: bad cell: %s" % (self.source, e))
+            except MetricsCsvError:
+                if self.strict:
+                    raise
+                self.skipped += 1
+                return
+            self.rows.append(row)
+
+
 def read_metrics_csv(path):
-    meta, columns, data = {}, None, []
+    parser = CsvLineParser(strict=True, source=str(path))
     with open(path) as fh:
         for raw in fh:
-            line = raw.strip()
-            if not line:
-                continue
-            if line.startswith("#"):
-                k, _, v = line[1:].strip().partition("=")
-                meta[k.strip()] = v.strip()
-            elif columns is None:
-                columns = line.split(",")
-            else:
-                cells = line.split(",")
-                if len(cells) != len(columns):
-                    raise MetricsCsvError("%s: ragged row (%d cells, %d columns)" % (path, len(cells), len(columns)))
-                try:
-                    data.append([float(c) for c in cells])
-                except ValueError as e:
-                    raise MetricsCsvError("%s: bad cell: %s" % (path, e))
+            parser.feed(raw)
+    meta, columns, data = parser.meta, parser.columns, parser.rows
     if columns is None:
         raise MetricsCsvError("%s: no column line" % path)
     if "offsets" not in meta:

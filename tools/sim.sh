@@ -87,6 +87,24 @@ cmd_figures() {
 # stop_tail: the per-second line streamer (host tail of `docker exec … tail -f`) and its container-side process
 stop_tail() { [ -n "${TAIL:-}" ] && kill "$TAIL" 2>/dev/null; TAIL=""; docker exec "$R" pkill -f "tail -n0 -f $S/metrics_node.log" >/dev/null 2>&1 || true; }
 
+# start_live_plot: the live plot window (design 2026-10-30) — window mode with a DISPLAY only; it never fails the run
+start_live_plot() {
+  LIVE_PID=""
+  [ "${HEADLESS:-false}" = true ] && return 0
+  [ -n "${DISPLAY:-}" ] || { say "WARN: no DISPLAY — no live plot window (the record's figure has the same plot)"; return 0; }
+  python3 "$REPO/tools/live/live_plot.py" --plots "$TD/plots.json" --docker "$R" --csv "$S/metrics.csv" --title "$NAME · $RUN" \
+    > "$OUT/live_plot.log" 2>&1 &
+  LIVE_PID=$!
+  say "live plot window opened: drag it where OBS can see it, then click back into this terminal"
+}
+# stop_live_plot: close this run's window (only its own pid) and the container-side tail feeding it; idempotent
+stop_live_plot() {
+  [ -n "${LIVE_PID:-}" ] || return 0
+  kill "$LIVE_PID" 2>/dev/null || true
+  docker exec "$R" pkill -f "tail -n [+]1 -F .*$S/metrics[.]csv" >/dev/null 2>&1 || true
+  LIVE_PID=""
+}
+
 # stop_fly: the PRE_LAND_HOOK — an aborted run must not keep a flight script that could send takeoff after the landing
 stop_fly() {
   [ "${METRICS_STARTED:-0}" = 1 ] || return 0                           # fly.sh starts after the node: before that nothing here is ours
@@ -96,6 +114,7 @@ stop_fly() {
 # metrics_stop: SIGINT the node (CSV flushed + closed), wait <= 10 s, TERM if needed, copy CSV + log out. Idempotent; also the ABORT_HOOK.
 # A node already dead at stop leaves $OUT/node_died.txt (time + last log lines) and a caveat: the coverage gate goes UNVERIFIED.
 metrics_stop() {
+  stop_live_plot                                                        # first: every exit path closes the window
   stop_tail
   [ "${METRICS_STARTED:-0}" = 1 ] || return 0                           # this run never started the node: nothing here is ours to stop
   [ ! -f "$HEAVY/.metrics_stopped" ] || return 0
@@ -153,7 +172,7 @@ take_lock() {
     echo "error: another sim.sh test is already running (pid $(cat "$SIM_LOCK"), lock $SIM_LOCK)" >&2; exit 2; fi
   rm -f "$SIM_LOCK"
   ( set -C; echo $$ > "$SIM_LOCK" ) 2>/dev/null || { echo "error: could not take $SIM_LOCK" >&2; exit 2; }
-  trap 'rm -f "$SIM_LOCK"' EXIT
+  trap 'stop_live_plot; rm -f "$SIM_LOCK"' EXIT
 }
 
 cmd_test() {
@@ -198,7 +217,7 @@ print(next((s for s in p if 'running' in s), p[0]))" "$TD/plots.json") || FIRST=
   local hz; hz=$(rx "timeout 10 ros2 topic hz /svg/test/$FIRST -w 20" | sed -n 's/.*average rate: *\([0-9.]*\).*/\1/p' | tail -1)
   say "metrics liveness: /svg/test/$FIRST ${hz:-0} Hz"
   awk -v h="${hz:-0}" 'BEGIN{exit !(h+0 >= 5)}' || fail "metrics node is not publishing /svg/test/$FIRST (${hz:-0} Hz < 5)"
-  say "layout: tools/sim_tests/$NAME/layout.json (import once in Studio if not installed by setup)"
+  start_live_plot
   if [ "$PAUSE" = 1 ]; then
     say "Stack up, drones on their pads, plots live. Start OBS now, then press Enter to fly."
     read -r _ < /dev/tty || fail "no terminal to wait on (use --no-pause)"
@@ -230,6 +249,7 @@ print(next((s for s in p if 'running' in s), p[0]))" "$TD/plots.json") || FIRST=
   json1 /svg/commander_status > "$OUT/status_post.json" || say "WARN: no commander_status after the flight"
   # 6  ask for the OBS file while the plots are still live, then stop the node
   if [ "$PAUSE" = 1 ]; then
+    say "Landed. Plots still live. Stop OBS, then click back into this terminal (keys typed into the plot window are lost)."
     say "Landed. Plots still live; the metrics node stops when you press Enter. OBS video path, repo-relative, e.g. videos/<file>.mkv (Enter to skip):"
     local v; read -r v < /dev/tty || v=""
     echo "${v:-none recorded}" > "$OUT/video.txt"
@@ -267,25 +287,20 @@ cmd_check() {
   [ "${PIPESTATUS[0]}" = 0 ]
 }
 
-STUDIO_STORE=/root/.config/Foxglove/studio-datastores/layouts-local
-# install_layout <name>: the test's layout as a Studio layouts-local file in the robot container (or the import path)
+# install_layout <name>: the test's Foxglove layout as an OPTIONAL import file in the robot container. The live plot
+# window is what a run shows (design 2026-10-30); a signed-in Studio clears its local layout store at every start,
+# so nothing is written there — import the file once from Studio's layout menu if you want the plots in Foxglove too.
 install_layout() {
-  local n=$1 R=airstack-robot-desktop-1 tmp
-  if docker exec "$R" test -d "$STUDIO_STORE" 2>/dev/null; then
-    if [ "${DRY:-0}" = 1 ]; then
-      if docker exec "$R" test -f "$STUDIO_STORE/lay_svgtest_$n" 2>/dev/null; then ok "layout present: $STUDIO_STORE/lay_svgtest_$n"
-      else warn "layout $n not installed in $STUDIO_STORE (setup installs it)"; fi
-      return 0
-    fi
-    tmp=$(mktemp)
-    python3 "$REPO/tools/live/make_layout.py" "$SIM_TESTS_DIR/$n" --studio-envelope > "$tmp" \
-      && docker cp "$tmp" "$R:$STUDIO_STORE/lay_svgtest_$n" >/dev/null \
-      && ok "layout installed: $STUDIO_STORE/lay_svgtest_$n — appears in Studio's Layouts menu after Studio restarts" \
-      || bad "layout install failed for $n"
-    rm -f "$tmp"
-  else
-    warn "no Studio layout store in the container — import tools/sim_tests/$n/layout.json once via Layouts → Import"
+  local n=$1 R=airstack-robot-desktop-1 f
+  f=/root/svg_test_${n}_layout.json
+  if [ "${DRY:-0}" = 1 ]; then
+    if docker exec "$R" test -f "$f" 2>/dev/null; then ok "optional Foxglove layout ready to import: $f"
+    else warn "optional Foxglove layout for $n not in the container (setup copies it to $f)"; fi
+    return 0
   fi
+  docker cp "$REPO/tools/sim_tests/$n/layout.json" "$R:$f" >/dev/null \
+    && ok "optional Foxglove layout copied: $f (Studio layout menu → Import from file, once)" \
+    || warn "could not copy the optional Foxglove layout for $n"
 }
 
 N_OK=0; N_WARN=0; N_FAIL=0
@@ -328,6 +343,8 @@ cmd_setup() {
   if [ $have_docker = 1 ] && docker exec "$R" true 2>/dev/null; then
     for t in "$SIM_TESTS_DIR"/*/; do n=$(basename "$t"); [ "$n" = _template ] || install_layout "$n"; done
   fi
+  if python3 -c "import matplotlib; matplotlib.use('TkAgg'); import matplotlib.pyplot" >/dev/null 2>&1; then ok "live plot window: matplotlib TkAgg available"
+  else warn "live plot window unavailable: host matplotlib has no TkAgg (sudo apt install python3-tk) — runs still record the figure"; fi
   if cmd_check >/dev/null 2>&1; then ok "sim.sh check (contract + metrics_core tests)"; else bad "sim.sh check FAILS — run tools/sim.sh check"; fi
   if python3 -m unittest discover -s "$REPO/tools/tests" >/dev/null 2>&1; then ok "unit tests"; else bad "unit tests FAIL — python3 -m unittest discover -s tools/tests"; fi
   echo "$SUB: $N_OK OK, $N_WARN WARN, $N_FAIL FAIL"

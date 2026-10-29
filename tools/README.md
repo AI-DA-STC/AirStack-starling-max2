@@ -53,18 +53,18 @@ tools/sim.sh test crossing [--headless] [--no-pause] --ledger 20 --issue NEAR-78
 - **Window mode (default)** opens the Isaac window and the in-container Foxglove Studio. The driver prints the
   layout path (`tools/sim_tests/crossing/layout.json`); `setup` installs it, and Studio shows it after a restart.
 - **Pause 1**, before the flight: start OBS (the screen recorder), then press Enter.
-  **Pause 2**, after landing with the plots still live: type the video's path (Enter skips); it goes into the record.
+  **Pause 2**, after landing with the plots still live: type the video's path, repo-relative, e.g. `videos/<file>.mkv` (Enter skips); it goes into the record.
   `--no-pause` skips both.
 - **Where the video ends up:** OBS saves where its own settings say (Settings → Output → Recording Path, by default `~/Videos`).
-  Move the file into `videos/` under the repo and type that path at Pause 2, so the record links it.
+  Move the file into `videos/` under the repo and type that repo-relative path (`videos/<file>.mkv`, not `~/Videos/…`) at Pause 2, so the record links it.
 - **`--headless`** (no Isaac window) has no Studio and no pauses; use it when there is no `DISPLAY` or for unattended re-runs.
 - **Ctrl-C** lands every drone, waits for disarm, keeps the bag and ulogs, and writes the record as ABORTED.
-  It never becomes PASS. If landing fails the driver prints DRONES STILL ARMED and leaves the stack up.
+  It never becomes PASS. If landing fails the driver still writes the ABORTED record, prints DRONES STILL ARMED and leaves the stack up.
 - **A late video name:** edit `docs/record/<run>/video.txt`, then re-render with
   `python3 tools/lib/report.py tools/sim_tests/crossing docs/record/<run> --ledger 20 --issue NEAR-787`.
+  Run-specific caveats live in `docs/record/<run>/caveats.txt` (one per line) and survive a re-render; edit that file, never the record.
 - Then record the result: [DOCS_STANDARD §7](../docs/DOCS_STANDARD.md).
-  For Linear: paste the `VERDICT:` line the run prints (also the record's `Verdict` line) and the record's GitHub path
-  (`docs/record/<run>_record.md`) into the NEAR-nnn issue as a comment, then tick the issue if it passed.
+  In Linear: comment the run's `VERDICT:` line, `LEDGER #<n>` and the record's GitHub path (`docs/record/<run>_record.md`) on the NEAR-nnn issue, then tick it if it passed.
 
 ## Adding a test
 

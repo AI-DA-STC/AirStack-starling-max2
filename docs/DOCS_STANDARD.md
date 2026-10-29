@@ -74,7 +74,7 @@ Longer than that: it belongs in a record file with a link.
 4. If a figure should change, edit the run list in `tools/make_figures.sh` and run it by hand. Figures never regenerate silently.
 5. `tools/docs_check/check_docs.sh` must print `0 FAIL`. The pre-commit guard runs it for you.
 6. Commit in the live clone on `main`. Subject: `<project>/<milestone> NEAR-nnn: <what>`. Then pull the mirror; the owner pushes.
-7. In Linear: comment the run's `VERDICT:` line, the ledger number and the record's GitHub path on the issue, then tick it if it passed.
+7. In Linear: comment the run's `VERDICT:` line, `LEDGER #<n>` and the record's GitHub path (`docs/record/<run>_record.md`) on the NEAR-nnn issue, then tick it if it passed.
 
 ## 8. Structural changes
 

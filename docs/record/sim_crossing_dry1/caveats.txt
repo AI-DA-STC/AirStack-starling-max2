@@ -1,0 +1,5 @@
+Reading for the flight-test decision. The drones start on a line at 2 m spacing (d_12 = 2, d_13 = 4, d_23 = 2) and their antipodal goals send all three through the same middle region at once.
+Peak speed was 1.04 m/s against the 2.0 m/s scenario speed because the CBF was active for 88.5 s of the run, so the ≤ 4.2 m/s gate passed on a quantity this scenario cannot produce.
+The closest pair sat under 1.10 m for 28 % of the crossing, in a limit cycle of about 3.5 s between about 1.0 and 1.5 m: the filter holds the pairs near its boundary, it did not slip once. The margin to the 0.55 m radius stayed above 0.4 m (no contact).
+After landing started, d_13 dropped to about 0.76 m and the landed drones sit about 0.8 m apart; no gate sees this.
+Options for the owner: a larger arena or goal radius, a different gate, or recording this result as the acceptance.

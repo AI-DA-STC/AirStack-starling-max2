@@ -13,7 +13,7 @@ A test is one command, watched live, recorded, and gated by the same numbers the
 5. **One shared metrics module.** Live node, offline recompute and figures import the same `tools/live/metrics_core.py`. No formula exists twice.
 6. **A test is five files** in `tools/sim_tests/<name>/`: `test.env` (title, purpose, sim-only line, config), `fly.sh` (drives the commander: services and goal topics), `metrics.py` (the series list, pure functions over odometry and status), `gates.py` (returns gate rows: name, criterion, measured, verdict), `plots.json` (what to plot, which reference lines). `layout.json` is generated from `plots.json` and CMU's read-only base layout by `tools/live/make_layout.py`, committed, and checked for staleness by `tools/sim.sh check`.
 7. **Pauses for the human.** In window mode the driver waits for Enter before the flight (start OBS) and again after landing with the plots still live. `--no-pause` skips both.
-8. **Ctrl-C is a landing.** The driver traps it, lands every drone, waits for disarm, keeps the bag and ulogs, and writes the record as ABORTED. ABORTED never becomes PASS. If landing fails it prints DRONES STILL ARMED and does not tear the stack down.
+8. **Ctrl-C is a landing.** The driver traps it, lands every drone, waits for disarm, keeps the bag and ulogs, and writes the record as ABORTED. ABORTED never becomes PASS. If landing fails it still writes the ABORTED record, prints DRONES STILL ARMED and does not tear the stack down.
 9. **Terminal tells the story.** One line per second during the flight (phase, the headline metric, CBF state), then a verdict banner. A `/svg/test/phase` topic marks takeoff, test, land for the plots.
 10. **The record is complete or it is not a result.** Every run writes `docs/record/<run>_record.md` (purpose, scope line, pass/fail table, figure, verdict history), `docs/record/<run>/` (metrics.csv, logs), and `~/flight_logs/sim/<run>/` (bag + ulogs). The record names the OBS file. Missing evidence = INCOMPLETE. The drafted LEDGER row carries the issue id.
 11. **Gates are written before the run** in `gates.py`, with the justification and the last baseline, and are never moved to fit a result. A failed gate is the finding.
@@ -33,7 +33,7 @@ cp -r tools/sim_tests/_template tools/sim_tests/<name>
 # edit the five files: test.env, fly.sh, metrics.py, gates.py, plots.json
 python3 tools/live/make_layout.py tools/sim_tests/<name>
 tools/sim.sh check
-tools/sim.sh test <name> --ledger N --issue NEAR-nnn <run>
+tools/sim.sh test <name> --ledger <next #> --issue NEAR-nnn <run>
 ```
 
 Follow [DOCS_STANDARD.md](DOCS_STANDARD.md) §7 to record it; `<next #>` is the last row of LEDGER table 1 plus one. The project page's results block for the issue opens with the scope line (position source, world, what is not in the loop).

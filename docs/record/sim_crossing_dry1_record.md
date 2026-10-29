@@ -2,7 +2,7 @@ RECORD · SIM — sim_crossing_dry1. Sim-only (iron rule 9): none of these value
 
 # sim_crossing_dry1 — three-drone CBF crossing, antipodal, live metrics (started 2026-10-29T22:52:02+08:00 +08; flight 14:54:03–14:55:21 UTC)
 
-**Verdict: FAIL.** Re-run of the three-drone crossing with collision avoidance on the rebuilt asset at cbf_sim.yaml's 2.0 / 4.0 m/s, gated on live 40 Hz odometry (ledger #4 sampled the 5 Hz status string). For Linear NEAR-787 (milestone S5). PASS = every gate PASS; INCOMPLETE = no FAIL but ≥ 1 gate UNVERIFIED; FAIL = any gate FAIL; ABORTED = Ctrl-C landing, never a result. Report generated 2026-10-29 at repo `05635f7`.
+**Verdict: FAIL.** Re-run of the three-drone crossing with collision avoidance on the rebuilt asset at cbf_sim.yaml's 2.0 / 4.0 m/s, gated on live 40 Hz odometry (ledger #4 sampled the 5 Hz status string). For Linear NEAR-787 (milestone S5). PASS = every gate PASS; INCOMPLETE = no FAIL but ≥ 1 gate UNVERIFIED; FAIL = any gate FAIL; ABORTED = Ctrl-C landing, never a result. Report generated 2026-10-29 at repo `13adeee`.
 
 **Scope:** PX4's own sim state estimate positions the drones (no mocap, no camera); flat default world; camera and cuVSLAM not in the loop; speeds are cbf_sim.yaml's sim-only values.
 
@@ -26,20 +26,22 @@ RECORD · SIM — sim_crossing_dry1. Sim-only (iron rule 9): none of these value
 | Isaac launch: no 'Unknown model' | no 'Unknown model' | 0 | - | PASS |
 | Isaac launch: no PhysX cooking warnings | no PhysX cooking warnings | 0 | - | PASS |
 | Isaac launch: Starling2MaxConfig x3 | Starling2MaxConfig x3 (launcher print) | 6 | - | PASS |
+| coverage: rows through the window | largest `t_s` gap over the phase-2 rows ≤ 0.5 s, ≥ 1 landing (`phase` 3) row, metrics node alive at stop | largest phase-2 gap 0.05 s; 1800 phase-2 rows, 150 landing rows | - | PASS |
 | min pairwise distance ≥ 1.10 m (2r) | ≥ 1.10 m, binary (live 40 Hz odometry, phase 2) | `min_pair_distance`: 0.99 m (margin -0.11 m to the gate; pair `d_13` at t=39.1 s) | #4: 1.02 m (0.08 m inside, 10-19 asset, 3 m/s cap, no bag) | **FAIL** |
 | vs ledger #4 | informational (min distance − 1.02 m) | `min_pair_distance` − 1.02 m: -0.03 m | #4: 1.02 m | info |
-| emergency samples | 0 (5 Hz status string) | 0 CSV rows flagged (≈ 8 per 5 Hz status sample) | - | PASS |
-| fence-breach samples | 0 (5 Hz status string) | 0 CSV rows flagged (≈ 8 per 5 Hz status sample) | - | PASS |
-| CBF active on ≥ 1 drone at least once | /svg/cbf_active names ≥ 1 drone at least once (20 Hz) | drone_1, drone_2, drone_3 seen; 88.5 s active (any drone) | - | PASS |
+| min pairwise distance, all phases | informational (every row: takeoff, window, landing; not a gate) | `d_12`/`d_13`/`d_23`: 0.75 m (d_13 at t=77.0 s, landing) | - | info |
+| emergency samples | 0 (5 Hz status string) | `emergency`: 0 CSV rows flagged (≈ 8 per 5 Hz status sample) | - | PASS |
+| fence-breach samples | 0 (5 Hz status string) | `fence_breached`: 0 CSV rows flagged (≈ 8 per 5 Hz status sample) | - | PASS |
+| CBF active on ≥ 1 drone at least once | /svg/cbf_active names ≥ 1 drone at least once (20 Hz) | `cbf_drone_1..3`: drone_1, drone_2, drone_3 seen; 88.5 s active (any drone) | - | PASS |
 | far goal reached per drone | closest approach ≤ 0.40 m (commander arrival radius; spec draft said 0.3 m) | `goal_dist_drone_1..3`: drone_1 0.23 m; drone_2 0.28 m; drone_3 0.14 m | - | PASS |
 | peak speed ≤ 4.2 m/s | ≤ 4.2 m/s (cap 4.0 + 5 %), over every row including takeoff and landing (conservative) | `speed_drone_1..3`: 1.04 m/s (drone_1 1.01, drone_2 1.02, drone_3 1.04) | - | PASS |
 | landed, disarmed ×3 (commander ACK) | informational (ACK log, not an arming display) | drone_1, drone_2, drone_3 | - | info |
 | post-flight armed=false x3 (MAVROS state) | armed: false for drone_1, drone_2, drone_3 | drone_1 false, drone_2 false, drone_3 false | - | PASS |
-| live vs bag recompute | live metrics.csv agrees with the rosbag recompute (minimum distance within tolerance; flags by count) | d_12 Δmax 0.003462 (tol 0.02); d_13 Δmax 0 (tol 0.02); d_23 Δmax 0.009708 (tol 0.02); min_pair_distance Δmax 0.003462 (tol 0.02); speed_drone_1 Δmax 0 (tol 0.1); speed_drone_2 Δmax 0.000857 (tol 0.1); speed_drone_3 Δmax 0 (tol 0.1); cbf_drone_1 Σ 3694 vs 3694; cbf_drone_2 Σ 3634 vs 3634; cbf_drone_3 Σ 3604 vs 3604; emergency Σ 0 vs 0; fence_breached Σ 0 vs 0; fence_margin Δmax 0 (tol 0.02); goal_dist_drone_1 Δmax 0 (tol 0.05); goal_dist_drone_2 Δmax 0.006801 (tol 0.05); goal_dist_drone_3 Δmax 0 (tol 0.05); min_pair_distance_running Δmax 0 (tol 0.02); unpaired 0.0 % | - | PASS |
+| live vs bag recompute | live metrics.csv agrees with the rosbag recompute (minimum distance within tolerance; flags by count) | d_12 Δmax 0.003462 (tol 0.02); d_13 Δmax 0 (tol 0.02); d_23 Δmax 0.009708 (tol 0.02); min_pair_distance Δmax 0.003462 (tol 0.02); speed_drone_1 Δmax 0 (tol 0.1); speed_drone_2 Δmax 0.000857 (tol 0.1); speed_drone_3 Δmax 0 (tol 0.1); cbf_drone_1 Σ 3694 vs 3694; cbf_drone_2 Σ 3634 vs 3634; cbf_drone_3 Σ 3604 vs 3604; emergency Σ 0 vs 0; fence_breached Σ 0 vs 0; fence_margin Δmax 0 (tol 0.02); goal_dist_drone_1 Δmax 0 (tol 0.05); goal_dist_drone_2 Δmax 0.006801 (tol 0.05); goal_dist_drone_3 Δmax 0 (tol 0.05); min_pair_distance_running Δmax 0 (tol 0.02); unpaired 0.0 %; bag unpaired 3.5 % | - | PASS |
 | rosbag copied + readable | bag dir crossing_* with metadata.yaml under the heavy folder, and metrics.csv, metrics_bag.csv in the run folder | crossing_20261029_145255: 231 MB, metadata.yaml present | - | PASS |
 | PX4 ulogs one per sysid 2/3/4 | ulog_sysid_map.txt lists sysids 2, 3, 4 (drone_1/2/3) | 3 files, sysids ['2', '3', '4'] | - | PASS |
 | WiFi firmware alerts | 0 during the run | 0 | - | PASS |
-| code that ran | informational (run_meta.txt head vs git HEAD at report time) | ran at 05635f7 | - | info |
+| code that ran | informational (run_meta.txt head vs git HEAD at report time) | ran at 05635f7, report at 13adeee | - | info |
 | metrics node offsets (read once at start) | informational (CSV header) | offsets -2,0,0,0,0,0,2,0,0; t0_unix 1793285631.4053679 | - | info |
 | window / samples | informational (phase 2) | 45.8 s, 1800 rows (4909 total), 39.3 Hz | - | info |
 
@@ -50,7 +52,7 @@ Rows marked info are informational and never pass or fail the run.
 <a id="fig-1"></a>
 ![three-drone CBF crossing, antipodal, live metrics](sim_crossing_dry1/fig-1.png)
 
-*Figure 1. Pairwise distances d_12, d_13 and d_23 and their running minimum against time, with the 1.10 m (2r) gate line and the 0.55 m (r) line; shaded bands mark the takeoff and land phases. Drawn from the run's metrics.csv by `tools/sim.sh figures crossing <run>`.*
+*Figure 1. Pairwise distances d_12, d_13 and d_23 and their running minimum against wall-clock time, with the 1.10 m (2r) gate line and the 0.55 m (r) line; shaded bands mark the takeoff and land phases. Drawn from the run's metrics.csv by `tools/sim.sh figures crossing <run>`.*
 
 ## Driver verdict history
 
@@ -58,6 +60,7 @@ Every generation of this record (`verdicts.log`, newest last; the last line is t
 
 ```
 2026-10-29T22:57:06+08:00 head=05635f7 verdict=FAIL fail=1 unverified=0
+2026-10-29T23:41:29+08:00 head=05635f7 verdict=FAIL fail=1 unverified=0
 ```
 
 ## Evidence
@@ -125,7 +128,7 @@ Live vs bag recompute:
 
 ## Files
 
-- Repo (this folder, `docs/record/sim_crossing_dry1/`): `armed_post.txt`, `bag_evidence.txt`, `bag_path.txt`, `bag_status_pre.json`, `clock_check.txt`, `commander.log`, `commands.sh`, `fig-1.png`, `interfaces.log`, `isaac.log`, `isaac.log.start`, `isaac_evidence.txt`, `landing_evidence.txt`, `metrics.csv`, `metrics_bag.csv`, `metrics_node.log`, `odom_hz.txt`, `params_mavros.txt`, `params_mavros_names.txt`, `params_ulog.txt`, `px4_arm_times.txt`, `res_watch.log`, `run.log`, `run_meta.txt`, `status_post.json`, `status_pre.json`, `test_stdout.log`, `topics_of_interest.txt`, `ulog_list.txt`, `ulog_sysid_map.txt`, `ulogs_copied.ok`, `verdicts.log`, `video.txt`.
+- Repo (this folder, `docs/record/sim_crossing_dry1/`): `armed_post.txt`, `bag_evidence.txt`, `bag_path.txt`, `bag_status_pre.json`, `caveats.txt`, `clock_check.txt`, `commander.log`, `commands.sh`, `fig-1.png`, `interfaces.log`, `isaac.log`, `isaac.log.start`, `isaac_evidence.txt`, `landing_evidence.txt`, `metrics.csv`, `metrics_bag.csv`, `metrics_node.log`, `odom_hz.txt`, `params_mavros.txt`, `params_mavros_names.txt`, `params_ulog.txt`, `px4_arm_times.txt`, `res_watch.log`, `run.log`, `run_meta.txt`, `status_post.json`, `status_pre.json`, `test_stdout.log`, `topics_of_interest.txt`, `ulog_list.txt`, `ulog_sysid_map.txt`, `ulogs_copied.ok`, `verdicts.log`, `video.txt`.
 - Not in the repo (`/home/jeremychia/flight_logs/sim/sim_crossing_dry1/`): `crossing_20261029_145255` (231 MB), `drone_1_sysid2_14_52_16.ulg` (62 MB), `drone_2_sysid3_14_52_16.ulg` (62 MB), `drone_3_sysid4_14_52_16.ulg` (61 MB).
 
 ## Caveats

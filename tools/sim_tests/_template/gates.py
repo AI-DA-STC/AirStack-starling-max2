@@ -19,7 +19,7 @@ GATE_M = 1.10  # CHANGE_ME
 
 def build_rows(out, heavy, env):
     out = pathlib.Path(out)
-    rows, ctx = [], {"headline": "minimum pairwise distance", "crosscheck": None}
+    rows, ctx = [], {"headline": "minimum pairwise distance", "headline_row": "min pairwise distance", "crosscheck": None}
     R.isaac_rows(rows, out)
     try:
         _, cols, data = M.read_metrics_csv(out / "metrics.csv")

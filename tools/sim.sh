@@ -90,8 +90,9 @@ stop_tail() { [ -n "${TAIL:-}" ] && kill "$TAIL" 2>/dev/null; TAIL=""; docker ex
 # metrics_stop: SIGINT the node (CSV flushed + closed), wait <= 10 s, TERM if needed, copy CSV + log out. Idempotent; also the ABORT_HOOK.
 metrics_stop() {
   stop_tail
+  [ "${METRICS_STARTED:-0}" = 1 ] || return 0                           # this run never started the node: nothing here is ours to stop
   docker exec "$R" pkill -f "fly\\.sh" >/dev/null 2>&1 || true        # an aborted run must not keep flying a script (harmless after a normal landing)
-  [ "${METRICS_STARTED:-0}" = 1 ] && [ ! -f "$HEAVY/.metrics_stopped" ] || return 0
+  [ ! -f "$HEAVY/.metrics_stopped" ] || return 0
   local i
   if alive "$R" 'python3 metrics_node\.py'; then
     nx docker exec "$R" pkill -INT -f 'python3 metrics_node.py' || true
@@ -118,21 +119,35 @@ bag_dump_hook() {
 }
 
 render_report() {   # the record + verdict banner; REPORT_RC = report.py's rc (0 PASS / 2 INCOMPLETE / 1 FAIL / 3 ABORTED)
+  local RTMP; RTMP=$(mktemp)
   note "python3 $REPO/tools/lib/report.py $SIM_TESTS_DIR/$NAME $OUT --heavy $HEAVY --ledger $LEDGER --issue $ISSUE"
-  python3 "$REPO/tools/lib/report.py" "$SIM_TESTS_DIR/$NAME" "$OUT" --heavy "$HEAVY" --ledger "$LEDGER" --issue "$ISSUE" 2>&1 | tee -a "$OUT/run.log" > "$HEAVY/.report_out"
+  python3 "$REPO/tools/lib/report.py" "$SIM_TESTS_DIR/$NAME" "$OUT" --heavy "$HEAVY" --ledger "$LEDGER" --issue "$ISSUE" 2>&1 | tee -a "$OUT/run.log" > "$RTMP"
   REPORT_RC=${PIPESTATUS[0]}
-  cat "$HEAVY/.report_out"
-  local v head; v=$(head -1 "$HEAVY/.report_out" | sed 's/:.*//'); head=$(sed -n 's/^HEADLINE: //p' "$HEAVY/.report_out" | head -1)
+  cat "$RTMP"
+  local v head; v=$(head -1 "$RTMP" | sed 's/:.*//'); head=$(sed -n 's/^HEADLINE: //p' "$RTMP" | head -1)
   case "$v" in
     PASS|FAIL|INCOMPLETE|ABORTED) say "========  VERDICT: $v — ${head:-n/a}  ========" ;;
-    *) say "REPORT ERROR: report.py printed no verdict (rc=$REPORT_RC): $(head -1 "$HEAVY/.report_out")"; REPORT_RC=4 ;;
+    *) say "REPORT ERROR: report.py printed no verdict (rc=$REPORT_RC): $(head -1 "$RTMP")"; REPORT_RC=4 ;;
   esac
-  rm -f "$HEAVY/.report_out"
+  rm -f "$RTMP"
 }
 # finish_report: REPORT_HOOK for abort/failure paths — the record, then the scratch dir in the robot container
-finish_report() { render_report; docker exec "$R" rm -rf "$S" >/dev/null 2>&1 || true; }
+finish_report() { rm -f "$HEAVY/.metrics_stopped"; render_report; [ "${OWN_SCRATCH:-0}" = 1 ] && docker exec "$R" rm -rf "$S" >/dev/null 2>&1; true; }
+
+# one `sim.sh test` at a time: a second run would kill the first one's processes and scratch dir
+SIM_LOCK=$HOME/flight_logs/sim/.sim_test.lock
+take_lock() {
+  mkdir -p "$(dirname "$SIM_LOCK")"
+  if [ -f "$SIM_LOCK" ] && kill -0 "$(cat "$SIM_LOCK" 2>/dev/null)" 2>/dev/null; then
+    echo "error: another sim.sh test is already running (pid $(cat "$SIM_LOCK"), lock $SIM_LOCK)" >&2; exit 2; fi
+  rm -f "$SIM_LOCK"
+  ( set -C; echo $$ > "$SIM_LOCK" ) 2>/dev/null || { echo "error: could not take $SIM_LOCK" >&2; exit 2; }
+  trap 'rm -f "$SIM_LOCK"' EXIT
+}
 
 cmd_test() {
+  take_lock
+  OWN_SCRATCH=0; METRICS_STARTED=0
   local ISSUE_ARG=$ISSUE
   # shellcheck source=/dev/null
   source "$SIM_TESTS_DIR/$NAME/test.env"; ISSUE=$ISSUE_ARG          # test.env's ISSUE is the default; the flag wins
@@ -155,6 +170,7 @@ print(next((s for s in p if 'running' in s), p[0]))" "$TD/plots.json") || FIRST=
   # 2  copy-in
   PHASE=metrics
   phase_begin metrics
+  OWN_SCRATCH=1                           # from here /tmp/svg_test in the robot container is this run's to delete
   nx docker exec "$R" mkdir -p "$S"
   for f in "$REPO/tools/live/metrics_core.py" "$REPO/tools/live/metrics_node.py" "$REPO/tools/live/bag_recompute.py" "$TD/metrics.py" "$TD/fly.sh"; do
     nx docker cp "$f" "$R:$S/" || fail "docker cp $f"; done
@@ -220,6 +236,7 @@ print(next((s for s in p if 'running' in s), p[0]))" "$TD/plots.json") || FIRST=
   else rm -f "$OUT/px4_arm_times.txt"; say "WARN: no PX4 arm times (no ulog at all)"; fi
   PHASE=down; down; STACK_UP=0
   docker exec "$R" rm -rf "$S"
+  rm -f "$HEAVY/.metrics_stopped"; OWN_SCRATCH=0
   FAIL_HOOK=""; REPORT_HOOK=""            # from here a render problem is the report's, not a wiring failure
   # 8  figure, record, verdict
   PHASE=report

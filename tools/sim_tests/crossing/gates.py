@@ -57,7 +57,7 @@ class _Run:
 
 def build_rows(out, heavy, env):
     out = pathlib.Path(out)
-    rows, ctx = [], {"headline": "minimum pairwise distance", "crosscheck": None, "values": {}}
+    rows, ctx = [], {"headline": "minimum pairwise distance", "headline_row": "min pairwise distance", "crosscheck": None, "values": {}}
     R.isaac_rows(rows, out)
     live, why = _load(out / "metrics.csv")
     bag, bag_why = _load(out / "metrics_bag.csv")

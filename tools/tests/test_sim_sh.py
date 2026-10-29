@@ -62,6 +62,29 @@ class SimSh(unittest.TestCase):
         self.assertLess(src.index("OBS file name (Enter to skip)"), src.index("PHASE=metrics_stop"))                # node stops AFTER the second pause
         self.assertIn("tail -n0 -f $S/metrics_node.log", src)
 
+    def test_lock_present_refuses_before_any_phase(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            os.makedirs(os.path.join(tmp, "flight_logs", "sim")); os.makedirs(os.path.join(tmp, "tests", "foo"))
+            lock = os.path.join(tmp, "flight_logs", "sim", ".sim_test.lock")
+            holder = subprocess.Popen(["sleep", "30"])
+            try:
+                open(lock, "w").write(str(holder.pid))
+                env = dict(os.environ, HOME=tmp, SIM_TESTS_DIR=os.path.join(tmp, "tests"))
+                r = run("test", "foo", "--headless", "--ledger", "20", "--issue", "NEAR-787", "r1", env=env)
+                self.assertEqual(r.returncode, 2, r.stdout + r.stderr); self.assertIn("another sim.sh test is already running", r.stderr)
+                self.assertNotRegex(r.stdout, r"^\[\d\d:\d\d:\d\d"); self.assertEqual(open(lock).read(), str(holder.pid))   # lock untouched, no phase ran
+            finally:
+                holder.kill(); holder.wait()
+
+    def test_metrics_stop_without_a_started_node_touches_nothing(self):
+        src = SIM.read_text()
+        fn = src[src.index("metrics_stop() {"):src.index("metrics_collect() {")]
+        body = 'docker(){ echo DOCKER "$@"; }; alive(){ return 0; }; stop_tail(){ :; }; nx(){ echo NX "$@"; }; say(){ :; }; ' + fn + "\nunset METRICS_STARTED; HEAVY=/nonexistent; metrics_stop; echo rc=$?"
+        r = subprocess.run(["bash", "-c", body], capture_output=True, text=True, timeout=20)
+        self.assertIn("rc=0", r.stdout, r.stderr); self.assertNotIn("DOCKER", r.stdout); self.assertNotIn("NX", r.stdout)
+        # the scratch dir is only removed when this run copied files in
+        self.assertIn('[ "${OWN_SCRATCH:-0}" = 1 ] && docker exec', src)
+
     def test_figures_needs_two_args(self):
         self.assertEqual(run("figures", "crossing").returncode, 2)
         self.assertEqual(run("figures").returncode, 2)

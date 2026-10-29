@@ -83,6 +83,13 @@ class Crossing(unittest.TestCase):
             self.assertIn("1.25", next(r.measured for r in rows if r.check.startswith("min pairwise distance")))
             self.assertEqual(next(r.verdict for r in rows if r.check.startswith("vs ledger #4")), "info")
 
+    def test_banner_headline_is_fed_by_the_real_gates(self):
+        with tempfile.TemporaryDirectory() as d:
+            out, heavy, env = make_run(d)
+            rows, ctx = G.build_rows(out, heavy, env)
+            self.assertIn("1.25", R.headline_text(rows, ctx))                                    # a missing ctx["headline_row"] gives "n/a" and fails here
+        self.assertIn('"headline_row": "min pairwise distance"', (TOOLS / "sim_tests" / "_template" / "gates.py").read_text())
+
     def test_distance_below_2r_fails(self):
         with tempfile.TemporaryDirectory() as d:
             out, heavy, env = make_run(d, closest_m=1.05)

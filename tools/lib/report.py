@@ -10,7 +10,7 @@ DURATION_S BASELINE); <test_dir>/gates.py gives the rows:
     ledger_sentence(rows, ctx, verdict) -> str
     figure_caption(ctx) -> str            # 2-4 sentences, <= 380 chars, without the leading "Figure 1."
 
-ctx keys read here: headline, reading (2-3 sentences of results text above the figure, linking [Figure 1](#fig-1)), crosscheck (list[CrossRow] | None), node_log_tail, test_stdout, caveats, tuning.
+ctx keys read here: headline (label), headline_row (check-name prefix of the gate row whose measured cell is the VERDICT banner's headline; printed as the `HEADLINE:` line), reading (2-3 sentences of results text above the figure, linking [Figure 1](#fig-1)), crosscheck (list[CrossRow] | None), node_log_tail, test_stdout, caveats, tuning.
 Every gate row is PASS / FAIL / UNVERIFIED; an info row never passes or fails the run; missing evidence is UNVERIFIED.
 Exit: 0 PASS, 2 INCOMPLETE, 1 FAIL, 3 ABORTED (<run_dir>/aborted.txt exists). Writes <record>.md and one line in
 <run_dir>/verdicts.log. Sim-only (CLAUDE.md iron rule 9)."""

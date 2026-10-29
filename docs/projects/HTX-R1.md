@@ -4,6 +4,8 @@ RECORD · SIM ONLY — every result on this page is Isaac Sim; nothing here has 
 
 Question (Linear): Does the candidate position source → PX4 → swarm controller and collision-avoidance pipeline work, and how does it fail? · Where: Isaac Sim on the lab laptop · [Linear project](https://linear.app/nearlab/project/htx-r1-swarm-sim-validation-isaac-649103a747b1) · Linear snapshot: 2026-10-26 · Evidence: [LEDGER](../record/LEDGER.md)
 
+**How to read a result here:** every results block starts by saying which position source flew the drone (PX4's own sim estimate · sim mocap · cuVSLAM) and in which world. Flying and perception are separate pipelines on this branch until S6/S7 hands the position source over.
+
 ### S1 Starling 2 Max sim drones — SIM ONLY (Isaac)
 Linear (snapshot 2026-10-26): target 2026-10-21 · 100 % · last ledger row #13 (2026-10-21)
 Done when (Linear): not stated in the snapshot — milestone at 100 %
@@ -61,6 +63,8 @@ Linear (snapshot 2026-10-26): 4 % · last ledger row #19 (2026-10-29)
 | NEAR-789 | Set up one-drone gamepad teleop in the construction site (pad detected, sticks move the drone, release holds) | — | — |
 | NEAR-790 | Hand-fly drone_1 with cuVSLAM running, record and score the flight | — | — |
 | NEAR-860 | Record the stereo camera images so a flight can be replayed through cuVSLAM | — | — |
+
+**What NEAR-786 measures:** the control loop only — commander goal → MAVROS → PX4, with PX4 positioning itself from Isaac's simulated sensors. The camera and cuVSLAM are not running and not in the loop. The world does not change this result (flat default world, same as #3); it changes only what the drone sees and the GPU load. cuVSLAM is scored offline in S3/S4 and starts positioning a drone only at S6/S7.
 
 NEAR-786 — results (sim only; gates 0.15 m / 3.0 s PX4 vehicle time / 0 re-entries / thrust 0.12–0.20 — [tools/README.md](../../tools/README.md#thresholds); set 2026-10-19 around the Iris reading, not a flight requirement)
 

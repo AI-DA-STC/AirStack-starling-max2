@@ -40,6 +40,7 @@ Milestone, then its issues, then the results of those issues. Evidence sits besi
 - **Evidence** links the record and names the LEDGER rows. A path with spaces is written as code, not a link.
 - **"Done when"** is Linear's target, printed on its own line and labelled as a target. It is never evidence that anything happened; only the Result and Evidence cells say what happened.
 - **Hand-flown results** (teleop, gamepad, any flight a person steered) count only with a link to a video the owner has watched. No video, no result.
+- **Scope line:** every results block opens with one sentence saying what was in the loop (which position source flew the drone, which world) and what was not (for example "camera and cuVSLAM not running"). Nobody should have to infer what a test measured from its name; the hover + step test is a control-loop check, not a perception test, and the page says so.
 - No status column anywhere. No status pills.
 - Negative and superseded results stay in the table.
 - Every figure caption names the generating command and the ledger rows it draws.

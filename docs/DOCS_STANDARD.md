@@ -80,6 +80,10 @@ Longer than that: it belongs in a record file with a link.
 
 Moving a section, adding a page, changing a page's shape or the checker's rules is a project, not an edit. It runs through the quality-change process (the `quality-change` skill): size it, convene the review panel, write the design under `docs/superpowers/specs/`, plan under `docs/superpowers/plans/`, execute task by task with a reviewer per task, final whole-branch review, one fix wave, then the acceptance test: an engineer new to the repo answers "what passed, with numbers", "what is next and what must be true first", and "sim or real" from MILESTONES.md plus one click.
 
+## 8b. Scripts that run tests
+
+How a milestone test is scripted (one command, window on, live plots in Foxglove, Ctrl-C lands, record complete or INCOMPLETE): [TEST_STANDARD.md](TEST_STANDARD.md).
+
 ## 9. Gates
 
 | Gate | Command | Must show |

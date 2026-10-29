@@ -6,14 +6,20 @@
 ## Install in three commands
 
 ```bash
-cd ~/AirStack-starling-max2 && AirStack/airstack.sh setup && AirStack/airstack.sh up   # CMU's install + containers
-tools/sim.sh setup                                       # our tool copies + Foxglove layouts
-tools/sim.sh test crossing --ledger <next #> --issue NEAR-787 <run>   # window on; <run> = a NEW name
+cd ~/AirStack-starling-max2
+AirStack/airstack.sh setup && AirStack/airstack.sh up   # CMU's install + containers (two steps)
+tools/sim.sh setup                                      # our tool copies + Foxglove layouts
+```
+
+First run, once the install is done:
+
+```bash
+tools/sim.sh test crossing --ledger <next #> --issue NEAR-787 <run>   # <next #> = last row of LEDGER table 1, plus one; <run> = a NEW name
 ```
 
 `tools/sim.sh doctor` says what is missing. `tools/sim.sh` with no argument prints the usage and does nothing.
-The contract behind every test is [TEST_STANDARD.md](../docs/TEST_STANDARD.md); the old hover + step driver still
-works and moves under the front door later.
+The contract behind every test is [TEST_STANDARD.md](../docs/TEST_STANDARD.md).
+The old hover + step driver still works and moves under the front door later.
 
 ## What is here
 
@@ -46,14 +52,19 @@ tools/sim.sh test crossing [--headless] [--no-pause] --ledger 20 --issue NEAR-78
 
 - **Window mode (default)** opens the Isaac window and the in-container Foxglove Studio. The driver prints the
   layout path (`tools/sim_tests/crossing/layout.json`); `setup` installs it, and Studio shows it after a restart.
-- **Pause 1**, before the flight: start OBS, then press Enter. **Pause 2**, after landing with the plots still
-  live: type the OBS file name (Enter skips); it goes into the record. `--no-pause` skips both.
-- **`--headless`** has no window, no Studio and no pauses; use it when there is no `DISPLAY` or for unattended re-runs.
+- **Pause 1**, before the flight: start OBS (the screen recorder), then press Enter.
+  **Pause 2**, after landing with the plots still live: type the video's path (Enter skips); it goes into the record.
+  `--no-pause` skips both.
+- **Where the video ends up:** OBS saves where its own settings say (Settings → Output → Recording Path, by default `~/Videos`).
+  Move the file into `videos/` under the repo and type that path at Pause 2, so the record links it.
+- **`--headless`** (no Isaac window) has no Studio and no pauses; use it when there is no `DISPLAY` or for unattended re-runs.
 - **Ctrl-C** lands every drone, waits for disarm, keeps the bag and ulogs, and writes the record as ABORTED.
   It never becomes PASS. If landing fails the driver prints DRONES STILL ARMED and leaves the stack up.
 - **A late video name:** edit `docs/record/<run>/video.txt`, then re-render with
   `python3 tools/lib/report.py tools/sim_tests/crossing docs/record/<run> --ledger 20 --issue NEAR-787`.
 - Then record the result: [DOCS_STANDARD §7](../docs/DOCS_STANDARD.md).
+  For Linear: paste the `VERDICT:` line the run prints (also the record's `Verdict` line) and the record's GitHub path
+  (`docs/record/<run>_record.md`) into the NEAR-nnn issue as a comment, then tick the issue if it passed.
 
 ## Adding a test
 
@@ -69,17 +80,19 @@ tools/sim.sh test crossing [--headless] [--no-pause] --ledger 20 --issue NEAR-78
 |---|---|
 | `docs/record/<run>/` (tracked, small text) | `metrics.csv`, `run.log`, `commands.sh`, `video.txt`, `verdicts.log`, `fig-1.png`, container logs; the hover test adds its CSVs and `step_response.png` |
 | `docs/record/<run>_record.md` | the record: purpose, scope line, gate table, figure, verdict |
-| `~/flight_logs/sim/<run>/` (never the repo) | the rosbag and the three ulogs `drone_<n>_sysid<s>_<basename>.ulg` (MAV_SYS_ID 2/3/4 = drone_1/2/3) |
+| `~/flight_logs/sim/<run>/` (never the repo) | the rosbag and the three ulogs `drone_<n>_sysid<s>_<basename>.ulg` (sysid = the PX4 `MAV_SYS_ID`; 2/3/4 = drone_1/2/3) |
 | `docs/record/figures/` (tracked) | figures the project pages embed; fixed filenames, made only by `tools/make_figures.sh` |
 
 ## Hover + step (legacy driver)
 
-`sim_hover_step_run.sh` is the hover + 1 m step acceptance (NEAR-786). It runs on its own entry point until it
-migrates under `sim.sh`. Phases, in `all` order: `precheck up watch isaac interfaces commander params fly collect down analyse report`;
-extra: `status`, `ifgates`. Env: `STEPS_PER_AXIS` (default 3), `LEDGER`, `ISSUE` (unset = `?`), `ISAAC_GUI=1`,
-`PAUSE_BEFORE_FLY=1`, `ISAAC_KIT_ARGS`. Tools: `sim_hover_step_test.sh` (flight script), `hover_step_bag.py` (container-only bag dump),
-`hover_step_analysis.py`, `hover_step_timescale.py`, `hover_step_report.py` (exit 0 PASS / 2 INCOMPLETE / 1 FAIL),
-`hover_step_plot.py`, `analyze_step.py` (info only, never a gate).
+`sim_hover_step_run.sh` is the hover + 1 m step acceptance (NEAR-786).
+It runs on its own entry point until it migrates under `sim.sh`.
+
+- Phases, in `all` order: `precheck up watch isaac interfaces commander params fly collect down analyse report`; extra: `status`, `ifgates`.
+- Env: `STEPS_PER_AXIS` (default 3), `LEDGER`, `ISSUE` (unset = `?`), `ISAAC_GUI=1`, `PAUSE_BEFORE_FLY=1`, `ISAAC_KIT_ARGS`.
+- Tools: `sim_hover_step_test.sh` (flight script), `hover_step_bag.py` (container-only bag dump), `hover_step_analysis.py`,
+  `hover_step_timescale.py`, `hover_step_report.py` (exit 0 PASS / 2 INCOMPLETE / 1 FAIL), `hover_step_plot.py`,
+  `analyze_step.py` (info only, never a gate).
 
 ### Prerequisites
 
@@ -96,7 +109,7 @@ extra: `status`, `ifgates`. Env: `STEPS_PER_AXIS` (default 3), `LEDGER`, `ISSUE`
 
 ```bash
 cd ~/AirStack-starling-max2
-LEDGER=19 ISSUE=NEAR-786 tools/sim_hover_step_run.sh all sim_hover_step_run3   # NEW run name every time; LEDGER = the ledger row this run will get
+LEDGER=19 ISSUE=NEAR-786 tools/sim_hover_step_run.sh all sim_hover_step_run3   # legacy hover driver, migrates to the front door later; NEW run name every time; LEDGER = the ledger row this run will get
 tools/sim_hover_step_run.sh status sim_hover_step_run3  # what is up, last verdict, commit that ran
 ```
 

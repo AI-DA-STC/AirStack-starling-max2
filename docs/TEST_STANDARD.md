@@ -36,7 +36,7 @@ tools/sim.sh check
 tools/sim.sh test <name> --ledger N --issue NEAR-nnn <run>
 ```
 
-Follow [DOCS_STANDARD.md](DOCS_STANDARD.md) §7 to record it. The project page's results block for the issue opens with the scope line (position source, world, what is not in the loop).
+Follow [DOCS_STANDARD.md](DOCS_STANDARD.md) §7 to record it; `<next #>` is the last row of LEDGER table 1 plus one. The project page's results block for the issue opens with the scope line (position source, world, what is not in the loop).
 
 ## 3. Migration order
 

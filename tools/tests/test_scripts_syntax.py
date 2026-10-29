@@ -41,7 +41,7 @@ class ScriptSyntax(unittest.TestCase):
         self.assertNotIn("sed -i", src)                       # no in-container patching
         self.assertNotIn("isaac-sim/tools", src)              # copies come from tools/
         self.assertIn("set -o pipefail", src); self.assertNotIn("set -eo pipefail", src)
-        for needle in ("ulogs_copied.ok", "run_meta.txt", "clock_check.txt", "hover_step_timescale.py", "hover_step_analysis.py", "connected: true", "^armed: (true|false)", "ISSUE", "--issue", "ISAAC_GUI", "PAUSE_BEFORE_FLY", "ISAAC_SIM_HEADLESS='\"$HEADLESS\"'"):
+        for needle in ("ulogs_copied.ok", "run_meta.txt", "clock_check.txt", "hover_step_timescale.py", "hover_step_analysis.py", "connected: true", "^armed: (true|false)", "ISSUE", "--issue", "ISAAC_GUI", "PAUSE_BEFORE_FLY", "ISAAC_SIM_HEADLESS='\"$HEADLESS\"'", "px4_arm_times_of", "ulog_header_params", "bag_dump_hook", "source"):
             self.assertIn(needle, src, needle)
 
     def test_shellcheck_if_present(self):

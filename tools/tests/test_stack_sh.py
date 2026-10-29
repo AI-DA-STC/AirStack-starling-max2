@@ -23,3 +23,32 @@ class StackSh(unittest.TestCase):
             r = subprocess.run(["bash", "-c", f"{ENV} USE_STUDIO={use}; source {LIB}; echo \"$CMD_CMD\""], capture_output=True, text=True)
             self.assertEqual("use_foxglove_studio:=true" in r.stdout, want, r.stdout)
             self.assertIn("scenario:=goal record_bag:=true bag_prefix:=hover_step", r.stdout)
+
+
+def run_stub(body, timeout=60):
+    pre = ENV + "; source " + str(LIB) + '; OUT=$(mktemp -d); say(){ echo "SAY: $*"; }; note(){ :; }; '
+    return subprocess.run(["bash", "-c", pre + body], capture_output=True, text=True, timeout=timeout)
+
+class AbortPath(unittest.TestCase):
+    def test_land_returns_0_when_all_disarmed(self):
+        r = run_stub('rx(){ case "$*" in *mavros/state*) echo "armed: false";; esac; }; land_all_and_wait 10; echo rc=$?')
+        self.assertIn("rc=0", r.stdout, r.stderr)
+
+    def test_land_bound_is_real(self):
+        r = run_stub('rx(){ case "$*" in *mavros/state*) sleep 3; echo "armed: true";; esac; }; t0=$SECONDS; land_all_and_wait 4; echo rc=$? el=$((SECONDS-t0))')
+        self.assertIn("rc=1", r.stdout, r.stderr)
+        el = int(r.stdout.split("el=")[1].split()[0])
+        self.assertLessEqual(el, 4 + 3 + 1, r.stdout)
+
+    def test_no_mavros_goes_to_down_and_exits_3(self):
+        r = run_stub('rx(){ :; }; copy_ulogs(){ echo CALLED copy_ulogs; }; down(){ echo CALLED down; }; arm_abort_trap; kill -INT $$; sleep 1; echo NOT_REACHED')
+        self.assertEqual(r.returncode, 3, r.stdout + r.stderr)
+        self.assertIn("aborted before flight", r.stdout)
+        self.assertIn("CALLED copy_ulogs", r.stdout); self.assertIn("CALLED down", r.stdout)
+        self.assertNotIn("DRONES STILL ARMED", r.stdout); self.assertNotIn("NOT_REACHED", r.stdout)
+
+    def test_second_ctrl_c_in_handler_is_ignored(self):
+        r = run_stub('rx(){ case "$*" in *mavros/state*) kill -INT $$; echo "armed: false";; esac; }; copy_ulogs(){ :; }; down(){ trap -p INT; echo DOWN_RAN; }; arm_abort_trap; kill -INT $$; sleep 1; echo NOT_REACHED')
+        self.assertEqual(r.returncode, 3, r.stdout + r.stderr)
+        self.assertIn("DOWN_RAN", r.stdout); self.assertNotIn("NOT_REACHED", r.stdout)
+        self.assertEqual(r.stdout.count("ABORT: Ctrl-C"), 1, r.stdout)

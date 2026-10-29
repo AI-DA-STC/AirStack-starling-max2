@@ -2,7 +2,7 @@
 # tools/lib/stack.sh — the shared sim-stack phases (precheck up watch isaac interfaces ifgates odom_gates commander params
 # copy_ulogs down status) and helpers, extracted from tools/sim_hover_step_run.sh. SIM ONLY (CLAUDE.md iron rule 9).
 # SOURCE it, after the caller sets:  RUN OUT HEAVY S SCENARIO BAG_PREFIX CONFIG HEADLESS
-#   optional: USE_STUDIO (default false: add use_foxglove_studio:=true to the commander launch), ISAAC_KIT_ARGS, ISAAC_LOG_HINT
+#   optional: USE_STUDIO (default false: add use_foxglove_studio:=true to the commander launch), ISAAC_KIT_ARGS
 # Hooks the caller may define:  bag_dump_hook <bag_dir> (down; non-zero = bag stays in the container)
 #   ABORT_HOOK / REPORT_HOOK = names of functions run by abort_trap.
 # Sourcing runs nothing else; a required variable unset -> "stack.sh: <VAR> unset" on stderr and return 2.
@@ -12,7 +12,6 @@ for _v in RUN OUT HEAVY S SCENARIO BAG_PREFIX CONFIG HEADLESS; do
 done; unset _v
 USE_STUDIO=${USE_STUDIO:-false}
 ISAAC_KIT_ARGS=${ISAAC_KIT_ARGS:-}           # opt-in extra Kit args appended to the Isaac launch (default none)
-ISAAC_LOG_HINT=${ISAAC_LOG_HINT:-}
 REPO=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 TOOLS=$REPO/tools
 R=airstack-robot-desktop-1; I=isaac-sim
@@ -210,6 +209,7 @@ copy_ulogs() {   # PX4 ulogs of THIS session (newer than isaac.log.start), one p
 
 down() {   # commander -> bag out -> interfaces -> ulogs (if not yet) -> Isaac -> orphans -> watch; containers stay up (no airstack.sh down)
   phase_begin down bag_evidence.txt bag_path.txt
+  trap '' INT      # a second Ctrl-C must not re-enter the abort handler against a half-dismantled stack
   local i b
   nx docker exec "$R" pkill -INT -f ground_control.launch.py || true
   for i in $(seq 1 25); do alive "$R" ground_control.launch.py || break; sleep 1; done
@@ -279,25 +279,33 @@ px4_arm_times_of() {   # $1 = ulog path in $I, $2 = MAV_SYS_ID, $3 = who -> $OUT
     else rm -f "$OUT/px4_arm_times.txt"; say "WARN: no PX4 arm times (hover_step_timescale.py rc=$rc) — time-scale gate will be UNVERIFIED"; fi
 }
 
-land_all_and_wait() {   # $1 = bound (s): land via the commander, poll MAVROS armed (drones 1-3) every 3 s; 0 = all false, 1 = bound hit
-  local bound=$1 t0=$SECONDS N all
+any_mavros_state() {   # 0 when at least one drone's MAVROS state is readable (the stack got far enough to have flown)
+  local N; for N in 1 2 3; do rx "timeout 3 ros2 topic echo --once /drone_$N/interface/mavros/state" | grep -q '^armed: ' && return 0; done; return 1
+}
+
+land_all_and_wait() {   # $1 = bound (s), real: land via the commander, poll MAVROS armed (drones 1-3); 0 = all false, 1 = bound hit (overshoot <= one 3 s read)
+  local bound=$1 deadline=$((SECONDS + $1)) N all
   note "docker exec $R bash -ic 'ros2 service call /swarm_commander/land std_srvs/srv/Trigger'"
-  rx 'timeout 15 ros2 service call /swarm_commander/land std_srvs/srv/Trigger' | tail -1 | tee -a "$OUT/run.log"
+  rx 'timeout 4 ros2 service call /swarm_commander/land std_srvs/srv/Trigger' | tail -1 | tee -a "$OUT/run.log"
   while :; do all=1
-    for N in 1 2 3; do rx "timeout 10 ros2 topic echo --once /drone_$N/interface/mavros/state" | grep -qE '^armed: false' || all=0; done
+    for N in 1 2 3; do
+      [ "$SECONDS" -ge "$deadline" ] && return 1
+      rx "timeout 3 ros2 topic echo --once /drone_$N/interface/mavros/state" | grep -qE '^armed: false' || all=0; done
     [ "$all" = 1 ] && return 0
-    [ $((SECONDS - t0)) -ge "$bound" ] && return 1
-    sleep 3; done
+    [ "$SECONDS" -ge "$deadline" ] && return 1
+    sleep 1; done
 }
 
 abort_trap() {   # Ctrl-C: land everything, then stop the stack and report; exit 3 either way
   trap '' INT; ALL_MODE=0
   say "ABORT: Ctrl-C — landing"
-  local landed=0; land_all_and_wait 30 && landed=1
+  local landed=0 flew=1
+  if any_mavros_state; then land_all_and_wait 30 && landed=1
+  else flew=0; landed=1; say "ABORTED: aborted before flight (no MAVROS state readable) — stopping the stack"; fi
   [ -n "${ABORT_HOOK:-}" ] && declare -F "$ABORT_HOOK" >/dev/null && "$ABORT_HOOK"
-  echo "aborted=$(date -Is)" > "$OUT/aborted.txt"
+  { echo "aborted=$(date -Is)"; [ "$flew" = 0 ] && echo "aborted before flight"; } > "$OUT/aborted.txt"
   if [ "$landed" = 1 ]; then
-    copy_ulogs; down
+    trap '' INT; copy_ulogs; down
     [ -n "${REPORT_HOOK:-}" ] && declare -F "$REPORT_HOOK" >/dev/null && "$REPORT_HOOK"
     exit 3
   fi

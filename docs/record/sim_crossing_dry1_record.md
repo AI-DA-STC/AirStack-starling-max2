@@ -26,13 +26,13 @@ RECORD · SIM — sim_crossing_dry1. Sim-only (iron rule 9): none of these value
 | Isaac launch: no 'Unknown model' | no 'Unknown model' | 0 | - | PASS |
 | Isaac launch: no PhysX cooking warnings | no PhysX cooking warnings | 0 | - | PASS |
 | Isaac launch: Starling2MaxConfig x3 | Starling2MaxConfig x3 (launcher print) | 6 | - | PASS |
-| min pairwise distance ≥ 1.10 m (2r) | ≥ 1.10 m, binary (live 40 Hz odometry, phase 2) | 0.99 m (margin -0.11 m to the gate; pair d_13 at t=39.1 s) | #4: 1.02 m (0.08 m inside, 10-19 asset, 3 m/s cap, no bag) | **FAIL** |
-| vs ledger #4 | informational (min distance − 1.02 m) | -0.03 m | #4: 1.02 m | info |
+| min pairwise distance ≥ 1.10 m (2r) | ≥ 1.10 m, binary (live 40 Hz odometry, phase 2) | `min_pair_distance`: 0.99 m (margin -0.11 m to the gate; pair `d_13` at t=39.1 s) | #4: 1.02 m (0.08 m inside, 10-19 asset, 3 m/s cap, no bag) | **FAIL** |
+| vs ledger #4 | informational (min distance − 1.02 m) | `min_pair_distance` − 1.02 m: -0.03 m | #4: 1.02 m | info |
 | emergency samples | 0 (5 Hz status string) | 0 CSV rows flagged (≈ 8 per 5 Hz status sample) | - | PASS |
 | fence-breach samples | 0 (5 Hz status string) | 0 CSV rows flagged (≈ 8 per 5 Hz status sample) | - | PASS |
 | CBF active on ≥ 1 drone at least once | /svg/cbf_active names ≥ 1 drone at least once (20 Hz) | drone_1, drone_2, drone_3 seen; 88.5 s active (any drone) | - | PASS |
-| far goal reached per drone | closest approach ≤ 0.40 m (commander arrival radius; spec draft said 0.3 m) | drone_1 0.23 m; drone_2 0.28 m; drone_3 0.14 m | - | PASS |
-| peak speed ≤ 4.2 m/s | ≤ 4.2 m/s (cap 4.0 + 5 %), over every row including takeoff and landing (conservative) | 1.04 m/s (drone_1 1.01, drone_2 1.02, drone_3 1.04) | - | PASS |
+| far goal reached per drone | closest approach ≤ 0.40 m (commander arrival radius; spec draft said 0.3 m) | `goal_dist_drone_1..3`: drone_1 0.23 m; drone_2 0.28 m; drone_3 0.14 m | - | PASS |
+| peak speed ≤ 4.2 m/s | ≤ 4.2 m/s (cap 4.0 + 5 %), over every row including takeoff and landing (conservative) | `speed_drone_1..3`: 1.04 m/s (drone_1 1.01, drone_2 1.02, drone_3 1.04) | - | PASS |
 | landed, disarmed ×3 (commander ACK) | informational (ACK log, not an arming display) | drone_1, drone_2, drone_3 | - | info |
 | post-flight armed=false x3 (MAVROS state) | armed: false for drone_1, drone_2, drone_3 | drone_1 false, drone_2 false, drone_3 false | - | PASS |
 | live vs bag recompute | live metrics.csv agrees with the rosbag recompute (minimum distance within tolerance; flags by count) | d_12 Δmax 0.003462 (tol 0.02); d_13 Δmax 0 (tol 0.02); d_23 Δmax 0.009708 (tol 0.02); min_pair_distance Δmax 0.003462 (tol 0.02); speed_drone_1 Δmax 0 (tol 0.1); speed_drone_2 Δmax 0.000857 (tol 0.1); speed_drone_3 Δmax 0 (tol 0.1); cbf_drone_1 Σ 3694 vs 3694; cbf_drone_2 Σ 3634 vs 3634; cbf_drone_3 Σ 3604 vs 3604; emergency Σ 0 vs 0; fence_breached Σ 0 vs 0; fence_margin Δmax 0 (tol 0.02); goal_dist_drone_1 Δmax 0 (tol 0.05); goal_dist_drone_2 Δmax 0.006801 (tol 0.05); goal_dist_drone_3 Δmax 0 (tol 0.05); min_pair_distance_running Δmax 0 (tol 0.02); unpaired 0.0 % | - | PASS |
@@ -131,6 +131,11 @@ Live vs bag recompute:
 ## Caveats
 
 - The 45 s window is wall-clock; PX4 lockstep runs about 1.3× faster than the wall clock, so it is about 34 s of vehicle time (the duration is not a gate).
+- Reading for the flight-test decision. The drones start on a line at 2 m spacing (d_12 = 2, d_13 = 4, d_23 = 2) and their antipodal goals send all three through the same middle region at once.
+- Peak speed was 1.04 m/s against the 2.0 m/s scenario speed because the CBF was active for 88.5 s of the run, so the ≤ 4.2 m/s gate passed on a quantity this scenario cannot produce.
+- The closest pair sat under 1.10 m for 28 % of the crossing, in a limit cycle of about 3.5 s between about 1.0 and 1.5 m: the filter holds the pairs near its boundary, it did not slip once. The margin to the 0.55 m radius stayed above 0.4 m (no contact).
+- After landing started, d_13 dropped to about 0.76 m and the landed drones sit about 0.8 m apart; no gate sees this.
+- Options for the owner: a larger arena or goal radius, a different gate, or recording this result as the acceptance.
 
 ## Ledger row draft (docs/record/LEDGER.md table 1, #20, NEAR-787)
 

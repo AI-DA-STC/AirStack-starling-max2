@@ -64,7 +64,7 @@ Linear (snapshot 2026-10-26): 4 % · last ledger row #20 (2026-10-29)
 | Issue | Title (Linear, verbatim) | Result | Evidence |
 |---|---|---|---|
 | NEAR-786 | Re-run hover and 1 m step test on the updated sim drone | PASS ×2 — x 0.095 m / 2.47 s, 2026-10-29 | [#18, #19](../record/LEDGER.md) → [run3 record](../record/sim_hover_step_run3_record.md) |
-| NEAR-787 | Re-run three-drone crossing with collision avoidance and record it | FAIL — min 0.99 m vs 1.10 m gate, 2026-10-29 | [#20](../record/LEDGER.md) → [dry1 record](../record/sim_crossing_dry1_record.md); #4: 1.02 m |
+| NEAR-787 | Re-run three-drone crossing with collision avoidance and record it | FAIL — min 0.99 m, 2026-10-29 | [#20](../record/LEDGER.md) → [dry1 record](../record/sim_crossing_dry1_record.md); #4: 1.02 m |
 | NEAR-788 | Try live gain tuning from the panel in sim | — | — |
 | NEAR-789 | Set up one-drone gamepad teleop in the construction site (pad detected, sticks move the drone, release holds) | — | — |
 | NEAR-790 | Hand-fly drone_1 with cuVSLAM running, record and score the flight | — | — |
@@ -91,11 +91,11 @@ Reading [Figure 2](#fig-2): every step is inside the settle band within 2.5 s an
 ![x and z step responses, #17–#19 overlaid, PX4 vehicle time](../record/figures/s5_hover_step_overlay.png)
 *Figure 2. Step response of drone_1 to 1 m commands, x (left) and z (right), #17–#19 overlaid, PX4 time. Dotted: goal. Shaded: ±0.1 m band. Dashed: 3 s gate. Backward steps sign-flipped. `tools/make_figures.sh`; records [#17](../record/sim_hover_step_run1_record.md), [#18](../record/sim_hover_step_run2_record.md), [#19](../record/sim_hover_step_run3_record.md).*
 
-NEAR-787 — results (sim only; PX4's own sim state estimate positions the drones, flat world, camera and cuVSLAM not in the loop; gate 1.10 m = 2r, cbf_sim.yaml 2.0 / 4.0 m/s) — Min pairwise distance 0.99 m vs the 1.10 m gate (d_13 at t=39.1 s); ledger [#4](../record/LEDGER.md) measured 1.02 m on the old asset. Peak speed was 1.04 m/s against the 2.0 m/s scenario speed; the other gates passed (record). Reading [Figure 3](#fig-3): during the crossing the pairs swing between about 1.0 and 1.5 m, and the closest pair is under the 1.10 m line in 28 % of the window's samples, so the gate fails repeatedly, not by one spike.
+NEAR-787 — results (sim only; PX4's own sim state estimate positions the drones, flat world, camera and cuVSLAM not in the loop; gate 1.10 m = 2r, cbf_sim.yaml 2.0 / 4.0 m/s) — Min pairwise distance 0.99 m vs the 1.10 m gate (d_13 at t=39.1 s); ledger [#4](../record/LEDGER.md) measured 1.02 m on the old asset. Peak speed was 1.04 m/s against the 2.0 m/s scenario speed; the other gates passed (record). Reading [Figure 3](#fig-3): during the crossing the pairs swing between about 1.0 and 1.5 m, and the closest pair is under the 1.10 m line in 28 % of the window's samples, so the gate fails repeatedly, not by one spike. The drones start on a line and cross through one middle region together; the CBF was active 88.5 s, so peak speed was only 1.04 m/s and the speed gate passed on a quantity this scenario cannot produce. Landed drones end about 0.8 m apart, which no gate checks; options are a larger arena, a different gate or recording this result ([record](../record/sim_crossing_dry1_record.md#caveats)).
 
 <a id="fig-3"></a>
 ![pairwise distances of the three-drone crossing against the 1.10 m gate](../record/figures/s5_crossing_distances.png)
-*Figure 3. Pairwise distances d_12, d_13, d_23 and their running minimum against time, with the 1.10 m (2r) gate and 0.55 m (r) lines; shaded: takeoff and land. Live 40 Hz odometry, PX4 estimate. `tools/make_figures.sh`; record [#20](../record/sim_crossing_dry1_record.md).*
+*Figure 3. Pairwise distances d_12, d_13, d_23 and their running minimum against time (wall clock), with the 1.10 m (2r) gate and 0.55 m (r) lines and the closest approach marked; shaded: takeoff and land. Live 40 Hz odometry, PX4 estimate. `tools/make_figures.sh`; record [#20](../record/sim_crossing_dry1_record.md).*
 
 Open: nothing hand-flown yet — NEAR-789/790 count only with a video the owner has watched (2026-10-29). NEAR-787 FAIL needs a decision; windowed re-run: `tools/sim.sh test crossing --ledger 21 --issue NEAR-787 <run>` ([TEST_STANDARD](../TEST_STANDARD.md)).
 

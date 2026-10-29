@@ -279,18 +279,19 @@ px4_arm_times_of() {   # $1 = ulog path in $I, $2 = MAV_SYS_ID, $3 = who -> $OUT
     else rm -f "$OUT/px4_arm_times.txt"; say "WARN: no PX4 arm times (hover_step_timescale.py rc=$rc) — time-scale gate will be UNVERIFIED"; fi
 }
 
-any_mavros_state() {   # 0 when at least one drone's MAVROS state is readable (the stack got far enough to have flown)
-  local N; for N in 1 2 3; do rx "timeout 3 ros2 topic echo --once /drone_$N/interface/mavros/state" | grep -q '^armed: ' && return 0; done; return 1
+no_flight_established() {   # 0 ONLY when positively no flight: drone_1's MAVROS state topic has no publisher. Anything else (timeout, error, a publisher) = assume flying
+  local info; info=$(rx 'timeout 10 ros2 topic info /drone_1/interface/mavros/state')
+  echo "$info" | grep -qE "^Publisher count: 0|^Unknown topic"
 }
 
-land_all_and_wait() {   # $1 = bound (s), real: land via the commander, poll MAVROS armed (drones 1-3); 0 = all false, 1 = bound hit (overshoot <= one 3 s read)
+land_all_and_wait() {   # $1 = bound (s), real: land via the commander, poll MAVROS armed (drones 1-3); 0 = all false, 1 = bound hit (overshoot <= one 10 s read)
   local bound=$1 deadline=$((SECONDS + $1)) N all
   note "docker exec $R bash -ic 'ros2 service call /swarm_commander/land std_srvs/srv/Trigger'"
   rx 'timeout 4 ros2 service call /swarm_commander/land std_srvs/srv/Trigger' | tail -1 | tee -a "$OUT/run.log"
   while :; do all=1
     for N in 1 2 3; do
       [ "$SECONDS" -ge "$deadline" ] && return 1
-      rx "timeout 3 ros2 topic echo --once /drone_$N/interface/mavros/state" | grep -qE '^armed: false' || all=0; done
+      rx "timeout 10 ros2 topic echo --once /drone_$N/interface/mavros/state" | grep -qE '^armed: false' || all=0; done
     [ "$all" = 1 ] && return 0
     [ "$SECONDS" -ge "$deadline" ] && return 1
     sleep 1; done
@@ -300,8 +301,8 @@ abort_trap() {   # Ctrl-C: land everything, then stop the stack and report; exit
   trap '' INT; ALL_MODE=0
   say "ABORT: Ctrl-C — landing"
   local landed=0 flew=1
-  if any_mavros_state; then land_all_and_wait 30 && landed=1
-  else flew=0; landed=1; say "ABORTED: aborted before flight (no MAVROS state readable) — stopping the stack"; fi
+  if ! no_flight_established; then land_all_and_wait 30 && landed=1      # fail safe: in doubt, land
+  else flew=0; landed=1; say "ABORTED: aborted before flight (MAVROS state topic has no publisher) — stopping the stack"; fi
   [ -n "${ABORT_HOOK:-}" ] && declare -F "$ABORT_HOOK" >/dev/null && "$ABORT_HOOK"
   { echo "aborted=$(date -Is)"; [ "$flew" = 0 ] && echo "aborted before flight"; } > "$OUT/aborted.txt"
   if [ "$landed" = 1 ]; then

@@ -38,10 +38,10 @@ class AbortPath(unittest.TestCase):
         r = run_stub('rx(){ case "$*" in *mavros/state*) sleep 3; echo "armed: true";; esac; }; t0=$SECONDS; land_all_and_wait 4; echo rc=$? el=$((SECONDS-t0))')
         self.assertIn("rc=1", r.stdout, r.stderr)
         el = int(r.stdout.split("el=")[1].split()[0])
-        self.assertLessEqual(el, 4 + 3 + 1, r.stdout)
+        self.assertLessEqual(el, 4 + 10 + 1, r.stdout)
 
     def test_no_mavros_goes_to_down_and_exits_3(self):
-        r = run_stub('rx(){ :; }; copy_ulogs(){ echo CALLED copy_ulogs; }; down(){ echo CALLED down; }; arm_abort_trap; kill -INT $$; sleep 1; echo NOT_REACHED')
+        r = run_stub('rx(){ case "$*" in *"topic info"*) echo "Publisher count: 0";; esac; }; copy_ulogs(){ echo CALLED copy_ulogs; }; down(){ echo CALLED down; }; arm_abort_trap; kill -INT $$; sleep 1; echo NOT_REACHED')
         self.assertEqual(r.returncode, 3, r.stdout + r.stderr)
         self.assertIn("aborted before flight", r.stdout)
         self.assertIn("CALLED copy_ulogs", r.stdout); self.assertIn("CALLED down", r.stdout)
@@ -52,3 +52,17 @@ class AbortPath(unittest.TestCase):
         self.assertEqual(r.returncode, 3, r.stdout + r.stderr)
         self.assertIn("DOWN_RAN", r.stdout); self.assertNotIn("NOT_REACHED", r.stdout)
         self.assertEqual(r.stdout.count("ABORT: Ctrl-C"), 1, r.stdout)
+
+    def test_timeout_with_a_publisher_means_flying_and_lands(self):
+        r = run_stub('rx(){ case "$*" in *"topic info"*) echo "Publisher count: 3";; *) return 1;; esac; }; land_all_and_wait(){ echo CALLED land; return 1; }; copy_ulogs(){ echo CALLED copy_ulogs; }; down(){ echo CALLED down; }; arm_abort_trap; kill -INT $$; sleep 1')
+        self.assertEqual(r.returncode, 3, r.stdout + r.stderr)
+        self.assertIn("CALLED land", r.stdout); self.assertNotIn("aborted before flight", r.stdout)
+        self.assertIn("DRONES STILL ARMED", r.stdout); self.assertNotIn("CALLED down", r.stdout)
+
+    def test_unreadable_topic_info_also_means_flying(self):
+        r = run_stub('rx(){ return 1; }; land_all_and_wait(){ echo CALLED land; return 0; }; copy_ulogs(){ :; }; down(){ echo CALLED down; }; arm_abort_trap; kill -INT $$; sleep 1')
+        self.assertIn("CALLED land", r.stdout); self.assertNotIn("aborted before flight", r.stdout)
+
+    def test_no_publisher_means_aborted_before_flight(self):
+        r = run_stub('rx(){ echo "Unknown topic \'/drone_1/interface/mavros/state\'"; }; land_all_and_wait(){ echo CALLED land; }; copy_ulogs(){ :; }; down(){ echo CALLED down; }; arm_abort_trap; kill -INT $$; sleep 1')
+        self.assertIn("aborted before flight", r.stdout); self.assertNotIn("CALLED land", r.stdout); self.assertIn("CALLED down", r.stdout)

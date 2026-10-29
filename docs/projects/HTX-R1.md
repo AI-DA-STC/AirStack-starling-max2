@@ -70,7 +70,7 @@ Linear (snapshot 2026-10-26): 4 % · last ledger row #22 (2026-10-30)
 | NEAR-790 | Hand-fly drone_1 with cuVSLAM running, record and score the flight | — | — |
 | NEAR-860 | Record the stereo camera images so a flight can be replayed through cuVSLAM | — | — |
 
-**NEAR-786: Re-run hover and 1 m step test on the updated sim drone.** It measures the control loop only: commander goal → MAVROS → PX4, with PX4 positioning itself from Isaac's simulated sensors. The camera and cuVSLAM are not running; the world does not change this result (flat default world, same as #3), and cuVSLAM is scored offline in S3/S4 and flies a drone only from S6/S7. Results below: sim only; gates 0.15 m / 3.0 s PX4 vehicle time / 0 re-entries / thrust 0.12–0.20 ([tools/README.md](../../tools/README.md#thresholds)), set 2026-10-19 around the Iris reading, not a flight requirement.
+**NEAR-786: Re-run hover and 1 m step test on the updated sim drone.** This test checks that one drone still hovers, moves 1 m and settles cleanly after the rebuild. It tests the control loop only, so the camera and cuVSLAM are off and the world makes no difference. The gates are set as a sanity bar, not a flight requirement ([thresholds](../../tools/README.md#thresholds)).
 
 | | gate | #3 (19 Oct, old asset, 0.6 m/s, wall time) | #17 (28 Oct, n=1) | #18 (28 Oct, n=3) | #19 (29 Oct, n=3) |
 |---|---|---|---|---|---|
@@ -89,15 +89,15 @@ Reading [Figure 2](#fig-2): every step is inside the settle band within 2.5 s an
 ![x and z step responses, #17–#19 overlaid, PX4 vehicle time](../record/figures/s5_hover_step_overlay.png)
 *Figure 2. Step response of drone_1 to 1 m commands, x (left) and z (right), #17–#19 overlaid, PX4 time. Dotted: goal. Shaded: ±0.1 m band. Dashed: 3 s gate. Backward steps sign-flipped. `tools/make_figures.sh`; records [#17](../record/sim_hover_step_run1_record.md), [#18](../record/sim_hover_step_run2_record.md), [#19](../record/sim_hover_step_run3_record.md).*
 
-**NEAR-787: Re-run three-drone crossing with collision avoidance and record it.** It checks that collision avoidance still works on the updated sim drones, against the 19 Oct baseline (#4, 1.02 m). The CBF gives each drone a 0.55 m safety bubble and brakes any two drones heading for each other so that their bubbles stop just touching, 1.10 m between centers (`cbf_filter.py`: barrier = d² − (2r)²); the test's gate asks whether two bubbles ever overlap. Scope: sim only; PX4's own sim estimate positions the drones; flat world; camera and cuVSLAM not in the loop; cbf_sim.yaml 2.0 / 4.0 m/s.
+**NEAR-787: Re-run three-drone crossing with collision avoidance and record it.** This test checks that three drones crossing paths still avoid each other after the rebuild. The collision avoidance gives each drone a 0.55 m safety bubble, so two drones should stay at least 1.10 m apart. All runs are in simulation on a flat world, with PX4's own position estimate and no camera.
 
-Results: closest pair [#4](../record/LEDGER.md) 1.02 m, #20 0.99 m, #21 0.95 m (with a second, panel-flown crossing), #22 1.00 m (clean: every other gate PASS, live and bag agree within 0.003 m), so FAIL against 1.10 m every time; no emergency stop, no fence breach, every drone reached its goal. Reading [Figure 3](#fig-3): the CBF brakes the pairs early, but they reach the line still moving and overshoot it by 0.08–0.15 m before being pushed back (#22: 0.35 m/s at the line, 0.8 s more to 1.00 m, [record](../record/sim_crossing_run2_record.md#caveats)), so the bubbles overlap while the bodies stay about 1 m apart. Avoidance holds as before; keeping 1.10 m as the pass line, or using CMU's own 1.5 r = 0.825 m, is the owner's call.
+The closest two drones came was 1.00 m in the clean run ([#22](../record/sim_crossing_run2_record.md)), against 1.02 m before the rebuild ([#4](../record/LEDGER.md)). Every run went about 0.1 m inside the 1.10 m line, so each one fails the gate. [Figure 3](#fig-3) shows why: the drones brake as they close in, but reach the line still moving and overshoot it before being pushed apart. They never touched, and every other check passed.
 
 <a id="fig-3"></a>
 ![pairwise distances of the three-drone crossing against the 1.10 m gate](../record/figures/s5_crossing_distances.png)
 *Figure 3. Pairwise distances d_12, d_13, d_23 and their running minimum against time (wall clock), with the 1.10 m (2r) gate and 0.55 m (r) lines and the closest approach marked; shaded: takeoff and land. Live 40 Hz odometry, PX4 estimate. `tools/make_figures.sh`; record [#20](../record/sim_crossing_dry1_record.md).*
 
-Open: nothing hand-flown yet — NEAR-789/790 count only with a video the owner has watched (2026-10-29). NEAR-787 failed the 1.10 m gate in four runs (0.95–1.02 m, no contact); keeping the gate and tuning the CBF, gating at 1.5 r, or accepting the result is the owner's call. During a test run, leave the panel alone: in #21 it flew a second crossing and stopped the bag.
+Open: nothing has been hand-flown yet, and NEAR-789/790 count only with a video the owner has watched. For NEAR-787 the owner decides whether to keep the 1.10 m gate and tune the collision avoidance, or loosen it to CMU's 0.825 m. During a test run, leave the Foxglove panel alone.
 
 ### S5b · Map the construction site with cuVSLAM — SIM ONLY (Isaac)
 **Purpose:** if a saved map of the site lets a fresh drone find its own position in it, every drone can share one coordinate frame without extra hardware (UWB). This tests that idea in sim first.

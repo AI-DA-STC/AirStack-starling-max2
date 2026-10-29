@@ -1,0 +1,15 @@
+# arena_high=3,3,2.5
+# arena_low=-3,-3,0.5
+# cbf_max_speed_mps=4.0
+# cbf_safety_radius_m=0.55
+# drone_position_offsets=-2,0,0,0,0,0,2,0,0
+# drones=drone_1,drone_2,drone_3
+# fence_max=5,5,3
+# fence_min=-3,-6,0
+# offsets=-2,0,0,0,0,0,2,0,0
+# refs=ref_2r:1.1;ref_r:0.55;ref_speed_cap:4.0
+# source=bag:/root/AirStack/robot/ros_ws/bags/crossing_20261029_180849
+# started=2026-10-29T18:09:41+00:00
+# t0_unix=1793297381.7436056
+# trigger=drone_1
+t_s,phase,d_12,d_13,d_23,min_pair_distance,speed_drone_1,speed_drone_2,speed_drone_3,cbf_drone_1,cbf_drone_2,cbf_drone_3,emergency,fence_breached,fence_margin,goal_dist_drone_1,goal_dist_drone_2,goal_dist_drone_3,min_pair_distance_running

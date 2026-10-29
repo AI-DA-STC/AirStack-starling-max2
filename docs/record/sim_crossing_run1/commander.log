@@ -1,0 +1,1160 @@
+[INFO] [launch]: All log files can be found below /root/.ros/log/2026-10-29-18-08-48-946336-jeremychia-Legion-Pro-7-16IAX10H-24131
+[INFO] [launch]: Default logging verbosity is set to INFO
+[INFO] [bag_recorder-1]: process started with pid [24134]
+[INFO] [swarm_commander-2]: process started with pid [24135]
+[INFO] [mocap_bridge-3]: process started with pid [24136]
+[INFO] [led_controller-4]: process started with pid [24137]
+[INFO] [foxglove_bridge-5]: process started with pid [24138]
+[INFO] [foxglove-studio-6]: process started with pid [24139]
+[foxglove_bridge-5] [0m[INFO] [1793297329.083918722] [foxglove_bridge]: Starting foxglove_bridge (jazzy, 3.2.6@)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.086513997] [foxglove_bridge]: Server listening on port 8765[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.088260377] [foxglove_bridge]: Advertising new channel 1 for topic "/rosout"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.089694296] [foxglove_bridge]: Advertising new channel 2 for topic "/parameter_events"[0m
+[foxglove-studio-6] [24139:1029/180849.236203:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[led_controller-4] [0m[INFO] [1793297329.393465714] [led_controller]: led_controller up: drones ['drone_1'], heartbeat udp/47901, default green, CBF -> red (hold 0.5s), brightness 80/255[0m
+[swarm_commander-2] [33m[WARN] [1793297329.455922146] [swarm_commander]: formation_profiles set but scenario "antipodal" has no retargetable goals; profiles ignored[0m
+[bag_recorder-1] [0m[INFO] [1793297329.459284678] [bag_recorder]: bag recorder ready: bag_dir=/root/AirStack/robot/ros_ws/bags prefix=crossing — switch with bag_recorder/record (std_srvs/SetBool)[0m
+[bag_recorder-1] [0m[INFO] [1793297329.460435130] [bag_recorder]: recording all topics to /root/AirStack/robot/ros_ws/bags/crossing_20261029_180849[0m
+[mocap_bridge-3] [0m[INFO] [1793297329.474077972] [mocap_bridge]: MocapBridge [direct/enu_to_ned] forwarding 3 drone(s): /drone_1/pose -> /drone_1/fmu/in/vehicle_visual_odometry, /drone_2/pose -> /drone_2/fmu/in/vehicle_visual_odometry, /drone_3/pose -> /drone_3/fmu/in/vehicle_visual_odometry[0m
+[swarm_commander-2] [0m[INFO] [1793297329.481666463] [swarm_commander]: SwarmCommander up | scenario=antipodal | drone_1(auto/sim), drone_2(auto/sim), drone_3(auto/sim) | speed=2.0 m/s (accel 6.0 m/s2, settle 0.3 s, lead 2.0 m) | real output: none | CBF r=0.55 m, vmax=4.0 m/s, alpha=2.5, ext_vel_gain=1.0 | FENCE hold_all [-3. -6.  0.]..[5. 5. 3.][0m
+[swarm_commander-2] [0m[INFO] [1793297329.484273374] [swarm_commander]: position offsets (local->world): drone_1: [-2.  0.  0.], drone_2: [0. 0. 0.], drone_3: [2. 0. 0.][0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.640513454] [foxglove_bridge]: Advertising new channel 3 for topic "/uas3/mavlink_source"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.640568008] [foxglove_bridge]: Advertising new channel 4 for topic "/uas3/mavlink_sink"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.640574920] [foxglove_bridge]: Advertising new channel 5 for topic "/uas2/mavlink_sink"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.640912324] [foxglove_bridge]: Advertising new channel 6 for topic "/svg/led_command"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.640918468] [foxglove_bridge]: Advertising new channel 7 for topic "/svg/drone_1/led_command"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.643654643] [foxglove_bridge]: Advertising new channel 8 for topic "/drone_3/trajectory_controller/tracking_point"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.644714511] [foxglove_bridge]: Advertising new channel 9 for topic "/drone_3/odometry_conversion/odometry"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.645068425] [foxglove_bridge]: Advertising new channel 10 for topic "/drone_3/interface/velocity_command"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.645391760] [foxglove_bridge]: Advertising new channel 11 for topic "/drone_3/interface/roll_pitch_yawrate_thrust_command"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.646263932] [foxglove_bridge]: Advertising new channel 12 for topic "/drone_3/interface/pose_command"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.646924005] [foxglove_bridge]: Advertising new channel 13 for topic "/drone_3/interface/mavros/wind_estimation"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.647515411] [foxglove_bridge]: Advertising new channel 14 for topic "/drone_3/interface/mavros/target_actuator_control"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.647943579] [foxglove_bridge]: Advertising new channel 15 for topic "/drone_3/interface/mavros/statustext/send"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.648603338] [foxglove_bridge]: Advertising new channel 16 for topic "/drone_3/interface/mavros/status_event"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.649164866] [foxglove_bridge]: Advertising new channel 17 for topic "/drone_3/interface/mavros/time_reference"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.649655187] [foxglove_bridge]: Advertising new channel 18 for topic "/drone_3/interface/mavros/state"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.649664434] [foxglove_bridge]: Advertising new channel 19 for topic "/drone_3/interface/mavros/setpoint_velocity/cmd_vel"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.650092470] [foxglove_bridge]: Advertising new channel 20 for topic "/drone_3/interface/mavros/setpoint_raw/target_global"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.650101259] [foxglove_bridge]: Advertising new channel 21 for topic "/drone_3/interface/mavros/setpoint_raw/global"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.650643453] [foxglove_bridge]: Advertising new channel 22 for topic "/drone_3/interface/mavros/setpoint_raw/attitude"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.651081934] [foxglove_bridge]: Advertising new channel 23 for topic "/drone_3/interface/mavros/setpoint_raw/target_local"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.651095460] [foxglove_bridge]: Advertising new channel 24 for topic "/drone_3/interface/mavros/setpoint_position/local"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.651100959] [foxglove_bridge]: Advertising new channel 25 for topic "/drone_3/pose"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.652132937] [foxglove_bridge]: Advertising new channel 26 for topic "/drone_3/interface/mavros/setpoint_position/global_to_local"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.652532691] [foxglove_bridge]: Advertising new channel 27 for topic "/drone_3/interface/mavros/setpoint_attitude/thrust"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.652540163] [foxglove_bridge]: Advertising new channel 28 for topic "/drone_3/interface/mavros/setpoint_attitude/cmd_vel"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.653080908] [foxglove_bridge]: Advertising new channel 29 for topic "/drone_3/interface/mavros/rc/in"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.653490046] [foxglove_bridge]: Advertising new channel 30 for topic "/drone_3/interface/mavros/nav_controller_output/output"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.653889615] [foxglove_bridge]: Advertising new channel 31 for topic "/drone_3/interface/mavros/mission/reached"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.653901781] [foxglove_bridge]: Advertising new channel 32 for topic "/uas4/mavlink_source"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.654876107] [foxglove_bridge]: Advertising new channel 33 for topic "/drone_3/interface/mavros/manual_control/send"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.655062868] [foxglove_bridge]: Advertising new channel 34 for topic "/drone_3/interface/mavros/local_position/velocity_local"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.655070132] [foxglove_bridge]: Advertising new channel 35 for topic "/drone_3/interface/mavros/local_position/velocity_body_cov"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.655075805] [foxglove_bridge]: Advertising new channel 36 for topic "/drone_3/interface/mavros/local_position/velocity_body"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.655081879] [foxglove_bridge]: Advertising new channel 37 for topic "/svg/cbf_active"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.655471131] [foxglove_bridge]: Advertising new channel 38 for topic "/drone_3/interface/mavros/imu/temperature_baro"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.655859160] [foxglove_bridge]: Advertising new channel 39 for topic "/drone_3/interface/mavros/imu/mag"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.656164440] [foxglove_bridge]: Advertising new channel 40 for topic "/drone_3/interface/torque_thrust_command"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.656724790] [foxglove_bridge]: Advertising new channel 41 for topic "/drone_3/interface/mavros/imu/data"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.657081728] [foxglove_bridge]: Advertising new channel 42 for topic "/drone_3/interface/mavros/global_position/set_gp_origin"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.657451377] [foxglove_bridge]: Advertising new channel 43 for topic "/drone_3/interface/mavros/global_position/rel_alt"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.658209397] [foxglove_bridge]: Advertising new channel 44 for topic "/drone_3/interface/mavros/global_position/raw/fix"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.658218210] [foxglove_bridge]: Advertising new channel 45 for topic "/drone_3/interface/mavros/global_position/gp_origin"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.658609373] [foxglove_bridge]: Advertising new channel 46 for topic "/drone_3/interface/mavros/extended_state"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.659160723] [foxglove_bridge]: Advertising new channel 47 for topic "/drone_3/interface/mavros/battery"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.659608625] [foxglove_bridge]: Advertising new channel 48 for topic "/drone_3/interface/mavros/altitude"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.659958910] [foxglove_bridge]: Advertising new channel 49 for topic "/drone_3/interface/is_armed"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.659967475] [foxglove_bridge]: Advertising new channel 50 for topic "/drone_3/interface/cmd_velocity"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.659973432] [foxglove_bridge]: Advertising new channel 51 for topic "/drone_3/interface/cmd_torque_thrust"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.660306528] [foxglove_bridge]: Advertising new channel 52 for topic "/drone_3/interface/cmd_rate_thrust"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.660315412] [foxglove_bridge]: Advertising new channel 53 for topic "/drone_3/interface/cmd_pose"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.660321252] [foxglove_bridge]: Advertising new channel 54 for topic "/drone_3/interface/mavros/setpoint_position/global"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.661170480] [foxglove_bridge]: Advertising new channel 55 for topic "/drone_3/global_plan"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.662223439] [foxglove_bridge]: Advertising new channel 56 for topic "/tf_static"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.662625440] [foxglove_bridge]: Advertising new channel 57 for topic "/drone_3/interface/mavros/home_position/home"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.663073197] [foxglove_bridge]: Advertising new channel 58 for topic "/drone_3/fmu/in/vehicle_visual_odometry"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.663408941] [foxglove_bridge]: Advertising new channel 59 for topic "/drone_3/control/reset_integrators"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.663417003] [foxglove_bridge]: Advertising new channel 60 for topic "/drone_2/trajectory_controller/projected_drone_pose"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.663807165] [foxglove_bridge]: Advertising new channel 61 for topic "/drone_3/interface/mavros/timesync_status"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.663814948] [foxglove_bridge]: Advertising new channel 62 for topic "/drone_3/interface/mavros/setpoint_trajectory/desired"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.663821582] [foxglove_bridge]: Advertising new channel 63 for topic "/drone_3/interface/mavros/actuator_control"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.663827954] [foxglove_bridge]: Advertising new channel 64 for topic "/drone_3/interface/cmd_roll_pitch_yawrate_thrust"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.663848939] [foxglove_bridge]: Advertising new channel 65 for topic "/drone_2/pose"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.664421960] [foxglove_bridge]: Advertising new channel 66 for topic "/drone_3/interface/mavros/rc/override"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.664434860] [foxglove_bridge]: Advertising new channel 67 for topic "/drone_3/interface/mavros/manual_control/control"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.664441354] [foxglove_bridge]: Advertising new channel 68 for topic "/drone_2/interface/torque_thrust_command"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.664447690] [foxglove_bridge]: Advertising new channel 69 for topic "/drone_2/interface/rate_thrust_command"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.664454269] [foxglove_bridge]: Advertising new channel 70 for topic "/drone_2/interface/mavros/statustext/send"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.664461010] [foxglove_bridge]: Advertising new channel 71 for topic "/drone_2/interface/mavros/state"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.664469408] [foxglove_bridge]: Advertising new channel 72 for topic "/drone_3/interface/mavros/setpoint_raw/target_attitude"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.664886088] [foxglove_bridge]: Advertising new channel 73 for topic "/drone_3/interface/attitude_thrust_command"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.664896057] [foxglove_bridge]: Advertising new channel 74 for topic "/drone_2/interface/mavros/setpoint_velocity/cmd_vel"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.666098564] [foxglove_bridge]: Advertising new channel 75 for topic "/drone_2/interface/mavros/setpoint_trajectory/local"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.666110302] [foxglove_bridge]: Advertising new channel 76 for topic "/drone_2/interface/mavros/target_actuator_control"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.666116898] [foxglove_bridge]: Advertising new channel 77 for topic "/drone_2/interface/mavros/setpoint_raw/local"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.666123451] [foxglove_bridge]: Advertising new channel 78 for topic "/drone_2/interface/mavros/setpoint_raw/global"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.666129611] [foxglove_bridge]: Advertising new channel 79 for topic "/drone_3/interface/cmd_attitude_thrust"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.666139047] [foxglove_bridge]: Advertising new channel 80 for topic "/drone_2/interface/mavros/setpoint_raw/attitude"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.666147980] [foxglove_bridge]: Advertising new channel 81 for topic "/drone_3/interface/mavros/global_position/global"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.666154403] [foxglove_bridge]: Advertising new channel 82 for topic "/drone_2/interface/mavros/setpoint_position/global_to_local"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.666162990] [foxglove_bridge]: Advertising new channel 83 for topic "/drone_2/interface/mavros/setpoint_position/global"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.666169253] [foxglove_bridge]: Advertising new channel 84 for topic "/drone_2/interface/mavros/setpoint_attitude/thrust"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.666545745] [foxglove_bridge]: Advertising new channel 85 for topic "/drone_3/interface/mavros/setpoint_accel/accel"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.666553481] [foxglove_bridge]: Advertising new channel 86 for topic "/drone_2/interface/mavros/setpoint_attitude/cmd_vel"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.666560270] [foxglove_bridge]: Advertising new channel 87 for topic "/drone_3/interface/mavros/setpoint_trajectory/local"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.666961063] [foxglove_bridge]: Advertising new channel 88 for topic "/drone_3/interface/mavros/param/event"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.667885191] [foxglove_bridge]: Advertising new channel 89 for topic "/drone_3/interface/mavros/mission/waypoints"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.667897778] [foxglove_bridge]: Advertising new channel 90 for topic "/drone_2/interface/mavros/rc/override"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.668278793] [foxglove_bridge]: Advertising new channel 91 for topic "/drone_2/interface/mavros/rc/out"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.668629013] [foxglove_bridge]: Advertising new channel 92 for topic "/drone_3/interface/mavros/local_position/pose_cov"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.668637034] [foxglove_bridge]: Advertising new channel 93 for topic "/drone_2/interface/mavros/rc/in"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.668643383] [foxglove_bridge]: Advertising new channel 94 for topic "/drone_2/interface/mavros/rallypoint/rallypoints"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.668649202] [foxglove_bridge]: Advertising new channel 95 for topic "/drone_2/interface/mavros/param/event"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.668668364] [foxglove_bridge]: Advertising new channel 96 for topic "/drone_2/interface/mavros/nav_controller_output/output"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.668674317] [foxglove_bridge]: Advertising new channel 97 for topic "/drone_2/interface/mavros/manual_control/control"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.668680423] [foxglove_bridge]: Advertising new channel 98 for topic "/drone_2/interface/mavros/local_position/velocity_local"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.668686747] [foxglove_bridge]: Advertising new channel 99 for topic "/drone_2/interface/mavros/local_position/velocity_body_cov"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.668693622] [foxglove_bridge]: Advertising new channel 100 for topic "/drone_2/interface/mavros/local_position/velocity_body"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.668703179] [foxglove_bridge]: Advertising new channel 101 for topic "/drone_2/interface/mavros/local_position/pose_cov"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.668712707] [foxglove_bridge]: Advertising new channel 102 for topic "/drone_2/interface/mavros/imu/temperature_imu"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.668718543] [foxglove_bridge]: Advertising new channel 103 for topic "/drone_3/cross_track_error"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.668726531] [foxglove_bridge]: Advertising new channel 104 for topic "/drone_2/interface/mavros/imu/mag"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.669159592] [foxglove_bridge]: Advertising new channel 105 for topic "/drone_3/interface/mavros/sys_status"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.669167771] [foxglove_bridge]: Advertising new channel 106 for topic "/drone_2/interface/mavros/imu/data_raw"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.669173993] [foxglove_bridge]: Advertising new channel 107 for topic "/drone_2/interface/mavros/imu/data"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.669185565] [foxglove_bridge]: Advertising new channel 108 for topic "/drone_2/interface/mavros/home_position/set"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.669192167] [foxglove_bridge]: Advertising new channel 109 for topic "/drone_2/interface/mavros/home_position/home"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.669198279] [foxglove_bridge]: Advertising new channel 110 for topic "/drone_2/interface/mavros/global_position/set_gp_origin"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.669204064] [foxglove_bridge]: Advertising new channel 111 for topic "/drone_2/interface/mavros/global_position/raw/gps_vel"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.669210040] [foxglove_bridge]: Advertising new channel 112 for topic "/drone_2/interface/mavros/global_position/raw/fix"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.669597926] [foxglove_bridge]: Advertising new channel 113 for topic "/drone_2/interface/mavros/imu/static_pressure"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.669606193] [foxglove_bridge]: Advertising new channel 114 for topic "/drone_2/interface/mavros/global_position/gp_origin"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.669612205] [foxglove_bridge]: Advertising new channel 115 for topic "/drone_2/interface/mavros/global_position/compass_hdg"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.669618517] [foxglove_bridge]: Advertising new channel 116 for topic "/uas4/mavlink_sink"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.669624709] [foxglove_bridge]: Advertising new channel 117 for topic "/drone_2/interface/mavros/global_position/gp_lp_offset"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.669632355] [foxglove_bridge]: Advertising new channel 118 for topic "/drone_2/interface/mavros/geofence/fences"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.669640454] [foxglove_bridge]: Advertising new channel 119 for topic "/drone_2/trajectory_controller/tracking_point"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.669648520] [foxglove_bridge]: Advertising new channel 120 for topic "/drone_2/interface/mavros/altitude"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.669654427] [foxglove_bridge]: Advertising new channel 121 for topic "/drone_3/interface/mavros/imu/diff_pressure"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.669669894] [foxglove_bridge]: Advertising new channel 122 for topic "/drone_2/interface/mavros/actuator_control"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.669675685] [foxglove_bridge]: Advertising new channel 123 for topic "/drone_2/interface/is_armed"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.669683704] [foxglove_bridge]: Advertising new channel 124 for topic "/drone_3/interface/mavros/home_position/set"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.669691861] [foxglove_bridge]: Advertising new channel 125 for topic "/drone_3/interface/mavros/geofence/fences"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.669703183] [foxglove_bridge]: Advertising new channel 126 for topic "/drone_2/interface/cmd_velocity"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.669711845] [foxglove_bridge]: Advertising new channel 127 for topic "/drone_2/interface/cmd_roll_pitch_yawrate_thrust"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.669720683] [foxglove_bridge]: Advertising new channel 128 for topic "/drone_3/interface/mavros/global_position/compass_hdg"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.669730077] [foxglove_bridge]: Advertising new channel 129 for topic "/drone_2/interface/cmd_rate_thrust"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.669738560] [foxglove_bridge]: Advertising new channel 130 for topic "/drone_2/interface/cmd_pose"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.669743823] [foxglove_bridge]: Advertising new channel 131 for topic "/drone_2/interface/cmd_attitude_thrust"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.669755260] [foxglove_bridge]: Advertising new channel 132 for topic "/drone_3/interface/mavros/global_position/local"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.669763873] [foxglove_bridge]: Advertising new channel 133 for topic "/drone_2/interface/attitude_thrust_command"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.669769497] [foxglove_bridge]: Advertising new channel 134 for topic "/drone_3/interface/mavros/rc/out"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.669777557] [foxglove_bridge]: Advertising new channel 135 for topic "/drone_2/global_plan"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.669785609] [foxglove_bridge]: Advertising new channel 136 for topic "/drone_2/fmu/in/vehicle_visual_odometry"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.670264854] [foxglove_bridge]: Advertising new channel 137 for topic "/drone_3/interface/mavros/global_position/raw/satellites"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.670274305] [foxglove_bridge]: Advertising new channel 138 for topic "/drone_2/cross_track_error"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.670280605] [foxglove_bridge]: Advertising new channel 139 for topic "/drone_2/control/reset_integrators"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.670287034] [foxglove_bridge]: Advertising new channel 140 for topic "/drone_1/pose"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.671323342] [foxglove_bridge]: Advertising new channel 141 for topic "/drone_3/interface/mavros/local_position/accel"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.671333761] [foxglove_bridge]: Advertising new channel 142 for topic "/drone_1/odometry_conversion/odometry"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.671340035] [foxglove_bridge]: Advertising new channel 143 for topic "/drone_1/interface/velocity_command"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.671346761] [foxglove_bridge]: Advertising new channel 144 for topic "/drone_2/interface/mavros/local_position/accel"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.671358949] [foxglove_bridge]: Advertising new channel 145 for topic "/drone_1/interface/roll_pitch_yawrate_thrust_command"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.671365518] [foxglove_bridge]: Advertising new channel 146 for topic "/drone_1/interface/rate_thrust_command"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.671377718] [foxglove_bridge]: Advertising new channel 147 for topic "/drone_3/interface/rate_thrust_command"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.671386771] [foxglove_bridge]: Advertising new channel 148 for topic "/drone_1/trajectory_controller/tracking_point"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.671392996] [foxglove_bridge]: Advertising new channel 149 for topic "/drone_1/interface/mavros/time_reference"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.671401460] [foxglove_bridge]: Advertising new channel 150 for topic "/drone_1/interface/mavros/target_actuator_control"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.671407329] [foxglove_bridge]: Advertising new channel 151 for topic "/drone_3/interface/mavros/imu/temperature_imu"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.671415659] [foxglove_bridge]: Advertising new channel 152 for topic "/drone_3/interface/mavros/imu/data_raw"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.671772595] [foxglove_bridge]: Advertising new channel 153 for topic "/drone_2/interface/mavros/setpoint_velocity/cmd_vel_unstamped"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.671781183] [foxglove_bridge]: Advertising new channel 154 for topic "/drone_1/interface/mavros/sys_status"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.671787695] [foxglove_bridge]: Advertising new channel 155 for topic "/drone_2/interface/mavros/setpoint_accel/accel"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.671794242] [foxglove_bridge]: Advertising new channel 156 for topic "/drone_2/interface/mavros/manual_control/send"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.671800452] [foxglove_bridge]: Advertising new channel 157 for topic "/drone_1/interface/mavros/statustext/send"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.671812025] [foxglove_bridge]: Advertising new channel 158 for topic "/drone_1/interface/mavros/statustext/recv"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.671818401] [foxglove_bridge]: Advertising new channel 159 for topic "/drone_1/interface/mavros/status_event"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.671824212] [foxglove_bridge]: Advertising new channel 160 for topic "/drone_3/interface/mavros/rallypoint/rallypoints"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.671832908] [foxglove_bridge]: Advertising new channel 161 for topic "/drone_1/interface/mavros/state"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.671839268] [foxglove_bridge]: Advertising new channel 162 for topic "/drone_1/interface/mavros/setpoint_velocity/cmd_vel"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.671847856] [foxglove_bridge]: Advertising new channel 163 for topic "/uas2/mavlink_source"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.671856827] [foxglove_bridge]: Advertising new channel 164 for topic "/drone_1/interface/mavros/timesync_status"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.671865878] [foxglove_bridge]: Advertising new channel 165 for topic "/drone_1/interface/mavros/setpoint_trajectory/local"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.671875171] [foxglove_bridge]: Advertising new channel 166 for topic "/drone_1/interface/mavros/setpoint_raw/target_local"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.671883901] [foxglove_bridge]: Advertising new channel 167 for topic "/drone_3/interface/mavros/local_position/odom"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.671890216] [foxglove_bridge]: Advertising new channel 168 for topic "/drone_1/interface/mavros/setpoint_raw/target_attitude"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.671898857] [foxglove_bridge]: Advertising new channel 169 for topic "/drone_1/interface/mavros/setpoint_raw/local"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.671915155] [foxglove_bridge]: Advertising new channel 170 for topic "/drone_1/interface/mavros/setpoint_raw/global"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.671923741] [foxglove_bridge]: Advertising new channel 171 for topic "/drone_1/interface/mavros/setpoint_raw/attitude"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.671929963] [foxglove_bridge]: Advertising new channel 172 for topic "/drone_1/interface/mavros/setpoint_position/local"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.671938434] [foxglove_bridge]: Advertising new channel 173 for topic "/drone_1/interface/mavros/setpoint_position/global_to_local"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.671945037] [foxglove_bridge]: Advertising new channel 174 for topic "/drone_2/interface/mavros/global_position/rel_alt"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.671953474] [foxglove_bridge]: Advertising new channel 175 for topic "/drone_1/interface/mavros/setpoint_position/global"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.671962099] [foxglove_bridge]: Advertising new channel 176 for topic "/drone_3/trajectory_controller/projected_drone_pose"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672367801] [foxglove_bridge]: Advertising new channel 177 for topic "/drone_3/interface/mavros/estimator_status"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672375911] [foxglove_bridge]: Advertising new channel 178 for topic "/drone_2/interface/mavros/setpoint_position/local"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672382644] [foxglove_bridge]: Advertising new channel 179 for topic "/drone_1/interface/mavros/setpoint_attitude/thrust"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672389262] [foxglove_bridge]: Advertising new channel 180 for topic "/drone_1/interface/pose_command"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672395880] [foxglove_bridge]: Advertising new channel 181 for topic "/drone_1/interface/mavros/setpoint_accel/accel"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672402471] [foxglove_bridge]: Advertising new channel 182 for topic "/drone_3/interface/mavros/global_position/gp_lp_offset"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672408916] [foxglove_bridge]: Advertising new channel 183 for topic "/drone_1/interface/mavros/rc/override"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672415010] [foxglove_bridge]: Advertising new channel 184 for topic "/drone_3/interface/mavros/setpoint_raw/local"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672421498] [foxglove_bridge]: Advertising new channel 185 for topic "/drone_1/interface/mavros/wind_estimation"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672427307] [foxglove_bridge]: Advertising new channel 186 for topic "/drone_1/interface/mavros/rc/out"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672433708] [foxglove_bridge]: Advertising new channel 187 for topic "/drone_2/interface/roll_pitch_yawrate_thrust_command"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672443868] [foxglove_bridge]: Advertising new channel 188 for topic "/drone_1/interface/mavros/rallypoint/rallypoints"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672450513] [foxglove_bridge]: Advertising new channel 189 for topic "/drone_1/interface/mavros/param/event"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672456785] [foxglove_bridge]: Advertising new channel 190 for topic "/drone_3/interface/mavros/setpoint_velocity/cmd_vel_unstamped"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672463304] [foxglove_bridge]: Advertising new channel 191 for topic "/drone_1/interface/mavros/setpoint_attitude/cmd_vel"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672472413] [foxglove_bridge]: Advertising new channel 192 for topic "/drone_1/interface/mavros/nav_controller_output/output"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672481347] [foxglove_bridge]: Advertising new channel 193 for topic "/drone_3/interface/mavros/imu/static_pressure"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672487753] [foxglove_bridge]: Advertising new channel 194 for topic "/drone_1/interface/mavros/setpoint_trajectory/desired"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672496608] [foxglove_bridge]: Advertising new channel 195 for topic "/drone_1/interface/mavros/mission/reached"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672505056] [foxglove_bridge]: Advertising new channel 196 for topic "/drone_2/interface/mavros/global_position/local"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672521113] [foxglove_bridge]: Advertising new channel 197 for topic "/drone_1/interface/mavros/manual_control/send"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672527775] [foxglove_bridge]: Advertising new channel 198 for topic "/drone_1/interface/mavros/manual_control/control"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672537583] [foxglove_bridge]: Advertising new channel 199 for topic "/drone_2/odometry_conversion/odometry"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672551278] [foxglove_bridge]: Advertising new channel 200 for topic "/drone_1/interface/mavros/local_position/velocity_local"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672558502] [foxglove_bridge]: Advertising new channel 201 for topic "/drone_3/interface/mavros/local_position/pose"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672568035] [foxglove_bridge]: Advertising new channel 202 for topic "/drone_1/interface/mavros/local_position/pose_cov"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672574282] [foxglove_bridge]: Advertising new channel 203 for topic "/drone_1/interface/mavros/local_position/pose"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672584456] [foxglove_bridge]: Advertising new channel 204 for topic "/drone_1/interface/mavros/local_position/odom"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672592598] [foxglove_bridge]: Advertising new channel 205 for topic "/drone_2/interface/mavros/local_position/pose"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672601350] [foxglove_bridge]: Advertising new channel 206 for topic "/drone_1/interface/mavros/local_position/accel"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672608131] [foxglove_bridge]: Advertising new channel 207 for topic "/drone_1/interface/mavros/imu/temperature_imu"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672619954] [foxglove_bridge]: Advertising new channel 208 for topic "/drone_2/interface/mavros/local_position/odom"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672626293] [foxglove_bridge]: Advertising new channel 209 for topic "/drone_1/interface/mavros/imu/temperature_baro"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672639309] [foxglove_bridge]: Advertising new channel 210 for topic "/drone_1/interface/mavros/imu/mag"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672648260] [foxglove_bridge]: Advertising new channel 211 for topic "/drone_1/interface/mavros/imu/diff_pressure"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672654540] [foxglove_bridge]: Advertising new channel 212 for topic "/drone_3/interface/mavros/global_position/raw/gps_vel"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672663453] [foxglove_bridge]: Advertising new channel 213 for topic "/drone_1/interface/mavros/imu/data_raw"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672672371] [foxglove_bridge]: Advertising new channel 214 for topic "/drone_1/interface/mavros/imu/data"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672681613] [foxglove_bridge]: Advertising new channel 215 for topic "/drone_1/interface/mavros/home_position/set"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672687880] [foxglove_bridge]: Advertising new channel 216 for topic "/drone_3/interface/has_control"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672694164] [foxglove_bridge]: Advertising new channel 217 for topic "/drone_1/interface/mavros/global_position/rel_alt"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672703050] [foxglove_bridge]: Advertising new channel 218 for topic "/drone_1/interface/mavros/global_position/raw/satellites"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672712774] [foxglove_bridge]: Advertising new channel 219 for topic "/drone_1/interface/mavros/global_position/raw/gps_vel"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672722053] [foxglove_bridge]: Advertising new channel 220 for topic "/drone_3/interface/mavros/statustext/recv"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672728395] [foxglove_bridge]: Advertising new channel 221 for topic "/drone_2/interface/has_control"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672734491] [foxglove_bridge]: Advertising new channel 222 for topic "/drone_1/interface/mavros/setpoint_velocity/cmd_vel_unstamped"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672746320] [foxglove_bridge]: Advertising new channel 223 for topic "/drone_1/interface/mavros/global_position/raw/fix"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672752922] [foxglove_bridge]: Advertising new channel 224 for topic "/drone_2/interface/pose_command"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672792564] [foxglove_bridge]: Advertising new channel 225 for topic "/drone_2/interface/mavros/global_position/raw/satellites"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672800283] [foxglove_bridge]: Advertising new channel 226 for topic "/drone_1/interface/mavros/local_position/velocity_body_cov"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672815019] [foxglove_bridge]: Advertising new channel 227 for topic "/drone_1/interface/mavros/global_position/local"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672824307] [foxglove_bridge]: Advertising new channel 228 for topic "/drone_1/interface/mavros/global_position/gp_origin"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672832082] [foxglove_bridge]: Advertising new channel 229 for topic "/drone_1/interface/mavros/global_position/gp_lp_offset"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672841415] [foxglove_bridge]: Advertising new channel 230 for topic "/tf"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672850280] [foxglove_bridge]: Advertising new channel 231 for topic "/drone_1/interface/mavros/global_position/global"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672857039] [foxglove_bridge]: Advertising new channel 232 for topic "/drone_1/interface/mavros/global_position/compass_hdg"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672866150] [foxglove_bridge]: Advertising new channel 233 for topic "/drone_1/interface/torque_thrust_command"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672875681] [foxglove_bridge]: Advertising new channel 234 for topic "/drone_1/interface/mavros/extended_state"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672884916] [foxglove_bridge]: Advertising new channel 235 for topic "/drone_1/interface/mavros/setpoint_raw/target_global"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672891731] [foxglove_bridge]: Advertising new channel 236 for topic "/drone_1/interface/mavros/estimator_status"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672901194] [foxglove_bridge]: Advertising new channel 237 for topic "/drone_1/interface/mavros/battery"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672910597] [foxglove_bridge]: Advertising new channel 238 for topic "/drone_1/interface/mavros/altitude"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672917078] [foxglove_bridge]: Advertising new channel 239 for topic "/drone_1/interface/mavros/actuator_control"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672925999] [foxglove_bridge]: Advertising new channel 240 for topic "/drone_1/interface/is_armed"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672932176] [foxglove_bridge]: Advertising new channel 241 for topic "/drone_1/interface/has_control"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672941189] [foxglove_bridge]: Advertising new channel 242 for topic "/drone_1/interface/cmd_velocity"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672948245] [foxglove_bridge]: Advertising new channel 243 for topic "/drone_2/interface/mavros/imu/diff_pressure"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672957161] [foxglove_bridge]: Advertising new channel 244 for topic "/drone_1/interface/cmd_torque_thrust"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672963566] [foxglove_bridge]: Advertising new channel 245 for topic "/drone_2/interface/velocity_command"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672972649] [foxglove_bridge]: Advertising new channel 246 for topic "/drone_1/trajectory_controller/projected_drone_pose"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672981688] [foxglove_bridge]: Advertising new channel 247 for topic "/drone_1/interface/mavros/global_position/set_gp_origin"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.672988494] [foxglove_bridge]: Advertising new channel 248 for topic "/drone_1/interface/cmd_roll_pitch_yawrate_thrust"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.673003976] [foxglove_bridge]: Advertising new channel 249 for topic "/drone_2/interface/mavros/global_position/global"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.673010867] [foxglove_bridge]: Advertising new channel 250 for topic "/drone_1/interface/mavros/local_position/velocity_body"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.673020389] [foxglove_bridge]: Advertising new channel 251 for topic "/drone_1/interface/cmd_rate_thrust"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.673030097] [foxglove_bridge]: Advertising new channel 252 for topic "/drone_1/interface/mavros/home_position/home"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.673036774] [foxglove_bridge]: Advertising new channel 253 for topic "/drone_1/interface/cmd_pose"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.673045685] [foxglove_bridge]: Advertising new channel 254 for topic "/drone_1/interface/mavros/mission/waypoints"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.673055151] [foxglove_bridge]: Advertising new channel 255 for topic "/drone_1/interface/cmd_attitude_thrust"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.673065192] [foxglove_bridge]: Advertising new channel 256 for topic "/drone_2/interface/mavros/imu/temperature_baro"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.673072102] [foxglove_bridge]: Advertising new channel 257 for topic "/drone_1/interface/attitude_thrust_command"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.673083538] [foxglove_bridge]: Advertising new channel 258 for topic "/drone_1/global_plan"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.673095528] [foxglove_bridge]: Advertising new channel 259 for topic "/drone_1/interface/mavros/imu/static_pressure"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.673118959] [foxglove_bridge]: Advertising new channel 260 for topic "/drone_1/fmu/in/vehicle_visual_odometry"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.673126330] [foxglove_bridge]: Advertising new channel 261 for topic "/drone_1/interface/mavros/rc/in"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.673135662] [foxglove_bridge]: Advertising new channel 262 for topic "/drone_1/cross_track_error"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.673142065] [foxglove_bridge]: Advertising new channel 263 for topic "/drone_2/interface/cmd_torque_thrust"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.673151386] [foxglove_bridge]: Advertising new channel 264 for topic "/drone_1/control/reset_integrators"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.673158475] [foxglove_bridge]: Advertising new channel 265 for topic "/drone_1/interface/mavros/geofence/fences"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297329.674203162] [foxglove_bridge]: Advertising new channel 266 for topic "/diagnostics"[0m
+[foxglove-studio-6] Could not set app as handler for foxglove://
+[foxglove-studio-6] Checking for beta autoupdate feature for deb/rpm distributions
+[foxglove-studio-6] Found package-type: deb
+[bag_recorder-1] stdin is not a terminal device. Keyboard handling disabled.[0m[INFO] [1793297329.793857632] [rosbag2_recorder]: Press SPACE for pausing/resuming[0m
+[bag_recorder-1] [0m[INFO] [1793297329.793877573] [rosbag2_recorder]: Event publisher thread: Started[0m
+[bag_recorder-1] [0m[INFO] [1793297329.799047172] [rosbag2_recorder]: Starting recording to '/root/AirStack/robot/ros_ws/bags/crossing_20261029_180849'[0m
+[bag_recorder-1] [0m[INFO] [1793297329.802673461] [rosbag2_recorder]: Subscribed to topic '/rosout'[0m
+[bag_recorder-1] [0m[INFO] [1793297329.803616618] [rosbag2_recorder]: Subscribed to topic '/events/write_split'[0m
+[bag_recorder-1] [0m[INFO] [1793297329.803730602] [rosbag2_recorder]: Listening for topics...[0m
+[bag_recorder-1] [0m[INFO] [1793297329.803739531] [rosbag2_recorder]: Recording...[0m
+[bag_recorder-1] [0m[INFO] [1793297329.803846709] [rosbag2_recorder]: Topics discovery started.[0m
+[foxglove-studio-6] Gtk-Message: 18:08:49.821: Failed to load module "canberra-gtk-module"
+[foxglove-studio-6] Gtk-Message: 18:08:49.823: Failed to load module "canberra-gtk-module"
+[foxglove-studio-6] [24139:1029/180849.840023:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[foxglove-studio-6] [24139:1029/180849.840071:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[foxglove-studio-6] [24139:1029/180849.843485:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[foxglove-studio-6] [24139:1029/180849.864319:ERROR:dbus/object_proxy.cc:573] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[foxglove-studio-6] [24139:1029/180849.866085:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[foxglove-studio-6] [24139:1029/180849.866107:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[foxglove-studio-6] [24139:1029/180849.866114:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[foxglove-studio-6] [24139:1029/180849.866119:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[foxglove-studio-6] [24139:1029/180849.866125:ERROR:dbus/object_proxy.cc:573] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[bag_recorder-1] [0m[INFO] [1793297329.899983667] [rosbag2_recorder]: Subscribed to topic '/parameter_events'[0m
+[bag_recorder-1] [0m[INFO] [1793297329.913522702] [rosbag2_recorder]: Subscribed to topic '/drone_1/odometry_conversion/odometry'[0m
+[bag_recorder-1] [0m[INFO] [1793297329.915472868] [rosbag2_recorder]: Subscribed to topic '/drone_3/odometry_conversion/odometry'[0m
+[foxglove-studio-6] [24139:1029/180849.916403:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[bag_recorder-1] [0m[INFO] [1793297329.924400155] [rosbag2_recorder]: Subscribed to topic '/tf'[0m
+[foxglove-studio-6] [24139:1029/180849.957758:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[bag_recorder-1] [0m[INFO] [1793297329.958923922] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/local_position/velocity_body'[0m
+[bag_recorder-1] [0m[INFO] [1793297329.962759477] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/local_position/accel'[0m
+[bag_recorder-1] [0m[INFO] [1793297329.969893166] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/imu/static_pressure'[0m
+[bag_recorder-1] [0m[INFO] [1793297329.972833475] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/imu/temperature_imu'[0m
+[bag_recorder-1] [0m[INFO] [1793297329.977771248] [rosbag2_recorder]: Subscribed to topic '/diagnostics'[0m
+[bag_recorder-1] [0m[INFO] [1793297329.980277886] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/imu/mag'[0m
+[bag_recorder-1] [0m[INFO] [1793297329.982657217] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/global_position/gp_lp_offset'[0m
+[bag_recorder-1] [0m[INFO] [1793297329.985005194] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/imu/temperature_baro'[0m
+[bag_recorder-1] [0m[INFO] [1793297329.986400338] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/local_position/velocity_local'[0m
+[bag_recorder-1] [0m[INFO] [1793297329.989209761] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/global_position/compass_hdg'[0m
+[bag_recorder-1] [0m[INFO] [1793297329.992637794] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/global_position/global'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.002743893] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/target_actuator_control'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.004984826] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/global_position/local'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.006963878] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/global_position/raw/fix'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.010498304] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/global_position/gp_origin'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.012880439] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/home_position/set'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.014924771] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/global_position/raw/gps_vel'[0m
+[foxglove-studio-6] [24139:1029/180850.014979:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[bag_recorder-1] [0m[INFO] [1793297330.017174337] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/imu/data'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.018592813] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/local_position/pose'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.020802573] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/setpoint_raw/local'[0m
+[bag_recorder-1] [33m[WARN] [1793297330.021270516] [rosbag2_cpp]: Message definition for topic '/drone_1/control/reset_integrators' with type 'std_msgs/msg/Empty' not found. Message definition will be left empty in bag.[0m
+[bag_recorder-1] [0m[INFO] [1793297330.022890430] [rosbag2_recorder]: Subscribed to topic '/drone_1/control/reset_integrators'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.025103993] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/local_position/pose_cov'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.027214270] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/local_position/velocity_body_cov'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.028875539] [rosbag2_recorder]: Subscribed to topic '/tf_static'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.030411782] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/home_position/home'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.032964347] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/setpoint_position/global'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.035178082] [rosbag2_recorder]: Subscribed to topic '/uas2/mavlink_source'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.037408161] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/is_armed'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.039637186] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/altitude'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.042292902] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/geofence/fences'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.044525331] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/local_position/odom'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.047197342] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/setpoint_raw/attitude'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.048616367] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/setpoint_position/local'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.050141499] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/has_control'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.051452119] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/global_position/rel_alt'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.053389105] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/imu/data_raw'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.056030136] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/global_position/raw/satellites'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.057495575] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/imu/diff_pressure'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.085491321] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/rallypoint/rallypoints'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.088087084] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/rc/out'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.093684206] [rosbag2_recorder]: Subscribed to topic '/drone_3/fmu/in/vehicle_visual_odometry'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.096486366] [rosbag2_recorder]: Subscribed to topic '/drone_1/fmu/in/vehicle_visual_odometry'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.099218457] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/param/event'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.103140874] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/nav_controller_output/output'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.105872953] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/velocity_command'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.107985788] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/manual_control/control'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.110812528] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/rc/in'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.111955557] [rosbag2_recorder]: Subscribed to topic '/drone_2/fmu/in/vehicle_visual_odometry'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.133766585] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/wind_estimation'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.135170439] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/statustext/recv'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.137402015] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/state'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.139060592] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/sys_status'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.140699639] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/status_event'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.142313171] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/estimator_status'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.146866086] [rosbag2_recorder]: Subscribed to topic '/svg/viz/markers'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.148490723] [rosbag2_recorder]: Subscribed to topic '/svg/commander_status'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.149612273] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/velocity_command'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.150939500] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/time_reference'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.153859427] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/setpoint_trajectory/desired'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.155083021] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/velocity_command'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.156753908] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/battery'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.158277876] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/setpoint_raw/target_global'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.161643625] [rosbag2_recorder]: Subscribed to topic '/uas2/mavlink_sink'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.164417977] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/extended_state'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.166108094] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/mission/waypoints'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.168433139] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/mission/reached'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.170231872] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/setpoint_raw/target_local'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.171713761] [rosbag2_recorder]: Subscribed to topic '/svg/cbf_active'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.173931815] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/timesync_status'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.175458265] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/mavros/setpoint_raw/target_attitude'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.215032108] [rosbag2_recorder]: Subscribed to topic '/drone_1/cross_track_error'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.216341358] [rosbag2_recorder]: Subscribed to topic '/drone_1/global_plan'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.217695995] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/cmd_velocity'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.219368001] [rosbag2_recorder]: Subscribed to topic '/drone_1/interface/cmd_pose'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.731626656] [rosbag2_recorder]: Subscribed to topic '/drone_2/odometry_conversion/odometry'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.776050300] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/setpoint_position/global'[0m
+[bag_recorder-1] [33m[WARN] [1793297330.776192669] [rosbag2_cpp]: Message definition for topic '/drone_2/control/reset_integrators' with type 'std_msgs/msg/Empty' not found. Message definition will be left empty in bag.[0m
+[bag_recorder-1] [0m[INFO] [1793297330.780233612] [rosbag2_recorder]: Subscribed to topic '/drone_2/control/reset_integrators'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.782296529] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/has_control'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.785599148] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/setpoint_position/local'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.789844160] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/setpoint_raw/attitude'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.792523075] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/home_position/set'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.794739343] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/is_armed'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.798137137] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/setpoint_raw/local'[0m
+[foxglove-studio-6] [24139:1029/180850.850620:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[bag_recorder-1] [0m[INFO] [1793297330.855558934] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/nav_controller_output/output'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.857539807] [rosbag2_recorder]: Subscribed to topic '/uas3/mavlink_source'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.859415715] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/imu/temperature_baro'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.861582264] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/global_position/local'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.863892381] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/imu/static_pressure'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.866708449] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/global_position/raw/fix'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.868621042] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/local_position/velocity_local'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.870929540] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/imu/data'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.872693653] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/altitude'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.874474873] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/local_position/velocity_body'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.876133433] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/local_position/accel'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.877875673] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/imu/data_raw'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.880825532] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/param/event'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.884449220] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/local_position/pose_cov'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.891400112] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/rallypoint/rallypoints'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.900113502] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/geofence/fences'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.914809387] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/local_position/odom'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.918864511] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/imu/mag'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.922612691] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/imu/temperature_imu'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.925863949] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/home_position/home'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.929104225] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/global_position/gp_origin'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.943133389] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/global_position/raw/gps_vel'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.951974712] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/imu/diff_pressure'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.954785684] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/local_position/pose'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.957737418] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/manual_control/control'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.960404485] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/global_position/raw/satellites'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.963064725] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/global_position/compass_hdg'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.965615082] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/global_position/rel_alt'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.967726592] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/global_position/global'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.969556738] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/target_actuator_control'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.971350957] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/local_position/velocity_body_cov'[0m
+[bag_recorder-1] [0m[INFO] [1793297330.972753626] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/global_position/gp_lp_offset'[0m
+[bag_recorder-1] [0m[INFO] [1793297331.042544129] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/timesync_status'[0m
+[bag_recorder-1] [0m[INFO] [1793297331.044112240] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/wind_estimation'[0m
+[bag_recorder-1] [0m[INFO] [1793297331.046228903] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/statustext/recv'[0m
+[bag_recorder-1] [0m[INFO] [1793297331.047723665] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/setpoint_raw/target_local'[0m
+[bag_recorder-1] [0m[INFO] [1793297331.049662591] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/setpoint_trajectory/desired'[0m
+[bag_recorder-1] [0m[INFO] [1793297331.051383850] [rosbag2_recorder]: Subscribed to topic '/uas3/mavlink_sink'[0m
+[bag_recorder-1] [0m[INFO] [1793297331.053521549] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/status_event'[0m
+[bag_recorder-1] [0m[INFO] [1793297331.056008880] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/setpoint_raw/target_attitude'[0m
+[bag_recorder-1] [0m[INFO] [1793297331.058017707] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/time_reference'[0m
+[bag_recorder-1] [0m[INFO] [1793297331.060313975] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/state'[0m
+[bag_recorder-1] [0m[INFO] [1793297331.062044487] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/mission/reached'[0m
+[bag_recorder-1] [0m[INFO] [1793297331.063574707] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/rc/out'[0m
+[bag_recorder-1] [0m[INFO] [1793297331.065628992] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/setpoint_raw/target_global'[0m
+[bag_recorder-1] [0m[INFO] [1793297331.067393779] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/rc/in'[0m
+[bag_recorder-1] [0m[INFO] [1793297331.069071358] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/mission/waypoints'[0m
+[bag_recorder-1] [0m[INFO] [1793297331.070607311] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/sys_status'[0m
+[bag_recorder-1] [0m[INFO] [1793297331.072149235] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/estimator_status'[0m
+[bag_recorder-1] [0m[INFO] [1793297331.074041266] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/extended_state'[0m
+[bag_recorder-1] [0m[INFO] [1793297331.075803010] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/mavros/battery'[0m
+[bag_recorder-1] [0m[INFO] [1793297331.148140790] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/cmd_pose'[0m
+[bag_recorder-1] [0m[INFO] [1793297331.152470068] [rosbag2_recorder]: Subscribed to topic '/drone_2/cross_track_error'[0m
+[bag_recorder-1] [0m[INFO] [1793297331.158978686] [rosbag2_recorder]: Subscribed to topic '/drone_2/interface/cmd_velocity'[0m
+[bag_recorder-1] [0m[INFO] [1793297331.169727744] [rosbag2_recorder]: Subscribed to topic '/drone_2/global_plan'[0m
+[foxglove-studio-6] [24139:1029/180851.679033:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[bag_recorder-1] [0m[INFO] [1793297331.794308697] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/local_position/odom'[0m
+[bag_recorder-1] [0m[INFO] [1793297331.874513934] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/imu/static_pressure'[0m
+[bag_recorder-1] [0m[INFO] [1793297331.878490968] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/imu/data'[0m
+[bag_recorder-1] [0m[INFO] [1793297331.882290422] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/imu/temperature_imu'[0m
+[bag_recorder-1] [0m[INFO] [1793297331.886497141] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/global_position/gp_origin'[0m
+[bag_recorder-1] [0m[INFO] [1793297331.890000051] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/global_position/local'[0m
+[bag_recorder-1] [0m[INFO] [1793297331.891664551] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/global_position/global'[0m
+[bag_recorder-1] [0m[INFO] [1793297331.893761108] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/global_position/gp_lp_offset'[0m
+[bag_recorder-1] [0m[INFO] [1793297331.895258061] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/manual_control/control'[0m
+[bag_recorder-1] [0m[INFO] [1793297331.896527519] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/target_actuator_control'[0m
+[bag_recorder-1] [0m[INFO] [1793297331.897776316] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/home_position/home'[0m
+[bag_recorder-1] [0m[INFO] [1793297331.899123123] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/local_position/accel'[0m
+[bag_recorder-1] [0m[INFO] [1793297331.900458888] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/local_position/velocity_local'[0m
+[bag_recorder-1] [0m[INFO] [1793297331.902021627] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/local_position/velocity_body_cov'[0m
+[bag_recorder-1] [0m[INFO] [1793297331.903576856] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/imu/diff_pressure'[0m
+[bag_recorder-1] [0m[INFO] [1793297331.904973441] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/local_position/pose'[0m
+[bag_recorder-1] [0m[INFO] [1793297331.906221047] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/rc/out'[0m
+[bag_recorder-1] [0m[INFO] [1793297331.907600463] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/global_position/raw/gps_vel'[0m
+[bag_recorder-1] [0m[INFO] [1793297331.909514158] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/global_position/raw/satellites'[0m
+[bag_recorder-1] [0m[INFO] [1793297331.911338519] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/setpoint_position/global'[0m
+[bag_recorder-1] [0m[INFO] [1793297331.913176002] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/setpoint_raw/attitude'[0m
+[bag_recorder-1] [0m[INFO] [1793297331.915196775] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/setpoint_position/local'[0m
+[bag_recorder-1] [33m[WARN] [1793297331.915363360] [rosbag2_cpp]: Message definition for topic '/drone_3/control/reset_integrators' with type 'std_msgs/msg/Empty' not found. Message definition will be left empty in bag.[0m
+[bag_recorder-1] [0m[INFO] [1793297331.918353340] [rosbag2_recorder]: Subscribed to topic '/drone_3/control/reset_integrators'[0m
+[bag_recorder-1] [0m[INFO] [1793297331.920397598] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/rc/in'[0m
+[bag_recorder-1] [0m[INFO] [1793297331.922017253] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/altitude'[0m
+[bag_recorder-1] [0m[INFO] [1793297331.923351432] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/nav_controller_output/output'[0m
+[bag_recorder-1] [0m[INFO] [1793297331.924581398] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/setpoint_raw/local'[0m
+[bag_recorder-1] [0m[INFO] [1793297331.925803570] [rosbag2_recorder]: Subscribed to topic '/uas4/mavlink_source'[0m
+[bag_recorder-1] [0m[INFO] [1793297331.927165604] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/rallypoint/rallypoints'[0m
+[bag_recorder-1] [0m[INFO] [1793297331.928500284] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/imu/temperature_baro'[0m
+[bag_recorder-1] [0m[INFO] [1793297331.929883081] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/imu/data_raw'[0m
+[bag_recorder-1] [0m[INFO] [1793297331.931359230] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/imu/mag'[0m
+[bag_recorder-1] [0m[INFO] [1793297331.932655628] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/home_position/set'[0m
+[bag_recorder-1] [0m[INFO] [1793297331.933964077] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/global_position/rel_alt'[0m
+[bag_recorder-1] [0m[INFO] [1793297331.935368287] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/local_position/pose_cov'[0m
+[bag_recorder-1] [0m[INFO] [1793297331.936739719] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/global_position/raw/fix'[0m
+[bag_recorder-1] [0m[INFO] [1793297331.938078368] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/global_position/compass_hdg'[0m
+[bag_recorder-1] [0m[INFO] [1793297331.939630769] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/local_position/velocity_body'[0m
+[bag_recorder-1] [0m[INFO] [1793297331.940938945] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/param/event'[0m
+[bag_recorder-1] [0m[INFO] [1793297331.942092905] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/geofence/fences'[0m
+[bag_recorder-1] [0m[INFO] [1793297331.943534262] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/has_control'[0m
+[bag_recorder-1] [0m[INFO] [1793297331.944814383] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/is_armed'[0m
+[bag_recorder-1] [0m[INFO] [1793297332.004520821] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/setpoint_raw/target_global'[0m
+[bag_recorder-1] [0m[INFO] [1793297332.005907506] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/timesync_status'[0m
+[bag_recorder-1] [0m[INFO] [1793297332.007847156] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/setpoint_trajectory/desired'[0m
+[bag_recorder-1] [0m[INFO] [1793297332.009348392] [rosbag2_recorder]: Subscribed to topic '/uas4/mavlink_sink'[0m
+[bag_recorder-1] [0m[INFO] [1793297332.011133420] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/state'[0m
+[bag_recorder-1] [0m[INFO] [1793297332.012790551] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/sys_status'[0m
+[bag_recorder-1] [0m[INFO] [1793297332.014268626] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/statustext/recv'[0m
+[bag_recorder-1] [0m[INFO] [1793297332.015778477] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/setpoint_raw/target_local'[0m
+[bag_recorder-1] [0m[INFO] [1793297332.017350549] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/extended_state'[0m
+[bag_recorder-1] [0m[INFO] [1793297332.018978375] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/estimator_status'[0m
+[bag_recorder-1] [0m[INFO] [1793297332.021188307] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/setpoint_raw/target_attitude'[0m
+[bag_recorder-1] [0m[INFO] [1793297332.023127398] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/battery'[0m
+[bag_recorder-1] [0m[INFO] [1793297332.024794804] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/wind_estimation'[0m
+[bag_recorder-1] [0m[INFO] [1793297332.026443079] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/mission/reached'[0m
+[bag_recorder-1] [0m[INFO] [1793297332.028164264] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/status_event'[0m
+[bag_recorder-1] [0m[INFO] [1793297332.030047322] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/mission/waypoints'[0m
+[bag_recorder-1] [0m[INFO] [1793297332.032121306] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/mavros/time_reference'[0m
+[bag_recorder-1] [0m[INFO] [1793297332.197325263] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/cmd_pose'[0m
+[bag_recorder-1] [0m[INFO] [1793297332.198718598] [rosbag2_recorder]: Subscribed to topic '/drone_3/interface/cmd_velocity'[0m
+[bag_recorder-1] [0m[INFO] [1793297332.265098295] [rosbag2_recorder]: Subscribed to topic '/drone_3/cross_track_error'[0m
+[bag_recorder-1] [0m[INFO] [1793297332.266942962] [rosbag2_recorder]: Subscribed to topic '/drone_3/global_plan'[0m
+[foxglove_bridge-5] [0m[INFO] [1793297332.861445681] [foxglove_bridge]: Advertising new channel 267 for topic "/svg/commander_status"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297332.861616939] [foxglove_bridge]: Advertising new channel 268 for topic "/drone_2/interface/mavros/wind_estimation"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297332.861652008] [foxglove_bridge]: Advertising new channel 269 for topic "/drone_2/interface/mavros/time_reference"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297332.861680105] [foxglove_bridge]: Advertising new channel 270 for topic "/drone_2/interface/mavros/sys_status"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297332.861707923] [foxglove_bridge]: Advertising new channel 271 for topic "/drone_2/interface/mavros/statustext/recv"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297332.864392395] [foxglove_bridge]: Advertising new channel 272 for topic "/svg/viz/markers"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297332.864443451] [foxglove_bridge]: Advertising new channel 273 for topic "/drone_2/interface/mavros/setpoint_trajectory/desired"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297332.864473958] [foxglove_bridge]: Advertising new channel 274 for topic "/drone_2/interface/mavros/setpoint_raw/target_local"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297332.864502093] [foxglove_bridge]: Advertising new channel 275 for topic "/drone_2/interface/mavros/setpoint_raw/target_attitude"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297332.864536170] [foxglove_bridge]: Advertising new channel 276 for topic "/drone_2/interface/mavros/mission/reached"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297332.864564887] [foxglove_bridge]: Advertising new channel 277 for topic "/drone_2/interface/mavros/mission/waypoints"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297332.864600970] [foxglove_bridge]: Advertising new channel 278 for topic "/drone_2/interface/mavros/estimator_status"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297332.864627944] [foxglove_bridge]: Advertising new channel 279 for topic "/drone_2/interface/mavros/extended_state"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297332.864659447] [foxglove_bridge]: Advertising new channel 280 for topic "/drone_2/interface/mavros/status_event"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297332.864740409] [foxglove_bridge]: Advertising new channel 281 for topic "/drone_2/interface/mavros/battery"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297332.864790155] [foxglove_bridge]: Advertising new channel 282 for topic "/svg/bag_recorder/status"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297332.864837099] [foxglove_bridge]: Advertising new channel 283 for topic "/drone_2/interface/mavros/timesync_status"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297332.864873806] [foxglove_bridge]: Advertising new channel 284 for topic "/drone_2/interface/mavros/setpoint_raw/target_global"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297332.865326889] [foxglove_bridge]: Advertising new channel 285 for topic "/events/write_split"[0m
+[bag_recorder-1] [0m[INFO] [1793297333.236626639] [rosbag2_recorder]: Subscribed to topic '/svg/bag_recorder/status'[0m
+[led_controller-4] [33m[WARN] [1793297334.375979034] [led_controller]: drone_1: no LED heartbeat yet — is svg-led running on the VOXL, does its ground IP point here, is udp/47901 open in the firewall?[0m
+[foxglove_bridge-5] [0m[INFO] [1793297336.579269179] [foxglove_bridge]: received connection graph subscribe request[0m
+[foxglove_bridge-5] [0m[INFO] [1793297336.579435685] [foxglove_bridge]: received subscribe request for channel 142 from client 1 (sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297336.586547165] [foxglove_bridge]: created ROS subscription on /drone_1/odometry_conversion/odometry (nav_msgs/msg/Odometry) successfully for channel 142 (client 1, sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297336.586640834] [foxglove_bridge]: received subscribe request for channel 140 from client 1 (sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297336.591240000] [foxglove_bridge]: created ROS subscription on /drone_1/pose (geometry_msgs/msg/PoseStamped) successfully for channel 140 (client 1, sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297336.591327725] [foxglove_bridge]: received subscribe request for channel 237 from client 1 (sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297336.596216162] [foxglove_bridge]: created ROS subscription on /drone_1/interface/mavros/battery (sensor_msgs/msg/BatteryState) successfully for channel 237 (client 1, sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297336.596313357] [foxglove_bridge]: received subscribe request for channel 143 from client 1 (sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297336.600678000] [foxglove_bridge]: created ROS subscription on /drone_1/interface/velocity_command (geometry_msgs/msg/TwistStamped) successfully for channel 143 (client 1, sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297336.600764399] [foxglove_bridge]: received subscribe request for channel 199 from client 1 (sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297336.604999611] [foxglove_bridge]: created ROS subscription on /drone_2/odometry_conversion/odometry (nav_msgs/msg/Odometry) successfully for channel 199 (client 1, sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297336.605072898] [foxglove_bridge]: received subscribe request for channel 65 from client 1 (sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297336.608867767] [foxglove_bridge]: created ROS subscription on /drone_2/pose (geometry_msgs/msg/PoseStamped) successfully for channel 65 (client 1, sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297336.608940748] [foxglove_bridge]: received subscribe request for channel 245 from client 1 (sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297336.612759353] [foxglove_bridge]: created ROS subscription on /drone_2/interface/velocity_command (geometry_msgs/msg/TwistStamped) successfully for channel 245 (client 1, sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297336.612846442] [foxglove_bridge]: received subscribe request for channel 9 from client 1 (sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297336.617412482] [foxglove_bridge]: created ROS subscription on /drone_3/odometry_conversion/odometry (nav_msgs/msg/Odometry) successfully for channel 9 (client 1, sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297336.617493844] [foxglove_bridge]: received subscribe request for channel 25 from client 1 (sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297336.621646745] [foxglove_bridge]: created ROS subscription on /drone_3/pose (geometry_msgs/msg/PoseStamped) successfully for channel 25 (client 1, sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297336.621738974] [foxglove_bridge]: received subscribe request for channel 47 from client 1 (sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297336.625990405] [foxglove_bridge]: created ROS subscription on /drone_3/interface/mavros/battery (sensor_msgs/msg/BatteryState) successfully for channel 47 (client 1, sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297336.626073481] [foxglove_bridge]: received subscribe request for channel 10 from client 1 (sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297336.630233912] [foxglove_bridge]: created ROS subscription on /drone_3/interface/velocity_command (geometry_msgs/msg/TwistStamped) successfully for channel 10 (client 1, sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297336.632024035] [foxglove_bridge]: received subscribe request for channel 230 from client 1 (sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297336.638156233] [foxglove_bridge]: created ROS subscription on /tf (tf2_msgs/msg/TFMessage) successfully for channel 230 (client 1, sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297336.638271446] [foxglove_bridge]: received subscribe request for channel 56 from client 1 (sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297336.642946346] [foxglove_bridge]: created ROS subscription on /tf_static (tf2_msgs/msg/TFMessage) successfully for channel 56 (client 1, sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297336.647239526] [foxglove_bridge]: Client ID 1 is advertising "/move_base_simple/goal" (geometry_msgs/PoseStamped) on channel 1 with encoding "cdr"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297336.651415907] [foxglove_bridge]: Client ID 1 is advertising "/clicked_point" (geometry_msgs/PointStamped) on channel 2 with encoding "cdr"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297336.655553805] [foxglove_bridge]: Client ID 1 is advertising "/initialpose" (geometry_msgs/PoseWithCovarianceStamped) on channel 3 with encoding "cdr"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297336.655634534] [foxglove_bridge]: received subscribe request for channel 231 from client 1 (sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297336.659940243] [foxglove_bridge]: created ROS subscription on /drone_1/interface/mavros/global_position/global (sensor_msgs/msg/NavSatFix) successfully for channel 231 (client 1, sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297336.660032274] [foxglove_bridge]: received subscribe request for channel 223 from client 1 (sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297336.664779298] [foxglove_bridge]: created ROS subscription on /drone_1/interface/mavros/global_position/raw/fix (sensor_msgs/msg/NavSatFix) successfully for channel 223 (client 1, sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297336.664883911] [foxglove_bridge]: received subscribe request for channel 249 from client 1 (sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297336.669307780] [foxglove_bridge]: created ROS subscription on /drone_2/interface/mavros/global_position/global (sensor_msgs/msg/NavSatFix) successfully for channel 249 (client 1, sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297336.669404633] [foxglove_bridge]: received subscribe request for channel 112 from client 1 (sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297336.674072367] [foxglove_bridge]: created ROS subscription on /drone_2/interface/mavros/global_position/raw/fix (sensor_msgs/msg/NavSatFix) successfully for channel 112 (client 1, sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297336.674160889] [foxglove_bridge]: received subscribe request for channel 81 from client 1 (sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297336.678363321] [foxglove_bridge]: created ROS subscription on /drone_3/interface/mavros/global_position/global (sensor_msgs/msg/NavSatFix) successfully for channel 81 (client 1, sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297336.678444744] [foxglove_bridge]: received subscribe request for channel 44 from client 1 (sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297336.682711016] [foxglove_bridge]: created ROS subscription on /drone_3/interface/mavros/global_position/raw/fix (sensor_msgs/msg/NavSatFix) successfully for channel 44 (client 1, sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297336.682807442] [foxglove_bridge]: received subscribe request for channel 267 from client 1 (sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297336.686920264] [foxglove_bridge]: created ROS subscription on /svg/commander_status (std_msgs/msg/String) successfully for channel 267 (client 1, sink 1)[0m
+[bag_recorder-1] [0m[INFO] [1793297336.764203667] [rosbag2_recorder]: Subscribed to topic '/clicked_point'[0m
+[bag_recorder-1] [0m[INFO] [1793297336.766537817] [rosbag2_recorder]: Subscribed to topic '/initialpose'[0m
+[bag_recorder-1] [0m[INFO] [1793297336.768860412] [rosbag2_recorder]: Subscribed to topic '/move_base_simple/goal'[0m
+[foxglove_bridge-5] [0m[INFO] [1793297336.811141948] [foxglove_bridge]: received subscribe request for channel 281 from client 1 (sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297336.816494619] [foxglove_bridge]: created ROS subscription on /drone_2/interface/mavros/battery (sensor_msgs/msg/BatteryState) successfully for channel 281 (client 1, sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297336.819205219] [foxglove_bridge]: received subscribe request for channel 282 from client 1 (sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297336.823484754] [foxglove_bridge]: created ROS subscription on /svg/bag_recorder/status (std_msgs/msg/String) successfully for channel 282 (client 1, sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297336.928155455] [foxglove_bridge]: Advertising new channel 286 for topic "/move_base_simple/goal"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297336.928442008] [foxglove_bridge]: Advertising new channel 287 for topic "/initialpose"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297336.929728950] [foxglove_bridge]: Advertising new channel 288 for topic "/clicked_point"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297337.107103816] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297337.622060396] [foxglove_bridge]: received subscribe request for channel 272 from client 1 (sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297337.631167818] [foxglove_bridge]: created ROS subscription on /svg/viz/markers (visualization_msgs/msg/MarkerArray) successfully for channel 272 (client 1, sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297337.703231724] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297338.303089891] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297339.036479108] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297339.629338278] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297340.290093160] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297340.876958244] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297341.695593149] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297344.782795196] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297345.376174818] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297346.023377888] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297347.772481218] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297348.364188423] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297349.045011132] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297350.776218145] [foxglove_bridge]: publishing connection graph[0m
+[foxglove-studio-6] [24139:1029/180911.202266:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[foxglove_bridge-5] [0m[INFO] [1793297351.372882248] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297352.114533290] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297353.772852243] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297354.364618049] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297355.220705415] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297355.808927097] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297356.804513083] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297359.792088996] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297360.386615081] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297361.141694801] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297361.731552728] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297362.744255387] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297363.352527452] [foxglove_bridge]: publishing connection graph[0m
+[bag_recorder-1] [0m[INFO] [1793297364.068580677] [bag_recorder]: stopping recording /root/AirStack/robot/ros_ws/bags/crossing_20261029_180849[0m
+[bag_recorder-1] [0m[INFO] [1793297364.068807720] [rosbag2_recorder]: Topics discovery stopped.[0m
+[bag_recorder-1] [0m[INFO] [1793297364.068959419] [rosbag2_recorder]: Pausing recording.[0m
+[bag_recorder-1] [0m[INFO] [1793297364.070283722] [rosbag2_cpp]: Writing remaining messages from cache to the bag. It may take a while[0m
+[bag_recorder-1] [0m[INFO] [1793297364.239951279] [rosbag2_recorder]: Recording stopped[0m
+[foxglove_bridge-5] [0m[INFO] [1793297364.342429412] [foxglove_bridge]: publishing connection graph[0m
+[led_controller-4] [33m[WARN] [1793297364.376317982] [led_controller]: drone_1: no LED heartbeat yet — is svg-led running on the VOXL, does its ground IP point here, is udp/47901 open in the firewall?[0m
+[bag_recorder-1] [0m[INFO] [1793297364.383723474] [rosbag2_recorder]: Event publisher thread: Exited[0m
+[foxglove_bridge-5] [0m[INFO] [1793297364.848599901] [foxglove_bridge]: Removing channel 285 for topic "/events/write_split" (rosbag2_interfaces/msg/WriteSplitEvent)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297364.958014150] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297365.536397968] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.377099300] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.603589375] [foxglove_bridge]: Client ID 1 is no longer advertising /move_base_simple/goal (0 subscribers) on channel 1[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.603885831] [foxglove_bridge]: Client ID 1 is no longer advertising /clicked_point (0 subscribers) on channel 2[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.603900946] [foxglove_bridge]: Client ID 1 is no longer advertising /initialpose (0 subscribers) on channel 3[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.626726950] [foxglove_bridge]: received unsubscribe request for channel 142[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.626771793] [foxglove_bridge]: Cleaned up subscription to topic /drone_1/odometry_conversion/odometry for client 1 on channel 142[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.626809534] [foxglove_bridge]: received unsubscribe request for channel 140[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.626814359] [foxglove_bridge]: Cleaned up subscription to topic /drone_1/pose for client 1 on channel 140[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.626824341] [foxglove_bridge]: received unsubscribe request for channel 237[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.626828235] [foxglove_bridge]: Cleaned up subscription to topic /drone_1/interface/mavros/battery for client 1 on channel 237[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.626836966] [foxglove_bridge]: received unsubscribe request for channel 143[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.626840556] [foxglove_bridge]: Cleaned up subscription to topic /drone_1/interface/velocity_command for client 1 on channel 143[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.626850847] [foxglove_bridge]: received unsubscribe request for channel 199[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.626854820] [foxglove_bridge]: Cleaned up subscription to topic /drone_2/odometry_conversion/odometry for client 1 on channel 199[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.626865079] [foxglove_bridge]: received unsubscribe request for channel 65[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.626868902] [foxglove_bridge]: Cleaned up subscription to topic /drone_2/pose for client 1 on channel 65[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.626878758] [foxglove_bridge]: received unsubscribe request for channel 245[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.626882522] [foxglove_bridge]: Cleaned up subscription to topic /drone_2/interface/velocity_command for client 1 on channel 245[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.626906733] [foxglove_bridge]: received unsubscribe request for channel 9[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.626911304] [foxglove_bridge]: Cleaned up subscription to topic /drone_3/odometry_conversion/odometry for client 1 on channel 9[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.626922209] [foxglove_bridge]: received unsubscribe request for channel 25[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.626926509] [foxglove_bridge]: Cleaned up subscription to topic /drone_3/pose for client 1 on channel 25[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.626936226] [foxglove_bridge]: received unsubscribe request for channel 47[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.626940394] [foxglove_bridge]: Cleaned up subscription to topic /drone_3/interface/mavros/battery for client 1 on channel 47[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.626950720] [foxglove_bridge]: received unsubscribe request for channel 10[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.626954594] [foxglove_bridge]: Cleaned up subscription to topic /drone_3/interface/velocity_command for client 1 on channel 10[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.626964315] [foxglove_bridge]: received unsubscribe request for channel 230[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.626968199] [foxglove_bridge]: Cleaned up subscription to topic /tf for client 1 on channel 230[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.626990423] [foxglove_bridge]: received unsubscribe request for channel 56[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.626994560] [foxglove_bridge]: Cleaned up subscription to topic /tf_static for client 1 on channel 56[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.627004511] [foxglove_bridge]: received unsubscribe request for channel 231[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.627008051] [foxglove_bridge]: Cleaned up subscription to topic /drone_1/interface/mavros/global_position/global for client 1 on channel 231[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.627034051] [foxglove_bridge]: received unsubscribe request for channel 223[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.627068436] [foxglove_bridge]: Cleaned up subscription to topic /drone_1/interface/mavros/global_position/raw/fix for client 1 on channel 223[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.627077897] [foxglove_bridge]: received unsubscribe request for channel 249[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.627081413] [foxglove_bridge]: Cleaned up subscription to topic /drone_2/interface/mavros/global_position/global for client 1 on channel 249[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.627089721] [foxglove_bridge]: received unsubscribe request for channel 112[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.627092697] [foxglove_bridge]: Cleaned up subscription to topic /drone_2/interface/mavros/global_position/raw/fix for client 1 on channel 112[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.627100904] [foxglove_bridge]: received unsubscribe request for channel 81[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.627104161] [foxglove_bridge]: Cleaned up subscription to topic /drone_3/interface/mavros/global_position/global for client 1 on channel 81[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.627123556] [foxglove_bridge]: received unsubscribe request for channel 44[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.627127173] [foxglove_bridge]: Cleaned up subscription to topic /drone_3/interface/mavros/global_position/raw/fix for client 1 on channel 44[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.627136306] [foxglove_bridge]: received unsubscribe request for channel 267[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.627139364] [foxglove_bridge]: Cleaned up subscription to topic /svg/commander_status for client 1 on channel 267[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.627147694] [foxglove_bridge]: received unsubscribe request for channel 281[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.627151137] [foxglove_bridge]: Cleaned up subscription to topic /drone_2/interface/mavros/battery for client 1 on channel 281[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.627159943] [foxglove_bridge]: received unsubscribe request for channel 282[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.627163013] [foxglove_bridge]: Cleaned up subscription to topic /svg/bag_recorder/status for client 1 on channel 282[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.627172125] [foxglove_bridge]: received unsubscribe request for channel 272[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.627175658] [foxglove_bridge]: Cleaned up subscription to topic /svg/viz/markers for client 1 on channel 272[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.730098963] [foxglove_bridge]: received subscribe request for channel 142 from client 1 (sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.741382653] [foxglove_bridge]: created ROS subscription on /drone_1/odometry_conversion/odometry (nav_msgs/msg/Odometry) successfully for channel 142 (client 1, sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.741500961] [foxglove_bridge]: received subscribe request for channel 140 from client 1 (sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.748751669] [foxglove_bridge]: created ROS subscription on /drone_1/pose (geometry_msgs/msg/PoseStamped) successfully for channel 140 (client 1, sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.748825286] [foxglove_bridge]: received subscribe request for channel 237 from client 1 (sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.757188331] [foxglove_bridge]: created ROS subscription on /drone_1/interface/mavros/battery (sensor_msgs/msg/BatteryState) successfully for channel 237 (client 1, sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.757268590] [foxglove_bridge]: received subscribe request for channel 143 from client 1 (sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.765027756] [foxglove_bridge]: created ROS subscription on /drone_1/interface/velocity_command (geometry_msgs/msg/TwistStamped) successfully for channel 143 (client 1, sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.765101880] [foxglove_bridge]: received subscribe request for channel 199 from client 1 (sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.773729140] [foxglove_bridge]: created ROS subscription on /drone_2/odometry_conversion/odometry (nav_msgs/msg/Odometry) successfully for channel 199 (client 1, sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.773822828] [foxglove_bridge]: received subscribe request for channel 65 from client 1 (sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.782563885] [foxglove_bridge]: created ROS subscription on /drone_2/pose (geometry_msgs/msg/PoseStamped) successfully for channel 65 (client 1, sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.782646123] [foxglove_bridge]: received subscribe request for channel 281 from client 1 (sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.789468712] [foxglove_bridge]: created ROS subscription on /drone_2/interface/mavros/battery (sensor_msgs/msg/BatteryState) successfully for channel 281 (client 1, sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.789567066] [foxglove_bridge]: received subscribe request for channel 245 from client 1 (sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.792701057] [foxglove_bridge]: created ROS subscription on /drone_2/interface/velocity_command (geometry_msgs/msg/TwistStamped) successfully for channel 245 (client 1, sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.792770567] [foxglove_bridge]: received subscribe request for channel 9 from client 1 (sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.795740790] [foxglove_bridge]: created ROS subscription on /drone_3/odometry_conversion/odometry (nav_msgs/msg/Odometry) successfully for channel 9 (client 1, sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.795791496] [foxglove_bridge]: received subscribe request for channel 25 from client 1 (sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.798205077] [foxglove_bridge]: created ROS subscription on /drone_3/pose (geometry_msgs/msg/PoseStamped) successfully for channel 25 (client 1, sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.798243558] [foxglove_bridge]: received subscribe request for channel 47 from client 1 (sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.801064329] [foxglove_bridge]: created ROS subscription on /drone_3/interface/mavros/battery (sensor_msgs/msg/BatteryState) successfully for channel 47 (client 1, sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.801118548] [foxglove_bridge]: received subscribe request for channel 10 from client 1 (sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.803990424] [foxglove_bridge]: created ROS subscription on /drone_3/interface/velocity_command (geometry_msgs/msg/TwistStamped) successfully for channel 10 (client 1, sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.804046360] [foxglove_bridge]: received subscribe request for channel 267 from client 1 (sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.806723489] [foxglove_bridge]: created ROS subscription on /svg/commander_status (std_msgs/msg/String) successfully for channel 267 (client 1, sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.806785272] [foxglove_bridge]: received subscribe request for channel 282 from client 1 (sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.809256246] [foxglove_bridge]: created ROS subscription on /svg/bag_recorder/status (std_msgs/msg/String) successfully for channel 282 (client 1, sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.881160609] [foxglove_bridge]: Removing channel 288 for topic "/clicked_point" (geometry_msgs/msg/PointStamped)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.881227408] [foxglove_bridge]: Removing channel 287 for topic "/initialpose" (geometry_msgs/msg/PoseWithCovarianceStamped)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.881240429] [foxglove_bridge]: Removing channel 286 for topic "/move_base_simple/goal" (geometry_msgs/msg/PoseStamped)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297366.936482864] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297367.183105414] [foxglove_bridge]: received subscribe request for channel 230 from client 1 (sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297367.188224728] [foxglove_bridge]: created ROS subscription on /tf (tf2_msgs/msg/TFMessage) successfully for channel 230 (client 1, sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297367.188345565] [foxglove_bridge]: received subscribe request for channel 56 from client 1 (sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297367.192743480] [foxglove_bridge]: created ROS subscription on /tf_static (tf2_msgs/msg/TFMessage) successfully for channel 56 (client 1, sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297367.218664424] [foxglove_bridge]: Client ID 1 is advertising "/move_base_simple/goal" (geometry_msgs/PoseStamped) on channel 4 with encoding "cdr"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297367.223106543] [foxglove_bridge]: Client ID 1 is advertising "/clicked_point" (geometry_msgs/PointStamped) on channel 5 with encoding "cdr"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297367.228308302] [foxglove_bridge]: Client ID 1 is advertising "/initialpose" (geometry_msgs/PoseWithCovarianceStamped) on channel 6 with encoding "cdr"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297367.267197706] [foxglove_bridge]: received subscribe request for channel 231 from client 1 (sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297367.272500488] [foxglove_bridge]: created ROS subscription on /drone_1/interface/mavros/global_position/global (sensor_msgs/msg/NavSatFix) successfully for channel 231 (client 1, sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297367.272657940] [foxglove_bridge]: received subscribe request for channel 223 from client 1 (sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297367.279900329] [foxglove_bridge]: created ROS subscription on /drone_1/interface/mavros/global_position/raw/fix (sensor_msgs/msg/NavSatFix) successfully for channel 223 (client 1, sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297367.280009362] [foxglove_bridge]: received subscribe request for channel 249 from client 1 (sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297367.287019457] [foxglove_bridge]: created ROS subscription on /drone_2/interface/mavros/global_position/global (sensor_msgs/msg/NavSatFix) successfully for channel 249 (client 1, sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297367.287116559] [foxglove_bridge]: received subscribe request for channel 112 from client 1 (sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297367.292102351] [foxglove_bridge]: created ROS subscription on /drone_2/interface/mavros/global_position/raw/fix (sensor_msgs/msg/NavSatFix) successfully for channel 112 (client 1, sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297367.292196510] [foxglove_bridge]: received subscribe request for channel 81 from client 1 (sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297367.296808332] [foxglove_bridge]: created ROS subscription on /drone_3/interface/mavros/global_position/global (sensor_msgs/msg/NavSatFix) successfully for channel 81 (client 1, sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297367.296873617] [foxglove_bridge]: received subscribe request for channel 44 from client 1 (sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297367.300699991] [foxglove_bridge]: created ROS subscription on /drone_3/interface/mavros/global_position/raw/fix (sensor_msgs/msg/NavSatFix) successfully for channel 44 (client 1, sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297367.300756285] [foxglove_bridge]: received subscribe request for channel 272 from client 1 (sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297367.304586182] [foxglove_bridge]: created ROS subscription on /svg/viz/markers (visualization_msgs/msg/MarkerArray) successfully for channel 272 (client 1, sink 1)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297367.441318291] [foxglove_bridge]: Advertising new channel 289 for topic "/move_base_simple/goal"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297367.441533825] [foxglove_bridge]: Advertising new channel 290 for topic "/initialpose"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297367.441854805] [foxglove_bridge]: Advertising new channel 291 for topic "/clicked_point"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297367.500324109] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297368.762019939] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297369.327342240] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297369.928335315] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297370.499216553] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297372.309589802] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297372.875789650] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297373.447378797] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297374.013839997] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297374.765346746] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297375.328864075] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297375.914593069] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297376.481792464] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297377.044606953] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297377.778268827] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297378.343491450] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297378.920421495] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297380.757915178] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297381.331063689] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297381.836178086] [foxglove_bridge]: Advertising new channel 292 for topic "/svg/test/speed_drone_3"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297381.836750911] [foxglove_bridge]: Advertising new channel 293 for topic "/svg/test/speed_drone_2"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297381.837481979] [foxglove_bridge]: Advertising new channel 294 for topic "/svg/test/phase"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297381.837535834] [foxglove_bridge]: Advertising new channel 295 for topic "/svg/test/min_pair_distance"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297381.837552732] [foxglove_bridge]: Advertising new channel 296 for topic "/svg/test/goal_dist_drone_1"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297381.837568912] [foxglove_bridge]: Advertising new channel 297 for topic "/svg/test/fence_breached"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297381.837583465] [foxglove_bridge]: Advertising new channel 298 for topic "/svg/test/d_23"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297381.837599619] [foxglove_bridge]: Advertising new channel 299 for topic "/svg/test/d_13"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297381.837615748] [foxglove_bridge]: Advertising new channel 300 for topic "/svg/test/d_12"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297381.837631963] [foxglove_bridge]: Advertising new channel 301 for topic "/svg/test/cbf_drone_3"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297381.837648291] [foxglove_bridge]: Advertising new channel 302 for topic "/svg/test/cbf_drone_2"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297381.837661800] [foxglove_bridge]: Advertising new channel 303 for topic "/svg/test/cbf_drone_1"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297381.837701158] [foxglove_bridge]: Advertising new channel 304 for topic "/svg/test/ref_2r"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297381.837811828] [foxglove_bridge]: Advertising new channel 305 for topic "/svg/test/fence_margin"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297381.837845420] [foxglove_bridge]: Advertising new channel 306 for topic "/svg/test/ref_r"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297381.837949270] [foxglove_bridge]: Advertising new channel 307 for topic "/svg/test/ref_speed_cap"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297381.837993003] [foxglove_bridge]: Advertising new channel 308 for topic "/svg/test/goal_dist_drone_2"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297381.838148990] [foxglove_bridge]: Advertising new channel 309 for topic "/svg/test/goal_dist_drone_3"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297381.838317119] [foxglove_bridge]: Advertising new channel 310 for topic "/svg/test/min_pair_distance_running"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297381.838422841] [foxglove_bridge]: Advertising new channel 311 for topic "/svg/test/speed_drone_1"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297381.838444764] [foxglove_bridge]: Advertising new channel 312 for topic "/svg/test/emergency"[0m
+[foxglove_bridge-5] [0m[INFO] [1793297381.996079085] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297382.572582384] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297384.605038624] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297385.183165541] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297385.753671785] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297393.027094366] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297393.605778621] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297394.206025954] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297394.776581674] [foxglove_bridge]: publishing connection graph[0m
+[led_controller-4] [33m[WARN] [1793297395.375722652] [led_controller]: drone_1: no LED heartbeat yet — is svg-led running on the VOXL, does its ground IP point here, is udp/47901 open in the firewall?[0m
+[foxglove_bridge-5] [0m[INFO] [1793297396.056334717] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297396.633029592] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297406.990470390] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297407.562516369] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297408.142225451] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297410.824095670] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297411.408510372] [foxglove_bridge]: publishing connection graph[0m
+[swarm_commander-2] [0m[INFO] [1793297412.132992538] [swarm_commander]: drone_1: request offboard -> success=True[0m
+[swarm_commander-2] [0m[INFO] [1793297412.133370457] [swarm_commander]: drone_2: request offboard -> success=True[0m
+[swarm_commander-2] [0m[INFO] [1793297412.133689298] [swarm_commander]: drone_3: request offboard -> success=True[0m
+[swarm_commander-2] [0m[INFO] [1793297412.654804986] [swarm_commander]: drone_2: arm -> success=True[0m
+[swarm_commander-2] [0m[INFO] [1793297412.656503571] [swarm_commander]: drone_3: arm -> success=True[0m
+[swarm_commander-2] [0m[INFO] [1793297412.659511594] [swarm_commander]: drone_1: arm -> success=True[0m
+[swarm_commander-2] [0m[INFO] [1793297413.629063326] [swarm_commander]: drone_1: ascending to [0.24308847 0.62522636 2.1       ][0m
+[swarm_commander-2] [0m[INFO] [1793297413.629658992] [swarm_commander]: drone_2: ascending to [-0.80710454 -0.39822388  1.5       ][0m
+[swarm_commander-2] [0m[INFO] [1793297413.630145543] [swarm_commander]: drone_3: ascending to [ 0.64408458 -0.18749682  0.9       ][0m
+[foxglove_bridge-5] [0m[INFO] [1793297414.735336155] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297415.314075080] [foxglove_bridge]: publishing connection graph[0m
+[swarm_commander-2] [0m[INFO] [1793297415.780625282] [swarm_commander]: CBF active on: drone_1, drone_2 (residual 0.0014)[0m
+[swarm_commander-2] [0m[INFO] [1793297416.781343719] [swarm_commander]: CBF active on: drone_1, drone_2 (residual 0.0013)[0m
+[swarm_commander-2] [0m[INFO] [1793297417.780584823] [swarm_commander]: CBF active on: drone_1, drone_2 (residual 0.0016)[0m
+[swarm_commander-2] [0m[INFO] [1793297417.979516944] [swarm_commander]: drone_3: holding takeoff position[0m
+[swarm_commander-2] [0m[INFO] [1793297418.780364959] [swarm_commander]: CBF active on: drone_1, drone_2 (residual 0.0019)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297418.861622772] [foxglove_bridge]: publishing connection graph[0m
+[swarm_commander-2] [0m[INFO] [1793297419.329119134] [swarm_commander]: drone_2: holding takeoff position[0m
+[foxglove_bridge-5] [0m[INFO] [1793297419.773274059] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297420.355658397] [foxglove_bridge]: publishing connection graph[0m
+[swarm_commander-2] [0m[INFO] [1793297421.729305783] [swarm_commander]: drone_1: holding takeoff position[0m
+[foxglove_bridge-5] [0m[INFO] [1793297423.850384269] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297424.473802231] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297425.052650630] [foxglove_bridge]: publishing connection graph[0m
+[led_controller-4] [33m[WARN] [1793297425.376001090] [led_controller]: drone_1: no LED heartbeat yet — is svg-led running on the VOXL, does its ground IP point here, is udp/47901 open in the firewall?[0m
+[swarm_commander-2] [0m[INFO] [1793297426.305704167] [swarm_commander]: scenario "antipodal" running[0m
+[foxglove_bridge-5] [0m[INFO] [1793297426.395776078] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297426.970800197] [foxglove_bridge]: publishing connection graph[0m
+[swarm_commander-2] [0m[INFO] [1793297427.132957068] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0017)[0m
+[swarm_commander-2] [0m[INFO] [1793297428.130771036] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0016)[0m
+[foxglove-studio-6] [24139:1029/181029.075555:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[swarm_commander-2] [0m[INFO] [1793297429.131200862] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0017)[0m
+[swarm_commander-2] [0m[INFO] [1793297430.131703355] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0018)[0m
+[swarm_commander-2] [0m[INFO] [1793297431.130983459] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0017)[0m
+[swarm_commander-2] [0m[INFO] [1793297432.131949579] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0014)[0m
+[swarm_commander-2] [0m[INFO] [1793297433.131617526] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0015)[0m
+[swarm_commander-2] [0m[INFO] [1793297434.331944565] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0017)[0m
+[swarm_commander-2] [0m[INFO] [1793297435.331416697] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0015)[0m
+[swarm_commander-2] [0m[INFO] [1793297436.331598465] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0016)[0m
+[swarm_commander-2] [0m[INFO] [1793297437.331677862] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0016)[0m
+[swarm_commander-2] [0m[INFO] [1793297438.331905103] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0017)[0m
+[swarm_commander-2] [0m[INFO] [1793297439.331921202] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0018)[0m
+[swarm_commander-2] [0m[INFO] [1793297440.531426606] [swarm_commander]: CBF active on: drone_2, drone_3 (residual 0.0019)[0m
+[swarm_commander-2] [0m[INFO] [1793297441.531532719] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0020)[0m
+[swarm_commander-2] [0m[INFO] [1793297442.532087652] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0018)[0m
+[swarm_commander-2] [0m[INFO] [1793297443.531752822] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0020)[0m
+[swarm_commander-2] [0m[INFO] [1793297444.532631318] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0016)[0m
+[swarm_commander-2] [0m[INFO] [1793297445.531753623] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0016)[0m
+[swarm_commander-2] [0m[INFO] [1793297446.530952022] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0019)[0m
+[swarm_commander-2] [0m[INFO] [1793297447.531827369] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0020)[0m
+[swarm_commander-2] [0m[INFO] [1793297448.531671582] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0015)[0m
+[swarm_commander-2] [0m[INFO] [1793297449.530618248] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0016)[0m
+[swarm_commander-2] [0m[INFO] [1793297450.531547330] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0015)[0m
+[swarm_commander-2] [0m[INFO] [1793297451.531867733] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0019)[0m
+[swarm_commander-2] [0m[INFO] [1793297452.531866722] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0016)[0m
+[swarm_commander-2] [0m[INFO] [1793297453.532216036] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0017)[0m
+[swarm_commander-2] [0m[INFO] [1793297454.531871656] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0016)[0m
+[led_controller-4] [33m[WARN] [1793297455.376115181] [led_controller]: drone_1: no LED heartbeat yet — is svg-led running on the VOXL, does its ground IP point here, is udp/47901 open in the firewall?[0m
+[swarm_commander-2] [0m[INFO] [1793297455.531498262] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0016)[0m
+[swarm_commander-2] [0m[INFO] [1793297456.531773286] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0016)[0m
+[swarm_commander-2] [0m[INFO] [1793297457.531459843] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0016)[0m
+[swarm_commander-2] [0m[INFO] [1793297458.531784185] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0019)[0m
+[swarm_commander-2] [0m[INFO] [1793297459.530776174] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0014)[0m
+[swarm_commander-2] [0m[INFO] [1793297460.530304682] [swarm_commander]: CBF active on: drone_1, drone_2 (residual 0.0014)[0m
+[swarm_commander-2] [0m[INFO] [1793297461.531257666] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0018)[0m
+[swarm_commander-2] [0m[INFO] [1793297462.531963665] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0016)[0m
+[swarm_commander-2] [0m[INFO] [1793297463.530930580] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0020)[0m
+[swarm_commander-2] [0m[INFO] [1793297464.531129856] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0019)[0m
+[swarm_commander-2] [0m[INFO] [1793297465.531985168] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0018)[0m
+[swarm_commander-2] [0m[INFO] [1793297466.530699454] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0020)[0m
+[swarm_commander-2] [0m[INFO] [1793297467.531809921] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0018)[0m
+[swarm_commander-2] [0m[INFO] [1793297468.531493863] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0017)[0m
+[swarm_commander-2] [0m[INFO] [1793297469.532756566] [swarm_commander]: CBF active on: drone_1, drone_2 (residual 0.0017)[0m
+[swarm_commander-2] [0m[INFO] [1793297470.531726260] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0017)[0m
+[swarm_commander-2] [0m[INFO] [1793297471.531229041] [swarm_commander]: CBF active on: drone_2, drone_3 (residual 0.0015)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297471.960068944] [foxglove_bridge]: publishing connection graph[0m
+[swarm_commander-2] [0m[INFO] [1793297472.531256222] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0018)[0m
+[swarm_commander-2] [0m[INFO] [1793297473.532028421] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0019)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297473.776553101] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297474.365629347] [foxglove_bridge]: publishing connection graph[0m
+[swarm_commander-2] [0m[INFO] [1793297475.729826307] [swarm_commander]: drone_2: touchdown at z=0.09 m, settling 2.0 s before disarm[0m
+[swarm_commander-2] [0m[INFO] [1793297476.430870247] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0017)[0m
+[swarm_commander-2] [0m[INFO] [1793297476.581119135] [swarm_commander]: drone_1: touchdown at z=0.14 m, settling 2.0 s before disarm[0m
+[swarm_commander-2] [0m[INFO] [1793297476.831130162] [swarm_commander]: drone_3: touchdown at z=0.11 m, settling 2.0 s before disarm[0m
+[swarm_commander-2] [0m[INFO] [1793297477.431238158] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0017)[0m
+[swarm_commander-2] [0m[INFO] [1793297477.759113193] [swarm_commander]: drone_2: disarm -> success=True[0m
+[swarm_commander-2] [0m[INFO] [1793297477.781544901] [swarm_commander]: drone_2: landed, disarmed (attempt 1)[0m
+[swarm_commander-2] [0m[INFO] [1793297478.430871114] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0019)[0m
+[swarm_commander-2] [0m[INFO] [1793297478.645422543] [swarm_commander]: drone_1: disarm -> success=True[0m
+[swarm_commander-2] [0m[INFO] [1793297478.681808499] [swarm_commander]: drone_1: landed, disarmed (attempt 1)[0m
+[swarm_commander-2] [0m[INFO] [1793297478.911286784] [swarm_commander]: drone_3: disarm -> success=True[0m
+[swarm_commander-2] [0m[INFO] [1793297478.930494812] [swarm_commander]: drone_3: landed, disarmed (attempt 1)[0m
+[swarm_commander-2] [0m[INFO] [1793297479.432018089] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0017)[0m
+[swarm_commander-2] [0m[INFO] [1793297480.430571549] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0014)[0m
+[swarm_commander-2] [0m[INFO] [1793297481.432385271] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0017)[0m
+[swarm_commander-2] [0m[INFO] [1793297482.432204408] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0016)[0m
+[swarm_commander-2] [0m[INFO] [1793297483.431274687] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0016)[0m
+[swarm_commander-2] [0m[INFO] [1793297484.431293082] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0016)[0m
+[swarm_commander-2] [0m[INFO] [1793297485.431325205] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0016)[0m
+[led_controller-4] [33m[WARN] [1793297486.375821312] [led_controller]: drone_1: no LED heartbeat yet — is svg-led running on the VOXL, does its ground IP point here, is udp/47901 open in the firewall?[0m
+[swarm_commander-2] [0m[INFO] [1793297486.431123279] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0016)[0m
+[foxglove-studio-6] [24139:1029/181126.715887:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[swarm_commander-2] [0m[INFO] [1793297487.430759130] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0016)[0m
+[swarm_commander-2] [0m[INFO] [1793297488.431174302] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0016)[0m
+[swarm_commander-2] [0m[INFO] [1793297489.432532138] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0018)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297489.870263160] [foxglove_bridge]: publishing connection graph[0m
+[swarm_commander-2] [0m[INFO] [1793297490.431035794] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0018)[0m
+[swarm_commander-2] [0m[INFO] [1793297491.431853582] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0020)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297491.789472522] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297492.363579942] [foxglove_bridge]: publishing connection graph[0m
+[swarm_commander-2] [0m[INFO] [1793297492.430667211] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0019)[0m
+[swarm_commander-2] [0m[INFO] [1793297493.037070476] [swarm_commander]: drone_1: request offboard -> success=True[0m
+[swarm_commander-2] [0m[INFO] [1793297493.037562967] [swarm_commander]: drone_2: request offboard -> success=True[0m
+[swarm_commander-2] [0m[INFO] [1793297493.037970367] [swarm_commander]: drone_3: request offboard -> success=True[0m
+[swarm_commander-2] [0m[INFO] [1793297493.430914675] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0018)[0m
+[swarm_commander-2] [0m[INFO] [1793297493.560595636] [swarm_commander]: drone_2: arm -> success=True[0m
+[swarm_commander-2] [0m[INFO] [1793297493.563286878] [swarm_commander]: drone_3: arm -> success=True[0m
+[swarm_commander-2] [0m[INFO] [1793297493.567263507] [swarm_commander]: drone_1: arm -> success=True[0m
+[swarm_commander-2] [0m[INFO] [1793297494.431525222] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0014)[0m
+[swarm_commander-2] [0m[INFO] [1793297494.529289623] [swarm_commander]: drone_1: ascending to [0.24308847 0.62522636 2.1       ][0m
+[swarm_commander-2] [0m[INFO] [1793297494.529929041] [swarm_commander]: drone_2: ascending to [-0.80710454 -0.39822388  1.5       ][0m
+[swarm_commander-2] [0m[INFO] [1793297494.530482410] [swarm_commander]: drone_3: ascending to [ 0.64408458 -0.18749682  0.9       ][0m
+[foxglove-studio-6] [24139:1029/181134.675793:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[swarm_commander-2] [0m[INFO] [1793297495.431696374] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0015)[0m
+[swarm_commander-2] [0m[INFO] [1793297496.430826695] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0019)[0m
+[swarm_commander-2] [0m[INFO] [1793297497.431352070] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0017)[0m
+[swarm_commander-2] [0m[INFO] [1793297498.431526945] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0018)[0m
+[swarm_commander-2] [0m[INFO] [1793297499.431494123] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0014)[0m
+[swarm_commander-2] [0m[INFO] [1793297500.279831044] [swarm_commander]: drone_1: holding takeoff position[0m
+[swarm_commander-2] [0m[INFO] [1793297500.429576988] [swarm_commander]: drone_3: holding takeoff position[0m
+[swarm_commander-2] [0m[INFO] [1793297502.779302480] [swarm_commander]: drone_2: holding takeoff position[0m
+[foxglove_bridge-5] [0m[INFO] [1793297514.139053204] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297514.742918262] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297515.334388025] [foxglove_bridge]: publishing connection graph[0m
+[foxglove-studio-6] [24139:1029/181155.845686:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[foxglove_bridge-5] [0m[INFO] [1793297516.091637106] [foxglove_bridge]: publishing connection graph[0m
+[led_controller-4] [33m[WARN] [1793297516.375963145] [led_controller]: drone_1: no LED heartbeat yet — is svg-led running on the VOXL, does its ground IP point here, is udp/47901 open in the firewall?[0m
+[foxglove_bridge-5] [0m[INFO] [1793297516.684850473] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297517.270332953] [foxglove_bridge]: publishing connection graph[0m
+[swarm_commander-2] [0m[INFO] [1793297517.845310105] [swarm_commander]: scenario "antipodal" running[0m
+[swarm_commander-2] [0m[INFO] [1793297518.031606527] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0015)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297518.827424936] [foxglove_bridge]: publishing connection graph[0m
+[swarm_commander-2] [0m[INFO] [1793297519.031733890] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0017)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297519.454870740] [foxglove_bridge]: publishing connection graph[0m
+[swarm_commander-2] [0m[INFO] [1793297520.032458694] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0020)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297520.065264950] [foxglove_bridge]: publishing connection graph[0m
+[swarm_commander-2] [0m[INFO] [1793297521.030843353] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0016)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297521.141420663] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297521.777984191] [foxglove_bridge]: publishing connection graph[0m
+[swarm_commander-2] [0m[INFO] [1793297522.031926642] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0018)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297522.377181358] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297522.965245471] [foxglove_bridge]: publishing connection graph[0m
+[swarm_commander-2] [0m[INFO] [1793297523.032371982] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0017)[0m
+[foxglove-studio-6] [24139:1029/181203.397375:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[swarm_commander-2] [0m[INFO] [1793297524.031797782] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0015)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297524.071293495] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297524.663481317] [foxglove_bridge]: publishing connection graph[0m
+[swarm_commander-2] [0m[INFO] [1793297525.033124641] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0014)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297525.332048387] [foxglove_bridge]: publishing connection graph[0m
+[swarm_commander-2] [0m[INFO] [1793297526.032192592] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0019)[0m
+[swarm_commander-2] [0m[INFO] [1793297527.031842801] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0018)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297527.816544694] [foxglove_bridge]: publishing connection graph[0m
+[swarm_commander-2] [0m[INFO] [1793297528.032723962] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0014)[0m
+[foxglove_bridge-5] [0m[INFO] [1793297528.406961512] [foxglove_bridge]: publishing connection graph[0m
+[swarm_commander-2] [0m[INFO] [1793297529.031672439] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0017)[0m
+[swarm_commander-2] [0m[INFO] [1793297530.032468847] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0017)[0m
+[swarm_commander-2] [0m[INFO] [1793297531.032477994] [swarm_commander]: CBF active on: drone_1, drone_2 (residual 0.0018)[0m
+[swarm_commander-2] [0m[INFO] [1793297532.031225892] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0019)[0m
+[swarm_commander-2] [0m[INFO] [1793297533.031616526] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0020)[0m
+[swarm_commander-2] [0m[INFO] [1793297534.032227291] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0017)[0m
+[swarm_commander-2] [0m[INFO] [1793297535.032802510] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0016)[0m
+[swarm_commander-2] [0m[INFO] [1793297536.032523635] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0017)[0m
+[swarm_commander-2] [0m[INFO] [1793297537.031938774] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0018)[0m
+[swarm_commander-2] [0m[INFO] [1793297538.032107240] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0016)[0m
+[swarm_commander-2] [0m[INFO] [1793297539.032863358] [swarm_commander]: CBF active on: drone_1, drone_3 (residual 0.0015)[0m
+[swarm_commander-2] [0m[INFO] [1793297540.031576721] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0018)[0m
+[swarm_commander-2] [0m[INFO] [1793297541.031790941] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0015)[0m
+[swarm_commander-2] [0m[INFO] [1793297542.031929869] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0013)[0m
+[swarm_commander-2] [0m[INFO] [1793297543.031533257] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0015)[0m
+[swarm_commander-2] [0m[INFO] [1793297544.032326536] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0015)[0m
+[swarm_commander-2] [0m[INFO] [1793297545.032913819] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0017)[0m
+[swarm_commander-2] [0m[INFO] [1793297546.031427683] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0019)[0m
+[swarm_commander-2] [0m[INFO] [1793297547.031908172] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0015)[0m
+[led_controller-4] [33m[WARN] [1793297547.375934755] [led_controller]: drone_1: no LED heartbeat yet — is svg-led running on the VOXL, does its ground IP point here, is udp/47901 open in the firewall?[0m
+[swarm_commander-2] [0m[INFO] [1793297548.031722869] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0014)[0m
+[swarm_commander-2] [0m[INFO] [1793297549.032051813] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0019)[0m
+[swarm_commander-2] [0m[INFO] [1793297550.031597233] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0017)[0m
+[swarm_commander-2] [0m[INFO] [1793297551.032237255] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0017)[0m
+[swarm_commander-2] [0m[INFO] [1793297552.031238991] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0015)[0m
+[swarm_commander-2] [0m[INFO] [1793297553.032598588] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0019)[0m
+[swarm_commander-2] [0m[INFO] [1793297554.033260439] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0018)[0m
+[swarm_commander-2] [0m[INFO] [1793297555.031843059] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0015)[0m
+[swarm_commander-2] [0m[INFO] [1793297556.031953379] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0018)[0m
+[swarm_commander-2] [0m[INFO] [1793297557.031691805] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0018)[0m
+[swarm_commander-2] [0m[INFO] [1793297558.032080126] [swarm_commander]: CBF active on: drone_1, drone_3 (residual 0.0015)[0m
+[swarm_commander-2] [0m[INFO] [1793297559.031791418] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0016)[0m
+[swarm_commander-2] [0m[INFO] [1793297560.032020941] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0015)[0m
+[swarm_commander-2] [0m[INFO] [1793297561.031437570] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0014)[0m
+[swarm_commander-2] [0m[INFO] [1793297562.031968630] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0017)[0m
+[swarm_commander-2] [0m[INFO] [1793297563.031900093] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0019)[0m
+[swarm_commander-2] [0m[INFO] [1793297564.033825619] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0018)[0m
+[swarm_commander-2] [0m[INFO] [1793297565.031549024] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0015)[0m
+[swarm_commander-2] [0m[INFO] [1793297566.031425563] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0020)[0m
+[swarm_commander-2] [0m[INFO] [1793297567.032436083] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0015)[0m
+[swarm_commander-2] [0m[INFO] [1793297568.032401188] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0017)[0m
+[swarm_commander-2] [0m[INFO] [1793297569.032747732] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0015)[0m
+[swarm_commander-2] [0m[INFO] [1793297570.031818529] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0019)[0m
+[swarm_commander-2] [0m[INFO] [1793297571.032066995] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0018)[0m
+[swarm_commander-2] [0m[INFO] [1793297572.030691432] [swarm_commander]: CBF active on: drone_1, drone_3 (residual 0.0019)[0m
+[swarm_commander-2] [0m[INFO] [1793297573.030647992] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0018)[0m
+[swarm_commander-2] [0m[INFO] [1793297574.031992807] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0017)[0m
+[swarm_commander-2] [0m[INFO] [1793297575.032328162] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0015)[0m
+[swarm_commander-2] [0m[INFO] [1793297576.032197745] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0018)[0m
+[swarm_commander-2] [0m[INFO] [1793297577.032073908] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0017)[0m
+[led_controller-4] [33m[WARN] [1793297577.375968856] [led_controller]: drone_1: no LED heartbeat yet — is svg-led running on the VOXL, does its ground IP point here, is udp/47901 open in the firewall?[0m
+[swarm_commander-2] [0m[INFO] [1793297578.032043598] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0016)[0m
+[swarm_commander-2] [0m[INFO] [1793297579.031073022] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0017)[0m
+[swarm_commander-2] [0m[INFO] [1793297580.031958919] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0017)[0m
+[swarm_commander-2] [0m[INFO] [1793297581.032081015] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0019)[0m
+[swarm_commander-2] [0m[INFO] [1793297582.031428649] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0018)[0m
+[swarm_commander-2] [0m[INFO] [1793297583.031162886] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0017)[0m
+[swarm_commander-2] [0m[INFO] [1793297584.031171588] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0020)[0m
+[swarm_commander-2] [0m[INFO] [1793297585.031672394] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0016)[0m
+[swarm_commander-2] [0m[INFO] [1793297586.032563030] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0018)[0m
+[swarm_commander-2] [0m[INFO] [1793297587.031684362] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0016)[0m
+[swarm_commander-2] [0m[INFO] [1793297588.031813878] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0017)[0m
+[swarm_commander-2] [0m[INFO] [1793297589.031422056] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0014)[0m
+[swarm_commander-2] [0m[INFO] [1793297590.031571870] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0019)[0m
+[swarm_commander-2] [0m[INFO] [1793297591.031860161] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0014)[0m
+[swarm_commander-2] [0m[INFO] [1793297592.032653629] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0016)[0m
+[swarm_commander-2] [0m[INFO] [1793297593.032437496] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0017)[0m
+[swarm_commander-2] [0m[INFO] [1793297594.031943821] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0019)[0m
+[swarm_commander-2] [0m[INFO] [1793297595.031769789] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0016)[0m
+[swarm_commander-2] [0m[INFO] [1793297596.030697817] [swarm_commander]: CBF active on: drone_1, drone_2, drone_3 (residual 0.0016)[0m
+[foxglove-studio-6] [24139:1029/181316.321928:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[swarm_commander-2] [0m[INFO] [1793297598.430124703] [swarm_commander]: drone_1: touchdown at z=0.13 m, settling 2.0 s before disarm[0m
+[swarm_commander-2] [0m[INFO] [1793297598.630032900] [swarm_commander]: drone_2: touchdown at z=0.12 m, settling 2.0 s before disarm[0m
+[swarm_commander-2] [0m[INFO] [1793297598.779910854] [swarm_commander]: drone_3: touchdown at z=0.12 m, settling 2.0 s before disarm[0m
+[swarm_commander-2] [0m[INFO] [1793297600.466224111] [swarm_commander]: drone_1: disarm -> success=True[0m
+[swarm_commander-2] [0m[INFO] [1793297600.480738918] [swarm_commander]: drone_1: landed, disarmed (attempt 1)[0m
+[swarm_commander-2] [0m[INFO] [1793297600.659209457] [swarm_commander]: drone_2: disarm -> success=True[0m
+[swarm_commander-2] [0m[INFO] [1793297600.680347971] [swarm_commander]: drone_2: landed, disarmed (attempt 1)[0m
+[swarm_commander-2] [0m[INFO] [1793297600.858345679] [swarm_commander]: drone_3: disarm -> success=True[0m
+[swarm_commander-2] [0m[INFO] [1793297600.880112537] [swarm_commander]: drone_3: landed, disarmed (attempt 1)[0m
+[led_controller-4] [33m[WARN] [1793297607.375993088] [led_controller]: drone_1: no LED heartbeat yet — is svg-led running on the VOXL, does its ground IP point here, is udp/47901 open in the firewall?[0m
+[led_controller-4] [33m[WARN] [1793297637.376052847] [led_controller]: drone_1: no LED heartbeat yet — is svg-led running on the VOXL, does its ground IP point here, is udp/47901 open in the firewall?[0m
+[led_controller-4] [33m[WARN] [1793297668.375912409] [led_controller]: drone_1: no LED heartbeat yet — is svg-led running on the VOXL, does its ground IP point here, is udp/47901 open in the firewall?[0m
+[led_controller-4] [33m[WARN] [1793297699.376083551] [led_controller]: drone_1: no LED heartbeat yet — is svg-led running on the VOXL, does its ground IP point here, is udp/47901 open in the firewall?[0m
+[led_controller-4] [33m[WARN] [1793297730.376009148] [led_controller]: drone_1: no LED heartbeat yet — is svg-led running on the VOXL, does its ground IP point here, is udp/47901 open in the firewall?[0m
+[led_controller-4] [33m[WARN] [1793297761.375982223] [led_controller]: drone_1: no LED heartbeat yet — is svg-led running on the VOXL, does its ground IP point here, is udp/47901 open in the firewall?[0m
+[foxglove_bridge-5] [0m[INFO] [1793297783.981320084] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297784.573607079] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297785.155491117] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297785.748741074] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297786.328939641] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297787.242239097] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297788.067240345] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297789.121809985] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793297791.790976719] [foxglove_bridge]: publishing connection graph[0m
+[led_controller-4] [33m[WARN] [1793297792.376014332] [led_controller]: drone_1: no LED heartbeat yet — is svg-led running on the VOXL, does its ground IP point here, is udp/47901 open in the firewall?[0m
+[foxglove_bridge-5] [0m[INFO] [1793297792.380789807] [foxglove_bridge]: publishing connection graph[0m
+[led_controller-4] [33m[WARN] [1793297823.375901761] [led_controller]: drone_1: no LED heartbeat yet — is svg-led running on the VOXL, does its ground IP point here, is udp/47901 open in the firewall?[0m
+[led_controller-4] [33m[WARN] [1793297854.375881726] [led_controller]: drone_1: no LED heartbeat yet — is svg-led running on the VOXL, does its ground IP point here, is udp/47901 open in the firewall?[0m
+[led_controller-4] [33m[WARN] [1793297884.376025599] [led_controller]: drone_1: no LED heartbeat yet — is svg-led running on the VOXL, does its ground IP point here, is udp/47901 open in the firewall?[0m
+[led_controller-4] [33m[WARN] [1793297915.375919097] [led_controller]: drone_1: no LED heartbeat yet — is svg-led running on the VOXL, does its ground IP point here, is udp/47901 open in the firewall?[0m
+[led_controller-4] [33m[WARN] [1793297945.376033862] [led_controller]: drone_1: no LED heartbeat yet — is svg-led running on the VOXL, does its ground IP point here, is udp/47901 open in the firewall?[0m
+[led_controller-4] [33m[WARN] [1793297976.375939930] [led_controller]: drone_1: no LED heartbeat yet — is svg-led running on the VOXL, does its ground IP point here, is udp/47901 open in the firewall?[0m
+[led_controller-4] [33m[WARN] [1793298007.375782497] [led_controller]: drone_1: no LED heartbeat yet — is svg-led running on the VOXL, does its ground IP point here, is udp/47901 open in the firewall?[0m
+[led_controller-4] [33m[WARN] [1793298037.375844301] [led_controller]: drone_1: no LED heartbeat yet — is svg-led running on the VOXL, does its ground IP point here, is udp/47901 open in the firewall?[0m
+[led_controller-4] [33m[WARN] [1793298067.375907391] [led_controller]: drone_1: no LED heartbeat yet — is svg-led running on the VOXL, does its ground IP point here, is udp/47901 open in the firewall?[0m
+[led_controller-4] [33m[WARN] [1793298097.375929666] [led_controller]: drone_1: no LED heartbeat yet — is svg-led running on the VOXL, does its ground IP point here, is udp/47901 open in the firewall?[0m
+[led_controller-4] [33m[WARN] [1793298127.376185548] [led_controller]: drone_1: no LED heartbeat yet — is svg-led running on the VOXL, does its ground IP point here, is udp/47901 open in the firewall?[0m
+[led_controller-4] [33m[WARN] [1793298158.375860521] [led_controller]: drone_1: no LED heartbeat yet — is svg-led running on the VOXL, does its ground IP point here, is udp/47901 open in the firewall?[0m
+[led_controller-4] [33m[WARN] [1793298188.376174419] [led_controller]: drone_1: no LED heartbeat yet — is svg-led running on the VOXL, does its ground IP point here, is udp/47901 open in the firewall?[0m
+[led_controller-4] [33m[WARN] [1793298219.375886339] [led_controller]: drone_1: no LED heartbeat yet — is svg-led running on the VOXL, does its ground IP point here, is udp/47901 open in the firewall?[0m
+[foxglove_bridge-5] [0m[INFO] [1793298239.570830193] [foxglove_bridge]: publishing connection graph[0m
+[foxglove_bridge-5] [0m[INFO] [1793298240.077196271] [foxglove_bridge]: Removing channel 312 for topic "/svg/test/emergency" (std_msgs/msg/Float64)[0m
+[foxglove_bridge-5] [0m[INFO] [1793298240.077264771] [foxglove_bridge]: Removing channel 311 for topic "/svg/test/speed_drone_1" (std_msgs/msg/Float64)[0m
+[foxglove_bridge-5] [0m[INFO] [1793298240.077279923] [foxglove_bridge]: Removing channel 310 for topic "/svg/test/min_pair_distance_running" (std_msgs/msg/Float64)[0m
+[foxglove_bridge-5] [0m[INFO] [1793298240.077296005] [foxglove_bridge]: Removing channel 309 for topic "/svg/test/goal_dist_drone_3" (std_msgs/msg/Float64)[0m
+[foxglove_bridge-5] [0m[INFO] [1793298240.077310222] [foxglove_bridge]: Removing channel 308 for topic "/svg/test/goal_dist_drone_2" (std_msgs/msg/Float64)[0m
+[foxglove_bridge-5] [0m[INFO] [1793298240.077324766] [foxglove_bridge]: Removing channel 307 for topic "/svg/test/ref_speed_cap" (std_msgs/msg/Float64)[0m
+[foxglove_bridge-5] [0m[INFO] [1793298240.077337484] [foxglove_bridge]: Removing channel 306 for topic "/svg/test/ref_r" (std_msgs/msg/Float64)[0m
+[foxglove_bridge-5] [0m[INFO] [1793298240.077351434] [foxglove_bridge]: Removing channel 305 for topic "/svg/test/fence_margin" (std_msgs/msg/Float64)[0m
+[foxglove_bridge-5] [0m[INFO] [1793298240.077365590] [foxglove_bridge]: Removing channel 304 for topic "/svg/test/ref_2r" (std_msgs/msg/Float64)[0m
+[foxglove_bridge-5] [0m[INFO] [1793298240.077377459] [foxglove_bridge]: Removing channel 303 for topic "/svg/test/cbf_drone_1" (std_msgs/msg/Float64)[0m
+[foxglove_bridge-5] [0m[INFO] [1793298240.077390745] [foxglove_bridge]: Removing channel 302 for topic "/svg/test/cbf_drone_2" (std_msgs/msg/Float64)[0m
+[foxglove_bridge-5] [0m[INFO] [1793298240.077406483] [foxglove_bridge]: Removing channel 301 for topic "/svg/test/cbf_drone_3" (std_msgs/msg/Float64)[0m
+[foxglove_bridge-5] [0m[INFO] [1793298240.077419747] [foxglove_bridge]: Removing channel 300 for topic "/svg/test/d_12" (std_msgs/msg/Float64)[0m
+[foxglove_bridge-5] [0m[INFO] [1793298240.077432459] [foxglove_bridge]: Removing channel 299 for topic "/svg/test/d_13" (std_msgs/msg/Float64)[0m
+[foxglove_bridge-5] [0m[INFO] [1793298240.077445924] [foxglove_bridge]: Removing channel 298 for topic "/svg/test/d_23" (std_msgs/msg/Float64)[0m
+[foxglove_bridge-5] [0m[INFO] [1793298240.077458953] [foxglove_bridge]: Removing channel 297 for topic "/svg/test/fence_breached" (std_msgs/msg/Float64)[0m
+[foxglove_bridge-5] [0m[INFO] [1793298240.077473152] [foxglove_bridge]: Removing channel 296 for topic "/svg/test/goal_dist_drone_1" (std_msgs/msg/Float64)[0m
+[foxglove_bridge-5] [0m[INFO] [1793298240.077486878] [foxglove_bridge]: Removing channel 295 for topic "/svg/test/min_pair_distance" (std_msgs/msg/Float64)[0m
+[foxglove_bridge-5] [0m[INFO] [1793298240.077499708] [foxglove_bridge]: Removing channel 294 for topic "/svg/test/phase" (std_msgs/msg/Int32)[0m
+[foxglove_bridge-5] [0m[INFO] [1793298240.077511610] [foxglove_bridge]: Removing channel 293 for topic "/svg/test/speed_drone_2" (std_msgs/msg/Float64)[0m
+[foxglove_bridge-5] [0m[INFO] [1793298240.077524036] [foxglove_bridge]: Removing channel 292 for topic "/svg/test/speed_drone_3" (std_msgs/msg/Float64)[0m
+[foxglove_bridge-5] [0m[INFO] [1793298240.149623893] [foxglove_bridge]: publishing connection graph[0m
+[WARNING] [launch]: user interrupted with ctrl-c (SIGINT)
+[INFO] [foxglove-studio-6]: sending signal 'SIGINT' to process[foxglove-studio-6]
+[INFO] [foxglove_bridge-5]: sending signal 'SIGINT' to process[foxglove_bridge-5]
+[INFO] [led_controller-4]: sending signal 'SIGINT' to process[led_controller-4]
+[INFO] [mocap_bridge-3]: sending signal 'SIGINT' to process[mocap_bridge-3]
+[INFO] [swarm_commander-2]: sending signal 'SIGINT' to process[swarm_commander-2]
+[INFO] [bag_recorder-1]: sending signal 'SIGINT' to process[bag_recorder-1]
+[foxglove_bridge-5] [0m[INFO] [1793298245.481551120] [rclcpp]: signal_handler(SIGINT/SIGTERM)[0m
+[foxglove-studio-6] Cleaning up 1 tracked renderers at app quit: [2]
+[foxglove_bridge-5] [0m[INFO] [1793298245.510644818] [foxglove_bridge]: Shutting down foxglove_bridge[0m
+[INFO] [foxglove-studio-6]: process has finished cleanly [pid 24139]
+[INFO] [led_controller-4]: process has finished cleanly [pid 24137]
+[INFO] [bag_recorder-1]: process has finished cleanly [pid 24134]
+[INFO] [swarm_commander-2]: process has finished cleanly [pid 24135]
+[INFO] [mocap_bridge-3]: process has finished cleanly [pid 24136]
+[foxglove_bridge-5] [0m[INFO] [1793298246.087559878] [foxglove_bridge]: received unsubscribe request for channel 142[0m
+[foxglove_bridge-5] [0m[INFO] [1793298246.087580505] [foxglove_bridge]: Cleaned up subscription to topic /drone_1/odometry_conversion/odometry for client 1 on channel 142[0m
+[foxglove_bridge-5] [0m[INFO] [1793298246.093163537] [foxglove_bridge]: received unsubscribe request for channel 9[0m
+[foxglove_bridge-5] [0m[INFO] [1793298246.093176799] [foxglove_bridge]: Cleaned up subscription to topic /drone_3/odometry_conversion/odometry for client 1 on channel 9[0m
+[foxglove_bridge-5] [0m[INFO] [1793298246.098521067] [foxglove_bridge]: received unsubscribe request for channel 272[0m
+[foxglove_bridge-5] [0m[INFO] [1793298246.098535766] [foxglove_bridge]: Cleaned up subscription to topic /svg/viz/markers for client 1 on channel 272[0m
+[foxglove_bridge-5] [0m[INFO] [1793298246.104802013] [foxglove_bridge]: received unsubscribe request for channel 199[0m
+[foxglove_bridge-5] [0m[INFO] [1793298246.104816040] [foxglove_bridge]: Cleaned up subscription to topic /drone_2/odometry_conversion/odometry for client 1 on channel 199[0m
+[foxglove_bridge-5] [0m[INFO] [1793298246.110731338] [foxglove_bridge]: received unsubscribe request for channel 143[0m
+[foxglove_bridge-5] [0m[INFO] [1793298246.110743930] [foxglove_bridge]: Cleaned up subscription to topic /drone_1/interface/velocity_command for client 1 on channel 143[0m
+[foxglove_bridge-5] [0m[INFO] [1793298246.115696000] [foxglove_bridge]: received unsubscribe request for channel 47[0m
+[foxglove_bridge-5] [0m[INFO] [1793298246.115707918] [foxglove_bridge]: Cleaned up subscription to topic /drone_3/interface/mavros/battery for client 1 on channel 47[0m
+[foxglove_bridge-5] [0m[INFO] [1793298246.120910412] [foxglove_bridge]: received unsubscribe request for channel 281[0m
+[foxglove_bridge-5] [0m[INFO] [1793298246.120921159] [foxglove_bridge]: Cleaned up subscription to topic /drone_2/interface/mavros/battery for client 1 on channel 281[0m
+[foxglove_bridge-5] [0m[INFO] [1793298246.126142013] [foxglove_bridge]: received unsubscribe request for channel 65[0m
+[foxglove_bridge-5] [0m[INFO] [1793298246.126152469] [foxglove_bridge]: Cleaned up subscription to topic /drone_2/pose for client 1 on channel 65[0m
+[foxglove_bridge-5] [0m[INFO] [1793298246.131174699] [foxglove_bridge]: received unsubscribe request for channel 237[0m
+[foxglove_bridge-5] [0m[INFO] [1793298246.131187923] [foxglove_bridge]: Cleaned up subscription to topic /drone_1/interface/mavros/battery for client 1 on channel 237[0m
+[foxglove_bridge-5] [0m[INFO] [1793298246.136686939] [foxglove_bridge]: received unsubscribe request for channel 245[0m
+[foxglove_bridge-5] [0m[INFO] [1793298246.136698637] [foxglove_bridge]: Cleaned up subscription to topic /drone_2/interface/velocity_command for client 1 on channel 245[0m
+[foxglove_bridge-5] [0m[INFO] [1793298246.148645284] [foxglove_bridge]: received unsubscribe request for channel 25[0m
+[foxglove_bridge-5] [0m[INFO] [1793298246.148661306] [foxglove_bridge]: Cleaned up subscription to topic /drone_3/pose for client 1 on channel 25[0m
+[foxglove_bridge-5] [0m[INFO] [1793298246.154056848] [foxglove_bridge]: received unsubscribe request for channel 267[0m
+[foxglove_bridge-5] [0m[INFO] [1793298246.154068745] [foxglove_bridge]: Cleaned up subscription to topic /svg/commander_status for client 1 on channel 267[0m
+[foxglove_bridge-5] [0m[INFO] [1793298246.159583778] [foxglove_bridge]: received unsubscribe request for channel 230[0m
+[foxglove_bridge-5] [0m[INFO] [1793298246.159596358] [foxglove_bridge]: Cleaned up subscription to topic /tf for client 1 on channel 230[0m
+[foxglove_bridge-5] [0m[INFO] [1793298246.165363405] [foxglove_bridge]: received unsubscribe request for channel 56[0m
+[foxglove_bridge-5] [0m[INFO] [1793298246.165375040] [foxglove_bridge]: Cleaned up subscription to topic /tf_static for client 1 on channel 56[0m
+[foxglove_bridge-5] [0m[INFO] [1793298246.171652624] [foxglove_bridge]: received unsubscribe request for channel 282[0m
+[foxglove_bridge-5] [0m[INFO] [1793298246.171666416] [foxglove_bridge]: Cleaned up subscription to topic /svg/bag_recorder/status for client 1 on channel 282[0m
+[foxglove_bridge-5] [0m[INFO] [1793298246.177695956] [foxglove_bridge]: received unsubscribe request for channel 231[0m
+[foxglove_bridge-5] [0m[INFO] [1793298246.177710111] [foxglove_bridge]: Cleaned up subscription to topic /drone_1/interface/mavros/global_position/global for client 1 on channel 231[0m
+[foxglove_bridge-5] [0m[INFO] [1793298246.183054076] [foxglove_bridge]: received unsubscribe request for channel 223[0m
+[foxglove_bridge-5] [0m[INFO] [1793298246.183064659] [foxglove_bridge]: Cleaned up subscription to topic /drone_1/interface/mavros/global_position/raw/fix for client 1 on channel 223[0m
+[foxglove_bridge-5] [0m[INFO] [1793298246.188441807] [foxglove_bridge]: received unsubscribe request for channel 249[0m
+[foxglove_bridge-5] [0m[INFO] [1793298246.188452732] [foxglove_bridge]: Cleaned up subscription to topic /drone_2/interface/mavros/global_position/global for client 1 on channel 249[0m
+[foxglove_bridge-5] [0m[INFO] [1793298246.194157672] [foxglove_bridge]: received unsubscribe request for channel 112[0m
+[foxglove_bridge-5] [0m[INFO] [1793298246.194169092] [foxglove_bridge]: Cleaned up subscription to topic /drone_2/interface/mavros/global_position/raw/fix for client 1 on channel 112[0m
+[foxglove_bridge-5] [0m[INFO] [1793298246.199700703] [foxglove_bridge]: received unsubscribe request for channel 81[0m
+[foxglove_bridge-5] [0m[INFO] [1793298246.199711743] [foxglove_bridge]: Cleaned up subscription to topic /drone_3/interface/mavros/global_position/global for client 1 on channel 81[0m
+[foxglove_bridge-5] [0m[INFO] [1793298246.204740288] [foxglove_bridge]: received unsubscribe request for channel 140[0m
+[foxglove_bridge-5] [0m[INFO] [1793298246.204750201] [foxglove_bridge]: Cleaned up subscription to topic /drone_1/pose for client 1 on channel 140[0m
+[foxglove_bridge-5] [0m[INFO] [1793298246.210429286] [foxglove_bridge]: received unsubscribe request for channel 10[0m
+[foxglove_bridge-5] [0m[INFO] [1793298246.210439758] [foxglove_bridge]: Cleaned up subscription to topic /drone_3/interface/velocity_command for client 1 on channel 10[0m
+[foxglove_bridge-5] [0m[INFO] [1793298246.215919125] [foxglove_bridge]: received unsubscribe request for channel 44[0m
+[foxglove_bridge-5] [0m[INFO] [1793298246.215929320] [foxglove_bridge]: Cleaned up subscription to topic /drone_3/interface/mavros/global_position/raw/fix for client 1 on channel 44[0m
+[foxglove_bridge-5] [0m[INFO] [1793298246.223465771] [foxglove_bridge]: Shutdown complete[0m
+[INFO] [foxglove_bridge-5]: process has finished cleanly [pid 24138]

@@ -18,7 +18,7 @@ Hazards the pilot assumes until the named issue re-earns them (detail: [HTX-R2.m
 
 | Project (Linear) | Sim / real | Milestone in progress (snapshot 2026-10-26) | Last result | Next issue | Blocked by |
 |---|---|---|---|---|---|
-| [HTX-R1 Swarm Sim Validation (Isaac)](projects/HTX-R1.md) | SIM ONLY (Isaac) | S5 Finish basic sim flight checks | [#20](record/LEDGER.md) FAIL crossing, min 0.99 m vs 1.10 m, 2026-10-29 → [record](record/sim_crossing_dry1_record.md) | NEAR-787 (windowed re-run) | — |
+| [HTX-R1 Swarm Sim Validation (Isaac)](projects/HTX-R1.md) | SIM ONLY (Isaac) | S5 Finish basic sim flight checks | [#21](record/LEDGER.md) FAIL crossing, min 0.95 m vs 1.10 m, 2026-10-30 → [record](record/sim_crossing_run1_record.md) | NEAR-788 (787 gate decision open) | — |
 | [HTX-R2 Starling Flight Bring-up (M2–M7)](projects/HTX-R2.md) | REAL DRONE | R1 · New mocap and network pipeline (not started) | none on this software; previous software [A21](record/LEDGER.md), 2026-09-03 | NEAR-814 | mocap system back ~2026-11-09; the five hazards above |
 | [HTX-R3 Multi-Drone Localisation (VO + UWB)](projects/HTX-R3.md) | SIM + desk; L4 hand-carried | L1 · Team review pack | [#16](record/LEDGER.md) stereo VO 0.081 m RMSE over 162 m, 2026-10-22 | NEAR-843 | — |
 

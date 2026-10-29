@@ -148,3 +148,32 @@ class PageBudgets(unittest.TestCase):
     def test_ledger_cells_not_budgeted(self):
         with tempfile.TemporaryDirectory() as d:
             fixture(d, "", ledger="| # |\n|---|\n| " + "y" * 200 + " |\n"); self.assertEqual(C.check_page_budgets().status, "PASS")
+
+
+class FigureRefs(unittest.TestCase):
+    """Figures are numbered in page order, anchored, and every mention in text links to its figure."""
+    GOOD = ('<a id="fig-1"></a>\n![a](x.png)\n*Figure 1. A.*\n\nSee [Figure 1](#fig-1).\n\n'
+            '<a id="fig-2"></a>\n![b](y.png)\n*Figure 2. B.*\n')
+
+    def setUp(self):
+        self._root = C.ROOT
+        self.addCleanup(setattr, C, "ROOT", self._root)
+
+    def test_good_page_passes(self):
+        with tempfile.TemporaryDirectory() as d:
+            fixture(d, "", extra=self.GOOD); self.assertEqual(C.check_figure_refs().status, "PASS")
+
+    def test_out_of_order_numbering_fails(self):
+        with tempfile.TemporaryDirectory() as d:
+            fixture(d, "", extra=self.GOOD.replace("Figure 1. A", "Figure 2. A").replace("Figure 2. B", "Figure 1. B"))
+            r = C.check_figure_refs(); self.assertEqual(r.status, "FAIL"); self.assertTrue(any("expected Figure 1" in x for x in r.details), r.details)
+
+    def test_missing_anchor_fails(self):
+        with tempfile.TemporaryDirectory() as d:
+            fixture(d, "", extra=self.GOOD.replace('<a id="fig-2"></a>\n', ""))
+            r = C.check_figure_refs(); self.assertEqual(r.status, "FAIL"); self.assertTrue(any('<a id="fig-2">' in x for x in r.details), r.details)
+
+    def test_unlinked_mention_fails(self):
+        with tempfile.TemporaryDirectory() as d:
+            fixture(d, "", extra=self.GOOD.replace("See [Figure 1](#fig-1).", "See Figure 1."))
+            r = C.check_figure_refs(); self.assertEqual(r.status, "FAIL"); self.assertTrue(any("not linked" in x for x in r.details), r.details)

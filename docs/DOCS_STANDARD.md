@@ -43,7 +43,8 @@ Milestone, then its issues, then the results of those issues. Evidence sits besi
 - **Scope line:** every results block opens with one sentence saying what was in the loop (which position source flew the drone, which world) and what was not (for example "camera and cuVSLAM not running"). Nobody should have to infer what a test measured from its name; the hover + step test is a control-loop check, not a perception test, and the page says so.
 - No status column anywhere. No status pills.
 - Negative and superseded results stay in the table.
-- Every figure has a numbered caption in italics right under it, 2–4 sentences and at most 400 characters (enforced): what is plotted and on which axes, what each line, band and mark means, then the generating command and the ledger rows. The reading of the figure (what it shows, what good looks like, the caveat) is 2–3 sentences of results text above the figure, never in the caption.
+- Every figure has a numbered caption in italics right under it, 2–4 sentences and at most 400 characters: what is plotted and on which axes, what each line, band and mark means, then the generating command and the ledger rows. The reading of the figure (what it shows, what good looks like, the caveat) is 2–3 sentences of results text above the figure, never in the caption.
+- Figures are numbered in page order, `Figure 1` first. The line before the image is `<a id="fig-N"></a>`, and every mention in the text is a link to that anchor (written as `[Figure N]` followed by `(#fig-N)`) so a reader can jump to it. Enforced by `figure-refs`, caption length by `page-budgets`.
 
 ## 5. Budgets (enforced by `page-budgets`)
 

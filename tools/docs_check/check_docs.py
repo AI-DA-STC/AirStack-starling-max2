@@ -650,6 +650,44 @@ def check_page_budgets():
                    f"{len(fails)} budget breach(es)")
 
 
+FIG_CAPTION_RE = re.compile(r"^\*Figure (\d+)\.")
+FIG_MENTION_RE = re.compile(r"Figure (\d+)")
+FIG_LINK_RE = re.compile(r"\[Figure (\d+)\]\(#fig-\1\)")
+
+
+def figure_problems(text):
+    """Captions `*Figure N.` numbered 1..n in page order, each with `<a id=\"fig-N\"></a>` within the 3 lines above its
+    image; every other `Figure N` in the text must be the link `[Figure N](#fig-N)`. Returns FAIL detail strings."""
+    out, expected, lines = [], 1, text.splitlines()
+    for i, line in enumerate(lines, 1):
+        m = FIG_CAPTION_RE.match(line)
+        if m:
+            n = int(m.group(1))
+            if n != expected:
+                out.append(f"line {i}: caption says Figure {n}, expected Figure {expected} (number figures in page order)")
+            window = "\n".join(lines[max(0, i - 5):i - 1])
+            if f'<a id="fig-{n}"></a>' not in window:
+                out.append(f'line {i}: Figure {n} has no <a id="fig-{n}"></a> on the line before its image')
+            expected = max(expected, n) + 1
+            continue
+        stripped = FIG_LINK_RE.sub("", line)
+        for mm in FIG_MENTION_RE.finditer(stripped):
+            out.append(f"line {i}: 'Figure {mm.group(1)}' not linked — write [Figure {mm.group(1)}](#fig-{mm.group(1)})")
+    return out
+
+
+def check_figure_refs():
+    """Numbered, anchored, linked figures on the top page and the project pages."""
+    fails = []
+    pages = [ROOT / TOP_PAGE] + sorted((ROOT / PROJECT_DIR).glob("*.md"))
+    for f in pages:
+        text = read(f)
+        if text is None:
+            continue
+        fails += [f"{rel(f)}:{p}" for p in figure_problems(text)]
+    return verdict("figure-refs", fails, [], "figures numbered in page order, anchored, every mention a link", f"{len(fails)} figure problem(s)")
+
+
 # ----------------------------------------------------------------- selftest / main
 def selftest():
     """Prove the dead-link check works on a temp corpus: one good link, one dead file, one dead fragment."""
@@ -683,7 +721,7 @@ def main():
     checks = [lambda: check_links(link_files()), check_section_refs, check_iron_rules, check_safety_registry,
               check_values_registry, check_banners, check_real_page_hygiene, check_warnings_registered,
               check_budget, check_preflight_date, check_headings_stable, check_hashes,
-              check_linear_parity, lambda: check_images(corpus()), check_page_budgets]
+              check_linear_parity, lambda: check_images(corpus()), check_page_budgets, check_figure_refs]
     results = []
     for fn in checks:
         try:

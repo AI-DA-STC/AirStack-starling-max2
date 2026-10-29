@@ -6,7 +6,7 @@ A test is one command, watched live, recorded, and gated by the same numbers the
 
 ## 1. Rules
 
-1. **One front door.** Every test runs as `tools/sim.sh test <name> [--headless] [--no-pause] --ledger N --issue NEAR-nnn <run>`. No test has its own entry point. `tools/sim.sh` with no arguments prints usage and does nothing.
+1. **One front door.** Every test runs as `tools/sim.sh test <name> [--headless] [--no-pause] [--ledger N] --issue NEAR-nnn <run>`. The run takes the next free ledger number unless `--ledger N` is given, and a number already used is refused. No test has its own entry point. `tools/sim.sh` with no arguments prints usage and does nothing.
 2. **Window on by default.** The Isaac Sim window opens unless `--headless` is given. Headless is for unattended re-runs only.
 3. **Live in a plot window.** A metrics node of ours (`tools/live/metrics_node.py`) computes every quantity the test gates on from the 40 Hz odometry, never from the 5 Hz status string. It writes them to `metrics.csv` and publishes them under `/svg/test/` at about 10 Hz. The driver opens a live plot window (`tools/live/live_plot.py`) before pause 1 and closes it after pause 2. The window shows the test's first `plots.json` plot with the same series, colours and reference lines as the record's Figure 1. Foxglove plots are optional: `setup` leaves the test's layout as a one-time import file. Changed 2026-10-30 by the owner ([design](superpowers/specs/2026-10-30-live-plot-window-design.md)).
 4. **What you watched is what is gated.** The metrics node writes `metrics.csv` from the values it publishes; `gates.py` reads that file. The report recomputes the headline number from the rosbag and the two must agree (minimum distance within 0.02 m, other columns by max difference); otherwise the gate is UNVERIFIED and the run cannot PASS.
@@ -33,7 +33,7 @@ cp -r tools/sim_tests/_template tools/sim_tests/<name>
 # edit the five files: test.env, fly.sh, metrics.py, gates.py, plots.json
 python3 tools/live/make_layout.py tools/sim_tests/<name>
 tools/sim.sh check
-tools/sim.sh test <name> --ledger <next #> --issue NEAR-nnn <run>
+tools/sim.sh test <name> --issue NEAR-nnn <run>
 ```
 
 Follow [DOCS_STANDARD.md](DOCS_STANDARD.md) §7 to record it; `<next #>` is the last row of LEDGER table 1 plus one. The project page's results block for the issue opens with the scope line (position source, world, what is not in the loop).

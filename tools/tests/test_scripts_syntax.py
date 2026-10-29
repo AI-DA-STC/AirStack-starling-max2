@@ -54,5 +54,5 @@ class ScriptSyntax(unittest.TestCase):
     def test_readme_opens_with_the_three_command_install_and_names_every_front_door_file(self):
         src = (TOOLS / "README.md").read_text()
         self.assertLess(src.index("Install in three commands"), 600)
-        for n in ("AirStack/airstack.sh setup", "tools/sim.sh setup", "tools/sim.sh test crossing --ledger", "## Thresholds", "tools/sim_tests/_template", "tools/lib/stack.sh", "tools/lib/report.py", "tools/live/metrics_core.py", "sim-only"):
+        for n in ("AirStack/airstack.sh setup", "tools/sim.sh setup", "tools/sim.sh test crossing --issue", "## Thresholds", "tools/sim_tests/_template", "tools/lib/stack.sh", "tools/lib/report.py", "tools/live/metrics_core.py", "sim-only"):
             self.assertIn(n, src, n)

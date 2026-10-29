@@ -8,7 +8,7 @@
 #   down                   stop the stack (commander, bag, interfaces, ulogs, Isaac); containers stay up
 #   status                 what is running now
 #   tabs                   open the terminal tabs for the stack
-#   test <name> [--headless] [--no-pause] --ledger N --issue NEAR-nnn <run>
+#   test <name> [--headless] [--no-pause] [--ledger N] --issue NEAR-nnn <run>
 #                          run tools/sim_tests/<name> end to end; records land in docs/record/<run>/
 #   figures                make the record figures of a finished run
 #   check                  contract check of every tools/sim_tests/<dir> + the metrics_core tests
@@ -27,8 +27,8 @@ usage: tools/sim.sh <setup|doctor|up|down|status|tabs|test|figures|check> [flags
   down                                   stop the sim stack
   status                                 what is running
   tabs                                   open the terminal tabs
-  test <name> [--headless] [--no-pause] --ledger N --issue NEAR-nnn <run>
-                                         run tools/sim_tests/<name>; --ledger N = new LEDGER row, --issue = Linear id
+  test <name> [--headless] [--no-pause] [--ledger N] --issue NEAR-nnn <run>
+                                         run tools/sim_tests/<name>; --issue = Linear id; ledger # = next free unless --ledger N
   figures                                make the record figures of a run
   check                                  contract check of tools/sim_tests/* + metrics_core tests
 sim only; flags, not environment variables.
@@ -36,16 +36,25 @@ USAGE
 }
 
 die_usage() { usage_line >&2; echo "error: $*" >&2; exit 2; }
-usage_line() { echo "usage: tools/sim.sh test <name> [--headless] [--no-pause] --ledger N --issue NEAR-nnn <run>"; }
+usage_line() { echo "usage: tools/sim.sh test <name> [--headless] [--no-pause] [--ledger N] --issue NEAR-nnn <run>"; }
+
+# next_ledger: 1 + the highest table-1 number in docs/record/LEDGER.md or in any record's drafted row, so a run
+# whose row was never pasted (aborted, smoke) keeps its number. ledger_numbers lists them; ledger_used N tests one.
+ledger_numbers() {
+  cat "$REPO/docs/record/LEDGER.md" "$REPO"/docs/record/*_record.md 2>/dev/null \
+    | awk -F'|' '/^\| [0-9]+ \| 20[0-9][0-9]-/ { gsub(/ /, "", $2); print $2 }'
+}
+next_ledger() { echo $(( $(ledger_numbers | sort -n | tail -1 | grep . || echo 0) + 1 )); }
+ledger_used() { ledger_numbers | grep -qx "$1"; }
 
 # parse_test_args <args…>: sets NAME LEDGER ISSUE RUN HEADLESS PAUSE USE_STUDIO; any violation exits 2 before any container call
 parse_test_args() {
-  NAME=""; LEDGER=""; ISSUE=""; RUN=""; HEADLESS=false; PAUSE=1
+  NAME=""; LEDGER=""; LEDGER_FLAG=0; ISSUE=""; RUN=""; HEADLESS=false; PAUSE=1
   while [ $# -gt 0 ]; do
     case "$1" in
       --headless) HEADLESS=true ;;
       --no-pause) PAUSE=0 ;;
-      --ledger) { [ $# -ge 2 ] && [[ "$2" != --* ]]; } || die_usage "--ledger needs a value"; LEDGER=$2; shift ;;
+      --ledger) { [ $# -ge 2 ] && [[ "$2" != --* ]]; } || die_usage "--ledger needs a value"; LEDGER=$2; LEDGER_FLAG=1; shift ;;
       --issue)  { [ $# -ge 2 ] && [[ "$2" != --* ]]; } || die_usage "--issue needs a value";  ISSUE=$2;  shift ;;
       -*) die_usage "unknown flag: $1" ;;
       *) if [ -z "$NAME" ]; then NAME=$1; elif [ -z "$RUN" ]; then RUN=$1; else die_usage "unexpected argument: $1"; fi ;;
@@ -55,10 +64,17 @@ parse_test_args() {
   [ -n "$NAME" ] || die_usage "missing <name>"
   [ "$NAME" != _template ] && [[ "$NAME" =~ ^[A-Za-z0-9_]+$ ]] && [ -d "$SIM_TESTS_DIR/$NAME" ] \
     || die_usage "no such test: $NAME (need a directory tools/sim_tests/<name>, not _template)"
-  [[ "$LEDGER" =~ ^[0-9]+$ ]] || die_usage "--ledger must be an integer (got '${LEDGER}')"
+  if [ -n "$LEDGER" ] || [ "${LEDGER_FLAG:-0}" = 1 ]; then
+    [[ "$LEDGER" =~ ^[0-9]+$ ]] || die_usage "--ledger must be an integer (got '${LEDGER}')"
+  fi
   [[ "$ISSUE" =~ ^NEAR-[0-9]+$ ]] || die_usage "--issue must look like NEAR-123 (got '${ISSUE}')"
   [ -n "$RUN" ] || die_usage "missing <run>"
   [[ "$RUN" =~ ^[A-Za-z0-9_]+$ ]] || die_usage "<run> must match [A-Za-z0-9_]+ (got '${RUN}')"
+  if [ "$LEDGER_FLAG" = 1 ]; then
+    ! ledger_used "$LEDGER" || die_usage "--ledger $LEDGER is already used (LEDGER.md or a record); omit --ledger to take the next free number"
+  else
+    LEDGER=$(next_ledger); echo "ledger: #$LEDGER (next free row; --ledger N to override)"
+  fi
   [ "$HEADLESS" = true ] && PAUSE=0
   if [ "$HEADLESS" = true ]; then USE_STUDIO=false; else USE_STUDIO=true; fi
 }

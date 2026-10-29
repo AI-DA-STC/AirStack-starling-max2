@@ -70,7 +70,7 @@ class SimSh(unittest.TestCase):
             try:
                 open(lock, "w").write(str(holder.pid))
                 env = dict(os.environ, HOME=tmp, SIM_TESTS_DIR=os.path.join(tmp, "tests"))
-                r = run("test", "foo", "--headless", "--ledger", "20", "--issue", "NEAR-787", "r1", env=env)
+                r = run("test", "foo", "--headless", "--ledger", "9999", "--issue", "NEAR-787", "r1", env=env)
                 self.assertEqual(r.returncode, 2, r.stdout + r.stderr); self.assertIn("another sim.sh test is already running", r.stderr)
                 self.assertNotRegex(r.stdout, r"^\[\d\d:\d\d:\d\d"); self.assertEqual(open(lock).read(), str(holder.pid))   # lock untouched, no phase ran
             finally:
@@ -148,7 +148,7 @@ class SimSh(unittest.TestCase):
             fake = os.path.join(tmp, "bin", "docker")
             open(fake, "w").write("#!/bin/sh\ntouch %s/docker_called\n" % tmp); os.chmod(fake, 0o755)
             env = dict(os.environ, HOME=tmp, SIM_TESTS_DIR=os.path.join(tmp, "tests"), PATH=os.path.join(tmp, "bin") + ":" + os.environ["PATH"])
-            args = ("test", "foo", "--headless", "--ledger", "20", "--issue", "NEAR-787")
+            args = ("test", "foo", "--headless", "--ledger", "9999", "--issue", "NEAR-787")
             self.assertTrue((SIM.parents[1] / "docs" / "record" / "sim_crossing_dry1_record.md").exists())
             r = run(*args, "sim_crossing_dry1", env=env)                                       # a record of that name exists
             self.assertEqual(r.returncode, 2, r.stdout + r.stderr); self.assertIn("run name already used — choose a new one", r.stderr)
@@ -249,3 +249,58 @@ class OptionalFoxgloveLayout(unittest.TestCase):
         src = SIM.read_text()
         seg = src[src.index("Landed. Plots still live"):src.index("PHASE=metrics_stop")]
         self.assertIn("click back into this terminal", seg)
+
+
+class LedgerNumber(unittest.TestCase):
+    """--ledger is optional: the next free number is 1 + the highest in LEDGER.md or any record's drafted row."""
+
+    def _fn(self, call, files):
+        src = SIM.read_text()
+        fn = src[src.index("# next_ledger:"):src.index("# parse_test_args")]
+        with tempfile.TemporaryDirectory() as tmp:
+            rec = pathlib.Path(tmp, "docs", "record"); rec.mkdir(parents=True)
+            for name, text in files.items():
+                (rec / name).write_text(text)
+            r = subprocess.run(["bash", "-c", fn + f"\nREPO={tmp}; {call}"], capture_output=True, text=True, timeout=20)
+            return r.stdout.strip()
+
+    LEDGER = ("| # | date | kind | what | record | issue |\n|---|---|---|---|---|---|\n"
+              "| 21 | 2026-10-30 | SIM | a | r | NEAR-787 |\n| 22 | 2026-10-30 | SIM | b | r | NEAR-787 |\n\n"
+              "## Table 2\n| A21 | 2026-09-03 | REAL | old | r | - |\n")
+
+    def test_next_after_the_last_ledger_row(self):
+        self.assertEqual(self._fn("next_ledger", {"LEDGER.md": self.LEDGER}), "23")
+
+    def test_an_unpasted_record_keeps_its_number(self):
+        files = {"LEDGER.md": self.LEDGER, "sim_x_record.md": "text\n| 23 | 2026-10-31 | SIM | aborted run | [r](r) | NEAR-788 |\n"}
+        self.assertEqual(self._fn("next_ledger", files), "24")
+
+    def test_empty_ledger_starts_at_one(self):
+        self.assertEqual(self._fn("next_ledger", {}), "1")
+
+    def test_ledger_used(self):
+        files = {"LEDGER.md": self.LEDGER}
+        self.assertEqual(self._fn("ledger_used 22 && echo yes || echo no", files), "yes")
+        self.assertEqual(self._fn("ledger_used 2 && echo yes || echo no", files), "no")     # 2 is not 22
+        self.assertEqual(self._fn("ledger_used 23 && echo yes || echo no", files), "no")
+
+    def test_cli_without_ledger_gets_past_parsing_and_prints_the_number(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            os.makedirs(os.path.join(tmp, "flight_logs", "sim")); os.makedirs(os.path.join(tmp, "tests", "foo"))
+            lock = os.path.join(tmp, "flight_logs", "sim", ".sim_test.lock")
+            holder = subprocess.Popen(["sleep", "30"])
+            try:
+                open(lock, "w").write(str(holder.pid))
+                env = dict(os.environ, HOME=tmp, SIM_TESTS_DIR=os.path.join(tmp, "tests"))
+                r = run("test", "foo", "--headless", "--issue", "NEAR-787", "r1", env=env)
+                self.assertIn("another sim.sh test is already running", r.stderr)      # parsing accepted the missing --ledger
+                self.assertRegex(r.stdout, r"ledger: #\d+ \(next free row")
+            finally:
+                holder.kill(); holder.wait()
+
+    def test_cli_rejects_a_ledger_number_already_used(self):
+        r = run("test", "crossing", "--headless", "--ledger", "20", "--issue", "NEAR-787", "r_unused_name")
+        self.assertEqual(r.returncode, 2); self.assertIn("--ledger 20 is already used", r.stderr)
+
+    def test_usage_shows_ledger_as_optional(self):
+        self.assertIn("[--ledger N]", run().stdout)

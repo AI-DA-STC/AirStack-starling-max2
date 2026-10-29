@@ -14,7 +14,7 @@ tools/sim.sh setup                                      # our checks + an option
 First run, once the install is done:
 
 ```bash
-tools/sim.sh test crossing --ledger <next #> --issue NEAR-787 <run>   # <next #> = last row of LEDGER table 1, plus one; <run> = a NEW name
+tools/sim.sh test crossing --issue NEAR-787 <run>                   # <run> = a NEW name; the ledger number is picked for you
 ```
 
 `tools/sim.sh doctor` says what is missing. `tools/sim.sh` with no argument prints the usage and does nothing.
@@ -44,10 +44,10 @@ The old hover + step driver still works and moves under the front door later.
 ## Run a test
 
 ```bash
-tools/sim.sh test crossing [--headless] [--no-pause] --ledger 20 --issue NEAR-787 sim_crossing_run1
+tools/sim.sh test crossing [--headless] [--no-pause] [--ledger N] --issue NEAR-787 sim_crossing_run1
 ```
 
-`--ledger` is the number of the new LEDGER row, `--issue` its Linear id; both are required, and the run name must be new.
+`--issue` is the Linear id and is required; the run name must be new. The run takes the next free LEDGER number and prints it; `--ledger N` overrides it, and a used number is refused.
 
 - **Window mode (default)** opens the Isaac window, the in-container Foxglove Studio with the SVG Basestation panel,
   and a live plot window with the test's distance plot. Drag the plot window where OBS can see it, then click back into the terminal.
@@ -60,7 +60,7 @@ tools/sim.sh test crossing [--headless] [--no-pause] --ledger 20 --issue NEAR-78
 - **Ctrl-C** lands every drone, waits for disarm, keeps the bag and ulogs, and writes the record as ABORTED.
   It never becomes PASS. If landing fails the driver still writes the ABORTED record, prints DRONES STILL ARMED and leaves the stack up.
 - **A late video name:** edit `docs/record/<run>/video.txt`, then re-render with
-  `python3 tools/lib/report.py tools/sim_tests/crossing docs/record/<run> --ledger 20 --issue NEAR-787`.
+  `python3 tools/lib/report.py tools/sim_tests/crossing docs/record/<run> --ledger <the run's #> --issue NEAR-787`.
   Run-specific caveats live in `docs/record/<run>/caveats.txt` (one per line) and survive a re-render; edit that file, never the record.
 - Then record the result: [DOCS_STANDARD §7](../docs/DOCS_STANDARD.md).
   In Linear: comment the run's `VERDICT:` line, `LEDGER #<n>` and the record's GitHub path (`docs/record/<run>_record.md`) on the NEAR-nnn issue, then tick it if it passed.
@@ -138,7 +138,7 @@ Results: [docs/record/LEDGER.md](../docs/record/LEDGER.md), [docs/projects/HTX-R
 ## Tests
 
 ```bash
-cd ~/AirStack-starling-max2 && python3 -m unittest discover -s tools/tests   # 230 tests, 1 skipped (shellcheck not installed)
+cd ~/AirStack-starling-max2 && python3 -m unittest discover -s tools/tests   # about 300 tests, 1 skipped (shellcheck not installed)
 ```
 
 No pytest, no ROS on the host: the tests add `tools/`, `tools/live` and `tools/lib` to `sys.path` themselves. No test starts a sim run.

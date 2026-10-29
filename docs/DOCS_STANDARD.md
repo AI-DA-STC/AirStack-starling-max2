@@ -69,7 +69,7 @@ Longer than that: it belongs in a record file with a link.
 
 ## 7. After a test run
 
-1. Run the test with its ledger number and issue: `tools/sim.sh test <name> --ledger <next #> --issue NEAR-nnn <new_run_name>` (the hover test, until it migrates: `LEDGER=<next #> ISSUE=NEAR-nnn tools/sim_hover_step_run.sh all <new_run_name>`).
+1. Run the test with its ledger number and issue: `tools/sim.sh test <name> --issue NEAR-nnn <new_run_name>` (it takes the next free ledger number) (the hover test, until it migrates: `LEDGER=<next #> ISSUE=NEAR-nnn tools/sim_hover_step_run.sh all <new_run_name>`).
 2. The record lands in `docs/record/`. Paste its drafted one-line row into [LEDGER.md](record/LEDGER.md) table 1 (append; never edit older rows).
 3. Fill the issue's Result cell on the project page from the record (verdict word, headline number, date) and link the record in Evidence.
 4. If a figure should change, edit the run list in `tools/make_figures.sh` and run it by hand. Figures never regenerate silently.

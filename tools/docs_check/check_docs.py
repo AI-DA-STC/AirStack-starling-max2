@@ -688,6 +688,30 @@ def check_figure_refs():
     return verdict("figure-refs", fails, [], "figures numbered in page order, anchored, every mention a link", f"{len(fails)} figure problem(s)")
 
 
+def check_purpose_lines():
+    """Every ### milestone section on a project page opens with a `**Purpose:**` line a newcomer can follow."""
+    fails = []
+    for f in sorted((ROOT / PROJECT_DIR).glob("*.md")):
+        text = read(f)
+        if text is None:
+            continue
+        cur, has = None, True
+        for i, line in enumerate(text.splitlines(), 1):
+            if line.startswith("### "):
+                if cur and not has:
+                    fails.append(f"{rel(f)}: '{cur}' has no **Purpose:** line")
+                cur, has = line[4:].strip(), False
+            elif line.startswith("## "):
+                if cur and not has:
+                    fails.append(f"{rel(f)}: '{cur}' has no **Purpose:** line")
+                cur, has = None, True
+            elif line.startswith("**Purpose:**"):
+                has = True
+        if cur and not has:
+            fails.append(f"{rel(f)}: '{cur}' has no **Purpose:** line")
+    return verdict("purpose-lines", fails, [], "every milestone section says why it exists", f"{len(fails)} section(s) without a Purpose line")
+
+
 # ----------------------------------------------------------------- selftest / main
 def selftest():
     """Prove the dead-link check works on a temp corpus: one good link, one dead file, one dead fragment."""
@@ -721,7 +745,7 @@ def main():
     checks = [lambda: check_links(link_files()), check_section_refs, check_iron_rules, check_safety_registry,
               check_values_registry, check_banners, check_real_page_hygiene, check_warnings_registered,
               check_budget, check_preflight_date, check_headings_stable, check_hashes,
-              check_linear_parity, lambda: check_images(corpus()), check_page_budgets, check_figure_refs]
+              check_linear_parity, lambda: check_images(corpus()), check_page_budgets, check_figure_refs, check_purpose_lines]
     results = []
     for fn in checks:
         try:

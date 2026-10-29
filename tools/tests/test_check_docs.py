@@ -177,3 +177,20 @@ class FigureRefs(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             fixture(d, "", extra=self.GOOD.replace("See [Figure 1](#fig-1).", "See Figure 1."))
             r = C.check_figure_refs(); self.assertEqual(r.status, "FAIL"); self.assertTrue(any("not linked" in x for x in r.details), r.details)
+
+
+class PurposeLines(unittest.TestCase):
+    def setUp(self):
+        self._root = C.ROOT
+        self.addCleanup(setattr, C, "ROOT", self._root)
+
+    def test_section_without_purpose_fails(self):
+        with tempfile.TemporaryDirectory() as d:
+            fixture(d, "")                       # the fixture's S5 section has no **Purpose:** line
+            r = C.check_purpose_lines(); self.assertEqual(r.status, "FAIL"); self.assertTrue(any("S5" in x and "Purpose" in x for x in r.details), r.details)
+
+    def test_section_with_purpose_passes(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = fixture(d, "")
+            f = root / "docs/projects/HTX-R1.md"; f.write_text(f.read_text().replace("### S5 x — SIM ONLY\n", "### S5 x — SIM ONLY\n**Purpose:** because.\n"))
+            self.assertEqual(C.check_purpose_lines().status, "PASS")

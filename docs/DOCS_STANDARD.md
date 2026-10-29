@@ -25,6 +25,7 @@ One idea per page, one place per fact, every number traceable to a record. Statu
 
 ```
 ### <code> <name> — SIM ONLY (Isaac) | REAL DRONE | DESK
+**Purpose:** 2–3 sentences a student can follow: the question this milestone answers, why it comes now, what breaks if it is skipped.
 Linear: <status> · <progress> (snapshot <date>) · last ledger row #<n>
 Done when (Linear, verbatim): …
 | Issue | Title (Linear, verbatim) | Result | Evidence |
@@ -33,6 +34,8 @@ Open: <one line>. Re-run: <one command>.
 ```
 
 Milestone, then its issues, then the results of those issues. Evidence sits beside the result it supports; there is no separate evidence section.
+
+Write for a student who joined today. Every section first says why it exists in plain words (enforced by `purpose-lines`); every test states what question it answers; nothing is a bare list of what was done.
 
 ## 4. Cells
 

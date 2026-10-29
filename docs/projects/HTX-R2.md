@@ -29,6 +29,7 @@ Hazards the pilot assumes until the named issue re-earns them (iron rules in [PR
 Leak detail: `px4_interface` publishes the trajectory setpoint ungated, and PX4 v1.14's position controller takes the latest sample in POSCTL/ALTCTL. Takeover is MANUAL or KILL; the panel's stop is the software-side stop. Iron rule 1 stands.
 
 ### R1 · New mocap and network pipeline — REAL DRONE, mocap hardware, no flight
+**Purpose:** nothing real can fly until the position pipeline works end to end: the upgraded OptiTrack streams, the laptop sits on the mocap subnet (multicast does not cross the router), the drone is reachable, and PX4 receives the pose with the right axes. Every later milestone assumes this.
 Linear (snapshot 2026-10-26): 0 % · no ledger row on this software
 
 **Done when** (Linear's target, verbatim; a target, not a result): Motive calibration, ground plane, axes and rigid body are configured; full-rate streaming lasts 10 minutes without stalls; laptop/drone communicate both ways; PX4 receives correct-axis mocap; settings are documented.
@@ -54,6 +55,7 @@ Observed on the previous software (archived branch `archive/airstack-starling-ma
 Decisive check: `./mocap.sh check` → `./mocap.sh` → `ros2 topic hz /drone_1/pose` (50 Hz) → panel EKF `EV FUSED` before any arming ([MOCAP.md](../MOCAP.md)). The laptop must sit on 192.168.9.x: NatNet is multicast and never crosses the router.
 
 ### M2 · Drone setup and hand-carry, propellers off — REAL DRONE, props off
+**Purpose:** with the props off, every link in the chain is checked before anything can hurt anyone: the drone answers to the controller's id, one watchdog runs, the estimator fuses mocap, the panel tracks a hand-carried drone, the kill switch works.
 Linear (snapshot 2026-10-26): 0 % · no ledger row on this software
 
 **Done when** (Linear's target, verbatim; a target, not a result): drone ID matches controller target, only one watchdog runs, estimator fuses mocap, the panel tracks the hand-carried drone correctly, and kill switch is checked props-off.
@@ -86,6 +88,7 @@ Observed on the previous software (archived branch `archive/airstack-starling-ma
 | A15 | RViz tracks the hand-carried drone (2026-08-28) | NEAR-822 |
 
 ### M3 · First flight on the new software — REAL DRONE
+**Purpose:** the first flight on this software proves the full loop in the air: commands are acknowledged, the fence holds, landing settles and disarms. It is also where the carried-over hazards (RC takeover, disarm) are re-observed.
 Linear (snapshot 2026-10-26): 0 % · no ledger row on this software
 
 **Done when** (Linear's target, verbatim; a target, not a result): every command is acknowledged; landing settles and disarms; dummy-payload hover yields hover throttle and flight time.
@@ -111,6 +114,7 @@ Observed on the previous software (archived branch `archive/airstack-starling-ma
 Decisive check in hover: `ros2 topic hz /drone_1/fmu/trajectory_command` ≈ 20 Hz ([RUNBOOK.md](../RUNBOOK.md) §B step 8).
 
 ### M4 · Goal flights with the braking fence — REAL DRONE
+**Purpose:** goal flights are the building block of every scenario. This checks the speed-limited profile, how hard the fence brakes at a wall, live gain changes and where a hold stops the drone, on one drone before any formation.
 Linear (snapshot 2026-10-26): 0 % · no ledger row on this software
 
 **Done when** (Linear's target, verbatim; a target, not a result): goal legs use the smooth speed-limited profile; wall braking distance is measured; gains change live; hold stops the drone where expected.
@@ -133,6 +137,7 @@ Observed on the previous software (archived branch `archive/airstack-starling-ma
 Decisive check: wall test — goal 0.5 m past the `keep_in` wall at low speed: cruise, brake, stop, `fence_breached` stays `false` ([RUNBOOK.md](../RUNBOOK.md) §C). Config `goal_single_ours.yaml`.
 
 ### M5 · Gamepad flying on the real drone — REAL DRONE
+**Purpose:** a person on the gamepad is both the backup pilot and the mapping tool (S5b). Yaw direction, the teleop fence, release-to-hold and coast distance cannot be proved in sim and must be seen on the real drone.
 Linear (snapshot 2026-10-26): 0 % · no ledger row on this software
 
 **Done when** (Linear's target, verbatim; a target, not a result): yaw direction is correct (not proved by sim), the gamepad fence holds, stick release holds position, and coast distance is measured.
@@ -146,6 +151,7 @@ Linear (snapshot 2026-10-26): 0 % · no ledger row on this software
 Decisive check: yaw stick 10 % for one second, low, thumb on KILL; wrong way → land, flip `yaw_sign`, relaunch ([TELEOP.md](../TELEOP.md) §2, §5). Config `teleop_real_ours.yaml`.
 
 ### M6 · LED strips — REAL DRONE, cosmetic
+**Purpose:** LED strips give everyone in the room a glance-level status: green ok, red when collision avoidance is acting. Optional hardware; starts when the strip arrives.
 Linear (snapshot 2026-10-26): 0 % · no ledger row on this software · starts when the strip arrives
 
 **Done when** (Linear's target, verbatim; a target, not a result): LED service runs on the drone; green by default, red when collision avoidance acts; motor LEDs muted.
@@ -158,6 +164,7 @@ Linear (snapshot 2026-10-26): 0 % · no ledger row on this software · starts wh
 Decisive check: `scripts/voxl_push_led.sh drone_1 <DRONE_IP>` then on the drone `systemctl status svg-led` → `opened … sink`, `PX4 ESC LED bits muted` ([BASESTATION.md](../BASESTATION.md) §8). The ESC LEDs then no longer show arm state — QGC is the arming display.
 
 ### M7 · Multi-drone — REAL DRONE, needs the new Starlings
+**Purpose:** the project's goal is a swarm. Two, then three real drones fly formations, random goals with collision avoidance and the intruder squeeze. Depends on the new Starlings arriving.
 Linear (snapshot 2026-10-26): 0 % · no ledger row on this software
 
 **Done when** (Linear's target, verbatim; a target, not a result): formations, random goals with collision avoidance and intruder-squeeze tests fly.

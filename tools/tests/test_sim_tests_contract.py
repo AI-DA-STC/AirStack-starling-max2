@@ -147,6 +147,33 @@ class Crossing(unittest.TestCase):
             self.assertIn("[Figure 1](#fig-1)", ctx["reading"])
 
 
+class Landing(unittest.TestCase):
+    def test_ack_log_is_info_only_mavros_decides(self):
+        with tempfile.TemporaryDirectory() as d:
+            out, heavy, env = make_run(d)
+            (out / "landing_evidence.txt").write_text("drone_1: landed, disarmed (attempt 1)\n")   # fewer than three ACKs
+            rows, ctx = G.build_rows(out, heavy, env)
+            self.assertEqual(R.overall_verdict(rows), "PASS")
+            self.assertEqual(verdict_of(rows, "landed, disarmed"), "info")
+            self.assertIn("landed + DISARMED ×3 yes", G.ledger_sentence(rows, ctx, "PASS"))
+            (out / "landing_evidence.txt").unlink()
+            rows, ctx = G.build_rows(out, heavy, env)
+            self.assertEqual(R.overall_verdict(rows), "PASS")
+
+    def test_mavros_armed_true_fails_despite_three_acks(self):
+        with tempfile.TemporaryDirectory() as d:
+            out, heavy, env = make_run(d)
+            (out / "armed_post.txt").write_text("drone_1 armed: false\ndrone_2 armed: true\ndrone_3 armed: false\n")
+            rows, ctx = G.build_rows(out, heavy, env)
+            self.assertEqual(R.overall_verdict(rows), "FAIL")
+            self.assertIn("landed + DISARMED ×3 NOT shown", G.ledger_sentence(rows, ctx, "FAIL"))
+
+    def test_window_caveat_present(self):
+        with tempfile.TemporaryDirectory() as d:
+            out, heavy, env = make_run(d)
+            self.assertIn("vehicle time", G.build_rows(out, heavy, env)[1]["caveats"][0])
+
+
 class FlySh(unittest.TestCase):
     def test_fly_parses_sleeps_and_keeps_cmu_flow(self):
         src = (CROSSING / "fly.sh").read_text()

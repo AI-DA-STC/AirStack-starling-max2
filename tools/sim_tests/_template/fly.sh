@@ -9,7 +9,7 @@ cd ~/AirStack/robot/ros_ws && source install/setup.bash >/dev/null 2>&1
 wait_s(){ sleep "$1"; }
 svc(){ timeout 20 ros2 service call /swarm_commander/$1 std_srvs/srv/Trigger 2>/dev/null | grep -o "success=[A-Za-z]*, message='[^']*'"; }
 states(){ timeout 10 ros2 topic echo /svg/commander_status --once --field data 2>/dev/null | grep -v '^---' \
-  | grep -oE '"(name|state)": *"[^"]*"|"position": *\[[^]]*\]' | tr -d '"' | paste -sd' '; }
+  | grep -oE '"(name|state)": *"[^"]*"|"position": *(\[[^]]*\]|null)' | tr -d '"' | sed 's/position: null/position: ?/' | paste -sd' '; }
 echo "[$(date +%T)] pre-takeoff: $(states)"
 echo "[$(date +%T)] takeoff: $(svc takeoff)"
 for i in $(seq 1 30); do wait_s 3; r=$(svc start); case "$r" in success=True*) echo "[$(date +%T)] start: $r"; break;; esac

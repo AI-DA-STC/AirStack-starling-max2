@@ -99,7 +99,7 @@ def build_rows(out, heavy, env):
             c = r.col(name)
             n = int(np.nansum(c))
             V[key] = n
-            return "%d CSV rows flagged (status string, held between 5 Hz samples)" % n, n == 0
+            return "%d CSV rows flagged (≈ 8 per 5 Hz status sample)" % n, n == 0
         return fn
     gate("emergency samples", "0 (5 Hz status string)", "-", f_flag("emergency", "emerg"), ("emergency",))
     gate("fence-breach samples", "0 (5 Hz status string)", "-", f_flag("fence_breached", "breach"), ("fence_breached",))
@@ -130,14 +130,14 @@ def build_rows(out, heavy, env):
         m = max(pk.values())
         V["peak"] = m
         return "%.2f m/s (%s)" % (m, ", ".join("%s %.2f" % (d, pk[d]) for d in DRONES)), m <= GATE_SPEED
-    gate("peak speed ≤ 4.2 m/s", "≤ 4.2 m/s (cap 4.0 + 5 %)", "-", f_speed, tuple("speed_" + d for d in DRONES))
+    gate("peak speed ≤ 4.2 m/s", "≤ 4.2 m/s (cap 4.0 + 5 %), over every row including takeoff and landing (conservative)", "-", f_speed, tuple("speed_" + d for d in DRONES))
 
     # ---- landing: commander ACKs, then MAVROS state
     land = R.read(out, "landing_evidence.txt")
     done = sorted(set(re.findall(r"(drone_\d): landed, disarmed", land)))
-    R.row(rows, "landed, disarmed ×3 (commander ACK)", "landed, disarmed for drone_1, drone_2, drone_3",
-          ", ".join(done) if done else "n/a — no landed, disarmed line in landing_evidence.txt", "-",
-          (set(done) == set(DRONES)) if land else None)
+    # Iron rules 2 and 5: the commander's ACK log is not an arming display -> info only; the MAVROS row below is the gate.
+    R.row(rows, "landed, disarmed ×3 (commander ACK)", "informational (ACK log, not an arming display)",
+          ", ".join(done) if done else "none — no landed, disarmed line in landing_evidence.txt", "-", None, gate=False)
     R.landing_rows(rows, out)
 
     # ---- live vs bag cross-check
@@ -168,6 +168,8 @@ def build_rows(out, heavy, env):
         for c in ("metrics node offsets (read once at start)", "window / samples"):
             R.row(rows, c, "informational", "n/a — %s" % why, "-", None, gate=False)
     ctx["reading"] = _reading(V)
+    ctx["caveats"] = ["The %s s window is wall-clock; PX4 lockstep runs about 1.3× faster than the wall clock, so it is about %.0f s of vehicle time (the duration is not a gate)."
+                      % (env.get("DURATION_S", "45"), float(env.get("DURATION_S", "45")) / 1.32)]
     return rows, ctx
 
 
@@ -198,7 +200,7 @@ def ledger_sentence(rows, ctx, verdict):
     V = ctx.get("values", {})
     x = lambda k, f: (f % V[k]) if k in V else "n/a"
     cbf = ",".join(d.replace("drone_", "") for d in V.get("cbf_drones", [])) or "nobody"
-    landed = _status(rows, "landed, disarmed") == "PASS" and _status(rows, "post-flight armed") == "PASS"
+    landed = _status(rows, "post-flight armed") == "PASS"   # MAVROS state only, never the ACK log
     s = ("CBF crossing, 3 drones antipodal, cbf_sim.yaml 2.0 / 4.0 m/s, live metrics: %s — min pairwise distance %s m (2r 1.10), "
          "emergency %s, fence breach %s, peak %s m/s, CBF on %s, landed + DISARMED ×3 %s, bag cross-check %s"
          % (verdict, x("min_d", "%.2f"), x("emerg", "%d"), x("breach", "%d"), x("peak", "%.2f"), cbf,

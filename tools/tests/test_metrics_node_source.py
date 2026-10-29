@@ -15,3 +15,10 @@ class NodeSource(unittest.TestCase):
         tree = ast.parse((LIVE / "metrics_core.py").read_text())
         names = {n.names[0].name.split(".")[0] for n in tree.body if isinstance(n, (ast.Import, ast.ImportFrom)) for _ in [0]} | {n.module.split(".")[0] for n in tree.body if isinstance(n, ast.ImportFrom) and n.module}
         self.assertFalse(names & {"rclpy", "rosbag2_py", "std_msgs", "nav_msgs"}, names)
+
+    def test_node_waits_for_every_position_and_retries_sanity(self):
+        src = (LIVE / "metrics_node.py").read_text()
+        for needle in ("never got a position", "retry_end", "sys.exit(2)"):
+            self.assertIn(needle, src, needle)
+    def test_recompute_names_missing_params(self):
+        self.assertIn("lacks param(s)", (LIVE / "bag_recompute.py").read_text())

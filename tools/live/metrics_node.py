@@ -53,7 +53,13 @@ def load_test(test_dir):
         sys.exit(2)
     spec = importlib.util.spec_from_file_location("svg_test_metrics", path)
     mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
+    try:
+        spec.loader.exec_module(mod)
+        for need in ("SERIES", "PARAMS", "TRIGGER", "DRONES"):
+            getattr(mod, need)
+    except Exception as e:  # broken test dir: rc 2, one line
+        print("metrics_node: bad metrics.py in %s: %s: %s" % (test_dir, type(e).__name__, e), flush=True)
+        sys.exit(2)
     return mod
 
 
@@ -151,17 +157,34 @@ def main():
     node.create_subscription(String, args.status_topic, on_status, 10)
     node.create_subscription(String, args.cbf_topic, on_cbf, 10)
 
-    # ---- wait for one status + one odometry per drone
+    # ---- wait until EVERY drone has a status position and an odometry, then sanity-check (retry <= 10 s)
+    def positions():
+        st = state["status"] or {}
+        return {d["name"]: d.get("position") for d in st.get("drones", []) if d.get("position")}
+
+    def ready():
+        sp = positions()
+        return state["status"] is not None and all(d in state["raw"] and d in sp for d in drones)
+
     deadline = time.monotonic() + 30.0
-    while time.monotonic() < deadline and (state["status"] is None or any(d not in state["raw"] for d in drones)):
+    while time.monotonic() < deadline and not ready():
         rclpy.spin_once(node, timeout_sec=0.2)
     if state["status"] is None:
         refuse("no message on %s within 30 s (is the commander publishing status?)" % args.status_topic)
     missing = [d for d in drones if d not in state["raw"]]
     if missing:
         refuse("no odometry within 30 s from %s (%s)" % (", ".join(missing), args.odom_template))
-    spos = {d["name"]: d.get("position") for d in state["status"].get("drones", []) if d.get("position")}
-    errs = M.offset_sanity(spos, {d: state["raw"][d][1] for d in drones}, offsets)
+    nopos = [d for d in drones if d not in positions()]
+    if nopos:
+        refuse("%s never got a position in %s within 30 s" % (", ".join(nopos), args.status_topic))
+    retry_end = time.monotonic() + 10.0
+    while True:
+        errs = M.offset_sanity(positions(), {d: state["raw"][d][1] for d in drones}, offsets)  # latest status + odometry
+        if not errs or time.monotonic() >= retry_end:
+            break
+        t_next = time.monotonic() + 0.5
+        while time.monotonic() < t_next:
+            rclpy.spin_once(node, timeout_sec=0.1)
     if errs:
         refuse("offset sanity failed: " + "; ".join(errs))
 
@@ -170,7 +193,11 @@ def main():
     state["t0"] = t0
     refs = {}
     for k, v in getattr(T, "REFERENCES", {}).items():
-        refs[k] = float(v(calc_params)) if callable(v) else float(v)
+        try:
+            refs[k] = float(v(calc_params)) if callable(v) else float(v)
+        except Exception as e:
+            print("metrics_node: REFERENCES[%r] failed: %s: %s" % (k, type(e).__name__, e), flush=True)
+            sys.exit(2)
     meta = dict(params)
     meta.update({"offsets": [x for d in drones for x in offsets[d]],
                  "refs": ";".join("%s:%s" % (k, refs[k]) for k in refs),

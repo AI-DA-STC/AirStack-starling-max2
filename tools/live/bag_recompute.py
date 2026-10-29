@@ -63,6 +63,9 @@ def main():
     try:
         offsets = M.meta_offsets(meta, drones)
         t0 = float(meta["t0_unix"])
+        absent = [n for n in T.PARAMS if n != "drone_position_offsets" and n not in meta]
+        if absent:
+            fail("live CSV header lacks param(s) named in PARAMS: %s" % ", ".join(absent))
         params = {n: parse_meta_value(meta[n]) for n in T.PARAMS if n in meta}
     except (KeyError, ValueError) as e:
         fail("live CSV header incomplete: %r" % (e,))

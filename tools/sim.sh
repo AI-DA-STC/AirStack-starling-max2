@@ -16,6 +16,7 @@
 # No argument, -h or an unknown subcommand prints this usage and exits 2; nothing is run.
 set -o pipefail
 REPO=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+SIM_TESTS_DIR=${SIM_TESTS_DIR:-$REPO/tools/sim_tests}     # overridable for the unit tests only
 
 usage() {
   cat <<'USAGE'
@@ -44,15 +45,15 @@ parse_test_args() {
     case "$1" in
       --headless) HEADLESS=true ;;
       --no-pause) PAUSE=0 ;;
-      --ledger) [ $# -ge 2 ] || die_usage "--ledger needs a value"; LEDGER=$2; shift ;;
-      --issue)  [ $# -ge 2 ] || die_usage "--issue needs a value";  ISSUE=$2;  shift ;;
+      --ledger) { [ $# -ge 2 ] && [[ "$2" != --* ]]; } || die_usage "--ledger needs a value"; LEDGER=$2; shift ;;
+      --issue)  { [ $# -ge 2 ] && [[ "$2" != --* ]]; } || die_usage "--issue needs a value";  ISSUE=$2;  shift ;;
       -*) die_usage "unknown flag: $1" ;;
       *) if [ -z "$NAME" ]; then NAME=$1; elif [ -z "$RUN" ]; then RUN=$1; else die_usage "unexpected argument: $1"; fi ;;
     esac
     shift
   done
   [ -n "$NAME" ] || die_usage "missing <name>"
-  [ "$NAME" != _template ] && [[ "$NAME" =~ ^[A-Za-z0-9_]+$ ]] && [ -d "$REPO/tools/sim_tests/$NAME" ] \
+  [ "$NAME" != _template ] && [[ "$NAME" =~ ^[A-Za-z0-9_]+$ ]] && [ -d "$SIM_TESTS_DIR/$NAME" ] \
     || die_usage "no such test: $NAME (need a directory tools/sim_tests/<name>, not _template)"
   [[ "$LEDGER" =~ ^[0-9]+$ ]] || die_usage "--ledger must be an integer (got '${LEDGER}')"
   [[ "$ISSUE" =~ ^NEAR-[0-9]+$ ]] || die_usage "--issue must look like NEAR-123 (got '${ISSUE}')"
@@ -71,6 +72,7 @@ stack_env() {   # stack_env [nomk]
   source "$REPO/tools/lib/stack.sh" || exit $?
 }
 
+no_args() { [ $# -eq 0 ] || { usage_line >&2; echo "error: $SUB takes no arguments (got $1)" >&2; exit 2; }; }
 not_yet() { echo "$1: not implemented yet ($2)" >&2; exit 2; }
 cmd_test()    { not_yet test "Task 8"; }
 cmd_figures() { not_yet figures "Task 8"; }
@@ -91,9 +93,9 @@ case "$SUB" in
     for a in "$@"; do case "$a" in --headless) HEADLESS=true ;; *) usage_line >&2; echo "error: up: unknown flag $a" >&2; exit 2 ;; esac; done
     stack_env
     for PHASE in precheck up watch isaac interfaces; do "$PHASE"; done ;;
-  down)   stack_env; PHASE=down; HEADLESS=false; down ;;
-  status) HEADLESS=false; stack_env nomk; PHASE=status; status ;;
-  tabs)   exec "$REPO/tools/sim_terminals.sh" ;;
+  down)   no_args "$@"; stack_env; PHASE=down; HEADLESS=false; down ;;
+  status) no_args "$@"; HEADLESS=false; stack_env nomk; PHASE=status; status ;;
+  tabs)   no_args "$@"; exec "$REPO/tools/sim_terminals.sh" ;;
   test)   parse_test_args "$@"; cmd_test ;;
   figures) cmd_figures "$@" ;;
   setup)  cmd_setup "$@" ;;

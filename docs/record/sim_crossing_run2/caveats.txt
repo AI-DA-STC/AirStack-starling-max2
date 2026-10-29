@@ -1,0 +1,1 @@
+How the gate was missed: d_12 crossed 1.10 m at t = 50.88 s closing at 0.35 m/s (0.25 s finite difference of metrics.csv) and kept closing for 0.77 s to 1.00 m at t = 51.65 s before the CBF pushed the pair back out; 29 % of phase-2 rows have the closest pair under 1.10 m (dry1: 28 %).

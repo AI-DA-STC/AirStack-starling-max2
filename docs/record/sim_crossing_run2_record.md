@@ -2,7 +2,7 @@ RECORD · SIM — sim_crossing_run2. Sim-only (iron rule 9): none of these value
 
 # sim_crossing_run2 — three-drone CBF crossing, antipodal, live metrics (started 2026-10-30T02:32:03+08:00 +08; flight 18:34:26–18:35:51 UTC)
 
-**Verdict: FAIL.** Re-run of the three-drone crossing with collision avoidance on the rebuilt asset at cbf_sim.yaml's 2.0 / 4.0 m/s, gated on live 40 Hz odometry (ledger #4 sampled the 5 Hz status string). For Linear NEAR-787 (milestone S5). PASS = every gate PASS; INCOMPLETE = no FAIL but ≥ 1 gate UNVERIFIED; FAIL = any gate FAIL; ABORTED = Ctrl-C landing, never a result. Report generated 2026-10-30 at repo `814c774`.
+**Verdict: FAIL.** Re-run of the three-drone crossing with collision avoidance on the rebuilt asset at cbf_sim.yaml's 2.0 / 4.0 m/s, gated on live 40 Hz odometry (ledger #4 sampled the 5 Hz status string). For Linear NEAR-787 (milestone S5). PASS = every gate PASS; INCOMPLETE = no FAIL but ≥ 1 gate UNVERIFIED; FAIL = any gate FAIL; ABORTED = Ctrl-C landing, never a result. Report generated 2026-10-30 at repo `2512f0f`.
 
 **Scope:** PX4's own sim state estimate positions the drones (no mocap, no camera); flat default world; camera and cuVSLAM not in the loop; speeds are cbf_sim.yaml's sim-only values.
 
@@ -41,7 +41,7 @@ RECORD · SIM — sim_crossing_run2. Sim-only (iron rule 9): none of these value
 | rosbag copied + readable | bag dir crossing_* with metadata.yaml under the heavy folder, and metrics.csv, metrics_bag.csv in the run folder | crossing_20261029_183259: 246 MB, metadata.yaml present | - | PASS |
 | PX4 ulogs one per sysid 2/3/4 | ulog_sysid_map.txt lists sysids 2, 3, 4 (drone_1/2/3) | 3 files, sysids ['2', '3', '4'] | - | PASS |
 | WiFi firmware alerts | 0 during the run | 0 | - | PASS |
-| code that ran | informational (run_meta.txt head vs git HEAD at report time) | ran at 3b28e16, report at 814c774 | - | info |
+| code that ran | informational (run_meta.txt head vs git HEAD at report time) | ran at 3b28e16, report at 2512f0f | - | info |
 | metrics node offsets (read once at start) | informational (CSV header) | offsets -2,0,0,0,0,0,2,0,0; t0_unix 1793298840.1852098 | - | info |
 | window / samples | informational (phase 2) | 46.8 s, 1202 rows (5476 total), 25.7 Hz | - | info |
 
@@ -62,6 +62,7 @@ Every generation of this record (`verdicts.log`, newest last; the last line is t
 2026-10-30T02:38:44+08:00 head=3b28e16 verdict=FAIL fail=1 unverified=0
 2026-10-30T02:41:12+08:00 head=3b28e16 verdict=FAIL fail=1 unverified=0
 2026-10-30T02:42:49+08:00 head=3b28e16 verdict=FAIL fail=1 unverified=0
+2026-10-30T02:51:08+08:00 head=3b28e16 verdict=FAIL fail=1 unverified=0
 ```
 
 ## Evidence
@@ -129,12 +130,13 @@ Live vs bag recompute:
 
 ## Files
 
-- Repo (this folder, `docs/record/sim_crossing_run2/`): `armed_post.txt`, `bag_evidence.txt`, `bag_path.txt`, `bag_status_pre.json`, `clock_check.txt`, `commander.log`, `commands.sh`, `fig-1.png`, `interfaces.log`, `isaac.log`, `isaac.log.start`, `isaac_evidence.txt`, `landing_evidence.txt`, `metrics.csv`, `metrics_bag.csv`, `metrics_node.log`, `odom_hz.txt`, `params_mavros.txt`, `params_mavros_names.txt`, `params_ulog.txt`, `px4_arm_times.txt`, `res_watch.log`, `run.log`, `run_meta.txt`, `status_post.json`, `status_pre.json`, `test_stdout.log`, `topics_of_interest.txt`, `ulog_list.txt`, `ulog_sysid_map.txt`, `ulogs_copied.ok`, `verdicts.log`, `video.txt`.
+- Repo (this folder, `docs/record/sim_crossing_run2/`): `armed_post.txt`, `bag_evidence.txt`, `bag_path.txt`, `bag_status_pre.json`, `caveats.txt`, `clock_check.txt`, `commander.log`, `commands.sh`, `fig-1.png`, `interfaces.log`, `isaac.log`, `isaac.log.start`, `isaac_evidence.txt`, `landing_evidence.txt`, `metrics.csv`, `metrics_bag.csv`, `metrics_node.log`, `odom_hz.txt`, `params_mavros.txt`, `params_mavros_names.txt`, `params_ulog.txt`, `px4_arm_times.txt`, `res_watch.log`, `run.log`, `run_meta.txt`, `status_post.json`, `status_pre.json`, `test_stdout.log`, `topics_of_interest.txt`, `ulog_list.txt`, `ulog_sysid_map.txt`, `ulogs_copied.ok`, `verdicts.log`, `video.txt`.
 - Not in the repo (`/home/jeremychia/flight_logs/sim/sim_crossing_run2/`): `crossing_20261029_183259` (246 MB), `drone_1_sysid2_18_32_18.ulg` (48 MB), `drone_2_sysid3_18_32_18.ulg` (49 MB), `drone_3_sysid4_18_32_18.ulg` (48 MB).
 
 ## Caveats
 
 - The 45 s window is wall-clock; PX4 lockstep runs about 1.3× faster than the wall clock, so it is about 34 s of vehicle time (the duration is not a gate).
+- How the gate was missed: d_12 crossed 1.10 m at t = 50.88 s closing at 0.35 m/s (0.25 s finite difference of metrics.csv) and kept closing for 0.77 s to 1.00 m at t = 51.65 s before the CBF pushed the pair back out; 29 % of phase-2 rows have the closest pair under 1.10 m (dry1: 28 %).
 
 ## Ledger row draft (docs/record/LEDGER.md table 1, #22, NEAR-787)
 

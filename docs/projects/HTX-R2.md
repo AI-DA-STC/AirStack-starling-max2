@@ -69,9 +69,11 @@ Linear (snapshot 2026-10-26): 0 % · no ledger row on this software
 | NEAR-822 | Hand-carry with props off: panel tracks the drone, estimator fuses mocap | — | — |
 | NEAR-823 | Props-off kill switch test | — | — |
 
-NEAR-818 — gate: `voxl_setup_real_drone.sh drone_1 <LAPTOP_IP> 1 8888` then `reboot` (never `systemctl restart voxl-px4`: it leaves the SLPI flight core dead) — [DRONE_SETUP.md](../DRONE_SETUP.md) §4.
-NEAR-819 — gate: read `MAV_SYS_ID` back in QGC before the first arm (the 2026-09-04 export says 1, a 2026-09-18 note says 2); the `px4_interface` startup line must read `target_system=N` with the same N (`target_systems:=2` if the read-back says 2); no ACK at all = mismatch.
-NEAR-820 — gate: `systemctl status svg-microdds-watchdog` and `systemctl status voxl-dds-retry` — keep ONE, record which in [CONFIG.md](../CONFIG.md); both together is untested.
+**NEAR-818: Re-run the drone setup script, then reboot the drone (never restart the flight software service).** Gate: `voxl_setup_real_drone.sh drone_1 <LAPTOP_IP> 1 8888` then `reboot` (never `systemctl restart voxl-px4`: it leaves the SLPI flight core dead) — [DRONE_SETUP.md](../DRONE_SETUP.md) §4.
+
+**NEAR-819: Confirm the drone ID matches the controller’s target.** Gate: read `MAV_SYS_ID` back in QGC before the first arm (the 2026-09-04 export says 1, a 2026-09-18 note says 2); the `px4_interface` startup line must read `target_system=N` with the same N (`target_systems:=2` if the read-back says 2); no ACK at all = mismatch.
+
+**NEAR-820: Confirm only one connection watchdog runs on the drone.** Gate: `systemctl status svg-microdds-watchdog` and `systemctl status voxl-dds-retry` — keep ONE, record which in [CONFIG.md](../CONFIG.md); both together is untested.
 
 Observed on the previous software (archived branch `archive/airstack-starling-max2`, 2026-07-22 → 08-28) — observations, not results on this software ([LEDGER table 2](../record/LEDGER.md#table-2--observed-on-the-previous-software-archived)):
 
@@ -101,8 +103,9 @@ Linear (snapshot 2026-10-26): 0 % · no ledger row on this software
 | NEAR-827 | Weigh the flight-ready drone and fit a dummy payload mass | — | — |
 | NEAR-828 | Dummy-payload hover: hover throttle and flight time to 20 % battery | — | — |
 
-NEAR-825 — also re-observes: RC takeover to MANUAL mid-hover, land by hand, `land` once to reset the commander (iron rules 1, 3); every command ACK seen in the Interface column; a `DENIED` = PX4 refused, no entry = `target_system` mismatch.
-NEAR-826 — sub-test (from the retired M3 procedure): fly `land_settle_s` 0.0 (what `swarm_real_ours.yaml` ships) until two landings end DISARMED in QGC; then set 2.0 live (`ros2 param set /swarm_commander land_settle_s 2.0`), land twice more, expect `touchdown … settling 2.0 s` then `landed, disarmed (attempt 1)` and QGC DISARMED within ~3 s, no re-climb; only then put 2.0 in the real config. The disarm retry cannot engage on real (`px4_interface.disarm()` returns true on send) — the `px4_interface` ACK log is the only evidence.
+**NEAR-825: First flight: takeoff, hover, land.** Also re-observes: RC takeover to MANUAL mid-hover, land by hand, `land` once to reset the commander (iron rules 1, 3); every command ACK seen in the Interface column; a `DENIED` = PX4 refused, no entry = `target_system` mismatch.
+
+**NEAR-826: Landing test: settle on the ground, then disarm.** Sub-test (from the retired M3 procedure): fly `land_settle_s` 0.0 (what `swarm_real_ours.yaml` ships) until two landings end DISARMED in QGC; then set 2.0 live (`ros2 param set /swarm_commander land_settle_s 2.0`), land twice more, expect `touchdown … settling 2.0 s` then `landed, disarmed (attempt 1)` and QGC DISARMED within ~3 s, no re-climb; only then put 2.0 in the real config. The disarm retry cannot engage on real (`px4_interface.disarm()` returns true on send) — the `px4_interface` ACK log is the only evidence.
 
 Observed on the previous software (archived branch `archive/airstack-starling-max2`, 2026-09-01 → 03) — observations, not results on this software ([LEDGER table 2](../record/LEDGER.md#table-2--observed-on-the-previous-software-archived)):
 

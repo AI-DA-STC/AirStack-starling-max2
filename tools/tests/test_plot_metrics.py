@@ -108,6 +108,8 @@ class RefHeaderForm(unittest.TestCase):
         self.assertEqual(P._ref_value(meta, "ref_2r"), 1.1)
         self.assertEqual(P._ref_value(meta, "ref_speed_cap"), 4.0)
         self.assertIsNone(P._ref_value(meta, "nope"))
+        import metrics_core as M
+        self.assertEqual(M.meta_refs(meta), {"ref_2r": 1.1, "ref_r": 0.55, "ref_speed_cap": 4.0})
 
 if __name__ == "__main__":
     unittest.main()

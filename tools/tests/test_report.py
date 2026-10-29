@@ -174,5 +174,10 @@ class Report(unittest.TestCase):
         e = self.env; self.assertEqual(e["TITLE"], "Fake crossing"); self.assertEqual(e["ISSUE"], "NEAR-787")
 
 
+class ArmedUnknown(unittest.TestCase):
+    def test_unknown_lines_are_unreadable_never_disarmed(self):
+        self.assertIsNone(R.parse_armed_post("drone_1 armed: false\ndrone_2 armed: UNKNOWN\ndrone_3 armed: UNKNOWN\n"))
+
+
 if __name__ == "__main__":
     unittest.main()

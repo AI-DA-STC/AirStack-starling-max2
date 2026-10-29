@@ -325,6 +325,18 @@ def read_metrics_csv(path):
     return meta, columns, np.array(data, dtype=float).reshape(len(data), len(columns))
 
 
+def meta_refs(meta):
+    """The header's `refs=ref_2r:1.1;ref_r:0.55` string as {name: float}; the one parser (plot_metrics uses it)."""
+    out = {}
+    for part in str(meta.get("refs", "")).split(";"):
+        k, _, v = part.partition(":")
+        try:
+            out[k.strip()] = float(v)
+        except ValueError:
+            continue
+    return out
+
+
 def meta_offsets(meta, drones):
     return offsets_by_drone([float(x) for x in meta["offsets"].split(",")], drones)
 

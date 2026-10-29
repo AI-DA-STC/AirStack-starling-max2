@@ -24,6 +24,7 @@ import metrics_core as M  # noqa: E402
 INK, MUTED, GRID, SPINE = "#404040", "#5F6368", "#E6E8EA", "#D0D3D6"
 COLOURS = ["#0072B2", "#E69F00", "#009E73"]          # Okabe-Ito blue / orange / bluish green, fixed series order
 STYLES = ["-", "--", ":"]                            # a 4th+ series repeats the hues with another dash
+MIN_COLOUR = "#CC79A7"                               # Okabe-Ito reddish purple: the running minimum is not d_12
 PHASE_SPAN = {1: "#8A8F94", 3: "#C9A66B"}
 PHASE_NAME = {1: "takeoff", 3: "land"}
 LABEL_GAP_FRAC = 0.045
@@ -34,17 +35,10 @@ def _ref_value(meta, name):
     refs = meta.get("refs")
     if isinstance(refs, dict) and name in refs:
         return float(refs[name])
-    if isinstance(refs, str):                       # the CSV header form: refs=ref_2r:1.1;ref_r:0.55
-        for part in refs.split(";"):
-            k, _, val = part.partition(":")
-            if k.strip() == name:
-                try:
-                    return float(val)
-                except ValueError:
-                    return None
-    v = meta.get(name)
+    if name in M.meta_refs(meta):                    # the CSV header's string form, parsed by metrics_core
+        return M.meta_refs(meta)[name]
     try:
-        return float(v)
+        return float(meta.get(name))
     except (TypeError, ValueError):
         return None
 
@@ -86,17 +80,26 @@ def plot(columns, rows, meta, plot_spec, out_png=None, title=None):
     ends = []
     for i, name in enumerate(series):
         y = rows[:, idx[name]]
-        ln, = ax.plot(t, y, color=COLOURS[i % 3], ls=STYLES[(i // 3) % 3], lw=1.6, label=name)
+        col = MIN_COLOUR if name.endswith("_running") else COLOURS[i % 3]
+        ln, = ax.plot(t, y, color=col, ls=STYLES[(i // 3) % 3], lw=1.6, label=name)
         ok = np.where(~np.isnan(y))[0]
         if len(ok):
-            ends.append((y[ok[-1]], t[ok[-1]], name, COLOURS[i % 3]))
+            ends.append((y[ok[-1]], t[ok[-1]], name, col))
+    if "min_pair_distance" in idx and "phase" in idx:       # mark the closest approach of phase 2 (what the gate reads)
+        d, ph = rows[:, idx["min_pair_distance"]], rows[:, idx["phase"]]
+        ok2 = np.where((ph == 2) & ~np.isnan(d))[0]
+        if len(ok2):
+            k = ok2[int(np.argmin(d[ok2]))]
+            ax.plot([t[k]], [d[k]], "o", color=INK, ms=5, zorder=5)
+            ax.annotate("%.2f m @ %.1f s" % (d[k], t[k]), (t[k], d[k]), xytext=(8, -16), textcoords="offset points",
+                        fontsize=8, color=INK, arrowprops=dict(arrowstyle="-", color=INK, lw=0.8))
     for name in plot_spec.get("refs", []):
         v = _ref_value(meta, name)
         if v is None:
             continue
         ax.axhline(v, color=INK, ls="--", lw=1.0, alpha=0.8, label="%s = %g" % (name, v))
-        ax.annotate("%s %g" % (name, v), (1.0, v), xycoords=("axes fraction", "data"), xytext=(-4, 3),
-                    textcoords="offset points", ha="right", va="bottom", fontsize=7, color=INK)
+        ax.annotate("%s %g" % (name, v), (0.0, v), xycoords=("axes fraction", "data"), xytext=(4, 3),
+                    textcoords="offset points", ha="left", va="bottom", fontsize=7, color=INK)
     yr = plot_spec.get("y_range")
     if yr:
         ax.set_ylim(yr[0], yr[1])

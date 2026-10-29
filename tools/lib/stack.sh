@@ -300,14 +300,17 @@ land_all_and_wait() {   # $1 = bound (s), real: land via the commander, poll MAV
   local bound=$1 deadline=$((SECONDS + $1)) N all
   note "docker exec $R bash -ic 'ros2 service call /swarm_commander/land std_srvs/srv/Trigger'"
   rx 'timeout 4 ros2 service call /swarm_commander/land std_srvs/srv/Trigger' | tail -1 | tee -a "$OUT/run.log"
-  local st pass
+  local st pass M done_pass=0
   while :; do all=1; pass=""
     for N in 1 2 3; do
-      [ "$SECONDS" -ge "$deadline" ] && return 1
+      if [ "$SECONDS" -ge "$deadline" ]; then                    # bound hit: keep the partial pass, unread drones are UNKNOWN (never read as disarmed)
+        for M in $(seq "$N" 3); do pass+="drone_$M armed: UNKNOWN"$'\n'; done
+        [ "$done_pass" = 1 ] || printf '%s' "$pass" > "$OUT/armed_post.txt"   # an earlier complete pass wins over a partial one
+        return 1; fi
       st=$(rx "timeout 10 ros2 topic echo --once /drone_$N/interface/mavros/state" | grep -oE '^armed: (true|false)')
       [ "$st" = "armed: false" ] || all=0
-      pass+="drone_$N $st"$'\n'; done
-    printf '%s' "$pass" > "$OUT/armed_post.txt"                    # the last complete pass is the abort run's MAVROS evidence
+      pass+="drone_$N ${st:-armed: UNKNOWN}"$'\n'; done
+    printf '%s' "$pass" > "$OUT/armed_post.txt"; done_pass=1        # the last complete pass is the abort run's MAVROS evidence
     [ "$all" = 1 ] && return 0
     [ "$SECONDS" -ge "$deadline" ] && return 1
     sleep 1; done

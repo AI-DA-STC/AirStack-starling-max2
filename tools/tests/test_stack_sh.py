@@ -38,6 +38,22 @@ class AbortPath(unittest.TestCase):
         r = run_stub('rx(){ case "$*" in *mavros/state*) echo "armed: false";; esac; }; land_all_and_wait 10; cat "$OUT/armed_post.txt"')
         self.assertEqual(r.stdout.split("\n")[:3], ["drone_1 armed: false", "drone_2 armed: false", "drone_3 armed: false"], r.stdout)
 
+    def test_bound_inside_first_pass_writes_unknown_lines(self):
+        r = run_stub('rx(){ case "$*" in *mavros/state*) sleep 3; echo "armed: false";; esac; }; land_all_and_wait 4; echo rc=$?; cat "$OUT/armed_post.txt"')
+        self.assertIn("rc=1", r.stdout, r.stderr)
+        self.assertIn("drone_3 armed: UNKNOWN", r.stdout, r.stdout)
+        self.assertNotIn("armed: true", r.stdout)
+
+    def test_later_complete_pass_overwrites_earlier_and_partial_never_does(self):
+        body = ('C=$(mktemp); rx(){ case "$*" in *mavros/state*) echo x >> $C; n=$(wc -l < $C); [ $n -le 3 ] && echo "armed: true" || echo "armed: false";; esac; }; '
+                'land_all_and_wait 10; echo rc=$?; cat "$OUT/armed_post.txt"')
+        r = run_stub(body)
+        self.assertIn("rc=0", r.stdout, r.stderr)
+        self.assertEqual(r.stdout.count("armed: false"), 3, r.stdout); self.assertNotIn("armed: true", r.stdout)
+        r = run_stub('C=$(mktemp); rx(){ case "$*" in *mavros/state*) echo x >> $C; n=$(wc -l < $C); [ $n -le 3 ] && echo "armed: true" || { sleep 3; echo "armed: true"; };; esac; }; land_all_and_wait 4; echo rc=$?; cat "$OUT/armed_post.txt"')
+        self.assertIn("rc=1", r.stdout, r.stderr)
+        self.assertNotIn("UNKNOWN", r.stdout, r.stdout)
+
     def test_land_bound_is_real(self):
         r = run_stub('rx(){ case "$*" in *mavros/state*) sleep 3; echo "armed: true";; esac; }; t0=$SECONDS; land_all_and_wait 4; echo rc=$? el=$((SECONDS-t0))')
         self.assertIn("rc=1", r.stdout, r.stderr)

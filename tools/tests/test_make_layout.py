@@ -98,12 +98,6 @@ class MakeLayout(unittest.TestCase):
             self.assertEqual(L.main([td, "--check"]), 2)
             self.assertEqual(L.main([td]), 2)
 
-    def test_envelope_shape(self):
-        env = L.studio_envelope({"layout": {}}, "crossing")
-        self.assertEqual(env["id"], "lay_svgtest_crossing")
-        self.assertEqual(env["permission"], "CREATOR_WRITE")
-        self.assertIn("savedAt", env["baseline"])
-
     def test_column_tree_balanced(self):
         self.assertEqual(L.column_tree(["a"]), "a")
         t = L.column_tree(["a", "b", "c"])

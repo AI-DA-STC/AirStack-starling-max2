@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """make_layout — build a test's Foxglove layout.json. Sim-only tooling: nothing here has seen a real flight.
 
-    make_layout.py <test_dir> [--check] [--base PATH] [--studio-envelope]
+    make_layout.py <test_dir> [--check] [--base PATH]
 
 Reads CMU's read-only base layout (svg_basestation.json) and <test_dir>/plots.json, validates every series name
 against <test_dir>/metrics.py (SERIES, "<name>_running" for running_min series, REFERENCES keys, "phase"), and writes
@@ -10,7 +10,6 @@ deterministic. --check exits 0 when layout.json is current, 1 when stale or miss
 """
 import argparse
 import copy
-import datetime
 import importlib.util
 import json
 import pathlib
@@ -119,12 +118,6 @@ def dumps(layout):
     return json.dumps(layout, indent=2, sort_keys=True) + "\n"
 
 
-def studio_envelope(layout, name):
-    saved = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000Z")
-    return {"id": "lay_svgtest_" + name, "name": "svg_test_" + name, "permission": "CREATOR_WRITE",
-            "baseline": {"data": layout, "savedAt": saved}}
-
-
 def build(test_dir, base_path):
     td = pathlib.Path(test_dir)
     try:
@@ -140,7 +133,6 @@ def main(argv=None):
     ap.add_argument("test_dir")
     ap.add_argument("--check", action="store_true")
     ap.add_argument("--base", default=str(BASE_LAYOUT))
-    ap.add_argument("--studio-envelope", action="store_true")
     a = ap.parse_args(argv)
     try:
         layout = build(a.test_dir, a.base)
@@ -154,10 +146,6 @@ def main(argv=None):
             return 0
         print("stale: run python3 tools/live/make_layout.py %s" % a.test_dir)
         return 1
-    if a.studio_envelope:
-        name = pathlib.Path(a.test_dir).resolve().name
-        print(dumps(studio_envelope(layout, name)), end="")
-        return 0
     out.write_text(text)
     return 0
 

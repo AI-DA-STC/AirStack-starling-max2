@@ -91,7 +91,7 @@ Reading [Figure 2](#fig-2): every step is inside the settle band within 2.5 s an
 ![x and z step responses, #17–#19 overlaid, PX4 vehicle time](../record/figures/s5_hover_step_overlay.png)
 *Figure 2. Step response of drone_1 to 1 m commands, x (left) and z (right), #17–#19 overlaid, PX4 time. Dotted: goal. Shaded: ±0.1 m band. Dashed: 3 s gate. Backward steps sign-flipped. `tools/make_figures.sh`; records [#17](../record/sim_hover_step_run1_record.md), [#18](../record/sim_hover_step_run2_record.md), [#19](../record/sim_hover_step_run3_record.md).*
 
-Open: nothing hand-flown yet — NEAR-789/790 count only with a video of the hand-flown flight the owner has watched (owner's rule, 2026-10-29); NEAR-787 at 2.0 / 4.0 m/s with a bag (`tools/sim_cbf_crossing_test.sh`, SCENARIOS §5). Re-run: `LEDGER=20 ISSUE=NEAR-786 tools/sim_hover_step_run.sh all <new_run>`.
+Open: nothing hand-flown yet — NEAR-789/790 count only with a video of the hand-flown flight the owner has watched (owner's rule, 2026-10-29); NEAR-787 at 2.0 / 4.0 m/s with a bag: `tools/sim.sh test crossing --ledger 20 --issue NEAR-787 <run>` ([TEST_STANDARD](../TEST_STANDARD.md)). Re-run: `LEDGER=20 ISSUE=NEAR-786 tools/sim_hover_step_run.sh all <new_run>` (hover) or `tools/sim.sh test crossing --ledger 20 --issue NEAR-787 <run>` (crossing).
 
 ### S5b · Map the construction site with cuVSLAM — SIM ONLY (Isaac)
 **Purpose:** if a saved map of the site lets a fresh drone find its own position in it, every drone can share one coordinate frame without extra hardware (UWB). This tests that idea in sim first.

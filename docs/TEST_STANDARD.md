@@ -26,7 +26,17 @@ Laptop: `tools/sim.sh` and everything under `tools/`. Robot container: CMU's com
 
 ## 2. Adding a test
 
-Copy `tools/sim_tests/_template/` to `tools/sim_tests/<name>/`, fill the five files, run `tools/sim.sh check`, run the test once in window mode, then follow [DOCS_STANDARD.md](DOCS_STANDARD.md) §7 to record it. The project page's results block for the issue opens with the scope line (position source, world, what is not in the loop).
+Five commands, then record the result:
+
+```bash
+cp -r tools/sim_tests/_template tools/sim_tests/<name>
+# edit the five files: test.env, fly.sh, metrics.py, gates.py, plots.json
+python3 tools/live/make_layout.py tools/sim_tests/<name>
+tools/sim.sh check
+tools/sim.sh test <name> --ledger N --issue NEAR-nnn <run>
+```
+
+Follow [DOCS_STANDARD.md](DOCS_STANDARD.md) §7 to record it. The project page's results block for the issue opens with the scope line (position source, world, what is not in the loop).
 
 ## 3. Migration order
 

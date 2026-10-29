@@ -223,8 +223,7 @@ push-apart in sim means the geometry or the gains are wrong — fix it here, not
 **Status:** ✅ ledger #4 (2026-10-19) at 0.6 / 1.2 with the old gains — min distance **1.02 m**
 (8 cm inside the barrier, the CBF's soft margin) · ⏳ **re-run at 2.0 / 4.0** pending
 (the next issue in Linear (snapshot: [MILESTONES.md](MILESTONES.md) "Where each project is") — the only to-do list) with
-`AirStack/simulation/isaac-sim/tools/sim_cbf_crossing_test.sh` (45 s of `/svg/commander_status`,
-prints min pairwise distance, corrections, emergencies).
+`tools/sim.sh test crossing --ledger N --issue NEAR-787 <run>` ([TEST_STANDARD](TEST_STANDARD.md); 45 s window, live min-distance plots, gated at 1.10 m).
 
 **Real flight.** ⏳ blocked on a second Starling (M7). `cbf_sim.yaml` is sim-only by design; a
 real version is a copy with `drone_modes: "real,real,real"`, zero offsets, and a `vmax` sane for

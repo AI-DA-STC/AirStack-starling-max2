@@ -49,3 +49,9 @@ class ScriptSyntax(unittest.TestCase):
         if not shutil.which("shellcheck"): self.skipTest("shellcheck not installed")
         r = subprocess.run(["shellcheck", "-S", "warning", str(TOOLS / "sim_hover_step_run.sh"), str(TOOLS / "lib" / "stack.sh"), str(TOOLS / "sim_hover_step_test.sh")], capture_output=True, text=True)
         self.assertEqual(r.returncode, 0, r.stdout)
+
+    def test_readme_opens_with_the_three_command_install_and_names_every_front_door_file(self):
+        src = (TOOLS / "README.md").read_text()
+        self.assertLess(src.index("Install in three commands"), 600)
+        for n in ("AirStack/airstack.sh setup", "tools/sim.sh setup", "tools/sim.sh test crossing --ledger", "## Thresholds", "tools/sim_tests/_template", "tools/lib/stack.sh", "tools/lib/report.py", "tools/live/metrics_core.py", "sim-only"):
+            self.assertIn(n, src, n)

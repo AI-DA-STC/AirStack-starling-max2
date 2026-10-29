@@ -57,7 +57,7 @@ S3/S4 result (sim only; reference = PX4 EKF2, not ground truth). [Figure 1](#fig
 
 ### S5 Finish basic sim flight checks — SIM ONLY (Isaac)
 **Purpose:** the drone model, gains, airframe and commander all changed after S1. Before anything new is built on top, the basic flight behaviour is re-checked: does the drone still take off, hold, move 1 m cleanly and land (NEAR-786), still avoid the others (787), still take live gain changes (788)? The site items (789, 790, 860) prepare S5b, because hand-flying is how the map gets built.
-Linear (snapshot 2026-10-26): 4 % · last ledger row #22 (2026-10-30)
+Linear (snapshot 2026-10-26): 4 % · last ledger row #23 (2026-10-30)
 
 **Done when** (Linear's target, verbatim; a target, not a result): hover and 1 m steps, three-drone collision-avoidance crossing and live gain tuning are tried and recorded; drone_1 is hand-flown in the construction site with cuVSLAM, camera recording and scoring.
 
@@ -65,7 +65,7 @@ Linear (snapshot 2026-10-26): 4 % · last ledger row #22 (2026-10-30)
 |---|---|---|---|
 | NEAR-786 | Re-run hover and 1 m step test on the updated sim drone | PASS ×2 — x 0.095 m / 2.47 s, 2026-10-29 | [#18, #19](../record/LEDGER.md) → [run3 record](../record/sim_hover_step_run3_record.md) |
 | NEAR-787 | Re-run three-drone crossing with collision avoidance and record it | FAIL ×3 — min 1.00 m (#22), 2026-10-30 | [#20–#22](../record/LEDGER.md) → [record](../record/sim_crossing_run2_record.md), [#21 video](../../videos/cbf_test.mp4) |
-| NEAR-788 | Try live gain tuning from the panel in sim | — | — |
+| NEAR-788 | Try live gain tuning from the panel in sim | Works — 5 of 5 changes applied, 2026-10-30 | [#23](../record/LEDGER.md) → [record](../record/sim_gains_run1_record.md) |
 | NEAR-789 | Set up one-drone gamepad teleop in the construction site (pad detected, sticks move the drone, release holds) | — | — |
 | NEAR-790 | Hand-fly drone_1 with cuVSLAM running, record and score the flight | — | — |
 | NEAR-860 | Record the stereo camera images so a flight can be replayed through cuVSLAM | — | — |
@@ -89,15 +89,15 @@ Reading [Figure 2](#fig-2): every step is inside the settle band within 2.5 s an
 ![x and z step responses, #17–#19 overlaid, PX4 vehicle time](../record/figures/s5_hover_step_overlay.png)
 *Figure 2. Step response of drone_1 to 1 m commands, x (left) and z (right), #17–#19 overlaid, PX4 time. Dotted: goal. Shaded: ±0.1 m band. Dashed: 3 s gate. Backward steps sign-flipped. `tools/make_figures.sh`; records [#17](../record/sim_hover_step_run1_record.md), [#18](../record/sim_hover_step_run2_record.md), [#19](../record/sim_hover_step_run3_record.md).*
 
-**NEAR-787: Re-run three-drone crossing with collision avoidance and record it.** This test checks that three drones crossing paths still avoid each other after the rebuild. The collision avoidance gives each drone a 0.55 m safety bubble, so two drones should stay at least 1.10 m apart. All runs are in simulation on a flat world, with PX4's own position estimate and no camera.
+**NEAR-787: Re-run three-drone crossing with collision avoidance and record it.** This test checks that three drones crossing paths still avoid each other after the rebuild. The collision avoidance gives each drone a 0.55 m safety bubble, so two drones should stay at least 1.10 m apart. All runs are in simulation on a flat world, with PX4's own position estimate and no camera. The closest two drones came was 1.00 m in the clean run ([#22](../record/sim_crossing_run2_record.md)), against 1.02 m before the rebuild ([#4](../record/LEDGER.md)). Every run went about 0.1 m inside the 1.10 m line, so each one fails the gate. [Figure 3](#fig-3) shows why: the drones brake as they close in, but reach the line still moving and overshoot it before being pushed apart. They never touched, and every other check passed.
 
-The closest two drones came was 1.00 m in the clean run ([#22](../record/sim_crossing_run2_record.md)), against 1.02 m before the rebuild ([#4](../record/LEDGER.md)). Every run went about 0.1 m inside the 1.10 m line, so each one fails the gate. [Figure 3](#fig-3) shows why: the drones brake as they close in, but reach the line still moving and overshoot it before being pushed apart. They never touched, and every other check passed.
+**NEAR-788: Try live gain tuning from the panel in sim.** This checks that a gain changed in the Foxglove panel reaches the commander while the drones fly. In run [#23](../record/sim_gains_run1_record.md), all five changes were applied on the next control tick, and the drones' spacing followed: the closest pair went from 0.99 m to about 1.4 m after the bubble grew from 0.55 to 0.75 m. A large jump is not safe, though: raising the bubble from 0.75 to 1.2 m in one step put every pair inside it at once, fired the emergency push-apart and threw a drone 0.55 m past the fence.
 
 <a id="fig-3"></a>
 ![pairwise distances of the three-drone crossing against the 1.10 m gate](../record/figures/s5_crossing_distances.png)
 *Figure 3. Pairwise distances d_12, d_13, d_23 and their running minimum against time (wall clock), with the 1.10 m (2r) gate and 0.55 m (r) lines and the closest approach marked; shaded: takeoff and land. Live 40 Hz odometry, PX4 estimate. `tools/make_figures.sh`; record [#20](../record/sim_crossing_dry1_record.md).*
 
-Open: nothing has been hand-flown yet, and NEAR-789/790 count only with a video the owner has watched. For NEAR-787 the owner decides whether to keep the 1.10 m gate and tune the collision avoidance, or loosen it to CMU's 0.825 m. During a test run, leave the Foxglove panel alone.
+Open: nothing has been hand-flown yet, and NEAR-789/790 count only with a video the owner has watched. For NEAR-787 the owner decides whether to keep the 1.10 m gate and tune the collision avoidance, or loosen it to CMU's 0.825 m. During a test run, leave the Foxglove panel alone. In flight, change the safety radius only in small steps (#23).
 
 ### S5b · Map the construction site with cuVSLAM — SIM ONLY (Isaac)
 **Purpose:** if a saved map of the site lets a fresh drone find its own position in it, every drone can share one coordinate frame without extra hardware (UWB). This tests that idea in sim first.

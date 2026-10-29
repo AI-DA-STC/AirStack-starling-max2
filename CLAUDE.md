@@ -14,7 +14,7 @@ parent/child. Milestones were RESET; **nothing on this software has flown; sim r
 |---|---|
 | [MILESTONES.md](docs/MILESTONES.md) | one screen: where each project is (HTX-R1/R2/R3), before-the-next-real-flight hazards, links to the pages below |
 | [projects/](docs/projects/HTX-R1.md) | per Linear project — [HTX-R1](docs/projects/HTX-R1.md) sim validation, [HTX-R2](docs/projects/HTX-R2.md) real-drone bring-up (pilot's hazards box + carried-over table), [HTX-R3](docs/projects/HTX-R3.md) localization research; every milestone and issue by Linear id and verbatim title, results from the records |
-| [record/LEDGER.md](docs/record/LEDGER.md) | append-only test ledger: table 1 this software (#1–#22, sim), table 2 the previous software (A1–A21, archived) |
+| [record/LEDGER.md](docs/record/LEDGER.md) | append-only test ledger: table 1 this software (#1–#23, sim), table 2 the previous software (A1–A21, archived) |
 | [DOCS_STANDARD.md](docs/DOCS_STANDARD.md) | **how docs are organised and changed** — where things live, Linear naming, milestone → issues → results shape, cell rules, budgets, wording, the after-a-test-run recipe, gates; structural changes go through the `quality-change` skill |
 | [TEST_STANDARD.md](docs/TEST_STANDARD.md) | **how a milestone test is scripted** — one front door `tools/sim.sh test <name>`, Isaac window on, a live plot window, same numbers gated, Ctrl-C lands + ABORTED, five-file test contract under `tools/sim_tests/` |
 | [PX4_MSGS_AUDIT.md](docs/PX4_MSGS_AUDIT.md) | PX4 v1.14 vs px4_msgs audit + re-run method (NEAR-821; iron rule 5) |

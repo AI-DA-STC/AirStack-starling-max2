@@ -1,0 +1,6 @@
+[19:36:27] pre-takeoff: name:drone_1 state:IDLE position:[-1.986,-0.023,0.003] name:drone_2 state:IDLE position:[0.013,-0.002,-0.019] name:drone_3 state:IDLE position:[2.001,-0.001,-0.008]
+[19:36:29] takeoff: success=True, message='takeoff: drone_1, drone_2, drone_3'
+[19:36:49] start: success=True, message='scenario "antipodal" running'
+[19:36:49] window: 45 s
+[19:37:34] land: success=True, message='landing: drone_1, drone_2, drone_3'
+[19:37:51] landed: name:land name:drone_1 state:IDLE position:[1.135,1.925,0.006] name:drone_2 state:IDLE position:[-2.064,-0.824,-0.005] name:drone_3 state:IDLE position:[0.867,-0.275,-0.001]

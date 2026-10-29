@@ -1,0 +1,107 @@
+[03:33:53 +08] == phase precheck ==
+[03:33:53 +08] precheck: no real-drone bridge on the laptop, port 8765 free, drone battery out (sim shares domain 1)
+[03:33:53 +08] WARN: Isaac start/stop can crash the WiFi firmware (iwlwifi) — use Ethernet or sit at the laptop
+NVIDIA GeForce RTX 5070 Ti Laptop GPU, 2047 MiB
+[03:33:53 +08] == phase up ==
+[0;32m[INFO][0m Starting services...
+ Container isaac-sim Running 
+ Container airstack-gcs-1 Running 
+ Container airstack-robot-desktop-1 Running 
+[0;32m[INFO][0m Services brought up successfully
+head=73b228c430f714818a745b04a8ae34ce6ef8cbae
+head_short=73b228c
+dirty_tools=0
+started=2026-10-30T03:33:59+08:00
+tz=+08
+run=sim_gains_run1
+steps_per_axis=
+[03:33:59 +08] up: containers running, domain 1 clean
+[03:33:59 +08] == phase watch ==
+[03:34:02 +08] watch: running (pid 355830)
+[03:34:02 +08] == phase isaac ==
+[03:34:17 +08] Ready for takeoff: 3 (after 15s)
+model_line=1 starling_cfg=6 autostart=3 unknown_model=0 cooking=0 ready=3
+[03:34:17 +08] == phase interfaces ==
+[03:34:28 +08] drone_1 MAVROS connected (after ~11s)
+[03:34:32 +08] drone_2 MAVROS connected (after ~4s)
+[03:34:36 +08] drone_3 MAVROS connected (after ~4s)
+[03:34:40 +08] drone_1 odometry: ok (after 4 s)
+[03:34:41 +08] drone_2 odometry: ok (after 1 s)
+[03:34:43 +08] drone_3 odometry: ok (after 2 s)
+average rate: 35.637
+/drone_1/interface/mavros/setpoint_raw/target_attitude
+/drone_2/interface/mavros/setpoint_raw/target_attitude
+/drone_3/interface/mavros/setpoint_raw/target_attitude
+clock_rc=1
+[03:35:00 +08] interfaces: 3 drones with odometry
+[03:35:00 +08] == phase commander ==
+[03:35:02 +08] SwarmCommander up: 1 (after 2s)
+scenario antipodal states ['IDLE', 'IDLE', 'IDLE'] fresh [True, True, True] tuning {'teleop_max_speed_mps': 1.2, 'goal_accel_mps2': 6.0, 'goal_settle_s': 0.3, 'scenario_speed_mps': 2.0}
+{"stamp": 1793302508.6124303, "node": "/bag_recorder", "recording": true, "path": "/root/AirStack/robot/ros_ws/bags/crossing_20261029_193502", "started_at": 1793302502.1350567, "duration_s": 6.4773736000061035, "size_bytes": 3342336, "topic_count": 285, "bag_dir": "/root/AirStack/robot/ros_ws/bags", "bag_prefix": "crossing", "storage": "mcap", "include_hidden": false, "last_bag": null, "last_result": null, "error": null}
+[03:35:08 +08] == phase params ==
+
+SYS_AUTOSTART: Integer value is: 10090
+MC_PITCHRATE_P: Double value is: 0.03200000151991844
+MC_ROLLRATE_P: Double value is: 0.03200000151991844
+LNDMC_ROT_MAX: Double value is: 300.0
+MPC_XY_VEL_MAX: Double value is: 20.0
+MPC_THR_HOVER: Double value is: 0.16500000655651093
+IMU_GYRO_CUTOFF: Double value is: 80.0
+IMU_DGYRO_CUTOFF: Double value is: 40.0
+MPC_Z_VEL_MAX_DN: Double value is: 4.0
+MPC_ACC_HOR: Double value is: 6.0
+[03:35:40 +08] params: 10-20 airframe confirmed via MAVROS
+[03:35:40 +08] == phase metrics ==
+[03:36:07 +08] metrics node ready: 1 (after 26s)
+[03:36:18 +08] metrics liveness: /svg/test/min_pair_distance_running 9.999 Hz
+[03:36:18 +08] live plot window opened: drag it where OBS can see it, then click back into this terminal
+[03:36:18 +08] Stack up, drones on their pads, plots live. Start OBS now, then press Enter to fly.
+[03:36:26 +08] == phase fly ==
+[03:36:26 +08] fly: tools/sim_tests/crossing/fly.sh 45 s window (takeoff -> start -> window -> land)
+drone_1 armed: false
+drone_2 armed: false
+drone_3 armed: false
+[swarm_commander-2] [0m[INFO] [1793302656.948402047] [swarm_commander]: drone_3: touchdown at z=0.13 m, settling 2.0 s before disarm[0m
+[swarm_commander-2] [0m[INFO] [1793302658.997867294] [swarm_commander]: drone_3: landed, disarmed (attempt 1)[0m
+[swarm_commander-2] [0m[INFO] [1793302659.797907479] [swarm_commander]: drone_2: touchdown at z=0.11 m, settling 2.0 s before disarm[0m
+[swarm_commander-2] [0m[INFO] [1793302659.897589896] [swarm_commander]: drone_1: touchdown at z=0.10 m, settling 2.0 s before disarm[0m
+[swarm_commander-2] [0m[INFO] [1793302661.847968689] [swarm_commander]: drone_2: landed, disarmed (attempt 1)[0m
+[swarm_commander-2] [0m[INFO] [1793302661.947855258] [swarm_commander]: drone_1: landed, disarmed (attempt 1)[0m
+[03:38:23 +08] Landed. Plots still live. Stop OBS, then click back into this terminal (keys typed into the plot window are lost).
+[03:38:23 +08] Landed. Plots still live; the metrics node stops when you press Enter. OBS video path, repo-relative, e.g. videos/<file>.mkv (Enter to skip):
+[03:41:10 +08] metrics.csv copied (8346 lines)
+[03:41:10 +08] == phase collect ==
+2 /tmp/tmpoky2ltdr/log/2026-10-29/19_34_14.ulg 50379894
+3 /tmp/tmpjeek9m5u/log/2026-10-29/19_34_14.ulg 50457720
+4 /tmp/tmpvami50p5/log/2026-10-29/19_34_14.ulg 49811321
+[03:41:12 +08] ulogs copied for sysids 2 3 4 -> /home/jeremychia/flight_logs/sim/sim_gains_run1
+SYS_AUTOSTART 10090
+MAV_SYS_ID 2
+MC_PITCHRATE_P 0.03200000151991844
+MC_ROLLRATE_P 0.03200000151991844
+LNDMC_ROT_MAX 300.0
+MPC_XY_VEL_MAX 20.0
+MPC_THR_HOVER 0.16500000655651093
+IMU_GYRO_CUTOFF 80.0
+IMU_DGYRO_CUTOFF 40.0
+MPC_Z_VEL_MAX_DN 4.0
+MPC_ACC_HOR 6.0
+# PX4 arm/disarm times of drone_1, MAV_SYS_ID 2, ulog /tmp/tmpoky2ltdr/log/2026-10-29/19_34_14.ulg (vehicle time, s since PX4 boot)
+arm_s=130.396959 disarm_s=186.851313 interval_s=56.454354 source=19_34_14.ulg sysid=2
+[03:41:13 +08] == phase down ==
+[03:41:17 +08] bag copied to /home/jeremychia/flight_logs/sim/sim_gains_run1/crossing_20261029_193502
+{"rows": 8475, "odom_msgs": {"drone_1": 9999, "drone_2": 9973, "drone_3": 10023}, "status_msgs": 1855, "cbf_msgs": 7417}
+[03:41:22 +08] metrics_bag.csv copied
+[03:41:48 +08] WARN: interface nodes still alive 25 s after SIGINT — TERM
+[03:41:48 +08] ulogs already copied (collect)
+[03:41:51 +08] orphaned PX4 SITL instances killed (Isaac's exit leaves them)
+model_line=1 starling_cfg=6 autostart=3 unknown_model=0 cooking=0 ready=3
+[03:42:21 +08] no WIFI-ALERT during the run
+[03:42:21 +08] down: stack stopped, containers left up
+wrote /home/jeremychia/AirStack-starling-max2/docs/record/sim_gains_run1/fig-1.png
+FAIL: /home/jeremychia/AirStack-starling-max2/docs/record/sim_gains_run1_record.md
+HEADLINE: `min_pair_distance`: 0.99 m (margin -0.11 m to the gate; pair `d_12` at t=45.1 s)
+  FAIL       min pairwise distance ≥ 1.10 m (2r): `min_pair_distance`: 0.99 m (margin -0.11 m to the gate; pair `d_12` at t=45.1 s)
+  FAIL       emergency samples: `emergency`: 5 CSV rows flagged (≈ 8 per 5 Hz status sample)
+  FAIL       fence-breach samples: `fence_breached`: 6214 CSV rows flagged (≈ 8 per 5 Hz status sample)
+[03:42:22 +08] ========  VERDICT: FAIL — `min_pair_distance`: 0.99 m (margin -0.11 m to the gate; pair `d_12` at t=45.1 s)  ========

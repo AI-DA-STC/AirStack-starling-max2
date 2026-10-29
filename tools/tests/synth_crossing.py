@@ -21,17 +21,17 @@ T_START, T_END, R_START = 1.0, 9.0, 0.9
 def _series():
     s = []
     for a, b in (("drone_1", "drone_2"), ("drone_1", "drone_3"), ("drone_2", "drone_3")):
-        s.append(M.Series(M.pair_key(a, b), lambda f, a=a, b=b: M.pair_distance(f, a, b), 0.01, "m"))
-    s.append(M.Series("min_pair_distance", M.min_pair_distance, 0.01, "m", running_min=True))
+        s.append(M.Series(M.pair_key(a, b), lambda f, a=a, b=b: M.pair_distance(f, a, b), 0.02, "m"))
+    s.append(M.Series("min_pair_distance", M.min_pair_distance, 0.02, "m", running_min=True))
     for d in DRONES:
-        s.append(M.Series("speed_" + d, lambda f, d=d: M.speed_of(f, d), 0.05, "m/s"))
+        s.append(M.Series("speed_" + d, lambda f, d=d: M.speed_of(f, d), 0.10, "m/s"))
     for d in DRONES:
         s.append(M.Series("cbf_" + d, lambda f, d=d: 1.0 if d in f.cbf_active else 0.0, 0.0, "", "flag"))
     s.append(M.Series("emergency", lambda f: 1.0 if f.emergency else 0.0, 0.0, "", "flag"))
     s.append(M.Series("fence_breached", lambda f: 1.0 if f.fence_breached else 0.0, 0.0, "", "flag"))
-    s.append(M.Series("fence_margin", M.fence_margin, 0.01, "m"))
+    s.append(M.Series("fence_margin", M.fence_margin, 0.02, "m"))
     for d in DRONES:
-        s.append(M.Series("goal_dist_" + d, lambda f, d=d: M.goal_distance(f, d), 0.01, "m"))
+        s.append(M.Series("goal_dist_" + d, lambda f, d=d: M.goal_distance(f, d), 0.05, "m"))
     return s
 
 
@@ -53,7 +53,9 @@ def _world_pos(d, t, closest_m, far_goal_miss_m):
     th = _ANG[d] + math.pi * s
     p = _CENTER + r * np.array([math.cos(th), math.sin(th), 0.0])
     if far_goal_miss_m is not None and d == "drone_1":
-        p = p + np.array([far_goal_miss_m * s * s, 0.0, 0.0])
+        # Miss the antipode radially (perpendicular to the final approach): closest approach = far_goal_miss_m.
+        u = (p - _CENTER) * np.array([1.0, 1.0, 0.0])
+        p = p + u / np.linalg.norm(u) * far_goal_miss_m * min(1.0, 2.0 * s)
     return p
 
 

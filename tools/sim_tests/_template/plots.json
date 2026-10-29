@@ -1,0 +1,7 @@
+{
+  "plots": [
+    {"id": "distance", "title": "Distance drone_1 to drone_2", "series": ["d_12", "min_pair_distance_running"], "refs": ["ref_2r"], "y_range": [0, 4]}
+  ],
+  "phase_series": "phase",
+  "panel_width_pct": 50
+}

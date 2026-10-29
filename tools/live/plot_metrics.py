@@ -1,0 +1,129 @@
+#!/usr/bin/env python3
+"""Figure of one plots.json plot, drawn from a test's metrics.csv (record Figure 1).
+
+    plot_metrics.py <metrics.csv> --plots plots.json [--plot <id>] -o fig-1.png
+
+The plot's series against t_s, its reference lines (dashed, at the values in the CSV header), shaded spans for phase 1
+(takeoff) and phase 3 (land). House style of tools/hover_step_plot.py: white background, colour-blind-safe hues in a
+fixed order, legend plus direct labels, a "Sim only" footer. Host-only: numpy + matplotlib (Agg)."""
+from __future__ import annotations
+
+import argparse
+import json
+import pathlib
+import sys
+
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+import numpy as np
+
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import metrics_core as M  # noqa: E402
+
+INK, MUTED, GRID, SPINE = "#404040", "#5F6368", "#E6E8EA", "#D0D3D6"
+COLOURS = ["#0072B2", "#E69F00", "#009E73"]          # Okabe-Ito blue / orange / bluish green, fixed series order
+STYLES = ["-", "--", ":"]                            # a 4th+ series repeats the hues with another dash
+PHASE_SPAN = {1: "#8A8F94", 3: "#C9A66B"}
+PHASE_NAME = {1: "takeoff", 3: "land"}
+FOOTER = "Sim only (iron rule 9): not a drone result."
+
+
+def _ref_value(meta, name):
+    refs = meta.get("refs")
+    if isinstance(refs, dict) and name in refs:
+        return float(refs[name])
+    v = meta.get(name)
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return None
+
+
+def _spans(t, phase, want):
+    out, start = [], None
+    for i, p in enumerate(phase):
+        if p == want and start is None:
+            start = t[i]
+        if p != want and start is not None:
+            out.append((start, t[i])); start = None
+    if start is not None:
+        out.append((start, t[-1]))
+    return out
+
+
+def plot(columns, rows, meta, plot_spec, out_png, title=None):
+    idx = {c: i for i, c in enumerate(columns)}
+    series = list(plot_spec.get("series", []))
+    missing = [s for s in series if s not in idx]
+    if "t_s" not in idx or missing:
+        raise ValueError("metrics.csv lacks column(s): %s" % ", ".join(missing or ["t_s"]))
+    rows = np.asarray(rows, dtype=float)
+    t = rows[:, idx["t_s"]]
+    title = title or plot_spec.get("title") or plot_spec.get("id", "")
+    fig, ax = plt.subplots(figsize=(8.0, 4.8), dpi=130, facecolor="white")
+    ax.set_facecolor("white"); ax.grid(True, color=GRID, linewidth=0.8); ax.set_axisbelow(True)
+    for sp in ("top", "right"):
+        ax.spines[sp].set_visible(False)
+    for sp in ("left", "bottom"):
+        ax.spines[sp].set_color(SPINE)
+    ax.tick_params(colors=MUTED, labelsize=8)
+    if "phase" in idx and len(t):
+        phase = rows[:, idx["phase"]]
+        for ph, colour in PHASE_SPAN.items():
+            for k, (a, b) in enumerate(_spans(t, phase, ph)):
+                ax.axvspan(a, b, color=colour, alpha=0.12, lw=0, label="phase %d (%s)" % (ph, PHASE_NAME[ph]) if k == 0 else None)
+    ends = []
+    for i, name in enumerate(series):
+        y = rows[:, idx[name]]
+        ln, = ax.plot(t, y, color=COLOURS[i % 3], ls=STYLES[(i // 3) % 3], lw=1.6, label=name)
+        ok = np.where(~np.isnan(y))[0]
+        if len(ok):
+            ends.append((y[ok[-1]], t[ok[-1]], name, COLOURS[i % 3]))
+    for name in plot_spec.get("refs", []):
+        v = _ref_value(meta, name)
+        if v is None:
+            continue
+        ax.axhline(v, color=INK, ls="--", lw=1.0, alpha=0.8, label="%s = %g" % (name, v))
+        ax.annotate("%s %g" % (name, v), (1.0, v), xycoords=("axes fraction", "data"), xytext=(-4, 3),
+                    textcoords="offset points", ha="right", va="bottom", fontsize=7, color=INK)
+    last, gap = None, 0.0
+    yr = plot_spec.get("y_range")
+    if yr:
+        ax.set_ylim(yr[0], yr[1])
+    lo, hi = ax.get_ylim()
+    gap = (hi - lo) * 0.045
+    for y, x, name, colour in sorted(ends):                 # direct labels, nudged apart
+        yy = y if last is None or y - last >= gap else last + gap
+        ax.annotate(name, (x, y), xytext=(4, 0), textcoords="offset points", fontsize=7, color=colour, va="center")
+        last = yy
+    ax.set_xlabel("t [s, wall]", color=INK, fontsize=9)
+    ax.set_ylabel(title, color=INK, fontsize=9)
+    ax.set_title(title, color=INK, fontsize=10, loc="left")
+    ax.legend(fontsize=7, frameon=False, loc="upper center", bbox_to_anchor=(0.5, -0.16), ncol=3)
+    fig.text(0.01, 0.01, FOOTER, fontsize=7, color=MUTED)
+    fig.tight_layout(rect=(0, 0.03, 1, 1))
+    fig.savefig(out_png, facecolor="white")
+    plt.close(fig)
+
+
+def main(argv=None) -> int:
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument("csv")
+    ap.add_argument("--plots", required=True)
+    ap.add_argument("--plot", default=None, help="plot id (default: the first)")
+    ap.add_argument("-o", "--out", required=True)
+    a = ap.parse_args(argv)
+    meta, columns, rows = M.read_metrics_csv(a.csv)
+    spec_all = json.loads(pathlib.Path(a.plots).read_text())["plots"]
+    spec = next((p for p in spec_all if p["id"] == a.plot), None) if a.plot else (spec_all[0] if spec_all else None)
+    if spec is None:
+        print("no such plot: %s" % (a.plot or "(plots.json is empty)"), file=sys.stderr)
+        return 2
+    plot(columns, rows, meta, spec, a.out, spec.get("title"))
+    print("wrote %s" % a.out)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

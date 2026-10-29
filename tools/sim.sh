@@ -85,12 +85,13 @@ cmd_figures() {
 
 # ----------------------------------------------------------------------------------------------- test flow
 # stop_tail: the per-second line streamer (host tail of `docker exec … tail -f`) and its container-side process
-stop_tail() { [ -n "${TAIL:-}" ] && kill "$TAIL" 2>/dev/null; TAIL=""; docker exec "$R" pkill -f 'tail -n0 -f' >/dev/null 2>&1 || true; }
+stop_tail() { [ -n "${TAIL:-}" ] && kill "$TAIL" 2>/dev/null; TAIL=""; docker exec "$R" pkill -f "tail -n0 -f $S/metrics_node.log" >/dev/null 2>&1 || true; }
 
 # metrics_stop: SIGINT the node (CSV flushed + closed), wait <= 10 s, TERM if needed, copy CSV + log out. Idempotent; also the ABORT_HOOK.
 metrics_stop() {
   stop_tail
-  [ -f "$OUT/.metrics_stopped" ] && return 0
+  docker exec "$R" pkill -f "fly\\.sh" >/dev/null 2>&1 || true        # an aborted run must not keep flying a script (harmless after a normal landing)
+  [ "${METRICS_STARTED:-0}" = 1 ] && [ ! -f "$HEAVY/.metrics_stopped" ] || return 0
   local i
   if alive "$R" 'python3 metrics_node\.py'; then
     nx docker exec "$R" pkill -INT -f 'python3 metrics_node.py' || true
@@ -104,7 +105,7 @@ metrics_collect() {
   docker cp "$R:$S/metrics_node.log" "$OUT/metrics_node.log" 2>/dev/null || true
   local o; o=$(grep -m1 '^# offsets=' "$OUT/metrics.csv" 2>/dev/null | sed 's/^# offsets=//')
   [ -n "$o" ] && echo "offsets=$o" >> "$OUT/run_meta.txt" || true
-  touch "$OUT/.metrics_stopped"
+  touch "$HEAVY/.metrics_stopped"
 }
 
 # bag_dump_hook <bag path in $R> (called by stack.sh down): recompute the metrics from the bag; non-zero = bag stays in the container
@@ -118,14 +119,18 @@ bag_dump_hook() {
 
 render_report() {   # the record + verdict banner; REPORT_RC = report.py's rc (0 PASS / 2 INCOMPLETE / 1 FAIL / 3 ABORTED)
   note "python3 $REPO/tools/lib/report.py $SIM_TESTS_DIR/$NAME $OUT --heavy $HEAVY --ledger $LEDGER --issue $ISSUE"
-  python3 "$REPO/tools/lib/report.py" "$SIM_TESTS_DIR/$NAME" "$OUT" --heavy "$HEAVY" --ledger "$LEDGER" --issue "$ISSUE" 2>&1 | tee -a "$OUT/run.log" > "$OUT/.report_out"
+  python3 "$REPO/tools/lib/report.py" "$SIM_TESTS_DIR/$NAME" "$OUT" --heavy "$HEAVY" --ledger "$LEDGER" --issue "$ISSUE" 2>&1 | tee -a "$OUT/run.log" > "$HEAVY/.report_out"
   REPORT_RC=${PIPESTATUS[0]}
-  cat "$OUT/.report_out"
-  local v head rec; v=$(head -1 "$OUT/.report_out" | sed 's/:.*//'); rec="$REPO/docs/record/${RUN}_record.md"
-  head=$(grep -m1 '^| min pairwise distance' "$rec" 2>/dev/null | awk -F'|' '{gsub(/^ +| +$/,"",$4); print $4}')
-  say "========  VERDICT: ${v:-?} — ${head:-no minimum distance in the record}  ========"
-  rm -f "$OUT/.report_out"
+  cat "$HEAVY/.report_out"
+  local v head; v=$(head -1 "$HEAVY/.report_out" | sed 's/:.*//'); head=$(sed -n 's/^HEADLINE: //p' "$HEAVY/.report_out" | head -1)
+  case "$v" in
+    PASS|FAIL|INCOMPLETE|ABORTED) say "========  VERDICT: $v — ${head:-n/a}  ========" ;;
+    *) say "REPORT ERROR: report.py printed no verdict (rc=$REPORT_RC): $(head -1 "$HEAVY/.report_out")"; REPORT_RC=4 ;;
+  esac
+  rm -f "$HEAVY/.report_out"
 }
+# finish_report: REPORT_HOOK for abort/failure paths — the record, then the scratch dir in the robot container
+finish_report() { render_report; docker exec "$R" rm -rf "$S" >/dev/null 2>&1 || true; }
 
 cmd_test() {
   local ISSUE_ARG=$ISSUE
@@ -139,9 +144,9 @@ cmd_test() {
 import json, sys
 p = json.load(open(sys.argv[1]))['plots'][0]['series']
 print(next((s for s in p if 'running' in s), p[0]))" "$TD/plots.json") || FIRST=min_pair_distance_running
-  rm -f "$OUT/.metrics_stopped" "$OUT/aborted.txt"
+  rm -f "$HEAVY/.metrics_stopped" "$OUT/aborted.txt"; METRICS_STARTED=0
   # 1  stack phases; the abort trap is armed from the commander phase on
-  ABORT_HOOK=metrics_stop; REPORT_HOOK=render_report
+  ABORT_HOOK=metrics_stop; REPORT_HOOK=finish_report; FAIL_HOOK=metrics_stop; FAIL_RC=4     # a wiring failure exits 4, a gate FAIL exits 1
   for PHASE in precheck up watch isaac interfaces commander params; do
     [ "$PHASE" = isaac ] && STACK_UP=1
     [ "$PHASE" = commander ] && arm_abort_trap
@@ -154,7 +159,9 @@ print(next((s for s in p if 'running' in s), p[0]))" "$TD/plots.json") || FIRST=
   for f in "$REPO/tools/live/metrics_core.py" "$REPO/tools/live/metrics_node.py" "$REPO/tools/live/bag_recompute.py" "$TD/metrics.py" "$TD/fly.sh"; do
     nx docker cp "$f" "$R:$S/" || fail "docker cp $f"; done
   # 3  metrics node: started before the flight, ready + liveness checked
+  docker exec "$R" pkill -f 'python3 metrics_node.py' >/dev/null 2>&1 || true      # never two nodes publishing /svg/test/*
   docker exec "$R" bash -c ": > $S/metrics_node.log; rm -f $S/metrics.csv"
+  METRICS_STARTED=1
   note "docker exec -d $R bash -ic 'cd $S && python3 metrics_node.py --test-dir $S --csv $S/metrics.csv > $S/metrics_node.log 2>&1'"
   docker exec -d "$R" bash -ic "cd $S && python3 metrics_node.py --test-dir $S --csv $S/metrics.csv > $S/metrics_node.log 2>&1"
   NEED=1 wait_for 90 2 "metrics node ready" count_log "$R" 'metrics_node: ready' "$S/metrics_node.log" || fail "metrics node refused: $(docker exec "$R" tail -3 "$S/metrics_node.log")"
@@ -191,14 +198,14 @@ print(next((s for s in p if 'running' in s), p[0]))" "$TD/plots.json") || FIRST=
   grep -q 'armed: true' "$OUT/armed_post.txt" && say "!! a drone still reports armed: true 20 s after landing" || true
   docker exec "$R" grep -E 'touchdown at z=|landed, disarmed|disarm not accepted' "$S/commander.log" | tee "$OUT/landing_evidence.txt" | tee -a "$OUT/run.log" || true
   json1 /svg/commander_status > "$OUT/status_post.json" || say "WARN: no commander_status after the flight"
-  # 6  stop the node (plots stayed live until now), ask for the OBS file
-  PHASE=metrics_stop
-  metrics_stop
+  # 6  ask for the OBS file while the plots are still live, then stop the node
   if [ "$PAUSE" = 1 ]; then
-    say "Landed. Plots still live. OBS file name (Enter to skip):"
+    say "Landed. Plots still live; the metrics node stops when you press Enter. OBS file name (Enter to skip):"
     local v; read -r v < /dev/tty || v=""
     echo "${v:-none recorded}" > "$OUT/video.txt"
   else echo "none (headless run)" > "$OUT/video.txt"; fi
+  PHASE=metrics_stop
+  metrics_stop
   # 7  ulogs, params, arm times, then the stack down (bag dump hook = bag recompute)
   PHASE=collect
   phase_begin collect ulog_list.txt ulog_sysid_map.txt params_ulog.txt px4_arm_times.txt
@@ -213,6 +220,7 @@ print(next((s for s in p if 'running' in s), p[0]))" "$TD/plots.json") || FIRST=
   else rm -f "$OUT/px4_arm_times.txt"; say "WARN: no PX4 arm times (no ulog at all)"; fi
   PHASE=down; down; STACK_UP=0
   docker exec "$R" rm -rf "$S"
+  FAIL_HOOK=""; REPORT_HOOK=""            # from here a render problem is the report's, not a wiring failure
   # 8  figure, record, verdict
   PHASE=report
   cmd_figures "$NAME" "$RUN" 2>&1 | tee -a "$OUT/run.log"; [ "${PIPESTATUS[0]}" = 0 ] || say "WARN: figure not made (record will show it missing)"

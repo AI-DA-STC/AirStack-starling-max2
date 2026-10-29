@@ -41,7 +41,7 @@ class AbortPath(unittest.TestCase):
         self.assertLessEqual(el, 4 + 10 + 1, r.stdout)
 
     def test_no_mavros_goes_to_down_and_exits_3(self):
-        r = run_stub('rx(){ case "$*" in *"topic list"*) echo "/rosout";; esac; }; copy_ulogs(){ echo CALLED copy_ulogs; }; down(){ echo CALLED down; }; arm_abort_trap; kill -INT $$; sleep 1; echo NOT_REACHED')
+        r = run_stub('rx(){ case "$*" in *"topic list"*) printf "/rosout\\n/svg/commander_status\\n";; esac; }; copy_ulogs(){ echo CALLED copy_ulogs; }; down(){ echo CALLED down; }; arm_abort_trap; kill -INT $$; sleep 1; echo NOT_REACHED')
         self.assertEqual(r.returncode, 3, r.stdout + r.stderr)
         self.assertIn("aborted before flight", r.stdout)
         self.assertIn("CALLED copy_ulogs", r.stdout); self.assertIn("CALLED down", r.stdout)
@@ -64,7 +64,7 @@ class AbortPath(unittest.TestCase):
         self.assertIn("CALLED land", r.stdout); self.assertNotIn("aborted before flight", r.stdout)
 
     def test_no_publisher_means_aborted_before_flight(self):
-        r = run_stub('rx(){ printf "/rosout\\n/parameter_events\\n"; }; land_all_and_wait(){ echo CALLED land; }; copy_ulogs(){ :; }; down(){ echo CALLED down; }; arm_abort_trap; kill -INT $$; sleep 1')
+        r = run_stub('rx(){ printf "/rosout\\n/svg/commander_status\\n"; }; land_all_and_wait(){ echo CALLED land; }; copy_ulogs(){ :; }; down(){ echo CALLED down; }; arm_abort_trap; kill -INT $$; sleep 1')
         self.assertIn("aborted before flight", r.stdout); self.assertNotIn("CALLED land", r.stdout); self.assertIn("CALLED down", r.stdout)
 
     def test_commander_phase_polls_status_and_topic_check_bypasses_the_daemon(self):
@@ -74,3 +74,15 @@ class AbortPath(unittest.TestCase):
         self.assertNotIn("json1 /svg/commander_status", c)
         n = src[src.index("no_flight_established() {"):src.index("land_all_and_wait() {")]
         self.assertIn("ros2 topic list --no-daemon --spin-time 5", n); self.assertIn("/drone_1/interface/mavros/state", n)
+
+    def test_error_text_or_partial_list_means_flying(self):
+        for out in ('echo "The ros2 daemon may be unhealthy: error"', 'printf "/rosout\\n/parameter_events\\n"', 'echo "!! WARNING /svg/commander_status"'):
+            r = run_stub('rx(){ %s; }; land_all_and_wait(){ echo CALLED land; return 0; }; copy_ulogs(){ :; }; down(){ :; }; arm_abort_trap; kill -INT $$; sleep 1' % out)
+            self.assertIn("CALLED land", r.stdout, out); self.assertNotIn("aborted before flight", r.stdout, out)
+
+    def test_fail_runs_hooks_in_order_and_exits_with_fail_rc(self):
+        r = run_stub('fh(){ echo HOOK_FAIL; }; rh(){ echo HOOK_REPORT; }; down(){ echo CALLED down; }; FAIL_HOOK=fh; REPORT_HOOK=rh; FAIL_RC=4; ALL_MODE=1; STACK_UP=1; PHASE=fly; fail boom; echo NOT_REACHED')
+        self.assertEqual(r.returncode, 4, r.stdout + r.stderr)
+        o = r.stdout; self.assertLess(o.index("HOOK_FAIL"), o.index("CALLED down")); self.assertLess(o.index("CALLED down"), o.index("HOOK_REPORT"))
+        self.assertNotIn("NOT_REACHED", o)
+        self.assertEqual(run_stub('PHASE=x; fail boom').returncode, 1)                  # default stays 1 (hover driver)

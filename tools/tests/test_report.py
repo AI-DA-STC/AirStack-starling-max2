@@ -86,6 +86,25 @@ class Report(unittest.TestCase):
         (self.out / "armed_post.txt").unlink()
         rows, _ = self.G.build_rows(self.out, self.heavy, self.env); self.assertEqual(R.overall_verdict(rows), "INCOMPLETE")
 
+    def test_fill_ctx_loads_tuning_stdout_and_node_log_from_the_run_dir(self):
+        for f in ("status_pre.json", "test_stdout.log"):
+            shutil.copy(FX / f, self.out / f)
+        (self.out / "metrics_node.log").write_text("\n".join("line %d" % i for i in range(30)) + "\n")
+        ctx = R.fill_ctx({}, self.out)
+        self.assertTrue(ctx["tuning"]); self.assertEqual(ctx["node_log_tail"].splitlines()[-1], "line 29")
+        self.assertEqual(len(ctx["node_log_tail"].splitlines()), 12)
+        self.assertRegex(ctx["test_stdout"], r"\[\d\d:\d\d:\d\d\]")
+        md = R.render(self.env, [], ctx, self.out, self.heavy, "INCOMPLETE", [], 20, "NEAR-787")
+        self.assertNotIn("flight span n/a", md); self.assertNotIn("tuning n/a", md)
+        keep = R.fill_ctx({"tuning": {"v": 1}, "test_stdout": "[01:02:03] x"}, self.out)       # gates.py values win
+        self.assertEqual(keep["tuning"], {"v": 1}); self.assertEqual(keep["test_stdout"], "[01:02:03] x")
+
+    def test_headline_text_reads_the_named_row(self):
+        rows = []
+        R.row(rows, "min pairwise distance >= 1.10 m", "c", "0.98 m (margin -0.12 m)", "-", False)
+        self.assertEqual(R.headline_text(rows, {"headline_row": "min pairwise distance"}), "0.98 m (margin -0.12 m)")
+        self.assertEqual(R.headline_text(rows, {}), "n/a")
+
     def test_cli_pass_exit_0_and_verdict_log(self):
         rc = R.main([str(self.td), str(self.out), "--heavy", str(self.heavy), "--ledger", "20", "--issue", "NEAR-787"])
         self.assertEqual(rc, 0)

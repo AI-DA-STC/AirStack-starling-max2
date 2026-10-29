@@ -29,9 +29,13 @@ say()  { echo "[$(date '+%T %Z')] $*" | tee -a "$OUT/run.log"; }
 note() { echo "$*" >> "$OUT/commands.sh"; }                # the exact commands used, for the record
 nx()   { note "$*"; "$@"; }                                 # note + run a host command
 fail() { say "FAIL ($PHASE): $*"
+  # optional caller hooks: FAIL_HOOK (before the tear-down, e.g. stop a node) and REPORT_HOOK (after it, e.g. write the record); FAIL_RC = exit code (default 1)
+  local fh=${FAIL_HOOK:-}; FAIL_HOOK=""
+  [ -n "$fh" ] && declare -F "$fh" >/dev/null && "$fh"
   if [ "${ALL_MODE:-0}" = 1 ] && [ "${STACK_UP:-0}" = 1 ] && [ "$PHASE" != down ]; then
     say "all: stack is up after a FAIL in $PHASE -> running down (ulogs + logs are copied, bag kept if present)"; STACK_UP=0; PHASE=down; down || true; fi
-  exit 1; }
+  [ -n "${REPORT_HOOK:-}" ] && declare -F "$REPORT_HOOK" >/dev/null && { local rh=$REPORT_HOOK; REPORT_HOOK=""; "$rh"; }
+  exit "${FAIL_RC:-1}"; }
 caveat() { echo "$*" >> "$OUT/caveats.txt"; say "CAVEAT: $*"; }
 rx()   { docker exec "$R" bash -ic "$*" 2>&1 | grep -v -E "$NOISE" || true; }      # robot container, profile noise dropped
 ix()   { docker exec "$I" bash -ic "$*" 2>&1 | grep -v -E "$NOISE" || true; }      # isaac container
@@ -286,10 +290,10 @@ px4_arm_times_of() {   # $1 = ulog path in $I, $2 = MAV_SYS_ID, $3 = who -> $OUT
     else rm -f "$OUT/px4_arm_times.txt"; say "WARN: no PX4 arm times (hover_step_timescale.py rc=$rc) — time-scale gate will be UNVERIFIED"; fi
 }
 
-no_flight_established() {   # 0 ONLY when positively no flight: a non-empty topic list (no daemon) without drone_1's MAVROS state topic. Present, empty list, error or timeout = assume flying
-  local l; l=$(rx 'timeout 25 ros2 topic list --no-daemon --spin-time 5')
-  [ -n "$l" ] || return 1
-  ! echo "$l" | grep -q '^/drone_1/interface/mavros/state$'
+no_flight_established() {   # 0 ONLY when positively no flight: a topic list (no daemon; only lines starting with "/") that HAS the sentinel /svg/commander_status and LACKS /drone_1/interface/mavros/state. Empty, error text, no sentinel or the state topic present = assume flying
+  local l; l=$(rx 'timeout 25 ros2 topic list --no-daemon --spin-time 5' | grep '^/')
+  echo "$l" | grep -qx '/svg/commander_status' || return 1
+  ! echo "$l" | grep -qx '/drone_1/interface/mavros/state'
 }
 
 land_all_and_wait() {   # $1 = bound (s), real: land via the commander, poll MAVROS armed (drones 1-3); 0 = all false, 1 = bound hit (overshoot <= one 10 s read)

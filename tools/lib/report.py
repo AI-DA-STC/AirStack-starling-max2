@@ -233,6 +233,36 @@ def fit_caption(caption: str) -> str:
     return caption[:room - 1].rstrip() + "…"
 
 
+def fill_ctx(ctx, out):
+    """Record fields no gates.py has to fill: commander tuning (status_pre.json), flight script stdout, metrics node log tail."""
+    out = pathlib.Path(out)
+    if not ctx.get("tuning"):
+        try:
+            t = json.loads(read(out, "status_pre.json")).get("tuning")
+            if t:
+                ctx["tuning"] = t
+        except (ValueError, AttributeError):
+            pass
+    if not (ctx.get("test_stdout") or "").strip():
+        txt = read(out, "test_stdout.log").strip()
+        if txt:
+            ctx["test_stdout"] = txt
+    if not (ctx.get("node_log_tail") or "").strip():
+        tail = "\n".join(read(out, "metrics_node.log").strip().splitlines()[-12:])
+        if tail:
+            ctx["node_log_tail"] = tail
+    return ctx
+
+
+def headline_text(rows, ctx):
+    """Measured cell of the gate row named by ctx['headline_row'] (check-name prefix); n/a when there is none."""
+    key = (ctx.get("headline_row") or "").lower()
+    for r in rows:
+        if key and r.check.lower().startswith(key):
+            return r.measured
+    return "n/a"
+
+
 def render(env, rows, ctx, out, heavy, verdict, history, ledger, issue) -> str:
     out = pathlib.Path(out)
     run = out.name
@@ -345,6 +375,7 @@ def main(argv=None) -> int:
     except Exception as e:   # a broken gates.py still leaves a record: INCOMPLETE with the error as a row
         rows, ctx = [], {}
         row(rows, "gates.py build_rows", "returns the gate rows", f"{type(e).__name__}: {e}", "-", None)
+    fill_ctx(ctx, out)
     verdict = overall_verdict(rows, aborted=(out / "aborted.txt").exists())
     history = [l for l in read(out, "verdicts.log").splitlines() if l.strip()]
     if not a.no_verdict_log:
@@ -357,6 +388,7 @@ def main(argv=None) -> int:
             ctx[key] = f"{key} unavailable ({type(e).__name__})"
     rec.write_text(render(env, rows, ctx, out, heavy, verdict, history, a.ledger, issue))
     print(f"{verdict}: {rec}")
+    print(f"HEADLINE: {headline_text(rows, ctx)}")
     for r in rows:
         if r.gate and r.verdict != "PASS":
             print(f"  {r.verdict:10s} {r.check}: {r.measured}")

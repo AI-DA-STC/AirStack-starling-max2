@@ -15,7 +15,7 @@ Definitions
                 every series that uses it is NaN for that row.
   speed         norm of odometry twist.twist.linear (same as the commander's speed_mps).
   goal distance |pos - antipode(start_pos)|, antipode = 2*arena_center - start; NaN before phase 2.
-  running min   minimum over every row since the tracker started (NaN ignored).
+  running min   minimum over the phase-2 rows only (NaN ignored): NaN before phase 2, frozen at the last phase-2 value after it.
   cross-check   live rows are paired to bag rows by mutual-nearest t_s within t_tol.
                 Continuous column: ok = max abs diff <= tol. Flag column (0/1): compared by
                 sample count, ok = |sum_live - sum_bag| <= max(2, 1 % of paired rows).
@@ -261,10 +261,13 @@ class Tracker:
         for s in self.series:
             if s.running_min:
                 v = vals[s.name]
-                if not math.isnan(v):
+                if f.phase == 2 and not math.isnan(v):
                     self._runmin[s.name] = min(self._runmin[s.name], v)
                 r = self._runmin[s.name]
-                out[s.name + "_running"] = math.nan if (math.isinf(r) or math.isnan(v)) else r
+                if math.isinf(r) or (f.phase == 2 and math.isnan(v)):
+                    out[s.name + "_running"] = math.nan      # before phase 2 starts, or a stale row inside it
+                else:
+                    out[s.name + "_running"] = r             # phase 2 so far; frozen at the last phase-2 value afterwards
         return out
 
 

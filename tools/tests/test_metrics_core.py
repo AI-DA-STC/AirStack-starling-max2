@@ -212,6 +212,26 @@ class TrackerStatusAndStale(unittest.TestCase):
             tr.update_odom(d, 3.0, pos[d] - tr.offsets[d], vel[d])
         self.assertAlmostEqual(tr.row(3.0)["min_pair_distance_running"], good)
 
+    def test_running_min_counts_phase_2_only(self):
+        tr = seen_tracker({d: 2.0 for d in synth.DRONES}, status_phase2=False)
+        pos, vel = synth.straight_world(2.0)
+        close = {d: pos["drone_1"] - tr.offsets[d] + np.array([0.1 * i, 0.0, 0.0]) for i, d in enumerate(synth.DRONES)}
+        for d in synth.DRONES:                                   # phase 0, drones 0.1 m apart (on the pads)
+            tr.update_odom(d, 2.0, close[d], vel[d])
+        r = tr.row(2.0)
+        self.assertEqual(r["phase"], 0.0); self.assertTrue(math.isnan(r["min_pair_distance_running"]))      # before
+        tr.update_status(synth.straight_status(2.0))
+        for d in synth.DRONES:
+            tr.update_odom(d, 3.0, pos[d] - tr.offsets[d], vel[d])
+        r = tr.row(3.0); during = r["min_pair_distance_running"]
+        self.assertEqual(r["phase"], 2.0); self.assertAlmostEqual(during, r["min_pair_distance"])           # during
+        tr.update_status({"drones": [{"state": "LANDING"}], "mission_active": False, "cbf": {"emergency": False}, "fence_breached": False})
+        for d in synth.DRONES:
+            tr.update_odom(d, 4.0, close[d], vel[d])
+        r = tr.row(4.0)
+        self.assertEqual(r["phase"], 3.0); self.assertLess(r["min_pair_distance"], 0.5)
+        self.assertAlmostEqual(r["min_pair_distance_running"], during)                                      # after: frozen
+
     def test_update_status_reads_emergency_and_fence_breached(self):
         tr = synth.make_tracker()
         tr.update_status({"drones": [{"state": "ACTIVE"}], "mission_active": True, "cbf": {"emergency": True}, "fence_breached": True})
@@ -279,7 +299,7 @@ class AsymmetricRun(unittest.TestCase):
     def test_running_min_is_final_closest_and_above_current_afterwards(self):
         run = self.col("min_pair_distance_running")
         self.assertAlmostEqual(run[-1], 0.2987, places=3)
-        self.assertTrue(np.all(np.diff(run) <= 1e-9))
+        self.assertTrue(np.all(np.diff(run[~np.isnan(run)]) <= 1e-9))
         self.assertGreater(self.col("min_pair_distance")[-1], run[-1] + 0.3)
 
     def test_speed_from_twist_at_two_instants(self):
@@ -310,7 +330,7 @@ class TrackerAndCsv(unittest.TestCase):
         cols, rows = synth.frames()
         i = cols.index("min_pair_distance_running")
         self.assertAlmostEqual(rows[-1, i], 1.25, places=2)
-        self.assertTrue(np.all(np.diff(rows[:, i]) <= 1e-9))
+        self.assertTrue(np.all(np.diff(rows[~np.isnan(rows[:, i]), i]) <= 1e-9))
 
     def test_csv_roundtrip_keeps_meta_and_columns(self):
         cols, rows = synth.frames()

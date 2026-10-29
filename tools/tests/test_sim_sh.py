@@ -52,6 +52,16 @@ class SimSh(unittest.TestCase):
         self.assertLess(src.index("commander"), src.index("arm_abort_trap"))        # trap armed only from the commander phase on
         self.assertLess(src.index('cmd_figures "$NAME" "$RUN"'), src.rindex("render_report"))   # figure exists before the record is rendered
 
+    def test_failure_and_abort_paths_clean_up(self):
+        src = SIM.read_text()
+        for n in ("FAIL_HOOK=metrics_stop", "FAIL_RC=4", "REPORT_HOOK=finish_report", "pkill -f 'python3 metrics_node.py'", 'pkill -f "fly', "REPORT ERROR", "HEADLINE: "):
+            self.assertIn(n, src, n)
+        self.assertNotIn("min pairwise distance", src)                                   # the banner headline comes from report.py (ctx headline_row)
+        self.assertNotIn('"$OUT/.metrics_stopped"', src); self.assertNotIn('"$OUT/.report_out"', src)
+        self.assertLess(src.index("pkill -f 'python3 metrics_node.py' >/dev/null"), src.index("METRICS_STARTED=1"))   # old node killed before a new one starts
+        self.assertLess(src.index("OBS file name (Enter to skip)"), src.index("PHASE=metrics_stop"))                # node stops AFTER the second pause
+        self.assertIn("tail -n0 -f $S/metrics_node.log", src)
+
     def test_figures_needs_two_args(self):
         self.assertEqual(run("figures", "crossing").returncode, 2)
         self.assertEqual(run("figures").returncode, 2)

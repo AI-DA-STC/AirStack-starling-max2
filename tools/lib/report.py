@@ -10,8 +10,9 @@ DURATION_S BASELINE); <test_dir>/gates.py gives the rows:
     ledger_sentence(rows, ctx, verdict) -> str
     figure_caption(ctx) -> str            # 2-4 sentences, <= 380 chars, without the leading "Figure 1."
 
-ctx keys read here: headline (label), headline_row (check-name prefix of the gate row whose measured cell is the VERDICT banner's headline; printed as the `HEADLINE:` line), reading (2-3 sentences of results text above the figure, linking [Figure 1](#fig-1)), crosscheck (list[CrossRow] | None), node_log_tail, test_stdout, caveats, tuning.
-Every gate row is PASS / FAIL / UNVERIFIED; an info row never passes or fails the run; missing evidence is UNVERIFIED.
+ctx keys read here: headline (label), headline_row (check-name prefix of the gate row whose measured cell is the VERDICT banner's headline; printed as the `HEADLINE:` line), reading (2-3 sentences of results text above the figure, linking [Figure 1](#fig-1)), crosscheck (list[CrossRow] | None), node_log_tail, test_stdout, caveats (then <run_dir>/caveats.txt, one per line), tuning.
+Every gate row is PASS / FAIL / UNVERIFIED; an info row never passes or fails the run; missing evidence is UNVERIFIED;
+no gate row at all is INCOMPLETE.
 Exit: 0 PASS, 2 INCOMPLETE, 1 FAIL, 3 ABORTED (<run_dir>/aborted.txt exists). Writes <record>.md and one line in
 <run_dir>/verdicts.log. Sim-only (CLAUDE.md iron rule 9)."""
 from __future__ import annotations
@@ -55,6 +56,8 @@ def overall_verdict(rows, aborted: bool = False) -> str:
     if aborted:
         return "ABORTED"
     gates = [r for r in rows if r.gate]
+    if not gates:                       # nothing was judged: never a PASS
+        return "INCOMPLETE"
     if any(r.verdict == "FAIL" for r in gates):
         return "FAIL"
     if any(r.verdict == "UNVERIFIED" for r in gates):
@@ -152,7 +155,8 @@ def evidence_rows(rows, out, heavy, bag_prefix, extra_files=()):
     out = pathlib.Path(out)
     heavy = pathlib.Path(heavy) if heavy is not None else None
     crit = f"bag dir {bag_prefix}_* with metadata.yaml under the heavy folder" + (f", and {', '.join(extra_files)} in the run folder" if extra_files else "")
-    bagdir = next((p for p in sorted(heavy.glob(bag_prefix + "_*")) if p.is_dir()), None) if heavy is not None and heavy.is_dir() else None
+    bags = [p for p in heavy.glob(bag_prefix + "_*") if p.is_dir()] if heavy is not None and heavy.is_dir() else []
+    bagdir = max(bags, key=lambda p: p.stat().st_mtime) if bags else None      # newest: an older bag never stands in
     if bagdir is None:
         row(rows, "rosbag copied + readable", crit, f"n/a — no {bag_prefix}_* dir under {heavy if heavy is not None else 'the heavy folder'}", "-", None)
     else:
@@ -180,6 +184,29 @@ def evidence_rows(rows, out, heavy, bag_prefix, extra_files=()):
     row(rows, "code that ran", "informational (run_meta.txt head vs git HEAD at report time)", code, "-", None, gate=False)
 
 
+def coverage_row(rows, out, cov, stale_s: float, why: str = ""):
+    """Gate on row coverage (metrics_core.coverage dict, or None + why): rows exist only when the trigger drone's odometry
+    arrives, so a hole or a dead node leaves no NaN behind. PASS = largest phase-2 gap <= stale_s, >= 1 landing row and
+    no out/node_died.txt (written by sim.sh when the node was already dead at stop); otherwise UNVERIFIED with the reasons."""
+    crit = f"largest `t_s` gap over the phase-2 rows ≤ {stale_s:g} s, ≥ 1 landing (`phase` 3) row, metrics node alive at stop"
+    died = read(out, "node_died.txt").strip()
+    probs = []
+    if cov is None:
+        probs.append(f"no coverage — {why or 'metrics.csv unreadable'}")
+    else:
+        g = cov["max_gap_s"]
+        if not g <= stale_s:
+            probs.append("no phase-2 rows" if cov["phase2_rows"] == 0 else f"largest phase-2 gap {g:.2f} s at t={cov['gap_at_s']:.1f} s")
+        if cov["phase3_rows"] < 1:
+            probs.append("no landing rows")
+    if died:
+        probs.append(f"metrics node died ({died.splitlines()[0]}; node_died.txt)")
+    if probs:
+        return row(rows, "coverage: rows through the window", crit, "; ".join(probs), "-", None)
+    return row(rows, "coverage: rows through the window", crit,
+               f"largest phase-2 gap {cov['max_gap_s']:.2f} s; {cov['phase2_rows']} phase-2 rows, {cov['phase3_rows']} landing rows", "-", True)
+
+
 def crosscheck_rows(rows, cr, headline: str):
     crit = f"live metrics.csv agrees with the rosbag recompute ({headline} within tolerance; flags by count)"
     if cr is None:
@@ -190,7 +217,8 @@ def crosscheck_rows(rows, cr, headline: str):
         return
     parts = [f"{c.name} Σ {c.sum_live:g} vs {c.sum_bag:g}" if c.kind == "flag" else f"{c.name} Δmax {c.max_abs_diff:g} (tol {c.tol:g})" for c in cr]
     unp = max(c.unpaired_frac for c in cr)
-    row(rows, "live vs bag recompute", crit, "; ".join(parts) + f"; unpaired {unp * 100:.1f} %", "-", all(c.ok for c in cr))
+    unb = max(c.unpaired_bag_frac for c in cr)
+    row(rows, "live vs bag recompute", crit, "; ".join(parts) + f"; unpaired {unp * 100:.1f} %; bag unpaired {unb * 100:.1f} %", "-", all(c.ok for c in cr))
 
 
 # ----------------------------------------------------------------------------- verdict log + record
@@ -234,8 +262,15 @@ def fit_caption(caption: str) -> str:
 
 
 def fill_ctx(ctx, out):
-    """Record fields no gates.py has to fill: commander tuning (status_pre.json), flight script stdout, metrics node log tail."""
+    """Record fields no gates.py has to fill: commander tuning (status_pre.json), flight script stdout, metrics node log tail,
+    and the run's caveats.txt (one per line: stack.sh's caveat() and hand-written ones) after the gates' own, de-duplicated."""
     out = pathlib.Path(out)
+    cav = list(ctx.get("caveats") or [])
+    for line in read(out, "caveats.txt").splitlines():
+        if line.strip() and line.strip() not in cav:
+            cav.append(line.strip())
+    if cav:
+        ctx["caveats"] = cav
     if not ctx.get("tuning"):
         try:
             t = json.loads(read(out, "status_pre.json")).get("tuning")

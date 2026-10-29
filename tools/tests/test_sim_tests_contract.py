@@ -7,6 +7,8 @@ import sys
 import tempfile
 import unittest
 
+import numpy as np
+
 HERE = pathlib.Path(__file__).resolve().parent
 TOOLS = HERE.parent
 for p in (HERE, TOOLS, TOOLS / "live", TOOLS / "lib"):
@@ -44,6 +46,7 @@ def make_run(tmp, **frames_kw):
     (out / "armed_post.txt").write_text("".join("drone_%d armed: false\n" % i for i in (1, 2, 3)))
     (out / "landing_evidence.txt").write_text("".join("[swarm_commander-2] drone_%d: landed, disarmed (attempt 1)\n" % i for i in (1, 2, 3)))
     (out / "run_meta.txt").write_text("head_short=abc1234 dirty_tools=0 started=2026-10-29T12:00:00 tz=+08\n")
+    frames_kw.setdefault("land_at", 9.5)                 # 20 landing (phase-3) rows after the window
     cols, rows = synth.frames(**frames_kw)
     synth.write_csv(out / "metrics.csv", cols, rows)
     shutil.copy(out / "metrics.csv", out / "metrics_bag.csv")
@@ -152,6 +155,125 @@ class Crossing(unittest.TestCase):
             self.assertIn("NEAR", R.ledger_row(20, "2026-10-29", G.ledger_sentence(rows, ctx, "PASS"), "r", "NEAR-787"))
             self.assertIn("min pairwise distance 1.25 m", G.ledger_sentence(rows, ctx, "PASS"))
             self.assertIn("[Figure 1](#fig-1)", ctx["reading"])
+
+
+def rewrite_csvs(out, live_rows=None, bag_rows=None, **frames_kw):
+    """Rewrite metrics.csv / metrics_bag.csv from synthetic frames; live_rows / bag_rows = fn(cols, rows) -> rows."""
+    frames_kw.setdefault("land_at", 9.5)
+    cols, rows = synth.frames(**frames_kw)
+    synth.write_csv(out / "metrics.csv", cols, live_rows(cols, rows) if live_rows else rows)
+    synth.write_csv(out / "metrics_bag.csv", cols, bag_rows(cols, rows) if bag_rows else rows)
+
+
+def drop_t(lo, hi):
+    def fn(cols, rows):
+        t = rows[:, cols.index("t_s")]
+        return rows[~((t > lo + 1e-9) & (t < hi - 1e-9))]
+    return fn
+
+
+class Coverage(unittest.TestCase):
+    def test_clean_run_coverage_row_passes(self):
+        with tempfile.TemporaryDirectory() as d:
+            out, heavy, env = make_run(d)
+            rows, _ = G.build_rows(out, heavy, env)
+            self.assertEqual(verdict_of(rows, "coverage"), "PASS")
+            self.assertEqual(R.overall_verdict(rows), "PASS")
+
+    def test_gap_in_phase_2_is_incomplete(self):
+        with tempfile.TemporaryDirectory() as d:
+            out, heavy, env = make_run(d)
+            rewrite_csvs(out, live_rows=drop_t(4.0, 5.0), bag_rows=drop_t(4.0, 5.0))   # the bag has the same hole: cross-check passes
+            rows, _ = G.build_rows(out, heavy, env)
+            self.assertEqual(verdict_of(rows, "live vs bag recompute"), "PASS")
+            self.assertEqual(verdict_of(rows, "coverage"), "UNVERIFIED")
+            self.assertIn("largest phase-2 gap 1.00 s", next(r.measured for r in rows if r.check.startswith("coverage")))
+            self.assertEqual(R.overall_verdict(rows), "INCOMPLETE")
+
+    def test_no_landing_rows_is_incomplete(self):
+        with tempfile.TemporaryDirectory() as d:
+            out, heavy, env = make_run(d, land_at=None)
+            rows, _ = G.build_rows(out, heavy, env)
+            self.assertEqual(verdict_of(rows, "coverage"), "UNVERIFIED")
+            self.assertIn("no landing rows", next(r.measured for r in rows if r.check.startswith("coverage")))
+            self.assertEqual(R.overall_verdict(rows), "INCOMPLETE")
+
+    def test_node_died_is_incomplete(self):
+        with tempfile.TemporaryDirectory() as d:
+            out, heavy, env = make_run(d)
+            (out / "node_died.txt").write_text("found_dead=2026-10-29T22:55:00+08:00\nTraceback (most recent call last):\n")
+            rows, _ = G.build_rows(out, heavy, env)
+            self.assertEqual(verdict_of(rows, "coverage"), "UNVERIFIED")
+            self.assertIn("metrics node died", next(r.measured for r in rows if r.check.startswith("coverage")))
+            self.assertEqual(R.overall_verdict(rows), "INCOMPLETE")
+
+    def test_bag_unpaired_rows_make_crosscheck_unverified(self):
+        with tempfile.TemporaryDirectory() as d:
+            out, heavy, env = make_run(d)
+            rewrite_csvs(out, live_rows=lambda c, r: r[::2])          # bag has twice the rows; live gap 0.05 s stays covered
+            rows, _ = G.build_rows(out, heavy, env)
+            self.assertEqual(verdict_of(rows, "coverage"), "PASS")
+            self.assertEqual(verdict_of(rows, "live vs bag recompute"), "UNVERIFIED")
+            self.assertIn("bag unpaired 50.", next(r.measured for r in rows if r.check.startswith("live vs bag")))
+            self.assertEqual(R.overall_verdict(rows), "INCOMPLETE")
+
+    def test_template_has_the_coverage_row(self):
+        TG = _load("template_gates_t", TEMPLATE / "gates.py")
+        with tempfile.TemporaryDirectory() as d:
+            out, heavy, env = make_run(d)
+            env["BAG_PREFIX"] = "crossing"
+            rows, _ = TG.build_rows(out, heavy, env)
+            self.assertEqual(verdict_of(rows, "coverage"), "PASS")
+            (out / "node_died.txt").write_text("found_dead=2026-10-29T22:55:00+08:00\n")
+            rows, _ = TG.build_rows(out, heavy, env)
+            self.assertEqual(verdict_of(rows, "coverage"), "UNVERIFIED")
+            self.assertEqual(R.overall_verdict(rows), "INCOMPLETE")
+
+
+class MeasuredNamesColumns(unittest.TestCase):
+    def test_every_csv_gate_cell_names_its_columns(self):
+        with tempfile.TemporaryDirectory() as d:
+            out, heavy, env = make_run(d)
+            rows, _ = G.build_rows(out, heavy, env)
+            m = {r.check: r.measured for r in rows}
+            self.assertRegex(m["min pairwise distance ≥ 1.10 m (2r)"], r"^`min_pair_distance`: 1\.25 m \(margin \+0\.15 m to the gate; pair `d_\d\d` at t=")
+            self.assertTrue(m["vs ledger #4"].startswith("`min_pair_distance` − 1.02 m: +0.23 m"), m["vs ledger #4"])
+            self.assertTrue(m["far goal reached per drone"].startswith("`goal_dist_drone_1..3`: drone_1 "), m["far goal reached per drone"])
+            self.assertTrue(m["peak speed ≤ 4.2 m/s"].startswith("`speed_drone_1..3`: "), m["peak speed ≤ 4.2 m/s"])
+            self.assertTrue(m["emergency samples"].startswith("`emergency`: 0 CSV rows flagged"), m["emergency samples"])
+            self.assertTrue(m["fence-breach samples"].startswith("`fence_breached`: 0 CSV rows flagged"), m["fence-breach samples"])
+            self.assertTrue(m["CBF active on ≥ 1 drone at least once"].startswith("`cbf_drone_1..3`: drone_1, drone_3 seen"), m["CBF active on ≥ 1 drone at least once"])
+            self.assertIn("`t_s`", next(r.criterion for r in rows if r.check.startswith("coverage")))
+
+    def test_caption_says_wall_clock(self):
+        self.assertIn("against wall-clock time", G.figure_caption({}))
+        self.assertLessEqual(len("*Figure 1. " + G.figure_caption({}) + "*"), 400)
+
+
+class AllPhaseMin(unittest.TestCase):
+    def test_info_row_finds_the_minimum_outside_the_window(self):
+        def dip(cols, rows):
+            rows = rows.copy()
+            k = int(np.flatnonzero(rows[:, cols.index("phase")] == 3)[5])
+            rows[k, cols.index("d_13")] = 0.76
+            rows[k, cols.index("min_pair_distance")] = 0.76
+            return rows
+        with tempfile.TemporaryDirectory() as d:
+            out, heavy, env = make_run(d)
+            rewrite_csvs(out, live_rows=dip, bag_rows=dip)
+            rows, _ = G.build_rows(out, heavy, env)
+            r = next(r for r in rows if r.check == "min pairwise distance, all phases")
+            self.assertFalse(r.gate); self.assertEqual(r.verdict, "info")
+            self.assertIn("0.76 m", r.measured); self.assertIn("d_13", r.measured); self.assertIn("landing", r.measured)
+            self.assertIn("1.25", R.headline_text(rows, {"headline_row": "min pairwise distance"}))   # headline stays the phase-2 gate
+            self.assertEqual(verdict_of(rows, "min pairwise distance"), "PASS")                      # the window gate is unchanged
+
+    def test_info_row_in_the_window_says_so(self):
+        with tempfile.TemporaryDirectory() as d:
+            out, heavy, env = make_run(d)
+            rows, _ = G.build_rows(out, heavy, env)
+            r = next(r for r in rows if r.check == "min pairwise distance, all phases")
+            self.assertIn("1.25 m", r.measured); self.assertIn("test window", r.measured)
 
 
 class Landing(unittest.TestCase):

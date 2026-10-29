@@ -77,6 +77,10 @@ def build_rows(out, heavy, env):
         meas, ok = fn(run)
         return R.row(rows, check, crit, meas, base, ok)
 
+    # ---- coverage: a trigger-drone gap or a dead node leaves no NaN row, so the gates below would judge partial data
+    has_tp = run is not None and "t_s" in run.cols and "phase" in run.cols
+    R.coverage_row(rows, out, M.coverage(run.cols, run.data) if has_tp else None, M.STALE_S, why or "metrics.csv lacks t_s/phase")
+
     # ---- minimum pairwise distance
     def f_min(r):
         mp = r.col("min_pair_distance", r.p2)
@@ -85,13 +89,21 @@ def build_rows(out, heavy, env):
         pair = PAIRS[int(np.argmin([r.col(p, r.p2)[i] for p in PAIRS]))]
         m = float(mp[i])
         V["min_d"], V["min_pair"], V["min_t"] = m, pair, t
-        return "%.2f m (margin %+.2f m to the gate; pair %s at t=%.1f s)" % (m, m - GATE_2R, pair, t), m >= GATE_2R
+        return "`min_pair_distance`: %.2f m (margin %+.2f m to the gate; pair `%s` at t=%.1f s)" % (m, m - GATE_2R, pair, t), m >= GATE_2R
     gate("min pairwise distance ≥ 1.10 m (2r)", "≥ 1.10 m, binary (live 40 Hz odometry, phase 2)",
          "#4: 1.02 m (0.08 m inside, 10-19 asset, 3 m/s cap, no bag)", f_min, ("min_pair_distance",) + PAIRS)
     if "min_d" in V:
-        R.row(rows, "vs ledger #4", "informational (min distance − 1.02 m)", "%+.2f m" % (V["min_d"] - LEDGER4), "#4: 1.02 m", None, gate=False)
+        R.row(rows, "vs ledger #4", "informational (min distance − 1.02 m)", "`min_pair_distance` − 1.02 m: %+.2f m" % (V["min_d"] - LEDGER4), "#4: 1.02 m", None, gate=False)
     else:
         R.row(rows, "vs ledger #4", "informational (min distance − 1.02 m)", "n/a — no minimum distance", "#4: 1.02 m", None, gate=False)
+
+    # ---- all-phase minimum (info only, F8 ruling: the owner decides whether to gate it)
+    if run is not None and all(p in run.cols for p in PAIRS) and len(run.data):
+        R.row(rows, "min pairwise distance, all phases", "informational (every row: takeoff, window, landing; not a gate)",
+              _all_phase_min(run), "-", None, gate=False)
+    else:
+        R.row(rows, "min pairwise distance, all phases", "informational (every row: takeoff, window, landing; not a gate)",
+              "n/a — %s" % (why or "metrics.csv lacks d_12/d_13/d_23"), "-", None, gate=False)
 
     # ---- flags: emergency, fence
     def f_flag(name, key):
@@ -99,7 +111,7 @@ def build_rows(out, heavy, env):
             c = r.col(name)
             n = int(np.nansum(c))
             V[key] = n
-            return "%d CSV rows flagged (≈ 8 per 5 Hz status sample)" % n, n == 0
+            return "`%s`: %d CSV rows flagged (≈ 8 per 5 Hz status sample)" % (name, n), n == 0
         return fn
     gate("emergency samples", "0 (5 Hz status string)", "-", f_flag("emergency", "emerg"), ("emergency",))
     gate("fence-breach samples", "0 (5 Hz status string)", "-", f_flag("fence_breached", "breach"), ("fence_breached",))
@@ -112,7 +124,7 @@ def build_rows(out, heavy, env):
             anyc |= np.nan_to_num(r.col("cbf_" + d)) > 0
         secs = float(anyc.sum() * r.dt())
         V["cbf_drones"], V["cbf_s"] = cs, secs
-        return ("%s seen; %.1f s active (any drone)" % (", ".join(cs), secs)) if cs else "nobody seen; 0.0 s active", bool(cs)
+        return "`cbf_drone_1..3`: " + (("%s seen; %.1f s active (any drone)" % (", ".join(cs), secs)) if cs else "nobody seen; 0.0 s active"), bool(cs)
     gate("CBF active on ≥ 1 drone at least once", "/svg/cbf_active names ≥ 1 drone at least once (20 Hz)", "-", f_cbf,
          tuple("cbf_" + d for d in DRONES))
 
@@ -120,7 +132,7 @@ def build_rows(out, heavy, env):
     def f_goal(r):
         best = {d: float(np.nanmin(r.col("goal_dist_" + d, r.p2))) for d in DRONES}
         V["goal"] = best
-        return "; ".join("%s %.2f m" % (d, best[d]) for d in DRONES), all(v <= GATE_GOAL for v in best.values())
+        return "`goal_dist_drone_1..3`: " + "; ".join("%s %.2f m" % (d, best[d]) for d in DRONES), all(v <= GATE_GOAL for v in best.values())
     gate("far goal reached per drone", "closest approach ≤ 0.40 m (commander arrival radius; spec draft said 0.3 m)", "-", f_goal,
          tuple("goal_dist_" + d for d in DRONES))
 
@@ -129,7 +141,7 @@ def build_rows(out, heavy, env):
         pk = {d: float(np.nanmax(r.col("speed_" + d))) for d in DRONES}
         m = max(pk.values())
         V["peak"] = m
-        return "%.2f m/s (%s)" % (m, ", ".join("%s %.2f" % (d, pk[d]) for d in DRONES)), m <= GATE_SPEED
+        return "`speed_drone_1..3`: %.2f m/s (%s)" % (m, ", ".join("%s %.2f" % (d, pk[d]) for d in DRONES)), m <= GATE_SPEED
     gate("peak speed ≤ 4.2 m/s", "≤ 4.2 m/s (cap 4.0 + 5 %), over every row including takeoff and landing (conservative)", "-", f_speed, tuple("speed_" + d for d in DRONES))
 
     # ---- landing: commander ACKs, then MAVROS state
@@ -173,6 +185,18 @@ def build_rows(out, heavy, env):
     return rows, ctx
 
 
+def _all_phase_min(r):
+    """nanmin over d_12/d_13/d_23 across every row, with the pair, t and the phase it fell in."""
+    d = np.column_stack([r.col(p) for p in PAIRS])
+    if np.all(np.isnan(d)):
+        return "n/a — every pair distance is NaN"
+    i, j = np.unravel_index(int(np.nanargmin(d)), d.shape)
+    ph = int(r.col("phase")[i])
+    seen2 = bool(np.any(r.col("phase")[:i] == 2))
+    where = {1: "takeoff", 2: "test window", 3: "landing"}.get(ph, "after landing" if seen2 else "before takeoff")
+    return "`d_12`/`d_13`/`d_23`: %.2f m (%s at t=%.1f s, %s)" % (d[i, j], PAIRS[j], float(r.col("t_s")[i]), where)
+
+
 def _series():
     import importlib.util
     spec = importlib.util.spec_from_file_location("crossing_metrics_for_gates", pathlib.Path(__file__).with_name("metrics.py"))
@@ -213,6 +237,6 @@ def ledger_sentence(rows, ctx, verdict):
 
 
 def figure_caption(ctx):
-    return ("Pairwise distances d_12, d_13 and d_23 and their running minimum against time, with the 1.10 m (2r) gate line and the "
+    return ("Pairwise distances d_12, d_13 and d_23 and their running minimum against wall-clock time, with the 1.10 m (2r) gate line and the "
             "0.55 m (r) line; shaded bands mark the takeoff and land phases. Drawn from the run's metrics.csv by "
             "`tools/sim.sh figures crossing <run>`.")

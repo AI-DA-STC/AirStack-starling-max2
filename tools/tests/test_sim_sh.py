@@ -59,7 +59,7 @@ class SimSh(unittest.TestCase):
         self.assertNotIn("min pairwise distance", src)                                   # the banner headline comes from report.py (ctx headline_row)
         self.assertNotIn('"$OUT/.metrics_stopped"', src); self.assertNotIn('"$OUT/.report_out"', src)
         self.assertLess(src.index("pkill -f 'python3 metrics_node.py' >/dev/null"), src.index("METRICS_STARTED=1"))   # old node killed before a new one starts
-        self.assertLess(src.index("OBS file name (Enter to skip)"), src.index("PHASE=metrics_stop"))                # node stops AFTER the second pause
+        self.assertLess(src.index("OBS video path, repo-relative, e.g. videos/<file>.mkv (Enter to skip)"), src.index("PHASE=metrics_stop"))   # node stops AFTER the second pause
         self.assertIn("tail -n0 -f $S/metrics_node.log", src)
 
     def test_lock_present_refuses_before_any_phase(self):
@@ -83,7 +83,81 @@ class SimSh(unittest.TestCase):
         r = subprocess.run(["bash", "-c", body], capture_output=True, text=True, timeout=20)
         self.assertIn("rc=0", r.stdout, r.stderr); self.assertNotIn("DOCKER", r.stdout); self.assertNotIn("NX", r.stdout)
         # the scratch dir is only removed when this run copied files in
-        self.assertIn('[ "${OWN_SCRATCH:-0}" = 1 ] && docker exec', src)
+        self.assertTrue('[ "${OWN_SCRATCH:-0}" = 1 ] && [ "${STACK_UP:-0}" != 1 ] && docker exec' in src)
+
+    def _fn(self, name, nxt):
+        src = SIM.read_text()
+        return src[src.index(name + "() {"):src.index(nxt)]
+
+    def test_metrics_stop_on_a_dead_node_writes_node_died_and_a_caveat(self):
+        fn = self._fn("metrics_stop", "metrics_collect() {")
+        with tempfile.TemporaryDirectory() as tmp:
+            body = ('docker(){ case "$*" in *tail*) printf "l1\\nl2\\nl3\\nl4\\nTraceback boom\\n";; esac; }; alive(){ return 1; }; stop_tail(){ :; }; '
+                    'nx(){ :; }; say(){ :; }; caveat(){ echo "$*" >> "$OUT/caveats.txt"; }; metrics_collect(){ echo COLLECTED; }; ' + fn +
+                    f'\nOUT={tmp}; HEAVY={tmp}; R=r; S=/tmp/s; METRICS_STARTED=1; metrics_stop; echo rc=$?')
+            r = subprocess.run(["bash", "-c", body], capture_output=True, text=True, timeout=20)
+            self.assertIn("rc=0", r.stdout, r.stderr); self.assertIn("COLLECTED", r.stdout)
+            died = pathlib.Path(tmp, "node_died.txt").read_text()
+            self.assertRegex(died.splitlines()[0], r"^found_dead=\d{4}-\d\d-\d\dT"); self.assertIn("Traceback boom", died)
+            self.assertIn("metrics node was not running at stop", pathlib.Path(tmp, "caveats.txt").read_text())
+
+    def test_metrics_stop_on_a_live_node_writes_no_node_died(self):
+        fn = self._fn("metrics_stop", "metrics_collect() {")
+        with tempfile.TemporaryDirectory() as tmp:
+            body = ('A=$(mktemp); docker(){ :; }; alive(){ [ ! -s $A ] && { echo x > $A; return 0; }; return 1; }; stop_tail(){ :; }; '
+                    'nx(){ :; }; say(){ :; }; caveat(){ echo "$*" >> "$OUT/caveats.txt"; }; metrics_collect(){ echo COLLECTED; }; ' + fn +
+                    f'\nOUT={tmp}; HEAVY={tmp}; R=r; S=/tmp/s; METRICS_STARTED=1; metrics_stop; echo rc=$?')
+            r = subprocess.run(["bash", "-c", body], capture_output=True, text=True, timeout=30)
+            self.assertIn("COLLECTED", r.stdout, r.stderr)
+            self.assertFalse(pathlib.Path(tmp, "node_died.txt").exists()); self.assertFalse(pathlib.Path(tmp, "caveats.txt").exists())
+
+    def test_fly_script_is_stopped_before_the_landing_not_by_metrics_stop(self):
+        src = SIM.read_text()
+        self.assertTrue("PRE_LAND_HOOK=stop_fly" in src, "sim.sh does not set PRE_LAND_HOOK=stop_fly")
+        self.assertIn('pkill -f "fly\\\\.sh"', self._fn("stop_fly", "metrics_stop() {"))
+        self.assertNotIn("fly", self._fn("metrics_stop", "metrics_collect() {").split("\n", 1)[1])
+        fly = src[src.index("PHASE=fly"):src.index("PHASE=metrics_stop")]
+        self.assertLess(fly.index("stop_fly"), fly.index("land_all_and_wait"))       # the overrun path stops fly.sh before landing
+
+    def test_finish_report_keeps_the_scratch_dir_while_the_stack_is_up(self):
+        fn = SIM.read_text().split("finish_report() {", 1)[1].split("\n", 1)[0]
+        self.assertIn('"${STACK_UP:-0}" != 1', fn)
+
+    def _render(self, report_py):
+        fn = self._fn("render_report", "# finish_report")
+        with tempfile.TemporaryDirectory() as tmp:
+            lib = pathlib.Path(tmp, "tools", "lib"); lib.mkdir(parents=True)
+            (lib / "report.py").write_text(report_py)
+            body = ('say(){ echo "SAY: $*"; }; note(){ :; }; ' + fn +
+                    f'\nREPO={tmp}; OUT={tmp}; HEAVY={tmp}; SIM_TESTS_DIR={tmp}; NAME=n; LEDGER=1; ISSUE=NEAR-1; render_report; echo REPORT_RC=$REPORT_RC')
+            return subprocess.run(["bash", "-c", body], capture_output=True, text=True, timeout=20)
+
+    def test_banner_skips_a_stderr_warning_printed_first(self):
+        r = self._render("import sys\nprint('warning: figure caption is 420 chars (room 388); trimmed', file=sys.stderr, flush=True)\n"
+                         "print('PASS: /x/r_record.md'); print('HEADLINE: 1.25 m (margin +0.15 m)')\n")
+        self.assertIn("VERDICT: PASS — 1.25 m (margin +0.15 m)", r.stdout, r.stdout + r.stderr)
+        self.assertIn("REPORT_RC=0", r.stdout)
+
+    def test_banner_without_a_verdict_line_is_report_error(self):
+        r = self._render("import sys\nprint('Traceback: boom', file=sys.stderr); sys.exit(1)\n")
+        self.assertIn("REPORT ERROR", r.stdout); self.assertIn("REPORT_RC=4", r.stdout)
+
+    def test_used_run_name_refuses_before_lock_and_docker(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            os.makedirs(os.path.join(tmp, "tests", "foo")); os.makedirs(os.path.join(tmp, "bin"))
+            fake = os.path.join(tmp, "bin", "docker")
+            open(fake, "w").write("#!/bin/sh\ntouch %s/docker_called\n" % tmp); os.chmod(fake, 0o755)
+            env = dict(os.environ, HOME=tmp, SIM_TESTS_DIR=os.path.join(tmp, "tests"), PATH=os.path.join(tmp, "bin") + ":" + os.environ["PATH"])
+            args = ("test", "foo", "--headless", "--ledger", "20", "--issue", "NEAR-787")
+            self.assertTrue((SIM.parents[1] / "docs" / "record" / "sim_crossing_dry1_record.md").exists())
+            r = run(*args, "sim_crossing_dry1", env=env)                                       # a record of that name exists
+            self.assertEqual(r.returncode, 2, r.stdout + r.stderr); self.assertIn("run name already used — choose a new one", r.stderr)
+            os.makedirs(os.path.join(tmp, "flight_logs", "sim", "r_new_x")); open(os.path.join(tmp, "flight_logs", "sim", "r_new_x", "a.ulg"), "w").write("x")
+            r = run(*args, "r_new_x", env=env)                                                 # the heavy folder already holds files
+            self.assertEqual(r.returncode, 2, r.stdout + r.stderr); self.assertIn("run name already used", r.stderr)
+            self.assertFalse(os.path.exists(os.path.join(tmp, "docker_called")))
+            self.assertFalse(os.path.exists(os.path.join(tmp, "flight_logs", "sim", ".sim_test.lock")))
+            self.assertNotRegex(r.stdout, r"^\[\d\d:\d\d:\d\d")
 
     def test_figures_needs_two_args(self):
         self.assertEqual(run("figures", "crossing").returncode, 2)

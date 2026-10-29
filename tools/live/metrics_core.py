@@ -19,7 +19,11 @@ Definitions
   cross-check   live rows are paired to bag rows by mutual-nearest t_s within t_tol.
                 Continuous column: ok = max abs diff <= tol. Flag column (0/1): compared by
                 sample count, ok = |sum_live - sum_bag| <= max(2, 1 % of paired rows).
-                More than 5 % unpaired live rows: ok is False for every row (UNVERIFIED).
+                More than 5 % unpaired live rows, or more than 5 % unpaired bag rows, or no pair at all:
+                ok is False for every row (UNVERIFIED).
+  coverage      rows exist only when the trigger drone's odometry arrives, so a trigger-drone gap or a dead node
+                leaves no NaN row behind. coverage() reports the largest t_s step over the phase-2 rows plus the
+                row on each side (a hole across the start or end of the window counts) and the phase-2/3 row counts.
 """
 import itertools
 import math
@@ -72,6 +76,7 @@ class CrossRow:
     paired: int
     unpaired_frac: float
     ok: bool
+    unpaired_bag_frac: float = 0.0
 
 
 # ---------------------------------------------------------------- geometry
@@ -367,9 +372,11 @@ def _pair_rows(t_live, t_bag, t_tol):
 
 def crosscheck(live_cols, live, bag_cols, bag, series, t_tol=0.05):
     li, bi = _pair_rows(live[:, live_cols.index("t_s")], bag[:, bag_cols.index("t_s")], t_tol)
-    n_live = len(live)
+    n_live, n_bag = len(live), len(bag)
     unpaired = 1.0 - (len(li) / n_live if n_live else 0.0)
-    fail_all = (n_live - len(li)) > UNPAIRED_MAX * n_live
+    unpaired_bag = 1.0 - (len(bi) / n_bag if n_bag else 0.0)
+    fail_all = (len(li) == 0 or (n_live - len(li)) > UNPAIRED_MAX * n_live
+                or (n_bag - len(bi)) > UNPAIRED_MAX * n_bag)
     specs = [(s.name, s.tol, s.kind) for s in series] + [(s.name + "_running", s.tol, "continuous") for s in series if s.running_min]
     out = []
     for name, tol, kind in specs:
@@ -385,7 +392,25 @@ def crosscheck(live_cols, live, bag_cols, bag, series, t_tol=0.05):
             ok = abs(sl - sb) <= max(2.0, 0.01 * len(li))
         else:
             ok = diff <= tol
-        out.append(CrossRow(name, tol, kind, diff, sl, sb, int(len(li)), float(unpaired), bool(ok and not fail_all)))
+        out.append(CrossRow(name, tol, kind, diff, sl, sb, int(len(li)), float(unpaired), bool(ok and not fail_all), float(unpaired_bag)))
+    return out
+
+
+def coverage(cols, rows):
+    """Row coverage of the test window: {max_gap_s, gap_at_s, phase2_rows, phase3_rows}.
+
+    max_gap_s = largest t_s step between consecutive rows from the row before the first phase-2 row to the row after
+    the last one (inf with fewer than two such rows); gap_at_s = t_s where that step starts (nan if none)."""
+    ph = rows[:, cols.index("phase")] if len(rows) else np.array([])
+    t = rows[:, cols.index("t_s")] if len(rows) else np.array([])
+    idx = np.flatnonzero(ph == 2)
+    out = {"phase2_rows": int(len(idx)), "phase3_rows": int(np.sum(ph == 3)), "max_gap_s": math.inf, "gap_at_s": math.nan}
+    if len(idx):
+        span = t[max(0, idx[0] - 1):min(len(t), idx[-1] + 2)]
+        if len(span) > 1:
+            d = np.diff(span)
+            k = int(np.argmax(d))
+            out["max_gap_s"], out["gap_at_s"] = float(d[k]), float(span[k])
     return out
 
 

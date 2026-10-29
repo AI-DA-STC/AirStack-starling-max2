@@ -100,6 +100,31 @@ class AbortPath(unittest.TestCase):
             r = run_stub('rx(){ %s; }; land_all_and_wait(){ echo CALLED land; return 0; }; copy_ulogs(){ :; }; down(){ :; }; arm_abort_trap; kill -INT $$; sleep 1' % out)
             self.assertIn("CALLED land", r.stdout, out); self.assertNotIn("aborted before flight", r.stdout, out)
 
+    def test_pre_land_hook_runs_before_the_flight_check_and_the_land(self):
+        body = ('L=$(mktemp); pre(){ echo PRE >> $L; }; PRE_LAND_HOOK=pre; '
+                'rx(){ echo RX >> $L; case "$*" in *"topic list"*) echo "/drone_1/interface/mavros/state";; esac; }; '
+                'land_all_and_wait(){ echo LAND >> $L; return 0; }; copy_ulogs(){ :; }; down(){ echo DOWN >> $L; }; '
+                'trap "cat \$L" EXIT; arm_abort_trap; kill -INT $$; sleep 1')
+        r = run_stub(body)
+        self.assertEqual(r.returncode, 3, r.stdout + r.stderr)
+        seq = [l for l in r.stdout.splitlines() if l in ("PRE", "RX", "LAND", "DOWN")]
+        self.assertEqual(seq[0], "PRE", seq); self.assertLess(seq.index("PRE"), seq.index("LAND"))
+        self.assertEqual(seq.count("PRE"), 1, seq)
+        self.assertIn("PRE_LAND_HOOK", LIB.read_text().split("set -o pipefail")[0])        # documented in the header
+
+    def test_landing_timeout_still_writes_the_record_and_leaves_the_stack_up(self):
+        body = ('rx(){ case "$*" in *"topic list"*) echo "/drone_1/interface/mavros/state";; esac; }; '
+                'land_all_and_wait(){ echo CALLED land; return 1; }; copy_ulogs(){ echo CALLED copy_ulogs; }; down(){ echo CALLED down; }; '
+                'rh(){ echo "REPORT_HOOK aborted=$([ -f $OUT/aborted.txt ] && echo yes) caveat=$(cat $OUT/caveats.txt)"; }; REPORT_HOOK=rh; '
+                'arm_abort_trap; kill -INT $$; sleep 1')
+        r = run_stub(body)
+        self.assertEqual(r.returncode, 3, r.stdout + r.stderr)
+        o = r.stdout
+        self.assertIn("REPORT_HOOK aborted=yes", o)
+        self.assertIn("caveat=landing timed out; stack left up; bag left in the container", o)
+        self.assertNotIn("CALLED down", o); self.assertNotIn("CALLED copy_ulogs", o)
+        self.assertLess(o.index("REPORT_HOOK"), o.index("DRONES STILL ARMED"))
+
     def test_fail_runs_hooks_in_order_and_exits_with_fail_rc(self):
         r = run_stub('fh(){ echo HOOK_FAIL; }; rh(){ echo HOOK_REPORT; }; down(){ echo CALLED down; }; FAIL_HOOK=fh; REPORT_HOOK=rh; FAIL_RC=4; ALL_MODE=1; STACK_UP=1; PHASE=fly; fail boom; echo NOT_REACHED')
         self.assertEqual(r.returncode, 4, r.stdout + r.stderr)

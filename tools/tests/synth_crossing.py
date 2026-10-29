@@ -94,13 +94,15 @@ def make_tracker(series=SERIES):
     return M.Tracker(DRONES, offs, PARAMS, series)
 
 
-def frames(n=400, dt=0.025, closest_m=1.25, emergency_at=None, peak_speed=2.0, cbf=True, far_goal_miss_m=None):
+def frames(n=400, dt=0.025, closest_m=1.25, emergency_at=None, peak_speed=2.0, cbf=True, far_goal_miss_m=None, land_at=None):
+    """land_at: from this t on the commander reports LANDING (phase 3); None = the window never ends (no phase-3 rows)."""
     tr = make_tracker()
     cols = M.csv_columns(SERIES)
     rows = []
     for i in range(n):
         t = i * dt
-        status = {"drones": [{"state": s} for s in _states(t)], "mission_active": t >= T_START,
+        landing = land_at is not None and t >= land_at
+        status = {"drones": [{"state": s} for s in (["LANDING"] * 3 if landing else _states(t))], "mission_active": t >= T_START and not landing,
                   "cbf": {"emergency": emergency_at is not None and abs(t - emergency_at) < dt / 2},
                   "fence_breached": False}
         tr.update_status(status)

@@ -4,7 +4,9 @@
 # SOURCE it, after the caller sets:  RUN OUT HEAVY S SCENARIO BAG_PREFIX CONFIG HEADLESS
 #   optional: USE_STUDIO (default false: add use_foxglove_studio:=true to the commander launch), ISAAC_KIT_ARGS
 # Hooks the caller may define:  bag_dump_hook <bag_dir> (down; non-zero = bag stays in the container)
-#   ABORT_HOOK / REPORT_HOOK = names of functions run by abort_trap.
+#   PRE_LAND_HOOK / ABORT_HOOK / REPORT_HOOK = names of functions run by abort_trap: PRE_LAND_HOOK first, before the
+#   flight check and the landing (e.g. stop a flight script that could still send takeoff); ABORT_HOOK after the
+#   landing; REPORT_HOOK last (the record), also when the landing times out and the stack is left up.
 # Sourcing runs nothing else; a required variable unset -> "stack.sh: <VAR> unset" on stderr and return 2.
 set -o pipefail            # no -e: every failure that matters is an explicit `|| fail`
 for _v in RUN OUT HEAVY S SCENARIO BAG_PREFIX CONFIG HEADLESS; do
@@ -316,19 +318,23 @@ land_all_and_wait() {   # $1 = bound (s), real: land via the commander, poll MAV
     sleep 1; done
 }
 
-abort_trap() {   # Ctrl-C: land everything, then stop the stack and report; exit 3 either way
+abort_trap() {   # Ctrl-C: land everything, then stop the stack and report; exit 3 either way (timeout: report, stack left up)
   trap '' INT; ALL_MODE=0
   say "ABORT: Ctrl-C — landing"
+  [ -n "${PRE_LAND_HOOK:-}" ] && declare -F "$PRE_LAND_HOOK" >/dev/null && "$PRE_LAND_HOOK"   # before any land call
   local landed=0 flew=1
   if ! no_flight_established; then land_all_and_wait 30 && landed=1      # fail safe: in doubt, land
   else flew=0; landed=1; say "ABORTED: aborted before flight (MAVROS state topic has no publisher) — stopping the stack"; fi
   [ -n "${ABORT_HOOK:-}" ] && declare -F "$ABORT_HOOK" >/dev/null && "$ABORT_HOOK"
   { echo "aborted=$(date -Is)"; [ "$flew" = 0 ] && echo "aborted before flight"; } > "$OUT/aborted.txt"
   if [ "$landed" = 1 ]; then
-    trap '' INT; copy_ulogs; down
+    trap '' INT; copy_ulogs; down; STACK_UP=0
     [ -n "${REPORT_HOOK:-}" ] && declare -F "$REPORT_HOOK" >/dev/null && "$REPORT_HOOK"
     exit 3
   fi
+  # landing timed out: no `down` (the drones may still be armed); the record is still written, as ABORTED
+  caveat "landing timed out; stack left up; bag left in the container"
+  [ -n "${REPORT_HOOK:-}" ] && declare -F "$REPORT_HOOK" >/dev/null && "$REPORT_HOOK"
   say "DRONES STILL ARMED — stack left up; land by hand: docker exec $R bash -ic 'ros2 service call /swarm_commander/land std_srvs/srv/Trigger', then tools/sim.sh down"
   exit 3
 }

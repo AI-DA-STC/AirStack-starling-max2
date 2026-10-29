@@ -87,17 +87,26 @@ cmd_figures() {
 # stop_tail: the per-second line streamer (host tail of `docker exec … tail -f`) and its container-side process
 stop_tail() { [ -n "${TAIL:-}" ] && kill "$TAIL" 2>/dev/null; TAIL=""; docker exec "$R" pkill -f "tail -n0 -f $S/metrics_node.log" >/dev/null 2>&1 || true; }
 
+# stop_fly: the PRE_LAND_HOOK — an aborted run must not keep a flight script that could send takeoff after the landing
+stop_fly() {
+  [ "${METRICS_STARTED:-0}" = 1 ] || return 0                           # fly.sh starts after the node: before that nothing here is ours
+  docker exec "$R" pkill -f "fly\\.sh" >/dev/null 2>&1 || true
+}
+
 # metrics_stop: SIGINT the node (CSV flushed + closed), wait <= 10 s, TERM if needed, copy CSV + log out. Idempotent; also the ABORT_HOOK.
+# A node already dead at stop leaves $OUT/node_died.txt (time + last log lines) and a caveat: the coverage gate goes UNVERIFIED.
 metrics_stop() {
   stop_tail
   [ "${METRICS_STARTED:-0}" = 1 ] || return 0                           # this run never started the node: nothing here is ours to stop
-  docker exec "$R" pkill -f "fly\\.sh" >/dev/null 2>&1 || true        # an aborted run must not keep flying a script (harmless after a normal landing)
   [ ! -f "$HEAVY/.metrics_stopped" ] || return 0
   local i
   if alive "$R" 'python3 metrics_node\.py'; then
     nx docker exec "$R" pkill -INT -f 'python3 metrics_node.py' || true
     for i in $(seq 1 10); do alive "$R" 'python3 metrics_node\.py' || break; sleep 1; done
     alive "$R" 'python3 metrics_node\.py' && { say "WARN: metrics node still alive 10 s after SIGINT — TERM"; docker exec "$R" pkill -TERM -f 'python3 metrics_node.py' || true; sleep 3; }
+  else
+    { echo "found_dead=$(date -Is)"; docker exec "$R" tail -5 "$S/metrics_node.log" 2>&1; } > "$OUT/node_died.txt"
+    caveat "metrics node was not running at stop"
   fi
   metrics_collect
 }
@@ -124,15 +133,17 @@ render_report() {   # the record + verdict banner; REPORT_RC = report.py's rc (0
   python3 "$REPO/tools/lib/report.py" "$SIM_TESTS_DIR/$NAME" "$OUT" --heavy "$HEAVY" --ledger "$LEDGER" --issue "$ISSUE" 2>&1 | tee -a "$OUT/run.log" > "$RTMP"
   REPORT_RC=${PIPESTATUS[0]}
   cat "$RTMP"
-  local v head; v=$(head -1 "$RTMP" | sed 's/:.*//'); head=$(sed -n 's/^HEADLINE: //p' "$RTMP" | head -1)
+  local v head   # stderr is merged in: a warning may come first, so find the verdict line, never take line 1
+  v=$(grep -m1 -E '^(PASS|FAIL|INCOMPLETE|ABORTED): ' "$RTMP" | sed 's/:.*//'); head=$(grep -m1 '^HEADLINE: ' "$RTMP" | sed 's/^HEADLINE: //')
   case "$v" in
     PASS|FAIL|INCOMPLETE|ABORTED) say "========  VERDICT: $v — ${head:-n/a}  ========" ;;
     *) say "REPORT ERROR: report.py printed no verdict (rc=$REPORT_RC): $(head -1 "$RTMP")"; REPORT_RC=4 ;;
   esac
   rm -f "$RTMP"
 }
-# finish_report: REPORT_HOOK for abort/failure paths — the record, then the scratch dir in the robot container
-finish_report() { rm -f "$HEAVY/.metrics_stopped"; render_report; [ "${OWN_SCRATCH:-0}" = 1 ] && docker exec "$R" rm -rf "$S" >/dev/null 2>&1; true; }
+# finish_report: REPORT_HOOK for abort/failure paths — the record, then the scratch dir in the robot container (kept while
+# the stack is still up: a landing that timed out leaves the commander logging into it)
+finish_report() { rm -f "$HEAVY/.metrics_stopped"; render_report; [ "${OWN_SCRATCH:-0}" = 1 ] && [ "${STACK_UP:-0}" != 1 ] && docker exec "$R" rm -rf "$S" >/dev/null 2>&1; true; }
 
 # one `sim.sh test` at a time: a second run would kill the first one's processes and scratch dir
 SIM_LOCK=$HOME/flight_logs/sim/.sim_test.lock
@@ -146,6 +157,9 @@ take_lock() {
 }
 
 cmd_test() {
+  # a reused run name would mix old evidence into the new record (verdicts.log, caveats.txt, bag dirs)
+  if [ -e "$REPO/docs/record/${RUN}_record.md" ] || [ -n "$(ls -A "$HOME/flight_logs/sim/$RUN" 2>/dev/null)" ]; then
+    usage_line >&2; echo "error: run name already used — choose a new one ($RUN: docs/record/${RUN}_record.md or ~/flight_logs/sim/$RUN/ exists)" >&2; exit 2; fi
   take_lock
   OWN_SCRATCH=0; METRICS_STARTED=0
   local ISSUE_ARG=$ISSUE
@@ -161,7 +175,7 @@ p = json.load(open(sys.argv[1]))['plots'][0]['series']
 print(next((s for s in p if 'running' in s), p[0]))" "$TD/plots.json") || FIRST=min_pair_distance_running
   rm -f "$HEAVY/.metrics_stopped" "$OUT/aborted.txt"; METRICS_STARTED=0
   # 1  stack phases; the abort trap is armed from the commander phase on
-  ABORT_HOOK=metrics_stop; REPORT_HOOK=finish_report; FAIL_HOOK=metrics_stop; FAIL_RC=4     # a wiring failure exits 4, a gate FAIL exits 1
+  PRE_LAND_HOOK=stop_fly; ABORT_HOOK=metrics_stop; REPORT_HOOK=finish_report; FAIL_HOOK=metrics_stop; FAIL_RC=4     # a wiring failure exits 4, a gate FAIL exits 1
   for PHASE in precheck up watch isaac interfaces commander params; do
     [ "$PHASE" = isaac ] && STACK_UP=1
     [ "$PHASE" = commander ] && arm_abort_trap
@@ -200,7 +214,7 @@ print(next((s for s in p if 'running' in s), p[0]))" "$TD/plots.json") || FIRST=
   sleep 3
   local el=0
   while alive "$R" 'fly\.sh'; do
-    [ "$el" -ge $((DURATION_S + 240)) ] && { say "WARN: fly.sh still running after $el s — landing everything"; land_all_and_wait 60 || true; break; }
+    [ "$el" -ge $((DURATION_S + 240)) ] && { say "WARN: fly.sh still running after $el s — stopping it, landing everything"; stop_fly; land_all_and_wait 60 || true; break; }
     sleep 2; el=$((el+2)); done
   stop_tail
   docker cp "$R:$S/test_stdout.log" "$OUT/" 2>/dev/null || say "WARN: no test_stdout.log"
@@ -216,7 +230,7 @@ print(next((s for s in p if 'running' in s), p[0]))" "$TD/plots.json") || FIRST=
   json1 /svg/commander_status > "$OUT/status_post.json" || say "WARN: no commander_status after the flight"
   # 6  ask for the OBS file while the plots are still live, then stop the node
   if [ "$PAUSE" = 1 ]; then
-    say "Landed. Plots still live; the metrics node stops when you press Enter. OBS file name (Enter to skip):"
+    say "Landed. Plots still live; the metrics node stops when you press Enter. OBS video path, repo-relative, e.g. videos/<file>.mkv (Enter to skip):"
     local v; read -r v < /dev/tty || v=""
     echo "${v:-none recorded}" > "$OUT/video.txt"
   else echo "none (headless run)" > "$OUT/video.txt"; fi

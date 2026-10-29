@@ -479,6 +479,73 @@ class CrossCheck(unittest.TestCase):
         self.assertFalse(M.crosscheck(cols, live, cols, bag[:18], const_series())[0].ok)     # 10 %
 
 
+class CrossCheckBagSide(unittest.TestCase):
+    def test_bag_extra_rows_counted_as_unpaired_bag_frac(self):
+        cols, rows = synth.frames(n=40)
+        cr = M.crosscheck(cols, rows[:-1], cols, rows, synth.SERIES)          # 1 extra bag row of 40 = 2.5 %
+        self.assertTrue(all(r.unpaired_bag_frac > 0 for r in cr))
+        self.assertTrue(all(r.ok for r in cr))
+
+    def test_bag_unpaired_over_five_percent_is_not_ok(self):
+        cols, rows = synth.frames()
+        cr = M.crosscheck(cols, rows[::2], cols, rows, synth.SERIES)         # live is half the bag
+        self.assertTrue(all(r.unpaired_frac == 0 for r in cr))
+        self.assertTrue(all(r.unpaired_bag_frac > 0.05 for r in cr))
+        self.assertFalse(any(r.ok for r in cr))
+
+    def test_empty_live_is_not_ok(self):
+        cols, rows = synth.frames()
+        cr = M.crosscheck(cols, rows[:0], cols, rows, synth.SERIES)
+        self.assertTrue(cr)
+        self.assertFalse(any(r.ok for r in cr))
+
+    def test_empty_both_is_not_ok(self):
+        cols, rows = synth.frames()
+        self.assertFalse(any(r.ok for r in M.crosscheck(cols, rows[:0], cols, rows[:0], synth.SERIES)))
+
+
+def _drop(cols, rows, t_lo, t_hi):
+    t = rows[:, cols.index("t_s")]
+    return rows[~((t > t_lo + 1e-9) & (t < t_hi - 1e-9))]
+
+
+class Coverage(unittest.TestCase):
+    def test_clean_synthetic_run_has_small_gap_and_counts_rows(self):
+        cols, rows = synth.frames()
+        c = M.coverage(cols, rows)
+        self.assertAlmostEqual(c["max_gap_s"], 0.025, places=6)
+        self.assertEqual(c["phase2_rows"], int(np.sum(rows[:, cols.index("phase")] == 2)))
+        self.assertEqual(c["phase3_rows"], 0)                                 # synth.frames never lands
+
+    def test_one_second_gap_inside_phase_2(self):
+        cols, rows = synth.frames()
+        c = M.coverage(cols, _drop(cols, rows, 4.0, 5.0))
+        self.assertAlmostEqual(c["max_gap_s"], 1.0, places=6)
+        self.assertAlmostEqual(c["gap_at_s"], 4.0, places=6)
+
+    def test_gap_across_the_start_of_phase_2_is_seen(self):
+        cols, rows = synth.frames()                                          # phase 2 from t = 1.0
+        c = M.coverage(cols, _drop(cols, rows, 0.5, 1.5))
+        self.assertAlmostEqual(c["max_gap_s"], 1.0, places=6)
+
+    def test_landing_rows_counted(self):
+        cols, rows = synth.frames(land_at=9.5)
+        c = M.coverage(cols, rows)
+        self.assertGreater(c["phase3_rows"], 0)
+        self.assertEqual(c["phase3_rows"], int(np.sum(rows[:, cols.index("phase")] == 3)))
+
+    def test_gap_across_the_end_of_phase_2_is_seen(self):
+        cols, rows = synth.frames(land_at=9.5)
+        c = M.coverage(cols, _drop(cols, rows, 9.0, 9.8))
+        self.assertAlmostEqual(c["max_gap_s"], 0.8, places=6)
+
+    def test_no_phase_2_rows_is_infinite_gap(self):
+        cols, rows = synth.frames(n=30)                                      # t < 0.75: phases 0 and 1 only
+        c = M.coverage(cols, rows)
+        self.assertEqual(c["phase2_rows"], 0)
+        self.assertTrue(math.isinf(c["max_gap_s"]))
+
+
 class NanFraction(unittest.TestCase):
     COLS = ["t_s", "phase", "x"]
 

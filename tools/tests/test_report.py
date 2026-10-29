@@ -174,6 +174,38 @@ class Report(unittest.TestCase):
         e = self.env; self.assertEqual(e["TITLE"], "Fake crossing"); self.assertEqual(e["ISSUE"], "NEAR-787")
 
 
+class FinalFixes(unittest.TestCase):
+    def setUp(self):
+        self._d = tempfile.TemporaryDirectory(); self.addCleanup(self._d.cleanup)
+        self.td, self.out, self.heavy = make(self._d.name)
+        self.env = R.parse_env(self.td / "test.env"); self.G = R.load_gates(self.td)
+
+    def test_no_gate_rows_is_incomplete_not_pass(self):
+        self.assertEqual(R.overall_verdict([]), "INCOMPLETE")
+        rows = []; R.row(rows, "note", "informational", "x", "-", None, gate=False)
+        self.assertEqual(R.overall_verdict(rows), "INCOMPLETE")
+        self.assertEqual(R.overall_verdict([], aborted=True), "ABORTED")
+        rows = []; R.row(rows, "g", "c", "m", "-", True)
+        self.assertEqual(R.overall_verdict(rows), "PASS")
+
+    def test_newest_bag_dir_is_used(self):
+        import os
+        new = self.heavy / "fake_20261030"; new.mkdir(); (new / "metadata.yaml").write_text("x: 1\n")
+        os.utime(self.heavy / "fake_20261029", (1_000_000_000, 1_000_000_000))                 # older, sorts first by name
+        old = self.heavy / "fake_20261031"; old.mkdir(); (old / "metadata.yaml").write_text("x: 1\n")
+        os.utime(old, (1_000_000_100, 1_000_000_100))                                         # older, sorts last by name
+        rows = []; R.evidence_rows(rows, self.out, self.heavy, "fake")
+        self.assertTrue(rows[0].measured.startswith("fake_20261030:"), rows[0].measured)
+
+    def test_caveats_txt_lines_join_the_record_after_the_gates_caveats(self):
+        (self.out / "caveats.txt").write_text("landing timed out; stack left up; bag left in the container\none fake caveat\n\nsecond run caveat\n")
+        rc = R.main([str(self.td), str(self.out), "--heavy", str(self.heavy), "--no-verdict-log"])
+        md = (self.out.parent / f"{self.out.name}_record.md").read_text()
+        cav = md.split("## Caveats", 1)[1].split("## Ledger", 1)[0]
+        lines = [l for l in cav.splitlines() if l.startswith("- ")]
+        self.assertEqual(lines, ["- one fake caveat", "- landing timed out; stack left up; bag left in the container", "- second run caveat"])
+
+
 class ArmedUnknown(unittest.TestCase):
     def test_unknown_lines_are_unreadable_never_disarmed(self):
         self.assertIsNone(R.parse_armed_post("drone_1 armed: false\ndrone_2 armed: UNKNOWN\ndrone_3 armed: UNKNOWN\n"))

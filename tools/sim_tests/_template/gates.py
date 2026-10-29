@@ -23,6 +23,12 @@ def build_rows(out, heavy, env):
     R.isaac_rows(rows, out)
     try:
         _, cols, data = M.read_metrics_csv(out / "metrics.csv")
+    except (OSError, M.MetricsCsvError) as e:
+        cols, data, why = None, None, str(e)
+    R.coverage_row(rows, out, M.coverage(cols, data) if cols is not None else None, M.STALE_S, "" if cols is not None else "metrics.csv: " + why)   # keep: gaps leave no NaN rows
+    try:
+        if cols is None:
+            raise ValueError(why)
         p2 = data[data[:, cols.index("phase")] == 2]
         m = float(np.nanmin(p2[:, cols.index("min_pair_distance")]))
         R.row(rows, "min pairwise distance ≥ %.2f m" % GATE_M, "≥ %.2f m" % GATE_M, "%.2f m" % m, "-", m >= GATE_M)

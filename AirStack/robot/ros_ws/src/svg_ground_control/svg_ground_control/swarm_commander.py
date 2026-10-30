@@ -304,6 +304,14 @@ class DroneHandle:
         # command (bag run_060352: altitude walked down 1.1 m on pure x-y
         # stick, and released sticks kept it coasting).
         self.published = np.zeros(3)
+        # Velocity-output (sim) teleop only — AirStack-starling-max2 patch 0006.
+        # There `published` is stick + teleop_kp * (ref - position); the stick
+        # ramp and the reference must follow the STICK part, or the correction
+        # feeds back through both and a released drone keeps swinging at 1-2 m/s
+        # (Isaac 2026-10-30; test/test_sim_teleop_release.py). The trajectory
+        # output (real drones) publishes the stick itself and never uses these.
+        self.teleop_stick_published = np.zeros(3)
+        self.teleop_feedforward = None    # this tick's stick part, from teleop_position_mode
         # Outcome of the most recent robot_command (offboard / arm / disarm)
         # sent to this drone, for the status topic:
         # {'label', 'result': 'pending'|'ok'|'rejected'|'error'|'skipped',
@@ -1893,8 +1901,11 @@ class SwarmCommander(Node):
         without a ramp). See position_hold.ramp_velocity.
         """
         stick = self.teleop_stick(drone, now)
+        # Velocity output (sim): re-attach to the stick part, not the P term (patch 0006).
+        base = (drone.teleop_stick_published if drone.output == 'velocity'
+                else drone.published)
         velocity, accel, drone.teleop_profile = ramp_velocity(
-            drone.teleop_profile, drone.published, stick, self.teleop_accel,
+            drone.teleop_profile, base, stick, self.teleop_accel,
             self.control_dt)
         return velocity, accel
 
@@ -1911,6 +1922,7 @@ class SwarmCommander(Node):
         stick, accel = self.teleop_command(drone, now)
         if drone.output == 'trajectory' or drone.ref is None:
             return stick, accel
+        drone.teleop_feedforward = stick.copy()     # patch 0006: what ref + ramp follow
         return tracking_velocity(drone.ref, drone.position, stick,
                                  self.teleop_kp, self.teleop_max_speed), accel
 
@@ -1959,6 +1971,7 @@ class SwarmCommander(Node):
             # published and the yaw hold re-adopts the measured heading.
             drone.teleop_profile = None
             drone.teleop_yaw_hold = None
+            drone.teleop_stick_published = np.zeros(3)   # patch 0006 (velocity output)
         if seeded and drone.role == 'teleop' and self.mission_active:
             self.get_logger().info(
                 f'{drone.name}: sticks live, holding '
@@ -2294,6 +2307,12 @@ class SwarmCommander(Node):
         drone.cmd_pub.publish(msg)
         drone.applied = velocity.copy()
         drone.published = velocity.copy()
+        if drone.output == 'velocity' and drone.teleop_feedforward is not None:
+            # Sim teleop (patch 0006): the reference advances by, and the stick
+            # ramp restarts from, the stick part only — never the P term.
+            drone.applied = drone.teleop_feedforward.copy()
+            drone.teleop_stick_published = drone.teleop_feedforward.copy()
+        drone.teleop_feedforward = None
 
     # ------------------------------------------------------------------
     # Visualization (RViz MarkerArray, world frame)

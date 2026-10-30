@@ -606,10 +606,14 @@ def test_teleop_stick_is_ramped_with_feedforward_when_enabled() -> None:
 def test_teleop_ramp_reattaches_to_the_published_velocity_not_the_measured_one() -> None:
     import numpy as np
 
+    # Trajectory output (real drones), where the published velocity IS the stick
+    # (bag run_060352). The velocity-output (sim) twin, which re-attaches to the
+    # stick part instead, is in test_sim_teleop_release.py (patch 0006).
     node = make_commander(teleop_drones="drone_2", teleop_accel_mps2=5.0,
-                          teleop_max_speed_mps=8.0)
+                          teleop_max_speed_mps=8.0, drone_modes="real,real,real")
     try:
         d2 = node.drones[1]
+        assert d2.output == "trajectory"
         now = node.get_clock().now()
         d2.last_teleop_time = now
         d2.teleop_twist = np.zeros(3)                  # sticks released

@@ -1,6 +1,6 @@
-# Linear change list — rescope for the real command route, NUS velocity policies and the two camera setups (DRAFT for owner approval, 2026-10-30)
+# Linear change list — rescope for the real command route, NUS velocity policies and the two camera setups (APPLIED in Linear 2026-10-30)
 
-Design: [2026-10-30-rescope-real-route-nus-cameras-design.md](../superpowers/specs/2026-10-30-rescope-real-route-nus-cameras-design.md). The owner applies these rows in Linear, re-exports the plan, and the repo pages follow the new snapshot in one commit. Nothing on the project pages changes before that. `NEW-n` ids are placeholders until Linear assigns NEAR numbers.
+Design: [2026-10-30-rescope-real-route-nus-cameras-design.md](../superpowers/specs/2026-10-30-rescope-real-route-nus-cameras-design.md). **Applied:** 2026-10-30 by the Linear agent; its record is [2026-10-30-linear-sync-record.md](2026-10-30-linear-sync-record.md) (all 27 titles match; HTX-R1 milestone order still to drag by hand). The owner applies these rows in Linear, re-exports the plan, and the repo pages follow the new snapshot in one commit. Nothing on the project pages changes before that. `NEW-n` ids are placeholders until Linear assigns NEAR numbers.
 
 Camera setups in titles: **ZED-style added camera** (the stereo camera + Jetson payload planned so far; short label **A** in tables) and **Starling built-in sensors** (the Starling 2 Max's own cameras, ToF, thermal camera and IMUs; short label **B**).
 
@@ -76,4 +76,30 @@ Milestones 25 → 28 (S5d, S5e, M8 new; S5c, S8 renamed). Issues 78 → 105: HTX
 
 | placeholder | NEAR id |
 |---|---|
-| NEW-1 … NEW-27 | (filled from the new snapshot) |
+| NEW-1 | NEAR-866 |
+| NEW-2 | NEAR-867 |
+| NEW-3 | NEAR-868 |
+| NEW-4 | NEAR-869 |
+| NEW-5 | NEAR-870 |
+| NEW-6 | NEAR-871 |
+| NEW-7 | NEAR-872 |
+| NEW-8 | NEAR-873 |
+| NEW-9 | NEAR-874 |
+| NEW-10 | NEAR-875 |
+| NEW-11 | NEAR-876 |
+| NEW-12 | NEAR-877 |
+| NEW-13 | NEAR-878 |
+| NEW-14 | NEAR-879 |
+| NEW-15 | NEAR-880 |
+| NEW-16 | NEAR-881 |
+| NEW-17 | NEAR-882 |
+| NEW-18 | NEAR-883 |
+| NEW-19 | NEAR-884 |
+| NEW-20 | NEAR-885 |
+| NEW-21 | NEAR-886 |
+| NEW-22 | NEAR-887 |
+| NEW-23 | NEAR-888 |
+| NEW-24 | NEAR-889 |
+| NEW-25 | NEAR-890 |
+| NEW-26 | NEAR-891 |
+| NEW-27 | NEAR-892 |

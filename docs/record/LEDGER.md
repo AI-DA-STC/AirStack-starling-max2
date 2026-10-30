@@ -52,7 +52,7 @@ Notes: the Fix 1 detail (the landing path as it is now — `land_settle_s`, `Swa
 
 ## Table 2 · Observed on the previous software (archived)
 
-Branch `archive/airstack-starling-max2` (`daniel/diffaero_ground_control`), 2026-07-20 → 2026-09-03. The archive's own milestone labels are not carried (they would collide with Linear's M2–M7). Desk and network rows carry no evidence file, only the archived ledger number; the flight rows A17–A21 cite the folder `~/flight_logs/2026-09-01/` (four ulogs, no per-row mapping known). No curve is drawn from these logs.
+Branch `archive/airstack-starling-max2` (`daniel/diffaero_ground_control`), 2026-07-20 → 2026-09-03. The archive's own milestone labels are not carried (they would collide with Linear's M-codes). Desk and network rows carry no evidence file, only the archived ledger number; the flight rows A17–A21 cite the folder `~/flight_logs/2026-09-01/` (four ulogs, no per-row mapping known). No curve is drawn from these logs.
 
 | A# | Observed | Date | Evidence | Re-earn at |
 |---|---|---|---|---|

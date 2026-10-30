@@ -1,6 +1,6 @@
 # Linear change list — rescope for the real command route, NUS velocity policies and the two camera setups (APPLIED in Linear 2026-10-30)
 
-Design: [2026-10-30-rescope-real-route-nus-cameras-design.md](../superpowers/specs/2026-10-30-rescope-real-route-nus-cameras-design.md). **Applied:** 2026-10-30 by the Linear agent; its record is [2026-10-30-linear-sync-record.md](2026-10-30-linear-sync-record.md) (all 27 titles match; HTX-R1 milestone order still to drag by hand). The owner applies these rows in Linear, re-exports the plan, and the repo pages follow the new snapshot in one commit. Nothing on the project pages changes before that. `NEW-n` ids are placeholders until Linear assigns NEAR numbers.
+Design: [2026-10-30-rescope-real-route-nus-cameras-design.md](../superpowers/specs/2026-10-30-rescope-real-route-nus-cameras-design.md). **Applied:** 2026-10-30 by the Linear agent; its record is [2026-10-30-linear-sync-record.md](2026-10-30-linear-sync-record.md) (all 27 titles match; HTX-R1 milestone order dragged by the owner the same day). The owner applies these rows in Linear, re-exports the plan, and the repo pages follow the new snapshot in one commit. Nothing on the project pages changes before that. `NEW-n` ids are placeholders until Linear assigns NEAR numbers.
 
 Camera setups in titles: **ZED-style added camera** (the stereo camera + Jetson payload planned so far; short label **A** in tables) and **Starling built-in sensors** (the Starling 2 Max's own cameras, ToF, thermal camera and IMUs; short label **B**).
 

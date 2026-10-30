@@ -8,8 +8,8 @@ Linear is the source of truth: this file mirrors the three projects in Linear as
 
 - 3 projects, 28 milestones, 105 issues: 9 Done, 1 In Progress, 94 Backlog, 1 Canceled.
 - 2026-10-30 rescope: new milestones S5d, S5e (HTX-R1) and M8 (HTX-R2); S5c and S8 renamed; 27 new issues NEAR-866…892; NEAR-809 moved S8 → S5c; NEAR-802 Canceled; NEAR-786/787/788 Done; HTX-R2 renamed (M2–M8).
-- Progress below = Done ÷ issues not Canceled, as Linear computes it; S5 and the new milestones are computed, the rest are unchanged from 26 October.
-- Milestones are listed in Linear's order. In HTX-R1 that order is the work order (S5d before S6, S5e after S6), so codes do not sort.
+- Progress for S5 and the new milestones is computed, not read from Linear: Done counts 1 and In Progress ¼ (the 26 October figures imply this: S5 was 4 % with one of six In Progress), over the issues not Canceled. The rest are unchanged from 26 October.
+- Milestones are listed in Linear's order. The owner dragged HTX-R1 into the work order on 30 October, after the sync record (which still reads PENDING); codes therefore do not sort (S5d before S6, S5e after S6).
 - Project 1 has 55 issues; redundant NEAR-799 removed (26 October).
 
 ## How the work is split
@@ -85,7 +85,7 @@ Converted the lab's UE4 construction site into an Isaac world, loaded with `ENV_
 
 ### S5 Finish basic sim flight checks
 
-**Linear target:** not set. **Progress:** 50%.
+**Linear target:** not set. **Progress:** 54%.
 
 Re-run core flight checks on the updated model and prepare gamepad flying for S5b mapping.
 

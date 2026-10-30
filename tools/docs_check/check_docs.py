@@ -476,25 +476,39 @@ def plan_issues(text):
     return out
 
 
-def plan_milestones(text):
-    """{code: 'code name'} from the plan's '### ' milestone headings under '## Project …' sections (rescope 2026-10-30)."""
-    out, in_project = {}, False
+def plan_structure(text):
+    """Milestones and issue membership from the plan's '## Project … · HTX-Rn …' sections (rescope 2026-10-30):
+    ({code: (project, 'code name', order)}, {NEAR id: milestone code}). Headings outside project sections
+    (e.g. '### Terms') are not milestones."""
+    ms, member, project, cur = {}, {}, None, None
     for line in text.splitlines():
         if line.startswith("## "):
-            in_project = line.startswith("## Project")
-        elif in_project and line.startswith("### "):
+            m = re.search(r"\b(HTX-R\d+)\b", line) if line.startswith("## Project") else None
+            project, cur = (m.group(1) if m else None), None
+        elif project and line.startswith("### ") and norm(line[4:]):
             name = norm(line[4:])
-            out[name.split()[0]] = name
-    return out
+            cur = name.split()[0]
+            ms[cur] = (project, name, len(ms))
+        elif project and cur:
+            c = _table_cells(line)
+            m = re.fullmatch(r"\[(NEAR-\d+)\]\(.*\)", c[0]) if c else None
+            if m:
+                member[m.group(1)] = cur
+    return ms, member
+
+
+def plan_milestones(text):
+    """{code: 'code name'} — the milestone names in the plan."""
+    return {code: v[1] for code, v in plan_structure(text)[0].items()}
 
 
 def page_milestones(text):
-    """[(lineno, code, 'code name')] from a project page's '### code name — TAG' headings."""
+    """[(lineno, code, 'code name')] from a project page's '### code name — TAG' headings; code '' = empty heading."""
     out = []
     for i, line in enumerate(text.splitlines(), 1):
         if line.startswith("### "):
             name = norm(line[4:].split(" — ")[0])
-            out.append((i, name.split()[0], name))
+            out.append((i, name.split()[0] if name else "", name))
     return out
 
 
@@ -532,27 +546,56 @@ def check_linear_parity():
     if plan_text is None:
         return Result("linear-parity", "FAIL", f"{PLAN_FILE} missing")
     plan = plan_issues(plan_text)
-    plan_ms = plan_milestones(plan_text)
+    plan_ms, member = plan_structure(plan_text)
     projects = sorted((ROOT / PROJECT_DIR).glob("*.md"))
-    fails, warns, nrows, page_text, seen_ms = [], [], 0, "", set()
+    fails, warns, nrows, page_text, seen_ms, seen_ids = [], [], 0, "", set(), {}
     for f in projects:
         text = read(f) or ""
         page_text += text + "\n"
-        for i, code, name in page_milestones(text):
+        heads = page_milestones(text)
+        on_page = []
+        for i, code, name in heads:
+            if not code:
+                fails.append(f"{rel(f)}:{i}: empty ### heading")
+                continue
+            if code in on_page:
+                fails.append(f"{rel(f)}:{i}: milestone {code} appears twice on the page")
+                continue
+            on_page.append(code)
             seen_ms.add(code)
             if code not in plan_ms:
                 fails.append(f"{rel(f)}:{i}: milestone '{name}' not in {PLAN_FILE}")
-            elif name != plan_ms[code]:
-                fails.append(f"{rel(f)}:{i}: milestone {code} name differs — page: '{name}' / plan: '{plan_ms[code]}'")
+                continue
+            proj, pname, _ = plan_ms[code]
+            if name != pname:
+                fails.append(f"{rel(f)}:{i}: milestone {code} name differs — page: '{name}' / plan: '{pname}'")
+            if proj != f.stem:
+                fails.append(f"{rel(f)}:{i}: milestone {code} belongs to {proj} in the plan but sits on {f.name}")
+        known = [c for c in on_page if c in plan_ms]
+        if known != sorted(known, key=lambda c: plan_ms[c][2]):
+            fails.append(f"{rel(f)}: milestones out of the plan's order — page: {' '.join(known)} / plan: "
+                         f"{' '.join(sorted(known, key=lambda c: plan_ms[c][2]))}")
+        def under(line_no, _heads=heads):
+            cur = None
+            for i, code, _ in _heads:
+                if i < line_no:
+                    cur = code
+            return cur
         snap = re.search(r"Linear snapshot:\s*(\d{4}-\d\d-\d\d)", text)
         date = snap.group(1) if snap else "(no snapshot line)"
         row_lines = set()
         for i, nid, title, status, result in page_issue_rows(text):
             nrows += 1
             row_lines.add(i)
+            if nid in seen_ids:
+                fails.append(f"{rel(f)}:{i}: {nid} appears twice (first at {seen_ids[nid]})")
+                continue
+            seen_ids[nid] = f"{rel(f)}:{i}"
             if nid not in plan:
                 fails.append(f"{rel(f)}:{i}: {nid} not in {PLAN_FILE}")
                 continue
+            if member.get(nid) and under(i) != member[nid]:
+                fails.append(f"{rel(f)}:{i}: {nid} sits under {under(i)} on the page but under {member[nid]} in the plan")
             if norm(title) != norm(plan[nid][0]):
                 fails.append(f"{rel(f)}:{i}: {nid} title differs — page: '{norm(title)}' / plan: '{norm(plan[nid][0])}'")
             if status is None:
@@ -566,7 +609,7 @@ def check_linear_parity():
                 for nid in NEAR_RE.findall(line):
                     if nid not in plan:
                         fails.append(f"{rel(f)}:{i}: {nid} not in the plan file")
-    for code, name in plan_ms.items():
+    for code, (_, name, _) in plan_ms.items():
         if projects and code not in seen_ms:
             fails.append(f"{PLAN_FILE}: milestone '{name}' has no section on any {PROJECT_DIR} page")
     for name in ID_PAGES:
@@ -607,8 +650,16 @@ def check_change_lists():
                 continue
             if len(c) == 2 and re.fullmatch(r"NEW-\d+", c[0]):
                 mapping[c[0]] = c[1] if re.fullmatch(r"NEAR-\d+", c[1]) else None
-            elif len(c) >= 4 and c[0] == "NEW" and re.fullmatch(r"NEW-\d+", c[1]):
+            elif len(c) >= 4 and re.fullmatch(r"NEW-\d+", c[1]):
+                if c[0] != "NEW":
+                    fails.append(f"{rel(f)}: {c[1]} sits in a '{c[0]}' row; placeholders belong to NEW rows")
                 titles[c[1]] = c[3]
+        used = {}
+        for ph, nid in mapping.items():
+            if nid and nid in used:
+                fails.append(f"{rel(f)}: {nid} is mapped twice ({used[nid]}, {ph})")
+            elif nid:
+                used[nid] = ph
         for ph, title in titles.items():
             nid = mapping.get(ph)
             if nid is None:

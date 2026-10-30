@@ -129,6 +129,75 @@ class RescopeParity(unittest.TestCase):                              # rescope 2
             self.assertEqual(C.check_linear_parity().status, "PASS", C.check_linear_parity().details)
 
 
+TWO_MS_PLAN = """## Project 1 · HTX-R1 Swarm Sim Validation (Isaac)
+### S5c · Cams
+| [NEAR-809](https://linear.app/x) | Model the Starling built-in tracking_front camera (AR0144) in sim | Backlog |
+### S8 Payload
+| [NEAR-798](https://linear.app/x) | Add the Jetson and ZED-style camera weight to the Starling sim model | Backlog |
+"""
+ROW809 = "| NEAR-809 | Model the Starling built-in tracking_front camera (AR0144) in sim | Backlog | — | — |\n"
+ROW798 = "| NEAR-798 | Add the Jetson and ZED-style camera weight to the Starling sim model | Backlog | — | — |\n"
+TBL = "| Issue | Title | Linear status | Result | Evidence |\n|---|---|---|---|---|\n"
+
+
+class MilestoneMembership(unittest.TestCase):                      # final review 2026-10-30, items 3, 4, 6
+    def setUp(self):
+        self._root = C.ROOT
+        self.addCleanup(setattr, C, "ROOT", self._root)
+
+    def run_with(self, d, extra, plan_extra=TWO_MS_PLAN):
+        fixture(d, "", extra=extra, plan_extra=plan_extra)
+        return C.check_linear_parity()
+
+    def test_issue_under_its_snapshot_milestone_passes(self):
+        with tempfile.TemporaryDirectory() as d:
+            r = self.run_with(d, "\n### S5c · Cams — SIM ONLY\n" + TBL + ROW809 + "\n### S8 Payload — SIM ONLY\n" + TBL + ROW798)
+            self.assertEqual(r.status, "PASS", r.details)
+
+    def test_issue_under_the_wrong_milestone_fails(self):
+        with tempfile.TemporaryDirectory() as d:
+            r = self.run_with(d, "\n### S5c · Cams — SIM ONLY\n" + TBL + "\n### S8 Payload — SIM ONLY\n" + TBL + ROW798 + ROW809)
+            self.assertEqual(r.status, "FAIL")
+            self.assertTrue(any("NEAR-809" in x and "S5c" in x and "S8" in x for x in r.details), r.details)
+
+    def test_issue_row_twice_fails(self):
+        with tempfile.TemporaryDirectory() as d:
+            r = self.run_with(d, "\n### S5c · Cams — SIM ONLY\n" + TBL + ROW809 + ROW809 + "\n### S8 Payload — SIM ONLY\n" + TBL + ROW798)
+            self.assertEqual(r.status, "FAIL"); self.assertTrue(any("NEAR-809" in x and "twice" in x for x in r.details), r.details)
+
+    def test_milestone_heading_twice_fails(self):
+        with tempfile.TemporaryDirectory() as d:
+            r = self.run_with(d, "\n### S5c · Cams — SIM ONLY\n" + TBL + ROW809 + "\n### S8 Payload — SIM ONLY\n" + TBL + ROW798 + "\n### S8 Payload — SIM ONLY\n")
+            self.assertEqual(r.status, "FAIL"); self.assertTrue(any("S8" in x and "twice" in x for x in r.details), r.details)
+
+    def test_milestones_out_of_snapshot_order_fail(self):
+        with tempfile.TemporaryDirectory() as d:
+            r = self.run_with(d, "\n### S8 Payload — SIM ONLY\n" + TBL + ROW798 + "\n### S5c · Cams — SIM ONLY\n" + TBL + ROW809)
+            self.assertEqual(r.status, "FAIL"); self.assertTrue(any("order" in x for x in r.details), r.details)
+
+    def test_milestone_on_the_wrong_project_page_fails(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = fixture(d, "", extra="\n### S8 Payload — SIM ONLY\n" + TBL + ROW798, plan_extra=TWO_MS_PLAN)
+            (root / "docs/projects/HTX-R3.md").write_text("# HTX-R3\nLinear snapshot: 2026-10-30\n\n### S5c · Cams — SIM ONLY\n" + TBL + ROW809)
+            r = C.check_linear_parity()
+            self.assertEqual(r.status, "FAIL"); self.assertTrue(any("S5c" in x and "HTX-R3" in x for x in r.details), r.details)
+
+    def test_page_milestone_code_not_in_plan_fails(self):
+        with tempfile.TemporaryDirectory() as d:
+            r = self.run_with(d, "\n### S99 Nowhere — SIM ONLY\n", plan_extra="")
+            self.assertEqual(r.status, "FAIL"); self.assertTrue(any("S99" in x and "not in" in x for x in r.details), r.details)
+
+    def test_terms_heading_outside_project_sections_is_not_a_milestone(self):
+        with tempfile.TemporaryDirectory() as d:
+            r = self.run_with(d, "", plan_extra="## How the work is split\n### Terms\n")
+            self.assertEqual(r.status, "PASS", r.details)
+
+    def test_empty_heading_fails_with_a_clear_message(self):
+        with tempfile.TemporaryDirectory() as d:
+            r = self.run_with(d, "\n### \n", plan_extra="")
+            self.assertEqual(r.status, "FAIL"); self.assertTrue(any("empty" in x for x in r.details), r.details)
+
+
 CHANGE_LIST = """# Linear change list (APPLIED)
 {applied}
 | op | id | milestone | exact title | state | note |
@@ -167,6 +236,21 @@ class ChangeLists(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             self.write(d)
             self.assertEqual(C.check_change_lists().status, "PASS", C.check_change_lists().details)
+
+    def test_placeholder_in_a_mistyped_op_row_fails(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = fixture(d, "")
+            (root / "docs/plans/2026-10-30-linear-change-list.md").write_text(
+                CHANGE_LIST.format(applied="**Applied:** x", title="Re-run hover and 1 m step test on the updated sim drone",
+                                   map="| NEW-1 | NEAR-786 |").replace("| NEW | NEW-1 |", "| ADD | NEW-1 |"))
+            r = C.check_change_lists()
+            self.assertEqual(r.status, "FAIL"); self.assertTrue(any("NEW-1" in x and "ADD" in x for x in r.details), r.details)
+
+    def test_two_placeholders_mapped_to_one_id_fail(self):
+        with tempfile.TemporaryDirectory() as d:
+            self.write(d, mapping="| NEW-1 | NEAR-786 |\n| NEW-2 | NEAR-786 |")
+            r = C.check_change_lists()
+            self.assertEqual(r.status, "FAIL"); self.assertTrue(any("NEAR-786" in x and "twice" in x for x in r.details), r.details)
 
     def test_draft_list_is_ignored(self):
         with tempfile.TemporaryDirectory() as d:

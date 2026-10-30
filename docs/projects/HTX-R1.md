@@ -64,7 +64,7 @@ S3/S4 result (sim only; reference = PX4 EKF2, not ground truth). [Figure 1](#fig
 
 ### S5 Finish basic sim flight checks — SIM ONLY (Isaac)
 **Purpose:** the drone model, gains, airframe and commander all changed after S1. Before anything new is built on top, the basic flight behaviour is re-checked: does the drone still take off, hold, move 1 m cleanly and land (NEAR-786), still avoid the others (787), still take live gain changes (788)? The site items (789, 790, 860) prepare S5b, because hand-flying is how the map gets built.
-Linear (snapshot 2026-10-30): 50 % · last ledger row #23 (2026-10-30)
+Linear (snapshot 2026-10-30): 54 % · last ledger row #23 (2026-10-30)
 
 **Done when** (Linear's target, verbatim; a target, not a result): hover and 1 m steps, three-drone collision-avoidance crossing and live gain tuning are tried and recorded; drone_1 is hand-flown in the construction site with cuVSLAM, camera recording and scoring.
 

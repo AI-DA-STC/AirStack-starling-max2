@@ -135,4 +135,4 @@ Nothing on the project pages changes before the new snapshot exists.
 | 19 | Counts by state | Change list count line gives per-project totals; all new issues Backlog, one Canceled |
 | 20 | "under mocap" | No title breaks it |
 
-**Resolved (owner, 2026-10-30):** M8 flies in NEAR Lab's mocap area, like M2–M7. **Status:** approved and applied in Linear 2026-10-30 ([sync record](../../plans/2026-10-30-linear-sync-record.md)); repo updated by [the plan](../plans/2026-10-30-rescope-repo-update.md).
+**Resolved (owner, 2026-10-30):** M8 flies in NEAR Lab's mocap area, like M2–M7. **Status:** approved and applied in Linear 2026-10-30, the HTX-R1 milestone order dragged by the owner the same day ([sync record](../../plans/2026-10-30-linear-sync-record.md)); repo updated by [the plan](../plans/2026-10-30-rescope-repo-update.md).

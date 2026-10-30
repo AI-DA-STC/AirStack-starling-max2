@@ -22,7 +22,7 @@ Hazards the pilot assumes until the named issue re-earns them (detail: [HTX-R2.m
 | [HTX-R2 Starling Flight Bring-up (M2–M8)](projects/HTX-R2.md) | REAL DRONE | R1 · New mocap and network pipeline (not started) | none on this software; previous software [A21](record/LEDGER.md), 2026-09-03 | NEAR-814 | mocap system back ~2026-11-09; the five hazards above |
 | [HTX-R3 Multi-Drone Localisation (VO + UWB)](projects/HTX-R3.md) | SIM + desk; L4 hand-carried | L1 · Team review pack | [#16](record/LEDGER.md) stereo VO 0.081 m RMSE over 162 m, 2026-10-22 | NEAR-843 | — |
 
-**Sim vs real:** until HTX-R1 S5d, sim drones take a different command route (MAVROS) from the real drone, run PX4 1.16 (real 1.14) with sim-only rate gains, and Isaac's clock runs 1.3–2× wall time; full list on [HTX-R1](projects/HTX-R1.md). NUS policies run in sim at S5e, then on real drones in NEAR Lab's mocap area at HTX-R2 M8.
+**Sim vs real:** until HTX-R1 S5d, sim drones take a different command route (MAVROS) from the real drone, run PX4 1.16 (real 1.14) with sim-only rate gains, and Isaac's clock runs 1.3–2× wall time; full list on [HTX-R1](projects/HTX-R1.md). NUS policies run in sim at S5e, then on real drones in NEAR Lab's mocap area at HTX-R2 M8. Camera setups: A = ZED-style added camera (every camera result so far, e.g. #15, #16); B = Starling built-in sensors (HTX-R1 S5c).
 
 ## Pages
 

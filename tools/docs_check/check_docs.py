@@ -21,7 +21,7 @@ BUDGETS = {"README": 450, "CLAUDE": 1000, "START_HERE": 1500, "SETUP": 1200, "RU
            "PREFLIGHT": 1100, "DRONE_SETUP": 1800, "ARCHITECTURE": 1500, "CONFIG": 2500,
            "SCENARIOS": 2500, "TELEOP": 2000, "BASESTATION": 2500, "MOCAP": 2000,
            "GLOSSARY": 3000, "AI_ASSIST": 800, "MILESTONES": 1200}
-PLAN_FILE = "docs/plans/2026-10-26-project-plan-linear.md"
+PLAN_FILE = "docs/plans/2026-10-30-project-plan-linear.md"
 PROJECT_DIR = "docs/projects"
 LEDGER_FILE = "docs/record/LEDGER.md"
 ID_PAGES = ("docs/MILESTONES.md", "docs/record/LEDGER.md", "docs/PX4_MSGS_AUDIT.md")   # plus docs/projects/*.md
@@ -465,14 +465,36 @@ def _table_cells(line):
 
 
 def plan_issues(text):
-    """{id: (title, status)} from plan rows '| [NEAR-nnn](url) | title | Done|In Progress|Backlog |'."""
+    """{id: (title, status)} from plan rows '| [NEAR-nnn](url) | title | Done|In Progress|Backlog|Canceled |'."""
     out = {}
     for line in text.splitlines():
         c = _table_cells(line)
-        if c and len(c) >= 3 and c[-1] in ("Done", "In Progress", "Backlog"):
+        if c and len(c) >= 3 and c[-1] in ("Done", "In Progress", "Backlog", "Canceled"):
             m = re.fullmatch(r"\[(NEAR-\d+)\]\(.*\)", c[0])
             if m:
                 out[m.group(1)] = (c[1], c[-1])
+    return out
+
+
+def plan_milestones(text):
+    """{code: 'code name'} from the plan's '### ' milestone headings under '## Project …' sections (rescope 2026-10-30)."""
+    out, in_project = {}, False
+    for line in text.splitlines():
+        if line.startswith("## "):
+            in_project = line.startswith("## Project")
+        elif in_project and line.startswith("### "):
+            name = norm(line[4:])
+            out[name.split()[0]] = name
+    return out
+
+
+def page_milestones(text):
+    """[(lineno, code, 'code name')] from a project page's '### code name — TAG' headings."""
+    out = []
+    for i, line in enumerate(text.splitlines(), 1):
+        if line.startswith("### "):
+            name = norm(line[4:].split(" — ")[0])
+            out.append((i, name.split()[0], name))
     return out
 
 
@@ -510,11 +532,18 @@ def check_linear_parity():
     if plan_text is None:
         return Result("linear-parity", "FAIL", f"{PLAN_FILE} missing")
     plan = plan_issues(plan_text)
+    plan_ms = plan_milestones(plan_text)
     projects = sorted((ROOT / PROJECT_DIR).glob("*.md"))
-    fails, warns, nrows, page_text = [], [], 0, ""
+    fails, warns, nrows, page_text, seen_ms = [], [], 0, "", set()
     for f in projects:
         text = read(f) or ""
         page_text += text + "\n"
+        for i, code, name in page_milestones(text):
+            seen_ms.add(code)
+            if code not in plan_ms:
+                fails.append(f"{rel(f)}:{i}: milestone '{name}' not in {PLAN_FILE}")
+            elif name != plan_ms[code]:
+                fails.append(f"{rel(f)}:{i}: milestone {code} name differs — page: '{name}' / plan: '{plan_ms[code]}'")
         snap = re.search(r"Linear snapshot:\s*(\d{4}-\d\d-\d\d)", text)
         date = snap.group(1) if snap else "(no snapshot line)"
         row_lines = set()
@@ -537,6 +566,9 @@ def check_linear_parity():
                 for nid in NEAR_RE.findall(line):
                     if nid not in plan:
                         fails.append(f"{rel(f)}:{i}: {nid} not in the plan file")
+    for code, name in plan_ms.items():
+        if projects and code not in seen_ms:
+            fails.append(f"{PLAN_FILE}: milestone '{name}' has no section on any {PROJECT_DIR} page")
     for name in ID_PAGES:
         text = read(ROOT / name)
         for i, line in enumerate((text or "").splitlines(), 1):
@@ -553,6 +585,40 @@ def check_linear_parity():
     return verdict("linear-parity", fails, warns,
                    f"{nrows} issue rows on {len(projects)} project pages match the plan file; {len(recs)} PASS records cited",
                    f"{len(fails)} Linear id/title mismatch(es)", f"{len(warns)} parity warning(s)")
+
+
+CHANGE_LIST_GLOB = "docs/plans/*-linear-change-list.md"
+
+
+def check_change_lists():
+    """An applied Linear change list (has an '**Applied:**' line) maps every NEW-n to a NEAR id, and each
+    NEW row's title equals the snapshot's title for that id (rescope 2026-10-30). Draft lists are skipped."""
+    plan = plan_issues(read(ROOT / PLAN_FILE) or "")
+    fails, n = [], 0
+    for f in sorted(ROOT.glob(CHANGE_LIST_GLOB)):
+        text = read(f) or ""
+        if "**Applied:**" not in text:
+            continue
+        n += 1
+        mapping, titles = {}, {}
+        for line in text.splitlines():
+            c = _table_cells(line)
+            if not c:
+                continue
+            if len(c) == 2 and re.fullmatch(r"NEW-\d+", c[0]):
+                mapping[c[0]] = c[1] if re.fullmatch(r"NEAR-\d+", c[1]) else None
+            elif len(c) >= 4 and c[0] == "NEW" and re.fullmatch(r"NEW-\d+", c[1]):
+                titles[c[1]] = c[3]
+        for ph, title in titles.items():
+            nid = mapping.get(ph)
+            if nid is None:
+                fails.append(f"{rel(f)}: {ph} has no NEAR id in the placeholder map")
+            elif nid not in plan:
+                fails.append(f"{rel(f)}: {ph} → {nid} not in {PLAN_FILE}")
+            elif norm(title) != norm(plan[nid][0]):
+                fails.append(f"{rel(f)}: {ph} → {nid} title differs — list: '{norm(title)}' / plan: '{norm(plan[nid][0])}'")
+    return verdict("change-lists", fails, [], f"{n} applied Linear change list(s) match {PLAN_FILE}",
+                   f"{len(fails)} change-list mismatch(es)")
 
 
 IMG_MD_RE = re.compile(r"!\[[^\]]*\]\(<?([^)\s>]+)")
@@ -754,7 +820,7 @@ def main():
     checks = [lambda: check_links(link_files()), check_section_refs, check_iron_rules, check_safety_registry,
               check_values_registry, check_banners, check_real_page_hygiene, check_warnings_registered,
               check_budget, check_preflight_date, check_headings_stable, check_hashes,
-              check_linear_parity, lambda: check_images(corpus()), check_page_budgets, check_figure_refs, check_purpose_lines]
+              check_linear_parity, check_change_lists, lambda: check_images(corpus()), check_page_budgets, check_figure_refs, check_purpose_lines]
     results = []
     for fn in checks:
         try:

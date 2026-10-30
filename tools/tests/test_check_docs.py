@@ -5,16 +5,18 @@ import check_docs as C
 
 PLAN = textwrap.dedent("""\
     # plan
+    ## Project 1 · HTX-R1 Swarm Sim Validation (Isaac)
+    ### S5 x
     | Issue | Exact Linear title | Status |
     |---|---|---|
     | [NEAR-786](https://linear.app/x) | Re-run hover and 1 m step test on the updated sim drone | Backlog |
     | [NEAR-808](https://linear.app/x) | Feed drone_1’s IMU into cuVSLAM (camera-only → camera + IMU) and compare the scores | Backlog |
     """)
 
-def fixture(tmp, page_rows, records=(), ledger="| # |\n|---|\n", milestones_lines=10, extra=""):
+def fixture(tmp, page_rows, records=(), ledger="| # |\n|---|\n", milestones_lines=10, extra="", plan_extra=""):
     root = pathlib.Path(tmp)
     (root / "docs/plans").mkdir(parents=True); (root / "docs/projects").mkdir(); (root / "docs/record").mkdir(); (root / "localisation/results").mkdir(parents=True)
-    (root / "docs/plans/2026-10-26-project-plan-linear.md").write_text(PLAN)
+    (root / C.PLAN_FILE).write_text(PLAN + plan_extra)
     (root / "docs/projects/HTX-R1.md").write_text("# HTX-R1\nLinear snapshot: 2026-10-26\n\n### S5 x — SIM ONLY\n| Issue | Title | Linear status | Result | Evidence |\n|---|---|---|---|---|\n" + page_rows + extra)
     for name, head in records: (root / name).write_text(head)
     (root / "docs/record/LEDGER.md").write_text(ledger)
@@ -88,6 +90,89 @@ class LinearParity(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = fixture(d, ""); (root / "docs/projects/HTX-R1.md").unlink()
             self.assertEqual(C.check_linear_parity().status, "PASS")
+
+
+CANCELED_PLAN = "| [NEAR-802](https://linear.app/x) | Decide the camera (built-in mono / built-in stereo / added stereo) and write down why | Canceled |\n"
+
+
+class RescopeParity(unittest.TestCase):                              # rescope 2026-10-30, Review focus 1–3
+    def setUp(self):
+        self._root = C.ROOT
+        self.addCleanup(setattr, C, "ROOT", self._root)
+
+    def test_canceled_row_matching_the_snapshot_passes(self):
+        with tempfile.TemporaryDirectory() as d:
+            fixture(d, "| NEAR-802 | Decide the camera (built-in mono / built-in stereo / added stereo) and write down why | Canceled | — | — |\n",
+                    plan_extra=CANCELED_PLAN)
+            r = C.check_linear_parity()
+            self.assertEqual(r.status, "PASS", r.details)
+
+    def test_page_milestone_name_must_match_the_snapshot(self):
+        with tempfile.TemporaryDirectory() as d:
+            fixture(d, "", extra="\n### S5c · Choose the camera for cuVSLAM — DESK (decision)\n",
+                    plan_extra="### S5c · Compare the two camera setups for cuVSLAM and OpenVINS\n")
+            r = C.check_linear_parity()
+            self.assertEqual(r.status, "FAIL")
+            self.assertTrue(any("S5c" in x and "Compare the two camera setups" in x for x in r.details), r.details)
+
+    def test_snapshot_milestone_missing_from_every_page_fails(self):
+        with tempfile.TemporaryDirectory() as d:
+            fixture(d, "", plan_extra="### S5d · Sim flies the real command route (px4_interface)\n")
+            r = C.check_linear_parity()
+            self.assertEqual(r.status, "FAIL")
+            self.assertTrue(any("S5d" in x and "no section" in x for x in r.details), r.details)
+
+    def test_matching_milestone_heading_with_tag_passes(self):
+        with tempfile.TemporaryDirectory() as d:
+            fixture(d, "", extra="\n### S5c · Compare the two camera setups for cuVSLAM and OpenVINS — SIM ONLY (Isaac)\n",
+                    plan_extra="### S5c · Compare the two camera setups for cuVSLAM and OpenVINS\n")
+            self.assertEqual(C.check_linear_parity().status, "PASS", C.check_linear_parity().details)
+
+
+CHANGE_LIST = """# Linear change list (APPLIED)
+{applied}
+| op | id | milestone | exact title | state | note |
+|---|---|---|---|---|---|
+| NEW | NEW-1 | S5 | {title} | Backlog | x |
+
+| placeholder | NEAR id |
+|---|---|
+{map}
+"""
+
+
+class ChangeLists(unittest.TestCase):
+    def setUp(self):
+        self._root = C.ROOT
+        self.addCleanup(setattr, C, "ROOT", self._root)
+
+    def write(self, d, applied=True, title="Re-run hover and 1 m step test on the updated sim drone", mapping="| NEW-1 | NEAR-786 |"):
+        root = fixture(d, "")
+        (root / "docs/plans/2026-10-30-linear-change-list.md").write_text(CHANGE_LIST.format(
+            applied="**Applied:** 2026-10-30" if applied else "", title=title, map=mapping))
+
+    def test_applied_list_with_unmapped_placeholder_fails(self):
+        with tempfile.TemporaryDirectory() as d:
+            self.write(d, mapping="| NEW-1 … NEW-27 | (filled from the new snapshot) |")
+            r = C.check_change_lists()
+            self.assertEqual(r.status, "FAIL"); self.assertTrue(any("NEW-1" in x for x in r.details), r.details)
+
+    def test_applied_list_with_a_title_differing_from_the_snapshot_fails(self):
+        with tempfile.TemporaryDirectory() as d:
+            self.write(d, title="Re-run hover and step test")
+            r = C.check_change_lists()
+            self.assertEqual(r.status, "FAIL"); self.assertTrue(any("NEAR-786" in x for x in r.details), r.details)
+
+    def test_applied_list_fully_mapped_passes(self):
+        with tempfile.TemporaryDirectory() as d:
+            self.write(d)
+            self.assertEqual(C.check_change_lists().status, "PASS", C.check_change_lists().details)
+
+    def test_draft_list_is_ignored(self):
+        with tempfile.TemporaryDirectory() as d:
+            self.write(d, applied=False, mapping="| NEW-1 | (later) |")
+            self.assertEqual(C.check_change_lists().status, "PASS")
+
 
 class Images(unittest.TestCase):
     def setUp(self):

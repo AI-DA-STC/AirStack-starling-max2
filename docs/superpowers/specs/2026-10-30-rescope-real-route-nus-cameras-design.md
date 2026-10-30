@@ -1,4 +1,4 @@
-# Rescope HTX-R1/R2/R3 for the real command route, NUS velocity policies and two camera setups — design (draft for owner approval, 2026-10-30)
+# Rescope HTX-R1/R2/R3 for the real command route, NUS velocity policies and two camera setups — design (approved and applied, 2026-10-30)
 
 **Change list (what the owner applies in Linear):** [docs/plans/2026-10-30-linear-change-list.md](../../plans/2026-10-30-linear-change-list.md).
 **Process:** quality-change skill. A panel of four (engineering manager, flight-test engineer, test automation, newcomer reader) wrote positions and voted in two rounds. A builder check followed; its 20 questions are answered in the last section.
@@ -135,4 +135,4 @@ Nothing on the project pages changes before the new snapshot exists.
 | 19 | Counts by state | Change list count line gives per-project totals; all new issues Backlog, one Canceled |
 | 20 | "under mocap" | No title breaks it |
 
-**Open for the owner:** where M8 flies. HTX-R2 says the mocap room, while the request said "the real drones in CMU". If M8 is at CMU on CMU's drones, it may need its own location line, and NEW-23 must name which drones' files are copied.
+**Resolved (owner, 2026-10-30):** M8 flies in NEAR Lab's mocap area, like M2–M7. **Status:** approved and applied in Linear 2026-10-30 ([sync record](../../plans/2026-10-30-linear-sync-record.md)); repo updated by [the plan](../plans/2026-10-30-rescope-repo-update.md).

@@ -2,11 +2,11 @@ RECORD · SIM + DESK — research project; L4 is hand-carried real hardware (no 
 
 # HTX-R3 Multi-Drone Localisation (VO + UWB)
 
-Question (Linear): Without mocap, which approach keeps drones positioned correctly relative to one another? · Where: literature, simulation, then real drones · [Linear project](https://linear.app/nearlab/project/htx-r3-multi-drone-localisation-vo-uwb-b4a877b2fd7c) · Linear snapshot: 2026-10-26 · Evidence: [LEDGER](../record/LEDGER.md) · Sim runs: [localisation/README.md](../../localisation/README.md)
+Question (Linear): Without mocap, which approach keeps drones positioned correctly relative to one another? · Where: literature, simulation, then real drones · [Linear project](https://linear.app/nearlab/project/htx-r3-multi-drone-localisation-vo-uwb-b4a877b2fd7c) · Linear snapshot: 2026-10-30 · Evidence: [LEDGER](../record/LEDGER.md) · Sim runs: [localisation/README.md](../../localisation/README.md)
 
 ### L0 · Literature review — DESK
 **Purpose:** before building anything, find out what the field has already tried for multi-drone positioning without mocap. The review of 13 methods set the direction: each drone's own visual odometry plus UWB alignment as the baseline.
-Linear (snapshot 2026-10-26): target 2026-10-22 · 100 % · no ledger row (deliverable, not a test)
+Linear (snapshot 2026-10-30): target 2026-10-22 · 100 % · no ledger row (deliverable, not a test)
 
 | Issue | Title (Linear, verbatim) | Linear status | Result | Evidence |
 |---|---|---|---|---|
@@ -14,7 +14,7 @@ Linear (snapshot 2026-10-26): target 2026-10-22 · 100 % · no ledger row (deliv
 
 ### L1 · Team review pack — DESK
 **Purpose:** the team and HTX need one readable pack of the evidence so far (literature, flat-world versus site cuVSLAM result, effort, open questions) to decide the direction.
-Linear (snapshot 2026-10-26): 0 % · last ledger row feeding it: #16 (2026-10-22)
+Linear (snapshot 2026-10-30): 0 % · last ledger row feeding it: #16 (2026-10-22)
 
 **Done when** (Linear's target, verbatim; a target, not a result): the review includes the literature table, flat-world versus construction-site cuVSLAM result, effort log, recommendation and open questions.
 
@@ -27,21 +27,23 @@ Linear (snapshot 2026-10-26): 0 % · last ledger row feeding it: #16 (2026-10-22
 
 ### L2 · Three-drone dataset and UWB emulator — SIM ONLY (Isaac)
 **Purpose:** a method can only be compared on data. This records three-drone flights with true positions and emulates UWB distances with realistic errors, so L3 has something to test against.
-Linear (snapshot 2026-10-26): 0 % · no ledger row yet
+Linear (snapshot 2026-10-30): 0 % · no ledger row yet
 
 **Done when** (Linear's target, verbatim; a target, not a result): cameras run on all three drones; hover, formation, crossing and a 10–15 min figure-8 are recorded with true positions; the emulator includes realistic noise, bias and blocked-line errors from the papers.
 
 | Issue | Title (Linear, verbatim) | Linear status | Result | Evidence |
 |---|---|---|---|---|
-| NEAR-847 | Cameras on all three sim drones, added one at a time with a GPU check | Backlog | — | — |
+| NEAR-847 | Cameras of both setups on all three sim drones, added one at a time with a GPU check | Backlog | — | — |
 | NEAR-848 | Record hover, formation, crossing and long figure-8 with true positions | Backlog | — | — |
 | NEAR-849 | UWB distance emulator between drones (noise, bias, blocked-line errors) | Backlog | — | — |
 | NEAR-850 | Drift injector to test many drones without many cameras | Backlog | — | — |
 | NEAR-851 | Run one public multi-drone dataset (MILUV) for a real-data result | Backlog | — | — |
 
+NEAR-847: the Starling built-in cameras (setup B) can only be added once HTX-R1 S5c has modelled them.
+
 ### L3 · Own visual odometry + UWB alignment — SIM ONLY (Isaac)
 **Purpose:** the chosen baseline needs numbers: how well drones keep a shared frame from their own visual odometry plus UWB ranges, how fast it converges, and whether one or two tags per drone are needed.
-Linear (snapshot 2026-10-26): 0 % · no ledger row yet
+Linear (snapshot 2026-10-30): 0 % · no ledger row yet
 
 **Done when** (Linear's target, verbatim; a target, not a result): pairwise relative-position error over time, heading error and convergence time are measured; one versus two UWB tags per drone are compared.
 
@@ -52,19 +54,19 @@ Linear (snapshot 2026-10-26): 0 % · no ledger row yet
 | NEAR-854 | Compare one vs two UWB tags per drone | Backlog | — | — |
 
 ### L4 · First real-hardware number — REAL HARDWARE, hand-carried (no flight)
-**Purpose:** sim numbers are not enough for a hardware decision. One hand-carried run of the chosen camera, scored against mocap, gives the first real number.
-Linear (snapshot 2026-10-26): 0 % · no ledger row yet
+**Purpose:** sim numbers are not enough for a hardware decision. One hand-carried run of each camera setup, scored against mocap with both cuVSLAM and OpenVINS, gives the first real numbers.
+Linear (snapshot 2026-10-30): 0 % · no ledger row yet
 
 **Done when** (Linear's target, verbatim; a target, not a result): its trajectory is scored against Motive/mocap.
 
 | Issue | Title (Linear, verbatim) | Linear status | Result | Evidence |
 |---|---|---|---|---|
-| NEAR-855 | Hand-carry the chosen camera under mocap with cuVSLAM on the laptop | Backlog | — | — |
-| NEAR-856 | Score cuVSLAM against Motive | Backlog | — | — |
+| NEAR-855 | Hand-carry each camera setup with motion-capture positioning (mocap) and run cuVSLAM and OpenVINS on the laptop | Backlog | — | — |
+| NEAR-856 | Score cuVSLAM and OpenVINS against Motive | Backlog | — | — |
 
 ### L5 · Scale to 10 sim drones — SIM ONLY (Isaac)
 **Purpose:** the method must work for the swarm size the demo needs. Ten simulated drones show the error and the radio bandwidth cost.
-Linear (snapshot 2026-10-26): 0 % · no ledger row yet
+Linear (snapshot 2026-10-30): 0 % · no ledger row yet
 
 **Done when** (Linear's target, verbatim; a target, not a result): alignment runs on 10 simulated drones; error and UWB/WiFi bandwidth are measured.
 

@@ -80,6 +80,39 @@ def baseline_from_right_info(info: CameraInfo) -> float:
     return -tx / fx
 
 
+def make_tracker(left_info: CameraInfo, right_info: CameraInfo, baseline_override_m: float = 0.0):
+    """cuVSLAM stereo tracker for a rectified pair; returns (tracker, baseline_m). Shared by the live node and
+    scripts/replay_offline.py (NEAR-860) so a replay runs exactly the live configuration."""
+    b = baseline_override_m if baseline_override_m > 0.0 else baseline_from_right_info(right_info)
+    left = camera_from_info(left_info)
+    right = camera_from_info(right_info)
+    # right camera sits +baseline along the optical X axis of the left (rig) camera
+    right.rig_from_camera = cuvslam.Pose(rotation=[0.0, 0.0, 0.0, 1.0], translation=[float(b), 0.0, 0.0])
+    rig = cuvslam.Rig()
+    rig.cameras = [left, right]
+    cfg = cuvslam.Tracker.OdometryConfig(
+        async_sba=False,
+        rectified_stereo_camera=True,
+        odometry_mode=cuvslam.Tracker.OdometryMode.Multicamera,
+    )
+    return cuvslam.Tracker(rig, cfg), b
+
+
+def track_frame(tracker, ts_ns: int, left_img: np.ndarray, right_img: np.ndarray):
+    """Track one stereo frame. Returns (t_b, q_b_xyzw) in the FLU-aligned world, or None when tracking is lost.
+    Raises ValueError when cuVSLAM rejects the frame."""
+    est, _ = tracker.track(ts_ns, [left_img, right_img])
+    if est.world_from_rig is None:
+        return None
+    pose = est.world_from_rig.pose
+    t_o = np.asarray(pose.translation, dtype=float)
+    q_o = np.asarray(pose.rotation, dtype=float)          # xyzw, world_opt <- rig_opt
+    # conjugate into an FLU-aligned world: T_b = C * T_o * C^-1, C = (R_BODY_FROM_OPT, 0)
+    R_o = R.from_quat(q_o).as_matrix()
+    R_b = R_BODY_FROM_OPT @ R_o @ R_BODY_FROM_OPT.T
+    return R_BODY_FROM_OPT @ t_o, R.from_matrix(R_b).as_quat()
+
+
 class CuvslamStereoNode(Node):
     def __init__(self):
         super().__init__("cuvslam_stereo_node")
@@ -152,22 +185,11 @@ class CuvslamStereoNode(Node):
         if self.tracker is not None or self.left_info is None or self.right_info is None:
             return
         try:
-            b = self.baseline_override if self.baseline_override > 0.0 else baseline_from_right_info(self.right_info)
+            self.tracker, b = make_tracker(self.left_info, self.right_info, self.baseline_override)
         except ValueError as e:
             self.get_logger().error(f"cannot derive baseline: {e}; set baseline_override_m")
             return
         left = camera_from_info(self.left_info)
-        right = camera_from_info(self.right_info)
-        # right camera sits +baseline along the optical X axis of the left (rig) camera
-        right.rig_from_camera = cuvslam.Pose(rotation=[0.0, 0.0, 0.0, 1.0], translation=[float(b), 0.0, 0.0])
-        rig = cuvslam.Rig()
-        rig.cameras = [left, right]
-        cfg = cuvslam.Tracker.OdometryConfig(
-            async_sba=False,
-            rectified_stereo_camera=True,
-            odometry_mode=cuvslam.Tracker.OdometryMode.Multicamera,
-        )
-        self.tracker = cuvslam.Tracker(rig, cfg)
         self.baseline = b
         self.get_logger().info(
             f"tracker ready: {left.size[0]}x{left.size[1]} fx={left.focal[0]:.1f} "
@@ -188,7 +210,7 @@ class CuvslamStereoNode(Node):
             return
         t0 = time.monotonic()
         try:
-            est, _ = self.tracker.track(ts_ns, imgs)
+            res = track_frame(self.tracker, ts_ns, imgs[0], imgs[1])
         except ValueError as e:
             self.get_logger().warn(f"track() rejected frame: {e}", throttle_duration_sec=5.0)
             return
@@ -196,18 +218,11 @@ class CuvslamStereoNode(Node):
         self.last_ts_ns = ts_ns
         self.n_frames += 1
         self.win_frames += 1
-        if est.world_from_rig is None:
+        if res is None:
             self.n_lost += 1
             return
         self.n_tracked += 1
-        pose = est.world_from_rig.pose
-        t_o = np.asarray(pose.translation, dtype=float)
-        q_o = np.asarray(pose.rotation, dtype=float)          # xyzw, world_opt <- rig_opt
-        # conjugate into an FLU-aligned world: T_b = C * T_o * C^-1, C = (R_BODY_FROM_OPT, 0)
-        R_o = R.from_quat(q_o).as_matrix()
-        R_b = R_BODY_FROM_OPT @ R_o @ R_BODY_FROM_OPT.T
-        t_b = R_BODY_FROM_OPT @ t_o
-        q_b = R.from_matrix(R_b).as_quat()
+        t_b, q_b = res
 
         od = Odometry()
         od.header.stamp = left_msg.header.stamp

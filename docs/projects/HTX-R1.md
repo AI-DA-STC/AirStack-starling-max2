@@ -240,7 +240,7 @@ Linear (snapshot 2026-10-30): 0 % · no ledger row yet
 | Item | Seen | Candidate fix (none tried) |
 |---|---|---|
 | Isaac's clock runs 1.3–2× wall time | [#18, #19](../record/LEDGER.md) scale 1.32–1.33 | NEAR-871: record it on every run; a real-time pacing switch |
-| MAVROS route: a turned sim drone orbits (velocity labelled body frame) | PX4 log, 2026-10-30 | moot once S5d moves the sim to px4_interface; patch 0007 held |
+| MAVROS route: a turned sim drone orbits (velocity labelled body frame) | PX4 log, 2026-10-30 | fixed by patch 0007 (sim-only, 2026-10-30); flight check pending; moot after S5d |
 | Pegasus Stop ▶ Play leaks the stopped vehicles' physics callbacks | [#6](../record/LEDGER.md), 2026-10-20 | guard `PX4MavlinkBackend.update()` with `if not self._is_running: return`, or fix the callback removal by prefix |
 | `mavros_node` segfault (exit −11) mid-flight, cause unknown (respawn masks it) | [#8, #11](../record/LEDGER.md) | set a file `core_pattern` on the host before a long sim session (apport eats cores today) |
 | Isaac ROS 2 topics invisible to host-network containers (DDS does not cross the isaac docker network) | 2026-10-22 | isaac-sim on the host network, or keep `--network container:isaac-sim` (`localisation/docker/run.sh`) |

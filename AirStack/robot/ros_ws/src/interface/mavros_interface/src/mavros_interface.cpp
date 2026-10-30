@@ -321,6 +321,11 @@ namespace mavros_interface
         bool is_ardupilot;
         float post_takeoff_command_delay_time;
         bool do_global_pose_command;
+        // Frame of incoming velocity commands (patch 0007, AirStack-starling-max2): "body" = CMU's original
+        // FRAME_BODY_NED (relative to the drone's heading); "local" = FRAME_LOCAL_NED, MAVROS converts from
+        // ENU. The SVG swarm commander sends room-frame (ENU) velocities, so its sim interface sets "local";
+        // with "body", a yawed drone gets every command rotated by its heading and orbits.
+        bool velocity_local_frame = false;
 
         bool is_state_received_ = false;
         mavros_msgs::msg::State current_state_;
@@ -382,6 +387,15 @@ namespace mavros_interface
             is_ardupilot = airstack::get_param(this, "is_ardupilot", false);
             post_takeoff_command_delay_time = airstack::get_param(this, "post_takeoff_command_delay_time", 5.);
             do_global_pose_command = airstack::get_param(this, "do_global_pose_command", false);
+            const std::string velocity_frame = airstack::get_param(this, "velocity_frame", std::string("body"));
+            if (velocity_frame != "body" && velocity_frame != "local")
+            {
+                RCLCPP_FATAL(this->get_logger(), "velocity_frame must be 'body' or 'local', got '%s'", velocity_frame.c_str());
+                exit(1);
+            }
+            velocity_local_frame = (velocity_frame == "local");
+            RCLCPP_INFO(this->get_logger(), "velocity commands are %s",
+                        velocity_local_frame ? "room frame (ENU -> FRAME_LOCAL_NED)" : "body frame (FRAME_BODY_NED)");
 
             // services
             service_callback_group =
@@ -467,7 +481,8 @@ namespace mavros_interface
                 (in_air && ((this->get_clock()->now() - in_air_start_time).seconds() > post_takeoff_command_delay_time)))
             {
                 mavros_msgs::msg::PositionTarget msg;
-                msg.coordinate_frame = mavros_msgs::msg::PositionTarget::FRAME_BODY_NED;
+                msg.coordinate_frame = velocity_local_frame ? mavros_msgs::msg::PositionTarget::FRAME_LOCAL_NED
+                                                            : mavros_msgs::msg::PositionTarget::FRAME_BODY_NED;
                 msg.type_mask = mavros_msgs::msg::PositionTarget::IGNORE_PX |
                                 mavros_msgs::msg::PositionTarget::IGNORE_PY |
                                 mavros_msgs::msg::PositionTarget::IGNORE_PZ |

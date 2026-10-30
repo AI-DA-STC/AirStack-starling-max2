@@ -82,6 +82,9 @@ def launch_setup(context, *args, **kwargs):
             'is_ardupilot': False,
             'post_takeoff_command_delay_time': 10.0,
             'do_global_pose_command': False,
+            # patch 0007 (AirStack-starling-max2): the only sender on velocity_command here is the SVG swarm
+            # commander, which sends room-frame (ENU) velocities; 'body' made a yawed sim drone orbit.
+            'velocity_frame': 'local',
         }],
         remappings=[
             ('ardupilot_takeoff',

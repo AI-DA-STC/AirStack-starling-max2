@@ -31,7 +31,7 @@ class SimSh(unittest.TestCase):
 
     def test_no_args_prints_usage_exit_2(self):
         r = run(); self.assertEqual(r.returncode, 2); self.assertIn("usage:", r.stdout)
-        for sub in ("setup", "doctor", "up", "down", "status", "tabs", "test", "figures", "check"): self.assertIn(sub, r.stdout)
+        for sub in ("setup", "doctor", "up", "down", "status", "tabs", "test", "figures", "check", "param"): self.assertIn(sub, r.stdout)
 
     def test_unknown_subcommand_exit_2(self):
         self.assertEqual(run("fly").returncode, 2)
@@ -601,3 +601,65 @@ class HookCheck(unittest.TestCase):
         self.assertLess(body.index("git-hooks/install.sh"), body.index("hook_check"))
         self.assertNotIn('cmp -s "$REPO/tools/git-hooks/pre-commit"', body)
         self.assertNotIn("hook missing or stale", body)
+
+
+class ParamSet(unittest.TestCase):
+    """`sim.sh param set NAME VALUE [--drone N]`: host -> docker cp + docker exec -> tools/lib/px4_param_set.sh (fake docker)."""
+    LINE = "2026-11-03T10:00:00+08:00 · drone_1/MC_YAW_P · 2.8 → 2 · sim.sh-param-set@t (via ros2 param set) · readback 2"
+
+    def _env(self, tmp, rc=0, up=True):
+        b = os.path.join(tmp, "bin"); os.makedirs(b, exist_ok=True); fake = os.path.join(b, "docker")
+        open(fake, "w").write('#!/bin/sh\necho "$@" >> %s/docker.log\n%scase "$*" in *"bash /tmp/svg_param/px4_param_set.sh"*) echo "noise"; echo "%s"; exit %d;; esac\nexit 0\n'
+                              % (tmp, "" if up else 'case "$*" in "exec airstack-robot-desktop-1 true") exit 1;; esac\n', self.LINE, rc))
+        os.chmod(fake, 0o755)
+        return dict(os.environ, HOME=tmp, PATH=b + ":" + os.environ["PATH"])
+
+    def test_copies_the_helper_runs_it_in_the_robot_container_and_logs_on_the_host(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            r = run("param", "set", "MC_YAW_P", "2.0", env=self._env(tmp)); self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+            calls = open(os.path.join(tmp, "docker.log")).read()
+            self.assertRegex(calls, r"cp \S+/tools/lib/px4_param_set\.sh airstack-robot-desktop-1:/tmp/svg_param/")
+            self.assertRegex(calls, r"cp \S+/tools/lib/changes_log\.py airstack-robot-desktop-1:/tmp/svg_param/")
+            self.assertIn("bash /tmp/svg_param/px4_param_set.sh 1 MC_YAW_P 2.0 sim.sh-param-set@", calls)
+            self.assertIn("/tmp/svg_param/changes.log", calls)
+            self.assertEqual(open(os.path.join(tmp, "flight_logs/sim/changes.log")).read(), self.LINE + "\n")   # only the line, not the noise
+            self.assertIn(self.LINE, r.stdout)
+            self.assertFalse(os.path.exists(GUARD_MARK) and "px4_param_set" in open(GUARD_MARK).read())
+
+    def test_during_a_test_run_the_line_lands_in_the_run(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            os.makedirs(os.path.join(tmp, "flight_logs/sim")); open(os.path.join(tmp, "flight_logs/sim/.sim_test.lock"), "w").write(str(os.getpid()))
+            run("param", "set", "MC_YAW_P", "2.0", env=self._env(tmp))
+            self.assertIn("/tmp/svg_test/changes.log", open(os.path.join(tmp, "docker.log")).read())
+
+    def test_a_stale_lock_does_not_count_as_a_run(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            os.makedirs(os.path.join(tmp, "flight_logs/sim")); open(os.path.join(tmp, "flight_logs/sim/.sim_test.lock"), "w").write("999999999")
+            run("param", "set", "MC_YAW_P", "2.0", env=self._env(tmp))
+            calls = open(os.path.join(tmp, "docker.log")).read()
+            self.assertIn("/tmp/svg_param/changes.log", calls); self.assertNotIn("/tmp/svg_test/changes.log", calls)
+
+    def test_drone_flag_and_exit_code_pass_through(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            r = run("param", "set", "--drone", "2", "MC_YAW_P", "2.0", env=self._env(tmp, rc=1))
+            self.assertEqual(r.returncode, 1); self.assertIn("px4_param_set.sh 2 MC_YAW_P 2.0", open(os.path.join(tmp, "docker.log")).read())
+            self.assertIn(self.LINE, open(os.path.join(tmp, "flight_logs/sim/changes.log")).read())   # a mismatch is logged too
+
+    def test_container_down_refuses(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            r = run("param", "set", "MC_YAW_P", "2.0", env=self._env(tmp, up=False))
+            self.assertEqual(r.returncode, 2); self.assertIn("robot container", r.stderr)
+            self.assertNotIn("px4_param_set", open(os.path.join(tmp, "docker.log")).read())
+            self.assertFalse(os.path.exists(os.path.join(tmp, "flight_logs/sim/changes.log")))
+
+    def test_bad_arguments_exit_2_before_docker(self):
+        for args in (["param"], ["param", "get", "MC_YAW_P"], ["param", "set", "mc_yaw_p", "2"], ["param", "set", "MC_YAW_P", "abc"],
+                     ["param", "set", "MC_YAW_P", "2", "--drone", "0"], ["param", "set", "MC_YAW_P", "2", "--drone"], ["param", "set", "MC_YAW_P"],
+                     ["param", "set", "MC_YAW_P", "2", "3"], ["param", "set", "MC_YAW_P", "2", "--bogus"]):
+            with tempfile.TemporaryDirectory() as tmp:
+                r = run(*args, env=self._env(tmp)); self.assertEqual(r.returncode, 2, args); self.assertIn("error:", r.stderr, args)
+                self.assertIn("param set NAME VALUE", r.stderr, args)
+                self.assertFalse(os.path.exists(os.path.join(tmp, "docker.log")), args)
+
+    def test_usage_lists_param_set(self):
+        self.assertIn("param set NAME VALUE [--drone N]", run().stdout)

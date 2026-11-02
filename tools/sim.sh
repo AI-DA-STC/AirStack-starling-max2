@@ -12,6 +12,8 @@
 #   test <name> [--headless] [--no-pause] [--ledger N] --issue NEAR-nnn <run>
 #                          run tools/sim_tests/<name> end to end; records land in docs/record/<run>/
 #   figures                make the record figures of a finished run
+#   param set NAME VALUE [--drone N]
+#                          one PX4 parameter of a sim drone, live via MAVROS, read back, logged to changes.log
 #   check                  contract check of every tools/sim_tests/<dir> + the metrics_core tests
 #
 # No argument, -h or an unknown subcommand prints this usage and exits 2; nothing is run.
@@ -21,7 +23,7 @@ SIM_TESTS_DIR=${SIM_TESTS_DIR:-$REPO/tools/sim_tests}     # overridable for the 
 
 usage() {
   cat <<'USAGE'
-usage: tools/sim.sh <setup|doctor|up|down|status|tabs|test|figures|check> [flags]
+usage: tools/sim.sh <setup|doctor|up|down|status|tabs|test|figures|check|param> [flags]
   setup                                  one-time preparation (checks, optional Foxglove layout file)
   doctor                                 read-only health check
   up [--headless]                        start the sim stack (Isaac window unless --headless)
@@ -33,6 +35,7 @@ usage: tools/sim.sh <setup|doctor|up|down|status|tabs|test|figures|check> [flags
                                          run tools/sim_tests/<name>; --issue = Linear id; ledger # = next free unless --ledger N
   figures                                make the record figures of a run
   check                                  contract check of tools/sim_tests/* + metrics_core tests
+  param set NAME VALUE [--drone N]       one PX4 parameter of a sim drone, live via MAVROS, read back and logged (sim only)
 sim only; flags, not environment variables.
 USAGE
 }
@@ -357,6 +360,43 @@ cmd_keys() {
   docker exec -i $tty "$R" bash -ic "python3 $D/key_teleop.py $*"
 }
 
+# cmd_param: `param set NAME VALUE [--drone N]` — one PX4 parameter of a sim drone, live through MAVROS, by
+# tools/lib/px4_param_set.sh inside the robot container (read back; the line through tools/lib/changes_log.py).
+# The line goes to the run's changes.log while a `sim.sh test` holds $SIM_LOCK, else /tmp/svg_param/changes.log in the
+# container, and always to ~/flight_logs/sim/changes.log on the host (docs/CODING_STANDARD.md §3). Exit = the helper's.
+param_die() { echo "usage: tools/sim.sh param set NAME VALUE [--drone N]" >&2; echo "error: param: $*" >&2; exit 2; }
+cmd_param() {
+  local R=airstack-robot-desktop-1 D=/tmp/svg_param NAME="" VALUE="" N=1 LOG out rc line
+  [ "${1:-}" = set ] || param_die "only 'param set' exists (got '${1:-}')"
+  shift
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --drone) [ $# -ge 2 ] || param_die "--drone needs a value"; N=$2; shift ;;
+      -*) param_die "unknown flag: $1" ;;
+      *) if [ -z "$NAME" ]; then NAME=$1; elif [ -z "$VALUE" ]; then VALUE=$1; else param_die "unexpected argument: $1"; fi ;;
+    esac; shift
+  done
+  { [ -n "$NAME" ] && [ -n "$VALUE" ]; } || param_die "needs NAME and VALUE"
+  [[ "$NAME" =~ ^[A-Z][A-Z0-9_]{0,15}$ ]] || param_die "NAME must be a PX4 parameter name, upper case (got '$NAME')"
+  [[ "$VALUE" =~ ^-?[0-9]+(\.[0-9]*)?([eE][-+]?[0-9]+)?$ ]] || param_die "VALUE must be a number (got '$VALUE')"
+  [[ "$N" =~ ^[1-9]$ ]] || param_die "--drone must be 1-9 (got '$N')"
+  docker exec "$R" true 2>/dev/null || { echo "error: param: the robot container is not running ($R) — tools/sim.sh up first" >&2; exit 2; }
+  docker exec "$R" mkdir -p "$D" \
+    && docker cp "$REPO/tools/lib/px4_param_set.sh" "$R:$D/" >/dev/null \
+    && docker cp "$REPO/tools/lib/changes_log.py" "$R:$D/" >/dev/null \
+    || { echo "error: param: could not copy the helper into $R" >&2; exit 2; }
+  if [ -f "$SIM_LOCK" ] && kill -0 "$(cat "$SIM_LOCK" 2>/dev/null)" 2>/dev/null; then LOG=/tmp/svg_test/changes.log; else LOG=$D/changes.log; fi
+  out=$(docker exec "$R" bash -ic "cd ~/AirStack/robot/ros_ws && source install/setup.bash >/dev/null 2>&1; bash $D/px4_param_set.sh $N $NAME $VALUE sim.sh-param-set@${USER:-$(id -un)} $LOG")
+  rc=$?
+  [ -z "$out" ] || printf '%s\n' "$out"
+  line=$(printf '%s\n' "$out" | grep -E ' · [^ ]+/[A-Z0-9_]+ · .* → ' | tail -1)
+  if [ -n "$line" ]; then
+    mkdir -p "$HOME/flight_logs/sim" && printf '%s\n' "$line" >> "$HOME/flight_logs/sim/changes.log" \
+      && echo "logged: ~/flight_logs/sim/changes.log and $R:$LOG"
+  fi
+  exit $rc
+}
+
 # already_copied <basename> <size>: 0 when a file of that name ending and exact size is already under ~/flight_logs/sim
 # (test runs name copies drone_<n>_sysid<s>_<basename>; ulog_guard's own copies are <tmpdir>_<datedir>_<basename>)
 already_copied() {
@@ -465,7 +505,7 @@ cmd_doctor() { DRY=1 cmd_setup "$@"; }
 SUB=${1:-}
 case "$SUB" in
   ""|-h|--help) usage; exit 2 ;;
-  setup|doctor|up|down|status|tabs|keys|test|figures|check) shift ;;
+  setup|doctor|up|down|status|tabs|keys|test|figures|check|param) shift ;;
   *) usage; exit 2 ;;
 esac
 
@@ -485,6 +525,7 @@ case "$SUB" in
   status) no_args "$@"; HEADLESS=false; stack_env nomk; PHASE=status; status ;;
   tabs)   no_args "$@"; exec "$REPO/tools/sim_terminals.sh" ;;
   keys)   cmd_keys "$@"; exit $? ;;
+  param)  cmd_param "$@" ;;
   test)   parse_test_args "$@"; cmd_test ;;
   figures) cmd_figures "$@" ;;
   setup)  cmd_setup "$@" ;;

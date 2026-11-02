@@ -9,7 +9,7 @@ Rotation (BODY -> WORLD), psi = ENU yaw:
 
 Guard (BODY mode only; WORLD never trips): the horizontal command is zeroed (vz and yaw rate still pass)
 when the latest heading is older than stale_s, or when two consecutive headings differ by more than
-jump_rad (wrapped to +-pi). A jump stays latched until the input is centred (|v_xy| < CENTRED_MPS) AND the
+jump_rad (wrapped to +-pi). Both trips stay latched until the input is centred (|v_xy| < CENTRED_MPS) AND the
 heading is fresh and steady again.
 
 A mode flip is applied only when the input is centred; until then it is `pending`. Requesting the current
@@ -74,7 +74,7 @@ class FrameState:
         return not math.isnan(self.yaw_t) and (t - self.yaw_t) <= self.stale_s
 
     def _try_rearm(self, t: float) -> None:
-        if self.tripped == "jump" and self.last_input_centred and self._fresh(t) and self._steady():
+        if self.tripped is not None and self.last_input_centred and self._fresh(t) and self._steady():
             self.tripped = None
 
     def update_heading(self, yaw: float, t: float) -> None:
@@ -99,7 +99,9 @@ class FrameState:
         if self.mode == "world":
             return vx, vy, vz, yaw_rate
         self._try_rearm(t)
-        if self.tripped is not None or not self._fresh(t):
+        if self.tripped is None and not self._fresh(t):
+            self.tripped = "stale"
+        if self.tripped is not None:
             return 0.0, 0.0, vz, yaw_rate
         wx, wy = rotate_body_to_world(vx, vy, self.yaw)
         return wx, wy, vz, yaw_rate

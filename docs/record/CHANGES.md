@@ -34,3 +34,4 @@ The last cell is `this` (the commit that carries the entry) or the sha(s) of old
 | CHG-0024 | 2026-11-02 | sim-only | sim airframe: MC_YAWRATE_P 0.07 -> 0.25, MC_YAWRATE_I 0.5 -> 0.2 (with the 15 Hz yaw filter of CHG-0023); real drone keeps 0.07 / 0.5 | this |
 | CHG-0025 | 2026-11-02 | tooling | yaw_step fly.sh waits for swarm_commander to subscribe to the teleop topic, plus 2 s, before the first pulse; no pulses after 30 s without it | this |
 | CHG-0026 | 2026-11-03 | sim-only | tools/teleop/frame.py: BODY/WORLD rotation, pending flip, heading guard — pure logic for the relay | this |
+| CHG-0027 | 2026-11-03 | sim-only | tools/teleop/frame.py: a stale heading now stays latched (like a jump) until the keys are centred and the heading is fresh and steady, so odometry returning mid-push no longer resumes the full horizontal command | this |

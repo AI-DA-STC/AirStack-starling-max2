@@ -46,6 +46,14 @@ class Guard(unittest.TestCase):
     def test_stale_heading_zeroes_horizontal_keeps_vz_and_yaw(self):
         s = F.FrameState(); s.update_heading(0.0, 10.0)
         self.assertEqual(s.command(1.0, 0.5, 0.3, 0.7, 10.5), (0.0, 0.0, 0.3, 0.7)); self.assertEqual(s.status(10.5)["guard"], "stale")
+    def test_stale_trip_stays_latched_until_centred(self):
+        s = F.FrameState(); s.update_heading(0.0, 10.0)
+        self.assertEqual(s.command(1.0, 0, 0, 0, 10.5)[:2], (0.0, 0.0))
+        s.update_heading(0.0, 10.6)                                                       # fresh again, key still held
+        self.assertEqual(s.command(1.0, 0, 0, 0, 10.61)[:2], (0.0, 0.0)); self.assertEqual(s.status(10.61)["guard"], "stale")
+        s.command(0.0, 0.0, 0, 0, 10.65); s.update_heading(0.0, 10.7)
+        self.assertEqual(s.status(10.71)["guard"], "ok"); self.assertEqual(s.command(1.0, 0, 0, 0, 10.72)[0], 1.0)
+
     def test_normal_sample_gap_does_not_trip(self):
         s = F.FrameState(); s.update_heading(0.0, 10.0); s.update_heading(0.03, 10.1)
         self.assertEqual(s.command(1.0, 0.0, 0, 0, 10.15)[0], 1.0 * math.cos(0.03)); self.assertEqual(s.status(10.15)["guard"], "ok")

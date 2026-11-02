@@ -46,7 +46,7 @@ nose points; turn the drone 180° and forward is still the *same* wall (CMU `tel
 command is published as world-frame ENU velocity). And **the sticks do nothing until you call
 `start`** — `takeoff` climbs to `hover_positions` and holds there; only
 `/swarm_commander/start` hands the drone to the pad, and only for drones listed in the
-commander's `teleop_drones`. The sim keyboard is the exception: it flies in Drive mode (BODY) through our relay, §3b.
+commander's `teleop_drones`. The sim keyboard with `teleop_single_ours.yaml` is the exception: it flies in Drive mode (BODY) through our relay, §3b.
 
 Chain, end to end:
 
@@ -144,6 +144,12 @@ Drive mode (BODY) is the default: ↑ goes where the nose points, like driving a
 pad's behaviour: ↑ is always the far wall, like moving a chess piece. `F` only asks the relay to switch.
 The switch waits until every key is up, so a push in flight is never reversed. The window header shows the
 mode in words and turns red when the heading is lost.
+
+Drive mode needs `teleop_single_ours.yaml`. `keys` starts the relay, a small node between `safe_teleop` and the
+commander that turns the stick into room velocities. With a pad, start it with `tools/sim.sh relay` and stop it
+with `tools/sim.sh relay stop`. A grey Room-mode header means the relay gets no stick: the old yaml is loaded, or
+`safe_teleop` is not running. A red "Keys not reaching the drone" header means the relay is silent: close the
+window, then run `tools/sim.sh keys`.
 
 `safe_teleop` commands velocities, so roll slides the drone sideways and pitch moves it forward or back.
 Two arrow keys together fly no faster than one. There is no stick lock on the keyboard.

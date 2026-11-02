@@ -223,6 +223,21 @@ class Relay(unittest.TestCase):
         self.tick(); self.assertIn("guard=stale", self.status.sent[-1].data)
         self.assertEqual(sum("teleop_frame: HEADING STALE" in l for l in self.node.logger.lines), 1)
 
+    def test_zero_quaternions_after_good_ones_go_stale_never_0_deg(self):   # final review extra: an unfilled quaternion
+        self.odom_cb(_odom(math.pi / 2))                                       # heading 270
+        self.in_cb(_cmd(0.0, 0.0, 0.0, 0.0))
+        zero = Odometry(); zero.pose.pose.orientation = _NS(x=0.0, y=0.0, z=0.0, w=0.0)
+        for _ in range(10):                                                    # 0.5 s of zero quaternions
+            self.t += 0.05
+            self.odom_cb(zero)
+        self.in_cb(_cmd(1.0, 0.0, 0.0, 0.0))
+        m = self.out.sent[-1]
+        self.assertEqual((m.twist.linear.x, m.twist.linear.y), (0.0, 0.0))
+        self.tick()
+        line = self.status.sent[-1].data
+        self.assertIn("guard=stale", line)
+        self.assertNotRegex(line, r"heading_deg=0\.0\b")
+
     def test_heading_jump_logged(self):
         self.odom_cb(_odom(0.0)); self.odom_cb(_odom(1.0))
         self.in_cb(_cmd(1.0, 0.0, 0.0, 0.0))

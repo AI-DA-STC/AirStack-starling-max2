@@ -127,7 +127,10 @@ def main(argv=None) -> int:
         if status_dict is None or flip_pending["fut"] is not None:
             print("key_teleop: F ignored — no relay status yet" if status_dict is None else "key_teleop: F ignored — previous request still open", flush=True)
             return
-        target = "world" if status_dict.get("frame") == "body" else "body"
+        target = K.flip_target(status_dict)
+        if target is None:
+            print("key_teleop: F ignored — relay has no input to flip", flush=True)
+            return
         req = SetParameters.Request()
         req.parameters = [Parameter(name="stick_frame", value=ParameterValue(type=ParameterType.PARAMETER_STRING, string_value=target))]
         flip_pending.update(fut=flip_cli.call_async(req), target=target)
@@ -139,8 +142,12 @@ def main(argv=None) -> int:
 
     closed = {"done": False}
     last_count = {"t": 0.0, "n": 0}
+    from rcl_interfaces.srv import GetParameters
+    live_cli = node.create_client(GetParameters, "/safe_teleop/get_parameters")
+    live_read = {"fut": None, "t": time.monotonic()}      # max_speed_mps follows the commander live (Foxglove dropdown)
 
     def tick():
+        nonlocal max_speed
         if stop["now"]:
             close()
             return
@@ -164,6 +171,17 @@ def main(argv=None) -> int:
                 ok = bool(res and res.results and res.results[0].successful)
                 print("key_teleop: F -> stick_frame=%s %s" % (flip_pending["target"], "accepted" if ok else "FAILED"), flush=True)
                 flip_pending.update(fut=None, target=None)
+            if live_read["fut"] is None and now - live_read["t"] >= 2.0 and live_cli.service_is_ready():
+                req = GetParameters.Request()
+                req.names = ["teleop_controller", "deadzone", "max_speed_mps"]
+                live_read.update(fut=live_cli.call_async(req), t=now)
+            elif live_read["fut"] is not None and live_read["fut"].done():
+                if live_read["fut"].exception() is None:
+                    vals = live_read["fut"].result().values
+                    if len(vals) > 2:
+                        max_speed = vals[2].double_value or max_speed
+                        state.deadzone = vals[1].double_value or state.deadzone
+                live_read["fut"] = None
             if now - last_count["t"] >= 1.0:
                 n = max(0, node.count_publishers(a.topic) - 1)      # minus our own publisher
                 if n != last_count["n"]:

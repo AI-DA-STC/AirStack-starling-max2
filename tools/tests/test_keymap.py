@@ -174,6 +174,26 @@ class Safety(unittest.TestCase):
             for w in ("BODY", "WORLD", "CMU"):
                 self.assertNotIn(w, lines[0] + lines[1])
 
+    def test_stop_clears_when_a_flight_key_is_pressed_again(self):
+        s = K.KeyState("dragonrise_usb"); s.press("space", 1.0); s.press("Up", 1.3)
+        self.assertNotEqual(set(s.axes(1.4)), {0.0}); self.assertNotIn("STOP", s.status(1.4))
+
+    def test_flip_target_cancels_a_pending_flip(self):
+        P = K.parse_status
+        base = "heading_deg=1 heading_age_s=0.1 guard=ok input=ok"
+        self.assertEqual(K.flip_target(P("frame=body pending=none " + base)), "world")
+        self.assertEqual(K.flip_target(P("frame=world pending=none " + base)), "body")
+        self.assertEqual(K.flip_target(P("frame=body pending=world " + base)), "body")      # second F cancels
+        self.assertEqual(K.flip_target(P("frame=world pending=body " + base)), "world")
+        self.assertIsNone(K.flip_target(None)); self.assertIsNone(K.flip_target({}))
+        self.assertTrue(K.footer_line(P("frame=body pending=world " + base)).endswith("F → drive mode"))
+
+    def test_garbled_status_reads_as_relay_missing(self):
+        for st in ({}, K.parse_status("garbage"), K.parse_status("frame=sideways pending=none guard=ok input=ok")):
+            lines = K.header_lines(st, True)
+            self.assertEqual(lines[0], "Keys not reaching the drone — run tools/sim.sh keys again"); self.assertEqual(lines[2], K.RED)
+            self.assertNotIn("F →", K.footer_line(st))
+
     def test_footer_follows_the_mode(self):
         P = K.parse_status
         self.assertEqual(K.footer_line(P("frame=body pending=none heading_deg=1 heading_age_s=0.1 guard=ok input=ok")),
@@ -245,3 +265,9 @@ class WindowReviewFixes(unittest.TestCase):
         tick = self.SRC[self.SRC.index("def tick():"):self.SRC.index("def close():")]
         self.assertIn("call_async", self.SRC); self.assertNotIn("spin_until_future_complete", tick)
         self.assertIn("flip_requested", tick)
+
+    def test_max_speed_is_re_read_periodically_without_blocking(self):
+        tick = self.SRC[self.SRC.index("def tick():"):self.SRC.index("def close():")]
+        self.assertIn("/safe_teleop/get_parameters", self.SRC)
+        self.assertIn("call_async", tick); self.assertIn("max_speed", tick)
+        self.assertNotIn("spin_until_future_complete", tick)

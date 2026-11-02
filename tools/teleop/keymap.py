@@ -99,6 +99,7 @@ class KeyState:
             self.flip_requested = True
             return
         if k in KEYS:
+            self.stop_at = None            # a new flight key ends the STOP display
             self._settle(t)
             self._down.add(k)
             self._released.pop(k, None)
@@ -182,7 +183,7 @@ _DRIVE = ("Drive mode — ↑ is always where the nose points", "Like driving a 
 
 def header_lines(status, relay_seen):
     """(bold line, sentence, colour) for the window header; wording is spec 5.4 (words only)."""
-    if status is None or not relay_seen:
+    if status is None or not relay_seen or status.get("frame") not in ("body", "world"):
         return ("Keys not reaching the drone — run tools/sim.sh keys again", "", RED)
     if status.get("input") == "none":
         return _ROOM + (GREY,)
@@ -198,8 +199,19 @@ def header_lines(status, relay_seen):
     return _DRIVE + (GREEN,)
 
 
+def flip_target(status):
+    """The mode F asks for: the other one, measured from the pending target if a flip is waiting (so a second F
+    cancels it). None when there is no usable status or the relay has no input (nothing to flip)."""
+    if status is None or status.get("input") == "none" or status.get("frame") not in ("body", "world"):
+        return None
+    pending = status.get("pending", "none")
+    effective = pending if pending in ("body", "world") else status["frame"]
+    return "body" if effective == "world" else "world"
+
+
 def footer_line(status):
     base = "A / D turn · W / S up / down · Space STOP"
-    if status is None or status.get("input") == "none":
+    target = flip_target(status)
+    if target is None:
         return base
-    return base + (" · F → drive mode" if status.get("frame") == "world" else " · F → room mode")
+    return base + (" · F → drive mode" if target == "body" else " · F → room mode")

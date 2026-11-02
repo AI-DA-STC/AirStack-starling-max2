@@ -43,6 +43,7 @@ CHANGES_LOG="$HERE/changes.log" PARAM_HELPER="$HERE/px4_param_set.sh" PYTHONPATH
 import os, re, signal, subprocess, sys, threading, time
 
 import rclpy
+from rclpy.executors import SingleThreadedExecutor
 from geometry_msgs.msg import TwistStamped
 try:
     from rclpy.signals import SignalHandlerOptions
@@ -270,7 +271,10 @@ def message():
 
 
 node.create_timer(0.05, lambda: pub.publish(message()))
-threading.Thread(target=rclpy.spin, args=(node,), daemon=True).start()
+executor = SingleThreadedExecutor()      # CHG-0022: an executor we can stop; bare rclpy.spin in a thread was still running at exit
+executor.add_node(node)
+spin_thread = threading.Thread(target=executor.spin, daemon=True)
+spin_thread.start()
 rc = 1
 try:
     rc = main(node, pub)
@@ -294,14 +298,25 @@ finally:
     except Exception as e:  # noqa: BLE001
         print("CAVEAT: restoring the booted gains failed (%s: %s); the running PX4 may keep the sweep gains %s"
               % (type(e).__name__, e, ", ".join(touched)), flush=True)
-    try:
-        node.destroy_node()
-        rclpy.shutdown()
-    except Exception:  # noqa: BLE001
-        pass
+    # CHG-0022 shutdown order: stop the executor, join its thread, destroy the node, then rclpy. A spin thread still
+    # running at interpreter exit made the C++ runtime abort (`terminate called without an active exception`).
+    for step in (lambda: executor.shutdown(), lambda: spin_thread.join(5.0), lambda: node.destroy_node(),
+                 lambda: (rclpy.try_shutdown if hasattr(rclpy, "try_shutdown") else rclpy.shutdown)()):
+        try:
+            step()
+        except Exception:  # noqa: BLE001
+            pass
+    if spin_thread.is_alive():
+        print("CAVEAT: the yaw_step spin thread did not stop within 5 s of executor.shutdown(); the python may abort at exit",
+              flush=True)
 sys.exit(rc)
 PY
 rc=$?
+# CHG-0022: the program itself only ever exits 0 or 1; anything else (134 = abort, 139 = segfault, 128+n = a signal) is a crash
+if [ "$rc" -gt 1 ]; then
+  sig=""; [ "$rc" -gt 128 ] && sig=" (signal $((rc - 128)))"
+  echo "CAVEAT: the yaw_step pulse program (python) died with exit code $rc$sig instead of 0/1 -- the C++ runtime aborting at shutdown (\`terminate called without an active exception\`) or a crash; the landing below still ran"
+fi
 echo "[$(date +%T)] land: $(svc land)"
 wait_s 15
 echo "[$(date +%T)] landed: $(states)"

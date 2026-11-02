@@ -432,6 +432,11 @@ RUNNER = r"""
 import os, sys, time, types
 time.sleep = lambda s: None
 os.environ["FAKE_PYPID"] = str(os.getpid())
+import threading
+_EV = os.environ.get("FAKE_EVENTS")
+def ev(name):
+    if _EV:
+        open(_EV, "a").write(name + "\n")
 class _Clock:
     def now(self): return self
     def to_msg(self): return None
@@ -439,16 +444,34 @@ class _Node:
     def create_publisher(self, *a): return types.SimpleNamespace(publish=lambda m: None)
     def create_timer(self, *a): return None
     def get_clock(self): return _Clock()
-    def destroy_node(self): pass
+    def destroy_node(self): ev("node.destroy")
 class TwistStamped:
     def __init__(self):
         self.header = types.SimpleNamespace(stamp=None, frame_id="")
         self.twist = types.SimpleNamespace(angular=types.SimpleNamespace(z=0.0), linear=types.SimpleNamespace(x=0.0))
 rclpy = types.ModuleType("rclpy"); rclpy.init = lambda **k: None; rclpy.create_node = lambda n: _Node()
-rclpy.spin = lambda n: None; rclpy.shutdown = lambda: None
+def _spin_forever(n):          # a real spin never returns by itself: only executor.shutdown() ends it
+    threading.Event().wait()
+rclpy.spin = _spin_forever
+def _shutdown():
+    ev("rclpy.shutdown")
+    if os.environ.get("FAKE_ABORT_AT_SHUTDOWN"): os.abort()      # the C++ runtime's `terminate called without an active exception`
+rclpy.shutdown = _shutdown
+def _try_shutdown():
+    ev("rclpy.try_shutdown")
+    if os.environ.get("FAKE_ABORT_AT_SHUTDOWN"): os.abort()
+rclpy.try_shutdown = _try_shutdown
+class SingleThreadedExecutor:
+    def __init__(self): self._stop = threading.Event()
+    def add_node(self, n): ev("executor.add_node")
+    def spin(self):
+        ev("spin.start"); self._stop.wait(); ev("spin.exit")
+    def shutdown(self, *a, **k):
+        ev("executor.shutdown"); self._stop.set()
+exe = types.ModuleType("rclpy.executors"); exe.SingleThreadedExecutor = SingleThreadedExecutor
 sig = types.ModuleType("rclpy.signals"); sig.SignalHandlerOptions = types.SimpleNamespace(NO=0)
 gmm = types.ModuleType("geometry_msgs.msg"); gmm.TwistStamped = TwistStamped
-sys.modules.update({"rclpy": rclpy, "rclpy.signals": sig, "geometry_msgs": types.ModuleType("geometry_msgs"), "geometry_msgs.msg": gmm})
+sys.modules.update({"rclpy": rclpy, "rclpy.signals": sig, "rclpy.executors": exe, "geometry_msgs": types.ModuleType("geometry_msgs"), "geometry_msgs.msg": gmm})
 code = open(sys.argv[1]).read()
 sys.argv = ["-", "yaw_step/fly.sh"] + sys.argv[2:]
 exec(compile(code, "fly.sh<<PY", "exec"), {"__name__": "__main__"})
@@ -495,6 +518,55 @@ def run_program(tmp, sweep, **fake):
     calls = (tmp / "state" / "calls").read_text().splitlines() if (tmp / "state" / "calls").exists() else []
     run_program.calls = calls          # every ros2 call: "<discovery range> <static peers> <argv>"
     return r, [C.parse_change(l) for l in log], state
+
+
+FAKE_PY3 = """#!/bin/bash
+# stands in for `python3 - yaw_step/fly.sh GAP N RATE PULSE SWEEP <<PY`: program on stdin, stubbed rclpy
+cat > "$FAKE_DIR/prog.py"; shift 2
+exec "$REAL_PY" "$FAKE_DIR/runner.py" "$FAKE_DIR/prog.py" "$@"
+"""
+FAKE_ROS2_SVC = "#!/bin/bash\ncase \"$*\" in *service*call*) echo \"success=True, message='ok'\";; esac\nexit 0\n"
+
+
+def run_flysh(tmp, **fake):
+    """The whole fly.sh (bash + embedded program) with a fake ros2, python3 and sleep: no ROS, no docker."""
+    tmp = pathlib.Path(tmp); (tmp / "bin").mkdir(parents=True); (tmp / "home/AirStack/robot/ros_ws/install").mkdir(parents=True)
+    (tmp / "home/AirStack/robot/ros_ws/install/setup.bash").write_text("")
+    for name, body in (("ros2", FAKE_ROS2_SVC), ("python3", FAKE_PY3), ("sleep", "#!/bin/bash\nexit 0\n")):
+        (tmp / "bin" / name).write_text(body); (tmp / "bin" / name).chmod(0o755)
+    (tmp / "runner.py").write_text(RUNNER)
+    for f in ("changes_log.py", "px4_param_set.sh"):
+        shutil.copy(TOOLS / "lib" / f, tmp / f)
+    shutil.copy(YAW / "fly.sh", tmp / "fly.sh")
+    env = dict(os.environ, HOME=str(tmp / "home"), PATH=str(tmp / "bin") + ":" + os.environ["PATH"], FAKE_DIR=str(tmp),
+               REAL_PY=sys.executable, **fake)
+    return subprocess.run(["bash", str(tmp / "fly.sh"), "0", "1", "1.0", "0"], capture_output=True, text=True, timeout=60, env=env)
+
+
+class FlyShExit(unittest.TestCase):                                              # CHG-0022
+    def test_the_spin_thread_is_stopped_and_joined_before_the_node_and_rclpy_go(self):
+        with tempfile.TemporaryDirectory() as d:
+            ev = pathlib.Path(d) / "events"
+            r = run_flysh(pathlib.Path(d) / "run", FAKE_EVENTS=str(ev))
+            events = ev.read_text().split()
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertEqual(events[-4:], ["executor.shutdown", "spin.exit", "node.destroy", "rclpy.try_shutdown"], events)
+        self.assertIn("spin.start", events); self.assertNotIn("rclpy.shutdown", events)
+
+    def test_a_clean_python_exit_adds_no_caveat(self):
+        with tempfile.TemporaryDirectory() as d:
+            r = run_flysh(d)
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertNotIn("CAVEAT", r.stdout); self.assertIn("landed:", r.stdout)
+
+    def test_an_aborted_python_is_flagged_and_the_landing_still_runs(self):
+        with tempfile.TemporaryDirectory() as d:
+            r = run_flysh(d, FAKE_ABORT_AT_SHUTDOWN="1")
+        self.assertNotEqual(r.returncode, 0, r.stdout)
+        cav = [l for l in r.stdout.splitlines() if l.startswith("CAVEAT: ")]
+        self.assertEqual(len(cav), 1, r.stdout)
+        self.assertIn("pulse program", cav[0]); self.assertIn("134", cav[0]); self.assertIn("signal 6", cav[0])
+        self.assertIn("landed:", r.stdout)
 
 
 class FlyProgram(unittest.TestCase):

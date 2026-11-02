@@ -1,0 +1,23 @@
+[13:36:08] pre-takeoff: name:drone_1 state:IDLE position:[0.016,0.013,-0.015]
+[13:36:10] takeoff: success=True, message='takeoff: drone_1'
+[13:36:19] start: success=True, message='scenario "hover" running'
+[13:36:19] pulses: gap 20 s (wall), 3 per direction, rate 1.0 rad/s, pulse 1.0 s, sweep 'none'
+[1793626579.518289] pulse 0/1 onset sign=+1 rate=1.000
+[1793626580.518516] pulse 0/1 release
+[1793626600.518587] pulse 0/2 onset sign=-1 rate=1.000
+[1793626601.518722] pulse 0/2 release
+[1793626621.518843] pulse 0/3 onset sign=+1 rate=1.000
+[1793626622.518984] pulse 0/3 release
+[1793626642.519114] pulse 0/4 onset sign=-1 rate=1.000
+[1793626643.519233] pulse 0/4 release
+[1793626663.519353] pulse 0/5 onset sign=+1 rate=1.000
+[1793626664.519475] pulse 0/5 release
+[1793626684.519580] pulse 0/6 onset sign=-1 rate=1.000
+[1793626685.519701] pulse 0/6 release
+[1793626705.519826] turn onset sign=+1 rate=0.500
+[1793626708.659950] turn release
+[1793626713.660069] tap onset vx=0.500
+[1793626715.160192] tap release
+[13:38:41] pulse program done (rc 0); zeros published
+[13:38:41] land: success=True, message='landing: drone_1'
+[13:38:57] landed: name:land name:drone_1 state:IDLE position:[0.732,0.004,0.014]

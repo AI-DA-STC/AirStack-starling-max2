@@ -1,0 +1,10 @@
+head=31abf12a4a2e53c6002c165b874a50f973570af3
+head_short=31abf12
+dirty_tools=0
+started=2026-11-02T17:09:31+08:00
+tz=+08
+run=sim_yaw_run1
+steps_per_axis=
+num_robots=1
+fly_args=3 1.0 1.0
+offsets=0,0,0

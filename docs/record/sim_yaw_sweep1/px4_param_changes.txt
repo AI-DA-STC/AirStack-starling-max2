@@ -1,0 +1,1 @@
+# MC_YAW* parameter changes of drone_1_sysid2_10_10_13.ulg, t_s = PX4 vehicle time (s since boot); sim only

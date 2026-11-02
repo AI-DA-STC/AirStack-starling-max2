@@ -1,0 +1,67 @@
+[12:53:27] pre-takeoff: name:drone_1 state:IDLE position:[-0.03,0.021,-0.018]
+[12:53:28] takeoff: success=True, message='takeoff: drone_1'
+[12:53:33] start: success=True, message='scenario "hover" running'
+[12:53:33] pulses: gap 20 s (wall), 2 per direction, rate 1.0 rad/s, pulse 1.0 s, sweep 'MC_YAWRATE_P=0.07,MC_YAWRATE_I=0.2;MC_YAWRATE_P=0.14,MC_YAWRATE_I=0.5;MC_YAWRATE_P=0.14,MC_YAWRATE_I=0.2;MC_YAWRATE_P=0.25,MC_YAWRATE_I=0.2'
+[1793624019.930233] pulse 0/1 onset sign=+1 rate=1.000
+[1793624020.930353] pulse 0/1 release
+[1793624040.930467] pulse 0/2 onset sign=-1 rate=1.000
+[1793624041.930577] pulse 0/2 release
+[1793624061.930640] pulse 0/3 onset sign=+1 rate=1.000
+[1793624062.930756] pulse 0/3 release
+[1793624082.930876] pulse 0/4 onset sign=-1 rate=1.000
+[1793624083.931000] pulse 0/4 release
+[12:55:03] set 1: MC_YAWRATE_P=0.07, MC_YAWRATE_I=0.2
+2026-11-02T12:55:15+00:00 · drone_1/MC_YAWRATE_P · 0.07 → 0.07 · yaw_step-sweep-set-1 (via ros2 param set) · readback 0.07
+2026-11-02T12:55:27+00:00 · drone_1/MC_YAWRATE_I · 0.5 → 0.2 · yaw_step-sweep-set-1 (via ros2 param set) · readback 0.2
+[1793624130.866125] pulse 1/1 onset sign=+1 rate=1.000
+[1793624131.866244] pulse 1/1 release
+[1793624151.866378] pulse 1/2 onset sign=-1 rate=1.000
+[1793624152.866526] pulse 1/2 release
+[1793624172.866656] pulse 1/3 onset sign=+1 rate=1.000
+[1793624173.866789] pulse 1/3 release
+[1793624193.866913] pulse 1/4 onset sign=-1 rate=1.000
+[1793624194.867023] pulse 1/4 release
+[12:56:54] set 2: MC_YAWRATE_P=0.14, MC_YAWRATE_I=0.5
+2026-11-02T12:57:06+00:00 · drone_1/MC_YAWRATE_P · 0.07 → 0.14 · yaw_step-sweep-set-2 (via ros2 param set) · readback 0.14
+2026-11-02T12:57:21+00:00 · drone_1/MC_YAWRATE_I · 0.2 → 0.5 · yaw_step-sweep-set-2 (via ros2 param set) · readback 0.5
+[1793624244.892381] pulse 2/1 onset sign=+1 rate=1.000
+[1793624245.892529] pulse 2/1 release
+[1793624265.892724] pulse 2/2 onset sign=-1 rate=1.000
+[1793624266.892881] pulse 2/2 release
+[1793624286.893002] pulse 2/3 onset sign=+1 rate=1.000
+[1793624287.893133] pulse 2/3 release
+[1793624307.893278] pulse 2/4 onset sign=-1 rate=1.000
+[1793624308.893437] pulse 2/4 release
+[12:58:48] set 3: MC_YAWRATE_P=0.14, MC_YAWRATE_I=0.2
+2026-11-02T12:59:02+00:00 · drone_1/MC_YAWRATE_P · 0.14 → 0.14 · yaw_step-sweep-set-3 (via ros2 param set) · readback 0.14
+2026-11-02T12:59:16+00:00 · drone_1/MC_YAWRATE_I · 0.5 → 0.2 · yaw_step-sweep-set-3 (via ros2 param set) · readback 0.2
+[1793624359.075012] pulse 3/1 onset sign=+1 rate=1.000
+[1793624360.075131] pulse 3/1 release
+[1793624380.075243] pulse 3/2 onset sign=-1 rate=1.000
+[1793624381.075348] pulse 3/2 release
+[1793624401.075452] pulse 3/3 onset sign=+1 rate=1.000
+[1793624402.075576] pulse 3/3 release
+[1793624422.075691] pulse 3/4 onset sign=-1 rate=1.000
+[1793624423.075809] pulse 3/4 release
+[13:00:43] set 4: MC_YAWRATE_P=0.25, MC_YAWRATE_I=0.2
+2026-11-02T13:00:54+00:00 · drone_1/MC_YAWRATE_P · 0.14 → 0.25 · yaw_step-sweep-set-4 (via ros2 param set) · readback 0.25
+2026-11-02T13:01:06+00:00 · drone_1/MC_YAWRATE_I · 0.2 → 0.2 · yaw_step-sweep-set-4 (via ros2 param set) · readback 0.2
+[1793624469.834209] pulse 4/1 onset sign=+1 rate=1.000
+[1793624470.834324] pulse 4/1 release
+[1793624490.834463] pulse 4/2 onset sign=-1 rate=1.000
+[1793624491.834642] pulse 4/2 release
+[1793624511.834768] pulse 4/3 onset sign=+1 rate=1.000
+[1793624512.834905] pulse 4/3 release
+[1793624532.835029] pulse 4/4 onset sign=-1 rate=1.000
+[1793624533.835147] pulse 4/4 release
+[13:02:33] restoring the booted gains (after the sweep before the patch-0007 check): MC_YAWRATE_P=0.07, MC_YAWRATE_I=0.5
+2026-11-02T13:02:43+00:00 · drone_1/MC_YAWRATE_P · 0.25 → 0.07 · restore-yaw_step-after-the-sweep-before-the-patch-0007-check (via ros2 param set) · readback 0.07
+2026-11-02T13:02:53+00:00 · drone_1/MC_YAWRATE_I · 0.2 → 0.5 · restore-yaw_step-after-the-sweep-before-the-patch-0007-check (via ros2 param set) · readback 0.5
+[1793624573.966537] booted gains restored: MC_YAWRATE_P=0.07, MC_YAWRATE_I=0.5
+[1793624573.966546] turn onset sign=+1 rate=0.500
+[1793624577.106631] turn release
+[1793624582.106774] tap onset vx=0.500
+[1793624583.607013] tap release
+[13:03:09] pulse program done (rc 0); zeros published
+[13:03:09] land: success=True, message='landing: drone_1'
+[13:03:25] landed: name:land name:drone_1 state:IDLE position:[0.753,0.09,-0.031]

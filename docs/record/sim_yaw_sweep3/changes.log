@@ -1,0 +1,10 @@
+2026-11-02T11:31:08+00:00 · drone_1/MC_YAWRATE_P · 0.07 → 0.14 · yaw_step-sweep-set-1 (via ros2 param set) · readback 0.14
+2026-11-02T11:31:23+00:00 · drone_1/MC_YAWRATE_I · 0.5 → 0.5 · yaw_step-sweep-set-1 (via ros2 param set) · readback 0.5
+2026-11-02T11:33:05+00:00 · drone_1/MC_YAWRATE_P · 0.14 → 0.14 · yaw_step-sweep-set-2 (via ros2 param set) · readback 0.14
+2026-11-02T11:33:20+00:00 · drone_1/MC_YAWRATE_I · 0.5 → 0.2 · yaw_step-sweep-set-2 (via ros2 param set) · readback 0.2
+2026-11-02T11:35:02+00:00 · drone_1/MC_YAWRATE_P · 0.14 → 0.25 · yaw_step-sweep-set-3 (via ros2 param set) · readback 0.25
+2026-11-02T11:35:14+00:00 · drone_1/MC_YAWRATE_I · 0.2 → 0.3 · yaw_step-sweep-set-3 (via ros2 param set) · readback 0.3
+2026-11-02T11:36:50+00:00 · drone_1/MC_YAWRATE_P · 0.25 → 0.25 · yaw_step-sweep-set-4 (via ros2 param set) · readback 0.25
+2026-11-02T11:36:59+00:00 · drone_1/MC_YAWRATE_I · 0.3 → 0.5 · yaw_step-sweep-set-4 (via ros2 param set) · readback 0.5
+2026-11-02T11:38:40+00:00 · drone_1/MC_YAWRATE_P · 0.25 → 0.07 · restore-yaw_step-after-the-sweep-before-the-patch-0007-check (via ros2 param set) · readback 0.07
+2026-11-02T11:38:50+00:00 · drone_1/MC_YAWRATE_I · 0.5 → 0.5 · restore-yaw_step-after-the-sweep-before-the-patch-0007-check (via ros2 param set) · readback 0.5

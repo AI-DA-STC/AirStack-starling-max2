@@ -1,0 +1,10 @@
+head=ba2f3c4f91364e84d617d32457a694c0d10e3998
+head_short=ba2f3c4
+dirty_tools=1
+started=2026-11-02T19:59:55+08:00
+tz=+08
+run=sim_yaw_sweep4
+steps_per_axis=
+num_robots=1
+fly_args=2 1.0 1.0 MC_YAWRATE_P=0.25,MC_YAWRATE_I=0.2;MC_YAWRATE_P=0.35,MC_YAWRATE_I=0.2;MC_YAWRATE_P=0.35,MC_YAWRATE_I=0.1;MC_YAWRATE_P=0.45,MC_YAWRATE_I=0.2
+offsets=0,0,0

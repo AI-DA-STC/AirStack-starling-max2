@@ -1,0 +1,112 @@
+[19:25:57 +08] == phase precheck ==
+[19:25:57 +08] precheck: no real-drone bridge on the laptop, port 8765 free, drone battery out (sim shares domain 1)
+[19:25:57 +08] WARN: Isaac start/stop can crash the WiFi firmware (iwlwifi) — use Ethernet or sit at the laptop
+NVIDIA GeForce RTX 5070 Ti Laptop GPU, 1575 MiB
+[19:25:57 +08] == phase up ==
+[0;32m[INFO][0m Starting services...
+ Container airstack-gcs-1 Running 
+ Container isaac-sim Running 
+ Container airstack-robot-desktop-1 Running 
+[0;32m[INFO][0m Services brought up successfully
+head=31abf12a4a2e53c6002c165b874a50f973570af3
+head_short=31abf12
+dirty_tools=1
+started=2026-11-02T19:26:03+08:00
+tz=+08
+run=sim_yaw_sweep3
+steps_per_axis=
+num_robots=1
+fly_args=2 1.0 1.0 MC_YAWRATE_P=0.14,MC_YAWRATE_I=0.5;MC_YAWRATE_P=0.14,MC_YAWRATE_I=0.2;MC_YAWRATE_P=0.25,MC_YAWRATE_I=0.3;MC_YAWRATE_P=0.25,MC_YAWRATE_I=0.5
+[19:26:03 +08] up: containers running, domain 1 clean
+[19:26:03 +08] == phase watch ==
+[19:26:06 +08] watch: running (pid 1326919)
+[19:26:06 +08] == phase isaac ==
+[19:26:21 +08] Ready for takeoff: 1 (after 15s)
+model_line=1 starling_cfg=2 autostart=1 unknown_model=0 cooking=0 ready=1
+[19:26:21 +08] == phase interfaces ==
+[19:26:29 +08] drone_1 MAVROS connected (after ~8s)
+[19:26:30 +08] drone_1 odometry: ok (after 1 s)
+average rate: 74.287
+/drone_1/interface/mavros/setpoint_raw/target_attitude
+clock_rc=1
+[19:26:47 +08] interfaces: 1 drones with odometry
+[19:26:47 +08] == phase commander ==
+[19:26:49 +08] SwarmCommander up: 1 (after 2s)
+scenario hover states ['IDLE'] fresh [True] tuning {'teleop_max_speed_mps': 2.0, 'goal_accel_mps2': 3.0, 'goal_settle_s': 0.3, 'scenario_speed_mps': 0.6}
+{"stamp": 1793618812.9796789, "node": "/bag_recorder", "recording": true, "path": "/root/AirStack/robot/ros_ws/bags/yaw_step_20261102_112648", "started_at": 1793618808.9968734, "duration_s": 3.9828054904937744, "size_bytes": 2531328, "topic_count": 108, "bag_dir": "/root/AirStack/robot/ros_ws/bags", "bag_prefix": "yaw_step", "storage": "mcap", "include_hidden": false, "last_bag": null, "last_result": null, "error": null}
+[19:26:53 +08] == phase params ==
+
+SYS_AUTOSTART: Integer value is: 10090
+MC_PITCHRATE_P: Double value is: 0.03200000151991844
+MC_ROLLRATE_P: Double value is: 0.03200000151991844
+LNDMC_ROT_MAX: Double value is: 300.0
+MPC_XY_VEL_MAX: Double value is: 20.0
+MPC_THR_HOVER: Double value is: 0.16500000655651093
+IMU_GYRO_CUTOFF: Double value is: 80.0
+IMU_DGYRO_CUTOFF: Double value is: 40.0
+MPC_Z_VEL_MAX_DN: Double value is: 4.0
+MPC_ACC_HOR: Double value is: 6.0
+[19:27:15 +08] params: 10-20 airframe confirmed via MAVROS
+[19:27:15 +08] == phase snapshot ==
+mavros_msgs.srv.ParamPull_Response(success=True, param_received=895)
+[19:27:19 +08] snapshot start drone_1: 894 PX4 parameters
+[19:27:20 +08] snapshot start swarm_commander: 89 parameters
+[19:27:20 +08] == phase metrics ==
+[19:27:29 +08] metrics node ready: 1 (after 8s)
+[19:27:39 +08] metrics liveness: /svg/test/heading_rel_deg 10.001 Hz
+[19:27:39 +08] live plot window opened: drag it where OBS can see it, then click back into this terminal
+[19:27:39 +08] Stack up, drones on their pads, plots live. Start OBS now, then press Enter to fly.
+[19:29:14 +08] == phase fly ==
+[19:29:15 +08] fly: tools/sim_tests/yaw_step/fly.sh 20 s window 2 1.0 1.0 MC_YAWRATE_P=0.14,MC_YAWRATE_I=0.5;MC_YAWRATE_P=0.14,MC_YAWRATE_I=0.2;MC_YAWRATE_P=0.25,MC_YAWRATE_I=0.3;MC_YAWRATE_P=0.25,MC_YAWRATE_I=0.5 (takeoff -> start -> window -> land)
+drone_1 armed: false
+[swarm_commander-2] [0m[INFO] [1793619548.726831812] [swarm_commander]: drone_1: touchdown at z=0.14 m, settling 2.0 s before disarm[0m
+[swarm_commander-2] [0m[INFO] [1793619550.827032424] [swarm_commander]: drone_1: landed, disarmed (attempt 1)[0m
+mavros_msgs.srv.ParamPull_Response(success=True, param_received=895)
+[19:39:53 +08] snapshot end drone_1: 894 PX4 parameters
+[19:39:55 +08] snapshot end swarm_commander: 89 parameters
+[19:39:55 +08] Landed. Plots still live. Stop OBS, then click back into this terminal (keys typed into the plot window are lost).
+[19:39:55 +08] Landed. Plots still live; the metrics node stops when you press Enter. OBS video path, repo-relative, e.g. videos/<file>.mkv (Enter to skip):
+[19:41:49 +08] metrics.csv copied (55976 lines)
+[19:41:49 +08] changes.log copied (live parameter changes of this run)
+[19:41:49 +08] == phase collect ==
+2 /tmp/tmp2593mzxs/log/2026-11-02/11_26_17.ulg 453328273
+[19:41:54 +08] ulogs copied for sysids 2 -> /home/jeremychia/flight_logs/sim/sim_yaw_sweep3
+SYS_AUTOSTART 10090
+MAV_SYS_ID 2
+MC_PITCHRATE_P 0.03200000151991844
+MC_ROLLRATE_P 0.03200000151991844
+LNDMC_ROT_MAX 300.0
+MPC_XY_VEL_MAX 20.0
+MPC_THR_HOVER 0.16500000655651093
+IMU_GYRO_CUTOFF 80.0
+IMU_DGYRO_CUTOFF 40.0
+MPC_Z_VEL_MAX_DN 4.0
+MPC_ACC_HOR 6.0
+MC_YAW_P 2.799999952316284
+MC_YAWRATE_P 0.07000000029802322
+MC_YAWRATE_I 0.5
+MC_YAWRATE_D 0.0
+MC_YAWRATE_K 1.0
+# PX4 arm/disarm times of drone_1, MAV_SYS_ID 2, ulog /tmp/tmp2593mzxs/log/2026-11-02/11_26_17.ulg (vehicle time, s since PX4 boot)
+arm_s=424.317564 disarm_s=1658.884095 interval_s=1234.566531 source=11_26_17.ulg sysid=2
+ulog_yaw_dump: 137573 rows -> /home/jeremychia/flight_logs/sim/sim_yaw_sweep3/px4_drone_1.csv
+[19:42:06 +08] px4_drone_1.csv written (host pyulog)
+[19:42:09 +08] px4_param_changes_all.txt written (1 ulogs)
+[19:42:09 +08] == phase down ==
+[19:42:11 +08] bag copied to /home/jeremychia/flight_logs/sim/sim_yaw_sweep3/yaw_step_20261102_112648
+{"rows": 57042, "odom_msgs": {"drone_1": 59797}, "status_msgs": 4601, "cbf_msgs": 18404}
+[19:42:22 +08] metrics_bag.csv copied
+[19:42:48 +08] WARN: interface nodes still alive 25 s after SIGINT — TERM
+[19:42:48 +08] ulogs already copied (collect)
+[19:42:51 +08] orphaned PX4 SITL instances killed (Isaac's exit leaves them)
+model_line=1 starling_cfg=2 autostart=1 unknown_model=0 cooking=0 ready=1
+[19:43:21 +08] no WIFI-ALERT during the run
+[19:43:21 +08] down: stack stopped, containers left up
+wrote /home/jeremychia/AirStack-starling-max2/docs/record/sim_yaw_sweep3/fig-1.png
+FAIL: /home/jeremychia/AirStack-starling-max2/docs/record/sim_yaw_sweep3_record.md
+HEADLINE: `overshoot_deg`: worst 13.33° (pulse 0/2 (−)); 4 of 4 set-0 pulses with numbers
+  FAIL       heading overshoot ≤ 3.0°: `overshoot_deg`: worst 13.33° (pulse 0/2 (−)); 4 of 4 set-0 pulses with numbers
+  FAIL       settle to ±2° ≤ 2.0 s (vehicle): `settle_s`: worst not settled (pulse 0/1 (+)); 4 of 4 set-0 pulses with numbers
+  FAIL       ring crossings ≤ 1: `ring_crossings`: worst 24 (pulse 0/1 (+)); 4 of 4 set-0 pulses with numbers
+  FAIL       swing back ≤ 30 °/s: `peak_rate_dps`: worst 81.6 °/s (pulse 0/2 (−)); 4 of 4 set-0 pulses with numbers
+[19:43:22 +08] ========  VERDICT: FAIL — `overshoot_deg`: worst 13.33° (pulse 0/2 (−)); 4 of 4 set-0 pulses with numbers  ========

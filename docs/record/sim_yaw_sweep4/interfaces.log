@@ -1,0 +1,152 @@
+Launching interface for drone_1 (fcu udp://:14541@172.31.0.200:14581, sysid 2)
+[INFO] [launch]: All log files can be found below /root/.ros/log/2026-11-02-12-00-14-272647-jeremychia-Legion-Pro-7-16IAX10H-27393
+[INFO] [launch]: Default logging verbosity is set to INFO
+[INFO] [mavros_node-1]: process started with pid [27439]
+[INFO] [robot_interface_node-2]: process started with pid [27440]
+[INFO] [position_setpoint_pub.py-3]: process started with pid [27441]
+[INFO] [odometry_conversion-4]: process started with pid [27442]
+[odometry_conversion-4] [0m[INFO] [1793620814.423685194] [drone_1.odometry_conversion.odometry_conversion]: OdometryConversion node started[0m
+[mavros_node-1] [0m[INFO] [1793620814.426925471] [drone_1.interface.mavros.mavros_node]: Starting mavros_node container[0m
+[mavros_node-1] [0m[INFO] [1793620814.426997697] [drone_1.interface.mavros.mavros_node]: FCU URL: udp://:14541@172.31.0.200:14581[0m
+[mavros_node-1] [0m[INFO] [1793620814.427004932] [drone_1.interface.mavros.mavros_node]: GCS URL: [0m
+[mavros_node-1] [0m[INFO] [1793620814.427009001] [drone_1.interface.mavros.mavros_node]: UAS Prefix: /uas2[0m
+[mavros_node-1] [0m[INFO] [1793620814.427012591] [drone_1.interface.mavros.mavros_node]: Starting mavros router node[0m
+[robot_interface_node-2] Loading robot interface plugin: mavros_interface::MAVROSInterface
+[odometry_conversion-4] [33m[WARN] [1793620814.430453169] [drone_1.odometry_conversion.odometry_conversion]: Use odometry estimate as TF: true[0m
+[mavros_node-1] [0m[INFO] [1793620814.436071867] [drone_1.interface.mavros.mavros_router]: Built-in SIMD instructions: SSE, SSE2[0m
+[mavros_node-1] [0m[INFO] [1793620814.436096292] [drone_1.interface.mavros.mavros_router]: Built-in MAVLink package version: 2026.3.3[0m
+[mavros_node-1] [0m[INFO] [1793620814.436105280] [drone_1.interface.mavros.mavros_router]: Known MAVLink dialects: common ardupilotmega ASLUAV AVSSUAS all csAirLink cubepilot development icarous loweheiser marsh matrixpilot paparazzi standard stemstudios storm32 uAvionix ualberta[0m
+[mavros_node-1] [0m[INFO] [1793620814.436114045] [drone_1.interface.mavros.mavros_router]: MAVROS Router started[0m
+[mavros_node-1] [0m[INFO] [1793620814.436232150] [drone_1.interface.mavros.mavros_node]: Starting mavros uas node[0m
+[robot_interface_node-2] [0m[INFO] [1793620814.461877665] [drone_1.interface.robot_interface]: velocity commands are room frame (ENU -> FRAME_LOCAL_NED)[0m
+[mavros_node-1] [0m[INFO] [1793620814.464643461] [drone_1.interface.mavros.mavros_router]: Requested to add endpoint: type: 0, url: udp://:14541@172.31.0.200:14581[0m
+[mavros_node-1] [0m[INFO] [1793620814.464695287] [drone_1.interface.mavros.mavros_router]: Endpoint link[1000] created[0m
+[mavros_node-1] [0m[INFO] [1793620814.465064498] [drone_1.interface.mavros.mavros_router]: link[1000] opened successfully[0m
+[mavros_node-1] [0m[INFO] [1793620814.465079842] [drone_1.interface.mavros.mavros_router]: Requested to add endpoint: type: 2, url: /uas2[0m
+[mavros_node-1] [0m[INFO] [1793620814.465093730] [drone_1.interface.mavros.mavros_router]: Endpoint link[1001] created[0m
+[mavros_node-1] [0m[INFO] [1793620814.468294065] [drone_1.interface.mavros.mavros_router]: link[1001] opened successfully[0m
+[mavros_node-1] [0m[INFO] [1793620814.474762032] [drone_1.interface.mavros.mavros]: UAS Executor started, threads: 16[0m
+[mavros_node-1] [0m[INFO] [1793620814.498795474] [drone_1.interface.mavros.mavros]: Plugin actuator_control created[0m
+[mavros_node-1] [0m[INFO] [1793620814.498878151] [drone_1.interface.mavros.mavros]: Plugin actuator_control initialized[0m
+[mavros_node-1] [0m[INFO] [1793620814.522440829] [drone_1.interface.mavros.mavros]: Plugin altitude created[0m
+[mavros_node-1] [0m[INFO] [1793620814.522505638] [drone_1.interface.mavros.mavros]: Plugin altitude initialized[0m
+[mavros_node-1] [0m[INFO] [1793620814.578171366] [drone_1.interface.mavros.mavros]: Plugin command created[0m
+[mavros_node-1] [0m[INFO] [1793620814.578236306] [drone_1.interface.mavros.mavros]: Plugin command initialized[0m
+[mavros_node-1] [0m[INFO] [1793620814.601274559] [drone_1.interface.mavros.mavros]: Plugin ftp created[0m
+[mavros_node-1] [0m[INFO] [1793620814.601338834] [drone_1.interface.mavros.mavros]: Plugin ftp initialized[0m
+[mavros_node-1] [0m[INFO] [1793620814.612905706] [drone_1.interface.mavros.mavros]: Plugin geofence created[0m
+[mavros_node-1] [0m[INFO] [1793620814.612957233] [drone_1.interface.mavros.mavros]: Plugin geofence initialized[0m
+[mavros_node-1] [0m[INFO] [1793620814.627616068] [drone_1.interface.mavros.mavros]: Plugin global_position created[0m
+[mavros_node-1] [0m[INFO] [1793620814.627678095] [drone_1.interface.mavros.mavros]: Plugin global_position initialized[0m
+[mavros_node-1] [0m[INFO] [1793620814.636547359] [drone_1.interface.mavros.mavros]: Plugin home_position created[0m
+[mavros_node-1] [0m[INFO] [1793620814.636602116] [drone_1.interface.mavros.mavros]: Plugin home_position initialized[0m
+[mavros_node-1] [0m[INFO] [1793620814.647492113] [drone_1.interface.mavros.mavros]: Plugin imu created[0m
+[mavros_node-1] [0m[INFO] [1793620814.647540843] [drone_1.interface.mavros.mavros]: Plugin imu initialized[0m
+[mavros_node-1] [0m[INFO] [1793620814.667867890] [drone_1.interface.mavros.mavros]: Plugin local_position created[0m
+[mavros_node-1] [0m[INFO] [1793620814.667916844] [drone_1.interface.mavros.mavros]: Plugin local_position initialized[0m
+[mavros_node-1] [0m[INFO] [1793620814.704064387] [drone_1.interface.mavros.mavros]: Plugin manual_control created[0m
+[mavros_node-1] [0m[INFO] [1793620814.704177078] [drone_1.interface.mavros.mavros]: Plugin manual_control initialized[0m
+[mavros_node-1] [0m[INFO] [1793620814.747991723] [drone_1.interface.mavros.mavros]: Plugin nav_controller_output created[0m
+[mavros_node-1] [0m[INFO] [1793620814.748040997] [drone_1.interface.mavros.mavros]: Plugin nav_controller_output initialized[0m
+[mavros_node-1] [0m[INFO] [1793620814.759996234] [drone_1.interface.mavros.mavros]: Plugin param created[0m
+[mavros_node-1] [0m[INFO] [1793620814.760042310] [drone_1.interface.mavros.mavros]: Plugin param initialized[0m
+[mavros_node-1] [0m[INFO] [1793620814.770682017] [drone_1.interface.mavros.mavros]: Plugin rallypoint created[0m
+[mavros_node-1] [0m[INFO] [1793620814.770738913] [drone_1.interface.mavros.mavros]: Plugin rallypoint initialized[0m
+[mavros_node-1] [0m[INFO] [1793620814.780986584] [drone_1.interface.mavros.mavros]: Plugin rc_io created[0m
+[mavros_node-1] [0m[INFO] [1793620814.781031137] [drone_1.interface.mavros.mavros]: Plugin rc_io initialized[0m
+[mavros_node-1] [0m[INFO] [1793620814.790676078] [drone_1.interface.mavros.mavros]: Plugin setpoint_accel created[0m
+[mavros_node-1] [0m[INFO] [1793620814.790712889] [drone_1.interface.mavros.mavros]: Plugin setpoint_accel initialized[0m
+[mavros_node-1] [0m[INFO] [1793620814.800909537] [drone_1.interface.mavros.mavros]: Plugin setpoint_attitude created[0m
+[mavros_node-1] [0m[INFO] [1793620814.800941145] [drone_1.interface.mavros.mavros]: Plugin setpoint_attitude initialized[0m
+[mavros_node-1] [0m[INFO] [1793620814.813601552] [drone_1.interface.mavros.mavros]: Plugin setpoint_position created[0m
+[mavros_node-1] [0m[INFO] [1793620814.813638344] [drone_1.interface.mavros.mavros]: Plugin setpoint_position initialized[0m
+[mavros_node-1] [0m[INFO] [1793620814.826816796] [drone_1.interface.mavros.mavros]: Plugin setpoint_raw created[0m
+[mavros_node-1] [0m[INFO] [1793620814.826864884] [drone_1.interface.mavros.mavros]: Plugin setpoint_raw initialized[0m
+[mavros_node-1] [0m[INFO] [1793620814.839928555] [drone_1.interface.mavros.mavros]: Plugin setpoint_trajectory created[0m
+[mavros_node-1] [0m[INFO] [1793620814.839964403] [drone_1.interface.mavros.mavros]: Plugin setpoint_trajectory initialized[0m
+[mavros_node-1] [0m[INFO] [1793620814.857077090] [drone_1.interface.mavros.mavros]: Plugin setpoint_velocity created[0m
+[mavros_node-1] [0m[INFO] [1793620814.857111988] [drone_1.interface.mavros.mavros]: Plugin setpoint_velocity initialized[0m
+[mavros_node-1] [0m[INFO] [1793620814.886928871] [drone_1.interface.mavros.mavros]: Plugin sys_status created[0m
+[mavros_node-1] [0m[INFO] [1793620814.887007791] [drone_1.interface.mavros.mavros]: Plugin sys_status initialized[0m
+[mavros_node-1] [31m[ERROR] [1793620814.901042448] [uas.enum]: TM: Unknown mode: SYSTEM_TIME[0m
+[mavros_node-1] [0m[INFO] [1793620814.901118347] [drone_1.interface.mavros.time]: TM: Timesync mode: NONE[0m
+[mavros_node-1] [0m[INFO] [1793620814.904992561] [drone_1.interface.mavros.mavros]: Plugin sys_time created[0m
+[mavros_node-1] [0m[INFO] [1793620814.905043859] [drone_1.interface.mavros.mavros]: Plugin sys_time initialized[0m
+[mavros_node-1] [0m[INFO] [1793620814.925474030] [drone_1.interface.mavros.mavros]: Plugin waypoint created[0m
+[mavros_node-1] [0m[INFO] [1793620814.925535337] [drone_1.interface.mavros.mavros]: Plugin waypoint initialized[0m
+[mavros_node-1] [0m[INFO] [1793620814.938349777] [drone_1.interface.mavros.mavros]: Plugin wind_estimation created[0m
+[mavros_node-1] [0m[INFO] [1793620814.938391687] [drone_1.interface.mavros.mavros]: Plugin wind_estimation initialized[0m
+[mavros_node-1] [0m[INFO] [1793620814.939894782] [drone_1.interface.mavros.mavros]: Built-in SIMD instructions: SSE, SSE2[0m
+[mavros_node-1] [0m[INFO] [1793620814.939914219] [drone_1.interface.mavros.mavros]: Built-in MAVLink package version: 2026.3.3[0m
+[mavros_node-1] [0m[INFO] [1793620814.939918810] [drone_1.interface.mavros.mavros]: Known MAVLink dialects: common ardupilotmega ASLUAV AVSSUAS all csAirLink cubepilot development icarous loweheiser marsh matrixpilot paparazzi standard stemstudios storm32 uAvionix ualberta[0m
+[mavros_node-1] [0m[INFO] [1793620814.939924397] [drone_1.interface.mavros.mavros]: MAVROS UAS via /uas2 started. MY ID 2.191, TARGET ID 2.1[0m
+All 1 interface stacks running. Ctrl-C to stop.
+[mavros_node-1] [0m[INFO] [1793620815.872859651] [drone_1.interface.mavros.mavros_router]: link[1001] detected remote address 2.191[0m
+[mavros_node-1] [0m[INFO] [1793620815.879810011] [drone_1.interface.mavros.mavros_router]: link[1000] detected remote address 2.1[0m
+[mavros_node-1] [0m[INFO] [1793620815.879993451] [drone_1.interface.mavros.imu]: IMU: High resolution IMU detected![0m
+[mavros_node-1] [0m[INFO] [1793620815.880394000] [drone_1.interface.mavros.imu]: IMU: Attitude quaternion IMU detected![0m
+[mavros_node-1] [0m[INFO] [1793620815.894922666] [drone_1.interface.mavros.geofence]: GF: Using MISSION_ITEM_INT[0m
+[mavros_node-1] [0m[INFO] [1793620815.894960348] [drone_1.interface.mavros.rallypoint]: RP: Using MISSION_ITEM_INT[0m
+[mavros_node-1] [0m[INFO] [1793620815.894968600] [drone_1.interface.mavros.mission]: WP: Using MISSION_ITEM_INT[0m
+[mavros_node-1] [0m[INFO] [1793620815.894975718] [drone_1.interface.mavros.sys]: VER: 2.1: Capabilities         0x000000000000e8ff[0m
+[mavros_node-1] [0m[INFO] [1793620815.894983057] [drone_1.interface.mavros.sys]: VER: 2.1: Flight software:     011001ff (94cb201279000000)[0m
+[mavros_node-1] [0m[INFO] [1793620815.894987383] [drone_1.interface.mavros.sys]: VER: 2.1: Middleware software: 011001ff (94cb201279000000)[0m
+[mavros_node-1] [0m[INFO] [1793620815.894990875] [drone_1.interface.mavros.sys]: VER: 2.1: OS software:         061100ff (886acbbdb4f061e5)[0m
+[mavros_node-1] [0m[INFO] [1793620815.894993910] [drone_1.interface.mavros.sys]: VER: 2.1: Board hardware:      00000001[0m
+[mavros_node-1] [0m[INFO] [1793620815.894996731] [drone_1.interface.mavros.sys]: VER: 2.1: VID/PID:             0000:0000[0m
+[mavros_node-1] [0m[INFO] [1793620815.894999581] [drone_1.interface.mavros.sys]: VER: 2.1: UID:                 4954414c44494e50[0m
+[mavros_node-1] [33m[WARN] [1793620815.896595799] [drone_1.interface.mavros.cmd]: CMD: Unexpected command 520, result 0[0m
+[mavros_node-1] [0m[INFO] [1793620816.282518565] [drone_1.interface.mavros.mavros]: CON: Got HEARTBEAT, connected. FCU: PX4 Autopilot[0m
+[mavros_node-1] [0m[INFO] [1793620816.282608618] [drone_1.interface.mavros.mission]: WP: detected enable_partial_push: 0[0m
+[mavros_node-1] [0m[INFO] [1793620816.282800894] [drone_1.interface.mavros.imu]: IMU: High resolution IMU detected![0m
+[mavros_node-1] [0m[INFO] [1793620816.283111656] [drone_1.interface.mavros.imu]: IMU: Attitude quaternion IMU detected![0m
+[mavros_node-1] [0m[INFO] [1793620817.284811379] [drone_1.interface.mavros.sys]: VER: 2.1: Capabilities         0x000000000000e8ff[0m
+[mavros_node-1] [0m[INFO] [1793620817.284841828] [drone_1.interface.mavros.sys]: VER: 2.1: Flight software:     011001ff (94cb201279000000)[0m
+[mavros_node-1] [0m[INFO] [1793620817.284847167] [drone_1.interface.mavros.sys]: VER: 2.1: Middleware software: 011001ff (94cb201279000000)[0m
+[mavros_node-1] [0m[INFO] [1793620817.284850883] [drone_1.interface.mavros.sys]: VER: 2.1: OS software:         061100ff (886acbbdb4f061e5)[0m
+[mavros_node-1] [0m[INFO] [1793620817.284854236] [drone_1.interface.mavros.sys]: VER: 2.1: Board hardware:      00000001[0m
+[mavros_node-1] [0m[INFO] [1793620817.284856980] [drone_1.interface.mavros.sys]: VER: 2.1: VID/PID:             0000:0000[0m
+[mavros_node-1] [0m[INFO] [1793620817.284859779] [drone_1.interface.mavros.sys]: VER: 2.1: UID:                 4954414c44494e50[0m
+[mavros_node-1] [0m[INFO] [1793620831.283108762] [drone_1.interface.mavros.mission]: WP: mission received[0m
+[mavros_node-1] [0m[INFO] [1793620836.283235449] [drone_1.interface.mavros.rallypoint]: RP: mission received[0m
+[mavros_node-1] [0m[INFO] [1793620841.283174899] [drone_1.interface.mavros.geofence]: GF: mission received[0m
+[mavros_node-1] [33m[WARN] [1793621024.475690235] [drone_1.interface.mavros.sys]: FCU: UNK(8): EVENT 11047904 with args -0-0-0-0-0-128-0-0-0-176-123-127-128-176-123-127-128-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-[0m
+[mavros_node-1] [0m[INFO] [1793621024.475874071] [drone_1.interface.mavros.sys]: FCU: EVENT 377561 with args -8-0-0-0-20-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-[0m
+[mavros_node-1] [33m[WARN] [1793621024.475933926] [drone_1.interface.mavros.sys]: FCU: EVENT 453929 with args -255-255-255-255-7-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-[0m
+[mavros_node-1] [0m[INFO] [1793621024.476054736] [drone_1.interface.mavros.sys]: FCU: EVENT 6801787 with args -255-255-255-255-12-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-[0m
+[mavros_node-1] [33m[WARN] [1793621024.476092442] [drone_1.interface.mavros.sys]: FCU: UNK(8): EVENT 1914663 with args -0-10-13-2-56-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-[0m
+[robot_interface_node-2] waiting rc
+[robot_interface_node-2] done rc
+[mavros_node-1] [33m[WARN] [1793621025.464958319] [drone_1.interface.mavros.cmd]: CMD: Unexpected command 176, result 0[0m
+[robot_interface_node-2] waiting arm
+[robot_interface_node-2] done arm
+[mavros_node-1] [0m[INFO] [1793621025.968704801] [drone_1.interface.mavros.sys]: FCU: EVENT 9489139 with args -4-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-[0m
+[mavros_node-1] [0m[INFO] [1793621027.126223567] [drone_1.interface.mavros.sys]: FCU: EVENT 4277609 with args -0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-[0m
+[mavros_node-1] [0m[INFO] [1793621131.346645532] [drone_1.interface.mavros.param]: PR: start force pull[0m
+[mavros_node-1] [0m[INFO] [1793621145.327629660] [drone_1.interface.mavros.param]: PR: start force pull[0m
+[mavros_node-1] [0m[INFO] [1793621247.218468686] [drone_1.interface.mavros.param]: PR: start force pull[0m
+[mavros_node-1] [0m[INFO] [1793621257.120539876] [drone_1.interface.mavros.param]: PR: start force pull[0m
+[mavros_node-1] [0m[INFO] [1793621358.091803359] [drone_1.interface.mavros.param]: PR: start force pull[0m
+[mavros_node-1] [0m[INFO] [1793621373.298481850] [drone_1.interface.mavros.param]: PR: start force pull[0m
+[mavros_node-1] [0m[INFO] [1793621469.163562587] [drone_1.interface.mavros.param]: PR: start force pull[0m
+[mavros_node-1] [0m[INFO] [1793621481.170878679] [drone_1.interface.mavros.param]: PR: start force pull[0m
+[mavros_node-1] [0m[INFO] [1793621580.160330011] [drone_1.interface.mavros.param]: PR: start force pull[0m
+[mavros_node-1] [0m[INFO] [1793621592.197567986] [drone_1.interface.mavros.param]: PR: start force pull[0m
+[mavros_node-1] [0m[INFO] [1793621615.180793786] [drone_1.interface.mavros.sys]: FCU: EVENT 9844908 with args -0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-[0m
+[mavros_node-1] [0m[INFO] [1793621616.339542452] [drone_1.interface.mavros.sys]: FCU: EVENT 16017271 with args -6-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-[0m
+[robot_interface_node-2] waiting disarm
+[robot_interface_node-2] done disarm
+[mavros_node-1] [33m[WARN] [1793621617.065868835] [drone_1.interface.mavros.sys]: FCU: UNK(8): EVENT 11047904 with args -0-0-0-16-0-128-0-0-0-176-59-127-128-176-59-127-128-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-[0m
+[mavros_node-1] [0m[INFO] [1793621617.065984856] [drone_1.interface.mavros.sys]: FCU: EVENT 377561 with args -8-0-0-0-20-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-[0m
+[mavros_node-1] [31m[ERROR] [1793621617.066106879] [drone_1.interface.mavros.sys]: FCU: EVENT 3087815 with args -0-64-0-0-20-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-[0m
+[mavros_node-1] [33m[WARN] [1793621617.066204481] [drone_1.interface.mavros.sys]: FCU: EVENT 453929 with args -255-255-255-255-7-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-[0m
+[mavros_node-1] [0m[INFO] [1793621617.066361235] [drone_1.interface.mavros.sys]: FCU: EVENT 6801787 with args -255-255-255-255-12-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-[0m
+[mavros_node-1] [33m[WARN] [1793621617.066462902] [drone_1.interface.mavros.sys]: FCU: UNK(8): EVENT 1914663 with args -0-10-13-2-56-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-[0m
+[mavros_node-1] [33m[WARN] [1793621618.186091588] [drone_1.interface.mavros.sys]: FCU: UNK(8): EVENT 11047904 with args -0-0-0-16-0-128-0-0-0-176-59-127-128-176-59-127-128-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-[0m
+[mavros_node-1] [0m[INFO] [1793621618.186198941] [drone_1.interface.mavros.sys]: FCU: EVENT 377561 with args -8-0-0-0-20-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-[0m
+[mavros_node-1] [31m[ERROR] [1793621618.186300915] [drone_1.interface.mavros.sys]: FCU: EVENT 3087815 with args -0-64-0-0-20-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-[0m
+[mavros_node-1] [33m[WARN] [1793621618.186376875] [drone_1.interface.mavros.sys]: FCU: EVENT 453929 with args -255-255-255-255-7-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-[0m
+[mavros_node-1] [0m[INFO] [1793621618.186465061] [drone_1.interface.mavros.sys]: FCU: EVENT 6801787 with args -255-255-255-255-12-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-[0m
+[mavros_node-1] [33m[WARN] [1793621618.186509155] [drone_1.interface.mavros.sys]: FCU: UNK(8): EVENT 1914663 with args -0-10-9-2-56-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-[0m
+[mavros_node-1] [0m[INFO] [1793621655.323258864] [drone_1.interface.mavros.param]: PR: start force pull[0m
+Stopping 1 interface stacks...

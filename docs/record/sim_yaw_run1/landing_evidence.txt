@@ -1,0 +1,2 @@
+[swarm_commander-2] [0m[INFO] [1793610992.458097672] [swarm_commander]: drone_1: touchdown at z=0.13 m, settling 2.0 s before disarm[0m
+[swarm_commander-2] [0m[INFO] [1793610994.558041896] [swarm_commander]: drone_1: landed, disarmed (attempt 1)[0m

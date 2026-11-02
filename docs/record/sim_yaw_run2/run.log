@@ -1,0 +1,116 @@
+[21:31:00 +08] == phase precheck ==
+[21:31:00 +08] precheck: no real-drone bridge on the laptop, port 8765 free, drone battery out (sim shares domain 1)
+[21:31:00 +08] WARN: Isaac start/stop can crash the WiFi firmware (iwlwifi) — use Ethernet or sit at the laptop
+NVIDIA GeForce RTX 5070 Ti Laptop GPU, 2294 MiB
+[21:31:00 +08] == phase up ==
+[0;32m[INFO][0m Starting services...
+ Container isaac-sim Running 
+ Container airstack-gcs-1 Running 
+ Container airstack-robot-desktop-1 Running 
+[0;32m[INFO][0m Services brought up successfully
+head=c66f0105f1d309a64b489526baf3a0b34ea09961
+head_short=c66f010
+dirty_tools=0
+started=2026-11-02T21:31:06+08:00
+tz=+08
+run=sim_yaw_run2
+steps_per_axis=
+num_robots=1
+fly_args=3 1.0 1.0
+[21:31:06 +08] up: containers running, domain 1 clean
+[21:31:06 +08] == phase watch ==
+[21:31:09 +08] watch: running (pid 1601017)
+[21:31:09 +08] == phase isaac ==
+[21:31:25 +08] Ready for takeoff: 1 (after 15s)
+model_line=1 starling_cfg=2 autostart=1 unknown_model=0 cooking=0 ready=1
+[21:31:25 +08] == phase interfaces ==
+[21:31:28 +08] drone_1 MAVROS connected (after ~3s)
+[21:31:29 +08] drone_1 odometry: ok (after 1 s)
+average rate: 56.169
+/drone_1/interface/mavros/setpoint_raw/target_attitude
+clock_rc=1
+[21:31:46 +08] interfaces: 1 drones with odometry
+[21:31:46 +08] == phase commander ==
+[21:31:49 +08] SwarmCommander up: 1 (after 2s)
+scenario hover states ['IDLE'] fresh [True] tuning {'teleop_max_speed_mps': 2.0, 'goal_accel_mps2': 3.0, 'goal_settle_s': 0.3, 'scenario_speed_mps': 0.6}
+{"stamp": 1793626315.4442246, "node": "/bag_recorder", "recording": true, "path": "/root/AirStack/robot/ros_ws/bags/yaw_step_20261102_133148", "started_at": 1793626308.4637535, "duration_s": 6.980471134185791, "size_bytes": 3379200, "topic_count": 108, "bag_dir": "/root/AirStack/robot/ros_ws/bags", "bag_prefix": "yaw_step", "storage": "mcap", "include_hidden": false, "last_bag": null, "last_result": null, "error": null}
+[21:31:55 +08] == phase params ==
+
+SYS_AUTOSTART: Integer value is: 10090
+MC_PITCHRATE_P: Double value is: 0.03200000151991844
+MC_ROLLRATE_P: Double value is: 0.03200000151991844
+LNDMC_ROT_MAX: Double value is: 300.0
+MPC_XY_VEL_MAX: Double value is: 20.0
+MPC_THR_HOVER: Double value is: 0.16500000655651093
+IMU_GYRO_CUTOFF: Double value is: 80.0
+IMU_DGYRO_CUTOFF: Double value is: 40.0
+MPC_Z_VEL_MAX_DN: Double value is: 4.0
+MPC_ACC_HOR: Double value is: 6.0
+[21:32:17 +08] params: 10-20 airframe confirmed via MAVROS
+[21:32:17 +08] == phase snapshot ==
+mavros_msgs.srv.ParamPull_Response(success=True, param_received=895)
+[21:32:21 +08] snapshot start drone_1: 894 PX4 parameters
+[21:32:22 +08] snapshot start swarm_commander: 89 parameters
+[21:32:22 +08] == phase metrics ==
+[21:32:29 +08] metrics node ready: 1 (after 6s)
+[21:32:39 +08] metrics liveness: /svg/test/heading_rel_deg 9.999 Hz
+[21:32:39 +08] live plot window opened: drag it where OBS can see it, then click back into this terminal
+[21:32:39 +08] Stack up, drones on their pads, plots live. Start OBS now, then press Enter to fly.
+[21:36:08 +08] == phase fly ==
+[21:36:08 +08] fly: tools/sim_tests/yaw_step/fly.sh 20 s window 3 1.0 1.0 (takeoff -> start -> window -> land)
+drone_1 armed: false
+[swarm_commander-2] [0m[INFO] [1793626723.939690165] [swarm_commander]: drone_1: touchdown at z=0.13 m, settling 2.0 s before disarm[0m
+[swarm_commander-2] [0m[INFO] [1793626725.989276432] [swarm_commander]: drone_1: landed, disarmed (attempt 1)[0m
+mavros_msgs.srv.ParamPull_Response(success=True, param_received=895)
+[21:39:26 +08] snapshot end drone_1: 894 PX4 parameters
+[21:39:28 +08] snapshot end swarm_commander: 89 parameters
+[21:39:28 +08] Landed. Plots still live. Stop OBS, then click back into this terminal (keys typed into the plot window are lost).
+[21:39:28 +08] Landed. Plots still live; the metrics node stops when you press Enter. OBS video path, repo-relative, e.g. videos/<file>.mkv (Enter to skip):
+[21:39:48 +08] metrics.csv copied (25091 lines)
+[21:39:48 +08] changes.log copied (live parameter changes of this run)
+[21:39:48 +08] == phase collect ==
+2 /tmp/tmp9rui7xbj/log/2026-11-02/13_31_22.ulg 224984774
+[21:39:51 +08] ulogs copied for sysids 2 -> /home/jeremychia/flight_logs/sim/sim_yaw_run2
+SYS_AUTOSTART 10090
+MAV_SYS_ID 2
+MC_PITCHRATE_P 0.03200000151991844
+MC_ROLLRATE_P 0.03200000151991844
+LNDMC_ROT_MAX 300.0
+MPC_XY_VEL_MAX 20.0
+MPC_THR_HOVER 0.16500000655651093
+IMU_GYRO_CUTOFF 80.0
+IMU_DGYRO_CUTOFF 40.0
+MPC_Z_VEL_MAX_DN 4.0
+MPC_ACC_HOR 6.0
+MC_YAW_P 2.799999952316284
+MC_YAWRATE_P 0.25
+MC_YAWRATE_I 0.20000000298023224
+MC_YAWRATE_D 0.0
+MC_YAWRATE_K 1.0
+# PX4 arm/disarm times of drone_1, MAV_SYS_ID 2, ulog /tmp/tmp9rui7xbj/log/2026-11-02/13_31_22.ulg (vehicle time, s since PX4 boot)
+arm_s=552.524742 disarm_s=841.895802 interval_s=289.371060 source=13_31_22.ulg sysid=2
+ulog_yaw_dump: 66840 rows -> /home/jeremychia/flight_logs/sim/sim_yaw_run2/px4_drone_1.csv
+[21:39:56 +08] px4_drone_1.csv written (host pyulog)
+[21:39:58 +08] px4_param_changes_all.txt written (1 ulogs)
+[21:39:58 +08] == phase down ==
+[21:40:00 +08] bag copied to /home/jeremychia/flight_logs/sim/sim_yaw_run2/yaw_step_20261102_133148
+{"rows": 25687, "odom_msgs": {"drone_1": 27741}, "status_msgs": 2447, "cbf_msgs": 9754}
+[21:40:05 +08] metrics_bag.csv copied
+[21:40:31 +08] WARN: interface nodes still alive 25 s after SIGINT — TERM
+[21:40:31 +08] ulogs already copied (collect)
+[21:40:32 +08] orphaned PX4 SITL instances killed (Isaac's exit leaves them)
+model_line=1 starling_cfg=2 autostart=1 unknown_model=0 cooking=0 ready=1
+[21:41:02 +08] no WIFI-ALERT during the run
+[21:41:02 +08] down: stack stopped, containers left up
+wrote /home/jeremychia/AirStack-starling-max2/docs/record/sim_yaw_run2/fig-1.png
+INCOMPLETE: /home/jeremychia/AirStack-starling-max2/docs/record/sim_yaw_run2_record.md
+HEADLINE: n/a — match: the ulog shows 6 yaw pulses, fly.sh stamped 7
+  UNVERIFIED set-0 pulses flown and analysable: n/a — the ulog shows 6 yaw pulses, fly.sh stamped 7
+  UNVERIFIED heading overshoot ≤ 3.0°: n/a — match: the ulog shows 6 yaw pulses, fly.sh stamped 7
+  UNVERIFIED settle to ±2° ≤ 2.0 s (vehicle): n/a — match: the ulog shows 6 yaw pulses, fly.sh stamped 7
+  UNVERIFIED ring crossings ≤ 1: n/a — match: the ulog shows 6 yaw pulses, fly.sh stamped 7
+  UNVERIFIED swing back ≤ 30 °/s: n/a — match: the ulog shows 6 yaw pulses, fly.sh stamped 7
+  UNVERIFIED xy drift ≤ 0.15 m: n/a — match: the ulog shows 6 yaw pulses, fly.sh stamped 7
+  UNVERIFIED yaw sign: n/a — match: the ulog shows 6 yaw pulses, fly.sh stamped 7
+  UNVERIFIED live vs ulog overshoot: n/a — match: the ulog shows 6 yaw pulses, fly.sh stamped 7
+[21:41:03 +08] ========  VERDICT: INCOMPLETE — n/a — match: the ulog shows 6 yaw pulses, fly.sh stamped 7  ========

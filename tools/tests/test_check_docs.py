@@ -380,3 +380,16 @@ class PurposeLines(unittest.TestCase):
             root = fixture(d, "")
             f = root / "docs/projects/HTX-R1.md"; f.write_text(f.read_text().replace("### S5 x — SIM ONLY\n", "### S5 x — SIM ONLY\n**Purpose:** because.\n"))
             self.assertEqual(C.check_purpose_lines().status, "PASS")
+
+
+class ChangeLogCheck(unittest.TestCase):
+    def setUp(self):
+        self._root = C.ROOT; self.addCleanup(setattr, C, "ROOT", self._root)
+
+    def test_skips_before_the_standard_and_fails_on_a_slipped_commit(self):
+        from test_changes import make_repo, commit
+        with tempfile.TemporaryDirectory() as d:
+            C.ROOT = make_repo(d, standard=False); self.assertEqual(C.check_change_log().status, "SKIP")
+        with tempfile.TemporaryDirectory() as d:
+            C.ROOT = make_repo(d); self.assertEqual(C.check_change_log().status, "PASS")
+            commit(C.ROOT, {"tools/sim.sh": "x\n"}, "slipped"); self.assertEqual(C.check_change_log().status, "FAIL")

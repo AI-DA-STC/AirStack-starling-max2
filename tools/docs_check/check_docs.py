@@ -11,6 +11,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))                  # check_docs.sh runs python3 -I: the script's own directory is not on sys.path
+import changes as CH                           # noqa: E402  (change-log pass, docs/CODING_STANDARD.md)
 EXCLUDE_DIRS = ("docs/superpowers/",)          # planning notes, not the doc corpus
 IRON_BEGIN, IRON_END = "<!-- IRON_RULES:BEGIN -->", "<!-- IRON_RULES:END -->"
 WARN_RE = re.compile(r"^\s*(?:[-*>]|\d+\.)*\s*⚠️")       # ⚠️ after list/quote markers
@@ -838,6 +840,15 @@ def check_purpose_lines():
     return verdict("purpose-lines", fails, [], "every milestone section says why it exists", f"{len(fails)} section(s) without a Purpose line")
 
 
+def check_change_log():
+    """docs/CODING_STANDARD.md: CHANGES.md IDs ↔ commits, behaviour commits carry Change:, Verified cites real LEDGER rows."""
+    fails, warns, skip = CH.audit(ROOT)
+    if skip:
+        return Result("change-log", "SKIP", skip)
+    return verdict("change-log", fails, warns, "every CHG id has one commit; behaviour commits since the standard carry Change:",
+                   f"{len(fails)} change-log problem(s)")
+
+
 # ----------------------------------------------------------------- selftest / main
 def selftest():
     """Prove the dead-link check works on a temp corpus: one good link, one dead file, one dead fragment."""
@@ -871,7 +882,8 @@ def main():
     checks = [lambda: check_links(link_files()), check_section_refs, check_iron_rules, check_safety_registry,
               check_values_registry, check_banners, check_real_page_hygiene, check_warnings_registered,
               check_budget, check_preflight_date, check_headings_stable, check_hashes,
-              check_linear_parity, check_change_lists, lambda: check_images(corpus()), check_page_budgets, check_figure_refs, check_purpose_lines]
+              check_linear_parity, check_change_lists, lambda: check_images(corpus()), check_page_budgets, check_figure_refs, check_purpose_lines,
+              check_change_log]
     results = []
     for fn in checks:
         try:

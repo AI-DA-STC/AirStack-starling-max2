@@ -22,6 +22,7 @@ Run from anywhere: `tools/docs_check/check_docs.sh [--warn-only] [--json] [--sel
 | page-budgets | docs/MILESTONES.md ≤ 60 lines; docs/projects/*.md ≤ 250 lines and each ### milestone ≤ 40 lines (image + caption lines excluded); every table cell ≤ 120 chars on those pages except the Linear title column | FAIL |
 | figure-refs | on MILESTONES and docs/projects/*.md: captions `*Figure N.` numbered 1..n in page order, each with `<a id="fig-N"></a>` just above its image; every `Figure N` in text is the link `[Figure N](#fig-N)` | FAIL |
 | purpose-lines | every `###` milestone section on docs/projects/*.md has a `**Purpose:**` line (2–3 sentences a newcomer can follow: the question it answers, why now, what breaks if skipped) | FAIL |
+| change-log | (from the commit that adds docs/CODING_STANDARD.md) CHANGES.md lines well-formed, unique; every CHG id carried by exactly one commit (`Change: CHG-nnnn`); no unknown ids; every behaviour commit carries a Change: line or is named by a line; `Verified by:` LEDGER rows exist; entry fields (WARN) | FAIL / WARN / SKIP |
 | hashes | MOVE-phase hook; prints SKIP until `corpus_hashes.txt` / `retired.txt` exist | SKIP |
 
 Output: one `[PASS|FAIL|WARN|SKIP] check: summary` line per check, indented details (max 25, then "… N more"),

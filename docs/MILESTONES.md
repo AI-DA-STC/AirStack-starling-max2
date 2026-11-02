@@ -2,7 +2,7 @@ KNOW · SIM + REAL — one screen: where each Linear project is, what passed, wh
 
 # Milestones — where each project is
 
-Three Linear projects ([plan snapshot 2026-10-30](plans/2026-10-30-project-plan-linear.md); status and order live in [Linear](https://linear.app/nearlab)). **Every result is simulation unless the row says REAL DRONE.** Nothing on this software (`yikuan/SVG_ground_control_dev` @ `b21d28c`) has flown; the September 2026 flights were the previous software, archived in [LEDGER table 2](record/LEDGER.md#table-2--observed-on-the-previous-software-archived). Evidence: one row per test in [record/LEDGER.md](record/LEDGER.md); results tables and figures sit under each milestone on the project pages.
+Three Linear projects ([plan snapshot 2026-11-02](plans/2026-11-02-project-plan-linear.md); status and order live in [Linear](https://linear.app/nearlab)). **Every result is simulation unless the row says REAL DRONE.** Nothing on this software (`yikuan/SVG_ground_control_dev` @ `b21d28c`) has flown; the September 2026 flights were the previous software, archived in [LEDGER table 2](record/LEDGER.md#table-2--observed-on-the-previous-software-archived). Evidence: one row per test in [record/LEDGER.md](record/LEDGER.md); results tables and figures sit under each milestone on the project pages.
 
 ## Before the next real flight
 
@@ -16,9 +16,9 @@ Hazards the pilot assumes until the named issue re-earns them (detail: [HTX-R2.m
 
 ## Where each project is
 
-| Project (Linear) | Sim / real | Milestone in progress (snapshot 2026-10-30) | Last result | Next issue | Blocked by |
+| Project (Linear) | Sim / real | Milestone in progress (snapshot 2026-11-02) | Last result | Next issue | Blocked by |
 |---|---|---|---|---|---|
-| [HTX-R1 Swarm Sim Validation (Isaac)](projects/HTX-R1.md) | SIM ONLY (Isaac) | S5 Finish basic sim flight checks | [#23](record/LEDGER.md) live gain tuning works, 5 of 5 applied, 2026-10-30 → [record](record/sim_gains_run1_record.md) | NEAR-789; then NEAR-866 (S5d, the real command route) | — |
+| [HTX-R1 Swarm Sim Validation (Isaac)](projects/HTX-R1.md) | SIM ONLY (Isaac) | S5 Finish basic sim flight checks | [#31](record/LEDGER.md) yaw step passes, 1.65°, 0.03 s, 2026-11-02 → [record](record/sim_yaw_run3_record.md) | NEAR-789; then NEAR-866 (S5d, the real command route) | — |
 | [HTX-R2 Starling Flight Bring-up (M2–M8)](projects/HTX-R2.md) | REAL DRONE | R1 · New mocap and network pipeline (not started) | none on this software; previous software [A21](record/LEDGER.md), 2026-09-03 | NEAR-814 | mocap system back ~2026-11-09; the five hazards above |
 | [HTX-R3 Multi-Drone Localisation (VO + UWB)](projects/HTX-R3.md) | SIM + desk; L4 hand-carried | L1 · Team review pack | [#16](record/LEDGER.md) stereo VO 0.081 m RMSE over 162 m, 2026-10-22 | NEAR-843 | — |
 
@@ -29,7 +29,7 @@ Hazards the pilot assumes until the named issue re-earns them (detail: [HTX-R2.m
 - [projects/HTX-R1.md](projects/HTX-R1.md) — sim validation S1–S10 with S5b–S5e (in work order): results tables, the S5 figures, sim vs real, sim debt
 - [projects/HTX-R2.md](projects/HTX-R2.md) — real-drone bring-up R1, M2–M8: the pilot's hazards box, carried-over table, archived observations to re-earn
 - [projects/HTX-R3.md](projects/HTX-R3.md) — localization research L0–L5
-- [record/LEDGER.md](record/LEDGER.md) — append-only evidence: table 1 this software (#1–#23, all sim), table 2 previous software (A1–A21)
+- [record/LEDGER.md](record/LEDGER.md) — append-only evidence: table 1 this software (#1–#31, all sim), table 2 previous software (A1–A21)
 - [PX4_MSGS_AUDIT.md](PX4_MSGS_AUDIT.md) — PX4 v1.14 vs px4_msgs audit and its re-run method (NEAR-821)
 - Procedures: [RUNBOOK.md](RUNBOOK.md) · [PREFLIGHT.md](PREFLIGHT.md) · [DRONE_SETUP.md](DRONE_SETUP.md) · [SCENARIOS.md](SCENARIOS.md) · sim hover-test thresholds: [tools/README.md](../tools/README.md#thresholds)
 - Per test: one LEDGER row + one Result cell on the project page (both from the record), one Linear comment with the ledger number and record link; then the owner ticks the issue in Linear.

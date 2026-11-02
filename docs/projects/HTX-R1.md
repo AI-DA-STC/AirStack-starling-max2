@@ -2,7 +2,7 @@ RECORD · SIM ONLY — every result on this page is Isaac Sim; nothing here has 
 
 # HTX-R1 Swarm Sim Validation (Isaac)
 
-Question (Linear): Does the candidate position source → PX4 → swarm controller and collision-avoidance pipeline work, and how does it fail? · Where: Isaac Sim on the lab laptop · [Linear project](https://linear.app/nearlab/project/htx-r1-swarm-sim-validation-isaac-649103a747b1) · Linear snapshot: 2026-10-30 · Evidence: [LEDGER](../record/LEDGER.md)
+Question (Linear): Does the candidate position source → PX4 → swarm controller and collision-avoidance pipeline work, and how does it fail? · Where: Isaac Sim on the lab laptop · [Linear project](https://linear.app/nearlab/project/htx-r1-swarm-sim-validation-isaac-649103a747b1) · Linear snapshot: 2026-11-02 · Evidence: [LEDGER](../record/LEDGER.md)
 
 **How to read a result here:** every results block starts by saying which position source flew the drone (PX4's own sim estimate · sim mocap · cuVSLAM) and in which world. Flying and perception are separate pipelines on this branch until S6/S7 hands the position source over.
 
@@ -11,11 +11,12 @@ Question (Linear): Does the candidate position source → PX4 → swarm controll
 **Sim vs real — what the sim does not match yet:**
 - Command route: the sim flies commander → velocity → MAVROS, the real drone commander → trajectory → px4_interface. S5d moves the sim onto the real route.
 - PX4 1.16.1 in sim, 1.14 on the drone; sim rate gains ×0.5 and motor lag off (sim-only, iron rule 9). Isaac's clock runs 1.3–2× wall time, so gates use PX4 time.
+- Yaw: the sim uses a 15 Hz yaw torque filter (MC_YAW_TQ_CUTOFF, CHG-0023) and yaw-rate gains 0.25 / 0.2 (CHG-0024). The real drone has MC_YAW_CUTOFF 15 and gains 0.07 / 0.5. The gains are sim-only. That the two filters are the same is inferred, not confirmed in PX4's source.
 - Every camera result so far is the ZED-style added camera (setup A). The Starling built-in sensors (setup B) arrive in S5c.
 
 ### S1 Starling 2 Max sim drones — SIM ONLY (Isaac)
 **Purpose:** everything in sim depends on the drone model behaving like the real Starling. This built it from CMU's measured mass, inertia and motor data with the real controller gains, and proved three of them fly and land. Without it, no later sim result would mean anything.
-Linear (snapshot 2026-10-30): target 2026-10-21 · 100 % · last ledger row #13 (2026-10-21)
+Linear (snapshot 2026-11-02): target 2026-10-21 · 100 % · last ledger row #13 (2026-10-21)
 Done when (Linear): not stated in the snapshot — milestone at 100 %
 
 | Issue | Title (Linear, verbatim) | Linear status | Result | Evidence |
@@ -26,7 +27,7 @@ Open: none. Re-run: `tools/sim_terminals.sh` with `DRONE_USD=… PX4_VEHICLE_MOD
 
 ### S2 Stereo camera on a sim drone — SIM ONLY (Isaac)
 **Purpose:** cuVSLAM needs camera images, and the real Starling will carry a camera. This put a simulated stereo camera on drone_1 so the perception pipeline could be exercised at all; it also found that Isaac's camera topics do not cross into the robot container.
-Linear (snapshot 2026-10-30): target 2026-10-22 · 100 % · last ledger row #15 (2026-10-22)
+Linear (snapshot 2026-11-02): target 2026-10-22 · 100 % · last ledger row #15 (2026-10-22)
 Done when (Linear): not stated in the snapshot — milestone at 100 %
 
 | Issue | Title (Linear, verbatim) | Linear status | Result | Evidence |
@@ -35,7 +36,7 @@ Done when (Linear): not stated in the snapshot — milestone at 100 %
 
 ### S3 Evaluate cuVSLAM in sim — SIM ONLY (Isaac)
 **Purpose:** before trusting cuVSLAM as a position source we need to know how good it is against something we trust. This scored it against PX4's own estimate and found that the empty world (sky plus a grid floor) breaks it.
-Linear (snapshot 2026-10-30): target 2026-10-22 · 100 % · last ledger row #15 (2026-10-22)
+Linear (snapshot 2026-11-02): target 2026-10-22 · 100 % · last ledger row #15 (2026-10-22)
 Done when (Linear): not stated in the snapshot — milestone at 100 %
 
 | Issue | Title (Linear, verbatim) | Linear status | Result | Evidence |
@@ -44,7 +45,7 @@ Done when (Linear): not stated in the snapshot — milestone at 100 %
 
 ### S4 Construction-site environment — SIM ONLY (Isaac)
 **Purpose:** S3 showed cuVSLAM needs texture to look at. This brought the lab's construction site into Isaac so the sim looks like the place the drones will fly, and showed cuVSLAM holds 0.08 m there.
-Linear (snapshot 2026-10-30): target 2026-10-23 · 100 % · last ledger row #16 (2026-10-22)
+Linear (snapshot 2026-11-02): target 2026-10-23 · 100 % · last ledger row #16 (2026-10-22)
 Done when (Linear): not stated in the snapshot — milestone at 100 %
 
 | Issue | Title (Linear, verbatim) | Linear status | Result | Evidence |
@@ -64,7 +65,7 @@ S3/S4 result (sim only; reference = PX4 EKF2, not ground truth). [Figure 1](#fig
 
 ### S5 Finish basic sim flight checks — SIM ONLY (Isaac)
 **Purpose:** the drone model, gains, airframe and commander all changed after S1. Before anything new is built on top, the basic flight behaviour is re-checked: does the drone still take off, hold, move 1 m cleanly and land (NEAR-786), still avoid the others (787), still take live gain changes (788)? The site items (789, 790, 860) prepare S5b, because hand-flying is how the map gets built.
-Linear (snapshot 2026-10-30): 54 % · last ledger row #23 (2026-10-30)
+Linear (snapshot 2026-11-02): 50 % · last ledger row #31 (2026-11-02)
 
 **Done when** (Linear's target, verbatim; a target, not a result): hover and 1 m steps, three-drone collision-avoidance crossing and live gain tuning are tried and recorded; drone_1 is hand-flown in the construction site with cuVSLAM, camera recording and scoring.
 
@@ -76,19 +77,9 @@ Linear (snapshot 2026-10-30): 54 % · last ledger row #23 (2026-10-30)
 | NEAR-789 | Set up one-drone gamepad teleop in the construction site (pad detected, sticks move the drone, release holds) | In Progress | — | — |
 | NEAR-790 | Hand-fly drone_1 with cuVSLAM running, record and score the flight | Backlog | — | — |
 | NEAR-860 | Record the stereo camera images so a flight can be replayed through cuVSLAM | Backlog | — | — |
+| NEAR-910 | Retune the sim airframe’s yaw-rate gains so the heading settles after a turn | In Progress | PASS — overshoot 1.65°, settle 0.03 s, 2026-11-02 | [#31](../record/LEDGER.md) → [record](../record/sim_yaw_run3_record.md) |
 
-**NEAR-786: Re-run hover and 1 m step test on the updated sim drone.** This test checks that one drone still hovers, moves 1 m and settles cleanly after the rebuild. It tests the control loop only, so the camera and cuVSLAM are off and the world makes no difference. The gates are set as a sanity bar, not a flight requirement ([thresholds](../../tools/README.md#thresholds)).
-
-| | gate | #3 (19 Oct, old asset, 0.6 m/s, wall time) | #17 (28 Oct, n=1) | #18 (28 Oct, n=3) | #19 (29 Oct, n=3) |
-|---|---|---|---|---|---|
-| hover thrust | 0.12–0.20 (real 0.165) | 0.155 | 0.153 | 0.153 | 0.153 |
-| PX4 s per wall s | — | — | 1.336 (est., overlay scale) | 1.324 | 1.333 |
-| x overshoot, m | < 0.15 | 0.002 | 0.054 | 0.085 | 0.095 |
-| x settle, s | < 3.0 | 2.75 | 2.49 | 2.47 | 2.47 |
-| z overshoot, m | < 0.15 | 0.001 | 0.001 | 0.033 | 0.020 |
-| z settle, s | < 3.0 | 0.75 | 2.16 | 2.50 | 2.42 |
-| landed, DISARMED ×3 | yes | — | yes | yes | yes |
-| verdict | | superseded | driver FAIL ×3, re-analysed PASS; drone_1 ulog lost | PASS | PASS |
+**NEAR-786: Re-run hover and 1 m step test on the updated sim drone.** This test checks the control loop only, so the camera and cuVSLAM are off and the world makes no difference. The gate-by-gate table for runs #3, #17, #18 and #19 is in [sim_notes_hover_step.md](../record/sim_notes_hover_step.md).
 
 Reading [Figure 2](#fig-2): every step is inside the settle band within 2.5 s and stays there; x overshoots by up to 0.095 m, z by almost nothing. The three runs lie on top of each other, so the result is repeatable. The settle time is set as much by the commander's braking ramp as by PX4: it describes the loop, not the airframe.
 
@@ -104,11 +95,13 @@ Reading [Figure 2](#fig-2): every step is inside the settle band within 2.5 s an
 ![pairwise distances of the three-drone crossing against the 1.10 m gate](../record/figures/s5_crossing_distances.png)
 *Figure 3. Pairwise distances d_12, d_13, d_23 and their running minimum against time (wall clock), with the 1.10 m (2r) gate and 0.55 m (r) lines and the closest approach marked; shaded: takeoff and land. Live 40 Hz odometry, PX4 estimate. `tools/make_figures.sh`; record [#20](../record/sim_crossing_dry1_record.md).*
 
-Open: nothing has been hand-flown yet, and NEAR-789/790 count only with a video the owner has watched. NEAR-787 is closed in Linear; whether to keep the 1.10 m gate or loosen it to CMU's 0.825 m is now NEAR-878 (S5e). During a test run, leave the Foxglove panel alone. In flight, change the safety radius only in small steps (#23).
+**NEAR-910: Retune the sim airframe’s yaw-rate gains so the heading settles after a turn.** This checks that the sim drone's heading settles after a yaw pulse, so a keyboard turn is not followed by a ring. Scope: flat world, one drone, PX4's own sim estimate, camera off, MAVROS route, gains as booted. Run [#31](../record/sim_yaw_run3_record.md) passed: overshoot 1.65°, settle 0.03 s, one ring crossing, swing-back 11.8 °/s, drift 0.056 m. The main cause of the old ring was the 2 Hz yaw filter (CHG-0023). The new gains 0.25 / 0.2 (CHG-0024) are sim-only. Details: [sim notes](../record/sim_notes_2026-11-02.md). The issue stays In Progress because Linear says so.
+
+Open: nothing has been hand-flown yet, and NEAR-789/790 count only with a video the owner has watched. Keyboard turning in NEAR-789 is now unblocked by NEAR-910, and only the construction-site session remains. NEAR-787 is closed in Linear; whether to keep the 1.10 m gate or loosen it to CMU's 0.825 m is now NEAR-878 (S5e). During a test run, leave the Foxglove panel alone. In flight, change the safety radius only in small steps (#23).
 
 ### S5d · Sim flies the real command route (px4_interface) — SIM ONLY (Isaac)
 **Purpose:** every sim flight so far took a different command path from the real drone (MAVROS, with the commander holding position itself), and that path had two sim-only bugs: the release swing (patch 0006) and the turn orbit. Moving the sim onto px4_interface, the real drone's path, is what lets a sim result predict a real one, NUS policies included (S5e). NEAR-866 is the one-drone [trial](../superpowers/specs/2026-10-30-sim-real-route-trial-design.md).
-Linear (snapshot 2026-10-30): 0 % · no ledger row yet
+Linear (snapshot 2026-11-02): 0 % · no ledger row yet
 
 **Done when** (Linear's target, verbatim; a target, not a result): one sim drone takes off, hovers and lands through px4_interface with MAVROS not started; the hover and 1 m step test passes on gates no looser than ledger #17–#19, in vehicle time; the release and 90° turn test shows neither MAVROS-route bug; the crossing is re-run against ledger #22; every sim record names its route and camera setup and prints the remaining sim-vs-real differences.
 
@@ -122,10 +115,14 @@ Linear (snapshot 2026-10-30): 0 % · no ledger row yet
 | NEAR-871 | Record Isaac’s real-time factor on every run and add a real-time pacing switch | Backlog | — | — |
 | NEAR-872 | Re-run the three-drone crossing on the px4_interface route | Backlog | — | — |
 | NEAR-873 | Print the remaining sim-vs-real differences on every sim record | Backlog | — | — |
+| NEAR-911 | Check heading hold (MC_YAW_P) on the px4_interface route with the yaw-step test | Backlog | — | — |
+| NEAR-912 | Match the sim airframe’s MPC speed and acceleration limits to the real drone’s | Backlog | — | — |
+| NEAR-913 | Model rotor reaction torque and rotational drag in the sim Starling, then re-run the yaw-step test | Backlog | — | — |
+| NEAR-916 | Compare every PX4 parameter between the sim and the real drone | Backlog | — | — |
 
 ### S6 Sim mocap — SIM ONLY (Isaac)
 **Purpose:** the real indoor drones get their position from mocap, not GPS. Making the sim drones do the same (true position fed to PX4 as mocap, GPS off, the real estimator settings) means every later sim test exercises the real position path.
-Linear (snapshot 2026-10-30): 0 % · no ledger row yet
+Linear (snapshot 2026-11-02): 0 % · no ledger row yet
 
 **Done when** (Linear's target, verbatim; a target, not a result): three drones take off, fly random goals and land on sim mocap.
 
@@ -140,7 +137,7 @@ Related: the laptop-side mocap bridge loopback, [#14](../record/LEDGER.md) (fake
 
 ### S5e · Evaluate NUS velocity policies in sim — SIM ONLY (Isaac)
 **Purpose:** NUS writes the policies that decide where each drone goes. Each policy outputs one velocity per drone, and CMU's commander filters it with the collision avoidance (CBF). This milestone runs those policies in sim, on the real command route and with sim mocap, before any of them flies in NEAR Lab's mocap area (HTX-R2 M8).
-Linear (snapshot 2026-10-30): 0 % · no ledger row yet · starts after S5d, S6 and NEAR-871 (the sim clock)
+Linear (snapshot 2026-11-02): 0 % · no ledger row yet · starts after S5d, S6 and NEAR-871 (the sim clock)
 
 **Done when** (Linear's target, verbatim; a target, not a result): the velocity contract is written once and shared with NUS; the plug-in point and its teleop behaviour are decided; one, two and three policy drones fly in sim with collision avoidance on and off, each with one command and a record; the separation gate is agreed. Results say "observed in sim", never "validated".
 
@@ -154,7 +151,7 @@ Linear (snapshot 2026-10-30): 0 % · no ledger row yet · starts after S5d, S6 a
 
 ### S5b · Map the construction site with cuVSLAM — SIM ONLY (Isaac)
 **Purpose:** if a saved map of the site lets a fresh drone find its own position in it, every drone can share one coordinate frame without extra hardware (UWB). This tests that idea in sim first.
-Linear (snapshot 2026-10-30): 0 % · no ledger row yet
+Linear (snapshot 2026-11-02): 0 % · no ledger row yet
 
 **Done when** (Linear's target, verbatim; a target, not a result): a map is saved; fresh runs localise from several starts/headings with success rate and time recorded; positions agree with simulator ground truth.
 
@@ -167,7 +164,7 @@ Linear (snapshot 2026-10-30): 0 % · no ledger row yet
 
 ### S5c · Compare the two camera setups for cuVSLAM and OpenVINS — SIM ONLY (Isaac)
 **Purpose:** two camera setups are kept: the ZED-style added camera (setup A, behind every camera result so far) and the Starling 2 Max's own sensors (setup B). Each built-in sensor is modelled at its real mount, resolution and rate, then cuVSLAM and OpenVINS (what the drone runs) are scored on both setups, so the choice rests on measurements.
-Linear (snapshot 2026-10-30): 0 % · no ledger row yet
+Linear (snapshot 2026-11-02): 0 % · no ledger row yet
 
 **Done when** (Linear's target, verbatim; a target, not a result): every Starling built-in sensor is modelled at its real mount, resolution and rate; OpenVINS runs in sim; the flat-world and site VIO tests are re-run on the built-in sensors; one table scores cuVSLAM and OpenVINS on both setups.
 
@@ -191,7 +188,7 @@ NEAR-802 was canceled because both setups are kept; NEAR-887 holds the compariso
 
 ### S7 drone_1 flies on cuVSLAM — SIM ONLY (Isaac)
 **Purpose:** the end goal is flying on the camera. This hands the position source from sim mocap to cuVSLAM with a fallback, so the switch and its failure cases are seen in sim before any real flight.
-Linear (snapshot 2026-10-30): 0 % · no ledger row yet
+Linear (snapshot 2026-11-02): 0 % · no ledger row yet
 
 **Done when** (Linear's target, verbatim; a target, not a result): source switching/fallback works; hand-flown hold, out-and-back, spin, open-view and hard-stick tests pass; a scripted flight is scored against true position.
 
@@ -203,7 +200,7 @@ Linear (snapshot 2026-10-30): 0 % · no ledger row yet
 
 ### S8 Model the ZED-style added camera and Jetson payload — SIM ONLY (Isaac)
 **Purpose:** the ZED-style added camera (setup A) and its Jetson add 300 to 360 g and change the drone. The model has to carry that weight and still pass hover, step and crossing before the real build is trusted.
-Linear (snapshot 2026-10-30): 0 % · no ledger row yet
+Linear (snapshot 2026-11-02): 0 % · no ledger row yet
 
 **Done when** (Linear's target, verbatim; a target, not a result): the camera feeds cuVSLAM; camera+IMU is scored against camera-only; the model with 300–360 g added passes hover, step and crossing checks.
 
@@ -215,7 +212,7 @@ Linear (snapshot 2026-10-30): 0 % · no ledger row yet
 
 ### S9 Safe failover — SIM ONLY (Isaac)
 **Purpose:** a position source can go stale, drop out or switch. The controller must not move the drone unsafely when that happens, and sim is where that is checked at no risk.
-Linear (snapshot 2026-10-30): 0 % · no ledger row yet
+Linear (snapshot 2026-11-02): 0 % · no ledger row yet
 
 **Done when** (Linear's target, verbatim; a target, not a result): no unsafe movement follows stale/missing positions, and source switching moves the drone less than 30 cm.
 
@@ -226,7 +223,7 @@ Linear (snapshot 2026-10-30): 0 % · no ledger row yet
 
 ### S10 Scale test — SIM ONLY (Isaac)
 **Purpose:** the demo needs more drones than the lab has. Running 6 to 10 simulated drones shows where the controller and the recording hit their limits.
-Linear (snapshot 2026-10-30): 0 % · no ledger row yet
+Linear (snapshot 2026-11-02): 0 % · no ledger row yet
 
 **Done when** (Linear's target, verbatim; a target, not a result): 6–10 simulated drones run without cameras; controller load and recording size are measured.
 
@@ -240,7 +237,7 @@ Linear (snapshot 2026-10-30): 0 % · no ledger row yet
 | Item | Seen | Candidate fix (none tried) |
 |---|---|---|
 | Isaac's clock runs 1.3–2× wall time | [#18, #19](../record/LEDGER.md) scale 1.32–1.33 | NEAR-871: record it on every run; a real-time pacing switch |
-| MAVROS route: a turned sim drone orbits (velocity labelled body frame) | PX4 log, 2026-10-30 | fixed by patch 0007 (sim-only, 2026-10-30); flight check pending; moot after S5d |
+| MAVROS route: a turned sim drone orbits (velocity labelled body frame) | PX4 log, 2026-10-30 | patch 0007 (sim-only) confirmed in flight, no orbit ([records](../record/sim_yaw_run1_record.md)); moot after S5d |
 | Pegasus Stop ▶ Play leaks the stopped vehicles' physics callbacks | [#6](../record/LEDGER.md), 2026-10-20 | guard `PX4MavlinkBackend.update()` with `if not self._is_running: return`, or fix the callback removal by prefix |
 | `mavros_node` segfault (exit −11) mid-flight, cause unknown (respawn masks it) | [#8, #11](../record/LEDGER.md) | set a file `core_pattern` on the host before a long sim session (apport eats cores today) |
 | Isaac ROS 2 topics invisible to host-network containers (DDS does not cross the isaac docker network) | 2026-10-22 | isaac-sim on the host network, or keep `--network container:isaac-sim` (`localisation/docker/run.sh`) |

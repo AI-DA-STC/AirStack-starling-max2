@@ -12,7 +12,9 @@ Sources (TEST_STANDARD rule 4 deviation, stated in docs/superpowers/plans/2026-1
                             are matched to the stamps in order (sign + onset spacing); the patch-0007 turn (0.5 rad/s =
                             28.6 deg/s, above yaw_core's 20 deg/s plateau, with the 0.75 m tap in its window) is matched
                             to its own stamp and never gated.
-  out/px4_param_changes.txt MC_YAW* changes PX4 applied (ulog), out/changes.log the owner-rule log of fly.sh's sweep.
+  out/px4_param_changes.txt MC_YAW* changes PX4 applied (ulog), out/changes.log the owner-rule log of fly.sh's sweep
+                            (`drone_1/NAME` lines, written by tools/lib/px4_param_set.sh, CHG-0020). fly.sh's stop
+                            lines `PARAM MISMATCH|REFUSED|UNVERIFIED: …` in test_stdout.log judge "sweep completed".
 Gates judge sweep set 0 (the booted airframe gains) only; every gate = the worst set-0 pulse. A set-0 pulse without
 numbers (unreleased, short window, NaN, not in the ulog, or a stamp/ulog mismatch) never passes: the metric gates go
 UNVERIFIED (FAIL wins when another pulse is measured over the limit) and the "set-0 pulses" row is FAIL for an
@@ -346,9 +348,10 @@ def build_rows(out, heavy, env):
             ovr.verdict = "UNVERIFIED"
 
     # ---- live parameter changes: every MC_YAW* change PX4 applied has a changes.log line (owner rule 2026-11-02)
-    # drone_1's lines only (a bare name = fly.sh's sweep, which flies drone_1); a REFUSED line never reached PX4 (CHG-0018)
+    # drone_1's lines only: fly.sh's sweep writes `drone_1/NAME` through px4_param_set.sh (CHG-0020), so a bare name
+    # is not a line of this drone; a REFUSED line never reached PX4 (CHG-0018)
     log_lines = [c for c in (changes_log.parse_change(l) for l in R.read(out, "changes.log").splitlines())
-                 if c and c["target"] in (None, "drone_1") and not c["refused"]]
+                 if c and c["target"] == "drone_1" and not c["refused"]]
     ul_changes = res["changes"] if res else []
     crit_c = "every MC_YAW* change in the ulog (px4_param_changes.txt) has a changes.log line, same name and value (owner rule 2026-11-02)"
     if not ul_changes and not log_lines and not sweep:
@@ -374,15 +377,19 @@ def build_rows(out, heavy, env):
 
     # ---- sweep completed (a short sweep must be visible) + booted gains restored before the turn / landing
     K = 1 + len(sweep)
-    mism = [l.strip() for l in stdout.splitlines() if l.startswith("PARAM MISMATCH")]
-    crit_s = "fly.sh flew every requested gain set (2N stamped pulses each) and printed no PARAM MISMATCH"
+    # fly.sh's own stop lines (column 0; the helper's echoed lines are indented): MISMATCH / REFUSED = proven not flown
+    # as asked -> FAIL; UNVERIFIED = nothing confirmed the value PX4 holds -> never PASS (CHG-0020)
+    stops = [l.strip() for l in stdout.splitlines() if re.match(r"PARAM (MISMATCH|REFUSED|UNVERIFIED)\b", l)]
+    mism = [l for l in stops if not l.startswith("PARAM UNVERIFIED")]
+    crit_s = ("fly.sh flew every requested gain set (2N stamped pulses each) and printed no PARAM MISMATCH, "
+              "REFUSED or UNVERIFIED (each set read back through px4_param_set.sh)")
     if K == 1:
         R.row(rows, "sweep completed", "informational (no sweep in this run)", "set 0 only; %d set(s) flown" % flown, "-", None, gate=False)
     else:
         txt = "%d of %d sets flown (set 0 + %d of %d sweep sets)" % (flown, K, max(flown - 1, 0), K - 1)
-        if mism:
-            txt += "; " + mism[0][:90]
-        R.row(rows, "sweep completed", crit_s, txt, "-", False if mism else (True if flown >= K else None))
+        if stops:
+            txt += "; " + (mism or stops)[0][:90]
+        R.row(rows, "sweep completed", crit_s, txt, "-", False if mism else (True if flown >= K and not stops else None))
     crit_r = "every MC_YAW* the sweep changed is back at its ulog-header (booted) value before the patch-0007 turn (ulog changed_parameters)"
     if not ul_changes and K == 1:
         R.row(rows, "booted gains restored", "informational (no sweep in this run)", "nothing to restore", "-", None, gate=False)

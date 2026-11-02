@@ -83,7 +83,8 @@ def make_run(tmp, n=3, sets=1, sweep="", pulses=None, groups=None, extra=None, m
     (out / "px4_param_changes.txt").write_text("\n".join(pc) + "\n")
     if log_changes and changes:
         for t, name, v in changes:
-            C.append_change(out / "changes.log", 1_800_000_000.0 + (t + 100.0) / SCALE, name, 2.8, v, "yaw_step fly.sh sweep", readback=v)
+            C.append_change(out / "changes.log", 1_800_000_000.0 + (t + 100.0) / SCALE, "drone_1/" + name, 2.8, v,
+                            "yaw_step-sweep-set-1 (via ros2 param set)", readback=v)
     YM = _load("yaw_metrics_t", YAW / "metrics.py")
     S.metrics_csv(out / "metrics.csv", YM.SERIES, pulses, scale=SCALE, heading_gain=live_gain, yaw_rate=yaw_rate)
     shutil.copy(out / "metrics.csv", out / "metrics_bag.csv")
@@ -257,13 +258,46 @@ class YawStepGates(unittest.TestCase):
 
     def test_a_log_line_for_another_drone_does_not_count(self):            # CHG-0018: match drone_N/, not the bare name
         changes = [(20.0 + 2 * GAP_V + 3.0, "MC_YAW_P", 1.0)]
-        for prefix, verdict in (("drone_2/", "FAIL"), ("drone_1/", "PASS")):
+        # CHG-0020: fly.sh's sweep writes drone_1/ through px4_param_set.sh, so a bare name no longer counts either
+        for prefix, verdict in (("drone_2/", "FAIL"), ("", "FAIL"), ("drone_1/", "PASS")):
             with tempfile.TemporaryDirectory() as d:
                 out, heavy, env = make_run(d, n=1, sets=2, sweep="MC_YAW_P=1.0", changes=changes)
-                log = (out / "changes.log").read_text().replace(" · MC_YAW_P · ", " · %sMC_YAW_P · " % prefix)
+                log = (out / "changes.log").read_text().replace(" · drone_1/MC_YAW_P · ", " · %sMC_YAW_P · " % prefix)
                 (out / "changes.log").write_text(log)
                 _, (rows, _) = rows_of(out, heavy, env)
             self.assertEqual(v(rows, "live parameter changes logged"), verdict, prefix)
+
+    def test_a_refused_log_line_does_not_count(self):                      # CHG-0018: a REFUSED set never reached PX4
+        changes = [(20.0 + 2 * GAP_V + 3.0, "MC_YAW_P", 1.0)]
+        with tempfile.TemporaryDirectory() as d:
+            out, heavy, env = make_run(d, n=1, sets=2, sweep="MC_YAW_P=1.0", changes=changes)
+            log = (out / "changes.log").read_text().rstrip("\n") + " · REFUSED fcu_url is not the sim PX4\n"
+            (out / "changes.log").write_text(log)
+            _, (rows, _) = rows_of(out, heavy, env)
+        self.assertEqual(v(rows, "live parameter changes logged"), "FAIL")
+
+    def test_a_stopped_sweep_set_names_why(self):                          # CHG-0020: REFUSED = FAIL, UNVERIFIED = UNVERIFIED
+        changes = [(20.0 + 2 * GAP_V + 3.0, "MC_YAW_P", 1.0)]
+        for line, verdict in (("PARAM UNVERIFIED: drone_1/MC_YAW_P set 1.4: param pull did not succeed -- sweep stopped", "UNVERIFIED"),
+                              ("PARAM REFUSED: drone_1/MC_YAW_P set 1.4: fcu_url is not the sim PX4 -- sweep stopped", "FAIL"),
+                              ("PARAM MISMATCH: drone_1/MC_YAW_P set 1.4, read back 1.0 -- sweep stopped", "FAIL")):
+            with tempfile.TemporaryDirectory() as d:          # 3 sets asked, 2 flown, set 2 stopped by the helper
+                out, heavy, env = make_run(d, n=1, sets=2, sweep="MC_YAW_P=1.0;MC_YAW_P=1.4", changes=changes)
+                with open(out / "test_stdout.log", "a") as fh:
+                    fh.write("  helper: PARAM MISMATCH: an indented helper line is not fly.sh's verdict\n" + line + "\n")
+                _, (rows, _) = rows_of(out, heavy, env)
+            self.assertEqual(v(rows, "sweep completed"), verdict, line)
+            self.assertIn(line.split(":")[0], m(rows, "sweep completed"))
+            self.assertIn("2 of 3", m(rows, "sweep completed"))
+
+    def test_an_unverified_set_is_never_a_completed_sweep(self):          # every set flown, one set not confirmed
+        changes = [(20.0 + 2 * GAP_V + 3.0, "MC_YAW_P", 1.0)]
+        with tempfile.TemporaryDirectory() as d:
+            out, heavy, env = make_run(d, n=1, sets=2, sweep="MC_YAW_P=1.0", changes=changes)
+            with open(out / "test_stdout.log", "a") as fh:
+                fh.write("PARAM UNVERIFIED: drone_1/MC_YAW_P set 1: no read-back -- sweep stopped\n")
+            _, (rows, _) = rows_of(out, heavy, env)
+        self.assertEqual(v(rows, "sweep completed"), "UNVERIFIED")
 
     def test_no_sweep_has_no_change_gate(self):
         with tempfile.TemporaryDirectory() as d:
@@ -356,17 +390,21 @@ class YawStepGates(unittest.TestCase):
 class FlyScript(unittest.TestCase):
     def test_fly_publishes_zeros_on_exit(self):                            # static: no ROS on the host
         src = (YAW / "fly.sh").read_text()
-        for n in ("/svg/drone_1/teleop_command", "TwistStamped", "finally", "SIGTERM", "param/set", "param/pull",
-                  "force_pull: true", "pulse", "release", "landed:", "ParamSetV2", "ros2 param set", "ros2 param get",
+        for n in ("/svg/drone_1/teleop_command", "TwistStamped", "finally", "SIGTERM", "px4_param_set.sh",
+                  "yaw_step-sweep-set-", "changes.log", "pulse", "release", "landed:", "ros2 param get",
                   "PARAM MISMATCH", "turn onset", "tap onset", "SignalHandlerOptions.NO", 'frame_id = "map"'):
             self.assertIn(n, src, n)
+        for n in ("ParamSetV2", "ros2 param set", "param/pull", "force_pull"):     # every set goes through the helper (CHG-0020)
+            self.assertNotIn(n, src, n)
+        self.assertNotIn('rm -f "$HERE/changes.log"', src)    # sim.sh empties the run's log after `up` (CHG-0017)
         self.assertEqual(subprocess.run(["bash", "-n", str(YAW / "fly.sh")]).returncode, 0)
 
     def test_the_embedded_pulse_program_compiles(self):
         src = (YAW / "fly.sh").read_text()
         py = src.split("<<'PY'\n", 1)[1].split("\nPY\n", 1)[0]
         compile(py, "fly.sh<<PY", "exec")
-        self.assertIn("finally:", py.split("def set_and_log", 1)[1].split("def apply_set", 1)[0])   # an interrupted set is still logged
+        cut = py.split("def helper_set", 1)[1].split("\ndef ", 1)[0]
+        self.assertIn("except BaseException:", cut); self.assertIn("raise", cut)      # an interrupted set is still logged
 
     def test_the_pulse_program_dies_with_the_flight_script(self):
         # sim.sh's stop_fly runs `pkill -f "fly\\.sh"`: the embedded python must carry "fly.sh" in its argv or it would
@@ -418,8 +456,10 @@ exec(compile(code, "fly.sh<<PY", "exec"), {"__name__": "__main__"})
 # fake ros2: the MAVROS param node as files in $FAKE_STATE (booted gains), PX4 applies a set at once
 FAKE_ROS2 = r"""#!/bin/bash
 st=$FAKE_STATE; a="$*"
+echo "${ROS_AUTOMATIC_DISCOVERY_RANGE:-unset} ${ROS_STATIC_PEERS:-} $a" >> "$st/calls"
 case "$a" in
-  *param/pull*) echo "success=True" ;;
+  *param/pull*) [ -n "${FAKE_PULL_FAIL:-}" ] && { echo "success=False"; exit 0; }; echo "success=True" ;;
+  "param get "*mavros_node*fcu_url*) echo "String value is: ${FAKE_FCU:-udp://:14541@172.31.0.200:14581}" ;;
   "param get "*) p=$4; echo "Double value is: $(cat "$st/$p")" ;;
   *param/set*ParamSetV2*)
     [[ "$a" =~ param_id:\ ([A-Z_]+),.*double_value:\ ([-0-9.eE+]+) ]] || exit 1
@@ -446,11 +486,14 @@ def run_program(tmp, sweep, **fake):
     (tmp / "prog.py").write_text(src.split("<<'PY'\n", 1)[1].split("\nPY\n", 1)[0])
     (tmp / "runner.py").write_text(RUNNER)
     env = dict(os.environ, PATH=str(tmp / "bin") + ":" + os.environ["PATH"], FAKE_STATE=str(tmp / "state"),
-               CHANGES_LOG=str(tmp / "changes.log"), PYTHONPATH=str(TOOLS / "lib"), **fake)
+               CHANGES_LOG=str(tmp / "changes.log"), PYTHONPATH=str(TOOLS / "lib"),
+               PARAM_HELPER=str(TOOLS / "lib" / "px4_param_set.sh"), ROS_STATIC_PEERS="10.40.2.11", **fake)
     r = subprocess.run([sys.executable, str(tmp / "runner.py"), str(tmp / "prog.py"), "0", "1", "1.0", "0", sweep],
                        capture_output=True, text=True, timeout=60, env=env)
     log = (tmp / "changes.log").read_text().splitlines() if (tmp / "changes.log").exists() else []
     state = {k: float((tmp / "state" / k).read_text()) for k in BOOTED}
+    calls = (tmp / "state" / "calls").read_text().splitlines() if (tmp / "state" / "calls").exists() else []
+    run_program.calls = calls          # every ros2 call: "<discovery range> <static peers> <argv>"
     return r, [C.parse_change(l) for l in log], state
 
 
@@ -465,6 +508,16 @@ class FlyProgram(unittest.TestCase):
         self.assertEqual(next(c for c in rest if c["name"] == "MC_YAW_P")["old"], 1.4)     # old = the sweep value it replaced
         self.assertEqual(len(log), 3 + 2)
         self.assertLess(r.stdout.index("booted gains restored"), r.stdout.index("turn onset"))
+        # CHG-0020: every line through px4_param_set.sh: drone_1/, the read-back, the helper's who
+        self.assertEqual({c["target"] for c in log}, {"drone_1"})
+        self.assertEqual([c["who"].split(" ")[0] for c in log[:3]], ["yaw_step-sweep-set-1", "yaw_step-sweep-set-2", "yaw_step-sweep-set-2"])
+        self.assertTrue(all(c["who"].startswith("restore-") for c in rest), rest)
+        self.assertTrue(all(c["readback"] == c["new"] and not c["unverified"] for c in log), log)
+        self.assertTrue(any(" · drone_1/MC_YAW_P · 2.8 → 2 · yaw_step-sweep-set-1" in l for l in r.stdout.splitlines()),
+                        r.stdout)                                                        # the helper's line is echoed
+        calls = run_program.calls
+        self.assertTrue(calls and all(c.startswith("LOCALHOST  ") for c in calls), calls)  # never the lab subnet
+        self.assertTrue(any("fcu_url" in c for c in calls), calls)                          # the sim-PX4 check ran
 
     def test_an_interrupted_set_is_still_logged_and_restored(self):                 # review Important 1
         with tempfile.TemporaryDirectory() as d:
@@ -472,6 +525,7 @@ class FlyProgram(unittest.TestCase):
         self.assertNotEqual(r.returncode, 0)
         cut = [c for c in log if c["new"] == 1.4]
         self.assertEqual(len(cut), 1, log); self.assertIn("interrupted", cut[0]["who"]); self.assertIsNone(cut[0]["readback"])
+        self.assertEqual(cut[0]["target"], "drone_1"); self.assertTrue(cut[0]["unverified"]); self.assertEqual(cut[0]["old"], 2.0)
         self.assertEqual(state["MC_YAW_P"], 2.8)                                         # restored on the way out
         self.assertTrue(any("restore" in c["who"] and c["new"] == 2.8 for c in log))
         self.assertNotIn("turn onset", r.stdout)
@@ -483,13 +537,64 @@ class FlyProgram(unittest.TestCase):
         self.assertIn("PARAM MISMATCH", r.stdout)
         self.assertEqual(state["MC_YAW_P"], 2.8)
         self.assertNotIn("pulse 1/1 onset", r.stdout)
+        self.assertTrue(any(c["mismatch"] and c["name"] == "MC_YAWRATE_D" for c in log), log)
+
+    def test_an_interrupted_first_set_restores_the_value_read_before_it(self):     # booted value read before any set
+        with tempfile.TemporaryDirectory() as d:
+            r, log, state = run_program(d, "MC_YAW_P=2.0", FAKE_KILL_ON_SET="MC_YAW_P=2.0")
+        self.assertNotEqual(r.returncode, 0)
+        cut = [c for c in log if c["new"] == 2.0]
+        self.assertEqual(len(cut), 1, log); self.assertIn("interrupted", cut[0]["who"]); self.assertEqual(cut[0]["old"], 2.8)
+        self.assertEqual(state["MC_YAW_P"], 2.8, r.stdout)
+        self.assertNotIn("CAVEAT", r.stdout)
+
+    def test_a_restore_cut_short_runs_again_on_exit(self):
+        with tempfile.TemporaryDirectory() as d:
+            r, log, state = run_program(d, "MC_YAW_P=2.0", FAKE_KILL_ON_SET="MC_YAW_P=2.8")
+        self.assertNotEqual(r.returncode, 0)
+        rest = [c for c in log if c["who"].startswith("restore-")]
+        self.assertEqual(len(rest), 2, log); self.assertIn("interrupted", rest[0]["who"])
+        self.assertIn("on-exit", rest[1]["who"]); self.assertEqual(rest[1]["readback"], 2.8)
+        self.assertNotIn("turn onset", r.stdout)
+
+    def test_an_unknown_parameter_is_logged_refused_and_stops_the_sweep(self):      # helper exit 3 writes no line itself
+        with tempfile.TemporaryDirectory() as d:
+            r, log, state = run_program(d, "MC_YAW_FOO=1.0")
+        self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
+        self.assertEqual(len(log), 1, log); self.assertTrue(log[0]["refused"]); self.assertIn("exit 3", log[0]["refused"])
+        self.assertEqual(log[0]["target"], "drone_1")
+        self.assertIn("PARAM REFUSED: drone_1/MC_YAW_FOO", r.stdout); self.assertNotIn("CAVEAT", r.stdout)
+
+    def test_an_unverified_set_stops_the_sweep(self):                                # CHG-0020: helper exit 1 UNVERIFIED
+        with tempfile.TemporaryDirectory() as d:
+            r, log, state = run_program(d, "MC_YAW_P=2.0;MC_YAW_P=1.4", FAKE_PULL_FAIL="1")
+        self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
+        stops = [l for l in r.stdout.splitlines() if l.startswith("PARAM ")]
+        self.assertEqual(len(stops), 1, r.stdout); self.assertTrue(stops[0].startswith("PARAM UNVERIFIED: drone_1/MC_YAW_P"), stops)
+        self.assertNotIn("pulse 1/1 onset", r.stdout); self.assertNotIn("turn onset", r.stdout)
+        self.assertEqual([c["new"] for c in log if c["who"].startswith("yaw_step-sweep-set-")], [2.0])   # set 2 never sent
+        self.assertTrue(log[0]["unverified"])
+        self.assertTrue(any(c["who"].startswith("restore-") for c in log), log)                  # the restore is still tried
+        self.assertEqual(len([l for l in r.stdout.splitlines() if l.startswith("CAVEAT: ")]), 1, r.stdout)  # and not confirmed
+
+    def test_a_refused_set_stops_the_sweep_and_touches_nothing(self):               # CHG-0020: helper exit 2 REFUSED
+        with tempfile.TemporaryDirectory() as d:
+            r, log, state = run_program(d, "MC_YAW_P=2.0,MC_YAWRATE_D=0.002", FAKE_FCU="udp://:14540@10.40.2.11:14580")
+        self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
+        self.assertIn("PARAM REFUSED: drone_1/MC_YAW_P", r.stdout)
+        self.assertEqual(len(log), 1, log); self.assertTrue(log[0]["refused"])    # set stopped at its first parameter; no restore
+        self.assertEqual(state, {k: float(x) for k, x in BOOTED.items()})
+        self.assertNotIn("pulse 1/1 onset", r.stdout); self.assertNotIn("CAVEAT", r.stdout)
+        self.assertFalse([c for c in run_program.calls if "param/set" in c or c.split()[1:3] == ["param", "set"]])
 
     def test_a_failed_restore_says_which_gains_are_left(self):
         with tempfile.TemporaryDirectory() as d:
-            r, log, state = run_program(d, "MC_YAW_P=2.0", FAKE_STUCK="MC_YAW_P")
+            r, log, state = run_program(d, "MC_YAW_P=2.0,MC_YAWRATE_D=0.002", FAKE_STUCK="MC_YAW_P")
         self.assertEqual(state["MC_YAW_P"], 2.0)
+        self.assertEqual(state["MC_YAWRATE_D"], 0.0)          # one failed restore does not stop the others (CHG-0020)
         cav = [l for l in r.stdout.splitlines() if l.startswith("CAVEAT: ")]
         self.assertEqual(len(cav), 1, r.stdout); self.assertIn("non-booted gains", cav[0]); self.assertIn("MC_YAW_P=2", cav[0])
+        self.assertNotIn("MC_YAWRATE_D", cav[0])
 
     def test_no_sweep_touches_no_parameter(self):
         with tempfile.TemporaryDirectory() as d:

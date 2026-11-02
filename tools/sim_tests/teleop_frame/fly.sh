@@ -29,6 +29,9 @@ NUM='[0-9]+([.][0-9]*)?'
 HERE=$(cd "$(dirname "$0")" && pwd)
 cd ~/AirStack/robot/ros_ws && source install/setup.bash >/dev/null 2>&1
 STICK=/svg/drone_1/teleop_command_stick
+# the yaml that diverts safe_teleop is a new file: a container that never rebuilt has no installed copy (checked before takeoff)
+yaml="$(ros2 pkg prefix svg_ground_control 2>/dev/null)/share/svg_ground_control/config/teleop_single_ours.yaml"
+[ -f "$yaml" ] || { echo "fly.sh: teleop_single_ours.yaml not installed — run bws && sws once"; exit 1; }
 svc(){ timeout 20 ros2 service call /swarm_commander/$1 std_srvs/srv/Trigger 2>/dev/null | grep -o "success=[A-Za-z]*, message='[^']*'"; }
 states(){ timeout 10 ros2 topic echo /svg/commander_status --once --field data 2>/dev/null | grep -v '^---' \
   | grep -oE '"(name|state)": *"[^"]*"|"position": *(\[[^]]*\]|null)' | tr -d '"' | sed 's/position: null/position: ?/' | paste -sd' '; }
@@ -48,6 +51,8 @@ cleanup() {
     kill -0 "$RELAY_PID" 2>/dev/null && kill -KILL "$RELAY_PID" 2>/dev/null
     echo "[$(date +%T)] relay stopped (zeros published on $STICK first)"
   fi
+  # the relay's guard and mode lines, into the record before sim.sh deletes $S (a guard trip mid-push shows here)
+  grep -E 'HEADING|heading guard|mode' "$HERE/teleop_frame.log" 2>/dev/null | tail -40 | sed 's/^/  relay log: /'
 }
 trap cleanup EXIT
 trap 'cleanup; exit 130' INT

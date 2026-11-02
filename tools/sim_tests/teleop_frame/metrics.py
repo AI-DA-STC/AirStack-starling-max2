@@ -3,7 +3,7 @@
 Loaded by tools/live/metrics_node.py (live, 40 Hz odometry) and tools/live/bag_recompute.py (offline): one definition.
 Tolerances are the live-vs-bag agreement per column (metrics_core.crosscheck). gates.py reads x_m / y_m at fly.sh's
 push stamps. heading_deg is ENU yaw (counter-clockwise positive, metrics_core); fly.sh's stamps carry the operator
-heading (clockwise positive, = -ENU yaw).
+heading (clockwise positive, = -ENU yaw). gates.py leaves heading_deg out of the cross-check: it wraps at ±180°.
 """
 import math
 

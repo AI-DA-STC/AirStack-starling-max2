@@ -12,6 +12,7 @@ import contextlib
 import importlib.util
 import io
 import math
+import os
 import pathlib
 import shutil
 import subprocess
@@ -241,6 +242,38 @@ class TeleopFrameGates(unittest.TestCase):
         self.assertEqual(v(rows, "push 0: direction"), "UNVERIFIED")
         self.assertEqual(R.overall_verdict(rows), "INCOMPLETE")
 
+    def test_heading_wrap_does_not_fail_the_cross_check(self):         # final review finding 5
+        # live -179.9 vs bag +179.9 is one heading 0.2 deg apart; plain abs() reads 359.8 deg. heading_deg is plot-only.
+        with tempfile.TemporaryDirectory() as d:
+            out, heavy, env = make_run(d)
+            for name, val in (("metrics.csv", "-179.900000"), ("metrics_bag.csv", "179.900000")):
+                f = out / name
+                lines = f.read_text().splitlines()
+                k = next(i for i, l in enumerate(lines) if l.startswith("t_s,")) if any(l.startswith("t_s,") for l in lines) else None
+                cols = lines[k].split(",") if k is not None else None
+                hi = cols.index("heading_deg") if cols else 2
+                f.write_text("\n".join(l if l.startswith("#") or l.startswith("t_s") or l.split(",")[hi] != "-180.000000"
+                                       else ",".join(c if j != hi else val for j, c in enumerate(l.split(",")))
+                                       for l in lines) + "\n")
+            self.assertIn("179.900000", (out / "metrics_bag.csv").read_text())
+            G = _load("tf_gates_wrap", TF / "gates.py")
+            rows, ctx = G.build_rows(out, heavy, env)
+        self.assertEqual(v(rows, "live vs bag recompute"), "PASS", m(rows, "live vs bag recompute"))
+        self.assertNotIn("heading_deg", [c.name for c in ctx["crosscheck"]])
+        self.assertIn("x_m", [c.name for c in ctx["crosscheck"]])
+        crit = next(r.criterion for r in rows if r.check == "live vs bag recompute")
+        self.assertNotIn("x_m / y_m", crit); self.assertIn("heading_deg", crit)        # the row says what it left out
+        self.assertEqual(R.overall_verdict(rows), "PASS", failing(rows))
+
+    def test_nose_reference_caveat(self):                                  # the nose comes from the relay's own yaw_from_quat
+        _, _, ctx = build()
+        self.assertTrue(any("yaw_from_quat" in c and "not an independent" in c for c in ctx["caveats"]), ctx["caveats"])
+
+    def test_park_window_is_wall_clock(self):
+        _, rows, _ = build()
+        crit = next(r.criterion for r in rows if r.check == "push 90: parked within 0.30 m")
+        self.assertIn("wall clock", crit); self.assertIn("1.3", crit)
+
     def test_caption_and_ledger_sentence(self):
         G, rows, ctx = build()
         s = G.ledger_sentence(rows, ctx, R.overall_verdict(rows))
@@ -284,6 +317,36 @@ class FlyScript(unittest.TestCase):
             self.assertIn(n, src, n)
         self.assertRegex(src, r'python3 - [^\n]*fly\.sh')                # sim.sh's stop_fly (pkill -f fly\.sh) stops it too
         self.assertEqual(subprocess.run(["bash", "-n", str(TF / "fly.sh")]).returncode, 0)
+
+    def test_cleanup_prints_the_relays_heading_and_mode_lines(self):   # a guard trip mid-push is on record before $S goes
+        src = (TF / "fly.sh").read_text()
+        fn = src[src.index("cleanup() {"):src.index("trap cleanup EXIT")]
+        with tempfile.TemporaryDirectory() as d:
+            pathlib.Path(d, "teleop_frame.log").write_text(
+                "[INFO] [1.0] [teleop_frame]: teleop_frame: drone_1 stick_frame=body in=a out=b odom=c\n"
+                "[WARN] [2.0] [teleop_frame]: teleop_frame: HEADING STALE — horizontal command zeroed until the keys are centred\n"
+                "[INFO] [3.0] [teleop_frame]: teleop_frame: heading guard ok\n"
+                "[INFO] [4.0] [teleop_frame]: teleop_frame: mode -> world (pending until centred)\n"
+                "[INFO] [5.0] [teleop_frame]: teleop_frame: input ok\n")
+            r = subprocess.run(["bash", "-c", fn + '\nHERE=%s; RELAY_PID=""; CLEANED=0; STICK=/x; cleanup' % d],
+                               capture_output=True, text=True, timeout=10)
+        self.assertIn("HEADING STALE", r.stdout, r.stderr); self.assertIn("heading guard ok", r.stdout)
+        self.assertIn("mode -> world", r.stdout)
+        self.assertNotIn("input ok", r.stdout); self.assertNotIn("stick_frame=body", r.stdout)   # gates.py reads that line elsewhere
+
+    def test_refuses_before_takeoff_without_the_installed_yaml(self):
+        src = (TF / "fly.sh").read_text()
+        self.assertLess(src.index("teleop_single_ours.yaml not installed"), src.index('teleop_frame.py" --drone'))
+        self.assertLess(src.index("teleop_single_ours.yaml not installed"), src.index("$(svc takeoff)"))
+        with tempfile.TemporaryDirectory() as d:                           # fake ros2: the package prefix has no such yaml
+            b = pathlib.Path(d, "bin"); b.mkdir()
+            (b / "ros2").write_text("#!/bin/sh\necho %s/prefix\n" % d); (b / "ros2").chmod(0o755)
+            (b / "pgrep").write_text("#!/bin/sh\necho PGREP_CALLED\nexit 1\n"); (b / "pgrep").chmod(0o755)
+            env = dict(os.environ, HOME=d, PATH="%s:%s" % (b, os.environ["PATH"]))
+            r = subprocess.run(["bash", str(TF / "fly.sh"), "4", "0.25", "2.0"], capture_output=True, text=True, timeout=20, env=env)
+        self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
+        self.assertIn("fly.sh: teleop_single_ours.yaml not installed — run bws && sws once", r.stdout)
+        self.assertNotIn("PGREP_CALLED", r.stdout)                            # nothing after the check ran
 
     def test_other_publishers_on_the_stick_topic_are_a_caveat(self):  # a leftover safe_teleop / keyboard session
         src = (TF / "fly.sh").read_text()

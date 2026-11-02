@@ -11,7 +11,8 @@ Sources:
 
 Heading convention. fly.sh stamps the OPERATOR heading h: 0 = +X, clockwise positive, [0, 360) (the relay's status line,
 frame.heading_deg_from_yaw). The ENU yaw is psi = -h, so the nose points along (cos psi, sin psi):
-h 0 -> +X, h 90 -> -Y, h 180 -> -X, h 270 -> +Y. metrics.csv's heading_deg is ENU yaw (plotted, not gated).
+h 0 -> +X, h 90 -> -Y, h 180 -> -X, h 270 -> +Y. metrics.csv's heading_deg is ENU yaw (plotted only: not gated and not
+cross-checked, it wraps at ±180°).
 
 Gate values (written before the first run, never moved after):
   direction <= 20 deg   angle between the xy move from onset to release and the nose at onset (Drive mode), or +X
@@ -46,6 +47,7 @@ LABELS = ("0", "90", "180", "270", "world")
 STAMP = re.compile(r"^\[(\d+\.\d+)\] push (\d+|world) (onset|release) heading=(\S+)")
 RELAY = re.compile(r"relay: stick_frame=(\w+)")
 BASE = "none (first run sets it)"
+NOT_CROSSCHECKED = ("heading_deg",)   # plot-only, wraps at ±180°: a live/bag pair from different samples can differ by 360°
 
 
 # ------------------------------------------------------------------------------------------------ inputs
@@ -187,11 +189,11 @@ def build_rows(out, heavy, env):
         bag = None
     if live is not None and bag is not None:
         try:
-            cr = M.crosscheck(live[1], live[2], bag[1], bag[2], _series())
+            cr = M.crosscheck(live[1], live[2], bag[1], bag[2], [s for s in _series() if s.name not in NOT_CROSSCHECKED])
         except (ValueError, KeyError, IndexError):
             cr = None
     ctx["crosscheck"] = cr
-    R.crosscheck_rows(rows, cr, "x_m / y_m")
+    R.crosscheck_rows(rows, cr, "every column but heading_deg (plotted only; it wraps at ±180°)")
     if rows[-1].verdict == "FAIL":     # nothing proven wrong, but what was watched is not what is gated: UNVERIFIED
         rows[-1].verdict = "UNVERIFIED"
     extra = tuple(f for f in ("metrics.csv", "metrics_bag.csv") if (out / f).is_file())
@@ -200,6 +202,8 @@ def build_rows(out, heavy, env):
     ctx["reading"] = _reading(V)
     ctx["caveats"].append("Stamps are wall clock; they are placed on metrics.csv through its t0_unix header (t_s = stamp − t0_unix), "
                           "the same mapping as yaw_step's live check. PX4 lockstep runs about 1.3× the wall clock, so a 2 s push is about 2.6 s of vehicle time.")
+    ctx["caveats"].append("The nose reference comes from the same odometry quaternion and frame.yaw_from_quat the relay uses, so the "
+                          "direction gates check that the relay agrees with the odometry, not an independent truth.")
     return rows, ctx
 
 
@@ -209,7 +213,8 @@ def _push_rows(rows, lab, e, track, why, errs, V):
     c_dir = ("direction within %.0f° of +X (Room mode; the nose at about 180° points the other way, so Drive mode would fail)" % GATE_DIR_DEG
              if world else "direction within %.0f° of the nose at onset (Drive mode; nose = (cos ψ, sin ψ), ψ = −heading)" % GATE_DIR_DEG)
     c_mov = "|xy move| from onset to release ≥ %.2f m" % GATE_MOVED_M
-    c_park = "|xy at release + %.0f s − xy at release| ≤ %.2f m" % (PARK_S, GATE_PARK_M)
+    c_park = ("|xy at release + %.0f s − xy at release| ≤ %.2f m (%.0f s of wall clock; PX4 lockstep runs about 1.3× it, so about %.1f s of vehicle time)"
+              % (PARK_S, GATE_PARK_M, PARK_S, PARK_S * 1.3))
     checks = ("%s: direction within %.0f° of %s" % (name, GATE_DIR_DEG, "+X" if world else "the nose"), "%s: moved ≥ %.2f m" % (name, GATE_MOVED_M), "%s: parked within %.2f m" % (name, GATE_PARK_M))
 
     target = 180.0 if world else float(lab)

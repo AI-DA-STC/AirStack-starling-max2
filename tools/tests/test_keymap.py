@@ -147,6 +147,31 @@ class Safety(unittest.TestCase):
         s = K.KeyState("dragonrise_usb"); s.press("f", 1.0)
         self.assertTrue(s.flip_requested); self.assertEqual(set(s.axes(1.05)), {0.0})
 
+    @staticmethod
+    def _flips(s, events):
+        """Feed (kind, t) F events; count the flip requests the window would send (it clears the flag each tick)."""
+        n = 0
+        for kind, t in events:
+            (s.press if kind == "p" else s.release)("f", t)
+            if s.flip_requested:
+                n += 1; s.flip_requested = False
+        return n
+
+    def test_a_held_f_asks_for_one_flip_only(self):                    # final review finding 1: 22 requests from a 1.5 s hold
+        s = K.KeyState("dragonrise_usb"); ev = [("p", 1.0)]; t = 1.5
+        while t < 3.0:                                                  # X11 auto-repeat: release+press every 30 ms
+            ev += [("r", t), ("p", t + 0.001)]; t += 0.03
+        self.assertEqual(self._flips(s, ev), 1)
+
+    def test_a_held_f_without_release_events_asks_once(self):         # auto-repeat that sends presses only
+        s = K.KeyState("dragonrise_usb")
+        self.assertEqual(self._flips(s, [("p", 1.0), ("p", 1.5)] + [("p", 1.5 + 0.03 * i) for i in range(1, 40)]), 1)
+
+    def test_f_tapped_twice_asks_twice(self):                           # flip, then cancel: two real presses
+        s = K.KeyState("dragonrise_usb")
+        self.assertEqual(self._flips(s, [("p", 1.0), ("r", 1.1), ("p", 1.3), ("r", 1.4)]), 2)
+        self.assertEqual(self._flips(s, [("p", 3.0)]), 1)               # after a long hold and release, F works again
+
     def test_status_line_uses_the_new_words_and_speed(self):
         s = K.KeyState("dragonrise_usb", scale=0.5); s.press("Up", 1.0); s.press("Left", 1.0)
         self.assertEqual(s.status(1.05, max_speed_mps=2.0), "pitch: forward, roll: slide left  ·  50 % of top speed = 1.0 m/s")
@@ -166,7 +191,7 @@ class Safety(unittest.TestCase):
         self.assertEqual(pend[0], "Switching to room mode — let go of the keys first"); self.assertEqual(pend[2], K.AMBER)
         lost = K.header_lines(P("frame=body pending=none heading_deg=nan heading_age_s=nan guard=stale input=ok"), True)
         self.assertEqual(lost[0], "Heading lost — let go of the keys"); self.assertEqual(lost[2], K.RED)
-        self.assertEqual(K.header_lines(None, False)[0], "Keys not reaching the drone — run tools/sim.sh keys again")
+        self.assertEqual(K.header_lines(None, False)[0], "Keys not reaching the drone — close this window, then run tools/sim.sh keys")
         self.assertEqual(K.header_lines(P("frame=body pending=none heading_deg=1 heading_age_s=0.1 guard=ok input=ok"), False)[2], K.RED)
         old = K.header_lines(P("frame=body pending=none heading_deg=1 heading_age_s=0.1 guard=ok input=none"), True)
         self.assertEqual(old[0], "Room mode — ↑ is always the far wall"); self.assertEqual(old[2], K.GREY)
@@ -191,7 +216,7 @@ class Safety(unittest.TestCase):
     def test_garbled_status_reads_as_relay_missing(self):
         for st in ({}, K.parse_status("garbage"), K.parse_status("frame=sideways pending=none guard=ok input=ok")):
             lines = K.header_lines(st, True)
-            self.assertEqual(lines[0], "Keys not reaching the drone — run tools/sim.sh keys again"); self.assertEqual(lines[2], K.RED)
+            self.assertEqual(lines[0], "Keys not reaching the drone — close this window, then run tools/sim.sh keys"); self.assertEqual(lines[2], K.RED)
             self.assertNotIn("F →", K.footer_line(st))
 
     def test_footer_follows_the_mode(self):
@@ -265,6 +290,15 @@ class WindowReviewFixes(unittest.TestCase):
         tick = self.SRC[self.SRC.index("def tick():"):self.SRC.index("def close():")]
         self.assertIn("call_async", self.SRC); self.assertNotIn("spin_until_future_complete", tick)
         self.assertIn("flip_requested", tick)
+
+    def test_f_is_sent_only_to_a_ready_service_and_a_lost_request_is_dropped(self):   # final review finding 4
+        req = self.SRC[self.SRC.index("def request_flip("):self.SRC.index("root.bind(")]
+        self.assertIn("flip_cli.service_is_ready()", req)
+        self.assertLess(req.index("service_is_ready()"), req.index("flip_cli.call_async("))
+        tick = self.SRC[self.SRC.index("def tick():"):self.SRC.index("def close():")]
+        self.assertRegex(self.SRC, r"FLIP_ANSWER_S = 2\.0"); self.assertRegex(self.SRC, r"LIVE_READ_ANSWER_S = 5\.0")
+        self.assertRegex(tick, r"now - flip_pending\[\"t\"\] > FLIP_ANSWER_S")
+        self.assertRegex(tick, r"now - live_read\[\"t\"\] > LIVE_READ_ANSWER_S")
 
     def test_max_speed_is_re_read_periodically_without_blocking(self):
         tick = self.SRC[self.SRC.index("def tick():"):self.SRC.index("def close():")]

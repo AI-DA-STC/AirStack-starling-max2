@@ -24,6 +24,8 @@ import keymap as K  # noqa: E402
 
 RATE_HZ = 20.0
 DISCOVERY_S = 1.0            # let DDS discovery find other /joy publishers before the first count
+FLIP_ANSWER_S = 2.0          # an F request unanswered this long was lost (sent before DDS matched): dropped, F works again
+LIVE_READ_ANSWER_S = 5.0     # the same for the periodic safe_teleop parameter read
 HELP = ("Arrows  ↑ / ↓  forward / back (pitch)      ← / →  slide left / right (roll)\n"
         "W / S  climb / descend      A / D  turn (yaw) left / right\n"
         "1 / 2 / 3  = 25 / 50 / 100 % of top speed.  No stick lock on the keyboard.\n"
@@ -120,7 +122,7 @@ def main(argv=None) -> int:
     node.create_subscription(String, "/teleop_frame/status",
                              lambda m: last_status.update(line=m.data, rx=time.monotonic()), 10)
     flip_cli = node.create_client(SetParameters, "/teleop_frame/set_parameters")
-    flip_pending = {"fut": None, "target": None}
+    flip_pending = {"fut": None, "target": None, "t": 0.0}
 
     def request_flip(status_dict):
         """Ask the relay for the other mode; never blocks (call_async, result checked in a later tick)."""
@@ -131,9 +133,12 @@ def main(argv=None) -> int:
         if target is None:
             print("key_teleop: F ignored — relay has no input to flip", flush=True)
             return
+        if not flip_cli.service_is_ready():           # a request sent before DDS matched is dropped and never answered
+            print("key_teleop: F ignored — the relay's parameter service is not reachable yet; press F again", flush=True)
+            return
         req = SetParameters.Request()
         req.parameters = [Parameter(name="stick_frame", value=ParameterValue(type=ParameterType.PARAMETER_STRING, string_value=target))]
-        flip_pending.update(fut=flip_cli.call_async(req), target=target)
+        flip_pending.update(fut=flip_cli.call_async(req), target=target, t=time.monotonic())
 
     root.bind("<KeyPress>", lambda e: state.press(e.keysym, time.monotonic()))
     root.bind("<KeyRelease>", lambda e: state.release(e.keysym, time.monotonic()))
@@ -145,6 +150,13 @@ def main(argv=None) -> int:
     from rcl_interfaces.srv import GetParameters
     live_cli = node.create_client(GetParameters, "/safe_teleop/get_parameters")
     live_read = {"fut": None, "t": time.monotonic()}      # max_speed_mps follows the commander live (Foxglove dropdown)
+
+    def drop(cli, fut):
+        """Forget an unanswered request (rclpy keeps it in the client's pending list otherwise)."""
+        try:
+            cli.remove_pending_request(fut)
+        except Exception:                            # older rclpy has no remove_pending_request: the future is just dropped
+            pass
 
     def tick():
         nonlocal max_speed
@@ -171,6 +183,10 @@ def main(argv=None) -> int:
                 ok = bool(res and res.results and res.results[0].successful)
                 print("key_teleop: F -> stick_frame=%s %s" % (flip_pending["target"], "accepted" if ok else "FAILED"), flush=True)
                 flip_pending.update(fut=None, target=None)
+            elif fut is not None and now - flip_pending["t"] > FLIP_ANSWER_S:
+                print("key_teleop: F -> stick_frame=%s no answer in %.0f s — dropped; press F again" % (flip_pending["target"], FLIP_ANSWER_S), flush=True)
+                drop(flip_cli, fut)
+                flip_pending.update(fut=None, target=None)
             if live_read["fut"] is None and now - live_read["t"] >= 2.0 and live_cli.service_is_ready():
                 req = GetParameters.Request()
                 req.names = ["teleop_controller", "deadzone", "max_speed_mps"]
@@ -182,6 +198,9 @@ def main(argv=None) -> int:
                         max_speed = vals[2].double_value or max_speed
                         state.deadzone = vals[1].double_value or state.deadzone
                 live_read["fut"] = None
+            elif live_read["fut"] is not None and now - live_read["t"] > LIVE_READ_ANSWER_S:
+                drop(live_cli, live_read["fut"])                 # lost request: drop it, the next read starts in 2 s
+                live_read.update(fut=None, t=now)
             if now - last_count["t"] >= 1.0:
                 n = max(0, node.count_publishers(a.topic) - 1)      # minus our own publisher
                 if n != last_count["n"]:

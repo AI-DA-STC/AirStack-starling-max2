@@ -7,7 +7,7 @@ Pure logic, no ROS and no Tk: key_teleop.py feeds it key events and publishes wh
     W / S          climb / descend          (left stick up / down)
     A / D          turn (yaw) left / right  (left stick left / right)
     Space          STOP: every key let go
-    F              ask the relay to flip Drive mode <-> Room mode (this module never changes the frame itself)
+    F              ask the relay to flip Drive mode <-> Room mode, once per press (this module never changes the frame)
     1 / 2 / 3      25 / 50 / 100 % of top speed (default 50 %; safe_teleop's dead zone is compensated)
 
 A "mode 2" layout: arrows = right stick (move), WASD = left stick (height + heading). safe_teleop commands
@@ -84,6 +84,8 @@ class KeyState:
         self._released = {}            # key -> release time, cancelled by a press within DEBOUNCE_S
         self._last = {}                # key -> time of its last press or release event
         self.flip_requested = False    # F pressed; the window asks the relay, then clears this
+        self._f_last = None            # time of the last F event (press or release); None = F is up
+        self._f_rel = None             # time of the last F release, None after a press
         self.stop_at = None            # time of the last Space
 
     def press(self, keysym, t):
@@ -95,8 +97,10 @@ class KeyState:
             self.all_up()
             self.stop_at = t
             return
-        if k == "f":
-            self.flip_requested = True
+        if k == "f":                       # one request per real press: a held F auto-repeats (final review 1)
+            if not self._f_held(t):
+                self.flip_requested = True
+            self._f_last, self._f_rel = t, None
             return
         if k in KEYS:
             self.stop_at = None            # a new flight key ends the STOP display
@@ -107,6 +111,9 @@ class KeyState:
 
     def release(self, keysym, t):
         k = _norm(keysym)
+        if k == "f" and self._f_last is not None:
+            self._f_last = self._f_rel = t
+            return
         if k in KEYS and k in self._down:
             self._released[k] = t
             self._last[k] = t
@@ -116,6 +123,15 @@ class KeyState:
         self._down.clear()
         self._released.clear()
         self._last.clear()
+        self._f_last = self._f_rel = None
+
+    def _f_held(self, t):
+        """F still down: released less than DEBOUNCE_S ago (an auto-repeat pair), or an event within HOLD_SILENCE_S."""
+        if self._f_last is None:
+            return False
+        if self._f_rel is not None:
+            return t - self._f_rel < DEBOUNCE_S
+        return t - self._f_last < HOLD_SILENCE_S
 
     def _settle(self, t):
         for k, tr in list(self._released.items()):
@@ -184,7 +200,7 @@ _DRIVE = ("Drive mode — ↑ is always where the nose points", "Like driving a 
 def header_lines(status, relay_seen):
     """(bold line, sentence, colour) for the window header; wording is spec 5.4 (words only)."""
     if status is None or not relay_seen or status.get("frame") not in ("body", "world"):
-        return ("Keys not reaching the drone — run tools/sim.sh keys again", "", RED)
+        return ("Keys not reaching the drone — close this window, then run tools/sim.sh keys", "", RED)
     if status.get("input") == "none":
         return _ROOM + (GREY,)
     if status.get("guard", "ok") != "ok":

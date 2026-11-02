@@ -86,7 +86,7 @@ Window header, **words only, no picture** (owner chose this over two mockup roun
 - Room mode: bold blue **`Room mode — ↑ is always the far wall`**, then `Like moving a chess piece: ↑ is the far wall no matter where the nose points.`
 - `F` pressed while a key is held: bold amber **`Switching to room mode — let go of the keys first`** (or "drive mode"), then `Your ↑ still works the old way until every key is up.`
 - Heading lost (guard tripped): bold red **`Heading lost — let go of the keys`**, then `The drone holds until the heading is back and every key is up.`
-- Relay missing: bold red **`Keys not reaching the drone — run tools/sim.sh keys again`** when the status topic is silent for 2 s.
+- Relay missing: bold red **`Keys not reaching the drone — close this window, then run tools/sim.sh keys`** when the status topic is silent for 2 s (wording adjusted after review: `keys` refuses while a window is open).
 - Launched with the old yaml (no diversion, §5.8 1): the Room-mode lines in grey, and the footer omits `F`.
 
 The footer line lists the keys: `A / D turn · W / S up / down · Space STOP · F → room mode` (or `→ drive mode`). The existing status line (held keys, percent) stays and gains the m/s figure. "BODY"/"WORLD" appear only in brackets in TELEOP.md, never on screen.

@@ -440,8 +440,14 @@ def ev(name):
 class _Clock:
     def now(self): return self
     def to_msg(self): return None
+_graph_calls = [0]
+def _subs():                   # the ROS graph: who subscribes to the teleop topic right now (default: the commander)
+    _graph_calls[0] += 1
+    if _graph_calls[0] <= int(os.environ.get("FAKE_SUB_AFTER_CALLS", "0")): return []
+    return os.environ.get("FAKE_SUB_NAMES", "swarm_commander").split(",")
 class _Node:
-    def create_publisher(self, *a): return types.SimpleNamespace(publish=lambda m: None)
+    def create_publisher(self, *a): return types.SimpleNamespace(publish=lambda m: None, get_subscription_count=lambda: len(_subs()))
+    def get_subscriptions_info_by_topic(self, t): return [types.SimpleNamespace(node_name=n) for n in _subs()]
     def create_timer(self, *a): return None
     def get_clock(self): return _Clock()
     def destroy_node(self): ev("node.destroy")
@@ -472,6 +478,7 @@ exe = types.ModuleType("rclpy.executors"); exe.SingleThreadedExecutor = SingleTh
 sig = types.ModuleType("rclpy.signals"); sig.SignalHandlerOptions = types.SimpleNamespace(NO=0)
 gmm = types.ModuleType("geometry_msgs.msg"); gmm.TwistStamped = TwistStamped
 sys.modules.update({"rclpy": rclpy, "rclpy.signals": sig, "rclpy.executors": exe, "geometry_msgs": types.ModuleType("geometry_msgs"), "geometry_msgs.msg": gmm})
+os.environ.setdefault("YAW_SUB_SETTLE_S", "0")
 code = open(sys.argv[1]).read()
 sys.argv = ["-", "yaw_step/fly.sh"] + sys.argv[2:]
 exec(compile(code, "fly.sh<<PY", "exec"), {"__name__": "__main__"})
@@ -570,6 +577,20 @@ class FlyShExit(unittest.TestCase):                                             
 
 
 class FlyProgram(unittest.TestCase):
+    def test_no_pulse_before_the_commander_subscribes(self):                        # sim_yaw_run2: pulse 0/1 was lost to discovery
+        with tempfile.TemporaryDirectory() as d:
+            r, _, _ = run_program(d, "", FAKE_SUB_AFTER_CALLS="4")
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertIn("commander subscribed", r.stdout)
+        self.assertLess(r.stdout.index("commander subscribed"), r.stdout.index("pulse 0/1 onset"))
+
+    def test_a_commander_that_never_subscribes_means_no_pulses(self):               # other subscribers do not count
+        with tempfile.TemporaryDirectory() as d:
+            r, _, _ = run_program(d, "MC_YAW_P=2.0", FAKE_SUB_NAMES="rosbag2_recorder,foxglove_bridge", YAW_SUB_WAIT_S="0.3")
+        self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
+        self.assertIn("swarm_commander did not subscribe", r.stdout)
+        self.assertNotIn("onset", r.stdout)
+
     def test_a_sweep_restores_the_booted_gains_before_the_0007_check(self):        # review Important 2
         with tempfile.TemporaryDirectory() as d:
             r, log, state = run_program(d, "MC_YAW_P=2.0;MC_YAW_P=1.4,MC_YAWRATE_D=0.002")

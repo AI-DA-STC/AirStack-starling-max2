@@ -54,6 +54,9 @@ import changes_log
 GAP, N, RATE, PULSE = float(sys.argv[2]), int(float(sys.argv[3])), float(sys.argv[4]), float(sys.argv[5])
 SWEEP = sys.argv[6] if len(sys.argv) > 6 else ""
 TOPIC = "/svg/drone_1/teleop_command"
+COMMANDER = "swarm_commander"             # the node that must receive the pulses
+SUB_WAIT_S = float(os.environ.get("YAW_SUB_WAIT_S", "30"))
+SUB_SETTLE_S = float(os.environ.get("YAW_SUB_SETTLE_S", "2"))
 PNODE = "/drone_1/interface/mavros/param"
 DRONE = "drone_1"                         # the helper's <drone_n> is 1: changes.log lines read drone_1/NAME
 HELPER = os.environ.get("PARAM_HELPER", "px4_param_set.sh")
@@ -216,8 +219,25 @@ def hold(seconds):
     time.sleep(seconds)
 
 
+def wait_for_commander(node, pub):
+    """True once the commander itself subscribes to the teleop topic, then SUB_SETTLE_S more. sim_yaw_run2 lost pulse 0/1:
+    the first pulse went out about 3 s before discovery finished. A recorder or bridge on the topic does not count."""
+    t_end = time.monotonic() + SUB_WAIT_S
+    while time.monotonic() < t_end:
+        names = [i.node_name for i in node.get_subscriptions_info_by_topic(TOPIC)]
+        if COMMANDER in names and pub.get_subscription_count() > 0:
+            say("%s subscribed to %s (commander subscribed); %.0f s more before the first pulse" % (COMMANDER, TOPIC, SUB_SETTLE_S))
+            hold(SUB_SETTLE_S)
+            return True
+        time.sleep(0.2)
+    return False
+
+
 def main(node, pub):
     sets = parse_sweep(SWEEP)
+    if not wait_for_commander(node, pub):
+        say("%s did not subscribe to %s within %.0f s: no pulses flown" % (COMMANDER, TOPIC, SUB_WAIT_S))
+        return 1
     for p in dict.fromkeys(name for gs in sets for name, _ in gs):
         booted[p] = param_get(p)                        # read only: what a cut-short first set is restored to
     for k, gs in enumerate([[]] + sets):

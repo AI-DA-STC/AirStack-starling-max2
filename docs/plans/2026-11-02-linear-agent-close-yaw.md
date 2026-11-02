@@ -14,13 +14,13 @@ Leave **NEAR-789 In Progress**. It still needs the keyboard session in the const
 
 Set the status to **Canceled**, and add this comment:
 
-> Canceled by the owner, 2026-11-02: not needed. Which MPC limits the drone flies stays unmeasured. The drone's parameter file starling_1_indoor_params.params (3 / 3 / 3 / 2 / 0.6) is used as the reference, and PREFLIGHT keeps treating the commander's 1.0 m/s cap as the only speed limit.
+> Canceled by the owner, 2026-11-02: no QGC read needed. The owner will supply the drone's parameter files later, which answers the same question. Until then starling_1_indoor_params.params (3 / 3 / 3 / 2 / 0.6) is the reference, and PREFLIGHT keeps treating the commander's 1.0 m/s cap as the only speed limit.
 
 ## Part 3 · NEAR-912 "Match the sim airframe’s MPC speed and acceleration limits to the real drone’s"
 
 Keep the title and status. Replace the description with:
 
-> Sim-only. Today the sim has MPC_XY_VEL_MAX 20, MPC_ACC_HOR 6, MPC_ACC_HOR_MAX 1000, MPC_Z_VEL_MAX_UP 10, MPC_Z_VEL_MAX_DN 4 (the 2026-08-20 drone backup). Match them to the drone's parameter file starling_1_indoor_params.params: 3 / 3 / 3 / 2 / 0.6. Also lower cbf_sim.yaml’s 4.0 m/s cap. Re-run hover/step and crossing after (baselines ledger `#17–#22`). Its own change-log entry.
+> Sim-only. Today the sim has MPC_XY_VEL_MAX 20, MPC_ACC_HOR 6, MPC_ACC_HOR_MAX 1000, MPC_Z_VEL_MAX_UP 10, MPC_Z_VEL_MAX_DN 4 (the 2026-08-20 drone backup). Match them to the drone's parameter files, which the owner will supply. Until then the reference is starling_1_indoor_params.params: 3 / 3 / 3 / 2 / 0.6. Also lower cbf_sim.yaml’s 4.0 m/s cap. Re-run hover/step and crossing after (baselines ledger `#17–#22`). Its own change-log entry.
 
 Remove any relation from NEAR-912 to NEAR-914.
 

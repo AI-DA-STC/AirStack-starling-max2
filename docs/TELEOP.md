@@ -153,7 +153,7 @@ minimised, or after 1 s with no key event (a held key keeps auto-repeating). Clo
 publishes zeros first. If the window dies, `safe_teleop` stops the drone after 0.5 s without `/joy`.
 
 Only one source may publish `/joy`. The window warns while another one does, such as a plugged-in pad.
-It reads `safe_teleop`'s controller profile and refuses a mismatch; `teleop_single.yaml` pins
+It reads `safe_teleop`'s controller profile and refuses a mismatch; `teleop_single_ours.yaml` pins
 `dragonrise_usb`, the default. Sim only: it has not flown the real drone.
 
 ## 4 · Quick start — SIM (M1 rehearsal)
@@ -175,7 +175,7 @@ the `dragonrise_usb` the yamls pin — and on a DragonRise pad the §3 guard the
 drone will not move at all. ✅ CMU (their pad), ⏳ STE for ours.
 
 So the **manual two-terminal form is the one to learn** — identical to §5's, with
-`teleop_single.yaml` for `teleop_real.yaml` and no `use_mocap:=true`. Open the sim session with
+`teleop_single_ours.yaml` for `teleop_real.yaml` and no `use_mocap:=true`. Open the sim session with
 [RUNBOOK.md](RUNBOOK.md) §A0 (`tools/sim_terminals.sh` opens one Terminator window with the
 tabs **Isaac Sim · Interfaces · Commander · Cockpit**, each already inside the right container);
 start Isaac with **1** drone in the Isaac Sim tab and `launch_sim_interfaces.sh 1` in the
@@ -183,12 +183,15 @@ Interfaces tab. Then, both in the **container** (`root@…#`) — tmux alternati
 "Alternatives to the tabs"): the `bringup` session, pad in pane 5, commander in pane 2:
 
 ```bash
-CFG=$(ros2 pkg prefix svg_ground_control)/share/svg_ground_control/config/teleop_single.yaml
+CFG=$(ros2 pkg prefix svg_ground_control)/share/svg_ground_control/config/teleop_single_ours.yaml
 # Cockpit tab — the pad, FIRST (prints the stick reading once a second)
 ros2 launch svg_ground_control teleop.launch.py config:=$CFG
 # Commander tab — the commander, SAME config
 ros2 launch svg_ground_control ground_control.launch.py config:=$CFG
 ```
+
+`teleop_single_ours.yaml` is a new file, so run `bws && sws` once in the robot container before the first launch.
+For the keyboard window use `tools/sim.sh keys`. A pad in sim needs `tools/sim.sh relay` (§3b).
 
 (`takeoff` / `start` / `land` then go in any extra container shell — a new Terminator tab,
 `Ctrl-Shift-T`, dropped into the robot container the way RUNBOOK §A0 describes.)

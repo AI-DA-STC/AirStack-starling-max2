@@ -52,6 +52,13 @@ Studio opens already connected to ws://localhost:8765. First time: import the la
 TXT
 ;;
 cockpit) cat <<'TXT'
+# keyboard session (sim): launch both with the _ours yaml, pad first. New yaml: bws && sws once.
+CFG=$(ros2 pkg prefix svg_ground_control)/share/svg_ground_control/config/teleop_single_ours.yaml
+ros2 launch svg_ground_control teleop.launch.py config:=$CFG                                  # this tab
+#   Commander tab: ros2 launch svg_ground_control ground_control.launch.py config:=$CFG use_foxglove_studio:=true
+tools/sim.sh keys                                                  # laptop: keyboard window + Drive/Room relay
+tools/sim.sh relay                                                 # laptop: relay alone, for pad users in sim
+
 ros2 service call /swarm_commander/takeoff std_srvs/srv/Trigger    # wait for "holding takeoff position" x3 (~30 s)
 ros2 service call /swarm_commander/start   std_srvs/srv/Trigger
 ros2 service call /swarm_commander/hold    std_srvs/srv/Trigger    # freeze in a hover first

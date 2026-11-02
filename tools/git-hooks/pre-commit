@@ -3,7 +3,8 @@
 # Blocks a commit when a behaviour path is staged without a new docs/record/CHANGES.md line (docs/CODING_STANDARD.md),
 # when the docs checker reports a FAIL, or the host unit tests fail.
 # --no-verify skips it; the docs check's change-log pass still flags a behaviour commit without a Change: line.
-# The change-log rule is inactive until docs/CODING_STANDARD.md is in HEAD or the index (tools/docs_check/changes.py).
+# The change-log rule is inactive until a commit adds docs/CODING_STANDARD.md (or the index holds it); then it stays on
+# for good, and a renamed or deleted standard blocks the commit (tools/docs_check/changes.py).
 set -u
 root=$(git rev-parse --show-toplevel)
 staged=$(git diff --cached --name-only --no-renames)

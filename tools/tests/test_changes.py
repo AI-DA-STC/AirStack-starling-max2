@@ -1,5 +1,6 @@
 # tools/tests/test_changes.py — change-logging standard: path map, pre-commit rule, git-log audit (docs/CODING_STANDARD.md)
 import os, pathlib, shutil, subprocess, sys, tempfile, unittest
+from unittest import mock
 TOOLS = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS / "docs_check"))
 import changes as CH
@@ -57,7 +58,15 @@ class PathMap(unittest.TestCase):
              "tools/sim_tests/crossing/plots.json": False, "tools/sim_tests/_template/gates.py": False,
              "tools/tests/test_report.py": False, "tools/docs_check/check_docs.py": False, "tools/git-hooks/pre-commit": False,
              "tools/make_figures.sh": False, "localisation/nodes/cuvslam_stereo_node.py": True, "localisation/docker/Dockerfile": True,
-             "localisation/README.md": False, "docs/record/CHANGES.md": False, "README.md": False, "CLAUDE.md": False}
+             "localisation/README.md": False, "docs/record/CHANGES.md": False, "README.md": False, "CLAUDE.md": False,
+             # fix round 2026-11-02: yaw_step + changes_log (yaw Task 4), the S5 hover/step tools, pattern mutants
+             "tools/sim_tests/yaw_step/fly.sh": True, "tools/sim_tests/yaw_step/gates.py": True,
+             "tools/sim_tests/yaw_step/metrics.py": True, "tools/sim_tests/yaw_step/test.env": True,
+             "tools/sim_tests/yaw_step/layout.json": False, "tools/sim_tests/yaw_step/plots.json": False,
+             "tools/lib/changes_log.py": True, "tools/sim_hover_step_test.sh": True, "tools/hover_step_analysis.py": True,
+             "tools/hover_step_bag.py": True, "tools/hover_step_timescale.py": True, "tools/analyze_step.py": True,
+             "tools/hover_step_plot.py": False, "tools/sim_tests/crossing/x.yaml": True, "mocap/cfg.yml": True,
+             "notes.yamlx": False, "localisation/launch/vo.launch.py": True, "relaunch/x.py": False}
 
     def test_behaviour_paths(self):
         for p, want in self.CASES.items():
@@ -122,8 +131,8 @@ class HookEndToEnd(unittest.TestCase):                                          
             self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
 
     def test_inactive_until_the_standard_exists(self):
-        # The rule switches on when docs/CODING_STANDARD.md is in HEAD or in the index (Task 2's start commit adds it
-        # together with CHANGES.md). Before that, a behaviour commit without a CHANGES.md line goes through.
+        # The rule switches on once a commit in HEAD's history added docs/CODING_STANDARD.md, or the index holds it
+        # (Task 2's start commit adds it together with CHANGES.md). Before that, a behaviour commit without a line goes through.
         with tempfile.TemporaryDirectory() as d:
             root = self._repo(d, standard=False)
             (root / "AirStack").mkdir(); (root / "AirStack/x.py").write_text("print(1)\n"); git(root, "add", "AirStack/x.py")
@@ -142,6 +151,49 @@ class HookEndToEnd(unittest.TestCase):                                          
             (root / ".git/hooks/pre-commit").write_text("#!/bin/sh\n# someone else's hook\nexit 0\n")
             r = subprocess.run(["bash", "tools/git-hooks/install.sh"], cwd=root, capture_output=True, text=True, env=clean_env())
             self.assertEqual(r.returncode, 0, r.stderr); self.assertTrue((root / ".git/hooks/pre-commit").exists())
+
+    # fix round 2026-11-02 (Opus review)
+    def _commit(self, root, *args):
+        r = subprocess.run(["git", "commit", "-q", *args], cwd=root, capture_output=True, text=True, env=clean_env())
+        return r.returncode, r.stdout + r.stderr
+
+    def test_renamed_standard_keeps_the_rule_on(self):                             # Important 1
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d)
+            git(root, "mv", "docs/CODING_STANDARD.md", "docs/OLD_STANDARD.md")
+            rc, out = self._commit(root, "-m", "rename")
+            self.assertNotEqual(rc, 0, out); self.assertIn("docs/CODING_STANDARD.md", out); self.assertIn("missing", out)
+            git(root, "commit", "-q", "--no-verify", "-m", "rename anyway")
+            (root / "AirStack").mkdir(); (root / "AirStack/x.py").write_text("print(1)\n"); git(root, "add", "AirStack/x.py")
+            rc, out = self._commit(root, "-m", "x")
+            self.assertNotEqual(rc, 0, out); self.assertIn("without a new docs/record/CHANGES.md line", out)
+
+    def test_rename_out_of_a_behaviour_path_is_blocked(self):                      # --no-renames mutant
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d)
+            (root / "AirStack").mkdir(); (root / "AirStack/x.py").write_text("print(1)\n" * 20)
+            (root / "docs/record/CHANGES.md").write_text(HEAD_MD + row(1) + row(2)); git(root, "add", "-A")
+            rc, out = self._commit(root, "-m", "x", "-m", block(2)); self.assertEqual(rc, 0, out)
+            git(root, "mv", "AirStack/x.py", "docs/x.py")
+            rc, out = self._commit(root, "-m", "move")
+            self.assertNotEqual(rc, 0, out); self.assertIn("AirStack/x.py", out)
+
+    def test_non_ascii_behaviour_path_is_seen(self):                               # git diff -z
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d)
+            (root / "mocap").mkdir(); (root / "mocap/café.yaml").write_text("a: 1\n"); git(root, "add", "mocap/café.yaml")
+            rc, out = self._commit(root, "-m", "x")
+            self.assertNotEqual(rc, 0, out); self.assertIn("café.yaml", out)
+
+    def test_amend_is_told_to_make_a_new_commit(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = self._repo(d)
+            (root / "AirStack").mkdir(); (root / "AirStack/a.py").write_text("print(1)\n")
+            (root / "docs/record/CHANGES.md").write_text(HEAD_MD + row(1) + row(2)); git(root, "add", "-A")
+            rc, out = self._commit(root, "-m", "x", "-m", block(2)); self.assertEqual(rc, 0, out)
+            (root / "AirStack/a.py").write_text("print(2)\n"); git(root, "add", "AirStack/a.py")
+            rc, out = self._commit(root, "--amend", "--no-edit")
+            self.assertNotEqual(rc, 0, out); self.assertIn("make a new commit instead of --amend", out)
 
 
 class Audit(unittest.TestCase):
@@ -209,6 +261,60 @@ class Audit(unittest.TestCase):
         r = subprocess.run([sys.executable, str(TOOLS / "docs_check/changes.py"), "candidates", "--since", "2000-01-01 00:00"],
                            cwd=self.root, capture_output=True, text=True, env=clean_env())
         self.assertEqual(r.stdout.split(), [sha[:7], "metrics", "change"])
+
+
+    # fix round 2026-11-02 (Opus review)
+    def test_rewriting_an_old_line_is_not_an_entry(self):                          # Important 2: the --no-verify dodge
+        sha = commit(self.root, {"tools/sim.sh": "a\n", "docs/record/CHANGES.md": HEAD_MD + row(1, what="rewritten")}, "dodge")
+        f = self.fails()
+        self.assertTrue(any(sha[:7] in x and "without a Change: line" in x for x in f), f)
+        self.assertTrue(any(sha[:7] in x and "append-only" in x for x in f), f)
+
+    def test_rewriting_an_old_line_fails_even_with_a_change_line(self):
+        commit(self.root, {"docs/record/CHANGES.md": HEAD_MD + row(1, what="rewritten") + row(2), "tools/sim.sh": "a\n"}, "a", block(2))
+        self.assertTrue(any("append-only" in x for x in self.fails()), self.fails())
+
+    def test_renamed_standard_fails(self):                                         # Important 1
+        git(self.root, "mv", "docs/CODING_STANDARD.md", "docs/OLD.md"); git(self.root, "commit", "-q", "--no-verify", "-m", "mv")
+        fails, _, skip = CH.audit(self.root)
+        self.assertIsNone(skip); self.assertTrue(any("docs/CODING_STANDARD.md" in x and "missing" in x for x in fails), fails)
+
+    def test_rename_out_of_a_behaviour_path_is_caught(self):                       # --no-renames mutant (R6)
+        commit(self.root, {"docs/record/CHANGES.md": HEAD_MD + row(1) + row(2), "AirStack/x.py": "print(1)\n" * 20}, "a", block(2))
+        git(self.root, "mv", "AirStack/x.py", "docs/x.py"); git(self.root, "commit", "-q", "--no-verify", "-m", "move")
+        self.assertTrue(any("AirStack/x.py" in x and "without a Change: line" in x for x in self.fails()), self.fails())
+
+    def test_non_ascii_path_is_caught(self):                                       # git show -z (R6)
+        commit(self.root, {"mocap/café.yaml": "a: 1\n"}, "x")
+        self.assertTrue(any("café.yaml" in x for x in self.fails()), self.fails())
+
+    def test_merge_commits_are_not_judged_their_parents_are(self):                 # merge-skip mutant (plan R6: non-merge)
+        git(self.root, "checkout", "-q", "-b", "side")
+        side = commit(self.root, {"tools/lib/s.sh": "s\n"}, "side, no entry")
+        git(self.root, "checkout", "-q", "main"); commit(self.root, {"docs/RUNBOOK.md": "x\n"}, "main side")
+        git(self.root, "merge", "-q", "--no-ff", "--no-commit", "side")
+        (self.root / "tools/sim.sh").write_text("evil\n"); git(self.root, "add", "tools/sim.sh")   # content only the merge has
+        git(self.root, "commit", "-q", "--no-verify", "-m", "merge")
+        merge = git(self.root, "rev-parse", "HEAD").stdout.strip()
+        f = self.fails()
+        self.assertTrue(any(side[:7] in x for x in f), f); self.assertFalse(any(merge[:7] in x for x in f), f)
+
+    def test_inherited_git_env_is_ignored(self):                                   # env-scrub mutant: a hook exports these
+        sha = commit(self.root, {"tools/sim.sh": "echo\n"}, "sneaky")
+        with tempfile.TemporaryDirectory() as d:
+            other = make_repo(d)
+            with mock.patch.dict(os.environ, {"GIT_DIR": str(other / ".git"), "GIT_INDEX_FILE": str(other / ".git/index"),
+                                              "GIT_WORK_TREE": str(other)}):
+                f = self.fails()
+        self.assertTrue(any(sha[:7] in x for x in f), f)
+
+    def test_shallow_clone_skips(self):
+        with tempfile.TemporaryDirectory() as d:
+            dst = pathlib.Path(d) / "shallow"
+            subprocess.run(["git", "clone", "-q", "--depth", "1", f"file://{self.root}", str(dst)], capture_output=True,
+                           env=clean_env(), check=True)
+            skip = CH.audit(dst)[2]
+        self.assertTrue(skip and "shallow" in skip, skip)
 
 
 class HookSource(unittest.TestCase):

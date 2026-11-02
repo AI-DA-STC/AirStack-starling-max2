@@ -2,7 +2,8 @@
 """Change-logging standard (docs/CODING_STANDARD.md): path map, CHANGES.md parser, staged-commit rule, git-log audit.
 
 Stdlib only. Used by tools/git-hooks/pre-commit (`changes.py hook`, first) and by check_docs.py (the change-log pass).
-The rule is inactive until docs/CODING_STANDARD.md exists: the hook checks HEAD and the index, the audit the working tree.
+The rule is inactive until docs/CODING_STANDARD.md lands: on once any commit in HEAD's history added it (or, for the start
+commit, the index / working tree holds it). After that it never switches off: a renamed or deleted standard is a FAIL.
 
 CLI (run from anywhere inside the repo):
   hook                          the staged rule (uses the hook's inherited GIT_INDEX_FILE); exit 1 on any error
@@ -27,7 +28,9 @@ LEDGER_ROW_RE = re.compile(r"^\|\s*(\d+)\s*\|\s*20\d\d-\d\d-\d\d\s*\|", re.M)
 # A path is behaviour if it matches a BEHAVIOUR pattern and no NOT_BEHAVIOUR pattern (NOT_BEHAVIOUR wins).
 BEHAVIOUR = tuple(re.compile(p) for p in (
     r"^AirStack/", r"^patches/", r"^starling_1_indoor_params\.params$", r"^mocap(\.sh$|/)",
-    r"^tools/(sim|sim_tab|sim_terminals|sim_hover_step_run)\.sh$", r"^tools/hover_step_report\.py$",
+    r"^tools/(sim|sim_tab|sim_terminals|sim_hover_step_run|sim_hover_step_test)\.sh$",
+    r"^tools/(analyze_step|hover_step_(analysis|report|bag|timescale))\.py$",      # S5 hover/step: flies, extracts or gates
+                                                                                    # (hover_step_plot.py draws only: not behaviour)
     r"^tools/(lib|live|teleop)/", r"^tools/sim_tests/(?!_template/)[^/]+/(fly\.sh|gates\.py|metrics\.py|test\.env)$",
     r"^localisation/(nodes|scripts|docker|scenes)/", r"\.ya?ml$", r"(^|/)launch/", r"(^|/)Dockerfile",
     r"(^|/)docker-compose", r"fastdds\.xml$"))
@@ -137,14 +140,30 @@ def _log(root, rng, *extra):
     return commits
 
 
+def _zlist(out):
+    """NUL-separated git output (-z: no quoting of non-ASCII paths) -> paths."""
+    return [p.strip("\n") for p in out.split("\0") if p.strip("\n")]
+
+
 def _files(root, sha):
-    rc, out = _git(root, "show", "--no-renames", "--format=", "--name-only", sha)
-    return [l for l in out.splitlines() if l.strip()] if rc == 0 else []
+    """Paths a commit changed; --no-renames so a move out of a behaviour path still lists the old path."""
+    rc, out = _git(root, "show", "-z", "--no-renames", "--format=", "--name-only", sha)
+    return _zlist(out) if rc == 0 else []
 
 
-def _added_a_row(root, sha):
-    rc, out = _git(root, "show", "--format=", "--unified=0", sha, "--", CHANGES_FILE)
-    return rc == 0 and any(l.startswith("+| CHG-") for l in out.splitlines())
+def _show(root, spec, scrub=True):
+    rc, out = _git(root, "show", spec, scrub=scrub)
+    return out if rc == 0 else ""
+
+
+def standard_landed(root, scrub=True):
+    """True once any commit in HEAD's history added docs/CODING_STANDARD.md: the rule then stays on for good."""
+    rc, out = _git(root, "log", "--diff-filter=A", "--no-renames", "--format=%H", "HEAD", "--", STANDARD_FILE, scrub=scrub)
+    return rc == 0 and bool(out.split())
+
+
+MISSING_STANDARD = (f"{STANDARD_FILE} is missing (renamed or deleted?) — the change-log rule stays on once the standard "
+                    f"has landed; restore the file")
 
 
 def _resolve(root, sha):
@@ -176,17 +195,23 @@ def _carriers(commits, described):
 
 
 def audit(root):
-    """(fails, warns, skip). skip is a reason string while docs/CODING_STANDARD.md is absent (rules R1-R8)."""
+    """(fails, warns, skip). skip is a reason string until the standard has landed (rules R1-R8).
+
+    Active once docs/CODING_STANDARD.md is in the working tree or any commit in HEAD's history added it; after that a
+    missing file is a FAIL, so renaming or deleting the standard cannot switch the rule off."""
     root = pathlib.Path(root)
-    if not (root / STANDARD_FILE).exists():
+    has_head = _git(root, "rev-parse", "--verify", "--quiet", "HEAD")[0] == 0
+    if has_head and _git(root, "rev-parse", "--is-shallow-repository")[1].strip() == "true":
+        return [], [], "shallow clone: history incomplete, change-log audit skipped (run: git fetch --unshallow)"
+    in_tree = (root / STANDARD_FILE).exists()
+    if not in_tree and not (has_head and standard_landed(root)):
         return [], [], f"{STANDARD_FILE} not in the working tree yet (the standard has not landed)"
+    if not has_head:
+        return [], [], "no git history (HEAD unresolvable); change-log audit skipped"
+    fails, warns = ([] if in_tree else [MISSING_STANDARD]), []
     cf = root / CHANGES_FILE
     if not cf.exists():
-        return [f"{CHANGES_FILE} missing while {STANDARD_FILE} exists"], [], None
-    rc, _ = _git(root, "rev-parse", "--verify", "--quiet", "HEAD")
-    if rc != 0:
-        return [], [], "no git history (HEAD unresolvable); change-log audit skipped"
-    fails, warns = [], []
+        return fails + [f"{CHANGES_FILE} missing while the standard is in force"], [], None
     rows, bad = parse_rows(cf.read_text(encoding="utf-8", errors="replace"))           # R2
     fails += [f"{CHANGES_FILE}: {b}" for b in bad]
     fails += [f"{CHANGES_FILE}: duplicate ID {i}" for i in _dups(rows)]
@@ -208,15 +233,25 @@ def audit(root):
     for cid, c in carriers.items():                                                    # R5
         if cid not in wt_ids:
             fails += [f"commit {s[:7]} names unknown {cid}" for s, _ in c]
-    _, starts = _git(root, "log", "--diff-filter=A", "--format=%H", "HEAD", "--", STANDARD_FILE)
+    _, starts = _git(root, "log", "--diff-filter=A", "--no-renames", "--format=%H", "HEAD", "--", STANDARD_FILE)
     start = starts.split()[-1] if starts.split() else None
-    if start:                                                                          # R6
+    if start:                                                                          # R6: the hook's rule, re-run per commit
         for sha, parents, body in _log(root, f"{start}..HEAD") or []:
-            if len(parents) > 1 or CHANGE_RE.search(body) or sha in described:
+            if len(parents) > 1 or sha in described:                                   # merges: their parents are judged
                 continue
-            beh = [f for f in _files(root, sha) if is_behaviour(f)]
-            if beh and not _added_a_row(root, sha):
-                fails.append(f"commit {sha[:7]} touches behaviour paths ({', '.join(beh[:3])}) without a Change: line")
+            files = _files(root, sha)
+            old = _show(root, f"{parents[0]}:{CHANGES_FILE}") if parents else ""
+            errs, _ = staged_problems(old, _show(root, f"{sha}:{CHANGES_FILE}"), files, True)
+            already = set(staged_problems(old, old, [], True)[0])                      # inherited from the parent
+            for e in errs:
+                if e in already:
+                    continue
+                if e.startswith("behaviour path(s) staged"):
+                    if not CHANGE_RE.search(body):
+                        beh = [f for f in files if is_behaviour(f)]
+                        fails.append(f"commit {sha[:7]} touches behaviour paths ({', '.join(beh[:3])}) without a Change: line")
+                else:
+                    fails.append(f"commit {sha[:7]}: {e}")
     lt = root / LEDGER_FILE
     ledger = set(LEDGER_ROW_RE.findall(lt.read_text(encoding="utf-8", errors="replace"))) if lt.exists() else set()
     for cid, c in carriers.items():
@@ -252,17 +287,24 @@ def cmd_hook():
     root = _toplevel(scrub=False)
     if root is None:
         print("change log: not inside a git work tree"); return 1
-    rc, out = _git(root, "diff", "--cached", "--name-only", "--no-renames", scrub=False)
+    rc, out = _git(root, "diff", "--cached", "-z", "--name-only", "--no-renames", scrub=False)
     if rc != 0:
         print("change log: git diff --cached failed"); return 1
-    staged = [l for l in out.splitlines() if l.strip()]
-    present = any(_git(root, "cat-file", "-e", spec, scrub=False)[0] == 0 for spec in (f"HEAD:{STANDARD_FILE}", f":{STANDARD_FILE}"))
-    new_text = _git(root, "show", f":{CHANGES_FILE}", scrub=False)
-    old_text = _git(root, "show", f"HEAD:{CHANGES_FILE}", scrub=False)
-    errors, new_ids = staged_problems(old_text[1] if old_text[0] == 0 else "", new_text[1] if new_text[0] == 0 else "",
-                                      staged, present)
+    staged = _zlist(out)
+    in_index = _git(root, "cat-file", "-e", f":{STANDARD_FILE}", scrub=False)[0] == 0
+    landed = standard_landed(root, scrub=False)
+    old_text = _show(root, f"HEAD:{CHANGES_FILE}", scrub=False)
+    errors, new_ids = staged_problems(old_text, _show(root, f":{CHANGES_FILE}", scrub=False), staged, landed or in_index)
+    if landed and not in_index:
+        errors.insert(0, MISSING_STANDARD)
     for e in errors:
         print(f"change log: {e}")
+    if any(e.startswith("behaviour path(s) staged") for e in errors):
+        head_ids = {r.id for r in parse_rows(old_text)[0]}
+        parent_ids = {r.id for r in parse_rows(_show(root, f"HEAD~1:{CHANGES_FILE}", scrub=False))[0]}
+        if head_ids - parent_ids:                                                      # HEAD added its own line: likely --amend
+            print("change log: amending? HEAD already holds its CHANGES.md line, so an amend never adds a new one — "
+                  "make a new commit instead of --amend")
     if errors:
         return 1
     for cid in new_ids:

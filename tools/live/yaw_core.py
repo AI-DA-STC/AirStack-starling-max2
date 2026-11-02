@@ -11,8 +11,9 @@ Frames: PX4 is NED (heading 0 = north, clockwise positive); the commander's tele
 (counter-clockwise positive). Pulse sign +1 = the commander's +angular.z = ENU CCW = NED feed-forward NEGATIVE.
 Headings are converted to ENU (`ned_to_enu_deg`) and unwrapped (`unwrap_deg`) before any difference is taken.
 
-A pulse that never released (setpoint non-zero to the end of the data) is returned with released=False and every
-post-release number None: the caller must report it UNVERIFIED, never PASS and never skip it.
+A pulse that never released (setpoint non-zero to the end of the data), a post-release window shorter than
+MIN_POST_WINDOW_S, or a NaN heading/rate after release returns every POST_KEYS number as None with post_status
+"unreleased" / "short_window" / "nan_in_window": the caller must report it UNVERIFIED, never PASS and never skip it.
 """
 import math
 import os
@@ -27,6 +28,11 @@ from metrics_core import CsvLineParser  # noqa: E402  the one CSV line parser
 GAIN_KEYS = ("MC_YAW_P", "MC_YAWRATE_P", "MC_YAWRATE_I", "MC_YAWRATE_D", "MC_YAWRATE_K")
 COLUMNS = ("t_s", "heading_ned_deg", "x_ned", "y_ned", "yaw_rate_dps", "ff_dps", "yawspeed_sp_dps", "yaw_sp_ned_deg")
 RING_HYST_DEG = 0.5          # a ring crossing counts only once (h - h_final) passes this far to the other side
+MIN_POST_WINDOW_S = 3.0      # release -> end of window must cover the 2 s settle gate + the 1 s h_final mean
+# measured after release; None (post_status says why) for an unreleased pulse, a window shorter than
+# MIN_POST_WINDOW_S, or any NaN heading / yaw rate in [release, t_end]: no data is never "settled"
+POST_KEYS = ("turn_deg", "overshoot_deg", "undershoot_deg", "settle_s", "ring_crossings", "ring_hz",
+             "peak_rate_dps", "peak_rate_abs_dps", "plateau_meas_dps", "h_final_enu_deg")
 
 Pulse = namedtuple("Pulse", "onset_s release_s sign plateau_dps released")
 
@@ -136,9 +142,13 @@ def _ring(t, e, t_from, hyst):
 
 
 def measure_pulse(p, t, h_enu_deg, rate_dps, x, y, t_end, band_deg=2.0, ring_hyst_deg=RING_HYST_DEG):
-    """Numbers of one pulse, vehicle time. h_enu_deg must already be unwrapped. Post-release keys are None for an
-    unreleased pulse. overshoot = max of sign*(h - h_final) after release (continued turning past the hold);
-    undershoot = max of -sign*(h - h_final) (swing back); h_final = mean over the last 1.0 s of [release, t_end]."""
+    """Numbers of one pulse, vehicle time. h_enu_deg must already be unwrapped. POST_KEYS are None, and post_status
+    says why, for an unreleased pulse ("unreleased"), a window shorter than MIN_POST_WINDOW_S ("short_window") or a
+    NaN heading/rate anywhere in [release, t_end] ("nan_in_window"); else post_status "ok".
+    h_final = mean over the last 1.0 s of [release, t_end]. overshoot = max of sign*(h - h_final) after release
+    (continued turning past the final heading). undershoot = max of -sign*(h - h_final): the swing back, BUT it also
+    includes the lag at release itself — if the drone coasts on past its release heading and stops there (no hold),
+    the release sample already sits short of h_final by the coast, and that counts as undershoot."""
     t = np.asarray(t, dtype=float)
     on_i = int(np.searchsorted(t, p.onset_s))
     w = (t >= p.onset_s) & (t <= t_end)
@@ -146,11 +156,18 @@ def measure_pulse(p, t, h_enu_deg, rate_dps, x, y, t_end, band_deg=2.0, ring_hys
     drift = float(np.nanmax(np.hypot(dx, dy))) if w.any() else float("nan")
     out = dict(onset_s=p.onset_s, release_s=p.release_s, sign=p.sign, plateau_dps=p.plateau_dps, released=p.released,
                xy_drift_m=drift, t_end_s=float(t_end))
-    post_keys = ("turn_deg", "overshoot_deg", "undershoot_deg", "settle_s", "ring_crossings", "ring_hz",
-                 "peak_rate_dps", "peak_rate_abs_dps", "plateau_meas_dps", "window_s", "h_final_enu_deg")
     if not p.released:
-        out.update({k: None for k in post_keys})
+        out.update({k: None for k in POST_KEYS}, window_s=None, post_status="unreleased")
         return out
+    out["window_s"] = float(t_end - p.release_s)
+    post = (t >= p.release_s) & (t <= t_end)
+    if out["window_s"] < MIN_POST_WINDOW_S:
+        out.update({k: None for k in POST_KEYS}, post_status="short_window")
+        return out
+    if not post.any() or np.isnan(h_enu_deg[post]).any() or np.isnan(rate_dps[post]).any():
+        out.update({k: None for k in POST_KEYS}, post_status="nan_in_window")
+        return out
+    out["post_status"] = "ok"
     rel_i = int(np.searchsorted(t, p.release_s))
     out["turn_deg"] = float(h_enu_deg[min(rel_i, len(t) - 1)] - h_enu_deg[on_i])
     pl = (t >= p.onset_s + 0.3) & (t <= p.release_s)
@@ -162,7 +179,6 @@ def measure_pulse(p, t, h_enu_deg, rate_dps, x, y, t_end, band_deg=2.0, ring_hys
     back = p.sign * rate_dps[pr]                                  # ENU rate = -NED rate; against the turn = -sign*ENU
     out["peak_rate_dps"] = float(max(0.0, np.nanmax(back))) if pr.any() else float("nan")
     out["peak_rate_abs_dps"] = float(np.nanmax(np.abs(rate_dps[pr]))) if pr.any() else float("nan")
-    post = (t >= p.release_s) & (t <= t_end)
     tp, hp = t[post], h_enu_deg[post]
     fin = tp >= t_end - 1.0
     h_final = float(np.nanmean(hp[fin])) if fin.any() else float(hp[-1])
@@ -185,7 +201,6 @@ def measure_pulse(p, t, h_enu_deg, rate_dps, x, y, t_end, band_deg=2.0, ring_hys
         n, times = 0, []
     out["ring_crossings"] = n
     out["ring_hz"] = float((n - 1) / (2.0 * (times[-1] - times[0]))) if n >= 3 and times[-1] > times[0] else float("nan")
-    out["window_s"] = float(t_end - p.release_s)
     return out
 
 

@@ -208,7 +208,7 @@ class SimSh(unittest.TestCase):
         self.assertLess(call, src.index("PHASE=down; down"))                            # before Isaac (the fallback) stops
         body = src[src.index("yaw_dump() {"):src.index("render_report() {")]
         self.assertLess(body.index("python3 \"$REPO/tools/live/ulog_yaw_dump.py\""), body.index('docker exec "$I" python3 /tmp/ulog_yaw_dump.py'))  # host first
-        self.assertIn('caveat "no px4_drone_1.csv', body)
+        self.assertIn('caveat "PX4 yaw dump missing (no px4_drone_1.csv', body)
 
     def test_yaw_dump_fails_closed_without_a_ulog_or_a_container(self):          # Review Focus 4
         src = SIM.read_text()
@@ -223,7 +223,10 @@ class SimSh(unittest.TestCase):
                 env = dict(os.environ, OUT=out, HEAVY=heavy, REPO=str(SIM.parents[1]), TOOLS=str(SIM.parent), I="isaac-sim")
                 r = subprocess.run(["bash", "-c", script, "x", u], capture_output=True, text=True, timeout=20, env=guarded_env(env))
                 self.assertEqual(r.returncode, 0, r.stderr)
-                self.assertIn("no px4_drone_1.csv", open(os.path.join(out, "caveats.txt")).read(), u)
+                cav = open(os.path.join(out, "caveats.txt")).read()
+                self.assertIn("no px4_drone_1.csv", cav, u)
+                self.assertIn("only tests that gate on it (yaw_step) are affected", cav, u)   # a crossing record must not
+                self.assertNotIn("vehicle-time gates UNVERIFIED", cav, u)                    # claim yaw gates it lacks
                 self.assertFalse(os.path.exists(os.path.join(heavy, "px4_drone_1.csv")), "a stale CSV must not survive")
 
     def test_exported_num_robots_does_not_leak_into_the_bare_stack(self):

@@ -58,11 +58,57 @@ class Pulses(unittest.TestCase):
         self.assertGreater(p["peak_rate_dps"], 30.0)
 
     def test_pulse_across_the_seam_has_small_overshoot(self):              # Review Focus 1
+        # 211.5 + 57.3 = 268.8 deg ENU at release; the 2.4 deg overshoot passes ENU 270 = NED +-180, where the ulog
+        # heading wraps. Without the unwrap the overshoot samples read ~-89 deg ENU: a ~358 deg "undershoot".
         with tempfile.TemporaryDirectory() as d:
-            csv = S.px4_csv(pathlib.Path(d) / "p.csv", [dict(onset=20.0, dur=1.0, sign=+1, zeta=0.9, f_hz=1.5)], start_heading_enu_deg=160.0)
+            csv = S.px4_csv(pathlib.Path(d) / "p.csv", [dict(onset=20.0, dur=1.0, sign=+1, zeta=0.9, f_hz=1.5)], seam=True)
+            _, cols, data = Y.read_px4_csv(csv)
+            h = data[:, cols.index("heading_ned_deg")]
+            self.assertGreater(np.nanmax(np.abs(np.diff(h))), 300.0)          # the fixture really wraps in NED
             p = Y.analyse(csv)["pulses"][0]
-        self.assertLess(p["overshoot_deg"], 3.0); self.assertLess(abs(p["undershoot_deg"]), 3.0)
-        self.assertAlmostEqual(p["turn_deg"], 57.3, delta=4.0)
+        self.assertLess(p["overshoot_deg"], 3.0); self.assertGreater(p["overshoot_deg"], 1.5)
+        self.assertLess(abs(p["undershoot_deg"]), 3.0)
+        self.assertAlmostEqual(p["turn_deg"], 57.3, delta=4.0); self.assertEqual(p["post_status"], "ok")
+
+    def test_small_second_swing_pins_the_ring_hysteresis(self):
+        # zeta 0.5 at 0.8 Hz: 6.2 deg overshoot, then one ~1.0 deg swing back, then 0.17 deg (below the 0.5 deg
+        # hysteresis). Exactly one crossing; a 3.0 deg hysteresis would hide the swing (0 crossings).
+        with tempfile.TemporaryDirectory() as d:
+            csv = S.px4_csv(pathlib.Path(d) / "p.csv", [dict(onset=20.0, dur=1.0, sign=+1, zeta=0.5, f_hz=0.8)])
+            p = Y.analyse(csv)["pulses"][0]
+        self.assertAlmostEqual(p["undershoot_deg"], 1.0, delta=0.3)
+        self.assertEqual(p["ring_crossings"], 1)
+        self.assertEqual(Y.RING_HYST_DEG, 0.5)
+
+    def test_xy_drift_is_measured_from_the_onset_position(self):
+        with tempfile.TemporaryDirectory() as d:
+            csv = S.px4_csv(pathlib.Path(d) / "p.csv", [dict(onset=20.0, dur=1.0, sign=+1, zeta=0.9, f_hz=1.5)], xy_ramp_mps=(0.006, 0.008))
+            p = Y.analyse(csv)["pulses"][0]
+        self.assertAlmostEqual(p["xy_drift_m"], 0.010 * (p["t_end_s"] - p["onset_s"]), delta=0.002)
+        self.assertGreater(p["xy_drift_m"], 0.1)
+
+    def test_nan_in_the_post_release_window_is_unverified_not_zero(self):   # fail closed: no data is never "settled"
+        for gap in ((21.2, 22.0), (21.0, 40.0)):                             # a gap after release; everything after release
+            with tempfile.TemporaryDirectory() as d:
+                csv = S.px4_csv(pathlib.Path(d) / "p.csv", [dict(onset=20.0, dur=1.0, sign=+1, zeta=0.1, f_hz=0.8)], nan_window=gap)
+                p = Y.analyse(csv)["pulses"][0]
+            self.assertTrue(p["released"], gap); self.assertEqual(p["post_status"], "nan_in_window", gap)
+            for k in Y.POST_KEYS:
+                self.assertIsNone(p[k], (gap, k))
+
+    def test_short_post_release_window_is_unverified(self):
+        # data ends 1.24 s after release on a ringing drone: settle would read ~1.1 s and pass a 2 s gate
+        with tempfile.TemporaryDirectory() as d:
+            csv = S.px4_csv(pathlib.Path(d) / "p.csv", [dict(onset=20.0, dur=1.0, sign=+1, zeta=0.1, f_hz=0.8)], tail_s=1.24)
+            p = Y.analyse(csv)["pulses"][0]
+        self.assertEqual(p["post_status"], "short_window"); self.assertLess(p["window_s"], Y.MIN_POST_WINDOW_S)
+        for k in Y.POST_KEYS:
+            self.assertIsNone(p[k], k)
+        self.assertEqual(Y.MIN_POST_WINDOW_S, 3.0)
+        with tempfile.TemporaryDirectory() as d:                             # just long enough -> measured
+            csv = S.px4_csv(pathlib.Path(d) / "p.csv", [dict(onset=20.0, dur=1.0, sign=+1, zeta=0.9, f_hz=1.5)], tail_s=3.2)
+            p = Y.analyse(csv)["pulses"][0]
+        self.assertEqual(p["post_status"], "ok"); self.assertIsNotNone(p["settle_s"])
 
     def test_settle_time_is_in_vehicle_time_not_wall(self):                 # Review Focus 2
         with tempfile.TemporaryDirectory() as d:
@@ -78,7 +124,7 @@ class Pulses(unittest.TestCase):
             r = Y.analyse(csv)
         self.assertEqual(len(r["pulses"]), 2)                                # named, not silently skipped
         self.assertFalse(r["pulses"][1]["released"]); self.assertIsNone(r["pulses"][1]["settle_s"])
-        self.assertIsNone(r["pulses"][1]["release_s"])
+        self.assertIsNone(r["pulses"][1]["release_s"]); self.assertEqual(r["pulses"][1]["post_status"], "unreleased")
         for k in ("overshoot_deg", "peak_rate_dps", "ring_crossings"):
             self.assertIsNone(r["pulses"][1][k], k)
         self.assertTrue(r["pulses"][0]["released"])

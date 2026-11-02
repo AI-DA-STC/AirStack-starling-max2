@@ -55,12 +55,15 @@ def _held(t, cmd, hz):
 
 
 def px4_csv(path, pulses, hz=84, sign_flip=False, seam=False, start_heading_enu_deg=None, rate_dps=57.3,
-            ff_hz=20, sp_hz=5, ff_zero=False, tail_s=15.0, header=None):
+            ff_hz=20, sp_hz=5, ff_zero=False, tail_s=15.0, header=None, xy_ramp_mps=(0.0, 0.0), nan_window=None):
     """Write a CSV in the dumper's schema; returns `path`. pulses = [dict(onset, dur (None = never released), sign,
     zeta, f_hz)]. sign +1 = commander +angular.z = ENU CCW = NED ff negative. sign_flip writes the heading with the
-    wrong sign (a frame bug); seam=True starts at 160 deg ENU so the first pulse crosses +-180."""
+    wrong sign (a frame bug); seam=True starts at 211.5 deg ENU so the first pulse's overshoot crosses ENU 270 deg =
+    the NED +-180 seam the ulog wraps at. tail_s = data after the last release. xy_ramp_mps = constant NED
+    (vx, vy) drift over the whole run. nan_window = (t0, t1) in the pulses' time base: heading and yaw rate NaN there
+    (a gap, as metrics.csv has)."""
     if start_heading_enu_deg is None:
-        start_heading_enu_deg = 160.0 if seam else 0.0
+        start_heading_enu_deg = 211.5 if seam else 0.0
     last = pulses[-1] if pulses else {"onset": 10.0, "dur": 0.0}
     t_end = float(last["onset"]) + float(last.get("dur") or 0.0) + tail_s
     t = np.arange(0.0, t_end, 1.0 / hz) + 100.0           # vehicle time since PX4 boot, never 0-based in a real ulog
@@ -73,7 +76,11 @@ def px4_csv(path, pulses, hz=84, sign_flip=False, seam=False, start_heading_enu_
     if ff_zero:
         ff_ned = np.zeros_like(t)
     sp_ned = -_held(t, cmd_enu, sp_hz)
-    yaw_sp = h_ned_wrapped
+    yaw_sp = h_ned_wrapped.copy()
+    x_ned, y_ned = xy_ramp_mps[0] * (t - t[0]), xy_ramp_mps[1] * (t - t[0])
+    if nan_window is not None:
+        gap = (t >= nan_window[0] + 100.0) & (t < nan_window[1] + 100.0)
+        h_ned_wrapped = h_ned_wrapped.copy(); h_ned_wrapped[gap] = np.nan; rate_ned = rate_ned.copy(); rate_ned[gap] = np.nan
     g = dict(HEADER_GAINS, **(header or {}))
     with open(path, "w") as fh:
         fh.write("# source=synthetic\n# sysid=2\n")
@@ -81,7 +88,7 @@ def px4_csv(path, pulses, hz=84, sign_flip=False, seam=False, start_heading_enu_
             fh.write("# %s=%s\n" % (k, v))
         fh.write("# arm_s=%.6f\n# disarm_s=%.6f\n" % (t[0] + 1.0, t[-1] - 1.0))
         fh.write(COLUMNS + "\n")
-        for row in zip(t, h_ned_wrapped, np.zeros_like(t), np.zeros_like(t), rate_ned, ff_ned, sp_ned, yaw_sp):
+        for row in zip(t, h_ned_wrapped, x_ned, y_ned, rate_ned, ff_ned, sp_ned, yaw_sp):
             fh.write(",".join("%.6f" % v for v in row) + "\n")
     return path
 

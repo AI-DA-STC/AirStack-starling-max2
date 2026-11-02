@@ -182,7 +182,7 @@ yaw_dump() {
         && say "px4_drone_1.csv written (isaac-sim pyulog)" || rm -f "$HEAVY/px4_drone_1.csv"
     fi
   fi
-  [ -s "$HEAVY/px4_drone_1.csv" ] || caveat "no px4_drone_1.csv — vehicle-time gates UNVERIFIED (drone_1 ulog missing or the yaw dump failed)"
+  [ -s "$HEAVY/px4_drone_1.csv" ] || caveat "PX4 yaw dump missing (no px4_drone_1.csv: drone_1 ulog missing or the dump failed) — only tests that gate on it (yaw_step) are affected"
 }
 
 render_report() {   # the record + verdict banner; REPORT_RC = report.py's rc (0 PASS / 2 INCOMPLETE / 1 FAIL / 3 ABORTED)

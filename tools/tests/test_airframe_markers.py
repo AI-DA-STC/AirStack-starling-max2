@@ -12,9 +12,9 @@ class Markers(unittest.TestCase):
         errs = A.check_markers((REPO / A.AIRFRAME).read_text(), A.parse_real((REPO / A.REAL_PARAMS).read_text()),
                                A.changes_ids((REPO / "docs/record/CHANGES.md").read_text()))
         self.assertEqual(errs, [])
-    def test_all_48_lines_carry_a_marker(self):
+    def test_all_49_lines_carry_a_marker(self):                 # 48 + MC_YAW_TQ_CUTOFF (CHG-0023)
         lines = A.parse_airframe((REPO / A.AIRFRAME).read_text())
-        self.assertEqual(len(lines), 48); self.assertTrue(all(l.marker for l in lines), [l.name for l in lines if not l.marker])
+        self.assertEqual(len(lines), 49); self.assertTrue(all(l.marker for l in lines), [l.name for l in lines if not l.marker])
     def test_real_values_parse_as_floats(self):
         self.assertEqual(A.parse_real(REAL)["LNDMC_ROT_MAX"], 30.0)
     def test_unmarked_line_fails(self):

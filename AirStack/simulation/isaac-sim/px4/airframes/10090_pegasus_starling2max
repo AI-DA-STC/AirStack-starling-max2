@@ -60,6 +60,12 @@ param set-default MC_YAWRATE_P 0.07   # = real
 param set-default MC_YAWRATE_I 0.5   # = real
 param set-default MC_YAWRATE_D 0.0   # = real
 param set-default MC_YAWRATE_K 1.0   # = real
+# Yaw torque low-pass (CHG-0023, 2026-11-02): the real drone (PX4 v1.14) has MC_YAW_CUTOFF 15 Hz; this sim
+# PX4 (v1.16) has no MC_YAW_CUTOFF and ran MC_YAW_TQ_CUTOFF at its 2 Hz default, which delayed the yaw
+# correction and (with the sim's weak rotor-drag yaw torque) made the heading ring ~1 Hz after every turn
+# (docs/record/sim_notes_2026-11-02.md). Set to the real drone's 15 Hz; that the two are the same filter is
+# checked by the yaw-step run that follows (sim_yaw_sweep5).
+param set-default MC_YAW_TQ_CUTOFF 15   # SIM-ONLY (no real value) CHG-0023
 param set-default MC_ROLL_P 8.0   # = real
 param set-default MC_PITCH_P 8.0   # = real
 param set-default MC_YAW_P 2.8   # = real

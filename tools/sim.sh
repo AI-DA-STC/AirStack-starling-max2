@@ -162,6 +162,28 @@ bag_dump_hook() {
   caveat "bag recompute failed — live/offline cross-check missing (bag left in the robot container at $b)"; return 1
 }
 
+# yaw_dump <drone_1 ulog path in $I or "">: drone_1's yaw in VEHICLE time for tools/live/yaw_core.py (sim only) ->
+# $HEAVY/px4_drone_1.csv + $OUT/px4_param_changes.txt (MC_YAW* changes). Host pyulog over the copy in $HEAVY first,
+# then inside the isaac-sim container; neither -> a caveat (a test gating on it goes UNVERIFIED). Every test runs it;
+# tests that do not read the CSV are unaffected. Runs after px4_arm_times_of (it copies hover_step_timescale.py too).
+yaw_dump() {
+  local u=${1:-} yl; rm -f "$HEAVY/px4_drone_1.csv"
+  if [ -n "$u" ]; then
+    yl="$HEAVY/drone_1_sysid2_$(basename "$u")"
+    if [ -f "$yl" ] && nx python3 "$REPO/tools/live/ulog_yaw_dump.py" "$yl" -o "$HEAVY/px4_drone_1.csv" --params-out "$OUT/px4_param_changes.txt" >> "$OUT/run.log" 2>&1; then
+      say "px4_drone_1.csv written (host pyulog)"
+    else
+      say "host ulog_yaw_dump.py failed or no host copy of the ulog — retrying inside $I"
+      docker exec "$I" rm -f /tmp/px4_drone_1.csv /tmp/px4_param_changes.txt >/dev/null 2>&1
+      { nx docker cp "$REPO/tools/live/ulog_yaw_dump.py" "$I:/tmp/" && nx docker cp "$TOOLS/hover_step_timescale.py" "$I:/tmp/" \
+        && nx docker exec "$I" python3 /tmp/ulog_yaw_dump.py "$u" -o /tmp/px4_drone_1.csv --params-out /tmp/px4_param_changes.txt \
+        && nx docker cp "$I:/tmp/px4_drone_1.csv" "$HEAVY/px4_drone_1.csv" && nx docker cp "$I:/tmp/px4_param_changes.txt" "$OUT/px4_param_changes.txt"; } >> "$OUT/run.log" 2>&1 \
+        && say "px4_drone_1.csv written (isaac-sim pyulog)" || rm -f "$HEAVY/px4_drone_1.csv"
+    fi
+  fi
+  [ -s "$HEAVY/px4_drone_1.csv" ] || caveat "no px4_drone_1.csv — vehicle-time gates UNVERIFIED (drone_1 ulog missing or the yaw dump failed)"
+}
+
 render_report() {   # the record + verdict banner; REPORT_RC = report.py's rc (0 PASS / 2 INCOMPLETE / 1 FAIL / 3 ABORTED)
   local RTMP; RTMP=$(mktemp)
   note "python3 $REPO/tools/lib/report.py $SIM_TESTS_DIR/$NAME $OUT --heavy $HEAVY --ledger $LEDGER --issue $ISSUE"
@@ -275,7 +297,7 @@ print(next((s for s in p if 'running' in s), p[0]))" "$TD/plots.json") || FIRST=
   metrics_stop
   # 7  ulogs, params, arm times, then the stack down (bag dump hook = bag recompute)
   PHASE=collect
-  phase_begin collect ulog_list.txt ulog_sysid_map.txt params_ulog.txt px4_arm_times.txt
+  phase_begin collect ulog_list.txt ulog_sysid_map.txt params_ulog.txt px4_arm_times.txt px4_param_changes.txt
   copy_ulogs
   local U1 USE SID=2 WHO=drone_1; U1=$(awk '$1==2{print $2}' "$OUT/ulog_sysid_map.txt" | tail -1)
   if [ -n "$U1" ]; then ulog_header_params "$U1"; USE=$U1
@@ -285,6 +307,7 @@ print(next((s for s in p if 'running' in s), p[0]))" "$TD/plots.json") || FIRST=
   fi
   if [ -n "$USE" ]; then px4_arm_times_of "$USE" "$SID" "$WHO"
   else rm -f "$OUT/px4_arm_times.txt"; say "WARN: no PX4 arm times (no ulog at all)"; fi
+  yaw_dump "$U1"
   PHASE=down; down; STACK_UP=0
   docker exec "$R" rm -rf "$S"
   rm -f "$HEAVY/.metrics_stopped"; OWN_SCRATCH=0

@@ -197,6 +197,35 @@ class SimSh(unittest.TestCase):
         self.assertNotIn("for N in 1 2 3", src)
         self.assertLess(src.index('source "$SIM_TESTS_DIR/$NAME/test.env"'), src.index('NUM_ROBOTS=${NUM_ROBOTS:-3}'))   # test.env may set it
 
+    def test_collect_dumps_the_yaw_csv_with_a_container_fallback(self):
+        src = SIM.read_text()
+        for n in ("ulog_yaw_dump.py", "px4_drone_1.csv", "px4_param_changes.txt", "no px4_drone_1.csv"):
+            self.assertIn(n, src, n)
+        self.assertLess(src.index("px4_arm_times_of"), src.index("ulog_yaw_dump.py"))
+        self.assertIn("phase_begin collect ulog_list.txt ulog_sysid_map.txt params_ulog.txt px4_arm_times.txt px4_param_changes.txt", src)
+        call = src.index('yaw_dump "$U1"')                                              # the call in cmd_test step 7
+        self.assertLess(src.index('then px4_arm_times_of "$USE"'), call)
+        self.assertLess(call, src.index("PHASE=down; down"))                            # before Isaac (the fallback) stops
+        body = src[src.index("yaw_dump() {"):src.index("render_report() {")]
+        self.assertLess(body.index("python3 \"$REPO/tools/live/ulog_yaw_dump.py\""), body.index('docker exec "$I" python3 /tmp/ulog_yaw_dump.py'))  # host first
+        self.assertIn('caveat "no px4_drone_1.csv', body)
+
+    def test_yaw_dump_fails_closed_without_a_ulog_or_a_container(self):          # Review Focus 4
+        src = SIM.read_text()
+        fn = src[src.index("yaw_dump() {"):src.index("render_report() {")]
+        stubs = 'say(){ echo "$*" >> "$OUT/run.log"; }; note(){ :; }; nx(){ "$@"; }; caveat(){ echo "$*" >> "$OUT/caveats.txt"; }\n'
+        for u, stale in (("", False), ("/tmp/tmpX/log/2026-11-02/10_00_00.ulg", True)):
+            with tempfile.TemporaryDirectory() as tmp:
+                out, heavy = os.path.join(tmp, "out"), os.path.join(tmp, "heavy"); os.makedirs(out); os.makedirs(heavy)
+                if stale:
+                    open(os.path.join(heavy, "px4_drone_1.csv"), "w").write("stale from an earlier session\n")
+                script = stubs + fn + '\nyaw_dump "$1"\n'
+                env = dict(os.environ, OUT=out, HEAVY=heavy, REPO=str(SIM.parents[1]), TOOLS=str(SIM.parent), I="isaac-sim")
+                r = subprocess.run(["bash", "-c", script, "x", u], capture_output=True, text=True, timeout=20, env=guarded_env(env))
+                self.assertEqual(r.returncode, 0, r.stderr)
+                self.assertIn("no px4_drone_1.csv", open(os.path.join(out, "caveats.txt")).read(), u)
+                self.assertFalse(os.path.exists(os.path.join(heavy, "px4_drone_1.csv")), "a stale CSV must not survive")
+
 
 class LivePlotWindow(unittest.TestCase):
     """The live plot window (design 2026-10-30): opened before pause 1 in window mode, closed by metrics_stop."""

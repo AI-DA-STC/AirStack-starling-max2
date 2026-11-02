@@ -27,7 +27,7 @@ The old hover + step driver still works and moves under the front door later.
 
 | Path | What it does |
 |---|---|
-| `sim.sh` | the front door: `setup · doctor · up · down [--force] · status · tabs · keys · test <name> … · figures · check · param set` |
+| `sim.sh` | the front door: `setup · doctor · up · down [--force] · status · tabs · keys · relay · test <name> … · figures · check · param set` |
 | `tools/lib/stack.sh` | stack start/stop and cleanup helpers — sourced by `sim.sh` and by the hover driver |
 | `tools/lib/report.py` | writes `docs/record/<run>_record.md` and the drafted LEDGER row from a test's `gates.py`; exit 0 PASS / 1 FAIL / 2 INCOMPLETE / 3 ABORTED |
 | `tools/lib/contract_check.py` | what `sim.sh check` runs on each test folder |
@@ -36,7 +36,7 @@ The old hover + step driver still works and moves under the front door later.
 | `sim_tests/<name>/` | one test = five files: `test.env`, `fly.sh`, `metrics.py`, `gates.py`, `plots.json` (+ generated `layout.json`) |
 | `sim_tests/crossing/` | NEAR-787, the three-drone crossing: the worked example |
 | `sim_tests/_template/` | the copy-me folder |
-| `teleop/` | `tools/sim.sh keys`: a keyboard window that publishes `/joy` like a gamepad for `safe_teleop` (sim only) — [TELEOP.md §3b](../docs/TELEOP.md) |
+| `teleop/` | `tools/sim.sh keys`: a keyboard window that publishes `/joy` like a gamepad for `safe_teleop` (sim only). It starts the relay first. The relay (`tools/sim.sh relay body` or `relay world`, optional `--drone N`, and `relay stop`) turns the stick into Drive mode (body) or Room mode (world) velocities for the commander. Both refuse unless the isaac-sim container runs — [TELEOP.md §3b](../docs/TELEOP.md) |
 | `sim_terminals.sh` / `sim_tab.sh` | the four-tab sim session (Isaac Sim · Interfaces · Commander · Cockpit) — [RUNBOOK §A](../docs/RUNBOOK.md) |
 | `sim_hover_step_run.sh` and the `hover_step_*` / `analyze_step.py` tools | the hover + 1 m step driver, unchanged ([below](#hover--step-legacy-driver)) |
 | `docs_check/` | the documentation checker — `tools/docs_check/check_docs.sh` (0 FAIL required before a docs commit) |

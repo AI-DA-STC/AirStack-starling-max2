@@ -1,5 +1,5 @@
 # tools/tests/test_sim_sh.py
-import os, pathlib, subprocess, tempfile, unittest
+import os, pathlib, re, subprocess, tempfile, unittest
 SIM = pathlib.Path(__file__).resolve().parents[1] / "sim.sh"
 
 # Guard (2026-10-30): a test once reached a real `sim.sh test` and started headless Isaac. Every call here runs with a
@@ -10,6 +10,8 @@ with open(os.path.join(_GUARD_BIN, "docker"), "w") as _fh:
     _fh.write("#!/bin/sh\necho \"$@\" >> %s/docker_called\necho 'test guard: real docker blocked' >&2\nexit 97\n" % _GUARD)
 os.chmod(os.path.join(_GUARD_BIN, "docker"), 0o755)
 GUARD_MARK = os.path.join(_GUARD, "docker_called")
+# a fake docker's answer to `docker ps --format {{.Names}}` when the sim is up (sim.sh keys/relay refuse without isaac-sim)
+ISAAC_UP = 'case "$*" in "ps --format {{.Names}}") printf "%s\\n" isaac-sim airstack-robot-desktop-1; exit 0;; esac\n'
 
 
 def guarded_env(env=None):
@@ -66,7 +68,8 @@ class SimSh(unittest.TestCase):
     def test_test_flow_wires_the_pieces(self):
         src = SIM.read_text()
         for n in ("source", "lib/stack.sh", "arm_abort_trap", "ABORT_HOOK=metrics_stop", "metrics_node.py", "bag_recompute.py", "metrics_node: ready", "ros2 topic hz /svg/test/",
-                  "tail -n0 -f", "fly.sh", "armed_post.txt", "video.txt", "copy_ulogs", "bag_dump_hook", "report.py", "plot_metrics.py", "VERDICT:", "read -r"):
+                  "tail -n0 -f", "fly.sh", "armed_post.txt", "video.txt", "copy_ulogs", "bag_dump_hook", "report.py", "plot_metrics.py", "VERDICT:", "read -r",
+                  '"$REPO/tools/teleop/frame.py"', '"$REPO/tools/teleop/teleop_frame.py"'):
             self.assertIn(n, src, n)
         self.assertNotIn("sed -i", src); self.assertNotIn("AirStack/simulation/isaac-sim/tools", src)
         self.assertLess(src.index("commander"), src.index("arm_abort_trap"))        # trap armed only from the commander phase on
@@ -502,7 +505,7 @@ class KeysSubcommand(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             os.makedirs(os.path.join(tmp, "bin")); log = os.path.join(tmp, "docker.log")
             fake = os.path.join(tmp, "bin", "docker")
-            open(fake, "w").write('#!/bin/sh\necho "$@" >> %s\ncase "$*" in *pgrep*) exit 1;; esac\nexit 0\n' % log); os.chmod(fake, 0o755)
+            open(fake, "w").write('#!/bin/sh\necho "$@" >> %s\n' % log + ISAAC_UP + 'case "$*" in *pgrep*) exit 1;; esac\nexit 0\n'); os.chmod(fake, 0o755)
             env = dict(os.environ, HOME=tmp, PATH=os.path.join(tmp, "bin") + ":" + os.environ["PATH"], SIM_KEYS_NO_TTY_OK="1")
             r = run("keys", "--profile", "xbox_usb", env=env)
             self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
@@ -510,7 +513,8 @@ class KeysSubcommand(unittest.TestCase):
             self.assertRegex(calls, r"cp \S+/tools/teleop/keymap\.py airstack-robot-desktop-1:/tmp/svg_keys/")
             self.assertRegex(calls, r"cp \S+/tools/teleop/key_teleop\.py airstack-robot-desktop-1:/tmp/svg_keys/")
             self.assertIn("python3 /tmp/svg_keys/key_teleop.py --profile xbox_usb", calls)
-            self.assertIn("pkill -TERM -f /tmp/svg_keys/key_teleop.py", calls.splitlines()[-1])   # cleanup runs last
+            self.assertIn("pkill -TERM -f /tmp/svg_keys/key_teleop.py", calls.splitlines()[-2])   # cleanup runs last: window,
+            self.assertIn("pkill -TERM -f /tmp/svg_keys/teleop_frame.py", calls.splitlines()[-1])  # then the relay it started
 
     def _fake(self, tmp, body):
         os.makedirs(os.path.join(tmp, "bin"), exist_ok=True); fake = os.path.join(tmp, "bin", "docker")
@@ -526,20 +530,22 @@ class KeysSubcommand(unittest.TestCase):
 
     def test_refuses_a_second_window(self):
         with tempfile.TemporaryDirectory() as tmp:
-            env = self._fake(tmp, 'echo "$@" >> %s/log\ncase "$*" in *pgrep*) exit 0;; esac\nexit 0\n' % tmp)
+            env = self._fake(tmp, 'echo "$@" >> %s/log\n' % tmp + ISAAC_UP + 'case "$*" in *pgrep*) exit 0;; esac\nexit 0\n')
             env["SIM_KEYS_NO_TTY_OK"] = "1"
             r = run("keys", env=env)
             self.assertEqual(r.returncode, 2); self.assertIn("already running", r.stderr)
-            self.assertNotIn("key_teleop.py --profile", open(os.path.join(tmp, "log")).read())
+            calls = open(os.path.join(tmp, "log")).read()
+            self.assertNotIn("key_teleop.py --profile", calls); self.assertNotIn("teleop_frame.py --drone", calls)   # no relay either
 
     def test_without_the_robot_container_it_says_so(self):
         with tempfile.TemporaryDirectory() as tmp:
             os.makedirs(os.path.join(tmp, "bin"))
             fake = os.path.join(tmp, "bin", "docker")
-            open(fake, "w").write('#!/bin/sh\nexit 1\n'); os.chmod(fake, 0o755)
+            open(fake, "w").write('#!/bin/sh\ncase "$*" in "ps --format {{.Names}}") echo isaac-sim; exit 0;; esac\nexit 1\n'); os.chmod(fake, 0o755)
             env = dict(os.environ, HOME=tmp, PATH=os.path.join(tmp, "bin") + ":" + os.environ["PATH"], SIM_KEYS_NO_TTY_OK="1")
-            r = run("keys", env=env)
-            self.assertNotEqual(r.returncode, 0); self.assertIn("robot container", r.stderr)
+            for args in (["keys"], ["relay"]):
+                r = run(*args, env=env)
+                self.assertEqual(r.returncode, 2, args); self.assertIn("robot container", r.stderr, args)
 
     def test_the_guard_lets_a_tests_own_fake_docker_win(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -548,6 +554,104 @@ class KeysSubcommand(unittest.TestCase):
             env = guarded_env(dict(os.environ, PATH=os.path.join(tmp, "bin") + ":" + os.environ["PATH"]))
             r = subprocess.run(["bash", "-c", "docker ps"], capture_output=True, text=True, env=env)
             self.assertIn("OWN_FAKE", r.stdout)
+
+
+    def test_keys_starts_the_relay_first_and_stops_only_its_own(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            env = self._fake(tmp, 'echo "$@" >> %s/log\n' % tmp + ISAAC_UP + 'case "$*" in *pgrep*) exit 1;; esac\nexit 0\n')
+            env["SIM_KEYS_NO_TTY_OK"] = "1"
+            r = run("keys", env=env)
+            self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+            lines = open(os.path.join(tmp, "log")).read().splitlines()
+            self.assertEqual(lines[0], "ps --format {{.Names}}")                          # the guard is the first container call
+            idx = lambda pat: next(i for i, l in enumerate(lines) if re.search(pat, l))
+            window = idx(r"python3 /tmp/svg_keys/key_teleop\.py")
+            self.assertLess(idx(r"cp \S+/tools/teleop/frame\.py airstack-robot-desktop-1:/tmp/svg_keys/"), window)
+            self.assertLess(idx(r"cp \S+/tools/teleop/teleop_frame\.py airstack-robot-desktop-1:/tmp/svg_keys/"), window)
+            self.assertLess(idx(r"^exec -d airstack-robot-desktop-1 .*teleop_frame\.py --drone drone_1 --stick-frame body"), window)
+            self.assertIn("relay: started (drone_1, body frame)", r.stdout)
+            self.assertIn("F drive/room mode", r.stdout); self.assertIn("Space STOP", r.stdout)
+            self.assertIn("pkill -TERM -f /tmp/svg_keys/key_teleop.py", lines[-2])
+            self.assertIn("pkill -TERM -f /tmp/svg_keys/teleop_frame.py", lines[-1])
+
+    def test_keys_leaves_a_relay_it_did_not_start(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            env = self._fake(tmp, 'echo "$@" >> %s/log\n' % tmp + ISAAC_UP
+                             + 'case "$*" in *pgrep*teleop_frame*) exit 0;; *pgrep*) exit 1;; esac\nexit 0\n')
+            env["SIM_KEYS_NO_TTY_OK"] = "1"
+            r = run("keys", env=env)
+            self.assertEqual(r.returncode, 0, r.stdout + r.stderr); self.assertIn("relay: already running", r.stdout)
+            calls = open(os.path.join(tmp, "log")).read()
+            self.assertNotIn("--stick-frame", calls)                                       # no second relay
+            self.assertIn("python3 /tmp/svg_keys/key_teleop.py", calls)
+            self.assertIn("pkill -TERM -f /tmp/svg_keys/key_teleop.py", calls.splitlines()[-1])
+            self.assertNotIn("pkill -TERM -f /tmp/svg_keys/teleop_frame.py", calls)        # someone else's relay stays
+
+
+class Relay(unittest.TestCase):
+    """tools/sim.sh relay: the teleop_frame node (BODY/WORLD sticks) in the robot container (NEAR-789, sim)."""
+
+    def _fake(self, tmp, isaac=True, relay_running=False):
+        os.makedirs(os.path.join(tmp, "bin"), exist_ok=True); fake = os.path.join(tmp, "bin", "docker")
+        body = 'echo "$@" >> %s/log\n' % tmp
+        body += ISAAC_UP if isaac else 'case "$*" in "ps --format {{.Names}}") exit 0;; esac\n'
+        body += 'case "$*" in *pgrep*) exit %d;; *pkill*) exit 1;; esac\nexit 0\n' % (0 if relay_running else 1)
+        open(fake, "w").write("#!/bin/sh\n" + body); os.chmod(fake, 0o755)
+        return dict(os.environ, HOME=tmp, PATH=os.path.join(tmp, "bin") + ":" + os.environ["PATH"], SIM_KEYS_NO_TTY_OK="1")
+
+    def _calls(self, tmp):
+        f = os.path.join(tmp, "log"); return open(f).read() if os.path.exists(f) else ""
+
+    def test_usage_lists_relay(self):
+        self.assertIn("relay", run().stdout)
+
+    def test_relay_copies_both_files_and_starts_the_node(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            r = run("relay", env=self._fake(tmp))
+            self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+            calls = self._calls(tmp); lines = calls.splitlines()
+            self.assertEqual(lines[0], "ps --format {{.Names}}")
+            self.assertRegex(calls, r"cp \S+/tools/teleop/frame\.py airstack-robot-desktop-1:/tmp/svg_keys/")
+            self.assertRegex(calls, r"cp \S+/tools/teleop/teleop_frame\.py airstack-robot-desktop-1:/tmp/svg_keys/")
+            self.assertRegex(calls, r"exec -d airstack-robot-desktop-1 bash -ic python3 /tmp/svg_keys/teleop_frame\.py "
+                                    r"--drone drone_1 --stick-frame body > /tmp/svg_keys/teleop_frame\.log 2>&1")
+            self.assertIn("relay: started (drone_1, body frame)", r.stdout)
+
+    def test_relay_world_and_drone_2(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            r = run("relay", "world", "--drone", "2", env=self._fake(tmp))
+            self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+            self.assertIn("--drone drone_2 --stick-frame world", self._calls(tmp))
+            self.assertIn("relay: started (drone_2, world frame)", r.stdout)
+
+    def test_relay_already_running_starts_no_second(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            r = run("relay", env=self._fake(tmp, relay_running=True))
+            self.assertEqual(r.returncode, 0, r.stdout + r.stderr); self.assertIn("relay: already running", r.stdout)
+            self.assertNotIn("exec -d", self._calls(tmp))
+
+    def test_relay_stop(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            r = run("relay", "stop", env=self._fake(tmp))                               # fake pkill exits 1: none ran
+            self.assertEqual(r.returncode, 0, r.stdout + r.stderr); self.assertIn("relay: stopped", r.stdout)
+            self.assertIn("exec airstack-robot-desktop-1 pkill -TERM -f /tmp/svg_keys/teleop_frame.py", self._calls(tmp))
+
+    def test_relay_rejects_bad_mode(self):
+        for args in (["nose"], ["--drone", "x"], ["--drone", "0"], ["--drone"], ["body", "world"], ["stop", "body"],
+                     ["body", "--drone", "1", "extra"], ["body;id"]):
+            with tempfile.TemporaryDirectory() as tmp:
+                r = run("relay", *args, env=self._fake(tmp))
+                self.assertEqual(r.returncode, 2, args); self.assertIn("error: relay:", r.stderr, args)
+                self.assertIn("usage:", r.stderr, args)
+                self.assertEqual(self._calls(tmp), "", args)                            # no docker call at all
+
+    def test_keys_and_relay_refuse_without_the_isaac_container(self):
+        for args in (["keys"], ["relay"], ["relay", "stop"]):
+            with tempfile.TemporaryDirectory() as tmp:
+                r = run(*args, env=self._fake(tmp, isaac=False))
+                self.assertEqual(r.returncode, 2, args); self.assertIn("sim-only", r.stderr, args)
+                self.assertIn("isaac-sim container not running", r.stderr, args)
+                self.assertEqual(self._calls(tmp).splitlines(), ["ps --format {{.Names}}"], args)   # nothing else touched
 
 
 class UlogGuard(unittest.TestCase):

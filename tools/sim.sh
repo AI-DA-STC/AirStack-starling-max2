@@ -23,14 +23,16 @@ SIM_TESTS_DIR=${SIM_TESTS_DIR:-$REPO/tools/sim_tests}     # overridable for the 
 
 usage() {
   cat <<'USAGE'
-usage: tools/sim.sh <setup|doctor|up|down|status|tabs|test|figures|check|param> [flags]
+usage: tools/sim.sh <setup|doctor|up|down|status|tabs|keys|relay|test|figures|check|param> [flags]
   setup                                  one-time preparation (checks, optional Foxglove layout file)
   doctor                                 read-only health check
   up [--headless]                        start the sim stack (Isaac window unless --headless)
   down [--force]                         stop the sim stack (first saves uncopied PX4 ulogs; --force skips that)
   status                                 what is running
   tabs                                   open the terminal tabs
-  keys [--profile xbox_usb]              keyboard teleop window (arrows move, W/S up/down, A/D turn) for safe_teleop; sim only
+  keys [--profile xbox_usb]              keyboard teleop window for safe_teleop (starts the relay first); sim only
+  relay [body|world] [--drone N] | relay stop
+                                         the stick relay (Drive mode = body, Room mode = world; default body, drone 1); sim only
   test <name> [--headless] [--no-pause] [--ledger N] --issue NEAR-nnn <run>
                                          run tools/sim_tests/<name>; --issue = Linear id; ledger # = next free unless --ledger N
   figures                                make the record figures of a run
@@ -278,7 +280,8 @@ print(next((s for s in p if 'running' in s), p[0]))" "$TD/plots.json") || FIRST=
   phase_begin metrics
   OWN_SCRATCH=1                           # from here /tmp/svg_test in the robot container is this run's to delete
   nx docker exec "$R" mkdir -p "$S"
-  for f in "$REPO/tools/live/metrics_core.py" "$REPO/tools/live/metrics_node.py" "$REPO/tools/live/bag_recompute.py" "$REPO/tools/lib/px4_param_set.sh" "$REPO/tools/lib/changes_log.py" "$TD/metrics.py" "$TD/fly.sh"; do
+  for f in "$REPO/tools/live/metrics_core.py" "$REPO/tools/live/metrics_node.py" "$REPO/tools/live/bag_recompute.py" "$REPO/tools/lib/px4_param_set.sh" "$REPO/tools/lib/changes_log.py" "$TD/metrics.py" "$TD/fly.sh" \
+           "$REPO/tools/teleop/frame.py" "$REPO/tools/teleop/teleop_frame.py"; do
     nx docker cp "$f" "$R:$S/" || fail "docker cp $f"; done
   # 3  metrics node: started before the flight, ready + liveness checked
   docker exec "$R" pkill -f 'python3 metrics_node.py' >/dev/null 2>&1 || true      # never two nodes publishing /svg/test/*
@@ -357,14 +360,62 @@ print(next((s for s in p if 'running' in s), p[0]))" "$TD/plots.json") || FIRST=
   exit "$REPORT_RC"
 }
 
+# sim_only_guard <cmd>: keys and relay are sim-only. The real session never has the isaac-sim container, so they refuse
+# there — and this is the first container call they make.
+sim_only_guard() {
+  local names; names=$(docker ps --format '{{.Names}}' 2>/dev/null)   # captured first: grep -q + pipefail could read SIGPIPE as "no"
+  grep -qx isaac-sim <<< "$names" \
+    || { echo "error: $1 needs the sim (isaac-sim container not running) — this is sim-only" >&2; return 2; }
+}
+
+# relay_start MODE N: the stick relay (tools/teleop/teleop_frame.py) in the robot container, detached, log in $D.
+# safe_teleop's stick goes through it to the commander; without it the commander hears nothing and holds.
+# Sets RELAY_NEW=1 only when this call started it (a caller's `local RELAY_NEW` sees that), so keys stops only its own.
+relay_start() {
+  local mode=$1 n=$2 R=airstack-robot-desktop-1 D=/tmp/svg_keys   # D: no regex characters (pgrep/pkill pattern)
+  RELAY_NEW=0
+  docker exec "$R" mkdir -p "$D" 2>/dev/null \
+    || { echo "error: relay: the robot container ($R) is not running — tools/sim.sh up first" >&2; return 2; }
+  docker cp "$REPO/tools/teleop/frame.py" "$R:$D/" >/dev/null \
+    && docker cp "$REPO/tools/teleop/teleop_frame.py" "$R:$D/" >/dev/null \
+    || { echo "error: relay: could not copy the relay files into $R" >&2; return 2; }
+  if docker exec "$R" pgrep -f "$D/teleop_frame.py" >/dev/null 2>&1; then
+    echo "relay: already running (tools/sim.sh relay stop, then start it again to change mode or drone)"; return 0; fi
+  docker exec -d "$R" bash -ic "python3 $D/teleop_frame.py --drone drone_$n --stick-frame $mode > $D/teleop_frame.log 2>&1" \
+    || { echo "error: relay: could not start teleop_frame.py in $R" >&2; return 2; }
+  RELAY_NEW=1
+  echo "relay: started (drone_$n, $mode frame); log $R:$D/teleop_frame.log"
+}
+
+# cmd_relay: `relay [body|world] [--drone N]` starts the stick relay (default body, drone 1); `relay stop` stops it.
+cmd_relay() {
+  local mode=body n=1 stop=0 R=airstack-robot-desktop-1 D=/tmp/svg_keys
+  relay_bad() { usage_line >&2; echo "error: relay: $* (usage: tools/sim.sh relay [body|world] [--drone N] | relay stop)" >&2; return 2; }
+  if [ "${1:-}" = stop ]; then [ $# -eq 1 ] || { relay_bad "stop takes no other argument"; return 2; }; stop=1; shift; fi
+  if [[ "${1:-}" =~ ^(body|world)$ ]]; then mode=$1; shift; fi
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --drone) [[ "${2:-}" =~ ^[1-9][0-9]?$ ]] || { relay_bad "--drone needs a drone number 1-99 (got '${2:-}')"; return 2; }; n=$2; shift 2 ;;
+      *) relay_bad "bad argument '$1' (mode is body or world, given once, before --drone)"; return 2 ;;
+    esac
+  done
+  sim_only_guard relay || return 2
+  if [ "$stop" = 1 ]; then
+    docker exec "$R" pkill -TERM -f "$D/teleop_frame.py" >/dev/null 2>&1   # none running is fine
+    echo "relay: stopped"; return 0; fi
+  relay_start "$mode" "$n"
+}
+
 # cmd_keys: the keyboard teleop window (tools/teleop/key_teleop.py) inside the robot container, where ROS and the
 # container's display are. It publishes /joy like a gamepad; CMU's safe_teleop must already be running (TELEOP.md).
+# It starts the stick relay first (body, drone 1) and, on the way out, stops the relay only if it started it.
 cmd_keys() {
-  local R=airstack-robot-desktop-1 D=/tmp/svg_keys a tty=""   # D: no regex characters (pgrep/pkill pattern)
+  local R=airstack-robot-desktop-1 D=/tmp/svg_keys a tty="" RELAY_NEW=0 stop_relay=""   # D: no regex characters (pgrep/pkill pattern)
   for a in "$@"; do [[ "$a" =~ ^[A-Za-z0-9_./-]+$ ]] || { usage_line >&2; echo "error: keys: bad argument '$a'" >&2; return 2; }; done
   # without a terminal, docker exec -i does not pass Ctrl-C on: the window would outlive this command
   if [ -t 0 ]; then tty=-t; elif [ "${SIM_KEYS_NO_TTY_OK:-0}" != 1 ]; then    # SIM_KEYS_NO_TTY_OK: unit tests only
     echo "error: keys needs a terminal (Ctrl-C must reach the window); run it in a terminal tab" >&2; return 2; fi
+  sim_only_guard keys || return 2
   docker exec "$R" true 2>/dev/null || { echo "error: keys: the robot container ($R) is not running — tools/sim.sh up first" >&2; return 2; }
   if docker exec "$R" pgrep -f "$D/key_teleop.py" >/dev/null 2>&1; then
     echo "error: keys: a keyboard window is already running in $R — close it first (two windows would both publish /joy)" >&2; return 2; fi
@@ -372,8 +423,10 @@ cmd_keys() {
     && docker cp "$REPO/tools/teleop/keymap.py" "$R:$D/" >/dev/null \
     && docker cp "$REPO/tools/teleop/key_teleop.py" "$R:$D/" >/dev/null \
     || { echo "error: keys: could not copy the teleop files into $R" >&2; return 2; }
-  echo "keyboard teleop: click the window; arrows move (pitch/roll), W/S up/down, A/D turn, 1/2/3 = speed; close it or Ctrl-C to stop"
-  trap "docker exec $R pkill -TERM -f $D/key_teleop.py >/dev/null 2>&1" EXIT    # however this ends, the window goes too
+  relay_start body 1 || return 2
+  [ "$RELAY_NEW" = 1 ] && stop_relay="; docker exec $R pkill -TERM -f $D/teleop_frame.py >/dev/null 2>&1"
+  trap "docker exec $R pkill -TERM -f $D/key_teleop.py >/dev/null 2>&1$stop_relay" EXIT    # however this ends, the window goes too
+  echo "keyboard teleop: click the window; arrows move (pitch/roll), W/S up/down, A/D turn, Space STOP, F drive/room mode, 1/2/3 = speed; close it or Ctrl-C to stop"
   docker exec -i $tty "$R" bash -ic "python3 $D/key_teleop.py $*"
 }
 
@@ -537,7 +590,7 @@ cmd_doctor() { DRY=1 cmd_setup "$@"; }
 SUB=${1:-}
 case "$SUB" in
   ""|-h|--help) usage; exit 2 ;;
-  setup|doctor|up|down|status|tabs|keys|test|figures|check|param) shift ;;
+  setup|doctor|up|down|status|tabs|keys|relay|test|figures|check|param) shift ;;
   *) usage; exit 2 ;;
 esac
 
@@ -557,6 +610,7 @@ case "$SUB" in
   status) no_args "$@"; HEADLESS=false; stack_env nomk; PHASE=status; status ;;
   tabs)   no_args "$@"; exec "$REPO/tools/sim_terminals.sh" ;;
   keys)   cmd_keys "$@"; exit $? ;;
+  relay)  cmd_relay "$@"; exit $? ;;
   param)  cmd_param "$@" ;;
   test)   parse_test_args "$@"; cmd_test ;;
   figures) cmd_figures "$@" ;;

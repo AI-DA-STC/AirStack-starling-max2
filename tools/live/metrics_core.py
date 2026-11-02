@@ -42,6 +42,7 @@ import numpy as np
 
 STALE_S = 0.5
 UNPAIRED_MAX = 0.05
+QUAT_MIN_NORM2 = 0.5  # below this |q|^2 the odometry orientation is treated as unfilled (heading NaN)
 
 
 class MetricsCsvError(ValueError):
@@ -302,10 +303,13 @@ class Tracker:
 
     def update_odom(self, drone, t, xyz, vxyz, quat=None, ang_z=None):
         """quat = odometry orientation (x, y, z, w); ang_z = twist.twist.angular.z (rad/s). None = not available:
-        the drone then has no heading / yaw rate in the frame (its heading series are NaN)."""
+        the drone then has no heading / yaw rate in the frame (its heading series are NaN). A quaternion with
+        |q|^2 < QUAT_MIN_NORM2 (an unfilled all-zero orientation) counts as None: fail closed, never a fake 0 deg."""
         self._pos[drone] = world_position(xyz, self.offsets[drone])
         self._vel[drone] = np.asarray(vxyz, dtype=float)
         self._seen[drone] = float(t)
+        if quat is not None and sum(float(c) * float(c) for c in quat) < QUAT_MIN_NORM2:
+            quat = None
         if quat is None:
             self._yaw.pop(drone, None)
         else:

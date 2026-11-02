@@ -712,6 +712,32 @@ class Heading(unittest.TestCase):
         self.assertTrue(math.isnan(M.heading_rel_deg(f, "drone_1")))
         self.assertTrue(math.isnan(M.yaw_rate_dps(f, "drone_1")))
 
+    def test_heading_nan_when_stale_in_phase2(self):
+        # Phase 2, odometry stops: the last heading must not be frozen in the series.
+        tr = synth.make_tracker(); tr.update_status(synth.straight_status(2.0))
+        pos, vel = synth.straight_world(2.0)
+        for d in synth.DRONES:
+            tr.update_odom(d, 2.0, pos[d] - tr.offsets[d], vel[d], yaw_quat(45.0), 0.3)
+        self.assertAlmostEqual(M.heading_rel_deg(tr.frame(2.0), "drone_1"), 0.0, places=6)
+        f = tr.frame(2.0 + 0.7)
+        self.assertEqual(f.phase, 2)
+        self.assertIn("drone_1", f.stale)
+        self.assertTrue(math.isnan(M.heading_rel_deg(f, "drone_1")))
+        self.assertTrue(math.isnan(M.yaw_rate_dps(f, "drone_1")))
+
+    def test_unfilled_quaternion_gives_nan_heading(self):
+        # An odometry that leaves orientation all-zero must not read as a constant, live-looking 0 deg.
+        tr, t = yaw_tracker([10.0, 20.0])
+        pos, vel = synth.straight_world(2.0)
+        for q in ((0.0, 0.0, 0.0, 0.0), (0.0, 0.0, 0.1, 0.1)):
+            tr.update_odom("drone_1", t + 0.1, pos["drone_1"] - tr.offsets["drone_1"], vel["drone_1"], q, 0.0)
+            f = tr.frame(t + 0.1)
+            self.assertNotIn("drone_1", f.yaw, q)
+            self.assertTrue(math.isnan(M.heading_deg(f, "drone_1")), q)
+            self.assertTrue(math.isnan(M.heading_rel_deg(f, "drone_1")), q)
+        tr.update_odom("drone_1", t + 0.2, pos["drone_1"] - tr.offsets["drone_1"], vel["drone_1"], yaw_quat(30.0), 0.0)
+        self.assertAlmostEqual(M.heading_rel_deg(tr.frame(t + 0.2), "drone_1"), 20.0, places=6)   # unwrap state kept
+
     def test_unwrap_deg(self):
         np.testing.assert_allclose(M.unwrap_deg([170, 179, -179, -170, 179, 170]), [170, 179, 181, 190, 179, 170])
         np.testing.assert_allclose(M.unwrap_deg([0, -90, -180, 90, 0]), [0, -90, -180, -270, -360])

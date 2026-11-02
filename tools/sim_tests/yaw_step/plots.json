@@ -1,0 +1,9 @@
+{
+  "plots": [
+    {"id": "heading", "title": "Heading relative to the test start", "series": ["heading_rel_deg"], "refs": ["ref_band_plus", "ref_band_minus"], "y_range": [-120, 120], "unit": "deg"},
+    {"id": "yaw_rate", "title": "Yaw rate (odometry, plotted only)", "series": ["yaw_rate_dps"], "refs": [], "y_range": [-90, 90], "unit": "deg/s"},
+    {"id": "drift", "title": "xy drift from the test start", "series": ["xy_drift_m"], "refs": [], "y_range": [0, 0.5], "unit": "m"}
+  ],
+  "phase_series": "phase",
+  "panel_width_pct": 50
+}

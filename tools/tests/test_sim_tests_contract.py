@@ -314,7 +314,9 @@ class FlySh(unittest.TestCase):
 
 class Template(unittest.TestCase):
     def test_template_and_crossing_have_the_five_files_and_fresh_layout(self):
-        for d in (TEMPLATE, CROSSING):
+        dirs = sorted(p for p in (TOOLS / "sim_tests").iterdir() if p.is_dir() and not p.name.startswith("__"))
+        self.assertTrue({TEMPLATE, CROSSING, TOOLS / "sim_tests" / "yaw_step"} <= set(dirs), dirs)
+        for d in dirs:                                   # every test directory, not only the first two
             for f in ("test.env", "fly.sh", "metrics.py", "gates.py", "plots.json", "layout.json"):
                 self.assertTrue((d / f).exists(), d / f)
             self.assertEqual(L.main([str(d), "--check"]), 0, d)

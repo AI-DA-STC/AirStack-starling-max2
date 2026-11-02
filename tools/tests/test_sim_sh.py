@@ -192,7 +192,7 @@ class SimSh(unittest.TestCase):
 
     def test_test_flow_passes_fly_args_and_drone_count(self):
         src = SIM.read_text()
-        for n in ('NUM_ROBOTS=${NUM_ROBOTS:-3}', 'FLY_ARGS=${FLY_ARGS:-}', 'fly.sh $DURATION_S $FLY_ARGS', 'for N in $DRONE_IDS', 'pyulog'):
+        for n in ('NUM_ROBOTS=${NUM_ROBOTS:-3}', 'FLY_ARGS=${FLY_ARGS:-}', 'fly.sh $DURATION_S$(fly_q "$FLY_ARGS")', 'for N in $DRONE_IDS', 'pyulog'):
             self.assertIn(n, src, n)
         self.assertNotIn("for N in 1 2 3", src)
         self.assertLess(src.index('source "$SIM_TESTS_DIR/$NAME/test.env"'), src.index('NUM_ROBOTS=${NUM_ROBOTS:-3}'))   # test.env may set it
@@ -236,9 +236,34 @@ class SimSh(unittest.TestCase):
 
     def test_fly_exec_line_carries_fly_args_and_count_check_uses_it(self):
         src = SIM.read_text()
-        self.assertIn('docker exec -d "$R" bash -ic "bash $S/fly.sh $DURATION_S $FLY_ARGS', src)       # the exec line itself, not the note
+        self.assertIn('docker exec -d "$R" bash -ic "bash $S/fly.sh $DURATION_S$(fly_q "$FLY_ARGS")', src)   # the exec line itself, not the note
         self.assertIn('[ "$(wc -l < "$OUT/armed_post.txt")" = "$NUM_ROBOTS" ]', src)
         self.assertIn('s window${FLY_ARGS:+ $FLY_ARGS}', src)                      # say line: "s window" before the args
+
+
+    def test_fly_args_survive_the_container_shell(self):
+        # the exec line goes through `bash -ic "…"`: an unquoted ';' (yaw_step's SWEEP separator) would end the command
+        fn = self._fn("fly_q", "# cmd_figures <name> <run>")
+        for args, want in (("3 1.0 1.0", ["3", "1.0", "1.0"]),
+                           ("2 1.0 1.0 MC_YAW_P=2.0;MC_YAW_P=1.4,MC_YAWRATE_D=0.002", ["2", "1.0", "1.0", "MC_YAW_P=2.0;MC_YAW_P=1.4,MC_YAWRATE_D=0.002"]),
+                           ("", [])):
+            q = subprocess.run(["bash", "-c", fn + '\nfly_q "$1"', "x", args], capture_output=True, text=True, timeout=20).stdout
+            got = subprocess.run(["bash", "-c", "for a in " + q + "; do echo \"<$a>\"; done"], capture_output=True, text=True, timeout=20).stdout.split()
+            self.assertEqual(got, ["<%s>" % w for w in want], (args, q))
+
+    def test_fly_watchdog_bound_comes_from_test_env(self):
+        src = SIM.read_text()
+        fly = src[src.index("PHASE=fly"):src.index("PHASE=metrics_stop")]
+        self.assertIn("FLY_TIMEOUT_S", fly)
+        self.assertIn("$((DURATION_S + 240))", fly)                                    # the default stays the crossing's
+        self.assertIn("unset NUM_ROBOTS FLY_ARGS FLY_TIMEOUT_S", src)                   # a shell variable never sets it
+
+    def test_changes_log_goes_in_and_comes_out(self):                                  # owner rule 2026-11-02
+        src = SIM.read_text()
+        copy_in = src[src.index("# 2  copy-in"):src.index("# 3  metrics node")]
+        self.assertIn('"$REPO/tools/lib/changes_log.py"', copy_in)
+        col = self._fn("metrics_collect", "# bag_dump_hook")                           # every path: normal and abort
+        self.assertIn('"$R:$S/changes.log" "$OUT/changes.log"', col)
 
 
 class LivePlotWindow(unittest.TestCase):

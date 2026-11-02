@@ -324,7 +324,7 @@ def render(env, rows, ctx, out, heavy, verdict, history, ledger, issue) -> str:
          f"{VERDICT_DEF} Report generated {today} at repo `{head}`.", "",
          f"**Scope:** {env.get('SCOPE', '')}", "",
          "## Setup", "", "| Item | Value |", "|---|---|",
-         "| Sim | Isaac Sim, 3 Starling 2 Max (`DRONE_USD=starling2max.usd`, `PX4_VEHICLE_MODEL=pegasus_starling2max`), default flat world |",
+         f"| Sim | Isaac Sim, {meta.get('num_robots') or env.get('NUM_ROBOTS') or 3} Starling 2 Max (`DRONE_USD=starling2max.usd`, `PX4_VEHICLE_MODEL=pegasus_starling2max`), default flat world |",
          "| Airframe | `10090_pegasus_starling2max` (sim-only airframe gains, see the S5 hover records) |",
          f"| Commander | `{env.get('CONFIG', '?')} scenario:={env.get('SCENARIO', '?')}`, tuning {json.dumps(tuning) if tuning else 'n/a'} |",
          f"| Driver | `tools/sim.sh test {env.get('NAME', run)}`, repo commit `{meta.get('head', meta.get('head_short', 'n/a'))}` (tools/ uncommitted changes: {meta.get('dirty_tools', 'n/a')}) |",

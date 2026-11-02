@@ -92,6 +92,10 @@ stack_env() {   # stack_env [nomk]
 
 no_args() { [ $# -eq 0 ] || { usage_line >&2; echo "error: $SUB takes no arguments (got $1)" >&2; exit 2; }; }
 
+# fly_q "<FLY_ARGS>": the words of FLY_ARGS, each shell-quoted with a leading space, for the `bash -ic "…"` exec line
+# (yaw_step's SWEEP separates gain sets with ';', which the container shell would otherwise read as a command end)
+fly_q() { local a; read -ra a <<< "$1"; [ ${#a[@]} -eq 0 ] || printf ' %q' "${a[@]}"; }
+
 # cmd_figures <name> <run>: the record figure (plot 1 of the test's plots.json) from the run's metrics.csv
 cmd_figures() {
   [ $# -eq 2 ] || { echo "usage: tools/sim.sh figures <name> <run>" >&2; echo "error: figures needs exactly <name> <run>" >&2; exit 2; }
@@ -149,6 +153,7 @@ metrics_stop() {
 metrics_collect() {
   docker cp "$R:$S/metrics.csv" "$OUT/metrics.csv" 2>/dev/null && say "metrics.csv copied ($(wc -l < "$OUT/metrics.csv") lines)" || say "WARN: no metrics.csv in the robot container"
   docker cp "$R:$S/metrics_node.log" "$OUT/metrics_node.log" 2>/dev/null || true
+  docker cp "$R:$S/changes.log" "$OUT/changes.log" 2>/dev/null && say "changes.log copied (live parameter changes of this run)" || true   # only a test that changes parameters writes one
   local o; o=$(grep -m1 '^# offsets=' "$OUT/metrics.csv" 2>/dev/null | sed 's/^# offsets=//')
   [ -n "$o" ] && echo "offsets=$o" >> "$OUT/run_meta.txt" || true
   touch "$HEAVY/.metrics_stopped"
@@ -221,7 +226,7 @@ cmd_test() {
   take_lock
   OWN_SCRATCH=0; METRICS_STARTED=0
   local ISSUE_ARG=$ISSUE
-  unset NUM_ROBOTS FLY_ARGS      # only the test's own test.env may set them, never the caller's shell
+  unset NUM_ROBOTS FLY_ARGS FLY_TIMEOUT_S      # only the test's own test.env may set them, never the caller's shell
   # shellcheck source=/dev/null
   source "$SIM_TESTS_DIR/$NAME/test.env"; ISSUE=$ISSUE_ARG          # test.env's ISSUE is the default; the flag wins
   NUM_ROBOTS=${NUM_ROBOTS:-3}; FLY_ARGS=${FLY_ARGS:-}                 # test.env may set them (a one-drone test: NUM_ROBOTS=1); stack.sh reads NUM_ROBOTS when sourced
@@ -246,7 +251,7 @@ print(next((s for s in p if 'running' in s), p[0]))" "$TD/plots.json") || FIRST=
   phase_begin metrics
   OWN_SCRATCH=1                           # from here /tmp/svg_test in the robot container is this run's to delete
   nx docker exec "$R" mkdir -p "$S"
-  for f in "$REPO/tools/live/metrics_core.py" "$REPO/tools/live/metrics_node.py" "$REPO/tools/live/bag_recompute.py" "$TD/metrics.py" "$TD/fly.sh"; do
+  for f in "$REPO/tools/live/metrics_core.py" "$REPO/tools/live/metrics_node.py" "$REPO/tools/live/bag_recompute.py" "$REPO/tools/lib/changes_log.py" "$TD/metrics.py" "$TD/fly.sh"; do
     nx docker cp "$f" "$R:$S/" || fail "docker cp $f"; done
   # 3  metrics node: started before the flight, ready + liveness checked
   docker exec "$R" pkill -f 'python3 metrics_node.py' >/dev/null 2>&1 || true      # never two nodes publishing /svg/test/*
@@ -268,13 +273,14 @@ print(next((s for s in p if 'running' in s), p[0]))" "$TD/plots.json") || FIRST=
   phase_begin fly test_stdout.log armed_post.txt landing_evidence.txt status_post.json
   alive "$R" swarm_commander || fail "commander is not running"
   say "fly: tools/sim_tests/$NAME/fly.sh $DURATION_S s window${FLY_ARGS:+ $FLY_ARGS} (takeoff -> start -> window -> land)"
-  note "docker exec -d $R bash -ic 'bash $S/fly.sh $DURATION_S $FLY_ARGS > $S/test_stdout.log 2>&1'"
-  docker exec -d "$R" bash -ic "bash $S/fly.sh $DURATION_S $FLY_ARGS > $S/test_stdout.log 2>&1"
+  note "docker exec -d $R bash -ic 'bash $S/fly.sh $DURATION_S$(fly_q "$FLY_ARGS") > $S/test_stdout.log 2>&1'"
+  docker exec -d "$R" bash -ic "bash $S/fly.sh $DURATION_S$(fly_q "$FLY_ARGS") > $S/test_stdout.log 2>&1"
   docker exec "$R" tail -n0 -f "$S/metrics_node.log" & TAIL=$!
   sleep 3
-  local el=0
+  local el=0 bound=$((DURATION_S + 240))
+  [[ "${FLY_TIMEOUT_S:-}" =~ ^[0-9]+$ ]] && bound=$FLY_TIMEOUT_S      # a test.env with a longer flight (yaw_step's sweep) sets its own
   while alive "$R" 'fly\.sh'; do
-    [ "$el" -ge $((DURATION_S + 240)) ] && { say "WARN: fly.sh still running after $el s — stopping it, landing everything"; stop_fly; land_all_and_wait 60 || true; break; }
+    [ "$el" -ge "$bound" ] && { say "WARN: fly.sh still running after $el s — stopping it, landing everything"; stop_fly; land_all_and_wait 60 || true; break; }
     sleep 2; el=$((el+2)); done
   stop_tail
   docker cp "$R:$S/test_stdout.log" "$OUT/" 2>/dev/null || say "WARN: no test_stdout.log"

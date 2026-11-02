@@ -20,7 +20,11 @@ class TeleopOurs(unittest.TestCase):
     def test_ours_diverts_safe_teleop_only(self):
         base = yaml_load(CFG / "teleop_single.yaml")
         ours = yaml_load(CFG / "teleop_single_ours.yaml")
-        self.assertEqual(ours["swarm_commander"], base["swarm_commander"])
+        # ours: both fences off for the construction-site sessions (owner, 2026-11-03); everything else equal
+        bc = dict(base["swarm_commander"]["ros__parameters"]); oc = dict(ours["swarm_commander"]["ros__parameters"])
+        self.assertFalse(oc.pop("fence_enabled")); self.assertFalse(oc.pop("teleop_fence_enabled"))
+        bc.pop("fence_enabled"); bc.pop("teleop_fence_enabled")
+        self.assertEqual(oc, bc)
         self.assertEqual(ours["safe_teleop"]["ros__parameters"]["teleop_topic_template"],
                          "/svg/{name}/teleop_command_stick")
         b = dict(base["safe_teleop"]["ros__parameters"])

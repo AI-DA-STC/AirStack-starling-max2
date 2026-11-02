@@ -69,7 +69,7 @@ swarm_commander:
     teleop_accel_mps2: 5.0
 
     # Breach -> all drones hold until /swarm_commander/reset_fence.
-    fence_enabled: true
+    fence_enabled: false         # ours (2026-11-03): no geofence for the localisation sessions in the construction site
     # fence_behavior: what a breach of [fence_min, fence_max] does.
     #   "hold_all" - any ACTIVE drone (auto, teleop OR external) outside the
     #                box latches: everyone freezes, scenario stops, until
@@ -94,7 +94,7 @@ swarm_commander:
     # geofence (refused otherwise). The sticks meet this soft wall whatever
     # fence_behavior is; the geofence stays the outer safety net. Amber in
     # the 3D view.
-    teleop_fence_enabled: true
+    teleop_fence_enabled: false  # ours (2026-11-03): no teleop fence either; the box values below are kept but unused
     teleop_fence_min: [-3.0, -1.5, 0.3]
     teleop_fence_max: [3.0, 1.5, 2.5]
 

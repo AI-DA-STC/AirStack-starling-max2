@@ -226,6 +226,17 @@ class SimSh(unittest.TestCase):
                 self.assertIn("no px4_drone_1.csv", open(os.path.join(out, "caveats.txt")).read(), u)
                 self.assertFalse(os.path.exists(os.path.join(heavy, "px4_drone_1.csv")), "a stale CSV must not survive")
 
+    def test_exported_num_robots_does_not_leak_into_the_bare_stack(self):
+        env = dict(os.environ, NUM_ROBOTS="1", FLY_ARGS="--x")
+        r = run("status", env=env)
+        self.assertIn("drone_3 connected", r.stdout, r.stdout + r.stderr)          # still three drones: a shell variable is not a test.env
+
+    def test_fly_exec_line_carries_fly_args_and_count_check_uses_it(self):
+        src = SIM.read_text()
+        self.assertIn('docker exec -d "$R" bash -ic "bash $S/fly.sh $DURATION_S $FLY_ARGS', src)       # the exec line itself, not the note
+        self.assertIn('[ "$(wc -l < "$OUT/armed_post.txt")" = "$NUM_ROBOTS" ]', src)
+        self.assertIn('s window${FLY_ARGS:+ $FLY_ARGS}', src)                      # say line: "s window" before the args
+
 
 class LivePlotWindow(unittest.TestCase):
     """The live plot window (design 2026-10-30): opened before pause 1 in window mode, closed by metrics_stop."""

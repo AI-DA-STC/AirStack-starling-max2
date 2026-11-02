@@ -158,7 +158,7 @@ odom_gates() {   # odometry from every drone (PX4's local position needs a few s
   note "docker exec $R bash -ic 'ros2 topic info /clock; echo clock_rc=\$?'   # 0 = /clock exists, 1 = unknown topic"
   rx 'ros2 topic info /clock >/dev/null 2>&1; echo clock_rc=$?' | grep clock_rc > "$OUT/clock_check.txt"
   tee -a "$OUT/run.log" < "$OUT/clock_check.txt"
-  say "interfaces: 3 drones with odometry"
+  say "interfaces: $NUM_ROBOTS drones with odometry"
 }
 
 commander() {
@@ -181,7 +181,7 @@ PY
     [ $((SECONDS - t0)) -ge 30 ] && break
     sleep 2
   done
-  [ "$ok" = 1 ] || fail "commander_status is not scenario=$SCENARIO with 3 IDLE, odom-fresh drones after 30 s (see status_pre.json)"
+  [ "$ok" = 1 ] || fail "commander_status is not scenario=$SCENARIO with $NUM_ROBOTS IDLE, odom-fresh drones after 30 s (see status_pre.json)"
   json1 /svg/bag_recorder/status | tee "$OUT/bag_status_pre.json" | tee -a "$OUT/run.log" || true
 }
 
@@ -202,7 +202,7 @@ params() {   # secondary, read-only proof via MAVROS (names verified live); the 
   else say "params: no MAVROS param service — ulog header will decide"; fi
 }
 
-copy_ulogs() {   # PX4 ulogs of THIS session (newer than isaac.log.start), one per MAV_SYS_ID 2/3/4 = drone_1/2/3 -> $HEAVY; must run BEFORE Isaac stops
+copy_ulogs() {   # PX4 ulogs of THIS session (newer than isaac.log.start), one per MAV_SYS_ID in $SYSIDS (drone_1..$NUM_ROBOTS) -> $HEAVY; must run BEFORE Isaac stops
   local START sid f sz; START=$(cat "$OUT/isaac.log.start" 2>/dev/null); START=${START:-0}
   note "docker exec $I bash -c 'for f in /tmp/tmp*/log/*/*.ulg; do [ \$(stat -c %Y \$f) -gt $START ] && echo \$f; done'  # -> ulog_list.txt"
   docker exec "$I" bash -c "for f in /tmp/tmp*/log/*/*.ulg; do [ -f \"\$f\" ] && [ \$(stat -c %Y \"\$f\") -gt $START ] && echo \"\$f\"; done" > "$OUT/ulog_list.txt" || true

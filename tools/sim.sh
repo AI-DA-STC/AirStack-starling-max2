@@ -85,6 +85,7 @@ stack_env() {   # stack_env [nomk]
   RUN=_stack; OUT=$HOME/flight_logs/sim/_stack; HEAVY=$OUT; S=/tmp/svg_test
   SCENARIO=-; BAG_PREFIX=svg; CONFIG=cbf_sim.yaml
   [ "${1:-}" = nomk ] || mkdir -p "$OUT"
+  unset NUM_ROBOTS FLY_ARGS      # a value exported in the user's shell must not turn the bare stack into a one-drone run
   # shellcheck source=lib/stack.sh
   source "$REPO/tools/lib/stack.sh" || exit $?
 }
@@ -220,6 +221,7 @@ cmd_test() {
   take_lock
   OWN_SCRATCH=0; METRICS_STARTED=0
   local ISSUE_ARG=$ISSUE
+  unset NUM_ROBOTS FLY_ARGS      # only the test's own test.env may set them, never the caller's shell
   # shellcheck source=/dev/null
   source "$SIM_TESTS_DIR/$NAME/test.env"; ISSUE=$ISSUE_ARG          # test.env's ISSUE is the default; the flag wins
   NUM_ROBOTS=${NUM_ROBOTS:-3}; FLY_ARGS=${FLY_ARGS:-}                 # test.env may set them (a one-drone test: NUM_ROBOTS=1); stack.sh reads NUM_ROBOTS when sourced
@@ -265,7 +267,7 @@ print(next((s for s in p if 'running' in s), p[0]))" "$TD/plots.json") || FIRST=
   PHASE=fly
   phase_begin fly test_stdout.log armed_post.txt landing_evidence.txt status_post.json
   alive "$R" swarm_commander || fail "commander is not running"
-  say "fly: tools/sim_tests/$NAME/fly.sh $DURATION_S${FLY_ARGS:+ $FLY_ARGS} s window (takeoff -> start -> window -> land)"
+  say "fly: tools/sim_tests/$NAME/fly.sh $DURATION_S s window${FLY_ARGS:+ $FLY_ARGS} (takeoff -> start -> window -> land)"
   note "docker exec -d $R bash -ic 'bash $S/fly.sh $DURATION_S $FLY_ARGS > $S/test_stdout.log 2>&1'"
   docker exec -d "$R" bash -ic "bash $S/fly.sh $DURATION_S $FLY_ARGS > $S/test_stdout.log 2>&1"
   docker exec "$R" tail -n0 -f "$S/metrics_node.log" & TAIL=$!

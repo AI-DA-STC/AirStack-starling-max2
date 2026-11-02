@@ -232,5 +232,18 @@ class OneDroneRows(unittest.TestCase):
             self.assertTrue(all(r.verdict == "PASS" for r in rows), [(r.check, r.verdict) for r in rows])
 
 
+    def test_landing_rows_n1_pass_with_one_line(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            out = pathlib.Path(tmp); (out / "armed_post.txt").write_text("drone_1 armed: false\n")
+            rows = []; R.landing_rows(rows, out, n=1)
+            self.assertEqual([r.verdict for r in rows], ["PASS"]); self.assertIn("x1", rows[0].check)
+            rows = []; R.landing_rows(rows, out)                                       # default: one line is not enough
+            self.assertEqual([r.verdict for r in rows], ["UNVERIFIED"])
+
+    def test_parse_armed_post_bound_is_n(self):
+        self.assertEqual(R.parse_armed_post("drone_1 armed: false\ndrone_2 armed: true\n", n=1), {"drone_1": False})
+        t3 = "drone_1 armed: false\ndrone_2 armed: false\ndrone_3 armed: false\ndrone_4 armed: true\n"
+        self.assertEqual(set(R.parse_armed_post(t3)), {"drone_1", "drone_2", "drone_3"})
+
 if __name__ == "__main__":
     unittest.main()

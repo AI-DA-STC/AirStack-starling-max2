@@ -152,3 +152,68 @@ class OneDrone(unittest.TestCase):
     def test_param_keys_carry_the_yaw_gains(self):
         r = subprocess.run(["bash", "-c", f"{ENV}; source {LIB}; echo \"$PARAM_KEYS\""], capture_output=True, text=True)
         for k in ("MC_YAW_P", "MC_YAWRATE_P", "MC_YAWRATE_I", "MC_YAWRATE_D", "MC_YAWRATE_K"): self.assertIn(k, r.stdout)
+
+
+def run_n(n, body, timeout=60):
+    """Source stack.sh with NUM_ROBOTS=n, throwaway OUT/HEAVY, say() echoed, note() silent; the body stubs what it needs."""
+    pre = ENV + f"; NUM_ROBOTS={n}; source " + str(LIB) + '; OUT=$(mktemp -d); HEAVY=$(mktemp -d); say(){ echo "SAY: $*"; }; note(){ :; }; phase_begin(){ :; }; '
+    return subprocess.run(["bash", "-c", pre + body], capture_output=True, text=True, timeout=timeout)
+
+
+class OneDroneStages(unittest.TestCase):
+    """Every stage that used to hard-code 3, run with one drone against stubs (no docker). A '3 put back' mutant of any of these fails here."""
+    def test_isaac_waits_for_one_ready_and_one_config_print(self):
+        r = run_n(1, 'alive(){ return 0; }; wait_for(){ echo "NEED=$NEED"; return 0; }; isaac_evidence(){ echo "unknown_model=0 starling_cfg=1" > "$OUT/isaac_evidence.txt"; }; isaac')
+        self.assertIn("NEED=1", r.stdout, r.stdout + r.stderr)
+        self.assertNotIn("Starling2MaxConfig printed", r.stdout)
+
+    def test_interfaces_checks_only_the_spawned_drones(self):
+        r = run_n(1, 'alive(){ return 0; }; count_log(){ echo 0; }; odom_gates(){ :; }; docker(){ :; }; mavros_connected(){ echo "mc $1"; return 0; }; interfaces')
+        self.assertIn("mc 1", r.stdout, r.stdout + r.stderr); self.assertNotIn("mc 2", r.stdout); self.assertNotIn("mc 3", r.stdout)
+
+    def test_odom_gates_reads_only_the_spawned_drones(self):
+        r = run_n(1, 'rx(){ echo "$*" >> "$OUT/rx.log"; case "$*" in *pose.pose.position*) echo "x: 1";; esac; }; odom_gates; cat "$OUT/rx.log"')
+        self.assertIn("/drone_1/odometry_conversion", r.stdout, r.stdout + r.stderr)
+        self.assertNotIn("/drone_2/odometry_conversion", r.stdout); self.assertNotIn("/drone_3/odometry_conversion", r.stdout)
+        self.assertIn("interfaces: 1 drones with odometry", r.stdout)
+
+    def test_commander_accepts_one_idle_drone_and_gets_the_count(self):
+        st = '{"scenario":"goal","drones":[{"state":"IDLE","odom_fresh":true}]}'
+        r = run_n(1, "alive(){ return 0; }; count_log(){ echo 1; }; wait_for(){ return 0; }; docker(){ return 1; }; json1(){ :; }; fail(){ echo \"FAILED: $*\"; return 9; }; rx(){ echo '" + st + "'; }; commander; echo done")
+        self.assertNotIn("FAILED", r.stdout, r.stdout + r.stderr); self.assertIn("done", r.stdout)
+
+    def test_commander_refuses_two_drones_when_one_spawned(self):
+        st = '{"scenario":"goal","drones":[{"state":"IDLE","odom_fresh":true},{"state":"IDLE","odom_fresh":true}]}'
+        r = run_n(1, "alive(){ return 0; }; count_log(){ echo 1; }; wait_for(){ return 0; }; docker(){ return 1; }; json1(){ :; }; sleep(){ :; }; SECONDS=100; fail(){ echo \"FAILED: $*\"; return 9; }; rx(){ echo '" + st + "'; }; commander")
+        self.assertIn("with 1 IDLE", r.stdout, r.stdout + r.stderr)
+
+    def test_copy_ulogs_keeps_only_this_stacks_sysids(self):
+        dk = ('docker(){ case "$1" in cp) touch "$3";; exec) shift; case "$*" in *"for f in"*) printf "/a.ulg\\n/b.ulg\\n";; '
+              '*"python3 -c"*) case "$*" in *"/a.ulg"*) echo 2;; *) echo 3;; esac;; *stat*) echo 100;; esac;; esac; }; ')
+        r = run_n(1, dk + 'copy_ulogs; ls "$OUT"; cat "$OUT/ulog_sysid_map.txt"')
+        self.assertIn("ulogs_copied.ok", r.stdout, r.stdout + r.stderr)
+        self.assertIn("2 /a.ulg", r.stdout); self.assertNotIn("3 /b.ulg", r.stdout)
+        self.assertIn("not in 2", r.stdout)                                      # sysid 3 is another stack's drone: warned and skipped
+
+    def test_copy_ulogs_three_drones_still_need_2_3_4(self):
+        dk = 'docker(){ case "$1" in cp) touch "$3";; exec) shift; case "$*" in *"for f in"*) printf "/a.ulg\\n";; *"python3 -c"*) echo 2;; *stat*) echo 100;; esac;; esac; }; '
+        r = run_n(3, dk + 'copy_ulogs; ls "$OUT"')
+        self.assertNotIn("ulogs_copied.ok", r.stdout, r.stdout); self.assertIn("need 2 3 4", r.stdout)
+
+    def test_land_wait_bound_hit_marks_only_the_spawned_drones_unknown(self):
+        r = run_n(2, 'rx(){ case "$*" in *mavros/state*) sleep 2; echo "armed: true";; esac; }; land_all_and_wait 1; echo rc=$?; cat "$OUT/armed_post.txt"')
+        self.assertIn("rc=1", r.stdout, r.stdout + r.stderr); self.assertIn("drone_2 armed: UNKNOWN", r.stdout); self.assertNotIn("drone_3", r.stdout)
+
+    def test_status_lists_only_the_spawned_drones(self):
+        r = run_n(1, 'docker(){ :; }; count_log(){ echo 0; }; alive(){ return 1; }; rx(){ :; }; mavros_connected(){ return 0; }; status')
+        self.assertIn("drone_1 connected: yes", r.stdout, r.stdout + r.stderr); self.assertNotIn("drone_2", r.stdout)
+
+
+class EnvLeak(unittest.TestCase):
+    def test_stack_env_ignores_an_exported_num_robots(self):
+        sim = TOOLS / "sim.sh"
+        text = sim.read_text()
+        i = text.index("stack_env() {"); j = text.index("source \"$REPO/tools/lib/stack.sh\"", i)
+        self.assertIn("unset NUM_ROBOTS FLY_ARGS", text[i:j])
+        k = text.index('source "$SIM_TESTS_DIR/$NAME/test.env"')
+        self.assertIn("unset NUM_ROBOTS FLY_ARGS", text[k - 200:k])               # right before test.env, so only test.env can set them

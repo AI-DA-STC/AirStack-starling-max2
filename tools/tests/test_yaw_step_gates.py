@@ -4,6 +4,7 @@ fly.sh's stamp lines), fly.sh static checks, the five-file contract. Sim-only (i
 ROS side is checked statically only."""
 import importlib.util
 import math
+import os
 import pathlib
 import re
 import shutil
@@ -180,7 +181,8 @@ class YawStepGates(unittest.TestCase):
         self.assertNotEqual(R.overall_verdict(rows), "PASS")
 
     def test_only_group_0_is_gated(self):
-        changes = [(20.0 + 2 * GAP_V + 3.0, "MC_YAW_P", 1.0)]               # between set 0 and set 1
+        changes = [(20.0 + 2 * GAP_V + 3.0, "MC_YAW_P", 1.0),               # between set 0 and set 1
+                   (20.0 + 4 * GAP_V + 10.0 - 2.0, "MC_YAW_P", 2.8)]        # fly.sh restores before the 0007 turn
         with tempfile.TemporaryDirectory() as d:
             out, heavy, env = make_run(d, n=1, sets=2, sweep="MC_YAW_P=1.0", ring_sets=(1,), changes=changes)
             _, (rows, _) = rows_of(out, heavy, env)
@@ -188,6 +190,63 @@ class YawStepGates(unittest.TestCase):
         s1 = next(r for r in rows if r.check.startswith("set 1"))
         self.assertFalse(s1.gate); self.assertIn("MC_YAW_P 1", s1.measured)
         self.assertEqual(v(rows, "live parameter changes logged"), "PASS")
+        self.assertEqual(v(rows, "booted gains restored"), "PASS")
+        self.assertEqual(v(rows, "sweep completed"), "PASS")
+        self.assertIn("booted gains", m(rows, "pulse turn"))                 # the record says which gains the turn flew
+
+    def test_a_sweep_that_never_restores_fails(self):                      # review Important 2
+        changes = [(20.0 + 2 * GAP_V + 3.0, "MC_YAW_P", 1.0)]
+        with tempfile.TemporaryDirectory() as d:
+            out, heavy, env = make_run(d, n=1, sets=2, sweep="MC_YAW_P=1.0", changes=changes)
+            _, (rows, _) = rows_of(out, heavy, env)
+        self.assertEqual(v(rows, "booted gains restored"), "FAIL")
+        self.assertIn("MC_YAW_P 1", m(rows, "booted gains restored"))
+        self.assertIn("NOT booted", m(rows, "pulse turn"))
+
+    def test_a_short_sweep_is_visible(self):                               # review Important 3
+        changes = [(20.0 + 2 * GAP_V + 3.0, "MC_YAW_P", 1.0), (20.0 + 4 * GAP_V + 8.0, "MC_YAW_P", 2.8)]
+        with tempfile.TemporaryDirectory() as d:          # 3 sets asked (2 sweep sets), 2 flown
+            out, heavy, env = make_run(d, n=1, sets=2, sweep="MC_YAW_P=1.0;MC_YAW_P=1.4", changes=changes)
+            G, (rows, ctx) = rows_of(out, heavy, env)
+            self.assertEqual(v(rows, "sweep completed"), "UNVERIFIED")
+            self.assertIn("2 of 3", m(rows, "sweep completed"))
+            self.assertIn("sweep 1 of 2 set(s) flown", G.ledger_sentence(rows, ctx, "INCOMPLETE"))
+            with open(out / "test_stdout.log", "a") as fh:
+                fh.write("PARAM MISMATCH: MC_YAW_P set 1.4, read back 1.0 (mechanism None) -- sweep stopped\n")
+            _, (rows, _) = rows_of(out, heavy, env)
+        self.assertEqual(v(rows, "sweep completed"), "FAIL")
+
+    def test_no_sweep_has_no_sweep_gate(self):
+        with tempfile.TemporaryDirectory() as d:
+            out, heavy, env = make_run(d)
+            _, (rows, _) = rows_of(out, heavy, env)
+        for c in ("sweep completed", "booted gains restored"):
+            self.assertFalse(next(r for r in rows if r.check.startswith(c)).gate, c)
+
+    def test_a_nan_swing_rate_is_unverified_not_fail(self):                # review minor
+        with tempfile.TemporaryDirectory() as d:
+            out, heavy, env = make_run(d)
+            G = _load("yaw_gates_nan", YAW / "gates.py")
+            real = G.Y.analyse
+            def patched(*a, **k):
+                res = real(*a, **k); res["pulses"][1]["peak_rate_dps"] = float("nan"); return res
+            G.Y.analyse = patched
+            try:
+                rows, _ = G.build_rows(out, heavy, env)
+            finally:
+                G.Y.analyse = real
+        self.assertEqual(v(rows, "swing back"), "UNVERIFIED")
+
+    def test_the_same_value_set_twice_needs_two_log_lines(self):           # review minor
+        t1, t2, t3 = 20.0 + 2 * GAP_V + 3.0, 20.0 + 4 * GAP_V + 13.0, 20.0 + 6 * GAP_V + 23.0
+        changes = [(t1, "MC_YAW_P", 1.0), (t2, "MC_YAW_P", 1.4), (t3, "MC_YAW_P", 1.0), (t3 + 50.0, "MC_YAW_P", 2.8)]
+        with tempfile.TemporaryDirectory() as d:
+            out, heavy, env = make_run(d, n=1, sets=4, sweep="MC_YAW_P=1.0;MC_YAW_P=1.4;MC_YAW_P=1.0", changes=changes)
+            lines = (out / "changes.log").read_text().splitlines()
+            (out / "changes.log").write_text("\n".join(lines[:2] + lines[3:]) + "\n")     # the second 1.0 line lost
+            _, (rows, _) = rows_of(out, heavy, env)
+        self.assertEqual(v(rows, "live parameter changes logged"), "FAIL")
+        self.assertIn("MC_YAW_P=1", m(rows, "live parameter changes logged"))
 
     def test_a_ulog_change_missing_from_changes_log_fails(self):           # owner rule 2026-11-02
         changes = [(20.0 + 2 * GAP_V + 3.0, "MC_YAW_P", 1.0)]
@@ -297,7 +356,7 @@ class FlyScript(unittest.TestCase):
         src = (YAW / "fly.sh").read_text()
         py = src.split("<<'PY'\n", 1)[1].split("\nPY\n", 1)[0]
         compile(py, "fly.sh<<PY", "exec")
-        self.assertIn("finally:", py.split("def apply_set", 1)[1].split("def hold", 1)[0])   # an interrupted set is still logged
+        self.assertIn("finally:", py.split("def set_and_log", 1)[1].split("def apply_set", 1)[0])   # an interrupted set is still logged
 
     def test_the_pulse_program_dies_with_the_flight_script(self):
         # sim.sh's stop_fly runs `pkill -f "fly\\.sh"`: the embedded python must carry "fly.sh" in its argv or it would
@@ -318,6 +377,131 @@ class FlyScript(unittest.TestCase):
         self.assertTrue(env["DURATION_S"].isdigit(), env["DURATION_S"])   # report.py parses it: no inline comment
         self.assertTrue(env["FLY_TIMEOUT_S"].isdigit())
         self.assertIn("iron rule 9", (YAW / "test.env").read_text())
+
+
+# ------------------------------------------------------------------ fly.sh's pulse program, run with stubs (no ROS, no docker)
+RUNNER = r"""
+import os, sys, time, types
+time.sleep = lambda s: None
+os.environ["FAKE_PYPID"] = str(os.getpid())
+class _Clock:
+    def now(self): return self
+    def to_msg(self): return None
+class _Node:
+    def create_publisher(self, *a): return types.SimpleNamespace(publish=lambda m: None)
+    def create_timer(self, *a): return None
+    def get_clock(self): return _Clock()
+    def destroy_node(self): pass
+class TwistStamped:
+    def __init__(self):
+        self.header = types.SimpleNamespace(stamp=None, frame_id="")
+        self.twist = types.SimpleNamespace(angular=types.SimpleNamespace(z=0.0), linear=types.SimpleNamespace(x=0.0))
+rclpy = types.ModuleType("rclpy"); rclpy.init = lambda **k: None; rclpy.create_node = lambda n: _Node()
+rclpy.spin = lambda n: None; rclpy.shutdown = lambda: None
+sig = types.ModuleType("rclpy.signals"); sig.SignalHandlerOptions = types.SimpleNamespace(NO=0)
+gmm = types.ModuleType("geometry_msgs.msg"); gmm.TwistStamped = TwistStamped
+sys.modules.update({"rclpy": rclpy, "rclpy.signals": sig, "geometry_msgs": types.ModuleType("geometry_msgs"), "geometry_msgs.msg": gmm})
+code = open(sys.argv[1]).read()
+sys.argv = ["-", "yaw_step/fly.sh"] + sys.argv[2:]
+exec(compile(code, "fly.sh<<PY", "exec"), {"__name__": "__main__"})
+"""
+# fake ros2: the MAVROS param node as files in $FAKE_STATE (booted gains), PX4 applies a set at once
+FAKE_ROS2 = r"""#!/bin/bash
+st=$FAKE_STATE; a="$*"
+case "$a" in
+  *param/pull*) echo "success=True" ;;
+  "param get "*) p=$4; echo "Double value is: $(cat "$st/$p")" ;;
+  *param/set*ParamSetV2*)
+    [[ "$a" =~ param_id:\ ([A-Z_]+),.*double_value:\ ([-0-9.eE+]+) ]] || exit 1
+    p=${BASH_REMATCH[1]}; v=${BASH_REMATCH[2]}
+    [ -e "$st/stuck_$p" ] && { echo "success=True"; exit 0; }           # PX4 ignores further sets of this one
+    [ "${FAKE_REJECT:-}" = "$p" ] && { echo "success=True"; exit 0; }   # reports success, value unchanged
+    echo "$v" > "$st/$p"
+    [ "${FAKE_STUCK:-}" = "$p" ] && touch "$st/stuck_$p"
+    [ "${FAKE_KILL_ON_SET:-}" = "$p=$v" ] && { kill -TERM "$FAKE_PYPID"; sleep 1; }   # Ctrl-C while the call is under way
+    echo "response: success=True" ;;
+  "param set "*) echo "Setting parameter failed" ;;
+esac
+"""
+BOOTED = {"MC_YAW_P": "2.8", "MC_YAWRATE_P": "0.07", "MC_YAWRATE_I": "0.5", "MC_YAWRATE_D": "0.0", "MC_YAWRATE_K": "1.0"}
+
+
+def run_program(tmp, sweep, **fake):
+    tmp = pathlib.Path(tmp)
+    (tmp / "bin").mkdir(); (tmp / "state").mkdir()
+    (tmp / "bin" / "ros2").write_text(FAKE_ROS2); (tmp / "bin" / "ros2").chmod(0o755)
+    for k, val in BOOTED.items():
+        (tmp / "state" / k).write_text(val + "\n")
+    src = (YAW / "fly.sh").read_text()
+    (tmp / "prog.py").write_text(src.split("<<'PY'\n", 1)[1].split("\nPY\n", 1)[0])
+    (tmp / "runner.py").write_text(RUNNER)
+    env = dict(os.environ, PATH=str(tmp / "bin") + ":" + os.environ["PATH"], FAKE_STATE=str(tmp / "state"),
+               CHANGES_LOG=str(tmp / "changes.log"), PYTHONPATH=str(TOOLS / "lib"), **fake)
+    r = subprocess.run([sys.executable, str(tmp / "runner.py"), str(tmp / "prog.py"), "0", "1", "1.0", "0", sweep],
+                       capture_output=True, text=True, timeout=60, env=env)
+    log = (tmp / "changes.log").read_text().splitlines() if (tmp / "changes.log").exists() else []
+    state = {k: float((tmp / "state" / k).read_text()) for k in BOOTED}
+    return r, [C.parse_change(l) for l in log], state
+
+
+class FlyProgram(unittest.TestCase):
+    def test_a_sweep_restores_the_booted_gains_before_the_0007_check(self):        # review Important 2
+        with tempfile.TemporaryDirectory() as d:
+            r, log, state = run_program(d, "MC_YAW_P=2.0;MC_YAW_P=1.4,MC_YAWRATE_D=0.002")
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertEqual(state, {k: float(x) for k, x in BOOTED.items()})
+        rest = [c for c in log if "restore" in c["who"]]
+        self.assertEqual(sorted((c["name"], c["new"], c["readback"]) for c in rest), [("MC_YAWRATE_D", 0.0, 0.0), ("MC_YAW_P", 2.8, 2.8)])
+        self.assertEqual(next(c for c in rest if c["name"] == "MC_YAW_P")["old"], 1.4)     # old = the sweep value it replaced
+        self.assertEqual(len(log), 3 + 2)
+        self.assertLess(r.stdout.index("booted gains restored"), r.stdout.index("turn onset"))
+
+    def test_an_interrupted_set_is_still_logged_and_restored(self):                 # review Important 1
+        with tempfile.TemporaryDirectory() as d:
+            r, log, state = run_program(d, "MC_YAW_P=2.0;MC_YAW_P=1.4", FAKE_KILL_ON_SET="MC_YAW_P=1.4")
+        self.assertNotEqual(r.returncode, 0)
+        cut = [c for c in log if c["new"] == 1.4]
+        self.assertEqual(len(cut), 1, log); self.assertIn("interrupted", cut[0]["who"]); self.assertIsNone(cut[0]["readback"])
+        self.assertEqual(state["MC_YAW_P"], 2.8)                                         # restored on the way out
+        self.assertTrue(any("restore" in c["who"] and c["new"] == 2.8 for c in log))
+        self.assertNotIn("turn onset", r.stdout)
+
+    def test_a_mismatch_stops_the_sweep_and_still_restores(self):
+        with tempfile.TemporaryDirectory() as d:
+            r, log, state = run_program(d, "MC_YAW_P=2.0,MC_YAWRATE_D=0.002", FAKE_REJECT="MC_YAWRATE_D")
+        self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
+        self.assertIn("PARAM MISMATCH", r.stdout)
+        self.assertEqual(state["MC_YAW_P"], 2.8)
+        self.assertNotIn("pulse 1/1 onset", r.stdout)
+
+    def test_a_failed_restore_says_which_gains_are_left(self):
+        with tempfile.TemporaryDirectory() as d:
+            r, log, state = run_program(d, "MC_YAW_P=2.0", FAKE_STUCK="MC_YAW_P")
+        self.assertEqual(state["MC_YAW_P"], 2.0)
+        cav = [l for l in r.stdout.splitlines() if l.startswith("CAVEAT: ")]
+        self.assertEqual(len(cav), 1, r.stdout); self.assertIn("non-booted gains", cav[0]); self.assertIn("MC_YAW_P=2", cav[0])
+
+    def test_no_sweep_touches_no_parameter(self):
+        with tempfile.TemporaryDirectory() as d:
+            r, log, state = run_program(d, "")
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr); self.assertEqual(log, [])
+        self.assertIn("turn onset", r.stdout); self.assertIn("tap release", r.stdout)
+
+
+class FlyArgsCheck(unittest.TestCase):
+    """fly.sh --check validates the arguments on the host (sim.sh runs it before Isaac starts); no ROS needed."""
+    def check(self, *args):
+        return subprocess.run(["bash", str(YAW / "fly.sh"), "--check", *args], capture_output=True, text=True, timeout=20)
+
+    def test_good_arguments_pass(self):
+        for a in (("20",), ("20", "3", "1.0", "1.0"), ("20", "2", "1.0", "1.0", "MC_YAW_P=2.0;MC_YAW_P=1.4,MC_YAWRATE_D=0.002")):
+            r = self.check(*a); self.assertEqual(r.returncode, 0, (a, r.stdout + r.stderr))
+
+    def test_bad_arguments_are_refused(self):
+        for a in (("20", "2", "1.0", "1.0", "MC_YAW_P=2.0;", "MC_YAW_P=1.4"),        # a space inside SWEEP -> 6 arguments
+                  ("20", "2", "1.0", "1.0", "MC_ROLL_P=2.0"),                         # only MC_YAW* may be swept
+                  ("20", "2", "1.0", "1.0", "MC_YAW_P=two"), ("20", "x"), ("20", "0"), ("abc",)):
+            r = self.check(*a); self.assertEqual(r.returncode, 2, a); self.assertIn("fly.sh:", r.stdout + r.stderr, a)
 
 
 class Contract(unittest.TestCase):

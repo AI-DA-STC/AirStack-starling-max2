@@ -190,6 +190,9 @@ yaw_dump() {
   [ -s "$HEAVY/px4_drone_1.csv" ] || caveat "PX4 yaw dump missing (no px4_drone_1.csv: drone_1 ulog missing or the dump failed) — only tests that gate on it (yaw_step) are affected"
 }
 
+# fly_caveats: every `CAVEAT: <text>` line fly.sh printed (e.g. yaw_step's failed gain restore) becomes a record caveat
+fly_caveats() { grep '^CAVEAT: ' "$OUT/test_stdout.log" 2>/dev/null | sed 's/^CAVEAT: //' | while IFS= read -r l; do caveat "$l"; done; true; }
+
 render_report() {   # the record + verdict banner; REPORT_RC = report.py's rc (0 PASS / 2 INCOMPLETE / 1 FAIL / 3 ABORTED)
   local RTMP; RTMP=$(mktemp)
   note "python3 $REPO/tools/lib/report.py $SIM_TESTS_DIR/$NAME $OUT --heavy $HEAVY --ledger $LEDGER --issue $ISSUE"
@@ -231,6 +234,11 @@ cmd_test() {
   source "$SIM_TESTS_DIR/$NAME/test.env"; ISSUE=$ISSUE_ARG          # test.env's ISSUE is the default; the flag wins
   NUM_ROBOTS=${NUM_ROBOTS:-3}; FLY_ARGS=${FLY_ARGS:-}                 # test.env may set them (a one-drone test: NUM_ROBOTS=1); stack.sh reads NUM_ROBOTS when sourced
   S=/tmp/svg_test; OUT=$REPO/docs/record/$RUN; HEAVY=$HOME/flight_logs/sim/$RUN; ALL_MODE=1; STACK_UP=0; TAIL=""; REPORT_RC=0
+  # a fly.sh that offers `--check` (marker line "# fly-check: yes") validates its arguments here, before anything starts
+  if grep -q '^# fly-check: yes' "$SIM_TESTS_DIR/$NAME/fly.sh"; then
+    local _fa; read -ra _fa <<< "$FLY_ARGS"
+    bash "$SIM_TESTS_DIR/$NAME/fly.sh" --check "$DURATION_S" "${_fa[@]}" || { usage_line >&2; echo "error: $NAME/fly.sh refused FLY_ARGS='$FLY_ARGS' (test.env); nothing was started" >&2; exit 2; }
+  fi
   mkdir -p "$OUT" "$HEAVY"
   source "$REPO/tools/lib/stack.sh" || exit $?
   local TD=$SIM_TESTS_DIR/$NAME FIRST
@@ -280,10 +288,11 @@ print(next((s for s in p if 'running' in s), p[0]))" "$TD/plots.json") || FIRST=
   local el=0 bound=$((DURATION_S + 240))
   [[ "${FLY_TIMEOUT_S:-}" =~ ^[0-9]+$ ]] && bound=$FLY_TIMEOUT_S      # a test.env with a longer flight (yaw_step's sweep) sets its own
   while alive "$R" 'fly\.sh'; do
-    [ "$el" -ge "$bound" ] && { say "WARN: fly.sh still running after $el s — stopping it, landing everything"; stop_fly; land_all_and_wait 60 || true; break; }
+    [ "$el" -ge "$bound" ] && { caveat "fly.sh still running after $el s (watchdog $bound s) — stopped and landed by sim.sh: the flight script did not finish"; stop_fly; land_all_and_wait 60 || true; break; }
     sleep 2; el=$((el+2)); done
   stop_tail
   docker cp "$R:$S/test_stdout.log" "$OUT/" 2>/dev/null || say "WARN: no test_stdout.log"
+  fly_caveats
   grep -q 'landed:' "$OUT/test_stdout.log" || say "WARN: fly.sh did not print landed:"
   # 5  post-flight evidence
   sleep 20

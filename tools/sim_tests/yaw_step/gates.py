@@ -171,7 +171,12 @@ def build_rows(out, heavy, env):
     # ---- the ulog, the stamps, the match
     n, rate, sweep = fly_args(out, env)
     V.update(n=n, rate=rate, sets=1 + len(sweep))
-    stamps, tap = parse_stamps(R.read(out, "test_stdout.log"))
+    stdout = R.read(out, "test_stdout.log")
+    stamps, tap = parse_stamps(stdout)
+    flown = 0                                  # sets whose 2N pulses were all stamped onset + release, counted from set 0
+    while sum(1 for e in stamps if e["kind"] == "pulse" and e["k"] == flown and e["w_rel"] is not None) == 2 * n:
+        flown += 1
+    V["flown"] = flown
     csv = heavy / "px4_drone_1.csv" if heavy is not None else None
     res, why_px4 = None, None
     try:
@@ -224,14 +229,16 @@ def build_rows(out, heavy, env):
         if problem:
             return R.row(rows, check, crit, "n/a — match: " + problem, BASE, None)
         vals = [(e, value(u)) for e, u in measured]
+        nan = [(e, "`%s` NaN" % key) for e, x in vals if x is None or (isinstance(x, float) and math.isnan(x))]
+        vals = [(e, x) for e, x in vals if not any(e is n for n, _ in nan)]
         fails = [(e, x) for e, x in vals if not ok(x)]
         worst = max(vals, key=lambda ex: math.inf if ex[1] is None else ex[1]) if vals else None
         txt = "`%s`: worst %s (%s); %d of %d set-0 pulses with numbers" % (key, fmt(worst[1]) if worst else "n/a",
                                                                             label(worst[0]) if worst else "-", len(vals), len(set0))
-        if missing:
-            txt += "; no numbers: " + ", ".join(label(e) for e, _ in missing)
+        if missing or nan:
+            txt += "; no numbers: " + ", ".join("%s%s" % (label(e), " (%s)" % w if w.startswith("`") else "") for e, w in missing + nan)
         V[key] = worst[1] if worst else None
-        return R.row(rows, check, crit, txt, BASE, False if fails else (None if (missing or not vals) else True))
+        return R.row(rows, check, crit, txt, BASE, False if fails else (None if (missing or nan or not vals) else True))
 
     inf = lambda x: math.inf if x is None else x
     ov = metric_gate("heading overshoot ≤ 3.0°", "max over set-0 pulses of the heading's overrun past its final value after release (PX4 ulog, unwrapped ENU)",
@@ -349,13 +356,50 @@ def build_rows(out, heavy, env):
     elif not (out / "px4_param_changes.txt").is_file():
         R.row(rows, "live parameter changes logged", crit_c, "n/a — px4_param_changes.txt missing", "-", None)
     else:
-        unlogged = [(t, nm, val) for t, nm, val in ul_changes if not any(c["name"] == nm and _close(c["new"], val) for c in log_lines)]
+        free, unlogged = list(log_lines), []        # each changes.log line accounts for ONE ulog change (same value twice = two lines)
+        for t, nm, val in ul_changes:
+            hit = next((c for c in free if c["name"] == nm and _close(c["new"], val)), None)
+            if hit is None:
+                unlogged.append((t, nm, val))
+            else:
+                free.remove(hit)
         txt = "ulog %d change(s), changes.log %d line(s)" % (len(ul_changes), len(log_lines))
         if unlogged:
             txt += "; NOT logged: " + ", ".join("%s=%g at %.1f s" % (nm, val, t) for t, nm, val in unlogged)
         if not ul_changes:
             txt += " — the sweep changed nothing PX4 logged"
         R.row(rows, "live parameter changes logged", crit_c, txt, "-", False if unlogged else (True if ul_changes else None))
+
+    # ---- sweep completed (a short sweep must be visible) + booted gains restored before the turn / landing
+    K = 1 + len(sweep)
+    mism = [l.strip() for l in stdout.splitlines() if l.startswith("PARAM MISMATCH")]
+    crit_s = "fly.sh flew every requested gain set (2N stamped pulses each) and printed no PARAM MISMATCH"
+    if K == 1:
+        R.row(rows, "sweep completed", "informational (no sweep in this run)", "set 0 only; %d set(s) flown" % flown, "-", None, gate=False)
+    else:
+        txt = "%d of %d sets flown (set 0 + %d of %d sweep sets)" % (flown, K, max(flown - 1, 0), K - 1)
+        if mism:
+            txt += "; " + mism[0][:90]
+        R.row(rows, "sweep completed", crit_s, txt, "-", False if mism else (True if flown >= K else None))
+    crit_r = "every MC_YAW* the sweep changed is back at its ulog-header (booted) value before the patch-0007 turn (ulog changed_parameters)"
+    if not ul_changes and K == 1:
+        R.row(rows, "booted gains restored", "informational (no sweep in this run)", "nothing to restore", "-", None, gate=False)
+    elif res is None:
+        R.row(rows, "booted gains restored", crit_r, "n/a — " + why_px4, "-", None)
+    else:
+        hdr, last = res["header_gains"], {}
+        for t, nm, val in sorted(ul_changes):
+            last[nm] = (t, val)
+        left = ["%s %g (booted %s)" % (nm, val, _g(hdr.get(nm), "%g")) for nm, (t, val) in last.items() if not _close(val, hdr.get(nm))]
+        turn_u = next((u for e, u in pairs if e["kind"] == "turn" and u is not None), None)
+        late = [nm for nm, (t, val) in last.items() if turn_u is not None and t >= turn_u["onset_s"]]
+        if not last:
+            R.row(rows, "booted gains restored", crit_r, "n/a — the ulog shows no MC_YAW* change", "-", None)
+        else:
+            txt = ("all %d back at booted" % len(last)) if not left else "NOT restored: " + ", ".join(left)
+            if late:
+                txt += "; restored only after the turn onset: " + ", ".join(late)
+            R.row(rows, "booted gains restored", crit_r, txt, "-", not left and not late)
 
     # ---- landing, evidence, cross-check
     land = R.read(out, "landing_evidence.txt")
@@ -397,7 +441,10 @@ def _info_rows(rows, ctx, res, why_px4, pairs, problem, set0, measured, n, rate,
                 if u is None:
                     txt = "not in the ulog; not gated (patch-0007 check)"
                 else:
-                    txt = "turn %s at %s °/s setpoint, not gated (patch-0007 check); post_status %s" % (_g(u["turn_deg"], "%+.0f°"), _g(u["plateau_dps"], "%.0f"), u["post_status"])
+                    hdr = res["header_gains"]
+                    booted = all(_close(u["gains"].get(k), hdr.get(k)) for k in Y.GAIN_KEYS)
+                    txt = "turn %s at %s °/s, not gated; flew %s" % (_g(u["turn_deg"], "%+.0f°"), _g(u["plateau_dps"], "%.0f"),
+                                                                   "booted gains" if booted else "NOT booted: " + gains_text(u["gains"]))
                 info(label(e), "informational (0.5 rad/s for 3.14 s wall = 90° × the time scale in vehicle time, then the tap)", txt[:120])
             else:
                 info(label(e), "informational (set %d; PX4 ulog, vehicle time)" % e["k"], "not in the ulog" if u is None else _pulse_text(u))
@@ -495,11 +542,11 @@ def ledger_sentence(rows, ctx, verdict):
     st = V.get("settle_s")
     landed = _status(rows, "post-flight armed") == "PASS"
     s = ("yaw step, 1 drone, teleop_single.yaml, %d pulses ±%g rad/s per set, vehicle time: %s — overshoot %s, settle %s, ring %s, swing back %s, drift %s "
-         "(set 0: %s); sweep %d set(s); landed + DISARMED %s"
+         "(set 0: %s); sweep %d of %d set(s) flown; landed + DISARMED %s"
          % (2 * V.get("n", 3), V.get("rate", 1.0), verdict, _g(V.get("overshoot_deg"), "%.2f°"),
             "n/a" if st is None else ("not reached" if math.isinf(st) else "%.2f s" % st), _g(V.get("ring_crossings"), "%d"),
             _g(V.get("peak_rate_dps"), "%.1f °/s"), _g(V.get("xy_drift_m"), "%.3f m"), V.get("gains0", "gains n/a"),
-            V.get("sets", 1) - 1, "yes" if landed else "NOT shown"))
+            max(V.get("flown", 0) - 1, 0), V.get("sets", 1) - 1, "yes" if landed else "NOT shown"))
     for vv in ("FAIL", "UNVERIFIED"):
         names = [r.check for r in rows if r.gate and r.verdict == vv]
         if names:

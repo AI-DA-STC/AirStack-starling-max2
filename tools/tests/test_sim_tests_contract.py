@@ -146,6 +146,12 @@ class Crossing(unittest.TestCase):
             rows, _ = G.build_rows(out, heavy, env)
             self.assertEqual(verdict_of(rows, "live vs bag recompute"), "UNVERIFIED")
 
+    def test_record_setup_row_says_three_drones(self):              # report.py reads num_robots; a crossing stays 3
+        with tempfile.TemporaryDirectory() as d:
+            out, heavy, env = make_run(d)
+            self.assertIn(R.main([str(CROSSING), str(out), "--heavy", str(heavy), "--no-verdict-log"]), (0, 1, 2))
+            self.assertIn("| Sim | Isaac Sim, 3 Starling 2 Max", (out.parent / "run_record.md").read_text())
+
     def test_ledger_sentence_and_caption(self):
         with tempfile.TemporaryDirectory() as d:
             out, heavy, env = make_run(d)

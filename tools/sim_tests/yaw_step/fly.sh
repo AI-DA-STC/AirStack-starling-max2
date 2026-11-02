@@ -10,7 +10,18 @@
 # commander's 0.5 s teleop_timeout_s zeroes the yaw rate anyway. A read-back that differs from the value set prints
 # PARAM MISMATCH, stops the sweep, lands normally and exits 1. Every live change: one line in changes.log next to this
 # script (format: tools/lib/changes_log.py; sim.sh copies it to docs/record/<run>/changes.log).
+# fly-check: yes   (tools/sim.sh runs `fly.sh --check <args>` on the host before the stack starts: bad arguments never fly)
+CHECK=0; [ "${1:-}" = --check ] && { CHECK=1; shift; }
+bad(){ echo "fly.sh: $*" >&2; exit 2; }
+[ $# -le 5 ] || bad "at most 5 arguments (gap N rate pulse sweep), got $# — a space inside SWEEP? ($*)"
 GAP=${1:-20}; N=${2:-3}; RATE=${3:-1.0}; PULSE=${4:-1.0}; SWEEP=${5:-}
+NUM='[0-9]+([.][0-9]*)?([eE][-+]?[0-9]+)?'; PV="MC_YAW(RATE)?_[A-Z]+=-?$NUM"; SET="$PV(,$PV)*"
+[[ "$GAP" =~ ^$NUM$ ]] || bad "gap must be a number of seconds (got '$GAP')"
+[[ "$N" =~ ^[1-9][0-9]*$ ]] || bad "N_PER_DIRECTION must be a whole number >= 1 (got '$N')"
+[[ "$RATE" =~ ^$NUM$ ]] || bad "RATE_RAD_S must be a number (got '$RATE')"
+[[ "$PULSE" =~ ^$NUM$ ]] || bad "PULSE_S must be a number (got '$PULSE')"
+[ -z "$SWEEP" ] || [[ "$SWEEP" =~ ^$SET(\;$SET)*\;?$ ]] || bad "SWEEP must be 'P=v,P=v;P=v' with MC_YAW* names only (got '$SWEEP')"
+[ "$CHECK" = 1 ] && { echo "fly.sh: arguments ok (gap $GAP, $N per direction, rate $RATE, pulse $PULSE, sweep '${SWEEP:-none}')"; exit 0; }
 HERE=$(cd "$(dirname "$0")" && pwd)
 cd ~/AirStack/robot/ros_ws && source install/setup.bash >/dev/null 2>&1
 wait_s(){ sleep "$1"; }
@@ -117,29 +128,68 @@ def parse_sweep(s):
     return sets
 
 
-def apply_set(k, gs):
-    """Set every parameter of gain set k, read each back, log one changes.log line per parameter. True = all match."""
-    param_pull()
-    old = {p: param_get(p) for p, _ in gs}
+touched = {}                  # parameter -> its booted value (read before this run first changed it), first-touch order
+restored = {"done": False}
+
+
+def set_and_log(gs, old, who):
+    """Set (name, value) pairs, pull, read each back; one changes.log line per parameter, also when interrupted: an
+    entry is listed BEFORE its call, because a call cut short by SIGINT/SIGTERM may still have reached PX4.
+    Returns [(name, value, readback)] that did not take (no mechanism, no read-back or a different read-back)."""
     issued, rb = [], {}
     try:
         for p, val in gs:
-            t = time.time()
-            issued.append((t, p, val, param_set(p, val)))
+            issued.append([time.time(), p, val, None])
+            issued[-1][3] = param_set(p, val)
         param_pull()
-        rb = {p: param_get(p) for _, p, _, _ in issued}
-    finally:                 # an interrupted set is still a change PX4 may have applied: log it (read-back n/a)
+        for _, p, _, _ in issued:
+            rb[p] = param_get(p)
+    finally:
         for t, p, val, how in issued:
-            who = "yaw_step fly.sh sweep set %d via %s" % (k, how or "NO mechanism reported success")
-            changes_log.append_change(LOG, t, p, old.get(p), val, who, readback=rb.get(p))
-    ok = True
+            if p in rb:
+                status = "via %s" % (how or "NO mechanism reported success")
+            else:
+                status = "interrupted before the read-back (via %s)" % (how or "a call that never returned")
+            changes_log.append_change(LOG, t, p, old.get(p), val, "%s %s" % (who, status), readback=rb.get(p))
+    bad = []
     for t, p, val, how in issued:
         r = rb.get(p)
         print("[%.6f] param %s set %r readback %r via %s" % (t, p, val, r, how), flush=True)
         if how is None or r is None or abs(r - val) > 1e-4 * max(1.0, abs(val)):
-            print("PARAM MISMATCH: %s set %r, read back %r (mechanism %s) -- sweep stopped" % (p, val, r, how), flush=True)
-            ok = False
-    return ok
+            bad.append((p, val, r))
+    return bad
+
+
+def apply_set(k, gs):
+    """Gain set k of the sweep. True = every parameter read back as set."""
+    param_pull()
+    old = {p: param_get(p) for p, _ in gs}
+    for p, _ in gs:
+        touched.setdefault(p, old[p])
+    bad = set_and_log(gs, old, "yaw_step fly.sh sweep set %d" % k)
+    for p, val, r in bad:
+        print("PARAM MISMATCH: %s set %r, read back %r -- sweep stopped" % (p, val, r), flush=True)
+    return not bad
+
+
+def restore_booted(why):
+    """Every parameter the sweep touched back to its booted value, read back and logged (who = restore). A failure
+    prints one `CAVEAT: ` line naming what the running PX4 is left with (sim.sh copies it into the record)."""
+    if not touched or restored["done"]:
+        return True
+    restored["done"] = True
+    gs = [(p, b) for p, b in touched.items() if b is not None]
+    say("restoring the booted gains (%s): %s" % (why, ", ".join("%s=%g" % g for g in gs) or "none known"))
+    param_pull()
+    cur = {p: param_get(p) for p, _ in gs}
+    bad = set_and_log(gs, cur, "restore (yaw_step fly.sh, %s)" % why)
+    left = ["%s=%s (booted %s)" % (p, "?" if r is None else "%g" % r, "%g" % b) for p, b, r in bad]
+    left += ["%s=? (booted value never read)" % p for p, b in touched.items() if b is None]
+    if left:
+        print("CAVEAT: the running PX4 is left with non-booted gains after the yaw_step sweep: %s" % ", ".join(left), flush=True)
+        return False
+    stamp("booted gains restored: %s" % ", ".join("%s=%g" % g for g in gs))
+    return True
 
 
 def hold(seconds):
@@ -162,6 +212,7 @@ def main(node, pub):
             set_cmd()
             stamp("pulse %d/%d release" % (k, i + 1))
             hold(GAP)
+    restore_booted("after the sweep, before the patch-0007 check")   # the turn, the tap and the landing fly the booted gains
     # patch-0007 turn-then-tap check (INFO in gates.py; never gated as a yaw pulse)
     stamp("turn onset sign=+1 rate=%.3f" % TURN_RAD_S)
     set_cmd(wz=TURN_RAD_S)
@@ -215,6 +266,13 @@ finally:
             break
         time.sleep(0.05)
     say("pulse program done (rc %d); zeros published" % rc)
+    signal.signal(signal.SIGTERM, signal.SIG_IGN)       # a second stop must not cut the restore short
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+    try:
+        restore_booted("on exit (rc %d)" % rc)            # a stopped or mismatched sweep: no-op when already restored
+    except Exception as e:  # noqa: BLE001
+        print("CAVEAT: restoring the booted gains failed (%s: %s); the running PX4 may keep the sweep gains %s"
+              % (type(e).__name__, e, ", ".join(touched)), flush=True)
     try:
         node.destroy_node()
         rclpy.shutdown()

@@ -266,6 +266,48 @@ class SimSh(unittest.TestCase):
         self.assertIn('"$R:$S/changes.log" "$OUT/changes.log"', col)
 
 
+    def test_bad_fly_args_refuse_before_any_phase(self):                              # yaw review: fail before Isaac flies
+        import shutil
+        yaw = SIM.parent / "sim_tests" / "yaw_step"
+        with tempfile.TemporaryDirectory() as tmp:
+            td = os.path.join(tmp, "tests", "yaw_step"); os.makedirs(td)
+            for f in ("fly.sh", "gates.py", "metrics.py", "plots.json", "layout.json"):
+                shutil.copy(yaw / f, td)
+            envtxt = (yaw / "test.env").read_text().replace('FLY_ARGS="3 1.0 1.0"', 'FLY_ARGS="2 1.0 1.0 MC_YAW_P=2.0; MC_YAW_P=1.4"')
+            open(os.path.join(td, "test.env"), "w").write(envtxt)
+            env = dict(os.environ, HOME=tmp, SIM_TESTS_DIR=os.path.join(tmp, "tests"))
+            run_name = "zz_flycheck_guard_%d" % os.getpid()               # OUT is the repo's docs/record/<run>: never a real name
+            rec = SIM.parents[1] / "docs" / "record"
+            try:
+                r = run("test", "yaw_step", "--headless", "--ledger", "99999", "--issue", "NEAR-789", run_name, env=env)
+                self.assertEqual(r.returncode, 2, r.stdout + r.stderr)
+                self.assertIn("fly.sh:", r.stdout + r.stderr)
+                self.assertNotIn("== phase", r.stdout)
+                self.assertFalse((rec / run_name).exists(), "the refusal must come before any run folder")
+            finally:                                                          # a red run must not leave a record behind
+                shutil.rmtree(rec / run_name, ignore_errors=True)
+                (rec / (run_name + "_record.md")).unlink(missing_ok=True)
+
+    def test_fly_caveat_lines_become_record_caveats(self):
+        fn = self._fn("fly_caveats", "render_report() {")
+        with tempfile.TemporaryDirectory() as tmp:
+            open(os.path.join(tmp, "test_stdout.log"), "w").write("[1.0] pulse 0/1 onset\nCAVEAT: the running PX4 is left with non-booted gains: MC_YAW_P=2\n")
+            body = 'caveat(){ echo "$*" >> "$OUT/caveats.txt"; }; ' + fn + f"\nOUT={tmp}; fly_caveats"
+            subprocess.run(["bash", "-c", body], capture_output=True, text=True, timeout=20)
+            self.assertEqual(open(os.path.join(tmp, "caveats.txt")).read(), "the running PX4 is left with non-booted gains: MC_YAW_P=2\n")
+        src = SIM.read_text(); fly = src[src.index("PHASE=fly"):src.index("PHASE=metrics_stop")]
+        self.assertLess(fly.index('docker cp "$R:$S/test_stdout.log"'), fly.index("fly_caveats"))
+        self.assertIn('caveat "fly.sh still running after', fly)                     # the watchdog kill is in the record
+
+    def test_fly_check_runs_before_the_stack_only_for_scripts_that_offer_it(self):
+        src = SIM.read_text()
+        body = src[src.index("cmd_test() {"):]
+        self.assertIn("# fly-check: yes", body)
+        self.assertLess(body.index("--check"), body.index("for PHASE in precheck"))
+        self.assertIn("# fly-check: yes", (SIM.parent / "sim_tests" / "yaw_step" / "fly.sh").read_text())
+        self.assertNotIn("fly-check", (SIM.parent / "sim_tests" / "crossing" / "fly.sh").read_text())
+
+
 class LivePlotWindow(unittest.TestCase):
     """The live plot window (design 2026-10-30): opened before pause 1 in window mode, closed by metrics_stop."""
 

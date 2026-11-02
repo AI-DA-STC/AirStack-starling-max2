@@ -14,23 +14,24 @@
 
 . ${R}etc/init.d/rc.mc_defaults
 
-param set-default CA_AIRFRAME 0
+param set-default CA_AIRFRAME 0   # = real
 
-param set-default CA_ROTOR_COUNT 4
-param set-default CA_ROTOR0_PX 0.095
-param set-default CA_ROTOR0_PY 0.13
-param set-default CA_ROTOR0_KM 0.0136
-param set-default CA_ROTOR1_PX -0.095
-param set-default CA_ROTOR1_PY -0.13
-param set-default CA_ROTOR1_KM 0.0136
-param set-default CA_ROTOR2_PX 0.095
-param set-default CA_ROTOR2_PY -0.13
-param set-default CA_ROTOR2_KM -0.0136
-param set-default CA_ROTOR3_PX -0.095
-param set-default CA_ROTOR3_PY 0.13
-param set-default CA_ROTOR3_KM -0.0136
+param set-default CA_ROTOR_COUNT 4   # = real
+param set-default CA_ROTOR0_PX 0.095   # SIM-ONLY (real 0.085) CHG-0003
+param set-default CA_ROTOR0_PY 0.13   # SIM-ONLY (real 0.0625) CHG-0003
+param set-default CA_ROTOR0_KM 0.0136   # SIM-ONLY (real 0.05) CHG-0003
+param set-default CA_ROTOR1_PX -0.095   # SIM-ONLY (real -0.085) CHG-0003
+param set-default CA_ROTOR1_PY -0.13   # SIM-ONLY (real -0.0625) CHG-0003
+param set-default CA_ROTOR1_KM 0.0136   # SIM-ONLY (real 0.05) CHG-0003
+param set-default CA_ROTOR2_PX 0.095   # SIM-ONLY (real 0.085) CHG-0003
+param set-default CA_ROTOR2_PY -0.13   # SIM-ONLY (real -0.0625) CHG-0003
+param set-default CA_ROTOR2_KM -0.0136   # SIM-ONLY (real -0.05) CHG-0003
+param set-default CA_ROTOR3_PX -0.095   # SIM-ONLY (real -0.085) CHG-0003
+param set-default CA_ROTOR3_PY 0.13   # SIM-ONLY (real 0.0625) CHG-0003
+param set-default CA_ROTOR3_KM -0.0136   # SIM-ONLY (real -0.05) CHG-0003
 
-param set-default MPC_THR_HOVER 0.165   # thrust SETPOINT (pre THR_MDL_FAC); measured 0.155 in sim, real drone 0.165 — actuator sits ~0.36
+# Thrust SETPOINT (pre THR_MDL_FAC); measured 0.155 in sim, real drone 0.165 — the actuator sits ~0.36.
+param set-default MPC_THR_HOVER 0.165   # = real
 
 # Attitude / rate / position gains: the REAL Starling 1's values (starling_1_indoor_params.params,
 # ModalAI tuning for this airframe). rc.mc_defaults (Iris gains) made the sim oscillate and run
@@ -44,42 +45,43 @@ param set-default MPC_THR_HOVER 0.165   # thrust SETPOINT (pre THR_MDL_FAC); mea
 # one and the pitch inertia is 37 % below roll. Live sweep in hover, pitch-rate std:
 # x1.0 164 deg/s, x0.7 9.4 (8.5 Hz residual), x0.5 0.4 (= roll), x0.35 0.4. Yaw untouched.
 # SIM-ONLY: never copy these to the real drone's parameter set.
-param set-default MC_ROLLRATE_P 0.032
-param set-default MC_ROLLRATE_I 0.05
-param set-default MC_ROLLRATE_D 0.00065
-param set-default MC_ROLLRATE_K 1.0
-param set-default MC_PITCHRATE_P 0.032
-param set-default MC_PITCHRATE_I 0.048
-param set-default MC_PITCHRATE_D 0.00055
-param set-default MC_PITCHRATE_K 1.0
+param set-default MC_ROLLRATE_P 0.032   # SIM-ONLY (real 0.064) CHG-0003
+param set-default MC_ROLLRATE_I 0.05   # SIM-ONLY (real 0.1) CHG-0003
+param set-default MC_ROLLRATE_D 0.00065   # SIM-ONLY (real 0.0013) CHG-0003
+param set-default MC_ROLLRATE_K 1.0   # = real
+param set-default MC_PITCHRATE_P 0.032   # SIM-ONLY (real 0.064) CHG-0003
+param set-default MC_PITCHRATE_I 0.048   # SIM-ONLY (real 0.096) CHG-0003
+param set-default MC_PITCHRATE_D 0.00055   # SIM-ONLY (real 0.0011) CHG-0003
+param set-default MC_PITCHRATE_K 1.0   # = real
 # Gyro filtering as on the real drone (SITL defaults are 40 / 30 Hz; part of the same sweep).
-param set-default IMU_GYRO_CUTOFF 80
-param set-default IMU_DGYRO_CUTOFF 40
-param set-default MC_YAWRATE_P 0.07
-param set-default MC_YAWRATE_I 0.5
-param set-default MC_YAWRATE_D 0.0
-param set-default MC_YAWRATE_K 1.0
-param set-default MC_ROLL_P 8.0
-param set-default MC_PITCH_P 8.0
-param set-default MC_YAW_P 2.8
-param set-default MPC_XY_P 0.95
-param set-default MPC_Z_P 5.0
-param set-default MPC_XY_VEL_P_ACC 1.8
-param set-default MPC_Z_VEL_P_ACC 8.0
-# Outer-loop limits = the REAL Starling 1's parameter set (~/RCC_Starling_1 backup), so the
-# sim can fly the 2-6 m/s legs CMU demos (2026-10-20; were 3.0 / 3.0 / default 3 / default 1):
-param set-default MPC_XY_VEL_MAX 20.0
-param set-default MPC_ACC_HOR 6.0
-param set-default MPC_ACC_HOR_MAX 1000.0
-param set-default MPC_JERK_AUTO 4.0
-param set-default MPC_Z_VEL_MAX_UP 10.0
-param set-default MPC_Z_VEL_MAX_DN 4.0
-param set-default THR_MDL_FAC 0.9
+param set-default IMU_GYRO_CUTOFF 80   # = real
+param set-default IMU_DGYRO_CUTOFF 40   # = real
+param set-default MC_YAWRATE_P 0.07   # = real
+param set-default MC_YAWRATE_I 0.5   # = real
+param set-default MC_YAWRATE_D 0.0   # = real
+param set-default MC_YAWRATE_K 1.0   # = real
+param set-default MC_ROLL_P 8.0   # = real
+param set-default MC_PITCH_P 8.0   # = real
+param set-default MC_YAW_P 2.8   # = real
+param set-default MPC_XY_P 0.95   # = real
+param set-default MPC_Z_P 5.0   # = real
+param set-default MPC_XY_VEL_P_ACC 1.8   # = real
+param set-default MPC_Z_VEL_P_ACC 8.0   # = real
+# Outer-loop limits: the 2026-08-20 drone backup (~/RCC_Starling_1), so the sim can fly CMU's 2-6 m/s legs
+# (2026-10-20). They differ from the drone's parameter file (starling_1_indoor_params.params); each line
+# below states both values. Which set the drone flies is not settled here.
+param set-default MPC_XY_VEL_MAX 20.0   # SIM-ONLY (real 3) CHG-0003
+param set-default MPC_ACC_HOR 6.0   # SIM-ONLY (real 3) CHG-0003
+param set-default MPC_ACC_HOR_MAX 1000.0   # SIM-ONLY (real 3) CHG-0003
+param set-default MPC_JERK_AUTO 4.0   # = real
+param set-default MPC_Z_VEL_MAX_UP 10.0   # SIM-ONLY (real 2) CHG-0003
+param set-default MPC_Z_VEL_MAX_DN 4.0   # SIM-ONLY (real 0.6) CHG-0003
+param set-default THR_MDL_FAC 0.9   # = real
 
-param set-default PWM_MAIN_FUNC1 101
-param set-default PWM_MAIN_FUNC2 102
-param set-default PWM_MAIN_FUNC3 103
-param set-default PWM_MAIN_FUNC4 104
+param set-default PWM_MAIN_FUNC1 101   # SIM-ONLY (no real value) CHG-0003
+param set-default PWM_MAIN_FUNC2 102   # SIM-ONLY (no real value) CHG-0003
+param set-default PWM_MAIN_FUNC3 103   # SIM-ONLY (no real value) CHG-0003
+param set-default PWM_MAIN_FUNC4 104   # SIM-ONLY (no real value) CHG-0003
 
 # SIM-ONLY land-detector relief (2026-10-20, MILESTONES ledger #9). On the Isaac floor the
 # body keeps rocking at ~10 Hz (gyro xy median 70-115 deg/s, peaks 200+) once it has
@@ -88,4 +90,4 @@ param set-default PWM_MAIN_FUNC4 104
 # then never passes, every DISARM is "denied: not landed" and the drone sits armed for
 # 30 s+. The other gates (descent setpoint, |vz|, |vxy|, minimum thrust) stay as they
 # are. The real Starling keeps the PX4 default — never copy this to a flight parameter set.
-param set-default LNDMC_ROT_MAX 300.0
+param set-default LNDMC_ROT_MAX 300.0   # SIM-ONLY (real 30) CHG-0003

@@ -1,17 +1,17 @@
 # Sim keyboard teleop in BODY frame — design (2026-11-03)
 
-Owner decision 2026-11-03, after a three-agent panel (positions kept in the session scratchpad `panel6/`): the sim keyboard flies relative to the drone's nose, switchable to room frame with one key; the real drone is untouched. Status: **draft for owner approval**. Nothing is built before approval.
+Owner decision 2026-11-03, after a three-agent panel (positions kept in the session scratchpad `panel6/`): the sim keyboard flies relative to the drone's nose, switchable to room frame with one key; the real drone is untouched. Status: **draft for owner approval** (UI wording settled with the owner 2026-11-03). Nothing is built before approval.
 
 ## 1 · Intent and why
 
 CMU's teleop is **room-fixed**: the stick's "forward" is mocap +X, whatever way the nose points ([TELEOP.md §1](../../TELEOP.md)). That suits a pilot who watches the drone from outside. In the sim the owner watches a view that follows the drone, and after a 180° turn every key felt reversed (NEAR-789 session, 2026-11-03). The owner wants the controls of a helicopter in a flight simulator or GTA V: forward is where the nose points.
 
-The two frames get PX4's names, which are also MAVROS's: **BODY** (relative to the nose, `FRAME_BODY_NED`) and **WORLD** (relative to the room, `FRAME_LOCAL_NED`). The on-screen word, the parameter value and the docs use these two words only.
+On screen the two frames are called **Drive mode** and **Room mode** (owner, 2026-11-03, after mockups: no diagram, no jargon, one analogy each). In code, parameters and docs they carry PX4's names, which are also MAVROS's: **BODY** (relative to the nose, `FRAME_BODY_NED`) and **WORLD** (relative to the room, `FRAME_LOCAL_NED`). Drive mode = BODY and is the default.
 
 ## 2 · Goals
 
 1. In the sim, with the keyboard, ↑ moves the drone the way its nose points, ← slides it to the nose's left, and this stays true after any turn.
-2. One key (`F`) flips between BODY and WORLD while flying; the window shows which is live and the heading.
+2. One key (`F`) flips between Drive mode (BODY) and Room mode (WORLD) while flying; the window says which is live in plain words.
 3. A heading fault can never send the drone the wrong way at speed: a stale or jumping heading zeroes the horizontal command until the operator centres the keys.
 4. Nothing in CMU's tree changes, and the real-drone session cannot run any of this.
 5. Every behaviour change has a `docs/record/CHANGES.md` row and a commit body `Change: CHG-nnnn` (docs/CODING_STANDARD.md).
@@ -75,12 +75,21 @@ The relay logs `HEADING JUMP` or `HEADING STALE` once per episode, the status st
 | W / S | climb / descend |
 | A / D | turn (yaw) left / right |
 | Space | STOP (every key let go, zeros published) |
-| F | frame: BODY ⇄ WORLD |
+| F | drive mode ⇄ room mode |
 | 1 / 2 / 3 | 25 / 50 / 100 % = x.x m/s (computed from `safe_teleop`'s live `max_speed_mps`) |
 
 The Shift/Ctrl and Q/E aliases are removed (Ctrl and Shift are Foxglove shortcuts in the panel that follows; one key per action keeps the two UIs identical). Signs are unchanged: ↑ = +forward, ← = +left, A = +yaw (counter-clockwise), W = +climb; these are CMU's `controllers.py` conventions and `test_keymap.py` keeps checking them against that file.
 
-Window header, one line, read from `/teleop_frame/status`: `FRAME: BODY · heading 123° · guard ok` or `FRAME: WORLD`. Red and `RELAY MISSING — start it: tools/sim.sh keys` when the status topic is silent for 2 s. The existing status line (held keys, percent) stays and gains the m/s figure.
+Window header, **words only, no picture** (owner chose this over two mockup rounds), read from `/teleop_frame/status`. Two lines:
+
+- Drive mode: bold green **`Drive mode — ↑ is always where the nose points`**, then `Like driving a car: turn with A / D, then ↑ goes that way.`
+- Room mode: bold blue **`Room mode — ↑ is always the far wall`**, then `Like moving a chess piece: ↑ is the far wall no matter where the nose points.`
+- `F` pressed while a key is held: bold amber **`Switching to room mode — let go of the keys first`** (or "drive mode"), then `Your ↑ still works the old way until every key is up.`
+- Heading lost (guard tripped): bold red **`Heading lost — let go of the keys`**, then `The drone holds until the heading is back and every key is up.`
+- Relay missing: bold red **`Keys not reaching the drone — run tools/sim.sh keys again`** when the status topic is silent for 2 s.
+- Launched with the old yaml (no diversion, §5.8 1): the Room-mode lines in grey, and the footer omits `F`.
+
+The footer line lists the keys: `A / D turn · W / S up / down · Space STOP · F → room mode` (or `→ drive mode`). The existing status line (held keys, percent) stays and gains the m/s figure. "BODY"/"WORLD" appear only in brackets in TELEOP.md, never on screen.
 
 ### 5.5 Front door
 
@@ -115,8 +124,8 @@ The keyboard itself is covered by `tools/tests/test_keymap.py` (new words, Space
 
 A fresh reviewer read this document as the builder would. Five questions came back; the answers below are the designer's calls, not the owner's, and the owner can change any of them.
 
-1. **Relay with a silent input.** With CMU's `teleop_single.yaml` or `swarm_sim.yaml` (no diversion), `safe_teleop` feeds the commander directly and the relay hears nothing. The relay reports `input: none` in its status when `…_stick` has been silent for 1 s, and the window header then reads, in amber, `FRAME: WORLD (CMU config: safe_teleop feeds the commander directly, no relay)`. It never shows BODY without input. The relay's drone name follows `safe_teleop`'s `drone` parameter, which `keys` already reads.
-2. **`F` while a key is held.** The flip is **held until every key is let go**, like the guard's re-arm; the header shows `WORLD (pending: let go of the keys)` meanwhile. A flip never reverses a push in flight.
+1. **Relay with a silent input.** With CMU's `teleop_single.yaml` or `swarm_sim.yaml` (no diversion), `safe_teleop` feeds the commander directly and the relay hears nothing. The relay reports `input: none` in its status when `…_stick` has been silent for 1 s, and the window shows the grey Room-mode lines with no `F` in the footer (§5.4). It never claims Drive mode without input. The relay's drone name follows `safe_teleop`'s `drone` parameter, which `keys` already reads.
+2. **`F` while a key is held.** The flip is **held until every key is let go**, like the guard's re-arm; the window shows the amber "Switching to … — let go of the keys first" lines meanwhile (§5.4). A flip never reverses a push in flight.
 3. **Gamepad in sim, and the test.** The relay gets its own front door, `tools/sim.sh relay [body|world]` (start it, or report it running), which is also the hook the Foxglove panel will use. `keys` starts the relay if none runs and stops only what it started. The Cockpit tab text names `relay` for pad users. `tools/sim.sh test teleop_frame` starts and stops the relay through the same command in its `fly.sh`.
 4. **Keeping it out of the real session.** Convention is not enough for a safety goal. `tools/sim.sh keys` and `tools/sim.sh relay` refuse to start unless the `isaac-sim` container is running (the real session never has it), with a one-line reason. The relay itself has no real-drone knowledge; the container check is the guard, and it is unit-tested like the other `sim.sh` refusals.
 5. **Odometry rate below 20 Hz.** The guard thresholds are relay parameters (`heading_stale_s` 0.2, `heading_jump_rad` 0.5) whose defaults assume about 20 Hz. The test records the measured rate; below 10 Hz the run is INCOMPLETE and the builder reports before any threshold is changed. Nothing is re-derived silently.
@@ -130,6 +139,6 @@ A fresh reviewer read this document as the builder would. Five questions came ba
 
 ## 7 · Done when
 
-- Sim session with `teleop_single_ours.yaml`: after a 180° turn, ↑ still moves the drone the way the nose points; `F` flips to WORLD and ↑ moves it towards +X; the header shows the frame and heading throughout. Owner-watched video, as every hand-flown result.
+- Sim session with `teleop_single_ours.yaml`: after a 180° turn, ↑ still moves the drone the way the nose points; `F` flips to Room mode and ↑ moves it towards +X; the window's mode lines match throughout. Owner-watched video, as every hand-flown result.
 - `tools/sim.sh test teleop_frame` PASS once, ledger row written.
 - `python3 -m unittest discover tools/tests` green, docs check 0 FAIL, `changes.py audit` PASS, `teleop_real_ours.yaml` and everything under `AirStack/` unchanged (`git diff --stat AirStack/` shows only the new `_ours` yaml).

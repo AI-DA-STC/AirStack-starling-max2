@@ -17,6 +17,8 @@ First run, once the install is done:
 tools/sim.sh test crossing --issue NEAR-787 <run>                   # <run> = a NEW name; the ledger number is picked for you
 ```
 
+`tools/sim.sh down [--force]` stops the stack and first saves any PX4 ulog not yet copied to `~/flight_logs/sim/uncollected_<date>/`. `--force` skips that and those logs are lost. `tools/sim.sh param set NAME VALUE [--drone N]` sets one PX4 parameter of a sim drone live, reads it back and logs it ([CODING_STANDARD.md](../docs/CODING_STANDARD.md) §3).
+
 `tools/sim.sh doctor` says what is missing. `tools/sim.sh` with no argument prints the usage and does nothing.
 The contract behind every test is [TEST_STANDARD.md](../docs/TEST_STANDARD.md).
 The old hover + step driver still works and moves under the front door later.
@@ -25,7 +27,7 @@ The old hover + step driver still works and moves under the front door later.
 
 | Path | What it does |
 |---|---|
-| `sim.sh` | the front door: `setup · doctor · up · down · status · tabs · keys · test <name> … · figures · check` |
+| `sim.sh` | the front door: `setup · doctor · up · down [--force] · status · tabs · keys · test <name> … · figures · check · param set` |
 | `tools/lib/stack.sh` | stack start/stop and cleanup helpers — sourced by `sim.sh` and by the hover driver |
 | `tools/lib/report.py` | writes `docs/record/<run>_record.md` and the drafted LEDGER row from a test's `gates.py`; exit 0 PASS / 1 FAIL / 2 INCOMPLETE / 3 ABORTED |
 | `tools/lib/contract_check.py` | what `sim.sh check` runs on each test folder |

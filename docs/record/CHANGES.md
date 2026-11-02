@@ -1,6 +1,6 @@
 RECORD · SIM + REAL — append-only change log ([CODING_STANDARD.md](../CODING_STANDARD.md)). One line per change. The full entry (eight fields) is in the body of the commit that carries `Change: CHG-nnnn`; read it with `python3 tools/docs_check/changes.py show CHG-nnnn`. Never edit or delete a line; correct with a new one.
 
-Open (owner, 2026-11-02): which MPC limits the drone flies is unknown until a QGC check; iron rule 9's sentence waits for it.
+Open (owner, 2026-11-02): which MPC limits the drone flies is unknown until the owner supplies the drone's parameter files. The QGC check (NEAR-914) was canceled. Until then the reference is `starling_1_indoor_params.params`.
 
 # Changes
 

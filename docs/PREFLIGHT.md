@@ -1,4 +1,4 @@
-# PRE-FLIGHT & EMERGENCY CARD — v2026-10-29 — print this, laminate it, keep it in the hangar
+# PRE-FLIGHT & EMERGENCY CARD — v2026-11-02 — print this, laminate it, keep it in the hangar
 
 > **DO · WORLD: REAL DRONE — this card gates every takeoff.** This stack bypasses AirStack's `drone_safety_monitor`: **PX4's failsafes plus the RC kill switch are the entire safety net.** Reprint the card whenever the version above changes.
 
@@ -60,7 +60,7 @@ ros2 service call /swarm_commander/land  std_srvs/srv/Trigger
 6. **Lab WiFi SSIDs (`motive`, `StarlingMax2`) are OPEN** — never bridge the lab network to the internet.
 7. **After re-provisioning the drone (`voxl_setup_real_drone.sh`): REBOOT it** — never `systemctl restart voxl-px4` (it leaves the SLPI flight core dead: "params missing", sensors never publish).
 8. The shipped configs are CMU's bench values, not ours — fly the `_ours` yamls. Traps at b21d28c: `goal_single.yaml` still exempts drone_1 from the CBF, flies 10 m/s and lands at 0.8; `goal_tracking.yaml`/`goal_sequence.yaml` carry `cbf_max_speed_mps 10.0`; CMU's real configs leave `land_settle_s` unset (→ 2.0 s default). The 10-07 traps (drone_2, random_goals) are gone since the 10-20 bump.
-9. **Sim-only — never port to the drone:** the sim PX4 airframe `10090_pegasus_starling2max` (rate gains × 0.5, gyro filters 80/40 Hz, `LNDMC_ROT_MAX` 300 — real drone 30 — motor lag off), the sim stack's MAVROS respawn, and `cbf_sim.yaml`'s speeds 2.0 / 4.0 / 6.0 with its landing settle 2.0 s + disarm retry. The drone's parameters come from `starling_1_indoor_params.params` / QGC only; the real `_ours` configs fly `drone_1`, `land_settle_s` 0.0, `land_speed_mps` 0.6, `cbf_max_speed_mps` 1.0. (The sim airframe's attitude/position gains and MPC speed limits equal the real drone's — that direction is fine; the other is not.)
+9. **Sim-only — never port to the drone:** the sim PX4 airframe `10090_pegasus_starling2max` (roll and pitch rate gains × 0.5, yaw rate gains 0.25 / 0.2 — real 0.07 / 0.5, `MC_YAW_TQ_CUTOFF` 15, `LNDMC_ROT_MAX` 300 — real 30, motor lag off, MPC speed limits 20 / 6 / 1000 / 10 / 4), the sim stack's MAVROS respawn, and `cbf_sim.yaml`'s speeds 2.0 / 4.0 / 6.0 with its landing settle 2.0 s + disarm retry. The drone's parameters come from `starling_1_indoor_params.params` / QGC only; the real `_ours` configs fly `drone_1`, `land_settle_s` 0.0, `land_speed_mps` 0.6, `cbf_max_speed_mps` 1.0. Lines in the airframe marked `# = real` match the drone's file; copying them from the drone to the sim is fine, the other direction is not.
 <!-- IRON_RULES:END -->
 - Fence `hold_all` breach = freeze-hover, **still armed** — recover: `land` → `reset_fence`; `keep_in` = brakes at the wall, nothing latches. Neither is a motor cut.
 - One person's job during flight is watching QGC + holding the transmitter. Only theirs.

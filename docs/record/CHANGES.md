@@ -35,3 +35,4 @@ The last cell is `this` (the commit that carries the entry) or the sha(s) of old
 | CHG-0025 | 2026-11-02 | tooling | yaw_step fly.sh waits for swarm_commander to subscribe to the teleop topic, plus 2 s, before the first pulse; no pulses after 30 s without it | this |
 | CHG-0026 | 2026-11-03 | sim-only | tools/teleop/frame.py: BODY/WORLD rotation, pending flip, heading guard — pure logic for the relay | this |
 | CHG-0027 | 2026-11-03 | sim-only | tools/teleop/frame.py: a stale heading now stays latched (like a jump) until the keys are centred and the heading is fresh and steady, so odometry returning mid-push no longer resumes the full horizontal command | this |
+| CHG-0028 | 2026-11-03 | sim-only | new tools/teleop/teleop_frame.py relay: /svg/{drone}/teleop_command_stick + odometry in, /svg/{drone}/teleop_command out rotated BODY/WORLD (stick_frame live, flip when centred), /teleop_frame/status at 5 Hz, one zero on exit | this |

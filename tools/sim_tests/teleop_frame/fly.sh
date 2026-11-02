@@ -171,6 +171,14 @@ def wait_for_chain(node, pub):
         if RELAY in a and COMMANDER in b and pub.get_subscription_count() > 0:
             say("%s subscribed to %s, %s to %s; %.0f s more before the first yaw" % (RELAY, TOPIC, COMMANDER, OUT_TOPIC, SUB_SETTLE_S))
             time.sleep(SUB_SETTLE_S)
+            # a leftover safe_teleop or keyboard session also publishes here (zeros on a stale pad): it would interleave
+            # with the pushes. Not a refusal: one CAVEAT line (sim.sh copies it into the record) and the flight goes on.
+            me = node.get_name()
+            others = sorted({"%s%s" % (i.node_namespace.rstrip("/") + "/" if i.node_namespace not in ("", "/") else "", i.node_name)
+                             for i in node.get_publishers_info_by_topic(TOPIC) if i.node_name != me})
+            if others:
+                print("CAVEAT: other publisher(s) on %s: %s — their commands interleave with the test's pushes"
+                      % (TOPIC, ", ".join(others)), flush=True)
             return True
         time.sleep(0.2)
     return False

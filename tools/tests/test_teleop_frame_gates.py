@@ -47,7 +47,7 @@ def nose(h_deg):
     return (math.cos(psi), math.sin(psi))
 
 
-def pushes(moves=None, drift=None, skip=()):
+def pushes(moves=None, drift=None, skip=(), stamp_h=None):
     """[(label, heading h, (dx, dy) during the push, (dx, dy) after the release)]: the good flight unless overridden.
     Drive-mode pushes move along the nose; the Room-mode push at heading 180 moves along +X (not the nose, -X)."""
     out = []
@@ -56,12 +56,12 @@ def pushes(moves=None, drift=None, skip=()):
             continue
         u = (1.0, 0.0) if lab == "world" else nose(h)
         d = (moves or {}).get(lab, (MOVE_M * u[0], MOVE_M * u[1]))
-        out.append((lab, h, d, (drift or {}).get(lab, (0.0, 0.0))))
+        out.append((lab, (stamp_h or {}).get(lab, h), d, (drift or {}).get(lab, (0.0, 0.0))))
     return out
 
 
 def make_run(tmp, moves=None, drift=None, skip=(), relay_line="relay: stick_frame=body", odom_hz="average rate: 40.012",
-             unreleased=None):
+             unreleased=None, stamp_h=None):
     tmp = pathlib.Path(tmp)
     out, heavy = tmp / "run", tmp / "heavy"
     out.mkdir()
@@ -72,7 +72,7 @@ def make_run(tmp, moves=None, drift=None, skip=(), relay_line="relay: stick_fram
     meta = {"offsets": [0.0, 0.0, 0.0], "t0_unix": repr(T0_UNIX), "trigger": "drone_1", "drones": "drone_1",
             "teleop_max_speed_mps": 2.0}
     # timeline (t_s from t0): phase 1 from 2 s, phase 2 from 5 s, push k onset at 10 + 15 k, 2 s long, phase 3 last 5 s
-    plan = pushes(moves, drift, skip)
+    plan = pushes(moves, drift, skip, stamp_h)
     segs, lines = [], ["[12:00:00] takeoff: success=True, message='ok'"]
     if relay_line:
         lines.append("[12:00:01] " + relay_line)
@@ -211,6 +211,22 @@ class TeleopFrameGates(unittest.TestCase):
         self.assertEqual(v(rows, "pushes flown"), "UNVERIFIED")
         self.assertEqual(R.overall_verdict(rows), "INCOMPLETE", failing(rows))
 
+    def test_push_flown_at_the_wrong_heading_is_incomplete(self):     # the yaw loop stalled: the label's heading never flown
+        # stamped heading 0 under the label "180"; the drone moved along its real nose (+X), so direction itself passes
+        _, rows, _ = build(stamp_h={"180": 0.0}, moves={"180": (0.9, 0.0)})
+        self.assertEqual(v(rows, "push 180: heading reached"), "UNVERIFIED")
+        self.assertEqual(v(rows, "push 180: direction"), "PASS")
+        self.assertEqual(R.overall_verdict(rows), "INCOMPLETE", failing(rows))
+
+    def test_world_push_heading_is_checked_against_180(self):
+        _, rows, _ = build(stamp_h={"world": 90.0})
+        self.assertEqual(v(rows, "push world: heading reached"), "UNVERIFIED")
+
+    def test_heading_reached_wraps_at_zero(self):                      # 358 is 2 deg from 0, not 358
+        _, rows, _ = build(stamp_h={"0": 358.0}, moves={"0": (0.9 * math.cos(math.radians(2)), 0.9 * math.sin(math.radians(2)))})
+        self.assertEqual(v(rows, "push 0: heading reached"), "PASS")
+        self.assertEqual(R.overall_verdict(rows), "PASS", failing(rows))
+
     def test_unreleased_push_never_passes(self):
         _, rows, _ = build(unreleased="world")
         self.assertEqual(v(rows, "push world: direction"), "UNVERIFIED")
@@ -268,6 +284,11 @@ class FlyScript(unittest.TestCase):
             self.assertIn(n, src, n)
         self.assertRegex(src, r'python3 - [^\n]*fly\.sh')                # sim.sh's stop_fly (pkill -f fly\.sh) stops it too
         self.assertEqual(subprocess.run(["bash", "-n", str(TF / "fly.sh")]).returncode, 0)
+
+    def test_other_publishers_on_the_stick_topic_are_a_caveat(self):  # a leftover safe_teleop / keyboard session
+        src = (TF / "fly.sh").read_text()
+        self.assertIn("get_publishers_info_by_topic(TOPIC)", src)
+        self.assertIn("CAVEAT: other publisher(s) on", src)
 
     def test_the_embedded_program_compiles(self):
         src = (TF / "fly.sh").read_text()

@@ -18,6 +18,8 @@ Gate values (written before the first run, never moved after):
                         (Room mode). A frame error is 90 deg or more; 20 deg leaves room for lag and wind-up.
   moved >= 0.15 m       a 0.25 x 2.0 m/s push for 2 s commands about 1 m; 0.15 m says the push reached the drone.
   parked <= 0.30 m      distance from the release point to the point 3 s later: the drone stops when the stick is let go.
+  heading <= 10 deg     |wrap(onset heading - the push label)| (world: 180). It judges the driver, not the relay, so a
+                        miss is UNVERIFIED, never FAIL: the record must not claim a heading that was not flown.
   odometry >= 10 Hz     below that the stamps cannot be placed on the track (INCOMPLETE, never FAIL).
 A push without both stamps or without position data at its stamps never passes: its rows go UNVERIFIED.
 """
@@ -36,6 +38,7 @@ import metrics_core as M  # noqa: E402
 import report as R  # noqa: E402
 
 GATE_DIR_DEG, GATE_MOVED_M, GATE_PARK_M, GATE_ODOM_HZ = 20.0, 0.15, 0.30, 10.0
+GATE_HEADING_DEG = 10.0      # onset heading vs the push label (the yaw loop stops within ±3°)
 PARK_S = 3.0                  # parked point = release + 3 s
 MIN_DIR_M = 0.10              # below this the move has no direction to judge
 NEAR_S = 0.25                 # a stamp needs a valid position row within 0.25 s
@@ -209,7 +212,12 @@ def _push_rows(rows, lab, e, track, why, errs, V):
     c_park = "|xy at release + %.0f s − xy at release| ≤ %.2f m" % (PARK_S, GATE_PARK_M)
     checks = ("%s: direction within %.0f° of %s" % (name, GATE_DIR_DEG, "+X" if world else "the nose"), "%s: moved ≥ %.2f m" % (name, GATE_MOVED_M), "%s: parked within %.2f m" % (name, GATE_PARK_M))
 
+    target = 180.0 if world else float(lab)
+    c_head = "|onset heading − %.0f°| ≤ %.0f° (wrapped; a miss judges the yaw loop, not the relay: UNVERIFIED)" % (target, GATE_HEADING_DEG)
+    head_chk = "%s: heading reached" % name
+
     def all_na(reason):
+        R.row(rows, head_chk, c_head, "n/a — " + reason, BASE, None)
         for chk, crit in zip(checks, (c_dir, c_mov, c_park)):
             R.row(rows, chk, crit, "n/a — " + reason, BASE, None)
 
@@ -220,11 +228,18 @@ def _push_rows(rows, lab, e, track, why, errs, V):
     if track is None:
         return all_na(why)
     p_on, p_rel, p_park = track.at(e["w_on"]), track.at(e["w_rel"]), track.at(e["w_rel"] + PARK_S)
+    h = e["h_on"]
+    if math.isnan(h):
+        R.row(rows, head_chk, c_head, "n/a — no heading in the onset stamp", BASE, None)
+    else:
+        dh = abs((h - target + 180.0) % 360.0 - 180.0)
+        R.row(rows, head_chk, c_head, "%.1f° at onset (%.1f° off)%s" % (h, dh, "" if dh <= GATE_HEADING_DEG else " — the push did not fly at its label's heading"), BASE, True if dh <= GATE_HEADING_DEG else None)
     if p_on is None or p_rel is None:
-        return all_na("no valid metrics.csv row within %.2f s of the onset or release stamp" % NEAR_S)
+        for chk, crit in zip(checks, (c_dir, c_mov, c_park)):
+            R.row(rows, chk, crit, "n/a — no valid metrics.csv row within %.2f s of the onset or release stamp" % NEAR_S, BASE, None)
+        return
     d = (p_rel[0] - p_on[0], p_rel[1] - p_on[1])
     dist = math.hypot(*d)
-    h = e["h_on"]
     # direction
     if world:
         u, ref = (1.0, 0.0), "+X"

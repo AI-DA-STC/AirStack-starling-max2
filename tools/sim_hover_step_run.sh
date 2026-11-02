@@ -29,6 +29,7 @@ ISAAC_GUI=${ISAAC_GUI:-0}                    # 1 = open the Isaac Sim window (IS
 PAUSE_BEFORE_FLY=${PAUSE_BEFORE_FLY:-0}      # 1 = wait for Enter before the fly phase (start OBS / the screen recorder first)
 HEADLESS=true; [ "$ISAAC_GUI" = 1 ] && HEADLESS=false
 SCENARIO=goal; BAG_PREFIX=hover_step; CONFIG=cbf_sim.yaml          # the shared stack phases live in tools/lib/stack.sh
+unset NUM_ROBOTS FLY_ARGS FLY_TIMEOUT_S   # the hover test is always 3 drones; a value exported in the caller's shell must not change that (CHG-0021)
 # shellcheck source=lib/stack.sh
 source "$REPO/tools/lib/stack.sh" || exit $?
 

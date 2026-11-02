@@ -253,3 +253,12 @@ class Snapshots(unittest.TestCase):
     def test_param_diff_failure_is_a_caveat_not_a_fail(self):
         r = run_stub('HEAVY=$(mktemp -d); caveat(){ echo "CAVEAT: $*"; }; param_diff; echo rc=$?')
         self.assertIn("CAVEAT: params_diff.txt not written", r.stdout); self.assertIn("rc=0", r.stdout)
+
+
+class HoverDriverEnv(unittest.TestCase):                                   # final review 2026-11-02 (CHG-0021)
+    def test_hover_driver_clears_inherited_drone_count_before_the_stack(self):
+        src = (TOOLS / "sim_hover_step_run.sh").read_text()
+        unset = src.find("unset NUM_ROBOTS FLY_ARGS")
+        source = src.find('source "$REPO/tools/lib/stack.sh"')
+        self.assertGreater(unset, -1, "an exported NUM_ROBOTS would turn the 3-drone hover test into a one-drone run")
+        self.assertLess(unset, source, "the unset must come before stack.sh reads NUM_ROBOTS")

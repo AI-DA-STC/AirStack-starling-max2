@@ -441,7 +441,7 @@ tools/sim.sh check                      # OK _template, OK crossing, OK yaw_step
 tools/sim.sh test yaw_step --issue NEAR-789 sim_yaw_run1
 ```
 
-What you will see, in order: `ledger: #<n> (next free row…)`; phases `precheck` (WiFi warning) → `up` (`./airstack.sh up`, domain-1 check) → `watch` → `isaac` (the Isaac window opens; "Ready for takeoff: 1" after 2–5 min) → `interfaces` (drone_1 MAVROS connected, odometry ok) → `commander` (`SwarmCommander up | scenario=hover`, states `['IDLE']`) → `params` (MAVROS read of the airframe values) → `metrics` (`metrics liveness: /svg/test/heading_rel_deg 10 Hz`) → the live plot window (heading_rel_deg with the ±2° band) → **pause 1**: start OBS, press Enter. Flight (~2.5 min at the default `FLY_ARGS="3 1.0 1.0"`): takeoff to 1.2 m, `start` accepted (`sticks live, holding …` in the commander log), six pulses (+,−,+,−,+,−) 20 s apart — the plot shows a ~75° ramp then the ring-down after each release; one line per second in the terminal `[t= 42.0 s] phase=2 heading_rel_deg=…`; then the 90° turn, the forward tap, `land`, `landed:`. **Pause 2**: stop OBS, type `videos/<file>.mkv` or Enter. Then `collect` (ulog copied, `px4_drone_1.csv`, `px4_param_changes.txt`), `down` (stack stopped, containers stay up), the figure, and `VERDICT: <PASS|FAIL|INCOMPLETE> — worst overshoot …`. Open `docs/record/sim_yaw_run1_record.md`: the per-pulse table and the "set 0" summary are the baseline numbers.
+What you will see, in order: `ledger: #<n> (next free row…)`; phases `precheck` (WiFi warning) → `up` (`./airstack.sh up`, domain-1 check) → `watch` → `isaac` (the Isaac window opens; "Ready for takeoff: 1" after 2–5 min) → `interfaces` (drone_1 MAVROS connected, odometry ok) → `commander` (`SwarmCommander up | scenario=hover`, states `['IDLE']`) → `params` (MAVROS read of the airframe values) → `snapshot` (start PX4 parameter snapshot, `snapshot start drone_1: <n> PX4 parameters`) → `metrics` (`metrics liveness: /svg/test/heading_rel_deg 10 Hz`) → the live plot window (heading_rel_deg with the ±2° band) → **pause 1**: start OBS, press Enter. Flight (~2.5 min at the default `FLY_ARGS="3 1.0 1.0"`): takeoff to 1.2 m, `start` accepted (`sticks live, holding …` in the commander log), six pulses (+,−,+,−,+,−) 20 s apart — the plot shows a ~75° ramp then the ring-down after each release; one line per second in the terminal `[t= 42.0 s] phase=2 heading_rel_deg=…`; then the 90° turn, the forward tap, `land`, `landed:`. **Pause 2**: stop OBS, type `videos/<file>.mkv` or Enter. Then `collect` (ulog copied, `px4_drone_1.csv`, `px4_param_changes.txt`), `down` (stack stopped, containers stay up), the figure, and `VERDICT: <PASS|FAIL|INCOMPLETE> — worst overshoot …`. Open `docs/record/sim_yaw_run1_record.md`: the per-pulse table and the "set 0" summary are the baseline numbers.
 
 Tuning loop (one flight per sweep; each flight re-launches Isaac, ~10 min end to end):
 
@@ -455,7 +455,7 @@ tools/sim.sh test yaw_step --issue NEAR-789 sim_yaw_sweep1
 # 4) hand the chosen set to the executor of Task 5 (values + the two record paths), restore FLY_ARGS to "3 1.0 1.0"
 ```
 
-Which mechanism sets the gains (Task 4 settles U1/U2 at step 0; both are coded): primary `ros2 service call /drone_1/interface/mavros/param/set mavros_msgs/srv/ParamSetV2 "{force_set: false, param_id: MC_YAW_P, value: {type: 3, double_value: 2.0}}"`; fallback `ros2 param set /drone_1/interface/mavros/param MC_YAW_P 2.0`. Read-back, always: `ros2 service call /drone_1/interface/mavros/param/pull mavros_msgs/srv/ParamPull "{force_pull: true}"` then `ros2 param get /drone_1/interface/mavros/param MC_YAW_P` (prints `Double value is: 2.0`); authoritative proof = `docs/record/<run>/px4_param_changes.txt` (from the ulog's `changed_parameters`). The PX4 shell in the isaac container is NOT used (Pegasus starts PX4 without an attached console).
+Which mechanism sets the gains (since CHG-0018/0020 every set goes through `tools/lib/px4_param_set.sh`, the same helper as `tools/sim.sh param set`): it first checks that drone_N's MAVROS `fcu_url` is the sim's (`udp://:1454N@172.31.0.200:1458N`, else REFUSED), then tries `ros2 param set /drone_1/interface/mavros/param MC_YAW_P 2.0`, then `ros2 service call … mavros_msgs/srv/ParamSetV2 "{force_set: false, …}"` (never force_set). Read-back, always: `ros2 service call /drone_1/interface/mavros/param/pull mavros_msgs/srv/ParamPull "{force_pull: true}"` then `ros2 param get /drone_1/interface/mavros/param MC_YAW_P` (prints `Double value is: 2.0`); authoritative proof = `docs/record/<run>/px4_param_changes.txt` (from the ulog's `changed_parameters`). The PX4 shell in the isaac container is NOT used (Pegasus starts PX4 without an attached console).
 
 Shutdown: `tools/sim.sh test` already ran `down` (commander, interfaces, Isaac stopped; ulogs and bag in `~/flight_logs/sim/<run>/`). End of day: `cd ~/AirStack-starling-max2/AirStack && ./airstack.sh down`. If a run is interrupted: Ctrl-C lands (ABORTED record); if it prints `DRONES STILL ARMED`: `docker exec airstack-robot-desktop-1 bash -ic 'ros2 service call /swarm_commander/land std_srvs/srv/Trigger'` then `tools/sim.sh down`.
 
@@ -466,18 +466,30 @@ Reading the result: overshoot and ring count are the tuning signal; `plateau mea
 ### Task 5: Write the chosen yaw gains into the sim airframe (executor: **sonnet**; AFTER the owner session; input = the owner's chosen set + the record paths)
 
 **Files:**
-- Modify: `AirStack/simulation/isaac-sim/px4/airframes/10090_pegasus_starling2max` (lines 51–56 `MC_YAWRATE_*`, 59 `MC_YAW_P`) — the owner-approved sim-only exception
+- Modify: `AirStack/simulation/isaac-sim/px4/airframes/10090_pegasus_starling2max` — the five `param set-default MC_YAW*` lines (find them with `grep -n 'MC_YAW' <file>`; line numbers moved when CHG-0013 added the markers) — the owner-approved sim-only exception
+- Modify: `docs/record/CHANGES.md` — append the next CHG row (`python3 tools/docs_check/changes.py audit` names the next free id; CHG-0021 or later)
 - Modify: `patches/`? — No: the airframe file is ours (not a CMU patch); no patch file.
-- Test: none new; `tools/tests/test_yaw_step_gates.py::test_booted_gains_gate_reads_the_airframe_file` already ties `gates.py` to the file.
+- Test: none new; `tools/tests/test_yaw_step_gates.py::test_booted_gains_gate_reads_the_airframe_file` ties `gates.py` to the file, and `tools/tests/test_airframe_markers.py` fails unless every changed line's marker becomes `# SIM-ONLY (real <real value>) CHG-<this id>` (CODING_STANDARD §4).
 
-- [ ] **Step 1:** edit the airframe: replace the five `param set-default MC_YAW*` lines with the chosen values and add, above them, a comment in the style of the rate-gain block (lines 38–48): what was observed (the 10-30 keyboard ring, ledger `#<run1>`), the sweep (`#<sweep>`, sets tried, overshoot/settle/ring per set in one line each), why the sim plant differs (yaw torque only from rotor drag `k_m = 5.38697e-8`, motor lag off), the real values kept in the comment (`MC_YAW_P 2.8 · MC_YAWRATE_P 0.07 / I 0.5 / D 0`), and the line `# SIM-ONLY: never copy these to the real drone's parameter set.`
-- [ ] **Step 2:** `python3 -m unittest tools.tests.test_yaw_step_gates` → OK (the gate parses the new values); `tools/sim.sh check` OK.
+- [ ] **Step 1:** edit the airframe: replace the values on the five `param set-default MC_YAW*` lines with the chosen ones, change each changed line's marker from `# = real` to `# SIM-ONLY (real <v>) CHG-<this id>` (unchanged lines keep `# = real`), and add, above them, a comment in the style of the rate-gain block (lines 38–48): what was observed (the 10-30 keyboard ring, ledger `#<run1>`), the sweep (`#<sweep>`, sets tried, overshoot/settle/ring per set in one line each), why the sim plant differs (yaw torque only from rotor drag `k_m = 5.38697e-8`, motor lag off), the real values kept in the comment (`MC_YAW_P 2.8 · MC_YAWRATE_P 0.07 / I 0.5 / D 0`), and the line `# SIM-ONLY: never copy these to the real drone's parameter set.`
+- [ ] **Step 2:** `python3 -m unittest tools.tests.test_yaw_step_gates tools.tests.test_airframe_markers` → OK; full suite; `tools/sim.sh check` OK; append the CHANGES.md row (scope `sim-only`).
 - [ ] **Step 3:** the owner runs the acceptance `tools/sim.sh test yaw_step --issue NEAR-789 sim_yaw_run2` (booted gains = new values; expected PASS). The executor does not run it.
 - [ ] **Step 4: commit** (after the acceptance run exists):
 
 ```bash
-git add AirStack/simulation/isaac-sim/px4/airframes/10090_pegasus_starling2max
-git commit -m "sim airframe: yaw gains MC_YAW_P <v> / MC_YAWRATE_P <v> I <v> D <v> — kills the ~0.8 Hz heading ring after a yaw pulse (ledger #<n>); sim-only" -m "Real Starling 1 values (2.8 / 0.07 / 0.5 / 0) kept in the comment. Sweep: ledger #<sweep>. Same class as the 2026-10-20 rate gains x0.5 (ledger #10): the sim plant (rotor-drag yaw torque only, no motor lag) has a different yaw loop gain. Never port to the drone (iron rule 9)."
+git add AirStack/simulation/isaac-sim/px4/airframes/10090_pegasus_starling2max docs/record/CHANGES.md
+git commit -F - <<'MSG'
+sim airframe: yaw gains MC_YAW_P <v> / MC_YAWRATE_P <v> I <v> D <v> — kills the ~0.8 Hz heading ring after a yaw pulse; sim-only
+
+Change: CHG-<this id>
+What: 10090_pegasus_starling2max MC_YAW_P 2.8 -> <v>; MC_YAWRATE_P 0.07 -> <v>; MC_YAWRATE_I 0.5 -> <v>; MC_YAWRATE_D 0 -> <v> (markers SIM-ONLY (real ...) CHG-<this id>)
+Scope: sim-only (Isaac + Pegasus, PX4 SITL, any world, sim position source). Real drone keeps 2.8 / 0.07 / 0.5 / 0. Never port (iron rule 9).
+Why: heading rings ~0.8 Hz after a yaw key (sim_site_hand1/3 replays; yaw-step run sim_yaw_run1); sweep sim_yaw_sweep<k> chose this set. Same class as the 10-20 rate gains x0.5 (CHG-0003).
+Could affect: heading hold in every sim test, teleop turns, the crossing tests, landing detection, roll/pitch through motor saturation.
+Watch for: heading overshoot > 3 deg or ring after a turn in yaw_step; roll/pitch rate std > 0.4 deg/s in hover; landing not detected.
+Verified by: pending: tools/sim.sh test yaw_step --issue NEAR-789 sim_yaw_run2 (booted gains = these values, expected PASS); marker + gate tests.
+Revert: git revert <sha>; Isaac restart reloads the airframe.
+MSG
 ```
 
 The record/ledger/project-page entries for `sim_yaw_run1`, `sim_yaw_sweep*`, `sim_yaw_run2` follow DOCS_STANDARD §7 — in Task 6, after the owner's OK.

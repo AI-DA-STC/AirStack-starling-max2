@@ -1,4 +1,6 @@
-# Change-logging coding standard — design (draft for owner approval, 2026-11-02)
+# Change-logging coding standard — design (approved by the owner, 2026-11-02)
+
+**Owner approvals (2026-11-02):** this design; rewording iron rule 9's MPC-limits sentence in CLAUDE.md + PREFLIGHT.md to state the truth; matching the sim airframe's MPC speed/acceleration limits to the real drone's, as its own logged change AFTER the yaw retune (one change at a time), followed by re-runs of the hover/step and crossing tests (baselines ledger #17–#22) and lowering `cbf_sim.yaml`'s 4.0 m/s cap to the real 3 m/s.
 
 **Owner's request (verbatim):** "make sure to log wtv that is changed so we can debug further second order effects if it happens. Put this as a coding standard in this project."
 **Process:** quality-change skill. Panel of four (test automation, flight-test engineer, engineering manager, newcomer reader), two rounds; positions and votes in the session scratchpad (`panel4/`).

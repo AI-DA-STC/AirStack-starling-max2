@@ -381,7 +381,19 @@ cmd_keys() {
 # tools/lib/px4_param_set.sh inside the robot container (read back; the line through tools/lib/changes_log.py).
 # The line goes to the run's changes.log while a `sim.sh test` holds $SIM_LOCK, else /tmp/svg_param/changes.log in the
 # container, and always to ~/flight_logs/sim/changes.log on the host (docs/CODING_STANDARD.md §3). Exit = the helper's.
+# Ctrl-C / TERM while the helper runs: `docker exec` has no tty, so the helper may go on in the container; the host log
+# gets an UNVERIFIED "interrupted" line through the formatter and the user is told to read the container's log.
 param_die() { echo "usage: tools/sim.sh param set NAME VALUE [--drone N]" >&2; echo "error: param: $*" >&2; exit 2; }
+param_interrupted() {          # runs inside cmd_param (its locals R N NAME VALUE LOG are in scope)
+  trap - INT TERM
+  mkdir -p "$HOME/flight_logs/sim"
+  python3 "$REPO/tools/lib/changes_log.py" append --log "$HOME/flight_logs/sim/changes.log" --name "drone_$N/$NAME" \
+    --new "$VALUE" --who "sim.sh-param-set@${USER:-$(id -un)}" \
+    --unverified "interrupted on the host, outcome unknown; the helper in $R may still finish and log to $R:$LOG" >/dev/null
+  echo "param: interrupted — outcome unknown. The helper in $R may still finish: read $R:$LOG (docker exec $R tail -3 $LOG)." >&2
+  echo "param: logged as UNVERIFIED in ~/flight_logs/sim/changes.log" >&2
+  exit 130
+}
 cmd_param() {
   local R=airstack-robot-desktop-1 D=/tmp/svg_param NAME="" VALUE="" N=1 LOG out rc line
   [ "${1:-}" = set ] || param_die "only 'param set' exists (got '${1:-}')"
@@ -403,8 +415,10 @@ cmd_param() {
     && docker cp "$REPO/tools/lib/changes_log.py" "$R:$D/" >/dev/null \
     || { echo "error: param: could not copy the helper into $R" >&2; exit 2; }
   if [ -f "$SIM_LOCK" ] && kill -0 "$(cat "$SIM_LOCK" 2>/dev/null)" 2>/dev/null; then LOG=/tmp/svg_test/changes.log; else LOG=$D/changes.log; fi
+  trap param_interrupted INT TERM
   out=$(docker exec "$R" bash -ic "cd ~/AirStack/robot/ros_ws && source install/setup.bash >/dev/null 2>&1; bash $D/px4_param_set.sh $N $NAME $VALUE sim.sh-param-set@${USER:-$(id -un)} $LOG")
   rc=$?
+  trap - INT TERM
   [ -z "$out" ] || printf '%s\n' "$out"
   line=$(printf '%s\n' "$out" | grep -E ' · [^ ]+/[A-Z0-9_]+ · .* → ' | tail -1)
   if [ -n "$line" ]; then

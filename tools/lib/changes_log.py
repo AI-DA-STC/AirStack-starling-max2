@@ -1,16 +1,18 @@
 """changes_log — the ONE format of a live parameter-change line (owner rule 2026-11-02). Sim-only tooling.
 
-    <time> · <name> · <old> → <new> · <who> · readback <value>[ · MISMATCH]
+    <time> · <name> · <old> → <new> · <who> · readback <value>[ · MISMATCH][ · UNVERIFIED <why>][ · REFUSED <why>]
 
 time = ISO-8601 local time with its UTC offset (a unix float is converted); old / new / readback are numbers printed
 with %g, integers in full (unknown = "?", no read-back = "readback n/a"). name is a PX4 parameter, optionally with
 its drone: `drone_2/MC_YAW_P` (parse_change splits it into target + name). ` · MISMATCH` is added when the read-back
-differs from the value set (same()). One line per change, appended to `changes.log`. Writers: the yaw_step sweep in
+differs from the value set (same()); ` · UNVERIFIED <why>` when nothing confirmed the value PX4 holds (no read-back, a
+failed pull, no set mechanism reported success); ` · REFUSED <why>` when the set was never sent (CHG-0018). One line per change, appended to `changes.log`. Writers: the yaw_step sweep in
 tools/sim_tests/yaw_step/fly.sh and tools/lib/px4_param_set.sh (`tools/sim.sh param set`), which calls the CLI:
 
     python3 changes_log.py append --log L --name drone_N/NAME --old O --new V --who W [--readback R] [--time T]
+                                  [--unverified WHY] [--refused WHY]
 
-prints the line it appended; exit 1 when it is a MISMATCH. Readers: yaw_step gates.py (log vs the ulog's
+prints the line it appended; exit 1 when it is a MISMATCH, UNVERIFIED or REFUSED. Readers: yaw_step gates.py (log vs the ulog's
 changed_parameters) and report.py's "Changes in this run" block (changes_block, below). The append path is stdlib only:
 it runs on the host and in the robot container. Run capture (host only, CHG-0017; docs/CODING_STANDARD.md §3):
 
@@ -30,6 +32,8 @@ from pathlib import Path
 SEP = " · "
 ARROW = " → "
 MISMATCH = "MISMATCH"
+UNVERIFIED = "UNVERIFIED "
+REFUSED = "REFUSED "
 
 
 def _t(t):
@@ -73,34 +77,51 @@ def same(a, b):
     return abs(fa - fb) <= 1e-6 * max(1.0, abs(fa), abs(fb))
 
 
-def format_change(t, name, old, new, who, readback=None):
-    """One change-log line (no trailing newline)."""
+def _field(s):
+    """One field: one line, and never the separator."""
+    return _one_line(s).replace(SEP.strip(), ",").replace(" ,", ",")
+
+
+def format_change(t, name, old, new, who, readback=None, unverified=None, refused=None):
+    """One change-log line (no trailing newline). unverified / refused: the reason, appended as a marker."""
     rb = "readback n/a" if readback is None else "readback " + _v(readback)
-    parts = [_t(t), _one_line(name), _v(old) + ARROW + _v(new), _one_line(who), rb]
+    parts = [_t(t), _field(name), _v(old) + ARROW + _v(new), _field(who), rb]
     if readback is not None and not same(new, readback):
         parts.append(MISMATCH)
+    if unverified:
+        parts.append(UNVERIFIED + _field(unverified))
+    if refused:
+        parts.append(REFUSED + _field(refused))
     return SEP.join(parts)
 
 
 
 def parse_change(line):
-    """dict(time, target, name, old, new, who, readback, mismatch) of one line; None when it is not a change line.
-    target = the `drone_N` before a `/` in the name field (None without one); name = the bare parameter name."""
+    """dict(time, target, name, old, new, who, readback, mismatch, unverified, refused) of one line; None when it is not
+    a change line. target = the `drone_N` before a `/` in the name field (None without one); name = the bare parameter
+    name; unverified / refused = the reason (None without the marker)."""
     parts = line.rstrip("\n").split(SEP)
-    mismatch = len(parts) == 6 and parts[5] == MISMATCH
-    if mismatch:
-        parts = parts[:5]
-    if len(parts) != 5 or ARROW not in parts[2] or not parts[4].startswith("readback "):
+    if len(parts) < 5 or ARROW not in parts[2] or not parts[4].startswith("readback "):
         return None
+    mark = {"mismatch": False, "unverified": None, "refused": None}
+    for extra in parts[5:]:
+        if extra == MISMATCH:
+            mark["mismatch"] = True
+        elif extra.startswith(UNVERIFIED):
+            mark["unverified"] = extra[len(UNVERIFIED):]
+        elif extra.startswith(REFUSED):
+            mark["refused"] = extra[len(REFUSED):]
+        else:
+            return None
     old, _, new = parts[2].partition(ARROW)
     target, _, name = parts[1].rpartition("/")
     return dict(time=parts[0], target=target or None, name=name, old=_num(old), new=_num(new), who=parts[3],
-                readback=_num(parts[4][len("readback "):]), mismatch=mismatch)
+                readback=_num(parts[4][len("readback "):]), **mark)
 
 
-def append_change(path, t, name, old, new, who, readback=None):
+def append_change(path, t, name, old, new, who, readback=None, unverified=None, refused=None):
     """Append one line to `path` (created if missing); returns the line."""
-    line = format_change(t, name, old, new, who, readback)
+    line = format_change(t, name, old, new, who, readback, unverified=unverified, refused=refused)
     with open(path, "a") as fh:
         fh.write(line + "\n")
     return line
@@ -206,7 +227,7 @@ def changes_block(out, heavy, airframe_text=None):
               "or it predates CHG-0017)"]
     else:
         raw = [l for l in logp.read_text().splitlines() if l.strip()]
-        logged = [c for c in (parse_change(l) for l in raw) if c]
+        logged = [c for c in (parse_change(l) for l in raw) if c and not c["refused"]]      # REFUSED never reached PX4
         L += _fence(raw) if raw else ["none logged"]
 
     # 2  the ulog
@@ -364,7 +385,7 @@ def _cli_value(s):
 def main(argv=None):
     ap = argparse.ArgumentParser(prog="changes_log.py", description="the one live parameter-change line, and the run capture (sim only)")
     sub = ap.add_subparsers(dest="cmd", required=True)
-    a = sub.add_parser("append", help="append one line to --log and print it; exit 1 on a read-back MISMATCH")
+    a = sub.add_parser("append", help="append one line to --log and print it; exit 1 on MISMATCH, UNVERIFIED or REFUSED")
     a.add_argument("--log", required=True)
     a.add_argument("--time", default=None, help="default: now")
     a.add_argument("--name", required=True, help="drone_N/NAME or NAME")
@@ -372,6 +393,8 @@ def main(argv=None):
     a.add_argument("--new", required=True)
     a.add_argument("--who", required=True)
     a.add_argument("--readback", default=None)
+    a.add_argument("--unverified", default=None, help="why nothing confirmed the value (marks the line UNVERIFIED)")
+    a.add_argument("--refused", default=None, help="why the set was never sent (marks the line REFUSED)")
     d = sub.add_parser("diff", help="start/end snapshot diff of a run's heavy dir (needs PyYAML; exit 4 without)")
     d.add_argument("heavy"); d.add_argument("-o", "--out", required=True)
     u = sub.add_parser("ulog", help="every changed_parameters entry of the ulogs (needs pyulog; exit 4 without)")
@@ -388,8 +411,8 @@ def main(argv=None):
         os.makedirs(d, exist_ok=True)
     t = o.time if o.time else datetime.datetime.now()
     new, rb = _cli_value(o.new), _cli_value(o.readback)
-    print(append_change(o.log, t, o.name, _cli_value(o.old), new, o.who, readback=rb))
-    return 1 if rb is not None and not same(new, rb) else 0
+    print(append_change(o.log, t, o.name, _cli_value(o.old), new, o.who, readback=rb, unverified=o.unverified, refused=o.refused))
+    return 1 if (rb is not None and not same(new, rb)) or o.unverified or o.refused else 0
 
 
 if __name__ == "__main__":

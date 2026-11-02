@@ -69,6 +69,31 @@ class TargetAndMismatch(unittest.TestCase):
         self.assertIn("2147483647 → 1", C.format_change("t", "P", 2147483647, 1, "w"))
 
 
+class Markers(unittest.TestCase):
+    """Fix round CHG-0018: nothing confirmed = UNVERIFIED on the line; a refused set = REFUSED; both parse back."""
+    def test_unverified_is_on_the_line_and_parses(self):
+        s = C.format_change("t", "drone_1/MC_YAW_P", 2.8, 2.0, "w", unverified="no read-back")
+        self.assertTrue(s.endswith(" · readback n/a · UNVERIFIED no read-back"), s)
+        d = C.parse_change(s); self.assertEqual(d["unverified"], "no read-back"); self.assertFalse(d["mismatch"]); self.assertIsNone(d["refused"])
+
+    def test_mismatch_and_unverified_together(self):
+        d = C.parse_change(C.format_change("t", "drone_1/P", 2.8, 2.0, "w", readback=2.8, unverified="pull failed"))
+        self.assertTrue(d["mismatch"]); self.assertEqual(d["unverified"], "pull failed")
+
+    def test_refused_is_on_the_line_and_parses(self):
+        s = C.format_change("t", "drone_1/MC_YAW_P", None, 2.0, "w", refused="not the sim")
+        self.assertTrue(s.endswith(" · REFUSED not the sim"), s); self.assertEqual(C.parse_change(s)["refused"], "not the sim")
+
+    def test_a_reason_cannot_break_the_line(self):
+        s = C.format_change("t", "P", 1, 2, "w", unverified="a · b\nc")
+        self.assertEqual(C.parse_change(s)["unverified"], "a, b c")
+
+    def test_plain_lines_have_no_markers(self):
+        d = C.parse_change(C.format_change("t", "P", 2.8, 2.0, "w", readback=2.0))
+        self.assertIsNone(d["unverified"]); self.assertIsNone(d["refused"])
+        self.assertIsNone(C.parse_change("t · P · 1 → 2 · w · readback 2 · BOGUS"))
+
+
 class Cli(unittest.TestCase):
     """`python3 changes_log.py append …` — how the shell helper writes a line without its own formatter."""
     def _cli(self, *args):
@@ -88,25 +113,41 @@ class Cli(unittest.TestCase):
             r = self._cli("append", "--log", os.path.join(d, "l"), "--name", "drone_1/P", "--old", "2.8", "--new", "2.0", "--who", "w", "--readback", "2.8")
             self.assertEqual(r.returncode, 1); self.assertIn("MISMATCH", r.stdout)
 
+    def test_unverified_and_refused_exit_1(self):
+        with tempfile.TemporaryDirectory() as d:
+            for flag in ("--unverified", "--refused"):
+                r = self._cli("append", "--log", os.path.join(d, "l"), "--name", "drone_1/P", "--new", "2.0", "--who", "w", flag, "why")
+                self.assertEqual(r.returncode, 1, flag); self.assertIn(flag[2:].upper() + " why", r.stdout)
+
 
 LIB = pathlib.Path(__file__).resolve().parents[1] / "lib"
 HELPER = LIB / "px4_param_set.sh"
-# fake ros2: `param get` prints the state file, `param set` stores "<KIND> value is: <value>" unless STUCK, and
-# answers SET_REPLY; `service call` answers SVC_REPLY. Every call is appended to $CALLS.
-FAKE_ROS2 = ('#!/bin/sh\necho "$*" >> "$CALLS"\ncase "$1 $2" in\n'
-             '  "param get") cat "$STATE";;\n'
-             '  "param set") [ -n "$STUCK" ] || echo "$KIND value is: $5" > "$STATE"; echo "${SET_REPLY:-Set parameter successful}";;\n'
-             '  "service call") echo "${SVC_REPLY:-response: success=True}";;\nesac\n')
+# fake ros2: `param get <mavros node> fcu_url` prints $FCU (nothing with NO_MAVROS); `param get` of a parameter prints
+# the state file; `param set` stores "<KIND> value is: <value>" unless STUCK ("Parameter not set." with NOREAD) and
+# answers SET_REPLY; `service call …/pull` answers PULL_REPLY, any other service call SVC_REPLY. Every call is appended
+# to $CALLS as "<ROS_AUTOMATIC_DISCOVERY_RANGE>|<args>".
+FAKE_ROS2 = ('#!/bin/sh\necho "$ROS_AUTOMATIC_DISCOVERY_RANGE|$*" >> "$CALLS"\ncase "$1 $2" in\n'
+             '  "param get") if [ "$4" = fcu_url ]; then [ -n "$NO_MAVROS" ] || echo "String value is: $FCU"; else cat "$STATE"; fi;;\n'
+             '  "param set") [ -n "$STUCK" ] || echo "$KIND value is: $5" > "$STATE"; [ -z "$NOREAD" ] || echo "Parameter not set." > "$STATE"\n'
+             '               echo "${SET_REPLY:-Set parameter successful}";;\n'
+             '  "service call") case "$3" in */pull) echo "${PULL_REPLY:-response: mavros_msgs.srv.ParamPull_Response(success=True, param_received=900)}";;\n'
+             '                    *) echo "${SVC_REPLY:-response: success=True}";; esac;;\nesac\n')
+
+
+def sim_fcu(n):
+    return "udp://:%d@172.31.0.200:%d" % (14540 + n, 14580 + n)
 
 
 class Helper(unittest.TestCase):
-    def _run(self, kind, old, val, name="MC_YAW_P", **fake):
+    def _run(self, kind, old, val, name="MC_YAW_P", drone="1", **fake):
         with tempfile.TemporaryDirectory() as d:
             open(os.path.join(d, "ros2"), "w").write(FAKE_ROS2); os.chmod(os.path.join(d, "ros2"), 0o755)
             state, log, calls = os.path.join(d, "state"), os.path.join(d, "changes.log"), os.path.join(d, "calls")
             open(state, "w").write(f"{kind} value is: {old}\n" if kind else "Parameter not set.\n")
+            fake.setdefault("FCU", sim_fcu(int(drone)))
             env = dict(os.environ, PATH=d + ":" + os.environ["PATH"], STATE=state, KIND=kind or "", CALLS=calls, **fake)
-            r = subprocess.run(["bash", str(HELPER), "1", name, val, "who-1", log], capture_output=True, text=True, timeout=30, env=env)
+            env.pop("ROS_AUTOMATIC_DISCOVERY_RANGE", None)
+            r = subprocess.run(["bash", str(HELPER), drone, name, val, "who-1", log], capture_output=True, text=True, timeout=30, env=env)
             return r, (open(log).read() if os.path.exists(log) else ""), (open(calls).read() if os.path.exists(calls) else "")
 
     def test_sets_reads_back_and_logs_one_line(self):
@@ -142,6 +183,46 @@ class Helper(unittest.TestCase):
             argv = (args + ["w"])[:4] + [os.devnull]
             r = subprocess.run(["bash", str(HELPER), *argv], capture_output=True, text=True, timeout=10, env=dict(os.environ, PATH="/nonexistent:/usr/bin:/bin"))
             self.assertEqual(r.returncode, 2, args)
+
+    # ---- fix round CHG-0018
+    def test_drone_2_uses_its_own_node_and_name(self):                           # mutants: hard-coded /drone_1/ and drone_1/
+        r, log, calls = self._run("Double", "2.8", "2.0", drone="2")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("param set /drone_2/interface/mavros/param MC_YAW_P 2.0", calls)
+        self.assertIn("service call /drone_2/interface/mavros/param/pull", calls)
+        self.assertIn("param get /drone_2/interface/mavros/mavros_node fcu_url", calls)
+        self.assertNotIn("drone_1", calls); self.assertIn(" · drone_2/MC_YAW_P · ", log); self.assertNotIn("drone_1", log)
+
+    def test_both_mechanisms_failing_is_logged_unverified_and_exits_1(self):     # mutant: exit 3 without a line
+        r, log, calls = self._run("Double", "2.8", "2.0", SET_REPLY="Setting parameter failed", SVC_REPLY="response: success=False")
+        self.assertIn("ParamSetV2", calls)
+        self.assertEqual(r.returncode, 1, r.stderr); self.assertEqual(log.count("\n"), 1)
+        self.assertIn("UNVERIFIED no set mechanism reported success", log); self.assertNotIn("MISMATCH", log)
+
+    def test_no_read_back_is_unverified_and_exits_1(self):
+        r, log, _ = self._run("Double", "2.8", "2.0", NOREAD="1")
+        self.assertEqual(r.returncode, 1); self.assertIn("readback n/a · UNVERIFIED no read-back", log)
+
+    def test_a_failed_pull_is_unverified_and_exits_1(self):                      # the read-back came from a stale cache
+        r, log, _ = self._run("Double", "2.8", "2.0", PULL_REPLY="response: mavros_msgs.srv.ParamPull_Response(success=False, param_received=0)")
+        self.assertEqual(r.returncode, 1); self.assertIn("· readback 2 · UNVERIFIED param pull did not succeed", log)
+
+    def test_every_ros2_call_is_localhost_only(self):                            # SAFETY: never discover a lab-subnet MAVROS
+        _, _, calls = self._run("Double", "2.8", "2.0")
+        lines = calls.splitlines(); self.assertGreaterEqual(len(lines), 5)
+        for l in lines:
+            self.assertTrue(l.startswith("LOCALHOST|"), l)
+        self.assertIn("|param get /drone_1/interface/mavros/mavros_node fcu_url", lines[0])     # the sim check comes first
+
+    def test_refuses_a_mavros_that_is_not_the_sim(self):                         # SAFETY: real-drone isolation
+        for fcu in ("/dev/ttyTHS4:115200", "udp://:14541@192.168.9.50:14581", sim_fcu(2), "udp://:14541@172.31.0.200:14581x", None):
+            fake = {"NO_MAVROS": "1"} if fcu is None else {"FCU": fcu}
+            r, log, calls = self._run("Double", "2.8", "2.0", **fake)
+            self.assertEqual(r.returncode, 2, fcu); self.assertIn("REFUSED", r.stderr, fcu)
+            self.assertIn(" · drone_1/MC_YAW_P · ", log, fcu); self.assertIn("· REFUSED ", log, fcu)
+            self.assertEqual(r.stdout.strip().splitlines()[-1], log.strip(), fcu)    # sim.sh copies the last line to the host log
+            self.assertNotIn("param set", calls, fcu); self.assertNotIn("service call", calls, fcu)
+            self.assertNotIn("|param get /drone_1/interface/mavros/param", calls, fcu)
 
     def test_never_force_sets(self):                                              # ledger #11: force_set aborted mavros_node
         self.assertNotIn("force_set: true", HELPER.read_text())
@@ -245,6 +326,13 @@ class Block(unittest.TestCase):
         self.assertIn("did PX4 receive it?", t)
         t = self._block({"changes.log": self.LOG, "px4_param_changes_all.txt": "# ulog drone_2 drone_2_sysid3_a.ulg\n"})
         self.assertNotIn("did PX4 receive it?", t)
+
+    def test_a_refused_line_is_not_a_logged_change(self):                          # CHG-0018: REFUSED never reached PX4
+        refused = WHEN + " · drone_1/MC_YAW_P · ? → 2 · w · readback n/a · REFUSED not the sim\n"
+        t = self._block({"changes.log": refused, "px4_param_changes_all.txt": self.ULOG_HDR})
+        self.assertNotIn("did PX4 receive it?", t); self.assertIn("REFUSED not the sim", t)
+        t = self._block({"changes.log": refused, "px4_param_changes_all.txt": self.ULOG_HDR + "35.100 drone_1 MC_YAW_P 2.0\n"})
+        self.assertIn("UNLOGGED CHANGE (ulog): drone_1/MC_YAW_P", t)
 
     def test_unlogged_snapshot_change_is_flagged(self):
         t = self._block({"changes.log": "", "params_diff.txt": "swarm_commander/cbf_alpha 2.5 -> 4.7\n"})

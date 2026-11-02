@@ -699,5 +699,29 @@ class ParamSet(unittest.TestCase):
                 self.assertIn("param set NAME VALUE", r.stderr, args)
                 self.assertFalse(os.path.exists(os.path.join(tmp, "docker.log")), args)
 
+    def test_ctrl_c_logs_interrupted_on_the_host(self):                          # CHG-0018: docker exec without a tty
+        import signal, time
+        with tempfile.TemporaryDirectory() as tmp:
+            b = os.path.join(tmp, "bin"); os.makedirs(b); fake = os.path.join(b, "docker")
+            open(fake, "w").write('#!/bin/sh\necho "$@" >> %s/docker.log\ncase "$*" in *"bash /tmp/svg_param/px4_param_set.sh"*) sleep 30;; esac\nexit 0\n' % tmp)
+            os.chmod(fake, 0o755)
+            env = guarded_env(dict(os.environ, HOME=tmp, PATH=b + ":" + os.environ["PATH"]))
+            p = subprocess.Popen(["bash", str(SIM), "param", "set", "--drone", "2", "MC_YAW_P", "2.0"], env=env,
+                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, start_new_session=True)
+            dl = os.path.join(tmp, "docker.log")
+            for _ in range(100):
+                if os.path.exists(dl) and "bash /tmp/svg_param/px4_param_set.sh" in open(dl).read():
+                    break
+                time.sleep(0.05)
+            time.sleep(0.2)
+            os.killpg(p.pid, signal.SIGINT)                                       # Ctrl-C reaches the whole foreground group
+            out, err = p.communicate(timeout=20)
+            self.assertNotEqual(p.returncode, 0)
+            log = open(os.path.join(tmp, "flight_logs/sim/changes.log")).read()
+            self.assertEqual(log.count("\n"), 1, log)
+            self.assertIn(" · drone_2/MC_YAW_P · ? → 2 · sim.sh-param-set@", log)
+            self.assertIn("· UNVERIFIED interrupted", log)
+            self.assertIn("may still finish", err)
+
     def test_usage_lists_param_set(self):
         self.assertIn("param set NAME VALUE [--drone N]", run().stdout)

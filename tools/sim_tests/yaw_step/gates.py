@@ -346,7 +346,9 @@ def build_rows(out, heavy, env):
             ovr.verdict = "UNVERIFIED"
 
     # ---- live parameter changes: every MC_YAW* change PX4 applied has a changes.log line (owner rule 2026-11-02)
-    log_lines = [c for c in (changes_log.parse_change(l) for l in R.read(out, "changes.log").splitlines()) if c]
+    # drone_1's lines only (a bare name = fly.sh's sweep, which flies drone_1); a REFUSED line never reached PX4 (CHG-0018)
+    log_lines = [c for c in (changes_log.parse_change(l) for l in R.read(out, "changes.log").splitlines())
+                 if c and c["target"] in (None, "drone_1") and not c["refused"]]
     ul_changes = res["changes"] if res else []
     crit_c = "every MC_YAW* change in the ulog (px4_param_changes.txt) has a changes.log line, same name and value (owner rule 2026-11-02)"
     if not ul_changes and not log_lines and not sweep:

@@ -255,6 +255,16 @@ class YawStepGates(unittest.TestCase):
             _, (rows, _) = rows_of(out, heavy, env)
         self.assertEqual(v(rows, "live parameter changes logged"), "FAIL")
 
+    def test_a_log_line_for_another_drone_does_not_count(self):            # CHG-0018: match drone_N/, not the bare name
+        changes = [(20.0 + 2 * GAP_V + 3.0, "MC_YAW_P", 1.0)]
+        for prefix, verdict in (("drone_2/", "FAIL"), ("drone_1/", "PASS")):
+            with tempfile.TemporaryDirectory() as d:
+                out, heavy, env = make_run(d, n=1, sets=2, sweep="MC_YAW_P=1.0", changes=changes)
+                log = (out / "changes.log").read_text().replace(" · MC_YAW_P · ", " · %sMC_YAW_P · " % prefix)
+                (out / "changes.log").write_text(log)
+                _, (rows, _) = rows_of(out, heavy, env)
+            self.assertEqual(v(rows, "live parameter changes logged"), verdict, prefix)
+
     def test_no_sweep_has_no_change_gate(self):
         with tempfile.TemporaryDirectory() as d:
             out, heavy, env = make_run(d)

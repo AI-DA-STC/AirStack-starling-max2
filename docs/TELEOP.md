@@ -46,7 +46,7 @@ nose points; turn the drone 180° and forward is still the *same* wall (CMU `tel
 command is published as world-frame ENU velocity). And **the sticks do nothing until you call
 `start`** — `takeoff` climbs to `hover_positions` and holds there; only
 `/swarm_commander/start` hands the drone to the pad, and only for drones listed in the
-commander's `teleop_drones`.
+commander's `teleop_drones`. The sim keyboard is the exception: it flies in Drive mode (BODY) through our relay, §3b.
 
 Chain, end to end:
 
@@ -130,14 +130,20 @@ No pad? `tools/sim.sh keys` opens a small window that turns key presses into the
 sends. `safe_teleop` then flies the drone unchanged, with its fences, hold and speed cap. Start `safe_teleop`
 first (§4), then run `keys` in a terminal tab and click the window.
 
-| Key | Does | Pad equivalent |
+| Key | On screen | Pad equivalent |
 |---|---|---|
-| ↑ / ↓ | forward / back (pitch) | right stick |
-| ← / → | slide left / right (roll) | right stick |
-| W / S | up / down | left stick |
-| A / D | turn left / right | left stick |
-| Shift / Ctrl, Q / E | same as W / S and A / D | left stick |
-| 1 / 2 / 3 | 25 / 50 / 100 % of top speed (default 50 %) | — |
+| ↑ / ↓ | pitch: forward / back | right stick |
+| ← / → | roll: slide left / right | right stick |
+| W / S | climb / descend | left stick |
+| A / D | turn (yaw) left / right | left stick |
+| Space | STOP (every key let go, zeros published) | — |
+| F | drive mode ⇄ room mode | — |
+| 1 / 2 / 3 | 25 / 50 / 100 % = x.x m/s (from `safe_teleop`'s live `max_speed_mps`) | — |
+
+Drive mode (BODY) is the default: ↑ goes where the nose points, like driving a car. Room mode (WORLD) is the
+pad's behaviour: ↑ is always the far wall, like moving a chess piece. `F` only asks the relay to switch.
+The switch waits until every key is up, so a push in flight is never reversed. The window header shows the
+mode in words and turns red when the heading is lost.
 
 `safe_teleop` commands velocities, so roll slides the drone sideways and pitch moves it forward or back.
 Two arrow keys together fly no faster than one. There is no stick lock on the keyboard.

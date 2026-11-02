@@ -4,7 +4,7 @@ the drone with every safety it has (fences, hold on release, speed cap). Sim onl
 
 Runs inside the robot container (rclpy + Tk on the container's display); start it with `tools/sim.sh keys`.
 
-    arrows forward/back + slide (pitch/roll) · W/S up/down · A/D turn · 1/2/3 = 25/50/100 % of top speed
+    arrows forward/back + slide (pitch/roll) · W/S climb/descend · A/D turn · Space STOP · F Drive/Room mode · 1/2/3 = 25/50/100 % of top speed
 
 Safety: a key counts as released on its release event, when the window loses focus or is minimised, or after
 1 s with no event from it (a held key auto-repeats; a silent one had its release swallowed). It publishes at
@@ -25,26 +25,27 @@ import keymap as K  # noqa: E402
 RATE_HZ = 20.0
 DISCOVERY_S = 1.0            # let DDS discovery find other /joy publishers before the first count
 HELP = ("Arrows  ↑ / ↓  forward / back (pitch)      ← / →  slide left / right (roll)\n"
-        "W / S  up / down      A / D  turn left / right      (Shift/Ctrl and Q/E work too)\n"
+        "W / S  climb / descend      A / D  turn (yaw) left / right\n"
         "1 / 2 / 3  = 25 / 50 / 100 % of top speed.  No stick lock on the keyboard.\n"
         "Let go of every key and the drone holds.  Click away or minimise and every key is let go.")
 
 
 def read_safe_teleop(node, timeout_s=2.0):
-    """{'teleop_controller': str, 'deadzone': float} from the running /safe_teleop, or None if it does not answer."""
+    """{'teleop_controller': str, 'deadzone': float, 'max_speed_mps': float|None} from the running /safe_teleop, or None if it does not answer."""
     from rcl_interfaces.srv import GetParameters
     import rclpy
     cli = node.create_client(GetParameters, "/safe_teleop/get_parameters")
     if not cli.wait_for_service(timeout_sec=timeout_s):
         return None
     req = GetParameters.Request()
-    req.names = ["teleop_controller", "deadzone"]
+    req.names = ["teleop_controller", "deadzone", "max_speed_mps"]
     fut = cli.call_async(req)
     rclpy.spin_until_future_complete(node, fut, timeout_sec=timeout_s)
     if not fut.done() or fut.result() is None:
         return None
     vals = fut.result().values
-    return {"teleop_controller": vals[0].string_value, "deadzone": vals[1].double_value or K.DEADZONE}
+    return {"teleop_controller": vals[0].string_value, "deadzone": vals[1].double_value or K.DEADZONE,
+            "max_speed_mps": (vals[2].double_value or None) if len(vals) > 2 else None}
 
 
 def main(argv=None) -> int:
@@ -69,6 +70,7 @@ def main(argv=None) -> int:
 
     live = read_safe_teleop(node)
     deadzone = K.DEADZONE
+    max_speed = live["max_speed_mps"] if live is not None else None
     if live is not None:
         controller = live["teleop_controller"]
         if controller != a.profile:
@@ -99,12 +101,36 @@ def main(argv=None) -> int:
 
     root = tk.Tk()
     root.title("Keyboard teleop — keep this window focused")
+    mode_var, sentence_var, footer_var = tk.StringVar(), tk.StringVar(), tk.StringVar()
+    mode_label = tk.Label(root, textvariable=mode_var, font=("TkFixedFont", 13, "bold"), pady=4)
+    mode_label.pack()
+    tk.Label(root, textvariable=sentence_var, justify="left").pack()
     tk.Label(root, text=HELP, justify="left", font=("TkFixedFont", 11), padx=12, pady=8).pack()
+    tk.Label(root, textvariable=footer_var, justify="left", font=("TkFixedFont", 11)).pack()
     status = tk.StringVar(value="hold (no key)")
     tk.Label(root, textvariable=status, font=("TkFixedFont", 14, "bold"), fg="#0072B2", pady=6).pack()
     tk.Label(root, text=info, fg="#5F6368").pack()
     warn = tk.StringVar(value="")
     tk.Label(root, textvariable=warn, fg="#B00020", pady=4).pack()
+
+    from rcl_interfaces.msg import Parameter, ParameterType, ParameterValue
+    from rcl_interfaces.srv import SetParameters
+    from std_msgs.msg import String
+    last_status = {"line": None, "rx": 0.0}
+    node.create_subscription(String, "/teleop_frame/status",
+                             lambda m: last_status.update(line=m.data, rx=time.monotonic()), 10)
+    flip_cli = node.create_client(SetParameters, "/teleop_frame/set_parameters")
+    flip_pending = {"fut": None, "target": None}
+
+    def request_flip(status_dict):
+        """Ask the relay for the other mode; never blocks (call_async, result checked in a later tick)."""
+        if status_dict is None or flip_pending["fut"] is not None:
+            print("key_teleop: F ignored — no relay status yet" if status_dict is None else "key_teleop: F ignored — previous request still open", flush=True)
+            return
+        target = "world" if status_dict.get("frame") == "body" else "body"
+        req = SetParameters.Request()
+        req.parameters = [Parameter(name="stick_frame", value=ParameterValue(type=ParameterType.PARAMETER_STRING, string_value=target))]
+        flip_pending.update(fut=flip_cli.call_async(req), target=target)
 
     root.bind("<KeyPress>", lambda e: state.press(e.keysym, time.monotonic()))
     root.bind("<KeyRelease>", lambda e: state.release(e.keysym, time.monotonic()))
@@ -121,7 +147,23 @@ def main(argv=None) -> int:
         try:
             publish()
             now = time.monotonic()
-            status.set(state.status(now))
+            status.set(state.status(now, max_speed))
+            seen = last_status["line"] is not None and now - last_status["rx"] <= 2.0
+            sd = K.parse_status(last_status["line"]) if last_status["line"] is not None else None
+            bold, sentence, colour = K.header_lines(sd, seen)
+            mode_var.set(bold)
+            sentence_var.set(sentence)
+            mode_label.configure(fg=colour)
+            footer_var.set(K.footer_line(sd if seen else None))
+            if state.flip_requested:
+                state.flip_requested = False
+                request_flip(sd if seen else None)
+            fut = flip_pending["fut"]
+            if fut is not None and fut.done():
+                res = fut.result() if fut.exception() is None else None
+                ok = bool(res and res.results and res.results[0].successful)
+                print("key_teleop: F -> stick_frame=%s %s" % (flip_pending["target"], "accepted" if ok else "FAILED"), flush=True)
+                flip_pending.update(fut=None, target=None)
             if now - last_count["t"] >= 1.0:
                 n = max(0, node.count_publishers(a.topic) - 1)      # minus our own publisher
                 if n != last_count["n"]:

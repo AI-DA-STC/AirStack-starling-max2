@@ -4,9 +4,10 @@ Pure logic, no ROS and no Tk: key_teleop.py feeds it key events and publishes wh
 
     Up / Down      forward / back = pitch   (right stick up / down)
     Left / Right   slide left / right = roll (right stick left / right)
-    W / S          up / down                (left stick up / down = climb)
-    A / D          turn left / right        (left stick left / right = yaw)
-    Shift / Ctrl   up / down, Q / E  turn left / right (aliases of W/S and A/D)
+    W / S          climb / descend          (left stick up / down)
+    A / D          turn (yaw) left / right  (left stick left / right)
+    Space          STOP: every key let go
+    F              ask the relay to flip Drive mode <-> Room mode (this module never changes the frame itself)
     1 / 2 / 3      25 / 50 / 100 % of top speed (default 50 %; safe_teleop's dead zone is compensated)
 
 A "mode 2" layout: arrows = right stick (move), WASD = left stick (height + heading). safe_teleop commands
@@ -52,12 +53,13 @@ KEYS = {
     "left": ("left", 1.0), "right": ("left", -1.0),              # roll
     "w": ("climb", 1.0), "s": ("climb", -1.0),
     "a": ("yaw", 1.0), "d": ("yaw", -1.0),
-    "shift_l": ("climb", 1.0), "shift_r": ("climb", 1.0),        # aliases from the first layout
-    "control_l": ("climb", -1.0), "control_r": ("climb", -1.0),
-    "q": ("yaw", 1.0), "e": ("yaw", -1.0),
 }
-WORDS = {("forward", 1.0): "forward", ("forward", -1.0): "back", ("left", 1.0): "left", ("left", -1.0): "right",
-         ("yaw", 1.0): "turn left", ("yaw", -1.0): "turn right", ("climb", 1.0): "up", ("climb", -1.0): "down"}
+WORDS = {("forward", 1.0): "pitch: forward", ("forward", -1.0): "pitch: back",
+         ("left", 1.0): "roll: slide left", ("left", -1.0): "roll: slide right",
+         ("yaw", 1.0): "turn (yaw) left", ("yaw", -1.0): "turn (yaw) right",
+         ("climb", 1.0): "climb", ("climb", -1.0): "descend"}
+STOP_SHOWN_S = 1.0
+GREY, GREEN, BLUE, AMBER, RED = "#6b7280", "#0a7a3c", "#1d4ed8", "#b45309", "#B00020"
 
 
 def stick_for(frac, width):
@@ -81,11 +83,20 @@ class KeyState:
         self._down = set()
         self._released = {}            # key -> release time, cancelled by a press within DEBOUNCE_S
         self._last = {}                # key -> time of its last press or release event
+        self.flip_requested = False    # F pressed; the window asks the relay, then clears this
+        self.stop_at = None            # time of the last Space
 
     def press(self, keysym, t):
         k = _norm(keysym)
         if k in SCALES:
             self.scale = SCALES[k]
+            return
+        if k == "space":
+            self.all_up()
+            self.stop_at = t
+            return
+        if k == "f":
+            self.flip_requested = True
             return
         if k in KEYS:
             self._settle(t)
@@ -120,7 +131,7 @@ class KeyState:
         out = {"forward": 0.0, "left": 0.0, "yaw": 0.0, "climb": 0.0}
         for k in self._down:
             stick, sign = KEYS[k]
-            out[stick] += sign                       # opposite keys cancel to 0; a key and its alias clamp to 1
+            out[stick] += sign                       # opposite keys cancel to 0; a repeated key clamps to 1
         out = {s: max(-1.0, min(1.0, v)) for s, v in out.items()}
         h = (out["forward"] ** 2 + out["left"] ** 2) ** 0.5
         if h > 1.0:                                  # diagonal: same speed as straight (safe_teleop does not cap it)
@@ -137,7 +148,58 @@ class KeyState:
     def buttons(self):
         return [0] * N_BUTTONS
 
-    def status(self, t):
-        st = self.sticks(t)
-        held = [WORDS[(s, 1.0 if v > 0 else -1.0)] for s, v in st.items() if v]
-        return "%s  ·  %d %% of top speed" % (", ".join(held) or "hold (no key)", round(self.scale * 100))
+    def status(self, t, max_speed_mps=None):
+        if self.stop_at is not None and t - self.stop_at < STOP_SHOWN_S:
+            words = "STOP"
+        else:
+            st = self.sticks(t)
+            held = [WORDS[(s, 1.0 if v > 0 else -1.0)] for s, v in st.items() if v]
+            words = ", ".join(held) or "hold (no key)"
+        out = "%s  ·  %d %% of top speed" % (words, round(self.scale * 100))
+        if max_speed_mps is not None:
+            out += " = %.1f m/s" % (self.scale * max_speed_mps)
+        return out
+
+
+def parse_status(line):
+    """The relay's `key=value ...` status line as a dict; numbers become floats (nan stays nan)."""
+    out = {}
+    for tok in str(line).split():
+        if "=" in tok:
+            k, v = tok.split("=", 1)
+            if k in ("heading_deg", "heading_age_s"):
+                try:
+                    v = float(v)
+                except ValueError:
+                    v = float("nan")
+            out[k] = v
+    return out
+
+
+_ROOM = ("Room mode — ↑ is always the far wall", "Like moving a chess piece: ↑ is the far wall no matter where the nose points.")
+_DRIVE = ("Drive mode — ↑ is always where the nose points", "Like driving a car: turn with A / D, then ↑ goes that way.")
+
+
+def header_lines(status, relay_seen):
+    """(bold line, sentence, colour) for the window header; wording is spec 5.4 (words only)."""
+    if status is None or not relay_seen:
+        return ("Keys not reaching the drone — run tools/sim.sh keys again", "", RED)
+    if status.get("input") == "none":
+        return _ROOM + (GREY,)
+    if status.get("guard", "ok") != "ok":
+        return ("Heading lost — let go of the keys", "The drone holds until the heading is back and every key is up.", RED)
+    pending = status.get("pending", "none")
+    if pending != "none":
+        name = "room" if pending == "world" else "drive"
+        return ("Switching to %s mode — let go of the keys first" % name,
+                "Your ↑ still works the old way until every key is up.", AMBER)
+    if status.get("frame") == "world":
+        return _ROOM + (BLUE,)
+    return _DRIVE + (GREEN,)
+
+
+def footer_line(status):
+    base = "A / D turn · W / S up / down · Space STOP"
+    if status is None or status.get("input") == "none":
+        return base
+    return base + (" · F → drive mode" if status.get("frame") == "world" else " · F → room mode")

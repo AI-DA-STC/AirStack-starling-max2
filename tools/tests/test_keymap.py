@@ -48,24 +48,25 @@ class Keys(unittest.TestCase):
         cases = {"Up": (self.p.forward_axis, 1.0), "Down": (self.p.forward_axis, -1.0),
                  "Left": (self.p.left_axis, 1.0), "Right": (self.p.left_axis, -1.0),
                  "w": (self.p.climb_axis, 1.0), "s": (self.p.climb_axis, -1.0),
-                 "a": (self.p.yaw_axis, 1.0), "d": (self.p.yaw_axis, -1.0),
-                 "Shift_L": (self.p.climb_axis, 1.0), "Control_L": (self.p.climb_axis, -1.0),
-                 "Shift_R": (self.p.climb_axis, 1.0), "Control_R": (self.p.climb_axis, -1.0),
-                 "q": (self.p.yaw_axis, 1.0), "e": (self.p.yaw_axis, -1.0)}
+                 "a": (self.p.yaw_axis, 1.0), "d": (self.p.yaw_axis, -1.0)}
         for key, (idx, val) in cases.items():
             s = K.KeyState("dragonrise_usb", scale=1.0); s.press(key, 1.0)
             a = s.axes(1.05)
             self.assertEqual(a[idx], val, key)
             self.assertEqual(sum(1 for v in a if v), 1, key)
 
-    def test_alias_and_main_key_together_never_exceed_full_stick(self):
-        self.assertEqual(self.held("w", "Shift_L")[self.p.climb_axis], 1.0)
-        s = K.KeyState("dragonrise_usb", scale=1.0); s.press("a", 1.0); s.press("e", 1.0)
-        self.assertEqual(s.axes(1.05)[self.p.yaw_axis], 0.0)                  # opposite directions cancel
+    def test_aliases_are_gone(self):
+        for key in ("Shift_L", "Shift_R", "Control_L", "Control_R", "q", "e"):
+            s = K.KeyState("dragonrise_usb", scale=1.0); s.press(key, 1.0)
+            self.assertEqual(set(s.axes(1.05)), {0.0}, key)
+
+    def test_two_keys_of_one_stick_never_exceed_full_stick(self):
+        s = K.KeyState("dragonrise_usb", scale=1.0); s.press("Up", 1.0); s.press("Up", 1.01)      # auto-repeat
+        self.assertEqual(s.axes(1.05)[self.p.forward_axis], 1.0)
 
     def test_uppercase_from_a_held_shift_is_the_same_key(self):
-        a = self.held("Shift_L", "A")                       # Shift held turns "a" into "A": still turn left
-        self.assertEqual(a[self.p.yaw_axis], 1.0); self.assertEqual(a[self.p.climb_axis], 1.0)
+        a = self.held("A")                                  # CapsLock/Shift turns "a" into "A": still turn left
+        self.assertEqual(a[self.p.yaw_axis], 1.0)
         self.s.release("A", 2.0)
         self.assertEqual(axes(self.s, 3.0)[self.p.yaw_axis], 0.0)
 
@@ -81,7 +82,7 @@ class Keys(unittest.TestCase):
         self.assertEqual(s.scale, 1.0)
 
     def test_unknown_keys_do_nothing(self):
-        self.assertEqual(set(self.held("x", "F5", "space")), {0.0})
+        self.assertEqual(set(self.held("x", "F5")), {0.0})
 
 
 class Speed(unittest.TestCase):
@@ -127,7 +128,7 @@ class Safety(unittest.TestCase):
 
     def test_focus_loss_releases_every_key_at_once(self):
         s = K.KeyState("dragonrise_usb", scale=1.0)
-        for k in ("w", "a", "q", "Shift_L"):
+        for k in ("w", "a", "Up", "d"):
             s.press(k, 1.0)
         s.all_up()
         self.assertEqual(set(s.axes(1.0)), {0.0})
@@ -135,7 +136,51 @@ class Safety(unittest.TestCase):
     def test_status_line_names_held_keys_and_scale(self):
         s = K.KeyState("dragonrise_usb"); s.press("Up", 1.0); s.press("w", 1.0)
         line = s.status(1.1)
-        self.assertIn("forward", line); self.assertIn("up", line); self.assertIn("50 %", line); self.assertIn("top speed", line)
+        self.assertIn("pitch: forward", line); self.assertIn("climb", line); self.assertIn("50 %", line); self.assertIn("top speed", line)
+
+    def test_space_releases_everything_and_reads_stop(self):
+        s = K.KeyState("dragonrise_usb"); s.press("Up", 1.0); s.press("a", 1.0); s.press("space", 1.2)
+        self.assertEqual(set(s.axes(1.25)), {0.0}); self.assertIn("STOP", s.status(1.25))
+        self.assertNotIn("STOP", s.status(2.5))
+
+    def test_f_is_a_flip_request_not_a_stick(self):
+        s = K.KeyState("dragonrise_usb"); s.press("f", 1.0)
+        self.assertTrue(s.flip_requested); self.assertEqual(set(s.axes(1.05)), {0.0})
+
+    def test_status_line_uses_the_new_words_and_speed(self):
+        s = K.KeyState("dragonrise_usb", scale=0.5); s.press("Up", 1.0); s.press("Left", 1.0)
+        self.assertEqual(s.status(1.05, max_speed_mps=2.0), "pitch: forward, roll: slide left  ·  50 % of top speed = 1.0 m/s")
+
+    def test_parse_status(self):
+        d = K.parse_status("frame=body pending=none heading_deg=123.0 heading_age_s=0.05 guard=ok input=ok")
+        self.assertEqual(d["frame"], "body"); self.assertEqual(d["heading_deg"], 123.0); self.assertEqual(d["guard"], "ok")
+
+    def test_header_lines_for_every_status(self):
+        P = K.parse_status
+        drive = K.header_lines(P("frame=body pending=none heading_deg=1 heading_age_s=0.1 guard=ok input=ok"), True)
+        self.assertEqual(drive[0], "Drive mode — ↑ is always where the nose points"); self.assertTrue(drive[1].startswith("Like driving a car"))
+        self.assertEqual(drive[2], K.GREEN)
+        room = K.header_lines(P("frame=world pending=none heading_deg=1 heading_age_s=0.1 guard=ok input=ok"), True)
+        self.assertEqual(room[0], "Room mode — ↑ is always the far wall"); self.assertEqual(room[2], K.BLUE)
+        pend = K.header_lines(P("frame=body pending=world heading_deg=1 heading_age_s=0.1 guard=ok input=ok"), True)
+        self.assertEqual(pend[0], "Switching to room mode — let go of the keys first"); self.assertEqual(pend[2], K.AMBER)
+        lost = K.header_lines(P("frame=body pending=none heading_deg=nan heading_age_s=nan guard=stale input=ok"), True)
+        self.assertEqual(lost[0], "Heading lost — let go of the keys"); self.assertEqual(lost[2], K.RED)
+        self.assertEqual(K.header_lines(None, False)[0], "Keys not reaching the drone — run tools/sim.sh keys again")
+        self.assertEqual(K.header_lines(P("frame=body pending=none heading_deg=1 heading_age_s=0.1 guard=ok input=ok"), False)[2], K.RED)
+        old = K.header_lines(P("frame=body pending=none heading_deg=1 heading_age_s=0.1 guard=ok input=none"), True)
+        self.assertEqual(old[0], "Room mode — ↑ is always the far wall"); self.assertEqual(old[2], K.GREY)
+        for lines in (drive, room, pend, lost, old):
+            for w in ("BODY", "WORLD", "CMU"):
+                self.assertNotIn(w, lines[0] + lines[1])
+
+    def test_footer_follows_the_mode(self):
+        P = K.parse_status
+        self.assertEqual(K.footer_line(P("frame=body pending=none heading_deg=1 heading_age_s=0.1 guard=ok input=ok")),
+                         "A / D turn · W / S up / down · Space STOP · F → room mode")
+        self.assertTrue(K.footer_line(P("frame=world pending=none heading_deg=1 heading_age_s=0.1 guard=ok input=ok")).endswith("F → drive mode"))
+        for st in (None, P("frame=body pending=none heading_deg=1 heading_age_s=0.1 guard=ok input=none")):
+            self.assertNotIn("F →", K.footer_line(st))
 
 
 if __name__ == "__main__":
@@ -183,3 +228,20 @@ class WindowReviewFixes(unittest.TestCase):
     def test_an_error_in_the_loop_publishes_zeros_and_closes(self):
         tick = self.SRC[self.SRC.index("def tick():"):self.SRC.index("def close():")]
         self.assertRegex(tick, r"except Exception[\s\S]{0,300}close\(\)")
+
+    def test_help_footer_has_space_and_f_and_no_aliases(self):
+        src = (HERE.parent / "teleop" / "keymap.py").read_text() + self.SRC
+        self.assertIn("Space STOP", src); self.assertIn("F → room mode", src)
+        help_text = self.SRC[self.SRC.index("HELP = ("):self.SRC.index("def read_safe_teleop")]
+        for bad in ("Shift", "Ctrl", "Q / E", "Q/E"):
+            self.assertNotIn(bad, help_text)
+        self.assertNotIn("Shift", (HERE.parent / "teleop" / "keymap.py").read_text().split("def _norm")[0])
+
+    def test_reads_max_speed_and_status_topic(self):
+        self.assertRegex(self.SRC, r'req\.names = \[[^\]]*"max_speed_mps"')
+        self.assertIn("/teleop_frame/status", self.SRC); self.assertIn("/teleop_frame/set_parameters", self.SRC)
+
+    def test_f_never_blocks_the_tick(self):
+        tick = self.SRC[self.SRC.index("def tick():"):self.SRC.index("def close():")]
+        self.assertIn("call_async", self.SRC); self.assertNotIn("spin_until_future_complete", tick)
+        self.assertIn("flip_requested", tick)

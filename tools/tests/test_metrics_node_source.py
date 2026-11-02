@@ -22,3 +22,11 @@ class NodeSource(unittest.TestCase):
             self.assertIn(needle, src, needle)
     def test_recompute_names_missing_params(self):
         self.assertIn("lacks param(s)", (LIVE / "bag_recompute.py").read_text())
+
+    def test_node_and_recompute_pass_orientation_and_yaw_rate(self):
+        for f in ("metrics_node.py", "bag_recompute.py"):
+            src = (LIVE / f).read_text()
+            self.assertIn("pose.pose.orientation", src, f); self.assertIn("twist.twist.angular", src, f)
+
+    def test_node_status_line_uses_the_core_formatter(self):
+        self.assertIn("M.status_text(", (LIVE / "metrics_node.py").read_text())

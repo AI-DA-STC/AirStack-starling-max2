@@ -601,3 +601,155 @@ class CsvLineParserStream(unittest.TestCase):
         for ln in self.LINES:
             p.feed(ln)
         self.assertEqual((meta, cols, rows.tolist()), (p.meta, p.columns, p.rows))
+
+
+def yaw_quat(yaw_deg, pitch_deg=0.0, roll_deg=0.0):
+    """(x, y, z, w) of the ZYX (yaw, pitch, roll) rotation, ENU, yaw counter-clockwise positive."""
+    cy, sy = math.cos(math.radians(yaw_deg) / 2), math.sin(math.radians(yaw_deg) / 2)
+    cp, sp = math.cos(math.radians(pitch_deg) / 2), math.sin(math.radians(pitch_deg) / 2)
+    cr, sr = math.cos(math.radians(roll_deg) / 2), math.sin(math.radians(roll_deg) / 2)
+    return (sr * cp * cy - cr * sp * sy, cr * sp * cy + sr * cp * sy, cr * cp * sy - sr * sp * cy, cr * cp * cy + sr * sp * sy)
+
+
+def yaw_tracker(yaws_deg, ang_z=0.3, t0=2.0, dt=0.1):
+    """Tracker fed one odometry per drone per yaw sample; phase 2 from the first sample on (start heading = yaws[0])."""
+    tr = synth.make_tracker(); tr.update_status(synth.straight_status(t0))
+    pos, vel = synth.straight_world(t0)
+    for i, yaw in enumerate(yaws_deg):
+        for d in synth.DRONES:
+            tr.update_odom(d, t0 + dt * i, pos[d] - tr.offsets[d], vel[d], yaw_quat(yaw), ang_z)
+        tr.frame(t0 + dt * i)
+    return tr, t0 + dt * (len(yaws_deg) - 1)
+
+
+class Heading(unittest.TestCase):
+    def test_yaw_from_quat_quarter_turn(self):
+        self.assertAlmostEqual(M.yaw_from_quat(0, 0, math.sin(math.pi / 4), math.cos(math.pi / 4)), math.pi / 2, places=9)
+
+    def test_yaw_sign_is_enu_counter_clockwise_positive(self):   # Review Focus 5
+        # body +x rotated from room +x (east) towards room +y (north) = counter-clockwise seen from above = +yaw
+        x, y, z, w = q = yaw_quat(30.0)
+        self.assertGreater(2 * (x * y + w * z), 0.0)              # body x-axis has a +y (north) component
+        self.assertAlmostEqual(M.yaw_from_quat(*q), math.radians(30.0), places=9)
+        self.assertAlmostEqual(M.yaw_from_quat(*yaw_quat(-30.0)), math.radians(-30.0), places=9)
+
+    def test_yaw_from_quat_ignores_roll_and_pitch(self):
+        self.assertAlmostEqual(M.yaw_from_quat(*yaw_quat(30.0, pitch_deg=10.0, roll_deg=-5.0)), math.radians(30.0), places=9)
+
+    def test_heading_nan_without_quaternion(self):          # crossing callers never pass one
+        tr = seen_tracker({d: 2.0 for d in synth.DRONES})
+        f = tr.frame(2.0)
+        self.assertEqual((f.yaw, f.yaw_rate), ({}, {}))
+        for fn in (M.heading_deg, M.heading_rel_deg, M.yaw_rate_dps):
+            self.assertTrue(math.isnan(fn(f, "drone_1")), fn.__name__)
+
+    def test_heading_rel_unwraps_across_pi(self):            # Review Focus 1
+        tr, t = yaw_tracker([170, 175, 179, -179, -175, -170])
+        f = tr.frame(t)
+        self.assertAlmostEqual(M.heading_rel_deg(f, "drone_1"), 20.0, places=6)
+        self.assertAlmostEqual(M.heading_deg(f, "drone_1"), -170.0, places=6)   # absolute heading stays wrapped
+        self.assertAlmostEqual(M.yaw_rate_dps(f, "drone_1"), math.degrees(0.3), places=6)
+
+    def test_heading_rel_unwraps_clockwise_across_pi(self):
+        tr, t = yaw_tracker([-170, -178, 178, 170], ang_z=-0.3)
+        f = tr.frame(t)
+        self.assertAlmostEqual(M.heading_rel_deg(f, "drone_1"), -20.0, places=6)
+        self.assertAlmostEqual(M.yaw_rate_dps(f, "drone_1"), -math.degrees(0.3), places=6)
+
+    def test_heading_rel_counts_full_turns(self):
+        tr, t = yaw_tracker([30.0 * i for i in range(25)])          # 720 deg counter-clockwise in 30 deg steps
+        self.assertAlmostEqual(M.heading_rel_deg(tr.frame(t), "drone_1"), 720.0, places=6)
+
+    def test_heading_rel_rises_on_counter_clockwise_turn(self):      # Review Focus 5: +angular.z => heading up
+        tr, t = yaw_tracker([10.0, 20.0, 30.0], ang_z=+0.5)
+        f = tr.frame(t)
+        self.assertGreater(M.heading_rel_deg(f, "drone_1"), 0.0)
+        self.assertGreater(M.yaw_rate_dps(f, "drone_1"), 0.0)
+
+    def test_heading_rel_is_independent_of_frame_calls(self):
+        tr, t = yaw_tracker([170, 179, -179])
+        a = M.heading_rel_deg(tr.frame(t), "drone_1")
+        for _ in range(3):
+            tr.frame(t); tr.row(t)
+        self.assertEqual(a, M.heading_rel_deg(tr.frame(t), "drone_1"))
+
+    def test_heading_rel_nan_before_phase2_and_when_stale(self):
+        tr = synth.make_tracker(); tr.update_status(synth.straight_status(0.0))
+        pos, vel = synth.straight_world(0.0)
+        for d in synth.DRONES:
+            tr.update_odom(d, 0.0, pos[d] - tr.offsets[d], vel[d], yaw_quat(45.0), 0.0)
+        f = tr.frame(0.0)
+        self.assertTrue(math.isnan(M.heading_rel_deg(f, "drone_1")))
+        self.assertTrue(math.isnan(M.xy_drift(f, "drone_1")))
+        self.assertAlmostEqual(M.heading_deg(f, "drone_1"), 45.0, places=6)
+        stale = tr.frame(M.STALE_S + 0.1)
+        for fn in (M.heading_deg, M.heading_rel_deg, M.yaw_rate_dps, M.xy_drift):
+            self.assertTrue(math.isnan(fn(stale, "drone_1")), fn.__name__)
+
+    def test_heading_rel_start_is_independent_of_earlier_full_turns(self):
+        # Live and bag trackers start at different points in the stream: a turn before phase 2 must not shift the series.
+        a, ta = yaw_tracker([100.0, 130.0])
+        b = synth.make_tracker(); b.update_status(synth.straight_status(0.0))
+        pos, vel = synth.straight_world(2.0)
+        for i, yaw in enumerate([100.0 - 30.0 * k for k in range(13)]):      # one full clockwise turn back to 100 deg
+            for d in synth.DRONES:
+                b.update_odom(d, 0.5 + 0.1 * i, pos[d] - b.offsets[d], vel[d], yaw_quat(yaw), 0.0)
+            b.frame(0.5 + 0.1 * i)
+        b.update_status(synth.straight_status(2.0))
+        for i, yaw in enumerate([100.0, 130.0]):
+            for d in synth.DRONES:
+                b.update_odom(d, 2.0 + 0.1 * i, pos[d] - b.offsets[d], vel[d], yaw_quat(yaw), 0.3)
+            b.frame(2.0 + 0.1 * i)
+        self.assertAlmostEqual(M.heading_rel_deg(b.frame(2.1), "drone_1"), M.heading_rel_deg(a.frame(ta), "drone_1"), places=6)
+        self.assertAlmostEqual(M.heading_rel_deg(b.frame(2.1), "drone_1"), 30.0, places=6)
+
+    def test_quat_none_drops_the_heading(self):
+        tr, t = yaw_tracker([10.0, 20.0])
+        pos, vel = synth.straight_world(2.0)
+        tr.update_odom("drone_1", t + 0.1, pos["drone_1"] - tr.offsets["drone_1"], vel["drone_1"])
+        f = tr.frame(t + 0.1)
+        self.assertNotIn("drone_1", f.yaw)
+        self.assertTrue(math.isnan(M.heading_rel_deg(f, "drone_1")))
+        self.assertTrue(math.isnan(M.yaw_rate_dps(f, "drone_1")))
+
+    def test_unwrap_deg(self):
+        np.testing.assert_allclose(M.unwrap_deg([170, 179, -179, -170, 179, 170]), [170, 179, 181, 190, 179, 170])
+        np.testing.assert_allclose(M.unwrap_deg([0, -90, -180, 90, 0]), [0, -90, -180, -270, -360])
+        self.assertEqual(list(M.unwrap_deg([])), [])
+
+    def test_xy_drift_is_horizontal_distance_from_phase2_start(self):
+        tr = seen_tracker({d: 2.0 for d in synth.DRONES}); tr.row(2.0)
+        pos, vel = synth.straight_world(2.0)
+        tr.update_odom("drone_1", 2.1, pos["drone_1"] - tr.offsets["drone_1"] + np.array([0.3, 0.4, 5.0]), vel["drone_1"])
+        self.assertAlmostEqual(M.xy_drift(tr.frame(2.1), "drone_1"), 0.5, places=6)
+
+    def test_crossing_rows_unchanged_by_orientation(self):
+        # Passing a quaternion and a yaw rate to the crossing tracker must not change any crossing column.
+        cols, rows = synth.straight_frames(n=200)
+        tr = synth.make_tracker()
+        out = []
+        for i in range(200):
+            t = i * 0.025
+            tr.update_status(synth.straight_status(t))
+            pos, vel = synth.straight_world(t)
+            for d in reversed(synth.DRONES):
+                tr.update_odom(d, t, pos[d] - tr.offsets[d], vel[d], yaw_quat(7.0 * i), 0.2)
+            r = tr.row(t)
+            out.append([t] + [r[c] for c in cols[1:]])
+        np.testing.assert_array_equal(np.array(out), rows)
+
+
+class StatusText(unittest.TestCase):
+    def test_crossing_status_line_is_unchanged(self):
+        row = {"phase": 2.0, "min_pair_distance": 1.432, "min_pair_distance_running": 1.213, "emergency": 0.0}
+        self.assertEqual(M.status_text(12.0, row, synth.SERIES, "drone_1,drone_3", 0),
+                         "[t=  12.0 s] phase=2 min_d=1.432 run_min=1.213 cbf=drone_1,drone_3 emerg=0")
+
+    def test_status_line_without_running_min_shows_first_continuous_series(self):
+        series = [M.Series("cbf_drone_1", lambda f: 0.0, 0.0, "", "flag"),
+                  M.Series("heading_rel_deg", lambda f: M.heading_rel_deg(f, "drone_1"), 0.5, "deg"),
+                  M.Series("xy_drift_m", lambda f: M.xy_drift(f, "drone_1"), 0.02, "m")]
+        row = {"phase": 2.0, "heading_rel_deg": 57.3, "xy_drift_m": 0.01}
+        self.assertEqual(M.status_text(12.0, row, series, "", 0), "[t=  12.0 s] phase=2 heading_rel_deg=57.300 cbf= emerg=0")
+        row["heading_rel_deg"] = math.nan
+        self.assertEqual(M.status_text(3.0, row, series, "", 1), "[t=   3.0 s] phase=2 heading_rel_deg=nan cbf= emerg=1")

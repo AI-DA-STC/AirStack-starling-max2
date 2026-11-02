@@ -21,6 +21,13 @@ Definitions
                 sample count, ok = |sum_live - sum_bag| <= max(2, 1 % of paired rows).
                 More than 5 % unpaired live rows, or more than 5 % unpaired bag rows, or no pair at all:
                 ok is False for every row (UNVERIFIED).
+  heading       ENU yaw from the odometry quaternion, yaw_from_quat (atan2(2(wz+xy), 1-2(y^2+z^2)), the commander's
+                formula), counter-clockwise seen from above = positive. The Tracker unwraps it per drone on every
+                odometry message (each step taken as the one with |step| < 180 deg), so heading_rel_deg (unwrapped yaw
+                minus the yaw captured when phase became 2) never jumps by 360 at the +-180 seam and counts full turns.
+                NaN before phase 2, when stale, or when the caller passed no quaternion. heading_deg stays wrapped.
+  yaw rate      odometry twist.twist.angular.z in deg/s (sign as heading).
+  xy drift      horizontal distance from the phase-2 start position; NaN before phase 2.
   coverage      rows exist only when the trigger drone's odometry arrives, so a trigger-drone gap or a dead node
                 leaves no NaN row behind. coverage() reports the largest t_s step over the phase-2 rows plus the
                 row on each side (a hole across the start or end of the window counts) and the phase-2/3 row counts.
@@ -28,7 +35,7 @@ Definitions
 import itertools
 import math
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Callable
 
 import numpy as np
@@ -63,6 +70,11 @@ class Frame:
     phase: int
     start_pos: dict
     params: dict
+    # Heading (empty unless the caller passes an odometry quaternion / angular.z; every heading series is then NaN).
+    yaw: dict = field(default_factory=dict)            # ENU yaw, rad in (-pi, pi], counter-clockwise positive
+    yaw_rate: dict = field(default_factory=dict)       # odometry twist.twist.angular.z, rad/s
+    yaw_unwrapped: dict = field(default_factory=dict)  # continuous ENU yaw, rad (no jump at the +-pi seam)
+    start_yaw: dict = field(default_factory=dict)      # yaw_unwrapped captured when phase became 2
 
 
 @dataclass
@@ -152,6 +164,57 @@ def goal_distance(frame, drone):
     return float(np.linalg.norm(np.asarray(frame.pos[drone]) - goal))
 
 
+def xy_drift(frame, drone):
+    if frame.phase < 2 or drone in frame.stale or drone not in frame.start_pos or drone not in frame.pos:
+        return math.nan
+    d = np.asarray(frame.pos[drone], dtype=float)[:2] - np.asarray(frame.start_pos[drone], dtype=float)[:2]
+    return float(np.linalg.norm(d))
+
+
+# ---------------------------------------------------------------- heading
+
+def yaw_from_quat(x, y, z, w):
+    """ENU yaw (rad, (-pi, pi]) of an orientation quaternion; counter-clockwise seen from above is positive."""
+    return math.atan2(2.0 * (w * z + x * y), 1.0 - 2.0 * (y * y + z * z))
+
+
+def _wrap_pi(a):
+    """a mapped into [-pi, pi)."""
+    return (a + math.pi) % (2.0 * math.pi) - math.pi
+
+
+def unwrap_step(prev_unwrapped, raw):
+    """The continuous angle (rad) nearest prev_unwrapped that equals raw modulo 2 pi."""
+    return prev_unwrapped + _wrap_pi(raw - prev_unwrapped)
+
+
+def unwrap_deg(seq):
+    """Unwrap a sequence of angles in degrees: every step is taken as the one with |step| < 180."""
+    out = []
+    for v in seq:
+        out.append(float(v) if not out else math.degrees(unwrap_step(math.radians(out[-1]), math.radians(float(v)))))
+    return np.asarray(out, dtype=float)
+
+
+def heading_deg(frame, drone):
+    if drone in frame.stale or drone not in frame.yaw:
+        return math.nan
+    return math.degrees(frame.yaw[drone])
+
+
+def heading_rel_deg(frame, drone):
+    if (frame.phase < 2 or drone in frame.stale or drone not in frame.yaw or drone not in frame.yaw_unwrapped
+            or drone not in frame.start_yaw):
+        return math.nan
+    return math.degrees(frame.yaw_unwrapped[drone] - frame.start_yaw[drone])
+
+
+def yaw_rate_dps(frame, drone):
+    if drone in frame.stale or drone not in frame.yaw_rate:
+        return math.nan
+    return math.degrees(frame.yaw_rate[drone])
+
+
 # ---------------------------------------------------------------- phase / params
 
 def phase_from_status(states, mission_active, prev):
@@ -233,11 +296,27 @@ class Tracker:
         self._phase = 0
         self._start = {}
         self._runmin = {s.name: math.inf for s in self.series if s.running_min}
+        self._yaw, self._yaw_rate = {}, {}
+        self._yaw_unwrapped = {}  # kept when a later message has no quaternion, so the unwrap never restarts
+        self._start_yaw = {}
 
-    def update_odom(self, drone, t, xyz, vxyz):
+    def update_odom(self, drone, t, xyz, vxyz, quat=None, ang_z=None):
+        """quat = odometry orientation (x, y, z, w); ang_z = twist.twist.angular.z (rad/s). None = not available:
+        the drone then has no heading / yaw rate in the frame (its heading series are NaN)."""
         self._pos[drone] = world_position(xyz, self.offsets[drone])
         self._vel[drone] = np.asarray(vxyz, dtype=float)
         self._seen[drone] = float(t)
+        if quat is None:
+            self._yaw.pop(drone, None)
+        else:
+            raw = yaw_from_quat(*(float(c) for c in quat))
+            self._yaw[drone] = raw
+            prev = self._yaw_unwrapped.get(drone)
+            self._yaw_unwrapped[drone] = raw if prev is None else unwrap_step(prev, raw)
+        if ang_z is None:
+            self._yaw_rate.pop(drone, None)
+        else:
+            self._yaw_rate[drone] = float(ang_z)
 
     def update_cbf(self, names_csv):
         self._cbf = frozenset(n.strip() for n in (names_csv or "").split(",") if n.strip())
@@ -253,10 +332,13 @@ class Tracker:
         new = phase_from_status(self._states, self._active, self._phase)
         if new == 2 and self._phase != 2:
             self._start = {d: p.copy() for d, p in self._pos.items()}
+            self._start_yaw = {d: self._yaw_unwrapped[d] for d in self._yaw}
         self._phase = new
         return Frame(t_s=float(t), pos=dict(self._pos), vel=dict(self._vel), stale=stale, cbf_active=self._cbf,
                      emergency=self._emergency, fence_breached=self._fence, phase=new,
-                     start_pos=dict(self._start), params=self.params)
+                     start_pos=dict(self._start), params=self.params,
+                     yaw=dict(self._yaw), yaw_rate=dict(self._yaw_rate),
+                     yaw_unwrapped={d: self._yaw_unwrapped[d] for d in self._yaw}, start_yaw=dict(self._start_yaw))
 
     def row(self, t):
         f = self.frame(t)
@@ -274,6 +356,27 @@ class Tracker:
                 else:
                     out[s.name + "_running"] = r             # phase 2 so far; frozen at the last phase-2 value afterwards
         return out
+
+
+# ---------------------------------------------------------------- status line
+
+def _fmt3(v):
+    return "nan" if v is None or math.isnan(v) else "%.3f" % v
+
+
+def status_text(t_last, row, series, cbf, emerg):
+    """The node's 1 Hz stdout line. With a running-min series (crossing):
+    `[t=  12.0 s] phase=2 min_d=1.432 run_min=1.213 cbf=drone_1,drone_3 emerg=0`; without one, the first continuous
+    series instead: `[t=  12.0 s] phase=2 heading_rel_deg=57.300 cbf= emerg=0`."""
+    head = "[t=%6.1f s] phase=%d " % (t_last, int(row["phase"]))
+    tail = " cbf=%s emerg=%d" % (cbf, int(emerg))
+    run_name = next((s.name for s in series if s.running_min), None)
+    first = next((s.name for s in series if s.kind == "continuous"), None)
+    if run_name is None and first is not None:
+        return head + "%s=%s" % (first, _fmt3(row.get(first))) + tail
+    md = row.get(run_name) if run_name else None
+    rm = row.get(run_name + "_running") if run_name else None
+    return head + "min_d=%s run_min=%s" % (_fmt3(md), _fmt3(rm)) + tail
 
 
 # ---------------------------------------------------------------- CSV

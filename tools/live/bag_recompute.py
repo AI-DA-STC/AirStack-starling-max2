@@ -95,7 +95,8 @@ def main():
             m = deserialize_message(data, types[topic])
             t = m.header.stamp.sec + m.header.stamp.nanosec * 1e-9  # header.stamp
             p, v = m.pose.pose.position, m.twist.twist.linear
-            tr.update_odom(d, t, (p.x, p.y, p.z), (v.x, v.y, v.z))
+            o, w = m.pose.pose.orientation, m.twist.twist.angular
+            tr.update_odom(d, t, (p.x, p.y, p.z), (v.x, v.y, v.z), (o.x, o.y, o.z, o.w), w.z)
             counts[d] += 1
             if d == trigger and t >= t0:
                 row = tr.row(t)

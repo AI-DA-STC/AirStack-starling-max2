@@ -16,7 +16,9 @@ Any failure prints `metrics_node: REFUSED — <reason>` and exits 4.
 Running: one CSV row per trigger-drone odometry message (t_s = header.stamp - t0), using the latest pose of the
 others; a timer at --publish-hz publishes std_msgs/Float64 on /svg/test/<column> (every column but t_s/phase), on
 /svg/test/<reference>, and std_msgs/Int32 on /svg/test/phase; a 1 Hz stdout line
-`[t=  12.0 s] phase=2 min_d=1.432 run_min=1.213 cbf=drone_1,drone_3 emerg=0`.
+`[t=  12.0 s] phase=2 min_d=1.432 run_min=1.213 cbf=drone_1,drone_3 emerg=0` (a test with no running-min series
+prints its first continuous series instead: `... phase=2 heading_rel_deg=57.300 cbf= emerg=0`; metrics_core.status_text).
+Odometry orientation and twist.twist.angular.z go to the Tracker too (heading series; unused by the crossing).
 
 CSV schema: `# key=value` meta lines (sorted; every param, offsets, refs=<name>:<value>;..., t0_unix, trigger,
 drones, started), then the column line from metrics_core.csv_header, then one row per trigger message (NaN = "nan").
@@ -121,12 +123,13 @@ def main():
         def cb(msg):
             t = msg.header.stamp.sec + msg.header.stamp.nanosec * 1e-9  # header.stamp
             p, v = msg.pose.pose.position, msg.twist.twist.linear
-            xyz, vel = (p.x, p.y, p.z), (v.x, v.y, v.z)
-            state["raw"][drone] = (t, xyz, vel)
+            o, w = msg.pose.pose.orientation, msg.twist.twist.angular
+            xyz, vel, quat = (p.x, p.y, p.z), (v.x, v.y, v.z), (o.x, o.y, o.z, o.w)
+            state["raw"][drone] = (t, xyz, vel, quat, w.z)
             tr = state["tracker"]
             if tr is None:
                 return
-            tr.update_odom(drone, t, xyz, vel)
+            tr.update_odom(drone, t, xyz, vel, quat, w.z)
             if drone == trigger and t >= state["t0"]:
                 emit_row(t)
         return cb
@@ -207,8 +210,8 @@ def main():
     tr.update_status(state["status"])
     tr.update_cbf(state["cbf"])
     for d in drones:
-        t, xyz, vel = state["raw"][d]
-        tr.update_odom(d, t, xyz, vel)
+        t, xyz, vel, quat, ang_z = state["raw"][d]
+        tr.update_odom(d, t, xyz, vel, quat, ang_z)
     state["tracker"] = tr
     state["fh"] = open(args.csv, "w")
     state["fh"].write(M.csv_header(series, meta))
@@ -230,20 +233,12 @@ def main():
             p.publish(Float64(data=refs[k]))
         phase_pub.publish(Int32(data=int(row["phase"])))
 
-    run_name = next((s.name for s in series if s.running_min), None)
-
-    def fmt(v):
-        return "nan" if v is None or math.isnan(v) else "%.3f" % v
-
     def status_line():
         row = state["last"]
         if row is None:
             return
-        md = row.get(run_name) if run_name else None
-        rm = row.get(run_name + "_running") if run_name else None
         emerg = row.get("emergency", 1.0 if (state["status"] or {}).get("cbf", {}).get("emergency") else 0.0)
-        print("[t=%6.1f s] phase=%d min_d=%s run_min=%s cbf=%s emerg=%d" % (
-            state["t_last"], int(row["phase"]), fmt(md), fmt(rm), state["cbf"], int(emerg)), flush=True)
+        print(M.status_text(state["t_last"], row, series, state["cbf"], emerg), flush=True)
         state["fh"].flush()
 
     node.create_timer(1.0 / args.publish_hz, publish)

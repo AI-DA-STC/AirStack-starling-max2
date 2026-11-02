@@ -58,7 +58,9 @@ Each of these cost an afternoon to learn. Ask for them by name.
   disarmed, ask for the `armed: false` echo. It will have them.
 - Phase-by-phase "what to expect" before a flight or a choreography change is a standing
   request in this lab — ask for it if it is missing.
-- Ask for the **CHG id** of any behaviour change it makes and read its "Watch for" line: every such change is logged in [record/CHANGES.md](record/CHANGES.md) ([CODING_STANDARD.md](CODING_STANDARD.md)).
+- Ask for the **CHG id** of any behaviour change it makes and read its "Watch for" line:
+  every such change is logged in [record/CHANGES.md](record/CHANGES.md)
+  ([CODING_STANDARD.md](CODING_STANDARD.md)).
 
 ## 4 · What never to let it do
 

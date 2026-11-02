@@ -255,6 +255,19 @@ class Audit(unittest.TestCase):
         self.assertEqual(r.returncode, 0, r.stderr); self.assertIn("| CHG-0001 |", r.stdout); self.assertIn("Watch for: s", r.stdout)
         self.assertLessEqual(len(r.stdout.splitlines()), 12)
 
+    def test_show_prints_a_later_correction(self):
+        body = block(2) + "Corrects CHG-0001 \u2014 What: a -> c\nCorrects CHG-0009 \u2014 What: other\n"
+        commit(self.root, {"docs/record/CHANGES.md": HEAD_MD + row(1) + row(2, what="correction of CHG-0001: fixed"), "tools/sim.sh": "a\n"},
+               "fix", body)
+        r = subprocess.run([sys.executable, str(TOOLS / "docs_check/changes.py"), "show", "CHG-0001"], cwd=self.root,
+                           capture_output=True, text=True, env=clean_env())
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("| CHG-0002 |", r.stdout); self.assertIn("Corrects CHG-0001 \u2014 What: a -> c", r.stdout)
+        self.assertNotIn("CHG-0009", r.stdout)
+        r2 = subprocess.run([sys.executable, str(TOOLS / "docs_check/changes.py"), "show", "CHG-0002"], cwd=self.root,
+                            capture_output=True, text=True, env=clean_env())
+        self.assertNotIn("Corrects", r2.stdout.split("Change: CHG-0002")[0])
+
     def test_candidates_lists_uncovered_behaviour_commits(self):
         sha = commit(self.root, {"tools/live/m.py": "x\n"}, "metrics change")
         commit(self.root, {"docs/RUNBOOK.md": "x\n"}, "docs only")

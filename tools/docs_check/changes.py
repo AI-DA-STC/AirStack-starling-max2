@@ -8,7 +8,8 @@ commit, the index / working tree holds it). After that it never switches off: a 
 CLI (run from anywhere inside the repo):
   hook                          the staged rule (uses the hook's inherited GIT_INDEX_FILE); exit 1 on any error
   audit                         FAIL/WARN lines for CHANGES.md ids vs git log; exit 1 on any FAIL
-  show CHG-nnnn                 the CHANGES.md line, a blank line, then the entry block from its commit
+  show CHG-nnnn                 the CHANGES.md line, a blank line, then the entry block from its commit,
+                                then every later entry whose What starts 'correction of ... CHG-nnnn' (its row + 'Corrects CHG-nnnn' lines)
   candidates --since '<d> 00:00' behaviour commits with no Change: line and not named by a CHANGES.md line, oldest first
   is-behaviour <path>...        '<path>: yes|no' per path
 """
@@ -90,6 +91,14 @@ def staged_problems(old_text, new_text, staged_paths, standard_present):
         more = f" (+{len(beh) - 5} more)" if len(beh) > 5 else ""
         errors.append(f"behaviour path(s) staged without a new {CHANGES_FILE} line: {', '.join(beh[:5])}{more}")
     return errors, new_ids
+
+
+CORRECTION_RE = re.compile(r"^correction of ((?:CHG-\d{4})(?:, CHG-\d{4})*):")
+
+
+def corrections_of(rows, cid):
+    """Rows whose What starts 'correction of CHG-a[, CHG-b]:' and names cid."""
+    return [r for r in rows if (m := CORRECTION_RE.match(r.what)) and cid in m.group(1).split(", ")]
 
 
 def entry_block(body, cid):
@@ -345,6 +354,12 @@ def cmd_show(cid):
         print("\n".join(blk))
     else:
         print(f"{cid}: no commit carries 'Change: {cid}'")
+    for c in corrections_of(rows, cid):
+        cc = _carriers(commits, described).get(c.id, [])
+        print(); print(c.raw)
+        if cc:
+            print(f"(commit {cc[-1][0][:7]})")
+            print("\n".join(l for l in cc[-1][1].splitlines() if l.startswith(f"Corrects {cid}")))
     return 0 if row and blk else 1
 
 

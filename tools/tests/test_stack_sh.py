@@ -18,6 +18,12 @@ class StackSh(unittest.TestCase):
                    "down", "status", "ulog_header_params", "px4_arm_times_of", "land_all_and_wait", "arm_abort_trap", "abort_trap"):
             self.assertIn(fn, r.stdout.split(), fn)
 
+    def test_down_stops_any_teleop_frame_relay(self):                 # final review finding 3: an orphan dies with the stack
+        src = LIB.read_text()
+        down = src[src.index("down() {"):src.index("status() {")]
+        self.assertIn("pkill -TERM -f 'teleop_frame\\.py'", down)
+        self.assertLess(down.index("ground_control.launch.py"), down.index("teleop_frame"))   # after the commander stops
+
     def test_studio_arg_only_when_asked(self):
         for use, want in (("false", False), ("true", True)):
             r = subprocess.run(["bash", "-c", f"{ENV} USE_STUDIO={use}; source {LIB}; echo \"$CMD_CMD\""], capture_output=True, text=True)

@@ -132,10 +132,12 @@ stop_live_plot() {
   LIVE_PID=""
 }
 
-# stop_fly: the PRE_LAND_HOOK — an aborted run must not keep a flight script that could send takeoff after the landing
+# stop_fly: the PRE_LAND_HOOK — an aborted run must not keep a flight script that could send takeoff after the landing,
+# nor a teleop_frame relay from any path (a SIGKILLed fly.sh cannot stop its own; it would hold the node name for keys)
 stop_fly() {
   [ "${METRICS_STARTED:-0}" = 1 ] || return 0                           # fly.sh starts after the node: before that nothing here is ours
   docker exec "$R" pkill -f "fly\\.sh" >/dev/null 2>&1 || true
+  docker exec "$R" pkill -TERM -f "teleop_frame\\.py" >/dev/null 2>&1 || true
 }
 
 # metrics_stop: SIGINT the node (CSV flushed + closed), wait <= 10 s, TERM if needed, copy CSV + log out. Idempotent; also the ABORT_HOOK.
@@ -360,12 +362,15 @@ print(next((s for s in p if 'running' in s), p[0]))" "$TD/plots.json") || FIRST=
   exit "$REPORT_RC"
 }
 
-# sim_only_guard <cmd>: keys and relay are sim-only. The real session never has the isaac-sim container, so they refuse
-# there — and this is the first container call they make.
+# sim_only_guard <cmd>: keys and relay are sim-only. They refuse unless Isaac Sim itself runs in the isaac-sim container:
+# `down` leaves the containers up, so a real session after a sim one still has the container (final review finding 2).
+# These are the first container calls they make. `relay stop` needs no guard: stopping is always safe.
 sim_only_guard() {
   local names; names=$(docker ps --format '{{.Names}}' 2>/dev/null)   # captured first: grep -q + pipefail could read SIGPIPE as "no"
   grep -qx isaac-sim <<< "$names" \
     || { echo "error: $1 needs the sim (isaac-sim container not running) — this is sim-only" >&2; return 2; }
+  docker exec isaac-sim pgrep -f 'svg_multi_drone_single_domain\.py' >/dev/null 2>&1 \
+    || { echo "error: $1 needs the sim running (Isaac Sim is not running in the isaac-sim container) — this is sim-only" >&2; return 2; }
 }
 
 # relay_start MODE N: the stick relay (tools/teleop/teleop_frame.py) in the robot container, detached, log in $D.
@@ -379,7 +384,7 @@ relay_start() {
   docker cp "$REPO/tools/teleop/frame.py" "$R:$D/" >/dev/null \
     && docker cp "$REPO/tools/teleop/teleop_frame.py" "$R:$D/" >/dev/null \
     || { echo "error: relay: could not copy the relay files into $R" >&2; return 2; }
-  if docker exec "$R" pgrep -f "$D/teleop_frame.py" >/dev/null 2>&1; then
+  if docker exec "$R" pgrep -f 'teleop_frame\.py' >/dev/null 2>&1; then     # any path: the test's relay runs from its own dir
     echo "relay: already running (tools/sim.sh relay stop, then start it again to change mode or drone)"; return 0; fi
   docker exec -d "$R" bash -ic "python3 $D/teleop_frame.py --drone drone_$n --stick-frame $mode > $D/teleop_frame.log 2>&1" \
     || { echo "error: relay: could not start teleop_frame.py in $R" >&2; return 2; }
@@ -389,7 +394,7 @@ relay_start() {
 
 # cmd_relay: `relay [body|world] [--drone N]` starts the stick relay (default body, drone 1); `relay stop` stops it.
 cmd_relay() {
-  local mode=body n=1 stop=0 R=airstack-robot-desktop-1 D=/tmp/svg_keys
+  local mode=body n=1 stop=0 R=airstack-robot-desktop-1
   relay_bad() { usage_line >&2; echo "error: relay: $* (usage: tools/sim.sh relay [body|world] [--drone N] | relay stop)" >&2; return 2; }
   if [ "${1:-}" = stop ]; then [ $# -eq 1 ] || { relay_bad "stop takes no other argument"; return 2; }; stop=1; shift; fi
   if [[ "${1:-}" =~ ^(body|world)$ ]]; then mode=$1; shift; fi
@@ -399,10 +404,11 @@ cmd_relay() {
       *) relay_bad "bad argument '$1' (mode is body or world, given once, before --drone)"; return 2 ;;
     esac
   done
+  if [ "$stop" = 1 ]; then                                               # no guard: stopping is always safe
+    if docker exec "$R" pkill -TERM -f 'teleop_frame\.py' >/dev/null 2>&1; then echo "relay: stopped"   # any path
+    else echo "relay: none running"; fi
+    return 0; fi
   sim_only_guard relay || return 2
-  if [ "$stop" = 1 ]; then
-    docker exec "$R" pkill -TERM -f "$D/teleop_frame.py" >/dev/null 2>&1   # none running is fine
-    echo "relay: stopped"; return 0; fi
   relay_start "$mode" "$n"
 }
 

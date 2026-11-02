@@ -190,6 +190,14 @@ class SimSh(unittest.TestCase):
         self.assertIn("sim.sh\" check", (SIM.parent / "git-hooks" / "pre-commit").read_text())
 
 
+    def test_test_flow_passes_fly_args_and_drone_count(self):
+        src = SIM.read_text()
+        for n in ('NUM_ROBOTS=${NUM_ROBOTS:-3}', 'FLY_ARGS=${FLY_ARGS:-}', 'fly.sh $DURATION_S $FLY_ARGS', 'for N in $DRONE_IDS', 'pyulog'):
+            self.assertIn(n, src, n)
+        self.assertNotIn("for N in 1 2 3", src)
+        self.assertLess(src.index('source "$SIM_TESTS_DIR/$NAME/test.env"'), src.index('NUM_ROBOTS=${NUM_ROBOTS:-3}'))   # test.env may set it
+
+
 class LivePlotWindow(unittest.TestCase):
     """The live plot window (design 2026-10-30): opened before pause 1 in window mode, closed by metrics_stop."""
 

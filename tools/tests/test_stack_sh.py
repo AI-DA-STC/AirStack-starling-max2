@@ -131,3 +131,24 @@ class AbortPath(unittest.TestCase):
         o = r.stdout; self.assertLess(o.index("HOOK_FAIL"), o.index("CALLED down")); self.assertLess(o.index("CALLED down"), o.index("HOOK_REPORT"))
         self.assertNotIn("NOT_REACHED", o)
         self.assertEqual(run_stub('PHASE=x; fail boom').returncode, 1)                  # default stays 1 (hover driver)
+
+
+class OneDrone(unittest.TestCase):
+    def test_default_is_three_drones(self):
+        r = subprocess.run(["bash", "-c", f"{ENV}; source {LIB}; echo \"$ISAAC_CMD\"; echo \"$IF_CMD\"; echo $DRONE_IDS; echo $SYSIDS"], capture_output=True, text=True)
+        self.assertIn("NUM_ROBOTS=3 ", r.stdout); self.assertIn("launch_sim_interfaces.sh 3", r.stdout)
+        self.assertIn("1 2 3", r.stdout); self.assertIn("2 3 4", r.stdout)
+
+    def test_num_robots_1_everywhere(self):
+        r = subprocess.run(["bash", "-c", f"{ENV} NUM_ROBOTS=1; source {LIB}; echo \"$ISAAC_CMD\"; echo \"$IF_CMD\"; echo \"ids=$DRONE_IDS\"; echo \"sys=$SYSIDS\""], capture_output=True, text=True)
+        self.assertIn("NUM_ROBOTS=1 ", r.stdout); self.assertIn("launch_sim_interfaces.sh 1", r.stdout)
+        self.assertIn("ids=1\n", r.stdout); self.assertIn("sys=2\n", r.stdout)
+
+    def test_land_wait_polls_only_the_spawned_drones(self):
+        pre = ENV + " NUM_ROBOTS=1; source " + str(LIB) + '; OUT=$(mktemp -d); say(){ :; }; note(){ :; }; '
+        r = subprocess.run(["bash", "-c", pre + 'rx(){ case "$*" in *mavros/state*) echo "armed: false";; esac; }; land_all_and_wait 10; echo rc=$?; cat "$OUT/armed_post.txt"'], capture_output=True, text=True, timeout=60)
+        self.assertIn("rc=0", r.stdout); self.assertEqual(r.stdout.strip().splitlines()[-1], "drone_1 armed: false"); self.assertNotIn("drone_2", r.stdout)
+
+    def test_param_keys_carry_the_yaw_gains(self):
+        r = subprocess.run(["bash", "-c", f"{ENV}; source {LIB}; echo \"$PARAM_KEYS\""], capture_output=True, text=True)
+        for k in ("MC_YAW_P", "MC_YAWRATE_P", "MC_YAWRATE_I", "MC_YAWRATE_D", "MC_YAWRATE_K"): self.assertIn(k, r.stdout)

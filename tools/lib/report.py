@@ -88,14 +88,14 @@ def parse_kv(text: str) -> dict:
     return out
 
 
-def parse_armed_post(text: str):
-    """Exactly drone_1..3 each with `armed: true|false`; any garbage or missing drone -> None."""
+def parse_armed_post(text: str, n: int = 3):
+    """Exactly drone_1..n each with `armed: true|false`; any garbage or missing drone -> None."""
     found = {}
     for line in text.splitlines():
-        m = re.match(r"^\s*(drone_[123]) armed: (true|false)\s*$", line)
-        if m:
+        m = re.match(r"^\s*(drone_\d+) armed: (true|false)\s*$", line)
+        if m and 1 <= int(m.group(1)[6:]) <= n:      # drone_4.. lines never counted when n=3 (as before)
             found[m.group(1)] = m.group(2) == "true"
-    return found if set(found) == {"drone_1", "drone_2", "drone_3"} else None
+    return found if set(found) == {f"drone_{i}" for i in range(1, n + 1)} else None
 
 
 def read(out, name: str) -> str:
@@ -122,33 +122,34 @@ def git_head_short() -> str:
 
 
 # ----------------------------------------------------------------------------- shared evidence rows
-def isaac_rows(rows, out):
+def isaac_rows(rows, out, n=3):
     ev = {k: _num(v) for k, v in parse_kv(read(out, "isaac_evidence.txt")).items()}
-    for key, crit, want in [("autostart", "SYS_AUTOSTART=10090 x3", lambda n: n >= 3),
-                            ("ready", "Ready for takeoff x3", lambda n: n == 3),
-                            ("unknown_model", "no 'Unknown model'", lambda n: n == 0),
-                            ("cooking", "no PhysX cooking warnings", lambda n: n == 0)]:
-        n = ev.get(key)
-        row(rows, "Isaac launch: " + crit, crit, "n/a" if n is None else str(int(n)), "-", None if n is None else want(n))
+    for key, crit, want in [("autostart", f"SYS_AUTOSTART=10090 x{n}", lambda v: v >= n),
+                            ("ready", f"Ready for takeoff x{n}", lambda v: v == n),
+                            ("unknown_model", "no 'Unknown model'", lambda v: v == 0),
+                            ("cooking", "no PhysX cooking warnings", lambda v: v == 0)]:
+        v = ev.get(key)
+        row(rows, "Isaac launch: " + crit, crit, "n/a" if v is None else str(int(v)), "-", None if v is None else want(v))
     sc = ev.get("starling_cfg")
     if not sc:   # 0 or missing: the launcher print was not captured, never PASS "indirectly"
-        row(rows, "Isaac launch: Starling2MaxConfig x3", "Starling2MaxConfig x3 (launcher print)", "0 — launcher print not captured", "-", None)
+        row(rows, f"Isaac launch: Starling2MaxConfig x{n}", f"Starling2MaxConfig x{n} (launcher print)", "0 — launcher print not captured", "-", None)
     else:
-        row(rows, "Isaac launch: Starling2MaxConfig x3", "Starling2MaxConfig x3 (launcher print)", str(int(sc)), "-", sc >= 3)
+        row(rows, f"Isaac launch: Starling2MaxConfig x{n}", f"Starling2MaxConfig x{n} (launcher print)", str(int(sc)), "-", sc >= n)
 
 
-def landing_rows(rows, out):
+def landing_rows(rows, out, n=3):
     """The raw ACK log is printed in the record's Evidence block; only the MAVROS arming state is a row."""
-    armed = parse_armed_post(read(out, "armed_post.txt"))
+    armed = parse_armed_post(read(out, "armed_post.txt"), n)
+    names = ", ".join(f"drone_{i}" for i in range(1, n + 1)); word = {1: "one", 2: "two", 3: "three"}.get(n, str(n))
     if armed is None:
-        row(rows, "post-flight armed=false x3 (MAVROS state)", "armed: false for drone_1, drone_2, drone_3",
-            "n/a — armed_post.txt does not hold three readable `drone_N armed: true|false` lines", "-", None)
+        row(rows, f"post-flight armed=false x{n} (MAVROS state)", f"armed: false for {names}",
+            f"n/a — armed_post.txt does not hold {word} readable `drone_N armed: true|false` lines", "-", None)
     else:
-        row(rows, "post-flight armed=false x3 (MAVROS state)", "armed: false for drone_1, drone_2, drone_3",
+        row(rows, f"post-flight armed=false x{n} (MAVROS state)", f"armed: false for {names}",
             ", ".join(f"{k} {'true' if v else 'false'}" for k, v in sorted(armed.items())), "-", not any(armed.values()))
 
 
-def evidence_rows(rows, out, heavy, bag_prefix, extra_files=()):
+def evidence_rows(rows, out, heavy, bag_prefix, extra_files=(), n=3):
     out = pathlib.Path(out)
     heavy = pathlib.Path(heavy) if heavy is not None else None
     crit = f"bag dir {bag_prefix}_* with metadata.yaml under the heavy folder" + (f", and {', '.join(extra_files)} in the run folder" if extra_files else "")
@@ -165,8 +166,9 @@ def evidence_rows(rows, out, heavy, bag_prefix, extra_files=()):
             + (f"; MISSING in run folder: {', '.join(absent)}" if absent else ""), "-", has_meta and not absent)
     ulogs = [l.split() for l in read(out, "ulog_sysid_map.txt").splitlines() if l.strip()]
     sysids = sorted(u[0] for u in ulogs if u)
-    row(rows, "PX4 ulogs one per sysid 2/3/4", "ulog_sysid_map.txt lists sysids 2, 3, 4 (drone_1/2/3)",
-        f"{len(ulogs)} files, sysids {sysids}" if ulogs else "n/a — ulog_sysid_map.txt missing or empty", "-", (sysids == ["2", "3", "4"]) if ulogs else None)
+    want_ids = [str(i) for i in range(2, n + 2)]
+    row(rows, f"PX4 ulogs one per sysid {'/'.join(want_ids)}", f"ulog_sysid_map.txt lists sysids {', '.join(want_ids)} (drone_{'/'.join(str(i) for i in range(1, n + 1))})",
+        f"{len(ulogs)} files, sysids {sysids}" if ulogs else "n/a — ulog_sysid_map.txt missing or empty", "-", (sysids == want_ids) if ulogs else None)
     rw = read(out, "res_watch.log")
     wifi = rw.count("WIFI-ALERT")
     row(rows, "WiFi firmware alerts", "0 during the run", str(wifi) if rw else "n/a — no res_watch.log", "-", (wifi == 0) if rw else None)

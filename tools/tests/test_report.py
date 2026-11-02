@@ -211,5 +211,26 @@ class ArmedUnknown(unittest.TestCase):
         self.assertIsNone(R.parse_armed_post("drone_1 armed: false\ndrone_2 armed: UNKNOWN\ndrone_3 armed: UNKNOWN\n"))
 
 
+class OneDroneRows(unittest.TestCase):
+    def test_parse_armed_post_n1(self):
+        self.assertEqual(R.parse_armed_post("drone_1 armed: false\n", n=1), {"drone_1": False})
+        self.assertIsNone(R.parse_armed_post("drone_1 armed: false\n"))            # default still needs three
+
+    def test_evidence_rows_n1_wants_sysid_2_only(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            out = pathlib.Path(tmp); (out / "ulog_sysid_map.txt").write_text("2 /tmp/x.ulg 100\n")
+            rows = []; R.evidence_rows(rows, out, out, "yaw", n=1)
+            self.assertEqual(next(r.verdict for r in rows if r.check.startswith("PX4 ulogs")), "PASS")
+            rows = []; R.evidence_rows(rows, out, out, "yaw")
+            self.assertEqual(next(r.verdict for r in rows if r.check.startswith("PX4 ulogs")), "FAIL")
+
+    def test_isaac_rows_n1(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            out = pathlib.Path(tmp)
+            (out / "isaac_evidence.txt").write_text("model_line=0 starling_cfg=1 autostart=1 unknown_model=0 cooking=0 ready=1\n")
+            rows = []; R.isaac_rows(rows, out, n=1)
+            self.assertTrue(all(r.verdict == "PASS" for r in rows), [(r.check, r.verdict) for r in rows])
+
+
 if __name__ == "__main__":
     unittest.main()

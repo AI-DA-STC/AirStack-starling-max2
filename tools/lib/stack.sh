@@ -13,6 +13,8 @@ for _v in RUN OUT HEAVY S SCENARIO BAG_PREFIX CONFIG HEADLESS; do
   [ -n "${!_v:-}" ] || { echo "stack.sh: $_v unset" >&2; return 2; }
 done; unset _v
 USE_STUDIO=${USE_STUDIO:-false}
+NUM_ROBOTS=${NUM_ROBOTS:-3}                  # drones spawned (a test.env may set 1); default 3 = the crossing and the hover driver
+DRONE_IDS=$(seq -s ' ' 1 "$NUM_ROBOTS"); SYSIDS=$(seq -s ' ' 2 $((NUM_ROBOTS + 1)))   # drone_i has MAV_SYS_ID i+1
 ISAAC_KIT_ARGS=${ISAAC_KIT_ARGS:-}           # opt-in extra Kit args appended to the Isaac launch (default none)
 REPO=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 TOOLS=$REPO/tools
@@ -20,11 +22,11 @@ R=airstack-robot-desktop-1; I=isaac-sim
 NOISE='^(bash: cannot set terminal|bash: no job control|Sourcing|groups: cannot find name)'
 BAGS=/root/AirStack/robot/ros_ws/bags        # inside $R; host path AirStack/robot/ros_ws/bags (gitignored)
 
-ISAAC_CMD='PYTHONUNBUFFERED=1 DRONE_USD=/isaac-sim/AirStack/simulation/isaac-sim/assets/robots/starling2max.usd PX4_VEHICLE_MODEL=pegasus_starling2max NUM_ROBOTS=3 SVG_DOMAIN_ID=1 PLAY_SIM_ON_START=true ISAAC_SIM_HEADLESS='"$HEADLESS"' PYTHONPATH="$ISAAC_SIM_PYTHONPATH" /isaac-sim/python.sh /isaac-sim/AirStack/simulation/isaac-sim/launch_scripts/svg_multi_drone_single_domain.py --ext-folder ~/.local/share/ov/data/documents/Kit/shared/exts'"${ISAAC_KIT_ARGS:+ $ISAAC_KIT_ARGS}"
-IF_CMD='cd ~/AirStack/robot/ros_ws && ./src/svg_ground_control/scripts/launch_sim_interfaces.sh 3'
+ISAAC_CMD='PYTHONUNBUFFERED=1 DRONE_USD=/isaac-sim/AirStack/simulation/isaac-sim/assets/robots/starling2max.usd PX4_VEHICLE_MODEL=pegasus_starling2max NUM_ROBOTS='"$NUM_ROBOTS"' SVG_DOMAIN_ID=1 PLAY_SIM_ON_START=true ISAAC_SIM_HEADLESS='"$HEADLESS"' PYTHONPATH="$ISAAC_SIM_PYTHONPATH" /isaac-sim/python.sh /isaac-sim/AirStack/simulation/isaac-sim/launch_scripts/svg_multi_drone_single_domain.py --ext-folder ~/.local/share/ov/data/documents/Kit/shared/exts'"${ISAAC_KIT_ARGS:+ $ISAAC_KIT_ARGS}"
+IF_CMD='cd ~/AirStack/robot/ros_ws && ./src/svg_ground_control/scripts/launch_sim_interfaces.sh '"$NUM_ROBOTS"
 CMD_CMD='cd ~/AirStack/robot/ros_ws && ros2 launch svg_ground_control ground_control.launch.py config:=$(ros2 pkg prefix svg_ground_control)/share/svg_ground_control/config/'"$CONFIG"' scenario:='"$SCENARIO"' record_bag:=true bag_prefix:='"$BAG_PREFIX"
 [ "$USE_STUDIO" = true ] && CMD_CMD="$CMD_CMD use_foxglove_studio:=true"
-PARAM_KEYS="SYS_AUTOSTART MAV_SYS_ID MC_PITCHRATE_P MC_ROLLRATE_P LNDMC_ROT_MAX MPC_XY_VEL_MAX MPC_THR_HOVER IMU_GYRO_CUTOFF IMU_DGYRO_CUTOFF MPC_Z_VEL_MAX_DN MPC_ACC_HOR"
+PARAM_KEYS="SYS_AUTOSTART MAV_SYS_ID MC_PITCHRATE_P MC_ROLLRATE_P LNDMC_ROT_MAX MPC_XY_VEL_MAX MPC_THR_HOVER IMU_GYRO_CUTOFF IMU_DGYRO_CUTOFF MPC_Z_VEL_MAX_DN MPC_ACC_HOR MC_YAW_P MC_YAWRATE_P MC_YAWRATE_I MC_YAWRATE_D MC_YAWRATE_K"
 
 # ----------------------------------------------------------------------------------------------------- helpers
 say()  { echo "[$(date '+%T %Z')] $*" | tee -a "$OUT/run.log"; }
@@ -91,7 +93,7 @@ up() {
   note "git -C $REPO rev-parse HEAD; git -C $REPO status --porcelain -- tools | wc -l   # -> run_meta.txt"
   { echo "head=$(git -C "$REPO" rev-parse HEAD)"; echo "head_short=$(git -C "$REPO" rev-parse --short HEAD)"
     echo "dirty_tools=$(git -C "$REPO" status --porcelain -- tools | wc -l)"; echo "started=$(date -Is)"; echo "tz=$(date +%Z)"
-    echo "run=$RUN"; echo "steps_per_axis=$STEPS_PER_AXIS"; } > "$OUT/run_meta.txt"
+    echo "run=$RUN"; echo "steps_per_axis=$STEPS_PER_AXIS"; echo "num_robots=${NUM_ROBOTS}"; echo "fly_args=${FLY_ARGS:-}"; } > "$OUT/run_meta.txt"
   tee -a "$OUT/run.log" < "$OUT/run_meta.txt"
   say "up: containers running, domain 1 clean"
 }
@@ -115,11 +117,11 @@ isaac() {
     date +%s > "$OUT/isaac.log.start"
     docker exec -d "$I" bash -ic "$ISAAC_CMD > $S/isaac.log 2>&1"
   fi
-  NEED=3 wait_for 600 5 "Ready for takeoff" count_log "$I" 'Ready for takeoff' "$S/isaac.log" || fail "Isaac not ready"
+  NEED=$NUM_ROBOTS wait_for 600 5 "Ready for takeoff" count_log "$I" 'Ready for takeoff' "$S/isaac.log" || fail "Isaac not ready"
   isaac_evidence
   grep -q 'unknown_model=0' "$OUT/isaac_evidence.txt" || fail "PX4 reported Unknown model (airframe mount missing?)"
   local n; n=$(sed -n 's/.*starling_cfg=\([0-9]*\).*/\1/p' "$OUT/isaac_evidence.txt"); n=${n:-0}
-  [ "$n" -ge 3 ] || say "WARN: Starling2MaxConfig printed $n times (report will mark it UNVERIFIED)"
+  [ "$n" -ge "$NUM_ROBOTS" ] || say "WARN: Starling2MaxConfig printed $n times (report will mark it UNVERIFIED)"
   grep -q WIFI-ALERT "$OUT/res_watch.log" 2>/dev/null && say "!! WIFI-ALERT in res_watch.log — tell the user; the sim is still running" || true
 }
 
@@ -128,9 +130,9 @@ interfaces() {
   if alive "$R" launch_sim_interfaces.sh; then say "interfaces launcher already running; not relaunching"
   else docker exec "$R" bash -c ": > $S/interfaces.log"; note "docker exec -d $R bash -ic '$IF_CMD > $S/interfaces.log 2>&1'"; docker exec -d "$R" bash -ic "$IF_CMD > $S/interfaces.log 2>&1"; fi
   # readiness = each namespace's MAVROS reports connected: true (not raw HEARTBEAT lines, which a respawned mavros re-prints)
-  note "for N in 1 2 3: docker exec $R bash -ic 'timeout 10 ros2 topic echo --once /drone_\$N/interface/mavros/state' | grep '^connected: true'"
+  note "for N in $DRONE_IDS: docker exec $R bash -ic 'timeout 10 ros2 topic echo --once /drone_\$N/interface/mavros/state' | grep '^connected: true'"
   local N t0
-  for N in 1 2 3; do t0=$SECONDS
+  for N in $DRONE_IDS; do t0=$SECONDS
     until mavros_connected "$N"; do
       [ $((SECONDS - t0)) -ge 120 ] && fail "drone_$N MAVROS never reported connected: true (120 s)"
       sleep 3; done
@@ -143,8 +145,8 @@ ifgates() { phase_begin ifgates odom_hz.txt topics_of_interest.txt clock_check.t
 
 odom_gates() {   # odometry from every drone (PX4's local position needs a few seconds after connect), rate, topics, /clock
   local N i t0
-  note "for N in 1 2 3: docker exec $R bash -ic 'timeout 10 ros2 topic echo --once /drone_\$N/odometry_conversion/odometry --field pose.pose.position'  (retry <= 90 s)"
-  for N in 1 2 3; do t0=$SECONDS; i=0
+  note "for N in $DRONE_IDS: docker exec $R bash -ic 'timeout 10 ros2 topic echo --once /drone_\$N/odometry_conversion/odometry --field pose.pose.position'  (retry <= 90 s)"
+  for N in $DRONE_IDS; do t0=$SECONDS; i=0
     until rx "timeout 10 ros2 topic echo --once /drone_$N/odometry_conversion/odometry --field pose.pose.position" | grep -q '^x:'; do
       i=$((i+1)); say "drone_$N odometry: not yet (attempt $i, $((SECONDS - t0)) s)"
       [ $((SECONDS - t0)) -ge 90 ] && fail "no odometry for drone_$N after 90 s"
@@ -169,11 +171,11 @@ commander() {
   local t0=$SECONDS ok=0
   while :; do
     rx 'timeout 8 ros2 topic echo --once /svg/commander_status --field data' | grep -m1 '^{' > "$OUT/status_pre.json" || : > "$OUT/status_pre.json"
-    if [ -s "$OUT/status_pre.json" ] && python3 - "$OUT/status_pre.json" "$SCENARIO" <<'PY' | tee -a "$OUT/run.log"
+    if [ -s "$OUT/status_pre.json" ] && python3 - "$OUT/status_pre.json" "$SCENARIO" "$NUM_ROBOTS" <<'PY' | tee -a "$OUT/run.log"
 import json, sys
 j = json.load(open(sys.argv[1])); st = [d["state"] for d in j["drones"]]; fr = [d.get("odom_fresh") for d in j["drones"]]
 print("scenario", j["scenario"], "states", st, "fresh", fr, "tuning", j.get("tuning"))
-sys.exit(0 if j["scenario"] == sys.argv[2] and st == ["IDLE"] * 3 and all(fr) else 1)
+sys.exit(0 if j["scenario"] == sys.argv[2] and st == ["IDLE"] * int(sys.argv[3]) and all(fr) else 1)
 PY
     then ok=1; break; fi
     [ $((SECONDS - t0)) -ge 30 ] && break
@@ -209,15 +211,15 @@ copy_ulogs() {   # PX4 ulogs of THIS session (newer than isaac.log.start), one p
   while read -r f; do [ -n "$f" ] || continue
     sid=$(docker exec "$I" python3 -c "from pyulog import ULog; print(ULog('$f', message_name_filter_list=['vehicle_local_position']).initial_parameters.get('MAV_SYS_ID'))" 2>/dev/null)
     sz=$(docker exec "$I" stat -c %s "$f" 2>/dev/null)
-    case "$sid" in 2|3|4) echo "$sid $f ${sz:-0}" >> "$OUT/ulog_sysid_map.txt" ;; *) say "WARN: ulog $f has MAV_SYS_ID '$sid' (not 2/3/4) — skipped" ;; esac
+    case " $SYSIDS " in *" $sid "*) echo "$sid $f ${sz:-0}" >> "$OUT/ulog_sysid_map.txt" ;; *) say "WARN: ulog $f has MAV_SYS_ID '$sid' (not in $SYSIDS) — skipped" ;; esac
   done < "$OUT/ulog_list.txt"
   sort -n -o "$OUT/ulog_sysid_map.txt" "$OUT/ulog_sysid_map.txt"; tee -a "$OUT/run.log" < "$OUT/ulog_sysid_map.txt"
   note "docker cp $I:<ulog> $HEAVY/drone_<sid-1>_sysid<sid>_<basename>.ulg"
   while read -r sid f sz; do [ -n "$f" ] || continue
     docker cp "$I:$f" "$HEAVY/drone_$((sid-1))_sysid${sid}_$(basename "$f")" || say "WARN: docker cp of $f failed"; done < "$OUT/ulog_sysid_map.txt"
-  local have=""; for sid in 2 3 4; do ls "$HEAVY"/drone_*_sysid${sid}_*.ulg >/dev/null 2>&1 && have="$have $sid"; done
-  if [ "$have" = " 2 3 4" ]; then touch "$OUT/ulogs_copied.ok"; say "ulogs copied for sysids 2 3 4 -> $HEAVY"
-  else say "WARN: ulogs copied:${have:- none} (need 2 3 4)"; fi
+  local have=""; for sid in $SYSIDS; do ls "$HEAVY"/drone_*_sysid${sid}_*.ulg >/dev/null 2>&1 && have="$have $sid"; done
+  if [ "$have" = " $SYSIDS" ]; then touch "$OUT/ulogs_copied.ok"; say "ulogs copied for sysids $SYSIDS -> $HEAVY"
+  else say "WARN: ulogs copied:${have:- none} (need $SYSIDS)"; fi
 }
 
 down() {   # commander -> bag out -> interfaces -> ulogs (if not yet) -> Isaac -> orphans -> watch; containers stay up (no airstack.sh down)
@@ -263,7 +265,7 @@ down() {   # commander -> bag out -> interfaces -> ulogs (if not yet) -> Isaac -
 status() {
   docker ps --format '{{.Names}} {{.Status}}' | grep -E "$I|$R" || echo "containers down"
   echo "ready: $(count_log "$I" 'Ready for takeoff' "$S/isaac.log")  (isaac launcher alive: $(alive "$I" svg_multi_drone_single_domain.py && echo yes || echo no))"
-  local N; for N in 1 2 3; do echo "drone_$N connected: $(mavros_connected "$N" && echo yes || echo no)"; done
+  local N; for N in $DRONE_IDS; do echo "drone_$N connected: $(mavros_connected "$N" && echo yes || echo no)"; done
   echo "commander: up count $(count_log "$R" 'SwarmCommander up' "$S/commander.log")  (alive: $(alive "$R" swarm_commander && echo yes || echo no))"
   echo "bag recorder: $(rx 'timeout 8 ros2 topic echo --once /svg/bag_recorder/status --field data' | head -c 200)"
   [ -f "$OUT/.watch_pid" ] && kill -0 "$(cat "$OUT/.watch_pid")" 2>/dev/null && echo "watch alive: $(tail -1 "$OUT/res_watch.log")" || echo "watch not running"
@@ -298,15 +300,15 @@ no_flight_established() {   # 0 ONLY when positively no flight: a topic list (no
   ! echo "$l" | grep -qx '/drone_1/interface/mavros/state'
 }
 
-land_all_and_wait() {   # $1 = bound (s), real: land via the commander, poll MAVROS armed (drones 1-3); 0 = all false, 1 = bound hit (overshoot <= one 10 s read)
+land_all_and_wait() {   # $1 = bound (s), real: land via the commander, poll MAVROS armed (drones 1..NUM_ROBOTS); 0 = all false, 1 = bound hit (overshoot <= one 10 s read)
   local bound=$1 deadline=$((SECONDS + $1)) N all
   note "docker exec $R bash -ic 'ros2 service call /swarm_commander/land std_srvs/srv/Trigger'"
   rx 'timeout 4 ros2 service call /swarm_commander/land std_srvs/srv/Trigger' | tail -1 | tee -a "$OUT/run.log"
   local st pass M done_pass=0
   while :; do all=1; pass=""
-    for N in 1 2 3; do
+    for N in $DRONE_IDS; do
       if [ "$SECONDS" -ge "$deadline" ]; then                    # bound hit: keep the partial pass, unread drones are UNKNOWN (never read as disarmed)
-        for M in $(seq "$N" 3); do pass+="drone_$M armed: UNKNOWN"$'\n'; done
+        for M in $(seq "$N" "$NUM_ROBOTS"); do pass+="drone_$M armed: UNKNOWN"$'\n'; done
         [ "$done_pass" = 1 ] || printf '%s' "$pass" > "$OUT/armed_post.txt"   # an earlier complete pass wins over a partial one
         return 1; fi
       st=$(rx "timeout 10 ros2 topic echo --once /drone_$N/interface/mavros/state" | grep -oE '^armed: (true|false)')

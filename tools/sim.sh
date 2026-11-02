@@ -200,6 +200,7 @@ cmd_test() {
   local ISSUE_ARG=$ISSUE
   # shellcheck source=/dev/null
   source "$SIM_TESTS_DIR/$NAME/test.env"; ISSUE=$ISSUE_ARG          # test.env's ISSUE is the default; the flag wins
+  NUM_ROBOTS=${NUM_ROBOTS:-3}; FLY_ARGS=${FLY_ARGS:-}                 # test.env may set them (a one-drone test: NUM_ROBOTS=1); stack.sh reads NUM_ROBOTS when sourced
   S=/tmp/svg_test; OUT=$REPO/docs/record/$RUN; HEAVY=$HOME/flight_logs/sim/$RUN; ALL_MODE=1; STACK_UP=0; TAIL=""; REPORT_RC=0
   mkdir -p "$OUT" "$HEAVY"
   source "$REPO/tools/lib/stack.sh" || exit $?
@@ -242,9 +243,9 @@ print(next((s for s in p if 'running' in s), p[0]))" "$TD/plots.json") || FIRST=
   PHASE=fly
   phase_begin fly test_stdout.log armed_post.txt landing_evidence.txt status_post.json
   alive "$R" swarm_commander || fail "commander is not running"
-  say "fly: tools/sim_tests/$NAME/fly.sh $DURATION_S s window (takeoff -> start -> window -> land)"
-  note "docker exec -d $R bash -ic 'bash $S/fly.sh $DURATION_S > $S/test_stdout.log 2>&1'"
-  docker exec -d "$R" bash -ic "bash $S/fly.sh $DURATION_S > $S/test_stdout.log 2>&1"
+  say "fly: tools/sim_tests/$NAME/fly.sh $DURATION_S${FLY_ARGS:+ $FLY_ARGS} s window (takeoff -> start -> window -> land)"
+  note "docker exec -d $R bash -ic 'bash $S/fly.sh $DURATION_S $FLY_ARGS > $S/test_stdout.log 2>&1'"
+  docker exec -d "$R" bash -ic "bash $S/fly.sh $DURATION_S $FLY_ARGS > $S/test_stdout.log 2>&1"
   docker exec "$R" tail -n0 -f "$S/metrics_node.log" & TAIL=$!
   sleep 3
   local el=0
@@ -256,10 +257,10 @@ print(next((s for s in p if 'running' in s), p[0]))" "$TD/plots.json") || FIRST=
   grep -q 'landed:' "$OUT/test_stdout.log" || say "WARN: fly.sh did not print landed:"
   # 5  post-flight evidence
   sleep 20
-  note "for N in 1 2 3: docker exec $R bash -ic 'timeout 10 ros2 topic echo --once /drone_\$N/interface/mavros/state' | grep -oE '^armed: (true|false)'  # -> armed_post.txt"
-  for N in 1 2 3; do rx "timeout 10 ros2 topic echo --once /drone_$N/interface/mavros/state" | grep -oE '^armed: (true|false)' | sed "s/^/drone_$N /"; done > "$OUT/armed_post.txt"
+  note "for N in $DRONE_IDS: docker exec $R bash -ic 'timeout 10 ros2 topic echo --once /drone_\$N/interface/mavros/state' | grep -oE '^armed: (true|false)'  # -> armed_post.txt"
+  for N in $DRONE_IDS; do rx "timeout 10 ros2 topic echo --once /drone_$N/interface/mavros/state" | grep -oE '^armed: (true|false)' | sed "s/^/drone_$N /"; done > "$OUT/armed_post.txt"
   tee -a "$OUT/run.log" < "$OUT/armed_post.txt"
-  [ "$(wc -l < "$OUT/armed_post.txt")" = 3 ] || say "WARN: armed_post.txt does not hold three lines (armed gate will be UNVERIFIED)"
+  [ "$(wc -l < "$OUT/armed_post.txt")" = "$NUM_ROBOTS" ] || say "WARN: armed_post.txt does not hold $NUM_ROBOTS lines (armed gate will be UNVERIFIED)"
   grep -q 'armed: true' "$OUT/armed_post.txt" && say "!! a drone still reports armed: true 20 s after landing" || true
   docker exec "$R" grep -E 'touchdown at z=|landed, disarmed|disarm not accepted' "$S/commander.log" | tee "$OUT/landing_evidence.txt" | tee -a "$OUT/run.log" || true
   json1 /svg/commander_status > "$OUT/status_post.json" || say "WARN: no commander_status after the flight"
@@ -357,6 +358,7 @@ cmd_setup() {
     done
   fi
   if python3 -c 'import numpy, matplotlib' 2>/dev/null; then ok "host python: numpy, matplotlib"; else bad "host python lacks numpy/matplotlib (pip install numpy matplotlib)"; fi
+  if python3 -c 'import pyulog' 2>/dev/null; then ok "host python: pyulog"; else warn "host python lacks pyulog (pip install pyulog) — vehicle-time gates fall back to the isaac-sim container"; fi
   for t in ffmpeg obs; do if command -v $t >/dev/null; then ok "$t on PATH"; else warn "$t not on PATH (needed only for video)"; fi; done
   if [ $have_docker = 1 ] && docker exec "$R" true 2>/dev/null; then
     if docker exec "$R" bash -c 'command -v foxglove-studio' >/dev/null 2>&1; then ok "foxglove-studio in $R"; else warn "foxglove-studio not found in $R"; fi

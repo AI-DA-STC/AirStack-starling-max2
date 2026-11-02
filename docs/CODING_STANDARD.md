@@ -33,8 +33,8 @@ A later LEDGER row cites the CHG ID. The entry never waits for the row. Read any
 ## 3. Live changes
 | Rule | Status |
 |---|---|
-| Set a sim PX4 parameter with `tools/sim.sh param set NAME VALUE [--drone N]`. It reads the old value, sets, reads back and logs to `~/flight_logs/sim/changes.log`. A test's own sweep (yaw step) uses the same formatter. | not yet: formatter and `param set` CHG-0016 (plan Task 5), yaw sweep plan Task 7 |
-| Every `sim.sh test` record has a "Changes in this run" block: the tools' log, PX4's own list from the ulog, a start/end snapshot diff. The ulog wins a conflict. The snapshot catches Foxglove, QGC and `ros2 param set`. | not yet: plan Task 6 |
+| Set a sim PX4 parameter with `tools/sim.sh param set NAME VALUE [--drone N]`. It reads the old value, sets, reads back and logs one line to `~/flight_logs/sim/changes.log` (and to the run's `changes.log` during a test): `<time> · drone_N/NAME · <old> → <new> · <who> · readback <v>`, plus ` · MISMATCH` when the read-back differs. A test's own sweep (yaw step) uses the same formatter, `tools/lib/changes_log.py`. | live: `param set` CHG-0016; yaw sweep through the helper: plan Task 7 |
+| Every `sim.sh test` record has a "Changes in this run" block: the tools' log, PX4's own list from the ulog, a start/end snapshot diff (PX4 via MAVROS, the commander's parameters). The ulog wins a conflict. The snapshot catches Foxglove, QGC and `ros2 param set`. A source that is missing reads "unknown (why)"; a change no tool logged reads "UNLOGGED CHANGE". | live: CHG-0017 |
 | `tools/sim.sh down` saves any PX4 ulog not yet copied to `~/flight_logs/sim/uncollected_<date>/`. `down --force` skips that and those logs are lost. | live: CHG-0014 |
 | A value that wins a live sweep goes into the file in its own commit, with its own entry. | rule |
 ## 4. The sim airframe

@@ -150,5 +150,138 @@ class Helper(unittest.TestCase):
         self.assertNotIn(" → ", HELPER.read_text())
 
 
+# ----------------------------------------------------------------------------------------------- run capture (CHG-0017)
+DUMP = "/drone_1/interface/mavros/param:\n  ros__parameters:\n    MC_YAW_P: 2.799999952316284\n    MC_YAWRATE_P: 0.07000000029802322\n    SYS_AUTOSTART: 10090\n"
+CMD = ("bash: cannot set terminal process group\n/swarm_commander:\n  ros__parameters:\n    cbf_alpha: 2.5\n    fence_min:\n    - -4.0\n    - -2.0\n"
+       "    qos_overrides:\n      /parameter_events:\n        publisher:\n          depth: 1000\n")
+AF = "param set-default MC_YAW_P 2.8 # = real\nparam set-default MC_YAWRATE_P 0.07 # = real\n"
+WHEN = "2026-11-02T14:03:05+08:00"
+TOOLS = LIB.parent
+
+
+def _has_yaml():
+    try:
+        import yaml  # noqa: F401
+        return True
+    except ImportError:
+        return False
+
+
+@unittest.skipUnless(_has_yaml(), "host PyYAML missing")
+class Snapshot(unittest.TestCase):
+    def test_dump_flattens_nested_keys_and_lists_after_noise(self):
+        d = C.read_dump(CMD)
+        self.assertEqual(d["cbf_alpha"], "2.5"); self.assertEqual(d["fence_min"], "[-4.0, -2.0]"); self.assertIn("qos_overrides./parameter_events.publisher.depth", d)
+
+    def test_diff_is_float32_tolerant(self):
+        a = C.read_dump(DUMP)
+        self.assertEqual(C.diff_dumps(a, C.read_dump(DUMP.replace("0.07000000029802322", "0.07"))), [])
+        self.assertEqual(C.diff_dumps(a, C.read_dump(DUMP.replace("2.799999952316284", "2.0"))), [("MC_YAW_P", "2.799999952316284", "2.0")])
+        self.assertEqual(C.diff_dumps({"A": "1"}, {"B": "1"}), [("A", "1", "(absent)"), ("B", "(absent)", "1")])
+
+    def test_diff_cli_names_a_missing_end(self):
+        with tempfile.TemporaryDirectory() as d:
+            h = pathlib.Path(d)
+            (h / "params_start_drone_1.yaml").write_text(DUMP); (h / "params_end_drone_1.yaml").write_text(DUMP.replace("2.799999952316284", "2.0"))
+            (h / "params_start_swarm_commander.yaml").write_text(CMD)
+            subprocess.run([sys.executable, str(TOOLS / "lib/changes_log.py"), "diff", d, "-o", str(h / "diff.txt")], check=True)
+            t = (h / "diff.txt").read_text()
+            self.assertIn("drone_1/MC_YAW_P 2.799999952316284 -> 2.0", t); self.assertIn("# swarm_commander: no end snapshot", t)
+            self.assertIn("# drone_1: partial snapshot", t)                      # 3 PX4 parameters < 500: the diff may miss some
+
+    def test_diff_cli_without_any_start_snapshot_fails_and_says_so(self):
+        with tempfile.TemporaryDirectory() as d:
+            r = subprocess.run([sys.executable, str(TOOLS / "lib/changes_log.py"), "diff", d, "-o", os.path.join(d, "diff.txt")], capture_output=True, text=True)
+            self.assertEqual(r.returncode, 1); self.assertIn("no start snapshot", open(os.path.join(d, "diff.txt")).read())
+
+
+class UlogList(unittest.TestCase):
+    def test_parses_rows_and_the_drones_covered(self):
+        t = "# ulog drone_1 drone_1_sysid2_a.ulg\n0.950 drone_1 CAL_ACC0_ID 1310988\n35.100 drone_1 MC_YAW_P 2.0\n"
+        self.assertEqual(C.ulog_changes(t), [(0.95, "drone_1", "CAL_ACC0_ID", "1310988"), (35.1, "drone_1", "MC_YAW_P", "2.0")])
+        self.assertEqual(C.ulog_targets(t), {"drone_1"})
+
+    def test_cli_on_a_non_ulog_fails(self):
+        with tempfile.TemporaryDirectory() as d:
+            bad = os.path.join(d, "drone_1_sysid2_x.ulg"); open(bad, "w").write("not a ulog")
+            r = subprocess.run([sys.executable, str(TOOLS / "lib/changes_log.py"), "ulog", bad, "-o", os.path.join(d, "p.txt")], capture_output=True, text=True)
+            self.assertNotEqual(r.returncode, 0)
+
+
+@unittest.skipUnless(_has_yaml(), "host PyYAML missing")
+class Block(unittest.TestCase):
+    """The record's "Changes in this run" block: three sources, nothing silently empty, unlogged changes named."""
+    LOG = WHEN + " · drone_1/MC_YAW_P · 2.8 → 2 · yaw_step-sweep-set-1 · readback 2\n"
+    ULOG_HDR = "# ulog drone_1 drone_1_sysid2_a.ulg\n"
+
+    def _block(self, files, start=None):
+        with tempfile.TemporaryDirectory() as d:
+            out = pathlib.Path(d, "out"); heavy = pathlib.Path(d, "heavy"); out.mkdir(); heavy.mkdir()
+            for k, v in files.items():
+                (out / k).write_text(v)
+            if start:
+                (heavy / "params_start_drone_1.yaml").write_text(start)
+            return "\n".join(C.changes_block(out, heavy, airframe_text=AF))
+
+    def test_all_sources_agree(self):
+        t = self._block({"changes.log": self.LOG, "px4_param_changes_all.txt": self.ULOG_HDR + "0.950 drone_1 CAL_ACC0_ID 1310988\n35.100 drone_1 MC_YAW_P 2.0\n",
+                         "params_diff.txt": "drone_1/MC_YAW_P 2.8 -> 2.0\n"})
+        for s in ("## Changes in this run", "yaw_step-sweep-set-1", "35.100 drone_1 MC_YAW_P 2.0", "1 boot-time", "drone_1/MC_YAW_P 2.8 -> 2.0"):
+            self.assertIn(s, t)
+        self.assertNotIn("CAL_ACC0_ID", t); self.assertIn("Conflicts and unlogged changes:", t); self.assertIn("- none", t)
+        self.assertNotIn("UNLOGGED", t); self.assertNotIn("CONFLICT", t)
+
+    def test_a_bare_name_from_the_yaw_sweep_matches_its_drone(self):                # fly.sh logs `MC_YAW_P` without drone_N/
+        t = self._block({"changes.log": WHEN + " · MC_YAW_P · 2.8 → 2 · yaw_step fly.sh sweep set 1 · readback 2\n",
+                         "px4_param_changes_all.txt": self.ULOG_HDR + "35.100 drone_1 MC_YAW_P 2.0\n", "params_diff.txt": ""})
+        self.assertNotIn("UNLOGGED", t); self.assertNotIn("CONFLICT", t)
+
+    def test_conflict_names_the_ulog_as_the_winner(self):
+        t = self._block({"changes.log": self.LOG, "px4_param_changes_all.txt": self.ULOG_HDR + "35.100 drone_1 MC_YAW_P 1.5\n"})
+        self.assertIn("CONFLICT", t); self.assertIn("the ulog wins", t)
+
+    def test_logged_but_not_in_the_ulog_is_a_conflict_only_for_a_drone_the_ulog_covers(self):
+        t = self._block({"changes.log": self.LOG, "px4_param_changes_all.txt": self.ULOG_HDR})
+        self.assertIn("did PX4 receive it?", t)
+        t = self._block({"changes.log": self.LOG, "px4_param_changes_all.txt": "# ulog drone_2 drone_2_sysid3_a.ulg\n"})
+        self.assertNotIn("did PX4 receive it?", t)
+
+    def test_unlogged_snapshot_change_is_flagged(self):
+        t = self._block({"changes.log": "", "params_diff.txt": "swarm_commander/cbf_alpha 2.5 -> 4.7\n"})
+        self.assertIn("UNLOGGED CHANGE: swarm_commander/cbf_alpha 2.5 → 4.7", t)
+
+    def test_unlogged_ulog_change_is_flagged_even_when_another_value_was_logged(self):
+        t = self._block({"changes.log": self.LOG, "px4_param_changes_all.txt": self.ULOG_HDR + "35.100 drone_1 MC_YAW_P 2.0\n50.000 drone_1 MC_YAW_P 0.5\n60.000 drone_1 MPC_XY_VEL_MAX 9\n"})
+        self.assertIn("UNLOGGED CHANGE (ulog): drone_1/MC_YAW_P → 0.5 at 50.000 s", t)
+        self.assertIn("UNLOGGED CHANGE (ulog): drone_1/MPC_XY_VEL_MAX → 9 at 60.000 s", t)
+        self.assertNotIn("→ 2.0 at 35.100", t)
+
+    def test_empty_log_is_none_logged_but_a_missing_one_is_unknown(self):
+        self.assertIn("none logged", self._block({"changes.log": ""}))
+        self.assertIn("unknown (changes.log", self._block({}))
+
+    def test_missing_sources_say_unknown_with_a_reason_and_never_crash(self):
+        t = self._block({})
+        self.assertEqual(t.count("unknown ("), 4, t)                               # tools log, ulog list, snapshot diff, start vs airframe
+        self.assertNotIn("none logged", t); self.assertNotIn("no differences", t)
+        self.assertIn("- none found; not checked against changes.log, the ulog list, the snapshot diff", t)   # never a bare "none"
+
+    def test_a_partial_snapshot_says_unknown_for_that_target(self):
+        t = self._block({"changes.log": "", "params_diff.txt": "# drone_2: no end snapshot\n"})
+        self.assertIn("unknown (drone_2: no end snapshot)", t); self.assertNotIn("no differences", t)
+
+    def test_no_differences_and_no_ulog_change_after_boot_are_said(self):
+        t = self._block({"changes.log": "", "params_diff.txt": "", "px4_param_changes_all.txt": self.ULOG_HDR + "0.950 drone_1 CAL_ACC0_ID 1310988\n"})
+        self.assertIn("no differences", t); self.assertIn("none after boot", t)
+
+    def test_px4_bookkeeping_is_not_an_unlogged_change(self):                       # PX4 writes the flight-time counter itself at disarm
+        t = self._block({"changes.log": "", "params_diff.txt": "drone_1/LND_FLIGHT_T_LO 0 -> 81000000\n"})
+        self.assertNotIn("UNLOGGED", t); self.assertIn("PX4 bookkeeping", t)
+
+    def test_start_vs_airframe(self):
+        self.assertIn("MC_YAW_P: airframe 2.8, in force 2.0", self._block({}, start=DUMP.replace("2.799999952316284", "2.0")))
+        self.assertIn("all 2 airframe values in force", self._block({}, start=DUMP))
+
+
 if __name__ == "__main__":
     unittest.main()

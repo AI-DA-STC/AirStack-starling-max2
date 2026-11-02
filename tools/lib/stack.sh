@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # tools/lib/stack.sh — the shared sim-stack phases (precheck up watch isaac interfaces ifgates odom_gates commander params
-# copy_ulogs down status) and helpers, extracted from tools/sim_hover_step_run.sh. SIM ONLY (CLAUDE.md iron rule 9).
+# param_snapshot param_diff copy_ulogs down status) and helpers, extracted from tools/sim_hover_step_run.sh. SIM ONLY (CLAUDE.md iron rule 9).
 # SOURCE it, after the caller sets:  RUN OUT HEAVY S SCENARIO BAG_PREFIX CONFIG HEADLESS
 #   optional: USE_STUDIO (default false: add use_foxglove_studio:=true to the commander launch), ISAAC_KIT_ARGS
 # Hooks the caller may define:  bag_dump_hook <bag_dir> (down; non-zero = bag stays in the container)
@@ -200,6 +200,36 @@ params() {   # secondary, read-only proof via MAVROS (names verified live); the 
     grep -q 'MC_PITCHRATE_P: .*0\.032' "$OUT/params_mavros.txt" && grep -q 'LNDMC_ROT_MAX: .*300' "$OUT/params_mavros.txt" \
       && say "params: 10-20 airframe confirmed via MAVROS" || say "params: MAVROS read inconclusive — ulog header will decide"
   else say "params: no MAVROS param service — ulog header will decide"; fi
+}
+
+# param_snapshot <start|end> (CHG-0017; docs/CODING_STANDARD.md §3): every drone's PX4 parameters through MAVROS (a pull
+# that is never forced, then `ros2 param dump` of the param node) and the commander's parameters -> $HEAVY/params_<tag>_
+# {drone_N,swarm_commander}.yaml (~900 lines each, never in the repo). It never fails the run; a short dump is a WARN.
+# UNVERIFIED until an owner session: the dump's format and time (U3), whether MAVROS's cache is fresh at the end (U4).
+param_snapshot() {
+  local tag=$1 N f n
+  for N in $DRONE_IDS; do
+    f=$HEAVY/params_${tag}_drone_$N.yaml
+    note "docker exec $R bash -ic \"timeout 120 ros2 service call /drone_$N/interface/mavros/param/pull mavros_msgs/srv/ParamPull '{force_pull: false}'\""
+    rx "timeout 120 ros2 service call /drone_$N/interface/mavros/param/pull mavros_msgs/srv/ParamPull '{force_pull: false}'" | tail -1 >> "$OUT/run.log"
+    note "docker exec $R bash -ic 'timeout 60 ros2 param dump /drone_$N/interface/mavros/param' > $f"
+    rx "timeout 60 ros2 param dump /drone_$N/interface/mavros/param" > "$f"
+    n=$(grep -cE '^ {4}[A-Z][A-Z0-9_]*:' "$f")
+    if [ "${n:-0}" -ge 500 ]; then say "snapshot $tag drone_$N: $n PX4 parameters"
+    else say "WARN: snapshot $tag drone_$N has ${n:-0} PX4 parameters (< 500) — the diff for drone_$N is partial"; fi
+  done
+  f=$HEAVY/params_${tag}_swarm_commander.yaml
+  note "docker exec $R bash -ic 'timeout 30 ros2 param dump /swarm_commander' > $f"
+  rx "timeout 30 ros2 param dump /swarm_commander" > "$f"
+  if grep -q '^/swarm_commander' "$f"; then say "snapshot $tag swarm_commander: $(grep -c '^ \{4\}[a-z]' "$f") parameters"
+  else say "WARN: snapshot $tag swarm_commander is empty — the commander's diff will read unknown"; fi
+}
+
+# param_diff: start vs end snapshot -> $OUT/params_diff.txt (`<target>/<name> <old> -> <new>`; `#` lines = what is unknown)
+param_diff() {
+  note "python3 $REPO/tools/lib/changes_log.py diff $HEAVY -o $OUT/params_diff.txt"
+  python3 "$REPO/tools/lib/changes_log.py" diff "$HEAVY" -o "$OUT/params_diff.txt" >> "$OUT/run.log" 2>&1 \
+    || caveat "params_diff.txt not written (a snapshot missing or host PyYAML absent) — the record's snapshot column is unknown"
 }
 
 copy_ulogs() {   # PX4 ulogs of THIS session (newer than isaac.log.start), one per MAV_SYS_ID in $SYSIDS (drone_1..$NUM_ROBOTS) -> $HEAVY; must run BEFORE Isaac stops

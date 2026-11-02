@@ -202,7 +202,7 @@ class SimSh(unittest.TestCase):
         for n in ("ulog_yaw_dump.py", "px4_drone_1.csv", "px4_param_changes.txt", "no px4_drone_1.csv"):
             self.assertIn(n, src, n)
         self.assertLess(src.index("px4_arm_times_of"), src.index("ulog_yaw_dump.py"))
-        self.assertIn("phase_begin collect ulog_list.txt ulog_sysid_map.txt params_ulog.txt px4_arm_times.txt px4_param_changes.txt", src)
+        self.assertIn("phase_begin collect ulog_list.txt ulog_sysid_map.txt params_ulog.txt px4_arm_times.txt px4_param_changes.txt px4_param_changes_all.txt", src)
         call = src.index('yaw_dump "$U1"')                                              # the call in cmd_test step 7
         self.assertLess(src.index('then px4_arm_times_of "$USE"'), call)
         self.assertLess(call, src.index("PHASE=down; down"))                            # before Isaac (the fallback) stops
@@ -265,6 +265,44 @@ class SimSh(unittest.TestCase):
         col = self._fn("metrics_collect", "# bag_dump_hook")                           # every path: normal and abort
         self.assertIn('"$R:$S/changes.log" "$OUT/changes.log"', col)
 
+
+    def test_run_captures_parameter_changes(self):                                   # CHG-0017
+        src = SIM.read_text()
+        loop = src.index("for PHASE in precheck up watch isaac interfaces commander params"); s = src.index("param_snapshot start")
+        self.assertLess(loop, s); self.assertLess(s, src.index("start_live_plot\n"))
+        e = src.index("param_snapshot end"); self.assertLess(src.index('> "$OUT/status_post.json"'), e); self.assertLess(e, src.index("PHASE=metrics_stop"))
+        self.assertLess(e, src.index("param_diff"))
+        self.assertIn('"$REPO/tools/lib/px4_param_set.sh" "$REPO/tools/lib/changes_log.py"', src)
+        self.assertIn("$S/changes.log", src[src.index("metrics_collect() {"):src.index("bag_dump_hook() {")])
+        self.assertLess(src.index('yaw_dump "$U1"'), src.index("\n  ulog_param_changes")); self.assertLess(src.index("\n  ulog_param_changes"), src.index("PHASE=down; down"))
+
+    def test_the_runs_changes_log_starts_empty_right_after_up(self):                 # a `param set` during the stack phases is kept
+        src = SIM.read_text()
+        loop = src[src.index("for PHASE in precheck up watch isaac interfaces commander params"):src.index("param_snapshot start")]
+        self.assertIn('[ "$PHASE" = up ]', loop); self.assertIn(": > $S/changes.log", loop)
+        self.assertNotIn("changes.log", src[src.index("# 2  copy-in"):src.index("METRICS_STARTED=1\n")].replace('"$REPO/tools/lib/changes_log.py"', ""))
+
+    def test_abort_and_fail_paths_copy_changes_log_out(self):                         # metrics_stop returns early before the node starts
+        fn = SIM.read_text().split("finish_report() {", 1)[1].split("\n", 1)[0]
+        self.assertIn('"$R:$S/changes.log" "$OUT/changes.log"', fn); self.assertLess(fn.index("changes.log"), fn.index("render_report"))
+
+    def test_ulog_param_changes_fails_closed(self):
+        fn = self._fn("ulog_param_changes", "# fly_caveats")
+        stubs = 'say(){ :; }; note(){ :; }; nx(){ "$@"; }; caveat(){ echo "$*" >> "$OUT/caveats.txt"; }\n'
+        for junk in (False, True):
+            with tempfile.TemporaryDirectory() as tmp:
+                out, heavy = os.path.join(tmp, "out"), os.path.join(tmp, "heavy"); os.makedirs(out); os.makedirs(heavy)
+                if junk:
+                    open(os.path.join(heavy, "drone_1_sysid2_x.ulg"), "w").write("not a ulog")
+                env = dict(os.environ, OUT=out, HEAVY=heavy, REPO=str(SIM.parents[1]))
+                r = subprocess.run(["bash", "-c", stubs + fn + "\nulog_param_changes; echo rc=$?"], capture_output=True, text=True, timeout=30, env=guarded_env(env))
+                self.assertIn("rc=0", r.stdout, r.stderr)
+                cav = open(os.path.join(out, "caveats.txt")).read()
+                self.assertIn("px4_param_changes_all.txt", cav); self.assertIn("unknown" if junk else "no ulog", cav)
+
+    def test_setup_checks_host_pyyaml(self):
+        body = self._fn("cmd_setup", "cmd_doctor()")
+        self.assertIn("import yaml", body); self.assertIn("host python lacks PyYAML", body)
 
     def test_bad_fly_args_refuse_before_any_phase(self):                              # yaw review: fail before Isaac flies
         import shutil

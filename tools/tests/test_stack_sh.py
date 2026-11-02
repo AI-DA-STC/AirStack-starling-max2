@@ -217,3 +217,28 @@ class EnvLeak(unittest.TestCase):
         self.assertIn("unset NUM_ROBOTS FLY_ARGS", text[i:j])
         k = text.index('source "$SIM_TESTS_DIR/$NAME/test.env"')
         self.assertIn("unset NUM_ROBOTS FLY_ARGS", text[k - 200:k])               # right before test.env, so only test.env can set them
+
+
+class Snapshots(unittest.TestCase):
+    """param_snapshot start|end (CHG-0017): one MAVROS dump per drone + the commander's dump, in $HEAVY; never a fail."""
+    def test_one_dump_per_drone_and_the_commander(self):
+        r = run_stub('HEAVY=$(mktemp -d); rx(){ case "$*" in *"param dump /drone_"*) printf "/d:\\n  ros__parameters:\\n"; for i in $(seq 1 600); do echo "    P$i: 1"; done;; '
+                     '*"param dump /swarm_commander"*) printf "/swarm_commander:\\n  ros__parameters:\\n    cbf_alpha: 2.5\\n";; esac; }; param_snapshot start; echo rc=$?; ls "$HEAVY"')
+        for n in ("params_start_drone_1.yaml", "params_start_drone_2.yaml", "params_start_drone_3.yaml", "params_start_swarm_commander.yaml"):
+            self.assertIn(n, r.stdout, r.stdout + r.stderr)
+        self.assertIn("600 PX4 parameters", r.stdout); self.assertIn("rc=0", r.stdout); self.assertNotIn("WARN", r.stdout)
+
+    def test_pull_comes_before_the_dump_and_is_never_forced(self):
+        r = run_stub('HEAVY=$(mktemp -d); C=$(mktemp); rx(){ echo "$*" >> $C; }; param_snapshot end; echo ===; cat $C')
+        lines = [l for l in r.stdout.split("===", 1)[1].splitlines() if "drone_1" in l]
+        self.assertIn("param/pull mavros_msgs/srv/ParamPull '{force_pull: false}'", lines[0]); self.assertIn("ros2 param dump /drone_1/interface/mavros/param", lines[1])
+        self.assertNotIn("force_pull: true", r.stdout)                              # a forced pull mid-run is U5 (UNVERIFIED)
+
+    def test_a_short_or_empty_dump_warns(self):
+        r = run_stub('HEAVY=$(mktemp -d); rx(){ case "$*" in *"param dump /drone_"*) printf "/d:\\n  ros__parameters:\\n    P1: 1\\n";; esac; }; param_snapshot end; echo rc=$?')
+        self.assertIn("WARN: snapshot end drone_1 has 1 PX4 parameters", r.stdout)
+        self.assertIn("WARN: snapshot end swarm_commander is empty", r.stdout); self.assertIn("rc=0", r.stdout)
+
+    def test_param_diff_failure_is_a_caveat_not_a_fail(self):
+        r = run_stub('HEAVY=$(mktemp -d); caveat(){ echo "CAVEAT: $*"; }; param_diff; echo rc=$?')
+        self.assertIn("CAVEAT: params_diff.txt not written", r.stdout); self.assertIn("rc=0", r.stdout)

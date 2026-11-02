@@ -170,6 +170,11 @@ class Report(unittest.TestCase):
         md = (self.out.parent / f"{self.out.name}_record.md").read_text()
         self.assertIn("**Verdict: INCOMPLETE.**", md); self.assertIn("RuntimeError: boom", md)
 
+    def test_changes_block_sits_between_setup_and_pass_fail(self):                # CHG-0017
+        rows, ctx = self.G.build_rows(self.out, self.heavy, self.env)
+        md = R.render(self.env, rows, ctx, self.out, self.heavy, "PASS", [], 20, "NEAR-787")
+        self.assertLess(md.index("## Setup"), md.index("## Changes in this run")); self.assertLess(md.index("## Changes in this run"), md.index("## Pass/fail"))
+
     def test_parse_env_strips_quotes_and_comments(self):
         e = self.env; self.assertEqual(e["TITLE"], "Fake crossing"); self.assertEqual(e["ISSUE"], "NEAR-787")
 
@@ -247,3 +252,33 @@ class OneDroneRows(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class CrossingRecordPin(unittest.TestCase):
+    """CHG-0017 pin: the crossing record is the pre-CHG-0017 renderer's output (report.py at 6ef8475) plus ONLY the
+    "Changes in this run" block. Rendered from a scratch copy of docs/record/sim_crossing_run2 with the real crossing gates."""
+    BASE = "6ef8475"
+
+    def test_crossing_record_differs_only_by_the_changes_block(self):
+        import importlib.util, subprocess
+        repo = HERE.parents[1]
+        g = subprocess.run(["git", "-C", str(repo), "show", f"{self.BASE}:tools/lib/report.py"], capture_output=True, text=True)
+        if g.returncode != 0:
+            self.skipTest(f"no git history for {self.BASE} here")
+        src_run = repo / "docs" / "record" / "sim_crossing_run2"
+        if not src_run.is_dir():
+            self.skipTest("docs/record/sim_crossing_run2 missing")
+        with tempfile.TemporaryDirectory() as d:
+            old_py = pathlib.Path(d, "report_old.py"); old_py.write_text(g.stdout)
+            spec = importlib.util.spec_from_file_location("report_pre_chg0017", old_py); OLD = importlib.util.module_from_spec(spec)
+            sys.modules[spec.name] = OLD; spec.loader.exec_module(OLD)          # dataclasses needs the module registered
+            OLD.REPO, OLD.git_head_short = R.REPO, R.git_head_short                # it lives in a temp dir, not the repo
+            out = pathlib.Path(d, "sim_crossing_run2"); shutil.copytree(src_run, out); heavy = pathlib.Path(d, "heavy"); heavy.mkdir()
+            td = repo / "tools" / "sim_tests" / "crossing"
+            env = R.parse_env(td / "test.env"); env.setdefault("NAME", "crossing")
+            rows, ctx = R.load_gates(td).build_rows(out, heavy, env); R.fill_ctx(ctx, out)
+            args = (env, rows, ctx, out, heavy, "FAIL", ["h1"], 22, "NEAR-787")
+            old, new = OLD.render(*args).splitlines(), R.render(*args).splitlines()
+        i = new.index("## Changes in this run"); j = new.index("## Pass/fail")
+        self.assertEqual(new[:i] + new[j:], old, "the crossing record changed outside the new block")
+        self.assertEqual(new[j - 1], "")

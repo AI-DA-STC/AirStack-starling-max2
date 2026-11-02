@@ -194,6 +194,18 @@ yaw_dump() {
   [ -s "$HEAVY/px4_drone_1.csv" ] || caveat "PX4 yaw dump missing (no px4_drone_1.csv: drone_1 ulog missing or the dump failed) — only tests that gate on it (yaw_step) are affected"
 }
 
+# ulog_param_changes: every drone's PX4 changed-parameter list (ULog.changed_parameters, boot-time entries included) from
+# the host copies in $HEAVY -> $OUT/px4_param_changes_all.txt, read by the record's "Changes in this run" (CHG-0017).
+# No ulog or a failed read -> a caveat; the record then says unknown for that source.
+ulog_param_changes() {
+  local u=("$HEAVY"/drone_*_sysid*_*.ulg)
+  rm -f "$OUT/px4_param_changes_all.txt"
+  if [ ! -f "${u[0]}" ]; then caveat "no ulog for px4_param_changes_all.txt — the record's ulog column is unknown"; return 0; fi
+  nx python3 "$REPO/tools/lib/changes_log.py" ulog "${u[@]}" -o "$OUT/px4_param_changes_all.txt" >> "$OUT/run.log" 2>&1 \
+    && say "px4_param_changes_all.txt written (${#u[@]} ulogs)" \
+    || { rm -f "$OUT/px4_param_changes_all.txt"; caveat "px4_param_changes_all.txt not written (host pyulog missing or a ulog unreadable) — the record's ulog column is unknown"; }
+}
+
 # fly_caveats: every `CAVEAT: <text>` line fly.sh printed (e.g. yaw_step's failed gain restore) becomes a record caveat
 fly_caveats() { grep '^CAVEAT: ' "$OUT/test_stdout.log" 2>/dev/null | sed 's/^CAVEAT: //' | while IFS= read -r l; do caveat "$l"; done; true; }
 
@@ -211,9 +223,9 @@ render_report() {   # the record + verdict banner; REPORT_RC = report.py's rc (0
   esac
   rm -f "$RTMP"
 }
-# finish_report: REPORT_HOOK for abort/failure paths — the record, then the scratch dir in the robot container (kept while
+# finish_report: REPORT_HOOK for abort/failure paths — the run's changes.log (when metrics_collect never ran), the record, then the scratch dir in the robot container (kept while
 # the stack is still up: a landing that timed out leaves the commander logging into it)
-finish_report() { rm -f "$HEAVY/.metrics_stopped"; render_report; [ "${OWN_SCRATCH:-0}" = 1 ] && [ "${STACK_UP:-0}" != 1 ] && docker exec "$R" rm -rf "$S" >/dev/null 2>&1; true; }
+finish_report() { rm -f "$HEAVY/.metrics_stopped"; [ -f "$OUT/changes.log" ] || docker cp "$R:$S/changes.log" "$OUT/changes.log" >/dev/null 2>&1; render_report; [ "${OWN_SCRATCH:-0}" = 1 ] && [ "${STACK_UP:-0}" != 1 ] && docker exec "$R" rm -rf "$S" >/dev/null 2>&1; true; }
 
 # one `sim.sh test` at a time: a second run would kill the first one's processes and scratch dir
 SIM_LOCK=$HOME/flight_logs/sim/.sim_test.lock
@@ -257,13 +269,16 @@ print(next((s for s in p if 'running' in s), p[0]))" "$TD/plots.json") || FIRST=
     [ "$PHASE" = isaac ] && STACK_UP=1
     [ "$PHASE" = commander ] && arm_abort_trap
     "$PHASE"
+    # the run's changes.log starts empty as soon as the scratch dir exists: a `sim.sh param set` from here on is this run's
+    [ "$PHASE" = up ] && { docker exec "$R" bash -c ": > $S/changes.log" || say "WARN: could not reset $S/changes.log"; }
   done
+  PHASE=snapshot; param_snapshot start     # PX4 (per drone) + commander parameters before the flight -> $HEAVY (CHG-0017)
   # 2  copy-in
   PHASE=metrics
   phase_begin metrics
   OWN_SCRATCH=1                           # from here /tmp/svg_test in the robot container is this run's to delete
   nx docker exec "$R" mkdir -p "$S"
-  for f in "$REPO/tools/live/metrics_core.py" "$REPO/tools/live/metrics_node.py" "$REPO/tools/live/bag_recompute.py" "$REPO/tools/lib/changes_log.py" "$TD/metrics.py" "$TD/fly.sh"; do
+  for f in "$REPO/tools/live/metrics_core.py" "$REPO/tools/live/metrics_node.py" "$REPO/tools/live/bag_recompute.py" "$REPO/tools/lib/px4_param_set.sh" "$REPO/tools/lib/changes_log.py" "$TD/metrics.py" "$TD/fly.sh"; do
     nx docker cp "$f" "$R:$S/" || fail "docker cp $f"; done
   # 3  metrics node: started before the flight, ready + liveness checked
   docker exec "$R" pkill -f 'python3 metrics_node.py' >/dev/null 2>&1 || true      # never two nodes publishing /svg/test/*
@@ -307,6 +322,7 @@ print(next((s for s in p if 'running' in s), p[0]))" "$TD/plots.json") || FIRST=
   grep -q 'armed: true' "$OUT/armed_post.txt" && say "!! a drone still reports armed: true 20 s after landing" || true
   docker exec "$R" grep -E 'touchdown at z=|landed, disarmed|disarm not accepted' "$S/commander.log" | tee "$OUT/landing_evidence.txt" | tee -a "$OUT/run.log" || true
   json1 /svg/commander_status > "$OUT/status_post.json" || say "WARN: no commander_status after the flight"
+  param_snapshot end; param_diff           # the same parameters after the landing; the diff -> params_diff.txt (CHG-0017)
   # 6  ask for the OBS file while the plots are still live, then stop the node
   if [ "$PAUSE" = 1 ]; then
     say "Landed. Plots still live. Stop OBS, then click back into this terminal (keys typed into the plot window are lost)."
@@ -318,7 +334,7 @@ print(next((s for s in p if 'running' in s), p[0]))" "$TD/plots.json") || FIRST=
   metrics_stop
   # 7  ulogs, params, arm times, then the stack down (bag dump hook = bag recompute)
   PHASE=collect
-  phase_begin collect ulog_list.txt ulog_sysid_map.txt params_ulog.txt px4_arm_times.txt px4_param_changes.txt
+  phase_begin collect ulog_list.txt ulog_sysid_map.txt params_ulog.txt px4_arm_times.txt px4_param_changes.txt px4_param_changes_all.txt
   copy_ulogs
   local U1 USE SID=2 WHO=drone_1; U1=$(awk '$1==2{print $2}' "$OUT/ulog_sysid_map.txt" | tail -1)
   if [ -n "$U1" ]; then ulog_header_params "$U1"; USE=$U1
@@ -329,6 +345,7 @@ print(next((s for s in p if 'running' in s), p[0]))" "$TD/plots.json") || FIRST=
   if [ -n "$USE" ]; then px4_arm_times_of "$USE" "$SID" "$WHO"
   else rm -f "$OUT/px4_arm_times.txt"; say "WARN: no PX4 arm times (no ulog at all)"; fi
   yaw_dump "$U1"
+  ulog_param_changes
   PHASE=down; down; STACK_UP=0
   docker exec "$R" rm -rf "$S"
   rm -f "$HEAVY/.metrics_stopped"; OWN_SCRATCH=0
@@ -475,6 +492,7 @@ cmd_setup() {
   fi
   if python3 -c 'import numpy, matplotlib' 2>/dev/null; then ok "host python: numpy, matplotlib"; else bad "host python lacks numpy/matplotlib (pip install numpy matplotlib)"; fi
   if python3 -c 'import pyulog' 2>/dev/null; then ok "host python: pyulog"; else warn "host python lacks pyulog (pip install pyulog) — vehicle-time gates fall back to the isaac-sim container"; fi
+  if python3 -c 'import yaml' 2>/dev/null; then ok "host python: PyYAML"; else warn "host python lacks PyYAML (pip install pyyaml) — the record's snapshot diff is unknown"; fi
   for t in ffmpeg obs; do if command -v $t >/dev/null; then ok "$t on PATH"; else warn "$t not on PATH (needed only for video)"; fi; done
   if [ $have_docker = 1 ] && docker exec "$R" true 2>/dev/null; then
     if docker exec "$R" bash -c 'command -v foxglove-studio' >/dev/null 2>&1; then ok "foxglove-studio in $R"; else warn "foxglove-studio not found in $R"; fi

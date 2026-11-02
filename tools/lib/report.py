@@ -14,7 +14,8 @@ ctx keys read here: headline (label), headline_row (check-name prefix of the gat
 Every gate row is PASS / FAIL / UNVERIFIED; an info row never passes or fails the run; missing evidence is UNVERIFIED;
 no gate row at all is INCOMPLETE.
 Exit: 0 PASS, 2 INCOMPLETE, 1 FAIL, 3 ABORTED (<run_dir>/aborted.txt exists). Writes <record>.md and one line in
-<run_dir>/verdicts.log. Sim-only (CLAUDE.md iron rule 9)."""
+<run_dir>/verdicts.log. Every record carries "Changes in this run" after Setup (changes_log.changes_block, CHG-0017).
+Sim-only (CLAUDE.md iron rule 9)."""
 from __future__ import annotations
 
 import argparse
@@ -26,6 +27,9 @@ import pathlib
 import re
 import subprocess
 import sys
+
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))   # tools/lib: changes_log (also when imported by a test)
+import changes_log as CL  # noqa: E402
 
 REPO = pathlib.Path(__file__).resolve().parents[2]
 EXIT = {"PASS": 0, "INCOMPLETE": 2, "FAIL": 1, "ABORTED": 3}
@@ -329,9 +333,10 @@ def render(env, rows, ctx, out, heavy, verdict, history, ledger, issue) -> str:
          f"| Commander | `{env.get('CONFIG', '?')} scenario:={env.get('SCENARIO', '?')}`, tuning {json.dumps(tuning) if tuning else 'n/a'} |",
          f"| Driver | `tools/sim.sh test {env.get('NAME', run)}`, repo commit `{meta.get('head', meta.get('head_short', 'n/a'))}` (tools/ uncommitted changes: {meta.get('dirty_tools', 'n/a')}) |",
          f"| Started | {started} {tz} (laptop clock, `run_meta.txt`); flight {span or 'n/a'} UTC (container clock) |",
-         f"| Video | {video} |",
-         "", "## Pass/fail", "",
-         "| Check | Criterion | Measured | Baseline | Verdict |", "|---|---|---|---|---|"]
+         f"| Video | {video} |", ""]
+    L += CL.changes_block(out, heavy) + [""]          # CHG-0017: what changed while this run flew (CODING_STANDARD §3)
+    L += ["## Pass/fail", "",
+          "| Check | Criterion | Measured | Baseline | Verdict |", "|---|---|---|---|---|"]
     for r in rows:
         v = f"**{r.verdict}**" if r.verdict in ("FAIL", "UNVERIFIED") else r.verdict
         L.append("| " + " | ".join(_cell(x) for x in (r.check, r.criterion, r.measured, r.baseline, v)) + " |")

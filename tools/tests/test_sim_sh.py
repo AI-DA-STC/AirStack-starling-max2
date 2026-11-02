@@ -509,3 +509,95 @@ class KeysSubcommand(unittest.TestCase):
             env = guarded_env(dict(os.environ, PATH=os.path.join(tmp, "bin") + ":" + os.environ["PATH"]))
             r = subprocess.run(["bash", "-c", "docker ps"], capture_output=True, text=True, env=env)
             self.assertIn("OWN_FAKE", r.stdout)
+
+
+class UlogGuard(unittest.TestCase):
+    """bare `sim.sh down` saves every PX4 ulog no run folder holds before Isaac stops (design B9)."""
+    FAKE = ('#!/bin/sh\necho "$@" >> "$FAKE_LOG"\ncase "$1" in\n'
+            '  exec) [ -n "$FAIL_EXEC" ] && exit 1; case "$*" in *"/tmp/tmp*/log/"*) printf "%s\\n" "/tmp/tmpA/log/2026-11-02/10_00_00.ulg 100" "/tmp/tmpB/log/2026-11-02/10_00_00.ulg 200";; esac; exit 0;;\n'
+            '  cp) [ -n "$FAIL_CP" ] && exit 1; case "$2" in *tmpA*) n=100;; *) n=200;; esac; head -c $n /dev/zero > "$3"; exit 0;;\n'
+            'esac\nexit 0\n')
+
+    def _run(self, tmp, arg="", fail_cp="", fail_exec="", fresh=True):
+        src = SIM.read_text()
+        fn = src[src.index("already_copied() {"):src.index("# ----------------------------------------------------------------------------------------------- setup / doctor / check")]
+        b = os.path.join(tmp, "bin"); home = os.path.join(tmp, "home")
+        if fresh:
+            os.makedirs(b); pathlib.Path(b, "docker").write_text(self.FAKE); os.chmod(os.path.join(b, "docker"), 0o755)
+            prev = os.path.join(home, "flight_logs/sim/run1"); os.makedirs(prev)
+            pathlib.Path(prev, "drone_1_sysid2_10_00_00.ulg").write_bytes(b"\0" * 100)      # tmpA's log: a test run already holds it
+        log = os.path.join(tmp, "docker.log")
+        if os.path.exists(log): os.remove(log)
+        env = guarded_env(dict(os.environ, HOME=home, PATH=b + ":" + os.environ["PATH"], FAKE_LOG=log, FAIL_CP=fail_cp, FAIL_EXEC=fail_exec))
+        r = subprocess.run(["bash", "-c", 'say(){ echo "SAY $*"; }; I=isaac-sim; ' + fn + f"\nulog_guard {arg}; echo rc=$?"],
+                           capture_output=True, text=True, timeout=20, env=env)
+        return r, home, (pathlib.Path(log).read_text() if os.path.exists(log) else "")
+
+    @staticmethod
+    def _cps(calls): return [l for l in calls.splitlines() if l.startswith("cp ")]
+
+    def test_copies_only_what_no_run_folder_holds(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            r, home, calls = self._run(tmp)
+            self.assertIn("rc=0", r.stdout, r.stdout + r.stderr)
+            saved = list(pathlib.Path(home, "flight_logs/sim").glob("uncollected_*/*.ulg"))
+            self.assertEqual([p.name for p in saved], ["tmpB_2026-11-02_10_00_00.ulg"]); self.assertEqual(saved[0].stat().st_size, 200)
+            self.assertNotIn("tmpA", "".join(self._cps(calls)))
+            self.assertIn("saved 1 PX4 ulog", r.stdout); self.assertIn("1 already", r.stdout)
+
+    def test_a_second_down_does_not_copy_the_guards_own_copies_again(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self._run(tmp)
+            r, home, calls = self._run(tmp, fresh=False)
+            self.assertIn("rc=0", r.stdout, r.stdout + r.stderr); self.assertEqual(self._cps(calls), [])
+            self.assertIn("saved 0 PX4 ulog", r.stdout); self.assertIn("2 already", r.stdout)
+
+    def test_a_failed_copy_refuses_and_names_force(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            r, _, _ = self._run(tmp, fail_cp="1")
+            self.assertIn("rc=1", r.stdout); self.assertIn("Isaac NOT stopped", r.stdout); self.assertIn("--force", r.stdout)
+
+    def test_force_copies_nothing_and_says_the_logs_are_lost(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            r, _, calls = self._run(tmp, arg="--force")
+            self.assertIn("rc=0", r.stdout); self.assertIn("lost", r.stdout); self.assertEqual(calls, "")
+
+    def test_isaac_not_running_is_a_no_op(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            r, home, calls = self._run(tmp, fail_exec="1")
+            self.assertIn("rc=0", r.stdout); self.assertIn("not running", r.stdout); self.assertEqual(self._cps(calls), [])
+            self.assertEqual(list(pathlib.Path(home, "flight_logs/sim").glob("uncollected_*")), [])
+
+    def test_bare_down_runs_the_guard_before_down(self):
+        src = SIM.read_text(); seg = src[src.index("  down)"):src.index("  status)")]
+        self.assertIn("ulog_guard", seg); self.assertLess(seg.index("ulog_guard"), seg.rindex("down"))
+        self.assertIn("--force", seg); self.assertIn("ulogs_copied.ok", seg)
+        self.assertLess(seg.index("ulog_guard"), seg.index("ulogs_copied.ok"))     # the .ok only after the guard succeeded
+        self.assertIn("down [--force]", run().stdout)
+
+
+class HookCheck(unittest.TestCase):
+    """doctor fails on a clone where git would not run the versioned hook (design B4)."""
+    def _run(self, configured):
+        from test_changes import clean_env, git
+        src = SIM.read_text(); fn = src[src.index("hook_check() {"):src.index("# cmd_setup: idempotent preparation")]
+        with tempfile.TemporaryDirectory() as d:
+            git(d, "init", "-q")
+            if configured: git(d, "config", "core.hooksPath", configured)
+            body = 'ok(){ echo "OK $*"; }; bad(){ echo "FAIL $*"; }; warn(){ echo "WARN $*"; }; ' + fn + f"\nREPO={d}; hook_check"
+            return subprocess.run(["bash", "-c", body], capture_output=True, text=True, env=clean_env()).stdout
+
+    def test_fresh_clone_fails(self):                                              # Review Focus 5
+        out = self._run(""); self.assertIn("FAIL", out); self.assertIn("tools/sim.sh setup", out); self.assertNotIn("OK", out)
+
+    def test_configured_clone_is_ok(self):
+        out = self._run("tools/git-hooks"); self.assertIn("OK", out); self.assertNotIn("FAIL", out); self.assertNotIn("WARN", out)
+
+    def test_another_hooks_path_fails(self):
+        self.assertIn("FAIL", self._run(".husky"))
+
+    def test_setup_installs_then_checks(self):
+        src = SIM.read_text(); body = src[src.index("cmd_setup() {"):src.index("cmd_doctor()")]
+        self.assertLess(body.index("git-hooks/install.sh"), body.index("hook_check"))
+        self.assertNotIn('cmp -s "$REPO/tools/git-hooks/pre-commit"', body)
+        self.assertNotIn("hook missing or stale", body)

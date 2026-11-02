@@ -20,3 +20,4 @@ The last cell is `this` (the commit that carries the entry) or the sha(s) of old
 | CHG-0010 | 2026-11-02 | tooling | yaw_core: NaN or short post-release windows read UNVERIFIED, not 0; new post_status key; yaw_dump caveat reworded; backfilled | 84c990f |
 | CHG-0011 | 2026-11-02 | sim-only | new yaw_step test (one sim drone, yaw pulses, PX4-vehicle-time gates, live gain sweep) + tools/lib/changes_log.py; sim.sh quotes FLY_ARGS, FLY_TIMEOUT_S watchdog, changes.log copy-out; backfilled | 285fdbe |
 | CHG-0012 | 2026-11-02 | sim-only | yaw_step review fixes: interrupted sets logged, booted gains restored before the patch-0007 check, sweep gates, fly.sh --check before Isaac, fly.sh CAVEAT lines become record caveats; backfilled | 5b7e6e1 |
+| CHG-0014 | 2026-11-02 | sim-only | sim.sh down saves uncopied PX4 ulogs to ~/flight_logs/sim/uncollected_<date>/ before Isaac stops (--force skips); doctor fails without core.hooksPath | this |

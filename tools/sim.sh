@@ -5,7 +5,8 @@
 #   setup                  one-time host/container preparation (Foxglove layouts, tool copies)
 #   doctor                 read-only health check of the host, containers and ports
 #   up [--headless]        start the stack: precheck, watch, Isaac, MAVROS interfaces (window mode by default)
-#   down                   stop the stack (commander, bag, interfaces, ulogs, Isaac); containers stay up
+#   down [--force]         stop the stack (commander, bag, interfaces, ulogs, Isaac); containers stay up. First saves
+#                          every PX4 ulog not yet under ~/flight_logs/sim to uncollected_<date>/; --force skips that
 #   status                 what is running now
 #   tabs                   open the terminal tabs for the stack
 #   test <name> [--headless] [--no-pause] [--ledger N] --issue NEAR-nnn <run>
@@ -24,7 +25,7 @@ usage: tools/sim.sh <setup|doctor|up|down|status|tabs|test|figures|check> [flags
   setup                                  one-time preparation (checks, optional Foxglove layout file)
   doctor                                 read-only health check
   up [--headless]                        start the sim stack (Isaac window unless --headless)
-  down                                   stop the sim stack
+  down [--force]                         stop the sim stack (first saves uncopied PX4 ulogs; --force skips that)
   status                                 what is running
   tabs                                   open the terminal tabs
   keys [--profile xbox_usb]              keyboard teleop window (arrows move, W/S up/down, A/D turn) for safe_teleop; sim only
@@ -356,6 +357,32 @@ cmd_keys() {
   docker exec -i $tty "$R" bash -ic "python3 $D/key_teleop.py $*"
 }
 
+# already_copied <basename> <size>: 0 when a file of that name ending and exact size is already under ~/flight_logs/sim
+# (test runs name copies drone_<n>_sysid<s>_<basename>; ulog_guard's own copies are <tmpdir>_<datedir>_<basename>)
+already_copied() {
+  [ -n "$(find "$HOME/flight_logs/sim" -name "*$1" -size "${2}c" -print -quit 2>/dev/null)" ]
+}
+
+# ulog_guard [--force] (bare `down`, BEFORE Isaac stops: PX4's /tmp/tmp*/log vanishes with it): every ulog in the isaac
+# container that no run folder holds is copied to ~/flight_logs/sim/uncollected_<date>/. Non-zero = a copy failed and
+# nothing may be stopped. --force copies nothing (those logs are lost). Design B9 (docs/CODING_STANDARD.md §3).
+ulog_guard() {
+  if [ "${1:-}" = --force ]; then say "down --force: PX4 ulogs NOT copied — any uncollected log is lost when Isaac stops"; return 0; fi
+  docker exec "$I" true 2>/dev/null || { say "ulog guard: isaac container not running — no ulogs to save"; return 0; }
+  local list f sz rest dst n=0 m=0 got
+  list=$(docker exec "$I" bash -c 'for f in /tmp/tmp*/log/*/*.ulg; do [ -f "$f" ] && echo "$f $(stat -c %s "$f")"; done; true') \
+    || { say "ulog guard: could not list the PX4 ulogs in $I — Isaac NOT stopped. Retry, or: tools/sim.sh down --force (the uncopied logs are lost)"; return 1; }
+  dst=$HOME/flight_logs/sim/uncollected_$(date +%F)
+  while read -r f sz; do [ -n "$f" ] || continue
+    if already_copied "$(basename "$f")" "$sz"; then m=$((m+1)); continue; fi
+    rest=${f#/tmp/}
+    local to="$dst/${rest%%/*}_$(basename "$(dirname "$f")")_$(basename "$f")"
+    if mkdir -p "$dst" && docker cp "$I:$f" "$to" >/dev/null && got=$(stat -c %s "$to" 2>/dev/null) && [ "$got" -ge "$sz" ]; then n=$((n+1))
+    else say "ulog guard: copy FAILED for $f — Isaac NOT stopped. Retry, or: tools/sim.sh down --force (the uncopied logs are lost)"; return 1; fi
+  done <<< "$list"
+  say "ulog guard: saved $n PX4 ulog(s) to $dst ($m already under ~/flight_logs/sim)"
+}
+
 # ----------------------------------------------------------------------------------------------- setup / doctor / check
 cmd_check() {
   no_args "$@"
@@ -385,6 +412,15 @@ ok()   { echo "  OK    $*"; N_OK=$((N_OK+1)); }
 warn() { echo "  WARN  $*"; N_WARN=$((N_WARN+1)); }
 bad()  { echo "  FAIL  $*"; N_FAIL=$((N_FAIL+1)); }
 
+# hook_check: the versioned pre-commit hook runs only when core.hooksPath points at tools/git-hooks (design B4)
+hook_check() {
+  local v; v=$(git -C "$REPO" config --get core.hooksPath 2>/dev/null)
+  case "$v" in
+    tools/git-hooks|tools/git-hooks/|"$REPO/tools/git-hooks"|"$REPO/tools/git-hooks/") ok "pre-commit hook active (core.hooksPath = $v)" ;;
+    *) bad "pre-commit hook NOT active in this clone (core.hooksPath='$v') — run: tools/sim.sh setup   (or: git config core.hooksPath tools/git-hooks)" ;;
+  esac
+}
+
 # cmd_setup: idempotent preparation; with DRY=1 (doctor) it only reports and changes nothing
 cmd_setup() {
   no_args "$@"
@@ -404,12 +440,8 @@ cmd_setup() {
     if docker exec "$R" bash -c 'command -v foxglove-studio' >/dev/null 2>&1; then ok "foxglove-studio in $R"; else warn "foxglove-studio not found in $R"; fi
     if docker exec "$R" bash -c 'ls ~/.foxglove-studio/extensions 2>/dev/null | grep -qi svg'; then ok "Studio SVG extension installed"; else warn "Studio SVG extension not found in ~/.foxglove-studio/extensions"; fi
   elif [ $have_docker = 1 ]; then warn "$R not running — Studio checks and layout install skipped"; fi
-  if [ "${DRY:-0}" = 1 ]; then
-    [ -x "$REPO/.git/hooks/pre-commit" ] && cmp -s "$REPO/tools/git-hooks/pre-commit" "$REPO/.git/hooks/pre-commit" \
-      && ok "pre-commit hook installed and current" || warn "pre-commit hook missing or stale (setup installs it)"
-  else
-    bash "$REPO/tools/git-hooks/install.sh" >/dev/null && ok "pre-commit hook installed" || bad "hook install failed"
-  fi
+  [ "${DRY:-0}" = 1 ] || bash "$REPO/tools/git-hooks/install.sh" >/dev/null || bad "hook install failed"
+  hook_check
   for t in "$SIM_TESTS_DIR"/*/; do
     n=$(basename "$t")
     if [ "${DRY:-0}" = 1 ]; then
@@ -443,7 +475,13 @@ case "$SUB" in
     for a in "$@"; do case "$a" in --headless) HEADLESS=true ;; *) usage_line >&2; echo "error: up: unknown flag $a" >&2; exit 2 ;; esac; done
     stack_env
     for PHASE in precheck up watch isaac interfaces; do "$PHASE"; done ;;
-  down)   no_args "$@"; HEADLESS=false; stack_env; PHASE=down; down ;;
+  down)
+    FORCE=""
+    for a in "$@"; do case "$a" in --force) FORCE=1 ;; *) usage_line >&2; echo "error: down takes no arguments except --force (got $a)" >&2; exit 2 ;; esac; done
+    HEADLESS=false; stack_env; PHASE=down
+    ulog_guard ${FORCE:+--force} || exit 1
+    touch "$OUT/ulogs_copied.ok"      # the guard saved them: down() must not copy the same logs again into _stack
+    down ;;
   status) no_args "$@"; HEADLESS=false; stack_env nomk; PHASE=status; status ;;
   tabs)   no_args "$@"; exec "$REPO/tools/sim_terminals.sh" ;;
   keys)   cmd_keys "$@"; exit $? ;;

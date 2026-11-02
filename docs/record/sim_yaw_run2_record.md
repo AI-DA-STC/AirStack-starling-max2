@@ -2,7 +2,7 @@ RECORD · SIM — sim_yaw_run2. Sim-only (iron rule 9): none of these values is 
 
 # sim_yaw_run2 — one-drone yaw-step: heading ring-down after a yaw pulse, PX4 vehicle time (started 2026-11-02T21:31:06+08:00 +08; flight 13:36:08–13:38:57 UTC)
 
-**Verdict: INCOMPLETE.** Measure how the sim drone's heading settles after a yaw pulse is released (overshoot, ring, settle time, swing-back rate, drift) from the PX4 ulog in vehicle time, so the sim airframe's yaw gains can be retuned; the keyboard sessions of 2026-10-30 showed a ±8–17° ring at ~0.8 Hz. For Linear NEAR-789 (milestone S5). PASS = every gate PASS; INCOMPLETE = no FAIL but ≥ 1 gate UNVERIFIED; FAIL = any gate FAIL; ABORTED = Ctrl-C landing, never a result. Report generated 2026-11-02 at repo `0683b81`.
+**Verdict: INCOMPLETE.** Measure how the sim drone's heading settles after a yaw pulse is released (overshoot, ring, settle time, swing-back rate, drift) from the PX4 ulog in vehicle time, so the sim airframe's yaw gains can be retuned; the keyboard sessions of 2026-10-30 showed a ±8–17° ring at ~0.8 Hz. For Linear NEAR-789 (milestone S5). PASS = every gate PASS; INCOMPLETE = no FAIL but ≥ 1 gate UNVERIFIED; FAIL = any gate FAIL; ABORTED = Ctrl-C landing, never a result. Report generated 2026-11-02 at repo `85081be`.
 
 **Scope:** PX4's own sim state estimate positions the drone (no mocap, no camera); flat default world; one drone; commander teleop input only (safe_teleop and the keyboard not in the loop); time gates read PX4 vehicle time from the ulog.
 
@@ -73,7 +73,7 @@ all 49 airframe values in force
 | rosbag copied + readable | bag dir yaw_step_* with metadata.yaml under the heavy folder, and metrics.csv, metrics_bag.csv in the run folder | yaw_step_20261102_133148: 305 MB, metadata.yaml present | - | PASS |
 | PX4 ulogs one per sysid 2 | ulog_sysid_map.txt lists sysids 2 (drone_1) | 1 files, sysids ['2'] | - | PASS |
 | WiFi firmware alerts | 0 during the run | 0 | - | PASS |
-| code that ran | informational (run_meta.txt head vs git HEAD at report time) | ran at c66f010, report at 0683b81 | - | info |
+| code that ran | informational (run_meta.txt head vs git HEAD at report time) | ran at c66f010, report at 85081be | - | info |
 | ulog pulse 1 (−) | informational (match unverified: the ulog shows 6 yaw pulses, fly.sh stamped 7) | on 604.5 s, os 0.8°, settle 0.03 s, ring 1, swing 12 °/s (abs 56), drift 0.04 m, plat 56 °/s, scale 1.89 | - | info |
 | ulog pulse 2 (+) | informational (match unverified: the ulog shows 6 yaw pulses, fly.sh stamped 7) | on 644.2 s, os 1.4°, settle 0.03 s, ring 1, swing 11 °/s (abs 56), drift 0.03 m, plat 56 °/s, scale 1.89 | - | info |
 | ulog pulse 3 (−) | informational (match unverified: the ulog shows 6 yaw pulses, fly.sh stamped 7) | on 683.9 s, os 0.9°, settle 0.06 s, ring 1, swing 12 °/s (abs 56), drift 0.04 m, plat 56 °/s, scale 1.85 | - | info |
@@ -103,6 +103,7 @@ Every generation of this record (`verdicts.log`, newest last; the last line is t
 ```
 2026-11-02T21:41:03+08:00 head=c66f010 verdict=INCOMPLETE fail=0 unverified=8
 2026-11-02T22:17:15+08:00 head=c66f010 verdict=INCOMPLETE fail=0 unverified=8
+2026-11-02T22:26:52+08:00 head=c66f010 verdict=INCOMPLETE fail=0 unverified=8
 ```
 
 ## Evidence
@@ -176,7 +177,7 @@ Live vs bag recompute:
 ## Caveats
 
 - The 20 s gap between pulses is wall-clock; in vehicle time it is the gap × the time scale (1.89 here; ~1.3 on the flat world). Every time gate is PX4 vehicle time from the ulog; the figure's axis is wall clock.
-- Pulse 0 and 1 were lost before the commander had subscribed (discovery), fixed by CHG-0025, so INCOMPLETE is a test-script result, not a drone result.
+- Pulse 0/1, the first of six, was lost before the commander had subscribed (discovery), fixed by CHG-0025, so INCOMPLETE is a test-script result, not a drone result.
 
 ## Ledger row draft (docs/record/LEDGER.md table 1, #30, NEAR-789)
 

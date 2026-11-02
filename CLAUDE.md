@@ -17,6 +17,7 @@ parent/child. Milestones were RESET; **nothing on this software has flown; sim r
 | [record/LEDGER.md](docs/record/LEDGER.md) | append-only test ledger: table 1 this software (#1–#23, sim), table 2 the previous software (A1–A21, archived) |
 | [DOCS_STANDARD.md](docs/DOCS_STANDARD.md) | **how docs are organised and changed** — where things live, Linear naming, milestone → issues → results shape, cell rules, budgets, wording, the after-a-test-run recipe, gates; structural changes go through the `quality-change` skill |
 | [TEST_STANDARD.md](docs/TEST_STANDARD.md) | **how a milestone test is scripted** — one front door `tools/sim.sh test <name>`, Isaac window on, a live plot window, same numbers gated, Ctrl-C lands + ABORTED, five-file test contract under `tools/sim_tests/` |
+| [CODING_STANDARD.md](docs/CODING_STANDARD.md) | **how a behaviour change is logged** — what needs an entry, the eight fields, [record/CHANGES.md](docs/record/CHANGES.md), live changes through the tools, the hook that blocks a missing entry |
 | [PX4_MSGS_AUDIT.md](docs/PX4_MSGS_AUDIT.md) | PX4 v1.14 vs px4_msgs audit + re-run method (NEAR-821; iron rule 5) |
 | [MIGRATION.md](docs/MIGRATION.md) | old branch → this branch: removed/added, behaviours to unlearn, re-do list, archived-doc pointers |
 | [RUNBOOK.md](docs/RUNBOOK.md) | running a session — sim: `tools/sim_terminals.sh` (four Terminator tabs: Isaac Sim · Interfaces · Commander · Cockpit); real drone: tmux `bringup` panes; the panel instead of RViz |

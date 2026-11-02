@@ -1,0 +1,22 @@
+RECORD · SIM + REAL — append-only change log ([CODING_STANDARD.md](../CODING_STANDARD.md)). One line per change. The full entry (eight fields) is in the body of the commit that carries `Change: CHG-nnnn`; read it with `python3 tools/docs_check/changes.py show CHG-nnnn`. Never edit or delete a line; correct with a new one.
+
+Open (owner, 2026-11-02): which MPC limits the drone flies is unknown until a QGC check; iron rule 9's sentence waits for it.
+
+# Changes
+
+The last cell is `this` (the commit that carries the entry) or the sha(s) of older commits that the entry describes (backfilled, or a late entry for a commit that slipped through).
+
+| ID | Date | Scope | What | Commit |
+|---|---|---|---|---|
+| CHG-0001 | 2026-10-30 | sim-only | patch 0006: sim teleop, released sticks park the drone (commander velocity output only); backfilled | bdc58d6 |
+| CHG-0002 | 2026-10-30 | sim-only | patch 0007: sim MAVROS interface sends room-frame velocities as FRAME_LOCAL_NED (velocity_frame local); backfilled | 02cce03 |
+| CHG-0003 | 2026-10-20 | sim-only | sim airframe 10090_pegasus_starling2max baseline: CMU rotor geometry, rate gains x0.5, LNDMC_ROT_MAX 300, MPC limits above the drone's; backfilled | 803385a, 15100b6, 6d40f95, 5bb4e04, 2a70731, 7032af4, d739a73 |
+| CHG-0004 | 2026-10-30 | sim-only | NEAR-860: cuvslam_stereo_node.py tracker split into make_tracker()/track_frame() for the offline replay; backfilled | 1790264 |
+| CHG-0005 | 2026-11-02 | sim-only | sim stack takes NUM_ROBOTS and FLY_ARGS from test.env (default 3); yaw gains in the ulog header dump; backfilled | 777b0c3 |
+| CHG-0006 | 2026-11-02 | tooling | collect dumps drone_1's ulog to px4_drone_1.csv (vehicle-time yaw): ulog_yaw_dump.py, yaw_core.py; backfilled | a9f38d3 |
+| CHG-0007 | 2026-11-02 | tooling | live metrics carry heading (quaternion to ENU yaw, unwrapped), yaw rate and xy drift; backfilled | 923fbad |
+| CHG-0008 | 2026-11-02 | tooling | heading reads NaN on an unfilled quaternion (norm² < 0.5); backfilled | 1c45625 |
+| CHG-0009 | 2026-11-02 | tooling | sim.sh: NUM_ROBOTS and FLY_ARGS no longer leak from the caller's shell (only test.env sets them); stack texts and say line fixed; backfilled | 5ec0a04 |
+| CHG-0010 | 2026-11-02 | tooling | yaw_core: NaN or short post-release windows read UNVERIFIED, not 0; new post_status key; yaw_dump caveat reworded; backfilled | 84c990f |
+| CHG-0011 | 2026-11-02 | sim-only | new yaw_step test (one sim drone, yaw pulses, PX4-vehicle-time gates, live gain sweep) + tools/lib/changes_log.py; sim.sh quotes FLY_ARGS, FLY_TIMEOUT_S watchdog, changes.log copy-out; backfilled | 285fdbe |
+| CHG-0012 | 2026-11-02 | sim-only | yaw_step review fixes: interrupted sets logged, booted gains restored before the patch-0007 check, sweep gates, fly.sh --check before Isaac, fly.sh CAVEAT lines become record caveats; backfilled | 5b7e6e1 |

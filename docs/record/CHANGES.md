@@ -33,3 +33,4 @@ The last cell is `this` (the commit that carries the entry) or the sha(s) of old
 | CHG-0023 | 2026-11-02 | sim-only | sim airframe: MC_YAW_TQ_CUTOFF 2 Hz (PX4 v1.16 default) -> 15 Hz, the real drone's MC_YAW_CUTOFF under its v1.16 name; suspected cause of the sim yaw ring | this |
 | CHG-0024 | 2026-11-02 | sim-only | sim airframe: MC_YAWRATE_P 0.07 -> 0.25, MC_YAWRATE_I 0.5 -> 0.2 (with the 15 Hz yaw filter of CHG-0023); real drone keeps 0.07 / 0.5 | this |
 | CHG-0025 | 2026-11-02 | tooling | yaw_step fly.sh waits for swarm_commander to subscribe to the teleop topic, plus 2 s, before the first pulse; no pulses after 30 s without it | this |
+| CHG-0026 | 2026-11-03 | sim-only | tools/teleop/frame.py: BODY/WORLD rotation, pending flip, heading guard — pure logic for the relay | this |

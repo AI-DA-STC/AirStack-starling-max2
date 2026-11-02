@@ -334,7 +334,8 @@ def render(env, rows, ctx, out, heavy, verdict, history, ledger, issue) -> str:
          f"| Driver | `tools/sim.sh test {env.get('NAME', run)}`, repo commit `{meta.get('head', meta.get('head_short', 'n/a'))}` (tools/ uncommitted changes: {meta.get('dirty_tools', 'n/a')}) |",
          f"| Started | {started} {tz} (laptop clock, `run_meta.txt`); flight {span or 'n/a'} UTC (container clock) |",
          f"| Video | {video} |", ""]
-    L += CL.changes_block(out, heavy) + [""]          # CHG-0017: what changed while this run flew (CODING_STANDARD §3)
+    block = CL.changes_block(out, heavy)              # CHG-0017: what changed while this run flew (CODING_STANDARD §3)
+    L += block + [""]
     L += ["## Pass/fail", "",
           "| Check | Criterion | Measured | Baseline | Verdict |", "|---|---|---|---|---|"]
     for r in rows:
@@ -365,7 +366,8 @@ def render(env, rows, ctx, out, heavy, verdict, history, ledger, issue) -> str:
           f"- Repo (this folder, `docs/record/{run}/`): " + (", ".join(f"`{f}`" for f in repo_files) if repo_files else "nothing") + ".",
           f"- Not in the repo (`{heavy if heavy is not None else '~/flight_logs/sim/' + run}/`): " + (", ".join(heavy_files) if heavy_files else "nothing copied") + ".",
           "", "## Caveats", ""]
-    L += [f"- {c}" for c in (ctx.get("caveats") or [])] or ["- none recorded."]
+    cavs = list(ctx.get("caveats") or []) + [c for c in [CL.block_caveat(block)] if c]   # ONE caveat for the block (CHG-0019)
+    L += [f"- {c}" for c in cavs] or ["- none recorded."]
     which = "next free number" if ledger is None else f"#{ledger}"
     L += ["", f"## Ledger row draft (docs/record/LEDGER.md table 1, {which}, {issue})", "",
           ledger_row(ledger, today, ledger_sentence, run, issue), "", ""]

@@ -270,6 +270,7 @@ class SimSh(unittest.TestCase):
         src = SIM.read_text()
         loop = src.index("for PHASE in precheck up watch isaac interfaces commander params"); s = src.index("param_snapshot start")
         self.assertLess(loop, s); self.assertLess(s, src.index("start_live_plot\n"))
+        self.assertLess(loop, src.index("phase_begin snapshot")); self.assertLess(src.index("phase_begin snapshot"), s)   # a run.log marker
         e = src.index("param_snapshot end"); self.assertLess(src.index('> "$OUT/status_post.json"'), e); self.assertLess(e, src.index("PHASE=metrics_stop"))
         self.assertLess(e, src.index("param_diff"))
         self.assertIn('"$REPO/tools/lib/px4_param_set.sh" "$REPO/tools/lib/changes_log.py"', src)

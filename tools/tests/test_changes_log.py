@@ -236,6 +236,7 @@ DUMP = "/drone_1/interface/mavros/param:\n  ros__parameters:\n    MC_YAW_P: 2.79
 CMD = ("bash: cannot set terminal process group\n/swarm_commander:\n  ros__parameters:\n    cbf_alpha: 2.5\n    fence_min:\n    - -4.0\n    - -2.0\n"
        "    qos_overrides:\n      /parameter_events:\n        publisher:\n          depth: 1000\n")
 AF = "param set-default MC_YAW_P 2.8 # = real\nparam set-default MC_YAWRATE_P 0.07 # = real\n"
+FULL = DUMP + "".join("    P%d: 1\n" % i for i in range(500))          # >= 500 PX4 parameters: a complete snapshot
 WHEN = "2026-11-02T14:03:05+08:00"
 TOOLS = LIB.parent
 
@@ -263,12 +264,29 @@ class Snapshot(unittest.TestCase):
     def test_diff_cli_names_a_missing_end(self):
         with tempfile.TemporaryDirectory() as d:
             h = pathlib.Path(d)
-            (h / "params_start_drone_1.yaml").write_text(DUMP); (h / "params_end_drone_1.yaml").write_text(DUMP.replace("2.799999952316284", "2.0"))
+            (h / "params_start_drone_1.yaml").write_text(FULL); (h / "params_end_drone_1.yaml").write_text(FULL.replace("2.799999952316284", "2.0"))
             (h / "params_start_swarm_commander.yaml").write_text(CMD)
-            subprocess.run([sys.executable, str(TOOLS / "lib/changes_log.py"), "diff", d, "-o", str(h / "diff.txt")], check=True)
-            t = (h / "diff.txt").read_text()
+            t = self._diff(h)
             self.assertIn("drone_1/MC_YAW_P 2.799999952316284 -> 2.0", t); self.assertIn("# swarm_commander: no end snapshot", t)
-            self.assertIn("# drone_1: partial snapshot", t)                      # 3 PX4 parameters < 500: the diff may miss some
+            self.assertNotIn("# drone_1", t)
+
+    def _diff(self, h):
+        subprocess.run([sys.executable, str(TOOLS / "lib/changes_log.py"), "diff", str(h), "-o", str(h / "diff.txt")], check=True)
+        return (h / "diff.txt").read_text()
+
+    def test_a_partial_snapshot_is_a_note_and_its_rows_are_skipped(self):        # no hundreds of "(absent) -> v" rows
+        with tempfile.TemporaryDirectory() as d:
+            h = pathlib.Path(d)
+            (h / "params_start_drone_1.yaml").write_text(DUMP); (h / "params_end_drone_1.yaml").write_text(FULL.replace("2.799999952316284", "2.0"))
+            t = self._diff(h)
+            self.assertIn("# drone_1: partial snapshot (start 3, end 503", t); self.assertNotIn("drone_1/", t)
+
+    def test_an_empty_snapshot_is_a_note_never_a_normal_diff(self):               # M9
+        with tempfile.TemporaryDirectory() as d:
+            h = pathlib.Path(d)
+            (h / "params_start_drone_1.yaml").write_text(FULL); (h / "params_end_drone_1.yaml").write_text("bash: cannot set terminal process group\n")
+            t = self._diff(h)
+            self.assertIn("# drone_1: empty end snapshot", t); self.assertNotIn("(absent)", t); self.assertNotIn("drone_1/", t)
 
     def test_diff_cli_without_any_start_snapshot_fails_and_says_so(self):
         with tempfile.TemporaryDirectory() as d:
@@ -357,6 +375,44 @@ class Block(unittest.TestCase):
     def test_a_partial_snapshot_says_unknown_for_that_target(self):
         t = self._block({"changes.log": "", "params_diff.txt": "# drone_2: no end snapshot\n"})
         self.assertIn("unknown (drone_2: no end snapshot)", t); self.assertNotIn("no differences", t)
+        self.assertNotIn("- none\n", t + "\n"); self.assertIn("the snapshot of drone_2 (unknown above)", t)
+
+    def test_rows_survive_a_note_in_the_same_diff(self):                           # M6
+        t = self._block({"changes.log": "", "params_diff.txt": "drone_1/MC_YAW_P 2.8 -> 2.0\n# drone_2: no end snapshot\n"})
+        self.assertIn("drone_1/MC_YAW_P 2.8 -> 2.0", t); self.assertIn("unknown (drone_2: no end snapshot)", t)
+        self.assertIn("UNLOGGED CHANGE: drone_1/MC_YAW_P 2.8 → 2.0", t)
+
+    def test_a_drone_without_a_ulog_is_unknown(self):                              # copy_ulogs only WARNs on a missing ulog
+        t = self._block({"changes.log": "", "params_diff.txt": "", "run_meta.txt": "num_robots=3\n", "px4_param_changes_all.txt": self.ULOG_HDR})
+        self.assertIn("- unknown (no ulog for drone_2, drone_3)", t)
+        self.assertIn("not checked against the ulog of drone_2, the ulog of drone_3", t); self.assertNotIn("- none\n", t + "\n")
+
+    def test_the_unknown_tail_is_printed_even_after_other_lines(self):
+        t = self._block({"params_diff.txt": "drone_1/LND_FLIGHT_T_LO 0 -> 81000000\n"})
+        self.assertIn("PX4 bookkeeping", t); self.assertIn("- not checked against changes.log, the ulog list", t)
+
+    def test_end_snapshot_differing_from_the_last_logged_value_is_a_conflict(self):
+        log = self.LOG + WHEN + " · drone_1/MC_YAW_P · 2 → 1.4 · yaw_step-sweep-set-2 · readback 1.4\n"
+        t = self._block({"changes.log": log, "params_diff.txt": "drone_1/MC_YAW_P 2.8 -> 2.0\n", "px4_param_changes_all.txt": self.ULOG_HDR + "35.100 drone_1 MC_YAW_P 2.0\n40.000 drone_1 MC_YAW_P 1.4\n"})
+        self.assertIn("CONFLICT: changes.log last has drone_1/MC_YAW_P → 1.4, the end snapshot shows 2.0", t)
+        t = self._block({"changes.log": log, "params_diff.txt": "drone_1/MC_YAW_P 2.8 -> 1.4\n", "px4_param_changes_all.txt": self.ULOG_HDR + "35.100 drone_1 MC_YAW_P 2.0\n40.000 drone_1 MC_YAW_P 1.4\n"})
+        self.assertNotIn("CONFLICT", t)
+
+    def test_an_unreadable_airframe_file_is_unknown_not_a_crash(self):
+        with tempfile.TemporaryDirectory() as d:
+            out = pathlib.Path(d, "out"); heavy = pathlib.Path(d, "heavy"); out.mkdir(); heavy.mkdir()
+            (heavy / "params_start_drone_1.yaml").write_text(DUMP)
+            t = "\n".join(C.changes_block(out, heavy, airframe_text="param set-default MC_YAW_P abc # = real\n"))
+        self.assertIn("unknown (airframe file unreadable", t)
+
+    def test_one_caveat_when_anything_is_flagged_or_unknown(self):
+        clean = self._block({"changes.log": self.LOG, "px4_param_changes_all.txt": self.ULOG_HDR + "35.100 drone_1 MC_YAW_P 2.0\n",
+                             "params_diff.txt": "drone_1/MC_YAW_P 2.8 -> 2.0\n"}, start=DUMP).splitlines()
+        self.assertIsNone(C.block_caveat(clean))
+        cav = C.block_caveat(self._block({}).splitlines())
+        self.assertIn("Changes in this run", cav); self.assertIn("unknown", cav); self.assertIn("verdict", cav)
+        self.assertIn("1 CONFLICT", C.block_caveat(self._block({"changes.log": self.LOG, "px4_param_changes_all.txt": self.ULOG_HDR + "35.100 drone_1 MC_YAW_P 1.5\n",
+                                                                 "params_diff.txt": ""}, start=DUMP).splitlines()))
 
     def test_no_differences_and_no_ulog_change_after_boot_are_said(self):
         t = self._block({"changes.log": "", "params_diff.txt": "", "px4_param_changes_all.txt": self.ULOG_HDR + "0.950 drone_1 CAL_ACC0_ID 1310988\n"})

@@ -272,7 +272,7 @@ print(next((s for s in p if 'running' in s), p[0]))" "$TD/plots.json") || FIRST=
     # the run's changes.log starts empty as soon as the scratch dir exists: a `sim.sh param set` from here on is this run's
     [ "$PHASE" = up ] && { docker exec "$R" bash -c ": > $S/changes.log" || say "WARN: could not reset $S/changes.log"; }
   done
-  PHASE=snapshot; param_snapshot start     # PX4 (per drone) + commander parameters before the flight -> $HEAVY (CHG-0017)
+  PHASE=snapshot; phase_begin snapshot; param_snapshot start     # PX4 (per drone) + commander parameters before the flight -> $HEAVY (CHG-0017)
   # 2  copy-in
   PHASE=metrics
   phase_begin metrics

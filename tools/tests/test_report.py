@@ -175,6 +175,13 @@ class Report(unittest.TestCase):
         md = R.render(self.env, rows, ctx, self.out, self.heavy, "PASS", [], 20, "NEAR-787")
         self.assertLess(md.index("## Setup"), md.index("## Changes in this run")); self.assertLess(md.index("## Changes in this run"), md.index("## Pass/fail"))
 
+    def test_an_unknown_source_adds_one_caveat_and_never_changes_the_verdict(self):   # CHG-0019: print-only
+        rows, ctx = self.G.build_rows(self.out, self.heavy, self.env)
+        md = R.render(self.env, rows, ctx, self.out, self.heavy, "PASS", [], 20, "NEAR-787")
+        cav = md[md.index("## Caveats"):]
+        self.assertEqual(cav.count("- Changes in this run:"), 1); self.assertIn("**Verdict: PASS.**", md)
+        self.assertEqual(R.overall_verdict(rows), "PASS")
+
     def test_parse_env_strips_quotes_and_comments(self):
         e = self.env; self.assertEqual(e["TITLE"], "Fake crossing"); self.assertEqual(e["ISSUE"], "NEAR-787")
 
@@ -208,7 +215,8 @@ class FinalFixes(unittest.TestCase):
         md = (self.out.parent / f"{self.out.name}_record.md").read_text()
         cav = md.split("## Caveats", 1)[1].split("## Ledger", 1)[0]
         lines = [l for l in cav.splitlines() if l.startswith("- ")]
-        self.assertEqual(lines, ["- one fake caveat", "- landing timed out; stack left up; bag left in the container", "- second run caveat"])
+        self.assertEqual(lines[:-1], ["- one fake caveat", "- landing timed out; stack left up; bag left in the container", "- second run caveat"])
+        self.assertTrue(lines[-1].startswith("- Changes in this run:"), lines)     # the block's one caveat comes last (CHG-0019)
 
 
 class ArmedUnknown(unittest.TestCase):
@@ -250,10 +258,6 @@ class OneDroneRows(unittest.TestCase):
         t3 = "drone_1 armed: false\ndrone_2 armed: false\ndrone_3 armed: false\ndrone_4 armed: true\n"
         self.assertEqual(set(R.parse_armed_post(t3)), {"drone_1", "drone_2", "drone_3"})
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 class CrossingRecordPin(unittest.TestCase):
     """CHG-0017 pin: the crossing record is the pre-CHG-0017 renderer's output (report.py at 6ef8475) plus ONLY the
     "Changes in this run" block. Rendered from a scratch copy of docs/record/sim_crossing_run2 with the real crossing gates."""
@@ -280,5 +284,12 @@ class CrossingRecordPin(unittest.TestCase):
             args = (env, rows, ctx, out, heavy, "FAIL", ["h1"], 22, "NEAR-787")
             old, new = OLD.render(*args).splitlines(), R.render(*args).splitlines()
         i = new.index("## Changes in this run"); j = new.index("## Pass/fail")
-        self.assertEqual(new[:i] + new[j:], old, "the crossing record changed outside the new block")
         self.assertEqual(new[j - 1], "")
+        cav = [k for k, l in enumerate(new) if l.startswith("- Changes in this run:")]
+        self.assertEqual(len(cav), 1)                                              # ONE caveat: this run's sources are unknown
+        rest = [l for k, l in enumerate(new) if not (i <= k < j or k in cav)]
+        self.assertEqual(rest, old, "the crossing record changed outside the new block and its one caveat")
+
+if __name__ == "__main__":
+    unittest.main()
+

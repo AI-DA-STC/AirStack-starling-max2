@@ -205,6 +205,30 @@ def _why_no_diff(heavy):
     return "params_diff.txt not written: host PyYAML missing? see run.log"
 
 
+def _drones(out, heavy, covered):
+    """The run's drones: run_meta.txt num_robots, else the start snapshots in heavy, else the drones the ulog list covers."""
+    m = re.search(r"^num_robots=(\d+)\s*$", (out / "run_meta.txt").read_text() if (out / "run_meta.txt").is_file() else "", re.M)
+    if m:
+        return ["drone_%d" % i for i in range(1, int(m.group(1)) + 1)]
+    h = Path(heavy) if heavy is not None else None
+    found = {p.name[len("params_start_"):-len(".yaml")] for p in h.glob("params_start_drone_*.yaml")} if h is not None and h.is_dir() else set()
+    return sorted(found | set(covered), key=lambda t: int(t.split("_")[1]) if t.split("_")[1].isdigit() else 0)
+
+
+def block_caveat(lines):
+    """ONE record caveat when the block flags anything (UNLOGGED CHANGE, CONFLICT) or a source is unknown; None if clean.
+    Print-only: it never changes the verdict."""
+    n_unl = sum(1 for l in lines if l.startswith("- UNLOGGED CHANGE"))
+    n_con = sum(1 for l in lines if l.startswith("- CONFLICT"))
+    n_unk = sum(1 for l in lines if "unknown (" in l)
+    if not (n_unl or n_con or n_unk):
+        return None
+    what = ", ".join(s for s in (f"{n_unl} UNLOGGED CHANGE" if n_unl else "", f"{n_con} CONFLICT" if n_con else "",
+                                 f"{n_unk} unknown source(s)" if n_unk else "") if s)
+    return (f"Changes in this run: {what} — read that block before trusting which parameters this run flew "
+            "(print-only; the verdict is unchanged).")
+
+
 def _fence(lines):
     return ["```", *lines, "```"]
 
@@ -237,12 +261,16 @@ def changes_block(out, heavy, airframe_text=None):
     after = [r for r in (ul or []) if r[0] > BOOT_S]
     nboot = len(ul or []) - len(after)
     L += ["", f"**PX4 ulog, parameters changed after boot (vehicle time, t > {BOOT_S:g} s; {nboot} boot-time settings not listed):**", ""]
+    drones = _drones(out, heavy, covered)
+    no_ulog = [d for d in drones if d not in covered] if ul is not None else []
     if ul is None:
         L += ["unknown (px4_param_changes_all.txt missing: no ulog was copied, or host pyulog failed; see the caveats)"]
     elif after:
         L += _fence(["%.3f %s %s %s" % r for r in after])
     else:
         L += ["none after boot" + ("" if covered else " (the list names no drone's ulog)")]
+    if no_ulog:
+        L += ["- unknown (no ulog for " + ", ".join(no_ulog) + ")"]
 
     # 3  the snapshots
     L += ["", "**Parameter snapshot, start → end of the flight (MAVROS for PX4, `ros2 param dump /swarm_commander`; "
@@ -271,17 +299,23 @@ def changes_block(out, heavy, airframe_text=None):
     if start is None:
         L += [f"unknown ({why})"]
     else:
-        import airframe_params as AP
-        text = airframe_text if airframe_text is not None else (AP.REPO / AP.AIRFRAME).read_text()
-        want = {l.name: l.value for l in AP.parse_airframe(text)}
-        bad = []
-        for n, v in want.items():
-            have = start.get(n)
-            if have is None:
-                bad.append(f"- {n}: airframe {v:g}, not in the snapshot")
-            elif not same(v, have):
-                bad.append(f"- {n}: airframe {v:g}, in force {have}")
-        L += bad or [f"all {len(want)} airframe values in force"]
+        try:
+            import airframe_params as AP
+            text = airframe_text if airframe_text is not None else (AP.REPO / AP.AIRFRAME).read_text()
+            want = {l.name: l.value for l in AP.parse_airframe(text)}
+        except Exception as e:           # a missing or unparseable airframe must not cost the record
+            want, why = None, f"airframe file unreadable: {type(e).__name__}: {e}"
+        if want is None:
+            L += [f"unknown ({why})"]
+        else:
+            bad = []
+            for n, v in want.items():
+                have = start.get(n)
+                if have is None:
+                    bad.append(f"- {n}: airframe {v:g}, not in the snapshot")
+                elif not same(v, have):
+                    bad.append(f"- {n}: airframe {v:g}, in force {have}")
+            L += bad or [f"all {len(want)} airframe values in force"]
 
     # 5  conflicts and unlogged changes
     L += ["", "**Conflicts and unlogged changes:**", ""]
@@ -310,13 +344,23 @@ def changes_block(out, heavy, airframe_text=None):
             elif not last and ul is not None and target in covered:
                 probs.append(f"- CONFLICT: {target}/{c['name']} logged but absent from the ulog list — did PX4 receive it?")
     for target, name, old, new in snap:
+        lg = logs_for(target, name)
         if name in PX4_BOOKKEEPING:
             probs.append(f"- PX4 bookkeeping (not a tuning change): {target}/{name} {old} → {new} (snapshot)")
-        elif not logs_for(target, name):
+        elif not lg:
             probs.append(f"- UNLOGGED CHANGE: {target}/{name} {old} → {new} (snapshot; no tool logged it: Foxglove, QGC "
                          "or ros2 param set?)")
-    unknown = [n for n, gone in (("changes.log", not logp.is_file()), ("the ulog list", ul is None), ("the snapshot diff", not dp.is_file())) if gone]
-    L += probs or ["- none" + (" found; not checked against " + ", ".join(unknown) + " (unknown above)" if unknown else "")]
+        elif not same(lg[-1]["new"], new):
+            probs.append(f"- CONFLICT: changes.log last has {target}/{name} → {_v(lg[-1]['new'])}, the end snapshot shows {new} "
+                         "(a later set nobody logged, or a set PX4 did not keep)")
+    noted = [n.split(":", 1)[0] for n in notes if re.match(r"^[A-Za-z0-9_]+:", n)]
+    unknown = ([n for n, gone in (("changes.log", not logp.is_file()), ("the ulog list", ul is None), ("the snapshot diff", not dp.is_file())) if gone]
+               + ["the ulog of " + d for d in no_ulog] + ["the snapshot of " + t for t in noted])
+    tail = "not checked against " + ", ".join(unknown) + " (unknown above)" if unknown else ""
+    if probs:
+        L += probs + (["- " + tail] if tail else [])
+    else:
+        L += ["- none" + (" found; " + tail if tail else "")]
     return L
 
 
@@ -345,7 +389,8 @@ def _write_diff(heavy, out):
         if target.startswith("drone_"):
             na, nb = (sum(1 for k in d if _PX4_NAME.match(k)) for d in (a, b))
             if min(na, nb) < MIN_PX4_PARAMS:
-                lines.append(f"# {target}: partial snapshot (start {na}, end {nb} PX4 parameters, < {MIN_PX4_PARAMS}); the diff may miss changes")
+                lines.append(f"# {target}: partial snapshot (start {na}, end {nb} PX4 parameters, < {MIN_PX4_PARAMS}); its rows are skipped")
+                continue
         lines += [f"{target}/{n} {o} -> {v}" for n, o, v in diff_dumps(a, b)]
     Path(out).write_text("".join(l + "\n" for l in lines))
     return 0 if starts else 1

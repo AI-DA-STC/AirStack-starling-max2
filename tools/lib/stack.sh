@@ -202,16 +202,20 @@ params() {   # secondary, read-only proof via MAVROS (names verified live); the 
   else say "params: no MAVROS param service — ulog header will decide"; fi
 }
 
-# param_snapshot <start|end> (CHG-0017; docs/CODING_STANDARD.md §3): every drone's PX4 parameters through MAVROS (a pull
-# that is never forced, then `ros2 param dump` of the param node) and the commander's parameters -> $HEAVY/params_<tag>_
+# param_snapshot <start|end> (CHG-0017; docs/CODING_STANDARD.md §3): every drone's PX4 parameters through MAVROS (a param
+# pull — forced only at the end, after landing — then `ros2 param dump` of the param node) and the commander's parameters -> $HEAVY/params_<tag>_
 # {drone_N,swarm_commander}.yaml (~900 lines each, never in the repo). It never fails the run; a short dump is a WARN.
-# UNVERIFIED until an owner session: the dump's format and time (U3), whether MAVROS's cache is fresh at the end (U4).
+# UNVERIFIED until an owner session: the dump's format and time (U3), that the forced end pull re-reads PX4 (U4).
 param_snapshot() {
-  local tag=$1 N f n
+  local tag=$1 N f n fp=false pull
+  [ "$tag" = end ] && fp=true      # end = after landing: a forced pull re-reads PX4 (U4: the cache could be stale; CHG-0019)
   for N in $DRONE_IDS; do
     f=$HEAVY/params_${tag}_drone_$N.yaml
-    note "docker exec $R bash -ic \"timeout 120 ros2 service call /drone_$N/interface/mavros/param/pull mavros_msgs/srv/ParamPull '{force_pull: false}'\""
-    rx "timeout 120 ros2 service call /drone_$N/interface/mavros/param/pull mavros_msgs/srv/ParamPull '{force_pull: false}'" | tail -1 >> "$OUT/run.log"
+    note "docker exec $R bash -ic \"timeout 120 ros2 service call /drone_$N/interface/mavros/param/pull mavros_msgs/srv/ParamPull '{force_pull: $fp}'\""
+    pull=$(rx "timeout 120 ros2 service call /drone_$N/interface/mavros/param/pull mavros_msgs/srv/ParamPull '{force_pull: $fp}'")
+    printf '%s\n' "$pull" | tail -1 >> "$OUT/run.log"
+    [ "$fp" = true ] && ! printf '%s' "$pull" | grep -q 'success=True' \
+      && say "WARN: snapshot end drone_$N: the forced param pull did not report success — the end snapshot may be MAVROS's cache"
     note "docker exec $R bash -ic 'timeout 60 ros2 param dump /drone_$N/interface/mavros/param' > $f"
     rx "timeout 60 ros2 param dump /drone_$N/interface/mavros/param" > "$f"
     n=$(grep -cE '^ {4}[A-Z][A-Z0-9_]*:' "$f")

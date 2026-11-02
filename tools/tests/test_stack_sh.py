@@ -228,11 +228,22 @@ class Snapshots(unittest.TestCase):
             self.assertIn(n, r.stdout, r.stdout + r.stderr)
         self.assertIn("600 PX4 parameters", r.stdout); self.assertIn("rc=0", r.stdout); self.assertNotIn("WARN", r.stdout)
 
-    def test_pull_comes_before_the_dump_and_is_never_forced(self):
-        r = run_stub('HEAVY=$(mktemp -d); C=$(mktemp); rx(){ echo "$*" >> $C; }; param_snapshot end; echo ===; cat $C')
-        lines = [l for l in r.stdout.split("===", 1)[1].splitlines() if "drone_1" in l]
+    def _calls(self, tag):
+        r = run_stub('HEAVY=$(mktemp -d); C=$(mktemp); rx(){ echo "$*" >> $C; }; param_snapshot ' + tag + '; echo ===; cat $C')
+        return r.stdout.split("===", 1)[0], r.stdout.split("===", 1)[1]
+
+    def test_start_pull_is_cached_and_comes_before_the_dump(self):                 # before takeoff: MAVROS's own pull is fresh
+        _, calls = self._calls("start")
+        lines = [l for l in calls.splitlines() if "drone_1" in l]
         self.assertIn("param/pull mavros_msgs/srv/ParamPull '{force_pull: false}'", lines[0]); self.assertIn("ros2 param dump /drone_1/interface/mavros/param", lines[1])
-        self.assertNotIn("force_pull: true", r.stdout)                              # a forced pull mid-run is U5 (UNVERIFIED)
+        self.assertNotIn("force_pull: true", calls)
+
+    def test_end_pull_is_forced_after_landing(self):                               # U4: the end snapshot must not be MAVROS's cache
+        said, calls = self._calls("end")
+        lines = [l for l in calls.splitlines() if "drone_1" in l]
+        self.assertIn("'{force_pull: true}'", lines[0]); self.assertIn("ros2 param dump /drone_1/interface/mavros/param", lines[1])
+        self.assertNotIn("force_pull: false", calls)
+        self.assertIn("WARN: snapshot end drone_1: the forced param pull did not report success", said)   # the fake answers nothing
 
     def test_a_short_or_empty_dump_warns(self):
         r = run_stub('HEAVY=$(mktemp -d); rx(){ case "$*" in *"param dump /drone_"*) printf "/d:\\n  ros__parameters:\\n    P1: 1\\n";; esac; }; param_snapshot end; echo rc=$?')

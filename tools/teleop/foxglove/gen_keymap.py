@@ -89,6 +89,8 @@ def fixtures_text():
 
 def replaced(text):
     a, b = text.index(BEGIN), text.index(END) + len(END)
+    if b < a:
+        raise ValueError("markers reversed")
     return text[:a] + block() + text[b:]
 
 

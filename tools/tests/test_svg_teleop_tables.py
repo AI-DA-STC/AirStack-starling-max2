@@ -57,6 +57,23 @@ class Tables(unittest.TestCase):
                 self.assertIn("extension file not found:", r.stdout + r.stderr)
                 self.assertNotIn("Traceback", r.stderr)
 
+    def test_reversed_or_unclosed_markers_are_a_missing_block_and_leave_the_file_alone(self):
+        good = EXT.read_text(encoding="utf-8")
+        bad = {"reversed": "// KEYMAP:END\nx\n// KEYMAP:BEGIN\nconst TABLES = {};\n",
+               "no END": "// KEYMAP:BEGIN\nconst TABLES = {};\n",
+               "no BEGIN": "const TABLES = {};\n// KEYMAP:END\n"}
+        self.assertIn("// KEYMAP:BEGIN", good)
+        with tempfile.TemporaryDirectory() as d:
+            for name, text in bad.items():
+                ext = pathlib.Path(d) / "extension.js"
+                ext.write_text(text, encoding="utf-8")
+                before = ext.read_bytes()
+                for extra in ([], ["--check"]):
+                    r = self._run(*extra, "--extension", str(ext), "--fixtures", str(pathlib.Path(d) / "f.json"))
+                    self.assertEqual(r.returncode, 1, (name, r.stdout + r.stderr))
+                    self.assertIn("KEYMAP block not found in", r.stdout, name)
+                    self.assertEqual(ext.read_bytes(), before, name)
+
     def test_a_stale_fixture_fails_the_check(self):
         with tempfile.TemporaryDirectory() as d:
             fx = pathlib.Path(d) / "fixtures.json"

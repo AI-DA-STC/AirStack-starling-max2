@@ -98,7 +98,14 @@ def main(argv=None):
     ap.add_argument("--extension", type=pathlib.Path, default=EXT)
     ap.add_argument("--fixtures", type=pathlib.Path, default=FIX)
     a = ap.parse_args(argv)
-    want = {a.extension: replaced(a.extension.read_text(encoding="utf-8")), a.fixtures: fixtures_text()}
+    if not a.extension.exists():
+        print("extension file not found: %s" % a.extension)
+        return 1
+    try:
+        want = {a.extension: replaced(a.extension.read_text(encoding="utf-8")), a.fixtures: fixtures_text()}
+    except ValueError:
+        print("KEYMAP block not found in %s" % a.extension)
+        return 1
     stale = [p for p, t in want.items() if not p.exists() or p.read_text(encoding="utf-8") != t]
     if a.check:
         for p in stale:

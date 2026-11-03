@@ -38,6 +38,32 @@ class Tables(unittest.TestCase):
                                capture_output=True, text=True)
             self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
 
+    def _run(self, *args):
+        return subprocess.run([sys.executable, str(GEN), *args], capture_output=True, text=True)
+
+    def test_missing_block_or_file_is_a_message_not_a_traceback(self):
+        with tempfile.TemporaryDirectory() as d:
+            ext = pathlib.Path(d) / "extension.js"
+            ext.write_text("// no markers here\n", encoding="utf-8")
+            for extra in ([], ["--check"]):
+                r = self._run(*extra, "--extension", str(ext), "--fixtures", str(FIX))
+                self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
+                self.assertIn("KEYMAP block not found in", r.stdout + r.stderr)
+                self.assertNotIn("Traceback", r.stderr)
+            gone = pathlib.Path(d) / "nope.js"
+            for extra in ([], ["--check"]):
+                r = self._run(*extra, "--extension", str(gone), "--fixtures", str(FIX))
+                self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
+                self.assertIn("extension file not found:", r.stdout + r.stderr)
+                self.assertNotIn("Traceback", r.stderr)
+
+    def test_a_stale_fixture_fails_the_check(self):
+        with tempfile.TemporaryDirectory() as d:
+            fx = pathlib.Path(d) / "fixtures.json"
+            fx.write_text(FIX.read_text(encoding="utf-8").replace("pitch", "pitch ", 1) + " ", encoding="utf-8")
+            r = self._run("--check", "--extension", str(EXT), "--fixtures", str(fx))
+            self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
+
     def test_regeneration_keeps_code_outside_the_block(self):
         with tempfile.TemporaryDirectory() as d:
             ext = pathlib.Path(d) / "extension.js"

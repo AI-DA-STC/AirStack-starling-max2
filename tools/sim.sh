@@ -558,6 +558,7 @@ firewall_check() {
   case "$(firewall_probe)" in
     ok)      ok "firewall: container → host OK" ;;
     blocked) warn "firewall: container → host BLOCKED — run: $FIREWALL_FIX" ;;
+    error)   warn "firewall: not checked (probe failed: could not send from isaac-sim)" ;;
     *)       ok "firewall: not checked (isaac-sim not running)" ;;
   esac
 }

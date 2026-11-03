@@ -13,7 +13,10 @@ cd "$(dirname "$0")/.."
 C=localisation-exploration
 # the bridge reaches the robot container through the laptop firewall (spec 2026-11-03 §5.8): warn, never refuse
 . "$(cd .. && pwd)/tools/lib/firewall_probe.sh" 2>/dev/null || firewall_probe() { echo skip; }
-[ "$(firewall_probe)" != blocked ] || echo "WARNING: the container cannot reach the host (firewall) — the teleop strip will see no keys. Run: ${FIREWALL_FIX:-sudo ufw allow from 172.31.0.0/24}"
+case "$(firewall_probe)" in
+  blocked) echo "WARNING: the container cannot reach the host (firewall) — the teleop strip will see no keys. Run: ${FIREWALL_FIX:-sudo ufw allow from 172.31.0.0/24}" ;;
+  error)   echo "WARNING: firewall: not checked (probe failed: could not send from isaac-sim)" ;;
+esac
 # ex: run a command in the container; return ITS exit code (not grep's), hide the "Sourcing ..." banner lines
 ex() { local out rc; out=$(docker exec -w /exploration "$C" bash -lc "$*" 2>&1); rc=$?; [ -n "$out" ] && grep -v '^Sourcing' <<<"$out"; return $rc; }
 exd() { docker exec -d -w /exploration "$C" bash -lc "$*"; }

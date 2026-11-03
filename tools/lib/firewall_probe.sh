@@ -4,6 +4,8 @@
 # The cuVSLAM Foxglove bridge (in the Isaac network) finds the robot container (host network) through the bridge
 # at 172.31.0.1; the laptop firewall drops those packets unless:  sudo ufw allow from 172.31.0.0/24
 # firewall_probe prints one word and returns 0:  ok | blocked | skip (isaac-sim not running or no docker)
+#   | error (the send from isaac-sim itself failed: no python3, docker error; says nothing about the firewall)
+# blocked = the send exited 0 and nothing arrived.
 # The host binds a UDP socket FIRST, the container sends one datagram to 172.31.0.1:<port>, the host waits
 # FIREWALL_PROBE_TIMEOUT s (default 3). The socket is closed on every path. Read-only: nothing is changed.
 FIREWALL_FIX='sudo ufw allow from 172.31.0.0/24'
@@ -19,10 +21,12 @@ try:
     send = ("import socket,sys; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); "
             "s.sendto(b'probe', (sys.argv[1], int(sys.argv[2])))")
     try:
-        subprocess.run(["docker", "exec", "isaac-sim", "python3", "-c", send, "172.31.0.1", str(port)],
-                       capture_output=True, timeout=timeout + 5)
+        sent = subprocess.run(["docker", "exec", "isaac-sim", "python3", "-c", send, "172.31.0.1", str(port)],
+                              capture_output=True, timeout=timeout + 5).returncode == 0
     except (subprocess.SubprocessError, OSError):
-        pass
+        sent = False
+    if not sent:
+        print("error"); sys.exit(0)
     s.settimeout(timeout)
     try:
         s.recvfrom(64); print("ok")

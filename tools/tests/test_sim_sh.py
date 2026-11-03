@@ -446,15 +446,19 @@ class DoctorFirewall(unittest.TestCase):
             os.makedirs(os.path.join(tmp, "bin"))
             sender = ("import socket,sys; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); "
                       "s.sendto(b'x', ('127.0.0.1', int(sys.argv[-1])))")
-            fake = ('#!/bin/sh\n'
-                    'case "$*" in "exec isaac-sim true") exit %d;; esac\n' % (1 if mode == "down" else 0)
+            log = os.path.join(tmp, "calls")
+            fake = ('#!/bin/sh\necho "$*" >> %s\n' % log
+                    + 'case "$*" in "exec isaac-sim true") exit %d;; esac\n' % (1 if mode == "down" else 0)
                     + ('case "$*" in "exec isaac-sim python3 -c"*) exec python3 -c "%s" "$@";; esac\n' % sender if mode == "ok" else '')
+                    + ('case "$*" in "exec isaac-sim python3 -c"*) exit 1;; esac\n' if mode == "senderr" else '')
                     + 'case "$*" in "exec isaac-sim python3 -c"*) exit 0;; esac\nexit 1\n')
             p = os.path.join(tmp, "bin", "docker"); open(p, "w").write(fake); os.chmod(p, 0o755)
             env = dict(os.environ, PATH=tmp + "/bin:" + os.environ["PATH"], FIREWALL_PROBE_TIMEOUT="1")
             body = ('REPO=%s; ok(){ echo "OK $*"; }; warn(){ echo "WARN $*"; }; bad(){ echo "BAD $*"; }; %s\nfirewall_check; echo rc=$?'
                     % (SIM.parents[1], fn))
-            return subprocess.run(["bash", "-c", body], capture_output=True, text=True, timeout=20, env=env).stdout
+            out = subprocess.run(["bash", "-c", body], capture_output=True, text=True, timeout=20, env=env).stdout
+            self.calls = open(log).read().splitlines() if os.path.exists(log) else []
+            return out
 
     def test_probe_delivered(self):
         self.assertIn("OK firewall: container → host OK", self._doctor("ok"))
@@ -467,9 +471,18 @@ class DoctorFirewall(unittest.TestCase):
         self.assertIn("firewall: not checked (isaac-sim not running)", out)
         self.assertNotIn("BAD", out); self.assertNotIn("BLOCKED", out)
 
-    def test_doctor_calls_it_read_only(self):
-        src = SIM.read_text(); body = src[src.index("cmd_setup() {"):src.index("cmd_doctor()")]
-        self.assertIn("firewall_check", body)
+    def test_send_failure_is_an_error_not_a_firewall_verdict(self):
+        out = self._doctor("senderr")
+        self.assertIn("WARN firewall: not checked (probe failed: could not send from isaac-sim)", out)
+        self.assertNotIn("ufw", out); self.assertNotIn("BLOCKED", out); self.assertNotIn("BAD", out)
+
+    def test_firewall_check_is_read_only_and_keeps_the_exit_code(self):
+        for mode in ("down", "blocked", "senderr"):
+            out = self._doctor(mode)
+            self.assertIn("rc=0", out, mode)                  # never a failure, in any case
+            self.assertTrue(all(c == "exec isaac-sim true" or c.startswith("exec isaac-sim python3 -c ") for c in self.calls),
+                            (mode, self.calls))                # only the liveness check and the probe's send
+        self._doctor("down"); self.assertEqual(self.calls, ["exec isaac-sim true"])
 
 
 class LedgerNumber(unittest.TestCase):

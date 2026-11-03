@@ -231,3 +231,43 @@ def footer_line(status):
     if target is None:
         return base
     return base + (" · F → drive mode" if target == "body" else " · F → room mode")
+
+
+def export_tables():
+    """Every table the Foxglove strip needs, as plain JSON types (NEAR-789). Derived from the code above, so the
+    wording and numbers exist once; tools/teleop/foxglove/gen_keymap.py writes this into the extension."""
+    rooms = header_lines({"frame": "world", "input": "ok"}, True)
+    lines = {
+        "relay_lost": list(header_lines(None, False)),
+        "room_idle": list(header_lines({"frame": "world", "input": "none"}, True)),
+        "heading_lost": list(header_lines({"frame": "body", "guard": "lost"}, True)),
+        "switch_room": list(header_lines({"frame": "body", "pending": "world"}, True)),
+        "switch_drive": list(header_lines({"frame": "world", "pending": "body"}, True)),
+        "room": list(rooms),
+        "drive": list(header_lines({"frame": "body", "input": "ok"}, True)),
+    }
+    return {
+        "keys": {k: [stick, d] for k, (stick, d) in KEYS.items()},
+        "words": {"%s:%d" % (stick, int(d)): w for (stick, d), w in WORDS.items()},
+        "scales": dict(SCALES),
+        "default_scale": DEFAULT_SCALE,
+        "deadzone": DEADZONE,
+        "debounce_s": DEBOUNCE_S,
+        "hold_silence_s": HOLD_SILENCE_S,
+        "n_axes": N_AXES,
+        "n_buttons": N_BUTTONS,
+        "profiles": {n: {"forward_axis": p.forward_axis, "left_axis": p.left_axis, "climb_axis": p.climb_axis,
+                         "yaw_axis": p.yaw_axis, "lock_button": p.lock_button} for n, p in PROFILES.items()},
+        "lines": lines,
+        "footer": {"base": footer_line(None),
+                   "drive": footer_line({"frame": "world", "input": "ok"})[len(footer_line(None)):],
+                   "room": footer_line({"frame": "body", "input": "ok"})[len(footer_line(None)):]},
+        "stop_shown_s": STOP_SHOWN_S,
+    }
+
+
+if __name__ == "__main__":
+    import json
+    import sys
+    if "--dump-json" in sys.argv[1:]:
+        print(json.dumps(export_tables(), sort_keys=True, indent=2, ensure_ascii=False))

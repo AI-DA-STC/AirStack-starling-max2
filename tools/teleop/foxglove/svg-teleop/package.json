@@ -1,0 +1,9 @@
+{
+  "name": "svg-teleop",
+  "displayName": "SVG Teleop",
+  "description": "Keyboard strip that flies one sim drone through the relay: the same keys and wording as tools/teleop/key_teleop.py (tables generated from keymap.py).",
+  "publisher": "nearlab",
+  "version": "1.0.0",
+  "license": "Apache-2.0",
+  "main": "./dist/extension.js"
+}

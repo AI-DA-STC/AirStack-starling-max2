@@ -1,0 +1,6602 @@
+{
+ "axes": [
+  {
+   "held": [],
+   "scale": 0.25,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up"
+   ],
+   "scale": 0.25,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.3625,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "down"
+   ],
+   "scale": 0.25,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    -0.3625,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "left"
+   ],
+   "scale": 0.25,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.3625,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "right"
+   ],
+   "scale": 0.25,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    -0.3625,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "w"
+   ],
+   "scale": 0.25,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.3625,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "s"
+   ],
+   "scale": 0.25,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    -0.3625,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "a"
+   ],
+   "scale": 0.25,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.3625,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "d"
+   ],
+   "scale": 0.25,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    -0.3625,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "down"
+   ],
+   "scale": 0.25,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "left"
+   ],
+   "scale": 0.25,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.3002601910021413,
+    0.3002601910021413,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "right"
+   ],
+   "scale": 0.25,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    -0.3002601910021413,
+    0.3002601910021413,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "w"
+   ],
+   "scale": 0.25,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.3625,
+    0.0,
+    0.3625,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "s"
+   ],
+   "scale": 0.25,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    -0.3625,
+    0.0,
+    0.3625,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "a"
+   ],
+   "scale": 0.25,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.3625,
+    0.0,
+    0.0,
+    0.3625,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "d"
+   ],
+   "scale": 0.25,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    -0.3625,
+    0.0,
+    0.0,
+    0.3625,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "down",
+    "left"
+   ],
+   "scale": 0.25,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.3002601910021413,
+    -0.3002601910021413,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "down",
+    "right"
+   ],
+   "scale": 0.25,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    -0.3002601910021413,
+    -0.3002601910021413,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "down",
+    "w"
+   ],
+   "scale": 0.25,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.3625,
+    0.0,
+    -0.3625,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "down",
+    "s"
+   ],
+   "scale": 0.25,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    -0.3625,
+    0.0,
+    -0.3625,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "down",
+    "a"
+   ],
+   "scale": 0.25,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.3625,
+    0.0,
+    0.0,
+    -0.3625,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "down",
+    "d"
+   ],
+   "scale": 0.25,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    -0.3625,
+    0.0,
+    0.0,
+    -0.3625,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "left",
+    "right"
+   ],
+   "scale": 0.25,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "left",
+    "w"
+   ],
+   "scale": 0.25,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.3625,
+    0.3625,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "left",
+    "s"
+   ],
+   "scale": 0.25,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    -0.3625,
+    0.3625,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "left",
+    "a"
+   ],
+   "scale": 0.25,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.3625,
+    0.0,
+    0.3625,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "left",
+    "d"
+   ],
+   "scale": 0.25,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    -0.3625,
+    0.0,
+    0.3625,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "right",
+    "w"
+   ],
+   "scale": 0.25,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.3625,
+    -0.3625,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "right",
+    "s"
+   ],
+   "scale": 0.25,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    -0.3625,
+    -0.3625,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "right",
+    "a"
+   ],
+   "scale": 0.25,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.3625,
+    0.0,
+    -0.3625,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "right",
+    "d"
+   ],
+   "scale": 0.25,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    -0.3625,
+    0.0,
+    -0.3625,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "w",
+    "s"
+   ],
+   "scale": 0.25,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "w",
+    "a"
+   ],
+   "scale": 0.25,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.3625,
+    0.3625,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "w",
+    "d"
+   ],
+   "scale": 0.25,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    -0.3625,
+    0.3625,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "s",
+    "a"
+   ],
+   "scale": 0.25,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.3625,
+    -0.3625,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "s",
+    "d"
+   ],
+   "scale": 0.25,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    -0.3625,
+    -0.3625,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "a",
+    "d"
+   ],
+   "scale": 0.25,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "right",
+    "w"
+   ],
+   "scale": 0.25,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.3625,
+    -0.3002601910021413,
+    0.3002601910021413,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "left",
+    "a",
+    "w"
+   ],
+   "scale": 0.25,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.3625,
+    0.3625,
+    0.3002601910021413,
+    0.3002601910021413,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "down",
+    "left",
+    "right",
+    "w",
+    "s",
+    "a",
+    "d"
+   ],
+   "scale": 0.25,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "right",
+    "left"
+   ],
+   "scale": 0.25,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.3625,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "W"
+   ],
+   "scale": 0.25,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.3625,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "Up",
+    "D"
+   ],
+   "scale": 0.25,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    -0.3625,
+    0.0,
+    0.0,
+    0.3625,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [],
+   "scale": 0.5,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up"
+   ],
+   "scale": 0.5,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.575,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "down"
+   ],
+   "scale": 0.5,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    -0.575,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "left"
+   ],
+   "scale": 0.5,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.575,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "right"
+   ],
+   "scale": 0.5,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    -0.575,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "w"
+   ],
+   "scale": 0.5,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.575,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "s"
+   ],
+   "scale": 0.5,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    -0.575,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "a"
+   ],
+   "scale": 0.5,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.575,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "d"
+   ],
+   "scale": 0.5,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    -0.575,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "down"
+   ],
+   "scale": 0.5,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "left"
+   ],
+   "scale": 0.5,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.4505203820042827,
+    0.4505203820042827,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "right"
+   ],
+   "scale": 0.5,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    -0.4505203820042827,
+    0.4505203820042827,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "w"
+   ],
+   "scale": 0.5,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.575,
+    0.0,
+    0.575,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "s"
+   ],
+   "scale": 0.5,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    -0.575,
+    0.0,
+    0.575,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "a"
+   ],
+   "scale": 0.5,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.575,
+    0.0,
+    0.0,
+    0.575,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "d"
+   ],
+   "scale": 0.5,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    -0.575,
+    0.0,
+    0.0,
+    0.575,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "down",
+    "left"
+   ],
+   "scale": 0.5,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.4505203820042827,
+    -0.4505203820042827,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "down",
+    "right"
+   ],
+   "scale": 0.5,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    -0.4505203820042827,
+    -0.4505203820042827,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "down",
+    "w"
+   ],
+   "scale": 0.5,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.575,
+    0.0,
+    -0.575,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "down",
+    "s"
+   ],
+   "scale": 0.5,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    -0.575,
+    0.0,
+    -0.575,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "down",
+    "a"
+   ],
+   "scale": 0.5,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.575,
+    0.0,
+    0.0,
+    -0.575,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "down",
+    "d"
+   ],
+   "scale": 0.5,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    -0.575,
+    0.0,
+    0.0,
+    -0.575,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "left",
+    "right"
+   ],
+   "scale": 0.5,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "left",
+    "w"
+   ],
+   "scale": 0.5,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.575,
+    0.575,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "left",
+    "s"
+   ],
+   "scale": 0.5,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    -0.575,
+    0.575,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "left",
+    "a"
+   ],
+   "scale": 0.5,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.575,
+    0.0,
+    0.575,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "left",
+    "d"
+   ],
+   "scale": 0.5,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    -0.575,
+    0.0,
+    0.575,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "right",
+    "w"
+   ],
+   "scale": 0.5,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.575,
+    -0.575,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "right",
+    "s"
+   ],
+   "scale": 0.5,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    -0.575,
+    -0.575,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "right",
+    "a"
+   ],
+   "scale": 0.5,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.575,
+    0.0,
+    -0.575,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "right",
+    "d"
+   ],
+   "scale": 0.5,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    -0.575,
+    0.0,
+    -0.575,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "w",
+    "s"
+   ],
+   "scale": 0.5,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "w",
+    "a"
+   ],
+   "scale": 0.5,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.575,
+    0.575,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "w",
+    "d"
+   ],
+   "scale": 0.5,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    -0.575,
+    0.575,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "s",
+    "a"
+   ],
+   "scale": 0.5,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.575,
+    -0.575,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "s",
+    "d"
+   ],
+   "scale": 0.5,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    -0.575,
+    -0.575,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "a",
+    "d"
+   ],
+   "scale": 0.5,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "right",
+    "w"
+   ],
+   "scale": 0.5,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.575,
+    -0.4505203820042827,
+    0.4505203820042827,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "left",
+    "a",
+    "w"
+   ],
+   "scale": 0.5,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.575,
+    0.575,
+    0.4505203820042827,
+    0.4505203820042827,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "down",
+    "left",
+    "right",
+    "w",
+    "s",
+    "a",
+    "d"
+   ],
+   "scale": 0.5,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "right",
+    "left"
+   ],
+   "scale": 0.5,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.575,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "W"
+   ],
+   "scale": 0.5,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.575,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "Up",
+    "D"
+   ],
+   "scale": 0.5,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    -0.575,
+    0.0,
+    0.0,
+    0.575,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [],
+   "scale": 1.0,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up"
+   ],
+   "scale": 1.0,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "down"
+   ],
+   "scale": 1.0,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    -1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "left"
+   ],
+   "scale": 1.0,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "right"
+   ],
+   "scale": 1.0,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    -1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "w"
+   ],
+   "scale": 1.0,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "s"
+   ],
+   "scale": 1.0,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    -1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "a"
+   ],
+   "scale": 1.0,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "d"
+   ],
+   "scale": 1.0,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    -1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "down"
+   ],
+   "scale": 1.0,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "left"
+   ],
+   "scale": 1.0,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.7510407640085653,
+    0.7510407640085653,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "right"
+   ],
+   "scale": 1.0,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    -0.7510407640085653,
+    0.7510407640085653,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "w"
+   ],
+   "scale": 1.0,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    1.0,
+    0.0,
+    1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "s"
+   ],
+   "scale": 1.0,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    -1.0,
+    0.0,
+    1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "a"
+   ],
+   "scale": 1.0,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    1.0,
+    0.0,
+    0.0,
+    1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "d"
+   ],
+   "scale": 1.0,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    -1.0,
+    0.0,
+    0.0,
+    1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "down",
+    "left"
+   ],
+   "scale": 1.0,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.7510407640085653,
+    -0.7510407640085653,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "down",
+    "right"
+   ],
+   "scale": 1.0,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    -0.7510407640085653,
+    -0.7510407640085653,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "down",
+    "w"
+   ],
+   "scale": 1.0,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    1.0,
+    0.0,
+    -1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "down",
+    "s"
+   ],
+   "scale": 1.0,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    -1.0,
+    0.0,
+    -1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "down",
+    "a"
+   ],
+   "scale": 1.0,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    1.0,
+    0.0,
+    0.0,
+    -1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "down",
+    "d"
+   ],
+   "scale": 1.0,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    -1.0,
+    0.0,
+    0.0,
+    -1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "left",
+    "right"
+   ],
+   "scale": 1.0,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "left",
+    "w"
+   ],
+   "scale": 1.0,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    1.0,
+    1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "left",
+    "s"
+   ],
+   "scale": 1.0,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    -1.0,
+    1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "left",
+    "a"
+   ],
+   "scale": 1.0,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    1.0,
+    0.0,
+    1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "left",
+    "d"
+   ],
+   "scale": 1.0,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    -1.0,
+    0.0,
+    1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "right",
+    "w"
+   ],
+   "scale": 1.0,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    1.0,
+    -1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "right",
+    "s"
+   ],
+   "scale": 1.0,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    -1.0,
+    -1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "right",
+    "a"
+   ],
+   "scale": 1.0,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    1.0,
+    0.0,
+    -1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "right",
+    "d"
+   ],
+   "scale": 1.0,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    -1.0,
+    0.0,
+    -1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "w",
+    "s"
+   ],
+   "scale": 1.0,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "w",
+    "a"
+   ],
+   "scale": 1.0,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    1.0,
+    1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "w",
+    "d"
+   ],
+   "scale": 1.0,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    -1.0,
+    1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "s",
+    "a"
+   ],
+   "scale": 1.0,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    1.0,
+    -1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "s",
+    "d"
+   ],
+   "scale": 1.0,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    -1.0,
+    -1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "a",
+    "d"
+   ],
+   "scale": 1.0,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "right",
+    "w"
+   ],
+   "scale": 1.0,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    1.0,
+    -0.7510407640085653,
+    0.7510407640085653,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "left",
+    "a",
+    "w"
+   ],
+   "scale": 1.0,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    1.0,
+    1.0,
+    0.7510407640085653,
+    0.7510407640085653,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "down",
+    "left",
+    "right",
+    "w",
+    "s",
+    "a",
+    "d"
+   ],
+   "scale": 1.0,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "right",
+    "left"
+   ],
+   "scale": 1.0,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "W"
+   ],
+   "scale": 1.0,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "Up",
+    "D"
+   ],
+   "scale": 1.0,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "axes": [
+    -1.0,
+    0.0,
+    0.0,
+    1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up"
+   ],
+   "scale": 0.5,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.3,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.6499999999999999,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "right"
+   ],
+   "scale": 0.5,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.3,
+   "axes": [
+    0.0,
+    0.0,
+    -0.5474873734152916,
+    0.5474873734152916,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "w",
+    "a"
+   ],
+   "scale": 0.5,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.3,
+   "axes": [
+    0.6499999999999999,
+    0.6499999999999999,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "w"
+   ],
+   "scale": 0.5,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.0,
+   "axes": [
+    0.0,
+    0.5,
+    0.0,
+    0.5,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up"
+   ],
+   "scale": 0.5,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "space": true,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "right",
+    "w",
+    "a"
+   ],
+   "scale": 0.5,
+   "profile": "dragonrise_usb",
+   "deadzone": 0.15,
+   "space": true,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [],
+   "scale": 0.25,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up"
+   ],
+   "scale": 0.25,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.3625,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "down"
+   ],
+   "scale": 0.25,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    -0.3625,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "left"
+   ],
+   "scale": 0.25,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.3625,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "right"
+   ],
+   "scale": 0.25,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    -0.3625,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "w"
+   ],
+   "scale": 0.25,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.3625,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "s"
+   ],
+   "scale": 0.25,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    -0.3625,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "a"
+   ],
+   "scale": 0.25,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.3625,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "d"
+   ],
+   "scale": 0.25,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    -0.3625,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "down"
+   ],
+   "scale": 0.25,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "left"
+   ],
+   "scale": 0.25,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.3002601910021413,
+    0.3002601910021413,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "right"
+   ],
+   "scale": 0.25,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    -0.3002601910021413,
+    0.3002601910021413,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "w"
+   ],
+   "scale": 0.25,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.3625,
+    0.0,
+    0.0,
+    0.3625,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "s"
+   ],
+   "scale": 0.25,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    -0.3625,
+    0.0,
+    0.0,
+    0.3625,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "a"
+   ],
+   "scale": 0.25,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.3625,
+    0.0,
+    0.0,
+    0.0,
+    0.3625,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "d"
+   ],
+   "scale": 0.25,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    -0.3625,
+    0.0,
+    0.0,
+    0.0,
+    0.3625,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "down",
+    "left"
+   ],
+   "scale": 0.25,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.3002601910021413,
+    -0.3002601910021413,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "down",
+    "right"
+   ],
+   "scale": 0.25,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    -0.3002601910021413,
+    -0.3002601910021413,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "down",
+    "w"
+   ],
+   "scale": 0.25,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.3625,
+    0.0,
+    0.0,
+    -0.3625,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "down",
+    "s"
+   ],
+   "scale": 0.25,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    -0.3625,
+    0.0,
+    0.0,
+    -0.3625,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "down",
+    "a"
+   ],
+   "scale": 0.25,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.3625,
+    0.0,
+    0.0,
+    0.0,
+    -0.3625,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "down",
+    "d"
+   ],
+   "scale": 0.25,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    -0.3625,
+    0.0,
+    0.0,
+    0.0,
+    -0.3625,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "left",
+    "right"
+   ],
+   "scale": 0.25,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "left",
+    "w"
+   ],
+   "scale": 0.25,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.3625,
+    0.0,
+    0.3625,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "left",
+    "s"
+   ],
+   "scale": 0.25,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    -0.3625,
+    0.0,
+    0.3625,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "left",
+    "a"
+   ],
+   "scale": 0.25,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.3625,
+    0.0,
+    0.0,
+    0.3625,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "left",
+    "d"
+   ],
+   "scale": 0.25,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    -0.3625,
+    0.0,
+    0.0,
+    0.3625,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "right",
+    "w"
+   ],
+   "scale": 0.25,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.3625,
+    0.0,
+    -0.3625,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "right",
+    "s"
+   ],
+   "scale": 0.25,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    -0.3625,
+    0.0,
+    -0.3625,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "right",
+    "a"
+   ],
+   "scale": 0.25,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.3625,
+    0.0,
+    0.0,
+    -0.3625,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "right",
+    "d"
+   ],
+   "scale": 0.25,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    -0.3625,
+    0.0,
+    0.0,
+    -0.3625,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "w",
+    "s"
+   ],
+   "scale": 0.25,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "w",
+    "a"
+   ],
+   "scale": 0.25,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.3625,
+    0.3625,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "w",
+    "d"
+   ],
+   "scale": 0.25,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    -0.3625,
+    0.3625,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "s",
+    "a"
+   ],
+   "scale": 0.25,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.3625,
+    -0.3625,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "s",
+    "d"
+   ],
+   "scale": 0.25,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    -0.3625,
+    -0.3625,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "a",
+    "d"
+   ],
+   "scale": 0.25,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "right",
+    "w"
+   ],
+   "scale": 0.25,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.3625,
+    0.0,
+    -0.3002601910021413,
+    0.3002601910021413,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "left",
+    "a",
+    "w"
+   ],
+   "scale": 0.25,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.3625,
+    0.3625,
+    0.0,
+    0.3002601910021413,
+    0.3002601910021413,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "down",
+    "left",
+    "right",
+    "w",
+    "s",
+    "a",
+    "d"
+   ],
+   "scale": 0.25,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "right",
+    "left"
+   ],
+   "scale": 0.25,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.3625,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "W"
+   ],
+   "scale": 0.25,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.3625,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "Up",
+    "D"
+   ],
+   "scale": 0.25,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    -0.3625,
+    0.0,
+    0.0,
+    0.0,
+    0.3625,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [],
+   "scale": 0.5,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up"
+   ],
+   "scale": 0.5,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.575,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "down"
+   ],
+   "scale": 0.5,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    -0.575,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "left"
+   ],
+   "scale": 0.5,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.575,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "right"
+   ],
+   "scale": 0.5,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    -0.575,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "w"
+   ],
+   "scale": 0.5,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.575,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "s"
+   ],
+   "scale": 0.5,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    -0.575,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "a"
+   ],
+   "scale": 0.5,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.575,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "d"
+   ],
+   "scale": 0.5,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    -0.575,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "down"
+   ],
+   "scale": 0.5,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "left"
+   ],
+   "scale": 0.5,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.4505203820042827,
+    0.4505203820042827,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "right"
+   ],
+   "scale": 0.5,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    -0.4505203820042827,
+    0.4505203820042827,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "w"
+   ],
+   "scale": 0.5,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.575,
+    0.0,
+    0.0,
+    0.575,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "s"
+   ],
+   "scale": 0.5,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    -0.575,
+    0.0,
+    0.0,
+    0.575,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "a"
+   ],
+   "scale": 0.5,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.575,
+    0.0,
+    0.0,
+    0.0,
+    0.575,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "d"
+   ],
+   "scale": 0.5,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    -0.575,
+    0.0,
+    0.0,
+    0.0,
+    0.575,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "down",
+    "left"
+   ],
+   "scale": 0.5,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.4505203820042827,
+    -0.4505203820042827,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "down",
+    "right"
+   ],
+   "scale": 0.5,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    -0.4505203820042827,
+    -0.4505203820042827,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "down",
+    "w"
+   ],
+   "scale": 0.5,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.575,
+    0.0,
+    0.0,
+    -0.575,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "down",
+    "s"
+   ],
+   "scale": 0.5,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    -0.575,
+    0.0,
+    0.0,
+    -0.575,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "down",
+    "a"
+   ],
+   "scale": 0.5,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.575,
+    0.0,
+    0.0,
+    0.0,
+    -0.575,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "down",
+    "d"
+   ],
+   "scale": 0.5,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    -0.575,
+    0.0,
+    0.0,
+    0.0,
+    -0.575,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "left",
+    "right"
+   ],
+   "scale": 0.5,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "left",
+    "w"
+   ],
+   "scale": 0.5,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.575,
+    0.0,
+    0.575,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "left",
+    "s"
+   ],
+   "scale": 0.5,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    -0.575,
+    0.0,
+    0.575,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "left",
+    "a"
+   ],
+   "scale": 0.5,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.575,
+    0.0,
+    0.0,
+    0.575,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "left",
+    "d"
+   ],
+   "scale": 0.5,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    -0.575,
+    0.0,
+    0.0,
+    0.575,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "right",
+    "w"
+   ],
+   "scale": 0.5,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.575,
+    0.0,
+    -0.575,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "right",
+    "s"
+   ],
+   "scale": 0.5,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    -0.575,
+    0.0,
+    -0.575,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "right",
+    "a"
+   ],
+   "scale": 0.5,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.575,
+    0.0,
+    0.0,
+    -0.575,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "right",
+    "d"
+   ],
+   "scale": 0.5,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    -0.575,
+    0.0,
+    0.0,
+    -0.575,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "w",
+    "s"
+   ],
+   "scale": 0.5,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "w",
+    "a"
+   ],
+   "scale": 0.5,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.575,
+    0.575,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "w",
+    "d"
+   ],
+   "scale": 0.5,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    -0.575,
+    0.575,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "s",
+    "a"
+   ],
+   "scale": 0.5,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.575,
+    -0.575,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "s",
+    "d"
+   ],
+   "scale": 0.5,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    -0.575,
+    -0.575,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "a",
+    "d"
+   ],
+   "scale": 0.5,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "right",
+    "w"
+   ],
+   "scale": 0.5,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.575,
+    0.0,
+    -0.4505203820042827,
+    0.4505203820042827,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "left",
+    "a",
+    "w"
+   ],
+   "scale": 0.5,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.575,
+    0.575,
+    0.0,
+    0.4505203820042827,
+    0.4505203820042827,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "down",
+    "left",
+    "right",
+    "w",
+    "s",
+    "a",
+    "d"
+   ],
+   "scale": 0.5,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "right",
+    "left"
+   ],
+   "scale": 0.5,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.575,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "W"
+   ],
+   "scale": 0.5,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.575,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "Up",
+    "D"
+   ],
+   "scale": 0.5,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    -0.575,
+    0.0,
+    0.0,
+    0.0,
+    0.575,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [],
+   "scale": 1.0,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up"
+   ],
+   "scale": 1.0,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "down"
+   ],
+   "scale": 1.0,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    -1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "left"
+   ],
+   "scale": 1.0,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "right"
+   ],
+   "scale": 1.0,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    -1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "w"
+   ],
+   "scale": 1.0,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "s"
+   ],
+   "scale": 1.0,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    -1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "a"
+   ],
+   "scale": 1.0,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "d"
+   ],
+   "scale": 1.0,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    -1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "down"
+   ],
+   "scale": 1.0,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "left"
+   ],
+   "scale": 1.0,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.7510407640085653,
+    0.7510407640085653,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "right"
+   ],
+   "scale": 1.0,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    -0.7510407640085653,
+    0.7510407640085653,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "w"
+   ],
+   "scale": 1.0,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    1.0,
+    0.0,
+    0.0,
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "s"
+   ],
+   "scale": 1.0,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    -1.0,
+    0.0,
+    0.0,
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "a"
+   ],
+   "scale": 1.0,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    1.0,
+    0.0,
+    0.0,
+    0.0,
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "d"
+   ],
+   "scale": 1.0,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    -1.0,
+    0.0,
+    0.0,
+    0.0,
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "down",
+    "left"
+   ],
+   "scale": 1.0,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.7510407640085653,
+    -0.7510407640085653,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "down",
+    "right"
+   ],
+   "scale": 1.0,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    -0.7510407640085653,
+    -0.7510407640085653,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "down",
+    "w"
+   ],
+   "scale": 1.0,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    1.0,
+    0.0,
+    0.0,
+    -1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "down",
+    "s"
+   ],
+   "scale": 1.0,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    -1.0,
+    0.0,
+    0.0,
+    -1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "down",
+    "a"
+   ],
+   "scale": 1.0,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    1.0,
+    0.0,
+    0.0,
+    0.0,
+    -1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "down",
+    "d"
+   ],
+   "scale": 1.0,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    -1.0,
+    0.0,
+    0.0,
+    0.0,
+    -1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "left",
+    "right"
+   ],
+   "scale": 1.0,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "left",
+    "w"
+   ],
+   "scale": 1.0,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    1.0,
+    0.0,
+    1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "left",
+    "s"
+   ],
+   "scale": 1.0,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    -1.0,
+    0.0,
+    1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "left",
+    "a"
+   ],
+   "scale": 1.0,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    1.0,
+    0.0,
+    0.0,
+    1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "left",
+    "d"
+   ],
+   "scale": 1.0,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    -1.0,
+    0.0,
+    0.0,
+    1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "right",
+    "w"
+   ],
+   "scale": 1.0,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    1.0,
+    0.0,
+    -1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "right",
+    "s"
+   ],
+   "scale": 1.0,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    -1.0,
+    0.0,
+    -1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "right",
+    "a"
+   ],
+   "scale": 1.0,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    1.0,
+    0.0,
+    0.0,
+    -1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "right",
+    "d"
+   ],
+   "scale": 1.0,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    -1.0,
+    0.0,
+    0.0,
+    -1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "w",
+    "s"
+   ],
+   "scale": 1.0,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "w",
+    "a"
+   ],
+   "scale": 1.0,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    1.0,
+    1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "w",
+    "d"
+   ],
+   "scale": 1.0,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    -1.0,
+    1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "s",
+    "a"
+   ],
+   "scale": 1.0,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    1.0,
+    -1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "s",
+    "d"
+   ],
+   "scale": 1.0,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    -1.0,
+    -1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "a",
+    "d"
+   ],
+   "scale": 1.0,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "right",
+    "w"
+   ],
+   "scale": 1.0,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    1.0,
+    0.0,
+    -0.7510407640085653,
+    0.7510407640085653,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "left",
+    "a",
+    "w"
+   ],
+   "scale": 1.0,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    1.0,
+    1.0,
+    0.0,
+    0.7510407640085653,
+    0.7510407640085653,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "down",
+    "left",
+    "right",
+    "w",
+    "s",
+    "a",
+    "d"
+   ],
+   "scale": 1.0,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "right",
+    "left"
+   ],
+   "scale": 1.0,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "W"
+   ],
+   "scale": 1.0,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    0.0,
+    1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "Up",
+    "D"
+   ],
+   "scale": 1.0,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "axes": [
+    -1.0,
+    0.0,
+    0.0,
+    0.0,
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up"
+   ],
+   "scale": 0.5,
+   "profile": "xbox_usb",
+   "deadzone": 0.3,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.6499999999999999,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "right"
+   ],
+   "scale": 0.5,
+   "profile": "xbox_usb",
+   "deadzone": 0.3,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    -0.5474873734152916,
+    0.5474873734152916,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "w",
+    "a"
+   ],
+   "scale": 0.5,
+   "profile": "xbox_usb",
+   "deadzone": 0.3,
+   "axes": [
+    0.6499999999999999,
+    0.6499999999999999,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "w"
+   ],
+   "scale": 0.5,
+   "profile": "xbox_usb",
+   "deadzone": 0.0,
+   "axes": [
+    0.0,
+    0.5,
+    0.0,
+    0.0,
+    0.5,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up"
+   ],
+   "scale": 0.5,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "space": true,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "held": [
+    "up",
+    "right",
+    "w",
+    "a"
+   ],
+   "scale": 0.5,
+   "profile": "xbox_usb",
+   "deadzone": 0.15,
+   "space": true,
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  }
+ ],
+ "status": [
+  {
+   "line": null,
+   "seen": true,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP",
+   "flip": null
+  },
+  {
+   "line": null,
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP",
+   "flip": null
+  },
+  {
+   "line": "",
+   "seen": true,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP",
+   "flip": null
+  },
+  {
+   "line": "",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP",
+   "flip": null
+  },
+  {
+   "line": "garbage",
+   "seen": true,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP",
+   "flip": null
+  },
+  {
+   "line": "garbage",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP",
+   "flip": null
+  },
+  {
+   "line": "frame=",
+   "seen": true,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP",
+   "flip": null
+  },
+  {
+   "line": "frame=",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP",
+   "flip": null
+  },
+  {
+   "line": "frame=up input=ok",
+   "seen": true,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP",
+   "flip": null
+  },
+  {
+   "line": "frame=up input=ok",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP",
+   "flip": null
+  },
+  {
+   "line": "=body",
+   "seen": true,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP",
+   "flip": null
+  },
+  {
+   "line": "=body",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP",
+   "flip": null
+  },
+  {
+   "line": "frame=body input=ok extra",
+   "seen": true,
+   "header": [
+    "Drive mode — ↑ is always where the nose points",
+    "Like driving a car: turn with A / D, then ↑ goes that way.",
+    "#0a7a3c"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → room mode",
+   "flip": "world"
+  },
+  {
+   "line": "frame=body input=ok extra",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → room mode",
+   "flip": "world"
+  },
+  {
+   "line": "frame=body input=ok heading_deg=abc",
+   "seen": true,
+   "header": [
+    "Drive mode — ↑ is always where the nose points",
+    "Like driving a car: turn with A / D, then ↑ goes that way.",
+    "#0a7a3c"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → room mode",
+   "flip": "world"
+  },
+  {
+   "line": "frame=body input=ok heading_deg=abc",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → room mode",
+   "flip": "world"
+  },
+  {
+   "line": "frame=body input=ok heading_deg=nan heading_age_s=nan",
+   "seen": true,
+   "header": [
+    "Drive mode — ↑ is always where the nose points",
+    "Like driving a car: turn with A / D, then ↑ goes that way.",
+    "#0a7a3c"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → room mode",
+   "flip": "world"
+  },
+  {
+   "line": "frame=body input=ok heading_deg=nan heading_age_s=nan",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → room mode",
+   "flip": "world"
+  },
+  {
+   "line": "frame=world input=ok heading_deg=12.5 heading_age_s=0.1",
+   "seen": true,
+   "header": [
+    "Room mode — ↑ is always the far wall",
+    "Like moving a chess piece: ↑ is the far wall no matter where the nose points.",
+    "#1d4ed8"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → drive mode",
+   "flip": "body"
+  },
+  {
+   "line": "frame=world input=ok heading_deg=12.5 heading_age_s=0.1",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → drive mode",
+   "flip": "body"
+  },
+  {
+   "line": "frame=body input=ok guard=ok pending=none heading_deg=nan",
+   "seen": true,
+   "header": [
+    "Drive mode — ↑ is always where the nose points",
+    "Like driving a car: turn with A / D, then ↑ goes that way.",
+    "#0a7a3c"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → room mode",
+   "flip": "world"
+  },
+  {
+   "line": "frame=body input=ok guard=ok pending=none heading_deg=nan",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → room mode",
+   "flip": "world"
+  },
+  {
+   "line": "frame=body input=ok guard=ok pending=none heading_deg=90.0 heading_age_s=0.2",
+   "seen": true,
+   "header": [
+    "Drive mode — ↑ is always where the nose points",
+    "Like driving a car: turn with A / D, then ↑ goes that way.",
+    "#0a7a3c"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → room mode",
+   "flip": "world"
+  },
+  {
+   "line": "frame=body input=ok guard=ok pending=none heading_deg=90.0 heading_age_s=0.2",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → room mode",
+   "flip": "world"
+  },
+  {
+   "line": "frame=body input=ok guard=ok pending=body heading_deg=nan",
+   "seen": true,
+   "header": [
+    "Switching to drive mode — let go of the keys first",
+    "Your ↑ still works the old way until every key is up.",
+    "#b45309"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → room mode",
+   "flip": "world"
+  },
+  {
+   "line": "frame=body input=ok guard=ok pending=body heading_deg=nan",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → room mode",
+   "flip": "world"
+  },
+  {
+   "line": "frame=body input=ok guard=ok pending=body heading_deg=90.0 heading_age_s=0.2",
+   "seen": true,
+   "header": [
+    "Switching to drive mode — let go of the keys first",
+    "Your ↑ still works the old way until every key is up.",
+    "#b45309"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → room mode",
+   "flip": "world"
+  },
+  {
+   "line": "frame=body input=ok guard=ok pending=body heading_deg=90.0 heading_age_s=0.2",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → room mode",
+   "flip": "world"
+  },
+  {
+   "line": "frame=body input=ok guard=ok pending=world heading_deg=nan",
+   "seen": true,
+   "header": [
+    "Switching to room mode — let go of the keys first",
+    "Your ↑ still works the old way until every key is up.",
+    "#b45309"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → drive mode",
+   "flip": "body"
+  },
+  {
+   "line": "frame=body input=ok guard=ok pending=world heading_deg=nan",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → drive mode",
+   "flip": "body"
+  },
+  {
+   "line": "frame=body input=ok guard=ok pending=world heading_deg=90.0 heading_age_s=0.2",
+   "seen": true,
+   "header": [
+    "Switching to room mode — let go of the keys first",
+    "Your ↑ still works the old way until every key is up.",
+    "#b45309"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → drive mode",
+   "flip": "body"
+  },
+  {
+   "line": "frame=body input=ok guard=ok pending=world heading_deg=90.0 heading_age_s=0.2",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → drive mode",
+   "flip": "body"
+  },
+  {
+   "line": "frame=body input=ok guard=lost pending=none heading_deg=nan",
+   "seen": true,
+   "header": [
+    "Heading lost — let go of the keys",
+    "The drone holds until the heading is back and every key is up.",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → room mode",
+   "flip": "world"
+  },
+  {
+   "line": "frame=body input=ok guard=lost pending=none heading_deg=nan",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → room mode",
+   "flip": "world"
+  },
+  {
+   "line": "frame=body input=ok guard=lost pending=none heading_deg=90.0 heading_age_s=0.2",
+   "seen": true,
+   "header": [
+    "Heading lost — let go of the keys",
+    "The drone holds until the heading is back and every key is up.",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → room mode",
+   "flip": "world"
+  },
+  {
+   "line": "frame=body input=ok guard=lost pending=none heading_deg=90.0 heading_age_s=0.2",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → room mode",
+   "flip": "world"
+  },
+  {
+   "line": "frame=body input=ok guard=lost pending=body heading_deg=nan",
+   "seen": true,
+   "header": [
+    "Heading lost — let go of the keys",
+    "The drone holds until the heading is back and every key is up.",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → room mode",
+   "flip": "world"
+  },
+  {
+   "line": "frame=body input=ok guard=lost pending=body heading_deg=nan",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → room mode",
+   "flip": "world"
+  },
+  {
+   "line": "frame=body input=ok guard=lost pending=body heading_deg=90.0 heading_age_s=0.2",
+   "seen": true,
+   "header": [
+    "Heading lost — let go of the keys",
+    "The drone holds until the heading is back and every key is up.",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → room mode",
+   "flip": "world"
+  },
+  {
+   "line": "frame=body input=ok guard=lost pending=body heading_deg=90.0 heading_age_s=0.2",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → room mode",
+   "flip": "world"
+  },
+  {
+   "line": "frame=body input=ok guard=lost pending=world heading_deg=nan",
+   "seen": true,
+   "header": [
+    "Heading lost — let go of the keys",
+    "The drone holds until the heading is back and every key is up.",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → drive mode",
+   "flip": "body"
+  },
+  {
+   "line": "frame=body input=ok guard=lost pending=world heading_deg=nan",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → drive mode",
+   "flip": "body"
+  },
+  {
+   "line": "frame=body input=ok guard=lost pending=world heading_deg=90.0 heading_age_s=0.2",
+   "seen": true,
+   "header": [
+    "Heading lost — let go of the keys",
+    "The drone holds until the heading is back and every key is up.",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → drive mode",
+   "flip": "body"
+  },
+  {
+   "line": "frame=body input=ok guard=lost pending=world heading_deg=90.0 heading_age_s=0.2",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → drive mode",
+   "flip": "body"
+  },
+  {
+   "line": "frame=body input=none guard=ok pending=none heading_deg=nan",
+   "seen": true,
+   "header": [
+    "Room mode — ↑ is always the far wall",
+    "Like moving a chess piece: ↑ is the far wall no matter where the nose points.",
+    "#6b7280"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP",
+   "flip": null
+  },
+  {
+   "line": "frame=body input=none guard=ok pending=none heading_deg=nan",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP",
+   "flip": null
+  },
+  {
+   "line": "frame=body input=none guard=ok pending=none heading_deg=90.0 heading_age_s=0.2",
+   "seen": true,
+   "header": [
+    "Room mode — ↑ is always the far wall",
+    "Like moving a chess piece: ↑ is the far wall no matter where the nose points.",
+    "#6b7280"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP",
+   "flip": null
+  },
+  {
+   "line": "frame=body input=none guard=ok pending=none heading_deg=90.0 heading_age_s=0.2",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP",
+   "flip": null
+  },
+  {
+   "line": "frame=body input=none guard=ok pending=body heading_deg=nan",
+   "seen": true,
+   "header": [
+    "Room mode — ↑ is always the far wall",
+    "Like moving a chess piece: ↑ is the far wall no matter where the nose points.",
+    "#6b7280"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP",
+   "flip": null
+  },
+  {
+   "line": "frame=body input=none guard=ok pending=body heading_deg=nan",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP",
+   "flip": null
+  },
+  {
+   "line": "frame=body input=none guard=ok pending=body heading_deg=90.0 heading_age_s=0.2",
+   "seen": true,
+   "header": [
+    "Room mode — ↑ is always the far wall",
+    "Like moving a chess piece: ↑ is the far wall no matter where the nose points.",
+    "#6b7280"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP",
+   "flip": null
+  },
+  {
+   "line": "frame=body input=none guard=ok pending=body heading_deg=90.0 heading_age_s=0.2",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP",
+   "flip": null
+  },
+  {
+   "line": "frame=body input=none guard=ok pending=world heading_deg=nan",
+   "seen": true,
+   "header": [
+    "Room mode — ↑ is always the far wall",
+    "Like moving a chess piece: ↑ is the far wall no matter where the nose points.",
+    "#6b7280"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP",
+   "flip": null
+  },
+  {
+   "line": "frame=body input=none guard=ok pending=world heading_deg=nan",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP",
+   "flip": null
+  },
+  {
+   "line": "frame=body input=none guard=ok pending=world heading_deg=90.0 heading_age_s=0.2",
+   "seen": true,
+   "header": [
+    "Room mode — ↑ is always the far wall",
+    "Like moving a chess piece: ↑ is the far wall no matter where the nose points.",
+    "#6b7280"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP",
+   "flip": null
+  },
+  {
+   "line": "frame=body input=none guard=ok pending=world heading_deg=90.0 heading_age_s=0.2",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP",
+   "flip": null
+  },
+  {
+   "line": "frame=body input=none guard=lost pending=none heading_deg=nan",
+   "seen": true,
+   "header": [
+    "Room mode — ↑ is always the far wall",
+    "Like moving a chess piece: ↑ is the far wall no matter where the nose points.",
+    "#6b7280"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP",
+   "flip": null
+  },
+  {
+   "line": "frame=body input=none guard=lost pending=none heading_deg=nan",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP",
+   "flip": null
+  },
+  {
+   "line": "frame=body input=none guard=lost pending=none heading_deg=90.0 heading_age_s=0.2",
+   "seen": true,
+   "header": [
+    "Room mode — ↑ is always the far wall",
+    "Like moving a chess piece: ↑ is the far wall no matter where the nose points.",
+    "#6b7280"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP",
+   "flip": null
+  },
+  {
+   "line": "frame=body input=none guard=lost pending=none heading_deg=90.0 heading_age_s=0.2",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP",
+   "flip": null
+  },
+  {
+   "line": "frame=body input=none guard=lost pending=body heading_deg=nan",
+   "seen": true,
+   "header": [
+    "Room mode — ↑ is always the far wall",
+    "Like moving a chess piece: ↑ is the far wall no matter where the nose points.",
+    "#6b7280"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP",
+   "flip": null
+  },
+  {
+   "line": "frame=body input=none guard=lost pending=body heading_deg=nan",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP",
+   "flip": null
+  },
+  {
+   "line": "frame=body input=none guard=lost pending=body heading_deg=90.0 heading_age_s=0.2",
+   "seen": true,
+   "header": [
+    "Room mode — ↑ is always the far wall",
+    "Like moving a chess piece: ↑ is the far wall no matter where the nose points.",
+    "#6b7280"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP",
+   "flip": null
+  },
+  {
+   "line": "frame=body input=none guard=lost pending=body heading_deg=90.0 heading_age_s=0.2",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP",
+   "flip": null
+  },
+  {
+   "line": "frame=body input=none guard=lost pending=world heading_deg=nan",
+   "seen": true,
+   "header": [
+    "Room mode — ↑ is always the far wall",
+    "Like moving a chess piece: ↑ is the far wall no matter where the nose points.",
+    "#6b7280"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP",
+   "flip": null
+  },
+  {
+   "line": "frame=body input=none guard=lost pending=world heading_deg=nan",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP",
+   "flip": null
+  },
+  {
+   "line": "frame=body input=none guard=lost pending=world heading_deg=90.0 heading_age_s=0.2",
+   "seen": true,
+   "header": [
+    "Room mode — ↑ is always the far wall",
+    "Like moving a chess piece: ↑ is the far wall no matter where the nose points.",
+    "#6b7280"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP",
+   "flip": null
+  },
+  {
+   "line": "frame=body input=none guard=lost pending=world heading_deg=90.0 heading_age_s=0.2",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP",
+   "flip": null
+  },
+  {
+   "line": "frame=world input=ok guard=ok pending=none heading_deg=nan",
+   "seen": true,
+   "header": [
+    "Room mode — ↑ is always the far wall",
+    "Like moving a chess piece: ↑ is the far wall no matter where the nose points.",
+    "#1d4ed8"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → drive mode",
+   "flip": "body"
+  },
+  {
+   "line": "frame=world input=ok guard=ok pending=none heading_deg=nan",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → drive mode",
+   "flip": "body"
+  },
+  {
+   "line": "frame=world input=ok guard=ok pending=none heading_deg=90.0 heading_age_s=0.2",
+   "seen": true,
+   "header": [
+    "Room mode — ↑ is always the far wall",
+    "Like moving a chess piece: ↑ is the far wall no matter where the nose points.",
+    "#1d4ed8"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → drive mode",
+   "flip": "body"
+  },
+  {
+   "line": "frame=world input=ok guard=ok pending=none heading_deg=90.0 heading_age_s=0.2",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → drive mode",
+   "flip": "body"
+  },
+  {
+   "line": "frame=world input=ok guard=ok pending=body heading_deg=nan",
+   "seen": true,
+   "header": [
+    "Switching to drive mode — let go of the keys first",
+    "Your ↑ still works the old way until every key is up.",
+    "#b45309"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → room mode",
+   "flip": "world"
+  },
+  {
+   "line": "frame=world input=ok guard=ok pending=body heading_deg=nan",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → room mode",
+   "flip": "world"
+  },
+  {
+   "line": "frame=world input=ok guard=ok pending=body heading_deg=90.0 heading_age_s=0.2",
+   "seen": true,
+   "header": [
+    "Switching to drive mode — let go of the keys first",
+    "Your ↑ still works the old way until every key is up.",
+    "#b45309"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → room mode",
+   "flip": "world"
+  },
+  {
+   "line": "frame=world input=ok guard=ok pending=body heading_deg=90.0 heading_age_s=0.2",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → room mode",
+   "flip": "world"
+  },
+  {
+   "line": "frame=world input=ok guard=ok pending=world heading_deg=nan",
+   "seen": true,
+   "header": [
+    "Switching to room mode — let go of the keys first",
+    "Your ↑ still works the old way until every key is up.",
+    "#b45309"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → drive mode",
+   "flip": "body"
+  },
+  {
+   "line": "frame=world input=ok guard=ok pending=world heading_deg=nan",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → drive mode",
+   "flip": "body"
+  },
+  {
+   "line": "frame=world input=ok guard=ok pending=world heading_deg=90.0 heading_age_s=0.2",
+   "seen": true,
+   "header": [
+    "Switching to room mode — let go of the keys first",
+    "Your ↑ still works the old way until every key is up.",
+    "#b45309"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → drive mode",
+   "flip": "body"
+  },
+  {
+   "line": "frame=world input=ok guard=ok pending=world heading_deg=90.0 heading_age_s=0.2",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → drive mode",
+   "flip": "body"
+  },
+  {
+   "line": "frame=world input=ok guard=lost pending=none heading_deg=nan",
+   "seen": true,
+   "header": [
+    "Heading lost — let go of the keys",
+    "The drone holds until the heading is back and every key is up.",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → drive mode",
+   "flip": "body"
+  },
+  {
+   "line": "frame=world input=ok guard=lost pending=none heading_deg=nan",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → drive mode",
+   "flip": "body"
+  },
+  {
+   "line": "frame=world input=ok guard=lost pending=none heading_deg=90.0 heading_age_s=0.2",
+   "seen": true,
+   "header": [
+    "Heading lost — let go of the keys",
+    "The drone holds until the heading is back and every key is up.",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → drive mode",
+   "flip": "body"
+  },
+  {
+   "line": "frame=world input=ok guard=lost pending=none heading_deg=90.0 heading_age_s=0.2",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → drive mode",
+   "flip": "body"
+  },
+  {
+   "line": "frame=world input=ok guard=lost pending=body heading_deg=nan",
+   "seen": true,
+   "header": [
+    "Heading lost — let go of the keys",
+    "The drone holds until the heading is back and every key is up.",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → room mode",
+   "flip": "world"
+  },
+  {
+   "line": "frame=world input=ok guard=lost pending=body heading_deg=nan",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → room mode",
+   "flip": "world"
+  },
+  {
+   "line": "frame=world input=ok guard=lost pending=body heading_deg=90.0 heading_age_s=0.2",
+   "seen": true,
+   "header": [
+    "Heading lost — let go of the keys",
+    "The drone holds until the heading is back and every key is up.",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → room mode",
+   "flip": "world"
+  },
+  {
+   "line": "frame=world input=ok guard=lost pending=body heading_deg=90.0 heading_age_s=0.2",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → room mode",
+   "flip": "world"
+  },
+  {
+   "line": "frame=world input=ok guard=lost pending=world heading_deg=nan",
+   "seen": true,
+   "header": [
+    "Heading lost — let go of the keys",
+    "The drone holds until the heading is back and every key is up.",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → drive mode",
+   "flip": "body"
+  },
+  {
+   "line": "frame=world input=ok guard=lost pending=world heading_deg=nan",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → drive mode",
+   "flip": "body"
+  },
+  {
+   "line": "frame=world input=ok guard=lost pending=world heading_deg=90.0 heading_age_s=0.2",
+   "seen": true,
+   "header": [
+    "Heading lost — let go of the keys",
+    "The drone holds until the heading is back and every key is up.",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → drive mode",
+   "flip": "body"
+  },
+  {
+   "line": "frame=world input=ok guard=lost pending=world heading_deg=90.0 heading_age_s=0.2",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → drive mode",
+   "flip": "body"
+  },
+  {
+   "line": "frame=world input=none guard=ok pending=none heading_deg=nan",
+   "seen": true,
+   "header": [
+    "Room mode — ↑ is always the far wall",
+    "Like moving a chess piece: ↑ is the far wall no matter where the nose points.",
+    "#6b7280"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP",
+   "flip": null
+  },
+  {
+   "line": "frame=world input=none guard=ok pending=none heading_deg=nan",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP",
+   "flip": null
+  },
+  {
+   "line": "frame=world input=none guard=ok pending=none heading_deg=90.0 heading_age_s=0.2",
+   "seen": true,
+   "header": [
+    "Room mode — ↑ is always the far wall",
+    "Like moving a chess piece: ↑ is the far wall no matter where the nose points.",
+    "#6b7280"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP",
+   "flip": null
+  },
+  {
+   "line": "frame=world input=none guard=ok pending=none heading_deg=90.0 heading_age_s=0.2",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP",
+   "flip": null
+  },
+  {
+   "line": "frame=world input=none guard=ok pending=body heading_deg=nan",
+   "seen": true,
+   "header": [
+    "Room mode — ↑ is always the far wall",
+    "Like moving a chess piece: ↑ is the far wall no matter where the nose points.",
+    "#6b7280"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP",
+   "flip": null
+  },
+  {
+   "line": "frame=world input=none guard=ok pending=body heading_deg=nan",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP",
+   "flip": null
+  },
+  {
+   "line": "frame=world input=none guard=ok pending=body heading_deg=90.0 heading_age_s=0.2",
+   "seen": true,
+   "header": [
+    "Room mode — ↑ is always the far wall",
+    "Like moving a chess piece: ↑ is the far wall no matter where the nose points.",
+    "#6b7280"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP",
+   "flip": null
+  },
+  {
+   "line": "frame=world input=none guard=ok pending=body heading_deg=90.0 heading_age_s=0.2",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP",
+   "flip": null
+  },
+  {
+   "line": "frame=world input=none guard=ok pending=world heading_deg=nan",
+   "seen": true,
+   "header": [
+    "Room mode — ↑ is always the far wall",
+    "Like moving a chess piece: ↑ is the far wall no matter where the nose points.",
+    "#6b7280"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP",
+   "flip": null
+  },
+  {
+   "line": "frame=world input=none guard=ok pending=world heading_deg=nan",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP",
+   "flip": null
+  },
+  {
+   "line": "frame=world input=none guard=ok pending=world heading_deg=90.0 heading_age_s=0.2",
+   "seen": true,
+   "header": [
+    "Room mode — ↑ is always the far wall",
+    "Like moving a chess piece: ↑ is the far wall no matter where the nose points.",
+    "#6b7280"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP",
+   "flip": null
+  },
+  {
+   "line": "frame=world input=none guard=ok pending=world heading_deg=90.0 heading_age_s=0.2",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP",
+   "flip": null
+  },
+  {
+   "line": "frame=world input=none guard=lost pending=none heading_deg=nan",
+   "seen": true,
+   "header": [
+    "Room mode — ↑ is always the far wall",
+    "Like moving a chess piece: ↑ is the far wall no matter where the nose points.",
+    "#6b7280"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP",
+   "flip": null
+  },
+  {
+   "line": "frame=world input=none guard=lost pending=none heading_deg=nan",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP",
+   "flip": null
+  },
+  {
+   "line": "frame=world input=none guard=lost pending=none heading_deg=90.0 heading_age_s=0.2",
+   "seen": true,
+   "header": [
+    "Room mode — ↑ is always the far wall",
+    "Like moving a chess piece: ↑ is the far wall no matter where the nose points.",
+    "#6b7280"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP",
+   "flip": null
+  },
+  {
+   "line": "frame=world input=none guard=lost pending=none heading_deg=90.0 heading_age_s=0.2",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP",
+   "flip": null
+  },
+  {
+   "line": "frame=world input=none guard=lost pending=body heading_deg=nan",
+   "seen": true,
+   "header": [
+    "Room mode — ↑ is always the far wall",
+    "Like moving a chess piece: ↑ is the far wall no matter where the nose points.",
+    "#6b7280"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP",
+   "flip": null
+  },
+  {
+   "line": "frame=world input=none guard=lost pending=body heading_deg=nan",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP",
+   "flip": null
+  },
+  {
+   "line": "frame=world input=none guard=lost pending=body heading_deg=90.0 heading_age_s=0.2",
+   "seen": true,
+   "header": [
+    "Room mode — ↑ is always the far wall",
+    "Like moving a chess piece: ↑ is the far wall no matter where the nose points.",
+    "#6b7280"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP",
+   "flip": null
+  },
+  {
+   "line": "frame=world input=none guard=lost pending=body heading_deg=90.0 heading_age_s=0.2",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP",
+   "flip": null
+  },
+  {
+   "line": "frame=world input=none guard=lost pending=world heading_deg=nan",
+   "seen": true,
+   "header": [
+    "Room mode — ↑ is always the far wall",
+    "Like moving a chess piece: ↑ is the far wall no matter where the nose points.",
+    "#6b7280"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP",
+   "flip": null
+  },
+  {
+   "line": "frame=world input=none guard=lost pending=world heading_deg=nan",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP",
+   "flip": null
+  },
+  {
+   "line": "frame=world input=none guard=lost pending=world heading_deg=90.0 heading_age_s=0.2",
+   "seen": true,
+   "header": [
+    "Room mode — ↑ is always the far wall",
+    "Like moving a chess piece: ↑ is the far wall no matter where the nose points.",
+    "#6b7280"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP",
+   "flip": null
+  },
+  {
+   "line": "frame=world input=none guard=lost pending=world heading_deg=90.0 heading_age_s=0.2",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP",
+   "flip": null
+  },
+  {
+   "line": "frame=body",
+   "seen": true,
+   "header": [
+    "Drive mode — ↑ is always where the nose points",
+    "Like driving a car: turn with A / D, then ↑ goes that way.",
+    "#0a7a3c"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → room mode",
+   "flip": "world"
+  },
+  {
+   "line": "frame=body",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → room mode",
+   "flip": "world"
+  },
+  {
+   "line": "frame=world",
+   "seen": true,
+   "header": [
+    "Room mode — ↑ is always the far wall",
+    "Like moving a chess piece: ↑ is the far wall no matter where the nose points.",
+    "#1d4ed8"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → drive mode",
+   "flip": "body"
+  },
+  {
+   "line": "frame=world",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → drive mode",
+   "flip": "body"
+  },
+  {
+   "line": "frame=world input=none",
+   "seen": true,
+   "header": [
+    "Room mode — ↑ is always the far wall",
+    "Like moving a chess piece: ↑ is the far wall no matter where the nose points.",
+    "#6b7280"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP",
+   "flip": null
+  },
+  {
+   "line": "frame=world input=none",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP",
+   "flip": null
+  },
+  {
+   "line": "frame=body guard=lost",
+   "seen": true,
+   "header": [
+    "Heading lost — let go of the keys",
+    "The drone holds until the heading is back and every key is up.",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → room mode",
+   "flip": "world"
+  },
+  {
+   "line": "frame=body guard=lost",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → room mode",
+   "flip": "world"
+  },
+  {
+   "line": "frame=body pending=world",
+   "seen": true,
+   "header": [
+    "Switching to room mode — let go of the keys first",
+    "Your ↑ still works the old way until every key is up.",
+    "#b45309"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → drive mode",
+   "flip": "body"
+  },
+  {
+   "line": "frame=body pending=world",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → drive mode",
+   "flip": "body"
+  },
+  {
+   "line": "frame=world pending=body",
+   "seen": true,
+   "header": [
+    "Switching to drive mode — let go of the keys first",
+    "Your ↑ still works the old way until every key is up.",
+    "#b45309"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → room mode",
+   "flip": "world"
+  },
+  {
+   "line": "frame=world pending=body",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → room mode",
+   "flip": "world"
+  },
+  {
+   "line": "frame=body pending=body",
+   "seen": true,
+   "header": [
+    "Switching to drive mode — let go of the keys first",
+    "Your ↑ still works the old way until every key is up.",
+    "#b45309"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → room mode",
+   "flip": "world"
+  },
+  {
+   "line": "frame=body pending=body",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → room mode",
+   "flip": "world"
+  },
+  {
+   "line": "frame=body pending=bogus",
+   "seen": true,
+   "header": [
+    "Switching to drive mode — let go of the keys first",
+    "Your ↑ still works the old way until every key is up.",
+    "#b45309"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → room mode",
+   "flip": "world"
+  },
+  {
+   "line": "frame=body pending=bogus",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → room mode",
+   "flip": "world"
+  },
+  {
+   "line": "frame=body input=weird guard=weird",
+   "seen": true,
+   "header": [
+    "Heading lost — let go of the keys",
+    "The drone holds until the heading is back and every key is up.",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → room mode",
+   "flip": "world"
+  },
+  {
+   "line": "frame=body input=weird guard=weird",
+   "seen": false,
+   "header": [
+    "Keys not reaching the drone — close this window, then run tools/sim.sh keys",
+    "",
+    "#B00020"
+   ],
+   "footer": "A / D turn · W / S up / down · Space STOP · F → room mode",
+   "flip": "world"
+  }
+ ]
+}

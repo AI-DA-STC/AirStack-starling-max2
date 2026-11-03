@@ -133,7 +133,10 @@ const CLOCK = {
 const RATE_MS = 50;                  // 20 Hz, as the Tk window
 const RENDER_MS = 200;               // re-reads the status age with no frame arriving
 const POLL_MS = 2000;                // /safe_teleop/get_parameters
-const ANSWER_MS = 2000;              // an unanswered service call is dropped after this
+const FLIP_ANSWER_MS = 2000;         // an unanswered F request is dropped after this
+const READ_ANSWER_MS = 5000;         // the same for a safe_teleop read: slower under sim lag, as the Tk window's LIVE_READ_ANSWER_S
+const ECHO_FRESH_MS = 1000;          // our own /joy must have come back this recently for the strip to say FLYING
+const SENT_STAMPS_KEPT = 64;         // over 3 s of messages at 20 Hz, longer than ECHO_FRESH_MS
 const STATUS_FRESH_MS = 2000;        // the relay reports at 5 Hz; older than this it is gone
 const FAILURE_SHOWN_MS = 2000;       // a publish or service failure keeps the red line up this long
 const LISTEN_AFTER_DISARM_MS = 500;  // our own trailing zeros are gone by then
@@ -144,6 +147,7 @@ const RELAY_LINE = "Keys not reaching the drone — start the relay: tools/sim.s
 const CLICK_LINE = "Click here to fly — drone holds";
 const CHECK_LINE = "Checking for another source…";
 const NOT_FOUND_LINE = "safe_teleop not found yet";
+const NO_ECHO_LINE = "Your keys are not coming back from the bridge.";
 const GREEN = TABLES.lines.drive[2], GREY = TABLES.lines.room_idle[2], RED = TABLES.lines.relay_lost[2];
 const HELD_GLYPHS = [["up", "↑"], ["down", "↓"], ["left", "←"], ["right", "→"], ["w", "W"], ["s", "S"], ["a", "A"], ["d", "D"]];
 const PARAM_INTEGER = 2, PARAM_DOUBLE = 3, PARAM_STRING = 4;
@@ -184,7 +188,7 @@ function loadConfig(saved) {
 function paramNumber(pv) {
   const t = Number(pv?.type);
   const v = t === PARAM_DOUBLE ? Number(pv.double_value) : t === PARAM_INTEGER ? Number(pv.integer_value) : NaN;
-  return v > 0 ? v : null;
+  return Number.isFinite(v) ? v : null;
 }
 function paramString(pv) { return Number(pv?.type) === PARAM_STRING ? String(pv.string_value ?? "") : ""; }
 
@@ -207,6 +211,9 @@ function activate(extensionContext) {
       let check = null;              // { listening, timer } while a click waits for the source check
       let publishTimer = null;
       let lastDisarmAt = -Infinity;
+      let armedAt = -Infinity, echoAt = -Infinity;
+      const sentStamps = new Set();  // the stamps we published lately: what tells our echo from another source
+      let lastKeyEventAt = -Infinity;  // shared by all keys: only the last-pressed key auto-repeats
       let advertised = false;
       let refusal = "";
       let status = null, statusAt = -Infinity;
@@ -221,7 +228,7 @@ function activate(extensionContext) {
       function targets() {
         const t = {};
         for (const k of TEMPLATE_KEYS) t[k] = fillTemplate(cfg[k], selected);
-        return { joy: t.joyTopicTemplate, status: t.statusTopicTemplate, teleopNs: t.teleopNsTemplate, relayNs: t.relayNsTemplate };
+        return { drone: selected, joy: t.joyTopicTemplate, status: t.statusTopicTemplate, teleopNs: t.teleopNsTemplate, relayNs: t.relayNsTemplate };
       }
 
       function noteFailure() { failedAt = CLOCK.now(); }
@@ -269,8 +276,11 @@ function activate(extensionContext) {
         try {
           const t = CLOCK.now();
           const nanos = Math.trunc(t % 1000) * 1e6;
+          const sec = Math.floor(t / 1000);
+          sentStamps.add(`${sec}:${nanos}`);
+          if (sentStamps.size > SENT_STAMPS_KEPT) sentStamps.delete(sentStamps.values().next().value);
           panelContext.publish(names.joy, {
-            header: { stamp: { sec: Math.floor(t / 1000), nsec: nanos, nanosec: nanos }, frame_id: "" },
+            header: { stamp: { sec, nsec: nanos, nanosec: nanos }, frame_id: "" },
             axes,
             buttons: keys.buttons(),
           });
@@ -280,9 +290,15 @@ function activate(extensionContext) {
       }
       function zeroAxes() { return new Array(TABLES.n_axes).fill(0.0); }
 
+      // A message on the joy topic while armed proves the publish reached the bridge only if it is one of ours.
+      function noteEcho(message) {
+        const stamp = message?.header?.stamp;
+        if (stamp && sentStamps.has(`${stamp.sec}:${stamp.nsec ?? stamp.nanosec}`)) echoAt = CLOCK.now();
+      }
+
       function applySubscriptions() {
         const subs = [{ topic: names.status }];
-        if (check?.listening) subs.push({ topic: names.joy });
+        if (check?.listening || armed) subs.push({ topic: names.joy });
         panelContext.subscribe(subs);
       }
 
@@ -308,13 +324,20 @@ function activate(extensionContext) {
       }
       function finishCheck() {
         check = null;
-        applySubscriptions();
         armed = true;
+        armedAt = CLOCK.now();
+        echoAt = -Infinity;
+        sentStamps.clear();
+        applySubscriptions();        // stays on the joy topic: the echo is how FLYING knows the publish arrives
         keys.allUp();
-        if (!advertised) advertiseJoy();
-        publishTimer = CLOCK.setInterval(safe(() => publishJoy(keys.axes())), RATE_MS);
+        publishTimer = CLOCK.setInterval(safe(publishTick), RATE_MS);
         publishJoy(keys.axes());
         render();
+      }
+      function publishTick() {
+        // A keyup can get lost with focus and visibility intact (a dropped remote desktop): no disarm trigger fires.
+        if (keys.held().length && CLOCK.now() - lastKeyEventAt >= TABLES.hold_silence_s * 1000) keys.allUp();
+        publishJoy(keys.axes());
       }
       function refuseSource() {
         cancelCheck();
@@ -330,12 +353,13 @@ function activate(extensionContext) {
         publishTimer = null;
         for (let i = 0; i < ZEROS_ON_DISARM; i++) publishJoy(zeroAxes());
         lastDisarmAt = CLOCK.now();
+        applySubscriptions();
       }
 
       // ── services ───────────────────────────────────────────────────────
-      function callWithTimeout(service, request) {
+      function callWithTimeout(service, request, answerMs) {
         return new Promise((resolve, reject) => {
-          const timer = later(ANSWER_MS, () => reject(new Error(`no reply within ${ANSWER_MS} ms`)));
+          const timer = later(answerMs, () => reject(new Error(`no reply within ${answerMs} ms`)));
           Promise.resolve()
             .then(() => panelContext.callService(service, request))
             .then((res) => { cancel(timer); resolve(res); }, (err) => { cancel(timer); reject(err); });
@@ -353,7 +377,7 @@ function activate(extensionContext) {
           fn(arg);
           render();
         });
-        callWithTimeout(`${names.teleopNs}/get_parameters`, { names: ["teleop_controller", "deadzone", "max_speed_mps"] })
+        callWithTimeout(`${names.teleopNs}/get_parameters`, { names: ["teleop_controller", "deadzone", "max_speed_mps"] }, READ_ANSWER_MS)
           .then(answered(applySafeTeleop), answered(() => { safeTeleop.lost = safeTeleop.answered; }));
       }
       function applySafeTeleop(res) {
@@ -370,7 +394,8 @@ function activate(extensionContext) {
           disarm();
         }
         keys.deadzone = paramNumber(vals[1]) ?? keys.deadzone;
-        safeTeleop.maxSpeed = paramNumber(vals[2]) ?? safeTeleop.maxSpeed;
+        const maxSpeed = paramNumber(vals[2]);
+        if (maxSpeed !== null && maxSpeed > 0) safeTeleop.maxSpeed = maxSpeed;
       }
 
       function requestFlip() {
@@ -387,7 +412,7 @@ function activate(extensionContext) {
         });
         callWithTimeout(`${names.relayNs}/set_parameters`, {
           parameters: [{ name: "stick_frame", value: { type: PARAM_STRING, string_value: target } }],
-        }).then(answered((res) => {
+        }, FLIP_ANSWER_MS).then(answered((res) => {
           if (res?.results?.[0]?.successful === false) {
             flipNote = "The relay did not accept the mode change.";
             flipNoteAt = CLOCK.now();
@@ -401,8 +426,12 @@ function activate(extensionContext) {
         const linkDown = topicsEmpty || safeTeleop.lost || now - failedAt < FAILURE_SHOWN_MS;
         return !linkDown && status !== null && now - statusAt <= STATUS_FRESH_MS ? status : null;
       }
-      function flyingNow(usable) {
-        return armed && flipTarget(usable) !== null && usable.input === "ok" && (usable.guard ?? "ok") === "ok";
+      function flyingNow(usable, now) {
+        return armed && now - echoAt <= ECHO_FRESH_MS
+          && flipTarget(usable) !== null && usable.input === "ok" && (usable.guard ?? "ok") === "ok";
+      }
+      function echoLost(now) {
+        return armed && now - armedAt > ECHO_FRESH_MS && now - echoAt > ECHO_FRESH_MS;
       }
       function stripLines(usable) {
         const h = headerLines(usable, usable !== null);
@@ -466,7 +495,7 @@ function activate(extensionContext) {
         const now = CLOCK.now();
         const usable = usableStatus(now);
         const [bold, sentence, colour] = stripLines(usable);
-        const flying = flyingNow(usable);
+        const flying = flyingNow(usable, now);
         setText(modeEl, bold);
         modeEl.style.color = colour;
         setText(armEl, flying ? ` · FLYING ${selected}` : check ? ` · ${CHECK_LINE}` : armed ? "" : ` · ${CLICK_LINE}`);
@@ -476,7 +505,7 @@ function activate(extensionContext) {
 
         const notice = safeTeleop.unknown
           ? `Refusing to fly: safe_teleop runs controller '${safeTeleop.unknown}', and this strip has no layout for it.`
-          : refusal || (now - flipNoteAt < FAILURE_SHOWN_MS ? flipNote : "");
+          : refusal || (echoLost(now) ? NO_ECHO_LINE : "") || (now - flipNoteAt < FAILURE_SHOWN_MS ? flipNote : "");
         setText(noticeEl, notice);
         noticeEl.hidden = !notice;
 
@@ -504,13 +533,23 @@ function activate(extensionContext) {
         root.focus();
         if (armed || check) return;
         refusal = "";
-        if (!safeTeleop.unknown) startCheck();
+        if (!safeTeleop.unknown) {
+          if (!advertised) advertiseJoy();   // at the first click: an idle strip must not look like a /joy publisher
+          startCheck();
+        }
+        render();
+      });
+      // Capture phase, on the document: a panel elsewhere can keep focus from moving, not this from firing.
+      const onDocPointerDown = safe((ev) => {
+        if (root.contains(ev.target)) return;
+        disarm();
         render();
       });
       const onKeyDown = safe((ev) => {
         if (!armed && !check) return;                 // not flying: every key belongs to Studio
-        if (ev.ctrlKey || ev.metaKey || ev.altKey) return;
+        lastKeyEventAt = CLOCK.now();                 // repeats too: they are how a held key stays held
         const k = normKey(ev.key);
+        if ((ev.ctrlKey || ev.metaKey || ev.altKey) && k !== "space") return;   // Space stops, whatever else is down
         if (!handled(k)) return;                      // Tab is never handled: it moves focus out, which disarms
         ev.preventDefault();
         ev.stopPropagation();
@@ -521,6 +560,7 @@ function activate(extensionContext) {
       });
       const onKeyUp = safe((ev) => {
         if (!armed && !check) return;
+        lastKeyEventAt = CLOCK.now();
         const k = normKey(ev.key);
         if (!handled(k)) return;
         ev.preventDefault();
@@ -547,11 +587,10 @@ function activate(extensionContext) {
       function reconfigure() {
         if (!cfg.drones.includes(selected)) selected = cfg.drones[0];
         const next = targets();
+        disarm();
         if (Object.keys(next).some((k) => next[k] !== names[k])) {
-          disarm();
-          if (next.joy !== names.joy) unadvertiseJoy();
+          if (next.joy !== names.joy || next.drone !== names.drone) unadvertiseJoy();
           names = next;
-          if (!advertised) advertiseJoy();
           generation++;
           pollOpen = flipOpen = false;
           status = null;
@@ -612,8 +651,9 @@ function activate(extensionContext) {
               if (evt.topic === names.status && typeof evt.message?.data === "string") {
                 status = parseStatus(evt.message.data);
                 statusAt = CLOCK.now();    // wall clock: receiveTime is sim time on this bridge
-              } else if (evt.topic === names.joy && check?.listening) {
-                refuseSource();
+              } else if (evt.topic === names.joy) {
+                if (check?.listening) refuseSource();
+                else if (armed) noteEcho(evt.message);
               }
             }
             render();
@@ -633,6 +673,7 @@ function activate(extensionContext) {
       selector.addEventListener("change", onSelectorChange);
       if (win) win.addEventListener("blur", onWindowBlur);
       doc.addEventListener("visibilitychange", onVisibility);
+      doc.addEventListener("pointerdown", onDocPointerDown, true);
 
       const renderTimer = CLOCK.setInterval(safe(render), RENDER_MS);
       const pollTimer = CLOCK.setInterval(safe(pollSafeTeleop), POLL_MS);
@@ -642,7 +683,6 @@ function activate(extensionContext) {
         panelContext.watch("topics");
       }
       safe(applySubscriptions)();
-      advertiseJoy();
       pollSafeTeleop();
       renderSelector();
       updateSettings();
@@ -664,6 +704,7 @@ function activate(extensionContext) {
         selector.removeEventListener("change", onSelectorChange);
         if (win) win.removeEventListener("blur", onWindowBlur);
         doc.removeEventListener("visibilitychange", onVisibility);
+        doc.removeEventListener("pointerdown", onDocPointerDown, true);
         safe(() => {
           if (typeof panelContext.unsubscribeAll === "function") panelContext.unsubscribeAll();
           else panelContext.subscribe([]);

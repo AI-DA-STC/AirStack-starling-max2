@@ -82,12 +82,15 @@ function setup(initialState = {}, before = () => {}) {
     removeEventListener(t, fn) { win.listeners[t] = (win.listeners[t] ?? []).filter((f) => f !== fn); } };
   const doc = { defaultView: win, activeElement: null, hidden: false, visibilityState: "visible", listeners: {},
     createElement: (tag) => makeNode(tag, doc),
-    addEventListener(t, fn) { (doc.listeners[t] ??= []).push(fn); },
+    addEventListener(t, fn, opts) { (doc.listeners[t] ??= []).push(fn); doc.capture[t] = opts; },
+    capture: {},
     removeEventListener(t, fn) { doc.listeners[t] = (doc.listeners[t] ?? []).filter((f) => f !== fn); } };
   const root = makeNode("div", doc);
   const h = {
     clock, win, doc, root, published: [], publishAttempts: 0, advertised: [], unadvertised: [], subs: [], subLog: [],
     calls: [], saved: null, settings: null, watched: [], doneCount: 0, renderCount: 0, relayLine: null,
+    echo: true, echoed: 0,           // the bridge sends a client publish back to a client subscribed to the topic
+    heldReads: [],                   // get_parameters answers kept open while getParams === "held"
     publishThrows: () => false,
     params: { teleop_controller: "dragonrise_usb", deadzone: 0.15, max_speed_mps: 2.0 },
     getParams: "answer", setReply: { results: [{ successful: true, reason: "" }] }, setMode: "answer",
@@ -113,6 +116,8 @@ function setup(initialState = {}, before = () => {}) {
       if (service.endsWith("/get_parameters")) {
         if (h.getParams === "reject") return Promise.reject(new Error("service not found"));
         if (h.getParams === "never") return new Promise(() => {});
+        if (h.getParams === "held") return new Promise((resolve) => h.heldReads.push(() => resolve({ values: req.names.map((n) => (typeof h.params[n] === "string"
+          ? { type: 4, string_value: h.params[n] } : { type: 3, double_value: h.params[n] })) })));
         return Promise.resolve({ values: req.names.map((n) => (typeof h.params[n] === "string"
           ? { type: 4, string_value: h.params[n] } : h.params[n] === undefined ? { type: 0 } : { type: 3, double_value: h.params[n] })) });
       }
@@ -130,12 +135,20 @@ function setup(initialState = {}, before = () => {}) {
   h.deliver = (events) => { let done = 0; ctx.onRender({ currentFrame: events }, () => { done++; }); assert.strictEqual(done, 1, "onRender must call done once"); h.doneCount++; };
   h.status = (line, topic = "/teleop_frame/status") => h.deliver([{ topic, message: { data: line }, receiveTime: { sec: 1, nsec: 0 }, schemaName: "std_msgs/msg/String" }]);
   h.joy = (topic = "/joy") => h.deliver([{ topic, message: { axes: [], buttons: [] }, receiveTime: { sec: 1, nsec: 0 } }]);
+  // What comes back has the stamp as Studio decodes it, not the object the panel sent.
+  h.deliverOwn = (p) => {
+    const { sec, nsec } = p.message.header.stamp;
+    h.deliver([{ topic: p.topic, message: { ...p.message, header: { stamp: { sec, nsec }, frame_id: "" } }, receiveTime: { sec: 1, nsec: 0 } }]);
+  };
   let sinceFeed = 0;
   // Advance the clock in 10 ms steps, letting promises settle; the relay (if set) reports at 5 Hz.
   h.tick = async (ms) => {
     for (let left = ms; left > 0; left -= 10) {
       clock.advance(10);
       sinceFeed += 10;
+      const fresh = h.published.slice(h.echoed);
+      h.echoed = h.published.length;
+      if (h.echo) for (const p of fresh) if (h.subs.includes(p.topic)) h.deliverOwn(p);
       if (h.relayLine !== null && sinceFeed >= 200) { sinceFeed = 0; h.status(h.relayLine, h.relayTopic); }
       await new Promise(realSetImmediate);
     }
@@ -150,7 +163,7 @@ function setup(initialState = {}, before = () => {}) {
   h.joyLog = () => h.published.filter((p) => /joy$/.test(p.topic));
   h.lastAxes = () => { const l = h.joyLog(); return l[l.length - 1].message.axes; };
   h.fireWin = (t) => { for (const fn of [...(win.listeners[t] ?? [])]) fn({}); };
-  h.fireDoc = (t) => { for (const fn of [...(doc.listeners[t] ?? [])]) fn({}); };
+  h.fireDoc = (t, ev = {}) => { for (const fn of [...(doc.listeners[t] ?? [])]) fn(ev); };
   h.setCalls = () => h.calls.filter((c) => c.service.endsWith("/set_parameters"));
   h.getCalls = () => h.calls.filter((c) => c.service.endsWith("/get_parameters"));
   return h;
@@ -187,9 +200,6 @@ test("not armed at start: no /joy published, text \"Click here to fly — drone 
   assert.match(h.frameStyle(), /dashed/);
   assert.strictEqual(h.root.tabIndex, 0);
   assert.ok(h.watched.includes("currentFrame") && h.watched.includes("topics"));
-  assert.strictEqual(h.advertised[0].topic, "/joy");
-  assert.strictEqual(h.advertised[0].schema, "sensor_msgs/msg/Joy");
-  assert.ok(h.advertised[0].options.datatypes.has("sensor_msgs/msg/Joy"), "the schema is declared with the advertise call");
   assert.deepStrictEqual(h.subs, ["/teleop_frame/status"]);
 });
 
@@ -204,7 +214,7 @@ test("pointerdown arms: publishes at 20 Hz with zero axes, then \"FLYING drone_1
   await h.tick(900);
   assert.strictEqual(h.joyLog().length, 0, "nothing goes out during the check");
   await h.tick(110);
-  assert.ok(!h.subs.includes("/joy"), "stops listening once armed");
+  assert.ok(h.subs.includes("/joy"), "stays subscribed while armed: its own messages must come back");
   const before = h.joyLog().length;
   assert.ok(before >= 1);
   await h.tick(1000);
@@ -526,7 +536,7 @@ test("selector: choosing drone_2 disarms with zeros on the old topic, re-targets
   const h = setup(MULTI);
   h.relayTopic = "/drone_1/teleop_frame/status";
   await fly(h);
-  assert.deepStrictEqual(h.subs, ["/drone_1/teleop_frame/status"]);
+  assert.deepStrictEqual(h.subs, ["/drone_1/teleop_frame/status", "/drone_1/joy"]);
   h.key("ArrowUp");
   await h.tick(100);
   const n = h.joyLog().length;
@@ -539,7 +549,6 @@ test("selector: choosing drone_2 disarms with zeros on the old topic, re-targets
   assert.strictEqual(zeros.length, 5);
   for (const p of zeros) { assert.strictEqual(p.topic, "/drone_1/joy"); assert.ok(isZeros(p.message)); }
   assert.deepStrictEqual(h.unadvertised, ["/drone_1/joy"]);
-  assert.strictEqual(h.advertised.at(-1).topic, "/drone_2/joy");
   assert.deepStrictEqual(h.subs, ["/drone_2/teleop_frame/status"]);
   assert.strictEqual(h.saved.selected, "drone_2");
   await h.tick(50);
@@ -554,6 +563,7 @@ test("selector: choosing drone_2 disarms with zeros on the old topic, re-targets
   h.down();
   await h.tick(1100);
   assert.ok(h.text().includes("FLYING drone_2"), h.text());
+  assert.strictEqual(h.advertised.at(-1).topic, "/drone_2/joy");
   assert.strictEqual(h.joyLog().at(-1).topic, "/drone_2/joy");
   h.key("f");
   await h.tick(50);
@@ -768,6 +778,8 @@ test("safe_teleop: dead zone and layout from get_parameters; not found yet in th
   await h.tick(50);
   const c = h.getCalls().length;
   await h.tick(4100);
+  assert.strictEqual(h.getCalls().length, c, "one read open at a time, up to 5 s");
+  await h.tick(2000);
   assert.ok(h.getCalls().length > c, "dropped and asked again");
 });
 
@@ -799,18 +811,19 @@ test("the topic list going empty is a dead link: the red line at once", async ()
 test("settings: saved templates and drones, settings editor changes re-target and disarm", async () => {
   const h = setup({ drones: ["drone_3"], selected: "gone", joyTopicTemplate: "/{name}/joy" });
   assert.strictEqual(h.select().value, "drone_3", "a saved drone no longer listed falls back to the first");
-  assert.strictEqual(h.advertised[0].topic, "/drone_3/joy");
   h.relayLine = DRIVE_OK;
   await fly(h);
   assert.ok(h.text().includes("FLYING drone_3"));
+  assert.strictEqual(h.advertised[0].topic, "/drone_3/joy");
   assert.ok(h.settings, "uses updatePanelSettingsEditor as the basestation panel does");
   const n = h.joyLog().length;
   h.settings.actionHandler({ action: "update", payload: { path: ["strip", "joyTopicTemplate"], value: "/x/{name}/joy" } });
   assert.strictEqual(h.joyLog().length, n + 5);
   assert.strictEqual(h.joyLog().at(-1).topic, "/drone_3/joy");
   assert.deepStrictEqual(h.unadvertised, ["/drone_3/joy"]);
-  assert.strictEqual(h.advertised.at(-1).topic, "/x/drone_3/joy");
   assert.strictEqual(h.saved.joyTopicTemplate, "/x/{name}/joy");
+  h.down();
+  assert.strictEqual(h.advertised.at(-1).topic, "/x/drone_3/joy");
   h.settings.actionHandler({ action: "update", payload: { path: ["strip", "drones"], value: "drone_3, drone_4" } });
   assert.deepStrictEqual(h.saved.drones, ["drone_3", "drone_4"]);
   assert.strictEqual(h.select().disabled, false);
@@ -847,6 +860,214 @@ test("a right click does not arm; onRender with nothing new still calls done", a
   assert.strictEqual(done, 1);
   h.deliver([{ topic: "/teleop_frame/status", message: {} }]);
   assert.ok(h.text().includes(RELAY_LINE), "a malformed status is no status");
+});
+
+// ─── review findings, fix round 1 ──────────────────────────────────────────────
+test("publishes succeed but no echo: no FLYING", async () => {
+  const LINE = "Your keys are not coming back from the bridge.";
+  const h = setup();
+  h.echo = false;
+  h.relayLine = DRIVE_OK;
+  await h.tick(10);
+  h.down();
+  await h.tick(1100);
+  assert.ok(h.joyLog().length > 0, "armed and publishing");
+  assert.ok(!h.text().includes("FLYING"), "no echo yet: " + h.text());
+  assert.ok(!h.text().includes(LINE), "the first second is not a failure yet");
+  await h.tick(1100);
+  assert.ok(!h.text().includes("FLYING"), h.text());
+  assert.strictEqual(h.part("st-notice").textContent, LINE);
+  assert.match(h.frameStyle(), /dashed/);
+  // Someone else on the topic is not our message coming back.
+  h.deliver([{ topic: "/joy", message: { header: { stamp: { sec: 5, nsec: 7 }, frame_id: "" }, axes: [], buttons: [] } }]);
+  h.joy();
+  assert.ok(!h.text().includes("FLYING"), "a foreign message is no echo");
+  // The echo comes back, in either field name.
+  h.echoed = h.published.length;
+  h.echo = true;
+  await h.tick(100);
+  assert.ok(h.text().includes("FLYING"), h.text());
+  assert.ok(!h.text().includes(LINE));
+  const last = h.joyLog().at(-1);
+  h.echo = false;
+  await h.tick(900);
+  const { sec, nsec } = last.message.header.stamp;
+  h.deliver([{ topic: "/joy", message: { header: { stamp: { sec, nanosec: nsec }, frame_id: "" }, axes: [], buttons: [] } }]);
+  assert.ok(h.text().includes("FLYING"), "nanosec counts too");
+  await h.tick(1250);
+  assert.ok(!h.text().includes("FLYING"), "gone for over 1 s: " + h.text());
+  assert.strictEqual(h.part("st-notice").textContent, LINE);
+  // Disarm: no longer subscribed, no longer complaining.
+  assert.ok(h.subs.includes("/joy"));
+  h.fireWin("blur");
+  assert.ok(!h.subs.includes("/joy"), "unsubscribed on disarm");
+  assert.ok(!h.text().includes(LINE));
+});
+
+test("a lost keyup lets go after hold_silence_s with no key event", async () => {
+  const h = setup();
+  await fly(h);
+  h.key("ArrowUp");                  // the keyup never comes, focus and visibility stay: a dropped remote desktop
+  await h.tick(TABLES.hold_silence_s * 1000 - 100);
+  assert.ok(!isZeros(h.joyLog().at(-1).message), "still held before the silence runs out");
+  await h.tick(150);
+  assert.ok(isZeros(h.joyLog().at(-1).message), "let go");
+  await h.tick(250);
+  assert.strictEqual(h.part("st-held").textContent, "hold (no key)");
+  assert.ok(h.text().includes("FLYING"), "armed still: only the keys were let go");
+  h.key("ArrowUp", { repeat: true });
+  await h.tick(100);
+  assert.ok(isZeros(h.joyLog().at(-1).message), "a repeat does not bring it back");
+  h.up("ArrowUp");
+  h.key("ArrowUp");
+  await h.tick(100);
+  assert.ok(!isZeros(h.joyLog().at(-1).message), "a new press does");
+});
+
+test("a repeating held key stays held past hold_silence_s, and only the last-pressed key needs to repeat", async () => {
+  const h = setup();
+  await fly(h);
+  h.key("ArrowUp");
+  h.key("a");                        // only A auto-repeats now
+  for (let i = 0; i < 10; i++) {
+    await h.tick(300);
+    h.key("a", { repeat: true });
+  }
+  const d = TABLES.profiles.dragonrise_usb;
+  await h.tick(60);
+  near(h.lastAxes()[d.forward_axis], 0.575);
+  near(h.lastAxes()[d.yaw_axis], 0.575);
+  h.up("a");                         // a keyup counts as an event too
+  await h.tick(900);
+  near(h.lastAxes()[d.forward_axis], 0.575);
+  await h.tick(200);
+  assert.ok(isZeros(h.joyLog().at(-1).message));
+});
+
+test("advertise waits for the first click and stays until drone change or cleanup", async () => {
+  const h = setup(MULTI);
+  await h.tick(3000);
+  assert.strictEqual(h.advertised.length, 0, "an idle strip must not make the keyboard window warn");
+  h.relayTopic = "/drone_1/teleop_frame/status";
+  h.relayLine = DRIVE_OK;
+  await h.tick(10);
+  h.down();
+  assert.strictEqual(h.advertised.length, 1, "before the check starts");
+  assert.strictEqual(h.advertised[0].topic, "/drone_1/joy");
+  assert.strictEqual(h.advertised[0].schema, "sensor_msgs/msg/Joy");
+  assert.ok(h.advertised[0].options.datatypes.has("sensor_msgs/msg/Joy"), "the schema is declared with the advertise call");
+  await h.tick(1100);
+  h.fireWin("blur");
+  assert.deepStrictEqual(h.unadvertised, [], "a disarm keeps the publisher");
+  await h.tick(600);
+  h.down();
+  assert.strictEqual(h.advertised.length, 1, "no second advertise");
+  await h.tick(1100);
+  const sel = h.select();
+  sel.value = "drone_2";
+  dispatch(sel, "change", {});
+  assert.deepStrictEqual(h.unadvertised, ["/drone_1/joy"]);
+  assert.strictEqual(h.advertised.length, 1, "the new drone waits for its click too");
+  h.cleanup();
+  assert.deepStrictEqual(h.unadvertised, ["/drone_1/joy"], "nothing advertised, nothing to take back");
+  const idle = setup();
+  idle.cleanup();
+  assert.deepStrictEqual(idle.unadvertised, []);
+});
+
+test("a click elsewhere disarms even when focus does not move", async () => {
+  const h = setup();
+  await fly(h);
+  assert.strictEqual(h.doc.capture.pointerdown, true, "capture phase: a panel cannot hide it from us");
+  const n = h.joyLog().length;
+  h.fireDoc("pointerdown", { target: h.root });
+  assert.strictEqual(h.joyLog().length, n, "a click on the strip is not elsewhere");
+  const child = h.part("st-sentence");
+  h.fireDoc("pointerdown", { target: child });
+  assert.strictEqual(h.joyLog().length, n, "nor is a click inside it");
+  h.fireDoc("pointerdown", { target: makeNode("div", h.doc) });
+  assert.strictEqual(h.joyLog().length, n + 5);
+  assert.ok(!h.text().includes("FLYING"));
+  assert.ok(h.text().includes(CLICK));
+  assert.strictEqual(h.doc.activeElement, h.root, "focus never moved");
+  h.cleanup();
+  assert.strictEqual(h.doc.listeners.pointerdown.length, 0);
+});
+
+test("one unanswered service read keeps FLYING for 5 s; then the red line", async () => {
+  const h = setup();
+  await fly(h);
+  await h.tick(2100);
+  h.getParams = "held";
+  await h.tick(2100);                // the next poll is out and open
+  assert.strictEqual(h.heldReads.length, 1);
+  await h.tick(2500);
+  assert.ok(h.text().includes("FLYING"), "slower than 2 s is not a failure: " + h.text());
+  h.heldReads[0]();
+  await h.tick(100);
+  assert.ok(h.text().includes("FLYING"), h.text());
+  h.getParams = "never";
+  await h.tick(2100);
+  await h.tick(2500);
+  assert.ok(h.text().includes("FLYING"), "still inside 5 s: " + h.text());
+  await h.tick(3000);
+  assert.ok(h.text().includes(RELAY_LINE), h.text());
+  assert.ok(!h.text().includes("FLYING"));
+});
+
+test("Ctrl+Space still stops", async () => {
+  const h = setup();
+  await fly(h);
+  h.key("ArrowUp");
+  await h.tick(60);
+  assert.ok(!isZeros(h.joyLog().at(-1).message));
+  for (const props of [{ ctrlKey: true }, { metaKey: true }, { altKey: true }]) {
+    h.key("ArrowUp");
+    const ev = h.key(" ", props);
+    assert.ok(ev.prevented && ev.stopped, JSON.stringify(props));
+    assert.strictEqual(h.part("st-held").textContent, "STOP");
+    await h.tick(60);
+    assert.ok(isZeros(h.joyLog().at(-1).message));
+  }
+});
+
+test("drone change always disarms, even when every topic stays /joy", async () => {
+  const h = setup({ drones: ["drone_1", "drone_2"] });
+  await fly(h);
+  h.key("ArrowUp");
+  await h.tick(60);
+  const n = h.joyLog().length;
+  const sel = h.select();
+  sel.value = "drone_2";
+  dispatch(sel, "change", {});
+  assert.strictEqual(h.joyLog().length, n + 5);
+  for (const p of h.joyLog().slice(n)) assert.ok(isZeros(p.message));
+  assert.ok(!h.text().includes("FLYING"));
+  assert.ok(h.text().includes(CLICK));
+  await h.tick(1000);
+  assert.strictEqual(h.joyLog().length, n + 5, "stopped");
+  h.relayLine = DRIVE_OK;
+  await h.tick(600);
+  h.down();
+  await h.tick(1100);
+  assert.ok(h.text().includes("FLYING drone_2"), h.text());
+});
+
+test("deadzone 0.0 is honoured", async () => {
+  const h = setup({}, (x) => { x.params.deadzone = 0.0; });
+  await fly(h);
+  h.key("ArrowUp");
+  await h.tick(60);
+  near(h.lastAxes()[TABLES.profiles.dragonrise_usb.forward_axis], 0.5);
+  const unset = setup({}, (x) => { delete x.params.deadzone; delete x.params.max_speed_mps; x.params.teleop_controller = "dragonrise_usb"; });
+  await fly(unset);
+  unset.key("ArrowUp");
+  await unset.tick(60);
+  near(unset.lastAxes()[TABLES.profiles.dragonrise_usb.forward_axis], 0.5 * (1 - TABLES.deadzone) + TABLES.deadzone);
+  // max_speed_mps still needs to be positive to count as a speed.
+  const zero = setup({}, (x) => { x.params.max_speed_mps = 0.0; });
+  await zero.tick(50);
+  assert.ok(!zero.text().includes("m/s"), zero.text());
 });
 
 (async () => {

@@ -136,7 +136,8 @@ const POLL_MS = 2000;                // /safe_teleop/get_parameters
 const FLIP_ANSWER_MS = 2000;         // an unanswered F request is dropped after this
 const READ_ANSWER_MS = 5000;         // the same for a safe_teleop read: slower under sim lag, as the Tk window's LIVE_READ_ANSWER_S
 const ECHO_FRESH_MS = 1000;          // our own /joy must have come back this recently for the strip to say FLYING
-const SENT_STAMPS_KEPT = 64;         // over 3 s of messages at 20 Hz, longer than ECHO_FRESH_MS
+const SENT_STAMPS_KEPT = 200;        // 10 s of messages at 20 Hz: echoes held across a render stall still read as ours
+const FOREIGN_STAMPS_TO_REFUSE = 2;  // a live source gives many; one replayed message never trips it
 const STATUS_FRESH_MS = 2000;        // the relay reports at 5 Hz; older than this it is gone
 const FAILURE_SHOWN_MS = 2000;       // a publish or service failure keeps the red line up this long
 const LISTEN_AFTER_DISARM_MS = 500;  // our own trailing zeros are gone by then
@@ -208,7 +209,7 @@ function activate(extensionContext) {
       const keys = new KeyState(DEFAULT_PROFILE, TABLES.deadzone);
       let closed = false;
       let armed = false;             // set only at the end of a check that a pointerdown started
-      let check = null;              // { listening, timer } while a click waits for the source check
+      let check = null;              // { listening, timer, foreign } while a click waits for the source check
       let publishTimer = null;
       let lastDisarmAt = -Infinity;
       let armedAt = -Infinity, echoAt = -Infinity;
@@ -290,10 +291,20 @@ function activate(extensionContext) {
       }
       function zeroAxes() { return new Array(TABLES.n_axes).fill(0.0); }
 
+      function stampKey(message) {
+        const stamp = message?.header?.stamp;
+        return stamp ? `${stamp.sec}:${stamp.nsec ?? stamp.nanosec}` : null;
+      }
       // A message on the joy topic while armed proves the publish reached the bridge only if it is one of ours.
       function noteEcho(message) {
-        const stamp = message?.header?.stamp;
-        if (stamp && sentStamps.has(`${stamp.sec}:${stamp.nsec ?? stamp.nanosec}`)) echoAt = CLOCK.now();
+        if (sentStamps.has(stampKey(message))) echoAt = CLOCK.now();
+      }
+      // During the check our own stamps never count, and a replay of someone's last message is a single stamp.
+      function noteDuringCheck(message) {
+        const key = stampKey(message);
+        if (key === null || sentStamps.has(key)) return;
+        check.foreign.add(key);
+        if (check.foreign.size >= FOREIGN_STAMPS_TO_REFUSE) refuseSource();
       }
 
       function applySubscriptions() {
@@ -312,7 +323,7 @@ function activate(extensionContext) {
       }
       function startCheck() {
         const wait = Math.max(0, lastDisarmAt + LISTEN_AFTER_DISARM_MS - CLOCK.now());
-        check = { listening: false, timer: null };
+        check = { listening: false, timer: null, foreign: new Set() };
         if (wait > 0) check.timer = later(wait, beginListening);
         else beginListening();
       }
@@ -652,7 +663,7 @@ function activate(extensionContext) {
                 status = parseStatus(evt.message.data);
                 statusAt = CLOCK.now();    // wall clock: receiveTime is sim time on this bridge
               } else if (evt.topic === names.joy) {
-                if (check?.listening) refuseSource();
+                if (check?.listening) noteDuringCheck(evt.message);
                 else if (armed) noteEcho(evt.message);
               }
             }

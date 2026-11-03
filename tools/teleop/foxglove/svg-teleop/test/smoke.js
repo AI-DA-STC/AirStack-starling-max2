@@ -135,6 +135,8 @@ function setup(initialState = {}, before = () => {}) {
   h.deliver = (events) => { let done = 0; ctx.onRender({ currentFrame: events }, () => { done++; }); assert.strictEqual(done, 1, "onRender must call done once"); h.doneCount++; };
   h.status = (line, topic = "/teleop_frame/status") => h.deliver([{ topic, message: { data: line }, receiveTime: { sec: 1, nsec: 0 }, schemaName: "std_msgs/msg/String" }]);
   h.joy = (topic = "/joy") => h.deliver([{ topic, message: { axes: [], buttons: [] }, receiveTime: { sec: 1, nsec: 0 } }]);
+  // A message from someone else on the topic: its stamp was never ours. The same numbers repeat a replay.
+  h.foreign = (nsec, topic = "/joy") => h.deliver([{ topic, message: { header: { stamp: { sec: 42, nsec }, frame_id: "" }, axes: [], buttons: [] }, receiveTime: { sec: 1, nsec: 0 } }]);
   // What comes back has the stamp as Studio decodes it, not the object the panel sent.
   h.deliverOwn = (p) => {
     const { sec, nsec } = p.message.header.stamp;
@@ -488,7 +490,8 @@ test("another source on the topic refuses to arm and names the topic; re-click r
   await h.tick(10);
   h.down();
   await h.tick(300);
-  h.joy();
+  h.foreign(1);
+  h.foreign(2);
   const refusal = "Another source is publishing /joy (the keyboard window or a pad). Close it first.";
   assert.ok(h.text().includes(refusal), h.text());
   assert.strictEqual(h.part("st-notice").style.color, TABLES.lines.relay_lost[2]);
@@ -500,7 +503,8 @@ test("another source on the topic refuses to arm and names the topic; re-click r
   assert.ok(h.text().includes(CHECKING));
   assert.ok(!h.text().includes(refusal), "a click clears the old refusal");
   await h.tick(300);
-  h.joy();
+  h.foreign(3);
+  h.foreign(4);
   assert.ok(h.text().includes(refusal), "still there: refused again");
   h.down();
   await h.tick(1100);
@@ -586,7 +590,7 @@ test("no BODY, WORLD or CMU anywhere in the rendered text across all states", as
   let h = setup();
   snap(h);
   h.down(); snap(h);
-  await h.tick(300); h.joy(); snap(h);
+  await h.tick(300); h.foreign(1); h.foreign(2); snap(h);
   h = setup();
   for (const line of [DRIVE_OK, ROOM_OK, ROOM_IDLE,
     "frame=body pending=world heading_deg=1.0 heading_age_s=0.01 guard=ok input=ok",
@@ -860,6 +864,74 @@ test("a right click does not arm; onRender with nothing new still calls done", a
   assert.strictEqual(done, 1);
   h.deliver([{ topic: "/teleop_frame/status", message: {} }]);
   assert.ok(h.text().includes(RELAY_LINE), "a malformed status is no status");
+});
+
+// ─── review findings, fix round 2: what refuses a click ────────────────────────
+test("fly, disarm, re-click, the panel's own stamps delivered in the listen window: arms, reaches FLYING with echoes", async () => {
+  const h = setup();
+  await fly(h);
+  await h.tick(5000);                // long enough that the first stamps are over 64 messages old
+  const sent = h.joyLog();
+  h.fireWin("blur");
+  await h.tick(600);
+  h.down();
+  await h.tick(300);
+  assert.ok(h.text().includes(CHECKING));
+  h.deliverOwn(h.joyLog().at(-1));   // the replay of our last zero on re-subscribe
+  h.deliverOwn(sent[0]);             // and echoes held across a render stall
+  h.deliverOwn(sent[1]);
+  h.deliverOwn(sent.at(-1));
+  assert.ok(!h.text().includes("Another source"), h.text());
+  await h.tick(800);
+  assert.ok(h.text().includes("FLYING drone_1"), h.text());
+});
+
+test("one foreign stamp delivered once in the window: arms", async () => {
+  const h = setup();
+  h.relayLine = DRIVE_OK;
+  await h.tick(10);
+  h.down();
+  await h.tick(300);
+  h.foreign(1);                      // the cached last message of a keyboard window closed just now
+  assert.ok(!h.text().includes("Another source"), h.text());
+  await h.tick(800);
+  assert.ok(h.text().includes("FLYING drone_1"), h.text());
+});
+
+test("two distinct foreign stamps in the window: refuses and names the topic", async () => {
+  const h = setup({ joyTopicTemplate: "/{name}/joy" });
+  h.relayLine = DRIVE_OK;
+  await h.tick(10);
+  h.down();
+  await h.tick(300);
+  h.foreign(1, "/drone_1/joy");
+  assert.ok(!h.text().includes("Another source"), "one is not enough: " + h.text());
+  await h.tick(50);
+  h.foreign(2, "/drone_1/joy");
+  assert.ok(h.text().includes("Another source is publishing /drone_1/joy (the keyboard window or a pad). Close it first."), h.text());
+  await h.tick(1000);
+  assert.strictEqual(h.joyLog().length, 0, "stays disarmed");
+  // Stamps from an earlier check do not carry over.
+  h.down();
+  await h.tick(300);
+  h.foreign(2, "/drone_1/joy");
+  await h.tick(800);
+  assert.ok(h.text().includes("FLYING drone_1"), h.text());
+});
+
+test("the same foreign stamp delivered twice: arms", async () => {
+  const h = setup();
+  h.relayLine = DRIVE_OK;
+  await h.tick(10);
+  h.down();
+  await h.tick(300);
+  h.foreign(1);
+  h.foreign(1);
+  h.joy();                           // and a message with no stamp at all is no stamp
+  h.joy();
+  assert.ok(!h.text().includes("Another source"), h.text());
+  await h.tick(800);
+  assert.ok(h.text().includes("FLYING drone_1"), h.text());
 });
 
 // ─── review findings, fix round 1 ──────────────────────────────────────────────

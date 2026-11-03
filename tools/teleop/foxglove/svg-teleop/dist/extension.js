@@ -120,14 +120,559 @@ function footerLine(status) {
 function fillTemplate(tpl, name) { return String(tpl).split("{name}").join(name); }
 
 
+// Every timer and every reading of the time in the panel goes through here, so test/smoke.js can drive them.
+const CLOCK = {
+  now: () => Date.now(),
+  setInterval: (fn, ms) => setInterval(fn, ms),
+  clearInterval: (id) => clearInterval(id),
+  setTimeout: (fn, ms) => setTimeout(fn, ms),
+  clearTimeout: (id) => clearTimeout(id),
+};
+
+// ---- the panel: flies only while clicked, zeros on every way out (spec 5.3-5.6) ----
+const RATE_MS = 50;                  // 20 Hz, as the Tk window
+const RENDER_MS = 200;               // re-reads the status age with no frame arriving
+const POLL_MS = 2000;                // /safe_teleop/get_parameters
+const ANSWER_MS = 2000;              // an unanswered service call is dropped after this
+const STATUS_FRESH_MS = 2000;        // the relay reports at 5 Hz; older than this it is gone
+const FAILURE_SHOWN_MS = 2000;       // a publish or service failure keeps the red line up this long
+const LISTEN_AFTER_DISARM_MS = 500;  // our own trailing zeros are gone by then
+const LISTEN_MS = 1000;
+const ZEROS_ON_DISARM = 5;
+const DEFAULT_PROFILE = "dragonrise_usb";
+const RELAY_LINE = "Keys not reaching the drone — start the relay: tools/sim.sh relay";
+const CLICK_LINE = "Click here to fly — drone holds";
+const CHECK_LINE = "Checking for another source…";
+const NOT_FOUND_LINE = "safe_teleop not found yet";
+const GREEN = TABLES.lines.drive[2], GREY = TABLES.lines.room_idle[2], RED = TABLES.lines.relay_lost[2];
+const HELD_GLYPHS = [["up", "↑"], ["down", "↓"], ["left", "←"], ["right", "→"], ["w", "W"], ["s", "S"], ["a", "A"], ["d", "D"]];
+const PARAM_INTEGER = 2, PARAM_DOUBLE = 3, PARAM_STRING = 4;
+const DEFAULTS = {
+  drones: ["drone_1"],
+  joyTopicTemplate: "/joy",
+  statusTopicTemplate: "/teleop_frame/status",
+  teleopNsTemplate: "/safe_teleop",
+  relayNsTemplate: "/teleop_frame",
+};
+const TEMPLATE_KEYS = ["joyTopicTemplate", "statusTopicTemplate", "teleopNsTemplate", "relayNsTemplate"];
+const JOY_SCHEMA = "sensor_msgs/msg/Joy";
+// Declared with the advertise call: the bridge needs the definition to encode a client publish (spec 4).
+const JOY_DATATYPES = new Map([
+  [JOY_SCHEMA, { definitions: [
+    { name: "header", type: "std_msgs/msg/Header", isComplex: true, isArray: false },
+    { name: "axes", type: "float32", isComplex: false, isArray: true },
+    { name: "buttons", type: "int32", isComplex: false, isArray: true },
+  ] }],
+  ["std_msgs/msg/Header", { definitions: [
+    { name: "stamp", type: "time", isComplex: false, isArray: false },
+    { name: "frame_id", type: "string", isComplex: false, isArray: false },
+  ] }],
+]);
+
+function dronesFrom(value) {
+  const raw = Array.isArray(value) ? value : typeof value === "string" ? value.split(",") : [];
+  const names = raw.map((n) => String(n).trim()).filter((n) => n);
+  return names.length ? names : DEFAULTS.drones.slice();
+}
+
+function loadConfig(saved) {
+  const cfg = { drones: dronesFrom(saved.drones) };
+  for (const k of TEMPLATE_KEYS) cfg[k] = typeof saved[k] === "string" && saved[k] ? saved[k] : DEFAULTS[k];
+  return cfg;
+}
+
+function paramNumber(pv) {
+  const t = Number(pv?.type);
+  const v = t === PARAM_DOUBLE ? Number(pv.double_value) : t === PARAM_INTEGER ? Number(pv.integer_value) : NaN;
+  return v > 0 ? v : null;
+}
+function paramString(pv) { return Number(pv?.type) === PARAM_STRING ? String(pv.string_value ?? "") : ""; }
+
 function activate(extensionContext) {
   extensionContext.registerPanel({
     name: "SVG Teleop",
     initPanel: (panelContext) => {
-      return () => {};
+      const root = panelContext.panelElement;
+      const doc = root.ownerDocument ?? document;
+      const win = doc.defaultView ?? (typeof window !== "undefined" ? window : null);
+
+      // ── state ──────────────────────────────────────────────────────────
+      const saved = panelContext.initialState ?? {};
+      const cfg = loadConfig(saved);
+      let selected = cfg.drones.includes(saved.selected) ? saved.selected : cfg.drones[0];
+      let names = targets();
+      const keys = new KeyState(DEFAULT_PROFILE, TABLES.deadzone);
+      let closed = false;
+      let armed = false;             // set only at the end of a check that a pointerdown started
+      let check = null;              // { listening, timer } while a click waits for the source check
+      let publishTimer = null;
+      let lastDisarmAt = -Infinity;
+      let advertised = false;
+      let refusal = "";
+      let status = null, statusAt = -Infinity;
+      let failedAt = -Infinity;      // the last publish or service failure
+      let topicsEmpty = false, topicsSeen = false;
+      let safeTeleop = { answered: false, lost: false, unknown: "", maxSpeed: null };
+      let generation = 0;            // answers from before a drone change are ignored
+      let pollOpen = false, flipOpen = false;
+      let flipNote = "", flipNoteAt = -Infinity;
+      const timeouts = new Set();
+
+      function targets() {
+        const t = {};
+        for (const k of TEMPLATE_KEYS) t[k] = fillTemplate(cfg[k], selected);
+        return { joy: t.joyTopicTemplate, status: t.statusTopicTemplate, teleopNs: t.teleopNsTemplate, relayNs: t.relayNsTemplate };
+      }
+
+      function noteFailure() { failedAt = CLOCK.now(); }
+
+      // Nothing the panel does may throw into Studio's event dispatch or stop a timer.
+      function safe(fn) {
+        return (...args) => {
+          try {
+            return fn(...args);
+          } catch (err) {
+            noteFailure();
+            console.warn("SVG Teleop:", err);
+            return undefined;
+          }
+        };
+      }
+
+      function later(ms, fn) {
+        const id = CLOCK.setTimeout(safe(() => { timeouts.delete(id); fn(); }), ms);
+        timeouts.add(id);
+        return id;
+      }
+      function cancel(id) { CLOCK.clearTimeout(id); timeouts.delete(id); }
+
+      // ── publishing ─────────────────────────────────────────────────────
+      function advertiseJoy() {
+        if (typeof panelContext.advertise !== "function") return;
+        try {
+          panelContext.advertise(names.joy, JOY_SCHEMA, { datatypes: JOY_DATATYPES });
+          advertised = true;
+        } catch (err) {
+          noteFailure();
+        }
+      }
+      function unadvertiseJoy() {
+        if (!advertised) return;
+        advertised = false;
+        try {
+          if (typeof panelContext.unadvertise === "function") panelContext.unadvertise(names.joy);
+        } catch (err) {
+          noteFailure();
+        }
+      }
+      function publishJoy(axes) {
+        try {
+          const t = CLOCK.now();
+          const nanos = Math.trunc(t % 1000) * 1e6;
+          panelContext.publish(names.joy, {
+            header: { stamp: { sec: Math.floor(t / 1000), nsec: nanos, nanosec: nanos }, frame_id: "" },
+            axes,
+            buttons: keys.buttons(),
+          });
+        } catch (err) {
+          noteFailure();
+        }
+      }
+      function zeroAxes() { return new Array(TABLES.n_axes).fill(0.0); }
+
+      function applySubscriptions() {
+        const subs = [{ topic: names.status }];
+        if (check?.listening) subs.push({ topic: names.joy });
+        panelContext.subscribe(subs);
+      }
+
+      // ── arming: pointerdown → source check → armed or refused ──────────
+      function cancelCheck() {
+        if (!check) return;
+        const wasListening = check.listening;
+        cancel(check.timer);
+        check = null;
+        if (wasListening) applySubscriptions();
+      }
+      function startCheck() {
+        const wait = Math.max(0, lastDisarmAt + LISTEN_AFTER_DISARM_MS - CLOCK.now());
+        check = { listening: false, timer: null };
+        if (wait > 0) check.timer = later(wait, beginListening);
+        else beginListening();
+      }
+      function beginListening() {
+        check.listening = true;
+        check.timer = later(LISTEN_MS, finishCheck);
+        applySubscriptions();
+        render();
+      }
+      function finishCheck() {
+        check = null;
+        applySubscriptions();
+        armed = true;
+        keys.allUp();
+        if (!advertised) advertiseJoy();
+        publishTimer = CLOCK.setInterval(safe(() => publishJoy(keys.axes())), RATE_MS);
+        publishJoy(keys.axes());
+        render();
+      }
+      function refuseSource() {
+        cancelCheck();
+        refusal = `Another source is publishing ${names.joy} (the keyboard window or a pad). Close it first.`;
+      }
+      // Every way out comes through here. An idle strip publishes nothing: another source may own the topic.
+      function disarm() {
+        cancelCheck();
+        keys.allUp();
+        if (!armed) return;
+        armed = false;
+        CLOCK.clearInterval(publishTimer);
+        publishTimer = null;
+        for (let i = 0; i < ZEROS_ON_DISARM; i++) publishJoy(zeroAxes());
+        lastDisarmAt = CLOCK.now();
+      }
+
+      // ── services ───────────────────────────────────────────────────────
+      function callWithTimeout(service, request) {
+        return new Promise((resolve, reject) => {
+          const timer = later(ANSWER_MS, () => reject(new Error(`no reply within ${ANSWER_MS} ms`)));
+          Promise.resolve()
+            .then(() => panelContext.callService(service, request))
+            .then((res) => { cancel(timer); resolve(res); }, (err) => { cancel(timer); reject(err); });
+        });
+      }
+      function servicesAvailable() { return typeof panelContext.callService === "function"; }
+
+      function pollSafeTeleop() {
+        if (closed || pollOpen || !servicesAvailable()) return;
+        pollOpen = true;
+        const asked = generation;
+        const answered = (fn) => safe((arg) => {
+          if (closed || asked !== generation) return;
+          pollOpen = false;
+          fn(arg);
+          render();
+        });
+        callWithTimeout(`${names.teleopNs}/get_parameters`, { names: ["teleop_controller", "deadzone", "max_speed_mps"] })
+          .then(answered(applySafeTeleop), answered(() => { safeTeleop.lost = safeTeleop.answered; }));
+      }
+      function applySafeTeleop(res) {
+        const vals = res?.values;
+        if (!Array.isArray(vals)) { safeTeleop.lost = safeTeleop.answered; return; }
+        safeTeleop.answered = true;
+        safeTeleop.lost = false;
+        const controller = paramString(vals[0]);
+        if (controller && has(TABLES.profiles, controller)) {
+          safeTeleop.unknown = "";
+          keys.profile = TABLES.profiles[controller];
+        } else if (controller) {     // the Tk window refuses a layout it cannot send; so does the strip
+          safeTeleop.unknown = controller;
+          disarm();
+        }
+        keys.deadzone = paramNumber(vals[1]) ?? keys.deadzone;
+        safeTeleop.maxSpeed = paramNumber(vals[2]) ?? safeTeleop.maxSpeed;
+      }
+
+      function requestFlip() {
+        const target = flipTarget(usableStatus(CLOCK.now()));
+        if (target === null || flipOpen) return;   // the footer offers F only when there is something to flip
+        if (!servicesAvailable()) { noteFailure(); return; }
+        flipOpen = true;
+        const asked = generation;
+        const answered = (fn) => safe((arg) => {
+          if (closed || asked !== generation) return;
+          flipOpen = false;
+          fn(arg);
+          render();
+        });
+        callWithTimeout(`${names.relayNs}/set_parameters`, {
+          parameters: [{ name: "stick_frame", value: { type: PARAM_STRING, string_value: target } }],
+        }).then(answered((res) => {
+          if (res?.results?.[0]?.successful === false) {
+            flipNote = "The relay did not accept the mode change.";
+            flipNoteAt = CLOCK.now();
+          }
+        }), answered(noteFailure));
+      }
+
+      // ── what the strip knows ───────────────────────────────────────────
+      // The relay's last line while the link looks alive, otherwise null: the one input to the words.
+      function usableStatus(now) {
+        const linkDown = topicsEmpty || safeTeleop.lost || now - failedAt < FAILURE_SHOWN_MS;
+        return !linkDown && status !== null && now - statusAt <= STATUS_FRESH_MS ? status : null;
+      }
+      function flyingNow(usable) {
+        return armed && flipTarget(usable) !== null && usable.input === "ok" && (usable.guard ?? "ok") === "ok";
+      }
+      function stripLines(usable) {
+        const h = headerLines(usable, usable !== null);
+        return h[0] === TABLES.lines.relay_lost[0] ? [RELAY_LINE, h[1], h[2]] : h;
+      }
+
+      // ── DOM ────────────────────────────────────────────────────────────
+      const el = (tag, cls, css) => {
+        const n = doc.createElement(tag);
+        if (cls) n.className = cls;
+        if (css) Object.assign(n.style, css);
+        return n;
+      };
+      root.tabIndex = 0;
+      Object.assign(root.style, { outline: "none", height: "100%", cursor: "pointer", userSelect: "none" });
+      const frame = el("div", "st-frame", { boxSizing: "border-box", height: "100%", display: "flex", alignItems: "center", gap: "12px",
+        padding: "6px 10px", background: "#ffffff", color: "#111827", fontFamily: "sans-serif", fontSize: "13px" });
+      const lines = el("div", "st-lines", { flex: "1", minWidth: "0" });
+      const lineOne = el("div", "", { fontWeight: "bold", fontSize: "14px" });
+      const modeEl = el("span", "st-line1");
+      const armEl = el("span", "st-arm");
+      lineOne.appendChild(modeEl);
+      lineOne.appendChild(armEl);
+      const sentenceEl = el("div", "st-sentence");
+      const noticeEl = el("div", "st-notice", { color: RED, fontWeight: "bold" });
+      const footerEl = el("div", "st-footer", { fontFamily: "monospace", fontSize: "12px", marginTop: "2px" });
+      const footerKeys = el("span", "st-keys");
+      const heldEl = el("span", "st-held");
+      const speedEl = el("span", "st-speed");
+      const footerNote = el("span", "st-note");
+      const sep = () => { const s = el("span"); s.textContent = "  ·  "; return s; };
+      for (const n of [footerKeys, sep(), heldEl, sep(), speedEl, footerNote]) footerEl.appendChild(n);
+      for (const n of [lineOne, sentenceEl, noticeEl, footerEl]) lines.appendChild(n);
+      const selector = el("select", "st-selector");
+      frame.appendChild(lines);
+      frame.appendChild(selector);
+      root.appendChild(frame);
+
+      let selectorKey = null;
+      function renderSelector() {
+        const key = cfg.drones.join("\u0000");
+        if (key !== selectorKey) {
+          selectorKey = key;
+          selector.textContent = "";
+          for (const name of cfg.drones) {
+            const o = el("option");
+            o.value = name;
+            o.textContent = name;
+            selector.appendChild(o);
+          }
+        }
+        selector.value = selected;
+        selector.disabled = cfg.drones.length < 2;
+        selector.style.opacity = selector.disabled ? "0.5" : "1";
+      }
+
+      const setText = (n, t) => { if (n.textContent !== t) n.textContent = t; };
+
+      function render() {
+        if (closed) return;
+        const now = CLOCK.now();
+        const usable = usableStatus(now);
+        const [bold, sentence, colour] = stripLines(usable);
+        const flying = flyingNow(usable);
+        setText(modeEl, bold);
+        modeEl.style.color = colour;
+        setText(armEl, flying ? ` · FLYING ${selected}` : check ? ` · ${CHECK_LINE}` : armed ? "" : ` · ${CLICK_LINE}`);
+        armEl.style.color = flying ? GREEN : GREY;
+        setText(sentenceEl, sentence);
+        frame.style.border = flying ? `3px solid ${GREEN}` : `3px dashed ${GREY}`;
+
+        const notice = safeTeleop.unknown
+          ? `Refusing to fly: safe_teleop runs controller '${safeTeleop.unknown}', and this strip has no layout for it.`
+          : refusal || (now - flipNoteAt < FAILURE_SHOWN_MS ? flipNote : "");
+        setText(noticeEl, notice);
+        noticeEl.hidden = !notice;
+
+        setText(footerKeys, footerLine(usable));
+        const held = new Set(keys.held());
+        const glyphs = HELD_GLYPHS.filter(([k]) => held.has(k)).map(([, g]) => g);
+        const stop = keys.statusText(now / 1000).startsWith("STOP");
+        setText(heldEl, stop ? "STOP" : glyphs.length ? `holding: ${glyphs.join(", ")}` : "hold (no key)");
+        const pct = `${Math.round(keys.scale * 100)} %`;
+        const speed = safeTeleop.maxSpeed === null ? "" : ` = ${(keys.scale * safeTeleop.maxSpeed).toFixed(1)} m/s`;
+        setText(speedEl, pct + speed);
+        setText(footerNote, !safeTeleop.answered || safeTeleop.lost ? `  ·  ${NOT_FOUND_LINE}` : "");
+      }
+
+      // ── events ─────────────────────────────────────────────────────────
+      const handled = (k) => has(TABLES.keys, k) || has(SCALE_KEYS, k) || k === "space" || k === "f";
+
+      const onPointerDown = safe((ev) => {
+        if (ev.button !== undefined && ev.button !== 0) return;
+        if (!selector.disabled && selector.contains(ev.target)) {   // going for the selector is attention leaving the keys
+          disarm();
+          render();
+          return;
+        }
+        root.focus();
+        if (armed || check) return;
+        refusal = "";
+        if (!safeTeleop.unknown) startCheck();
+        render();
+      });
+      const onKeyDown = safe((ev) => {
+        if (!armed && !check) return;                 // not flying: every key belongs to Studio
+        if (ev.ctrlKey || ev.metaKey || ev.altKey) return;
+        const k = normKey(ev.key);
+        if (!handled(k)) return;                      // Tab is never handled: it moves focus out, which disarms
+        ev.preventDefault();
+        ev.stopPropagation();
+        if (!armed || ev.repeat) return;              // a key already down at arming stays ignored until pressed again
+        if (k === "f") requestFlip();
+        else keys.press(k, CLOCK.now() / 1000);
+        render();
+      });
+      const onKeyUp = safe((ev) => {
+        if (!armed && !check) return;
+        const k = normKey(ev.key);
+        if (!handled(k)) return;
+        ev.preventDefault();
+        ev.stopPropagation();
+        keys.release(k);
+        render();
+      });
+      const onFocusOut = safe((ev) => {
+        if (ev.relatedTarget === root) return;        // only the root flies: the selector inside it counts as leaving
+        disarm();
+        render();
+      });
+      const onWindowBlur = safe(() => { disarm(); render(); });
+      const onVisibility = safe(() => {
+        if (doc.hidden || doc.visibilityState === "hidden") { disarm(); render(); }
+      });
+      const onSelectorChange = safe(() => {
+        if (selector.value === selected) return;
+        selected = selector.value;
+        reconfigure();
+      });
+
+      // A new drone or new settings: zeros to the old topic, then every template points at the new one.
+      function reconfigure() {
+        if (!cfg.drones.includes(selected)) selected = cfg.drones[0];
+        const next = targets();
+        if (Object.keys(next).some((k) => next[k] !== names[k])) {
+          disarm();
+          if (next.joy !== names.joy) unadvertiseJoy();
+          names = next;
+          if (!advertised) advertiseJoy();
+          generation++;
+          pollOpen = flipOpen = false;
+          status = null;
+          statusAt = -Infinity;
+          failedAt = -Infinity;
+          refusal = flipNote = "";
+          safeTeleop = { answered: false, lost: false, unknown: "", maxSpeed: null };
+          keys.profile = TABLES.profiles[DEFAULT_PROFILE];
+          keys.deadzone = TABLES.deadzone;
+          applySubscriptions();
+          pollSafeTeleop();
+        }
+        persist();
+        renderSelector();
+        updateSettings();
+        render();
+      }
+
+      function persist() {
+        if (typeof panelContext.saveState === "function") panelContext.saveState({ ...cfg, selected });
+      }
+
+      function updateSettings() {
+        if (typeof panelContext.updatePanelSettingsEditor !== "function") return;
+        const str = (label, value, help) => ({ label, input: "string", value, help });
+        panelContext.updatePanelSettingsEditor({
+          actionHandler: safe((action) => {
+            if (action.action !== "update") return;
+            const key = action.payload.path[action.payload.path.length - 1];
+            if (key === "drones") cfg.drones = dronesFrom(action.payload.value);
+            else if (TEMPLATE_KEYS.includes(key)) cfg[key] = String(action.payload.value ?? "") || DEFAULTS[key];
+            else return;
+            reconfigure();
+          }),
+          nodes: {
+            strip: {
+              label: "SVG Teleop",
+              fields: {
+                drones: str("Drones", cfg.drones.join(", "), "Comma-separated names. The selector on the strip lists them."),
+                joyTopicTemplate: str("Joy topic", cfg.joyTopicTemplate, "{name} is the selected drone, e.g. /{name}/joy"),
+                statusTopicTemplate: str("Relay status topic", cfg.statusTopicTemplate, "e.g. /{name}/teleop_frame/status"),
+                teleopNsTemplate: str("safe_teleop namespace", cfg.teleopNsTemplate, "e.g. /{name}/safe_teleop"),
+                relayNsTemplate: str("Relay namespace", cfg.relayNsTemplate, "e.g. /{name}/teleop_frame"),
+              },
+            },
+          },
+        });
+      }
+
+      panelContext.onRender = (renderState, done) => {
+        try {
+          if (!closed) {
+            if (renderState.topics) {
+              topicsSeen = topicsSeen || renderState.topics.length > 0;
+              topicsEmpty = topicsSeen && renderState.topics.length === 0;
+            }
+            for (const evt of renderState.currentFrame ?? []) {
+              if (evt.topic === names.status && typeof evt.message?.data === "string") {
+                status = parseStatus(evt.message.data);
+                statusAt = CLOCK.now();    // wall clock: receiveTime is sim time on this bridge
+              } else if (evt.topic === names.joy && check?.listening) {
+                refuseSource();
+              }
+            }
+            render();
+          }
+        } catch (err) {
+          noteFailure();
+          console.warn("SVG Teleop:", err);
+        } finally {
+          done();
+        }
+      };
+
+      root.addEventListener("pointerdown", onPointerDown);
+      root.addEventListener("keydown", onKeyDown);
+      root.addEventListener("keyup", onKeyUp);
+      root.addEventListener("focusout", onFocusOut);
+      selector.addEventListener("change", onSelectorChange);
+      if (win) win.addEventListener("blur", onWindowBlur);
+      doc.addEventListener("visibilitychange", onVisibility);
+
+      const renderTimer = CLOCK.setInterval(safe(render), RENDER_MS);
+      const pollTimer = CLOCK.setInterval(safe(pollSafeTeleop), POLL_MS);
+
+      if (typeof panelContext.watch === "function") {
+        panelContext.watch("currentFrame");
+        panelContext.watch("topics");
+      }
+      safe(applySubscriptions)();
+      advertiseJoy();
+      pollSafeTeleop();
+      renderSelector();
+      updateSettings();
+      render();
+
+      return () => {
+        if (closed) return;
+        safe(disarm)();
+        closed = true;
+        unadvertiseJoy();
+        CLOCK.clearInterval(renderTimer);
+        CLOCK.clearInterval(pollTimer);
+        for (const id of timeouts) CLOCK.clearTimeout(id);
+        timeouts.clear();
+        root.removeEventListener("pointerdown", onPointerDown);
+        root.removeEventListener("keydown", onKeyDown);
+        root.removeEventListener("keyup", onKeyUp);
+        root.removeEventListener("focusout", onFocusOut);
+        selector.removeEventListener("change", onSelectorChange);
+        if (win) win.removeEventListener("blur", onWindowBlur);
+        doc.removeEventListener("visibilitychange", onVisibility);
+        safe(() => {
+          if (typeof panelContext.unsubscribeAll === "function") panelContext.unsubscribeAll();
+          else panelContext.subscribe([]);
+        })();
+        root.removeChild(frame);
+      };
     },
   });
 }
 
-module.exports = { activate, TABLES, __core: { KeyState, stickFor, parseStatus, headerLines, footerLine, flipTarget, fillTemplate } };
+module.exports = { activate, TABLES, __clock: CLOCK, __core: { KeyState, stickFor, parseStatus, headerLines, footerLine, flipTarget, fillTemplate } };
 })();

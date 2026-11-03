@@ -1,4 +1,4 @@
-# tools/tests/test_svg_teleop_panel.py — the Foxglove strip's JS logic equals keymap.py on the fixtures (NEAR-789, sim)
+# tools/tests/test_svg_teleop_panel.py — the Foxglove strip's JS logic equals keymap.py on the fixtures, and the panel passes its smoke cases (NEAR-789, sim)
 import pathlib, shutil, subprocess, unittest
 
 PANEL = pathlib.Path(__file__).resolve().parent.parent / "teleop/foxglove/svg-teleop"
@@ -17,6 +17,11 @@ class Panel(unittest.TestCase):
         r = run("node", "test/core.test.js")
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
         self.assertIn("core ok", r.stdout)
+
+    def test_panel_smoke(self):
+        r = run("node", "test/smoke.js")
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertIn("smoke ok", r.stdout)
 
 
 if __name__ == "__main__":

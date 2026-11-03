@@ -53,7 +53,7 @@ Basestation Studio opens on `ws://localhost:8765`. First time only: import `/roo
 ```bash
 cd ~/AirStack-starling-max2/localisation && scripts/slam_up.sh
 ```
-Expect `tracker ready`, a status line at ≥ 10 Hz, and SLAM Studio on `ws://172.31.0.200:8766`. First time only: Layouts → Import from file → `/exploration/foxglove/cuvslam_slam_view.json`.
+Expect `tracker ready`, a status line at ≥ 10 Hz, and SLAM Studio on `ws://172.31.0.200:8766`. First time only: Layouts → Import from file → `/exploration/foxglove/cuvslam_slam_view.json`. For the keyboard strip and a chase view import `/teleop-foxglove/teleop-cuvslam.json` instead: `slam_up.sh` installs the SVG Teleop panel every start ([TELEOP.md §3b](../docs/TELEOP.md)). It needs `sudo ufw allow from 172.31.0.0/24`.
 
 **7 · New laptop terminal — record the run** (two commands: the second runs inside the container)
 ```bash
@@ -147,7 +147,7 @@ reference = EKF2).* Records: [sim_site_run1](results/sim_site_run1_record.md) ·
 | `scripts/` | session (`slam_up/down/status`), recording, scoring, checks, the resource and WiFi watch |
 | `scenes/construction_site/` | the world: [README](scenes/construction_site/README.md), [VALIDATION.md](scenes/construction_site/VALIDATION.md), build scripts |
 | `docker/` | the exploration image and container (`up.sh` joins the Isaac network) |
-| `foxglove/` | the SLAM Studio layout |
+| `foxglove/` | the SLAM Studio layout (the teleop layout and panel are in `tools/teleop/foxglove/`, mounted at `/teleop-foxglove`) |
 | `results/` | run records, the [effort log](results/effort_log.md); bags and ladder logs are gitignored |
 | `reports/`, `research_notes/` | day-1 literature review on multi-drone localisation (every number sourced; nothing is our result) |
 

@@ -3,8 +3,10 @@
 #   1. exploration container up (joined to the Isaac network)
 #   2. cuVSLAM node        -> log results/cuvslam_node.log
 #   3. Foxglove bridge     -> ws://172.31.0.200:8766, log results/foxglove_bridge.log
+#   3b. install the SVG Teleop panel (tools/teleop/foxglove/install.sh) before Studio starts
 #   4. Foxglove Studio (its OWN instance, data dir foxglove/studio-data) pre-connected to that bridge.
 #      First time only: Layouts -> Import from file -> /exploration/foxglove/cuvslam_slam_view.json. Remembered after that.
+#      For the teleop strip import /teleop-foxglove/teleop-cuvslam.json (= tools/teleop/foxglove/teleop-cuvslam.json) the same way.
 # Stays in the FOREGROUND showing a live status line (every 3 s) and the node log; Ctrl-C shuts the SLAM side down
 # (= scripts/slam_down.sh). Use --detach to return to the prompt instead (then stop with slam_down.sh).
 set -euo pipefail
@@ -33,6 +35,10 @@ else echo "Foxglove bridge already running"; fi
 
 for i in $(seq 1 20); do ex 'grep -q "tracker ready" results/cuvslam_node.log' && break; sleep 1; done
 ex 'grep -m1 "tracker ready" results/cuvslam_node.log || echo "node not ready yet — is the sim playing with ENABLE_CAMERA=true CAMERA_DRONES=drone_1 ?"'
+
+# the SVG Teleop panel: copied into the container's Studio extensions folder on every start (its home is lost on docker rm)
+if ex 'test -f /teleop-foxglove/install.sh'; then ex 'bash /teleop-foxglove/install.sh' || echo "WARNING: teleop panel install failed"
+else echo "Teleop panel not installed: run scripts/slam_down.sh, then scripts/slam_up.sh"; fi
 
 if ! ex 'pgrep -f "[f]oxglove-studio.*studio-data" >/dev/null'; then
   exd 'foxglove-studio --no-sandbox --user-data-dir=/exploration/foxglove/studio-data "foxglove://open?ds=foxglove-websocket&ds.url=ws://172.31.0.200:8766" > results/foxglove_studio.log 2>&1'

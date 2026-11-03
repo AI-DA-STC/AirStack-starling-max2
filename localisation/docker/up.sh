@@ -13,5 +13,6 @@ docker run -d --name "$NAME" --gpus all --network container:isaac-sim --ipc host
   -e DISPLAY="${DISPLAY:-:1}" -e QT_X11_NO_MITSHM=1 -e XAUTHORITY=/.Xauthority -e NVIDIA_DRIVER_CAPABILITIES=all \
   -v "$HOME/.Xauthority:/.Xauthority:ro" -v /tmp/.X11-unix:/tmp/.X11-unix \
   -v "$PWD":/exploration -w /exploration \
+  -v "$PWD/../tools/teleop/foxglove":/teleop-foxglove:ro \
   localisation-exploration:cu12 sleep infinity >/dev/null
 echo "$NAME started"

@@ -86,6 +86,17 @@ Add to `topic_whitelist`: `^/joy$`, `^/drone_[0-9]+/joy$`, `^(/drone_[0-9]+)?/te
 - `docs/TELEOP.md` §3b: a short "In Foxglove" paragraph (the strip, click to fly, selector, layout import); `localisation/README.md`: the new layout and installer; `tools/README.md`: `teleop/foxglove/`.
 - Linear: one new S5 issue "Teleop strip inside the cuVSLAM Foxglove window, with a chase view" (next sync file); the multi-drone launch as a separate Backlog issue.
 
+## Built differently (2026-11-03, as built)
+
+The plan and the review rounds changed these points. The sections above are kept as designed.
+
+- §5.3 Advertise at the first click and keep the publisher until a drone change or cleanup, not on every disarm. A new publisher on each click waits for discovery and loses the first keys. The five zeros per disarm are unchanged.
+- §5.3 Hold-silence: with keys held and no key event for 1 s, every key is let go. A capture-phase `pointerdown` outside the root disarms, with or without a focus change.
+- §5.4 The source check refuses only on two distinct foreign header stamps in the listen window. The panel's own stamps never count.
+- §5.5 `FLYING` needs the panel's own `/joy` stamp back from the bridge within 1 s, as well as a fresh status and `input=ok`. Otherwise the strip says the keys are not coming back.
+- §5.7 No PX4 marker yet. PX4 odometry and `cuvslam_odom` are separate trees with an unmeasured alignment. It is a Backlog issue in the Linear file.
+- §5.1 Studio's extensions folder is `~/.foxglove-studio/extensions` inside the container. `install.sh` writes `nearlab.svg-teleop-1.0.0` there and leaves `test/` out.
+
 ## 6 · Left to the builder
 
 - The extension's internal structure (one file like CMU's or a few), how `keymap.json` is loaded, the smoke-test harness (CMU's `test/smoke.js` is the model).

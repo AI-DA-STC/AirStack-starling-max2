@@ -1,0 +1,130 @@
+{
+  "configById": {
+    "Image!cuvslam": {
+      "imageMode": {
+        "imageTopic": "/drone_1/cuvslam/debug_image"
+      },
+      "cameraState": {
+        "distance": 1,
+        "perspective": false
+      }
+    },
+    "3D!cuvslam": {
+      "followMode": "follow-pose",
+      "followTf": "drone_1/cuvslam_base",
+      "scene": {
+        "enableStats": false,
+        "backgroundColor": "#1b1b1b"
+      },
+      "cameraState": {
+        "perspective": true,
+        "distance": 4,
+        "phi": 65,
+        "thetaOffset": 180,
+        "targetOffset": [
+          0,
+          0,
+          0
+        ],
+        "target": [
+          0,
+          0,
+          0
+        ],
+        "targetOrientation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "fovy": 45,
+        "near": 0.1,
+        "far": 2000
+      },
+      "transforms": {},
+      "topics": {
+        "/drone_1/cuvslam/path": {
+          "visible": true,
+          "lineWidth": 0.05,
+          "gradient": [
+            "#00e5ff",
+            "#ff4081"
+          ]
+        },
+        "/drone_1/cuvslam/odometry": {
+          "visible": true,
+          "type": "arrow",
+          "axisScale": 0.6,
+          "arrowScale": [
+            0.6,
+            0.12,
+            0.12
+          ]
+        }
+      },
+      "layers": {
+        "grid": {
+          "layerId": "foxglove.Grid",
+          "visible": true,
+          "frameId": "drone_1/cuvslam_odom",
+          "size": 12,
+          "divisions": 12,
+          "lineWidth": 1,
+          "color": "#4f7cbb",
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "order": 1
+        }
+      },
+      "publish": {
+        "type": "point",
+        "poseTopic": "/move_base_simple/goal",
+        "pointTopic": "/clicked_point",
+        "poseEstimateTopic": "/initialpose"
+      }
+    },
+    "Tab!map": {
+      "activeTabIdx": 0,
+      "tabs": [
+        {
+          "title": "Map (reserved)",
+          "layout": null
+        }
+      ]
+    },
+    "nearlab.svg-teleop.SVG Teleop!teleop": {
+      "drones": [
+        "drone_1"
+      ]
+    }
+  },
+  "globalVariables": {},
+  "userNodes": {},
+  "playbackConfig": {
+    "speed": 1
+  },
+  "layout": {
+    "direction": "column",
+    "first": {
+      "direction": "row",
+      "first": "Image!cuvslam",
+      "second": {
+        "direction": "row",
+        "first": "3D!cuvslam",
+        "second": "Tab!map",
+        "splitPercentage": 88
+      },
+      "splitPercentage": 40
+    },
+    "second": "nearlab.svg-teleop.SVG Teleop!teleop",
+    "splitPercentage": 78
+  }
+}

@@ -162,6 +162,21 @@ Only one source may publish `/joy`. The window warns while another one does, suc
 It reads `safe_teleop`'s controller profile and refuses a mismatch; `teleop_single_ours.yaml` pins
 `dragonrise_usb`, the default. Sim only: it has not flown the real drone.
 
+**In Foxglove.** `localisation/scripts/slam_up.sh` installs the SVG Teleop panel into the SLAM Studio. Import the layout once:
+Layouts → Import from file → `/teleop-foxglove/teleop-cuvslam.json` (the file is `tools/teleop/foxglove/teleop-cuvslam.json`).
+It shows the cuVSLAM image and a chase view of the drone, with the strip below. The strip has the same keys and words as the keyboard window.
+It has not flown yet: nothing here is a result.
+
+- `tools/sim.sh relay` must be running. The strip cannot start it.
+- Click the strip to fly. Click anything else and the drone holds.
+- `FLYING drone_1` proves your keys came back from the bridge. A grey dashed frame with keys pressed means not proven, and keys may still be going out.
+- If you hold ↑ and tap A, ↑ stops about 1 s after A is released, because the keyboard stops repeating the older key. Let go of ↑ and press it again.
+- Keys stuck by a lost connection stop after 1 s.
+- While the strip has been used, the Tk window warns about another publisher on `/joy`. The strip itself refuses to fly while the Tk window is sending.
+- The Tk window is the fallback if the strip misbehaves.
+- Prerequisite: `sudo ufw allow from 172.31.0.0/24`. `tools/sim.sh doctor` checks it.
+- After this change the first `slam_up.sh` needs `slam_down.sh` before it, so the container gets the panel mount. `slam_up.sh` says so if it is missing.
+
 ## 4 · Quick start — SIM (M1 rehearsal)
 
 Needs a GPU and Isaac Sim, same as [RUNBOOK.md](RUNBOOK.md) §A. One command, on the

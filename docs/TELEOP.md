@@ -172,8 +172,9 @@ It has not flown yet: nothing here is a result.
 - `FLYING drone_1` proves your keys came back from the bridge. A grey dashed frame with keys pressed means not proven, and keys may still be going out.
 - If you hold ↑ and tap A, ↑ stops about 1 s after A is released, because the keyboard stops repeating the older key. Let go of ↑ and press it again.
 - Keys stuck by a lost connection stop after 1 s.
-- While the strip has been used, the Tk window warns about another publisher on `/joy`. The strip itself refuses to fly while the Tk window is sending.
+- Once the strip has been used, the Tk window warns about another publisher on `/joy`. The strip itself refuses to fly while the Tk window is sending.
 - The Tk window is the fallback if the strip misbehaves.
+- The chase view's direction is a first guess. Tune it in the 3D panel's settings and save the layout.
 - Prerequisite: `sudo ufw allow from 172.31.0.0/24`. `tools/sim.sh doctor` checks it.
 - After this change the first `slam_up.sh` needs `slam_down.sh` before it, so the container gets the panel mount. `slam_up.sh` says so if it is missing.
 

@@ -100,7 +100,7 @@
         }
       ]
     },
-    "nearlab.svg-teleop.SVG Teleop!teleop": {
+    "svg-teleop.SVG Teleop!teleop": {
       "drones": [
         "drone_1"
       ]
@@ -124,7 +124,7 @@
       },
       "splitPercentage": 40
     },
-    "second": "nearlab.svg-teleop.SVG Teleop!teleop",
+    "second": "svg-teleop.SVG Teleop!teleop",
     "splitPercentage": 78
   }
 }

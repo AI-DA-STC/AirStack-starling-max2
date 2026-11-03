@@ -130,7 +130,7 @@ class Tables(unittest.TestCase):
         self.assertIn("module.exports", src)
         pkg = json.loads((EXT.parents[1] / "package.json").read_text())
         self.assertEqual((pkg["publisher"], pkg["name"], pkg["displayName"], pkg["version"], pkg["main"]),
-                         ("nearlab", "svg-teleop", "SVG Teleop", "1.0.0", "./dist/extension.js"))
+                         ("nearlab", "svg-teleop", "svg-teleop", "1.0.0", "./dist/extension.js"))
 
 
 if __name__ == "__main__":

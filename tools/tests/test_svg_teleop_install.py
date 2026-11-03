@@ -1,5 +1,5 @@
 # tools/tests/test_svg_teleop_install.py — the Foxglove strip is installed by slam_up.sh and ships in its own layout (NEAR-789, sim)
-import json, pathlib, subprocess, tempfile, unittest
+import json, pathlib, re, subprocess, tempfile, unittest
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent.parent
 FOX = ROOT / "tools/teleop/foxglove"
@@ -42,7 +42,7 @@ class Install(unittest.TestCase):
 
     def test_slam_up_installs_before_studio(self):
         src = (ROOT / "localisation/scripts/slam_up.sh").read_text()
-        self.assertLess(src.index("install.sh"), src.index("foxglove-studio --no-sandbox"))
+        self.assertLess(src.index("bash /teleop-foxglove/install.sh"), src.index("foxglove-studio --no-sandbox"))
 
     def test_slam_up_carries_on_without_the_mount(self):
         src = (ROOT / "localisation/scripts/slam_up.sh").read_text()
@@ -57,6 +57,18 @@ class Layout(unittest.TestCase):
     def setUp(self):
         self.d = json.load(open(LAYOUT))
 
+    def strip_id(self):
+        # Studio builds the id as <package displayName>.<registerPanel name>!<instance>
+        pkg = json.load(open(FOX / "svg-teleop/package.json"))
+        name = re.search(r'registerPanel\(\{\s*name:\s*"([^"]+)"', (FOX / "svg-teleop/dist/extension.js").read_text()).group(1)
+        return f"{pkg['displayName']}.{name}!teleop"
+
+    def test_panel_id_follows_the_package_display_name(self):
+        pkg = json.load(open(FOX / "svg-teleop/package.json"))
+        self.assertEqual(pkg["displayName"], pkg["name"])
+        self.assertIn(self.strip_id(), self.d["configById"])
+        self.assertTrue(self.strip_id().startswith("svg-teleop.SVG Teleop!"))
+
     def three_d_id(self):
         return next(k for k in self.d["configById"] if k.startswith("3D!"))
 
@@ -68,7 +80,7 @@ class Layout(unittest.TestCase):
         self.assertEqual(top["direction"], "row")
         self.assertTrue(top["first"].startswith("Image!"))
         self.assertIn(self.three_d_id(), panel_ids(top["second"]))
-        self.assertEqual(bottom, "nearlab.svg-teleop.SVG Teleop!teleop")
+        self.assertEqual(bottom, self.strip_id())
         self.assertGreaterEqual(lay["splitPercentage"], 70)
         self.assertLessEqual(lay["splitPercentage"], 85)
         self.assertTrue(any(i.startswith("Tab!") for i in panel_ids(lay)))
@@ -90,7 +102,7 @@ class Layout(unittest.TestCase):
         self.assertEqual(c["cameraState"]["phi"], 65)
 
     def test_strip_config_keeps_template_defaults(self):
-        c = self.d["configById"]["nearlab.svg-teleop.SVG Teleop!teleop"]
+        c = self.d["configById"][self.strip_id()]
         self.assertEqual(c["drones"], ["drone_1"])
         self.assertFalse([k for k in c if k.endswith("Template")])
 

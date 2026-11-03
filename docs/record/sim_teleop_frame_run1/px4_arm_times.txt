@@ -1,0 +1,2 @@
+# PX4 arm/disarm times of drone_1, MAV_SYS_ID 2, ulog /tmp/tmp1zbjz7fa/log/2026-11-02/19_13_19.ulg (vehicle time, s since PX4 boot)
+arm_s=245.705427 disarm_s=369.963000 interval_s=124.257573 source=19_13_19.ulg sysid=2

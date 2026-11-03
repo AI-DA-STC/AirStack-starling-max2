@@ -1,0 +1,108 @@
+[03:12:56 +08] == phase precheck ==
+[03:12:56 +08] precheck: no real-drone bridge on the laptop, port 8765 free, drone battery out (sim shares domain 1)
+[03:12:56 +08] WARN: Isaac start/stop can crash the WiFi firmware (iwlwifi) — use Ethernet or sit at the laptop
+NVIDIA GeForce RTX 5070 Ti Laptop GPU, 3950 MiB
+[03:12:57 +08] == phase up ==
+[0;32m[INFO][0m Starting services...
+ Container airstack-robot-desktop-1 Running 
+ Container airstack-gcs-1 Running 
+ Container isaac-sim Running 
+[0;32m[INFO][0m Services brought up successfully
+head=737022d2216a0c164ca9be7e6f3d7abbeb3a8afc
+head_short=737022d
+dirty_tools=0
+started=2026-11-03T03:13:03+08:00
+tz=+08
+run=sim_teleop_frame_run1
+steps_per_axis=
+num_robots=1
+fly_args=0.25 2.0
+[03:13:03 +08] up: containers running, domain 1 clean
+[03:13:03 +08] == phase watch ==
+[03:13:06 +08] watch: running (pid 2604561)
+[03:13:06 +08] == phase isaac ==
+[03:13:21 +08] Ready for takeoff: 1 (after 15s)
+model_line=1 starling_cfg=2 autostart=1 unknown_model=0 cooking=0 ready=1
+[03:13:21 +08] == phase interfaces ==
+[03:13:24 +08] drone_1 MAVROS connected (after ~3s)
+[03:13:25 +08] drone_1 odometry: ok (after 1 s)
+average rate: 59.267
+/drone_1/interface/mavros/setpoint_raw/target_attitude
+clock_rc=1
+[03:13:42 +08] interfaces: 1 drones with odometry
+[03:13:42 +08] == phase commander ==
+[03:13:44 +08] SwarmCommander up: 1 (after 2s)
+scenario hover states ['IDLE'] fresh [True] tuning {'teleop_max_speed_mps': 2.0, 'goal_accel_mps2': 3.0, 'goal_settle_s': 0.3, 'scenario_speed_mps': 0.6}
+{"stamp": 1793646828.003721, "node": "/bag_recorder", "recording": true, "path": "/root/AirStack/robot/ros_ws/bags/teleop_frame_20261102_191344", "started_at": 1793646824.0223563, "duration_s": 3.9813647270202637, "size_bytes": 1687552, "topic_count": 108, "bag_dir": "/root/AirStack/robot/ros_ws/bags", "bag_prefix": "teleop_frame", "storage": "mcap", "include_hidden": false, "last_bag": null, "last_result": null, "error": null}
+[03:13:48 +08] == phase params ==
+
+SYS_AUTOSTART: Integer value is: 10090
+MC_PITCHRATE_P: Double value is: 0.03200000151991844
+MC_ROLLRATE_P: Double value is: 0.03200000151991844
+LNDMC_ROT_MAX: Double value is: 300.0
+MPC_XY_VEL_MAX: Double value is: 20.0
+MPC_THR_HOVER: Double value is: 0.16500000655651093
+IMU_GYRO_CUTOFF: Double value is: 80.0
+IMU_DGYRO_CUTOFF: Double value is: 40.0
+MPC_Z_VEL_MAX_DN: Double value is: 4.0
+MPC_ACC_HOR: Double value is: 6.0
+[03:14:05 +08] params: 10-20 airframe confirmed via MAVROS
+[03:14:05 +08] == phase snapshot ==
+mavros_msgs.srv.ParamPull_Response(success=True, param_received=895)
+[03:14:08 +08] snapshot start drone_1: 894 PX4 parameters
+[03:14:09 +08] snapshot start swarm_commander: 89 parameters
+[03:14:09 +08] == phase metrics ==
+[03:14:18 +08] metrics node ready: 1 (after 8s)
+[03:14:28 +08] metrics liveness: /svg/test/heading_deg 9.999 Hz
+[03:14:28 +08] live plot window opened: drag it where OBS can see it, then click back into this terminal
+[03:14:29 +08] Stack up, drones on their pads, plots live. Start OBS now, then press Enter to fly.
+[03:15:09 +08] == phase fly ==
+[03:15:09 +08] fly: tools/sim_tests/teleop_frame/fly.sh 4 s window 0.25 2.0 (takeoff -> start -> window -> land)
+drone_1 armed: false
+[swarm_commander-2] [0m[INFO] [1793646979.776152243] [swarm_commander]: drone_1: touchdown at z=0.14 m, settling 2.0 s before disarm[0m
+[swarm_commander-2] [0m[INFO] [1793646981.826329844] [swarm_commander]: drone_1: landed, disarmed (attempt 1)[0m
+mavros_msgs.srv.ParamPull_Response(success=True, param_received=895)
+[03:17:05 +08] snapshot end drone_1: 894 PX4 parameters
+[03:17:06 +08] snapshot end swarm_commander: 89 parameters
+[03:17:07 +08] Landed. Plots still live. Stop OBS, then click back into this terminal (keys typed into the plot window are lost).
+[03:17:07 +08] Landed. Plots still live; the metrics node stops when you press Enter. OBS video path, repo-relative, e.g. videos/<file>.mkv (Enter to skip):
+[03:17:11 +08] metrics.csv copied (10356 lines)
+[03:17:11 +08] changes.log copied (live parameter changes of this run)
+[03:17:11 +08] == phase collect ==
+2 /tmp/tmp1zbjz7fa/log/2026-11-02/19_13_19.ulg 99313523
+[03:17:12 +08] ulogs copied for sysids 2 -> /home/jeremychia/flight_logs/sim/sim_teleop_frame_run1
+SYS_AUTOSTART 10090
+MAV_SYS_ID 2
+MC_PITCHRATE_P 0.03200000151991844
+MC_ROLLRATE_P 0.03200000151991844
+LNDMC_ROT_MAX 300.0
+MPC_XY_VEL_MAX 20.0
+MPC_THR_HOVER 0.16500000655651093
+IMU_GYRO_CUTOFF 80.0
+IMU_DGYRO_CUTOFF 40.0
+MPC_Z_VEL_MAX_DN 4.0
+MPC_ACC_HOR 6.0
+MC_YAW_P 2.799999952316284
+MC_YAWRATE_P 0.25
+MC_YAWRATE_I 0.20000000298023224
+MC_YAWRATE_D 0.0
+MC_YAWRATE_K 1.0
+# PX4 arm/disarm times of drone_1, MAV_SYS_ID 2, ulog /tmp/tmp1zbjz7fa/log/2026-11-02/19_13_19.ulg (vehicle time, s since PX4 boot)
+arm_s=245.705427 disarm_s=369.963000 interval_s=124.257573 source=19_13_19.ulg sysid=2
+ulog_yaw_dump: 30019 rows -> /home/jeremychia/flight_logs/sim/sim_teleop_frame_run1/px4_drone_1.csv
+[03:17:15 +08] px4_drone_1.csv written (host pyulog)
+[03:17:16 +08] px4_param_changes_all.txt written (1 ulogs)
+[03:17:16 +08] == phase down ==
+[03:17:17 +08] bag copied to /home/jeremychia/flight_logs/sim/sim_teleop_frame_run1/teleop_frame_20261102_191344
+{"rows": 10692, "odom_msgs": {"drone_1": 12745}, "status_msgs": 1061, "cbf_msgs": 4241}
+[03:17:20 +08] metrics_bag.csv copied
+[03:17:46 +08] WARN: interface nodes still alive 25 s after SIGINT — TERM
+[03:17:46 +08] ulogs already copied (collect)
+[03:17:49 +08] orphaned PX4 SITL instances killed (Isaac's exit leaves them)
+model_line=1 starling_cfg=2 autostart=1 unknown_model=0 cooking=0 ready=1
+[03:18:19 +08] no WIFI-ALERT during the run
+[03:18:19 +08] down: stack stopped, containers left up
+wrote /home/jeremychia/AirStack-starling-max2/docs/record/sim_teleop_frame_run1/fig-1.png
+PASS: /home/jeremychia/AirStack-starling-max2/docs/record/sim_teleop_frame_run1_record.md
+HEADLINE: 0.9° (push 270; gate 20°)
+[03:18:19 +08] ========  VERDICT: PASS — 0.9° (push 270; gate 20°)  ========

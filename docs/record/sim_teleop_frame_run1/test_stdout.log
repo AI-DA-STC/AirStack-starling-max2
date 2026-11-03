@@ -1,0 +1,36 @@
+[19:15:10] relay: started (pid 12320, log /tmp/svg_test/teleop_frame.log)
+[19:15:11] relay status: frame=body pending=none heading_deg=359.5 heading_age_s=0.01 guard=ok input=none
+[19:15:11] relay: stick_frame=body (start line: drone_1 stick_frame=body in=/svg/drone_1/teleop_command_stick out=/svg/drone_1/teleop_command odom=/drone_1/odometry_conversion/odometry[0m)
+[19:15:11] pre-takeoff: name:drone_1 state:IDLE position:[0.013,0.018,0.001]
+[19:15:12] takeoff: success=True, message='takeoff: drone_1'
+[19:15:19] start: success=True, message='scenario "hover" running'
+[19:15:19] pushes: settle 4 s after each yaw, push 0.25 x teleop_max_speed_mps for 2.0 s
+[19:15:19] teleop_frame subscribed to /svg/drone_1/teleop_command_stick, swarm_commander to /svg/drone_1/teleop_command; 2 s more before the first yaw
+[19:15:24] push speed: 0.25 x teleop_max_speed_mps = 0.50 m/s for 2.0 s
+[19:15:24] yaw to 0: reached (heading 359.4)
+[19:15:28] relay status before push 0: frame=body pending=none heading_deg=359.5 heading_age_s=0.00 guard=ok input=ok
+[1793646928.103846] push 0 onset heading=359.5
+[1793646930.103948] push 0 release heading=359.3
+[19:15:34] yaw to 90: reached (heading 87.5)
+[19:15:38] relay status before push 90: frame=body pending=none heading_deg=87.2 heading_age_s=0.01 guard=ok input=ok
+[1793646938.629209] push 90 onset heading=87.2
+[1793646940.629295] push 90 release heading=87.2
+[19:15:45] yaw to 180: reached (heading 177.0)
+[19:15:49] relay status before push 180: frame=body pending=none heading_deg=176.6 heading_age_s=0.02 guard=ok input=ok
+[1793646949.194779] push 180 onset heading=176.6
+[1793646951.194881] push 180 release heading=176.6
+[19:15:55] yaw to 270: reached (heading 267.9)
+[19:15:59] relay status before push 270: frame=body pending=none heading_deg=266.5 heading_age_s=0.00 guard=ok input=ok
+[1793646959.800707] push 270 onset heading=266.5
+[1793646961.800811] push 270 release heading=266.5
+[19:16:05] relay status: frame=world (set through /teleop_frame/set_parameters)
+[19:16:06] yaw to 180: reached (heading 182.6)
+[19:16:10] relay status before push world: frame=world pending=none heading_deg=183.3 heading_age_s=0.01 guard=ok input=ok
+[1793646970.438431] push world onset heading=183.3
+[1793646972.438553] push world release heading=183.3
+[19:16:16] push program done (rc 0); zeros published
+[19:16:17] land: success=True, message='landing: drone_1'
+[19:16:33] landed: name:land name:drone_1 state:IDLE position:[1.015,0.003,-0.005]
+[19:16:37] relay stopped (zeros published on /svg/drone_1/teleop_command_stick first)
+  relay log: [0m[INFO] [1793646965.303620163] [teleop_frame]: teleop_frame: mode -> world (pending until centred)[0m
+  relay log: [0m[INFO] [1793646965.305089000] [teleop_frame]: teleop_frame: mode = world[0m

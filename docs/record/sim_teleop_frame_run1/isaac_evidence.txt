@@ -1,0 +1,1 @@
+model_line=1 starling_cfg=2 autostart=1 unknown_model=0 cooking=0 ready=1

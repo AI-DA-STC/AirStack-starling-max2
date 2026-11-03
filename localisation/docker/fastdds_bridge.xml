@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<profiles xmlns="http://www.eprosima.com/XMLSchemas/fastRTPS_Profiles" >
+    <transport_descriptors>
+        <transport_descriptor>
+            <transport_id>UdpTransport</transport_id>
+            <type>UDPv4</type>
+        </transport_descriptor>
+    </transport_descriptors>
+
+    <participant profile_name="udp_transport_profile" is_default_profile="true">
+        <rtps>
+            <userTransports>
+                <transport_id>UdpTransport</transport_id>
+            </userTransports>
+            <!-- Disables shared memory; required for Isaac Sim ROS2 Extension to transmit topics, especially between Docker containers or over the network -->
+             <!-- this is because if shared memory is enabled, ROS2 looks up message pointers thinking it's all on the same machine when it's not -->
+            <!-- https://answers.ros.org/question/370595/ros2-foxy-nodes-cant-communicate-through-docker-container-border/ -->
+            <!-- https://docs.omniverse.nvidia.com/isaacsim/latest/installation/install_ros.html#isaac-sim-app-install-ros:~:text=Run%20export%20FASTRTPS_DEFAULT_PROFILES_FILE%3D~/.ros/fastdds.xml%20in%20the%20terminals%20that%20will%20use%20ROS%202%20functions -->
+            <useBuiltinTransports>false</useBuiltinTransports>
+            <!-- BRIDGE ONLY (foxglove_bridge_isaac.sh). The bridge lives in the Isaac network namespace; safe_teleop, the relay and
+                 the commander live in the robot container on the HOST network. Multicast does not cross, so the host (172.31.0.1 from
+                 here) is listed as an initial peer: one UDP unicast port per participant (7660 + 2*id, ids 0..29).
+                 Needs the laptop firewall rule: sudo ufw allow from 172.31.0.0/24. The node, recorder and Isaac keep fastdds.xml. -->
+            <builtin>
+                <initialPeersList>
+                        <locator><udpv4><address>172.31.0.1</address><port>7660</port></udpv4></locator>
+                        <locator><udpv4><address>172.31.0.1</address><port>7662</port></udpv4></locator>
+                        <locator><udpv4><address>172.31.0.1</address><port>7664</port></udpv4></locator>
+                        <locator><udpv4><address>172.31.0.1</address><port>7666</port></udpv4></locator>
+                        <locator><udpv4><address>172.31.0.1</address><port>7668</port></udpv4></locator>
+                        <locator><udpv4><address>172.31.0.1</address><port>7670</port></udpv4></locator>
+                        <locator><udpv4><address>172.31.0.1</address><port>7672</port></udpv4></locator>
+                        <locator><udpv4><address>172.31.0.1</address><port>7674</port></udpv4></locator>
+                        <locator><udpv4><address>172.31.0.1</address><port>7676</port></udpv4></locator>
+                        <locator><udpv4><address>172.31.0.1</address><port>7678</port></udpv4></locator>
+                        <locator><udpv4><address>172.31.0.1</address><port>7680</port></udpv4></locator>
+                        <locator><udpv4><address>172.31.0.1</address><port>7682</port></udpv4></locator>
+                        <locator><udpv4><address>172.31.0.1</address><port>7684</port></udpv4></locator>
+                        <locator><udpv4><address>172.31.0.1</address><port>7686</port></udpv4></locator>
+                        <locator><udpv4><address>172.31.0.1</address><port>7688</port></udpv4></locator>
+                        <locator><udpv4><address>172.31.0.1</address><port>7690</port></udpv4></locator>
+                        <locator><udpv4><address>172.31.0.1</address><port>7692</port></udpv4></locator>
+                        <locator><udpv4><address>172.31.0.1</address><port>7694</port></udpv4></locator>
+                        <locator><udpv4><address>172.31.0.1</address><port>7696</port></udpv4></locator>
+                        <locator><udpv4><address>172.31.0.1</address><port>7698</port></udpv4></locator>
+                        <locator><udpv4><address>172.31.0.1</address><port>7700</port></udpv4></locator>
+                        <locator><udpv4><address>172.31.0.1</address><port>7702</port></udpv4></locator>
+                        <locator><udpv4><address>172.31.0.1</address><port>7704</port></udpv4></locator>
+                        <locator><udpv4><address>172.31.0.1</address><port>7706</port></udpv4></locator>
+                        <locator><udpv4><address>172.31.0.1</address><port>7708</port></udpv4></locator>
+                        <locator><udpv4><address>172.31.0.1</address><port>7710</port></udpv4></locator>
+                        <locator><udpv4><address>172.31.0.1</address><port>7712</port></udpv4></locator>
+                        <locator><udpv4><address>172.31.0.1</address><port>7714</port></udpv4></locator>
+                        <locator><udpv4><address>172.31.0.1</address><port>7716</port></udpv4></locator>
+                        <locator><udpv4><address>172.31.0.1</address><port>7718</port></udpv4></locator>
+                </initialPeersList>
+            </builtin>
+        </rtps>
+    </participant>
+</profiles>

@@ -4,5 +4,10 @@
 # Connect Studio to:  ws://172.31.0.200:8766   (the isaac-sim container IP, shared by this container)
 # The commander's own bridge stays on ws://localhost:8765 for the swarm panel.
 set -euo pipefail
+# Peer profile for THIS process only: reaches the host-network robot container (safe_teleop, relay, commander). The cuVSLAM node,
+# the recorder and Isaac keep docker/fastdds.xml, so /tf and /clock do not leak into the commander's world.
+export FASTRTPS_DEFAULT_PROFILES_FILE=/exploration/docker/fastdds_bridge.xml
 exec ros2 run foxglove_bridge foxglove_bridge --ros-args -p port:=8766 -p use_sim_time:=true \
-  -p topic_whitelist:='["^/clock$","^/drone_[0-9]+/cuvslam/.*","^/drone_[0-9]+/sensors/front_stereo/(left|right)/(image_rect|camera_info)$","^/tf$","^/tf_static$"]'
+  -p topic_whitelist:='["^/clock$","^/drone_[0-9]+/cuvslam/.*","^/drone_[0-9]+/sensors/front_stereo/(left|right)/(image_rect|camera_info)$","^/tf$","^/tf_static$","^/joy$","^/drone_[0-9]+/joy$","^(/drone_[0-9]+)?/teleop_frame/status$"]' \
+  -p service_whitelist:='["^(/drone_[0-9]+)?/teleop_frame/set_parameters$","^(/drone_[0-9]+)?/safe_teleop/get_parameters$"]' \
+  -p client_topic_whitelist:='["^(/drone_[0-9]+)?/joy$"]'

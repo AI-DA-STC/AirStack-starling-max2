@@ -551,6 +551,17 @@ hook_check() {
   esac
 }
 
+# firewall_check: doctor's line for the cuVSLAM bridge route (tools/lib/firewall_probe.sh; read-only, never a FAIL)
+firewall_check() {
+  # shellcheck source=lib/firewall_probe.sh
+  . "$REPO/tools/lib/firewall_probe.sh"
+  case "$(firewall_probe)" in
+    ok)      ok "firewall: container → host OK" ;;
+    blocked) warn "firewall: container → host BLOCKED — run: $FIREWALL_FIX" ;;
+    *)       ok "firewall: not checked (isaac-sim not running)" ;;
+  esac
+}
+
 # cmd_setup: idempotent preparation; with DRY=1 (doctor) it only reports and changes nothing
 cmd_setup() {
   no_args "$@"
@@ -573,6 +584,7 @@ cmd_setup() {
   elif [ $have_docker = 1 ]; then warn "$R not running — Studio checks and layout install skipped"; fi
   [ "${DRY:-0}" = 1 ] || bash "$REPO/tools/git-hooks/install.sh" >/dev/null || bad "hook install failed"
   hook_check
+  firewall_check
   for t in "$SIM_TESTS_DIR"/*/; do
     n=$(basename "$t")
     if [ "${DRY:-0}" = 1 ]; then

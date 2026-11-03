@@ -436,6 +436,42 @@ class OptionalFoxgloveLayout(unittest.TestCase):
         self.assertIn("click back into this terminal", seg)
 
 
+class DoctorFirewall(unittest.TestCase):
+    """doctor's firewall line: a UDP datagram from isaac-sim to the host (172.31.0.1). Fake docker only; the function is
+    cut out of sim.sh because a whole `doctor` run re-runs this test suite."""
+
+    def _doctor(self, mode):
+        src = SIM.read_text(); fn = src[src.index("firewall_check() {"):]; fn = fn[:fn.index("\n}\n") + 3]
+        with tempfile.TemporaryDirectory() as tmp:
+            os.makedirs(os.path.join(tmp, "bin"))
+            sender = ("import socket,sys; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); "
+                      "s.sendto(b'x', ('127.0.0.1', int(sys.argv[-1])))")
+            fake = ('#!/bin/sh\n'
+                    'case "$*" in "exec isaac-sim true") exit %d;; esac\n' % (1 if mode == "down" else 0)
+                    + ('case "$*" in "exec isaac-sim python3 -c"*) exec python3 -c "%s" "$@";; esac\n' % sender if mode == "ok" else '')
+                    + 'case "$*" in "exec isaac-sim python3 -c"*) exit 0;; esac\nexit 1\n')
+            p = os.path.join(tmp, "bin", "docker"); open(p, "w").write(fake); os.chmod(p, 0o755)
+            env = dict(os.environ, PATH=tmp + "/bin:" + os.environ["PATH"], FIREWALL_PROBE_TIMEOUT="1")
+            body = ('REPO=%s; ok(){ echo "OK $*"; }; warn(){ echo "WARN $*"; }; bad(){ echo "BAD $*"; }; %s\nfirewall_check; echo rc=$?'
+                    % (SIM.parents[1], fn))
+            return subprocess.run(["bash", "-c", body], capture_output=True, text=True, timeout=20, env=env).stdout
+
+    def test_probe_delivered(self):
+        self.assertIn("OK firewall: container → host OK", self._doctor("ok"))
+
+    def test_probe_not_delivered(self):
+        self.assertIn("firewall: container → host BLOCKED — run: sudo ufw allow from 172.31.0.0/24", self._doctor("blocked"))
+
+    def test_isaac_not_running_is_not_a_failure(self):
+        out = self._doctor("down")
+        self.assertIn("firewall: not checked (isaac-sim not running)", out)
+        self.assertNotIn("BAD", out); self.assertNotIn("BLOCKED", out)
+
+    def test_doctor_calls_it_read_only(self):
+        src = SIM.read_text(); body = src[src.index("cmd_setup() {"):src.index("cmd_doctor()")]
+        self.assertIn("firewall_check", body)
+
+
 class LedgerNumber(unittest.TestCase):
     """--ledger is optional: the next free number is 1 + the highest in LEDGER.md or any record's drafted row."""
 

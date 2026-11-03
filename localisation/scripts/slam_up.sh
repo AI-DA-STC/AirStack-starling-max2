@@ -44,7 +44,7 @@ if ! ex 'pgrep -f "[f]oxglove-studio.*studio-data" >/dev/null'; then
   exd 'foxglove-studio --no-sandbox --user-data-dir=/exploration/foxglove/studio-data "foxglove://open?ds=foxglove-websocket&ds.url=ws://172.31.0.200:8766" > results/foxglove_studio.log 2>&1'
   echo "Foxglove Studio (SLAM instance) opening, connected to ws://172.31.0.200:8766"
   [ -n "$(ls -A foxglove/studio-data 2>/dev/null)" ] || echo "FIRST TIME: in that window do Layouts -> Import from file -> /exploration/foxglove/cuvslam_slam_view.json (remembered afterwards)"
-else echo "Foxglove Studio (SLAM instance) already open"; fi
+else echo "Foxglove Studio (SLAM instance) already open. Restart Studio to load the panel (scripts/slam_down.sh, then scripts/slam_up.sh)"; fi
 
 [ "${1:-}" = "--detach" ] && { echo "detached — stop later with scripts/slam_down.sh"; exit 0; }
 

@@ -302,12 +302,53 @@ test("refocusing the window does not re-arm", async () => {
   h.fireWin("focus");
   dispatch(h.root, "focus", {});
   dispatch(h.root, "focusin", {});
-  const ev = h.key("ArrowUp");
-  assert.ok(!ev.prevented, "keys pass through while not armed");
+  assert.strictEqual(h.doc.activeElement, h.root, "the root still has focus");
+  for (const k of ["ArrowUp", " "]) {
+    const ev = h.key(k);
+    assert.ok(ev.prevented && ev.stopped, `focused but disarmed: ${JSON.stringify(k)} is swallowed, Studio never sees it`);
+  }
   await h.tick(2000);
   assert.strictEqual(h.joyLog().length, n);
   assert.ok(h.text().includes(CLICK));
   assert.ok(!h.text().includes("FLYING"));
+});
+
+test("unfocused and disarmed: every key passes through to Studio", async () => {
+  const h = setup();
+  h.doc.activeElement = null;
+  for (const k of ["ArrowUp", " ", "f", "1"]) {
+    const ev = h.key(k);
+    assert.ok(!ev.prevented && !ev.stopped, `${JSON.stringify(k)} passes through`);
+  }
+  assert.strictEqual(h.joyLog().length, 0);
+});
+
+test("refused click unadvertises; the next accepted click advertises again", async () => {
+  const h = setup();
+  h.relayLine = DRIVE_OK;
+  await h.tick(10);
+  h.down();
+  await h.tick(300);
+  h.foreign(1);
+  h.foreign(2);
+  assert.ok(h.text().includes("Another source is publishing"), h.text());
+  assert.deepStrictEqual(h.unadvertised, ["/joy"], "a refused strip publishes nothing, so it must not be listed as a publisher");
+  assert.strictEqual(h.advertised.length, 1);
+  h.down();
+  assert.strictEqual(h.advertised.length, 2, "the next click advertises again");
+  await h.tick(1100);
+  assert.ok(h.text().includes("FLYING drone_1"));
+});
+
+test("armed but not proven yet says so in the arm slot, where FLYING goes", async () => {
+  const h = setup();
+  await fly(h);
+  assert.ok(h.text().includes("FLYING drone_1"));
+  assert.ok(!h.text().includes("armed, not proven yet"));
+  h.relayLine = null;
+  await h.tick(2500);                // the relay goes silent: still armed, no longer FLYING
+  assert.ok(!h.text().includes("FLYING"), h.text());
+  assert.ok(h.text().includes(" · armed, not proven yet"), h.text());
 });
 
 test("lost keyup does not stick after re-click", async () => {

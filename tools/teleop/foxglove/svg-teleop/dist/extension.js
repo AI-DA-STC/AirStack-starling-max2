@@ -352,6 +352,7 @@ function activate(extensionContext) {
       }
       function refuseSource() {
         cancelCheck();
+        unadvertiseJoy();   // a refused strip publishes nothing: the keyboard window must not warn about it
         refusal = `Another source is publishing ${names.joy} (the keyboard window or a pad). Close it first.`;
       }
       // Every way out comes through here. An idle strip publishes nothing: another source may own the topic.
@@ -509,7 +510,7 @@ function activate(extensionContext) {
         const flying = flyingNow(usable, now);
         setText(modeEl, bold);
         modeEl.style.color = colour;
-        setText(armEl, flying ? ` · FLYING ${selected}` : check ? ` · ${CHECK_LINE}` : armed ? "" : ` · ${CLICK_LINE}`);
+        setText(armEl, flying ? ` · FLYING ${selected}` : check ? ` · ${CHECK_LINE}` : armed ? " · armed, not proven yet" : ` · ${CLICK_LINE}`);
         armEl.style.color = flying ? GREEN : GREY;
         setText(sentenceEl, sentence);
         frame.style.border = flying ? `3px solid ${GREEN}` : `3px dashed ${GREY}`;
@@ -557,7 +558,18 @@ function activate(extensionContext) {
         render();
       });
       const onKeyDown = safe((ev) => {
-        if (!armed && !check) return;                 // not flying: every key belongs to Studio
+        if (!armed && !check) {
+          // Focused but disarmed (Alt-Tab back, or a refusal): Studio's hotkeys must not see Space or the arrows.
+          const a = doc.activeElement;
+          if (a && root.contains(a)) {
+            const k = normKey(ev.key);
+            if (!((ev.ctrlKey || ev.metaKey || ev.altKey) && k !== "space") && handled(k)) {
+              ev.preventDefault();
+              ev.stopPropagation();
+            }
+          }
+          return;                                     // never flies; an unfocused strip passes everything through
+        }
         lastKeyEventAt = CLOCK.now();                 // repeats too: they are how a held key stays held
         const k = normKey(ev.key);
         if ((ev.ctrlKey || ev.metaKey || ev.altKey) && k !== "space") return;   // Space stops, whatever else is down

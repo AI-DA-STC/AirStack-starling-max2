@@ -288,6 +288,7 @@ down() {   # commander -> bag out -> interfaces -> ulogs (if not yet) -> Isaac -
   if alive "$I" '(^|/)px4( |$)'; then nx docker exec "$I" pkill -9 -x px4 || true; say "orphaned PX4 SITL instances killed (Isaac's exit leaves them)"; fi
   nx docker exec "$R" pkill -f position_setpoint_pub || true     # the interface launch leaves these behind
   nx docker exec "$R" pkill -TERM -f 'teleop_frame\.py' || true  # a teleop_frame relay (keys, relay, an aborted test) stops with the stack
+  nx docker exec "$R" pkill -TERM -f 'svg_grid/auto_grid\.py' || true  # the Basestation auto grid (slam_up.sh) must not outlive the sim
   docker cp "$I:$S/isaac.log" "$OUT/isaac.log" 2>/dev/null || say "WARN: no isaac.log in the isaac container"
   isaac_evidence
   sleep 30; grep WIFI-ALERT "$OUT/res_watch.log" 2>/dev/null | tee -a "$OUT/run.log" || say "no WIFI-ALERT during the run"

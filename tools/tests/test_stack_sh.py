@@ -24,6 +24,12 @@ class StackSh(unittest.TestCase):
         self.assertIn("pkill -TERM -f 'teleop_frame\\.py'", down)
         self.assertLess(down.index("ground_control.launch.py"), down.index("teleop_frame"))   # after the commander stops
 
+    def test_down_stops_the_basestation_auto_grid(self):              # review: it must not outlive the sim
+        src = LIB.read_text()
+        down = src[src.index("down() {"):src.index("status() {")]
+        self.assertIn("nx docker exec \"$R\" pkill -TERM -f 'svg_grid/auto_grid\\.py' || true", down)
+        self.assertLess(down.index("teleop_frame"), down.index("svg_grid/auto_grid"))
+
     def test_studio_arg_only_when_asked(self):
         for use, want in (("false", False), ("true", True)):
             r = subprocess.run(["bash", "-c", f"{ENV} USE_STUDIO={use}; source {LIB}; echo \"$CMD_CMD\""], capture_output=True, text=True)

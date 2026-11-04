@@ -149,6 +149,7 @@ class OdomMode(unittest.TestCase):
         self.assertEqual(m.header.frame_id, "drone_1/cuvslam_odom")
         self.assertEqual((m.header.stamp.sec, m.header.stamp.nanosec), (42, 7))
         self.assertEqual(m.type, Marker.LINE_LIST)
+        self.assertEqual(m.pose.orientation.w, 1.0)
         self.assertGreater(len(m.points), 0)
         self.assertEqual(len(m.points) % 2, 0)
         self.assertTrue(all(p.z == 0.0 for p in m.points))

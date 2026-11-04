@@ -167,8 +167,6 @@ Layouts → Import from file → `/teleop-foxglove/teleop-cuvslam.json` (the fil
 It shows the cuVSLAM image and a chase view of the drone, with the strip below. The strip has the same keys and words as the keyboard window.
 It has not flown yet: nothing here is a result.
 
-**Grid.** The grid in the cuVSLAM window grows by itself, so the drone never flies off it. `slam_up.sh` starts it. In the Basestation window turn on topic `/svg/viz/grid` once in the 3D panel's settings. The grid has no limit you will meet in the sim. It stops growing at 1600 m.
-
 - `tools/sim.sh relay` must be running. The strip cannot start it.
 - Click the strip to fly. Click anything else and the drone holds.
 - `FLYING drone_1` proves your keys came back from the bridge. A grey dashed frame with keys pressed means not proven, and keys may still be going out.
@@ -179,6 +177,8 @@ It has not flown yet: nothing here is a result.
 - The chase view's direction is a first guess. Tune it in the 3D panel's settings and save the layout.
 - Prerequisite: `sudo ufw allow from 172.31.0.0/24`. `tools/sim.sh doctor` checks it.
 - After this change the first `slam_up.sh` needs `slam_down.sh` before it, so the container gets the panel mount. `slam_up.sh` says so if it is missing.
+
+**Grid.** The grid in the cuVSLAM window grows by itself, so the drone never flies off it. `slam_up.sh` starts it. The squares start at 1 m and widen as the grid grows. It stops growing at 1600 m. The grid needs the layout freshly imported: an already-imported layout keeps its fixed grid until you import `/teleop-foxglove/teleop-cuvslam.json` again. To reset a grid grown by a bad cuVSLAM jump, stop it with `pkill -f auto_grid.py` in the exploration container and run `scripts/slam_up.sh` again. In the Basestation window turn on topic `/svg/viz/grid` once in the 3D panel's settings.
 
 ## 4 · Quick start — SIM (M1 rehearsal)
 

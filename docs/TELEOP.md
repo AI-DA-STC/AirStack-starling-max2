@@ -167,6 +167,8 @@ Layouts → Import from file → `/teleop-foxglove/teleop-cuvslam.json` (the fil
 It shows the cuVSLAM image and a chase view of the drone, with the strip below. The strip has the same keys and words as the keyboard window.
 It has not flown yet: nothing here is a result.
 
+**Grid.** The grid in the cuVSLAM window grows by itself, so the drone never flies off it. `slam_up.sh` starts it. In the Basestation window turn on topic `/svg/viz/grid` once in the 3D panel's settings. The grid has no limit you will meet in the sim. It stops growing at 1600 m.
+
 - `tools/sim.sh relay` must be running. The strip cannot start it.
 - Click the strip to fly. Click anything else and the drone holds.
 - `FLYING drone_1` proves your keys came back from the bridge. A grey dashed frame with keys pressed means not proven, and keys may still be going out.

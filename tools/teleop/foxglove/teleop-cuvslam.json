@@ -60,12 +60,15 @@
             0.12,
             0.12
           ]
+        },
+        "/drone_1/cuvslam/grid": {
+          "visible": true
         }
       },
       "layers": {
         "grid": {
           "layerId": "foxglove.Grid",
-          "visible": true,
+          "visible": false,
           "frameId": "drone_1/cuvslam_odom",
           "size": 12,
           "divisions": 12,

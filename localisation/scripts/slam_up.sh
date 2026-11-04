@@ -3,6 +3,7 @@
 #   1. exploration container up (joined to the Isaac network)
 #   2. cuVSLAM node        -> log results/cuvslam_node.log
 #   3. Foxglove bridge     -> ws://172.31.0.200:8766, log results/foxglove_bridge.log
+#   3a. auto grid (Foxglove ground grid that grows with the drone): cuVSLAM copy here, Basestation copy in the robot container
 #   3b. install the SVG Teleop panel (tools/teleop/foxglove/install.sh) before Studio starts
 #   4. Foxglove Studio (its OWN instance, data dir foxglove/studio-data) pre-connected to that bridge.
 #      First time only: Layouts -> Import from file -> /exploration/foxglove/cuvslam_slam_view.json. Remembered after that.
@@ -32,6 +33,27 @@ if ! ex 'pgrep -f "[f]oxglove_bridge.*8766" >/dev/null'; then
   exd 'scripts/foxglove_bridge_isaac.sh > results/foxglove_bridge.log 2>&1'
   echo "Foxglove bridge started on ws://172.31.0.200:8766 (results/foxglove_bridge.log)"
 else echo "Foxglove bridge already running"; fi
+
+# --- auto grid: a Foxglove ground grid that grows with the drone (tools/teleop/foxglove/auto_grid.py); never fails this script
+# cuVSLAM window: inside this container, plain fastdds.xml (NOT the bridge's peer profile); the bridge's cuvslam whitelist admits its topic
+if ex 'test -f /teleop-foxglove/auto_grid.py'; then
+  if ! ex 'pgrep -f "[a]uto_grid.py.*--source odom" >/dev/null'; then
+    exd 'python3 -u /teleop-foxglove/auto_grid.py --source odom --drone drone_1 > results/auto_grid.log 2>&1' \
+      && echo "auto grid (cuVSLAM window) started (results/auto_grid.log)" || echo "WARNING: auto grid (cuVSLAM window) did not start"
+  else echo "auto grid (cuVSLAM window) already running"; fi
+else echo "Auto grid not started: run scripts/slam_down.sh, then scripts/slam_up.sh"; fi
+# Basestation window: in the robot container (topic /svg/viz/grid, turn it on once in the 3D panel's settings)
+GR=airstack-robot-desktop-1; GD=/tmp/svg_grid; GSRC="$(cd .. && pwd)/tools/teleop/foxglove"
+if docker exec "$GR" mkdir -p "$GD" >/dev/null 2>&1; then
+  if docker cp "$GSRC/auto_grid.py" "$GR:$GD/" >/dev/null 2>&1 && docker cp "$GSRC/grid_core.py" "$GR:$GD/" >/dev/null 2>&1; then
+    if docker exec "$GR" pgrep -f 'svg_grid/auto_grid\.py' >/dev/null 2>&1; then echo "auto grid (Basestation window) already running"
+    else
+      docker exec -d "$GR" bash -ic "python3 $GD/auto_grid.py --source status > $GD/auto_grid.log 2>&1" \
+        && echo "auto grid (Basestation window) started ($GR:$GD/auto_grid.log)" || echo "WARNING: auto grid (Basestation window) did not start"
+    fi
+  else echo "WARNING: auto grid (Basestation window): could not copy the files into $GR"; fi
+else echo "WARNING: auto grid (Basestation window) skipped: the robot container ($GR) is not running"; fi
+# --- end auto grid
 
 for i in $(seq 1 20); do ex 'grep -q "tracker ready" results/cuvslam_node.log' && break; sleep 1; done
 ex 'grep -m1 "tracker ready" results/cuvslam_node.log || echo "node not ready yet — is the sim playing with ENABLE_CAMERA=true CAMERA_DRONES=drone_1 ?"'

@@ -101,6 +101,15 @@ class Layout(unittest.TestCase):
         self.assertEqual(c["cameraState"]["distance"], 4)
         self.assertEqual(c["cameraState"]["phi"], 65)
 
+    def test_grid_topic_visible_and_builtin_grid_off(self):
+        c = self.d["configById"][self.three_d_id()]
+        self.assertTrue(c["topics"]["/drone_1/cuvslam/grid"]["visible"])
+        self.assertFalse(c["layers"]["grid"]["visible"])
+
+    def test_reserved_tab_untouched(self):
+        t = self.d["configById"]["Tab!map"]
+        self.assertEqual(t["tabs"], [{"title": "Map (reserved)", "layout": None}])
+
     def test_strip_config_keeps_template_defaults(self):
         c = self.d["configById"][self.strip_id()]
         self.assertEqual(c["drones"], ["drone_1"])

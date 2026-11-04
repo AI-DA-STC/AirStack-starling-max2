@@ -148,6 +148,7 @@ reference = EKF2).* Records: [sim_site_run1](results/sim_site_run1_record.md) ·
 | `scenes/construction_site/` | the world: [README](scenes/construction_site/README.md), [VALIDATION.md](scenes/construction_site/VALIDATION.md), build scripts |
 | `docker/` | the exploration image and container (`up.sh` joins the Isaac network) |
 | `foxglove/` | the SLAM Studio layout (the teleop layout and panel are in `tools/teleop/foxglove/`, mounted at `/teleop-foxglove`) |
+| (auto grid) | `slam_up.sh` also starts `auto_grid.py` (from `tools/teleop/foxglove/`): a ground grid that grows with the drone, in the cuVSLAM window and, on `/svg/viz/grid`, the Basestation window ([TELEOP.md §3b](../docs/TELEOP.md)) |
 | `results/` | run records, the [effort log](results/effort_log.md); bags and ladder logs are gitignored |
 | `reports/`, `research_notes/` | day-1 literature review on multi-drone localisation (every number sourced; nothing is our result) |
 

@@ -7,7 +7,8 @@
 #   3b. install the SVG Teleop panel (tools/teleop/foxglove/install.sh) before Studio starts
 #   4. Foxglove Studio (its OWN instance, data dir foxglove/studio-data) pre-connected to that bridge.
 #      First time only: Layouts -> Import from file -> /exploration/foxglove/cuvslam_slam_view.json. Remembered after that.
-#      For the teleop strip import /teleop-foxglove/teleop-cuvslam.json (= tools/teleop/foxglove/teleop-cuvslam.json) the same way.
+#      For the teleop strip import /teleop-foxglove/teleop-cuvslam.json (= tools/teleop/foxglove/teleop-cuvslam.json) once;
+#      after that this script loads the shipped layout by itself (tools/teleop/foxglove/sync_layout.py) when it starts Studio.
 # Stays in the FOREGROUND showing a live status line (every 3 s) and the node log; Ctrl-C shuts the SLAM side down
 # (= scripts/slam_down.sh). Use --detach to return to the prompt instead (then stop with slam_down.sh).
 set -euo pipefail
@@ -63,7 +64,11 @@ if ex 'test -f /teleop-foxglove/install.sh'; then ex 'bash /teleop-foxglove/inst
 else echo "Teleop panel not installed: run scripts/slam_down.sh, then scripts/slam_up.sh"; fi
 
 if ! ex 'pgrep -f "[f]oxglove-studio.*studio-data" >/dev/null'; then
-  exd 'foxglove-studio --no-sandbox --user-data-dir=/exploration/foxglove/studio-data "foxglove://open?ds=foxglove-websocket&ds.url=ws://172.31.0.200:8766" > results/foxglove_studio.log 2>&1'
+  # the shipped layout goes into Studio's store (only here: Studio is not running). Any failure means no id, never a stop.
+  LAYOUT_ID=$(ex 'python3 /teleop-foxglove/sync_layout.py --store /exploration/foxglove/studio-data/studio-datastores --layout /teleop-foxglove/teleop-cuvslam.json --marker /exploration/results/teleop_layout.marker --backup-dir /exploration/results/layout_backups' 2>/dev/null | tail -n 1) || true
+  [[ "$LAYOUT_ID" =~ ^[A-Za-z0-9_-]+$ ]] || LAYOUT_ID=""
+  LAYOUT_ARG=""; [ -z "$LAYOUT_ID" ] || { LAYOUT_ARG="&layoutId=$LAYOUT_ID"; echo "Foxglove layout: teleop-cuvslam"; }
+  exd "foxglove-studio --no-sandbox --user-data-dir=/exploration/foxglove/studio-data \"foxglove://open?ds=foxglove-websocket&ds.url=ws://172.31.0.200:8766${LAYOUT_ARG}\" > results/foxglove_studio.log 2>&1"
   echo "Foxglove Studio (SLAM instance) opening, connected to ws://172.31.0.200:8766"
   [ -n "$(ls -A foxglove/studio-data 2>/dev/null)" ] || echo "FIRST TIME: in that window do Layouts -> Import from file -> /exploration/foxglove/cuvslam_slam_view.json (remembered afterwards)"
 else echo "Foxglove Studio (SLAM instance) already open. Restart Studio to load the panel (scripts/slam_down.sh, then scripts/slam_up.sh)"; fi

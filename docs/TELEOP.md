@@ -162,8 +162,10 @@ Only one source may publish `/joy`. The window warns while another one does, suc
 It reads `safe_teleop`'s controller profile and refuses a mismatch; `teleop_single_ours.yaml` pins
 `dragonrise_usb`, the default. Sim only: it has not flown the real drone.
 
-**In Foxglove.** `localisation/scripts/slam_up.sh` installs the SVG Teleop panel into the SLAM Studio. Import the layout once:
+**In Foxglove.** `localisation/scripts/slam_up.sh` installs the SVG Teleop panel into the SLAM Studio. On a new machine, import the layout once:
 Layouts → Import from file → `/teleop-foxglove/teleop-cuvslam.json` (the file is `tools/teleop/foxglove/teleop-cuvslam.json`).
+After that, `slam_up.sh` loads the shipped layout by itself each time it starts Studio. It keeps your edits until the shipped file changes. Your saved chase view survives that change too.
+The old copy is saved to `localisation/results/layout_backups/` first. Nothing is pushed to your Foxglove account.
 It shows the cuVSLAM image and a chase view of the drone, with the strip below. The strip has the same keys and words as the keyboard window.
 It has not flown yet: nothing here is a result.
 
@@ -178,7 +180,7 @@ It has not flown yet: nothing here is a result.
 - Prerequisite: `sudo ufw allow from 172.31.0.0/24`. `tools/sim.sh doctor` checks it.
 - After this change the first `slam_up.sh` needs `slam_down.sh` before it, so the container gets the panel mount. `slam_up.sh` says so if it is missing.
 
-**Grid.** The grid in the cuVSLAM window grows by itself, so the drone never flies off it. `slam_up.sh` starts it. The squares start at 1 m and widen as the grid grows. It stops growing at 1600 m. The grid needs the layout freshly imported: an already-imported layout keeps its fixed grid until you import `/teleop-foxglove/teleop-cuvslam.json` again. To reset a grid grown by a bad cuVSLAM jump, stop it with `pkill -f auto_grid.py` in the exploration container and run `scripts/slam_up.sh` again. In the Basestation window turn on topic `/svg/viz/grid` once in the 3D panel's settings.
+**Grid.** The grid in the cuVSLAM window grows by itself, so the drone never flies off it. `slam_up.sh` starts it. The squares start at 1 m and widen as the grid grows. It stops growing at 1600 m. The grid arrives with the shipped layout, which `slam_up.sh` loads when it starts Studio. To reset a grid grown by a bad cuVSLAM jump, stop it with `pkill -f auto_grid.py` in the exploration container and run `scripts/slam_up.sh` again. In the Basestation window turn on topic `/svg/viz/grid` once in the 3D panel's settings.
 
 ## 4 · Quick start — SIM (M1 rehearsal)
 

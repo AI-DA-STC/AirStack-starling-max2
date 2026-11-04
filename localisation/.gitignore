@@ -12,3 +12,4 @@ ConstructionSite(UE4)/
 scenes/construction_site/build/
 results/*.log
 .~lock.*#
+results/*.marker

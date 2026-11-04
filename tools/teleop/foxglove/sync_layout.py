@@ -2,7 +2,7 @@
 """Put the shipped Foxglove layout into Studio's layout store as the layout's `working` copy.
 
 Run by localisation/scripts/slam_up.sh before Studio starts (never while it runs). Prints the chosen
-layout id as the only stdout line, or nothing. Messages go to stderr. Always exits 0: a problem here
+layout id as the only stdout line, tagged LAYOUT_ID=<id>, or nothing. Messages go to stderr. Always exits 0: a problem here
 must never stop a session. Only `working` is written, so nothing is pushed to a Foxglove account.
 """
 import argparse, copy, datetime, hashlib, json, os, pathlib, sys, tempfile
@@ -18,6 +18,13 @@ def _load(path):
     return d if isinstance(d, dict) and isinstance(d.get("id"), str) else None
 
 
+def _tombstone(layout):
+    """Studio keeps deleted layouts as files until it syncs: skip them."""
+    sync = layout.get("syncInfo")
+    status = sync.get("status") if isinstance(sync, dict) else None
+    return status == "locally-deleted" or (status == "remotely-deleted" and "working" not in layout)
+
+
 def _find(store, name):
     found = []
     try:
@@ -31,7 +38,7 @@ def _find(store, name):
             continue
         for f in files:
             lay = _load(f)
-            if lay is not None and lay.get("name") == name:
+            if lay is not None and lay.get("name") == name and not _tombstone(lay):
                 found.append((str(lay.get("lastViewedAt") or ""), f, lay))
     return found
 
@@ -53,6 +60,7 @@ def _now():
 def _write_atomic(target, text, tmp_dir):
     fd, tmp = tempfile.mkstemp(dir=tmp_dir, prefix=".sync_layout.")
     try:
+        os.fchmod(fd, os.stat(target).st_mode & 0o777)
         with os.fdopen(fd, "w") as f:
             f.write(text)
         os.replace(tmp, target)
@@ -78,7 +86,7 @@ def run(args):
     marker = pathlib.Path(args.marker)
     try:
         if marker.read_text().split() == [digest, lid]:
-            print(lid)
+            print("LAYOUT_ID=" + lid)
             return
     except OSError:
         pass
@@ -97,7 +105,7 @@ def run(args):
     marker.parent.mkdir(parents=True, exist_ok=True)
     marker.write_text("%s %s\n" % (digest, lid))
     print("sync_layout: shipped layout loaded into %s (backup %s)" % (lid, bk), file=sys.stderr)
-    print(lid)
+    print("LAYOUT_ID=" + lid)
 
 
 def main(argv=None):

@@ -1,5 +1,5 @@
 # tools/tests/test_sync_layout.py — sync_layout.py puts the shipped Foxglove layout into Studio's store as `working` (sim only)
-import contextlib, io, json, os, pathlib, sys, tempfile, unittest
+import contextlib, io, json, os, pathlib, subprocess, sys, tempfile, unittest
 from unittest import mock
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent.parent
@@ -16,7 +16,7 @@ def shipped(tag="v1"):
 def layout(lid, name="teleop-cuvslam", base=None, work=None, viewed=None):
     d = {"id": lid, "name": name, "permission": "CREATOR_WRITE",
          "baseline": {"data": base or shipped("old"), "savedAt": "2026-01-01T00:00:00.000Z"},
-         "syncInfo": {"status": "synced", "lastRemoteSavedAt": "x"}}
+         "syncInfo": {"status": "tracked", "lastRemoteSavedAt": "x"}}
     if work is not None:
         d["working"] = {"data": work, "savedAt": "2026-01-02T00:00:00.000Z"}
     if viewed:
@@ -55,7 +55,7 @@ class Sync(Base):
     def test_first_run_updates_working_only(self):
         p = self.put("lay_a"); before = self.load(p)
         rc, out, _ = self.run_sync()
-        self.assertEqual((rc, out), (0, "lay_a\n"))
+        self.assertEqual((rc, out), (0, "LAYOUT_ID=lay_a\n"))
         after = self.load(p)
         for k in ("baseline", "syncInfo", "id", "name", "permission"):
             self.assertEqual(after[k], before[k])
@@ -77,7 +77,7 @@ class Sync(Base):
         p.write_text(json.dumps(d)); os.utime(p, (1000, 1000))
         content = p.read_text()
         rc, out, _ = self.run_sync()
-        self.assertEqual((rc, out), (0, "lay_a\n"))
+        self.assertEqual((rc, out), (0, "LAYOUT_ID=lay_a\n"))
         self.assertEqual(p.read_text(), content); self.assertEqual(p.stat().st_mtime, 1000)
         self.assertEqual(len(list(self.bk.iterdir())), 1)
 
@@ -85,7 +85,7 @@ class Sync(Base):
         p = self.put("lay_a"); self.run_sync()
         self.ship.write_text(json.dumps(shipped("v2")))
         rc, out, _ = self.run_sync()
-        self.assertEqual(out, "lay_a\n")
+        self.assertEqual(out, "LAYOUT_ID=lay_a\n")
         self.assertEqual(self.load(p)["working"]["data"]["configById"]["3D!cuvslam"]["tag"], "v2")
 
     def test_marker_for_another_layout_id_syncs_again(self):
@@ -95,6 +95,33 @@ class Sync(Base):
         self.run_sync()
         self.assertEqual(self.load(self.dir / "lay_b")["working"]["data"]["configById"]["3D!cuvslam"]["tag"], "v1")
         self.assertEqual(len(list(self.bk.iterdir())), 2)
+
+    def test_mode_preserved(self):
+        p = self.put("lay_a"); os.chmod(p, 0o644)
+        self.run_sync()
+        self.assertEqual(p.stat().st_mode & 0o777, 0o644)
+
+    def _status(self, status, working):
+        a = self.put("lay_a", work=shipped("w") if working else None)
+        d = self.load(a); d["syncInfo"]["status"] = status; a.write_text(json.dumps(d)); return a
+
+    def test_locally_deleted_skipped(self):
+        a = self._status("locally-deleted", True); raw = a.read_text()
+        rc, out, err = self.run_sync()
+        self.assertEqual((rc, out), (0, "")); self.assertEqual(a.read_text(), raw)
+
+    def test_remotely_deleted_without_working_skipped(self):
+        a = self._status("remotely-deleted", False)
+        self.assertEqual(self.run_sync()[1], "")
+
+    def test_remotely_deleted_with_working_used(self):
+        self._status("remotely-deleted", True)
+        self.assertEqual(self.run_sync()[1], "LAYOUT_ID=lay_a\n")
+
+    def test_tombstone_loses_to_live_duplicate(self):
+        self._status("locally-deleted", True)
+        b = self.put("lay_b", viewed="2020-01-01T00:00:00.000Z")
+        self.assertEqual(self.run_sync()[1], "LAYOUT_ID=lay_b\n")
 
     def test_camera_state_from_working(self):
         w = shipped("mine"); w["configById"]["3D!cuvslam"]["cameraState"] = {"d": 99}
@@ -115,7 +142,7 @@ class Sync(Base):
         a = self.put("lay_a", viewed="2026-11-01T00:00:00.000Z"); b = self.put("lay_b", viewed="2026-11-03T00:00:00.000Z")
         ra = a.read_text()
         rc, out, _ = self.run_sync()
-        self.assertEqual(out, "lay_b\n"); self.assertEqual(a.read_text(), ra)
+        self.assertEqual(out, "LAYOUT_ID=lay_b\n"); self.assertEqual(a.read_text(), ra)
         self.assertIn("working", self.load(b))
 
     def test_other_names_untouched(self):
@@ -127,7 +154,7 @@ class Sync(Base):
         loc = self.store / "layouts-local"; loc.mkdir()
         (loc / "lay_l").write_text(json.dumps(layout("lay_l")))
         rc, out, _ = self.run_sync()
-        self.assertEqual(out, "lay_l\n")
+        self.assertEqual(out, "LAYOUT_ID=lay_l\n")
 
     def test_no_match(self):
         o = self.put("lay_o"); d = self.load(o); d["name"] = "other"; o.write_text(json.dumps(d))
@@ -140,7 +167,7 @@ class Sync(Base):
         bad = self.dir / "lay_bad"; bad.write_text("{nope"); (self.dir / "subdir").mkdir()
         self.put("lay_a")
         rc, out, _ = self.run_sync()
-        self.assertEqual((rc, out), (0, "lay_a\n")); self.assertEqual(bad.read_text(), "{nope")
+        self.assertEqual((rc, out), (0, "LAYOUT_ID=lay_a\n")); self.assertEqual(bad.read_text(), "{nope")
 
     def test_missing_store(self):
         self.store = self.store / "nope"
@@ -193,10 +220,29 @@ class SlamUpSource(unittest.TestCase):
         b = self.branch()
         self.assertIn("&layoutId=", b); self.assertIn("^[A-Za-z0-9_-]+$", b)
         self.assertIn("Foxglove layout: teleop-cuvslam", b)
+        self.assertIn("results/sync_layout.log", b); self.assertIn("LAYOUT_ID=", b)
+        self.assertIn("panel and the layout", UP)
+
+    def snippet(self):
+        b = self.branch().splitlines()
+        a = next(i for i, l in enumerate(b) if l.lstrip().startswith("LAYOUT_ID=$(")); z = next(i for i, l in enumerate(b) if "LAYOUT_ARG=" in l and "echo" in l)
+        return "\n".join(b[a:z + 1])
+
+    def run_snippet(self, ex_body):
+        script = "set -euo pipefail\nex() { %s; }\n%s\necho \"AFTER id=[$LAYOUT_ID] arg=[$LAYOUT_ARG]\"\n" % (ex_body, self.snippet())
+        return subprocess.run(["bash", "-c", script], capture_output=True, text=True)
 
     def test_sync_cannot_abort_script(self):
-        line = [l for l in self.branch().splitlines() if "sync_layout.py" in l][0]
-        self.assertIn("|| true", line)
+        r = self.run_snippet("echo boom; return 3")
+        self.assertEqual(r.returncode, 0); self.assertIn("AFTER id=[] arg=[]", r.stdout)
+
+    def test_only_tagged_line_gives_an_id(self):
+        r = self.run_snippet("echo ready")
+        self.assertIn("AFTER id=[] arg=[]", r.stdout)
+        r = self.run_snippet("echo noise; echo LAYOUT_ID=lay_x; echo trailing")
+        self.assertIn("AFTER id=[lay_x] arg=[&layoutId=lay_x]", r.stdout)
+        r = self.run_snippet("echo 'LAYOUT_ID=bad id;x'")
+        self.assertIn("AFTER id=[] arg=[]", r.stdout)
 
 
 if __name__ == "__main__":

@@ -53,7 +53,7 @@ Basestation Studio opens on `ws://localhost:8765`. First time only: import `/roo
 ```bash
 cd ~/AirStack-starling-max2/localisation && scripts/slam_up.sh
 ```
-Expect `tracker ready`, a status line at ≥ 10 Hz, and SLAM Studio on `ws://172.31.0.200:8766`. First time only: Layouts → Import from file → `/exploration/foxglove/cuvslam_slam_view.json`. For the keyboard strip and a chase view import `/teleop-foxglove/teleop-cuvslam.json` instead: `slam_up.sh` installs the SVG Teleop panel and, once the layout is imported, loads the shipped layout into Studio every start (backups in `results/layout_backups/`) ([TELEOP.md §3b](../docs/TELEOP.md)). To fly from the strip, launch teleop and the commander with `teleop_single_ours.yaml` per [TELEOP.md §4](../docs/TELEOP.md) and run `tools/sim.sh relay`. It needs `sudo ufw allow from 172.31.0.0/24`.
+Expect `tracker ready`, a status line at ≥ 10 Hz, and SLAM Studio on `ws://172.31.0.200:8766`. First time only: Layouts → Import from file → `/exploration/foxglove/cuvslam_slam_view.json`. For the keyboard strip and a chase view import `/teleop-foxglove/teleop-cuvslam.json` instead: `slam_up.sh` installs the SVG Teleop panel and, once the layout is imported, loads the shipped layout into Studio when the shipped file changes, and Studio opens on it (backups in `results/layout_backups/`) ([TELEOP.md §3b](../docs/TELEOP.md)). To fly from the strip, launch teleop and the commander with `teleop_single_ours.yaml` per [TELEOP.md §4](../docs/TELEOP.md) and run `tools/sim.sh relay`. It needs `sudo ufw allow from 172.31.0.0/24`.
 
 **7 · New laptop terminal — record the run** (two commands: the second runs inside the container)
 ```bash

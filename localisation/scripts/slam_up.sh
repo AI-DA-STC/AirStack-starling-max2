@@ -65,13 +65,13 @@ else echo "Teleop panel not installed: run scripts/slam_down.sh, then scripts/sl
 
 if ! ex 'pgrep -f "[f]oxglove-studio.*studio-data" >/dev/null'; then
   # the shipped layout goes into Studio's store (only here: Studio is not running). Any failure means no id, never a stop.
-  LAYOUT_ID=$(ex 'python3 /teleop-foxglove/sync_layout.py --store /exploration/foxglove/studio-data/studio-datastores --layout /teleop-foxglove/teleop-cuvslam.json --marker /exploration/results/teleop_layout.marker --backup-dir /exploration/results/layout_backups' 2>/dev/null | tail -n 1) || true
+  LAYOUT_ID=$(ex 'python3 /teleop-foxglove/sync_layout.py --store /exploration/foxglove/studio-data/studio-datastores --layout /teleop-foxglove/teleop-cuvslam.json --marker /exploration/results/teleop_layout.marker --backup-dir /exploration/results/layout_backups 2>results/sync_layout.log' | sed -n 's/^LAYOUT_ID=//p' | tail -n 1) || true
   [[ "$LAYOUT_ID" =~ ^[A-Za-z0-9_-]+$ ]] || LAYOUT_ID=""
   LAYOUT_ARG=""; [ -z "$LAYOUT_ID" ] || { LAYOUT_ARG="&layoutId=$LAYOUT_ID"; echo "Foxglove layout: teleop-cuvslam"; }
   exd "foxglove-studio --no-sandbox --user-data-dir=/exploration/foxglove/studio-data \"foxglove://open?ds=foxglove-websocket&ds.url=ws://172.31.0.200:8766${LAYOUT_ARG}\" > results/foxglove_studio.log 2>&1"
   echo "Foxglove Studio (SLAM instance) opening, connected to ws://172.31.0.200:8766"
   [ -n "$(ls -A foxglove/studio-data 2>/dev/null)" ] || echo "FIRST TIME: in that window do Layouts -> Import from file -> /exploration/foxglove/cuvslam_slam_view.json (remembered afterwards)"
-else echo "Foxglove Studio (SLAM instance) already open. Restart Studio to load the panel (scripts/slam_down.sh, then scripts/slam_up.sh)"; fi
+else echo "Foxglove Studio (SLAM instance) already open. Restart Studio to load the panel and the layout (scripts/slam_down.sh, then scripts/slam_up.sh)"; fi
 
 [ "${1:-}" = "--detach" ] && { echo "detached — stop later with scripts/slam_down.sh"; exit 0; }
 

@@ -164,8 +164,11 @@ It reads `safe_teleop`'s controller profile and refuses a mismatch; `teleop_sing
 
 **In Foxglove.** `localisation/scripts/slam_up.sh` installs the SVG Teleop panel into the SLAM Studio. On a new machine, import the layout once:
 Layouts → Import from file → `/teleop-foxglove/teleop-cuvslam.json` (the file is `tools/teleop/foxglove/teleop-cuvslam.json`).
-After that, `slam_up.sh` loads the shipped layout by itself each time it starts Studio. It keeps your edits until the shipped file changes. Your saved chase view survives that change too.
-The old copy is saved to `localisation/results/layout_backups/` first. Nothing is pushed to your Foxglove account.
+After that, `slam_up.sh` loads the shipped layout by itself each time it starts Studio. Studio then always opens on `teleop-cuvslam` when it exists.
+Your edits stay until the shipped file changes. Your saved chase view survives that change too.
+The old copy is saved to `localisation/results/layout_backups/` first. `slam_up.sh` pushes nothing to your Foxglove account. Import and Save do push.
+Do not import the layout again, because that makes a second `teleop-cuvslam`. Delete any extra one.
+Revert in Studio shows the old cloud copy. To get the shipped layout back, run `rm localisation/results/teleop_layout.marker` and restart Studio with `slam_down.sh` then `slam_up.sh`.
 It shows the cuVSLAM image and a chase view of the drone, with the strip below. The strip has the same keys and words as the keyboard window.
 It has not flown yet: nothing here is a result.
 
@@ -176,7 +179,7 @@ It has not flown yet: nothing here is a result.
 - Keys stuck by a lost connection stop after 1 s.
 - Once the strip has been used, the Tk window warns about another publisher on `/joy`. The strip itself refuses to fly while the Tk window is sending.
 - The Tk window is the fallback if the strip misbehaves.
-- The chase view's direction is a first guess. Tune it in the 3D panel's settings and save the layout.
+- The chase view's direction is a first guess. Tune it in the 3D panel's settings.
 - Prerequisite: `sudo ufw allow from 172.31.0.0/24`. `tools/sim.sh doctor` checks it.
 - After this change the first `slam_up.sh` needs `slam_down.sh` before it, so the container gets the panel mount. `slam_up.sh` says so if it is missing.
 

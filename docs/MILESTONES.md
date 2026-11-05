@@ -29,7 +29,7 @@ Hazards the pilot assumes until the named issue re-earns them (detail: [HTX-R2.m
 - [projects/HTX-R1.md](projects/HTX-R1.md) — sim validation S1–S10 with S5b–S5e (in work order): results tables, the S5 figures, sim vs real, sim debt
 - [projects/HTX-R2.md](projects/HTX-R2.md) — real-drone bring-up R1, M2–M8: the pilot's hazards box, carried-over table, archived observations to re-earn
 - [projects/HTX-R3.md](projects/HTX-R3.md) — localization research L0–L5
-- [record/LEDGER.md](record/LEDGER.md) — append-only evidence: table 1 this software (#1–#31, all sim), table 2 previous software (A1–A21)
+- [record/LEDGER.md](record/LEDGER.md) — append-only evidence: table 1 this software (#1–#32, all sim), table 2 previous software (A1–A21)
 - [PX4_MSGS_AUDIT.md](PX4_MSGS_AUDIT.md) — PX4 v1.14 vs px4_msgs audit and its re-run method (NEAR-821)
 - Procedures: [RUNBOOK.md](RUNBOOK.md) · [PREFLIGHT.md](PREFLIGHT.md) · [DRONE_SETUP.md](DRONE_SETUP.md) · [SCENARIOS.md](SCENARIOS.md) · sim hover-test thresholds: [tools/README.md](../tools/README.md#thresholds)
 - Per test: one LEDGER row + one Result cell on the project page (both from the record), one Linear comment with the ledger number and record link; then the owner ticks the issue in Linear.

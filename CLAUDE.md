@@ -5,7 +5,7 @@ AirStack ground-control workspace flying a ModalAI Starling Max 2 indoors with O
 **Branch (since 2026-10-20):** CMU `yikuan/SVG_ground_control_dev` @ `b21d28c` (their *working* branch; `yikuan/SVG_ground_control` is its squash-release line, last cut `cf719f0` = our 2026-10-07 snapshot), vendored in `AirStack/`. The 10-20 bump brought the 6-gain Foxglove dropdown (goal accel/settle, teleop vmax), `goal_sequence` + `figure_eight` scenarios and the rosbag switch — [MIGRATION.md](docs/MIGRATION.md) §11.
 The previous branch (`daniel/diffaero_ground_control`, flown 09-01→03) is frozen on tag
 `airstack-starling-max2` / branch `archive/airstack-starling-max2`. The two are **siblings**, not
-parent/child. Milestones were RESET; **nothing on this software has flown; sim results in [record/LEDGER.md](docs/record/LEDGER.md)** (one screen: [MILESTONES.md](docs/MILESTONES.md)). Delta and the ordered re-do list:
+parent/child. Milestones were RESET; **nothing on this software has flown on the real drone; sim results in [record/LEDGER.md](docs/record/LEDGER.md)** (one screen: [MILESTONES.md](docs/MILESTONES.md)). Delta and the ordered re-do list:
 [MIGRATION.md](docs/MIGRATION.md).
 
 **Read first:** [MILESTONES.md](docs/MILESTONES.md) (one screen: where each Linear project is, the hazards before the next real flight) → the project page you are working on — then the table below.

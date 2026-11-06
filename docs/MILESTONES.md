@@ -2,7 +2,7 @@ KNOW · SIM + REAL — one screen: where each Linear project is, what passed, wh
 
 # Milestones — where each project is
 
-Three Linear projects ([plan snapshot 2026-11-05](plans/2026-11-05-project-plan-linear.md); status and order live in [Linear](https://linear.app/nearlab)). **Every result is simulation unless the row says REAL DRONE.** Nothing on this software (`yikuan/SVG_ground_control_dev` @ `b21d28c`) has flown; the September 2026 flights were the previous software, archived in [LEDGER table 2](record/LEDGER.md#table-2--observed-on-the-previous-software-archived). Evidence: one row per test in [record/LEDGER.md](record/LEDGER.md); results tables and figures sit under each milestone on the project pages.
+Three Linear projects ([plan snapshot 2026-11-05](plans/2026-11-05-project-plan-linear.md); status and order live in [Linear](https://linear.app/nearlab)). **Every result is simulation unless the row says REAL DRONE.** Nothing on this software (`yikuan/SVG_ground_control_dev` @ `b21d28c`) has flown on the real drone; the September 2026 flights were the previous software, archived in [LEDGER table 2](record/LEDGER.md#table-2--observed-on-the-previous-software-archived). Evidence: one row per test in [record/LEDGER.md](record/LEDGER.md); results tables and figures sit under each milestone on the project pages.
 
 ## Before the next real flight
 

@@ -1,4 +1,4 @@
-RECORD · SIM ONLY — every result on this page is Isaac Sim; nothing here has flown. Codes, titles and "Done when" are Linear's, verbatim.
+RECORD · SIM ONLY — every result on this page is Isaac Sim; nothing here flew a real drone. Codes, titles and "Done when" are Linear's, verbatim.
 
 # HTX-R1 Swarm Sim Validation (Isaac)
 

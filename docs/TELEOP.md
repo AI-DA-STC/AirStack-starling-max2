@@ -19,7 +19,7 @@
 > bring-up (agent, mocap, interfaces, QGC) underneath — and **NOT** CMU's old keyboard teleop,
 > which CMU deleted (its `svg_ground_control/README.md` says so in the teleop section).
 > Our sim keyboard (§3b) is a new, separate tool.
-> It is also **NOT validated by us**: ⏳ **nothing below has flown at STE.** Treat every
+> It is also **NOT validated by us**: ⏳ **nothing below has flown on the real drone at STE.** Treat every
 > ⏳ STE mark as "read this line, then go prove it".
 >
 > **In sim the drone is flown by keyboard, not by pad.** That path has flown in sim. The keys, cold start, video and test are in [localisation/README.md](../localisation/README.md#fly-it-with-the-keyboard-one-drone-sim-only). The keyboard window is §3b.

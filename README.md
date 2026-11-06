@@ -6,7 +6,7 @@ One real ModalAI **Starling Max 2**, flown indoors with **OptiTrack** motion-cap
 **AirStack** ground-control stack (a known-good snapshot lives in [`AirStack/`](AirStack/)), with
 three-drone swarms rehearsed in **Isaac Sim** before anything flies for real.
 
-**Status:** snapshot `yikuan/SVG_ground_control_dev` @ `b21d28c` · sim results in [record/LEDGER.md](docs/record/LEDGER.md) · **nothing on this software has flown** — the hazards before the next real flight are the first section of [MILESTONES.md](docs/MILESTONES.md).
+**Status:** snapshot `yikuan/SVG_ground_control_dev` @ `b21d28c` · sim results in [record/LEDGER.md](docs/record/LEDGER.md) · **nothing on this software has flown on the real drone** — the hazards before the next real flight are the first section of [MILESTONES.md](docs/MILESTONES.md).
 
 ## I want to…
 

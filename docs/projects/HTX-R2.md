@@ -1,4 +1,4 @@
-RECORD · REAL DRONE — nothing on this software has flown. Every result cell on this page is `—` until a LEDGER row with REAL exists; the archived tables are observations on the previous software, not results. Codes, titles and "Done when" are Linear's, verbatim.
+RECORD · REAL DRONE — nothing on this software has flown on the real drone. Every result cell on this page is `—` until a LEDGER row with REAL exists; the archived tables are observations on the previous software, not results. Codes, titles and "Done when" are Linear's, verbatim.
 
 # HTX-R2 Starling Flight Bring-up (M2–M8)
 

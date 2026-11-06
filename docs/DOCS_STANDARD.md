@@ -92,6 +92,7 @@ How a milestone test is scripted (one command, window on, live plots in Foxglove
 |---|---|---|
 | docs checker | `tools/docs_check/check_docs.sh` | `0 FAIL` |
 | host unit tests | `python3 -m unittest discover -s tools/tests` | `OK` |
+| one home per moved fact (WARN) | `tools/docs_check/check_docs.sh`, check `single-home` | no WARN: each phrase in `tools/docs_check/single_home.txt` sits only in its listed files, and every `require` phrase is present |
 | pre-commit guard (install once per clone) | `bash tools/git-hooks/install.sh` | runs both above on every commit; `--no-verify` only with a reason in the message |
 
 Never edit under `AirStack/` (CMU's tree). Never push from the assistant; the owner pushes from the mirror with GitHub Desktop.

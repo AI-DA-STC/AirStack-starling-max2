@@ -1,0 +1,11 @@
+# single_home.txt — facts that live in one place (design docs/superpowers/specs/2026-11-06-keyboard-docs-to-localisation-design.md).
+# Format (tab-separated): <kind><TAB><phrase><TAB><file,file>[<TAB><near phrase>]
+#   only    — the phrase may appear only in the listed files. With a near phrase, a line counts only when the near
+#             phrase is on it or on one of the 3 lines above it.
+#   require — the phrase must appear in each listed file.
+# Matching ignores backticks and runs of whitespace. Every row is WARN, never FAIL.
+# Not scanned (dated history): docs/plans/, docs/superpowers/, docs/record/, .claude/.
+only	Import from file → /teleop-foxglove/teleop-cuvslam.json	localisation/README.md
+only	teleop.launch.py config:=$CFG	localisation/README.md,docs/TELEOP.md	teleop_single_ours.yaml
+only	sim_keyboard_teleop_2026-11-04.mp4	localisation/README.md,docs/projects/HTX-R1.md
+require	never go on the real drone	docs/TELEOP.md

@@ -849,6 +849,58 @@ def check_change_log():
                    f"{len(fails)} change-log problem(s)")
 
 
+# ----------------------------------------------------------------- 21. single home
+SINGLE_HOME_EXEMPT = ("docs/plans/", "docs/superpowers/", "docs/record/", ".claude/")
+SINGLE_HOME_GLOBS = ("localisation/*.md", "localisation/scenes/**/*.md", "tools/*.md", "tools/*/README.md")   # never localisation/** (unreadable studio-data dirs)
+NEAR_LINES = 3
+
+
+def flat_line(s):
+    """Backticks removed, whitespace runs collapsed to one space, stripped."""
+    return " ".join(s.replace("`", "").split())
+
+
+def single_home_files():
+    """corpus() plus the live localisation/tools pages, de-duplicated, minus dated history."""
+    seen, out = set(), []
+    for f in corpus() + [g for pat in SINGLE_HOME_GLOBS for g in sorted(ROOT.glob(pat))]:
+        r = rel(f).replace(os.sep, "/")
+        if f.is_file() and r not in seen and not r.startswith(SINGLE_HOME_EXEMPT):
+            seen.add(r); out.append(f)
+    return out
+
+
+def check_single_home(rows=None):
+    """single_home.txt: `only` phrases sit solely in their listed files; `require` phrases are present. WARN only."""
+    rows = registry("single_home.txt") if rows is None else rows
+    if rows is None:
+        return Result("single-home", "WARN", "tools/docs_check/single_home.txt missing")
+    warns, n = [], 0
+    for _, f in rows:
+        f = [x.strip() for x in f]
+        if len(f) < 3 or f[0] not in ("only", "require") or not f[1]:
+            warns.append(f"malformed registry row: {f}"); continue
+        n += 1
+        kind, phrase, homes = f[0], f[1], [h.strip() for h in f[2].split(",")]
+        near = f[3] if len(f) > 3 and f[3] else None
+        for fn in homes:
+            text = read(ROOT / fn)
+            if text is None:
+                warns.append(f"{fn}: listed file does not exist ('{phrase}')")
+            elif kind == "require" and flat_line(phrase) not in flat_line(text):
+                warns.append(f"{fn}: required phrase '{phrase}' missing")
+        if kind == "only":
+            for p in single_home_files():
+                r, text = rel(p).replace(os.sep, "/"), read(p)
+                if r in homes or text is None:
+                    continue
+                lines = [flat_line(x) for x in text.splitlines()]
+                for i, ln in enumerate(lines, 1):
+                    if flat_line(phrase) in ln and (not near or any(flat_line(near) in x for x in lines[max(0, i - 1 - NEAR_LINES):i])):
+                        warns.append(f"{r}:{i}: '{phrase}' outside its home ({', '.join(homes)})")
+    return verdict("single-home", [], warns, f"{n} phrase(s) in their single homes", warn_msg=f"{len(warns)} single-home warning(s)")
+
+
 # ----------------------------------------------------------------- selftest / main
 def selftest():
     """Prove the dead-link check works on a temp corpus: one good link, one dead file, one dead fragment."""
@@ -883,7 +935,7 @@ def main():
               check_values_registry, check_banners, check_real_page_hygiene, check_warnings_registered,
               check_budget, check_preflight_date, check_headings_stable, check_hashes,
               check_linear_parity, check_change_lists, lambda: check_images(corpus()), check_page_budgets, check_figure_refs, check_purpose_lines,
-              check_change_log]
+              check_single_home, check_change_log]
     results = []
     for fn in checks:
         try:

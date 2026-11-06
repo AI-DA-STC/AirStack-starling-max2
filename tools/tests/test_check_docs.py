@@ -1,5 +1,5 @@
 # tools/tests/test_check_docs.py
-import pathlib, sys, tempfile, textwrap, unittest
+import json, pathlib, subprocess, sys, tempfile, textwrap, unittest
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / "docs_check"))
 import check_docs as C
 
@@ -393,3 +393,102 @@ class ChangeLogCheck(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             C.ROOT = make_repo(d); self.assertEqual(C.check_change_log().status, "PASS")
             commit(C.ROOT, {"tools/sim.sh": "x\n"}, "slipped"); self.assertEqual(C.check_change_log().status, "FAIL")
+
+
+class SingleHome(unittest.TestCase):                                  # design 2026-11-06: one home per moved fact, WARN only
+    ONLY = ("", ["only", "Import from file → /x/layout.json", "localisation/README.md"])
+    NEAR = ("", ["only", "teleop.launch.py config:=$CFG", "localisation/README.md,docs/TELEOP.md", "teleop_single_ours.yaml"])
+    REQ = ("", ["require", "never go on the real drone", "docs/TELEOP.md"])
+
+    def setUp(self):
+        self._root, self._here = C.ROOT, C.HERE
+        self.addCleanup(setattr, C, "ROOT", self._root); self.addCleanup(setattr, C, "HERE", self._here)
+
+    def tree(self, d, pages):
+        root = pathlib.Path(d)
+        pages = {"README.md": "# r\n", "CLAUDE.md": "# c\n", "localisation/README.md": "# l\n", "docs/TELEOP.md": "# t\n", **pages}
+        for name, text in pages.items():
+            (root / name).parent.mkdir(parents=True, exist_ok=True); (root / name).write_text(text)
+        C.ROOT = root
+        return root
+
+    def test_copy_outside_its_home_warns_with_file_and_line(self):
+        with tempfile.TemporaryDirectory() as d:
+            self.tree(d, {"localisation/README.md": "Layouts → Import from file → `/x/layout.json`\n",
+                          "docs/RUNBOOK.md": "# r\nLayouts → Import from file → `/x/layout.json`\n"})
+            r = C.check_single_home([self.ONLY])
+            self.assertEqual(r.status, "WARN"); self.assertTrue(any(x.startswith("docs/RUNBOOK.md:2:") for x in r.details), r.details)
+
+    def test_phrase_only_in_its_home_passes(self):
+        with tempfile.TemporaryDirectory() as d:
+            self.tree(d, {"localisation/README.md": "Layouts → Import from file → `/x/layout.json`\n"})
+            self.assertEqual(C.check_single_home([self.ONLY]).status, "PASS")
+
+    def test_copies_in_tools_and_localisation_pages_are_found(self):
+        with tempfile.TemporaryDirectory() as d:
+            self.tree(d, {"tools/README.md": "Import from file → /x/layout.json\n",
+                          "localisation/scenes/construction_site/README.md": "Import from file → /x/layout.json\n"})
+            r = C.check_single_home([self.ONLY])
+            self.assertTrue(any(x.startswith("tools/README.md:1:") for x in r.details), r.details)
+            self.assertTrue(any(x.startswith("localisation/scenes/construction_site/README.md:1:") for x in r.details), r.details)
+
+    def test_dated_history_is_exempt(self):
+        with tempfile.TemporaryDirectory() as d:
+            self.tree(d, {n: "Import from file → /x/layout.json\n" for n in
+                          ("docs/plans/p.md", "docs/superpowers/specs/s.md", "docs/record/r_record.md", ".claude/worktrees/a/docs/TELEOP.md")})
+            self.assertEqual(C.check_single_home([self.ONLY]).status, "PASS")
+
+    def test_backticks_and_spacing_are_ignored(self):
+        with tempfile.TemporaryDirectory() as d:
+            self.tree(d, {"docs/GLOSSARY.md": "Import  from file →\t`/x/layout.json`\n"})
+            self.assertEqual(C.check_single_home([self.ONLY]).status, "WARN")
+
+    def test_near_phrase_on_the_line_or_three_above_warns_inside_a_fence(self):
+        with tempfile.TemporaryDirectory() as d:
+            self.tree(d, {"docs/RUNBOOK.md": "```bash\nCFG=/c/teleop_single_ours.yaml\n# a\n# b\nros2 launch p teleop.launch.py config:=$CFG\n```\n"})
+            r = C.check_single_home([self.NEAR])
+            self.assertEqual(r.status, "WARN"); self.assertTrue(any(x.startswith("docs/RUNBOOK.md:5:") for x in r.details), r.details)
+
+    def test_near_phrase_four_lines_above_or_below_passes(self):
+        with tempfile.TemporaryDirectory() as d:
+            self.tree(d, {"docs/RUNBOOK.md": "CFG=/c/teleop_single_ours.yaml\n# a\n# b\n# c\nros2 launch p teleop.launch.py config:=$CFG\n",
+                          "docs/SCENARIOS.md": "CFG=/c/teleop_real_ours.yaml\nros2 launch p teleop.launch.py config:=$CFG\nin sim use teleop_single_ours.yaml\n"})
+            self.assertEqual(C.check_single_home([self.NEAR]).status, "PASS")
+
+    def test_require_missing_warns_and_a_wrapped_phrase_passes(self):
+        with tempfile.TemporaryDirectory() as d:
+            self.tree(d, {})
+            r = C.check_single_home([self.REQ])
+            self.assertEqual(r.status, "WARN"); self.assertTrue(any("docs/TELEOP.md" in x and "never go on the real drone" in x for x in r.details), r.details)
+        with tempfile.TemporaryDirectory() as d:
+            self.tree(d, {"docs/TELEOP.md": "**Sim only.** These never go on the\nreal drone.\n"})
+            self.assertEqual(C.check_single_home([self.REQ]).status, "PASS")
+
+    def test_listed_home_that_does_not_exist_warns(self):
+        with tempfile.TemporaryDirectory() as d:
+            self.tree(d, {})
+            r = C.check_single_home([("", ["only", "x y", "localisation/GONE.md"])])
+            self.assertEqual(r.status, "WARN"); self.assertTrue(any("localisation/GONE.md" in x and "does not exist" in x for x in r.details), r.details)
+
+    def test_bad_rows_and_a_missing_registry_warn_never_fail(self):
+        with tempfile.TemporaryDirectory() as d:
+            self.tree(d, {})
+            r = C.check_single_home([("", ["maybe", "x", "a.md"]), ("", ["only", "x"])])
+            self.assertEqual(r.status, "WARN"); self.assertEqual(sum("malformed" in x for x in r.details), 2, r.details)
+            C.HERE = pathlib.Path(d)                                    # no single_home.txt here
+            r = C.check_single_home()
+            self.assertEqual(r.status, "WARN"); self.assertIn("single_home.txt", r.summary)
+
+    def test_shipped_registry_has_the_designs_rows(self):
+        rows = C.registry("single_home.txt")
+        self.assertEqual([(f[0].strip(), f[1].strip()) for _, f in rows],
+                         [("only", "Import from file → /teleop-foxglove/teleop-cuvslam.json"), ("only", "teleop.launch.py config:=$CFG"),
+                          ("only", "sim_keyboard_teleop_2026-11-04.mp4"), ("require", "never go on the real drone")])
+        self.assertEqual(rows[1][1][3].strip(), "teleop_single_ours.yaml")
+        for _, f in rows:
+            for fn in f[2].split(","):
+                self.assertTrue((self._root / fn.strip()).is_file(), fn)
+
+    def test_registered_in_the_checker_run(self):
+        out = subprocess.run([sys.executable, "-I", str(pathlib.Path(C.__file__)), "--json"], capture_output=True, text=True, cwd=self._root).stdout
+        self.assertIn("single-home", [r["check"] for r in json.loads(out)["results"]])

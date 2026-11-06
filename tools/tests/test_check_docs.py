@@ -434,8 +434,9 @@ class SingleHome(unittest.TestCase):                                  # design 2
 
     def test_dated_history_is_exempt(self):
         with tempfile.TemporaryDirectory() as d:
-            self.tree(d, {n: "Import from file → /x/layout.json\n" for n in
-                          ("docs/plans/p.md", "docs/superpowers/specs/s.md", "docs/record/r_record.md", ".claude/worktrees/a/docs/TELEOP.md")})
+            self.tree(d, {"localisation/README.md": "Import from file → /x/layout.json\n",     # the phrase is in its home, so only the exempt copies are in play
+                          **{n: "Import from file → /x/layout.json\n" for n in
+                             ("docs/plans/p.md", "docs/superpowers/specs/s.md", "docs/record/r_record.md", ".claude/worktrees/a/docs/TELEOP.md")}})
             self.assertEqual(C.check_single_home([self.ONLY]).status, "PASS")
 
     def test_backticks_and_spacing_are_ignored(self):
@@ -451,7 +452,8 @@ class SingleHome(unittest.TestCase):                                  # design 2
 
     def test_near_phrase_four_lines_above_or_below_passes(self):
         with tempfile.TemporaryDirectory() as d:
-            self.tree(d, {"docs/RUNBOOK.md": "CFG=/c/teleop_single_ours.yaml\n# a\n# b\n# c\nros2 launch p teleop.launch.py config:=$CFG\n",
+            self.tree(d, {"localisation/README.md": "CFG=/c/teleop_single_ours.yaml\nros2 launch p teleop.launch.py config:=$CFG\n",     # the home has it
+                          "docs/RUNBOOK.md": "CFG=/c/teleop_single_ours.yaml\n# a\n# b\n# c\nros2 launch p teleop.launch.py config:=$CFG\n",
                           "docs/SCENARIOS.md": "CFG=/c/teleop_real_ours.yaml\nros2 launch p teleop.launch.py config:=$CFG\nin sim use teleop_single_ours.yaml\n"})
             self.assertEqual(C.check_single_home([self.NEAR]).status, "PASS")
 
@@ -470,6 +472,21 @@ class SingleHome(unittest.TestCase):                                  # design 2
             r = C.check_single_home([("", ["only", "x y", "localisation/GONE.md"])])
             self.assertEqual(r.status, "WARN"); self.assertTrue(any("localisation/GONE.md" in x and "does not exist" in x for x in r.details), r.details)
 
+    def test_only_phrase_missing_from_its_first_home_warns(self):
+        with tempfile.TemporaryDirectory() as d:
+            self.tree(d, {})
+            r = C.check_single_home([self.ONLY])
+            self.assertEqual(r.status, "WARN"); self.assertTrue(any(x.startswith("localisation/README.md:") and "missing from its home" in x for x in r.details), r.details)
+        with tempfile.TemporaryDirectory() as d:
+            self.tree(d, {"localisation/README.md": "CFG=/c/teleop_single_ours.yaml\nros2 launch p teleop.launch.py config:=$CFG\n"})
+            self.assertEqual(C.check_single_home([self.NEAR]).status, "PASS")
+
+    def test_an_exception_inside_the_check_is_a_warn_not_a_fail(self):
+        with tempfile.TemporaryDirectory() as d:
+            self.tree(d, {})
+            r = C.check_single_home([("", ["only", "x y", None])])       # a row that makes the check raise
+            self.assertEqual(r.status, "WARN"); self.assertIn("single-home check error", r.summary)
+
     def test_bad_rows_and_a_missing_registry_warn_never_fail(self):
         with tempfile.TemporaryDirectory() as d:
             self.tree(d, {})
@@ -483,7 +500,8 @@ class SingleHome(unittest.TestCase):                                  # design 2
         rows = C.registry("single_home.txt")
         self.assertEqual([(f[0].strip(), f[1].strip()) for _, f in rows],
                          [("only", "Import from file → /teleop-foxglove/teleop-cuvslam.json"), ("only", "teleop.launch.py config:=$CFG"),
-                          ("only", "sim_keyboard_teleop_2026-11-04.mp4"), ("require", "never go on the real drone")])
+                          ("only", "sim_keyboard_teleop_2026-11-04.mp4"), ("only", "cd ~/AirStack-starling-max2 && tools/sim.sh relay"),
+                          ("only", "drive mode ⇄ room mode"), ("require", "never go on the real drone")])
         self.assertEqual(rows[1][1][3].strip(), "teleop_single_ours.yaml")
         for _, f in rows:
             for fn in f[2].split(","):

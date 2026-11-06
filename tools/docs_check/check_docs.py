@@ -871,7 +871,14 @@ def single_home_files():
 
 
 def check_single_home(rows=None):
-    """single_home.txt: `only` phrases sit solely in their listed files; `require` phrases are present. WARN only."""
+    """single_home.txt: `only` phrases sit solely in their listed files (and are in the first); `require` phrases are present. WARN only, even on an error."""
+    try:
+        return _single_home(rows)
+    except Exception as e:                                          # main() turns an exception into FAIL; this check never fails the run
+        return Result("single-home", "WARN", f"single-home check error: {type(e).__name__}: {e}")
+
+
+def _single_home(rows):
     rows = registry("single_home.txt") if rows is None else rows
     if rows is None:
         return Result("single-home", "WARN", "tools/docs_check/single_home.txt missing")
@@ -890,14 +897,17 @@ def check_single_home(rows=None):
             elif kind == "require" and flat_line(phrase) not in flat_line(text):
                 warns.append(f"{fn}: required phrase '{phrase}' missing")
         if kind == "only":
+            def hits(text):
+                lines = [flat_line(x) for x in text.splitlines()]
+                return [i for i, ln in enumerate(lines, 1) if flat_line(phrase) in ln and (not near or any(flat_line(near) in x for x in lines[max(0, i - 1 - NEAR_LINES):i]))]
+            first = read(ROOT / homes[0])
+            if first is not None and not hits(first):
+                warns.append(f"{homes[0]}: '{phrase}' missing from its home")
             for p in single_home_files():
                 r, text = rel(p).replace(os.sep, "/"), read(p)
                 if r in homes or text is None:
                     continue
-                lines = [flat_line(x) for x in text.splitlines()]
-                for i, ln in enumerate(lines, 1):
-                    if flat_line(phrase) in ln and (not near or any(flat_line(near) in x for x in lines[max(0, i - 1 - NEAR_LINES):i])):
-                        warns.append(f"{r}:{i}: '{phrase}' outside its home ({', '.join(homes)})")
+                warns += [f"{r}:{i}: '{phrase}' outside its home ({', '.join(homes)})" for i in hits(text)]
     return verdict("single-home", [], warns, f"{n} phrase(s) in their single homes", warn_msg=f"{len(warns)} single-home warning(s)")
 
 

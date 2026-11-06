@@ -8,4 +8,6 @@
 only	Import from file → /teleop-foxglove/teleop-cuvslam.json	localisation/README.md
 only	teleop.launch.py config:=$CFG	localisation/README.md,docs/TELEOP.md	teleop_single_ours.yaml
 only	sim_keyboard_teleop_2026-11-04.mp4	localisation/README.md,docs/projects/HTX-R1.md
+only	cd ~/AirStack-starling-max2 && tools/sim.sh relay	localisation/README.md
+only	drive mode ⇄ room mode	localisation/README.md
 require	never go on the real drone	docs/TELEOP.md

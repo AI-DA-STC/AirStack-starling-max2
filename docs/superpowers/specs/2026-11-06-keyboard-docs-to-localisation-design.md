@@ -1,6 +1,6 @@
 # Design — the sim keyboard session moves to localisation/README.md
 
-Date: 2026-11-06. Status: draft for owner approval. Nothing is built before approval.
+Date: 2026-11-06. Status: **approved by the owner 2026-11-06** ("the rest of the design is ok"), with one addition: the "nothing on this software has flown" sentence is fixed too ("yeah this is confusing man").
 Process: `quality-change` (recon → four-hat panel, two rounds → this design → builder check → owner).
 
 ## Intent
@@ -26,6 +26,8 @@ Why it matters, measured by the newcomer reader on today's pages, starting from 
 2. Each of these exists in exactly one place: the keyboard cold start, the key table, the "import the layout once" instruction, the evidence list.
 3. A real-drone reader of `docs/TELEOP.md` still sees that Drive mode, the relay and `teleop_single_ours.yaml` are sim only.
 4. `docs/TELEOP.md` stops holding results. DOCS_STANDARD §1 says procedure pages never hold results; the Evidence block added on 2026-11-06 (commit 2cbce49) broke that rule, and this move repairs it.
+
+5. No page says "nothing on this software has flown" without saying it means the real drone (owner, 2026-11-06).
 
 ## Non-goals
 
@@ -120,6 +122,27 @@ Dated history is exempt: `docs/plans/`, `docs/superpowers/`, `docs/record/`. The
 tests beside the existing checker tests, and one line in `tools/docs_check/README.md` and
 DOCS_STANDARD's gate list.
 
+### Real or sim: "nothing on this software has flown" (added by the owner, 2026-11-06)
+
+The sentence means the real drone, but does not say so, and the same pages now say the keyboard has
+flown in sim. Every live page that carries it names the real drone:
+
+| Page | Today | After |
+|---|---|---|
+| `README.md` line 9 | "nothing on this software has flown" | "nothing on this software has flown on the real drone" |
+| `CLAUDE.md` line 8 | "nothing on this software has flown; sim results in …" | "nothing on this software has flown on the real drone; sim results in …" |
+| `docs/MILESTONES.md` line 5 | "Nothing on this software (…) has flown" | "… has flown on the real drone" |
+| `docs/projects/HTX-R2.md` line 1 | "nothing on this software has flown" | "nothing on this software has flown on the real drone" |
+| `docs/projects/HTX-R1.md` line 1 | "nothing here has flown" | "nothing here flew a real drone" |
+| `docs/TELEOP.md` intro | "nothing below has flown at STE" | "nothing below has flown on the real drone at STE" |
+| `docs/PREFLIGHT.md` line 5 | "nothing on this software has flown" | "nothing on this software has flown on the real drone" |
+
+`docs/SCENARIOS.md` already says "on the real drone" and is unchanged. No softening words are added:
+the hazard meaning stays exactly as strong. Coordinator's call: `docs/PREFLIGHT.md` is included, so
+its version token on line 1 is bumped to the edit date and the laminated card needs a reprint (one
+was already pending since v2026-11-02). Dated history (`docs/plans/`, `docs/superpowers/`,
+`docs/record/`) is not touched. The flight-test reviewer reads each of the seven lines.
+
 ## Builder check (answers to a fresh reader's questions)
 
 All six were settled without the owner. Items marked "coordinator's call" are choices, not owner decisions.
@@ -144,7 +167,8 @@ All six were settled without the owner. Items marked "coordinator's call" are ch
 2. `docs/TELEOP.md` contains no key table, no cold start, no Evidence block; "3b" still resolves and carries the sim-only warning.
 3. Every retargeted link resolves.
 4. Newcomer acceptance, a fresh reader starting from the root `README.md`, same three questions as the BEFORE table: cold start ≤ 70 lines on one page after the root README; keys and Drive mode ≤ 30 lines on the same page; flown-or-not and the video ≤ 15 lines on the same page. Before and after line counts are reported.
-5. The moved cold start has the same ten steps and the same commands as the one in TELEOP at commit 2cbce49. Only the step 7 layout comment differs (builder check 1).
+5. Goal 5: `grep -rn "has flown"` over the live pages finds no sentence that leaves real or sim unsaid.
+6. The moved cold start has the same ten steps and the same commands as the one in TELEOP at commit 2cbce49. Only the step 7 layout comment differs (builder check 1).
 
 ## Review focus
 
@@ -152,4 +176,4 @@ All six were settled without the owner. Items marked "coordinator's call" are ch
 - Any moved sentence that now reads as a result on hardware.
 - A paragraph absorbed into a table after the move (no blank line after a table row).
 - Links that still say "TELEOP §3b" but mean moved content.
-- The root README's "nothing on this software has flown" beside "flown in sim": the newcomer found the pair confusing. Out of scope here; listed for the owner.
+- The seven "nothing has flown" lines: each must still read as a warning about the real drone, and none may imply a sim result is a real one.

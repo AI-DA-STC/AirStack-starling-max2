@@ -1,7 +1,7 @@
-# TELEOP — flying `drone_1` by hand with a gamepad
+# TELEOP — flying `drone_1` by hand: gamepad, or keyboard in sim
 
 > **Who this is for:** anyone in the AI.R / STC lab who wants to hand-fly the Starling with a
-> game controller instead of publishing waypoints. No robotics background needed.
+> game controller (real drone) or the keyboard (sim only, §3b) instead of publishing waypoints. No robotics background needed.
 > **Read first:** [GLOSSARY.md](GLOSSARY.md) for the words, [RUNBOOK.md](RUNBOOK.md) §A (sim) or
 > §B (real drone) for the bring-up this sits on top of. "The commander" = the `swarm_commander`
 > node; "the panel" = the Foxglove SVG Basestation ([BASESTATION.md](BASESTATION.md)); "the real
@@ -16,10 +16,13 @@
 > on sim and on the real drone.
 >
 > It is **NOT** a replacement for [RUNBOOK.md](RUNBOOK.md) — you still need the whole §B
-> bring-up (agent, mocap, interfaces, QGC) underneath — and **NOT** the old keyboard teleop,
+> bring-up (agent, mocap, interfaces, QGC) underneath — and **NOT** CMU's old keyboard teleop,
 > which CMU deleted (its `svg_ground_control/README.md` says so in the teleop section).
+> Our sim keyboard (§3b) is a new, separate tool.
 > It is also **NOT validated by us**: ⏳ **nothing below has flown at STE.** Treat every
 > ⏳ STE mark as "read this line, then go prove it".
+>
+> **In sim the drone is flown by keyboard, not by pad.** That path has flown in sim: keys, cold start, video and test are in §3b.
 
 *(Unfamiliar term? → [GLOSSARY.md](GLOSSARY.md))*
 
@@ -170,7 +173,12 @@ The old copy is saved to `localisation/results/layout_backups/` first. `slam_up.
 Do not import the layout again, because that makes a second `teleop-cuvslam`. Delete any extra one.
 Revert in Studio shows the old cloud copy. To get the shipped layout back, run `rm localisation/results/teleop_layout.marker` and restart Studio with `slam_down.sh` then `slam_up.sh`.
 It shows the cuVSLAM image and a chase view of the drone, with the strip below. The strip has the same keys and words as the keyboard window.
-It has not flown yet: nothing here is a result.
+
+**Evidence (simulation, drone_1 in the construction site).**
+- Video: [sim_keyboard_teleop_2026-11-04.mp4](../videos/sim_keyboard_teleop_2026-11-04.mp4), 79 s, recorded 2026-11-04. The strip flies drone_1 in Drive mode, beside the cuVSLAM image and the chase view.
+- Test: [ledger #32](record/LEDGER.md) → [record](record/sim_teleop_frame_run1_record.md), PASS, 2026-11-03. Forward pushes at four headings went within 0.9° of the nose (gate 20°) and stopped within 0.17 m (gate 0.30 m). The test script drove the stick, not the keyboard.
+- Not on video or in a record, confirmed by the owner on 2026-11-05: clicking the image stops the drone, and the grid and the layout load by themselves.
+- Linear: NEAR-789, NEAR-920 and NEAR-921, Done ([HTX-R1](projects/HTX-R1.md), S5). Still open there: a recorded and scored hand flight (NEAR-790), and the follow-ups NEAR-922 to NEAR-925.
 
 - `tools/sim.sh relay` must be running. The strip cannot start it.
 - Click the strip to fly. Click anything else and the drone holds.
@@ -179,11 +187,56 @@ It has not flown yet: nothing here is a result.
 - Keys stuck by a lost connection stop after 1 s.
 - Once the strip has been used, the Tk window warns about another publisher on `/joy`. The strip itself refuses to fly while the Tk window is sending.
 - The Tk window is the fallback if the strip misbehaves.
-- The chase view's direction is a first guess. Tune it in the 3D panel's settings.
+- The chase view sits behind the drone and turns with it. Tune its distance and angle in the 3D panel's settings.
 - Prerequisite: `sudo ufw allow from 172.31.0.0/24`. `tools/sim.sh doctor` checks it.
 - After this change the first `slam_up.sh` needs `slam_down.sh` before it, so the container gets the panel mount. `slam_up.sh` says so if it is missing.
 
 **Grid.** The grid in the cuVSLAM window grows by itself, so the drone never flies off it. `slam_up.sh` starts it. The squares start at 1 m and widen as the grid grows. It stops growing at 1600 m. The grid arrives with the shipped layout, which `slam_up.sh` loads when it starts Studio. To reset a grid grown by a bad cuVSLAM jump, stop it with `pkill -f auto_grid.py` in the exploration container and run `scripts/slam_up.sh` again. In the Basestation window turn on topic `/svg/viz/grid` once in the 3D panel's settings.
+
+**Cold start: a keyboard session in the construction site (sim only).** Steps 0, 1, 6, 7 and 10 go in a terminal on the laptop. Steps 2 to 5 go in the tabs of the Terminator window that step 1 opens. Lines marked "first time only" are needed once per laptop.
+
+```bash
+# 0 · Laptop terminal, first time only — let the cuVSLAM container reach the drone side
+sudo ufw allow from 172.31.0.0/24
+
+# 1 · Laptop terminal — containers, then one Terminator window with four tabs
+cd ~/AirStack-starling-max2/AirStack && ./airstack.sh up
+cd ~/AirStack-starling-max2 && tools/sim_terminals.sh
+
+# 2 · Isaac Sim tab — wait for "Ready for takeoff!"
+ENV_USD=/isaac-sim/.local/share/ov/data/scenes/construction_site/construction_site_full.usdc ENABLE_CAMERA=true CAMERA_DRONES=drone_1 DRONE_USD=/isaac-sim/AirStack/simulation/isaac-sim/assets/robots/starling2max.usd PX4_VEHICLE_MODEL=pegasus_starling2max NUM_ROBOTS=1 SVG_DOMAIN_ID=1 PLAY_SIM_ON_START=true ISAAC_SIM_HEADLESS=false PYTHONPATH="$ISAAC_SIM_PYTHONPATH" /isaac-sim/python.sh /isaac-sim/AirStack/simulation/isaac-sim/launch_scripts/svg_multi_drone_single_domain.py --ext-folder ~/.local/share/ov/data/documents/Kit/shared/exts
+
+# 3 · Interfaces tab
+./src/svg_ground_control/scripts/launch_sim_interfaces.sh 1
+
+# 4 · Cockpit tab (first time only, before the launch: bws && sws)
+CFG=$(ros2 pkg prefix svg_ground_control)/share/svg_ground_control/config/teleop_single_ours.yaml
+ros2 launch svg_ground_control teleop.launch.py config:=$CFG
+
+# 5 · Commander tab
+CFG=$(ros2 pkg prefix svg_ground_control)/share/svg_ground_control/config/teleop_single_ours.yaml
+ros2 launch svg_ground_control ground_control.launch.py config:=$CFG use_foxglove_studio:=true
+
+# 6 · New laptop terminal — the relay (the command starts it inside the robot container)
+cd ~/AirStack-starling-max2 && tools/sim.sh relay
+
+# 7 · New laptop terminal — cuVSLAM, its Foxglove window, the strip, the grid, the layout
+cd ~/AirStack-starling-max2/localisation && scripts/slam_up.sh
+#     First time only: in that Foxglove window, Layouts → Import from file → /teleop-foxglove/teleop-cuvslam.json
+#     No Foxglove? `tools/sim.sh keys` (laptop) opens the keyboard window instead; it starts the relay itself.
+
+# 8 · Take off — Basestation panel, or a robot-container shell (new laptop terminal: tools/sim_tab.sh cockpit)
+ros2 service call /swarm_commander/takeoff std_srvs/srv/Trigger   # wait for "holding takeoff position" (~30 s)
+ros2 service call /swarm_commander/start std_srvs/srv/Trigger
+
+# 9 · Click the strip and fly. Land — panel "Land All", or
+ros2 service call /swarm_commander/land std_srvs/srv/Trigger
+
+# 10 · Shut down — Ctrl-C the Commander, Cockpit and Interfaces tabs first
+cd ~/AirStack-starling-max2/localisation && scripts/slam_down.sh
+cd ~/AirStack-starling-max2 && tools/sim.sh down
+cd AirStack && ./airstack.sh down
+```
 
 ## 4 · Quick start — SIM (M1 rehearsal)
 

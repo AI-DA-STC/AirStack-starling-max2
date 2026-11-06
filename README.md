@@ -54,7 +54,7 @@ Milestone by milestone, with evidence: [record/LEDGER.md](docs/record/LEDGER.md)
 | [CONFIG.md](docs/CONFIG.md) | Every value we fly: IPs, parameters, which config, sim airframe |
 | [SCENARIOS.md](docs/SCENARIOS.md) | The CBF filter and the swarm scenarios |
 | [BASESTATION.md](docs/BASESTATION.md) | The Foxglove panel, chip by chip |
-| [TELEOP.md](docs/TELEOP.md) | Gamepad flying through the commander |
+| [TELEOP.md](docs/TELEOP.md) | Gamepad flying through the commander, and keyboard flying in sim |
 | [MOCAP.md](docs/MOCAP.md) · [mocap.sh](mocap.sh) | The mocap bridge and the Motive PC |
 | [DRONE_SETUP.md](docs/DRONE_SETUP.md) | Provisioning a Starling from the box |
 | [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Symptom → first check → fix |

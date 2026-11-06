@@ -190,6 +190,15 @@ from every doc; add a term here rather than re-explaining it inline elsewhere.
   that read **+1.0 untouched**; pointing a velocity axis at one would command full speed with
   nothing held, so `safe_teleop` refuses any mapped axis resting past ±0.9. The **deadzone**
   (0.15) is the slop around centre treated as zero, rescaled so full deflection still reaches 1.0.
+- **Drive mode** — the sim keyboard's default: ↑ always goes where the drone's nose points, like
+  driving a car. **F** switches to Room mode. Sim only ([TELEOP.md](TELEOP.md) §3b).
+- **Room mode** — ↑ always goes toward the same wall of the room, whichever way the nose points,
+  like moving a chess piece. It is how the gamepad flies the real drone.
+- **Relay (`teleop_frame`)** — a small node of ours between `safe_teleop` and the commander
+  (`tools/sim.sh relay`). It turns a Drive-mode key push into a room velocity. Sim only.
+- **Teleop strip** — the keyboard strip along the bottom of the cuVSLAM Foxglove window. It flies
+  the drone only while it is clicked. Click anything else and the drone holds. `slam_up.sh` installs it.
+- **Chase view** — the 3D panel beside the camera image that follows the drone from behind and draws its path.
 - **Coast distance** — how far a hand-flown drone keeps travelling after the sticks are
   released: the command ramps down at `teleop_accel_mps2` and the reference may lead by
   `teleop_lead_m` (≈ 2 m from 4 m/s at 5 m/s²; far less at our 0.5 m/s cap — M5 measures it).

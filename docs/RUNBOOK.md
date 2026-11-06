@@ -162,6 +162,8 @@ fallback and the throw-away shell: [§ Sim launch variants](#sim-launch-variants
 *Optional fifth terminal* (laptop, not a tab — Ctrl-Shift-T is fine): `localisation/scripts/slam_up.sh` after
 `Ready for takeoff!` ×3 starts the SLAM side of a camera-world run ([localisation/README.md](../localisation/README.md)).
 
+*Fly it with the keyboard (sim only):* the cold start, the keys and the video are in [TELEOP.md](TELEOP.md) §3b.
+
 ---
 
 ## B · REAL DRONE session (mocap room) — ⏳ STE on this branch

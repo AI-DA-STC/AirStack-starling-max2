@@ -21,13 +21,13 @@
 |---|---|---|
 | `jeremychia@…$` | laptop terminal | `scripts/slam_up.sh` · `scripts/score_run.sh` · `scripts/sim_resources_watch.sh` · `scenes/construction_site/install.sh` |
 | `root@…:/exploration#` | exploration container (`./docker/run.sh`) | `scripts/record_sim_bag.sh` · `scripts/sim_check.py` · `scripts/grab_frame.py` |
-| Isaac Sim tab | isaac-sim container | the launch line with `ENV_USD` (step 3 below) |
+| Isaac Sim tab | isaac-sim container | the launch line with `ENV_USD` (Run it, step 3) |
 | Interfaces · Commander · Cockpit tabs | robot container | unchanged — [RUNBOOK §A2–A4](../docs/RUNBOOK.md) |
 | Cockpit tab · `jeremychia@…$` | robot container · laptop terminal | keyboard session only: `teleop.launch.py` in the Cockpit tab; `tools/sim.sh relay` in a laptop terminal (it starts the relay inside the robot container) |
 
 ## Run it
 
-Every command, from a cold laptop. Pick a new run name each time (`sim_site_run3`, `sim_site_run4`, …) and use it in steps 7 and 9.
+This is the scored three-drone run. To fly drone_1 yourself by keyboard, start at that session's [Cold start](#cold-start), not here. Every command, from a cold laptop. Pick a new run name each time (`sim_site_run3`, `sim_site_run4`, …) and use it in steps 7 and 9.
 
 **1 · Laptop terminal — open the four tabs** (starts the containers if needed)
 ```bash
@@ -61,7 +61,7 @@ Basestation Studio opens on `ws://localhost:8765`. First time only: import `/roo
 ```bash
 cd ~/AirStack-starling-max2/localisation && scripts/slam_up.sh
 ```
-Expect `tracker ready`, a status line at ≥ 10 Hz, and SLAM Studio on `ws://172.31.0.200:8766`. First time only: Layouts → Import from file → `/exploration/foxglove/cuvslam_slam_view.json`. To fly drone_1 yourself by keyboard instead, see [Fly it with the keyboard](#fly-it-with-the-keyboard-one-drone-sim-only).
+Expect `tracker ready`, a status line at ≥ 10 Hz, and SLAM Studio on `ws://172.31.0.200:8766`. First time only: Layouts → Import from file → `/exploration/foxglove/cuvslam_slam_view.json`. The keyboard session is a separate session (one drone, `teleop_single_ours.yaml`). Shut this one down and start at its [Cold start](#cold-start).
 
 **7 · New laptop terminal — record the run** (two commands: the second runs inside the container)
 ```bash
@@ -109,9 +109,9 @@ Jump to: [Evidence](#evidence) · [Keys](#keys) · [Cold start](#cold-start) · 
 ### Evidence
 
 - Video (simulation): [sim_keyboard_teleop_2026-11-04.mp4](../videos/sim_keyboard_teleop_2026-11-04.mp4), 79 s, recorded 2026-11-04. The strip flies drone_1 in Drive mode, beside the cuVSLAM image and the chase view.
-- Test (simulation): [ledger #32](../docs/record/LEDGER.md) → [record](../docs/record/sim_teleop_frame_run1_record.md), PASS, 2026-11-03. The test script drove the stick, not the keyboard. The numbers are in [HTX-R1, S5](../docs/projects/HTX-R1.md#s5-finish-basic-sim-flight-checks--sim-only-isaac).
+- Test (simulation, flat world, no camera): a forward push follows the nose in Drive mode, [ledger #32](../docs/record/LEDGER.md) → [record](../docs/record/sim_teleop_frame_run1_record.md), PASS, 2026-11-03. The test script drove the relay's input. `safe_teleop` and the keyboard were not in the loop. The numbers are in [HTX-R1, S5](../docs/projects/HTX-R1.md#s5-finish-basic-sim-flight-checks--sim-only-isaac).
 - Owner-confirmed (simulation), not on video or in a record, on 2026-11-05: clicking the image stops the drone, and the grid and the layout load by themselves.
-- Linear (simulation): NEAR-789, NEAR-920 and NEAR-921, Done ([HTX-R1](../docs/projects/HTX-R1.md), S5). Still open there: a recorded and scored hand flight (NEAR-790), and the follow-ups NEAR-922 to NEAR-925.
+- Linear (simulation): NEAR-789, NEAR-920 and NEAR-921. Their status, and what is still open, is on [HTX-R1, S5](../docs/projects/HTX-R1.md#s5-finish-basic-sim-flight-checks--sim-only-isaac).
 
 ### Keys
 
@@ -127,7 +127,7 @@ Jump to: [Evidence](#evidence) · [Keys](#keys) · [Cold start](#cold-start) · 
 
 Drive mode (BODY) is the default: ↑ goes where the nose points, like driving a car. Room mode (WORLD) is the
 pad's behaviour: ↑ is always the far wall, like moving a chess piece. `F` only asks the relay to switch.
-The switch waits until every key is up, so a push in flight is never reversed. The window header shows the
+The switch waits until every key is up, so a push in flight is never reversed. The header shows the
 mode in words and turns red when the heading is lost.
 
 The keyboard window instead of the strip (`tools/sim.sh keys`), with its focus and let-go rules, is in [TELEOP.md §3b](../docs/TELEOP.md#3b--keyboard-instead-of-a-pad-sim-only-ours).
@@ -197,10 +197,9 @@ It shows the cuVSLAM image and a chase view of the drone, with the strip below. 
 - `FLYING drone_1` proves your keys came back from the bridge. A grey dashed frame with keys pressed means not proven, and keys may still be going out.
 - If you hold ↑ and tap A, ↑ stops about 1 s after A is released, because the keyboard stops repeating the older key. Let go of ↑ and press it again.
 - Keys stuck by a lost connection stop after 1 s.
-- Once the strip has been used, the Tk window warns about another publisher on `/joy`. The strip itself refuses to fly while the Tk window is sending.
-- The Tk window is the fallback if the strip misbehaves.
+- Once the strip has been used, the keyboard window (`tools/sim.sh keys`) warns about another publisher on `/joy`. The strip itself refuses to fly while the keyboard window is sending.
+- The keyboard window is the fallback if the strip misbehaves.
 - The chase view sits behind the drone and turns with it. Tune its distance and angle in the 3D panel's settings.
-- Prerequisite: `sudo ufw allow from 172.31.0.0/24`. `tools/sim.sh doctor` checks it.
 - The first `slam_up.sh` after the strip was added needs `slam_down.sh` before it, so the container gets the panel mount. `slam_up.sh` says so if it is missing.
 
 **Grid.** The grid in the cuVSLAM window grows by itself, so the drone never flies off it. `slam_up.sh` starts it. The squares start at 1 m and widen as the grid grows. It stops growing at 1600 m. The grid arrives with the shipped layout, which `slam_up.sh` loads when it starts Studio. To reset a grid grown by a bad cuVSLAM jump, stop it with `pkill -f auto_grid.py` in the exploration container and run `scripts/slam_up.sh` again. In the Basestation window turn on topic `/svg/viz/grid` once in the 3D panel's settings.

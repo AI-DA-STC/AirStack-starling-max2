@@ -132,7 +132,7 @@ as a trigger, and its numbers go straight into the table above.
 **Sim only.** Drive mode, the relay and `teleop_single_ours.yaml` (it sets `fence_enabled: false` and `teleop_fence_enabled: false`) are for the simulator only and never go on the real drone. Real flying is §5 with `teleop_real_ours.yaml`.
 
 No pad? `tools/sim.sh keys` opens a small window that turns key presses into the same `/joy` stream a pad
-sends. `safe_teleop` then flies the drone unchanged, with its fences, hold and speed cap. Start `safe_teleop`
+sends. `safe_teleop` then flies the drone unchanged, with its hold and speed cap. `teleop_single_ours.yaml` turns both fences off. Start `safe_teleop`
 first (§4), then run `keys` in a terminal tab and click the window.
 
 Drive mode needs `teleop_single_ours.yaml`. `keys` starts the relay, a small node between `safe_teleop` and the

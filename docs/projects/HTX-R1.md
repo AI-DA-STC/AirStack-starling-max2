@@ -60,7 +60,7 @@ S3/S4 result (sim only; reference = PX4 EKF2, not ground truth). [Figure 1](#fig
 **Purpose:** the drone model, gains, airframe and commander all changed after S1. Before anything new is built on top, the basic flight behaviour is re-checked: does the drone still take off, hold, move 1 m cleanly and land (NEAR-786), still avoid the others (787), still take live gain changes (788)? The site items (789, 790, 860, and the keyboard work 920, 921) prepare S5b, because hand-flying is how the map gets built.
 Linear (snapshot 2026-11-05): 81 % · last ledger row #32 (2026-11-03)
 
-**Done when** (Linear's target, verbatim; a target, not a result): hover and 1 m steps are re-run and recorded; the three-drone crossing with collision avoidance is re-run and recorded; live gain tuning from the panel is tried in sim; drone_1 is hand-flown by gamepad in the construction site with cuVSLAM running, and the flight is scored.
+**Done when** (Linear's target, verbatim; a target, not a result): hover and 1 m steps are re-run and recorded; the three-drone crossing with collision avoidance is re-run and recorded; live gain tuning from the panel is tried in sim; drone_1 is hand-flown by keyboard in the construction site with cuVSLAM running, and the flight is scored.
 
 | Issue | Title (Linear, verbatim) | Linear status | Result | Evidence |
 |---|---|---|---|---|
@@ -94,7 +94,7 @@ Linear (snapshot 2026-11-05): 81 % · last ledger row #32 (2026-11-03)
 
 **NEAR-921: Teleop strip inside the cuVSLAM Foxglove window, with a chase view.** The pilot flies from one window: the cuVSLAM camera image, a chase view behind the drone, and a keyboard strip that flies only while it is clicked. `slam_up.sh` installs the strip, loads the layout and starts a grid that grows as the drone flies. There is no test or record. The owner flew it in the construction site and closed it with NEAR-789 on 2026-11-05, without a video.
 
-Open: NEAR-789, 920 and 921 were closed by the owner without a video, so no hand-flown result appears here. Still to do: a recorded and scored hand flight (NEAR-790), and NEAR-860, where the offline replay of sim_site_hand3 differs from the live path by 60 m, not yet explained. Linear's S5 text still says gamepad, but the flying is by keyboard. NEAR-787 is closed in Linear; whether to keep the 1.10 m gate or loosen it to CMU's 0.825 m is now NEAR-878 (S5e). During a test run, leave the Foxglove panel alone. In flight, change the safety radius only in small steps (#23).
+Open: NEAR-789, 920 and 921 were closed by the owner without a video, so no hand-flown result appears here. Still to do: a recorded and scored hand flight (NEAR-790), and NEAR-860, where the offline replay of sim_site_hand3 differs from the live path by 60 m, not yet explained. NEAR-787 is closed in Linear; whether to keep the 1.10 m gate or loosen it to CMU's 0.825 m is now NEAR-878 (S5e). During a test run, leave the Foxglove panel alone. In flight, change the safety radius only in small steps (#23).
 
 ### S5d · Sim flies the real command route (px4_interface) — SIM ONLY (Isaac)
 **Purpose:** every sim flight so far took a different command path from the real drone (MAVROS, with the commander holding position itself), and that path had two sim-only bugs: the release swing (patch 0006) and the turn orbit. Moving the sim onto px4_interface, the real drone's path, is what lets a sim result predict a real one, NUS policies included (S5e). NEAR-866 is the one-drone [trial](../superpowers/specs/2026-10-30-sim-real-route-trial-design.md).

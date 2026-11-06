@@ -1,13 +1,14 @@
 # Starling swarm: project plan (Linear milestones and issues)
 
-NEAR Lab · Linear snapshot: 5 November 2026, after the keyboard-teleop syncs ([2026-11-04 instructions](2026-11-04-linear-agent-update.md) and [sync record](2026-11-04-linear-sync-record.md); [2026-11-05 instructions](2026-11-05-linear-agent-close-teleop.md) and [sync record](2026-11-05-linear-sync-record.md)); built from the 2 November snapshot plus those two records
+NEAR Lab · Linear snapshot: 5 November 2026, after the keyboard-teleop syncs ([2026-11-04 instructions](2026-11-04-linear-agent-update.md) and [sync record](2026-11-04-linear-sync-record.md); [2026-11-05 instructions](2026-11-05-linear-agent-close-teleop.md) and [sync record](2026-11-05-linear-sync-record.md)); built from the 2 November snapshot plus those two records; S5 wording updated 6 November ([instructions](2026-11-06-linear-agent-s5-keyboard.md), [sync record](2026-11-06-linear-sync-record.md))
 
 Linear is the source of truth: this file mirrors the three projects in Linear as of the snapshot above. Only completed milestones carry target dates. Each issue links to its Linear page. The "Done when" lines describe the acceptance test, not progress made.
 
 ## Reconciliation notes
 
 - 3 projects, 28 milestones, 118 issues: 13 Done, 1 In Progress, 102 Backlog, 2 Canceled.
-- 2026-11-05 sync: NEAR-789 retitled (it was always keyboard teleop, not gamepad) and Done; NEAR-920 and NEAR-921 Done, closed by the owner without a video; NEAR-860 In Progress. The S5 description still says gamepad: the requested wording was not in Linear, so nothing there changed. Linear reports S5 at 81 %.
+- 2026-11-05 sync: NEAR-789 retitled (it was always keyboard teleop, not gamepad) and Done; NEAR-920 and NEAR-921 Done, closed by the owner without a video; NEAR-860 In Progress. Linear reports S5 at 81 %.
+- 2026-11-06 sync: S5's description and Done when now say keyboard instead of gamepad (owner, 2026-11-05). No status or count changed.
 - 2026-11-04 sync: NEAR-910 Done and NEAR-914 Canceled (both already held in Linear), NEAR-912 description replaced. Six new HTX-R1 issues: NEAR-920 and 921 (S5) and NEAR-922…925 (no milestone, listed after Project 1). The sync record counts all three projects: HTX-R1 66, HTX-R2 35, HTX-R3 17.
 - 2026-11-02 sync: seven issues. NEAR-910 (In Progress) is in S5. NEAR-911, 912, 913 and 916 (Backlog) are in S5d. NEAR-914 (Backlog) is in M2 and NEAR-915 (Backlog) is in M5. Nothing else changed. The sync record gives counts for HTX-R1 (60) and HTX-R2 (35) only. HTX-R3 is not in it, so its 17 issues are carried over from the 30 October snapshot.
 - 2026-10-30 rescope: new milestones S5d, S5e (HTX-R1) and M8 (HTX-R2); S5c and S8 renamed; 27 new issues NEAR-866…892; NEAR-809 moved S8 → S5c; NEAR-802 Canceled; NEAR-786/787/788 Done; HTX-R2 renamed (M2–M8).
@@ -90,9 +91,9 @@ Converted the lab's UE4 construction site into an Isaac world, loaded with `ENV_
 
 **Linear target:** not set. **Progress:** 81%.
 
-Re-run the core flight tests on the updated Starling sim model, and get one-drone gamepad flying working in the construction site. Hand-flying is how S5b will build its map, so this milestone prepares it.
+Re-run the core flight tests on the updated Starling sim model, and get one-drone keyboard flying working in the construction site. Hand-flying is how S5b will build its map, so this milestone prepares it.
 
-**Done when:** hover and 1 m steps are re-run and recorded; the three-drone crossing with collision avoidance is re-run and recorded; live gain tuning from the panel is tried in sim; drone_1 is hand-flown by gamepad in the construction site with cuVSLAM running, and the flight is scored.
+**Done when:** hover and 1 m steps are re-run and recorded; the three-drone crossing with collision avoidance is re-run and recorded; live gain tuning from the panel is tried in sim; drone_1 is hand-flown by keyboard in the construction site with cuVSLAM running, and the flight is scored.
 
 | Issue | Exact Linear title | Status |
 |---|---|---|

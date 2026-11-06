@@ -2,7 +2,7 @@ KNOW · SIM + REAL — one screen: where each Linear project is, what passed, wh
 
 # Milestones — where each project is
 
-Three Linear projects ([plan snapshot 2026-11-02](plans/2026-11-02-project-plan-linear.md); status and order live in [Linear](https://linear.app/nearlab)). **Every result is simulation unless the row says REAL DRONE.** Nothing on this software (`yikuan/SVG_ground_control_dev` @ `b21d28c`) has flown; the September 2026 flights were the previous software, archived in [LEDGER table 2](record/LEDGER.md#table-2--observed-on-the-previous-software-archived). Evidence: one row per test in [record/LEDGER.md](record/LEDGER.md); results tables and figures sit under each milestone on the project pages.
+Three Linear projects ([plan snapshot 2026-11-05](plans/2026-11-05-project-plan-linear.md); status and order live in [Linear](https://linear.app/nearlab)). **Every result is simulation unless the row says REAL DRONE.** Nothing on this software (`yikuan/SVG_ground_control_dev` @ `b21d28c`) has flown; the September 2026 flights were the previous software, archived in [LEDGER table 2](record/LEDGER.md#table-2--observed-on-the-previous-software-archived). Evidence: one row per test in [record/LEDGER.md](record/LEDGER.md); results tables and figures sit under each milestone on the project pages.
 
 ## Before the next real flight
 
@@ -16,9 +16,9 @@ Hazards the pilot assumes until the named issue re-earns them (detail: [HTX-R2.m
 
 ## Where each project is
 
-| Project (Linear) | Sim / real | Milestone in progress (snapshot 2026-11-02) | Last result | Next issue | Blocked by |
+| Project (Linear) | Sim / real | Milestone in progress (snapshot 2026-11-05) | Last result | Next issue | Blocked by |
 |---|---|---|---|---|---|
-| [HTX-R1 Swarm Sim Validation (Isaac)](projects/HTX-R1.md) | SIM ONLY (Isaac) | S5 Finish basic sim flight checks | [#31](record/LEDGER.md) yaw step passes, 1.65°, 0.03 s, 2026-11-02 → [record](record/sim_yaw_run3_record.md) | NEAR-789; then NEAR-866 (S5d, the real command route) | — |
+| [HTX-R1 Swarm Sim Validation (Isaac)](projects/HTX-R1.md) | SIM ONLY (Isaac) | S5 Finish basic sim flight checks | [#32](record/LEDGER.md) Drive mode, 0.9° off the nose, 2026-11-03 → [record](record/sim_teleop_frame_run1_record.md) | NEAR-790; then NEAR-866 (S5d, the real command route) | — |
 | [HTX-R2 Starling Flight Bring-up (M2–M8)](projects/HTX-R2.md) | REAL DRONE | R1 · New mocap and network pipeline (not started) | none on this software; previous software [A21](record/LEDGER.md), 2026-09-03 | NEAR-814 | mocap system back ~2026-11-09; the five hazards above |
 | [HTX-R3 Multi-Drone Localisation (VO + UWB)](projects/HTX-R3.md) | SIM + desk; L4 hand-carried | L1 · Team review pack | [#16](record/LEDGER.md) stereo VO 0.081 m RMSE over 162 m, 2026-10-22 | NEAR-843 | — |
 

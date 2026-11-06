@@ -22,7 +22,7 @@
 > It is also **NOT validated by us**: ⏳ **nothing below has flown at STE.** Treat every
 > ⏳ STE mark as "read this line, then go prove it".
 >
-> **In sim the drone is flown by keyboard, not by pad.** That path has flown in sim: keys, cold start, video and test are in §3b.
+> **In sim the drone is flown by keyboard, not by pad.** That path has flown in sim. The keys, cold start, video and test are in [localisation/README.md](../localisation/README.md#fly-it-with-the-keyboard-one-drone-sim-only). The keyboard window is §3b.
 
 *(Unfamiliar term? → [GLOSSARY.md](GLOSSARY.md))*
 
@@ -273,7 +273,7 @@ ros2 launch svg_ground_control ground_control.launch.py config:=$CFG
 ```
 
 `teleop_single_ours.yaml` is a new file, so run `bws && sws` once in the robot container before the first launch.
-For the keyboard window use `tools/sim.sh keys`. A pad in sim needs `tools/sim.sh relay` (§3b).
+For the keyboard window use `tools/sim.sh keys` (§3b). A pad in sim needs `tools/sim.sh relay` (§3b). The whole keyboard session, from a cold start, is in [localisation/README.md](../localisation/README.md#cold-start).
 
 (`takeoff` / `start` / `land` then go in any extra container shell — a new Terminator tab,
 `Ctrl-Shift-T`, dropped into the robot container the way RUNBOOK §A0 describes.)

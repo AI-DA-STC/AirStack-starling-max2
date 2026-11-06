@@ -20,7 +20,7 @@ three-drone swarms rehearsed in **Isaac Sim** before anything flies for real.
 | **fix something** | [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) — symptom → fix |
 | **see where each project is, what passed, what is next** | [MILESTONES.md](docs/MILESTONES.md) (one screen) → [docs/projects/](docs/projects/HTX-R1.md) |
 | **work with the AI assistant on this repo** | [AI_ASSIST.md](docs/AI_ASSIST.md) |
-| **fly in the construction site with the camera** (sim stereo VO) | [localisation/README.md](localisation/README.md) |
+| **fly in the construction site** (sim): the scored camera run, or drone_1 yourself by keyboard | [localisation/README.md](localisation/README.md), its first table picks the run |
 
 ## What we have achieved so far
 
@@ -54,7 +54,7 @@ Milestone by milestone, with evidence: [record/LEDGER.md](docs/record/LEDGER.md)
 | [CONFIG.md](docs/CONFIG.md) | Every value we fly: IPs, parameters, which config, sim airframe |
 | [SCENARIOS.md](docs/SCENARIOS.md) | The CBF filter and the swarm scenarios |
 | [BASESTATION.md](docs/BASESTATION.md) | The Foxglove panel, chip by chip |
-| [TELEOP.md](docs/TELEOP.md) | Gamepad flying through the commander, and keyboard flying in sim |
+| [TELEOP.md](docs/TELEOP.md) | Gamepad flying through the commander; the sim keyboard session is in [localisation/README.md](localisation/README.md#fly-it-with-the-keyboard-one-drone-sim-only) |
 | [MOCAP.md](docs/MOCAP.md) · [mocap.sh](mocap.sh) | The mocap bridge and the Motive PC |
 | [DRONE_SETUP.md](docs/DRONE_SETUP.md) | Provisioning a Starling from the box |
 | [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Symptom → first check → fix |
@@ -62,7 +62,7 @@ Milestone by milestone, with evidence: [record/LEDGER.md](docs/record/LEDGER.md)
 | [MIGRATION.md](docs/MIGRATION.md) | Branch history and what changed |
 | [GLOSSARY.md](docs/GLOSSARY.md) · [AI_ASSIST.md](docs/AI_ASSIST.md) | Terms · working with the assistant |
 | [CLAUDE.md](CLAUDE.md) | The assistant's brief and the iron rules |
-| [localisation/](localisation/README.md) | Camera-world sim runs: construction-site world, stereo VO (cuVSLAM), scoring. A sibling of `AirStack/`, never inside CMU's tree |
+| [localisation/](localisation/README.md) | Camera-world sim runs: construction-site world, stereo VO (cuVSLAM), scoring, and the one-drone [keyboard session](localisation/README.md#fly-it-with-the-keyboard-one-drone-sim-only). A sibling of `AirStack/`, never inside CMU's tree |
 | [AirStack/](AirStack/) | CMU AirStack snapshot, `yikuan/SVG_ground_control_dev` @ `b21d28c` ([its README](AirStack/README.md)) |
 | [`starling_1_indoor_params.params`](starling_1_indoor_params.params) | The drone's parameter set (QGC export) |
 | [tools/](tools/) · [patches/](patches/) | Sim session launcher, docs checker · our bug-fix patches |

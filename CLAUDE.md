@@ -22,7 +22,7 @@ parent/child. Milestones were RESET; **nothing on this software has flown; sim r
 | [MIGRATION.md](docs/MIGRATION.md) | old branch → this branch: removed/added, behaviours to unlearn, re-do list, archived-doc pointers |
 | [RUNBOOK.md](docs/RUNBOOK.md) | running a session — sim: `tools/sim_terminals.sh` (four Terminator tabs: Isaac Sim · Interfaces · Commander · Cockpit); real drone: tmux `bringup` panes; the panel instead of RViz |
 | [BASESTATION.md](docs/BASESTATION.md) | the Foxglove SVG Basestation panel, `/svg/commander_status` fields, LED strips |
-| [TELEOP.md](docs/TELEOP.md) | gamepad teleop (real drone) and sim keyboard teleop (Drive mode, Foxglove strip, cold start, video), the two fences, controller profiles, CMU `teleop.md` corrections |
+| [TELEOP.md](docs/TELEOP.md) | gamepad teleop (real drone), the sim keyboard window and its sim-only warning (§3b), the two fences, controller profiles, CMU `teleop.md` corrections; the sim keyboard session (keys, Drive mode, strip, cold start, video) is in [localisation/README.md](localisation/README.md#fly-it-with-the-keyboard-one-drone-sim-only) |
 | [SCENARIOS.md](docs/SCENARIOS.md) | CBF filter, runtime gains, formations / random goals / RC-intruder squeeze (sim now, real at M7 (HTX-R2, NEAR-840/841)) |
 | [CONFIG.md](docs/CONFIG.md) | live values (IPs, params, credentials, branch/commit, flight parameters per config) |
 | [MOCAP.md](docs/MOCAP.md) | laptop-side mocap bridge — unchanged by the branch switch |
@@ -34,7 +34,7 @@ parent/child. Milestones were RESET; **nothing on this software has flown; sim r
 | [SETUP.md](docs/SETUP.md) | new-laptop install + first build + the normal-looking error messages (moved from README 2026-10-21) |
 | [ARCHITECTURE.md](docs/ARCHITECTURE.md) | one-page primer, flight-lab network, whose document is whose (moved from README 2026-10-21) |
 | [tools/](tools/) | `sim.sh` front door (`setup · doctor · up · down · status · tabs · keys · test <name> … · figures · check`, [tools/README.md](tools/README.md)), `sim_terminals.sh` + `sim_tab.sh`, the hover-step tools |
-| [localisation/](localisation/README.md) | camera-world sim runs: construction-site world (`ENV_USD`), stereo VO with cuVSLAM, scoring vs the PX4 ulog, validation ladder — **sim-only exploration, nothing flies**. A sibling of `AirStack/` (git subtree, 2026-10-23), never inside CMU's tree |
+| [localisation/](localisation/README.md) | camera-world sim runs: construction-site world (`ENV_USD`), stereo VO with cuVSLAM, scoring vs the PX4 ulog, validation ladder — **sim-only exploration, nothing flies on cuVSLAM**; it also holds the one-drone [keyboard session](localisation/README.md#fly-it-with-the-keyboard-one-drone-sim-only). A sibling of `AirStack/` (git subtree, 2026-10-23), never inside CMU's tree |
 
 Architecture pictures: `pictures/Starling_Airstack_architecture.png` (control flow — drawn for
 the previous branch; README lists the four corrections: `./mocap.sh`, `px4_interface` box,

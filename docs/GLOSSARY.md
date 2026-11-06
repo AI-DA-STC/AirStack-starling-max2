@@ -191,7 +191,7 @@ from every doc; add a term here rather than re-explaining it inline elsewhere.
   nothing held, so `safe_teleop` refuses any mapped axis resting past ±0.9. The **deadzone**
   (0.15) is the slop around centre treated as zero, rescaled so full deflection still reaches 1.0.
 - **Drive mode** — the sim keyboard's default: ↑ always goes where the drone's nose points, like
-  driving a car. **F** switches to Room mode. Sim only ([TELEOP.md](TELEOP.md) §3b).
+  driving a car. **F** switches to Room mode. Sim only ([keys](../localisation/README.md#keys)).
 - **Room mode** — ↑ always goes toward the same wall of the room, whichever way the nose points,
   like moving a chess piece. It is how the gamepad flies the real drone.
 - **Relay (`teleop_frame`)** — a small node of ours between `safe_teleop` and the commander

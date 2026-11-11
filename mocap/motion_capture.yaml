@@ -11,7 +11,7 @@
   ros__parameters:
     type: "optitrack"            # open parser — works with Motive Broadcast AND Multicast
     hostname: "192.168.9.100"    # Motive PC, AI.R STC hangar wired LAN — seen 2026-11-11: Motive 3.5.0.2,
-                                 # NatNet 4.5, answers on 1510, 50 Hz broadcast on 1511 (was .152 on 09-10,
+                                 # NatNet 4.5, answers on 1510, broadcast on 1511 (was .152 on 09-10,
                                  # .124 on 08-28, .100 on 08-27: the hangar assigns by switch port). CONFIG.md.
 
     topics:
@@ -19,7 +19,8 @@
       poses:
         qos:
           mode: "sensor"         # best-effort, latest-wins — right for a high-rate stream
-          deadline: 50.0         # Hz — Motive's rate drifts (50 Hz 2026-08-28, 240 Hz 08-27);
+          deadline: 240.0        # Hz — Motive streams 240 Hz for the Starling (owner, 2026-11-11; was 50 Hz
+                                 # on 2026-08-28 and for the September flights);
                                  # only a QoS hint, the bridge follows the actual rate either way
       tf:
         child_frame_id: "{}_mocap"   # TF frame per body (flown setting); not used by AirStack

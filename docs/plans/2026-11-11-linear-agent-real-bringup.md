@@ -32,6 +32,10 @@ Evidence lives in the repo https://github.com/AI-DA-STC/AirStack-starling-max2 a
 
 > Real drone, 2026-11-11, 16:57:33 to 16:59:54 (+08). First flight on this software. Config `swarm_real_ours.yaml`, scenario hover, one drone, mocap. Takeoff to (−0.5, 0, 0.5) m, "holding takeoff position" after 7 s, about 2 min 20 s in the air, then land. The commander logged touchdown and its disarm. QGroundControl showed DISARMED after landing (owner's report). No video. Two more short hover flights followed at 17:08 and 17:09, each ending in a landing and a logged disarm. Not done in any of them: the RC takeover to MANUAL and the `land` reset that this issue also asks for. The software saw no command acknowledgement from PX4 at any point (see NEAR-821). Logs: `~/flight_logs/2026-11-11/` on the lab laptop.
 
+**NEAR-819 "Confirm the drone ID matches the controller’s target"**
+
+> Real drone, 2026-11-11. Read back on the drone: `px4-param show MAV_SYS_ID` gives 1. The interface runs with target_system=1. They match, and the drone armed, flew and disarmed on those commands.
+
 ## Part 2 · Set to In Progress, each with its comment
 
 **NEAR-816 "Mocap stream end to end: laptop receives it at full rate for 10 min with no stalls, it reaches the drone’s PX4, and moving the drone by hand moves the position the same way on every axis"**
@@ -44,10 +48,6 @@ Evidence lives in the repo https://github.com/AI-DA-STC/AirStack-starling-max2 a
 
 ## Part 3 · Comment only, status unchanged
 
-**NEAR-819 "Confirm the drone ID matches the controller’s target"**
-
-> 2026-11-11. Not confirmed yet. The interface ran with target_system=1 and the drone armed and flew, which suggests the ids match. `MAV_SYS_ID` has not been read back in QGroundControl.
-
 **NEAR-820 "Confirm only one connection watchdog runs on the drone"**
 
 > 2026-11-11. Not checked. The setup script installed and started `svg-microdds-watchdog` today. Whether the older `voxl-dds-retry` service is also running on this drone was not looked at.
@@ -55,6 +55,10 @@ Evidence lives in the repo https://github.com/AI-DA-STC/AirStack-starling-max2 a
 **NEAR-821 "Check the controller’s messages match the drone’s PX4 version"**
 
 > 2026-11-11. Finding: this drone does not publish the command-acknowledgement topic (`fmu/out/vehicle_command_ack` is absent from its topic list). The interface therefore logged no acknowledgement for any arm, takeoff or disarm command, on refused attempts and on the successful flight alike. The rule "no acknowledgement means the drone id is wrong" cannot be used on this drone.
+
+**NEAR-826 "Landing test: settle on the ground, then disarm"**
+
+> Real drone, 2026-11-11. Not run as a test. For the record: all four flights today landed with `land_settle_s` 0.0, and each time the commander logged touchdown and "landed, disarmed (attempt 1)". QGroundControl showed DISARMED after the first landing (owner's report). The other three were not checked in QGroundControl, and the 2.0 s setting was not tried.
 
 ## Part 4 · M4 goal flights
 
@@ -64,13 +68,13 @@ Evidence lives in the repo https://github.com/AI-DA-STC/AirStack-starling-max2 a
 
 **NEAR-830 "Measure braking at the fence walls".** Leave the status unchanged. Add this comment:
 
-> Real drone, 2026-11-11, 17:14:24 (+08). Observation, not a measurement. The third goal was x = 2.00, which is on the fence wall (fence x max = 2.0 m). Six seconds after it was sent the commander logged "drone_1 outside the fence (x>max), keep_in pushing it back". So at 1.0 m/s the drone went past the wall before it was pushed back. How far it went was not recorded. The owner landed five seconds later.
+> Real drone, 2026-11-11, 17:14:24 (+08). Observation, not a measurement. The third goal was x = 2.00, which is on the fence wall (fence x max = 2.0 m). Six seconds after it was sent the commander logged "drone_1 outside the fence (x>max), keep_in pushing it back". So the drone's position went past x = 2.0 m. The message appears for any distance past the wall, even a centimetre, and no recording was made, so how far it went is not known. The goal config has no margin inside the wall (`fence_margin_m` 0.0). The owner landed five seconds later.
 
 ## Part 5 · Write the sync record
 
 Write a Markdown file named `2026-11-11-linear-synced.md`. State only what Linear now holds:
 
-- the title and status of NEAR-814 to NEAR-825, NEAR-829 and NEAR-830;
+- the title and status of NEAR-814 to NEAR-826, NEAR-829 and NEAR-830;
 - each comment added here, and whether it was added now or already present;
 - the progress of milestones R1, M2, M3 and M4;
 - anything not applied, and why;

@@ -16,8 +16,8 @@
 > **2026-10-07**, bumped **2026-10-20** to `yikuan/SVG_ground_control_dev` @ `b21d28c` (added
 > `goal_sequence` and `figure_eight` — rows below, experiment.md C3 / C7 — and put
 > `goal_tracking.yaml` back on `goal`). **Sim validation has started** (ledger #1–#4 on
-> 2026-10-19, #8 and #13 on 10-20/21 — [record/LEDGER.md](record/LEDGER.md)); **nothing has flown
-> on the real drone.** Read every ✅ CMU below as "CMU says so", not "we flew it".
+> 2026-10-19, #8 and #13 on 10-20/21 — [record/LEDGER.md](record/LEDGER.md)); **on the real drone only
+> one-drone hover and goal legs have flown (ledger #33, 2026-11-11); no scenario on this page has.** Read every ✅ CMU below as "CMU says so", not "we flew it".
 
 ---
 

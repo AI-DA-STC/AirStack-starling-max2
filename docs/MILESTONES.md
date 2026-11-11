@@ -2,7 +2,7 @@ KNOW · SIM + REAL — one screen: where each Linear project is, what passed, wh
 
 # Milestones — where each project is
 
-Three Linear projects ([plan snapshot 2026-11-11](plans/2026-11-11-project-plan-linear.md); status and order live in [Linear](https://linear.app/nearlab)). **Every result is simulation unless the row says REAL DRONE.** Nothing on this software (`yikuan/SVG_ground_control_dev` @ `b21d28c`) has flown on the real drone; the September 2026 flights were the previous software, archived in [LEDGER table 2](record/LEDGER.md#table-2--observed-on-the-previous-software-archived). Evidence: one row per test in [record/LEDGER.md](record/LEDGER.md); results tables and figures sit under each milestone on the project pages.
+Three Linear projects ([plan snapshot 2026-11-11](plans/2026-11-11-project-plan-linear.md); status and order live in [Linear](https://linear.app/nearlab)). **Every result is simulation unless the row says REAL DRONE.** This software (`yikuan/SVG_ground_control_dev` @ `b21d28c`) first flew the real drone on 2026-11-11: one Starling, hover, goal legs and the fence ([#33](record/LEDGER.md)). Gamepad and multi-drone flying are unflown. The September 2026 flights were the previous software, archived in [LEDGER table 2](record/LEDGER.md#table-2--observed-on-the-previous-software-archived). Evidence: one row per test in [record/LEDGER.md](record/LEDGER.md); results tables and figures sit under each milestone on the project pages.
 
 ## Before the next real flight
 
@@ -19,7 +19,7 @@ Hazards the pilot assumes until the named issue re-earns them (detail: [HTX-R2.m
 | Project (Linear) | Sim / real | Milestone in progress (snapshot 2026-11-11) | Last result | Next issue | Blocked by |
 |---|---|---|---|---|---|
 | [HTX-R1 Swarm Sim Validation (Isaac)](projects/HTX-R1.md) | SIM ONLY (Isaac) | S5 Finish basic sim flight checks | [#32](record/LEDGER.md) Drive mode, 0.9° off the nose, 2026-11-03 → [record](record/sim_teleop_frame_run1_record.md) | NEAR-790; then NEAR-866 (S5d, the real command route) | — |
-| [HTX-R2 Starling Flight Bring-up (M2–M8)](projects/HTX-R2.md) | REAL DRONE | M4 · Goal flights with the braking fence (R1, M2, M3 also open) | no ledger row yet; first flights 2026-11-11, logs only ([HTX-R2](projects/HTX-R2.md)) | NEAR-816; then NEAR-826 | the five hazards above |
+| [HTX-R2 Starling Flight Bring-up (M2–M8)](projects/HTX-R2.md) | REAL DRONE | M4 · Goal flights with the braking fence (R1, M2, M3 also open) | [#33](record/LEDGER.md) first real flights: hover, goal legs, fence held, 2026-11-11 | NEAR-816; then NEAR-826 | the five hazards above |
 | [HTX-R3 Multi-Drone Localisation (VO + UWB)](projects/HTX-R3.md) | SIM + desk; L4 hand-carried | L1 · Team review pack | [#16](record/LEDGER.md) stereo VO 0.081 m RMSE over 162 m, 2026-10-22 | NEAR-843 | — |
 
 **Sim vs real:** until HTX-R1 S5d, sim drones take a different command route (MAVROS) from the real drone, run PX4 1.16 (real 1.14) with sim-only rate gains, and Isaac's clock runs 1.3–2× wall time; full list on [HTX-R1](projects/HTX-R1.md). NUS policies run in sim at S5e, then on real drones in NEAR Lab's mocap area at HTX-R2 M8. Camera setups: A = ZED-style added camera (every camera result so far, e.g. #15, #16); B = Starling built-in sensors (HTX-R1 S5c).
@@ -29,7 +29,7 @@ Hazards the pilot assumes until the named issue re-earns them (detail: [HTX-R2.m
 - [projects/HTX-R1.md](projects/HTX-R1.md) — sim validation S1–S10 with S5b–S5e (in work order): results tables, the S5 figures, sim vs real, sim debt
 - [projects/HTX-R2.md](projects/HTX-R2.md) — real-drone bring-up R1, M2–M8: the pilot's hazards box, carried-over table, archived observations to re-earn
 - [projects/HTX-R3.md](projects/HTX-R3.md) — localization research L0–L5
-- [record/LEDGER.md](record/LEDGER.md) — append-only evidence: table 1 this software (#1–#32, all sim), table 2 previous software (A1–A21)
+- [record/LEDGER.md](record/LEDGER.md) — append-only evidence: table 1 this software (#1–#33; #33 is the first REAL row), table 2 previous software (A1–A21)
 - [PX4_MSGS_AUDIT.md](PX4_MSGS_AUDIT.md) — PX4 v1.14 vs px4_msgs audit and its re-run method (NEAR-821)
 - Procedures: [RUNBOOK.md](RUNBOOK.md) · [PREFLIGHT.md](PREFLIGHT.md) · [DRONE_SETUP.md](DRONE_SETUP.md) · [SCENARIOS.md](SCENARIOS.md) · sim hover-test thresholds: [tools/README.md](../tools/README.md#thresholds)
 - Per test: one LEDGER row + one Result cell on the project page (both from the record), one Linear comment with the ledger number and record link; then the owner ticks the issue in Linear.

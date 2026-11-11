@@ -63,7 +63,7 @@
 | `/drone_1/pose` missing / 0 Hz | Is `./mocap.sh` running (laptop host terminal, NOT docker)? Then `./mocap.sh check` — its verdict names the culprit (Motive not streaming / wrong network / port 1511 squatter). Full table: [MOCAP.md](MOCAP.md) §5 |
 | **Poses stop while the drone is AIRBORNE** | **Land or kill FIRST** ([PREFLIGHT.md](PREFLIGHT.md)), debug after — EKF2 drifts within seconds without vision |
 | Bridge lists `cf1…` bodies but no `drone_1` | Rigid body not created/named yet in Motive — [MOCAP.md](MOCAP.md) §6.3; then restart the bridge (body list read once at startup) |
-| `/drone_1/pose` at ~50 Hz, not 120+ | Normal — our Motive runs 50 Hz ([CONFIG.md](CONFIG.md); adjustable in Motive's camera settings) |
+| `/drone_1/pose` at ~240 Hz | Normal — our Motive runs 240 Hz since 2026-11-11, 50 Hz before ([CONFIG.md](CONFIG.md); adjustable in Motive's camera settings) |
 | Floor z reads ~1 m with the drone on the ground | Motive origin/ground-plane problem — STOP, recalibrate + frame hand-check ([MOCAP.md](MOCAP.md) §6.1) |
 | natnet log: `Error getting Analog frame rate` | Harmless (legacy driver; no force plates on our rig). Ignore |
 

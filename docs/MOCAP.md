@@ -19,7 +19,7 @@ drone would be flying blind. Our hangar solves this with **motion capture ("moca
 eight OptiTrack infrared cameras on the ceiling watch small reflective balls
 ("markers") glued to the drone. A Windows PC running **Motive** (the OptiTrack
 software) combines the eight camera views and computes the drone's exact position and
-orientation many times per second (50 Hz at the moment — configurable up to 240 Hz),
+orientation many times per second (240 Hz since 2026-11-11; it was 50 Hz for the September flights),
 to about a millimetre.
 
 That position still has to travel from the Motive PC into the drone's flight
@@ -68,7 +68,7 @@ Verify inside the robot container — if the stack isn't up yet:
 `./airstack.sh connect robot` (lands in a tmux pane — details: [RUNBOOK.md](RUNBOOK.md) §B):
 
 ```bash
-ros2 topic hz /drone_1/pose        # want Motive's rate — 50 Hz as of 2026-08-28
+ros2 topic hz /drone_1/pose        # want Motive's rate — 240 Hz since 2026-11-11
 ```
 
 If that shows a steady rate matching Motive's, mocap is done — continue with the normal
@@ -165,7 +165,7 @@ differ on our setup (checked 2026-08-27):
 |---|---|
 | Launch `natnet_ros2` in the container (§B4) | **Don't** — it cannot receive our Motive's broadcast stream (§3). Run `./mocap.sh` on the laptop instead. Output topics are identical, so every later step is unchanged. |
 | serverIP/clientIP "already defaulted to this rig" | Their rig. Ours: Motive `192.168.9.124`, laptop `192.168.9.107` — the launch-file defaults now carry these, but check [CONFIG.md](CONFIG.md) (DHCP drifts). |
-| `ros2 topic hz /drone_1/pose` → ~180 Hz | Whatever Motive's capture rate is — **50 Hz** as of 2026-08-28 (it briefly ran at 240 Hz on 08-27 after a profile edit; the rate lives in Motive's camera settings and drifts when profiles change). |
+| `ros2 topic hz /drone_1/pose` → ~180 Hz | Whatever Motive's capture rate is — **240 Hz** since 2026-11-11 (the owner's choice for the Starling; 50 Hz on 2026-08-28 and for the September flights; the rate lives in Motive's camera settings and drifts when profiles change). |
 | `pub_rigid_body:=true` "(now the default)" | True as documented — but note if it's ever `false` the driver publishes **nothing at all** (no `/…/pose`, no `/tf`) while still logging "Configured!/Activated!" happily. That cost us hours. |
 | Motive body streams as `drone1` (implied by some notes) | The body is **`drone_1`** — underscore. Topic names copy Motive's body name letter-for-letter. |
 | §B4b lists its two verify commands (`hz in/vehicle_visual_odometry`, `echo out/vehicle_odometry`) *before* the §B5 commander launch | They can only pass **after** `ground_control.launch.py … use_mocap:=true` is up — that launch is what starts `mocap_bridge`, the publisher of `in/vehicle_visual_odometry` (true on CMU's branch too, verified 2026-08-28). Only §B4b's EKF2 *params* are a genuine before-hand (one-time) prereq. |
@@ -296,7 +296,7 @@ effectively **broadcasts** — a hidden profile flag
 need to fight it: our `./mocap.sh` bridge hears broadcast (it's the whole reason it
 exists). Full story: §3.
 
-**Frame rate:** currently **50 Hz** (lives in Motive's camera settings, not this
+**Frame rate:** currently **240 Hz** (since 2026-11-11; lives in Motive's camera settings, not this
 pane, and drifts when profiles change). Changing it is fine — the whole pipeline
 follows Motive's rate — but **update [CONFIG.md](CONFIG.md)** so the next person
 running `ros2 topic hz` expects the right number.

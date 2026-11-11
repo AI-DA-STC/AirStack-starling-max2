@@ -139,7 +139,7 @@ command the vehicle. Full guide: [BASESTATION.md](BASESTATION.md) §8.
 
 - [ ] Agent `session established` and all 24 `/drone_N/fmu/*` topics on the laptop — RUNBOOK §B step 3.
 - [ ] `px4_interface` startup line shows `target_system=N` — RUNBOOK §B step 5.
-- [ ] Mocap pose: `ros2 topic hz /drone_N/pose` ≈ 50 Hz in the robot container, tracks the hand-carried drone — MOCAP.md.
+- [ ] Mocap pose: `ros2 topic hz /drone_N/pose` ≈ 240 Hz in the robot container, tracks the hand-carried drone — MOCAP.md.
 - [ ] EKF2 fusion in → out: `fmu/in/vehicle_visual_odometry` feeding, `fmu/out/vehicle_odometry` positions match mocap within ~2 cm — RUNBOOK §B step 6.
 - [ ] Frame hand-check: carry North/East/up, `pos[0]`↑ / `pos[1]`↑ / `pos[2]`↓ (NED) — a wrong frame flies into a wall — RUNBOOK §B step 6.
 - [ ] `ros2 topic echo /svg/commander_status --once` shows `drone_N` with `"odom_fresh": true`, `"state": "IDLE"` — [BASESTATION.md](BASESTATION.md) §4.

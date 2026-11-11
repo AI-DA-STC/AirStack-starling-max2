@@ -256,8 +256,8 @@ startup.* **Laptop** terminal (NOT a container shell):
 ```bash
 cd ~/AirStack-starling-max2 && ./mocap.sh      # this repo's root
 ```
-Leave running. Verify (pane 4): `ros2 topic hz /drone_1/pose` (Motive's rate — 50 Hz as of
-2026-08-28). Poses missing → `./mocap.sh check` (laptop) names the culprit.
+Leave running. Verify (pane 4): `ros2 topic hz /drone_1/pose` (Motive's rate — 240 Hz since
+2026-11-11). Poses missing → `./mocap.sh check` (laptop) names the culprit.
 
 **5 — Per-drone interfaces** (turns `/fmu` traffic into the odometry the commander needs —
 without this the Basestation shows no odometry and takeoff is refused). Pane 2:

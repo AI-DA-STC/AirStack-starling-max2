@@ -1,4 +1,4 @@
-RECORD · REAL DRONE — nothing on this software has flown on the real drone. Every result cell on this page is `—` until a LEDGER row with REAL exists; the archived tables are observations on the previous software, not results. Codes, titles and "Done when" are Linear's, verbatim.
+RECORD · REAL DRONE — first flights on this software: 2026-11-11, one Starling ([#33](../record/LEDGER.md)). A result cell is filled only from a LEDGER row marked REAL; the archived tables are observations on the previous software, not results. Codes, titles and "Done when" are Linear's, verbatim.
 
 # HTX-R2 Starling Flight Bring-up (M2–M8)
 
@@ -52,7 +52,7 @@ Observed on the previous software (archived branch `archive/airstack-starling-ma
 | A13 | mocap poses on the laptop via `./mocap.sh` at 50 Hz (2026-08-28) | NEAR-816 |
 | A16 | frame hand-check, axes correct (2026-08-28) | NEAR-816 |
 
-Decisive check: `./mocap.sh check` → `./mocap.sh` → `ros2 topic hz /drone_1/pose` (50 Hz) → panel EKF `EV FUSED` before any arming ([MOCAP.md](../MOCAP.md)). The laptop must sit on 192.168.9.x: NatNet is multicast and never crosses the router.
+Decisive check: `./mocap.sh check` → `./mocap.sh` → `ros2 topic hz /drone_1/pose` (240 Hz) → panel EKF `EV FUSED` before any arming ([MOCAP.md](../MOCAP.md)). The laptop must sit on 192.168.9.x: NatNet is multicast and never crosses the router.
 
 ### M2 · Drone setup and hand-carry, propellers off — REAL DRONE, props off
 **Purpose:** with the props off, every link in the chain is checked before anything can hurt anyone: the drone answers to the controller's id, one watchdog runs, the estimator fuses mocap, the panel tracks a hand-carried drone, the kill switch works.
@@ -93,14 +93,14 @@ Observed on the previous software (archived branch `archive/airstack-starling-ma
 
 ### M3 · First flight on the new software — REAL DRONE
 **Purpose:** the first flight on this software proves the full loop in the air: commands are acknowledged, the fence holds, landing settles and disarms. It is also where the carried-over hazards (RC takeover, disarm) are re-observed.
-Linear (snapshot 2026-11-11): 20 % · no ledger row on this software (first flights 2026-11-11: logs only)
+Linear (snapshot 2026-11-11): 20 % · last ledger row #33 (2026-11-11)
 
 **Done when** (Linear's target, verbatim; a target, not a result): every command is acknowledged; landing settles and disarms; dummy-payload hover yields hover throttle and flight time.
 
 | Issue | Title (Linear, verbatim) | Linear status | Result | Evidence |
 |---|---|---|---|---|
 | NEAR-824 | Preflight card dry run with the new software | Backlog | — | — |
-| NEAR-825 | First flight: takeoff, hover, land | Done | — | `~/flight_logs/2026-11-11/` (commander log; no recording) |
+| NEAR-825 | First flight: takeoff, hover, land | Done | Flown — hover about 2 min 20 s, landed and disarmed, 2026-11-11 | [#33](../record/LEDGER.md) |
 | NEAR-826 | Landing test: settle on the ground, then disarm | Backlog | — | — |
 | NEAR-827 | Weigh the flight-ready drone and fit a dummy payload mass | Backlog | — | — |
 | NEAR-828 | Dummy-payload hover: hover throttle and flight time to 20 % battery | Backlog | — | — |
@@ -120,14 +120,14 @@ Decisive check in hover: `ros2 topic hz /drone_1/fmu/trajectory_command` ≈ 20 
 
 ### M4 · Goal flights with the braking fence — REAL DRONE
 **Purpose:** goal flights are the building block of every scenario. This checks the speed-limited profile, how hard the fence brakes at a wall, live gain changes and where a hold stops the drone, on one drone before any formation.
-Linear (snapshot 2026-11-11): 13 % · no ledger row on this software (first flights 2026-11-11: logs only)
+Linear (snapshot 2026-11-11): 13 % · last ledger row #33 (2026-11-11)
 
 **Done when** (Linear's target, verbatim; a target, not a result): goal legs use the smooth speed-limited profile; wall braking distance is measured; gains change live; hold stops the drone where expected.
 
 | Issue | Title (Linear, verbatim) | Linear status | Result | Evidence |
 |---|---|---|---|---|
-| NEAR-829 | Goal legs on the speed-limited profile | In Progress | — | `~/flight_logs/2026-11-11/` (commander log; no recording) |
-| NEAR-830 | Measure braking at the fence walls | In Progress | — | `~/flight_logs/2026-11-11/` (commander log; no recording) |
+| NEAR-829 | Goal legs on the speed-limited profile | In Progress | Flown — 3 goals at 1.0 m/s, profile not measured, 2026-11-11 | [#33](../record/LEDGER.md) |
+| NEAR-830 | Measure braking at the fence walls | In Progress | Held at the +x wall — distance not measured, 2026-11-11 | [#33](../record/LEDGER.md), [hangar video](../../videos/geofence_test_real_1080p.mp4) |
 | NEAR-831 | Change gains live from the panel in flight | Backlog | — | — |
 | NEAR-832 | Check where a hold stops the drone | Backlog | — | — |
 

@@ -1,8 +1,8 @@
-# PRE-FLIGHT & EMERGENCY CARD — v2026-11-06 — print this, laminate it, keep it in the hangar
+# PRE-FLIGHT & EMERGENCY CARD — v2026-11-11 — print this, laminate it, keep it in the hangar
 
 > **DO · WORLD: REAL DRONE — this card gates every takeoff.** This stack bypasses AirStack's `drone_safety_monitor`: **PX4's failsafes plus the RC kill switch are the entire safety net.** Reprint the card whenever the version above changes.
 
-*(Starling Max 2 · AirStack `yikuan/SVG_ground_control_dev` @ `b21d28c` · OptiTrack mocap — details: RUNBOOK.md §B/§C · nothing on this software has flown on the real drone; hazards: docs/projects/HTX-R2.md "Before the next real flight")*
+*(Starling Max 2 · AirStack `yikuan/SVG_ground_control_dev` @ `b21d28c` · OptiTrack mocap — details: RUNBOOK.md §B/§C · first real flights on this software 2026-11-11 (one drone: hover, goal legs); gamepad and multi-drone unflown; hazards: docs/projects/HTX-R2.md "Before the next real flight")*
 
 ## Before EVERY session
 
@@ -15,7 +15,7 @@
 - [ ] Mode switch (ch6) at **MANUAL** (low) until told otherwise
 - [ ] QGroundControl open, showing the vehicle — the ONLY trustworthy arming display (the Basestation's Interface column is an ACK log, not an arming display)
 - [ ] Mocap bridge running (`./mocap.sh` — laptop terminal, NOT docker);
-      `ros2 topic hz /drone_1/pose` ≈ 50 Hz (container)
+      `ros2 topic hz /drone_1/pose` ≈ 240 Hz (container)
 - [ ] Drone on floor: `/drone_1/pose` z reads ≈ 0.03–0.07 m (if ~1 m: Motive origin problem — STOP)
 - [ ] Drone placed at/near the config's `hover_positions` x,y (takeoff flies to that absolute point)
 - [ ] EKF2 fusing: `fmu/out/vehicle_odometry` position matches the pose within a few cm

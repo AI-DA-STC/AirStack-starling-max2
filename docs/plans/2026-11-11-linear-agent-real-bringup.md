@@ -66,9 +66,15 @@ Evidence lives in the repo https://github.com/AI-DA-STC/AirStack-starling-max2 a
 
 > Real drone, 2026-11-11, 17:13:21 to 17:14:29 (+08). First goal flight on this software. Config `goal_single_ours.yaml`: speed 1.0 m/s, acceleration 3.0 m/s², fence `keep_in` ±2 m. After takeoff and Start, three goals were sent from the Foxglove panel at 0.5 m height: x = 1.00, then x = −1.00, then x = 2.00. The drone flew each one (owner's report; the commander logged each goal). No position recording was made, so the shape of the speed profile is not measured yet. That is why this stays In Progress. An earlier goal sent during a hover flight was ignored: the commander takes goals only in the goal scenario, and the panel does not warn about it.
 
-**NEAR-830 "Measure braking at the fence walls".** Leave the status unchanged. Add this comment:
+**NEAR-830 "Measure braking at the fence walls".** Set the status to **In Progress**, and add this comment:
 
-> Real drone, 2026-11-11, 17:14:24 (+08). Observation, not a measurement. The third goal was x = 2.00, which is on the fence wall (fence x max = 2.0 m). Six seconds after it was sent the commander logged "drone_1 outside the fence (x>max), keep_in pushing it back". So the drone's position went past x = 2.0 m. The message appears for any distance past the wall, even a centimetre, and no recording was made, so how far it went is not known. The goal config has no margin inside the wall (`fence_margin_m` 0.0). The owner landed five seconds later.
+> Real drone, 2026-11-11, two goal flights with `goal_single_ours.yaml` (fence `keep_in`, x max 2.0 m, no margin, 1.0 m/s, brake 4.0 m/s²).
+>
+> Flight 1, 17:14: one goal at x = 2.00, on the wall. The commander logged "drone_1 outside the fence (x>max), keep_in pushing it back" once.
+>
+> Flight 2, 17:31:43 to 17:34:14: goals sent beyond the wall on purpose, at x = 2.10, 2.20, 2.40 and 2.50, with returns to x = 1.00 and 0.00 in between. Each time the fence limited the drone on x (85 "fence keep-in: drone_1 limited on x" lines, braking up to 4.0 m/s²) and the drone held at the wall instead of flying on to the goal. The owner watched it and reports that the geofence works.
+>
+> Still open: the braking distance itself. The "outside the fence" message appeared 21 times in flight 2. It prints whenever the position is past x = 2.0 m by any amount, so the drone sat on the wall and crossed it slightly, again and again. No recording was running in either flight, so how far it went past the wall is not measured. Only the +x wall was tried.
 
 ## Part 5 · Write the sync record
 

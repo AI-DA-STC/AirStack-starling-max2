@@ -10,8 +10,9 @@
 /motion_capture_tracking:
   ros__parameters:
     type: "optitrack"            # open parser — works with Motive Broadcast AND Multicast
-    hostname: "192.168.9.152"    # Motive PC, AI.R STC hangar wired LAN — seen 2026-09-10 (was .124 on
-                                 # 08-28, .100 on 08-27: the hangar assigns by switch port). CONFIG.md.
+    hostname: "192.168.9.100"    # Motive PC, AI.R STC hangar wired LAN — seen 2026-11-11: Motive 3.5.0.2,
+                                 # NatNet 4.5, answers on 1510, 50 Hz broadcast on 1511 (was .152 on 09-10,
+                                 # .124 on 08-28, .100 on 08-27: the hangar assigns by switch port). CONFIG.md.
 
     topics:
       frame_id: "world"          # frame stamped on /poses (matches natnet_ros2's default)

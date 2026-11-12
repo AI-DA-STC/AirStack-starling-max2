@@ -67,3 +67,4 @@ The last cell is `this` (the commit that carries the entry) or the sha(s) of old
 | CHG-0057 | 2026-11-11 | real-drone | Motive streams 240 Hz for the Starling (owner): mocap/motion_capture.yaml poses QoS deadline 50.0 → 240.0; CONFIG.md Motive frame rate 50 Hz → 240 Hz | this |
 | CHG-0058 | 2026-11-12 | real-drone | new config swarm_real_drone2_ours.yaml: swarm_real_ours.yaml with the three drone_names lists set to drone_2, to fly the second Starling alone (hover); nothing else differs | this |
 | CHG-0059 | 2026-11-12 | real-drone | new config goal_two_ours.yaml: goal_single_ours.yaml for drone_1 + drone_2 (drone_modes real,real; hover points (-1,0,0.5) and (+1,0,0.5); scenario_speed_mps 1.0 → 0.5), for the first real two-drone CBF test | this |
+| CHG-0060 | 2026-11-12 | real-drone | goal_two_ours.yaml fence_max [2.0, 2.0, 2.0] → [4.0, 4.0, 4.0] (owner); fence_min unchanged, so the keep_in box is x −2..4, y −2..4, z 0..4 m; unflown at this size | this |

@@ -4,7 +4,10 @@
 #   hover_positions  drone_1 (-1.0, 0, 0.5) · drone_2 (+1.0, 0, 0.5): 2.0 m apart, same height
 #   scenario_speed_mps  0.5 (was 1.0): first two-drone flights are slow; cbf_max_speed_mps stays 1.0
 # Unchanged: nobody CBF-exempt, CBF radius 0.55 m (keep-out 1.10 m centre to centre), alpha 2.5,
-# keep_in fence +-2 m XY / 0-2 m Z, land_speed_mps 0.6, land_settle_s 0.0. UNFLOWN with two drones.
+# land_speed_mps 0.6, land_settle_s 0.0. UNFLOWN with two drones.
+#   fence_max  [4.0, 4.0, 4.0] (was [2.0, 2.0, 2.0], owner 2026-11-12, CHG-0060); fence_min unchanged,
+#   so the keep_in box is x -2..4, y -2..4, z 0..4 m. This box is UNFLOWN: the +x wall at 2.0 m
+#   is the only wall tested (2026-11-11). It must sit inside the net and the mocap coverage.
 # Same height on purpose: the CBF correction then stays horizontal (no drone is pushed over another).
 #
 #   ros2 launch svg_ground_control real_interfaces.launch.py drones:=drone_1,drone_2 target_systems:=1,2
@@ -56,14 +59,15 @@ swarm_commander:
     teleop_max_speed_mps: 0.5
     teleop_accel_mps2: 5.0
 
-    # keep_in: the drone brakes before the wall instead of freezing. Box validated 2026-09-03.
+    # keep_in: the drone brakes before the wall instead of freezing.
+    # Box enlarged 2026-11-12 (owner): fence_max 2 -> 4 m on x, y and z. UNFLOWN at this size.
     fence_enabled: true
     fence_behavior: "keep_in"
     fence_brake_accel_mps2: 4.0  # live; keep >= goal_accel_mps2
     fence_keep_in_gain: 2.0      # live; CMU: keep 2 on the trajectory output
     fence_margin_m: 0.0
     fence_min: [-2.0, -2.0, 0.0]
-    fence_max: [2.0, 2.0, 2.0]
+    fence_max: [4.0, 4.0, 4.0]
     teleop_fence_enabled: false
 
 mocap_bridge:

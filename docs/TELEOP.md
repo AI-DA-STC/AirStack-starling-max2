@@ -100,12 +100,12 @@ in axis numbers:
 | `xbox_usb` | Xbox 360 wired pad (Linux `xpad`) | axes **4 / 3** | 1 / 0 | button **4** |
 | `dragonrise_usb` | generic DragonRise / SHANWAN "Android gamepad" (`hid-generic`) | axes **3 / 2** | 1 / 0 | button **6** |
 
-**Which one do we have?** ⏳ **Unknown — nobody has written it down.** Every shipped config
+**Which one do we have?** A Logitech F310, not yet tried, no recorded profile ([CONFIG.md](CONFIG.md) → Files & identities). Every shipped config
 pins `dragonrise_usb` (the `safe_teleop` block of `teleop_real.yaml`, `teleop_single.yaml` and
 every other shipped yaml) and the config beats the node default (`resolve_controller` in
 `safe_teleop/launch_helpers.py`: launch arg > config block > node default), so a real Xbox pad needs
 `teleop_controller:=xbox_usb` on the launch line or a yaml edit.
-⏳ **STE: record which pad the lab has in [CONFIG.md](CONFIG.md)** and stop guessing.
+⏳ **STE: record the F310's `teleop_controller` profile in [CONFIG.md](CONFIG.md)** once it is tried.
 
 **The wrong-axis-map guard.** On the DragonRise layout axes 4 and 5 are analog triggers that
 **rest at full scale**, so flying that pad on the `xbox_usb` map would read an untouched

@@ -6,7 +6,7 @@ One real ModalAI **Starling Max 2**, flown indoors with **OptiTrack** motion-cap
 **AirStack** ground-control stack (a known-good snapshot lives in [`AirStack/`](AirStack/)), with
 three-drone swarms rehearsed in **Isaac Sim** before anything flies for real.
 
-**Status:** snapshot `yikuan/SVG_ground_control_dev` @ `b21d28c` · sim results in [record/LEDGER.md](docs/record/LEDGER.md) · **real drone: first flights 2026-11-11, one drone (hover, goal legs, fence) — [ledger #33](docs/record/LEDGER.md); gamepad and multi-drone flying are unflown** — the hazards before the next real flight are the first section of [MILESTONES.md](docs/MILESTONES.md).
+**Status:** snapshot `yikuan/SVG_ground_control_dev` @ `b21d28c` · sim results in [record/LEDGER.md](docs/record/LEDGER.md) · **real drone: first flights 2026-11-11, one drone (hover, goal legs, fence) — [ledger #33](docs/record/LEDGER.md); two drones together with the collision filter observed 2026-11-12 — [ledger #35](docs/record/LEDGER.md); gamepad, formations and random goals are unflown** — the hazards before the next real flight are the first section of [MILESTONES.md](docs/MILESTONES.md).
 
 ## I want to…
 

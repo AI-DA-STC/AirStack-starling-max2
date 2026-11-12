@@ -50,6 +50,13 @@
 | Drone SSH login | user `root` · password `oelinux123` (ModalAI factory default — **verified by login 2026-09-01**; the previously-noted `AI.DA@STEngineering` is REJECTED by Starling 1, that credential belongs to something else) (⚠️ lab-LAN device credential stored here deliberately — keep this repo private) | `ssh root@<DRONE_IP>` | RUNBOOK §B step 0 re-provisioning; pulling `.ulg` flight logs from `/data/px4/log/` | Update here if the image/password ever changes |
 | Router admin page | `http://192.168.9.1:8080` (hangar router — shows every device's current IP) | open in a browser on the hangar LAN | The authority for ALL drifting IPs; alternatively contact **Jeremy Chia** | — |
 
+**The two Starlings (read 2026-11-12, two-drone session, [ledger #34–#35](record/LEDGER.md)).** The mocap bodies are on the right drones and the heading is right to within about 8°.
+
+| Name | Drone | IP | WiFi | `MAV_SYS_ID` | `XRCE_DDS_KEY` |
+|---|---|---|---|---|---|
+| `drone_1` | older Starling, WiFi dongle — GROUNDED, front-right motor start fault | `10.40.2.11` | `wlan0` | 1 | 2 |
+| `drone_2` | newer Starling, D0012 (flew alone 2026-11-11 as `drone_1`, [#33](record/LEDGER.md)) | `10.40.2.10` | `mlan0` | 2 | 1 |
+
 **Moved from RUNBOOK §B step 1 (2026-10-21) — reading today's IPs.** Compare against **CONFIG.md** (the single source of truth for every IP/SSID/name
 — including *what to do* when one has drifted). Quick version: `enp…` (Ethernet, lab LAN
 `192.168.9.x`) is the mocap path — step 4 listens on it automatically. `wlp…` (`10.40.2.x`)
@@ -202,6 +209,7 @@ Flight-log-verified additions (2026-09-01/03 sessions):
 | Hover / first real flight (M3) | **`swarm_real_ours.yaml`** (ours, 2026-10-07) | `drone_1` only, hover z 0.5, `land_speed_mps` 0.6, fence `[-2,-2,0]..[2,2,2]`, vmax 1.0, `hold_all`, `land_settle_s` 0.0. Derived from `swarm_real.yaml` (3 real drones, z 1.2, `land_speed_mps` 0.3 ⚠️) |
 | Goal flights (M4) | **`goal_single_ours.yaml`** (ours, 2026-10-07) | `drone_1`, `goal`, `keep_in` (brake 4, gain 2), speeds 1.0, `goal_accel` 3.0, `land_speed_mps` 0.6, teleop fence off, nobody exempt. Derived from `goal_single.yaml` (speeds **10.0** ⚠️, `land_speed_mps` 0.8, `drone_1` **exempt** — at `cf719f0` it targeted `drone_2`; fixed upstream at `b21d28c`) |
 | Gamepad (M5) | **`teleop_real_ours.yaml`** (added 2026-10-21, ⏳ unflown) | 1 real drone, `keep_in` geofence ±2 m XY / 0–2 m Z + teleop fence `[-1.5,-1.5,0.3]..[1.5,1.5,1.8]`, `land_speed_mps` 0.6, `land_settle_s` 0.0, `cbf_max_speed_mps` 1.0, `teleop_max_speed_mps` 0.5, hover z 0.5; pad profile still unrecorded → `teleop_controller:=` on the launch line ([TELEOP.md](TELEOP.md) §5). CMU's `teleop_real.yaml` (land 0.3, room fences) is never flown — iron rule 8 |
+| Two drones (M7) | **`goal_two_ours.yaml`** (ours, 2026-11-12, CHG-0059 to CHG-0063 in [CHANGES.md](record/CHANGES.md)) | `drone_1` + `drone_2` real, `goal`, speed 0.5 m/s, both drones filtered by the CBF (nobody exempt), `keep_in` fence `[-2,-2,0]..[2,2,4]` and takeoff points `drone_1` (1.0, −0.2, 2.0), `drone_2` (−1.5, −0.1, 2.0) as flown from 17:19. `cbf_safety_radius_m` 0.55; changed from the panel on the ground to 0.85, then 0.80. A commander restart resets it to 0.55 |
 | Keyboard teleop in sim (S5) | **`teleop_single_ours.yaml`** (ours, 2026-11-03) | as `teleop_single.yaml`, with both fences off (`fence_enabled`, `teleop_fence_enabled`: false, 2026-11-03: the construction-site sessions need no box). `safe_teleop` publishes on `…/teleop_command_stick` and the `teleop_frame` relay feeds the commander (Drive/Room mode, [keyboard session](../localisation/README.md#fly-it-with-the-keyboard-one-drone-sim-only)) |
 | Sim CBF demo (M1) | **`cbf_sim.yaml`** (ours since 2026-10-19/20) | 3 sim, `antipodal` (override with `scenario:=`), `scenario_speed_mps` **2.0**, `cbf_max_speed_mps` **4.0**, `goal_accel_mps2` **6.0**, `land_speed_mps` 1.0, settle 2.0 s + disarm retry 1.0 s × 5 — all of it **sim-only — never port to the drone**. Real-demo speeds; `ros2 param set` overrides live |
 | Other sim files | `swarm_sim.yaml`, `teleop_single.yaml`, `squeeze_3drone.yaml`, `goal_tracking_original.yaml` | as shipped, for M1 sim rehearsals (`goal_tracking_original.yaml` is CMU's pre-mocap 3-drone sim file, new 2026-10-20, reference only) |
@@ -317,7 +325,7 @@ UDP 14550). ✅ Set 2026-08-11 (drone→Mocap PC ping verified 3–7 ms).
 
 | Value | Current | If it changes → do this |
 |---|---|---|
-| `"primary_static_gcs_ip"` | the **laptop's** hangar-LAN IP, `192.168.9.107` (QGC moved to the laptop for the 09-01→03 flight sessions and connected — ⚠️ value inferred from that, verify by read-back on the drone; history: `192.168.0.190` = Mocap PC 08-11, factory `192.168.8.10`) | Set to the QGC machine's current IP, then `systemctl restart voxl-mavlink-server`; QGC connects within seconds. Read-back: `ssh root@<DRONE_IP> "grep gcs_ip /etc/modalai/voxl-mavlink-server.conf"` |
+| `"primary_static_gcs_ip"` | read back 2026-11-12: older Starling (`drone_1`) `192.168.8.10`, newer (`drone_2`) `192.168.9.111`. Neither is the laptop (`192.168.9.107`). QGC reaches the drones through two saved UDP links instead: `Starling1` → `10.40.2.11:14550`, `Starling2` → `10.40.2.10:14550` (history: `192.168.0.190` = Mocap PC 08-11, factory `192.168.8.10`) | Set to the QGC machine's current IP, then `systemctl restart voxl-mavlink-server`; QGC connects within seconds. Read-back: `ssh root@<DRONE_IP> "grep gcs_ip /etc/modalai/voxl-mavlink-server.conf"` |
 | `"primary_static_gcs_ip_port"` | `14550` | QGC's default listen port — leave it |
 
 ## Files & identities
@@ -327,7 +335,7 @@ UDP 14550). ✅ Set 2026-08-11 (drone→Mocap PC ping verified 3–7 ms).
 | Working folder (laptop) | `~/AirStack-starling-max2/AirStack` — on the new `main` since 2026-10-07 18:30 (container recreated, workspace rebuilt clean; old-branch config edits backed up in `~/AirStack-starling-max2-local-edits-2026-10-07/`) |
 | **AirStack branch / snapshot** | CMU `yikuan/SVG_ground_control_dev` @ **`b21d28c`** since **2026-10-20** (patch `cf719f0..b21d28c` applied over the 10-07 snapshot; tests 181/181 at the bump, **185 passed** 2026-10-20 with our landing tests; robot container NOT rebuilt — only `bws` + panel `install.py`). **How to check:** `git log -1 -- AirStack` in this repo. **If it changes:** read [MIGRATION.md](MIGRATION.md), do its §6 re-do list, restart the sim ladder ([projects/HTX-R1.md](projects/HTX-R1.md)). History: note below this table |
 | Real-run configs | hover/first flight: **`swarm_real_ours.yaml`** · goals: **`goal_single_ours.yaml`** · gamepad: **`teleop_real_ours.yaml`** (added 2026-10-21, unflown) — all under `<workspace>/src/svg_ground_control/config/`. The shipped 3-drone files are M7 material |
-| Gamepad | ⏳ model unknown — identify with `joy_map`, record the `teleop_controller` profile name here |
+| Gamepad | Logitech F310 (recorded 2026-11-12) — not yet tried, no recorded controller profile; identify it with `joy_map`, record the `teleop_controller` profile name here |
 | uXRCE client keeper on the drone | ⏳ decide: `svg-microdds-watchdog` (installed by the new provisioning script) **or** our `voxl-dds-retry.service` — not both |
 | Drone identity | `starling2-max (D0012)` · image 1.8.08 · voxl-suite 1.6.4~beta5 |
 | Drone factory backup | `/usr/bin/voxl-px4-start.FACTORY-ORIGINAL` (on drone) + `drone-backups/voxl-px4-start.original-D0012` in this repo (✅ both taken 2026-07-22, before the setup script ran) |

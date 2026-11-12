@@ -12,7 +12,12 @@ Hazards the pilot assumes until the named issue re-earns them (iron rules in [PR
 2. fly `_ours` configs (shipped real ones carry 0.3); `land_speed_mps` must stay 0.6 — 0.3 left the drone armed on the ground ([A21](../record/LEDGER.md#table-2--observed-on-the-previous-software-archived)); the landing is re-earned at NEAR-826.
 3. Drone ID must equal the controller target (`MAV_SYS_ID` = `target_system`; no ACK at all = mismatch) — NEAR-819; exactly one uXRCE watchdog on the drone — NEAR-820.
 4. After `voxl_setup_real_drone.sh`: reboot, never `systemctl restart voxl-px4` — NEAR-818.
-5. RC takeover is MANUAL or KILL only: setpoints leak into POSCTL/ALTCTL (confirmed in the code 2026-10-29, accepted; iron rule 1), and the commander stays non-IDLE after a takeover (`land` once; iron rule 3). No issue of their own; re-observed at NEAR-825 ([PX4_MSGS_AUDIT.md](../PX4_MSGS_AUDIT.md)).
+5. RC takeover is MANUAL or KILL only: setpoints leak into POSCTL/ALTCTL (confirmed in the code 2026-10-29, accepted; iron rule 1), and the commander stays non-IDLE after a takeover (`land` once; iron rule 3). After any RC kill call `land` too: the commander keeps sending setpoints ([#34](../record/LEDGER.md)). No issue of their own; re-observed at NEAR-825 ([PX4_MSGS_AUDIT.md](../PX4_MSGS_AUDIT.md)).
+6. The older Starling (`drone_1`) is GROUNDED: its front-right motor failed or started late in 5 of its last 7 arms, cause unknown ([#34](../record/LEDGER.md)).
+7. Takeoff flies a straight line to the takeoff point: stand each drone on its own point ([#34](../record/LEDGER.md)). The fence does not act during the climb or the landing.
+8. Do not raise the CBF radius while drones are inside the new keep-out: the emergency push-apart fires at once (seen on the ground 2026-11-12).
+
+Hazards 6–8 and the RC-kill line in 5 were found on 2026-11-12. None is fixed. The owner decides.
 
 ## Carried over from the previous software — verdicts the pilot assumes until re-observed
 
@@ -169,9 +174,9 @@ Linear (snapshot 2026-11-11): 0 % · no ledger row on this software · starts wh
 
 Decisive check: `scripts/voxl_push_led.sh drone_1 <DRONE_IP>` then on the drone `systemctl status svg-led` → `opened … sink`, `PX4 ESC LED bits muted` ([BASESTATION.md](../BASESTATION.md) §8). The ESC LEDs then no longer show arm state — QGC is the arming display.
 
-### M7 · Multi-drone — REAL DRONE, needs the new Starlings
-**Purpose:** the project's goal is a swarm. Two, then three real drones fly formations, random goals with collision avoidance and the intruder squeeze. Depends on the new Starlings arriving.
-Linear (snapshot 2026-11-11): 0 % · no ledger row on this software
+### M7 · Multi-drone — REAL DRONE, three drones need the new Starlings
+**Purpose:** the project's goal is a swarm. Two, then three real drones fly formations, random goals with collision avoidance and the intruder squeeze. Two drones first flew on the lab's two Starlings (2026-11-12); three drones depend on the new Starlings arriving.
+Linear (snapshot 2026-11-11): 0 % · last ledger row #35 (2026-11-12)
 
 **Done when** (Linear's target, verbatim; a target, not a result): formations, random goals with collision avoidance and intruder-squeeze tests fly.
 
@@ -179,8 +184,12 @@ Linear (snapshot 2026-11-11): 0 % · no ledger row on this software
 |---|---|---|---|---|
 | NEAR-838 | Check the hardware order went out (Starlings, 2 stereo cameras, LED strip, 2.4 GHz radio) | Backlog | — | — |
 | NEAR-839 | Set up each new Starling (one at a time, setup guide) | Backlog | — | — |
-| NEAR-840 | Two drones: formation and random goals with collision avoidance | Backlog | — | — |
+| NEAR-840 | Two drones: formation and random goals with collision avoidance | Backlog | Observed — two drones, closest 1.50 m against a 1.60 m keep-out, 2026-11-12 | [#35](../record/LEDGER.md), [hangar video](../../videos/cbf_drone_real_1080p.mp4) |
 | NEAR-841 | Three drones: intruder-squeeze test | Backlog | — | — |
+
+**NEAR-840: Two drones: formation and random goals with collision avoidance.** Checks that two real drones fly together under one commander and that the collision filter (CBF) keeps them apart, before formations and random goals are tried. Scope: both Starlings on motion-capture positioning (mocap) at 240 Hz, `goal_two_ours.yaml` at 0.5 m/s, one drone hovering while the other was sent toward it along x. No gate was fixed beforehand, so this is an observation, not a gated PASS.
+
+First clean two-drone hover 2026-11-12 17:19:54 ([#35](../record/LEDGER.md)). At radius 0.80 (keep-out 1.60 m, centre to centre) the commanded drone stopped short and the hovering one gave way up to 0.38 m. Minimum separation 1.50 m from raw mocap and 1.52 m from odometry (17:45, recorded), 1.57 m at 18:00 with the goal on the other drone's point for 9 s ([hangar video](../../videos/cbf_drone_real_1080p.mp4), [panel video](../../videos/cbf_check_ui.mp4)). That is 0.03 to 0.10 m inside the line, the same shortfall as in sim ([#20–#22](../record/LEDGER.md)). Heights stayed within 1.97–2.04 m and no emergency push-apart fired. Two earlier attempts failed and the older Starling is grounded ([#34](../record/LEDGER.md)). Still to fly: formations, random goals, both drones moving, a recording at radius 0.55.
 
 Each airframe: unique `MAV_SYS_ID` / `target_system`, DDS domain and Motive body ([DRONE_SETUP.md](../DRONE_SETUP.md)); procedures and safety briefs in [SCENARIOS.md](../SCENARIOS.md) §6–8 (sim-validated in HTX-R1 only).
 

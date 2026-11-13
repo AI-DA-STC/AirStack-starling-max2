@@ -23,7 +23,7 @@ BUDGETS = {"README": 450, "CLAUDE": 1000, "START_HERE": 1500, "SETUP": 1200, "RU
            "PREFLIGHT": 1100, "DRONE_SETUP": 1800, "ARCHITECTURE": 1500, "CONFIG": 2500,
            "SCENARIOS": 2500, "TELEOP": 2000, "BASESTATION": 2500, "MOCAP": 2000,
            "GLOSSARY": 3000, "AI_ASSIST": 800, "MILESTONES": 1200}
-PLAN_FILE = "docs/plans/2026-11-11-project-plan-linear.md"
+PLAN_FILE = "docs/plans/2026-11-12-project-plan-linear.md"
 PROJECT_DIR = "docs/projects"
 LEDGER_FILE = "docs/record/LEDGER.md"
 ID_PAGES = ("docs/MILESTONES.md", "docs/record/LEDGER.md", "docs/PX4_MSGS_AUDIT.md")   # plus docs/projects/*.md

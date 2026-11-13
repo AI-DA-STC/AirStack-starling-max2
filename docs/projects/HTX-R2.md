@@ -127,7 +127,7 @@ Decisive check in hover: `ros2 topic hz /drone_1/fmu/trajectory_command` ≈ 20 
 
 ### M4 · Goal flights with the braking fence — REAL DRONE
 **Purpose:** goal flights are the building block of every scenario. This checks the speed-limited profile, how hard the fence brakes at a wall, live gain changes and where a hold stops the drone, on one drone before any formation.
-Linear (snapshot 2026-11-13): 19 % · last ledger row #37 (2026-11-13)
+Linear (snapshot 2026-11-13): 38 % · last ledger row #37 (2026-11-13)
 
 **Done when** (Linear's target, verbatim; a target, not a result): goal legs use the smooth speed-limited profile; wall braking distance is measured; gains change live; hold stops the drone where expected.
 
@@ -135,7 +135,7 @@ Linear (snapshot 2026-11-13): 19 % · last ledger row #37 (2026-11-13)
 |---|---|---|---|---|
 | NEAR-829 | Goal legs on the speed-limited profile | In Progress | Flown — 3 goals at 1.0 m/s, profile not measured, 2026-11-11 | [#33](../record/LEDGER.md) |
 | NEAR-830 | Measure braking at the fence walls | In Progress | Held at the +x wall — distance not measured, 2026-11-11 | [#33](../record/LEDGER.md), [hangar video](../../videos/geofence_test_real_1080p.mp4) |
-| NEAR-831 | Change gains live from the panel in flight | In Progress | Flown — one gain, the CBF radius 0.55 → 0.90, changed from the panel in flight and took effect, 2026-11-13 | [#37](../record/LEDGER.md) |
+| NEAR-831 | Change gains live from the panel in flight | Done | Flown — one gain, the CBF radius 0.55 → 0.90, changed from the panel in flight and took effect, 2026-11-13 | [#37](../record/LEDGER.md) |
 | NEAR-832 | Check where a hold stops the drone | Backlog | — | — |
 
 Observed on the previous software (archived branch `archive/airstack-starling-max2`, 2026-09-03; freeze-fence, not the braking fence) — observations, not results on this software ([LEDGER table 2](../record/LEDGER.md#table-2--observed-on-the-previous-software-archived)):
@@ -150,15 +150,15 @@ Decisive check: wall test — goal 0.5 m past the `keep_in` wall at low speed: c
 
 ### M5 · Gamepad flying on the real drone — REAL DRONE
 **Purpose:** a person on the gamepad is both the backup pilot and the mapping tool (S5b). Yaw direction, the teleop fence, release-to-hold and coast distance cannot be proved in sim and must be seen on the real drone.
-Linear (snapshot 2026-11-13): 38 % · last ledger row #36 (2026-11-13)
+Linear (snapshot 2026-11-13): 75 % · last ledger row #36 (2026-11-13)
 
 **Done when** (Linear's target, verbatim; a target, not a result): yaw direction is correct (not proved by sim), the gamepad fence holds, stick release holds position, and coast distance is measured.
 
 | Issue | Title (Linear, verbatim) | Linear status | Result | Evidence |
 |---|---|---|---|---|
 | NEAR-833 | Check the yaw stick turns the drone the right way, slowly and low | Done | Flown — turned both ways, 0.05 m drift; direction per the owner's report, 2026-11-13 | [#36](../record/LEDGER.md) (the turn is not on video) |
-| NEAR-834 | Gamepad fence test | In Progress | Held at the −y wall — 0.03 m past at most; closed by the owner, 2026-11-13 | [#36](../record/LEDGER.md), [panel video](../../videos/xbox_teleop_ui.mp4) |
-| NEAR-835 | Release-to-hold test and coast distance | In Progress | Flown — coast 0.05–0.28 m from about 0.5 m/s, stopped in 0.9–1.6 s, 2026-11-13 | [#36](../record/LEDGER.md), [hangar video](../../videos/xbox_teleop_real_1080p.mp4) |
+| NEAR-834 | Gamepad fence test | Done | Held at the −y wall — 0.03 m past at most; closed by the owner, 2026-11-13 | [#36](../record/LEDGER.md), [panel video](../../videos/xbox_teleop_ui.mp4) |
+| NEAR-835 | Release-to-hold test and coast distance | Done | Flown — coast 0.05–0.28 m from about 0.5 m/s, stopped in 0.9–1.6 s, 2026-11-13 | [#36](../record/LEDGER.md), [hangar video](../../videos/xbox_teleop_real_1080p.mp4) |
 | NEAR-915 | Yaw-step check on the real Starling: overshoot and settle after a yaw pulse, compared with the sim | Backlog | — | — |
 
 Pass lines fixed 2026-11-13, before any gamepad flight (owner). Pad: Logitech F310 on the `xbox_usb` profile. Front door: `tools/real.sh teleop drone_2` ([tools/README.md](../../tools/README.md)): it checks the pad, then prepares `teleop_real_ours.yaml` for the drone named. Every test flies at 1.0 m with a second person on the kill switch, a recording and a video. Distances come from the mocap pose. The 2026-11-13 flight differed from this plan: it flew at 0.4 to 1.0 m, the fence approaches were faster (0.44 to 0.66 m/s), and no rosbag was recorded, so the numbers are from the drone's own PX4 log.

@@ -16,8 +16,9 @@ Hazards the pilot assumes until the named issue re-earns them (iron rules in [PR
 6. The older Starling (`drone_1`) is GROUNDED: its front-right motor failed or started late in 5 of its last 7 arms, cause unknown ([#34](../record/LEDGER.md)).
 7. Takeoff flies a straight line to the takeoff point: stand each drone on its own point ([#34](../record/LEDGER.md)). The fence does not act during the climb or the landing.
 8. Do not raise the CBF radius while drones are inside the new keep-out: the emergency push-apart fires at once (seen on the ground 2026-11-12).
+9. The commander gives no warning when no pad is sending commands: the drone holds as if the sticks were centred. Before takeoff check `ros2 topic hz /svg/drone_2/teleop_command` (about 20 Hz); keep the pad pane running until after landing ([#36](../record/LEDGER.md)).
 
-Hazards 6–8 and the RC-kill line in 5 were found on 2026-11-12. None is fixed. The owner decides.
+Hazards 6–8 and the RC-kill line in 5 were found on 2026-11-12, hazard 9 on 2026-11-13. None is fixed. The owner decides.
 
 ## Carried over from the previous software — verdicts the pilot assumes until re-observed
 
@@ -148,24 +149,24 @@ Decisive check: wall test — goal 0.5 m past the `keep_in` wall at low speed: c
 
 ### M5 · Gamepad flying on the real drone — REAL DRONE
 **Purpose:** a person on the gamepad is both the backup pilot and the mapping tool (S5b). Yaw direction, the teleop fence, release-to-hold and coast distance cannot be proved in sim and must be seen on the real drone.
-Linear (snapshot 2026-11-12): 0 % · no ledger row on this software
+Linear (snapshot 2026-11-12): 0 % · last ledger row #36 (2026-11-13)
 
 **Done when** (Linear's target, verbatim; a target, not a result): yaw direction is correct (not proved by sim), the gamepad fence holds, stick release holds position, and coast distance is measured.
 
 | Issue | Title (Linear, verbatim) | Linear status | Result | Evidence |
 |---|---|---|---|---|
-| NEAR-833 | Check the yaw stick turns the drone the right way, slowly and low | Backlog | — | — |
-| NEAR-834 | Gamepad fence test | Backlog | — | — |
-| NEAR-835 | Release-to-hold test and coast distance | Backlog | — | — |
+| NEAR-833 | Check the yaw stick turns the drone the right way, slowly and low | Backlog | Flown — turned both ways, 0.05 m drift; direction per the owner's report, 2026-11-13 | [#36](../record/LEDGER.md) (the turn is not on video) |
+| NEAR-834 | Gamepad fence test | Backlog | Held at the −y wall — 0.03 m past at most; +x wall and top unflown, 2026-11-13 | [#36](../record/LEDGER.md), [panel video](../../videos/xbox_teleop_ui.mp4) |
+| NEAR-835 | Release-to-hold test and coast distance | Backlog | Flown — coast 0.05–0.28 m from about 0.5 m/s, stopped in 0.9–1.6 s; unplug unflown, 2026-11-13 | [#36](../record/LEDGER.md), [hangar video](../../videos/xbox_teleop_real_1080p.mp4) |
 | NEAR-915 | Yaw-step check on the real Starling: overshoot and settle after a yaw pulse, compared with the sim | Backlog | — | — |
 
-Pass lines fixed 2026-11-13, before any gamepad flight (owner). Pad: Logitech F310 on the `xbox_usb` profile. Front door: `tools/real.sh teleop drone_2` ([tools/README.md](../../tools/README.md)): it checks the pad, then prepares `teleop_real_ours.yaml` for the drone named. Every test flies at 1.0 m with a second person on the kill switch, a recording and a video. Distances come from the mocap pose.
+Pass lines fixed 2026-11-13, before any gamepad flight (owner). Pad: Logitech F310 on the `xbox_usb` profile. Front door: `tools/real.sh teleop drone_2` ([tools/README.md](../../tools/README.md)): it checks the pad, then prepares `teleop_real_ours.yaml` for the drone named. Every test flies at 1.0 m with a second person on the kill switch, a recording and a video. Distances come from the mocap pose. The 2026-11-13 flight differed from this plan: it flew at 0.4 to 1.0 m, the fence approaches were faster (0.44 to 0.66 m/s), and no rosbag was recorded, so the numbers are from the drone's own PX4 log.
 
-**NEAR-833: Check the yaw stick turns the drone the right way, slowly and low.** Proves the one stick direction the sim cannot. A small push of the left stick to the left for about 1 s, then to the right. Pass: the drone turns left (anticlockwise seen from above) and then right, and drifts less than 0.3 m while turning. Wrong way: land and stop. `tools/real.sh` refuses a config that overrides the stick map, so a sign flip must be a recorded change first.
+**NEAR-833: Check the yaw stick turns the drone the right way, slowly and low.** Proves the one stick direction the sim cannot. A small push of the left stick to the left for about 1 s, then to the right. Pass: the drone turns left (anticlockwise seen from above) and then right, and drifts less than 0.3 m while turning. Wrong way: land and stop. `tools/real.sh` refuses a config that overrides the stick map, so a sign flip must be a recorded change first. Flown 2026-11-13 on `drone_2` with mocap, numbers from the drone's own PX4 log at 10 Hz because no rosbag was recorded ([#36](../record/LEDGER.md)): the heading followed the stick both ways and the drone moved at most 0.05 m during a 47° turn, inside the pass line. That it turned the way the stick was pushed is the owner's report: the turn is not on video and the stick was not recorded.
 
-**NEAR-834: Gamepad fence test.** Proves the pilot cannot fly the drone out of the teleop fence (x and y ±1.5 m, height 0.3 to 1.8 m). Fly at 0.25 m/s into the +x wall and hold the stick for 5 s. Repeat on the −y wall and the top. Pass: never more than 0.10 m past a wall (x 1.60 m, y −1.60 m, height 1.90 m). That matches the 0.03 to 0.10 m by which the collision filter came inside its line ([#35](../record/LEDGER.md)), and it leaves 0.4 m to the geofence at 2.0 m.
+**NEAR-834: Gamepad fence test.** Proves the pilot cannot fly the drone out of the teleop fence (x and y ±1.5 m, height 0.3 to 1.8 m). Fly at 0.25 m/s into the +x wall and hold the stick for 5 s. Repeat on the −y wall and the top. Pass: never more than 0.10 m past a wall (x 1.60 m, y −1.60 m, height 1.90 m). That matches the 0.03 to 0.10 m by which the collision filter came inside its line ([#35](../record/LEDGER.md)), and it leaves 0.4 m to the geofence at 2.0 m. Flown 2026-11-13 ([#36](../record/LEDGER.md)): three approaches into the −y wall at 0.44, 0.56 and 0.66 m/s went at most 0.03 m past it, inside the pass line. The +x wall and the top are still to fly (highest point flown 0.99 m).
 
-**NEAR-835: Release-to-hold test and coast distance.** Proves that letting go of the stick stops the drone. Fly at 0.25 m/s, then at 0.5 m/s (full stick), and release. Pass: stopped within 0.5 m and 2 s, then within 0.2 m of that point for 5 s. Also unplug the pad at 0.25 m/s: the code holds the last stick for up to 0.5 s, so the pass line is a stop within 0.75 m. Record the coast distance at each speed.
+**NEAR-835: Release-to-hold test and coast distance.** Proves that letting go of the stick stops the drone. Fly at 0.25 m/s, then at 0.5 m/s (full stick), and release. Pass: stopped within 0.5 m and 2 s, then within 0.2 m of that point for 5 s. Also unplug the pad at 0.25 m/s: the code holds the last stick for up to 0.5 s, so the pass line is a stop within 0.75 m. Record the coast distance at each speed. Flown 2026-11-13 ([#36](../record/LEDGER.md)): four releases from about 0.5 m/s coasted 0.05 to 0.28 m, stopped 0.9 to 1.6 s after release and then stayed within 0.05 to 0.15 m for 5 s, inside the pass line. From about 0.25 m/s the coast was 0.01 to 0.15 m, and unplugging the pad in flight is still to fly.
 
 ### M6 · LED strips — REAL DRONE, cosmetic
 **Purpose:** LED strips give everyone in the room a glance-level status: green ok, red when collision avoidance is acting. Optional hardware; starts when the strip arrives.

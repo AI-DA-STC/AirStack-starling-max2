@@ -37,7 +37,7 @@ Leak detail: `px4_interface` publishes the trajectory setpoint ungated, and PX4 
 
 ### R1 · New mocap and network pipeline — REAL DRONE, mocap hardware, no flight
 **Purpose:** nothing real can fly until the position pipeline works end to end: the upgraded OptiTrack streams, the laptop sits on the mocap subnet (multicast does not cross the router), the drone is reachable, and PX4 receives the pose with the right axes. Every later milestone assumes this.
-Linear (snapshot 2026-11-12): 63 % · no ledger row on this software (first flights 2026-11-11: logs only)
+Linear (snapshot 2026-11-13): 63 % · no ledger row on this software (first flights 2026-11-11: logs only)
 
 **Done when** (Linear's target, verbatim; a target, not a result): Motive calibration, ground plane, axes and rigid body are configured; full-rate streaming lasts 10 minutes without stalls; laptop/drone communicate both ways; PX4 receives correct-axis mocap; settings are documented.
 
@@ -63,7 +63,7 @@ Decisive check: `./mocap.sh check` → `./mocap.sh` → `ros2 topic hz /drone_1/
 
 ### M2 · Drone setup and hand-carry, propellers off — REAL DRONE, props off
 **Purpose:** with the props off, every link in the chain is checked before anything can hurt anyone: the drone answers to the controller's id, one watchdog runs, the estimator fuses mocap, the panel tracks a hand-carried drone, the kill switch works.
-Linear (snapshot 2026-11-12): 57 % · no ledger row on this software (first flights 2026-11-11: logs only)
+Linear (snapshot 2026-11-13): 57 % · no ledger row on this software (first flights 2026-11-11: logs only)
 
 **Done when** (Linear's target, verbatim; a target, not a result): drone ID matches controller target, only one watchdog runs, estimator fuses mocap, the panel tracks the hand-carried drone correctly, and kill switch is checked props-off.
 
@@ -100,7 +100,7 @@ Observed on the previous software (archived branch `archive/airstack-starling-ma
 
 ### M3 · First flight on the new software — REAL DRONE
 **Purpose:** the first flight on this software proves the full loop in the air: commands are acknowledged, the fence holds, landing settles and disarms. It is also where the carried-over hazards (RC takeover, disarm) are re-observed.
-Linear (snapshot 2026-11-12): 20 % · last ledger row #33 (2026-11-11)
+Linear (snapshot 2026-11-13): 20 % · last ledger row #33 (2026-11-11)
 
 **Done when** (Linear's target, verbatim; a target, not a result): every command is acknowledged; landing settles and disarms; dummy-payload hover yields hover throttle and flight time.
 
@@ -127,7 +127,7 @@ Decisive check in hover: `ros2 topic hz /drone_1/fmu/trajectory_command` ≈ 20 
 
 ### M4 · Goal flights with the braking fence — REAL DRONE
 **Purpose:** goal flights are the building block of every scenario. This checks the speed-limited profile, how hard the fence brakes at a wall, live gain changes and where a hold stops the drone, on one drone before any formation.
-Linear (snapshot 2026-11-12): 13 % · last ledger row #37 (2026-11-13)
+Linear (snapshot 2026-11-13): 19 % · last ledger row #37 (2026-11-13)
 
 **Done when** (Linear's target, verbatim; a target, not a result): goal legs use the smooth speed-limited profile; wall braking distance is measured; gains change live; hold stops the drone where expected.
 
@@ -135,7 +135,7 @@ Linear (snapshot 2026-11-12): 13 % · last ledger row #37 (2026-11-13)
 |---|---|---|---|---|
 | NEAR-829 | Goal legs on the speed-limited profile | In Progress | Flown — 3 goals at 1.0 m/s, profile not measured, 2026-11-11 | [#33](../record/LEDGER.md) |
 | NEAR-830 | Measure braking at the fence walls | In Progress | Held at the +x wall — distance not measured, 2026-11-11 | [#33](../record/LEDGER.md), [hangar video](../../videos/geofence_test_real_1080p.mp4) |
-| NEAR-831 | Change gains live from the panel in flight | Backlog | Flown — one gain, the CBF radius 0.55 → 0.90, changed from the panel in flight and took effect, 2026-11-13 | [#37](../record/LEDGER.md) |
+| NEAR-831 | Change gains live from the panel in flight | In Progress | Flown — one gain, the CBF radius 0.55 → 0.90, changed from the panel in flight and took effect, 2026-11-13 | [#37](../record/LEDGER.md) |
 | NEAR-832 | Check where a hold stops the drone | Backlog | — | — |
 
 Observed on the previous software (archived branch `archive/airstack-starling-max2`, 2026-09-03; freeze-fence, not the braking fence) — observations, not results on this software ([LEDGER table 2](../record/LEDGER.md#table-2--observed-on-the-previous-software-archived)):
@@ -150,15 +150,15 @@ Decisive check: wall test — goal 0.5 m past the `keep_in` wall at low speed: c
 
 ### M5 · Gamepad flying on the real drone — REAL DRONE
 **Purpose:** a person on the gamepad is both the backup pilot and the mapping tool (S5b). Yaw direction, the teleop fence, release-to-hold and coast distance cannot be proved in sim and must be seen on the real drone.
-Linear (snapshot 2026-11-12): 0 % · last ledger row #36 (2026-11-13)
+Linear (snapshot 2026-11-13): 38 % · last ledger row #36 (2026-11-13)
 
 **Done when** (Linear's target, verbatim; a target, not a result): yaw direction is correct (not proved by sim), the gamepad fence holds, stick release holds position, and coast distance is measured.
 
 | Issue | Title (Linear, verbatim) | Linear status | Result | Evidence |
 |---|---|---|---|---|
-| NEAR-833 | Check the yaw stick turns the drone the right way, slowly and low | Backlog | Flown — turned both ways, 0.05 m drift; direction per the owner's report, 2026-11-13 | [#36](../record/LEDGER.md) (the turn is not on video) |
-| NEAR-834 | Gamepad fence test | Backlog | Held at the −y wall — 0.03 m past at most; +x wall and top unflown, 2026-11-13 | [#36](../record/LEDGER.md), [panel video](../../videos/xbox_teleop_ui.mp4) |
-| NEAR-835 | Release-to-hold test and coast distance | Backlog | Flown — coast 0.05–0.28 m from about 0.5 m/s, stopped in 0.9–1.6 s; unplug unflown, 2026-11-13 | [#36](../record/LEDGER.md), [hangar video](../../videos/xbox_teleop_real_1080p.mp4) |
+| NEAR-833 | Check the yaw stick turns the drone the right way, slowly and low | Done | Flown — turned both ways, 0.05 m drift; direction per the owner's report, 2026-11-13 | [#36](../record/LEDGER.md) (the turn is not on video) |
+| NEAR-834 | Gamepad fence test | In Progress | Held at the −y wall — 0.03 m past at most; +x wall and top unflown, 2026-11-13 | [#36](../record/LEDGER.md), [panel video](../../videos/xbox_teleop_ui.mp4) |
+| NEAR-835 | Release-to-hold test and coast distance | In Progress | Flown — coast 0.05–0.28 m from about 0.5 m/s, stopped in 0.9–1.6 s; unplug unflown, 2026-11-13 | [#36](../record/LEDGER.md), [hangar video](../../videos/xbox_teleop_real_1080p.mp4) |
 | NEAR-915 | Yaw-step check on the real Starling: overshoot and settle after a yaw pulse, compared with the sim | Backlog | — | — |
 
 Pass lines fixed 2026-11-13, before any gamepad flight (owner). Pad: Logitech F310 on the `xbox_usb` profile. Front door: `tools/real.sh teleop drone_2` ([tools/README.md](../../tools/README.md)): it checks the pad, then prepares `teleop_real_ours.yaml` for the drone named. Every test flies at 1.0 m with a second person on the kill switch, a recording and a video. Distances come from the mocap pose. The 2026-11-13 flight differed from this plan: it flew at 0.4 to 1.0 m, the fence approaches were faster (0.44 to 0.66 m/s), and no rosbag was recorded, so the numbers are from the drone's own PX4 log.
@@ -171,7 +171,7 @@ Pass lines fixed 2026-11-13, before any gamepad flight (owner). Pad: Logitech F3
 
 ### M6 · LED strips — REAL DRONE, cosmetic
 **Purpose:** LED strips give everyone in the room a glance-level status: green ok, red when collision avoidance is acting. Optional hardware; starts when the strip arrives.
-Linear (snapshot 2026-11-12): 0 % · no ledger row on this software · starts when the strip arrives
+Linear (snapshot 2026-11-13): 0 % · no ledger row on this software · starts when the strip arrives
 
 **Done when** (Linear's target, verbatim; a target, not a result): LED service runs on the drone; green by default, red when collision avoidance acts; motor LEDs muted.
 
@@ -184,7 +184,7 @@ Decisive check: `scripts/voxl_push_led.sh drone_1 <DRONE_IP>` then on the drone 
 
 ### M7 · Multi-drone — REAL DRONE, three drones need the new Starlings
 **Purpose:** the project's goal is a swarm. Two, then three real drones fly formations, random goals with collision avoidance and the intruder squeeze. Two drones first flew on the lab's two Starlings (2026-11-12); three drones depend on the new Starlings arriving.
-Linear (snapshot 2026-11-12): 20 % · last ledger row #37 (2026-11-13)
+Linear (snapshot 2026-11-13): 20 % · last ledger row #37 (2026-11-13)
 
 **Done when** (Linear's target, verbatim; a target, not a result): formations, random goals with collision avoidance and intruder-squeeze tests fly.
 
@@ -214,7 +214,7 @@ Open: formations, random goals, both drones moving, a crossing and a recording a
 
 ### M8 · Evaluate NUS velocity policies on the real drones — REAL DRONE, NEAR Lab mocap area
 **Purpose:** NUS policies are first checked in sim (HTX-R1 S5e). This milestone flies the same scenarios on real Starlings in NEAR Lab's mocap area, with the same gate numbers, so sim and real results can be compared directly. It starts only after M4 (fence braking measured), M7 (multi-drone) and S5e.
-Linear (snapshot 2026-11-12): 0 % · no ledger row on this software
+Linear (snapshot 2026-11-13): 0 % · no ledger row on this software
 
 **Done when** (Linear's target, verbatim; a target, not a result): one, two, then three Starlings fly the S5e scenarios, speed capped below the sim-tested speed, fence on; the real results are compared with the sim results. Ticks only from real-flight records.
 

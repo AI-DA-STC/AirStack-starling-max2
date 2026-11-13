@@ -9,7 +9,7 @@
 
 | Where | What it is | Whose |
 |---|---|---|
-| [`CLAUDE.md`](../CLAUDE.md) (repo root) | The lab's rules for the assistant: the doc map, the 9 iron rules, the two-clone workflow, "never push". Read automatically at the start of every session. | ours |
+| [`CLAUDE.md`](../CLAUDE.md) (repo root) | The lab's rules for the assistant: the doc map, the 10 iron rules, the two-clone workflow, "never push". Read automatically at the start of every session. | ours |
 | [`docs/`](.) | The human docs. The assistant reads them like you do; keep them true and it stays true. | ours |
 | [`AirStack/AGENTS.md`](../AirStack/AGENTS.md) + [`AirStack/.agents/skills/`](../AirStack/.agents/skills/) | CMU's own guide and 18 step-by-step "skills" for agents: `debug-module`, `use-airstack-cli`, `test-in-simulation`, `configure-multi-robot`, `write-launch-file`, … Written for AirStack in general, not for our rig. The `svg-release-branches` skill describes CMU's dev→release branch workflow — **not ours** (we commit to `main`). | CMU |
 | The assistant's own memory (outside the repo) | Notes it keeps between sessions about this project: what was tried, what failed, which clone is live. It will cite them; they can be stale — the repo wins. | — |
@@ -73,6 +73,8 @@ Each of these cost an afternoon to learn. Ask for them by name.
 | Run `test/functional_*.py` with the real stack up | they publish fake odometry on live topics — iron rule 4 |
 | Edit files under `~/AirStack` (the raw CMU clone) | nothing runs from there; the live tree is `~/AirStack-starling-max2/AirStack` |
 | Treat a commander log line as proof of a hardware state | iron rules 2 and 5: QGC decides armed/disarmed, ACKs are not arming |
+| Suggest `takeoff` after an RC KILL or manual takeover, before `land` | the commander is not IDLE and keeps sending setpoints — iron rule 3 |
+| Say "ready" before each drone's pose matches its `hover_positions` | `takeoff` flies a straight line to that point — iron rule 10 |
 | Start or stop Isaac with nothing watching the laptop's WiFi | Isaac start/stop crashed the WiFi firmware twice (2026-10-22) and dropped the remote desktop. Keep `localisation/scripts/sim_resources_watch.sh` running ([TROUBLESHOOTING](TROUBLESHOOTING.md#simulation-isaac-sim--px4-sitl--mavros)) |
 | Call a sim VO score "ground truth" | the reference is PX4's EKF2 on simulated GPS; say "vs EKF2" (the run records do) |
 

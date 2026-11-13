@@ -281,12 +281,18 @@ def judge_step(step: Step, samples: Sequence[dict], rest: Sequence[float], spec:
 
 
 def judge_environment(joy_pubs: Sequence[str], nodes: Sequence[str], procs: Sequence[str]) -> Verdict:
-    """The ROS graph and the container's processes before the pad check starts its own joy_node."""
-    if any("svg_multi_drone_single_domain" in p for p in procs):
-        return bad("Isaac Sim running — real teleop refused")
+    """The ROS graph and the container's processes before the pad check starts its own joy_node. (Isaac Sim runs in
+    another container, whose processes the robot container cannot see: tools/teleop/real_teleop.sh refuses it.)"""
     if joy_pubs:
         return bad("%d publisher(s) on /joy (%s) — stop the teleop pane / close the sim keyboard window (tools/sim.sh relay stop)"
                    % (len(joy_pubs), ", ".join(joy_pubs)))
     if any(n.rstrip("/").split("/")[-1] == "safe_teleop" for n in nodes) or any("safe_teleop" in p for p in procs):
         return bad("safe_teleop running — stick tests would reach the commander")
     return ok("environment nothing else on /joy, no safe_teleop")
+
+
+def judge_check_topic(pubs: Sequence[str], node_name: str) -> Verdict:
+    """After the pad opens: the check topic has exactly one publisher, the check's own joy_node."""
+    if len(pubs) != 1 or pubs[0].rstrip("/").split("/")[-1] != node_name:
+        return bad("another publisher on the check topic — is a second pad check running?")
+    return ok("check topic published by %s only" % node_name)

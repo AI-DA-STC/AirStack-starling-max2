@@ -15,14 +15,23 @@ with open(os.path.join(_GUARD_BIN, "docker"), "w") as _fh:
 os.chmod(os.path.join(_GUARD_BIN, "docker"), 0o755)
 GUARD_MARK = os.path.join(_GUARD, "docker_called")
 
-# The fake docker: logs every call; FAKE_PS = the running container names; FAKE_ISAAC=1 = Isaac runs in isaac-sim;
-# FAKE_EXEC_RC = exit code of the pad check's `docker exec … bash -ic` (default 0).
-FAKE = r'''#!/bin/sh
+# The fake docker: logs every call; FAKE_PS = the running container names; FAKE_ISAAC=1 = Isaac runs in isaac-sim
+# (FAKE_ISAAC_RC = pgrep's exit code, overrides it); FAKE_EXEC_RC = exit code of the pad check's `docker exec … bash -ic`
+# (default 0); FAKE_NOISE=1 = the container's bash -ic noise lines first; FAKE_FAIL_MATCH = a glob of the call that
+# exits FAKE_FAIL_RC (default 1).
+FAKE = r'''#!/bin/bash
 echo "$@" >> "$FAKE_LOG"
+if [ -n "${FAKE_FAIL_MATCH:-}" ] && [[ "$*" == $FAKE_FAIL_MATCH ]]; then exit "${FAKE_FAIL_RC:-1}"; fi
 case "$*" in
   "ps --format {{.Names}}") [ -n "${FAKE_PS_FAIL:-}" ] && exit 1; printf "%b" "${FAKE_PS:-}"; exit 0;;
-  "exec isaac-sim pgrep"*) [ "${FAKE_ISAAC:-0}" = 1 ] && exit 0; exit 1;;
-  exec*bash\ -ic*) echo "FAKE pad check output"; exit "${FAKE_EXEC_RC:-0}";;
+  "exec isaac-sim pgrep"*) [ -n "${FAKE_ISAAC_RC:-}" ] && exit "$FAKE_ISAAC_RC"; [ "${FAKE_ISAAC:-0}" = 1 ] && exit 0; exit 1;;
+  exec*bash\ -ic*)
+    if [ "${FAKE_NOISE:-0}" = 1 ]; then
+      echo "bash: cannot set terminal process group (-1): Inappropriate ioctl for device"
+      echo "bash: no job control in this shell"
+      echo "Sourcing /root/AirStack/robot/ros_ws/install/setup.bash"
+    fi
+    echo "FAKE pad check output"; exit "${FAKE_EXEC_RC:-0}";;
 esac
 exit 0
 '''
@@ -30,7 +39,7 @@ exit 0
 
 def fake_env(tmp, **kw):
     os.makedirs(os.path.join(tmp, "bin"), exist_ok=True)
-    f = os.path.join(tmp, "bin", "docker"); open(f, "w").write(FAKE); os.chmod(f, 0o755)
+    f = os.path.join(tmp, "bin", "docker"); pathlib.Path(f).write_text(FAKE); os.chmod(f, 0o755)
     e = dict(os.environ, HOME=tmp, FAKE_LOG=os.path.join(tmp, "log"), FAKE_PS=R + "\\n")
     e["PATH"] = os.path.join(tmp, "bin") + ":" + _GUARD_BIN + ":" + os.environ["PATH"]
     e.update({k: str(v) for k, v in kw.items()})
@@ -38,13 +47,28 @@ def fake_env(tmp, **kw):
 
 
 def calls(tmp):
-    f = os.path.join(tmp, "log"); return open(f).read() if os.path.exists(f) else ""
+    f = os.path.join(tmp, "log"); return pathlib.Path(f).read_text() if os.path.exists(f) else ""
 
 
-def run(*args, env=None):
+def run(*args, env=None, script=REAL, stdin=subprocess.DEVNULL):
     if env is None:
         env = dict(os.environ, PATH=_GUARD_BIN + ":" + os.environ["PATH"], HOME=os.path.join(_GUARD, "home"))
-    return subprocess.run(["bash", str(REAL), *args], capture_output=True, text=True, timeout=30, env=env, stdin=subprocess.DEVNULL)
+    return subprocess.run(["bash", str(script), *args], capture_output=True, text=True, timeout=30, env=env, stdin=stdin)
+
+
+def copy_tree(tmp, source_text):
+    """A throwaway repo: tools/real.sh + tools/teleop/* and a teleop_real_ours.yaml with the given text."""
+    import shutil
+    os.makedirs(os.path.join(tmp, "tools", "teleop"))
+    shutil.copy2(REAL, os.path.join(tmp, "tools", "real.sh"))
+    for f in ("real_teleop.sh", "real_config.py", "pad_core.py", "pad_check.py"):
+        shutil.copy2(TOOLS / "teleop" / f, os.path.join(tmp, "tools", "teleop", f))
+    cfg = os.path.join(tmp, "AirStack/robot/ros_ws/src/svg_ground_control/config")
+    os.makedirs(cfg); pathlib.Path(os.path.join(cfg, "teleop_real_ours.yaml")).write_text(source_text)
+    return pathlib.Path(tmp, "tools", "real.sh")
+
+
+SOURCE = (TOOLS.parent / "AirStack/robot/ros_ws/src/svg_ground_control/config/teleop_real_ours.yaml").read_text()
 
 
 class Shim(unittest.TestCase):
@@ -54,9 +78,16 @@ class Shim(unittest.TestCase):
 
     def test_real_sh_is_only_a_shim(self):
         src = REAL.read_text()
-        self.assertIn('exec "$(dirname "$0")/teleop/real_teleop.sh" "$@"', src)
+        self.assertIn('exec "$(dirname "$(readlink -f "$0")")/teleop/real_teleop.sh" "$@"', src)
         code = [l for l in src.splitlines() if l.strip() and not l.lstrip().startswith("#")]
         self.assertEqual(len(code), 1, code)
+
+    def test_a_symlink_to_real_sh_works(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            link = os.path.join(tmp, "real.sh"); os.symlink(REAL, link)
+            r = run(script=link, env=fake_env(tmp))
+            self.assertEqual(r.returncode, 2, r.stdout + r.stderr)
+            self.assertIn("tools/real.sh teleop drone_1", r.stdout); self.assertEqual(calls(tmp), "")
 
     def test_strict_shell_and_no_detached_exec(self):
         src = FRONT.read_text()
@@ -129,14 +160,50 @@ class PadCommand(unittest.TestCase):
             self.assertNotIn("exec -d", c)
             self.assertIn("FAKE pad check output", r.stdout)
 
-    def test_guided_check_uses_a_terminal_when_there_is_one(self):
+    def test_guided_check_under_the_test_hook_runs_without_t(self):
         with tempfile.TemporaryDirectory() as tmp:
-            r = run("pad", env=fake_env(tmp, REAL_TELEOP_NO_TTY_OK=1))              # unit tests only: no -t here
+            r = run("pad", env=fake_env(tmp, REAL_TELEOP_NO_TTY_OK=1))              # unit tests only: no terminal, no -t
             self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
-            self.assertIn("bash -ic python3 /tmp/svg_real/pad_check.py --pad f310", calls(tmp))
-            self.assertNotIn("--static", calls(tmp))
-            self.assertIn("exec -i %s bash -ic" % R, calls(tmp))                     # no TTY in a test: -i only
-            self.assertRegex(FRONT.read_text(), r"\[ -t 0 \] && flags\+=\(-t\)")       # a terminal adds -t (Ctrl-C reaches the check)
+            self.assertIn("exec -i %s bash -ic python3 /tmp/svg_real/pad_check.py --pad f310\n" % R, calls(tmp))
+
+    def test_guided_check_in_a_terminal_passes_t(self):
+        import pty
+        master, slave = pty.openpty()
+        try:
+            with tempfile.TemporaryDirectory() as tmp:
+                r = run("pad", env=fake_env(tmp), stdin=slave)                     # a real terminal on stdin, no hook
+                self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+                self.assertIn("exec -i -t %s bash -ic python3 /tmp/svg_real/pad_check.py --pad f310\n" % R, calls(tmp))
+        finally:
+            os.close(master); os.close(slave)
+
+    def test_isaac_check_that_errors_is_cannot_check(self):          # fail closed: only pgrep's 1 means "not running"
+        for rc in (126, 2, 125):
+            with tempfile.TemporaryDirectory() as tmp:
+                r = run("pad", "--static", env=fake_env(tmp, FAKE_PS="isaac-sim\\n%s\\n" % R, FAKE_ISAAC_RC=rc))
+                self.assertEqual(r.returncode, 2, (rc, r.stdout, r.stderr))
+                self.assertIn("PAD CHECK: FAIL — do not fly: cannot tell whether Isaac Sim is running (", r.stdout)
+                self.assertNotIn("cp ", calls(tmp))
+
+    def test_noise_lines_are_filtered_and_the_exit_code_kept(self):
+        self.assertIn("NOISE='^(bash: cannot set terminal|bash: no job control|Sourcing|groups: cannot find name)'",
+                      (TOOLS / "lib" / "stack.sh").read_text())
+        self.assertIn("NOISE='^(bash: cannot set terminal|bash: no job control|Sourcing|groups: cannot find name)'", FRONT.read_text())
+        for rc in (0, 1, 3):
+            with tempfile.TemporaryDirectory() as tmp:
+                r = run("pad", "--static", env=fake_env(tmp, FAKE_NOISE=1, FAKE_EXEC_RC=rc))
+                self.assertEqual(r.returncode, rc, r.stdout + r.stderr)
+                self.assertIn("FAKE pad check output", r.stdout)
+                for n in ("cannot set terminal", "no job control", "Sourcing"):
+                    self.assertNotIn(n, r.stdout + r.stderr)
+
+    def test_every_failed_docker_step_prints_the_fail_line(self):
+        for glob in ("exec %s mkdir*" % R, "cp *pad_core.py*", "cp *pad_check.py*"):
+            with tempfile.TemporaryDirectory() as tmp:
+                r = run("pad", "--static", env=fake_env(tmp, FAKE_FAIL_MATCH=glob))
+                self.assertEqual(r.returncode, 2, (glob, r.stdout, r.stderr))
+                self.assertIn("PAD CHECK: FAIL — do not fly:", r.stdout, glob)
+                self.assertNotIn("bash -ic", calls(tmp), glob)
 
     def test_check_exit_codes_pass_through(self):
         for rc in (1, 2, 3):
@@ -222,30 +289,68 @@ class TeleopCommand(unittest.TestCase):
             self.assertIn("pane 2 : ros2 launch svg_ground_control real_interfaces.launch.py drones:=drone_1 target_systems:=1", r.stdout)
             self.assertIn(":/tmp/svg_real/teleop_real_drone_1.yaml", calls(tmp))
 
-    def test_a_failed_check_copies_and_prints_nothing(self):
+    def test_an_old_config_is_removed_before_the_check(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            r = run("teleop", "drone_2", env=fake_env(tmp, REAL_TELEOP_NO_TTY_OK=1))
+            self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+            lines = calls(tmp).splitlines()
+            rm = lines.index("exec %s rm -f /tmp/svg_real/teleop_real_drone_2.yaml" % R)
+            check = next(i for i, l in enumerate(lines) if "pad_check.py" in l and "bash -ic" in l)
+            self.assertLess(rm, check)
+
+    def test_a_failed_check_leaves_no_config(self):
         for rc in (1, 2, 3):
             with tempfile.TemporaryDirectory() as tmp:
                 r = run("teleop", "drone_2", env=fake_env(tmp, REAL_TELEOP_NO_TTY_OK=1, FAKE_EXEC_RC=rc))
-                self.assertEqual(r.returncode, rc, (rc, r.stdout, r.stderr))
-                self.assertNotIn("teleop_real_drone_2.yaml", calls(tmp)); self.assertNotIn("pane 3", r.stdout)
+                self.assertEqual(r.returncode, rc)
+                c = calls(tmp)
+                self.assertIn("rm -f /tmp/svg_real/teleop_real_drone_2.yaml", c)
+                self.assertNotRegex(c, r"(?m)^cp .*teleop_real_drone_2\.yaml")
+                self.assertNotIn("pane 3", r.stdout)
+
+    def test_a_failed_rm_or_config_copy_prints_the_fail_line(self):
+        for glob in ("exec %s rm -f*" % R, "cp *teleop_real_drone_2.yaml"):
+            with tempfile.TemporaryDirectory() as tmp:
+                r = run("teleop", "drone_2", env=fake_env(tmp, REAL_TELEOP_NO_TTY_OK=1, FAKE_FAIL_MATCH=glob))
+                self.assertEqual(r.returncode, 2, (glob, r.stdout, r.stderr))
+                self.assertIn("PAD CHECK: FAIL — do not fly:", r.stdout, glob); self.assertNotIn("pane 3", r.stdout)
+
+    def test_a_refused_render_exits_1_before_any_docker_call(self):
+        bad = SOURCE.replace("    max_climb_speed_mps: 0.5", "    max_climb_speed_mps: 0.5\n    forward_sign: -1.0", 1)
+        with tempfile.TemporaryDirectory() as tmp:
+            script = copy_tree(tmp, bad)
+            r = run("teleop", "drone_2", env=fake_env(tmp, REAL_TELEOP_NO_TTY_OK=1), script=script)
+            self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
+            self.assertIn("PAD CHECK: FAIL — do not fly: the drone_2 config was not made:", r.stdout)
+            self.assertIn("forward_sign", r.stdout); self.assertEqual(calls(tmp), "")
+
+    def test_pyyaml_missing_is_cannot_check_exit_2(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            shim = os.path.join(tmp, "shim"); os.makedirs(shim)
+            pathlib.Path(shim, "yaml.py").write_text("raise ImportError('no PyYAML in this test')\n")
+            r = run("teleop", "drone_2", env=fake_env(tmp, REAL_TELEOP_NO_TTY_OK=1, PYTHONPATH=shim))
+            self.assertEqual(r.returncode, 2, r.stdout + r.stderr)
+            self.assertIn("PAD CHECK: FAIL — do not fly: cannot check:", r.stdout); self.assertIn("PyYAML", r.stdout)
+            self.assertEqual(calls(tmp), "")
 
     def test_the_copied_file_is_the_checked_render(self):
         with tempfile.TemporaryDirectory() as tmp:
             keep = os.path.join(tmp, "copied.yaml")
             env = fake_env(tmp, REAL_TELEOP_NO_TTY_OK=1)
             fake = os.path.join(tmp, "bin", "docker")             # the fake keeps a copy of what `docker cp` gets for the yaml
-            open(fake, "w").write(FAKE.replace('echo "$@" >> "$FAKE_LOG"\n',
+            pathlib.Path(fake).write_text(FAKE.replace('echo "$@" >> "$FAKE_LOG"\n',
                                                'echo "$@" >> "$FAKE_LOG"\ncase "$*" in cp*teleop_real_*) cp "$2" %s;; esac\n' % keep))
             r = run("teleop", "drone_2", env=env)
             self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
             sys.path.insert(0, str(TOOLS / "teleop"))
             import pad_core, real_config
             src = (TOOLS.parent / "AirStack/robot/ros_ws/src/svg_ground_control/config/teleop_real_ours.yaml").read_text()
-            real_config.verify_render(src, open(keep).read(), "drone_2", pad_core.F310)
+            real_config.verify_render(src, pathlib.Path(keep).read_text(), "drone_2", pad_core.F310)
 
 
 class PadCheckShell(unittest.TestCase):
-    """pad_check.py needs rclpy + the pad (container only): compile, refusals that come before ROS, and source pins."""
+    """pad_check.py as a script: compile, refusals that come before ROS, and source pins. Its main() runs against a fake
+    ROS in tools/tests/test_pad_check.py (the joy_node pin and the stop on every exit path are tested there)."""
     SRC = PAD_CHECK.read_text()
 
     def test_compiles(self):
@@ -253,7 +358,7 @@ class PadCheckShell(unittest.TestCase):
 
     def _run(self, *args, tty_ok=False):
         with tempfile.TemporaryDirectory() as shim:
-            open(os.path.join(shim, "rclpy.py"), "w").write("raise ImportError('no ROS in this test')\n")
+            pathlib.Path(shim, "rclpy.py").write_text("raise ImportError('no ROS in this test')\n")
             env = dict(os.environ, PYTHONPATH=shim)
             return subprocess.run([sys.executable, str(PAD_CHECK), *args], capture_output=True, text=True, timeout=20,
                                   env=env, stdin=subprocess.DEVNULL)
@@ -270,21 +375,6 @@ class PadCheckShell(unittest.TestCase):
 
     def test_only_f310(self):
         self.assertEqual(self._run("--pad", "dragonrise").returncode, 2)
-
-    def test_private_joy_node_pinned_by_name(self):
-        for n in ('NODE = "svg_pad_check_joy"', 'TOPIC = "/svg_pad_check/joy"', '"__node:=" + NODE', '"joy:=" + TOPIC',
-                  '"device_name:=" + spec.sdl_name', "get_controller(spec.profile)", "profile.mapping_parameters()",
-                  'drv.get("deadzone"', 'drv.get("autorepeat_rate"'):
-            self.assertIn(n, self.SRC, n)
-        self.assertNotIn("device_id", self.SRC)
-
-    def test_joy_node_stopped_on_every_exit(self):
-        fin = self.SRC[self.SRC.index("    finally:"):]
-        self.assertIn("stop_joy(joy)", fin)
-        for sig in ("signal.SIGTERM", "signal.SIGHUP"):
-            self.assertIn(sig, self.SRC)
-        self.assertIn("except KeyboardInterrupt", self.SRC); self.assertIn("return 3", self.SRC)
-        self.assertIn("start_new_session=True", self.SRC); self.assertIn("os.killpg", self.SRC)
 
     def test_timeouts_match_the_spec(self):
         for n in ("DISCOVERY_S = 2.0", "FIRST_MSG_S = 5.0", "STEP_S = 15.0", "COLLECT_S = 0.5", "BACK_TO_REST_S = 10.0"):

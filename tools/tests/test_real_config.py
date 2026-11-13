@@ -114,7 +114,12 @@ class Refusals(unittest.TestCase):
 
     def test_existing_top_level_blocks_refused(self):
         for extra in ('led_controller:\n  ros__parameters:\n    drone_names: ["drone_1"]\n',
-                      'joy_node:\n  ros__parameters:\n    device_id: 1\n'):
+                      'joy_node:\n  ros__parameters:\n    device_id: 1\n',
+                      '/joy_node:\n  ros__parameters:\n    device_id: 1\n',
+                      '"/joy_node":\n  ros__parameters:\n    device_id: 1\n',
+                      '/led_controller:\n  ros__parameters:\n    drone_names: ["drone_1"]\n',
+                      '/**:\n  ros__parameters:\n    use_sim_time: false\n',
+                      '"/**":\n  ros__parameters:\n    use_sim_time: false\n'):
             with self.assertRaises(C.RenderError, msg=extra):
                 render("drone_1", SRC + extra)
 
@@ -136,16 +141,72 @@ class Refusals(unittest.TestCase):
             with self.assertRaises(C.RenderError) as e:
                 render("drone_2")
             self.assertIn("PyYAML", str(e.exception))
+            self.assertIsInstance(e.exception, C.CannotCheck)                    # exit 2, not a refusal (CHG-0066)
         finally:
             C.yaml = keep
 
 
+class MappingOverrides(unittest.TestCase):
+    """CHG-0066: safe_teleop takes its axis map from the config's block when one is set; the pad check tests the
+    profile's own map, so a source that overrides it must not render (it would fly inverted after a PASS)."""
+    KEYS = ("forward_axis", "left_axis", "climb_axis", "yaw_axis", "lock_button",
+            "forward_sign", "left_sign", "climb_sign", "yaw_sign", "joy_topic")
+    VALUES = {"forward_axis": "3", "forward_sign": "-1.0", "lock_button": "5", "joy_topic": '"/joy2"'}
+
+    def with_override(self, key, value, block="safe_teleop"):
+        anchor = "    max_climb_speed_mps: 0.5"
+        if block == "safe_teleop":
+            self.assertIn(anchor, SRC)
+            return SRC.replace(anchor, anchor + "\n    %s: %s" % (key, value), 1)
+        return SRC + "%s:\n  ros__parameters:\n    %s: %s\n" % (block, key, value)
+
+    def assert_refused(self, src, key):
+        for drone in C.KNOWN_DRONES:
+            with self.assertRaises(C.RenderError) as e:
+                render(drone, src)
+            msg = str(e.exception)
+            self.assertIn(key, msg)
+            self.assertIn("the pad check tests the profile's own mapping; remove the override from teleop_real_ours.yaml", msg)
+
+    def test_an_axis_override_is_refused(self):
+        self.assert_refused(self.with_override("forward_axis", "3"), "forward_axis")
+
+    def test_a_sign_override_is_refused(self):
+        self.assert_refused(self.with_override("forward_sign", "-1.0"), "forward_sign")
+
+    def test_a_lock_button_override_is_refused(self):
+        self.assert_refused(self.with_override("lock_button", "5"), "lock_button")
+
+    def test_a_joy_topic_override_is_refused(self):
+        self.assert_refused(self.with_override("joy_topic", '"/joy2"'), "joy_topic")
+
+    def test_every_key_in_every_spelling_is_refused(self):
+        for key in self.KEYS:
+            v = self.VALUES.get(key, "1")
+            for block in ("safe_teleop", "/safe_teleop", '"/safe_teleop"', "/**", '"/**"'):
+                with self.assertRaises(C.RenderError, msg=(key, block)) as e:
+                    render("drone_2", self.with_override(key, v, block))
+                self.assertIn(key, str(e.exception), (key, block))
+
+    def test_verify_render_refuses_an_override_too(self):
+        src = self.with_override("yaw_sign", "-1.0")
+        out = render("drone_2").replace("    max_climb_speed_mps: 0.5", "    max_climb_speed_mps: 0.5\n    yaw_sign: -1.0", 1)
+        with self.assertRaises(C.RenderError) as e:
+            C.verify_render(src, out, "drone_2", P.F310)
+        self.assertIn("yaw_sign", str(e.exception))
+
+    def test_the_real_source_still_renders(self):
+        for drone in C.KNOWN_DRONES:
+            C.verify_render(SRC, render(drone), drone, P.F310)
+
+
 class Operator(unittest.TestCase):
-    PANES_2 = ['laptop : cd ~/AirStack-starling-max2 && MOCAP_BODIES="drone_2" ./mocap.sh',
+    PANES_2 = ['laptop : cd ~/AirStack-starling-max2 && MOCAP_BODIES="drone_2" ./mocap.sh',      # start order (CHG-0066)
                'pane 1 : MicroXRCEAgent udp4 -p 8888 -v4',
                'pane 2 : ros2 launch svg_ground_control real_interfaces.launch.py drones:=drone_2 target_systems:=2',
-               'pane 3 : ros2 launch svg_ground_control ground_control.launch.py config:=/tmp/svg_real/teleop_real_drone_2.yaml use_mocap:=true use_foxglove_studio:=true',
-               'pane 5 : ros2 launch svg_ground_control teleop.launch.py config:=/tmp/svg_real/teleop_real_drone_2.yaml']
+               'pane 5 : ros2 launch svg_ground_control teleop.launch.py config:=/tmp/svg_real/teleop_real_drone_2.yaml',
+               'pane 3 : ros2 launch svg_ground_control ground_control.launch.py config:=/tmp/svg_real/teleop_real_drone_2.yaml use_mocap:=true use_foxglove_studio:=true']
+    START_HEADER = "Start them in this order. Prove the sticks on the ground (pane 5) before you start the commander (pane 3):"
 
     def test_pane_lines_drone_2_literal(self):
         self.assertEqual(C.pane_lines("drone_2", "/tmp/svg_real/teleop_real_drone_2.yaml"), self.PANES_2)
@@ -193,6 +254,7 @@ class Operator(unittest.TestCase):
         i_pane = b.index(self.PANES_2[0])
         self.assertLess(i_diff, i_take); self.assertLess(i_take, i_pane)
         self.assertEqual(b[i_pane:i_pane + 5], self.PANES_2)
+        self.assertEqual(b[i_pane - 1], self.START_HEADER)
         self.assertEqual(b[-1], "Do not press MODE. Re-run this command after any container restart or pad replug.")
 
 
@@ -216,6 +278,15 @@ class Cli(unittest.TestCase):
             C.verify_render(SRC, text, "drone_2", P.F310)
             self.assertIn(C.sha256_text(SRC), text.splitlines()[0])
             self.assertIn(Operator.PANES_2[4], r.stdout)
+
+    def test_render_without_pyyaml_is_cannot_check_exit_2(self):
+        with tempfile.TemporaryDirectory() as shim, tempfile.TemporaryDirectory() as tmp:
+            pathlib.Path(shim, "yaml.py").write_text("raise ImportError('no PyYAML in this test')\n")
+            r = subprocess.run([sys.executable, str(self.PY), "render", "--drone", "drone_2", "--source", str(SRC_PATH),
+                                "--out", os.path.join(tmp, "o.yaml")], capture_output=True, text=True, timeout=20,
+                               env=dict(os.environ, PYTHONPATH=shim))
+            self.assertEqual(r.returncode, 2, r.stderr); self.assertIn("PyYAML", r.stderr)
+            self.assertFalse(os.path.exists(os.path.join(tmp, "o.yaml")))
 
     def test_render_refuses_a_drifted_source(self):
         with tempfile.TemporaryDirectory() as tmp:

@@ -48,6 +48,27 @@ def check(v):
     return v
 
 
+# Hooks the tests replace (tools/tests/test_pad_check.py); in the container they read the real system.
+clock = time.monotonic
+
+
+def stdin_is_tty():
+    return sys.stdin.isatty()
+
+
+def read_input_devices():
+    with open("/proc/bus/input/devices") as f:
+        return f.read()
+
+
+def kill_stale():
+    """A joy_node left by a check that was killed hard."""
+    try:
+        subprocess.run(["pkill", "-f", "__node:=" + NODE], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except OSError:
+        pass
+
+
 def driver_of(js):
     try:
         return os.path.basename(os.readlink("/sys/class/input/%s/device/device/driver" % js))
@@ -97,7 +118,7 @@ def main(argv=None):
     for sig in (signal.SIGTERM, signal.SIGHUP):                    # a closed terminal or a kill also stops our joy_node
         signal.signal(sig, interrupted)
     try:
-        if not a.static and not sys.stdin.isatty():
+        if not a.static and not stdin_is_tty():
             raise Stop(2, "the stick test needs a terminal — run it in a terminal tab (or --static)")
         try:
             import rclpy
@@ -113,8 +134,7 @@ def main(argv=None):
 
         # 1  USB + driver: no ROS needed
         try:
-            with open("/proc/bus/input/devices") as f:
-                devs = P.parse_input_devices(f.read())
+            devs = P.parse_input_devices(read_input_devices())
         except OSError:
             devs = []
         verdicts, js = P.judge_usb(devs, spec)
@@ -125,22 +145,19 @@ def main(argv=None):
         # 2  nothing else may read the pad into the stack
         rclpy.init(signal_handler_options=SignalHandlerOptions.NO)
         node = rclpy.create_node("svg_pad_check")
-        end = time.monotonic() + DISCOVERY_S
-        while time.monotonic() < end:
+        end = clock() + DISCOVERY_S
+        while clock() < end:
             rclpy.spin_once(node, timeout_sec=0.1)
         pubs = ["%s/%s" % (i.node_namespace.rstrip("/"), i.node_name) for i in node.get_publishers_info_by_topic("/joy")]
         nodes = ["%s/%s" % (ns.rstrip("/"), n) for n, ns in node.get_node_names_and_namespaces()]
         check(P.judge_environment(pubs, nodes, processes()))
 
         # 3  our own joy_node, pinned by name, on a private topic
-        try:                                                       # a stale one from a check that was killed hard
-            subprocess.run(["pkill", "-f", "__node:=" + NODE], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        except OSError:
-            pass
+        kill_stale()
         samples = []
 
         def on_joy(m):
-            s = {"t": time.monotonic(), "axes": [float(x) for x in m.axes], "buttons": [int(b) for b in m.buttons]}
+            s = {"t": clock(), "axes": [float(x) for x in m.axes], "buttons": [int(b) for b in m.buttons]}
             samples.append(s)
             if rec:
                 rec.write(json.dumps(dict(s, phase=phase[0])) + "\n")
@@ -156,8 +173,8 @@ def main(argv=None):
                                env=dict(os.environ, RCUTILS_LOGGING_BUFFERED_STREAM="1"))
 
         def spin_for(seconds, until=None):
-            end = time.monotonic() + seconds
-            while time.monotonic() < end:
+            end = clock() + seconds
+            while clock() < end:
                 rclpy.spin_once(node, timeout_sec=0.05)
                 if until is not None and until():
                     return True
@@ -179,6 +196,8 @@ def main(argv=None):
         del samples[:]
         spin_for(REST_S)
         rest = check(P.judge_rest(list(samples), spec)).data
+        mine = ["%s/%s" % (i.node_namespace.rstrip("/"), i.node_name) for i in node.get_publishers_info_by_topic(TOPIC)]
+        check(P.judge_check_topic(mine, NODE))                 # a second check on the same topic would mix its samples in
         if a.static:
             say("PAD CHECK: STATIC PASS — the stick test is still to do: tools/real.sh pad")
             return 0
@@ -203,8 +222,8 @@ def main(argv=None):
                 if not samples:
                     return False
                 if P.at_rest(samples[-1], rest):
-                    calm["since"] = calm["since"] or time.monotonic()
-                    return time.monotonic() - calm["since"] >= 0.3
+                    calm["since"] = calm["since"] or clock()
+                    return clock() - calm["since"] >= 0.3
                 calm["since"] = None
                 return False
             if not spin_for(BACK_TO_REST_S, settled):
@@ -217,6 +236,9 @@ def main(argv=None):
     except KeyboardInterrupt:
         say(P.fail_line("stopped (Ctrl-C) — the check did not finish"))
         return 3
+    except Exception as e:                                         # anything unforeseen: cannot check, never a silent end
+        say(P.fail_line("cannot check: %s: %s" % (type(e).__name__, e)))
+        return 2
     finally:
         stop_joy(joy)
         if rec:

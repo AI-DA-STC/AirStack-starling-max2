@@ -58,9 +58,10 @@ tools/real.sh teleop drone_2      # the full check, then the config and the comm
 ```
 
 - Set the switch on the back of the pad to X, with the MODE light off. Do not press MODE after the check.
-- `teleop drone_2` writes `/tmp/svg_real/teleop_real_drone_2.yaml` in the robot container, made from `teleop_real_ours.yaml`: drone name, controller `xbox_usb`, the pad's name pin, the LED block. It prints the changed lines, the takeoff point and the pane commands.
+- `teleop drone_2` makes the config on the laptop from `teleop_real_ours.yaml`: drone name, controller `xbox_usb`, the pad's name pin, the LED block. It removes the old `/tmp/svg_real/teleop_real_drone_2.yaml` in the robot container, runs the full check, and copies the new file in only after a PASS. Then it prints the changed lines, the takeoff point and the pane commands in start order.
+- It refuses a `teleop_real_ours.yaml` that sets the stick map in its `safe_teleop` block (axes, signs, `lock_button`, `joy_topic`): the check tests the profile's own map.
 - Re-run it after any container restart or pad replug. It refuses while Isaac Sim runs, another node publishes `/joy` or `safe_teleop` runs.
-- Exit 0 PASS, 1 FAIL, 2 cannot check, 3 Ctrl-C.
+- Exit 0 PASS, 1 FAIL, 2 cannot check, 3 Ctrl-C. Exit 0 from `pad --static` is not a flight PASS: it cannot see MODE or a swapped stick. Only `pad` and `teleop` give a flight PASS.
 
 ## Run a test
 

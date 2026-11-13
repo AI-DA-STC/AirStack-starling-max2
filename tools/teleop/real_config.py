@@ -5,9 +5,10 @@ teleop_real_ours.yaml by exact text replacement (never a yaml load-and-dump), ch
   python3 real_config.py render --drone drone_2 --source <teleop_real_ours.yaml> --out <file>   (prints the operator block)
   python3 real_config.py check-drone drone_2
 
-Exit: 0 done · 1 refused (the source drifted from the anchors, or the check failed) · 2 usage or unknown drone.
+Exit: 0 done · 1 refused (the source drifted from the anchors or overrides the stick map, or the check failed)
+      · 2 usage, unknown drone, or cannot check (PyYAML missing).
 """
-import argparse, datetime, hashlib, os, sys
+import argparse, datetime, hashlib, os, re, sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import pad_core as P
@@ -25,10 +26,62 @@ TELEOP = '    teleop_drones: "%s"'
 CONTROLLER = '    teleop_controller: "%s"'
 ADDED_KEYS = ("led_controller", "joy_node")
 HEADER_LINES = 2
+# safe_teleop reads these from its config block when set, the profile's values are only defaults (teleop_node.py). The
+# pad check tests the profile's own map, so a source that sets any of them is refused (CHG-0066).
+MAPPING_KEYS = ("forward_axis", "left_axis", "climb_axis", "yaw_axis", "lock_button",
+                "forward_sign", "left_sign", "climb_sign", "yaw_sign", "joy_topic")
+TOP_KEY = re.compile(r"""^(["']?)(.+?)\1\s*:(\s|$)""")
 
 
 class RenderError(Exception):
     pass
+
+
+class CannotCheck(RenderError):
+    """The render cannot be checked on this host (PyYAML missing): exit 2, not a refusal."""
+
+
+def _need_yaml():
+    if yaml is None:
+        raise CannotCheck("PyYAML missing on the host — pip install pyyaml (the render cannot be checked)")
+
+
+def _load(text):
+    try:
+        tree = yaml.safe_load(text)
+    except yaml.YAMLError as e:
+        raise RenderError("yaml does not load: %s" % e)
+    if not isinstance(tree, dict):
+        raise RenderError("the yaml is not a mapping of node blocks")
+    return tree
+
+
+def _last(key):
+    return str(key).rstrip("/").split("/")[-1]
+
+
+def _taken(key):
+    """A top-level block the render would collide with: led_controller / joy_node in any spelling, or a wildcard."""
+    return _last(key) in ADDED_KEYS or "*" in str(key)
+
+
+def mapping_overrides(tree):
+    """[(block, key)] for every stick-map key a safe_teleop block (safe_teleop, /safe_teleop, /**, …) sets."""
+    hits = []
+    for top, block in tree.items():
+        if _last(top) != "safe_teleop" and "*" not in str(top):
+            continue
+        params = (block or {}).get("ros__parameters") if isinstance(block, dict) else None
+        if isinstance(params, dict):
+            hits += [(str(top), k) for k in MAPPING_KEYS if k in params]
+    return hits
+
+
+def refuse_overrides(tree):
+    hits = mapping_overrides(tree)
+    if hits:
+        raise RenderError("%s — the pad check tests the profile's own mapping; remove the override from %s"
+                          % ("; ".join("%s sets %s" % h for h in hits), SOURCE_NAME))
 
 
 def check_drone(drone):
@@ -75,14 +128,16 @@ def _check_source(src_lines):
         if got != n:
             raise RenderError("source drift: %r appears %d time(s), expected %d" % (a.strip(), got, n))
     for l in src_lines:
-        for k in ADDED_KEYS:
-            if l.startswith(k + ":"):
-                raise RenderError("the source already has a top-level %s block" % k)
+        m = TOP_KEY.match(l) if l[:1] not in ("", " ", "\t", "#") else None
+        if m and _taken(m.group(2)):
+            raise RenderError("the source already has a top-level %s block" % m.group(2))
 
 
 def render(src_text, drone, spec, now, src_sha):
     """The per-drone config text; RenderError on an unknown drone or any drift from the anchors."""
     check_drone(drone)
+    _need_yaml()
+    refuse_overrides(_load(src_text))
     src_lines = src_text.splitlines()
     _check_source(src_lines)
     body = [_replacement(l, drone, spec) or l for l in src_lines]
@@ -102,8 +157,7 @@ def render(src_text, drone, spec, now, src_sha):
 def verify_render(src_text, out_text, drone, spec):
     """(a) line level: only the anchor lines differ, each by its expected replacement; (b) semantic: the yaml trees are
     equal once the listed keys are popped, and the top level gained exactly led_controller and joy_node."""
-    if yaml is None:
-        raise RenderError("PyYAML missing on the host — pip install pyyaml (the render cannot be checked)")
+    _need_yaml()
     check_drone(drone)
     s, o = src_text.splitlines(), out_text.splitlines()
     t = tail(drone, spec)
@@ -119,11 +173,10 @@ def verify_render(src_text, out_text, drone, spec):
     for i in differ:
         if body[i] != _replacement(s[i], drone, spec):
             raise RenderError("line %d is %r, expected %r" % (i + 1, body[i], _replacement(s[i], drone, spec)))
-    try:
-        ys, yo = yaml.safe_load(src_text), yaml.safe_load(out_text)
-    except yaml.YAMLError as e:
-        raise RenderError("yaml does not load: %s" % e)
-    if set(yo) != set(ys) | set(ADDED_KEYS) or set(ys) & set(ADDED_KEYS):
+    ys, yo = _load(src_text), _load(out_text)
+    refuse_overrides(ys)
+    refuse_overrides(yo)
+    if set(yo) != set(ys) | set(ADDED_KEYS) or any(_taken(k) for k in ys):
         raise RenderError("top-level keys %s, expected the source's plus %s" % (sorted(yo), list(ADDED_KEYS)))
     expect = {("swarm_commander", "drone_names"): [drone], ("swarm_commander", "teleop_drones"): drone,
               ("mocap_bridge", "drone_names"): [drone], ("safe_teleop", "teleop_controller"): spec.profile}
@@ -171,10 +224,9 @@ def diff_summary(src_text, out_text):
 def takeoff_point(src_text, drone):
     """(x, y, z) the drone takes off to: the source's hover_positions, slot of `drone` (the render's slot 0 for a
     one-drone source whose single name the render replaces)."""
-    if yaml is None:
-        raise RenderError("PyYAML missing on the host — pip install pyyaml")
+    _need_yaml()
     check_drone(drone)
-    p = yaml.safe_load(src_text)["swarm_commander"]["ros__parameters"]
+    p = _load(src_text)["swarm_commander"]["ros__parameters"]
     names, hp = list(p["drone_names"]), [float(v) for v in p["hover_positions"]]
     if drone in names:
         i = names.index(drone)
@@ -192,14 +244,18 @@ def takeoff_sentence(drone, point):
         check_drone(drone), point[0], point[1])
 
 
+START_HEADER = "Start them in this order. Prove the sticks on the ground (pane 5) before you start the commander (pane 3):"
+
+
 def pane_lines(drone, path):
+    """The five commands in START order: the pad (pane 5) is proven on the ground before the commander (pane 3)."""
     check_drone(drone)
     n = int(drone.split("_")[1])
     return ['laptop : cd ~/AirStack-starling-max2 && MOCAP_BODIES="%s" ./mocap.sh' % drone,
             'pane 1 : MicroXRCEAgent udp4 -p 8888 -v4',
             'pane 2 : ros2 launch svg_ground_control real_interfaces.launch.py drones:=%s target_systems:=%d' % (drone, n),
-            'pane 3 : ros2 launch svg_ground_control ground_control.launch.py config:=%s use_mocap:=true use_foxglove_studio:=true' % path,
-            'pane 5 : ros2 launch svg_ground_control teleop.launch.py config:=%s' % path]
+            'pane 5 : ros2 launch svg_ground_control teleop.launch.py config:=%s' % path,
+            'pane 3 : ros2 launch svg_ground_control ground_control.launch.py config:=%s use_mocap:=true use_foxglove_studio:=true' % path]
 
 
 def operator_block(src_text, out_text, drone, path):
@@ -209,7 +265,7 @@ def operator_block(src_text, out_text, drone, path):
             + diff_summary(src_text, out_text)
             + ["", "Takeoff point (hover_positions in %s): x %s, y %s, z %s" % (SOURCE_NAME, pt[0], pt[1], pt[2]),
                takeoff_sentence(drone, pt),
-               "", "Commands, one per pane:"]
+               "", START_HEADER]
             + pane_lines(drone, path)
             + ["", "Do not press MODE. Re-run this command after any container restart or pad replug."])
 
@@ -236,6 +292,9 @@ def main(argv=None):
             src = f.read()
         out = render(src, a.drone, P.F310, datetime.datetime.now().astimezone(), sha256_text(src))
         block = operator_block(src, out, a.drone, container_path(a.drone))
+    except CannotCheck as e:
+        print("error: cannot check — %s" % e, file=sys.stderr)
+        return 2
     except (OSError, RenderError, KeyError, TypeError, ValueError) as e:
         print("error: render refused — %s" % e, file=sys.stderr)
         return 1

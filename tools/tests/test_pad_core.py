@@ -90,6 +90,17 @@ class InputDevices(unittest.TestCase):
         v, js = P.judge_usb(d, P.F310)
         self.assertFalse(v[0].ok); self.assertIsNone(js)
 
+    def test_no_other_joystick_reads_others_none(self):
+        d = [x for x in devs("proc_x_mode.txt") if "js0" not in x["handlers"]]
+        v, js = P.judge_usb(d, P.F310)
+        self.assertEqual(js, "js1"); self.assertEqual(v[1].line(), "PASS others none")
+
+    def test_three_pads_are_ambiguous(self):
+        d = devs("proc_two_f310.txt")
+        third = dict([x for x in d if x["vendor"] == "046d"][0], handlers=["event40", "js3"])
+        v, js = P.judge_usb(d + [third], P.F310)
+        self.assertIsNone(js); self.assertEqual(v[0].text, "ambiguous — three F310 pads, unplug one")
+
     def test_empty_or_garbage_is_not_found(self):
         for text in ("", "garbage\nlines\n"):
             v, js = P.judge_usb(P.parse_input_devices(text), P.F310)
@@ -116,6 +127,10 @@ class Opened(unittest.TestCase):
     def test_parses_the_measured_log_line(self):
         self.assertEqual(P.parse_opened_name(self.LOG), "Logitech Gamepad F310")
         self.assertEqual(P.parse_opened_name("noise\n" + self.LOG + "more\n"), "Logitech Gamepad F310")
+
+    def test_parses_a_line_without_the_deadzone_suffix(self):
+        self.assertEqual(P.parse_opened_name("[INFO] [1.0] [j]: Opened joystick: Logitech Gamepad F310.\n"), "Logitech Gamepad F310")
+        self.assertEqual(P.parse_opened_name("Opened joystick: Logitech Gamepad F310"), "Logitech Gamepad F310")
 
     def test_none_when_nothing_opened(self):
         self.assertIsNone(P.parse_opened_name("[ERROR] Could not get joystick with name Logitech Gamepad F310\n"))
@@ -247,11 +262,16 @@ class Step(unittest.TestCase):
         self.assertTrue(self.j("press LB", sample(b4=1, b5=1)).text.startswith("WRONG BUTTON"))      # two buttons: fail closed
         self.assertTrue(self.j("press LB", sample(a2=-1.0)).text.startswith("WRONG BUTTON"))         # LT instead of LB
 
-    def test_keyboard_never_moves(self):
+    def test_keyboard_stream_shows_no_movement_from_its_own_rest(self):
         kb = P.load_jsonl((FIX / "joy_keyboard.jsonl").read_text())
+        rest = kb[0]["axes"]                                               # the keyboard's joystick device: 6 zeros
         for name in STEPS:
-            v = P.judge_step(STEPS[name], kb, REST, P.F310)
-            self.assertFalse(v.ok, name)
+            self.assertEqual(P.judge_step(STEPS[name], kb, rest, P.F310).text, "NO MOVEMENT on " + name)
+
+    def test_axis_step_with_only_a_button_pressed(self):
+        v = self.j("right stick UP", sample(b0=1))
+        self.assertFalse(v.ok)
+        self.assertEqual(v.text, "WRONG BUTTON — right stick UP pressed button 0, expected a stick")
 
     def test_movement_needs_half_a_stick_or_a_button(self):
         self.assertFalse(P.movement(sample(a4=0.4), REST)); self.assertTrue(P.movement(sample(a4=0.6), REST))
@@ -272,9 +292,28 @@ class Environment(unittest.TestCase):
             v = P.judge_environment([], nodes, procs)
             self.assertFalse(v.ok); self.assertEqual(v.text, "safe_teleop running — stick tests would reach the commander")
 
-    def test_isaac_refuses(self):
-        v = P.judge_environment([], [], ["python3 svg_multi_drone_single_domain.py"])
-        self.assertFalse(v.ok); self.assertEqual(v.text, "Isaac Sim running — real teleop refused")
+    def test_isaac_is_not_judged_here(self):          # the robot container cannot see isaac-sim's processes: real_teleop.sh guards it
+        self.assertTrue(P.judge_environment([], [], ["python3 svg_multi_drone_single_domain.py"]).ok)
+        self.assertNotIn("svg_multi_drone_single_domain", (HERE.parent / "teleop" / "pad_core.py").read_text())
+
+
+class CheckTopic(unittest.TestCase):
+    """CHG-0066: after the pad opens, exactly one publisher on the check topic, and it is the check's own joy_node."""
+    TEXT = "another publisher on the check topic — is a second pad check running?"
+
+    def test_our_joy_node_alone_passes(self):
+        self.assertTrue(P.judge_check_topic(["/svg_pad_check_joy"], "svg_pad_check_joy").ok)
+
+    def test_two_publishers_fail(self):
+        v = P.judge_check_topic(["/svg_pad_check_joy", "/svg_pad_check_joy"], "svg_pad_check_joy")
+        self.assertFalse(v.ok); self.assertEqual(v.text, self.TEXT)
+
+    def test_another_node_fails(self):
+        v = P.judge_check_topic(["/someone_else"], "svg_pad_check_joy")
+        self.assertFalse(v.ok); self.assertEqual(v.text, self.TEXT)
+
+    def test_none_fails(self):
+        self.assertFalse(P.judge_check_topic([], "svg_pad_check_joy").ok)
 
 
 class Lines(unittest.TestCase):

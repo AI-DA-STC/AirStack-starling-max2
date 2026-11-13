@@ -159,7 +159,13 @@ Linear (snapshot 2026-11-12): 0 % · no ledger row on this software
 | NEAR-835 | Release-to-hold test and coast distance | Backlog | — | — |
 | NEAR-915 | Yaw-step check on the real Starling: overshoot and settle after a yaw pulse, compared with the sim | Backlog | — | — |
 
-Decisive check: yaw stick 10 % for one second, low, thumb on KILL; wrong way → land, flip `yaw_sign`, relaunch ([TELEOP.md](../TELEOP.md) §2, §5). Config `teleop_real_ours.yaml`.
+Pass lines fixed 2026-11-13, before any gamepad flight (owner). Pad: Logitech F310 on the `xbox_usb` profile. Front door: `tools/real.sh teleop drone_2` ([tools/README.md](../../tools/README.md)): it checks the pad, then prepares `teleop_real_ours.yaml` for the drone named. Every test flies at 1.0 m with a second person on the kill switch, a recording and a video. Distances come from the mocap pose.
+
+**NEAR-833: Check the yaw stick turns the drone the right way, slowly and low.** Proves the one stick direction the sim cannot. A small push of the left stick to the left for about 1 s, then to the right. Pass: the drone turns left (anticlockwise seen from above) and then right, and drifts less than 0.3 m while turning. Wrong way: land and stop. `tools/real.sh` refuses a config that overrides the stick map, so a sign flip must be a recorded change first.
+
+**NEAR-834: Gamepad fence test.** Proves the pilot cannot fly the drone out of the teleop fence (x and y ±1.5 m, height 0.3 to 1.8 m). Fly at 0.25 m/s into the +x wall and hold the stick for 5 s. Repeat on the −y wall and the top. Pass: never more than 0.10 m past a wall (x 1.60 m, y −1.60 m, height 1.90 m). That matches the 0.03 to 0.10 m by which the collision filter came inside its line ([#35](../record/LEDGER.md)), and it leaves 0.4 m to the geofence at 2.0 m.
+
+**NEAR-835: Release-to-hold test and coast distance.** Proves that letting go of the stick stops the drone. Fly at 0.25 m/s, then at 0.5 m/s (full stick), and release. Pass: stopped within 0.5 m and 2 s, then within 0.2 m of that point for 5 s. Also unplug the pad at 0.25 m/s: the code holds the last stick for up to 0.5 s, so the pass line is a stop within 0.75 m. Record the coast distance at each speed.
 
 ### M6 · LED strips — REAL DRONE, cosmetic
 **Purpose:** LED strips give everyone in the room a glance-level status: green ok, red when collision avoidance is acting. Optional hardware; starts when the strip arrives.

@@ -52,8 +52,7 @@ S3/S4 result (sim only; reference = PX4 EKF2, not ground truth). [Figure 1](#fig
 |---|---|---|
 | APE RMSE, SE(3)-aligned | 0.88–5.3 m, 2 jumps > 1 m per run (per sim_site_run1 record) | 0.081 m over 162 m, no jumps |
 
-<a id="fig-1"></a>
-![flat world: VO jumps away from the reference](../../pictures/vo_flat_xy_cam_run3.png) ![construction site: VO stays on the reference](../../pictures/vo_site_xy_site_run1.png)
+<a id="fig-1"></a>![flat world: VO jumps away from the reference](../../pictures/vo_flat_xy_cam_run3.png) ![construction site: VO stays on the reference](../../pictures/vo_site_xy_site_run1.png)
 *Figure 1. Top-down path of drone_1, PX4 (blue) vs cuVSLAM (orange): flat world (left, sim_cam_run3, no record file) and construction site (right, sim_site_run1). `localisation/scripts/score_run.sh <run> 1`; ledger #15, #16.*
 
 ### S5 Finish basic sim flight checks — SIM ONLY (Isaac)
@@ -68,7 +67,7 @@ Linear (snapshot 2026-11-13): 81 % · last ledger row #32 (2026-11-03)
 | NEAR-787 | Re-run three-drone crossing with collision avoidance and record it | Done | FAIL ×3 — min 1.00 m (#22), 2026-10-30 | [#20–#22](../record/LEDGER.md) → [record](../record/sim_crossing_run2_record.md), [#21 video](../../videos/cbf_test.mp4) |
 | NEAR-788 | Try live gain tuning from the panel in sim | Done | Works — 5 of 5 changes applied, 2026-10-30 | [#23](../record/LEDGER.md) → [record](../record/sim_gains_run1_record.md) |
 | NEAR-789 | Set up one-drone keyboard teleop in the construction site (keys move the drone, release holds) | Done | — | [video](../../videos/sim_keyboard_teleop_2026-11-04.mp4), 2026-11-04 |
-| NEAR-790 | Hand-fly drone_1 with cuVSLAM running, record and score the flight | Backlog | — | — |
+| NEAR-790 | Hand-fly drone_1 with cuVSLAM running, record and score the flight | In Progress | — | — |
 | NEAR-860 | Record the stereo camera images so a flight can be replayed through cuVSLAM | In Progress | — | — |
 | NEAR-910 | Retune the sim airframe’s yaw-rate gains so the heading settles after a turn | Done | PASS — overshoot 1.65°, settle 0.03 s, 2026-11-02 | [#31](../record/LEDGER.md) → [record](../record/sim_yaw_run3_record.md) |
 | NEAR-920 | Sim keyboard teleop flies in Drive mode (BODY), F switches to Room mode, with the forward-follows-the-nose test | Done | PASS — worst 0.9° off the nose, 2026-11-03 | [#32](../record/LEDGER.md) → [record](../record/sim_teleop_frame_run1_record.md) |
@@ -76,8 +75,7 @@ Linear (snapshot 2026-11-13): 81 % · last ledger row #32 (2026-11-03)
 
 **NEAR-786: Re-run hover and 1 m step test on the updated sim drone.** This test checks the control loop only, so the camera and cuVSLAM are off and the world makes no difference. The gate-by-gate table for runs #3, #17, #18 and #19 is in [sim_notes_hover_step.md](../record/sim_notes_hover_step.md). Reading [Figure 2](#fig-2): every step is inside the settle band within 2.5 s and stays there; x overshoots by up to 0.095 m, z by almost nothing. The three runs lie on top of each other, so the result is repeatable. The settle time is set as much by the commander's braking ramp as by PX4: it describes the loop, not the airframe.
 
-<a id="fig-2"></a>
-![x and z step responses, #17–#19 overlaid, PX4 vehicle time](../record/figures/s5_hover_step_overlay.png)
+<a id="fig-2"></a>![x and z step responses, #17–#19 overlaid, PX4 vehicle time](../record/figures/s5_hover_step_overlay.png)
 *Figure 2. Step response of drone_1 to 1 m commands, x (left) and z (right), #17–#19 overlaid, PX4 time. Dotted: goal. Shaded: ±0.1 m band. Dashed: 3 s gate. Backward steps sign-flipped. `tools/make_figures.sh`; records [#17](../record/sim_hover_step_run1_record.md), [#18](../record/sim_hover_step_run2_record.md), [#19](../record/sim_hover_step_run3_record.md).*
 
 **NEAR-787: Re-run three-drone crossing with collision avoidance and record it.** This test checks that three drones crossing paths still avoid each other after the rebuild. The collision avoidance gives each drone a 0.55 m safety bubble, so two drones should stay at least 1.10 m apart. All runs are in simulation on a flat world, with PX4's own position estimate and no camera. The closest two drones came was 1.00 m in the clean run ([#22](../record/sim_crossing_run2_record.md)), against 1.02 m before the rebuild ([#4](../record/LEDGER.md)). Every run went about 0.1 m inside the 1.10 m line, so each one fails the gate. [Figure 3](#fig-3) shows why: the drones brake as they close in, but reach the line still moving and overshoot it before being pushed apart. They never touched, and every other check passed.
@@ -235,6 +233,8 @@ Linear (snapshot 2026-11-13): 0 % · no ledger row yet
 | NEAR-923 | Live cuVSLAM map panel in the teleop layout | Backlog | — | — |
 | NEAR-924 | Draw the PX4 position in the chase view | Backlog | — | — |
 | NEAR-925 | Find why the cuVSLAM image freezes briefly at takeoff in the teleop layout | Backlog | — | — |
+| NEAR-954 | Sim: fly with the gamepad (Logitech F310), same pad check and profile as the real drone | In Progress | — | — |
+| NEAR-955 | Isaac Lab: train in parallel with the Starling model and measure steps per second | In Progress | — | — |
 
 ## Sim debt (ours; only the clock gates a milestone: NEAR-871 → S5e)
 

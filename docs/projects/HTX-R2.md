@@ -37,7 +37,7 @@ Leak detail: `px4_interface` publishes the trajectory setpoint ungated, and PX4 
 
 ### R1 · New mocap and network pipeline — REAL DRONE, mocap hardware, no flight
 **Purpose:** nothing real can fly until the position pipeline works end to end: the upgraded OptiTrack streams, the laptop sits on the mocap subnet (multicast does not cross the router), the drone is reachable, and PX4 receives the pose with the right axes. Every later milestone assumes this.
-Linear (snapshot 2026-11-13): 63 % · no ledger row on this software (first flights 2026-11-11: logs only)
+Linear (snapshot 2026-11-13): 100 % · last ledger row #37 (2026-11-13)
 
 **Done when** (Linear's target, verbatim; a target, not a result): Motive calibration, ground plane, axes and rigid body are configured; full-rate streaming lasts 10 minutes without stalls; laptop/drone communicate both ways; PX4 receives correct-axis mocap; settings are documented.
 
@@ -45,8 +45,8 @@ Linear (snapshot 2026-11-13): 63 % · no ledger row on this software (first flig
 |---|---|---|---|---|
 | NEAR-814 | Network: laptop on the mocap subnet (192.168.9.x) with the route to the drone subnet; drone gets its WiFi address; both ping each other | Done | — | — |
 | NEAR-815 | Set up the upgraded Motive: calibrate (wand, ground plane, axis convention) and create the Starling rigid body | Done | — | — |
-| NEAR-816 | Mocap stream end to end: laptop receives it at full rate for 10 min with no stalls, it reaches the drone’s PX4, and moving the drone by hand moves the position the same way on every axis | In Progress | Flew on the 240 Hz stream 2026-11-11 to 13; the 10-minute run was not done; closed by the owner, 2026-11-13 | [#33](../record/LEDGER.md), [#37](../record/LEDGER.md) |
-| NEAR-817 | Record the new Motive version, IP and streaming settings in the lab docs and pictures | In Progress | Recorded in the docs; pictures not taken; closed by the owner, 2026-11-13 | [CONFIG.md](../CONFIG.md) |
+| NEAR-816 | Mocap stream end to end: laptop receives it at full rate for 10 min with no stalls, it reaches the drone’s PX4, and moving the drone by hand moves the position the same way on every axis | Done | Flew on the 240 Hz stream 2026-11-11 to 13; the 10-minute run was not done; closed by the owner, 2026-11-13 | [#33](../record/LEDGER.md), [#37](../record/LEDGER.md) |
+| NEAR-817 | Record the new Motive version, IP and streaming settings in the lab docs and pictures | Done | Recorded in the docs; pictures not taken; closed by the owner, 2026-11-13 | [CONFIG.md](../CONFIG.md) |
 
 Observed on the previous software (archived branch `archive/airstack-starling-max2`, 2026-07-20 → 09-03) — observations, not results on this software ([LEDGER table 2](../record/LEDGER.md#table-2--observed-on-the-previous-software-archived)):
 
@@ -127,14 +127,14 @@ Decisive check in hover: `ros2 topic hz /drone_1/fmu/trajectory_command` ≈ 20 
 
 ### M4 · Goal flights with the braking fence — REAL DRONE
 **Purpose:** goal flights are the building block of every scenario. This checks the speed-limited profile, how hard the fence brakes at a wall, live gain changes and where a hold stops the drone, on one drone before any formation.
-Linear (snapshot 2026-11-13): 38 % · last ledger row #37 (2026-11-13)
+Linear (snapshot 2026-11-13): 75 % · last ledger row #37 (2026-11-13)
 
 **Done when** (Linear's target, verbatim; a target, not a result): goal legs use the smooth speed-limited profile; wall braking distance is measured; gains change live; hold stops the drone where expected.
 
 | Issue | Title (Linear, verbatim) | Linear status | Result | Evidence |
 |---|---|---|---|---|
-| NEAR-829 | Goal legs on the speed-limited profile | In Progress | One 0.94 m leg at 0.5 m/s: at speed in 0.5 s, 0.04 m overshoot, 2026-11-12; closed by the owner | [#35](../record/LEDGER.md) |
-| NEAR-830 | Measure braking at the fence walls | In Progress | Teleop wall: 0.03 m past at up to 0.66 m/s, 2026-11-13; main fence not measured; closed by the owner | [#36](../record/LEDGER.md), [#33](../record/LEDGER.md) |
+| NEAR-829 | Goal legs on the speed-limited profile | Done | One 0.94 m leg at 0.5 m/s: at speed in 0.5 s, 0.04 m overshoot, 2026-11-12; closed by the owner | [#35](../record/LEDGER.md) |
+| NEAR-830 | Measure braking at the fence walls | Done | Teleop wall: 0.03 m past at up to 0.66 m/s, 2026-11-13; main fence not measured; closed by the owner | [#36](../record/LEDGER.md), [#33](../record/LEDGER.md) |
 | NEAR-831 | Change gains live from the panel in flight | Done | Flown — one gain, the CBF radius 0.55 → 0.90, changed from the panel in flight and took effect, 2026-11-13 | [#37](../record/LEDGER.md) |
 | NEAR-832 | Check where a hold stops the drone | Backlog | — | — |
 
@@ -184,7 +184,7 @@ Decisive check: `scripts/voxl_push_led.sh drone_1 <DRONE_IP>` then on the drone 
 
 ### M7 · Multi-drone — REAL DRONE, three drones need the new Starlings
 **Purpose:** the project's goal is a swarm. Two, then three real drones fly formations, random goals with collision avoidance and the intruder squeeze. Two drones first flew on the lab's two Starlings (2026-11-12); three drones depend on the new Starlings arriving.
-Linear (snapshot 2026-11-13): 20 % · last ledger row #37 (2026-11-13)
+Linear (snapshot 2026-11-13): 25 % · last ledger row #37 (2026-11-13)
 
 **Done when** (Linear's target, verbatim; a target, not a result): formations, random goals with collision avoidance and intruder-squeeze tests fly.
 
@@ -194,7 +194,8 @@ Linear (snapshot 2026-11-13): 20 % · last ledger row #37 (2026-11-13)
 | NEAR-839 | Set up each new Starling (one at a time, setup guide) | Backlog | — | — |
 | NEAR-840 | Two drones: formation and random goals with collision avoidance | Done | Observed — two drones, closest 1.50 m against a 1.60 m keep-out, 2026-11-12 | [#35](../record/LEDGER.md), [hangar video](../../videos/cbf_drone_real_1080p.mp4), [#37](../record/LEDGER.md) |
 | NEAR-841 | Three drones: intruder-squeeze test | Backlog | — | — |
-| NEAR-951 | Two drones: formation and random goals | Backlog | — | — |
+| NEAR-951 | Two drones: formation and random goals | In Progress | — | — |
+| NEAR-953 | Two drones: figure-8 with collision avoidance | In Progress | — | — |
 
 **NEAR-840: Two drones: formation and random goals with collision avoidance.** Checks that two real drones fly together under one commander and that the collision filter (CBF) keeps them apart, before formations and random goals are tried. Scope: both Starlings on motion-capture positioning (mocap) at 240 Hz, `goal_two_ours.yaml` at 0.5 m/s, one drone hovering while the other was sent toward it along x. No gate was fixed beforehand, so this is an observation, not a gated PASS.
 

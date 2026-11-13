@@ -1,12 +1,13 @@
 # Starling swarm: project plan (Linear milestones and issues)
 
-NEAR Lab · Linear snapshot: 13 November 2026, after the first real gamepad flights ([instructions](2026-11-13-linear-agent-gamepad.md), [sync record](2026-11-13-linear-sync-record.md)) and the owner's closures the same day ([instructions](2026-11-13-linear-agent-close-gamepad.md), [sync record](2026-11-13-linear-sync-record-2.md)); built from the 12 November snapshot plus that record
+NEAR Lab · Linear snapshot: 13 November 2026, after the first real gamepad flights ([instructions](2026-11-13-linear-agent-gamepad.md), [sync record](2026-11-13-linear-sync-record.md)) and the owner's closures the same day ([instructions](2026-11-13-linear-agent-close-gamepad.md), [sync record](2026-11-13-linear-sync-record-2.md)) and the opening of the next week's work ([instructions](2026-11-13-linear-agent-next-week.md), [sync record](2026-11-13-linear-sync-record-3.md)); built from the 12 November snapshot plus that record
 
 Linear is the source of truth: this file mirrors the three projects in Linear as of the snapshot above. Only completed milestones carry target dates. Each issue links to its Linear page. The "Done when" lines describe the acceptance test, not progress made.
 
 ## Reconciliation notes
 
-- 3 projects, 28 milestones, 119 issues: 25 Done, 5 In Progress, 87 Backlog, 2 Canceled.
+- 3 projects, 28 milestones, 122 issues: 29 Done, 6 In Progress, 85 Backlog, 2 Canceled.
+- 2026-11-13 third sync: the owner closed NEAR-816, NEAR-817, NEAR-829 and NEAR-830 (each comment says what was not done), which completes R1 of HTX-R2 (100 %). NEAR-951 and NEAR-790 In Progress. Three new issues, all In Progress: NEAR-953 (HTX-R2, M7), NEAR-954 and NEAR-955 (HTX-R1, no milestone, listed after Project 1). Milestone progress is Linear's displayed figure: R1 100 %, M4 75 %, M7 25 %. HTX-R1 68 issues, HTX-R2 37, HTX-R3 17.
 - 2026-11-13 second sync (HTX-R2): the owner closed NEAR-831, NEAR-834 and NEAR-835 on what was flown; each comment names the part that was not flown. No title changed, no issue created. Milestone progress is Linear's displayed figure: M4 38 %, M5 75 %. Seven findings are listed in the sync record as proposed, not created.
 - 2026-11-13 sync (HTX-R2, real drones): NEAR-833 Done; NEAR-831, NEAR-834 and NEAR-835 In Progress; comments on NEAR-839 and NEAR-840. No title changed, no issue created. Milestone progress is Linear's displayed figure: M4 19 %, M5 38 %, M7 20 %. Four findings are listed in the sync record as proposed, not created. Linear turned the ledger references #36 and #37 in the comments into links to unrelated pull requests; the sync record says so. HTX-R1 and HTX-R3 are unchanged.
 - 2026-11-12 sync (HTX-R2, real drones): NEAR-840 Done, closed for collision avoidance by the owner. One new issue, NEAR-951 (M7, Backlog), holds the part of NEAR-840 that has not flown. Comments on NEAR-819, 826, 831, 839. No title changed. Milestone progress is Linear's displayed figure: M7 20 %; M2 57 %, M3 20 %, M4 13 % unchanged. Eight findings are listed in the sync record as proposed, not created. HTX-R1 and HTX-R3 are unchanged.
@@ -18,7 +19,7 @@ Linear is the source of truth: this file mirrors the three projects in Linear as
 - 2026-10-30 rescope: new milestones S5d, S5e (HTX-R1) and M8 (HTX-R2); S5c and S8 renamed; 27 new issues NEAR-866…892; NEAR-809 moved S8 → S5c; NEAR-802 Canceled; NEAR-786/787/788 Done; HTX-R2 renamed (M2–M8).
 - Progress for S5 and the new milestones is computed, not read from Linear: Done counts 1 and In Progress ¼ (the 26 October figures imply this: S5 was 4 % with one of six In Progress), over the issues not Canceled. On 2 November this gave S5 50 %. From 5 November S5's 81 % is Linear's own figure (7 Done of 9, one In Progress), which matches the same rule; S5d stays 0 %. The rest are unchanged from 26 October.
 - Milestones are listed in Linear's order. The owner dragged HTX-R1 into the work order on 30 October, after the sync record (which still reads PENDING); codes therefore do not sort (S5d before S6, S5e after S6).
-- Project 1 has 66 issues (55 on 30 October, five on 2 November, six on 4 November); redundant NEAR-799 removed (26 October).
+- Project 1 has 68 issues (55 on 30 October, five on 2 November, six on 4 November, two on 13 November); redundant NEAR-799 removed (26 October).
 
 ## How the work is split
 
@@ -46,7 +47,7 @@ Simulation precedes real flight to distinguish software/algorithm failures from 
 
 [Linear project](https://linear.app/nearlab/project/htx-r1-swarm-sim-validation-isaac-649103a747b1)
 
-**Status:** In Progress. **Start:** 2026-10-19. **Target:** not set. **Inventory:** 14 milestones, 66 issues (12 Done, 1 In Progress, 52 Backlog, 1 Canceled).
+**Status:** In Progress. **Start:** 2026-10-19. **Target:** not set. **Inventory:** 14 milestones, 68 issues (12 Done, 4 In Progress, 51 Backlog, 1 Canceled).
 
 Test a candidate swarm flight pipeline in Isaac Sim: position source → PX4 → commander and CBF. Find out what works before deciding what goes onto the real Starlings. Simulation makes failures cheaper to investigate and must match indoor flight with GPS off. Mocap is expected back around 9 Nov; the HTX demo is mid-February and strategy teams need a multi-drone test bed from December. Real flight belongs to Project 2; shared-frame research belongs to Project 3.
 
@@ -105,7 +106,7 @@ Re-run the core flight tests on the updated Starling sim model, and get one-dron
 | [NEAR-787](https://linear.app/nearlab/issue/NEAR-787) | Re-run three-drone crossing with collision avoidance and record it | Done |
 | [NEAR-788](https://linear.app/nearlab/issue/NEAR-788) | Try live gain tuning from the panel in sim | Done |
 | [NEAR-789](https://linear.app/nearlab/issue/NEAR-789) | Set up one-drone keyboard teleop in the construction site (keys move the drone, release holds) | Done |
-| [NEAR-790](https://linear.app/nearlab/issue/NEAR-790) | Hand-fly drone_1 with cuVSLAM running, record and score the flight | Backlog |
+| [NEAR-790](https://linear.app/nearlab/issue/NEAR-790) | Hand-fly drone_1 with cuVSLAM running, record and score the flight | In Progress |
 | [NEAR-860](https://linear.app/nearlab/issue/NEAR-860) | Record the stereo camera images so a flight can be replayed through cuVSLAM | In Progress |
 | [NEAR-910](https://linear.app/nearlab/issue/NEAR-910) | Retune the sim airframe’s yaw-rate gains so the heading settles after a turn | Done |
 | [NEAR-920](https://linear.app/nearlab/issue/NEAR-920) | Sim keyboard teleop flies in Drive mode (BODY), F switches to Room mode, with the forward-follows-the-nose test | Done |
@@ -258,6 +259,8 @@ In project HTX-R1, with no milestone in Linear (created 2026-11-04).
 | [NEAR-923](https://linear.app/nearlab/issue/NEAR-923) | Live cuVSLAM map panel in the teleop layout | Backlog |
 | [NEAR-924](https://linear.app/nearlab/issue/NEAR-924) | Draw the PX4 position in the chase view | Backlog |
 | [NEAR-925](https://linear.app/nearlab/issue/NEAR-925) | Find why the cuVSLAM image freezes briefly at takeoff in the teleop layout | Backlog |
+| [NEAR-954](https://linear.app/nearlab/issue/NEAR-954) | Sim: fly with the gamepad (Logitech F310), same pad check and profile as the real drone | In Progress |
+| [NEAR-955](https://linear.app/nearlab/issue/NEAR-955) | Isaac Lab: train in parallel with the Starling model and measure steps per second | In Progress |
 
 ---
 
@@ -265,13 +268,13 @@ In project HTX-R1, with no milestone in Linear (created 2026-11-04).
 
 [Linear project](https://linear.app/nearlab/project/htx-r2-starling-flight-bring-up-m2-m7-269b3d72d5ce)
 
-**Status:** Backlog. **Start:** 2026-11-09. **Target:** not set. **Inventory:** 8 milestones, 36 issues (12 Done, 4 In Progress, 19 Backlog, 1 Canceled).
+**Status:** Backlog. **Start:** 2026-11-09. **Target:** not set. **Inventory:** 8 milestones, 37 issues (16 Done, 2 In Progress, 18 Backlog, 1 Canceled).
 
 Fly real Starling 2 Max drones on the new ground-control software under mocap, one safety-checked step at a time. The software changed on 7 Oct, so September's flight capabilities must be re-earned. Each step begins only after the previous one passes; every flight follows the preflight card. Mocap is expected back around 9 Nov. Simulation and flight without mocap are outside this project's scope.
 
 ### R1 · New mocap and network pipeline
 
-**Linear target:** not set. **Progress:** 63%.
+**Linear target:** not set. **Progress:** 100%.
 
 Bring upgraded OptiTrack online and rebuild the camera-to-drone network path. The laptop needs the mocap PC's 192.168.9.x subnet because multicast does not cross the router; the drone uses a separate routed subnet.
 
@@ -281,8 +284,8 @@ Bring upgraded OptiTrack online and rebuild the camera-to-drone network path. Th
 |---|---|---|
 | [NEAR-814](https://linear.app/nearlab/issue/NEAR-814) | Network: laptop on the mocap subnet (192.168.9.x) with the route to the drone subnet; drone gets its WiFi address; both ping each other | Done |
 | [NEAR-815](https://linear.app/nearlab/issue/NEAR-815) | Set up the upgraded Motive: calibrate (wand, ground plane, axis convention) and create the Starling rigid body | Done |
-| [NEAR-816](https://linear.app/nearlab/issue/NEAR-816) | Mocap stream end to end: laptop receives it at full rate for 10 min with no stalls, it reaches the drone’s PX4, and moving the drone by hand moves the position the same way on every axis | In Progress |
-| [NEAR-817](https://linear.app/nearlab/issue/NEAR-817) | Record the new Motive version, IP and streaming settings in the lab docs and pictures | In Progress |
+| [NEAR-816](https://linear.app/nearlab/issue/NEAR-816) | Mocap stream end to end: laptop receives it at full rate for 10 min with no stalls, it reaches the drone’s PX4, and moving the drone by hand moves the position the same way on every axis | Done |
+| [NEAR-817](https://linear.app/nearlab/issue/NEAR-817) | Record the new Motive version, IP and streaming settings in the lab docs and pictures | Done |
 
 ### M2 · Drone setup and hand-carry, propellers off
 
@@ -319,14 +322,14 @@ NEAR-824 description: walk through the preflight card on the ground, props off, 
 
 ### M4 · Goal flights with the braking fence
 
-**Linear target:** not set. **Progress:** 38%.
+**Linear target:** not set. **Progress:** 75%.
 
 **Done when:** goal legs use the smooth speed-limited profile; wall braking distance is measured; gains change live; hold stops the drone where expected.
 
 | Issue | Exact Linear title | Status |
 |---|---|---|
-| [NEAR-829](https://linear.app/nearlab/issue/NEAR-829) | Goal legs on the speed-limited profile | In Progress |
-| [NEAR-830](https://linear.app/nearlab/issue/NEAR-830) | Measure braking at the fence walls | In Progress |
+| [NEAR-829](https://linear.app/nearlab/issue/NEAR-829) | Goal legs on the speed-limited profile | Done |
+| [NEAR-830](https://linear.app/nearlab/issue/NEAR-830) | Measure braking at the fence walls | Done |
 | [NEAR-831](https://linear.app/nearlab/issue/NEAR-831) | Change gains live from the panel in flight | Done |
 | [NEAR-832](https://linear.app/nearlab/issue/NEAR-832) | Check where a hold stops the drone | Backlog |
 
@@ -356,7 +359,7 @@ Optional hardware; starts when the strip arrives. **Done when:** LED service run
 
 ### M7 · Multi-drone
 
-**Linear target:** not set. **Progress:** 20%.
+**Linear target:** not set. **Progress:** 25%.
 
 Fly two, then three real drones under mocap. **Done when:** formations, random goals with collision avoidance and intruder-squeeze tests fly. The plan states this depends on the new Starlings arriving; issue status remains Backlog.
 
@@ -366,7 +369,8 @@ Fly two, then three real drones under mocap. **Done when:** formations, random g
 | [NEAR-839](https://linear.app/nearlab/issue/NEAR-839) | Set up each new Starling (one at a time, setup guide) | Backlog |
 | [NEAR-840](https://linear.app/nearlab/issue/NEAR-840) | Two drones: formation and random goals with collision avoidance | Done |
 | [NEAR-841](https://linear.app/nearlab/issue/NEAR-841) | Three drones: intruder-squeeze test | Backlog |
-| [NEAR-951](https://linear.app/nearlab/issue/NEAR-951) | Two drones: formation and random goals | Backlog |
+| [NEAR-951](https://linear.app/nearlab/issue/NEAR-951) | Two drones: formation and random goals | In Progress |
+| [NEAR-953](https://linear.app/nearlab/issue/NEAR-953) | Two drones: figure-8 with collision avoidance | In Progress |
 
 ### M8 · Evaluate NUS velocity policies on the real drones
 
@@ -474,9 +478,9 @@ Sim results and run records: `localisation/results/`. How to run the camera-worl
 
 | Project | Milestones | Issues | Done | In Progress | Backlog |
 |---|---:|---:|---:|---:|---:|
-| HTX-R1 | 14 | 66 | 12 | 1 | 52 |
-| HTX-R2 | 8 | 36 | 12 | 4 | 19 |
+| HTX-R1 | 14 | 68 | 12 | 4 | 51 |
+| HTX-R2 | 8 | 37 | 16 | 2 | 18 |
 | HTX-R3 | 6 | 17 | 1 | 0 | 16 |
-| Total | 28 | 119 | 25 | 5 | 87 |
+| Total | 28 | 122 | 29 | 6 | 85 |
 
 Canceled: 2 (NEAR-802, HTX-R1; NEAR-914, HTX-R2), counted in Issues, not in the status columns.

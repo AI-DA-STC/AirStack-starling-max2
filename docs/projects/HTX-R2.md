@@ -1,4 +1,4 @@
-RECORD · REAL DRONE — first flights on this software: 2026-11-11, one Starling ([#33](../record/LEDGER.md)). A result cell is filled only from a LEDGER row marked REAL; the archived tables are observations on the previous software, not results. Codes, titles and "Done when" are Linear's, verbatim.
+RECORD · REAL DRONE — first flights on this software: 2026-11-11 with one Starling ([#33](../record/LEDGER.md)), two Starlings since 2026-11-12 ([#35](../record/LEDGER.md)). A result cell is filled only from a LEDGER row marked REAL; the archived tables are observations on the previous software, not results. Codes, titles and "Done when" are Linear's, verbatim.
 
 # HTX-R2 Starling Flight Bring-up (M2–M8)
 

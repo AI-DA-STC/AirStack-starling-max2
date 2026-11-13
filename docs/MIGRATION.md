@@ -199,7 +199,7 @@ re-checked. ⏳ = decide at STE. ✅ = done, with the date and the [LEDGER](reco
       **1.2** not our validated 0.5; `land_speed_mps` differs from our validated **0.6**
       everywhere. Full list in §7; what we fly instead: the `_ours` files ([CONFIG.md](CONFIG.md)).
 - [ ] **Verify `target_system` == the drone's `MAV_SYS_ID`** before the first arm attempt —
-      ⏳ **read `MAV_SYS_ID` back in QGC before the first arm** — the 2026-09-04 params export says **1**, a 2026-09-18 session note on this airframe says it was set to **2**; whichever it is, `target_systems:=` must match. A silent no-ack is the symptom of getting this wrong.
+      Read back 2026-11-12: `drone_1` = 1, `drone_2` = 2 ([CONFIG.md](CONFIG.md) "The two Starlings" table); `target_systems:=` must match. A silent no-ack is the symptom of getting this wrong.
 
 ## 7 · Config value diff table
 
@@ -223,7 +223,7 @@ longer applies to the shipped value.
 | | `scenario_speed_mps` | `0.6` | `10.0` | 🚨 ⚠️ |
 | | `cbf_max_speed_mps` | `1.2` | `10.0` | 🚨 ⚠️ |
 | | `fence_min`/`max` | `[-2,-2,0]` / `[2,2,2]` | `[-4.5,-5.2,0]` / `[5.5,5.0,3.0]` | 🚨 ⚠️ bigger than our net |
-| | `fence_behavior` | *(latch)* | `"keep_in"`, brake `8.0`, gain `2.0` | ⚠️ new behaviour, unflown here |
+| | `fence_behavior` | *(latch)* | `"keep_in"`, brake `8.0`, gain `2.0` | ⚠️ new behaviour. Seen once on the real drone at the +x wall, with our brake 4.0 ([#33](record/LEDGER.md)). Not flown: the other walls of this fence |
 | | `land_speed_mps` | `0.6` ✅ validated 2026-09-03 | `1.0` | ⚠️ |
 | | `takeoff_speed_mps` | *(absent)* | `1.0` | new key |
 | `goal_single.yaml` | `drone_names` | `["drone_1"]` | `["drone_2"]` | ⚠️ wrong drone for us — at `b21d28c`: `["drone_1"]` again, still CBF-exempt (CONFIG.md) |
@@ -362,7 +362,9 @@ Status 2026-10-21: the **fresh-launch and landing-end-to-end checks are closed**
 (new asset loaded, PhysX clean, three clean landings with DISARM accepted first time). Still
 ⏳: the sim re-runs and first-use checks — the ordered list lives **only** in
 the next issue in Linear (snapshot: [MILESTONES.md](MILESTONES.md) "Where each project is"; this page keeps no copy).
-Everything real-drone stays ⏳ STE as before.
+Real drones: hover, goal legs and the +x fence wall ([#33](record/LEDGER.md)), two drones with the CBF
+([#35](record/LEDGER.md)), the gamepad ([#36](record/LEDGER.md)) and one drone hand-flown toward a hovering
+one ([#37](record/LEDGER.md)) have flown. Not flown: formations, random goals, crossings, the squeeze, the LED strips.
 
 ## 12 · Moved from README: showcase, milestones in brief, historical appendix
 
@@ -434,11 +436,11 @@ proves the position tracking, and only then do propellers spin.
 | 0 | Bring-up on the new branch | Build, containers, Foxglove panel — three sim drones visible in the Basestation | ⏳ STE |
 | 1 | Sim rehearsal | CBF crossing, braking fence, gamepad, formations, random goals in Isaac Sim; pytest green | ⏳ partly — Starling model, CBF crossing, random goals + landing pass in sim; re-runs pending — the one to-do list is the next issue in Linear (snapshot: [MILESTONES.md](MILESTONES.md) "Where each project is") |
 | 2 | Drone provisioning + hand-carry | New provisioning script + watchdog; `target_system`; Basestation tracks the carried drone; EKF2 fusing | ⏳ STE |
-| 3 | First flight | Takeoff, hover, land under the trajectory output; command ACKs seen; iron rules re-verified | ⏳ STE |
-| 4 | Goal flights + braking fence | Acceleration-limited goal legs; keep-in wall braking measured; live gains | ⏳ STE |
-| 5 | Gamepad teleop, real | Yaw sign verified; teleop fence; release-to-hold | ⏳ STE |
+| 3 | First flight | Takeoff, hover, land under the trajectory output; command ACKs seen; iron rules re-verified | Takeoff, hover and land flown here ([#33](record/LEDGER.md), [#35](record/LEDGER.md)). Not seen: command ACKs (this drone publishes none, [#33](record/LEDGER.md)). Not recorded: an iron-rules re-check |
+| 4 | Goal flights + braking fence | Acceleration-limited goal legs; keep-in wall braking measured; live gains | Goal legs and the +x `keep_in` wall seen once on the real drone ([#33](record/LEDGER.md)). Not measured: speed profile, distance past the wall. The CBF radius was changed live from the panel ([#37](record/LEDGER.md)). No other live gain change is recorded. |
+| 5 | Gamepad teleop, real | Yaw sign verified; teleop fence; release-to-hold | Seen once on the real drone ([#36](record/LEDGER.md)): yaw, the −y teleop fence wall, release-to-hold. Not flown: the +x wall, the top, the pad unplugged in flight |
 | 6 | LED strips (optional) | Green default, red on CBF; ESC arm LEDs muted — acknowledged | ⏳ STE |
-| 7 | Multi-drone | Formations, random-goal CBF test, RC-intruder squeeze | ⏳ blocked — one Starling |
+| 7 | Multi-drone | Formations, random-goal CBF test, RC-intruder squeeze | ⏳ partly — two drones flew `goal` with the CBF ([#35](record/LEDGER.md)), one hand-flown toward a hovering one ([#37](record/LEDGER.md)). Not flown: formations, random goals, the squeeze |
 
 Live status: Linear; snapshot in [MILESTONES.md](MILESTONES.md). The previous branch's ladder (M1–M5 validated 2026-07-20→08-28, M6 flown
 2026-09-01→03 without final sign-off) is on the archive tag.
@@ -614,8 +616,8 @@ authoritative):
 
 **Genuinely NOT in code (manual, by design):** machine clock sync; PX4 EKF2 external-vision
 parameters (the `.params` file via QGC); PX4 failsafes and the RC kill switch (QGC);
-Motive-side configuration; which physical gamepad the lab owns (identify with `joy_map`,
-record in [CONFIG.md](CONFIG.md)).
+Motive-side configuration; which physical gamepad the lab owns (a Logitech F310, profile `xbox_usb`,
+recorded in [CONFIG.md](CONFIG.md), checked by `tools/real.sh pad`).
 
 **Known defects on arrival** (found in the 2026-10-07 code survey — none block M0–M3, all
 must be remembered; details in the corrections tables of the linked docs):

@@ -87,7 +87,8 @@ WebSocket bridge for you):
 · `0/1 airborne` · Rosbag chip `IDLE`; mission chip `ON GROUND`; `drone_1` in Agent State as
 `IDLE` with x y z matching the mocap pose and tagged `cmdr`, `Odom fresh`; the Goal card's agent
 row showing a single `drone_1` button; and the 3D view showing one drone marker, the geofence box
-and a grid on the fence floor. `⏳ STE` — not seen yet.
+and a grid on the fence floor. `⏳ STE` — not seen yet. The lab has two Starlings: with `goal_two_ours.yaml`
+expect, from the config and not yet seen, `drone_1` and `drone_2` rows, buttons and markers, `0 sim · 2 real` and `0/2 airborne`.
 
 **Healthy in the sim** (`cbf_sim.yaml`, three Isaac drones): mission chip `ON GROUND`, three
 `IDLE` rows, three agent buttons. Three cosmetic oddities are **expected**: the banner may read
@@ -339,8 +340,8 @@ The axis map, deadzone and speed scaling are read from `safe_teleop`'s own param
 (`/safe_teleop/get_parameters` — `refreshTeleopParams`; the namespace is the `Teleop node
 namespace` setting), so a DragonRise pad is drawn on its own layout. Until that read answers, the
 `xbox_usb` defaults are assumed and the lock line says so. The raw joy topic is the `Joystick
-(raw)` setting (`/joy`). The card is the quickest way to run TELEOP.md §5's ground check (sticks
-move the right bars, zero at rest, unplug → zeros). `⏳ STE`
+(raw)` setting (`/joy`). The card is the quickest way to run the ground check in [RUNBOOK.md B9](RUNBOOK.md#b9--fly-one-real-drone-with-the-gamepad), step 9 (sticks
+move the right bars, zero at rest). `⏳ STE`
 
 ## 4 · The `/svg/commander_status` snapshot
 
@@ -414,7 +415,7 @@ is the source of truth for the panel's internals. These points differ for us (co
 
 | CMU's README says | On our rig |
 |---|---|
-| Three drones in the demo | **One** real drone, `drone_1`. Our real configs (`swarm_real_ours.yaml`, `goal_single_ours.yaml`) list `drone_1` only, so the panel shows **one** agent button and **one** Agent State row — `0 sim · 1 real`, `0/1 airborne`. (The `cf719f0` panel's phantom-agent roster is gone — §9 appendix.) The shipped 3-drone files are M7 material |
+| Three drones in the demo | **Two** real Starlings, `drone_1` and `drone_2`. Our single-drone configs (`swarm_real_ours.yaml`, `goal_single_ours.yaml`) list `drone_1` only, so the panel shows **one** agent button and **one** Agent State row — `0 sim · 1 real`, `0/1 airborne`. `goal_two_ours.yaml` lists both drones. (The `cf719f0` panel's phantom-agent roster is gone — §9 appendix.) The shipped 3-drone files are M7 material |
 | Mode is auto-detected from the wire (`/{name}/fmu/` ⇒ real) | True, and it works — but detection needs the drone's `fmu` topics to already be publishing. Before [RUNBOOK.md](RUNBOOK.md) §B's interfaces are up, an agent can read as neither. Set **Modes** to `real` if you want it pinned. In the **sim** the same rule misfires the other way (`0 sim · 3 real`, §2) — cosmetic; `Modes = sim,sim,sim` fixes the banner |
 | `Cmd stream` is "~20 Hz while the commander drives it" and "the proof that Start reached the drone" | Only if commands go out as `velocity_command`. This branch defaults real drones to **`trajectory_command`**, which the panel does not subscribe to — expect `--` on the real drone (§3.8). Works in sim. `⏳ STE` |
 | Cellular / Tailscale VPN section, 4G/5G path | **Not on our rig** — no cellular, no Tailscale. The section stays hidden, by design |

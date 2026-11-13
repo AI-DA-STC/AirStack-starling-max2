@@ -89,6 +89,7 @@ from every doc; add a term here rather than re-explaining it inline elsewhere.
   that is **CBF-exempt** or **external** (RC-flown) is a *fixed row*: modelled as going where
   it will actually go, never corrected, and the others absorb the whole dodge. Two fixed rows
   get **no** protection from each other. [SCENARIOS.md](SCENARIOS.md) §1–2.
+- **Keep-out** — the distance the CBF holds two drones apart: twice `cbf_safety_radius_m`, centre to centre (radius 0.55 → 1.10 m).
 - **Fixed row** — a drone the CBF may not adjust because its velocity is what it will
   actually fly: an RC-flown (external) or CBF-exempt drone. The others absorb 100 % of the
   dodge instead of half. Two fixed rows have **no** mutual protection.
@@ -186,6 +187,8 @@ from every doc; add a term here rather than re-explaining it inline elsewhere.
 - **Controller profile** — one entry in `safe_teleop/controllers.py` naming the driver node,
   axis numbers, signs and lock button for one kind of pad (`xbox_usb`, `dragonrise_usb`);
   `teleop_controller` selects it. Wrong profile = the axis guard refuses to command.
+- **Lock button** — LB on the Logitech F310 (`xbox_usb`): a toggle that locks climb and turn only. The right stick stays live.
+- **Pad check** — `tools/real.sh pad`: confirms the F310 is in X mode and its stick map is right, before any config is made.
 - **Analog trigger / deadzone** — on many generic pads the shoulder triggers appear as *axes*
   that read **+1.0 untouched**; pointing a velocity axis at one would command full speed with
   nothing held, so `safe_teleop` refuses any mapped axis resting past ±0.9. The **deadzone**
@@ -201,7 +204,7 @@ from every doc; add a term here rather than re-explaining it inline elsewhere.
 - **Chase view** — the 3D panel beside the camera image that follows the drone from behind and draws its path.
 - **Coast distance** — how far a hand-flown drone keeps travelling after the sticks are
   released: the command ramps down at `teleop_accel_mps2` and the reference may lead by
-  `teleop_lead_m` (≈ 2 m from 4 m/s at 5 m/s²; far less at our 0.5 m/s cap — M5 measures it).
+  `teleop_lead_m` (≈ 2 m from 4 m/s at 5 m/s²; far less at our 0.5 m/s cap — seen once on the real drone, [#36](record/LEDGER.md)).
 - **Position mode (teleop)** — the sticks command a velocity of the *reference point*, and the
   drone is flown to it; release the sticks and it holds. Not nose-relative — axes are fixed to
   the room (ENU).
@@ -254,15 +257,17 @@ from every doc; add a term here rather than re-explaining it inline elsewhere.
 - **QGC (QGroundControl)** — the standard PX4 ground-station app, run on the laptop and fed by the
   drone's MAVLink push (udp/14550). The **only trustworthy arming display** (iron rules 2 and 5)
   and where PX4 parameters are loaded (`starling_1_indoor_params.params`).
-- **`_ours` configs** — `swarm_real_ours.yaml` (hover, M3) and `goal_single_ours.yaml` (goals, M4):
-  our single-drone versions of CMU's shipped yamls — `drone_1`, nobody CBF-exempt, speeds 1.0,
+- **`_ours` configs** — `swarm_real_ours.yaml` (hover, M3), `goal_single_ours.yaml` (goals, M4),
+  `goal_two_ours.yaml` (two drones) and the per-drone teleop config that `tools/real.sh teleop`
+  renders from `teleop_real_ours.yaml`: our versions of CMU's shipped yamls. The single-drone files use `drone_1`, nobody CBF-exempt, speeds 1.0,
   `land_speed_mps` 0.6, `land_settle_s` 0.0, ±2 m fence. The only real-drone configs to fly
   ([CONFIG.md](CONFIG.md)); `cbf_sim.yaml` is our sim counterpart and sim-only.
-- **Iron rules** — the nine numbered flight rules in [CLAUDE.md](../CLAUDE.md), mirrored word for
+- **Iron rules** — the ten numbered flight rules in [CLAUDE.md](../CLAUDE.md), mirrored word for
   word in [PREFLIGHT.md](PREFLIGHT.md). Quoted by number ("iron rule 9") across the docs.
 - **Ledger (test ledger, "ledger #N")** — the numbered table of every test result on this branch,
   [record/LEDGER.md](record/LEDGER.md) (restarted at #1 on 2026-10-07). The next issue in Linear
   is the **only** to-do list; "archive ledger #N" means the previous branch's ledger.
+- **Pass line** — the number fixed before a test that decides pass or fail.
 
 - **IDLE / ARMING / ASCEND / ACTIVE / LANDING** — the swarm commander's per-drone flight
   states (shown as chips in the Basestation). `takeoff` only accepts drones in IDLE; after an

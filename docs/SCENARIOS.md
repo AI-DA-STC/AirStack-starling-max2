@@ -5,8 +5,12 @@
 > the random-goal collision test, the RC-flown-intruder squeeze. No robotics background needed.
 > This is **NOT the per-session runbook** ([RUNBOOK.md](RUNBOOK.md) has bring-up order, terminals
 > and services): it is the **background, procedure and exit criteria** per scenario, plus our
-> corrections to CMU's write-ups. ⚠️ The lab has two Starlings and the older one is grounded ([#34](record/LEDGER.md)), so every multi-drone scenario
-> is still a **SIM procedure** with a "Real flight" subsection marked `⏳ blocked on a second Starling (M7)`: read that as a second *flyable* Starling.
+> corrections to CMU's write-ups. ⚠️ The lab has two Starlings. Two real drones have flown the `goal` scenario with the
+> collision filter ([#35](record/LEDGER.md)), and one was hand-flown toward a hovering one ([#37](record/LEDGER.md)).
+> Formations, random goals, crossings and the squeeze are not flown: they are still **SIM procedures**. Their "Real
+> flight" subsections marked `⏳ blocked on a second Starling (M7)` mean "not flown on two real drones yet". The older
+> Starling (`drone_1`) flies by the owner's decision, with a watcher on its front-right motor at every takeoff
+> ([hazard 6](projects/HTX-R2.md#before-the-next-real-flight)).
 >
 > **Read first:** [GLOSSARY.md](GLOSSARY.md) (CBF, scenario, fence…), then [RUNBOOK.md](RUNBOOK.md)
 > §A for the sim session this runs in. "The commander" = the `swarm_commander` node; "the panel" =
@@ -18,7 +22,8 @@
 > `goal_tracking.yaml` back on `goal`). **Sim validation has started** (ledger #1–#4 on
 > 2026-10-19, #8 and #13 on 10-20/21 — [record/LEDGER.md](record/LEDGER.md)); **on real drones, one drone flew hover and goal legs ([#33](record/LEDGER.md), 2026-11-11); two drones flew
 > the `goal` scenario and the collision filter was observed ([#35](record/LEDGER.md), 2026-11-12; procedure:
-> [RUNBOOK.md](RUNBOOK.md#c9--two-real-drones-with-the-collision-filter-cbf) C9). Formations, random goals, crossings and the squeeze are unflown on real drones.** Read every ✅ CMU below as "CMU says so", not "we flew it".
+> [RUNBOOK.md](RUNBOOK.md#c9--two-real-drones-with-the-collision-filter-cbf) C9); one drone was hand-flown toward a hovering one ([#37](record/LEDGER.md), 2026-11-13; procedure:
+> [RUNBOOK.md](RUNBOOK.md#b10--two-real-drones-one-flown-by-hand) B10). Formations, random goals, crossings and the squeeze are unflown on real drones.** Read every ✅ CMU below as "CMU says so", not "we flew it".
 
 ---
 
@@ -137,11 +142,12 @@ list, every scenario geometry — yaml edit + relaunch (RUNBOOK §C7). Three got
 `antipodal`, `squeeze`, `goal_sequence`, `figure_eight`. Status glyphs: **✅ CMU** = CMU reports
 it working · **✅ STE sim** = we ran it in Isaac Sim (ledger number given) · **⏳ STE sim** = our
 sim rehearsal, M1, not yet run · **⏳ M7 real** = not yet flown on real drones (only `goal` has flown with two: [#35](record/LEDGER.md),
-[RUNBOOK.md](RUNBOOK.md#c9--two-real-drones-with-the-collision-filter-cbf) C9).
+[RUNBOOK.md](RUNBOOK.md#c9--two-real-drones-with-the-collision-filter-cbf) C9, and with one of them hand-flown:
+[#37](record/LEDGER.md), [RUNBOOK.md](RUNBOOK.md#b10--two-real-drones-one-flown-by-hand) B10).
 
 | Scenario | What it does | Config that ships it | Drones | Status |
 |---|---|---|---|---|
-| `hover` | Hold fixed `hover_positions`. The baseline; nothing crosses. | `swarm_real.yaml`, `swarm_sim.yaml`, `teleop_*.yaml` | 1–3 | ✅ CMU · ⏳ STE real (M3 re-do) |
+| `hover` | Hold fixed `hover_positions`. The baseline; nothing crosses. | `swarm_real.yaml`, `swarm_sim.yaml`, `teleop_*.yaml` | 1–3 | ✅ CMU · flown here on real drones ([#33](record/LEDGER.md), [#35](record/LEDGER.md)) |
 | `goal` | Takeoff targets **are** the initial goals; only moves when you retarget (`goal_command` / `goal_xyzt` / `formation_command`). The **only** scenario that honours formation profiles. | `goal_single.yaml` / **`goal_single_ours.yaml`** (1 drone), `goal_tracking.yaml` (3 real, back on `goal` at `b21d28c`), `goal_tracking_original.yaml`; else `scenario:=goal` | any | ✅ CMU · ✅ STE sim steps (ledger #3, old gains) · ⏳ re-run |
 | `antipodal` | Every drone crosses the arena centre to the opposite side, re-crossing on arrival. Maximum conflict — the CBF demo. | **`cbf_sim.yaml`** — at **our** speeds since 2026-10-20 (cruise 2.0, cap 4.0, accel 6) | 3 sim | ✅ CMU · ✅ STE sim at 0.6 / 1.2 (ledger #4) · ⏳ at 2.0 / 4.0 |
 | `head_on` | Two facing rows swap sides, repeatedly. | — (`scenario:=head_on`) | even N | ✅ CMU · ⏳ STE sim |

@@ -22,7 +22,7 @@
 > **📝 Record as you go:** every value you discover (IP, image version, domain ID, rigid-body
 > name) goes into [CONFIG.md](CONFIG.md)'s tables the moment you learn it, and each passed
 > check earns a row in the [record/LEDGER.md](record/LEDGER.md) test ledger. Throughout,
-> `drone_N` = this drone's number (drone_1 is taken by Starling 1 / D0012).
+> `drone_N` = this drone's number (`drone_1` and `drone_2` are both taken: see the table in [CONFIG.md](CONFIG.md)).
 
 *(Unfamiliar term? → [GLOSSARY.md](GLOSSARY.md))*
 
@@ -74,7 +74,7 @@ evidence: [CLAUDE.md](../CLAUDE.md).
 ## 4 · Point PX4 at the laptop (uXRCE-DDS provisioning)
 
 - [ ] Pick this drone's **UNIQUE DDS domain ID** — every additional drone gets its own domain (drone_1 = 1, so drone_2 = 2, …); record it in CONFIG.md §Protocol constants — CONFIG.md "DDS domain" row / archived MILESTONES M3-A step 3 multi-drone rule.
-- [ ] **`target_system` = this drone's `MAV_SYS_ID`** (PX4 param, QGC → Parameters; Starling 1: ⏳ **read `MAV_SYS_ID` back in QGC before the first arm** — the 2026-09-04 params export says **1**, a 2026-09-18 session note on this airframe says it was set to **2**; whichever it is, `target_systems:=` must match). For drone_N set `MAV_SYS_ID = N` so QGC tells the fleet apart, and launch its interface with `target_systems:=` matching (defaults to the trailing number of the name: `drone_2` → 2). A mismatch means PX4 **silently drops every arm/takeoff/land command — no error, no ACK** — [MIGRATION.md](MIGRATION.md) §5. Record it in CONFIG.md §Protocol constants.
+- [ ] **`target_system` = this drone's `MAV_SYS_ID`** (PX4 param, QGC → Parameters; read back 2026-11-12, `drone_1` = 1 and `drone_2` = 2 (table in [CONFIG.md](CONFIG.md)); `target_systems:=` must match). For drone_N set `MAV_SYS_ID = N` so QGC tells the fleet apart, and launch its interface with `target_systems:=` matching (defaults to the trailing number of the name: `drone_2` → 2). A mismatch means PX4 **silently drops every arm/takeoff/land command — no error, no ACK** — [MIGRATION.md](MIGRATION.md) §5. Record it in CONFIG.md §Protocol constants.
 - [ ] Push the **new** script (rewritten on this branch: `px4-` wrapper, 60 s boot retry loop, `svg-microdds-watchdog` service): `adb push AirStack/robot/ros_ws/src/svg_ground_control/scripts/voxl_setup_real_drone.sh /usr/bin/` then `chmod +x` it on the drone — [RUNBOOK.md](RUNBOOK.md) §B step 0.
 - [ ] Run it on the drone: `voxl_setup_real_drone.sh drone_N <LAPTOP_IP> <UNIQUE_DOMAIN> 8888` (laptop IP reachable from the drone segment, CONFIG.md; port must stay 8888). Then **`reboot`** — on these airframes `systemctl restart voxl-px4` (which the script's older form did) leaves the SLPI flight core dead — [CLAUDE.md](../CLAUDE.md) iron rule 7.
 - [ ] After the reboot: `systemctl status svg-microdds-watchdog` must be `active`. If the drone also carries our earlier `voxl-dds-retry.service` (Starling 1 does), **keep only one** — both restart the uXRCE client; running both is untested (⏳ STE decision → CONFIG.md).

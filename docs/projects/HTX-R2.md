@@ -45,8 +45,8 @@ Linear (snapshot 2026-11-13): 63 % · no ledger row on this software (first flig
 |---|---|---|---|---|
 | NEAR-814 | Network: laptop on the mocap subnet (192.168.9.x) with the route to the drone subnet; drone gets its WiFi address; both ping each other | Done | — | — |
 | NEAR-815 | Set up the upgraded Motive: calibrate (wand, ground plane, axis convention) and create the Starling rigid body | Done | — | — |
-| NEAR-816 | Mocap stream end to end: laptop receives it at full rate for 10 min with no stalls, it reaches the drone’s PX4, and moving the drone by hand moves the position the same way on every axis | In Progress | — | laptop-side loopback with a fake Motive: [#14](../record/LEDGER.md) (sim, not the real stream) |
-| NEAR-817 | Record the new Motive version, IP and streaming settings in the lab docs and pictures | In Progress | — | — |
+| NEAR-816 | Mocap stream end to end: laptop receives it at full rate for 10 min with no stalls, it reaches the drone’s PX4, and moving the drone by hand moves the position the same way on every axis | In Progress | Flew on the 240 Hz stream 2026-11-11 to 13; the 10-minute run was not done; closed by the owner, 2026-11-13 | [#33](../record/LEDGER.md), [#37](../record/LEDGER.md) |
+| NEAR-817 | Record the new Motive version, IP and streaming settings in the lab docs and pictures | In Progress | Recorded in the docs; pictures not taken; closed by the owner, 2026-11-13 | [CONFIG.md](../CONFIG.md) |
 
 Observed on the previous software (archived branch `archive/airstack-starling-max2`, 2026-07-20 → 09-03) — observations, not results on this software ([LEDGER table 2](../record/LEDGER.md#table-2--observed-on-the-previous-software-archived)):
 
@@ -133,8 +133,8 @@ Linear (snapshot 2026-11-13): 38 % · last ledger row #37 (2026-11-13)
 
 | Issue | Title (Linear, verbatim) | Linear status | Result | Evidence |
 |---|---|---|---|---|
-| NEAR-829 | Goal legs on the speed-limited profile | In Progress | Flown — 3 goals at 1.0 m/s, profile not measured, 2026-11-11 | [#33](../record/LEDGER.md) |
-| NEAR-830 | Measure braking at the fence walls | In Progress | Held at the +x wall — distance not measured, 2026-11-11 | [#33](../record/LEDGER.md), [hangar video](../../videos/geofence_test_real_1080p.mp4) |
+| NEAR-829 | Goal legs on the speed-limited profile | In Progress | One 0.94 m leg at 0.5 m/s: at speed in 0.5 s, 0.04 m overshoot, 2026-11-12; closed by the owner | [#35](../record/LEDGER.md) |
+| NEAR-830 | Measure braking at the fence walls | In Progress | Teleop wall: 0.03 m past at up to 0.66 m/s, 2026-11-13; main fence not measured; closed by the owner | [#36](../record/LEDGER.md), [#33](../record/LEDGER.md) |
 | NEAR-831 | Change gains live from the panel in flight | Done | Flown — one gain, the CBF radius 0.55 → 0.90, changed from the panel in flight and took effect, 2026-11-13 | [#37](../record/LEDGER.md) |
 | NEAR-832 | Check where a hold stops the drone | Backlog | — | — |
 

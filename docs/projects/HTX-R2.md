@@ -13,12 +13,13 @@ Hazards the pilot assumes until the named issue re-earns them (iron rules in [PR
 3. Drone ID must equal the controller target (`MAV_SYS_ID` = `target_system`; no ACK at all = mismatch) — NEAR-819; exactly one uXRCE watchdog on the drone — NEAR-820.
 4. After `voxl_setup_real_drone.sh`: reboot, never `systemctl restart voxl-px4` — NEAR-818.
 5. RC takeover is MANUAL or KILL only: setpoints leak into POSCTL/ALTCTL (confirmed in the code 2026-10-29, accepted; iron rule 1), and the commander stays non-IDLE after a takeover (`land` once; iron rule 3). After any RC kill call `land` too: the commander keeps sending setpoints ([#34](../record/LEDGER.md)). No issue of their own; re-observed at NEAR-825 ([PX4_MSGS_AUDIT.md](../PX4_MSGS_AUDIT.md)).
-6. The older Starling (`drone_1`) is GROUNDED: its front-right motor failed or started late in 5 of its last 7 arms, cause unknown ([#34](../record/LEDGER.md)).
+6. The older Starling (`drone_1`) flies by the owner's decision, with a watcher on its front-right motor at every takeoff. That motor failed or started late in 5 of 7 arms on 2026-11-12, cause unknown ([#34](../record/LEDGER.md)). On 2026-11-13 all four motors started on time in the three flights checked.
 7. Takeoff flies a straight line to the takeoff point: stand each drone on its own point ([#34](../record/LEDGER.md)). The fence does not act during the climb or the landing.
 8. Do not raise the CBF radius while drones are inside the new keep-out: the emergency push-apart fires at once (seen on the ground 2026-11-12).
 9. The commander gives no warning when no pad is sending commands: the drone holds as if the sticks were centred. Before takeoff check `ros2 topic hz /svg/drone_2/teleop_command` (about 20 Hz); keep the pad pane running until after landing ([#36](../record/LEDGER.md)).
+10. With the stick held, the collision filter keeps pushing the hovering drone toward the wall behind it (0.29 m left on 2026-11-13). Let go once it resists ([#37](../record/LEDGER.md)).
 
-Hazards 6–8 and the RC-kill line in 5 were found on 2026-11-12, hazard 9 on 2026-11-13. None is fixed. The owner decides.
+Hazards 6–8 and the RC-kill line in 5 were found on 2026-11-12, hazards 9 and 10 on 2026-11-13. None is fixed. The owner decides.
 
 ## Carried over from the previous software — verdicts the pilot assumes until re-observed
 
@@ -126,7 +127,7 @@ Decisive check in hover: `ros2 topic hz /drone_1/fmu/trajectory_command` ≈ 20 
 
 ### M4 · Goal flights with the braking fence — REAL DRONE
 **Purpose:** goal flights are the building block of every scenario. This checks the speed-limited profile, how hard the fence brakes at a wall, live gain changes and where a hold stops the drone, on one drone before any formation.
-Linear (snapshot 2026-11-12): 13 % · last ledger row #33 (2026-11-11)
+Linear (snapshot 2026-11-12): 13 % · last ledger row #37 (2026-11-13)
 
 **Done when** (Linear's target, verbatim; a target, not a result): goal legs use the smooth speed-limited profile; wall braking distance is measured; gains change live; hold stops the drone where expected.
 
@@ -134,7 +135,7 @@ Linear (snapshot 2026-11-12): 13 % · last ledger row #33 (2026-11-11)
 |---|---|---|---|---|
 | NEAR-829 | Goal legs on the speed-limited profile | In Progress | Flown — 3 goals at 1.0 m/s, profile not measured, 2026-11-11 | [#33](../record/LEDGER.md) |
 | NEAR-830 | Measure braking at the fence walls | In Progress | Held at the +x wall — distance not measured, 2026-11-11 | [#33](../record/LEDGER.md), [hangar video](../../videos/geofence_test_real_1080p.mp4) |
-| NEAR-831 | Change gains live from the panel in flight | Backlog | — | — |
+| NEAR-831 | Change gains live from the panel in flight | Backlog | Flown — one gain, the CBF radius 0.55 → 0.90, changed from the panel in flight and took effect, 2026-11-13 | [#37](../record/LEDGER.md) |
 | NEAR-832 | Check where a hold stops the drone | Backlog | — | — |
 
 Observed on the previous software (archived branch `archive/airstack-starling-max2`, 2026-09-03; freeze-fence, not the braking fence) — observations, not results on this software ([LEDGER table 2](../record/LEDGER.md#table-2--observed-on-the-previous-software-archived)):
@@ -183,7 +184,7 @@ Decisive check: `scripts/voxl_push_led.sh drone_1 <DRONE_IP>` then on the drone 
 
 ### M7 · Multi-drone — REAL DRONE, three drones need the new Starlings
 **Purpose:** the project's goal is a swarm. Two, then three real drones fly formations, random goals with collision avoidance and the intruder squeeze. Two drones first flew on the lab's two Starlings (2026-11-12); three drones depend on the new Starlings arriving.
-Linear (snapshot 2026-11-12): 20 % · last ledger row #35 (2026-11-12)
+Linear (snapshot 2026-11-12): 20 % · last ledger row #37 (2026-11-13)
 
 **Done when** (Linear's target, verbatim; a target, not a result): formations, random goals with collision avoidance and intruder-squeeze tests fly.
 
@@ -191,13 +192,15 @@ Linear (snapshot 2026-11-12): 20 % · last ledger row #35 (2026-11-12)
 |---|---|---|---|---|
 | NEAR-838 | Check the hardware order went out (Starlings, 2 stereo cameras, LED strip, 2.4 GHz radio) | Backlog | — | — |
 | NEAR-839 | Set up each new Starling (one at a time, setup guide) | Backlog | — | — |
-| NEAR-840 | Two drones: formation and random goals with collision avoidance | Done | Observed — two drones, closest 1.50 m against a 1.60 m keep-out, 2026-11-12 | [#35](../record/LEDGER.md), [hangar video](../../videos/cbf_drone_real_1080p.mp4) |
+| NEAR-840 | Two drones: formation and random goals with collision avoidance | Done | Observed — two drones, closest 1.50 m against a 1.60 m keep-out, 2026-11-12 | [#35](../record/LEDGER.md), [hangar video](../../videos/cbf_drone_real_1080p.mp4), [#37](../record/LEDGER.md) |
 | NEAR-841 | Three drones: intruder-squeeze test | Backlog | — | — |
 | NEAR-951 | Two drones: formation and random goals | Backlog | — | — |
 
 **NEAR-840: Two drones: formation and random goals with collision avoidance.** Checks that two real drones fly together under one commander and that the collision filter (CBF) keeps them apart, before formations and random goals are tried. Scope: both Starlings on motion-capture positioning (mocap) at 240 Hz, `goal_two_ours.yaml` at 0.5 m/s, one drone hovering while the other was sent toward it along x. No gate was fixed beforehand, so this is an observation, not a gated PASS.
 
-First clean two-drone hover 2026-11-12 17:19:54 ([#35](../record/LEDGER.md)). At radius 0.80 (keep-out 1.60 m, centre to centre) the commanded drone stopped short and the hovering one gave way up to 0.38 m. Minimum separation 1.50 m from raw mocap and 1.52 m from odometry (17:45, recorded), 1.57 m at 18:00 with the goal on the other drone's point for 9 s ([hangar video](../../videos/cbf_drone_real_1080p.mp4), [panel video](../../videos/cbf_check_ui.mp4)). That is 0.03 to 0.10 m inside the line, the same shortfall as in sim ([#20–#22](../record/LEDGER.md)). Heights stayed within 1.97–2.04 m and no emergency push-apart fired. Two earlier attempts failed and the older Starling is grounded ([#34](../record/LEDGER.md)). Closed for collision avoidance by the owner, 2026-11-12. Still to fly, in NEAR-951: formations, random goals, both drones moving, a crossing, a recording at radius 0.55.
+First clean two-drone hover 2026-11-12 17:19:54 ([#35](../record/LEDGER.md)). At radius 0.80 (keep-out 1.60 m, centre to centre) the commanded drone stopped short and the hovering one gave way up to 0.38 m. Minimum separation 1.50 m from raw mocap and 1.52 m from odometry (17:45, recorded), 1.57 m at 18:00 with the goal on the other drone's point for 9 s ([hangar video](../../videos/cbf_drone_real_1080p.mp4), [panel video](../../videos/cbf_check_ui.mp4)). That is 0.03 to 0.10 m inside the line, the same shortfall as in sim ([#20–#22](../record/LEDGER.md)). Heights stayed within 1.97–2.04 m and no emergency push-apart fired. Two earlier attempts failed, and the older Starling's front-right motor fault is unexplained ([#34](../record/LEDGER.md)). Closed for collision avoidance by the owner, 2026-11-12. Still to fly, in NEAR-951: formations, random goals, both drones moving, a crossing, a recording at radius 0.55.
+
+On 2026-11-13 `drone_2` was hand-flown with the gamepad at the hovering `drone_1`, three times along x, at radius 0.90 (keep-out 1.80 m) set from the panel in flight ([#37](../record/LEDGER.md), [hangar video](../../videos/cbf_teleop_two_drones_real_1080p.mp4)). Closest approach was 1.76 m against a pass line of 1.40 m fixed beforehand, and `drone_1` gave way up to 0.72 m, to 0.29 m from its +x wall. It was one flight at 1.0 m: other approach directions, height offsets and both drones moving were not flown.
 
 [Figure 1](#fig-1) is the panel during the 18:00 flight. The filter is correcting both drones at once, so the hovering drone moves as well as the commanded one; that is why `drone_1` gave way. In this frame Agent State puts `drone_1` at x 1.10 and `drone_2` at x −0.48, about 1.58 m apart, with `drone_2`'s goal at x −0.3; the empty `drone_3` row is not part of this flight. It is one moment of one approach direction; the numbers above come from the recording and the video.
 
@@ -207,7 +210,7 @@ First clean two-drone hover 2026-11-12 17:19:54 ([#35](../record/LEDGER.md)). At
 
 Each airframe: unique `MAV_SYS_ID` / `target_system`, DDS domain and Motive body ([DRONE_SETUP.md](../DRONE_SETUP.md)).
 
-Open: formations, random goals, both drones moving, a crossing and a recording at radius 0.55 (NEAR-951); three drones (NEAR-841); the older Starling is grounded. Re-run: [RUNBOOK.md](../RUNBOOK.md#c9--two-real-drones-with-the-collision-filter-cbf) C9.
+Open: formations, random goals, both drones moving, a crossing and a recording at radius 0.55 (NEAR-951); three drones (NEAR-841); the older Starling's motor fault (hazard 6). Re-run: [RUNBOOK.md](../RUNBOOK.md#c9--two-real-drones-with-the-collision-filter-cbf) C9.
 
 ### M8 · Evaluate NUS velocity policies on the real drones — REAL DRONE, NEAR Lab mocap area
 **Purpose:** NUS policies are first checked in sim (HTX-R1 S5e). This milestone flies the same scenarios on real Starlings in NEAR Lab's mocap area, with the same gate numbers, so sim and real results can be compared directly. It starts only after M4 (fence braking measured), M7 (multi-drone) and S5e.

@@ -1,11 +1,11 @@
 # pictures/ — what each image shows, and whether it is still current
 
 > **RECORD.** Nothing here is deleted; this index says what each picture proves, which docs use
-> it, and whether it needs re-shooting. Last reviewed 2026-10-23.
+> it, and whether it needs re-shooting. Last reviewed 2026-11-13 (README GIFs).
 
 **Size policy (2026-10-23):** ≤ 1600 px wide and ≤ 500 KB. JPG q85 for renders and desktop screenshots, PNG for small UI or
 plot crops. Full-size originals live outside git in `~/Pictures/airstack-originals/`. GIFs ≤ 3 MB go in `../assets/`.
-**No new mp4 in git** (the six in `../videos/` stay); a screen recording becomes a GIF plus a contact sheet.
+**No new mp4 in git** (the mp4s already in `../videos/` stay); a screen recording becomes a GIF plus a contact sheet.
 
 | File | What it shows | Used by | Status |
 |---|---|---|---|
@@ -36,5 +36,30 @@ plot crops. Full-size originals live outside git in `~/Pictures/airstack-origina
 3. **After the camera upgrade:** Motive streaming pane + IP, replacing the three Motive shots.
 4. **After M3:** the redrawn control-flow diagram as an SVG next to the PNG.
 
-GIFs used by the README gallery live in `../assets/` and are all current (one per video in `../videos/`, except
+GIFs used by the README gallery live in `../assets/`. The ones on the README are current (one per video in `../videos/`, except
 `randompos_construction_10fps.gif`: cuVSLAM debug image + Basestation 3D side by side, from a screen recording kept outside git).
+
+### GIFs added 2026-11-13
+
+| File | What it shows | Source video | Record |
+|---|---|---|---|
+| `cbf_teleop_two_drones_hero.gif` | README hero, 800 px, 14 s: the hand-flown `drone_2` approaches the hovering `drone_1`, the CBF caption appears, the distance readout holds, then the result card. 3.3 MB, over the 3 MB cap by design (the cap for the hero is 4 MB) | [`cbf_teleop_two_drones_showcase.mp4`](../videos/cbf_teleop_two_drones_showcase.mp4) | REAL, [#37](../docs/record/LEDGER.md) |
+| `cbf_teleop_two_drones_real.gif` | Hangar camera, drones labelled `drone_1` / `drone_2`, 3× speed: the same flight | [`cbf_teleop_two_drones_real_labeled_1080p.mp4`](../videos/cbf_teleop_two_drones_real_labeled_1080p.mp4) | REAL, [#37](../docs/record/LEDGER.md) |
+| `cbf_teleop_two_drones_panel.gif` | Foxglove 3D view of the same flight, 4× speed: the two keep-out spheres meet as `drone_2` closes on `drone_1` | [`cbf_teleop_two_drones_ui.mp4`](../videos/cbf_teleop_two_drones_ui.mp4) | REAL, [#37](../docs/record/LEDGER.md) |
+| `xbox_teleop_real.gif` | Hangar camera, 2× speed: the first gamepad flight, one drone (`drone_2`) | [`xbox_teleop_real_1080p.mp4`](../videos/xbox_teleop_real_1080p.mp4) | REAL, [#36](../docs/record/LEDGER.md) |
+| `xbox_teleop_panel.gif` | Foxglove 3D view of the first gamepad flight, 2× speed: `drone_2` inside the amber teleop fence | [`xbox_teleop_ui.mp4`](../videos/xbox_teleop_ui.mp4) | REAL, [#36](../docs/record/LEDGER.md) |
+| `cmu_random_goals.gif` | CMU AirLab's drones in CMU's lab flying random goals, 2× speed, a 24 s excerpt. Not flown here | CMU's clip, kept in the lab's website repo, not in this repo | Video: AirLab, Carnegie Mellon University, CC BY-SA 4.0; re-encoded and cropped in time. |
+| `cmu_figure_eight.gif` | CMU AirLab's drones in CMU's lab flying a figure-eight, 2× speed, a 24 s excerpt. Not flown here | CMU's clip, kept in the lab's website repo, not in this repo | Video: AirLab, Carnegie Mellon University, CC BY-SA 4.0; re-encoded and cropped in time. |
+
+### GIFs retired from the README gallery
+
+Taken off the README on 2026-11-13 to make room for the flights on this software. They were observed on the previous
+software in September 2026 ([LEDGER table 2](../docs/record/LEDGER.md#table-2--observed-on-the-previous-software-archived),
+[MIGRATION.md](../docs/MIGRATION.md) §12). Kept for the archive. Nothing was deleted.
+
+| File | What it shows | Full video |
+|---|---|---|
+| `starling_goal_tracking_drone_8x.gif` | 2026-09-03: waypoint flight on the previous software, drone view | [`Starling_goal_tracking_drone.mp4`](../videos/Starling_goal_tracking_drone.mp4) |
+| `starling_goal_tracking_rviz_4x.gif` | The same flight in RViz (the operator view is now the Foxglove panel) | [`Starling_goal_tracking_RVIZ.mp4`](../videos/Starling_goal_tracking_RVIZ.mp4) |
+| `takeoff_and_land.gif` | 2026-09-01: first offboard takeoff and landing, previous software | [`takeoff_and_land.mp4`](../videos/takeoff_and_land.mp4) |
+| `rviz_tracks_hand_carried_drone.gif` | RViz following a hand-carried drone before the first flight, previous software | [`SVG_check_if_rviz_moves_by_movingdrone_manually.mp4`](../videos/SVG_check_if_rviz_moves_by_movingdrone_manually.mp4) |

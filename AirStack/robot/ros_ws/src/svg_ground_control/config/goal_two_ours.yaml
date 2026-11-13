@@ -1,8 +1,8 @@
 # OUR two-drone GOAL config for drone_1 + drone_2 — derived 2026-11-12 from goal_single_ours.yaml
 # for the first real collision-avoidance (CBF) test. Differences from goal_single_ours.yaml:
 #   drone_names  ["drone_1", "drone_2"] (commander, mocap bridge, LED) · drone_modes "real,real"
-#   hover_positions  drone_1 (+1.0, -0.2, 2.0) · drone_2 (-1.5, -0.1, 2.0): 2.5 m apart, same height
-#     (owner 2026-11-12, CHG-0063). These are where the drones stood on the floor at 17:13 (mocap:
+#   hover_positions  drone_1 (+1.0, -0.2, 1.0) · drone_2 (-1.5, -0.1, 1.0): 2.5 m apart, same height
+#     (x, y: owner 2026-11-12, CHG-0063; height 2.0 -> 1.0 m: owner 2026-11-13, CHG-0067). These are where the drones stood on the floor at 17:13 (mocap:
 #     drone_1 (+1.01, -0.23), drone_2 (-1.52, -0.11)), so takeoff is a straight climb. Takeoff flies a
 #     straight line to these points: a drone standing elsewhere is flown sideways to its point.
 #   scenario_speed_mps  0.5 (was 1.0): first two-drone flights are slow; cbf_max_speed_mps stays 1.0
@@ -38,8 +38,8 @@ swarm_commander:
     drone_position_offsets: [0.0, 0.0, 0.0,
                              0.0, 0.0, 0.0]
     # takeoff target = initial goal, ABSOLUTE mocap coords — place each drone at its x,y on the floor
-    hover_positions: [ 1.0, -0.2, 2.0,    # drone_1 (+x side)
-                      -1.5, -0.1, 2.0]    # drone_2 (-x side)
+    hover_positions: [ 1.0, -0.2, 1.0,    # drone_1 (+x side)
+                      -1.5, -0.1, 1.0]    # drone_2 (-x side)
 
     state_topic_template: "/{name}/odometry_conversion/odometry"
 

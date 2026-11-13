@@ -12,9 +12,9 @@
 > ⚠️ **Branch note (2026-10-21):** this runbook describes CMU's `yikuan/SVG_ground_control_dev`
 > @ `b21d28c` (vendored 2026-10-20 — [MIGRATION.md](MIGRATION.md) §11; the release line
 > `yikuan/SVG_ground_control` @ `cf719f0` was our 2026-10-07 snapshot). **Sim (§A) is validated
-> in part** — ledger in [record/LEDGER.md](record/LEDGER.md). **No real flight on this branch
-> yet:** §B/§C were last flown on the *previous* branch (2026-09-01→03) and stay **⏳ STE until
-> re-validated**. What changed for a pilot: [MIGRATION.md](MIGRATION.md) §5.
+> in part** — ledger in [record/LEDGER.md](record/LEDGER.md). **Real flights on this
+> branch:** one drone ([#33](record/LEDGER.md), 2026-11-11) and two drones with the collision filter
+> ([#35](record/LEDGER.md), 2026-11-12, [C9](#c9--two-real-drones-with-the-collision-filter-cbf)); gamepad, formations and random goals are unflown. What changed for a pilot: [MIGRATION.md](MIGRATION.md) §5.
 
 *(Unfamiliar term? → [GLOSSARY.md](GLOSSARY.md))*
 
@@ -177,7 +177,8 @@ fallback and the throw-away shell: [§ Sim launch variants](#sim-launch-variants
 > `ros2: command not found` ⇒ host shell; `./mocap.sh` complaining about ROS ⇒ container — swap.
 > Full table: [ARCHITECTURE.md](ARCHITECTURE.md#where-things-run-real-drone-session).
 
-> **Maturity (2026-10-07):** nothing in §B has run on this branch yet. The mocap chain
+> **Maturity:** flown on this branch with one drone ([#33](record/LEDGER.md), 2026-11-11); the
+> two-drone session flown on 2026-11-12 is [C9](#c9--two-real-drones-with-the-collision-filter-cbf) ([#35](record/LEDGER.md)). The mocap chain
 > (steps 1, 3b, 4) is unchanged from the previous branch. Steps 0, 5, 6, 7 are changed —
 > read them, don't skim. One-time drone work (new provisioning script, watchdog decision):
 > NEAR-818–823 ([projects/HTX-R2.md](projects/HTX-R2.md)). No Isaac Sim needed — do NOT start it.
@@ -460,6 +461,181 @@ radius it was launched with for its own spacing; only the filter follows a live 
 ### C8 — parameters you must NEVER set live (they look harmless and are not)
 
 > ⚠️ `fence_brake_accel_mps2` **0** silently reverts the keep_in wall to the old gain×distance barrier · keep `hold_lead_m` at **0.2** (a 1.3 m lead above a grounded drone doubled its hover height, bag C1_0920_203148) · keep `fence_brake_accel_mps2` **≥ `goal_accel_mps2`** or the wall caps cruise speed · `cbf_max_speed_mps` is the ONLY speed limit on the real drone (its PX4 allows 20 m/s). Details: [CONFIG.md](CONFIG.md).
+
+### C9 — Two real drones with the collision filter (CBF)
+
+> **Not flyable as written today.** The older Starling (`drone_1` on 2026-11-12) is GROUNDED: its
+> front-right motor failed or started late in 5 of its last 7 arms ([#34](record/LEDGER.md)). This
+> section records how the 2026-11-12 flights were run; it is not a go-ahead. A substitute second
+> drone first needs its own `MAV_SYS_ID`, Motive body and takeoff point ([DRONE_SETUP.md](DRONE_SETUP.md)).
+
+One drone hovers while the other is flown toward it, to see the collision filter (CBF) keep
+them apart. This is the sequence run on 2026-11-12 ([#35](record/LEDGER.md)): config
+`goal_two_ours.yaml`, 0.5 m/s, CBF radius 0.80 (keep-out 1.60 m centre to centre). Times are SGT.
+
+**What was observed** (no gate was set beforehand): [hangar camera](../videos/cbf_drone_real_1080p.mp4) ·
+[panel](../videos/cbf_check_ui.mp4) — the 18:00 flight: `drone_2` stopped short of the hovering
+`drone_1`, which gave way ([#35](record/LEDGER.md)). The drones are small on the hangar camera
+once they hover; the panel shows the filter best.
+
+**Before you start**
+- Every box on [PREFLIGHT.md](PREFLIGHT.md); the hazards in [MILESTONES.md](MILESTONES.md#before-the-next-real-flight).
+- Which drone is which (IP, `MAV_SYS_ID`): the table under "The two Starlings" in [CONFIG.md](CONFIG.md).
+- **Hazard:** takeoff flies a straight line to each drone's takeoff point, so a drone standing
+  on the wrong side is flown across the room at floor level ([#34](record/LEDGER.md)). Stand
+  each drone on its own point, nose toward +x: `drone_1` (+1.0, −0.2), `drone_2` (−1.5, −0.1),
+  2.5 m apart. Step 10 checks it.
+- **Hazard:** raising the radius while the drones are closer than twice the new radius fires
+  `CBF emergency push-apart` (seen on the floor on 2026-11-12, drones 1.1 m apart). The config
+  ships 0.55 and a commander restart resets it to 0.55. Set it only with both drones on their
+  points, after step 10 passes.
+- **Hazard:** a motor that does not start sends the drone along the floor (7.5 m at up to
+  4.5 m/s, [#34](record/LEDGER.md)). Everyone stays outside the net from takeoff until
+  QGroundControl shows both drones Disarmed; a motor that does not spin up at arming means KILL.
+- One KILL switch per drone and one person per transmitter. Which transmitter is bound to which
+  drone is not written down yet: confirm it on the ground. Killing one drone leaves the other flying.
+
+**Where things run:** drones = step 0 · laptop = steps 1, 2, 5 · container panes = the rest
+(pane 1 agent, pane 2 interfaces, pane 3 commander, pane 4 cockpit, pane 5 = any spare
+container pane, for the separation readout). **Order on the floor:** positions (10), then
+radius (11), then recording (12), then readout (13), then takeoff (14).
+
+```bash
+# 0 · Both drones powered and booted. If the laptop or its IP changed since the last session,
+#     re-provision each drone first (section B, step 0), then reboot it.
+
+# 1 · Laptop — no sim (must print nothing), mocap ports clear, both drones answer
+docker ps | grep isaac
+ss -ulpn | grep -E ':(1510|1511)' || echo "ports clear"
+ping -c2 10.40.2.10        # drone_2 (IPs drift: CONFIG.md table)
+ping -c2 10.40.2.11        # drone_1
+
+# 2 · Laptop — robot container
+cd ~/AirStack-starling-max2/AirStack
+./airstack.sh up robot-desktop
+./airstack.sh connect robot          # → tmux "bringup", prompt root@…#
+
+# 3 · Pane 1 — the drone link; wait for "session established", leave running
+MicroXRCEAgent udp4 -p 8888 -v4
+
+# 4 · Pane 4 — both links alive: each must print a steady rate (the 2026-11-12 session notes
+#     say about 2 Hz; section B's older note says ~30 Hz). Ctrl-C after each reading
+ros2 topic hz /drone_1/fmu/out/vehicle_status
+ros2 topic hz /drone_2/fmu/out/vehicle_status
+
+# 5 · Laptop, two new terminals — QGroundControl (connect both drones, keep it visible),
+#     then mocap for both bodies (rigid bodies drone_1 and drone_2 must exist in Motive: MOCAP.md)
+~/QGroundControl-x86_64.AppImage
+cd ~/AirStack-starling-max2 && MOCAP_BODIES="drone_1 drone_2" ./mocap.sh
+
+# 6 · Pane 4 — both poses at 240 Hz
+ros2 topic hz /drone_1/pose
+ros2 topic hz /drone_2/pose
+
+# 7 · Pane 2 — interfaces; startup lines must say target_system=1 (drone_1) and =2 (drone_2)
+ros2 launch svg_ground_control real_interfaces.launch.py drones:=drone_1,drone_2 target_systems:=1,2
+
+# 8 · Pane 3 — commander with the two-drone config
+ros2 launch svg_ground_control ground_control.launch.py \
+  config:=/root/AirStack/robot/ros_ws/src/svg_ground_control/config/goal_two_ours.yaml \
+  use_mocap:=true use_foxglove_studio:=true
+
+# 9 · Pane 4 — both drones "state": "IDLE" and "odom_fresh": true; fence keep_in,
+#     min [-2,-2,0] max [2,2,4]; cbf safety_radius_m 0.55
+ros2 topic echo /svg/commander_status --once
+
+# 10 · Positions: the panel's Agent State x, y per drone (or "position" in step 9's output)
+#      must match that drone's takeoff point: drone_1 (+1.0, -0.2), drone_2 (-1.5, -0.1).
+#      Wrong side → carry the drones over and check again. No takeoff until both match.
+
+# 11 · Radius 0.80, only after step 10 passes (a drone moved since → redo step 10 first).
+#      As flown, in the panel: Swarm Command box, CBF r field → 0.80 → Apply; the panel then
+#      shows "CBF r 0.80 · Live 0.80 m". Pane 4 equivalent:
+ros2 param set /swarm_commander cbf_safety_radius_m 0.80
+ros2 param get /swarm_commander cbf_safety_radius_m      # read back: 0.8
+
+# 12 · Recording on: the panel's Rosbag switch, or pane 4; status must say "recording": true
+#      (where the bag lands: BASESTATION.md, "Rosbag switch")
+ros2 service call /bag_recorder/record std_srvs/srv/SetBool "{data: true}"
+ros2 topic echo /svg/bag_recorder/status --once
+
+# 13 · Pane 5 — start the separation readout (block below). It must print about 2.5 m before
+#      takeoff. The stop rules below depend on it.
+
+# 14 · Pane 4 (or the panel's Takeoff / Start buttons). Wait for "holding takeoff position"
+#      twice in pane 3, then start
+ros2 service call /swarm_commander/takeoff std_srvs/srv/Trigger
+ros2 service call /swarm_commander/start   std_srvs/srv/Trigger
+
+# 15 · Goals for drone_2; the brief waited about 10 s between them. Goals 1 and 2 lie inside
+#      the keep-out (1.5 m and 1.3 m from drone_1's point): drone_2 is not meant to reach them.
+#      As flown: the panel's Goal box, drone_2 selected, x y z → Send Goal (frame note must
+#      read "commander"). Pane 4 equivalents:
+ros2 topic pub --once /svg/drone_2/goal_command geometry_msgs/msg/PoseStamped \
+  "{header: {frame_id: map}, pose: {position: {x: -0.5, y: -0.2, z: 2.0}}}"   # goal 1
+ros2 topic pub --once /svg/drone_2/goal_command geometry_msgs/msg/PoseStamped \
+  "{header: {frame_id: map}, pose: {position: {x: -0.3, y: -0.2, z: 2.0}}}"   # goal 2
+ros2 topic pub --once /svg/drone_2/goal_command geometry_msgs/msg/PoseStamped \
+  "{header: {frame_id: map}, pose: {position: {x: -1.5, y: -0.1, z: 2.0}}}"   # home
+
+# 16 · Land both. QGroundControl must show BOTH Disarmed before anyone walks in. Still armed
+#      after about 10 s → KILL or arm switch down (iron rule 2)
+ros2 service call /swarm_commander/land std_srvs/srv/Trigger
+
+# 17 · Recording off (or the Rosbag switch)
+ros2 service call /bag_recorder/record std_srvs/srv/SetBool "{data: false}"
+
+# 18 · Shutdown: Ctrl-C panes 5, 3, 2, 1 and the mocap terminal, then on the laptop
+cd ~/AirStack-starling-max2/AirStack && ./airstack.sh down
+```
+Then power each drone down: "Drone shutdown" at the end of [section B](#b--real-drone-session-mocap-room---ste-on-this-branch).
+
+**Panic, in this order:** hold → land → KILL (each pilot kills their own drone). The emergency
+table on [PREFLIGHT.md](PREFLIGHT.md) is the one to follow. After any kill or RC takeover call
+`land` once: the commander keeps sending setpoints (iron rule 3, [#34](record/LEDGER.md)).
+RC takeover is MANUAL or KILL, never Position or Altitude (iron rule 1).
+```bash
+ros2 service call /swarm_commander/hold std_srvs/srv/Trigger
+```
+
+**Separation readout** (step 13, pane 5; needs the interfaces of step 7; run on the live stack
+on 2026-11-12). Prints the centre-to-centre distance from odometry, five times a second:
+```bash
+python3 -c "
+import rclpy,numpy as np
+from rclpy.node import Node
+from rclpy.qos import qos_profile_sensor_data
+from nav_msgs.msg import Odometry
+rclpy.init();n=Node('sep');p={}
+for d in('drone_1','drone_2'):
+  n.create_subscription(Odometry,'/%s/odometry_conversion/odometry'%d,lambda m,d=d:p.__setitem__(d,np.array([m.pose.pose.position.x,m.pose.pose.position.y,m.pose.pose.position.z])),qos_profile_sensor_data)
+n.create_timer(0.2,lambda:len(p)==2 and print('sep %.2f m'%np.linalg.norm(p['drone_1']-p['drone_2']),flush=True))
+rclpy.spin(n)"
+```
+
+**What to expect.** Observed on 2026-11-12 ([#35](record/LEDGER.md)). The 17:45 flight (rosbag): closest 1.50 m from
+raw mocap and 1.52 m from odometry, which is what the readout prints; `drone_1` gave way up to 0.38 m; heights
+stayed within 1.97–2.04 m. The 18:00 flight (panel video): closest 1.57 m. It ended with one more goal, on
+`drone_1`'s own takeoff point, held for 9 s; that goal is not part of this sequence.
+
+| Phase | Expect |
+|---|---|
+| Takeoff | both climb straight up to 2.0 m and hold; readout about 2.5 m |
+| Goal 1 (x −0.5) | `drone_2` flies toward `drone_1` and stops short of its goal, near the 1.60 m keep-out; the panel shows both keep-out spheres blue and "CBF correcting drone_1, drone_2" |
+| Goal 2 (x −0.3) | `drone_2` barely moves although its goal is 0.2 m deeper; `drone_1` gives way along +x |
+| Home | `drone_2` flies back to x −1.5; the readout rises |
+| Land | both descend; QGroundControl must show both Disarmed |
+
+**Stop rules.** The actions on the [PREFLIGHT.md](PREFLIGHT.md) emergency table come first. The
+2026-11-12 brief added the triggers below. They were set for radius 0.85 and were not re-derived
+for 0.80, and PREFLIGHT says `land` on a push-apart where this brief said KILL: the owner sets
+them again before the next two-drone flight.
+
+| Trigger briefed on 2026-11-12 | Action briefed |
+|---|---|
+| Either drone climbs or sinks more than 0.3 m | send `drone_2` home (step 15, last goal) |
+| Readout under 1.2 m | hold |
+| Readout under 0.7 m, or `CBF emergency push-apart` in pane 3 | both KILL switches, then `land` once |
 
 ## D · POST-FLIGHT — pull & review the PX4 logs
 

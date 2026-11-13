@@ -1,8 +1,8 @@
-# PRE-FLIGHT & EMERGENCY CARD — v2026-11-11 — print this, laminate it, keep it in the hangar
+# PRE-FLIGHT & EMERGENCY CARD — v2026-11-13 — print this, laminate it, keep it in the hangar
 
 > **DO · WORLD: REAL DRONE — this card gates every takeoff.** This stack bypasses AirStack's `drone_safety_monitor`: **PX4's failsafes plus the RC kill switch are the entire safety net.** Reprint the card whenever the version above changes.
 
-*(Starling Max 2 · AirStack `yikuan/SVG_ground_control_dev` @ `b21d28c` · OptiTrack mocap — details: RUNBOOK.md §B/§C · first real flights on this software 2026-11-11 (one drone: hover, goal legs); gamepad and multi-drone unflown; hazards: docs/projects/HTX-R2.md "Before the next real flight")*
+*(Starling Max 2 · AirStack `yikuan/SVG_ground_control_dev` @ `b21d28c` · OptiTrack mocap — details: RUNBOOK.md §B/§C · first real flights on this software 2026-11-11 (one drone: hover, goal legs) and 2026-11-12 (two drones, collision filter observed: RUNBOOK.md C9); gamepad, formations and random goals unflown; hazards: docs/projects/HTX-R2.md "Before the next real flight")*
 
 ## Before EVERY session
 

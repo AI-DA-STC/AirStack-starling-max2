@@ -27,6 +27,7 @@ plot crops. Full-size originals live outside git in `~/Pictures/airstack-origina
 | `sim_two_networks.svg` | Diagram: the isaac docker network vs the host network; DDS stays inside, MAVLink crosses; the two Foxglove Studios (8766, 8765) | ARCHITECTURE "Sim session anatomy" | Current 2026-10-23; hand-written SVG, the comment inside names what to redraw it from |
 | `vo_scoring_flow.svg` | Diagram: bag + PX4 ulog → `score_vs_ulog.py` (convert, clock offset, SE(3) align, APE/RPE) → json + plot | `localisation/README.md` "How a run is scored" | Current 2026-10-23; hand-written SVG |
 | `randompos_construction_sheet.jpg` | Six frames, 8 s apart, of the 2026-10-23 random-goals flight in the site (both Studio windows, Isaac, terminals) | `localisation/README.md` | Current (sim, unscored flight; source video `~/Videos/randompos_construction.mp4`, not in git) |
+| `cbf_two_drones_real_panel.png` | Foxglove panel at 1280×720 during the 18:00 two-drone flight, 2026-11-12: both keep-out spheres blue in the 3D view, "CBF r 0.80 · Live 0.80 m", "CBF correcting drone_1, drone_2", Agent State CBF column "correcting" for both | docs/projects/HTX-R2.md (M7, Figure 1) | Current (real, [#35](../docs/record/LEDGER.md)); frame at 37.5 s of `../videos/cbf_check_ui.mp4`: `ffmpeg -ss 37.5 -i videos/cbf_check_ui.mp4 -frames:v 1 pictures/cbf_two_drones_real_panel.png` |
 
 ## Pictures this branch still needs
 

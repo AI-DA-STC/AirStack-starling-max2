@@ -5,8 +5,8 @@
 > the random-goal collision test, the RC-flown-intruder squeeze. No robotics background needed.
 > This is **NOT the per-session runbook** ([RUNBOOK.md](RUNBOOK.md) has bring-up order, terminals
 > and services): it is the **background, procedure and exit criteria** per scenario, plus our
-> corrections to CMU's write-ups. ⚠️ The lab has **ONE** Starling, so every multi-drone scenario
-> is a **SIM procedure** with a "Real flight" subsection marked `⏳ blocked on a 2nd Starling (M7)`.
+> corrections to CMU's write-ups. ⚠️ The lab has two Starlings and the older one is grounded ([#34](record/LEDGER.md)), so every multi-drone scenario
+> is still a **SIM procedure** with a "Real flight" subsection marked `⏳ blocked on a second Starling (M7)`: read that as a second *flyable* Starling.
 >
 > **Read first:** [GLOSSARY.md](GLOSSARY.md) (CBF, scenario, fence…), then [RUNBOOK.md](RUNBOOK.md)
 > §A for the sim session this runs in. "The commander" = the `swarm_commander` node; "the panel" =
@@ -16,8 +16,9 @@
 > **2026-10-07**, bumped **2026-10-20** to `yikuan/SVG_ground_control_dev` @ `b21d28c` (added
 > `goal_sequence` and `figure_eight` — rows below, experiment.md C3 / C7 — and put
 > `goal_tracking.yaml` back on `goal`). **Sim validation has started** (ledger #1–#4 on
-> 2026-10-19, #8 and #13 on 10-20/21 — [record/LEDGER.md](record/LEDGER.md)); **on the real drone only
-> one-drone hover and goal legs have flown (ledger #33, 2026-11-11); no scenario on this page has.** Read every ✅ CMU below as "CMU says so", not "we flew it".
+> 2026-10-19, #8 and #13 on 10-20/21 — [record/LEDGER.md](record/LEDGER.md)); **on real drones, one drone flew hover and goal legs ([#33](record/LEDGER.md), 2026-11-11); two drones flew
+> the `goal` scenario and the collision filter was observed ([#35](record/LEDGER.md), 2026-11-12; procedure:
+> [RUNBOOK.md](RUNBOOK.md#c9--two-real-drones-with-the-collision-filter-cbf) C9). Formations, random goals, crossings and the squeeze are unflown on real drones.** Read every ✅ CMU below as "CMU says so", not "we flew it".
 
 ---
 
@@ -135,7 +136,8 @@ list, every scenario geometry — yaml edit + relaunch (RUNBOOK §C7). Three got
 `scenarios.py` (`_SCENARIOS`): `hover`, `goal`, `random_walk`, `random_goals`, `head_on`,
 `antipodal`, `squeeze`, `goal_sequence`, `figure_eight`. Status glyphs: **✅ CMU** = CMU reports
 it working · **✅ STE sim** = we ran it in Isaac Sim (ledger number given) · **⏳ STE sim** = our
-sim rehearsal, M1, not yet run · **⏳ M7 real** = needs a second Starling.
+sim rehearsal, M1, not yet run · **⏳ M7 real** = not yet flown on real drones (only `goal` has flown with two: [#35](record/LEDGER.md),
+[RUNBOOK.md](RUNBOOK.md#c9--two-real-drones-with-the-collision-filter-cbf) C9).
 
 | Scenario | What it does | Config that ships it | Drones | Status |
 |---|---|---|---|---|

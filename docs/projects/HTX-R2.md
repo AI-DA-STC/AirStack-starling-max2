@@ -192,7 +192,15 @@ Linear (snapshot 2026-11-12): 20 % · last ledger row #35 (2026-11-12)
 
 First clean two-drone hover 2026-11-12 17:19:54 ([#35](../record/LEDGER.md)). At radius 0.80 (keep-out 1.60 m, centre to centre) the commanded drone stopped short and the hovering one gave way up to 0.38 m. Minimum separation 1.50 m from raw mocap and 1.52 m from odometry (17:45, recorded), 1.57 m at 18:00 with the goal on the other drone's point for 9 s ([hangar video](../../videos/cbf_drone_real_1080p.mp4), [panel video](../../videos/cbf_check_ui.mp4)). That is 0.03 to 0.10 m inside the line, the same shortfall as in sim ([#20–#22](../record/LEDGER.md)). Heights stayed within 1.97–2.04 m and no emergency push-apart fired. Two earlier attempts failed and the older Starling is grounded ([#34](../record/LEDGER.md)). Closed for collision avoidance by the owner, 2026-11-12. Still to fly, in NEAR-951: formations, random goals, both drones moving, a crossing, a recording at radius 0.55.
 
-Each airframe: unique `MAV_SYS_ID` / `target_system`, DDS domain and Motive body ([DRONE_SETUP.md](../DRONE_SETUP.md)); procedures and safety briefs in [SCENARIOS.md](../SCENARIOS.md) §6–8 (sim-validated in HTX-R1 only).
+[Figure 1](#fig-1) is the panel during the 18:00 flight. The filter is correcting both drones at once, so the hovering drone moves as well as the commanded one; that is why `drone_1` gave way. In this frame Agent State puts `drone_1` at x 1.10 and `drone_2` at x −0.48, about 1.58 m apart, with `drone_2`'s goal at x −0.3; the empty `drone_3` row is not part of this flight. It is one moment of one approach direction; the numbers above come from the recording and the video.
+
+<a id="fig-1"></a>
+![Foxglove panel during the 18:00 two-drone flight: both keep-out spheres blue, CBF correcting both drones](../../pictures/cbf_two_drones_real_panel.png)
+*Figure 1. Foxglove panel, 18:00 two-drone flight, 2026-11-12. The blue spheres in the 3D view are the two keep-out bubbles (radius 0.80 m); the panel reads "CBF r 0.80 · Live 0.80 m" and "CBF correcting drone_1, drone_2", and the Agent State table's CBF column reads "correcting" for both. Frame at 37.5 s of `videos/cbf_check_ui.mp4`, cut with `ffmpeg -ss 37.5`; [#35](../record/LEDGER.md).*
+
+Each airframe: unique `MAV_SYS_ID` / `target_system`, DDS domain and Motive body ([DRONE_SETUP.md](../DRONE_SETUP.md)).
+
+Open: formations, random goals, both drones moving, a crossing and a recording at radius 0.55 (NEAR-951); three drones (NEAR-841); the older Starling is grounded. Re-run: [RUNBOOK.md](../RUNBOOK.md#c9--two-real-drones-with-the-collision-filter-cbf) C9.
 
 ### M8 · Evaluate NUS velocity policies on the real drones — REAL DRONE, NEAR Lab mocap area
 **Purpose:** NUS policies are first checked in sim (HTX-R1 S5e). This milestone flies the same scenarios on real Starlings in NEAR Lab's mocap area, with the same gate numbers, so sim and real results can be compared directly. It starts only after M4 (fence braking measured), M7 (multi-drone) and S5e.

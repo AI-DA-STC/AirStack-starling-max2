@@ -56,7 +56,17 @@ topology). Network/router details live in the companion repo
 9. **Sim-only — never port to the drone:** the sim PX4 airframe `10090_pegasus_starling2max` (roll and pitch rate gains × 0.5, yaw rate gains 0.25 / 0.2 — real 0.07 / 0.5, `MC_YAW_TQ_CUTOFF` 15, `LNDMC_ROT_MAX` 300 — real 30, motor lag off, MPC speed limits 20 / 6 / 1000 / 10 / 4), the sim stack's MAVROS respawn, and `cbf_sim.yaml`'s speeds 2.0 / 4.0 / 6.0 with its landing settle 2.0 s + disarm retry. The drone's parameters come from `starling_1_indoor_params.params` / QGC only; the real `_ours` configs fly `drone_1`, `land_settle_s` 0.0, `land_speed_mps` 0.6, `cbf_max_speed_mps` 1.0. Lines in the airframe marked `# = real` match the drone's file; copying them from the drone to the sim is fine, the other direction is not.
 <!-- IRON_RULES:END -->
 
-**Two clones, one workflow:** `~/AirStack-starling-max2` is the **live** clone (docker-mounted) — **edit and commit HERE**, on `main`. `~/Documents/GitHub/AirStack-starling-max2` is the **mirror** GitHub Desktop pushes from — update it with `git -C ~/Documents/GitHub/AirStack-starling-max2 pull ~/AirStack-starling-max2 main`. **Never push from Claude** — the user pushes via GitHub Desktop. (Every 10-19/10-20 commit was made in the live clone; the older note "commit in the mirror, pull in the live clone" was wrong.) Both clones were put on the new `main` on 2026-10-07; the live clone's old-branch config edits are backed up in `~/AirStack-starling-max2-local-edits-2026-10-07/`.
+**Two clones, one workflow:** `~/AirStack-starling-max2` is the **live** clone (docker-mounted) — **commits land HERE**, on `main` (a small edit directly, anything larger by fast-forward from a worktree branch: [More than one Claude session](#more-than-one-claude-session-on-this-repo)). `~/Documents/GitHub/AirStack-starling-max2` is the **mirror** GitHub Desktop pushes from — update it with `git -C ~/Documents/GitHub/AirStack-starling-max2 pull ~/AirStack-starling-max2 main`. **Never push from Claude** — the user pushes via GitHub Desktop. (Every 10-19/10-20 commit was made in the live clone; the older note "commit in the mirror, pull in the live clone" was wrong.) Both clones were put on the new `main` on 2026-10-07; the live clone's old-branch config edits are backed up in `~/AirStack-starling-max2-local-edits-2026-10-07/`.
+
+## More than one Claude session on this repo
+
+Assume another session may be working here at any time.
+
+- Before editing, look: `git status -sb`, `git worktree list`, and `find . -path ./.git -prune -o -type f -mmin -30 -print`. Uncommitted or untracked files you did not create belong to someone else: leave them alone and tell the owner what you saw.
+- Stage by explicit path only. Never `git add -A`, `git commit -a`, `git stash`, `git reset --hard`, `git checkout -- <file>` or `git clean`.
+- A one-file edit committed within minutes may go straight on `main`. Anything larger goes in its own worktree and branch (`git worktree add ../AirStack-starling-max2-<topic> -b <branch> main`).
+- Back to `main`: rebase the branch on `main`, rerun `tools/docs_check/check_docs.sh` and the unit tests (a fast-forward does not run the pre-commit guard), then `git merge --ff-only <branch>` in the live clone. If git refuses, stop and ask.
+- Then pull the mirror. The owner pushes.
 
 **Session history:** pre-2026-09 session-by-session narrative used to live in `CLAUDE_NOTES.md`
 (retired 2026-09-08 — superseded by the docs above). Recover it with `git log --follow CLAUDE_NOTES.md`.

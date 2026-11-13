@@ -5,7 +5,7 @@
 > when something goes wrong — pick the section for the layer that misbehaves, find the row,
 > apply the fix, then add a row if you learned something new.
 > Merged from the per-doc tables 2026-09-07; updated for `yikuan/SVG_ground_control_dev` @
-> `b21d28c`, 2026-10-21.
+> `b21d28c`, 2026-10-21; real gamepad and two-drone rows added 2026-11-13.
 > Safety first: if the drone is AIRBORNE and misbehaving →
 > [PREFLIGHT.md](PREFLIGHT.md) emergencies table FIRST, debug after.
 >
@@ -17,8 +17,8 @@
 > [§ Simulation](#simulation-isaac-sim--px4-sitl--mavros) below.**
 >
 > Names used here: "the commander" = `swarm_commander` (the ground-side node that flies the
-> drones); "the panel" = the Foxglove SVG Basestation panel; "the real drone" = our Starling
-> `drone_1`; the sim's four terminal tabs are the **Isaac Sim / Interfaces / Commander /
+> drones); "the panel" = the Foxglove SVG Basestation panel; "the real drones" = our two Starlings,
+> `drone_1` (older) and `drone_2`; the sim's four terminal tabs are the **Isaac Sim / Interfaces / Commander /
 > Cockpit tabs** opened by `tools/sim_terminals.sh` ([RUNBOOK.md](RUNBOOK.md) §A0).
 
 *(Unfamiliar term? → [GLOSSARY.md](GLOSSARY.md))*
@@ -27,6 +27,7 @@
 
 | Symptom | Cause / fix |
 |---|---|
+| `ros2 topic echo` says the topic is not published | Run it inside the container (`./airstack.sh connect robot`), not on the laptop. Still the same: the commander or the pad pane is not up. `teleop_command` exists only while the pad pane runs ([BASESTATION.md](BASESTATION.md) §3.13) |
 | `ros2` not found / empty topics / service call hangs "waiting" | Wrong shell — you're on the laptop host. `./airstack.sh connect robot` first (lands in the tmux `bringup` session, `root@` prompt) |
 | tmux pane shows a bare `bash` prompt with no workspace / `sws_after_build` never returns | pane 0's `bws` never ran or failed — run `cd ~/AirStack/robot/ros_ws && bws && sws` in pane 0; the others source when `.build.lock` is released |
 | Everything on the wrong DDS domain after a `./svg_teleop.sh` run | a tmux *server* inherits the env of the shell that started it — `./svg_teleop.sh stop`, then `tmux kill-server` inside the container, then relaunch (the script re-exports `ROS_DOMAIN_ID` per session) |
@@ -74,7 +75,8 @@
 | PX4 won't arm indoors ("fuse failure" / "Not Ready") | No fused position source — mocap feed down or EKF2 params missing ([CONFIG.md](CONFIG.md) §PX4/EKF2, the `.params` file) |
 | Takeoff refused: "no drone eligible (missing odometry or not IDLE)" | In order: **1.** commander stuck non-IDLE after an RC takeover / Ctrl-C → call `land` once (drone on floor); **2.** interfaces not running — RUNBOOK §B step 5; **3.** mocap bridge down → `./mocap.sh check`; **4.** config names a drone you don't have (CMU's 3-drone real configs; `goal_single.yaml` targeted `drone_2` at `cf719f0`, `drone_1` since `b21d28c`) |
 | `takeoff` accepted, Interface column / `px4_interface` log shows **nothing** (no ack), drone sits | `target_system` ≠ the drone's `MAV_SYS_ID` — PX4 drops the command silently. Check the `px4_interface` startup line; `target_systems:=` on the interface launch ([CONFIG.md](CONFIG.md) §Protocol constants) |
-| `takeoff` accepted, ack says **`DENIED`** | PX4 preflight refused (no fused position, EKF not ready, kill switch engaged) — QGC's message bar names it |
+| `takeoff` accepted, ack says **`DENIED`** | PX4 preflight refused. QGC's message bar names why: no fused position, EKF not ready, kill switch engaged, throttle stick up. Call `land` once, hands clear, BEFORE touching switch or throttle. Fix it, then `takeoff` again |
+| Two drones on, QGC shows only one | Connect both saved QGC Comm Links: `Starling1` (`10.40.2.11:14550`), `Starling2` (`10.40.2.10:14550`). `MAV_SYS_ID` is 1 on `drone_1`, 2 on `drone_2`. A shared ID shows one vehicle ([CONFIG.md](CONFIG.md)). No two-drone takeoff until QGC lists both |
 | Goal / speed / formation commands do nothing, no error | the running scenario has no retargetable goals — `cbf_sim.yaml` ships `antipodal`, and `scenario:=random_goals` / `head_on` / `random_walk` ignore goals (`goal_tracking.yaml` did too at `cf719f0`; it ships `goal` at `b21d28c`); use a `goal`-scenario config or `scenario:=goal` ([SCENARIOS.md](SCENARIOS.md) §10) |
 | Startup WARN `formation_profiles set but scenario "X" has no retargetable goals; profiles ignored` | expected on `cbf_sim.yaml` (`antipodal`) or any launch with `scenario:=random_goals` (`goal_tracking.yaml` ships `goal` at `b21d28c`) — add `scenario:=goal` to the launch ([SCENARIOS.md](SCENARIOS.md) §6) |
 | `CBF emergency push-apart engaged` in the log / every LED red at once | drones already inside each other's safety bubbles — the solve is infeasible. **Land and investigate** ([SCENARIOS.md](SCENARIOS.md) §1) |
@@ -85,13 +87,17 @@
 | **Landing ends with the drone still armed** — QGC shows ARMED after touchdown, or the log says `Disarming denied` / `disarm -> success=False`; in sim `mavros/state` `armed: true`, props spinning | Real drone and sim differ — read the REAL / SIM bullets right under this table. Real: flip KILL (ch8 — harmless on the ground) or the arm switch (ch5) down first, then read on |
 | RC sticks ignored / fighting in Position/Altitude mode | Control-authority leak: PX4 v1.14 still consumes commander setpoints in those modes. Take over into **MANUAL** (or kill) only |
 | Fence breach → everything frozen mid-air (`FENCE BREACH` chip) | `hold_all` behaviour, by design: freeze-hover, **still armed**, not a motor cut. Recover: `land` → `reset_fence` (or panel **Reset Fence**) → `takeoff` → `start`. Now also triggers when an **RC-flown** drone is airborne outside the box. `keep_in` configs never latch |
-| Gamepad sticks do nothing | in order: `start` not called; drone not in `teleop_drones`; `safe_teleop` log says `REFUSING TO COMMAND` (axis guard — wrong controller profile, [TELEOP.md](TELEOP.md) §3); `/joy` stale (pad asleep/unplugged); container created before the `/dev/input` mount — recreate it |
-| `safe_teleop` prints `pad: NO /joy` forever | `joy_node` cannot see the device: `ls /dev/input/js0` on the laptop, then inside the container. Missing in the container ⇒ created before the `/dev/input` bind mount — recreate it (`down` + `up`). Present but unreadable ⇒ add yourself to the `input` group and re-login |
-| Yaw turns the wrong way on the first teleop flight | expected risk — sim cannot prove yaw sign (`px4_interface` negates the ENU yaw rate). Land, flip `yaw_sign` in the config's `safe_teleop` block, relaunch ([TELEOP.md](TELEOP.md) §2) |
+| Gamepad sticks do nothing | in order: `start` not called; pad pane not running (see "Sticks ignored after `start`"); drone not in `teleop_drones`; `safe_teleop` log says `REFUSING TO COMMAND` (axis guard — wrong controller profile, [TELEOP.md](TELEOP.md) §3); `/joy` stale (pad asleep/unplugged); container created before the `/dev/input` mount — recreate it |
+| `safe_teleop` prints `pad: NO /joy` forever | `joy_node` cannot find the F310 (pinned by name, not `js0`). Run `tools/real.sh pad --static`. Pad missing in the container: recreate it (`down` + `up`). Present but unreadable: join the `input` group, log in again |
+| Yaw turns the wrong way | First yaw slow, thumb on KILL. Right once (owner's report, [#36](record/LEDGER.md)). If wrong: land and stop. `tools/real.sh` refuses a config that sets `yaw_sign`: a flip is a code change with its change record ([TELEOP.md](TELEOP.md) §2) |
+| Sticks ignored after `start`, and no warning anywhere | The pad pane was stopped or never started, so the drone holds as if the sticks were centred. Check `ros2 topic hz /svg/drone_2/teleop_command` (about 20 Hz). Keep the pad pane up until DISARMED (hazard 9, [#36](record/LEDGER.md)) |
+| The keyboard shows as a joystick; `js0` is not the pad | Harmless: `joy_node` opens the F310 by name, so a keyboard at `js0` is never read. `tools/real.sh pad` shows which `js` the pad is ([TELEOP.md](TELEOP.md) §3) |
+| A drone tips over at lift-off | KILL, then `land` once (iron rule 3). On `drone_1` suspect the front-right motor and watch it at every takeoff (hazard 6, [#34](record/LEDGER.md)). With two drones, check each stood on its own takeoff point (hazard 7) |
+| CBF radius is back at 0.55 after a commander restart | A panel-set radius is not saved. Set it again with both drones outside the new keep-out (twice the radius), or `CBF emergency push-apart` fires (hazard 8, [RUNBOOK.md](RUNBOOK.md) C9) |
 | Hand-flown drone hovers ~30 cm up on `land` and never touches down | a reference clamped to the teleop-fence floor (`teleop_fence_min` z) — should not happen (only ACTIVE drones are clipped); if it does, `hold` → `land` again → kill if it persists, and note the bag |
 | Drone drifts/sinks slowly during hand-flying, or keeps going after release | should be fixed on this branch (separate horizontal/vertical leash, ramp re-attaches to the published command) — if seen, note the bag and check `teleop_lead_m` / `teleop_accel_mps2` ([TELEOP.md](TELEOP.md) §7) |
 | `hold` makes the drone continue forward before stopping | by design now — it brakes to a predicted stop point ahead instead of flying back to the call position |
-| Startup WARNs about `drone_2`/`drone_3` with only one drone; the panel's Agent State / 3D view carry drones that never get odometry | the loaded config lists three drones (CMU's 3-drone real configs — `swarm_real`, `goal_tracking`, `goal_sequence`, …; `goal_single.yaml` is single-drone `drone_1` at `b21d28c`). Our `swarm_real_ours.yaml` / `goal_single_ours.yaml` are single-drone (`drone_1`) — fly those ([MIGRATION.md](MIGRATION.md) §6). (The old "Agents roster" card is gone since the 10-20 bump) |
+| Startup WARNs about `drone_2`/`drone_3` when fewer drones are up than the config lists; the panel's Agent State / 3D view carry drones that never get odometry | the loaded config lists three drones (CMU's 3-drone real configs — `swarm_real`, `goal_tracking`, `goal_sequence`, …; `goal_single.yaml` is single-drone `drone_1` at `b21d28c`). Our `swarm_real_ours.yaml` / `goal_single_ours.yaml` are single-drone (`drone_1`) — fly those for one drone; `goal_two_ours.yaml` is the two-drone config ([CONFIG.md](CONFIG.md), [MIGRATION.md](MIGRATION.md) §6). (The old "Agents roster" card is gone since the 10-20 bump) |
 
 **Landing ends with the drone still armed — detail**
 

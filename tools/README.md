@@ -2,6 +2,7 @@
 
 > **DO · SIM.** Everything here runs on the laptop or inside the sim containers. It is sim-only: nothing in this
 > folder touches the real drone, and nothing measured here is ported to it (CLAUDE.md iron rule 9).
+> The one exception is `tools/real.sh`: it checks the gamepad for real teleop and starts nothing ([below](#real-drone-the-gamepad-check)).
 
 ## Install in three commands
 
@@ -27,6 +28,7 @@ The old hover + step driver still works and moves under the front door later.
 
 | Path | What it does |
 |---|---|
+| `real.sh` | the real-drone exception: `pad [--static]` checks the Logitech F310, `teleop drone_1` or `teleop drone_2` also prepares the config; logic in `teleop/real_teleop.sh`, `pad_core.py`, `pad_check.py`, `real_config.py` ([below](#real-drone-the-gamepad-check)) |
 | `sim.sh` | the front door: `setup · doctor · up · down [--force] · status · tabs · keys · relay · test <name> … · figures · check · param set` |
 | `tools/lib/stack.sh` | stack start/stop and cleanup helpers — sourced by `sim.sh` and by the hover driver |
 | `tools/lib/report.py` | writes `docs/record/<run>_record.md` and the drafted LEDGER row from a test's `gates.py`; exit 0 PASS / 1 FAIL / 2 INCOMPLETE / 3 ABORTED |
@@ -44,6 +46,21 @@ The old hover + step driver still works and moves under the front door later.
 | `git-hooks/` | the pre-commit guard: docs check, unit tests, `tools/sim.sh check` |
 | `make_figures.sh` | regenerates the committed figures in `docs/record/figures/`; run by hand when a figure should change |
 | `tests/` | host unit tests |
+
+## Real drone: the gamepad check
+
+`tools/real.sh` is the one tool here for the real drone. It checks the Logitech F310 pad and prepares teleop for one drone. It starts nothing.
+
+```bash
+tools/real.sh pad --static        # the static checks only: no stick moves
+tools/real.sh pad                 # the static checks, then five stick moves
+tools/real.sh teleop drone_2      # the full check, then the config and the commands; drone_1 the same way
+```
+
+- Set the switch on the back of the pad to X, with the MODE light off. Do not press MODE after the check.
+- `teleop drone_2` writes `/tmp/svg_real/teleop_real_drone_2.yaml` in the robot container, made from `teleop_real_ours.yaml`: drone name, controller `xbox_usb`, the pad's name pin, the LED block. It prints the changed lines, the takeoff point and the pane commands.
+- Re-run it after any container restart or pad replug. It refuses while Isaac Sim runs, another node publishes `/joy` or `safe_teleop` runs.
+- Exit 0 PASS, 1 FAIL, 2 cannot check, 3 Ctrl-C.
 
 ## Run a test
 

@@ -69,7 +69,7 @@ class Usage(unittest.TestCase):
         r = run()
         self.assertEqual(r.returncode, 2, r.stdout + r.stderr)
         out = r.stdout + r.stderr
-        for ex in ("tools/real.sh pad", "tools/real.sh pad --static"):
+        for ex in ("tools/real.sh pad", "tools/real.sh pad --static", "tools/real.sh teleop drone_1", "tools/real.sh teleop drone_2"):
             self.assertIn(ex, out)
         for bad in ("drone_N", "<drone>", "<"):
             self.assertNotIn(bad, out)
@@ -153,6 +153,95 @@ class PadCommand(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             run("pad", "--static", env=fake_env(tmp, FAKE_EXEC_RC=3))
             self.assertIn("exec %s pkill -f __node:=svg_pad_check_joy" % R, calls(tmp).splitlines()[-1])
+
+
+PANES_2 = ['laptop : cd ~/AirStack-starling-max2 && MOCAP_BODIES="drone_2" ./mocap.sh',
+           'pane 1 : MicroXRCEAgent udp4 -p 8888 -v4',
+           'pane 2 : ros2 launch svg_ground_control real_interfaces.launch.py drones:=drone_2 target_systems:=2',
+           'pane 3 : ros2 launch svg_ground_control ground_control.launch.py config:=/tmp/svg_real/teleop_real_drone_2.yaml use_mocap:=true use_foxglove_studio:=true',
+           'pane 5 : ros2 launch svg_ground_control teleop.launch.py config:=/tmp/svg_real/teleop_real_drone_2.yaml']
+
+
+class TeleopCommand(unittest.TestCase):
+    def test_unknown_drone_exit_2_before_any_docker_call(self):
+        for args in (["teleop"], ["teleop", "drone_3"], ["teleop", "drone_N"], ["teleop", "2"], ["teleop", "drone_02"],
+                     ["teleop", ""], ["teleop", "drone_1", "extra"], ["teleop", "--static"]):
+            with tempfile.TemporaryDirectory() as tmp:
+                r = run(*args, env=fake_env(tmp, REAL_TELEOP_NO_TTY_OK=1))
+                self.assertEqual(r.returncode, 2, (args, r.stdout, r.stderr))
+                self.assertIn("usage:", r.stderr, args)
+                self.assertEqual(calls(tmp), "", args)
+
+    def test_drone_3_names_the_two_drones(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            r = run("teleop", "drone_3", env=fake_env(tmp))
+            self.assertIn("error: unknown drone 'drone_3' — use drone_1 or drone_2", r.stderr)
+
+    def test_refuses_without_a_terminal_before_docker(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            r = run("teleop", "drone_2", env=fake_env(tmp))
+            self.assertEqual(r.returncode, 2, r.stdout + r.stderr); self.assertIn("terminal", r.stdout)
+            self.assertEqual(calls(tmp), "")
+
+    def test_refuses_while_the_sim_runs(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            r = run("teleop", "drone_2", env=fake_env(tmp, REAL_TELEOP_NO_TTY_OK=1, FAKE_PS="isaac-sim\\n%s\\n" % R, FAKE_ISAAC=1))
+            self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
+            self.assertIn("PAD CHECK: FAIL — do not fly: Isaac Sim running — real teleop refused", r.stdout)
+            self.assertNotIn("cp ", calls(tmp))
+
+    def test_container_down_exit_2(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            r = run("teleop", "drone_1", env=fake_env(tmp, REAL_TELEOP_NO_TTY_OK=1, FAKE_PS=""))
+            self.assertEqual(r.returncode, 2, r.stdout + r.stderr); self.assertNotIn("cp ", calls(tmp))
+
+    def test_pass_runs_the_full_check_then_copies_the_config_and_prints_the_panes(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            r = run("teleop", "drone_2", env=fake_env(tmp, REAL_TELEOP_NO_TTY_OK=1))
+            self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+            c = calls(tmp); lines = c.splitlines()
+            idx = lambda pat: next(i for i, l in enumerate(lines) if pat in l)
+            check = idx("bash -ic python3 /tmp/svg_real/pad_check.py --pad f310")
+            self.assertNotIn("--static", lines[check])                                      # the full check, sticks included
+            cp = idx(":/tmp/svg_real/teleop_real_drone_2.yaml")
+            self.assertLess(check, cp); self.assertTrue(lines[cp].startswith("cp "))
+            self.assertNotIn("exec -d", c)
+            out = r.stdout
+            for p in PANES_2:
+                self.assertIn(p + "\n", out)
+            self.assertIn("Stand drone_2 on x -0.5, y 0.0, nose toward +x. Takeoff flies a straight line to that point.", out)
+            self.assertIn('drone_names: ["drone_2"]', out); self.assertIn('teleop_controller: "xbox_usb"', out)
+            self.assertTrue(out.rstrip().endswith("Do not press MODE. Re-run this command after any container restart or pad replug."))
+            self.assertLess(out.index("FAKE pad check output"), out.index("Stand drone_2"))
+            self.assertNotIn("drone_N", out); self.assertNotIn("<", out)
+
+    def test_drone_1_uses_target_system_1(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            r = run("teleop", "drone_1", env=fake_env(tmp, REAL_TELEOP_NO_TTY_OK=1))
+            self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+            self.assertIn("pane 2 : ros2 launch svg_ground_control real_interfaces.launch.py drones:=drone_1 target_systems:=1", r.stdout)
+            self.assertIn(":/tmp/svg_real/teleop_real_drone_1.yaml", calls(tmp))
+
+    def test_a_failed_check_copies_and_prints_nothing(self):
+        for rc in (1, 2, 3):
+            with tempfile.TemporaryDirectory() as tmp:
+                r = run("teleop", "drone_2", env=fake_env(tmp, REAL_TELEOP_NO_TTY_OK=1, FAKE_EXEC_RC=rc))
+                self.assertEqual(r.returncode, rc, (rc, r.stdout, r.stderr))
+                self.assertNotIn("teleop_real_drone_2.yaml", calls(tmp)); self.assertNotIn("pane 3", r.stdout)
+
+    def test_the_copied_file_is_the_checked_render(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            keep = os.path.join(tmp, "copied.yaml")
+            env = fake_env(tmp, REAL_TELEOP_NO_TTY_OK=1)
+            fake = os.path.join(tmp, "bin", "docker")             # the fake keeps a copy of what `docker cp` gets for the yaml
+            open(fake, "w").write(FAKE.replace('echo "$@" >> "$FAKE_LOG"\n',
+                                               'echo "$@" >> "$FAKE_LOG"\ncase "$*" in cp*teleop_real_*) cp "$2" %s;; esac\n' % keep))
+            r = run("teleop", "drone_2", env=env)
+            self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+            sys.path.insert(0, str(TOOLS / "teleop"))
+            import pad_core, real_config
+            src = (TOOLS.parent / "AirStack/robot/ros_ws/src/svg_ground_control/config/teleop_real_ours.yaml").read_text()
+            real_config.verify_render(src, open(keep).read(), "drone_2", pad_core.F310)
 
 
 class PadCheckShell(unittest.TestCase):

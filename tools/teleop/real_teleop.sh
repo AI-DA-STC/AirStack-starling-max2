@@ -1,23 +1,34 @@
 #!/usr/bin/env bash
 # tools/teleop/real_teleop.sh — the REAL-drone gamepad front door, called through tools/real.sh.
-# It checks the Logitech F310 pad inside the robot container. It never starts the stack, a pane or a
-# detached container process.
+# It checks the Logitech F310 pad inside the robot container and prepares the teleop config for one drone. It never
+# starts the stack, a pane or a detached container process.
 #
-#   pad            the full pad check: static checks, then five stick moves (needs a terminal)
-#   pad --static   the static checks only: no stick moves, no terminal needed
+#   pad              the full pad check: static checks, then five stick moves (needs a terminal)
+#   pad --static     the static checks only: no stick moves, no terminal needed
+#   teleop drone_1   render the config for drone_1 (tools/teleop/real_config.py), the full pad check, then copy the
+#   teleop drone_2   config to /tmp/svg_real/ in the robot container and print the diff, takeoff point and pane lines
 #
 # Exit: 0 PASS · 1 FAIL or refused · 2 cannot check (usage, docker or the robot container down, no terminal) · 3 Ctrl-C.
-# Every decision is in tools/teleop/pad_core.py; tools/teleop/pad_check.py runs it in the container.
+# Every decision is in tools/teleop/pad_core.py and real_config.py; tools/teleop/pad_check.py runs in the container.
 set -euo pipefail
 HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+SRC_YAML=$(cd "$HERE/../.." && pwd)/AirStack/robot/ros_ws/src/svg_ground_control/config/teleop_real_ours.yaml
 R=airstack-robot-desktop-1
 D=/tmp/svg_real                 # no regex characters: also a pkill pattern
+TMPD=""; CHECK_STARTED=0
+cleanup() {
+  [ -z "$TMPD" ] || rm -rf "$TMPD"
+  [ "$CHECK_STARTED" = 0 ] || docker exec "$R" pkill -f __node:=svg_pad_check_joy >/dev/null 2>&1 || true   # backup: the check stops its own joy_node
+}
+trap cleanup EXIT
 
 usage() {
   cat <<'USAGE'
-usage: tools/real.sh pad [--static]
-  tools/real.sh pad            check the Logitech F310 pad: static checks, then five stick moves (needs a terminal)
-  tools/real.sh pad --static   the static checks only (no stick moves)
+usage: tools/real.sh pad [--static]   or   tools/real.sh teleop drone_1|drone_2
+  tools/real.sh pad              check the Logitech F310 pad: static checks, then five stick moves (needs a terminal)
+  tools/real.sh pad --static     the static checks only (no stick moves)
+  tools/real.sh teleop drone_1   the full pad check, then the teleop config for drone_1 and the commands to run
+  tools/real.sh teleop drone_2   the same for drone_2
 real drone: it checks and prepares only. It starts nothing.
 USAGE
 }
@@ -44,7 +55,7 @@ run_pad_check() {
     && docker cp "$HERE/pad_core.py" "$R:$D/" >/dev/null \
     && docker cp "$HERE/pad_check.py" "$R:$D/" >/dev/null \
     || fail 2 "could not copy the pad check into $R"
-  trap 'docker exec "$R" pkill -f __node:=svg_pad_check_joy >/dev/null 2>&1 || true' EXIT   # backup: the check stops its own joy_node
+  CHECK_STARTED=1
   trap 'echo "PAD CHECK: FAIL — do not fly: stopped (Ctrl-C) — the check did not finish"; exit 3' INT TERM
   docker exec "${flags[@]}" "$R" bash -ic "python3 $D/pad_check.py --pad f310${1:+ $1}" || rc=$?
   case "$rc" in
@@ -67,9 +78,28 @@ cmd_pad() {
   run_pad_check $static
 }
 
+# cmd_teleop drone_1|drone_2: render first (a drifted source is refused before the operator moves a stick), then the
+# full pad check, then the copy into the container, then the operator block that real_config.py printed.
+cmd_teleop() {
+  [ $# -eq 1 ] || die_usage "teleop takes one drone: drone_1 or drone_2"
+  local drone=$1 msg out
+  msg=$(python3 "$HERE/real_config.py" check-drone -- "$drone" 2>&1) || die_usage "${msg#error: }"
+  if ! [ -t 0 ] && [ "${REAL_TELEOP_NO_TTY_OK:-0}" != 1 ]; then    # REAL_TELEOP_NO_TTY_OK: unit tests only
+    fail 2 "the stick test needs a terminal (Ctrl-C must reach it) — run it in a terminal tab"
+  fi
+  TMPD=$(mktemp -d); out=$TMPD/teleop_real_$drone.yaml
+  python3 "$HERE/real_config.py" render --drone "$drone" --source "$SRC_YAML" --out "$out" > "$TMPD/block.txt" 2> "$TMPD/err" \
+    || fail 1 "the $drone config was not made: $(sed 's/^error: //' "$TMPD/err" | head -1)"
+  guard
+  run_pad_check || return $?
+  docker cp "$out" "$R:$D/teleop_real_$drone.yaml" >/dev/null || fail 2 "could not copy the $drone config into $R"
+  cat "$TMPD/block.txt"
+}
+
 SUB=${1:-}
 case "$SUB" in
   pad) shift; rc=0; cmd_pad "$@" || rc=$?; exit "$rc" ;;
+  teleop) shift; rc=0; cmd_teleop "$@" || rc=$?; exit "$rc" ;;
   ""|-h|--help) usage; exit 2 ;;
   *) die_usage "unknown subcommand: $SUB" ;;
 esac

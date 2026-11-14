@@ -911,6 +911,214 @@ def _single_home(rows):
     return verdict("single-home", [], warns, f"{n} phrase(s) in their single homes", warn_msg=f"{len(warns)} single-home warning(s)")
 
 
+# ----------------------------------------------------------------- 22. runbook procedure
+# design 2026-11-14 D11; definitions from plan 2026-11-14 "Shared definitions" (segments, command line, laptop/container line,
+# shared opening and its normalisation, chooser, stop table and gap).
+RUNBOOK_FILE = "docs/RUNBOOK.md"
+CHOOSER_HEADER, CHOOSER_MAX_LINE = "| Session | SIM or REAL | Go to |", 15
+SEGMENT_HEADS = (("A", "## A ·"), ("B", "## B ·"), ("B9", "### B9 —"), ("B10", "### B10 —"), ("C", "## C ·"), ("C9", "### C9 —"),
+                 ("D", "## D ·"), ("Pocket", "## Pocket reference"), ("Variants", "### Sim launch variants"))
+REAL_SEQUENCES = ("B", "B9", "B10", "C", "C9")
+OPENING_BEGIN, OPENING_END = "<!-- shared-opening -->", "<!-- /shared-opening -->"
+LAPTOP_MARKS = ("airstack.sh", "mocap.sh", "QGroundControl-x86_64.AppImage")
+COMMANDER_CALL_RE = re.compile(r"/swarm_commander/(takeoff|start|land)\b")
+STOP_TABLE_MAX_GAP, SEQUENCE_MAX_LINES = 15, 180
+DATED_RE = re.compile(r"20\d\d-\d\d-\d\d|(?<![\w&/])#\d+(?![\w-])")     # a date, or a ledger number (not an anchor like .md#4--x)
+UNDATED_NOTES = ("not flown", "not re-derived", "not set")               # DOCS_STANDARD §6b: rule-6 notes may carry their date
+
+
+def _fences(lines):
+    """(outside, blocks): outside[i] is True for a line outside every ``` / ~~~ fence (fence lines count as inside);
+    blocks = [(start, [(i, command)])], 0-based. Command line: non-blank, not starting '#', trailing ' # …' comment removed."""
+    outside, blocks, fence, cur = [], [], None, None
+    for i, line in enumerate(lines):
+        s = line.strip()
+        if fence is None:
+            m = re.match(r"^\s*(`{3,}|~{3,})", line)
+            if m:
+                fence, cur = (m.group(1)[0], len(m.group(1))), (i, [])
+                outside.append(False)
+                continue
+            outside.append(True)
+            continue
+        outside.append(False)
+        if s and set(s) == {fence[0]} and len(s) >= fence[1]:
+            blocks.append(cur); fence, cur = None, None
+            continue
+        if s and not s.startswith("#"):
+            cmd = re.sub(r"\s+#\s.*$", "", line).strip()
+            if cmd:
+                cur[1].append((i, cmd))
+    if cur is not None:
+        blocks.append(cur)
+    return outside, blocks
+
+
+def segments(lines):
+    """{name: (start, end)} for each segment heading found outside fences (0-based, end exclusive: the next segment heading)."""
+    outside, _ = _fences(lines)
+    found = []
+    for i, line in enumerate(lines):
+        if outside[i] and line.startswith("#"):
+            name = next((n for n, head in SEGMENT_HEADS if line.startswith(head)), None)
+            if name:
+                found.append((i, name))
+    return {name: (i, found[k + 1][0] if k + 1 < len(found) else len(lines)) for k, (i, name) in enumerate(found)}
+
+
+def _opening(lines, seg):
+    """([(lineno, text)] between each shared-opening marker pair inside seg, concatenated; first marker error or None)."""
+    outside, _ = _fences(lines)
+    out, inside, err = [], False, None
+    for i in range(*seg):
+        s = lines[i].strip()
+        if outside[i] and s == OPENING_BEGIN:
+            if inside:
+                err = err or f"line {i + 1}: opening marker inside an open region"
+            inside = True
+        elif outside[i] and s == OPENING_END:
+            if not inside:
+                err = err or f"line {i + 1}: closing marker without an opening one"
+            inside = False
+        elif inside:
+            out.append((i + 1, lines[i]))
+    if inside:
+        err = err or "an opening marker is never closed"
+    return out, err
+
+
+def opening_lines(lines, seg):
+    """The shared-opening lines of one sequence (seg from segments()), in page order."""
+    return [t for _, t in _opening(lines, seg)[0]]
+
+
+def _normalise_numbered(numbered):
+    res = []
+    for no, line in numbered:
+        s = line.strip()
+        if not s or s.startswith("```") or s.startswith("~~~"):
+            continue
+        line = re.sub(r"drone_\d+", "drone_N", line)
+        line = re.sub(r"10\.40\.2\.\d+", "IP", line)
+        line = re.sub(r" target_systems:=[\d,]+", "", line)
+        line = re.sub(r"target_system=\d+", "target_system=N", line)
+        line = re.sub(r'MOCAP_BODIES="[^"]*" ', "", line)
+        line = re.sub(r"^\*\*\d+ ·", "**N ·", line)
+        prev = None
+        while prev != line:
+            prev, line = line, re.sub(r"drone_N(, | and |,| )drone_N", "drone_N", line)
+        if res and res[-1][1] == line:
+            continue
+        res.append((no, line))
+    return res
+
+
+def normalise_opening(lines):
+    """The plan's normalisation, in its order: drop fence and blank lines; drone_N; IP; drop target_systems:=…; target_system=N;
+    drop MOCAP_BODIES="…"; **N ·; collapse drone_N lists; drop a line identical to the one before."""
+    return [t for _, t in _normalise_numbered(enumerate(lines, 1))]
+
+
+def _stop_table(lines, outside, seg):
+    """(last row index, error or None) for the table that follows the first `**Stop table.**` line in seg (prose may continue first)."""
+    head = next((i for i in range(*seg) if outside[i] and lines[i].startswith("**Stop table.**")), None)
+    if head is None:
+        return None, "no **Stop table.** line"
+    i = head + 1
+    while i < seg[1] and outside[i] and not lines[i].lstrip().startswith("|") and not lines[i].startswith("#"):
+        i += 1
+    if i >= seg[1] or not outside[i] or not lines[i].lstrip().startswith("|"):
+        return None, f"line {head + 1}: no table after the **Stop table.** line"
+    while i + 1 < seg[1] and lines[i + 1].lstrip().startswith("|"):
+        i += 1
+    return i, None
+
+
+def check_runbook_procedure(text=None):
+    """RUNBOOK procedure rules (design 2026-11-14 D11): chooser, one place per block, connect last, one commander call per block,
+    stop table close above takeoff, one shared opening; dated text and long sequences warn."""
+    if text is None:
+        text = read(ROOT / RUNBOOK_FILE)
+        if text is None:
+            return Result("runbook-procedure", "WARN", f"{RUNBOOK_FILE} missing")
+    lines = text.split("\n")
+    outside, blocks = _fences(lines)
+    fails, warns = [], []
+    where = lambda i: f"RUNBOOK.md:{i + 1}"
+    chooser = next((i for i, x in enumerate(lines) if outside[i] and x.strip() == CHOOSER_HEADER), None)
+    if chooser is None:
+        fails.append(f"chooser: no table headed '{CHOOSER_HEADER}'")
+    elif chooser + 1 > CHOOSER_MAX_LINE:
+        fails.append(f"chooser: header on line {chooser + 1} (at most line {CHOOSER_MAX_LINE})")
+    for start, cmds in blocks:
+        laptop = [i for i, c in cmds if any(k in c for k in LAPTOP_MARKS)]
+        container = [i for i, c in cmds if c.startswith("ros2 ")]
+        if laptop and container:
+            fails.append(f"{where(laptop[0])}: one block holds a laptop line and a ros2 line ({where(container[0])}); split it per place")
+        for i, c in cmds:
+            if "airstack.sh connect" in c and i != cmds[-1][0]:
+                fails.append(f"{where(i)}: `airstack.sh connect` is not its block's last command line ({where(cmds[-1][0])} follows)")
+        calls = sorted({m.group(1) for _, c in cmds for m in COMMANDER_CALL_RE.finditer(c)}, key=("takeoff", "start", "land").index)
+        if len(calls) > 1:
+            fails.append(f"{where(start)}: one block holds {' and '.join(calls)}; each gets its own block")
+    segs = segments(lines)
+    real = [n for n in REAL_SEQUENCES if n in segs]
+    if not real:
+        warns.append("no real sequence heading (## B ·, ### B9 —, ### B10 —, ## C ·, ### C9 —) found")
+    ref = None
+    for name in real:
+        seg = segs[name]
+        last_row, err = _stop_table(lines, outside, seg)
+        if err:
+            fails.append(f"{name}: {err}")
+        else:
+            takeoff = next((i for i in range(last_row + 1, seg[1]) if "/swarm_commander/takeoff" in lines[i]), None)
+            if takeoff is None:
+                fails.append(f"{name}: no /swarm_commander/takeoff after the stop table")
+            elif takeoff - last_row > STOP_TABLE_MAX_GAP:
+                fails.append(f"{name}: stop table's last row (line {last_row + 1}) is {takeoff - last_row} lines above takeoff "
+                             f"(line {takeoff + 1}); at most {STOP_TABLE_MAX_GAP}")
+        numbered, err = _opening(lines, seg)
+        if err:
+            fails.append(f"{name}: {err}")
+        elif not numbered:
+            fails.append(f"{name}: no shared-opening markers ({OPENING_BEGIN} … {OPENING_END})")
+        else:
+            norm = _normalise_numbered(numbered)
+            if ref is None:
+                ref = (name, norm)
+            else:
+                for k in range(max(len(ref[1]), len(norm))):
+                    a = ref[1][k] if k < len(ref[1]) else (None, "<end of opening>")
+                    b = norm[k] if k < len(norm) else (None, "<end of opening>")
+                    if a[1] != b[1]:
+                        fails.append(f"{name}: shared opening differs from {ref[0]} at normalised line {k + 1}: "
+                                     f"{ref[0]} line {a[0]} '{a[1]}' / {name} line {b[0]} '{b[1]}'")
+                        break
+    for name in (["A"] if "A" in segs else []) + real:
+        start, end = segs[name]
+        if end - start > SEQUENCE_MAX_LINES:
+            warns.append(f"{name}: {end - start} lines from its heading to the next section (aim: at most {SEQUENCE_MAX_LINES})")
+        if name == "A":
+            continue
+        q = start + 1                                           # the opening blockquote (world line): '>' lines after the heading
+        while q < end and not lines[q].strip():
+            q += 1
+        quote_end = q
+        while quote_end < end and lines[quote_end].startswith(">"):
+            quote_end += 1
+        for i in range(quote_end, end):
+            x = lines[i]
+            if not outside[i] or x.lstrip().startswith("|") or any(n in x.lower() for n in UNDATED_NOTES):
+                continue
+            if DATED_RE.search(x):
+                warns.append(f"{name}: line {i + 1}: dated text in a sequence: {x.strip()[:100]}")
+    return verdict("runbook-procedure", fails, warns,
+                   f"{RUNBOOK_FILE}: chooser by line {CHOOSER_MAX_LINE}, {len(blocks)} blocks one place each, "
+                   f"{len(real)} real sequence(s) with a stop table and one shared opening",
+                   f"{len(fails)} procedure problem(s)", f"{len(warns)} procedure warning(s)")
+
+
 # ----------------------------------------------------------------- selftest / main
 def selftest():
     """Prove the dead-link check works on a temp corpus: one good link, one dead file, one dead fragment."""
@@ -945,7 +1153,7 @@ def main():
               check_values_registry, check_banners, check_real_page_hygiene, check_warnings_registered,
               check_budget, check_preflight_date, check_headings_stable, check_hashes,
               check_linear_parity, check_change_lists, lambda: check_images(corpus()), check_page_budgets, check_figure_refs, check_purpose_lines,
-              check_single_home, check_change_log]
+              check_single_home, check_runbook_procedure, check_change_log]
     results = []
     for fn in checks:
         try:

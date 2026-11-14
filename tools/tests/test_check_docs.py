@@ -510,3 +510,142 @@ class SingleHome(unittest.TestCase):                                  # design 2
     def test_registered_in_the_checker_run(self):
         out = subprocess.run([sys.executable, "-I", str(pathlib.Path(C.__file__)), "--json"], capture_output=True, text=True, cwd=self._root).stdout
         self.assertIn("single-home", [r["check"] for r in json.loads(out)["results"]])
+
+
+class RunbookProcedure(unittest.TestCase):                            # design 2026-11-14 D11: procedure-page rules for RUNBOOK
+    CHOOSER = "| Session | SIM or REAL | Go to |"
+    HEADS = {"B": "## B · REAL DRONE session (mocap room)", "B9": "### B9 — Fly one real drone with the gamepad",
+             "B10": "### B10 — Two real drones, one flown by hand", "C": "## C · GOAL FLIGHTS (fly to commanded waypoints)",
+             "C9": "### C9 — Two real drones with the collision filter (CBF)"}
+    IP, SYS = {"drone_1": "10.40.2.11", "drone_2": "10.40.2.10"}, {"drone_1": "1", "drone_2": "2"}
+    TAKEOFF, START, LAND = (f"ros2 service call /swarm_commander/{c} std_srvs/srv/Trigger" for c in ("takeoff", "start", "land"))
+
+    def setUp(self):
+        self._root = C.ROOT; self.addCleanup(setattr, C, "ROOT", self._root)
+
+    def opening(self, drones=("drone_2",), bodies=True, rate="a steady rate"):
+        """The shared opening for one or two drones; bodies=False is the bare `./mocap.sh` + no target_systems form."""
+        mocap = (f'MOCAP_BODIES="{" ".join(drones)}" ' if bodies else "") + "./mocap.sh"
+        launch = "drones:=" + ",".join(drones) + (" target_systems:=" + ",".join(self.SYS[d] for d in drones) if bodies else "")
+        out = ["<!-- shared-opening -->", "**1 · Laptop · ping every drone**", "```bash", *[f"ping -c2 {self.IP[d]}" for d in drones], "```", "",
+               "**2 · Laptop · mocap**", "```bash", f"cd ~/AirStack-starling-max2 && {mocap}", "```", "", "**3 · Pane 1 · link alive**"]
+        for d in drones:
+            out += ["```bash", f"ros2 topic hz /{d}/fmu/out/vehicle_status", "```"]
+        out += [f"Must see: {rate}. Ctrl-C after each reading.", "", "**4 · Pane 3 · interfaces**", "```bash",
+                f"ros2 launch svg_ground_control real_interfaces.launch.py {launch}", "```"]
+        out += [f"Must see: the startup line of `{d}` says `target_system={self.SYS[d]}`." for d in drones]
+        return out + ["<!-- /shared-opening -->", ""]
+
+    def seq(self, name, opening=None, stop=True, gap=6, body=()):
+        """One real sequence: heading, world blockquote (dated: exempt), opening, body, stop table, takeoff/start/land blocks.
+        gap = line of `takeoff` minus line of the stop table's last row."""
+        out = [self.HEADS[name], "", "> **WORLD: REAL DRONE.** First flown 2026-11-12 ([#34](record/LEDGER.md)).", ""]
+        out += self.opening() if opening is None else opening
+        out += list(body)
+        if stop:
+            out += ["**Stop table.** The PREFLIGHT.md emergency table comes first.", "", "| What you see | Do this |", "|---|---|",
+                    "| Anything scary | KILL, then `land` once |"]
+            out += [""] * (gap - 2)
+        out += ["```bash", self.TAKEOFF, "```", "", "```bash", self.START, "```", "", "```bash", self.LAND, "```", ""]
+        return out
+
+    def page(self, top=0, a=(), seqs=None):
+        """A whole RUNBOOK: chooser header on line 2 + top; section A (sim, no stop table); the five real sequences; tail."""
+        seqs = seqs or {}
+        out = ["# RUNBOOK", *[""] * top, self.CHOOSER, "|---|---|---|", "| Fly in simulation | SIM | [A](#a) |", "",
+               "## A · Fly in SIMULATION", "", *a, "```bash", self.TAKEOFF, "```", "", "```bash", self.START, "```", ""]
+        for name in self.HEADS:
+            out += seqs.get(name) or self.seq(name)
+        return "\n".join(out + ["## D · POST-FLIGHT — pull & review the PX4 logs", "", "## Pocket reference", "", "### Sim launch variants", ""]) + "\n"
+
+    def run_check(self, text):
+        return C.check_runbook_procedure(text)
+
+    def test_chooser_on_line_15_passes_on_16_fails(self):
+        self.assertEqual(self.run_check(self.page(top=13)).status, "PASS")
+        r = self.run_check(self.page(top=14))
+        self.assertEqual(r.status, "FAIL"); self.assertTrue(any("chooser" in x and "16" in x for x in r.details), r.details)
+        r = self.run_check(self.page().replace(self.CHOOSER, "| Session | Go to |"))
+        self.assertEqual(r.status, "FAIL"); self.assertTrue(any("chooser" in x for x in r.details), r.details)
+
+    def test_block_mixing_mocap_sh_and_ros2_fails(self):
+        for laptop in ("cd ~/AirStack-starling-max2 && ./mocap.sh", "cd ~/AirStack-starling-max2/AirStack && ./airstack.sh up",
+                       "~/QGroundControl-x86_64.AppImage"):
+            r = self.run_check(self.page(a=["```bash", laptop, "ros2 topic list", "```", ""]))
+            self.assertEqual(r.status, "FAIL", laptop)
+            self.assertTrue(any("laptop" in x and "ros2" in x and ":9" in x for x in r.details), r.details)
+
+    def test_connect_not_last_fails_last_passes(self):
+        r = self.run_check(self.page(a=["```bash", "cd ~/AirStack-starling-max2/AirStack && ./airstack.sh connect robot", "tmux attach -t bringup", "```", ""]))
+        self.assertEqual(r.status, "FAIL"); self.assertTrue(any("connect" in x and ":9" in x for x in r.details), r.details)
+        ok = self.page(a=["```bash", "cd ~/AirStack-starling-max2/AirStack", "./airstack.sh connect robot   # a new shell opens", "```", ""])
+        self.assertEqual(self.run_check(ok).status, "PASS")
+
+    def test_takeoff_and_start_in_one_block_fails(self):
+        a = ["```bash", self.TAKEOFF, "# then", self.START, "```", ""]
+        r = self.run_check(self.page(a=a))
+        self.assertEqual(r.status, "FAIL"); self.assertTrue(any("takeoff" in x and "start" in x for x in r.details), r.details)
+        self.assertEqual(self.run_check(self.page(a=["```bash", self.LAND, self.LAND, "```", ""])).status, "PASS")    # the same call twice is one call
+
+    def test_stop_table_gap_16_fails_15_passes(self):
+        self.assertEqual(self.run_check(self.page(seqs={"B10": self.seq("B10", gap=15)})).status, "PASS")
+        r = self.run_check(self.page(seqs={"B10": self.seq("B10", gap=16)}))
+        self.assertEqual(r.status, "FAIL"); self.assertTrue(any("B10" in x and "16" in x for x in r.details), r.details)
+
+    def test_real_sequence_without_stop_table_fails_section_A_needs_none(self):
+        self.assertEqual(self.run_check(self.page()).status, "PASS")                    # section A takes off with no stop table
+        r = self.run_check(self.page(seqs={"C9": self.seq("C9", stop=False)}))
+        self.assertEqual(r.status, "FAIL"); self.assertTrue(any("C9" in x and "Stop table" in x for x in r.details), r.details)
+
+    def test_openings_differing_only_in_names_ips_and_counts_pass(self):
+        two = self.opening(drones=("drone_1", "drone_2"))
+        seqs = {"B": self.seq("B", opening=self.opening(drones=("drone_1",), bodies=False)), "B9": self.seq("B9"),
+                "B10": self.seq("B10", opening=two), "C": self.seq("C", opening=self.opening(drones=("drone_1",), bodies=False)),
+                "C9": self.seq("C9", opening=two)}
+        r = self.run_check(self.page(seqs=seqs))
+        self.assertEqual(r.status, "PASS", r.details)
+        self.assertEqual(C.normalise_opening(['ping -c2 10.40.2.11', 'ping -c2 10.40.2.10', '```bash',
+                                              'cd ~/AirStack-starling-max2 && MOCAP_BODIES="drone_1 drone_2" ./mocap.sh',
+                                              'x drones:=drone_1,drone_2 target_systems:=1,2', '**17 · Pane 3 · `drone_1` and `drone_2`**']),
+                         ['ping -c2 IP', 'cd ~/AirStack-starling-max2 && ./mocap.sh', 'x drones:=drone_N', '**N · Pane 3 · `drone_N` and `drone_N`**'])
+
+    def test_opening_word_change_fails_with_the_line(self):
+        r = self.run_check(self.page(seqs={"C9": self.seq("C9", opening=self.opening(rate="about 30 Hz"))}))
+        self.assertEqual(r.status, "FAIL")
+        self.assertTrue(any("C9" in x and "about 30 Hz" in x and "a steady rate" in x for x in r.details), r.details)
+        self.assertFalse(any(x.startswith(("B:", "B9:", "B10:", "C:")) for x in r.details), r.details)
+
+    def test_unpaired_or_missing_markers_fail(self):
+        unclosed = [x for x in self.opening() if x != "<!-- /shared-opening -->"]
+        stray = ["<!-- /shared-opening -->"] + self.opening()
+        for name, op, word in (("B10", unclosed, "never closed"), ("B9", stray, "closing marker"),
+                               ("C", [x for x in self.opening() if "shared-opening" not in x], "no shared-opening")):
+            r = self.run_check(self.page(seqs={name: self.seq(name, opening=op)}))
+            self.assertEqual(r.status, "FAIL", name); self.assertTrue(any(x.startswith(name + ":") and word in x for x in r.details), r.details)
+
+    def test_date_or_ledger_number_in_a_step_warns_not_in_world_line_table_row_or_not_flown_line(self):
+        body = ["**5 · Pane 4 · check** as flown on 2026-11-13.", "Seen in [#41](record/LEDGER.md).",
+                "| 2026-11-12 | a table row, [#34](record/LEDGER.md) |", "Not flown since 2026-11-12; not re-derived for #34; not set.",
+                "Re-provision ([DRONE_SETUP.md](DRONE_SETUP.md#4--point-px4-at-the-laptop-uxrce-dds-provisioning) §4).", ""]
+        r = self.run_check(self.page(seqs={"B9": self.seq("B9", body=body)}))
+        self.assertEqual(r.status, "WARN", r.details)
+        self.assertEqual(len(r.details), 2, r.details)
+        self.assertTrue(r.details[0].startswith("B9:") and "2026-11-13" in r.details[0], r.details)
+        self.assertTrue(r.details[1].startswith("B9:") and "#41" in r.details[1], r.details)
+
+    def test_sequence_of_181_lines_warns_not_fails(self):
+        base = len(self.seq("B9"))
+        self.assertEqual(self.run_check(self.page(seqs={"B9": self.seq("B9", body=["text"] * (180 - base))})).status, "PASS")
+        r = self.run_check(self.page(seqs={"B9": self.seq("B9", body=["text"] * (181 - base))}))
+        self.assertEqual(r.status, "WARN"); self.assertTrue(any(x.startswith("B9:") and "181" in x for x in r.details), r.details)
+        r = self.run_check(self.page(a=["text"] * 181))
+        self.assertEqual(r.status, "WARN"); self.assertTrue(any(x.startswith("A:") for x in r.details), r.details)
+
+    def test_registered_in_the_checker_run(self):
+        out = subprocess.run([sys.executable, "-I", str(pathlib.Path(C.__file__)), "--json"], capture_output=True, text=True, cwd=self._root).stdout
+        self.assertIn("runbook-procedure", [r["check"] for r in json.loads(out)["results"]])
+
+    def test_shipped_runbook_has_no_fail(self):
+        r = C.check_runbook_procedure()
+        self.assertEqual(r.name, "runbook-procedure")
+        self.assertNotEqual(r.status, "FAIL", r.details)

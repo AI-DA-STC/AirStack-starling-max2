@@ -81,5 +81,5 @@ Nothing here is a flight result.
 
 ## Next
 
-- S1: drone model and safety filter; [plan](plans/2026-11-15-s1-drone-model-and-safety-filter.md) awaiting the owner's approval.
+- S1: drone model and safety filter; [plan](plans/2026-11-15-s1-drone-model-and-safety-filter.md) approved by the owner on 15 November 2026; building.
 - S0 again on a training workstation, when one is available.

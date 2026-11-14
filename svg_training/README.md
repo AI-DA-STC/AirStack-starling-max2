@@ -9,7 +9,7 @@ repository, like `localisation/`; it changes nothing in CMU's `AirStack/` tree.
 | Build step | State | Evidence |
 |---|---|---|
 | S0 (throughput benchmark) | run of record T1: **FAIL** on one [gate](docs/GLOSSARY.md) (1 of 96 points lost to an Isaac start-up crash) | every number verified; both speed [decision rules](docs/GLOSSARY.md) met → [S0 results](docs/S0_RESULTS.md) |
-| S1 Drone model and safety filter | planned; plan awaiting the owner's approval | [S1 plan](docs/plans/2026-11-15-s1-drone-model-and-safety-filter.md) |
+| S1 Drone model and safety filter | approved 15 Nov; building | [S1 plan](docs/plans/2026-11-15-s1-drone-model-and-safety-filter.md) |
 | S2–S5 | not started | [DESIGN §8](docs/DESIGN.md#8-build-order) |
 | Training | nothing trained yet | — |
 

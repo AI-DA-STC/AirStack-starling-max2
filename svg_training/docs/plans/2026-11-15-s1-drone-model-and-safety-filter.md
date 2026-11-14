@@ -10,7 +10,7 @@
 
 **Spec:** [../DESIGN.md](../DESIGN.md) §3 (stage 1), §4, §8 row S1; [../../STANDARDS.md](../../STANDARDS.md) §3, §5 (rules 1–9), §7.
 
-**Status:** written 15 November 2026; **awaiting the owner's approval**, including the gates in Task 1.
+**Status:** written 15 November 2026; **approved by the owner on 15 November 2026 with the gates of Task 1 as proposed**; execution: subagent-driven.
 
 ## Facts this plan rests on (S1 research, 15 November 2026)
 

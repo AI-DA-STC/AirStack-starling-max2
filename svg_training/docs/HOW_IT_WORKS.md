@@ -86,7 +86,7 @@ Each point warms up for at least 50 steps and 2 s, then times at least 200 steps
 | Step | Builds | State |
 |---|---|---|
 | S0 Measure | benchmarks for both tiers, records, ledger, container | done on the laptop: T1 = FAIL on one gate ([results](S0_RESULTS.md)); workstation run to do |
-| S1 Drone model | fitted tier 1 model from AirStack simulator logs; safety filter port | planned; [plan](plans/2026-11-15-s1-drone-model-and-safety-filter.md) awaiting approval |
+| S1 Drone model | fitted tier 1 model from AirStack simulator logs; safety filter port | building; [plan](plans/2026-11-15-s1-drone-model-and-safety-filter.md) approved 15 Nov |
 | S2 One against one | open arena, game rules with tags, scripted opponents, evaluation suite | not started |
 | S3 Two against one | random blocks and columns, line of sight, opponent pool | not started |
 | S4 Five against three | the construction-site world, team-size randomisation, tier 2 cross-check | not started |

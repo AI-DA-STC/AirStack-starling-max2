@@ -84,6 +84,7 @@ evidence: [CLAUDE.md](../CLAUDE.md).
   # newer Starling (D0012, 10.40.2.10):       voxl_setup_real_drone.sh drone_2 <LAPTOP_IP> 1 8888
   # older Starling (WiFi dongle, 10.40.2.11):  voxl_setup_real_drone.sh drone_1 <LAPTOP_IP> 1 8888
   ```
+  Both lab drones fly on domain `1`, as shown. The unique-domain rule above is an open owner item.
 - [ ] After the reboot: `systemctl status svg-microdds-watchdog` must be `active`. If the drone also carries our earlier `voxl-dds-retry.service` (Starling 1 does), **keep only one** — both restart the uXRCE client; running both is untested (⏳ STE decision → CONFIG.md).
 - [ ] Expect `Running, disconnected` from `px4-microdds_client status` until the laptop agent is up — the watchdog keeps retrying — [RUNBOOK.md](RUNBOOK.md#b--real-drone-session-mocap-room) §B (the drone-link step).
 - [ ] Start the agent in the robot container (`MicroXRCEAgent udp4 -p 8888 -v4`) and verify on the drone: `px4-microdds_client status` → **Running, connected**, Agent IP = laptop; and on the laptop the interface startup line `PX4Interface initialized (uXRCE-DDS), target_system=N` — RUNBOOK §B (the drone-link and interfaces steps).
@@ -151,7 +152,7 @@ command the vehicle. Full guide: [BASESTATION.md](BASESTATION.md) §8.
 - [ ] Agent `session established` and all 24 `/drone_N/fmu/*` topics on the laptop — [RUNBOOK.md](RUNBOOK.md#b--real-drone-session-mocap-room) §B (the drone-link step).
 - [ ] `px4_interface` startup line shows `target_system=N` — RUNBOOK §B (the interfaces step).
 - [ ] Mocap pose: `ros2 topic hz /drone_N/pose` ≈ 240 Hz in the robot container, tracks the hand-carried drone — MOCAP.md.
-- [ ] EKF2 fusion in → out: `fmu/in/vehicle_visual_odometry` feeding, `fmu/out/vehicle_odometry` positions match mocap within ~2 cm — RUNBOOK §B (the "mocap into PX4" and "EKF2 output, commander status" steps).
+- [ ] EKF2 fusion in → out: `fmu/in/vehicle_visual_odometry` feeding, `fmu/out/vehicle_odometry` positions match mocap within ~2 cm — RUNBOOK §B (the "mocap into PX4" and "EKF2 output, commander status" steps). RUNBOOK prints the output only: the in/out comparison has no command there yet (open owner item).
 - [ ] Frame hand-check: carry North/East/up, `pos[0]`↑ / `pos[1]`↑ / `pos[2]`↓ (NED) — a wrong frame flies into a wall — RUNBOOK §B (the frame hand-check step).
 - [ ] `ros2 topic echo /svg/commander_status --once` shows `drone_N` with `"odom_fresh": true`, `"state": "IDLE"` — [BASESTATION.md](BASESTATION.md) §4.
 - [ ] **Basestation** 3D view tracks the hand-carried drone; Agent State row `IDLE · odom fresh` (`real_interfaces.launch.py drones:=drone_N` running) — NEAR-818–823 ([projects/HTX-R2.md](projects/HTX-R2.md)) / RUNBOOK §B (the Basestation check step). (RViz, Fixed Frame `world`, still works as a fallback.)

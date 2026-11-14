@@ -21,7 +21,7 @@ container that holds the ROS 2 workspace) · `starling2-max…$` = on the drone 
 
 Iron rules, RC channels (ch5 arm · ch6 mode · ch8 KILL) and the emergency order: [PREFLIGHT.md](PREFLIGHT.md).
 
-The `bringup` tmux session has 8 panes: pane 0 top-left, 1–4 across the top, 5–7 along the bottom. Each is a container shell with the workspace sourced. Sections B and C say "pane N". Section A says "<name> tab".
+The `bringup` tmux session has 8 panes: pane 0 top-left, 1–4 across the top, 5–7 along the bottom. Each is a container shell with the workspace sourced. Sections B and C say "pane N". Section A says "`<name>` tab".
 
 tmux moves: `Ctrl-b` then an arrow key switches panes. `Ctrl-b d` detaches. The session survives closing the terminal (`connect` again to return).
 
@@ -227,7 +227,9 @@ Must see: a position is printed (EKF2 output alive). The fusion gate is the bann
 Must see: the status shows `drone_1`, `"odom_fresh": true`, `"state": "IDLE"`. If not IDLE: `land` once, drone on the floor ([TROUBLESHOOTING.md](TROUBLESHOOTING.md), "Takeoff refused").
 Every `/fmu/*` echo needs `--qos-reliability best_effort` or it looks dead. `ros2 topic hz` does not accept that flag: run hz bare.
 
-**15 · Floor · frame hand-check** (first flight of the day, and after any Motive recalibration or ground-plane change). Carry the drone and re-run step 14's first echo at each position.
+**15 · Floor · frame hand-check** (first flight of the day, and after any Motive recalibration or ground-plane change)
+
+Carry the drone and re-run step 14's first echo at each position.
 
 Must see: North → `position[0]`↑, East → `[1]`↑, up → `[2]`↓. If not: wrong axes = DO NOT FLY ([PREFLIGHT.md](PREFLIGHT.md)).
 
@@ -303,7 +305,7 @@ Already in the drone's own shell (adb or ssh)? Type `shutdown now` there instead
 > Until DISARMED, press Ctrl-C in pane 4 only.
 > Prompts, panes and tmux moves: [top of this page](#runbook--start-the-pipeline-fast).
 
-**`drone_1` instead:** step 3 runs `tools/real.sh teleop drone_1`; paste the lines it prints, ping `10.40.2.11`, read `drone_1` for `drone_2` in every check.
+**`drone_1` instead:** step 3 runs `tools/real.sh teleop drone_1`; paste the lines it prints (they say `drone_1` and `target_systems:=1`), ping `10.40.2.11`, read `drone_1` for `drone_2` in every check.
 It flies by the owner's decision, with a watcher on its front-right motor at every takeoff ([hazard 6](projects/HTX-R2.md#before-the-next-real-flight)).
 
 <!-- shared-opening -->
@@ -428,6 +430,8 @@ This session adds: `drone_2` stands ON the takeoff point step 3 printed (x -0.5,
 | `start` | Pane 3: `drone_2: sticks live, holding [...] until moved`. The card reads `STICKS LIVE → drone_2` |
 | Flight | The teleop fence (x and y −1.5 to 1.5 m, z 0.3 to 1.8 m) is meant to brake the drone at its walls. The −y wall was seen in one flight. The +x wall and the top are not flown |
 | Speed | The cap is 0.5 m/s. It caps the command, not the drone |
+
+What was seen: [HTX-R2.md, M5](projects/HTX-R2.md#m5--gamepad-flying-on-the-real-drone--real-drone).
 
 **Stop table.** The [PREFLIGHT.md](PREFLIGHT.md) emergency table comes first.
 
@@ -628,6 +632,7 @@ Must see: about 2.5 m (both drones on their points), five times a second.
 If not: the block has no stale-data check. If the number stops changing while a drone moves, the readout is dead: let go of the sticks and `land`.
 
 **16 · Floor · go / no-go**
+
 Every box on [PREFLIGHT.md](PREFLIGHT.md).
 Basestation: banner `EKF EV FUSED`, each drone's Agent State row reads `IDLE · odom fresh`. Frame hand-check on the first flight of the day and after any Motive recalibration or ground-plane change ([PREFLIGHT.md](PREFLIGHT.md)).
 This session adds:
@@ -833,7 +838,9 @@ Must see: a position is printed (EKF2 output alive). The fusion gate is the bann
 Must see: the status shows `drone_1`, `"odom_fresh": true`, `"state": "IDLE"`. If not IDLE: `land` once, drone on the floor ([TROUBLESHOOTING.md](TROUBLESHOOTING.md), "Takeoff refused").
 Every `/fmu/*` echo needs `--qos-reliability best_effort` or it looks dead. `ros2 topic hz` does not accept that flag: run hz bare.
 
-**15 · Floor · frame hand-check** (first flight of the day, and after any Motive recalibration or ground-plane change). Carry the drone and re-run step 14's first echo at each position.
+**15 · Floor · frame hand-check** (first flight of the day, and after any Motive recalibration or ground-plane change)
+
+Carry the drone and re-run step 14's first echo at each position.
 
 Must see: North → `position[0]`↑, East → `[1]`↑, up → `[2]`↓. If not: wrong axes = DO NOT FLY ([PREFLIGHT.md](PREFLIGHT.md)).
 
@@ -880,8 +887,8 @@ ros2 service call /swarm_commander/start   std_srvs/srv/Trigger
 
 **20 · Pane 4 · one goal** (or the Basestation's Goal card: `drone_1`, x y z, Send Goal. Its frame note must read `commander`, not "unconfirmed")
 
-Coordinates are ABSOLUTE in the mocap/world frame (same numbers as `/drone_1/pose`). Each publish REPLACES the goal: no queue. The publisher exiting does NOT cancel it.
-Keep goals inside the fence (±2 m in `goal_single_ours.yaml`). Goals only act under the `goal` scenario. Not measured: how far the drone goes past the wall.
+Coordinates are ABSOLUTE (same numbers as `/drone_1/pose`). Each publish REPLACES the goal.
+Keep goals inside the fence (±2 m in `goal_single_ours.yaml`). Not measured: how far the drone goes past the wall.
 ```bash
 ros2 topic pub --once /svg/drone_1/goal_command geometry_msgs/msg/PoseStamped \
   "{header: {frame_id: map}, pose: {position: {x: 0.5, y: 0.0, z: 1.0}}}"

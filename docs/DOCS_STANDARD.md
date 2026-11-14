@@ -92,7 +92,7 @@ Must see, pane 3: `drone_2: sticks live`. If not: stop table, "Sticks do nothing
 - The stop table starts `**Stop table.**` and sits directly above `takeoff`. Go/no-go is one line, "Every box on PREFLIGHT.md", plus only what this session adds.
 - "What to expect" is at most five rows, with its "not flown" marks. Results and videos go to HTX-R2.md.
 - Wrap the opening steps shared by all real sequences in `<!-- shared-opening -->` and `<!-- /shared-opening -->`. They read the same everywhere.
-- `runbook-procedure` in `tools/docs_check/check_docs.sh` enforces these.
+- `runbook-procedure` in `tools/docs_check/check_docs.sh` enforces the block, stop-table, chooser and shared-opening rules. The rest is held by review.
 
 ## 7. After a test run
 

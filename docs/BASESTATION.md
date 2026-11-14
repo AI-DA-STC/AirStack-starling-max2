@@ -340,7 +340,7 @@ The axis map, deadzone and speed scaling are read from `safe_teleop`'s own param
 (`/safe_teleop/get_parameters` — `refreshTeleopParams`; the namespace is the `Teleop node
 namespace` setting), so a DragonRise pad is drawn on its own layout. Until that read answers, the
 `xbox_usb` defaults are assumed and the lock line says so. The raw joy topic is the `Joystick
-(raw)` setting (`/joy`). The card is the quickest way to run the ground check in [RUNBOOK.md B9](RUNBOOK.md#b9--fly-one-real-drone-with-the-gamepad), the pad step (sticks
+(raw)` setting (`/joy`). The card is the quickest way to run the ground check in [RUNBOOK.md B9](RUNBOOK.md#b9--fly-one-real-drone-with-the-gamepad), "the pad, before the commander" step (sticks
 move the right bars, zero at rest). `⏳ STE`
 
 ## 4 · The `/svg/commander_status` snapshot

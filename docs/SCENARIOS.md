@@ -112,6 +112,8 @@ ros2 param set /swarm_commander scenario_speed_mps 1.0     # cruise speed of the
 ros2 param set /swarm_commander fence_brake_accel_mps2 6.0
 ```
 
+`fence_brake_accel_mps2`: never 0 (it silently reverts the `keep_in` wall), and keep it ≥ `goal_accel_mps2` ([CONFIG.md](CONFIG.md)). On the real drone only `cbf_safety_radius_m` has been changed live ([#35, #37](record/LEDGER.md)).
+
 They apply **on the next control tick**. Anything not live is refused with a reason naming what
 *is* (`SwarmCommander.on_parameter_change`). The live set is `_RUNTIME_ATTRS` +
 `_SCENARIO_PARAMS` in `swarm_commander.py` — besides the three CBF gains: `teleop_max_speed_mps`,
@@ -422,7 +424,7 @@ Paths relative to `AirStack/robot/ros_ws/src/svg_ground_control/`.
 | Go-to-goal profile | `svg_ground_control/trajectory.py` | `brake_speed` · `stopping_distance` · `seek_velocity` · `ReferenceTracker` |
 | The key configs | `config/cbf_sim.yaml` (3 sim, `antipodal`, nobody exempt, **ours**: cruise 2.0 / vmax 4.0 / accel 6 — sim-only) · `config/goal_tracking.yaml` (3 **real**, `goal` at `b21d28c`, speed/vmax/accel 10.0 ⚠️, `keep_in`) · `config/squeeze_rc_intruder.yaml` (3 real, `drone_3` teleop + exempt, own teleop fence) · `config/goal_sequence.yaml`, `config/figure_eight_rc_intruder.yaml` (new 10-20) | Per-scenario parameters; read once at launch — full matrix in [CONFIG.md](CONFIG.md) |
 | CBF telemetry | `/svg/cbf_active` · `/svg/commander_status` | `cbf_active` = `std_msgs/String`, comma-separated names, **every tick** (end of `control_loop`), drives the LEDs and the panel. The status snapshot carries `cbf{alpha, safety_radius_m, max_speed_mps, external_velocity_gain, active, emergency}` and `tuning{teleop_max_speed_mps, goal_accel_mps2, goal_settle_s, scenario_speed_mps}` |
-| Goal inputs | `/svg/{name}/goal_command` (PoseStamped) · `/svg/{name}/goal_xyzt` (Float64MultiArray `[x,y,z,theta_deg]`) · `/svg/{name}/speed_command` (Float32) · `/svg/formation_command` (String) | All after `start` only. `goal_xyzt` also sets the heading. Without it the nose stays on +X |
+| Goal inputs | `/svg/{name}/goal_command` (PoseStamped) · `/svg/{name}/goal_xyzt` (Float64MultiArray `[x,y,z,theta_deg]`) · `/svg/{name}/speed_command` (Float32) · `/svg/formation_command` (String) | All after `start` only. Each publish replaces the goal; a publisher exiting does not cancel it. `goal_xyzt` also sets the heading. Without it the nose stays on +X |
 | Operator tooling | `scripts/svg_teleop.sh` · `foxglove/svg-basestation/` · `tools/sim_terminals.sh` | `svg_teleop.sh solo\|squeeze\|hover` brings up Isaac + agent + interfaces + commander + pad in tmux; `tools/sim_terminals.sh` is our four-tab session (RUNBOOK §A0). The panel has the six-gain runtime dropdown (α / r / vmax / teleop vmax / goal accel / goal settle), the per-drone CBF chip, the mission chip and the Rosbag switch ([BASESTATION.md](BASESTATION.md)) |
 
 **Tests** — inside the robot container, at the package directory:

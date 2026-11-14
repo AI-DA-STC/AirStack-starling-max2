@@ -922,7 +922,11 @@ REAL_SEQUENCES = ("B", "B9", "B10", "C", "C9")
 OPENING_BEGIN, OPENING_END = "<!-- shared-opening -->", "<!-- /shared-opening -->"
 LAPTOP_MARKS = ("airstack.sh", "mocap.sh", "QGroundControl-x86_64.AppImage")
 COMMANDER_CALL_RE = re.compile(r"/swarm_commander/(takeoff|start|land)\b")
-STOP_TABLE_MAX_GAP, SEQUENCE_MAX_LINES = 15, 180
+# design D12: a line that is exactly one complete definition with one call inside (`takeoff() { …; }`) defines a word and runs
+# nothing. Quoted strings may hold braces (C9's `rec_on() { … "{data: true}"; }`); anything after the closing brace disqualifies it.
+FUNCTION_DEF_RE = re.compile(r"""^\s*[A-Za-z_]\w*\s*\(\)\s*\{(?:[^{};"']|"[^"]*"|'[^']*')*;\s*\}\s*$""")
+TAKEOFF_STEP_RE = re.compile(r"^\*\*\d+ ·[^*]*\btakeoff\b", re.I)           # a bold step line naming takeoff
+STOP_TABLE_MAX_GAP, TAKEOFF_STEP_MAX_GAP, SEQUENCE_MAX_LINES = 15, 25, 180
 DATED_RE = re.compile(r"20\d\d-\d\d-\d\d|(?<![\w&/])#\d+(?![\w-])")     # a date, or a ledger number (not an anchor like .md#4--x)
 UNDATED_NOTES = ("not flown", "not re-derived", "not set")               # DOCS_STANDARD §6b: rule-6 notes may carry their date
 
@@ -1035,8 +1039,9 @@ def _stop_table(lines, outside, seg):
 
 
 def check_runbook_procedure(text=None):
-    """RUNBOOK procedure rules (design 2026-11-14 D11): chooser, one place per block, connect last, one commander call per block,
-    stop table close above takeoff, one shared opening; dated text and long sequences warn."""
+    """RUNBOOK procedure rules (design 2026-11-14 D11, D12): chooser, one place per block, connect last, one commander call per block
+    (one-call definition lines excepted; a box defining a commander word holds only definitions), stop table close above takeoff and above the takeoff step, one shared opening; dated text and
+    long sequences warn."""
     if text is None:
         text = read(ROOT / RUNBOOK_FILE)
         if text is None:
@@ -1058,9 +1063,15 @@ def check_runbook_procedure(text=None):
         for i, c in cmds:
             if "airstack.sh connect" in c and i != cmds[-1][0]:
                 fails.append(f"{where(i)}: `airstack.sh connect` is not its block's last command line ({where(cmds[-1][0])} follows)")
-        calls = sorted({m.group(1) for _, c in cmds for m in COMMANDER_CALL_RE.finditer(c)}, key=("takeoff", "start", "land").index)
+        calls = sorted({m.group(1) for _, c in cmds if not FUNCTION_DEF_RE.match(c) for m in COMMANDER_CALL_RE.finditer(c)},
+                       key=("takeoff", "start", "land").index)
         if len(calls) > 1:
             fails.append(f"{where(start)}: one block holds {' and '.join(calls)}; each gets its own block")
+        defs = [i for i, c in cmds if FUNCTION_DEF_RE.match(c) and "/swarm_commander/" in c]
+        other = [i for i, c in cmds if not FUNCTION_DEF_RE.match(c)]
+        if defs and other:
+            fails.append(f"{where(other[0])}: a definitions box must hold only definitions (definition on {where(defs[0])}); "
+                         f"a paste would run this line")
     segs = segments(lines)
     real = [n for n in REAL_SEQUENCES if n in segs]
     if not real:
@@ -1078,6 +1089,12 @@ def check_runbook_procedure(text=None):
             elif takeoff - last_row > STOP_TABLE_MAX_GAP:
                 fails.append(f"{name}: stop table's last row (line {last_row + 1}) is {takeoff - last_row} lines above takeoff "
                              f"(line {takeoff + 1}); at most {STOP_TABLE_MAX_GAP}")
+            step = next((i for i in range(last_row + 1, seg[1]) if outside[i] and TAKEOFF_STEP_RE.match(lines[i])), None)
+            if step is None:
+                fails.append(f"{name}: no takeoff step (**N · … takeoff …**) after the stop table")
+            elif step - last_row > TAKEOFF_STEP_MAX_GAP:
+                fails.append(f"{name}: the takeoff step (line {step + 1}) is {step - last_row} lines below the stop table's last row "
+                             f"(line {last_row + 1}); at most {TAKEOFF_STEP_MAX_GAP}")
         numbered, err = _opening(lines, seg)
         if err:
             fails.append(f"{name}: {err}")

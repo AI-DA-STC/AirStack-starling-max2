@@ -70,19 +70,13 @@ Longer than that: it belongs in a record file with a link.
 
 ## 6b. Procedure pages
 
-Rules for a runbook sequence. Each step is a bold line, one small code block, then `Must see:` and, where an action is known, `If not:`.
+Rules for a runbook sequence. Each step is a bold line, at most one small code block (a panel step has none), then `Must see:` and, where an action is known, `If not:`.
 
 ````markdown
-**13 · Pane 4 · takeoff**
-```bash
-ros2 service call /swarm_commander/takeoff std_srvs/srv/Trigger
-```
-Must see, pane 3: `holding takeoff position`.
+**17 · Panel · takeoff.** Swarm Command card: **Takeoff**, confirm.
+Must see, pane 3: `holding takeoff position`. Only then `start`.
 
-**14 · Pane 4 · start**
-```bash
-ros2 service call /swarm_commander/start   std_srvs/srv/Trigger
-```
+**18 · Panel · start.** Swarm Command card: **Start**, confirm.
 Must see, pane 3: `drone_2: sticks live`. If not: stop table, "Sticks do nothing".
 ````
 
@@ -90,6 +84,7 @@ Must see, pane 3: `drone_2: sticks live`. If not: stop table, "Sticks do nothing
 - One block per place. `takeoff`, `start` and `land` never share a block. No block continues past a `connect` line.
 - `If not:` cites an existing stop-table or TROUBLESHOOTING row. Never write one from memory.
 - The stop table starts `**Stop table.**` and sits directly above `takeoff`. Go/no-go is one line, "Every box on PREFLIGHT.md", plus only what this session adds.
+- Action steps name the panel control first. The service calls sit in one box per sequence that only defines words (`takeoff() { … }`), so a paste runs nothing.
 - "What to expect" is at most five rows, with its "not flown" marks. Results and videos go to HTX-R2.md.
 - Wrap the opening steps shared by all real sequences in `<!-- shared-opening -->` and `<!-- /shared-opening -->`. They read the same everywhere.
 - `runbook-procedure` in `tools/docs_check/check_docs.sh` enforces the block, stop-table, chooser and shared-opening rules. The rest is held by review.

@@ -536,18 +536,23 @@ class RunbookProcedure(unittest.TestCase):                            # design 2
         out += [f"Must see: the startup line of `{d}` says `target_system={self.SYS[d]}`." for d in drones]
         return out + ["<!-- /shared-opening -->", ""]
 
-    def seq(self, name, opening=None, stop=True, gap=6, body=()):
-        """One real sequence: heading, world blockquote (dated: exempt), opening, body, stop table, takeoff/start/land blocks.
-        gap = line of `takeoff` minus line of the stop table's last row."""
+    def seq(self, name, opening=None, stop=True, gap=6, body=(), pre_step=()):
+        """One real sequence: heading, world blockquote (dated: exempt), opening, body, stop table, pre_step lines, the bold
+        takeoff step, takeoff/start/land blocks. gap = line of `takeoff` minus line of the stop table's last row (pre_step empty)."""
         out = [self.HEADS[name], "", "> **WORLD: REAL DRONE.** First flown 2026-11-12 ([#34](record/LEDGER.md)).", ""]
         out += self.opening() if opening is None else opening
         out += list(body)
         if stop:
             out += ["**Stop table.** The PREFLIGHT.md emergency table comes first.", "", "| What you see | Do this |", "|---|---|",
                     "| Anything scary | KILL, then `land` once |"]
-            out += [""] * (gap - 2)
+            out += [""] * (gap - 3)
+        out += list(pre_step) + ["**18 · Panel · takeoff.** Swarm Command card: **Takeoff**, confirm."]
         out += ["```bash", self.TAKEOFF, "```", "", "```bash", self.START, "```", "", "```bash", self.LAND, "```", ""]
         return out
+
+    def box(self, calls=("takeoff", "start", "land")):
+        """The D12 box: one shell function per commander call, so a paste runs nothing."""
+        return ["```bash", *[f"{c}() {{ ros2 service call /swarm_commander/{c} std_srvs/srv/Trigger; }}" for c in calls], "```", ""]
 
     def page(self, top=0, a=(), seqs=None):
         """A whole RUNBOOK: chooser header on line 2 + top; section A (sim, no stop table); the five real sequences; tail."""
@@ -586,6 +591,51 @@ class RunbookProcedure(unittest.TestCase):                            # design 2
         r = self.run_check(self.page(a=a))
         self.assertEqual(r.status, "FAIL"); self.assertTrue(any("takeoff" in x and "start" in x for x in r.details), r.details)
         self.assertEqual(self.run_check(self.page(a=["```bash", self.LAND, self.LAND, "```", ""])).status, "PASS")    # the same call twice is one call
+
+    def test_definitions_box_passes_definition_plus_real_call_fails(self):     # design D12: the box defines, runs nothing
+        r = self.run_check(self.page(a=self.box(("takeoff", "start", "hold", "land"))))
+        self.assertEqual(r.status, "PASS", r.details)
+        r = self.run_check(self.page(a=["```bash", "takeoff() { ros2 service call /swarm_commander/takeoff std_srvs/srv/Trigger; }",
+                                        self.START, "```", ""]))          # a definition plus a real call: the paste runs `start`
+        self.assertEqual(r.status, "FAIL", r.details)
+        self.assertTrue(any("only definitions" in x for x in r.details), r.details)
+
+    def test_definitions_box_with_quoted_braces_passes(self):     # C9's box: rec_on() { … "{data: true}"; } is one complete definition
+        rec = ['rec_on()  { ros2 service call /bag_recorder/record std_srvs/srv/SetBool "{data: true}"; }',
+               'rec_off() { ros2 service call /bag_recorder/record std_srvs/srv/SetBool "{data: false}"; }']
+        box = self.box(("takeoff", "start", "land"))
+        r = self.run_check(self.page(a=box[:-2] + rec + box[-2:]))
+        self.assertEqual(r.status, "PASS", r.details)
+
+    def test_definitions_then_bare_words_in_one_block_fails(self):   # a paste would define AND fly
+        box = self.box(("takeoff", "start", "land"))
+        r = self.run_check(self.page(a=box[:-2] + ["takeoff", "start", "land"] + box[-2:]))
+        self.assertEqual(r.status, "FAIL", r.details)
+        self.assertTrue(any("only definitions" in x for x in r.details), r.details)
+
+    def test_definition_and_real_call_on_one_line_fails(self):
+        line = ("takeoff() { ros2 service call /swarm_commander/takeoff std_srvs/srv/Trigger; }; "
+                "ros2 service call /swarm_commander/start std_srvs/srv/Trigger")
+        r = self.run_check(self.page(a=["```bash", line, "```", ""]))
+        self.assertEqual(r.status, "FAIL", r.details)
+
+    def test_one_function_calling_two_commander_services_fails(self):
+        line = ("go() { ros2 service call /swarm_commander/takeoff std_srvs/srv/Trigger; "
+                "ros2 service call /swarm_commander/start std_srvs/srv/Trigger; }")
+        r = self.run_check(self.page(a=["```bash", line, "```", ""]))
+        self.assertEqual(r.status, "FAIL", r.details)
+        self.assertTrue(any("takeoff" in x and "start" in x for x in r.details), r.details)
+
+    def test_takeoff_step_far_below_stop_table_fails(self):       # design D12: the box sits between the table and the takeoff step
+        filler = lambda n: self.box(("takeoff", "start", "hold", "land")) + ["text"] * (n - len(self.box(("takeoff", "start", "hold", "land"))))
+        ok = self.page(seqs={"C": self.seq("C", pre_step=filler(21))})                   # bold step 25 lines below the last row
+        self.assertEqual(self.run_check(ok).status, "PASS", self.run_check(ok).details)
+        r = self.run_check(self.page(seqs={"C": self.seq("C", pre_step=filler(22))}))    # 26 lines
+        self.assertEqual(r.status, "FAIL")
+        self.assertTrue(any(x.startswith("C:") and "takeoff step" in x and "26" in x for x in r.details), r.details)
+        no_step = [x for x in self.seq("C9") if "Panel · takeoff" not in x]
+        r = self.run_check(self.page(seqs={"C9": no_step}))
+        self.assertEqual(r.status, "FAIL"); self.assertTrue(any(x.startswith("C9:") and "takeoff step" in x for x in r.details), r.details)
 
     def test_stop_table_gap_16_fails_15_passes(self):
         self.assertEqual(self.run_check(self.page(seqs={"B10": self.seq("B10", gap=15)})).status, "PASS")

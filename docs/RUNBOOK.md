@@ -25,6 +25,13 @@ The `bringup` tmux session has 8 panes: pane 0 top-left, 1–4 across the top, 5
 
 tmux moves: `Ctrl-b` then an arrow key switches panes. `Ctrl-b d` detaches. The session survives closing the terminal (`connect` again to return).
 
+Where to look on the panel: [Figure 1](#fig-1).
+
+<a id="fig-1"></a>
+![The Foxglove panel with its controls numbered](../pictures/runbook/panel_map.png)
+
+*Figure 1. The SVG Basestation panel in Foxglove during the one-drone goal flight of 11 November 2026 (frame from `videos/geofence_test_ui.mp4`, 9:33:59). Red boxes mark the controls this page uses. The banner's `EKF NO DATA` chip reads the same in every recorded session and is not the fusion check.*
+
 ---
 
 ## A · Fly in SIMULATION — sim validated in part on this branch ([record/LEDGER.md](record/LEDGER.md))
@@ -61,11 +68,16 @@ Leave running.
 
 ### A3 — Commander tab: the commander + the panel
 
-**4 · Commander · the commander**
+**4 · Commander · the commander** [Figure 2](#fig-2).
 ```bash
 ros2 launch svg_ground_control ground_control.launch.py config:=$(ros2 pkg prefix svg_ground_control)/share/svg_ground_control/config/cbf_sim.yaml scenario:=random_goals use_foxglove_studio:=true
 ```
 Must see: Foxglove Studio opens, already connected. Leave running.
+
+<a id="fig-2"></a>
+![The panel in the simulator just after Takeoff](../pictures/runbook/panel_A_sim.png)
+
+*Figure 2. The panel in a three-drone simulator session on 21 October 2026, just after Takeoff (frame from `videos/random_CBF_sim_edited.mp4`). The mission chip reads `TAKING OFF` while the drones climb.*
 
 ### A4 — Cockpit tab: fly
 
@@ -235,7 +247,8 @@ Must see: North → `position[0]`↑, East → `[1]`↑, up → `[2]`↓. If not
 
 **16 · Foxglove Studio · Basestation check, no arming.**
 
-Must see: banner `EKF EV FUSED`, mission chip `ON GROUND`, the Agent State row for `drone_1` reads `IDLE · odom fresh · x y z tagged cmdr`, and the drone mesh in the 3D view follows the hand-carried drone.
+Must see: mission chip `ON GROUND`, the Agent State row for `drone_1` reads `IDLE · odom fresh · x y z tagged cmdr`, and the drone mesh in the 3D view follows the hand-carried drone.
+The banner's EKF chip reads `EKF NO DATA` in every recording so far ([Figure 1](#fig-1)): not a fault, and not the fusion check (step 14 is).
 If not: the row says `odom none` → step 10 must be running ([TROUBLESHOOTING.md](TROUBLESHOOTING.md), "No odometry reaching the commander").
 
 **17 · Floor · go / no-go**
@@ -282,9 +295,14 @@ ros2 topic hz /drone_1/fmu/trajectory_command
 Must see: about 20 Hz. Ctrl-C after the reading. The panel's `Cmd stream` column reads `--` on a real drone ([BASESTATION.md](BASESTATION.md) §6).
 If not: stop table, "You need it down".
 
-**21 · Panel · land.** Safety bar: **Safety Stop · Land All**, two clicks within 4 s. Or `land` in pane 4.
+**21 · Panel · land.** Safety bar: **Safety Stop · Land All**, two clicks within 4 s. Or `land` in pane 4. [Figure 3](#fig-3).
 Must see: QGroundControl shows DISARMED before anyone walks in. If not: still ARMED after about 10 s → KILL or arm switch (ch5) down (iron rule 2).
 At touchdown on this software the Interface column shows `disarm ✗` and QGroundControl one red "Disarming denied" until the landing test (NEAR-826) is re-observed: expected, not a fault.
+
+<a id="fig-3"></a>
+![The panel just after Land All, one drone](../pictures/runbook/panel_B_land.png)
+
+*Figure 3. The panel just after Land All on 11 November 2026 (frame from `videos/geofence_test_ui.mp4`, 9:34:15). That flight used `goal_single_ours.yaml`; the controls are the same here. QGroundControl, not the panel, says when the drone is DISARMED.*
 
 **Shutdown.** Only after QGroundControl says DISARMED: Ctrl-C panes 3, 2, 1 and the mocap terminal.
 
@@ -416,7 +434,7 @@ Must see: about 20 Hz. Ctrl-C after the reading. If not: the pad pane stopped ([
 **16 · Floor · go / no-go**
 
 Every box on [PREFLIGHT.md](PREFLIGHT.md), and a briefed safety pilot holds the transmitter. Do not call `takeoff` before.
-Basestation: banner `EKF EV FUSED`, each drone's Agent State row reads `IDLE · odom fresh`. Frame hand-check on the first flight of the day and after any Motive recalibration or ground-plane change ([PREFLIGHT.md](PREFLIGHT.md)).
+Basestation: each drone's Agent State row reads `IDLE · odom fresh`. Frame hand-check on the first flight of the day and after any Motive recalibration or ground-plane change ([PREFLIGHT.md](PREFLIGHT.md)).
 This session adds: `drone_2` stands ON the takeoff point step 3 printed (x -0.5, y 0.0 in `teleop_real_ours.yaml`), nose toward +x.
 
 **What to expect**
@@ -459,9 +477,14 @@ Swarm Command card: **Takeoff**, confirm. Or `takeoff` in pane 4.
 Must see, the panel: command log `sent → accepted → ✓ confirmed`. Never click Takeoff twice because a reply was slow.
 Must see, pane 3: `holding takeoff position`. Only then `start`. If not: [TROUBLESHOOTING.md](TROUBLESHOOTING.md), "Takeoff refused" and "`takeoff` accepted, ack says **`DENIED`**".
 
-**18 · Panel · start.** Swarm Command card: **Start**, confirm. Or `start` in pane 4.
+**18 · Panel · start.** Swarm Command card: **Start**, confirm. Or `start` in pane 4. [Figure 4](#fig-4).
 Must see, the panel: command log `sent → accepted → ✓ confirmed`.
 Must see, pane 3: `drone_2: sticks live`. Wait for it before touching the sticks. If not: stop table, "Sticks do nothing after `start`".
+
+<a id="fig-4"></a>
+![The panel during a gamepad flight, sticks live](../pictures/runbook/panel_B9_sticks.png)
+
+*Figure 4. The panel during the gamepad flight of 13 November 2026, after Start (frame from `videos/xbox_teleop_ui.mp4`). The Teleop · Sticks card shows `STICKS LIVE → drone_2`. The orange box in the 3D view is the teleop fence.*
 
 **19 · Pad · fly.** First turn: slow and low, thumb on KILL.
 
@@ -630,7 +653,7 @@ If not: the block has no stale-data check. If the number stops changing while a 
 **16 · Floor · go / no-go**
 
 Every box on [PREFLIGHT.md](PREFLIGHT.md).
-Basestation: banner `EKF EV FUSED`, each drone's Agent State row reads `IDLE · odom fresh`. Frame hand-check on the first flight of the day and after any Motive recalibration or ground-plane change ([PREFLIGHT.md](PREFLIGHT.md)).
+Basestation: each drone's Agent State row reads `IDLE · odom fresh`. Frame hand-check on the first flight of the day and after any Motive recalibration or ground-plane change ([PREFLIGHT.md](PREFLIGHT.md)).
 This session adds:
 - Two people at takeoff (iron rule 10): the pilot, and a second person watching `drone_1`'s front-right motor. `drone_1` flies by the owner's decision. Everyone stays outside the net until QGroundControl shows both drones DISARMED.
 - Each drone stands ON its own point (`hover_positions` in `goal_two_ours.yaml`, both z 1.0), nose toward +x. The points are 2.5 m apart.
@@ -676,7 +699,7 @@ Swarm Command card: **Takeoff**, confirm. Or `takeoff` in pane 4.
 Must see, the panel: command log `sent → accepted → ✓ confirmed`. Never click Takeoff twice because a reply was slow.
 Must see, pane 3: `holding takeoff position` twice. Wait for both. Only then step 18 (radius), then step 19 (start). If not: [TROUBLESHOOTING.md](TROUBLESHOOTING.md), "Takeoff refused" and "`takeoff` accepted, ack says **`DENIED`**".
 
-**18 · Panel · CBF radius 0.90, with both drones holding on their own points.** Runtime gain row: dropdown **CBF r**, 0.90, **Apply**.
+**18 · Panel · CBF radius 0.90, with both drones holding on their own points.** Runtime gain row: dropdown **CBF r**, 0.90, **Apply**. [Figure 5](#fig-5).
 Must see, the panel: the `live` readout "Live 0.90 m", marked `✓`, before you go on.
 Or pane 4:
 ```bash
@@ -685,6 +708,11 @@ ros2 param get /swarm_commander cbf_safety_radius_m
 ```
 Must see: the read-back says 0.9.
 Skipping this step leaves the file's 0.55, which has not been flown with the pad. A commander restart puts it back to 0.55.
+
+<a id="fig-5"></a>
+![The panel with two drones, radius 0.90 live](../pictures/runbook/panel_B10_radius.png)
+
+*Figure 5. The panel during the two-drone gamepad flight of 13 November 2026 (frame from `videos/cbf_teleop_two_drones_ui.mp4`). The runtime gain row reads `Live 0.90 m` and the collision filter is correcting both drones.*
 
 **19 · Panel · start: the sticks go live for `drone_2`.** Swarm Command card: **Start**, confirm. Or `start` in pane 4.
 Must see, the panel: command log `sent → accepted → ✓ confirmed`.
@@ -843,7 +871,8 @@ Must see: North → `position[0]`↑, East → `[1]`↑, up → `[2]`↓. If not
 
 **16 · Foxglove Studio · Basestation check, no arming.**
 
-Must see: banner `EKF EV FUSED`, mission chip `ON GROUND`, the Agent State row for `drone_1` reads `IDLE · odom fresh · x y z tagged cmdr`, and the drone mesh in the 3D view follows the hand-carried drone.
+Must see: mission chip `ON GROUND`, the Agent State row for `drone_1` reads `IDLE · odom fresh · x y z tagged cmdr`, and the drone mesh in the 3D view follows the hand-carried drone.
+The banner's EKF chip reads `EKF NO DATA` in every recording so far ([Figure 1](#fig-1)): not a fault, and not the fusion check (step 14 is).
 If not: the row says `odom none` → step 10 must be running ([TROUBLESHOOTING.md](TROUBLESHOOTING.md), "No odometry reaching the commander").
 
 **17 · Floor · go / no-go**
@@ -882,7 +911,7 @@ Must see, pane 3: `holding takeoff position`. Only then `start`. If not: stop ta
 Must see, the panel: command log `sent → accepted → ✓ confirmed`, mission chip `RUNNING`.
 `start` begins the scenario and is REQUIRED before goals respond.
 
-**20 · Panel · one goal.** Goal card: agent `drone_1`, x 0.5, y 0.0, z 1.0, speed left blank, **Send Goal**; its frame note must read `commander`.
+**20 · Panel · one goal.** Goal card: agent `drone_1`, x 0.5, y 0.0, z 1.0, speed left blank, **Send Goal**; its frame note must read `commander`. [Figure 6](#fig-6).
 Coordinates are ABSOLUTE (same numbers as `/drone_1/pose`). Each publish REPLACES the goal.
 Keep goals inside the fence (±2 m in `goal_single_ours.yaml`). Not measured: how far the drone goes past the wall.
 Or pane 4:
@@ -890,6 +919,11 @@ Or pane 4:
 ros2 topic pub --once /svg/drone_1/goal_command geometry_msgs/msg/PoseStamped \
   "{header: {frame_id: map}, pose: {position: {x: 0.5, y: 0.0, z: 1.0}}}"
 ```
+
+<a id="fig-6"></a>
+![The Goal card and a goal outside the fence](../pictures/runbook/panel_C_goal.png)
+
+*Figure 6. The Goal card and the 3D view during the geofence test of 11 November 2026 (frame from `videos/geofence_test_ui.mp4`, 9:34:04). The goal (x 2.50) was sent outside the ±2 m fence on purpose and the drone stopped at the wall, x 2.02. In this section goals lie inside the fence.*
 
 **21 · Pane 4 · square loop, two laps**
 ```bash
@@ -1071,7 +1105,7 @@ The block has no stale-data check. If the number stops changing while a drone mo
 **16 · Floor · go / no-go**
 
 Every box on [PREFLIGHT.md](PREFLIGHT.md).
-Basestation: banner `EKF EV FUSED`, each drone's Agent State row reads `IDLE · odom fresh`. Frame hand-check on the first flight of the day and after any Motive recalibration or ground-plane change ([PREFLIGHT.md](PREFLIGHT.md)).
+Basestation: each drone's Agent State row reads `IDLE · odom fresh`. Frame hand-check on the first flight of the day and after any Motive recalibration or ground-plane change ([PREFLIGHT.md](PREFLIGHT.md)).
 This session adds:
 - One KILL switch per drone and one person per transmitter. Which transmitter is bound to which drone is not written down yet: confirm it on the ground. Killing one drone leaves the other flying.
 - The watcher on `drone_1`'s front-right motor (world line).
@@ -1119,7 +1153,7 @@ If not: [TROUBLESHOOTING.md](TROUBLESHOOTING.md), "Takeoff refused" and "`takeof
 **18 · Panel · start.** Swarm Command card: **Start**, confirm. Or `start` in pane 4.
 Must see, the panel: command log `sent → accepted → ✓ confirmed`, mission chip `RUNNING`.
 
-**19 · Panel · goal 1 for `drone_2`.** Goal card: agent `drone_2`, x -0.5, y -0.2, z 1.0, speed left blank, **Send Goal**.
+**19 · Panel · goal 1 for `drone_2`.** Goal card: agent `drone_2`, x -0.5, y -0.2, z 1.0, speed left blank, **Send Goal**. [Figure 7](#fig-7).
 Its frame note must read `commander`.
 Goals 1 and 2 lie inside the keep-out (1.5 m and 1.3 m from `drone_1`'s point): `drone_2` is not meant to reach them.
 Or pane 4:
@@ -1128,6 +1162,11 @@ ros2 topic pub --once /svg/drone_2/goal_command geometry_msgs/msg/PoseStamped \
   "{header: {frame_id: map}, pose: {position: {x: -0.5, y: -0.2, z: 1.0}}}"
 ```
 Must see: What to expect, "Goal 1".
+
+<a id="fig-7"></a>
+![The panel with two drones, radius 0.80, filter correcting](../pictures/runbook/panel_C9_filter.png)
+
+*Figure 7. The panel during the two-drone flight of 12 November 2026 (frame from `videos/cbf_check_ui.mp4`, 10:00:49). The runtime gain row reads `Live 0.80 m`, both drones show `correcting` and their keep-out spheres touch. That flight used z 2.0; this section uses 1.0 m.*
 
 **20 · Panel · goal 2 for `drone_2`.** Goal card: agent `drone_2`, x -0.3, y -0.2, z 1.0, speed left blank, **Send Goal**.
 The brief waited about 10 s between goals.

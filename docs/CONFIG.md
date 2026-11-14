@@ -206,6 +206,12 @@ Flight-log-verified additions (2026-09-01/03 sessions):
 > `teleop_real_ours.yaml` ([#36](record/LEDGER.md)). The other files are not flown on the real drone.
 > ⚠️ = a CMU value we must not fly as-is.
 
+**Editing a config.** Edit → Ctrl-C the commander → relaunch (no rebuild). Edit the **source**
+yaml in the folder above, because the workspace is symlink-installed. Verify once:
+`readlink $(ros2 pkg prefix svg_ground_control)/share/svg_ground_control/config/<file>.yaml`
+should point at the source; no symlink → `bws`. Every number in a list must be a float (`0.0`
+not `0`).
+
 **Which config for what** (⚠️ no shipped CMU file is flyable as-is — [MIGRATION.md](MIGRATION.md) §7):
 
 | Purpose | File | Notes |

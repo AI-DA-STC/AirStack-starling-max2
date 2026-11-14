@@ -74,9 +74,16 @@ evidence: [CLAUDE.md](../CLAUDE.md).
 ## 4 · Point PX4 at the laptop (uXRCE-DDS provisioning)
 
 - [ ] Pick this drone's **UNIQUE DDS domain ID** — every additional drone gets its own domain (drone_1 = 1, so drone_2 = 2, …); record it in CONFIG.md §Protocol constants — CONFIG.md "DDS domain" row / archived MILESTONES M3-A step 3 multi-drone rule.
-- [ ] **`target_system` = this drone's `MAV_SYS_ID`** (PX4 param, QGC → Parameters; read back 2026-11-12, `drone_1` = 1 and `drone_2` = 2 (table in [CONFIG.md](CONFIG.md)); `target_systems:=` must match). For drone_N set `MAV_SYS_ID = N` so QGC tells the fleet apart, and launch its interface with `target_systems:=` matching (defaults to the trailing number of the name: `drone_2` → 2). A mismatch means PX4 **silently drops every arm/takeoff/land command — no error, no ACK** — [MIGRATION.md](MIGRATION.md) §5. Record it in CONFIG.md §Protocol constants.
+- [ ] **`target_system` = this drone's `MAV_SYS_ID`** (PX4 param, QGC → Parameters; read back 2026-11-12, `drone_1` = 1 and `drone_2` = 2 (table in [CONFIG.md](CONFIG.md)); `target_systems:=` must match). For drone_N set `MAV_SYS_ID = N` so QGC tells the fleet apart, and launch its interface with `target_systems:=` matching (defaults to the trailing number of the name: `drone_2` → 2). A mismatch means PX4 **silently drops every arm/takeoff/land command — no error, no ACK** — [MIGRATION.md](MIGRATION.md) §5. Record it in CONFIG.md §Protocol constants. The provisioning script does not set `MAV_SYS_ID`.
 - [ ] Push the **new** script (rewritten on this branch: `px4-` wrapper, 60 s boot retry loop, `svg-microdds-watchdog` service): `adb push AirStack/robot/ros_ws/src/svg_ground_control/scripts/voxl_setup_real_drone.sh /usr/bin/` then `chmod +x` it on the drone — [RUNBOOK.md](RUNBOOK.md) §B step 0.
+- [ ] From the laptop, log in to the drone you are provisioning: `ssh root@<DRONE_IP>` (IPs and password in [CONFIG.md](CONFIG.md)).
 - [ ] Run it on the drone: `voxl_setup_real_drone.sh drone_N <LAPTOP_IP> <UNIQUE_DOMAIN> 8888` (laptop IP reachable from the drone segment, CONFIG.md; port must stay 8888). Then **`reboot`** — on these airframes `systemctl restart voxl-px4` (which the script's older form did) leaves the SLPI flight core dead — [CLAUDE.md](../CLAUDE.md) iron rule 7.
+  The argument order (explained in the paragraph below this list), and the line for each of the two lab Starlings:
+  ```bash
+  voxl_setup_real_drone.sh <BODY_NAME> <LAPTOP_IP> <DOMAIN_ID> <AGENT_PORT>
+  # newer Starling (D0012, 10.40.2.10):       voxl_setup_real_drone.sh drone_2 <LAPTOP_IP> 1 8888
+  # older Starling (WiFi dongle, 10.40.2.11):  voxl_setup_real_drone.sh drone_1 <LAPTOP_IP> 1 8888
+  ```
 - [ ] After the reboot: `systemctl status svg-microdds-watchdog` must be `active`. If the drone also carries our earlier `voxl-dds-retry.service` (Starling 1 does), **keep only one** — both restart the uXRCE client; running both is untested (⏳ STE decision → CONFIG.md).
 - [ ] Expect `Running, disconnected` from `px4-microdds_client status` until the laptop agent is up — the watchdog keeps retrying — RUNBOOK §B step 3.
 - [ ] Start the agent in the robot container (`MicroXRCEAgent udp4 -p 8888 -v4`) and verify on the drone: `px4-microdds_client status` → **Running, connected**, Agent IP = laptop; and on the laptop the interface startup line `PX4Interface initialized (uXRCE-DDS), target_system=N` — RUNBOOK §B steps 3 + 5.
@@ -90,6 +97,10 @@ to this branch** (the script is rewritten: `px4-` wrapper, boot retry loop, and 
 `8888` (must match step 3's agent — RUNBOOK §B step 3). Push the *new* script first if the drone
 still has the old one
 (`adb push AirStack/robot/ros_ws/src/svg_ground_control/scripts/voxl_setup_real_drone.sh /usr/bin/`).
+`<LAPTOP_IP>` = **the laptop's `wlp…` address on the drone segment (`10.40.2.107`)**, same subnet
+as the drone. Get today's value from `ip -4 -brief addr` on the laptop, and confirm the drone can
+`ping` it before you fly. Names per drone: the table under "The two Starlings" in [CONFIG.md](CONFIG.md).
+A wrong name here is not caught until the interfaces step.
 
 ## 5 · PX4 parameters (QGC fast path)
 

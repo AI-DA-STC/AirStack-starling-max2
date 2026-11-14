@@ -27,6 +27,33 @@ no policy network, random actions. Each row is the best point of its case, mean 
 A game-step is one 1/20 s policy step of one game; drone-steps = game-steps × drones per game. Every other case
 and game count is in the record.
 
+### The same data as charts
+
+All three figures are drawn by [`scripts/make_s0_figures.py`](../scripts/make_s0_figures.py) from the run's own
+`results.jsonl`; each point is the mean of the two repeats, exactly as the record tabulates it. Both axes are log
+scales, so a straight rising line means speed grows in proportion to the number of games.
+
+<a id="fig-1"></a>
+![Tier 1 game-steps per second against the number of games, six cases](figures/s0_t1_tier1.png)
+
+**Figure 1.** Tier 1, game-steps per second against games at once. Without sensing, speed grows with the number of
+games until about 16,384 games, then flattens: the GPU is full. With range rays, speed is flat from the start: the
+sensing, not the GPU's capacity, sets the pace.
+
+<a id="fig-2"></a>
+![Tier 2 drone-steps per second against the number of games, four drone counts](figures/s0_t1_tier2.png)
+
+**Figure 2.** Tier 2 (Isaac Lab), drone-steps per second against games at once, 200 Hz physics. All four lines
+still rise in a straight line at the largest size measured, so the GPU was not yet full: larger runs would be
+faster still. The 1-drone case has no 64-game point (an Isaac Sim start-up crash, [below](#the-fail)).
+
+<a id="fig-3"></a>
+![Tier 1 game-steps per second for nine sensing variants at 4,096 games](figures/s0_t1_sensing.png)
+
+**Figure 3.** What each kind of sensing costs, tier 1, 5 v 3, 4,096 games. Obstacles cost a factor of 2 to 10;
+range rays against per-game obstacles cost about 200. Rays against the baked distance field alone cost about 25,
+so making the rays read the field is the first speed-up for S3.
+
 ### Decision rules — **TRAINING SIMULATOR ONLY**
 
 Scope: as above. [Decision rules](GLOSSARY.md) are PROPOSED thresholds in the config's `[decisions]`, read off the

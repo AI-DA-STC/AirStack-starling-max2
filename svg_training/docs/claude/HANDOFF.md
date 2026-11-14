@@ -2,7 +2,7 @@
 
 > **How to use this file.** Read it at the start of a session, after [../../CLAUDE.md](../../CLAUDE.md).
 > §4 is the current state, §5 is what is waiting on people. Update both before you stop.
-> Last updated: 14 November 2026 (session 1, third round).
+> Last updated: 14 November 2026 (session 1, fourth round: committed to the repository).
 
 ## 0. Resume here (for a new session or another Claude account)
 
@@ -60,8 +60,9 @@ What the final review found that matters to the owner: (1) a cold laptop GPU mad
 - Full sensing costs about 250 times the open arena. The hot spot is range rays against per-game obstacles (the ray march evaluates every obstacle at every step); rays against the baked field alone are about five times cheaper. This is the first thing to optimise in S3.
 - **Waiting on the owner — the repeat gate.** One point misses the approved 10 % repeat gate: 1 against 1, open arena, 256 games, spread 18 % (every other point ≤ 8.5 %). At 256 games the 200 timed steps last about a tenth of a second. As the approved config stands, the record will say FAIL on that gate. The lead may not change a gate or the pinned config; options for the owner: accept the FAIL as written, or approve a new config for a new run in which the timed window is at least 200 steps and at least 2 s.
 
-**Packaging (14 November 2026, third round).** The folder is committed as a top-level component of the
-repository. `docker/build.sh` builds `svg-training:isaaclab-2.3.2` on NVIDIA's `nvcr.io/nvidia/isaac-lab:2.3.2`
+**Packaging (14 November 2026, third round).** The folder is COMMITTED: `2daf942` on `main` (change-log
+CHG-0068), mirror updated (one commit ahead of GitHub; the owner pushes after checking the repository is
+private). It is a top-level component of the repository. `docker/build.sh` builds `svg-training:isaaclab-2.3.2` on NVIDIA's `nvcr.io/nvidia/isaac-lab:2.3.2`
 (26 GB download, once) and adds pytest plus two launchers, `svg-python` and `svg-isaaclab`, that keep exit codes
 (Isaac Sim's own `python.sh` turns every failure into exit 1). Tests: host 108 passed; container 106 passed,
 2 skipped (host-only). `scripts/run_s0.sh` works in both places (`SVG_PY`, `SVG_ISAACLAB`, `SVG_IN_CONTAINER`).

@@ -2,19 +2,28 @@
 
 S0 asks one question: **how many games can the training simulator play per second on one GPU, and is that fast
 enough to train on?** The answer sets the compute budget for S2–S4 ([DESIGN §8](DESIGN.md#8-build-order)).
-Terms are in the [glossary](GLOSSARY.md).
+Terms are in the [glossary](GLOSSARY.md). How we got here, step by step: [WHAT_WE_DID](WHAT_WE_DID.md).
 
-| | |
+The training simulator has two parts. *Tier 1* is a fast, simple drone model in plain PyTorch. *Tier 2* is a full
+physics drone in Isaac Lab. The official run whose numbers we keep (the *run of record*) is T1. Its written
+summary (the *record*) is never edited. The table gives the facts of that run.
+
+| Item | Value |
 |---|---|
 | Run of record | T1, `2026-11-15_s0_laptop`, started 15 November 2026 at 00:54 Singapore time, finished 02:41 |
 | Verdict | **FAIL** on one [gate](GLOSSARY.md) of four (see [The FAIL](#the-fail)); every number below is usable |
 | Record | [records/2026-11-15_s0_laptop_record.md](../records/2026-11-15_s0_laptop_record.md) |
 | Sweep | 96 points: 65 in tier 1 (13 cases × 5 game counts), 31 in tier 2 (8 cases) |
 
-## T1 throughput — **TRAINING SIMULATOR ONLY**
+A *gate* is a pass/fail check written before the run and never moved afterwards. A *sweep point* is one set-up
+run at one number of games.
 
-Scope: training simulator, laptop RTX 5070 Ti (12 GB), in the container; stand-in drone models, no safety filter,
-no policy network, random actions. Each row is the best point of its case, mean of two repeats.
+<a id="t1-throughput--training-simulator-only"></a>
+## T1 throughput: **TRAINING SIMULATOR ONLY**
+
+Scope: training simulator, laptop RTX 5070 Ti (12 GB), in the container (a sealed copy of the software). The
+drone models are stand-ins (placeholders until S1 fits real ones). There was no safety filter and no policy
+network, and the actions were random. The table shows the best point of each case, as the mean of two repeats.
 
 | Case | Config name | Games | Game-steps / s | Drone-steps / s | Source |
 |---|---|---|---|---|---|
@@ -24,21 +33,21 @@ no policy network, random actions. Each row is the best point of its case, mean 
 | Tier 2 (Isaac Lab), 3 drones per game, 100 Hz physics | `t2_k3_100hz` | 4,096 | 151,767 | 455,300 | [record, tier 2](../records/2026-11-15_s0_laptop_record.md#tier-2-arl-robot-1-airframe) |
 | Tier 2 (Isaac Lab), 8 drones per game, 200 Hz physics | `t2_k8` | 2,048 | 22,045 | 176,361 | [record, tier 2](../records/2026-11-15_s0_laptop_record.md#tier-2-arl-robot-1-airframe) |
 
-A game-step is one 1/20 s policy step of one game; drone-steps = game-steps × drones per game. Every other case
-and game count is in the record.
+A *game-step* is one tick of game time (one 1/20 s policy step) for one game. A *drone-step* is the same for one
+drone: drone-steps = game-steps × drones per game. Every other case and game count is in the record.
 
 ### The same data as charts
 
 All three figures are drawn by [`scripts/make_s0_figures.py`](../scripts/make_s0_figures.py) from the run's own
-`results.jsonl`; each point is the mean of the two repeats, exactly as the record tabulates it. Both axes are log
+`results.jsonl`. Each point is the mean of the two repeats, exactly as the record tabulates it. Both axes are log
 scales, so a straight rising line means speed grows in proportion to the number of games.
 
 <a id="fig-1"></a>
 ![Tier 1 game-steps per second against the number of games, six cases](figures/s0_t1_tier1.png)
 
 **Figure 1.** Tier 1, game-steps per second against games at once. Without sensing, speed grows with the number of
-games until about 16,384 games, then flattens: the GPU is full. With range rays, speed is flat from the start: the
-sensing, not the GPU's capacity, sets the pace.
+games until about 16,384 games, then flattens: the GPU is full. With range rays, speed is flat from the start,
+because the sensing sets the pace.
 
 <a id="fig-2"></a>
 ![Tier 2 drone-steps per second against the number of games, four drone counts](figures/s0_t1_tier2.png)
@@ -54,10 +63,12 @@ faster still. The 1-drone case has no 64-game point (an Isaac Sim start-up crash
 range rays against per-game obstacles cost about 200. Rays against the baked distance field alone cost about 25,
 so making the rays read the field is the first speed-up for S3.
 
-### Decision rules — **TRAINING SIMULATOR ONLY**
+<a id="decision-rules--training-simulator-only"></a>
+### Decision rules: **TRAINING SIMULATOR ONLY**
 
-Scope: as above. [Decision rules](GLOSSARY.md) are PROPOSED thresholds in the config's `[decisions]`, read off the
-numbers; not gates.
+Scope: as above. A [decision rule](GLOSSARY.md) is a threshold we proposed in the config's `[decisions]` to help
+choose the next step. It is read off the numbers and is not a gate: it cannot fail a run. The table shows both
+rules and what T1 observed.
 
 | Rule | Threshold (drone-steps / s) | Observed | Reading |
 |---|---|---|---|
@@ -66,28 +77,30 @@ numbers; not gates.
 
 ## What it means
 
-- **Both decision rules are met.** Tier 1 can carry bulk training on the laptop; tier 2 is fast enough to train on.
-- **About 1.5 GPU-hours** of simulator stepping per 2 billion drone-steps (full sensing, 382,206 drone-steps / s).
+- **Both decision rules are met.** Tier 1 can carry bulk training on the laptop. Tier 2 is fast enough to train on.
+- About 1.5 GPU-hours of simulator stepping per 2 billion drone-steps (full sensing, 382,206 drone-steps / s).
   This is a lower bound: no policy network, no learning update and no safety filter were in the step.
-- **Tier 2 scales with the number of games.** `t2_k3_100hz` went from 3,340 to 151,767 game-steps / s as games
-  rose from 64 to 4,096, in 5.2–6.8 GB of GPU memory, device-wide (all tier 2 points: 5.1–7.6 GB).
-- **Sensing is the bottleneck.** The best full-sensing rate is about 1/257 of the best open-arena rate (both 5 v 3,
+- Tier 2 speeds up as games are added. `t2_k3_100hz` went from 3,340 to 151,767 game-steps / s as games
+  rose from 64 to 4,096. It used 5.2–6.8 GB of GPU memory, device-wide (all tier 2 points: 5.1–7.6 GB).
+- Sensing is the slow part. The best full-sensing rate is about 1/257 of the best open-arena rate (both 5 v 3,
   game-steps per second).
-  Rays against per-game obstacles cost most: with 32 rays the best was 65,367 game-steps / s among 10 obstacles,
-  327,002 against the shared field alone. This is the first thing to speed up in S3.
+  Rays against per-game obstacles cost most. With 32 rays the best was 65,367 game-steps / s among 10 obstacles,
+  and 327,002 against the shared field alone. This is the first thing to speed up in S3.
 
 ## The FAIL
 
 One of 96 sweep points has no measurement: tier 2 case `t2_k1` (1 drone per game) at 64 games. Isaac Sim
-crashed while starting (segmentation fault in a Kit telemetry thread, exit 139) before any project code ran, so
+crashed while starting (segmentation fault in a Kit telemetry thread, exit 139), before any project code ran. So
 the `sweep_complete` gate failed. The other three gates passed: tests `109 passed, 2 skipped` (`runs/2026-11-15_s0_laptop/tests.txt`); worst repeat spread
-0.0562 (limit 0.10); no NaN. The gatekeeper agent recomputed every number in the record from `results.jsonl`
-and found them exact. The owner ruled on 15 November 2026 that T1 stands as FAIL and its numbers are used.
-`scripts/run_s0.sh` now retries such a start-up crash once ([GETTING_STARTED](GETTING_STARTED.md#when-it-fails)).
+0.0562 (limit 0.10); no NaN ("not a number", a sign that the maths broke). The *repeat spread* is how far two
+repeats of one point differ, divided by their mean. The gatekeeper agent recomputed every number in the record
+from `results.jsonl` and found them exact. The owner decided on 15 November 2026 that T1 stands as FAIL and its
+numbers are used. `scripts/run_s0.sh` now retries such a start-up crash once ([GETTING_STARTED](GETTING_STARTED.md#when-it-fails)).
 
-Three faults of the record generator, fixed for the next run (commit `fa33852`); the record itself is never edited:
+The program that writes the record had three faults. They are fixed for the next run (commit `fa33852`). The
+record itself is never edited. The table sets each fault beside the facts.
 
-| In the record | What is true |
+| What the record says | What is true |
 |---|---|
 | "while it is untracked" and commit `unknown` | the folder is tracked since 14 November 2026; the container had no `.git` to read the commit from |
 | no MEASURED / PROPOSED labels | the throughput is MEASURED; the decision rules and the compute budget are PROPOSED |
@@ -95,7 +108,9 @@ Three faults of the record generator, fixed for the next run (commit `fa33852`);
 
 ## Limits
 
-| Limit | Consequence |
+The table lists what T1 did not include and what that means for its numbers.
+
+| Limit | What it means |
 |---|---|
 | Stand-in drone models: tier 1 a placeholder delay and lag, tier 2 Isaac Lab's ARL Robot 1 airframe, not a Starling | the numbers are for the stand-ins; the fitted models (S1 on) may run slower |
 | Tier 2 has no flight controller and rewrites every drone's state each policy step | the PX4-style cascade is not in the timing yet |

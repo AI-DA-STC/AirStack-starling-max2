@@ -1,0 +1,157 @@
+# What we did, step by step
+
+This folder exists to train strategies for the Strike vs Guard game. In the game, a Guard team of drones holds
+a circular zone and a Strike team tries to reach it. We want a computer to learn good team strategies by playing
+thousands of games at once on one graphics card (GPU), and then fly those strategies on real Starling drones.
+
+This page tells the story so far, in the order it happened. Nothing has been trained yet. Words in *italics* are
+explained where they first appear; all of them are also in the [glossary](GLOSSARY.md).
+
+```mermaid
+flowchart LR
+  A["14 Nov<br/>Idea and research"] --> B["14 Nov<br/>Design and<br/>owner's decisions"]
+  B --> C["14 Nov<br/>Build the speed test (S0)<br/>and review it"]
+  C --> D["15 Nov<br/>First runs<br/>run of record T1"]
+  D --> E["15 Nov<br/>Read the results"]
+  E --> F["15 Nov, now<br/>S1: drone model<br/>and safety filter"]
+  F --> G["Next<br/>S2: first training"]
+```
+
+## 1. The idea and the research (14 November 2026)
+
+**What we did.** We read the flight software that already flies the drones (CMU's AirStack) and the programme's
+website. Six helper agents read the code, checked the Isaac Lab copy on the laptop and searched
+published work on training drone teams with NVIDIA's Isaac Lab ([HANDOFF §4](claude/HANDOFF.md#4-current-state)).
+We drew the proposed pipeline as a slide deck ([training-pipeline.pptx](pipeline/training-pipeline.pptx)).
+
+**Why.** Before building anything, we needed to know what others had done and what Isaac Lab could already do.
+
+**What we found.** Isaac Lab can simulate a drone with four rotors, and it can run many games at once. It has no
+controller that flies a drone by speed commands, and it has no way for a team to train against copies of itself.
+We have to build both. Nobody had published how fast Isaac Lab runs a team of drones, so we had to measure it.
+The sources are in [RESEARCH](RESEARCH.md).
+
+## 2. The design and the owner's decisions (14 and 15 November)
+
+**What we did.** We wrote the design ([DESIGN](DESIGN.md)) and the rules ([STANDARDS](../STANDARDS.md)), then asked
+the owner to choose. His decisions are listed in [HANDOFF §4](claude/HANDOFF.md#4-current-state).
+
+| Decision | What it means |
+|---|---|
+| Two simulators | A fast, simple drone model in plain PyTorch (*tier 1*) carries most of the training. A full physics drone in Isaac Lab (*tier 2*) checks it. Both play the same game code, and together they are the *training simulator* ([DESIGN §9](DESIGN.md#9-approaches-considered)). |
+| A tag is contact | A Guard drone scores by touching a Strike drone. The rule and its limits are in [STANDARDS §2](../STANDARDS.md#2-wording) and [DESIGN §7](DESIGN.md#7-environments-and-contact-tags). |
+| The safety filter works within a team | CMU's filter, which stops drones flying into each other, acts only between drones of the same team. |
+| After a tag, both drones leave | By default the Strike drone and the Guard drone that touched it both leave the game. It is a setting, so it can be changed later ([STANDARDS §4](../STANDARDS.md)). |
+| Realistic worlds | Games are played in 3D worlds shaped like real places, starting with an open arena and building up to the lab's construction-site world ([DESIGN §7](DESIGN.md#7-environments-and-contact-tags)). |
+| Isaac Lab 2.3.2 now | Version 3.0 comes later, on a larger training computer. |
+
+**Why.** A trained strategy must plug into AirStack unchanged. So the trainer sends the same command the flight
+software already takes: a speed in x, y and z plus a turning rate, 20 times a second. The place where that command
+enters the flight software is the *plug-in point* ([HOW_IT_WORKS](HOW_IT_WORKS.md#where-a-strategy-plugs-in)).
+
+**What we found.** A realistic world makes training harder. Drones lose sight of each other behind walls, and the
+cost of sensing the world grows fast. So the first build step, S0, measures speed with obstacles and sensing
+switched on ([DESIGN §7](DESIGN.md#7-environments-and-contact-tags)).
+
+## 3. Building the speed test, S0, and what the reviews caught (14 and 15 November)
+
+**What we did.** S0 is a speed test of the two simulators. It plays random moves (no learning yet) and counts how
+many games it can step through per second. It uses stand-in drone models: simple placeholders until S1 fits a
+real one. Each part was built by one agent and checked by a second one. The lead agent then re-ran the tests.
+Before the run we wrote down the pass/fail checks it had to meet (the *gates*). Gates are never changed after a
+run starts ([STANDARDS §7](../STANDARDS.md#7-evaluation-and-gates)).
+
+**Why.** The speed tells us how long training will take, and which kind of sensing is affordable.
+
+**What the reviews caught.** These are recorded in [HANDOFF §0](claude/HANDOFF.md#0-resume-here-for-a-new-session-or-another-claude-account).
+
+| What was wrong | What we changed |
+|---|---|
+| Guard drones could fly as fast as Strike drones when moving diagonally, because the speed limit was applied to each axis on its own. | The limit now applies to the total speed: Guard drones are capped at the Strike speed ÷ 1.5, with a test. |
+| The written summary of a run (the *record*) could have said PASS when it should not. A NaN ("not a number") value means the maths broke. Three gaps were found: a bad NaN rate, a missing NaN count, and negative or duplicated rows. | The record maker now refuses such rows. After two rounds of fixes, 30 tests passed. |
+| Isaac Sim's own shutdown could hide an error: the program could end as if it had succeeded. | The benchmark now leaves through its own exit, so the error code survives. |
+| A cold laptop GPU made two repeats of the smallest point differ by 22 %. | Every point now warms up for at least 50 steps and 2 s before timing starts. |
+| One slow distance routine in the tier 1 stand-in model took most of the time in the open arena, so that result came out many times too low. | The routine was replaced and measured before and after. |
+
+The gate on how far two repeats may differ (the *repeat spread*) was also at risk: at the smallest point the timed
+window lasted only a fraction of a second. The owner approved a longer timed window, at least 200 steps and at
+least 2 s, on 15 November ([HANDOFF §0](claude/HANDOFF.md#0-resume-here-for-a-new-session-or-another-claude-account)).
+
+## 4. The first runs (15 November)
+
+**What we did.** We built a container: a sealed copy of the software (NVIDIA's Isaac Lab 2.3.2 image plus our test
+tools), so every machine runs the same versions ([docker/README](../docker/README.md)). We started Isaac Lab inside
+it for one small trial: 64 games with 2 drones each.
+
+**What we found.** The trial worked: about 1,800 to 2,300 game-steps per second, no NaN values, and the two
+repeats within 1 % of each other. A *game-step* is one tick of game time (1/20 s) for one game. Then the program
+would not stop: Isaac Sim's shutdown kept running after the results were written. We fixed it by ending the
+program directly once the work is done (commit `08107eb`).
+
+**The run of record.** Next came the official run whose numbers we keep (the *run of record*), called T1. It ran
+from 00:54 to 02:41 Singapore time on 15 November and tried 96 settings, called sweep points: 65 in tier 1 and 31
+in tier 2 ([S0_RESULTS](S0_RESULTS.md)). One point has no measurement. Isaac Sim crashed while starting, before any
+of our code ran, at tier 2 with 1 drone per game and 64 games. So the gate "every point measured" failed, and T1 is
+a FAIL. The other three gates passed: the tests (`109 passed, 2 skipped`), the repeat spread (worst 0.0562, limit
+0.10) and the NaN count (none) ([S0_RESULTS, The FAIL](S0_RESULTS.md#the-fail)).
+
+A checking agent recomputed every number in the record from the raw results and found them exact. The owner
+decided that T1 stays a FAIL and that its numbers are used. The benchmark now retries such a start-up crash once
+([GETTING_STARTED](GETTING_STARTED.md#when-it-fails)). Each run also gets one line in a list of all runs (the
+*ledger*, [records/LEDGER.md](../records/LEDGER.md)).
+
+## 5. What the results mean
+
+Figure 1 shows how tier 1's speed grows as more games run at once. It is copied from
+[S0_RESULTS](S0_RESULTS.md#fig-1), where it is drawn from the run's own data.
+
+![Tier 1 game-steps per second against the number of games, six cases](figures/s0_t1_tier1.png)
+
+**Figure 1.** Tier 1, game-steps per second against games at once (both axes on log scales). Without sensing,
+speed grows until about 16,384 games, when the GPU is full. With range rays, speed is flat from the start: the
+sensing sets the pace.
+
+We had set two thresholds to help choose the next step (the *decision rules*). Unlike gates, they do not pass or
+fail a run. Both were met ([S0_RESULTS](S0_RESULTS.md)). Speeds are counted in *drone-steps*: one tick of game time
+for one drone.
+
+- Tier 1 with full sensing reached 382,206 drone-steps per second; the rule asked for at least 50,000. So tier 1
+  can carry training on the laptop.
+- Tier 2 reached 455,300 drone-steps per second at best; the rule asked for at least 20,000. So tier 2 is fast
+  enough to train on, as well as to check.
+- Stepping the simulator for 2 billion drone-steps would take about 1.5 GPU-hours. This is a lower bound, because
+  no learning was in the step.
+- Sensing is the slow part. Full sensing ran at about 1/257 of the open-arena speed. Making it faster is the first
+  job in S3.
+
+These numbers were observed in the training simulator, with stand-in drone models. None is a flight result.
+
+## 6. S1 so far: a drone model and a safety filter (15 November, being built)
+
+**What we are doing.** S1 replaces the stand-in drone with a model fitted to how a Starling responds to a speed
+command. The data comes from the *AirStack simulator*: CMU's simulator with the PX4 flight software, which flies up
+to three drones. It is separate from our training simulator. S1 also copies CMU's safety filter into a form that
+runs thousands of games at once. The owner approved the plan and its gates on 15 November ([S1 plan](plans/2026-11-15-s1-drone-model-and-safety-filter.md)).
+
+**Why.** Tier 1's drone is a guess today. A strategy trained on a wrong drone may not fly well on the real one.
+
+**Done so far** (from the commit history): the S1 gates in `configs/s1.toml` (commit `92d30ac`); a tool that reads
+the simulator's recordings into tables (commit `cf239d0`); the model and the fitting code (commit `c4f77d0`). The
+copy of the safety filter is being built.
+
+**What we found.** The simulator reports the drone's speed in the drone's own frame (its nose is "forward"), not in
+the world frame. The fitting code must turn it into the world frame first. The simulator also runs faster than
+the clock on the wall, by an amount that changed between sessions, so it must be measured for each session.
+CMU's ground controller, outside this folder, also uses this speed as if it were in the world frame. We reported it
+to the owner and changed nothing there.
+
+## 7. What comes next
+
+- Finish S1: fit the model on an existing simulator session, then on a planned set of speed steps. Compare the
+  copied safety filter with CMU's on recorded inputs. Each fit is judged on steps it was not fitted on (*held-out*
+  steps). Each ends on a record and a ledger line.
+- S2: the first training, one Guard drone against one Strike drone in an open arena
+  ([DESIGN §8](DESIGN.md#8-build-order)).
+- Run S0 again on a training workstation, when one is available.
+
+How to run the tests and the speed test yourself: [GETTING_STARTED](GETTING_STARTED.md).

@@ -57,6 +57,9 @@ The programme's wording rules apply to every document and figure here
   Write "tag" or "contact tag". The programme's public pages do not describe contact between
   drones; nothing from this folder about it goes on the website or into partner-facing material
   without the owner's say-so.
+- Plain language (owner, 15 November 2026): everyday words first and the term second, explained at
+  first use; short sentences; write for a reader new to training. Every page that claims a result
+  shows it with a generated figure or a diagram.
 
 ## 3. Policy interface (version 0, PROPOSED)
 

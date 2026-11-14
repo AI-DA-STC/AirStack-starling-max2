@@ -35,7 +35,7 @@
 | `omni_pass.env not found` on `up` | Re-run `./airstack.sh setup` to (re)generate it (press Enter at the API Token prompt) |
 | "mounting … user.config.json … not a directory" | A failed `up` created a directory; `rmdir` it, then re-run `./airstack.sh setup` |
 | `/fmu/*` topics look dead | `echo` needs `--qos-reliability best_effort` (`hz` takes no QoS flag here); and is the uXRCE agent running? |
-| No odometry reaching the commander / Basestation row says `odom none` / takeoff refused | Per-drone interfaces not running — [RUNBOOK.md](RUNBOOK.md) §B step 5 (`real_interfaces.launch.py drones:=drone_1`) must be up |
+| No odometry reaching the commander / Basestation row says `odom none` / takeoff refused | Per-drone interfaces not running — [RUNBOOK.md](RUNBOOK.md#b--real-drone-session-mocap-room) §B, the interfaces step (`real_interfaces.launch.py drones:=drone_1`), must be up |
 | Basestation shows `NO COMMANDER` | commander not running, or Studio connected to the wrong source — bridge is `ws://localhost:8765`, started by the commander launch (`use_foxglove_bridge` default true) |
 | Foxglove Studio cannot connect to `ws://localhost:8765` | the bridge is a node inside the commander launch — is it up? `use_foxglove_bridge:=false` passed? Port squatter: `ss -ltnp \| grep 8765`. The `gcs` container is NOT involved |
 | Basestation buttons greyed, CBF row reads `live -- (no services)` | Studio is on a bag/file source, not the live WebSocket — normal when reviewing a recording |
@@ -73,7 +73,7 @@
 | Symptom | Cause / fix |
 |---|---|
 | PX4 won't arm indoors ("fuse failure" / "Not Ready") | No fused position source — mocap feed down or EKF2 params missing ([CONFIG.md](CONFIG.md) §PX4/EKF2, the `.params` file) |
-| Takeoff refused: "no drone eligible (missing odometry or not IDLE)" | In order: **1.** commander stuck non-IDLE after an RC takeover / Ctrl-C → call `land` once (drone on floor); **2.** interfaces not running — RUNBOOK §B step 5; **3.** mocap bridge down → `./mocap.sh check`; **4.** config names a drone you don't have (CMU's 3-drone real configs; `goal_single.yaml` targeted `drone_2` at `cf719f0`, `drone_1` since `b21d28c`) |
+| Takeoff refused: "no drone eligible (missing odometry or not IDLE)" | In order: **1.** commander stuck non-IDLE after an RC takeover / Ctrl-C → call `land` once (drone on floor); **2.** interfaces not running — RUNBOOK §B (the interfaces step); **3.** mocap bridge down → `./mocap.sh check`; **4.** config names a drone you don't have (CMU's 3-drone real configs; `goal_single.yaml` targeted `drone_2` at `cf719f0`, `drone_1` since `b21d28c`) |
 | `takeoff` accepted, Interface column / `px4_interface` log shows **nothing** (no ack), drone sits | `target_system` ≠ the drone's `MAV_SYS_ID` — PX4 drops the command silently. Check the `px4_interface` startup line; `target_systems:=` on the interface launch ([CONFIG.md](CONFIG.md) §Protocol constants) |
 | `takeoff` accepted, ack says **`DENIED`** | PX4 preflight refused. QGC's message bar names why: no fused position, EKF not ready, kill switch engaged, throttle stick up. Call `land` once, hands clear, BEFORE touching switch or throttle. Fix it, then `takeoff` again |
 | Two drones on, QGC shows only one | Connect both saved QGC Comm Links: `Starling1` (`10.40.2.11:14550`), `Starling2` (`10.40.2.10:14550`). `MAV_SYS_ID` is 1 on `drone_1`, 2 on `drone_2`. A shared ID shows one vehicle ([CONFIG.md](CONFIG.md)). No two-drone takeoff until QGC lists both |
@@ -182,5 +182,5 @@ open (no core dumps: the host's `core_pattern` is apport) — [projects/HTX-R1.m
 | Drone `iw` prints usage instead of link info | Old iw needs explicit syntax: `iw dev mlan0 link` |
 | Ctrl+C does nothing in `adb shell` | VOXL adbd doesn't forward signals — kill from a second shell (`adb shell pkill <cmd>`) or use self-terminating commands (`ping -c2 -w4`) |
 | QGC shows wrong dates on the drone's flight logs | Drone clock unsynced (no NTP). Match logs by **size**; logs at `/data/px4/log/sessNNN/` (ssh — password in CONFIG.md), pull procedure: [RUNBOOK.md](RUNBOOK.md) §D |
-| Need the drone's IP (RUNBOOK §B step 0's `ssh`, §D `scp`) | router admin page (`http://192.168.9.1:8080`), or `adb shell voxl-my-ip`, or the agent's `session established` line. The drone auto-joins SSID `StarlingMax2` at boot (moved from RUNBOOK §B step 1, 2026-10-21) |
+| Need the drone's IP ([DRONE_SETUP.md](DRONE_SETUP.md#4--point-px4-at-the-laptop-uxrce-dds-provisioning) §4 `ssh`, RUNBOOK §D `scp`) | router admin page (`http://192.168.9.1:8080`), or `adb shell voxl-my-ip`, or the agent's `session established` line. The drone auto-joins SSID `StarlingMax2` at boot (moved from RUNBOOK §B step 1, 2026-10-21) |
 | WiFi missing after reboot + dmesg `Firmware Init Failed` | cold power cycle: battery + USB out 10 s (moved from RUNBOOK §B step 1, 2026-10-21 — same fix as the `Card is removed` row above) |

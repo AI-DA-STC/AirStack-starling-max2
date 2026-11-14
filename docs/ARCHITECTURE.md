@@ -93,7 +93,7 @@ alongside the laptop's own WiFi NIC (`10.40.2.107`). Crazyflies stay on the lab 
 > into it must be reachable from the drone's segment: the laptop's WiFi NIC
 > (`10.40.2.107`) is same-subnet, and the router also routes to its wired `192.168.9.107`.
 > Confirm with a ping from the drone before flying — a stale or unreachable value means
-> [RUNBOOK](RUNBOOK.md) §B step 3 never gets `session established`.
+> [RUNBOOK](RUNBOOK.md#b--real-drone-session-mocap-room) §B (the drone-link step) never gets `session established`.
 
 The router serves both drone SSIDs open on 5 GHz **channel 36**. Crazyflies (also
 `192.168.9.x`, SSID `motive`) are commanded over a **Crazyradio 2.4 GHz USB dongle** with a
@@ -150,7 +150,7 @@ corrections tables show CMU's doc disagreeing with CMU's code; there the code wi
 ## Moved from RUNBOOK (2026-10-21)
 
 Explanation paragraphs lifted **verbatim** out of [RUNBOOK.md](RUNBOOK.md) §A / §B so the
-runbook reads as commands and consequences; each RUNBOOK step keeps a "(why: …)" pointer here.
+runbook reads as commands and consequences. The runbook holds the commands; this page holds the reasons.
 
 ### Sim session anatomy
 
@@ -196,15 +196,15 @@ driver can't hear it; story + troubleshooting in [MOCAP.md](MOCAP.md).
 
 ### Where things run (real-drone session)
 
-*(RUNBOOK §B header — step numbers are §B's)*
+*(RUNBOOK §B header)*
 
 > **Where things run.** Three KINDS of shell exist; each step names its kind:
 >
 > | Kind | Prompt looks like | How you get one | Runs |
 > |---|---|---|---|
-> | **Laptop (host)** — outside docker | `jeremychia@…$` | just open a terminal | step 0 ssh entry · step 1 IP checks · step 2 `airstack.sh up` · **step 3b QGC** · **step 4 mocap bridge** · **step 7 Foxglove Studio (if on the host)** — these do NOT run in docker |
-> | **Container pane** — inside docker | `root@…#` | step 2's `connect` → tmux `bringup`, panes 0–7 | step 3 agent · step 5 interfaces · step 6 commander · step 8 cockpit · verify commands |
-> | **Drone (ssh/adb)** | `starling2-max…$` | `ssh root@<DRONE_IP>` (step 0) or `adb shell` | one-time provisioning · clean shutdown |
+> | **Laptop (host)** — outside docker | `jeremychia@…$` | just open a terminal | provisioning ssh entry ([DRONE_SETUP.md](DRONE_SETUP.md#4--point-px4-at-the-laptop-uxrce-dds-provisioning) §4) · today's IPs · robot container up (`airstack.sh up`) · **QGroundControl** · **mocap** (`./mocap.sh`) · **Foxglove Studio for the Basestation check (if on the host)** — these do NOT run in docker |
+> | **Container pane** — inside docker | `root@…#` | the "into the container" step's `connect` → tmux `bringup`, panes 0–7 | the drone link (agent) · interfaces · the commander · takeoff to land (pane 4) · verify commands |
+> | **Drone (ssh/adb)** | `starling2-max…$` | `ssh root@<DRONE_IP>` (DRONE_SETUP.md §4) or `adb shell` | one-time provisioning · clean shutdown |
 >
 > A full session = 3–4 laptop terminals + one tmux session. If a `ros2` command says
 > "command not found" you're in a host shell; if `./mocap.sh` complains about ROS you're in

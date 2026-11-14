@@ -248,8 +248,8 @@ from every doc; add a term here rather than re-explaining it inline elsewhere.
   (host, not docker) that receives Motive's broadcast NatNet stream and publishes `/drone_1/pose`
   ([MOCAP.md](MOCAP.md)). (2) AirStack's **`mocap_bridge` node**, started inside the container by the
   commander launch (`use_mocap:=true`), which forwards that pose to PX4 as external vision
-  (`/drone_1/fmu/in/vehicle_visual_odometry`). Both must run for a real flight; RUNBOOK §B step 4
-  is (1), step 6 includes (2).
+  (`/drone_1/fmu/in/vehicle_visual_odometry`). Both must run for a real flight; RUNBOOK §B's mocap step
+  is (1), its commander step includes (2).
 - **Interfaces** — the per-drone nodes that turn the autopilot's traffic into the odometry the
   commander needs and carry its commands back: on the **real drone** `px4_interface`
   (`real_interfaces.launch.py`, uXRCE-DDS, carries `target_system`), in the **sim** one MAVROS per

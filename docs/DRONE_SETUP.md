@@ -75,7 +75,7 @@ evidence: [CLAUDE.md](../CLAUDE.md).
 
 - [ ] Pick this drone's **UNIQUE DDS domain ID** — every additional drone gets its own domain (drone_1 = 1, so drone_2 = 2, …); record it in CONFIG.md §Protocol constants — CONFIG.md "DDS domain" row / archived MILESTONES M3-A step 3 multi-drone rule.
 - [ ] **`target_system` = this drone's `MAV_SYS_ID`** (PX4 param, QGC → Parameters; read back 2026-11-12, `drone_1` = 1 and `drone_2` = 2 (table in [CONFIG.md](CONFIG.md)); `target_systems:=` must match). For drone_N set `MAV_SYS_ID = N` so QGC tells the fleet apart, and launch its interface with `target_systems:=` matching (defaults to the trailing number of the name: `drone_2` → 2). A mismatch means PX4 **silently drops every arm/takeoff/land command — no error, no ACK** — [MIGRATION.md](MIGRATION.md) §5. Record it in CONFIG.md §Protocol constants. The provisioning script does not set `MAV_SYS_ID`.
-- [ ] Push the **new** script (rewritten on this branch: `px4-` wrapper, 60 s boot retry loop, `svg-microdds-watchdog` service): `adb push AirStack/robot/ros_ws/src/svg_ground_control/scripts/voxl_setup_real_drone.sh /usr/bin/` then `chmod +x` it on the drone — [RUNBOOK.md](RUNBOOK.md) §B step 0.
+- [ ] Push the **new** script (rewritten on this branch: `px4-` wrapper, 60 s boot retry loop, `svg-microdds-watchdog` service): `adb push AirStack/robot/ros_ws/src/svg_ground_control/scripts/voxl_setup_real_drone.sh /usr/bin/` then `chmod +x` it on the drone.
 - [ ] From the laptop, log in to the drone you are provisioning: `ssh root@<DRONE_IP>` (IPs and password in [CONFIG.md](CONFIG.md)).
 - [ ] Run it on the drone: `voxl_setup_real_drone.sh drone_N <LAPTOP_IP> <UNIQUE_DOMAIN> 8888` (laptop IP reachable from the drone segment, CONFIG.md; port must stay 8888). Then **`reboot`** — on these airframes `systemctl restart voxl-px4` (which the script's older form did) leaves the SLPI flight core dead — [CLAUDE.md](../CLAUDE.md) iron rule 7.
   The argument order (explained in the paragraph below this list), and the line for each of the two lab Starlings:
@@ -85,8 +85,8 @@ evidence: [CLAUDE.md](../CLAUDE.md).
   # older Starling (WiFi dongle, 10.40.2.11):  voxl_setup_real_drone.sh drone_1 <LAPTOP_IP> 1 8888
   ```
 - [ ] After the reboot: `systemctl status svg-microdds-watchdog` must be `active`. If the drone also carries our earlier `voxl-dds-retry.service` (Starling 1 does), **keep only one** — both restart the uXRCE client; running both is untested (⏳ STE decision → CONFIG.md).
-- [ ] Expect `Running, disconnected` from `px4-microdds_client status` until the laptop agent is up — the watchdog keeps retrying — RUNBOOK §B step 3.
-- [ ] Start the agent in the robot container (`MicroXRCEAgent udp4 -p 8888 -v4`) and verify on the drone: `px4-microdds_client status` → **Running, connected**, Agent IP = laptop; and on the laptop the interface startup line `PX4Interface initialized (uXRCE-DDS), target_system=N` — RUNBOOK §B steps 3 + 5.
+- [ ] Expect `Running, disconnected` from `px4-microdds_client status` until the laptop agent is up — the watchdog keeps retrying — [RUNBOOK.md](RUNBOOK.md#b--real-drone-session-mocap-room) §B (the drone-link step).
+- [ ] Start the agent in the robot container (`MicroXRCEAgent udp4 -p 8888 -v4`) and verify on the drone: `px4-microdds_client status` → **Running, connected**, Agent IP = laptop; and on the laptop the interface startup line `PX4Interface initialized (uXRCE-DDS), target_system=N` — RUNBOOK §B (the drone-link and interfaces steps).
 - [ ] Revert recipe exists if anything goes wrong (restore `.FACTORY-ORIGINAL` + reset the flash-saved domain param) — archived MILESTONES M3-A "Full revert to factory" (`git show airstack-starling-max2:docs/MILESTONES.md`).
 
 **Moved from RUNBOOK §B step 0 (2026-10-21) — when, and the script's arguments.** Re-provisioning is
@@ -94,7 +94,7 @@ needed once per drone every time the GC laptop (or its IP) changes, **and once a
 to this branch** (the script is rewritten: `px4-` wrapper, boot retry loop, and a new
 `svg-microdds-watchdog` service). `<BODY_NAME>` = the Motive rigid-body name (`drone_1`),
 `<DOMAIN_ID>` = the drone's DDS domain (`1` for drone_1 — unique per drone), `<AGENT_PORT>` =
-`8888` (must match step 3's agent — RUNBOOK §B step 3). Push the *new* script first if the drone
+`8888` (must match the agent in RUNBOOK §B's drone-link step). Push the *new* script first if the drone
 still has the old one
 (`adb push AirStack/robot/ros_ws/src/svg_ground_control/scripts/voxl_setup_real_drone.sh /usr/bin/`).
 `<LAPTOP_IP>` = **the laptop's `wlp…` address on the drone segment (`10.40.2.107`)**, same subnet
@@ -148,13 +148,13 @@ command the vehicle. Full guide: [BASESTATION.md](BASESTATION.md) §8.
 
 ## 9 · Acceptance (all pass BEFORE props go on)
 
-- [ ] Agent `session established` and all 24 `/drone_N/fmu/*` topics on the laptop — RUNBOOK §B step 3.
-- [ ] `px4_interface` startup line shows `target_system=N` — RUNBOOK §B step 5.
+- [ ] Agent `session established` and all 24 `/drone_N/fmu/*` topics on the laptop — [RUNBOOK.md](RUNBOOK.md#b--real-drone-session-mocap-room) §B (the drone-link step).
+- [ ] `px4_interface` startup line shows `target_system=N` — RUNBOOK §B (the interfaces step).
 - [ ] Mocap pose: `ros2 topic hz /drone_N/pose` ≈ 240 Hz in the robot container, tracks the hand-carried drone — MOCAP.md.
-- [ ] EKF2 fusion in → out: `fmu/in/vehicle_visual_odometry` feeding, `fmu/out/vehicle_odometry` positions match mocap within ~2 cm — RUNBOOK §B step 6.
-- [ ] Frame hand-check: carry North/East/up, `pos[0]`↑ / `pos[1]`↑ / `pos[2]`↓ (NED) — a wrong frame flies into a wall — RUNBOOK §B step 6.
+- [ ] EKF2 fusion in → out: `fmu/in/vehicle_visual_odometry` feeding, `fmu/out/vehicle_odometry` positions match mocap within ~2 cm — RUNBOOK §B (the "mocap into PX4" and "EKF2 output, commander status" steps).
+- [ ] Frame hand-check: carry North/East/up, `pos[0]`↑ / `pos[1]`↑ / `pos[2]`↓ (NED) — a wrong frame flies into a wall — RUNBOOK §B (the frame hand-check step).
 - [ ] `ros2 topic echo /svg/commander_status --once` shows `drone_N` with `"odom_fresh": true`, `"state": "IDLE"` — [BASESTATION.md](BASESTATION.md) §4.
-- [ ] **Basestation** 3D view tracks the hand-carried drone; Agent State row `IDLE · odom fresh` (`real_interfaces.launch.py drones:=drone_N` running) — NEAR-818–823 ([projects/HTX-R2.md](projects/HTX-R2.md)) / RUNBOOK §B step 7. (RViz, Fixed Frame `world`, still works as a fallback.)
+- [ ] **Basestation** 3D view tracks the hand-carried drone; Agent State row `IDLE · odom fresh` (`real_interfaces.launch.py drones:=drone_N` running) — NEAR-818–823 ([projects/HTX-R2.md](projects/HTX-R2.md)) / RUNBOOK §B (the Basestation check step). (RViz, Fixed Frame `world`, still works as a fallback.)
 - [ ] Ledger + CONFIG.md rows updated for everything above. **Only now do props go on** — first flight follows NEAR-825 ([projects/HTX-R2.md](projects/HTX-R2.md)) + RUNBOOK §B.
 
 ## Snags you're most likely to hit (full table: [TROUBLESHOOTING.md](TROUBLESHOOTING.md))
@@ -166,7 +166,7 @@ command the vehicle. Full guide: [BASESTATION.md](BASESTATION.md) §8.
 | Older unit (USB dongle): boots on `169.254.x.x` | `wpa_supplicant` hit its systemd start limit before `wlan0` existed — §2b drop-in; recover with `systemctl reset-failed wpa_supplicant && systemctl start wpa_supplicant` |
 | Older unit (USB dongle): no `wlan0` at all | `option` driver stole the stick — §2b `NoDriverLoading=1` |
 | Setup script prints "PX4 server not running" | PX4 still rebooting (~30 s) — retry `px4-microdds_client status` |
-| `px4-microdds_client` stuck `Running, disconnected` | Laptop agent not running yet, or wrong laptop IP/domain — re-run RUNBOOK §B steps 0 + 3 (then **reboot**) |
+| `px4-microdds_client` stuck `Running, disconnected` | Laptop agent not running yet, or wrong laptop IP/domain — re-run §4 above and the drone-link step of [RUNBOOK.md](RUNBOOK.md#b--real-drone-session-mocap-room) §B (then **reboot**) |
 | After the setup script: QGC "params missing", sensor topics never publish | You ran `systemctl restart voxl-px4` (or the old script did) — the SLPI flight core is wedged. **Reboot the drone.** |
 | Arm/takeoff sent, nothing happens, **no** `PX4 ack` line on the laptop | `target_system` ≠ the drone's `MAV_SYS_ID` — §4. (A `DENIED` ack is a different problem: preflight/EKF.) |
 | `/fmu/*` topics look dead | Add `--qos-reliability best_effort` to echo/hz |

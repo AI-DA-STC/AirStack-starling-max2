@@ -448,7 +448,7 @@ runtime gains** are editable from the dropdown, not just alpha.
 | Teleop · Sticks card absent although the pad is plugged in | The card needs `safe_teleop` to be **publishing** `/svg/{name}/teleop_command` (20 Hz, zeros included) — start the pad launch ([TELEOP.md](TELEOP.md) §4/§5). `Sections → Show all` forces an empty card. `main` view never shows it: look at the `power` instance |
 | Banner `0 sim · 3 real`, `LINK DEGRADED`, `EKF NO DATA` in the sim | Cosmetic (§2). Set **Modes** to `sim,sim,sim` for the first; the other two are the derived-ping grading and missing EKF topics |
 | CBF vmax slider will not reach 4.0 | Slider max is the `cbfSpeedMax` setting (3). Type the value in the number box or raise the setting (§3.4) |
-| Phantom `drone_2`/`drone_3` rows with no data during the RUNBOOK §B step 7 preflight | Normal if the config is still 3-drone (moved from RUNBOOK §B step 7, 2026-10-21) |
+| Phantom `drone_2`/`drone_3` rows with no data during the RUNBOOK §B Basestation check | Normal if the config is still 3-drone (moved from RUNBOOK §B step 7, 2026-10-21) |
 | Need a view without Studio | RViz still works — `rviz2 -d …/svg_drones.rviz`, Fixed Frame → `world` — as a fallback (moved from RUNBOOK §B step 7, 2026-10-21) |
 
 ## 8 · LED strips

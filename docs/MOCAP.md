@@ -209,7 +209,7 @@ A 30 cm origin shift moves the takeoff spot, every waypoint, AND the fence by 30
 
 So after **ANY** recalibration or ground-plane change, before anyone flies:
 
-1. Re-run the **frame hand-check** ([RUNBOOK.md](RUNBOOK.md) §B step 6): carry the
+1. Re-run the **frame hand-check** ([RUNBOOK.md](RUNBOOK.md#b--real-drone-session-mocap-room) §B, the frame hand-check step): carry the
    drone North → `position[0]`↑, East → `[1]`↑, lift up → `[2]`↓ (PX4 counts down as
    positive).
 2. Put the drone on the floor and check its reported height reads **z ≈ 0.05 m**

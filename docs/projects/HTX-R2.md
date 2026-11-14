@@ -123,7 +123,7 @@ Observed on the previous software (archived branch `archive/airstack-starling-ma
 | A17 | first offboard flight: takeoff + hover under the commander, manual landing (2026-09-01) | NEAR-825 |
 | A21 | landing auto-disarm at `land_speed_mps` 0.6; 0.3 left the drone armed (2026-09-03) | NEAR-826 |
 
-Decisive check in hover: `ros2 topic hz /drone_1/fmu/trajectory_command` ≈ 20 Hz ([RUNBOOK.md](../RUNBOOK.md) §B step 8).
+Decisive check in hover: `ros2 topic hz /drone_1/fmu/trajectory_command` ≈ 20 Hz ([RUNBOOK.md](../RUNBOOK.md#b--real-drone-session-mocap-room) §B, the hover-check step).
 
 ### M4 · Goal flights with the braking fence — REAL DRONE
 **Purpose:** goal flights are the building block of every scenario. This checks the speed-limited profile, how hard the fence brakes at a wall, live gain changes and where a hold stops the drone, on one drone before any formation.

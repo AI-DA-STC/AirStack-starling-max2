@@ -95,7 +95,7 @@ The topic carries the name of the drone flown: `/svg/drone_2/teleop_command` in 
   The new `vehicle_command_ack` logging in `px4_interface` prints PX4's verdict (ACCEPTED /
   DENIED); **no ack at all** means `target_system` ≠ the drone's `MAV_SYS_ID` — check the
   `real_interfaces` startup line reads `target_system=1` for `drone_1`, `target_system=2` for
-  `drone_2` ([RUNBOOK.md](RUNBOOK.md) §B step 5).
+  `drone_2` ([RUNBOOK.md](RUNBOOK.md#b--real-drone-session-mocap-room) §B, the interfaces step).
 - **This stack bypasses `drone_safety_monitor`.** PX4 failsafes plus the RC kill switch are
   the entire net. (Squeeze is M7's problem, but for the record the hand-flown intruder is
   CBF-exempt — the holders dodge, and one cornered against the fence can be hit.)

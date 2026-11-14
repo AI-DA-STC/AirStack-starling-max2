@@ -27,132 +27,85 @@ tmux moves: `Ctrl-b` then an arrow key switches panes. `Ctrl-b d` detaches. The 
 
 ## A · Fly in SIMULATION — sim validated in part on this branch ([record/LEDGER.md](record/LEDGER.md))
 
-> **WORLD: SIMULATION — nothing on this page touches the drone.** Step 0, before anything else: the drone's battery is OUT and `./mocap.sh` is NOT running on the laptop (the sim shares DDS domain 1 and the `/drone_1` topic names with the real drone). ⚠️ Sim-only — never port to the drone: the sim airframe values and `cbf_sim.yaml` speeds/landing settle (iron rule 9).
-
-GPU required. Four long-running things, one per tab — Isaac spawn · interfaces (MAVROS) ·
-commander · cockpit; the panel is the operator view (why: [ARCHITECTURE.md](ARCHITECTURE.md#sim-session-anatomy)).
-
-**What success looks like:** [videos/random_CBF_sim_edited.mp4](../videos/random_CBF_sim_edited.mp4)
-— three Starling 2 Max models flying `random_goals` under the CBF in Isaac Sim, 2026-10-21 ·
-camera world: [localisation/README.md](../localisation/README.md)
-(`cbf_sim.yaml`: 2.0 m/s cruise, cap 4.0, r 0.55, α 2.5; a 47 s excerpt of a 3.5 min run).
+> **WORLD: SIMULATION — nothing in this section touches the drone.** Step 0, before anything else: the drone's battery is OUT and `./mocap.sh` is NOT running on the laptop (the sim shares DDS domain 1 and the `/drone_1` topic names with the real drone). ⚠️ Sim-only — never port to the drone: the sim airframe values and `cbf_sim.yaml` speeds/landing settle (iron rule 9).
 
 ### A0 — open the session (one command)
 
-Laptop:
+**1 · Laptop · the four tabs**
 ```bash
 ~/AirStack-starling-max2/tools/sim_terminals.sh
 ```
-Opens ONE Terminator window, four tabs, each already inside its container (brings the
-containers up first if needed). Work left to right: **A1 = Isaac Sim tab, A2 = Interfaces
-tab, A3 = Commander tab, A4 = Cockpit tab.** Keep the window open (why:
-[ARCHITECTURE.md](ARCHITECTURE.md#sim-session-anatomy)).
-
-> **No-terminal variant for the hover + 1 m step acceptance only:** `tools/sim_hover_step_run.sh all` runs A1–A4 for that one test from the laptop and writes `docs/record/<run>_record.md` — see [tools/README.md](../tools/README.md). Everything else in §A is done in the tabs.
+Must see: ONE Terminator window, four tabs (Isaac Sim, Interfaces, Commander, Cockpit), each already inside its container. Keep the window open.
 
 ### A1 — Isaac Sim tab: spawn the sim drones
 
-Paste as one block (Starling 2 Max model, Isaac window on):
+**2 · Isaac Sim · spawn the drones.** Starling 2 Max model, Isaac window on. Paste as one block.
 ```bash
 DRONE_USD=/isaac-sim/AirStack/simulation/isaac-sim/assets/robots/starling2max.usd PX4_VEHICLE_MODEL=pegasus_starling2max NUM_ROBOTS=3 SVG_DOMAIN_ID=1 PLAY_SIM_ON_START=true ISAAC_SIM_HEADLESS=false PYTHONPATH="$ISAAC_SIM_PYTHONPATH" /isaac-sim/python.sh /isaac-sim/AirStack/simulation/isaac-sim/launch_scripts/svg_multi_drone_single_domain.py --ext-folder ~/.local/share/ov/data/documents/Kit/shared/exts
 ```
-Wait for `Ready for takeoff!` ×3. Leave running.
+Must see: `Ready for takeoff!` ×3. Leave running. Other launch lines: [§ Sim launch variants](#sim-launch-variants).
 
-Variants: no Isaac window → `ISAAC_SIM_HEADLESS=true` · CMU's Iris quad → drop `DRONE_USD=…`
-and `PX4_VEHICLE_MODEL=…` · ZED camera / construction-site world / 72 ms motor lag → [§ Sim launch variants](#sim-launch-variants).
-
-`DRONE_USD` + `PX4_VEHICLE_MODEL` select CMU's sys-ID Starling model and our bind-mounted PX4
-airframe; what in it is real and what is sim-only: [CONFIG.md](CONFIG.md#sim-airframe-starling-2-max-sim-only--10090_pegasus_starling2max) "Sim airframe".
-
-⚠️ Everything marked **sim-only — never port to the drone** stays in the sim (iron rule 9) — so
-do `cbf_sim.yaml`'s speeds 2.0 / 4.0 / 6.0 and its landing settle 2.0 s + disarm retry (the real
-`_ours` configs fly `drone_1`, `land_settle_s` 0.0, `land_speed_mps` 0.6, `cbf_max_speed_mps` 1.0).
-The drone's parameters come from `starling_1_indoor_params.params` via QGC.
-
-Validation: [record/LEDGER.md](record/LEDGER.md) (state + acceptance tools: [CONFIG.md](CONFIG.md#sim-airframe-starling-2-max-sim-only--10090_pegasus_starling2max) "Sim airframe").
-
-> ⚠️ **Never press Stop / Play in the Isaac window** to reset the drones (observed 2026-10-20):
-> Pegasus kills and relaunches PX4 but leaks the old vehicles' physics callbacks, the new PX4s
-> never connect, and the whole stack has to be restarted — [TROUBLESHOOTING.md](TROUBLESHOOTING.md).
+> ⚠️ **Never press Stop / Play in the Isaac window** to reset the drones. The new PX4s never connect and the whole stack has to be restarted ([TROUBLESHOOTING.md](TROUBLESHOOTING.md), "Pressed Stop ▶ Play").
 > The only reset is Ctrl-C + relaunch of this script, then the Interfaces and Commander tabs.
-> To bring landed drones back to their pads without a restart: `hold` → formation `home` →
-> `land` — this works **only** under `scenario:=goal`.
+> To bring landed drones back to their pads without a restart: `hold` → formation `home` → `land`. This works **only** under `scenario:=goal`.
 
 ### A2 — Interfaces tab: one MAVROS per drone
 
-After `Ready for takeoff!` ×3:
+**3 · Interfaces · MAVROS.** Only after `Ready for takeoff!` ×3.
 ```bash
 ./src/svg_ground_control/scripts/launch_sim_interfaces.sh 3
 ```
-Leave running (you are already in `~/AirStack/robot/ros_ws`, workspace sourced — why:
-[ARCHITECTURE.md](ARCHITECTURE.md#workspace-build-and-sourcing)).
-
-- **Rebuild** (`bws && sws`) only after NEW entry points or files (e.g. a snapshot bump);
-  `.py`/`.yaml` edits need none (why: [ARCHITECTURE.md](ARCHITECTURE.md#workspace-build-and-sourcing)).
-- **MAVROS respawn (sim-only — never port to the drone):** a MAVROS node that dies comes back after 2 s, but PX4 has
-  meanwhile dropped to its offboard-loss failsafe. Recovery, in the Cockpit tab:
-  `ros2 topic echo /drone_N/interface/mavros/state --once`; if `mode` ≠ `OFFBOARD`:
-  `ros2 service call /drone_N/interface/mavros/set_mode mavros_msgs/srv/SetMode "{custom_mode: AUTO.LAND}"`,
-  then the commander's `land`.
+Leave running.
 
 ### A3 — Commander tab: the commander + the panel
 
+**4 · Commander · the commander**
 ```bash
 ros2 launch svg_ground_control ground_control.launch.py config:=$(ros2 pkg prefix svg_ground_control)/share/svg_ground_control/config/cbf_sim.yaml scenario:=random_goals use_foxglove_studio:=true
 ```
-Leave running.
-
-- `scenario:=` overrides the yaml's own `antipodal`. Choices: `hover`, `goal`, `random_walk`,
-  `random_goals`, `head_on`, `antipodal`, `squeeze`, `goal_sequence`, `figure_eight` —
-  catalogue in [SCENARIOS.md](SCENARIOS.md) §4.
-- `use_foxglove_studio:=true` = Studio inside the container, already connected. First time
-  only: import the layout — paths, the laptop-Studio alternative and what "healthy" looks
-  like: [BASESTATION.md](BASESTATION.md#2--quick-start) §2.
-- The launch also starts the `bag_recorder` node (since 2026-10-20); add `record_bag:=true`
-  to record the whole run, or use the panel's Rosbag switch mid-run
-  ([BASESTATION.md](BASESTATION.md) §3.12).
-- **Speeds:** `cbf_sim.yaml` flies 2.0 m/s cruise with a 4.0 m/s CBF cap and 6.0 m/s² goal
-  accel — **sim-only — never port to the drone**; the real `_ours` configs stay at 1.0 m/s.
+Must see: Foxglove Studio opens, already connected. Leave running.
 
 ### A4 — Cockpit tab: fly
 
-One call at a time — or the panel's buttons, which call the same services:
+One call at a time, or the panel's buttons (they call the same services).
+
+**5 · Cockpit · takeoff.** Arms and climbs.
 ```bash
-ros2 service call /swarm_commander/takeoff std_srvs/srv/Trigger   # arm + climb; wait for "holding takeoff position" ×3 (~30 s)
-ros2 service call /swarm_commander/start   std_srvs/srv/Trigger   # scenario live
-ros2 service call /swarm_commander/hold    std_srvs/srv/Trigger   # freeze in a hover (also the PANIC button)
-ros2 service call /swarm_commander/land    std_srvs/srv/Trigger   # land from the hover — never mid-leg
-ros2 topic echo /drone_1/interface/mavros/state --once           # expect armed: false
+ros2 service call /swarm_commander/takeoff std_srvs/srv/Trigger
 ```
-Expected landing log in the Commander tab, per drone: `touchdown at z=… settling 2.0 s
-before disarm` then `landed, disarmed (attempt 1)`. If PX4 refuses, up to 5 retries 1 s
-apart, then ERROR `disarm not accepted after 5 tries` → see the MAVROS note in A2 and
-[TROUBLESHOOTING.md](TROUBLESHOOTING.md). (The 2.0 s settle and the retry are **sim-only — never
-port to the drone**; the real `_ours` configs set `land_settle_s` 0.0.)
+Must see: `holding takeoff position` ×3 (about 30 s). Only then `start`.
 
-**Live parameters** (no relaunch): `ros2 param set /swarm_commander scenario_speed_mps 1.0`
-— the live list is in [SCENARIOS.md](SCENARIOS.md) §3 and §C8 below.
-
-**Fence latched** (`FENCE BREACH` chip, drones frozen — `hold_all` configs)? → `land`, then
-`ros2 service call /swarm_commander/reset_fence std_srvs/srv/Trigger` (or the panel's **Reset
-Fence**), then `takeoff` + `start` again. `keep_in` configs never latch — the drone brakes at
-the wall instead.
-
-### Alternatives to the tabs
-
-tmux instead of Terminator — same commands. Laptop:
+**6 · Cockpit · start**
 ```bash
-cd ~/AirStack-starling-max2/AirStack && ./airstack.sh up && ./airstack.sh connect isaac-sim --command=bash
+ros2 service call /swarm_commander/start   std_srvs/srv/Trigger
 ```
-→ run A1 there. New laptop terminal: `cd ~/AirStack-starling-max2/AirStack && ./airstack.sh connect robot`
-→ tmux `bringup`: pane 1 = A2 (after `cd ~/AirStack/robot/ros_ws`), pane 2 = A3, pane 3 = A4.
-`Ctrl-b d` detaches; `connect robot` again re-attaches. One-command teleop session, RViz
-fallback and the throw-away shell: [§ Sim launch variants](#sim-launch-variants).
+Drones frozen with the `FENCE BREACH` chip (`hold_all` configs): `land`, then `ros2 service call /swarm_commander/reset_fence std_srvs/srv/Trigger` (or the panel's **Reset Fence**), then `takeoff` + `start` again. `keep_in` configs never latch: the drone brakes at the wall.
+A MAVROS node died and came back after 2 s (the respawn is sim-only — never port to the drone): PX4 has dropped to its offboard-loss failsafe. In this tab: `ros2 topic echo /drone_N/interface/mavros/state --once`. If `mode` ≠ `OFFBOARD`: `ros2 service call /drone_N/interface/mavros/set_mode mavros_msgs/srv/SetMode "{custom_mode: AUTO.LAND}"`, then the commander's `land`.
 
-*Optional fifth terminal* (laptop, not a tab — Ctrl-Shift-T is fine): `localisation/scripts/slam_up.sh` after
-`Ready for takeoff!` ×3 starts the SLAM side of a camera-world run ([localisation/README.md](../localisation/README.md)).
+**7 · Cockpit · hold.** Freezes the drones in a hover. Also the PANIC button.
+```bash
+ros2 service call /swarm_commander/hold    std_srvs/srv/Trigger
+```
 
-*Fly it with the keyboard (sim only):* the cold start, the keys and the video are in [localisation/README.md](../localisation/README.md#fly-it-with-the-keyboard-one-drone-sim-only).
+**8 · Cockpit · land.** Land from the hover — never mid-leg.
+```bash
+ros2 service call /swarm_commander/land    std_srvs/srv/Trigger
+```
+Must see, Commander tab, per drone: `touchdown at z=… settling 2.0 s before disarm`, then `landed, disarmed (attempt 1)`.
+If not: PX4 refused the disarm. Up to 5 retries follow, 1 s apart, then ERROR `disarm not accepted after 5 tries` → the MAVROS recovery in step 6, and [TROUBLESHOOTING.md](TROUBLESHOOTING.md), "Landing ends with the drone still armed".
+
+**9 · Cockpit · disarmed**
+```bash
+ros2 topic echo /drone_1/interface/mavros/state --once
+```
+Must see: `armed: false`. If not: [TROUBLESHOOTING.md](TROUBLESHOOTING.md), "Landing ends with the drone still armed".
+
+**Shutdown.** Ctrl-C each tab's launch.
+
+**10 · Laptop · stack down**
+```bash
+cd ~/AirStack-starling-max2/AirStack && ./airstack.sh down
+```
 
 ---
 

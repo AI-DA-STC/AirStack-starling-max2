@@ -209,7 +209,7 @@ inert there): [CONFIG.md](CONFIG.md) ground-side table.
 **Procedure (sim — M1).** Open the session with RUNBOOK §A0 (`tools/sim_terminals.sh` →
 tabs **Isaac Sim · Interfaces · Commander · Cockpit**), spawn 3 Starling drones in the Isaac Sim
 tab (§A1, with `DRONE_USD` + `PX4_VEHICLE_MODEL`), interfaces in the Interfaces tab (§A2), then in
-the **Commander tab** (tmux alternative — RUNBOOK §A "Alternatives to the tabs" — pane 2 of the
+the **Commander tab** (tmux alternative — [RUNBOOK.md](RUNBOOK.md#sim-launch-variants), "tmux instead of Terminator" — pane 2 of the
 `bringup` session):
 
 ```bash

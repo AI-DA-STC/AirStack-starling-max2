@@ -339,7 +339,7 @@ Tests 181/181. Reversible: one commit, `git revert`.
 | Commander | status snapshot gains a `tuning` block (`teleop_max_speed_mps`, `goal_accel_mps2`, `goal_settle_s`, `scenario_speed_mps`); `goal_settle_s` may be 0 (`NON_NEGATIVE_PARAMS`); `sequence_*` params + `/svg/sequence_command`; pushes/accepts the teleop speed sync | [CONFIG.md](CONFIG.md) |
 | Scenarios | `GoalSequenceScenario` (scripted crossing goal sets), `FigureEightScenario` (collision-negligent pair + intruder), both with `path` markers | [SCENARIOS.md](SCENARIOS.md) §4 |
 | Teleop | `safe_teleop` `max_speed_mps` is live and kept equal to the commander's `teleop_max_speed_mps` both ways (`sync_max_speed`, `commander_status_topic`, `commander_ns`) | [TELEOP.md](TELEOP.md) |
-| Launch | `use_bag_recorder` (true), `record_bag`, `bag_dir`, `bag_prefix`, `bag_include_hidden`; `bag_recorder` node always started | [RUNBOOK.md](RUNBOOK.md) §A |
+| Launch | `use_bag_recorder` (true), `record_bag`, `bag_dir`, `bag_prefix`, `bag_include_hidden`; `bag_recorder` node always started | [BASESTATION.md](BASESTATION.md) §3.12 |
 | Configs | new `goal_sequence.yaml`, `figure_eight_rc_intruder.yaml`; one-line touches to `goal_single`, `goal_tracking`, `squeeze_rc_intruder`, `swarm_sim`, `teleop_real`, `teleop_single` (not our `_ours` files) | [CONFIG.md](CONFIG.md) |
 | Docs | `experiment.md` C2–C7 (C3 goal sequence, C7 figure-eight; squeeze moved to C4–C6), "Recording rosbags"; panel README; `teleop.md` | — |
 | Tests | +37 (`test_safe_teleop_sync.py`, sequence/figure-eight rollouts, runtime params) | — |

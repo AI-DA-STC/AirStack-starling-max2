@@ -196,8 +196,8 @@ So the **manual two-terminal form is the one to learn** — the same two launche
 [RUNBOOK.md](RUNBOOK.md) §A0 (`tools/sim_terminals.sh` opens one Terminator window with the
 tabs **Isaac Sim · Interfaces · Commander · Cockpit**, each already inside the right container);
 start Isaac with **1** drone in the Isaac Sim tab and `launch_sim_interfaces.sh 1` in the
-Interfaces tab. Then, both in the **container** (`root@…#`) — tmux alternative (RUNBOOK §A
-"Alternatives to the tabs"): the `bringup` session, pad in pane 5, commander in pane 2:
+Interfaces tab. Then, both in the **container** (`root@…#`) — tmux alternative ([RUNBOOK.md](RUNBOOK.md#sim-launch-variants),
+"tmux instead of Terminator"): the `bringup` session, pad in pane 5, commander in pane 2:
 
 ```bash
 CFG=$(ros2 pkg prefix svg_ground_control)/share/svg_ground_control/config/teleop_single_ours.yaml

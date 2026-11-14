@@ -2,7 +2,7 @@
 
 > **How to use this file.** Read it at the start of a session, after [../../CLAUDE.md](../../CLAUDE.md).
 > §4 is the current state, §5 is what is waiting on people. Update both before you stop.
-> Last updated: 14 November 2026 (session 1, fourth round: committed to the repository).
+> Last updated: 15 November 2026 (human documentation written: README, docs/GETTING_STARTED, HOW_IT_WORKS, S0_RESULTS, GLOSSARY; stale facts corrected).
 
 ## 0. Resume here (for a new session or another Claude account)
 
@@ -25,7 +25,7 @@ Everything needed is in this folder; nothing depends on the previous chat.
 
 | Task | What | State | Evidence |
 |---|---|---|---|
-| 1 | Skeleton, gates, record scaffolding | done | 3 tests pass; reviewed. Approved `configs/s0_benchmark.toml` sha256 `959dc7107f0169a4b05c448575bd5e8690b7180953805fd2a542c0f562e19197` |
+| 1 | Skeleton, gates, record scaffolding | done | 3 tests pass; reviewed. Approved config sha256: [../GETTING_STARTED.md](../GETTING_STARTED.md#approved-sha256) (approved 15 November; replaced `959dc710…` of 14 November) |
 | 2 | Analytic shapes | done | reviewed; maths checked independently. Known limit parked for S3: the 24-step ray march is conservative beside surfaces (`runs/sdd/progress.md`) |
 | 3 | Distance field | done | reviewed; maths checked independently. Known limit parked for S3: the 24-step ray march is conservative beside surfaces (`runs/sdd/progress.md`) |
 | 4 | World, range rays, line of sight | done | reviewed; maths checked independently. Known limit parked for S3: the 24-step ray march is conservative beside surfaces (`runs/sdd/progress.md`) |
@@ -34,55 +34,28 @@ Everything needed is in this folder; nothing depends on the previous chat.
 | 7 | Tier 2 benchmark (Isaac Lab) | done; FIRST RUN 15 Nov | smoke point in the container: 64 games × 2 drones, ~1,800–2,300 game-steps/s, 0 NaN, 2.5 % resets per step, repeats within 1 %. Found and fixed: `simulation_app.close()` spun forever after the rows were written; the script now always leaves with `os._exit` (commit `08107eb`) |
 | 8 | Record and ledger from results and gates | done | 30 tests pass; reviewed with an attack list, two fix rounds. Reviews closed three ways the record could have shown a false PASS (NaN rate, missing NaN count, negative or duplicated rows). `make_record.py` needs `--seeds` |
 | 9 | Run S0 on the laptop, record, gatekeeper | done: T1 = FAIL on one gate | `records/2026-11-15_s0_laptop_record.md`, ledger T1 (commit `1b50419`). Only `sweep_complete` failed: tier 2 point `t2_k1` at 64 games lost to an Isaac Sim start-up segfault (Kit telemetry thread, before project code). Gatekeeper: every number recomputes exactly from `results.jsonl`; record faults to fix in code for the next run: commit shown as `unknown` (no `.git` in the container) and stale "untracked" text; no status labels (MEASURED / PROPOSED) in the record; ledger date in container UTC. Owner decides: accept T1 and go to S1, or re-run S0 after the fixes |
+| — | Owner's decision on T1 (15 Nov) | "go with ur recommendations" | T1 stands as FAIL as written; its numbers are used. Next, in order: (1) record fixes + automatic retry of an Isaac start-up crash (building); (2) the S1 plan for the owner's approval (research running); (3) documentation written with the technical-writer agent. The next S0 (on the workstation) should come out PASS |
 
 Build bookkeeping (rulings, briefs, reports, snapshots) is in `runs/sdd/`; its ledger is `runs/sdd/progress.md`.
 S0 was built before the folder was tracked: each task was reviewed from a file diff against a snapshot (`bash runs/sdd/tools.sh`).
 Tasks 2–4 are built and reviewed together. No Isaac Sim launch before the lead checks `docker ps` and
 that the owner is at the machine or on Ethernet.
 
-What the final review found that matters to the owner: (1) a cold laptop GPU made two repeats differ by 22 % at the smallest sweep point, so warm-up becomes at least 50 steps AND 2 s (gates and config untouched); (2) one distance routine in the tier 1 stand-in dominated open-arena timing (being replaced, with a before/after measurement); (3) rows now carry a hash of the code because the folder is untracked; (4) `gnome-remote-desktop-daemon` holds 611 MiB of GPU compute memory on this laptop, a sign a remote-desktop session may be active.
+What the final review found that matters to the owner: (1) a cold laptop GPU made two repeats differ by 22 % at the smallest sweep point, so warm-up becomes at least 50 steps AND 2 s (gates and config untouched); (2) one distance routine in the tier 1 stand-in dominated open-arena timing (being replaced, with a before/after measurement); (3) rows carry a hash of the code (`code_sha`), added while the folder was untracked; (4) `gnome-remote-desktop-daemon` holds 611 MiB of GPU compute memory on this laptop, a sign a remote-desktop session may be active.
 
-**S0 run of record T1, 15 November 2026** (training simulator, laptop RTX 5070 Ti, container; stand-in drone models, no safety filter, no policy network). Best mean of two repeats:
-
-| Case | Game-steps / s | Drone-steps / s | At games |
-|---|---|---|---|
-| tier 1, 5 v 3 open arena | 12.3 million | 98 million | 65,536 |
-| tier 1, construction-site-size distance field | 9.1 million | 73 million | 16,384 |
-| tier 1, full sensing (field + 10 obstacles + 32 rays + line of sight) | 48,000 | 382,000 | 1,024 |
-| tier 2 Isaac Lab, 3 drones per game, 100 Hz physics | 152,000 | 455,000 | 4,096 |
-| tier 2 Isaac Lab, 8 drones per game, 200 Hz physics | 22,000 | 176,000 | 2,048 |
-
-Tier 2 speed rises almost in proportion to the number of games and stays within 5–8 GB of GPU memory, so Isaac
-Lab is fast enough to train on, not only to cross-check (it has no sensing yet). Both decision rules are met.
-
-**Superseded: tier 1 observed, 14 November 2026** (training simulator, tier 1, RTX 5070 Ti laptop; stand-in drone model, no safety filter, no policy network; NOT yet a record). Best mean over two repeats:
-
-| Case (5 Guard against 3 Strike unless said) | Game-steps per second | At games |
-|---|---|---|
-| open arena, 1 against 1 | 86.9 million | 65,536 |
-| open arena | 12.2 million | 65,536 |
-| distance field the size of the construction-site crop | 9.3 million | 16,384 |
-| 10 obstacles | 3.5 million | 4,096 |
-| 50 obstacles | 0.90 million | 1,024 |
-| 10 obstacles + line of sight | 0.50 million | 4,096 |
-| distance field + 32 range rays | 0.33 million | 4,096 |
-| 10 obstacles + 32 range rays | 64,000 | 1,024 |
-| full sensing: field + 10 obstacles + 32 rays + line of sight | 48,000 (0.38 million drone-steps) | 1,024 |
-
-- Decision rule "tier 1 can do bulk training on this machine" (≥ 50,000 drone-steps per second with full sensing): met, 384,000. Simulator stepping for 2 billion drone-steps: about 1.5 GPU-hours, a lower bound (no policy, no learning update, no safety filter).
-- Full sensing costs about 250 times the open arena. The hot spot is range rays against per-game obstacles (the ray march evaluates every obstacle at every step); rays against the baked field alone are about five times cheaper. This is the first thing to optimise in S3.
-- **Waiting on the owner — the repeat gate.** One point misses the approved 10 % repeat gate: 1 against 1, open arena, 256 games, spread 18 % (every other point ≤ 8.5 %). At 256 games the 200 timed steps last about a tenth of a second. As the approved config stands, the record will say FAIL on that gate. The lead may not change a gate or the pinned config; options for the owner: accept the FAIL as written, or approve a new config for a new run in which the timed window is at least 200 steps and at least 2 s.
+**S0 results:** [../S0_RESULTS.md](../S0_RESULTS.md) (run of record T1; record
+[../../records/2026-11-15_s0_laptop_record.md](../../records/2026-11-15_s0_laptop_record.md)). The tier 1 table of
+14 November and its repeat-gate question are superseded: the owner approved the new config (timed window at least
+200 steps and at least 2 s) on 15 November, and T1 passed the repeat gate.
 
 **Packaging (14 November 2026, third round).** The folder is COMMITTED: `2daf942` on `main` (change-log
 CHG-0068), mirror updated (one commit ahead of GitHub; the owner pushes after checking the repository is
 private). It is a top-level component of the repository. `docker/build.sh` builds `svg-training:isaaclab-2.3.2` on NVIDIA's `nvcr.io/nvidia/isaac-lab:2.3.2`
 (26 GB download, once) and adds pytest plus two launchers, `svg-python` and `svg-isaaclab`, that keep exit codes
-(Isaac Sim's own `python.sh` turns every failure into exit 1). Tests: host 108 passed; container 106 passed,
-2 skipped (host-only). `scripts/run_s0.sh` works in both places (`SVG_PY`, `SVG_ISAACLAB`, `SVG_IN_CONTAINER`).
-The tier 1 rows in `runs/2026-11-14_s0_laptop/` carry code hash `e9a7b4407e58`; the packaging changed
-`scripts/run_s0.sh`, so finishing that run now would mix two code versions (the record warns). Re-run tier 1
-before the record: it takes about 15 minutes, and it is needed anyway if the owner approves a new config for the
-repeat gate.
+(Isaac Sim's own `python.sh` turns every failure into exit 1). Tests: T1's test count is in
+[../S0_RESULTS.md](../S0_RESULTS.md#the-fail). `scripts/run_s0.sh` works in both places
+(`SVG_PY`, `SVG_ISAACLAB`, `SVG_IN_CONTAINER`). The partial run `runs/2026-11-14_s0_laptop/` (code hash
+`e9a7b4407e58`) was not finished; T1 ran from the start as `2026-11-15_s0_laptop` (code hash `13bebe8bb138`).
 
 State values: not started · building · built, in review · done (tests quoted) · blocked (why).
 
@@ -92,7 +65,7 @@ Jeremy (Robotics AI Engineer, NEAR Lab, ST Engineering) wants training for the S
 run in parallel on a GPU. On 14 November 2026 a first session read the flight stack and the programme
 website, ran web research on drone training in Isaac Lab, proposed a pipeline, and the owner chose an
 approach. This folder now holds the rules, the design, the research digest, the diagrams, and the
-agents and skills for the work. **No training code exists and nothing has been run.**
+agents and skills for the work. Since then S0 has been built and run (T1, §0); **nothing has been trained.**
 
 ## 2. Read these first
 
@@ -184,7 +157,7 @@ stay out of git; real flights of a contact policy should start with a virtual co
   IPPO and MAPPO; it has no velocity controller and no self-play. Both are ours to build.
 - Isaac Lab 3.0 (20 October 2026) adds batched velocity controllers and a velocity-command
   navigation task, needs Isaac Sim 6.2 and a newer GPU driver.
-- No measured throughput exists for quadrotor teams in Isaac Lab.
+- No published throughput existed for quadrotor teams in Isaac Lab; S0 has since measured ours ([../S0_RESULTS.md](../S0_RESULTS.md)).
 - The repository holds no Strike vs Guard game code.
 
 ## 5. Open items
@@ -197,8 +170,6 @@ stay out of git; real flights of a contact policy should start with a virtual co
 | What the real drone senses its surroundings with: a known map, or an on-board range sensor | owner | S3 |
 | Control level for contact tags: stay at velocity, or add a final-approach skill at thrust and body rates | owner, on the S2 numbers | after S2 |
 | When real-drone velocity-step logs can be flown (simulator logs: approved, by running `tools/sim.sh`) | owner | the `real` parameter set |
-| Compute budget: GPU-hours per run and in total | owner, after S0 | S2 |
-| Who approves each `gates.toml` (proposed: the owner, in each step's plan) | owner | S0 |
 | Arena sizes in metres (lab, hangar, outdoor) and zone radius | owner + NUS | S2 |
 | What a drone may observe about others (full state, or shared with delay and loss) | owner + partners | S2 |
 | How a drop-out is simulated | owner + partners | S4 |
@@ -211,7 +182,8 @@ stay out of git; real flights of a contact policy should start with a virtual co
 | Drone speed limit: the parameter file says 3 m/s, `docs/CONFIG.md` says 20 m/s | read the live drone | S1 |
 | Driver 595 with AirStack's Isaac Sim 5.1 | untested | any move to Isaac Lab 3.0 on a machine that also runs AirStack |
 
-**Not verified** (carry these as doubts, not facts): every throughput estimate for Isaac Lab; the
+**Not verified** (carry these as doubts, not facts): every published throughput estimate for Isaac Lab (S0 measured
+ours: [../S0_RESULTS.md](../S0_RESULTS.md)); the
 Isaac Lab 3.0 release details beyond what RESEARCH cites; the links in RESEARCH (collected by web
 research agents; open one before quoting it outside the lab); the axis order of the inertia values;
 the velocity response (0.15 s + 0.55 s), which comes from one CMU log at 5 m/s, not from our drones;
@@ -226,9 +198,9 @@ STANDARDS and DESIGN. Their open questions are in the table above.
 
 1. Run the `train-start` skill.
 2. The design is approved. A change to it goes through the owner first.
-3. The S0 plan is written: [../plans/2026-11-14-s0-measure-throughput.md](../plans/2026-11-14-s0-measure-throughput.md)
-   (9 tasks, not started). Its `[gates]` and `[decisions]` need the owner's approval before the first
-   run; then build it with `train-implementer`, test first, and have `train-gatekeeper` read the record.
+3. S0 is built and run (T1, §0). Next is S1: [../plans/2026-11-15-s1-drone-model-and-safety-filter.md](../plans/2026-11-15-s1-drone-model-and-safety-filter.md),
+   awaiting the owner's approval; then build it with `train-implementer`, test first, and have
+   `train-gatekeeper` read the record.
 4. One step at a time, S0 to S5. Each ends on a record and a ledger row.
 5. For a design question, brief the adviser agents in parallel with the files, not your conclusion;
    reconcile; show the owner; then build.

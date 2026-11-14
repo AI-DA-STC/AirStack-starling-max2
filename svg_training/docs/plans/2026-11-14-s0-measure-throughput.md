@@ -10,7 +10,7 @@
 
 **Spec:** [../DESIGN.md](../DESIGN.md) §4, §7, §8 (row S0); rules in [../../STANDARDS.md](../../STANDARDS.md).
 
-**Status:** written 14 November 2026. The owner approved the gates and decision rules of Task 1 and subagent-driven execution on 14 November 2026. Progress is tracked in [../claude/HANDOFF.md](../claude/HANDOFF.md) §0.
+**Status:** built and run; see [records/2026-11-15_s0_laptop_record.md](../../records/2026-11-15_s0_laptop_record.md) (T1) and [../S0_RESULTS.md](../S0_RESULTS.md). Written and approved (gates, decision rules, subagent-driven execution) 14 November 2026.
 
 ## Global Constraints
 
@@ -72,7 +72,7 @@ svg_training/
 **Interfaces:**
 - Produces: `configs/s0_benchmark.toml` with tables `[gates]`, `[decisions]`, `[timing]`, `[[tier1]]`, `[[tier2]]` (below); importable package `svg_training`.
 
-- [ ] **Step 1: Write the failing test** `tests/test_skeleton.py`
+- [x] **Step 1: Write the failing test** `tests/test_skeleton.py`
 
 ```python
 import tomllib, pathlib, importlib
@@ -96,9 +96,9 @@ def test_no_yaml_or_launch_paths():
     assert bad == []
 ```
 
-- [ ] **Step 2: Run** `$PY -m pytest tests/test_skeleton.py -q` — expected: FAIL (no package, no config).
+- [x] **Step 2: Run** `$PY -m pytest tests/test_skeleton.py -q` — expected: FAIL (no package, no config).
 
-- [ ] **Step 3: Create the files.** `pyproject.toml` holds only `[tool.pytest.ini_options]` with `pythonpath = ["source"]`, `testpaths = ["tests"]`. `configs/s0_benchmark.toml`:
+- [x] **Step 3: Create the files.** `pyproject.toml` holds only `[tool.pytest.ini_options]` with `pythonpath = ["source"]`, `testpaths = ["tests"]`. `configs/s0_benchmark.toml`:
 
 ```toml
 # Written 14 November 2026, before any run. Never edited after the first result exists (STANDARDS §7.1).
@@ -141,8 +141,8 @@ Tier 2 cases, keys `name`, `drones_per_game`, `num_games`, `physics_dt_s = 0.005
 
 `records/LEDGER.md`: a title, one line "Training ledger; separate from the flight ledger `docs/record/LEDGER.md`", and an empty table `| # | Date | Simulator | Run | What | Result | Record |`. `records/_template_record.md`: first line `Simulator: <training simulator, tier N>`, then the STANDARDS §8 fields as headings.
 
-- [ ] **Step 4: Run** `$PY -m pytest tests/test_skeleton.py -q` — expected: 3 passed.
-- [ ] **Step 5: Checkpoint.** Report the test output. The lead takes `[gates]` and `[decisions]` to the owner for approval before Task 9.
+- [x] **Step 4: Run** `$PY -m pytest tests/test_skeleton.py -q` — expected: 3 passed.
+- [x] **Step 5: Checkpoint.** Report the test output. The lead takes `[gates]` and `[decisions]` to the owner for approval before Task 9.
 
 ---
 
@@ -155,7 +155,7 @@ Tier 2 cases, keys `name`, `drones_per_game`, `num_games`, `physics_dt_s = 0.005
   - `sdf_boxes(points_m: Tensor[N, P, 3], centre_m: Tensor[N, B, 3], half_m: Tensor[N, B, 3]) -> Tensor[N, P]` — signed distance to the nearest axis-aligned box; `+inf` when `B == 0`.
   - `sdf_cylinders(points_m: Tensor[N, P, 3], base_m: Tensor[N, C, 3], radius_m: Tensor[N, C], height_m: Tensor[N, C]) -> Tensor[N, P]` — vertical cylinders standing on `base_m`; `+inf` when `C == 0`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```python
 import torch
@@ -178,9 +178,9 @@ def test_no_shapes_is_free_space_and_batched():
     assert sdf_boxes(p, torch.zeros(7, 4, 3), torch.ones(7, 4, 3)).shape == (7, 5)
 ```
 
-- [ ] **Step 2: Run** `$PY -m pytest tests/test_shapes.py -q` — expected: FAIL (module missing).
-- [ ] **Step 3: Implement** both functions with the standard exact box and capped-cylinder distance formulas, broadcasting `points[:, :, None, :]` against shapes `[:, None, :, :]`, then `min` over shapes.
-- [ ] **Step 4: Run** the tests — expected: 3 passed.
+- [x] **Step 2: Run** `$PY -m pytest tests/test_shapes.py -q` — expected: FAIL (module missing).
+- [x] **Step 3: Implement** both functions with the standard exact box and capped-cylinder distance formulas, broadcasting `points[:, :, None, :]` against shapes `[:, None, :, :]`, then `min` over shapes.
+- [x] **Step 4: Run** the tests — expected: 3 passed.
 
 ---
 
@@ -193,7 +193,7 @@ def test_no_shapes_is_free_space_and_batched():
   - `class DistanceField` with attributes `grid: Tensor[X, Y, Z]`, `origin_m: Tensor[3]` (world position of voxel `[0,0,0]` centre), `voxel_m: float`; method `sample(points_m: Tensor[..., 3]) -> Tensor[...]` (trilinear, same dtype as `points_m`); points outside the grid return the nearest border value.
   - `synthetic_field(size_m: tuple[float, float, float] = (80.0, 80.0, 20.0), voxel_m: float = 0.2, n_boxes: int = 60, seed: int = 0, device="cpu", dtype=torch.float16) -> DistanceField` — a grid the size of the construction-site 40 m crop, filled from random boxes with `sdf_boxes`, centred on the origin in x and y, floor at z = 0. Built in chunks so that it fits in 2 GB while building.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```python
 import torch
@@ -222,9 +222,9 @@ def test_synthetic_field_size():
     assert (f.grid < 0).any() and (f.grid > 0).any()
 ```
 
-- [ ] **Step 2: Run** — expected: FAIL.
-- [ ] **Step 3: Implement.** `sample` uses `torch.nn.functional.grid_sample(mode="bilinear", padding_mode="border", align_corners=True)` on the grid viewed as `[1, 1, Z, Y, X]`; mind that `grid_sample` takes coordinates in `(x, y, z)` order mapped to the last three dimensions reversed. The grid is cast to float32 once at construction if the device lacks float16 `grid_sample`; record which in `self.sample_dtype`.
-- [ ] **Step 4: Run** — expected: 4 passed.
+- [x] **Step 2: Run** — expected: FAIL.
+- [x] **Step 3: Implement.** `sample` uses `torch.nn.functional.grid_sample(mode="bilinear", padding_mode="border", align_corners=True)` on the grid viewed as `[1, 1, Z, Y, X]`; mind that `grid_sample` takes coordinates in `(x, y, z)` order mapped to the last three dimensions reversed. The grid is cast to float32 once at construction if the device lacks float16 `grid_sample`; record which in `self.sample_dtype`.
+- [x] **Step 4: Run** — expected: 4 passed.
 
 ---
 
@@ -240,7 +240,7 @@ def test_synthetic_field_size():
   - `cast_rays(world: World, origin_m: Tensor[N, M, 3], dirs: Tensor[R, 3], max_range_m: float = 10.0, n_steps: int = 24) -> Tensor[N, M, R]` — sphere tracing with a fixed step count; 0 where the origin is inside a structure; capped at `max_range_m`.
   - `line_of_sight(world: World, pos_m: Tensor[N, M, 3], n_steps: int = 24) -> Tensor[N, M, M]` (bool) — True where the segment between two drones is clear; the diagonal is True.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```python
 import torch
@@ -280,9 +280,9 @@ def test_empty_world_sees_everything():
     assert (cast_rays(w, torch.rand(1, 4, 3), ray_directions(8), max_range_m=5.0) == 5.0).all()
 ```
 
-- [ ] **Step 2: Run** — expected: FAIL.
-- [ ] **Step 3: Implement.** `cast_rays`: travelled distance `t` starts at 0; each of `n_steps` iterations adds `clamp(sdf(origin + t·dir), min=0)`; rays whose distance drops below 0.01 m stop advancing. `line_of_sight`: same march along each of the `M·M` segments, clear when the march reaches the far end; force the diagonal True; build only the upper triangle if that is cheaper and mirror it.
-- [ ] **Step 4: Run** — expected: 5 passed.
+- [x] **Step 2: Run** — expected: FAIL.
+- [x] **Step 3: Implement.** `cast_rays`: travelled distance `t` starts at 0; each of `n_steps` iterations adds `clamp(sdf(origin + t·dir), min=0)`; rays whose distance drops below 0.01 m stop advancing. `line_of_sight`: same march along each of the `M·M` segments, clear when the march reaches the far end; force the diagonal True; build only the upper triangle if that is cheaper and mirror it.
+- [x] **Step 4: Run** — expected: 5 passed.
 
 ---
 
@@ -297,7 +297,7 @@ def test_empty_world_sees_everything():
   - `@dataclass class Tier1BenchCfg`: `num_games, guards, strikes, world ("open" | "primitives" | "field"), n_obstacles, n_rays, line_of_sight, dt_s=0.05, contact_m=0.50, body_radius_m=0.248, arena_half_m=(20.0, 20.0), height_m=(0.5, 8.0), seed=0, device="cuda"`.
   - `class Tier1BenchEnv(cfg)` with `M = guards + strikes`; `step(action: Tensor[N, M, 4]) -> dict` whose keys are `"pos_m" [N, M, 3]`, `"vel_mps" [N, M, 3]`, `"ranges_m" [N, M, R]`, `"visible" [N, M, M] bool`, `"tagged" [N, M] bool` (a Guard drone and a Strike drone closer than `contact_m`), `"touched" [N, M] bool` (distance to a structure below `body_radius_m`, or outside the arena box), `"reset_fraction"` (scalar tensor); attribute `world: World`. Tagged and touched drones are respawned in the same step at a random clear position (batched rejection: draw 8 candidates per drone, take the first that is clear of structures by 1 m and more than 1 m from every drone already placed in that game; if none, keep the last candidate and count it in `"bad_spawns"`).
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```python
 import torch
@@ -349,9 +349,9 @@ def test_seed_reproducible():
     assert torch.equal(a.step(act)["pos_m"], b.step(act)["pos_m"])
 ```
 
-- [ ] **Step 2: Run** — expected: FAIL.
-- [ ] **Step 3: Implement.** Action scaling: `action[..., :3].clamp(-1, 1) × cap`, Strike drones at `speed_cap_mps`, Guard drones at `speed_cap_mps / 1.5` (STANDARDS §4); the fourth channel (yaw rate) is accepted and ignored in S0. Position integrates the model's velocity. `world = "primitives"`: per game, `n_obstacles` split evenly between boxes (half-sizes 0.5–3 m) and cylinders (radius 0.2–1 m, height 2–8 m) placed uniformly in the arena. `world = "field"`: one shared `synthetic_field()` plus `n_obstacles` per-game shapes. Use one `torch.Generator` seeded from `cfg.seed` for every random draw.
-- [ ] **Step 4: Run** `$PY -m pytest tests/test_tier1_bench.py -q` — expected: 7 passed.
+- [x] **Step 2: Run** — expected: FAIL.
+- [x] **Step 3: Implement.** Action scaling: `action[..., :3].clamp(-1, 1) × cap`, Strike drones at `speed_cap_mps`, Guard drones at `speed_cap_mps / 1.5` (STANDARDS §4); the fourth channel (yaw rate) is accepted and ignored in S0. Position integrates the model's velocity. `world = "primitives"`: per game, `n_obstacles` split evenly between boxes (half-sizes 0.5–3 m) and cylinders (radius 0.2–1 m, height 2–8 m) placed uniformly in the arena. `world = "field"`: one shared `synthetic_field()` plus `n_obstacles` per-game shapes. Use one `torch.Generator` seeded from `cfg.seed` for every random draw.
+- [x] **Step 4: Run** `$PY -m pytest tests/test_tier1_bench.py -q` — expected: 7 passed.
 
 ---
 
@@ -367,7 +367,7 @@ def test_seed_reproducible():
   - Row keys (both tiers): `tier, case, num_games, drones_per_game, repeat, status, env_steps_per_s, drone_steps_per_s, peak_mem_mb, nan_count, mean_reset_fraction, device, gpu_name, commit, date`.
   - CLI: `PYTHONPATH=source $PY scripts/benchmark_tier1.py --config configs/s0_benchmark.toml --out runs/<run>/results.jsonl [--device cuda] [--only <case>] [--max-games <n>]` (appends rows).
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```python
 import json, subprocess, sys, pathlib, torch
@@ -405,9 +405,9 @@ def test_cli_smoke(tmp_path):
     assert rows[0]["drone_steps_per_s"] == rows[0]["env_steps_per_s"] * 3
 ```
 
-- [ ] **Step 2: Run** — expected: FAIL.
-- [ ] **Step 3: Implement.** `env_steps_per_s = steps_per_s × num_games`. The tier 1 step function draws `torch.rand` actions on the device inside the timed section (the policy's stand-in). `commit` comes from `git -C <repo> rev-parse --short HEAD` (read-only), `gpu_name` from `torch.cuda.get_device_name`.
-- [ ] **Step 4: Run** `$PY -m pytest tests/test_timing.py -q` — expected: 4 passed. Then the whole suite: `$PY -m pytest -q` — expected: 26 passed.
+- [x] **Step 2: Run** — expected: FAIL.
+- [x] **Step 3: Implement.** `env_steps_per_s = steps_per_s × num_games`. The tier 1 step function draws `torch.rand` actions on the device inside the timed section (the policy's stand-in). `commit` comes from `git -C <repo> rev-parse --short HEAD` (read-only), `gpu_name` from `torch.cuda.get_device_name`.
+- [x] **Step 4: Run** `$PY -m pytest tests/test_timing.py -q` — expected: 4 passed. Then the whole suite: `$PY -m pytest -q` — expected: 26 passed.
 
 ---
 
@@ -422,7 +422,7 @@ def test_cli_smoke(tmp_path):
   - `scripts/benchmark_tier2.py --case <name> --num-games <n> --config ... --out ...` runs **one** sweep point and appends its rows; exit code 2 with a one-line reason if the asset cannot be loaded.
   - `parse_case(cfg: dict, name: str, num_games: int) -> dict` in the script (pure, testable without Isaac): raises `KeyError` for an unknown case and `ValueError` when `num_games` is not listed for it.
 
-- [ ] **Step 1: Write the failing test** (`tests/test_tier2_args.py`): load `scripts/benchmark_tier2.py` with `importlib.util` (the script must not start Isaac at import; the launcher lives under `if __name__ == "__main__":`), then
+- [x] **Step 1: Write the failing test** (`tests/test_tier2_args.py`): load `scripts/benchmark_tier2.py` with `importlib.util` (the script must not start Isaac at import; the launcher lives under `if __name__ == "__main__":`), then
 
 ```python
 def test_parse_case(mod, cfg):
@@ -437,10 +437,10 @@ def test_only_compat_imports_isaac():
     assert offenders == []
 ```
 
-- [ ] **Step 2: Run** — expected: FAIL.
-- [ ] **Step 3: Implement.** Before writing, read the local sources and follow them, not memory: `~/IsaacLab/scripts/benchmarks/benchmark_non_rl.py` (launcher pattern: `AppLauncher.add_app_launcher_args`, `AppLauncher(args)`, imports of `isaaclab` only after it), `~/IsaacLab/source/isaaclab_assets/isaaclab_assets/robots/arl_robot_1.py` (`ARL_ROBOT_1_CFG`, a `MultirotorCfg`), `~/IsaacLab/source/isaaclab_contrib/isaaclab_contrib/assets/multirotor/multirotor.py` (`set_thrust_target(target: Tensor[num_envs, num_thrusters])`, `write_data_to_sim`), and `~/IsaacLab/source/isaaclab_tasks/isaaclab_tasks/direct/shadow_hand_over/` (two assets per environment). The scene: a ground plane, and per game `drones_per_game` copies of `ARL_ROBOT_1_CFG.replace(prim_path="{ENV_REGEX_NS}/Drone_<k>")` spawned 1.5 m apart at 2 m height, `replicate_physics=True`, collision filtering left on. One 20 Hz step = set a random thrust near hover on every drone (`hover ± 10 %`, hover = mass × 9.81 / 4 read from the asset's data), then `substeps` physics steps; drones lower than 0.3 m or further than 5 m from their spawn are put back in one batched root-state write. The step function returns `{"pos_m": ..., "reset_fraction": ...}` so `timing.measure` counts NaNs and resets. The asset is NVIDIA's ARL Robot 1, a stand-in for the Starling: the row carries `"airframe": "arl_robot_1"`.
-- [ ] **Step 4: Run** `$PY -m pytest tests/test_tier2_args.py -q` — expected: 2 passed.
-- [ ] **Step 5: Smoke run** (GPU; do the pre-flight of the `train-run` skill first: `docker ps` shows no AirStack simulator, record `nvidia-smi`):
+- [x] **Step 2: Run** — expected: FAIL.
+- [x] **Step 3: Implement.** Before writing, read the local sources and follow them, not memory: `~/IsaacLab/scripts/benchmarks/benchmark_non_rl.py` (launcher pattern: `AppLauncher.add_app_launcher_args`, `AppLauncher(args)`, imports of `isaaclab` only after it), `~/IsaacLab/source/isaaclab_assets/isaaclab_assets/robots/arl_robot_1.py` (`ARL_ROBOT_1_CFG`, a `MultirotorCfg`), `~/IsaacLab/source/isaaclab_contrib/isaaclab_contrib/assets/multirotor/multirotor.py` (`set_thrust_target(target: Tensor[num_envs, num_thrusters])`, `write_data_to_sim`), and `~/IsaacLab/source/isaaclab_tasks/isaaclab_tasks/direct/shadow_hand_over/` (two assets per environment). The scene: a ground plane, and per game `drones_per_game` copies of `ARL_ROBOT_1_CFG.replace(prim_path="{ENV_REGEX_NS}/Drone_<k>")` spawned 1.5 m apart at 2 m height, `replicate_physics=True`, collision filtering left on. One 20 Hz step = set a random thrust near hover on every drone (`hover ± 10 %`, hover = mass × 9.81 / 4 read from the asset's data), then `substeps` physics steps; drones lower than 0.3 m or further than 5 m from their spawn are put back in one batched root-state write. The step function returns `{"pos_m": ..., "reset_fraction": ...}` so `timing.measure` counts NaNs and resets. The asset is NVIDIA's ARL Robot 1, a stand-in for the Starling: the row carries `"airframe": "arl_robot_1"`.
+- [x] **Step 4: Run** `$PY -m pytest tests/test_tier2_args.py -q` — expected: 2 passed.
+- [x] **Step 5: Smoke run** (GPU; do the pre-flight of the `train-run` skill first: `docker ps` shows no AirStack simulator, record `nvidia-smi`):
 
 ```bash
 cd ~/AirStack-starling-max2/svg_training && conda run -n env_isaaclab --no-capture-output \
@@ -464,7 +464,7 @@ Expected: exit code 0 and 2 rows with `status "ok"`, `nan_count 0`, `mean_reset_
   - `ledger_row(n: int, meta, verdict) -> str`.
   - CLI: `scripts/make_record.py --results runs/<run>/results.jsonl --config configs/s0_benchmark.toml --tests-passed {yes,no} --name <date>_s0_<machine>` writes `records/<name>_record.md` and appends `T<n>` to `records/LEDGER.md`; refuses to overwrite an existing record.
 
-- [ ] **Step 1: Write the failing tests** with a fixture of synthetic rows built from the config (every case, two repeats, `env_steps_per_s = 1000 × num_games`):
+- [x] **Step 1: Write the failing tests** with a fixture of synthetic rows built from the config (every case, two repeats, `env_steps_per_s = 1000 × num_games`):
 
 ```python
 def test_complete_sweep_passes(rows, cfg):
@@ -486,9 +486,9 @@ def test_record_text(rows, cfg):
     for word in ("stand-in", "no safety filter", "GPU-hours", "PASS", "t1_5v3_full", "RTX 5070 Ti"): assert word in txt
 ```
 
-- [ ] **Step 2: Run** — expected: FAIL.
-- [ ] **Step 3: Implement.** A FAIL is written as FAIL; nothing in this module edits the config.
-- [ ] **Step 4: Run** `$PY -m pytest -q` — expected: all tests pass (34).
+- [x] **Step 2: Run** — expected: FAIL.
+- [x] **Step 3: Implement.** A FAIL is written as FAIL; nothing in this module edits the config.
+- [x] **Step 4: Run** `$PY -m pytest -q` — expected: all tests pass (34).
 
 ---
 
@@ -499,12 +499,12 @@ def test_record_text(rows, cfg):
 **Interfaces:**
 - Consumes: everything above.
 
-- [ ] **Step 1: Confirm the gates are approved.** The lead has the owner's approval of `[gates]` and `[decisions]` in `configs/s0_benchmark.toml` in the conversation. If not, stop here.
-- [ ] **Step 2: Write `scripts/run_s0.sh <name>`** (`set -euo pipefail`): (1) refuse to run if `docker ps --format '{{.Names}}'` lists an AirStack or Isaac container; (2) save `nvidia-smi` and `git rev-parse --short HEAD` into `runs/<name>/preflight.txt`; (3) copy the config to `runs/<name>/s0_benchmark.toml` and check it is byte-identical to the approved file's hash recorded in `preflight.txt`; (4) run the test suite and remember the result; (5) tier 1 sweep; (6) tier 2 sweep, one process per `(case, num_games)`, continuing after a non-zero exit and appending a row with `status "crash"` for that point; (7) `make_record.py`. An interrupt (Ctrl-C) writes `records/<name>_ABORTED_record.md` with what ran.
-- [ ] **Step 3: Run it** from a local terminal or over Ethernet (starting Isaac Sim over the remote desktop has crashed this laptop's WiFi firmware): `bash scripts/run_s0.sh $(date +%F)_s0_laptop`. Run it in the background and watch `results.jsonl` grow.
-- [ ] **Step 4: Read the record.** Check by eye: the open-world cases are the fastest; throughput per game falls as games rise once the GPU is saturated; reset fractions are small; no NaN. Anything odd goes to the `train-debug` skill, not into the record as a result.
-- [ ] **Step 5: Gatekeeper.** Dispatch `train-gatekeeper` on the record, the gates and the ledger. Every item PASS, or fix and re-check.
-- [ ] **Step 6: Update `docs/claude/HANDOFF.md`** §4 (what was observed, with the record's path) and §5 (remove "Compute budget", add what the decision rules say). State plainly: stand-in models, no safety filter, laptop only.
+- [x] **Step 1: Confirm the gates are approved.** The lead has the owner's approval of `[gates]` and `[decisions]` in `configs/s0_benchmark.toml` in the conversation. If not, stop here.
+- [x] **Step 2: Write `scripts/run_s0.sh <name>`** (`set -euo pipefail`): (1) refuse to run if `docker ps --format '{{.Names}}'` lists an AirStack or Isaac container; (2) save `nvidia-smi` and `git rev-parse --short HEAD` into `runs/<name>/preflight.txt`; (3) copy the config to `runs/<name>/s0_benchmark.toml` and check it is byte-identical to the approved file's hash recorded in `preflight.txt`; (4) run the test suite and remember the result; (5) tier 1 sweep; (6) tier 2 sweep, one process per `(case, num_games)`, continuing after a non-zero exit and appending a row with `status "crash"` for that point; (7) `make_record.py`. An interrupt (Ctrl-C) writes `records/<name>_ABORTED_record.md` with what ran.
+- [x] **Step 3: Run it** from a local terminal or over Ethernet (starting Isaac Sim over the remote desktop has crashed this laptop's WiFi firmware): `bash scripts/run_s0.sh $(date +%F)_s0_laptop`. Run it in the background and watch `results.jsonl` grow.
+- [x] **Step 4: Read the record.** Check by eye: the open-world cases are the fastest; throughput per game falls as games rise once the GPU is saturated; reset fractions are small; no NaN. Anything odd goes to the `train-debug` skill, not into the record as a result.
+- [x] **Step 5: Gatekeeper.** Dispatch `train-gatekeeper` on the record, the gates and the ledger. Every item PASS, or fix and re-check.
+- [x] **Step 6: Update `docs/claude/HANDOFF.md`** §4 (what was observed, with the record's path) and §5 (remove "Compute budget", add what the decision rules say). State plainly: stand-in models, no safety filter, laptop only.
 - [ ] **Step 7: Workstation.** When the owner gives access to a training workstation, repeat Steps 2–5 there with `<date>_s0_<machine>`; same config, new record, new ledger row.
 
 ---

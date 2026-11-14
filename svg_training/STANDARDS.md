@@ -253,7 +253,7 @@ Rules:
 
 ## 8. Runs and records
 
-| Path (planned) | Holds | In git |
+| Path | Holds | In git |
 |---|---|---|
 | `runs/<date>_<name>/` | checkpoints, logs, videos | no |
 | `records/<date>_<name>_record.md` | purpose, commit, config, model parameter set, seeds, machine, games at once, steps per second, gates with PASS or FAIL | yes |
@@ -267,7 +267,8 @@ Rules:
 
 ## 9. Code
 
-Planned layout (nothing below `docs/` exists yet):
+Layout. Built in S0: `source/svg_training/` with `bench/`, `compat/`, `envs/`, `models/`, `worlds/`; `configs/`, `scripts/`,
+`tests/`, `records/`, `runs/`, `docker/`. Still planned: `core/`, `opponents/` and the scripts after the benchmark. Target:
 
 ```
 svg_training/

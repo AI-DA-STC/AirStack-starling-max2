@@ -1,7 +1,8 @@
 # Design — vectorised training pipeline for Strike vs Guard
 
-Date: 14 November 2026. Status: **approved by the owner on 14 November 2026, with three changes made
-the same day (contact tag, safety filter within each team, realistic environments); nothing is built.** Diagrams: [pipeline/training-pipeline.pptx](pipeline/training-pipeline.pptx).
+Status: **approved by the owner on 14 November 2026** (contact tag, safety filter within each team and realistic
+environments added the same day). S0 is built and run: [S0_RESULTS.md](S0_RESULTS.md). The short version:
+[HOW_IT_WORKS.md](HOW_IT_WORKS.md). Diagrams: [pipeline/training-pipeline.pptx](pipeline/training-pipeline.pptx).
 Evidence: [RESEARCH.md](RESEARCH.md). Rules: [../STANDARDS.md](../STANDARDS.md).
 
 ## 1. Intent
@@ -15,9 +16,8 @@ games at once on one GPU, on a drone model that behaves like a Starling under PX
 safety filter the flight stack uses, in environments shaped like real places. A policy trained here
 must plug into AirStack unchanged.
 
-Three rules of the game were set by the owner on 14 November 2026: a tag is **physical contact**
-between a Guard drone and a Strike drone; the safety filter acts **within each team only**; games are
-played in **realistic 3D environments**, the lab's construction-site world first.
+Three rules of the game were set by the owner on 14 November 2026: a tag is **physical contact**; the
+safety filter acts **within each team only**; games are played in **realistic 3D environments**.
 
 **Why now.** Three gaps in the programme's public simulation page: skills trained from fixed start
 positions fail outside them (about 20 % hold rate at 2 against 1); the AirStack simulator stops at
@@ -51,21 +51,20 @@ Cross-check or simulated flight disagrees with training → the drone model is w
 The game rules, observations, rewards, safety filter and the world's shape are written once, in
 PyTorch, and import nothing from Isaac. Two drone models plug in underneath.
 
-| | Tier 1: response model | Tier 2: rigid body |
-|---|---|---|
-| What a drone is | a point that follows a velocity command the way the flight stack does: command shaping, PX4 position and velocity loops, lag, delay, limits | a rigid body with four rotors in Isaac Lab, flown by a batched port of PX4's cascade |
-| Built from | velocity-step logs (stage 1) | CMU system identification + the drone's PX4 parameter file |
-| Used for | bulk training of uses 1 and 2 | the cross-check (stage 4), use 3, later use 4 |
-| The world is | one distance field on the GPU, shared by every game, plus random blocks and columns per game | one static collision mesh in Isaac Lab, shared by every game |
-| A contact tag is | the two centres closer than 0.50 m | a PhysX contact between the two bodies |
-| Needs Isaac | no | yes (Isaac Lab 2.3.2 `Multirotor` + `Thruster`) |
-| Expected speed | high; to be measured in S0 | lower: several rigid bodies per game; to be measured in S0 |
+| | Tier 1 planned: response model | Tier 1 in S0 today | Tier 2 planned: rigid body | Tier 2 in S0 today |
+|---|---|---|---|---|
+| What a drone is | a point that follows a velocity command as the flight stack does: shaping, PX4 loops, lag, delay, limits | a point behind a placeholder 0.15 s delay and 0.55 s lag | a rigid body with four rotors in Isaac Lab, flown by a batched port of PX4's cascade | Isaac Lab's ARL Robot 1 airframe; no flight controller; state rewritten every policy step |
+| Built from | velocity-step logs (stage 1) | nothing fitted yet (S1) | CMU system identification + the drone's PX4 parameter file | Isaac Lab's asset |
+| Used for | bulk training of uses 1 and 2 | throughput only | the cross-check (stage 4), use 3, later use 4 | throughput only |
+| The world is | one distance field on the GPU, shared by every game, plus random blocks and columns per game | open arena, 10 or 50 shapes per game, or a stand-in field the size of the construction-site crop | one static collision mesh in Isaac Lab, shared by every game | a ground plane only |
+| A contact tag is | the two centres closer than 0.50 m | the same | a PhysX contact between the two bodies | not modelled |
+| Needs Isaac | no | no | yes (Isaac Lab 2.3.2 `Multirotor` + `Thruster`) | yes |
+| Speed | high | see [S0_RESULTS](S0_RESULTS.md) | lower | see [S0_RESULTS](S0_RESULTS.md) |
 
 Why two: published work flew velocity-level policies trained on a fitted point-mass model through PX4
 (RESEARCH §4–5), and strategy learning gains nothing from rotor physics. But a point-mass model
 cannot show what happens near tilt and thrust limits, so a heavier model checks it before the
-AirStack simulator does. Isaac Lab 2.3.2 has no multirotor velocity controller, and the one in 3.0 is
-proportional-only, not PX4's, so tier 2 carries a PX4-style cascade of its own on either version.
+AirStack simulator does. Tier 2 carries its own PX4-style cascade: Isaac Lab has no PX4-like one (§9).
 
 ## 5. Four uses
 
@@ -131,7 +130,7 @@ Each step ends on a number. S0–S5 deliver use 1.
 
 | Step | Builds | Ends when |
 |---|---|---|
-| **S0 Measure** | the project skeleton (`source/`, `tests/`, `records/` with the ledger and a record template, `runs/`); minimal tier 1 and tier 2 environments with random actions; tier 1 also with 0, 10 and 50 obstacles, range rays, line-of-sight tests and a distance field the size of the construction-site crop | environment steps per second against number of games is recorded for both tiers, with and without obstacles, on the laptop and a training workstation, and a compute budget for S2–S4 is written from those numbers |
+| **S0 Measure** | the project skeleton; minimal tier 1 and tier 2 environments with random actions; tier 1 with 0, 10 and 50 obstacles, range rays, line of sight and a stand-in distance field | steps per second against number of games recorded for both tiers on the laptop (done: T1, [S0_RESULTS](S0_RESULTS.md)) and a training workstation (to do), with a compute budget for S2–S4 |
 | **S1 Drone model** | velocity-step logs at the plug-in point (none exist yet; recorded by running `tools/sim.sh`, approved by the owner on 14 November 2026); stage 1 fitting script; tier 1 model; the safety filter port | fitted model reproduces a velocity step from the AirStack simulator within a limit set beforehand; filter port matches `cbf_filter.py` on recorded inputs |
 | **S2 One against one** | open arena (E0); game rules with contact tags, scripted opponents, evaluation suite, records | unit tests pass without Isaac; a trained Guard policy tags the scripted Strike behaviours at a rate set beforehand; that rate decides the control level (§7) |
 | **S3 Two against one** | random blocks and columns (E1); line-of-sight masking; opponent pool, start archive | hold rate from random starts and layouts against the scripted Strike behaviours at a rate set beforehand, with the interval reported; the 20 % figure is a reference only, its game conditions differ |
@@ -151,20 +150,16 @@ The owner chose C on 14 November 2026, with Isaac Lab 2.3.2 now and 3.0 later, a
 
 ## 10. Constraints
 
-- Isaac Lab 2.3.2 on Isaac Sim 5.1 in conda `env_isaaclab`; no GPU driver change on the flight laptop.
-  Isaac Lab 3.0 (Isaac Sim 6.2, Python 3.12) is for the training workstations, behind the adapter module.
+- Isaac Lab 2.3.2 now, 3.0 later on the training workstations, behind the adapter module
+  ([versions](GLOSSARY.md#versions)); no GPU driver change on the flight laptop.
 - Training moves to an RTX 5090, RTX PRO 6000 or RTX 6000 Ada workstation (owner, 14 November 2026);
   the laptop is for development and smoke tests.
 - 12 GB of GPU memory on the laptop, below Isaac Sim's stated 16 GB minimum: enough for headless
   physics and ray-casting, not for camera training. The GPU is shared with the AirStack simulator.
-- The construction-site world is the lab's export of an Unreal Engine asset pack; no licence file is
-  with it. It is read, never changed, and files baked from it stay out of git.
-- Packaging (owner, 14 November 2026): the pipeline is a top-level component of the repository, like
-  `localisation/`, with its own `docker/` image that carries Isaac Lab; CMU's `AirStack/` tree is not
-  touched.
-- The repository's hook and docs checker: no YAML, no links from the repository's docs
-  ([STANDARDS §9–10](../STANDARDS.md)).
-- Other Claude sessions work elsewhere in this repository.
+- The construction-site world has no licence file: it is read, never changed, and nothing baked from it enters git.
+- Packaging (owner, 14 November 2026): a top-level component of the repository with its own `docker/`
+  image carrying Isaac Lab; CMU's `AirStack/` tree is not touched.
+- The repository's hook, its docs checker and other Claude sessions ([STANDARDS §9–10](../STANDARDS.md)).
 
 ## 11. Risks
 
@@ -177,7 +172,6 @@ The owner chose C on 14 November 2026, with Isaac Lab 2.3.2 now and 3.0 later, a
 | Contact is an event, not physics, in tier 1: what happens to the two drones afterwards is not modelled | the drones leave the game at contact; tier 2 shows the physical contact |
 | The response model is fitted to one route; the real drone and the AirStack simulator use different command routes (NEAR-866) | fit both, keep both parameter sets, cross-check on tier 2 |
 | Self-play goes in circles or overfits to its own pool | scripted opponents, cross-play table, a fixed-budget best-response test |
-| Throughput on Isaac Lab is unknown | S0 comes first |
 | The drone runs PX4 1.14 and the AirStack simulator PX4 1.16.1; a model fitted to one may not match the other | copy the drone's control law; compare the two versions' position controller before S1; fit both routes |
 | Overlap with UPenn's Isaac Lab environment and NUS's simulators | this pipeline's niche is Starling response + safety filter + AirStack hand-over; tell the partners early |
 | The lab arena (3 × 3 m) is small against a 1.10 m keep-out: few drones fit | arena size is a parameter; decide the scales with the owner |

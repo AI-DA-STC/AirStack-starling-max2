@@ -223,7 +223,7 @@ def slide_title(prs):
     for r in sub.text_frame.paragraphs[0].runs:
         set_run(r, 22, False, LIGHT)
     note(s, 0.8, 6.3, 11.7, 0.5,
-         "Approach agreed with the owner on 14 November 2026 · nothing in this deck has been built or measured yet",
+         "Design approved 14 November 2026 · S0 benchmark run 15 November 2026 · nothing has been trained yet",
          size=14, color=LIGHT)
 
 
@@ -583,8 +583,8 @@ def slide_contact(prs):
 def slide_build(prs):
     s = new_slide(prs, "Build order: measure first, then grow the game")
     steps = [
-        ("S0", "Measure", "Games per second against number of games, with and without obstacles"),
-        ("S1", "Drone model", "Fitted to velocity steps; error against PX4 simulator within a stated limit"),
+        ("S0", "Measure", "Done 15 Nov: run of record T1 (see the next slide)"),
+        ("S1", "Drone model", "Planned, awaiting approval: fit to AirStack velocity steps; safety filter port"),
         ("S2", "1 against 1", "Open arena; contact tags against scripted Strike drones, at a rate set beforehand"),
         ("S3", "2 against 1", "Random blocks and columns; holds the zone from any start and layout"),
         ("S4", "5 against 3", "Construction-site world; drop-outs; rigid-body cross-check"),
@@ -595,43 +595,73 @@ def slide_build(prs):
     for i, (tag, head, body) in enumerate(steps):
         x = x0 + i * (w + gap)
         b = node(s, P, x, 1.8, w, 1.0, [(tag, {"bold": True, "size": 16}), (head, {"size": 13})],
-                 fill=PIPE if i < 5 else EXIST)
+                 fill=PASS if i == 0 else (PIPE if i < 5 else EXIST))
         note(s, x, 3.0, w, 1.9, body, size=12, align=PP_ALIGN.CENTER)
         if prev is not None:
             link(s, prev, RIGHT, b, LEFT)
         prev = b
     note(s, 0.57, 4.6, 12.2, 2.0,
          [("Each step ends on a number, not on \"it runs\".", {"bold": True, "size": 14, "color": DARK}),
-          "S0 comes first because no published games-per-second figure exists for Isaac Lab quadrotor teams; the answer decides how training is split between the two tiers.",
+          "S0 came first because no published games-per-second figure existed for Isaac Lab quadrotor teams. Green = done.",
           "S2 also answers whether velocity commands are fast enough for a contact tag.",
           "S5 needs a small ROS 2 node inside the AirStack tree. That is outside the new folder and needs separate approval.",
           "S0 to S5 deliver use 1 (team strategy). Partner strategies, flight control and cameras follow in that order."],
          size=13, space_after=5)
 
 
+def slide_s0_results(prs):
+    s = new_slide(prs, "S0: the simulators are fast enough to train on")
+    note(s, 0.6, 1.3, 12.1, 0.4, "Observed in the training simulator, run of record T1, 15 November 2026: laptop RTX 5070 Ti, "
+         "stand-in drone models, no safety filter, no policy network.", size=12, color=EXIST)
+    rows = [
+        ("Tier 1, 5 v 3, open arena", "98.3 million", "65,536 games", PIPE),
+        ("Tier 1, construction-site-size map", "72.9 million", "16,384 games", PIPE),
+        ("Tier 1, full sensing (map, obstacles, 32 rays, line of sight)", "382,206", "1,024 games", PIPE),
+        ("Tier 2, Isaac Lab rigid bodies, 3 drones per game", "455,300", "4,096 games", EXIST),
+        ("Tier 2, Isaac Lab rigid bodies, 8 drones per game", "176,361", "2,048 games", EXIST),
+    ]
+    note(s, 0.6, 1.8, 6.4, 0.35, ("What was measured", {"bold": True}), size=13, color=EXIST)
+    note(s, 7.1, 1.8, 2.8, 0.35, ("Drone-steps per second", {"bold": True}), size=13, color=EXIST, align=PP_ALIGN.CENTER)
+    note(s, 10.0, 1.8, 2.7, 0.35, ("Best at", {"bold": True}), size=13, color=EXIST, align=PP_ALIGN.CENTER)
+    y = 2.2
+    for what, rate, at, fill in rows:
+        node(s, P, 0.6, y, 6.3, 0.55, what, fill=fill, size=12, align=PP_ALIGN.LEFT)
+        node(s, P, 7.1, y, 2.8, 0.55, (rate, {"bold": True, "size": 14}), fill=None, outline=fill, text_color=INK)
+        node(s, P, 10.0, y, 2.7, 0.55, at, fill=None, outline=fill, text_color=INK, size=12)
+        y += 0.68
+    note(s, 0.6, 5.75, 12.1, 1.4,
+         [("What it means", {"bold": True, "size": 14, "color": DARK}),
+          "2 billion drone-steps of full-sensing simulation take about 1.5 GPU-hours on this laptop (a lower bound). "
+          "Isaac Lab speed grows with the number of games, so tier 2 can train, not only cross-check. Range sensing is the bottleneck.",
+          "Verdict FAIL on one gate: 1 of 96 points lost to an Isaac Sim start-up crash; every number was recomputed and matches."],
+         size=12, space_after=4)
+
+
 def slide_decisions(prs):
-    s = new_slide(prs, "Decided on 14 November 2026, and still open")
+    s = new_slide(prs, "Decided so far, and still open")
     rows = [
         ("1", "What it is for", "Team strategy, partner strategies, flight control; cameras later."),
         ("2", "How it is built", "Two tiers sharing one game, safety filter and reward code."),
         ("3", "Which Isaac Lab", "2.3.2 on Isaac Sim 5.1 now; 3.0 later on the training workstations."),
-        ("4", "Where it lives", "svg_training, a new folder; nothing outside it is edited."),
+        ("4", "Where it lives", "svg_training, a top-level folder of the repository; outside it only one change-log line."),
         ("5", "What a tag is", "Physical contact between a Guard drone and a Strike drone; no tag radius."),
         ("6", "Safety filter", "Acts between drones of the same team only."),
         ("7", "Where games are played", "Realistic 3D environments; the construction-site world first."),
+        ("8", "After a tag", "Both drones leave the game by default (a game setting)."),
+        ("9", "Packaging", "Committed to the repository; Isaac Lab comes in a docker image, never copied in."),
     ]
-    y = 1.45
+    y = 1.35
     for num, head, body in rows:
         node(s, MSO_SHAPE.FLOWCHART_CONNECTOR, 0.6, y + 0.04, 0.46, 0.46, [(num, {"bold": True, "size": 13})],
              fill=PIPE)
         note(s, 1.3, y, 3.2, 0.54, (head, {"bold": True}), size=15, color=DARK, anchor=MSO_ANCHOR.MIDDLE)
         note(s, 4.6, y, 8.1, 0.54, body, size=14, anchor=MSO_ANCHOR.MIDDLE)
-        y += 0.6
-    note(s, 0.6, 5.8, 12.1, 1.3,
+        y += 0.5
+    note(s, 0.6, 6.0, 12.1, 1.2,
          [("Still open", {"bold": True, "color": DARK, "size": 14}),
-          "After a tag, does the Guard drone also leave the game · the zone's size and place in each world · "
-          "what the real drone senses its surroundings with · the licence of the construction-site asset · "
-          "a pair mask in CMU's safety filter before any contact policy can fly."],
+          "S1 plan and its gates (awaiting approval) · the zone's size and place in each world · what the real drone "
+          "senses its surroundings with · the licence of the construction-site asset · a pair mask in CMU's safety filter "
+          "before any contact policy can fly."],
          size=13, space_after=3)
 
 
@@ -652,6 +682,7 @@ def main(out):
     slide_shared_world(prs)
     slide_contact(prs)
     slide_build(prs)
+    slide_s0_results(prs)
     slide_decisions(prs)
     prs.core_properties.title = "Training drone teams in parallel: proposed Isaac Lab pipeline"
     prs.core_properties.author = "NEAR Lab, ST Engineering"

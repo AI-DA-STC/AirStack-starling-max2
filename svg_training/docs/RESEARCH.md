@@ -1,5 +1,10 @@
 # Research digest: vectorised drone-team training (as of 14 November 2026)
 
+> **How to read this.** Start with the bullets below, then §1: each finding and what the design does about it.
+> §2 is Isaac Lab, §8 published throughput (ours is measured in [S0_RESULTS.md](S0_RESULTS.md)), §9–10 environments and tags.
+> Sources are web research of 14 November 2026; §11 lists what is not verified. Paper titles keep their wording;
+> this folder's own wording rules are in [STANDARDS §2](../STANDARDS.md#2-wording).
+
 - Realistic environments change training: opponents hide behind obstacles, samples needed rise by billions, and how the policy sees obstacles decides success (0.79 vs 0.10 in one study). One baked distance field can serve every game.
 - Contact tags favour thrust-and-body-rate control: velocity-level pursuers caught 17.7% vs 88.4% for body-rate pursuers in one study, so the fast model must carry PX4's tracking lag or its contacts look too easy.
 - Velocity-command policies transfer to real quadrotors and are the least sensitive to model mismatch, so team strategy can train on a fast model of PX4's velocity loop instead of rotor physics.

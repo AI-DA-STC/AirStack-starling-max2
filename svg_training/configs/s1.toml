@@ -1,0 +1,26 @@
+# S1 gates and settings. Approved by the owner on 15 November 2026 as proposed in
+# docs/plans/2026-11-15-s1-drone-model-and-safety-filter.md (Task 1). Never edited after the first result exists.
+
+[fit_gates]                       # judged on held-out steps only, vehicle time
+vel_rms_max_mps = 0.10            # RMS of measured minus model velocity over each held-out step window
+t63_err_max_s = 0.10              # |time to 63 % of the step|, model vs measured, worst held-out step
+delay_range_s = [0.0, 0.40]       # fitted pure delay must be physically plausible
+min_held_out_steps = 8
+
+[filter_gates]
+max_abs_dv_mps = 0.02             # port vs cbf_filter.py, scenes where the original converged without emergency
+constraint_residual_max = 2.0e-3  # every pair constraint of the port, same tolerance as the original
+emergency_agreement_min = 0.99    # fraction of scenes where both agree on "emergency push-apart used"
+cross_team_corrections = 0        # Guard–Strike pairs: exactly zero correction
+scenes = 2000                     # random scenes, 2–8 drones, 1 or 2 teams, near-collision heavy
+
+[steps]                           # designed step session in the AirStack simulator (Task 5)
+speeds_mps = [0.5, 1.0, 2.0]
+axes = ["x", "y", "z"]
+hold_s = 3.0                      # wall time per step
+signs = [1, -1]
+repeats = 2
+
+[filter_bench]                    # throughput with the filter on (informational)
+cases = ["t1_5v3_open", "t1_5v3_full"]
+num_games = [1024, 4096, 16384]

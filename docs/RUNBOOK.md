@@ -1,38 +1,27 @@
 # RUNBOOK — start the pipeline fast
 
-> **What this is:** the copy-paste command sequence for one session — simulation (§A), the
-> real drone (§B; the gamepad in [B9](#b9--fly-one-real-drone-with-the-gamepad) and
-> [B10](#b10--two-real-drones-one-flown-by-hand)), goal flights (§C), post-flight logs (§D).
-> **Who should read it:** anyone whose machine is already set up (README → "Setting up AirStack
-> on a NEW machine") and who just wants to **run** things. No background, no debugging — that
-> lives in the project pages ([MILESTONES.md](MILESTONES.md) is the index) and
-> [TROUBLESHOOTING.md](TROUBLESHOOTING.md) (symptom → fix).
-> Every code block says where it runs. **Never paste across a `connect` line** — it opens a
-> new shell and swallows what follows.
->
-> ⚠️ **Branch note (2026-10-21):** this runbook describes CMU's `yikuan/SVG_ground_control_dev`
-> @ `b21d28c` (vendored 2026-10-20 — [MIGRATION.md](MIGRATION.md) §11; the release line
-> `yikuan/SVG_ground_control` @ `cf719f0` was our 2026-10-07 snapshot). **Sim (§A) is validated
-> in part** — ledger in [record/LEDGER.md](record/LEDGER.md). **Real flights on this
-> branch:** one drone ([#33](record/LEDGER.md), 2026-11-11) and two drones with the collision filter
-> ([#35](record/LEDGER.md), 2026-11-12, [C9](#c9--two-real-drones-with-the-collision-filter-cbf)), the gamepad with one drone ([#36](record/LEDGER.md), [B9](#b9--fly-one-real-drone-with-the-gamepad)) and one drone hand-flown at a hovering one ([#37](record/LEDGER.md), [B10](#b10--two-real-drones-one-flown-by-hand)), both 2026-11-13. Formations and random goals are unflown. What changed for a pilot: [MIGRATION.md](MIGRATION.md) §5.
+| Session | SIM or REAL | Go to |
+|---|---|---|
+| Fly in simulation with the four-tab window | SIM | [A](#a--fly-in-simulation--sim-validated-in-part-on-this-branch-recordledgermd) |
+| Fly the simulation with the keyboard, one drone | SIM | [Keyboard teleop](../localisation/README.md#fly-it-with-the-keyboard-one-drone-sim-only) |
+| One real drone, takeoff and land from the commander | REAL | [B](#b--real-drone-session-mocap-room) |
+| One real drone on the gamepad | REAL | [B9](#b9--fly-one-real-drone-with-the-gamepad) |
+| Two real drones, one flown by hand | REAL | [B10](#b10--two-real-drones-one-flown-by-hand) |
+| One real drone flying to commanded goals | REAL | [C](#c--goal-flights-fly-to-commanded-waypoints) |
+| Two real drones with the collision filter | REAL | [C9](#c9--two-real-drones-with-the-collision-filter-cbf) |
+| Pull and review the PX4 logs after a flight | REAL | [D](#d--post-flight--pull--review-the-px4-logs) |
 
-*(Unfamiliar term? → [GLOSSARY.md](GLOSSARY.md))*
+For anyone whose machine is already set up. Every code block says where it runs. Unfamiliar term? See [GLOSSARY.md](GLOSSARY.md).
 
 **Prompt rule:** `jeremychia@…$` = laptop · `root@…#` = inside the robot container (the docker
 container that holds the ROS 2 workspace) · `starling2-max…$` = on the drone (adb/ssh) ·
 `root@…:/exploration#` = the exploration container (camera-world runs — [localisation/README.md](../localisation/README.md)).
 
-**Two ways into the containers.** Pick one per session:
+**Never paste across a `connect` line.** It opens a new shell and swallows what follows.
 
-| Way | Laptop command | What opens | Use it for |
-|---|---|---|---|
-| **Sim session (tabs)** | `~/AirStack-starling-max2/tools/sim_terminals.sh` | ONE Terminator window, four tabs — **Isaac Sim · Interfaces · Commander · Cockpit** — each already inside its container, each printing its own commands | the sim (§A) |
-| **tmux `bringup` session** | `cd ~/AirStack-starling-max2/AirStack && ./airstack.sh connect robot` | the container's tmux session: **8 panes** — pane 0 top-left, 1–4 across the top, 5–7 along the bottom — every one a container shell with the workspace sourced | the real drone (§B/§C); §A without Terminator |
+The `bringup` tmux session has 8 panes: pane 0 top-left, 1–4 across the top, 5–7 along the bottom. Each is a container shell with the workspace sourced. Sections B and C say "pane N". Section A says "<name> tab".
 
-tmux moves: `Ctrl-b` then an arrow key switches panes; `Ctrl-b d` detaches; the session
-survives closing the terminal (`connect` again to return). One long-running thing per
-tab or pane. §B/§C say "pane N"; §A says "<name> tab".
+tmux moves: `Ctrl-b` then an arrow key switches panes. `Ctrl-b d` detaches. The session survives closing the terminal (`connect` again to return).
 
 ---
 

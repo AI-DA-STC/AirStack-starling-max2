@@ -73,18 +73,17 @@ evidence: [CLAUDE.md](../CLAUDE.md).
 
 ## 4 · Point PX4 at the laptop (uXRCE-DDS provisioning)
 
-- [ ] Pick this drone's **UNIQUE DDS domain ID** — every additional drone gets its own domain (drone_1 = 1, so drone_2 = 2, …); record it in CONFIG.md §Protocol constants — CONFIG.md "DDS domain" row / archived MILESTONES M3-A step 3 multi-drone rule.
+- [ ] DDS domain: **`1` for every drone.** All lab drones share domain 1. What tells them apart is `MAV_SYS_ID` (the item above). CONFIG.md "DDS domain" row.
 - [ ] **`target_system` = this drone's `MAV_SYS_ID`** (PX4 param, QGC → Parameters; read back 2026-11-12, `drone_1` = 1 and `drone_2` = 2 (table in [CONFIG.md](CONFIG.md)); `target_systems:=` must match). For drone_N set `MAV_SYS_ID = N` so QGC tells the fleet apart, and launch its interface with `target_systems:=` matching (defaults to the trailing number of the name: `drone_2` → 2). A mismatch means PX4 **silently drops every arm/takeoff/land command — no error, no ACK** — [MIGRATION.md](MIGRATION.md) §5. Record it in CONFIG.md §Protocol constants. The provisioning script does not set `MAV_SYS_ID`.
 - [ ] Push the **new** script (rewritten on this branch: `px4-` wrapper, 60 s boot retry loop, `svg-microdds-watchdog` service): `adb push AirStack/robot/ros_ws/src/svg_ground_control/scripts/voxl_setup_real_drone.sh /usr/bin/` then `chmod +x` it on the drone.
 - [ ] From the laptop, log in to the drone you are provisioning: `ssh root@<DRONE_IP>` (IPs and password in [CONFIG.md](CONFIG.md)).
-- [ ] Run it on the drone: `voxl_setup_real_drone.sh drone_N <LAPTOP_IP> <UNIQUE_DOMAIN> 8888` (laptop IP reachable from the drone segment, CONFIG.md; port must stay 8888). Then **`reboot`** — on these airframes `systemctl restart voxl-px4` (which the script's older form did) leaves the SLPI flight core dead — [CLAUDE.md](../CLAUDE.md) iron rule 7.
+- [ ] Run it on the drone: `voxl_setup_real_drone.sh drone_N <LAPTOP_IP> 1 8888` (laptop IP reachable from the drone segment, CONFIG.md; port must stay 8888). Then **`reboot`** — on these airframes `systemctl restart voxl-px4` (which the script's older form did) leaves the SLPI flight core dead — [CLAUDE.md](../CLAUDE.md) iron rule 7.
   The argument order (explained in the paragraph below this list), and the line for each of the two lab Starlings:
   ```bash
   voxl_setup_real_drone.sh <BODY_NAME> <LAPTOP_IP> <DOMAIN_ID> <AGENT_PORT>
   # newer Starling (D0012, 10.40.2.10):       voxl_setup_real_drone.sh drone_2 <LAPTOP_IP> 1 8888
   # older Starling (WiFi dongle, 10.40.2.11):  voxl_setup_real_drone.sh drone_1 <LAPTOP_IP> 1 8888
   ```
-  Both lab drones fly on domain `1`, as shown. The unique-domain rule above is an open owner item.
 - [ ] After the reboot: `systemctl status svg-microdds-watchdog` must be `active`. If the drone also carries our earlier `voxl-dds-retry.service` (Starling 1 does), **keep only one** — both restart the uXRCE client; running both is untested (⏳ STE decision → CONFIG.md).
 - [ ] Expect `Running, disconnected` from `px4-microdds_client status` until the laptop agent is up — the watchdog keeps retrying — [RUNBOOK.md](RUNBOOK.md#b--real-drone-session-mocap-room) §B (the drone-link step).
 - [ ] Start the agent in the robot container (`MicroXRCEAgent udp4 -p 8888 -v4`) and verify on the drone: `px4-microdds_client status` → **Running, connected**, Agent IP = laptop; and on the laptop the interface startup line `PX4Interface initialized (uXRCE-DDS), target_system=N` — RUNBOOK §B (the drone-link and interfaces steps).
@@ -94,7 +93,7 @@ evidence: [CLAUDE.md](../CLAUDE.md).
 needed once per drone every time the GC laptop (or its IP) changes, **and once after switching
 to this branch** (the script is rewritten: `px4-` wrapper, boot retry loop, and a new
 `svg-microdds-watchdog` service). `<BODY_NAME>` = the Motive rigid-body name (`drone_1`),
-`<DOMAIN_ID>` = the drone's DDS domain (`1` for drone_1 — unique per drone), `<AGENT_PORT>` =
+`<DOMAIN_ID>` = the DDS domain (`1` for every drone), `<AGENT_PORT>` =
 `8888` (must match the agent in RUNBOOK §B's drone-link step). Push the *new* script first if the drone
 still has the old one
 (`adb push AirStack/robot/ros_ws/src/svg_ground_control/scripts/voxl_setup_real_drone.sh /usr/bin/`).
@@ -152,7 +151,7 @@ command the vehicle. Full guide: [BASESTATION.md](BASESTATION.md) §8.
 - [ ] Agent `session established` and all 24 `/drone_N/fmu/*` topics on the laptop — [RUNBOOK.md](RUNBOOK.md#b--real-drone-session-mocap-room) §B (the drone-link step).
 - [ ] `px4_interface` startup line shows `target_system=N` — RUNBOOK §B (the interfaces step).
 - [ ] Mocap pose: `ros2 topic hz /drone_N/pose` ≈ 240 Hz in the robot container, tracks the hand-carried drone — MOCAP.md.
-- [ ] EKF2 fusion in → out: `fmu/in/vehicle_visual_odometry` feeding, `fmu/out/vehicle_odometry` positions match mocap within ~2 cm — RUNBOOK §B (the "mocap into PX4" and "EKF2 output, commander status" steps). RUNBOOK prints the output only: the in/out comparison has no command there yet (open owner item).
+- [ ] EKF2 fusion in → out: `fmu/in/vehicle_visual_odometry` feeding, `fmu/out/vehicle_odometry` positions match mocap within ~2 cm — RUNBOOK §B (the "mocap into PX4" and "EKF2 output, commander status" steps).
 - [ ] Frame hand-check: carry North/East/up, `pos[0]`↑ / `pos[1]`↑ / `pos[2]`↓ (NED) — a wrong frame flies into a wall — RUNBOOK §B (the frame hand-check step).
 - [ ] `ros2 topic echo /svg/commander_status --once` shows `drone_N` with `"odom_fresh": true`, `"state": "IDLE"` — [BASESTATION.md](BASESTATION.md) §4.
 - [ ] **Basestation** 3D view tracks the hand-carried drone; Agent State row `IDLE · odom fresh` (`real_interfaces.launch.py drones:=drone_N` running) — NEAR-818–823 ([projects/HTX-R2.md](projects/HTX-R2.md)) / RUNBOOK §B (the Basestation check step). (RViz, Fixed Frame `world`, still works as a fallback.)
@@ -181,7 +180,7 @@ command the vehicle. Full guide: [BASESTATION.md](BASESTATION.md) §8.
 |---|---|
 | Drone name / serial | drone_N · D00xx |
 | Image / voxl-suite | |
-| DDS domain ID (unique!) | |
+| DDS domain ID (`1`, shared) | |
 | `MAV_SYS_ID` / `target_system` (unique!) | |
 | uXRCE client keeper (`svg-microdds-watchdog` or `voxl-dds-retry`) | |
 | LED strip fitted + `svg-led` active (optional) | |

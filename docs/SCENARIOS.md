@@ -326,7 +326,7 @@ three `MicroXRCEAgent udp4 -p 8888|8889|8892 -v4` (one per drone, own terminal) 
 `real_interfaces.launch.py drones:=drone_1,drone_2,drone_3` → `ground_control.launch.py
 config:=…/goal_tracking.yaml scenario:=random_goals use_mocap:=true` (the file ships `goal` at
 `b21d28c`) → `takeoff` → `start`. Our rig also needs a mocap
-body + EKF2 params + unique DDS domain per drone ([MOCAP.md](MOCAP.md) §6.3),
+body + EKF2 params + its own `MAV_SYS_ID` on the shared DDS domain 1 ([MOCAP.md](MOCAP.md) §6.3),
 `cbf_max_speed_mps` off 10.0, and arena = the net.
 
 ## 8 · RC-intruder squeeze — `squeeze_rc_intruder.yaml`

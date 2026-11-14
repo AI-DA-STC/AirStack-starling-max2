@@ -81,7 +81,7 @@ line. The drone auto-joins SSID `StarlingMax2` at boot. (WiFi missing after rebo
 | Value | Current | Used by |
 |---|---|---|
 | uXRCE agent port | `8888` | Setup script arg **and** `MicroXRCEAgent udp4 -p 8888` — must match |
-| DDS domain | `1` (= drone_1) | Setup script arg; container `.bashrc` pins it; sim uses the same. Each ADDITIONAL drone must get a UNIQUE domain ID and its own subnet IP when provisioned |
+| DDS domain | `1` (= drone_1) | Setup script arg; container `.bashrc` pins it; sim uses the same. Every drone uses domain `1`; drones differ by `MAV_SYS_ID` and their own subnet IP |
 | NatNet ports | `1510` (cmd) / `1511` (data) | Motive defaults; per-session check: `ss -ulpn \| grep -E ':(1510\|1511)'` must be clear |
 | **`target_system` = `MAV_SYS_ID`** (new 2026-10-07) | Read back 2026-11-12: `drone_1` = 1, `drone_2` = 2 (table in "The two Starlings" above); `target_systems:=` must match | `px4_interface` stamps it on every command; `real_interfaces.launch.py` derives it from the drone name (`drone_2` → 2) or takes `target_systems:=1,2,…`. **Mismatch ⇒ PX4 silently drops every arm/takeoff/land and sends no ACK.** Each additional drone needs a unique `MAV_SYS_ID` |
 | Foxglove bridge port | `8765` (`foxglove_port:=` on the commander launch; `address 0.0.0.0`) | Foxglove Studio connects to `ws://localhost:8765` — robot container is host-networked, so "localhost" on the laptop works ([BASESTATION.md](BASESTATION.md) §2) |

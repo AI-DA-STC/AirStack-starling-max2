@@ -211,7 +211,7 @@ On 2026-11-13 `drone_2` was hand-flown with the gamepad at the hovering `drone_1
 ![Foxglove panel during the 18:00 two-drone flight: both keep-out spheres blue, CBF correcting both drones](../../pictures/cbf_two_drones_real_panel.png)
 *Figure 1. Foxglove panel, 18:00 two-drone flight, 2026-11-12. The blue spheres in the 3D view are the two keep-out bubbles (radius 0.80 m); the panel reads "CBF r 0.80 · Live 0.80 m" and "CBF correcting drone_1, drone_2", and the Agent State table's CBF column reads "correcting" for both. Frame at 37.5 s of `videos/cbf_check_ui.mp4`, cut with `ffmpeg -ss 37.5`; [#35](../record/LEDGER.md).*
 
-Each airframe: unique `MAV_SYS_ID` / `target_system`, DDS domain and Motive body ([DRONE_SETUP.md](../DRONE_SETUP.md)).
+Each airframe: unique `MAV_SYS_ID` / `target_system` and Motive body, on the shared DDS domain 1 ([DRONE_SETUP.md](../DRONE_SETUP.md)).
 
 Open: formations, random goals, both drones moving, a crossing and a recording at radius 0.55 (NEAR-951); three drones (NEAR-841); the older Starling's motor fault (hazard 6). Re-run: [RUNBOOK.md](../RUNBOOK.md#c9--two-real-drones-with-the-collision-filter-cbf) C9.
 

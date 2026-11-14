@@ -180,7 +180,7 @@ If not: a stale laptop IP on a drone means no session. Re-provision it ([DRONE_S
 ```bash
 ros2 topic hz /drone_1/fmu/out/vehicle_status
 ```
-Must see: a steady rate. Ctrl-C after each reading. If not: is pane 1 running? ([TROUBLESHOOTING.md](TROUBLESHOOTING.md), "`/fmu/*` topics look dead")
+Must see: about 30 Hz. Ctrl-C after each reading. If not: is pane 1 running? ([TROUBLESHOOTING.md](TROUBLESHOOTING.md), "`/fmu/*` topics look dead")
 
 **9 · Pane 4 · pose alive**
 ```bash
@@ -220,16 +220,17 @@ Must see: about the mocap rate (mocap_bridge alive). Ctrl-C after the reading.
 
 **14 · Pane 4 · EKF2 output, commander status.** ⚠️ Copy-paste these: arrow-key editing `in/` into `out/` gives a nonexistent `/fmu/inout/…` topic.
 ```bash
+ros2 topic echo /drone_1/fmu/in/vehicle_visual_odometry --once --qos-reliability best_effort
 ros2 topic echo /drone_1/fmu/out/vehicle_odometry --once --qos-reliability best_effort --qos-durability volatile
 ros2 topic echo /svg/commander_status --once
 ```
-Must see: a position is printed (EKF2 output alive). The fusion gate is the banner `EKF EV FUSED` in step 16.
+Must see: the `out/…` position matches the `in/…` position within a few cm (EKF2 is fusing). `in/…` velocities read `.nan`: by design.
 Must see: the status shows `drone_1`, `"odom_fresh": true`, `"state": "IDLE"`. If not IDLE: `land` once, drone on the floor ([TROUBLESHOOTING.md](TROUBLESHOOTING.md), "Takeoff refused").
 Every `/fmu/*` echo needs `--qos-reliability best_effort` or it looks dead. `ros2 topic hz` does not accept that flag: run hz bare.
 
 **15 · Floor · frame hand-check** (first flight of the day, and after any Motive recalibration or ground-plane change)
 
-Carry the drone and re-run step 14's first echo at each position.
+Carry the drone and re-run step 14's second echo (`out/…`) at each position.
 
 Must see: North → `position[0]`↑, East → `[1]`↑, up → `[2]`↓. If not: wrong axes = DO NOT FLY ([PREFLIGHT.md](PREFLIGHT.md)).
 
@@ -367,7 +368,7 @@ If not: a stale laptop IP on a drone means no session. Re-provision it ([DRONE_S
 ```bash
 ros2 topic hz /drone_2/fmu/out/vehicle_status
 ```
-Must see: a steady rate. Ctrl-C after each reading. If not: is pane 1 running? ([TROUBLESHOOTING.md](TROUBLESHOOTING.md), "`/fmu/*` topics look dead")
+Must see: about 30 Hz. Ctrl-C after each reading. If not: is pane 1 running? ([TROUBLESHOOTING.md](TROUBLESHOOTING.md), "`/fmu/*` topics look dead")
 
 **9 · Pane 4 · pose alive**
 ```bash
@@ -566,7 +567,7 @@ ros2 topic hz /drone_1/fmu/out/vehicle_status
 ```bash
 ros2 topic hz /drone_2/fmu/out/vehicle_status
 ```
-Must see: a steady rate. Ctrl-C after each reading. If not: is pane 1 running? ([TROUBLESHOOTING.md](TROUBLESHOOTING.md), "`/fmu/*` topics look dead")
+Must see: about 30 Hz. Ctrl-C after each reading. If not: is pane 1 running? ([TROUBLESHOOTING.md](TROUBLESHOOTING.md), "`/fmu/*` topics look dead")
 
 **9 · Pane 4 · pose alive**
 ```bash
@@ -791,7 +792,7 @@ If not: a stale laptop IP on a drone means no session. Re-provision it ([DRONE_S
 ```bash
 ros2 topic hz /drone_1/fmu/out/vehicle_status
 ```
-Must see: a steady rate. Ctrl-C after each reading. If not: is pane 1 running? ([TROUBLESHOOTING.md](TROUBLESHOOTING.md), "`/fmu/*` topics look dead")
+Must see: about 30 Hz. Ctrl-C after each reading. If not: is pane 1 running? ([TROUBLESHOOTING.md](TROUBLESHOOTING.md), "`/fmu/*` topics look dead")
 
 **9 · Pane 4 · pose alive**
 ```bash
@@ -831,16 +832,17 @@ Must see: about the mocap rate (mocap_bridge alive). Ctrl-C after the reading.
 
 **14 · Pane 4 · EKF2 output, commander status.** ⚠️ Copy-paste these: arrow-key editing `in/` into `out/` gives a nonexistent `/fmu/inout/…` topic.
 ```bash
+ros2 topic echo /drone_1/fmu/in/vehicle_visual_odometry --once --qos-reliability best_effort
 ros2 topic echo /drone_1/fmu/out/vehicle_odometry --once --qos-reliability best_effort --qos-durability volatile
 ros2 topic echo /svg/commander_status --once
 ```
-Must see: a position is printed (EKF2 output alive). The fusion gate is the banner `EKF EV FUSED` in step 16.
+Must see: the `out/…` position matches the `in/…` position within a few cm (EKF2 is fusing). `in/…` velocities read `.nan`: by design.
 Must see: the status shows `drone_1`, `"odom_fresh": true`, `"state": "IDLE"`. If not IDLE: `land` once, drone on the floor ([TROUBLESHOOTING.md](TROUBLESHOOTING.md), "Takeoff refused").
 Every `/fmu/*` echo needs `--qos-reliability best_effort` or it looks dead. `ros2 topic hz` does not accept that flag: run hz bare.
 
 **15 · Floor · frame hand-check** (first flight of the day, and after any Motive recalibration or ground-plane change)
 
-Carry the drone and re-run step 14's first echo at each position.
+Carry the drone and re-run step 14's second echo (`out/…`) at each position.
 
 Must see: North → `position[0]`↑, East → `[1]`↑, up → `[2]`↓. If not: wrong axes = DO NOT FLY ([PREFLIGHT.md](PREFLIGHT.md)).
 
@@ -885,7 +887,7 @@ ros2 service call /swarm_commander/start   std_srvs/srv/Trigger
 ```
 `start` begins the scenario and is REQUIRED before goals respond.
 
-**20 · Pane 4 · one goal** (or the Basestation's Goal card: `drone_1`, x y z, Send Goal. Its frame note must read `commander`, not "unconfirmed")
+**20 · Pane 4 · one goal** (or the Basestation's Goal card: `drone_1`, x y z, speed left blank (the config's default), Send Goal. Its frame note must read `commander`, not "unconfirmed")
 
 Coordinates are ABSOLUTE (same numbers as `/drone_1/pose`). Each publish REPLACES the goal.
 Keep goals inside the fence (±2 m in `goal_single_ours.yaml`). Not measured: how far the drone goes past the wall.
@@ -894,20 +896,14 @@ ros2 topic pub --once /svg/drone_1/goal_command geometry_msgs/msg/PoseStamped \
   "{header: {frame_id: map}, pose: {position: {x: 0.5, y: 0.0, z: 1.0}}}"
 ```
 
-**21 · Pane 4 · speed**
-```bash
-ros2 topic pub --once /svg/drone_1/speed_command std_msgs/msg/Float32 "{data: 0.8}"
-```
-Expect a `speed_cap_note` in the commander log (pane 3) if the requested speed cannot be reached.
-
-**22 · Pane 4 · square loop, two laps**
+**21 · Pane 4 · square loop, two laps**
 ```bash
 G() { ros2 topic pub --once /svg/drone_1/goal_command geometry_msgs/msg/PoseStamped "{header: {frame_id: map}, pose: {position: {x: $1, y: $2, z: $3}}}"; }
 for lap in 1 2; do for c in "-0.5 -0.5" "0.5 -0.5" "0.5 0.5" "-0.5 0.5"; do G $c 1.0; sleep 5; done; done
 ```
 The loop holds pane 4 for about 40 s and sends a new goal every 5 s. To stop early: the panel's Hold All or Safety Stop, or Ctrl-C the loop first, then `hold` or `land` in pane 4.
 
-**23 · Pane 4 · land**
+**22 · Pane 4 · land**
 ```bash
 ros2 service call /swarm_commander/land std_srvs/srv/Trigger
 ```
@@ -916,7 +912,7 @@ At touchdown on this software the Interface column shows `disarm ✗` and QGroun
 
 **Shutdown.** Only after QGroundControl says DISARMED: Ctrl-C panes 3, 2, 1 and the mocap terminal.
 
-**24 · Laptop, drone on USB-C · stack down, drone off**
+**23 · Laptop, drone on USB-C · stack down, drone off**
 ```bash
 cd ~/AirStack-starling-max2/AirStack && ./airstack.sh down
 adb shell shutdown now
@@ -995,7 +991,7 @@ ros2 topic hz /drone_1/fmu/out/vehicle_status
 ```bash
 ros2 topic hz /drone_2/fmu/out/vehicle_status
 ```
-Must see: a steady rate. Ctrl-C after each reading. If not: is pane 1 running? ([TROUBLESHOOTING.md](TROUBLESHOOTING.md), "`/fmu/*` topics look dead")
+Must see: about 30 Hz. Ctrl-C after each reading. If not: is pane 1 running? ([TROUBLESHOOTING.md](TROUBLESHOOTING.md), "`/fmu/*` topics look dead")
 
 **8 · Pane 4 · pose alive**
 ```bash

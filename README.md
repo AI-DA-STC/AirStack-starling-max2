@@ -92,6 +92,7 @@ Milestone by milestone, with evidence: [record/LEDGER.md](docs/record/LEDGER.md)
 | [GLOSSARY.md](docs/GLOSSARY.md) · [AI_ASSIST.md](docs/AI_ASSIST.md) | Terms · working with the assistant |
 | [CLAUDE.md](CLAUDE.md) | The assistant's brief and the iron rules |
 | [localisation/](localisation/README.md) | Camera-world sim runs: construction-site world, stereo VO (cuVSLAM), scoring, and the one-drone [keyboard session](localisation/README.md#fly-it-with-the-keyboard-one-drone-sim-only). A sibling of `AirStack/`, never inside CMU's tree |
+| [svg_training/](svg_training/README.md) | Training pipeline for the Strike vs Guard game: thousands of simulated games at once on one GPU (Isaac Lab in docker). Training simulator only; nothing in it flies. A sibling of `AirStack/` |
 | [AirStack/](AirStack/) | CMU AirStack snapshot, `yikuan/SVG_ground_control_dev` @ `b21d28c` ([its README](AirStack/README.md)) |
 | [`starling_1_indoor_params.params`](starling_1_indoor_params.params) | The drone's parameter set (QGC export) |
 | [tools/](tools/) · [patches/](patches/) | Sim session launcher, docs checker, the real-drone gamepad check [`tools/real.sh`](tools/README.md#real-drone-the-gamepad-check) · our bug-fix patches |

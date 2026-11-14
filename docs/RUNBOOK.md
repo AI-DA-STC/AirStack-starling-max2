@@ -1162,32 +1162,17 @@ the first thing to run when "this flight behaved differently".
 |---|---|
 | `ros2` / `bws` / `rviz2` | container only (`root@`) — a sim-session tab or a `bringup` pane |
 | `docker` / `airstack.sh` / `adb` / `ip addr` / `./mocap.sh` / `./svg_teleop.sh` / `tools/real.sh` | laptop only (`jeremychia@`) |
-| Real gamepad session | [B9](#b9--fly-one-real-drone-with-the-gamepad) (one drone) · [B10](#b10--two-real-drones-one-flown-by-hand) (two drones, one by hand) — `tools/real.sh teleop drone_2` first, pad pane 5 before commander pane 3, pane 5 open until DISARMED |
-| Sim session (tabs) | `~/AirStack-starling-max2/tools/sim_terminals.sh` (laptop) → one Terminator window: Isaac Sim · Interfaces · Commander · Cockpit tabs, each inside its container with its commands printed — §A |
-| tmux `bringup` (real drone; sim alternative) | `./airstack.sh connect robot` attaches · `Ctrl-b ←→↑↓` moves · `Ctrl-b d` detaches · session survives closing the terminal |
-| `/fmu/*` topics | `echo` always needs `--qos-reliability best_effort`; `hz` takes no QoS flag in this ros2 |
-| One-message health check | `ros2 topic echo /svg/commander_status --once` — state, odometry freshness, fence, last command |
-| Long-running (leave open) | Isaac spawn (Isaac Sim tab) · mocap bridge (laptop) · QGC (laptop) · agent · interfaces · gamepad pad (pane 5) · commander — **one tab or pane each** |
 | Panic, in order | `hold` → `land` → **RC kill switch** — exact syntax: [PREFLIGHT.md](PREFLIGHT.md); the panel's Hold All / Safety Stop call the same services |
-| Troubleshooting | [TROUBLESHOOTING.md](TROUBLESHOOTING.md) |
-| Goal topics | `/svg/drone_1/goal_command` (PoseStamped, `map` frame, ABSOLUTE) · `/svg/drone_1/speed_command` (Float32) · `/svg/drone_1/goal_xyzt` (x,y,z,θ°) — after `start`, `goal` scenario only |
-| Live params | `ros2 param set /swarm_commander <name> <value>` — CBF gains, fence dynamics, goal law, teleop; others refused |
-| [SIM] **sim-only — never port to the drone** (iron rule 9) | sim airframe rate gains ×0.5, gyro filters 80/40, `LNDMC_ROT_MAX` 300 (real 30), motor lag off, MAVROS respawn, `cbf_sim.yaml` speeds 2.0 / 4.0 / 6.0 + landing settle 2.0 s / retry. Real `_ours` configs: `drone_1`, `land_settle_s` 0.0, `land_speed_mps` 0.6, `cbf_max_speed_mps` 1.0 |
 | `target_system` | must equal the drone's `MAV_SYS_ID` — check the `px4_interface` startup line; no ACK = mismatch |
 | RC takeover | straight to **MANUAL** or **kill switch** ONLY (POSCTL/ALTCTL leak commander setpoints) |
 | After landing | confirm **DISARMED** in QGC before approaching — the panel's Interface column is an ACK log, not an arming display |
 | After RC takeover | call `land` once (drone on floor) to reset the commander |
-| Container messages to ignore | `Workspace not built yet` (pre-bws) · `groups: … 992` · `unknown-robot` · `LED daemon` warnings with no strip fitted · prompt garbage `[:refused refused reached]` |
-| Drone hotspot (`uap0`, SSID `Starling_1_demo_mode` on Starling 1) | never connect the laptop to it |
 | Drone power-off | `adb shell shutdown now` (laptop) → wait ~10 s → unplug USB, then battery |
 | Drone after re-provisioning | **reboot**, never `systemctl restart voxl-px4` |
 
 ### Sim launch variants
 
-*(Moved verbatim from §A1 and §A "Alternatives to the tabs" on 2026-10-21. "The line above" =
-the §A1 Isaac spawn line.)*
-
-| Variant | Change to the line above |
+| Variant | Change to the A1 spawn line |
 |---|---|
 | No Isaac window (lighter) | `ISAAC_SIM_HEADLESS=true` |
 | CMU's Iris quad instead of the Starling | drop `DRONE_USD=…` and `PX4_VEHICLE_MODEL=…` |
@@ -1203,15 +1188,3 @@ cd ~/AirStack-starling-max2/AirStack && ./airstack.sh up && ./airstack.sh connec
 → tmux `bringup`: pane 1 = A2 (after `cd ~/AirStack/robot/ros_ws`), pane 2 = A3, pane 3 = A4.
 The old `./airstack.sh connect robot --command=bash` still gives a throw-away container shell
 outside tmux.
-
-**One-command teleop session** (laptop, from the package's `scripts/` folder — brings up
-Isaac, interfaces, commander, an RViz window and a gamepad in tmux sessions of its own — ⏳ STE;
-it passes no `teleop_controller`, so it always assumes an Xbox pad; the panel still connects
-to its commander):
-```bash
-cd ~/AirStack-starling-max2/AirStack/robot/ros_ws/src/svg_ground_control/scripts
-./svg_teleop.sh solo        # 1 sim drone + gamepad   (squeeze = 3 drones, hover = 3 drones)
-./svg_teleop.sh takeoff && ./svg_teleop.sh start      # later: land | hold | reset-fence | stop
-```
-Details and the gamepad: [TELEOP.md](TELEOP.md) §4. RViz still works as a fallback view
-(`rviz2 -d $(ros2 pkg prefix svg_ground_control)/share/svg_ground_control/config/svg_drones.rviz`).

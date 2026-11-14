@@ -68,6 +68,32 @@ Longer than that: it belongs in a record file with a link.
 - Sim and real are impossible to confuse: the tag in every milestone heading, a SIM/REAL column in every table that could mix them, and the words "observed" / "archived" (never "validated", "PASS", "done") for anything from the previous software.
 - Nothing may read as validated on the real drone that was not (iron rule 9).
 
+## 6b. Procedure pages
+
+Rules for a runbook sequence. Each step is a bold line, one small code block, then `Must see:` and, where an action is known, `If not:`.
+
+````markdown
+**13 · Pane 4 · takeoff**
+```bash
+ros2 service call /swarm_commander/takeoff std_srvs/srv/Trigger
+```
+Must see, pane 3: `holding takeoff position`.
+
+**14 · Pane 4 · start**
+```bash
+ros2 service call /swarm_commander/start   std_srvs/srv/Trigger
+```
+Must see, pane 3: `drone_2: sticks live`. If not: stop table, "Sticks do nothing".
+````
+
+- Keep only: a command; what to see; what to do if not; a hazard at its step; the world line; a "not flown", "not re-derived" or "not set" note. The rest moves to the page that owns it. A step instruction is at most 160 characters.
+- One block per place. `takeoff`, `start` and `land` never share a block. No block continues past a `connect` line.
+- `If not:` cites an existing stop-table or TROUBLESHOOTING row. Never write one from memory.
+- The stop table starts `**Stop table.**` and sits directly above `takeoff`. Go/no-go is one line, "Every box on PREFLIGHT.md", plus only what this session adds.
+- "What to expect" is at most five rows, with its "not flown" marks. Results and videos go to HTX-R2.md.
+- Wrap the opening steps shared by all real sequences in `<!-- shared-opening -->` and `<!-- /shared-opening -->`. They read the same everywhere.
+- The checker rules for these are added by this project's last task.
+
 ## 7. After a test run
 
 1. Run the test with its ledger number and issue: `tools/sim.sh test <name> --issue NEAR-nnn <new_run_name>` (it takes the next free ledger number) (the hover test, until it migrates: `LEDGER=<next #> ISSUE=NEAR-nnn tools/sim_hover_step_run.sh all <new_run_name>`).

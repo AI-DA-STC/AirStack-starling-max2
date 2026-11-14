@@ -120,7 +120,7 @@ They apply **on the next control tick**. Anything not live is refused with a rea
 2026-10-19/20 — §5), `fence_keep_in_gain`, `fence_brake_accel_mps2`, `fence_margin_m`,
 `scenario_speed_mps`, `goal_accel_mps2`, `goal_settle_s`, `goal_velocity_only_settle_s`.
 **Not live:** `cbf_external_velocity_gain`, `land_speed_mps`, every fence **box**, every name
-list, every scenario geometry — yaml edit + relaunch (RUNBOOK §C7). Three gotchas:
+list, every scenario geometry — yaml edit + relaunch ([CONFIG.md](CONFIG.md), "Editing a config"). Three gotchas:
 
 - **`POSITIVE_PARAMS`** (the three CBF gains + `fence_keep_in_gain`, `teleop_max_speed_mps`,
   `goal_accel_mps2`) are refused if **≤ 0** or non-finite — `1/gain` is the envelope's lag, so
@@ -404,7 +404,7 @@ rows that `b21d28c` fixed say so).
 | An exempt/RC drone is shoved backwards instead of pushing through | Its exemption is not in effect. Check the startup roster line for `/cbf-exempt` on that name, that it is **ACTIVE** (climb-out and landing are never exempt — `SwarmCommander.control_loop`), and that `cbf_exempt_drones` spells the name exactly. |
 | Holders yield **late**, only once the intruder is on top of them | The intruder's fixed row has zero velocity: its odometry is stale (external) so the filter thinks it is hovering (`control_loop`). Check `ros2 topic hz /drone_3/odometry_conversion/odometry`. |
 | Everyone freezes mid-air when only the RC drone misbehaved | `fence_behavior: hold_all` now latches on airborne external/teleop drones too. `land` → `/swarm_commander/reset_fence` → `takeoff` → `start`. |
-| `ros2 param set` refused ("read once at startup" / "must be finite and > 0") | Not a live parameter — the message lists what is; or the `POSITIVE_PARAMS` guard rejecting ≤ 0 (`goal_settle_s` alone may be 0). Yaml + relaunch (RUNBOOK §C7). Note a live radius bump does **not** re-space goals (§3). |
+| `ros2 param set` refused ("read once at startup" / "must be finite and > 0") | Not a live parameter — the message lists what is; or the `POSITIVE_PARAMS` guard rejecting ≤ 0 (`goal_settle_s` alone may be 0). Yaml + relaunch ([CONFIG.md](CONFIG.md), "Editing a config"). Note a live radius bump does **not** re-space goals (§3). |
 | `land` → drones sit on the floor 2 s, then `disarm -> success=False`, retry lines | Working as designed (§5): the settle, then up to 5 retries 1 s apart; PX4's own `COM_DISARM_LAND` often disarms first. If the retries run out the commander goes IDLE with an ERROR — check arming in the sim's `mavros/state` (QGC on the real drone). Floor rocking blocking the land detector was ledger #9 (sim-only `LNDMC_ROT_MAX` 300). |
 | Real drone arms and then just hovers, commands look fine | `real_command_mode: trajectory` with a stale `px4_interface`. `bws --packages-select px4_interface`, re-source, relaunch. |
 | Fake odometry on real topics, drone lurches | A `test/functional_*.py` is running. **Never with the real stack up** — they publish fake odometry on the live topic names. Kill it and restart the stack. |

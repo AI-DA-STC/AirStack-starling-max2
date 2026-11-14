@@ -706,124 +706,202 @@ Then wait about 10 s, and unplug USB and the battery. Then the other drone: plug
 
 ## C · GOAL FLIGHTS (fly to commanded waypoints)
 
-Flown here ([#33](record/LEDGER.md), [#35](record/LEDGER.md)). Seen on the real drone: goal legs and the hold at the +x `keep_in` wall with one drone (NEAR-829, NEAR-830,
-[#33](record/LEDGER.md)), goals with two drones and the collision filter (C9, [#35](record/LEDGER.md)). The CBF radius was changed
-live from the panel ([#37](record/LEDGER.md), NEAR-831). No other live gain change is recorded. Not flown: where a hold stops the
-drone (NEAR-832). Not measured: the speed profile and the distance past the wall ([#33](record/LEDGER.md)).
-Issues: [projects/HTX-R2.md](projects/HTX-R2.md).
+> **WORLD: REAL DRONE.** One Starling (`drone_1`), `goal_single_ours.yaml`: takeoff, fly to commanded goals, land. Motion-capture positioning (mocap). [PREFLIGHT.md](PREFLIGHT.md) gates every takeoff. Gates before the next real flight: [MILESTONES.md](MILESTONES.md#before-the-next-real-flight) "Before the next real flight". What was seen: [HTX-R2.md, M4](projects/HTX-R2.md#m4--goal-flights-with-the-braking-fence--real-drone).
+> Which world: Isaac container NOT running, no `mavros_node` and no `svg_teleop` in `ros2 node list`. ⚠️ Never start Isaac Sim during a real session: the sim publishes on the real drone's topic names.
+> **Panic:** `hold` (pane 4, or the panel's Hold All) brakes to a stop point ahead and holds there, still ARMED. Then `land` (or the panel's Safety Stop · Land All, two clicks). Where a hold stops the drone is not flown (NEAR-832).
+> Anything scary: KILL (ch8), then `land` once. Takeover: ch6 MANUAL only.
 
-> **🚨 EMERGENCY** — `ros2 service call /swarm_commander/hold  std_srvs/srv/Trigger`
-> · `ros2 service call /swarm_commander/land  std_srvs/srv/Trigger`
-> · panel: **Hold All** / **Safety Stop · Land All** (two clicks)
-> · **KILL = ch8 on the RC — instant motor cut**
-> · **takeover = flip ch6 to MANUAL, never Position/Altitude**
+<!-- shared-opening -->
 
-Same session bring-up as §B steps 0–7 — **only step 6's config changes**. ⚠️ The shipped
-goal configs are **not usable as-is on our rig** ([MIGRATION.md](MIGRATION.md) §7):
+Every drone powered and booted. Laptop or its IP changed since the last session: re-provision ([DRONE_SETUP.md](DRONE_SETUP.md#4--point-px4-at-the-laptop-uxrce-dds-provisioning) §4).
+Then REBOOT every drone, never `systemctl restart voxl-px4` (iron rule 7).
 
-| Config | Shipped as | What to do |
-|---|---|---|
-| `swarm_real.yaml` | 3 real drones, hover scenario, `hold_all` fence, z 1.2 m | use **`swarm_real_ours.yaml`** (`drone_1`, z 0.5, `land_speed_mps` 0.6, ±2 m fence) — the §B hover config |
-| `goal_single.yaml` | `drone_1`, `goal` scenario, **`drone_1` CBF-exempt** (filter off), `keep_in` fence `[-4.5,-5.2,0]..[5.5,4.5,3.0]`, teleop fence on, `cbf_max_speed_mps` **10.0**, `land_speed_mps` 0.8 (targeted `drone_2` at `cf719f0`; `drone_1` since the 10-20 bump) | use **`goal_single_ours.yaml`** (`drone_1`, ±2 m fence, speeds 1.0, `goal_accel` 3.0, `keep_in` brake 4 / gain 2, `land_speed_mps` 0.6) — the §C config |
-| `goal_tracking.yaml` | 3 real drones, `goal` scenario (`random_goals` at `cf719f0`; `goal` again since the 10-20 bump), `keep_in`, 10 m/s | not for one drone — M7 material ([SCENARIOS.md](SCENARIOS.md) §6–7) |
+**1 · Laptop · no sim, mocap ports clear, every drone answers**
+```bash
+docker ps | grep isaac
+ss -ulpn | grep -E ':(1510|1511)' || echo "ports clear"
+ping -c2 10.40.2.11
+```
+Must see: nothing from `docker ps`, then `ports clear`, then ping replies.
+If not: ports → `./mocap.sh stop`, re-check. No reply → IPs drift: [CONFIG.md](CONFIG.md) table.
 
-Both `*_ours.yaml` files live beside CMU's under
-`AirStack/robot/ros_ws/src/svg_ground_control/config/` (rules in C7); any change to them
-goes into [CONFIG.md](CONFIG.md).
+<!-- /shared-opening -->
 
-**C1 — Launch.** Pane 3 (replaces step 6's launch command):
+**2 · Laptop · today's IPs, Motive PC answers.** `<MOTIVE_IP>`: the network table in [CONFIG.md](CONFIG.md).
+```bash
+ip -4 -brief addr
+ping -c2 <MOTIVE_IP>
+```
+Must see: `enp…` on `192.168.9.x` (mocap path) and `wlp…` on `10.40.2.x` (drone segment). Then ping replies.
+
+<!-- shared-opening -->
+
+**3 · Laptop · robot container up**
+```bash
+cd ~/AirStack-starling-max2/AirStack
+./airstack.sh up robot-desktop
+```
+
+**4 · Laptop, new terminal · QGroundControl**
+```bash
+~/QGroundControl-x86_64.AppImage
+```
+Must see: `drone_1` in QGroundControl. Keep it visible. If not: [TROUBLESHOOTING.md](TROUBLESHOOTING.md), "QGC shows no vehicle" and "Two drones on, QGC shows only one".
+
+**5 · Laptop, new terminal · mocap.** A Motive rigid body must exist for each drone (`drone_1`) before this starts ([MOCAP.md](MOCAP.md)).
+```bash
+cd ~/AirStack-starling-max2 && ./mocap.sh
+```
+Leave running.
+
+**6 · Laptop · into the container**
+```bash
+cd ~/AirStack-starling-max2/AirStack && ./airstack.sh connect robot
+```
+Must see: tmux "bringup", prompt `root@…#`.
+
+**7 · Pane 1 · the drone link**
+```bash
+MicroXRCEAgent udp4 -p 8888 -v4
+```
+Must see: `session established`. Leave running.
+If not: a stale laptop IP on a drone means no session. Re-provision it ([DRONE_SETUP.md](DRONE_SETUP.md#4--point-px4-at-the-laptop-uxrce-dds-provisioning) §4), then reboot.
+
+**8 · Pane 4 · link alive**
+```bash
+ros2 topic hz /drone_1/fmu/out/vehicle_status
+```
+Must see: a steady rate. Ctrl-C after each reading. If not: is pane 1 running? ([TROUBLESHOOTING.md](TROUBLESHOOTING.md), "`/fmu/*` topics look dead")
+
+**9 · Pane 4 · pose alive**
+```bash
+ros2 topic hz /drone_1/pose
+```
+Must see: a steady rate, about 240 Hz. Ctrl-C after each reading. If not: `./mocap.sh check` on the laptop names the culprit.
+
+**10 · Pane 2 · interfaces**
+```bash
+ros2 launch svg_ground_control real_interfaces.launch.py drones:=drone_1
+```
+Must see: the startup line of `drone_1` says `target_system=1`.
+Leave running. If not: do not fly (iron rule 5).
+
+<!-- /shared-opening -->
+
+**11 · Pane 3 · the commander**
 ```bash
 ros2 launch svg_ground_control ground_control.launch.py \
   config:=$(ros2 pkg prefix svg_ground_control)/share/svg_ground_control/config/goal_single_ours.yaml \
   use_mocap:=true use_foxglove_studio:=true
 ```
+Must see: Foxglove Studio opens, already pointed at the bridge. `foxglove_bridge` listening on 8765. Leave running.
+Also expected: a WARN that `drone_position_offsets` are all zero (correct for mocap), and `LED daemon` warnings if no strip is fitted (harmless).
 
-**C2 — Fly.** Takeoff (climbs to `hover_positions` — BOTH the takeoff target AND the initial
-goal), then `start`, then publish waypoints — from the Basestation's **Goal card** (select
-`drone_1`, type x y z, Send Goal; its frame note must read `commander`, not "unconfirmed")
-or from pane 4. Before takeoff, place the drone on the floor ON the config's
-`hover_positions` x,y — takeoff flies to that ABSOLUTE point (iron rule 10).
+**12 · Pane 4 · odometry flowing**
+```bash
+ros2 topic hz /drone_1/odometry_conversion/odometry
+```
+Must see: a steady rate. Ctrl-C after the reading. If not: takeoff will be refused. [TROUBLESHOOTING.md](TROUBLESHOOTING.md), "Takeoff refused".
+
+**13 · Pane 4 · mocap into PX4**
+```bash
+ros2 topic hz   /drone_1/fmu/in/vehicle_visual_odometry
+```
+Must see: about the mocap rate (mocap_bridge alive). Ctrl-C after the reading.
+
+**14 · Pane 4 · EKF2 output, commander status.** ⚠️ Copy-paste these: arrow-key editing `in/` into `out/` gives a nonexistent `/fmu/inout/…` topic.
+```bash
+ros2 topic echo /drone_1/fmu/out/vehicle_odometry --once --qos-reliability best_effort --qos-durability volatile
+ros2 topic echo /svg/commander_status --once
+```
+Must see: a position is printed (EKF2 output alive). The fusion gate is the banner `EKF EV FUSED` in step 16.
+Must see: the status shows `drone_1`, `"odom_fresh": true`, `"state": "IDLE"`. If not IDLE: `land` once, drone on the floor ([TROUBLESHOOTING.md](TROUBLESHOOTING.md), "Takeoff refused").
+Every `/fmu/*` echo needs `--qos-reliability best_effort` or it looks dead. `ros2 topic hz` does not accept that flag: run hz bare.
+
+**15 · Floor · frame hand-check** (first flight of the day, and after any Motive recalibration or ground-plane change). Carry the drone and re-run step 14's first echo at each position.
+
+Must see: North → `position[0]`↑, East → `[1]`↑, up → `[2]`↓. If not: wrong axes = DO NOT FLY ([PREFLIGHT.md](PREFLIGHT.md)).
+
+**16 · Foxglove Studio · Basestation check, no arming.**
+
+Must see: banner `EKF EV FUSED`, mission chip `ON GROUND`, the Agent State row for `drone_1` reads `IDLE · odom fresh · x y z tagged cmdr`, and the drone mesh in the 3D view follows the hand-carried drone.
+If not: the row says `odom none` → step 10 must be running ([TROUBLESHOOTING.md](TROUBLESHOOTING.md), "No odometry reaching the commander").
+
+**17 · Floor · go / no-go**
+
+Every box on [PREFLIGHT.md](PREFLIGHT.md), and a briefed safety pilot holds the transmitter. Do not call `takeoff` before.
+This session adds: a second person watches `drone_1`'s front-right motor at takeoff (iron rule 10).
+⚠️ Kill-switch ground check (after any RC change, and once after the branch switch): props OFF, software takeoff, flip kill — motors cut instantly ([PREFLIGHT.md](PREFLIGHT.md), [DRONE_SETUP.md](DRONE_SETUP.md) §8). Then `land` once. Props on only after QGroundControl says DISARMED (iron rules 2, 3).
+`drone_1` stands on the floor ON the config's `hover_positions` x,y (x -0.5, y 0.0 in `goal_single_ours.yaml`), nose toward +x: takeoff flies to that ABSOLUTE point (iron rule 10).
+
+**Stop table.** The [PREFLIGHT.md](PREFLIGHT.md) emergency table comes first.
+
+| What you see | Do this | Record |
+|---|---|---|
+| A motor of `drone_1` does not spin with the others at takeoff | KILL, then `land` once | hazard 6, [#34](record/LEDGER.md) |
+| You need it down | `land` (pane 4, or the panel's Safety Stop, two clicks) | iron rule 2 |
+| The panel's command log after `takeoff`: `DENIED`, or no entry at all | `DENIED`: `land` once, hands clear, before touching switch or throttle. QGroundControl's message bar names why. Fix it, then `takeoff` again. No entry at all: `target_system` mismatch, do not fly until fixed ([TROUBLESHOOTING.md](TROUBLESHOOTING.md), "`takeoff` accepted") | iron rule 5 |
+| You take over with the RC | flip ch6 straight to MANUAL, never Position/Altitude, or KILL. After ANY RC takeover: `land` once (drone on the floor) before the next takeoff | iron rules 1 and 3 |
+| Anything scary | KILL (ch8), then `land` once with the drone on the floor | iron rule 3 |
+| Landed, but QGroundControl still says ARMED | after about 10 s: KILL or arm switch (ch5) down. Nobody walks in | iron rule 2 |
+
+**PANIC call — hold:**
+```bash
+ros2 service call /swarm_commander/hold    std_srvs/srv/Trigger
+```
+
+**18 · Pane 4 · takeoff.** Everyone stays outside the net from takeoff until QGroundControl says DISARMED.
 ```bash
 ros2 service call /swarm_commander/takeoff std_srvs/srv/Trigger
+```
+Must see, pane 3: `holding takeoff position`. Only then `start`. If not: stop table, "`DENIED`, or no entry at all".
+Must see, the panel: command log `sent → accepted → ✓ confirmed`, Interface column `request offboard ✓ · arm ✓`.
+
+**19 · Pane 4 · start**
+```bash
 ros2 service call /swarm_commander/start   std_srvs/srv/Trigger
+```
+`start` begins the scenario and is REQUIRED before goals respond.
+
+**20 · Pane 4 · one goal** (or the Basestation's Goal card: `drone_1`, x y z, Send Goal. Its frame note must read `commander`, not "unconfirmed")
+
+Coordinates are ABSOLUTE in the mocap/world frame (same numbers as `/drone_1/pose`). Each publish REPLACES the goal: no queue. The publisher exiting does NOT cancel it.
+Keep goals inside the fence (±2 m in `goal_single_ours.yaml`). Goals only act under the `goal` scenario. Not measured: how far the drone goes past the wall.
+```bash
 ros2 topic pub --once /svg/drone_1/goal_command geometry_msgs/msg/PoseStamped \
   "{header: {frame_id: map}, pose: {position: {x: 0.5, y: 0.0, z: 1.0}}}"
+```
+
+**21 · Pane 4 · speed**
+```bash
 ros2 topic pub --once /svg/drone_1/speed_command std_msgs/msg/Float32 "{data: 0.8}"
 ```
-- Coordinates are **ABSOLUTE** in the mocap/world frame (same numbers as `/drone_1/pose`).
-- Each publish **REPLACES** the goal — no queue. The publisher exiting does NOT cancel it.
-- **New:** the drone flies an acceleration-limited profile (`goal_accel_mps2`) and PX4
-  holds the position onboard — expect a crisper stop than the old branch, and a
-  `speed_cap_note` in the commander log if the requested speed cannot be reached.
-- **New:** `/svg/drone_1/goal_xyzt` (`Float64MultiArray [x,y,z,theta_deg]`) also sets the
-  heading; otherwise the nose stays on +X.
-- Keep goals inside the fence. Goals only act under the `goal` scenario.
+Expect a `speed_cap_note` in the commander log (pane 3) if the requested speed cannot be reached.
 
-**C3 — Square / multi-goal loop.** Pane 4, after C2's takeoff + start:
+**22 · Pane 4 · square loop, two laps**
 ```bash
 G() { ros2 topic pub --once /svg/drone_1/goal_command geometry_msgs/msg/PoseStamped "{header: {frame_id: map}, pose: {position: {x: $1, y: $2, z: $3}}}"; }
 for lap in 1 2; do for c in "-0.5 -0.5" "0.5 -0.5" "0.5 0.5" "-0.5 0.5"; do G $c 1.0; sleep 5; done; done
+```
+
+**23 · Pane 4 · land**
+```bash
 ros2 service call /swarm_commander/land std_srvs/srv/Trigger
 ```
-What success looked like on the previous branch: [drone POV](../videos/Starling_goal_tracking_drone.mp4)
-· [RViz POV](../videos/Starling_goal_tracking_RVIZ.mp4) (2026-09-03).
+Must see: QGroundControl shows DISARMED before anyone walks in. If not: still ARMED after about 10 s → KILL or arm switch (ch5) down (iron rule 2).
+At touchdown on this software the Interface column shows `disarm ✗` and QGroundControl one red "Disarming denied" until the landing test (NEAR-826) is re-observed: expected, not a fault.
 
-**C4 — Fence: two behaviours now** ([TELEOP.md](TELEOP.md) §6). `fence_behavior` in the
-config decides:
-- **`hold_all`** (default, `swarm_real.yaml`): breach ⇒ **ALL drones freeze-hover in place
-  — still ARMED, not a motor cut.** Recover: `land` → `/swarm_commander/reset_fence` →
-  `takeoff` → `start`. ⚠️ Now also latches when an **RC-flown** drone is airborne outside
-  the box.
-- **`keep_in`** (`goal_single`, `goal_tracking`): nobody freezes — the drone **brakes
-  before the wall** (`fence_brake_accel_mps2`) and is pushed back inside if already out;
-  `fence_breached` stays false; `reset_fence` is never needed. Only ACTIVE drones are
-  clipped (landing may cross the floor). **M4 wall test:** goal 0.5 m past the wall at low
-  speed, measure the overshoot.
+**Shutdown.** Only after QGroundControl says DISARMED: Ctrl-C panes 3, 2, 1 and the mocap terminal.
 
-**C5 — Landing / disarm.** `land` descends at `land_speed_mps`. On touchdown the commander
-waits `land_settle_s`, then sends DISARM; if PX4 refuses it retries up to
-`land_disarm_retries` times, `land_disarm_retry_s` apart (log: `touchdown at z=… settling …`
-→ `landed, disarmed (attempt N)`). PX4's own land detector + auto-disarm remain the backstop.
-- Our `_ours` configs set **`land_settle_s: 0.0`** — the landing exactly as flown
-  2026-09-03 (immediate disarm). CMU's shipped real configs do **not** set it and inherit
-  the code default **2.0 s** — one more reason to fly `_ours`. Re-check the settle at M3.
-- On the real drone the interface answers `success` on *send*, not on PX4's ACK, so the
-  retry only ever fires in sim and the log says `landed, disarmed` whether or not PX4
-  obeyed. ⚠️ ALWAYS confirm **DISARMED** in QGC before approaching.
-- Our validated `land_speed_mps` is **0.6** (0.3 left the drone armed on the ground); the
-  shipped configs carry **0.3** (`swarm_real`, `teleop_real`), 0.8 (`goal_single`) or 1.0
-  (`goal_tracking`, `goal_sequence`) — set 0.6 in every config you fly.
-
-**C6 — RC takeover rules** (previous-branch forensics; re-test at M3). While the commander
-runs, its setpoints leak into POSCTL/ALTCTL — takeover is ONLY clean flipping straight to
-**MANUAL**, or the **kill switch**. After ANY RC takeover the commander is stuck non-IDLE →
-call `land` once (drone on floor) to reset before the next takeoff.
-
-**C7 — Config editing rules.** yaml is read once at launch: edit → Ctrl-C the commander →
-relaunch (no rebuild). Edit the **SOURCE** yaml under
-`AirStack/robot/ros_ws/src/svg_ground_control/config/` — the workspace is symlink-installed.
-Verify once: `readlink $(ros2 pkg prefix svg_ground_control)/share/svg_ground_control/config/<file>.yaml`
-should point at the source; no symlink → `bws`. Every number in a list must be a float
-(`0.0` not `0`). The teleop fence must lie **inside** the geofence or the launch raises.
-⚠️ Never run `test/functional_*.py` while the real stack is up — they publish FAKE odometry
-onto the real topics (flyaway risk).
-
-**C8 — Live gains (new).** Some parameters change in flight without a relaunch — from the
-Basestation's CBF row (dropdown α / r / vmax, slider, Apply, `live ✓`) or pane 4:
+**24 · Laptop, drone on USB-C · stack down, drone off**
 ```bash
-ros2 param set /swarm_commander cbf_alpha 4.0            # how early the CBF yields
-ros2 param set /swarm_commander scenario_speed_mps 1.0   # cruise speed of the goal law
-ros2 param set /swarm_commander fence_brake_accel_mps2 6.0
+cd ~/AirStack-starling-max2/AirStack && ./airstack.sh down
+adb shell shutdown now
 ```
-Live list: CBF gains, fence dynamics, goal law, teleop gains ([SCENARIOS.md](SCENARIOS.md) §3).
-Anything else is refused with a reason. Gains must stay > 0. The scenario keeps the safety
-radius it was launched with for its own spacing; only the filter follows a live change.
+Then wait about 10 s, and unplug USB and the battery.
+Already in the drone's own shell (adb or ssh)? Type `shutdown now` there instead. Never in a laptop or container shell: on the laptop it powers off the laptop.
 
 ---
-
-### C8 — parameters you must NEVER set live (they look harmless and are not)
-
-> ⚠️ `fence_brake_accel_mps2` **0** silently reverts the keep_in wall to the old gain×distance barrier · keep `hold_lead_m` at **0.2** (a 1.3 m lead above a drone on the ground doubled its hover height, bag C1_0920_203148) · keep `fence_brake_accel_mps2` **≥ `goal_accel_mps2`** or the wall caps cruise speed · `cbf_max_speed_mps` is the ONLY speed limit on the real drone (its PX4 allows 20 m/s). Details: [CONFIG.md](CONFIG.md).
 
 ### C9 — Two real drones with the collision filter (CBF)
 

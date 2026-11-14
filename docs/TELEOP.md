@@ -356,7 +356,7 @@ synced with the commander (2026-10-20). The old statement "none of it live" is w
 | `teleop_fence_enabled` / `_min` / `_max` | `false` / ±1000 | no | `true`, `[-1.5,-1.5,0.3]` / `[1.5,1.5,1.8]` |
 
 yaml editing rules are unchanged — read once at launch, floats only, edit the **source** copy:
-[RUNBOOK.md](RUNBOOK.md) §C7.
+[CONFIG.md](CONFIG.md), "Editing a config".
 
 ## 9 · Corrections to CMU's `teleop.md` for OUR rig
 

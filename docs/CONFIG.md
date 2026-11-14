@@ -196,7 +196,7 @@ Flight-log-verified additions (2026-09-01/03 sessions):
 ## Ground-side flight parameters (svg_ground_control config yamls)
 
 > Config source: `AirStack/robot/ros_ws/src/svg_ground_control/config/`. A yaml is read **once
-> at launch** ([RUNBOOK.md](RUNBOOK.md) §C7); the parameters marked **live** below can also be
+> at launch** ("Editing a config" below); the parameters marked **live** below can also be
 > changed in flight with `ros2 param set /swarm_commander <name> <value>` or from the panel's
 > runtime-gain dropdown ([BASESTATION.md](BASESTATION.md) §3.4, [SCENARIOS.md](SCENARIOS.md) §3).
 > **The shipped files are CMU's bench values** (read at `b21d28c`, 2026-10-21). Files marked

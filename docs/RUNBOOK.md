@@ -321,11 +321,22 @@ RViz fallback: [BASESTATION.md](BASESTATION.md#7--troubleshooting) §7.
 box on [PREFLIGHT.md](PREFLIGHT.md) is checked and a briefed safety pilot holds the
 transmitter. Pane 4 (the "cockpit") — one call at a time — **or the Basestation buttons**
 (Takeoff and Start ask for confirmation; Safety Stop needs two clicks within 4 s):
+
+Takeoff:
 ```bash
 ros2 service call /swarm_commander/takeoff std_srvs/srv/Trigger   # arm + climb + hold
+```
+Then start (REQUIRED before goals or teleop respond):
+```bash
 ros2 service call /swarm_commander/start   std_srvs/srv/Trigger   # scenario live
-ros2 service call /swarm_commander/hold    std_srvs/srv/Trigger   # PANIC: brake to a stop point ahead, hold there
+```
+Land:
+```bash
 ros2 service call /swarm_commander/land    std_srvs/srv/Trigger   # descend + disarm
+```
+**PANIC call — hold:**
+```bash
+ros2 service call /swarm_commander/hold    std_srvs/srv/Trigger   # PANIC: brake to a stop point ahead, hold there
 ```
 In hover, confirm the setpoint stream from a pane: `ros2 topic hz /drone_1/fmu/trajectory_command` ≈ 20 Hz (the panel's `Cmd stream` column watches velocity topics only and reads `--` on a real drone — [BASESTATION.md](BASESTATION.md) §6).
 `start` begins the scenario and is **REQUIRED** before goals or teleop respond. Hover about 20 s before `land`; at touchdown on this software the Interface column shows `disarm ✗` and QGC one red "Disarming denied" until the landing test (NEAR-826) is re-observed — expected, not a fault.
@@ -333,9 +344,9 @@ Watch the panel's command log: `sent → accepted → ✓ confirmed`, and the In
 `request offboard ✓ · arm ✓`. **`DENIED`** = PX4 refused (preflight) · **no entry at all** =
 `target_system` mismatch — fix before retrying. Goal/waypoint flights → **§C**. Gamepad →
 [B9](#b9--fly-one-real-drone-with-the-gamepad) (one drone) or [B10](#b10--two-real-drones-one-flown-by-hand) (two drones).
-⚠️ Safety status: RC kill switch mapped + tested on the previous branch (2026-09-01) —
-**repeat the props-off kill ground test** before the first flight on this branch
-([DRONE_SETUP.md](DRONE_SETUP.md) §8). Every flight: fence fits the net, thumb on kill,
+⚠️ Kill-switch ground check (after any RC change, and once after the branch switch): props OFF,
+software takeoff, flip kill — motors cut instantly ([PREFLIGHT.md](PREFLIGHT.md),
+[DRONE_SETUP.md](DRONE_SETUP.md) §8). Every flight: fence fits the net, thumb on kill,
 QGC visible.
 
 **Shutdown** (either session type). Ctrl+C each tab's or pane's launch (in tmux, `Ctrl-b d`
@@ -444,6 +455,7 @@ ros2 topic hz /svg/drone_2/teleop_command
 # 13 · Pane 4 — takeoff. Wait for "holding takeoff position" in pane 3, then start.
 #      After start, wait for "drone_2: sticks live" in pane 3 before touching the sticks
 ros2 service call /swarm_commander/takeoff std_srvs/srv/Trigger
+#      WAIT for "holding takeoff position" in pane 3. Only then:
 ros2 service call /swarm_commander/start   std_srvs/srv/Trigger
 
 # 14 · Fly with the sticks (below). Sticks do nothing: see the stop table below. Then land.
@@ -534,6 +546,7 @@ cd ~/AirStack-starling-max2 && tools/real.sh teleop drone_2
 
 # 4 · Laptop, two new terminals — QGroundControl (both drones, keep it visible), then mocap for both
 #     bodies (rigid bodies drone_1 and drone_2 must exist in Motive: MOCAP.md)
+#     No takeoff until QGroundControl lists both drones (PREFLIGHT.md)
 ~/QGroundControl-x86_64.AppImage
 cd ~/AirStack-starling-max2 && MOCAP_BODIES="drone_1 drone_2" ./mocap.sh
 
@@ -587,7 +600,8 @@ ros2 service call /swarm_commander/start std_srvs/srv/Trigger
 #      (ledger #37). There is no teleop fence in this config: the only vertical limit is the geofence.
 #      Let go once the filter resists. No stop distance is set for the pilot. The pass line fixed before
 #      the 2026-11-13 flight is in ledger #37. The owner sets a stop distance before the next flight.
-#      Land both. QGroundControl must show BOTH DISARMED before anyone walks in (iron rule 2)
+#      Land both. QGroundControl must show BOTH DISARMED before anyone walks in. Still ARMED
+#      after about 10 s → KILL or arm switch down (iron rule 2)
 ros2 service call /swarm_commander/land std_srvs/srv/Trigger
 ```
 
@@ -671,8 +685,8 @@ ros2 launch svg_ground_control ground_control.launch.py \
 **C2 — Fly.** Takeoff (climbs to `hover_positions` — BOTH the takeoff target AND the initial
 goal), then `start`, then publish waypoints — from the Basestation's **Goal card** (select
 `drone_1`, type x y z, Send Goal; its frame note must read `commander`, not "unconfirmed")
-or from pane 4. Before takeoff, place the drone on the floor at/near the config's
-`hover_positions` x,y — takeoff flies to that ABSOLUTE point.
+or from pane 4. Before takeoff, place the drone on the floor ON the config's
+`hover_positions` x,y — takeoff flies to that ABSOLUTE point (iron rule 10).
 ```bash
 ros2 service call /swarm_commander/takeoff std_srvs/srv/Trigger
 ros2 service call /swarm_commander/start   std_srvs/srv/Trigger
@@ -818,6 +832,7 @@ ros2 topic hz /drone_2/fmu/out/vehicle_status
 
 # 5 · Laptop, two new terminals — QGroundControl (connect both drones, keep it visible),
 #     then mocap for both bodies (rigid bodies drone_1 and drone_2 must exist in Motive: MOCAP.md)
+#     No takeoff until QGroundControl lists both drones (PREFLIGHT.md)
 ~/QGroundControl-x86_64.AppImage
 cd ~/AirStack-starling-max2 && MOCAP_BODIES="drone_1 drone_2" ./mocap.sh
 
@@ -858,6 +873,7 @@ ros2 topic echo /svg/bag_recorder/status --once
 # 14 · Pane 4 (or the panel's Takeoff / Start buttons). Wait for "holding takeoff position"
 #      twice in pane 3, then start
 ros2 service call /swarm_commander/takeoff std_srvs/srv/Trigger
+#      WAIT for "holding takeoff position" twice in pane 3. Only then:
 ros2 service call /swarm_commander/start   std_srvs/srv/Trigger
 
 # 15 · Goals for drone_2; the brief waited about 10 s between them. Goals 1 and 2 lie inside

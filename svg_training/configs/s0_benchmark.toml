@@ -1,0 +1,202 @@
+# Written 14 November 2026, before any run. Never edited after the first result exists (STANDARDS §7.1).
+[gates]            # S0 is a measurement: the gates check that the measurement is sound.
+tests_pass = true
+sweep_complete = true        # every case below has a row with status "ok" or "oom"
+repeat_spread_max = 0.10     # |a-b| / mean of the two repeats of a case
+nan_count_max = 0
+
+[decisions]        # PROPOSED rules read off the numbers; not pass/fail.
+budget_drone_steps = 2.0e9   # samples a published game with a few columns needed (RESEARCH §10)
+tier1_bulk_min_drone_steps_per_s = 50000    # case t1_5v3_full: below this, bulk training needs the workstation
+tier2_train_min_drone_steps_per_s = 20000   # best tier 2 case: below this, tier 2 is cross-check only
+
+[timing]
+warmup_steps = 50
+timed_steps = 200
+repeats = 2
+
+[[tier1]]
+name = "t1_1v1_open"
+guards = 1
+strikes = 1
+world = "open"
+n_obstacles = 0
+n_rays = 0
+line_of_sight = false
+num_games = [256, 1024, 4096, 16384, 65536]
+
+[[tier1]]
+name = "t1_2v1_open"
+guards = 2
+strikes = 1
+world = "open"
+n_obstacles = 0
+n_rays = 0
+line_of_sight = false
+num_games = [256, 1024, 4096, 16384, 65536]
+
+[[tier1]]
+name = "t1_5v3_open"
+guards = 5
+strikes = 3
+world = "open"
+n_obstacles = 0
+n_rays = 0
+line_of_sight = false
+num_games = [256, 1024, 4096, 16384, 65536]
+
+[[tier1]]
+name = "t1_5v3_prim10"
+guards = 5
+strikes = 3
+world = "primitives"
+n_obstacles = 10
+n_rays = 0
+line_of_sight = false
+num_games = [256, 1024, 4096, 16384, 65536]
+
+[[tier1]]
+name = "t1_5v3_prim50"
+guards = 5
+strikes = 3
+world = "primitives"
+n_obstacles = 50
+n_rays = 0
+line_of_sight = false
+num_games = [256, 1024, 4096, 16384, 65536]
+
+[[tier1]]
+name = "t1_5v3_prim10_rays32"
+guards = 5
+strikes = 3
+world = "primitives"
+n_obstacles = 10
+n_rays = 32
+line_of_sight = false
+num_games = [256, 1024, 4096, 16384, 65536]
+
+[[tier1]]
+name = "t1_5v3_prim10_rays64"
+guards = 5
+strikes = 3
+world = "primitives"
+n_obstacles = 10
+n_rays = 64
+line_of_sight = false
+num_games = [256, 1024, 4096, 16384, 65536]
+
+[[tier1]]
+name = "t1_5v3_prim10_los"
+guards = 5
+strikes = 3
+world = "primitives"
+n_obstacles = 10
+n_rays = 0
+line_of_sight = true
+num_games = [256, 1024, 4096, 16384, 65536]
+
+[[tier1]]
+name = "t1_5v3_prim50_full"
+guards = 5
+strikes = 3
+world = "primitives"
+n_obstacles = 50
+n_rays = 32
+line_of_sight = true
+num_games = [256, 1024, 4096, 16384, 65536]
+
+[[tier1]]
+name = "t1_5v3_field"
+guards = 5
+strikes = 3
+world = "field"
+n_obstacles = 0
+n_rays = 0
+line_of_sight = false
+num_games = [256, 1024, 4096, 16384, 65536]
+
+[[tier1]]
+name = "t1_5v3_field_rays32"
+guards = 5
+strikes = 3
+world = "field"
+n_obstacles = 0
+n_rays = 32
+line_of_sight = false
+num_games = [256, 1024, 4096, 16384, 65536]
+
+[[tier1]]
+name = "t1_5v3_full"
+guards = 5
+strikes = 3
+world = "field"
+n_obstacles = 10
+n_rays = 32
+line_of_sight = true
+num_games = [256, 1024, 4096, 16384, 65536]
+
+[[tier1]]
+name = "t1_2v1_full"
+guards = 2
+strikes = 1
+world = "field"
+n_obstacles = 10
+n_rays = 32
+line_of_sight = true
+num_games = [256, 1024, 4096, 16384, 65536]
+
+[[tier2]]
+name = "t2_k2"
+drones_per_game = 2
+num_games = [64, 256, 1024, 4096]
+physics_dt_s = 0.005
+substeps = 10
+
+[[tier2]]
+name = "t2_k3"
+drones_per_game = 3
+num_games = [64, 256, 1024, 4096]
+physics_dt_s = 0.005
+substeps = 10
+
+[[tier2]]
+name = "t2_k8"
+drones_per_game = 8
+num_games = [64, 256, 1024, 2048]
+physics_dt_s = 0.005
+substeps = 10
+
+[[tier2]]
+name = "t2_k2_100hz"
+drones_per_game = 2
+num_games = [64, 256, 1024, 4096]
+physics_dt_s = 0.01
+substeps = 5
+
+[[tier2]]
+name = "t2_k3_100hz"
+drones_per_game = 3
+num_games = [64, 256, 1024, 4096]
+physics_dt_s = 0.01
+substeps = 5
+
+[[tier2]]
+name = "t2_k8_100hz"
+drones_per_game = 8
+num_games = [64, 256, 1024, 2048]
+physics_dt_s = 0.01
+substeps = 5
+
+[[tier2]]
+name = "t2_k8_250hz"
+drones_per_game = 8
+num_games = [64, 256, 1024]
+physics_dt_s = 0.004
+substeps = 12
+
+[[tier2]]
+name = "t2_k1"
+drones_per_game = 1
+num_games = [64, 256, 1024, 4096]
+physics_dt_s = 0.005
+substeps = 10

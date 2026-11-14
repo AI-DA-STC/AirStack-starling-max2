@@ -1,0 +1,34 @@
+# Docker: the training simulator in a container
+
+The image is NVIDIA's `nvcr.io/nvidia/isaac-lab:2.3.2` (Isaac Sim 5.1, Isaac Lab 2.3.2), unchanged, plus `pytest`
+and a few variables. The project folder is mounted at run time, so code changes need no rebuild. Headless only: no display.
+
+| | On the host | In the container |
+|---|---|---|
+| Python | `~/miniconda3/envs/env_isaaclab/bin/python` | `svg-python` (Isaac Sim's `python.sh`, but the exit code is kept) |
+| Isaac Lab | `~/IsaacLab/isaaclab.sh` | `/workspace/isaaclab` (NVIDIA's image, unmodified), started by `svg-isaaclab` |
+| Tier 2 start | `conda run -n env_isaaclab ... isaaclab.sh -p` | `svg-isaaclab -p` |
+
+`scripts/run_s0.sh` reads `SVG_IN_CONTAINER`, `SVG_PY` and `SVG_ISAACLAB`. The image sets them. On the host they are unset.
+
+## Commands
+
+```
+docker/build.sh                                        # once; needs the NVIDIA base image
+docker/run.sh                                          # an interactive shell in /workspace/svg_training
+docker/run.sh bash scripts/run_s0.sh <name> <approved sha256>
+```
+
+`docker/run.sh --print ...` shows the `docker run` line and starts nothing. Arguments are joined with spaces and
+run by `bash -lc`, so quote a compound command as one argument.
+
+## What is stored where
+
+- `runs/` and `records/` are on the host (the mounted folder). After each command they are handed back to your user.
+- Isaac's caches and logs are named docker volumes, prefixed `svg-training-isaac-`. List them with `docker volume ls`.
+- Nothing else in the container survives it (`--rm`).
+
+## Cautions
+
+- The first tier 2 run downloads NVIDIA's drone asset. The machine needs internet access.
+- The script's "is the GPU busy" check sees only processes inside its own container. Run `nvidia-smi` on the host first.

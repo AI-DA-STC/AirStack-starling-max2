@@ -118,3 +118,5 @@ T1's own files show these times in container UTC (8 h behind).
   `retried_points.txt`.
 - Run again with the same name before a record exists and the run resumes: finished points are skipped.
 - In the container, the GPU check sees only the container's processes. Run `nvidia-smi` on the host first.
+
+Next: training, headless and with the Isaac Sim window → [TRAINING](TRAINING.md) (planned workflow until S2).

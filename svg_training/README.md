@@ -29,6 +29,7 @@ the [deck](docs/pipeline/training-pipeline.pptx).
 | run the tests | [GETTING_STARTED](docs/GETTING_STARTED.md) A2: `docker/run.sh '$SVG_PY -m pytest -q'` |
 | build the container | [GETTING_STARTED](docs/GETTING_STARTED.md) A1 |
 | run the benchmark | [GETTING_STARTED](docs/GETTING_STARTED.md) A3–A4 (container) or B (host) |
+| train a policy, headless or with the Isaac Sim window | [TRAINING](docs/TRAINING.md) (planned workflow: nothing trains before S2) |
 | read the results | [S0_RESULTS](docs/S0_RESULTS.md); all records in [records/LEDGER.md](records/LEDGER.md) |
 | understand the design | [HOW_IT_WORKS](docs/HOW_IT_WORKS.md), then [DESIGN](docs/DESIGN.md) and [RESEARCH](docs/RESEARCH.md) |
 | look up a word or a version | [GLOSSARY](docs/GLOSSARY.md) |

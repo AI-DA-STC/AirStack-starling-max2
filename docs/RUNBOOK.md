@@ -19,6 +19,8 @@ container that holds the ROS 2 workspace) · `starling2-max…$` = on the drone 
 
 **Never paste across a `connect` line.** It opens a new shell and swallows what follows.
 
+Iron rules, RC channels (ch5 arm · ch6 mode · ch8 KILL) and the emergency order: [PREFLIGHT.md](PREFLIGHT.md).
+
 The `bringup` tmux session has 8 panes: pane 0 top-left, 1–4 across the top, 5–7 along the bottom. Each is a container shell with the workspace sourced. Sections B and C say "pane N". Section A says "<name> tab".
 
 tmux moves: `Ctrl-b` then an arrow key switches panes. `Ctrl-b d` detaches. The session survives closing the terminal (`connect` again to return).
@@ -113,8 +115,10 @@ cd ~/AirStack-starling-max2/AirStack && ./airstack.sh down
 
 > **WORLD: REAL DRONE.** One Starling (`drone_1`), `swarm_real_ours.yaml`: takeoff, hover, land. Motion-capture positioning (mocap). [PREFLIGHT.md](PREFLIGHT.md) gates every takeoff. Gates before the next real flight: [MILESTONES.md](MILESTONES.md#before-the-next-real-flight) "Before the next real flight".
 > Which world: Isaac container NOT running, no `mavros_node` and no `svg_teleop` in `ros2 node list`. ⚠️ Never start Isaac Sim during a real session: the sim publishes on the real drone's topic names.
-> **Panic:** `hold` (pane 4, or the panel's Hold All) brakes to a stop point ahead and holds there, still ARMED. Then `land` (or the panel's Safety Stop · Land All, two clicks). Where a hold stops the drone is not flown (NEAR-832).
+> **Panic:** `hold` (pane 4, or the panel's Hold All) brakes to a stop point ahead and holds there, still ARMED. Then `land` (or the panel's Safety Stop · Land All, two clicks). `hold` is not flown on the real drone: where it stops the drone is untested (NEAR-832).
 > Anything scary: KILL (ch8), then `land` once. Takeover: ch6 MANUAL only.
+> Until DISARMED, press Ctrl-C in pane 4 only.
+> Prompts, panes and tmux moves: [top of this page](#runbook--start-the-pipeline-fast).
 
 <!-- shared-opening -->
 
@@ -235,7 +239,7 @@ If not: the row says `odom none` → step 10 must be running ([TROUBLESHOOTING.m
 **17 · Floor · go / no-go**
 
 Every box on [PREFLIGHT.md](PREFLIGHT.md), and a briefed safety pilot holds the transmitter. Do not call `takeoff` before.
-This session adds: a second person watches `drone_1`'s front-right motor at takeoff (iron rule 10).
+This session adds: `drone_1` flies by the owner's decision, with a second person watching its front-right motor at takeoff (iron rule 10).
 ⚠️ Kill-switch ground check (after any RC change, and once after the branch switch): props OFF, software takeoff, flip kill — motors cut instantly ([PREFLIGHT.md](PREFLIGHT.md), [DRONE_SETUP.md](DRONE_SETUP.md) §8). Then `land` once. Props on only after QGroundControl says DISARMED (iron rules 2, 3).
 `drone_1` stands ON the takeoff point (x -0.5, y 0.0 in `swarm_real_ours.yaml`), nose toward +x (iron rule 10).
 
@@ -260,8 +264,8 @@ ros2 service call /swarm_commander/hold    std_srvs/srv/Trigger
 ```bash
 ros2 service call /swarm_commander/takeoff std_srvs/srv/Trigger
 ```
-Must see, pane 3: `holding takeoff position`. Only then `start`. If not: stop table, "`DENIED`, or no entry at all".
 Must see, the panel: command log `sent → accepted → ✓ confirmed`, Interface column `request offboard ✓ · arm ✓`.
+Must see, pane 3: `holding takeoff position`. Only then `start`. If not: stop table, "`DENIED`, or no entry at all".
 
 **19 · Pane 4 · start**
 ```bash
@@ -295,11 +299,12 @@ Already in the drone's own shell (adb or ssh)? Type `shutdown now` there instead
 ### B9 — Fly one real drone with the gamepad
 
 > **WORLD: REAL DRONE.** One Starling (`drone_2`), hand-flown with a Logitech F310 pad, motion-capture positioning (mocap). No Isaac Sim. [PREFLIGHT.md](PREFLIGHT.md) gates the takeoff.
-> **Panic:** `hold` (pane 4, or the panel's Hold All), then `land`. Anything scary: KILL (ch8), then `land` once with the drone on the floor. `hold` on a hand-flown drone is not flown (NEAR-832).
+> **Panic:** `hold` (pane 4, or the panel's Hold All), then `land`. Anything scary: KILL (ch8), then `land` once with the drone on the floor. `hold` is not flown on a hand-flown real drone: where it stops the drone is untested (NEAR-832).
 > Until DISARMED, press Ctrl-C in pane 4 only.
+> Prompts, panes and tmux moves: [top of this page](#runbook--start-the-pipeline-fast).
 
 **`drone_1` instead:** step 3 runs `tools/real.sh teleop drone_1`; paste the lines it prints, ping `10.40.2.11`, read `drone_1` for `drone_2` in every check.
-It flies with a watcher on its front-right motor at every takeoff ([hazard 6](projects/HTX-R2.md#before-the-next-real-flight)).
+It flies by the owner's decision, with a watcher on its front-right motor at every takeoff ([hazard 6](projects/HTX-R2.md#before-the-next-real-flight)).
 
 <!-- shared-opening -->
 
@@ -410,7 +415,8 @@ Must see: about 20 Hz. Ctrl-C after the reading. If not: the pad pane stopped ([
 
 **16 · Floor · go / no-go**
 
-Every box on [PREFLIGHT.md](PREFLIGHT.md).
+Every box on [PREFLIGHT.md](PREFLIGHT.md), and a briefed safety pilot holds the transmitter. Do not call `takeoff` before.
+Basestation: banner `EKF EV FUSED`, each drone's Agent State row reads `IDLE · odom fresh`. Frame hand-check on the first flight of the day and after any Motive recalibration or ground-plane change ([PREFLIGHT.md](PREFLIGHT.md)).
 This session adds: `drone_2` stands ON the takeoff point step 3 printed (x -0.5, y 0.0 in `teleop_real_ours.yaml`), nose toward +x.
 
 **What to expect**
@@ -433,6 +439,7 @@ This session adds: `drone_2` stands ON the takeoff point step 3 printed (x -0.5,
 | Sticks do nothing after `start` | pane 4: `ros2 topic hz /svg/drone_2/teleop_command`. Silent = the pad pane stopped, and no warning appears: `land`. Card says `press Start`: call `start` | [#36](record/LEDGER.md) |
 | Pad unplugged in flight | do not replug it in flight. `land`. The code holds the drone where it is (a stale pad = zero command) | not flown |
 | Near the top or the +x wall of the teleop fence | let go of the sticks. Still moving: `hold`, then `land` | not flown |
+| You take over with the RC | flip ch6 straight to MANUAL, never Position/Altitude, or KILL. After ANY RC takeover: `land` once (drone on the floor) before the next takeoff | iron rules 1 and 3 |
 | Anything scary | KILL (ch8), then `land` once with the drone on the floor | iron rule 3 |
 | Landed, but QGroundControl still says ARMED | after about 10 s: KILL or arm switch (ch5) down. Nobody walks in | iron rule 2 |
 
@@ -445,7 +452,7 @@ ros2 service call /swarm_commander/hold    std_srvs/srv/Trigger
 ```bash
 ros2 service call /swarm_commander/takeoff std_srvs/srv/Trigger
 ```
-Must see, pane 3: `holding takeoff position`. Only then `start`. If not: [TROUBLESHOOTING.md](TROUBLESHOOTING.md), "Takeoff refused".
+Must see, pane 3: `holding takeoff position`. Only then `start`. If not: [TROUBLESHOOTING.md](TROUBLESHOOTING.md), "Takeoff refused" and "`takeoff` accepted, ack says **`DENIED`**".
 
 **18 · Pane 4 · start**
 ```bash
@@ -467,6 +474,7 @@ Must see, pane 3: `drone_2: sticks live`. Wait for it before touching the sticks
 ros2 service call /swarm_commander/land std_srvs/srv/Trigger
 ```
 Must see: QGroundControl shows DISARMED before anyone walks in. If not: still ARMED after about 10 s → KILL or arm switch (ch5) down (iron rule 2).
+At touchdown on this software the Interface column shows `disarm ✗` and QGroundControl one red "Disarming denied" until the landing test (NEAR-826) is re-observed: expected, not a fault.
 
 **Shutdown.** Only after QGroundControl says DISARMED: Ctrl-C panes 3, 5, 2, 1 and the mocap terminal.
 
@@ -480,8 +488,9 @@ Then wait about 10 s, and unplug USB and the battery.
 ### B10 — Two real drones, one flown by hand
 
 > **WORLD: REAL DRONE.** Both Starlings, motion-capture positioning (mocap). `drone_1` hovers on its takeoff point. `drone_2` is hand-flown at it with the Logitech F310, and the collision filter (CBF) keeps them apart. No Isaac Sim. [PREFLIGHT.md](PREFLIGHT.md) gates the takeoff.
-> **Panic:** anything scary: KILL (each pilot their own drone), then `land` once. Killing one leaves the other flying. `land` brings down EVERY airborne drone, including the one that was not killed. `hold` on a hand-flown drone is not flown (NEAR-832).
+> **Panic:** `hold` (pane 4, or the panel's Hold All), then `land`. Anything scary: KILL (each pilot their own drone), then `land` once. Killing one leaves the other flying. `land` brings down EVERY airborne drone, including the one that was not killed. `hold` is not flown on a hand-flown real drone: where it stops the drone is untested (NEAR-832).
 > Until DISARMED, press Ctrl-C in pane 4 only.
+> Prompts, panes and tmux moves: [top of this page](#runbook--start-the-pipeline-fast).
 
 <!-- shared-opening -->
 
@@ -510,7 +519,7 @@ cd ~/AirStack-starling-max2/AirStack
 ```bash
 cd ~/AirStack-starling-max2 && tools/real.sh teleop drone_2
 ```
-Must see: `PAD CHECK: PASS — do not press MODE from now on`.
+Must see: `PAD CHECK: PASS — do not press MODE from now on`. Never press MODE after this.
 Use only its pane 5 line: its takeoff point and its other lines are for one drone, NOT used here. Do NOT launch pane 3 from that output: its commander line is for one drone.
 
 <!-- shared-opening -->
@@ -619,8 +628,10 @@ Must see: about 2.5 m (both drones on their points), five times a second.
 If not: the block has no stale-data check. If the number stops changing while a drone moves, the readout is dead: let go of the sticks and `land`.
 
 **16 · Floor · go / no-go**
-Every box on [PREFLIGHT.md](PREFLIGHT.md). This session adds:
-- Two people at takeoff (iron rule 10): the pilot, and a second person watching `drone_1`'s front-right motor. Everyone stays outside the net until QGroundControl shows both drones DISARMED.
+Every box on [PREFLIGHT.md](PREFLIGHT.md).
+Basestation: banner `EKF EV FUSED`, each drone's Agent State row reads `IDLE · odom fresh`. Frame hand-check on the first flight of the day and after any Motive recalibration or ground-plane change ([PREFLIGHT.md](PREFLIGHT.md)).
+This session adds:
+- Two people at takeoff (iron rule 10): the pilot, and a second person watching `drone_1`'s front-right motor. `drone_1` flies by the owner's decision. Everyone stays outside the net until QGroundControl shows both drones DISARMED.
 - Each drone stands ON its own point (`hover_positions` in `goal_two_ours.yaml`, both z 1.0), nose toward +x. The points are 2.5 m apart.
 - One KILL switch per drone and one person per transmitter. Confirm on the ground which transmitter is which drone.
 
@@ -643,6 +654,7 @@ What was seen: [projects/HTX-R2.md](projects/HTX-R2.md#m7--multi-drone--real-dro
 | `CBF emergency push-apart` in pane 3 | `land` | hazard 8 |
 | You want a larger CBF radius while the drones are closer than twice the new radius | do not raise it. Fly `drone_2` back to its point first | hazard 8 |
 | Sticks do nothing after `start` | pane 4: `ros2 topic hz /svg/drone_2/teleop_command`. Silent: `land` | [#36](record/LEDGER.md) |
+| You take over with the RC | flip ch6 straight to MANUAL, never Position/Altitude, or KILL (each pilot their own drone). After ANY RC takeover: `land` once (drone on the floor) before the next takeoff | iron rules 1 and 3 |
 | Anything scary | KILL (each pilot their own drone), then `land` once. Killing one leaves the other flying. `land` brings down EVERY airborne drone, including the one that was not killed | iron rule 3 |
 | Doubt, or the drone drifts with the sticks released | `hold` (pane 4 or the panel's Hold All), then `land`. After `hold` the sticks stay dead until `start` | not flown (`hold`: NEAR-832) |
 | You need it down | `land` (pane 4, or the panel's Safety Stop, two clicks) | iron rule 2 |
@@ -658,7 +670,7 @@ ros2 service call /swarm_commander/hold    std_srvs/srv/Trigger
 ```bash
 ros2 service call /swarm_commander/takeoff std_srvs/srv/Trigger
 ```
-Must see, pane 3: `holding takeoff position` twice. Wait for both. If not: [TROUBLESHOOTING.md](TROUBLESHOOTING.md), "Takeoff refused".
+Must see, pane 3: `holding takeoff position` twice. Wait for both. Only then step 18 (radius), then step 19 (start). If not: [TROUBLESHOOTING.md](TROUBLESHOOTING.md), "Takeoff refused" and "`takeoff` accepted, ack says **`DENIED`**".
 
 **18 · Pane 4 · CBF radius 0.90, with both drones holding on their own points (or the panel's CBF r field → Apply)**
 ```bash
@@ -691,7 +703,8 @@ Let go once the filter resists. No stop distance is set.
 ros2 service call /swarm_commander/land std_srvs/srv/Trigger
 ```
 Must see: QGroundControl shows BOTH drones DISARMED before anyone walks in.
-If not: still ARMED after about 10 s → KILL or arm switch down (iron rule 2).
+If not: still ARMED after about 10 s → KILL or arm switch (ch5) down (iron rule 2).
+At touchdown on this software the Interface column shows `disarm ✗` and QGroundControl one red "Disarming denied" until the landing test (NEAR-826) is re-observed: expected, not a fault.
 
 **Shutdown.** Only after QGroundControl shows both drones DISARMED: Ctrl-C panes 6, 3, 5, 2, 1 and the mocap terminal.
 
@@ -708,8 +721,10 @@ Then wait about 10 s, and unplug USB and the battery. Then the other drone: plug
 
 > **WORLD: REAL DRONE.** One Starling (`drone_1`), `goal_single_ours.yaml`: takeoff, fly to commanded goals, land. Motion-capture positioning (mocap). [PREFLIGHT.md](PREFLIGHT.md) gates every takeoff. Gates before the next real flight: [MILESTONES.md](MILESTONES.md#before-the-next-real-flight) "Before the next real flight". What was seen: [HTX-R2.md, M4](projects/HTX-R2.md#m4--goal-flights-with-the-braking-fence--real-drone).
 > Which world: Isaac container NOT running, no `mavros_node` and no `svg_teleop` in `ros2 node list`. ⚠️ Never start Isaac Sim during a real session: the sim publishes on the real drone's topic names.
-> **Panic:** `hold` (pane 4, or the panel's Hold All) brakes to a stop point ahead and holds there, still ARMED. Then `land` (or the panel's Safety Stop · Land All, two clicks). Where a hold stops the drone is not flown (NEAR-832).
+> **Panic:** `hold` (pane 4, or the panel's Hold All) brakes to a stop point ahead and holds there, still ARMED. Then `land` (or the panel's Safety Stop · Land All, two clicks). `hold` is not flown on the real drone: where it stops the drone is untested (NEAR-832).
 > Anything scary: KILL (ch8), then `land` once. Takeover: ch6 MANUAL only.
+> Until DISARMED, press Ctrl-C in pane 4 only.
+> Prompts, panes and tmux moves: [top of this page](#runbook--start-the-pipeline-fast).
 
 <!-- shared-opening -->
 
@@ -830,7 +845,7 @@ If not: the row says `odom none` → step 10 must be running ([TROUBLESHOOTING.m
 **17 · Floor · go / no-go**
 
 Every box on [PREFLIGHT.md](PREFLIGHT.md), and a briefed safety pilot holds the transmitter. Do not call `takeoff` before.
-This session adds: a second person watches `drone_1`'s front-right motor at takeoff (iron rule 10).
+This session adds: `drone_1` flies by the owner's decision, with a second person watching its front-right motor at takeoff (iron rule 10).
 ⚠️ Kill-switch ground check (after any RC change, and once after the branch switch): props OFF, software takeoff, flip kill — motors cut instantly ([PREFLIGHT.md](PREFLIGHT.md), [DRONE_SETUP.md](DRONE_SETUP.md) §8). Then `land` once. Props on only after QGroundControl says DISARMED (iron rules 2, 3).
 `drone_1` stands on the floor ON the config's `hover_positions` x,y (x -0.5, y 0.0 in `goal_single_ours.yaml`), nose toward +x: takeoff flies to that ABSOLUTE point (iron rule 10).
 
@@ -854,8 +869,8 @@ ros2 service call /swarm_commander/hold    std_srvs/srv/Trigger
 ```bash
 ros2 service call /swarm_commander/takeoff std_srvs/srv/Trigger
 ```
-Must see, pane 3: `holding takeoff position`. Only then `start`. If not: stop table, "`DENIED`, or no entry at all".
 Must see, the panel: command log `sent → accepted → ✓ confirmed`, Interface column `request offboard ✓ · arm ✓`.
+Must see, pane 3: `holding takeoff position`. Only then `start`. If not: stop table, "`DENIED`, or no entry at all".
 
 **19 · Pane 4 · start**
 ```bash
@@ -883,6 +898,7 @@ Expect a `speed_cap_note` in the commander log (pane 3) if the requested speed c
 G() { ros2 topic pub --once /svg/drone_1/goal_command geometry_msgs/msg/PoseStamped "{header: {frame_id: map}, pose: {position: {x: $1, y: $2, z: $3}}}"; }
 for lap in 1 2; do for c in "-0.5 -0.5" "0.5 -0.5" "0.5 0.5" "-0.5 0.5"; do G $c 1.0; sleep 5; done; done
 ```
+The loop holds pane 4 for about 40 s and sends a new goal every 5 s. To stop early: the panel's Hold All or Safety Stop, or Ctrl-C the loop first, then `hold` or `land` in pane 4.
 
 **23 · Pane 4 · land**
 ```bash
@@ -908,9 +924,10 @@ Already in the drone's own shell (adb or ssh)? Type `shutdown now` there instead
 > **WORLD: REAL DRONE.** Two Starlings, motion-capture positioning (mocap). No Isaac Sim. [PREFLIGHT.md](PREFLIGHT.md) gates the takeoff. One drone hovers while the other is flown toward it, to see the collision filter (CBF) keep them apart.
 > The older Starling (`drone_1`) flies by the owner's decision, with a watcher on its front-right motor at every takeoff ([projects/HTX-R2.md](projects/HTX-R2.md#before-the-next-real-flight), hazard 6).
 > On 2026-11-12 the takeoff height was 2.0 m. The file now says 1.0 m, and the goals below use 1.0 m.
-> **Panic:** `hold` → `land` → KILL (each pilot kills their own drone). `hold` on the real drone is not flown (NEAR-832). After any kill or RC takeover call `land` once: the commander keeps sending setpoints (iron rule 3, [#34](record/LEDGER.md)).
+> **Panic:** `hold` → `land` → KILL (each pilot kills their own drone). `hold` is not flown on the real drone: where it stops the drone is untested (NEAR-832). After any kill or RC takeover call `land` once: the commander keeps sending setpoints (iron rule 3, [#34](record/LEDGER.md)).
 > `land` brings down EVERY airborne drone, including one that was not killed. RC takeover is MANUAL or KILL, never Position or Altitude (iron rule 1).
 > Until DISARMED, press Ctrl-C in pane 4 only.
+> Prompts, panes and tmux moves: [top of this page](#runbook--start-the-pipeline-fast).
 
 <!-- shared-opening -->
 
@@ -1012,7 +1029,7 @@ If not IDLE: `land` once, drones on the floor ([TROUBLESHOOTING.md](TROUBLESHOOT
 **Hazard:** takeoff flies a straight line to each drone's takeoff point, so a drone standing on the wrong side is flown across the room at floor level ([#34](record/LEDGER.md)).
 Stand each drone on its own point, nose toward +x: `drone_1` (+1.0, −0.2), `drone_2` (−1.5, −0.1), 2.5 m apart.
 Must see: the panel's Agent State x, y per drone (or `"position"` in step 11's output) on that drone's point.
-If not: wrong side → carry the drones over and check again. No takeoff until both match.
+If not: wrong side → carry the drones over and check again (re-run step 11's command and read `"position"`). No takeoff until both match.
 
 **13 · Pane 4 · CBF radius 0.80, only after step 12 passes** (or the panel's CBF r field → 0.80 → Apply)
 
@@ -1050,7 +1067,9 @@ The block has no stale-data check. If the number stops changing while a drone mo
 
 **16 · Floor · go / no-go**
 
-Every box on [PREFLIGHT.md](PREFLIGHT.md). This session adds:
+Every box on [PREFLIGHT.md](PREFLIGHT.md).
+Basestation: banner `EKF EV FUSED`, each drone's Agent State row reads `IDLE · odom fresh`. Frame hand-check on the first flight of the day and after any Motive recalibration or ground-plane change ([PREFLIGHT.md](PREFLIGHT.md)).
+This session adds:
 - One KILL switch per drone and one person per transmitter. Which transmitter is bound to which drone is not written down yet: confirm it on the ground. Killing one drone leaves the other flying.
 - The watcher on `drone_1`'s front-right motor (world line).
 - Radius read back `0.8` (step 13), recording on (step 14), readout about 2.5 m (step 15).
@@ -1078,7 +1097,7 @@ They are not for B10 or for any other radius. They were not re-derived for 0.80.
 
 **PANIC call — hold:**
 ```bash
-ros2 service call /swarm_commander/hold std_srvs/srv/Trigger
+ros2 service call /swarm_commander/hold    std_srvs/srv/Trigger
 ```
 
 **17 · Pane 4 · takeoff** (or the panel's Takeoff button)
@@ -1089,7 +1108,7 @@ Everyone stays outside the net from takeoff until QGroundControl shows both dron
 ros2 service call /swarm_commander/takeoff std_srvs/srv/Trigger
 ```
 Must see: WAIT for "holding takeoff position" twice in pane 3. Only then: step 18.
-If not: [TROUBLESHOOTING.md](TROUBLESHOOTING.md), "Takeoff refused".
+If not: [TROUBLESHOOTING.md](TROUBLESHOOTING.md), "Takeoff refused" and "`takeoff` accepted, ack says **`DENIED`**".
 
 **18 · Pane 4 · start** (or the panel's Start button)
 ```bash
@@ -1123,7 +1142,8 @@ Must see: What to expect, "Home".
 ```bash
 ros2 service call /swarm_commander/land std_srvs/srv/Trigger
 ```
-Must see: QGroundControl shows BOTH Disarmed before anyone walks in. If not: still armed after about 10 s → KILL or arm switch down (iron rule 2).
+Must see: QGroundControl shows BOTH Disarmed before anyone walks in. If not: still armed after about 10 s → KILL or arm switch (ch5) down (iron rule 2).
+At touchdown on this software the Interface column shows `disarm ✗` and QGroundControl one red "Disarming denied" until the landing test (NEAR-826) is re-observed: expected, not a fault.
 
 **23 · Pane 4 · recording off** (or the Rosbag switch)
 ```bash

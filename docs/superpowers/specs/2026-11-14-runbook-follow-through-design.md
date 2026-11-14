@@ -1,6 +1,6 @@
 # Design — a runbook a person can follow with a drone on the floor
 
-Date: 2026-11-14. Status: **draft, waiting for the owner's approval.** Nothing is built before that.
+Date: 2026-11-14. Status: **approved by the owner on 2026-11-14** ("Yeah build the whole run book like the sample"; D11 "yes"; D9 "Yes. include all steps from cold run for each commander.py sequence").
 Process: `quality-change` (recon → four-hat panel, two rounds → this design → builder check → owner).
 
 ## Intent
@@ -134,7 +134,9 @@ Every real session has the same parts in the same order: world line and panic li
 
 **D11 · Keeping it short (P2, P8; needs the owner's yes because it changes `tools/docs_check/`).** New checker rules for RUNBOOK: the chooser starts within 15 lines; no code block mixes laptop commands (`airstack.sh`, `mocap.sh`, the QGroundControl AppImage) with `ros2`; `connect` is the last line of its block; `takeoff`, `start` and `land` never share a block; at most 15 lines from a sequence's stop table to its `takeoff`; the lines marked as the shared opening are identical across the real sequences; no dated sentence inside a sequence. A line budget per sequence was voted 3 to 1 (90, 120 and 150 lines proposed); ruling: 180 lines from heading to shutdown, stop table included (the sample is 168), as a warning, not a failure, so nobody cuts a stop row to pass. The shared opening steps are marked with an HTML comment (`<!-- shared-opening -->` … `<!-- /shared-opening -->`) and compared as text after the drone names are normalised. "Dated" means `20\d\d-\d\d-\d\d` or a ledger number `#\d+` outside the world line and the rule-6 notes. Each rule ships with unit tests. `docs/DOCS_STANDARD.md` gains a short "Procedure pages" section with D1 and D2. If the owner says no to the tool change, the rules are written in DOCS_STANDARD only and held by review.
 
-## For the owner
+## For the owner (answered 2026-11-14)
+
+Answers: 1 yes. 2 yes, and every sequence that launches the commander carries all its steps from a cold start. 3 the owner believes about 30 Hz but has not measured it ("i think 30hz? idk"): the page keeps "a steady rate" until a reading is logged. 4 not answered: left as written.
 
 1. **D11:** allow the checker rules (a change under `tools/docs_check/`, with tests)? Recommended: yes.
 2. **D9, order of the opening steps:** C9 and section B start the drone link before QGroundControl and mocap; B9 and B10 start it after. Use the B9 order everywhere? Recommended: yes (it is the newest, flown on 2026-11-13).

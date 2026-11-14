@@ -294,126 +294,134 @@ Already in the drone's own shell (adb or ssh)? Type `shutdown now` there instead
 
 ### B9 — Fly one real drone with the gamepad
 
-One Starling, hand-flown with a Logitech F310 pad, motion-capture positioning (mocap). The front door is
-[`tools/real.sh`](../tools/README.md#real-drone-the-gamepad-check): it checks the pad and makes the config. It starts nothing.
-No Isaac Sim. Every box on [PREFLIGHT.md](PREFLIGHT.md) gates the takeoff.
+> **WORLD: REAL DRONE.** One Starling (`drone_2`), hand-flown with a Logitech F310 pad, motion-capture positioning (mocap). No Isaac Sim. [PREFLIGHT.md](PREFLIGHT.md) gates the takeoff.
+> **Panic:** `hold` (pane 4, or the panel's Hold All), then `land`. Anything scary: KILL (ch8), then `land` once with the drone on the floor. `hold` on a hand-flown drone is not flown (NEAR-832).
+> Until DISARMED, press Ctrl-C in pane 4 only.
 
-**Which drone is which** (source: the table under "The two Starlings" in [CONFIG.md](CONFIG.md)):
+**`drone_1` instead:** step 3 runs `tools/real.sh teleop drone_1`; paste the lines it prints, ping `10.40.2.11`, read `drone_1` for `drone_2` in every check.
+It flies with a watcher on its front-right motor at every takeoff ([hazard 6](projects/HTX-R2.md#before-the-next-real-flight)).
 
-| Name | Drone | IP | `MAV_SYS_ID` |
-|---|---|---|---|
-| `drone_1` | older Starling, WiFi dongle | `10.40.2.11` | 1 |
-| `drone_2` | newer Starling, D0012 | `10.40.2.10` | 2 |
+<!-- shared-opening -->
 
-The older Starling (`drone_1`) flies by the owner's decision, with a watcher on its front-right motor at every
-takeoff ([projects/HTX-R2.md](projects/HTX-R2.md#before-the-next-real-flight), hazard 6). This section flies
-`drone_2`, as on 2026-11-13. To fly `drone_1` instead, run `tools/real.sh teleop drone_1` in step 3, paste the
-lines it prints (they say `drone_1` and `target_systems:=1`), ping `10.40.2.11`, and read `drone_1` for `drone_2` in every check.
+Every drone powered and booted. Laptop or its IP changed since the last session: re-provision ([DRONE_SETUP.md](DRONE_SETUP.md#4--point-px4-at-the-laptop-uxrce-dds-provisioning) §4).
+Then REBOOT every drone, never `systemctl restart voxl-px4` (iron rule 7).
 
-**The pad.** Logitech F310, plugged into the laptop. Switch on the back of the pad on **X**, MODE light **off**.
-Never press MODE after the pad check. `tools/real.sh pad` checks the pad alone. `tools/real.sh teleop drone_2`
-runs the same check (five stick moves), then makes `/tmp/svg_real/teleop_real_drone_2.yaml` in the robot
-container. Re-run it after any container restart or pad replug. It refuses while the pad pane runs.
-
-**Cold start.** Prompts: laptop `jeremychia@…$`, container pane `root@…#`. The container's tmux session has
-numbered panes. `Ctrl-b` then an arrow key moves between them.
-
-| Pane | What runs there |
-|---|---|
-| 1 | the drone link (agent). Left running |
-| 2 | the interfaces. Left running |
-| 3 | the commander. Left running |
-| 4 | the cockpit: every `echo`, `hz` and service call |
-| 5 | the pad. Left running until DISARMED |
-
-Until DISARMED, press Ctrl-C in pane 4 only.
-
-**0 ·** Drone powered and booted. If the laptop or its IP changed since the last session, re-provision it first
-([DRONE_SETUP.md](DRONE_SETUP.md#4--point-px4-at-the-laptop-uxrce-dds-provisioning) §4). Then REBOOT it, never `systemctl restart voxl-px4` (iron rule 7).
-Each drone keeps its own name and ID: `drone_1` → `MAV_SYS_ID` 1, `drone_2` → `MAV_SYS_ID` 2. The script does not set `MAV_SYS_ID`.
-
+**1 · Laptop · no sim, mocap ports clear, every drone answers**
 ```bash
-# 1 · Laptop — no sim (must print nothing), mocap ports clear, the drone answers
 docker ps | grep isaac
 ss -ulpn | grep -E ':(1510|1511)' || echo "ports clear"
-ping -c2 10.40.2.10        # drone_2 (IPs drift: CONFIG.md table)
+ping -c2 10.40.2.10
+```
+Must see: nothing from `docker ps`, then `ports clear`, then ping replies.
+If not: ports → `./mocap.sh stop`, re-check. No reply → IPs drift: [CONFIG.md](CONFIG.md) table.
 
-# 2 · Laptop — robot container up (the pad check runs inside it)
+**2 · Laptop · robot container up**
+```bash
 cd ~/AirStack-starling-max2/AirStack
 ./airstack.sh up robot-desktop
-
-# 3 · Laptop, a terminal — pad check, then the config. Move each stick when asked. It must end
-#     "PAD CHECK: PASS — do not press MODE from now on", then print the takeoff point and the pane lines.
-cd ~/AirStack-starling-max2 && tools/real.sh teleop drone_2
-
-# 4 · Laptop, two new terminals — QGroundControl (keep it visible), then mocap
-#     (rigid body drone_2 must exist in Motive before this starts: MOCAP.md)
-~/QGroundControl-x86_64.AppImage
-cd ~/AirStack-starling-max2 && MOCAP_BODIES="drone_2" ./mocap.sh
-
-# 5 · Laptop — into the container
-cd ~/AirStack-starling-max2/AirStack && ./airstack.sh connect robot   # → tmux "bringup", prompt root@…#
-
-# 6 · Pane 1 — the drone link; wait for "session established", leave running
-MicroXRCEAgent udp4 -p 8888 -v4
-
-# 7 · Pane 4 — link and pose alive: a steady rate each (pose about 240 Hz). Ctrl-C after each reading
-ros2 topic hz /drone_2/fmu/out/vehicle_status
-ros2 topic hz /drone_2/pose
-
-# 8 · Pane 2 — interfaces; the startup line must say target_system=2
-ros2 launch svg_ground_control real_interfaces.launch.py drones:=drone_2 target_systems:=2
-
-# 9 · Pane 5 — the pad, BEFORE the commander. A "pad:" line once a second: move each stick, the numbers
-#     must follow. No "REFUSING TO COMMAND". Leave it running until QGroundControl says DISARMED.
-ros2 launch svg_ground_control teleop.launch.py config:=/tmp/svg_real/teleop_real_drone_2.yaml
-
-# 10 · Pane 3 — the commander, with the config step 3 made
-ros2 launch svg_ground_control ground_control.launch.py config:=/tmp/svg_real/teleop_real_drone_2.yaml use_mocap:=true use_foxglove_studio:=true
-
-# 11 · Pane 4 — odometry flowing, drone_2 "state": "IDLE" and "odom_fresh": true, then the
-#      pad-alive check: about 20 Hz. Ctrl-C each hz after the reading
-ros2 topic hz /drone_2/odometry_conversion/odometry
-ros2 topic echo /svg/commander_status --once
-ros2 topic hz /svg/drone_2/teleop_command
-
-# 12 · Every box on PREFLIGHT.md. drone_2 stands ON the takeoff point step 3 printed
-#      (x -0.5, y 0.0 in teleop_real_ours.yaml), nose toward +x. Safety pilot on the transmitter, thumb on KILL.
-#      Everyone stays outside the net from takeoff until QGroundControl says DISARMED.
-
-# 13 · Pane 4 — takeoff. Wait for "holding takeoff position" in pane 3, then start.
-#      After start, wait for "drone_2: sticks live" in pane 3 before touching the sticks
-ros2 service call /swarm_commander/takeoff std_srvs/srv/Trigger
-#      WAIT for "holding takeoff position" in pane 3. Only then:
-ros2 service call /swarm_commander/start   std_srvs/srv/Trigger
-
-# 14 · Fly with the sticks (below). Sticks do nothing: see the stop table below. Then land.
-#      QGroundControl must show DISARMED before anyone walks in.
-#      Still ARMED after about 10 s → KILL or arm switch down (iron rule 2)
-ros2 service call /swarm_commander/land std_srvs/srv/Trigger
 ```
 
-**The sticks** (the Basestation's Teleop · Sticks card shows them live: [BASESTATION.md](BASESTATION.md) §3.13):
+<!-- /shared-opening -->
 
-| Control | What it does |
-|---|---|
-| Right stick | moves the drone in ROOM axes, not relative to its nose: up = +x, left = +y |
-| Left stick | up and down = climb and descend · left and right = turn |
-| LB | press once to lock climb and turn, press again to unlock. The right stick still works. Pane 5 shows `LOCKED` |
-| Sticks released | the drone holds where it is |
+**3 · Laptop · pad check, then the config.** Pad plugged in, back switch on **X**, MODE light **off**. Move each stick when asked.
+```bash
+cd ~/AirStack-starling-max2 && tools/real.sh teleop drone_2
+```
+Must see: `PAD CHECK: PASS — do not press MODE from now on`, then the takeoff point and the pane lines. Never press MODE after this.
 
-The sticks do nothing until `start`. The speed cap is 0.5 m/s (`teleop_max_speed_mps` and `max_speed_mps` in
-`teleop_real_ours.yaml`). It caps the command, not the drone ([#36](record/LEDGER.md)). First turn: slow and low, thumb on KILL.
+<!-- shared-opening -->
+
+**4 · Laptop, new terminal · QGroundControl**
+```bash
+~/QGroundControl-x86_64.AppImage
+```
+Must see: `drone_2` in QGroundControl. Keep it visible. If not: [TROUBLESHOOTING.md](TROUBLESHOOTING.md), "QGC shows no vehicle" and "Two drones on, QGC shows only one".
+
+**5 · Laptop, new terminal · mocap.** A Motive rigid body must exist for each drone (`drone_2`) before this starts ([MOCAP.md](MOCAP.md)).
+```bash
+cd ~/AirStack-starling-max2 && MOCAP_BODIES="drone_2" ./mocap.sh
+```
+Leave running.
+
+**6 · Laptop · into the container**
+```bash
+cd ~/AirStack-starling-max2/AirStack && ./airstack.sh connect robot
+```
+Must see: tmux "bringup", prompt `root@…#`.
+
+**7 · Pane 1 · the drone link**
+```bash
+MicroXRCEAgent udp4 -p 8888 -v4
+```
+Must see: `session established`. Leave running.
+If not: a stale laptop IP on a drone means no session. Re-provision it ([DRONE_SETUP.md](DRONE_SETUP.md#4--point-px4-at-the-laptop-uxrce-dds-provisioning) §4), then reboot.
+
+**8 · Pane 4 · link alive**
+```bash
+ros2 topic hz /drone_2/fmu/out/vehicle_status
+```
+Must see: a steady rate. Ctrl-C after each reading. If not: is pane 1 running? ([TROUBLESHOOTING.md](TROUBLESHOOTING.md), "`/fmu/*` topics look dead")
+
+**9 · Pane 4 · pose alive**
+```bash
+ros2 topic hz /drone_2/pose
+```
+Must see: a steady rate, about 240 Hz. Ctrl-C after each reading. If not: `./mocap.sh check` on the laptop names the culprit.
+
+**10 · Pane 2 · interfaces**
+```bash
+ros2 launch svg_ground_control real_interfaces.launch.py drones:=drone_2 target_systems:=2
+```
+Must see: the startup line of `drone_2` says `target_system=2`.
+Leave running. If not: do not fly (iron rule 5).
+
+<!-- /shared-opening -->
+
+**11 · Pane 5 · the pad, before the commander**
+```bash
+ros2 launch svg_ground_control teleop.launch.py config:=/tmp/svg_real/teleop_real_drone_2.yaml
+```
+Must see: a `pad:` line once a second; move each stick, the numbers must follow. No `REFUSING TO COMMAND`. Leave it running until DISARMED.
+If not: [TROUBLESHOOTING.md](TROUBLESHOOTING.md), "Gamepad sticks do nothing" and "`safe_teleop` prints `pad: NO /joy` forever".
+
+**12 · Pane 3 · the commander**
+```bash
+ros2 launch svg_ground_control ground_control.launch.py config:=/tmp/svg_real/teleop_real_drone_2.yaml use_mocap:=true use_foxglove_studio:=true
+```
+Must see: Foxglove Studio opens, already pointed at the bridge. Leave running.
+
+**13 · Pane 4 · odometry flowing**
+```bash
+ros2 topic hz /drone_2/odometry_conversion/odometry
+```
+Must see: a steady rate. Ctrl-C after the reading. If not: takeoff will be refused. [TROUBLESHOOTING.md](TROUBLESHOOTING.md), "Takeoff refused".
+
+**14 · Pane 4 · commander status**
+```bash
+ros2 topic echo /svg/commander_status --once
+```
+Must see: `drone_2`, `"state": "IDLE"`, `"odom_fresh": true`. If not IDLE: `land` once, drone on the floor ([TROUBLESHOOTING.md](TROUBLESHOOTING.md), "Takeoff refused").
+
+**15 · Pane 4 · pad alive**
+```bash
+ros2 topic hz /svg/drone_2/teleop_command
+```
+Must see: about 20 Hz. Ctrl-C after the reading. If not: the pad pane stopped ([TROUBLESHOOTING.md](TROUBLESHOOTING.md), "Sticks ignored after `start`").
+
+**16 · Floor · go / no-go**
+
+Every box on [PREFLIGHT.md](PREFLIGHT.md).
+This session adds: `drone_2` stands ON the takeoff point step 3 printed (x -0.5, y 0.0 in `teleop_real_ours.yaml`), nose toward +x.
 
 **What to expect**
-- `takeoff` arms and flies a STRAIGHT LINE from where the drone stands to the takeoff point step 3 printed (z 0.5).
-  Standing on the point, that is a climb. The fence does not act during the climb or the landing.
-- Then it hovers on the point. The Sticks card reads `STICKS PARKED` (press Start).
-- `start`: pane 3 prints `drone_2: sticks live, holding [...] until moved`. The card reads `STICKS LIVE → drone_2`.
-  (Seen in the panel recordings: `STICKS LIVE` in `videos/xbox_teleop_ui.mp4`, ledger [#36](record/LEDGER.md), and `STICKS PARKED` in
-  `videos/cbf_teleop_two_drones_ui.mp4`, ledger [#37](record/LEDGER.md).)
-- In flight the teleop fence (x and y −1.5 to 1.5 m, z 0.3 to 1.8 m) is meant to brake the drone at its walls.
-  The −y wall was seen in one flight ([#36](record/LEDGER.md)). The +x wall and the top are not flown.
+
+| When | You see |
+|---|---|
+| `takeoff` | A STRAIGHT LINE from where the drone stands to the takeoff point (z 0.5): standing on the point, a climb. The fence does not act during the climb or the landing |
+| Hover | The drone hovers on the point. The Basestation's Teleop · Sticks card: `STICKS PARKED` (press Start) |
+| `start` | Pane 3: `drone_2: sticks live, holding [...] until moved`. The card reads `STICKS LIVE → drone_2` |
+| Flight | The teleop fence (x and y −1.5 to 1.5 m, z 0.3 to 1.8 m) is meant to brake the drone at its walls. The −y wall was seen in one flight. The +x wall and the top are not flown |
+| Speed | The cap is 0.5 m/s. It caps the command, not the drone |
 
 **Stop table.** The [PREFLIGHT.md](PREFLIGHT.md) emergency table comes first.
 
@@ -428,13 +436,46 @@ The sticks do nothing until `start`. The speed cap is 0.5 m/s (`teleop_max_speed
 | Anything scary | KILL (ch8), then `land` once with the drone on the floor | iron rule 3 |
 | Landed, but QGroundControl still says ARMED | after about 10 s: KILL or arm switch (ch5) down. Nobody walks in | iron rule 2 |
 
-**Shutdown.** Only after QGroundControl says DISARMED: Ctrl-C panes 3, 5, 2, 1 and the mocap terminal, then on the laptop:
+**PANIC call — hold:**
 ```bash
-cd ~/AirStack-starling-max2/AirStack && ./airstack.sh down
-adb shell shutdown now      # drone power-off, USB-C connected; wait about 10 s, then unplug USB and the battery
+ros2 service call /swarm_commander/hold    std_srvs/srv/Trigger
 ```
 
-What was seen: ledger [#36](record/LEDGER.md).
+**17 · Pane 4 · takeoff.** Everyone stays outside the net from takeoff until QGroundControl says DISARMED.
+```bash
+ros2 service call /swarm_commander/takeoff std_srvs/srv/Trigger
+```
+Must see, pane 3: `holding takeoff position`. Only then `start`. If not: [TROUBLESHOOTING.md](TROUBLESHOOTING.md), "Takeoff refused".
+
+**18 · Pane 4 · start**
+```bash
+ros2 service call /swarm_commander/start   std_srvs/srv/Trigger
+```
+Must see, pane 3: `drone_2: sticks live`. Wait for it before touching the sticks. If not: stop table, "Sticks do nothing after `start`".
+
+**19 · Pad · fly.** First turn: slow and low, thumb on KILL.
+
+| Control | What it does |
+|---|---|
+| Right stick | moves the drone in ROOM axes, not relative to its nose: up = +x, left = +y |
+| Left stick | up and down = climb and descend · left and right = turn |
+| LB | press once to lock climb and turn, press again to unlock. The right stick still works. Pane 5 shows `LOCKED` |
+| Sticks released | the drone holds where it is |
+
+**20 · Pane 4 · land**
+```bash
+ros2 service call /swarm_commander/land std_srvs/srv/Trigger
+```
+Must see: QGroundControl shows DISARMED before anyone walks in. If not: still ARMED after about 10 s → KILL or arm switch (ch5) down (iron rule 2).
+
+**Shutdown.** Only after QGroundControl says DISARMED: Ctrl-C panes 3, 5, 2, 1 and the mocap terminal.
+
+**21 · Laptop, drone on USB-C · stack down, drone off**
+```bash
+cd ~/AirStack-starling-max2/AirStack && ./airstack.sh down
+adb shell shutdown now
+```
+Then wait about 10 s, and unplug USB and the battery.
 
 ### B10 — Two real drones, one flown by hand
 

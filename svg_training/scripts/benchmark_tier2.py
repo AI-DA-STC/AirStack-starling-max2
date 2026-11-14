@@ -129,20 +129,22 @@ def run(args, case: dict, timing: dict) -> int:
 
         for repeat in range(timing["repeats"]):
             il.reset_drones(scene, drones, only_out_of_bounds=False)
-            r = tm.measure(step, timing["warmup_steps"], timing["timed_steps"], device)
+            r = tm.measure(step, timing["warmup_steps"], timing["timed_steps"], device,
+                           min_timed_s=timing.get("min_timed_s", 0.0))
             env_sps = r["steps_per_s"] * n
             free_b, total_b = torch.cuda.mem_get_info(gpu_index)  # device-wide, sees the PhysX buffers
             append({**base, "repeat": repeat, "status": "ok", "env_steps_per_s": env_sps,
                     "drone_steps_per_s": env_sps * k, "peak_mem_mb": r["peak_mem_mb"],
                     "gpu_mem_used_mb": (total_b - free_b) / 2**20, "hover_n": hover_n,
-                    "nan_count": r["nan_count"], "mean_reset_fraction": r["mean_reset_fraction"]})
+                    "nan_count": r["nan_count"], "mean_reset_fraction": r["mean_reset_fraction"],
+                    "timed_steps": r["timed_steps"], "timed_s": r["timed_s"]})
             print(f"{case['name']} games={n} repeat={repeat}: {env_sps:,.0f} env steps/s", flush=True)
         return 0
     except Exception as e:  # torch.OutOfMemoryError is an Exception
         oom = isinstance(e, torch.OutOfMemoryError) or "out of memory" in str(e).lower()
         append({**base, "repeat": repeat, "status": "oom" if oom else "crash", "env_steps_per_s": None,
                 "drone_steps_per_s": None, "peak_mem_mb": None, "nan_count": None, "mean_reset_fraction": None,
-                "gpu_mem_used_mb": None, "hover_n": None, "error": repr(e)[:300]})
+                "gpu_mem_used_mb": None, "hover_n": None, "timed_steps": None, "timed_s": None, "error": repr(e)[:300]})
         print(f"{case['name']} games={n}: {'OOM' if oom else 'crash'}: {e!r}", file=sys.stderr, flush=True)
         return 1
 

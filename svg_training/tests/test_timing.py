@@ -187,3 +187,37 @@ def test_cuda_warmup_synchronises_before_clock_check(monkeypatch):
     # the clock check inside the warm-up is always directly preceded by a synchronise
     checks = [i for i, e in enumerate(ev) if e == "clock"][1:3]
     assert all(ev[i - 1] == "sync" for i in checks)
+
+
+def test_min_timed_s_extends_the_window(monkeypatch):
+    import types
+    clock = {"t": 0.0}
+    monkeypatch.setattr(timing, "time", types.SimpleNamespace(perf_counter=lambda: clock["t"]))
+    def step():
+        clock["t"] += 0.001
+    r = timing.measure(step, warmup_steps=50, timed_steps=200, device="cpu", min_warmup_s=0.0, min_timed_s=2.0)
+    assert r["timed_steps"] >= 2000 and r["timed_s"] >= 2.0 and isinstance(r["timed_steps"], int)
+    assert r["steps_per_s"] == pytest.approx(r["timed_steps"] / r["timed_s"])
+    r = timing.measure(step, warmup_steps=50, timed_steps=200, device="cpu", min_warmup_s=0.0, min_timed_s=0.0)
+    assert r["timed_steps"] == 200
+
+
+def test_min_timed_s_order_on_cuda(monkeypatch):
+    import types
+    ev, clock = [], {"t": 0.0}
+    monkeypatch.setattr(torch.cuda, "synchronize", lambda *a, **k: ev.append("sync"))
+    monkeypatch.setattr(torch.cuda, "reset_peak_memory_stats", lambda *a, **k: None)
+    monkeypatch.setattr(torch.cuda, "max_memory_allocated", lambda *a, **k: 0)
+    def now():
+        ev.append("clock"); return clock["t"]
+    monkeypatch.setattr(timing, "time", types.SimpleNamespace(perf_counter=now))
+    def step():
+        ev.append("step"); clock["t"] += 0.01
+    r = timing.measure(step, warmup_steps=5, timed_steps=3, device="cuda", min_warmup_s=0.0, min_timed_s=0.5)
+    n = r["timed_steps"]
+    assert n in (55, 56)  # ceil(0.5 * 100 steps/s * 1.1), float rounding
+    last = len(ev) - 1
+    assert ev[last] == "clock" and ev[last - 1] == "sync"
+    assert ev[last - 1 - n:last - 1] == ["step"] * n  # no synchronise inside the timed steps
+    assert ev[last - 2 - n] == "clock"  # clock starts directly before the timed steps
+    assert ev[:1] == ["clock"] and ev[1:6] == ["step"] * 5 and ev[6] == "sync"

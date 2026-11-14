@@ -6,6 +6,7 @@ Throughput is environment steps per second (games x policy steps per second), dr
 import datetime
 import gc
 import json
+import math
 import pathlib
 import subprocess
 import time
@@ -30,40 +31,59 @@ def _idx(device: str) -> int:
 
 
 def measure(step_fn: Callable[[], "dict | None"], warmup_steps: int, timed_steps: int, device: str,
-            min_warmup_s: float = 2.0) -> dict:
-    """Run the warm-up untimed, then time timed_steps calls of step_fn.
+            min_warmup_s: float = 2.0, min_timed_s: float = 0.0) -> dict:
+    """Run the warm-up untimed, then time n calls of step_fn, n = timed_steps or more.
 
     The warm-up is at least warmup_steps steps AND at least min_warmup_s seconds (a cold GPU needs time to reach
     its clocks; 50 steps can last 25 ms). Its elapsed time is checked after a synchronise, and all of it happens
     before the clock starts. min_warmup_s=0 turns the time condition off.
+
+    The timed window is at least timed_steps steps AND at least min_timed_s seconds. The number of timed steps n is
+    decided before the clock starts, from the warm-up's own rate (warm-up steps run / warm-up seconds, read after a
+    synchronise): n = max(timed_steps, ceil(min_timed_s * rate * 1.1)). min_timed_s=0 gives n = timed_steps exactly.
+    The timed loop itself has no extra synchronise.
 
     The timed section includes a per-step finiteness check of every floating-point output (a training loop
     guards against NaN too), so the throughput reported contains that cost.
     The timed loop forces no host-device sync: the per-step non-finite flag and reset_fraction stay on the device
     as tensors and are read once after the clock stops. nan_count = timed steps in which any floating-point
     tensor of the returned dict has a NaN or infinity (a step returning None counts 0).
-    Returns steps_per_s, nan_count, mean_reset_fraction, peak_mem_mb (0 on CPU).
+    Returns steps_per_s (n / elapsed), nan_count, mean_reset_fraction, peak_mem_mb (0 on CPU), timed_steps (the n
+    actually run) and timed_s (elapsed seconds of the timed window).
     """
     cuda = _is_cuda(device)
     idx = _idx(device) if cuda else 0
     if cuda:
         torch.cuda.reset_peak_memory_stats(idx)
-    w0 = time.perf_counter() if min_warmup_s > 0 else 0.0
+    need_rate = min_timed_s > 0
+    w0 = time.perf_counter() if (min_warmup_s > 0 or need_rate) else 0.0
+    warm_done = warmup_steps
     for _ in range(warmup_steps):
         step_fn()
+    w1 = None
     if min_warmup_s > 0:
         while True:
             if cuda:
                 torch.cuda.synchronize(idx)
-            if time.perf_counter() - w0 >= min_warmup_s:
+            w1 = time.perf_counter()
+            if w1 - w0 >= min_warmup_s:
                 break
-            for _ in range(max(1, warmup_steps // 5)):
+            extra = max(1, warmup_steps // 5)
+            for _ in range(extra):
                 step_fn()
+            warm_done += extra
+    elif need_rate:
+        if cuda:
+            torch.cuda.synchronize(idx)
+        w1 = time.perf_counter()
+    n = timed_steps
+    if need_rate and w1 is not None and w1 > w0 and warm_done > 0:
+        n = max(timed_steps, math.ceil(min_timed_s * (warm_done / (w1 - w0)) * 1.1))
     flags, resets = [], []
     if cuda:
         torch.cuda.synchronize(idx)  # warm-up work must be finished before the clock starts
     t0 = time.perf_counter()
-    for _ in range(timed_steps):
+    for _ in range(n):
         out = step_fn()
         if out is None:
             continue
@@ -82,8 +102,9 @@ def measure(step_fn: Callable[[], "dict | None"], warmup_steps: int, timed_steps
     nan_count = int(torch.stack(flags).sum().item()) if flags else 0
     mean_reset = float(torch.stack(resets).mean().item()) if resets else 0.0
     peak_mb = torch.cuda.max_memory_allocated(idx) / 2**20 if cuda else 0
-    return {"steps_per_s": timed_steps / elapsed, "nan_count": nan_count,
-            "mean_reset_fraction": mean_reset, "peak_mem_mb": float(peak_mb)}
+    return {"steps_per_s": n / elapsed, "nan_count": nan_count,
+            "mean_reset_fraction": mean_reset, "peak_mem_mb": float(peak_mb),
+            "timed_steps": int(n), "timed_s": float(elapsed)}
 
 
 _commit = None
@@ -129,7 +150,7 @@ def run_case(make_env: Callable[[], Any], step_of: Callable[[Any], Callable], ca
     An out-of-memory error while building or stepping gives exactly one row with status "oom", repeat 0 and None
     for the measured fields. Any other exception gives exactly one row with status "crash" (repeat 0, None for the
     measured fields, key "error" = exception class and message), so one bad point does not end a sweep.
-    min_warmup_s is passed to `measure`.
+    min_warmup_s and timing["min_timed_s"] (default 0) are passed to `measure`; rows also carry timed_steps and timed_s.
     """
     if "guards" in case and "strikes" in case:
         drones = case["guards"] + case["strikes"]
@@ -143,13 +164,15 @@ def run_case(make_env: Callable[[], Any], step_of: Callable[[Any], Callable], ca
         for repeat in range(timing["repeats"]):
             env = make_env()
             step = step_of(env)
-            r = measure(step, timing["warmup_steps"], timing["timed_steps"], device, min_warmup_s)
+            r = measure(step, timing["warmup_steps"], timing["timed_steps"], device, min_warmup_s,
+                        timing.get("min_timed_s", 0.0))
             env = step = None
             _release(device)
             env_sps = r["steps_per_s"] * num_games
             rows.append({**base, "repeat": repeat, "status": "ok", "env_steps_per_s": env_sps,
                          "drone_steps_per_s": env_sps * drones, "peak_mem_mb": r["peak_mem_mb"],
-                         "nan_count": r["nan_count"], "mean_reset_fraction": r["mean_reset_fraction"]})
+                         "nan_count": r["nan_count"], "mean_reset_fraction": r["mean_reset_fraction"],
+                         "timed_steps": r["timed_steps"], "timed_s": r["timed_s"]})
     except torch.OutOfMemoryError:
         oom = True
     except Exception as e:  # noqa: BLE001 - one bad point must not end the sweep
@@ -158,10 +181,12 @@ def run_case(make_env: Callable[[], Any], step_of: Callable[[Any], Callable], ca
         env = step = None
         _release(device)
         return [{**base, "repeat": 0, "status": "oom", "env_steps_per_s": None, "drone_steps_per_s": None,
-                 "peak_mem_mb": None, "nan_count": None, "mean_reset_fraction": None}]
+                 "peak_mem_mb": None, "nan_count": None, "mean_reset_fraction": None,
+                 "timed_steps": None, "timed_s": None}]
     if crash is not None:  # outside the except block for the same reason
         env = step = None
         _release(device)
         return [{**base, "repeat": 0, "status": "crash", "env_steps_per_s": None, "drone_steps_per_s": None,
-                 "peak_mem_mb": None, "nan_count": None, "mean_reset_fraction": None, "error": crash}]
+                 "peak_mem_mb": None, "nan_count": None, "mean_reset_fraction": None,
+                 "timed_steps": None, "timed_s": None, "error": crash}]
     return rows

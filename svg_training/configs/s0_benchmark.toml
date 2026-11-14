@@ -1,4 +1,4 @@
-# Written 14 November 2026, before any run. Never edited after the first result exists (STANDARDS §7.1).
+# Rewritten 15 November 2026 and approved by the owner the same day (timed window at least 200 steps and at least 2 s). Never edited after the first result exists (STANDARDS §7.1).
 [gates]            # S0 is a measurement: the gates check that the measurement is sound.
 tests_pass = true
 sweep_complete = true        # every case below has a row with status "ok" or "oom"
@@ -13,6 +13,7 @@ tier2_train_min_drone_steps_per_s = 20000   # best tier 2 case: below this, tier
 [timing]
 warmup_steps = 50
 timed_steps = 200
+min_timed_s = 2.0
 repeats = 2
 
 [[tier1]]

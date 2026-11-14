@@ -413,3 +413,17 @@ def test_cli_missing_flags_file_is_no_flags(tmp_path, rows):
     res.write_text("\n".join(json.dumps(r) for r in rows) + "\n")
     assert _load_cli().main(_cli_args(tmp_path, res, ["--seeds", "0", "--flags-file", str(tmp_path / "none.txt")])) == 0
     assert "PhysX buffer overflow" not in (tmp_path / "records" / "2026-11-15_s0_laptop_record.md").read_text()
+
+
+def test_short_timed_window_listed_and_timing_line(rows, cfg):
+    assert cfg["timing"]["min_timed_s"] == 2.0
+    base = _txt(rows, cfg)
+    assert "at least 2.0 s" in base and "short timed window" not in base
+    ok = [dict(r, timed_s=2.5) for r in rows]
+    assert "short timed window" not in _txt(ok, cfg)
+    short = [dict(r) for r in ok]
+    short[0]["timed_s"] = 0.5
+    t = _txt(short, cfg)
+    r0 = short[0]
+    assert f"short timed window: {r0['case']} {r0['num_games']} repeat {r0['repeat']} (0.50 s)" in t
+    assert t.count("short timed window") == 1

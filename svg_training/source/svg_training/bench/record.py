@@ -217,7 +217,8 @@ def render_record(rows: list[dict], cfg: dict, verdict: dict, meta: dict) -> str
          "## Code version", "", "code_sha (first 12 hex of a sha256 over the files under source/, scripts/ and "
          "configs/): " + ", ".join(f"`{c}`" for c in shas), "",
          "## Config", "", cfg_line,
-         f"Timing: {t['warmup_steps']} warm-up steps, {t['timed_steps']} timed steps, {t['repeats']} repeats.", "",
+         f"Timing: {t['warmup_steps']} warm-up steps and at least 2 s; timed window at least {t['timed_steps']} steps "
+         f"and at least {t.get('min_timed_s', 0)} s; {t['repeats']} repeats.", "",
          "## Model parameter set", "", "placeholder", "",
          "## Seeds", "", seeds, "",
          "## Machine", "", f"- Machine: {meta.get('machine', 'unknown')}", f"- GPU: {', '.join(gpus)}", "",
@@ -234,6 +235,12 @@ def render_record(rows: list[dict], cfg: dict, verdict: dict, meta: dict) -> str
     if meta.get("note"):
         L.insert(L.index("## Gates") + 2, f"Note: {meta['note']}")
         L.insert(L.index("## Gates") + 3, "")
+    short = [r for r in _ok(rows) if isinstance(r.get("timed_s"), (int, float)) and not isinstance(r["timed_s"], bool)
+             and r["timed_s"] < 0.8 * t.get("min_timed_s", 0)]
+    if short:
+        L.append("")
+        L += [f"short timed window: {r['case']} {r['num_games']} repeat {r['repeat']} ({r['timed_s']:.2f} s)"
+              for r in short]
     if verdict.get("oom_order"):
         L += ["", "Unexpected out-of-memory order (out of memory at this size while a larger size of the same case "
               "is ok): " + ", ".join(f"{c} at {n:,} games" for c, n in verdict["oom_order"])]

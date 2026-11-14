@@ -118,6 +118,7 @@ anything uncertain is executed, and told about anything that could affect other 
 | Folder | `svg_training` in the live clone `~/AirStack-starling-max2` (he first wrote "IssacLab") |
 | Packaging (third round, same day) | "the point is to add a training pipeline to airstack": the folder is committed as a top-level component of the repository, like `localisation/`, with a `docker/` image carrying Isaac Lab (option A); its agents and skills are committed too ("yes commit agents") |
 | Models | Fable orchestrates; if it runs out, Opus at high effort |
+| Fourth round (15 November) | repository may be public ("its just a training pipeline doesnt need to be private"); new S0 config approved (timed window at least 200 steps and at least 2 s); Isaac Lab launch approved ("ok do it"; he is remote with the laptop behind him); after a tag both drones leave by default |
 | Design | approved ("yup looks good"), with the four answers below |
 | Tag | physical contact between a Guard drone and a Strike drone; no tag radius. His words: "the end goal is to have physical interdiction between strike team and guard team drones" |
 | Safety filter | only between drones of the same team |
@@ -177,7 +178,6 @@ stay out of git; real flights of a contact policy should start with a virtual co
 
 | Item | Who | Needed before |
 |---|---|---|
-| After a tag, the Guard drone: Claude recommended a setting `guard_survives_tag_prob`, default 0 (both leave), evaluated at 0 and 1. The owner has not answered yet (his words: "it depends on the policy for the guard drone(?) idk"; the Strike drone "should go down") | owner | S2 |
 | A pair mask in CMU's safety filter, so that a contact tag can fly at all; and a flight safety case for deliberate contact | owner + CMU (outside this folder) | any flight of a contact policy |
 | The zone's size and place in each world; the playing volume | owner | S2 |
 | Licence of the construction-site asset (an Unreal Engine asset pack exported by the lab; no licence file found) | owner | before anything made from it leaves the lab |
@@ -192,7 +192,6 @@ stay out of git; real flights of a contact policy should start with a virtual co
 | Written velocity contract with NUS and CMU (Linear NEAR-874, NEAR-875) | owner + NUS + CMU | use 2, S5 |
 | Tell UPenn and NUS about this pipeline; UPenn already has an Isaac Lab environment | owner | early |
 | Access to a training workstation (RTX 5090, RTX PRO 6000 or RTX 6000 Ada); its driver and Isaac versions | owner | S0 on that machine |
-| Check the GitHub repository is PRIVATE before pushing: this folder's docs describe contact tags and name the programme's confidential reports | owner | his next push |
 | Build and try the image on the training workstation (`docker/build.sh`, then `docker/run.sh`) | owner + Claude | S0 on that machine |
 | A ROS 2 policy node inside the AirStack tree | owner (separate approval) | S5 |
 | Rotor positions for tier 2: sim CAD or the drone's parameters | owner | S4 |

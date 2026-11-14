@@ -9,7 +9,7 @@ def test_package_imports_without_isaac():
 def test_sweep_config_is_complete():
     cfg = tomllib.loads((ROOT / "configs/s0_benchmark.toml").read_text())
     assert cfg["gates"] == {"tests_pass": True, "sweep_complete": True, "repeat_spread_max": 0.10, "nan_count_max": 0}
-    assert cfg["timing"] == {"warmup_steps": 50, "timed_steps": 200, "repeats": 2}
+    assert cfg["timing"] == {"warmup_steps": 50, "timed_steps": 200, "min_timed_s": 2.0, "repeats": 2}
     assert len(cfg["tier1"]) == 13 and len(cfg["tier2"]) == 8
     for case in cfg["tier1"]:
         assert set(case) == {"name", "guards", "strikes", "world", "n_obstacles", "n_rays", "line_of_sight", "num_games"}

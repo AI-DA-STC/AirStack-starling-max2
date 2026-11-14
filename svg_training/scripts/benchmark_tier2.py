@@ -104,7 +104,7 @@ def run(args, case: dict, timing: dict) -> int:
             "physics_dt_s": dt_s, "substeps": substeps, "policy_dt_s": dt_s * substeps}
 
     def append(row: dict) -> None:
-        row["date"] = datetime.datetime.now().isoformat(timespec="seconds")
+        row["date"] = datetime.datetime.now().astimezone().isoformat(timespec="seconds")
         with open(out, "a") as fh:
             fh.write(json.dumps(row) + "\n")
 

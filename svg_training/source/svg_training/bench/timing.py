@@ -7,6 +7,7 @@ import datetime
 import gc
 import json
 import math
+import os
 import pathlib
 import subprocess
 import time
@@ -122,6 +123,8 @@ def _code_sha() -> str:
 def git_commit() -> str:
     """Short hash of HEAD of the repository containing this folder (read-only); "unknown" if unavailable."""
     global _commit
+    if _commit is None and os.environ.get("SVG_COMMIT"):  # set by docker/run.sh: the container has no .git
+        _commit = os.environ["SVG_COMMIT"]
     if _commit is None:
         try:
             res = subprocess.run(["git", "-C", str(ROOT.parent), "rev-parse", "--short", "HEAD"],
@@ -158,7 +161,7 @@ def run_case(make_env: Callable[[], Any], step_of: Callable[[Any], Callable], ca
         drones = case["drones_per_game"]
     base = {"tier": case.get("tier", 1), "case": case["name"], "num_games": num_games, "drones_per_game": drones,
             "device": device, "gpu_name": gpu_name(device), "commit": git_commit(),
-            "code_sha": _code_sha(), "date": datetime.datetime.now().isoformat(timespec="seconds")}
+            "code_sha": _code_sha(), "date": datetime.datetime.now().astimezone().isoformat(timespec="seconds")}
     rows, env, step, oom, crash = [], None, None, False, None
     try:
         for repeat in range(timing["repeats"]):

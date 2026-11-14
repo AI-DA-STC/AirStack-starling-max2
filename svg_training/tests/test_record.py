@@ -329,7 +329,9 @@ def test_two_code_versions_warn(rows, cfg):
 
 
 def test_commit_is_labelled(rows, cfg):
-    assert "Parent repository HEAD (does not contain this folder while it is untracked)" in _txt(rows, cfg)
+    assert ('repository commit (svg_training/ is tracked; "-dirty" = uncommitted changes under svg_training/ '
+            'at the start of the run)') in _txt(rows, cfg)
+    assert "untracked" not in _txt(rows, cfg)
 
 
 def test_unexpected_oom_order_listed(rows, cfg):
@@ -427,3 +429,40 @@ def test_short_timed_window_listed_and_timing_line(rows, cfg):
     r0 = short[0]
     assert f"short timed window: {r0['case']} {r0['num_games']} repeat {r0['repeat']} (0.50 s)" in t
     assert t.count("short timed window") == 1
+
+
+def test_status_labels_in_record(rows, cfg):
+    t = _txt(rows, cfg)
+    assert "### Tier 1 — MEASURED" in t and "### Tier 2 (ARL Robot 1 airframe) — MEASURED" in t
+    assert "Limits: FIXED (approved config, sha256" in t and "Observed values: MEASURED." in t
+    assert "PROPOSED rules read off MEASURED numbers; not pass or fail." in t
+    assert "GPU-hours (PROPOSED; a lower bound: simulator stepping only)" in t.split("## Limits of")[0]
+
+
+def test_retried_line_only_when_given(rows, cfg):
+    v = record.evaluate(rows, cfg, True)
+    plain = record.render_record(rows, cfg, v, META)
+    assert "Retried once" not in plain
+    t = record.render_record(rows, cfg, v, {**META, "retried_points": [("t2_k2", 64), ("t2_k2", 256)]})
+    gates = t.split("## Gates")[1]
+    assert "Retried once after an Isaac Sim start-up crash: t2_k2 64, t2_k2 256" in gates
+
+
+def test_cli_retried_file(tmp_path, rows):
+    res = tmp_path / "r.jsonl"
+    res.write_text("\n".join(json.dumps(r) for r in rows) + "\n")
+    rf = tmp_path / "retried_points.txt"
+    rf.write_text("t2_k2 64: start-up crash (exit 139), retried once\n")
+    assert _load_cli().main(_cli_args(tmp_path, res, ["--seeds", "0", "--retried-file", str(rf)])) == 0
+    rec = (tmp_path / "records" / "2026-11-15_s0_laptop_record.md").read_text()
+    assert "Retried once after an Isaac Sim start-up crash: t2_k2 64" in rec
+
+
+def test_ledger_date_is_earliest_row(tmp_path, rows):
+    rows = [dict(r, date="2026-11-15T01:00:00+08:00") for r in rows]
+    rows[-1]["date"] = "2026-11-15T00:55:40+08:00"
+    res = tmp_path / "r.jsonl"
+    res.write_text("\n".join(json.dumps(r) for r in rows) + "\n")
+    args = _cli_args(tmp_path, res, ["--seeds", "0"])
+    assert _load_cli().main(args) == 0
+    assert "| T1 | 2026-11-15T00:55:40+08:00 |" in (tmp_path / "LEDGER.md").read_text()

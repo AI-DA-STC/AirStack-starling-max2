@@ -239,6 +239,9 @@ record_cmd() {
     if [ -n "$TIER2_STOPPED" ]; then
         CMD+=(--note "$TIER2_STOPPED")
     fi
+    if [ -s "$RUN_DIR/retried_points.txt" ]; then
+        CMD+=(--retried-file "$RUN_DIR/retried_points.txt")
+    fi
     if [ -s "$RUN_DIR/overflow_points.txt" ]; then
         CMD+=(--flags-file "$RUN_DIR/overflow_points.txt")
     fi
@@ -271,7 +274,7 @@ dry_run() {
     fi
     while read -r case_name n k; do
         tier2_cmd "$case_name" "$n"
-        echo "DRY: ${CMD[*]} >> $RUN_DIR/tier2_logs/${case_name}_${n}.log   (one summary line in $RUN_DIR/tier2.log; no row afterwards: append an oom row if the log says out of memory, else a crash row, drones_per_game=$k; log mentions overflow: point added to $RUN_DIR/overflow_points.txt)"
+        echo "DRY: ${CMD[*]} >> $RUN_DIR/tier2_logs/${case_name}_${n}.log   (one summary line in $RUN_DIR/tier2.log; a non-zero exit with no row and no mass_kg= line in the log is an Isaac start-up crash: log moved to ${case_name}_${n}.startup_crash1.log, point run once more, line added to $RUN_DIR/retried_points.txt; no row afterwards: append an oom row if the log says out of memory, else a crash row, drones_per_game=$k; log mentions overflow: point added to $RUN_DIR/overflow_points.txt)"
     done < <(tier2_points)
     echo "DRY: if the first tier 2 point leaves no ok row: stop tier 2, go to the record with --note <reason>"
     TESTS_PASSED="<yes|no>"
@@ -296,7 +299,11 @@ write_preflight() {
     step 5 "preflight"
     local sha
     sha="$(sha256sum "$CONFIG" | cut -d' ' -f1)"
-    COMMIT="$(git -C "$ROOT/.." rev-parse --short HEAD 2>/dev/null)" || COMMIT="unknown"
+    if [ -n "${SVG_COMMIT:-}" ]; then  # set by docker/run.sh: the container has no .git
+        COMMIT="$SVG_COMMIT"
+    else
+        COMMIT="$(git -C "$ROOT/.." rev-parse --short HEAD 2>/dev/null)" || COMMIT="unknown"
+    fi
     [ -n "$COMMIT" ] || COMMIT="unknown"
     CODE_SHA="$(PYTHONPATH=source "$PY" -c 'from svg_training.bench.rows import code_sha; print(code_sha())' 2>/dev/null)" || CODE_SHA=""
     [ -n "$CODE_SHA" ] || CODE_SHA="unknown"
@@ -304,7 +311,7 @@ write_preflight() {
     [ -n "$GPU_NAME" ] || GPU_NAME="unknown"
     {
         echo "date-time: $(date -Iseconds)"
-        echo "git commit (parent repository HEAD; does not contain this folder while it is untracked): $COMMIT"
+        echo "git commit (svg_training/ is tracked; -dirty = uncommitted changes under svg_training/ at the start of the run): $COMMIT"
         echo "code_sha: $CODE_SHA"
         echo "config sha256: $sha"
         echo "hostname: $(hostname)"
@@ -396,6 +403,24 @@ run_tier2() {
             tier2_cmd "$case_name" "$n"
             run_child "$log" "${CMD[@]}"
             rc="$CHILD_RC"
+            # Isaac Sim start-up crash (owner approved 15 Nov 2026): non-zero exit, no row, and the log never reached
+            # the "mass_kg=" line (printed after Isaac started and the scene was built): run the point once more.
+            if [ -z "$status" ] && [ "$rc" -ne 0 ] && ! has_row "$case_name" "$n" && ! grep -q '^mass_kg=' "$log" 2>/dev/null; then
+                echo "  start-up crash (exit $rc): retrying once"
+                mv "$log" "${log%.log}.startup_crash1.log"
+                echo "$case_name $n: start-up crash (exit $rc), retried once" >> "$RUN_DIR/retried_points.txt"
+                if wait_gpu_idle; then
+                    tier2_cmd "$case_name" "$n"
+                    run_child "$log" "${CMD[@]}"
+                    rc="$CHILD_RC"
+                else
+                    status="crash"
+                    note="gpu busy"
+                    rc=-1
+                    echo "  GPU busy (60 s wait): $GPU_BUSY"
+                    printf 'gpu busy: %s\n' "$GPU_BUSY" >> "$log"
+                fi
+            fi
         else
             status="crash"
             note="gpu busy"

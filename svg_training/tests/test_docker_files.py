@@ -1,3 +1,4 @@
+import os
 """Docker packaging: static checks only. No docker daemon, no GPU, no build."""
 import pathlib
 import re
@@ -38,6 +39,9 @@ def test_run_print_line():
     for part in ("--gpus all", "--entrypoint bash", ":/workspace/svg_training", "ACCEPT_EULA=Y"):
         assert part in out, part
     assert "--network host" not in out
+    assert "SVG_COMMIT=" in out and "TZ=" in out
+    if os.path.exists("/etc/localtime"):
+        assert "/etc/localtime:/etc/localtime:ro" in out
     assert "svg-training-isaac-cache-kit" in out
 
 

@@ -257,3 +257,72 @@ def test_dry_run_container_form_has_no_conda():
     assert all("/y/isaaclab.sh -p scripts/benchmark_tier2.py" in ln and "conda run" not in ln for ln in t2)
     assert all("timeout -k 60 1800 env TERM=xterm PYTHONPATH=source /y/isaaclab.sh" in ln for ln in t2)
     assert_nothing_created()
+
+
+def retry_loop(tmp_path, kind):
+    """Run run_tier2 over the first point with a stateful stub. kind: startup_then_ok, mass_then_139, startup_twice."""
+    run_dir = tmp_path / "run"
+    (run_dir / "tier2_logs").mkdir(parents=True)
+    stub = tmp_path / "stub.sh"
+    stub.write_text(f"""#!/usr/bin/env bash
+case="$1"; n="$2"; kind={kind}
+cnt={tmp_path}/cnt_${{case}}_${{n}}
+c=$(cat $cnt 2>/dev/null || echo 0); echo $((c+1)) > $cnt
+ok() {{ printf '{{"case": "%s", "num_games": %s, "status": "ok"}}\\n' "$case" "$n" >> {run_dir}/results.jsonl; }}
+if [ "$kind" = mass_then_139 ]; then echo "mass_kg=0.03"; exit 139; fi
+if [ "$kind" = startup_twice ]; then echo "Segmentation fault"; exit 139; fi
+if [ "$c" -eq 0 ] && [ "$n" = 64 ] && [ "$case" = t2_k2 ]; then echo "Segmentation fault"; exit 139; fi
+echo "mass_kg=0.03"; ok
+""")
+    r = bash(f"""
+RUN_DIR={run_dir}; RESULTS={run_dir}/results.jsonl; GPU_NAME=g; COMMIT=c; CODE_SHA=abc123abc123
+wait_gpu_idle() {{ return 0; }}
+tier2_cmd() {{ CMD=(bash {stub} "$1" "$2"); }}
+run_tier2
+echo "STOPPED=[$TIER2_STOPPED]"
+""")
+    return r, run_dir, tmp_path
+
+
+def read_rows(run_dir):
+    import json
+    p = run_dir / "results.jsonl"
+    return [json.loads(ln) for ln in p.read_text().splitlines()] if p.exists() else []
+
+
+def test_tier2_startup_crash_retried_once_then_ok(tmp_path):
+    r, run_dir, _ = retry_loop(tmp_path, "startup_then_ok")
+    assert r.returncode == 0, r.stderr + r.stdout
+    rows = read_rows(run_dir)
+    assert len(rows) == tier2_points() and all(x["status"] == "ok" for x in rows)
+    lines = (run_dir / "retried_points.txt").read_text().splitlines()
+    assert lines == ["t2_k2 64: start-up crash (exit 139), retried once"]
+    assert (run_dir / "tier2_logs" / "t2_k2_64.startup_crash1.log").read_text().startswith("Segmentation")
+    assert "mass_kg=" in (run_dir / "tier2_logs" / "t2_k2_64.log").read_text()
+    assert "STOPPED=[]" in r.stdout
+
+
+def test_tier2_crash_after_mass_line_is_not_retried(tmp_path):
+    r, run_dir, _ = retry_loop(tmp_path, "mass_then_139")
+    rows = read_rows(run_dir)
+    assert len(rows) == 1 and rows[0]["status"] == "crash" and rows[0]["note"] == "exit code 139"
+    assert not (run_dir / "retried_points.txt").exists()
+    assert not list((run_dir / "tier2_logs").glob("*startup_crash*"))
+    assert (tmp_path / "cnt_t2_k2_64").read_text().strip() == "1"
+
+
+def test_tier2_startup_crash_twice_gives_crash_row(tmp_path):
+    r, run_dir, _ = retry_loop(tmp_path, "startup_twice")
+    rows = read_rows(run_dir)
+    assert len(rows) == 1 and rows[0]["status"] == "crash" and rows[0]["note"] == "exit code 139"
+    assert (tmp_path / "cnt_t2_k2_64").read_text().strip() == "2"
+    assert len((run_dir / "retried_points.txt").read_text().splitlines()) == 1
+    assert "STOPPED=[tier 2 stopped after its first point" in r.stdout
+
+
+def test_record_cmd_passes_retried_file_only_when_it_exists(tmp_path):
+    r = bash(f"RUN_DIR={tmp_path}; RESULTS=x; NAME=n; TESTS_PASSED=yes\nrecord_cmd\nprintf '%s ' \"${{CMD[@]}}\"")
+    assert "--retried-file" not in r.stdout
+    (tmp_path / "retried_points.txt").write_text("t2_k2 64: start-up crash (exit 139), retried once\n")
+    r = bash(f"RUN_DIR={tmp_path}; RESULTS=x; NAME=n; TESTS_PASSED=yes\nrecord_cmd\nprintf '%s ' \"${{CMD[@]}}\"")
+    assert f"--retried-file {tmp_path}/retried_points.txt" in r.stdout

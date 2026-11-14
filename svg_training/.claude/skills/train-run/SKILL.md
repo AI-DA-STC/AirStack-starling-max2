@@ -5,9 +5,10 @@ description: Use when launching a benchmark or a training run. Covers pre-flight
 
 # Launch and record a run
 
-Do these in order. The run scripts do not exist until build step S0; from then they live in
-`scripts/` (benchmark, fit_model, train, evaluate, export) and this skill points at them. Until then,
-stop at step 1 and tell the owner.
+Do these in order. The S0 benchmark's front door is `scripts/run_s0.sh` (in the container:
+`docker/run.sh 'bash scripts/run_s0.sh <name> <approved config sha256>'`); later steps add their own
+scripts under `scripts/` (fit, train, evaluate, export). A script that does not exist yet: stop and tell
+the owner.
 
 ## 1. Pre-flight
 ```bash

@@ -18,7 +18,8 @@ Every path you will write starts with `~/AirStack-starling-max2/svg_training/`. 
 
 ## 3. Test first
 Write the failing test, run it, watch it fail. `core/` and the tier 1 model are tested without
-launching Isaac. Tests do not exist yet; the first ones arrive with build step S1.
+launching Isaac. Run the whole suite on the host and, for anything the container runs, inside it too
+(`docker/run.sh '$SVG_PY -m pytest -q -W error -p no:cacheprovider'`).
 ```bash
 cd ~/AirStack-starling-max2
 python -m pytest svg_training/tests -q

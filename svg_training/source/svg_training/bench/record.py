@@ -212,7 +212,8 @@ def render_record(rows: list[dict], cfg: dict, verdict: dict, meta: dict) -> str
          "Measure how fast the training simulator runs, in tier 1 (batched game model) and tier 2 "
          "(Isaac Lab physics), over the cases and numbers of games in the config. Overall result: "
          f"**{verdict['overall']}**.", "",
-         "## Commit", "", "Parent repository HEAD (does not contain this folder while it is untracked): "
+         "## Commit", "", 'repository commit (svg_training/ is tracked; "-dirty" = uncommitted changes under '
+         'svg_training/ at the start of the run): '
          + ", ".join(f"`{c}`" for c in commits), "",
          "## Code version", "", "code_sha (first 12 hex of a sha256 over the files under source/, scripts/ and "
          "configs/): " + ", ".join(f"`{c}`" for c in shas), "",
@@ -224,8 +225,10 @@ def render_record(rows: list[dict], cfg: dict, verdict: dict, meta: dict) -> str
          "## Machine", "", f"- Machine: {meta.get('machine', 'unknown')}", f"- GPU: {', '.join(gpus)}", "",
          "## Throughput", "",
          "Mean of the repeats. Environment steps per second = games x policy steps per second.", "",
-         "### Tier 1", ""] + _table(rows, cfg, "tier1") + ["", "### Tier 2 (ARL Robot 1 airframe)", ""] \
+         "### Tier 1 — MEASURED", ""] + _table(rows, cfg, "tier1") + ["", "### Tier 2 (ARL Robot 1 airframe) — MEASURED", ""] \
         + _table(rows, cfg, "tier2") + ["", "## Gates", "",
+                                        f"Limits: FIXED (approved config, sha256 {meta.get('config_sha256') or 'not given'}). "
+                                        "Observed values: MEASURED.", "",
                                         "| Gate | Limit | Observed | Result |", "|---|---|---|---|"]
     for k, gt in verdict["gates"].items():
         obs = _fv(gt["observed"])
@@ -235,6 +238,9 @@ def render_record(rows: list[dict], cfg: dict, verdict: dict, meta: dict) -> str
     if meta.get("note"):
         L.insert(L.index("## Gates") + 2, f"Note: {meta['note']}")
         L.insert(L.index("## Gates") + 3, "")
+    if meta.get("retried_points"):
+        L += ["", "Retried once after an Isaac Sim start-up crash: "
+              + ", ".join(f"{c} {n}" for c, n in meta["retried_points"])]
     short = [r for r in _ok(rows) if isinstance(r.get("timed_s"), (int, float)) and not isinstance(r["timed_s"], bool)
              and r["timed_s"] < 0.8 * t.get("min_timed_s", 0)]
     if short:
@@ -262,7 +268,7 @@ def render_record(rows: list[dict], cfg: dict, verdict: dict, meta: dict) -> str
     d = verdict["decisions"]
     b, t2 = d["tier1_bulk"], d["tier2_train"]
     L += ["", "## Decision rules", "",
-          "Proposed rules read off the numbers; not pass or fail.", "",
+          "PROPOSED rules read off MEASURED numbers; not pass or fail.", "",
           f"- Tier 1 bulk training (case {BULK_CASE}): best {_f0(b['observed'])} drone-steps per second "
           f"at {_fv(b['at_num_games'])} games, rule is at least {_f0(b['limit'])}: "
           f"{'meets' if b['meets'] else 'does not meet' if b['observed'] is not None else 'not measured'}.",
@@ -271,10 +277,11 @@ def render_record(rows: list[dict], cfg: dict, verdict: dict, meta: dict) -> str
           f"{'meets' if t2['meets'] else 'does not meet' if t2['observed'] is not None else 'not measured'}.", "",
           "## Compute budget", ""]
     if d["budget_gpu_hours"] is None:
-        L.append(f"No observation of {BULK_CASE}, so no GPU-hours estimate.")
+        L.append(f"No observation of {BULK_CASE}, so no GPU-hours estimate (PROPOSED; a lower bound: simulator stepping only).")
     else:
         L.append(f"{d['budget_drone_steps']:,.0f} drone-steps / {_f0(b['observed'])} drone-steps per second "
-                 f"(case {BULK_CASE} at {b['at_num_games']:,} games) = {d['budget_gpu_hours']:,.1f} GPU-hours.")
+                 f"(case {BULK_CASE} at {b['at_num_games']:,} games) = {d['budget_gpu_hours']:,.1f} GPU-hours "
+                 "(PROPOSED; a lower bound: simulator stepping only).")
     L += ["", "## Limits of this record", "",
           "- Stand-in drone models: tier 1 uses a placeholder lag and delay, tier 2 uses Isaac Lab's "
           "ARL Robot 1 airframe.",

@@ -19,6 +19,13 @@ if [ "$PRINT" -eq 0 ] && ! docker image inspect "$IMAGE" > /dev/null 2>&1; then
     exit 1
 fi
 
+# The container has no .git (only this folder is mounted): hand it the host commit, "-dirty" if tracked files
+# under svg_training/ have uncommitted changes (untracked files such as runs/ do not count).
+COMMIT="$(git -C "$ROOT/.." rev-parse --short HEAD 2>/dev/null || echo unknown)"
+if git -C "$ROOT/.." status --porcelain -- svg_training 2>/dev/null | grep -v '^??' | grep -q .; then
+    COMMIT="$COMMIT-dirty"
+fi
+
 ARGS=(docker run --rm --gpus all --entrypoint bash)
 [ -t 0 ] && ARGS+=(-it)
 ARGS+=(
@@ -35,7 +42,15 @@ ARGS+=(
     -e ACCEPT_EULA=Y -e PRIVACY_CONSENT=Y
     -e PYTHONDONTWRITEBYTECODE=1
     -e "HOST_UID=$(id -u)" -e "HOST_GID=$(id -g)"
+    -e "SVG_COMMIT=$COMMIT"
 )
+# The image has no tzdata, so a zone name in TZ would silently mean UTC: with the host's /etc/localtime mounted,
+# TZ points at that file; without it, the zone name (or UTC).
+if [ -e /etc/localtime ]; then
+    ARGS+=(-v /etc/localtime:/etc/localtime:ro -e "TZ=:/etc/localtime")
+else
+    ARGS+=(-e "TZ=$(cat /etc/timezone 2>/dev/null || echo UTC)")
+fi
 
 # The container runs as root. Afterwards everything root created in the mounted project folder is handed back
 # to the caller (find -user root, never following symlinks, never leaving the mount), and the command's own

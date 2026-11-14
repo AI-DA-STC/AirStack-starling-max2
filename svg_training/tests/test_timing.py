@@ -221,3 +221,13 @@ def test_min_timed_s_order_on_cuda(monkeypatch):
     assert ev[last - 1 - n:last - 1] == ["step"] * n  # no synchronise inside the timed steps
     assert ev[last - 2 - n] == "clock"  # clock starts directly before the timed steps
     assert ev[:1] == ["clock"] and ev[1:6] == ["step"] * 5 and ev[6] == "sync"
+
+
+def test_git_commit_prefers_env(monkeypatch):
+    monkeypatch.setattr(timing, "_commit", None)
+    monkeypatch.setenv("SVG_COMMIT", "abc1234-dirty")
+    assert timing.git_commit() == "abc1234-dirty"
+    monkeypatch.setattr(timing, "_commit", None)
+    monkeypatch.delenv("SVG_COMMIT")
+    assert timing.git_commit()  # host: git call or "unknown"
+    monkeypatch.setattr(timing, "_commit", None)

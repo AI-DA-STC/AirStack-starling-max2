@@ -33,7 +33,7 @@ Everything needed is in this folder; nothing depends on the previous chat.
 | 6 | Timing harness, tier 1 benchmark script | done | reviewed (timing logic verified: no hidden sync, clock bounded by synchronises); one fix round (re-runs skip finished points instead of duplicating rows). Whole suite: 64 tests pass |
 | 7 | Tier 2 benchmark (Isaac Lab) | done; FIRST RUN 15 Nov | smoke point in the container: 64 games × 2 drones, ~1,800–2,300 game-steps/s, 0 NaN, 2.5 % resets per step, repeats within 1 %. Found and fixed: `simulation_app.close()` spun forever after the rows were written; the script now always leaves with `os._exit` (commit `08107eb`) |
 | 8 | Record and ledger from results and gates | done | 30 tests pass; reviewed with an attack list, two fix rounds. Reviews closed three ways the record could have shown a false PASS (NaN rate, missing NaN count, negative or duplicated rows). `make_record.py` needs `--seeds` |
-| 9 | Run S0 on the laptop, record, gatekeeper | RUN OF RECORD RUNNING (started 15 Nov ~01:00, in the container) | `docker/run.sh 'bash scripts/run_s0.sh 2026-11-15_s0_laptop 2d3114864a8f335ce8456e40af9c50c63700d59d821d53b9b0f3e7abac2accf0'`; progress in `runs/run_s0_2026-11-15_stdout.txt` and `runs/2026-11-15_s0_laptop/` (`tier1.log`, `tier2.log`, `tier2_logs/`, `results.jsonl`). If it was interrupted, run the same command again: finished points are skipped. When the record exists (`records/2026-11-15_s0_laptop_record.md`, ledger row T1), the `train-gatekeeper` agent reads it. The 14 Nov tier 1 rows (`runs/2026-11-14_s0_laptop/`) are superseded: old config and old code |
+| 9 | Run S0 on the laptop, record, gatekeeper | done: T1 = FAIL on one gate | `records/2026-11-15_s0_laptop_record.md`, ledger T1 (commit `1b50419`). Only `sweep_complete` failed: tier 2 point `t2_k1` at 64 games lost to an Isaac Sim start-up segfault (Kit telemetry thread, before project code). Gatekeeper: every number recomputes exactly from `results.jsonl`; record faults to fix in code for the next run: commit shown as `unknown` (no `.git` in the container) and stale "untracked" text; no status labels (MEASURED / PROPOSED) in the record; ledger date in container UTC. Owner decides: accept T1 and go to S1, or re-run S0 after the fixes |
 
 Build bookkeeping (rulings, briefs, reports, snapshots) is in `runs/sdd/`; its ledger is `runs/sdd/progress.md`.
 S0 was built before the folder was tracked: each task was reviewed from a file diff against a snapshot (`bash runs/sdd/tools.sh`).
@@ -42,7 +42,20 @@ that the owner is at the machine or on Ethernet.
 
 What the final review found that matters to the owner: (1) a cold laptop GPU made two repeats differ by 22 % at the smallest sweep point, so warm-up becomes at least 50 steps AND 2 s (gates and config untouched); (2) one distance routine in the tier 1 stand-in dominated open-arena timing (being replaced, with a before/after measurement); (3) rows now carry a hash of the code because the folder is untracked; (4) `gnome-remote-desktop-daemon` holds 611 MiB of GPU compute memory on this laptop, a sign a remote-desktop session may be active.
 
-**Tier 1 observed, 14 November 2026** (training simulator, tier 1, RTX 5070 Ti laptop; stand-in drone model, no safety filter, no policy network; NOT yet a record). Best mean over two repeats:
+**S0 run of record T1, 15 November 2026** (training simulator, laptop RTX 5070 Ti, container; stand-in drone models, no safety filter, no policy network). Best mean of two repeats:
+
+| Case | Game-steps / s | Drone-steps / s | At games |
+|---|---|---|---|
+| tier 1, 5 v 3 open arena | 12.3 million | 98 million | 65,536 |
+| tier 1, construction-site-size distance field | 9.1 million | 73 million | 16,384 |
+| tier 1, full sensing (field + 10 obstacles + 32 rays + line of sight) | 48,000 | 382,000 | 1,024 |
+| tier 2 Isaac Lab, 3 drones per game, 100 Hz physics | 152,000 | 455,000 | 4,096 |
+| tier 2 Isaac Lab, 8 drones per game, 200 Hz physics | 22,000 | 176,000 | 2,048 |
+
+Tier 2 speed rises almost in proportion to the number of games and stays within 5–8 GB of GPU memory, so Isaac
+Lab is fast enough to train on, not only to cross-check (it has no sensing yet). Both decision rules are met.
+
+**Superseded: tier 1 observed, 14 November 2026** (training simulator, tier 1, RTX 5070 Ti laptop; stand-in drone model, no safety filter, no policy network; NOT yet a record). Best mean over two repeats:
 
 | Case (5 Guard against 3 Strike unless said) | Game-steps per second | At games |
 |---|---|---|

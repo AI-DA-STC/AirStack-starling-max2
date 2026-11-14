@@ -171,14 +171,18 @@ They sit beside the cuVSLAM Foxglove window that `slam_up.sh` opens, where the s
 ## 4 · Quick start — SIM (M1 rehearsal)
 
 Needs a GPU and Isaac Sim, same as [RUNBOOK.md](RUNBOOK.md) §A. One command, on the
-**laptop**, from the scripts directory:
+**laptop**, from the scripts directory, brings up Isaac, interfaces, commander, an RViz window
+and a gamepad in tmux sessions of its own. The panel still connects to its commander.
 
 ```bash
 cd ~/AirStack-starling-max2/AirStack/robot/ros_ws/src/svg_ground_control/scripts
-./svg_teleop.sh solo       # 1 sim drone, teleop_single.yaml; --headless skips the viewport
+./svg_teleop.sh solo       # 1 sim drone, teleop_single.yaml (squeeze = 3 drones, hover = 3 drones); --headless skips the viewport
 ./svg_teleop.sh takeoff && ./svg_teleop.sh start      # sticks do nothing until start
 ./svg_teleop.sh land       # also: hold | reset-fence | monitor | status | stop
 ```
+
+RViz still works as a fallback view
+(`rviz2 -d $(ros2 pkg prefix svg_ground_control)/share/svg_ground_control/config/svg_drones.rviz`).
 
 ⚠️ **The script does not pass `teleop_controller`.** Both its sim and real modes start the node
 with **no config file** (the `ros2 run svg_ground_control safe_teleop --ros-args -p drone:=…` lines

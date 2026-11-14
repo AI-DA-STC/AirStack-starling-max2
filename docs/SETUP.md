@@ -186,6 +186,7 @@ source automatically. After the first `bws`, `tmux attach -t bringup` — expect
   unaffected. Re-run the installer by hand if you use in-container Studio.
 - `led_controller`: `no heartbeat from drone_1` — no LED strip fitted (M6). Harmless, or
   launch with `use_led:=false`.
+- Prompt garbage `[:refused refused reached]` in a container shell — harmless.
 
 
 ## Security note

@@ -5,8 +5,8 @@ PYTHONPATH=source <isaaclab.sh -p> scripts/benchmark_tier2.py --headless --case 
 One process = one sweep point = [timing].repeats rows appended to --out. The scene is built once; each repeat
 resets every drone to its spawn pose and times `timing.measure`. Exit codes: 0 ok or already done (resume: no app
 launched), 1 crash or out of memory (a row with that status is appended), 2 asset cannot be loaded, --headless
-missing or device not cuda (one line, no row). On failure the process leaves with os._exit: Kit's shutdown would
-swallow the exit code.
+missing or device not cuda (one line, no row). The process always leaves with os._exit after flushing: Kit's
+shutdown would swallow the exit code on failure, and in the container it spun without returning on success.
 Every row carries "code_sha" and the process seeds torch with 0 (torch.manual_seed(0)) before any random draw.
 Resume: a point that already has a row in --out is skipped (no app launched). A "crash" or "oom" row counts as done;
 delete that row from the results file to retry the point.
@@ -79,8 +79,8 @@ def main() -> int:
     finally:
         sys.stdout.flush()
         sys.stderr.flush()
-        if code == 0:
-            simulation_app.close()
+        # simulation_app.close() is never called: in the container it spun for 30 min after the rows were written
+        # (smoke run, 15 Nov 2026). Rows are closed and flushed by now; os._exit ends Kit with the process.
         os._exit(code)  # never returns; rows are already closed and flushed (append() uses `with open`)
 
 

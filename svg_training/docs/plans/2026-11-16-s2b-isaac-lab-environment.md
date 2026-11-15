@@ -651,3 +651,9 @@ Test: a 1-minute CPU smoke run writes an event file whose tags include `game/hol
 - **D-term filter** (D6 / Task 3 step 7): first-order `AlphaFilter` on the raw angular rate (`VehicleAngularVelocity.hpp:172`, alpha 0.557 at 200 Hz), not a second-order Butterworth.
 - **Rate gains**: K multiplies P, I and D; feed-forward stands alone (`rate_control.cpp`). Identical here because every K is 1 on the drone.
 - **Known differences for Task 7**: `THR_MDL_FAC` 0.9 and `MPC_USE_HTE` 1 (hover-thrust estimator) are on the drone but not modelled (fixed hover thrust 0.165, linear motor).
+
+## Amendment (lead, 16 November 2026): the registered Isaac Lab task
+
+The owner's answer 1 (register the game as a standard Isaac Lab task) has no owning task in the list above, and "What S2b does not do" says "No DirectMARLEnv task", which contradicts it. Resolution: **Task 8b, after Task 8** — a thin `DirectMARLEnv` wrapper over the same `SvgGame` with `backend = "physics"` and `IsaacWorld` (no second game code path), registered with `gymnasium.register` under the name `Isaac-SvG-StrikeGuard-v0`; its test runs one short headless episode through Isaac Lab's own environment loop and checks the observations and rewards equal the game's for the same seed. Task 10 documents it in `docs/PLUG_IN.md`. The "No DirectMARLEnv task" line is superseded.
+
+Note for Task 7 (gatekeeper, T10 review): T10 ran 64 games (~320 m extent); at training scale (4,096 games at 40 m spacing, ~2.5 km) float32 positions step ~2.4e-4 m — measure precision at that extent.

@@ -27,6 +27,7 @@ three-drone swarms rehearsed in **Isaac Sim** before anything flies for real.
 | **see where each project is, what passed, what is next** | [MILESTONES.md](docs/MILESTONES.md) (one screen) → [docs/projects/](docs/projects/HTX-R1.md) |
 | **work with the AI assistant on this repo** | [AI_ASSIST.md](docs/AI_ASSIST.md) |
 | **fly in the construction site** (sim): the scored camera run, or drone_1 yourself by keyboard | [localisation/README.md](localisation/README.md), its first table picks the run |
+| **train Strike vs Guard drone teams** (GPU, thousands of games at once; nothing here flies a drone) | [svg_training/README.md](svg_training/README.md) — where it stands and what to read; results so far in [S1_RESULTS.md](svg_training/docs/S1_RESULTS.md) |
 
 ## What we have achieved so far
 

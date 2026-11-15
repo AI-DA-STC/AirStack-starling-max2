@@ -2,7 +2,7 @@
 
 > **How to use this file.** Read it at the start of a session, after [../../CLAUDE.md](../../CLAUDE.md).
 > §4 is the current state, §5 is what is waiting on people. Update both before you stop.
-> Last updated: 15 November 2026, night (S1 CLOSED: owner confirmed T2 on the exact counts and approved I7; docs/CONFIG.md speed limits fixed on his request, AirStack commit 680cd1f; no drone-model gate passed; next = S2 plan for approval, real flight with planned pushes whenever the owner flies).
+> Last updated: 15 November 2026, night (S1 CLOSED: owner confirmed T2 on the exact counts and approved I7; docs/CONFIG.md speed limits fixed on his request, AirStack commit 680cd1f; root README.md "I want to…" table now has a row pointing here (owner's request); no drone-model gate passed; next = S2 plan for approval, real flight with planned pushes whenever the owner flies).
 
 ## 0. Resume here (for a new session or another Claude account)
 

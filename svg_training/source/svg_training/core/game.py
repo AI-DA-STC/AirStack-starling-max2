@@ -1,4 +1,4 @@
-"""S2 batched game core: partner rules without the pair rule (Task 3 fills ``_apply_pair_rules``).
+"""S2 batched game core: partner rules (push-apart) and the contact-tag side quest.
 
 Everything in ``step`` is a batched tensor operation over all games: no loop over games, no host reads.
 Drones are indexed Guard drones first (0..G-1), then Strike drones (G..M-1). The world is planar (D2):
@@ -13,6 +13,7 @@ from torch import Tensor
 from .arena import BANDS, GUARD, STRIKE, Arenas, draw_arenas, draw_starts  # noqa: F401  (re-exported)
 from .game_config import TICK_S, GameCfg
 from .observations import build_obs, build_state
+from .pair_rules import contact_tags, push_apart
 from .rewards import GUARD_WIN, RUNNING, STRIKE_WIN, team_rewards
 from .scenarios import SCENARIOS, Scenario, scenario_arenas  # noqa: F401  (re-exported)
 
@@ -24,6 +25,7 @@ class StepOut:
     """Result of one step. obs after auto-reset of the games that ended; reward, outcome, end_step and info
     describe the step just taken. info: band [N], closest_cross_m [N] (inf if no live opposite pair),
     closest_team_m [N] (inf if no live same-team pair), rule_breach [N] bool, filter_corrected [N, M] bool,
+    tagged [N, M] bool (contact preset: drones tagged this step),
     final_alive [N, M] bool (who was in the game at the end of this step, before any reset),
     start_miss [N] bool (True if the game that played this step started with a miss: its starts could not
     meet the spacing / keep-out; constant over a game, so read it on the done step to count games).
@@ -49,6 +51,8 @@ class SvgGame:
             raise ValueError(f"starts.mode must be 'rings' or 'anywhere', got {cfg.starts.mode!r}")
         if cfg.rules.win_steps_in_zone != 1:
             raise ValueError("only win_steps_in_zone = 1 is built (one step inside the zone wins)")
+        if cfg.rules.push_rule not in ("block", "shove"):
+            raise ValueError(f"rules.push_rule must be 'block' or 'shove', got {cfg.rules.push_rule!r}")
         if guards < 1 or strikes < 1:
             raise ValueError("a game needs at least one Guard and one Strike drone")
         if scenario is not None and len(scenario.start_m) != guards + strikes:
@@ -81,6 +85,7 @@ class SvgGame:
         self.arenas = self._draw_arenas()
         self.start_miss = torch.zeros(n, dtype=torch.bool, device=dev)
         self._phi = torch.zeros(n, device=dev)
+        self._guard_survives = torch.zeros(n, dtype=torch.bool, device=dev)
         self.reset()
 
     # ------------------------------------------------------------------ helpers
@@ -119,6 +124,9 @@ class SvgGame:
         self.alive = torch.where(mk, torch.ones_like(self.alive), self.alive)
         self.steps = torch.where(mask, torch.zeros_like(self.steps), self.steps)
         self.dropout_step = torch.where(mk, drop, self.dropout_step)
+        if self.cfg.preset == "contact":      # drawn only here, so the partner preset's random stream is unchanged
+            surv = torch.rand(n, generator=self.gen, device=dev) < self.cfg.contact.guard_survives_tag_prob
+            self._guard_survives = torch.where(mask, surv, self._guard_survives)
         phi = self._potential(self.pos_m, self.alive, self.arenas)
         self._phi = torch.where(mask, torch.where(torch.isfinite(phi), phi, torch.zeros_like(phi)), self._phi)
 
@@ -130,10 +138,17 @@ class SvgGame:
                          self._time_left_s(), self.guards, self.strikes)
 
     def _apply_pair_rules(self, pos_prev_m: Tensor, pos_m: Tensor, alive: Tensor) -> tuple[Tensor, Tensor]:
-        """Hook for Task 3 (partner push-apart, contact tags, Starling layer). Takes the positions before and
-        after the move ([N, M, 3] each) and who is in the game ([N, M]); returns the corrected positions
-        [N, M, 3] and filter_corrected [N, M] bool. Here: no pair rule."""
-        return pos_m, torch.zeros_like(alive)
+        """Partner preset: push-apart between opposite teams (rule from cfg.rules.push_rule), skipping drones that
+        are out. Contact preset: no push-apart (tags are applied in step). Takes positions before and after the
+        move ([N, M, 3]) and who is in the game ([N, M]); returns corrected positions [N, M, 3] and
+        filter_corrected [N, M] bool (all False: the Starling layer is Task 4)."""
+        no_filter = torch.zeros_like(alive)
+        if self.cfg.preset != "partner":
+            return pos_m, no_filter
+        r = self.cfg.rules
+        xy = push_apart(pos_m[..., :2], pos_prev_m[..., :2], self._is_strike[0], alive, r.keepout_guard_m,
+                        r.keepout_strike_m, r.push_rule)
+        return torch.cat((xy, pos_m[..., 2:]), dim=-1), no_filter
 
     # ------------------------------------------------------------------ public
     def reset(self, seed: int | None = None) -> dict[str, Tensor]:
@@ -172,6 +187,9 @@ class SvgGame:
         # walls
         lim = (self.arenas.half_m - cfg.arena.wall_margin_m)[:, None, None]
         alive = alive_prev
+        tagged = torch.zeros_like(alive_prev)
+        if cfg.preset == "contact":
+            tagged, alive = contact_tags(pos, alive_prev, g, cfg.contact.contact_m, self._guard_survives)
         if cfg.arena.walls == "keep_in":
             xy = torch.maximum(torch.minimum(pos[..., :2], lim), -lim)
             pos = torch.cat((xy, pos[..., 2:]), dim=-1)
@@ -203,7 +221,7 @@ class SvgGame:
         reward = team_rewards(cfg.rewards, outcome, self._phi, phi_now, g, self.strikes)
         info = {"band": self.arenas.band, "closest_cross_m": closest_cross, "closest_team_m": closest_team,
                 "rule_breach": closest_cross < self._keepout_min - 1e-6, "filter_corrected": corrected,
-                "final_alive": alive.clone()}
+                "final_alive": alive.clone(), "tagged": tagged}
         end_step = torch.where(done, steps_new, torch.zeros_like(steps_new))
         self._phi = phi_now
         info["start_miss"] = self.start_miss.clone()      # the game that just played

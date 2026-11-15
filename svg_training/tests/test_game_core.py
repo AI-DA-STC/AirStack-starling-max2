@@ -206,7 +206,7 @@ def test_scenarios_exist_and_fit():
 
 
 def test_game_modules_have_no_host_calls():
-    for f in ["arena", "observations", "rewards", "game"]:
+    for f in ["arena", "observations", "rewards", "game", "pair_rules"]:
         src = (CORE / f"{f}.py").read_text()
         assert not re.search(r"\.(item|cpu|numpy|tolist)\(|import numpy|nonzero\(", src), f
 

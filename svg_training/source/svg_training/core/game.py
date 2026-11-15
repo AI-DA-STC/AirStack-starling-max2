@@ -24,7 +24,9 @@ class StepOut:
     """Result of one step. obs after auto-reset of the games that ended; reward, outcome, end_step and info
     describe the step just taken. info: band [N], closest_cross_m [N] (inf if no live opposite pair),
     closest_team_m [N] (inf if no live same-team pair), rule_breach [N] bool, filter_corrected [N, M] bool,
-    final_alive [N, M] bool (who was in the game at the end of this step, before any reset)."""
+    final_alive [N, M] bool (who was in the game at the end of this step, before any reset),
+    start_miss [N] bool (True for a game that auto-reset this step whose starts could not meet the spacing /
+    keep-out; False elsewhere)."""
     obs: dict[str, Tensor]
     reward: dict[str, Tensor]
     done: Tensor
@@ -76,6 +78,7 @@ class SvgGame:
         self.steps = torch.zeros(n, dtype=torch.long, device=dev)
         self.dropout_step = torch.full((n, m), -1, dtype=torch.long, device=dev)
         self.arenas = self._draw_arenas()
+        self.start_miss = torch.zeros(n, dtype=torch.bool, device=dev)
         self._phi = torch.zeros(n, device=dev)
         self.reset()
 
@@ -97,12 +100,17 @@ class SvgGame:
         n, m, dev = self.num_games, self.M, self.device
         mk = mask[:, None]
         ar = self._draw_arenas()
-        pos = self._sc_pos if self.scenario is not None else draw_starts(self.cfg, ar, self.guards,
-                                                                          self.strikes, self.gen)
-        f = self.cfg.dropout_fraction
-        hit = torch.rand(n, m, generator=self.gen, device=dev) < f
-        when = (torch.rand(n, m, generator=self.gen, device=dev) * self.ticks).floor().long().clamp(max=self.ticks - 1) + 1
-        drop = torch.where(hit, when, torch.full_like(when, -1))
+        if self.scenario is not None:
+            pos, miss = self._sc_pos, torch.zeros(n, dtype=torch.bool, device=dev)
+        else:
+            pos, miss = draw_starts(self.cfg, ar, self.guards, self.strikes, self.gen, return_miss=True)
+        # drop-out: in a fraction of games, one random drone (any team) leaves at one random step
+        hit = torch.rand(n, generator=self.gen, device=dev) < self.cfg.dropout_fraction
+        who = (torch.rand(n, generator=self.gen, device=dev) * m).floor().long().clamp(max=m - 1)
+        when = (torch.rand(n, generator=self.gen, device=dev) * self.ticks).floor().long().clamp(max=self.ticks - 1) + 1
+        pick = hit[:, None] & (torch.arange(m, device=dev)[None, :] == who[:, None])
+        drop = torch.where(pick, when[:, None].expand(n, m), torch.full((n, m), -1, dtype=torch.long, device=dev))
+        self.start_miss = torch.where(mask, miss, torch.zeros_like(miss))
         self.arenas = self.arenas.merge(ar, mask)
         self.pos_m = torch.where(mk[..., None], pos, self.pos_m)
         self.vel_mps = torch.where(mk[..., None], torch.zeros_like(self.vel_mps), self.vel_mps)
@@ -197,6 +205,6 @@ class SvgGame:
                 "final_alive": alive.clone()}
         end_step = torch.where(done, steps_new, torch.zeros_like(steps_new))
         self._phi = phi_now
-        info["band"] = self.arenas.band.clone()
         self._new_games(done)
+        info["start_miss"] = self.start_miss
         return StepOut(self._obs(), reward, done, outcome, end_step, info)

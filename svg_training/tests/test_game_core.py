@@ -171,6 +171,24 @@ def test_random_games_run_and_reset():
     assert done_seen.all()                                           # everyone ended within 1200 steps
 
 
+def test_dropout_is_one_drone_in_a_fraction_of_games():
+    f = 0.3
+    g = SvgGame(CFG.replace(dropout_fraction=f), 20000, 3, 2, device="cpu", seed=9)
+    per_game = (g.dropout_step >= 0).sum(dim=1)
+    assert per_game.max() <= 1
+    assert abs(float((per_game == 1).float().mean()) - f) < 0.02
+    who = (g.dropout_step >= 0).float().argmax(dim=1)[per_game == 1]
+    assert set(who.tolist()) == {0, 1, 2, 3, 4}                      # any team, any drone
+    steps = g.dropout_step[g.dropout_step >= 0]
+    assert steps.min() >= 1 and steps.max() <= 1200
+
+
+def test_start_miss_reported():
+    g = SvgGame(CFG, 64, 5, 3, device="cpu", seed=2, band=0)
+    out = g.step({"guard": torch.zeros(64, 5, 4), "strike": torch.zeros(64, 3, 4)})
+    assert out.info["start_miss"].shape == (64,) and not out.info["start_miss"].any()
+
+
 def test_scenarios_exist_and_fit():
     assert set(SCENARIOS) == {"lab4_open", "lab4_block", "large16_open", "large16_block"}
     for sc in SCENARIOS.values():

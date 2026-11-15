@@ -67,14 +67,18 @@ def draw_arenas(cfg: ArenaCfg, n: int, gen: torch.Generator, device, band: int |
     return Arenas(side, half, centre, radius, b)
 
 
-def draw_starts(cfg: GameCfg, ar: Arenas, guards: int, strikes: int, gen: torch.Generator) -> Tensor:
+def draw_starts(cfg: GameCfg, ar: Arenas, guards: int, strikes: int, gen: torch.Generator,
+                return_miss: bool = False) -> Tensor | tuple[Tensor, Tensor]:
     """Starting positions [N, M, 3], M = guards + strikes, Guard drones first, z = start_height_m.
 
     ``rings``: Strike drones on the square inset ``strike_inset_m`` from the walls; Guard drones evenly on a
     circle of radius zone_radius + guard_ring_gap_m round the zone (one random phase per game), clamped inside
     the walls. ``anywhere``: uniform in the arena, Strike drones outside the zone. Each drone takes the first
     of 8 candidates that keeps ``spacing_m`` from its placed team-mates (and, for Strike, stays outside the
-    zone); if none does, candidate 0 is used (a miss, not a loop)."""
+    zone) and the larger keep-out from every placed opposite-team drone (Guard drones are placed first, so
+    only Strike drones check it). The Guard ring radius is at least spacing / (2 sin(pi / G)) so that team-mates
+    can be spacing apart. If no candidate fits (arena too small), candidate 0 is used (a Strike drone inside the
+    zone is pushed out along the radius): that game is a miss. With ``return_miss`` returns (starts, miss [N] bool)."""
     mode = cfg.starts.mode
     if mode not in ("rings", "anywhere"):
         raise ValueError(f"starts.mode must be 'rings' or 'anywhere', got {mode!r}")
@@ -86,6 +90,9 @@ def draw_starts(cfg: GameCfg, ar: Arenas, guards: int, strikes: int, gen: torch.
     centre = ar.zone_centre_m[:, None, :]                        # [N, 1, 2]
     phase0 = torch.rand(n, 1, generator=gen, device=dev) * (2 * math.pi)
     placed = torch.zeros(n, m, 2, device=dev)
+    miss = torch.zeros(n, dtype=torch.bool, device=dev)
+    keepout = max(cfg.rules.keepout_guard_m, cfg.rules.keepout_strike_m)
+    ring_min = st.spacing_m / (2 * math.sin(math.pi / guards)) if guards > 1 else 0.0
     for i in range(m):                                           # fixed small drone count
         is_strike = i >= guards
         if mode == "anywhere":
@@ -103,7 +110,7 @@ def draw_starts(cfg: GameCfg, ar: Arenas, guards: int, strikes: int, gen: torch.
             jit = (torch.rand(n, k, generator=gen, device=dev) - 0.5) * step
             jit = torch.cat((torch.zeros(n, 1, device=dev), jit[:, 1:]), dim=1)   # candidate 0 = exact ring
             ang = phase0 + step * i + jit
-            rr = (ar.zone_radius_m + st.guard_ring_gap_m)[:, None]
+            rr = (ar.zone_radius_m + st.guard_ring_gap_m).clamp(min=ring_min)[:, None]
             cand = centre + rr[:, :, None] * torch.stack((ang.cos(), ang.sin()), dim=-1)
         cand = torch.maximum(torch.minimum(cand, lim), -lim)
         valid = torch.ones(n, k, dtype=torch.bool, device=dev)
@@ -112,7 +119,20 @@ def draw_starts(cfg: GameCfg, ar: Arenas, guards: int, strikes: int, gen: torch.
                 valid = valid & ((cand - placed[:, j:j + 1]).norm(dim=-1) >= st.spacing_m)
         if is_strike:
             valid = valid & ((cand - centre).norm(dim=-1) > ar.zone_radius_m[:, None])
+            for j in range(guards):                              # opposite team: keep-out distance
+                valid = valid & ((cand - placed[:, j:j + 1]).norm(dim=-1) >= keepout)
+        has = valid.any(dim=-1)
         idx = valid.to(torch.uint8).argmax(dim=-1)               # first valid, else 0
-        placed[:, i] = cand.gather(1, idx[:, None, None].expand(n, 1, 2))[:, 0]
+        pick = cand.gather(1, idx[:, None, None].expand(n, 1, 2))[:, 0]
+        if is_strike:                                            # a fallback must not start inside the zone
+            off = pick - ar.zone_centre_m
+            dist = off.norm(dim=-1, keepdim=True)
+            unit = torch.where(dist > 1e-6, off / dist.clamp(min=1e-6), torch.cat((torch.ones_like(dist), torch.zeros_like(dist)), dim=-1))
+            out = ar.zone_centre_m + unit * (ar.zone_radius_m[:, None] + 0.05)
+            out = torch.maximum(torch.minimum(out, lim[:, 0]), -lim[:, 0])
+            pick = torch.where((dist[:, 0] <= ar.zone_radius_m)[:, None], out, pick)
+        placed[:, i] = pick
+        miss = miss | ~has
     z = torch.full((n, m, 1), cfg.arena.start_height_m, device=dev)
-    return torch.cat((placed, z), dim=-1)
+    starts = torch.cat((placed, z), dim=-1)
+    return (starts, miss) if return_miss else starts

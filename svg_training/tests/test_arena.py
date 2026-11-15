@@ -42,21 +42,43 @@ def test_bad_band_raises():
         draw_arenas(CFG.arena, 4, _gen(), "cpu", band=3)
 
 
+def _spacing_ok(pos, g, cfg):
+    n, m = pos.shape[:2]
+    ok = torch.ones(n, dtype=torch.bool)
+    for a in range(m):
+        for b in range(a + 1, m):
+            if (a < g) == (b < g):
+                ok &= (pos[:, a, :2] - pos[:, b, :2]).norm(dim=-1) >= cfg.starts.spacing_m - 1e-5
+    return ok
+
+
 @pytest.mark.parametrize("mode", ["rings", "anywhere"])
-def test_starts_are_legal(mode):
+@pytest.mark.parametrize("band", [0, 1, 2, None])
+@pytest.mark.parametrize("gs", [(2, 1), (5, 3)])
+def test_starts_are_legal(mode, band, gs):
+    """Every start is inside the walls and the Strike drones outside the zone; a spacing or keep-out violation
+    only ever happens in a game reported as a miss. Lab-band 5v3 cannot always fit (8 drones, 1.2 m apart in
+    a 4 m arena), so its miss share is reported by the draw, bounded here, not hidden."""
+    g_, s_ = gs
     cfg = CFG.replace(**{"starts.mode": mode})
     g = _gen(2)
-    ar = draw_arenas(cfg.arena, N, g, "cpu")
-    pos = draw_starts(cfg, ar, 3, 2, g)
-    assert pos.shape == (N, 5, 3) and (pos[..., 2] == cfg.arena.start_height_m).all()
-    assert (pos[..., :2].abs() <= ar.half_m[:, None, None] + 1e-6).all()
-    d = (pos[:, 3:, :2] - ar.zone_centre_m[:, None]).norm(dim=-1)
-    assert (d > ar.zone_radius_m[:, None]).all()
-    ok = torch.ones(N, dtype=torch.bool)
-    for a, b in [(0, 1), (0, 2), (1, 2), (3, 4)]:
-        ok &= (pos[:, a, :2] - pos[:, b, :2]).norm(dim=-1) >= cfg.starts.spacing_m - 1e-6
-    if mode == "anywhere":
-        assert float(ok.float().mean()) >= 0.99
+    ar = draw_arenas(cfg.arena, N, g, "cpu", band=band)
+    pos, miss = draw_starts(cfg, ar, g_, s_, g, return_miss=True)
+    assert pos.shape == (N, g_ + s_, 3) and (pos[..., 2] == cfg.arena.start_height_m).all()
+    assert (pos[..., :2].abs() <= ar.half_m[:, None, None] + 1e-5).all()
+    d = (pos[:, g_:, :2] - ar.zone_centre_m[:, None]).norm(dim=-1)
+    assert (d > ar.zone_radius_m[:, None]).all()                      # also on a fallback (pushed out)
+    ok = _spacing_ok(pos, g_, cfg)
+    cross = (pos[:, :g_, None, :2] - pos[:, None, g_:, :2]).norm(dim=-1).amin(dim=(1, 2))
+    far = cross >= max(cfg.rules.keepout_guard_m, cfg.rules.keepout_strike_m) - 1e-5
+    assert (ok & far | miss).all()                                    # a violation is always a reported miss
+    share = float(miss.float().mean())
+    if gs == (2, 1):
+        assert share < 0.01 and float((ok & far).float().mean()) >= 0.99
+    elif band in (1, 2):
+        assert share < 0.05
+    else:
+        assert share < 0.5
 
 
 def test_rings_geometry():

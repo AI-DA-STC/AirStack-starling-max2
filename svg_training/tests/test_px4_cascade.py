@@ -11,8 +11,8 @@ import pytest
 import torch
 
 from svg_training.models.physics_params import load_physics_params
-from svg_training.models.px4_cascade import (Px4Cascade, allocate, allocation_matrix, bodyz_to_rotmat, constrain_xy,
-                                             limit_tilt)
+from svg_training.models.px4_cascade import (MC_YAW_CUTOFF_HZ_DRONE, Px4Cascade, allocate, allocation_matrix,
+                                             bodyz_to_rotmat, constrain_xy, limit_tilt)
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 P = load_physics_params("params/starling_physics_v0.toml")
@@ -170,10 +170,11 @@ def test_cascade_reset_clears_integrators():
         c.step(**x)
     assert c.vel_int.abs().min() > 0 and c.rate_int.abs().min() > 0
     assert c.vel_dot.abs().min() > 0 and c.ang_acc.abs().min() > 0
-    before = (c.vel_int.clone(), c.rate_int.clone(), c.vel_dot.clone(), c.ang_acc.clone())
+    assert c.yaw_torque_lpf.abs().min() > 0
+    before = (c.vel_int.clone(), c.rate_int.clone(), c.vel_dot.clone(), c.ang_acc.clone(), c.yaw_torque_lpf.clone())
     mask = torch.tensor([[True, False], [False, False]])
     c.reset(mask)
-    for now, old in zip((c.vel_int, c.rate_int, c.vel_dot, c.ang_acc), before):
+    for now, old in zip((c.vel_int, c.rate_int, c.vel_dot, c.ang_acc, c.yaw_torque_lpf), before):
         assert (now[0, 0] == 0).all()
         assert torch.equal(now[~mask], old[~mask])
     # derivative filters at rest: the next step after a reset sees no derivative kick for the reset drone
@@ -182,6 +183,53 @@ def test_cascade_reset_clears_integrators():
     c.step(**x)
     assert (c.vel_dot[0, 0] == 0).all() and (c.ang_acc[0, 0] == 0).all()
     assert (c.vel_dot[1, 1].abs() > 1.0).all()
+
+
+def test_yaw_cutoff_is_the_drone_value():
+    line = next(x for x in (ROOT.parent / "starling_1_indoor_params.params").read_text().splitlines()
+                if x.split("\t")[2:3] == ["MC_YAW_CUTOFF"])
+    assert float(line.split("\t")[3]) == MC_YAW_CUTOFF_HZ_DRONE == 15.0
+    assert Px4Cascade(1, 1, G, 0.005, "cpu").yaw_cutoff_hz == 15.0
+
+
+def test_yaw_torque_lowpass_form():
+    """AlphaFilter on the yaw torque only (note C): alpha = dt / (dt + 1 / (2 pi f)); 0 Hz turns it off."""
+    rates = torch.tensor([[[0.5, -0.4, 1.0]]])
+    omega = torch.zeros(1, 1, 3)
+    hover = torch.full((1, 1), H)
+    on = Px4Cascade(1, 1, G, 0.005, "cpu")
+    off = Px4Cascade(1, 1, G, 0.005, "cpu", yaw_torque_cutoff_hz=0.0)
+    on.rate_step(rates, omega, hover)
+    off.rate_step(rates, omega, hover)
+    alpha = 0.005 / (0.005 + 1.0 / (2 * math.pi * 15.0))
+    assert torch.allclose(on.torque_n[..., :2], off.torque_n[..., :2])                    # roll, pitch untouched
+    assert on.torque_n[0, 0, 2] == pytest.approx(alpha * float(off.torque_n[0, 0, 2]), rel=1e-5)
+    assert off.torque_n[0, 0, 2] == pytest.approx(G.mc_yawrate_p * 1.0, rel=1e-5)
+    for _ in range(400):                       # zero error from here: the yaw torque settles to the raw one (= I term)
+        on.rate_step(torch.zeros(1, 1, 3), omega, hover)
+    assert torch.allclose(on.torque_n, on.rate_int, atol=1e-6)
+
+
+def test_allocator_saturation_stops_the_rate_integrator():
+    """Note D: unallocated yaw torque -> positive yaw saturation flag -> the yaw integrator stops growing."""
+    c = Px4Cascade(1, 2, G, 0.005, "cpu", yaw_torque_cutoff_hz=0.0)
+    rates = torch.tensor([[[0.0, 0.0, 2.5], [0.0, 0.0, 0.2]]])          # drone 0 asks for far more yaw than fits
+    omega = torch.zeros(1, 2, 3)
+    low = torch.full((1, 2), 0.05)                                      # little thrust: yaw saturates at u = 0
+    c.rate_step(rates, omega, low)
+    assert c.sat_pos[0, 0, 2] and not c.sat_neg[0, 0, 2] and not c.sat_pos[0, 1].any()
+    held = c.rate_int[0, 0, 2].clone()
+    for _ in range(50):
+        c.rate_step(rates, omega, low)
+    assert c.rate_int[0, 0, 2] == held                                  # frozen in the saturated direction
+    assert c.rate_int[0, 1, 2] > held                                   # the unsaturated drone keeps integrating
+    full = allocate(c.torque_n, low, c.mix)
+    assert torch.equal(full, c.u)
+    c.reset(torch.tensor([[True, False]]))
+    assert not c.sat_pos[0, 0].any()
+    hover = Px4Cascade(1, 1, G, 0.005, "cpu")                           # at hover nothing saturates
+    hover.rate_step(torch.zeros(1, 1, 3), torch.zeros(1, 1, 3), torch.full((1, 1), H))
+    assert not hover.sat_pos.any() and not hover.sat_neg.any()
 
 
 # ------------------------------------------------------------------------------------------ closed loop

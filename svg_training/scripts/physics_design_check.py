@@ -18,6 +18,10 @@ Measured per variant
           feed-forward (0.5, 0, 0), 4 s: t63 of the east speed (s), overshoot (% of 0.5 m/s), peak tilt (deg).
   rate    the rate loop alone (outer loops skipped): roll-rate setpoint +1 rad/s for 0.3 s from hover, then
           -1 rad/s for 0.3 s: t63 (s) and overshoot (%) of the first step.
+  options INFO (fix round 2): yaw options A-C, and D with --info-yaw-rate-pid P I D (see yaw_options).
+  yaw     INFO (fix round 1, not a gate): hover yaw std and peak-to-peak (last 5 s of the hover above), and a
+          +0.5 rad yaw setpoint jump from hover for 10 s: t63, overshoot, peak-to-peak after 5 s, final error. Also
+          for the default plant with the yaw torque filter off (upstream v1.14.0 has none; px4_cascade note C).
 Decision rules (S2b plan, Task 3, fixed before the run)
   (a) default (cad, lag on, 0.005) hover tilt spread > 1.0 deg -> BLOCKED (D5).
   (b) default at 0.005 against default at 0.001: RMS of |v_0.005(t) - v_0.001(t)| over the +x step > 0.02 m/s
@@ -51,6 +55,7 @@ S2B = ROOT / "configs" / "s2b.toml"
 TILT_SPREAD_MAX_DEG = 1.0          # rule (a): [step_gates] hover_tilt_std_max_deg, D5
 STEP_RMS_MAX_MPS = 0.02            # rule (b)
 HOVER_S, STEP_S, STEP_MPS = 10.0, 4.0, 0.5
+YAW_STEP_RAD, YAW_STEP_S = 0.5, 10.0   # INFO (fix round 1): yaw step size and length
 
 # setpoint(t) -> (p_sp ENU [N, M, 3], v_ff ENU, a_ff ENU, yaw ENU [N, M], yaw rate ENU [N, M])
 SetpointFn = Callable[[float], tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]]
@@ -66,7 +71,7 @@ def load_params(geometry: str = "cad", motor_lag: bool = True, dt_s: float = 0.0
 def fly(p: PhysicsParams, duration_s: float, setpoint: SetpointFn, *, n: int = 1, m: int = 1,
         pos0: torch.Tensor | None = None, quat0: torch.Tensor | None = None, ang_vel0: torch.Tensor | None = None,
         rate_sp: Callable[[float], torch.Tensor] | None = None, tilt_max_deg: float | None = None,
-        dtype: torch.dtype = torch.float32) -> dict[str, torch.Tensor]:
+        dtype: torch.dtype = torch.float32, yaw_cutoff_hz: float | None = None) -> dict[str, torch.Tensor]:
     """Closed loop on the CPU: cascade -> rotor model -> body wrench -> torch world, one physics step at a time.
 
     Setpoints are ENU (the game's frame) and cross into NED here, as Task 4's physics drone will do. With
@@ -78,7 +83,8 @@ def fly(p: PhysicsParams, duration_s: float, setpoint: SetpointFn, *, n: int = 1
     steps = int(round(duration_s / dt))
     world = TorchRigidBodyWorld(n, m, p.airframe, dt, "cpu", dtype=dtype)
     rotors = RotorModel(n, m, p.airframe, p.motor_lag, dt, "cpu")
-    cascade = Px4Cascade(n, m, p.gains, dt, "cpu", tilt_max_deg=tilt_max_deg, dtype=dtype)
+    cascade = Px4Cascade(n, m, p.gains, dt, "cpu", tilt_max_deg=tilt_max_deg, dtype=dtype,
+                         yaw_torque_cutoff_hz=yaw_cutoff_hz)
     everyone = torch.ones(n, m, dtype=torch.bool)
     q0 = quat0 if quat0 is not None else torch.tensor([1.0, 0.0, 0.0, 0.0], dtype=dtype).expand(n, m, 4)
     p0 = pos0 if pos0 is not None else torch.zeros(n, m, 3, dtype=dtype)
@@ -157,21 +163,82 @@ def t63(t: torch.Tensor, y: torch.Tensor, target: float, t0: float = 0.0) -> flo
     return float(t[hit[0, 0]] - t0) if len(hit) else float("nan")
 
 
-def hover_metrics(p: PhysicsParams) -> dict:
+def hover_metrics(p: PhysicsParams, yaw_cutoff_hz: float | None = None) -> dict:
     pos0 = torch.tensor([[[0.0, 0.0, 1.0]]])
     out = fly(p, HOVER_S, hold(pos0), pos0=pos0, quat0=upset_quat(2.0, -1.0),
-              ang_vel0=torch.tensor([[[0.1, -0.1, 0.05]]]))
+              ang_vel0=torch.tensor([[[0.1, -0.1, 0.05]]]), yaw_cutoff_hz=yaw_cutoff_hz)
     last = out["t_s"] > HOVER_S - 5.0
     tilt = out["tilt_deg"][last, 0, 0]
     dist = (out["pos_m"][last, 0, 0] - pos0[0, 0]).norm(dim=-1)
     finite = bool(torch.isfinite(out["pos_m"]).all())
+    yaw = out["yaw_enu_deg"][last, 0, 0]
     return {"tilt_spread_deg": float(tilt.std()), "tilt_p2p_deg": float(tilt.max() - tilt.min()),
-            "tilt_max_last5_deg": float(tilt.max()), "drift_m": float(dist.max()), "finite": finite}
+            "tilt_max_last5_deg": float(tilt.max()), "drift_m": float(dist.max()), "finite": finite,
+            "yaw_spread_deg": float(yaw.std()), "yaw_p2p_deg": float(yaw.max() - yaw.min())}
 
 
-def step_run(p: PhysicsParams) -> dict[str, torch.Tensor]:
+def yaw_step_run(p: PhysicsParams, duration_s: float = YAW_STEP_S,
+                 yaw_cutoff_hz: float | None = None) -> dict[str, torch.Tensor]:
+    """Hover at rest, then the yaw setpoint jumps to +YAW_STEP_RAD (ENU, nose turning left) at t = 0, no feed-forward."""
     pos0 = torch.tensor([[[0.0, 0.0, 1.0]]])
-    return fly(p, STEP_S, ramp_x(pos0, STEP_MPS), pos0=pos0)
+    z = torch.zeros(1, 1, 3)
+    yaw = torch.full((1, 1), YAW_STEP_RAD)
+    zy = torch.zeros(1, 1)
+    return fly(p, duration_s, lambda t: (pos0, z, z, yaw, zy), pos0=pos0, yaw_cutoff_hz=yaw_cutoff_hz)
+
+
+def yaw_step_metrics(out: dict[str, torch.Tensor]) -> dict:
+    """INFO: t63 of the yaw (s), peak-to-peak after 5 s (deg), final error (deg), largest overshoot (deg)."""
+    yaw = out["yaw_enu_deg"][:, 0, 0]
+    target = math.degrees(YAW_STEP_RAD)
+    late = out["t_s"] > 5.0
+    return {"t63_s": t63(out["t_s"], yaw, target), "p2p_after_5s_deg": float(yaw[late].max() - yaw[late].min()),
+            "final_err_deg": float(yaw[-1] - target), "overshoot_deg": float(yaw.max() - target)}
+
+
+def step_run(p: PhysicsParams, yaw_cutoff_hz: float | None = None) -> dict[str, torch.Tensor]:
+    pos0 = torch.tensor([[[0.0, 0.0, 1.0]]])
+    return fly(p, STEP_S, ramp_x(pos0, STEP_MPS), pos0=pos0, yaw_cutoff_hz=yaw_cutoff_hz)
+
+
+def yaw_options(yaw_rate_pid: tuple[float, float, float] | None) -> tuple[list[dict], list[str]]:
+    """INFO (fix round 2): the yaw options put to the owner, all on the default plant (CAD arms) at dt 0.005.
+
+    A drone gains, yaw filter, motor lag on (the code default); B the same with the yaw filter off; C motor lag off;
+    D (only with ``yaw_rate_pid``) yaw-rate P / I / D from the command line, filter and lag on. D's numbers are
+    never written in this file: the AirStack simulator's yaw-rate gains are SIM-ONLY (iron rule 9), so they are
+    passed on the command line for a one-off INFO comparison and labelled so in the output.
+    Returns result rows and table lines; the last column is the RMS of the +x step's velocity difference to A.
+    """
+    base = load_params("cad", True, 0.005)
+    cases = [("A drone gains, 15 Hz yaw filter, lag on (default)", base, None),
+             ("B drone gains, yaw filter off, lag on", base, 0.0),
+             ("C drone gains, 15 Hz yaw filter, lag off", load_params("cad", False, 0.005), None)]
+    if yaw_rate_pid is not None:
+        yp, yi, yd = yaw_rate_pid
+        sim = dataclasses.replace(base, gains=dataclasses.replace(base.gains, mc_yawrate_p=yp, mc_yawrate_i=yi,
+                                                                  mc_yawrate_d=yd))
+        cases.append((f"D SIM-ONLY yaw-rate P/I/D {yp:g}/{yi:g}/{yd:g} (command line), 15 Hz filter, lag on", sim,
+                      None))
+    out, ref = [], None
+    for name, p, cut in cases:
+        h = hover_metrics(p, cut)
+        y = yaw_step_metrics(yaw_step_run(p, yaw_cutoff_hz=cut))
+        run = step_run(p, cut)
+        ref = run if ref is None else ref
+        out.append({"case": name, "hover": h, "yaw_step": y, "step": step_metrics(run),
+                    "step_rms_vs_A_mps": speed_rms_diff(run, ref)})
+        print(f"option {name}: done", flush=True)
+    lines = ["", "INFO, yaw options for the owner (default plant, dt 0.005; not gates):", "",
+             "| case | hover yaw std (deg) | hover tilt spread (deg) | yaw step t63 (s) | yaw p2p after 5 s (deg) | "
+             "yaw final error (deg) | +x t63 (s) | +x overshoot (%) | +x velocity RMS vs A (m/s) |",
+             "|---|---|---|---|---|---|---|---|---|"]
+    for r in out:
+        h, y, s = r["hover"], r["yaw_step"], r["step"]
+        lines.append(f"| {r['case']} | {h['yaw_spread_deg']:.3f} | {h['tilt_spread_deg']:.4f} | {y['t63_s']:.3f} | "
+                     f"{y['p2p_after_5s_deg']:.2f} | {y['final_err_deg']:.2f} | {s['t63_s']:.3f} | "
+                     f"{s['overshoot_pct']:.1f} | {r['step_rms_vs_A_mps']:.5f} |")
+    return out, lines
 
 
 def step_metrics(out: dict[str, torch.Tensor]) -> dict:
@@ -204,6 +271,8 @@ def speed_rms_diff(a: dict[str, torch.Tensor], b: dict[str, torch.Tensor]) -> fl
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--out", required=True, help="output folder, e.g. runs/2026-11-16_s2b_design_check/")
+    ap.add_argument("--info-yaw-rate-pid", type=float, nargs=3, metavar=("P", "I", "D"), default=None,
+                    help="INFO only: also fly the default plant with these yaw-rate gains (labelled SIM-ONLY)")
     args = ap.parse_args(argv)
     out_dir = Path(args.out)
     out_dir = out_dir if out_dir.is_absolute() else ROOT / out_dir
@@ -220,11 +289,21 @@ def main(argv: list[str] | None = None) -> int:
                 steps[(geometry, lag, dt)] = run
                 s = step_metrics(run)
                 r = rate_metrics(p)
-                rows.append({"geometry": geometry, "motor_lag": lag, "dt_s": dt, "hover": h, "step": s, "rate": r})
+                y = yaw_step_metrics(yaw_step_run(p))
+                rows.append({"geometry": geometry, "motor_lag": lag, "dt_s": dt, "hover": h, "step": s, "rate": r,
+                             "yaw_step": y})
                 print(f"{geometry:6s} lag={'on ' if lag else 'off'} dt={dt}: tilt spread {h['tilt_spread_deg']:.4f} "
                       f"deg, drift {h['drift_m']:.4f} m, step t63 {s['t63_s']:.3f} s, overshoot "
                       f"{s['overshoot_pct']:.1f} %, peak tilt {s['peak_tilt_deg']:.2f} deg, rate t63 "
-                      f"{r['t63_s'] * 1000:.0f} ms, rate overshoot {r['overshoot_pct']:.1f} %", flush=True)
+                      f"{r['t63_s'] * 1000:.0f} ms, rate overshoot {r['overshoot_pct']:.1f} %; hover yaw std "
+                      f"{h['yaw_spread_deg']:.3f} deg, yaw step p2p after 5 s {y['p2p_after_5s_deg']:.2f} deg",
+                      flush=True)
+    # INFO: the same yaw checks with the yaw torque filter off (upstream v1.14.0 has none; note C of px4_cascade)
+    no_filter = []
+    for lag in (True, False):
+        p = load_params("cad", lag, 0.005)
+        no_filter.append({"geometry": "cad", "motor_lag": lag, "dt_s": 0.005, "hover": hover_metrics(p, 0.0),
+                          "yaw_step": yaw_step_metrics(yaw_step_run(p, yaw_cutoff_hz=0.0))})
 
     default = next(r for r in rows if r["geometry"] == "cad" and r["motor_lag"] and r["dt_s"] == 0.005)
     rule_a = default["hover"]["tilt_spread_deg"] > TILT_SPREAD_MAX_DEG or not default["hover"]["finite"]
@@ -241,15 +320,28 @@ def main(argv: list[str] | None = None) -> int:
                      f"{h['tilt_spread_deg']:.4f} | {h['tilt_p2p_deg']:.4f} | {h['drift_m']:.4f} | {s['t63_s']:.3f} | "
                      f"{s['overshoot_pct']:.1f} | {s['peak_tilt_deg']:.2f} | {rr['t63_s'] * 1000:.0f} | "
                      f"{rr['overshoot_pct']:.1f} |")
+    yaw_cut = Px4Cascade(1, 1, load_params().gains, 0.005, "cpu").yaw_cutoff_hz
+    lines += ["", f"INFO, yaw (not a gate). Yaw torque filter {yaw_cut:g} Hz unless marked off. Hover yaw = last 5 s "
+              f"of the hover above; yaw step = +{YAW_STEP_RAD} rad setpoint jump from hover, {YAW_STEP_S:g} s.",
+              "", "| geometry | motor lag | dt (s) | yaw filter | hover yaw std (deg) | hover yaw p2p (deg) | "
+              "yaw step t63 (s) | yaw overshoot (deg) | yaw p2p after 5 s (deg) | yaw final error (deg) |",
+              "|---|---|---|---|---|---|---|---|---|---|"]
+    for r, cut in [(r, f"{yaw_cut:g} Hz") for r in rows] + [(r, "off") for r in no_filter]:
+        h, y = r["hover"], r["yaw_step"]
+        lines.append(f"| {r['geometry']} | {'on' if r['motor_lag'] else 'off'} | {r['dt_s']} | {cut} | "
+                     f"{h['yaw_spread_deg']:.3f} | {h['yaw_p2p_deg']:.3f} | {y['t63_s']:.3f} | "
+                     f"{y['overshoot_deg']:.2f} | {y['p2p_after_5s_deg']:.2f} | {y['final_err_deg']:.2f} |")
     lines += ["", "| +x step, dt 0.005 vs 0.001: RMS of the velocity difference (m/s) | value |", "|---|---|"]
     lines += [f"| {k} | {v:.5f} |" for k, v in rms.items()]
     lines += ["", f"Rule (a) default hover tilt spread {default['hover']['tilt_spread_deg']:.4f} deg "
               f"(limit {TILT_SPREAD_MAX_DEG}): {'FIRED -> BLOCKED' if rule_a else 'clear'}.",
               f"Rule (b) default dt RMS {rms['cad_lag']:.5f} m/s (limit {STEP_RMS_MAX_MPS}): "
               f"{'FIRED -> fallback_physics_dt_s' if rule_b else 'clear'}."]
+    options, option_lines = yaw_options(tuple(args.info_yaw_rate_pid) if args.info_yaw_rate_pid else None)
+    lines += option_lines
     (out_dir / "table.md").write_text("\n".join(lines) + "\n")
     (out_dir / "results.json").write_text(json.dumps(
-        {"rows": rows, "dt_rms_mps": rms, "rule_a_fired": rule_a, "rule_b_fired": rule_b,
+        {"rows": rows, "yaw_options": options, "yaw_filter_off_rows": no_filter, "yaw_cutoff_hz": yaw_cut, "dt_rms_mps": rms, "rule_a_fired": rule_a, "rule_b_fired": rule_b,
          "params_source": load_params().source}, indent=2) + "\n")
     print("\n".join(lines))
     return 3 if rule_a else (4 if rule_b else 0)

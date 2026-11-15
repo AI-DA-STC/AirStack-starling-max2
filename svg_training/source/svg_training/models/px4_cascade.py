@@ -27,8 +27,10 @@ Sources (v1.14.0), in cascade order
    ``MulticopterRateControl.cpp`` (``K P``, ``K I``, ``K D``, ``FF``). ``angular_accel`` is
    ``sensors/vehicle_angular_velocity/VehicleAngularVelocity.cpp`` ``FilterAngularAcceleration``: the difference
    quotient of the rate through ``AlphaFilter`` at ``IMU_DGYRO_CUTOFF`` (see note B).
-   The allocator's saturation flags are taken as never set (``setSaturationStatus`` is not modelled), and the drone
-   is never "landed" (the integrator always runs).
+   The allocator's saturation feedback is ported (note D); the drone is never "landed" (the integrator runs).
+7b. The yaw torque low-pass of the drone's PX4 (``MC_YAW_CUTOFF`` 15 Hz in the drone's file; see note C):
+   ``torque.z = AlphaFilter(torque.z)``, ``alpha = dt / (dt + 1 / (2 pi MC_YAW_CUTOFF))``, after
+   ``RateControl::update`` and before the allocator.
 8. ``src/modules/control_allocator/``: effectiveness ``ActuatorEffectivenessRotors::computeEffectivenessMatrix``
    (axis (0, 0, -1), ``moment = CT r x axis - CT KM axis``, ``thrust = CT axis``), ``matrix::geninv``,
    ``ControlAllocationPseudoInverse::updateControlAllocationMatrixScale`` / ``normalizeControlAllocationMatrix``
@@ -52,6 +54,23 @@ uses 2.8 / 0.4 = 7.0. Note B: the plan calls the D-term filter a second-order Bu
 ``VehicleAngularVelocity.hpp`` declares ``AlphaFilter<float> _lp_filter_acceleration[3]`` (first order,
 ``alpha = dt / (dt + 1 / (2 pi f_c))``, ``AlphaFilter::setCutoffFreq``), and the port follows the source.
 
+Note D (fix round 2): the allocator's saturation feedback. ``ControlAllocator::publish_control_allocator_status``
+computes ``unallocated_torque = torque_sp - (E (u - trim)) .emult(_control_allocation_scale)`` from the clipped
+``u`` (``getAllocatedControl``, ControlAllocation.hpp:145); ``torque_setpoint_achieved`` = its norm squared < 1e-6.
+``MulticopterRateControl::Run`` (v1.14.0 :194-213) reads the latest status before ``RateControl::update``: if not
+achieved, axis i is saturated positive when unallocated > FLT_EPSILON and negative when < -FLT_EPSILON, and
+``updateIntegral`` then integrates only ``min(e, 0)`` / ``max(e, 0)`` on that axis. Here the flags come from the
+previous physics step (the status is published after the allocation, at most every 5 ms, and read on the next rate
+loop); at 200 Hz that is every step.
+
+Note C (fix round 1): upstream v1.14.0 has **no** yaw torque filter (``git grep`` of the tag finds no yaw cutoff
+parameter anywhere). The drone's file carries ``MC_YAW_CUTOFF`` 15, so the drone runs ModalAI's PX4 1.14 fork, which
+has it. Its source is not on this laptop; the form is taken from upstream commit ``8ecb76aba2`` "[Multirotor] add
+yaw torque low pass filter (#24173)", co-authored by ModalAI, first released in v1.16.0 as ``MC_YAW_TQ_CUTOFF``:
+``MulticopterRateControl::Run`` does ``torque_setpoint(2) = _output_lpf_yaw.update(torque_setpoint(2), dt)``, an
+``AlphaFilter`` with ``setCutoffFreq(f)`` -> time constant ``1 / (2 pi f)``; 0 disables it. The filter state starts
+at 0 and is never reset in PX4; ``reset`` here sets it to 0 (a drone at rest has zero yaw torque).
+
 Nothing in ``Px4Cascade.step`` / ``rate_step`` / ``allocate`` reads a tensor on the host; constants are made on the
 device in ``__init__``.
 """
@@ -69,6 +88,9 @@ FLT_EPSILON: float = 1.1920929e-07          # C's FLT_EPSILON, as PX4 uses it
 CA_ROTOR_CT: float = 6.5                    # CA_ROTOR0..3_CT in the drone's file (PX4 default); cancels in the
                                             # normalised mix, kept so the effectiveness matrix is PX4's own
 I_FACTOR_RATE_RAD_S: float = math.radians(400.0)   # rate_control.cpp updateIntegral
+# The drone's MC_YAW_CUTOFF (starling_1_indoor_params.params; note C). Used only while Px4Gains has no
+# ``mc_yaw_cutoff`` field (params/starling_physics_v0.toml predates fix round 1); tests check it against the file.
+MC_YAW_CUTOFF_HZ_DRONE: float = 15.0
 
 
 # ----------------------------------------------------------------------------------------------- ControlMath.cpp
@@ -139,6 +161,20 @@ def allocation_matrix(g: Px4Gains) -> Tensor:
     Rows = rotors 0..3, columns = (roll, pitch, yaw torque, thrust x, y, z), as ``_mix`` in
     ``ControlAllocationPseudoInverse``. Built in float64 once (not in the step); move it to the device once.
     """
+    return _allocation(g)[0]
+
+
+def allocated_control_matrix(g: Px4Gains) -> Tensor:
+    """[6, 4] float32 CPU: ``ControlAllocation::getAllocatedControl`` as a matrix, ``diag(scale) @ E``.
+
+    Allocated control = (E (u - trim)) .emult(_control_allocation_scale), trim 0 (ControlAllocation.hpp:145-146):
+    maps clipped rotor commands back to the (normalised torque, thrust) they produce, for the allocator status.
+    """
+    return _allocation(g)[1]
+
+
+def _allocation(g: Px4Gains) -> tuple[Tensor, Tensor]:
+    """(mix [4, 6], diag(scale) @ effectiveness [6, 4]), both float32 CPU."""
     cols = []
     for i in range(4):
         x, y = getattr(g, f"ca_rotor{i}_px"), getattr(g, f"ca_rotor{i}_py")
@@ -172,7 +208,7 @@ def allocation_matrix(g: Px4Gains) -> Tensor:
     if scale[3] > FLT_EPSILON:
         mix[:, 3:] /= scale[3:]
     mix = torch.where(mix.abs() < 1e-3, torch.zeros_like(mix), mix)
-    return mix.to(torch.float32)
+    return mix.to(torch.float32), (scale.unsqueeze(-1) * eff).to(torch.float32)
 
 
 def _desat_gain(vec: Tensor, u: Tensor, u_max: float) -> Tensor:
@@ -257,11 +293,13 @@ class Px4Cascade:
     derivative filters (``vel_dot``, ``ang_acc``).
 
     ``tilt_max_deg`` overrides ``MPC_TILTMAX_AIR`` (D11's INFO variant); ``dtype`` (default float32) is an
-    addition to the plan's signature, as in ``TorchRigidBodyWorld``.
+    addition to the plan's signature, as in ``TorchRigidBodyWorld``. ``yaw_torque_cutoff_hz`` (fix round 1) overrides
+    the drone's ``MC_YAW_CUTOFF`` (note C) for the design check's INFO comparison; 0 disables the filter, None (the
+    default) uses the drone's value.
     """
 
     def __init__(self, n: int, m: int, g: Px4Gains, dt_s: float, device, tilt_max_deg: float | None = None,
-                 dtype: torch.dtype = torch.float32) -> None:
+                 dtype: torch.dtype = torch.float32, yaw_torque_cutoff_hz: float | None = None) -> None:
         self.g = g
         self.n, self.m = n, m
         self.dt_s = dt_s
@@ -301,7 +339,13 @@ class Px4Cascade:
         # D-term filter (AlphaFilter::setCutoffFreq at the loop rate; note B)
         self._dgyro_alpha = dt_s / (dt_s + 1.0 / (2.0 * math.pi * g.imu_dgyro_cutoff)) \
             if 0.0 < g.imu_dgyro_cutoff < 0.5 / dt_s else 1.0
+        # yaw torque low-pass (note C): AlphaFilter, 0 Hz disables it
+        yaw_cut = yaw_torque_cutoff_hz if yaw_torque_cutoff_hz is not None \
+            else getattr(g, "mc_yaw_cutoff", MC_YAW_CUTOFF_HZ_DRONE)
+        self.yaw_cutoff_hz = yaw_cut
+        self._yaw_tq_alpha = dt_s / (dt_s + 1.0 / (2.0 * math.pi * yaw_cut)) if yaw_cut > FLT_EPSILON else 1.0
         self.mix = allocation_matrix(g).to(dtype).to(self.device)              # [4, 6], once
+        self._alloc_back = allocated_control_matrix(g).to(dtype).to(self.device)  # [6, 4], once (status feedback)
 
         # state
         self.vel_int = torch.zeros(n, m, 3, **kw)
@@ -309,6 +353,10 @@ class Px4Cascade:
         self.vel_dot = torch.zeros(n, m, 3, **kw)                # BlockLowPass state
         self._vel_prev = torch.zeros(n, m, 3, **kw)
         self.ang_acc = torch.zeros(n, m, 3, **kw)                # AlphaFilter state
+        self.yaw_torque_lpf = torch.zeros(n, m, 1, **kw)         # yaw torque AlphaFilter state (note C)
+        # allocator saturation feedback (note D): flags from the previous step's control_allocator_status
+        self.sat_pos = torch.zeros(n, m, 3, device=self.device, dtype=torch.bool)
+        self.sat_neg = torch.zeros(n, m, 3, device=self.device, dtype=torch.bool)
         self._omega_prev = torch.zeros(n, m, 3, **kw)
         self._deriv_ready = torch.zeros(n, m, 1, device=self.device, dtype=torch.bool)
         # logs
@@ -322,13 +370,17 @@ class Px4Cascade:
         self.u = torch.zeros(n, m, 4, **kw)
 
     def reset(self, mask: Tensor) -> None:
-        """Where ``mask`` [N, M]: integrators 0; derivative filters at rest (output 0, first difference skipped)."""
+        """Where ``mask`` [N, M]: integrators 0; derivative filters at rest (output 0, first difference skipped);
+        yaw torque filter 0."""
         k = mask.unsqueeze(-1)
         zero = torch.zeros_like(self.vel_int)
         self.vel_int = torch.where(k, zero, self.vel_int)
         self.rate_int = torch.where(k, zero, self.rate_int)
         self.vel_dot = torch.where(k, zero, self.vel_dot)
         self.ang_acc = torch.where(k, zero, self.ang_acc)
+        self.yaw_torque_lpf = torch.where(k, torch.zeros_like(self.yaw_torque_lpf), self.yaw_torque_lpf)
+        self.sat_pos = self.sat_pos & ~k
+        self.sat_neg = self.sat_neg & ~k
         self._deriv_ready = self._deriv_ready & ~k
 
     # ------------------------------------------------------------------------------------------- the step
@@ -435,13 +487,23 @@ class Px4Cascade:
 
         e = rates_sp - omega_frd
         torque = e * self._rate_p + self.rate_int - self.ang_acc * self._rate_d + rates_sp * self._rate_ff
-        # updateIntegral (saturation flags never set; never landed)
-        i_factor = (1.0 - (e / I_FACTOR_RATE_RAD_S) ** 2).clamp_min(0.0)
-        rate_i = self.rate_int + i_factor * self._rate_i * e * dt
+        # updateIntegral (never landed): no further integration in a saturated direction (note D)
+        e_i = torch.where(self.sat_pos, e.clamp_max(0.0), e)
+        e_i = torch.where(self.sat_neg, e_i.clamp_min(0.0), e_i)
+        i_factor = (1.0 - (e_i / I_FACTOR_RATE_RAD_S) ** 2).clamp_min(0.0)
+        rate_i = self.rate_int + i_factor * self._rate_i * e_i * dt
         rate_i = torch.maximum(torch.minimum(rate_i, self._rate_int_lim), -self._rate_int_lim)
         self.rate_int = torch.where(torch.isfinite(rate_i), rate_i, self.rate_int)
+        # yaw torque low-pass (note C), then the publish-time NaN guard
+        self.yaw_torque_lpf = (1.0 - self._yaw_tq_alpha) * self.yaw_torque_lpf + self._yaw_tq_alpha * torque[..., 2:]
+        torque = torch.cat((torque[..., :2], self.yaw_torque_lpf), dim=-1)
         torque = torch.where(torch.isfinite(torque), torque, torch.zeros_like(torque))   # vehicle_torque_setpoint
 
         self.rates_sp, self.torque_n = rates_sp, torque
         self.u = allocate(torque, collective, self.mix)
+        # publish_control_allocator_status -> MulticopterRateControl::Run's setSaturationStatus (used next step)
+        unalloc = torque - (self.u.unsqueeze(-2) * self._alloc_back[:3]).sum(-1)       # [N, M, 3]
+        missed = (unalloc * unalloc).sum(-1, keepdim=True) >= 1e-6                    # !torque_setpoint_achieved
+        self.sat_pos = missed & (unalloc > FLT_EPSILON)
+        self.sat_neg = missed & (unalloc < -FLT_EPSILON)
         return self.u

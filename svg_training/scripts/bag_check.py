@@ -453,7 +453,7 @@ def write_record(path: Path, ctx: dict) -> None:
           "straight lines; this run held each message (as the S2 brief prescribed). See the information-only "
           "paragraph under Results.",
           "- Leg 3 is not a push: the position setpoint barely moves (about 0.02 m east, 0.06 m north over the leg) "
-          "while the speed setpoint reads about 0.115 m/s, and drone_2's measured stream stops at 220.42 s and "
+          "while the speed setpoint reads about 0.12 m/s (peak 0.1215), and drone_2's measured stream stops at 220.42 s and "  # leg-3 figures read from the bag by hand at review; not recomputed by this script
           "resumes at 628.31 s, so the scored span (to 221.92 s) runs past the end of the measurements. It was "
           "scored as specified and not rescored. A future script should require measurements across the whole "
           "window; that would be a new run.", ""]

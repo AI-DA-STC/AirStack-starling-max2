@@ -84,7 +84,7 @@ A FAIL here does not touch `params/`: the model file stays as it is, and the mod
 - Measured velocity is PX4's estimate after the WiFi, so its delay includes one network leg. The best extra shift (-0.10 s) sits at the edge of the searched range [-0.10, 0.30] s, so it says only that the model is not too early; it is information and moved no gate.
 - The 0.15 s delayed setpoint speed (pooled RMS 0.066 m/s) fits the measured speed better than the model (0.093 m/s).
 - The acceleration feed-forward is derived from the speed setpoint. The S1 fit joined its setpoint by straight lines; this run held each message (as the S2 brief prescribed). See the information-only paragraph under Results.
-- Leg 3 is not a push: the position setpoint barely moves (about 0.02 m east, 0.06 m north over the leg) while the speed setpoint reads about 0.115 m/s, and drone_2's measured stream stops at 220.42 s and resumes at 628.31 s, so the scored span (to 221.92 s) runs past the end of the measurements. It was scored as specified and not rescored. A future script should require measurements across the whole window; that would be a new run.
+- Leg 3 is not a push: the position setpoint barely moves (about 0.02 m east, 0.06 m north over the leg) while the speed setpoint reads about 0.12 m/s (peak 0.1215), and drone_2's measured stream stops at 220.42 s and resumes at 628.31 s, so the scored span (to 221.92 s) runs past the end of the measurements. It was scored as specified and not rescored. A future script should require measurements across the whole window; that would be a new run.
 
 ## Edited after the run (lead's review, 16 Nov)
 

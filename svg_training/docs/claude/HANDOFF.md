@@ -290,7 +290,7 @@ STANDARDS and DESIGN. Their open questions are in the table above.
 
 1. Run the `train-start` skill.
 2. The design is approved. A change to it goes through the owner first.
-3. S0 and S1 are closed; S2 is built and reviewed, final review pending (§0, [../S2_RESULTS.md](../S2_RESULTS.md)). Next is
+3. S0 and S1 are closed; S2 is closed (16 November) (§0, [../S2_RESULTS.md](../S2_RESULTS.md)). Next is
    S2's final review, then S2b from its approved plan: build with `train-implementer`, test first, and have
    `train-gatekeeper` read each record.
 4. One step at a time, S0 to S5. Each ends on a record and a ledger row.

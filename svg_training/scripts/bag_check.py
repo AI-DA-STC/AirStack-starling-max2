@@ -320,6 +320,25 @@ def caption_for(res: dict, g: dict) -> str:
     return txt
 
 
+def why_text(res: dict, g: dict) -> str:
+    """One sentence on why the verdict is what it is, from results.json numbers."""
+    d2, lin = res.get("drone_2"), res.get("linear_setpoint_sensitivity", {}).get("drone_2")
+    if not d2 or res["result"] == "INFO":
+        return "No verdict: too few flight legs in the bag."
+    over = [lg for lg in d2["legs"] if lg["rms_mps"] > g["vel_rms_max_mps"]]
+    rest = max((lg["rms_mps"] for lg in d2["legs"] if lg not in over), default=math.nan)
+    txt = (f"Why it {'fails' if res['result'] == 'FAIL' else 'passes'}: the velocity RMS gate "
+           f"{'fails on leg ' + ', '.join(str(lg['leg']) for lg in over) + ' alone' if over else 'holds on every leg'} "
+           f"(the other legs are at most {_f(rest)} m/s")
+    if lin:
+        txt += f", and at most {_f(max(lg['rms_mps'] for lg in lin['legs'] if lg['rms_mps'] <= g['vel_rms_max_mps']), 3)} m/s if the setpoint is joined by lines, information only"
+    txt += (f"). The 63 % time gate {'fails' if d2['worst_t63_error_s'] > g['t63_err_max_s'] else 'holds'} "
+            f"with the held-setpoint method (worst error {_f(d2['worst_t63_error_s'])} s")
+    if lin:
+        txt += f"; joined by lines it would be {_f(lin['worst_t63_error_s'])} s, information only"
+    return txt + "). See Results and Limits."
+
+
 def write_record(path: Path, ctx: dict) -> None:
     res, g, p = ctx["results"], ctx["gates"], ctx["params"]
     d2 = res.get("drone_2", {})
@@ -327,6 +346,7 @@ def write_record(path: Path, ctx: dict) -> None:
     L = ["Observed in flight logs: real drone, 12 November 2026 rosbag; the training simulator's drone model checked, "
          "not refitted", "",
          f"# {ctx['name']} record", "", f"Result: **{result}** (gates on drone_2). Ledger row {ctx['t_id']}.", "",
+         ctx["why"], "",
          "## Purpose", "",
          "Check the training simulator's drone model (`params/real_exploratory_v0.toml`, fitted to the 13 November "
          "PX4 logs of drone_2) against a different recording it never saw: the 12 November two-drone flight, "
@@ -424,10 +444,19 @@ def write_record(path: Path, ctx: dict) -> None:
           "of S1's own fit gates.", "",
           "## Limits", "",
           "- Same low-speed regime as the fit (setpoint at most 0.5 m/s); the simulator's 2 to 6 m/s are untested.",
-          "- Measured velocity is PX4's estimate after the WiFi; its delay includes one network leg, so a model "
-          "delay larger than the 13 November PX4-log fit is expected and is not by itself an error.",
-          "- The acceleration feed-forward is derived from the held speed setpoint, as in the fit.",
-          "- The best extra shift is information only and moved no gate.", ""]
+          "- Measured velocity is PX4's estimate after the WiFi, so its delay includes one network leg. The best "
+          "extra shift (-0.10 s) sits at the edge of the searched range [-0.10, 0.30] s, so it says only that the "
+          "model is not too early; it is information and moved no gate.",
+          "- The 0.15 s delayed setpoint speed (pooled RMS 0.066 m/s) fits the measured speed better than the model "
+          "(0.093 m/s).",
+          "- The acceleration feed-forward is derived from the speed setpoint. The S1 fit joined its setpoint by "
+          "straight lines; this run held each message (as the S2 brief prescribed). See the information-only "
+          "paragraph under Results.",
+          "- Leg 3 is not a push: the position setpoint barely moves (about 0.02 m east, 0.06 m north over the leg) "
+          "while the speed setpoint reads about 0.115 m/s, and drone_2's measured stream stops at 220.42 s and "
+          "resumes at 628.31 s, so the scored span (to 221.92 s) runs past the end of the measurements. It was "
+          "scored as specified and not rescored. A future script should require measurements across the whole "
+          "window; that would be a new run.", ""]
     path.write_text("\n".join(L))
 
 
@@ -502,7 +531,7 @@ def main(argv=None) -> int:
         caption = caption_for(results, gates)
         ctx = {"results": results, "gates": gates, "params": params, "name": a.name, "t_id": t_id, "head": head,
                "code_sha": code_sha(), "bag_name": mcap_path.name, "bag_sha": sha256_of(mcap_path),
-               "bag_mb": mcap_path.stat().st_size / 1e6, "params_sha": sha256_of(a.params), "caption": caption}
+               "bag_mb": mcap_path.stat().st_size / 1e6, "params_sha": sha256_of(a.params), "caption": caption, "why": why_text(results, gates)}
         rec = a.records_dir / f"{a.name}_record.md"
         write_record(rec, ctx)
         row = (f"| {t_id} | {now.isoformat()} | observed in flight logs (12 November rosbag; drone model checked, "

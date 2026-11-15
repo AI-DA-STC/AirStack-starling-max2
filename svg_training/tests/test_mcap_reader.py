@@ -54,3 +54,10 @@ def test_cdr_unsupported_type_raises():
     for text in ("string name\n", "float32[] xs\n", "float32[<=3] xs\n", "geometry_msgs/Point p\n"):
         with pytest.raises(NotImplementedError):
             compile_ros2msg(text)
+
+
+def test_cdr_refuses_other_encapsulations():
+    lay = compile_ros2msg("uint8 n\n")
+    for header in (bytes([0, 7, 0, 0]), bytes([0, 0, 0, 0])):          # XCDR2 little endian, big endian
+        with pytest.raises(NotImplementedError):
+            decode(lay, header + b"\x01", ("n",))

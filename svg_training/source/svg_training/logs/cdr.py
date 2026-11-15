@@ -62,8 +62,8 @@ def decode(layout: CdrLayout, data: bytes, fields: tuple[str, ...]) -> dict[str,
     """The named fields of one message: a float for a scalar, a tuple of floats for an array."""
     if len(data) < 4:
         raise ValueError("message shorter than the CDR header")
-    if data[1] & 1 == 0:
-        raise NotImplementedError("big-endian CDR is not supported")
+    if data[0] != 0 or data[1] != 1:
+        raise NotImplementedError(f"only plain little-endian CDR (header 00 01) is supported, got {data[:2].hex()}")
     out: dict[str, float | tuple[float, ...]] = {}
     for name in fields:
         c, count, off, array = layout.fields[name]

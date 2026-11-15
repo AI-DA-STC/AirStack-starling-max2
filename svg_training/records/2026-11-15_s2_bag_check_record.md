@@ -4,6 +4,8 @@ Observed in flight logs: real drone, 12 November 2026 rosbag; the training simul
 
 Result: **FAIL** (gates on drone_2). Ledger row T5.
 
+Why it fails: the velocity RMS gate fails on leg 3 alone (0.120 m/s; legs 0-2 are at most 0.084 m/s, and 0.050 m/s if the setpoint is joined by lines, information only). The 63 % time gate fails because of the held-setpoint method (worst error 0.690 s; joined by lines it would be 0.084 s, information only). See Results and Limits.
+
 ## Purpose
 
 Check the training simulator's drone model (`params/real_exploratory_v0.toml`, fitted to the 13 November PX4 logs of drone_2) against a different recording it never saw: the 12 November two-drone flight, recorded as a rosbag at the full 19 Hz command rate. Nothing is refitted; the parameter file is read as written. This answers one question: does the model, fitted at one speed in one log, still describe the real drone's velocity in another flight? Observed in flight logs; it says nothing about how a trained strategy will fly.
@@ -79,6 +81,11 @@ A FAIL here does not touch `params/`: the model file stays as it is, and the mod
 ## Limits
 
 - Same low-speed regime as the fit (setpoint at most 0.5 m/s); the simulator's 2 to 6 m/s are untested.
-- Measured velocity is PX4's estimate after the WiFi; its delay includes one network leg, so a model delay larger than the 13 November PX4-log fit is expected and is not by itself an error.
-- The acceleration feed-forward is derived from the held speed setpoint, as in the fit.
-- The best extra shift is information only and moved no gate.
+- Measured velocity is PX4's estimate after the WiFi, so its delay includes one network leg. The best extra shift (-0.10 s) sits at the edge of the searched range [-0.10, 0.30] s, so it says only that the model is not too early; it is information and moved no gate.
+- The 0.15 s delayed setpoint speed (pooled RMS 0.066 m/s) fits the measured speed better than the model (0.093 m/s).
+- The acceleration feed-forward is derived from the speed setpoint. The S1 fit joined its setpoint by straight lines; this run held each message (as the S2 brief prescribed). See the information-only paragraph under Results.
+- Leg 3 is not a push: the position setpoint barely moves (about 0.02 m east, 0.06 m north over the leg) while the speed setpoint reads about 0.115 m/s, and drone_2's measured stream stops at 220.42 s and resumes at 628.31 s, so the scored span (to 221.92 s) runs past the end of the measurements. It was scored as specified and not rescored. A future script should require measurements across the whole window; that would be a new run.
+
+## Edited after the run (lead's review, 16 Nov)
+
+Wording only; no number, gate or result changed and the run was not repeated. Changes: the Limits bullet on the feed-forward now says the S1 fit joined the setpoint by straight lines and this run held each message; a sentence under the result says why it fails; leg 3 is disclosed as not a push (setpoint barely moves, measurements end at 220.42 s); the 0.15 s delayed baseline beating the model and the -0.10 s shift at the edge of the searched range are stated, and the earlier sentence that a larger delay was expected is removed. `scripts/bag_check.py` generates the same wording.

@@ -627,3 +627,13 @@ def test_standin_config_unchanged(): ...                  # [standin], [standin_
 | 5 | Wall-clock cap for the Isaac stand-in | **Keep the 50 million game-step budget; cap 3 hours for the Isaac run only**; the PyTorch runs keep 45 minutes. |
 | 6 | Stand-in control runs | **Both PyTorch variants**: pure partner rules and the Starling layer (the fair twin of the Isaac physics), each its own ledger row. |
 | 7 | Isaac MP4s in git? | **Yes**, each under 10 MB, in `docs/media/`. |
+
+## Addition (owner, 16 November 2026): TensorBoard for every training run
+
+The stand-in task (both backends) and every later training run log to TensorBoard:
+
+- skrl's own curves (rewards, losses, learning rate) in the run folder `runs/<run name>/` — skrl writes them by default;
+- the game's own numbers, every evaluation interval, as extra scalars under `game/`: hold rate (trained Guard against each scripted Strike behaviour), share of games won by time-out, closest Guard–Strike approach (3-D, minimum and 5th percentile), filter share, game-steps per second;
+- the run's settings (game config hash, seed, backend, preset) as TensorBoard text, so two runs can be told apart.
+
+Test: a 1-minute CPU smoke run writes an event file whose tags include `game/hold_rate`. `docs/TRAINING.md` gets the exact command (`tensorboard --logdir runs/`, host side, then `http://localhost:6006`; safe over the remote desktop because it is only a web page). No cloud logging service (the partner's numbers must not leave the laptop).

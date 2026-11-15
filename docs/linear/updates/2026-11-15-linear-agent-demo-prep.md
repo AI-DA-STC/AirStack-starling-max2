@@ -1,6 +1,6 @@
 # Linear update — 2026-11-15, cuVSLAM next steps and the 26 November demo
 
-Instructions for the Linear agent, in the **nearlab** workspace. Apply every step below. Delete nothing. Use the comments and titles exactly as written. Change no existing title. Check Linear before each step: if a status, comment or issue is already in place, do not repeat it. Every new issue is unassigned with no due date.
+Instructions for the Linear agent, in the **nearlab** workspace. Apply every step below. Delete nothing. Use the comments and titles exactly as written. Change no existing title. Check Linear before each step: if a status, comment or issue is already in place, do not repeat it. Assign every new issue to me (HweHuang Chia, the person who uploads this file). No issue touched here gets a cycle or a due date: if Linear adds an In Progress issue to a cycle, set the cycle back to none.
 
 The real-drone demo is on **26 November 2026**. The code for random goals, the figure-8 and the hand-flown intruder is CMU's commander (Yikuan's `svg_ground_control`), vendored in the repo https://github.com/AI-DA-STC/AirStack-starling-max2 under `AirStack/robot/ros_ws/src/svg_ground_control/`.
 
@@ -76,4 +76,5 @@ Write a Markdown file named `2026-11-15-linear-sync-record.md`. State only what 
 - each comment added here, and whether it was added now or already present;
 - the progress of milestones S5b (HTX-R1) and M7 (HTX-R2);
 - anything not applied, and why;
-- the totals per project for **all three** projects (HTX-R1, HTX-R2 and HTX-R3): total, Backlog, In Progress, Done, Canceled.
+- the assignee, cycle and due date of NEAR-791 to NEAR-794 and of each new issue;
+- the totals per project for **all four** projects (HTX-R1, HTX-R2, HTX-R3 and Isaac Lab Pipeline for NUS Strategy Training): total, Backlog, In Progress, Done, Canceled.

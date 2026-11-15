@@ -10,7 +10,7 @@
 
 **Spec:** the S2 design [../specs/2026-11-15-s2-game-and-plug-in-design.md](../specs/2026-11-15-s2-game-and-plug-in-design.md) §4a, §5, §7, plus this plan's own [Design](#design) section below (the owner's decision of 16 November 2026 is the spec; no separate spec file). Rules: [../../STANDARDS.md](../../STANDARDS.md) §3, §5, §6 (rules 7 and 8), §7, §8, §9, §11.
 
-**Status:** written 16 November 2026 for the owner's approval with its gates (`configs/s2b.toml`, Task 1). Execution: subagent-driven, the lead commits. Starts after S2 (Tasks 6, 7b, 9, 11) is complete.
+**Status:** approved by the owner 16 November 2026 with the answers at the end of this file; starts after S2 closes.
 
 ## Facts this plan rests on (read 16 November 2026)
 
@@ -615,3 +615,15 @@ def test_standin_config_unchanged(): ...                  # [standin], [standin_
 - No flight-control (thrust and body-rate) policy (use 3), no camera policy (use 4); the video camera is for people only.
 - No change to the S2 gates, the S2 tasks or their results; `--batch-per-pair` and the `physics` preset are additions with S2 behaviour unchanged by default.
 - Nothing here is a flight result or authorises a flight.
+
+## Owner's answers (16 November 2026, "go with ur picks")
+
+| # | Question | Answer |
+|---|---|---|
+| 1 | Also register the game as a standard Isaac Lab task? | **Yes**: a thin registration wrapper over the same environment, so partners can use Isaac Lab's usual tools and trainers. |
+| 2 | Which rotor layout? | **As planned**: the body from CMU's CAD rotor positions (the owner's 19 October decision for the AirStack sim); PX4-style motor mixing from the drone's own parameters. |
+| 3 | Real gains unstable with motor lag? | **One pre-written fallback allowed**: the AirStack sim's sim-only rate gains × 0.5 (ledger #10), labelled sim-only. Anything beyond it: BLOCKED, ask the owner. |
+| 4 | `configs/s2b.toml` gates | **Approved as proposed**; written before any run, never moved. |
+| 5 | Wall-clock cap for the Isaac stand-in | **Keep the 50 million game-step budget; cap 3 hours for the Isaac run only**; the PyTorch runs keep 45 minutes. |
+| 6 | Stand-in control runs | **Both PyTorch variants**: pure partner rules and the Starling layer (the fair twin of the Isaac physics), each its own ledger row. |
+| 7 | Isaac MP4s in git? | **Yes**, each under 10 MB, in `docs/media/`. |

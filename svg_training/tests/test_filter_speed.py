@@ -109,12 +109,83 @@ def test_accuracy_phase_writes_run_folder_and_refuses_overwrite(tmp_path):
     assert not (ROOT / "records" / "x_s2_filter_speed_record.md").exists()  # 7a writes no record
 
 
-def test_speed_phase_is_not_built_in_7a(tmp_path):
+def test_speed_phase_cpu_smoke_writes_tables_and_selection(tmp_path):
+    """Both phases end to end on the CPU with a tiny case: speed rows for every candidate, the pass-through
+    baseline, the selection, and refusal to overwrite. (The run of record is on the GPU.)"""
     fs = _load("filter_speed")
     gates = _small_gates(tmp_path)
-    args = ["--gates", str(gates), "--name", "y", "--phase", "speed", "--runs-dir", str(tmp_path / "runs")]
-    assert fs.main(args) == 2
-    assert not (tmp_path / "runs" / "y").exists()
+    gates.write_text(gates.read_text().replace("num_games = 4096", "num_games = 4"))
+    runs = tmp_path / "runs"
+    args = ["--gates", str(gates), "--name", "z", "--phase", "both", "--runs-dir", str(runs), "--device", "cpu",
+            "--sync-steps", "0", "--timing-override",
+            json.dumps({"warmup_steps": 1, "timed_steps": 2, "min_timed_s": 0.0, "min_warmup_s": 0.0})]
+    assert fs.main(args) == 0
+    out = runs / "z"
+    speed = json.loads((out / "speed.json").read_text())
+    assert [(r["iterations"], r["check_every"]) for r in speed["rows"]] == [(60, 0), (60, 8), (20, 0), (20, 8)]
+    for r in speed["rows"] + [speed["baseline"]]:
+        assert r["status"] == "ok" and r["game_steps_per_s"] > 0 and len(r["repeats_game_steps_per_s"]) == 2
+        assert r["nan_count"] == 0
+    assert all(r["filter_share"] is not None for r in speed["rows"])
+    assert speed["context"]["local_file"] is None and speed["context"]["case"]["num_games"] == 4
+    sel = json.loads((out / "selection.json").read_text())
+    assert sel["verdict"] in ("PASS", "FAIL") and "accurate_iterations" in sel
+    table = (out / "speed.md").read_text()
+    assert table.splitlines()[0].startswith("Simulator: training simulator, tier 1 (S2 game with the Starling layer")
+    full_args = ["--gates", str(gates), "--name", "z", "--phase", "fullgame", "--runs-dir", str(runs), "--device",
+                 "cpu", "--sync-steps", "0"]
+    assert fs.main(full_args) == 0                            # INFO: early-stop candidates over one whole game
+    full = json.loads((out / "fullgame.json").read_text())
+    assert [(r["iterations"], r["check_every"]) for r in full["rows"]] == [(60, 8), (20, 8)]
+    for r in full["rows"]:
+        assert r["steps"] == 1200 and r["game_steps_per_s"] > 0 and len(r["segment_game_steps_per_s"]) == 12
+    assert fs.main(full_args) == 1                            # refuses to overwrite
+    assert fs.main(["--gates", str(gates), "--name", "nofolder", "--phase", "fullgame", "--runs-dir", str(runs),
+                    "--device", "cpu"]) == 1                  # only into an existing run folder
+    figs = _load("make_s2_figures")
+    figs.filter_speed(str(out), str(tmp_path / "fig.png"))  # the record's figure script reads these files
+    assert (tmp_path / "fig.png").stat().st_size > 10_000
+    assert fs.main(args) == 1  # refuses to overwrite
+    speed_only = ["--gates", str(gates), "--name", "z", "--phase", "speed", "--runs-dir", str(runs), "--device", "cpu"]
+    assert fs.main(speed_only) == 1
+
+
+def test_gate_passes_rounds_max_abs_dv_to_four_decimals():
+    """Owner's ruling (16 November 2026): max_abs_dv_mps is compared at its written precision, 4 decimals."""
+    fs = _load("filter_speed")
+    assert fs.gate_passes("max_abs_dv_mps", 1.6666038415522255, 1.6666)  # T2's raw value passes
+    assert fs.gate_passes("max_abs_dv_mps", 1.66664, 1.6666)
+    assert not fs.gate_passes("max_abs_dv_mps", 1.66671, 1.6666)
+    # every other gate compares as written
+    assert not fs.gate_passes("constraint_residual_max", 2.0897301, 2.08973)
+    assert not fs.gate_passes("max_abs_dv_first_phase_mps", 0.02000001, 0.02)
+    assert fs.gate_passes("emergency_agreement_min", 0.999, 0.999)
+    assert not fs.gate_passes("emergency_agreement_min", 0.9989999, 0.999)
+    assert fs.gate_passes("cross_team_corrections", 0, 0) and not fs.gate_passes("cross_team_corrections", 1, 0)
+
+
+def test_selection_applies_the_rounding_to_raw_rows():
+    """select_candidate judges rows that carry raw values with gate_passes: T2's 1.6666038 counts as accurate."""
+    fs = _load("filter_speed")
+    limits = tomllib.loads((ROOT / "configs/s2.toml").read_text())["filter_speed_gates"]
+    limits = {n: limits[n] for n in fs.GATE_ORDER}
+
+    def row(it, k, dv):
+        measured = {"max_abs_dv_mps": dv, "constraint_residual_max": 2.089727015421041,
+                    "emergency_agreement_min": 0.999, "cross_team_corrections": 0,
+                    "max_abs_dv_first_phase_mps": 6.18e-05}
+        return {"iterations": it, "check_every": k, "measured": measured, "limits": limits, "all_pass": False}
+
+    acc = [row(1000, 0, 1.6666038415522255), row(1000, 8, 1.6666038415522255), row(500, 0, 2.83), row(500, 8, 2.83)]
+    spd = [_spd(1000, 0, 10_000.0), _spd(1000, 8, 120_000.0), _spd(500, 8, 400_000.0)]
+    sel = fs.select_candidate(acc, spd, 100_000)
+    assert sel["accurate_iterations"] == [1000]
+    assert sel["verdict"] == "PASS" and sel["chosen"] == (1000, 8) and sel["fastest"] == (500, 8)
+    acc_bad = [row(1000, 0, 1.66671), row(1000, 8, 1.66671)]
+    assert fs.select_candidate(acc_bad, spd, 100_000)["verdict"] == "FAIL"
+    # a failed speed point (None) is never chosen
+    sel = fs.select_candidate(acc, [{"iterations": 1000, "check_every": 8, "game_steps_per_s": None}], 100_000)
+    assert sel["verdict"] == "FAIL" and sel["fastest"] is None
 
 
 def test_accuracy_rows_use_t2_measures():

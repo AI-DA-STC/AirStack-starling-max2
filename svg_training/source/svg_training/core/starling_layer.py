@@ -20,7 +20,10 @@ Every (re)start seeds the PX4 model's delay history with a hover setpoint at the
 command reaches PX4 after the fitted delay like every later one.
 
 Everything is a batched tensor operation: no loop over games, no host reads (the filter's own fixed sweep loop
-and the PX4 model's fixed sub-steps are the only loops). Shapes: N games, M drones (Guard drones first).
+and the PX4 model's fixed sub-steps are the only loops). One exception, by choice: ``[starling_layer]
+filter_check_every = k > 0`` turns on the filter's early stop, which reads one number back from the GPU every k
+sweeps (one host sync per check, S2 plan decision D10; counted in the Task 7 filter-speed record). With k = 0 the
+step makes no host sync. Shapes: N games, M drones (Guard drones first).
 """
 from __future__ import annotations
 
@@ -96,12 +99,23 @@ class StarlingLayer:
     def keep_in(self, lo_m: Tensor, hi_m: Tensor) -> Tensor:
         """Walls (keep_in) and height band: clamp the positions to [lo_m, hi_m] (each broadcastable to [N, M, 3]),
         stop the model's speed on every clamped axis, and clamp the commander's reference point into the same box
-        (as the real commander clamps its reference to its fence). Returns the clamped positions [N, M, 3]."""
+        (as the real commander clamps its reference to its fence). Returns the clamped positions [N, M, 3].
+
+        On every axis the wall clamped, the outward part of the commander's published speed and of its ramp is
+        zeroed too, as the real commander's keep_in fence publishes the clipped speed (``swarm_commander.py``
+        :2208-2219, :2307-2308). Without it the commander copy remembers a speed the drone never had: the next ramp
+        starts from it, and the safety filter believes a drone pinned at a wall is still moving away, so it lets an
+        opposite drone close to ~0.77 m of a 1.10 m keep-out (S2 Task 7b fix)."""
         p = self.model.pos_m
         q = torch.maximum(torch.minimum(p, hi_m), lo_m)
         hit = q != p
+        out_hi, out_lo = p > hi_m, p < lo_m                        # [N, M, 3] which side each clamped axis was on
         self.model.pos_m = q
         self.model.vel_mps = torch.where(hit, torch.zeros_like(self.model.vel_mps), self.model.vel_mps)
         c = self.model.commander
         c.ref = torch.maximum(torch.minimum(c.ref, hi_m), lo_m)
+        c.published = torch.where((out_hi & (c.published > 0)) | (out_lo & (c.published < 0)),
+                                  torch.zeros_like(c.published), c.published)
+        c.profile = torch.where((out_hi & (c.profile > 0)) | (out_lo & (c.profile < 0)),
+                                torch.zeros_like(c.profile), c.profile)
         return q

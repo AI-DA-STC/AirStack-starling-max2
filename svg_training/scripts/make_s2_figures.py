@@ -3,9 +3,10 @@
 
   make_s2_figures.py scripted_reference runs/<run> docs/figures/s2_scripted_reference.png
   make_s2_figures.py closest_cross runs/<run> docs/figures/s2_scripted_reference_closest.png
+  make_s2_figures.py filter_speed runs/<run> docs/figures/s2_filter_speed.png
 
-Every value plotted is read from the run's own ``scores.json`` / ``per_game.npz`` as ``scripts/score.py`` wrote
-it; nothing is smoothed or fitted. Style and palette: ``scripts/make_s0_figures.py`` (imported). Each function
+Every value plotted is read from the run's own files as the run's script wrote them (``scores.json`` /
+``per_game.npz`` from ``scripts/score.py``; ``speed.json`` / ``selection.json`` from ``scripts/filter_speed.py``); nothing is smoothed or fitted. Style and palette: ``scripts/make_s0_figures.py`` (imported). Each function
 prints the table it plotted.
 """
 from __future__ import annotations
@@ -13,6 +14,7 @@ from __future__ import annotations
 import json
 import pathlib
 import sys
+import tomllib
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 import matplotlib  # noqa: E402
@@ -124,7 +126,68 @@ def closest_cross(run_dir: str, out: str) -> None:
     plt.close(fig)
 
 
-FIGURES = {"scripted_reference": scripted_reference, "closest_cross": closest_cross}
+def filter_speed(run_dir: str, out: str) -> None:
+    """Game-steps per second against the filter's sweep budget, one line per check_every; filled marker = that
+    sweep count passes all five accuracy gates, open marker = it fails; the speed target and the step with the
+    filter replaced by a pass-through drawn as horizontal lines."""
+    run = pathlib.Path(run_dir)
+    speed = json.loads((run / "speed.json").read_text())
+    sel = json.loads((run / "selection.json").read_text())
+    target = tomllib.loads((run / "gates.toml").read_text())["filter_speed_gates"]["game_steps_per_s_min"]
+    accurate = set(sel["accurate_iterations"])
+    rows = speed["rows"]
+    ks = list(dict.fromkeys(r["check_every"] for r in rows))
+    fig, ax = plt.subplots(figsize=(8.5, 5.0), dpi=150)
+    for ci, k in enumerate(ks):
+        pts = sorted((r["iterations"], r["game_steps_per_s"]) for r in rows
+                     if r["check_every"] == k and r["game_steps_per_s"] is not None)
+        if not pts:
+            continue
+        xs, ys = zip(*pts)
+        label = "fixed loop (check_every 0)" if k == 0 else f"early stop, check every {k} sweeps"
+        ax.plot(xs, ys, color=SERIES[ci], linewidth=1.8, label=label)
+        for x, y in pts:
+            ax.plot([x], [y], marker="o", markersize=8, color=SERIES[ci],
+                    markerfacecolor=SERIES[ci] if x in accurate else "white", markeredgewidth=1.6)
+            print(f"check_every {k}\titerations {x}\tgame-steps/s {y:.0f}\taccuracy "
+                  f"{'PASS' if x in accurate else 'FAIL'}")
+    full_path = run / "fullgame.json"                     # INFO: the same candidates over one whole game
+    if full_path.exists():
+        full = json.loads(full_path.read_text())["rows"]
+        for ci, k in enumerate(ks):
+            pts = sorted((r["iterations"], r["game_steps_per_s"]) for r in full if r["check_every"] == k)
+            if not pts:
+                continue
+            xs, ys = zip(*pts)
+            ax.plot(xs, ys, color=SERIES[ci], linewidth=1.4, linestyle="--", marker="x", markersize=7,
+                    label=f"check every {k} sweeps, whole game from reset (INFO)")
+            for x, y in pts:
+                print(f"whole game: check_every {k}\titerations {x}\tgame-steps/s {y:.0f}")
+    ax.axhline(target, color=INK2, linewidth=1, linestyle=":")
+    ax.text(560, target * 0.86, f"target {target:,.0f}", color=INK2, fontsize=8)
+    base = speed["baseline"]["game_steps_per_s"]
+    if base:
+        ax.axhline(base, color=INK2, linewidth=1, linestyle="--")
+        ax.text(95, base * 1.08, f"filter skipped (pass-through) {base:,.0f}", color=INK2, fontsize=8)
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    its = sorted({r["iterations"] for r in rows})
+    ax.set_xticks(its)
+    ax.set_xticklabels([str(i) for i in its])
+    ax.minorticks_off()
+    handles, labels = ax.get_legend_handles_labels()
+    handles += [Line2D([], [], marker="o", color=INK2, linestyle="", markersize=7),
+                Line2D([], [], marker="o", color=INK2, markerfacecolor="white", linestyle="", markersize=7)]
+    labels += ["sweep count passes all five accuracy gates", "sweep count fails an accuracy gate"]
+    ax.legend(handles, labels, frameon=False, fontsize=8, loc="lower left", labelcolor=INK)
+    style(ax, f"Safety filter speed: 5 Guard v 3 Strike, {speed['context']['case']['num_games']:,} games, "
+              "Starling layer on", "sweep budget (iterations)", "game-steps per second")
+    fig.tight_layout()
+    fig.savefig(out)
+    plt.close(fig)
+
+
+FIGURES = {"scripted_reference": scripted_reference, "closest_cross": closest_cross, "filter_speed": filter_speed}
 
 if __name__ == "__main__":
     if len(sys.argv) != 4 or sys.argv[1] not in FIGURES:

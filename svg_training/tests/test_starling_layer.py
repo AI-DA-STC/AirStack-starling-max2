@@ -256,3 +256,109 @@ def test_commander_tick_must_be_game_tick(tmp_path):
     (tmp_path / "p.toml").write_text(text)
     with pytest.raises(ValueError, match="tick"):
         StarlingLayer(starling(**{"starling.params": str(tmp_path / "p.toml")}), 1, 1, 1, "cpu")
+
+
+# --- the filter's early stop (check_every) reaches the filter (S2 Task 7b) -------------------------------------
+
+@pytest.mark.parametrize("k", [0, 8])
+def test_starling_check_every_reaches_the_filter(monkeypatch, k):
+    seen = []
+    real = fitted.filter_velocities
+
+    def spy(*args, **kwargs):
+        seen.append(kwargs)
+        return real(*args, **kwargs)
+
+    monkeypatch.setattr(fitted, "filter_velocities", spy)
+    g = make(starling(iterations=40, **{"starling.filter_check_every": k}), 8.0, ((-1.0, 0.0), (1.0, 0.0)))
+    g.step(act([(1.0, 0.0, 0.0)], [(-1.0, 0.0, 0.0)]))
+    assert seen and all(kw["iterations"] == 40 for kw in seen)
+    assert all(kw.get("check_every", 0) == k for kw in seen)
+
+
+def test_starling_check_every_gives_the_fixed_loop_answer():
+    """Same game, same actions: positions with the early stop equal those of the fixed loop (float rounding)."""
+    def run(k):
+        g = make(starling(iterations=200, **{"starling.filter_check_every": k}), 8.0, ((-0.6, 0.0), (0.6, 0.0)))
+        for _ in range(30):
+            out = g.step(act([(1.0, 0.0, 0.0)], [(-1.0, 0.0, 0.0)]))
+        return g.pos_m.clone(), out.info["filter_corrected"]
+    p0, c0 = run(0)
+    p8, c8 = run(8)
+    assert (p0 - p8).abs().max() <= 1e-5 and torch.equal(c0, c8)
+
+
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA only")
+def test_starling_step_syncs_once_per_filter_check_cuda():
+    import warnings
+    cfg = starling(iterations=40, **{"starling.filter_check_every": 8})
+    g = SvgGame(cfg, 256, 3, 2, device="cuda", seed=1)
+    a = {"guard": torch.rand(256, 3, 4, device="cuda") * 2 - 1, "strike": torch.rand(256, 2, 4, device="cuda") * 2 - 1}
+    g.step(a)
+    torch.cuda.synchronize()
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        torch.cuda.set_sync_debug_mode("warn")
+        try:
+            for _ in range(5):
+                g.step(a)
+        finally:
+            torch.cuda.set_sync_debug_mode(0)
+    syncs = sum("synchroniz" in str(w.message) for w in caught)
+    assert 5 <= syncs <= 5 * (40 // 8)  # at least one check per step, at most one per 8 sweeps
+
+
+# --- walls: the commander copy must not keep a speed the wall took away (S2 Task 7b bug fix) ----------------
+
+def test_keep_in_zeroes_outward_published_and_profile_on_clamped_axes():
+    """A drone pushed past +x and -y walls: the commander's published speed and ramp lose their outward part on
+    those axes only; an inward part, and every axis the wall did not clamp, are kept."""
+    layer = StarlingLayer(starling(), 1, 1, 1, "cpu")
+    lo = torch.tensor([[[-1.75, -1.75, 0.5]]])
+    hi = torch.tensor([[[1.75, 1.75, 1.8]]])
+    layer.model.pos_m = torch.tensor([[[1.80, -1.90, 1.2], [1.80, 0.0, 1.2]]])   # drone 0: out on +x and -y
+    c = layer.model.commander
+    c.published = torch.tensor([[[0.30, -0.20, 0.10], [-0.25, 0.20, 0.0]]])      # drone 1: inward on x
+    c.profile = c.published.clone() * 0.5
+    q = layer.keep_in(lo, hi)
+    assert torch.equal(q[0, 0], torch.tensor([1.75, -1.75, 1.2]))
+    assert torch.equal(c.published[0, 0], torch.tensor([0.0, 0.0, 0.10]))         # outward x and y gone, z kept
+    assert torch.equal(c.profile[0, 0], torch.tensor([0.0, 0.0, 0.05]))
+    assert torch.equal(c.published[0, 1], torch.tensor([-0.25, 0.20, 0.0]))       # inward speed kept
+    assert torch.equal(c.profile[0, 1], torch.tensor([-0.125, 0.10, 0.0]))
+
+
+def test_drone_pushing_into_wall_no_phantom_speed():
+    """The Guard drone flies into the +x wall and keeps pushing at full stick; a Strike drone flies straight at it.
+    Before the fix the commander copy remembered the 0.33 m/s the wall took away, so the filter thought the Guard
+    drone was retreating and the pair closed to 0.778 m. After it: 0.856 m. The rest of the gap to 1.10 m is the
+    real commander's own order (the filter shares the correction between both drones, then the fence removes the
+    walled drone's share), which the copy keeps on purpose; see the Task 7b report."""
+    sc = Scenario("pinned", 4.0, (-1.0, -1.0), 0.4, ((1.6, 0.0), (-1.0, 0.0)))   # walls at +-1.75 m
+    g = SvgGame(starling(iterations=200), N, 1, 1, device="cpu", scenario=sc)
+    closest = torch.full((N,), float("inf"))
+    for _ in range(300):                                                        # 15 s
+        out = g.step(act([(1.0, 0.0, 0.0)], [(1.0, 0.0, 0.0)]))
+        closest = torch.minimum(closest, out.info["closest_cross_m"])
+    assert (g.pos_m[:, 0, 0] >= 1.75 - 1e-6).all()                              # the Guard drone is pinned
+    assert (closest >= 0.83).all(), closest                                     # 0.778 before the fix
+
+
+def test_reviewer_scenario_wall_pinned_pairs_stay_out():
+    """The reviewer's case: 2 Guard (mark edge) v 1 Strike (flank), lab band, 100 games, 600 steps, early stop on.
+    Closest Guard-Strike approach over each game slot's first game: 0.785 m before the fix, 0.965 m after."""
+    from svg_training.opponents.scripted import make_strategy
+    cfg = CFG.replace(**{"starling.enabled": True, "starling.filter_check_every": 10})
+    n = 100
+    game = SvgGame(cfg, n, 2, 1, device="cpu", seed=0, band=0)
+    gd = make_strategy("guard_mark_edge", "guard", cfg, n, "cpu", 101)
+    st = make_strategy("strike_flank", "strike", cfg, n, "cpu", 202)
+    obs = game.reset()
+    closest = torch.full((n,), float("inf"))
+    first = torch.ones(n, dtype=torch.bool)                                     # still in its first game
+    for _ in range(600):
+        out = game.step({"guard": gd.act(obs["guard"]), "strike": st.act(obs["strike"])})
+        closest = torch.where(first, torch.minimum(closest, out.info["closest_cross_m"]), closest)
+        first = first & ~out.done
+        obs = out.obs
+    assert float(closest.min()) >= 0.95, float(closest.min())

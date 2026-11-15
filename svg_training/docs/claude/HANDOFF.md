@@ -37,7 +37,7 @@ Tests (Task 11, 16 November, laptop host, conda `env_isaaclab`, `PYTHONPATH=sour
      (Isaac Lab drones' 3-D closest approach at most 0.10 m below tier 1's on paired games without a start miss),
      replacing `physics_closest_cross_min_m = 1.0`, which failed by construction; (B) the training filter stays faithful
      to CMU's.
-   - **S2b STARTED 16 Nov ~06:45** (build ledger `runs/sdd/s2b/progress.md`, briefs beside it): Task 1 building. Isaac launches (Task 5 on) are BLOCKED while the laptop is WiFi-only with remote desktop; Tasks 1–4 are CPU-only.
+   - **S2b STARTED 16 Nov ~06:45** (build ledger `runs/sdd/s2b/progress.md`, briefs beside it): Tasks 1–2 DONE (20021af, 2d000bf, 7873811), Task 3 PX4 cascade done (a669df8, eea2d2e: + ModalAI 15 Hz yaw filter, + PX4 allocator saturation feedback), Task 4 physics backend done (f4ff5fb, 1a94f87), Task 5 (Isaac Lab adapter + agreement run) building. OPEN OWNER DECISION: yaw does not settle with the real gains + filter + motor lag; recommended sim-only yaw-rate gains 0.25/0.2/0 (AirStack sim precedent CHG-0024; translation identical); Isaac spike done (bcad43e). Isaac launches: HEADLESS only, approved on the WiFi laptop by the owner (16 Nov, "yes dont worry about wifi"); windowed launches allowed too ("u can allow window launches"); default stays headless for runs of record. An early headless Isaac spike runs alongside Task 2.
    - **S2b** ([../plans/2026-11-16-s2b-isaac-lab-environment.md](../plans/2026-11-16-s2b-isaac-lab-environment.md)),
      approved with the owner's 7 answers (in the plan): the S2 game on rigid-body Starlings in Isaac Lab with PX4's
      cascade and the real gains; compare with tier 1; throughput; stand-in trainer on both backends (unchanged

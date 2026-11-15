@@ -1,3 +1,6 @@
 [tool.pytest.ini_options]
 pythonpath = ["source"]
 testpaths = ["tests"]
+markers = [
+    "isaac: starts Isaac Sim (headless, in a subprocess); skipped unless SVG_ISAAC_TESTS=1 (S2b plan D12)",
+]

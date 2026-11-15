@@ -49,6 +49,12 @@ class PhysicsLayer:
 
     ``status`` is "physics"; ``stick_cap_mps`` the commander's stick cap; ``chain`` (CommandChain) and ``drone``
     (PhysicsDrone) are public for logging and tests; ``params`` the PhysicsParams in use.
+
+    Restart contract (D9): ``reset`` only records the restart; the next ``step`` applies it, together with the
+    restarts of the drones that are out, in one world write. Until then the world, ``drone`` and the chain still
+    hold the old state. A reader that needs the restarted drones before the next step (a renderer, a test that
+    writes the world, ``SvgGame.reset``) calls ``flush()``: it applies the pending restarts now (one world write)
+    and does nothing, not even a write, when ``reset`` was not called since the last step or flush.
     """
 
     status = "physics"
@@ -72,6 +78,7 @@ class PhysicsLayer:
         self._pending_pos = torch.zeros(n, m, 3, device=device)
         self._pending_yaw = torch.zeros(n, m, device=device)
         self._alive = torch.ones(n, m, dtype=torch.bool, device=device)        # who was in the game this step
+        self._has_pending = False        # Python flag: reset() called since the last step / flush (no host read)
 
     @property
     def upset(self) -> Tensor:
@@ -85,6 +92,17 @@ class PhysicsLayer:
         self._pending = self._pending | mask
         self._pending_pos = torch.where(mask[..., None], pos_m.to(self._pending_pos.dtype), self._pending_pos)
         self._pending_yaw = torch.where(mask, yaw.to(self._pending_yaw.dtype), self._pending_yaw)
+        self._has_pending = True
+
+    def flush(self) -> None:
+        """Apply the pending restarts now (class docstring): one world write; nothing at all when none is pending."""
+        if not self._has_pending:
+            return
+        pend = self._pending
+        self.drone.reset(pend, self._pending_pos, self._pending_yaw)
+        self.chain.reset(pend)
+        self._pending = torch.zeros_like(self._pending)
+        self._has_pending = False
 
     def step(self, cmd_mps: Tensor, pos_m: Tensor, alive: Tensor, yaw: Tensor | None = None,
              yaw_rate_rad_s: Tensor | None = None) -> tuple[Tensor, Tensor, Tensor]:
@@ -105,6 +123,7 @@ class PhysicsLayer:
                          torch.where(pend, self._pending_yaw, yaw))
         self.chain.reset(restart)
         self._pending = torch.zeros_like(self._pending)
+        self._has_pending = False
         p_sp, v_ff, a_ff = self.chain.step(cmd_mps * alive[..., None], self.drone.pos_m)
         self.drone.step_setpoint(p_sp, v_ff, a_ff, yaw, yaw_rate_rad_s * alive)
         return self.drone.pos_m, self.drone.vel_mps, self.chain.corrected & alive
@@ -116,11 +135,13 @@ class PhysicsLayer:
         published speed and ramp (``CommandChain.keep_in``). Returns the clamped positions [N, M, 3].
 
         Drones that were out this step are not written: they stay at their parked position in the world (the game
-        parks them again), instead of being pulled into an arena corner."""
+        parks them again), instead of being pulled into an arena corner. A drone whose position is not finite is not
+        written either (NaN != NaN would mark it clamped and write a NaN pose); it is already flagged upset."""
         p, v = self.drone.pos_m, self.drone.vel_mps
         q = torch.maximum(torch.minimum(p, hi_m), lo_m)
         hit = q != p
         out_hi, out_lo = p > hi_m, p < lo_m
-        self.drone.write_clamped(hit.any(dim=-1) & self._alive, q, torch.where(hit, torch.zeros_like(v), v))
+        write = hit.any(dim=-1) & self._alive & torch.isfinite(p).all(dim=-1)
+        self.drone.write_clamped(write, q, torch.where(hit, torch.zeros_like(v), v))
         self.chain.keep_in(lo_m, hi_m, out_hi, out_lo)
         return q

@@ -323,12 +323,73 @@ def test_yaw_step_turns_the_right_way_motor_lag_off():
     assert all(abs(x - 0.3) < 0.01 for x in h[40:])                     # settled within 2 s, ENU sign right
 
 
-@pytest.mark.xfail(strict=False, reason="OPEN (Task 4 finding, for Task 3's cascade): with the drone's 55/85 ms "
-                   "motor lag a 0.3 rad yaw step grows into a yaw limit cycle (rotors hit u = 0, yaw-rate "
-                   "integrator pinned at MC_YR_INT_LIM; PX4's allocator-saturation feedback is not ported)")
+# OPEN (Task 4 finding, for Task 3's cascade; strict=False until the yaw work settles). With the drone's 55 / 85 ms
+# motor lag a 0.3 rad yaw step does not settle: on the working-tree cascade of 16 Nov (with the yaw torque low-pass)
+# the heading swings between 0.09 and 0.51 rad over 5-10 s (0.09-0.52 over 2-10 s). Seen at first (before the
+# low-pass): growing to -0.47 / 0.98 rad, rotors at u = 0, yaw-rate integrator at MC_YR_INT_LIM. Likely cause: PX4's
+# allocator-saturation feedback to the rate integrator is not ported. Motor lag off: settles at 0.300 +- 0.001.
+@pytest.mark.xfail(strict=False, raises=AssertionError,
+                   reason="OPEN: yaw limit cycle with motor lag on (see the comment above)")
 def test_yaw_step_settles_with_motor_lag():
     h = _yaw_step(motor_lag=True)
     assert all(abs(x - 0.3) < 0.05 for x in h[100:])
+
+
+def test_game_tick_matches_the_physics_drone():
+    from svg_training.core.game_config import TICK_S
+    from svg_training.models.physics_drone import GAME_TICK_S
+    assert GAME_TICK_S == TICK_S
+
+
+def test_keep_in_does_not_write_a_nonfinite_drone():
+    """NaN != NaN marks a NaN position as clamped; keep_in must not write it (or zero its velocity) in the world."""
+    g = make(physics(), 8.0, ((-1.0, 0.0), (1.0, 0.0)))
+    still = act([(0.0, 0.0, 0.0)], [(0.0, 0.0, 0.0)])
+    g.step(still)
+    layer, w = g._starling, g._starling.world
+    pos, quat, vel, ang = w.state()
+    bad = torch.zeros(N, 2, dtype=torch.bool)
+    bad[0, 0] = True
+    vel = torch.where(bad[..., None], torch.full_like(vel, 0.7), vel)
+    w.write_state(bad, torch.where(bad[..., None], torch.full_like(pos, float("nan")), pos), quat, vel, ang)
+    layer.drone._read()
+    seen = []
+    real = w.write_state
+
+    def spy(mask, *a):
+        seen.append(mask.clone())
+        return real(mask, *a)
+
+    w.write_state = spy
+    lo, hi = torch.tensor([-3.0, -3.0, 0.5]), torch.tensor([3.0, 3.0, 1.8])
+    layer.keep_in(lo, hi)
+    assert len(seen) == 1 and not seen[0][0, 0]
+    assert torch.equal(w.state()[2][0, 0], torch.full((3,), 0.7))           # velocity untouched
+    assert torch.isnan(w.state()[0][0, 0]).all() and torch.isfinite(w.state()[0][1]).all()
+
+
+def test_flush_applies_pending_restarts_now():
+    g = make(physics(), 8.0, ((-1.0, 0.0), (1.0, 0.0)))
+    layer = g._starling
+    w = layer.world
+    assert torch.equal(w.state()[0], g.pos_m)                               # SvgGame.reset flushed the starts
+    for _ in range(10):
+        g.step(act([(1.0, 0.0, 0.0)], [(0.0, 0.0, 0.0)]))
+    moved = w.state()[0].clone()
+    new = torch.tensor([[[0.0, 2.0, 1.0], [0.0, -2.0, 1.0]]]).expand(N, 2, 3)
+    mask = torch.tensor([[True, False]]).expand(N, 2)
+    layer.reset(mask, new, torch.full((N, 2), 0.5))
+    assert torch.equal(w.state()[0], moved)                                 # deferred until a step or a flush
+    layer.flush()
+    pos, quat, vel, _ = w.state()
+    assert torch.equal(pos[:, 0], new[:, 0]) and torch.equal(pos[:, 1], moved[:, 1])
+    assert not vel[:, 0].any() and torch.allclose(_heading(quat[:, 0]), torch.full((N,), 0.5))
+    assert torch.equal(layer.drone.pos_m, pos)                              # the drone's cache too
+    writes = []
+    real = w.reset
+    w.reset = lambda *a: writes.append(1) or real(*a)
+    layer.flush()                                                           # nothing pending: no write at all
+    assert writes == []
 
 
 def test_core_imports_no_isaac():                             # Review Focus 4

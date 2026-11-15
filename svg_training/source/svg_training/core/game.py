@@ -207,6 +207,8 @@ class SvgGame:
         if seed is not None:
             self.gen.manual_seed(seed)
         self._new_games(torch.ones(self.num_games, dtype=torch.bool, device=self.device))
+        if self._physics:          # the world holds the new starts at once (a reader may look before the first step)
+            self._starling.flush()
         return self._obs()
 
     def state(self) -> Tensor:

@@ -16,8 +16,9 @@ approved 200 Hz). Per physics step, the closed loop of ``scripts/physics_design_
 
 Setpoints: the cascade needs finite setpoints (``px4_cascade`` docstring). At the crossing a non-finite setpoint
 part is replaced, as PX4 treats NaN, and counted in ``nonfinite_count``: a non-finite feed-forward (v_ff, a_ff,
-yaw rate) acts as 0 (PX4's ``addIfNotNanVector3f``); a non-finite position setpoint becomes the drone's own
-position (velocity-only control, ``p_sp = pos``); a non-finite yaw setpoint becomes the drone's own heading.
+yaw rate) acts as 0 (PX4's ``addIfNotNanVector3f``); a non-finite position setpoint becomes the drone's position
+at the start of the tick, held over the tick's physics steps (a short position hold, not velocity-only control);
+a non-finite yaw setpoint becomes the drone's heading at the start of the tick.
 
 Upset (D10): a drone whose tilt passes ``PhysicsParams.upset_tilt_deg`` (60) or whose state or wrench turns
 non-finite is ``upset`` until its next reset. ``max_tilt_rad`` is the largest tilt since the reset.
@@ -40,7 +41,7 @@ from .px4_cascade import Px4Cascade
 from .rigid_body import RigidBodyWorld
 from .starling_airframe import RotorModel, body_wrench_flu
 
-GAME_TICK_S: float = 0.05     # one game tick (core.game_config.TICK_S; models/ does not import core/)
+GAME_TICK_S: float = 0.05     # one game tick = core.game_config.TICK_S (models/ does not import core/; a test pins it)
 
 
 def _finite(x: Tensor) -> Tensor:

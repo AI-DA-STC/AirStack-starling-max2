@@ -2,7 +2,8 @@
 # Derived from CMU's teleop_real.yaml with the values this lab flies (swarm_real_ours.yaml):
 #   land_speed_mps 0.6 (0.3 left the drone armed on the ground, 2026-09-03) · land_settle_s 0.0
 #   (the landing as flown; the 2 s settle is a sim-only M3 sub-test) · hover z 0.5 ·
-#   cbf_max_speed_mps 1.0 and teleop_max_speed_mps 0.5 (the ONLY speed limits — PX4 allows 20 m/s)
+#   cbf_max_speed_mps 1.0 and teleop_max_speed_mps 0.5 (the speed limits set here; PX4's own
+#   MPC_XY_VEL_MAX is 3.0 m/s on both drones per the 2026-11-13 ulogs, docs/CONFIG.md)
 #   · geofence ±2 m XY / 0–2 m Z = our net, keep_in (brakes at the wall) · teleop fence inside it.
 # Pad model still unrecorded: pass teleop_controller:=<profile> on the launch line (TELEOP.md §4).
 # Iron rule 8: never fly teleop_real.yaml (CMU bench values).

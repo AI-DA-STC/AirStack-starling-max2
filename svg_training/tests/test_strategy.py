@@ -38,7 +38,7 @@ def lab4():
 
 def test_strategy_reset_mask_equals_done():
     g = lab4()
-    rec, mover = RecordingStrategy("guard"), RecordingStrategy("strike")
+    rec = RecordingStrategy("guard")
     obs = g.reset()
     rec.reset(torch.ones(N, dtype=torch.bool))
     outs = []

@@ -121,6 +121,21 @@ def test_flank_goes_round_a_guard_on_the_line():
     assert mk("strike_flank", "strike").act(obs_of(s4))[0, 0, 1] < -0.3
 
 
+def test_flank_near_side_guard_does_not_hide_blocker():
+    s = drone("strike", (-3.0, 0.0))
+    put(s, 0, (0.3, 1.5))                       # nearer, off to the side, outside clearance
+    put(s, 1, (2.0, 0.0))                       # farther, on the line
+    a = mk("strike_flank", "strike").act(obs_of(s))[0, 0, :2]
+    assert a[1].abs() > 0.3 and a[0] > 0
+
+
+def test_random_out_drone_gets_zero_action():
+    o = torch.zeros(2, 2, OBS_DIM)
+    o[:, 0, V.alive] = 1.0
+    a = make_strategy("random", "guard", CFG, 2, "cpu", 3).act(o)
+    assert (a[:, 1] == 0).all() and a[:, 0].abs().sum() > 0
+
+
 def test_out_drone_gets_zero_action():
     s = torch.zeros(OBS_DIM)
     s[V.team] = 1.0
@@ -143,6 +158,7 @@ def test_scripted_read_only_obs(name):
 
 def test_random_is_seeded_and_in_range():
     obs = torch.zeros(4, 2, OBS_DIM)
+    obs[..., V.alive] = 1.0
     a1 = make_strategy("random", "guard", CFG, 4, "cpu", 5).act(obs)
     a2 = make_strategy("random", "guard", CFG, 4, "cpu", 5).act(obs)
     assert torch.equal(a1, a2) and a1.abs().max() <= 1 and a1.abs().sum() > 0

@@ -78,7 +78,8 @@ class RandomActions(_Scripted):
         self.gen.manual_seed(seed)
 
     def act(self, obs: Tensor) -> Tensor:
-        return torch.rand(*obs.shape[:2], 4, generator=self.gen, device=obs.device) * 2.0 - 1.0
+        a = torch.rand(*obs.shape[:2], 4, generator=self.gen, device=obs.device) * 2.0 - 1.0
+        return a * obs[..., ObsView.alive:ObsView.alive + 1]       # drones that are out get zeros
 
 
 class _Guard(_Scripted):
@@ -172,8 +173,10 @@ class StrikeStraight(_Strike):
 
 class StrikeFlank(_Strike):
     """Straight, unless the line to the zone passes within keepout + 0.3 m of the nearest Guard drone ahead:
-    then aims at a waypoint keepout + 0.3 m to the side of that drone, on the side away from the zone line
-    (the side the Guard drone is offset to; the left of the heading if it is exactly on the line)."""
+    then aims at a waypoint keepout + 0.3 m to the side of that drone, on the FAR side of the Guard drone
+    from the zone line (the side it is offset to; the left of the heading if it is exactly on the line).
+    Only Guard drones ahead on the line and within the clearance count, so a nearer Guard drone off to the
+    side or behind never hides a blocking one."""
     MARGIN_M = 0.3
 
     def act(self, obs: Tensor) -> Tensor:
@@ -182,15 +185,16 @@ class StrikeFlank(_Strike):
         dist_zone = to_zone.norm(dim=-1, keepdim=True)
         heading = _unit(to_zone)
         side_dir = torch.stack((-heading[..., 1], heading[..., 0]), dim=-1)      # left of heading
-        rp, _, pres = _slots(obs, 0, self.cfg.pad_guards)
-        dist = rp.norm(dim=-1).masked_fill(~pres, float("inf"))
-        near = dist.argmin(-1)
-        found = pres.any(-1)
-        g = torch.gather(rp, 2, near[..., None, None].expand(-1, -1, 1, 2))[:, :, 0]     # rel to own
-        along = (g * heading).sum(-1, keepdim=True)
-        off = (g * side_dir).sum(-1, keepdim=True)
+        rp, _, pres = _slots(obs, 0, self.cfg.pad_guards)                        # [N, M, G, 2]
         clear_m = self.cfg.rules.keepout_strike_m + self.MARGIN_M
-        blocked = found[..., None] & (along > 0) & (along < dist_zone) & (off.abs() < clear_m)
+        along = (rp * heading[..., None, :]).sum(-1)                             # [N, M, G]
+        off_all = (rp * side_dir[..., None, :]).sum(-1)
+        in_way = pres & (along > 0) & (along < dist_zone) & (off_all.abs() < clear_m)
+        dist = rp.norm(dim=-1).masked_fill(~in_way, float("inf"))
+        near = dist.argmin(-1)                                                   # nearest Guard IN THE WAY
+        blocked = in_way.any(-1, keepdim=True)
+        g = torch.gather(rp, 2, near[..., None, None].expand(-1, -1, 1, 2))[:, :, 0]     # rel to own
+        off = (g * side_dir).sum(-1, keepdim=True)
         sign = torch.where(off >= 0, 1.0, -1.0)
         waypoint = g + side_dir * sign * clear_m
         delta = torch.where(blocked, waypoint, to_zone)

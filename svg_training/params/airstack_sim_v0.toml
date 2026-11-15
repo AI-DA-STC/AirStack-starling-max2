@@ -1,0 +1,44 @@
+# Response model airstack_sim_v0: fitted to the AirStack simulator. SIM ONLY: never for the real drone (repository iron rule 9).
+# Load with ResponseParams.from_dict(tomllib.load(f)["params"]). Verdict FAIL: see records/2026-11-15_s1_fit_v0_record.md.
+
+[params]
+delay_s = 0.00012209255159229983
+tau_xy_s = 0.24497628065075383
+tau_z_s = 0.4
+acc_max_xy_mps2 = 1.431424896272821
+acc_max_z_mps2 = 1.5
+speed_cap_mps = 2.0
+family = "lag2"
+tau2_s = 0.2112683899909379
+
+[fit]
+name = "2026-11-15_s1_fit_v0"
+date = "2026-11-15T13:50:14+08:00"
+family = "lag2"
+family_choice = "best"
+verdict = "FAIL"
+train_steps = 3
+held_out_steps = 2
+held_out_vel_rms_worst_mps = 0.12301391439135352
+held_out_t63_err_worst_s = 0.3446592224084668
+code_sha = "2e166feea419"
+grid_dt_s = 0.01
+fixed_not_fitted = ["speed_cap_mps"]
+not_identified = ["tau_z_s", "acc_max_z_mps2"]
+at_bound = []
+record = "records/2026-11-15_s1_fit_v0_record.md"
+
+[source]
+simulator = "AirStack simulator (Isaac Sim + Pegasus + PX4 SITL)"
+bag = "/home/jeremychia/flight_logs/sim/sim_teleop_frame_run1/teleop_frame_20261102_191344"
+csv_dir = "runs/s1_extract_check"
+ulog = "/home/jeremychia/flight_logs/sim/sim_teleop_frame_run1/drone_1_sysid2_19_13_19.ulg"
+ulog_sha256 = "4d27f7d2d5f49d1a2d8c28022ef67e768f216535146df53e7d812ab4d75f73f7"
+
+[time_scale]
+value = 1.9073097319429815
+source = "ulog /home/jeremychia/flight_logs/sim/sim_teleop_frame_run1/drone_1_sysid2_19_13_19.ulg"
+method = "PX4 vehicle_local_position takeoff -> touchdown (height > ground + 0.2 m, inside the ulog's arm -> disarm) over the same events in the bag odometry (wall)"
+derivative_gain = 1.919495762945944
+rel_diff_vs_derivative = -0.006348558427792472
+ported_from = ["tools/hover_step_timescale.py (git blob ddddbd1ebc9105079e7d6364af97b98961a93eea)", "tools/hover_step_analysis.py (git blob 7fc7b01c13f1b37047d5212f6a6a0ac185eab8ef)"]

@@ -15,6 +15,10 @@ Which pairs the safety filter sees, per step and per game:
 A drone that is out of the game takes part in no pair (an isolated drone is its own filter group), is commanded
 zero, and is restarted fresh (at rest, new commander reference) every step it is out.
 
+Every (re)start seeds the PX4 model's delay history with a hover setpoint at the drone's position
+(``FittedResponse(hover_seed=True)``): a real drone hovering at its start has been sent "hold here", so the first
+command reaches PX4 after the fitted delay like every later one.
+
 Everything is a batched tensor operation: no loop over games, no host reads (the filter's own fixed sweep loop
 and the PX4 model's fixed sub-steps are the only loops). Shapes: N games, M drones (Guard drones first).
 """
@@ -28,7 +32,7 @@ from torch import Tensor
 from svg_training.models.commander import CommanderParams
 from svg_training.models.fitted import FittedResponse, load_params
 
-from .game_config import CONFIGS, GameCfg
+from .game_config import CONFIGS, TICK_S, GameCfg
 
 ROOT = CONFIGS.parent          # svg_training/: relative parameter paths are read from here
 
@@ -49,7 +53,11 @@ class StarlingLayer:
 
     def __init__(self, cfg: GameCfg, num_games: int, guards: int, strikes: int, device: str | torch.device):
         params = load_params(resolve_params(cfg.starling.params))
-        self.stick_cap_mps = CommanderParams.from_dict(params["commander"]).teleop_max_speed_mps
+        commander = CommanderParams.from_dict(params["commander"])
+        if abs(commander.tick_s - TICK_S) > 1e-12:
+            raise ValueError(f"the parameter file's commander tick {commander.tick_s} s is not the game's tick "
+                             f"{TICK_S} s")
+        self.stick_cap_mps = commander.teleop_max_speed_mps
         for team in ("strike", "guard"):
             # the commander would clip a faster command to its cap, losing the Strike/Guard speed ratio silently.
             # The speed itself is not printed: it may be a partner value from the local file.
@@ -69,7 +77,7 @@ class StarlingLayer:
         k = int(cfg.starling.filter_check_every)
         self.model = FittedResponse(num_games, m, params, device=device, safety_filter=True, pair_mask=pairs,
                                     filter_iterations=cfg.starling.filter_iterations,
-                                    filter_kwargs={"check_every": k} if k > 0 else None)
+                                    filter_kwargs={"check_every": k} if k > 0 else None, hover_seed=True)
 
     def reset(self, mask: Tensor, pos_m: Tensor) -> None:
         """Restart the drones where mask [N, M] bool is True: at rest at pos_m [N, M, 3], fresh commander."""

@@ -81,17 +81,21 @@ def test_starling_keeps_teammates_apart():
 
 
 def test_starling_speed_ratio():
-    # full stick +x for 10 s in a 16 m arena; speed over the last second. Not 4 s as first planned: the fitted
-    # PX4 model is underdamped (period about 9 s), so at 4 s the Guard drone is at 0.29 m/s and the Strike drone
-    # at 0.52 m/s, the same as models/fitted.FittedResponse alone; by 10 s both are within 0.02 m/s.
+    # full stick +x in a 16 m arena. Speeds over the last second of 12 s, not of 4 s as first planned: the
+    # exploratory model's PX4 time constant is not pinned by the fitted legs (2-2.8 s) and leaves a slow,
+    # underdamped mode (period about 9 s). With hover seeding (the first-tick artefact fixed) the 3-4 s speeds
+    # are Guard 0.392, Strike 0.618 m/s (overshoot); 11-12 s: 0.336, 0.505. Before the fix, 3-4 s: 0.295, 0.519.
+    # The ratio holds all along with hover seeding: 1.578 over 3-4 s (1.762 before the fix).
     g = make(starling(), 16.0, ((-7.0, 3.0), (-7.0, -3.0)), zone=((6.0, 0.0), 1.0))
     xs = []
-    for _ in range(STEPS_10_S):
+    for _ in range(240):
         g.step(act([(1.0, 0.0, 0.0)], [(1.0, 0.0, 0.0)]))
         xs.append(g.pos_m[:, :, 0].clone())
-    speed = (xs[-1] - xs[-21]) / 1.0                                     # [N, 2]
+    speed = (xs[-1] - xs[-21]) / 1.0                                     # [N, 2], 11-12 s
     guard_speed, strike_speed = float(speed[:, 0].mean()), float(speed[:, 1].mean())
     assert strike_speed == pytest.approx(0.5, abs=0.02) and guard_speed == pytest.approx(0.5 / 1.5, abs=0.02)
+    early = xs[79] - xs[59]                                              # 3-4 s
+    assert float((early[:, 1] / early[:, 0]).mean()) == pytest.approx(1.5, abs=0.1)
 
 
 def _local_cfg(tmp_path, text):
@@ -224,6 +228,31 @@ def test_starling_game_resets_layer_with_new_game():
         out = g.step(act([(1.0, 0.0, 0.0)], [(0.0, 1.0, 0.0)]))
     assert out.done.all() and (out.outcome == GUARD_WIN).all()
     m = g._starling.model
-    assert torch.allclose(m.vel_mps, torch.zeros_like(m.vel_mps)) and m._fresh.all()
+    assert torch.allclose(m.vel_mps, torch.zeros_like(m.vel_mps))
+    # delay history = hover at the new starts (zero speed and acceleration in every slot)
+    assert torch.equal(m._buf[..., :3], g.pos_m[None].expand_as(m._buf[..., :3])) and not m._buf[..., 3:].any()
     out = g.step(act([(0.0, 0.0, 0.0)], [(0.0, 0.0, 0.0)]))              # at rest at the starts: stays put
     assert torch.allclose(g.pos_m[:, 0, :2], torch.tensor([-1.0, 0.0]).expand(N, 2), atol=1e-5)
+
+
+def test_hover_seed_delays_the_first_command():
+    """hover_seed: PX4 sees "hold here" for the fitted delay, so the drone has not moved after 0.1 s; without it
+    (the S1 default) the first tick's feed-forward acts at once. The Starling layer turns it on."""
+    pos = torch.tensor([[[0.0, 0.0, 1.2]]])
+    moved = {}
+    for seed in (False, True):
+        r = FittedResponse(1, 1, PARAMS, device="cpu", hover_seed=seed)
+        r.reset(torch.ones(1, 1, dtype=torch.bool), pos)
+        r.step(torch.tensor([[[0.5, 0.0, 0.0]]]))
+        r.step(torch.tensor([[[0.5, 0.0, 0.0]]]))
+        moved[seed] = float(r.pos_m[0, 0, 0])
+    assert abs(moved[True]) < 1e-6 and moved[False] > 1e-3
+    assert StarlingLayer(starling(), 1, 1, 1, "cpu").model.hover_seed
+
+
+def test_commander_tick_must_be_game_tick(tmp_path):
+    text = (ROOT / "params" / "real_exploratory_v0.toml").read_text().replace("tick_s = 0.05 ", "tick_s = 0.1 ")
+    assert "tick_s = 0.1 " in text
+    (tmp_path / "p.toml").write_text(text)
+    with pytest.raises(ValueError, match="tick"):
+        StarlingLayer(starling(**{"starling.params": str(tmp_path / "p.toml")}), 1, 1, 1, "cpu")

@@ -68,9 +68,14 @@ class FittedResponse:
     def __init__(self, n_games: int, n_drones: int, params: str | pathlib.Path | dict, dt_s: float | None = None,
                  device="cuda", dtype: torch.dtype = torch.float32, safety_filter: bool = False,
                  pair_mask: Tensor | None = None, filter_iterations: int = 1000, pos_m: Tensor | None = None,
-                 filter_kwargs: dict | None = None):
+                 filter_kwargs: dict | None = None, hover_seed: bool = False):
         """filter_kwargs, if given, is merged last into the ``filter_velocities`` call (it may override any keyword
-        this class passes, e.g. ``iterations``); None leaves the S1 call unchanged."""
+        this class passes, e.g. ``iterations``); None leaves the S1 call unchanged.
+
+        hover_seed: on ``reset`` fill a drone's delay history with a hover setpoint (its position, zero speed, zero
+        acceleration), so PX4 sees "hold here" for the first ``delay_s`` and the first tick's feed-forward arrives
+        delayed like every later one. Off (the S1 default, bit-identical): the history is filled with the first
+        setpoint, so the first tick's 5 m/s^2 ramp acceleration acts with no delay for about 0.2 s."""
         cfg = params if isinstance(params, dict) else load_params(params)
         px4 = dict(cfg["px4"])
         model_dt_s = float(px4.pop("model_dt_s"))
@@ -98,6 +103,7 @@ class FittedResponse:
         self.filter_cfg = dict(cfg["filter"])
         self.filter_iterations = int(filter_iterations)
         self.filter_kwargs = dict(filter_kwargs) if filter_kwargs else {}
+        self.hover_seed = bool(hover_seed)
         if self.safety_filter:
             if pair_mask is None:
                 raise ValueError("safety_filter=True needs a pair_mask (core.safety_filter.team_pair_mask)")
@@ -186,5 +192,10 @@ class FittedResponse:
         self.vel_mps = torch.where(sel, torch.zeros_like(self.vel_mps), self.vel_mps)
         if pos_m is not None:
             self.pos_m = torch.where(sel, pos_m.to(device=self.device, dtype=self.dtype), self.pos_m)
-        self._fresh = self._fresh | mask
+        if self.hover_seed:      # history = hover at the (new) position; the drone is no longer fresh
+            hover = torch.cat([self.pos_m, torch.zeros_like(self.pos_m), torch.zeros_like(self.pos_m)], dim=-1)
+            self._buf = torch.where(mask[None, ..., None], hover[None], self._buf)
+            self._fresh = self._fresh & ~mask
+        else:
+            self._fresh = self._fresh | mask
         self.commander.reset(mask)

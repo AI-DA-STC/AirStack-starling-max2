@@ -65,7 +65,12 @@ class RotorModel:
 
 @functools.lru_cache(maxsize=32)
 def _mixer_flu(a: AirframeParams, geometry: str, device: torch.device, dtype: torch.dtype) -> Tensor:
-    """[6, 4]: rotor thrusts -> (force_FLU, torque_FLU). Built once per (airframe, geometry, device, dtype)."""
+    """[6, 4]: rotor thrusts -> (force_FLU, torque_FLU). Built once per (airframe, geometry, device, dtype).
+
+    Assumes ONE airframe per run (the cache holds 32 entries). Randomising the airframe per reset (domain
+    randomisation) would build a new matrix on the host and copy it to the device inside the step, a host sync:
+    that needs a batched per-drone mixer instead, not this cache.
+    """
     if geometry not in ROTOR_GEOMETRIES:
         raise ValueError(f"rotor geometry must be one of {ROTOR_GEOMETRIES}, got {geometry!r}")
     xy = a.rotor_xy_cad_m if geometry == "cad" else a.rotor_xy_params_m
@@ -83,7 +88,8 @@ def _mixer_flu(a: AirframeParams, geometry: str, device: torch.device, dtype: to
 def body_wrench_flu(thrust_n: Tensor, a: AirframeParams, geometry: str) -> tuple[Tensor, Tensor]:
     """Rotor thrusts [N, M, 4] (newtons) -> force_b [N, M, 3] (N) and torque_b [N, M, 3] (N m), both body FLU.
 
-    The mixer matrix is cached per device and dtype, so after the first call this copies nothing to the device.
+    The mixer matrix is cached per device and dtype, so after the first call this copies nothing to the device
+    (one airframe per run; see ``_mixer_flu``).
     Product then sum (not a matmul): a matmul's fused multiply-add leaves a ~1e-9 N m yaw residue when four equal
     thrusts should cancel exactly, and the hover drone of the torch world would then slowly spin.
     """

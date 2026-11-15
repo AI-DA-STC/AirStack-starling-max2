@@ -20,6 +20,7 @@ from .frames import quat_mul_wxyz, quat_wxyz_to_rotmat
 from .physics_params import G_MPS2, AirframeParams
 
 TORCH_WORLD_LABEL: str = "torch-reference (test oracle)"
+GYRO_MODES: tuple[str, ...] = ("momentum_preserving", "explicit")     # TorchRigidBodyWorld(gyro=...); first = default
 
 
 @runtime_checkable
@@ -33,7 +34,8 @@ class RigidBodyWorld(Protocol):
     device: torch.device
 
     def reset(self, mask: Tensor, pos_m: Tensor, quat_wxyz: Tensor) -> None:
-        """Where ``mask`` [N, M]: put the drone at ``pos_m`` [N, M, 3] with ``quat_wxyz`` [N, M, 4], at rest."""
+        """Where ``mask`` [N, M]: put the drone at ``pos_m`` [N, M, 3] with ``quat_wxyz`` [N, M, 4], at rest, and
+        zero its held wrench (as Isaac Lab resets the permanent wrench composer of a reset body)."""
 
     def write_state(self, mask: Tensor, pos_m: Tensor, quat_wxyz: Tensor, lin_vel_mps: Tensor,
                     ang_vel_b_rad_s: Tensor) -> None:
@@ -54,19 +56,34 @@ class TorchRigidBodyWorld:
 
     Per step, with the held body wrench (f_b, tau_b), R = body -> world rotation, I = diag inertia:
         v   += (R f_b / m + (0, 0, -g)) dt
-        w_b += I^-1 (tau_b - w_b x I w_b) dt
+        w_b  = angular update, ``gyro`` below
         p   += v dt                                     (new v)
         q   <- normalise(q (x) [cos(|w| dt / 2), sin(|w| dt / 2) w / |w|])      (new w, body frame: right product)
 
     The order matters: the S2b headless Isaac spike (runs/sdd/s2b/isaac-spike-report.md) found PhysX overshoots
     the exact constant-acceleration distance by (n + 1) / n, as this order does; tests/test_rigid_body.py pins it.
 
-    ``dtype`` (default float32) is an addition to the plan's signature, for float64 oracle tests. State tensors are
-    replaced (never changed in place), so tensors returned by ``state()`` stay as they were.
+    ``gyro`` picks the angular update:
+      - ``"momentum_preserving"`` (default, PhysX's own): w' = w + I^-1 tau_b dt; L = I w';
+        L_new = (L - (w' x L) dt) * |L| / |L - (w' x L) dt|; w_b = I^-1 L_new. The gyroscopic step comes after the
+        external torque and keeps the size of the body angular momentum. Read in PhysX 5 source (GitHub
+        NVIDIA-Omniverse/PhysX, main, 16 Nov 2026): GPU ``gpusolver/src/CUDA/preIntegration.cuh`` (after
+        ``bodyCoreComputeUnconstrainedVelocity``) and CPU ``lowleveldynamics/src/DyRigidBodyToSolverBody.cpp``
+        ``copyToSolverBodyData``. It runs when ``physxRigidBody:enableGyroscopicForces`` is on, which is the Omni
+        PhysX schema default (``= 1``) and is left unset (so on) by Isaac Lab's ``RigidBodyPropertiesCfg``.
+      - ``"explicit"`` (the S2b plan's formula): w_b += I^-1 (tau_b - w_b x I w_b) dt, old w in the gyro term.
+        It adds energy: at 200 Hz, about 2.5 % in 2 s of free tumbling at the rate limits (130 / 130 / 150 deg/s).
+    Task 5 compares both with PhysX tumbles.
+
+    ``dtype`` (default float32) and ``gyro`` are additions to the plan's signature. State tensors are replaced
+    (never changed in place), so tensors returned by ``state()`` stay as they were.
     """
 
     def __init__(self, num_games: int, drones: int, a: AirframeParams, dt_s: float, device,
-                 dtype: torch.dtype = torch.float32) -> None:
+                 dtype: torch.dtype = torch.float32, gyro: str = "momentum_preserving") -> None:
+        if gyro not in GYRO_MODES:
+            raise ValueError(f"gyro must be one of {GYRO_MODES}, got {gyro!r}")
+        self.gyro = gyro
         self.num_games = num_games
         self.drones = drones
         self.dt_s = dt_s
@@ -88,11 +105,12 @@ class TorchRigidBodyWorld:
         self.torque_b = torch.zeros(n, m, 3, **kw)
 
     def reset(self, mask: Tensor, pos_m: Tensor, quat_wxyz: Tensor) -> None:
-        """Where ``mask`` [N, M]: pose from ``pos_m`` [N, M, 3], ``quat_wxyz`` [N, M, 4]; velocities zero.
-
-        The held wrench is left as it is (as Isaac's permanent wrench); the next ``apply_wrench_b`` replaces it.
-        """
+        """Where ``mask`` [N, M]: pose from ``pos_m`` [N, M, 3], ``quat_wxyz`` [N, M, 4]; velocities zero; the held
+        wrench zero (as Isaac Lab resets a reset body's permanent wrench). Elsewhere unchanged."""
         self.write_state(mask, pos_m, quat_wxyz, torch.zeros_like(self.lin_vel_w), torch.zeros_like(self.ang_vel_b))
+        k = mask.unsqueeze(-1)
+        self.force_b = torch.where(k, torch.zeros_like(self.force_b), self.force_b)
+        self.torque_b = torch.where(k, torch.zeros_like(self.torque_b), self.torque_b)
 
     def write_state(self, mask: Tensor, pos_m: Tensor, quat_wxyz: Tensor, lin_vel_mps: Tensor,
                     ang_vel_b_rad_s: Tensor) -> None:
@@ -117,8 +135,16 @@ class TorchRigidBodyWorld:
         self.lin_vel_w = self.lin_vel_w + acc * dt
 
         w = self.ang_vel_b
-        gyro = torch.linalg.cross(w, self._inertia * w)
-        self.ang_vel_b = w + self._inv_inertia * (self.torque_b - gyro) * dt
+        if self.gyro == "explicit":
+            gyro = torch.linalg.cross(w, self._inertia * w)
+            self.ang_vel_b = w + self._inv_inertia * (self.torque_b - gyro) * dt
+        else:                                                                    # PhysX: torque, then gyro step
+            w = w + self._inv_inertia * self.torque_b * dt
+            mom = self._inertia * w
+            new_mom = mom - torch.linalg.cross(w, mom) * dt
+            # |new_mom| >= |mom| (the cross term is perpendicular), so it is 0 only when mom is: then ratio 0, as PhysX
+            ratio = mom.norm(dim=-1, keepdim=True) / new_mom.norm(dim=-1, keepdim=True).clamp_min(1e-30)
+            self.ang_vel_b = self._inv_inertia * new_mom * ratio
 
         self.pos_m = self.pos_m + self.lin_vel_w * dt
 

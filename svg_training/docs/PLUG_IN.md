@@ -344,7 +344,7 @@ by half the arena side.
 The committed game file (`configs/s2_game.toml`) holds neutral values. Put your team's real values in
 `configs/local/partner_rules.toml`, copied from `configs/partner_rules.example.toml`. That file may change the
 keep-out distances and the push-apart rule, the team speeds, the game length, the units (metres per unit,
-seconds per step) and the zone size range; nothing else. The observation layout and the action meaning never
+seconds per step), the zone size range, whether teammates pass through each other and how many steps inside the zone win; nothing else. The observation layout and the action meaning never
 change. The game still steps every 0.05 s and converts your speeds and length; the Starling layer refuses a team
 speed above 0.5 m/s (the real drones' stick limit).
 

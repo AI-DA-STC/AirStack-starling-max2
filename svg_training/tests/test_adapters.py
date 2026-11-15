@@ -170,14 +170,14 @@ def test_gym_vector_env_api():
     assert env.single_observation_space.shape == (2 * OBS_DIM,)
     assert env.action_space.shape == (N, 8) and env.observation_space.shape == (N, 2 * OBS_DIM)
     assert float(env.single_action_space.low.min()) == -1.0 and float(env.single_action_space.high.max()) == 1.0
-    # observation = drone 0's 69 floats then drone 1's
+    # observation = drone 0's OBS_DIM (71) floats then drone 1's
     assert torch.equal(obs.reshape(N, 2, OBS_DIM), game._obs()["guard"])
     o, r, term, trunc, info = env.step(torch.zeros(N, 8))
     assert o.shape == (N, 2 * OBS_DIM) and r.shape == (N,) and term.shape == (N,) and trunc.shape == (N,)
     assert term.dtype == torch.bool and trunc.dtype == torch.bool and not bool(trunc.any())
     assert info["outcome"].shape == (N,) and info["opponent"] == "StrikeStraight"
     assert o.device == r.device == term.device == torch.device("cpu")
-    # the Strike team's view: one drone, 69 floats
+    # the Strike team's view: one drone, OBS_DIM (71) floats
     s_env = SvgTeamVectorEnv(game_2v1(), "strike", make_strategy("guard_field", "guard", CFG, N, "cpu", 0))
     so, _ = s_env.reset(seed=1)
     assert so.shape == (N, OBS_DIM) and s_env.single_action_space.shape == (4,)

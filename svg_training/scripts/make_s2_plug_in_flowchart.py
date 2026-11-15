@@ -23,7 +23,7 @@ BOXES = [
     ("you_t", 9.0, 7.2, 6.6, 1.4, GREY, "Your training method",
      "skrl (IPPO, MAPPO) or any learner\nthat drives a Gymnasium vector env"),
     ("contract", 0.4, 4.4, 6.6, 2.0, BLUE, "Layer 2: the strategy contract",
-     "core/strategy.py\nact(obs [N, drones, 69]) -> actions [N, drones, 4]\n"
+     "core/strategy.py\nact(obs [N, drones, 71]) -> actions [N, drones, 4]\n"
      "reset(games [N]): these games just started\ncheck_strategy(...) names any broken rule"),
     ("adapters", 9.0, 4.4, 6.6, 2.0, ORANGE, "Layer 3: the adapters",
      "envs/skrl_adapter.py  SvgSkrlEnv: one agent per drone\n"

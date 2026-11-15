@@ -88,4 +88,4 @@ Agents (in `.claude/agents/`, described in [docs/claude/AGENTS_AND_SKILLS.md](do
 - Do not link to this folder from `docs/`, `README.md` or the root `CLAUDE.md` without the owner's
   say-so: that brings it under the docs checker. Approved once (owner, 15 November 2026): one row in the root
   `README.md` "I want to…" table points at `svg_training/README.md` and `docs/S1_RESULTS.md`; the checker
-  still does not scan inside this folder (links resolved, no new warnings).
+  still does not scan inside this folder (links resolved, no new warnings). Also approved (owner, 16 November 2026): one row in the root `CLAUDE.md` doc table points at this folder's CLAUDE.md.

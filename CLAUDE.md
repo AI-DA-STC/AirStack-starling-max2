@@ -35,6 +35,7 @@ parent/child. Milestones were RESET; **on the real drone this software has flown
 | [ARCHITECTURE.md](docs/ARCHITECTURE.md) | one-page primer, flight-lab network, whose document is whose (moved from README 2026-10-21) |
 | [tools/](tools/) | `sim.sh` front door (`setup · doctor · up · down · status · tabs · keys · test <name> … · figures · check`, [tools/README.md](tools/README.md)), `sim_terminals.sh` + `sim_tab.sh`, the hover-step tools |
 | [localisation/](localisation/README.md) | camera-world sim runs: construction-site world (`ENV_USD`), stereo VO with cuVSLAM, scoring vs the PX4 ulog, validation ladder — **sim-only exploration, nothing flies on cuVSLAM**; it also holds the one-drone [keyboard session](localisation/README.md#fly-it-with-the-keyboard-one-drone-sim-only). A sibling of `AirStack/` (git subtree, 2026-10-23), never inside CMU's tree |
+| [svg_training/](svg_training/CLAUDE.md) | Isaac Lab training pipeline for the Strike vs Guard game (main use: NUS's strategy; Linear project P-NEAR-31). Has its own CLAUDE.md, rules and skills: start Claude inside that folder for training work. Flight-stack sessions don't edit it; it changes nothing in AirStack, tools or drone parameters |
 
 Architecture pictures: `pictures/Starling_Airstack_architecture.png` (control flow — drawn for
 the previous branch; README lists the four corrections: `./mocap.sh`, `px4_interface` box,

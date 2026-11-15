@@ -166,7 +166,7 @@ Its pure-rule half sets the reference that later strategies are compared with. T
 
 Wording only. No number, table or figure changed, and the run was not repeated.
 
-- The review found the cause of the deep Starling-layer approaches: the wall bug in `core/starling_layer.py` `keep_in`. The bug is fixed outside this record.
+- The review found the cause of the deep Starling-layer approaches: the wall bug in `core/starling_layer.py` `keep_in`. The fix is being applied outside this record (in `core/starling_layer.py`). In the reviewer's patched probe the closest approach rose to 0.965 m (2v1, lab) and 0.840 m (5v3, middle, still at walls): a smaller shortfall at walls remains, because the filter does not know the walls, as on the real commander.
 - Every Starling-layer closest-approach and breach number is now marked as affected.
 - The open-space model limit (about 0.05 m) is now credited to the acceleration limit and the slow lag. Earlier text blamed the deep approaches on the position-setpoint leak and the slow mode; that is removed.
 - The record now says the scripted reference will be re-run on the fixed layer as a new ledger row.

@@ -229,7 +229,8 @@ SRC = ROOT / "source" / "svg_training"
 _STEP_FILES = ["core/arena.py", "core/observations.py", "core/rewards.py", "core/game.py", "core/pair_rules.py",
                "core/starling_layer.py", "core/safety_filter.py", "core/play.py", "opponents/scripted.py",
                "models/commander.py", "models/fitted.py", "models/placeholder.py", "models/_filters.py",
-               "models/frames.py", "models/starling_airframe.py", "models/rigid_body.py"]   # S2b physics path
+               "models/frames.py", "models/starling_airframe.py", "models/rigid_body.py",   # S2b physics path
+               "models/px4_cascade.py"]
 # Offline fitting modules: run on flight logs with NumPy/SciPy, never in the step (the step imports only the frozen
 # TrajectoryParams dataclass from px4_trajectory). Listed so a new models/*.py file must be placed on one list.
 _OFFLINE_MODELS = {"models/fit.py", "models/px4_trajectory.py", "models/response.py", "models/__init__.py",

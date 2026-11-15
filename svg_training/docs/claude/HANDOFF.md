@@ -29,9 +29,9 @@ Everything needed is in this folder; nothing depends on the previous chat.
 | 2 | Bag to CSV inside CMU's robot image | done (`cf239d0`) |
 | 3 | Response model and fitting (NumPy reference) | done (`c4f77d0`) |
 | 4 | Fit v0 on the existing teleop session | building |
-| 5 | Designed step session in the AirStack simulator (Isaac starts once) | scripts in a second fix round after a safety review; the real session is HELD for the owner (it shares the real drones' network channel, DDS domain 1) |
+| 5 | Designed step session in the AirStack simulator (Isaac starts once) | fix round 2 done (all 12 safety findings answered, 248 tests pass, dry run creates nothing); safety re-review (`runs/sdd/s1/task-5-rereview.md`): safe with the owner present IF launched detached and the owner confirms no real drone, mocap bridge or second ground station is on DDS domain 1 for the ~7–11 min; two Important fixes (never call `land` or run `down` when another commander is seen) in fix round 3. Owner to decide: the new floor guard will probably skip the two 2.0 m/s down steps (34 of 36 steps fly, gates need 16); the real session is HELD for the owner (it shares the real drones' network channel, DDS domain 1) |
 | 6 | Fit v1 on the designed steps | waits for 4 and 5 |
-| 7 | Batched safety filter with team mask, parity run | building |
+| 7 | Batched safety filter with team mask, parity run | built; run of record **T2 = FAIL** on 2 of 4 gates (`records/2026-11-15_s1_filter_parity_record.md`). DONE: reviewed (task review + re-review clean after one fix: a NaN in one team leaked into the other team; T2 numbers unchanged bit for bit); 28 tests pass; figures in the record. **Owner, 15 Nov: "if 1998/2000 checks passed its ok"** = T2 stays FAIL in the ledger, gates unchanged, and S1 goes on with this filter. Background: the 2 failing numbers come from 2 of 2,000 scenes where CMU's own filter needs its slow one-pair-at-a-time phase and stops up to 0.10 m/s short of the exact answer. Options: re-define the two gates against the exact answer, add that slow phase (a pair loop), or accept FAIL. Also: 1,000 sweeps cost 582 ms per step for 4,096 games, about 7,000 game-steps/s, far too slow to train; Task 8 must measure a lower sweep count |
 | 8 | Tier 1 with the fitted model and the filter | waits for 3 and 7 |
 | 9 | Hand-over | last |
 

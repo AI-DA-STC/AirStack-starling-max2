@@ -44,6 +44,8 @@ if a run happened; HANDOFF updated.
 
 ## 8. Update HANDOFF
 `docs/claude/HANDOFF.md` §4 (what changed) and §5 (what is still open). Change the "Last updated" line.
+If the change finishes, starts or reshapes a Linear issue, offer the owner an instruction file in
+`docs/linear/updates/` (process and rules: `docs/linear/README.md`).
 
 ## 9. Prove nothing else changed
 ```bash

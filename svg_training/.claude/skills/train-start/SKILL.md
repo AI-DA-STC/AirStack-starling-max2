@@ -13,6 +13,8 @@ Do these in order. Do not skip because the task looks small.
    §3 to §6 and §9 as well if the task touches the interface, the game, the drone models or code.
 3. `docs/claude/HANDOFF.md` §4 (current state) and §5 (open items). Something you are about to "fix"
    may already be a recorded decision or a question waiting on the owner.
+4. `docs/linear/README.md` and the newest file in `docs/linear/snapshots/`: which Linear issues (NEAR-nnn) are In
+   Progress, so the work and the Linear status stay in step.
 
 ## 2. Check the working copy
 ```bash

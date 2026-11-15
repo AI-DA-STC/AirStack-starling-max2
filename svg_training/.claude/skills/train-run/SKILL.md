@@ -49,6 +49,12 @@ last good step. Do not delete the run folder. Do not edit `gates.toml`.
   parameter set, seeds, machine, games at once, steps per second, gates with PASS or FAIL.
 - One new row in `records/LEDGER.md`, numbered T1, T2, …, append-only. This folder never writes to the
   flight ledger `docs/record/LEDGER.md`.
+- Linear: if the run finishes or changes the state of an issue (NEAR-nnn in the newest
+  `docs/linear/snapshots/` file), write an instruction file in `docs/linear/updates/` as
+  `docs/linear/README.md` says: status and one comment citing "ledger row Tn" and the record; ask for a record
+  named `YYYY-MM-DD-linear-sync-record.md`. Owner's rules: no cycles, no due dates, every issue assigned to the
+  owner, "Done when" lines are targets; never the partner's confidential numbers. The owner uploads it; save the
+  record he brings back in `synced/` and, if a status changed, write a new snapshot.
 
 ## 6. Report throughput in the required form
 Environment steps per second, together with the number of games, drones per game, tier and GPU

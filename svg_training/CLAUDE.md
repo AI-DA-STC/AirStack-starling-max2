@@ -21,6 +21,7 @@ real flight with planned pushes (owner), then the S2 plan for the owner's approv
 | [docs/RESEARCH.md](docs/RESEARCH.md) | state of the art as of 14 November 2026, with sources; the evidence behind the design |
 | [docs/S0_RESULTS.md](docs/S0_RESULTS.md), [docs/S1_RESULTS.md](docs/S1_RESULTS.md), [docs/GLOSSARY.md](docs/GLOSSARY.md) | S0's and S1's numbers and limits; terms and the one Versions table |
 | [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md) | the human path from a clone to tests and a benchmark run; `run_s0.sh` exit codes |
+| [docs/linear/README.md](docs/linear/README.md) | this project in Linear (P-NEAR-31): how an update goes (`updates/` → owner uploads → `synced/` → `snapshots/`), the latest snapshot, the owner's Linear rules |
 | [docs/pipeline/training-pipeline.pptx](docs/pipeline/training-pipeline.pptx) | the diagrams (editable flowchart shapes); rebuilt by `docs/pipeline/build_deck.py` |
 | [../CLAUDE.md](../CLAUDE.md) | the repository's own rules (iron rules, two clones, more than one Claude session) — they still apply here |
 

@@ -2,15 +2,14 @@
 
 > **How to use this file.** Read it at the start of a session, after [../../CLAUDE.md](../../CLAUDE.md).
 > §4 is the current state, §5 is what is waiting on people. Update both before you stop.
-> Last updated: 16 November 2026 (S2 built and every task reviewed; S2 documents written (Task 11): [../S2_RESULTS.md](../S2_RESULTS.md); final review pending; stand-in trainer moved to S2b; S2b plan approved, starts after S2 closes).
+> Last updated: 16 November 2026, morning (**S2 CLOSED**: final whole-stage review done on Opus, one fix wave 4d0d409, wording c218cbb; owner ruled A and B; S2b plan approved and ready to start).
 
 ## 0. Resume here (for a new session or another Claude account)
 
 Everything needed is in this folder; nothing depends on the previous chat.
 
-**Where it stands.** S0 and S1 are closed. **S2 is built and every task reviewed; its documents are written
-(Task 11) and the final review is pending** (gatekeeper on the S2 records, a code review of the whole S2 diff, a
-newcomer read of S2_RESULTS and PLUG_IN). Nothing has been trained. S2's results, with figures:
+**Where it stands.** S0 and S1 are closed. **S2 is CLOSED (16 November): every task reviewed, the final
+whole-stage review done (no Critical), its single fix wave applied and re-reviewed** (review notes: `runs/sdd/s2/`). Nothing has been trained. S2's results, with figures:
 [../S2_RESULTS.md](../S2_RESULTS.md); the partner guide: [../PLUG_IN.md](../PLUG_IN.md). The short version:
 
 | Run | Result | Meaning |
@@ -33,10 +32,7 @@ Tests (Task 11, 16 November, laptop host, conda `env_isaaclab`, `PYTHONPATH=sour
 1. `cd ~/AirStack-starling-max2/svg_training && claude`, then say: **"Run the train-start skill, read
    docs/claude/HANDOFF.md §0, and tell me what is waiting on me."**
 2. **Next, in order.**
-   - **S2 final review** (plan Task 11): `train-gatekeeper` on T5–T9 with their `gates.toml` and ledger rows; a code
-     review of the whole S2 diff (superpowers:requesting-code-review) against the plan and design; `panel-newcomer-reader`
-     on `S2_RESULTS.md` and `PLUG_IN.md`. Fix rounds until no Critical or Important is open; tick STANDARDS §11; the
-     lead commits the documents with explicit paths and refreshes the `~/Downloads/` copy.
+   - **S2 final review: DONE** (16 November): Opus (Fable was out of quota), no Critical; fix wave 4d0d409 (setting guard, honest leak test, committed wall probe `scripts/probe_wall_limit.py`, interface version 0.1, caveats, clip on the fixed walls); A/B wording c218cbb.
    - **Owner ruled, 16 November** (S2b plan, a7e4c2f): (A) the S2b games gate is now `closest_cross_3d_gap_max_m = 0.10`
      (Isaac Lab drones' 3-D closest approach at most 0.10 m below tier 1's on paired games without a start miss),
      replacing `physics_closest_cross_min_m = 1.0`, which failed by construction; (B) the training filter stays faithful
@@ -92,7 +88,7 @@ Tests (Task 11, 16 November, laptop host, conda `env_isaaclab`, `PYTHONPATH=sour
 | 9 | skrl and Gymnasium adapters, partner guide `docs/PLUG_IN.md`; observation 69 → 71 | done (`c9faff3`..`911b3ae`) |
 | 10 | Stand-in trainer | MOVED to S2b (owner, 16 November) |
 | — | Replay clips (`docs/media/`) | done (`bcae60b`); the Starling clip predates the wall fix |
-| 11 | Documents (S2_RESULTS, WHAT_WE_DID §7, GLOSSARY, README, CLAUDE.md, DESIGN §8 note, STANDARDS §4 sources, this file) | written, final review pending |
+| 11 | Documents (S2_RESULTS, WHAT_WE_DID §7, GLOSSARY, README, CLAUDE.md, DESIGN §8 note, STANDARDS §4 sources, this file) | DONE (aedb076; final review fix wave 4d0d409, c218cbb) |
 
 **S1 progress** (plan: [../plans/2026-11-15-s1-drone-model-and-safety-filter.md](../plans/2026-11-15-s1-drone-model-and-safety-filter.md); build ledger `runs/sdd/s1/progress.md`)
 

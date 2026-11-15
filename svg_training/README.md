@@ -14,7 +14,7 @@ official run whose numbers we keep is the *run of record* (both in the [glossary
 |---|---|---|
 | S0 (throughput benchmark) | run of record T1: **FAIL** on one [gate](docs/GLOSSARY.md) (1 of 96 points lost to an Isaac start-up crash) | every number verified; both speed [decision rules](docs/GLOSSARY.md) met → [S0 results](docs/S0_RESULTS.md) |
 | S1 (drone model and safety filter) | built, run and closed 15 Nov: filter copy T2 **FAIL** (accepted by the owner on the exact counts); simulator fit T3 **FAIL**; real-log fit exploratory; tier 1 with the real chain T4 information only; no S1 gate on the drone model passed yet | [S1 results](docs/S1_RESULTS.md); [S1 plan](docs/plans/2026-11-15-s1-drone-model-and-safety-filter.md) |
-| S2 (the game and the plug-in point) | built and reviewed 16 Nov; final review pending. Faster filter T8 **PASS**; drone-model check T5 **FAIL**; scripted reference T9 information only; stand-in trainer moved to S2b | [S2 results](docs/S2_RESULTS.md); [S2 plan](docs/plans/2026-11-15-s2-game-and-plug-in.md) |
+| S2 (the game and the plug-in point) | built, reviewed and CLOSED 16 Nov (final review on the whole stage, one fix wave). Faster filter T8 **PASS**; drone-model check T5 **FAIL**; scripted reference T9 information only; stand-in trainer moved to S2b | [S2 results](docs/S2_RESULTS.md); [S2 plan](docs/plans/2026-11-15-s2-game-and-plug-in.md) |
 | S2b (the game on Isaac Lab drones) | plan approved 16 Nov; not started | [S2b plan](docs/plans/2026-11-16-s2b-isaac-lab-environment.md) |
 | S3–S5 | not started | [DESIGN §8](docs/DESIGN.md#8-build-order) |
 | Training | nothing trained yet | none |

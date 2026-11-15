@@ -4,14 +4,14 @@ Training pipeline for the **Strike vs Guard** game: thousands of games run at on
 drone teams can learn strategies that then fly through AirStack on Starling 2 Max drones.
 It is a sibling of `AirStack/`, `tools/` and `localisation/`, and it edits none of them.
 
-**Status (2026-11-16): S0 and S1 closed; S2 built and reviewed, final review pending; nothing trained.** S0: run of
+**Status (2026-11-16): S0 and S1 closed; S2 closed (final review done, one fix wave); nothing trained.** S0: run of
 record T1 = FAIL on one gate (one tier 2 point lost to an Isaac Sim start-up crash), both decision rules met
 ([docs/S0_RESULTS.md](docs/S0_RESULTS.md)). S1: filter copy T2 = FAIL (accepted by the owner), simulator fit T3 =
 FAIL, tier 1 carries the real-drone command chain with an exploratory PX4 model ([docs/S1_RESULTS.md](docs/S1_RESULTS.md)).
 S2: the game (partner rules preset, neutral committed values, varied arenas, Starling layer), scripted opponents,
 scoring tool, skrl and Gymnasium adapters and the partner guide; faster filter T8 = PASS, drone-model check T5 = FAIL,
 scripted reference T9 = INFO; the stand-in trainer moved to S2b ([docs/S2_RESULTS.md](docs/S2_RESULTS.md),
-[docs/PLUG_IN.md](docs/PLUG_IN.md)). Next: S2's final review, then S2b (the game on Isaac Lab drones, plan approved).
+[docs/PLUG_IN.md](docs/PLUG_IN.md)). Next: S2b (the game on Isaac Lab drones, plan approved).
 
 ## Read first
 

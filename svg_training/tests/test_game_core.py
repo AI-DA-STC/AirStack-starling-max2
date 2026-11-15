@@ -230,7 +230,8 @@ _STEP_FILES = ["core/arena.py", "core/observations.py", "core/rewards.py", "core
                "core/starling_layer.py", "core/safety_filter.py", "core/play.py", "opponents/scripted.py",
                "models/commander.py", "models/fitted.py", "models/placeholder.py", "models/_filters.py",
                "models/frames.py", "models/starling_airframe.py", "models/rigid_body.py",   # S2b physics path
-               "models/px4_cascade.py"]
+               "models/px4_cascade.py",
+               "core/physics_layer.py", "models/command_chain.py", "models/physics_drone.py"]   # S2b Task 4
 # Offline fitting modules: run on flight logs with NumPy/SciPy, never in the step (the step imports only the frozen
 # TrajectoryParams dataclass from px4_trajectory). Listed so a new models/*.py file must be placed on one list.
 _OFFLINE_MODELS = {"models/fit.py", "models/px4_trajectory.py", "models/response.py", "models/__init__.py",
@@ -248,11 +249,12 @@ _ALLOWED = {
     ("models/fitted.py", 'model_dt_s = float(px4.pop("model_dt_s"))'): "parameter file, in __init__",
     ("models/fitted.py", 'self.vertical = {k: float(v) for k, v in cfg["px4_vertical"].items()}'): "parameter file",
     ("models/fitted.py", "self.delay_n = int(math.floor(d))"): "parameter file, in __init__",
-    ("models/fitted.py", "self.safety_filter = bool(safety_filter)"): "argument, in __init__",
-    ("models/fitted.py", "self.filter_iterations = int(filter_iterations)"): "argument, in __init__",
     ("models/fitted.py", "self.hover_seed = bool(hover_seed)"): "argument, in __init__",
-    ("models/fitted.py", 'self._filter_cap_mps = torch.tensor(float(self.filter_cfg["max_speed_mps"]), '
-                         'device=device, dtype=dtype)'): "parameter file, in __init__ (made a device tensor once)",
+    # the commander + filter moved from fitted.py into the shared chain (S2b Task 4), lines unchanged
+    ("models/command_chain.py", "self.safety_filter = bool(safety_filter)"): "argument, in __init__",
+    ("models/command_chain.py", "self.filter_iterations = int(filter_iterations)"): "argument, in __init__",
+    ("models/command_chain.py", 'self._filter_cap_mps = torch.tensor(float(self.filter_cfg["max_speed_mps"]), '
+                                'device=device, dtype=dtype)'): "parameter file, in __init__ (made a device tensor once)",
 }
 
 
@@ -280,19 +282,28 @@ def test_host_scan_pattern():
 
 
 @pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA only")
-@pytest.mark.parametrize("starling", [False, True])
-def test_step_runs_under_sync_debug_error(starling):
+@pytest.mark.parametrize("motion", ["pure", "starling", "physics-torch"])
+def test_step_runs_under_sync_debug_error(motion):
     cfg, steps = CFG.replace(dropout_fraction=0.2), 1300
-    if starling:   # Starling layer, filter without early stop (check_every 0); short games so auto-reset runs often
+    n, guards, strikes, world = 256, 3, 2, None
+    if motion != "pure":   # Starling layer, filter without early stop (check_every 0); short games: auto-reset often
         cfg = cfg.replace(**{"starling.enabled": True, "starling.filter_iterations": 20,
                              "starling.filter_check_every": 0, "rules.game_steps": 40})
         steps = 130
-    g = SvgGame(cfg, 256, 3, 2, device="cuda", seed=1)
-    a = {"guard": torch.rand(256, 3, 4, device="cuda") * 2 - 1, "strike": torch.rand(256, 2, 4, device="cuda") * 2 - 1}
+    if motion == "physics-torch":   # S2b: the physics backend on the torch reference world, 64 games 2v1
+        from svg_training.core.physics_layer import load_game_physics_params
+        from svg_training.models.rigid_body import TorchRigidBodyWorld
+        cfg = cfg.replace(**{"starling.backend": "physics"})
+        n, guards, strikes = 64, 2, 1
+        p = load_game_physics_params(cfg)
+        world = TorchRigidBodyWorld(n, guards + strikes, p.airframe, p.physics_dt_s, "cuda")
+    g = SvgGame(cfg, n, guards, strikes, device="cuda", seed=1, world=world)
+    a = {"guard": torch.rand(n, guards, 4, device="cuda") * 2 - 1,
+         "strike": torch.rand(n, strikes, 4, device="cuda") * 2 - 1}
     g.step(a)
     torch.cuda.set_sync_debug_mode("error")
     try:
-        done = torch.zeros(256, dtype=torch.bool, device="cuda")
+        done = torch.zeros(n, dtype=torch.bool, device="cuda")
         for _ in range(steps):
             done |= g.step(a).done
     finally:

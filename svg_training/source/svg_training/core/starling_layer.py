@@ -46,6 +46,43 @@ def resolve_params(path: str) -> Path:
     return p if p.is_absolute() else ROOT / p
 
 
+def check_commander(cfg: GameCfg, params: dict) -> float:
+    """The checks every Starling-layer backend makes on its parameter file (``params`` = ``load_params`` dict):
+    the commander's tick is the game's, and neither team's speed exceeds the commander's stick cap.
+    Returns the stick cap (m/s)."""
+    commander = CommanderParams.from_dict(params["commander"])
+    if abs(commander.tick_s - TICK_S) > 1e-12:
+        raise ValueError(f"the parameter file's commander tick {commander.tick_s} s is not the game's tick "
+                         f"{TICK_S} s")
+    stick_cap_mps = commander.teleop_max_speed_mps
+    for team in ("strike", "guard"):
+        # the commander would clip a faster command to its cap, losing the Strike/Guard speed ratio silently.
+        # The speed itself is not printed: it may be a partner value from the local file.
+        if cfg.team_speed_mps(team) > stick_cap_mps + 1e-6:
+            raise ValueError(f"the {team} team's speed exceeds the commander's stick cap "
+                             f"({stick_cap_mps} m/s): the Strike/Guard speed ratio would be lost")
+    if cfg.preset not in ("partner", "contact"):
+        raise ValueError(f"preset must be 'partner' or 'contact', got {cfg.preset!r}")
+    return stick_cap_mps
+
+
+def filter_pairs(cfg: GameCfg, guards: int, strikes: int, device: str | torch.device) -> Tensor:
+    """[M, M] bool: the pairs the safety filter sees (module docstring): every pair (preset "partner") or
+    team-mates only (preset "contact")."""
+    m = guards + strikes
+    off_diag = ~torch.eye(m, dtype=torch.bool, device=device)
+    if cfg.preset == "partner":
+        return off_diag                                                        # every pair
+    team = torch.arange(m, device=device) >= guards
+    return (team[:, None] == team[None, :]) & off_diag                         # team-mates only
+
+
+def filter_kwargs(cfg: GameCfg) -> dict | None:
+    """The filter's early stop from ``[starling_layer] filter_check_every`` (0 = off: no host sync)."""
+    k = int(cfg.starling.filter_check_every)
+    return {"check_every": k} if k > 0 else None
+
+
 class StarlingLayer:
     """Commander + safety filter (pairs as in the module docstring) + fitted PX4 response for N games of M drones.
 
@@ -56,39 +93,24 @@ class StarlingLayer:
 
     def __init__(self, cfg: GameCfg, num_games: int, guards: int, strikes: int, device: str | torch.device):
         params = load_params(resolve_params(cfg.starling.params))
-        commander = CommanderParams.from_dict(params["commander"])
-        if abs(commander.tick_s - TICK_S) > 1e-12:
-            raise ValueError(f"the parameter file's commander tick {commander.tick_s} s is not the game's tick "
-                             f"{TICK_S} s")
-        self.stick_cap_mps = commander.teleop_max_speed_mps
-        for team in ("strike", "guard"):
-            # the commander would clip a faster command to its cap, losing the Strike/Guard speed ratio silently.
-            # The speed itself is not printed: it may be a partner value from the local file.
-            if cfg.team_speed_mps(team) > self.stick_cap_mps + 1e-6:
-                raise ValueError(f"the {team} team's speed exceeds the commander's stick cap "
-                                 f"({self.stick_cap_mps} m/s): the Strike/Guard speed ratio would be lost")
-        if cfg.preset not in ("partner", "contact"):
-            raise ValueError(f"preset must be 'partner' or 'contact', got {cfg.preset!r}")
-        m = guards + strikes
-        off_diag = ~torch.eye(m, dtype=torch.bool, device=device)
-        if cfg.preset == "partner":
-            pairs = off_diag                                                   # every pair
-        else:
-            team = torch.arange(m, device=device) >= guards
-            pairs = (team[:, None] == team[None, :]) & off_diag               # team-mates only
+        self.stick_cap_mps = check_commander(cfg, params)
+        pairs = filter_pairs(cfg, guards, strikes, device)
         self._pairs = pairs[None]                                              # [1, M, M]
-        k = int(cfg.starling.filter_check_every)
+        m = guards + strikes
         self.model = FittedResponse(num_games, m, params, device=device, safety_filter=True, pair_mask=pairs,
                                     filter_iterations=cfg.starling.filter_iterations,
-                                    filter_kwargs={"check_every": k} if k > 0 else None, hover_seed=True)
+                                    filter_kwargs=filter_kwargs(cfg), hover_seed=True)
 
-    def reset(self, mask: Tensor, pos_m: Tensor) -> None:
-        """Restart the drones where mask [N, M] bool is True: at rest at pos_m [N, M, 3], fresh commander."""
+    def reset(self, mask: Tensor, pos_m: Tensor, yaw: Tensor | None = None) -> None:
+        """Restart the drones where mask [N, M] bool is True: at rest at pos_m [N, M, 3], fresh commander.
+        ``yaw`` [N, M] is accepted and ignored (the physics backend uses it)."""
         self.model.reset(mask, pos_m)
 
-    def step(self, cmd_mps: Tensor, pos_m: Tensor, alive: Tensor) -> tuple[Tensor, Tensor, Tensor]:
+    def step(self, cmd_mps: Tensor, pos_m: Tensor, alive: Tensor, yaw: Tensor | None = None,
+             yaw_rate_rad_s: Tensor | None = None) -> tuple[Tensor, Tensor, Tensor]:
         """One 0.05 s tick. cmd_mps [N, M, 3] world ENU m/s (already capped to each team's speed), pos_m [N, M, 3]
-        (the game's positions; the model adopts them first), alive [N, M] bool.
+        (the game's positions; the model adopts them first), alive [N, M] bool. ``yaw`` / ``yaw_rate_rad_s`` [N, M]
+        are accepted and ignored (the fitted model has no yaw; the physics backend uses them).
 
         Returns (pos_m [N, M, 3], vel_mps [N, M, 3], corrected [N, M] bool: live drones the filter changed)."""
         self.model.set_pair_mask(self._pairs & alive[:, :, None] & alive[:, None, :])
@@ -113,10 +135,5 @@ class StarlingLayer:
         out_hi, out_lo = p > hi_m, p < lo_m                        # [N, M, 3] which side each clamped axis was on
         self.model.pos_m = q
         self.model.vel_mps = torch.where(hit, torch.zeros_like(self.model.vel_mps), self.model.vel_mps)
-        c = self.model.commander
-        c.ref = torch.maximum(torch.minimum(c.ref, hi_m), lo_m)
-        c.published = torch.where((out_hi & (c.published > 0)) | (out_lo & (c.published < 0)),
-                                  torch.zeros_like(c.published), c.published)
-        c.profile = torch.where((out_hi & (c.profile > 0)) | (out_lo & (c.profile < 0)),
-                                torch.zeros_like(c.profile), c.profile)
+        self.model.chain.keep_in(lo_m, hi_m, out_hi, out_lo)        # the commander's side (shared code)
         return q

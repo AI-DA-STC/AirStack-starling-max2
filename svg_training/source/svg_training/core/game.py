@@ -4,7 +4,10 @@ Everything in ``step`` is a batched tensor operation over all games: no loop ove
 Drones are indexed Guard drones first (0..G-1), then Strike drones (G..M-1). The pure partner rules are planar
 (D2): z is held at ``start_height_m``. With ``[starling_layer] enabled`` (core/starling_layer.py, Task 4) drones
 move in 3-D through the commander copy, the safety filter and the fitted PX4 model (exploratory); the push-apart
-rule is then off (D3) and a breach of the keep-out is reported in ``info["rule_breach"]``.
+rule is then off (D3) and a breach of the keep-out is reported in ``info["rule_breach"]``. With ``[starling_layer]
+backend = "physics"`` (S2b, core/physics_layer.py) the same commander copy and filter fly rigid-body Starlings under
+PX4 1.14's cascade in a world given as ``SvgGame(..., world=...)``; ``motion`` names the path ("pure", "starling"
+or "physics/<world label>") and ``info["upset"]`` flags games where a live drone was upset (D10).
 
 Order inside one step: move (pure rule + push-apart, or the Starling layer), walls (keep_in clamps, leave takes
 the drone out), contact tags (contact preset), scheduled drop-outs, then the zone test. Tie rule: tags come before
@@ -16,10 +19,13 @@ from dataclasses import dataclass
 import torch
 from torch import Tensor
 
+from svg_training.models.rigid_body import RigidBodyWorld
+
 from .arena import BANDS, GUARD, STRIKE, Arenas, draw_arenas, draw_starts  # noqa: F401  (re-exported)
-from .game_config import TICK_S, GameCfg
+from .game_config import BACKENDS, TICK_S, GameCfg
 from .observations import build_obs, build_state
 from .pair_rules import contact_tags, push_apart
+from .physics_layer import PhysicsLayer
 from .rewards import GUARD_WIN, RUNNING, STRIKE_WIN, team_rewards
 from .scenarios import SCENARIOS, Scenario, scenario_arenas  # noqa: F401  (re-exported)
 from .starling_layer import StarlingLayer
@@ -41,7 +47,9 @@ class StepOut:
     zone does not score: tags come before the zone test),
     final_alive [N, M] bool (who was in the game at the end of this step, before any reset),
     start_miss [N] bool (True if the game that played this step started with a miss: its starts could not
-    meet the spacing / keep-out; constant over a game, so read it on the done step to count games).
+    meet the spacing / keep-out; constant over a game, so read it on the done step to count games),
+    upset [N] bool (physics backend: a live drone of the game that played this step tipped past 60 deg or turned
+    non-finite at any step of that game; all False on the other backends).
     ``SvgGame.start_miss`` holds the same flag for the current (new) game."""
     obs: dict[str, Tensor]
     reward: dict[str, Tensor]
@@ -55,7 +63,8 @@ class SvgGame:
     """Batched Strike vs Guard game. See the module docstring and the S2 plan, Task 2."""
 
     def __init__(self, cfg: GameCfg, num_games: int, guards: int, strikes: int, device: str = "cuda",
-                 seed: int = 0, band: int | None = None, scenario: Scenario | None = None):
+                 seed: int = 0, band: int | None = None, scenario: Scenario | None = None,
+                 world: RigidBodyWorld | None = None):
         if cfg.preset not in ("partner", "contact"):
             raise ValueError(f"preset must be 'partner' or 'contact', got {cfg.preset!r}")
         if cfg.arena.walls not in ("keep_in", "leave"):
@@ -90,8 +99,25 @@ class SvgGame:
         self._cross = self._is_strike[:, :, None] != self._is_strike[:, None, :]     # [1, M, M]
         self._same = ~self._cross & ~torch.eye(m, dtype=torch.bool, device=dev)[None]
         self._keepout_min = min(cfg.rules.keepout_guard_m, cfg.rules.keepout_strike_m)
-        # Starling layer (raises if a team's speed is above the commander's stick cap); None = pure partner rules
-        self._starling = StarlingLayer(cfg, n, guards, strikes, dev) if cfg.starling.enabled else None
+        # Starling layer (raises if a team's speed is above the commander's stick cap); None = pure partner rules.
+        # Backend "fitted": S2's fitted PX4 model; "physics": the rigid-body drone in ``world`` (S2b).
+        backend = cfg.starling.backend
+        if backend not in BACKENDS:
+            raise ValueError(f"starling_layer.backend must be one of {BACKENDS}, got {backend!r}")
+        physics = cfg.starling.enabled and backend == "physics"
+        if backend == "physics" and not cfg.starling.enabled:
+            raise ValueError('starling_layer.backend = "physics" needs starling_layer.enabled = true')
+        if physics and world is None:
+            raise ValueError("the physics backend needs a world: IsaacWorld or TorchRigidBodyWorld")
+        if world is not None and not physics:
+            raise ValueError('a world is used only by the physics backend (starling_layer.backend = "physics")')
+        self._starling: StarlingLayer | PhysicsLayer | None = None
+        if physics:
+            self._starling = PhysicsLayer(cfg, n, guards, strikes, dev, world)
+        elif cfg.starling.enabled:
+            self._starling = StarlingLayer(cfg, n, guards, strikes, dev)
+        self.motion = f"physics/{world.label}" if physics else ("starling" if cfg.starling.enabled else "pure")
+        self._physics = physics
         if scenario is not None:
             self._sc_arenas = scenario_arenas(cfg.arena, scenario, n, dev)
             xy = torch.tensor(scenario.start_m, device=dev)
@@ -107,6 +133,7 @@ class SvgGame:
         self.start_miss = torch.zeros(n, dtype=torch.bool, device=dev)
         self._phi = torch.zeros(n, device=dev)
         self._guard_survives = torch.zeros(n, dtype=torch.bool, device=dev)
+        self._upset = torch.zeros(n, dtype=torch.bool, device=dev)       # this game had an upset drone (physics)
         self.reset()
 
     # ------------------------------------------------------------------ helpers
@@ -145,8 +172,9 @@ class SvgGame:
         self.alive = torch.where(mk, torch.ones_like(self.alive), self.alive)
         self.steps = torch.where(mask, torch.zeros_like(self.steps), self.steps)
         self.dropout_step = torch.where(mk, drop, self.dropout_step)
+        self._upset = self._upset & ~mask
         if self._starling is not None:       # new games: drones at rest at their starts, fresh commander
-            self._starling.reset(mk.expand(n, m), self.pos_m)
+            self._starling.reset(mk.expand(n, m), self.pos_m, self.yaw)
         if self.cfg.preset == "contact":      # drawn only here, so the partner preset's random stream is unchanged
             surv = torch.rand(n, generator=self.gen, device=dev) < self.cfg.contact.guard_survives_tag_prob
             self._guard_survives = torch.where(mask, surv, self._guard_survives)
@@ -224,7 +252,10 @@ class SvgGame:
             # commander + safety filter + PX4; no push-apart (D3)
             v = a[..., :3]
             v = v / v.norm(dim=-1, keepdim=True).clamp(min=1.0) * self._speed_mps
-            pos, _, corrected = self._starling.step(v, pos_prev, alive_prev)
+            yaw_rate = a[..., 3] * cfg.yaw_rate_max_rad_s * alive_prev
+            pos, _, corrected = self._starling.step(v, pos_prev, alive_prev, self.yaw, yaw_rate)
+            if self._physics:                     # D10: any live drone upset this game
+                self._upset = self._upset | (self._starling.upset & alive_prev).any(dim=1)
             if cfg.arena.walls == "keep_in":      # walls and the height band stop the drone (and its model)
                 lo = torch.cat((-lim, -lim, torch.full_like(lim, z_lo)), dim=-1)          # [N, 1, 3]
                 hi = torch.cat((lim, lim, torch.full_like(lim, z_hi)), dim=-1)
@@ -272,5 +303,6 @@ class SvgGame:
         end_step = torch.where(done, steps_new, torch.zeros_like(steps_new))
         self._phi = phi_now
         info["start_miss"] = self.start_miss.clone()      # the game that just played
+        info["upset"] = self._upset.clone()
         self._new_games(done)
         return StepOut(self._obs(), reward, done, outcome, end_step, info)

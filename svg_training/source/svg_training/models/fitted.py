@@ -3,6 +3,9 @@
 ``FittedResponse`` is the drop-in for ``PlaceholderResponse`` (same ``step``/``reset``, plus positions): the
 command a policy sends, [N, M, 3] world ENU m/s, goes through
 
+Steps 1 and 2 are ``models/command_chain.CommandChain``, the chain shared with the S2b physics backend (moved out of
+this class unchanged, S2b Task 4; checked bit for bit by ``tests/test_command_chain.py``).
+
 1. ``models/commander.py``: CMU's real-mode teleop law (stick cap, acceleration ramp, reference point and its
    leash), one 0.05 s tick;
 2. optionally ``core/safety_filter.py``, at the point where the commander calls its filter: on the ramped stick,
@@ -33,7 +36,8 @@ import torch
 from torch import Tensor
 
 from svg_training.core.safety_filter import filter_velocities
-from svg_training.models.commander import CommanderParams, TeleopCommander
+from svg_training.models.command_chain import CommandChain
+from svg_training.models.commander import CommanderParams
 from svg_training.models.px4_trajectory import TrajectoryParams
 from svg_training.models._filters import lag_alpha
 
@@ -99,47 +103,53 @@ class FittedResponse:
         self.alpha_xy = lag_alpha(model_dt_s, self.px4.tau_s)
         self.alpha_z = lag_alpha(model_dt_s, self.vertical["tau_z_s"])
 
-        self.safety_filter = bool(safety_filter)
-        self.filter_cfg = dict(cfg["filter"])
-        self.filter_iterations = int(filter_iterations)
-        self.filter_kwargs = dict(filter_kwargs) if filter_kwargs else {}
         self.hover_seed = bool(hover_seed)
-        if self.safety_filter:
-            if pair_mask is None:
-                raise ValueError("safety_filter=True needs a pair_mask (core.safety_filter.team_pair_mask)")
-            self.pair_mask = pair_mask.to(device)
-        else:
-            self.pair_mask = None
-
         n, m = n_games, n_drones
         self.device, self.dtype = device, dtype
-        self.commander = TeleopCommander(n, m, self.commander_params, device=device, dtype=dtype)
+        # the commander copy and the safety filter: the chain shared with the physics backend (S2b Task 4)
+        self.chain = CommandChain(n, m, cfg, device, dtype=dtype, safety_filter=safety_filter, pair_mask=pair_mask,
+                                  filter_iterations=filter_iterations, filter_kwargs=filter_kwargs,
+                                  filter_fn=filter_velocities)
         self.vel_mps = torch.zeros(n, m, 3, device=device, dtype=dtype)
         self.pos_m = (torch.zeros(n, m, 3, device=device, dtype=dtype) if pos_m is None
                       else pos_m.to(device=device, dtype=dtype).clone())
         self._buf = torch.zeros(self.hist, n, m, 9, device=device, dtype=dtype)  # delay history, ring buffer
         self._head = 0                                                          # slot the next sample goes to
         self._fresh = torch.ones(n, m, dtype=torch.bool, device=device)        # history not started yet
-        zeros = torch.zeros(n, m, 3, device=device, dtype=dtype)
-        self.setpoint = (zeros, zeros.clone(), zeros.clone())
-        # the filter's speed cap as a device tensor, made once: a Python number would be copied to the GPU on
-        # every call (a host sync); same value, so results are unchanged
-        self._filter_cap_mps = torch.tensor(float(self.filter_cfg["max_speed_mps"]), device=device, dtype=dtype)
-        self.corrected = torch.zeros(n, m, dtype=torch.bool, device=device)
 
-    # ------------------------------------------------------------------------------------- the filter
-    def _filter(self, nominal: Tensor, pos_m: Tensor) -> tuple[Tensor, Tensor]:
-        f = self.filter_cfg
-        kw = {"alpha": f["alpha"], "iterations": self.filter_iterations, "tolerance": f["tolerance"],
-              **self.filter_kwargs}
-        res = filter_velocities(nominal, pos_m, self.pair_mask, f["safety_radius_m"], self._filter_cap_mps, **kw)
-        self.corrected = res.corrected
-        return res.velocities, res.corrected
+    # ------------------------------------------------------------------------------------- the chain's state
+    # Kept as attributes of this class (S1/S2 callers and tests read and write them); they live in ``self.chain``.
+    commander = property(lambda self: self.chain.commander)
+    safety_filter = property(lambda self: self.chain.safety_filter)
+    filter_cfg = property(lambda self: self.chain.filter_cfg)
+    filter_iterations = property(lambda self: self.chain.filter_iterations)
+    filter_kwargs = property(lambda self: self.chain.filter_kwargs)
+    pair_mask = property(lambda self: self.chain.pair_mask)
+    setpoint = property(lambda self: self.chain.setpoint)
+    _filter_cap_mps = property(lambda self: self.chain._filter_cap_mps)
+
+    @property
+    def corrected(self) -> Tensor:
+        """[N, M] bool: drones the filter changed in the last step (all False when off)."""
+        return self.chain.corrected
+
+    @corrected.setter
+    def corrected(self, value: Tensor) -> None:
+        self.chain.corrected = value
+
+    @property
+    def _filter(self):
+        """The filter callback the commander calls (replaceable, as scripts/probe_wall_limit.py does)."""
+        return self.chain._filter
+
+    @_filter.setter
+    def _filter(self, fn) -> None:
+        self.chain._filter = fn
 
     def set_pair_mask(self, mask: Tensor) -> None:
         """Replace the filter's pair mask: [M, M] (all games) or [N, M, M] bool (per game, e.g. live drones only).
         Same rules as ``filter_velocities``: symmetric, False on the diagonal, block shaped."""
-        self.pair_mask = mask.to(self.device)
+        self.chain.set_pair_mask(mask)
 
     # ------------------------------------------------------------------------------------- PX4, one 0.01 s step
     def _px4_step(self, x: Tensor) -> None:
@@ -167,11 +177,7 @@ class FittedResponse:
         """
         if pos_m is not None:
             self.pos_m = pos_m.to(device=self.device, dtype=self.dtype)
-        safety = self._filter if self.safety_filter else None
-        if not self.safety_filter:
-            self.corrected = torch.zeros_like(self.corrected)
-        p_sp, v_ff, a_ff = self.commander.step(cmd_mps.to(self.dtype), self.pos_m, safety=safety)
-        self.setpoint = (p_sp, v_ff, a_ff)
+        p_sp, v_ff, a_ff = self.chain.step(cmd_mps, self.pos_m)
         x = torch.cat([p_sp, v_ff, a_ff], dim=-1)
         # a fresh drone's history is its first setpoint (the reference holds x[0] before t_0)
         self._buf = torch.where(self._fresh[None, ..., None], x[None], self._buf)
@@ -198,4 +204,4 @@ class FittedResponse:
             self._fresh = self._fresh & ~mask
         else:
             self._fresh = self._fresh | mask
-        self.commander.reset(mask)
+        self.chain.reset(mask)

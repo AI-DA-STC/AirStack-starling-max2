@@ -1,8 +1,9 @@
 # Linear snapshot: Isaac Lab Pipeline for NUS Strategy Training
 
-> Snapshot of Linear as of the sync on 16 November 2026
-> ([sync record](2026-11-16-linear-synced-isaac-lab-pipeline.md), from
-> [these instructions](2026-11-16-linear-agent-isaac-lab-pipeline.md)). Linear is the source of truth; this page
+> Snapshot of Linear as of the second sync on 16 November 2026
+> ([first sync record](2026-11-16-linear-synced-isaac-lab-pipeline.md), from
+> [these instructions](2026-11-16-linear-agent-isaac-lab-pipeline.md);
+> [second sync record](2026-11-16-linear-synced-remove-cycles.md), cycles removed). Linear is the source of truth; this page
 > is refreshed after each sync. The "In the repo" column says where the work stands in this folder on that day.
 
 Project P-NEAR-31, team NEAR Lab. 18 issues: 11 Backlog, 4 In Progress, 3 Done, 0 Canceled.
@@ -42,5 +43,5 @@ Project P-NEAR-31, team NEAR Lab. 18 issues: 11 Backlog, 4 In Progress, 3 Done, 
 | NEAR-974 | Export a strategy and fly it in the AirStack simulator | S5 | Backlog | related to NEAR-875 |
 | NEAR-975 | Train NEAR Lab's own Guard and Strike strategies (research) | Side quest | Backlog | — |
 
-The four In Progress issues are assigned to the owner. Linear put them in **Cycle 37 (9–15 November)**, which had
-already ended on the day of the sync: move them to the current cycle in Linear if they should show there.
+The four In Progress issues are assigned to the owner. No issue has a cycle or a due date (owner, 16 November).
+Only milestones S0 and S1 carry a target date.

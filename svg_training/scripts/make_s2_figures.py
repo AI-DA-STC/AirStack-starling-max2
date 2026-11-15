@@ -87,10 +87,11 @@ def scripted_reference(run_dir: str, out: str) -> None:
     plt.close(fig)
 
 
-def closest_cross(run_dir: str, out: str) -> None:
+def closest_cross(run_dir: str, out: str, field: str = "closest_cross_m") -> None:
     """How close Guard and Strike drones came: share of games whose closest opposite approach is at or below a
     distance (cumulative), per band, pure partner rules against the Starling layer, all strategy pairs pooled;
-    one panel per size. The keep-out (1.10 m, committed neutral value) is marked."""
+    one panel per size. The keep-out (1.10 m, committed neutral value) is marked. field: "closest_cross_m"
+    (horizontal) or "closest_cross_3d_m" (3-D; runs scored after 16 November 2026)."""
     run = pathlib.Path(run_dir)
     rows = json.loads((run / "scores.json").read_text())["rows"]
     pg = np.load(run / "per_game.npz")
@@ -102,9 +103,9 @@ def closest_cross(run_dir: str, out: str) -> None:
             for bi, band in enumerate(BANDS):
                 vals = []
                 for key in pg.files:
-                    p, sz, _g, _s, b, field = key.split("|")
-                    if (p, sz, b, field) == (preset, size, band, "closest_cross_m"):
-                        oc = pg[key.replace("closest_cross_m", "outcome")]
+                    p, sz, _g, _s, b, f = key.split("|")
+                    if (p, sz, b, f) == (preset, size, band, field):
+                        oc = pg[key.replace(field, "outcome")]
                         v = pg[key][oc > 0]
                         vals.append(v[np.isfinite(v)])
                 if not vals:
@@ -118,7 +119,8 @@ def closest_cross(run_dir: str, out: str) -> None:
         ax.axvline(1.10, color=INK2, linewidth=1, linestyle=":")
         ax.text(1.12, 3, "keep-out 1.10 m", color=INK2, fontsize=8)
         ax.set_xlim(0, 4)
-        style(ax, f"{size[0]} Guard v {size[-1]} Strike", "closest Guard–Strike approach in a game (m)",
+        what = "3-D" if field == "closest_cross_3d_m" else "horizontal"
+        style(ax, f"{size[0]} Guard v {size[-1]} Strike", f"closest Guard–Strike approach in a game, {what} (m)",
               "games at or below, %" if ax is axes[0, 0] else "")
     axes[0, -1].legend(frameon=False, fontsize=8, loc="lower right", labelcolor=INK)
     fig.tight_layout()
@@ -187,7 +189,13 @@ def filter_speed(run_dir: str, out: str) -> None:
     plt.close(fig)
 
 
-FIGURES = {"scripted_reference": scripted_reference, "closest_cross": closest_cross, "filter_speed": filter_speed}
+def closest_cross_3d(run_dir: str, out: str) -> None:
+    """closest_cross on the 3-D distance."""
+    closest_cross(run_dir, out, field="closest_cross_3d_m")
+
+
+FIGURES = {"scripted_reference": scripted_reference, "closest_cross": closest_cross,
+           "closest_cross_3d": closest_cross_3d, "filter_speed": filter_speed}
 
 if __name__ == "__main__":
     if len(sys.argv) != 4 or sys.argv[1] not in FIGURES:

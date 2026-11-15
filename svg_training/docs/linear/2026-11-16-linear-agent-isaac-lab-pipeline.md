@@ -3,7 +3,7 @@
 Instructions for the Linear agent, in the **nearlab** workspace (team NEAR Lab). Apply every step below. Delete
 nothing. Use the titles, descriptions and comments exactly as written. Change no existing title. Check Linear
 before each step: if a project, milestone, issue, relation or comment is already in place, do not repeat it.
-Every new issue is unassigned with no due date. Set a milestone target date only where this file gives one.
+Every new issue has no due date. Assign every issue with status **In Progress** in this file to **me** (the person who uploads this file) and add it to the team's **current cycle**; leave the Backlog and Done issues unassigned and without a cycle. Set a milestone target date only where this file gives one.
 
 Evidence is in the repo https://github.com/AI-DA-STC/AirStack-starling-max2, folder `svg_training/`
 (`records/LEDGER.md` rows T1–T4, `docs/S0_RESULTS.md`, `docs/S1_RESULTS.md`,
@@ -170,6 +170,6 @@ Write a Markdown file named `2026-11-16-linear-synced-isaac-lab-pipeline.md`. St
 
 - the project's name and its seven milestones with target dates and progress;
 - NEAR-955's project, milestone, status and comment;
-- the NEAR id, title, milestone and status of every new issue, and each relation added;
+- the NEAR id, title, milestone, status, assignee and cycle of every new issue, and each relation added;
 - anything not applied, and why;
 - the totals for the new project and for HTX-R1, HTX-R2 and HTX-R3: total, Backlog, In Progress, Done, Canceled.

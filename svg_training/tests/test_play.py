@@ -48,6 +48,7 @@ def test_play_counts_first_game_per_slot():
     assert rows[0]["games"] == n and rows[0]["hold_rate"] == 0.0 and rows[0]["mean_end_step"] == 37
     # Guard at (1.5, 1.5), Strike on y = 0 from x = -1.51: closest at its last position x = -1.51 + 37 * 0.025
     assert rows[0]["closest_cross_m"] == pytest.approx(math.hypot(1.5 + 1.51 - 37 * 0.025, 1.5), abs=1e-4)
+    assert rows[0]["closest_cross_3d_m"] == pytest.approx(rows[0]["closest_cross_m"])   # pure rules: one height
     assert rows[0]["rule_breach_rate"] == 0.0 and rows[0]["filter_rate"] == 0.0
 
 
@@ -118,6 +119,7 @@ def test_summarise_groups_and_percentiles():
     t = torch.tensor
     res = MatchResult(outcome=t([2, 2, 1, 2, 0], dtype=torch.int8), end_step=t([10, 20, 30, 40, 0]),
                       band=t([0, 0, 0, 2, 2]), closest_cross_m=t([1.0, 2.0, 3.0, float("inf"), 0.1]),
+                      closest_cross_3d_m=t([1.2, 2.0, 3.0, float("inf"), 0.1]),
                       rule_breach=t([True, False, False, False, True]),
                       filter_corrected_rate=t([0.5, 0.0, 0.25, 0.0, 1.0]),
                       start_miss=t([True, False, False, False, True]))
@@ -127,7 +129,9 @@ def test_summarise_groups_and_percentiles():
     assert lab["closest_cross_m"] == 1.0 and lab["closest_cross_p50_m"] == pytest.approx(2.0)
     assert lab["rule_breach_rate"] == pytest.approx(1 / 3) and lab["start_miss_rate"] == pytest.approx(1 / 3)
     assert lab["filter_rate"] == pytest.approx(0.25) and lab["mean_end_step"] == pytest.approx(20.0)
+    assert lab["closest_cross_3d_m"] == pytest.approx(1.2) and lab["closest_cross_3d_p50_m"] == pytest.approx(2.0)
     assert large["games"] == 1 and large["closest_cross_m"] is None     # unfinished slot left out; inf -> None
+    assert large["closest_cross_3d_m"] is None
     both = summarise(res, by=("band", "start_miss"))
     assert {(r["band"], r["start_miss"]) for r in both} == {("lab", True), ("lab", False), ("large", False)}
     with pytest.raises(ValueError):
@@ -160,3 +164,20 @@ def test_play_loop_runs_under_sync_debug_error(starling, guard):
     finally:
         torch.cuda.set_sync_debug_mode(0)
     assert res.steps_played == 99
+
+
+
+@pytest.mark.parametrize("z_guard, z_strike, breach", [(0.6, 1.8, False), (1.2, 1.2, True)])
+def test_closest_cross_3d_and_breach_in_3d(z_guard, z_strike, breach):
+    """Starling layer: a Guard drone 1.2 m below a Strike drone and 0.3 m to the side is 0.3 m away horizontally
+    but 1.237 m in 3-D, outside the 1.10 m keep-out: no breach. The same pair at one height is a breach."""
+    from svg_training.core.game import Scenario
+    cfg = CFG.replace(**{"starling.enabled": True, "starling.filter_iterations": 20})
+    sc = Scenario("stack", 8.0, (0.0, 0.0), 1.0, ((2.0, 2.0), (2.3, 2.0)))
+    game = SvgGame(cfg, 1, 1, 1, device="cpu", scenario=sc)
+    game.pos_m[0, 0, 2], game.pos_m[0, 1, 2] = z_guard, z_strike
+    game._starling.reset(torch.ones(1, 2, dtype=torch.bool), game.pos_m)        # at rest at these points
+    out = game.step({"guard": torch.zeros(1, 1, 4), "strike": torch.zeros(1, 1, 4)})
+    assert float(out.info["closest_cross_m"][0]) == pytest.approx(0.3, abs=0.01)
+    assert float(out.info["closest_cross_3d_m"][0]) == pytest.approx(math.hypot(0.3, z_strike - z_guard), abs=0.01)
+    assert bool(out.info["rule_breach"][0]) is breach

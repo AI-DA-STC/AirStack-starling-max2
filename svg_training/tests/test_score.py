@@ -71,7 +71,8 @@ def test_score_starling_preset_runs(tmp_path):
     r = json.loads((out / "scores.json").read_text())["rows"][0]
     assert r["preset"] == "starling" and r["games"] == 4 and r["filter_rate"] is not None
     md = (out / "scores.md").read_text()
-    assert "with Starling layer" in md and "filter 20 sweeps" in md
+    assert "with Starling layer" in md and "filter 20 sweeps" in md and "3-D min / p5 / p50" in md
+    assert r["closest_cross_3d_m"] is None or r["closest_cross_3d_m"] >= r["closest_cross_m"] - 1e-6
 
 
 def test_score_reports_local_file_by_sha_only(tmp_path):

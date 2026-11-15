@@ -98,8 +98,9 @@ def render_md(meta: dict, rows: list[dict]) -> str:
              "- Hold rate = share of games the Guard team held (no Strike drone reached the zone), with its "
              "Wilson 95 % interval. Each game slot counts its first finished game only.",
              "- Closest = closest horizontal approach of a Guard and a Strike drone in a game (m): minimum over the "
-             "games, then the 5th and 50th percentiles of the per-game values. Breach = share of games with an "
-             "opposite pair closer than the keep-out. Filter = share of live drone-steps the safety filter "
+             "games, then the 5th and 50th percentiles of the per-game values; 3-D = the same measured in 3-D (the "
+             "safety filter works in 3-D, so a pair passing one above the other is close only horizontally). "
+             "Breach = share of games with an opposite pair closer than the keep-out in 3-D. Filter = share of live drone-steps the safety filter "
              "changed. Start miss = share of games whose starts could not meet the spacing / keep-out.", ""]
     keys = []
     for r in rows:
@@ -109,8 +110,8 @@ def render_md(meta: dict, rows: list[dict]) -> str:
     for preset, size in keys:
         lines += [f"## {PRESET_NAMES.get(preset, preset)}, {size}", "",
                   "| Guard | Strike | band | games | hold rate (95 % interval) | mean end step | closest min / p5 / "
-                  "p50 (m) | breach | filter | start miss |",
-                  "|---|---|---|---|---|---|---|---|---|---|"]
+                  "p50 (m) | 3-D min / p5 / p50 (m) | breach | filter | start miss |",
+                  "|---|---|---|---|---|---|---|---|---|---|---|"]
         for r in rows:
             if (r["preset"], r["size"]) != (preset, size):
                 continue
@@ -118,8 +119,10 @@ def render_md(meta: dict, rows: list[dict]) -> str:
                     f"{100 * r['hold_rate']:.1f} % ({100 * r['ci_low']:.1f}–{100 * r['ci_high']:.1f})")
             closest = (f"{_fmt(r['closest_cross_m'])} / {_fmt(r['closest_cross_p05_m'])} / "
                        f"{_fmt(r['closest_cross_p50_m'])}")
+            closest3 = (f"{_fmt(r['closest_cross_3d_m'])} / {_fmt(r['closest_cross_3d_p05_m'])} / "
+                        f"{_fmt(r['closest_cross_3d_p50_m'])}")
             lines.append(f"| {r['guard']} | {r['strike']} | {r['band']} | {r['games']} | {hold} | "
-                         f"{_fmt(r['mean_end_step'], 1)} | {closest} | {_pct(r['rule_breach_rate'])} | "
+                         f"{_fmt(r['mean_end_step'], 1)} | {closest} | {closest3} | {_pct(r['rule_breach_rate'])} | "
                          f"{_pct(r['filter_rate'])} | {_pct(r['start_miss_rate'])} |")
         lines.append("")
     return "\n".join(lines)
@@ -225,7 +228,7 @@ def main(argv: list[str] | None = None) -> int:
                                      "batch_seconds": dt,
                                      "batch_game_steps_per_s": game_steps / dt if dt > 0 else None})
                     key = f"{preset}|{size}|{gs}|{ss}|{where}"
-                    for f in ("outcome", "end_step", "band", "closest_cross_m", "rule_breach",
+                    for f in ("outcome", "end_step", "band", "closest_cross_m", "closest_cross_3d_m", "rule_breach",
                               "filter_corrected_rate", "start_miss"):
                         per_game[f"{key}|{f}"] = getattr(res, f).detach().cpu().numpy()
                     print(f"  {gs} v {ss}: hold {rows[-1]['hold_rate']}", flush=True)

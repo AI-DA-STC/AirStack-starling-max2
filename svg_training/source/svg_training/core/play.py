@@ -22,14 +22,15 @@ class MatchResult:
     """One entry per game slot: its FIRST finished game (a slot that never finished has outcome 0 = running and
     is left out of every summary). outcome [N] int8 (1 Strike win, 2 Guard win), end_step [N] long (the step it
     ended on), band [N] long (index into BANDS), closest_cross_m [N] (closest horizontal approach of any live
-    opposite pair over the game's steps, m; inf if none), rule_breach [N] bool (some step had an opposite pair
-    closer than the keep-out), filter_corrected_rate [N] (share of live drone-steps the safety filter changed),
+    opposite pair over the game's steps, m; inf if none), closest_cross_3d_m [N] (the same in 3-D),
+    rule_breach [N] bool (some step had an opposite pair closer than the keep-out, in 3-D), filter_corrected_rate [N] (share of live drone-steps the safety filter changed),
     start_miss [N] bool (the game's starts could not meet the spacing / keep-out). steps_played: steps the loop
     ran (all N games step every time, so N x steps_played game-steps were simulated)."""
     outcome: Tensor
     end_step: Tensor
     band: Tensor
     closest_cross_m: Tensor
+    closest_cross_3d_m: Tensor
     rule_breach: Tensor
     filter_corrected_rate: Tensor
     start_miss: Tensor
@@ -38,7 +39,7 @@ class MatchResult:
     def slice(self, sl: slice) -> "MatchResult":
         """The games in sl (e.g. one strategy pair's share of a packed batch)."""
         return MatchResult(self.outcome[sl], self.end_step[sl], self.band[sl], self.closest_cross_m[sl],
-                           self.rule_breach[sl], self.filter_corrected_rate[sl], self.start_miss[sl],
+                           self.closest_cross_3d_m[sl], self.rule_breach[sl], self.filter_corrected_rate[sl], self.start_miss[sl],
                            self.steps_played)
 
 
@@ -61,6 +62,7 @@ def play_match(game: SvgGame, guard: Strategy, strike: Strategy, max_steps: int 
     band = game.arenas.band.clone()
     start_miss = game.start_miss.clone()
     closest = torch.full((n,), float("inf"), device=dev)
+    closest_3d = torch.full((n,), float("inf"), device=dev)
     breach = torch.zeros(n, dtype=torch.bool, device=dev)
     corrected = torch.zeros(n, device=dev)
     live = torch.zeros(n, device=dev)
@@ -70,6 +72,7 @@ def play_match(game: SvgGame, guard: Strategy, strike: Strategy, max_steps: int 
         active = ~finished                                    # the slot's first game played this step
         info = out.info
         closest = torch.where(active, torch.minimum(closest, info["closest_cross_m"]), closest)
+        closest_3d = torch.where(active, torch.minimum(closest_3d, info["closest_cross_3d_m"]), closest_3d)
         breach = breach | (active & info["rule_breach"])
         alive = info["final_alive"]
         corrected = corrected + active * (info["filter_corrected"] & alive).sum(dim=1)
@@ -85,5 +88,5 @@ def play_match(game: SvgGame, guard: Strategy, strike: Strategy, max_steps: int 
         obs = out.obs
         if steps % CHECK_EVERY_STEPS == 0 and bool(finished.all()):     # one host read, outside the game step
             break
-    return MatchResult(outcome, end_step, band, closest, breach, corrected / live.clamp(min=1.0), start_miss,
+    return MatchResult(outcome, end_step, band, closest, closest_3d, breach, corrected / live.clamp(min=1.0), start_miss,
                        steps)

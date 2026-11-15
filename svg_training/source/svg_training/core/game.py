@@ -30,10 +30,12 @@ PARK_M = 1.0e3     # where a drone that is out is parked (x and y)
 @dataclass
 class StepOut:
     """Result of one step. obs after auto-reset of the games that ended; reward, outcome, end_step and info
-    describe the step just taken. info: band [N], closest_cross_m [N] (inf if no live opposite pair),
-    closest_team_m [N] (inf if no live same-team pair), rule_breach [N] bool (a live opposite pair closer than
-    min(keepout_guard_m, keepout_strike_m), horizontal; with the Starling layer the push-apart is off, so this
-    reports what the filter alone allowed), filter_corrected [N, M] bool (Starling layer: live drones the safety
+    describe the step just taken. info: band [N], closest_cross_m [N] (closest live opposite pair, horizontal;
+    inf if none), closest_cross_3d_m [N] (the same in 3-D: the safety filter keeps drones apart in 3-D, so a pair
+    passing one above the other is close horizontally but not in 3-D), closest_team_m [N] (inf if no live
+    same-team pair), rule_breach [N] bool (a live opposite pair closer than min(keepout_guard_m,
+    keepout_strike_m) in 3-D; the pure partner rules hold every drone at one height, so there 3-D = horizontal;
+    with the Starling layer the push-apart is off, so this reports what the filter alone allowed), filter_corrected [N, M] bool (Starling layer: live drones the safety
     filter changed this step; all False without it),
     tagged [N, M] bool (contact preset: drones tagged this step; a Strike drone tagged on the step it enters the
     zone does not score: tags come before the zone test),
@@ -252,11 +254,14 @@ class SvgGame:
         inf = torch.full_like(dist, float("inf"))
         closest_cross = torch.where(live2 & self._cross, dist, inf).amin(dim=(1, 2))
         closest_team = torch.where(live2 & self._same, dist, inf).amin(dim=(1, 2))
+        dist3 = (pos[:, :, None, :] - pos[:, None, :, :]).norm(dim=-1)                 # [N, M, M], 3-D
+        closest_cross_3d = torch.where(live2 & self._cross, dist3, inf).amin(dim=(1, 2))
         phi_now = self._potential(pos, alive, self.arenas)
         phi_now = torch.where(torch.isfinite(phi_now), phi_now, self._phi)
         reward = team_rewards(cfg.rewards, outcome, self._phi, phi_now, g, self.strikes)
-        info = {"band": self.arenas.band, "closest_cross_m": closest_cross, "closest_team_m": closest_team,
-                "rule_breach": closest_cross < self._keepout_min - 1e-6, "filter_corrected": corrected,
+        info = {"band": self.arenas.band, "closest_cross_m": closest_cross, "closest_cross_3d_m": closest_cross_3d,
+                "closest_team_m": closest_team,
+                "rule_breach": closest_cross_3d < self._keepout_min - 1e-6, "filter_corrected": corrected,
                 "final_alive": alive.clone(), "tagged": tagged}
         end_step = torch.where(done, steps_new, torch.zeros_like(steps_new))
         self._phi = phi_now

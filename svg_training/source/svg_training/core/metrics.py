@@ -49,14 +49,15 @@ def _row(res: "dict[str, Tensor]", sel: Tensor) -> dict:
     n = int(fin.sum())
     k = int((res["outcome"][fin] == GUARD_WIN).sum())
     lo, hi = wilson_interval(k, n)
-    cc = res["closest_cross_m"][fin]
-    cc = cc[torch.isfinite(cc)].double()
     row = {"games": n, "guard_wins": k, "hold_rate": k / n if n else None, "ci_low": lo if n else None,
            "ci_high": hi if n else None,
-           "mean_end_step": float(res["end_step"][fin].double().mean()) if n else None,
-           "closest_cross_m": float(cc.min()) if cc.numel() else None}
-    for q in QUANTILES:
-        row[f"closest_cross_p{round(q * 100):02d}_m"] = float(torch.quantile(cc, q)) if cc.numel() else None
+           "mean_end_step": float(res["end_step"][fin].double().mean()) if n else None}
+    for name in ("closest_cross", "closest_cross_3d"):
+        cc = res[f"{name}_m"][fin]
+        cc = cc[torch.isfinite(cc)].double()
+        row[f"{name}_m"] = float(cc.min()) if cc.numel() else None
+        for q in QUANTILES:
+            row[f"{name}_p{round(q * 100):02d}_m"] = float(torch.quantile(cc, q)) if cc.numel() else None
     row["rule_breach_rate"] = float(res["rule_breach"][fin].double().mean()) if n else None
     row["filter_rate"] = float(res["filter_corrected_rate"][fin].double().mean()) if n else None
     row["start_miss_rate"] = float(res["start_miss"][fin].double().mean()) if n else None
@@ -69,8 +70,9 @@ def summarise(res: "MatchResult", by: tuple[str, ...] = ("band",)) -> list[dict]
     Each row: the group keys ("band" as its name in BANDS), games, guard_wins, hold_rate, ci_low, ci_high
     (Wilson 95 %), mean_end_step, closest_cross_m (the minimum over the games: the closest any opposite pair
     came, horizontal, m) and its 5th, 25th and 50th percentiles over games (closest_cross_p05_m, _p25_m, _p50_m;
-    games with no live opposite pair are left out), rule_breach_rate (share of games with at least one step where
-    an opposite pair was closer than the keep-out), filter_rate (mean over games of the share of live drone-steps
+    games with no live opposite pair are left out), the same four in 3-D (closest_cross_3d_m, _3d_p05_m, ...),
+    rule_breach_rate (share of games with at least one step where an opposite pair was closer than the keep-out,
+    in 3-D), filter_rate (mean over games of the share of live drone-steps
     the safety filter changed; 0 without the Starling layer), start_miss_rate (share of games whose starts could
     not meet the spacing / keep-out). A value that cannot be computed is None; a group with no finished game
     gives no row (so no finished game at all gives []). Moves the result to the host once.
@@ -79,7 +81,8 @@ def summarise(res: "MatchResult", by: tuple[str, ...] = ("band",)) -> list[dict]
         if key not in ("band", "start_miss"):
             raise ValueError(f"cannot group by {key!r}: use 'band' and/or 'start_miss'")
     h = {name: getattr(res, name).detach().cpu() for name in
-         ("outcome", "end_step", "band", "closest_cross_m", "rule_breach", "filter_corrected_rate", "start_miss")}
+         ("outcome", "end_step", "band", "closest_cross_m", "closest_cross_3d_m", "rule_breach",
+          "filter_corrected_rate", "start_miss")}
     groups: list[tuple[dict, Tensor]] = [({}, h["outcome"] != RUNNING)]      # finished first games only
     for key in by:
         values = range(len(BANDS)) if key == "band" else (False, True)

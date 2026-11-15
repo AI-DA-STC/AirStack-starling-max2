@@ -43,7 +43,7 @@ guard_survives_tag_prob = 0.0
 enabled = false
 params = "params/real_exploratory_v0.toml"
 filter_iterations = 1000
-filter_check_every = 0
+filter_check_every = 8
 
 [starts]
 mode = "rings"                     # "rings" | "anywhere"

@@ -7,7 +7,7 @@ in the [glossary](GLOSSARY.md). How we got here, step by step: [WHAT_WE_DID](WHA
 | Item | Value |
 |---|---|
 | Runs | T2 (filter copy), T3 (fit to the AirStack simulator), T4 (tier 1 with the new drone model); one exploratory fit to real flight logs, with no ledger row |
-| Verdicts | T2 **FAIL**, accepted by the owner; T3 **FAIL**; real-log fit exploratory, no gates; T4 information only, no gates |
+| Verdicts | T2 **FAIL**, accepted by the owner (re-confirmation on the exact counts pending); T3 **FAIL**; real-log fit exploratory, no gates; T4 information only, no gates |
 | Main finding | the real drone and the AirStack simulator feed PX4 in different ways, so the drone model for training must come from real flight logs |
 | Drone model now in tier 1 | the commander's real-drone law plus a small PX4 model **observed in flight logs** at up to 0.5 m/s; not validated, not a run of record. No S1 gate on the drone model has passed yet |
 | Plan and gates | [S1 plan](plans/2026-11-15-s1-drone-model-and-safety-filter.md), gates in `configs/s1.toml`, approved by the owner on 15 November 2026 |
@@ -31,7 +31,7 @@ That changed half-way, for the reasons below.
 
 ```mermaid
 flowchart LR
-  A["T2<br/>safety filter copy<br/>FAIL, accepted"] --> B["T3<br/>fit to the AirStack<br/>simulator: FAIL"]
+  A["T2<br/>safety filter copy<br/>FAIL, accepted<br/>(re-confirmation pending)"] --> B["T3<br/>fit to the AirStack<br/>simulator: FAIL"]
   B --> C["Cause found<br/>two clocks in<br/>the simulator"]
   C --> D["Survey of real logs<br/>the real drone gets<br/>a different command"]
   D --> E["Exploratory fit<br/>to real flight logs"]
@@ -40,7 +40,9 @@ flowchart LR
 
 ## What we found
 
-### 1. The safety filter copy (T2): FAIL, accepted by the owner
+<a id="1-the-safety-filter-copy-t2-fail-accepted-by-the-owner"></a>
+
+### 1. The safety filter copy (T2): FAIL, accepted by the owner (re-confirmation pending)
 
 **What we did.** We wrote a copy of CMU's filter (`core/safety_filter.py`) that works on all games at once. It
 improves every drone's speed in small repeated corrections, called *sweeps*. We compared it with CMU's original on
@@ -127,7 +129,7 @@ the drone outruns its reference point, the pull turns backwards, and the speed s
 command. On release, the drone is about 0.25 m past the point, so it flies back.
 
 We checked this by re-running the commander's rules on the recorded inputs. The result matched what the commander
-actually sent within 0.019 m/s on every tick of all five pushes ([cause notes](../runs/sdd/s1/task-4-cause.md)).
+actually sent within 0.019 m/s on every tick of all five pushes ([cause notes](notes/s1_two_clocks_cause.md)).
 
 **This is a simulator effect only.** On the real drone both clocks are real time, and the same rules give no sag.
 Making the commander use the simulator's clock would be a change to flight code, which is the owner's call. Nothing
@@ -136,7 +138,7 @@ was changed outside this folder.
 ### 4. The real drone takes a different route
 
 A read-only survey of the real flight logs of 11–13 November found a bigger difference
-([survey](../runs/sdd/s1/real-logs-survey.md)). On the real drone the commander does not send a bare speed. It sends
+([survey](notes/s1_real_logs_survey.md)). On the real drone the commander does not send a bare speed. It sends
 a *trajectory setpoint*: one instruction holding a position, a speed and an acceleration. PX4 then closes the
 position loop on the drone itself. The simulator gets a speed only, through a different bridge program (MAVROS),
 and runs a newer PX4.
@@ -273,12 +275,18 @@ All rows are in the [training ledger](../records/LEDGER.md). Nothing here is a f
 
 ## What the owner needs to do next
 
-**1. Fly the planned-pushes flight.** This gives the drone model its run of record. What to record, from the
-[exploratory record §8](../records/2026-11-15_s1_real_px4_exploratory.md#8-what-to-record-at-the-next-real-flight)
-and the [survey §6](../runs/sdd/s1/real-logs-survey.md#6-what-to-record-at-the-next-real-flight):
+> **This page does not authorise a flight.** Real flights follow [docs/PREFLIGHT.md](../../docs/PREFLIGHT.md) and
+> [docs/RUNBOOK.md](../../docs/RUNBOOK.md) and the owner's decision; turning the collision filter off or raising the
+> stick cap is the owner's call under those procedures.
 
-1. Record a rosbag of every flight, with the stick command (`/svg/drone_N/teleop_command`) and the commander's output
-   (`/drone_N/fmu/trajectory_command`) together.
+**1. Fly the planned-pushes flight.** This gives the drone model its run of record. The list below is a set of
+proposals for the owner's flight plan, to be checked against the repository's iron rules (the real `_ours` configs
+fly `cbf_max_speed_mps` 1.0). What to record, from the
+[exploratory record §8](../records/2026-11-15_s1_real_px4_exploratory.md#8-what-to-record-at-the-next-real-flight)
+and the [survey §6](notes/s1_real_logs_survey.md#6-what-to-record-at-the-next-real-flight):
+
+1. Record a rosbag of every flight, with the stick command (`/svg/drone_1/teleop_command`, `/svg/drone_2/teleop_command`)
+   and the commander's output (`/drone_1/fmu/trajectory_command`, `/drone_2/fmu/trajectory_command`) together.
 2. Log the setpoint at its full rate: the setpoint at 20 Hz, and position and attitude at 50 Hz or more. This is a
    change to the drone's logging (`SDLOG_PROFILE`), so it is the owner's decision.
 3. Start every push from rest, hold it 3–4 s, rest 3 s. Hold some for 5 s.

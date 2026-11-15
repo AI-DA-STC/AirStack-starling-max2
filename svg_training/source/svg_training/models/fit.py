@@ -1,8 +1,11 @@
-"""Fit the response model (models/response.py) to velocity steps recorded at the plug-in point.
+"""SIMULATOR ROUTE: describes the AirStack simulator, not the training model; see docs/S1_RESULTS.md
+(STANDARDS §5 rule 10: the training model comes from real flight logs).
 
-Pipeline (Task 6 drives it; this module takes arrays, not files):
+Fit the response model (models/response.py) to velocity steps recorded at the plug-in point.
+
+Pipeline (scripts/fit_response.py drives it; S1's Task 6 that was to drive it was replaced; arrays in, not files):
   1. `to_vehicle_time` on BOTH the command and the odometry stamps, with the same scale and t0. Bag stamps
-     are wall time; the AirStack simulator runs about 1.33 x faster than the wall clock (PX4 lockstep), so a
+     are wall time; the AirStack simulator ran about 1.9 x faster than the wall clock in S1 (PX4 lockstep), so a
      fit on wall stamps gives a delay and time constants `scale` times too small (Review Focus 1).
   2. Odometry twist is body frame (see response.py): `response.body_to_world(v_body, q)` first.
   3. `resample_uniform` onto one grid (dt 0.01 s of vehicle time by default):

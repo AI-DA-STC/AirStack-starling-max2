@@ -169,7 +169,8 @@ are in [S1_RESULTS](S1_RESULTS.md).
 ![One real push beside one simulator push, both at 0.5 m/s](figures/s1_real_sim_vs_real.png)
 
 **Figure 2.** Left: one real 0.5 m/s push; the drone flies close to the speed it was sent and drifts back slowly.
-Right: the same push in the AirStack simulator; the speed sags while the push is held and swings back on release.
+Right: a different 0.5 m/s push in the AirStack simulator, on its own route; the speed sags while the push is held
+and swings back on release.
 This difference is why the drone model for training comes from real flights.
 
 **What we did not do.** We changed nothing in the flight software or the simulator. The drone model in tier 1 was

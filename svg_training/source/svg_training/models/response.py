@@ -1,4 +1,7 @@
-"""Response model at the plug-in point (NumPy reference): teleop velocity command -> measured velocity.
+"""SIMULATOR ROUTE: describes the AirStack simulator, not the training model; see docs/S1_RESULTS.md
+(STANDARDS §5 rule 10: the training model comes from real flight logs).
+
+Response model at the plug-in point (NumPy reference): teleop velocity command -> measured velocity.
 
 The model is a black box from the command a policy sends (`/svg/<drone>/teleop_command`, world ENU, m/s)
 to the drone's measured velocity (odometry, world ENU, m/s). It stands for everything in between: the
@@ -46,6 +49,8 @@ from dataclasses import asdict, dataclass, fields
 
 import numpy as np
 
+from svg_training.models._filters import lag_alpha  # noqa: F401 -- re-exported; moved to _filters.py (final review I5)
+
 FAMILIES = ("lag1", "lag2")
 
 
@@ -88,13 +93,6 @@ class ResponseParams:
         if unknown:
             raise ValueError(f"unknown ResponseParams keys: {sorted(unknown)}")
         return cls(**d)
-
-
-def lag_alpha(dt_s: float, tau_s: float) -> float:
-    """Exact zero-order-hold gain of a first-order lag over one step: 1 - exp(-dt/tau); 1 when tau = 0."""
-    if tau_s <= 0.0:
-        return 1.0
-    return -math.expm1(-dt_s / tau_s)
 
 
 def cap_speed(cmd_mps: np.ndarray, speed_cap_mps: float) -> np.ndarray:

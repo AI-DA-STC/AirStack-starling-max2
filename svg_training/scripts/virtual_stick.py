@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SIMULATOR ONLY: never point this at a real drone; real flights follow docs/PREFLIGHT.md and docs/RUNBOOK.md.
+# (Those are the repository's own docs/ pages. The script checks this itself: see "Simulator check" below.)
 """Designed velocity-step session for ONE drone in the AirStack simulator (S1 Task 5). SIM ONLY (repository iron rule 9).
 
 Inside the robot container (record_steps.sh copies this file and configs/s1.toml next to each other):
@@ -13,6 +15,12 @@ On the host (no ROS needed; rclpy is imported inside run_session only):
 
 Plan order: repeat, speed, axis, sign with signs [1, -1] — every + step is followed by its - twin, so the drone comes
 back near its start after each pair and a -z step always follows the +z step of the same size.
+Simulator check (first, before any publish or service call): every drone in /svg/commander_status must have mode
+"sim" (the commander's per-drone `mode`, swarm_commander.py:1210), the target drone must be listed, and no topic name on
+the domain may contain "/fmu/" (PX4's real-drone bridge; tools/sim.sh treats it as a real-drone signal too). A status
+that cannot be read within STATUS_WAIT_S counts as a failure. A failure is a REFUSAL in capitals ("REAL DRONE MAY BE
+PRESENT"), nothing is sent (no publish, no service call, not even land) and the exit code is 67. The check runs again
+just before the first publish.
 Safety (the configs fly with the fences off):
   - floor, predictive: a -z step is skipped unless z_onset - |vz| * hold_s * FLOOR_PREDICT_SCALE >= FLOOR_M +
     FLOOR_MARGIN_M; during a -z step the command is cut to zero once z - |vz| * (FLOOR_LAG_S + |vz| / FLOOR_DECEL_MPS2)
@@ -29,11 +37,13 @@ commander on the domain — and exit 67 (record_steps.sh then leaves the simulat
 called whenever this stick has SENT a takeoff request (st["took_off"], set just before the call: a request that timed
 out, or a signal during the call, may still have put the drone in the air; `land` on an IDLE drone is a harmless "no
 airborne drone to land"). Precedence: a second commander (exit 67) always wins — then nothing is sent, not even land.
-Times are wall seconds; the AirStack simulator runs about 1.33 times faster than wall clock (vehicle = wall x scale).
+Times are wall seconds; the AirStack simulator ran about 1.9 times faster than wall clock in the S1 run (1.907, drifting
+1.73-1.97: records/2026-11-15_s1_fit_v0_record.md) (vehicle = wall x scale).
 
 Exit codes: 0 all steps flown and landed; 1 refused before the takeoff request (nothing sent); 2 bad arguments or
 config; 3 stopped by SIGINT/SIGTERM (landed if a takeoff request was sent); 4 a flight error from the takeoff request on,
-including a takeoff refused or unanswered (landed); 67 a second commander or foreign status on the domain (nothing sent: no zeros, no land)."""
+including a takeoff refused or unanswered (landed); 67 a second commander or foreign status on the domain, or the simulator
+check failed (a real drone may be present) (nothing sent: no zeros, no land)."""
 from __future__ import annotations
 
 import argparse
@@ -49,7 +59,7 @@ ZERO_GAP_S = 2.0          # zero command before every step and after the last on
 RATE_HZ = 20.0            # publish rate of the virtual stick (wall), = the commander's control_rate_hz
 FLOOR_M = 0.5             # odometry z (m) the drone must never be driven below
 FLOOR_MARGIN_M = 0.3      # extra margin for the skip rule (m)
-FLOOR_PREDICT_SCALE = 1.4  # vehicle/wall time scale bound for the skip rule (measured ~1.33)
+FLOOR_PREDICT_SCALE = 1.4  # time scale for the skip rule; below the measured 1.73-1.97, so the live cut rule backs it
 FLOOR_LAG_S = 0.7         # sim velocity-loop lag used by the cut rule (s)
 FLOOR_DECEL_MPS2 = 5.0    # braking used by the cut rule (m/s^2) = teleop_accel_mps2
 ODOM_STALE_S = 1.0        # odometry older than this during the steps = flight error (wall s)
@@ -61,6 +71,7 @@ START_TRIES, START_EVERY_S = 15, 2.0
 LAND_WAIT_S = 60.0        # land -> IDLE (the commander disarms, then declares IDLE)
 CALL_TIMEOUT_S = 20.0     # wait for a /swarm_commander/* service answer (wall s)
 STATUS_TOPIC = "/svg/commander_status"
+REAL_TOPIC_MARK = "/fmu/"     # any topic name containing this = a real drone's PX4 bridge may be on the domain
 BENIGN_SUBSCRIBERS = ("rosbag2_recorder", "foxglove_bridge")   # read-only listeners of the teleop topic
 AXES = {"x": 0, "y": 1, "z": 2}
 
@@ -114,7 +125,7 @@ def format_plan(plan: list[dict]) -> str:
              f"{s['speed_mps']:.2f} m/s zero {s['zero_before_s']:.1f} s then hold {s['hold_s']:.1f} s "
              f"onset {s['onset_s']:6.1f} s end {s['end_s']:6.1f} s" for s in plan]
     lines.append(f"plan: {n} steps, {gap:.1f} s zero before each and after the last, "
-                 f"total {plan_total_s(plan):.1f} s wall (vehicle time = wall x the run's time scale, ~1.33)")
+                 f"total {plan_total_s(plan):.1f} s wall (vehicle time = wall x the run's time scale, ~1.9)")
     return "\n".join(lines)
 
 
@@ -296,6 +307,35 @@ def run_session(plan: list[dict], drone: str, flown_json: str | None) -> int:
     spin = threading.Thread(target=executor.spin, daemon=True)
     spin.start()
 
+    def not_sim():
+        """None when the commander says every drone is simulated and no /fmu/ topic is visible, else the reason.
+        Anything that cannot be read counts as a reason (fail closed)."""
+        with lock:
+            status = seen["status"]
+        if not isinstance(status, dict):
+            return f"no readable {STATUS_TOPIC} (the drone's mode cannot be checked)"
+        drones = status.get("drones")
+        if not isinstance(drones, list) or not any(isinstance(x, dict) and x.get("name") == drone for x in drones):
+            return f"{drone} is not in {STATUS_TOPIC} (its mode cannot be checked)"
+        modes = {str(x.get("name")): x.get("mode") for x in drones if isinstance(x, dict)}
+        bad = {n: m for n, m in modes.items() if m != "sim"}
+        if bad:
+            return "commander status mode " + ", ".join(f"{n} mode {m!r}" if m is not None else f"{n} mode None"
+                                                         for n, m in sorted(bad.items())) + " (need \"sim\" for every drone)"
+        try:
+            names = [str(t[0]) for t in node.get_topic_names_and_types()]
+        except Exception as e:  # noqa: BLE001 -- the topic list could not be read
+            return f"topic list unreadable: {type(e).__name__}: {e}"
+        real = sorted(t for t in names if REAL_TOPIC_MARK in t)
+        if real:
+            return f"real-drone topic(s) on the domain: {', '.join(real[:5])}"
+        return None
+
+    def refuse_real(why):
+        say(f"!! REFUSED: REAL DRONE MAY BE PRESENT: {why} — NOTHING SENT (NO PUBLISH, NO SERVICE CALL); exit 67. "
+            "THIS TOOL IS SIMULATOR ONLY: REAL FLIGHTS FOLLOW docs/PREFLIGHT.md AND docs/RUNBOOK.md")
+        return 67
+
     def wait_until_t(t_abs, step):
         """Hold the current command until monotonic t_abs; a health failure returns the flight error."""
         while time.monotonic() < t_abs:
@@ -306,6 +346,12 @@ def run_session(plan: list[dict], drone: str, flown_json: str | None) -> int:
         return None
 
     def fly() -> int:
+        # 0  simulator check, before anything is sent: a status that never arrives counts as a refusal
+        wait_for(lambda: seen["status"] is not None, STATUS_WAIT_S, 0.05)
+        why = not_sim()
+        if why:
+            return refuse_real(why)
+        say(f"simulator check: {drone} mode sim, no {REAL_TOPIC_MARK} topic on the domain")
         # 1  commander up, drone IDLE with fresh odometry, one commander, the plan inside the commander's speed cap
         if not wait_for(lambda: (drone_state() == "IDLE" and bool((seen["drone"] or {}).get("odom_fresh"))),
                         STATUS_WAIT_S, 0.05):
@@ -333,6 +379,9 @@ def run_session(plan: list[dict], drone: str, flown_json: str | None) -> int:
             say(f"refused: other publisher(s) on {teleop_topic}: {', '.join(others)} (a relay or keyboard would "
                 "interleave with the steps)")
             return 1
+        why = not_sim()                                   # again, just before the first publish and the takeoff call
+        if why:
+            return refuse_real(why)
         z0, age = odom()
         say(f"pre-takeoff: {drone} state={drone_state()} z={z0:.2f} m (odometry age {age:.2f} s); one commander: "
             "publishing from now on")

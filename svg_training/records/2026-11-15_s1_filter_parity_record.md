@@ -82,3 +82,9 @@ Each bar counts scenes by how far the port's velocities are from CMU's, over the
 ![Max velocity difference and emergency agreement against sweeps, development seed 1](../docs/figures/s1_t2_sweeps.png)
 
 Development seed 1, not this record's seed. More sweeps help in steps: from 1,000 the largest difference stays at 0.105 m/s, which is how far CMU's own answer is from the exact solution (a 20,000-sweep float64 run, implementer report §3), so it never reaches the 0.02 m/s limit. Emergency agreement passes 0.99 from 300 sweeps.
+
+## Notes added after the final S1 review (15 Nov)
+
+Added by the implementer of the final-review fixes; no number in this record changed.
+
+- **The port changed after this run.** "Commit" gives the port's sha256 as `8559e7061af9`. The port has since had the NaN fix (one game's NaN no longer spreads to other games); its sha256 is now `6272a19cfd6f`. The final review states that a recomputation gives identical numbers. No per-scene output of this run was saved, so this record cannot show that itself.

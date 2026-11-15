@@ -242,3 +242,11 @@ Added by the technical writer at the lead's request; no measured number changed.
 
 - **Code version**: `scripts/fit_real_px4.py` and `source/svg_training/models/px4_trajectory.py` were committed in `b467aa5` (`git log -1 --format=%h -- <both files>`), with this record. The line "this work is uncommitted" was stale and is replaced above.
 - **Clock ratio per leg**: the sentence "legs 4 and 7, both 4–5 s long, give 1.11" could not be traced. `results.json` stores the ten ratios (`clock_ratio.per_leg`: 0.959, 1.025, 0.974, 1.032, 1.107, 0.992, 1.005, 1.11, 0.987, 1.015) without leg numbers, and the list skips some legs, so a position in it is not a leg number. Section 1 now says only that the two highest ratios are 1.107 and 1.11.
+
+## Notes added after the final S1 review (15 Nov)
+
+Added by the implementer of the final-review fixes; no number in this record changed.
+
+- **Notes now committed.** Section 6 cites `runs/sdd/s1/task-4-cause.md` and section 8 cites `runs/sdd/s1/real-logs-survey.md`; git ignores both. They are now committed as [docs/notes/s1_two_clocks_cause.md](../docs/notes/s1_two_clocks_cause.md) and [docs/notes/s1_real_logs_survey.md](../docs/notes/s1_real_logs_survey.md) (§6 there). `runs/s1_extract_check/` stays a local folder; `scripts/extract_bag.sh` re-creates it from the bag.
+- **This record does not authorise a flight.** Section 8 lists proposals for the owner's flight plan. Real flights follow [docs/PREFLIGHT.md](../../docs/PREFLIGHT.md) and [docs/RUNBOOK.md](../../docs/RUNBOOK.md) and the owner's decision; turning the collision filter off or raising the stick cap is the owner's call under those procedures, checked against the repository's iron rules (the real `_ours` configs fly `cbf_max_speed_mps` 1.0).
+- **Code moved, behaviour unchanged.** `lag_alpha` moved from `models/response.py` to `models/_filters.py`; `models/px4_trajectory.py` now imports it from there. Its tests pass unchanged.

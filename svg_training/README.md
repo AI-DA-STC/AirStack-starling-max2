@@ -51,12 +51,13 @@ The table lists what each folder holds.
 
 | Folder | What it holds |
 |---|---|
-| `source/svg_training/` | the package: benchmark timing, tier 1 environment, worlds and sensing, the Isaac Lab adapter |
-| `scripts/` | `run_s0.sh` (the one command that runs S0), the two benchmarks, `make_record.py` |
-| `configs/` | TOML configs; `s0_benchmark.toml` holds S0's gates, decision rules and sweep |
+| `source/svg_training/` | the package: benchmark timing, tier 1 environment, worlds and sensing, the Isaac Lab adapter; `core/` the safety filter copy; `models/` the drone models (commander copy, PX4 model, placeholder, simulator-route fit) |
+| `scripts/` | `run_s0.sh` (the one command that runs S0), the two benchmarks, `make_record.py`; S1's fits (`fit_real_px4.py`, `fit_response.py`), filter check (`filter_parity.py`), figures and the simulator step session (`record_steps.sh`, `virtual_stick.py`) |
+| `configs/` | TOML configs; `s0_benchmark.toml` holds S0's gates, decision rules and sweep; `s1.toml` S1's |
+| `params/` | drone-model parameter sets: `real_exploratory_v0.toml` (used by tier 1), `airstack_sim_v0.toml` (simulator only) |
 | `tests/` | pytest; most tests need no Isaac |
 | `docker/` | the container image, built on NVIDIA's Isaac Lab 2.3.2, and its launchers |
 | `records/` | one record per run (its written summary) and the training ledger (the list of all runs), in git |
-| `runs/`, `docs/` | raw output of each run (not in git); the documents |
+| `runs/`, `docs/` | raw output of each run (not in git); the documents (`docs/notes/` holds investigation notes the results cite) |
 
 Check [STANDARDS §2](STANDARDS.md) before reusing any text on the programme website.

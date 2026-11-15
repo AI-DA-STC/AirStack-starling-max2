@@ -35,7 +35,7 @@ three drones; nobody trains with the Starling's response and the safety filter i
 
 | # | Stage | Takes in | Produces | Gate |
 |---|---|---|---|---|
-| 1 | **Identify** | velocity-step logs from the AirStack simulator and, later, the real drone | a named parameter set for the tier 1 response model | step-response error against the log within a stated limit |
+| 1 | **Identify** | real flight logs (since 15 November 2026: the commander's rules are copied and PX4's response is fitted; a fit to AirStack simulator logs describes that simulator only, STANDARDS §5 rule 10) | a named parameter set for the tier 1 response model | step-response error against the log within a stated limit |
 | 2 | **Train** | game config, model parameter set, opponent pool | checkpoints, curves | training gates in `gates.toml` |
 | 3 | **Evaluate** | a checkpoint | hold rates, safety and smoothness numbers | the fixed suite ([STANDARDS §7](../STANDARDS.md)) |
 | 4 | **Cross-check** | the same checkpoint | the same numbers on the tier 2 rigid-body Starling | gap between tiers within a stated limit |
@@ -54,7 +54,7 @@ PyTorch, and import nothing from Isaac. Two drone models plug in underneath.
 | | Tier 1 planned: response model | Tier 1 in S0 today | Tier 2 planned: rigid body | Tier 2 in S0 today |
 |---|---|---|---|---|
 | What a drone is | a point that follows a velocity command as the flight stack does: shaping, PX4 loops, lag, delay, limits | a point behind a placeholder 0.15 s delay and 0.55 s lag | a rigid body with four rotors in Isaac Lab, flown by a batched port of PX4's cascade | Isaac Lab's ARL Robot 1 airframe; no flight controller; state rewritten every policy step |
-| Built from | velocity-step logs (stage 1) | nothing fitted yet (S1) | CMU system identification + the drone's PX4 parameter file | Isaac Lab's asset |
+| Built from | real flight logs (stage 1; S1 today: the real command chain, PX4's response observed in flight logs, exploratory) | nothing fitted (S0) | CMU system identification + the drone's PX4 parameter file | Isaac Lab's asset |
 | Used for | bulk training of uses 1 and 2 | throughput only | the cross-check (stage 4), use 3, later use 4 | throughput only |
 | The world is | one distance field on the GPU, shared by every game, plus random blocks and columns per game | open arena, 10 or 50 shapes per game, or a stand-in field the size of the construction-site crop | one static collision mesh in Isaac Lab, shared by every game | a ground plane only |
 | A contact tag is | the two centres closer than 0.50 m | the same | a PhysX contact between the two bodies | not modelled |
@@ -128,6 +128,12 @@ body-rate level is trained on tier 2, which brings use 3 forward.
 
 Each step ends on a number. S0–S5 deliver use 1.
 
+> **Status note, 15 November 2026.** S1 changed during the work. The AirStack simulator feeds PX4 by a different
+> route and clock from the real drone, so the owner ruled that the training model comes from real flight logs and
+> simulator fits describe the simulator only (STANDARDS §5 rule 10). The S1 row below is the original plan; what
+> was built and measured is in [S1_RESULTS](S1_RESULTS.md), and the changes are listed at the top of the
+> [S1 plan](plans/2026-11-15-s1-drone-model-and-safety-filter.md).
+
 | Step | Builds | Ends when |
 |---|---|---|
 | **S0 Measure** | the project skeleton; minimal tier 1 and tier 2 environments with random actions; tier 1 with 0, 10 and 50 obstacles, range rays, line of sight and a stand-in distance field | steps per second against number of games recorded for both tiers on the laptop (done: T1, [S0_RESULTS](S0_RESULTS.md)) and a training workstation (to do), with a compute budget for S2–S4 |
@@ -170,7 +176,7 @@ The owner chose C on 14 November 2026, with Isaac Lab 2.3.2 now and 3.0 later, a
 | With no filter between the teams, two drones can meet at a high closing speed | closing speed at contact is logged and gated in evaluation; published real flights use a virtual contact distance instead of impact |
 | A policy that tags by contact cannot fly on today's flight stack, whose safety filter keeps every pair of drones apart | training is unaffected; flying it needs a pair mask in CMU's filter and a flight safety case, both outside this folder |
 | Contact is an event, not physics, in tier 1: what happens to the two drones afterwards is not modelled | the drones leave the game at contact; tier 2 shows the physical contact |
-| The response model is fitted to one route; the real drone and the AirStack simulator use different command routes (NEAR-866) | fit both, keep both parameter sets, cross-check on tier 2 |
+| The response model is fitted to one route; the real drone and the AirStack simulator use different command routes (NEAR-866) | train on the real route (STANDARDS §5 rule 10, 15 November 2026); a simulator fit is kept only to describe the simulator; cross-check on tier 2 |
 | Self-play goes in circles or overfits to its own pool | scripted opponents, cross-play table, a fixed-budget best-response test |
 | The drone runs PX4 1.14 and the AirStack simulator PX4 1.16.1; a model fitted to one may not match the other | copy the drone's control law; compare the two versions' position controller before S1; fit both routes |
 | Overlap with UPenn's Isaac Lab environment and NUS's simulators | this pipeline's niche is Starling response + safety filter + AirStack hand-over; tell the partners early |

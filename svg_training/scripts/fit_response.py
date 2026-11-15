@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """Fit the response model (teleop command -> measured velocity) to one session recorded in the AirStack simulator.
 
+SIMULATOR ROUTE: describes the AirStack simulator, not the training model; see docs/S1_RESULTS.md
+(STANDARDS §5 rule 10: the training model comes from real flight logs).
+
 Usage (from svg_training/):
     fit_response.py --csv-dir runs/<extract> (--ulog <drone ulog> | --time-scale <float>) --name <YYYY-MM-DD>_s1_fit_v<k>
                     --gates configs/s1.toml [--steps-json <file>] [--family lag1|lag2|best] [--dt-s 0.01]

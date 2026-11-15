@@ -101,3 +101,9 @@ None. This run is informational (`gates.toml`, written before the first point: `
 Added by the technical writer at the lead's request; no number in this record changed.
 
 - **Parameter file changed after the run (comments only).** The run used the copy in `runs/2026-11-15_s1_tier1_fitted_filter/real_exploratory_v0.toml`, sha256 `9233fb03e520` (the value under "Model parameter set"). Afterwards `params/real_exploratory_v0.toml` gained three comment lines, the feed-forward caveat from review m1; no value changed (`diff` of the two files shows only those three added lines). Its sha256 is now `4c93543f51ab`.
+
+## Notes added after the final S1 review (15 Nov)
+
+Added by the implementer of the final-review fixes; no number in this record changed.
+
+- **One import line changed in `models/fitted.py`.** `lag_alpha` now comes from `models/_filters.py` instead of `models/response.py` (the simulator route). The function is the same code, moved, so the measured path is unchanged; the file's sha256 under "Commit" no longer matches today's file.

@@ -44,7 +44,7 @@ from dataclasses import asdict, dataclass, fields, replace
 import numpy as np
 from scipy.optimize import least_squares
 
-from svg_training.models.response import lag_alpha
+from svg_training.models._filters import lag_alpha
 
 FAMILIES = ("lag1", "pid")
 FITTABLE = ("tau_s", "delay_s", "acc_max_mps2")

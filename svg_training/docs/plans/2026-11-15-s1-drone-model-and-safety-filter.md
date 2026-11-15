@@ -1,5 +1,28 @@
 # S1 Drone Model and Safety Filter Implementation Plan
 
+## Changes during execution (15 November 2026)
+
+The plan below is kept as approved. Three things changed while it was carried out, all on the owner's word the
+same day:
+
+- **Why.** The fit to the AirStack simulator (Task 4, T3) failed because the simulator runs two clocks: the
+  commander moves its reference point on the wall clock while PX4 runs about 1.9 times faster
+  ([cause notes](../notes/s1_two_clocks_cause.md)). A survey of the real flight logs then showed that the real
+  drone gets a different command, a trajectory setpoint through `px4_interface`, not a bare speed through MAVROS
+  ([survey](../notes/s1_real_logs_survey.md)). So a simulator fit describes the simulator, not the drone. The owner
+  ruled that the training model comes from real flight logs (STANDARDS §5 rule 10).
+- **Task 6 was replaced.** Fit v1 on simulator steps is not done. Its place is taken by a real flight with planned
+  pushes, flown by the owner, which will give the drone model its run of record
+  ([S1 results, next steps](../S1_RESULTS.md#what-the-owner-needs-to-do-next)). Task 5's simulator session (scripts
+  ready, not run) is optional now.
+- **Task 8 was revised to the real chain.** Instead of `FittedResponse(params: ResponseParams)` tested against
+  `models.response.simulate`, tier 1 got a batched copy of the commander's real-drone rules (`models/commander.py`,
+  tested against CMU's `position_hold.py`), a PX4 trajectory-mode model fitted to real flight logs
+  (`models/fitted.py`, `params/real_exploratory_v0.toml`, exploratory), and the team filter where the commander
+  calls it. The revised brief is a local working note; what was built and measured is in the
+  [T4 record](../../records/2026-11-15_s1_tier1_fitted_filter_record.md) and the
+  [exploratory record](../../records/2026-11-15_s1_real_px4_exploratory.md).
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Replace the stand-in drone response with one fitted to how a velocity command actually moves a Starling in the AirStack simulator, and port CMU's safety filter to batched PyTorch (within each team only), each proven by gates set before the runs.

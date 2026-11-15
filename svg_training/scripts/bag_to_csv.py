@@ -7,7 +7,10 @@ Writes into <out_dir> (must be absent or empty, else exit 1):
     odometry.csv                               t_wall_s,x,y,z,vx,vy,vz,qw,qx,qy,qz   (Odometry: position m, twist.linear m/s, quaternion wxyz)
     commander_status.csv                       t_wall_s,data   (std_msgs/String)
     manifest.json                              bag path, rows per topic, sha256 of this script
-t_wall_s is the bag's receive time in seconds (float, wall clock). A topic absent from the bag gives no file and a printed note."""
+t_wall_s is the bag's receive time in seconds (float, wall clock). A topic absent from the bag gives no file and a printed note.
+
+SIMULATOR ROUTE: describes the AirStack simulator, not the training model; see docs/S1_RESULTS.md
+(STANDARDS §5 rule 10: the training model comes from real flight logs)."""
 import argparse
 import csv
 import hashlib

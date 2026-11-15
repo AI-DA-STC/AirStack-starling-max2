@@ -23,6 +23,7 @@
 # zeros, land and the disarm wait if stick.log has this run's `pre-takeoff:` line OR drone_1 is armed — but never after a
 # second commander, and only while ours is the one /svg/commander_status publisher (precedence: zero_land_wait) -> our
 # commander stopped -> logs and ulog -> the same down sequence -> runs/<name>/ABORTED.txt.
+# The stick's own simulator check failed (stick exit 67, "REAL DRONE MAY BE PRESENT"): the same as below, nothing sent.
 # A SECOND COMMANDER or foreign status (stick exit 67), another commander alive in the robot container or any
 # /svg/commander_status publisher after ours is stopped: nothing is sent (no zeros, no land — land reaches every
 # commander on the domain), our commander is stopped by its bag_prefix, `down` is NOT run, exit 67.
@@ -327,6 +328,15 @@ copy_logs() {
 }
 
 stick_said() { docker exec "$R" grep -qE -- "$1" "$D/stick.log" 2>/dev/null; }   # a line of this run's stick.log
+# stick67_why <has-line command...>: the capitals reason for a stick exit 67 (its own simulator check, or a second commander)
+stick67_why() {
+  if "$@" 'REAL DRONE MAY BE PRESENT'; then
+    echo "STICK REFUSED: REAL DRONE MAY BE PRESENT (its simulator check failed) — NOTHING SENT BY THE STICK; tools/sim.sh down NOT RUN"
+  else
+    echo "SECOND COMMANDER OR FOREIGN STATUS SEEN BY THE STICK — NO ZEROS, NO LAND SENT; DRONE_1 MAY STILL BE IN THE AIR IN ISAAC; tools/sim.sh down NOT RUN"
+  fi
+}
+host_stick_said() { grep -qE -- "$1" "$OUT/stick.log" 2>/dev/null; }                 # the same, on the host copy
 
 # status_publishers: how many /svg/commander_status publishers the robot container's domain shows ("unknown" if the
 # answer is neither `Unknown topic` nor `Publisher count: N`)
@@ -361,7 +371,7 @@ zero_land_wait() {
   if [ "$STAGE" -ge 3 ] && stick_said 'SECOND COMMANDER|virtual_stick: exit 67'; then          # 1
     stop_commander || true
     copy_logs
-    left_up 67 "SECOND COMMANDER OR FOREIGN STATUS SEEN BY THE STICK — NO ZEROS, NO LAND SENT; DRONE_1 MAY STILL BE IN THE AIR IN ISAAC; tools/sim.sh down NOT RUN"
+    left_up 67 "$(stick67_why stick_said)"
   fi
   if ! { [ "$STAGE" -ge 3 ] && stick_said 'pre-takeoff:'; } \
      && ! rx "timeout 10 ros2 topic echo --once /$DRONE/interface/mavros/state" | grep -q '^armed: true'; then   # 4
@@ -551,7 +561,7 @@ else
   t0=$SECONDS; last=""; sleep "$POLL_S"
   while alive "$R" virtual_stick; do
     [ $((SECONDS - t0)) -ge "$BOUND" ] && die "virtual_stick.py still running after $BOUND s (watchdog)"
-    l=$(docker exec "$R" grep -E 'step [0-9]+/[0-9]+ onset|takeoff:|holding takeoff|start:|land:|FLOOR GUARD|error|refused' "$D/stick.log" 2>/dev/null | tail -1)
+    l=$(docker exec "$R" grep -E 'step [0-9]+/[0-9]+ onset|takeoff:|holding takeoff|start:|land:|FLOOR GUARD|error|refused|REFUSED' "$D/stick.log" 2>/dev/null | tail -1)
     [ "$l" != "$last" ] && [ -n "$l" ] && { say "stick: $l"; last=$l; }
     sleep "$POLL_S"; done
 fi
@@ -562,7 +572,7 @@ if [ "$DRY" = 0 ]; then
   if [ "$STICK_RC" = 67 ]; then
     stop_commander || true
     copy_logs
-    left_up 67 "SECOND COMMANDER OR FOREIGN STATUS SEEN BY THE STICK — NO ZEROS, NO LAND SENT; DRONE_1 MAY STILL BE IN THE AIR IN ISAAC; tools/sim.sh down NOT RUN"
+    left_up 67 "$(stick67_why host_stick_said)"
   fi
   [ "$STICK_RC" = 0 ] || die "virtual_stick.py exit $STICK_RC (see stick.log)"
 fi

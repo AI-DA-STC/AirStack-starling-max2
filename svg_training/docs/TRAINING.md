@@ -1,7 +1,7 @@
 # Training a policy: headless and with the Isaac Sim window
 
 > **Nothing can be trained yet.** The training code arrives with build step S2 (one Guard drone against one Strike
-> drone). S1 (drone model and safety filter) is being built now ([DESIGN §8](DESIGN.md#8-build-order)). This page
+> drone). S1 (drone model and safety filter) is built and run, with no drone-model gate passed yet ([S1 results](S1_RESULTS.md)). This page
 > describes how training is **planned** to work. A command marked `# planned (S2)` (or S4) does not exist yet;
 > commands without the mark work today. The page is checked and corrected when S2 arrives. Terms: [glossary](GLOSSARY.md).
 

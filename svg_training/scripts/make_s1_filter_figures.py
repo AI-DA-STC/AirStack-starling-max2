@@ -7,7 +7,8 @@ Writes <prefix>_dv_hist.png and <prefix>_sweeps.png.
 Run T2 saved no per-scene output, so this script RECOMPUTES it with the run's own code and settings
 (scripts/filter_parity.py: seed 20261115, 2,000 scenes, 1,000 sweeps, float32, CPU, 8 threads; nothing
 tuned), then checks all four recomputed gate numbers against the record's gate table and stops if they differ.
-The sweeps figure recomputes the development-seed table of runs/sdd/s1/task-7-report.md (seed 1).
+The sweeps figure recomputes the development-seed table (seed 1) of the Task 7 implementer's report, a local
+working note that git ignores; the T2 record's Figures section and docs/S1_RESULTS.md Figure 2 give its result.
 Palette and style() are copied from scripts/make_s0_figures.py.
 """
 import argparse

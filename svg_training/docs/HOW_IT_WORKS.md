@@ -51,6 +51,7 @@ compares the two tiers.
 |---|---|---|
 | A drone is (planned) | a point that answers a velocity command the way PX4 does: lag, delay, limits | a body with four rotors in Isaac Lab, flown by a PX4-style controller |
 | A drone is (S0 today) | a placeholder: 0.15 s delay and 0.55 s lag, not yet fitted | Isaac Lab's ARL Robot 1 airframe; no controller; its state is rewritten each step |
+| A drone is (S1 today) | the real drone's command chain: a copy of the commander's rules, then PX4's response taken from real flight logs (exploratory, no run of record yet); the AirStack simulator's fit describes that simulator only | unchanged |
 | Needs Isaac | no; tests run in seconds | yes |
 | Speed (S0, laptop) | 5 v 3: 98.3 million drone-steps / s in the open arena; 382,206 with full sensing | 455,300 drone-steps / s at best (3 drones per game, 100 Hz) |
 | Used for | bulk training | the cross-check; later flight control and cameras |
@@ -104,7 +105,7 @@ The table shows each build step and where it stands.
 | Step | What it builds | Where it stands |
 |---|---|---|
 | S0 Measure | benchmarks for both tiers, records, ledger, container | done on the laptop: T1 = FAIL on one gate ([results](S0_RESULTS.md)); workstation run to do |
-| S1 Drone model | fitted tier 1 model from AirStack simulator logs; safety filter port | building; [plan](plans/2026-11-15-s1-drone-model-and-safety-filter.md) approved 15 Nov |
+| S1 Drone model | tier 1 carries the real drone's command chain, with PX4's response from real flight logs; safety filter copy | built and run, no drone-model gate passed yet: T2 and T3 FAIL, real-log fit exploratory, T4 information only ([results](S1_RESULTS.md)); next, a real flight with planned pushes (owner) |
 | S2 One against one | open arena, game rules with tags, scripted opponents, evaluation suite | not started |
 | S3 Two against one | random blocks and columns, line of sight, opponent pool | not started |
 | S4 Five against three | the construction-site world, team-size randomisation, tier 2 cross-check | not started |

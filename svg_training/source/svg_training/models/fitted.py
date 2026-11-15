@@ -35,7 +35,7 @@ from torch import Tensor
 from svg_training.core.safety_filter import filter_velocities
 from svg_training.models.commander import CommanderParams, TeleopCommander
 from svg_training.models.px4_trajectory import TrajectoryParams
-from svg_training.models.response import lag_alpha
+from svg_training.models._filters import lag_alpha
 
 
 def load_params(path: str | pathlib.Path) -> dict:

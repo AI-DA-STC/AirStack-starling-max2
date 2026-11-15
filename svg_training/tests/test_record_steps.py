@@ -172,7 +172,9 @@ def shell(st, c, sh):
         else:
             lines = [pre, "[0.5] takeoff: success=True message='takeoff: drone_1'",
                      "[1.0] step 1/36 onset axis=x sign=+1 speed=0.50 z=1.20"]
-        if rc == 67:
+        if rc == 67 and SC.get("stick_real_drone"):
+            lines.append("[1.5] !! REFUSED: REAL DRONE MAY BE PRESENT: x — NOTHING SENT (NO PUBLISH, NO SERVICE CALL); exit 67")
+        elif rc == 67:
             lines.append("[1.5] !! SECOND COMMANDER OR FOREIGN STATUS ON THE DOMAIN: x — NOTHING SENT (NO ZEROS, NO LAND); exit 67")
         lines += ["[2.0] steps reached: 36/36", f"[2.1] virtual_stick: exit {rc}"]
         open(cmap(c, d + "/stick.log"), "w").write("\n".join(lines) + "\n")
@@ -818,8 +820,9 @@ def test_held_lock_refuses(tmp_path):
 class FakeWorld:
     """A one-drone commander + odometry, driven by the stick's own publisher and service calls."""
 
-    def __init__(self, hover_z=1.2, k=1.0, status_pubs=1, extra_subs=(), idle=True):
+    def __init__(self, hover_z=1.2, k=1.0, status_pubs=1, extra_subs=(), idle=True, mode="sim", topics=()):
         self.lock = threading.Lock()
+        self.mode, self.topics = mode, list(topics)    # the drone's status `mode` (None = field absent); graph topics
         self.checks, self.pub_times = [], []
         self.z, self.vz, self.k, self.hover_z = 0.07, 0.0, k, hover_z
         self.state = "IDLE" if idle else "ARMING"
@@ -876,9 +879,12 @@ class FakeWorld:
                 self.z += self.vz * dt * self.k
             status = None
             if self.status_on:
+                d = {"name": "drone_1", "state": self.state, "odom_fresh": True}
+                if self.mode is not None:
+                    d["mode"] = self.mode
                 status = json.dumps({"pid": self.pid, "node": "/swarm_commander", "scenario": "hover",
                                      "mission_active": self.mission, "tuning": {"teleop_max_speed_mps": 2.0},
-                                     "drones": [{"name": "drone_1", "state": self.state, "odom_fresh": True}]})
+                                     "drones": [d]})
             z = self.z
         for cb in self.subs.get("/drone_1/odometry_conversion/odometry", []):
             cb(types.SimpleNamespace(pose=types.SimpleNamespace(pose=types.SimpleNamespace(
@@ -956,6 +962,10 @@ def fake_ros(world):
 
         def get_publishers_info_by_topic(self, _topic):
             return [info("svg_s1_virtual_stick")]
+
+        def get_topic_names_and_types(self):
+            base = ["/svg/commander_status", "/svg/drone_1/teleop_command", "/drone_1/odometry_conversion/odometry"]
+            return [(t, ["x/msg/X"]) for t in base + world.topics]
 
     class Executor:
         def __init__(self):
@@ -1274,3 +1284,54 @@ def test_stick_takeoff_timeout_unreadable_count_no_land(stick, capsys):
     out = capsys.readouterr().out
     assert rc == 67 and "commander count unreadable" in out, out
     assert w.calls == ["takeoff"]
+
+
+# ------------------------------------------------- final review I1: the stick refuses unless the drone is simulated
+REAL_DRONE = "REAL DRONE MAY BE PRESENT"
+
+
+@pytest.mark.parametrize("world_kw,why", [
+    (dict(mode="real"), "mode 'real'"),
+    (dict(mode=None), "mode None"),
+    (dict(topics=["/fmu/out/vehicle_status"]), "/fmu/out/vehicle_status"),
+    (dict(topics=["/drone_2/fmu/in/vehicle_visual_odometry"]), "/drone_2/fmu/in/vehicle_visual_odometry"),
+])
+def test_stick_refuses_real_drone(stick, capsys, world_kw, why):
+    """Status mode not "sim" (or absent), or any /fmu/ topic on the domain: exit 67, capitals, NOTHING published and
+    NO service call (not even land)."""
+    run, _ = stick
+    w = FakeWorld(**world_kw)
+    rc, flown = run(w)
+    out = capsys.readouterr().out
+    assert rc == 67 and REAL_DRONE in out and why in out, out
+    assert w.published == [] and w.calls == []
+    assert flown["reached"] == 0
+
+
+def test_stick_refuses_unreadable_status(stick, capsys):
+    """No commander status ever read: the mode cannot be checked -> refusal, exit 67, nothing sent."""
+    run, _ = stick
+    w = FakeWorld()
+    w.status_on = False
+    rc, _ = run(w)
+    out = capsys.readouterr().out
+    assert rc == 67 and REAL_DRONE in out and "no readable" in out, out
+    assert w.published == [] and w.calls == []
+
+
+def test_stick_sim_check_passes_then_flies(stick, capsys):
+    """Mode "sim" and no /fmu/ topic: the check is logged, then the session flies as before."""
+    run, _ = stick
+    w = FakeWorld(topics=["/drone_1/interface/mavros/state"])
+    rc, _ = run(w)
+    out = capsys.readouterr().out
+    assert rc == 0 and "simulator check: drone_1 mode sim, no /fmu/ topic" in out, out
+    assert out.index("simulator check:") < out.index("pre-takeoff:")
+
+
+def test_host_names_the_real_drone_refusal(tmp_path):
+    """Stick exit 67 because it saw a real drone: the host leaves everything up and says so, not 'second commander'."""
+    s = Session(tmp_path, {"stick_rc": 67, "stick_real_drone": True, "stick_no_takeoff": True})
+    assert s.r.returncode == 67, s.why()
+    assert not s.has(r"^sim down") and not s.has(r"ros2 service call") and not s.has(r"ros2 topic pub")
+    assert "REAL DRONE MAY BE PRESENT" in s.text("session.log") and "SECOND COMMANDER" not in s.text("session.log")

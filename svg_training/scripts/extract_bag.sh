@@ -2,6 +2,8 @@
 # Bag -> CSV inside CMU's robot image (it has ROS 2 jazzy + rosbag2_py; the host has neither).
 # Usage: bash scripts/extract_bag.sh <bag_dir> <out_dir> [bag_to_csv.py options, e.g. --drone drone_1]
 # The bag is mounted read-only; out_dir must be absent or empty. Files come back owned by the caller.
+# SIMULATOR ROUTE: describes the AirStack simulator, not the training model; see docs/S1_RESULTS.md
+# (STANDARDS §5 rule 10: the training model comes from real flight logs).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

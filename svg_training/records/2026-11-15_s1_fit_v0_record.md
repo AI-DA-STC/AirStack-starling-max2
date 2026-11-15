@@ -140,3 +140,11 @@ Added by the technical writer at the lead's request; no number in this record ch
 - **Machine**: this laptop (Intel Core Ultra 9 275HX; the RTX 5070 Ti Laptop GPU is not used: the fit is NumPy and SciPy on the CPU); conda `env_isaaclab`, Python 3.11.15, NumPy 1.26.0, SciPy 1.15.3 (versions read from that environment on 15 November 2026).
 - **Seeds**: none. The fit is deterministic (`scipy.optimize.least_squares` from fixed starting values; `scripts/fit_response.py` and `models/fit.py` draw no random numbers). The gatekeeper's re-run gave identical parameters, metrics and verdict.
 - **Model family chosen on held-out steps.** `scripts/fit_response.py` keeps the family with the lower held-out RMS. Held-out steps must not choose anything. Here the two families tie (0.123 m/s) and both FAIL, so the verdict does not change; the script must choose on training error before any later fit (`runs/sdd/s1/gatekeeper-s1.md`, must-fix 2).
+
+## Notes added after the final S1 review (15 Nov)
+
+Added by the implementer of the final-review fixes; no number in this record changed.
+
+- **Cause notes now committed.** The "Reading" section points to `runs/sdd/s1/task-4-cause.md`, a working note that git ignores. The same note is now committed as [docs/notes/s1_two_clocks_cause.md](../docs/notes/s1_two_clocks_cause.md); read it there. The gatekeeper note cited in the bullet on the model family (`runs/sdd/s1/gatekeeper-s1.md`) stays a local working note; its must-fix 2 is summarised in that bullet.
+- **The family choice has changed since this run.** That bullet describes the script as it was. `scripts/fit_response.py` (`choose_family`) now keeps the family with the lower *training* RMS, so `family_choice = "best"` in `params/airstack_sim_v0.toml` now means something different, and a re-run at today's code may not give this record's kept family. The verdict would not change: both families FAIL.
+- **Simulator-route labels.** `scripts/fit_response.py`, `scripts/bag_to_csv.py`, `scripts/extract_bag.sh`, `models/fit.py` and `models/response.py` gained a header saying they describe the AirStack simulator, not the training model. These are comment and docstring changes only, but they change the files' sha256 (including the `bag_to_csv.py` hash under "Inputs").

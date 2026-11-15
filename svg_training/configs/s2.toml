@@ -1,4 +1,4 @@
-# S2 gates and settings. Approved by the owner. Never edited after the first result exists.
+# S2 gates and settings. Approved by the owner with the S2 plan on 15 November 2026 ("just execute the rest"). Never edited after the first result exists.
 
 [filter_speed]                      # Task 7. Candidates fixed before the run; a new one = a new run
 iterations = [1000, 500, 300, 200, 100]

@@ -13,7 +13,7 @@ official run whose numbers we keep is the *run of record* (both in the [glossary
 | Build step | Where it stands | Evidence |
 |---|---|---|
 | S0 (throughput benchmark) | run of record T1: **FAIL** on one [gate](docs/GLOSSARY.md) (1 of 96 points lost to an Isaac start-up crash) | every number verified; both speed [decision rules](docs/GLOSSARY.md) met → [S0 results](docs/S0_RESULTS.md) |
-| S1 (drone model and safety filter) | built and run 15 Nov: filter copy T2 **FAIL** (accepted by the owner; re-confirmation on the exact counts asked); simulator fit T3 **FAIL**; real-log fit exploratory; tier 1 with the real chain T4 information only; no S1 gate on the drone model passed yet | [S1 results](docs/S1_RESULTS.md); [S1 plan](docs/plans/2026-11-15-s1-drone-model-and-safety-filter.md) |
+| S1 (drone model and safety filter) | built, run and closed 15 Nov: filter copy T2 **FAIL** (accepted by the owner on the exact counts); simulator fit T3 **FAIL**; real-log fit exploratory; tier 1 with the real chain T4 information only; no S1 gate on the drone model passed yet | [S1 results](docs/S1_RESULTS.md); [S1 plan](docs/plans/2026-11-15-s1-drone-model-and-safety-filter.md) |
 | S2–S5 | not started | [DESIGN §8](docs/DESIGN.md#8-build-order) |
 | Training | nothing trained yet | none |
 

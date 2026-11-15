@@ -142,7 +142,7 @@ are in [S1_RESULTS](S1_RESULTS.md).
    decision on the emergency push-apart in 1,998 of them, and it never acted between a Guard drone and a Strike
    drone. It failed two gates. Of the 1,779 scenes where CMU did not push apart, 13 are over the speed limit, all of
    them scenes CMU finishes in a slow, one-pair-at-a-time phase the copy does not have; 109 are over the limit on
-   how far an answer breaks a keep-out rule. The owner accepted T2 on 15 November ('if 1998/2000 checks passed its ok'); that figure is the emergency-agreement count. Re-confirmation on the counts above was asked the same day. T2 stays a FAIL and S1 went on
+   how far an answer breaks a keep-out rule. The owner accepted T2 on 15 November ('if 1998/2000 checks passed its ok'); that figure is the emergency-agreement count. Asked again with the counts above, the owner confirmed the same day. T2 stays a FAIL and S1 went on
    ([S1_RESULTS §1](S1_RESULTS.md#1-the-safety-filter-copy-t2-fail-accepted-by-the-owner)).
 2. **The first fit (run T3).** We fitted a simple model to a recorded session in the *AirStack simulator* (CMU's
    simulator with the PX4 flight software). It failed: the simulated drone sped up, slowed down while the push was

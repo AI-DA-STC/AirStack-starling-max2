@@ -7,7 +7,7 @@ in the [glossary](GLOSSARY.md). How we got here, step by step: [WHAT_WE_DID](WHA
 | Item | Value |
 |---|---|
 | Runs | T2 (filter copy), T3 (fit to the AirStack simulator), T4 (tier 1 with the new drone model); one exploratory fit to real flight logs, with no ledger row |
-| Verdicts | T2 **FAIL**, accepted by the owner (re-confirmation on the exact counts pending); T3 **FAIL**; real-log fit exploratory, no gates; T4 information only, no gates |
+| Verdicts | T2 **FAIL**, accepted by the owner on the exact counts; T3 **FAIL**; real-log fit exploratory, no gates; T4 information only, no gates |
 | Main finding | the real drone and the AirStack simulator feed PX4 in different ways, so the drone model for training must come from real flight logs |
 | Drone model now in tier 1 | the commander's real-drone law plus a small PX4 model **observed in flight logs** at up to 0.5 m/s; not validated, not a run of record. No S1 gate on the drone model has passed yet |
 | Plan and gates | [S1 plan](plans/2026-11-15-s1-drone-model-and-safety-filter.md), gates in `configs/s1.toml`, approved by the owner on 15 November 2026 |
@@ -31,7 +31,7 @@ That changed half-way, for the reasons below.
 
 ```mermaid
 flowchart LR
-  A["T2<br/>safety filter copy<br/>FAIL, accepted<br/>(re-confirmation pending)"] --> B["T3<br/>fit to the AirStack<br/>simulator: FAIL"]
+  A["T2<br/>safety filter copy<br/>FAIL, accepted"] --> B["T3<br/>fit to the AirStack<br/>simulator: FAIL"]
   B --> C["Cause found<br/>two clocks in<br/>the simulator"]
   C --> D["Survey of real logs<br/>the real drone gets<br/>a different command"]
   D --> E["Exploratory fit<br/>to real flight logs"]
@@ -42,7 +42,7 @@ flowchart LR
 
 <a id="1-the-safety-filter-copy-t2-fail-accepted-by-the-owner"></a>
 
-### 1. The safety filter copy (T2): FAIL, accepted by the owner (re-confirmation pending)
+### 1. The safety filter copy (T2): FAIL, accepted by the owner
 
 **What we did.** We wrote a copy of CMU's filter (`core/safety_filter.py`) that works on all games at once. It
 improves every drone's speed in small repeated corrections, called *sweeps*. We compared it with CMU's original on
@@ -81,7 +81,7 @@ phase, go past the 0.02 m/s limit; the two marked scenes are the worst.
 difference stays at 0.105 m/s, which is how far CMU's own answer is from the exact one. Emergency agreement passes
 0.99 from 300 sweeps.
 
-**The owner's decision.** The owner accepted T2 on 15 November ('if 1998/2000 checks passed its ok'); that figure is the emergency-agreement count. Re-confirmation on the counts above was asked the same day. T2 stays a FAIL in the ledger, the gates
+**The owner's decision.** The owner accepted T2 on 15 November ('if 1998/2000 checks passed its ok'); that figure is the emergency-agreement count. Asked again with the counts above (13 and 109 scenes), the owner confirmed the same day. T2 stays a FAIL in the ledger, the gates
 are unchanged, and S1 went on with this filter. Two costs remain: 1,000 sweeps is slow (section 6), and in emergency
 scenes the push-apart speeds differ from CMU's (parked for the owner).
 
@@ -253,7 +253,7 @@ Training keeps the behaviour, because it is how the real chain works.
 
 | Ledger row | Run | Result | What it means |
 |---|---|---|---|
-| T2 | [filter copy against CMU's filter](../records/2026-11-15_s1_filter_parity_record.md) | FAIL, accepted by the owner (re-confirmation on the counts asked) | of 1,779 scenes, 13 are over the speed limit and 109 over the keep-out residual limit; emergency decision agreed in 1,998 of 2,000 |
+| T2 | [filter copy against CMU's filter](../records/2026-11-15_s1_filter_parity_record.md) | FAIL, accepted by the owner on the exact counts | of 1,779 scenes, 13 are over the speed limit and 109 over the keep-out residual limit; emergency decision agreed in 1,998 of 2,000 |
 | T3 | [fit to the AirStack simulator](../records/2026-11-15_s1_fit_v0_record.md) | FAIL | the simulator's sag-and-swing-back comes from its two clocks, which no simple model follows |
 | none | [fit to real flight logs](../records/2026-11-15_s1_real_px4_exploratory.md) | exploratory, no gates | at up to 0.5 m/s the real drone flies close to its setpoint, about 0.1–0.15 s late |
 | T4 | [tier 1 with the real chain and the filter](../records/2026-11-15_s1_tier1_fitted_filter_record.md) | INFO, no gates | the filter at 1,000 sweeps is too slow to train with; it cuts speed about 5 to 227 times |
@@ -265,7 +265,6 @@ All rows are in the [training ledger](../records/LEDGER.md). Nothing here is a f
 | Item | Status |
 |---|---|
 | A drone model with a run of record | waiting on a real flight with planned pushes (next section) |
-| The owner's acceptance of T2 on the exact counts (13 and 109 scenes) | asked on 15 November; waiting on the owner |
 | Filter speed: 1,000 sweeps is too slow to train with | to fix before S2: fewer sweeps, an early stop, or other speed-ups, each measured against T2's checks |
 | Emergency push-apart speeds differ from CMU's | parked for the owner; matters only in scenes already flagged as emergencies |
 | The filter gap through the position setpoint | HYPOTHESIS for the real drone; a fix would be in CMU's code, outside this folder |
@@ -299,14 +298,12 @@ and the [survey §6](notes/s1_real_logs_survey.md#6-what-to-record-at-the-next-r
 
 **2. Decisions waiting on the owner.**
 
-- Whether T2's acceptance stands on the exact counts: 13 scenes over the speed limit, 109 over the residual
-  limit (his "1998/2000" is the emergency-agreement count).
 - How to make the filter fast enough: which speed-up to try, and what agreement with CMU is good enough.
 - Whether to fix the commander's clock in the AirStack simulator (flight code, outside this folder).
 - Whether to tell CMU about the filter gap through the position setpoint.
 - The speed caps: the rules say Guard 0.67 m/s from a 1.0 m/s cap, but the real stick limit is 0.5 m/s, which
   makes Strike 0.5 and Guard 0.33 m/s. Tier 1 uses 0.5 and 0.33 now.
-- `docs/CONFIG.md` lists 20 m/s for `MPC_XY_VEL_MAX`; the 13 November logs show 3.0 m/s on both drones.
+- `docs/CONFIG.md` now lists the 13 November logs' limits for the real drones (3.0 m/s, owner's request, AirStack commit 680cd1f).
 - What the unlabelled 13 November log `08_34_27.ulg` was (drone_1, 0.87 m/s, the fastest real data).
 - Whether the simulator step session (scripts ready, not run) is still wanted. It measures the simulator's route,
   so it is optional now.

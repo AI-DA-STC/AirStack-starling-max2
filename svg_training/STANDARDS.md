@@ -20,7 +20,9 @@ Status labels used in the tables below:
    One exception, approved by the owner on 14 November 2026: a session may **run** `tools/sim.sh`
    (the AirStack simulator) to record the velocity-step logs for stage 1. Running is approved; editing
    anything under `tools/` is not. What the tool itself writes under `docs/record/` follows the
-   repository's own standards.
+   repository's own standards. Approved by the owner on 15 November 2026 (final S1 review, item I7):
+   `scripts/record_steps.sh` may make its guarded writes outside this folder — the bag folder
+   `AirStack/robot/ros_ws/bags/`, `~/flight_logs/sim/_stack/` and the simulator test lock.
 3. Stages 6 and 7 (simulated flight in AirStack, real flight) belong to the existing flight stack and
    its documents. This folder hands them two files, a policy and an interface file, and nothing else.
 4. Anything that needs an edit outside this folder (a ROS 2 node for the policy, a new AirStack

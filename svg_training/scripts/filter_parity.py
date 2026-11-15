@@ -169,10 +169,13 @@ def _batch(scenes: list, only_team=None, dtype=torch.float32):
     return t(nom), t(pos), torch.tensor(mask), t(cap)
 
 
-def run_port(scenes: list, iterations: int, dtype=torch.float32, only_team=None) -> dict:
+def run_port(scenes: list, iterations: int, dtype=torch.float32, only_team=None, **filter_kw) -> dict:
+    """The port on all scenes in one CPU batch. filter_kw (e.g. ``check_every``, S2 Task 7) goes to
+    ``filter_velocities``; without it the call is run T2's."""
     nom, pos, mask, cap = _batch(scenes, only_team, dtype)
     t0 = time.perf_counter()
-    res = filter_velocities(nom, pos, mask, RADIUS_M, cap, alpha=ALPHA, iterations=iterations, tolerance=TOL)
+    res = filter_velocities(nom, pos, mask, RADIUS_M, cap, alpha=ALPHA, iterations=iterations, tolerance=TOL,
+                            **filter_kw)
     sec = time.perf_counter() - t0
     v = res.velocities.double().numpy()
     return {"vel": [v[k, : len(s.pos_m)] for k, s in enumerate(scenes)], "emergency": res.emergency.numpy(),
@@ -190,11 +193,12 @@ def worst_constraint_violation(s: Scene, v: np.ndarray) -> float:
     return worst
 
 
-def cross_team_check(scenes: list, port: dict, iterations: int, dtype) -> dict:
-    """Port with both teams vs the port with the other team removed: any change is a cross-team correction."""
+def cross_team_check(scenes: list, port: dict, iterations: int, dtype, **filter_kw) -> dict:
+    """Port with both teams vs the port with the other team removed: any change is a cross-team correction.
+    filter_kw goes to ``run_port`` (the same settings as ``port``); without it the check is run T2's."""
     two = [k for k, s in enumerate(scenes) if s.teams == 2]
     sub = [scenes[k] for k in two]
-    alone = {t: run_port(sub, iterations, dtype, only_team=[t] * len(sub)) for t in (0, 1)}
+    alone = {t: run_port(sub, iterations, dtype, only_team=[t] * len(sub), **filter_kw) for t in (0, 1)}
     corrections = pairs = closing = 0
     for q, k in enumerate(two):
         s = scenes[k]

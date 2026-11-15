@@ -39,6 +39,14 @@ Differences from the original, by design:
 * No ``fixed`` rows: the game has no external drones. Passing ``fixed`` raises.
 * ``max_speed_mps`` may be per drone; the pruning bound and the push speed then use each drone's own
   cap (identical to the original when the cap is one number).
+
+Early stop (``check_every = k > 0``, S2 Task 7; ``k = 0``, the default, is the fixed loop of run T2, bit for
+bit): games with no active pair skip the sweeps (their answer is the speed clamp after the loop); every ``k``
+sweeps, starting at sweep 0, the games that still have an unconverged group are gathered into a smaller working
+batch, and the loop ends when none is left or ``iterations`` is reached. Converged groups are frozen in the
+fixed loop as well, so the answer equals the fixed loop's up to float rounding. Each check makes one host sync
+(``nonzero``), the one the S2 plan allows (decision D10); nothing else in the call syncs when every tensor
+argument, the speed cap included, is already on the inputs' device.
 """
 from dataclasses import dataclass
 
@@ -91,7 +99,7 @@ def _drone_residual(v: Tensor, ii: Tensor, jj: Tensor, member: Tensor, g: Tensor
 
 def filter_velocities(nominal_mps: Tensor, pos_m: Tensor, pair_mask: Tensor, safety_radius_m: float,
                       max_speed_mps: float | Tensor, alpha: float = 2.5, iterations: int = 1000,
-                      tolerance: float = 2e-3, fixed: None = None) -> FilterResult:
+                      tolerance: float = 2e-3, fixed: None = None, check_every: int = 0) -> FilterResult:
     """Project nominal velocities onto the safe set of every masked pair, all games at once.
 
     nominal_mps [N, M, 3], pos_m [N, M, 3]; pair_mask [M, M] or [N, M, M] bool, which must be symmetric,
@@ -103,10 +111,15 @@ def filter_velocities(nominal_mps: Tensor, pos_m: Tensor, pair_mask: Tensor, saf
     The result is on the inputs' device and dtype. ``fixed`` (the original's externally flown rows) is
     not supported: the game has no external drones. ``iterations`` defaults to the count of the parity
     record (1,000; see ``scripts/filter_parity.py``); fewer sweeps are cheaper and differ more from the
-    original.
+    original. ``check_every`` = k > 0 stops early (module docstring, "Early stop"): one host sync every k
+    sweeps; 0 runs all ``iterations`` sweeps on every game with no host sync. A speed cap given as a Python
+    number is copied to the device on every call (a host sync on CUDA); pass a device tensor in the step.
     """
     if fixed is not None:
         raise ValueError("fixed rows are not supported: the training game has no external drones")
+    check_every = int(check_every)
+    if check_every < 0:
+        raise ValueError(f"check_every must be >= 0 (0 = no early stop); got {check_every}")
     if nominal_mps.dim() != 3 or nominal_mps.shape[-1] != 3 or nominal_mps.shape != pos_m.shape:
         raise ValueError(f"nominal_mps and pos_m must both be [N, M, 3]; got {tuple(nominal_mps.shape)}, "
                          f"{tuple(pos_m.shape)}")
@@ -149,31 +162,52 @@ def filter_velocities(nominal_mps: Tensor, pos_m: Tensor, pair_mask: Tensor, saf
     s = torch.zeros_like(bias)
     converged = torch.zeros(n, m, dtype=torch.bool, device=dev)  # per drone, always equal within a group
 
-    for _ in range(iterations):
+    # The sweeps run on a working batch. With check_every = 0 it is every game, the tensors above themselves, so
+    # the loop is T2's bit for bit. With check_every = k > 0 it is re-gathered every k sweeps: the games that still
+    # have an active pair in an unconverged group; the others are written back to `out_v` first.
+    has_pair = active.any(dim=1)  # [N] games with something to filter
+    w_g, w_bias, w_active, w_pns, w_cap = g, bias, active, pair_norm_sq, cap
+    w_inv, w_weight, w_same = involvement, weight, same
+    work = torch.arange(n, device=dev)  # [W] game index of each working row
+    out_v = v
+
+    for it in range(iterations):
+        if check_every and it % check_every == 0:
+            out_v = out_v.index_copy(0, work, v)
+            live = (has_pair[work] & ~converged.all(dim=-1)).nonzero().squeeze(1)  # the one host sync (D10)
+            if live.numel() == 0:
+                break
+            work = work[live]
+            v, cap_corr, s, converged = v[live], cap_corr[live], s[live], converged[live]
+            w_g, w_bias, w_active, w_pns, w_cap = w_g[live], w_bias[live], w_active[live], w_pns[live], w_cap[live]
+            w_inv, w_weight, w_same = w_inv[live], w_weight[live], w_same[live]
         capped = v + cap_corr
         norms = capped.norm(dim=-1, keepdim=True)
-        cap_proj = torch.where(norms > cap, capped * (cap / norms.clamp(min=1e-12)), capped)
-        lhs = (g * (v[:, ii] - v[:, jj])).sum(-1) - s * pair_norm_sq + bias  # at y = v + corr
-        s_new = torch.where(active, (-lhs).clamp(min=0.0) / pair_norm_sq, torch.zeros_like(s))
+        cap_proj = torch.where(norms > w_cap, capped * (w_cap / norms.clamp(min=1e-12)), capped)
+        lhs = (w_g * (v[:, ii] - v[:, jj])).sum(-1) - s * w_pns + w_bias  # at y = v + corr
+        s_new = torch.where(w_active, (-lhs).clamp(min=0.0) / w_pns, torch.zeros_like(s))
         # consensus: sum over the speed ball and every active pair containing the drone, of its projection.
         # The pair sum is a matrix product with the +1/-1/0 incidence (it fixes the summation order, so results
         # are bit-identical to run T2); its operand is guarded first, so it is always finite and an inactive
         # pair is exactly 0: a drone outside a pair adds exactly nothing (0 x NaN never happens). A non-finite
         # step goes back as NaN to its own two drones only, by boolean indexing.
-        step = (s_new - s)[..., None] * g  # [N, P, 3]
-        bad_step = active & ~torch.isfinite(step).all(dim=-1)  # [N, P]
-        step = torch.where((active & ~bad_step)[..., None], step, torch.zeros_like(step))
-        acc = cap_proj + involvement[..., None] * v + torch.einsum("npd,pm->nmd", step, inc)
-        spoilt = (bad_step[..., None] & member[None]).any(dim=1)  # [N, M] drones of a non-finite pair step
-        new_v = torch.where(spoilt[..., None], torch.full_like(acc, float("nan")), acc / weight)
+        step = (s_new - s)[..., None] * w_g  # [W, P, 3]
+        bad_step = w_active & ~torch.isfinite(step).all(dim=-1)  # [W, P]
+        step = torch.where((w_active & ~bad_step)[..., None], step, torch.zeros_like(step))
+        acc = cap_proj + w_inv[..., None] * v + torch.einsum("npd,pm->nmd", step, inc)
+        spoilt = (bad_step[..., None] & member[None]).any(dim=1)  # [W, M] drones of a non-finite pair step
+        new_v = torch.where(spoilt[..., None], torch.full_like(acc, float("nan")), acc / w_weight)
 
-        delta = _group_max((new_v - v).abs().amax(dim=-1), same)
-        res = _group_max(_drone_residual(new_v, ii, jj, member, g, bias, active, cap), same)
+        delta = _group_max((new_v - v).abs().amax(dim=-1), w_same)
+        res = _group_max(_drone_residual(new_v, ii, jj, member, w_g, w_bias, w_active, w_cap), w_same)
         keep = converged[..., None]  # converged groups are frozen, as the original stops
         v = torch.where(keep, v, new_v)
         cap_corr = torch.where(keep, cap_corr, capped - cap_proj)
         s = torch.where(converged[:, ii], s, s_new)
         converged = converged | ((res <= tolerance) & (delta <= tolerance))
+
+    if check_every:
+        v = out_v.index_copy(0, work, v)
 
     # Final safeguard, as the original: zero non-finite rows (group then not converged), clamp to the cap.
     finite = torch.isfinite(v).all(dim=-1) & ~bad  # [N, M]

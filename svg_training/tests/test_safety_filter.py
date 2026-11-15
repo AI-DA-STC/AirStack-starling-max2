@@ -308,3 +308,149 @@ def test_parity_script_writes_record_and_ledger_row_and_refuses_overwrite(tmp_pa
     assert len(rows) == len(before) + 1
     assert fp.main(args) == 1  # refuses to overwrite
     assert len([ln for ln in ledger.read_text().splitlines() if ln.startswith("| T")]) == len(rows)
+
+
+# --- `check_every`: early stop with a shrinking working batch (S2 Task 7) -------------------------
+
+def _scene_batch(count, seed):
+    fp = _load_script()
+    return fp._batch(fp.make_scenes(count, seed))
+
+
+def test_check_every_matches_fixed_loop():
+    nom, pos, mask, cap = _scene_batch(200, 7)
+    a = filter_velocities(nom, pos, mask, 0.55, cap, iterations=300)
+    b = filter_velocities(nom, pos, mask, 0.55, cap, iterations=300, check_every=8)
+    assert (a.velocities - b.velocities).abs().max() <= 1e-5
+    assert torch.equal(a.emergency, b.emergency) and torch.equal(a.corrected, b.corrected)
+
+
+def test_check_every_zero_is_bit_identical():
+    nom, pos, mask, cap = _scene_batch(200, 7)
+    a = filter_velocities(nom, pos, mask, 0.55, cap, iterations=300)
+    b = filter_velocities(nom, pos, mask, 0.55, cap, iterations=300, check_every=0)
+    for x, y in ((a.velocities, b.velocities), (a.corrected, b.corrected), (a.residual, b.residual),
+                 (a.emergency, b.emergency)):
+        assert torch.equal(x, y)
+
+
+def test_inactive_games_return_clamped_nominal():
+    """Drones 10 m apart: no pair can be violated, the game skips the sweeps; the answer is the speed clamp."""
+    gen = torch.Generator().manual_seed(17)
+    pos = torch.tensor([[0.0, 0, 1], [10.0, 0, 1], [0.0, 10.0, 1], [10.0, 10.0, 1]]).expand(32, 4, 3).clone()
+    nom = (torch.rand(32, 4, 3, generator=gen) - 0.5) * 8.0  # many over the 2 m/s cap
+    res = filter_velocities(nom, pos, team_pair_mask(2, 2), R_M, 2.0, iterations=300, check_every=8)
+    norms = nom.norm(dim=-1, keepdim=True)
+    clamped = torch.where(norms > 2.0, nom * (2.0 / norms), nom)
+    assert (res.velocities - clamped).abs().max() <= 1e-6
+    assert not res.emergency.any()
+    fixed = filter_velocities(nom, pos, team_pair_mask(2, 2), R_M, 2.0, iterations=300)
+    assert torch.equal(res.corrected, fixed.corrected)
+
+
+def test_check_every_with_per_game_mask():
+    """[N, M, M] masks with drop-outs (a dropped drone pairs with nobody) give the fixed loop's answer."""
+    gen = torch.Generator().manual_seed(19)
+    pos = torch.rand(64, 8, 3, generator=gen) * 3.0
+    nom = (torch.rand(64, 8, 3, generator=gen) - 0.5) * 4.0
+    live = torch.rand(64, 8, generator=gen) > 0.25  # about a quarter of the drones dropped out
+    mask = ~torch.eye(8, dtype=torch.bool).expand(64, 8, 8) & live[:, :, None] & live[:, None, :]
+    a = filter_velocities(nom, pos, mask, R_M, 2.0, iterations=300)
+    b = filter_velocities(nom, pos, mask, R_M, 2.0, iterations=300, check_every=8)
+    assert (a.velocities - b.velocities).abs().max() <= 1e-5
+    assert torch.equal(a.emergency, b.emergency) and torch.equal(a.corrected, b.corrected)
+
+
+def test_check_every_stops_early(monkeypatch):
+    """Solvable games converge in tens of sweeps; with check_every the loop ends soon after, not at `iterations`;
+    a game that never converges (coincident drones) keeps sweeping alone in a one-game working batch."""
+    calls = []
+    real = sf._drone_residual
+    monkeypatch.setattr(sf, "_drone_residual", lambda *a: calls.append(a[0].shape[0]) or real(*a))
+    names = ["head_on_outside_keep_out", "head_on_offset", "three_way"]
+    m = 3
+    pos = torch.full((len(names), m, 3), 50.0, dtype=torch.float64)
+    nom = torch.zeros(len(names), m, 3, dtype=torch.float64)
+    pos[:, :, 0] += 10.0 * torch.arange(m)  # padding drones far apart
+    for k, name in enumerate(names):
+        p_, n_, _, _ = HAND_SCENES[name]
+        pos[k, : len(p_)], nom[k, : len(n_)] = torch.tensor(p_), torch.tensor(n_)
+    mask = team_pair_mask(m, 0)
+    fixed = filter_velocities(nom, pos, mask, R_M, 2.0, iterations=5000)
+    calls.clear()
+    early = filter_velocities(nom, pos, mask, R_M, 2.0, iterations=5000, check_every=8)
+    assert len(calls) - 2 < 1000  # one residual per sweep, plus two after the loop
+    assert (early.velocities - fixed.velocities).abs().max() <= 1e-9
+    calls.clear()  # add a coincident game: it never converges, so the loop runs on, on that game alone
+    pos2, nom2 = torch.cat([pos, pos[:1]]), torch.cat([nom, nom[:1]])
+    pos2[-1, 1] = pos2[-1, 0]
+    filter_velocities(nom2, pos2, mask, R_M, 2.0, iterations=400, check_every=8)
+    assert len(calls) - 2 == 400 and calls[-3] == 1
+
+
+def test_check_every_must_not_be_negative():
+    nom, pos, mask, cap = _scene_batch(4, 7)
+    with pytest.raises(ValueError, match="check_every"):
+        filter_velocities(nom, pos, mask, 0.55, cap, iterations=10, check_every=-1)
+
+
+def test_t2_numbers_reproduced_at_1000_sweeps_check_every_0():
+    """T2's 2,000 scenes (seed 20261115) at 1,000 sweeps, check_every 0: the four T2 numbers of its record."""
+    fp = _load_script()
+    threads = torch.get_num_threads()
+    torch.set_num_threads(min(8, threads))  # T2's setting
+    try:
+        scenes = fp.make_scenes(2000, 20261115)
+        ref = fp.run_original(scenes)
+        port = fp.run_port(scenes, 1000, torch.float32, check_every=0)
+        ev = fp.evaluate(scenes, ref, port)
+        cross = fp.cross_team_check(scenes, port, 1000, torch.float32, check_every=0)
+    finally:
+        torch.set_num_threads(threads)
+    assert fp._fmt(ev["max_abs_dv_mps"]) == "1.6666"
+    assert fp._fmt(ev["constraint_residual_max"]) == "2.08973"
+    assert fp._fmt(ev["emergency_agreement_min"]) == "0.999"
+    assert cross["cross_team_corrections"] == 0
+    assert f"{ev['max_dv_subset_no_gs']:.3g}" == "6.18e-05"
+    assert len(ev["subset"]) == 1779 and int(port["emergency"].sum()) == 223
+
+
+# --- host syncs on CUDA (D10: one per check, none otherwise) --------------------------------------
+
+def _cuda_batch():
+    gen = torch.Generator().manual_seed(23)
+    pos = (torch.rand(256, 8, 3, generator=gen) * 4.0).cuda()
+    nom = ((torch.rand(256, 8, 3, generator=gen) - 0.5) * 4.0).cuda()
+    mask = torch.ones(8, 8, dtype=torch.bool).fill_diagonal_(False).cuda()  # every pair, as the Starling layer
+    cap = torch.tensor(2.0, device="cuda")
+    return nom, pos, mask, cap
+
+
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="no CUDA device")
+def test_tensor_cap_makes_no_host_sync_cuda():
+    nom, pos, mask, cap = _cuda_batch()
+    filter_velocities(nom, pos, mask, R_M, cap, iterations=20)  # warm-up (lazy CUDA init)
+    torch.cuda.synchronize()
+    torch.cuda.set_sync_debug_mode("error")
+    try:
+        filter_velocities(nom, pos, mask, R_M, cap, iterations=20)
+        filter_velocities(nom, pos, mask, R_M, cap, iterations=20, check_every=0)
+    finally:
+        torch.cuda.set_sync_debug_mode("default")
+
+
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="no CUDA device")
+def test_check_every_one_host_sync_per_check_cuda():
+    import warnings
+    nom, pos, mask, cap = _cuda_batch()
+    filter_velocities(nom, pos, mask, R_M, cap, iterations=40, check_every=8)  # warm-up
+    torch.cuda.synchronize()
+    torch.cuda.set_sync_debug_mode("warn")
+    try:
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            filter_velocities(nom, pos, mask, R_M, cap, iterations=40, check_every=8)
+    finally:
+        torch.cuda.set_sync_debug_mode("default")
+    syncs = [w for w in caught if "synchroniz" in str(w.message)]
+    assert 1 <= len(syncs) <= 40 // 8  # checks at sweeps 0, 8, 16, 24, 32 at most; it may stop sooner

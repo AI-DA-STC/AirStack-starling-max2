@@ -2,23 +2,52 @@
 
 > **How to use this file.** Read it at the start of a session, after [../../CLAUDE.md](../../CLAUDE.md).
 > §4 is the current state, §5 is what is waiting on people. Update both before you stop.
-> Last updated: 15 November 2026 (human documentation written: README, docs/GETTING_STARTED, HOW_IT_WORKS, S0_RESULTS, GLOSSARY; stale facts corrected).
+> Last updated: 15 November 2026, evening (S1 hand-over: S1 done, results in docs/S1_RESULTS.md; STANDARDS §5 updated with what S1 measured).
 
 ## 0. Resume here (for a new session or another Claude account)
 
 Everything needed is in this folder; nothing depends on the previous chat.
 
+**Where it stands.** S0 and S1's build tasks are done. Nothing has been trained. Both gated S1 runs (T2, T3) are
+FAIL, and no S1 gate on the drone model has passed yet: that waits on the real flight below. S1's results, with figures, are in
+[../S1_RESULTS.md](../S1_RESULTS.md); the short version:
+
+| Run | Result | Meaning |
+|---|---|---|
+| T2, filter copy | FAIL, accepted by the owner; re-confirmation on the counts asked (§5) | of the 1,779 scenes where CMU did not push apart, 13 are over the 0.02 m/s limit (3 over 0.1; worst 1.67 and 1.04 m/s, where our copy pushed apart) and 109 over the 2e-3 residual limit (CMU's own filter: 94); emergency agreement 1,998 of 2,000 |
+| T3, AirStack simulator fit | FAIL | the sim's sag and swing-back come from the commander's wall clock against a PX4 running 1.907 times faster |
+| real-log fit (no ledger row) | exploratory, no gates | real drone ≈ its trajectory setpoint delayed about 0.1–0.15 s at up to 0.5 m/s; the model is "observed in flight logs", never "validated" |
+| T4, tier 1 with the real chain | INFO, no gates | filter at 1,000 sweeps: 10,027 / 7,938 game-steps/s at 4,096 games (open / full sensing), too slow to train. Lead's arithmetic from T4, not measured training: 2 billion drone-steps with full sensing take about 9 h at 4,096 games, about 5 h at 16,384 games (14,042 game-steps/s) |
+
+Tests at hand-over (15 November, evening, laptop host, conda `env_isaaclab`): `316 passed in 214.84s`.
+
 1. `cd ~/AirStack-starling-max2/svg_training && claude`, then say: **"Run the train-start skill, read
-   docs/claude/HANDOFF.md §0, and continue S0 from the first unticked task."**
-2. The owner approved on 14 November 2026: the design; the S0 gates and decision rules in the S0 plan
-   (Task 1, `[gates]` and `[decisions]`, unchanged); **subagent-driven execution** (a fresh agent
-   builds each task from the plan, a fresh reviewer checks it, the lead verifies by running the tests).
-3. Rules while building: write only inside `svg_training/`; commit finished, tested steps with explicit
+   docs/claude/HANDOFF.md §0, and tell me what is waiting on me."**
+2. **Next, in order.**
+   - **Real flight with planned pushes (owner flies; PENDING).** It gives the drone model its run of record.
+     What to record is listed in [../S1_RESULTS.md](../S1_RESULTS.md#what-the-owner-needs-to-do-next)
+     (from the exploratory record §8 and `runs/sdd/s1/real-logs-survey.md` §6). Afterwards: gates written
+     BEFORE the fit, the fit, a record, a ledger row and a named parameter file under `params/`.
+   - **S2 needs a plan and the owner's approval before any code.** Nothing of S2 is written. The plan must
+     settle a faster safety filter (fewer sweeps, an early stop, CUDA graphs; each measured against T2's
+     checks), and uses the open items in §5 (zone size, arena, what a drone may observe about others).
+   - **Gatekeeper reading of the S1 records** was running at hand-over time; read its result before quoting
+     any S1 number outside this folder.
+3. **Decisions waiting on the owner** (details in S1_RESULTS): the filter speed-up and how much agreement with
+   CMU is enough; the commander's wall clock in the AirStack simulator (flight code, outside this folder);
+   whether to tell CMU about the filter gap through the unfiltered position setpoint (HYPOTHESIS for the real
+   drone); speed caps (STANDARDS §4 says Guard 0.67 m/s from 1.0, the real stick cap is 0.5, so Strike 0.5 and
+   Guard 0.33, which tier 1 uses); `docs/CONFIG.md` 20 m/s against 3.0 m/s in the logs; what the unlabelled log
+   `08_34_27.ulg` was; whether the simulator step session (Task 5 scripts, not run) is still wanted; the
+   emergency push-apart speeds that differ from CMU's (T2 review I3).
+4. Rules while building: write only inside `svg_training/`; commit finished, tested steps with explicit
    paths, never push (builder agents make no git writes; the lead commits); no `pip install`; Python is
    `~/miniconda3/envs/env_isaaclab/bin/python`; tests with `python -m pytest -q` from this folder.
-4. Model use the owner prefers: the lead plans and reviews, cheaper models build. He expects usage
-   limits to run out quickly, so **update the table below after every task**, before starting the next.
-5. A copy of this file is kept at `~/Downloads/claude-handoff-svg-training.md`; refresh it with
+   Owner rules of 15 November: every results page shows generated figures or a flowchart; plain language for
+   a reader new to the topic; no change to flight or simulator code (STANDARDS §11).
+5. Model use the owner prefers: the lead plans and reviews, cheaper models build. He expects usage
+   limits to run out quickly, so **update the tables below after every task**, before starting the next.
+6. A copy of this file is kept at `~/Downloads/claude-handoff-svg-training.md`; refresh it with
    `cp docs/claude/HANDOFF.md ~/Downloads/claude-handoff-svg-training.md` after each update.
 
 **S1 progress** (plan: [../plans/2026-11-15-s1-drone-model-and-safety-filter.md](../plans/2026-11-15-s1-drone-model-and-safety-filter.md); build ledger `runs/sdd/s1/progress.md`)
@@ -31,9 +60,9 @@ Everything needed is in this folder; nothing depends on the previous chat.
 | 4 | Fit v0 on the existing teleop session | DONE, reviewed: run of record **T3 = FAIL** on 3 of 4 gates (`records/2026-11-15_s1_fit_v0_record.md`, figures in `docs/figures/s1_t3_*`). Main finding: on every 0.5 m/s push the sim drone peaks at ~85 % of the command, sags to 50–65 % while the command is still held, then drifts backwards ~25 % after release; no lag model can do that. CAUSE FOUND (`runs/sdd/s1/task-4-cause.md`, replay matches to 0.019 m/s): in the SIM the commander advances its teleop reference on the wall clock while PX4 runs 1.9× faster, so the drone outruns it (sim-only; real drone σ = 1). Recommendation for Task 6: copy the commander's teleop law in code with the time scale σ as a parameter, and fit only PX4's lag (setpoint → velocity; a first-order fit gives held-out RMS 0.036–0.047 m/s). Owner to confirm; running the commander on sim time inside AirStack is his call. Sim time scale this session 1.907 (ulog) |
 | 5 | Designed step session in the AirStack simulator (Isaac starts once) | SCRIPTS DONE and committed after 5 fix rounds and a safety re-review (`runs/sdd/s1/task-5-rereview.md`: safe with the owner present, no open Critical/Important). 270 tests pass; dry run creates nothing. **Real session NOT RUN, held for the owner.** Conditions: launch detached (`setsid nohup bash scripts/record_steps.sh <name> > runs/<name>.out 2>&1 &`, about 7–11 min), and the owner confirms no real drone, mocap bridge or second ground station is on DDS domain 1. Expected: 35 of 36 steps fly (one 2.0 m/s descent skipped by the floor guard), peak about 16.5 m in the sim. Any other commander seen → exit 67, no `land`, no `down` |
 | 6 | Fit v1 on the designed steps | REPLACED: the drone model's run of record comes from planned pushes at the next REAL flight (list in `records/2026-11-15_s1_real_px4_exploratory.md`); the sim step session is optional |
-| 7 | Batched safety filter with team mask, parity run | built; run of record **T2 = FAIL** on 2 of 4 gates (`records/2026-11-15_s1_filter_parity_record.md`). DONE: reviewed (task review + re-review clean after one fix: a NaN in one team leaked into the other team; T2 numbers unchanged bit for bit); 28 tests pass; figures in the record. **Owner, 15 Nov: "if 1998/2000 checks passed its ok"** = T2 stays FAIL in the ledger, gates unchanged, and S1 goes on with this filter. Background: the 2 failing numbers come from 2 of 2,000 scenes where CMU's own filter needs its slow one-pair-at-a-time phase and stops up to 0.10 m/s short of the exact answer. Options: re-define the two gates against the exact answer, add that slow phase (a pair loop), or accept FAIL. Also: 1,000 sweeps cost 582 ms per step for 4,096 games, about 7,000 game-steps/s, far too slow to train; Task 8 must measure a lower sweep count |
+| 7 | Batched safety filter with team mask, parity run | built; run of record **T2 = FAIL** on 2 of 4 gates (`records/2026-11-15_s1_filter_parity_record.md`). DONE: reviewed (task review + re-review clean after one fix: a NaN in one team leaked into the other team; T2 numbers unchanged bit for bit); 28 tests pass; figures in the record. **Owner, 15 Nov: "if 1998/2000 checks passed its ok"** = T2 stays FAIL in the ledger, gates unchanged, and S1 goes on with this filter. The owner accepted T2 on 15 November ('if 1998/2000 checks passed its ok'); that figure is the emergency-agreement count. Re-confirmation on the counts above was asked the same day. Background (corrected after the gatekeeper check, `runs/sdd/s1/gatekeeper-s1.md`): of the 1,779 scenes where CMU did not push apart, 13 are over the 0.02 m/s limit (3 over 0.1 m/s; the worst 2, 1.67 and 1.04 m/s, are where our copy pushed apart) and 109 over the 2e-3 residual limit (CMU's own filter is over it in 94); the speed failures are scenes where CMU needs its slow one-pair-at-a-time phase, and CMU's own answer stops up to 0.10 m/s short of the exact one. Options: re-define the two gates against the exact answer, add that slow phase (a pair loop), or accept FAIL. Also: 1,000 sweeps cost 582 ms per step for 4,096 games, about 7,000 game-steps/s (Task 7 estimate; T4 later measured 10,027 open / 7,938 full sensing), far too slow to train; Task 8 must measure a lower sweep count |
 | 8 | Tier 1 with the fitted model and the filter | DONE, reviewed clean after 1 fix round. Real-drone chain in tier 1 (commander copy + exploratory PX4 response + team filter at the commander's CBF point; per-team speed cap, Guard = Strike ÷ 1.5). Run T4 = INFO (`records/2026-11-15_s1_tier1_fitted_filter_record.md`): 4,096 games, open/full sensing: filter off 2.27 M / 38.3 k game-steps/s; 1,000 sweeps 10.0 k / 7.9 k; 200 sweeps 48.4 k / 21.3 k. Finding (HYPOTHESIS for the real drone, owner told): the commander's CBF filters only the teleop velocity, the position setpoint up to 0.2 m ahead is not filtered, so teammates flown head-on reach 1.083 m (keep-out 1.10 m) in the copy |
-| 9 | Hand-over | last |
+| 9 | Hand-over | DONE: [../S1_RESULTS.md](../S1_RESULTS.md) written (10 figures, route flowchart, run table, the owner's next steps); STANDARDS §5 rows and rules 3 and 8, new rule 10 (training model from real flight logs); WHAT_WE_DID §6–7, GLOSSARY, README, CLAUDE.md status; report `runs/sdd/s1/task-9-report.md`; tests `316 passed`. Gatekeeper reading of the S1 records ran in parallel |
 
 **Owner, 15 Nov afternoon ("ok i will follow all ur reccomendations"):** (1) Task 6 = copy the commander's teleop law in code (time scale σ as a parameter, 1 for the real drone) + fit only PX4's lag; fit it from the sim first (label "simulator drone"), then from REAL flight logs, which is what training should use, plus small randomisation. The real-log fit is a NEW step outside the approved plan; first a read-only survey of ~/flight_logs/2026-11-1x (`runs/sdd/s1/real-logs-survey.md`, running). (2) Owner says no drone is up. The sim step session is still held: at 15:xx the laptop was on WiFi only (Ethernet down, 10.10.100.x, remote desktop active), which is the Isaac-start WiFi-crash setup; launch once on Ethernet or with the owner at the machine. SURVEY RESULT (`runs/sdd/s1/real-logs-survey.md`): the real drone gets position + velocity setpoints (px4_interface TRAJECTORY mode, CMU comment ~0.1 s lag), the sim gets velocity only through MAVROS (~0.7 s): a sim-fitted model would make training think the drone is sluggish. Real ulogs: setpoint 5 Hz, position 10 Hz, ≤0.5 m/s, no stick topic. Exploratory real fit on log103 (#36) DONE and committed (`records/2026-11-15_s1_real_px4_exploratory.md`, no gates, reviewed clean after one fix round): commander → px4_interface TRAJECTORY mode → PX4 1.14 `v_ff + 0.95·(p_sp − p)`; real σ = 1.01. After choosing the family on training legs only, held-out RMS 0.058 m/s, the SAME as the baseline 'drone flies the setpoint speed ~0.15 s later' (no delay: 0.095). So at ≤0.5 m/s the real drone ≈ setpoint delayed ~0.1–0.15 s; the model misses the overshoot (held-out peaks up to 1.31×) and the slow drift after release (−0.14×). Also found: MPC_XY_VEL_MAX is 3.0 m/s on both drones (docs/CONFIG.md says 20 — owner's doc, not edited); tilt limit 30° drone_1, 45° drone_2. Recommendation: sim step session deprioritised (it measures the wrong chain); the run of record for the drone model should come from designed steps at the next real flight with full-rate logging. (3) The commander's wall-clock bug is SIM-ONLY (the real drone runs in real time); fixing AirStack is the owner's call, not done here.
 
@@ -84,7 +113,7 @@ Jeremy (Robotics AI Engineer, NEAR Lab, ST Engineering) wants training for the S
 run in parallel on a GPU. On 14 November 2026 a first session read the flight stack and the programme
 website, ran web research on drone training in Isaac Lab, proposed a pipeline, and the owner chose an
 approach. This folder now holds the rules, the design, the research digest, the diagrams, and the
-agents and skills for the work. Since then S0 has been built and run (T1, §0); **nothing has been trained.**
+agents and skills for the work. Since then S0 and S1 have been built and run (T1–T4, §0); **nothing has been trained.**
 
 ## 2. Read these first
 
@@ -183,12 +212,13 @@ stay out of git; real flights of a contact policy should start with a virtual co
 
 | Item | Who | Needed before |
 |---|---|---|
+| **Re-confirmation of T2's acceptance on the exact counts** (13 scenes over the speed limit, 109 over the residual limit; his "1998/2000" is the emergency-agreement count). Asked 15 November | owner | quoting T2 as accepted outside this folder |
 | A pair mask in CMU's safety filter, so that a contact tag can fly at all; and a flight safety case for deliberate contact | owner + CMU (outside this folder) | any flight of a contact policy |
 | The zone's size and place in each world; the playing volume | owner | S2 |
 | Licence of the construction-site asset (an Unreal Engine asset pack exported by the lab; no licence file found) | owner | before anything made from it leaves the lab |
 | What the real drone senses its surroundings with: a known map, or an on-board range sensor | owner | S3 |
 | Control level for contact tags: stay at velocity, or add a final-approach skill at thrust and body rates | owner, on the S2 numbers | after S2 |
-| When real-drone velocity-step logs can be flown (simulator logs: approved, by running `tools/sim.sh`) | owner | the `real` parameter set |
+| The real flight with planned pushes (list: [../S1_RESULTS.md](../S1_RESULTS.md#what-the-owner-needs-to-do-next)) | owner | the `real` parameter set's run of record |
 | Arena sizes in metres (lab, hangar, outdoor) and zone radius | owner + NUS | S2 |
 | What a drone may observe about others (full state, or shared with delay and loss) | owner + partners | S2 |
 | How a drop-out is simulated | owner + partners | S4 |
@@ -198,15 +228,15 @@ stay out of git; real flights of a contact policy should start with a virtual co
 | Build and try the image on the training workstation (`docker/build.sh`, then `docker/run.sh`) | owner + Claude | S0 on that machine |
 | A ROS 2 policy node inside the AirStack tree | owner (separate approval) | S5 |
 | Rotor positions for tier 2: sim CAD or the drone's parameters | owner | S4 |
-| Drone speed limit: the parameter file says 3 m/s, `docs/CONFIG.md` says 20 m/s | read the live drone | S1 |
+| Drone speed limit: the parameter file and the 13 November logs say 3.0 m/s, `docs/CONFIG.md` says 20 m/s | owner (his doc) | before speeds above 0.5 m/s |
 | Driver 595 with AirStack's Isaac Sim 5.1 | untested | any move to Isaac Lab 3.0 on a machine that also runs AirStack |
 
 **Not verified** (carry these as doubts, not facts): every published throughput estimate for Isaac Lab (S0 measured
 ours: [../S0_RESULTS.md](../S0_RESULTS.md)); the
 Isaac Lab 3.0 release details beyond what RESEARCH cites; the links in RESEARCH (collected by web
 research agents; open one before quoting it outside the lab); the axis order of the inertia values;
-the velocity response (0.15 s + 0.55 s), which comes from one CMU log at 5 m/s, not from our drones;
-whether PX4's position controller differs between 1.14 (drone) and 1.16.1 (AirStack simulator).
+the real drone's response above 0.5 m/s (S1 saw only up to 0.5 m/s, exploratory); the vertical response
+(not fitted); whether the drone's PX4 build matches tag v1.14.0, which S1 read.
 
 **Independent checks run in session 1.** A builder check of the design and a review by the agent that
 wrote the agents and skills found five wrong statements (simulator speed cap, arena box, delay
@@ -217,9 +247,8 @@ STANDARDS and DESIGN. Their open questions are in the table above.
 
 1. Run the `train-start` skill.
 2. The design is approved. A change to it goes through the owner first.
-3. S0 is built and run (T1, §0). Next is S1: [../plans/2026-11-15-s1-drone-model-and-safety-filter.md](../plans/2026-11-15-s1-drone-model-and-safety-filter.md),
-   awaiting the owner's approval; then build it with `train-implementer`, test first, and have
-   `train-gatekeeper` read the record.
+3. S0 and S1's build tasks are done (§0, [../S1_RESULTS.md](../S1_RESULTS.md)); no S1 gate on the drone model has passed yet. Next is the S2 plan, for the owner's
+   approval; then build it with `train-implementer`, test first, and have `train-gatekeeper` read the record.
 4. One step at a time, S0 to S5. Each ends on a record and a ledger row.
 5. For a design question, brief the adviser agents in parallel with the files, not your conclusion;
    reconcile; show the owner; then build.

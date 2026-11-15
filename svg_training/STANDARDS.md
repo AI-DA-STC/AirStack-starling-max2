@@ -149,8 +149,11 @@ position and velocity loops, attitude lag, delay, limits.
 | Drag | not identified | OPEN | — |
 | PX4 velocity loop gains, horizontal | P 1.8, I 0.4, D 0.2 | MEASURED | `starling_1_indoor_params.params` (`MPC_XY_VEL_*_ACC`) |
 | PX4 position gains | horizontal 0.95, vertical 5; vertical velocity P 8 | MEASURED | same file |
-| PX4 limits on the drone | 3 m/s horizontal, 2 m/s up, 0.6 m/s down, tilt 45° | MEASURED | same file; `docs/CONFIG.md` states 20 m/s — read the live drone before relying on either |
-| Response to a bare velocity command | 0.15 s delay plus 0.55 s lag | MEASURED | `svg_ground_control/trajectory.py` header: one CMU log, drone_2 at 5 m/s, 20 September 2026; not measured on our drones or at lab speeds |
+| PX4 limits on the drone | 3 m/s horizontal, 2 m/s up, 0.6 m/s down, tilt 45° | MEASURED | same file; `docs/CONFIG.md` states 20 m/s. The 13 November flight logs show 3.0 m/s on both drones, tilt 30° on drone_1 and 45° on drone_2 ([exploratory record §1](records/2026-11-15_s1_real_px4_exploratory.md#1-the-path-a-teleop-command-takes-on-the-real-drone)) |
+| Command route, real drone | not a bare velocity: the commander sends a trajectory setpoint (position + speed + acceleration) through `px4_interface` TRAJECTORY mode; PX4 1.14 flies `speed = sent speed + 0.95 × (position setpoint − position)`; clocks agree (ratio 1.01) | MEASURED | [exploratory record §1, §4](records/2026-11-15_s1_real_px4_exploratory.md#1-the-path-a-teleop-command-takes-on-the-real-drone): `MPC_XY_P` 0.95 read from the ulogs; a least-squares fit to the log gives 0.98 |
+| Response of the real drone to that setpoint | close to the setpoint's speed delayed by about 0.1–0.15 s, at up to 0.5 m/s: held-out RMS 0.058 m/s for the fitted model and for a plain 0.15 s delay (0.095 with no delay); misses the overshoot (up to 1.31×) and the slow drift after release (−0.14×) | MEASURED, exploratory (no gates, one flight) | [exploratory record §4](records/2026-11-15_s1_real_px4_exploratory.md#4-results); `params/real_exploratory_v0.toml` |
+| Command route, AirStack simulator | speed only, through MAVROS (`setpoint_raw/local`) to PX4 1.16.1; the commander moves its reference point on the wall clock while PX4 runs 1.907 times faster (1.73–2.06 within the session), so a held push sags to about half speed and swings back on release | MEASURED | [T3 record](records/2026-11-15_s1_fit_v0_record.md#time-scale--measured); `runs/sdd/s1/task-4-cause.md` (replay within 0.019 m/s) |
+| Response to a bare velocity command | 0.15 s delay plus 0.55 s lag; the real drone does not take this route today (row above) | MEASURED | `svg_ground_control/trajectory.py` header: one CMU log, drone_2 at 5 m/s, 20 September 2026; not measured on our drones or at lab speeds |
 | Response with acceleration feed-forward | about 0.1 s lag | MEASURED | same header; `docs/ARCHITECTURE.md` |
 | Safety filter in flight today | keep-out radius 0.55 m (1.10 m centre to centre), alpha 2.5, 20 Hz, **every pair of drones**; the flight stack has no notion of teams | FIXED | `cbf_filter.py`, `swarm_commander.py`, `_ours` configs |
 
@@ -164,8 +167,8 @@ Rules:
    whose rate gains are halved on purpose (iron rule 9). A tier 1 parameter set fitted to AirStack
    simulator logs is a different thing: it describes that simulator and is used to predict stage 6.
 3. **Two tier 1 parameter sets**: `airstack_sim` (fitted to the AirStack simulator) and `real`
-   (fitted to the drone). Training randomises over a range that covers both; evaluation reports each
-   separately (PROPOSED).
+   (fitted to the drone). Training uses `real` with small random variation around it (rule 10);
+   `airstack_sim` predicts stage 6; evaluation reports each separately (PROPOSED).
 4. Every model parameter set is a named, versioned file with its source log. A policy records which
    set it trained on.
 5. Randomise around the fitted values, do not replace fitting with wide randomisation
@@ -177,10 +180,19 @@ Rules:
    every pair apart, so a policy that tags by contact cannot fly until CMU's filter takes a pair
    mask. That change is outside this folder.
 8. **PX4 versions differ**: the drone runs PX4 1.14, the AirStack simulator 1.16.1. Both tiers copy
-   the drone's version of the control law. Whether the position controller changed between the two
-   versions has not been checked (OPEN, before S1).
+   the drone's version of the control law. Between the two versions the position step is unchanged and
+   the velocity loop differs (new notch and low-pass filters, restructured anti-windup) (MEASURED,
+   [S1 plan, facts](docs/plans/2026-11-15-s1-drone-model-and-safety-filter.md#facts-this-plan-rests-on-s1-research-15-november-2026)).
+   The routes differ more than the versions (MEASURED, S1): the drone gets a trajectory setpoint
+   through `px4_interface`, the simulator a speed only through MAVROS, with its PX4 clock about 1.9
+   times the commander's ([exploratory record §6](records/2026-11-15_s1_real_px4_exploratory.md#6-real-drone-and-airstack-simulator-side-by-side)).
 9. **Unit trap**: Isaac Lab's `ThrusterCfg.thrust_const_range` is in N/(revolutions per second)²; the
    identified thrust coefficient is in N/(rad/s)². Convert, and test the hover thrust.
+10. **The drone model for training is fitted from real flight logs; simulator fits describe the
+    simulator only** (owner, 15 November 2026; FIXED). The AirStack simulator feeds PX4 by a different
+    route and clock (rule 8), so its fit would teach a policy the wrong drone. The `real` set gets its
+    run of record from planned pushes at a real flight
+    ([S1_RESULTS](docs/S1_RESULTS.md#what-the-owner-needs-to-do-next)).
 
 **World models.** Both tiers take the world from the same source file, so they cannot drift apart.
 
@@ -192,9 +204,9 @@ Rules:
 | Tier 2 world | one static triangle mesh outside the per-game folders; drones carry simple colliders | PROPOSED | RESEARCH §9 |
 | Distance-field resolution | 0.2 m to start, 0.1 m if gaps matter | PROPOSED | RESEARCH §9 |
 
-10. World files are read, never changed. Anything baked from a licensed asset (meshes, distance
+11. World files are read, never changed. Anything baked from a licensed asset (meshes, distance
     fields) goes under `runs/` or a git-ignored folder, never into git.
-11. Appearance is dropped: the training copy of a world is collision shape only.
+12. Appearance is dropped: the training copy of a world is collision shape only.
 
 ## 6. Training rules
 
@@ -249,8 +261,8 @@ Rules:
 
 | Limit | Status | Set in the plan for |
 |---|---|---|
-| Stage 1: error between the fitted model and the logged velocity step | OPEN | S1 |
-| Safety filter port: tolerance against `cbf_filter.py` | OPEN | S1 |
+| Stage 1: error between the fitted model and the logged velocity step: held-out velocity RMS ≤ 0.10 m/s, t63 error ≤ 0.10 s, fitted delay 0–0.40 s, at least 8 held-out steps | FIXED (owner, 15 November 2026) | S1: [`configs/s1.toml`](configs/s1.toml) `[fit_gates]` |
+| Safety filter port: tolerance against `cbf_filter.py`: speed difference ≤ 0.02 m/s, constraint residual ≤ 2e-3, emergency agreement ≥ 0.99, Guard–Strike corrections 0, over 2,000 scenes | FIXED (owner, 15 November 2026) | S1: [`configs/s1.toml`](configs/s1.toml) `[filter_gates]` |
 | Stage 4: allowed gap in hold rate and in step response between tier 1 and tier 2 | OPEN | S4 |
 | Stage 6: allowed gap between the training simulator and the AirStack simulator | OPEN | S5 |
 

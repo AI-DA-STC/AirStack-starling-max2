@@ -95,3 +95,9 @@ After review, the fitted path caps each team's command norm before the commander
 ## Gates
 
 None. This run is informational (`gates.toml`, written before the first point: `gates = []`). Result: INFO (no gates).
+
+## Notes added after the gatekeeper check (15 Nov)
+
+Added by the technical writer at the lead's request; no number in this record changed.
+
+- **Parameter file changed after the run (comments only).** The run used the copy in `runs/2026-11-15_s1_tier1_fitted_filter/real_exploratory_v0.toml`, sha256 `9233fb03e520` (the value under "Model parameter set"). Afterwards `params/real_exploratory_v0.toml` gained three comment lines, the feed-forward caveat from review m1; no value changed (`diff` of the two files shows only those three added lines). Its sha256 is now `4c93543f51ab`.

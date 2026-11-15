@@ -18,8 +18,8 @@ bag_to_csv.py. Steps:
   3. fit.to_vehicle_time (same scale and t0 for both streams), fit.resample_uniform, fit.step_data segments.
      Split: even segments train, odd held out (fit.split_alternate). --steps-json (virtual_stick.py plan) only
      labels the segments and must match their number.
-  4. Both families fitted on the training steps, scored on the held-out steps; --family best keeps the one with the
-     lower held-out velocity RMS (worst step, the gated metric).
+  4. Both families fitted on the training steps; --family best keeps the one with the lower TRAINING velocity RMS.
+     Held-out steps never choose anything: they only score the kept family against the gates (gatekeeper, S1).
   5. Gates from [fit_gates], judged on the kept family. Writes params/airstack_sim_v<k>.toml, records/<name>_record.md,
      one row of records/LEDGER.md (T<n>) and docs/figures/s1_t<n>_held_out_step_<i>.png + s1_t<n>_all_steps.png
      (docs/, not runs/: runs/ is git-ignored and the record links the figures). Refuses to overwrite any of them.
@@ -459,7 +459,8 @@ def main(argv=None) -> int:
     ap.add_argument("--name", required=True, help="<YYYY-MM-DD>_s1_fit_v<k>; writes params/airstack_sim_v<k>.toml")
     ap.add_argument("--gates", required=True, help="configs/s1.toml ([fit_gates])")
     ap.add_argument("--steps-json", help="virtual_stick.py plan: labels the segments (must match their number)")
-    ap.add_argument("--family", choices=[*FAMILIES, "best"], default="best")
+    ap.add_argument("--family", choices=[*FAMILIES, "best"], default="best",
+                    help="best = the family with the lower training RMS (held-out steps never choose)")
     ap.add_argument("--dt-s", type=float, default=0.01, help="vehicle-time grid of the fit (s)")
     ap.add_argument("--speed-cap-mps", type=float, default=2.0, help="FIXED: teleop_max_speed_mps of the session")
     ap.add_argument("--out-root", default=str(ROOT), help="folder holding params/, records/, docs/figures/ (default svg_training)")
@@ -567,7 +568,7 @@ def main(argv=None) -> int:
              for s, e in (data.windows[i] for i in held)]))))
         fits[fam] = {"p": p, "rep": rep, "ev": ev, "pooled_rms": pooled,
                      "sens": _sensitivity(p, data, train, rep["free_params"])}
-    kept = min(FAMILIES, key=lambda f: fits[f]["ev"]["vel_rms_mps"]) if a.family == "best" else a.family
+    kept = choose_family(fits, a.family)
     k = fits[kept]
     p, ev = k["p"], k["ev"]
     not_identified = [nm for nm, v in k["sens"].items() if v < NOT_IDENTIFIED_MPS]
@@ -693,6 +694,28 @@ def _reading(data, labels, train, fits, kept) -> list[str]:
     return L + ["", facts + opt + dl]
 
 
+def _machine() -> str:
+    """GPU name (torch, if importable and CUDA is up; else CPU), Python, numpy and scipy versions, hostname."""
+    import platform
+    import socket
+    import scipy
+    try:
+        import torch
+        gpu = torch.cuda.get_device_name(0) if torch.cuda.is_available() else "CPU"
+    except Exception:  # torch absent or CUDA broken: the fit itself runs on the CPU either way
+        gpu = "CPU"
+    return (f"GPU: {gpu} (the fit runs on the CPU); Python {platform.python_version()}, numpy {np.__version__}, "
+            f"scipy {scipy.__version__}; host {socket.gethostname()}")
+
+
+def choose_family(fits: dict, family: str) -> str:
+    """The kept family: `family` itself, or for "best" the family with the lower TRAINING velocity RMS. Held-out
+    metrics are never read here (S1 gatekeeper: held-out steps must not choose anything)."""
+    if family != "best":
+        return family
+    return min(FAMILIES, key=lambda f: fits[f]["rep"]["optimizer"]["rms_train_mps"])
+
+
 def _record(a, version, date, sha, gates_bytes, bag, manifest, csv_dir, ulog_sha, ts, dropped, data, labels, train,
             held, fits, kept, g, verdict, not_identified, pngs, fig_dir, out_root, params_path) -> str:
     session = Path(bag).name if bag != "unknown" else str(csv_dir)
@@ -700,7 +723,8 @@ def _record(a, version, date, sha, gates_bytes, bag, manifest, csv_dir, ulog_sha
     L = [f"{FIRST_LINE}; session {session}", "", f"# {date} {a.name} record", "", "## Purpose", "",
          "Fit a simple model of how the drone's speed follows the speed a policy asks for (the response model: teleop "
          "command -> measured velocity) to one session observed in the AirStack simulator. Two model shapes were fitted "
-         f"and the {'better' if a.family == 'best' else 'requested'} one was judged against the fixed gates. "
+         f"and the {'one with the lower error on the training steps' if a.family == 'best' else 'requested one'} "
+         "was judged against the fixed gates. "
          f"Overall result: **{verdict}**."]
     failed = [n for n, x in g.items() if not x[2]]
     if verdict == "FAIL":
@@ -709,6 +733,9 @@ def _record(a, version, date, sha, gates_bytes, bag, manifest, csv_dir, ulog_sha
               "gates, and it has not been compared with the placeholder model."]
     L += ["", "## Terms used here", "", *TERMS]
     L += ["", "## Code version", "", f"code_sha (first 12 hex of a sha256 over source/, scripts/, configs/): `{sha}`", "",
+          "## Machine", "", _machine(), "",
+          "## Seeds", "", f"Deterministic fit; no random seeds. Each family starts from the same "
+          f"{len(fits[kept]['rep']['starts'])} fixed optimiser starts (fit.LAG1_STARTS, fit.TAU2_STARTS).", "",
           "## Config", "", f"`{a.gates}` `[fit_gates]` (FIXED, approved), sha256 `{hashlib.sha256(gates_bytes).hexdigest()}`", "",
           "## Inputs", "",
           f"- Bag: `{bag}` (extracted by {manifest.get('script', '?')}, sha256 `{manifest.get('script_sha256', '?')}`)",
@@ -777,14 +804,15 @@ def _record(a, version, date, sha, gates_bytes, bag, manifest, csv_dir, ulog_sha
     L.append("| training velocity RMS (m/s) | " + " | ".join(_f(fits[f]["rep"]["optimizer"]["rms_train_mps"])
                                                             for f in FAMILIES) + " |")
     L.append("| optimiser | " + " | ".join(_optimiser_words(fits[f]["rep"]["optimizer"]) for f in FAMILIES) + " |")
-    rms = {f: fits[f]["ev"]["vel_rms_mps"] for f in FAMILIES}
+    rms = {f: fits[f]["rep"]["optimizer"]["rms_train_mps"] for f in FAMILIES}
     if a.family != "best":
         why = f"Kept: **{kept}** (requested)."
     elif len({f"{v:.3f}" for v in rms.values()}) == 1:
-        why = (f"Kept: **{kept}**. The two families tie on held-out RMS to 3 decimals ({rms[kept]:.3f} m/s), so the "
-               "choice between them is arbitrary here.")
+        why = (f"Kept: **{kept}**, chosen on the training steps only. The two families tie on training RMS to "
+               f"3 decimals ({rms[kept]:.3f} m/s), so the choice between them is arbitrary here.")
     else:
-        why = f"Kept: **{kept}** (lower held-out RMS)."
+        why = f"Kept: **{kept}**, chosen on the training steps only (lower training RMS)."
+    why += " The held-out steps only score the kept family; they choose nothing."
     L += ["", PARAM_WORDS, "", why + " 'Not identified': raising "
           f"the parameter by 25 % moves the model over the training windows by less than {NOT_IDENTIFIED_MPS} m/s RMS, "
           "so the session does not determine it; its value is the optimiser's start.", "",

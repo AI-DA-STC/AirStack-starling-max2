@@ -32,14 +32,23 @@ Each row gives a word, what it means in everyday terms, and where to read more.
 | Code hash (`code_sha`) | first 12 hex digits of a sha256 over `source/`, `scripts/` and `configs/`; in every result row | [record](../records/2026-11-15_s0_laptop_record.md#code-version) |
 | Approved config hash | sha256 of the config the owner approved; `scripts/run_s0.sh` refuses a different one (exit 65) | [GETTING_STARTED](GETTING_STARTED.md#approved-sha256) |
 | Seed | the starting number for the random draws; the same seed gives the same run | [STANDARDS §6](../STANDARDS.md#6-training-rules) |
-| Held-out | data kept aside and used only to judge a fit or a policy, never to train it | [DESIGN §7](DESIGN.md#7-environments-and-contact-tags) |
+| Held-out | data kept aside and used only to judge a fit or a policy, never to train it. In S1, every other push was held out, chosen before any fit | [DESIGN §7](DESIGN.md#7-environments-and-contact-tags), [S1_RESULTS](S1_RESULTS.md#2-first-fit-to-the-airstack-simulator-t3-fail) |
 | Status labels | FIXED, MEASURED, PROPOSED, OPEN: where a value comes from and whether it may change | [STANDARDS](../STANDARDS.md) |
 | Plug-in point | `/svg/{name}/teleop_command`: the place where a strategy's velocity command enters the flight software | [STANDARDS §3](../STANDARDS.md#3-policy-interface-version-0-proposed) |
 | Guard team | the drone team that holds a circular zone | [STANDARDS §4](../STANDARDS.md#4-game-specification-version-0) |
 | Strike team | the drone team that tries to reach the zone; its drones are 1.5 times as fast | [STANDARDS §4](../STANDARDS.md#4-game-specification-version-0) |
 | Tag | the scoring event of the game between a Guard drone and a Strike drone; defined in [STANDARDS §4](../STANDARDS.md) | [STANDARDS §4](../STANDARDS.md#4-game-specification-version-0) |
 | Safety filter (within each team) | CMU's filter that keeps drones apart; in the game it acts only between drones of one team | [STANDARDS §5](../STANDARDS.md#5-drone-models) |
-| Keep-out distance | 1.10 m centre to centre (0.55 m radius): how close the safety filter lets two drones come | [STANDARDS §5](../STANDARDS.md#5-drone-models) |
+| Keep-out distance | 1.10 m centre to centre (0.55 m radius): how close the safety filter lets two drones' commanded speeds bring them. The filter does not correct the position the commander sends, so drones can come slightly closer (1.083 m in a tier 1 test) | [STANDARDS §5](../STANDARDS.md#5-drone-models), [S1_RESULTS](S1_RESULTS.md#6-tier-1-with-the-real-chain-t4-information-only) |
+| Sweep (safety filter) | one round of small corrections to every drone's speed in the filter copy; more sweeps get closer to CMU's answer but cost time. T2 used 1,000. Not the same as a *sweep point* | [S1_RESULTS](S1_RESULTS.md#1-the-safety-filter-copy-t2-fail-accepted-by-the-owner) |
+| Commander | CMU's ground-control program (`swarm_commander.py`); 20 times a second it turns each drone's speed command into an instruction for PX4 | [S1_RESULTS](S1_RESULTS.md#3-why-two-clocks-in-the-simulator) |
+| Commander teleop law | the commander's rules for a speed command: cap it, ramp up to it, move a reference point ("where the drone should be") by it, keep that point within 0.5 m of the drone, apply the safety filter. Tier 1 has a copy of the real-drone version (`models/commander.py`) | [S1_RESULTS](S1_RESULTS.md#6-tier-1-with-the-real-chain-t4-information-only) |
+| PX4 | the flight software on the drone; version 1.14 on the real drones, 1.16.1 in the AirStack simulator | [STANDARDS §5](../STANDARDS.md#5-drone-models) |
+| Trajectory setpoint | the instruction the commander sends a real drone each tick: a position, a speed and an acceleration together. PX4 closes the position loop itself. The AirStack simulator gets a speed only, through MAVROS | [S1_RESULTS](S1_RESULTS.md#4-the-real-drone-takes-a-different-route) |
+| Position gain | PX4's `MPC_XY_P`, 0.95 per second on our drones: how much extra speed PX4 adds per metre the drone is away from its position setpoint | [S1_RESULTS](S1_RESULTS.md#5-a-first-fit-from-real-flight-logs-exploratory) |
+| Time scale | how many seconds pass on the simulated drone's clock for each second on the wall clock; 1.907 in the S1 simulator session, 1.01 on the real drone | [S1_RESULTS](S1_RESULTS.md#3-why-two-clocks-in-the-simulator) |
+| Exploratory | a first look with no gates and no ledger row; its numbers guide the next step but prove nothing | [S1_RESULTS](S1_RESULTS.md) |
+| Observed in flight logs | the wording for a model fitted to real flight logs without a run of record; never "validated" | [S1_RESULTS](S1_RESULTS.md) |
 | Distance field | a 3D grid holding the distance to the nearest structure; one copy on the GPU serves every game | [DESIGN §4](DESIGN.md#4-two-tiers-one-game) |
 | Range ray | a ray from a drone that returns the distance to the first structure it meets | [STANDARDS §3](../STANDARDS.md#3-policy-interface-version-0-proposed) |
 | Line of sight | whether one drone can see another past structures; a hidden drone is masked | [DESIGN §7](DESIGN.md#7-environments-and-contact-tags) |

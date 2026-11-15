@@ -54,7 +54,7 @@ All paths are under `AirStack/robot/ros_ws/src/`, read at the current checkout (
 | Offboard mode flags | `px4_interface.cpp:620-637` | position, velocity and acceleration all on |
 | PX4 1.14 | `PositionControl.cpp` at tag v1.14.0 (`~/PX4-Autopilot`, read with `git show`), `:124-138`, `:147-150`, anti-windup `:185-201` | `vel_sp = v_ff + MPC_XY_P·(p_sp − p)`, capped at `MPC_XY_VEL_MAX`; `acc_sp = a_ff + P·e + I∫e − D·a` |
 
-**Clocks.** The commander's 20 Hz timer runs on the ROS node clock (`swarm_commander.py:986`). No real launch file sets `use_sim_time`, so this is the laptop's wall clock. PX4 on the drone runs in real time. So σ = 1. Over ten legs the log gives a median ratio of **1.01**: how far the reference point moved, divided by the integral of the feed-forward speed. The spread across legs, 0.96–1.11, is unexplained; legs 4 and 7, both 4–5 s long, give 1.11. The setpoint's timestamp is set on the laptop and shifted onto PX4's clock by the uXRCE-DDS time sync (PX4 v1.14 `uxrce_dds_client/dds_topics.h.em:103-111`).
+**Clocks.** The commander's 20 Hz timer runs on the ROS node clock (`swarm_commander.py:986`). No real launch file sets `use_sim_time`, so this is the laptop's wall clock. PX4 on the drone runs in real time. So σ = 1. Over ten legs the log gives a median ratio of **1.01**: how far the reference point moved, divided by the integral of the feed-forward speed. The spread across legs, 0.96–1.11, is unexplained; the two highest ratios are 1.107 and 1.11. The setpoint's timestamp is set on the laptop and shifted onto PX4's clock by the uXRCE-DDS time sync (PX4 v1.14 `uxrce_dds_client/dds_topics.h.em:103-111`).
 
 **Config-dependent.** Stick cap 0.5 m/s and ramp 5 m/s² come from the `_ours` config. With `teleop_accel_mps2: 0` the acceleration part would be zero. With `real_command_mode: velocity` the real drone would get a bare speed and the commander's own P term, as in the simulator.
 
@@ -234,4 +234,11 @@ Code: `source/svg_training/models/px4_trajectory.py`, `scripts/fit_real_px4.py`.
 - the PID's D term against the closed-form response;
 - anti-windup against a transcription of PX4's code.
 
-Repository commit at the time: `a99a96a`; this work is uncommitted.
+Repository commit at the time of the run: `a99a96a`. This work was committed in `b467aa5` (see the notes below).
+
+## Notes added after the gatekeeper check (15 Nov)
+
+Added by the technical writer at the lead's request; no measured number changed.
+
+- **Code version**: `scripts/fit_real_px4.py` and `source/svg_training/models/px4_trajectory.py` were committed in `b467aa5` (`git log -1 --format=%h -- <both files>`), with this record. The line "this work is uncommitted" was stale and is replaced above.
+- **Clock ratio per leg**: the sentence "legs 4 and 7, both 4–5 s long, give 1.11" could not be traced. `results.json` stores the ten ratios (`clock_ratio.per_leg`: 0.959, 1.025, 0.974, 1.032, 1.107, 0.992, 1.005, 1.11, 0.987, 1.015) without leg numbers, and the list skips some legs, so a position in it is not a leg number. Section 1 now says only that the two highest ratios are 1.107 and 1.11.

@@ -4,10 +4,12 @@ Training pipeline for the **Strike vs Guard** game: thousands of games run at on
 drone teams can learn strategies that then fly through AirStack on Starling 2 Max drones.
 It is a sibling of `AirStack/`, `tools/` and `localisation/`, and it edits none of them.
 
-**Status (2026-11-15): S0 built and run; nothing trained.** Run of record T1 (laptop, container, both tiers,
-96 sweep points) = FAIL on `sweep_complete` only: one tier 2 point lost to an Isaac Sim start-up crash; both
-decision rules met. Numbers: [docs/S0_RESULTS.md](docs/S0_RESULTS.md). Next: S1 (drone model and safety filter),
-plan [docs/plans/2026-11-15-s1-drone-model-and-safety-filter.md](docs/plans/2026-11-15-s1-drone-model-and-safety-filter.md), awaiting the owner's approval.
+**Status (2026-11-15): S0 and S1 built and run; nothing trained; no S1 gate on the drone model passed yet.** S0: run of record T1 = FAIL on one gate (one tier 2
+point lost to an Isaac Sim start-up crash), both decision rules met ([docs/S0_RESULTS.md](docs/S0_RESULTS.md)).
+S1: filter copy T2 = FAIL (accepted by the owner; re-confirmation on the exact counts asked), simulator fit T3 = FAIL (the simulator's two clocks), tier 1 now
+carries the real-drone command chain with a PX4 model observed in flight logs (exploratory) and the team filter
+(T4 = INFO; the filter at 1,000 sweeps is too slow to train) ([docs/S1_RESULTS.md](docs/S1_RESULTS.md)). Next: a
+real flight with planned pushes (owner), then the S2 plan for the owner's approval.
 
 ## Read first
 
@@ -17,7 +19,7 @@ plan [docs/plans/2026-11-15-s1-drone-model-and-safety-filter.md](docs/plans/2026
 | [STANDARDS.md](STANDARDS.md) | **the rules**: scope, wording, policy interface, game specification, drone models, gates, records, code, git |
 | [docs/DESIGN.md](docs/DESIGN.md) | the design: seven stages, two tiers, four uses, environments and contact tags, build order S0–S5, approaches considered |
 | [docs/RESEARCH.md](docs/RESEARCH.md) | state of the art as of 14 November 2026, with sources; the evidence behind the design |
-| [docs/S0_RESULTS.md](docs/S0_RESULTS.md), [docs/GLOSSARY.md](docs/GLOSSARY.md) | S0's numbers and limits; terms and the one Versions table |
+| [docs/S0_RESULTS.md](docs/S0_RESULTS.md), [docs/S1_RESULTS.md](docs/S1_RESULTS.md), [docs/GLOSSARY.md](docs/GLOSSARY.md) | S0's and S1's numbers and limits; terms and the one Versions table |
 | [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md) | the human path from a clone to tests and a benchmark run; `run_s0.sh` exit codes |
 | [docs/pipeline/training-pipeline.pptx](docs/pipeline/training-pipeline.pptx) | the diagrams (editable flowchart shapes); rebuilt by `docs/pipeline/build_deck.py` |
 | [../CLAUDE.md](../CLAUDE.md) | the repository's own rules (iron rules, two clones, more than one Claude session) — they still apply here |

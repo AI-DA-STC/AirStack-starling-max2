@@ -132,3 +132,11 @@ Made by this run from its own data (measured odometry, rotated to world, against
 - One time scale for the whole session; exploratory checks put its drift at about 1.73–1.97 (see Time scale). The model has no commander P term on the leashed reference and no up/down asymmetry.
 - The held-out split is fixed (alternate segments), not chosen after seeing the results. In this session it puts every x step in training and both y steps in the held-out set, so the held-out result tests y only.
 - Not identified by this session (lag2): tau_z_s, acc_max_z_mps2.
+
+## Notes added after the gatekeeper check (15 Nov)
+
+Added by the technical writer at the lead's request; no number in this record changed.
+
+- **Machine**: this laptop (Intel Core Ultra 9 275HX; the RTX 5070 Ti Laptop GPU is not used: the fit is NumPy and SciPy on the CPU); conda `env_isaaclab`, Python 3.11.15, NumPy 1.26.0, SciPy 1.15.3 (versions read from that environment on 15 November 2026).
+- **Seeds**: none. The fit is deterministic (`scipy.optimize.least_squares` from fixed starting values; `scripts/fit_response.py` and `models/fit.py` draw no random numbers). The gatekeeper's re-run gave identical parameters, metrics and verdict.
+- **Model family chosen on held-out steps.** `scripts/fit_response.py` keeps the family with the lower held-out RMS. Held-out steps must not choose anything. Here the two families tie (0.123 m/s) and both FAIL, so the verdict does not change; the script must choose on training error before any later fit (`runs/sdd/s1/gatekeeper-s1.md`, must-fix 2).

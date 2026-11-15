@@ -13,8 +13,8 @@ flowchart LR
   B --> C["14 Nov<br/>Build the speed test (S0)<br/>and review it"]
   C --> D["15 Nov<br/>First runs<br/>run of record T1"]
   D --> E["15 Nov<br/>Read the results"]
-  E --> F["15 Nov, now<br/>S1: drone model<br/>and safety filter"]
-  F --> G["Next<br/>S2: first training"]
+  E --> F["15 Nov<br/>S1: drone model<br/>and safety filter"]
+  F --> G["Next<br/>real pushes flight,<br/>then S2: first training"]
 ```
 
 ## 1. The idea and the research (14 November 2026)
@@ -126,32 +126,62 @@ for one drone.
 
 These numbers were observed in the training simulator, with stand-in drone models. None is a flight result.
 
-## 6. S1 so far: a drone model and a safety filter (15 November, being built)
+## 6. S1: a drone model and a safety filter (15 November)
 
-**What we are doing.** S1 replaces the stand-in drone with a model fitted to how a Starling responds to a speed
-command. The data comes from the *AirStack simulator*: CMU's simulator with the PX4 flight software, which flies up
-to three drones. It is separate from our training simulator. S1 also copies CMU's safety filter into a form that
-runs thousands of games at once. The owner approved the plan and its gates on 15 November ([S1 plan](plans/2026-11-15-s1-drone-model-and-safety-filter.md)).
+**What we did.** S1 had two jobs. The first was to replace the stand-in drone with a model of how a Starling's speed
+follows the speed a policy asks for. The second was to copy CMU's safety filter, which keeps drones of a team from
+flying into each other, into a form that runs thousands of games at once. The owner approved the plan and its gates
+on 15 November ([S1 plan](plans/2026-11-15-s1-drone-model-and-safety-filter.md)). The full results, with figures,
+are in [S1_RESULTS](S1_RESULTS.md).
 
-**Why.** Tier 1's drone is a guess today. A strategy trained on a wrong drone may not fly well on the real one.
+**Why.** Tier 1's drone was a guess. A strategy trained on a wrong drone may not fly well on the real one.
 
-**Done so far** (from the commit history): the S1 gates in `configs/s1.toml` (commit `92d30ac`); a tool that reads
-the simulator's recordings into tables (commit `cf239d0`); the model and the fitting code (commit `c4f77d0`). The
-copy of the safety filter is being built.
+**What happened, in order.**
 
-**What we found.** The simulator reports the drone's speed in the drone's own frame (its nose is "forward"), not in
-the world frame. The fitting code must turn it into the world frame first. The simulator also runs faster than
-the clock on the wall, by an amount that changed between sessions, so it must be measured for each session.
-CMU's ground controller, outside this folder, also uses this speed as if it were in the world frame. We reported it
-to the owner and changed nothing there.
+1. **The filter copy (run T2).** We compared our copy with CMU's on 2,000 random scenes. It made the same
+   decision on the emergency push-apart in 1,998 of them, and it never acted between a Guard drone and a Strike
+   drone. It failed two gates. Of the 1,779 scenes where CMU did not push apart, 13 are over the speed limit, all of
+   them scenes CMU finishes in a slow, one-pair-at-a-time phase the copy does not have; 109 are over the limit on
+   how far an answer breaks a keep-out rule. The owner accepted T2 on 15 November ('if 1998/2000 checks passed its ok'); that figure is the emergency-agreement count. Re-confirmation on the counts above was asked the same day. T2 stays a FAIL and S1 went on
+   ([S1_RESULTS §1](S1_RESULTS.md#1-the-safety-filter-copy-t2-fail-accepted-by-the-owner)).
+2. **The first fit (run T3).** We fitted a simple model to a recorded session in the *AirStack simulator* (CMU's
+   simulator with the PX4 flight software). It failed: the simulated drone sped up, slowed down while the push was
+   still held, then moved backwards after release. No simple model does that
+   ([S1_RESULTS §2](S1_RESULTS.md#2-first-fit-to-the-airstack-simulator-t3-fail)).
+3. **The cause: two clocks.** CMU's ground-control program, the *commander*, keeps a "where the drone should be"
+   point and moves it by the clock on the wall. The simulator's PX4 ran 1.9 times faster than the wall clock. So
+   the drone outran the point and was pulled back. This happens in the simulator only
+   ([S1_RESULTS §3](S1_RESULTS.md#3-why-two-clocks-in-the-simulator)).
+4. **The real drone is fed differently.** Reading the real flight logs showed that the real drone gets a position,
+   a speed and an acceleration in one instruction (a *trajectory setpoint*), while the simulator gets a speed only.
+   So a simulator fit describes the simulator, not the drone. The owner agreed that the drone model for training
+   comes from real flight logs ([S1_RESULTS §4](S1_RESULTS.md#4-the-real-drone-takes-a-different-route)).
+5. **A first look at real logs (exploratory, no gates).** On the 13 November gamepad flight the real drone flew
+   close to the speed it was sent, about 0.1–0.15 s later, at up to 0.5 m/s. We could see PX4's position gain, 0.95,
+   in the log ([S1_RESULTS §5](S1_RESULTS.md#5-a-first-fit-from-real-flight-logs-exploratory)).
+6. **Tier 1 with the real chain (run T4, information only).** We put a copy of the commander, the real-log model
+   and the filter copy into tier 1, and measured speed. The filter, at 1,000 sweeps, made tier 1 about 5 to 227
+   times slower. We also found that the filter does not cover the position the commander sends, so two teammates
+   came 1.7 cm inside the keep-out in a test. For the real drone this is a hypothesis, not seen in flight
+   ([S1_RESULTS §6](S1_RESULTS.md#6-tier-1-with-the-real-chain-t4-information-only)).
+
+<a id="fig-2"></a>
+![One real push beside one simulator push, both at 0.5 m/s](figures/s1_real_sim_vs_real.png)
+
+**Figure 2.** Left: one real 0.5 m/s push; the drone flies close to the speed it was sent and drifts back slowly.
+Right: the same push in the AirStack simulator; the speed sags while the push is held and swings back on release.
+This difference is why the drone model for training comes from real flights.
+
+**What we did not do.** We changed nothing in the flight software or the simulator. The drone model in tier 1 was
+observed in flight logs; it is not validated and it has no run of record yet.
 
 ## 7. What comes next
 
-- Finish S1: fit the model on an existing simulator session, then on a planned set of speed steps. Compare the
-  copied safety filter with CMU's on recorded inputs. Each fit is judged on steps it was not fitted on (*held-out*
-  steps). Each ends on a record and a ledger line.
-- S2: the first training, one Guard drone against one Strike drone in an open arena
-  ([DESIGN §8](DESIGN.md#8-build-order)).
+- **A real flight with planned pushes**, so the drone model gets its run of record. The list of what to record is
+  in [S1_RESULTS](S1_RESULTS.md#what-the-owner-needs-to-do-next).
+- **A faster safety filter**, before training can start.
+- **S2**: the first training, one Guard drone against one Strike drone in an open arena
+  ([DESIGN §8](DESIGN.md#8-build-order)). It needs a plan and the owner's approval first.
 - Run S0 again on a training workstation, when one is available.
 
 How to run the tests and the speed test yourself: [GETTING_STARTED](GETTING_STARTED.md).

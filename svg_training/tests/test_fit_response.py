@@ -154,6 +154,11 @@ def test_pass_record_and_ledger(passed):
         assert any(line.startswith(f"| {gate}: ") and line.rstrip().endswith("| PASS |") for line in text.splitlines())
     assert "body frame" in text and "observed in the AirStack simulator" in text
     _plain_language(text)
+    machine = text.split("## Machine\n\n", 1)[1].splitlines()[0]
+    assert re.fullmatch(r"GPU: .+ \(the fit runs on the CPU\); Python 3\.\d+\.\d+, numpy \S+, scipy \S+; host \S+",
+                        machine), machine
+    seeds = text.split("## Seeds\n\n", 1)[1].splitlines()[0]
+    assert seeds.startswith("Deterministic fit; no random seeds.") and "3 fixed optimiser starts" in seeds
     figs = re.findall(r"^!\[Figure (\d+)\]\((\.\./docs/figures/s1_t2_[^)]+\.png)\)$", text, flags=re.M)
     assert len(figs) == 9 and figs[-1][1].endswith("/s1_t2_all_steps.png")
     for _, link in figs:
@@ -293,3 +298,46 @@ def test_ulog_time_scale_from_flight_span(tmp_path):
     assert r["arm_s"] == 5.0 and r["disarm_s"] == 70.0
     with pytest.raises(ValueError):
         fr.ulog_time_scale(u, t_wall, np.zeros_like(z))
+
+
+# ---------------------------------------------------------------- family choice (training steps only)
+
+def _fake_fits(train_rms: dict, held_rms: dict) -> dict:
+    return {f: {"rep": {"optimizer": {"rms_train_mps": train_rms[f]}}, "ev": {"vel_rms_mps": held_rms[f]}}
+            for f in train_rms}
+
+
+def test_choose_family_reads_training_error_only():
+    fits = _fake_fits({"lag1": 0.05, "lag2": 0.08}, {"lag1": 0.30, "lag2": 0.01})
+    assert fr.choose_family(fits, "best") == "lag1"
+    fits = _fake_fits({"lag1": 0.08, "lag2": 0.05}, {"lag1": 0.01, "lag2": 0.30})
+    assert fr.choose_family(fits, "best") == "lag2"
+    assert fr.choose_family(fits, "lag1") == "lag1"
+
+
+def test_cli_keeps_the_training_best_family_when_held_out_favours_the_other(tmp_path, monkeypatch):
+    """Training favours lag2 (its training RMS forced to 0), held-out favours lag1 (lag2's held-out RMS + 1 m/s)."""
+    real_fit, real_eval = fr.fitmod.fit, fr.fitmod.evaluate
+
+    def fit(*args, **kw):
+        p, rep = real_fit(*args, **kw)
+        if p.family == "lag2":
+            rep["optimizer"]["rms_train_mps"] = 0.0
+        return p, rep
+
+    def evaluate(p, *args, **kw):
+        ev = real_eval(p, *args, **kw)
+        return dict(ev, vel_rms_mps=ev["vel_rms_mps"] + 1.0) if p.family == "lag2" else ev
+
+    monkeypatch.setattr(fr.fitmod, "fit", fit)
+    monkeypatch.setattr(fr.fitmod, "evaluate", evaluate)
+    csv = _write_session(tmp_path / "csv", PLAN6)
+    root = _root(tmp_path / "root")
+    assert fr.main(_args(csv, root, "--family", "best")) == 0
+    d = tomllib.loads((root / "params" / "airstack_sim_v0.toml").read_text())
+    assert d["params"]["family"] == "lag2" and d["fit"]["family"] == "lag2"
+    text = (root / "records" / f"{NAME}_record.md").read_text()
+    assert "Kept: **lag2**, chosen on the training steps only" in text
+    assert "they choose nothing" in text and "lower error on the training steps" in text
+    row = next(line for line in text.splitlines() if line.startswith("| vel_rms_max_mps: "))
+    assert row.rstrip().endswith("| FAIL |")          # the held-out score of the kept family is still reported

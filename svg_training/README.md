@@ -13,7 +13,7 @@ official run whose numbers we keep is the *run of record* (both in the [glossary
 | Build step | Where it stands | Evidence |
 |---|---|---|
 | S0 (throughput benchmark) | run of record T1: **FAIL** on one [gate](docs/GLOSSARY.md) (1 of 96 points lost to an Isaac start-up crash) | every number verified; both speed [decision rules](docs/GLOSSARY.md) met → [S0 results](docs/S0_RESULTS.md) |
-| S1 Drone model and safety filter | approved 15 Nov; building | [S1 plan](docs/plans/2026-11-15-s1-drone-model-and-safety-filter.md) |
+| S1 (drone model and safety filter) | built and run 15 Nov: filter copy T2 **FAIL** (accepted by the owner; re-confirmation on the exact counts asked); simulator fit T3 **FAIL**; real-log fit exploratory; tier 1 with the real chain T4 information only; no S1 gate on the drone model passed yet | [S1 results](docs/S1_RESULTS.md); [S1 plan](docs/plans/2026-11-15-s1-drone-model-and-safety-filter.md) |
 | S2–S5 | not started | [DESIGN §8](docs/DESIGN.md#8-build-order) |
 | Training | nothing trained yet | none |
 
@@ -38,7 +38,7 @@ Each row points to the page that answers the question.
 | build the container | [GETTING_STARTED](docs/GETTING_STARTED.md) A1 |
 | run the benchmark | [GETTING_STARTED](docs/GETTING_STARTED.md) A3–A4 (container) or B (host) |
 | train a policy, without a window (headless) or with the Isaac Sim window | [TRAINING](docs/TRAINING.md) (planned workflow: nothing trains before S2) |
-| read the results | [S0_RESULTS](docs/S0_RESULTS.md); all records in [records/LEDGER.md](records/LEDGER.md) |
+| read the results | [S0_RESULTS](docs/S0_RESULTS.md), [S1_RESULTS](docs/S1_RESULTS.md); all records in [records/LEDGER.md](records/LEDGER.md) |
 | understand the design | [HOW_IT_WORKS](docs/HOW_IT_WORKS.md), then [DESIGN](docs/DESIGN.md) and [RESEARCH](docs/RESEARCH.md) |
 | look up a word or a version | [GLOSSARY](docs/GLOSSARY.md) |
 | know the rules | [STANDARDS](STANDARDS.md): interface, game, drone models, gates, records |

@@ -66,7 +66,30 @@ The scoring tool reports three **size bands** separately: lab (4–6 m), middle 
 (10–16 m). Fixed named scenarios (for example a 4 m lab arena with the zone in the middle) exist only
 for scoring, never for training (STANDARDS §6 rule 4).
 
-## 4b. Game rules for S2 (Claude's calls; each is a config switch, because NUS's exact game is unknown)
+## 4a. Main game: the partner rules preset (owner, 15 November 2026, night)
+
+The default game is **NUS's area-denial game**, taken from the programme's October 2026 monthly report.
+That report is confidential programme material, so **its numbers never enter this repository**: the game code
+has the switches below with neutral defaults, and NUS's values live in a local settings file that git ignores
+(`configs/local/`, created by the S2 plan, never committed).
+
+| Switch | What it does |
+|---|---|
+| Push-apart between teams | drones of opposite teams cannot come closer than a set distance (one distance for each team); this replaces contact tags |
+| Teammates | pass through each other in the partner rules as written |
+| Win | a Strike drone inside the zone for one step wins, and the win is permanent; otherwise the Guard team wins when time runs out |
+| Speeds and length | per-step speeds for each team and a game length in steps |
+| Units | metres per partner unit and seconds per step: settings until NUS states them |
+
+The scoring tool runs every strategy two ways: under the **partner rules as written**, and with the
+**Starling layer** on top (the fitted drone model and the real safety filter, which on the real drones keeps
+every pair of drones apart, teammates included). The gap between the two is what flying a real Starling costs
+that strategy.
+
+**Contact tags** (STANDARDS §4, 14 November) move to the **side quest** only (owner, 15 November): the programme's
+current demo rules are non-kinetic.
+
+## 4b. Game rules for the side quest and for gaps in the partner rules (Claude's calls; each is a config switch)
 
 | Item | Default | Switch |
 |---|---|---|
@@ -128,6 +151,8 @@ control level") moves to the side quest.
 - 15 November 2026: NUS's strategy is the main use; NEAR Lab's own strategies are a research side quest.
 - 15 November 2026: arena sizes vary, as a test.
 - 15 November 2026: approach A.
+- 15 November 2026, night: the partner rules preset (§4a) is the main game; contact tags only in the side quest;
+  NUS's numbers kept in a git-ignored local file; speeds as §4b (Strike 0.5, Guard 0.33 m/s, a setting).
 - Earlier rules unchanged: STANDARDS §3 and §4 FIXED rows (actions, rate, teams, speed ratio, filter
   within a team only, tag = contact, Strike leaves after a tag, `guard_survives_tag_prob`).
 

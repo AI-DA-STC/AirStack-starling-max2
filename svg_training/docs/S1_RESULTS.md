@@ -266,9 +266,9 @@ All rows are in the [training ledger](../records/LEDGER.md). Nothing here is a f
 |---|---|
 | A drone model with a run of record | waiting on a real flight with planned pushes (next section) |
 | Filter speed: 1,000 sweeps is too slow to train with | to fix before S2: fewer sweeps, an early stop, or other speed-ups, each measured against T2's checks |
-| Emergency push-apart speeds differ from CMU's | parked for the owner; matters only in scenes already flagged as emergencies |
-| The filter gap through the position setpoint | HYPOTHESIS for the real drone; a fix would be in CMU's code, outside this folder |
-| The commander moves its reference point on the wall clock in the simulator | simulator only; the owner decides whether AirStack changes |
+| Emergency push-apart speeds differ from CMU's | accepted by the owner (15 November); matters only in scenes already flagged as emergencies |
+| The filter gap through the position setpoint | HYPOTHESIS for the real drone; the owner decided CMU need not be told (15 November) |
+| The commander moves its reference point on the wall clock in the simulator | simulator only; owner: fix it in an AirStack session (15 November), not done here |
 | Up-and-down (vertical) response | not fitted; a working value only |
 | Speeds above 0.5 m/s | not in the logs we fitted; one unlabelled log reaches 0.87 m/s |
 
@@ -298,13 +298,12 @@ and the [survey §6](notes/s1_real_logs_survey.md#6-what-to-record-at-the-next-r
 
 **2. Decisions waiting on the owner.**
 
-- How to make the filter fast enough: which speed-up to try, and what agreement with CMU is good enough.
-- Whether to fix the commander's clock in the AirStack simulator (flight code, outside this folder).
-- Whether to tell CMU about the filter gap through the position setpoint.
-- The speed caps: the rules say Guard 0.67 m/s from a 1.0 m/s cap, but the real stick limit is 0.5 m/s, which
-  makes Strike 0.5 and Guard 0.33 m/s. Tier 1 uses 0.5 and 0.33 now.
-- `docs/CONFIG.md` now lists the 13 November logs' limits for the real drones (3.0 m/s, owner's request, AirStack commit 680cd1f).
-- What the unlabelled 13 November log `08_34_27.ulg` was (drone_1, 0.87 m/s, the fastest real data).
-- Whether the simulator step session (scripts ready, not run) is still wanted. It measures the simulator's route,
-  so it is optional now.
-- S2's plan, once written.
+Answered by the owner on 15 November 2026 (night):
+
+- Filter speed: settled in the approved S2 design (no worse than T2 on T2's checks; otherwise the owner rules).
+- The commander's clock in the AirStack simulator: **fix it**, in an AirStack session (note handed over).
+- The filter gap through the position setpoint: **no need to tell CMU**.
+- Speeds: **Strike 0.5, Guard 0.33 m/s**, a setting.
+- Emergency push-apart speeds that differ from CMU's: **accepted**.
+- The simulator step session: **not wanted**; the scripts stay, unused.
+- The unlabelled log `08_34_27.ulg` (drone_1, 0.87 m/s, the fastest real data): the owner will label it.

@@ -106,13 +106,13 @@ are parameters in one game config, never constants in code.
 | Teams | the Guard team holds a circular zone; the Strike team tries to reach it | FIXED | programme benchmark |
 | Team sizes of interest | 2 Guard against 1 Strike; 5 Guard against 3 Strike | FIXED | programme simulation page |
 | Speed ratio | Strike drones 1.5 times as fast as Guard drones | FIXED | NUS partner page |
-| Speeds in metres per second | Strike drones at the game's speed cap, Guard drones at the cap ÷ 1.5 (lab flights today: cap 1.0 m/s, so Guard 0.67 m/s) | PROPOSED | cap from §3 |
+| Speeds in metres per second | Strike 0.5 m/s, Guard 0.33 m/s: the real stick cap and cap ÷ 1.5; a setting up to the commander's cap | FIXED | owner, 15 November 2026 |
 | How the ratio is enforced | by scaling each team's policy output before the safety filter; the filter keeps its single cap for every drone, as in flight, so a Guard drone giving way may briefly exceed its own team's speed | PROPOSED | `cbf_filter.py` takes one cap for all drones |
-| Safety filter in the game | acts between drones of the **same team** only; it does not act between a Guard drone and a Strike drone | FIXED | owner, 14 November 2026 |
+| Safety filter in the game | side quest (contact tags): acts between drones of the **same team** only. Main game with the Starling layer: as on the real drones, every pair (S2 design §4a) | FIXED | owner, 14 and 15 November 2026 |
 | Structures | a drone that touches a structure leaves the game; avoiding structures is learned. The flight stack has no obstacle avoidance, only a box fence | PROPOSED | `fence.py` |
 | Trained size range | 1–5 Guard, 1–3 Strike, drawn per game | PROPOSED | — |
 | Strike scores | a Strike drone is inside the zone | PROPOSED | — |
-| Tag | physical contact between a Guard drone and a Strike drone; there is no tag radius | FIXED | owner, 14 November 2026 |
+| Tag | **side quest only** (owner, 15 November 2026): physical contact between a Guard drone and a Strike drone; there is no tag radius. The main game has no tag: the partner rules preset keeps opposite teams apart ([docs/specs/2026-11-15-s2-game-and-plug-in-design.md](docs/specs/2026-11-15-s2-game-and-plug-in-design.md) §4a) | FIXED | owner, 14 and 15 November 2026 |
 | Contact, tier 1 | the two centres closer than **0.50 m**: twice the 0.248 m radius of the smallest sphere that encloses the airframe with its propellers. A property of the airframe, not a game rule; a sphere is slightly generous | MEASURED | vertices of `AirStack/simulation/isaac-sim/assets/robots/starling2max.usd`, read 14 November 2026 |
 | Contact, tier 2 | a PhysX contact between the two bodies | PROPOSED | — |
 | After a tag, Strike drone | it goes down: it leaves the game | FIXED | owner, 14 November 2026 |

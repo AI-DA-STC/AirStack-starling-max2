@@ -34,13 +34,18 @@ Tests after the final-review fixes (15 November, late evening, laptop host, cond
      checks), and uses the open items in §5 (zone size, arena, what a drone may observe about others).
    - **Final S1 review** done (15 November): no Critical; I1–I6 fixed (`runs/sdd/s1/final-fix-report.md`, local);
      I7 approved by the owner (15 November; STANDARDS §1). The gatekeeper's must-fixes were applied before it.
-3. **Decisions waiting on the owner** (details in S1_RESULTS): the filter speed-up and how much agreement with
-   CMU is enough; the commander's wall clock in the AirStack simulator (flight code, outside this folder);
-   whether to tell CMU about the filter gap through the unfiltered position setpoint (HYPOTHESIS for the real
-   drone); speed caps (STANDARDS §4 says Guard 0.67 m/s from 1.0, the real stick cap is 0.5, so Strike 0.5 and
-   Guard 0.33, which tier 1 uses); what the unlabelled log
-   `08_34_27.ulg` was; whether the simulator step session (Task 5 scripts, not run) is still wanted; the
-   emergency push-apart speeds that differ from CMU's (T2 review I3).
+3. **Owner's answers, 15 November (night)** (A1–A4, C9–C14 of the decision list):
+   - A1 main game = the **partner rules preset** (NUS's area-denial rules: opposite teams kept apart, teammates
+     pass through, one step inside the zone wins), with the Starling layer scored on top (S2 design §4a);
+   - A2 contact tags **only in the side quest**; A3 NUS's numbers only in a **git-ignored local file** (the
+     programme report is confidential; this repo is public); A4 speeds Strike 0.5, Guard 0.33 m/s;
+   - C9 fix the sim commander's wall clock **in an AirStack session** (note: `~/Downloads/note-for-airstack-sim-clock-fix.md`);
+     C10 CMU need not be told about the position-setpoint gap; C11 the "20 m/s" comment fixed (AirStack 53945f6,
+     CHG-0069); C12 emergency push-apart differences accepted; C13 owner will label `08_34_27.ulg`;
+     C14 the simulator step session is not wanted.
+   - **Still to ask NUS (owner):** metres per unit, seconds per step, which NUS project is the strategy to host,
+     its inputs/outputs and software, code access; whether to tell NUS and UPenn about this pipeline.
+   - **Next:** write the S2 plan for the owner's approval.
 4. Rules while building: write only inside `svg_training/`; commit finished, tested steps with explicit
    paths, never push (builder agents make no git writes; the lead commits); no `pip install`; Python is
    `~/miniconda3/envs/env_isaaclab/bin/python`; tests with `python -m pytest -q` from this folder.
@@ -214,12 +219,12 @@ stay out of git; real flights of a contact policy should start with a virtual co
 | Item | Who | Needed before |
 |---|---|---|
 | A pair mask in CMU's safety filter, so that a contact tag can fly at all; and a flight safety case for deliberate contact | owner + CMU (outside this folder) | any flight of a contact policy |
-| The zone's size and place in each world; the playing volume | owner | S2 |
+| The zone's size and place in each world beyond S2 (S2 draws arena and zone sizes at random; partner zone ratio in the local file) | owner | S3 |
 | Licence of the construction-site asset (an Unreal Engine asset pack exported by the lab; no licence file found) | owner | before anything made from it leaves the lab |
 | What the real drone senses its surroundings with: a known map, or an on-board range sensor | owner | S3 |
 | Control level for contact tags: stay at velocity, or add a final-approach skill at thrust and body rates | owner, on the S2 numbers | after S2 |
 | The real flight with planned pushes (list: [../S1_RESULTS.md](../S1_RESULTS.md#what-the-owner-needs-to-do-next)) | owner | the `real` parameter set's run of record |
-| Arena sizes in metres (lab, hangar, outdoor) and zone radius | owner + NUS | S2 |
+| Metres per partner unit and seconds per step (NUS); hangar flying space in metres | owner + NUS | a partner-rules result quoted in metres |
 | What a drone may observe about others (full state, or shared with delay and loss) | owner + partners | S2 |
 | How a drop-out is simulated | owner + partners | S4 |
 | Written velocity contract with NUS and CMU (Linear NEAR-874, NEAR-875) | owner + NUS + CMU | use 2, S5 |

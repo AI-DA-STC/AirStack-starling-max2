@@ -196,7 +196,7 @@ no BODY, WORLD or CMU anywhere in the rendered text across all states
 ### Task 5: Install, layout, docs, Linear
 
 **Files:**
-- Create: `tools/teleop/foxglove/install.sh`, `tools/teleop/foxglove/teleop-cuvslam.json`, `docs/plans/2026-11-03-linear-agent-foxglove-teleop.md`
+- Create: `tools/teleop/foxglove/install.sh`, `tools/teleop/foxglove/teleop-cuvslam.json`, `docs/linear/updates/2026-11-03-linear-agent-foxglove-teleop.md`
 - Modify: `localisation/scripts/slam_up.sh`, `localisation/docker/up.sh` (mount `tools/teleop/foxglove` read-only at `/teleop-foxglove`), `docs/TELEOP.md` §3b, `localisation/README.md`, `tools/README.md`, `docs/record/CHANGES.md`
 - Test: `tools/tests/test_svg_teleop_install.py`
 
@@ -225,6 +225,6 @@ class Layout(unittest.TestCase):
 
 - [ ] **Step 2: Run to verify they fail** — `python3 -m unittest tools.tests.test_svg_teleop_install -v`.
 
-- [ ] **Step 3: Implement.** Layout built from `localisation/foxglove/cuvslam_slam_view.json`. Strip about 22 % of the height. Chase camera: `distance` 4, `phi` 65, `thetaOffset` chosen so the camera sits behind the nose; the owner tunes it live. A reserved empty Tab for the later map panel. Docs: TELEOP §3b gets a short "In Foxglove" paragraph (import the layout once, click the strip to fly, click away and the drone holds, `tools/sim.sh relay` must run, Tk window is the fallback, the `ufw` prerequisite). Linear file (nearlab, same style as `docs/plans/2026-11-03-linear-agent-teleop-frame.md`): one new S5 issue `Teleop strip inside the cuVSLAM Foxglove window, with a chase view`, Backlog issues `Launch one safe_teleop and relay per drone for keyboard switching`, `Live cuVSLAM map panel in the teleop layout`, `Draw the PX4 position in the chase view`; sync record `2026-11-03-linear-synced-2.md`.
+- [ ] **Step 3: Implement.** Layout built from `localisation/foxglove/cuvslam_slam_view.json`. Strip about 22 % of the height. Chase camera: `distance` 4, `phi` 65, `thetaOffset` chosen so the camera sits behind the nose; the owner tunes it live. A reserved empty Tab for the later map panel. Docs: TELEOP §3b gets a short "In Foxglove" paragraph (import the layout once, click the strip to fly, click away and the drone holds, `tools/sim.sh relay` must run, Tk window is the fallback, the `ufw` prerequisite). Linear file (nearlab, same style as `docs/linear/updates/2026-11-03-linear-agent-teleop-frame.md`): one new S5 issue `Teleop strip inside the cuVSLAM Foxglove window, with a chase view`, Backlog issues `Launch one safe_teleop and relay per drone for keyboard switching`, `Live cuVSLAM map panel in the teleop layout`, `Draw the PX4 position in the chase view`; sync record `2026-11-03-linear-synced-2.md`.
 
 - [ ] **Step 4: Run tests, full suite, docs check, `git diff --stat a6e5e87 HEAD -- AirStack/` empty, commit** — subject `HTX-R1/S5 NEAR-789: install the strip with slam_up, teleop-cuvslam layout, docs and Linear file`. Could affect: `slam_up.sh` start-up, and a first `up.sh` after this needs `slam_down.sh` so the new mount exists. Watch for: panel missing from Studio's list (wrong extensions path), the chase view static or facing the wrong way.

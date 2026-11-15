@@ -16,7 +16,7 @@
 - A how-to page holds no result number. It points to the ledger row. Behaviour that was not flown says "not flown".
 - Commands are full sequences with literal names (`drone_1`, `drone_2`). The commander line carries `use_foxglove_studio:=true`. The pad pane (pane 5) starts before the commander (pane 3) and is never stopped until DISARMED.
 - The older Starling, everywhere: "The older Starling (`drone_1`) flies by the owner's decision, with a watcher on its front-right motor at every takeoff." Short form in a cell: "`drone_1` (older Starling): flies by the owner's decision, with a watcher on its front-right motor." Never "grounded", never "fixed".
-- Wording: short plain sentences, no semicolon chains, "motion-capture positioning (mocap)", never "under mocap". Linear ids and titles verbatim from `docs/plans/2026-11-13-project-plan-linear.md`.
+- Wording: short plain sentences, no semicolon chains, "motion-capture positioning (mocap)", never "under mocap". Linear ids and titles verbatim from `docs/linear/snapshots/2026-11-13-project-plan-linear.md`.
 - Ledger links are written `[#36](record/LEDGER.md)` style, as the pages already do.
 
 ## Tasks

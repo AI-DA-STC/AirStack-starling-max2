@@ -270,4 +270,4 @@ STANDARDS and DESIGN. Their open questions are in the table above.
 | Programme, game, wording rules | `~/Documents/GitHub/Strike-Versus-Guard` (`content/programme/`, `STANDARDS.md`) |
 | Programme reports | `~/Documents/GitHub/Strike-Versus-Guard-sources` — **confidential**: point to them, do not copy from them |
 | Isaac Lab | `~/IsaacLab` (2.3.2), conda `env_isaaclab` |
-| Linear plan snapshot | `docs/plans/2026-11-13-project-plan-linear.md` in this repository |
+| Linear plan snapshot | `docs/linear/snapshots/2026-11-13-project-plan-linear.md` in this repository |

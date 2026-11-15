@@ -1,6 +1,6 @@
 # Starling swarm: project plan (Linear milestones and issues)
 
-NEAR Lab · Linear snapshot: 11 November 2026, after the first real-drone session ([instructions](2026-11-11-linear-agent-real-bringup.md), [Linear agent's sync record](2026-11-11-linear-sync-record.md)); built from the 5 November snapshot plus that record
+NEAR Lab · Linear snapshot: 11 November 2026, after the first real-drone session ([instructions](../updates/2026-11-11-linear-agent-real-bringup.md), [Linear agent's sync record](../synced/2026-11-11-linear-sync-record.md)); built from the 5 November snapshot plus that record
 
 Linear is the source of truth: this file mirrors the three projects in Linear as of the snapshot above. Only completed milestones carry target dates. Each issue links to its Linear page. The "Done when" lines describe the acceptance test, not progress made.
 

@@ -23,7 +23,7 @@ BUDGETS = {"README": 450, "CLAUDE": 1000, "START_HERE": 1500, "SETUP": 1200, "RU
            "PREFLIGHT": 1100, "DRONE_SETUP": 1800, "ARCHITECTURE": 1500, "CONFIG": 2500,
            "SCENARIOS": 2500, "TELEOP": 2000, "BASESTATION": 2500, "MOCAP": 2000,
            "GLOSSARY": 3000, "AI_ASSIST": 800, "MILESTONES": 1200}
-PLAN_FILE = "docs/plans/2026-11-13-project-plan-linear.md"
+PLAN_FILE = "docs/linear/snapshots/2026-11-13-project-plan-linear.md"
 PROJECT_DIR = "docs/projects"
 LEDGER_FILE = "docs/record/LEDGER.md"
 ID_PAGES = ("docs/MILESTONES.md", "docs/record/LEDGER.md", "docs/PX4_MSGS_AUDIT.md")   # plus docs/projects/*.md
@@ -632,7 +632,7 @@ def check_linear_parity():
                    f"{len(fails)} Linear id/title mismatch(es)", f"{len(warns)} parity warning(s)")
 
 
-CHANGE_LIST_GLOB = "docs/plans/*-linear-change-list.md"
+CHANGE_LIST_GLOB = "docs/linear/updates/*-linear-change-list.md"
 
 
 def check_change_lists():
@@ -850,7 +850,7 @@ def check_change_log():
 
 
 # ----------------------------------------------------------------- 21. single home
-SINGLE_HOME_EXEMPT = ("docs/plans/", "docs/superpowers/", "docs/record/", ".claude/")
+SINGLE_HOME_EXEMPT = ("docs/linear/", "docs/superpowers/", "docs/record/", ".claude/")
 SINGLE_HOME_GLOBS = ("localisation/*.md", "localisation/scenes/**/*.md", "tools/*.md", "tools/*/README.md")   # never localisation/** (unreadable studio-data dirs)
 NEAR_LINES = 3
 

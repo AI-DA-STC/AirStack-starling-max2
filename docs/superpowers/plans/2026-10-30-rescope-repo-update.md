@@ -4,7 +4,7 @@
 
 **Goal:** the repo mirrors Linear after the 2026-10-30 rescope: a new snapshot, the three project pages, MILESTONES.md, DOCS_STANDARD §2, and a docs check that reads the new snapshot.
 
-**Spec:** [2026-10-30-rescope-real-route-nus-cameras-design.md](../specs/2026-10-30-rescope-real-route-nus-cameras-design.md). **Naming authority for this plan:** [docs/plans/2026-10-30-linear-sync-record.md](../../plans/2026-10-30-linear-sync-record.md) (what Linear now holds) on top of [docs/plans/2026-10-26-project-plan-linear.md](../../plans/2026-10-26-project-plan-linear.md). Titles are copied from these files, never retyped.
+**Spec:** [2026-10-30-rescope-real-route-nus-cameras-design.md](../specs/2026-10-30-rescope-real-route-nus-cameras-design.md). **Naming authority for this plan:** [docs/linear/synced/2026-10-30-linear-sync-record.md](../../linear/synced/2026-10-30-linear-sync-record.md) (what Linear now holds) on top of [docs/linear/snapshots/2026-10-26-project-plan-linear.md](../../linear/snapshots/2026-10-26-project-plan-linear.md). Titles are copied from these files, never retyped.
 
 ## Global constraints
 
@@ -25,7 +25,7 @@
 
 ---
 
-### Task 1: New snapshot `docs/plans/2026-10-30-project-plan-linear.md`
+### Task 1: New snapshot `docs/linear/snapshots/2026-10-30-project-plan-linear.md`
 
 Copy the 10-26 file and apply the sync record: header date 30 October 2026; reconciliation notes (28 milestones, 105 issues: 9 Done, 1 In Progress, 94 Backlog, 1 Canceled; progress = Done ÷ issues not Canceled, as Linear computes it); HTX-R2 project name "(M2–M8)" in the split table and heading; milestones in Linear's order (HTX-R1: S1–S5, S5d, S6, S5e, S5b, S5c, S7–S10; HTX-R2: R1, M2–M8); new milestone sections with the sync record's descriptions and issue tables; S5c/S8 renamed with S5c's new description; issue renames, NEAR-809 moved, NEAR-802 Canceled, NEAR-786/787/788 Done; per-project inventory lines and the inventory table.
 
@@ -35,7 +35,7 @@ Check: `python3 -c` that `plan_issues()` (after Task 2 accepts Canceled) returns
 
 1. Fixture writes the plan to `C.PLAN_FILE`, not a hard-coded path.
 2. RED tests: (a) a `Canceled` row matching the snapshot passes; (b) a page `### S5c · Old name — DESK` against a snapshot `### S5c · New name` fails naming the code; (c) a snapshot milestone missing from every page fails; (d) an "Applied" change list with an unmapped `NEW-n` fails; with all mapped and titles equal it passes; a non-applied change list is ignored.
-3. GREEN: `PLAN_FILE = "docs/plans/2026-10-30-project-plan-linear.md"`; `plan_issues()` accepts `Canceled`; `plan_milestones(text)` → `{code: full heading}` from `### ` lines under `## Project`; in `check_linear_parity` compare each page `### ` heading (text before ` — `) with the snapshot by code, and each snapshot milestone must appear on a page; new `check_change_lists()` over `docs/plans/*-linear-change-list.md` with a `**Applied:**` line: every `NEW-n` in the id map has a NEAR id, and each NEW row's title equals the snapshot title of its mapped id. Register it in the check list.
+3. GREEN: `PLAN_FILE = "docs/linear/snapshots/2026-10-30-project-plan-linear.md"`; `plan_issues()` accepts `Canceled`; `plan_milestones(text)` → `{code: full heading}` from `### ` lines under `## Project`; in `check_linear_parity` compare each page `### ` heading (text before ` — `) with the snapshot by code, and each snapshot milestone must appear on a page; new `check_change_lists()` over `docs/plans/*-linear-change-list.md` with a `**Applied:**` line: every `NEW-n` in the id map has a NEAR id, and each NEW row's title equals the snapshot title of its mapped id. Register it in the check list.
 4. Full suite: `python3 -m pytest tools/tests -q` green.
 
 ### Task 3: HTX-R1 page

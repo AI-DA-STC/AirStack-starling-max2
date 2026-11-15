@@ -4,7 +4,7 @@
 #             phrase is on it or on one of the 3 lines above it.
 #   require — the phrase must appear in each listed file.
 # Matching ignores backticks and runs of whitespace. Every row is WARN, never FAIL.
-# Not scanned (dated history): docs/plans/, docs/superpowers/, docs/record/, .claude/.
+# Not scanned (dated history): docs/linear/, docs/superpowers/, docs/record/, .claude/.
 only	Import from file → /teleop-foxglove/teleop-cuvslam.json	localisation/README.md
 only	teleop.launch.py config:=$CFG	localisation/README.md,docs/TELEOP.md	teleop_single_ours.yaml
 only	sim_keyboard_teleop_2026-11-04.mp4	localisation/README.md,docs/projects/HTX-R1.md

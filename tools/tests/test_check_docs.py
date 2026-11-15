@@ -15,7 +15,7 @@ PLAN = textwrap.dedent("""\
 
 def fixture(tmp, page_rows, records=(), ledger="| # |\n|---|\n", milestones_lines=10, extra="", plan_extra=""):
     root = pathlib.Path(tmp)
-    (root / "docs/plans").mkdir(parents=True); (root / "docs/projects").mkdir(); (root / "docs/record").mkdir(); (root / "localisation/results").mkdir(parents=True)
+    (root / "docs/linear/snapshots").mkdir(parents=True); (root / "docs/linear/updates").mkdir(parents=True); (root / "docs/projects").mkdir(); (root / "docs/record").mkdir(); (root / "localisation/results").mkdir(parents=True)
     (root / C.PLAN_FILE).write_text(PLAN + plan_extra)
     (root / "docs/projects/HTX-R1.md").write_text("# HTX-R1\nLinear snapshot: 2026-10-26\n\n### S5 x — SIM ONLY\n| Issue | Title | Linear status | Result | Evidence |\n|---|---|---|---|---|\n" + page_rows + extra)
     for name, head in records: (root / name).write_text(head)
@@ -217,7 +217,7 @@ class ChangeLists(unittest.TestCase):
 
     def write(self, d, applied=True, title="Re-run hover and 1 m step test on the updated sim drone", mapping="| NEW-1 | NEAR-786 |"):
         root = fixture(d, "")
-        (root / "docs/plans/2026-10-30-linear-change-list.md").write_text(CHANGE_LIST.format(
+        (root / "docs/linear/updates/2026-10-30-linear-change-list.md").write_text(CHANGE_LIST.format(
             applied="**Applied:** 2026-10-30" if applied else "", title=title, map=mapping))
 
     def test_applied_list_with_unmapped_placeholder_fails(self):
@@ -240,7 +240,7 @@ class ChangeLists(unittest.TestCase):
     def test_placeholder_in_a_mistyped_op_row_fails(self):
         with tempfile.TemporaryDirectory() as d:
             root = fixture(d, "")
-            (root / "docs/plans/2026-10-30-linear-change-list.md").write_text(
+            (root / "docs/linear/updates/2026-10-30-linear-change-list.md").write_text(
                 CHANGE_LIST.format(applied="**Applied:** x", title="Re-run hover and 1 m step test on the updated sim drone",
                                    map="| NEW-1 | NEAR-786 |").replace("| NEW | NEW-1 |", "| ADD | NEW-1 |"))
             r = C.check_change_lists()
@@ -436,7 +436,7 @@ class SingleHome(unittest.TestCase):                                  # design 2
         with tempfile.TemporaryDirectory() as d:
             self.tree(d, {"localisation/README.md": "Import from file → /x/layout.json\n",     # the phrase is in its home, so only the exempt copies are in play
                           **{n: "Import from file → /x/layout.json\n" for n in
-                             ("docs/plans/p.md", "docs/superpowers/specs/s.md", "docs/record/r_record.md", ".claude/worktrees/a/docs/TELEOP.md")}})
+                             ("docs/linear/p.md", "docs/superpowers/specs/s.md", "docs/record/r_record.md", ".claude/worktrees/a/docs/TELEOP.md")}})
             self.assertEqual(C.check_single_home([self.ONLY]).status, "PASS")
 
     def test_backticks_and_spacing_are_ignored(self):

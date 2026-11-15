@@ -440,9 +440,9 @@ Revert: git revert <sha>."
 ### Task 7: Finish — handoff, mirror, Linear note
 
 **Files:**
-- Modify: `docs/plans/2026-11-03-linear-agent-teleop-frame.md` (create), `~/claude-handoff.md`
+- Modify: `docs/linear/updates/2026-11-03-linear-agent-teleop-frame.md` (create), `~/claude-handoff.md`
 - No code.
 
 - [ ] **Step 1:** `python3 -m unittest discover tools/tests 2>&1 | tail -3` → OK; `python3 tools/docs_check/check_docs.py` → 0 FAIL; `python3 tools/docs_check/changes.py audit` → PASS; `git diff --stat $(git log --format=%H -1 --before="2026-11-03 00:00" main) -- AirStack/` shows only `teleop_single_ours.yaml`.
-- [ ] **Step 2:** Write `docs/plans/2026-11-03-linear-agent-teleop-frame.md` (nearlab workspace; create in S5: title `Sim keyboard teleop flies in Drive mode (BODY), F switches to Room mode, with the forward-follows-the-nose test`, Backlog, description from spec §1 + §5.6 gates; comment on NEAR-874: "The NUS velocity contract stays room-frame (WORLD). The sim keyboard's Drive mode is a relay in tools/teleop only and does not touch that path."). Commit (docs only).
+- [ ] **Step 2:** Write `docs/linear/updates/2026-11-03-linear-agent-teleop-frame.md` (nearlab workspace; create in S5: title `Sim keyboard teleop flies in Drive mode (BODY), F switches to Room mode, with the forward-follows-the-nose test`, Backlog, description from spec §1 + §5.6 gates; comment on NEAR-874: "The NUS velocity contract stays room-frame (WORLD). The sim keyboard's Drive mode is a relay in tools/teleop only and does not touch that path."). Commit (docs only).
 - [ ] **Step 3:** `git -C ~/Documents/GitHub/AirStack-starling-max2 pull ~/AirStack-starling-max2 main`; update `~/claude-handoff.md` (Recent changes bullets, Open items: first `teleop_frame` run + hand-flown session with video pending).

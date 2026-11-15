@@ -106,7 +106,7 @@
 **Files:** `docs/projects/HTX-R2.md`, `docs/projects/HTX-R1.md`, `docs/MIGRATION.md`, `docs/SCENARIOS.md`, `docs/TELEOP.md` (§4 `## 4 · Quick start — SIM (M1 rehearsal)`), `docs/BASESTATION.md`, and any other page the inventory names (MOCAP, TROUBLESHOOTING).
 
 - [ ] Apply every `moved to` row for these pages: "what was observed", dates and videos of B9, B10, C9 to HTX-R2 inside the matching `**NEAR-nnn: <title>.**` block (D8; DOCS_STANDARD §4); the branch note to MIGRATION (D3 row 1); C4, C8 reference to SCENARIOS/TELEOP (D3); the `svg_teleop.sh` block (OLD 998–1006) and the RViz fallback line to TELEOP §4 (D10).
-- [ ] Project pages fail the build otherwise: each `###` milestone at most 40 lines, the page at most 250, cells at most 120 characters (`page-budgets`), every NEAR id in `docs/plans/2026-11-13-project-plan-linear.md` (`linear-parity`), figures per `figure-refs`. Today M5 is 21 lines, M7 29: if a moved passage does not fit, link the LEDGER row instead and say so in the report.
+- [ ] Project pages fail the build otherwise: each `###` milestone at most 40 lines, the page at most 250, cells at most 120 characters (`page-budgets`), every NEAR id in `docs/linear/snapshots/2026-11-13-project-plan-linear.md` (`linear-parity`), figures per `figure-refs`. Today M5 is 21 lines, M7 29: if a moved passage does not fit, link the LEDGER row instead and say so in the report.
 - [ ] Moved text must render: visible prose, not an HTML comment, not a code comment.
 - [ ] **Verify:** checker `0 FAIL`; `grep -nF` finds each moved passage; `git diff --stat` only the named pages.
 - [ ] **Commit:** `docs: history, results and reference pages receive what leaves the runbook`.

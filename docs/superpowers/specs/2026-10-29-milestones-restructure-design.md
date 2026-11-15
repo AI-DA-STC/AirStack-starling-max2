@@ -6,7 +6,7 @@
 
 ## Goals
 - An engineer who has never opened the repo answers "where is each project, what passed, what is next" from one screen, then one click.
-- Names and codes are Linear's, verbatim (`docs/plans/2026-10-26-project-plan-linear.md` is the naming authority).
+- Names and codes are Linear's, verbatim (`docs/linear/snapshots/2026-10-26-project-plan-linear.md` is the naming authority).
 - Under each milestone: its issues, then the results of those issues, with the evidence links inline. No separate "evidence" section.
 - Results are shown as tables and figures, not prose.
 - Sim and real are impossible to confuse: stated in every milestone heading and in every table that can mix them.

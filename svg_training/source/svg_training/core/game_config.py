@@ -46,12 +46,26 @@ class ContactRulesCfg:
     guard_survives_tag_prob: float = 0.0
 
 
+BACKENDS: tuple[str, ...] = ("fitted", "physics")
+
+
 @dataclass(frozen=True)
 class StarlingLayerCfg:
+    """The Starling layer: the commander copy and the safety filter, then a drone model ("backend").
+
+    backend "fitted" is S2's fitted PX4 response (``params``); "physics" is S2b's rigid-body drone under the PX4 1.14
+    cascade (``physics_params``). An unknown backend raises here, so the game never sees one.
+    """
     enabled: bool = False
     params: str = "params/real_exploratory_v0.toml"
     filter_iterations: int = 1000
     filter_check_every: int = 0
+    backend: str = "fitted"
+    physics_params: str = "params/starling_physics_v0.toml"
+
+    def __post_init__(self) -> None:
+        if self.backend not in BACKENDS:
+            raise ValueError(f"starling_layer.backend must be one of {BACKENDS}, got {self.backend!r}")
 
 
 @dataclass(frozen=True)
@@ -194,4 +208,9 @@ def load_game_cfg(path: str | Path = CONFIGS / "s2_game.toml", local_dir: Path |
 
 def load_s2_gates(path: str | Path = CONFIGS / "s2.toml") -> dict:
     """Load the S2 gates file as a plain dict."""
+    return tomllib.loads(Path(path).read_text())
+
+
+def load_s2b_gates(path: str | Path = CONFIGS / "s2b.toml") -> dict:
+    """Load the S2b settings and gates file (owner-approved 16 November 2026) as a plain dict."""
     return tomllib.loads(Path(path).read_text())

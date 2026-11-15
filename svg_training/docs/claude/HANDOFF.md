@@ -37,6 +37,7 @@ Tests (Task 11, 16 November, laptop host, conda `env_isaaclab`, `PYTHONPATH=sour
      (Isaac Lab drones' 3-D closest approach at most 0.10 m below tier 1's on paired games without a start miss),
      replacing `physics_closest_cross_min_m = 1.0`, which failed by construction; (B) the training filter stays faithful
      to CMU's.
+   - **S2b STARTED 16 Nov ~06:45** (build ledger `runs/sdd/s2b/progress.md`, briefs beside it): Task 1 building. Isaac launches (Task 5 on) are BLOCKED while the laptop is WiFi-only with remote desktop; Tasks 1–4 are CPU-only.
    - **S2b** ([../plans/2026-11-16-s2b-isaac-lab-environment.md](../plans/2026-11-16-s2b-isaac-lab-environment.md)),
      approved with the owner's 7 answers (in the plan): the S2 game on rigid-body Starlings in Isaac Lab with PX4's
      cascade and the real gains; compare with tier 1; throughput; stand-in trainer on both backends (unchanged

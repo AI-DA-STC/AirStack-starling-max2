@@ -231,7 +231,8 @@ _STEP_FILES = ["core/arena.py", "core/observations.py", "core/rewards.py", "core
                "models/commander.py", "models/fitted.py", "models/placeholder.py", "models/_filters.py"]
 # Offline fitting modules: run on flight logs with NumPy/SciPy, never in the step (the step imports only the frozen
 # TrajectoryParams dataclass from px4_trajectory). Listed so a new models/*.py file must be placed on one list.
-_OFFLINE_MODELS = {"models/fit.py", "models/px4_trajectory.py", "models/response.py", "models/__init__.py"}
+_OFFLINE_MODELS = {"models/fit.py", "models/px4_trajectory.py", "models/response.py", "models/__init__.py",
+                   "models/physics_params.py"}   # S2b: parameter file loading, PyTorch-free, before any step
 _ALLOWED = {
     ("core/arena.py", "tot = float(sum(w))"): "config band weights (Python floats), before any tensor",
     ("core/starling_layer.py", "k = int(cfg.starling.filter_check_every)"): "config value, in __init__",

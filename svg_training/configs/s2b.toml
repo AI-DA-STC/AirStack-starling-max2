@@ -1,0 +1,106 @@
+# S2b settings and gates. APPROVED by the owner 16 Nov 2026 (S2b plan, "Owner's answers": "go with ur picks";
+# second round "yes"). Written before any S2b run. Never edited after a result exists; a new gate = a new run.
+[physics]                                  # backend settings (not gates)
+params = "params/starling_physics_v0.toml"
+physics_dt_s = 0.005                       # D6: 200 Hz, 10 physics steps per game tick
+fallback_physics_dt_s = 0.0025             # D6: used only if Task 3's convergence test fails at 0.005
+rotor_geometry = "cad"                     # D4
+motor_lag = true                           # D5
+setpoint_delay_s = 0.0                     # D7
+
+[fallback_rate_gains]                      # Owner's answer 3: the ONE pre-written fallback, not applied by default.
+# Applied only if Task 3's design check finds the drone's real gains unstable on the physics drone with motor lag;
+# the run's record then says so. As the AirStack simulator (ledger #10): roll and pitch rate P / I / D halved; yaw
+# rate gains unchanged. Anything beyond this fallback: BLOCKED, ask the owner. Never a drone value (iron rule 9).
+label = "SIM-ONLY: roll and pitch rate gains x 0.5, as the AirStack simulator (ledger #10); never port to the drone"
+rate_gain_scale = 0.5
+gains = ["mc_rollrate_p", "mc_rollrate_i", "mc_rollrate_d", "mc_pitchrate_p", "mc_pitchrate_i", "mc_pitchrate_d"]
+
+[agreement]                                # Task 5
+games = 64
+drones_per_game = 3
+seed = 20261116
+
+[agreement_gates]                          # Isaac Lab world vs the torch reference world
+open_loop_pos_max_m = 1.0e-3               # 1 s, the same constant wrench: only integrator rounding should differ
+open_loop_angle_max_deg = 0.1              # same, attitude
+closed_loop_vel_rms_max_mps = 0.01         # step set under the cascade: a tenth of the S1 model allowance (0.10)
+closed_loop_pos_max_m = 0.02               # end of each step: a tenth of the commander's 0.2 m hold leash
+mass_inertia_rel_err_max = 1.0e-4          # read back from PhysX: the body is the one specified
+nan_max = 0
+
+[step_tests]                               # Task 7
+steps = [
+  { name = "x_strike",  cmd_mps = [0.5, 0.0, 0.0],      push_s = 4.0, release_s = 4.0 },
+  { name = "y_guard",   cmd_mps = [0.0, -0.3333, 0.0],  push_s = 4.0, release_s = 4.0 },
+  { name = "diagonal",  cmd_mps = [0.3536, 0.3536, 0.0], push_s = 4.0, release_s = 4.0 },
+  { name = "reverse",   cmd_mps = [0.5, 0.0, 0.0],      push_s = 3.0, release_s = 3.0, then_mps = [-0.5, 0.0, 0.0] },
+  { name = "z_up_info", cmd_mps = [0.0, 0.0, 0.3],      push_s = 2.0, release_s = 3.0 },   # INFO: tier 1 z not fitted
+]
+hover_s = 10.0
+real_log = "~/flight_logs/2026-11-13/ulog_drone_2/log103.ulg"
+real_log_sha256_prefix = "4db5b1fcf33e69c6"
+tilt_info_deg = 30.0                       # D11: drone_1's limit, INFO variant
+
+[step_gates]
+hover_drift_max_m = 0.05                   # 10 s from rest: a tenth of the 0.5 m stick leash
+hover_tilt_std_max_deg = 1.0               # last 5 s of hover; a limit cycle like the AirStack sim's 9 Hz one is far larger
+peak_tilt_max_deg = 45.5                   # MPC_TILTMAX_AIR 45: the tilt limiter works
+upsets_max = 0                             # D10
+real_min_windows = 6                       # log103's six held-out legs (S1 split); fewer found = INFO
+real_vel_rms_max_mps = 0.10                # physics drone fed the logged setpoints: S1 [fit_gates] value
+real_t63_err_max_s = 0.10                  # S1 [fit_gates] value
+tier1_vel_rms_max_mps = 0.10               # physics vs tier 1 Starling layer, same commands, gated steps only
+tier1_t63_gap_max_s = 0.10
+
+[throughput]                               # Task 7: INFO, no gate
+sizes = ["2v1", "5v3"]
+num_games = [1024, 2048, 4096]
+actions = "random"
+repeats = 2
+trainable_drone_steps_per_s_min = 20000    # S0's decision rule for tier 2, read off, not a gate
+
+[compare_games]                            # Task 8
+guards = ["guard_mark_edge", "guard_mark_inside", "guard_field", "guard_mirror", "random"]
+strikes = ["strike_straight", "strike_flank"]
+sizes = ["2v1", "5v3"]
+games_per_band = 1000
+seed = 0
+batch_per_pair = true                      # D15: paired games
+
+[compare_games_gates]
+max_cell_hold_gap = 0.10                   # per Guard × Strike × size × band, 1,000 paired games; ~2× the 0.044
+                                           # 95 % spread of two unpaired rates at 0.5, so a larger gap is the drone
+closest_cross_3d_gap_max_m = 0.10          # AMENDED by the owner 16 Nov (decision A): per matchup cell, games without a start miss, 3-D closest Guard–Strike approach: physics minimum and 5th percentile no more than 0.10 m below tier 1 Starling layer's (paired games). Replaces physics_closest_cross_min_m = 1.0, which failed by construction (T9: walled drones + teammate squeeze reach 0.75–0.80 m on tier 1)
+upsets_max = 0
+nan_max = 0
+
+[standin_s2b]                              # Task 9. configs/s2.toml [standin] and [standin_gates] stay unchanged (D14)
+# Owner's answer 6: control runs on BOTH PyTorch variants, then the Isaac Lab run; one ledger row each.
+motions = ["pure", "starling", "physics"]  # pure partner rules · tier 1 Starling layer · physics drone (Isaac Lab)
+# Owner's answer 5: the 50 M game-step budget of [standin] is kept; only the wall-clock cap differs.
+wall_clock_cap_min_torch = 45              # = [standin] wall_clock_cap_min (both PyTorch runs)
+wall_clock_cap_min_isaac = 180             # 3 h, the Isaac Lab run only
+
+[tensorboard]                              # Owner's addition 16 Nov: every training run (Task 9 and later)
+logdir = "runs"                            # runs/<run name>/: skrl's own curves (rewards, losses, learning rate)
+# The game's own numbers, every evaluation interval; hold rate is per scripted Strike behaviour, under game/hold_rate/
+game_scalars = ["game/hold_rate", "game/timeout_win_share", "game/closest_cross_3d_min_m",
+                "game/closest_cross_3d_p05_m", "game/filter_share", "game/game_steps_per_s"]
+settings_text = ["game_config_sha256", "seed", "backend", "preset"]   # TensorBoard text, to tell runs apart
+cloud_logging = false                      # no cloud service: the partner's numbers never leave the laptop
+
+[video]                                    # Task 6
+clips = [
+  { name = "s2b_2v1_lab",    size = "2v1", band = "lab",    guard = "guard_mark_edge", strike = "strike_flank", seed = 1 },
+  { name = "s2b_2v1_large",  size = "2v1", band = "large",  guard = "guard_field",     strike = "strike_straight", seed = 2 },
+  { name = "s2b_5v3_lab",    size = "5v3", band = "lab",    guard = "guard_mark_edge", strike = "strike_flank", seed = 3 },
+  { name = "s2b_5v3_middle", size = "5v3", band = "middle", guard = "guard_mirror",    strike = "strike_flank", seed = 4 },
+]
+candidate_games = 4                        # clip rule: first game slot (index order) whose first game lasts 20-40 s, else the longest
+seconds_min = 20.0
+seconds_max = 40.0
+fps = 20
+resolution = [1280, 720]
+max_mb = 10.0
+caption = "Training simulator (Isaac Lab), scripted strategies, not a real flight"

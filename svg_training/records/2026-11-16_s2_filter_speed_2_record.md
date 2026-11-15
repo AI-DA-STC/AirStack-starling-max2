@@ -24,7 +24,7 @@ Repository HEAD `bcae60bf3982` at launch. Uncommitted at launch (`launch_commit.
 - this task's files: `scripts/filter_speed.py`, `scripts/make_s2_figures.py`, `core/starling_layer.py` (the early-stop docstring and the wall fix below), tests;
 - another builder's Task 6 follow-up: `core/game.py` (a 3-D closest-approach number, one small batched sum per step), `core/metrics.py`, `core/play.py`, `scripts/score.py`.
 
-Code fingerprint `ee9c631ed44d`. After the run, `scripts/filter_speed.py` gained the whole-game INFO phase and `scripts/make_s2_figures.py` gained its lines in the figure; neither changes the code that was timed.
+Code fingerprint `ee9c631ed44d` (the speed and accuracy phases). After the run, `scripts/filter_speed.py` gained the whole-game INFO phase and `scripts/make_s2_figures.py` gained its lines in the figure; neither changes the code that was timed. The whole-game phase has no code fingerprint of its own: it ran from the working tree as it stood after the run, which still held the other builder's uncommitted `core/game.py` change listed above.
 
 **Wall fix, in the code timed.** Before this run a reviewer found that at a wall the commander copy kept the speed the wall had taken away. The safety filter then believed a drone pinned at a wall was moving away, and let an opposite drone close to about 0.77 m (keep-out 1.10 m). `StarlingLayer.keep_in` now also zeroes the outward part of the commander's published speed and ramp on every axis the wall clamped, as the real commander's fence does. The first attempt at this run (T7, ABORTED) was stopped to put this fix in.
 
@@ -111,7 +111,7 @@ With the early stop, the filter costs more when games are crowded, so the speed 
 - **Timed window:** 200 steps took 6.8 s, about 34 ms per step. At that speed the loop must have ended at the first checks.
 - **Reason:** with random actions the drones stay near their starts. Once the first close pairs are sorted out, few games have anything left to filter.
 
-To see a whole game, each early-stop candidate was timed again over one game of 1,200 steps from the start (`--phase fullgame`, 01:54–02:04, same GPU, same seed), with its syncs counted over a second whole game:
+To see a whole game, each early-stop candidate was timed again over one game of 1,200 steps from the start (`--phase fullgame`, 01:54–02:10, same GPU, same seed; no code fingerprint of its own, see Commit), with its syncs counted over a second whole game:
 
 | iterations | check_every | game-steps/s, whole game | slowest / fastest 100 steps | host syncs per step, whole game |
 |---|---|---|---|---|
@@ -131,8 +131,9 @@ The first 100 steps of a game are the slowest: 25,210 game-steps/s at 1,000 swee
 What this means for training:
 
 - A Guard team that learns to meet Strike drones makes games more crowded than random actions do. The early stop then saves less.
-- In a long run, games restart at different times after their first end, so some are always at the crowded start.
-- So 121,118 is an upper end for this setting. Over a whole game with random actions it gave 90,121. With trained play it would likely be lower; that was not measured.
+- In this check every game started together (reset fraction 2.2e-5). In training, games restart at different times, so some game is always in its crowded start and every step may pay up to 125 checks; the rate could then fall below 90,121, and that was not measured.
+- So 121,118 is an upper end for this setting. Over a whole game with random actions it gave 90,121. With trained play or staggered restarts it would likely be lower.
+- Before any claim about training time (such as the S2 plan's "about 17 min" for 100 M game-steps, decision D7), an INFO run with staggered restarts should measure the rate.
 
 ## Gates
 
@@ -144,3 +145,7 @@ What this means for training:
 **Selection: PASS.** Chosen: `iterations` 1000, `check_every` 8 (the fastest accurate candidate; the fastest of all is 500 / 8 at 121,972, which fails accuracy).
 
 Following the rule, the lead sets `configs/s2_game.toml` `[starling_layer] filter_iterations = 1000, filter_check_every = 8` after this record; the change is not made here. Read the whole-game check before relying on the 100,000 figure.
+
+## Edited after the run (gatekeeper review, 16 November 2026)
+
+Wording only; no number changed and nothing was re-run. Added: the whole-game check had all games starting together, and the staggered-restart INFO run recommended before any training-time claim. Corrected: the whole-game phase's time span (01:54–02:10, `fullgame.json` written 02:09:42). Stated: that phase has no code fingerprint of its own.

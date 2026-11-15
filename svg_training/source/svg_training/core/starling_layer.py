@@ -102,8 +102,9 @@ class StarlingLayer:
         (as the real commander clamps its reference to its fence). Returns the clamped positions [N, M, 3].
 
         On every axis the wall clamped, the outward part of the commander's published speed and of its ramp is
-        zeroed too, as the real commander's keep_in fence publishes the clipped speed (``swarm_commander.py``
-        :2208-2219, :2307-2308). Without it the commander copy remembers a speed the drone never had: the next ramp
+        zeroed too, as the real commander's keep_in fence publishes the clipped speed at the wall
+        (``swarm_commander.py`` :2208-2219, :2307-2308); the real fence's slow-down before the wall (``fence.py``
+        ``keep_in_velocity``) is not copied. Without it the commander copy remembers a speed the drone never had: the next ramp
         starts from it, and the safety filter believes a drone pinned at a wall is still moving away, so it lets an
         opposite drone close to ~0.77 m of a 1.10 m keep-out (S2 Task 7b fix)."""
         p = self.model.pos_m

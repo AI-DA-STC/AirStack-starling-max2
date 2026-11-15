@@ -37,7 +37,10 @@ Left out, on purpose (each is listed in params/real_exploratory_v0.toml and the 
 -------------------------------------------------------------------------------------------
 * the stale-stick timeout (``teleop_timeout_s`` 0.5 s, :1881-1884): a policy commands every tick;
 * the keep-in fences (teleop fence and geofence, :1966-1968 reference clamp, :2209-2210 speed clip and its
-  braking feed-forward): the game's arena boundary is a game rule (a drone leaving it leaves the game);
+  braking feed-forward): the game's arena boundary is a game rule (a drone leaving it leaves the game). Since S2
+  Task 7b the Starling layer (``core/starling_layer.StarlingLayer.keep_in``) copies the fence's effect AT the wall:
+  the reference is clamped and the outward published speed and ramp are clipped to zero. The real fence's
+  slow-down before the wall (``fence.py`` ``keep_in_velocity``, its margin and braking) is not copied;
 * yaw (the teleop yaw rate, :2271-2283): it does not change the translation law;
 * the takeoff, landing and hold states, and stale-odometry zero commands: a training drone is always ACTIVE;
 * the emergency flag's re-leash of a filter group's drones whose command was NOT changed (:2229-2230,

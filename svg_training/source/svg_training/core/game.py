@@ -25,8 +25,9 @@ class StepOut:
     describe the step just taken. info: band [N], closest_cross_m [N] (inf if no live opposite pair),
     closest_team_m [N] (inf if no live same-team pair), rule_breach [N] bool, filter_corrected [N, M] bool,
     final_alive [N, M] bool (who was in the game at the end of this step, before any reset),
-    start_miss [N] bool (True for a game that auto-reset this step whose starts could not meet the spacing /
-    keep-out; False elsewhere)."""
+    start_miss [N] bool (True if the game that played this step started with a miss: its starts could not
+    meet the spacing / keep-out; constant over a game, so read it on the done step to count games).
+    ``SvgGame.start_miss`` holds the same flag for the current (new) game."""
     obs: dict[str, Tensor]
     reward: dict[str, Tensor]
     done: Tensor
@@ -110,7 +111,7 @@ class SvgGame:
         when = (torch.rand(n, generator=self.gen, device=dev) * self.ticks).floor().long().clamp(max=self.ticks - 1) + 1
         pick = hit[:, None] & (torch.arange(m, device=dev)[None, :] == who[:, None])
         drop = torch.where(pick, when[:, None].expand(n, m), torch.full((n, m), -1, dtype=torch.long, device=dev))
-        self.start_miss = torch.where(mask, miss, torch.zeros_like(miss))
+        self.start_miss = torch.where(mask, miss, self.start_miss)
         self.arenas = self.arenas.merge(ar, mask)
         self.pos_m = torch.where(mk[..., None], pos, self.pos_m)
         self.vel_mps = torch.where(mk[..., None], torch.zeros_like(self.vel_mps), self.vel_mps)
@@ -205,6 +206,6 @@ class SvgGame:
                 "final_alive": alive.clone()}
         end_step = torch.where(done, steps_new, torch.zeros_like(steps_new))
         self._phi = phi_now
+        info["start_miss"] = self.start_miss.clone()      # the game that just played
         self._new_games(done)
-        info["start_miss"] = self.start_miss
         return StepOut(self._obs(), reward, done, outcome, end_step, info)

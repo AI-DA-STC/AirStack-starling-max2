@@ -184,9 +184,19 @@ def test_dropout_is_one_drone_in_a_fraction_of_games():
 
 
 def test_start_miss_reported():
-    g = SvgGame(CFG, 64, 5, 3, device="cpu", seed=2, band=0)
-    out = g.step({"guard": torch.zeros(64, 5, 4), "strike": torch.zeros(64, 3, 4)})
-    assert out.info["start_miss"].shape == (64,) and not out.info["start_miss"].any()
+    big = CFG.replace(**{"starts.spacing_m": 50.0})                  # made-up: impossible to meet
+    g = SvgGame(big, 32, 5, 3, device="cpu", seed=2, band=0)
+    assert g.start_miss.all()                                        # from reset() itself
+    a = {"guard": torch.zeros(32, 5, 4), "strike": torch.zeros(32, 3, 4)}
+    out = g.step(a)
+    assert out.info["start_miss"].all()                              # same flag, every step of the game
+    for _ in range(1199):
+        out = g.step(a)
+    assert out.done.all() and out.info["start_miss"].all()           # read on the done step
+    assert g.start_miss.all()                                        # the new game also misses
+    ok = SvgGame(CFG, 32, 2, 1, device="cpu", seed=2, band=2)
+    assert not ok.start_miss.any() and not ok.step({"guard": torch.zeros(32, 2, 4),
+                                                    "strike": torch.zeros(32, 1, 4)}).info["start_miss"].any()
 
 
 def test_scenarios_exist_and_fit():

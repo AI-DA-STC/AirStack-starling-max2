@@ -14,7 +14,7 @@ never associated. It is *not* a DHCP server problem.
 
 Two **independent boot races** caused this. Both are fixed and reboot-verified.
 
-### Cause 1 — the `option` serial driver steals the dongle (no `wlan0` at all)
+## Cause 1 — the `option` serial driver steals the dongle (no `wlan0` at all)
 `usb_modeswitch` flips the stick from `0bda:1a2b` (fake CD-ROM) to `35bc:0108` (WLAN), then
 — assuming every mode-switching device is an LTE modem — writes the new ID into
 `/sys/bus/usb-serial/drivers/option1/new_id`. `option` is **built into the kernel** (registers
@@ -32,7 +32,7 @@ echo -n 1-1.4:1.0 > /sys/bus/usb/drivers/option/unbind
 echo -n 1-1.4:1.0 > /sys/bus/usb/drivers/rtl8852bu/bind
 ```
 
-### Cause 2 — `wpa_supplicant` gives up before `wlan0` exists (this is the 169.254 one)
+## Cause 2 — `wpa_supplicant` gives up before `wlan0` exists (this is the 169.254 one)
 Stock `/lib/systemd/system/wpa_supplicant.service` has `Restart=always` but **no `RestartSec`**,
 so it defaults to 100 ms. Against systemd's default `StartLimitBurst=5` /
 `StartLimitIntervalSec=10s` it burns all 5 starts **inside one second**, logging
@@ -54,11 +54,11 @@ RestartSec=5
 `systemctl start wpa_supplicant`. A plain `systemctl restart` will NOT work once the start
 limit is hit — `reset-failed` is mandatory.
 
-### Verified state after reboot
+## Verified state after reboot
 `rtl8852bu` bound · 1 USB enumeration (was 5) · 1 supplicant retry · associated to
 `StarlingMax2` on 5180 MHz · DHCP lease **10.40.2.11/23** via 10.40.2.1 · 0% loss both ways.
 
-### Laptop side — drone "can't ping the GCS" is asymmetric routing, NOT a firewall
+## Laptop side — drone "can't ping the GCS" is asymmetric routing, NOT a firewall
 Drone `10.40.2.11` pinging the GCS `192.168.9.107` failed while the router was fine (drone
 pings `192.168.9.1` at 0% loss). Proof the packets *did* arrive, no root needed: `/proc/net/snmp`
 Icmp `InEchos` **and** `OutEchoReps` both rose by 5 during 5 pings. The laptop was replying —

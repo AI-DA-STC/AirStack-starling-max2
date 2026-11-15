@@ -61,7 +61,14 @@ Two independent boot races will otherwise leave the drone with no WiFi. Full wri
 evidence: [record/real_notes_2026-09-16_wifi.md](record/real_notes_2026-09-16_wifi.md).
 
 - [ ] **Stop `option` stealing the dongle.** Append `NoDriverLoading=1` to `/etc/usb_modeswitch.d/0bda:1a2b`. Without it the kernel-builtin `option` serial driver claims the stick and exports it as `/dev/ttyUSB0`, so no `wlan0` ever appears.
-- [ ] **Stop `wpa_supplicant` quitting before `wlan0` exists.** Create `/etc/systemd/system/wpa_supplicant.service.d/10-wait-for-wlan0.conf` with `StartLimitIntervalSec=0` under `[Unit]` and `RestartSec=5` under `[Service]`, then `systemctl daemon-reload`. The stock unit burns 5 starts in under a second; the dongle only enumerates at t≈8 s.
+- [ ] **Stop `wpa_supplicant` quitting before `wlan0` exists.** Create `/etc/systemd/system/wpa_supplicant.service.d/10-wait-for-wlan0.conf` with exactly this (the version reboot-tested on 2026-09-16), then `systemctl daemon-reload`. The stock unit burns 5 starts in under a second; the dongle only enumerates at t≈8 s.
+  ```
+  [Unit]
+  StartLimitIntervalSec=0
+  After=sys-subsystem-net-devices-wlan0.device
+  [Service]
+  RestartSec=5
+  ```
 - [ ] **Verify by REBOOTING** (this is a boot race — a live test proves nothing): `readlink /sys/bus/usb/devices/1-1.4:1.0/driver` = `rtl8852bu`, `systemctl is-active wpa_supplicant` = `active`, `iw dev wlan0 link` = Connected, and `ip -4 -br addr show wlan0` shows a real lease, **not** `169.254.x.x`.
 - [ ] If the drone sits on a different subnet from the GCS, add the GCS-side route (`sudo ip route add <drone_subnet> via 192.168.9.1 dev <gcs_nic>`, persist via `nmcli`). ⚠️ Unicast only — **NatNet mocap is multicast and will not cross the router**, so a drone that must fly under OptiTrack has to sit on `192.168.9.x`.
 

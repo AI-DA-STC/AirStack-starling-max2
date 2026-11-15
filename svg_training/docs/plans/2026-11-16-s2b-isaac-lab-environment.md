@@ -644,3 +644,10 @@ Test: a 1-minute CPU smoke run writes an event file whose tags include `game/hol
 |---|---|---|
 | A | The games gate "physics closest Guard–Strike approach ≥ 1.0 m in every game" fails by construction (S2's T9: on tier 1 a drone held at a wall plus a team-mate squeeze already reaches 0.75–0.80 m; some games start closer than 1.0 m) | **Replaced, before any S2b run:** per matchup cell, in games without a start miss, the 3-D closest Guard–Strike approach under physics (minimum and 5th percentile) may be at most **0.10 m** below the tier 1 Starling layer's on the same paired games (`closest_cross_3d_gap_max_m` in `configs/s2b.toml`, Task 1). Wherever the plan's text still names `physics_closest_cross_min_m`, the builder uses this rule instead. |
 | B | Make the training copy's safety filter wall-aware (it would no longer match CMU's)? | **No: keep the filter faithful to CMU's.** The wall effect is recorded as a real-drone hazard hypothesis (the commander runs the filter before the keep-in fence); a fix belongs in CMU's commander, the owner's call. |
+
+## Corrections during the build (checked against PX4 v1.14.0 source, `git show v1.14.0:<path>`)
+
+- **Yaw attitude gain** (D6 / Task 3 step 7): PX4 v1.14 `AttitudeControl::setProportionalGain` divides the yaw gain by the yaw weight, so the yaw P is `MC_YAW_P / MC_YAW_WEIGHT` (7.0 with the drone's values), not `MC_YAW_P`.
+- **D-term filter** (D6 / Task 3 step 7): first-order `AlphaFilter` on the raw angular rate (`VehicleAngularVelocity.hpp:172`, alpha 0.557 at 200 Hz), not a second-order Butterworth.
+- **Rate gains**: K multiplies P, I and D; feed-forward stands alone (`rate_control.cpp`). Identical here because every K is 1 on the drone.
+- **Known differences for Task 7**: `THR_MDL_FAC` 0.9 and `MPC_USE_HTE` 1 (hover-thrust estimator) are on the drone but not modelled (fixed hover thrust 0.165, linear motor).

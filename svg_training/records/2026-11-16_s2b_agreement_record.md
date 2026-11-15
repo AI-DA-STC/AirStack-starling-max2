@@ -22,7 +22,7 @@ S2b flies the S2 game on rigid-body Starlings. Two worlds can move those bodies:
 
 ## Commit
 
-`1a94f87-dirty`, code fingerprint `f57f1f7dd1ce`.
+`1a94f87-dirty`, code fingerprint `f57f1f7dd1ce`. After the run, `scripts/physics_agreement.py` was edited (record formatting and the `--record-from` mode; the measuring code unchanged), and in a later fix round `compat/isaaclab_232.py` moved the same settling step into one method and `scripts/isaac_preflight.sh` changed. So `f57f1f7dd1ce` is the code as it ran, not the committed files.
 
 ## Config
 

@@ -191,31 +191,41 @@ class IsaacWorld:
         if (self.co.num_instances, self.co.num_objects) != (self.num_games, self.drones):
             raise RuntimeError(f"PhysX holds {self.co.num_instances} x {self.co.num_objects} bodies, "
                                f"expected {self.num_games} x {self.drones}")
-        view = self.co.root_physx_view
-        count = view.count
-        ixx, iyy, izz = self.a.inertia_kgm2
-        want = torch.tensor([ixx, 0.0, 0.0, 0.0, iyy, 0.0, 0.0, 0.0, izz], dtype=torch.float32)
-        current = view.get_inertias()
-        view.set_inertias(want.expand(count, 9).reshape(current.shape).clone().to(current.device),
-                          torch.arange(count, dtype=torch.int32, device=current.device))
         self.origins = self.scene.env_origins.clone()                                     # [N, 3] world
         n, m = self.num_games, self.drones
         kw = dict(device=self.device, dtype=torch.float32)
         self._force_b = torch.zeros(n, m, 3, **kw)
         self._torque_b = torch.zeros(n, m, 3, **kw)
         self.co.permanent_wrench_composer.reset()
-        # One settling step, then back to the spawn poses at rest. Observed in Task 5 (GPU pipeline): the first
-        # physics step after play turned the bodies about 1.29x as fast as the written inertia allows (a probe with
-        # a roll torque); from the second step on, the body rates match the torch world to 1e-6. The smoke run's
-        # first_step check (tests/test_isaac_world.py) pins this.
+        self.write_inertia()                                    # the bodies are at their spawn poses, at rest
+        self._ready = True
+
+    def write_inertia(self, inertia_kgm2: tuple[float, float, float] | None = None) -> None:
+        """Write a diagonal inertia (default: the airframe's) into PhysX for every drone, then take one settling
+        physics step with no wrench and put every body back exactly as it was (pose and velocities, one write).
+
+        Why the settling step: observed in Task 5 (GPU pipeline), the first physics step after play and the inertia
+        write turned the bodies about 1.29x as fast as the written inertia allows (a probe with a roll torque); from
+        the next step on the body rates match the torch world to 1e-6. Whether play or the write itself causes it was
+        not separated, so any later inertia change comes through here and is settled the same way (a precaution). The held wrench (``apply_wrench_b``) is kept and applied from the next step.
+        The smoke run's first_step check (tests/test_isaac_world.py) pins this.
+        """
+        ixx, iyy, izz = self.a.inertia_kgm2 if inertia_kgm2 is None else inertia_kgm2
+        view = self.co.root_physx_view
+        count = view.count
+        want = torch.tensor([ixx, 0.0, 0.0, 0.0, iyy, 0.0, 0.0, 0.0, izz], dtype=torch.float32)
+        current = view.get_inertias()
+        view.set_inertias(want.expand(count, 9).reshape(current.shape).clone().to(current.device),
+                          torch.arange(count, dtype=torch.int32, device=current.device))
+        d = self.co.data
+        before = torch.cat((d.object_link_pose_w, d.object_com_vel_w), dim=-1).clone()  # [N, M, 13] world
+        zero = torch.zeros(self.num_games, self.drones, 3, device=self.device, dtype=torch.float32)
+        self.co.permanent_wrench_composer.set_forces_and_torques(forces=zero, torques=zero, is_global=False)
         self.scene.write_data_to_sim()
         self.sim.step(render=False)
         self.scene.update(dt=self.dt_s)
-        spawn = self.co.data.default_object_state.clone()                                 # [N, M, 13] game frame
-        spawn[..., :3] += self.origins[:, None]
-        self.co.write_object_state_to_sim(spawn)
+        self.co.write_object_state_to_sim(before)
         self._refresh()
-        self._ready = True
 
     def _refresh(self) -> None:
         """Read the state PhysX holds (after a step) into game-relative clones."""

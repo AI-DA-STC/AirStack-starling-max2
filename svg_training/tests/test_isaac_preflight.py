@@ -35,10 +35,10 @@ def _fake_bin(tmp: pathlib.Path) -> pathlib.Path:
     return b
 
 
-def _run(tmp_path, nmcli: str, pgrep: str = "", apps: str = DESKTOP_APP) -> subprocess.CompletedProcess:
+def _run(tmp_path, nmcli: str, pgrep: str = "", apps: str = DESKTOP_APP, *flags: str) -> subprocess.CompletedProcess:
     env = {"PATH": f"{_fake_bin(tmp_path)}:/usr/bin:/bin", "FAKE_NMCLI": nmcli, "FAKE_PGREP": pgrep,
            "FAKE_APPS": apps, "HOME": str(tmp_path)}
-    return subprocess.run(["bash", str(SCRIPT)], env=env, capture_output=True, text=True, timeout=60)
+    return subprocess.run(["bash", str(SCRIPT), *flags], env=env, capture_output=True, text=True, timeout=60)
 
 
 def test_wifi_only_with_remote_desktop_is_blocked(tmp_path):
@@ -61,6 +61,27 @@ def test_big_foreign_gpu_process_is_busy(tmp_path):
     r = _run(tmp_path, WITH_ETHERNET, "", DESKTOP_APP + BIG_FOREIGN)
     assert r.returncode == 11, r.stdout + r.stderr
     assert "777001" in r.stdout and "3600" in r.stdout
+
+
+def test_gpu_check_runs_even_when_blocked(tmp_path):
+    r = _run(tmp_path, WIFI_ONLY, XRDP, DESKTOP_APP + BIG_FOREIGN)
+    assert r.returncode == 10 and "777001" in r.stdout and "BLOCKED" in r.stdout
+
+
+@pytest.mark.parametrize("flag, words", [("--approved-headless", "headless"), ("--approved-windowed", "window")])
+def test_approval_turns_block_into_warning(tmp_path, flag, words):
+    r = _run(tmp_path, WIFI_ONLY, XRDP, DESKTOP_APP, flag)
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "WARNING" in r.stdout and "16 November 2026" in r.stdout and words in r.stdout
+
+
+def test_approval_does_not_hide_a_busy_gpu(tmp_path):
+    r = _run(tmp_path, WIFI_ONLY, XRDP, DESKTOP_APP + BIG_FOREIGN, "--approved-headless")
+    assert r.returncode == 11 and "WARNING" in r.stdout and "777001" in r.stdout
+
+
+def test_unknown_argument_exits_2(tmp_path):
+    assert _run(tmp_path, WITH_ETHERNET, "", DESKTOP_APP, "--yes").returncode == 2
 
 
 def test_prints_nvidia_smi_and_network(tmp_path):

@@ -12,6 +12,9 @@ import torch
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 CMU_PKG = ROOT.parent / "AirStack/robot/ros_ws/src/svg_ground_control"
+if not (CMU_PKG / "svg_ground_control").is_dir():   # the container mounts only svg_training/
+    pytest.skip(f"CMU's svg_ground_control is not on this machine ({CMU_PKG}); run on the host",
+                allow_module_level=True)
 sys.path.insert(0, str(CMU_PKG))
 from svg_ground_control.cbf_filter import filter_velocities as cmu_filter  # noqa: E402
 

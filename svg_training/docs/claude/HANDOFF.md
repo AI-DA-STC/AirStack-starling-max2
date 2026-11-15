@@ -37,10 +37,10 @@ Tests (Task 11, 16 November, laptop host, conda `env_isaaclab`, `PYTHONPATH=sour
      review of the whole S2 diff (superpowers:requesting-code-review) against the plan and design; `panel-newcomer-reader`
      on `S2_RESULTS.md` and `PLUG_IN.md`. Fix rounds until no Critical or Important is open; tick STANDARDS §11; the
      lead commits the documents with explicit paths and refreshes the `~/Downloads/` copy.
-   - **Owner rulings before S2b runs** (§5 rows A and B): (A) the S2b gate `physics_closest_cross_min_m = 1.0` fails by
-     construction (T9: 0.75–0.80 m near walls, 0.025 m in crowded starts); proposed replacement: compare the Isaac
-     Lab drones with tier 1 game by game in 3-D, leaving out start-miss games; no S2b run yet. (B) keep the filter
-     faithful to CMU (recommended) or make the training copy wall-aware.
+   - **Owner ruled, 16 November** (S2b plan, a7e4c2f): (A) the S2b games gate is now `closest_cross_3d_gap_max_m = 0.10`
+     (Isaac Lab drones' 3-D closest approach at most 0.10 m below tier 1's on paired games without a start miss),
+     replacing `physics_closest_cross_min_m = 1.0`, which failed by construction; (B) the training filter stays faithful
+     to CMU's.
    - **S2b** ([../plans/2026-11-16-s2b-isaac-lab-environment.md](../plans/2026-11-16-s2b-isaac-lab-environment.md)),
      approved with the owner's 7 answers (in the plan): the S2 game on rigid-body Starlings in Isaac Lab with PX4's
      cascade and the real gains; compare with tier 1; throughput; stand-in trainer on both backends (unchanged
@@ -256,8 +256,6 @@ stay out of git; real flights of a contact policy should start with a virtual co
 
 | Item | Who | Needed before |
 |---|---|---|
-| **A. S2b gate `physics_closest_cross_min_m = 1.0`** fails by construction (T9: the same command chain reaches 0.75–0.80 m near walls, 0.025 m in crowded starts). Proposed: compare Isaac Lab drones with tier 1 game by game in 3-D, excluding start-miss games | owner (proposal pending) | the first S2b run |
-| **B. Training filter faithful to CMU (recommended), or wall-aware** (a departure from the real commander) | owner | S2b scoring runs |
 | D1 reading of "one keep-out per team" (`push_rule = "block"`) against NUS's report; `shove` is the other switch | owner | a partner-rules result |
 | Real-drone hazards, **HYPOTHESES, not flown, not fixed**: (1) CMU's commander runs the CBF (`swarm_commander.py` ~2140) before the keep-in fence (~2210), so a drone held at the fence may let another inside 1.10 m (T9 diagnosis, training copy); (2) the position setpoint is not filtered, teammates head-on 1.083 m in tier 1 (T4) | owner (tell CMU? test?) | the next multi-drone real flight near a fence |
 | INFO speed run with staggered game restarts (T8 timed all games starting together) | Claude | any training-time claim |

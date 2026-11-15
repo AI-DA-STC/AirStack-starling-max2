@@ -111,22 +111,22 @@ are parameters in one game config, never constants in code.
 | Safety filter in the game | side quest (contact tags): acts between drones of the **same team** only. Main game with the Starling layer: as on the real drones, every pair (S2 design §4a) | FIXED | owner, 14 and 15 November 2026 |
 | Structures | a drone that touches a structure leaves the game; avoiding structures is learned. The flight stack has no obstacle avoidance, only a box fence | PROPOSED | `fence.py` |
 | Trained size range | 1–5 Guard, 1–3 Strike, drawn per game | PROPOSED | — |
-| Strike scores | a Strike drone is inside the zone | PROPOSED | — |
+| Strike scores | a Strike drone is inside the zone | PROPOSED | S2: `configs/s2_game.toml` `[partner_rules] win_steps_in_zone` (one step) |
 | Tag | **side quest only** (owner, 15 November 2026): physical contact between a Guard drone and a Strike drone; there is no tag radius. The main game has no tag: the partner rules preset keeps opposite teams apart ([docs/specs/2026-11-15-s2-game-and-plug-in-design.md](docs/specs/2026-11-15-s2-game-and-plug-in-design.md) §4a) | FIXED | owner, 14 and 15 November 2026 |
 | Contact, tier 1 | the two centres closer than **0.50 m**: twice the 0.248 m radius of the smallest sphere that encloses the airframe with its propellers. A property of the airframe, not a game rule; a sphere is slightly generous | MEASURED | vertices of `AirStack/simulation/isaac-sim/assets/robots/starling2max.usd`, read 14 November 2026 |
 | Contact, tier 2 | a PhysX contact between the two bodies | PROPOSED | — |
 | After a tag, Strike drone | it goes down: it leaves the game | FIXED | owner, 14 November 2026 |
 | After a tag, Guard drone | it leaves too by default: setting `guard_survives_tag_prob` = 0 (both leave); training may draw it per game; evaluation reports 0 and 1 separately | FIXED | owner, 15 November 2026 |
-| Game length | 60 s (1,200 steps) | PROPOSED | — |
+| Game length | 60 s (1,200 steps) | PROPOSED | S2: `configs/s2_game.toml` `[partner_rules] game_steps` |
 | Arena, lab scale | goals are drawn from a 3 × 3 m box, 0.5–1.8 m high; the boundary that acts on a drone is the 4 × 4 × 4 m keep-in fence | MEASURED | `goal_two_ours.yaml` (`arena_low/high`, `fence_min/max`) |
 | Environments | games are played in realistic 3D environments, the construction-site world first; an empty arena is only the first build step | FIXED | owner, 14 November 2026 |
 | Environment ladder | E0 open arena; E1 random blocks and columns; E2 the construction-site world plus E1 clutter; E3 more worlds, one held out; E4 a scanned real place; E5 a camera-ready copy | PROPOSED | [docs/DESIGN.md](docs/DESIGN.md) §7 |
 | Per game | its own placement in the world, start positions and clutter | PROPOSED | RESEARCH §10 |
 | The zone's size and place in each world; the playing volume | OPEN | OPEN | owner |
-| Zone radius | OPEN in metres; NUS's balanced ratio is in the October 2026 monthly report | OPEN | owner + NUS |
-| Height | games are scored in the horizontal plane; height is held in a band at first | PROPOSED | — |
-| Drop-out | a drone is removed at a random time in a set fraction of games | PROPOSED | — |
-| Start positions | anywhere in the playing volume that is clear of structures and respects the keep-out distance within a team, drawn per game | PROPOSED | [docs/RESEARCH.md](docs/RESEARCH.md) §7 |
+| Zone radius | OPEN in metres; NUS's balanced ratio is in the October 2026 monthly report | OPEN | owner + NUS; S2 draws 10–25 % of the arena side, `configs/s2_game.toml` `[arena] zone_radius_frac` |
+| Height | games are scored in the horizontal plane; height is held in a band at first | PROPOSED | S2: `configs/s2_game.toml` `[arena] height_band_m`, `start_height_m`; S2 also reports closest approach in 3-D ([docs/S2_RESULTS.md](docs/S2_RESULTS.md)) |
+| Drop-out | a drone is removed at a random time in a set fraction of games | PROPOSED | S2: `configs/s2_game.toml` `[game] dropout_fraction` (0) |
+| Start positions | anywhere in the playing volume that is clear of structures and respects the keep-out distance within a team, drawn per game | PROPOSED | [docs/RESEARCH.md](docs/RESEARCH.md) §7; S2 open arena: rings, `configs/s2_game.toml` `[starts]` |
 
 ## 5. Drone models
 

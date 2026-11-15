@@ -14,7 +14,8 @@ flowchart LR
   C --> D["15 Nov<br/>First runs<br/>run of record T1"]
   D --> E["15 Nov<br/>Read the results"]
   E --> F["15 Nov<br/>S1: drone model<br/>and safety filter"]
-  F --> G["Next<br/>real pushes flight,<br/>then S2: first training"]
+  F --> G["15–16 Nov<br/>S2: the game and<br/>the plug-in point"]
+  G --> H["Next<br/>S2b: the game on<br/>Isaac Lab drones"]
 ```
 
 ## 1. The idea and the research (14 November 2026)
@@ -176,13 +177,62 @@ This difference is why the drone model for training comes from real flights.
 **What we did not do.** We changed nothing in the flight software or the simulator. The drone model in tier 1 was
 observed in flight logs; it is not validated and it has no run of record yet.
 
-## 7. What comes next
+## 7. S2: the game and the plug-in point (15 and 16 November)
 
+**What we did.** The strategy that will fly comes from NUS, and their code is not here yet. So S2 built the
+track, not the runner: the game itself, thousands of copies at once, on arenas from 4 to 16 m across; the main
+rules after NUS's game (the *partner rules preset*); a switch that makes the drones fly like our Starlings (the
+*Starling layer*); scripted opponents; a scoring tool; and a plug-in point any training library can use
+([S2 design](specs/2026-11-15-s2-game-and-plug-in-design.md)). NUS's own numbers are confidential, so the
+committed game uses neutral values and theirs stay in a file git never sees. The owner approved the plan on
+15 November ("just execute the rest"). The full results, with figures, are in [S2_RESULTS](S2_RESULTS.md).
+
+**Why.** When NUS's strategy arrives, it should plug in with little work and be scored the same way as everything
+else, both under its own rules and with a real drone's limits.
+
+**What happened, in order.**
+
+1. **The game and its rules.** Each part was built by one agent and reviewed by another. A review caught that
+   5 Guard and 3 Strike drones often cannot be spaced out at the start of a small arena. That is geometry, not a
+   bug, so these games are now flagged (*start miss*) and counted.
+2. **The drone model against a second flight (run T5): FAIL.** The S1 model was checked, unchanged, against the
+   12 November flight. It rises more slowly than the real drone ([S2_RESULTS §2](S2_RESULTS.md#2-the-drone-model-against-a-flight-it-never-saw-t5-fail)).
+3. **The first scoring run (T6).** Scripted Guard strategies held the zone far more often than random moves. But
+   with the Starling layer, Guard and Strike drones came to 0.77 m, well inside the 1.10 m keep-out.
+4. **A bug at the walls.** A reviewer found why: when a wall stopped a drone, our copy of the commander still
+   thought it was moving away, so the safety filter let the other drone close in. We fixed it as the real
+   commander does. The filter speed run then in progress (T7) was stopped and restarted on the fixed code.
+5. **A faster safety filter (run T8): PASS.** Letting the filter stop early once a game is settled made it about
+   12 times faster over the timed stretch (9 times over a whole game), with exactly the same answers. One gate had been written as T2's value rounded down; the
+   owner ruled it is compared at its 4 written decimals ([S2_RESULTS §1](S2_RESULTS.md#1-a-faster-safety-filter-t7-aborted-t8-pass)).
+6. **The scoring run again (T9).** On the fixed code, most close approaches come only a few centimetres inside the keep-out. In crowded
+   5 v 3 games, a drone pinned at a wall can still let another come about 0.3 m inside the keep-out. CMU's real
+   commander has the same blind spot, so we kept our copy faithful and told the owner
+   ([S2_RESULTS §4](S2_RESULTS.md#4-how-close-guard-and-strike-drones-came)).
+7. **The plug-in point.** Two adapters (skrl and Gymnasium) and a guide for partners, [PLUG_IN](PLUG_IN.md). A
+   reader new to the folder tried it, and the guide was fixed where they got lost. A review also showed that a
+   drone could not tell where the walls were, so each drone now sees the zone's place in the arena: 71
+   numbers instead of 69.
+8. **The stand-in trainer moved.** The owner decided on 16 November to wrap the game for Isaac Lab next (S2b), and
+   the short pipe-test training moved there, to run on both versions of the game.
+
+<a id="fig-3"></a>
+![Hold rate per arena band, one panel per rule set and team size](figures/s2_scripted_reference_2.png)
+
+**Figure 3.** How often each scripted Guard strategy held the zone, per arena size band (run T9, 1,000 games per
+point). Top: the pure partner rules; bottom: with the Starling layer. Random Guard moves (pink) almost never hold.
+
+**What we did not do.** Nothing was trained. No flight or simulator code changed. Every result is observed in the
+training simulator (T5: in flight logs).
+
+## 8. What comes next
+
+- **S2b: the S2 game on Isaac Lab drones**, with PX4's control loops and the real gains, compared with the PyTorch
+  game, and the stand-in trainer on both ([S2b plan](plans/2026-11-16-s2b-isaac-lab-environment.md)). Every
+  training run will log to TensorBoard ([TRAINING](TRAINING.md)).
 - **A real flight with planned pushes**, so the drone model gets its run of record. The list of what to record is
   in [S1_RESULTS](S1_RESULTS.md#what-the-owner-needs-to-do-next).
-- **A faster safety filter**, before training can start.
-- **S2**: the first training, one Guard drone against one Strike drone in an open arena
-  ([DESIGN §8](DESIGN.md#8-build-order)). It needs a plan and the owner's approval first.
+- **NUS's strategy and rule details**, so it can be plugged in and scored.
 - Run S0 again on a training workstation, when one is available.
 
 How to run the tests and the speed test yourself: [GETTING_STARTED](GETTING_STARTED.md).

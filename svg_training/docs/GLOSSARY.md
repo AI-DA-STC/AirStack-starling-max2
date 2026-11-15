@@ -54,7 +54,24 @@ Each row gives a word, what it means in everyday terms, and where to read more.
 | Line of sight | whether one drone can see another past structures; a hidden drone is masked | [DESIGN §7](DESIGN.md#7-environments-and-contact-tags) |
 | Stand-in (placeholder) model | the drone model used until a fitted one exists: tier 1 delay + lag, tier 2 ARL Robot 1 | [S0_RESULTS](S0_RESULTS.md#limits) |
 | Observed in the training simulator | the only way to describe a result here; no result here is a flight result | [STANDARDS §2](../STANDARDS.md#2-wording) |
-| Build steps S0–S5 | Measure, Drone model, One against one, Two against one, Five against three, Hand-over | [DESIGN §8](DESIGN.md#8-build-order) |
+| Partner rules preset | the main game of S2, after NUS's rules: opposite teams kept apart by the push-apart rule, teammates pass through each other, one step inside the zone wins for the Strike team, a time-out wins for the Guard team. The committed values are neutral; NUS's own values live only in the git-ignored `configs/local/` | [S2_RESULTS](S2_RESULTS.md#what-was-built), [PLUG_IN](PLUG_IN.md#your-own-game-numbers-stay-local) |
+| Pure partner rules (`pure`) | the partner rules with drones as points moving at fixed team speeds, all at one height | [PLUG_IN](PLUG_IN.md#pure-rules-and-the-starling-layer) |
+| Push-apart rule | under the pure rules, a move that would bring a drone inside the other team's keep-out distance is cut short | [PLUG_IN](PLUG_IN.md#words-used-here) |
+| Starling layer (`starling`) | a switch that makes drones fly like our Starlings: each command goes through a copy of CMU's commander, the safety filter on every pair of drones (both teams) and the drone model `real_exploratory_v0`; the push-apart rule is then off | [S2_RESULTS](S2_RESULTS.md#what-was-built) |
+| Size band | arena sizes reported separately: lab 4–6 m, middle 6–10 m, large 10–16 m a side | [S2_RESULTS](S2_RESULTS.md#3-the-scripted-reference-t6-re-run-as-t9) |
+| Start miss | a game whose drones could not be placed far enough apart at the start (crowded small arenas: 34.7 % of 5 v 3 lab games in T9); it is played and counted, and flagged | [S2_RESULTS](S2_RESULTS.md#4-how-close-guard-and-strike-drones-came) |
+| Hold rate | the share of games in which no Strike drone reached the zone before the time-out, given with its 95 % interval; for a Strike strategy, its win share is 1 − hold rate | [S2_RESULTS](S2_RESULTS.md#3-the-scripted-reference-t6-re-run-as-t9) |
+| Strategy contract | the rule a strategy follows to be scored: it plays one team, is called once per step with all its drones' observations in all games, returns all their actions, and is told which games just restarted | [PLUG_IN](PLUG_IN.md#three-layers) |
+| Scripted opponent | a hand-written strategy used as an opponent and a yardstick: Guard mark edge, mark inside, field, mirror, random; Strike straight, flank | [S2_RESULTS](S2_RESULTS.md#3-the-scripted-reference-t6-re-run-as-t9) |
+| Scoring tool | `scripts/score.py`: plays strategies against each other per size band, team size and rule set, and reports hold rate, closest approach, breaches, filter use and start misses | [PLUG_IN](PLUG_IN.md#what-the-scoring-tool-prints) |
+| Adapter | a thin wrapper that lets a training library drive the game: `SvgSkrlEnv` (skrl) and `SvgTeamVectorEnv` (Gymnasium) | [PLUG_IN](PLUG_IN.md#plug-a-training-method-in) |
+| Stand-in trainer (pipe test) | a short training run whose only job is to prove the pipe works end to end; never "the policy". Moved from S2 to S2b (owner, 16 November 2026) | [S2_RESULTS](S2_RESULTS.md#5-the-stand-in-trainer-moved-to-s2b) |
+| Rule breach (breach) | a game in which some Guard drone and some Strike drone came closer than the keep-out distance; since T9 judged in 3-D | [S2_RESULTS](S2_RESULTS.md#4-how-close-guard-and-strike-drones-came) |
+| Closest approach, horizontal and 3-D | the smallest distance between any Guard drone and any Strike drone in a game. Horizontal ignores height; 3-D does not. They differ when drones pass one above the other (T6: 0.004 m horizontally, 0.851 m in 3-D in one probe) | [S2_RESULTS](S2_RESULTS.md#4-how-close-guard-and-strike-drones-came) |
+| Early stop, `check_every` | a filter option: every `check_every` sweeps it checks which games still need work and stops when none is left (0 = no early stop). S2 uses 1,000 sweeps with a check every 8 (T8) | [S2_RESULTS](S2_RESULTS.md#1-a-faster-safety-filter-t7-aborted-t8-pass) |
+| Interface change, 69 → 71 | on 16 November 2026 each drone's observation gained the zone centre's place in the arena (indices 69–70), so a drone can find the walls | [S2_RESULTS](S2_RESULTS.md#one-change-to-the-interface) |
+| S2b | the S2 game on rigid-body Starlings in Isaac Lab, with the stand-in trainer on both versions; approved 16 November 2026 | [S2b plan](plans/2026-11-16-s2b-isaac-lab-environment.md) |
+| Build steps S0–S5 | Measure, Drone model, One against one, Two against one, Five against three, Hand-over. S2 became "the game and the plug-in point" ([S2 design](specs/2026-11-15-s2-game-and-plug-in-design.md)), followed by S2b | [DESIGN §8](DESIGN.md#8-build-order) |
 | Versions | which Isaac Lab, Isaac Sim and PX4 run where | [below](#versions) |
 
 ## Versions
@@ -65,7 +82,7 @@ The table lists which version of each tool runs where.
 |---|---|---|
 | Container image | `nvcr.io/nvidia/isaac-lab:2.3.2` = Isaac Lab 2.3.2 on Isaac Sim 5.1.0; ours is `svg-training:isaaclab-2.3.2` | the container ([docker/README](../docker/README.md)); run of record T1 |
 | Host install (this laptop) | `~/IsaacLab`, 2.3.2 plus 25 commits (`f73c331738`), none touching code tier 2 uses | host runs, conda `env_isaaclab` |
-| Host Python environment | conda `env_isaaclab`: Python 3.11, torch 2.7.0+cu128, Isaac Sim 5.1.0, skrl 2.1.0 | host runs |
+| Host Python environment | conda `env_isaaclab`: Python 3.11, torch 2.7.0+cu128, Isaac Sim 5.1.0, skrl 2.1.0, gymnasium 1.2.1 | host runs |
 | Isaac Lab 3.0 | needs Isaac Sim 6.2 and Python 3.12 | later, on the training workstations |
 | AirStack simulator | Isaac Sim 5.1.0 + Pegasus + PX4 v1.16.1 | stage 6, simulated flight |
 | Real drones | PX4 1.14 | stage 7, real flight |

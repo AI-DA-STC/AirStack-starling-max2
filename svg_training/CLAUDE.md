@@ -4,12 +4,14 @@ Training pipeline for the **Strike vs Guard** game: thousands of games run at on
 drone teams can learn strategies that then fly through AirStack on Starling 2 Max drones.
 It is a sibling of `AirStack/`, `tools/` and `localisation/`, and it edits none of them.
 
-**Status (2026-11-15): S0 and S1 built, run and closed; nothing trained; no S1 gate on the drone model passed yet.** S0: run of record T1 = FAIL on one gate (one tier 2
-point lost to an Isaac Sim start-up crash), both decision rules met ([docs/S0_RESULTS.md](docs/S0_RESULTS.md)).
-S1: filter copy T2 = FAIL (accepted by the owner on the exact counts, 15 November), simulator fit T3 = FAIL (the simulator's two clocks), tier 1 now
-carries the real-drone command chain with a PX4 model observed in flight logs (exploratory) and the team filter
-(T4 = INFO; the filter at 1,000 sweeps is too slow to train) ([docs/S1_RESULTS.md](docs/S1_RESULTS.md)). Next: a
-real flight with planned pushes (owner), then the S2 plan for the owner's approval.
+**Status (2026-11-16): S0 and S1 closed; S2 built and reviewed, final review pending; nothing trained.** S0: run of
+record T1 = FAIL on one gate (one tier 2 point lost to an Isaac Sim start-up crash), both decision rules met
+([docs/S0_RESULTS.md](docs/S0_RESULTS.md)). S1: filter copy T2 = FAIL (accepted by the owner), simulator fit T3 =
+FAIL, tier 1 carries the real-drone command chain with an exploratory PX4 model ([docs/S1_RESULTS.md](docs/S1_RESULTS.md)).
+S2: the game (partner rules preset, neutral committed values, varied arenas, Starling layer), scripted opponents,
+scoring tool, skrl and Gymnasium adapters and the partner guide; faster filter T8 = PASS, drone-model check T5 = FAIL,
+scripted reference T9 = INFO; the stand-in trainer moved to S2b ([docs/S2_RESULTS.md](docs/S2_RESULTS.md),
+[docs/PLUG_IN.md](docs/PLUG_IN.md)). Next: S2's final review, then S2b (the game on Isaac Lab drones, plan approved).
 
 ## Read first
 
@@ -19,7 +21,8 @@ real flight with planned pushes (owner), then the S2 plan for the owner's approv
 | [STANDARDS.md](STANDARDS.md) | **the rules**: scope, wording, policy interface, game specification, drone models, gates, records, code, git |
 | [docs/DESIGN.md](docs/DESIGN.md) | the design: seven stages, two tiers, four uses, environments and contact tags, build order S0–S5, approaches considered |
 | [docs/RESEARCH.md](docs/RESEARCH.md) | state of the art as of 14 November 2026, with sources; the evidence behind the design |
-| [docs/S0_RESULTS.md](docs/S0_RESULTS.md), [docs/S1_RESULTS.md](docs/S1_RESULTS.md), [docs/GLOSSARY.md](docs/GLOSSARY.md) | S0's and S1's numbers and limits; terms and the one Versions table |
+| [docs/S0_RESULTS.md](docs/S0_RESULTS.md), [docs/S1_RESULTS.md](docs/S1_RESULTS.md), [docs/S2_RESULTS.md](docs/S2_RESULTS.md), [docs/GLOSSARY.md](docs/GLOSSARY.md) | S0's, S1's and S2's numbers and limits; terms and the one Versions table |
+| [docs/PLUG_IN.md](docs/PLUG_IN.md) | how a partner plugs a strategy or a training method into the game and scores it |
 | [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md) | the human path from a clone to tests and a benchmark run; `run_s0.sh` exit codes |
 | [docs/linear/README.md](docs/linear/README.md) | this project in Linear (P-NEAR-31): how an update goes (`updates/` → owner uploads → `synced/` → `snapshots/`), the latest snapshot, the owner's Linear rules |
 | [docs/pipeline/training-pipeline.pptx](docs/pipeline/training-pipeline.pptx) | the diagrams (editable flowchart shapes); rebuilt by `docs/pipeline/build_deck.py` |

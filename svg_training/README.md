@@ -14,7 +14,9 @@ official run whose numbers we keep is the *run of record* (both in the [glossary
 |---|---|---|
 | S0 (throughput benchmark) | run of record T1: **FAIL** on one [gate](docs/GLOSSARY.md) (1 of 96 points lost to an Isaac start-up crash) | every number verified; both speed [decision rules](docs/GLOSSARY.md) met → [S0 results](docs/S0_RESULTS.md) |
 | S1 (drone model and safety filter) | built, run and closed 15 Nov: filter copy T2 **FAIL** (accepted by the owner on the exact counts); simulator fit T3 **FAIL**; real-log fit exploratory; tier 1 with the real chain T4 information only; no S1 gate on the drone model passed yet | [S1 results](docs/S1_RESULTS.md); [S1 plan](docs/plans/2026-11-15-s1-drone-model-and-safety-filter.md) |
-| S2–S5 | not started | [DESIGN §8](docs/DESIGN.md#8-build-order) |
+| S2 (the game and the plug-in point) | built and reviewed 16 Nov; final review pending. Faster filter T8 **PASS**; drone-model check T5 **FAIL**; scripted reference T9 information only; stand-in trainer moved to S2b | [S2 results](docs/S2_RESULTS.md); [S2 plan](docs/plans/2026-11-15-s2-game-and-plug-in.md) |
+| S2b (the game on Isaac Lab drones) | plan approved 16 Nov; not started | [S2b plan](docs/plans/2026-11-16-s2b-isaac-lab-environment.md) |
+| S3–S5 | not started | [DESIGN §8](docs/DESIGN.md#8-build-order) |
 | Training | nothing trained yet | none |
 
 Every number in this folder was observed in the training simulator. None is a flight result.
@@ -38,11 +40,12 @@ Each row points to the page that answers the question.
 | build the container | [GETTING_STARTED](docs/GETTING_STARTED.md) A1 |
 | run the benchmark | [GETTING_STARTED](docs/GETTING_STARTED.md) A3–A4 (container) or B (host) |
 | train a policy, without a window (headless) or with the Isaac Sim window | [TRAINING](docs/TRAINING.md) (planned workflow: nothing trains before S2) |
-| read the results | [S0_RESULTS](docs/S0_RESULTS.md), [S1_RESULTS](docs/S1_RESULTS.md); all records in [records/LEDGER.md](records/LEDGER.md) |
+| read the results | [S0_RESULTS](docs/S0_RESULTS.md), [S1_RESULTS](docs/S1_RESULTS.md), [S2_RESULTS](docs/S2_RESULTS.md); all records in [records/LEDGER.md](records/LEDGER.md) |
 | understand the design | [HOW_IT_WORKS](docs/HOW_IT_WORKS.md), then [DESIGN](docs/DESIGN.md) and [RESEARCH](docs/RESEARCH.md) |
 | look up a word or a version | [GLOSSARY](docs/GLOSSARY.md) |
 | know the rules | [STANDARDS](STANDARDS.md): interface, game, drone models, gates, records |
-| plug in a partner's strategy | there is no code hook yet. The policy file and `interface.toml` arrive with S5 ([STANDARDS §3](STANDARDS.md)) |
+| plug in a partner's strategy or training method, and score it | [PLUG_IN](docs/PLUG_IN.md). Export to the drones (policy file and `interface.toml`) arrives with S5 ([STANDARDS §3](STANDARDS.md)) |
+| watch a game | top-down replay clips in [docs/media](docs/media/README.md) |
 | work on it with Claude | [CLAUDE.md](CLAUDE.md), then [docs/claude/HANDOFF.md](docs/claude/HANDOFF.md) |
 
 ## Folder layout
@@ -51,9 +54,9 @@ The table lists what each folder holds.
 
 | Folder | What it holds |
 |---|---|
-| `source/svg_training/` | the package: benchmark timing, tier 1 environment, worlds and sensing, the Isaac Lab adapter; `core/` the safety filter copy; `models/` the drone models (commander copy, PX4 model, placeholder, simulator-route fit) |
-| `scripts/` | `run_s0.sh` (the one command that runs S0), the two benchmarks, `make_record.py`; S1's fits (`fit_real_px4.py`, `fit_response.py`), filter check (`filter_parity.py`), figures and the simulator step session (`record_steps.sh`, `virtual_stick.py`) |
-| `configs/` | TOML configs; `s0_benchmark.toml` holds S0's gates, decision rules and sweep; `s1.toml` S1's |
+| `source/svg_training/` | the package: benchmark timing, tier 1 environment, worlds and sensing, the Isaac Lab adapter; `core/` the game, the safety filter copy, the Starling layer, strategies and scoring; `envs/` also the skrl and Gymnasium adapters; `models/` the drone models (commander copy, PX4 model, placeholder, simulator-route fit) |
+| `scripts/` | `run_s0.sh` (the one command that runs S0), the two benchmarks, `make_record.py`; S1's fits (`fit_real_px4.py`, `fit_response.py`), filter check (`filter_parity.py`), figures and the simulator step session (`record_steps.sh`, `virtual_stick.py`); S2's scoring tool (`score.py`), filter speed (`filter_speed.py`), bag check (`bag_check.py`) and replay clips (`make_replay.py`) |
+| `configs/` | TOML configs; `s0_benchmark.toml` holds S0's gates, decision rules and sweep; `s1.toml` S1's; `s2_game.toml` the game's neutral values and `s2.toml` S2's gates; `local/` (git-ignored) a partner's own values |
 | `params/` | drone-model parameter sets: `real_exploratory_v0.toml` (used by tier 1), `airstack_sim_v0.toml` (simulator only) |
 | `tests/` | pytest; most tests need no Isaac |
 | `docker/` | the container image, built on NVIDIA's Isaac Lab 2.3.2, and its launchers |

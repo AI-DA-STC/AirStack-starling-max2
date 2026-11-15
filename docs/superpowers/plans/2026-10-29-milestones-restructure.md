@@ -10,7 +10,7 @@
 
 **Spec:** `docs/superpowers/specs/2026-10-29-milestones-restructure-design.md` (read all of it, including "Builder-check answers").
 
-**Naming authority:** `docs/linear/snapshots/2026-10-26-project-plan-linear.md`. Every project name, milestone code + name, issue id and issue title in this plan was copied from that file. Implementers copy from that file too, never from memory — note the typographic apostrophes (’) in several titles.
+**Naming authority:** `docs/plans/2026-10-26-project-plan-linear.md`. Every project name, milestone code + name, issue id and issue title in this plan was copied from that file. Implementers copy from that file too, never from memory — note the typographic apostrophes (’) in several titles.
 
 ## Global Constraints
 
@@ -324,7 +324,7 @@ git commit -m "tools: hover_step_report.py --issue NEAR-nnn (wrapper env ISSUE) 
 - Create: `tools/tests/test_check_docs.py`
 
 **Interfaces:**
-- Constants: `PLAN_FILE = "docs/linear/snapshots/2026-10-26-project-plan-linear.md"`, `PROJECT_DIR = "docs/projects"`, `LEDGER_FILE = "docs/record/LEDGER.md"`, `ID_PAGES = ("docs/MILESTONES.md", "docs/record/LEDGER.md", "docs/PX4_MSGS_AUDIT.md")` (+ every `docs/projects/*.md`), `NEAR_RE = re.compile(r"\bNEAR-\d+\b")`.
+- Constants: `PLAN_FILE = "docs/plans/2026-10-26-project-plan-linear.md"`, `PROJECT_DIR = "docs/projects"`, `LEDGER_FILE = "docs/record/LEDGER.md"`, `ID_PAGES = ("docs/MILESTONES.md", "docs/record/LEDGER.md", "docs/PX4_MSGS_AUDIT.md")` (+ every `docs/projects/*.md`), `NEAR_RE = re.compile(r"\bNEAR-\d+\b")`.
 - `_table_cells(line: str) -> list[str] | None` — cells of a markdown table row (`|`-split, outer empties dropped, each stripped); `None` for non-rows and `|---|` separators.
 - `plan_issues(text: str) -> dict[str, tuple[str, str]]` — `{id: (title, status)}` from rows `| [NEAR-nnn](url) | title | Done|In Progress|Backlog |`.
 - `page_issue_rows(text: str) -> list[tuple[int, str, str, str]]` — `(lineno, id, title, result_cell)` for rows whose first cell matches `^\[?(NEAR-\d+)\]?(\(.*\))?$`; `result_cell` = third cell or `""`.
@@ -352,7 +352,7 @@ PLAN = textwrap.dedent("""\
 def fixture(tmp, page_rows, records=(), ledger="| # |\n|---|\n", milestones_lines=10, extra=""):
     root = pathlib.Path(tmp)
     (root / "docs/plans").mkdir(parents=True); (root / "docs/projects").mkdir(); (root / "docs/record").mkdir(); (root / "localisation/results").mkdir(parents=True)
-    (root / "docs/linear/snapshots/2026-10-26-project-plan-linear.md").write_text(PLAN)
+    (root / "docs/plans/2026-10-26-project-plan-linear.md").write_text(PLAN)
     (root / "docs/projects/HTX-R1.md").write_text("# HTX-R1\nLinear snapshot: 2026-10-26\n\n### S5 x — SIM ONLY\n| Issue | Title | Result | Evidence |\n|---|---|---|---|\n" + page_rows + extra)
     for name, head in records: (root / name).write_text(head)
     (root / "docs/record/LEDGER.md").write_text(ledger)
@@ -431,7 +431,7 @@ Expected: `OK (skipped=1)`, 53 tests; live output shows `[PASS] linear-parity: 0
 
 - [ ] **Step 5: Document in `tools/docs_check/README.md`**
 
-Two rows: `| linear-parity | every NEAR-nnn on docs/projects/*.md (and bare ids on MILESTONES, LEDGER, PX4_MSGS_AUDIT) exists in docs/linear/snapshots/2026-10-26-project-plan-linear.md with the identical title; PASS records (docs/record, localisation/results) cited by LEDGER and an issue row; PASS result on a Backlog issue | FAIL / WARN |` and `| images | every relative ![…](…) / <img src> target exists | FAIL |`.
+Two rows: `| linear-parity | every NEAR-nnn on docs/projects/*.md (and bare ids on MILESTONES, LEDGER, PX4_MSGS_AUDIT) exists in docs/plans/2026-10-26-project-plan-linear.md with the identical title; PASS records (docs/record, localisation/results) cited by LEDGER and an issue row; PASS result on a Backlog issue | FAIL / WARN |` and `| images | every relative ![…](…) / <img src> target exists | FAIL |`.
 
 - [ ] **Step 6: Commit**
 
@@ -611,7 +611,7 @@ git commit -m "docs: MIGRATION.md appendix — the 2026-10-07 code-readiness aud
 **Files:**
 - Create: `docs/projects/HTX-R1.md` (≤ 250 lines; each `###` section ≤ 40 lines excluding figure + caption lines; every cell ≤ 120 chars except the title column)
 - Modify: `tools/README.md` (append the "Results:" sentence to `## Thresholds`, see Task 3 Step 5)
-- Naming source: `docs/linear/snapshots/2026-10-26-project-plan-linear.md` lines 35–188
+- Naming source: `docs/plans/2026-10-26-project-plan-linear.md` lines 35–188
 
 **Interfaces:**
 - Consumes: `../record/LEDGER.md`, `../record/sim_hover_step_run{1,2,3}_record.md`, `../record/figures/s5_hover_step_overlay.png`, `../../pictures/vo_flat_xy_cam_run3.png`, `../../pictures/vo_site_xy_site_run1.png`, `../../localisation/results/sim_site_run1_record.md`, `../../localisation/results/sim_cam_run1_record.md`, `../../tools/README.md#thresholds`.
@@ -771,7 +771,7 @@ git commit -m "docs: projects/HTX-R1.md — HTX-R1 Swarm Sim Validation (Isaac):
 
 **Files:**
 - Create: `docs/projects/HTX-R2.md` (≤ 250 lines; the same budgets as Task 8)
-- Naming source: `docs/linear/snapshots/2026-10-26-project-plan-linear.md` lines 192–293
+- Naming source: `docs/plans/2026-10-26-project-plan-linear.md` lines 192–293
 - Content sources: MILESTONES.md lines 13–19 (gates box), 264–277 (carried-over table), 405–430 (M2 gates), 436–443 (M3 landing sub-test); LEDGER table 2 (Task 5)
 
 **Interfaces:**
@@ -930,7 +930,7 @@ git commit -m "docs: projects/HTX-R2.md — HTX-R2 Starling Flight Bring-up (M2�
 
 **Files:**
 - Create: `docs/projects/HTX-R3.md`
-- Naming source: `docs/linear/snapshots/2026-10-26-project-plan-linear.md` lines 297–374
+- Naming source: `docs/plans/2026-10-26-project-plan-linear.md` lines 297–374
 
 - [ ] **Step 1: Write the page**
 
@@ -1050,7 +1050,7 @@ git commit -m "docs: iron rules 1/3/5 point at NEAR-825 / PX4_MSGS_AUDIT.md (NEA
 - Modify: `docs/MIGRATION.md` 8, 49, 71, 108, 144, 145, 276, 277, 364, 387, 397, 435, 443, 448
 - Modify: `docs/record/sim_hover_step_run{1,2,3}_record.md` line 5 (the gates sentence) and their `## Ledger row draft (MILESTONES.md §3c …)` headings
 - Modify: `tools/sim_hover_step_test.sh` line 3 comment
-- Leave: `AirStack/README.md:76` (not ours; its file link still resolves), `docs/linear/snapshots/2026-10-26-project-plan-linear.md:380` (a snapshot of Linear's text; add nothing), `docs/ARCHITECTURE.md:125` (lists page names).
+- Leave: `AirStack/README.md:76` (not ours; its file link still resolves), `docs/plans/2026-10-26-project-plan-linear.md:380` (a snapshot of Linear's text; add nothing), `docs/ARCHITECTURE.md:125` (lists page names).
 
 **Replacement rules (apply per line; keep every other word):**
 - `§3c "Next up"` / `the one to-do list is MILESTONES §3c "Next up"` → `the next issue in Linear (snapshot: [MILESTONES.md](MILESTONES.md) "Where each project is")`.

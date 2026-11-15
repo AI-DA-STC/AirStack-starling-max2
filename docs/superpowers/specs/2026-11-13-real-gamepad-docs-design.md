@@ -34,7 +34,7 @@ Measured by the newcomer reader on today's pages, starting from the root `README
 
 ## Constraints
 
-- Linear is the naming authority (`docs/linear/snapshots/2026-11-13-project-plan-linear.md`): ids and titles verbatim, no status typed by hand.
+- Linear is the naming authority (`docs/plans/2026-11-13-project-plan-linear.md`): ids and titles verbatim, no status typed by hand.
 - Results live in `docs/record/LEDGER.md` and the project pages. The ledger is append-only.
 - `python3 tools/docs_check/check_docs.py` ends with 0 FAIL at every commit. The `IRON_RULES` block in `docs/PREFLIGHT.md` and `CLAUDE.md` must stay byte-identical, and `docs/AI_ASSIST.md` must quote the rule count.
 - Commands shown to an operator are full sequences with literal names (`drone_1`, `drone_2`), in the order `tools/real.sh` prints them (pad pane 5 before commander pane 3), and the commander line carries `use_foxglove_studio:=true`.

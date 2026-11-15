@@ -7,7 +7,7 @@
 ## How
 
 1. Every issue table on `docs/projects/HTX-R1/R2/R3.md` is `| Issue | Title (Linear, verbatim) | Linear status | Result | Evidence |`.
-2. The status cell is copied verbatim from the snapshot named in the page header (`docs/linear/snapshots/2026-10-26-project-plan-linear.md` today). It is never typed by hand: `tools/docs_check/check_docs.py` (`linear-parity`) fails a row with no status cell or one that differs from the snapshot. This keeps the panel's real concern, no second tracker that drifts, because the column can only change with a new snapshot.
+2. The status cell is copied verbatim from the snapshot named in the page header (`docs/plans/2026-10-26-project-plan-linear.md` today). It is never typed by hand: `tools/docs_check/check_docs.py` (`linear-parity`) fails a row with no status cell or one that differs from the snapshot. This keeps the panel's real concern, no second tracker that drifts, because the column can only change with a new snapshot.
 3. The Result cell is unchanged: the record's verdict word, headline number and date.
 4. Refresh: the owner ticks issues in Linear, a new synced plan file replaces the snapshot, and every status cell is regenerated from it in one commit.
 

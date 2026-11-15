@@ -1,6 +1,6 @@
 # Rescope HTX-R1/R2/R3 for the real command route, NUS velocity policies and two camera setups — design (approved and applied, 2026-10-30)
 
-**Change list (what the owner applies in Linear):** [docs/linear/updates/2026-10-30-linear-change-list.md](../../linear/updates/2026-10-30-linear-change-list.md).
+**Change list (what the owner applies in Linear):** [docs/plans/2026-10-30-linear-change-list.md](../../linear/updates/2026-10-30-linear-change-list.md).
 **Process:** quality-change skill. A panel of four (engineering manager, flight-test engineer, test automation, newcomer reader) wrote positions and voted in two rounds. A builder check followed; its 20 questions are answered in the last section.
 
 ## Terms

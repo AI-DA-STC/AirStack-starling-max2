@@ -69,7 +69,7 @@ Create them in this order. "Done when" lines are targets, not results.
 
 ## Part 4 · Write the sync record
 
-Write a Markdown file named `2026-11-15-linear-synced.md`. State only what Linear now holds:
+Write a Markdown file named `2026-11-15-linear-sync-record.md`. State only what Linear now holds:
 
 - the title and status of NEAR-790, NEAR-791, NEAR-792, NEAR-793, NEAR-794, NEAR-860, NEAR-951 and NEAR-953;
 - the NEAR id, title, project, milestone, status and relations of each of the six new issues;

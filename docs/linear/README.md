@@ -5,7 +5,7 @@ Linear is the source of truth for issues and status. These files are the repo's 
 | Folder | What is in it | File name |
 |---|---|---|
 | [updates/](updates/) | Instructions handed to the Linear agent, and change lists | `YYYY-MM-DD-linear-agent-<topic>.md`, `YYYY-MM-DD-linear-change-list.md` |
-| [synced/](synced/) | The record the Linear agent writes back after applying an update | `YYYY-MM-DD-linear-sync-record.md` (`-2`, `-3` for later syncs that day) |
+| [synced/](synced/) | The record the Linear agent writes back after applying an update | `YYYY-MM-DD-linear-sync-record.md` (`-2`, `-3` for later syncs that day). Older instruction files asked for `…-linear-synced.md`: rename to this pattern when saving |
 | [snapshots/](snapshots/) | A full copy of the three projects, milestones and issue titles on a date | `YYYY-MM-DD-project-plan-linear.md` |
 
 How one update goes:

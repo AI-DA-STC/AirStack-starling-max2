@@ -24,7 +24,7 @@ def _inputs(alive=None):
 
 
 def test_dims_and_slots():
-    assert OBS_DIM == 69 and STATE_DIM == 59
+    assert OBS_DIM == 71 and STATE_DIM == 61
     pos, vel, yaw, al, ar, tl = _inputs()
     o = build_obs(CFG, pos, vel, yaw, al, ar, tl, 2, 1)
     assert o["guard"].shape == (3, 2, OBS_DIM) and o["strike"].shape == (3, 1, OBS_DIM)
@@ -60,3 +60,27 @@ def test_state_shape():
     pos, vel, yaw, al, ar, tl = _inputs()
     st = build_state(CFG, pos, vel, al, ar, tl, 2, 1)
     assert st.shape == (3, STATE_DIM) and st.shape[-1] == STATE_DIM
+
+
+def test_zone_centre_at_69_70():
+    """Interface change (S2 Task 9 fix round 1): indices 69-70 of every drone's observation, and 59-60 of the
+    central state, are the zone centre's x, y relative to the arena centre (m). Nothing before them moved."""
+    pos, vel, yaw, al, ar, tl = _inputs()
+    zc = torch.tensor([[0.7, -1.3], [0.0, 0.0], [-2.0, 0.5]])
+    ar = Arenas(ar.side_m, ar.half_m, zc, ar.zone_radius_m, ar.band)
+    v = ObsView()
+    assert v.zone_centre == slice(69, 71) and v.slot(7).stop == 69
+    o = build_obs(CFG, pos, vel, yaw, al, ar, tl, 2, 1)
+    for team in ("guard", "strike"):
+        assert torch.equal(o[team][..., 69:71], zc[:, None, :].expand_as(o[team][..., 69:71]))
+        assert torch.equal(o[team][..., v.zone_centre], o[team][..., 69:71])
+    # own position + zone centre = position in the arena (walls at +-arena_half)
+    g0 = o["guard"][0, 0]
+    assert torch.allclose(g0[v.own_pos][:2] + g0[v.zone_centre], pos[0, 0, :2])
+    # a drone that is out sees zeros there too (all zeros except team)
+    al2 = al.clone()
+    al2[:, 2] = False
+    s = build_obs(CFG, pos, vel, yaw, al2, ar, tl, 2, 1)["strike"][0, 0]
+    assert (s[v.zone_centre] == 0).all()
+    st = build_state(CFG, pos, vel, al, ar, tl, 2, 1)
+    assert torch.equal(st[:, 59:61], zc) and st.shape[-1] == 61

@@ -81,7 +81,7 @@ It becomes FIXED when the velocity contract with NUS and CMU is written (Linear 
 | Observation, others | padded lists of team-mates and of the other team: relative position, relative velocity, present flag; a drone hidden behind a structure is masked, with its last seen position and the time since | PROPOSED | [docs/RESEARCH.md](docs/RESEARCH.md) §10 |
 | Observation, surroundings | 32–64 range rays (a horizontal ring, plus up and down); the number is set from the S0 measurements | PROPOSED | RESEARCH §10 |
 | What the real drone senses its surroundings with | OPEN: a known map (the accepted first step in published work), or an on-board range sensor | OPEN | owner |
-| Observation, game | zone radius, arena bounds, time left, own team | PROPOSED | — |
+| Observation, game | zone radius, arena half-side, the zone centre's position from the arena centre (so a drone can place the walls), time left, own team. As built in S2: 71 numbers per drone, full view of every drone; layout in `core/observations.py` and [docs/PLUG_IN.md](docs/PLUG_IN.md) | PROPOSED | layout change 16 Nov 2026 (S2 Task 9 review): 69 → 71 numbers, zone centre added at the end; no earlier index moved |
 | What a drone may know about others | OPEN: full state of every drone, or only what its team shares, with delay and drop-outs | OPEN | owner + partners |
 
 Rules:

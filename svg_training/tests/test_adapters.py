@@ -254,8 +254,9 @@ def _guide_blocks():
 
 def test_plug_in_guide_example_runs(tmp_path):
     """Writes the guide's '# file:' blocks into a tmp folder, runs its '# run' Python blocks there (CPU), and
-    runs its score.py command with tiny settings (CPU, 8 games, lab band). The repo's configs/local/ is never
-    read: the guide's code uses use_local=False and score.py gets --no-local."""
+    runs its score.py commands there with tiny settings (CPU, 8 games, lab band, pure rules). The repo's
+    configs/local/ is never read: the guide's code uses use_local=False and score.py gets --no-local. The second
+    score.py command loads the networks the skrl block saved (my_ippo:TrainedGuard, from the checkpoint)."""
     blocks = _guide_blocks()
     files = [c for _, c in blocks if c.startswith("# file:")]
     runs = [(lang, c) for lang, c in blocks if c.startswith("# run")]
@@ -265,7 +266,8 @@ def test_plug_in_guide_example_runs(tmp_path):
         (tmp_path / name).write_text(code)
     env = child_env(f"{ROOT / 'source'}{os.pathsep}{tmp_path}")
     env["CUDA_VISIBLE_DEVICES"] = ""          # the guide's examples pick the CPU when no GPU is visible
-    for lang, code in runs:
+    scored = []
+    for b, (lang, code) in enumerate(runs):
         if lang == "python":
             script = tmp_path / "block.py"
             script.write_text(code)
@@ -279,26 +281,31 @@ def test_plug_in_guide_example_runs(tmp_path):
             args = [a for a in args if not a.startswith("runs/")]
             i = args.index("--out")
             del args[i:i + 1]
-            out = tmp_path / "score_out"
+            out = tmp_path / f"score_out_{b}"
             # later options win: CPU, 8 games, lab band, pure rules only (the Starling layer is tested in
             # test_score.py on a shortened game file)
             args += ["--device", "cpu", "--games-per-band", "8", "--bands", "lab", "--presets", "pure",
                      "--no-local", "--out", str(out)]
-            r = subprocess.run([child_python(), str(ROOT / "scripts" / "score.py"), *args], cwd=ROOT, env=env,
+            r = subprocess.run([child_python(), str(ROOT / "scripts" / "score.py"), *args], cwd=tmp_path, env=env,
                                capture_output=True, text=True, timeout=600)
             assert r.returncode == 0, r.stderr[-3000:]
-            assert (out / "scores.md").is_file()
+            scored.append((out / "scores.md").read_text())
+    assert (tmp_path / "my_ippo_guard.pt").is_file()                       # the skrl block saved its networks
+    assert any("my_guard:MyGuard" in t for t in scored)
+    assert any("my_ippo:TrainedGuard" in t for t in scored)                # scored from the saved checkpoint
 
 
 def test_plug_in_guide_obs_table_matches_obsview():
     """The guide's observation table names the same index ranges as ObsView."""
     text = GUIDE.read_text()
-    for idx in ("0–2", "3–5", "6–7", "8", "9", "10", "11", "12", "13–19", "48–54", "62–68"):
+    for idx in ("0–2", "3–5", "6–7", "8", "9", "10", "11", "12", "13–19", "48–54", "62–68", "69–70"):
         assert f"| {idx} |" in text, idx
     assert V.own_pos == slice(0, 3) and V.own_vel == slice(3, 6) and V.sin_cos_yaw == slice(6, 8)
     assert (V.zone_radius, V.arena_half, V.time_left, V.team, V.alive) == (8, 9, 10, 11, 12)
     assert V.slot(0) == slice(13, 20) and V.slot(5) == slice(48, 55) and V.slot(7) == slice(62, 69)
-    assert "69" in text and str(OBS_DIM) == "69"
+    assert V.zone_centre == slice(69, 71) and OBS_DIM == 71 and STATE_DIM == 61
+    assert "| 69–70 | zone centre x, y from the arena centre (m)" in text and "[N, 61]" in text
+    assert "71 numbers" in text and "69 floats" not in text
 
 
 def test_plug_in_flowchart_script_runs(tmp_path):
@@ -307,3 +314,41 @@ def test_plug_in_flowchart_script_runs(tmp_path):
                        env=child_env(str(ROOT / "source")), capture_output=True, text=True)
     assert r.returncode == 0, r.stderr
     assert out.stat().st_size > 10_000
+
+
+def test_adapter_modules_have_no_host_calls():
+    """Static scan, as tests/test_game_core.py does for the game: no host reads or NumPy in the adapters."""
+    for f in ("skrl_adapter", "gym_adapter"):
+        src = (ROOT / "source" / "svg_training" / "envs" / f"{f}.py").read_text()
+        assert not re.search(r"\.(item|cpu|numpy|tolist)\(|import numpy|nonzero\(", src), f
+
+
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA only")
+def test_adapter_steps_run_under_sync_debug_error():
+    """Both adapters' step (with a scripted opponent inside) make no host sync; short games so the auto-reset
+    runs often."""
+    cfg = CFG.replace(**{"dropout_fraction": 0.2, "rules.game_steps": 40})
+    n = 256
+    opp = make_strategy("strike_flank", "strike", cfg, n, "cuda", 0)
+    skrl_env = SvgSkrlEnv(SvgGame(cfg, n, 3, 2, device="cuda", seed=1), ("guard",), {"strike": opp})
+    gym_env = SvgTeamVectorEnv(SvgGame(cfg, n, 3, 2, device="cuda", seed=2), "guard",
+                               make_strategy("strike_straight", "strike", cfg, n, "cuda", 0))
+    skrl_env.reset()
+    gym_env.reset(seed=2)
+    acts = {a: torch.rand(n, 4, device="cuda") * 2 - 1 for a in skrl_env.possible_agents}
+    flat = torch.rand(n, 12, device="cuda") * 2 - 1
+    skrl_env.step(acts)
+    gym_env.step(flat)
+    torch.cuda.set_sync_debug_mode("error")
+    try:
+        d1 = torch.zeros(n, dtype=torch.bool, device="cuda")
+        d2 = torch.zeros_like(d1)
+        for _ in range(100):
+            _, _, term, _, _ = skrl_env.step(acts)
+            skrl_env.state()
+            d1 |= term["guard_0"][:, 0]
+            _, _, t2, _, _ = gym_env.step(flat)
+            d2 |= t2
+    finally:
+        torch.cuda.set_sync_debug_mode(0)
+    assert bool(d1.all()) and bool(d2.all())                     # every game auto-reset at least once

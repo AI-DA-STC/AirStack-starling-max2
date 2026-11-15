@@ -14,10 +14,10 @@ needs the ended game's last observation; ``info`` therefore carries no "final_ob
 Training on the fixed named scenarios is refused (STANDARDS §6 rule 4)."""
 from __future__ import annotations
 
+import math
 from typing import Any
 
 import gymnasium
-import numpy as np
 import torch
 from gymnasium.vector import AutoresetMode, VectorEnv
 from gymnasium.vector.utils import batch_space
@@ -38,12 +38,14 @@ def refuse_scenario(game: SvgGame) -> None:
 class SvgTeamVectorEnv(VectorEnv):
     """``team`` ("guard" or "strike") of ``game`` as a Gymnasium vector env; ``opponent`` plays the other team.
 
-    Shapes (M_team = the team's drone count, N = game.num_games): observation [N, M_team * OBS_DIM] (drone 0's 69
-    floats, then drone 1's, ...); action [N, M_team * 4] in [-1, 1] (drone k's vx, vy, vz, yaw rate at
+    Shapes (M_team = the team's drone count, N = game.num_games): observation [N, M_team * OBS_DIM] (drone 0's
+    OBS_DIM floats, then drone 1's, ...); action [N, M_team * 4] in [-1, 1] (drone k's vx, vy, vz, yaw rate at
     4k..4k+3); reward [N] = the team's mean drone reward; terminations [N] bool; truncations [N] bool (False).
     info (reset and step): "opponent" = the opponent's name (the opponent mix; a ``SplitStrategy`` names every
     part). info (step): also "outcome" [N] int8 (0 running, 1 Strike team reached the zone, 2 Guard team held),
-    "end_step" [N], and the game's own info (StepOut.info: closest approach, rule breach, band, ...)."""
+    "end_step" [N], and the game's own info (StepOut.info: closest approach, rule breach, band, ...).
+    info is a plain dict of whole-batch tensors [N] or [N, M] and strings, one entry per key; it does NOT follow
+    Gymnasium's vector format (NumPy arrays plus a "_key" mask per key)."""
 
     metadata = {"autoreset_mode": AutoresetMode.SAME_STEP}
 
@@ -59,8 +61,8 @@ class SvgTeamVectorEnv(VectorEnv):
         self.m_team = game.guards if team == "guard" else game.strikes
         self.num_envs = game.num_games
         self.device = game.device
-        self.single_observation_space = gymnasium.spaces.Box(-np.inf, np.inf, (self.m_team * OBS_DIM,), np.float32)
-        self.single_action_space = gymnasium.spaces.Box(-1.0, 1.0, (self.m_team * 4,), np.float32)
+        self.single_observation_space = gymnasium.spaces.Box(-math.inf, math.inf, (self.m_team * OBS_DIM,), "float32")
+        self.single_action_space = gymnasium.spaces.Box(-1.0, 1.0, (self.m_team * 4,), "float32")
         self.observation_space = batch_space(self.single_observation_space, self.num_envs)
         self.action_space = batch_space(self.single_action_space, self.num_envs)
         self._game_obs: dict[str, Tensor] = {}

@@ -8,14 +8,18 @@ from .arena import Arenas
 from .game_config import GameCfg
 
 SLOT = 7                      # rel pos 3, rel vel 3, present 1
-OBS_DIM = 69                  # own 8 + game 5 + (pad_guards + pad_strikes) x 7, with the default pads 5 + 3
-STATE_DIM = 59                # game 3 + 8 slots x 7
+OBS_DIM = 71                  # own 8 + game 5 + (pad_guards + pad_strikes) x 7 + zone centre 2 (default pads 5 + 3)
+STATE_DIM = 61                # game 3 + 8 slots x 7 + zone centre 2
+# Interface history: 69 / 59 until 16 November 2026 (S2 Task 9 fix round 1); the zone centre (2 floats) was then
+# appended at the end of both, so no earlier index moved.
 
 
 class ObsView:
     """Named slices of one drone's observation [OBS_DIM] (for strategies that read it).
     Positions are relative to the zone centre (STANDARDS §3); slot k holds the other drone with slot index k
-    (Guard drones first, padded to pad_guards, then Strike drones): rel pos 3, rel vel 3, present 1."""
+    (Guard drones first, padded to pad_guards, then Strike drones): rel pos 3, rel vel 3, present 1. The last two
+    floats are the zone centre relative to the arena centre (the arena is a square centred on the world origin),
+    so own position + zone centre = own position in the arena, and the walls are at +-arena_half."""
     own_pos = slice(0, 3)
     own_vel = slice(3, 6)
     sin_cos_yaw = slice(6, 8)
@@ -25,6 +29,7 @@ class ObsView:
     team = 11                 # -1 Guard, +1 Strike
     alive = 12
     SLOTS_FROM = 13
+    zone_centre = slice(69, 71)   # zone centre x, y relative to the arena centre (m): where the walls are
 
     def slot(self, k: int) -> slice:
         a = self.SLOTS_FROM + SLOT * k
@@ -35,7 +40,7 @@ def _check_pads(cfg: GameCfg, guards: int, strikes: int) -> None:
     if guards > cfg.pad_guards or strikes > cfg.pad_strikes:
         raise ValueError(f"{guards}v{strikes} does not fit pads {cfg.pad_guards}+{cfg.pad_strikes}")
     if cfg.pad_guards + cfg.pad_strikes != 8:
-        raise ValueError("OBS_DIM = 69 assumes pad_guards + pad_strikes = 8")
+        raise ValueError(f"OBS_DIM = {OBS_DIM} assumes pad_guards + pad_strikes = 8")
 
 
 def _pad(feat: Tensor, cfg: GameCfg, guards: int) -> Tensor:
@@ -50,7 +55,8 @@ def build_obs(cfg: GameCfg, pos_m: Tensor, vel_mps: Tensor, yaw: Tensor, alive: 
               time_left_s: Tensor, guards: int, strikes: int) -> dict[str, Tensor]:
     """pos_m, vel_mps [N, M, 3]; yaw [N, M]; alive [N, M] bool; time_left_s [N]. Returns
     {"guard": [N, G, OBS_DIM], "strike": [N, S, OBS_DIM]}. A drone that is out gets an all-zero observation
-    except team and alive = 0; a drone that is out is absent (all zeros, present 0) in the others'."""
+    except team and alive = 0; a drone that is out is absent (all zeros, present 0) in the others'. The last two
+    floats (ObsView.zone_centre) are the zone centre relative to the arena centre, ar.zone_centre_m [N, 2]."""
     _check_pads(cfg, guards, strikes)
     n, m = pos_m.shape[:2]
     eye = torch.eye(m, dtype=torch.bool, device=pos_m.device)
@@ -64,7 +70,9 @@ def build_obs(cfg: GameCfg, pos_m: Tensor, vel_mps: Tensor, yaw: Tensor, alive: 
     team = torch.where(torch.arange(m, device=pos_m.device) < guards, -1.0, 1.0).to(pos_m.dtype)
     team = team[None, :, None].expand(n, m, 1)
     game = torch.stack((ar.zone_radius_m, ar.half_m, time_left_s), dim=-1)[:, None, :].expand(n, m, 3)
-    obs = torch.cat((own_p, vel_mps, yaw.sin()[..., None], yaw.cos()[..., None], game, team, a, slots), dim=-1)
+    zc = ar.zone_centre_m[:, None, :].expand(n, m, 2)
+    obs = torch.cat((own_p, vel_mps, yaw.sin()[..., None], yaw.cos()[..., None], game, team, a, slots, zc),
+                    dim=-1)
     obs = torch.where(alive[..., None], obs, obs * 0)                            # out: zeros ...
     obs = torch.cat((obs[..., :ObsView.team], team, obs[..., ObsView.team + 1:]), dim=-1)   # ... but team kept
     return {"guard": obs[:, :guards], "strike": obs[:, guards:]}
@@ -73,10 +81,12 @@ def build_obs(cfg: GameCfg, pos_m: Tensor, vel_mps: Tensor, yaw: Tensor, alive: 
 def build_state(cfg: GameCfg, pos_m: Tensor, vel_mps: Tensor, alive: Tensor, ar: Arenas, time_left_s: Tensor,
                 guards: int, strikes: int) -> Tensor:
     """Central state [N, STATE_DIM]: zone radius, arena half, time left, then 8 slots (Guard drones, padding,
-    Strike drones, padding) of position relative to the zone centre 3, velocity 3, present 1."""
+    Strike drones, padding) of position relative to the zone centre 3, velocity 3, present 1, then the zone
+    centre relative to the arena centre (x, y, m)."""
     _check_pads(cfg, guards, strikes)
     n = pos_m.shape[0]
     p = torch.cat((pos_m[..., :2] - ar.zone_centre_m[:, None, :], pos_m[..., 2:]), dim=-1)
     feat = torch.cat((p, vel_mps, alive[..., None].to(pos_m.dtype)), dim=-1) * alive[..., None]
     slots = _pad(feat, cfg, guards).reshape(n, -1)
-    return torch.cat((torch.stack((ar.zone_radius_m, ar.half_m, time_left_s), dim=-1), slots), dim=-1)
+    return torch.cat((torch.stack((ar.zone_radius_m, ar.half_m, time_left_s), dim=-1), slots, ar.zone_centre_m),
+                     dim=-1)

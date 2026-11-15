@@ -15,10 +15,10 @@ Training on the fixed named scenarios is refused (STANDARDS §6 rule 4): a game 
 ``ValueError``."""
 from __future__ import annotations
 
+import math
 from typing import Any
 
 import gymnasium
-import numpy as np
 import torch
 from skrl.envs.wrappers.torch.base import MultiAgentEnvWrapper
 from torch import Tensor
@@ -72,9 +72,9 @@ class SvgSkrlEnv(MultiAgentEnvWrapper):
         count = {"guard": game.guards, "strike": game.strikes}
         self._names = {t: [f"{t}_{i}" for i in range(count[t])] for t in self.train_teams}
         self._possible_agents = [a for t in self.train_teams for a in self._names[t]]
-        obs_box = gymnasium.spaces.Box(-np.inf, np.inf, (OBS_DIM,), np.float32)
-        act_box = gymnasium.spaces.Box(-1.0, 1.0, (4,), np.float32)
-        self._state_box = gymnasium.spaces.Box(-np.inf, np.inf, (STATE_DIM,), np.float32)
+        obs_box = gymnasium.spaces.Box(-math.inf, math.inf, (OBS_DIM,), "float32")
+        act_box = gymnasium.spaces.Box(-1.0, 1.0, (4,), "float32")
+        self._state_box = gymnasium.spaces.Box(-math.inf, math.inf, (STATE_DIM,), "float32")
         self._obs_spaces = {a: obs_box for a in self._possible_agents}
         self._act_spaces = {a: act_box for a in self._possible_agents}
         self._obs: dict[str, Tensor] = {}

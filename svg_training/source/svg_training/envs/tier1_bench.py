@@ -1,13 +1,25 @@
-"""Tier 1 benchmark environment: batched point-mass drones, placeholder response, sensing, contact tags.
+"""Tier 1 benchmark environment: batched point-mass drones, a response model, sensing, contact tags.
 
 No game rules and no rewards yet; its speed is what S0 measures. N = games, M = drones per game
 (Guard drones first, then Strike drones), R = rays.
+
+Response model (``Tier1BenchCfg.response``): "placeholder" (S0's delay + lag, the default, unchanged bit for bit)
+or the path of a parameter TOML such as ``params/real_exploratory_v0.toml`` for ``models/fitted.FittedResponse``
+(the commander's real-mode teleop law, then PX4's fitted response; exploratory). ``safety_filter=True`` puts
+``core/safety_filter.py`` inside the commander, between drones of the same team only, with
+``filter_iterations`` sweeps; it needs the fitted response.
+Speeds on the fitted path: each team's command is scaled and its NORM capped before the commander, Strike drones at
+``strike_speed_mps`` and Guard drones at ``strike_speed_mps / 1.5`` (STANDARDS §4); ``speed_cap_mps`` is the
+placeholder path's cap only. ``strike_speed_mps`` may not exceed the commander's own stick cap (0.5 m/s in the real
+config), or the ratio would be lost there.
 """
 from dataclasses import dataclass
 
 import torch
 from torch import Tensor
 
+from svg_training.core.safety_filter import team_pair_mask
+from svg_training.models.fitted import FittedResponse
 from svg_training.models.placeholder import PlaceholderResponse
 from svg_training.worlds.field import synthetic_field
 from svg_training.worlds.sensing import World, cast_rays, line_of_sight, ray_directions
@@ -33,6 +45,10 @@ class Tier1BenchCfg:
     seed: int = 0
     device: str = "cuda"
     speed_cap_mps: float = 4.0  # Strike drones; Guard drones get speed_cap_mps / 1.5 (STANDARDS §4)
+    response: str = "placeholder"  # "placeholder" | path of a parameter TOML (FittedResponse)
+    safety_filter: bool = False  # the safety filter, per team, inside the commander (fitted response only)
+    filter_iterations: int = 1000  # filter sweeps per tick (core/safety_filter.py default: the parity record's)
+    strike_speed_mps: float = 0.5  # fitted path: Strike norm cap; Guard = this / 1.5; <= the commander's stick cap
 
 
 class Tier1BenchEnv:
@@ -51,7 +67,22 @@ class Tier1BenchEnv:
         self.gen = torch.Generator(device=dev).manual_seed(cfg.seed)
         cap = cfg.speed_cap_mps
         self._cap_mps = torch.tensor([cap / 1.5] * self.G + [cap] * self.S, device=dev)[None, :, None]  # [1, M, 1]
-        self.response = PlaceholderResponse(self.N, self.M, dt_s=cfg.dt_s, speed_cap_mps=self._cap_mps, device=dev)
+        self._fitted = cfg.response != "placeholder"
+        if not self._fitted:
+            if cfg.safety_filter:
+                raise ValueError("safety_filter needs the fitted response: set response to a parameter TOML path")
+            self.response = PlaceholderResponse(self.N, self.M, dt_s=cfg.dt_s, speed_cap_mps=self._cap_mps, device=dev)
+        else:
+            self.response = FittedResponse(self.N, self.M, cfg.response, dt_s=cfg.dt_s, device=dev,
+                                           safety_filter=cfg.safety_filter,
+                                           pair_mask=team_pair_mask(self.G, self.S, device=dev),
+                                           filter_iterations=cfg.filter_iterations)
+            stick_cap = self.response.commander_params.teleop_max_speed_mps
+            if cfg.strike_speed_mps > stick_cap:
+                raise ValueError(f"strike_speed_mps {cfg.strike_speed_mps} exceeds the commander's stick cap "
+                                 f"{stick_cap} m/s: the Strike/Guard speed ratio would be lost")
+            s_cap = cfg.strike_speed_mps
+            self._team_cap_mps = torch.tensor([s_cap / 1.5] * self.G + [s_cap] * self.S, device=dev)[None, :, None]
         self._self_inf = torch.diag(torch.full((self.M,), float("inf"), device=dev))[None, :, None, :]  # [1, M, 1, M]
         self._lo_m = torch.tensor([-cfg.arena_half_m[0], -cfg.arena_half_m[1], cfg.height_m[0]], device=dev)
         self._hi_m = torch.tensor([cfg.arena_half_m[0], cfg.arena_half_m[1], cfg.height_m[1]], device=dev)
@@ -64,6 +95,8 @@ class Tier1BenchEnv:
             mask = torch.zeros(self.N, self.M, dtype=torch.bool, device=dev)
             mask[:, m] = True
             self._spawn(mask)
+        if self._fitted:
+            self.response.reset(torch.ones(self.N, self.M, dtype=torch.bool, device=dev), self.pos_m)
 
     def _uniform(self, *shape) -> Tensor:
         return torch.rand(*shape, generator=self.gen, device=self.cfg.device)
@@ -102,9 +135,16 @@ class Tier1BenchEnv:
     def step(self, action: Tensor) -> dict:
         """action [N, M, 4] (vx, vy, vz in [-1, 1] of the speed cap; yaw rate ignored in S0)."""
         cfg = self.cfg
-        cmd = action[..., :3].clamp(-1.0, 1.0) * self._cap_mps
-        self.vel_mps = self.response.step(cmd)
-        self.pos_m = self.pos_m + self.vel_mps * cfg.dt_s
+        if self._fitted:  # the model integrates the position itself, from the env's current one
+            cap = self._team_cap_mps  # [1, M, 1]: per-team norm cap before the commander (STANDARDS §4)
+            cmd = action[..., :3].clamp(-1.0, 1.0) * cap
+            cmd = cmd * (cap / cmd.norm(dim=-1, keepdim=True).clamp(min=1e-9)).clamp(max=1.0)
+            self.vel_mps = self.response.step(cmd, self.pos_m)
+            self.pos_m = self.response.pos_m
+        else:
+            cmd = action[..., :3].clamp(-1.0, 1.0) * self._cap_mps
+            self.vel_mps = self.response.step(cmd)
+            self.pos_m = self.pos_m + self.vel_mps * cfg.dt_s
         pos = self.pos_m
 
         g, s = pos[:, :self.G], pos[:, self.G:]
@@ -126,7 +166,10 @@ class Tier1BenchEnv:
                "tagged": tagged, "touched": touched}
         respawn = tagged | touched
         self._spawn(respawn)
-        self.response.reset(respawn)
+        if self._fitted:
+            self.response.reset(respawn, self.pos_m)
+        else:
+            self.response.reset(respawn)
         self.vel_mps = self.response.vel_mps
         out["reset_fraction"] = respawn.float().mean()
         out["bad_spawns"] = self.bad_spawns

@@ -2,6 +2,10 @@
 
 PYTHONPATH=source python scripts/benchmark_tier1.py --config configs/s0_benchmark.toml --out runs/<run>/results.jsonl
     [--device cuda] [--only <case>] [--max-games <n>] [--min-warmup-s <seconds>]
+    [--games 1024,4096] [--response params/real_exploratory_v0.toml] [--safety-filter] [--filter-iterations 1000]
+The last four are S1 options (Task 8b): --games replaces each case's num_games list; --response picks the response
+model (default "placeholder", S0's); --safety-filter turns the per-team filter on inside the commander (fitted
+response only). Rows of a run with any of them carry "response", "safety_filter" and "filter_iterations".
 Every row carries "code_sha" (rows.code_sha: the code and config this run used). A point that raises any exception
 other than out-of-memory is written as one "crash" row and the sweep goes on; the exit code is then 1 at the end.
 """
@@ -25,12 +29,22 @@ def main() -> None:
     ap.add_argument("--only", default=None, help="one case name")
     ap.add_argument("--max-games", type=int, default=None, help="drop num_games entries above this")
     ap.add_argument("--min-warmup-s", type=float, default=2.0, help="minimum warm-up seconds per repeat")
+    ap.add_argument("--games", default=None, help="comma list of num_games, replacing each case's own list")
+    ap.add_argument("--response", default="placeholder", help='"placeholder" or a parameter TOML path')
+    ap.add_argument("--safety-filter", action="store_true", help="per-team safety filter (fitted response only)")
+    ap.add_argument("--filter-iterations", type=int, default=1000, help="filter sweeps per tick")
     args = ap.parse_args()
 
     with open(args.config, "rb") as f:
         config = tomllib.load(f)
     timing = config["timing"]
     cases = [c for c in config["tier1"] if args.only is None or c["name"] == args.only]
+    if args.games is not None:
+        games = [int(g) for g in args.games.split(",") if g.strip()]
+        cases = [{**c, "num_games": games} for c in cases]
+    s1 = args.response != "placeholder" or args.safety_filter or args.games is not None
+    setting = ({"response": args.response, "safety_filter": args.safety_filter,
+                "filter_iterations": args.filter_iterations if args.safety_filter else None} if s1 else {})
     if args.only is not None and not cases:
         print(f"no tier 1 case named {args.only!r}; valid names: {', '.join(c['name'] for c in config['tier1'])}")
         sys.exit(3)
@@ -61,7 +75,8 @@ def main() -> None:
                     return Tier1BenchEnv(Tier1BenchCfg(
                         num_games=n, guards=case["guards"], strikes=case["strikes"], world=case["world"],
                         n_obstacles=case["n_obstacles"], n_rays=case["n_rays"],
-                        line_of_sight=case["line_of_sight"], device=dev))
+                        line_of_sight=case["line_of_sight"], device=dev, response=args.response,
+                        safety_filter=args.safety_filter, filter_iterations=args.filter_iterations))
 
                 def step_of(env, n=n, m=m):
                     # random action drawn on the device inside the timed section (the policy's stand-in)
@@ -69,7 +84,7 @@ def main() -> None:
 
                 rows = run_case(make_env, step_of, case, n, timing, dev, args.min_warmup_s)
                 for r in rows:
-                    fh.write(json.dumps(r) + "\n")
+                    fh.write(json.dumps({**r, **setting}) + "\n")
                 fh.flush()
                 if rows[0]["status"] == "oom":
                     print(f"{case['name']} games={n}: OOM", flush=True)

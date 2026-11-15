@@ -56,7 +56,7 @@ Game-steps per second (one game advanced by one 0.05 s step). Tier 1, 10,000 gam
 | pure partner rules | 1,685,289 / 1,713,912 / 1,705,909 | 1,385,957 / 1,346,821 / 1,392,461 |
 | with Starling layer (1,000 sweeps, check every 8) | 386,845 / 309,714 / 296,343 | 21,439 / 34,259 / 43,833 |
 
-Run time 1,342 s (22 min), against 66 min for T6. With the Starling layer, 2v1 ran 13–17 times faster than in T6, and 5v3 only 1.2–2.5 times faster. The early stop helps little in 5v3: with crowded drones the filter rarely settles, so it runs most of its 1,000 sweeps. The 5v3 lab batch alone took 560 s.
+Run time 1,342 s (22 min), against 66 min for T6. With the Starling layer, 2v1 ran 13–17 times faster than in T6, and 5v3 only 1.2–2.5 times faster. The early stop helps little in 5v3, where many games still have drones close together; why was not measured. The 5v3 lab batch alone took 560 s.
 
 ## Gates
 
@@ -114,7 +114,7 @@ What the closeness numbers mean:
 
 - **Horizontal against 3-D.** The near-zero horizontal minima are drones passing one above the other: the filter keeps drones apart in 3-D and moves them up and down. Measured in 3-D, the 2v1 minimum is 0.83–0.85 m. The two lowest 3-D values, 0.025 m (5v3 lab) and 0.491 m (5v3 middle), come from games that began with a start miss.
 - **Most breaches are shallow.** The median closest approach in 3-D is 1.01–1.09 m, a few centimetres inside the keep-out. That matches the model's open-space loss of about 0.05 m, which the T6 review put down to the fitted acceleration limit and the slow lag.
-- **Some go deeper.** The four scripted Guards never command up or down, so for them 3-D = horizontal. Without a start miss they now bottom out at 0.89–0.91 m (2v1) and 0.75–0.80 m (5v3). In T6 the floor was 0.75–0.77 m in every band (0.662 m in 5v3 lab without a start miss). Games under 0.9 m: none in 2v1, and 6.4 % / 1.3 % / 0.2 % in 5v3 lab / middle / large (T6: 1.6–6.1 % in 2v1, 4.5–32.7 % in 5v3). So the wall fix removed the 0.770 m floor, but in crowded 5v3 games pairs still come about 0.3 m inside the keep-out. That is deeper than the open-space loss, and its cause is not diagnosed (see Limits).
+- **Some go deeper.** The four scripted Guards never command up or down, so for them 3-D = horizontal. Without a start miss they now bottom out at 0.89–0.91 m (2v1) and 0.75–0.80 m (5v3). In T6 the floor was 0.75–0.77 m in every band (0.662 m in 5v3 lab without a start miss). Games without a start miss that came under 0.9 m: in 2v1, 3 games (0.04 % of the lab games; mirror v flank, lowest 0.892 m), none in middle or large. In 5v3: 4.1 % / 1.2 % / 0.2 % in lab / middle / large. T6 had 1.6–6.1 % in 2v1 and 30.6 / 13.9 / 4.5 % in 5v3. So the wall fix removed the 0.770 m floor, but in crowded 5v3 games pairs still come about 0.3 m inside the keep-out. That is deeper than the open-space loss. The review traced it to a limit of the commander's design, not a bug (see Limits).
 - **The breach share barely moved** (2v1 lab 94.3 % against T6's 94.4 %): almost every game has a shallow breach either way. What changed is the depth.
 
 ### Starts that could not be spaced (start miss)
@@ -137,8 +137,21 @@ It replaces T6 as the reference that later strategies are compared with, under e
   - The time to 63 % of a speed change is 0.6–0.9 s in the model against about 0.35 s on the real drone (the commander's 5 m/s² ramp is cut by the fitted 1.72 m/s² limit).
   - The model has an unpinned slow mode of about 9 s.
   - So in short lab-band games the Strike/Guard speed ratio is not exactly 1.5.
-- **Deep approaches in crowded games, not diagnosed.** Scripted Guard–Strike pairs come to 0.75–0.80 m in 5v3 (without a start miss), about 0.3 m inside the keep-out. That is deeper than the open-space loss. Candidates: several drones squeezing one pair, the filter running out of sweeps in crowded scenes (it rarely settles in 5v3), and the model's lag. It is a property of the training simulator, and says nothing about the real commander.
+- **Deep approaches next to walls: a limit, not a bug** (diagnosed in the lead's review). Scripted Guard–Strike pairs come to 0.75–0.80 m in 5v3 without a start miss, about 0.3 m inside the keep-out.
+  - **Where it happens.** In 98 % of the games under 0.95 m, one drone of the pair is held at a wall, usually with a third drone within 1.3 m.
+  - **Why.** The filter has settled there (residual at most 0.003, no emergency). Its answer puts the escape on the walled drone, and the wall then stops that drone. More sweeps change nothing: 5,000 sweeps gave identical results.
+  - **What it costs.** Two causes each cost about 0.2 m, and they overlap. The filter does not know the walls (0.84 m with that cause alone). The fitted model's lag is slow (0.91 m with that cause alone). Together the pair reaches 0.82 m; with neither, 1.084 m.
+  - **The copy is faithful.** CMU's real commander does the same: its fence clips the speed after the filter, and `cbf_filter.py` knows no walls.
+  - **Evidence.** The review's probe files are in a scratch folder, not committed: `/tmp/claude-1000/-home-jeremychia/2b67e152-f4d0-40c1-8b77-4ead5185a30b/scratchpad/deep/`. That is not reproducible from the repository yet.
 - **Start misses.** About a third of 5v3 lab games start with drones closer than the keep-out. They are played and counted, and they give the lowest 3-D values.
 - **Filter setting.** 1,000 sweeps with a check every 8 is the setting T8 chose for speed; T8's accuracy check covers it. T6 used no early stop. Hold rates differ from T6 by at most 1.8 points, so the setting changed little here.
 - **Arenas differ per pair.** The 10 pairs in a batch play independent arena and start draws, not the same ones.
 - One seed (0), on this laptop.
+
+## Edited after the run (lead's review, 16 November 2026)
+
+Wording only. No number in the tables changed, and the run was not repeated.
+
+- **Under 0.9 m.** The share of games under 0.9 m now counts only games without a start miss: 4.1 / 1.2 / 0.2 % in 5v3, against T6's 30.6 / 13.9 / 4.5 %. 2v1 is now given as 3 games (0.04 %, mirror v flank, lab, 0.892 m), not "none".
+- **Deep approaches near walls.** "Not diagnosed" is replaced by the review's diagnosis: a limit of the commander's design next to walls, faithful to the real commander, not a bug. Its probe files are in a scratch folder and not committed.
+- **Early stop.** The guess that the filter "rarely settles" in 5v3 is removed. The review found it settled in the deep games.

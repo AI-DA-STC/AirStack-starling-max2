@@ -1,0 +1,54 @@
+# S2 gates and settings. Approved by the owner. Never edited after the first result exists.
+
+[filter_speed]                      # Task 7. Candidates fixed before the run; a new one = a new run
+iterations = [1000, 500, 300, 200, 100]
+check_every = [0, 8, 32]            # 0 = the fixed loop of T2
+accuracy_device = "cpu"             # T2's conditions: CPU, float32
+speed_case = { guards = 5, strikes = 3, num_games = 4096, actions = "random", repeats = 2 }
+
+[filter_speed_gates]                # on T2's 2,000 scenes (seed 20261115); "no worse than T2"
+max_abs_dv_mps = 1.6666             # T2 measured
+constraint_residual_max = 2.08973   # T2 measured
+emergency_agreement_min = 0.999     # T2 measured
+cross_team_corrections = 0          # T2 measured
+max_abs_dv_first_phase_mps = 0.02   # D6: scenes CMU solved without its Gauss-Seidel phase (T2: 6.18e-05)
+game_steps_per_s_min = 100000       # D7
+scenes = 2000
+seed = 20261115
+
+[bag_check_gates]                   # Task 8; exploratory: the bag cannot give the 8 legs of S1's fit gates
+drone = "drone_2"                   # the airframe the model was fitted on; drone_1 reported, not gated
+vel_rms_max_mps = 0.10              # every leg, active span (leg start to leg end + 1 s); S1 [fit_gates] value
+t63_err_max_s = 0.10                # worst leg start or stop; S1 [fit_gates] value
+min_legs = 3                        # fewer legs found = INFO, no verdict
+accel_ff = "derived"                # as the model was fitted
+
+[scoring]                           # Task 6
+games_per_band = 1000
+sizes = ["2v1", "5v3"]
+presets = ["pure", "starling"]
+
+[standin]                           # Task 10 (D8)
+algorithm = "IPPO"
+guards = 2
+strikes = 1
+preset = "pure"                     # committed neutral values; --no-local
+num_games = 4096
+game_steps_per_seed = 50_000_000
+wall_clock_cap_min = 45
+seeds = [1, 2, 3]
+opponent_mix = { strike_straight = 0.5, strike_flank = 0.5 }   # split by game index
+shaping_weight = 1.0
+rollouts = 32
+learning_epochs = 5
+mini_batches = 4
+learning_rate = 3.0e-4
+hidden = [128, 128]
+
+[standin_gates]
+eval_games_per_band = 1000          # 3,000 games per condition
+eval_seed_offset = 1000             # evaluation seed = training seed + this
+behaviours = ["strike_straight", "strike_flank"]
+min_hold_rate_gain = 0.20           # trained minus random Guard, absolute, for every seed and behaviour
+intervals_disjoint = true           # Wilson 95 %: trained lower bound > random upper bound
+seeds_required = 3                  # all three seeds must pass

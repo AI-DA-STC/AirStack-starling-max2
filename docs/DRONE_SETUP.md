@@ -58,7 +58,7 @@
 ### 2b · Extra steps for OLDER units on the USB dongle (`wlan0`) — skip if you have `mlan0`
 
 Two independent boot races will otherwise leave the drone with no WiFi. Full writeup and
-evidence: [CLAUDE.md](../CLAUDE.md).
+evidence: [record/real_notes_2026-09-16_wifi.md](record/real_notes_2026-09-16_wifi.md).
 
 - [ ] **Stop `option` stealing the dongle.** Append `NoDriverLoading=1` to `/etc/usb_modeswitch.d/0bda:1a2b`. Without it the kernel-builtin `option` serial driver claims the stick and exports it as `/dev/ttyUSB0`, so no `wlan0` ever appears.
 - [ ] **Stop `wpa_supplicant` quitting before `wlan0` exists.** Create `/etc/systemd/system/wpa_supplicant.service.d/10-wait-for-wlan0.conf` with `StartLimitIntervalSec=0` under `[Unit]` and `RestartSec=5` under `[Service]`, then `systemctl daemon-reload`. The stock unit burns 5 starts in under a second; the dongle only enumerates at t≈8 s.

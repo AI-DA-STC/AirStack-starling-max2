@@ -67,7 +67,10 @@ class FittedResponse:
 
     def __init__(self, n_games: int, n_drones: int, params: str | pathlib.Path | dict, dt_s: float | None = None,
                  device="cuda", dtype: torch.dtype = torch.float32, safety_filter: bool = False,
-                 pair_mask: Tensor | None = None, filter_iterations: int = 1000, pos_m: Tensor | None = None):
+                 pair_mask: Tensor | None = None, filter_iterations: int = 1000, pos_m: Tensor | None = None,
+                 filter_kwargs: dict | None = None):
+        """filter_kwargs, if given, is merged last into the ``filter_velocities`` call (it may override any keyword
+        this class passes, e.g. ``iterations``); None leaves the S1 call unchanged."""
         cfg = params if isinstance(params, dict) else load_params(params)
         px4 = dict(cfg["px4"])
         model_dt_s = float(px4.pop("model_dt_s"))
@@ -94,6 +97,7 @@ class FittedResponse:
         self.safety_filter = bool(safety_filter)
         self.filter_cfg = dict(cfg["filter"])
         self.filter_iterations = int(filter_iterations)
+        self.filter_kwargs = dict(filter_kwargs) if filter_kwargs else {}
         if self.safety_filter:
             if pair_mask is None:
                 raise ValueError("safety_filter=True needs a pair_mask (core.safety_filter.team_pair_mask)")
@@ -112,15 +116,24 @@ class FittedResponse:
         self._fresh = torch.ones(n, m, dtype=torch.bool, device=device)        # history not started yet
         zeros = torch.zeros(n, m, 3, device=device, dtype=dtype)
         self.setpoint = (zeros, zeros.clone(), zeros.clone())
+        # the filter's speed cap as a device tensor, made once: a Python number would be copied to the GPU on
+        # every call (a host sync); same value, so results are unchanged
+        self._filter_cap_mps = torch.tensor(float(self.filter_cfg["max_speed_mps"]), device=device, dtype=dtype)
         self.corrected = torch.zeros(n, m, dtype=torch.bool, device=device)
 
     # ------------------------------------------------------------------------------------- the filter
     def _filter(self, nominal: Tensor, pos_m: Tensor) -> tuple[Tensor, Tensor]:
         f = self.filter_cfg
-        res = filter_velocities(nominal, pos_m, self.pair_mask, f["safety_radius_m"], f["max_speed_mps"],
-                                alpha=f["alpha"], iterations=self.filter_iterations, tolerance=f["tolerance"])
+        kw = {"alpha": f["alpha"], "iterations": self.filter_iterations, "tolerance": f["tolerance"],
+              **self.filter_kwargs}
+        res = filter_velocities(nominal, pos_m, self.pair_mask, f["safety_radius_m"], self._filter_cap_mps, **kw)
         self.corrected = res.corrected
         return res.velocities, res.corrected
+
+    def set_pair_mask(self, mask: Tensor) -> None:
+        """Replace the filter's pair mask: [M, M] (all games) or [N, M, M] bool (per game, e.g. live drones only).
+        Same rules as ``filter_velocities``: symmetric, False on the diagonal, block shaped."""
+        self.pair_mask = mask.to(self.device)
 
     # ------------------------------------------------------------------------------------- PX4, one 0.01 s step
     def _px4_step(self, x: Tensor) -> None:

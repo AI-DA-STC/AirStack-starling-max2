@@ -206,19 +206,43 @@ def test_scenarios_exist_and_fit():
 
 
 def test_game_modules_have_no_host_calls():
-    for f in ["arena", "observations", "rewards", "game", "pair_rules"]:
+    for f in ["arena", "observations", "rewards", "game", "pair_rules", "starling_layer"]:
         src = (CORE / f"{f}.py").read_text()
         assert not re.search(r"\.(item|cpu|numpy|tolist)\(|import numpy|nonzero\(", src), f
 
 
 @pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA only")
-def test_step_runs_under_sync_debug_error():
-    g = SvgGame(CFG.replace(dropout_fraction=0.2), 256, 3, 2, device="cuda", seed=1)
+@pytest.mark.parametrize("starling", [False, True])
+def test_step_runs_under_sync_debug_error(starling):
+    cfg, steps = CFG.replace(dropout_fraction=0.2), 1300
+    if starling:   # Starling layer, filter without early stop (check_every 0); short games so auto-reset runs often
+        cfg = cfg.replace(**{"starling.enabled": True, "starling.filter_iterations": 20,
+                             "starling.filter_check_every": 0, "rules.game_steps": 40})
+        steps = 130
+    g = SvgGame(cfg, 256, 3, 2, device="cuda", seed=1)
     a = {"guard": torch.rand(256, 3, 4, device="cuda") * 2 - 1, "strike": torch.rand(256, 2, 4, device="cuda") * 2 - 1}
     g.step(a)
     torch.cuda.set_sync_debug_mode("error")
     try:
-        for _ in range(1300):
-            g.step(a)
+        done = torch.zeros(256, dtype=torch.bool, device="cuda")
+        for _ in range(steps):
+            done |= g.step(a).done
     finally:
         torch.cuda.set_sync_debug_mode(0)
+    assert bool(done.all())                                          # every game auto-reset at least once
+
+
+def test_contact_tag_beats_zone_on_the_same_step():
+    """Tie rule: tags come before the zone test. The Strike drone enters the zone (radius 0.4) and comes within
+    contact (0.5 m) of the Guard drone on the same step (step 1): Guard win. Without the Guard drone near, the
+    same move scores."""
+    cfg = CFG.replace(preset="contact")
+
+    def first_step(guard_xy):
+        sc = Scenario("tie", 4.0, (0.0, 0.0), 0.4, (guard_xy, (-0.41, 0.0)))
+        return SvgGame(cfg, N, 1, 1, device="cpu", scenario=sc).step({"guard": z(1), "strike": act_x(1, 1.0)})
+
+    out = first_step((0.1, 0.0))            # strike to x = -0.385: 0.385 m from the zone centre, 0.485 m from the guard
+    assert out.info["tagged"].all() and (out.outcome == GUARD_WIN).all() and (out.end_step == 1).all()
+    out = first_step((1.5, 1.5))
+    assert not out.info["tagged"].any() and (out.outcome == STRIKE_WIN).all() and (out.end_step == 1).all()

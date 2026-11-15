@@ -213,7 +213,7 @@ batch_per_pair = true                      # D15: paired games
 [compare_games_gates]
 max_cell_hold_gap = 0.10                   # per Guard × Strike × size × band, 1,000 paired games; ~2× the 0.044
                                            # 95 % spread of two unpaired rates at 0.5, so a larger gap is the drone
-physics_closest_cross_min_m = 1.0          # S2 Task 4's threshold: the filter keeps opposite drones apart here too
+closest_cross_3d_gap_max_m = 0.10          # AMENDED by the owner 16 Nov (decision A): per matchup cell, games without a start miss, 3-D closest Guard–Strike approach: physics minimum and 5th percentile no more than 0.10 m below tier 1 Starling layer's (paired games). Replaces physics_closest_cross_min_m = 1.0, which failed by construction (T9: walled drones + teammate squeeze reach 0.75–0.80 m on tier 1)
 upsets_max = 0
 nan_max = 0
 
@@ -637,3 +637,10 @@ The stand-in task (both backends) and every later training run log to TensorBoar
 - the run's settings (game config hash, seed, backend, preset) as TensorBoard text, so two runs can be told apart.
 
 Test: a 1-minute CPU smoke run writes an event file whose tags include `game/hold_rate`. `docs/TRAINING.md` gets the exact command (`tensorboard --logdir runs/`, host side, then `http://localhost:6006`; safe over the remote desktop because it is only a web page). No cloud logging service (the partner's numbers must not leave the laptop).
+
+## Owner's answers, second round (16 November 2026, "yes")
+
+| # | Question | Answer |
+|---|---|---|
+| A | The games gate "physics closest Guard–Strike approach ≥ 1.0 m in every game" fails by construction (S2's T9: on tier 1 a drone held at a wall plus a team-mate squeeze already reaches 0.75–0.80 m; some games start closer than 1.0 m) | **Replaced, before any S2b run:** per matchup cell, in games without a start miss, the 3-D closest Guard–Strike approach under physics (minimum and 5th percentile) may be at most **0.10 m** below the tier 1 Starling layer's on the same paired games (`closest_cross_3d_gap_max_m` in `configs/s2b.toml`, Task 1). Wherever the plan's text still names `physics_closest_cross_min_m`, the builder uses this rule instead. |
+| B | Make the training copy's safety filter wall-aware (it would no longer match CMU's)? | **No: keep the filter faithful to CMU's.** The wall effect is recorded as a real-drone hazard hypothesis (the commander runs the filter before the keep-in fence); a fix belongs in CMU's commander, the owner's call. |

@@ -50,9 +50,6 @@ training library drives the game through an adapter. Both play the same game, `c
 circles) use the field strategy, Strike drones (orange triangles) fly straight. The Guard team holds the zone for
 the full 60 s. Training simulator, neutral values; made by `scripts/make_replay.py`.
 
-The Starling-layer clip (`5v3_starling`) was made before the wall fix described in
-[§4](#4-how-close-guard-and-strike-drones-came), so it shows the old wall handling.
-
 ## What the runs showed
 
 ### 1. A faster safety filter (T7 ABORTED, T8 PASS)
@@ -135,7 +132,9 @@ T6 as the reference.
 **What we found.** The four scripted Guard strategies held the zone in 38–100 % of games under the pure rules and
 14–100 % with the Starling layer. Random Guard moves held 0–37 % and 0–0.1 %. Hold rates fall as the arena grows,
 most at 5 v 3, and the Starling layer lowers most of them: mark inside against straight, 2 v 1 large, falls from
-67.5 % to 13.7 %.
+67.5 % to 13.7 %. The Starling-layer drops come from an exploratory drone model that reaches 63 % of a speed change in 0.6–0.9 s,
+against about 0.35 s on the real drone (its check against a real flight, T5, is a FAIL), so they are not the
+cost of flying a real Starling.
 
 <a id="fig-5"></a>
 ![Hold rate per arena band, one panel per rule set and team size](figures/s2_scripted_reference_2.png)
@@ -173,8 +172,9 @@ minimum for 2 v 1 is 0.83–0.85 m while the horizontal one is 0.001–0.003 m.
 
 **Crowded 5 v 3 games near walls: a limit, not a bug.** After the fix, most breaches are shallow: the median closest
 approach in 3-D is 1.01–1.09 m, close to the model's 0.05 m open-space loss. But in 5 v 3 games, scripted pairs
-still reach 0.75–0.80 m (2 v 1: 0.89–0.91 m) without a crowded start. That happens in 4.1 %, 1.2 % and 0.2 % of
-5 v 3 games (lab, middle, large), against 30.6 %, 13.9 % and 4.5 % before the fix.
+still reach 0.75–0.80 m (2 v 1: 0.89–0.91 m) without a crowded start. Counting the four scripted Guard strategies
+only, in games without a start miss, pairs came under 0.9 m in 4.1 %, 1.2 % and 0.2 % of 5 v 3 games (lab 212 of
+5,223, middle 97 of 7,833, large 16 of 8,000), against 30.6 %, 13.9 % and 4.5 % before the fix.
 
 The review traced it ([T9 record, Limits](../records/2026-11-16_s2_scripted_reference_2_record.md#limits)):
 
@@ -186,8 +186,8 @@ The review traced it ([T9 record, Limits](../records/2026-11-16_s2_scripted_refe
 - **the copy is faithful:** CMU's real commander also runs the filter first and clips the speed at its fence
   afterwards (`swarm_commander.py`, about lines 2140 and 2210), and its filter knows no walls.
 
-The review's probe files are in a scratch folder, not in the repository, so this diagnosis cannot yet be
-reproduced from the repository.
+The review's probe is in the repository: `scripts/probe_wall_limit.py` (CPU, 3–10 minutes per variant), with its
+command and output in [notes/s2_wall_limit_probe.md](notes/s2_wall_limit_probe.md).
 
 **Crowded starts (start misses).** A start miss is a game whose drones could not be placed far enough apart at the
 start. In 5 v 3 that is 34.7 % of lab games, 2.1 % of middle games and none of the large ones; in 2 v 1, none. A
@@ -220,7 +220,7 @@ From the [S2 design §7](specs/2026-11-15-s2-game-and-plug-in-design.md#7-when-s
 | 2 | The scoring tool gives the hand-worked answer on fixed scenarios | **PASS** (tests) | `tests/test_score.py::test_score_fixed_scenarios_hand_worked`: a straight Strike drone reaches the zone at step 37 (4 m) and step 205 (16 m); with the push-apart in the way the Guard team holds to the time-out |
 | 3 | The chosen filter setting meets the speed gate (at least 100,000 game-steps/s) and is no worse than T2 on T2's checks | **PASS** (T8), under the owner's 4-decimal ruling. Whole game 90,121 game-steps/s: INFO. Staggered restarts: not measured | [T8 record](../records/2026-11-16_s2_filter_speed_2_record.md); T7 ABORTED ([record](../records/2026-11-16_s2_filter_speed_record.md)) |
 | 4 | A stand-in trainer beats random actions by a margin set before the run | **MOVED to S2b** by the owner (16 November); not run in S2 | gates unchanged in `configs/s2.toml` `[standin_gates]`; [S2b plan](plans/2026-11-16-s2b-isaac-lab-environment.md) |
-| 5 | A one-page partner guide with a worked example | **DONE**; the worked example is a small skrl training script, run by the tests. The stand-in example is added in S2b | [PLUG_IN.md](PLUG_IN.md); `tests/test_adapters.py` |
+| 5 | A one-page partner guide with a worked example | **DONE in part**: the guide exists and its examples (a small skrl training script among them) run in the tests. The design's worked example uses the stand-in trainer, so it comes with the stand-in in S2b (lead's ruling, 16 November) | [PLUG_IN.md](PLUG_IN.md); `tests/test_adapters.py` |
 
 Information runs: T6 and T9 (scripted reference, no gates) and T5 (drone-model check, **FAIL**). All rows are in the
 [training ledger](../records/LEDGER.md).

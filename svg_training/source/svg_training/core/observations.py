@@ -7,6 +7,9 @@ from torch import Tensor
 from .arena import Arenas
 from .game_config import GameCfg
 
+# Policy interface version (STANDARDS §3). History: "0" = 69 observation numbers (59 state); "0.1" = 71 (61 state),
+# zone centre appended at the end, 16 November 2026. A layout or scaling change raises it.
+INTERFACE_VERSION = "0.1"
 SLOT = 7                      # rel pos 3, rel vel 3, present 1
 OBS_DIM = 71                  # own 8 + game 5 + (pad_guards + pad_strikes) x 7 + zone centre 2 (default pads 5 + 3)
 STATE_DIM = 61                # game 3 + 8 slots x 7 + zone centre 2

@@ -24,7 +24,7 @@ from skrl.envs.wrappers.torch.base import MultiAgentEnvWrapper
 from torch import Tensor
 
 from svg_training.core.game import SvgGame
-from svg_training.core.observations import OBS_DIM, STATE_DIM
+from svg_training.core.observations import INTERFACE_VERSION, OBS_DIM, STATE_DIM
 from svg_training.core.strategy import Strategy
 
 from .gym_adapter import refuse_scenario
@@ -49,6 +49,8 @@ class SvgSkrlEnv(MultiAgentEnvWrapper):
     opponents: {team: Strategy} for every team not trained (its ``team`` must match). info of reset and step
     carries "opponents" ({team: strategy name}: the opponent mix); step's info also carries the game's own info
     (StepOut.info) plus "outcome" [N] and "end_step" [N]."""
+
+    interface_version = INTERFACE_VERSION     # policy interface version of the observation layout (STANDARDS §3)
 
     def __init__(self, game: SvgGame, train_teams: tuple[str, ...] = ("guard",),
                  opponents: dict[str, Strategy] | None = None):

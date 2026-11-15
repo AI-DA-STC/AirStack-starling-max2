@@ -24,7 +24,7 @@ from gymnasium.vector.utils import batch_space
 from torch import Tensor
 
 from svg_training.core.game import SvgGame
-from svg_training.core.observations import OBS_DIM
+from svg_training.core.observations import INTERFACE_VERSION, OBS_DIM
 from svg_training.core.strategy import Strategy
 
 
@@ -47,7 +47,8 @@ class SvgTeamVectorEnv(VectorEnv):
     info is a plain dict of whole-batch tensors [N] or [N, M] and strings, one entry per key; it does NOT follow
     Gymnasium's vector format (NumPy arrays plus a "_key" mask per key)."""
 
-    metadata = {"autoreset_mode": AutoresetMode.SAME_STEP}
+    metadata = {"autoreset_mode": AutoresetMode.SAME_STEP, "interface_version": INTERFACE_VERSION}
+    interface_version = INTERFACE_VERSION     # policy interface version of the observation layout (STANDARDS §3)
 
     def __init__(self, game: SvgGame, team: str, opponent: Strategy):
         refuse_scenario(game)

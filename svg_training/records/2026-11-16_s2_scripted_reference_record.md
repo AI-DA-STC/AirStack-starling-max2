@@ -172,3 +172,4 @@ Wording only. No number, table or figure changed, and the run was not repeated.
 - The record now says the scripted reference will be re-run on the fixed layer as a new ledger row.
 - The probe script is now committed as `scripts/probe_closest_3d.py`.
 - The first caption was shortened to three sentences.
+- Forward pointer (S2 final review, 16 November 2026): the re-run on the fixed layer is ledger row T9, [2026-11-16_s2_scripted_reference_2_record.md](2026-11-16_s2_scripted_reference_2_record.md); it replaces this record's Starling-layer closeness numbers.

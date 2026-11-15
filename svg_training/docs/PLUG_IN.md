@@ -130,7 +130,9 @@ writes `scores.md` (one table per preset and size, one row per band), `scores.js
 What to compare with (ledger T9, 2v1 and 5v3, three bands, 1,000 games per cell, committed values): our four
 scripted Guard strategies held 38–100 % under the pure rules and 14–100 % with the Starling layer; random Guard
 moves held 0–37 % (pure) and 0–0.1 % (Starling layer). A Guard strategy worth having beats random clearly and
-should be compared band by band with the scripted ones.
+should be compared band by band with the scripted ones. The Starling-layer drops come from an exploratory drone model that reaches 63 % of a speed change in 0.6–0.9 s,
+against about 0.35 s on the real drone (its check against a real flight, T5, is a FAIL), so they are not the
+cost of flying a real Starling.
 
 ## Pure rules and the Starling layer
 
@@ -306,7 +308,9 @@ print(gym_env.single_action_space.shape)                       # (4,): one Strik
 
 ## What a drone sees and does
 
-Each drone's observation is 71 numbers. It sees every drone's full state (`obs_view = "full"`); a limited view
+Each drone's observation is 71 numbers: policy interface version 0.1 (`INTERFACE_VERSION` in
+`core/observations.py`, also `interface_version` on both adapters; version 0 had 69 numbers, before the zone centre
+was added at the end on 16 November 2026). Save the version with any trained strategy. It sees every drone's full state (`obs_view = "full"`); a limited view
 may come later behind the same switch, with the same layout. Frame: x east, y north, z up; metres, m/s, s.
 
 | Index | What |
@@ -344,11 +348,17 @@ by half the arena side.
 The committed game file (`configs/s2_game.toml`) holds neutral values. Put your team's real values in
 `configs/local/partner_rules.toml`, copied from `configs/partner_rules.example.toml`. That file may change the
 keep-out distances and the push-apart rule, the team speeds, the game length, the units (metres per unit,
-seconds per step), the zone size range, whether teammates pass through each other and how many steps inside the zone win; nothing else. The observation layout and the action meaning never
+seconds per step), the zone size range, whether teammates pass through each other and how many steps inside the zone win; nothing else. Only some
+choices are built so far: teammates pass through each other (`teammates_pass = true`), one step inside the zone wins
+(`win_steps_in_zone = 1`) and every drone sees the full state (`obs_view = "full"` in the committed file); any
+other value stops the game at start with an error that names the key. The observation layout and the action meaning never
 change. The game still steps every 0.05 s and converts your speeds and length; the Starling layer refuses a team
 speed above 0.5 m/s (the real drones' stick limit).
 
 That folder is ignored by git: **never commit it, and never copy its numbers into code, tests, documents or
 commit messages.** `load_game_cfg()` and `score.py` read it when it is there; `score.py` names it only by file
 name and checksum (sha256), never by its values. Use `--no-local` (or `load_game_cfg(use_local=False)`) to run
-on the neutral values, as every result we publish does.
+on the neutral values, as every result we publish does. A test (`tests/test_partner_privacy.py`) looks for the
+local file's values in committed files, commit messages and the slide deck, but only where they would be recognisable
+(the key written next to a changed value, or a value with three or more significant digits): small common numbers
+cannot be told apart from ordinary ones, so the rule relies on never typing the partner's values into a committed file.

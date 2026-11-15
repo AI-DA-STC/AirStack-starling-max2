@@ -142,7 +142,7 @@ It replaces T6 as the reference that later strategies are compared with, under e
   - **Why.** The filter has settled there (residual at most 0.003, no emergency). Its answer puts the escape on the walled drone, and the wall then stops that drone. More sweeps change nothing: 5,000 sweeps gave identical results.
   - **What it costs.** Two causes each cost about 0.2 m, and they overlap. The filter does not know the walls (0.84 m with that cause alone). The fitted model's lag is slow (0.91 m with that cause alone). Together the pair reaches 0.82 m; with neither, 1.084 m.
   - **The copy is faithful.** CMU's real commander does the same: its fence clips the speed after the filter, and `cbf_filter.py` knows no walls.
-  - **Evidence.** The review's probe files are in a scratch folder, not committed: `/tmp/claude-1000/-home-jeremychia/2b67e152-f4d0-40c1-8b77-4ead5185a30b/scratchpad/deep/`. That is not reproducible from the repository yet.
+  - **Evidence.** The review's probe is committed as `scripts/probe_wall_limit.py` (CPU, mirror v flank, 5v3 lab, 300 games); what it does, its command and its output are in [docs/notes/s2_wall_limit_probe.md](../docs/notes/s2_wall_limit_probe.md).
 - **Start misses.** About a third of 5v3 lab games start with drones closer than the keep-out. They are played and counted, and they give the lowest 3-D values.
 - **Filter setting.** 1,000 sweeps with a check every 8 is the setting T8 chose for speed; T8's accuracy check covers it. T6 used no early stop. Hold rates differ from T6 by at most 1.8 points, so the setting changed little here.
 - **Arenas differ per pair.** The 10 pairs in a batch play independent arena and start draws, not the same ones.
@@ -155,3 +155,9 @@ Wording only. No number in the tables changed, and the run was not repeated.
 - **Under 0.9 m.** The share of games under 0.9 m now counts only games without a start miss: 4.1 / 1.2 / 0.2 % in 5v3, against T6's 30.6 / 13.9 / 4.5 %. 2v1 is now given as 3 games (0.04 %, mirror v flank, lab, 0.892 m), not "none".
 - **Deep approaches near walls.** "Not diagnosed" is replaced by the review's diagnosis: a limit of the commander's design next to walls, faithful to the real commander, not a bug. Its probe files are in a scratch folder and not committed.
 - **Early stop.** The guess that the filter "rarely settles" in 5v3 is removed. The review found it settled in the deep games.
+
+## Edited after the run (S2 final review fix wave, 16 November 2026)
+
+Wording only. No number changed, and the run was not repeated.
+
+- **Probe committed.** The scratch-folder path under Limits is replaced by the committed probe, `scripts/probe_wall_limit.py`, and its note, [docs/notes/s2_wall_limit_probe.md](../docs/notes/s2_wall_limit_probe.md). Run once on 16 November 2026, it gave the numbers quoted under Limits again (see the note).

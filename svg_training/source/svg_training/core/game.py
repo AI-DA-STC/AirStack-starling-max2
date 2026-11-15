@@ -66,6 +66,12 @@ class SvgGame:
             raise ValueError("only win_steps_in_zone = 1 is built (one step inside the zone wins)")
         if cfg.rules.push_rule not in ("block", "shove"):
             raise ValueError(f"rules.push_rule must be 'block' or 'shove', got {cfg.rules.push_rule!r}")
+        # Only these two are built so far. The message names the key, never the value (it may come from the
+        # partner's local file).
+        if cfg.rules.teammates_pass is not True:
+            raise ValueError("only partner_rules.teammates_pass = true is built (team-mates pass through each other)")
+        if cfg.obs_view != "full":
+            raise ValueError("only game.obs_view = \"full\" is built (every drone sees every drone's full state)")
         if guards < 1 or strikes < 1:
             raise ValueError("a game needs at least one Guard and one Strike drone")
         if scenario is not None and len(scenario.start_m) != guards + strikes:

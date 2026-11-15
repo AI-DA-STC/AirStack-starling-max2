@@ -63,7 +63,10 @@ The programme's wording rules apply to every document and figure here
   first use; short sentences; write for a reader new to training. Every page that claims a result
   shows it with a generated figure or a diagram.
 
-## 3. Policy interface (version 0, PROPOSED)
+## 3. Policy interface (version 0.1, PROPOSED)
+
+Version history: 0 = the S2 layout of 69 observation numbers; 0.1 (16 November 2026) = 71 numbers, the zone
+centre added at the end, no earlier index moved (`INTERFACE_VERSION` in `core/observations.py`).
 
 The interface copies what the flight stack already does, so a policy needs no translation layer.
 It becomes FIXED when the velocity contract with NUS and CMU is written (Linear NEAR-874).

@@ -2,13 +2,15 @@
 import pathlib
 import sys
 
+import pytest
 import torch
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "source"))
 from svg_training.core.arena import Arenas  # noqa: E402
 from svg_training.core.game_config import load_game_cfg  # noqa: E402
-from svg_training.core.observations import OBS_DIM, STATE_DIM, ObsView, build_obs, build_state  # noqa: E402
+from svg_training.core.observations import (INTERFACE_VERSION, OBS_DIM, STATE_DIM, ObsView, build_obs,  # noqa: E402
+                                            build_state)
 
 CFG = load_game_cfg(use_local=False)[0]
 
@@ -21,6 +23,25 @@ def _inputs(alive=None):
                 torch.ones(n, dtype=torch.long))
     al = torch.ones(n, 3, dtype=torch.bool) if alive is None else alive
     return pos, vel, torch.zeros(n, 3), al, ar, torch.full((n,), 30.0)
+
+
+def test_obs_dim_matches_interface_version():
+    """A layout change must raise INTERFACE_VERSION (STANDARDS §3 rule 3): this table says what each version has."""
+    layout = {"0": (69, 59), "0.1": (71, 61)}
+    assert INTERFACE_VERSION in layout, f"new interface version {INTERFACE_VERSION}: add its layout here"
+    assert (OBS_DIM, STATE_DIM) == layout[INTERFACE_VERSION]
+    assert INTERFACE_VERSION == max(layout, key=lambda v: tuple(int(x) for x in v.split(".")))
+    std = (ROOT / "STANDARDS.md").read_text()
+    assert f"## 3. Policy interface (version {INTERFACE_VERSION}," in std
+
+
+def test_adapters_carry_interface_version():
+    pytest.importorskip("skrl")
+    from svg_training.envs.gym_adapter import SvgTeamVectorEnv
+    from svg_training.envs.skrl_adapter import SvgSkrlEnv
+    assert SvgTeamVectorEnv.interface_version == INTERFACE_VERSION
+    assert SvgTeamVectorEnv.metadata["interface_version"] == INTERFACE_VERSION
+    assert SvgSkrlEnv.interface_version == INTERFACE_VERSION
 
 
 def test_dims_and_slots():

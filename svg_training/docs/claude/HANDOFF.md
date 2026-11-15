@@ -22,8 +22,8 @@ newcomer read of S2_RESULTS and PLUG_IN). Nothing has been trained. S2's results
 | T9, scripted reference on the fixed layer | INFO, no gates | the reference for later strategies. Pure half identical to T6. Crowded 5 v 3 near walls still reaches 0.75–0.80 m in 3-D: a LIMIT faithful to CMU's commander (filter wall-blind, fence after the filter), not a bug |
 
 Design §7 done conditions: (1) game-rule tests PASS; (2) scoring tool on fixed scenarios PASS; (3) filter PASS (T8);
-(4) stand-in trainer MOVED to S2b by the owner (16 November), not run; (5) partner guide DONE (stand-in example added
-in S2b). Interface change 16 November: observation 69 → 71 numbers (zone centre at 69–70; central state 59 → 61).
+(4) stand-in trainer MOVED to S2b by the owner (16 November), not run; (5) partner guide DONE in part (the guide
+exists and runs; the design's worked example uses the stand-in, so it comes in S2b, lead's ruling). Interface change 16 November: observation 69 → 71 numbers (zone centre at 69–70; central state 59 → 61); policy interface version 0 → 0.1 (`INTERFACE_VERSION`).
 
 S1 in one line: T2 filter copy FAIL (accepted by the owner), T3 simulator fit FAIL (two clocks), real-log fit
 exploratory, T4 INFO; details in [../S1_RESULTS.md](../S1_RESULTS.md).

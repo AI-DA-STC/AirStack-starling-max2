@@ -352,3 +352,38 @@ def test_adapter_steps_run_under_sync_debug_error():
     finally:
         torch.cuda.set_sync_debug_mode(0)
     assert bool(d1.all()) and bool(d2.all())                     # every game auto-reset at least once
+
+
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA only")
+@pytest.mark.parametrize("starling", [False, True])
+def test_strike_team_against_scripted_guards_under_sync_debug_error(starling):
+    """A Strike team trained through either adapter against each scripted Guard strategy (opponents/scripted.py)
+    makes no host sync in the step; short games so the auto-reset runs often."""
+    cfg = CFG.replace(**{"dropout_fraction": 0.2, "rules.game_steps": 40})
+    if starling:
+        cfg = cfg.replace(**{"starling.enabled": True, "starling.filter_iterations": 20,
+                             "starling.filter_check_every": 0})
+    n, steps = 128, (60 if starling else 100)
+    for k, gs in enumerate(("guard_mark_edge", "guard_mark_inside", "guard_field", "guard_mirror")):
+        skrl_env = SvgSkrlEnv(SvgGame(cfg, n, 5, 3, device="cuda", seed=k), ("strike",),
+                              {"guard": make_strategy(gs, "guard", cfg, n, "cuda", 101)})
+        gym_env = SvgTeamVectorEnv(SvgGame(cfg, n, 5, 3, device="cuda", seed=10 + k), "strike",
+                                   make_strategy(gs, "guard", cfg, n, "cuda", 101))
+        skrl_env.reset()
+        gym_env.reset(seed=10 + k)
+        acts = {a: torch.rand(n, 4, device="cuda") * 2 - 1 for a in skrl_env.possible_agents}
+        flat = torch.rand(n, 12, device="cuda") * 2 - 1
+        skrl_env.step(acts)
+        gym_env.step(flat)
+        torch.cuda.set_sync_debug_mode("error")
+        try:
+            d1 = torch.zeros(n, dtype=torch.bool, device="cuda")
+            d2 = torch.zeros_like(d1)
+            for _ in range(steps):
+                _, _, term, _, _ = skrl_env.step(acts)
+                d1 |= term["strike_0"][:, 0]
+                _, _, t2, _, _ = gym_env.step(flat)
+                d2 |= t2
+        finally:
+            torch.cuda.set_sync_debug_mode(0)
+        assert bool(d1.all()) and bool(d2.all()), gs              # every game auto-reset at least once

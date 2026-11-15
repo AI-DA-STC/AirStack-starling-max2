@@ -145,6 +145,22 @@ def test_unknown_options_raise():
         SvgGame(CFG.replace(**{"starts.mode": "x"}), 2, 1, 1, device="cpu")
 
 
+@pytest.mark.parametrize("change, key", [({"rules.teammates_pass": False}, "teammates_pass"),
+                                         ({"obs_view": "limited"}, "obs_view"),
+                                         ({"obs_view": "FULL"}, "obs_view")])
+def test_unbuilt_rule_options_raise_naming_the_key(change, key):
+    """Only teammates_pass = true and obs_view = "full" are built; anything else (e.g. from the local file) raises,
+    and the message names the key, not the value given."""
+    with pytest.raises(ValueError, match=key) as e:
+        SvgGame(CFG.replace(**change), 2, 1, 1, device="cpu")
+    assert "limited" not in str(e.value) and "FULL" not in str(e.value) and "False" not in str(e.value)
+
+
+def test_built_rule_options_accepted():
+    assert CFG.rules.teammates_pass is True and CFG.obs_view == "full"
+    SvgGame(CFG, 2, 1, 1, device="cpu")
+
+
 def test_rewards_terminal_signs():
     cfg = CFG.rewards
     out = torch.tensor([0, 1, 2], dtype=torch.int8)
@@ -205,10 +221,59 @@ def test_scenarios_exist_and_fit():
         SvgGame(CFG, 2, 1, 1, device="cpu", scenario=sc)
 
 
+# Host reads that would stall the GPU step: .item() .cpu() .numpy() .tolist(), NumPy, nonzero(), and the builtins
+# bool( float( int( on a tensor. A literal like float("inf") is not a host read. Static scan: a builtin call on a
+# Python number looks the same, so each one outside the step is allow-listed below by its exact line, with why.
+_HOST = re.compile(r"\.(item|cpu|numpy|tolist)\(|import numpy|nonzero\(|(?<![\w.])(bool|float|int)\((?![\"'])")
+SRC = ROOT / "source" / "svg_training"
+_STEP_FILES = ["core/arena.py", "core/observations.py", "core/rewards.py", "core/game.py", "core/pair_rules.py",
+               "core/starling_layer.py", "core/safety_filter.py", "core/play.py", "opponents/scripted.py",
+               "models/commander.py", "models/fitted.py", "models/placeholder.py", "models/_filters.py"]
+# Offline fitting modules: run on flight logs with NumPy/SciPy, never in the step (the step imports only the frozen
+# TrajectoryParams dataclass from px4_trajectory). Listed so a new models/*.py file must be placed on one list.
+_OFFLINE_MODELS = {"models/fit.py", "models/px4_trajectory.py", "models/response.py", "models/__init__.py"}
+_ALLOWED = {
+    ("core/arena.py", "tot = float(sum(w))"): "config band weights (Python floats), before any tensor",
+    ("core/starling_layer.py", "k = int(cfg.starling.filter_check_every)"): "config value, in __init__",
+    ("core/safety_filter.py", "check_every = int(check_every)"): "keyword argument (Python int)",
+    ("core/safety_filter.py", "live = (has_pair[work] & ~converged.all(dim=-1)).nonzero().squeeze(1)"):
+        "the early stop's one host sync every check_every sweeps (D10); check_every 0 never reaches it",
+    ("core/play.py", "max_steps = game.ticks if max_steps is None else int(max_steps)"): "argument, before the loop",
+    ("core/play.py", "if steps % CHECK_EVERY_STEPS == 0 and bool(finished.all()):"):
+        "the match loop's end check every CHECK_EVERY_STEPS steps, outside game.step (scoring, not training)",
+    ("models/commander.py", "value = float(getattr(self, f.name))"): "dataclass __post_init__ on config numbers",
+    ("models/fitted.py", 'model_dt_s = float(px4.pop("model_dt_s"))'): "parameter file, in __init__",
+    ("models/fitted.py", 'self.vertical = {k: float(v) for k, v in cfg["px4_vertical"].items()}'): "parameter file",
+    ("models/fitted.py", "self.delay_n = int(math.floor(d))"): "parameter file, in __init__",
+    ("models/fitted.py", "self.safety_filter = bool(safety_filter)"): "argument, in __init__",
+    ("models/fitted.py", "self.filter_iterations = int(filter_iterations)"): "argument, in __init__",
+    ("models/fitted.py", "self.hover_seed = bool(hover_seed)"): "argument, in __init__",
+    ("models/fitted.py", 'self._filter_cap_mps = torch.tensor(float(self.filter_cfg["max_speed_mps"]), '
+                         'device=device, dtype=dtype)'): "parameter file, in __init__ (made a device tensor once)",
+}
+
+
 def test_game_modules_have_no_host_calls():
-    for f in ["arena", "observations", "rewards", "game", "pair_rules", "starling_layer"]:
-        src = (CORE / f"{f}.py").read_text()
-        assert not re.search(r"\.(item|cpu|numpy|tolist)\(|import numpy|nonzero\(", src), f
+    models = {f"models/{p.name}" for p in (SRC / "models").glob("*.py")}
+    assert models <= set(_STEP_FILES) | _OFFLINE_MODELS, f"new model module(s) to classify: {models - set(_STEP_FILES)}"
+    used = set()
+    for f in _STEP_FILES:
+        for line in (SRC / f).read_text().splitlines():
+            code = line.split("#", 1)[0].strip()
+            if not _HOST.search(code):
+                continue
+            key = (f, code)
+            assert key in _ALLOWED, f"host read in {f}: {code!r} (move it out of the step, or allow-list it with why)"
+            used.add(key)
+    assert used == set(_ALLOWED), f"allow-list entries no longer in the code: {set(_ALLOWED) - used}"
+
+
+def test_host_scan_pattern():
+    for bad in ["x.item()", "t.cpu()", "import numpy as np", "i = m.nonzero()", "if bool(done.any()):", "float(t.max())",
+                "int(k.sum())"]:
+        assert _HOST.search(bad), bad
+    for ok in ['float("inf")', "x.float()", "(a == b).int()", "torch.full_like(d, float('nan'))", "a.bool()"]:
+        assert not _HOST.search(ok), ok
 
 
 @pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA only")

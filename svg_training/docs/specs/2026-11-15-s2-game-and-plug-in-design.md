@@ -1,6 +1,6 @@
 # S2 design: the game, varied arena sizes, and a plug-in point for NUS's strategy
 
-> Status: DRAFT for the owner's approval, 15 November 2026. Nothing in it is built.
+> Status: APPROVED by the owner, 15 November 2026 (night). Nothing in it is built yet; the S2 plan comes next.
 > It replaces the S2 row of [../DESIGN.md](../DESIGN.md) §8 ("One against one") once approved.
 
 ## 1. Why

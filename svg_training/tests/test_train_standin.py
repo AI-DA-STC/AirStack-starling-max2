@@ -546,3 +546,108 @@ def test_diagnostic_freeze_log_std_axes(tmp_path):                         # H6 
     assert _in_process(["--seed", "1", "--name", "frz2", *ABORT_ARGS, "--diag-freeze-log-std-axes", "roll",
                         "--runs-dir", str(tmp_path)]) == 2
     assert not (tmp_path / "frz2").exists()
+
+
+# ---------------------------------------------------------------- [standin_v2] (S2b Task 9 runs of record, owner 17 Nov)
+V2 = tomllib.loads((CONFIGS / "s2b.toml").read_text())["standin_v2"]
+V2_SKRL_KEYS = ("discount_factor", "gae_lambda", "entropy_loss_scale", "value_loss_scale", "ratio_clip", "value_clip",
+                "grad_norm_clip")
+
+
+def test_standin_v2_table_as_proposed():                    # the final proposal of task-9-report.md, verbatim values
+    assert V2["init_log_std"] == -1.6 and V2["game_steps_per_seed"] == 100_000_000
+    assert V2["frozen_log_std_axes"] == {"pure": ["vz", "yaw"], "starling": ["yaw"], "physics": ["yaw"]}
+    assert (V2["algorithm"], V2["preset"], V2["guards"], V2["strikes"], V2["num_games"]) == ("IPPO", "pure", 2, 1, 4096)
+    assert (V2["rollouts"], V2["learning_epochs"], V2["mini_batches"], V2["learning_rate"]) == (32, 5, 4, 3.0e-4)
+    assert V2["discount_factor"] == 0.99 and V2["gae_lambda"] == 0.95 and V2["entropy_loss_scale"] == 0.0
+
+
+def _v2_run(tmp_path, name, motion="pure", extra=(), **kw) -> int:
+    return _in_process(["--seed", "1", "--name", name, *ABORT_ARGS, "--settings", "standin_v2", "--motion", motion,
+                        *extra, "--runs-dir", str(tmp_path)], **kw)
+
+
+def test_settings_standin_v2_is_read_applied_and_recorded(tmp_path):
+    assert _v2_run(tmp_path, "v2") == 0
+    run = tmp_path / "v2"
+    meta = tomllib.loads((run / "interface.toml").read_text())
+    assert "diagnostic" not in meta                                     # a run of record, not a diagnosis
+    assert meta["settings_table"] == "standin_v2" and meta["settings_file"] == "s2b.toml"
+    assert meta["settings_table_sha256"] == hashlib.sha256(train_standin.table_text(
+        (CONFIGS / "s2b.toml").read_text(), "standin_v2").encode()).hexdigest()
+    assert meta["settings_values"]["init_log_std"] == -1.6
+    assert meta["settings_values"]["frozen_log_std_axes"] == V2["frozen_log_std_axes"]
+    tr = meta["training"]
+    assert tr["init_log_std"] == -1.6 and tr["frozen_log_std_axes"] == ["vz", "yaw"]
+    assert tr["game_steps_budget"] == 100_000_000
+    for k in V2_SKRL_KEYS:                                              # the written-down skrl values are the effective ones
+        assert tr[f"skrl_{k}"] == V2[k], k
+    assert tr["wall_clock_cap_min"] == 45                               # pure: [standin_s2b] torch cap
+    saved = torch.load(run / "agent.pt", weights_only=False)
+    for a in ("guard_0", "guard_1"):
+        ls = saved[a]["policy"]["log_std"]
+        assert torch.equal(ls[2:], torch.full((2,), -1.6))              # vz, yaw frozen at the table's value
+        assert not torch.equal(ls[:2], torch.full((2,), -1.6))          # vx, vy trained from -1.6
+        assert torch.allclose(ls[:2], torch.full((2,), -1.6), atol=0.05)
+    res = json.loads((run / "train_result.json").read_text())
+    assert res["settings_table"] == "standin_v2" and res["settings_table_sha256"] == meta["settings_table_sha256"]
+    assert res["init_log_std"] == -1.6 and res["frozen_log_std_axes"] == ["vz", "yaw"]
+    from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
+    texts = set()
+    for f in run.glob("events.out.tfevents.*"):
+        ea = EventAccumulator(str(f), size_guidance={"tensors": 0})
+        ea.Reload()
+        texts |= set(ea.Tags()["tensors"])
+    assert "settings/settings_table/text_summary" in texts and "diagnostic/text_summary" not in texts
+
+
+@pytest.mark.parametrize("motion", ["starling", "physics"])
+def test_settings_standin_v2_frozen_axes_per_motion(tmp_path, motion):     # vz moves the drone here: only yaw frozen
+    kw = {"world_factory": _torch_world} if motion == "physics" else {}
+    extra = ("--eval-max-steps", "20") if motion == "physics" else ()
+    assert _v2_run(tmp_path, motion, motion, extra, **kw) == 0
+    meta = tomllib.loads((tmp_path / motion / "interface.toml").read_text())
+    assert meta["training"]["frozen_log_std_axes"] == ["yaw"] and "diagnostic" not in meta
+    if motion == "physics":
+        assert meta["training"]["wall_clock_cap_min"] == 180            # the Isaac cap, not the table's 45
+    ls = torch.load(tmp_path / motion / "agent.pt", weights_only=False)["guard_0"]["policy"]["log_std"]
+    assert torch.equal(ls[3:], torch.full((1,), -1.6))                    # yaw frozen bit for bit
+    assert not torch.equal(ls[:3], torch.full((3,), -1.6))                # vx, vy, vz trained
+
+
+def test_settings_standin_v2_refuses_diag_flags(tmp_path):
+    assert _v2_run(tmp_path, "mixed", extra=("--diag-init-log-std", "-1.0")) == 2
+    assert not (tmp_path / "mixed").exists()
+
+
+def test_default_settings_unchanged(smoke_run):                 # without --settings: the committed [standin], as before
+    meta = tomllib.loads((smoke_run / "interface.toml").read_text())
+    assert meta["settings_table"] == "standin" and meta["settings_file"] == "s2.toml" and "diagnostic" not in meta
+    assert meta["standin_table_sha256"] == STANDIN_SHA256["standin"]
+    assert meta["training"]["frozen_log_std_axes"] == [] and meta["training"]["init_log_std"] == 0.0
+    assert meta["training"]["skrl_discount_factor"] == 0.99 and meta["training"]["game_steps_budget"] == 50_000_000
+    ls = torch.load(smoke_run / "agent.pt", weights_only=False)["guard_0"]["policy"]["log_std"]
+    assert bool((ls != 0.0).all())                                      # every axis trained from 0, none frozen
+
+
+def test_stop_file_stops_cleanly_at_the_next_update(tmp_path):     # the deadline stop for shared-laptop runs
+    stop = tmp_path / "STOP"
+    stop.write_text("deadline\n")
+    rc = _in_process(["--seed", "1", "--name", "stopped", *ABORT_ARGS, "--stop-file", str(stop),
+                      "--runs-dir", str(tmp_path)])
+    assert rc == 4
+    res = json.loads((tmp_path / "stopped" / "train_result.json").read_text())
+    assert res["status"] == "ABORTED" and res["stopped_by_operator"] is True and "stop file" in res["abort_reason"]
+    assert res["timesteps_done"] == 32 and res["evaluations"] == 2      # one update, then the final evaluation
+    assert (tmp_path / "stopped" / "agent.pt").exists()
+
+
+def test_stop_at_a_past_time_stops_at_the_first_update(tmp_path):
+    rc = _in_process(["--seed", "1", "--name", "late", *ABORT_ARGS, "--stop-at", "2000-01-01T00:00:00",
+                      "--runs-dir", str(tmp_path)])
+    assert rc == 4
+    res = json.loads((tmp_path / "late" / "train_result.json").read_text())
+    assert res["stopped_by_operator"] is True and "stop time" in res["abort_reason"] and res["timesteps_done"] == 32
+    assert _in_process(["--seed", "1", "--name", "bad", *ABORT_ARGS, "--stop-at", "8 am",
+                        "--runs-dir", str(tmp_path)]) == 2
+    assert not (tmp_path / "bad").exists()

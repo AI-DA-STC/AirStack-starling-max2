@@ -104,3 +104,32 @@ fps = 20
 resolution = [1280, 720]
 max_mb = 10.0
 caption = "Training simulator (Isaac Lab), scripted strategies, not a real flight"
+
+# Owner approved [standin_v2] for the S2b Task 9 runs of record on 17 Nov 2026 (~03:25 SGT); the table below is the final
+# proposal of runs/sdd/s2b/task-9-report.md, verbatim. configs/s2.toml [standin] and [standin_gates] stay unchanged.
+# train_standin.py reads it with --settings standin_v2; the wall-clock caps stay those of [standin_s2b].
+[standin_v2]                        # S2b Task 9 Step B (diagnosis, 17 Nov 2026). Gates: configs/s2.toml [standin_gates], unchanged
+algorithm = "IPPO"
+guards = 2
+strikes = 1
+preset = "pure"                     # committed neutral values; --no-local
+num_games = 4096
+game_steps_per_seed = 100_000_000   # seed 1 peaked near 100 M (0.32 v straight); 200 M tested: no gain in either seed
+wall_clock_cap_min = 45             # PyTorch (pure, starling); the Isaac Lab run keeps [standin_s2b] wall_clock_cap_min_isaac = 180
+seeds = [1, 2, 3]
+opponent_mix = { strike_straight = 0.5, strike_flank = 0.5 }   # split by game index
+shaping_weight = 1.0
+rollouts = 32
+learning_epochs = 5
+mini_batches = 4
+learning_rate = 3.0e-4
+hidden = [128, 128]
+init_log_std = -1.6                 # policy std 0.20 at start (skrl default 0 = std 1.0 on a [-1, 1] action range)
+frozen_log_std_axes = { pure = ["vz", "yaw"], starling = ["yaw"], physics = ["yaw"] }   # axes the motion ignores: their noise is not trained
+discount_factor = 0.99              # skrl default, written down (0.999 tested worse)
+gae_lambda = 0.95                   # skrl default
+entropy_loss_scale = 0.0            # skrl default
+value_loss_scale = 2.5              # skrl default
+ratio_clip = 0.2                    # skrl default
+value_clip = 0.2                    # skrl default
+grad_norm_clip = 0.5                # skrl default

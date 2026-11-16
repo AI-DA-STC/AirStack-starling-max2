@@ -24,6 +24,15 @@ Wall-clock cap from ``configs/s2b.toml [standin_s2b]`` (45 min PyTorch, 180 min 
 time only (evaluation time is recorded beside it), and when reached the run stops at the next update and keeps
 its last networks (written in train_result.json; not an abort).
 
+``--settings standin_v2`` (S2b Task 9 runs of record, owner-approved 17 Nov 2026) reads ``configs/s2b.toml
+[standin_v2]`` in place of [standin]: the same keys plus ``init_log_std`` (every policy's log std starts there),
+``frozen_log_std_axes`` (per motion: the axes whose log std is never trained, by the same gradient hook as
+``--diag-freeze-log-std-axes``) and skrl's defaults written down (passed to IPPO_CFG and checked against skrl's
+effective values). The caps stay those of [standin_s2b]. The table name, file, sha256 and values go into
+interface.toml, the TensorBoard settings text and train_result.json; such a run carries no [diagnostic] table, and
+the ``--diag-*`` flags are refused with it. ``--stop-at`` / ``--stop-file``: an operator stop at the next update
+boundary (final evaluation done, status ABORTED with the reason, exit 4), for runs with a deadline.
+
 Strike team: ``SplitStrategy`` over the game slots by ``[standin] opponent_mix`` (first half strike_straight,
 second half strike_flank). skrl IPPO: one Gaussian policy and one value network per Guard name, ``hidden`` ELU
 layers, ``RunningStandardScaler`` on observations and values, the [standin] PPO settings, skrl's defaults for the
@@ -83,6 +92,13 @@ ACTION_AXES = {"vx": 0, "vy": 1, "vz": 2, "yaw": 3}   # order of the 4 action nu
 PRESET_OF = {"pure": "pure", "starling": "starling", "physics": "physics"}   # score.py's preset names
 EVAL_SEED_OFFSET = 1000              # = [standin_gates] eval_seed_offset (the learning curve uses the same rule)
 FIRST_LINE = "Stand-in (pipe test), not a strategy of record. Observed in the training simulator."
+# --settings: which settings table the run uses, and where it lives. "standin" = configs/s2.toml [standin] as committed
+# (pinned, the default); "standin_v2" = configs/s2b.toml [standin_v2], approved by the owner on 17 Nov 2026 for the
+# S2b Task 9 runs of record (init log std, per-motion frozen log std axes, skrl's defaults written down).
+SETTINGS_TABLES = {"standin": ("--config", "committed S2 table, pinned (plan D14)"),
+                   "standin_v2": ("--s2b-config", "approved by the owner 17 Nov 2026 for the S2b Task 9 runs of record")}
+SKRL_TABLE_KEYS = ("discount_factor", "gae_lambda", "entropy_loss_scale", "value_loss_scale", "ratio_clip",
+                   "value_clip", "grad_norm_clip")       # skrl settings a table may write down; passed to IPPO_CFG
 
 
 SKRL_MAJOR = 2                       # skrl 2.x API (IPPO_CFG, "observations" inputs); the container has 1.4.3
@@ -371,6 +387,14 @@ def make_parser(isaac: bool = False) -> argparse.ArgumentParser:
     ap.add_argument("--eval-every-updates", type=int, default=20)
     ap.add_argument("--eval-max-steps", type=int, help="steps per evaluation (default: the game length; tests)")
     ap.add_argument("--runs-dir", default=str(ROOT / "runs"))
+    ap.add_argument("--settings", choices=list(SETTINGS_TABLES), default="standin",
+                    help="settings table: standin = configs/s2.toml [standin] (default); standin_v2 = configs/s2b.toml "
+                         "[standin_v2] (owner-approved 17 Nov 2026); not combinable with the --diag-* flags")
+    # A clean early stop for runs on a shared machine with a deadline: checked at every update boundary, like the cap.
+    # The run then does its final evaluation (agent.pt = the networks at the stop), writes status ABORTED with the
+    # reason in train_result.json and exits 4. Neither changes training; both are recorded.
+    ap.add_argument("--stop-at", help="local time YYYY-MM-DDTHH:MM[:SS]: stop at the first update boundary after it")
+    ap.add_argument("--stop-file", help="path: stop at the first update boundary at which this file exists")
     # Diagnosis only (S2b Task 9 Step B): change ONE setting the committed [standin] does not hold. A run using any of
     # these is never a run of record; interface.toml gets a [diagnostic] table and TensorBoard a "diagnostic" text.
     ap.add_argument("--diag-init-log-std", type=float, help="initial log std of every policy (skrl default 0)")
@@ -417,10 +441,24 @@ def run(args: argparse.Namespace, world_factory: Callable | None = None) -> int:
         # Small CPU batches (tests, smoke runs): one thread. Measured 16 Nov 2026 on this laptop, 32 games 2v1:
         # 6 s with one thread against 83 s with torch's default 24 (thread start-up on tiny tensors).
         torch.set_num_threads(1)
-    settings_path = pathlib.Path(args.config)
+    table_name = str(args.settings)
+    settings_path = pathlib.Path(args.config if SETTINGS_TABLES[table_name][0] == "--config" else args.s2b_config)
     settings_text = settings_path.read_text()
-    s2 = tomllib.loads(settings_text)
-    st = s2["standin"]
+    st = tomllib.loads(settings_text)[table_name]
+    standin_text = pathlib.Path(args.config).read_text()          # the committed [standin], hashed in every run
+    diag_flags = [f for f in ("diag_init_log_std", "diag_discount", "diag_entropy_scale", "diag_freeze_log_std_axes")
+                  if getattr(args, f) is not None]
+    if table_name != "standin" and diag_flags:
+        print(f"refusing: --settings {table_name} is a run-of-record table; the --diag-* flags "
+              f"({', '.join(diag_flags)}) belong to diagnosis runs on the default table", file=sys.stderr)
+        return 2
+    stop_at = None
+    if args.stop_at:
+        try:
+            stop_at = datetime.datetime.fromisoformat(args.stop_at).timestamp()
+        except ValueError:
+            print(f"refusing: --stop-at {args.stop_at!r} is not YYYY-MM-DDTHH:MM[:SS]", file=sys.stderr)
+            return 2
     s2b = tomllib.loads(pathlib.Path(args.s2b_config).read_text())
     caps, tb_cfg = s2b["standin_s2b"], s2b["tensorboard"]
     motion = args.motion
@@ -428,7 +466,11 @@ def run(args: argparse.Namespace, world_factory: Callable | None = None) -> int:
         print(f"refusing: motion {motion!r} not in [standin_s2b] motions {caps['motions']}", file=sys.stderr)
         return 2
     if st["preset"] != "pure" or st["algorithm"] != "IPPO":
-        print("refusing: [standin] preset must be 'pure' and algorithm 'IPPO' (as committed)", file=sys.stderr)
+        print(f"refusing: [{table_name}] preset must be 'pure' and algorithm 'IPPO' (as committed)", file=sys.stderr)
+        return 2
+    frozen_table = st.get("frozen_log_std_axes")
+    if frozen_table is not None and motion not in frozen_table:
+        print(f"refusing: [{table_name}] frozen_log_std_axes names no axes for motion {motion!r}", file=sys.stderr)
         return 2
     if tb_cfg.get("cloud_logging", False):
         print("refusing: [tensorboard] cloud_logging must be false", file=sys.stderr)
@@ -497,29 +539,38 @@ def run(args: argparse.Namespace, world_factory: Callable | None = None) -> int:
     models = make_models(names, list(st["hidden"]), device)
     diag = {k: v for k, v in (("init_log_std", args.diag_init_log_std), ("discount_factor", args.diag_discount),
                               ("entropy_loss_scale", args.diag_entropy_scale)) if v is not None}
-    if "init_log_std" in diag:
+    # The initial log std and the frozen axes come from the --diag-* flags (diagnosis, default table) or from the
+    # settings table ([standin_v2]); the two are never combined (refused above). One code path applies them.
+    init_log_std = diag.get("init_log_std", st.get("init_log_std"))
+    if args.diag_freeze_log_std_axes:
+        freeze_axes = [x.strip() for x in args.diag_freeze_log_std_axes.split(",") if x.strip()]
+    else:
+        freeze_axes = list(frozen_table[motion]) if frozen_table is not None else []
+    if init_log_std is not None:
         with torch.no_grad():
             for a in names:
-                models[a]["policy"].log_std.fill_(diag["init_log_std"])
-    if args.diag_freeze_log_std_axes:
+                models[a]["policy"].log_std.fill_(float(init_log_std))
+    if args.diag_freeze_log_std_axes or freeze_axes:
         # The log std is one Parameter [4] per policy, so requires_grad cannot be set per axis. A gradient hook zeroes the
         # frozen entries of its gradient on every backward pass, from the first update on. skrl's Adam (no weight
         # decay) then keeps both moment estimates of those entries at exactly 0, so its step m / (sqrt(v) + eps) is
         # exactly 0, and the global grad-norm clip only rescales (0 stays 0): the entries keep their initial value
         # bit for bit, also inside an update's epochs (a re-fill after each update would let them move in between).
-        axes = [x.strip() for x in args.diag_freeze_log_std_axes.split(",") if x.strip()]
+        axes = freeze_axes
         bad = [x for x in axes if x not in ACTION_AXES]
         if bad or not axes:
-            print(f"refusing: --diag-freeze-log-std-axes takes axes from {list(ACTION_AXES)}, got {axes}",
-                  file=sys.stderr)
+            print(f"refusing: frozen log std axes (--diag-freeze-log-std-axes or [{table_name}]) come from "
+                  f"{list(ACTION_AXES)}, got {axes}", file=sys.stderr)
             return 2
         keep = torch.ones(4, device=device)
         for x in axes:
             keep[ACTION_AXES[x]] = 0.0
         for a in names:
             models[a]["policy"].log_std.register_hook(lambda g, k=keep: g * k)
-        diag["freeze_log_std_axes"] = axes
-    extra_cfg = {k: v for k, v in diag.items() if k in ("discount_factor", "entropy_loss_scale")}
+        if args.diag_freeze_log_std_axes:
+            diag["freeze_log_std_axes"] = axes
+    extra_cfg = {k: float(st[k]) for k in SKRL_TABLE_KEYS if k in st}           # written down in the table
+    extra_cfg.update({k: v for k, v in diag.items() if k in ("discount_factor", "entropy_loss_scale")})
     memories = {a: RandomMemory(memory_size=rollouts, num_envs=n, device=device) for a in names}
     run_dir.mkdir(parents=True, exist_ok=True)
     write_interval = max(1, timesteps // 100)
@@ -567,6 +618,11 @@ def run(args: argparse.Namespace, world_factory: Callable | None = None) -> int:
             "time_limit_bootstrap", "random_timesteps", "learning_starts", "mixed_precision")
     skrl_settings = {f"skrl_{k}": ("none" if c0.get(k) is None else c0.get(k)) for k in keys if k in c0}
     skrl_settings["skrl_version"] = skrl.__version__
+    for k in SKRL_TABLE_KEYS:
+        if k in st and not math.isclose(float(c0.get(k)), float(st[k])):
+            raise RuntimeError(f"skrl's effective {k} = {c0.get(k)} differs from [{table_name}] {k} = {st[k]}")
+    effective_log_std = 0.0 if init_log_std is None else float(init_log_std)     # 0.0 = learned.py's zeros
+    settings_sha = hashlib.sha256(table_text(settings_text, table_name).encode()).hexdigest()
     meta = {
         "interface_version": INTERFACE_VERSION, "pipe_test": True, "what": "stand-in (pipe test), not a strategy "
         "of record; observed in the training simulator", "team": "guard", "guards": guards, "strikes": strikes,
@@ -574,7 +630,9 @@ def run(args: argparse.Namespace, world_factory: Callable | None = None) -> int:
         "world": physics_meta.get("world", "none"), "parameter_set": param_set,
         "game_config": pathlib.Path(prov.game_file).name, "game_config_sha256": prov.game_sha256,
         "local_file": "none", "settings_file": settings_path.name,
-        "standin_table_sha256": hashlib.sha256(table_text(settings_text, "standin").encode()).hexdigest(),
+        "standin_table_sha256": hashlib.sha256(table_text(standin_text, "standin").encode()).hexdigest(),
+        "settings_table": table_name, "settings_table_sha256": settings_sha,
+        "settings_table_status": SETTINGS_TABLES[table_name][1],
         "seed": seed, "git_commit": commit, "tick_s": 0.05, "rate_hz": 20,
         "frames": "world ENU (x east, y north, z up); positions from the zone centre",
         "created": datetime.datetime.now().astimezone().isoformat(timespec="seconds"),
@@ -594,8 +652,11 @@ def run(args: argparse.Namespace, world_factory: Callable | None = None) -> int:
                      "learning_rate": float(st["learning_rate"]), "shaping_weight": float(st["shaping_weight"]),
                      "opponent_mix": mix, "eval_games": e, "eval_every_updates": int(args.eval_every_updates),
                      "eval_seed": eval_seed, "eval_max_steps": int(args.eval_max_steps or game.ticks),
-                     "device": device, **skrl_settings},
+                     "device": device, "init_log_std": effective_log_std, "frozen_log_std_axes": freeze_axes,
+                     "stop_at": args.stop_at or "none", "stop_file": args.stop_file or "none", **skrl_settings},
     }
+    if table_name != "standin":
+        meta["settings_values"] = dict(st)          # the whole table as read (the committed [standin] is pinned)
     if physics_meta:
         meta["physics"] = physics_meta
     if diag:
@@ -609,10 +670,16 @@ def run(args: argparse.Namespace, world_factory: Callable | None = None) -> int:
                "preset": PRESET_OF[motion]}
     for key in tb_cfg["settings_text"]:
         tb.add_text(f"settings/{key}", text_of[key], 0)
+    tb.add_text("settings/settings_table", f"[{table_name}] of {settings_path.name} (sha256 {settings_sha}): "
+                f"{SETTINGS_TABLES[table_name][1]}", 0)
     table = "| setting | value |\n|---|---|\n" + "\n".join(
         f"| {k} | {x} |" for k, x in [*text_of.items(), ("algorithm", "IPPO"), ("num_games", n),
                                       ("timesteps", timesteps), ("wall_clock_cap_min", cap_min),
                                       ("git_commit", commit), ("pipe_test", "true"),
+                                      ("settings_table", f"[{table_name}] of {settings_path.name}"),
+                                      ("settings_table_sha256", settings_sha),
+                                      ("init_log_std", effective_log_std), ("frozen_log_std_axes", freeze_axes),
+                                      ("game_steps_budget", budget_game_steps),
                                       *[(f"DIAGNOSTIC {k}", x) for k, x in diag.items()],
                                       ("hidden", list(st["hidden"])), ("policy mean", "Tanh"),
                                       *skrl_settings.items(),
@@ -738,6 +805,7 @@ def run(args: argparse.Namespace, world_factory: Callable | None = None) -> int:
         """skrl's single multi-agent training loop (trainers/torch/base.py ``Trainer.train``), with the
         evaluation and the wall-clock cap checked after every update (training time only)."""
         stopped_by_cap = False
+        stop_reason = None          # an operator stop (--stop-at, --stop-file): status ABORTED, exit 4
         timesteps_done = 0
         upset_games = None          # finished training games in which a live drone was upset (physics; D10)
 
@@ -772,6 +840,12 @@ def run(args: argparse.Namespace, world_factory: Callable | None = None) -> int:
                     if clock["train_s"] >= cap_min * 60.0:
                         self.stopped_by_cap = True
                         return
+                    if stop_at is not None and time.time() >= stop_at:
+                        self.stop_reason = f"stopped by the operator: stop time {args.stop_at} reached"
+                        return
+                    if args.stop_file and os.path.exists(args.stop_file):
+                        self.stop_reason = f"stopped by the operator: stop file {args.stop_file} present"
+                        return
                     if updates % int(args.eval_every_updates) == 0 and timestep + 1 < total:
                         self.agents.enable_training_mode(False)
                         evaluate(timestep + 1)
@@ -789,6 +863,12 @@ def run(args: argparse.Namespace, world_factory: Callable | None = None) -> int:
         trainer.train()
         agent.enable_training_mode(False)
         evaluate(trainer.timesteps_done)
+        if trainer.stop_reason:
+            status, abort_reason = "ABORTED", trainer.stop_reason
+            tb.add_text("status", f"ABORTED: {trainer.stop_reason}; agent.pt is the networks at the stop",
+                        trainer.timesteps_done)
+            print(f"ABORTED: {trainer.stop_reason} (final evaluation done, agent.pt kept)", file=sys.stderr,
+                  flush=True)
     except NonFiniteAbort as ex:
         status, abort_reason = "ABORTED", str(ex)
         tb.add_text("status", f"ABORTED: {ex}; agent.pt is the last evaluation's networks", trainer.timesteps_done)
@@ -803,6 +883,10 @@ def run(args: argparse.Namespace, world_factory: Callable | None = None) -> int:
               "game_steps_done": trainer.timesteps_done * n, "game_steps_budget": budget_game_steps,
               "updates_done": trainer.timesteps_done // rollouts,
               "stopped_by_wall_clock_cap": trainer.stopped_by_cap, "wall_clock_cap_min": cap_min,
+              "stopped_by_operator": trainer.stop_reason is not None,
+              "settings_table": table_name, "settings_file": settings_path.name,
+              "settings_table_sha256": settings_sha, "settings_table_status": SETTINGS_TABLES[table_name][1],
+              "settings_values": dict(st), "init_log_std": effective_log_std, "frozen_log_std_axes": freeze_axes,
               "train_s": clock["train_s"], "eval_s": clock["eval_s"], "total_s": time.time() - t_start,
               "evaluations": len(curve), "eval_to_train_time_ratio": clock["eval_s"] / max(clock["train_s"], 1e-9),
               "upset_training_games": int(trainer.upset_games) if trainer.upset_games is not None else 0,
@@ -812,7 +896,7 @@ def run(args: argparse.Namespace, world_factory: Callable | None = None) -> int:
               "last_tracked": {k: x for k, x in last_loss.items()}}
     (run_dir / "train_result.json").write_text(json.dumps(result, indent=1, default=str))
     if status == "ABORTED":
-        return 3
+        return 4 if trainer.stop_reason else 3
     print(f"done: {result['game_steps_done']:,} game-steps "
           f"({'stopped by the wall-clock cap' if trainer.stopped_by_cap else 'budget reached'}), train "
           f"{clock['train_s']:.0f} s, eval {clock['eval_s']:.0f} s -> {run_dir}", flush=True)

@@ -146,7 +146,7 @@ def standin_bars(out: str, group_dir: str, *score_dirs: str) -> None:
                          {"hold_rate": k / nn, "ci_low": lo, "ci_high": hi, "games": nn}, SERIES[2]))
         for j, (label, r, col) in enumerate(bars):
             ax.bar(j, r["hold_rate"], color=col, width=0.6)
-            ax.errorbar(j, r["hold_rate"], yerr=[[r["hold_rate"] - r["ci_low"]], [r["ci_high"] - r["hold_rate"]]],
+            ax.errorbar(j, r["hold_rate"], yerr=[[max(0.0, r["hold_rate"] - r["ci_low"])], [max(0.0, r["ci_high"] - r["hold_rate"])]],
                         color=INK, capsize=4, linewidth=1.2)
             print(f"| {b} | {label.replace(chr(10), ' ')} | {r['hold_rate']:.3f} | {r['ci_low']:.3f}–"
                   f"{r['ci_high']:.3f} | {r['games']} |")

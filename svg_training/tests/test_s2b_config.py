@@ -16,7 +16,7 @@ STANDIN_SHA256 = {"standin": "29d71984c226f88cf568d2fbe128b5e8a782ed21f48569002f
                   "standin_gates": "10e16a5be00ff3bb539351f7bd96d089741ce95d0c7d1a73cde9a598caa0eb77"}
 
 S2B_TABLES = {"physics", "agreement", "agreement_gates", "step_tests", "step_gates", "throughput", "compare_games",
-              "compare_games_gates", "video", "standin_s2b", "fallback_rate_gains", "tensorboard"}
+              "compare_games_gates", "video", "standin_s2b", "fallback_rate_gains", "tensorboard", "standin_v2"}
 
 
 def table_text(text: str, name: str) -> str:

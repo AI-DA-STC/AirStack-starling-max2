@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
-"""Figures for the S2b records: one function per figure (Task 9 now; other tasks add theirs).
+"""Figures for the S2b records: one function per figure (Tasks 7 and 9; Task 8 adds its own).
 
   make_s2b_figures.py standin <out.png> runs/<seed 1 run> [runs/<seed 2 run> ...]
   make_s2b_figures.py standin_bars <out.png> runs/<group with verdict.json> runs/<seed 1 score> [...]
+  make_s2b_figures.py steps <out.png> runs/<step-test run>                      (Task 7, s2b_steps.png)
+  make_s2b_figures.py real_replay <out.png> runs/<step-test run>                (Task 7, s2b_real_replay.png)
+  make_s2b_figures.py throughput <out.png> runs/<run>/results.jsonl [S0 results.jsonl]   (Task 7, s2b_throughput.png)
 
 ``standin``: the stand-in's learning curves, read from each run folder's TensorBoard event files with
 TensorBoard's own ``EventAccumulator`` (the same numbers the TensorBoard web page shows; this is how the
@@ -148,7 +151,153 @@ def standin_bars(out: str, group_dir: str, *score_dirs: str) -> None:
     print(f"wrote {out}")
 
 
-FIGURES = {"standin": standin, "standin_bars": standin_bars}
+def _load_run(run_dir: str | pathlib.Path) -> tuple[dict, dict]:
+    import numpy as np
+
+    run = pathlib.Path(run_dir)
+    return json.loads((run / "results.json").read_text()), dict(np.load(run / "arrays.npz"))
+
+
+def steps(out: str, run_dir: str) -> None:
+    """Task 7: speed along the stick command for each step (one panel per step): the physics drone in the world,
+    tier 1's drone model and the command, from the step-test run's arrays.npz (game g = step g mod 5)."""
+    import numpy as np
+
+    res, arr = _load_run(run_dir)
+    sched = json.loads(str(arr["schedule"]))
+    seen, games = set(), []
+    for g, info in enumerate(sched):
+        if info["step"] not in seen:
+            seen.add(info["step"])
+            games.append(g)
+    rows = {r["name"]: r for r in res["steps"]["steps"]}
+    fig, axes = plt.subplots(1, len(games), figsize=(3.6 * len(games), 4.4), dpi=150, squeeze=False, sharey=True)
+    print("| step | t (s) | command | physics | tier 1 |\n|---|---|---|---|---|")
+    for ax, g in zip(axes.flat, games):
+        info = sched[g]
+        name = info["step"]
+        r = rows[name]
+        cmd = np.asarray(r["cmd_mps"], float)
+        axis = cmd / np.linalg.norm(cmd)
+        end = info["ticks"] + 1
+        t = np.arange(end) * 0.05
+        vp = arr["physics_step_vel"][:end, g, 0] @ axis
+        v1 = arr["tier1_step_vel"][:end, g, 0] @ axis
+        c = np.concatenate(([0.0], arr["physics_cmd"][:end - 1, g] @ axis))
+        ax.step(t, c, where="pre", color=INK2, linewidth=1.4, linestyle="--", label="command")
+        ax.plot(t, vp, color=SERIES[0], linewidth=2.0, label="physics drone (Isaac Lab)")
+        ax.plot(t, v1, color=SERIES[1], linewidth=2.0, label="tier 1 (exploratory model)")
+        axis_txt = "up" if abs(axis[2]) > 0.9 else ("x" if abs(axis[0]) > 0.9 else ("y" if abs(axis[1]) > 0.9
+                                                                                    else "diagonal"))
+        style(ax, f"{name}{'' if r['gated'] else ' (INFO)'}", "time from the step's start (s)",
+              f"speed along the command, {axis_txt} (m/s)" if g == games[0] else "")
+        ax.text(0.98, 0.04, f"RMS gap {r['rms_vs_tier1_mps']:.3f} m/s", transform=ax.transAxes, ha="right",
+                color=INK2, fontsize=8)
+        for k in range(0, end, 20):
+            print(f"| {name} | {t[k]:.2f} | {c[k]:.3f} | {vp[k]:.3f} | {v1[k]:.3f} |")
+    handles, labels = axes[0, 0].get_legend_handles_labels()
+    fig.legend(handles, labels, frameon=False, fontsize=9, labelcolor=INK, loc="lower center", ncol=3)
+    fig.suptitle(f"Step tests: physics drone against tier 1, the same stick commands through the same commander and "
+                 f"filter ({res['verdict']}, observed in the training simulator)", x=0.01, ha="left", fontsize=12,
+                 color=INK)
+    fig.tight_layout(rect=(0, 0.07, 1, 1))
+    fig.savefig(out)
+    plt.close(fig)
+    print(f"wrote {out}")
+
+
+def real_replay(out: str, run_dir: str) -> None:
+    """Task 7: the six held-out legs of log103: the speed the drone logged, the physics drone and tier 1's drone
+    model, each fed PX4's logged setpoints, along each leg's direction (the mean direction of its speed setpoint)."""
+    import numpy as np
+
+    res, arr = _load_run(run_dir)
+    w = np.load(pathlib.Path(run_dir) / "windows.npz")
+    legs = res["replay"]["legs"]
+    t_rel = arr["physics_replay_t_rel_s"]
+    fig, axes = plt.subplots(2, 3, figsize=(14.0, 7.4), dpi=150, squeeze=False)
+    print("| leg | RMS physics (m/s) | RMS tier 1 (m/s) |\n|---|---|---|")
+    for ax, leg in zip(axes.flat, legs):
+        k = leg["game"]
+        t = w[f"w{k}_t_s"]
+        u = w[f"w{k}_v_ff"][:, :2].mean(axis=0)
+        u = u / np.linalg.norm(u)
+        t0 = t[0]
+        meas_t = t[w[f"w{k}_meas_idx"]] - t0
+        ax.plot(t - t0, w[f"w{k}_v_ff"][:, :2] @ u, color=INK2, linewidth=1.2, linestyle="--",
+                label="setpoint speed (logged)")
+        ax.plot(meas_t, w[f"w{k}_v_meas"] @ u, color=INK, linewidth=0, marker="o", markersize=3,
+                label="drone, logged")
+        ax.plot(t_rel, arr["physics_replay_vel"][:, k, 0, :2] @ u, color=SERIES[0], linewidth=2.0,
+                label="physics drone (Isaac Lab)")
+        ax.plot(t - t0, w[f"w{k}_v_tier1"] @ u, color=SERIES[1], linewidth=2.0, label="tier 1 (exploratory model)")
+        ax.set_xlim(0, t[-1] - t0)
+        style(ax, f"leg {leg['leg']}: RMS physics {leg['rms_physics_mps']:.3f}, tier 1 {leg['rms_tier1_mps']:.3f} m/s",
+              "time in the leg's window (s)", "speed along the leg (m/s)")
+        print(f"| {leg['leg']} | {leg['rms_physics_mps']:.4f} | {leg['rms_tier1_mps']:.4f} |")
+    axes[0, 0].legend(frameon=False, fontsize=8, labelcolor=INK, loc="best")
+    fig.suptitle("Real flight, 13 November 2026 (drone_2, log103): six held-out legs replayed at setpoint level "
+                 "(observed in the training simulator)", x=0.01, ha="left", fontsize=12, color=INK)
+    fig.tight_layout()
+    fig.savefig(out)
+    plt.close(fig)
+    print(f"wrote {out}")
+
+
+def throughput(out: str, results_jsonl: str, s0_results: str | None = None, line: str = "20000") -> None:
+    """Task 7: drone-steps per second against games for the game on the physics drone (2v1, 5v3; mean of the
+    repeats, both repeats as dots), S0's tier 2 benchmark at the same drones per game (dashed, t2_k3 and t2_k8 at
+    200 Hz: ARL Robot 1 stand-in drones, random thrust, no controller; from S0's own results file) and S0's decision
+    line."""
+    rows = [json.loads(x) for x in pathlib.Path(results_jsonl).read_text().splitlines() if x.strip()]
+    s0 = []
+    if s0_results and pathlib.Path(s0_results).exists():
+        s0 = [json.loads(x) for x in pathlib.Path(s0_results).read_text().splitlines() if x.strip()]
+    fig, ax = plt.subplots(figsize=(7.6, 4.8), dpi=150)
+    print("| series | games | drone-steps/s (mean) |\n|---|---|---|")
+    for i, (size, case) in enumerate((("2v1", "t2_k3"), ("5v3", "t2_k8"))):
+        col = SERIES[i]
+        ok = [r for r in rows if r.get("size") == size and r.get("status") == "ok"]
+        games = sorted({r["num_games"] for r in ok})
+        means = [sum(r["drone_steps_per_s"] for r in ok if r["num_games"] == n)
+                 / sum(1 for r in ok if r["num_games"] == n) for n in games]
+        if games:
+            ax.plot(games, means, color=col, linewidth=2.0, marker="o", markersize=6,
+                    label=f"{size}, physics drone + commander + filter")
+            ax.scatter([r["num_games"] for r in ok], [r["drone_steps_per_s"] for r in ok], color=col, s=10, zorder=3)
+        for n, v in zip(games, means):
+            print(f"| {size} physics | {n} | {v:,.0f} |")
+        bad = [r for r in rows if r.get("size") == size and r.get("status") != "ok"]
+        for r in bad:
+            ax.annotate(r["status"], (r["num_games"], float(line)), color=col, fontsize=8, ha="center")
+        s0_ok = [r for r in s0 if r.get("case") == case and r.get("status") == "ok"]
+        g0 = sorted({r["num_games"] for r in s0_ok})
+        m0 = [sum(r["drone_steps_per_s"] for r in s0_ok if r["num_games"] == n)
+              / sum(1 for r in s0_ok if r["num_games"] == n) for n in g0]
+        if g0:
+            ax.plot(g0, m0, color=col, linewidth=1.4, linestyle="--", marker="s", markersize=4,
+                    label=f"S0 tier 2 {case} ({'3' if size == '2v1' else '8'} ARL stand-in drones, no controller)")
+            for n, v in zip(g0, m0):
+                print(f"| S0 {case} | {n} | {v:,.0f} |")
+    ax.axhline(float(line), color=INK2, linewidth=1.2, linestyle=":")
+    ax.text(0.01, float(line) * 1.08, f"S0 decision line {float(line):,.0f}", color=INK2, fontsize=8,
+            transform=ax.get_yaxis_transform())
+    ax.set_xscale("log", base=2)
+    ax.set_yscale("log")
+    ticks = sorted({r["num_games"] for r in rows} | {r["num_games"] for r in s0 if r.get("case") in ("t2_k3", "t2_k8")})
+    ax.set_xticks(ticks, [f"{t:,}" for t in ticks])
+    ax.minorticks_off()
+    style(ax, "Game on the physics drone (Isaac Lab): throughput\nobserved in the training simulator",
+          "games at once", "drone-steps per second")
+    ax.legend(frameon=False, fontsize=8, labelcolor=INK, loc="lower right")
+    fig.tight_layout()
+    fig.savefig(out)
+    plt.close(fig)
+    print(f"wrote {out}")
+
+
+FIGURES = {"standin": standin, "standin_bars": standin_bars, "steps": steps, "real_replay": real_replay,
+           "throughput": throughput}
 
 
 def main(argv: list[str] | None = None) -> int:

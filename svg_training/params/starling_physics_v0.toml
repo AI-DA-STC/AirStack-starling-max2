@@ -52,6 +52,7 @@ mc_yawrate_max = 1.5e+02                  # MEASURED ../starling_1_indoor_params
 mc_rr_int_lim = 0.3                       # MEASURED ../starling_1_indoor_params.params MC_RR_INT_LIM
 mc_pr_int_lim = 0.3                       # MEASURED ../starling_1_indoor_params.params MC_PR_INT_LIM
 mc_yr_int_lim = 0.3                       # MEASURED ../starling_1_indoor_params.params MC_YR_INT_LIM
+mc_yaw_cutoff = 15                        # MEASURED ../starling_1_indoor_params.params MC_YAW_CUTOFF
 imu_dgyro_cutoff = 4e+01                  # MEASURED ../starling_1_indoor_params.params IMU_DGYRO_CUTOFF
 imu_gyro_ratemax = 800                    # MEASURED ../starling_1_indoor_params.params IMU_GYRO_RATEMAX
 mc_airmode = 0                            # MEASURED ../starling_1_indoor_params.params MC_AIRMODE

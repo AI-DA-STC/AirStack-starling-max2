@@ -3,6 +3,9 @@
 PyTorch-free, frozen dataclasses, SI units. Read from a parameter file written by
 ``scripts/make_physics_params.py`` (``params/starling_physics_v0.toml``): the gains are copied from the drone's
 parameter file and never tuned; the airframe is CMU's system identification (``../docs/CONFIG.md`` "Inertials").
+``load_physics_params`` returns the drone's values only. Sim-only values are applied after it, from a separate file
+that says SIM-ONLY (``apply_sim_only_gains``, owner's ruling of 16 November 2026: the yaw-rate gains), or from the
+pre-written fallback (``apply_rate_gain_fallback``); each records itself in ``PhysicsParams.source``.
 
 Frames: rotor positions are (x, y) in PX4's body frame FRD (x forward, y right), PX4 rotor order 0..3; inertia is
 the diagonal (roll, pitch, yaw) about the centre of mass.
@@ -10,6 +13,7 @@ the diagonal (roll, pitch, yaw) about the centre of mass.
 from __future__ import annotations
 
 import dataclasses
+import hashlib
 import tomllib
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -94,6 +98,7 @@ class Px4Gains:
     mc_rr_int_lim: float
     mc_pr_int_lim: float
     mc_yr_int_lim: float
+    mc_yaw_cutoff: float          # yaw torque low-pass, Hz (ModalAI's PX4 1.14 fork; px4_cascade note C)
     imu_dgyro_cutoff: float
     imu_gyro_ratemax: float
     mc_airmode: float
@@ -193,6 +198,67 @@ def load_physics_params(path: str | Path, overrides: dict | None = None) -> Phys
                          rotor_geometry=str(model["rotor_geometry"]), motor_lag=model["motor_lag"],
                          setpoint_delay_s=float(model["setpoint_delay_s"]),
                          upset_tilt_deg=float(model.get("upset_tilt_deg", 60.0)), source=dict(data.get("source", {})))
+
+
+DEFAULT_SIM_ONLY_GAINS: str = "params/sim_only_yaw_v0.toml"   # = core.game_config.StarlingLayerCfg default
+SIM_ONLY_GAIN_NAMES: tuple[str, ...] = ("mc_yawrate_p", "mc_yawrate_i", "mc_yawrate_d")   # the owner's ruling
+SIM_ONLY_HEADER: str = "# SIM-ONLY"                    # first line of every sim-only override file
+DRONE_GAINS_SOURCE: str = "the drone's own gains (no sim-only override)"
+
+
+def apply_sim_only_gains(params: PhysicsParams, path: str | Path | None) -> PhysicsParams:
+    """Owner's ruling of 16 November 2026: the physics drone flies the AirStack simulator's SIM-ONLY yaw-rate gains.
+
+    ``path`` is a sim-only override file (``params/sim_only_yaw_v0.toml``; absolute or relative to svg_training/)
+    or None / "" for the drone's own gains. The file must start with "# SIM-ONLY", carry a [sim_only] ``label``
+    that says SIM-ONLY, and set only the yaw-rate P / I / D (``SIM_ONLY_GAIN_NAMES``); anything else raises
+    ValueError. Roll and pitch gains, the yaw torque filter and the motor lag stay the drone's. Either way the
+    result's ``source["yaw_rate_gains"]`` says which gains are in use (file, sha256 and label, or the drone's own),
+    so records and TensorBoard can quote it. The result is never a drone value (iron rule 9).
+    """
+    if not path:
+        return dataclasses.replace(params, source={**params.source, "yaw_rate_gains": DRONE_GAINS_SOURCE})
+    p = Path(path)
+    p = p if p.is_absolute() else ROOT / p
+    raw = p.read_bytes()
+    text = raw.decode()
+    if not text.startswith(SIM_ONLY_HEADER):
+        raise ValueError(f"{p.name}: a sim-only override file must start with {SIM_ONLY_HEADER!r}")
+    data = tomllib.loads(text)
+    if sorted(data) != ["gains", "sim_only"]:
+        raise ValueError(f"{p.name}: needs exactly the sections [sim_only] and [gains], got {sorted(data)}")
+    label = str(data["sim_only"].get("label", ""))
+    if "SIM-ONLY" not in label:
+        raise ValueError(f"{p.name}: the [sim_only] label must say SIM-ONLY")
+    bad = sorted(set(data["gains"]) - set(SIM_ONLY_GAIN_NAMES))
+    if bad:
+        raise ValueError(f"{p.name}: only {SIM_ONLY_GAIN_NAMES} may be overridden, got {bad}")
+    gains = dataclasses.replace(params.gains, **{k: float(v) for k, v in data["gains"].items()})
+    try:
+        rel = str(p.resolve().relative_to(ROOT))
+    except ValueError:
+        rel = str(p)
+    entry = {"file": rel, "sha256": hashlib.sha256(raw).hexdigest(), "label": label,
+             "gains": {k: float(v) for k, v in data["gains"].items()}}
+    return dataclasses.replace(params, gains=gains, source={**params.source, "yaw_rate_gains": entry})
+
+
+def load_physics_drone_params(path: str | Path, overrides: dict | None = None,
+                              sim_only_gains: str | Path | None = DEFAULT_SIM_ONLY_GAINS) -> PhysicsParams:
+    """The physics drone's parameters as the game flies them: ``load_physics_params`` (the drone's values), then
+    ``apply_sim_only_gains`` (default: the owner's SIM-ONLY yaw-rate gains; None or "" = the drone's own gains).
+    Scripts use this so that they fly the same drone as ``core.physics_layer.load_game_physics_params``."""
+    return apply_sim_only_gains(load_physics_params(path, overrides), sim_only_gains)
+
+
+def yaw_gains_text(params: PhysicsParams) -> str:
+    """One line for records and logs: which yaw-rate gains ``params`` carries (see ``apply_sim_only_gains``)."""
+    y = params.source.get("yaw_rate_gains")
+    g = params.gains
+    pid = f"yaw-rate P/I/D {g.mc_yawrate_p:g}/{g.mc_yawrate_i:g}/{g.mc_yawrate_d:g}"
+    if isinstance(y, dict):
+        return f"{y['label']} ({y['file']}, sha256 {y['sha256'][:12]}): {pid}"
+    return f"{y or DRONE_GAINS_SOURCE}: {pid}"
 
 
 def apply_rate_gain_fallback(params: PhysicsParams, fallback: dict) -> PhysicsParams:

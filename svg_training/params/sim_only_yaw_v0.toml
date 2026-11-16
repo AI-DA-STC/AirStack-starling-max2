@@ -1,0 +1,21 @@
+# SIM-ONLY yaw-rate gains for the tier 2 physics drone. NEVER port these to the real drone (iron rule 9).
+# Owner's ruling, 16 November 2026: the physics drone uses the AirStack simulator's sim-only yaw-rate gains
+# (precedent: AirStack CHG-0024, ../docs/CONFIG.md "PX4 inner (rate) loops" row). This ruling supersedes, for these
+# three values only, the S2b plan's Global Constraint "no sim-only airframe value appears in any S2b file".
+# Why: with the drone's own yaw-rate gains, its 15 Hz yaw torque filter and the 55 / 85 ms motor lag, the physics
+# drone's heading does not settle (S2b Task 3 fix rounds 1-2: a steady swing of about 23 deg peak to peak).
+# These gains settle it and leave the translation response unchanged. Everything else stays the drone's own: roll and
+# pitch gains, the 15 Hz yaw torque filter (MC_YAW_CUTOFF) and the motor lag.
+# Applied over params/starling_physics_v0.toml (the drone's values) by models/physics_params.apply_sim_only_gains;
+# the default for backend = "physics" (core/game_config.py StarlingLayerCfg.physics_sim_only_gains). Hand-written;
+# the only file that holds these values (tests/test_physics_params.py checks that).
+
+[sim_only]
+label = "SIM-ONLY: AirStack simulator yaw-rate gains (CHG-0024), owner's ruling 16 Nov 2026; never port to the drone"
+owner_ruling = "2026-11-16"
+precedent = "AirStack CHG-0024, ../docs/CONFIG.md \"PX4 inner (rate) loops\""
+
+[gains]                                    # replace the drone's yaw-rate P / I / D (0.07 / 0.5 / 0 in its file)
+mc_yawrate_p = 0.25                        # SIM-ONLY (AirStack simulator, CHG-0024)
+mc_yawrate_i = 0.2                         # SIM-ONLY (AirStack simulator, CHG-0024)
+mc_yawrate_d = 0.0                         # SIM-ONLY (AirStack simulator, CHG-0024; the drone's value is also 0)

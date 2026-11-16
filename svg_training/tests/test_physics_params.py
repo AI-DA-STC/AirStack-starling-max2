@@ -2,6 +2,7 @@
 import dataclasses
 import hashlib
 import pathlib
+import re
 import subprocess
 import sys
 import tomllib
@@ -13,9 +14,11 @@ from _proc import child_env, child_python
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "source"))
 from svg_training.models.physics_params import (  # noqa: E402
-    GAIN_NAMES, Px4Gains, apply_rate_gain_fallback, load_physics_params)
+    DEFAULT_SIM_ONLY_GAINS, GAIN_NAMES, SIM_ONLY_GAIN_NAMES, Px4Gains, apply_rate_gain_fallback, apply_sim_only_gains,
+    load_physics_drone_params, load_physics_params, yaw_gains_text)
 
 PARAMS = ROOT / "params/starling_physics_v0.toml"
+SIM_ONLY_YAW = ROOT / "params/sim_only_yaw_v0.toml"
 DRONE_FILE = ROOT.parent / "starling_1_indoor_params.params"
 SCRIPT = ROOT / "scripts/make_physics_params.py"
 
@@ -82,7 +85,7 @@ def test_source_hash_matches_drone_file():
 
 def test_no_sim_only_values():                             # iron rule 9
     text = PARAMS.read_text()
-    for bad in ("0.032", "0.00065", "0.00055", "= 0.25", "= 20.0", "= 300"):
+    for bad in ("0.032", "0.00065", "0.00055", "= 0.25", "= 20.0", "= 300", "SIM-ONLY"):
         assert bad not in text, bad
     assert text.startswith("# Tier 2 rigid-body Starling, version 0. Gains copied from the drone, never tuned.\n")
 
@@ -143,3 +146,82 @@ def test_generator_refuses_missing_name(tmp_path):
     r = _run_generator(tmp_path / "fake.params", tmp_path / "out.toml")
     assert r.returncode == 2 and "MPC_XY_P" in r.stderr
     assert not (tmp_path / "out.toml").exists()
+
+
+# ------------------------------------------------- the owner's SIM-ONLY yaw-rate gains (ruling of 16 November 2026)
+def test_sim_only_yaw_file_is_labelled():
+    text = SIM_ONLY_YAW.read_text()
+    assert text.startswith("# SIM-ONLY yaw-rate gains for the tier 2 physics drone. NEVER port these to the real drone")
+    assert "16 November 2026" in text and "CHG-0024" in text and 'PX4 inner (rate) loops' in text
+    data = tomllib.loads(text)
+    assert "SIM-ONLY" in data["sim_only"]["label"] and data["sim_only"]["owner_ruling"] == "2026-11-16"
+    assert tuple(sorted(data["gains"])) == tuple(sorted(SIM_ONLY_GAIN_NAMES))
+    for line in text.splitlines():
+        if line.startswith("mc_"):
+            assert "# SIM-ONLY" in line, line
+
+
+def test_sim_only_yaw_values_live_only_in_the_override_file():
+    """Every numeric yaw-rate gain assignment in code, configs and parameter files is either the drone's (copied into
+    params/starling_physics_v0.toml) or in the SIM-ONLY override file. Docs, records and runs/ may quote the numbers
+    and are out of scope; configs/local/ is never read."""
+    pat = re.compile(r"mc_yawrate_[pid]\s*[=:]\s*[-+0-9.]")
+    found = set()
+    for top in ("source", "scripts", "configs", "params", "tests"):
+        for f in (ROOT / top).rglob("*"):
+            if not f.is_file() or f.suffix not in (".py", ".toml") or (ROOT / "configs/local") in f.parents:
+                continue
+            if pat.search(f.read_text(errors="replace")):
+                found.add(f.relative_to(ROOT).as_posix())
+    assert found == {"params/starling_physics_v0.toml", "params/sim_only_yaw_v0.toml"}, found
+    drone = load_physics_params(PARAMS).gains
+    sim = tomllib.loads(SIM_ONLY_YAW.read_text())["gains"]
+    assert (sim["mc_yawrate_p"], sim["mc_yawrate_i"]) != (drone.mc_yawrate_p, drone.mc_yawrate_i)
+
+
+def test_sim_only_gains_change_only_the_yaw_rate_gains():
+    p = load_physics_params(PARAMS)
+    q = apply_sim_only_gains(p, DEFAULT_SIM_ONLY_GAINS)
+    sim = tomllib.loads(SIM_ONLY_YAW.read_text())["gains"]
+    for f in dataclasses.fields(Px4Gains):
+        want = float(sim[f.name]) if f.name in sim else getattr(p.gains, f.name)
+        assert getattr(q.gains, f.name) == want, f.name
+    assert q.airframe == p.airframe and q.motor_lag == p.motor_lag
+    y = q.source["yaw_rate_gains"]
+    assert y["file"] == "params/sim_only_yaw_v0.toml" and "SIM-ONLY" in y["label"]
+    assert y["sha256"] == hashlib.sha256(SIM_ONLY_YAW.read_bytes()).hexdigest()
+    assert "SIM-ONLY" in yaw_gains_text(q) and "yaw_rate_gains" not in p.source
+    r = apply_sim_only_gains(p, "")                                       # the real-gains path stays selectable
+    assert r.gains == p.gains and r.source["yaw_rate_gains"].startswith("the drone's own gains")
+    assert load_physics_drone_params(PARAMS).gains == q.gains
+    assert load_physics_drone_params(PARAMS, sim_only_gains=None).gains == p.gains
+
+
+def test_sim_only_file_refuses_unlabelled_or_other_gains(tmp_path):    # made-up numbers
+    p = load_physics_params(PARAMS)
+    body = f'[sim_only]\nlabel = "SIM-ONLY: made up"\n\n[gains]\n{SIM_ONLY_GAIN_NAMES[0]} = 0.11\n'
+    (tmp_path / "no_header.toml").write_text("# made up\n" + body)
+    with pytest.raises(ValueError, match="must start"):
+        apply_sim_only_gains(p, tmp_path / "no_header.toml")
+    (tmp_path / "no_label.toml").write_text("# SIM-ONLY made up\n" + body.replace("SIM-ONLY: ", ""))
+    with pytest.raises(ValueError, match="label"):
+        apply_sim_only_gains(p, tmp_path / "no_label.toml")
+    (tmp_path / "roll.toml").write_text("# SIM-ONLY made up\n" + body + "mc_rollrate_p = 0.01\n")
+    with pytest.raises(ValueError, match="only"):
+        apply_sim_only_gains(p, tmp_path / "roll.toml")
+    (tmp_path / "ok.toml").write_text("# SIM-ONLY made up\n" + body)
+    assert apply_sim_only_gains(p, tmp_path / "ok.toml").gains.mc_yawrate_p == 0.11
+
+
+def test_sim_only_yaw_is_the_physics_default():
+    from svg_training.core.game_config import LOCAL_ALLOWED, StarlingLayerCfg, load_game_cfg
+    assert StarlingLayerCfg().physics_sim_only_gains == DEFAULT_SIM_ONLY_GAINS == "params/sim_only_yaw_v0.toml"
+    cfg, _ = load_game_cfg(use_local=False)
+    assert cfg.starling.physics_sim_only_gains == DEFAULT_SIM_ONLY_GAINS
+    assert "starling_layer.physics_sim_only_gains" not in LOCAL_ALLOWED        # a local file cannot switch it
+
+
+def test_yaw_cutoff_in_the_parameter_file():
+    g = load_physics_params(PARAMS).gains
+    assert g.mc_yaw_cutoff == 15.0
+    assert "mc_yaw_cutoff = 15 " in PARAMS.read_text()

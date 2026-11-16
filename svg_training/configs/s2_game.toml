@@ -46,6 +46,7 @@ filter_iterations = 1000
 filter_check_every = 8
 backend = "fitted"                 # "fitted" (S2's fitted PX4 response, params above) | "physics" (S2b rigid body)
 physics_params = "params/starling_physics_v0.toml"   # read only when backend = "physics"
+physics_sim_only_gains = "params/sim_only_yaw_v0.toml"  # physics only: SIM-ONLY yaw-rate gains (owner, 16 Nov); "" = drone's own
 
 [starts]
 mode = "rings"                     # "rings" | "anywhere"

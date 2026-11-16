@@ -16,6 +16,13 @@ Result: **FAIL** against `[agreement_gates]` of `configs/s2b.toml`. Ledger row T
 
 How the steps were flown: 0.5 s of hold, then the setpoint ramps at the step speed for `push_s`, then for `release_s` it moves at `then_mps` (the `reverse` step: −0.5 m/s) or stops. Yaw is held at the start heading; the cascade's yaw is the drone's (15 Hz yaw torque filter, motor lag on), the same in both worlds.
 
+## Owner's ruling (16 November 2026)
+
+- **The FAIL stands in the ledger (row T10), and the owner accepts it**, as with T2. The gap comes from Isaac Lab's GPU physics (PhysX on the CPU agrees to 0.021 mm), and the closed-loop gates, the way the game flies the drones, pass about 30 times inside. The gate was not moved and this run was not repeated.
+- `tests/test_isaac_world.py::test_isaac_open_loop_matches_torch` is now a strict expected failure that cites this ruling. The angle and non-finite parts of the same smoke check are a separate test that must still pass.
+- **Yaw setting of this run:** the drone's own yaw-rate gains, the 15 Hz yaw torque filter and motor lag on, in both worlds. Since the same day's ruling the physics drone defaults to SIM-ONLY yaw-rate gains (`params/sim_only_yaw_v0.toml`, AirStack precedent CHG-0024; never a drone value), and later records name the yaw gains they used.
+- **Parameter file changed after this run:** `params/starling_physics_v0.toml` was regenerated from the drone's file to add `MC_YAW_CUTOFF` (one added line, `mc_yaw_cutoff = 15`; every other value unchanged). Its sha256 is now `888f4aea1b5a`, not the `11fce758d518` cited below, which is the file as this run read it.
+
 ## Purpose
 
 S2b flies the S2 game on rigid-body Starlings. Two worlds can move those bodies: Isaac Lab (PhysX, the one training will use) and a small PyTorch world written to the same equations, which the CPU tests use. This run gives both worlds the same forces, then the same PX4 control cascade, and measures how far apart they end up. If they agree, everything checked on the PyTorch world also holds in Isaac Lab, and the Isaac Lab body is the one we specified (mass, inertia, no damping, no collider).

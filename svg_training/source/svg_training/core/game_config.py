@@ -55,6 +55,8 @@ class StarlingLayerCfg:
 
     backend "fitted" is S2's fitted PX4 response (``params``); "physics" is S2b's rigid-body drone under the PX4 1.14
     cascade (``physics_params``). An unknown backend raises here, so the game never sees one.
+    ``physics_sim_only_gains`` (physics only): the SIM-ONLY override file applied over the drone's gains (owner's
+    ruling of 16 November 2026: the AirStack simulator's yaw-rate gains, CHG-0024); "" = the drone's own gains.
     """
     enabled: bool = False
     params: str = "params/real_exploratory_v0.toml"
@@ -62,6 +64,7 @@ class StarlingLayerCfg:
     filter_check_every: int = 0
     backend: str = "fitted"
     physics_params: str = "params/starling_physics_v0.toml"
+    physics_sim_only_gains: str = "params/sim_only_yaw_v0.toml"
 
     def __post_init__(self) -> None:
         if self.backend not in BACKENDS:

@@ -8,7 +8,10 @@ Usage (from svg_training/, CPU, no Isaac):
 Development check: no ledger row, no gates file; the table goes in the task report. One drone in the PyTorch
 reference world (``models/rigid_body.py``, the test oracle), the rotor model (``models/starling_airframe.py``) and
 the cascade (``models/px4_cascade.py``). Variants: plant rotor geometry {cad, params} x motor lag {on, off} x
-dt {0.005, 0.001} s. Gains are the drone's own (``params/starling_physics_v0.toml``), never tuned.
+dt {0.005, 0.001} s. Gains for rules (a) and (b) are the drone's own (``params/starling_physics_v0.toml``), never
+tuned, as the rules were written. Since the owner's ruling of 16 November 2026 the physics drone the game flies uses
+the SIM-ONLY yaw-rate gains of ``params/sim_only_yaw_v0.toml`` (``--sim-only-gains``) over them; the check flies that
+default too, as INFO, and every table says which yaw-rate gains it used.
 
 Measured per variant
   hover   10 s from a small upset (roll 2 deg, pitch -1 deg, rates (0.1, -0.1, 0.05) rad/s) at the setpoint:
@@ -18,7 +21,9 @@ Measured per variant
           feed-forward (0.5, 0, 0), 4 s: t63 of the east speed (s), overshoot (% of 0.5 m/s), peak tilt (deg).
   rate    the rate loop alone (outer loops skipped): roll-rate setpoint +1 rad/s for 0.3 s from hover, then
           -1 rad/s for 0.3 s: t63 (s) and overshoot (%) of the first step.
-  options INFO (fix round 2): yaw options A-C, and D with --info-yaw-rate-pid P I D (see yaw_options).
+  options INFO (fix round 2): yaw options A-C, and D = the SIM-ONLY override file (see yaw_options).
+  default INFO (16 Nov): the default physics drone (SIM-ONLY yaw-rate gains) on both plant geometries, lag on and
+          off, dt 0.005: hover, +x step, and yaw steps of 0.5 and 0.3 rad (0.3 rad = tests/test_physics_layer.py).
   yaw     INFO (fix round 1, not a gate): hover yaw std and peak-to-peak (last 5 s of the hover above), and a
           +0.5 rad yaw setpoint jump from hover for 10 s: t63, overshoot, peak-to-peak after 5 s, final error. Also
           for the default plant with the yaw torque filter off (upstream v1.14.0 has none; px4_cascade note C).
@@ -46,7 +51,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "source"))
 from svg_training.models.frames import (quat_wxyz_to_rotmat, rot_enu_flu_to_ned_frd, tilt_rad,  # noqa: E402
                                         vec_enu_to_ned, yaw_enu_to_ned)
-from svg_training.models.physics_params import PhysicsParams, load_physics_params  # noqa: E402
+from svg_training.models.physics_params import (DEFAULT_SIM_ONLY_GAINS, PhysicsParams,  # noqa: E402
+                                                apply_sim_only_gains, load_physics_params, yaw_gains_text)
 from svg_training.models.px4_cascade import Px4Cascade  # noqa: E402
 from svg_training.models.rigid_body import TorchRigidBodyWorld  # noqa: E402
 from svg_training.models.starling_airframe import RotorModel, body_wrench_flu  # noqa: E402
@@ -61,10 +67,14 @@ YAW_STEP_RAD, YAW_STEP_S = 0.5, 10.0   # INFO (fix round 1): yaw step size and l
 SetpointFn = Callable[[float], tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]]
 
 
-def load_params(geometry: str = "cad", motor_lag: bool = True, dt_s: float = 0.005) -> PhysicsParams:
-    """The drone's parameter file with the configs/s2b.toml [physics] settings, then the variant's overrides."""
+def load_params(geometry: str = "cad", motor_lag: bool = True, dt_s: float = 0.005,
+                sim_only_gains: str | None = None) -> PhysicsParams:
+    """The drone's parameter file with the configs/s2b.toml [physics] settings, then the variant's overrides.
+
+    ``sim_only_gains`` None / "" = the drone's own gains (rules (a) and (b)); a path = that SIM-ONLY override file
+    (``models.physics_params.apply_sim_only_gains``), e.g. the game's default ``DEFAULT_SIM_ONLY_GAINS``."""
     physics = tomllib.loads(S2B.read_text())["physics"]
-    p = load_physics_params(physics["params"], physics)
+    p = apply_sim_only_gains(load_physics_params(physics["params"], physics), sim_only_gains)
     return dataclasses.replace(p, rotor_geometry=geometry, motor_lag=motor_lag, physics_dt_s=dt_s)
 
 
@@ -178,19 +188,19 @@ def hover_metrics(p: PhysicsParams, yaw_cutoff_hz: float | None = None) -> dict:
 
 
 def yaw_step_run(p: PhysicsParams, duration_s: float = YAW_STEP_S,
-                 yaw_cutoff_hz: float | None = None) -> dict[str, torch.Tensor]:
-    """Hover at rest, then the yaw setpoint jumps to +YAW_STEP_RAD (ENU, nose turning left) at t = 0, no feed-forward."""
+                 yaw_cutoff_hz: float | None = None, step_rad: float = YAW_STEP_RAD) -> dict[str, torch.Tensor]:
+    """Hover at rest, then the yaw setpoint jumps to +step_rad (ENU, nose turning left) at t = 0, no feed-forward."""
     pos0 = torch.tensor([[[0.0, 0.0, 1.0]]])
     z = torch.zeros(1, 1, 3)
-    yaw = torch.full((1, 1), YAW_STEP_RAD)
+    yaw = torch.full((1, 1), step_rad)
     zy = torch.zeros(1, 1)
     return fly(p, duration_s, lambda t: (pos0, z, z, yaw, zy), pos0=pos0, yaw_cutoff_hz=yaw_cutoff_hz)
 
 
-def yaw_step_metrics(out: dict[str, torch.Tensor]) -> dict:
+def yaw_step_metrics(out: dict[str, torch.Tensor], step_rad: float = YAW_STEP_RAD) -> dict:
     """INFO: t63 of the yaw (s), peak-to-peak after 5 s (deg), final error (deg), largest overshoot (deg)."""
     yaw = out["yaw_enu_deg"][:, 0, 0]
-    target = math.degrees(YAW_STEP_RAD)
+    target = math.degrees(step_rad)
     late = out["t_s"] > 5.0
     return {"t63_s": t63(out["t_s"], yaw, target), "p2p_after_5s_deg": float(yaw[late].max() - yaw[late].min()),
             "final_err_deg": float(yaw[-1] - target), "overshoot_deg": float(yaw.max() - target)}
@@ -201,25 +211,25 @@ def step_run(p: PhysicsParams, yaw_cutoff_hz: float | None = None) -> dict[str, 
     return fly(p, STEP_S, ramp_x(pos0, STEP_MPS), pos0=pos0, yaw_cutoff_hz=yaw_cutoff_hz)
 
 
-def yaw_options(yaw_rate_pid: tuple[float, float, float] | None) -> tuple[list[dict], list[str]]:
+def yaw_options(sim_only_gains: str | None) -> tuple[list[dict], list[str]]:
     """INFO (fix round 2): the yaw options put to the owner, all on the default plant (CAD arms) at dt 0.005.
 
-    A drone gains, yaw filter, motor lag on (the code default); B the same with the yaw filter off; C motor lag off;
-    D (only with ``yaw_rate_pid``) yaw-rate P / I / D from the command line, filter and lag on. D's numbers are
-    never written in this file: the AirStack simulator's yaw-rate gains are SIM-ONLY (iron rule 9), so they are
-    passed on the command line for a one-off INFO comparison and labelled so in the output.
+    A drone gains, yaw filter, motor lag on; B the same with the yaw filter off; C motor lag off; D (with a
+    ``sim_only_gains`` file) the yaw-rate gains of that SIM-ONLY file, filter and lag on. Since the owner's ruling of
+    16 November 2026, D with ``params/sim_only_yaw_v0.toml`` is the physics drone's default. The sim-only numbers are
+    never written in this file: they live in the override file only (iron rule 9), and the row is labelled SIM-ONLY.
     Returns result rows and table lines; the last column is the RMS of the +x step's velocity difference to A.
     """
     base = load_params("cad", True, 0.005)
-    cases = [("A drone gains, 15 Hz yaw filter, lag on (default)", base, None),
+    cases = [("A drone gains, 15 Hz yaw filter, lag on (the default until 16 Nov)", base, None),
              ("B drone gains, yaw filter off, lag on", base, 0.0),
              ("C drone gains, 15 Hz yaw filter, lag off", load_params("cad", False, 0.005), None)]
-    if yaw_rate_pid is not None:
-        yp, yi, yd = yaw_rate_pid
-        sim = dataclasses.replace(base, gains=dataclasses.replace(base.gains, mc_yawrate_p=yp, mc_yawrate_i=yi,
-                                                                  mc_yawrate_d=yd))
-        cases.append((f"D SIM-ONLY yaw-rate P/I/D {yp:g}/{yi:g}/{yd:g} (command line), 15 Hz filter, lag on", sim,
-                      None))
+    if sim_only_gains:
+        sim = load_params("cad", True, 0.005, sim_only_gains)
+        g = sim.gains
+        cases.append((f"D SIM-ONLY yaw-rate P/I/D {g.mc_yawrate_p:g}/{g.mc_yawrate_i:g}/{g.mc_yawrate_d:g} "
+                      f"({sim.source['yaw_rate_gains']['file']}), 15 Hz filter, lag on (the default since 16 Nov)",
+                      sim, None))
     out, ref = [], None
     for name, p, cut in cases:
         h = hover_metrics(p, cut)
@@ -239,6 +249,33 @@ def yaw_options(yaw_rate_pid: tuple[float, float, float] | None) -> tuple[list[d
                      f"{y['p2p_after_5s_deg']:.2f} | {y['final_err_deg']:.2f} | {s['t63_s']:.3f} | "
                      f"{s['overshoot_pct']:.1f} | {r['step_rms_vs_A_mps']:.5f} |")
     return out, lines
+
+
+def default_drone_rows(sim_only_gains: str | None) -> tuple[list[dict], list[str]]:
+    """INFO (16 Nov): the physics drone as the game flies it by default (``sim_only_gains`` over the drone's gains),
+    both plant geometries, motor lag on and off, dt 0.005. The 0.3 rad step is the one tests/test_physics_layer.py
+    gates. Returns result rows and table lines."""
+    rows = []
+    for geometry in ("cad", "params"):
+        for lag in (True, False):
+            p = load_params(geometry, lag, 0.005, sim_only_gains)
+            rows.append({"geometry": geometry, "motor_lag": lag, "dt_s": 0.005, "hover": hover_metrics(p),
+                         "step": step_metrics(step_run(p)), "yaw_step": yaw_step_metrics(yaw_step_run(p)),
+                         "yaw_step_0p3": yaw_step_metrics(yaw_step_run(p, step_rad=0.3), 0.3)})
+            print(f"default drone {geometry} lag={'on' if lag else 'off'}: done", flush=True)
+    yaw_text = yaw_gains_text(load_params(sim_only_gains=sim_only_gains))
+    lines = ["", f"INFO, the default physics drone since 16 Nov ({yaw_text}; 15 Hz yaw filter; dt 0.005; not gates):",
+             "",
+             "| geometry | motor lag | hover tilt spread (deg) | hover yaw std (deg) | +x t63 (s) | +x overshoot (%) | "
+             "yaw 0.5 rad t63 (s) | yaw 0.5 rad p2p after 5 s (deg) | yaw 0.3 rad p2p after 5 s (deg) | "
+             "yaw 0.3 rad final error (deg) |",
+             "|---|---|---|---|---|---|---|---|---|---|"]
+    for r in rows:
+        h, s, y, y3 = r["hover"], r["step"], r["yaw_step"], r["yaw_step_0p3"]
+        lines.append(f"| {r['geometry']} | {'on' if r['motor_lag'] else 'off'} | {h['tilt_spread_deg']:.4f} | "
+                     f"{h['yaw_spread_deg']:.3f} | {s['t63_s']:.3f} | {s['overshoot_pct']:.1f} | {y['t63_s']:.3f} | "
+                     f"{y['p2p_after_5s_deg']:.3f} | {y3['p2p_after_5s_deg']:.3f} | {y3['final_err_deg']:.3f} |")
+    return rows, lines
 
 
 def step_metrics(out: dict[str, torch.Tensor]) -> dict:
@@ -271,8 +308,9 @@ def speed_rms_diff(a: dict[str, torch.Tensor], b: dict[str, torch.Tensor]) -> fl
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--out", required=True, help="output folder, e.g. runs/2026-11-16_s2b_design_check/")
-    ap.add_argument("--info-yaw-rate-pid", type=float, nargs=3, metavar=("P", "I", "D"), default=None,
-                    help="INFO only: also fly the default plant with these yaw-rate gains (labelled SIM-ONLY)")
+    ap.add_argument("--sim-only-gains", default=DEFAULT_SIM_ONLY_GAINS,
+                    help="the SIM-ONLY override file of the default physics drone (INFO rows; '' = none). Rules (a) "
+                         "and (b) always fly the drone's own gains")
     args = ap.parse_args(argv)
     out_dir = Path(args.out)
     out_dir = out_dir if out_dir.is_absolute() else ROOT / out_dir
@@ -321,8 +359,11 @@ def main(argv: list[str] | None = None) -> int:
                      f"{s['overshoot_pct']:.1f} | {s['peak_tilt_deg']:.2f} | {rr['t63_s'] * 1000:.0f} | "
                      f"{rr['overshoot_pct']:.1f} |")
     yaw_cut = Px4Cascade(1, 1, load_params().gains, 0.005, "cpu").yaw_cutoff_hz
-    lines += ["", f"INFO, yaw (not a gate). Yaw torque filter {yaw_cut:g} Hz unless marked off. Hover yaw = last 5 s "
-              f"of the hover above; yaw step = +{YAW_STEP_RAD} rad setpoint jump from hover, {YAW_STEP_S:g} s.",
+    lines.insert(0, f"Rules (a) and (b), and the two tables below them: {yaw_gains_text(load_params())}.")
+    lines.insert(1, "")
+    lines += ["", f"INFO, yaw (not a gate), {yaw_gains_text(load_params())}. Yaw torque filter {yaw_cut:g} Hz "
+              f"unless marked off. Hover yaw = last 5 s of the hover above; yaw step = +{YAW_STEP_RAD} rad setpoint "
+              f"jump from hover, {YAW_STEP_S:g} s.",
               "", "| geometry | motor lag | dt (s) | yaw filter | hover yaw std (deg) | hover yaw p2p (deg) | "
               "yaw step t63 (s) | yaw overshoot (deg) | yaw p2p after 5 s (deg) | yaw final error (deg) |",
               "|---|---|---|---|---|---|---|---|---|---|"]
@@ -337,11 +378,15 @@ def main(argv: list[str] | None = None) -> int:
               f"(limit {TILT_SPREAD_MAX_DEG}): {'FIRED -> BLOCKED' if rule_a else 'clear'}.",
               f"Rule (b) default dt RMS {rms['cad_lag']:.5f} m/s (limit {STEP_RMS_MAX_MPS}): "
               f"{'FIRED -> fallback_physics_dt_s' if rule_b else 'clear'}."]
-    options, option_lines = yaw_options(tuple(args.info_yaw_rate_pid) if args.info_yaw_rate_pid else None)
+    options, option_lines = yaw_options(args.sim_only_gains or None)
     lines += option_lines
+    default_rows, default_lines = default_drone_rows(args.sim_only_gains or None)
+    lines += default_lines
     (out_dir / "table.md").write_text("\n".join(lines) + "\n")
     (out_dir / "results.json").write_text(json.dumps(
-        {"rows": rows, "yaw_options": options, "yaw_filter_off_rows": no_filter, "yaw_cutoff_hz": yaw_cut, "dt_rms_mps": rms, "rule_a_fired": rule_a, "rule_b_fired": rule_b,
+        {"yaw_rate_gains_rules": yaw_gains_text(load_params()),
+         "yaw_rate_gains_default": yaw_gains_text(load_params(sim_only_gains=args.sim_only_gains or None)),
+         "default_drone_rows": default_rows, "rows": rows, "yaw_options": options, "yaw_filter_off_rows": no_filter, "yaw_cutoff_hz": yaw_cut, "dt_rms_mps": rms, "rule_a_fired": rule_a, "rule_b_fired": rule_b,
          "params_source": load_params().source}, indent=2) + "\n")
     print("\n".join(lines))
     return 3 if rule_a else (4 if rule_b else 0)

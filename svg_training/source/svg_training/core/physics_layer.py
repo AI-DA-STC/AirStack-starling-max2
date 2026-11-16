@@ -9,7 +9,8 @@ team's speed) goes through
    (``starling_layer.check_commander``, ``filter_pairs``, ``filter_kwargs``);
 2. ``models/physics_drone.PhysicsDrone``: PX4 1.14's cascade with the drone's own gains, the rotor model and a
    rigid-body world (``IsaacWorld`` or ``TorchRigidBodyWorld``), 10 physics steps per tick. Its parameters are
-   ``cfg.starling.physics_params`` with the ``[physics]`` table of ``configs/s2b.toml`` over them.
+   ``cfg.starling.physics_params`` with the ``[physics]`` table of ``configs/s2b.toml`` over them, then by default
+   the SIM-ONLY yaw-rate gains of ``cfg.starling.physics_sim_only_gains`` (owner's ruling, 16 November 2026).
 
 Pairs, out drones and walls follow ``StarlingLayer`` (S2 Task 4): the filter sees the live pairs only; a drone that
 is out is restarted at its (parked) position every step, at rest, with a fresh commander and cascade, and is
@@ -32,7 +33,7 @@ from torch import Tensor
 from svg_training.models.command_chain import CommandChain
 from svg_training.models.fitted import load_params
 from svg_training.models.physics_drone import PhysicsDrone
-from svg_training.models.physics_params import PhysicsParams, load_physics_params
+from svg_training.models.physics_params import PhysicsParams, apply_sim_only_gains, load_physics_params
 from svg_training.models.rigid_body import RigidBodyWorld
 
 from .game_config import GameCfg, load_s2b_gates
@@ -40,8 +41,11 @@ from .starling_layer import check_commander, filter_kwargs, filter_pairs, resolv
 
 
 def load_game_physics_params(cfg: GameCfg) -> PhysicsParams:
-    """The physics parameters of a game: ``cfg.starling.physics_params`` overridden by configs/s2b.toml [physics]."""
-    return load_physics_params(resolve_params(cfg.starling.physics_params), overrides=load_s2b_gates()["physics"])
+    """The physics parameters of a game: ``cfg.starling.physics_params`` overridden by configs/s2b.toml [physics],
+    then the SIM-ONLY gains of ``cfg.starling.physics_sim_only_gains`` ("" = the drone's own gains). The choice is in
+    ``params.source["yaw_rate_gains"]`` (``models.physics_params.yaw_gains_text`` prints it for records)."""
+    p = load_physics_params(resolve_params(cfg.starling.physics_params), overrides=load_s2b_gates()["physics"])
+    return apply_sim_only_gains(p, cfg.starling.physics_sim_only_gains)
 
 
 class PhysicsLayer:

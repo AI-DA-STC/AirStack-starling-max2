@@ -69,7 +69,8 @@ has it. Its source is not on this laptop; the form is taken from upstream commit
 yaw torque low pass filter (#24173)", co-authored by ModalAI, first released in v1.16.0 as ``MC_YAW_TQ_CUTOFF``:
 ``MulticopterRateControl::Run`` does ``torque_setpoint(2) = _output_lpf_yaw.update(torque_setpoint(2), dt)``, an
 ``AlphaFilter`` with ``setCutoffFreq(f)`` -> time constant ``1 / (2 pi f)``; 0 disables it. The filter state starts
-at 0 and is never reset in PX4; ``reset`` here sets it to 0 (a drone at rest has zero yaw torque).
+at 0 and is never reset in PX4; ``reset`` here sets it to 0 (a drone at rest has zero yaw torque). The cutoff is
+``Px4Gains.mc_yaw_cutoff``, copied from the drone's file into ``params/starling_physics_v0.toml`` (16 Nov).
 
 Nothing in ``Px4Cascade.step`` / ``rate_step`` / ``allocate`` reads a tensor on the host; constants are made on the
 device in ``__init__``.
@@ -88,9 +89,6 @@ FLT_EPSILON: float = 1.1920929e-07          # C's FLT_EPSILON, as PX4 uses it
 CA_ROTOR_CT: float = 6.5                    # CA_ROTOR0..3_CT in the drone's file (PX4 default); cancels in the
                                             # normalised mix, kept so the effectiveness matrix is PX4's own
 I_FACTOR_RATE_RAD_S: float = math.radians(400.0)   # rate_control.cpp updateIntegral
-# The drone's MC_YAW_CUTOFF (starling_1_indoor_params.params; note C). Used only while Px4Gains has no
-# ``mc_yaw_cutoff`` field (params/starling_physics_v0.toml predates fix round 1); tests check it against the file.
-MC_YAW_CUTOFF_HZ_DRONE: float = 15.0
 
 
 # ----------------------------------------------------------------------------------------------- ControlMath.cpp
@@ -295,7 +293,7 @@ class Px4Cascade:
     ``tilt_max_deg`` overrides ``MPC_TILTMAX_AIR`` (D11's INFO variant); ``dtype`` (default float32) is an
     addition to the plan's signature, as in ``TorchRigidBodyWorld``. ``yaw_torque_cutoff_hz`` (fix round 1) overrides
     the drone's ``MC_YAW_CUTOFF`` (note C) for the design check's INFO comparison; 0 disables the filter, None (the
-    default) uses the drone's value.
+    default) uses ``g.mc_yaw_cutoff``, the drone's value copied into the parameter file.
     """
 
     def __init__(self, n: int, m: int, g: Px4Gains, dt_s: float, device, tilt_max_deg: float | None = None,
@@ -340,8 +338,7 @@ class Px4Cascade:
         self._dgyro_alpha = dt_s / (dt_s + 1.0 / (2.0 * math.pi * g.imu_dgyro_cutoff)) \
             if 0.0 < g.imu_dgyro_cutoff < 0.5 / dt_s else 1.0
         # yaw torque low-pass (note C): AlphaFilter, 0 Hz disables it
-        yaw_cut = yaw_torque_cutoff_hz if yaw_torque_cutoff_hz is not None \
-            else getattr(g, "mc_yaw_cutoff", MC_YAW_CUTOFF_HZ_DRONE)
+        yaw_cut = yaw_torque_cutoff_hz if yaw_torque_cutoff_hz is not None else g.mc_yaw_cutoff
         self.yaw_cutoff_hz = yaw_cut
         self._yaw_tq_alpha = dt_s / (dt_s + 1.0 / (2.0 * math.pi * yaw_cut)) if yaw_cut > FLT_EPSILON else 1.0
         self.mix = allocation_matrix(g).to(dtype).to(self.device)              # [4, 6], once

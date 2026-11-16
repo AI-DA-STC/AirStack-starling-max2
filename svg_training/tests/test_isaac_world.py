@@ -51,8 +51,18 @@ def test_isaac_wrench_is_body_frame(smoke):               # body yawed 90 deg, +
     assert ay == pytest.approx(want, rel=0.02) and abs(ax) < 0.01 * want and abs(az) < 0.01 * want
 
 
-def test_isaac_open_loop_matches_torch(smoke):            # smoke version of gate (2)
+# Known gap, accepted: ledger T10 (records/2026-11-16_s2b_agreement_record.md) FAILED this gate, 1.15 mm against
+# 1.0 mm (this smoke: 1.067 mm). Owner's ruling, 16 November 2026: the FAIL stands in the ledger and is accepted,
+# because the gap comes from PhysX's GPU attitude integration (PhysX on the CPU: 0.021 mm) and the closed-loop gates
+# pass about 30 times inside. Strict: if the gap ever closes, this XPASSes, the run fails, and the mark must go.
+@pytest.mark.xfail(strict=True, raises=AssertionError,
+                   reason="T10 FAIL accepted by the owner 16 Nov 2026: PhysX GPU attitude integration, ~1.07-1.15 mm "
+                          "against the 1.0 mm open-loop gate; closed loop ~30x inside its gates")
+def test_isaac_open_loop_matches_torch(smoke):            # smoke version of gate (2), position part
     assert smoke["open_loop_pos_max_m"] <= GATES["open_loop_pos_max_m"]
+
+
+def test_isaac_open_loop_angle_and_nan(smoke):            # smoke version of gate (2), the parts that pass
     assert smoke["open_loop_angle_max_deg"] <= GATES["open_loop_angle_max_deg"]
     assert smoke["nan"] <= GATES["nan_max"]
 

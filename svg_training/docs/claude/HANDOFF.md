@@ -260,7 +260,6 @@ stay out of git; real flights of a contact policy should start with a virtual co
 | `docs/media/5v3_starling` clip and its README "known limit" line predate the wall fix (`bcae60b` < `17197a7`); regenerate or relabel | Claude | showing the clip outside the lab |
 | A pair mask in CMU's safety filter, so that a contact tag can fly at all; and a flight safety case for deliberate contact | owner + CMU (outside this folder) | any flight of a contact policy |
 | The zone's size and place in each world beyond S2 (S2 draws arena and zone sizes at random; partner zone ratio in the local file) | owner | S3 |
-| Licence of the construction-site asset (an Unreal Engine asset pack exported by the lab; no licence file found) | owner | before anything made from it leaves the lab |
 | What the real drone senses its surroundings with: a known map, or an on-board range sensor | owner | S3 |
 | Control level for contact tags: stay at velocity, or add a final-approach skill at thrust and body rates | owner | side quest (S2 trained nothing with tags) |
 | The real flight with planned pushes (NEAR-962; list: [../S1_RESULTS.md](../S1_RESULTS.md#what-the-owner-needs-to-do-next)); T5 shows the exploratory model rises too slowly | owner | the `real` parameter set's run of record |
@@ -274,6 +273,9 @@ stay out of git; real flights of a contact policy should start with a virtual co
 | A ROS 2 policy node inside the AirStack tree | owner (separate approval) | S5 |
 | Rotor positions for tier 2: sim CAD or the drone's parameters | owner | S4 |
 | Driver 595 with AirStack's Isaac Sim 5.1 | untested | any move to Isaac Lab 3.0 on a machine that also runs AirStack |
+
+**Closed 16 November 2026:** licence of the construction-site asset. The owner bought it from CGTrader. Rendered
+clips made from it may be committed; the asset files themselves never are.
 
 **Not verified** (carry these as doubts, not facts): every published throughput estimate for Isaac Lab (S0 measured
 ours: [../S0_RESULTS.md](../S0_RESULTS.md)); the

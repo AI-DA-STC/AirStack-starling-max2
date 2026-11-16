@@ -50,6 +50,8 @@ import traceback
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "source"))
 sys.path.insert(0, str(ROOT / "scripts"))
+# PyTorch-free. Default physics drone (owner's ruling, 16 Nov 2026): SIM-ONLY yaw-rate gains over the drone's own.
+from svg_training.models.physics_params import DEFAULT_SIM_ONLY_GAINS  # noqa: E402
 
 SMOKE_GAMES = 4
 HOVER_S = 2.0
@@ -66,6 +68,8 @@ LEAD_S = 0.5                               # hold before each closed-loop step
 FIRST_LINE = ("Simulator: observed in the training simulator (tier 2, Isaac Lab) against its PyTorch reference "
               "world; no real drone")
 FIGURE = ROOT / "docs" / "figures" / "s2b_agreement.png"
+# Runs before that ruling (T10) flew the drone's own yaw-rate gains and did not write meta["yaw_rate_gains"].
+TEN_YAW = "the drone's own (this run predates the owner's SIM-ONLY yaw ruling of 16 Nov 2026)"
 
 
 # --------------------------------------------------------------------------------------------- helpers (no Isaac)
@@ -169,13 +173,13 @@ def run(args, gates_cfg: dict) -> dict:
     from svg_training.compat import isaaclab_232 as isaac
     from svg_training.models.frames import quat_from_yaw_enu, quat_mul_wxyz, quat_wxyz_to_rotmat
     from svg_training.models.physics_drone import PhysicsDrone
-    from svg_training.models.physics_params import G_MPS2, load_physics_params
+    from svg_training.models.physics_params import G_MPS2, load_physics_drone_params, yaw_gains_text
     from svg_training.models.rigid_body import TorchRigidBodyWorld
     from svg_training.models.starling_airframe import body_wrench_flu
 
     t_start = time.time()
     agree, gates, phys = gates_cfg["agreement"], gates_cfg["agreement_gates"], gates_cfg["physics"]
-    p = load_physics_params(ROOT / phys["params"], overrides=phys)
+    p = load_physics_drone_params(ROOT / phys["params"], overrides=phys, sim_only_gains=args.sim_only_gains)
     a, dt = p.airframe, p.physics_dt_s
     n = SMOKE_GAMES if args.smoke else int(agree["games"])
     m = int(agree["drones_per_game"])
@@ -185,6 +189,7 @@ def run(args, gates_cfg: dict) -> dict:
     allm = torch.ones(n, m, dtype=torch.bool, device=dev)
     weight_n = a.mass_kg * G_MPS2
     res: dict = {"meta": {"games": n, "drones_per_game": m, "physics_dt_s": dt, "seed": int(agree["seed"]),
+                          "yaw_rate_gains": yaw_gains_text(p),
                           "smoke": bool(args.smoke), "device": str(dev), "motor_lag": p.motor_lag,
                           "rotor_geometry": p.rotor_geometry, "torch_gyro": "momentum_preserving"}}
     nan_total = 0
@@ -517,9 +522,10 @@ def write_record(name: str, res: dict, rows: list[dict], verdict: str, t_number:
              f"`[agreement_gates]`, copied to `runs/{name}/gates.toml` before the run.",
              f"- Physics: `{meta['params']}` (sha256 `{meta['params_sha256']}`), physics step {meta['physics_dt_s']} s, "
              f"plant rotor positions `{meta['rotor_geometry']}`, motor lag {'on' if meta['motor_lag'] else 'off'}.",
-             f"- Cascade: the drone's own PX4 gains, yaw torque filter {res.get('closed_loop', {}).get('yaw_torque_cutoff_hz')} Hz "
-             "(the drone's `MC_YAW_CUTOFF`), allocator saturation feedback on. The same cascade drives both worlds; "
-             "the yaw-gain question that is open with the owner does not change this comparison.",
+             f"- Cascade: the drone's own PX4 gains except the yaw-rate gains, which are "
+             f"{meta.get('yaw_rate_gains', TEN_YAW)}; yaw torque filter "
+             f"{res.get('closed_loop', {}).get('yaw_torque_cutoff_hz')} Hz (the drone's `MC_YAW_CUTOFF`), allocator "
+             "saturation feedback on. The same cascade drives both worlds.",
              f"- PyTorch world: `TorchRigidBodyWorld`, gyroscopic step `{meta['torch_gyro']}` (PhysX's own).",
              f"- PhysX solver type {bs['solver_type']} (Isaac Lab default, TGS); one `RigidObjectCollection` of all "
              "drone slots; wrench set as one body-frame force and torque per drone per physics step.",
@@ -630,6 +636,9 @@ def make_parser() -> argparse.ArgumentParser:
     ap.add_argument("--name", help="run name, e.g. 2026-11-16_s2b_agreement (full run)")
     ap.add_argument("--smoke", action="store_true", help="4 games, no closed loop, writes only --out")
     ap.add_argument("--out", help="smoke: where to write the JSON")
+    ap.add_argument("--sim-only-gains", default=DEFAULT_SIM_ONLY_GAINS,
+                    help="SIM-ONLY override file over the drone's gains (default: the owner's yaw-rate ruling of "
+                         "16 Nov 2026, as the game); '' = the drone's own gains (T10 flew those)")
     return ap
 
 

@@ -11,7 +11,7 @@ import pytest
 import torch
 
 from svg_training.models.physics_params import load_physics_params
-from svg_training.models.px4_cascade import (MC_YAW_CUTOFF_HZ_DRONE, Px4Cascade, allocate, allocation_matrix,
+from svg_training.models.px4_cascade import (Px4Cascade, allocate, allocation_matrix,
                                              bodyz_to_rotmat, constrain_xy, limit_tilt)
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -188,7 +188,7 @@ def test_cascade_reset_clears_integrators():
 def test_yaw_cutoff_is_the_drone_value():
     line = next(x for x in (ROOT.parent / "starling_1_indoor_params.params").read_text().splitlines()
                 if x.split("\t")[2:3] == ["MC_YAW_CUTOFF"])
-    assert float(line.split("\t")[3]) == MC_YAW_CUTOFF_HZ_DRONE == 15.0
+    assert float(line.split("\t")[3]) == G.mc_yaw_cutoff == 15.0          # copied into the parameter file
     assert Px4Cascade(1, 1, G, 0.005, "cpu").yaw_cutoff_hz == 15.0
 
 

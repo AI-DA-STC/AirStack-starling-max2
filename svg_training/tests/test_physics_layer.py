@@ -37,7 +37,8 @@ def physics(cfg=CFG, iterations=50, **extra):
     return starling(cfg, iterations, **{"starling.backend": "physics", **extra})
 
 
-PARAMS = load_game_physics_params(physics())
+PARAMS = load_game_physics_params(physics())     # the default physics drone: SIM-ONLY yaw-rate gains (16 Nov ruling)
+REAL_YAW = load_game_physics_params(physics(**{"starling.physics_sim_only_gains": ""}))   # the drone's own gains
 A = PARAMS.airframe
 
 
@@ -305,9 +306,9 @@ def test_game_passes_its_yaw_to_the_drone(monkeypatch):      # D8: setpoint = ga
     assert float(g.yaw.min()) == pytest.approx(3 * 0.5 * CFG.yaw_rate_max_rad_s * 0.05)
 
 
-def _yaw_step(motor_lag: bool) -> list[float]:
+def _yaw_step(motor_lag: bool, params=PARAMS) -> list[float]:
     """One drone, hover, yaw setpoint stepped 0 -> 0.3 rad (ENU, counter-clockwise), 10 s; heading every tick."""
-    p = dataclasses.replace(PARAMS, motor_lag=motor_lag)
+    p = dataclasses.replace(params, motor_lag=motor_lag)
     d = PhysicsDrone(world(1, 1), p, "cpu")
     d.reset(torch.ones(1, 1, dtype=torch.bool), torch.tensor([[[0.0, 0.0, 1.2]]]), torch.zeros(1, 1))
     out = []
@@ -323,16 +324,34 @@ def test_yaw_step_turns_the_right_way_motor_lag_off():
     assert all(abs(x - 0.3) < 0.01 for x in h[40:])                     # settled within 2 s, ENU sign right
 
 
-# OPEN (Task 4 finding, for Task 3's cascade; strict=False until the yaw work settles). With the drone's 55 / 85 ms
-# motor lag a 0.3 rad yaw step does not settle: on the working-tree cascade of 16 Nov (with the yaw torque low-pass)
-# the heading swings between 0.09 and 0.51 rad over 5-10 s (0.09-0.52 over 2-10 s). Seen at first (before the
-# low-pass): growing to -0.47 / 0.98 rad, rotors at u = 0, yaw-rate integrator at MC_YR_INT_LIM. Likely cause: PX4's
-# allocator-saturation feedback to the rate integrator is not ported. Motor lag off: settles at 0.300 +- 0.001.
-@pytest.mark.xfail(strict=False, raises=AssertionError,
-                   reason="OPEN: yaw limit cycle with motor lag on (see the comment above)")
-def test_yaw_step_settles_with_motor_lag():
-    h = _yaw_step(motor_lag=True)
-    assert all(abs(x - 0.3) < 0.05 for x in h[100:])
+# Owner's ruling, 16 November 2026: the physics drone flies the AirStack simulator's SIM-ONLY yaw-rate gains
+# (params/sim_only_yaw_v0.toml, CHG-0024); roll and pitch gains, the 15 Hz yaw torque filter and the motor lag stay
+# the drone's. Settle criterion, from the design check's numbers and this harness (0.3 rad step, heading per tick):
+# over 5-10 s the heading's peak to peak and its largest error are both under 0.5 deg. Measured 16 Nov: 0.014 deg
+# and 0.015 deg with motor lag on (0.005 / 0.005 deg with it off); the drone's own gains swing 23.9 deg.
+YAW_SETTLED_DEG = 0.5
+
+
+def test_yaw_step_settles_with_the_default_sim_only_yaw_gains():
+    assert PARAMS.source["yaw_rate_gains"]["file"] == "params/sim_only_yaw_v0.toml" and PARAMS.motor_lag
+    assert PARAMS.gains.mc_yaw_cutoff == REAL_YAW.gains.mc_yaw_cutoff == 15.0
+    late = _yaw_step(motor_lag=True)[100:]                               # 5-10 s
+    assert math.degrees(max(late) - min(late)) < YAW_SETTLED_DEG
+    assert math.degrees(max(abs(x - 0.3) for x in late)) < YAW_SETTLED_DEG
+
+
+# Expected behaviour, recorded (not a failure): with the drone's OWN yaw-rate gains, its 15 Hz yaw torque filter and
+# the 55 / 85 ms motor lag, the heading does not settle on this plant. S2b Task 3 fix rounds 1-2 and Task 4: a
+# steady swing (here 0.09-0.51 rad over 5-10 s, 23.9 deg peak to peak on 16 Nov) with tilt and position held; the
+# likely missing piece is the rotors' own inertia torque (not modelled). This is why the owner chose the sim-only
+# gains above. If this test starts failing, the plant or the cascade changed: tell the owner before relying on it.
+def test_yaw_step_with_the_drones_own_yaw_gains_does_not_settle():
+    assert REAL_YAW.source["yaw_rate_gains"] == "the drone's own gains (no sim-only override)"
+    assert (REAL_YAW.gains.mc_yawrate_p, REAL_YAW.gains.mc_yawrate_i) != (PARAMS.gains.mc_yawrate_p,
+                                                                          PARAMS.gains.mc_yawrate_i)
+    late = _yaw_step(motor_lag=True, params=REAL_YAW)[100:]
+    assert math.degrees(max(late) - min(late)) > 10 * YAW_SETTLED_DEG    # a swing, not settling
+    assert all(math.isfinite(x) for x in late)
 
 
 def test_game_tick_matches_the_physics_drone():

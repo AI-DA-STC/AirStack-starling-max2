@@ -8,14 +8,15 @@
 # (10.40.2.10). 0.5 m/s, CBF r 0.55 (keep-out 1.10 m).
 #
 # TAKEOFF POINTS = the far ends of the eight (hover_positions unused):
-#   drone_1 (+2.15, +3.0, 2.3)   drone_2 (+2.15, -3.0, 2.3)   6.0 m apart, nose +x
+#   drone_1 (+1.5, +3.0, 2.3)   drone_2 (+1.5, -3.0, 2.3)   6.0 m apart, nose +x
 # Takeoff flies a straight line to them: stand each drone under its point.
 # Geofence in THIS file: x +-3.25, y +-3.75, z 0..4.5 m (other files 6.5 x 6.5 x 4).
 #
-# Offline check with CMU's scenario + cbf_filter (first-order lag 0.15 s,
-# 180 s): closest 1.10 m, never one above the other, drones within
-# y -3.02..3.02, z 0.78..3.84, x 2.15, no emergency push-apart. Needs the
-# net and mocap tracking up to ~4 m. NOT FLOWN.
+# Offline check from THIS file (CMU's scenario + cbf_filter, first-order lag
+# 0.15 s, 180 s): closest 1.10 m, never one above the other, 18 loop swaps
+# (a true shared eight), drones within x 0.18..2.82, y -3.02..3.02,
+# z 1.54..3.06, at most 1.28 m off the eight, inside the geofence, no
+# emergency push-apart. NOT FLOWN.
 #
 #   ros2 launch svg_ground_control ground_control.launch.py \
 #     config:=/root/AirStack/robot/ros_ws/src/svg_ground_control/config/figure_eight_two_ours.yaml \
@@ -31,21 +32,21 @@ swarm_commander:
 
     scenario: "figure_eight"
     # CMU's figure-eight with TWO drones (patch 0008: no intruder slot).
-    # CMU's size (owner 2026-11-16, CHG-0078): radius 1.5 m, centres 3.0 m
-    # apart (as CMU's figure_eight_rc_intruder.yaml), axis -90 deg (along -y:
-    # drone_1 starts at +y, drone_2 at -y), centre (2.15, 0, 2.3).
-    # VERTICAL (tilt 90): the eight stands in the y-z plane, 6.0 m long,
-    # 3.0 m tall, z 0.8..3.8 m. Takeoff points = far ends, at 2.3 m.
-    # senses [1,1] (SAME direction, a side-by-side merge), NOT CMU's head-on
-    # [1,-1]: in a vertical eight head-on meets one drone coming down onto
-    # the other (offline: stacked 73 s of 180 s, downwash). [1,1]: never.
+    # CMU's setup (owner 2026-11-16, CHG-0079), as figure_eight_rc_intruder.yaml:
+    # radius 1.5 m, centres 3.0 m apart, plane TILTED 30 deg, the two drones
+    # running the eight in OPPOSITE directions (head-on at the crossing),
+    # both flying the whole eight and swapping loops there. Axis -90 (along
+    # -y: drone_1 starts at +y), centre (1.5, 0, 2.3): the 30 deg tilt makes
+    # the eight 2.6 m wide in x (0.2..2.8) and 1.5 m tall (z 1.55..3.05).
+    # (A vertical eight was tried first: head-on stacked the drones one above
+    # the other, same-direction never swapped loops. 30 deg: neither.)
     # 0.5 m/s (CMU flew 2.0): one eight 37.7 s, meeting every 18.8 s.
-    figure_eight_center: [2.15, 0.0, 2.3]
+    figure_eight_center: [1.5, 0.0, 2.3]
     figure_eight_radius_m: 1.5
     figure_eight_center_distance_m: 3.0
     figure_eight_axis_deg: -90.0
-    figure_eight_tilt_deg: 90.0
-    figure_eight_senses: [1.0, 1.0]
+    figure_eight_tilt_deg: -30.0
+    figure_eight_senses: [1.0, -1.0]
     figure_eight_track_gain: 1.0
     figure_eight_intruder_start: [0.0, 0.0, 2.0]   # unused with two drones
     figure_eight_intruder_cbf_exempt: true          # unused with two drones

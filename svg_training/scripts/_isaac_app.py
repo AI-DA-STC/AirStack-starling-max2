@@ -6,7 +6,9 @@
     from svg_training.compat import isaaclab_232 as isaac       # only after this point
 
 ``start_headless`` adds Isaac Lab's launcher arguments, parses the command line, refuses (exit 2, one line on stderr)
-when ``--headless`` is missing, and starts the app. Run the network and GPU check first:
+when ``--headless`` is missing (unless ``--windowed`` is given), and starts the app. ``--windowed`` opens the Isaac Sim
+window instead, for screenshots only (owner's approval, 16 November 2026: "u can allow window launches"); run
+``scripts/isaac_preflight.sh --approved-windowed`` before it. Run the network and GPU check first:
 ``scripts/isaac_preflight.sh``. Leave a script with ``os._exit`` after flushing, never ``simulation_app.close()``
 (Kit's shutdown spins in the container and swallows exit codes; S0, the S2b spike).
 """
@@ -20,14 +22,25 @@ def start_headless(parser: argparse.ArgumentParser, cameras: bool = False) -> tu
     """Parse the command line with Isaac Lab's launcher arguments and start Isaac Sim headless.
 
     cameras: also turn on off-screen rendering (``--enable_cameras``), for videos (Task 6).
-    Returns (args, simulation_app). Exits 2 without starting anything when ``--headless`` is missing.
+    Returns (args, simulation_app). Exits 2 without starting anything when neither ``--headless`` nor ``--windowed``
+    is given, or both are.
     """
     from isaaclab.app import AppLauncher   # importing the launcher starts nothing
 
     AppLauncher.add_app_launcher_args(parser)
+    parser.add_argument("--windowed", action="store_true",
+                        help="open the Isaac Sim window instead of --headless: screenshots only (owner's approval, "
+                             "16 Nov 2026); never a run of record")
     args = parser.parse_args()
-    if not args.headless:
-        print("refused: run with --headless (S2b plan: every Isaac launch is headless)", file=sys.stderr)
+    if args.windowed and args.headless:
+        print("refused: give --headless or --windowed, not both", file=sys.stderr)
+        sys.stderr.flush()
+        raise SystemExit(2)
+    if args.windowed:
+        print("WINDOWED: the Isaac Sim window opens (screenshots only; owner's approval, 16 Nov 2026)", flush=True)
+    elif not args.headless:
+        print("refused: run with --headless (S2b plan: every Isaac launch is headless; --windowed for screenshots)",
+              file=sys.stderr)
         sys.stderr.flush()
         raise SystemExit(2)
     if cameras:

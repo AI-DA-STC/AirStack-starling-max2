@@ -2,11 +2,31 @@
 
 > **How to use this file.** Read it at the start of a session, after [../../CLAUDE.md](../../CLAUDE.md).
 > §4 is the current state, §5 is what is waiting on people. Update both before you stop.
-> Last updated: 17 November 2026, ~05:30 (S2b Tasks 1–8 done (T13 FAIL, over/under passing), 9 Isaac seeds running, 10 docs being written, 8b deferred; see §0 S2b line). Before: ~03:00. Earlier: 16 November morning (**S2 CLOSED**: final whole-stage review done on Opus, one fix wave 4d0d409, wording c218cbb; owner ruled A and B; S2b plan approved and ready to start).
+> Last updated: 17 November 2026, ~07:00 (morning summary in §0). Before: ~05:30 (S2b Tasks 1–8 done (T13 FAIL, over/under passing), 9 Isaac seeds running, 10 docs being written, 8b deferred; see §0 S2b line). Before: ~03:00. Earlier: 16 November morning (**S2 CLOSED**: final whole-stage review done on Opus, one fix wave 4d0d409, wording c218cbb; owner ruled A and B; S2b plan approved and ready to start).
 
 ## 0. Resume here (for a new session or another Claude account)
 
 Everything needed is in this folder; nothing depends on the previous chat.
+
+### Morning summary, 17 November 2026 (for the owner)
+
+**Done overnight (all observed in the training simulator; nothing flown):** S2b Tasks 1–9 built and reviewed, Task 10
+results page [../S2B_RESULTS.md](../S2B_RESULTS.md) (linked from the root README). Ledger: T13 scripted games on both
+backends **FAIL** (Strike drones pass over/under Guards on the physics drone; your option (a)); T14 stand-in on Isaac
+drones **FAIL** (seeds 1–2 hold 0 % v straight Strike, 7–13 % v flank; seed 3 queued for the 5090, §5a). 5090 port kit
+(`scripts/workstation/`, [../WORKSTATION_SETUP.md](../WORKSTATION_SETUP.md)) and the private bundle `~/svg_workstation_bundle/`. Five live screenshots of the Isaac Sim window (four worlds + the stand-in
+trainer running) in [../media/README.md](../media/README.md); new opt-in `--windowed` launch option (headless stays default; WiFi survived).
+
+**Waiting on you, most important first:**
+
+1. **Push `main`** from GitHub Desktop before you port (the 5090 clones from GitHub; ~310 commits ahead, ~45 MB of clips and figures).
+2. **The stand-in does not learn on the physics drone.** Pick the next step: (a) a tier-1 control run to find the cause, (b) a different learner or a curriculum, (c) Guards with a height-covering reward. Lead suggests (a) first, on the 5090.
+3. **Confirm `[standin_v2]`** (initial log std −1.6, frozen noise on reward-free axes, 100 M game-steps per seed): taken as approved from "Issac drone runs, if possible"; you have not confirmed the table itself.
+4. **T13 hold-rate gate**: FAIL by design after option (a). Re-scope that gate for later stages, or keep it as a standing record of the 2-D/3-D gap?
+5. **Undiagnosed**: in 4 random-Guard cells the physics drones come 0.12–0.23 m closer than tier 1; stand-in and scripted Guards reach ~0.95 m in 3-D (under the 1.10 m keep-out). Diagnose next session?
+6. **NUS**: their JAX reference results are in `~/nus_jax_reference/` (Guard best 0.999, Strike 1.000 against scripted opponents; full self-play needs the 5090). The agent's REPORT.md write was refused — say "save it" if you want it written. Slack draft in the chat.
+7. **5090 settings (PROPOSED)**: JAX memory fraction 0.60; a larger S0 config for 32 GB needs your approval (STANDARDS §7).
+8. **Deferred by the lead**: Task 8b (registered Isaac Lab task) and the S2b final review (gatekeeper, drone dynamics, Isaac Lab engineer) — next session; two small trainer fixes (M7/M8 in `runs/sdd/s2b/task-9-isaac-review.md`).
 
 **Where it stands.** S0 and S1 are closed. **S2 is CLOSED (16 November): every task reviewed, the final
 whole-stage review done (no Critical), its single fix wave applied and re-reviewed** (review notes: `runs/sdd/s2/`). Nothing has been trained. S2's results, with figures:

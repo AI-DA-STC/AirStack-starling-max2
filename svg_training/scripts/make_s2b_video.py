@@ -516,7 +516,8 @@ def main() -> int:
     except KeyError as e:
         print(e, file=sys.stderr)
         return 2
-    pre = subprocess.run(["bash", str(ROOT / "scripts" / "isaac_preflight.sh"), "--approved-headless"],
+    approval = "--approved-windowed" if "--windowed" in sys.argv[1:] else "--approved-headless"   # screenshots only
+    pre = subprocess.run(["bash", str(ROOT / "scripts" / "isaac_preflight.sh"), approval],
                          capture_output=True, text=True)
     print(pre.stdout[-1500:], flush=True)
     work = _path(ap.parse_known_args()[0].work) / ap.parse_known_args()[0].clip

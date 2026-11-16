@@ -196,6 +196,9 @@ class IsaacWorld:
             _add_drone_visuals(list(self.scene.env_prim_paths), drones, visual, slot_rgb, starling_usd,
                                marker_radius_m)
         self._ready = False
+        # an app with a window (--windowed, screenshots only) is refreshed once per game tick; headless never
+        self._gui_every = round(TICK_S / physics_dt_s) if sim.has_gui() else 0
+        self._gui_steps = 0
 
     # ------------------------------------------------------------------------------------------- after play
     def _after_play(self) -> None:
@@ -327,6 +330,12 @@ class IsaacWorld:
         self.sim.step(render=False)
         self.scene.update(dt=self.dt_s)
         self._refresh()
+        if self._gui_every:                                    # --windowed only: keep the window's viewport live
+            self._gui_steps += 1
+            if self._gui_steps % self._gui_every == 0:
+                if self._gui_steps == self._gui_every:
+                    _close_popup_windows()
+                self.sim.render()
 
     def state(self) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         """pos_m [N, M, 3] (game-relative ENU), quat_wxyz [N, M, 4], lin_vel_w [N, M, 3] (ENU), ang_vel_b [N, M, 3]
@@ -351,6 +360,30 @@ def physics_play(sim, world: IsaacWorld, rel_err_max: float | None = 1.0e-4) -> 
     if not (m_err <= rel_err_max and i_err <= rel_err_max) or math.isnan(m_err + i_err):
         raise RuntimeError(f"PhysX holds a different body: mass rel err {m_err:.3g}, inertia rel err {i_err:.3g} "
                            f"(limit {rel_err_max:g})")
+
+
+def _close_popup_windows(titles: tuple[str, ...] = ("Simulation Settings",)) -> None:
+    """--windowed only: hide Kit's start-up pop-up windows that cover the viewport (UI only)."""
+    import omni.ui as ui
+
+    for t in titles:
+        w = ui.Workspace.get_window(t)
+        if w is not None:
+            w.visible = False
+
+
+def windowed_world(sim, num_games: int, drones: int, a: AirframeParams, physics_dt_s: float, starling_usd: str,
+                   guards: int = 2) -> IsaacWorld:
+    """--windowed only (screenshots): an IsaacWorld drawn with the Starling model (first ``guards`` slots blue,
+    the rest orange), lights, a floor and the window's camera on game 0. Same physics bodies as the plain world."""
+    rgb = [(0.0, 114 / 255, 178 / 255)] * guards + [(240 / 255, 95 / 255, 0.0)] * (drones - guards)
+    spawn_world_lights(sun=True)
+    spawn_floor()
+    world = IsaacWorld(sim, num_games, drones, a, physics_dt_s, visual="starling", slot_rgb=rgb,
+                       starling_usd=starling_usd, marker_radius_m=0.12)
+    o = [float(v) for v in world.scene.env_origins[0].tolist()]
+    sim.set_camera_view((o[0] - 7.0, o[1] - 7.0, o[2] + 6.0), (o[0], o[1], o[2] + 1.5))
+    return world
 
 
 # =====================================================================================================================

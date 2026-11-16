@@ -52,3 +52,15 @@ Still frames (PNG, 1280 x 720, caption burnt in), taken while the clip named was
 | `s2b_still_5v3_site_wide.png` | A 5 v 3 game in the construction-site world, wide view from further back, 6 s into the game. Backdrop only: the drones do not see or avoid the buildings. | `s2b_5v3_site` |
 | `s2b_still_starlings_close.png` | Close view of Guard-team Starlings (blue balls) over the zone, 3 s into the same game. Rendered drone model, not a photo. | `s2b_5v3_site` |
 | `s2b_still_5v3_props.png` | The props clip's camera, 5 s in: blocks and columns for show only; the drones do not see or avoid them. | `s2b_5v3_props` |
+
+## Live screenshots of the Isaac Sim window (S2b, 17 November 2026)
+
+The real Isaac Sim 5.1.0 window on the laptop, with the app's own panels, taken while games or the stand-in trainer ran (launched with `--windowed`; runs of record stay headless). Pictures only: no gates, no ledger row. How they were made: the opt-in `--windowed` option of `scripts/make_s2b_video.py` and `scripts/train_standin.py`, window grabbed with ImageMagick `import`.
+
+| Screenshot | Caption |
+|---|---|
+| [s2b_live_lab_arena.png](s2b_live_lab_arena.png) | Isaac Sim window, training simulator: 5 Guard drones (blue balls) v 3 Strike drones (orange balls) on rigid-body Starlings in a lab-size arena. Scripted strategies, early in a game; the green disc is the zone. A screenshot of the simulator, not a flight. |
+| [s2b_live_large_arena.png](s2b_live_large_arena.png) | Isaac Sim window, training simulator: 2 Guard drones v 1 Strike drone in the large arena. Same Starling drones and game rules as the smaller arenas, only the space is bigger. Scripted strategies; a screenshot, not a flight. |
+| [s2b_live_props.png](s2b_live_props.png) | Isaac Sim window, training simulator: 5 v 3 among blocks and columns placed at random. The props are for show only: the game has no obstacles yet, so the drones neither see nor avoid them. Scripted strategies; not a flight. |
+| [s2b_live_construction_site.png](s2b_live_construction_site.png) | Isaac Sim window, training simulator: 5 v 3 on an open patch of the construction-site world, used as a backdrop only. The drones do not see or avoid the buildings. Scripted strategies; a screenshot, not a flight. |
+| [s2b_live_standin_training.png](s2b_live_standin_training.png) | Isaac Sim window, training simulator, while the stand-in trainer runs: the first of 8 games, 2 Guard drones learning against 1 scripted Strike drone. A short pipe-test run stopped after a few minutes; nothing was learned and it is not a strategy. Not a flight. |

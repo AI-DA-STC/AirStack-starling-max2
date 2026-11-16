@@ -67,6 +67,8 @@ pictures, not measurements: no gates and no ledger row. How they are made and ch
 Two more stills: [Guard-team Starlings over the zone, close up](media/s2b_still_starlings_close.png) and
 [the props clip's camera](media/s2b_still_5v3_props.png). Every clip uses the SIM-ONLY yaw-rate gains.
 
+**Live screenshots.** Five screenshots of the real Isaac Sim window (four worlds and the stand-in trainer running) are in [media/README](media/README.md#live-screenshots-of-the-isaac-sim-window-s2b-17-november-2026), for example [the construction-site backdrop](media/s2b_live_construction_site.png).
+
 ## What the runs showed
 
 ### 1. Do Isaac Lab and the PyTorch reference world move the drones the same way? (T10): FAIL, accepted

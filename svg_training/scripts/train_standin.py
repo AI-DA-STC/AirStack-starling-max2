@@ -919,9 +919,17 @@ def _isaac_world_factory(n: int, m: int, params, device: str):
     """IsaacWorld of n games x m drones (Isaac Sim already started by __main__)."""
     from svg_training.compat import isaaclab_232 as isaac
     sim = isaac.make_physics_sim(params.physics_dt_s, device)
-    world = isaac.IsaacWorld(sim, n, m, params.airframe, params.physics_dt_s)
+    if "--windowed" not in sys.argv[1:]:
+        world = isaac.IsaacWorld(sim, n, m, params.airframe, params.physics_dt_s)
+    else:                                          # screenshots only: Starling look, lights, floor, view on game 0
+        world = isaac.windowed_world(sim, n, m, params.airframe, params.physics_dt_s, str(WINDOW_STARLING_USD))
     isaac.physics_play(sim, world)                 # starts PhysX, writes the inertia, checks the read-back
     return world
+
+
+# --windowed only: the AirStack Starling model, read-only (as scripts/make_s2b_video.py)
+WINDOW_STARLING_USD = (pathlib.Path(__file__).resolve().parents[1] / ".." / "AirStack" / "simulation" / "isaac-sim"
+                       / "assets" / "robots" / "starling2max.usd").resolve()
 
 
 def _main_cli() -> int:
@@ -931,7 +939,7 @@ def _main_cli() -> int:
     if sys.argv[1:2] == ["verdict"] or known.motion != "physics":
         return main()
     # physics: Isaac Lab, headless only (S2b plan), started before torch is imported
-    if "--headless" not in sys.argv[1:]:
+    if "--headless" not in sys.argv[1:] and "--windowed" not in sys.argv[1:]:   # --windowed: screenshots only
         print("refused: --motion physics runs Isaac Lab: add --headless (after "
               "scripts/isaac_preflight.sh)", file=sys.stderr)
         return 2

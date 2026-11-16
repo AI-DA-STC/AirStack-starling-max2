@@ -6,6 +6,8 @@
   make_s2b_figures.py steps <out.png> runs/<step-test run>                      (Task 7, s2b_steps.png)
   make_s2b_figures.py real_replay <out.png> runs/<step-test run>                (Task 7, s2b_real_replay.png)
   make_s2b_figures.py throughput <out.png> runs/<run>/results.jsonl [S0 results.jsonl]   (Task 7, s2b_throughput.png)
+  make_s2b_figures.py scripted_compare <out.png> runs/<compare run>            (Task 8, s2b_scripted_compare.png)
+  make_s2b_figures.py vertical_pass <out.png> runs/<compare run>               (Task 8, s2b_scripted_compare_vertical.png)
 
 ``standin``: the stand-in's learning curves, read from each run folder's TensorBoard event files with
 TensorBoard's own ``EventAccumulator`` (the same numbers the TensorBoard web page shows; this is how the
@@ -14,6 +16,14 @@ x = game-steps (skrl timestep x the run's num_games from interface.toml).
 ``standin_bars``: the gate evaluation: hold rate with Wilson 95 % intervals per Strike behaviour for the trained
 stand-in (each seed; the gate is per seed), random Guard moves and ``guard_mark_edge`` (if scored; these two summed over the seeds' evaluations), summed over the bands, read from
 verdict.json (``train_standin.py verdict``) and the score.py outputs.
+
+``scripted_compare``: paired scripted games, hold rate with Wilson 95 % intervals per band for the tier 1 Starling
+layer and the physics drone side by side; one panel per size x Strike behaviour; colour = Guard strategy, open circle
+= tier 1, filled square = physics drone. Read from ``compare_backends.py``'s compare.json.
+``vertical_pass``: per cell, the share of games in which a Guard and a Strike drone passed one over the other
+(closest horizontal approach under 0.55 m while the closest 3-D approach stayed at or above 1.0 m, so the two were at
+least 0.84 m apart in height at that moment), tier 1 against the physics drone. Read from the score folders that
+compare.json names (per_game.npz).
 
 Every value plotted is read from the run's own files as written; nothing is smoothed or fitted. Style and palette:
 ``scripts/make_s0_figures.py``. Each function prints the table it plotted.
@@ -296,8 +306,138 @@ def throughput(out: str, results_jsonl: str, s0_results: str | None = None, line
     print(f"wrote {out}")
 
 
+SC_BANDS = ("lab", "middle", "large")
+SC_BAND_LABEL = {"lab": "lab\n4–6 m", "middle": "middle\n6–10 m", "large": "large\n10–16 m"}
+
+
+def scripted_compare(out: str, compare_dir: str) -> None:
+    """Task 8: hold rate (Wilson 95 %) per band, tier 1 against the physics drone, one panel per size x Strike."""
+    from matplotlib.lines import Line2D
+
+    res = json.loads((pathlib.Path(compare_dir) / "compare.json").read_text())
+    cells = res["cells"]
+    sizes = list(dict.fromkeys(c["size"] for c in cells))
+    strikes = list(dict.fromkeys(c["strike"] for c in cells))
+    guards = list(dict.fromkeys(c["guard"] for c in cells))
+    fig, axes = plt.subplots(len(sizes), len(strikes), figsize=(13, 4.6 * len(sizes)), dpi=150, sharey=True,
+                             squeeze=False)
+    width = 0.84
+    slot = width / len(guards)
+    print("| size | Strike | Guard | band | tier 1 hold | physics hold | gap |\n|---|---|---|---|---|---|---|")
+    for i, size in enumerate(sizes):
+        for k, strike in enumerate(strikes):
+            ax = axes[i, k]
+            for gi, g in enumerate(guards):
+                colour = SERIES[gi % len(SERIES)]
+                for side, dx, marker, face in (("tier1", -0.22, "o", "white"), ("physics", 0.22, "s", colour)):
+                    xs, ys, lo, hi = [], [], [], []
+                    for bi, band in enumerate(SC_BANDS):
+                        c = next((c for c in cells if (c["size"], c["strike"], c["guard"], c["band"])
+                                  == (size, strike, g, band)), None)
+                        if c is None or c[side]["hold_rate"] is None:
+                            continue
+                        r = c[side]
+                        xs.append(bi - width / 2 + slot * (gi + 0.5) + dx * slot)
+                        ys.append(100 * r["hold_rate"])
+                        lo.append(100 * (r["hold_rate"] - r["ci_low"]))
+                        hi.append(100 * (r["ci_high"] - r["hold_rate"]))
+                        if side == "physics":
+                            print(f"| {size} | {strike} | {g} | {band} | {100 * c['tier1']['hold_rate']:.1f} | "
+                                  f"{100 * r['hold_rate']:.1f} | {100 * c['hold_gap']:+.1f} |")
+                    ax.errorbar(xs, ys, yerr=[lo, hi], fmt=marker, color=colour, markersize=5, capsize=1.5,
+                                linewidth=1.0, markerfacecolor=face)
+            for bi in range(1, len(SC_BANDS)):
+                ax.axvline(bi - 0.5, color=INK2, linewidth=0.6, alpha=0.4)
+            ax.set_xticks(range(len(SC_BANDS)), [SC_BAND_LABEL[b] for b in SC_BANDS])
+            ax.set_ylim(-3, 103)
+            style(ax, f"{size[0]} Guard v {size[-1]} Strike, {BEHAVIOUR_LABEL.get(strike, strike)} Strike",
+                  "arena size band", "hold rate, % of games (95 % interval)" if k == 0 else "")
+    handles = [Line2D([], [], color=SERIES[i % len(SERIES)], marker="s", linestyle="", label=f"Guard: {g}")
+               for i, g in enumerate(guards)]
+    handles += [Line2D([], [], color=INK2, marker="o", markerfacecolor="white", linestyle="",
+                       label="tier 1 Starling layer"),
+                Line2D([], [], color=INK2, marker="s", linestyle="", label="physics drone (Isaac Lab)")]
+    fig.legend(handles=handles, loc="lower center", ncol=4, frameon=False, fontsize=9, labelcolor=INK)
+    fig.suptitle(f"Paired scripted games, physics drone v tier 1: {res['verdict']}; observed in the training "
+                 "simulator", x=0.01, ha="left", fontsize=13, color=INK)
+    fig.tight_layout(rect=(0, 0.07, 1, 1))
+    fig.savefig(out)
+    plt.close(fig)
+    print(f"wrote {out}")
+
+
+PASS_HORIZ_M, PASS_3D_M = 0.55, 1.0      # vertical_pass: horizontal < 0.55 m while 3-D >= 1.0 m -> >= 0.84 m apart in z
+
+
+def vertical_pass(out: str, compare_dir: str) -> None:
+    """Task 8: share of games with a Guard-Strike pair passing one over the other, tier 1 v physics, per cell."""
+    import numpy as np
+    from matplotlib.lines import Line2D
+
+    res = json.loads((pathlib.Path(compare_dir) / "compare.json").read_text())
+    root = pathlib.Path(__file__).resolve().parents[1]
+    sides = {}
+    for side, key in (("tier1", "a"), ("physics", "b")):
+        pg = {}
+        for d in res["meta"][key]:
+            d = pathlib.Path(d)
+            with np.load((d if d.is_absolute() else root / d) / "per_game.npz") as z:
+                pg.update({k: z[k] for k in z.files})
+        sides[side] = (res["preset_a"] if side == "tier1" else res["preset_b"], pg)
+    cells = res["cells"]
+    sizes = list(dict.fromkeys(c["size"] for c in cells))
+    strikes = list(dict.fromkeys(c["strike"] for c in cells))
+    guards = list(dict.fromkeys(c["guard"] for c in cells))
+    fig, axes = plt.subplots(len(sizes), len(strikes), figsize=(13, 4.4 * len(sizes)), dpi=150, sharey=True,
+                             squeeze=False)
+    width = 0.84
+    slot = width / len(guards)
+    print("| size | Strike | Guard | band | tier 1 share | physics share |\n|---|---|---|---|---|---|")
+    for i, size in enumerate(sizes):
+        for k, strike in enumerate(strikes):
+            ax = axes[i, k]
+            for gi, g in enumerate(guards):
+                colour = SERIES[gi % len(SERIES)]
+                for bi, band in enumerate(SC_BANDS):
+                    share = {}
+                    for side, (preset, pg) in sides.items():
+                        key = f"{preset}|{size}|{g}|{strike}|{band}"
+                        if f"{key}|outcome" not in pg:
+                            continue
+                        fin = pg[f"{key}|outcome"] != 0
+                        hz, c3 = pg[f"{key}|closest_cross_m"][fin], pg[f"{key}|closest_cross_3d_m"][fin]
+                        share[side] = float(((hz < PASS_HORIZ_M) & (c3 >= PASS_3D_M)).mean()) if fin.any() else None
+                    x = bi - width / 2 + slot * (gi + 0.5)
+                    if share.get("physics") is not None:
+                        ax.bar(x, 100 * share["physics"], width=slot * 0.8, color=colour)
+                    if share.get("tier1") is not None:
+                        ax.plot(x, 100 * share["tier1"], marker="o", color=INK, markerfacecolor="white",
+                                markersize=5, linestyle="")
+                    print(f"| {size} | {strike} | {g} | {band} | {share.get('tier1', float('nan')):.3f} | "
+                          f"{share.get('physics', float('nan')):.3f} |")
+            for bi in range(1, len(SC_BANDS)):
+                ax.axvline(bi - 0.5, color=INK2, linewidth=0.6, alpha=0.4)
+            ax.set_xticks(range(len(SC_BANDS)), [SC_BAND_LABEL[b] for b in SC_BANDS])
+            ax.set_ylim(0, 102)
+            style(ax, f"{size[0]} Guard v {size[-1]} Strike, {BEHAVIOUR_LABEL.get(strike, strike)} Strike",
+                  "arena size band", "games with an over/under pass, %" if k == 0 else "")
+    handles = [Line2D([], [], color=SERIES[i % len(SERIES)], marker="s", linestyle="", label=f"Guard: {g}")
+               for i, g in enumerate(guards)]
+    handles += [Line2D([], [], color=INK2, marker="s", linestyle="", label="bar: physics drone (Isaac Lab)"),
+                Line2D([], [], color=INK, marker="o", markerfacecolor="white", linestyle="",
+                       label="circle: tier 1 Starling layer")]
+    fig.legend(handles=handles, loc="lower center", ncol=4, frameon=False, fontsize=9, labelcolor=INK)
+    fig.suptitle("Guard and Strike drones passing one over the other (>= 0.84 m apart in height); observed in the "
+                 "training simulator", x=0.01, ha="left", fontsize=13, color=INK)
+    fig.tight_layout(rect=(0, 0.07, 1, 1))
+    fig.savefig(out)
+    plt.close(fig)
+    print(f"wrote {out}")
+
+
 FIGURES = {"standin": standin, "standin_bars": standin_bars, "steps": steps, "real_replay": real_replay,
-           "throughput": throughput}
+           "throughput": throughput, "scripted_compare": scripted_compare,
+           "vertical_pass": vertical_pass}
 
 
 def main(argv: list[str] | None = None) -> int:

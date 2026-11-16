@@ -27,7 +27,11 @@ class MatchResult:
     start_miss [N] bool (the game's starts could not meet the spacing / keep-out). steps_played: steps the loop
     ran (all N games step every time, so N x steps_played game-steps were simulated). nonfinite_actions [N] long
     (drone-steps of the slot's first game whose action held NaN or inf: the game commanded them zero; a scorer must
-    refuse a result where this is not all zero; None only for a result built by hand)."""
+    refuse a result where this is not all zero; None only for a result built by hand).
+    S2b (Task 8), None only for a result built by hand: upset [N] bool (physics backend: a live drone of the slot's first
+    game tipped past 60 deg or turned non-finite; all False on the other backends); start_pos_m [N, M, 3] (where the
+    slot's first game started, m, game frame) and arena_m [N, 4] (its arena: half side, zone centre x, zone centre y,
+    zone radius, m): the draws that make paired games comparable across backends (D15)."""
     outcome: Tensor
     end_step: Tensor
     band: Tensor
@@ -38,13 +42,17 @@ class MatchResult:
     start_miss: Tensor
     steps_played: int = 0
     nonfinite_actions: Tensor | None = None
+    upset: Tensor | None = None
+    start_pos_m: Tensor | None = None
+    arena_m: Tensor | None = None
 
     def slice(self, sl: slice) -> "MatchResult":
         """The games in sl (e.g. one strategy pair's share of a packed batch)."""
         return MatchResult(self.outcome[sl], self.end_step[sl], self.band[sl], self.closest_cross_m[sl],
                            self.closest_cross_3d_m[sl], self.rule_breach[sl], self.filter_corrected_rate[sl], self.start_miss[sl],
                            self.steps_played,
-                           None if self.nonfinite_actions is None else self.nonfinite_actions[sl])
+                           *(None if t is None else t[sl] for t in (self.nonfinite_actions, self.upset,
+                                                                    self.start_pos_m, self.arena_m)))
 
 
 def play_match(game: SvgGame, guard: Strategy, strike: Strategy, max_steps: int | None = None) -> MatchResult:
@@ -57,6 +65,9 @@ def play_match(game: SvgGame, guard: Strategy, strike: Strategy, max_steps: int 
     n, dev = game.num_games, game.device
     max_steps = game.ticks if max_steps is None else int(max_steps)
     obs = game.reset()
+    ar = game.arenas                                          # the first games' draws (no random draw, no host read)
+    start_pos_m = game.pos_m.clone()
+    arena_m = torch.cat((ar.half_m[:, None], ar.zone_centre_m, ar.zone_radius_m[:, None]), dim=1).clone()
     start = torch.ones(n, dtype=torch.bool, device=dev)
     guard.reset(start)
     strike.reset(start)
@@ -71,6 +82,7 @@ def play_match(game: SvgGame, guard: Strategy, strike: Strategy, max_steps: int 
     corrected = torch.zeros(n, device=dev)
     live = torch.zeros(n, device=dev)
     nonfinite = torch.zeros(n, dtype=torch.long, device=dev)
+    upset = torch.zeros(n, dtype=torch.bool, device=dev)
     steps = 0
     for steps in range(1, max_steps + 1):
         out = game.step({"guard": guard.act(obs["guard"]), "strike": strike.act(obs["strike"])})
@@ -83,6 +95,7 @@ def play_match(game: SvgGame, guard: Strategy, strike: Strategy, max_steps: int 
         corrected = corrected + active * (info["filter_corrected"] & alive).sum(dim=1)
         live = live + active * alive.sum(dim=1)
         nonfinite = nonfinite + active * info["nonfinite_actions"]
+        upset = upset | (active & info["upset"])
         first_end = active & out.done
         outcome = torch.where(first_end, out.outcome, outcome)
         end_step = torch.where(first_end, out.end_step, end_step)
@@ -95,4 +108,4 @@ def play_match(game: SvgGame, guard: Strategy, strike: Strategy, max_steps: int 
         if steps % CHECK_EVERY_STEPS == 0 and bool(finished.all()):     # one host read, outside the game step
             break
     return MatchResult(outcome, end_step, band, closest, closest_3d, breach, corrected / live.clamp(min=1.0), start_miss,
-                       steps, nonfinite)
+                       steps, nonfinite, upset, start_pos_m, arena_m)

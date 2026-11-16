@@ -11,8 +11,8 @@ got here, step by step: [WHAT_WE_DID](WHAT_WE_DID.md#8-s2b-the-game-on-isaac-lab
 |---|---|
 | Runs | T10 (do the two physics worlds agree), T11 (step tests against tier 1 and a real flight log), T12 (speed), T13 (scripted games on both backends); the stand-in trainer on Isaac Lab is running |
 | Verdicts | T10 **FAIL** on one gate (accepted by the owner); T11 **FAIL** on three gates; T12 information only, no gates; T13 **FAIL** on two gates; stand-in **PENDING** |
-| Main result | with random actions, the game runs on Isaac Lab drones at 42,590–262,190 drone-steps a second on this laptop, above S0's 20,000 line for training directly on tier 2 |
-| Main finding | on the physics drone a Strike drone often passes over or under a Guard drone, so against a straight Strike the scripted Guards hold 0–13 % of games, where tier 1 gave up to 95.1 %. The owner kept this in the game (option (a), 17 November 2026) |
+| Main result | with random actions, the game runs on Isaac Lab drones at 42,590–262,190 drone-steps a second on this laptop. That is above 20,000, S0's [decision rule](S0_RESULTS.md#decision-rules--training-simulator-only) for "tier 2 is fast enough to train on, not only to cross-check" |
+| Main finding | on the physics drone a Strike drone often passes over or under a Guard drone, so against a straight Strike the scripted Guards hold 0–13 % of games, where tier 1 gave up to 95.1 %. The owner chose to keep this in the game (17 November 2026; option (a) of three put to him, §4) |
 | Trained | no strategy. The stand-in trainer (a pipe test, not a strategy) is running on Isaac Lab |
 | Plan and gates | [S2b plan](plans/2026-11-16-s2b-isaac-lab-environment.md), gates in `configs/s2b.toml`, approved by the owner on 16 November 2026 |
 | Linear | project P-NEAR-31, milestone S2b: NEAR-968, NEAR-973, NEAR-980, NEAR-981 ([snapshot of 16 November](linear/snapshots/2026-11-16-project-plan-linear.md)) |
@@ -27,7 +27,7 @@ one real flight log. None is a flight result, and nothing here authorises a flig
 
 **Figure 1.** One game, three ways to move the drones. The pure rules move points; the Starling layer sends each
 command through CMU's commander copy and the safety filter, then to tier 1's fitted model or, new in S2b, to the
-physics drone. The physics drone runs in Isaac Lab or in a PyTorch twin used by the tests. Made by
+physics drone. The physics drone runs in Isaac Lab or in the PyTorch reference world used by the tests. Made by
 `scripts/make_s2b_flowchart.py`.
 
 | Part | What it does | Linear issue |
@@ -40,7 +40,7 @@ physics drone. The physics drone runs in Isaac Lab or in a PyTorch twin used by 
 | Scoring on both (`score.py --presets physics --batch-per-pair`, `scripts/compare_backends.py`) | *paired games*: the same arenas, zones and starts on both backends, then a per-cell comparison against the gates | **NEAR-973: Cross-check the fast simulator against full drone physics in Isaac Lab.** |
 | Preflight (`scripts/isaac_preflight.sh`) | runs before every Isaac start and stops on WiFi-only remote desktop or a busy GPU | NEAR-980 |
 | Clips (`scripts/make_s2b_video.py`) | MP4 and GIF clips of scripted games on Isaac Lab drones, with the caption burnt in | **NEAR-981: Isaac Lab video of the game.** |
-| Stand-in trainer (`scripts/train_standin.py`) | skrl IPPO for 2 Guard drones against scripted Strike drones, on any backend, logging to TensorBoard | **NEAR-968: Stand-in trainer: prove the training pipe end to end.** |
+| Stand-in trainer (`scripts/train_standin.py`) | skrl IPPO (each Guard drone learns its own policy with PPO, a common learning method) for 2 Guard drones against scripted Strike drones, on any backend, logging to TensorBoard | **NEAR-968: Stand-in trainer: prove the training pipe end to end.** |
 
 ### The clips
 
@@ -69,7 +69,7 @@ Two more stills: [Guard-team Starlings over the zone, close up](media/s2b_still_
 
 ## What the runs showed
 
-### 1. Do Isaac Lab and the PyTorch twin move the drones the same way? (T10): FAIL, accepted
+### 1. Do Isaac Lab and the PyTorch reference world move the drones the same way? (T10): FAIL, accepted
 
 **What we did.** Both worlds got the same forces with no controller for 1 s (open loop), then the same PX4 cascade
 on five speed steps (closed loop), 64 games of 3 drones each. This run used the drone's own yaw gains
@@ -104,18 +104,21 @@ and stops far more slowly. Training simulator, tiers 1 and 2.
 ![Six held-out legs of the 13 November flight: logged speed, physics drone and tier 1](figures/s2b_real_replay.png)
 
 **Figure 5.** The six held-out legs of the 13 November flight (drone_2): the speed the drone logged, the physics
-drone and tier 1's model, each fed PX4's logged setpoints. Both stay within 0.11 m/s RMS of the logged speed on
-every leg; the physics drone mostly answers a little early.
+drone and tier 1's model, each fed PX4's logged setpoints. Worst leg: physics drone 0.096 m/s RMS (gate 0.10, which
+applies to the physics drone only), tier 1 0.111 m/s. The physics drone mostly answers a little early.
 
 **What it shows.** Against the real log the physics drone's speed is close enough (worst leg 0.096 m/s, gate 0.10),
-but its timing is not: it reaches 63 % of a change up to 0.38 s off (gate 0.10), mostly early, as a drone with no
-estimator and no transport delay would. Through the commander copy, tier 1 takes 0.56–0.88 s to reach 63 % of a
-push against the physics drone's 0.19–0.25 s, so their speeds differ by up to 0.29 m/s RMS (gate 0.10). Hover held to
+but its timing is not: the time to reach 63 % of a speed change (a standard measure of how quickly a drone responds) is off by up to
+0.38 s (gate 0.10). In 10 of the 12
+changes it is early, by 0.05–0.13 s typically. The 0.38 s is leg 5's stop, where it is late, and that leg starts from
+one suspect logged sample; without it the worst is 0.25 s (information only). Through the commander copy, tier 1 takes 0.56–0.88 s to reach 63 % of a
+push against the physics drone's 0.19–0.25 s, so their speeds differ by up to 0.29 m/s RMS (gate 0.10) and their timing by up to 0.99 s (gate 0.10). Hover held to
 2 mm and the largest tilt was 25° (gate 45.5°), with no upsets.
 
-**Read with care.** Six of nine gates pass. The slowness is tier 1's: its fitted 1.72 m/s² acceleration limit cuts
-the commander's 5 m/s² ramp ([T13 record](../records/2026-11-17_s2b_scripted_compare_record.md#what-this-run-shows)).
-Tier 1 was not refitted; its model of record waits on the planned-pushes flight.
+**Read with care.** Six of nine gates pass. Why the physics drone is early: candidate, not tested (it has no
+estimator and no transport delay). Why tier 1 is slow through the commander copy: candidate, not tested in T11 (its
+fitted 1.72 m/s² acceleration limit cuts the commander's 5 m/s² ramp; [T11 record](../records/2026-11-16_s2b_step_tests_record.md#what-this-run-shows)).
+Tier 1 was not refitted; its model of record waits on a real flight with planned speed pushes (NEAR-962).
 
 ### 3. How fast does the game run on Isaac Lab drones? (T12): information only
 
@@ -128,9 +131,9 @@ random actions, no learner, at 1,024, 2,048 and 4,096 games of 2 v 1 and 5 v 3. 
 
 **Figure 6.** Drone-steps per second against the number of games, physics drone in Isaac Lab, random actions.
 Dashed: S0's tier 2 benchmark (stand-in drones, no controller, no filter). Grey: S0's 20,000 decision line; every
-point is above it. Training simulator, tier 2, this laptop.
+physics-drone point is above it. Training simulator, tier 2, this laptop.
 
-**What it shows.** Every point is above S0's line of 20,000 drone-steps a second: the slowest is 42,590 (2 v 1, 1,024
+**What it shows.** Every physics-drone point is above S0's line of 20,000 drone-steps a second: the slowest is 42,590 (2 v 1, 1,024
 games), the fastest 262,190 (5 v 3, 4,096 games). Speed still grows almost in step with the number of games, so the
 GPU is not full at 4,096. The PX4 cascade takes 36–50 % of each tick, PhysX 20–24 % and the filter 11–27 %.
 
@@ -151,40 +154,49 @@ arena bands, 1,000 paired games per cell, on tier 1's Starling layer and on the 
 games. Open circles: tier 1 Starling layer; filled squares: the physics drone in Isaac Lab. Colour is the Guard
 strategy; one panel per team size and Strike behaviour. Training simulator.
 
+A *cell* is one matchup: one Guard strategy against one Strike strategy, at one team size, in one arena band (5 × 2
+× 2 × 3 = 60 cells, 1,000 games each).
+
 **What it shows.** In 36 of the 60 cells the hold rate moves by more than the 0.10 gate, and always the same way:
 the Guard team holds less on the physics drone. Against the straight Strike, scripted Guards hold 0–13 % on the
 physics drone where tier 1 gave 11.5–95.1 %; the largest drop is field v straight, 2 v 1 lab, 95.1 % to 0.3 %.
 
-**Why: the Strike drone passes over or under a Guard drone.** The safety filter, copied faithfully from CMU's,
-keeps drones 1.10 m apart in 3-D, so it may push two drones apart up and down as well as sideways. On tier 1, with scripted
+**What we saw: the Strike drone passes over or under a Guard drone.** The safety filter is a copy of CMU's (its
+check against the original, [S1's T2](S1_RESULTS.md#1-the-safety-filter-copy-t2-fail-accepted-by-the-owner), was a
+FAIL accepted by the owner). It keeps drones 1.10 m apart in 3-D, so it may push two drones apart up and down as well as sideways. On tier 1, with scripted
 Guards, every drone stayed at exactly 1.20 m (the scripted strategies never command up or down), so the filter could only push
 sideways and the Guard blocked the Strike drone's path. On the physics drone, heights differ by millimetres, and
-the filter's cheapest escape becomes vertical: one drone climbs towards 1.8 m, the other drops towards 0.6 m, and
+the filter's escape can become vertical (the 1 mm test below backs this for one cell only): one drone climbs towards 1.8 m, the other drops towards 0.6 m, and
 the Strike drone flies over or under the Guard into the zone.
 
 <a id="fig-8"></a>
 ![Share of games with a Guard and a Strike drone passing one over the other, physics drone against tier 1](figures/s2b_scripted_compare_vertical.png)
 
-**Figure 8.** Share of games in which a Guard and a Strike drone passed one over the other: closest horizontal
-approach under 0.55 m while staying at least 1.0 m apart in 3-D. Bars: physics drone; circles: tier 1. With
-scripted Guards, tier 1 never passes. Training simulator.
+**Figure 8.** Share of games in which a Guard and a Strike drone passed one over the other: under 0.55 m apart
+sideways but at least 1.0 m apart in 3-D, so at least 0.84 m apart in height. Bars: physics drone; circles: tier 1.
+With scripted Guards, tier 1 never passes. Training simulator.
 
-**A 1 mm test.** In the PyTorch reference world on the CPU (40 games of 2 v 1 lab, mark edge v straight; a
-diagnosis, not a run of record: [note](notes/2026-11-17_s2b_vertical_pass_note.md)), the Guards held 97.5 % on tier 1 as run. With every Strike drone started **1 mm** higher, they held **0 %**.
-So tier 1's scripted Guards held only because all drones flew at exactly the same height.
+**A 1 mm test, one cell only.** Tier 1 (the fitted drone model, `--backend fitted`), on the CPU, 40 games of one cell:
+2 v 1, lab arena, mark edge v straight Strike. As drawn, the Guards held 97.5 %. With every Strike drone started
+**1 mm** higher, they held **0 %**. So in this cell tier 1's Guards held because all drones flew at exactly the
+same height; other cells were not tested. A diagnosis, not a run of record: `scripts/diag_vertical_pass.py`,
+[note](notes/2026-11-17_s2b_vertical_pass_note.md). A physics run with all drones pinned to one height was not done.
 
 **Read with care.**
 
-- A pass alone does not decide a game: in 2 v 1 field v flank the drones pass in 94–96 % of physics games and the
-  Guard team still holds 93.5–99.9 %.
-- The physics drone also answers faster (§2). The 1 mm test shows that speed is not needed for the collapse against
-  the straight Strike; how much it adds elsewhere, for example 5 v 3 against the flank Strike, is not separated.
+- Random Guards command up and down, so on tier 1 they pass over or under too (up to 44.5 % of games, 2 v 1 random
+  v flank, lab).
+- A pass alone does not decide a game: in 2 v 1 field v flank the drones pass in 93.5–96.1 % of physics games and
+  the Guard team still holds 93.5–99.9 % (pass shares from T13's per-game arrays, as figure 8).
+- The physics drone also answers faster (§2). In the one cell tested, the 1 mm test shows that speed is not needed
+  for the collapse against the straight Strike; how much it adds elsewhere, for example 5 v 3 against the flank Strike, is not separated.
 - **Closest approach is a second, separate FAIL.** In all 48 scripted-Guard cells the physics drone stays within the
   0.10 m gate of tier 1. The 4 failing cells are all *random* Guards in middle and large arenas, 0.12–0.23 m closer
   at their minimum. Cause not diagnosed.
 - No upsets and no non-finite values in 60,000 physics games.
 
-**The owner's choice, 17 November 2026: option (a).** Passing over or under stays part of the game on the Starling
+**The owner's choice, 17 November 2026: option (a).** Three options were put to him: (a) keep it, (b) pin every
+drone's height in the game, (c) a narrower height band. He chose (a): passing over or under stays part of the game on the Starling
 layer and the physics drone; the Guard team will have to learn to cover height. The pure partner rules stay flat, as
 NUS's game is. The gate was not moved and the FAIL stands ([S2b plan, third round](plans/2026-11-16-s2b-isaac-lab-environment.md#owners-answer-third-round-17-november-2026-the-game-design-should-follow-a)).
 
@@ -207,9 +219,7 @@ pilots (pure rules, not of record) it held no games against the straight Strike.
   pure rules, yaw rate only on the Starling layer and the physics drone, where height speed now matters;
 - 100 million game-steps per seed instead of 50 million.
 
-In the pilots one seed then cleared the 0.20 margin against the straight Strike and another did not, so a FAIL of
-the three-seed gate is possible. The pilots' notes, not of record, are in `runs/sdd/s2b/task-9-report.md` (not in
-git); `configs/s2b.toml` notes the approval of these settings on 17 November 2026.
+Whether the stand-in passes its gate is not known until the runs of record finish (§5a). The pilots' notes are not of record and not in git (Task 9's report in the run folder); `configs/s2b.toml` notes the approval of these settings on 17 November 2026.
 
 #### 5a. On the physics drone in Isaac Lab
 
@@ -258,11 +268,11 @@ All rows are in the [training ledger](../records/LEDGER.md).
 
 | # | Item | Why it matters | Recommendation |
 |---|---|---|---|
-| A | The stand-in gate's outcome (**NEAR-968: Stand-in trainer: prove the training pipe end to end.**) | the pilots suggest the three-seed gate may fail even though every part of the pipe works | owner reads §5 once the Isaac seeds finish; a different learner, a curriculum or a new gate is his call |
+| A | The stand-in gate's outcome (**NEAR-968: Stand-in trainer: prove the training pipe end to end.**) | it is S2's last open done condition; the result is pending | owner reads §5 once the Isaac seeds finish; what follows a FAIL (a different learner, a curriculum or a new gate) is his call |
 | B | T13's hold-rate FAIL | it follows from option (a): the Strike drone now passes over or under scripted Guards that never move up or down | the FAIL stands; whether the S2b scripted-games gate is re-scoped later is the owner's call |
 | C | T13's 4 random-Guard closest-approach cells | the physics drones came 0.12–0.23 m closer than on tier 1 at their minimum; not diagnosed | owner decides whether to diagnose before S4 |
 | D | Task 8b, the registered Isaac Lab task `Isaac-SvG-StrikeGuard-v0` | the owner's answer 1: lets partners use Isaac Lab's usual tools and trainers | planned and not yet built; next session |
-| E | Tier 1 is slower than the physics drone (T11) (**NEAR-962: Fit the drone model from a planned-pushes real flight.**) | tier 1 games have Starlings slower than the real drone | the planned-pushes real flight, as in [S1_RESULTS](S1_RESULTS.md#what-the-owner-needs-to-do-next) |
+| E | Tier 1 is slower than the physics drone (T11) (**NEAR-962: Fit the drone model from a planned-pushes real flight.**) | through the commander copy tier 1 takes 0.56–0.88 s to 63 % of a push, the physics drone 0.19–0.25 s; how tier 1 compares with the real drone on this route is not measured | the planned-pushes real flight, as in [S1_RESULTS](S1_RESULTS.md#what-the-owner-needs-to-do-next) |
 
 ## Next
 

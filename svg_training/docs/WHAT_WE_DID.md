@@ -247,12 +247,14 @@ trained on the fast model is trusted, it should give the same answers on a drone
 3. **Clips.** Seven short clips of scripted games on Isaac Lab Starlings, two in the construction-site world as a
    backdrop ([media](media/README.md#isaac-lab-clips-s2b-the-same-game-on-rigid-body-starling-drones)).
 4. **Step tests (run T11): FAIL.** Against a real flight log the physics drone's speed is close, but its timing is off by
-   up to 0.38 s, mostly early. Tier 1, the fast model, turned out much slower than both.
+   up to 0.38 s, mostly early. Through the commander copy, tier 1, the fast model, answers much more
+   slowly than the physics drone.
 5. **Speed (run T12).** The game on Isaac Lab drones ran at 42,590–262,190 drone-steps a second with random
    actions, fast enough by S0's rule to train on directly.
 6. **Scripted games on both (run T13): FAIL.** On the physics drone a Strike drone often passes over or under a
-   Guard drone, because the safety filter keeps drones apart in 3-D and the drones' heights now differ by
-   millimetres. On tier 1 every drone stayed at exactly one height, which is why the scripted Guards held there.
+   Guard drone: the safety filter keeps drones apart in 3-D, and the drones' heights now differ by millimetres. On
+   tier 1, with scripted Guards, every drone stayed at exactly one height; in the one matchup tested, starting the
+   Strike drone 1 mm higher made tier 1's Guards lose every game too.
    The owner chose on 17 November to keep this in the game: Guards will have to learn to cover height.
 7. **The stand-in trainer.** It first learned nothing: its starting moves were almost pure noise. In pilots (not
    of record), smaller starting noise and more game-steps let it learn a little; its runs of record on Isaac Lab are

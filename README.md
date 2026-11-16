@@ -9,7 +9,7 @@ three-drone swarms rehearsed in **Isaac Sim** before anything flies for real.
 <a href="videos/cbf_teleop_two_drones_showcase.mp4"><img src="assets/cbf_teleop_two_drones_hero.gif" alt="Captioned cut of one flight: the hand-flown drone_2 approaches the hovering drone_1, the collision filter (CBF) engages, the distance readout holds, then the result card" width="800"></a><br>
 *2026-11-13, two real Starlings, one flight. `drone_2` is flown by hand with a gamepad toward the hovering `drone_1`, and the collision filter (CBF) keeps them apart: [closest 1.76 m, pass mark 1.40 m](docs/record/LEDGER.md), ledger #37. [Full 46 s video (16 MB)](videos/cbf_teleop_two_drones_showcase.mp4) · [how it was run](docs/RUNBOOK.md#b10--two-real-drones-one-flown-by-hand).*
 
-**Real drones:** ledger rows [#33 to #37](docs/record/LEDGER.md) (2026-11-11 to 2026-11-13) · the three demo flights were flown 2026-11-16, no data recorded · 16 Nov: no closest-approach numbers; the owner's video of the figure-8 is the only evidence · demo 26 November · not flown yet: formations, and with the gamepad the fence top, the +x wall and the pad unplugged<br>
+**Real drones:** ledger rows [#33 to #37](docs/record/LEDGER.md) (2026-11-11 to 2026-11-13) · the three demo flights were flown 2026-11-16, no data recorded · 16 Nov: no closest-approach numbers; evidence: the owner's word; for the figure-8, his video · demo 26 November · not flown yet: formations, and with the gamepad the fence top, the +x wall and the pad unplugged<br>
 **Simulator:** results in [record/LEDGER.md](docs/record/LEDGER.md), table 1<br>
 **Before the next real flight:** the hazards in the first section of [MILESTONES.md](docs/MILESTONES.md#before-the-next-real-flight)
 

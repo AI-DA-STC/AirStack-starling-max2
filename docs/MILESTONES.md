@@ -19,10 +19,10 @@ Hazards the pilot assumes until the named issue re-earns them (detail: [HTX-R2.m
 9. No warning when no pad sends commands: check `ros2 topic hz /svg/drone_2/teleop_command` ≈ 20 Hz before takeoff; keep the pad pane running until after landing ([#36](record/LEDGER.md)).
 10. With the stick held, the collision filter pushes a hovering drone toward the wall behind it (0.29 m left): let go once it resists ([#37](record/LEDGER.md)).
 11. Figure-8 crossing: one drone passed above the other (owner's video, 2026-11-16); cause not investigated. If one drone is directly over the other, land at the next readout above 3 m. NEAR-984.
-12. After the figure-8 the drones landed on swapped sides (`drone_1` right, `drone_2` left): the design, as they swap loops at each crossing and `land` goes straight down. Keep the floor under the whole eight clear; carry each drone back to its takeoff point before a re-fly. NEAR-984.
-13. Random goals: both drones can stop side by side inside the keep-out until landed (NEAR-985); harmless hover; `land` after 5 s stuck or 2 minutes.
-14. At 2.0 m/s the figure-8 comes within 0.19 m of the +x geofence wall (3.06 m against 3.25 m), offline figure, not measured in the 16 Nov flight. If pane 3 prints a fence line or x passes 3.0 m, land at the next readout above 3 m. NEAR-984.
-15. Changing `scenario_speed_mps` while the figure-8 runs moves both drones' targets by metres. Set the speed before `start` only. NEAR-984.
+12. After the figure-8 the drones landed on swapped sides (`drone_1` right, `drone_2` left): the design, as they swap loops at each crossing and `land` goes straight down. Keep the floor under the whole eight clear; carry each drone back to its takeoff point before a re-fly. Design; no fix needed.
+13. Random goals: two goals can fall inside each other's keep-out; both drones then stop side by side about 1.1 m apart and hover until landed (NEAR-985); harmless hover; `land` after 5 s stuck or 2 minutes.
+14. At 2.0 m/s the figure-8 comes within 0.19 m of the +x geofence wall (3.06 m against 3.25 m), offline figure, not measured in the 16 Nov flight. If pane 3 prints a fence line or x passes 3.1 m, land at the next readout above 3 m. NEAR-984.
+15. Changing `scenario_speed_mps` while the figure-8 runs moves both drones' targets by metres, and so does pressing Start again after Hold (the eight restarts at its far ends). Set the speed before `start` only; after Hold, land, never Start again. No fix planned (a code change needs a new patch and Linear issue).
 
 ## Where each project is
 

@@ -74,7 +74,7 @@ Each of these cost an afternoon to learn. Ask for them by name.
 | Edit files under `~/AirStack` (the raw CMU clone) | nothing runs from there; the live tree is `~/AirStack-starling-max2/AirStack` |
 | Treat a commander log line as proof of a hardware state | iron rules 2 and 5: QGC decides armed/disarmed, ACKs are not arming |
 | Suggest `takeoff` after an RC KILL or manual takeover, before `land` | the commander is not IDLE and keeps sending setpoints — iron rule 3 |
-| Say "ready" before each drone's pose matches its `hover_positions` | `takeoff` flies a straight line to that point — iron rule 10 |
+| Say "ready" before each drone's pose matches its takeoff point (the config's `hover_positions`; in the random-goals and figure-8 files these equal the seed's and the eight's takeoff points, CHG-0082) | `takeoff` flies a straight line to that point — iron rule 10 |
 | Start or stop Isaac with nothing watching the laptop's WiFi | Isaac start/stop crashed the WiFi firmware twice (2026-10-22) and dropped the remote desktop. Keep `localisation/scripts/sim_resources_watch.sh` running ([TROUBLESHOOTING](TROUBLESHOOTING.md#simulation-isaac-sim--px4-sitl--mavros)) |
 | Call a sim VO score "ground truth" | the reference is PX4's EKF2 on simulated GPS; say "vs EKF2" (the run records do) |
 

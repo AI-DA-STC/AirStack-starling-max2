@@ -7,7 +7,7 @@
 > and services): it is the **background, procedure and exit criteria** per scenario, plus our
 > corrections to CMU's write-ups. ⚠️ The lab has two Starlings. Two real drones have flown the `goal` scenario with the
 > collision filter ([#35](record/LEDGER.md)), and one was hand-flown toward a hovering one ([#37](record/LEDGER.md)).
-> Formations, the three-drone random goals, crossings and the squeeze are not flown: they are still **SIM procedures**. Their "Real
+> Formations, the three-drone random goals, the `head_on`/`antipodal` crossings and the squeeze are not flown: they are still **SIM procedures**. Their "Real
 > flight" subsections marked `⏳ blocked on a second Starling (M7)` mean "not flown on two real drones yet". Our two-drone random goals, figure-8 and goal swap were flown on 2026-11-16 (owner: worked, not recorded): [§7b](#7b--our-two-drone-files--random-goals-figure-8-and-swap). The older
 > Starling (`drone_1`) flies by the owner's decision, with a watcher on its front-right motor at every takeoff
 > ([hazard 6](projects/HTX-R2.md#before-the-next-real-flight)).
@@ -23,7 +23,7 @@
 > 2026-10-19, #8 and #13 on 10-20/21 — [record/LEDGER.md](record/LEDGER.md)); **on real drones, one drone flew hover and goal legs ([#33](record/LEDGER.md), 2026-11-11); two drones flew
 > the `goal` scenario and the collision filter was observed ([#35](record/LEDGER.md), 2026-11-12; procedure:
 > [RUNBOOK.md](RUNBOOK.md#c9--two-real-drones-with-the-collision-filter-cbf) C9); one drone was hand-flown toward a hovering one ([#37](record/LEDGER.md), 2026-11-13; procedure:
-> [RUNBOOK.md](RUNBOOK.md#b10--two-real-drones-one-flown-by-hand) B10). Two-drone files: [§7b](#7b--our-two-drone-files--random-goals-figure-8-and-swap). Formations, crossings and the squeeze are unflown on real drones.** Read every ✅ CMU below as "CMU says so", not "we flew it".
+> [RUNBOOK.md](RUNBOOK.md#b10--two-real-drones-one-flown-by-hand) B10). Two-drone files: [§7b](#7b--our-two-drone-files--random-goals-figure-8-and-swap). Formations, the `head_on`/`antipodal` crossings and the squeeze are unflown on real drones.** Read every ✅ CMU below as "CMU says so", not "we flew it".
 
 ---
 
@@ -108,7 +108,7 @@ The three CBF gains are **live**, and so are the goal-law and fence parameters l
 ros2 param set /swarm_commander cbf_alpha 4.0              # yield later, harder
 ros2 param set /swarm_commander cbf_safety_radius_m 0.8    # wider berth
 ros2 param set /swarm_commander cbf_max_speed_mps 1.5      # dodge/flight speed cap
-ros2 param set /swarm_commander scenario_speed_mps 1.0     # cruise speed of the goal law
+ros2 param set /swarm_commander scenario_speed_mps 1.0     # cruise speed of the goal law (figure-8: before `start` only, §7b, hazard 15)
 ros2 param set /swarm_commander fence_brake_accel_mps2 6.0
 ```
 
@@ -120,7 +120,7 @@ They apply **on the next control tick**. Anything not live is refused with a rea
 `goal_lead_m`, `teleop_kp`, `teleop_lead_m`, `teleop_accel_mps2`, `hover_kp`, `hold_lead_m`,
 `takeoff_speed_mps`, **`land_settle_s`, `land_disarm_retry_s`, `land_disarm_retries`** (ours,
 2026-10-19/20 — §5), `fence_keep_in_gain`, `fence_brake_accel_mps2`, `fence_margin_m`,
-`scenario_speed_mps`, `goal_accel_mps2`, `goal_settle_s`, `goal_velocity_only_settle_s`.
+`scenario_speed_mps` (figure-8: before `start` only, [§7b](#7b--our-two-drone-files--random-goals-figure-8-and-swap), [hazard 15](projects/HTX-R2.md#before-the-next-real-flight)), `goal_accel_mps2`, `goal_settle_s`, `goal_velocity_only_settle_s`.
 **Not live:** `cbf_external_velocity_gain`, `land_speed_mps`, every fence **box**, every name
 list, every scenario geometry — yaml edit + relaunch ([CONFIG.md](CONFIG.md), "Editing a config"). Three gotchas:
 
@@ -331,7 +331,7 @@ body + EKF2 params + its own `MAV_SYS_ID` on the shared DDS domain 1 ([MOCAP.md]
 
 ## 7b · Our two-drone files — random goals, figure-8 and swap
 
-**Why this section exists.** CMU's scenarios expect three drones and a bigger room. For the 26 November demo we run three of them with our two Starlings, each from its own `_ours` file ([CONFIG.md](CONFIG.md)). **Results: all three were flown on 2026-11-16 and the owner reports each worked. No rosbag was saved (the recorder was off) and no PX4 log was pulled, so there is no closest-approach number from any flight.** Numbers marked offline come from CMU's scenario code and `cbf_filter` run on a desk, not from a drone. Procedures: [C10](RUNBOOK.md#c10--two-real-drones-fly-random-goals-with-the-collision-filter), [C11](RUNBOOK.md#c11--two-real-drones-fly-cmus-figure-8-with-the-collision-filter), order on the day: [E](RUNBOOK.md#e--demo-day--the-three-flights-in-order). Each flight is its own commander start: Ctrl-C pane 3, relaunch with the next file, carry the drones to that file's takeoff points.
+**Why this section exists.** CMU's scenarios expect three drones and a bigger room. We fly three of them with our two Starlings, each from its own `_ours` file ([CONFIG.md](CONFIG.md)); random goals and the figure-8 are in the 26 November demo, the swap is not. **Results: all three were flown on 2026-11-16 and the owner reports each worked. No rosbag was saved (the recorder was off) and no PX4 log was pulled, so there is no closest-approach number from any flight.** Numbers marked offline come from CMU's scenario code and `cbf_filter` run on a desk, not from a drone. Procedures: [C10](RUNBOOK.md#c10--two-real-drones-fly-random-goals-with-the-collision-filter), [C11](RUNBOOK.md#c11--two-real-drones-fly-cmus-figure-8-with-the-collision-filter), order on the day: [E](RUNBOOK.md#e--demo-day--the-three-flights-in-order). Each flight is its own commander start: Ctrl-C pane 3, relaunch with the next file, carry the drones to that file's takeoff points.
 
 | File | Takeoff points | Speed | Fence | Flown 16 Nov | Record |
 |---|---|---|---|---|---|
@@ -341,7 +341,7 @@ body + EKF2 params + its own `MAV_SYS_ID` on the shared DDS domain 1 ([MOCAP.md]
 
 **Random goals — `random_goals_two_ours.yaml`** (CHG-0071). CMU's `random_goals`, code unchanged. Height is pinned flat at 2.0 m (the `arena_low`/`arena_high` box has z 2.0..2.0) and goals are drawn inside x, y ±1.2 m. Speed 0.5 m/s, `cbf_safety_radius_m` 0.55 (keep-out 1.10 m), geofence ±3.25 m.
 
-- **The seed picks the takeoff points, not `hover_positions`.** With `scenario_seed: 114` they are `drone_1` (+0.55, −0.86, 2.0) and `drone_2` (−0.94, −0.82, 2.0), 1.49 m apart, nose +x. Change the seed and they move.
+- **The seed picks the takeoff points, not `hover_positions`.** With `scenario_seed: 114` they are `drone_1` (+0.55, −0.86, 2.0) and `drone_2` (−0.94, −0.82, 2.0), 1.49 m apart, nose +x. Change the seed and they move. The file's `hover_positions` are set equal to them (CHG-0082), so standing on `hover_positions` is right.
 - **Why flat 2.0 m, not CMU's 0.8–1.8 m band.** Offline, with the band the filter also parks one drone directly above the other, so the drone below sits in the other's propeller wash (downwash).
 - **Expected stop.** CMU picks each drone's goal on its own, so two goals can land closer than 1.10 m. Both drones then stop side by side about 1.1 m apart and hover until landed. Offline, over 200 seeds, the stop came after a median of 13 s, and seed 114 ran 107 s. This is not flight data. It is harmless: land. Fix tracked as **NEAR-985: Random goals: re-pick a goal that lands inside the other drone's keep-out** (Backlog).
 - **Flight plan.** Land when they have been stuck for 5 s, or after 2 minutes.
@@ -352,7 +352,7 @@ body + EKF2 params + its own `MAV_SYS_ID` on the shared DDS domain 1 ([MOCAP.md]
 - **Place.** Centre (1.5, 0, 2.3), axis along y. Takeoff points are the eight's far ends: `drone_1` (+1.5, +3.0, 2.3), `drone_2` (+1.5, −3.0, 2.3), 6.0 m apart. The eight spans x 0.2–2.8, y −3.0..3.0, z 1.55–3.05 m, so this file has its own geofence x ±3.25, y ±3.75, z 0..4.5 m (CHG-0078).
 - **Speed 2.0 m/s** (CMU's, CHG-0080): one lap takes 9.4 s, and the drones meet head-on every 4.7 s with a closing speed of about 4 m/s.
 - **The cap that matters** is `cbf_max_speed_mps`: 3.0 here (1.0 would clip the eight), equal to the drones' own PX4 limit `MPC_XY_VEL_MAX`. After a dodge a drone may briefly catch up at up to 3.0 m/s. 5 m/s is not possible.
-- **Set the speed after takeoff and before `start`, never while the eight runs.** `ros2 param set /swarm_commander scenario_speed_mps <v>` takes effect at once, but the eight's phase is speed × time since `start`, so a change mid-flight moves both targets by metres (offline from the code: 1.0 to 1.5 m/s after 20 s jumps the target 4.7 m; 1.5 to 2.0 after 45 s, 2.9 m; 2.0 to 0.5 after 60 s, 3.0 m) and the drones chase at up to 3.0 m/s. To fly slower, set 1.0 or 1.5 before `start`. Land at whatever speed it is flying. A code fix would be a new patch and Linear issue; not made.
+- **Set the speed after takeoff and before `start`, never while the eight runs.** `ros2 param set /swarm_commander scenario_speed_mps <v>` takes effect at once, but the eight's phase is speed × time since `start`, so a change mid-flight moves both targets by metres (offline from the code: 1.0 to 1.5 m/s after 20 s jumps the target 4.7 m; 1.5 to 2.0 after 45 s, 2.9 m; 2.0 to 0.5 after 60 s, 3.0 m) and the drones chase at up to 3.0 m/s. To fly slower, set 1.0 or 1.5 before `start`. Land at whatever speed it is flying. Pressing `start` again after `hold` restarts the eight at its far ends, so both targets jump too: after `hold`, land. A code fix would be a new patch and Linear issue; not made.
 - **Rejected offline:** a vertical eight (y–z plane) with head-on meetings stacked the drones, one above the other for 36–73 s of a 180 s run. The same vertical eight with both drones in the same direction never swapped loops.
 - **Offline numbers (not flight data):** closest 1.16 m at 2.0 m/s with the real PX4 limits modelled, up to 1.85 m off the eight, x up to 3.06 m (0.19 m inside the +3.25 wall).
 - **Seen in the owner's video** (`videos/fig8-final-master-1080p.mp4`, 48 s; excerpt `assets/fig8_two_drones_real.gif`). At one crossing, in the replay at half speed, one drone passes above the other. Cause not investigated; the owner is being asked whether the speed was changed mid-flight. Keep the 3D view in sight and land at the next readout above 3 m if one drone is directly over the other.
@@ -420,6 +420,7 @@ rows that `b21d28c` fixed say so).
 | `fence_behavior: hold_all` latching | Now latched by any **ACTIVE** drone of **any role**, including an airborne **external** drone (`SwarmCommander.enforce_fence`). A behaviour change CMU does not call out. Brief the intruder's pilot (§2). |
 | — (stated nowhere) | **There is no protection between two fixed rows.** Pairs with no movable drone are pruned from the solve and skipped by the push-apart. Two exempt or external drones are on their own. |
 | `experiment.md` (geofence analysis) "10 m/s needs ~15.5 m even at 8 m/s² — not in this room" | Agreed — and yet `goal_tracking.yaml`, `goal_single.yaml`, `squeeze_rc_intruder.yaml`, `goal_sequence.yaml` and `figure_eight_rc_intruder.yaml` all ship `cbf_max_speed_mps: 10.0` **and** `goal_accel_mps2: 10.0` (cruise 10.0 / 10.0 / 10.0 / 6.0 / 2.0). Our net is far smaller than CMU's 10 × 9.7 m box. **Lower all three before flying.** |
+| `experiment.md` C7: `scenario_speed_mps 2.0 # harder meeting (live)` and `hold` → `start` to resume | On our rig never during the eight: the phase is speed × time since `start`, so either change moves both targets by metres ([§7b](#7b--our-two-drone-files--random-goals-figure-8-and-swap), [hazard 15](projects/HTX-R2.md#before-the-next-real-flight)). Set the speed before `start`; after `hold`, land. |
 | `experiment.md` rule: keep `fence_brake_accel_mps2 ≥ goal_accel_mps2` | Those same five real configs ship brake **8** against accel **10**, which violates it — the wall envelope then caps the cruise first. Lower both together. |
 | `goal_single.yaml` is "the single-drone goal config" | At `cf719f0` it targeted **`drone_2`**; **`b21d28c` puts it back on `drone_1`** — but it still **exempts** that drone (`cbf_exempt_drones: "drone_1"`: harmless with one drone, yet the filter is then off), ships speeds **10.0** and `land_speed_mps` `0.8` (not the `0.6` we validated), `land_complete_altitude_m` 0.1. Fly **`goal_single_ours.yaml`** instead ([CONFIG.md](CONFIG.md)). |
 | Real drones take velocity commands | Default is now **`real_command_mode: trajectory`** → `/{name}/fmu/trajectory_command` (`MultiDOFJointTrajectory`; declared in `SwarmCommander.__init__`, published by `publish_command`). **`px4_interface` must be rebuilt** (`bws --packages-select px4_interface`) or the drone just hovers; `real_command_mode: velocity` restores the old `TwistStamped`. |

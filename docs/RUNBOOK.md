@@ -1314,7 +1314,7 @@ If not IDLE: `land` once, drones on the floor ([TROUBLESHOOTING.md](TROUBLESHOOT
 **12 · Floor · each drone under its own takeoff point**
 
 **Hazard:** takeoff flies a straight line to each drone's takeoff point, so a drone standing on the wrong side is flown across the room at floor level ([hazard 7](projects/HTX-R2.md#before-the-next-real-flight)).
-The seed sets these points, not `hover_positions` (unused in this file). They are not B10's or C9's points.
+The seed sets these points. The file's `hover_positions` equal them (CHG-0082). They are not B10's or C9's points.
 Stand each drone on its own point, nose toward +x: `drone_1` (+0.55, −0.86), `drone_2` (−0.94, −0.82), 1.49 m apart. Both take off to 2.0 m.
 Must see: the panel's Agent State x, y per drone (or `"position"` in step 11's output) within 0.2 m of that drone's point.
 If not: wrong side → carry the drones over and check again (re-run step 11's command and read `"position"`). No takeoff until both match.
@@ -1428,7 +1428,7 @@ Then wait about 10 s, and unplug USB and the battery. Then the other drone: plug
 > The eight: radius 1.5 m, 6 m long along y, plane tilted 30°, centre (1.5, 0, 2.3). It spans x 0.2 to 2.8, y −3.0 to 3.0, z 1.55 to 3.05 m. This file's own geofence: x −3.25 to 3.25, y −3.75 to 3.75, z 0 to 4.5 m. Needs patch 0008 ([MIGRATION.md](MIGRATION.md)).
 > Flown on 2026-11-16 at up to 2.0 m/s (owner: worked, not recorded). The owner's video of that flight shows one drone passing above the other at a crossing (hazard 11, cause not investigated). It also shows the drones landing on swapped sides (hazard 12). That is expected: they swap loops at every crossing, and `land` brings each straight down.
 > **Speed:** set it once, after takeoff and before `start` (step 17). Never change `scenario_speed_mps` while the eight runs: both drones' target points jump by metres (hazard 15).
-> **Panic:** the panel's **Hold All**, then **Safety Stop · Land All** (two clicks within 4 s), or `hold` then `land` in pane 4. Hold All and Land All act on both drones. Then KILL (each pilot kills their own drone). `hold` is not flown on the real drone: where it stops the drone is untested (NEAR-832). After any kill or RC takeover call `land` once: the commander keeps sending setpoints (iron rule 3, [#34](record/LEDGER.md)).
+> **Panic:** the panel's **Hold All**, then **Safety Stop · Land All** (two clicks within 4 s), or `hold` then `land` in pane 4. Hold All and Land All act on both drones. Then KILL (each pilot kills their own drone). `hold` is not flown on the real drone: where it stops the drone is untested (NEAR-832). After any kill or RC takeover call `land` once: the commander keeps sending setpoints (iron rule 3, [#34](record/LEDGER.md)). After Hold All in C11: land. Never press Start again (hazard 15).
 > `land` brings down EVERY airborne drone, including one that was not killed. RC takeover is MANUAL or KILL, never Position or Altitude (iron rule 1).
 > Until DISARMED, press Ctrl-C in pane 4 only.
 > Prompts, panes and tmux moves: [top of this page](#runbook--start-the-pipeline-fast).
@@ -1536,7 +1536,7 @@ If not IDLE: `land` once, drones on the floor ([TROUBLESHOOTING.md](TROUBLESHOOT
 **12 · Floor · each drone under its own end of the eight**
 
 **Hazard:** takeoff flies a straight line to each drone's takeoff point, so a drone standing on the wrong side is flown across the room at floor level ([hazard 7](projects/HTX-R2.md#before-the-next-real-flight)).
-The takeoff points are the eight's far ends, not `hover_positions` (unused in this file).
+The takeoff points are the eight's far ends. The file's `hover_positions` equal them (CHG-0082).
 Stand each drone on its own point, nose toward +x: `drone_1` (+1.5, +3.0), `drone_2` (+1.5, −3.0), 6.0 m apart. Both take off to 2.3 m.
 Must see: the panel's Agent State x, y per drone (or `"position"` in step 11's output) within 0.2 m of that drone's point.
 If not: wrong side → carry the drones over and check again (re-run step 11's command and read `"position"`). No takeoff until both match.
@@ -1596,8 +1596,8 @@ This session adds:
 | What you see | Do this | Record |
 |---|---|---|
 | A motor of `drone_1` does not spin with the others at takeoff | KILL `drone_1` (its transmitter), then `land` once | hazard 6, [#34](record/LEDGER.md) |
-| One drone directly over the other (under 0.5 m apart sideways in the 3D view) | land (step 19) at the next readout above 3 m. Above 3 m they are at least 2.6 m apart sideways | hazard 11, cause not investigated |
-| Pane 3 prints `drone_1 outside the fence (x>max), keep_in pushing it back` (or the same for `drone_2`), or the panel shows a drone's x above 3.0 m | land (step 19) at the next readout above 3 m | hazard 14 |
+| One drone directly over the other (under 0.5 m apart sideways in the 3D view) | land (step 19): start Land when the readout passes 3 m and is rising (Safety Stop is two clicks within 4 s; or type `land` in pane 4). Above 3 m they are at least 2.6 m apart sideways | hazard 11, cause not investigated |
+| Pane 3 prints `drone_1 outside the fence (x>max), keep_in pushing it back` (or the same for `drone_2`), or the panel shows a drone's x above 3.1 m | land (step 19): start Land when the readout passes 3 m and is rising (Safety Stop is two clicks within 4 s; or type `land` in pane 4) | hazard 14 |
 | `CBF emergency push-apart` in pane 3 | `land` and investigate (the PREFLIGHT.md emergency table) | hazard 8 |
 | The readout stops changing while a drone moves | `land`: the readout is dead | step 14 |
 | You take over with the RC | flip ch6 straight to MANUAL, or KILL (each pilot their own drone). Then `land` once | iron rules 1 and 3 |
@@ -1644,7 +1644,7 @@ Hands off. Watch every crossing ([hazard 11](projects/HTX-R2.md#before-the-next-
 Leave the speed alone until both drones are DISARMED (hazard 15).
 
 **19 · Panel · land both, with the readout above 3 m.** Safety bar: **Safety Stop · Land All**, two clicks within 4 s. Or `land` in pane 4.
-Land at the speed the drones are flying: do not change it first. Wait until the pane 6 readout is above 3 m, so the drones are away from the crossing.
+Land at the speed the drones are flying: do not change it first. Start Land when the readout passes 3 m and is rising (Safety Stop is two clicks within 4 s; or type `land` in pane 4), so the drones are moving away from the crossing.
 Each drone comes straight down under wherever it is. They swap loops at every crossing, so each often lands on the other side from takeoff: in the video `drone_1` landed on the right and `drone_2` on the left. Expected ([hazard 12](projects/HTX-R2.md#before-the-next-real-flight)).
 Before any re-fly, carry each drone back to its own takeoff point (step 12).
 Must see: QGroundControl shows BOTH Disarmed before anyone walks in. If not: still armed after about 10 s → KILL or arm switch (ch5) down (iron rule 2).
@@ -1668,16 +1668,17 @@ The demo is three two-drone flights in one session, one config file each. Every 
 
 | Order | Section | Config file | Takeoff points (x, y, z) | What you see |
 |---|---|---|---|---|
-| 1 | [B10](#b10--two-real-drones-one-flown-by-hand) | `goal_two_ours.yaml`, `teleop_drones:=drone_2` | `drone_1` (+1.0, −0.2, 1.0) · `drone_2` (−1.5, −0.1, 1.0) | `drone_1` hovers, `drone_2` is flown at it by hand, the filter keeps them apart |
-| 2 | [C10](#c10--two-real-drones-fly-random-goals-with-the-collision-filter) | `random_goals_two_ours.yaml` | `drone_1` (+0.55, −0.86, 2.0) · `drone_2` (−0.94, −0.82, 2.0) | random goals at 2.0 m; they end side by side, hovering (expected) |
-| 3 | [C11](#c11--two-real-drones-fly-cmus-figure-8-with-the-collision-filter) | `figure_eight_two_ours.yaml` | `drone_1` (+1.5, +3.0, 2.3) · `drone_2` (+1.5, −3.0, 2.3) | CMU's figure-8, head-on at the crossing, up to 2.0 m/s |
+| 1 | [B10](#b10--two-real-drones-one-flown-by-hand) | `goal_two_ours.yaml`, `teleop_drones:=drone_2` | `drone_1` (+1.0, −0.2, 1.0) · `drone_2` (−1.5, −0.1, 1.0), nose toward +x | `drone_1` hovers, `drone_2` is flown at it by hand, the filter keeps them apart |
+| 2 | [C10](#c10--two-real-drones-fly-random-goals-with-the-collision-filter) | `random_goals_two_ours.yaml` | `drone_1` (+0.55, −0.86, 2.0) · `drone_2` (−0.94, −0.82, 2.0), nose toward +x | random goals at 2.0 m; they end side by side, hovering (expected) |
+| 3 | [C11](#c11--two-real-drones-fly-cmus-figure-8-with-the-collision-filter) | `figure_eight_two_ours.yaml` | `drone_1` (+1.5, +3.0, 2.3) · `drone_2` (+1.5, −3.0, 2.3), nose toward +x | CMU's figure-8, head-on at the crossing, up to 2.0 m/s. Set the speed after takeoff, before `start`; never change it while the eight runs; after Hold, land |
 
-- Before each flight, check both batteries in QGroundControl. After a battery swap, redo steps 1, 3 and 6 to 9 of C10 or C11 for that drone.
-- Flight 1: B10 steps 1 to 21, not its shutdown. Then Ctrl-C pane 5: nobody flies by hand in flights 2 and 3.
-- Flight 1 recording (B10 has no recording step): after B10 step 16 (go / no-go), the panel's **Rosbag** switch on. Check `"recording": true` with `ros2 topic echo /svg/bag_recorder/status --once` in pane 4. Switch it off after landing.
+- Before each flight, check both batteries in QGroundControl.
+- After a battery swap (the drone reboots), with C10's or C11's step numbers: step 1's ping for that drone; QGroundControl lists it again; pane 1 prints a new `session established` (do not start a second agent); steps 7 and 8 for that drone. If its interface startup line is gone, Ctrl-C pane 2 and redo step 9.
+- Flight 1: B10 steps 1 to 21, not its shutdown. After B10 step 16 (go / no-go): panel **Rosbag** on, then in pane 4 `ros2 topic echo /svg/bag_recorder/status --once` must show `"recording": true`. After step 21 (both DISARMED): Rosbag off. Then Ctrl-C pane 5: nobody flies by hand in flights 2 and 3.
 - Flights 2 and 3: the opening steps are still running. First the **Rosbag** switch off, and both drones `IDLE` and DISARMED in QGroundControl. Only then Ctrl-C pane 3: the recorder runs inside the commander launch. Then run the next section from step 10.
 - While anyone is inside the net carrying drones: KILL on, or the arm switch (ch5) down, on both transmitters.
-- Carry the drones to the next file's takeoff points. That section's status check (step 11) and the pane 6 readout confirm them: about 1.5 m for flight 2, about 6.0 m for flight 3.
+- Back outside the net: KILL off and the arm switch (ch5) back, on both transmitters, before the next go / no-go.
+- Carry the drones to the next file's takeoff points. Step 12 confirms each drone's point; the pane 6 readout (about 1.5 m / 6.0 m) is only a cross-check and cannot tell the drones apart.
 - The pane 6 readout keeps running from flight 1: skip step 14 in C10 and C11.
 - Record every flight: C10 and C11 step 13 and their recording-off step. Video every flight.
 - Shut down once, after flight 3 (C11's shutdown and step 21). Before step 21, pull the PX4 logs of both drones ([D](#d--post-flight--pull--review-the-px4-logs)).

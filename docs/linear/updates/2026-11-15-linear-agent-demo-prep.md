@@ -1,5 +1,7 @@
 # Linear update — 2026-11-15, cuVSLAM next steps and the 26 November demo
 
+> **SUPERSEDED 2026-11-16, never applied:** replaced by [2026-11-16-linear-agent-demo-ready.md](2026-11-16-linear-agent-demo-ready.md). Do not upload this file.
+
 Instructions for the Linear agent, in the **nearlab** workspace. Apply every step below. Delete nothing. Use the comments and titles exactly as written. Change no existing title. Check Linear before each step: if a status, comment or issue is already in place, do not repeat it. Assign every new issue to me (HweHuang Chia, the person who uploads this file). No issue touched here gets a cycle or a due date: if Linear adds an In Progress issue to a cycle, set the cycle back to none.
 
 The real-drone demo is on **26 November 2026**. The code for random goals, the figure-8 and the hand-flown intruder is CMU's commander (Yikuan's `svg_ground_control`), vendored in the repo https://github.com/AI-DA-STC/AirStack-starling-max2 under `AirStack/robot/ros_ws/src/svg_ground_control/`.

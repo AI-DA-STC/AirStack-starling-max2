@@ -268,8 +268,11 @@ PYTHONPATH=source python scripts/score.py --guard runs/<name>,random --strike st
     --sizes 2v1 --presets pure --no-local --out runs/<name>_score/
 PYTHONPATH=source python scripts/train_standin.py --seed 1 --name <new name>                    # pure rules
 PYTHONPATH=source python scripts/train_standin.py --seed 1 --name <new name> --motion starling  # Starling layer
-PYTHONPATH=source python scripts/train_standin.py --seed 1 --name <new name> --motion physics --headless
-    # Isaac Lab physics drone, on the host after scripts/isaac_preflight.sh (needs skrl 2.x)
+PYTHONPATH=source python scripts/train_standin.py --seed 1 --name <new name> --motion physics --headless \
+    --settings standin_v2 --eval-every-updates 80
+    # Isaac Lab physics drone, on the host after scripts/isaac_preflight.sh (needs skrl 2.x); --settings standin_v2 =
+    # configs/s2b.toml [standin_v2], the settings of ledger T14 (the committed [standin] learned nothing in the pilots);
+    # --eval-every-updates 80 gives curves comparable with T14's
 tensorboard --logdir runs/        # then open http://localhost:6006; game/ curves at every evaluation
 ```
 

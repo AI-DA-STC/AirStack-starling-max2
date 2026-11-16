@@ -15,6 +15,9 @@ from svg_training.core.game_config import (  # noqa: E402
 STANDIN_SHA256 = {"standin": "29d71984c226f88cf568d2fbe128b5e8a782ed21f48569002fbc1d8eae980495",
                   "standin_gates": "10e16a5be00ff3bb539351f7bd96d089741ce95d0c7d1a73cde9a598caa0eb77"}
 
+# sha256 of configs/s2b.toml [standin_v2] as the T14 runs of record read it (stored in both run folders' interface.toml)
+STANDIN_V2_SHA256 = "06e8804eeb75fef9035bb64f80655a235401b56f4b27d49bada82b9660563dee"
+
 S2B_TABLES = {"physics", "agreement", "agreement_gates", "step_tests", "step_gates", "throughput", "compare_games",
               "compare_games_gates", "video", "standin_s2b", "fallback_rate_gains", "tensorboard", "standin_v2"}
 
@@ -104,3 +107,8 @@ def test_s2_standin_tables_unchanged():                     # D14
     text = (CONFIGS / "s2.toml").read_text()
     for name, sha in STANDIN_SHA256.items():
         assert hashlib.sha256(table_text(text, name).encode()).hexdigest() == sha, name
+
+
+def test_standin_v2_table_pinned():                       # T14 runs of record (17 Nov 2026) used exactly this text
+    text = (CONFIGS / "s2b.toml").read_text()
+    assert hashlib.sha256(table_text(text, "standin_v2").encode()).hexdigest() == STANDIN_V2_SHA256

@@ -651,3 +651,25 @@ def test_stop_at_a_past_time_stops_at_the_first_update(tmp_path):
     assert _in_process(["--seed", "1", "--name", "bad", *ABORT_ARGS, "--stop-at", "8 am",
                         "--runs-dir", str(tmp_path)]) == 2
     assert not (tmp_path / "bad").exists()
+
+
+def test_standin_bars_note_keeps_the_tool_verdict(tmp_path):    # fix round 1: no hand-edited verdict for a title
+    from make_s2b_figures import standin_bars
+    import matplotlib.pyplot as plt
+    seen = {}
+    real = plt.Figure.suptitle
+
+    def spy(self, t, *a, **k):
+        seen["title"] = t
+        return real(self, t, *a, **k)
+    cell = {"seed": 1, "behaviour": "strike_flank", "trained": {"hold_rate": 0.1, "ci_low": 0.08, "ci_high": 0.12,
+                                                                 "games": 3000, "guard_wins": 300},
+            "random": {"hold_rate": 0.0, "ci_low": 0.0, "ci_high": 0.001, "games": 3000, "guard_wins": 0}}
+    (tmp_path / "verdict.json").write_text(json.dumps({"verdict": "FAIL", "cells": [cell]}))
+    plt.Figure.suptitle = spy
+    try:
+        standin_bars(str(tmp_path / "b.png"), str(tmp_path), "--note=seed 3 not run")
+    finally:
+        plt.Figure.suptitle = real
+    assert seen["title"].startswith("Stand-in (pipe test) gate check: FAIL (seed 3 not run)")
+    assert json.loads((tmp_path / "verdict.json").read_text())["verdict"] == "FAIL"

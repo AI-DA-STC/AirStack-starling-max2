@@ -257,9 +257,9 @@ trained on the fast model is trusted, it should give the same answers on a drone
    Strike drone 1 mm higher made tier 1's Guards lose every game too.
    The owner chose on 17 November to keep this in the game: Guards will have to learn to cover height.
 7. **The stand-in trainer.** It first learned nothing: its starting moves were almost pure noise. In pilots (not
-   of record), smaller starting noise and more game-steps let it learn a little. On the physics drone (run T14, 2 of 3 seeds)
-   the pipe worked end to end, but the Guards learned almost nothing: 0 % held against the straight Strike, 7–13 %
-   against the flank Strike. Why is not tested. Seed 3 waits for the home RTX 5090.
+   of record), smaller starting noise and more game-steps let it learn a little. On the physics drone (run T14, FAIL: seeds 1–2 fail every gate cell;
+   seed 3 not run, cannot change it) the pipe worked end to end, but the Guards learned almost nothing: 0 % held
+   against the straight Strike, 7–13 % against the flank Strike. Why is not tested. Seed 3 waits for the home RTX 5090.
 
 <a id="fig-4"></a>
 ![Share of games the Guard team held, tier 1 against the physics drone](figures/s2b_scripted_compare.png)

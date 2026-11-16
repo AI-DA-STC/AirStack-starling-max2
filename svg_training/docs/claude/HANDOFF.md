@@ -251,10 +251,10 @@ stay out of git; real flights of a contact policy should start with a virtual co
 
 ## 5. Open items
 
-### 5a. On the home RTX 5090: S2b stand-in seed 3 (ledger T14 is INCOMPLETE without it)
+### 5a. On the home RTX 5090: S2b stand-in seed 3 (ledger T14 is FAIL already; seed 3 completes the record)
 
-Seeds 1–2 ran on the laptop (17 Nov, record `records/2026-11-17_s2b_standin_isaac_record.md`); both FAIL their gate
-cells, so seed 3 cannot turn T14 into a PASS, but it completes the record. From `svg_training/`, with
+Seeds 1–2 ran on the laptop (17 Nov, record `records/2026-11-17_s2b_standin_isaac_record.md`); both FAIL every gate
+cell, so T14 is FAIL and seed 3 cannot change it, but it completes the record. From `svg_training/`, with
 `export PYTHONPATH=source`, `P=~/miniconda3/envs/env_isaaclab/bin/python`, after `scripts/isaac_preflight.sh --approved-headless`,
 inside `tmux`:
 

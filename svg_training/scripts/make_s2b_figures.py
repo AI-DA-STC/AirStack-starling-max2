@@ -2,7 +2,7 @@
 """Figures for the S2b records: one function per figure (Tasks 7 and 9; Task 8 adds its own).
 
   make_s2b_figures.py standin <out.png> runs/<seed 1 run> [runs/<seed 2 run> ...]
-  make_s2b_figures.py standin_bars <out.png> runs/<group with verdict.json> runs/<seed 1 score> [...]
+  make_s2b_figures.py standin_bars <out.png> runs/<group with verdict.json> runs/<seed 1 score> [...] [--note=<text>]
   make_s2b_figures.py steps <out.png> runs/<step-test run>                      (Task 7, s2b_steps.png)
   make_s2b_figures.py real_replay <out.png> runs/<step-test run>                (Task 7, s2b_real_replay.png)
   make_s2b_figures.py throughput <out.png> runs/<run>/results.jsonl [S0 results.jsonl]   (Task 7, s2b_throughput.png)
@@ -116,7 +116,11 @@ def standin(out: str, *run_dirs: str) -> None:
 
 
 def standin_bars(out: str, group_dir: str, *score_dirs: str) -> None:
-    """Gate evaluation: trained stand-in (per seed), random and guard_mark_edge, per Strike behaviour, Wilson 95 %."""
+    """Gate evaluation: trained stand-in (per seed), random and guard_mark_edge, per Strike behaviour, Wilson 95 %.
+    The title shows verdict.json's verdict as the tool wrote it; an argument ``--note=<text>`` among the score dirs
+    adds <text> in brackets after it (e.g. which seeds ran), so the verdict file is never edited for a figure."""
+    notes = [d[len("--note="):] for d in score_dirs if d.startswith("--note=")]
+    score_dirs = tuple(d for d in score_dirs if not d.startswith("--note="))
     from svg_training.core.metrics import wilson_interval
 
     ver = json.loads((pathlib.Path(group_dir) / "verdict.json").read_text())
@@ -153,7 +157,8 @@ def standin_bars(out: str, group_dir: str, *score_dirs: str) -> None:
         ax.set_xticks(range(len(bars)), [x[0] for x in bars])
         ax.set_ylim(0, 1)
         style(ax, f"v {BEHAVIOUR_LABEL.get(b, b)} Strike (2v1, all bands)", "", "share of games held")
-    fig.suptitle(f"Stand-in (pipe test) gate check: {ver['verdict']}, observed in the training simulator",
+    note = f" ({'; '.join(notes)})" if notes else ""
+    fig.suptitle(f"Stand-in (pipe test) gate check: {ver['verdict']}{note}\nobserved in the training simulator",
                  x=0.01, ha="left", fontsize=13, color=INK)
     fig.tight_layout()
     fig.savefig(out)

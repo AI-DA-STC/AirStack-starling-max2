@@ -600,6 +600,14 @@ class RunbookProcedure(unittest.TestCase):                            # design 2
         r = self.run_check(self.page(seqs={"C11": self.seq("C11", stop=False)}))
         self.assertEqual(r.status, "FAIL", r.details); self.assertTrue(any("C11" in x for x in r.details), r.details)
 
+    def test_section_e_ends_c11_and_is_not_a_sequence(self):   # 2026-11-16: demo-day order (E) after C11, no stop table, dated text
+        self.HEADS = dict(RunbookProcedure.HEADS, C10="### C10 — Two real drones fly random goals with the collision filter",
+                          C11="### C11 — Two real drones fly CMU's figure-8 with the collision filter")
+        e = ["## E · DEMO DAY — the three flights in order", "", "Flown first on 2026-11-16; the run sheet is NEAR-984.", ""]
+        text = self.page().replace("## D · POST-FLIGHT", "\n".join(e) + "\n## D · POST-FLIGHT", 1)
+        r = self.run_check(text)
+        self.assertEqual(r.status, "PASS", r.details)              # E's dated line is not inside C11, E needs no stop table
+
     def test_definitions_box_passes_definition_plus_real_call_fails(self):     # design D12: the box defines, runs nothing
         r = self.run_check(self.page(a=self.box(("takeoff", "start", "hold", "land"))))
         self.assertEqual(r.status, "PASS", r.details)

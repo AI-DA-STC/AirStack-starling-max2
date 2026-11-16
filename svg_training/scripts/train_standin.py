@@ -79,6 +79,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 CONFIGS = ROOT / "configs"
 LOCAL_DIR = CONFIGS / "local"        # never read: every stand-in runs on the committed neutral values (--no-local)
 MOTIONS = ("pure", "starling", "physics")
+ACTION_AXES = {"vx": 0, "vy": 1, "vz": 2, "yaw": 3}   # order of the 4 action numbers
 PRESET_OF = {"pure": "pure", "starling": "starling", "physics": "physics"}   # score.py's preset names
 EVAL_SEED_OFFSET = 1000              # = [standin_gates] eval_seed_offset (the learning curve uses the same rule)
 FIRST_LINE = "Stand-in (pipe test), not a strategy of record. Observed in the training simulator."
@@ -375,6 +376,8 @@ def make_parser(isaac: bool = False) -> argparse.ArgumentParser:
     ap.add_argument("--diag-init-log-std", type=float, help="initial log std of every policy (skrl default 0)")
     ap.add_argument("--diag-discount", type=float, help="IPPO discount factor (skrl default 0.99)")
     ap.add_argument("--diag-entropy-scale", type=float, help="IPPO entropy loss scale (skrl default 0)")
+    ap.add_argument("--diag-freeze-log-std-axes",
+                    help="comma list of action axes (vx, vy, vz, yaw) whose log std stays at its initial value")
     if not isaac:
         ap.add_argument("--device", default="cuda")
     return ap
@@ -498,6 +501,24 @@ def run(args: argparse.Namespace, world_factory: Callable | None = None) -> int:
         with torch.no_grad():
             for a in names:
                 models[a]["policy"].log_std.fill_(diag["init_log_std"])
+    if args.diag_freeze_log_std_axes:
+        # The log std is one Parameter [4] per policy, so requires_grad cannot be set per axis. A gradient hook zeroes the
+        # frozen entries of its gradient on every backward pass, from the first update on. skrl's Adam (no weight
+        # decay) then keeps both moment estimates of those entries at exactly 0, so its step m / (sqrt(v) + eps) is
+        # exactly 0, and the global grad-norm clip only rescales (0 stays 0): the entries keep their initial value
+        # bit for bit, also inside an update's epochs (a re-fill after each update would let them move in between).
+        axes = [x.strip() for x in args.diag_freeze_log_std_axes.split(",") if x.strip()]
+        bad = [x for x in axes if x not in ACTION_AXES]
+        if bad or not axes:
+            print(f"refusing: --diag-freeze-log-std-axes takes axes from {list(ACTION_AXES)}, got {axes}",
+                  file=sys.stderr)
+            return 2
+        keep = torch.ones(4, device=device)
+        for x in axes:
+            keep[ACTION_AXES[x]] = 0.0
+        for a in names:
+            models[a]["policy"].log_std.register_hook(lambda g, k=keep: g * k)
+        diag["freeze_log_std_axes"] = axes
     extra_cfg = {k: v for k, v in diag.items() if k in ("discount_factor", "entropy_loss_scale")}
     memories = {a: RandomMemory(memory_size=rollouts, num_envs=n, device=device) for a in names}
     run_dir.mkdir(parents=True, exist_ok=True)

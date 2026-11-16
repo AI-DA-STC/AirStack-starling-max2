@@ -530,3 +530,19 @@ def test_diagnostic_overrides_are_recorded(smoke_run, tmp_path):            # St
     assert meta["training"]["skrl_discount_factor"] == 0.999
     log_std = torch.load(tmp_path / "diag" / "agent.pt", weights_only=False)["guard_0"]["policy"]["log_std"]
     assert torch.allclose(log_std, torch.full((4,), -1.6), atol=0.05)     # 3 updates move it only a little
+
+
+def test_diagnostic_freeze_log_std_axes(tmp_path):                         # H6 pilot flag (diagnosis only)
+    rc = _in_process(["--seed", "1", "--name", "frz", *ABORT_ARGS, "--diag-init-log-std", "-1.6",
+                      "--diag-freeze-log-std-axes", "vz,yaw", "--runs-dir", str(tmp_path)])
+    assert rc == 0
+    meta = tomllib.loads((tmp_path / "frz" / "interface.toml").read_text())
+    assert meta["diagnostic"]["freeze_log_std_axes"] == ["vz", "yaw"]
+    saved = torch.load(tmp_path / "frz" / "agent.pt", weights_only=False)
+    for a in ("guard_0", "guard_1"):
+        ls = saved[a]["policy"]["log_std"]
+        assert torch.equal(ls[2:], torch.full((2,), -1.6))             # frozen: exactly the initial value
+        assert not torch.equal(ls[:2], torch.full((2,), -1.6))         # trained axes moved
+    assert _in_process(["--seed", "1", "--name", "frz2", *ABORT_ARGS, "--diag-freeze-log-std-axes", "roll",
+                        "--runs-dir", str(tmp_path)]) == 2
+    assert not (tmp_path / "frz2").exists()

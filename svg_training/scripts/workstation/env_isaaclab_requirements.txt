@@ -1,0 +1,33 @@
+# Pinned packages of conda env_isaaclab, as on the laptop (pip freeze, 2026-11-17). MEASURED.
+# Installed by setup_isaaclab_host.sh AFTER Isaac Sim and `isaaclab.sh --install`, so these pins win over whatever
+# Isaac Lab's installer picked. Isaac Lab itself (six editable packages from ~/IsaacLab) is not listed here.
+# Full laptop list, for comparison only: env_isaaclab_freeze_laptop.txt.
+# UNTESTED ON THE 5090.
+#
+# The RTX 5090 (Blackwell) needs a PyTorch built for CUDA 12.8 or newer: the cu128 wheels below are.
+--extra-index-url https://download.pytorch.org/whl/cu128
+--extra-index-url https://pypi.nvidia.com
+
+# PyTorch (CUDA 12.8 builds)
+torch==2.7.0+cu128
+torchvision==0.22.0+cu128
+torchaudio==2.7.0
+
+# Isaac Sim (pip), the umbrella package; its isaacsim-* parts follow it
+isaacsim==5.1.0.0
+
+# Learning libraries (train_standin.py needs skrl 2.x; it refuses another major version)
+skrl==2.1.0
+rsl-rl-lib==5.0.1
+gymnasium==1.2.1
+tensorboard==2.20.0
+
+# What svg_training imports besides torch and Isaac (scripts, figures, videos, tests)
+numpy==1.26.0
+scipy==1.15.3
+matplotlib==3.10.3
+imageio==2.37.0
+imageio-ffmpeg==0.6.0
+opencv-python-headless==4.11.0.86
+pytest==9.0.3
+pytest-mock==3.15.1

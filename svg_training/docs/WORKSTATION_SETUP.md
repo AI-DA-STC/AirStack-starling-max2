@@ -1,70 +1,95 @@
 # Setting up a training workstation (home PC: RTX 5090, Ubuntu 24.04)
 
-A checklist for moving long training runs off the laptop. The laptop stays the place to build, test and watch
-results; the workstation runs long jobs. Nothing here touches AirStack, a drone or the lab network.
+How to move long training runs off the laptop. The laptop stays the place to build, test, record and commit; the
+workstation runs long jobs. Nothing here touches AirStack, a drone or the lab network.
 
-Status: PROPOSED (owner, 17 November 2026). Nothing has been installed or run on this PC yet; every value below
-marked OPEN is to be checked on the machine.
+Status: PROPOSED (owner, 17 November 2026). The scripts in `scripts/workstation/` were written on the laptop and
+checked there only with `bash -n` and `--dry-run`. **None has run on the 5090 yet.**
 
-## 1. Check the machine
+## 0. Before you leave the laptop: push first
 
-| Check | Command | Expect |
+The workstation clones from GitHub, so GitHub must have the work. On 17 November 2026 the live clone was 301
+commits ahead of GitHub, and the repository carries about 41 MB of video and GIF clips.
+
+1. Bring the mirror up to date: `git -C ~/Documents/GitHub/AirStack-starling-max2 pull ~/AirStack-starling-max2 main`.
+2. Push `main` from GitHub Desktop. Claude never pushes.
+3. Copy the private bundle (`~/svg_workstation_bundle/`) to the workstation by USB, a private drive or `scp`.
+   It holds the partner's code and checkpoints and the flight log. It never goes to GitHub.
+
+## 1. The scripts
+
+All five print their steps; `--help` explains each, and `--dry-run` prints what would run without running it.
+
+| Script | When | What it does |
 |---|---|---|
-| GPU and driver | `nvidia-smi` | RTX 5090 listed; driver 580 or newer (the laptop runs 580.178; Isaac Sim 5.1 and JAX with CUDA 13 need a recent driver). OPEN |
-| OS | `lsb_release -d` | Ubuntu 24.04. OPEN |
-| Disk | `df -h ~` | at least 60 GB free: about 26 GB for NVIDIA's Isaac Lab image, the rest for run folders. OPEN |
-| Docker + GPU in containers | `docker run --rm --gpus all ubuntu nvidia-smi` | the same GPU table as above. If it fails, install Docker and the NVIDIA Container Toolkit |
+| `check_machine.sh` | first, on the workstation | read-only checks: GPU, driver (580 or newer), Ubuntu version, free disk (60 GB or more), Docker with the GPU, conda |
+| `setup_isaaclab_host.sh` | once, for Isaac runs on the host | conda `env_isaaclab` as on the laptop: Python 3.11, PyTorch 2.7.0 for CUDA 12.8, Isaac Sim 5.1.0, Isaac Lab 2.3.2 in `~/IsaacLab`, skrl 2.1.0; versions in `env_isaaclab_requirements.txt` |
+| `setup_nus_jax.sh <folder>` | once, for NUS jobs | a separate conda env `nus_jax` (Python 3.12) for NUS's code, then their CPU tests |
+| `run_nus_job.sh` | each NUS job | starts the job in the background with a log; cloud logging off; JAX takes at most 60 % of GPU memory by default (PROPOSED; the laptop used 30 % beside other runs) |
+| `sync_results.sh <pc> <run>` | on the laptop, after a run | copies `runs/<run>/` back, plus the workstation's record and ledger for you to copy by hand |
 
-## 2. Get the pipeline
+Run them from the pipeline folder: `cd ~/AirStack-starling-max2/svg_training`, then `scripts/workstation/<name>`.
+
+**Container or host?** Use the container ([GETTING_STARTED](GETTING_STARTED.md) part A) for the tests and the S0
+benchmark: it is the same image as the laptop's run of record T1, so the numbers compare. Use the host env for the
+S2b Isaac stand-in seeds and the step tests: the stand-in trainer needs skrl 2.x and the container has 1.4.3, and
+the step tests read a flight log outside this folder.
+
+On the host, Isaac Lab is 2.3.2 by default. The laptop runs 2.3.2 plus 25 commits (`f73c331738`, none in code the
+pipeline uses); add `--isaaclab-ref f73c331738` to match it exactly.
+
+## 2. The first evening, in order
+
+1. **Check the machine.** `scripts/workstation/check_machine.sh`. Exit 0 means go; fix every FAIL line first.
+2. **Get the pipeline.**
+   `git clone https://github.com/AI-DA-STC/AirStack-starling-max2.git ~/AirStack-starling-max2`
+3. **Unpack the private bundle** to the same places as on the laptop. Its NOTES name each folder and give the
+   sha256 of each archive; check them before unpacking.
+4. **Container route.** `docker/build.sh`, then `docker/run.sh '$SVG_PY -m pytest -q'`
+   ([GETTING_STARTED](GETTING_STARTED.md) A1–A2).
+5. **Host route.** `scripts/workstation/setup_isaaclab_host.sh --dry-run`, read it, then run it without
+   `--dry-run`. The first Isaac Sim start asks you to accept NVIDIA's licence.
+6. **S0 speed benchmark** (Linear NEAR-959; [GETTING_STARTED](GETTING_STARTED.md) A3–A4). It runs only on a config
+   the owner approved (its sha256). More games to fill the 5090's 32 GB is a new config, so it needs his approval
+   first (STANDARDS §7).
+7. **The remaining S2b Isaac stand-in seeds**: the ones the laptop did not finish. The list and the exact command
+   are in [HANDOFF](claude/HANDOFF.md) and `scripts/train_standin.py --help`. Run `scripts/isaac_preflight.sh` first,
+   and always headless.
+8. **NUS jobs.** `scripts/workstation/setup_nus_jax.sh <NUS folder>`, then `run_nus_job.sh` with the settings in
+   the bundle's NOTES. Run them inside `tmux`.
+
+## 3. NUS's code stays private
+
+NUS's code, checkpoints and settings come only from the private bundle. They are never committed to this repository
+or pushed to GitHub. That is why `run_nus_job.sh` takes every NUS setting as an argument, and why a test fails if
+NUS-specific words appear in these scripts or this page. Their logs go to `~/nus_jax_runs/`, outside the repository.
+
+## 4. Getting results back to the laptop
+
+Every run folder under `runs/<name>/` holds the policy, TensorBoard logs, scores and settings. On the laptop:
 
 ```bash
-git clone https://github.com/AI-DA-STC/AirStack-starling-max2.git ~/AirStack-starling-max2
-cd ~/AirStack-starling-max2/svg_training
+scripts/workstation/sync_results.sh --dry-run <workstation> <name>    # see the commands
+scripts/workstation/sync_results.sh <workstation> <name>              # copy
 ```
 
-Then build and test exactly as on the laptop: [GETTING_STARTED](GETTING_STARTED.md) A1 (`docker/build.sh`) and
-A2 (`docker/run.sh '$SVG_PY -m pytest -q'`). Use the container, not a host install: the same image means results
-compare with the laptop's.
+Runs of record are still recorded and committed on the laptop. `run_s0.sh` writes a record and a ledger row on the
+machine that ran it, so `sync_results.sh` brings the workstation's record and ledger into
+`runs/<name>/_from_workstation/`. Move the record into `records/`, and copy its ledger row by hand with the laptop
+ledger's next T number (the two ledgers number separately). Then commit on the laptop.
 
-The Starling model file and the flight logs are not in the container (see the S2b plan, D13). Runs that need them
-(Isaac step tests, the drone-model checks) stay on the laptop until they are copied over.
+## 5. Working on it from the lab (Tailscale + Ubuntu remote desktop)
 
-## 3. First run: measure speed (Linear NEAR-959)
-
-The S0 benchmark is the speed test for a new machine: [GETTING_STARTED](GETTING_STARTED.md) A3–A4. Its config
-hash must be one the owner approved; a new game count for 32 GB is a new config and needs his approval first
-(STANDARDS §7). The result is a run of record with its own ledger row.
-
-## 4. NUS's own training code (optional)
-
-NUS's code is a partner's code: copy it by USB, a private drive or `scp`, never through GitHub or this repository.
-Give it its own conda environment, separate from Isaac Lab, and always switch off their W&B logging
-(`use_wandb=False`). The laptop's reference runs and their report live outside the repository
-(`~/nus_jax_reference/`).
-
-## 5. Getting results back to the laptop
-
-Each run folder under `svg_training/runs/<name>/` holds everything: the policy, TensorBoard logs, scores and
-settings. Copy the whole folder back, then score or watch it on the laptop with the usual scripts.
-
-```bash
-rsync -av <workstation>:AirStack-starling-max2/svg_training/runs/<name>/ ~/AirStack-starling-max2/svg_training/runs/<name>/
-```
-
-`<workstation>` is the PC's address on your network or over Tailscale. Records and ledger rows are written and
-committed on the laptop, in the live clone, as always (root CLAUDE.md).
-
-## 6. Working on it from the lab (owner's choice: Tailscale + Ubuntu remote desktop)
-
-- Join the PC and the laptop to the same Tailscale network; use the PC's Tailscale name as `<workstation>` above.
+- Join the PC and the laptop to the same Tailscale network; use the PC's Tailscale name as `<workstation>`.
 - Ubuntu 24.04: Settings → System → Remote Desktop. "Remote Login" works with nobody logged in at the PC.
-- Start long runs inside `tmux` (over SSH or a terminal in the remote desktop), so a dropped connection does not stop
-  the run; `tmux attach` to check on it.
-- Watch training live in TensorBoard on the PC (`tensorboard --logdir runs/`) through the remote desktop, or forward
-  the port: `ssh -L 6006:localhost:6006 <workstation>`, then `http://localhost:6006` on the laptop.
+- Start long runs inside `tmux`, so a dropped connection does not stop them; `tmux attach` to look again.
+- TensorBoard: `tensorboard --logdir runs/` on the PC, or `ssh -L 6006:localhost:6006 <workstation>` and open
+  `http://localhost:6006` on the laptop.
+- `isaac_preflight.sh` refuses (exit 10) when no Ethernet is connected and a remote-desktop program runs. That rule
+  comes from the laptop's WiFi crashes. Put the PC on Ethernet.
 
-## 7. Rules that still apply
+## 6. Rules that still apply
 
-- Headless for runs of record; check `nvidia-smi` before every run (CLAUDE.md rule 6).
-- A training result is not a flight result: "observed in the training simulator" (CLAUDE.md rule 4).
+- Headless for every run; check `nvidia-smi` before each one (CLAUDE.md rule 6).
+- A training result is not a flight result: write "observed in the training simulator" (CLAUDE.md rule 4).
 - Nothing trained here flies until it has passed its gates and the export stage (STANDARDS §3).

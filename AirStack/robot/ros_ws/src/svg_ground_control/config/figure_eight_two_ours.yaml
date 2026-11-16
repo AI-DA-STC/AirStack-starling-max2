@@ -7,13 +7,14 @@
 # (10.40.2.10). 0.5 m/s, CBF r 0.55 (keep-out 1.10 m).
 #
 # TAKEOFF POINTS = the far ends of the eight (hover_positions unused):
-#   drone_1 (+2.0, 0.0, 2.0)   drone_2 (-2.0, 0.0, 2.0)   4.0 m apart, nose +x
+#   drone_1 (+1.99, +1.14, 2.0)   drone_2 (+2.32, -0.97, 2.0)   2.14 m apart, nose +x
 # Takeoff flies a straight line to them: stand each drone under its point.
 #
 # Offline check with CMU's scenario + cbf_filter (first-order lag 0.15 s,
-# 180 s): closest 1.10 m, height 2.0 m throughout, drones within x +-2.03 m,
-# y +-1.03 m, pushed at most 1.18 m off the eight at the crossing, back on
-# it afterwards (no lock-up), no emergency push-apart. NOT FLOWN.
+# 180 s), this geometry: closest 1.10 m, height 2.0 m throughout, drones
+# within x 1.47..2.84 (0.41 m inside the +3.25 m geofence), y -1.02..1.19,
+# at most 1.08 m off the eight, no lock-up, no emergency push-apart.
+# NOT FLOWN.
 #
 #   ros2 launch svg_ground_control ground_control.launch.py \
 #     config:=/root/AirStack/robot/ros_ws/src/svg_ground_control/config/figure_eight_two_ours.yaml \
@@ -29,16 +30,19 @@ swarm_commander:
 
     scenario: "figure_eight"
     # CMU's figure-eight with TWO drones (patch 0008: no intruder slot).
-    # Two touching circles, radius 1.0 m, centres 2.0 m apart along x
-    # (axis 180: lobe A toward +x, so drone_1 starts at +x, drone_2 at -x),
-    # FLAT (tilt 0: the CBF can only steer sideways, nobody passes over the
+    # Fitted 2026-11-16 (CHG-0076) to where the owner stood the drones
+    # (mocap): drone_1 (+1.992, +1.144), drone_2 (+2.318, -0.975). The eight's
+    # far ends ARE those points: centre = their midpoint, axis = the line
+    # from drone_1 to drone_2 (-81.2 deg, nearly along -y, like CMU's eight
+    # along y), radius = a quarter of their distance (2.144 m / 4).
+    # FLAT (tilt 0; CMU flies -30: the CBF could then pass one over the
     # other), at 2.0 m. senses [1,-1]: the two meet HEAD-ON at the crossing
-    # (0, 0, 2) every half eight. 0.5 m/s: one eight 25 s, meeting every
-    # 12.6 s, centripetal 0.25 m/s2.
-    figure_eight_center: [0.0, 0.0, 2.0]
-    figure_eight_radius_m: 1.0
-    figure_eight_center_distance_m: 2.0
-    figure_eight_axis_deg: 180.0
+    # (2.155, 0.085, 2.0) every half eight. 0.5 m/s: one eight 13.5 s,
+    # meeting every 6.7 s, centripetal 0.47 m/s2.
+    figure_eight_center: [2.155, 0.085, 2.0]
+    figure_eight_radius_m: 0.536
+    figure_eight_center_distance_m: 1.072
+    figure_eight_axis_deg: -81.24
     figure_eight_tilt_deg: 0.0
     figure_eight_senses: [1.0, -1.0]
     figure_eight_track_gain: 1.0

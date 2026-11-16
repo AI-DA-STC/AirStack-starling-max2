@@ -5,6 +5,7 @@ Guard drones in slots 0..pad_guards-1, Strike drones from slot pad_guards on."""
 from __future__ import annotations
 
 import importlib
+from pathlib import Path
 
 import torch
 from torch import Tensor
@@ -214,8 +215,14 @@ REGISTRY: dict[str, type] = {
 
 
 def make_strategy(spec: str, team: str, cfg: GameCfg, num_games: int, device, seed: int):
-    """spec = a REGISTRY name or "package.module:ClassName" (outside code; same constructor arguments:
-    team, cfg, num_games, device, seed)."""
+    """spec = a REGISTRY name, "package.module:ClassName" (outside code; same constructor arguments:
+    team, cfg, num_games, device, seed), or a stand-in run folder holding interface.toml (S2b Task 9: loaded as
+    ``opponents.learned.SkrlPolicyStrategy``, deterministic; Guard team only). skrl is imported only for a run folder."""
+    if Path(spec).is_dir() and (Path(spec) / "interface.toml").is_file():
+        from .learned import SkrlPolicyStrategy        # lazy: the scripted opponents import no training library
+        if team != "guard":
+            raise ValueError(f"run folder {spec!r} holds a Guard stand-in; it cannot play the {team!r} team")
+        return SkrlPolicyStrategy(spec, num_games, device, deterministic=True, seed=seed)
     if ":" in spec:
         mod, _, cls = spec.partition(":")
         klass = getattr(importlib.import_module(mod), cls)

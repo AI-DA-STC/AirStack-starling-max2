@@ -252,6 +252,27 @@ side and time left (3), then 8 slots of 7 (each drone's position from the zone c
 the zone centre (2). A 64-step run learns nothing: it only proves the pipe. A real run uses many games on the GPU
 and far more steps.
 
+**Worked example: our stand-in.** `scripts/train_standin.py` is a complete skrl IPPO training script built this
+way (2 Guard drones v 1 scripted Strike drone, settings in `configs/s2.toml [standin]`). It is a pipe test that
+shows the whole chain works, not a strategy of record. Each run folder `runs/<name>/` holds `agent.pt`,
+`interface.toml` (observation version, action scaling, game file and its sha256, seed, commit) and TensorBoard
+curves. Load a run folder as a Guard strategy, score it, or train it again with the same command:
+
+```python
+from svg_training.opponents.learned import SkrlPolicyStrategy
+guard = SkrlPolicyStrategy("runs/<name>", num_games=1024, device="cuda")   # Guard team, 2 drones only
+```
+
+```bash
+PYTHONPATH=source python scripts/score.py --guard runs/<name>,random --strike strike_straight,strike_flank \
+    --sizes 2v1 --presets pure --no-local --out runs/<name>_score/
+PYTHONPATH=source python scripts/train_standin.py --seed 1 --name <new name>                    # pure rules
+PYTHONPATH=source python scripts/train_standin.py --seed 1 --name <new name> --motion starling  # Starling layer
+PYTHONPATH=source python scripts/train_standin.py --seed 1 --name <new name> --motion physics --headless
+    # Isaac Lab physics drone, on the host after scripts/isaac_preflight.sh (needs skrl 2.x)
+tensorboard --logdir runs/        # then open http://localhost:6006; game/ curves at every evaluation
+```
+
 **Gymnasium.** One team is the learner: its drones' observations side by side (`[N, G × 71]`) and its actions
 side by side (`[N, G × 4]`, drone k at columns 4k to 4k+3). The reward is the team's, `[N]`. The other team is
 a fixed strategy; `SplitStrategy` mixes several on fixed slices of the games.

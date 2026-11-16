@@ -4,7 +4,7 @@ This folder exists to train strategies for the Strike vs Guard game. In the game
 a circular zone and a Strike team tries to reach it. We want a computer to learn good team strategies by playing
 thousands of games at once on one graphics card (GPU), and then fly those strategies on real Starling drones.
 
-This page tells the story so far, in the order it happened. Nothing has been trained yet. Words in *italics* are
+This page tells the story so far, in the order it happened. No strategy has been trained yet. Words in *italics* are
 explained where they first appear; all of them are also in the [glossary](GLOSSARY.md).
 
 ```mermaid
@@ -15,7 +15,8 @@ flowchart LR
   D --> E["15 Nov<br/>Read the results"]
   E --> F["15 Nov<br/>S1: drone model<br/>and safety filter"]
   F --> G["15–16 Nov<br/>S2: the game and<br/>the plug-in point"]
-  G --> H["Next<br/>S2b: the game on<br/>Isaac Lab drones"]
+  G --> H["16–17 Nov<br/>S2b: the game on<br/>Isaac Lab drones"]
+  H --> I["Next<br/>stand-in results,<br/>S3 and S4"]
 ```
 
 ## 1. The idea and the research (14 November 2026)
@@ -225,11 +226,53 @@ point). Top: the pure partner rules; bottom: with the Starling layer. Random Gua
 **What we did not do.** Nothing was trained. No flight or simulator code changed. Every result is observed in the
 training simulator (T5: in flight logs).
 
-## 8. What comes next
+## 8. S2b: the game on Isaac Lab drones (16 and 17 November)
 
-- **S2b: the S2 game on Isaac Lab drones**, with PX4's control loops and the real gains, compared with the PyTorch
-  game, and the stand-in trainer on both ([S2b plan](plans/2026-11-16-s2b-isaac-lab-environment.md)). Every
-  training run will log to TensorBoard ([TRAINING](TRAINING.md)).
+**What we did.** In S2 a drone was a point that followed a fitted model. S2b adds the *physics drone*: a Starling
+as a rigid body with four rotors in Isaac Lab, flown by a line-by-line copy of PX4 1.14's control loops with the
+drone's own gains. The same game, commander copy and safety filter sit on top, so the game can now run on either
+drone model ([S2b plan](plans/2026-11-16-s2b-isaac-lab-environment.md)). The owner approved the plan on 16 November
+("go with ur picks"). The full results, with figures and clips, are in [S2B_RESULTS](S2B_RESULTS.md).
+
+**Why.** A point model cannot show what happens when a drone tilts, lags or runs out of thrust. Before a strategy
+trained on the fast model is trusted, it should give the same answers on a drone that does.
+
+**What happened, in order.**
+
+1. **The two physics worlds (run T10): FAIL, accepted.** Isaac Lab and a small PyTorch copy of the same equations
+   were given the same forces. Under PX4's loops they agree far inside the gates; with no controller, Isaac Lab's
+   GPU physics drifts 1.15 mm in 1 s against a 1.0 mm gate. The owner accepted it.
+2. **Yaw.** With the drone's own yaw gains the modelled yaw did not settle. The owner ruled that the physics drone
+   uses the AirStack simulator's SIM-ONLY yaw-rate gains; every other gain stays the drone's own.
+3. **Clips.** Seven short clips of scripted games on Isaac Lab Starlings, two in the construction-site world as a
+   backdrop ([media](media/README.md#isaac-lab-clips-s2b-the-same-game-on-rigid-body-starling-drones)).
+4. **Step tests (run T11): FAIL.** Against a real flight log the physics drone's speed is close, but its timing is off by
+   up to 0.38 s, mostly early. Tier 1, the fast model, turned out much slower than both.
+5. **Speed (run T12).** The game on Isaac Lab drones ran at 42,590–262,190 drone-steps a second with random
+   actions, fast enough by S0's rule to train on directly.
+6. **Scripted games on both (run T13): FAIL.** On the physics drone a Strike drone often passes over or under a
+   Guard drone, because the safety filter keeps drones apart in 3-D and the drones' heights now differ by
+   millimetres. On tier 1 every drone stayed at exactly one height, which is why the scripted Guards held there.
+   The owner chose on 17 November to keep this in the game: Guards will have to learn to cover height.
+7. **The stand-in trainer.** It first learned nothing: its starting moves were almost pure noise. In pilots (not
+   of record), smaller starting noise and more game-steps let it learn a little; its runs of record on Isaac Lab are
+   in progress.
+
+<a id="fig-4"></a>
+![Share of games the Guard team held, tier 1 against the physics drone](figures/s2b_scripted_compare.png)
+
+**Figure 4.** How often each scripted Guard strategy held the zone on tier 1 (open circles) and on the physics drone
+in Isaac Lab (filled squares), 1,000 paired games per point (run T13). Against the straight Strike the physics
+squares sit near zero.
+
+**What we did not do.** No strategy was trained. No flight or simulator code changed. Every result is observed in the
+training simulator.
+
+## 9. What comes next
+
+- **The stand-in results** on Isaac Lab, and the registered Isaac Lab task (Task 8b). The PyTorch stand-in runs are
+  not scheduled.
+  Every training run logs to TensorBoard ([TRAINING](TRAINING.md)).
 - **A real flight with planned pushes**, so the drone model gets its run of record. The list of what to record is
   in [S1_RESULTS](S1_RESULTS.md#what-the-owner-needs-to-do-next).
 - **NUS's strategy and rule details**, so it can be plugged in and scored.

@@ -11,7 +11,14 @@ FAIL, tier 1 carries the real-drone command chain with an exploratory PX4 model 
 S2: the game (partner rules preset, neutral committed values, varied arenas, Starling layer), scripted opponents,
 scoring tool, skrl and Gymnasium adapters and the partner guide; faster filter T8 = PASS, drone-model check T5 = FAIL,
 scripted reference T9 = INFO; the stand-in trainer moved to S2b ([docs/S2_RESULTS.md](docs/S2_RESULTS.md),
-[docs/PLUG_IN.md](docs/PLUG_IN.md)). Next: S2b (the game on Isaac Lab drones, plan approved).
+[docs/PLUG_IN.md](docs/PLUG_IN.md)).
+
+**S2b (2026-11-17): built and run through Task 8, not closed; no strategy trained.** The S2 game on rigid-body
+Starlings in Isaac Lab (the physics drone: PX4 1.14 cascade with the drone's gains, SIM-ONLY yaw-rate gains by the
+owner's ruling). Two physics worlds agree T10 = FAIL (accepted by the owner), step tests T11 = FAIL, speed T12 = INFO,
+scripted games on both backends T13 = FAIL: on the physics drone Strike drones pass over or under Guards, and the
+owner kept this in the game (option (a), 17 November). The stand-in trainer is running on Isaac Lab; the registered
+Isaac Lab task (Task 8b) is not yet built ([docs/S2B_RESULTS.md](docs/S2B_RESULTS.md)).
 
 ## Read first
 
@@ -21,7 +28,7 @@ scripted reference T9 = INFO; the stand-in trainer moved to S2b ([docs/S2_RESULT
 | [STANDARDS.md](STANDARDS.md) | **the rules**: scope, wording, policy interface, game specification, drone models, gates, records, code, git |
 | [docs/DESIGN.md](docs/DESIGN.md) | the design: seven stages, two tiers, four uses, environments and contact tags, build order S0–S5, approaches considered |
 | [docs/RESEARCH.md](docs/RESEARCH.md) | state of the art as of 14 November 2026, with sources; the evidence behind the design |
-| [docs/S0_RESULTS.md](docs/S0_RESULTS.md), [docs/S1_RESULTS.md](docs/S1_RESULTS.md), [docs/S2_RESULTS.md](docs/S2_RESULTS.md), [docs/GLOSSARY.md](docs/GLOSSARY.md) | S0's, S1's and S2's numbers and limits; terms and the one Versions table |
+| [docs/S0_RESULTS.md](docs/S0_RESULTS.md), [docs/S1_RESULTS.md](docs/S1_RESULTS.md), [docs/S2_RESULTS.md](docs/S2_RESULTS.md), [docs/S2B_RESULTS.md](docs/S2B_RESULTS.md), [docs/GLOSSARY.md](docs/GLOSSARY.md) | S0's, S1's, S2's and S2b's numbers and limits; terms and the one Versions table |
 | [docs/PLUG_IN.md](docs/PLUG_IN.md) | how a partner plugs a strategy or a training method into the game and scores it |
 | [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md) | the human path from a clone to tests and a benchmark run; `run_s0.sh` exit codes |
 | [docs/linear/README.md](docs/linear/README.md) | this project in Linear (P-NEAR-31): how an update goes (`updates/` → owner uploads → `synced/` → `snapshots/`), the latest snapshot, the owner's Linear rules |

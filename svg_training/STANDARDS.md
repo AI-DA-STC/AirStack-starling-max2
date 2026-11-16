@@ -139,8 +139,11 @@ There are two, and they must agree (stage 4 checks that they do).
 measured state, as one batched PyTorch model: the ground controller's command shaping, PX4's
 position and velocity loops, attitude lag, delay, limits.
 
-**Tier 2, rigid body.** The Starling as a rigid body with four rotors in Isaac Lab
-(`isaaclab_contrib` `Multirotor` + `Thruster`), flown by a batched port of PX4's control cascade.
+**Tier 2, rigid body.** The Starling as a rigid body with four rotors in Isaac Lab, flown by a batched port of PX4's
+control cascade. Since S2b (the *physics drone*, [S2B_RESULTS](docs/S2B_RESULTS.md)) each drone is one PhysX rigid
+body pushed by our own rotor model (`models/starling_airframe.py`: measured motor lag, one force and torque per
+drone), not `isaaclab_contrib` `Multirotor` + `Thruster`, which needs thruster joints the Starling model lacks (S2b
+plan D2).
 
 | Quantity | Value | Status | Source |
 |---|---|---|---|
@@ -150,7 +153,7 @@ position and velocity loops, attitude lag, delay, limits.
 | Moment coefficient | 5.38697e-8 N·m/(rad/s)² | MEASURED | same PDF |
 | Motor time constant | 55 ms rising, 85 ms falling (72 ms average) | MEASURED | same PDF |
 | Maximum rotor speed | 1,450 rad/s | MEASURED | `docs/CONFIG.md` |
-| Rotor positions | sim CAD ±0.095 / ±0.13 m; drone parameters ±0.085 / ±0.0625 m | OPEN | `docs/CONFIG.md` records both; pick one for tier 2 and say why |
+| Rotor positions | sim CAD ±0.095 / ±0.13 m; drone parameters ±0.085 / ±0.0625 m. Tier 2's body uses CAD; PX4's motor mixing uses the drone's parameters, as on the drone | FIXED for tier 2 (owner's answer 2, 16 November 2026); which layout the real drone has is not measured | `docs/CONFIG.md` records both; S2b plan D4: CAD and inertia come from the same system identification |
 | Drag | not identified | OPEN | — |
 | PX4 velocity loop gains, horizontal | P 1.8, I 0.4, D 0.2 | MEASURED | `starling_1_indoor_params.params` (`MPC_XY_VEL_*_ACC`) |
 | PX4 position gains | horizontal 0.95, vertical 5; vertical velocity P 8 | MEASURED | same file |
@@ -169,7 +172,10 @@ Rules:
    acceleration ramp), not PX4 alone. The real drone and the AirStack simulator use different
    command routes today (NEAR-866); fit each and keep both parameter sets.
 2. **Tier 2's control gains come from the drone's parameter file**, never from the sim airframe,
-   whose rate gains are halved on purpose (iron rule 9). A tier 1 parameter set fitted to AirStack
+   whose rate gains are halved on purpose (iron rule 9). One exception, the owner's ruling of 16 November 2026:
+   the physics drone uses the AirStack simulator's SIM-ONLY yaw-rate gains `MC_YAWRATE_P/I/D` 0.25 / 0.2 / 0
+   (`params/sim_only_yaw_v0.toml`, precedent CHG-0024), because with the drone's own the modelled yaw does not
+   settle. They are never a drone value, and every record names the yaw gains it used. A tier 1 parameter set fitted to AirStack
    simulator logs is a different thing: it describes that simulator and is used to predict stage 6.
 3. **Two tier 1 parameter sets**: `airstack_sim` (fitted to the AirStack simulator) and `real`
    (fitted to the drone). Training uses `real` with small random variation around it (rule 10);
@@ -192,7 +198,8 @@ Rules:
    through `px4_interface`, the simulator a speed only through MAVROS, with its PX4 clock about 1.9
    times the commander's ([exploratory record §6](records/2026-11-15_s1_real_px4_exploratory.md#6-real-drone-and-airstack-simulator-side-by-side)).
 9. **Unit trap**: Isaac Lab's `ThrusterCfg.thrust_const_range` is in N/(revolutions per second)²; the
-   identified thrust coefficient is in N/(rad/s)². Convert, and test the hover thrust.
+   identified thrust coefficient is in N/(rad/s)². Convert, and test the hover thrust. (S2b's own rotor model uses
+   N/(rad/s)² throughout, so the trap does not arise there; it applies to any use of `Thruster`.)
 10. **The drone model for training is fitted from real flight logs; simulator fits describe the
     simulator only** (owner, 15 November 2026; FIXED). The AirStack simulator feeds PX4 by a different
     route and clock (rule 8), so its fit would teach a policy the wrong drone. The `real` set gets its

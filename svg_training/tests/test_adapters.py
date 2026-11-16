@@ -316,6 +316,16 @@ def test_plug_in_flowchart_script_runs(tmp_path):
     assert out.stat().st_size > 10_000
 
 
+def test_s2b_flowchart_script_runs(tmp_path):
+    """docs/S2B_RESULTS.md figure 1 is made by a committed script (STANDARDS §11)."""
+    out = tmp_path / "s2b_flow.png"
+    r = subprocess.run([child_python(), str(ROOT / "scripts" / "make_s2b_flowchart.py"), str(out)],
+                       env=child_env(str(ROOT / "source")), capture_output=True, text=True)
+    assert r.returncode == 0, r.stderr
+    assert out.stat().st_size > 10_000
+    assert "figures/s2b_flow.png" in (ROOT / "docs" / "S2B_RESULTS.md").read_text()
+
+
 def test_adapter_modules_have_no_host_calls():
     """Static scan, as tests/test_game_core.py does for the game: no host reads or NumPy in the adapters."""
     for f in ("skrl_adapter", "gym_adapter"):

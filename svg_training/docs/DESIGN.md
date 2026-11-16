@@ -61,6 +61,15 @@ PyTorch, and import nothing from Isaac. Two drone models plug in underneath.
 | Needs Isaac | no | no | yes (Isaac Lab 2.3.2 `Multirotor` + `Thruster`) | yes |
 | Speed | high | see [S0_RESULTS](S0_RESULTS.md) | lower | see [S0_RESULTS](S0_RESULTS.md) |
 
+> **Tier 2 today, 17 November 2026 (S2b).** Tier 2 is the *physics drone* of
+> [S2B_RESULTS](S2B_RESULTS.md): each Starling is one PhysX rigid body (all drones in one collection, no collider),
+> pushed by our own rotor model (measured motor lag, CAD rotor positions) and flown by a line-by-line port of PX4
+> 1.14's cascade with the drone's gains, except the owner's SIM-ONLY yaw-rate gains. It is not `isaaclab_contrib`
+> `Multirotor` + `Thruster` (S2b plan D2: the Starling model has no thruster joints). A PyTorch copy of the same
+> equations serves the CPU tests. There is no world yet and no PhysX contact: a contact tag is still the 0.50 m
+> rule. It ran the game at 42,590–262,190 drone-steps a second on this laptop with random actions
+> ([T12 record](../records/2026-11-16_s2b_throughput_record.md)).
+
 Why two: published work flew velocity-level policies trained on a fitted point-mass model through PX4
 (RESEARCH §4–5), and strategy learning gains nothing from rotor physics. But a point-mass model
 cannot show what happens near tilt and thrust limits, so a heavier model checks it before the
@@ -140,14 +149,19 @@ Each step ends on a number. S0–S5 deliver use 1.
 > is in [S2_RESULTS](S2_RESULTS.md). The owner then added S2b, the S2 game on Isaac Lab drones
 > ([S2b plan](plans/2026-11-16-s2b-isaac-lab-environment.md)), which pulls part of S4's cross-check forward and
 > runs the stand-in trainer moved out of S2.
+>
+> **Status note, 17 November 2026.** S2b is built and run through its Task 8, not closed; the S2b row below says what
+> it holds, and [S2B_RESULTS](S2B_RESULTS.md) what it measured. S4 keeps the cross-check in the construction-site
+> world.
 
 | Step | Builds | Ends when |
 |---|---|---|
 | **S0 Measure** | the project skeleton; minimal tier 1 and tier 2 environments with random actions; tier 1 with 0, 10 and 50 obstacles, range rays, line of sight and a stand-in distance field | steps per second against number of games recorded for both tiers on the laptop (done: T1, [S0_RESULTS](S0_RESULTS.md)) and a training workstation (to do), with a compute budget for S2–S4 |
 | **S1 Drone model** | velocity-step logs at the plug-in point (none exist yet; recorded by running `tools/sim.sh`, approved by the owner on 14 November 2026); stage 1 fitting script; tier 1 model; the safety filter port | fitted model reproduces a velocity step from the AirStack simulator within a limit set beforehand; filter port matches `cbf_filter.py` on recorded inputs |
 | **S2 One against one** | open arena (E0); game rules with contact tags, scripted opponents, evaluation suite, records | unit tests pass without Isaac; a trained Guard policy tags the scripted Strike behaviours at a rate set beforehand; that rate decides the control level (§7) |
+| **S2b The game on Isaac Lab drones** (added 16 November 2026) | the physics drone (PX4 1.14 cascade, rotor model, a rigid body in Isaac Lab and a PyTorch twin) under the S2 game; paired scripted games on both backends; the stand-in trainer on both; clips; a registered Isaac Lab task (not yet built) | the gates of `configs/s2b.toml` have been run and recorded (T10–T13 run; stand-in pending) |
 | **S3 Two against one** | random blocks and columns (E1); line-of-sight masking; opponent pool, start archive | hold rate from random starts and layouts against the scripted Strike behaviours at a rate set beforehand, with the interval reported; the 20 % figure is a reference only, its game conditions differ |
-| **S4 Five against three** | the construction-site world (E2): bake its distance field, random clutter; team-size and drop-out randomisation; tier 2 cross-check in the same world | suite passes on tier 1, on held-out layouts too; gap to tier 2 within its limit |
+| **S4 Five against three** | the construction-site world (E2): bake its distance field, random clutter; team-size and drop-out randomisation; tier 2 cross-check in the same world (S2b brought the open-arena part forward) | suite passes on tier 1, on held-out layouts too; gap to tier 2 within its limit |
 | **S5 Hand-over** | export and `interface.toml` | the owner approves a ROS 2 policy node in the AirStack tree (outside this folder); the policy flies in the AirStack simulator |
 
 ## 9. Approaches considered

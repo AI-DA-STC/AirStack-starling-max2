@@ -15,9 +15,9 @@ official run whose numbers we keep is the *run of record* (both in the [glossary
 | S0 (throughput benchmark) | run of record T1: **FAIL** on one [gate](docs/GLOSSARY.md) (1 of 96 points lost to an Isaac start-up crash) | every number verified; both speed [decision rules](docs/GLOSSARY.md) met → [S0 results](docs/S0_RESULTS.md) |
 | S1 (drone model and safety filter) | built, run and closed 15 Nov: filter copy T2 **FAIL** (accepted by the owner on the exact counts); simulator fit T3 **FAIL**; real-log fit exploratory; tier 1 with the real chain T4 information only; no S1 gate on the drone model passed yet | [S1 results](docs/S1_RESULTS.md); [S1 plan](docs/plans/2026-11-15-s1-drone-model-and-safety-filter.md) |
 | S2 (the game and the plug-in point) | built, reviewed and CLOSED 16 Nov (final review on the whole stage, one fix wave). Faster filter T8 **PASS**; drone-model check T5 **FAIL**; scripted reference T9 information only; stand-in trainer moved to S2b | [S2 results](docs/S2_RESULTS.md); [S2 plan](docs/plans/2026-11-15-s2-game-and-plug-in.md) |
-| S2b (the game on Isaac Lab drones) | plan approved 16 Nov; not started | [S2b plan](docs/plans/2026-11-16-s2b-isaac-lab-environment.md) |
+| S2b (the game on Isaac Lab drones) | built and run through Task 8, 16–17 Nov; not closed. Two physics worlds agree T10 **FAIL** (accepted by the owner); step tests T11 **FAIL**; speed T12 information only; scripted games on both backends T13 **FAIL** (Strike drones pass over or under Guards on the physics drone; the owner kept this in the game); stand-in trainer running on Isaac Lab; registered Isaac Lab task not yet built | [S2b results](docs/S2B_RESULTS.md); [S2b plan](docs/plans/2026-11-16-s2b-isaac-lab-environment.md) |
 | S3–S5 | not started | [DESIGN §8](docs/DESIGN.md#8-build-order) |
-| Training | nothing trained yet | none |
+| Training | no strategy trained yet; the stand-in trainer (a pipe test) is running on Isaac Lab | [S2b results §5](docs/S2B_RESULTS.md#5-the-stand-in-trainer) |
 
 Every number in this folder was observed in the training simulator. None is a flight result.
 The story so far, in plain words and in order: [WHAT_WE_DID](docs/WHAT_WE_DID.md).
@@ -41,7 +41,7 @@ Each row points to the page that answers the question.
 | run the benchmark | [GETTING_STARTED](docs/GETTING_STARTED.md) A3–A4 (container) or B (host) |
 | set up a training workstation (home RTX 5090 PC) | [WORKSTATION_SETUP](docs/WORKSTATION_SETUP.md) |
 | train a policy, without a window (headless) or with the Isaac Sim window | [TRAINING](docs/TRAINING.md) (planned workflow: nothing trains before S2) |
-| read the results | [S0_RESULTS](docs/S0_RESULTS.md), [S1_RESULTS](docs/S1_RESULTS.md), [S2_RESULTS](docs/S2_RESULTS.md); all records in [records/LEDGER.md](records/LEDGER.md) |
+| read the results | [S0_RESULTS](docs/S0_RESULTS.md), [S1_RESULTS](docs/S1_RESULTS.md), [S2_RESULTS](docs/S2_RESULTS.md), [S2B_RESULTS](docs/S2B_RESULTS.md); all records in [records/LEDGER.md](records/LEDGER.md) |
 | understand the design | [HOW_IT_WORKS](docs/HOW_IT_WORKS.md), then [DESIGN](docs/DESIGN.md) and [RESEARCH](docs/RESEARCH.md) |
 | look up a word or a version | [GLOSSARY](docs/GLOSSARY.md) |
 | know the rules | [STANDARDS](STANDARDS.md): interface, game, drone models, gates, records |

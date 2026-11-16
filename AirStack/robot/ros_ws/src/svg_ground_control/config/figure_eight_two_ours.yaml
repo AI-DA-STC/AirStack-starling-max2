@@ -1,21 +1,21 @@
 # SVG ground control — TWO REAL STARLINGS FLY CMU's FIGURE-EIGHT (ours).
 #
 # Copy of goal_two_ours.yaml (flown 2026-11-12/13; fences of 2026-11-16:
-# geofence +-3.25 m / 0-4 m, teleop fence unused here) with scenario
+# geofence widened here to y +-3.75 / z 0-4.5, CHG-0078; teleop fence
+# unused here) with scenario
 # figure_eight. Needs patch 0008 (figure_eight accepts 2 drones).
 # drone_1 = older Starling (10.40.2.11), drone_2 = newer Starling D0012
 # (10.40.2.10). 0.5 m/s, CBF r 0.55 (keep-out 1.10 m).
 #
 # TAKEOFF POINTS = the far ends of the eight (hover_positions unused):
-#   drone_1 (+1.99, +1.14, 2.0)   drone_2 (+2.32, -0.97, 2.0)   2.14 m apart, nose +x
+#   drone_1 (+2.15, +3.0, 2.3)   drone_2 (+2.15, -3.0, 2.3)   6.0 m apart, nose +x
 # Takeoff flies a straight line to them: stand each drone under its point.
+# Geofence in THIS file: x +-3.25, y +-3.75, z 0..4.5 m (other files 6.5 x 6.5 x 4).
 #
 # Offline check with CMU's scenario + cbf_filter (first-order lag 0.15 s,
-# 180 s), vertical + same direction: closest 1.10 m, never one above the
-# other, drones within x 1.98..2.33, y -1.03..1.20, z 1.43..2.57, vertical
-# speed <= 0.53 m/s, at most 1.62 m off the eight (at the crossing they
-# often turn back on their own loop instead of swapping), no emergency
-# push-apart. NOT FLOWN.
+# 180 s): closest 1.10 m, never one above the other, drones within
+# y -3.02..3.02, z 0.78..3.84, x 2.15, no emergency push-apart. Needs the
+# net and mocap tracking up to ~4 m. NOT FLOWN.
 #
 #   ros2 launch svg_ground_control ground_control.launch.py \
 #     config:=/root/AirStack/robot/ros_ws/src/svg_ground_control/config/figure_eight_two_ours.yaml \
@@ -31,23 +31,19 @@ swarm_commander:
 
     scenario: "figure_eight"
     # CMU's figure-eight with TWO drones (patch 0008: no intruder slot).
-    # Fitted 2026-11-16 (CHG-0076) to where the owner stood the drones
-    # (mocap): drone_1 (+1.992, +1.144), drone_2 (+2.318, -0.975). The eight's
-    # far ends ARE those points: centre = their midpoint, axis = the line
-    # from drone_1 to drone_2 (-81.2 deg, nearly along -y, like CMU's eight
-    # along y), radius = a quarter of their distance (2.144 m / 4).
-    # VERTICAL (tilt 90, owner 2026-11-16, CHG-0077): the eight stands in the
-    # plane of its axis (nearly y) and z, centre height 2.0 m, so it runs from
-    # 1.46 m to 2.54 m; takeoff points (far ends) stay at 2.0 m.
+    # CMU's size (owner 2026-11-16, CHG-0078): radius 1.5 m, centres 3.0 m
+    # apart (as CMU's figure_eight_rc_intruder.yaml), axis -90 deg (along -y:
+    # drone_1 starts at +y, drone_2 at -y), centre (2.15, 0, 2.3).
+    # VERTICAL (tilt 90): the eight stands in the y-z plane, 6.0 m long,
+    # 3.0 m tall, z 0.8..3.8 m. Takeoff points = far ends, at 2.3 m.
     # senses [1,1] (SAME direction, a side-by-side merge), NOT CMU's head-on
     # [1,-1]: in a vertical eight head-on meets one drone coming down onto
-    # the other; offline that parked them one directly above the other for
-    # 73 s of 180 s (downwash). [1,1]: 0 s, always >= 1.1 m apart sideways.
-    # 0.5 m/s: one eight 13.5 s, meeting every 6.7 s (CMU flew 2.0 m/s).
-    figure_eight_center: [2.155, 0.085, 2.0]
-    figure_eight_radius_m: 0.536
-    figure_eight_center_distance_m: 1.072
-    figure_eight_axis_deg: -81.24
+    # the other (offline: stacked 73 s of 180 s, downwash). [1,1]: never.
+    # 0.5 m/s (CMU flew 2.0): one eight 37.7 s, meeting every 18.8 s.
+    figure_eight_center: [2.15, 0.0, 2.3]
+    figure_eight_radius_m: 1.5
+    figure_eight_center_distance_m: 3.0
+    figure_eight_axis_deg: -90.0
     figure_eight_tilt_deg: 90.0
     figure_eight_senses: [1.0, 1.0]
     figure_eight_track_gain: 1.0
@@ -94,8 +90,8 @@ swarm_commander:
     fence_brake_accel_mps2: 4.0  # live; keep >= goal_accel_mps2
     fence_keep_in_gain: 2.0      # live; CMU: keep 2 on the trajectory output
     fence_margin_m: 0.0
-    fence_min: [-3.25, -3.25, 0.0]   # 6.5 x 6.5 m (owner 2026-11-16, CHG-0072)
-    fence_max: [3.25, 3.25, 4.0]
+    fence_min: [-3.25, -3.75, 0.0]   # figure-8 only: y +-3.75, top 4.5 m (owner 2026-11-16, CHG-0078)
+    fence_max: [3.25, 3.75, 4.5]
     # Teleop fence (owner 2026-11-16, CHG-0073): a 6 x 6 m keep_in box for the
     # hand-flown drone only (B10: teleop_drones:=drone_2), inside the 6.5 x 6.5 m
     # geofence (the commander refuses it otherwise). Amber in the 3D view.

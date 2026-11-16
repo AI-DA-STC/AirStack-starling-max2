@@ -6,7 +6,7 @@ Three Linear projects ([plan snapshot 2026-11-16](linear/snapshots/2026-11-16-pr
 
 ## Before the next real flight
 
-Hazards the pilot assumes until the named issue re-earns them (detail: [HTX-R2.md](projects/HTX-R2.md); items 11–14 are new on 2026-11-16):
+Hazards the pilot assumes until the named issue re-earns them (detail: [HTX-R2.md](projects/HTX-R2.md); items 11–15 are new on 2026-11-16):
 
 1. Software is blind to PX4 arming; the command-ACK message is unaudited against PX4 v1.14 — [PX4_MSGS_AUDIT.md](PX4_MSGS_AUDIT.md), re-run at NEAR-821.
 2. fly `_ours` configs (shipped real ones carry 0.3); `land_speed_mps` must stay 0.6 — 0.3 left the drone armed on the ground ([A21](record/LEDGER.md)); landing re-earned at NEAR-826.
@@ -18,18 +18,18 @@ Hazards the pilot assumes until the named issue re-earns them (detail: [HTX-R2.m
 8. Never raise the CBF radius with drones inside the new keep-out (instant emergency push-apart).
 9. No warning when no pad sends commands: check `ros2 topic hz /svg/drone_2/teleop_command` ≈ 20 Hz before takeoff; keep the pad pane running until after landing ([#36](record/LEDGER.md)).
 10. With the stick held, the collision filter pushes a hovering drone toward the wall behind it (0.29 m left): let go once it resists ([#37](record/LEDGER.md)).
-
-11. Figure-8 crossing: one drone passed above the other (owner's video, 2026-11-16); cause not investigated. Step the speed 1.0, 1.5, 2.0 m/s.
-12. After the figure-8 the drones landed on swapped sides (`drone_1` right, `drone_2` left); cause not investigated. Check the landing spots before `land`.
-13. Random goals: both drones can stop side by side inside the keep-out until landed (NEAR-985); `land` after 5 s stuck or 2 minutes.
-14. At 2.0 m/s the figure-8 runs 0.19 m inside the +x geofence wall (offline, not flown into).
+11. Figure-8 crossing: one drone passed above the other (owner's video, 2026-11-16); cause not investigated. If one drone is directly over the other, land at the next readout above 3 m. NEAR-984.
+12. After the figure-8 the drones landed on swapped sides (`drone_1` right, `drone_2` left): the design, as they swap loops at each crossing and `land` goes straight down. Keep the floor under the whole eight clear; carry each drone back to its takeoff point before a re-fly. NEAR-984.
+13. Random goals: both drones can stop side by side inside the keep-out until landed (NEAR-985); harmless hover; `land` after 5 s stuck or 2 minutes.
+14. At 2.0 m/s the figure-8 comes within 0.19 m of the +x geofence wall (3.06 m against 3.25 m), offline figure, not measured in the 16 Nov flight. If pane 3 prints a fence line or x passes 3.0 m, land at the next readout above 3 m. NEAR-984.
+15. Changing `scenario_speed_mps` while the figure-8 runs moves both drones' targets by metres. Set the speed before `start` only. NEAR-984.
 
 ## Where each project is
 
 | Project (Linear) | Sim / real | Milestone in progress (snapshot 2026-11-16) | Last result | Next issue | Blocked by |
 |---|---|---|---|---|---|
 | [HTX-R1 Swarm Sim Validation (Isaac)](projects/HTX-R1.md) | SIM ONLY (Isaac) | S5 Finish basic sim flight checks | [#32](record/LEDGER.md) Drive mode, 0.9° off the nose, 2026-11-03 → [record](record/sim_teleop_frame_run1_record.md) | NEAR-790; then NEAR-866 (S5d, the real command route) | — |
-| [HTX-R2 Starling Flight Bring-up (M2–M8)](projects/HTX-R2.md) | REAL DRONE | M7 · Multi-drone, 30 % (M2–M6 and M8 also open) | [#37](record/LEDGER.md) drone hand-flown at a hovering one: closest 1.76 m, 2026-11-13 | NEAR-984 (26 November demo rehearsal, recorded); then NEAR-816, NEAR-826 | the fourteen hazards above |
+| [HTX-R2 Starling Flight Bring-up (M2–M8)](projects/HTX-R2.md) | REAL DRONE | M7 · Multi-drone, 30 % (M2–M6 and M8 also open) | [#37](record/LEDGER.md) drone hand-flown at a hovering one: closest 1.76 m, 2026-11-13 | NEAR-984 (26 November demo rehearsal, recorded); then NEAR-826 | the fifteen hazards above |
 | [HTX-R3 Multi-Drone Localisation (VO + UWB)](projects/HTX-R3.md) | SIM + desk; L4 hand-carried | L1 · Team review pack | [#16](record/LEDGER.md) stereo VO 0.081 m RMSE over 162 m, 2026-10-22 | NEAR-843 | — |
 
 **Sim vs real:** until HTX-R1 S5d, sim drones take a different command route (MAVROS) from the real drone, run PX4 1.16 (real 1.14) with sim-only rate gains, and Isaac's clock runs 1.3–2× wall time; full list on [HTX-R1](projects/HTX-R1.md). NUS policies run in sim at S5e, then on real drones in NEAR Lab's mocap area at HTX-R2 M8. Camera setups: A = ZED-style added camera (every camera result so far, e.g. #15, #16); B = Starling built-in sensors (HTX-R1 S5c).

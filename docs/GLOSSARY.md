@@ -106,7 +106,7 @@ from every doc; add a term here rather than re-explaining it inline elsewhere.
   cycles through them. Only honoured by the `goal` scenario.
 - **Random goals (`random_goals`)** — a scenario that gives every drone a fresh random goal
   inside the `arena` box each time it arrives, so drones keep crossing paths — the CBF stress
-  test. It ignores goal/speed/formation commands. [SCENARIOS.md](SCENARIOS.md) §7. Our two-drone version, `random_goals_two_ours.yaml`, flies at a flat 2.0 m with the seed choosing the takeoff points; if two goals land closer than 1.10 m both drones stop side by side until landed (NEAR-985). [§7b](SCENARIOS.md#7b--our-two-drone-files--random-goals-figure-8-and-swap).
+  test. It ignores goal/speed/formation commands. [SCENARIOS.md](SCENARIOS.md) §7. Our two-drone version: `random_goals_two_ours.yaml`, [§7b](SCENARIOS.md#7b--our-two-drone-files--random-goals-figure-8-and-swap).
 - **Squeeze** — the three-drone scenario: two holders keep station while an intruder (scripted
   or hand-flown, CBF-exempt) pushes between them and the holders must yield.
 - **Kill switch** — the one true motor cutoff: an RC transmitter channel (ours: ch8) that
@@ -151,8 +151,8 @@ from every doc; add a term here rather than re-explaining it inline elsewhere.
 - **`figure_eight`** — scenario (new 2026-10-20): two drones fly the same figure-eight half a
   period apart and meet head-on at the crossing every half period, with nothing but the CBF
   between them; a third drone hovers as (or is hand-flown as) an intruder. CMU's code needs
-  exactly three drones; patch 0008 lets it start with two (`figure_eight_two_ours.yaml`: radius
-  1.5 m, plane tilted 30°, 2.0 m/s). [SCENARIOS.md](SCENARIOS.md#7b--our-two-drone-files--random-goals-figure-8-and-swap).
+  exactly three drones; patch 0008 lets it start with two (`figure_eight_two_ours.yaml`).
+  [SCENARIOS.md](SCENARIOS.md#7b--our-two-drone-files--random-goals-figure-8-and-swap).
 - **ROS 2 service / parameter** — a *service* is a request/reply call to a node
   (`takeoff`, `land` — each gets an accept/reject answer, which can itself be lost on a bad
   link); a *parameter* is a named runtime value on a node (`cbf_alpha`), settable live with
@@ -263,7 +263,7 @@ from every doc; add a term here rather than re-explaining it inline elsewhere.
 - **`_ours` configs** — `swarm_real_ours.yaml` (hover, M3), `goal_single_ours.yaml` (goals, M4),
   `goal_two_ours.yaml`, `random_goals_two_ours.yaml`, `figure_eight_two_ours.yaml` and `goal_swap_two_ours.yaml` (two drones) and the per-drone teleop config that `tools/real.sh teleop`
   renders from `teleop_real_ours.yaml`: our versions of CMU's shipped yamls. The single-drone files use `drone_1`, nobody CBF-exempt, speeds 1.0,
-  `land_speed_mps` 0.6, `land_settle_s` 0.0, ±2 m fence (the two-drone files: 6.5 × 6.5 m, the figure-8 file 6.5 × 7.5 m). The only real-drone configs to fly
+  `land_speed_mps` 0.6, `land_settle_s` 0.0, `[-2,-2,0]..[2,2,2]` fence (the two-drone files: 6.5 × 6.5 × 4 m, the figure-8 file 6.5 × 7.5 × 4.5 m). The only real-drone configs to fly
   ([CONFIG.md](CONFIG.md)); `cbf_sim.yaml` is our sim counterpart and sim-only.
 - **Iron rules** — the ten numbered flight rules in [CLAUDE.md](../CLAUDE.md), mirrored word for
   word in [PREFLIGHT.md](PREFLIGHT.md). Quoted by number ("iron rule 9") across the docs.

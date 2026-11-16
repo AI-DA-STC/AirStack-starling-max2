@@ -9,11 +9,11 @@ got here, step by step: [WHAT_WE_DID](WHAT_WE_DID.md#8-s2b-the-game-on-isaac-lab
 
 | Item | Value |
 |---|---|
-| Runs | T10 (do the two physics worlds agree), T11 (step tests against tier 1 and a real flight log), T12 (speed), T13 (scripted games on both backends); the stand-in trainer on Isaac Lab is running |
-| Verdicts | T10 **FAIL** on one gate (accepted by the owner); T11 **FAIL** on three gates; T12 information only, no gates; T13 **FAIL** on two gates; stand-in **PENDING** |
+| Runs | T10 (do the two physics worlds agree), T11 (step tests against tier 1 and a real flight log), T12 (speed), T13 (scripted games on both backends), T14 (the stand-in trainer on Isaac Lab, 2 of 3 seeds) |
+| Verdicts | T10 **FAIL** on one gate (accepted by the owner); T11 **FAIL** on three gates; T12 information only, no gates; T13 **FAIL** on two gates; T14 **INCOMPLETE** (seed 3 not run; seeds 1 and 2 fail every gate cell, so it cannot pass) |
 | Main result | with random actions, the game runs on Isaac Lab drones at 42,590–262,190 drone-steps a second on this laptop. That is above 20,000, S0's [decision rule](S0_RESULTS.md#decision-rules--training-simulator-only) for "tier 2 is fast enough to train on, not only to cross-check" |
 | Main finding | on the physics drone a Strike drone often passes over or under a Guard drone, so against a straight Strike the scripted Guards hold 0–13 % of games, where tier 1 gave up to 95.1 %. The owner chose to keep this in the game (17 November 2026; option (a) of three put to him, §4) |
-| Trained | no strategy. The stand-in trainer (a pipe test, not a strategy) is running on Isaac Lab |
+| Trained | no strategy. The stand-in trainer (a pipe test, not a strategy) trained 2 seeds on Isaac Lab; the pipe worked end to end, but the Guards learned almost nothing (T14) |
 | Plan and gates | [S2b plan](plans/2026-11-16-s2b-isaac-lab-environment.md), gates in `configs/s2b.toml`, approved by the owner on 16 November 2026 |
 | Linear | project P-NEAR-31, milestone S2b: NEAR-968, NEAR-973, NEAR-980, NEAR-981 ([snapshot of 16 November](linear/snapshots/2026-11-16-project-plan-linear.md)) |
 
@@ -219,12 +219,45 @@ pilots (pure rules, not of record) it held no games against the straight Strike.
   pure rules, yaw rate only on the Starling layer and the physics drone, where height speed now matters;
 - 100 million game-steps per seed instead of 50 million.
 
-Whether the stand-in passes its gate is not known until the runs of record finish (§5a). The pilots' notes are not of record and not in git (Task 9's report in the run folder); `configs/s2b.toml` notes the approval of these settings on 17 November 2026.
+The pilots' notes are not of record and not in git. The owner approved these settings for the runs of record on
+17 November 2026 ([T14 record](../records/2026-11-17_s2b_standin_isaac_record.md#settings)).
 
 #### 5a. On the physics drone in Isaac Lab
 
-<!-- STANDIN-ISAAC-PENDING: lead fills from runs/sdd/s2b/task-9-isaac-report.md -->
-Isaac stand-in seeds running on 17 November 2026; results added when they finish.
+**What we did.** Two Guard drones trained against the scripted Strike mix on the physics drone in Isaac Lab, with
+`[standin_v2]`: 100 million game-steps per seed, 4,096 games at once. Each seed was then scored on 3,000 fresh games
+per Strike behaviour and checked against the gate. SIM-ONLY yaw-rate gains
+([T14 record](../records/2026-11-17_s2b_standin_isaac_record.md)).
+
+- Seeds 1 and 2 ran on this laptop (86 and 69 minutes). Seed 3 was not started: by the lead's ruling it would have
+  ended at the laptop's hard stop, so it is queued for the home RTX 5090.
+- **Deviation, disclosed in the record:** the learning curve was measured every 80 updates instead of the default
+  20, so that two seeds fitted in the night. The curves have 11 points per seed instead of 40.
+
+<a id="fig-9"></a>
+![Learning curves of the stand-in on the physics drone, seeds 1 and 2](figures/s2b_standin_isaac_curves.png)
+
+**Figure 9.** Learning curves, seed 1 (blue) and seed 2 (orange), against game-steps: hold rate against each Strike
+behaviour (256 evaluation games), the game reward, the closest 3-D Guard–Strike approach, the safety-filter share and
+the training speed. Hold v straight stays at 0; v flank rises to about 0.1 after 40–60 M game-steps. Training
+simulator, tier 2.
+
+<a id="fig-10"></a>
+![Hold rate of the stand-in, random Guards and scripted mark-edge Guards, against each Strike behaviour](figures/s2b_standin_isaac_bars.png)
+
+**Figure 10.** Share of scoring games held, 2 v 1, 3,000 games per bar with 95 % intervals: stand-in seeds 1 and 2,
+random Guards and the scripted mark-edge Guards (for comparison). Left: against the straight Strike; right: against
+the flank Strike. The gate asks for the stand-in at least 0.20 above random in both panels.
+
+**What it shows.** The pipe works on the Isaac Lab drones: both seeds trained the full 100 M game-steps with no NaN
+and no upset drone, and loaded and scored in `score.py`. But the Guards learned almost nothing: against the straight
+Strike both seeds hold 0 of 3,000 games, the same as random Guards, and against the flank Strike 7.2 % and 13.3 %
+against random's 0 %, short of the 0.20 margin. All four gate cells of seeds 1 and 2 FAIL, so seed 3 cannot make
+the gate pass.
+
+**Read with care.** No tier 1 control was run, so why the Guards do not learn against the straight Strike is not
+tested. Candidate, not tested: the Strike drone passes over or under the Guards, as in T13; the scripted mark-edge
+Guards also hold only 1.1 % against the straight Strike on the same games.
 
 #### 5b. On the PyTorch game
 
@@ -240,7 +273,7 @@ rules stand in as a control for now, but they are not runs of record. The PyTorc
 | T11 | step tests | 6 of 9 pass; timing against the real log (0.38 s against 0.10 s), speed against tier 1 (0.29 against 0.10 m/s) and timing against tier 1 (0.99 against 0.10 s) fail | **FAIL** | [T11](../records/2026-11-16_s2b_step_tests_record.md) |
 | T12 | speed | none; read-off 262,190 drone-steps a second, S0 line 20,000 | **INFO** | [T12](../records/2026-11-16_s2b_throughput_record.md) |
 | T13 | scripted games, paired | 2 of 4 pass (upsets, NaN); hold-rate gap (36 of 60 cells over 0.10) and closest approach (4 random-Guard cells over 0.10 m) fail | **FAIL** | [T13](../records/2026-11-17_s2b_scripted_compare_record.md) |
-| — | stand-in, Isaac Lab | `[standin_gates]` | **PENDING** | — |
+| T14 | stand-in, Isaac Lab | `[standin_gates]`: seeds 1 and 2 fail all four cells (gain +0.000 v straight, +0.072 and +0.133 v flank, gate +0.20); seed 3 not run | **INCOMPLETE**, cannot pass | [T14](../records/2026-11-17_s2b_standin_isaac_record.md) |
 | — | stand-in, PyTorch (pure, Starling layer) | `[standin_gates]` | **NOT RUN** | — |
 | — | clips | none (pictures) | — | [media/README](media/README.md) |
 
@@ -268,7 +301,7 @@ All rows are in the [training ledger](../records/LEDGER.md).
 
 | # | Item | Why it matters | Recommendation |
 |---|---|---|---|
-| A | The stand-in gate's outcome (**NEAR-968: Stand-in trainer: prove the training pipe end to end.**) | it is S2's last open done condition; the result is pending | owner reads §5 once the Isaac seeds finish; what follows a FAIL (a different learner, a curriculum or a new gate) is his call |
+| A | The stand-in on Isaac Lab (**NEAR-968: Stand-in trainer: prove the training pipe end to end.**) | T14 is INCOMPLETE: seed 3 is queued for the home RTX 5090, but seeds 1 and 2 already fail every gate cell. The pipe works; the learner does not learn to hold the zone on the physics drone | owner: whether seed 3 still runs on the 5090, and what to do about a stand-in that does not learn (a different learner, a curriculum, a tier 1 control run, or a new gate) is his call |
 | B | T13's hold-rate FAIL | it follows from option (a): the Strike drone now passes over or under scripted Guards that never move up or down | the FAIL stands; whether the S2b scripted-games gate is re-scoped later is the owner's call |
 | C | T13's 4 random-Guard closest-approach cells | the physics drones came 0.12–0.23 m closer than on tier 1 at their minimum; not diagnosed | owner decides whether to diagnose before S4 |
 | D | Task 8b, the registered Isaac Lab task `Isaac-SvG-StrikeGuard-v0` | the owner's answer 1: lets partners use Isaac Lab's usual tools and trainers | planned and not yet built; next session |
@@ -276,7 +309,8 @@ All rows are in the [training ledger](../records/LEDGER.md).
 
 ## Next
 
-- The Isaac stand-in results. The two PyTorch stand-in runs are not scheduled.
+- Seed 3 of the Isaac stand-in, on the home RTX 5090, if the owner wants it. The two PyTorch stand-in runs are not
+  scheduled.
 - Task 8b, the registered Isaac Lab task, documented in [PLUG_IN](PLUG_IN.md) when built.
 - S3 and S4 ([DESIGN §8](DESIGN.md#8-build-order)): the Guard team's strategy now has to cover height as well as
   position.

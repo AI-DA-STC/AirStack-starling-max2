@@ -17,7 +17,8 @@ scripted reference T9 = INFO; the stand-in trainer moved to S2b ([docs/S2_RESULT
 Starlings in Isaac Lab (the physics drone: PX4 1.14 cascade with the drone's gains, SIM-ONLY yaw-rate gains by the
 owner's ruling). Two physics worlds agree T10 = FAIL (accepted by the owner), step tests T11 = FAIL, speed T12 = INFO,
 scripted games on both backends T13 = FAIL: on the physics drone Strike drones pass over or under Guards, and the
-owner kept this in the game (option (a), 17 November). The stand-in trainer is running on Isaac Lab; the registered
+owner kept this in the game (option (a), 17 November). Stand-in trainer on Isaac Lab T14 = INCOMPLETE (seeds 1–2 run, both fail every gate cell; seed 3 queued for the
+home RTX 5090); the registered
 Isaac Lab task (Task 8b) is not yet built ([docs/S2B_RESULTS.md](docs/S2B_RESULTS.md)).
 
 ## Read first

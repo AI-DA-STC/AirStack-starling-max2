@@ -251,6 +251,35 @@ stay out of git; real flights of a contact policy should start with a virtual co
 
 ## 5. Open items
 
+### 5a. On the home RTX 5090: S2b stand-in seed 3 (ledger T14 is INCOMPLETE without it)
+
+Seeds 1–2 ran on the laptop (17 Nov, record `records/2026-11-17_s2b_standin_isaac_record.md`); both FAIL their gate
+cells, so seed 3 cannot turn T14 into a PASS, but it completes the record. From `svg_training/`, with
+`export PYTHONPATH=source`, `P=~/miniconda3/envs/env_isaaclab/bin/python`, after `scripts/isaac_preflight.sh --approved-headless`,
+inside `tmux`:
+
+```bash
+$P scripts/train_standin.py --headless --config configs/s2.toml --settings standin_v2 --seed 3 --name 2026-11-17_s2b_standin_isaac_seed3 --motion physics --eval-every-updates 80 > runs/2026-11-17_s2b_standin_isaac_seed3.log 2>&1
+$P scripts/score.py --guard runs/2026-11-17_s2b_standin_isaac_seed3,random --strike strike_straight,strike_flank --sizes 2v1 --presets physics --batch-per-pair --games-per-band 1000 --seed 1003 --no-local --headless --out runs/2026-11-17_s2b_standin_isaac_seed3_score
+$P scripts/score.py --guard guard_mark_edge --strike strike_straight,strike_flank --sizes 2v1 --presets physics --batch-per-pair --games-per-band 1000 --seed 1003 --no-local --headless --out runs/2026-11-17_s2b_standin_isaac_seed3_score_mark_edge
+```
+
+Bring the three folders back with `scripts/workstation/sync_results.sh` (one folder per call), then on the laptop
+(where seeds 1–2 live; `runs/` is not in git) run:
+
+```bash
+G=runs/2026-11-17_s2b_standin_isaac
+$P scripts/train_standin.py verdict --gates $G/gates.toml \
+   --scores runs/2026-11-17_s2b_standin_isaac_seed1_score,runs/2026-11-17_s2b_standin_isaac_seed2_score,runs/2026-11-17_s2b_standin_isaac_seed3_score \
+   --out $G/verdict_seeds_1_2_3
+$P scripts/make_s2b_figures.py standin docs/figures/s2b_standin_isaac_curves.png runs/2026-11-17_s2b_standin_isaac_seed{1,2,3}
+$P scripts/make_s2b_figures.py standin_bars docs/figures/s2b_standin_isaac_bars.png $G/verdict_seeds_1_2_3 \
+   runs/2026-11-17_s2b_standin_isaac_seed{1,2,3}_score runs/2026-11-17_s2b_standin_isaac_seed{1,2,3}_score_mark_edge
+```
+
+Then amend the T14 record (it must name the
+5090 and the commit seed 3 ran on). About 70 min training on a free laptop GPU; expect less on the 5090.
+
 | Item | Who | Needed before |
 |---|---|---|
 | D1 reading of "one keep-out per team" (`push_rule = "block"`) against NUS's report; `shove` is the other switch | owner | a partner-rules result |

@@ -16,7 +16,7 @@ flowchart LR
   E --> F["15 Nov<br/>S1: drone model<br/>and safety filter"]
   F --> G["15–16 Nov<br/>S2: the game and<br/>the plug-in point"]
   G --> H["16–17 Nov<br/>S2b: the game on<br/>Isaac Lab drones"]
-  H --> I["Next<br/>stand-in results,<br/>S3 and S4"]
+  H --> I["Next<br/>stand-in seed 3,<br/>S3 and S4"]
 ```
 
 ## 1. The idea and the research (14 November 2026)
@@ -257,8 +257,9 @@ trained on the fast model is trusted, it should give the same answers on a drone
    Strike drone 1 mm higher made tier 1's Guards lose every game too.
    The owner chose on 17 November to keep this in the game: Guards will have to learn to cover height.
 7. **The stand-in trainer.** It first learned nothing: its starting moves were almost pure noise. In pilots (not
-   of record), smaller starting noise and more game-steps let it learn a little; its runs of record on Isaac Lab are
-   in progress.
+   of record), smaller starting noise and more game-steps let it learn a little. On the physics drone (run T14, 2 of 3 seeds)
+   the pipe worked end to end, but the Guards learned almost nothing: 0 % held against the straight Strike, 7–13 %
+   against the flank Strike. Why is not tested. Seed 3 waits for the home RTX 5090.
 
 <a id="fig-4"></a>
 ![Share of games the Guard team held, tier 1 against the physics drone](figures/s2b_scripted_compare.png)
@@ -272,7 +273,8 @@ training simulator.
 
 ## 9. What comes next
 
-- **The stand-in results** on Isaac Lab, and the registered Isaac Lab task (Task 8b). The PyTorch stand-in runs are
+- **Seed 3 of the stand-in** on the home RTX 5090 if the owner wants it, the owner's call on a stand-in that does
+  not learn, and the registered Isaac Lab task (Task 8b). The PyTorch stand-in runs are
   not scheduled.
   Every training run logs to TensorBoard ([TRAINING](TRAINING.md)).
 - **A real flight with planned pushes**, so the drone model gets its run of record. The list of what to record is

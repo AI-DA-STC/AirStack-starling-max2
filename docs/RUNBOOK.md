@@ -1680,7 +1680,7 @@ The demo is three two-drone flights in one session, one config file each. Every 
 - Back outside the net: KILL off on both transmitters; QGroundControl still shows both Disarmed before the next go / no-go. Leave ch5 where it was.
 - Carry the drones to the next file's takeoff points. Step 12 confirms each drone's point; the pane 6 readout (about 1.5 m / 6.0 m) is only a cross-check and cannot tell the drones apart.
 - The pane 6 readout keeps running from flight 1: skip step 14 in C10 and C11.
-- Record every flight: C10 and C11 step 13 and their recording-off step. Video every flight.
+- Record every flight and video every flight: C10 and C11 step 13 and their recording-off step. Do not skip the bag to save space: the two-drone bag of 12 Nov is 565 MB for 14 minutes (about 40 MB a minute), so the three demo flights need well under 1 GB. Before flight 1, `df -h ~` on the laptop must show at least 2 GB free. Without the bag there is no closest-approach number.
 - Shut down once, after flight 3 (C11's shutdown and step 21). Before step 21, pull the PX4 logs of both drones ([D](#d--post-flight--pull--review-the-px4-logs)).
 - The run sheet and the dress rehearsal: NEAR-984 "26 November demo: three two-drone flights, run sheet and dress rehearsal".
 

@@ -5,7 +5,7 @@
 # unused here) with scenario
 # figure_eight. Needs patch 0008 (figure_eight accepts 2 drones).
 # drone_1 = older Starling (10.40.2.11), drone_2 = newer Starling D0012
-# (10.40.2.10). 0.5 m/s, CBF r 0.55 (keep-out 1.10 m).
+# (10.40.2.10). 2.0 m/s (CMU's), CBF r 0.55 (keep-out 1.10 m).
 #
 # TAKEOFF POINTS = the far ends of the eight (hover_positions unused):
 #   drone_1 (+1.5, +3.0, 2.3)   drone_2 (+1.5, -3.0, 2.3)   6.0 m apart, nose +x
@@ -17,6 +17,10 @@
 # (a true shared eight), drones within x 0.18..2.82, y -3.02..3.02,
 # z 1.54..3.06, at most 1.28 m off the eight, inside the geofence, no
 # emergency push-apart. NOT FLOWN.
+# At 2.0 m/s with the real drones' PX4 limits modelled (xy 3.0 m/s, accel
+# 3.0 m/s2, descent 0.6 m/s): closest 1.16 m, never stacked, up to 1.85 m
+# off the eight, x -0.06..3.06 (0.19 m inside +3.25), y -3.27..3.27. Step
+# up live (1.0 -> 1.5 -> 2.0) on the first flights.
 #
 #   ros2 launch svg_ground_control ground_control.launch.py \
 #     config:=/root/AirStack/robot/ros_ws/src/svg_ground_control/config/figure_eight_two_ours.yaml \
@@ -40,7 +44,8 @@ swarm_commander:
     # the eight 2.6 m wide in x (0.2..2.8) and 1.5 m tall (z 1.55..3.05).
     # (A vertical eight was tried first: head-on stacked the drones one above
     # the other, same-direction never swapped loops. 30 deg: neither.)
-    # 0.5 m/s (CMU flew 2.0): one eight 37.7 s, meeting every 18.8 s.
+    # 2.0 m/s like CMU (CHG-0080): one eight 9.4 s, meeting every 4.7 s,
+    # centripetal 2.7 m/s2 (real MPC_ACC_HOR 3.0).
     figure_eight_center: [1.5, 0.0, 2.3]
     figure_eight_radius_m: 1.5
     figure_eight_center_distance_m: 3.0
@@ -50,7 +55,7 @@ swarm_commander:
     figure_eight_track_gain: 1.0
     figure_eight_intruder_start: [0.0, 0.0, 2.0]   # unused with two drones
     figure_eight_intruder_cbf_exempt: true          # unused with two drones
-    scenario_speed_mps: 0.5      # live: ros2 param set /swarm_commander scenario_speed_mps X (single-drone config flies 1.0)
+    scenario_speed_mps: 2.0      # CMU's (owner 2026-11-16, CHG-0080). Live: ros2 param set /swarm_commander scenario_speed_mps X
     goal_accel_mps2: 3.0         # live. CMU flies 10; start gentle
     goal_settle_s: 0.3
     goal_lead_m: 2.0
@@ -79,7 +84,7 @@ swarm_commander:
     land_settle_s: 0.0
 
     cbf_safety_radius_m: 0.55
-    cbf_max_speed_mps: 1.0
+    cbf_max_speed_mps: 3.0       # was 1.0, which would clip the 2.0 m/s eight; 3.0 = the real drones' MPC_XY_VEL_MAX (CHG-0080)
     cbf_alpha: 2.5
     teleop_max_speed_mps: 0.5
     teleop_accel_mps2: 5.0

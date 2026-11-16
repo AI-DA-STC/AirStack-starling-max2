@@ -84,8 +84,8 @@ swarm_commander:
     fence_brake_accel_mps2: 4.0  # live; keep >= goal_accel_mps2
     fence_keep_in_gain: 2.0      # live; CMU: keep 2 on the trajectory output
     fence_margin_m: 0.0
-    fence_min: [-2.0, -2.0, 0.0]
-    fence_max: [2.0, 2.0, 4.0]
+    fence_min: [-3.25, -3.25, 0.0]   # 6.5 x 6.5 m (owner 2026-11-16, CHG-0072)
+    fence_max: [3.25, 3.25, 4.0]
     teleop_fence_enabled: false
 
 mocap_bridge:

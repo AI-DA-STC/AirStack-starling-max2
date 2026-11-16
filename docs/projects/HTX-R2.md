@@ -19,7 +19,12 @@ Hazards the pilot assumes until the named issue re-earns them (iron rules in [PR
 9. The commander gives no warning when no pad is sending commands: the drone holds as if the sticks were centred. Before takeoff check `ros2 topic hz /svg/drone_2/teleop_command` (about 20 Hz); keep the pad pane running until after landing ([#36](../record/LEDGER.md)).
 10. With the stick held, the collision filter keeps pushing the hovering drone toward the wall behind it (0.29 m left on 2026-11-13). Let go once it resists ([#37](../record/LEDGER.md)).
 
-Hazards 6–8 and the RC-kill line in 5 were found on 2026-11-12, hazards 9 and 10 on 2026-11-13. None is fixed. The owner decides.
+11. At a figure-8 crossing one drone passed above the other (owner's video, replay at half speed, 2026-11-16): cause not investigated. Until it is, treat every crossing as one where the drones can end up stacked: step the speed up 1.0, 1.5, then 2.0 m/s and watch the crossing ([C11](../RUNBOOK.md#c11--two-real-drones-fly-cmus-figure-8-with-the-collision-filter)).
+12. After the figure-8 the drones landed on swapped sides: `drone_1` on the right, `drone_2` on the left (same video). Cause not investigated. Do not assume each drone lands where it took off: check the landing spots are clear before `land`.
+13. Random goals: CMU picks each drone's goal on its own, so two goals can land within the 1.10 m keep-out. Both drones then stop side by side and hover until landed (offline, median 13 s into a run; not measured in flight). Harmless: `land` after 5 s stuck or 2 minutes. Fix: NEAR-985.
+14. At 2.0 m/s the figure-8 runs close to the +x geofence wall: offline it reaches x 3.06 m, 0.19 m inside the 3.25 m wall (not flown into). Watch that side, and drop `scenario_speed_mps` to 0.5 before landing.
+
+Hazards 6–8 and the RC-kill line in 5 were found on 2026-11-12, hazards 9 and 10 on 2026-11-13, hazards 11 to 14 on 2026-11-16. None is fixed. The owner decides.
 
 ## Carried over from the previous software — verdicts the pilot assumes until re-observed
 
@@ -184,7 +189,7 @@ Decisive check: `scripts/voxl_push_led.sh drone_1 <DRONE_IP>` then on the drone 
 
 ### M7 · Multi-drone — REAL DRONE, three drones need the new Starlings
 **Purpose:** the project's goal is a swarm. Two, then three real drones fly formations, random goals with collision avoidance and the intruder squeeze. Two drones first flew on the lab's two Starlings (2026-11-12); three drones depend on the new Starlings arriving.
-Linear (snapshot 2026-11-13): 25 % · last ledger row #37 (2026-11-13)
+Linear (snapshot 2026-11-16): 30 % · last ledger row #37 (2026-11-13)
 
 **Done when** (Linear's target, verbatim; a target, not a result): formations, random goals with collision avoidance and intruder-squeeze tests fly.
 
@@ -218,7 +223,9 @@ On 2026-11-13 `drone_2` was hand-flown with the gamepad at the hovering `drone_1
 
 Each airframe: unique `MAV_SYS_ID` / `target_system` and Motive body, on the shared DDS domain 1 ([DRONE_SETUP.md](../DRONE_SETUP.md)).
 
-Open: formations, random goals, both drones moving, a crossing and a recording at radius 0.55 (NEAR-951); three drones (NEAR-841); the older Starling's motor fault (hazard 6). Re-run: [RUNBOOK.md](../RUNBOOK.md#c9--two-real-drones-with-the-collision-filter-cbf) C9.
+**NEAR-951, NEAR-953 and NEAR-984: the 16 November flights.** On 2026-11-16 the owner flew three two-drone flights and reports that each worked: random goals (`random_goals_two_ours.yaml`), CMU's figure-8 at up to 2.0 m/s (`figure_eight_two_ours.yaml`, needs [patch 0008](../MIGRATION.md)), and the hand-flown flight of [B10](../RUNBOOK.md#b10--two-real-drones-one-flown-by-hand) again, now with the 6.5 × 6.5 m geofence and the 6 × 6 m teleop fence. Nothing was recorded: the rosbag recorder was off and the PX4 logs were not pulled, so there is no closest-approach number and the Result cells stay `—`. The only evidence is the owner's annotated video of the figure-8 ([48 s](../../videos/fig8-final-master-1080p.mp4)). It shows the drones take off with nobody on the sticks, meet head-on, and ease apart, and it shows hazards 11 and 12 (top of this page). Linear closed NEAR-951 and NEAR-953 on these flights. The dress rehearsal with recordings is NEAR-984.
+
+Open: the demo rehearsal with every flight recorded (NEAR-984); random goals that stop side by side (NEAR-985); the intruder demo with a third drone (NEAR-986 to NEAR-988); formations; three drones (NEAR-841); the older Starling's motor fault (hazard 6). Re-run: [RUNBOOK.md](../RUNBOOK.md#c9--two-real-drones-with-the-collision-filter-cbf) C9, [C10](../RUNBOOK.md#c10--two-real-drones-fly-random-goals-with-the-collision-filter), [C11](../RUNBOOK.md#c11--two-real-drones-fly-cmus-figure-8-with-the-collision-filter).
 
 ### M8 · Evaluate NUS velocity policies on the real drones — REAL DRONE, NEAR Lab mocap area
 **Purpose:** NUS policies are first checked in sim (HTX-R1 S5e). This milestone flies the same scenarios on real Starlings in NEAR Lab's mocap area, with the same gate numbers, so sim and real results can be compared directly. It starts only after M4 (fence braking measured), M7 (multi-drone) and S5e.

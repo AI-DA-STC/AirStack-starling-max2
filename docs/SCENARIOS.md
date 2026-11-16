@@ -7,8 +7,8 @@
 > and services): it is the **background, procedure and exit criteria** per scenario, plus our
 > corrections to CMU's write-ups. ⚠️ The lab has two Starlings. Two real drones have flown the `goal` scenario with the
 > collision filter ([#35](record/LEDGER.md)), and one was hand-flown toward a hovering one ([#37](record/LEDGER.md)).
-> Formations, random goals, crossings and the squeeze are not flown: they are still **SIM procedures**. Their "Real
-> flight" subsections marked `⏳ blocked on a second Starling (M7)` mean "not flown on two real drones yet". The older
+> Formations, the three-drone random goals, crossings and the squeeze are not flown: they are still **SIM procedures**. Their "Real
+> flight" subsections marked `⏳ blocked on a second Starling (M7)` mean "not flown on two real drones yet". Our two-drone random goals, figure-8 and goal swap were flown on 2026-11-16 (owner: worked, not recorded): [§7b](#7b--our-two-drone-files--random-goals-figure-8-and-swap). The older
 > Starling (`drone_1`) flies by the owner's decision, with a watcher on its front-right motor at every takeoff
 > ([hazard 6](projects/HTX-R2.md#before-the-next-real-flight)).
 >
@@ -23,7 +23,7 @@
 > 2026-10-19, #8 and #13 on 10-20/21 — [record/LEDGER.md](record/LEDGER.md)); **on real drones, one drone flew hover and goal legs ([#33](record/LEDGER.md), 2026-11-11); two drones flew
 > the `goal` scenario and the collision filter was observed ([#35](record/LEDGER.md), 2026-11-12; procedure:
 > [RUNBOOK.md](RUNBOOK.md#c9--two-real-drones-with-the-collision-filter-cbf) C9); one drone was hand-flown toward a hovering one ([#37](record/LEDGER.md), 2026-11-13; procedure:
-> [RUNBOOK.md](RUNBOOK.md#b10--two-real-drones-one-flown-by-hand) B10). Formations, random goals, crossings and the squeeze are unflown on real drones.** Read every ✅ CMU below as "CMU says so", not "we flew it".
+> [RUNBOOK.md](RUNBOOK.md#b10--two-real-drones-one-flown-by-hand) B10). The two-drone random goals, figure-8 and swap were flown on 2026-11-16 (owner: worked, not recorded; [§7b](#7b--our-two-drone-files--random-goals-figure-8-and-swap)). Formations, crossings and the squeeze are unflown on real drones.** Read every ✅ CMU below as "CMU says so", not "we flew it".
 
 ---
 
@@ -157,9 +157,9 @@ sim rehearsal, M1, not yet run · **⏳ M7 real** = not yet flown on real drones
 | `head_on` | Two facing rows swap sides, repeatedly. | — (`scenario:=head_on`) | even N | ✅ CMU · ⏳ STE sim |
 | `random_walk` | Each drone wanders on a random heading inside the arena, bouncing off the arena walls; no goals at all. The simplest "everything moves" smoke test. | — (`scenario:=random_walk`) | any | ✅ CMU · ⏳ STE sim |
 | `squeeze` | Two "holder" drones sit on posts; a third pushes through the gap between them and the holders yield. | `squeeze_3drone.yaml` (sim), `hybrid_squeeze.yaml`, `squeeze_rc_intruder.yaml` (real) | 3 | ✅ CMU · ⏳ STE sim · ⏳ M7 real |
-| `random_goals` | Uniform random goals inside the arena; resample on arrival. The unsupervised collision stress test. **Has a known defect — §7.** | — (`scenario:=random_goals`; `goal_tracking.yaml` shipped it at `cf719f0`, ships `goal` again at `b21d28c`) | 3 | ✅ CMU · ✅ STE sim 2026-10-20/21 (ledger #8, video §7) · ⏳ M7 real |
+| `random_goals` | Uniform random goals inside the arena; resample on arrival. The unsupervised collision stress test. **Has a known defect — §7.** | — (`scenario:=random_goals`; `goal_tracking.yaml` shipped it at `cf719f0`, ships `goal` again at `b21d28c`) | 3 | ✅ CMU · ✅ STE sim 2026-10-20/21 (ledger #8, video §7) · two real drones: flown 2026-11-16, not recorded ([§7b](#7b--our-two-drone-files--random-goals-figure-8-and-swap)) |
 | `goal_sequence` (new 2026-10-20) | **Scripted goal sets** played automatically: K sets of one goal per drone, laid out so the straight legs cross; the CBF alone deconflicts. Advances when everyone has arrived (or on a timer), loops. `/svg/sequence_command` takes `next` / a step name / `pause` / `resume`. Detail below the table. | `goal_sequence.yaml` (3 real, `keep_in`) — `scenario:=goal_sequence` on `cbf_sim.yaml` needs the `sequence_*` keys copied in | 3 | ✅ CMU · ⏳ STE sim · ⏳ M7 real |
-| `figure_eight` (new 2026-10-20) | **Collision-negligent pair + intruder**: drones 0 and 1 fly the SAME figure-eight half a period apart, meet head-on at the crossing every half period and swap lobes — nothing but the CBF between them. Drone 2 hovers as, or is hand-flown as, a CBF-exempt intruder. Detail below the table. | `figure_eight_rc_intruder.yaml` (3 real + pad) | 3 | ✅ CMU · ⏳ STE sim · ⏳ M7 real |
+| `figure_eight` (new 2026-10-20) | **Collision-negligent pair + intruder**: drones 0 and 1 fly the SAME figure-eight half a period apart, meet head-on at the crossing every half period and swap lobes — nothing but the CBF between them. Drone 2 hovers as, or is hand-flown as, a CBF-exempt intruder. Detail below the table. | `figure_eight_rc_intruder.yaml` (3 real + pad); two drones: `figure_eight_two_ours.yaml` ([§7b](#7b--our-two-drone-files--random-goals-figure-8-and-swap)) | 3 (2 with patch 0008) | ✅ CMU · ⏳ STE sim · two real drones: flown 2026-11-16, not recorded |
 
 **`goal_sequence` detail.** Sets are `sequence_steps` + one `sequence_<name>` array each, all inside
 the arena, pairs ≥ 2r (ends swap head-on, three-way crossing, rotating triangle). The next set
@@ -328,6 +328,28 @@ config:=…/goal_tracking.yaml scenario:=random_goals use_mocap:=true` (the file
 `b21d28c`) → `takeoff` → `start`. Our rig also needs a mocap
 body + EKF2 params + its own `MAV_SYS_ID` on the shared DDS domain 1 ([MOCAP.md](MOCAP.md) §6.3),
 `cbf_max_speed_mps` off 10.0, and arena = the net.
+
+## 7b · Our two-drone files — random goals, figure-8 and swap
+
+**Why this section exists.** CMU's scenarios expect three drones and a bigger room. For the 26 November demo we run three of them with our two Starlings, each from its own `_ours` file ([CONFIG.md](CONFIG.md)). **Results: all three were flown on 2026-11-16 and the owner reports each worked. No rosbag was saved (the recorder was off) and no PX4 log was pulled, so there is no closest-approach number from any flight.** Numbers marked offline come from CMU's scenario code and `cbf_filter` run on a desk, not from a drone. Procedures: [C10](RUNBOOK.md#c10--two-real-drones-fly-random-goals-with-the-collision-filter), [C11](RUNBOOK.md#c11--two-real-drones-fly-cmus-figure-8-with-the-collision-filter), order on the day: [E](RUNBOOK.md#e--demo-day--the-three-flights-in-order). Each flight is its own commander start: Ctrl-C pane 3, relaunch with the next file, carry the drones to that file's takeoff points.
+
+**Random goals — `random_goals_two_ours.yaml`** (CHG-0071). CMU's `random_goals`, code unchanged. Height is pinned flat at 2.0 m (`arena` z 2.0..2.0) and goals are drawn inside x, y ±1.2 m. Speed 0.5 m/s, `cbf_safety_radius_m` 0.55 (keep-out 1.10 m), geofence ±3.25 m.
+
+- **The seed picks the takeoff points, not `hover_positions`.** With `scenario_seed: 114` they are `drone_1` (+0.55, −0.86, 2.0) and `drone_2` (−0.94, −0.82, 2.0), 1.49 m apart, nose +x. Change the seed and they move.
+- **Why flat 2.0 m, not CMU's 0.8–1.8 m band.** Offline, with the band the filter also parks one drone directly above the other, in the other's downwash.
+- **Expected stop.** CMU picks each drone's goal on its own, so two goals can land closer than 1.10 m. Both drones then stop side by side about 1.1 m apart and hover until landed. Offline: median 13 s into a run over 200 seeds at 2.0 m, and seed 114 ran 107 s. It is harmless: land. Fix tracked as **NEAR-985: Random goals: re-pick a goal that lands inside the other drone's keep-out** (Backlog).
+- **Flight plan.** Land when they have been stuck for 5 s, or after 2 minutes.
+
+**CMU's figure-8 — `figure_eight_two_ours.yaml`** (CHG-0075 to CHG-0080). CMU's scenario needs exactly three drones (two on the eight and a hand-flown intruder). **Patch 0008** ([MIGRATION.md](MIGRATION.md), CHG-0074) lets it start with two. Without it the commander stops with "figure_eight scenario requires exactly 3 drones".
+
+- **CMU's setup kept** (from `figure_eight_rc_intruder.yaml`): radius 1.5 m, centre distance 3.0 m (one eight is 6 m long), plane tilted 30°. The two drones run the eight in opposite directions, meet head-on at the crossing and swap loops. Only the centre and the speed caps are ours.
+- **Place.** Centre (1.5, 0, 2.3), axis along y. Takeoff points are the eight's far ends: `drone_1` (+1.5, +3.0, 2.3), `drone_2` (+1.5, −3.0, 2.3), 6.0 m apart. The eight spans x 0.2–2.8, y −3.0..3.0, z 1.55–3.05 m, so this file has its own geofence x ±3.25, y ±3.75, z 0..4.5 m (CHG-0078).
+- **Speed 2.0 m/s** (CMU's, CHG-0080): one lap 9.4 s, a head-on meeting every 4.7 s, closing speed about 4 m/s. The cap that matters is `cbf_max_speed_mps`: 3.0 here (1.0 would clip the eight), equal to the drones' own PX4 limit `MPC_XY_VEL_MAX`. After a dodge a drone may briefly catch up at up to 3.0 m/s. 5 m/s is not possible. Speed is live: `ros2 param set /swarm_commander scenario_speed_mps <v>`.
+- **Rejected offline:** a vertical eight (y–z plane) with head-on meetings stacked the drones, one above the other for 36–73 s of a 180 s run. The same vertical eight with both drones in the same direction never swapped loops.
+- **Offline numbers (not flight data):** closest 1.16 m at 2.0 m/s with the real PX4 limits modelled, up to 1.85 m off the eight, x up to 3.06 m (0.19 m inside the +3.25 wall).
+- **Seen in the owner's video** (`videos/fig8-final-master-1080p.mp4`, 48 s; excerpt `assets/fig8_two_drones_real.gif`). At one crossing, in the replay at half speed, one drone passes above the other. After the eight, the drones land on the opposite sides from where they took off: `drone_1` on the right, `drone_2` on the left. Both are hazards. The cause is not investigated.
+
+**Goal swap — `goal_swap_two_ours.yaml`** (CHG-0070). CMU's `goal_sequence`: the drones swap sides in a loop at 1.0 m height and 0.5 m/s, from the `goal_two_ours.yaml` takeoff points. Geofence ±3.25 m since CHG-0072. Flown 2026-11-16, owner: worked, not recorded. Not part of the demo.
 
 ## 8 · RC-intruder squeeze — `squeeze_rc_intruder.yaml`
 

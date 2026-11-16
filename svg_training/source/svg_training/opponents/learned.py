@@ -33,24 +33,32 @@ INTERFACE_FILE = "interface.toml"
 AGENT_FILE = "agent.pt"
 
 
-def _mlp(sizes: list[int], out: int) -> torch.nn.Sequential:
-    """Linear + ELU for every hidden size, then a linear output layer."""
+def _mlp(sizes: list[int], out: int, squash: bool = False) -> torch.nn.Sequential:
+    """Linear + ELU for every hidden size, then a linear output layer (+ Tanh when ``squash``)."""
     layers: list[torch.nn.Module] = []
     width = OBS_DIM
     for h in sizes:
         layers += [torch.nn.Linear(width, h), torch.nn.ELU()]
         width = h
     layers.append(torch.nn.Linear(width, out))
+    if squash:
+        layers.append(torch.nn.Tanh())
     return torch.nn.Sequential(*layers)
 
 
 class StandinPolicy(GaussianMixin, Model):
-    """Gaussian policy: obs [B, OBS_DIM] (already scaled) -> mean action [B, 4], one learned log std per axis."""
+    """Gaussian policy: obs [B, OBS_DIM] (already scaled) -> mean action [B, 4] in [-1, 1] (Tanh inside ``net``), one
+    learned log std per axis.
+
+    The Tanh keeps the mean inside the action range. Without it (S2b Task 9 review) the mean drifted without bound on
+    the axes the pure rules ignore (vz, yaw rate, the part of (vx, vy) beyond length 1): skrl clips the sampled action
+    but scores the clipped action under the unbounded mean, so the probability ratio overflowed and training went NaN.
+    ``net`` is what the evaluation and ``SkrlPolicyStrategy`` call, so the Tanh belongs inside it."""
 
     def __init__(self, hidden: list[int], device) -> None:
         Model.__init__(self, observation_space=OBS_SPACE, action_space=ACT_SPACE, device=device)
         GaussianMixin.__init__(self, clip_actions=True)
-        self.net = _mlp(list(hidden), ACT_DIM)
+        self.net = _mlp(list(hidden), ACT_DIM, squash=True)
         self.log_std = torch.nn.Parameter(torch.zeros(ACT_DIM))
 
     def compute(self, inputs, role=""):
@@ -135,7 +143,8 @@ class SkrlPolicyStrategy:
         """Stateless networks: nothing to clear. games [N] bool."""
 
     def act(self, obs: Tensor) -> Tensor:
-        """obs [N, G, OBS_DIM] -> actions [N, G, 4] in [-1, 1]. Raises ValueError if G is not the trained size."""
+        """obs [N, G, OBS_DIM] -> actions [N, G, 4] in [-1, 1]. Raises ValueError if G is not the trained size, or
+        if any action is not finite."""
         if obs.shape[1] != self.guards:
             raise ValueError(f"{self.name}: trained for {self.guards} Guard drones (one network per slot), got "
                              f"{obs.shape[1]}; score it at {self.guards}vS only")
@@ -147,4 +156,9 @@ class SkrlPolicyStrategy:
                     std = pol.log_std.clamp(-20.0, 2.0).exp()
                     mean = mean + std * torch.randn(mean.shape, generator=self._gen, device=mean.device)
                 out.append(mean.clamp(-1.0, 1.0))
-        return torch.stack(out, dim=1).to(obs.dtype)
+        act = torch.stack(out, dim=1).to(obs.dtype)
+        # one host read per step: scoring and checks only, never the training loop (lead's ruling, Task 9 fix round 1)
+        if not bool(torch.isfinite(act).all()):
+            raise ValueError(f"{self.name}: the networks produced non-finite actions (NaN or inf); a diverged "
+                             f"stand-in is not scored")
+        return act

@@ -49,7 +49,8 @@ class StepOut:
     start_miss [N] bool (True if the game that played this step started with a miss: its starts could not
     meet the spacing / keep-out; constant over a game, so read it on the done step to count games),
     upset [N] bool (physics backend: a live drone of the game that played this step tipped past 60 deg or turned
-    non-finite at any step of that game; all False on the other backends).
+    non-finite at any step of that game; all False on the other backends),
+    nonfinite_actions [N] long (drones whose action this step held NaN or inf; they were commanded zero).
     ``SvgGame.start_miss`` holds the same flag for the current (new) game."""
     obs: dict[str, Tensor]
     reward: dict[str, Tensor]
@@ -229,7 +230,11 @@ class SvgGame:
         Tie rule (contact preset): tags are applied before the zone test, so a Strike drone tagged on the step it
         enters the zone does not score."""
         cfg, g = self.cfg, self.guards
-        a = torch.cat((actions[GUARD], actions[STRIKE]), dim=1).clamp(-1.0, 1.0)     # [N, M, 4]
+        a = torch.cat((actions[GUARD], actions[STRIKE]), dim=1)                       # [N, M, 4]
+        # a drone whose action holds NaN or inf is commanded zero (clamp lets NaN through), and counted per game in
+        # info["nonfinite_actions"], so a diverged strategy can never win silently (S2b Task 9, lead's ruling)
+        bad_action = ~torch.isfinite(a).all(dim=-1)                                      # [N, M]
+        a = torch.where(bad_action[..., None], torch.zeros_like(a), a).clamp(-1.0, 1.0)
         alive_prev = self.alive
         pos_prev = self.pos_m
         self.yaw = self.yaw + a[..., 3] * cfg.yaw_rate_max_rad_s * TICK_S * alive_prev
@@ -306,5 +311,6 @@ class SvgGame:
         self._phi = phi_now
         info["start_miss"] = self.start_miss.clone()      # the game that just played
         info["upset"] = self._upset.clone()
+        info["nonfinite_actions"] = bad_action.sum(dim=1)                    # [N] long: drones commanded NaN/inf
         self._new_games(done)
         return StepOut(self._obs(), reward, done, outcome, end_step, info)

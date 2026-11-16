@@ -393,3 +393,91 @@ def test_standin_physics_isaac_smoke(tmp_path):
     assert meta["motion"] == "physics/isaaclab-2.3.2" and "SIM-ONLY" in meta["physics"]["yaw_rate_gains"]
     res = json.loads((tmp_path / "isaac" / "train_result.json").read_text())
     assert res["timesteps_done"] == 64 and res["nonfinite_count"] == 0
+
+
+# ---------------------------------------------------------------- fix round 1 (lead's review of Task 9)
+def test_policy_mean_stays_in_range():
+    """CRITICAL fix: the Tanh is inside ``net`` (the evaluation and the loader call ``net``), so the mean action is in
+    [-1, 1] whatever the observation or the weights."""
+    from svg_training.opponents.learned import StandinPolicy
+    pol = StandinPolicy([128, 128], "cpu")
+    with torch.no_grad():
+        for p in pol.net.parameters():
+            p.mul_(50.0)                                         # weights far out, as a drifted run would have
+        out = pol.net(torch.randn(512, OBS_DIM) * 100.0)
+    assert isinstance(pol.net[-1], torch.nn.Tanh)
+    assert out.abs().max() <= 1.0 and torch.isfinite(out).all()
+
+
+def test_smoke_logs_mean_range_and_every_skrl_setting(smoke_run):
+    from make_s2b_figures import read_scalars
+    m = read_scalars(smoke_run)["standin/mean_action_abs_max"]
+    assert all(0.0 <= v <= 1.0 for _, v in m)
+    tr = tomllib.loads((smoke_run / "interface.toml").read_text())["training"]
+    want = {"skrl_discount_factor": 0.99, "skrl_gae_lambda": 0.95, "skrl_entropy_loss_scale": 0.0,
+            "skrl_value_loss_scale": 2.5, "skrl_ratio_clip": 0.2, "skrl_value_clip": 0.2, "skrl_grad_norm_clip": 0.5,
+            "skrl_rollouts": 32, "skrl_learning_epochs": 5, "skrl_mini_batches": 4}
+    for k, v in want.items():
+        assert tr[k] == v, (k, tr.get(k))
+    import skrl
+    assert tr["skrl_version"] == skrl.__version__ and "Tanh" in tomllib.loads(
+        (smoke_run / "interface.toml").read_text())["network"]["policy"]
+    res = json.loads((smoke_run / "train_result.json").read_text())
+    assert res["status"] == "FINISHED" and res["abort_reason"] is None
+
+
+def test_learned_refuses_nonfinite_actions(smoke_run, tmp_path):
+    bad = tmp_path / "nan_run"
+    bad.mkdir()
+    (bad / "interface.toml").write_text((smoke_run / "interface.toml").read_text())
+    saved = torch.load(smoke_run / "agent.pt", weights_only=False)
+    for v in saved["guard_0"]["policy"].values():
+        v.fill_(float("nan"))
+    torch.save(saved, bad / "agent.pt")
+    s = SkrlPolicyStrategy(bad, 4, "cpu")
+    with pytest.raises(ValueError, match="non-finite"):
+        s.act(torch.zeros(4, 2, OBS_DIM))
+
+
+def _patched_models(monkeypatch, poison):
+    """Make the trainer's networks with ``poison(models)`` applied after they are built."""
+    import svg_training.opponents.learned as learned
+    real = learned.make_models
+
+    def make(names, hidden, device):
+        models = real(names, hidden, device)
+        poison(models)
+        return models
+    monkeypatch.setattr(learned, "make_models", make)
+
+
+ABORT_ARGS = ["--device", "cpu", "--num-games-override", "8", "--timesteps-override", "96", "--eval-games", "4",
+              "--eval-max-steps", "20"]
+
+
+def test_aborts_on_nonfinite_weights(tmp_path, monkeypatch):
+    def poison(models):
+        with torch.no_grad():
+            next(models["guard_1"]["value"].parameters()).view(-1)[0] = float("nan")
+    _patched_models(monkeypatch, poison)
+    rc = _in_process(["--seed", "1", "--name", "nanw", *ABORT_ARGS, "--runs-dir", str(tmp_path)])
+    assert rc == 3
+    res = json.loads((tmp_path / "nanw" / "train_result.json").read_text())
+    assert res["status"] == "ABORTED" and "guard_1 value weights" in res["abort_reason"]
+    assert not (tmp_path / "nanw" / "agent.pt").exists()         # a NaN network is never saved
+
+
+def test_aborts_on_nonfinite_actions_during_training(tmp_path, monkeypatch):
+    """NaN actions in the training rollout (batch of 8 games; the 4-game evaluation stays finite): the game counts
+    them, the update-boundary check aborts, and the last evaluation's agent.pt is kept."""
+    def poison(models):
+        def hook(mod, inp, out):
+            return out * float("nan") if out.shape[0] == 8 else out
+        models["guard_0"]["policy"].net.register_forward_hook(hook)
+    _patched_models(monkeypatch, poison)
+    rc = _in_process(["--seed", "1", "--name", "nana", *ABORT_ARGS, "--runs-dir", str(tmp_path)])
+    assert rc == 3
+    res = json.loads((tmp_path / "nana" / "train_result.json").read_text())
+    assert res["status"] == "ABORTED" and "non-finite actions" in res["abort_reason"]
+    assert res["timesteps_done"] == 32                            # stopped at the first update boundary
+    assert (tmp_path / "nana" / "agent.pt").exists()             # from the evaluation at timestep 0

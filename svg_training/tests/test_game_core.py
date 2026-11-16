@@ -325,3 +325,47 @@ def test_contact_tag_beats_zone_on_the_same_step():
     assert out.info["tagged"].all() and (out.outcome == GUARD_WIN).all() and (out.end_step == 1).all()
     out = first_step((1.5, 1.5))
     assert not out.info["tagged"].any() and (out.outcome == STRIKE_WIN).all() and (out.end_step == 1).all()
+
+
+# S2b Task 9 fix round 1 (lead's ruling): a non-finite action is commanded zero and counted, never silently obeyed
+@pytest.mark.parametrize("starling", [False, True])
+def test_nonfinite_actions_are_zeroed_and_counted(starling):
+    cfg = CFG.replace(**{"starling.enabled": True, "starling.filter_iterations": 50}) if starling else CFG
+    a = SvgGame(cfg, 4, 2, 1, device="cpu", seed=3)
+    b = SvgGame(cfg, 4, 2, 1, device="cpu", seed=3)
+    act = {"guard": torch.full((4, 2, 4), 0.5), "strike": torch.full((4, 1, 4), -0.5)}
+    bad = {"guard": act["guard"].clone(), "strike": act["strike"]}
+    bad["guard"][0, 1, 0] = float("nan")                 # game 0, Guard drone 1: NaN vx
+    bad["guard"][2, 0, 3] = float("inf")                 # game 2, Guard drone 0: inf yaw rate
+    zeroed = {"guard": act["guard"].clone(), "strike": act["strike"]}
+    zeroed["guard"][0, 1] = 0.0
+    zeroed["guard"][2, 0] = 0.0
+    oa, ob = a.step(bad), b.step(zeroed)
+    assert oa.info["nonfinite_actions"].tolist() == [1, 0, 1, 0] and ob.info["nonfinite_actions"].sum() == 0
+    assert torch.equal(a.pos_m, b.pos_m) and torch.isfinite(a.pos_m).all() and torch.isfinite(a.yaw).all()
+
+
+def test_nan_guard_team_is_counted_in_the_match():
+    from svg_training.core.play import play_match
+
+    class NanGuard:
+        team, name = "guard", "nan"
+
+        def reset(self, games):
+            pass
+
+        def act(self, obs):
+            return torch.full((*obs.shape[:2], 4), float("nan"))
+
+    class Still:
+        team, name = "strike", "still"
+
+        def reset(self, games):
+            pass
+
+        def act(self, obs):
+            return torch.zeros(*obs.shape[:2], 4)
+
+    res = play_match(SvgGame(CFG, 8, 2, 1, device="cpu", seed=1), NanGuard(), Still(), max_steps=30)
+    assert res.nonfinite_actions.shape == (8,) and (res.nonfinite_actions == 2 * 30).all()
+    assert res.slice(slice(0, 3)).nonfinite_actions.shape == (3,)

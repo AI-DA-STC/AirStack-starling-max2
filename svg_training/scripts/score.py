@@ -22,7 +22,8 @@ Guard x Strike x band), ``scores.md`` (one table per preset x size, a row per ba
 intervals) and ``per_game.npz`` (per-game arrays for figures). The game config file is named with its sha256;
 the local partner file, if used, by its file name and sha256 only: no rule value is ever printed.
 
-Exit 0 when the outputs were written, 1 on refusal.
+Exit 0 when the outputs were written, 1 on refusal (including any non-finite action from either strategy: the game
+commands such a drone zero and counts it; scoring refuses rather than report a hold rate a NaN strategy "earned").
 """
 from __future__ import annotations
 
@@ -215,6 +216,11 @@ def main(argv: list[str] | None = None) -> int:
                 if a.device.startswith("cuda"):
                     torch.cuda.synchronize()
                 dt = time.time() - t0
+                bad = int(res_all.nonfinite_actions.sum())          # one host read after the match
+                if bad:
+                    print(f"refusing: {bad} drone-steps got non-finite (NaN or inf) actions in {preset}|{size}|band "
+                          f"{b}; a strategy that outputs NaN is not scored (no scores written)", file=sys.stderr)
+                    return 1
                 game_steps = n * len(pairs) * res_all.steps_played
                 where = BANDS[b] if b is not None else a.scenario
                 print(f"{preset}|{size}|{where}: {len(pairs)} pairs x {n} games, {res_all.steps_played} steps, "

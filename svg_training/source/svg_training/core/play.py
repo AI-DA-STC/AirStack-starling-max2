@@ -25,7 +25,9 @@ class MatchResult:
     opposite pair over the game's steps, m; inf if none), closest_cross_3d_m [N] (the same in 3-D),
     rule_breach [N] bool (some step had an opposite pair closer than the keep-out, in 3-D), filter_corrected_rate [N] (share of live drone-steps the safety filter changed),
     start_miss [N] bool (the game's starts could not meet the spacing / keep-out). steps_played: steps the loop
-    ran (all N games step every time, so N x steps_played game-steps were simulated)."""
+    ran (all N games step every time, so N x steps_played game-steps were simulated). nonfinite_actions [N] long
+    (drone-steps of the slot's first game whose action held NaN or inf: the game commanded them zero; a scorer must
+    refuse a result where this is not all zero; None only for a result built by hand)."""
     outcome: Tensor
     end_step: Tensor
     band: Tensor
@@ -35,12 +37,14 @@ class MatchResult:
     filter_corrected_rate: Tensor
     start_miss: Tensor
     steps_played: int = 0
+    nonfinite_actions: Tensor | None = None
 
     def slice(self, sl: slice) -> "MatchResult":
         """The games in sl (e.g. one strategy pair's share of a packed batch)."""
         return MatchResult(self.outcome[sl], self.end_step[sl], self.band[sl], self.closest_cross_m[sl],
                            self.closest_cross_3d_m[sl], self.rule_breach[sl], self.filter_corrected_rate[sl], self.start_miss[sl],
-                           self.steps_played)
+                           self.steps_played,
+                           None if self.nonfinite_actions is None else self.nonfinite_actions[sl])
 
 
 def play_match(game: SvgGame, guard: Strategy, strike: Strategy, max_steps: int | None = None) -> MatchResult:
@@ -66,6 +70,7 @@ def play_match(game: SvgGame, guard: Strategy, strike: Strategy, max_steps: int 
     breach = torch.zeros(n, dtype=torch.bool, device=dev)
     corrected = torch.zeros(n, device=dev)
     live = torch.zeros(n, device=dev)
+    nonfinite = torch.zeros(n, dtype=torch.long, device=dev)
     steps = 0
     for steps in range(1, max_steps + 1):
         out = game.step({"guard": guard.act(obs["guard"]), "strike": strike.act(obs["strike"])})
@@ -77,6 +82,7 @@ def play_match(game: SvgGame, guard: Strategy, strike: Strategy, max_steps: int 
         alive = info["final_alive"]
         corrected = corrected + active * (info["filter_corrected"] & alive).sum(dim=1)
         live = live + active * alive.sum(dim=1)
+        nonfinite = nonfinite + active * info["nonfinite_actions"]
         first_end = active & out.done
         outcome = torch.where(first_end, out.outcome, outcome)
         end_step = torch.where(first_end, out.end_step, end_step)
@@ -89,4 +95,4 @@ def play_match(game: SvgGame, guard: Strategy, strike: Strategy, max_steps: int 
         if steps % CHECK_EVERY_STEPS == 0 and bool(finished.all()):     # one host read, outside the game step
             break
     return MatchResult(outcome, end_step, band, closest, closest_3d, breach, corrected / live.clamp(min=1.0), start_miss,
-                       steps)
+                       steps, nonfinite)

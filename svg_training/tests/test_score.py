@@ -105,3 +105,17 @@ def test_score_packs_pairs_on_their_own_slices(tmp_path):
     rows = {r["guard"]: r for r in json.loads((out / "scores.json").read_text())["rows"]}
     assert rows["zero"]["hold_rate"] == 1.0 and rows["zero"]["mean_end_step"] == 1200
     assert rows["zero"]["games"] == rows["random"]["games"] == 6 and rows["zero"]["batch_games"] == 12
+
+
+def test_score_refuses_nonfinite_actions(tmp_path):        # S2b Task 9 fix round 1: a NaN strategy is never scored
+    (tmp_path / "nan_guard.py").write_text(
+        "import torch\n\nclass NanGuard:\n    def __init__(self, team, cfg, num_games, device, seed=0):\n"
+        "        self.team, self.name = 'guard', 'nan_guard'\n    def reset(self, games):\n        pass\n"
+        "    def act(self, obs):\n        return torch.full((*obs.shape[:2], 4), float('nan'), device=obs.device)\n")
+    env = child_env(str(ROOT / "source") + ":" + str(tmp_path))
+    r = subprocess.run([child_python(), str(SCORE), "--guard", "nan_guard:NanGuard", "--strike", "strike_straight",
+                        "--sizes", "2v1", "--presets", "pure", "--games-per-band", "4", "--bands", "lab", "--no-local",
+                        "--device", "cpu", "--out", str(tmp_path / "out")], cwd=ROOT, env=env, capture_output=True,
+                       text=True)
+    assert r.returncode == 1 and "non-finite" in r.stderr, r.stderr[-2000:]
+    assert not (tmp_path / "out" / "scores.json").exists()

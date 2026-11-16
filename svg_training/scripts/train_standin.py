@@ -45,7 +45,15 @@ evaluation, the ``game/`` scalars (``game/hold_rate`` and ``game/hold_rate/<Stri
 
 Writes ``runs/<name>/``: interface.toml (first, before training), agent.pt (at every evaluation and at the end),
 curve.json (one entry per evaluation), train_result.json (at the end), the event files. Refuses an existing run
-folder. Exit 0 = finished (stopped by the budget or the cap), 1 = crash, 2 = bad arguments or refused.
+folder. Exit 0 = finished (stopped by the budget or the cap), 1 = crash, 2 = bad arguments or refused, 3 = ABORTED.
+
+Non-finite guard (Task 9 fix round 1): after every update (one host read there) the run checks the rollout's
+actions (the game's ``info["nonfinite_actions"]``), the last losses skrl tracked and every network weight and scaler
+statistic; every evaluation checks its own actions. On the first NaN or inf the run is ABORTED: it stops, keeps the
+last good ``agent.pt`` (from the last evaluation), writes ``train_result.json`` with ``status = "ABORTED"`` and the
+reason, adds an "ABORTED" settings text to TensorBoard and exits 3. ``game/timeout_win_share`` equals
+``game/hold_rate`` while walls keep the drones in (``keep_in``, the committed game): a Strike drone can then only
+leave the game through a scheduled drop-out (none in the committed file), so the Guard team holds only by time-out.
 """
 from __future__ import annotations
 
@@ -512,6 +520,20 @@ def run(args: argparse.Namespace, world_factory: Callable | None = None) -> int:
             param_set += (f"; physics drone {physics_meta['physics_params']} sha256 "
                           f"{physics_meta['physics_params_sha256']}")
     commit = git_commit()
+    import skrl
+    c0 = {}
+    for f in dataclasses.fields(agent.cfg):        # the effective per-agent settings (skrl expands them per name)
+        v = getattr(agent.cfg, f.name)
+        v = v.get(names[0]) if isinstance(v, dict) and names[0] in v else v
+        if isinstance(v, (bool, int, float, str)) or v is None:
+            c0[f.name] = v
+        elif isinstance(v, (tuple, list)) and all(isinstance(x, (int, float)) for x in v):
+            c0[f.name] = list(v)
+    keys = ("rollouts", "learning_epochs", "mini_batches", "discount_factor", "gae_lambda", "learning_rate",
+            "entropy_loss_scale", "value_loss_scale", "ratio_clip", "value_clip", "grad_norm_clip", "kl_threshold",
+            "time_limit_bootstrap", "random_timesteps", "learning_starts", "mixed_precision")
+    skrl_settings = {f"skrl_{k}": ("none" if c0.get(k) is None else c0.get(k)) for k in keys if k in c0}
+    skrl_settings["skrl_version"] = skrl.__version__
     meta = {
         "interface_version": INTERFACE_VERSION, "pipe_test": True, "what": "stand-in (pipe test), not a strategy "
         "of record; observed in the training simulator", "team": "guard", "guards": guards, "strikes": strikes,
@@ -529,7 +551,8 @@ def run(args: argparse.Namespace, world_factory: Callable | None = None) -> int:
                    "guard_speed_mps": cfg.team_speed_mps("guard"), "strike_speed_mps": cfg.team_speed_mps("strike"),
                    "yaw_rate_max_rad_s": cfg.yaw_rate_max_rad_s,
                    "note": "velocity part capped at length 1, then times the team speed; vz ignored under pure rules"},
-        "network": {"hidden": list(st["hidden"]), "activation": "ELU", "policy": "Gaussian, one log std per axis",
+        "network": {"hidden": list(st["hidden"]), "activation": "ELU",
+                    "policy": "Gaussian, mean through Tanh (in [-1, 1]), one log std per axis; sampled actions clipped",
                     "observation_scaler": "RunningStandardScaler", "value_scaler": "RunningStandardScaler",
                     "one_network_per_guard_slot": True, "agent_file": AGENT_FILE},
         "training": {"num_games": n, "timesteps": timesteps, "game_steps_budget": budget_game_steps,
@@ -538,7 +561,7 @@ def run(args: argparse.Namespace, world_factory: Callable | None = None) -> int:
                      "learning_rate": float(st["learning_rate"]), "shaping_weight": float(st["shaping_weight"]),
                      "opponent_mix": mix, "eval_games": e, "eval_every_updates": int(args.eval_every_updates),
                      "eval_seed": eval_seed, "eval_max_steps": int(args.eval_max_steps or game.ticks),
-                     "device": device},
+                     "device": device, **skrl_settings},
     }
     if physics_meta:
         meta["physics"] = physics_meta
@@ -554,6 +577,8 @@ def run(args: argparse.Namespace, world_factory: Callable | None = None) -> int:
         f"| {k} | {x} |" for k, x in [*text_of.items(), ("algorithm", "IPPO"), ("num_games", n),
                                       ("timesteps", timesteps), ("wall_clock_cap_min", cap_min),
                                       ("git_commit", commit), ("pipe_test", "true"),
+                                      ("hidden", list(st["hidden"])), ("policy mean", "Tanh"),
+                                      *skrl_settings.items(),
                                       *([("yaw_rate_gains", physics_meta["yaw_rate_gains"])] if physics_meta else [])])
     tb.add_text("settings", table, 0)
     tb.flush()
@@ -566,11 +591,52 @@ def run(args: argparse.Namespace, world_factory: Callable | None = None) -> int:
         def reset(self, games) -> None:
             pass
 
+        mean_abs_max = None       # largest |mean action| of this evaluation (before the clamp), device tensor
+
         def act(self, obs):
             with torch.no_grad():
-                out = [agent.policies[a].net(agent._observation_preprocessor[a](obs[:, k])).clamp(-1.0, 1.0)
-                       for k, a in enumerate(names)]
-            return torch.stack(out, dim=1)
+                raw = torch.stack([agent.policies[a].net(agent._observation_preprocessor[a](obs[:, k]))
+                                   for k, a in enumerate(names)], dim=1)
+            m = raw.abs().amax()
+            self.mean_abs_max = m if self.mean_abs_max is None else torch.maximum(self.mean_abs_max, m)
+            return raw.clamp(-1.0, 1.0)
+
+    class NonFiniteAbort(Exception):
+        """NaN or inf found: the run is ABORTED (module docstring)."""
+
+    last_loss: dict[str, float] = {}
+    _track = agent.track_data
+
+    def track_data(tag: str, value: float) -> None:          # keep the latest value of every skrl-tracked number
+        last_loss[tag] = value
+        _track(tag, value)
+
+    agent.track_data = track_data
+
+    def check_finite(rollout_nonfinite, where: str) -> None:
+        """One host read: actions of the rollout, every weight and scaler statistic; then the tracked losses."""
+        bad = [rollout_nonfinite > 0]
+        for a in names:
+            for mod in (agent.policies[a], agent.values[a], agent._observation_preprocessor[a],
+                        agent._value_preprocessor[a]):
+                for t in list(mod.parameters()) + list(mod.buffers()):
+                    if t.is_floating_point():
+                        bad.append(~torch.isfinite(t).all())
+        if bool(torch.stack(bad).any()):
+            what = []
+            if int(rollout_nonfinite) > 0:
+                what.append(f"{int(rollout_nonfinite)} drone-steps with non-finite actions")
+            for a in names:
+                for nm, mod in (("policy", agent.policies[a]), ("value", agent.values[a]),
+                                ("observation scaler", agent._observation_preprocessor[a]),
+                                ("value scaler", agent._value_preprocessor[a])):
+                    if any(t.is_floating_point() and not bool(torch.isfinite(t).all())
+                           for t in list(mod.parameters()) + list(mod.buffers())):
+                        what.append(f"{a} {nm} weights")
+            raise NonFiniteAbort(f"{where}: non-finite " + ", ".join(what))
+        lossy = [k for k, x in last_loss.items() if k.startswith("Loss") and not math.isfinite(x)]
+        if lossy:
+            raise NonFiniteAbort(f"{where}: non-finite " + ", ".join(lossy))
 
     live = LiveGuard()
     curve: list[dict] = []
@@ -580,9 +646,11 @@ def run(args: argparse.Namespace, world_factory: Callable | None = None) -> int:
         t0 = time.perf_counter()
         snap = eval_world.snapshot() if eval_world is not None else None
         eval_game.gen.manual_seed(eval_seed)                 # the same evaluation games every time
+        live.mean_abs_max = None
         res = play_match(eval_game, live, eval_strike, max_steps=args.eval_max_steps)
         if eval_world is not None:
             eval_world.restore(snap)
+        check_finite(res.nonfinite_actions.sum(), f"evaluation at timestep {timestep}")
         entry: dict = {"timestep": timestep, "game_steps": timestep * n, "train_s": clock["train_s"]}
         rows = summarise(res, by=())
         overall = rows[0] if rows else None
@@ -609,6 +677,7 @@ def run(args: argparse.Namespace, world_factory: Callable | None = None) -> int:
         if d_train > 0:
             scal["game/game_steps_per_s"] = (timestep - clock["last_timestep"]) * n / d_train
         scal["game/eval_games_finished"] = float(n_fin)
+        scal["standin/mean_action_abs_max"] = float(live.mean_abs_max)
         for tag, val in scal.items():
             if val is not None:
                 tb.add_scalar(tag, val, timestep)
@@ -638,6 +707,7 @@ def run(args: argparse.Namespace, world_factory: Callable | None = None) -> int:
             states = self.env.state()
             total = self.cfg.timesteps
             self.upset_games = torch.zeros((), dtype=torch.long, device=device)
+            nonfinite = torch.zeros((), dtype=torch.long, device=device)
             for timestep in range(total):
                 t0 = time.perf_counter()
                 self.agents.pre_interaction(timestep=timestep, timesteps=total)
@@ -646,6 +716,7 @@ def run(args: argparse.Namespace, world_factory: Callable | None = None) -> int:
                     nxt, rewards, terminated, truncated, infos = self.env.step(actions)
                     nxt_states = self.env.state()
                     self.upset_games = self.upset_games + (infos["upset"] & terminated[names[0]][:, 0]).sum()
+                    nonfinite = nonfinite + infos["nonfinite_actions"].sum()
                     self.agents.record_transition(observations=observations, states=states, actions=actions,
                                                   rewards=rewards, next_observations=nxt, next_states=nxt_states,
                                                   terminated=terminated, truncated=truncated, infos=infos,
@@ -656,6 +727,8 @@ def run(args: argparse.Namespace, world_factory: Callable | None = None) -> int:
                 self.timesteps_done = timestep + 1
                 if (timestep + 1) % rollouts == 0:                       # an update just ran
                     updates = (timestep + 1) // rollouts
+                    check_finite(nonfinite, f"update {updates} (timestep {timestep + 1})")
+                    nonfinite = torch.zeros_like(nonfinite)
                     if clock["train_s"] >= cap_min * 60.0:
                         self.stopped_by_cap = True
                         return
@@ -670,15 +743,22 @@ def run(args: argparse.Namespace, world_factory: Callable | None = None) -> int:
     print(f"stand-in (pipe test): motion {game.motion}, {n} games, {timesteps} timesteps "
           f"({timesteps * n:,} game-steps of {budget_game_steps:,}), cap {cap_min:g} min training time, "
           f"run folder {run_dir}", flush=True)
-    evaluate(0)
-    trainer.train()
-    agent.enable_training_mode(False)
-    evaluate(trainer.timesteps_done)
+    status, abort_reason = "FINISHED", None
+    try:
+        evaluate(0)
+        trainer.train()
+        agent.enable_training_mode(False)
+        evaluate(trainer.timesteps_done)
+    except NonFiniteAbort as ex:
+        status, abort_reason = "ABORTED", str(ex)
+        tb.add_text("status", f"ABORTED: {ex}; agent.pt is the last evaluation's networks", trainer.timesteps_done)
+        print(f"ABORTED: {ex} (agent.pt kept from the last evaluation)", file=sys.stderr, flush=True)
     if getattr(agent, "writer", None) is not None:
         agent.writer.flush()
         agent.writer.close()
     tb.close()
-    result = {"what": FIRST_LINE, "motion": game.motion, "seed": seed, "num_games": n,
+    result = {"what": FIRST_LINE, "status": status, "abort_reason": abort_reason,
+              "motion": game.motion, "seed": seed, "num_games": n,
               "timesteps_planned": timesteps, "timesteps_done": trainer.timesteps_done,
               "game_steps_done": trainer.timesteps_done * n, "game_steps_budget": budget_game_steps,
               "updates_done": trainer.timesteps_done // rollouts,
@@ -688,9 +768,11 @@ def run(args: argparse.Namespace, world_factory: Callable | None = None) -> int:
               "upset_training_games": int(trainer.upset_games) if trainer.upset_games is not None else 0,
               "nonfinite_count": int(game._starling.drone.nonfinite_count) if motion == "physics" else 0,
               "git_commit": commit, "device": device,
-              "skrl_cfg": {k: (str(x) if not isinstance(x, (int, float, str, bool, type(None))) else x)
-                           for k, x in dataclasses.asdict(agent.cfg).items() if not isinstance(x, dict)}}
-    (run_dir / "train_result.json").write_text(json.dumps(result, indent=1))
+              "skrl_settings": skrl_settings,
+              "last_tracked": {k: x for k, x in last_loss.items()}}
+    (run_dir / "train_result.json").write_text(json.dumps(result, indent=1, default=str))
+    if status == "ABORTED":
+        return 3
     print(f"done: {result['game_steps_done']:,} game-steps "
           f"({'stopped by the wall-clock cap' if trainer.stopped_by_cap else 'budget reached'}), train "
           f"{clock['train_s']:.0f} s, eval {clock['eval_s']:.0f} s -> {run_dir}", flush=True)

@@ -2,7 +2,7 @@ RECORD · SIM ONLY — every result on this page is Isaac Sim; nothing here flew
 
 # HTX-R1 Swarm Sim Validation (Isaac)
 
-Question (Linear): Does the candidate position source → PX4 → swarm controller and collision-avoidance pipeline work, and how does it fail? · Where: Isaac Sim on the lab laptop · [Linear project](https://linear.app/nearlab/project/htx-r1-swarm-sim-validation-isaac-649103a747b1) · Linear snapshot: 2026-11-11 · Evidence: [LEDGER](../record/LEDGER.md)
+Question (Linear): Does the candidate position source → PX4 → swarm controller and collision-avoidance pipeline work, and how does it fail? · Where: Isaac Sim on the lab laptop · [Linear project](https://linear.app/nearlab/project/htx-r1-swarm-sim-validation-isaac-649103a747b1) · Linear snapshot: 2026-11-16 · Evidence: [LEDGER](../record/LEDGER.md)
 
 **How to read a result here:** every results block starts by saying which position source flew the drone (PX4's own sim estimate · sim mocap · cuVSLAM) and in which world. Flying and perception are separate pipelines on this branch until S6/S7 hands the position source over. **Work order** (Linear's milestone order; the codes do not sort): S1–S5 → S5d → S6 → S5e → S5b → S5c → S7 → S8 → S9 → S10.
 
@@ -150,10 +150,10 @@ Linear (snapshot 2026-11-13): 0 % · no ledger row yet
 
 | Issue | Title (Linear, verbatim) | Linear status | Result | Evidence |
 |---|---|---|---|---|
-| NEAR-791 | Add a mapping mode to the cuVSLAM node | Backlog | — | — |
-| NEAR-792 | Hand-fly a mapping loop and save the map | Backlog | — | — |
-| NEAR-793 | Localise in the saved map from 5+ starting points | Backlog | — | — |
-| NEAR-794 | Compare the localised position with the simulator’s position | Backlog | — | — |
+| NEAR-791 | Add a mapping mode to the cuVSLAM node | In Progress | — | — |
+| NEAR-792 | Hand-fly a mapping loop and save the map | In Progress | — | — |
+| NEAR-793 | Localise in the saved map from 5+ starting points | In Progress | — | — |
+| NEAR-794 | Compare the localised position with the simulator’s position | In Progress | — | — |
 
 ### S5c · Compare the two camera setups for cuVSLAM and OpenVINS — SIM ONLY (Isaac)
 **Purpose:** two camera setups are kept: the ZED-style added camera (setup A, behind every camera result so far) and the Starling 2 Max's own sensors (setup B). Each built-in sensor is modelled at its real mount, resolution and rate, then cuVSLAM and OpenVINS (what the drone runs) are scored on both setups, so the choice rests on measurements.
@@ -234,7 +234,6 @@ Linear (snapshot 2026-11-13): 0 % · no ledger row yet
 | NEAR-924 | Draw the PX4 position in the chase view | Backlog | — | — |
 | NEAR-925 | Find why the cuVSLAM image freezes briefly at takeoff in the teleop layout | Backlog | — | — |
 | NEAR-954 | Sim: fly with the gamepad (Logitech F310), same pad check and profile as the real drone | In Progress | — | — |
-| NEAR-955 | Isaac Lab: train in parallel with the Starling model and measure steps per second | In Progress | — | — |
 
 ## Sim debt (ours; only the clock gates a milestone: NEAR-871 → S5e)
 

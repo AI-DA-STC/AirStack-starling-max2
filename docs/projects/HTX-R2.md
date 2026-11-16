@@ -2,7 +2,7 @@ RECORD · REAL DRONE — first flights on this software: 2026-11-11 with one Sta
 
 # HTX-R2 Starling Flight Bring-up (M2–M8)
 
-Question: Does the same software fly real Starling 2 Max drones safely with motion-capture positioning (mocap)? · Where: mocap room · [Linear project](https://linear.app/nearlab/project/htx-r2-starling-flight-bring-up-m2-m7-269b3d72d5ce) · Linear snapshot: 2026-11-11 · Evidence: [LEDGER](../record/LEDGER.md) · Every flight follows [PREFLIGHT.md](../PREFLIGHT.md).
+Question: Does the same software fly real Starling 2 Max drones safely with motion-capture positioning (mocap)? · Where: mocap room · [Linear project](https://linear.app/nearlab/project/htx-r2-starling-flight-bring-up-m2-m7-269b3d72d5ce) · Linear snapshot: 2026-11-16 · Evidence: [LEDGER](../record/LEDGER.md) · Every flight follows [PREFLIGHT.md](../PREFLIGHT.md).
 
 ## Before the next real flight
 
@@ -194,8 +194,13 @@ Linear (snapshot 2026-11-13): 25 % · last ledger row #37 (2026-11-13)
 | NEAR-839 | Set up each new Starling (one at a time, setup guide) | Backlog | — | — |
 | NEAR-840 | Two drones: formation and random goals with collision avoidance | Done | Observed — two drones, closest 1.50 m against a 1.60 m keep-out, 2026-11-12 | [#35](../record/LEDGER.md), [hangar video](../../videos/cbf_drone_real_1080p.mp4), [#37](../record/LEDGER.md) |
 | NEAR-841 | Three drones: intruder-squeeze test | Backlog | — | — |
-| NEAR-951 | Two drones: formation and random goals | In Progress | — | — |
-| NEAR-953 | Two drones: figure-8 with collision avoidance | In Progress | — | — |
+| NEAR-951 | Two drones: formation and random goals | Done | — | — |
+| NEAR-953 | Two drones: figure-8 with collision avoidance | Done | — | — |
+| NEAR-984 | 26 November demo: three two-drone flights, run sheet and dress rehearsal | In Progress | — | — |
+| NEAR-985 | Random goals: re-pick a goal that lands inside the other drone's keep-out | Backlog | — | — |
+| NEAR-986 | Third drone for the intruder demo: Crazyflie or DJI, tracked by motion capture | Backlog | — | — |
+| NEAR-987 | Make the Starlings see the third drone: its motion-capture position into the commander | Backlog | — | — |
+| NEAR-988 | Figure-8 with a hand-flown intruder: two Starlings and the third drone, recorded | Backlog | — | — |
 
 **NEAR-840: Two drones: formation and random goals with collision avoidance.** Checks that two real drones fly together under one commander and that the collision filter (CBF) keeps them apart, before formations and random goals are tried. Scope: both Starlings on motion-capture positioning (mocap) at 240 Hz, `goal_two_ours.yaml` at 0.5 m/s, one drone hovering while the other was sent toward it along x. No gate was fixed beforehand, so this is an observation, not a gated PASS.
 

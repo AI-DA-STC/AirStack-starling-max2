@@ -455,12 +455,21 @@ def _toml_value(v) -> str:
     return json.dumps(str(v), ensure_ascii=False)
 
 
+UNKNOWN_TREE = "unknown (not recorded at recording time)"
+
+
+def recorded_working_tree(meta: dict) -> str:
+    """The working-tree state saved in meta.json when the clip was recorded; never the tree at encode time (clips
+    recorded before the field existed say so)."""
+    return meta.get("working_tree") or UNKNOWN_TREE
+
+
 def write_sidecar(path: pathlib.Path, clip: dict, meta: dict, mp4: pathlib.Path, crf: int, gif_info, stills,
                   caption: str) -> None:
     """The clip's settings and provenance next to it (TOML). No partner value: committed neutral config only."""
     rows = {
         "clip": clip["name"], "caption": caption, "commit": meta["commit"],
-        "working_tree": meta.get("working_tree", working_tree_state()), "date": meta["date"],
+        "working_tree": recorded_working_tree(meta), "date": meta["date"],
         "game_config_file": meta["game_config"]["file"], "game_config_sha256": meta["game_config"]["sha256"],
         "local_file": "none", "size": clip["size"], "band": clip["band"], "arena_side_m": meta["arena_side_m"],
         "zone_radius_m": meta["zone_radius_m"], "guard_strategy": clip["guard"], "strike_strategy": clip["strike"],

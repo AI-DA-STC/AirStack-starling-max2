@@ -118,3 +118,13 @@ def test_script_imports_isaac_only_inside_functions():
 @pytest.mark.parametrize("name", ["s2b_2v1_lab", "s2b_5v3_middle"])
 def test_plan_clips_exist_in_config(name):
     assert name in {c["name"] for c in load_s2b_gates()["video"]["clips"]}
+
+
+def test_sidecar_working_tree_is_the_recording_time_state():   # fix round 1: never the encode-time tree
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("make_s2b_video", SCRIPT)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    assert mod.recorded_working_tree({"working_tree": "clean"}) == "clean"
+    assert mod.recorded_working_tree({}) == "unknown (not recorded at recording time)"
+    assert "working_tree_state()" not in SCRIPT.read_text().split("def write_sidecar", 1)[1]

@@ -3,7 +3,7 @@
 clip = "s2b_2v1_lab"
 caption = "Training simulator (Isaac Lab), scripted strategies, not a real flight"
 commit = "b33c42e22935"
-working_tree = "uncommitted changes: svg_training/configs/s2b_video_scenes.toml, svg_training/scripts/make_s2b_video.py, svg_training/scripts/score.py, svg_training/scripts/train_standin.py, svg_training/source/svg_training/bench/overlay.py, svg_training/source/svg_training/compat/isaaclab_232.py, svg_training/source/svg_training/core/game.py, svg_training/source/svg_training/core/play.py, svg_training/source/svg_training/opponents/learned.py"
+working_tree = "unknown (not recorded at recording time)"
 date = "2026-11-16"
 game_config_file = "s2_game.toml"
 game_config_sha256 = "da8dd28fab3b5f6a67e244dcab9b699c8c8efa45190a8815dacc728f79db4054"

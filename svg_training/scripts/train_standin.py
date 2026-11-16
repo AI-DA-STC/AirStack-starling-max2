@@ -67,6 +67,7 @@ leave the game through a scheduled drop-out (none in the committed file), so the
 from __future__ import annotations
 
 import argparse
+import copy
 import dataclasses
 import datetime
 import hashlib
@@ -176,6 +177,30 @@ def to_toml(data: dict, header: str = "") -> str:
         if isinstance(v, dict):
             lines += ["", f"[{k}]"] + [f"{k2} = {_toml_value(v2)}" for k2, v2 in v.items()]
     return "\n".join(lines) + "\n"
+
+
+def effective_agent_cfg(cfg: Any, agent: str) -> dict:
+    """The scalar settings of one agent from an EXPANDED skrl multi-agent config (skrl expands per agent name)."""
+    out: dict = {}
+    for f in dataclasses.fields(cfg):
+        v = getattr(cfg, f.name)
+        v = v.get(agent) if isinstance(v, dict) and agent in v else v
+        if isinstance(v, (bool, int, float, str)) or v is None:
+            out[f.name] = v
+        elif isinstance(v, (tuple, list)) and all(isinstance(x, (int, float)) for x in v):
+            out[f.name] = list(v)
+    return out
+
+
+def skrl_table_mismatch(effective: dict, table: dict, table_name: str) -> str | None:
+    """None when every skrl setting the table writes down (SKRL_TABLE_KEYS) is skrl's effective value; else why not."""
+    for k in SKRL_TABLE_KEYS:
+        if k not in table:
+            continue
+        got = effective.get(k)
+        if not isinstance(got, (int, float)) or isinstance(got, bool) or not math.isclose(float(got), float(table[k])):
+            return f"skrl's effective {k} = {got!r} differs from [{table_name}] {k} = {table[k]}"
+    return None
 
 
 def mix_slices(mix: dict[str, float], n: int) -> list[tuple[str, slice]]:
@@ -572,7 +597,6 @@ def run(args: argparse.Namespace, world_factory: Callable | None = None) -> int:
     extra_cfg = {k: float(st[k]) for k in SKRL_TABLE_KEYS if k in st}           # written down in the table
     extra_cfg.update({k: v for k, v in diag.items() if k in ("discount_factor", "entropy_loss_scale")})
     memories = {a: RandomMemory(memory_size=rollouts, num_envs=n, device=device) for a in names}
-    run_dir.mkdir(parents=True, exist_ok=True)
     write_interval = max(1, timesteps // 100)
     kw = skrl_kwargs_defaults(names)
     kw["observation_preprocessor_kwargs"] = {a: {"size": OBS_SPACE, "device": device} for a in names}
@@ -584,6 +608,15 @@ def run(args: argparse.Namespace, world_factory: Callable | None = None) -> int:
                          experiment={"directory": str(run_dir.parent), "experiment_name": run_dir.name,
                                      "write_interval": write_interval, "checkpoint_interval": 0},
                          **kw)
+    # The table's written-down skrl values must be skrl's effective ones. Checked on a copy expanded exactly as IPPO
+    # expands its cfg (MultiAgent base __init__: cfg.expand(possible_agents=...)), BEFORE the run folder is made.
+    probe = copy.deepcopy(agent_cfg)
+    probe.expand(possible_agents=list(names))
+    mismatch = skrl_table_mismatch(effective_agent_cfg(probe, names[0]), st, table_name)
+    if mismatch:
+        print(f"refusing: {mismatch}", file=sys.stderr)
+        return 2
+    run_dir.mkdir(parents=True, exist_ok=True)
     agent = IPPO(possible_agents=names, models=models, memories=memories, observation_spaces=env.observation_spaces,
                  state_spaces=env.state_spaces, action_spaces=env.action_spaces, device=device, cfg=agent_cfg)
 
@@ -605,22 +638,15 @@ def run(args: argparse.Namespace, world_factory: Callable | None = None) -> int:
                           f"{physics_meta['physics_params_sha256']}")
     commit = git_commit()
     import skrl
-    c0 = {}
-    for f in dataclasses.fields(agent.cfg):        # the effective per-agent settings (skrl expands them per name)
-        v = getattr(agent.cfg, f.name)
-        v = v.get(names[0]) if isinstance(v, dict) and names[0] in v else v
-        if isinstance(v, (bool, int, float, str)) or v is None:
-            c0[f.name] = v
-        elif isinstance(v, (tuple, list)) and all(isinstance(x, (int, float)) for x in v):
-            c0[f.name] = list(v)
+    c0 = effective_agent_cfg(agent.cfg, names[0])   # the effective per-agent settings (skrl expands them per name)
     keys = ("rollouts", "learning_epochs", "mini_batches", "discount_factor", "gae_lambda", "learning_rate",
             "entropy_loss_scale", "value_loss_scale", "ratio_clip", "value_clip", "grad_norm_clip", "kl_threshold",
             "time_limit_bootstrap", "random_timesteps", "learning_starts", "mixed_precision")
     skrl_settings = {f"skrl_{k}": ("none" if c0.get(k) is None else c0.get(k)) for k in keys if k in c0}
     skrl_settings["skrl_version"] = skrl.__version__
-    for k in SKRL_TABLE_KEYS:
-        if k in st and not math.isclose(float(c0.get(k)), float(st[k])):
-            raise RuntimeError(f"skrl's effective {k} = {c0.get(k)} differs from [{table_name}] {k} = {st[k]}")
+    mismatch = skrl_table_mismatch(c0, st, table_name)          # the same rule on the agent itself (never expected)
+    if mismatch:
+        raise RuntimeError(mismatch)
     effective_log_std = 0.0 if init_log_std is None else float(init_log_std)     # 0.0 = learned.py's zeros
     settings_sha = hashlib.sha256(table_text(settings_text, table_name).encode()).hexdigest()
     meta = {

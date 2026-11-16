@@ -673,3 +673,29 @@ def test_standin_bars_note_keeps_the_tool_verdict(tmp_path):    # fix round 1: n
         plt.Figure.suptitle = real
     assert seen["title"].startswith("Stand-in (pipe test) gate check: FAIL (seed 3 not run)")
     assert json.loads((tmp_path / "verdict.json").read_text())["verdict"] == "FAIL"
+
+
+# ---------------------------------------------------------------- fix round 2 (review M7, M8): refusals before any folder
+@pytest.mark.parametrize("bad", [0.5, None])
+def test_refuses_a_skrl_setting_that_differs_from_the_table(tmp_path, monkeypatch, bad):
+    """skrl's effective discount differs from [standin_v2] (or is missing): exit 2 before the run folder is made."""
+    from skrl.multi_agents.torch.ippo import IPPO_CFG
+    real = IPPO_CFG.expand
+
+    def expand(self, *, possible_agents):
+        real(self, possible_agents=possible_agents)
+        self.discount_factor = {a: bad for a in possible_agents}
+    monkeypatch.setattr(IPPO_CFG, "expand", expand)
+    assert _v2_run(tmp_path, "mismatch") == 2
+    assert not (tmp_path / "mismatch").exists()
+
+
+def test_refuses_a_table_without_frozen_axes_for_the_motion(tmp_path):
+    text = (CONFIGS / "s2b.toml").read_text().replace(
+        'frozen_log_std_axes = { pure = ["vz", "yaw"], starling = ["yaw"], physics = ["yaw"] }',
+        'frozen_log_std_axes = { pure = ["vz", "yaw"], physics = ["yaw"] }')
+    assert "starling = [" not in train_standin.table_text(text, "standin_v2")
+    cfg = tmp_path / "s2b_no_starling.toml"
+    cfg.write_text(text)
+    assert _v2_run(tmp_path, "noaxes", "starling", ("--s2b-config", str(cfg))) == 2
+    assert not (tmp_path / "noaxes").exists()

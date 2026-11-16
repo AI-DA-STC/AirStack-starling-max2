@@ -6,21 +6,15 @@ Result: **FAIL** against `[compare_games_gates]` of `configs/s2b.toml`. Ledger r
 
 ## What this run shows
 
-- **The physics drone changes who wins.** In 36 of the 60 cells (Guard × Strike × size × band) the Guard team's hold rate moves by more than the 0.10 gate. Every gap over the gate goes the same way: the Guard team holds less on the physics drone (−0.115 to −0.948). The largest is field v straight, 2v1 lab: 95.1 % on tier 1, 0.3 % on the physics drone.
-- **Against the straight Strike, the scripted Guards stop holding.** On the physics drone they hold 0–13 % in every band and size, where tier 1 gave 11.5–95.1 %. Against the flank Strike the two backends agree within the gate in 9 of 12 scripted 2v1 cells, but in only 2 of 12 in 5v3 (gaps down to −0.51).
-- **Why: on the physics drone, Guard and Strike drones pass one over the other.**
-  - *What the filter does.* The safety filter keeps drones 1.10 m apart in 3-D, not only on the floor plan. When two drones are at different heights it can push them apart up and down as well as sideways.
-  - *Observed.* On tier 1 the scripted drones never leave their start height of 1.20 m (the scripted strategies never command up or down). They never passed one over the other: 0 of 48,000 tier 1 games with scripted Guards. On the physics drone they did in 43–64 % of games per size and Strike behaviour. One drone climbs towards 1.8 m, the other drops towards 0.6 m, and the Strike drone flies over or under the Guard into the zone. Such a pass, at least 0.84 m apart in height, shows in 65 % (2v1) and 43 % (5v3) of the physics Strike wins against the straight Strike (figure 2). Random Guards, which do command up and down, pass over or under on tier 1 too.
-  - *Tested.* The trigger is the height difference itself. CPU check in the PyTorch reference world, 40 games of 2v1 lab, mark edge v straight:
-    - Tier 1 as run: heights moved by 0.000000 m, and the Guards held 97.5 %.
-    - The same tier 1 games with every Strike drone started **1 mm** higher: the Guards held **0 %**, every drone pair got up to 0.63 m apart in height, and 25 of the 40 Strike wins showed a pass (a looser test here: over 0.5 m apart in height at the closest horizontal approach). With 10 mm, also 0 %.
-    - The physics drone as run: heights moved by up to 0.69 m, the Guards held 0 %, and 32 of the 40 Strike wins showed a pass (same looser test).
-    - So on tier 1, with its own slow drone model, a 1 mm height difference is enough to break the Guard's block. Exactly equal heights are what made tier 1's Guards hold. The physics drone's real dynamics never keep heights exactly equal.
-- **The owner chose to keep this behaviour** (17 November 2026, S2b plan section "Owner's answer, third round", following option (a); its commit is pending in the lead's log). Passing over or under stays part of the game on the Starling-layer and physics backends, and Guards will have to learn to cover height later. This run is recorded as it is: the gate stays, and the FAIL stands.
-- **The drones also answer faster on the physics drone.** Task 7 (T11) found tier 1 reaches a commanded speed much more slowly than the physics drone: 0.6–0.9 s to 63 % against 0.19–0.25 s. Tier 1's fitted 1.72 m/s² acceleration limit cuts the commander's 5 m/s² feed-forward pulse. In every cell that fails the hold gate the physics games are shorter on average, by 45–874 steps of 0.05 s. The 1 mm test shows the speed difference is not needed for the collapse against the straight Strike. Tier 1, with its slow response, collapses the same way. How much the speed difference adds elsewhere (for example 5v3 against the flank Strike) is not separated.
-- **Closest approach: the physics drone is not worse with scripted Guards.** In all 48 scripted cells the physics minimum and 5th percentile of the 3-D closest Guard–Strike approach are within 0.071 m and 0.018 m of tier 1's (gate 0.10 m). In 44 of the 48 cells the physics minimum is the larger: the physics drones stayed farther apart. The 4 cells that fail the closest-approach gate are all **random** Guards in middle and large arenas. There the physics drones came 0.12–0.23 m closer than on tier 1 at their minimum, while their 5th percentiles agree within 0.035 m. Cause not diagnosed. Candidate (untested): random Guards change command every step, and tier 1's slow response smooths that out where the physics drone follows it.
-- **No upsets and no NaN.** No drone tipped past 60° or turned non-finite in 60,000 physics games, and the physics drone produced no non-finite wrench value.
-- **The games were paired.** For every cell, the 1,000 game slots began from the same arena, zone, starts and start misses on both backends. `compare_backends.py` checked this from the per-game arrays and would have refused otherwise. Outcome agreement on the same slot ranged from 5 % to 99.9 % over the scripted cells (median 63 %).
+- **The physics drone changes who wins.** In 36 of the 60 cells (Guard × Strike × size × band) the Guard team's hold rate moves by more than the 0.10 gate, always downwards on the physics drone (−0.115 to −0.948). The largest is field v straight, 2v1 lab: 95.1 % on tier 1, 0.3 % on the physics drone.
+- **Against the straight Strike, the scripted Guards stop holding.** On the physics drone they hold 0–13 %, where tier 1 gave 11.5–95.1 %. Against the flank Strike the backends agree within the gate in 9 of 12 scripted 2v1 cells but only 2 of 12 in 5v3 (gaps down to −0.51).
+- **Why: Strike drones pass over or under the Guards.** The safety filter keeps drones 1.10 m apart in 3-D, so once two drones are at different heights it can push them apart up and down. With scripted Guards this happened in none of 48,000 tier 1 games and in 43–64 % of physics games: one drone climbs towards 1.8 m, the other drops towards 0.6 m, and the Strike drone flies into the zone (figure 2).
+- **Tested: a 1 mm height difference is enough.** On tier 1 no drone ever leaves its start height of 1.20 m, and the Guards held 97.5 % of 40 games of 2v1 lab mark edge v straight. With every Strike drone started 1 mm higher, tier 1's Guards held 0 %, as on the physics drone, where one drone's largest height change from its start was 0.646 m. Script `scripts/diag_vertical_pass.py`, CPU; command and numbers in the [vertical-pass note](../docs/notes/2026-11-17_s2b_vertical_pass_note.md).
+- **The owner chose to keep this behaviour** (17 November 2026, S2b plan section "Owner's answer, third round", option (a), commit `997a5d2`). Passing over or under stays part of the game, and Guards will have to learn to cover height later. The gate stays and the FAIL stands.
+- **The physics drone also answers faster.** Task 7 (T11) found tier 1 takes 0.6–0.9 s to reach 63 % of a commanded speed against 0.19–0.25 s, because its fitted 1.72 m/s² acceleration limit cuts the commander's 5 m/s² pulse. The 1 mm test shows this is not needed for the collapse against the straight Strike; how much it adds elsewhere (5v3 against the flank Strike) is not separated.
+- **Closest approach: no worse with scripted Guards.** In all 48 scripted cells the physics minimum and 5th percentile of the 3-D closest Guard–Strike approach are within 0.071 m and 0.018 m of tier 1's (gate 0.10 m), and in 44 the physics minimum is the larger. The 4 failing cells are random Guards in middle and large arenas, 0.12–0.23 m closer at the minimum; cause not diagnosed (candidate, untested: tier 1's slow response smooths out the random Guards' changing commands).
+- **No upsets and no NaN** in 60,000 physics games, and no non-finite wrench value.
+- **The games were paired.** Every cell's 1,000 game slots began from the same arena, zone, starts and start misses on both backends; `compare_backends.py` checked this and would have refused otherwise. Outcome agreement on the same slot ranged from 5 % to 99.9 % over the scripted cells (median 63 %).
 
 ## Purpose
 
@@ -81,7 +75,7 @@ Pooled over the four scripted Guards (12,000 games per row):
 
 The pass test is strict (0.84 m of height), so Strike wins without it may still involve a smaller vertical dodge; this run does not say.
 
-Diagnosis script and its output: `runs/sdd/s2b/task8/diag_vertical_pass.py` and `diag_vertical_pass_output.txt`. PyTorch reference world, CPU, 40 games of 2v1 lab, mark edge and field against the straight Strike, plus the 1 mm and 10 mm start offsets on tier 1. Not of record.
+Diagnosis: `scripts/diag_vertical_pass.py` (committed; CPU, PyTorch reference world), its commands and numbers in the [vertical-pass note](../docs/notes/2026-11-17_s2b_vertical_pass_note.md): 40 games of 2v1 lab, mark edge and field against the straight Strike, plus 1 mm and 10 mm Strike start offsets on tier 1. Re-run from the committed script on 17 November with the same numbers as the first run.
 
 ## Closest approach (3-D, games without a start miss)
 
@@ -132,7 +126,7 @@ Game seed 0 + band index for every pair, on both backends (paired). Guard strate
 - **Probes before launch, not of record:** one 5v3 lab batch per side (mark edge v flank, seed 99, scratch folder), to estimate run time. Physics 184 s and tier 1 194 s per 1,000-game batch, so each physics size was estimated under the 90-minute line. The same probe pair checked the pairing on real data (identical starts, arenas and start misses) before the runs were trusted.
 - **Shared GPU.** These are not timing runs. The three ran together: tier 1 01:15–03:07, physics 2v1 01:15–04:02, physics 5v3 01:19–05:02. From about 01:49 (and still at 04:32) the lead's NUS reference training (JAX, a different project, owner-approved) also ran on the GPU.
   - The physics 5v3 process was paused (SIGSTOP) from 02:21:26 to 02:37:52 to ease contention, then resumed. The batch in flight then includes the pause.
-  - None of this changes a game. Every step is the same computation whatever the GPU is doing.
+  - The game logic does not depend on timing: what each step computes does not depend on how long it takes. Bit-for-bit repeatability under GPU contention was not checked.
 
 ## Games at once
 
@@ -147,3 +141,13 @@ INFO only and not comparable: three runs of this task and another project's trai
 - `runs/2026-11-17_s2b_scripted_compare/`: `gates.toml`, `run.sh`, `compare.json` (sha256 `1b5aa222888b`), `compare.md`.
 - `runs/2026-11-17_s2b_scripted_compare_starling/`, `_physics_2v1/` and `_physics_5v3/`: `scores.json`, `scores.md`, `per_game.npz`, `gates.toml` (score.py's own, empty), `preflight.txt`, `launched.txt`, `run.log`; `_physics_5v3/notes.txt` has the pause.
 - Figures: `docs/figures/s2b_scripted_compare.png` (`make_s2b_figures.py scripted_compare`) and `docs/figures/s2b_scripted_compare_vertical.png` (`make_s2b_figures.py vertical_pass`), both from this run's files.
+
+## Edited after the run (fix round 1, 17 November 2026)
+
+Wording and evidence only; no number of the run changed, and the run was not repeated. The diagnosis script moved
+from a git-ignored folder to `scripts/diag_vertical_pass.py` and was run again with the same numbers; the note
+[2026-11-17_s2b_vertical_pass_note.md](../docs/notes/2026-11-17_s2b_vertical_pass_note.md) holds its commands. One
+measure is now named as measured (one drone's largest height change from its start, 0.646 m for mark edge; not a
+pair's height gap). The owner's answer is cited by commit (`997a5d2`). The results bullets were shortened. The
+safety gates of `compare_backends.py` (upsets, NaN) now refuse missing data instead of counting it as zero; T13's
+compare gives the same result under the stricter check.

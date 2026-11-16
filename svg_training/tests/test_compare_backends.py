@@ -154,6 +154,7 @@ def test_compare_cli_writes_outputs(tmp_path):
     out = tmp_path / "runs" / "cmp"
     res = json.loads((out / "compare.json").read_text())
     assert res["verdict"] == "PASS" and res["local_file"] == "none"
+    assert res["meta"]["config_check"].startswith("skipped")          # a bypassed [compare_games] check is on record
     assert tomllib.loads((out / "gates.toml").read_text())["compare_games_gates"] == GATES
     md = (out / "compare.md").read_text()
     assert "PASS" in md and "guard_field" in md
@@ -175,7 +176,7 @@ def test_compare_config_check():
     assert cb.config_problems([{**meta, "sizes": ["2v1"]}], cfg)
 
 
-def test_scripted_compare_figure(tmp_path):
+def test_scripted_compare_figure(tmp_path, capsys):
     """make_s2b_figures.py scripted_compare draws from compare.json (fake data)."""
     import make_s2b_figures
 
@@ -186,18 +187,81 @@ def test_scripted_compare_figure(tmp_path):
     out = tmp_path / "f.png"
     make_s2b_figures.scripted_compare(str(out), str(d))
     assert out.stat().st_size > 10_000
+    printed = capsys.readouterr().out                       # the table each figure function prints is what it plotted
+    assert "| 2v1 | strike_flank | guard_field | lab | 50.0 | 55.0 | +5.0 |" in printed
+    assert "| 2v1 | strike_flank | guard_field | large | 70.0 | 62.0 | -8.0 |" in printed
+    # a cell with no finished game (no hold rate) is skipped in the plot and printed as n/a, never a crash
+    res["cells"][0]["tier1"]["hold_rate"] = None
+    res["cells"][0]["hold_gap"] = None
+    (d / "compare.json").write_text(json.dumps(res))
+    make_s2b_figures.scripted_compare(str(tmp_path / "g.png"), str(d))
+    assert "| 2v1 | strike_flank | guard_field | lab | n/a | 55.0 | n/a |" in capsys.readouterr().out
 
 
-def test_vertical_pass_figure(tmp_path):
+def test_vertical_pass_figure(tmp_path, capsys):
     """make_s2b_figures.py vertical_pass reads the score folders compare.json names (fake data)."""
     import make_s2b_figures
 
+    b = _side("physics")
+    key = "physics|2v1|guard_field|strike_flank|lab"
+    b["per_game"][key + "|closest_cross_m"] = b["per_game"][key + "|closest_cross_m"].copy()
+    b["per_game"][key + "|closest_cross_m"][10:30] = 0.1     # 20 of 100 games: horizontal 0.1 m, 3-D >= 1.0 m: a pass
+    b["per_game"]["physics|2v1|guard_field|strike_flank|large|outcome"] = np.zeros(N, dtype=np.int8)   # none finished
     _write_run(tmp_path / "a", _side("starling"))
-    _write_run(tmp_path / "b", _side("physics"))
-    res = cb.compare(cb.load_side([tmp_path / "a"]), cb.load_side([tmp_path / "b"]), GATES)
+    _write_run(tmp_path / "b", b)
     d = tmp_path / "cmp"
     d.mkdir()
-    (d / "compare.json").write_text(json.dumps({**res, "meta": {"a": [str(tmp_path / "a")], "b": [str(tmp_path / "b")]}}))
+    res = {"preset_a": "starling", "preset_b": "physics",
+           "cells": [{"size": "2v1", "guard": "guard_field", "strike": "strike_flank", "band": band}
+                     for band in ("lab", "large")],
+           "meta": {"a": [str(tmp_path / "a")], "b": [str(tmp_path / "b")]}}
+    (d / "compare.json").write_text(json.dumps(res))
     out = tmp_path / "v.png"
     make_s2b_figures.vertical_pass(str(out), str(d))
     assert out.stat().st_size > 10_000
+    printed = capsys.readouterr().out
+    assert "| 2v1 | strike_flank | guard_field | lab | 0.000 | 0.200 |" in printed
+    assert "| 2v1 | strike_flank | guard_field | large | 0.000 | n/a |" in printed      # no finished game: n/a
+
+
+def test_compare_refuses_missing_physics_safety_data():
+    """Fix round 1 (review Important 1): the upset and NaN gates fail closed. Side b must be the physics preset with
+    its per-cell upset arrays and its physics meta (non-finite wrench count); anything missing is refused, never
+    counted as zero."""
+    a = _side("starling")
+    b = _side("physics")
+    for k in [k for k in b["per_game"] if k.endswith("|upset")]:
+        del b["per_game"][k]
+    with pytest.raises(ValueError, match="upset"):
+        cb.compare(a, b, GATES)
+    b = _side("physics")
+    del b["metas"][0]["physics"]
+    with pytest.raises(ValueError, match="physics meta"):
+        cb.compare(a, b, GATES)
+    b = _side("physics")
+    b["metas"][0]["physics"]["nonfinite_count"] = None
+    with pytest.raises(ValueError, match="nonfinite_count"):
+        cb.compare(a, b, GATES)
+
+
+def test_compare_refuses_starling_as_b():
+    """Side b given a tier 1 (starling) score folder: refused (its upset and NaN gates would have nothing to judge)."""
+    a = _side("starling")
+    b = _side("starling")
+    with pytest.raises(ValueError, match="physics"):
+        cb.compare(a, b, GATES)
+
+
+def test_compare_cli_refuses_missing_upset(tmp_path):
+    """The same refusal through the CLI: exit 2 with one clear line, no compare.json."""
+    b = _side("physics")
+    for k in [k for k in b["per_game"] if k.endswith("|upset")]:
+        del b["per_game"][k]
+    _write_run(tmp_path / "a", _side("starling"))
+    _write_run(tmp_path / "b", b)
+    p = subprocess.run([child_python(), str(ROOT / "scripts" / "compare_backends.py"), "--a", str(tmp_path / "a"),
+                        "--b", str(tmp_path / "b"), "--name", "cmp", "--runs-dir", str(tmp_path / "runs"),
+                        "--no-config-check"], cwd=ROOT, env=child_env(str(ROOT / "source")), capture_output=True,
+                       text=True)
+    assert p.returncode == 2 and "upset" in p.stderr, p.stderr
+    assert not (tmp_path / "runs" / "cmp" / "compare.json").exists()

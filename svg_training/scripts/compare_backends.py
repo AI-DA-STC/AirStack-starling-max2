@@ -27,7 +27,8 @@ starts per slot, checked here from per_game.npz, never assumed). Per cell:
 Overall: upsets (games of b with an upset drone, D10) <= upsets_max; NaN <= nan_max, where NaN counts NaN values in
 both sides' per-game closest-approach and filter arrays plus the physics drone's non-finite wrench values (score.py
 meta). Verdict PASS when every cell passes both gates and the upset and NaN counts pass; anything missing or NaN
-fails. Refused (ValueError; exit 2 from the CLI): a side that used a local partner file (only committed neutral values
+fails. Refused (ValueError; exit 2 from the CLI): side b not the physics preset, or missing its upset arrays or its
+physics meta (non-finite wrench count) (the upset and NaN gates fail closed); a side that used a local partner file (only committed neutral values
 are compared, so ``local_file`` is "none"), different seed, games per band, game config, or not --batch-per-pair, a
 cell on one side only, or slots whose starts or arenas differ (not paired). The CLI also refuses folders that do not
 hold the ``[compare_games]`` matchups, unless ``--no-config-check`` (tests only).
@@ -106,6 +107,17 @@ def _check_inputs(a: dict, b: dict) -> tuple[str, str]:
         if len(ps) != 1:
             raise ValueError(f"side {name} must hold exactly one preset, holds {sorted(ps)}")
         presets.append(ps.pop())
+    # the upset and NaN gates fail closed: side b must be the physics drone with its safety data (review, fix round 1)
+    if presets[1] != "physics":
+        raise ValueError(f"side b must be the physics preset (its upset and NaN gates need the physics drone's data); "
+                         f"got {presets[1]!r}")
+    for m in b["metas"]:
+        ph = m.get("physics")
+        if not isinstance(ph, dict):
+            raise ValueError("side b: a score folder has no physics meta (non-finite wrench count): NaN gate not judged")
+        nf = ph.get("nonfinite_count")
+        if not isinstance(nf, int) or isinstance(nf, bool):
+            raise ValueError(f"side b: physics meta nonfinite_count is {nf!r}, not a count: NaN gate not judged")
     return presets[0], presets[1]
 
 
@@ -170,7 +182,9 @@ def compare(a: dict, b: dict, gates: dict) -> dict:
         both = (oa != RUNNING) & (ob != RUNNING)
         ea, eb = a["per_game"][f"{ka}|end_step"], b["per_game"][f"{kb}|end_step"]
         up = b["per_game"].get(f"{kb}|upset")
-        cell_upsets = int((up.astype(bool) & (ob != RUNNING)).sum()) if up is not None else 0
+        if up is None or up.shape != ob.shape:
+            raise ValueError(f"cell {cell}: side b has no upset array for its games: upset gate not judged")
+        cell_upsets = int((up.astype(bool) & (ob != RUNNING)).sum())
         upsets += cell_upsets
         breach = {}
         for name, side, k, o in (("a", a, ka, oa), ("b", b, kb, ob)):
@@ -188,7 +202,7 @@ def compare(a: dict, b: dict, gates: dict) -> dict:
             "tier1_breach_rate": breach["a"], "physics_breach_rate": breach["b"],
             "start_miss_rate": float(a["per_game"][f"{ka}|start_miss"].mean()), "upset_games": cell_upsets})
     for m in b["metas"]:
-        nan += int(m.get("physics", {}).get("nonfinite_count", 0) or 0)
+        nan += int(m["physics"]["nonfinite_count"])               # present and an int: checked in _check_inputs
     upsets_ok = upsets <= int(gates["upsets_max"])
     nan_ok = nan <= int(gates["nan_max"])
     passed = bool(cells) and all(c["hold_ok"] and c["closest_ok"] for c in cells) and upsets_ok and nan_ok
@@ -323,6 +337,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"refusing: {e}", file=sys.stderr)
         return 2
     meta = {"a": dirs_a, "b": dirs_b, "gates_file": pathlib.Path(a.gates).name,
+            "config_check": "skipped (--no-config-check)" if a.no_config_check else "[compare_games] matched",
             "metas_a": side_a["metas"], "metas_b": side_b["metas"],
             "date": datetime.datetime.now().astimezone().isoformat(timespec="seconds")}
     out.mkdir(parents=True, exist_ok=True)

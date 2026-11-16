@@ -307,6 +307,11 @@ def throughput(out: str, results_jsonl: str, s0_results: str | None = None, line
 
 
 SC_BANDS = ("lab", "middle", "large")
+
+
+def _num(v, scale: float, fmt: str) -> str:
+    """A printed table value: "n/a" for a missing one (a cell with no finished game), else scale * v in fmt."""
+    return "n/a" if v is None else format(scale * v, fmt)
 SC_BAND_LABEL = {"lab": "lab\n4–6 m", "middle": "middle\n6–10 m", "large": "large\n10–16 m"}
 
 
@@ -342,8 +347,8 @@ def scripted_compare(out: str, compare_dir: str) -> None:
                         lo.append(100 * (r["hold_rate"] - r["ci_low"]))
                         hi.append(100 * (r["ci_high"] - r["hold_rate"]))
                         if side == "physics":
-                            print(f"| {size} | {strike} | {g} | {band} | {100 * c['tier1']['hold_rate']:.1f} | "
-                                  f"{100 * r['hold_rate']:.1f} | {100 * c['hold_gap']:+.1f} |")
+                            print(f"| {size} | {strike} | {g} | {band} | {_num(c['tier1']['hold_rate'], 100, '.1f')} | "
+                                  f"{_num(r['hold_rate'], 100, '.1f')} | {_num(c['hold_gap'], 100, '+.1f')} |")
                     ax.errorbar(xs, ys, yerr=[lo, hi], fmt=marker, color=colour, markersize=5, capsize=1.5,
                                 linewidth=1.0, markerfacecolor=face)
             for bi in range(1, len(SC_BANDS)):
@@ -413,8 +418,8 @@ def vertical_pass(out: str, compare_dir: str) -> None:
                     if share.get("tier1") is not None:
                         ax.plot(x, 100 * share["tier1"], marker="o", color=INK, markerfacecolor="white",
                                 markersize=5, linestyle="")
-                    print(f"| {size} | {strike} | {g} | {band} | {share.get('tier1', float('nan')):.3f} | "
-                          f"{share.get('physics', float('nan')):.3f} |")
+                    print(f"| {size} | {strike} | {g} | {band} | {_num(share.get('tier1'), 1, '.3f')} | "
+                          f"{_num(share.get('physics'), 1, '.3f')} |")
             for bi in range(1, len(SC_BANDS)):
                 ax.axvline(bi - 0.5, color=INK2, linewidth=0.6, alpha=0.4)
             ax.set_xticks(range(len(SC_BANDS)), [SC_BAND_LABEL[b] for b in SC_BANDS])

@@ -677,9 +677,12 @@ class FigureEightScenario(Scenario):
                  track_gain: float = 1.0, intruder_start: np.ndarray,
                  intruder_cbf_exempt: bool = True, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        if self.num_drones != 3:
+        # patch 0008 (AirStack-starling-max2): two drones fly the eight with no
+        # intruder slot; three keep CMU's layout [lobe A, lobe B, intruder].
+        if self.num_drones not in (2, 3):
             raise ValueError(
-                f'figure_eight scenario requires exactly 3 drones, got {self.num_drones}')
+                f'figure_eight scenario requires 2 or 3 drones, got {self.num_drones}')
+        self._has_intruder = self.num_drones == 3
         self._center = np.asarray(center, dtype=float).reshape(3)
         self._radius = float(radius)
         self._gap = float(center_distance)
@@ -748,7 +751,7 @@ class FigureEightScenario(Scenario):
 
     @property
     def cbf_exempt_indices(self) -> list:
-        return [2] if self._intruder_cbf_exempt else []
+        return [2] if (self._has_intruder and self._intruder_cbf_exempt) else []
 
     @property
     def paths(self) -> list:
@@ -756,9 +759,11 @@ class FigureEightScenario(Scenario):
         return [np.array([self.eight_point(v) for v in s])]
 
     def initial_positions(self) -> np.ndarray:
-        return np.vstack([self.eight_point(self._phase0[0]),
-                          self.eight_point(self._phase0[1]),
-                          self._intruder_start])
+        rows = [self.eight_point(self._phase0[0]),
+                self.eight_point(self._phase0[1])]
+        if self._has_intruder:
+            rows.append(self._intruder_start)
+        return np.vstack(rows)
 
     def reset_tracking(self) -> None:
         """Mission start: the carrots restart at the far ends (= the takeoff
@@ -791,10 +796,11 @@ class FigureEightScenario(Scenario):
             if tracked:
                 self._acceleration[i] = acc
         # The intruder holds its start (a teleop intruder's row is ignored).
-        goals[2] = self._intruder_start
-        v[2] = seek_velocity(positions[2][None], self._intruder_start[None],
-                             self.nominal_speed, self.tracker.accel,
-                             self.velocity_only_settle)[0]
+        if self._has_intruder:
+            goals[2] = self._intruder_start
+            v[2] = seek_velocity(positions[2][None], self._intruder_start[None],
+                                 self.nominal_speed, self.tracker.accel,
+                                 self.velocity_only_settle)[0]
         self._goals = goals
         return v
 

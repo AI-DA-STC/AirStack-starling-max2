@@ -397,7 +397,8 @@ class SwarmCommander(Node):
         # (lobe A CCW, through the crossing, lobe B CW, back), starting at the
         # two far ends; senses: +1 / -1 = each drone's direction along the
         # eight ([1,-1] head-on at the crossing, [1,1] a side-by-side merge).
-        # drone_3 holds intruder_start unless hand-flown.
+        # drone_3 holds intruder_start unless hand-flown. With two drones there is
+        # no intruder (patch 0008, AirStack-starling-max2).
         self.declare_parameter('figure_eight_center', [0.0, 0.0, 1.5])
         self.declare_parameter('figure_eight_radius_m', 1.0)
         self.declare_parameter('figure_eight_center_distance_m', 2.0)

@@ -414,3 +414,41 @@ def test_goal_sequence_kinematic_rollout_cbf_deconflicts_the_crossings() -> None
         d = [np.linalg.norm(positions[a] - positions[b]) for a, b in ((0, 1), (0, 2), (1, 2))]
         unfiltered_min = min(unfiltered_min, min(d))
     assert unfiltered_min < 0.5
+
+
+def test_figure_eight_two_drones_has_no_intruder() -> None:
+    """patch 0008: with two drones the eight flies without the intruder slot."""
+    kwargs = dict(center=[0.0, 0.0, 2.0], radius=1.0, center_distance=2.0,
+                  axis_deg=180.0, tilt_deg=0.0, senses=[1.0, -1.0],
+                  track_gain=1.0, intruder_start=[-2.0, 0.0, 1.5])
+    sc = make_scenario('figure_eight', num_drones=2, nominal_speed=0.5,
+                       bounds=ARENA, safety_radius=0.55, seed=7, **kwargs)
+    initial = sc.initial_positions()
+    assert initial.shape == (2, 3)
+    # axis 180: lobe A toward +x, so drone 0 takes off at +x, drone 1 at -x
+    np.testing.assert_allclose(initial, [[2.0, 0.0, 2.0], [-2.0, 0.0, 2.0]], atol=1e-9)
+    assert sc.cbf_exempt_indices == []
+    sc.reset_tracking()
+    v = sc.nominal_velocity(initial, dt=0.05)
+    assert v.shape == (2, 3) and sc.goals.shape == (2, 3)
+    # flat eight: no vertical velocity, the pair is kept apart by the filter
+    positions = initial.copy()
+    min_pair = np.inf
+    for _ in range(int(2 * 4 * np.pi / 0.5 / 0.05)):       # two full eights
+        nominal = sc.nominal_velocity(positions, dt=0.05)
+        assert np.allclose(nominal[:, 2], 0.0)
+        result = filter_velocities(nominal, positions, 0.55, 1.0, alpha=2.5)
+        positions = positions + result.velocities * 0.05
+        min_pair = min(min_pair, np.linalg.norm(positions[0] - positions[1]))
+    assert min_pair >= 2.0 * 0.55 - 0.05
+    np.testing.assert_allclose(positions[:, 2], 2.0, atol=1e-6)
+    # still on the eight afterwards (no deadlock)
+    assert np.linalg.norm(positions - sc.goals, axis=1).max() < 0.6
+
+
+def test_figure_eight_rejects_one_or_four_drones() -> None:
+    for n in (1, 4):
+        with pytest.raises(ValueError, match='2 or 3 drones'):
+            make_scenario('figure_eight', num_drones=n, nominal_speed=0.5,
+                          bounds=ARENA, safety_radius=0.55, seed=7,
+                          center=[0.0, 0.0, 2.0], intruder_start=[0.0, 0.0, 1.0])

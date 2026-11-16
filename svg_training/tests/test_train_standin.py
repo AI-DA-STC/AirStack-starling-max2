@@ -518,3 +518,15 @@ def test_aborts_on_a_nonfinite_loss_alone(tmp_path, monkeypatch):           # fi
     assert res["status"] == "ABORTED" and "Loss / Policy loss" in res["abort_reason"]
     assert "weights" not in res["abort_reason"] and "actions" not in res["abort_reason"]
     assert res["timesteps_done"] == 32
+
+
+def test_diagnostic_overrides_are_recorded(smoke_run, tmp_path):            # Step B diagnosis flags
+    assert "diagnostic" not in tomllib.loads((smoke_run / "interface.toml").read_text())   # defaults: none
+    rc = _in_process(["--seed", "1", "--name", "diag", *ABORT_ARGS, "--diag-init-log-std", "-1.6",
+                      "--diag-discount", "0.999", "--runs-dir", str(tmp_path)])
+    assert rc == 0
+    meta = tomllib.loads((tmp_path / "diag" / "interface.toml").read_text())
+    assert meta["diagnostic"]["init_log_std"] == -1.6 and meta["diagnostic"]["discount_factor"] == 0.999
+    assert meta["training"]["skrl_discount_factor"] == 0.999
+    log_std = torch.load(tmp_path / "diag" / "agent.pt", weights_only=False)["guard_0"]["policy"]["log_std"]
+    assert torch.allclose(log_std, torch.full((4,), -1.6), atol=0.05)     # 3 updates move it only a little

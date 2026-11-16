@@ -78,8 +78,9 @@ def standin(out: str, *run_dirs: str) -> None:
             pts = d.get(tag, [])
             if pts:
                 xs = [s * n / 1e6 for s, _ in pts]
-                ax.plot(xs, [v for _, v in pts], color=col, linewidth=2, marker="o", markersize=3,
-                        label=f"seed {m['seed']}")
+                seeds = [mm["seed"] for mm in metas]
+                label = f"seed {m['seed']}" if len(set(seeds)) == len(seeds) else r.name   # same seed: name the runs
+                ax.plot(xs, [v for _, v in pts], color=col, linewidth=2, marker="o", markersize=3, label=label)
                 for s, val in pts:
                     print(f"| {r.name} | {m['seed']} | {tag} | {s * n:,} | {val:.4g} |")
             if tag == "game/closest_cross_3d_p05_m":

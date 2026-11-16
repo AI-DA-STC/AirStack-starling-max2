@@ -370,6 +370,11 @@ def make_parser(isaac: bool = False) -> argparse.ArgumentParser:
     ap.add_argument("--eval-every-updates", type=int, default=20)
     ap.add_argument("--eval-max-steps", type=int, help="steps per evaluation (default: the game length; tests)")
     ap.add_argument("--runs-dir", default=str(ROOT / "runs"))
+    # Diagnosis only (S2b Task 9 Step B): change ONE setting the committed [standin] does not hold. A run using any of
+    # these is never a run of record; interface.toml gets a [diagnostic] table and TensorBoard a "diagnostic" text.
+    ap.add_argument("--diag-init-log-std", type=float, help="initial log std of every policy (skrl default 0)")
+    ap.add_argument("--diag-discount", type=float, help="IPPO discount factor (skrl default 0.99)")
+    ap.add_argument("--diag-entropy-scale", type=float, help="IPPO entropy loss scale (skrl default 0)")
     if not isaac:
         ap.add_argument("--device", default="cuda")
     return ap
@@ -487,6 +492,13 @@ def run(args: argparse.Namespace, world_factory: Callable | None = None) -> int:
 
     # ---- skrl IPPO ----
     models = make_models(names, list(st["hidden"]), device)
+    diag = {k: v for k, v in (("init_log_std", args.diag_init_log_std), ("discount_factor", args.diag_discount),
+                              ("entropy_loss_scale", args.diag_entropy_scale)) if v is not None}
+    if "init_log_std" in diag:
+        with torch.no_grad():
+            for a in names:
+                models[a]["policy"].log_std.fill_(diag["init_log_std"])
+    extra_cfg = {k: v for k, v in diag.items() if k in ("discount_factor", "entropy_loss_scale")}
     memories = {a: RandomMemory(memory_size=rollouts, num_envs=n, device=device) for a in names}
     run_dir.mkdir(parents=True, exist_ok=True)
     write_interval = max(1, timesteps // 100)
@@ -494,7 +506,7 @@ def run(args: argparse.Namespace, world_factory: Callable | None = None) -> int:
     kw["observation_preprocessor_kwargs"] = {a: {"size": OBS_SPACE, "device": device} for a in names}
     kw["value_preprocessor_kwargs"] = {a: {"size": 1, "device": device} for a in names}
     agent_cfg = IPPO_CFG(rollouts=rollouts, learning_epochs=int(st["learning_epochs"]),
-                         mini_batches=int(st["mini_batches"]), learning_rate=float(st["learning_rate"]),
+                         mini_batches=int(st["mini_batches"]), learning_rate=float(st["learning_rate"]), **extra_cfg,
                          observation_preprocessor={a: RunningStandardScaler for a in names},
                          value_preprocessor={a: RunningStandardScaler for a in names},
                          experiment={"directory": str(run_dir.parent), "experiment_name": run_dir.name,
@@ -565,6 +577,9 @@ def run(args: argparse.Namespace, world_factory: Callable | None = None) -> int:
     }
     if physics_meta:
         meta["physics"] = physics_meta
+    if diag:
+        meta["diagnostic"] = {"note": "DIAGNOSTIC run: settings outside the committed [standin]; never a run of record",
+                              **diag}
     (run_dir / INTERFACE_FILE).write_text(to_toml(meta, header=FIRST_LINE))
 
     # ---- TensorBoard: the game/ scalars and the settings text (skrl writes its own file beside it) ----
@@ -577,10 +592,14 @@ def run(args: argparse.Namespace, world_factory: Callable | None = None) -> int:
         f"| {k} | {x} |" for k, x in [*text_of.items(), ("algorithm", "IPPO"), ("num_games", n),
                                       ("timesteps", timesteps), ("wall_clock_cap_min", cap_min),
                                       ("git_commit", commit), ("pipe_test", "true"),
+                                      *[(f"DIAGNOSTIC {k}", x) for k, x in diag.items()],
                                       ("hidden", list(st["hidden"])), ("policy mean", "Tanh"),
                                       *skrl_settings.items(),
                                       *([("yaw_rate_gains", physics_meta["yaw_rate_gains"])] if physics_meta else [])])
     tb.add_text("settings", table, 0)
+    if diag:
+        tb.add_text("diagnostic", "DIAGNOSTIC run, never a run of record: " + ", ".join(f"{k} = {x}" for k, x in
+                                                                                    diag.items()), 0)
     tb.flush()
 
     # ---- the evaluation ----

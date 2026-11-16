@@ -54,7 +54,16 @@ rsync -av <workstation>:AirStack-starling-max2/svg_training/runs/<name>/ ~/AirSt
 `<workstation>` is the PC's address on your network or over Tailscale. Records and ledger rows are written and
 committed on the laptop, in the live clone, as always (root CLAUDE.md).
 
-## 6. Rules that still apply
+## 6. Working on it from the lab (owner's choice: Tailscale + Ubuntu remote desktop)
+
+- Join the PC and the laptop to the same Tailscale network; use the PC's Tailscale name as `<workstation>` above.
+- Ubuntu 24.04: Settings → System → Remote Desktop. "Remote Login" works with nobody logged in at the PC.
+- Start long runs inside `tmux` (over SSH or a terminal in the remote desktop), so a dropped connection does not stop
+  the run; `tmux attach` to check on it.
+- Watch training live in TensorBoard on the PC (`tensorboard --logdir runs/`) through the remote desktop, or forward
+  the port: `ssh -L 6006:localhost:6006 <workstation>`, then `http://localhost:6006` on the laptop.
+
+## 7. Rules that still apply
 
 - Headless for runs of record; check `nvidia-smi` before every run (CLAUDE.md rule 6).
 - A training result is not a flight result: "observed in the training simulator" (CLAUDE.md rule 4).

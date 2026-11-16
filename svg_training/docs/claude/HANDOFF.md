@@ -26,7 +26,7 @@ trainer running) in [../media/README.md](../media/README.md); new opt-in `--wind
 5. **Undiagnosed**: in 4 random-Guard cells the physics drones come 0.12–0.23 m closer than tier 1; stand-in and scripted Guards reach ~0.95 m in 3-D (under the 1.10 m keep-out). Diagnose next session?
 6. **NUS**: their JAX reference results are in `~/nus_jax_reference/` (Guard best 0.999, Strike 1.000 against scripted opponents; full self-play needs the 5090). The agent's REPORT.md write was refused — say "save it" if you want it written. Slack draft in the chat.
 7. **5090 settings (PROPOSED)**: JAX memory fraction 0.60; a larger S0 config for 32 GB needs your approval (STANDARDS §7).
-8. **Deferred by the lead**: Task 8b (registered Isaac Lab task) and the S2b final review (gatekeeper, drone dynamics, Isaac Lab engineer) — next session; two small trainer fixes (M7/M8 in `runs/sdd/s2b/task-9-isaac-review.md`).
+8. **Deferred by the lead**: Task 8b (registered Isaac Lab task) and the S2b final review (gatekeeper, drone dynamics, Isaac Lab engineer) — next session. (The two small trainer fixes M7/M8 are done, 0d10ffb.)
 
 **Where it stands.** S0 and S1 are closed. **S2 is CLOSED (16 November): every task reviewed, the final
 whole-stage review done (no Critical), its single fix wave applied and re-reviewed** (review notes: `runs/sdd/s2/`). Nothing has been trained. S2's results, with figures:

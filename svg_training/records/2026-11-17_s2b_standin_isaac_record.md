@@ -104,3 +104,17 @@ Training game-steps per second (training time only): seed 1 19.8–31.1 k (share
 - `runs/2026-11-17_s2b_standin_isaac_seed{1,2}/` (interface.toml, agent.pt, curve.json, train_result.json, TensorBoard files) and their `.log`.
 - `runs/2026-11-17_s2b_standin_isaac_seed{1,2}_score/` (trained + random) and `..._score_mark_edge/` (information), with logs.
 - Figures: `docs/figures/s2b_standin_isaac_curves.png`, `docs/figures/s2b_standin_isaac_bars.png`.
+
+## Edited after the run (17 November 2026)
+
+Wording and evidence only; no number of the run changed and nothing was re-run.
+
+- Fix round 1 (`ec89c6d`, 06:52): the verdict changed from INCOMPLETE to **FAIL** in this record, the ledger row T14
+  (an in-place edit of an append-only ledger, recorded here) and the bars figure title, because a PASS needs every seed
+  to pass and both seeds fail every cell. The bars figure is now built from the tool's own `verdict.json`. The
+  approval wording now says the owner has not yet confirmed `[standin_v2]`.
+- Gatekeeper read (07:25): the ledger row still said "owner-approved"; it now says "taken as approved by the lead;
+  owner has not confirmed the table" (second in-place ledger edit). The `[standin_v2]` table was committed at 06:39,
+  after both seeds ran; it was on disk from 03:32, and the committed table hashes to the runs' stored `06e8804e…`.
+- If seed 3 runs on the 5090, it gets its own record and ledger row that cite this one.
+

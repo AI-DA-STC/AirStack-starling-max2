@@ -96,6 +96,8 @@ Log `/home/jeremychia/flight_logs/2026-11-13/ulog_drone_2/log103.ulg`, sha256 `4
 
 `9471b61-dirty`, code fingerprint `a61699f93051`.
 
+Source and configs: `source/` and `configs/` are unchanged between the recorded commit and 413c713. The script edits made after the run were wording, the figure legend, an INFO field and the out-of-memory row only. T11's numbers re-derive bit for bit at 413c713: the reviewer recomputed them from `arrays.npz` and `windows.npz`.
+
 ## Config
 
 - Gates: `configs/s2b.toml` (sha256 `16814e44e881`), `[step_tests]` and `[step_gates]`, copied to `runs/2026-11-16_s2b_step_tests/gates.toml` before the run.

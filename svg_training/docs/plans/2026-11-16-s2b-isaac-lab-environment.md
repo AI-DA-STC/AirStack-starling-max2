@@ -661,3 +661,16 @@ Note for Task 7 (gatekeeper, T10 review): T10 ran 64 games (~320 m extent); at t
 ## Owner's ruling, 16 November 2026 (night): sim-only yaw gains
 
 The Global Constraint and Review Focus 5 ("no yaw-rate 0.25 / 0.2 in any S2b file") are **superseded for these three values**: the owner ruled that the physics drone uses the AirStack simulator's SIM-ONLY yaw-rate gains `MC_YAWRATE_P/I/D` = 0.25 / 0.2 / 0 (precedent CHG-0024), because with the drone's own gains, ModalAI's 15 Hz yaw filter and motor lag the modelled yaw does not settle (likely the missing rotor-inertia torque). They live only in `params/sim_only_yaw_v0.toml` (labelled SIM-ONLY, default for `backend = "physics"`); every other value stays the drone's own, and records name the yaw setting used. T10's FAIL is accepted (same ruling).
+
+## Owner's answer, third round (17 November 2026, "the game-design should follow (a)")
+
+Task 8 found that on the physics drone the Strike drone passes over or under a Guard drone: CMU's 3-D collision
+filter, which the game copies faithfully, escapes vertically once millimetre height differences break tier 1's
+exact equal-height symmetry (observed in the training simulator; not flown). Options put to the owner: (a) keep it,
+Guards must learn to cover height; (b) pin every drone's height in the game; (c) a narrower height band.
+
+**Answer: (a).** Vertical passing stays part of the game on the Starling layer and the physics drone. Consequences,
+for later stages, not S2b: the Guard team's policy uses its vertical-speed output (the stand-in's `[standin_v2]`
+proposal already leaves vz trained for `starling` and `physics`); scripted Guards that only move sideways are
+expected to lose to a straight Strike on the physics drone, which is recorded, not fixed; the pure partner-rules
+preset stays 2-D as NUS's game is. No S2b gate, task or result changes.

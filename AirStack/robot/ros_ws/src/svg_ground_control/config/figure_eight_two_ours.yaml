@@ -1,0 +1,118 @@
+# SVG ground control — TWO REAL STARLINGS FLY CMU's FIGURE-EIGHT (ours).
+#
+# Copy of goal_two_ours.yaml (flown 2026-11-12/13; fences of 2026-11-16:
+# geofence +-3.25 m / 0-4 m, teleop fence unused here) with scenario
+# figure_eight. Needs patch 0008 (figure_eight accepts 2 drones).
+# drone_1 = older Starling (10.40.2.11), drone_2 = newer Starling D0012
+# (10.40.2.10). 0.5 m/s, CBF r 0.55 (keep-out 1.10 m).
+#
+# TAKEOFF POINTS = the far ends of the eight (hover_positions unused):
+#   drone_1 (+2.0, 0.0, 2.0)   drone_2 (-2.0, 0.0, 2.0)   4.0 m apart, nose +x
+# Takeoff flies a straight line to them: stand each drone under its point.
+#
+# Offline check with CMU's scenario + cbf_filter (first-order lag 0.15 s,
+# 180 s): closest 1.10 m, height 2.0 m throughout, drones within x +-2.03 m,
+# y +-1.03 m, pushed at most 1.18 m off the eight at the crossing, back on
+# it afterwards (no lock-up), no emergency push-apart. NOT FLOWN.
+#
+#   ros2 launch svg_ground_control ground_control.launch.py \
+#     config:=/root/AirStack/robot/ros_ws/src/svg_ground_control/config/figure_eight_two_ours.yaml \
+#     use_mocap:=true use_foxglove_studio:=true
+
+swarm_commander:
+  ros__parameters:
+    drone_names: ["drone_1", "drone_2"]
+    drone_modes: "real,real"
+    teleop_drones: ""
+    external_drones: ""
+    cbf_exempt_drones: ""
+
+    scenario: "figure_eight"
+    # CMU's figure-eight with TWO drones (patch 0008: no intruder slot).
+    # Two touching circles, radius 1.0 m, centres 2.0 m apart along x
+    # (axis 180: lobe A toward +x, so drone_1 starts at +x, drone_2 at -x),
+    # FLAT (tilt 0: the CBF can only steer sideways, nobody passes over the
+    # other), at 2.0 m. senses [1,-1]: the two meet HEAD-ON at the crossing
+    # (0, 0, 2) every half eight. 0.5 m/s: one eight 25 s, meeting every
+    # 12.6 s, centripetal 0.25 m/s2.
+    figure_eight_center: [0.0, 0.0, 2.0]
+    figure_eight_radius_m: 1.0
+    figure_eight_center_distance_m: 2.0
+    figure_eight_axis_deg: 180.0
+    figure_eight_tilt_deg: 0.0
+    figure_eight_senses: [1.0, -1.0]
+    figure_eight_track_gain: 1.0
+    figure_eight_intruder_start: [0.0, 0.0, 2.0]   # unused with two drones
+    figure_eight_intruder_cbf_exempt: true          # unused with two drones
+    scenario_speed_mps: 0.5      # live: ros2 param set /swarm_commander scenario_speed_mps X (single-drone config flies 1.0)
+    goal_accel_mps2: 3.0         # live. CMU flies 10; start gentle
+    goal_settle_s: 0.3
+    goal_lead_m: 2.0
+    goal_velocity_only_settle_s: 1.0
+    arena_low: [-1.5, -1.5, 0.5]
+    arena_high: [1.5, 1.5, 1.8]
+    drone_position_offsets: [0.0, 0.0, 0.0,
+                             0.0, 0.0, 0.0]
+    # takeoff target = initial goal, ABSOLUTE mocap coords — place each drone at its x,y on the floor
+    hover_positions: [ 1.0, -0.2, 1.0,    # drone_1 (+x side)
+                      -1.5, -0.1, 1.0]    # drone_2 (-x side)
+
+    state_topic_template: "/{name}/odometry_conversion/odometry"
+
+    control_rate_hz: 20.0
+    hover_kp: 1.0
+    arrival_threshold_m: 0.15
+    land_speed_mps: 0.6          # validated 2026-09-03
+    takeoff_speed_mps: 0.5
+    hold_lead_m: 0.2
+    land_complete_altitude_m: 0.15
+    # 0.0 = the landing exactly as flown 2026-09-03 (one DISARM at 0.15 m, then
+    # silence; PX4's auto-disarm finishes). The 2 s settle + disarm retry
+    # (sim default, cbf_sim.yaml) is UNFLOWN on the real drone — enable it as
+    # its own M3 sub-test once the baseline landing is reconfirmed (MILESTONES).
+    land_settle_s: 0.0
+
+    cbf_safety_radius_m: 0.55
+    cbf_max_speed_mps: 1.0
+    cbf_alpha: 2.5
+    teleop_max_speed_mps: 0.5
+    teleop_accel_mps2: 5.0
+
+    # keep_in: the drone brakes before the wall instead of freezing.
+    # 4 x 4 x 4 m box centred on the origin (owner 2026-11-12): ceiling 2 -> 4 m. Ceiling UNFLOWN.
+    fence_enabled: true
+    fence_behavior: "keep_in"
+    fence_brake_accel_mps2: 4.0  # live; keep >= goal_accel_mps2
+    fence_keep_in_gain: 2.0      # live; CMU: keep 2 on the trajectory output
+    fence_margin_m: 0.0
+    fence_min: [-3.25, -3.25, 0.0]   # 6.5 x 6.5 m (owner 2026-11-16, CHG-0072)
+    fence_max: [3.25, 3.25, 4.0]
+    # Teleop fence (owner 2026-11-16, CHG-0073): a 6 x 6 m keep_in box for the
+    # hand-flown drone only (B10: teleop_drones:=drone_2), inside the 6.5 x 6.5 m
+    # geofence (the commander refuses it otherwise). Amber in the 3D view.
+    # Read at startup only: restart the commander to change it. NOT FLOWN.
+    teleop_fence_enabled: true
+    teleop_fence_min: [-3.0, -3.0, 0.3]
+    teleop_fence_max: [3.0, 3.0, 2.5]
+
+mocap_bridge:
+  ros__parameters:
+    drone_names: ["drone_1", "drone_2"]
+    mocap_topic_template: "/{name}/pose"
+    px4_vio_mode: "direct"
+    px4_vio_frame: "enu_to_ned"
+    vio_quality: 100
+    px4_vio_topic_template: "/{name}/fmu/in/vehicle_visual_odometry"
+    visual_odometry_topic_template: "/{name}/fmu/visual_odometry_in"
+    mocap_frame: "map"
+    velocity_filter_alpha: 0.4
+    mocap_qos_best_effort: false
+
+led_controller:
+  ros__parameters:
+    drone_names: ["drone_1", "drone_2"]
+    default_color: "green"
+    cbf_color: "red"
+    cbf_hold_s: 0.5
+    brightness: 80
+    heartbeat_port: 47901

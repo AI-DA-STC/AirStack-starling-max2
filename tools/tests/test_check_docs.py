@@ -592,6 +592,14 @@ class RunbookProcedure(unittest.TestCase):                            # design 2
         self.assertEqual(r.status, "FAIL"); self.assertTrue(any("takeoff" in x and "start" in x for x in r.details), r.details)
         self.assertEqual(self.run_check(self.page(a=["```bash", self.LAND, self.LAND, "```", ""])).status, "PASS")    # the same call twice is one call
 
+    def test_c10_c11_are_their_own_real_sequences(self):     # 2026-11-16: random goals (C10) and figure-8 (C11) sections
+        self.HEADS = dict(RunbookProcedure.HEADS, C10="### C10 — Two real drones fly random goals with the collision filter",
+                          C11="### C11 — Two real drones fly CMU's figure-8 with the collision filter")
+        r = self.run_check(self.page())
+        self.assertEqual(r.status, "PASS", r.details)
+        r = self.run_check(self.page(seqs={"C11": self.seq("C11", stop=False)}))
+        self.assertEqual(r.status, "FAIL", r.details); self.assertTrue(any("C11" in x for x in r.details), r.details)
+
     def test_definitions_box_passes_definition_plus_real_call_fails(self):     # design D12: the box defines, runs nothing
         r = self.run_check(self.page(a=self.box(("takeoff", "start", "hold", "land"))))
         self.assertEqual(r.status, "PASS", r.details)

@@ -917,8 +917,9 @@ def _single_home(rows):
 RUNBOOK_FILE = "docs/RUNBOOK.md"
 CHOOSER_HEADER, CHOOSER_MAX_LINE = "| Session | SIM or REAL | Go to |", 15
 SEGMENT_HEADS = (("A", "## A ·"), ("B", "## B ·"), ("B9", "### B9 —"), ("B10", "### B10 —"), ("C", "## C ·"), ("C9", "### C9 —"),
+                 ("C10", "### C10 —"), ("C11", "### C11 —"), ("E", "## E ·"),
                  ("D", "## D ·"), ("Pocket", "## Pocket reference"), ("Variants", "### Sim launch variants"))
-REAL_SEQUENCES = ("B", "B9", "B10", "C", "C9")
+REAL_SEQUENCES = ("B", "B9", "B10", "C", "C9", "C10", "C11")   # C10 random goals, C11 figure-8 (2026-11-16); E = demo-day order, no sequence
 OPENING_BEGIN, OPENING_END = "<!-- shared-opening -->", "<!-- /shared-opening -->"
 LAPTOP_MARKS = ("airstack.sh", "mocap.sh", "QGroundControl-x86_64.AppImage")
 COMMANDER_CALL_RE = re.compile(r"/swarm_commander/(takeoff|start|land)\b")
@@ -1075,7 +1076,7 @@ def check_runbook_procedure(text=None):
     segs = segments(lines)
     real = [n for n in REAL_SEQUENCES if n in segs]
     if not real:
-        warns.append("no real sequence heading (## B ·, ### B9 —, ### B10 —, ## C ·, ### C9 —) found")
+        warns.append("no real sequence heading (## B ·, ### B9 —, ### B10 —, ## C ·, ### C9 —, ### C10 —, ### C11 —) found")
     ref = None
     for name in real:
         seg = segs[name]

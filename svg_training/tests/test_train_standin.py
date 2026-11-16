@@ -436,7 +436,27 @@ def test_learned_refuses_nonfinite_actions(smoke_run, tmp_path):
     torch.save(saved, bad / "agent.pt")
     s = SkrlPolicyStrategy(bad, 4, "cpu")
     with pytest.raises(ValueError, match="non-finite"):
-        s.act(torch.zeros(4, 2, OBS_DIM))
+        s.act(torch.zeros(4, 2, OBS_DIM))                       # checked on the first call
+    # NaN that appears later is caught within CHECK_EVERY_STEPS calls (no host read on the other calls)
+    good = SkrlPolicyStrategy(smoke_run, 4, "cpu")
+    good.act(torch.zeros(4, 2, OBS_DIM))
+    with torch.no_grad():
+        for p in good.policies[0].parameters():
+            p.fill_(float("nan"))
+    with pytest.raises(ValueError, match="non-finite"):
+        for _ in range(SkrlPolicyStrategy.CHECK_EVERY_STEPS):
+            good.act(torch.zeros(4, 2, OBS_DIM))
+
+
+def test_learned_refuses_a_run_without_tanh(smoke_run, tmp_path):            # fix round 2: pre-7eb8241 runs
+    old = tmp_path / "old_run"
+    old.mkdir()
+    (old / "agent.pt").write_bytes((smoke_run / "agent.pt").read_bytes())
+    text = (smoke_run / "interface.toml").read_text()
+    line = next(x for x in text.splitlines() if x.startswith("policy = "))
+    (old / "interface.toml").write_text(text.replace(line, 'policy = "Gaussian, one log std per axis"'))
+    with pytest.raises(ValueError, match="7eb8241"):
+        SkrlPolicyStrategy(old, 4, "cpu")
 
 
 def _patched_models(monkeypatch, poison):
@@ -481,3 +501,20 @@ def test_aborts_on_nonfinite_actions_during_training(tmp_path, monkeypatch):
     assert res["status"] == "ABORTED" and "non-finite actions" in res["abort_reason"]
     assert res["timesteps_done"] == 32                            # stopped at the first update boundary
     assert (tmp_path / "nana" / "agent.pt").exists()             # from the evaluation at timestep 0
+
+
+def test_aborts_on_a_nonfinite_loss_alone(tmp_path, monkeypatch):           # fix round 2: loss check by itself
+    """Weights and actions stay finite; only the tracked policy loss is NaN: the run is ABORTED (exit 3)."""
+    from skrl.multi_agents.torch.ippo import IPPO
+    real = IPPO.update
+
+    def update(self, *, timestep, timesteps, uid):
+        real(self, timestep=timestep, timesteps=timesteps, uid=uid)
+        self.track_data(f"Loss / Policy loss ({uid})", float("nan"))
+    monkeypatch.setattr(IPPO, "update", update)
+    rc = _in_process(["--seed", "1", "--name", "nanloss", *ABORT_ARGS, "--runs-dir", str(tmp_path)])
+    assert rc == 3
+    res = json.loads((tmp_path / "nanloss" / "train_result.json").read_text())
+    assert res["status"] == "ABORTED" and "Loss / Policy loss" in res["abort_reason"]
+    assert "weights" not in res["abort_reason"] and "actions" not in res["abort_reason"]
+    assert res["timesteps_done"] == 32

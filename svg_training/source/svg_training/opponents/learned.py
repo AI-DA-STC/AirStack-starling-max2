@@ -105,6 +105,7 @@ class SkrlPolicyStrategy:
     saved log std (``seed`` seeds that draw). ``team`` = "guard"; ``name`` = "standin:<run folder name>"."""
 
     team = "guard"
+    CHECK_EVERY_STEPS = 100        # host reads of the non-finite flag: first call, then every this many calls
 
     def __init__(self, run_dir: str | Path, num_games: int, device, deterministic: bool = True,
                  seed: int = 0) -> None:
@@ -115,6 +116,10 @@ class SkrlPolicyStrategy:
                              f"{self.meta.get('interface_version')!r}; this game serves {INTERFACE_VERSION!r}")
         if self.meta.get("team") != "guard":
             raise ValueError(f"{self.run_dir.name}: trained for team {self.meta.get('team')!r}, not 'guard'")
+        if "Tanh" not in str(self.meta.get("network", {}).get("policy", "")):
+            raise ValueError(f"{self.run_dir.name}: its policy has no Tanh on the mean ([network] policy in "
+                             f"{INTERFACE_FILE}); it predates the bounded-mean fix (commit 7eb8241, S2b Task 9 fix "
+                             f"round 1) and is not comparable: retrain it")
         self.guards = int(self.meta["guards"])
         self.agents = [f"guard_{k}" for k in range(self.guards)]
         self.name = f"standin:{self.run_dir.name}"
@@ -123,6 +128,8 @@ class SkrlPolicyStrategy:
         self.deterministic = deterministic
         self._gen = torch.Generator(device=self.device)
         self._gen.manual_seed(seed)
+        self._calls = 0
+        self._bad = torch.zeros((), dtype=torch.bool, device=self.device)   # any non-finite action since the last check
         saved = torch.load(self.run_dir / AGENT_FILE, map_location=self.device, weights_only=False)
         hidden = list(self.meta["network"]["hidden"])
         self.policies: list[StandinPolicy] = []
@@ -144,7 +151,7 @@ class SkrlPolicyStrategy:
 
     def act(self, obs: Tensor) -> Tensor:
         """obs [N, G, OBS_DIM] -> actions [N, G, 4] in [-1, 1]. Raises ValueError if G is not the trained size, or
-        if any action is not finite."""
+        (at the next ``check``: first call, then every CHECK_EVERY_STEPS calls) if any action was not finite."""
         if obs.shape[1] != self.guards:
             raise ValueError(f"{self.name}: trained for {self.guards} Guard drones (one network per slot), got "
                              f"{obs.shape[1]}; score it at {self.guards}vS only")
@@ -157,8 +164,15 @@ class SkrlPolicyStrategy:
                     mean = mean + std * torch.randn(mean.shape, generator=self._gen, device=mean.device)
                 out.append(mean.clamp(-1.0, 1.0))
         act = torch.stack(out, dim=1).to(obs.dtype)
-        # one host read per step: scoring and checks only, never the training loop (lead's ruling, Task 9 fix round 1)
-        if not bool(torch.isfinite(act).all()):
+        self._bad = self._bad | ~torch.isfinite(act).all()                 # on the device, no host read
+        self._calls += 1
+        if self._calls % self.CHECK_EVERY_STEPS == 1:                     # first call, then every CHECK_EVERY_STEPS
+            self.check()
+        return act
+
+    def check(self) -> None:
+        """One host read: raise ValueError if any action since the last check was not finite. ``act`` calls it on its
+        first call and every CHECK_EVERY_STEPS calls; score.py also refuses through the game's own count."""
+        if bool(self._bad):
             raise ValueError(f"{self.name}: the networks produced non-finite actions (NaN or inf); a diverged "
                              f"stand-in is not scored")
-        return act

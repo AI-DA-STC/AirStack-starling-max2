@@ -231,8 +231,9 @@ class SvgGame:
         enters the zone does not score."""
         cfg, g = self.cfg, self.guards
         a = torch.cat((actions[GUARD], actions[STRIKE]), dim=1)                       # [N, M, 4]
-        # a drone whose action holds NaN or inf is commanded zero (clamp lets NaN through), and counted per game in
-        # info["nonfinite_actions"], so a diverged strategy can never win silently (S2b Task 9, lead's ruling)
+        # a drone whose action holds NaN or +/-inf is commanded zero and counted per game in info["nonfinite_actions"],
+        # so a diverged strategy can never win silently (S2b Task 9, lead's ruling). Before: clamp let NaN through and
+        # turned +/-inf into a full-scale command.
         bad_action = ~torch.isfinite(a).all(dim=-1)                                      # [N, M]
         a = torch.where(bad_action[..., None], torch.zeros_like(a), a).clamp(-1.0, 1.0)
         alive_prev = self.alive

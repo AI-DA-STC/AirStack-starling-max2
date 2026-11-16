@@ -16,7 +16,8 @@
 # 0.15 s, 180 s): closest 1.10 m, never one above the other, 18 loop swaps
 # (a true shared eight), drones within x 0.18..2.82, y -3.02..3.02,
 # z 1.54..3.06, at most 1.28 m off the eight, inside the geofence, no
-# emergency push-apart. NOT FLOWN.
+# emergency push-apart. Offline, not flight data. Flown 2026-11-16 at up to
+# 2.0 m/s (owner: worked, not recorded; video videos/fig8-final-master-1080p.mp4).
 # At 2.0 m/s with the real drones' PX4 limits modelled (xy 3.0 m/s, accel
 # 3.0 m/s2, descent 0.6 m/s): closest 1.16 m, never stacked, up to 1.85 m
 # off the eight, x -0.06..3.06 (0.19 m inside +3.25), y -3.27..3.27.
@@ -67,9 +68,11 @@ swarm_commander:
     arena_high: [1.5, 1.5, 1.8]
     drone_position_offsets: [0.0, 0.0, 0.0,
                              0.0, 0.0, 0.0]
-    # takeoff target = initial goal, ABSOLUTE mocap coords — place each drone at its x,y on the floor
-    hover_positions: [ 1.0, -0.2, 1.0,    # drone_1 (+x side)
-                      -1.5, -0.1, 1.0]    # drone_2 (-x side)
+    # UNUSED by figure_eight: takeoff is the eight's two far ends. Kept EQUAL to
+    # them (CHG-0082) so PREFLIGHT's hover_positions check holds: stand each
+    # drone here, nose +x.
+    hover_positions: [ 1.5,  3.0, 2.3,    # drone_1
+                       1.5, -3.0, 2.3]    # drone_2
 
     state_topic_template: "/{name}/odometry_conversion/odometry"
 
@@ -93,7 +96,7 @@ swarm_commander:
     teleop_accel_mps2: 5.0
 
     # keep_in: the drone brakes before the wall instead of freezing.
-    # 4 x 4 x 4 m box centred on the origin (owner 2026-11-12): ceiling 2 -> 4 m. Ceiling UNFLOWN.
+    # 6.5 x 7.5 x 4.5 m box centred on the origin, THIS file only (CHG-0078). Walls and ceiling not flown into.
     fence_enabled: true
     fence_behavior: "keep_in"
     fence_brake_accel_mps2: 4.0  # live; keep >= goal_accel_mps2
@@ -102,9 +105,9 @@ swarm_commander:
     fence_min: [-3.25, -3.75, 0.0]   # figure-8 only: y +-3.75, top 4.5 m (owner 2026-11-16, CHG-0078)
     fence_max: [3.25, 3.75, 4.5]
     # Teleop fence (owner 2026-11-16, CHG-0073): a 6 x 6 m keep_in box for the
-    # hand-flown drone only (B10: teleop_drones:=drone_2), inside the 6.5 x 6.5 m
+    # hand-flown drone only (B10: teleop_drones:=drone_2), inside this file's 6.5 x 7.5 m
     # geofence (the commander refuses it otherwise). Amber in the 3D view.
-    # Read at startup only: restart the commander to change it. NOT FLOWN.
+    # UNUSED here: no drone is hand-flown in the figure-8.
     teleop_fence_enabled: true
     teleop_fence_min: [-3.0, -3.0, 0.3]
     teleop_fence_max: [3.0, 3.0, 2.5]

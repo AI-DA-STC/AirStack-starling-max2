@@ -18,7 +18,8 @@
 #   but it still locks up (median 13 s; seed 114 ran 107 s): two goals within
 #   1.10 m and both drones stop side by side. Harmless hover; land.
 #   The real fix is a CMU code change (resample a goal closer than 2r to the
-#   other's) — not made. NOT FLOWN.
+#   other's) — not made (NEAR-985). Offline, not flight data. Flown 2026-11-16
+#   (owner: worked, not recorded).
 #
 #   ros2 launch svg_ground_control ground_control.launch.py \
 #     config:=/root/AirStack/robot/ros_ws/src/svg_ground_control/config/random_goals_two_ours.yaml \
@@ -43,9 +44,11 @@ swarm_commander:
     arena_high: [1.5, 1.5, 2.0]
     drone_position_offsets: [0.0, 0.0, 0.0,
                              0.0, 0.0, 0.0]
-    # takeoff target = initial goal, ABSOLUTE mocap coords — place each drone at its x,y on the floor
-    hover_positions: [ 1.0, -0.2, 1.0,    # drone_1 (+x side)
-                      -1.5, -0.1, 1.0]    # drone_2 (-x side)
+    # UNUSED by random_goals: the seed sets the takeoff points. Kept EQUAL to the
+    # seed-114 takeoff points (CHG-0082) so PREFLIGHT's hover_positions check
+    # holds: stand each drone here, nose +x.
+    hover_positions: [ 0.55, -0.86, 2.0,    # drone_1
+                      -0.94, -0.82, 2.0]    # drone_2
 
     state_topic_template: "/{name}/odometry_conversion/odometry"
 
@@ -69,7 +72,7 @@ swarm_commander:
     teleop_accel_mps2: 5.0
 
     # keep_in: the drone brakes before the wall instead of freezing.
-    # 4 x 4 x 4 m box centred on the origin (owner 2026-11-12): ceiling 2 -> 4 m. Ceiling UNFLOWN.
+    # 6.5 x 6.5 x 4 m box centred on the origin (CHG-0072; was 4 x 4 x 4, owner 2026-11-12). Walls and ceiling not flown into.
     fence_enabled: true
     fence_behavior: "keep_in"
     fence_brake_accel_mps2: 4.0  # live; keep >= goal_accel_mps2

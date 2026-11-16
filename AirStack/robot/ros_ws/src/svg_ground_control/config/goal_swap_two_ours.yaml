@@ -14,7 +14,8 @@
 # deadlock, drones parked one above the other (0.53 m / 1.47 m).
 # Offline check of THIS file (same code, first-order lag 0.15 s, 180 s):
 # 19 sets played, closest 1.10 m, height 1.0 m throughout, sideways
-# excursion <= 0.7 m, no emergency push-apart. NOT FLOWN.
+# excursion <= 0.7 m, no emergency push-apart. Offline, not flight data.
+# Flown 2026-11-16 (owner: worked, not recorded).
 #
 #   ros2 launch svg_ground_control ground_control.launch.py \
 #     config:=/root/AirStack/robot/ros_ws/src/svg_ground_control/config/goal_swap_two_ours.yaml \
@@ -78,7 +79,7 @@ swarm_commander:
     teleop_accel_mps2: 5.0
 
     # keep_in: the drone brakes before the wall instead of freezing.
-    # 4 x 4 x 4 m box centred on the origin (owner 2026-11-12): ceiling 2 -> 4 m. Ceiling UNFLOWN.
+    # 6.5 x 6.5 x 4 m box centred on the origin (CHG-0072; was 4 x 4 x 4, owner 2026-11-12). Walls and ceiling not flown into.
     fence_enabled: true
     fence_behavior: "keep_in"
     fence_brake_accel_mps2: 4.0  # live; keep >= goal_accel_mps2

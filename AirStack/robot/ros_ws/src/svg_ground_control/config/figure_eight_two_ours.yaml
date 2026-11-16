@@ -11,10 +11,11 @@
 # Takeoff flies a straight line to them: stand each drone under its point.
 #
 # Offline check with CMU's scenario + cbf_filter (first-order lag 0.15 s,
-# 180 s), this geometry: closest 1.10 m, height 2.0 m throughout, drones
-# within x 1.47..2.84 (0.41 m inside the +3.25 m geofence), y -1.02..1.19,
-# at most 1.08 m off the eight, no lock-up, no emergency push-apart.
-# NOT FLOWN.
+# 180 s), vertical + same direction: closest 1.10 m, never one above the
+# other, drones within x 1.98..2.33, y -1.03..1.20, z 1.43..2.57, vertical
+# speed <= 0.53 m/s, at most 1.62 m off the eight (at the crossing they
+# often turn back on their own loop instead of swapping), no emergency
+# push-apart. NOT FLOWN.
 #
 #   ros2 launch svg_ground_control ground_control.launch.py \
 #     config:=/root/AirStack/robot/ros_ws/src/svg_ground_control/config/figure_eight_two_ours.yaml \
@@ -35,16 +36,20 @@ swarm_commander:
     # far ends ARE those points: centre = their midpoint, axis = the line
     # from drone_1 to drone_2 (-81.2 deg, nearly along -y, like CMU's eight
     # along y), radius = a quarter of their distance (2.144 m / 4).
-    # FLAT (tilt 0; CMU flies -30: the CBF could then pass one over the
-    # other), at 2.0 m. senses [1,-1]: the two meet HEAD-ON at the crossing
-    # (2.155, 0.085, 2.0) every half eight. 0.5 m/s: one eight 13.5 s,
-    # meeting every 6.7 s, centripetal 0.47 m/s2.
+    # VERTICAL (tilt 90, owner 2026-11-16, CHG-0077): the eight stands in the
+    # plane of its axis (nearly y) and z, centre height 2.0 m, so it runs from
+    # 1.46 m to 2.54 m; takeoff points (far ends) stay at 2.0 m.
+    # senses [1,1] (SAME direction, a side-by-side merge), NOT CMU's head-on
+    # [1,-1]: in a vertical eight head-on meets one drone coming down onto
+    # the other; offline that parked them one directly above the other for
+    # 73 s of 180 s (downwash). [1,1]: 0 s, always >= 1.1 m apart sideways.
+    # 0.5 m/s: one eight 13.5 s, meeting every 6.7 s (CMU flew 2.0 m/s).
     figure_eight_center: [2.155, 0.085, 2.0]
     figure_eight_radius_m: 0.536
     figure_eight_center_distance_m: 1.072
     figure_eight_axis_deg: -81.24
-    figure_eight_tilt_deg: 0.0
-    figure_eight_senses: [1.0, -1.0]
+    figure_eight_tilt_deg: 90.0
+    figure_eight_senses: [1.0, 1.0]
     figure_eight_track_gain: 1.0
     figure_eight_intruder_start: [0.0, 0.0, 2.0]   # unused with two drones
     figure_eight_intruder_cbf_exempt: true          # unused with two drones

@@ -73,7 +73,13 @@ swarm_commander:
     fence_margin_m: 0.0
     fence_min: [-3.25, -3.25, 0.0]   # 6.5 x 6.5 m (owner 2026-11-16, CHG-0072)
     fence_max: [3.25, 3.25, 4.0]
-    teleop_fence_enabled: false
+    # Teleop fence (owner 2026-11-16, CHG-0073): a 6 x 6 m keep_in box for the
+    # hand-flown drone only (B10: teleop_drones:=drone_2), inside the 6.5 x 6.5 m
+    # geofence (the commander refuses it otherwise). Amber in the 3D view.
+    # Read at startup only: restart the commander to change it. NOT FLOWN.
+    teleop_fence_enabled: true
+    teleop_fence_min: [-3.0, -3.0, 0.3]
+    teleop_fence_max: [3.0, 3.0, 2.5]
 
 mocap_bridge:
   ros__parameters:

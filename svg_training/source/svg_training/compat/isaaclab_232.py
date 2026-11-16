@@ -126,7 +126,7 @@ ISAAC_WORLD_LABEL = "isaaclab-2.3.2"
 BODY_SIZE_M = (0.19, 0.26, 0.05)          # the Starling's CAD footprint, x along the nose (visual only: no collider)
 MAX_ANGULAR_VELOCITY_DEG_S = 1.0e4        # PhysX clamps the body rate here; the cascade limits rates to 150 deg/s
 SLOT_SPAWN_SPACING_M = 1.5                # where the slots stand before the first reset (game frame, 2 m up)
-VISUALS = (None,)                         # Task 6 adds "starling" and "primitive"
+VISUALS = (None, "starling", "primitive")  # Task 6: None = the plain box (training, tests); the others for videos
 
 
 def make_physics_sim(physics_dt_s: float, device: str):
@@ -158,9 +158,19 @@ class IsaacWorld:
     """
 
     def __init__(self, sim, num_games: int, drones: int, a: AirframeParams, physics_dt_s: float,
-                 spacing_m: float = 40.0, visual: str | None = None) -> None:
+                 spacing_m: float = 40.0, visual: str | None = None, slot_rgb: list[tuple] | None = None,
+                 starling_usd: str | None = None, marker_radius_m: float = 0.1) -> None:
+        """visual: None (a plain box per drone; training and tests), "starling" (the Starling USD at starling_usd,
+        referenced read-only under each body with its physics schemas removed; the box is hidden) or "primitive"
+        (the box darkened plus four rotor discs, the CAD layout). With a visual, slot_rgb [drones] gives each slot's
+        team colour (rotors and a marker sphere of marker_radius_m above the drone). The physics bodies are the
+        same for every visual."""
         if visual not in VISUALS:
-            raise NotImplementedError(f"visual {visual!r}: Task 6 adds the Starling and primitive visuals")
+            raise ValueError(f"visual must be one of {VISUALS}, got {visual!r}")
+        if visual is not None and (slot_rgb is None or len(slot_rgb) != drones):
+            raise ValueError("a visual needs slot_rgb, one colour per drone slot")
+        if visual == "starling" and not starling_usd:
+            raise ValueError('visual "starling" needs starling_usd')
         if abs(sim.cfg.dt - physics_dt_s) > 1e-12:
             raise ValueError(f"the simulation steps {sim.cfg.dt} s, the world was asked for {physics_dt_s} s")
         self.sim = sim
@@ -182,6 +192,9 @@ class IsaacWorld:
         # InteractiveScene reads cfg.__dict__ (interactive_scene.py:729), so an asset added to the instance is spawned
         scene_cfg.drones = RigidObjectCollectionCfg(rigid_objects=slots)
         self.scene = InteractiveScene(scene_cfg)
+        if visual is not None:
+            _add_drone_visuals(list(self.scene.env_prim_paths), drones, visual, slot_rgb, starling_usd,
+                               marker_radius_m)
         self._ready = False
 
     # ------------------------------------------------------------------------------------------- after play
@@ -338,3 +351,260 @@ def physics_play(sim, world: IsaacWorld, rel_err_max: float | None = 1.0e-4) -> 
     if not (m_err <= rel_err_max and i_err <= rel_err_max) or math.isnan(m_err + i_err):
         raise RuntimeError(f"PhysX holds a different body: mass rel err {m_err:.3g}, inertia rel err {i_err:.3g} "
                            f"(limit {rel_err_max:g})")
+
+
+# =====================================================================================================================
+# S2b (Task 6): visuals for the videos. Everything below is for people only: no physics schema, no collider, nothing
+# the game or the drones can sense. The physics bodies of IsaacWorld are the same with or without a visual (the
+# Starling USD is referenced under each body with every physics schema removed in the composed stage, never in the
+# file; physics_play's read-back still checks the body). Colours are RGB in 0..1.
+# =====================================================================================================================
+STARLING_ROTORS_FLU_M = ((0.095, -0.13), (-0.095, 0.13), (0.095, 0.13), (-0.095, -0.13))   # CAD layout (PX4 order)
+DRONE_BODY_RGB = (0.22, 0.22, 0.24)
+ARENA_BAR_RGB = (0.13, 0.13, 0.15)
+ARENA_RAIL_RGB = (0.30, 0.30, 0.33)
+ZONE_RGB = (0.0, 0.62, 0.45)
+FLOOR_RGB = (0.36, 0.37, 0.39)
+ARENA_FLOOR_RGB = (0.55, 0.56, 0.58)
+
+
+def _stage():
+    import omni.usd
+    return omni.usd.get_context().get_stage()
+
+
+def _strip_physics(root) -> int:
+    """Remove every Physics*/Physx* applied schema under root (composed stage, current edit target) and deactivate
+    joints. Returns the number of schemas removed."""
+    from pxr import Usd, UsdPhysics
+
+    n = 0
+    for p in Usd.PrimRange(root):
+        for name in list(p.GetAppliedSchemas()):
+            if name.startswith(("Physics", "Physx")):
+                p.RemoveAppliedSchema(name)
+                n += 1
+        if p.IsA(UsdPhysics.Joint):
+            p.SetActive(False)
+    return n
+
+
+def _srgb_to_linear(c: float) -> float:
+    c = float(c)
+    return c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
+
+
+def _colour(prim, rgb, opacity: float | None = None) -> None:
+    """Constant display colour (rgb given in sRGB 0..1, as on screen; the renderer works in linear light)."""
+    from pxr import Gf, UsdGeom, Vt
+
+    g = UsdGeom.Gprim(prim)
+    g.CreateDisplayColorAttr(Vt.Vec3fArray([Gf.Vec3f(*[_srgb_to_linear(c) for c in rgb])]))
+    g.GetDisplayColorPrimvar().SetInterpolation(UsdGeom.Tokens.constant)
+    if opacity is not None:
+        g.CreateDisplayOpacityAttr(Vt.FloatArray([float(opacity)]))
+
+
+def _shape(path: str, kind: str, size_m, xyz_m, rgb, yaw_rad: float = 0.0, opacity: float | None = None):
+    """A visual-only box ("box", size (dx, dy, dz)), cylinder ("cyl", size (diameter, _, height)) or sphere
+    ("sphere", size (diameter, _, _)) centred at xyz_m (parent frame)."""
+    import math as _m
+
+    from pxr import Gf, UsdGeom
+
+    st = _stage()
+    if kind == "box":
+        prim = UsdGeom.Cube.Define(st, path)
+        prim.CreateSizeAttr(1.0)
+        scale = Gf.Vec3f(*[float(s) for s in size_m])
+    elif kind == "cyl":
+        prim = UsdGeom.Cylinder.Define(st, path)
+        prim.CreateRadiusAttr(0.5)
+        prim.CreateHeightAttr(1.0)
+        prim.CreateAxisAttr("Z")
+        scale = Gf.Vec3f(float(size_m[0]), float(size_m[0]), float(size_m[2]))
+    elif kind == "sphere":
+        prim = UsdGeom.Sphere.Define(st, path)
+        prim.CreateRadiusAttr(0.5)
+        scale = Gf.Vec3f(float(size_m[0]), float(size_m[0]), float(size_m[0]))
+    else:
+        raise ValueError(kind)
+    x = UsdGeom.XformCommonAPI(prim)
+    x.SetTranslate(Gf.Vec3d(*[float(v) for v in xyz_m]))
+    x.SetRotate(Gf.Vec3f(0.0, 0.0, float(_m.degrees(yaw_rad))))
+    x.SetScale(scale)
+    _colour(prim.GetPrim(), rgb, opacity)
+    return prim.GetPrim()
+
+
+def _add_drone_visuals(env_paths: list[str], drones: int, visual: str, slot_rgb, starling_usd: str | None,
+                       marker_radius_m: float) -> None:
+    """Under each drone body: the Starling USD (physics stripped) or the primitive shape, plus a team marker sphere.
+    For "starling" the physics box's own geometry is hidden."""
+    from pxr import UsdGeom
+
+    st = _stage()
+    for env in env_paths:
+        for s in range(drones):
+            body = f"{env}/Drone_{s}"
+            rgb = slot_rgb[s]
+            if visual == "starling":
+                UsdGeom.Imageable(st.GetPrimAtPath(body + "/geometry")).MakeInvisible()
+                v = st.DefinePrim(body + "/Starling", "Xform")        # before play: PhysX has not parsed the stage
+                v.GetReferences().AddReference(starling_usd, "/vehicle")
+                _strip_physics(st.GetPrimAtPath(body + "/Starling"))
+                for name in ("body", "rotor0", "rotor1", "rotor2", "rotor3"):
+                    mesh = st.GetPrimAtPath(f"{body}/Starling/{name}/{name}")
+                    if mesh:
+                        _colour(mesh, DRONE_BODY_RGB if name == "body" else rgb)
+            else:   # primitive: the physics box itself, darkened, and four rotor discs (CAD layout)
+                _colour(st.GetPrimAtPath(body + "/geometry/mesh"), DRONE_BODY_RGB)
+                for r, (x, y) in enumerate(STARLING_ROTORS_FLU_M):
+                    _shape(f"{body}/Rotor_{r}", "cyl", (0.1, 0.1, 0.012), (x, y, 0.035), rgb)
+            _shape(f"{body}/Marker", "sphere", (2 * marker_radius_m,) * 3, (0.0, 0.0, 0.12 + marker_radius_m), rgb)
+
+
+def _quat_wxyz_minus_z_to(direction) -> tuple:
+    """Unit quaternion (w, x, y, z) turning the local -Z axis (where a distant light shines) onto direction."""
+    a = torch.tensor([0.0, 0.0, -1.0])
+    b = torch.tensor([float(v) for v in direction])
+    b = b / b.norm()
+    axis = torch.linalg.cross(a, b)
+    w = 1.0 + float(a @ b)
+    q = torch.tensor([w, *axis.tolist()])
+    q = q / q.norm()
+    return tuple(float(v) for v in q)
+
+
+def spawn_world_lights(sun: bool = True, dome_intensity: float = 450.0, sun_intensity: float = 1200.0) -> None:
+    """A dome light (soft sky) and, if sun, a distant light shining from the south-west, about 45 deg down."""
+    dome = sim_utils.DomeLightCfg(intensity=dome_intensity, color=(0.92, 0.94, 1.0))
+    dome.func("/World/VideoDome", dome)
+    if sun:
+        cfg = sim_utils.DistantLightCfg(intensity=sun_intensity, color=(1.0, 0.97, 0.92), angle=1.0)
+        cfg.func("/World/VideoSun", cfg, orientation=_quat_wxyz_minus_z_to((0.6, 0.8, -1.4)))
+
+
+def spawn_floor(size_m: float = 400.0) -> None:
+    """A flat, visual-only floor at z = 0 (no download: Isaac Lab's ground plane fetches a USD from the cloud)."""
+    _shape("/World/VideoFloor", "box", (size_m, size_m, 0.02), (0.0, 0.0, -0.011), FLOOR_RGB)
+
+
+def spawn_arena_visuals(env_index: int, half_m: float, zone_xy_m: tuple, zone_radius_m: float,
+                        wall_margin_m: float = 0.25, floor: bool = True, top_m: float = 1.8) -> None:
+    """Visual-only prims of one game (under its environment prim, so game-relative): the zone disc (0.02 m thick,
+    green), four low wall bars at +-(half_m - wall_margin_m) (where keep_in stops the drones), thin rails at top_m
+    (the height band's top) on four corner posts, so a drone in the air is seen inside the box it flies in, and, if
+    floor, a light square under the arena. Call after physics_play is fine: nothing here has a physics schema."""
+    env = f"/World/envs/env_{env_index}/VideoArena"
+    lim = half_m - wall_margin_m
+    if floor:
+        _shape(env + "/Floor", "box", (2 * half_m, 2 * half_m, 0.004), (0.0, 0.0, 0.002), ARENA_FLOOR_RGB)
+    _shape(env + "/Zone", "cyl", (2 * zone_radius_m, 0.0, 0.02), (zone_xy_m[0], zone_xy_m[1], 0.012), ZONE_RGB,
+           opacity=0.75)
+    sides = ((0.0, lim, 1, 0), (0.0, -lim, 1, 0), (lim, 0.0, 0, 1), (-lim, 0.0, 0, 1))
+    for i, (x, y, ax, ay) in enumerate(sides):
+        t, h = 0.06, 0.15                                              # ground bar
+        _shape(f"{env}/Bar_{i}", "box", (ax * (2 * lim + t) + ay * t, ay * (2 * lim + t) + ax * t, h),
+               (x, y, h / 2), ARENA_BAR_RGB)
+        r = 0.025                                                      # top rail
+        _shape(f"{env}/Rail_{i}", "box", (ax * (2 * lim + r) + ay * r, ay * (2 * lim + r) + ax * r, r),
+               (x, y, top_m), ARENA_RAIL_RGB)
+    for i, (x, y) in enumerate(((lim, lim), (lim, -lim), (-lim, lim), (-lim, -lim))):
+        _shape(f"{env}/Post_{i}", "box", (0.025, 0.025, top_m), (x, y, top_m / 2), ARENA_RAIL_RGB)
+
+
+def spawn_props(env_index: int, props: list[dict]) -> None:
+    """Visual-only blocks and columns (bench/overlay.place_props) in one game; no collider: the game ignores them."""
+    env = f"/World/envs/env_{env_index}/VideoProps"
+    for i, p in enumerate(props):
+        dx, dy, hz = p["size_m"]
+        x, y = p["xy_m"]
+        if p["kind"] == "block":
+            _shape(f"{env}/Block_{i}", "box", (dx, dy, hz), (x, y, hz / 2), (0.62, 0.52, 0.40), yaw_rad=p["yaw_rad"])
+        else:
+            _shape(f"{env}/Column_{i}", "cyl", (dx, dy, hz), (x, y, hz / 2), (0.78, 0.78, 0.76))
+
+
+def spawn_backdrop(usd_path: str, translation_m: tuple) -> int:
+    """Reference a world USD (read-only, its default prim) at /World/VideoBackdrop, moved by translation_m, with every
+    physics schema removed in the composed stage (its colliders would cost start-up time and memory, and nothing
+    may touch the drones). Returns the number of physics schemas removed."""
+    st = _stage()
+    prim = st.DefinePrim("/World/VideoBackdrop", "Xform")         # call before play: PhysX parses the stage at play
+    prim.GetReferences().AddReference(usd_path)
+    n = _strip_physics(st.GetPrimAtPath("/World/VideoBackdrop"))
+    move_backdrop(translation_m)
+    return n
+
+
+def scale_backdrop_lights(scale: float) -> list[tuple[str, float]]:
+    """Multiply the intensity of every light inside the backdrop by scale (composed stage only; the file is not
+    touched). Returns [(light path, new intensity)]."""
+    from pxr import Usd, UsdLux
+
+    out = []
+    for p in Usd.PrimRange(_stage().GetPrimAtPath("/World/VideoBackdrop")):
+        if p.HasAPI(UsdLux.LightAPI):
+            a = UsdLux.LightAPI(p).GetIntensityAttr()
+            v = float(a.Get() or 0.0) * float(scale)
+            a.Set(v)
+            out.append((str(p.GetPath()), v))
+    return out
+
+
+def move_backdrop(translation_m: tuple) -> None:
+    from pxr import Gf, UsdGeom
+
+    UsdGeom.XformCommonAPI(_stage().GetPrimAtPath("/World/VideoBackdrop")).SetTranslate(
+        Gf.Vec3d(*[float(v) for v in translation_m]))
+
+
+def show_only_game(num_games: int, keep_index: int) -> None:
+    """Hide every game's prims but keep_index's (visual only; PhysX keeps simulating them)."""
+    from pxr import UsdGeom
+
+    st = _stage()
+    for i in range(num_games):
+        im = UsdGeom.Imageable(st.GetPrimAtPath(f"/World/envs/env_{i}"))
+        im.MakeVisible() if i == keep_index else im.MakeInvisible()
+
+
+def stage_loading_done() -> bool:
+    """True when the USD context reports every file of the stage loaded."""
+    import omni.usd
+
+    _, loaded, total = omni.usd.get_context().get_stage_loading_status()
+    return loaded >= total
+
+
+def make_recorder(sim, eye_m: tuple, lookat_m: tuple, resolution: tuple[int, int]):
+    """Off-screen camera (the viewport camera /OmniverseKit_Persp, a replicator render product and the "rgb"
+    annotator, as isaaclab/envs/direct_marl_env.py does). Returns frame() -> [H, W, 3] uint8 RGB: it renders once
+    (sim.render(): no physics step) and reads the image; empty images while the renderer warms up are rendered again,
+    never returned. frame.set_view(eye_m, lookat_m) moves the camera. Needs --enable_cameras."""
+    import numpy as np
+    import omni.replicator.core as rep
+
+    from pxr import UsdGeom
+
+    cam = UsdGeom.Camera(_stage().GetPrimAtPath("/OmniverseKit_Persp"))
+    cam.GetFocalLengthAttr().Set(18.147)                   # with the 20.955 mm aperture: 60 deg horizontal field
+    cam.GetHorizontalApertureAttr().Set(20.955)            # (bench/overlay.HFOV_DEG frames the arena with it)
+    sim.set_camera_view(tuple(eye_m), tuple(lookat_m))
+    rp = rep.create.render_product("/OmniverseKit_Persp", (int(resolution[0]), int(resolution[1])))
+    annot = rep.AnnotatorRegistry.get_annotator("rgb", device="cpu")
+    annot.attach([rp])
+
+    def frame(max_tries: int = 200) -> "np.ndarray":
+        for _ in range(max_tries):
+            sim.render()
+            d = annot.get_data()
+            if getattr(d, "size", 0):
+                a = np.frombuffer(d, dtype=np.uint8).reshape(*d.shape)
+                if a.size and a.ndim == 3:
+                    return np.ascontiguousarray(a[:, :, :3])
+        raise RuntimeError(f"no camera image after {max_tries} renders (was --enable_cameras given?)")
+
+    frame.set_view = lambda eye, look: sim.set_camera_view(tuple(eye), tuple(look))
+    return frame

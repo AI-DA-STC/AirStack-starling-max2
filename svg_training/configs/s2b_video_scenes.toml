@@ -1,0 +1,79 @@
+# S2b Task 6, owner's addition (16 Nov 2026): clips of the same scripted games in other surroundings, for documents.
+# The four plan clips (configs/s2b.toml [video] clips) already cover the three arena size bands (lab, middle,
+# large); the clips here add a backdrop or visual props. Every other setting (fps, resolution, max_mb, the clip rule,
+# candidate_games) comes from configs/s2b.toml [video]. Not gates; a clip is not a measurement (no ledger row).
+# The surroundings are VISUAL ONLY: no colliders, nothing the game or the drones can sense. Captions say so.
+
+[construction_site]
+# The construction-site world (bought by the owner from CGTrader, 16 Nov 2026). Rendered clips may be committed;
+# the asset files never are: the file is referenced read-only from the localisation tree, on the host only.
+usd = "../localisation/scenes/construction_site/build/construction_site_full.usdc"   # relative to svg_training/
+# An open, flat patch in the file's own frame (its /stage/site translation included). MEASURED 16 Nov 2026 by a
+# bounding-box scan of the composed file (usd-core): nearest object rising above 0.15 m is 10.4 m from (44, 44);
+# the ground there is the flat plane at z = -0.2 m. The site is moved so this patch lies at the game's origin, z 0.
+spot_m = [44.0, 44.0]
+ground_z_m = -0.2
+clear_radius_m = 10.4         # a middle arena (side <= 10 m, corners 7.1 m from the centre) fits; a large one does not
+# The buildings, cranes and containers lie south, south-east and west of the patch; the camera stands on the
+# east side, looking west over the arena towards scaffolding, columns and the tower cranes, lower than over the floor.
+camera_azimuth_deg = 15.0     # camera direction from the arena's centre, counter-clockwise from +x (east)
+camera_elevation_deg = 20.0
+camera_distance_scale = 1.3   # step back from the closest fit so the site shows around the arena
+camera_lookat_lift_m = 0.9    # aim above the arena: it sits lower in the image, the site fills the top
+light_scale = 0.3             # the file's sun (intensity 5000, a UE4 export) overexposes Isaac's renderer
+
+[[clips]]
+name = "s2b_5v3_props"
+scene = "props"
+size = "5v3"
+band = "middle"
+guard = "guard_mark_inside"
+strike = "strike_flank"
+seed = 5
+props_seed = 11
+props_count = 10
+caption = "Training simulator (Isaac Lab): scripted strategies; the blocks and columns are visual props only, the S2 game has no obstacles yet, so the drones do not see or avoid them; not a real flight"
+
+[[clips]]
+name = "s2b_5v3_site"
+scene = "construction_site"
+size = "5v3"
+band = "middle"
+guard = "guard_field"
+strike = "strike_flank"
+seed = 6
+caption = "Training simulator (Isaac Lab): scripted strategies, the construction site is a backdrop only — the drones do not see or avoid the buildings yet; not a real flight"
+
+[[clips]]
+name = "s2b_2v1_site"
+scene = "construction_site"
+size = "2v1"
+band = "lab"
+guard = "guard_mirror"
+strike = "strike_flank"
+seed = 7
+caption = "Training simulator (Isaac Lab): scripted strategies, the construction site is a backdrop only — the drones do not see or avoid the buildings yet; not a real flight"
+
+# Still frames for documents, taken while a clip is recorded (same run, same game): view "wide" = the clip's camera,
+# "high" = steeper and further out, "close" = near the drones (looks at the live drones' centre). elevation_deg,
+# distance_scale and lookat_lift_m, if given, override the clip camera's for the still.
+[[stills]]
+name = "s2b_still_5v3_site_wide"
+clip = "s2b_5v3_site"
+at_s = 6.0
+view = "wide"
+elevation_deg = 24.0
+distance_scale = 2.0
+lookat_lift_m = 2.0
+
+[[stills]]
+name = "s2b_still_starlings_close"
+clip = "s2b_5v3_site"
+at_s = 3.0
+view = "close"
+
+[[stills]]
+name = "s2b_still_5v3_props"
+clip = "s2b_5v3_props"
+at_s = 5.0
+view = "wide"

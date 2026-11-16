@@ -19,8 +19,11 @@
 # emergency push-apart. NOT FLOWN.
 # At 2.0 m/s with the real drones' PX4 limits modelled (xy 3.0 m/s, accel
 # 3.0 m/s2, descent 0.6 m/s): closest 1.16 m, never stacked, up to 1.85 m
-# off the eight, x -0.06..3.06 (0.19 m inside +3.25), y -3.27..3.27. Step
-# up live (1.0 -> 1.5 -> 2.0) on the first flights.
+# off the eight, x -0.06..3.06 (0.19 m inside +3.25), y -3.27..3.27.
+# Set the speed ONLY before `start` (CHG-0081): the eight's phase is
+# speed x time since start, so changing scenario_speed_mps mid-eight makes
+# both targets jump by metres (scenarios.py). To fly slower, set 1.0 or 1.5
+# after takeoff and before start; never change it while the eight runs.
 #
 #   ros2 launch svg_ground_control ground_control.launch.py \
 #     config:=/root/AirStack/robot/ros_ws/src/svg_ground_control/config/figure_eight_two_ours.yaml \
@@ -55,7 +58,7 @@ swarm_commander:
     figure_eight_track_gain: 1.0
     figure_eight_intruder_start: [0.0, 0.0, 2.0]   # unused with two drones
     figure_eight_intruder_cbf_exempt: true          # unused with two drones
-    scenario_speed_mps: 2.0      # CMU's (owner 2026-11-16, CHG-0080). Live: ros2 param set /swarm_commander scenario_speed_mps X
+    scenario_speed_mps: 2.0      # CMU's (owner 2026-11-16, CHG-0080). Change only before start, never mid-eight (CHG-0081)
     goal_accel_mps2: 3.0         # live. CMU flies 10; start gentle
     goal_settle_s: 0.3
     goal_lead_m: 2.0

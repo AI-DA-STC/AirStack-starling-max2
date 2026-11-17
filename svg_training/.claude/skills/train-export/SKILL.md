@@ -5,7 +5,9 @@ description: Use when handing a trained policy to AirStack. Only for a checkpoin
 
 # Export a policy
 
-Do these in order. The export script (`scripts/`) is planned for build step S5.
+Do these in order. The export script (`scripts/`) is planned for build step S5. A converted NUS policy has a draft
+`interface.toml` (layout id `nus_area_denial_v1`, `scripts/nus_write_interface.py`); it is not an export: no NUS policy
+has passed stages 3 and 4.
 
 ## 1. Confirm the checkpoint qualifies
 - A record exists showing PASS on the evaluation gates (stage 3) and on the tier 2 cross-check (stage 4).

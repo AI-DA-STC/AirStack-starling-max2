@@ -1,6 +1,6 @@
 Simulator: training simulator, tier 1 (the batched replica of the partner's 2-D game, units converted to metres at the owner's scale; games on GPU tensors). Not a flight result.
 
-# 2026-11-18 NUS port, Phase 4 rung 1 (W4): the baseline, our replica of the partner's game (INFO)
+# 2026-11-18 NUS port, Phase 4 rung 1 (T18): the baseline, our replica of the partner's game (INFO)
 
 | Item | Value |
 |---|---|
@@ -17,13 +17,13 @@ Simulator: training simulator, tier 1 (the batched replica of the partner's 2-D 
 | Games | 1000 per pair, 12 pairs, 6 drones per game, tier: replica (CPU/GPU tensors) |
 | Throughput | 9,450,674 game-steps/s (56,704,044 drone-steps/s), 1000 games x 6 drones, replica (CPU/GPU tensors), NVIDIA GeForce RTX 5090 (a game-step is one replica step counted in ticks; the run time is kept in scores.json) |
 
-Pairs: Guard {G19, P3G, ApfGuard, ParkedGuard} x Strike {S20, P3S, ApfStrike} (12 pairs; our scripted players read our observation, which the replica lacks, so they are not on this row). G19 and S20: the archive pair of W3; P3G and P3S: the Phase 3 pair (W2). ParkedGuard: Run 0's parked Guard (Guard 0 starts at the zone centre, every Guard commands zero).
+Pairs: Guard {G19, P3G, ApfGuard, ParkedGuard} x Strike {S20, P3S, ApfStrike} (12 pairs; our scripted players read our observation, which the replica lacks, so they are not on this row). G19 and S20: the archive pair of T17; P3G and P3S: the Phase 3 pair (T16). ParkedGuard: Run 0's parked Guard (Guard 0 starts at the zone centre, every Guard commands zero).
 
 ## Checks of this rung
 
 | Check | Result |
 |---|---|
-| Exact check against W2 (reading rule 3): on W2's 1,000 shared starts, `P3G` against `ApfStrike` and `ApfGuard` against `P3S` through the new replica path equal a fresh `play_arm` game by game, and equal W2's converted-arm counts | 0 games differ (Guard arm, 46/1000 reached, W2 46/1000); 0 differ (Strike arm, 1000/1000, W2 1000/1000). `phase3_outcome_parity.json` holds counts only, so "game by game" is against a fresh `play_arm` on the same starts; PASS |
+| Exact check against T16 (reading rule 3): on T16's 1,000 shared starts, `P3G` against `ApfStrike` and `ApfGuard` against `P3S` through the new replica path equal a fresh `play_arm` game by game, and equal T16's converted-arm counts | 0 games differ (Guard arm, 46/1000 reached, T16 46/1000); 0 differ (Strike arm, 1000/1000, T16 1000/1000). `phase3_outcome_parity.json` holds counts only, so "game by game" is against a fresh `play_arm` on the same starts; PASS |
 | Reading rule 1: ParkedGuard holds at least the set limit against ApfStrike | held 0.000 of games: the geometry does not close the zone on its own; no stop |
 | Cuda actor parity (INFO, plan D7): gate (a)'s error with the actors on cuda, all 24,000 observation rows per team, limit 0.02 units | Phase 3 pair 0.00744 (Guard) and 0.01045 (Strike); archive pair 0.00792 and 0.00946: all within the limit, equal to the CPU values; the policy can run on cuda inside the step |
 
@@ -83,4 +83,4 @@ See HANDOFF section 0 (the lead's run after review).
 
 ## Ledger
 
-Row `W4` in `records/LEDGER.md`.
+Row `T18` in `records/LEDGER.md`.

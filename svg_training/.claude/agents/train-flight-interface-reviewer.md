@@ -28,6 +28,9 @@ Read `STANDARDS.md` §2, §3, §5 rule 7, §9, the repository root `../CLAUDE.md
   filter; "observed in the training simulator", never "validated".
 - **Iron rules** of the repository root `CLAUDE.md` are respected, including that numbers flow from
   the drone to the trainer only.
+- **NUS policy interface** (draft, layout `nus_area_denial_v1`, `configs/nus_interface.template.toml`): a 2-D action
+  held for the hold length, vertical speed and yaw rate zero, fixed team sizes (a drone that drops out ends the game),
+  and NUS's push replaced in flight by CMU's all-pairs filter (Phase 4 row 4, `docs/NUS_PORT.md`).
 
 Deliver, under ~400 words: PASS or FAIL per check with `file:line` for both sides of each
 comparison; mismatches ranked by what would break a flight; anything you could not compare.

@@ -42,5 +42,4 @@ very small smoothing amplifies float32 rounding; the per-step match rules out a 
 
 ## Ledger
 
-Row `W1` in `records/LEDGER.md` (a workstation number; the laptop gives it the next T number when it merges,
-WORKSTATION_SETUP §4).
+Row `T15` in `records/LEDGER.md` (run on the home RTX 5090 as a workstation row and renumbered at the merge into `main`).

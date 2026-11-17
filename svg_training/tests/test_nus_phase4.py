@@ -412,31 +412,12 @@ def _scripted_pair_for_clips(w):
     return res, ex
 
 
-# ------------------------------------------------------------------------------------------------ committed text check (D8)
-def test_committed_phase4_text_holds_no_protected_value():
-    """Every Phase 4 record, the W3-W9 ledger rows, the summary page and the Phase 4 lines of HANDOFF: no decimal equals a protected value.
-    Skips without the local files; the laptop's scans cover the rest."""
-    from svg_training.nus import outputs, strategy as s
-    hangar = hangar_mod.LOCAL_HANGAR
-    if not (s.DEPLOY_PATH.exists() and s.RULES_PATH.exists() and hangar.exists()):
-        pytest.skip("the local files are not on this machine")
-    protected = outputs.protected_numbers(s.RULES_PATH, s.DEPLOY_PATH, hangar_path=hangar)
-    texts = [(p.name, p.read_text()) for p in sorted((ROOT / "records").glob("*nus_phase4*.md"))]
-    ledger = (ROOT / "records" / "LEDGER.md").read_text().splitlines()
-    texts.append(("LEDGER W3-W9", "\n".join(line for line in ledger if line.startswith("| W") and not line.startswith(("| W1 ", "| W2 ")))))
-    summary = ROOT / "docs" / "NUS_PHASE4_RESULTS.md"
-    if summary.exists():
-        texts.append((summary.name, summary.read_text()))
-    handoff = ROOT / "docs" / "claude" / "HANDOFF.md"
-    if handoff.exists():
-        texts.append(("HANDOFF phase 4", "\n".join(line for line in handoff.read_text().splitlines() if "Phase 4" in line or "phase 4" in line)))
-    bad = []
-    for name, text in texts:
-        try:
-            ladder.check_text(text, protected)
-        except ValueError as error:
-            bad.append((name, str(error)))
-    assert not bad, bad
+# ------------------------------------------------------------------------------------------------ committed text check (D8): retired
+# Retired 18 Nov 2026 (owner: NUS agreed that its game settings and our results on its code may be published; STANDARDS section 2).
+# The check scanned the Phase 4 records, ledger rows, the summary page and HANDOFF for local values; documents may now state them.
+# What stays: the local files are the only place the code reads values from (G1), no literals in partner-facing code (G2), the
+# record writer and the table formatter keep refusing or marking local values (G3, the two tests above), the marker chain (G4), and
+# NUS's source code stays out of the repository (tests/test_partner_privacy.py).
 
 
 # ------------------------------------------------------------------------------------------------ the reference deploy file (W3)

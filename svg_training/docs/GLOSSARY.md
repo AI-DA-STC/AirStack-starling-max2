@@ -34,7 +34,7 @@ Each row gives a word, what it means in everyday terms, and where to read more.
 | Seed | the starting number for the random draws; the same seed gives the same run | [STANDARDS §6](../STANDARDS.md#6-training-rules) |
 | Held-out | data kept aside and used only to judge a fit or a policy, never to train it. In S1, every other push was held out, chosen before any fit | [DESIGN §7](DESIGN.md#7-environments-and-contact-tags), [S1_RESULTS](S1_RESULTS.md#2-first-fit-to-the-airstack-simulator-t3-fail) |
 | Status labels | FIXED, MEASURED, PROPOSED, OPEN: where a value comes from and whether it may change | [STANDARDS](../STANDARDS.md) |
-| Plug-in point | `/svg/{name}/teleop_command`: the place where a strategy's velocity command enters the flight software | [STANDARDS §3](../STANDARDS.md#3-policy-interface-version-0-proposed) |
+| Plug-in point | `/svg/{name}/teleop_command`: the place where a strategy's velocity command enters the flight software | [STANDARDS §3](../STANDARDS.md#3-policy-interface-version-01-proposed) |
 | Guard team | the drone team that holds a circular zone | [STANDARDS §4](../STANDARDS.md#4-game-specification-version-0) |
 | Strike team | the drone team that tries to reach the zone; its drones are 1.5 times as fast | [STANDARDS §4](../STANDARDS.md#4-game-specification-version-0) |
 | Tag | the scoring event of the game between a Guard drone and a Strike drone; defined in [STANDARDS §4](../STANDARDS.md) | [STANDARDS §4](../STANDARDS.md#4-game-specification-version-0) |
@@ -50,11 +50,14 @@ Each row gives a word, what it means in everyday terms, and where to read more.
 | Exploratory | a first look with no gates and no ledger row; its numbers guide the next step but prove nothing | [S1_RESULTS](S1_RESULTS.md) |
 | Observed in flight logs | the wording for a model fitted to real flight logs without a run of record; never "validated" | [S1_RESULTS](S1_RESULTS.md) |
 | Distance field | a 3D grid holding the distance to the nearest structure; one copy on the GPU serves every game | [DESIGN §4](DESIGN.md#4-two-tiers-one-game) |
-| Range ray | a ray from a drone that returns the distance to the first structure it meets | [STANDARDS §3](../STANDARDS.md#3-policy-interface-version-0-proposed) |
+| Range ray | a ray from a drone that returns the distance to the first structure it meets | [STANDARDS §3](../STANDARDS.md#3-policy-interface-version-01-proposed) |
 | Line of sight | whether one drone can see another past structures; a hidden drone is masked | [DESIGN §7](DESIGN.md#7-environments-and-contact-tags) |
 | Stand-in (placeholder) model | the drone model used until a fitted one exists: tier 1 delay + lag, tier 2 ARL Robot 1 | [S0_RESULTS](S0_RESULTS.md#limits) |
 | Observed in the training simulator | the only way to describe a result here; no result here is a flight result | [STANDARDS §2](../STANDARDS.md#2-wording) |
-| Partner rules preset | the main game of S2, after NUS's rules: opposite teams kept apart by the push-apart rule, teammates pass through each other, one step inside the zone wins for the Strike team, a time-out wins for the Guard team. The committed values are neutral; NUS's own values live only in the git-ignored `configs/local/` | [S2_RESULTS](S2_RESULTS.md#what-was-built), [PLUG_IN](PLUG_IN.md#your-own-game-numbers-stay-local) |
+| Partner rules preset | the main game of S2, after NUS's rules: opposite teams kept apart by the push-apart rule, teammates pass through each other, one step inside the zone wins for the Strike team, a time-out wins for the Guard team. The committed values are neutral; the code reads NUS's own values from the git-ignored `configs/local/` (NUS agreed on 18 Nov 2026 that they may be stated in documents: [NUS_PORT](NUS_PORT.md)) | [S2_RESULTS](S2_RESULTS.md#what-was-built), [PLUG_IN](PLUG_IN.md#your-own-game-numbers-stay-local) |
+| NUS port | running NUS's trained team strategy in this pipeline: NUS's own code as the reference, a copy of NUS's 2-D game (the *replica*), NUS's policy converted to PyTorch, then the *transfer ladder* | [NUS_PORT](NUS_PORT.md) |
+| Transfer ladder | Phase 4 of the NUS port: the frozen converted policies scored row by row, each row changing one thing on the way from NUS's game to our drones (engine, walls, push, drone response, safety filter, height, Isaac Lab) | [NUS_PORT §8](NUS_PORT.md#8-phase-4-the-transfer-ladder) |
+| W number (W1, W2, …) | a ledger row written on the home RTX 5090 workstation; the lead gives it the next T number when the branch merges to `main` | [WORKSTATION_SETUP §4](WORKSTATION_SETUP.md#4-getting-results-back-to-the-laptop) |
 | Pure partner rules (`pure`) | the partner rules with drones as points moving at fixed team speeds, all at one height | [PLUG_IN](PLUG_IN.md#pure-rules-and-the-starling-layer) |
 | Push-apart rule | under the pure rules, a move that would bring a drone inside the other team's keep-out distance is cut short | [PLUG_IN](PLUG_IN.md#words-used-here) |
 | Starling layer (`starling`) | a switch that makes drones fly like our Starlings: each command goes through a copy of CMU's commander, the safety filter on every pair of drones (both teams) and the drone model `real_exploratory_v0`; the push-apart rule is then off | [S2_RESULTS](S2_RESULTS.md#what-was-built) |
@@ -91,7 +94,7 @@ The table lists which version of each tool runs where.
 
 | What | Version | Used by |
 |---|---|---|
-| Container image | `nvcr.io/nvidia/isaac-lab:2.3.2` = Isaac Lab 2.3.2 on Isaac Sim 5.1.0; ours is `svg-training:isaaclab-2.3.2` (not yet built on the 5090) | the container ([docker/README](../docker/README.md)); run of record T1 |
+| Container image | `nvcr.io/nvidia/isaac-lab:2.3.2` = Isaac Lab 2.3.2 on Isaac Sim 5.1.0; ours is `svg-training:isaaclab-2.3.2` (built on the 5090 on 17 Nov 2026; its suite there is not clean yet) | the container ([docker/README](../docker/README.md)); run of record T1 |
 | Host install, laptop (RTX 5070 Ti) | `~/IsaacLab`, 2.3.2 plus 25 commits (`f73c331738`), none touching code tier 2 uses | host runs on the laptop, conda `env_isaaclab` |
 | Host install, 5090 workstation | `~/IsaacLab` at the tag v2.3.2 exactly (`37ddf62687`), clean; MEASURED 17 Nov 2026 | host runs on the 5090, conda `env_isaaclab` |
 | Host Python environment, laptop | conda `env_isaaclab`: Python 3.11, torch 2.7.0+cu128, Isaac Sim 5.1.0, skrl 2.1.0, gymnasium 1.2.1 | host runs on the laptop |
@@ -101,3 +104,6 @@ The table lists which version of each tool runs where.
 | Real drones | PX4 1.14 | stage 7, real flight |
 | Laptop GPU driver | 580.178.04 (RTX 5070 Ti Laptop GPU, 12 GB) | T1 |
 | 5090 GPU driver | 580.126.09 (RTX 5090, 32 GB); MEASURED 17 Nov 2026 | host runs on the 5090 |
+| NUS JAX environment, 5090 only | conda `nus_jax`: Python 3.12, jax 0.10.2, flax 0.12.8, CUDA 13 JAX; NUS's code `area-denial-continuous-space-self-play` at `2d2b904`; MEASURED 17 Nov 2026 ([GETTING_STARTED](GETTING_STARTED.md#nus-jax-env-home-rtx-5090-only)) | NUS's own training and evaluation; the JAX reference arms of Phase 3 |
+| `msgpack` | 1.2.4 in the 5090's `env_isaaclab` (`pyproject.toml`: `msgpack>=1.0`, owner approval 17 Nov 2026); not yet in the container image | reading NUS's checkpoint files (`nus/actor.py`) and the NUS tests |
+| NUS policy interface layout | `nus_area_denial_v1` (owner approval 17 Nov 2026): NUS's 9N+2 observation rebuilt from our 71 numbers, a 2-D action held for the hold length, vertical speed and yaw rate zero; keys in `configs/nus_interface.template.toml` | the NUS wrapper `svg_training.nus.strategy:NusPolicy`; draft `interface.toml` ([NUS_PORT](NUS_PORT.md)) |

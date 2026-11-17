@@ -1,6 +1,6 @@
 Simulator: training simulator, tier 1 (the hangar game with the Starling layer's commander copy, delay and lag from the fitted, EXPLORATORY drone model; safety filter off, our push-apart kept). Not a flight result.
 
-# 2026-11-18 NUS port, Phase 4 rung 3 (W6): the drone response (INFO)
+# 2026-11-18 NUS port, Phase 4 rung 3 (T20): the drone response (INFO)
 
 | Item | Value |
 |---|---|
@@ -157,4 +157,4 @@ Reading: the drone response raises the Strike reach rate almost everywhere again
 
 ## Ledger
 
-Row `W6`.
+Row `T20`.

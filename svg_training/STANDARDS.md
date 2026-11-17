@@ -54,11 +54,22 @@ The programme's wording rules apply to every document and figure here
 - British spelling, short sentences, plain present tense. One number per claim, with its source.
 - A figure caption is 2–4 sentences. A results paragraph is 2–3 sentences.
 - Partner order: ST Engineering, NUS, UPenn, CMU. HTX is the funder.
-- Programme reports marked confidential are not quoted or copied here. Point to them by name.
+- Programme reports marked confidential (the FR&PDR, the monthly reports) are not quoted or copied here. Point to
+  them by name.
+- **Partner privacy, NUS** (owner, 18 November 2026; replaces the rule of 15–17 November that kept every NUS value
+  out of git). NUS agreed that their code details, their game settings and our results on their code may be
+  published in this repository, which is public. So documents, records, the ledger, figures, videos and commit
+  messages may state NUS's settings and our numbers ([docs/NUS_PORT.md](docs/NUS_PORT.md)). Still kept out:
+  **NUS's source code itself** (it stays in NUS's own repository; describe it in words and cite `file:line`, never
+  paste a block or vendor a file) and quotes from confidential programme reports. Code keeps reading NUS's values
+  from the git-ignored `configs/local/` files (mechanism unchanged), and the record writers keep marking them.
+  Tests: `tests/test_partner_privacy.py` (no NUS source file, block or path tracked; no local value hard-coded in
+  code or configs). Any other partner's values stay local until that partner agrees.
 - **A tag is physical contact** between a Guard drone and a Strike drone (owner, 14 November 2026).
-  Write "tag" or "contact tag". The programme's public pages do not describe contact between
-  drones; nothing from this folder about it goes on the website or into partner-facing material
-  without the owner's say-so.
+  Write "tag" or "contact tag". The programme's public pages do not describe contact between drones. The
+  contact-tag track ([plan](docs/plans/2026-11-17-contact-tag-track.md), DRAFT) may be described in this
+  repository's public documents (owner, 18 November 2026; until then it was kept out of public and
+  partner-facing material). The programme website still needs the owner's say-so.
 - Plain language (owner, 15 November 2026): everyday words first and the term second, explained at
   first use; short sentences; write for a reader new to training. Every page that claims a result
   shows it with a generated figure or a diagram.
@@ -294,9 +305,13 @@ Rules:
 - **Every training run saves videos** (owner, 17 November 2026). At least two evaluation games per
   checkpoint the run keeps (its final and its best), and one game at each scheduled evaluation where
   the trainer supports it; headless, into `runs/<date>_<name>/videos/`. A partner's own trainer uses its
-  own recorder (for NUS's JAX code: `save_eval_gif=True`, or `ma_skills/scripts/eval.py` afterwards),
-  and its videos stay with the partner's outputs, outside this repository. The record lists the video
-  paths. A run that ends without videos says so in its record and why.
+  own recorder (for NUS's JAX code: `save_eval_gif=True` on the fixed-opponent runner; NUS's self-play runner
+  writes no GIFs, so render them afterwards with `ma_skills/scripts/eval.py`). Its raw videos stay with the
+  partner's outputs, outside this repository; a small chosen set may be converted and committed under
+  `docs/media/` (owner, 18 November 2026, NUS agreed; [docs/media/nus/](docs/media/nus/README.md)). The record lists
+  the video paths. A run that ends without videos says so in its record and why.
+- Ledger rows written on a workstation are numbered T15, T16, … (WORKSTATION_SETUP §4); the lead renumbers them to
+  the next T numbers when the branch merges to `main`.
 
 ## 9. Code
 

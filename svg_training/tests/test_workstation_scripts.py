@@ -1,5 +1,9 @@
 """scripts/workstation/*.sh (docs/WORKSTATION_SETUP.md): syntax, --help, --dry-run without side effects, argument
-checks, the pinned requirements, and no partner-specific text in the scripts or the workstation page. CPU only.
+checks, the pinned requirements, and no partner-specific text in the scripts. CPU only.
+
+Owner, 18 Nov 2026 (STANDARDS section 2): NUS agreed that its game settings, names and our results may be published, so the
+workstation page (docs/WORKSTATION_SETUP.md) may now name NUS's code and state its settings. The scripts stay generic: they take
+every partner setting as an argument, so the word and value scans below still cover the scripts.
 
 The dry runs use a fake HOME and fake conda, git, pip, docker, rsync, ssh, tmux, nohup and nvidia-smi on PATH. Each
 fake writes a sentinel file if it is ever called, so "no side effects" means: exit 0, no sentinel, and the fake HOME
@@ -14,13 +18,13 @@ import pytest
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 WS = ROOT / "scripts" / "workstation"
-DOC = ROOT / "docs" / "WORKSTATION_SETUP.md"
 SCRIPTS = ["check_machine.sh", "setup_isaaclab_host.sh", "setup_nus_jax.sh", "run_nus_job.sh", "sync_results.sh"]
 FAKES = ["conda", "git", "pip", "pip3", "docker", "rsync", "ssh", "scp", "tmux", "nohup", "nvidia-smi", "tailscale"]
 SYNC_NAME = "zz_test_dry_sync_must_not_exist"
 
-# Partner-specific words that must never appear in a committed workstation file (case-insensitive regexes). The
+# Partner-specific words that must not appear in the generic workstation scripts (case-insensitive regexes). The
 # partner's override values are checked separately, read at test time from the laptop's private reference folder.
+# Documents may use these words since 18 Nov 2026 (owner; STANDARDS section 2).
 DENY = [r"area[-_ ]?denial", r"marmot", r"\bapf\b", r"fixed_apf", r"ma_skills", r"self_play", r"mappo", r"\bmpe\b"]
 NUS_REFERENCE_LAUNCH = pathlib.Path.home() / "nus_jax_reference" / "launch_job.sh"
 
@@ -179,7 +183,8 @@ def test_requirements_pins():
 
 
 def _committed_workstation_files() -> list[pathlib.Path]:
-    return sorted(p for p in WS.rglob("*") if p.is_file() and "__pycache__" not in p.parts) + [DOC]
+    """The generic workstation scripts (not the page: owner, 18 Nov 2026)."""
+    return sorted(p for p in WS.rglob("*") if p.is_file() and "__pycache__" not in p.parts)
 
 
 def test_no_partner_words():

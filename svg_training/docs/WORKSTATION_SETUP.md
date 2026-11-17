@@ -5,18 +5,20 @@ commit; the workstation runs long jobs. Nothing here touches AirStack, a drone o
 
 Setting up either machine is in [GETTING_STARTED](GETTING_STARTED.md) steps 1–7, with a laptop and a 5090 column
 at each step. This page holds what is about a second machine: pushing first, the private bundle, the NUS scripts,
-bringing results back, remote access, the 5090's record (§2a) and the OPEN preflight decision (§2c).
+bringing results back, remote access, the 5090's record (§2a) and the preflight decision (§2c, decided 18 November).
 
-Status (17 November 2026): the scripts in `scripts/workstation/` were written on the laptop and checked there with
+Status (18 November 2026): the scripts in `scripts/workstation/` were written on the laptop and checked there with
 `bash -n` and `--dry-run`. On the 5090, `check_machine.sh` ran (0 failed, 2 warnings) and `setup_isaaclab_host.sh`
-stopped with exit 1; hand fixes finished the host route, and the full test suite passes there (MEASURED). Isaac
-preflight refuses on the 5090: an OPEN owner decision (§2c). The container, the NUS scripts, `sync_results.sh` and every
-training or benchmark run have not run on the 5090 yet.
+stopped with exit 1; hand fixes finished the host route, and the full test suite passes there (MEASURED).
+`setup_nus_jax.sh` built `nus_jax` and `run_nus_job.sh` ran NUS's benchmark and training jobs (17–18 November;
+[NUS_PORT](NUS_PORT.md)). Isaac preflight passes headless on the 5090 since the owner's two decisions of 18 November
+(§2c). `sync_results.sh`, the S0 benchmark and the S2b stand-in seed 3 have not run on the 5090 yet.
 
 ## 0. Before you leave the laptop: push first
 
 The workstation clones from GitHub, so GitHub must have the work. On 17 November 2026 the live clone was 301
-commits ahead of GitHub, and the repository carries about 41 MB of video and GIF clips.
+commits ahead of GitHub, and the repository carries about 41 MB of video and GIF clips (about 45 MB with figures; the NUS clips of 18 November
+add 1.25 MB).
 
 1. Bring the mirror up to date: `git -C ~/Documents/GitHub/AirStack-starling-max2 pull ~/AirStack-starling-max2 main`.
 2. Push `main` from GitHub Desktop. Claude never pushes.
@@ -32,8 +34,8 @@ them from the pipeline folder: `cd ~/AirStack-starling-max2/svg_training`, then 
 |---|---|---|---|
 | `check_machine.sh` | first, on any new machine | checks the machine: [GETTING_STARTED step 2](GETTING_STARTED.md#2-check-the-machine) | ran (step 2) |
 | `setup_isaaclab_host.sh` | once, for the host route | builds `env_isaaclab` and `~/IsaacLab`: [GETTING_STARTED step 5](GETTING_STARTED.md#5-the-host-route-part-b) | ran: exit 1, then hand fixes (step 5) |
-| `setup_nus_jax.sh <folder>` | once, for NUS jobs | a separate conda env `nus_jax` (Python 3.12) for NUS's code, then their CPU tests | not run yet |
-| `run_nus_job.sh` | each NUS job | starts the job in the background with a log; cloud logging off; JAX takes at most 60 % of GPU memory by default (PROPOSED; the laptop used 30 % beside other runs) | not run yet |
+| `setup_nus_jax.sh <folder>` | once, for NUS jobs | a separate conda env `nus_jax` (Python 3.12) for NUS's code, then their CPU tests | ran: env built, NUS's tests 65 passed, 1 failed (exit 5; a stale NUS test) |
+| `run_nus_job.sh` | each NUS job | starts the job in the background with a log; cloud logging off; JAX takes at most 60 % of GPU memory by default (PROPOSED; the laptop used 30 % beside other runs); refuses when another process holds more than 1024 MiB | ran: benchmark, fixed-opponent and self-play jobs ([TRAINING, NUS jobs](TRAINING.md#nus-jobs)) |
 | `sync_results.sh <pc> <run>` | on the laptop, after a run | copies `runs/<run>/` back, plus the workstation's record and ledger for you to copy by hand | not run yet |
 
 ## 2. The first evening, in order
@@ -44,10 +46,11 @@ them from the pipeline folder: `cd ~/AirStack-starling-max2/svg_training`, then 
    It runs only on a config the owner approved (its sha256). More games to fill the 5090's 32 GB is a new config, so
    it needs his approval first (STANDARDS §7). Not run on the 5090 yet.
 4. **The remaining S2b Isaac stand-in seeds**: the ones the laptop did not finish. The list and the exact command
-   are in [HANDOFF](claude/HANDOFF.md) and `scripts/train_standin.py --help`. They start with preflight, which
-   refuses on the 5090 today (§2c). Always headless.
+   are in [HANDOFF](claude/HANDOFF.md) and `scripts/train_standin.py --help`. They start with
+   `scripts/isaac_preflight.sh --approved-headless` (§2c). Always headless.
 5. **NUS jobs.** `scripts/workstation/setup_nus_jax.sh <NUS folder>`, then `run_nus_job.sh` with the settings in
-   the bundle's NOTES. Run them inside `tmux`. Not run on the 5090 yet.
+   the bundle's NOTES and in [TRAINING, NUS jobs](TRAINING.md#nus-jobs). Run them inside `tmux`. Done on the 5090,
+   17–18 November ([NUS_PORT](NUS_PORT.md)).
 
 ## 2a. What ran on the 5090
 
@@ -71,34 +74,39 @@ and [GLOSSARY, Versions](GLOSSARY.md#versions).
 ok, 512 drones, 0 NaN, about 254,000 drone-steps/s at 200 Hz, 3.8 GB of GPU memory, Isaac launch 3.3 s. Observed in
 the training simulator. It ran without preflight passing (§2c), so it is not a procedure.
 
-**Not run on the 5090 yet:** the container (`docker/build.sh`, `docker/run.sh`); `run_s0.sh`; `train_standin.py`;
-`score.py`; the step tests; `fit_real_px4.py`; `setup_nus_jax.sh`, `run_nus_job.sh`, `sync_results.sh`; any launch
-with the Isaac Sim window; TensorBoard. The private bundle, the flight logs and the construction-site world are not
-copied yet.
+**Not run on the 5090 yet** (18 November): `run_s0.sh`; `train_standin.py`; `score.py`; the step tests;
+`fit_real_px4.py`; `sync_results.sh`; any launch with the Isaac Sim window; TensorBoard. The container image was built
+on 17 November; its test suite is not clean yet (HANDOFF §0). The private bundle, the flight logs and the
+construction-site world are not copied yet. Ran since 17 November: `setup_nus_jax.sh`, `run_nus_job.sh`, the NUS port
+Phases 1–4 ([NUS_PORT](NUS_PORT.md)), Isaac Lab headless after preflight (the Phase 4 row 6 warm-up estimate, 18 November).
 
-## 2c. Preflight on the 5090 (OPEN: owner decision)
+## 2c. Preflight on the 5090 (decided 18 November)
 
-`scripts/isaac_preflight.sh` checks the machine before an Isaac launch. On the 5090 (MEASURED, 17 November 2026):
+`scripts/isaac_preflight.sh` checks the machine before an Isaac launch. On the 5090 (MEASURED, 17 November 2026),
+before the decisions below:
 
 | Command | Exit | Cause |
 |---|---|---|
 | `scripts/isaac_preflight.sh` | 10 | WiFi only, with remote-desktop programs running (§2a) |
-| `scripts/isaac_preflight.sh --approved-headless` | 11 | WiFi becomes a warning, but the GPU counts as in use: gnome-remote-desktop-daemon holds 546 MiB, over the 500 MiB limit. It is not a simulator or a flight session |
+| `scripts/isaac_preflight.sh --approved-headless` | 11 | the GPU counted as in use: gnome-remote-desktop-daemon held 546 MiB, over the old 500 MiB limit |
 
-The owner's approval the script cites (16 November, "yes dont worry about wifi") was given for the laptop. Whether
-it covers the 5090 is the owner's call. As the PC stands, the seed commands in [HANDOFF §5a](claude/HANDOFF.md)
-stop at exit 11, because they start with preflight.
+The owner's decisions (18 November 2026):
 
-Options for the owner (OPEN):
+- **GPU limit 1024 MiB per foreign process**, in `isaac_preflight.sh` and in `run_nus_job.sh` alike, so the
+  remote-desktop daemon (546–589 MiB measured) no longer blocks. A NUS JAX job (about 1.7 GB) still blocks, as it should.
+- **Headless over WiFi is approved on the 5090 too** ("wifi: yes"), as on the laptop (16 November). Use
+  `scripts/isaac_preflight.sh --approved-headless`; it exits 0 on the 5090 when no other GPU job runs. A window over
+  remote desktop stays forbidden on both machines.
 
-- Put the PC on Ethernet and end the remote-desktop session before a run.
-- Change the preflight rule or its 500 MiB limit. That is a script change, made on the laptop.
+## 3. NUS's code stays private; its settings and our results may be published
 
-## 3. NUS's code stays private
-
-NUS's code, checkpoints and settings come only from the private bundle. They are never committed to this repository
-or pushed to GitHub. That is why `run_nus_job.sh` takes every NUS setting as an argument, and why a test fails if
-NUS-specific words appear in these scripts or this page. Their logs go to `~/nus_jax_runs/`, outside the repository.
+NUS's code and checkpoints come only from the private bundle or NUS, and live on the 5090 in
+`~/ma_skills-self-play/` (5090 only). The code is never committed to this repository or pushed to GitHub
+(`tests/test_partner_privacy.py` fails on a tracked copy of it). Since 18 November 2026 NUS agreed that their game
+settings, names and our results on their code may be published (STANDARDS §2), so this page and
+[NUS_PORT](NUS_PORT.md) name them. The scripts stay generic: `run_nus_job.sh` takes every NUS setting as an argument,
+and a test fails if NUS-specific words or values appear in the scripts. Logs go to `~/nus_jax_runs/`, NUS's outputs to
+NUS's own `outputs/` folder, both outside the repository.
 
 ## 4. Getting results back to the laptop
 
@@ -122,7 +130,7 @@ ledger's next T number (the two ledgers number separately). Then commit on the l
 - TensorBoard: `tensorboard --logdir runs/` on the PC, or `ssh -L 6006:localhost:6006 <workstation>` and open
   `http://localhost:6006` on the laptop.
 - `isaac_preflight.sh` refuses (exit 10) when no Ethernet is connected and a remote-desktop program runs. That rule
-  comes from the laptop's WiFi crashes. On the 5090 it refuses even with `--approved-headless`: see §2c (OPEN).
+  comes from the laptop's WiFi crashes. With `--approved-headless` (approved on both machines) it warns instead: §2c.
 
 ## 6. Rules that still apply
 

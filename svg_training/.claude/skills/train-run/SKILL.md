@@ -23,7 +23,8 @@ docker ps --format '{{.Names}}'
 | Seeds | fixed and written down; 3 or more for a method claim |
 | Parameter set | the named drone-model set (STANDARDS §5 rule 4) |
 | Opponent pool mix | stated (STANDARDS §6.3) |
-| Mode | headless, always |
+| Mode | headless, always; Isaac starts after `scripts/isaac_preflight.sh --approved-headless` exits 0 (approved on the laptop 16 Nov and the 5090 18 Nov; exit 11 = another process holds more than 1024 MiB) |
+| Machine | `unset PYTHONPATH` on the 5090; a NUS job runs only on the 5090, through `scripts/workstation/run_nus_job.sh` (same 1024 MiB limit), with its own `hydra.run.dir` |
 
 If any row fails, stop and say which.
 
@@ -35,7 +36,9 @@ cd ~/AirStack-starling-max2/svg_training
 Use the Bash tool's background option so the session stays free. Logs and checkpoints go to
 `runs/<date>_<name>/` (not in git).
 **Videos are on for every run** (STANDARDS §8): pass the trainer's video option at launch (Isaac Lab `--video`;
-NUS's JAX code `save_eval_gif=True` and its own `hydra.run.dir`), headless, into `runs/<date>_<name>/videos/`.
+NUS's JAX code `save_eval_gif=True` and its own `hydra.run.dir`), headless, into `runs/<date>_<name>/videos/`. NUS's
+self-play runner writes no GIFs: render them afterwards with NUS's `ma_skills/scripts/eval.py` (docs/TRAINING.md, NUS
+jobs). A run longer than about 2 h goes in the background (`nus_phase4.py` stops with exit 4 until `--accept-long`).
 
 ## 3. Monitor
 - Throughput in environment steps per second; a sudden drop means a loop or a sync crept in.
@@ -51,8 +54,10 @@ last good step. Do not delete the run folder. Do not edit `gates.toml`.
   parameter set, seeds, machine, games at once, steps per second, gates with PASS or FAIL.
 - Videos: at least two evaluation games from the final and the best checkpoint (render them now if the run
   did not); list the paths in the record, or say why there are none.
-- One new row in `records/LEDGER.md`, numbered T1, T2, …, append-only. This folder never writes to the
-  flight ledger `docs/record/LEDGER.md`.
+- One new row in `records/LEDGER.md`, append-only: T1, T2, … on the laptop; W1, W2, … on the 5090 (the lead renumbers
+  W rows to the next T numbers at merge). This folder never writes to the flight ledger `docs/record/LEDGER.md`.
+- NUS runs may state NUS's settings in the record (owner, 18 Nov 2026); the record writers still mark local values,
+  and NUS's source code never goes into a record.
 - Linear: if the run finishes or changes the state of an issue (NEAR-nnn in the newest
   `docs/linear/snapshots/` file), write an instruction file in `docs/linear/updates/` as
   `docs/linear/README.md` says: status and one comment citing "ledger row Tn" and the record; ask for a record

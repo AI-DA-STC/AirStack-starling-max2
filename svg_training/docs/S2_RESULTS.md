@@ -240,7 +240,7 @@ Information runs: T6 and T9 (scripted reference, no gates) and T5 (drone-model c
 On 16 November each drone's observation grew from **69 to 71 numbers**: the zone centre's position from the arena
 centre was added at the end (indices 69–70). Without it a drone could not tell where the walls are. No earlier index
 moved. The whole-game state for a central critic grew from 59 to 61. The layout is in
-[PLUG_IN.md](PLUG_IN.md#what-a-drone-sees-and-does) and [STANDARDS §3](../STANDARDS.md#3-policy-interface-version-0-proposed).
+[PLUG_IN.md](PLUG_IN.md#what-a-drone-sees-and-does) and [STANDARDS §3](../STANDARDS.md#3-policy-interface-version-01-proposed).
 
 ## What S2 does not do
 

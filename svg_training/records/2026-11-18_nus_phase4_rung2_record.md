@@ -1,6 +1,6 @@
 Simulator: training simulator, tier 1 (the hangar game on point drones: our game engine with the partner's rules in rows 2.1 and 2.2, our own rules in row 2). Not a flight result.
 
-# 2026-11-18 NUS port, Phase 4 rung 2 (W5): our game engine and our rules (INFO)
+# 2026-11-18 NUS port, Phase 4 rung 2 (T19): our game engine and our rules (INFO)
 
 | Item | Value |
 |---|---|
@@ -172,4 +172,4 @@ Reading: (rung 2 against rung 1, 1,000 paired games per pair) our rules and the 
 
 ## Ledger
 
-Rows `W5` (this record).
+Rows `T19` (this record).

@@ -5,8 +5,9 @@ description: Use when scoring a checkpoint against its gates with the fixed eval
 
 # Score a checkpoint
 
-Do these in order. The evaluation script (`scripts/`) exists from build step S2; until then this is
-the procedure it must follow.
+Do these in order. The scoring tool is `scripts/score.py` (S2). A strategy plugs in as `package.module:Class`; a
+converted NUS policy is `svg_training.nus.strategy:NusPolicy` (docs/PLUG_IN.md), scored up the transfer ladder with
+`scripts/nus_phase4.py --row <id>` (INFO rows, no gates) and against its gates with `scripts/nus_phase4_w3.py`.
 
 ## 1. Load the gates
 Open the run's `gates.toml`. Check its date is before the run's first result. If it is not, or it was

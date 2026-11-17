@@ -74,14 +74,16 @@ place where its commands enter the flight software is the *plug-in point*. The t
 | No fresh command for 0.5 s | the drone holds position |
 | Safety filter | keeps drones of the same team apart; it does not act between the two teams |
 
-Status labels and sources for every item: [STANDARDS §3](../STANDARDS.md#3-policy-interface-version-0-proposed).
+Status labels and sources for every item: [STANDARDS §3](../STANDARDS.md#3-policy-interface-version-01-proposed).
 
 A partner's strategy plugs into the training simulator through the strategy contract ([PLUG_IN](PLUG_IN.md)). A
 partner's trained JAX policy has a scoring hook since 18 November 2026: `svg_training.nus.strategy:NusPolicy` reads a
 converted checkpoint (layout id `nus_area_denial_v1`) and plays one team, scored like any strategy
 ([PLUG_IN](PLUG_IN.md#plug-in-a-trained-nus-policy)). The exported policy file and `interface.toml` for the AirStack
 simulator and for flight still arrive with build step S5
-([STANDARDS §3](../STANDARDS.md#3-policy-interface-version-0-proposed)); the NUS policy's `interface.toml` is a draft.
+([STANDARDS §3](../STANDARDS.md#3-policy-interface-version-01-proposed)); the NUS policy's `interface.toml` is a draft.
+The whole NUS port (NUS's code run as the reference, the copy of NUS's game, the converted policy and the transfer
+ladder towards our drones), with NUS's settings and our results: [NUS_PORT](NUS_PORT.md).
 
 ## What a benchmark run does
 
@@ -110,9 +112,11 @@ The table shows each build step and where it stands.
 |---|---|---|
 | S0 Measure | benchmarks for both tiers, records, ledger, container | done on the laptop: T1 = FAIL on one gate ([results](S0_RESULTS.md)); workstation run to do |
 | S1 Drone model | tier 1 carries the real drone's command chain, with PX4's response from real flight logs; safety filter copy | built and run, no drone-model gate passed yet: T2 and T3 FAIL, real-log fit exploratory, T4 information only ([results](S1_RESULTS.md)); next, a real flight with planned pushes (owner) |
-| S2 One against one | open arena, game rules with tags, scripted opponents, evaluation suite | not started |
+| S2 The game and the plug-in point | open arena, game rules, scripted opponents, scoring tool, partner guide | closed 16 November: T8 PASS, T5 FAIL, T9 information only ([results](S2_RESULTS.md)) |
+| S2b The game on Isaac Lab drones | rigid-body Starlings with a PX4 1.14 cascade; stand-in trainer | built through Task 8, not closed: T10–T14 ([results](S2B_RESULTS.md)) |
+| NUS port (beside the build steps) | NUS's code as the reference, a copy of NUS's game, NUS's policy converted, the transfer ladder | T15–T17 PASS, ladder rows 1–3 scored, rows 4–6: results pending (running since 18 Nov 05:52) ([NUS_PORT](NUS_PORT.md)) |
 | S3 Two against one | random blocks and columns, line of sight, opponent pool | not started |
 | S4 Five against three | the construction-site world, team-size randomisation, tier 2 cross-check | not started |
 | S5 Hand-over | export and `interface.toml`; a ROS 2 policy node needs the owner's separate approval | not started |
 
-Nothing has been trained yet. Where each step ends: [DESIGN §8](DESIGN.md#8-build-order).
+Nothing of ours has been trained into a strategy yet: the stand-in trainer is a pipe test (T14), and the NUS policies were trained with NUS's own code. Where each step ends: [DESIGN §8](DESIGN.md#8-build-order).

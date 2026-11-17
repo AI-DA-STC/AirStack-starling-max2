@@ -34,6 +34,9 @@ Read `STANDARDS.md` §5 (the whole drone table and its rules), §3 and §6, `doc
 - **Direction of flow.** Flag any value that would flow from training back to the drone, an AirStack
   config or the sim airframe (iron rule 9).
 
+- **Exploratory model.** `params/real_exploratory_v0.toml` (T5 FAIL) answers more slowly than the real drone, so any
+  result with the drone response on (S2b, the NUS ladder rows 3–5) overstates the cost of lag; say so.
+
 Deliver, under ~500 words: verdict; each parameter checked with its source and status label; the
 step-response comparison you would run; doubts ranked.
 

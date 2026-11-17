@@ -1,4 +1,4 @@
-Simulator: training simulator — replica of the partner's 2-D game (Phase 2, W1); the converted PyTorch policy against the partner's own JAX policy, CPU. Not a flight result.
+Simulator: training simulator — replica of the partner's 2-D game (Phase 2, T15); the converted PyTorch policy against the partner's own JAX policy, CPU. Not a flight result.
 
 # NUS port, Phase 3: the partner's policy, converted to PyTorch (run of record)
 
@@ -11,7 +11,7 @@ Simulator: training simulator — replica of the partner's 2-D game (Phase 2, W1
 | Partner code | NUS `area-denial-continuous-space-self-play` @ `2d2b904` (private clone on the 5090) |
 | Gates | `configs/nus_port.toml` `[gates.phase3_converted_policy]`, written and approved before the run (17 Nov 2026), unchanged; the pass rule for gate (b) was coded before any number was seen |
 | Checkpoints converted | hangar-geometry fixed-opponent runs (private): Guard team `state.msgpack` sha256 `cd16bca68e9abbfe…`, Strike team `938b6e6c1f126a0f…`; converted actor-only entries `actor.msgpack` `c5d310ffbe4853e7…` (Guard), `0eeb938f0dea13f7…` (Strike), in `runs/nus_port/weights/` (git-ignored) |
-| Partner values | git-ignored `configs/local/nus_rules.toml` (sha256 `dd22cc28ce2042f3…`, unchanged since W1) and `configs/local/nus_deploy.toml` (`c248c6be…`: hangar overrides, scale, hold length, flying height, and partner-code constants read from the partner source); no partner value is written here |
+| Partner values | git-ignored `configs/local/nus_rules.toml` (sha256 `dd22cc28ce2042f3…`, unchanged since T15) and `configs/local/nus_deploy.toml` (`c248c6be…`: hangar overrides, scale, hold length, flying height, and partner-code constants read from the partner source); no partner value is written here |
 | Reference data | `runs/nus_port/reference/` (git-ignored): actions Guard `280a90a81dc8abe7…`, Strike `6d231234e357f333…`; scripted-opponent states `26c3fdc030a25b63…`; shared starts `386cccde0aa270e4…` |
 | Seeds | outcome parity: the partner environment's own starts, seed 20261118; reference rollouts as recorded in the reference files |
 | Games | 1,000 shared starts per team; 24,000 observation rows per team; 16,000 states for the scripted-opponent port |
@@ -74,5 +74,4 @@ value; G4 covers the loader, wrapper and interface writer through a synthetic ch
 
 ## Ledger
 
-Row `W2` in `records/LEDGER.md` (a workstation number; the laptop gives it the next T number when it merges,
-WORKSTATION_SETUP §4). The owner reads this record before Phase 4.
+Row `T16` in `records/LEDGER.md` (run on the home RTX 5090 as a workstation row and renumbered at the merge into `main`). The owner reads this record before Phase 4.

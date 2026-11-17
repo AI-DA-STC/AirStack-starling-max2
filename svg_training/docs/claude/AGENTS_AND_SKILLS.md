@@ -2,16 +2,22 @@
 
 Start Claude from the `svg_training` folder (`cd ~/AirStack-starling-max2/svg_training && claude`) so
 these load. They are committed with the folder (owner, 14 November 2026); the clone ignores `.claude/`
-by default, so a new agent or skill file needs `git add -f`.
+by default, so a new agent or skill file needs `git add -f`. Last touched 18 November 2026 (NUS hooks, the NUS privacy
+rule, W-numbered workstation rows, the 1024 MiB GPU limit, the video rule).
+
+**On the home RTX 5090 only**, the private NUS workspace `~/ma_skills-self-play/` keeps **copies** of these agents and
+skills (plus some GSD agents and the superpowers skills) in its own `.claude/`, refreshed at each session start by its
+`sync_claude_setup.sh` (newer sources replace a copy; nothing is deleted). The committed files here are the originals;
+the laptop has no copy and needs none. Claude's user memory (`~/.claude/`) does not travel with git on either machine.
 
 ## Skills (the standard process, in `.claude/skills/`)
 
 | Skill | Use | What it enforces |
 |---|---|---|
-| `train-start` | Start of every session | Read CLAUDE.md, STANDARDS sections, HANDOFF §4–5; check working copy and GPU; intent stated before editing |
-| `train-change` | Any edit in the folder | Paths inside the folder, test first, wording and labels, definition of done, HANDOFF updated, `git status` proof, no commit |
-| `train-run` | Launch a benchmark or training run | GPU free, no AirStack simulator, `gates.toml` dated first, seeds, headless, ABORTED record, record and ledger row |
-| `train-evaluate` | Score a checkpoint | Gates loaded and unchanged, fixed suite, 1,000 games or more, 95 % intervals, tier 2 cross-check, gatekeeper read |
+| `train-start` | Start of every session | Read CLAUDE.md, STANDARDS sections, HANDOFF §4–5 (and NUS_PORT for NUS work); which machine, and what exists on the 5090 only; `unset PYTHONPATH` on the 5090; check working copy and GPU; intent stated before editing |
+| `train-change` | Any edit in the folder | Paths inside the folder, test first, wording and labels, the NUS privacy rule (settings may be stated, source code never committed), 5090-only paths marked, definition of done, HANDOFF updated, `git status` proof, no commit |
+| `train-run` | Launch a benchmark or training run | GPU free (no foreign process above 1024 MiB), no AirStack simulator, `gates.toml` dated first, seeds, headless after preflight, videos on (NUS: `save_eval_gif=True`, own `hydra.run.dir`, self-play rendered with `eval.py`), ABORTED record, record and ledger row (T on the laptop, W on the 5090) |
+| `train-evaluate` | Score a checkpoint | Gates loaded and unchanged, fixed suite, 1,000 games or more, 95 % intervals, tier 2 cross-check, gatekeeper read; NUS policies through `svg_training.nus.strategy:NusPolicy` and `scripts/nus_phase4.py` |
 | `train-debug` | Something is wrong | Evidence first, symptom table, one hypothesis at a time, never move a gate |
 | `train-export` | Hand a policy to AirStack | Stages 3 and 4 passed, `interface.toml` complete, reload check, then stop at the folder boundary |
 

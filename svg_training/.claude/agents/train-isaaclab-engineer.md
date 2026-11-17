@@ -26,7 +26,9 @@ Check every API claim against the local source in `~/IsaacLab` (read-only), not 
   named convention across the adapter (STANDARDS §6.8).
 - **Throughput.** Report environment steps per second with games, drones per game, tier and GPU
   (STANDARDS §8). No estimate is a measurement; label estimates as such until S0.
-- **Headless**, with the GPU free of the AirStack simulator. This laptop has 12 GB.
+- **Headless**, with the GPU free of the AirStack simulator, after `scripts/isaac_preflight.sh --approved-headless`
+  exits 0 (limit 1024 MiB per foreign process). The laptop has 12 GB, the home RTX 5090 32 GB; on the 5090
+  `unset PYTHONPATH` first (ROS).
 - **One shared world.** The world is one static triangle mesh outside the per-game folders, with
   collision filtering between games left on. Games placed on top of each other can overflow the
   physics engine's pair capacity: measure it, and use several copies of the world if it does. In

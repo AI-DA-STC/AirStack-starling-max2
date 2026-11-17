@@ -13,10 +13,10 @@ itself. A machine can have both.
 
 Every step below has the same order on every machine. Where a step differs by machine, a small table says how.
 
-| Machine | What it is for | Where it stands (17 November 2026) |
+| Machine | What it is for | Where it stands (18 November 2026) |
 |---|---|---|
 | Laptop (RTX 5070 Ti, 12 GB) | build, test, record and commit; smoke runs | set up: the container (the S0 run of record T1 ran in it) and the host route |
-| Workstation (home RTX 5090, 32 GB) | long runs | host route built with the hand fixes (step 5); container not built; Isaac preflight refuses (step 7) |
+| Workstation (home RTX 5090, 32 GB) | long runs; NUS's code (5090 only) | host route built with the hand fixes (step 5); conda `nus_jax` for NUS's code ([below](#nus-jax-env-home-rtx-5090-only)); Isaac preflight passes headless when no other GPU job runs (step 7); container image built 17 Nov, its suite not clean (HANDOFF §0) |
 | Another new machine | — | a fresh install: follow the 5090 column |
 
 In the step tables below, 5090 cells are MEASURED on 17 November 2026; laptop cells come from this folder's
@@ -76,7 +76,7 @@ AirStack simulator's own output under `~/flight_logs/sim/`, which `scripts/recor
 | What | Where it goes | Needed for |
 |---|---|---|
 | Three real flight logs of 13 November (`log103.ulg`, `log105.ulg`, `08_47_58.ulg`, 51 MB) | `svg_training/data/flight_logs/2026-11-13/` (git-ignored), same sub-folders as in the bundle | the S2b step tests (`configs/s2b.toml [step_tests] real_log`) and the S1 real-log fit (`scripts/fit_real_px4.py`) |
-| Partner's code, checkpoints, reference logs | outside the repository, as the bundle's NOTES say | NUS jobs only |
+| Partner's code, checkpoints, reference logs | outside the repository, as the bundle's NOTES say; on the 5090 NUS's code is in `~/ma_skills-self-play/` (5090 only) | NUS jobs only ([TRAINING, NUS jobs](TRAINING.md#nus-jobs)) |
 | Construction-site world, `source/` and `build/` (about 280 MB, bought asset) | `localisation/scenes/construction_site/` in the clone, beside its README | the construction-site clips and screenshots only; training, scoring, tests and the other worlds do not use it |
 
 The first two rows come in the private bundle (`~/svg_workstation_bundle/` on the laptop). Copy it by USB, a private
@@ -98,7 +98,7 @@ needs no rebuild. What the image holds and where it stores things: [docker/READM
 
 | Laptop | 5090 workstation |
 |---|---|
-| built; T1 ran in it | not built yet |
+| built; T1 ran in it | built 17 Nov; its suite there is not clean yet: 704 passed, 29 failed, 13 errors (skrl 1.4.3 in the image, `svg_ground_control` not mounted, bare `python` calls; HANDOFF §0, 17 Nov evening, item 5) |
 
 ## 5. The host route (part B)
 
@@ -120,6 +120,16 @@ accept NVIDIA's licence for you (fix 4 below). Today it stops with exit 1 on a f
 | has `~/IsaacLab` (`f73c331738`) and `env_isaaclab`. The script has not run there (dry run only) | 17 Nov, default `v2.3.2`: exit 1. The script's steps 1–4 ran cleanly; its step 5 left out the core `isaaclab` package and changed torch; its step 9 (the tests) failed. The hand fixes finished it |
 
 Versions on both machines: [GLOSSARY, Versions](GLOSSARY.md#versions).
+
+**`msgpack`** (owner approval, 18 November 2026; `pyproject.toml`): the NUS checkpoint loader and its tests need it,
+and `tests/_nus_markers.py` imports it, so the suite stops at collection without it. The 5090's `env_isaaclab` has
+1.2.4. On a machine that lacks it (check: `~/miniconda3/envs/env_isaaclab/bin/pip show msgpack`):
+
+```bash
+~/miniconda3/envs/env_isaaclab/bin/pip install "msgpack>=1.0"
+```
+
+The container image does not have it yet (HANDOFF §5).
 
 ### Hand fixes after the setup script
 
@@ -213,7 +223,7 @@ the host.
 
 | Laptop | 5090 workstation |
 |---|---|
-| both routes in use; every S0 run starts with the tests (`runs/<name>/tests.txt`) | host, 17 Nov: 798 passed, 11 skipped, in 5 min 46 s. Eight skips are Isaac tests that need `SVG_ISAAC_TESTS=1` after preflight; three need private files not yet copied. Container: not built |
+| both routes in use; every S0 run starts with the tests (`runs/<name>/tests.txt`) | host, 17 Nov: 798 passed, 11 skipped, in 5 min 46 s. Eight skips are Isaac tests that need `SVG_ISAAC_TESTS=1` after preflight; three need private files not yet copied. Container, 17 Nov: 704 passed, 29 failed, 13 errors (step 4 table) |
 
 ## 7. The first Isaac check (preflight)
 
@@ -224,13 +234,34 @@ nvidia-smi                      # the GPU is free: no AirStack simulator, flight
 scripts/isaac_preflight.sh      # exit 0 means go
 ```
 
-Exit 10: WiFi only, with a remote-desktop program running. Exit 11: another process holds more than 500 MiB of GPU
-memory. `--approved-headless` turns exit 10 into a warning; use it only where the owner has approved it for that
-machine.
+Exit 10: WiFi only, with a remote-desktop program running. Exit 11: another process holds more than 1024 MiB of GPU
+memory (owner, 18 November 2026: raised from 500 MiB so the 5090's remote-desktop daemon, 546–589 MiB, does not block;
+`scripts/workstation/run_nus_job.sh` uses the same limit). `--approved-headless` turns exit 10 into a warning; the owner
+has approved it on both machines (laptop 16 November, 5090 18 November). Never open a window over remote desktop.
 
 | Laptop | 5090 workstation |
 |---|---|
-| starting Isaac Sim with a window over remote desktop has crashed its WiFi firmware. The owner approved headless launches on it over WiFi (16 Nov, "yes dont worry about wifi"); `--approved-headless` returned 0 before each point of the S2b speed run ([record](../records/2026-11-16_s2b_throughput_record.md)). Plain run: not recorded | 17 Nov: exit 10, and exit 11 with `--approved-headless`. Not yet passed: an OPEN owner decision, causes and options in [WORKSTATION_SETUP §2c](WORKSTATION_SETUP.md#2c-preflight-on-the-5090-open-owner-decision) |
+| starting Isaac Sim with a window over remote desktop has crashed its WiFi firmware. The owner approved headless launches on it over WiFi (16 Nov, "yes dont worry about wifi"); `--approved-headless` returned 0 before each point of the S2b speed run ([record](../records/2026-11-16_s2b_throughput_record.md)). Plain run: not recorded | 18 Nov: `--approved-headless` exits 0 when no other GPU job runs (a NUS JAX job, about 1.7 GB, still blocks it, as it should). 17 Nov, before the owner's two decisions: exit 10, and exit 11 at the old 500 MiB limit ([WORKSTATION_SETUP §2c](WORKSTATION_SETUP.md#2c-preflight-on-the-5090-decided-18-november)) |
+
+## NUS JAX env (home RTX 5090 only)
+
+NUS's training code is JAX, not PyTorch, and runs in its own conda env, `nus_jax` (Python 3.12), away from
+`env_isaaclab`. Only the 5090 has NUS's code (`~/ma_skills-self-play/`, outside every git repository); the laptop
+does not need this env to read the results or run the tests (the NUS tests that need NUS's code or the local files
+skip there).
+
+```bash
+unset PYTHONPATH                # ROS 2 Jazzy is Python 3.12 too: it would load quietly into nus_jax
+C=~/ma_skills-self-play/area-denial-continuous-space-self-play
+scripts/workstation/setup_nus_jax.sh --dry-run --skip-gpu-check $C
+scripts/workstation/setup_nus_jax.sh --skip-gpu-check $C
+```
+
+| Laptop | 5090 workstation |
+|---|---|
+| not built (no NUS code there) | 17 Nov: built (jax 0.10.2, flax 0.12.8, CUDA 13 JAX); NUS's CPU tests 65 passed, 1 failed (a stale NUS test; exit 5). Note: `pip install -e` writes build files into the NUS clone |
+
+Running NUS jobs and our NUS scripts: [TRAINING, NUS jobs](TRAINING.md#nus-jobs).
 
 ## Container or host?
 
@@ -238,7 +269,7 @@ machine.
 |---|---|
 | The tests and the S0 benchmark, a run of record | the container: one known image, the same as T1, so the numbers compare |
 | The S2b Isaac stand-in seeds | the host: the stand-in trainer needs skrl 2.x and the container has 1.4.3 |
-| Quick tests | either; the host skips the container start (on the 5090, the host only, until the image is built) |
+| Quick tests | either; the host skips the container start (on the 5090, the host, until the container suite is clean) |
 | The host's Isaac Lab differs from 2.3.2 | the container |
 
 ## The S0 benchmark

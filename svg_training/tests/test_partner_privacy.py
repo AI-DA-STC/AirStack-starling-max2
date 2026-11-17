@@ -1,7 +1,18 @@
-"""The partner's numbers stay in the git-ignored local file (configs/local/partner_rules.toml); none may appear in a
-tracked file under svg_training/, in a commit message that touched it, or in the text of the slide deck.
+"""Partner (NUS) privacy rails, as rewritten after the owner's decision of 18 November 2026 (STANDARDS section 2).
 
-What the scan looks for, when the local file is on this machine (it is read here at test time only):
+NUS agreed that their code details, game settings and our results on their code may be published in this public repository.
+So documents, records, the ledger, commit messages and the slide deck may now state NUS's values. What stays out, and what this
+file checks:
+
+1. **NUS's source code** (it stays in NUS's own repository): no tracked path that looks like a copy of it, no tracked file equal
+   to one of its files, and no tracked file sharing a block of its long source lines. The line and file scans need a NUS clone on
+   this machine (``SVG_NUS_CLONE``, else the home RTX 5090's private workspace); without one they skip (a skip is not a pass). The
+   path scan always runs.
+2. **The ``configs/local/`` mechanism**: code and committed configs read partner values from the git-ignored local files and never
+   hard-code them. The value scans below therefore cover code, configs and scripts only (``.py``, ``.toml``, ``.sh``), no longer the
+   documents (``.md``), commit messages or the deck.
+
+What the value scan looks for, when the local file is on this machine (it is read here at test time only):
 
 1. A key of the local file written next to the local value, e.g. ``keepout_strike_m = <local value>`` or
    ``"rules.keepout_strike_m": <local value>``, for every numeric key whose local value differs from the committed
@@ -15,11 +26,10 @@ What the scan looks for, when the local file is on this machine (it is read here
 Limits (read these before trusting a pass):
 
 - A small common number (one or two significant digits, say 0.8 or 40) cannot be told apart from the same number
-  used for something else, even next to its key (tests set keys to made-up numbers), so it is not searched for. The rule relies on never typing the partner's values into a committed
-  file; this test catches the recognisable slips only.
+  used for something else, even next to its key (tests set keys to made-up numbers), so it is not searched for. The rule relies on
+  never typing the partner's values into committed code or configs; this test catches the recognisable slips only.
 - Yes/no and text options (``teammates_pass``, ``push_rule``) are not searched for: each has two or three possible
   values that the code itself names.
-- The PDF copy of the deck is not read (compressed); it is built from the .pptx, which is.
 - With no local file, or nothing distinctive in it, the scans skip and say why: a skip is not a pass.
 """
 import html
@@ -161,22 +171,23 @@ def _deck_text(path: pathlib.Path) -> str:
     return "\n".join(parts)
 
 
+CODE_SUFFIXES = (".py", ".toml", ".sh")
+
+
+def _tracked_files() -> list[str]:
+    """Files git tracks or would add (tracked, plus untracked files that are not ignored), so a copy is caught before it is staged."""
+    return [f for f in subprocess.run(["git", "ls-files", "-z", "-co", "--exclude-standard", "--", "."], cwd=ROOT,
+                                      capture_output=True, text=True).stdout.split("\0") if f]
+
+
 def _tracked_texts() -> dict[str, str]:
-    files = subprocess.run(["git", "ls-files", "-z", "--", "."], cwd=ROOT, capture_output=True,
-                           text=True).stdout.split("\0")
-    return {f: _text(ROOT / f) for f in files if f}
-
-
-def _commit_messages() -> str:
-    return subprocess.run(["git", "log", "--format=%B", "--", "."], cwd=ROOT, capture_output=True, text=True).stdout
+    """Tracked code, configs and scripts (owner, 18 Nov 2026: documents may state NUS's values; code must read them locally)."""
+    return {f: _text(ROOT / f) for f in _tracked_files() if f.endswith(CODE_SUFFIXES)}
 
 
 def _sources() -> dict[str, str]:
-    """Everything committed that is searched: tracked files, the commit messages, the deck's text."""
-    out = _tracked_texts()
-    out["<commit messages touching svg_training>"] = _commit_messages()
-    out["<text inside docs/pipeline/training-pipeline.pptx>"] = _deck_text(DECK)
-    return out
+    """Everything searched for local values: tracked code, configs and scripts."""
+    return _tracked_texts()
 
 
 def _find_hits(checks: dict[str, tuple[float, ...]], values: list[str], sources: dict[str, str]) -> list[tuple]:
@@ -263,6 +274,13 @@ def test_deck_text_is_read():
     assert "Guard" in t and "<a:t>" not in t
 
 
+def test_value_scan_covers_code_not_documents():
+    """Owner, 18 Nov 2026 (STANDARDS section 2): documents may state NUS's values; code and configs still may not hold them."""
+    names = set(_sources())
+    assert any(n.endswith(".py") for n in names) and any(n.endswith(".toml") for n in names)
+    assert not any(n.endswith(".md") for n in names)
+
+
 # --- the scans ---
 
 def test_local_keys_not_written_with_local_values(local):
@@ -284,3 +302,71 @@ def test_local_values_not_in_committed_text(local):
                     "told apart from ordinary ones (see the module docstring)")
     hits = _find_hits({}, values, _sources())
     assert hits == [], f"a distinctive local value (index into the sorted list) appears in: {hits}"
+
+
+# --- NUS's source code stays out (owner, 18 Nov 2026: settings and results may be published, the code may not) ---
+
+import hashlib  # noqa: E402
+import os  # noqa: E402
+
+NUS_CLONE_DEFAULT = pathlib.Path.home() / "ma_skills-self-play" / "area-denial-continuous-space-self-play"
+NUS_SOURCE_SUFFIXES = (".py", ".yaml", ".yml", ".sh", ".toml")
+# Paths that would mean a copy of NUS's package or its vendored environment sits in this repository.
+NUS_SOURCE_PATHS = re.compile(r"(^|/)(ma_skills|skill_learning_mpe|third_party)/|\.msgpack$|(^|/)simple_area_denial\.py$")
+LONG_LINE = 50          # characters: shorter lines (imports, argparse boilerplate) are too common to mean a copy
+SHARED_LINES_MAX = 4    # a file sharing more distinct long lines than this with NUS's code counts as a copy
+SMALL_FILE = 200        # bytes: empty or tiny files (``__init__.py``) match by chance
+
+
+def _nus_clone() -> pathlib.Path | None:
+    p = pathlib.Path(os.environ.get("SVG_NUS_CLONE", NUS_CLONE_DEFAULT)).expanduser()
+    return p if (p / "ma_skills").is_dir() else None
+
+
+def _nus_source_files(clone: pathlib.Path) -> list[pathlib.Path]:
+    skip = {".git", "outputs", "wandb", ".venv", "__pycache__"}
+    return [p for p in clone.rglob("*") if p.is_file() and p.suffix in NUS_SOURCE_SUFFIXES and not skip & set(p.parts)]
+
+
+def _shared_long_lines(text: str, nus_lines: set[str]) -> set[str]:
+    return {s for s in (line.strip() for line in text.splitlines()) if len(s) >= LONG_LINE and s in nus_lines}
+
+
+def test_source_path_rule_on_made_up_names():
+    assert NUS_SOURCE_PATHS.search("svg_training/third_party/x/env.py")
+    assert NUS_SOURCE_PATHS.search("svg_training/ma_skills/jax/policy.py")
+    assert NUS_SOURCE_PATHS.search("runs/w/actor.msgpack")
+    assert not NUS_SOURCE_PATHS.search("svg_training/source/svg_training/nus/replica.py")
+    assert _shared_long_lines("  a_rather_long_line_of_code = compute(this, that, and_the_other_thing)\nx = 1\n",
+                              {"a_rather_long_line_of_code = compute(this, that, and_the_other_thing)"})
+
+
+def test_no_nus_source_path_is_tracked():
+    """Always runs: no tracked path looks like NUS's package, its vendored environment or a checkpoint file."""
+    hits = [f for f in _tracked_files() if NUS_SOURCE_PATHS.search(f)]
+    assert not hits, f"tracked paths that look like NUS's code or checkpoints: {hits}"
+
+
+def test_no_nus_source_file_or_block_is_tracked():
+    """With a NUS clone on this machine: no tracked file equals one of NUS's source files, and none shares more than a few of its
+    long source lines (a pasted block). A few shared lines are generic (argparse, hashing, numpy idioms)."""
+    clone = _nus_clone()
+    if clone is None:
+        pytest.skip("no NUS clone on this machine (set SVG_NUS_CLONE): the file and line scans cannot run (a skip is not a pass)")
+    hashes, lines = set(), set()
+    for p in _nus_source_files(clone):
+        data = p.read_bytes()
+        if len(data) >= SMALL_FILE:
+            hashes.add(hashlib.sha256(data).hexdigest())
+        if p.suffix == ".py":
+            lines |= {s for s in (line.strip() for line in data.decode(errors="ignore").splitlines()) if len(s) >= LONG_LINE}
+    assert lines, "the NUS clone has no long source lines: wrong folder?"
+    hits = []
+    for f in _tracked_files():
+        data = (ROOT / f).read_bytes() if (ROOT / f).is_file() else b""
+        if len(data) >= SMALL_FILE and hashlib.sha256(data).hexdigest() in hashes:
+            hits.append(f"{f}: equal to a NUS file")
+        shared = _shared_long_lines(data.decode(errors="ignore"), lines)
+        if len(shared) > SHARED_LINES_MAX:
+            hits.append(f"{f}: {len(shared)} long lines of NUS's code")
+    assert not hits, "NUS source code in tracked files:\n" + "\n".join(hits)

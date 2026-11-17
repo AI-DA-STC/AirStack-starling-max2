@@ -18,14 +18,17 @@ Check each item and say PASS or FAIL:
 3. The record has every field of STANDARDS §8: purpose, commit, config, model parameter set, seeds,
    machine, games at once, steps per second, gates with PASS or FAIL.
 4. The first line of the record names its simulator.
-5. The ledger row is present, numbered T1, T2, …, and append-only.
+5. The ledger row is present, numbered T1, T2, … (laptop) or W1, W2, … (the 5090, renumbered at merge), and
+   append-only.
 6. A FAIL is written as FAIL; an aborted run has an ABORTED record. No gate was moved.
 7. Evaluation used at least 1,000 games per condition, with 95 % intervals, and at least 3 seeds for
    any method claim.
 8. Every new value carries a status label (FIXED, MEASURED, PROPOSED, OPEN).
-9. Wording: "observed in the training simulator", never "validated"; programme terms (STANDARDS §2).
+9. Wording: "observed in the training simulator", never "validated"; programme terms (STANDARDS §2). NUS's settings
+   may be stated (owner, 18 Nov 2026); NUS's source code and quotes from confidential programme reports may not.
 10. Throughput is stated with games, drones per game, tier and GPU.
 11. Every number traces to a record, a source file or a cited paper.
+12. Videos: the record lists them or says why there are none (STANDARDS §8).
 
 Deliver: one line per item, `PASS` or `FAIL`, with `file:line` evidence, and nothing else. No advice,
 no summary, no praise.

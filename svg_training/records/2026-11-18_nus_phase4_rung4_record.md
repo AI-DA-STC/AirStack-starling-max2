@@ -1,6 +1,6 @@
 Simulator: training simulator, tier 1 (the hangar game with the all-pairs safety filter and the EXPLORATORY fitted drone model). **ABORTED: no result.** Not a flight result.
 
-# 2026-11-18 NUS port, Phase 4 rung 4 (W7): the all-pairs safety filter instead of the push (ABORTED, no score)
+# 2026-11-18 NUS port, Phase 4 rung 4 (T21): the all-pairs safety filter instead of the push (ABORTED, no score)
 
 | Item | Value |
 |---|---|
@@ -18,4 +18,4 @@ Rungs 4, 5 (rows 5a, 5) and 6 are not run. Options, none taken by the implemente
 
 ## Ledger
 
-Row `W7` (ABORTED).
+Row `T21` (ABORTED).

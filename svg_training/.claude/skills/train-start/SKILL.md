@@ -15,13 +15,21 @@ Do these in order. Do not skip because the task looks small.
    may already be a recorded decision or a question waiting on the owner.
 4. `docs/linear/README.md` and the newest file in `docs/linear/snapshots/`: which Linear issues (NEAR-nnn) are In
    Progress, so the work and the Linear status stay in step.
+5. For NUS work: `docs/NUS_PORT.md` (phases, settings, results) and `docs/TRAINING.md` "NUS jobs" (commands).
+
+Know which machine you are on (`hostname`; `nvidia-smi` shows RTX 5070 Ti on the laptop, RTX 5090 on the workstation).
+**5090 only, never assume them on the laptop:** `~/ma_skills-self-play/` (NUS's code, the private plan and notes, NUS's
+outputs, copies of these agents and skills), `configs/local/nus_*.toml`, `runs/nus_port/`, `~/nus_jax_runs/`, conda
+`nus_jax`. On the laptop, NUS's results are in `docs/NUS_PORT.md` and `records/`. Claude's user memory (`~/.claude/`)
+does not travel with git: the committed files are the state.
 
 ## 2. Check the working copy
 ```bash
 git -C ~/AirStack-starling-max2 status -sb
 git -C ~/AirStack-starling-max2 worktree list
 find ~/AirStack-starling-max2/svg_training -type f -mmin -30
-pwd    # must be ~/AirStack-starling-max2/svg_training so the agents and skills load
+pwd    # must be the svg_training folder of the clone or worktree you work in, so the agents and skills load
+echo $PYTHONPATH    # a path under /opt/ros (the 5090) means: unset PYTHONPATH before any env_isaaclab or nus_jax command
 ```
 Files you did not create belong to another session: leave them alone and tell the owner what you saw.
 The folder is tracked since 14 November 2026 (STANDARDS §10); `runs/` is git-ignored.
@@ -31,7 +39,9 @@ The folder is tracked since 14 November 2026 (STANDARDS §10); `runs/` is git-ig
 nvidia-smi --query-gpu=name,memory.used,memory.total --format=csv
 docker ps --format '{{.Names}}'     # a running AirStack simulator shares this GPU
 ```
-If the AirStack simulator or a flight session is up, no GPU job starts (CLAUDE.md rule 6).
+If the AirStack simulator or a flight session is up, no GPU job starts (CLAUDE.md rule 6). Another process holding
+more than 1024 MiB (a NUS JAX job, another run) also blocks Isaac (`scripts/isaac_preflight.sh`) and NUS jobs
+(`run_nus_job.sh`); the 5090's remote-desktop daemon (546–589 MiB) does not.
 
 ## 4. Say what you intend before doing it
 One short message: what you understood, which files change, what stays untouched, how you will

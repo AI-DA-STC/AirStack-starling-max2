@@ -21,9 +21,12 @@ Write the failing test, run it, watch it fail. `core/` and the tier 1 model are 
 launching Isaac. Run the whole suite on the host and, for anything the container runs, inside it too
 (`docker/run.sh '$SVG_PY -m pytest -q -W error -p no:cacheprovider'`).
 ```bash
-cd ~/AirStack-starling-max2
-python -m pytest svg_training/tests -q
+cd ~/AirStack-starling-max2/svg_training      # or the svg_training folder of your worktree
+unset PYTHONPATH                               # the 5090's shell sources ROS
+CUDA_VISIBLE_DEVICES="" PYTHONPATH=source ~/miniconda3/envs/env_isaaclab/bin/python -m pytest -q -p no:cacheprovider
 ```
+NUS tests that need `configs/local/` or NUS's code skip where those are missing (the laptop, a fresh worktree): a skip
+is not a pass. `msgpack` must be installed in `env_isaaclab` (GETTING_STARTED step 5).
 Anything that needs Isaac Lab uses conda env `env_isaaclab`, headless, with `nvidia-smi` checked first.
 
 ## 4. Edit
@@ -37,13 +40,19 @@ Same command as step 3. If no tests exist for this change yet, say "no tests exi
 - Programme wording and "observed in the training simulator" (STANDARDS §2).
 - Every new value has a status label: FIXED, MEASURED, PROPOSED or OPEN, with its source.
 - The simulator is named wherever a result appears.
+- NUS (owner, 18 Nov 2026, NUS agreed; STANDARDS §2): documents, records and commit messages may state NUS's settings
+  and our results; NUS's source code is never committed (no vendored file, no pasted block; cite `file:line`); code
+  reads NUS's values from `configs/local/` and partner-facing code holds no numeric literal other than 0, 1, -1, 2
+  (`tests/test_nus_rules_privacy.py` G2). Confidential programme reports are named, never quoted.
+- Mark any path that exists on the 5090 only (`~/ma_skills-self-play/`, `configs/local/`, `runs/`) as such.
 
 ## 7. Definition of done (STANDARDS §11)
 Walk the checklist: inside the folder; tests quoted; numbers traceable; labels; wording; run records
 if a run happened; HANDOFF updated.
 
 ## 8. Update HANDOFF
-`docs/claude/HANDOFF.md` §4 (what changed) and §5 (what is still open). Change the "Last updated" line.
+`docs/claude/HANDOFF.md` §0 (a dated summary), §4 (what changed) and §5 (what is still open). Change the "Last updated"
+line.
 If the change finishes, starts or reshapes a Linear issue, offer the owner an instruction file in
 `docs/linear/updates/` (process and rules: `docs/linear/README.md`).
 

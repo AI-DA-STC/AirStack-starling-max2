@@ -113,6 +113,10 @@ slower than the pure rules (ledger T9, `records/2026-11-16_s2_scripted_reference
 
 ## Plug in a trained NUS policy
 
+The whole NUS port, phase by phase, with NUS's settings, our results and videos: [NUS_PORT](NUS_PORT.md). Training NUS's
+policies with NUS's own code and every command below in order: [TRAINING, NUS jobs](TRAINING.md#nus-jobs) (home RTX 5090
+only: NUS's code, the converted weights and `configs/local/` exist only there).
+
 A policy trained with NUS's JAX code runs here without that code. The path (all observed in the training simulator, in our replica of
 NUS's 2-D game; nothing is flown):
 
@@ -139,8 +143,8 @@ NUS's 2-D game; nothing is flown):
    `scripts/isaac_preflight.sh --approved-headless` exits 0. Reading: `docs/NUS_PHASE4_RESULTS.md`.
 
 What it does not do: a drone that is removed from the game, other team sizes. Rungs 1 to 3 of the ladder (replica, our game, drone response
-with the filter off) are scored (`records/2026-11-18_nus_phase4_rung{1,2,3}_record.md`); the filter, 3-D and Isaac Lab rungs are built and tested
-but were not run (`records/2026-11-18_nus_phase4_rung4_record.md`). The gates of Phase 3 compare the converted policy with NUS's own policy, in the
+with the filter off) are scored (`records/2026-11-18_nus_phase4_rung{1,2,3}_record.md`); the filter, 3-D and Isaac Lab rungs:
+results pending (running since 18 Nov 05:52); the first foreground attempt is `records/2026-11-18_nus_phase4_rung4_record.md`, ABORTED. The gates of Phase 3 compare the converted policy with NUS's own policy, in the
 replica (`records/2026-11-18_nus_phase3_conversion_record.md`; the archive pair in `records/2026-11-18_nus_phase4_w3_reference_gates_record.md`).
 
 ## What the scoring tool prints
@@ -415,6 +419,12 @@ That folder is ignored by git: **never commit it, and never copy its numbers int
 commit messages.** `load_game_cfg()` and `score.py` read it when it is there; `score.py` names it only by file
 name and checksum (sha256), never by its values. Use `--no-local` (or `load_game_cfg(use_local=False)`) to run
 on the neutral values, as every result we publish does. A test (`tests/test_partner_privacy.py`) looks for the
-local file's values in committed files, commit messages and the slide deck, but only where they would be recognisable
+local file's values in committed code, configs and scripts (until 18 November 2026 also in documents, commit messages and the deck), but only where they would be recognisable
 (the key written next to a changed value, or a value with three or more significant digits): small common numbers
 cannot be told apart from ordinary ones, so the rule relies on never typing the partner's values into a committed file.
+
+**NUS, since 18 November 2026** (owner; NUS agreed; STANDARDS §2): documents, records and commit messages may state
+NUS's settings and our results on NUS's code, and the value scan now covers code, configs and scripts only. The code
+still reads NUS's values from `configs/local/` (the files above and `configs/local/nus_*.toml`), never from a typed
+number, and NUS's source code itself is never committed (`tests/test_partner_privacy.py` checks both). Any other
+partner's values stay local until that partner agrees.

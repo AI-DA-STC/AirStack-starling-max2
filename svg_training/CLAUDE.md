@@ -70,6 +70,7 @@ agents and skills below load. Then:
 | score a checkpoint against the gates | `train-evaluate` |
 | something is wrong (NaN, reward collapse, slow, unstable) | `train-debug` |
 | hand a policy to AirStack | `train-export` |
+| **end of every session** (laptop or 5090) | update [docs/claude/HANDOFF.md](docs/claude/HANDOFF.md): a dated §0 summary (what was done, what waits on whom), §4, §5 and the "Last updated" line; commit it with the session's work (on its branch). On the 5090, the NUS workspace's copied agents/skills refresh themselves at session start (`~/ma_skills-self-play/sync_claude_setup.sh`, SessionStart hook); run it by hand after merging a branch that changed `.claude/` or `STANDARDS.md` |
 
 Agents (in `.claude/agents/`, described in [docs/claude/AGENTS_AND_SKILLS.md](docs/claude/AGENTS_AND_SKILLS.md)):
 `train-isaaclab-engineer`, `train-drone-dynamics`, `train-marl-researcher`,

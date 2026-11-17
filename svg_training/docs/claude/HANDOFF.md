@@ -39,9 +39,15 @@ git-ignored `configs/local/` and `runs/`.
 - Claude setup copied to `~/ma_skills-self-play/.claude/` (agents, skills, superpowers) with its own `CLAUDE.md`;
   kept current by the process in §6.
 
+**Later the same night (to ~23:55):** hangar geometry decided from three reviews and a CPU balance probe (values
+private on the 5090); Phase 2 gate of record **W1 PASS** (`records/2026-11-17_nus_phase2_parity_record.md`, gates in
+`configs/nus_port.toml`); NUS self-play go/no-go on the hangar geometry running detached (3 seeds × 8 generations,
+done ≈ 02:00); Phase 3 plan v2 committed (owner approved `msgpack` and layout id `nus_area_denial_v1`), its build
+may be unfinished and uncommitted in this worktree. **Resume note (private, on the 5090):**
+`~/ma_skills-self-play/_notes/RESUME_2026-11-17_night.md`.
+
 **Waiting on the owner:**
-1. Zone radius and arena for the 8 m hangar: the mocap calibration and the intern's measured arena are being
-   reviewed; a decision comes with the reviewers' reasons.
+1. ~~Zone radius and arena~~ decided (lead, from three reviews; owner asked agents to decide).
 2. Accept the Phase 1 FAIL (cause confirmed by NUS); approve the PROPOSED gate numbers in `PORT_PLAN.md`.
 3. Go for a full NUS self-play run on the 5090 (a few hours) on the chosen hangar geometry.
 4. 5090 Isaac preflight: Ethernet/no remote desktop, or change the 500 MiB rule (blocks seed 3 and Isaac phases).

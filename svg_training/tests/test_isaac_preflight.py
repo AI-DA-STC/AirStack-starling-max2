@@ -14,7 +14,7 @@ SCRIPT = ROOT / "scripts" / "isaac_preflight.sh"
 WIFI_ONLY = "wifi:connected\nethernet:unavailable\nloopback:connected (externally)\n"
 WITH_ETHERNET = "wifi:connected\nethernet:connected\nloopback:connected (externally)\n"
 XRDP = "4242 /usr/sbin/xrdp --nodaemon\n"
-DESKTOP_APP = "3905, 380, /usr/libexec/gnome-remote-desktop-daemon\n"          # under 500 MiB: allowed
+DESKTOP_APP = "3905, 380, /usr/libexec/gnome-remote-desktop-daemon\n"          # under the limit: allowed
 BIG_FOREIGN = "777001, 3600, /isaac-sim/kit/python/bin/python3\n"               # a 3,600 MiB foreign process
 
 
@@ -61,6 +61,18 @@ def test_big_foreign_gpu_process_is_busy(tmp_path):
     r = _run(tmp_path, WITH_ETHERNET, "", DESKTOP_APP + BIG_FOREIGN)
     assert r.returncode == 11, r.stdout + r.stderr
     assert "777001" in r.stdout and "3600" in r.stdout
+
+
+def test_5090_remote_desktop_daemon_is_allowed(tmp_path):
+    """On the home RTX 5090 gnome-remote-desktop-daemon holds 546-589 MiB (owner raised the limit, 18 Nov 2026)."""
+    r = _run(tmp_path, WITH_ETHERNET, "", "4538, 589, /usr/libexec/gnome-remote-desktop-daemon\n")
+    assert r.returncode == 0, r.stdout + r.stderr
+
+
+def test_a_nus_jax_job_still_counts_as_busy(tmp_path):
+    """A partner JAX training job (about 1,700 MiB) must still block an Isaac launch."""
+    r = _run(tmp_path, WITH_ETHERNET, "", DESKTOP_APP + "736800, 1732, python3\n")
+    assert r.returncode == 11, r.stdout + r.stderr
 
 
 def test_gpu_check_runs_even_when_blocked(tmp_path):

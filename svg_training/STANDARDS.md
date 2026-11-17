@@ -291,6 +291,12 @@ Rules:
 - A record names its simulator in the first line.
 - Throughput is always reported as environment steps per second together with the number of games,
   the number of drones per game, the tier and the GPU.
+- **Every training run saves videos** (owner, 17 November 2026). At least two evaluation games per
+  checkpoint the run keeps (its final and its best), and one game at each scheduled evaluation where
+  the trainer supports it; headless, into `runs/<date>_<name>/videos/`. A partner's own trainer uses its
+  own recorder (for NUS's JAX code: `save_eval_gif=True`, or `ma_skills/scripts/eval.py` afterwards),
+  and its videos stay with the partner's outputs, outside this repository. The record lists the video
+  paths. A run that ends without videos says so in its record and why.
 
 ## 9. Code
 

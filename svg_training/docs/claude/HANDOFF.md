@@ -2,11 +2,51 @@
 
 > **How to use this file.** Read it at the start of a session, after [../../CLAUDE.md](../../CLAUDE.md).
 > §4 is the current state, §5 is what is waiting on people. Update both before you stop.
-> Last updated: 17 November 2026, ~07:00 (morning summary in §0). Before: ~05:30 (S2b Tasks 1–8 done (T13 FAIL, over/under passing), 9 Isaac seeds running, 10 docs being written, 8b deferred; see §0 S2b line). Before: ~03:00. Earlier: 16 November morning (**S2 CLOSED**: final whole-stage review done on Opus, one fix wave 4d0d409, wording c218cbb; owner ruled A and B; S2b plan approved and ready to start).
+> Last updated: 17 November 2026, ~22:30, on the home RTX 5090 (evening summary in §0). Before: ~07:00 (morning summary in §0). Before: ~05:30 (S2b Tasks 1–8 done (T13 FAIL, over/under passing), 9 Isaac seeds running, 10 docs being written, 8b deferred; see §0 S2b line). Before: ~03:00. Earlier: 16 November morning (**S2 CLOSED**: final whole-stage review done on Opus, one fix wave 4d0d409, wording c218cbb; owner ruled A and B; S2b plan approved and ready to start).
 
 ## 0. Resume here (for a new session or another Claude account)
 
 Everything needed is in this folder; nothing depends on the previous chat.
+
+### Evening summary, 17 November 2026 — home RTX 5090 session (for the owner and the laptop session)
+
+All observed in the training simulator or on the desktop; nothing flown. Partner numbers are NOT in this file: they
+live only on the 5090 in `~/ma_skills-self-play/` (private plan `PORT_PLAN.md`, notes `_notes/`) and in the
+git-ignored `configs/local/` and `runs/`.
+
+**Done:**
+- 5090 host env `env_isaaclab` built (setup script exits 1 on a fresh install; hand fixes in
+  [../GETTING_STARTED.md](../GETTING_STARTED.md) step 5, on branch `docs-5090-setup` with its note
+  `docs/claude/FROM_5090_2026-11-17.md`). Full suite there: 798 passed, 11 skipped.
+- NUS code (three branches) cloned on the 5090 only; owner: partner code on the 5090 is fine (personal desktop),
+  so TRAINING.md's "must not leave the laptop" needs updating. NUS confirms the continuous-space branch is the one.
+- **Two tracks (owner, 17 Nov):** (1) area denial = the NUS port, contact-free, filter on every pair (matches the
+  programme design review's Scenarios A/B); (2) contact tag = a separate one-on-one track,
+  [../plans/2026-11-17-contact-tag-track.md](../plans/2026-11-17-contact-tag-track.md) (DRAFT, nothing started).
+- NUS answers: their units are scaled to the arena (scale is ours; owner adopted a PROPOSED scale fitted to the
+  8 m hangar, value in `configs/local/`); a policy works only on the config it was trained on (train NUS policies on
+  the deployment geometry); fixed team size for the whole game (no drone dropping out).
+- Phase 1: conda `nus_jax` built; NUS's own tests 65 passed, 1 failed (their stale test vs their config; NUS
+  confirmed harmless). Phase 2a: NUS benchmark and two short 3 v 3 fixed-opponent runs (one per team), both teams
+  win every evaluation game against NUS's scripted opponents; not runs of record; videos saved with NUS's outputs.
+- **Phase 2 part A (this branch, `nus-port-phase2`):** leak guard rails G1–G4 (`configs/nus_rules.template.toml`,
+  `source/svg_training/nus/rules.py`, `outputs.py`, `tests/test_nus_rules_privacy.py`; marker test), a batched
+  PyTorch replica of NUS's 2-D game (`source/svg_training/nus/replica.py`), fixture recorder
+  (`scripts/nus_record_fixtures.py`), tests (`tests/test_nus_replica.py`). Per-step parity with NUS's code on 3 v 3,
+  5 v 3 and fixed starts: max position error < 1e-5 units, flags and steps identical, every rule exercised. Full
+  suite 820 passed, 11 skipped. Development check only: no record or ledger row.
+- **New standard:** every training run saves videos (STANDARDS §8; `train-run` skill).
+- Claude setup copied to `~/ma_skills-self-play/.claude/` (agents, skills, superpowers) with its own `CLAUDE.md`;
+  kept current by the process in §6.
+
+**Waiting on the owner:**
+1. Zone radius and arena for the 8 m hangar: the mocap calibration and the intern's measured arena are being
+   reviewed; a decision comes with the reviewers' reasons.
+2. Accept the Phase 1 FAIL (cause confirmed by NUS); approve the PROPOSED gate numbers in `PORT_PLAN.md`.
+3. Go for a full NUS self-play run on the 5090 (a few hours) on the chosen hangar geometry.
+4. 5090 Isaac preflight: Ethernet/no remote desktop, or change the 500 MiB rule (blocks seed 3 and Isaac phases).
+5. Merge `docs-5090-setup` and `nus-port-phase2` on the laptop; run `test_partner_privacy.py` there (its value scan
+   skips on the 5090) and read the diff for short partner numbers.
 
 ### Morning summary, 17 November 2026 (for the owner)
 
@@ -341,6 +381,12 @@ figure, Isaac Lab velocity controller, one speed cap in the filter); all five ar
 STANDARDS and DESIGN. Their open questions are in the table above.
 
 ## 6. How to continue
+
+**Keeping this file current (owner, 17 November 2026):** every session ends by updating §0 (a dated summary for the
+owner and the next session, on whichever machine), §4, §5 and "Last updated", committed with the work on its branch;
+the other machine merges it. Partner numbers never go in this file. The NUS workspace on the 5090
+(`~/ma_skills-self-play/`, private) keeps copies of this folder's agents, skills and STANDARDS, refreshed at each
+session start by `sync_claude_setup.sh`.
 
 1. Run the `train-start` skill.
 2. The design is approved. A change to it goes through the owner first.

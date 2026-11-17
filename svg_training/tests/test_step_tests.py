@@ -216,3 +216,17 @@ def test_throughput_oom_is_a_row():
     rows = ptp.measure_point(_OomWorld(), cfg, "2v1", 2, "cpu", {"warmup_steps": 1, "timed_steps": 1,
                                                                  "min_timed_s": 0.0, "repeats": 2})
     assert len(rows) == 1 and rows[0]["status"] == "oom" and rows[0]["game_steps_per_s"] is None
+
+
+# ------------------------------------------------------------------------------------------- flight log inside the folder
+def test_real_log_relative_path_resolves_inside_svg_training():
+    p = pst.resolve_real_log("data/flight_logs/2026-11-13/ulog_drone_2/log103.ulg")
+    assert p == pst.ROOT / "data/flight_logs/2026-11-13/ulog_drone_2/log103.ulg"
+    assert pst.resolve_real_log("/abs/x.ulg") == pathlib.Path("/abs/x.ulg")
+
+
+def test_config_real_log_is_inside_svg_training():
+    import tomllib
+    st = tomllib.loads((pst.ROOT / "configs/s2b.toml").read_text())["step_tests"]
+    assert not st["real_log"].startswith(("~", "/")), "flight log must live inside svg_training/ (owner, 17 Nov)"
+    assert pst.resolve_real_log(st["real_log"]).is_relative_to(pst.ROOT)

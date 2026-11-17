@@ -14,7 +14,7 @@ commits ahead of GitHub, and the repository carries about 41 MB of video and GIF
 1. Bring the mirror up to date: `git -C ~/Documents/GitHub/AirStack-starling-max2 pull ~/AirStack-starling-max2 main`.
 2. Push `main` from GitHub Desktop. Claude never pushes.
 3. Copy the private bundle (`~/svg_workstation_bundle/`) to the workstation by USB, a private drive or `scp`.
-   It holds the partner's code and checkpoints and the flight log. It never goes to GitHub.
+   It holds the partner's code and checkpoints and the flight logs. It never goes to GitHub.
 4. Copy the construction-site world too (section 1a): it is not in git and not in the bundle.
 
 ## 1a. Files that are not in git
@@ -26,10 +26,10 @@ copy by hand. Nothing is read from other project folders.
 |---|---|---|
 | Construction-site world, `source/` and `build/` (about 280 MB, bought asset) | `localisation/scenes/construction_site/` in the clone, beside its README | the construction-site clips and screenshots only; training, scoring, tests and the other worlds do not use it |
 | Partner's code, checkpoints, reference logs | outside the repository, as the bundle's NOTES say | NUS jobs only |
-| Flight log `log103.ulg` (13 November, drone_2) | `~/flight_logs/2026-11-13/ulog_drone_2/` (path in `configs/s2b.toml`, `real_log`) | the S2b step tests (T11) only |
+| Three real flight logs of 13 November (`log103.ulg`, `log105.ulg`, `08_47_58.ulg`, 51 MB) | `svg_training/data/flight_logs/2026-11-13/` (git-ignored), same sub-folders as in the bundle | the S2b step tests (`configs/s2b.toml [step_tests] real_log`) and the S1 real-log fit (`scripts/fit_real_px4.py`) |
 
-The flight log is the one file still read from outside the repository folder; moving it inside needs a config
-change (`real_log`) and the owner's approval.
+Nothing is read from outside the repository folder (owner, 17 November 2026). The one exception is the AirStack
+simulator's own output under `~/flight_logs/sim/`, which `scripts/record_steps.sh` collects from `tools/sim.sh`.
 
 ## 1. The scripts
 

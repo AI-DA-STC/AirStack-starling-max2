@@ -306,10 +306,16 @@ def load_windows(path: pathlib.Path) -> tuple[list[dict], dict]:
     return wins, meta
 
 
+def resolve_real_log(path: str) -> pathlib.Path:
+    """The configured flight log: a relative path is read from inside svg_training/ (owner, 17 Nov 2026)."""
+    p = pathlib.Path(os.path.expanduser(path))
+    return p if p.is_absolute() else ROOT / p
+
+
 def windows_phase(args) -> int:
     gates_cfg = tomllib.loads(_gates_path(args).read_text())
     st = gates_cfg["step_tests"]
-    log = pathlib.Path(args.log or os.path.expanduser(st["real_log"]))
+    log = pathlib.Path(args.log) if args.log else resolve_real_log(st["real_log"])
     if not log.is_file():
         print(f"refused: no flight log at {log}", file=sys.stderr)
         return 2

@@ -61,6 +61,7 @@ The table lists what each folder holds.
 | `params/` | drone-model parameter sets: `real_exploratory_v0.toml` (used by tier 1), `airstack_sim_v0.toml` (simulator only) |
 | `tests/` | pytest; most tests need no Isaac |
 | `docker/` | the container image, built on NVIDIA's Isaac Lab 2.3.2, and its launchers |
+| `data/` | git-ignored copies of the real flight logs the pipeline reads (from the private bundle; see [WORKSTATION_SETUP §1a](docs/WORKSTATION_SETUP.md#1a-files-that-are-not-in-git)) |
 | `records/` | one record per run (its written summary) and the training ledger (the list of all runs), in git |
 | `runs/`, `docs/` | raw output of each run (not in git); the documents (`docs/notes/` holds investigation notes the results cite) |
 

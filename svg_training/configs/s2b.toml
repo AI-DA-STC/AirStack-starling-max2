@@ -38,7 +38,7 @@ steps = [
   { name = "z_up_info", cmd_mps = [0.0, 0.0, 0.3],      push_s = 2.0, release_s = 3.0 },   # INFO: tier 1 z not fitted
 ]
 hover_s = 10.0
-real_log = "~/flight_logs/2026-11-13/ulog_drone_2/log103.ulg"
+real_log = "data/flight_logs/2026-11-13/ulog_drone_2/log103.ulg"   # relative to svg_training/ (git-ignored copy)
 real_log_sha256_prefix = "4db5b1fcf33e69c6"
 tilt_info_deg = 30.0                       # D11: drone_1's limit, INFO variant
 

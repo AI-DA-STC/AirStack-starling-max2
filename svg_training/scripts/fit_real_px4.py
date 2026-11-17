@@ -58,7 +58,7 @@ sys.path.insert(0, str(ROOT / "source"))
 from svg_training.models import px4_trajectory as m  # noqa: E402
 from svg_training.models.response import body_to_world  # noqa: E402
 
-FLIGHT_LOGS = Path.home() / "flight_logs"
+FLIGHT_LOGS = ROOT / "data" / "flight_logs"          # git-ignored copies (owner, 17 Nov 2026: self-contained)
 MAIN_LOG = FLIGHT_LOGS / "2026-11-13/ulog_drone_2/log103.ulg"
 CROSS_LOGS = (FLIGHT_LOGS / "2026-11-13/two_drone_teleop/drone_2/log105.ulg",
               FLIGHT_LOGS / "2026-11-13/two_drone_teleop/drone_1_candidates/08_47_58.ulg")

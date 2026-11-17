@@ -408,3 +408,10 @@ def test_pid_position_gain_pulls_toward_the_setpoint():
     assert v[20, 0] > 0.0
     assert pos[-1, 0] == pytest.approx(1.0, abs=0.02)
     assert abs(pos[-1, 1]) < 1e-9
+
+
+def test_flight_logs_live_inside_svg_training():
+    """Owner, 17 Nov 2026: everything the pipeline reads lives inside the repository folder."""
+    mod = _load_script()
+    assert mod.FLIGHT_LOGS == ROOT / "data" / "flight_logs"
+    assert all(p.is_relative_to(ROOT) for p in (mod.MAIN_LOG, *mod.CROSS_LOGS))

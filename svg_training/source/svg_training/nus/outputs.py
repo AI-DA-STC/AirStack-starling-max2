@@ -8,14 +8,17 @@
 """
 from __future__ import annotations
 
+import functools
 import json
 import math
 import re
 from pathlib import Path
 from typing import Any
 
-from .deploy import DEPLOY_KEYS, load_deploy
+from ..core.game_config import load_game_cfg
+from .deploy import DEPLOY_KEYS, apply_overrides, load_deploy
 from .deploy import numeric_values as deploy_numeric_values
+from .hangar import HANGAR_GAME, HANGAR_KEYS, load_hangar, load_phase4, protected_derived
 from .rules import RULE_KEYS, RUNS_DIR, file_sha256, load_rules, numeric_values
 
 # Structural numbers every file may hold (the same set the literal scan allows); they carry no partner information.
@@ -81,9 +84,25 @@ def architecture_numbers(config: dict[str, Any]) -> list[float]:
     return [float(v) for v in found]
 
 
+@functools.cache
+def near_relative() -> float:
+    """The relative tolerance of the near-equality test (committed settings, plan D8)."""
+    return float(load_phase4()["ladder"]["near_equal_relative"])
+
+
+def derived_numbers(rules_path: Path | str, deploy_path: Path | str, hangar_path: Path | str) -> set[float]:
+    """The hangar file's value and every value derived from the three local files (lengths x scale, speeds in m/s, ticks and seconds,
+    keep-outs, ring, disc, zone, arena; ``hangar.protected_derived``)."""
+    deploy = load_deploy(deploy_path)
+    rules = apply_overrides(load_rules(rules_path), deploy)
+    base, _ = load_game_cfg(HANGAR_GAME, use_local=False)
+    return set(protected_derived(rules, deploy, load_hangar(hangar_path), base))
+
+
 def protected_numbers(rules_path: Path | str, deploy_path: Path | str | None = None,
-                      checkpoints: tuple[Path | str, ...] | list[Path | str] = ()) -> set[float]:
-    """Every number a record must not hold: the rules file (floats and ints), the deploy file, the checkpoints' architecture."""
+                      checkpoints: tuple[Path | str, ...] | list[Path | str] = (), hangar_path: Path | str | None = None) -> set[float]:
+    """Every number a record must not hold: the rules file (floats and ints), the deploy file, the checkpoints' architecture, and (with a
+    hangar file, which needs the deploy file) the hangar value and the derived values."""
     rules = load_rules(rules_path)
     values = set(numeric_values(rules))
     values |= {float(getattr(rules, k)) for k in RULE_KEYS if isinstance(getattr(rules, k), int) and not isinstance(getattr(rules, k), bool)}
@@ -91,29 +110,45 @@ def protected_numbers(rules_path: Path | str, deploy_path: Path | str | None = N
         values |= set(deploy_numeric_values(load_deploy(deploy_path)))
     for folder in checkpoints:
         values |= set(architecture_numbers(json.loads((Path(folder) / "config.json").read_text())))
+    if hangar_path is not None:
+        if deploy_path is None:
+            raise ValueError("the derived values need the deploy file")
+        values |= derived_numbers(rules_path, deploy_path, hangar_path) | {float(getattr(load_hangar(hangar_path), k)) for k in HANGAR_KEYS}
     values = {v for v in values if v not in STRUCTURAL and not math.isnan(v)}
     return values | {_rounded(v) for v in values}
+
+
+def _is_protected(value: float, protected: set[float]) -> bool:
+    """Equal, equal at six significant digits, or nearly equal (relative tolerance of the committed settings)."""
+    if value in STRUCTURAL or math.isnan(value):
+        return False
+    if value in protected or _rounded(value) in protected:
+        return True
+    tolerance = near_relative()
+    return any(math.isclose(value, p, rel_tol=tolerance) for p in protected)
 
 
 def check_payload(payload: dict[str, Any], protected: set[float]) -> None:
     """Raise ValueError if the payload holds a protected number (as a number, or as a decimal inside a string)."""
     for value in _numbers(payload):
-        if value not in STRUCTURAL and not math.isnan(value) and (value in protected or _rounded(value) in protected):
+        if _is_protected(value, protected):
             raise ValueError("payload holds a number equal to a local rules, deploy or checkpoint value; keep values out of records")
     for text in _strings(payload):
         for token in _DECIMAL.findall(text):
-            if float(token) in protected or _rounded(float(token)) in protected:
+            if _is_protected(float(token), protected):
                 raise ValueError("payload text holds a number equal to a local rules, deploy or checkpoint value")
 
 
 def write_record(path: Path | str, payload: dict[str, Any], rules_path: Path | str, *, deploy_path: Path | str | None = None,
-                 checkpoints: tuple[Path | str, ...] | list[Path | str] = ()) -> Path:
+                 checkpoints: tuple[Path | str, ...] | list[Path | str] = (), hangar_path: Path | str | None = None) -> Path:
     """Write a JSON record with the rules stamp (and the deploy and checkpoint stamps when given). Refuses a payload number
     (float or int) that equals a value of those files; see :func:`check_payload`."""
-    check_payload(payload, protected_numbers(rules_path, deploy_path, checkpoints))
+    check_payload(payload, protected_numbers(rules_path, deploy_path, checkpoints, hangar_path))
     stamp: dict[str, Any] = rules_stamp(rules_path)
     if deploy_path is not None:
         stamp |= {"deploy_keys": list(DEPLOY_KEYS), "deploy_sha256": file_sha256(deploy_path)}
+    if hangar_path is not None:
+        stamp |= {"hangar_keys": list(HANGAR_KEYS), "hangar_sha256": file_sha256(hangar_path)}
     if checkpoints:
         stamp["checkpoint_sha256"] = [file_sha256(Path(c) / "state.msgpack") if (Path(c) / "state.msgpack").exists()
                                       else file_sha256(Path(c) / "actor.msgpack") for c in checkpoints]

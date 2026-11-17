@@ -62,11 +62,12 @@ def _check_cfg(cfg: GameCfg, rules, deploy, team: str) -> None:
 class NusPolicy:
     """The partner's converted actor playing one team. Batched torch only; per-game memory; deterministic."""
     name = "NusPolicy"
+    deploy_path = None  # a subclass binds another deploy file (nus/players.py); None = the module-level DEPLOY_PATH, read at construction
 
     def __init__(self, team: str, cfg: GameCfg, num_games: int, device, seed: int = 0):
         if team not in TEAMS:
             raise ValueError(f"team must be 'guard' or 'strike', got {team!r}")
-        deploy = load_deploy(DEPLOY_PATH)
+        deploy = load_deploy(type(self).deploy_path or DEPLOY_PATH)
         rules = apply_overrides(load_rules(RULES_PATH), deploy)
         _check_cfg(cfg, rules, deploy, team)
         self.team, self.cfg, self.num_games, self.device = team, cfg, num_games, torch.device(device)

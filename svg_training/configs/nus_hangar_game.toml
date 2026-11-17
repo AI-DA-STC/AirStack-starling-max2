@@ -1,0 +1,65 @@
+# NUS port Phase 4: the generic part of the hangar game (neutral committed values; no partner value, none of the owner's hangar values).
+# Everything partner-derived is set in memory by source/svg_training/nus/hangar.py:hangar_cfg from the git-ignored local files
+# (configs/local/nus_rules.toml, nus_deploy.toml, nus_hangar.toml). Keys that hangar_cfg sets, left at the neutral defaults here:
+#   partner_rules: metres_per_unit, seconds_per_step, strike_units_per_step, guard_units_per_step, game_steps, keepout_guard_m,
+#                  keepout_strike_m, push_rule
+#   arena:         start_height_m, height_band_m (pinned rows), walls
+#   starling_layer: enabled, backend (per ladder row)
+# The arena side, the zone and the starts do not come from this file at all: nus/hangar_game.py fixes them.
+
+[game]
+preset = "partner"
+dropout_fraction = 0.0
+obs_view = "full"
+pad_guards = 5
+pad_strikes = 3
+yaw_rate_max_rad_s = 1.0
+
+[arena]
+band_weights = [1.0, 1.0, 1.0]
+zone_radius_frac = [0.10, 0.25]
+zone_wall_margin_m = 0.5
+height_band_m = [0.5, 1.8]                  # the committed band; "free" rows keep it
+start_height_m = 1.2
+walls = "keep_in"
+wall_margin_m = 0.25
+
+[arena.bands_m]
+lab = [4.0, 6.0]
+middle = [6.0, 10.0]
+large = [10.0, 16.0]
+
+[partner_rules]
+keepout_guard_m = 1.10
+keepout_strike_m = 1.10
+push_rule = "block"
+teammates_pass = true
+win_steps_in_zone = 1
+strike_units_per_step = 0.025
+guard_units_per_step = 0.016666666666666666
+game_steps = 1200
+metres_per_unit = 1.0
+seconds_per_step = 0.05
+
+[contact_rules]
+contact_m = 0.50                             # tier 1 contact distance (STANDARDS section 4): a crash in flight
+guard_survives_tag_prob = 0.0
+
+[starling_layer]
+enabled = false
+params = "params/real_exploratory_v0.toml"
+filter_iterations = 1000
+filter_check_every = 8
+backend = "fitted"
+physics_params = "params/starling_physics_v0.toml"
+physics_sim_only_gains = "params/sim_only_yaw_v0.toml"
+
+[starts]
+mode = "rings"
+strike_inset_m = 0.3
+guard_ring_gap_m = 0.3
+spacing_m = 1.2
+
+[rewards]
+win = 1.0
+shaping_weight = 0.0

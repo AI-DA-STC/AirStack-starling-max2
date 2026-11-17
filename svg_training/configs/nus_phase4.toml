@@ -1,0 +1,166 @@
+# NUS port Phase 4: the transfer ladder (plan docs/plans/2026-11-18-nus-phase4-transfer-ladder.md v2 with the owner's answers).
+# INFO runs: no gates. Every value is PROPOSED (STANDARDS section 7) and fixed here before the first run. Counts, tolerances and names
+# only: no partner value, none of the owner's hangar values.
+
+[ladder]
+games = 1000                       # games per pair and row (STANDARDS 7.3)
+seed = 20261119                    # PROPOSED: the one seed of the paired starts file (one seed: no method claim, STANDARDS 6.5)
+video_slots = 16                   # PROPOSED: the first slots whose positions are kept for videos
+videos_per_pair = 2                # the first Strike win and the first hold among the kept slots
+jitter_m = 0.001                   # PROPOSED: +-1 mm start-height jitter of rung 5 (owner answer 5), uniform per drone and game
+warmup_ticks = 50                  # PROPOSED: ticks timed to estimate a run
+quantiles = [0.05, 0.5]            # closest approach: reported beside its minimum
+tail_quantile = 0.95               # correction size and smoothness: reported beside the mean
+parked_stop_hold = 0.90            # reading rule 1 (Run 0's trigger): parked Guard holds at least this against ApfStrike
+position_tolerance_units = 1.0e-4  # control rows: positions equal within this (partner units)
+near_equal_relative = 1.0e-6       # the record writer's near-equality test against protected values
+max_hours_foreground = 2           # a run estimated above this is reported before it is started
+
+[video]
+# top-down clips of the first Strike win and the first hold of each pair (plan D6); 1024 x 768 px
+speed = 8                          # game ticks per drawn frame; playback is speed x fps x 0.05 times real time
+fps = 15
+dpi = 96
+
+[pairs]
+# Every Guard spec plays every Strike spec of its block (1,000 games each).
+core_guards = ["G19", "P3G", "ApfGuard", "ParkedGuard"]
+core_strikes = ["S20", "P3S", "ApfStrike"]
+our_strike_guards = ["G19", "P3G", "ParkedGuard"]
+our_strikes = ["strike_straight", "strike_flank"]
+our_guard_guards = ["guard_mirror", "guard_mark_edge"]
+our_guard_strikes = ["S20", "P3S", "ApfStrike"]
+
+# One row per [[row]]: six keys (plan D3). `changed` lists the keys that differ from the row before; `blocks` says which pair blocks run.
+# Owner answer 3 (18 November): action hold moves into rung 2, so rung 2 changes two keys (separation and motion) and row 3h is dropped.
+[[row]]
+id = "1"
+rung = 1
+engine = "replica"
+boundary = "guard_circle"
+separation = "partner_push"
+motion = "jump"
+drone = "points"
+height = "pinned"
+changed = []
+blocks = ["core"]
+
+[[row]]
+id = "2.1"
+rung = 2
+engine = "game"
+boundary = "guard_circle"
+separation = "partner_push"
+motion = "jump"
+drone = "points"
+height = "pinned"
+changed = ["engine"]
+blocks = ["core"]
+only_if_split = true
+equals = "1"
+
+[[row]]
+id = "2.2"
+rung = 2
+engine = "game"
+boundary = "walls"
+separation = "partner_push"
+motion = "jump"
+drone = "points"
+height = "pinned"
+changed = ["boundary"]
+blocks = ["core"]
+only_if_split = true
+
+[[row]]
+id = "2"
+rung = 2
+engine = "game"
+boundary = "walls"
+separation = "block"
+motion = "hold"
+drone = "points"
+height = "pinned"
+changed = ["separation", "motion"]      # owner answer 3: hold arrives here
+blocks = ["core", "our_strike", "our_guard"]
+
+[[row]]
+id = "3a"
+rung = 3
+engine = "game"
+boundary = "walls"
+separation = "block"
+motion = "hold"
+drone = "identity"
+height = "pinned"
+changed = ["drone"]
+blocks = ["core", "our_strike", "our_guard"]
+equals = "2"
+
+[[row]]
+id = "3"
+rung = 3
+engine = "game"
+boundary = "walls"
+separation = "block"
+motion = "hold"
+drone = "fitted"
+height = "pinned"
+changed = ["drone"]
+blocks = ["core", "our_strike", "our_guard"]
+
+[[row]]
+id = "4"
+rung = 4
+engine = "game"
+boundary = "walls"
+separation = "filter"
+motion = "hold"
+drone = "fitted"
+height = "pinned"
+changed = ["separation"]
+blocks = ["core", "our_strike", "our_guard"]
+
+[[row]]
+id = "5a"
+rung = 5
+engine = "game"
+boundary = "walls"
+separation = "filter"
+motion = "hold"
+drone = "fitted"
+height = "free"
+changed = ["height"]
+blocks = ["core", "our_strike", "our_guard"]
+equals = "4"
+
+[[row]]
+id = "5"
+rung = 5
+engine = "game"
+boundary = "walls"
+separation = "filter"
+motion = "hold"
+drone = "fitted"
+height = "free_jitter"
+changed = ["height"]
+blocks = ["core", "our_strike", "our_guard"]
+
+[[row]]
+id = "6"
+rung = 6
+engine = "game"
+boundary = "walls"
+separation = "filter"
+motion = "hold"
+drone = "physics"
+height = "free_jitter"
+changed = ["drone"]
+blocks = ["core", "our_strike", "our_guard"]
+
+[figure]
+# The ladder figure (plan D8): Strike reach rate with its Wilson 95 % interval for the core pairs, one panel per Strike player.
+size_in = [11.0, 4.0]
+dpi = 150
+offset = 0.06                      # horizontal spacing of the four Guard players inside a row's slot
+row_order = ["1", "2.1", "2.2", "2", "3a", "3", "4", "5a", "5", "6"]

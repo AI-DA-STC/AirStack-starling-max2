@@ -129,9 +129,19 @@ NUS's 2-D game; nothing is flown):
    refuses a game configuration whose scale or team speeds differ from the deploy file, naming the keys, never the values.
 4. **`interface.toml`** (draft, layout id `nus_area_denial_v1`): `scripts/nus_write_interface.py` writes it into the weights folder.
 
-What it does not do yet: Starling-layer drones, the safety filter, 3-D, a drone that is removed from the game, other team sizes.
-The score against our scripted strategies is not meaningful until the Starling layer rung (Phase 4); the gates of this phase compare
-the converted policy with NUS's own policy, in the replica (`records/2026-11-18_nus_phase3_conversion_record.md`).
+5. **Score it up the transfer ladder (Phase 4).** `scripts/nus_phase4.py --row <id>` plays every Guard x Strike pair of a row from one paired
+   starts file (`--make-starts` once), 1,000 games per pair, on the hangar geometry (a git-ignored `configs/local/nus_hangar.toml`, template
+   `configs/nus_hangar.template.toml`), and writes the extra metrics, `per_game.npz` and top-down videos under `runs/nus_port/phase4/row_<id>/`.
+   Rows are declared in `configs/nus_phase4.toml` (six keys each: engine, boundary, separation, motion, drone, height); players are named in
+   `nus/players.py` (`G19`/`S20`, `P3G`/`P3S` bound to their deploy files, the ported controllers, `ParkedGuard`; our scripted strategies by their
+   names). `--tables <rows>` prints committed-text tables with every value that equals a local value replaced by "at the local value". A
+   row estimated above 2 h stops with exit 4 until `--accept-long`. Row 6 (Isaac Lab) needs `--headless --device cuda` after
+   `scripts/isaac_preflight.sh --approved-headless` exits 0. Reading: `docs/NUS_PHASE4_RESULTS.md`.
+
+What it does not do: a drone that is removed from the game, other team sizes. Rungs 1 to 3 of the ladder (replica, our game, drone response
+with the filter off) are scored (`records/2026-11-18_nus_phase4_rung{1,2,3}_record.md`); the filter, 3-D and Isaac Lab rungs are built and tested
+but were not run (`records/2026-11-18_nus_phase4_rung4_record.md`). The gates of Phase 3 compare the converted policy with NUS's own policy, in the
+replica (`records/2026-11-18_nus_phase3_conversion_record.md`; the archive pair in `records/2026-11-18_nus_phase4_w3_reference_gates_record.md`).
 
 ## What the scoring tool prints
 

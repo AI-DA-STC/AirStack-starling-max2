@@ -83,3 +83,21 @@ def play_arm(sim: NusReplica, apf: NusApf, team: str, starts: torch.Tensor,
         state = sim.step(state, actions)
         first = torch.where((first < 0) & (state.reached > 0), torch.full_like(first, step + 1), first)
     return ArmResult(reached=state.reached > 0, first_reach_step=first, final_pos=state.pos)
+
+
+@torch.no_grad()
+def play_pair(sim: NusReplica, guard_policy: Callable[[torch.Tensor], torch.Tensor], strike_policy: Callable[[torch.Tensor], torch.Tensor],
+              starts: torch.Tensor) -> ArmResult:
+    """Both teams play by their policies (team observations [N, T, obs] -> displacement requests [N, T, 2] in units per step) from ``starts``
+    [N, M, 2], for the episode length (the archive arm of Phase 4's W3). Same bookkeeping as :func:`play_arm`."""
+    guards = sim.guard_count
+    games = starts.shape[0]
+    state = ReplicaState(pos=starts.clone(), prev_pos=starts.clone(), reached=torch.zeros(games, dtype=sim.dtype, device=sim.device),
+                         step=torch.zeros(games, dtype=torch.long, device=sim.device))
+    first = torch.full((games,), -1, dtype=torch.long, device=sim.device)
+    for step in range(sim.rules.episode_steps):
+        observation = sim.observe(state)
+        actions = torch.cat((guard_policy(observation[:, :guards]), strike_policy(observation[:, guards:])), dim=1)
+        state = sim.step(state, actions)
+        first = torch.where((first < 0) & (state.reached > 0), torch.full_like(first, step + 1), first)
+    return ArmResult(reached=state.reached > 0, first_reach_step=first, final_pos=state.pos)

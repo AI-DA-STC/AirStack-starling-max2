@@ -2,11 +2,25 @@
 
 > **How to use this file.** Read it at the start of a session, after [../../CLAUDE.md](../../CLAUDE.md).
 > §4 is the current state, §5 is what is waiting on people. Update both before you stop.
-> Last updated: 18 November 2026, ~01:00, on the home RTX 5090 (Phase 3 W2 PASS). Before: 17 November 2026, ~22:30, on the home RTX 5090 (evening summary in §0). Before: ~07:00 (morning summary in §0). Before: ~05:30 (S2b Tasks 1–8 done (T13 FAIL, over/under passing), 9 Isaac seeds running, 10 docs being written, 8b deferred; see §0 S2b line). Before: ~03:00. Earlier: 16 November morning (**S2 CLOSED**: final whole-stage review done on Opus, one fix wave 4d0d409, wording c218cbb; owner ruled A and B; S2b plan approved and ready to start).
+> Last updated: 18 November 2026, ~05:30, on the home RTX 5090 (Phase 4: W3 PASS, rungs 1 to 3 scored, rungs 4 to 6 not run). Before: ~01:00 (Phase 3 W2 PASS). Before: 17 November 2026, ~22:30, on the home RTX 5090 (evening summary in §0). Before: ~07:00 (morning summary in §0). Before: ~05:30 (S2b Tasks 1–8 done (T13 FAIL, over/under passing), 9 Isaac seeds running, 10 docs being written, 8b deferred; see §0 S2b line). Before: ~03:00. Earlier: 16 November morning (**S2 CLOSED**: final whole-stage review done on Opus, one fix wave 4d0d409, wording c218cbb; owner ruled A and B; S2b plan approved and ready to start).
 
 ## 0. Resume here (for a new session or another Claude account)
 
 Everything needed is in this folder; nothing depends on the previous chat.
+
+### Phase 4 summary, 18 November 2026 ~05:30 — NUS port, transfer ladder (for the lead, the owner and the laptop session)
+
+Observed in the training simulator; nothing flown; no partner or hangar value here. Built and ran the plan `docs/plans/2026-11-18-nus-phase4-transfer-ladder.md` v2 with
+the owner's seven answers (hold in rung 2, no row 3h). **W3 PASS** (archive pair G19/S20 through the frozen Phase 3 gates, both arms). Ledger **W3 PASS, W4 to W6 INFO,
+W7 ABORTED**; records `records/2026-11-18_nus_phase4_*_record.md`; summary page `docs/NUS_PHASE4_RESULTS.md`. Rungs 1 to 3 scored (rows 1, 2.1, 2.2, 2, 3a, 3; the split of
+rung 2 fired). **Rungs 4, 5, 6 NOT run:** each is estimated at 4 to 5 h (limit 2 h); rung 4 was started and stopped, rows 5a, 5 and 6 never started; the lead or owner chooses
+(background run with `--accept-long`, core block only, or a filter-setting change). **Reading rule 2 fired on row 2.1** (float32 noise floor; diagnosed in the rung 2 record): the
+implementer continued; the lead confirms or rewords the rule. Core change: one hook, `SvgGame._draw_starts` (owner-approved), its test is `tests/test_game_draw_starts.py`.
+**Files** (all uncommitted, the lead commits; the core hook, its test and this HANDOFF line as one separate commit): `source/svg_training/core/game.py`, `tests/test_game_draw_starts.py`;
+new `source/svg_training/nus/{hangar,hangar_game,players,ladder}.py`, `configs/{nus_hangar.template,nus_hangar_game,nus_phase4}.toml`, `scripts/{nus_phase4,nus_phase4_w3,make_nus_phase4_figures}.py`,
+`tests/{test_nus_phase4.py,_nus_phase4_fixture.py}`; changed `nus/{outputs,outcome,strategy}.py`, `scripts/{nus_jax_common,nus_export_reference,nus_make_local_deploy}.py`,
+`tests/{test_nus_phase3_privacy,test_nus_rules_privacy}.py`, `docs/PLUG_IN.md`, `records/LEDGER.md`; new records and `docs/figures/nus_phase4_ladder.png`.
+**Waiting on the lead:** commit; `train-gatekeeper` read of the records; laptop privacy scans before merge (the partner value scans skip on the 5090; every diff and commit message by eye for short partner numbers). **How the privacy check was done:** `check_payload` on every committed text and an in-memory scan of every new or changed non-ignored file for the protected set in decimal and integer forms catch EQUALITY (and relative 1e-6 near-equality) with local values only, not ratios or common divisors; two ratio leaks were found by reading and removed (the per-sample smoothness column, which differs from the per-tick one by the hold length; reach times of replica and jump rows, which are multiples of the step length, now whole seconds) and run times are kept out of the records (throughput x run time shows the game length).
 
 ### Phase 3 summary, 18 November 2026 — NUS port, converted policy (for the owner and the laptop session)
 

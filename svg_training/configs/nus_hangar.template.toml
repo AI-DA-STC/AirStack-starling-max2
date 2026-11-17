@@ -1,0 +1,4 @@
+# Template of the hangar file (G1). Every value is the string "LOCAL" on purpose.
+# The real file is configs/local/nus_hangar.toml (git-ignored): the owner's arena side, chosen to fit the partner's start ring at the
+# owner's scale. Never type the value into a tracked file.
+arena_side_m = "LOCAL"

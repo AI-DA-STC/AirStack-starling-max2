@@ -29,7 +29,8 @@ import numpy as np  # noqa: E402
 
 from nus_jax_common import add_partner_paths, deterministic_actions, load_actor, make_adapter  # noqa: E402
 
-REFERENCE_DIR = Path(__file__).resolve().parents[1] / "runs" / "nus_port" / "reference"
+ROOT_RUNS = Path(__file__).resolve().parents[1] / "runs"
+REFERENCE_DIR = ROOT_RUNS / "nus_port" / "reference"
 ROLLOUT_KEYS = ("guard actions", "strike actions", "step")  # one random key for each
 
 
@@ -69,7 +70,7 @@ def rollout(adapter, bundle, team: str, kind: str, episodes: int, key):
     return {k: np.concatenate([np.swapaxes(np.stack(v), 0, 1).reshape(episodes * steps, *np.stack(v).shape[2:])], axis=0) for k, v in out.items()}
 
 
-def export_team(clone: Path, team: str, checkpoint: Path, episodes: int, seed: int) -> dict:
+def export_team(clone: Path, team: str, checkpoint: Path, episodes: int, seed: int, out_dir: Path = REFERENCE_DIR) -> dict:
     import jax
 
     bundle = load_actor(clone, checkpoint, team)
@@ -83,8 +84,8 @@ def export_team(clone: Path, team: str, checkpoint: Path, episodes: int, seed: i
     cat = {k: np.concatenate([p[k] for p in parts], axis=0) for k in parts[0]}
     actions = np.asarray(deterministic_actions(bundle, cat["obs"]), np.float32)
     actions32 = np.asarray(deterministic_actions(bundle32, cat["obs"]), np.float32)
-    REFERENCE_DIR.mkdir(parents=True, exist_ok=True)
-    path = REFERENCE_DIR / f"actions_{team}.npz"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    path = out_dir / f"actions_{team}.npz"
     np.savez_compressed(path, obs=cat["obs"].astype(np.float32), actions=actions, actions_f32=actions32, pos=cat["pos"], prev_pos=cat["prev"],
                         breach=cat["breach"], step=cat["step"], kind=np.concatenate(kinds))
     return {"team": team, "path": path, "states": cat["obs"].shape[0], "rows": cat["obs"].shape[0] * cat["obs"].shape[1],
@@ -99,21 +100,25 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--seed", required=True, type=int)
     parser.add_argument("--episodes-per-half", required=True, type=int)
     parser.add_argument("--starts", required=True, type=int)
+    parser.add_argument("--out-dir", type=Path, default=REFERENCE_DIR, help="default: the Phase 3 folder; Phase 4's W3 uses runs/nus_port/w3/reference")
     args = parser.parse_args(argv)
+    out_dir = args.out_dir.resolve()
+    if (ROOT_RUNS.resolve() not in (out_dir, *out_dir.parents)):
+        raise SystemExit("refusing: --out-dir must lie under runs/ (the files hold partner values)")
     add_partner_paths(args.clone)
     import jax
 
-    results = [export_team(args.clone, team, folder, args.episodes_per_half, args.seed + offset)
+    results = [export_team(args.clone, team, folder, args.episodes_per_half, args.seed + offset, out_dir)
                for offset, (team, folder) in enumerate((("guard", args.guard_checkpoint), ("strike", args.strike_checkpoint)))]
     apf_pos = np.concatenate([r["apf"]["pos"] for r in results])
-    np.savez_compressed(REFERENCE_DIR / "apf_states.npz", pos=apf_pos,
+    np.savez_compressed(out_dir / "apf_states.npz", pos=apf_pos,
                         strike_actions=np.concatenate([r["apf"]["strike_apf"] for r in results]).astype(np.float32),
                         guard_actions=np.concatenate([r["apf"]["guard_apf"] for r in results]).astype(np.float32))
     bundle = load_actor(args.clone, args.guard_checkpoint, "guard")
     adapter = make_adapter(bundle["config"])
     _, starts = adapter.reset_many(jax.random.split(jax.random.fold_in(jax.random.key(args.seed), 2), args.starts))
-    np.savez_compressed(REFERENCE_DIR / "starts.npz", pos=np.asarray(starts.p_pos, np.float32))
-    for path in sorted(REFERENCE_DIR.glob("*.npz")):
+    np.savez_compressed(out_dir / "starts.npz", pos=np.asarray(starts.p_pos, np.float32))
+    for path in sorted(out_dir.glob("*.npz")):
         print(f"{path.name}: sha256 {hashlib.sha256(path.read_bytes()).hexdigest()}")
     for r in results:
         print(f"{r['team']}: states {r['states']}, observation rows {r['rows']}")

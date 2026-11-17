@@ -39,7 +39,10 @@ def load_actor(clone: Path, checkpoint: Path, team: str, dtype_name: str | None 
     actor = TeamActor(config["obs_dim"], config["action_dim"], max_speed=speed, hidden_dim=policy["hidden_dim"],
                       num_blocks=policy["n_hidden_layers"], activation_name=policy["activation_type"], use_norm=policy["use_layernorm"],
                       dtype=dtype)
-    raw = serialization.msgpack_restore((checkpoint / "state.msgpack").read_bytes())["runner"]["policy"]["actor_params"]
+    if (checkpoint / "state.msgpack").exists():  # a runner checkpoint
+        raw = serialization.msgpack_restore((checkpoint / "state.msgpack").read_bytes())["runner"]["policy"]["actor_params"]
+    else:  # an archive entry (self-play archive): actor.msgpack holds the actor parameters at the top level
+        raw = serialization.msgpack_restore((checkpoint / "actor.msgpack").read_bytes())["actor_params"]
     template = actor.init(jax.random.key(0), jnp.zeros((1, 1, config["obs_dim"]), jnp.float32))["params"]
     params = serialization.from_state_dict(template, raw)
     return {"actor": actor, "params": params, "speed": speed, "config": config}

@@ -137,6 +137,7 @@ def test_g4_deploy_actor_wrapper_and_interface_chain_leaks_no_marker(tmp_path, m
 
     # the deploy script (code constants read from the fake clone; scale and weights names given on the command line)
     make = load_script("nus_make_local_deploy")
+    monkeypatch.setattr(make, "LOCAL_OUT_DIR", tmp_path / "local")   # Phase 4: --out is refused outside configs/local/; the test's own folder stands in
     with contextlib.redirect_stdout(captured):
         make.main(["--clone", str(clone), "--geometry-from", str(checkpoint), "--metres-per-unit", repr(values["metres_per_unit"]),
                    "--seconds-per-step", repr(values["seconds_per_step"]), "--hold-ticks", str(values["hold_ticks"]),

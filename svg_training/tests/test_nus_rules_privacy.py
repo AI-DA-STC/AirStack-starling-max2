@@ -171,7 +171,7 @@ _ALLOWED = {0, 1, -1, 2}
 
 def test_g2_partner_facing_code_has_no_numeric_literals():
     files = (sorted((ROOT / "source/svg_training/nus").glob("*.py")) + sorted((ROOT / "scripts").glob("nus_*.py"))
-             + sorted((ROOT / "tests").glob("test_nus_*.py")))
+             + sorted((ROOT / "tests").glob("test_nus_*.py")) + [ROOT / "scripts" / "make_nus_phase4_figures.py"])
     assert len(files) >= MIN_SCANNED_FILES
     bad = []
     for path in files:

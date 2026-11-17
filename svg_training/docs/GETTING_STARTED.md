@@ -71,6 +71,10 @@ At the end you should see `record: records/<name>_record.md` and the verdict lin
 ## B. On the host
 
 For a machine that already has Isaac Lab 2.3.2 in `~/IsaacLab` and conda `env_isaaclab`. This laptop has both.
+On a new machine, `scripts/workstation/setup_isaaclab_host.sh` builds the same set-up with the laptop's pinned
+versions (Python 3.11, PyTorch 2.7.0 for CUDA 12.8, Isaac Sim 5.1.0, Isaac Lab 2.3.2, skrl 2.1.0); run it with
+`--dry-run` first. Files that are not in git (the flight logs in `data/flight_logs/`, the construction-site world) come
+from the private bundle: [WORKSTATION_SETUP §1a](WORKSTATION_SETUP.md#1a-files-that-are-not-in-git).
 
 ```bash
 ~/miniconda3/envs/env_isaaclab/bin/python -m pytest -q          # tests

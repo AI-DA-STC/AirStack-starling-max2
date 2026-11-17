@@ -141,6 +141,13 @@ file once. Full guide: [BASESTATION.md](BASESTATION.md) §2. (Alternative with n
 to install: `use_foxglove_studio:=true` on the commander launch opens Studio inside the
 container.)
 
+#### Step 7 (optional) — the Strike vs Guard training pipeline
+
+Not needed to fly or to run the stack. It runs on the same machine as AirStack's simulator, but never at the same
+time (one GPU). Follow [svg_training/docs/GETTING_STARTED.md](../svg_training/docs/GETTING_STARTED.md) (container or
+host); on a training PC, [svg_training/docs/WORKSTATION_SETUP.md](../svg_training/docs/WORKSTATION_SETUP.md). Files not
+in git (flight logs, construction-site world) come from the private bundle.
+
 **Setup is now complete.** Starting and using the stack is a separate, every-session routine
 — next section.
 

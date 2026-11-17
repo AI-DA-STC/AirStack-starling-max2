@@ -36,10 +36,11 @@ Each row points to the page that answers the question.
 | I want to… | Go to |
 |---|---|
 | know what has been done so far, in plain words | [WHAT_WE_DID](docs/WHAT_WE_DID.md) |
-| run the tests | [GETTING_STARTED](docs/GETTING_STARTED.md) A2: `docker/run.sh '$SVG_PY -m pytest -q'` |
-| build the container | [GETTING_STARTED](docs/GETTING_STARTED.md) A1 |
-| run the benchmark | [GETTING_STARTED](docs/GETTING_STARTED.md) A3–A4 (container) or B (host) |
-| set up a training workstation (home RTX 5090 PC) | [WORKSTATION_SETUP](docs/WORKSTATION_SETUP.md) |
+| set up a machine (laptop or workstation) | [GETTING_STARTED](docs/GETTING_STARTED.md): pick your machine, then steps 1–7 |
+| run the tests | [GETTING_STARTED](docs/GETTING_STARTED.md#6-first-tests) step 6 (container or host) |
+| build the container | [GETTING_STARTED](docs/GETTING_STARTED.md#4-the-container-route-part-a) step 4 |
+| run the benchmark | [GETTING_STARTED, the S0 benchmark](docs/GETTING_STARTED.md#the-s0-benchmark) |
+| work with the home RTX 5090 workstation (push first, private bundle, NUS jobs, results back, remote access) | [WORKSTATION_SETUP](docs/WORKSTATION_SETUP.md) |
 | train a policy, without a window (headless) or with the Isaac Sim window | [TRAINING](docs/TRAINING.md) (planned workflow: nothing trains before S2) |
 | read the results | [S0_RESULTS](docs/S0_RESULTS.md), [S1_RESULTS](docs/S1_RESULTS.md), [S2_RESULTS](docs/S2_RESULTS.md), [S2B_RESULTS](docs/S2B_RESULTS.md); all records in [records/LEDGER.md](records/LEDGER.md) |
 | understand the design | [HOW_IT_WORKS](docs/HOW_IT_WORKS.md), then [DESIGN](docs/DESIGN.md) and [RESEARCH](docs/RESEARCH.md) |
@@ -61,7 +62,7 @@ The table lists what each folder holds.
 | `params/` | drone-model parameter sets: `real_exploratory_v0.toml` (used by tier 1), `airstack_sim_v0.toml` (simulator only) |
 | `tests/` | pytest; most tests need no Isaac |
 | `docker/` | the container image, built on NVIDIA's Isaac Lab 2.3.2, and its launchers |
-| `data/` | git-ignored copies of the real flight logs the pipeline reads (from the private bundle; see [WORKSTATION_SETUP §1a](docs/WORKSTATION_SETUP.md#1a-files-that-are-not-in-git)) |
+| `data/` | git-ignored copies of the real flight logs the pipeline reads (from the private bundle; see [GETTING_STARTED step 3](docs/GETTING_STARTED.md#3-copy-the-files-that-are-not-in-git)) |
 | `records/` | one record per run (its written summary) and the training ledger (the list of all runs), in git |
 | `runs/`, `docs/` | raw output of each run (not in git); the documents (`docs/notes/` holds investigation notes the results cite) |
 

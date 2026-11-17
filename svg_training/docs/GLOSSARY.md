@@ -91,10 +91,13 @@ The table lists which version of each tool runs where.
 
 | What | Version | Used by |
 |---|---|---|
-| Container image | `nvcr.io/nvidia/isaac-lab:2.3.2` = Isaac Lab 2.3.2 on Isaac Sim 5.1.0; ours is `svg-training:isaaclab-2.3.2` | the container ([docker/README](../docker/README.md)); run of record T1 |
-| Host install (this laptop) | `~/IsaacLab`, 2.3.2 plus 25 commits (`f73c331738`), none touching code tier 2 uses | host runs, conda `env_isaaclab` |
-| Host Python environment | conda `env_isaaclab`: Python 3.11, torch 2.7.0+cu128, Isaac Sim 5.1.0, skrl 2.1.0, gymnasium 1.2.1 | host runs |
+| Container image | `nvcr.io/nvidia/isaac-lab:2.3.2` = Isaac Lab 2.3.2 on Isaac Sim 5.1.0; ours is `svg-training:isaaclab-2.3.2` (not yet built on the 5090) | the container ([docker/README](../docker/README.md)); run of record T1 |
+| Host install, laptop (RTX 5070 Ti) | `~/IsaacLab`, 2.3.2 plus 25 commits (`f73c331738`), none touching code tier 2 uses | host runs on the laptop, conda `env_isaaclab` |
+| Host install, 5090 workstation | `~/IsaacLab` at the tag v2.3.2 exactly (`37ddf62687`), clean; MEASURED 17 Nov 2026 | host runs on the 5090, conda `env_isaaclab` |
+| Host Python environment, laptop | conda `env_isaaclab`: Python 3.11, torch 2.7.0+cu128, Isaac Sim 5.1.0, skrl 2.1.0, gymnasium 1.2.1 | host runs on the laptop |
+| Host Python environment, 5090 | conda `env_isaaclab`: Python 3.11, torch 2.7.0+cu128, Isaac Sim 5.1.0, skrl 2.1.0, warp-lang 1.14.0; MEASURED 17 Nov 2026, after the [hand fixes](GETTING_STARTED.md#hand-fixes-after-the-setup-script) | host runs on the 5090 |
 | Isaac Lab 3.0 | needs Isaac Sim 6.2 and Python 3.12 | later, on the training workstations |
 | AirStack simulator | Isaac Sim 5.1.0 + Pegasus + PX4 v1.16.1 | stage 6, simulated flight |
 | Real drones | PX4 1.14 | stage 7, real flight |
 | Laptop GPU driver | 580.178.04 (RTX 5070 Ti Laptop GPU, 12 GB) | T1 |
+| 5090 GPU driver | 580.126.09 (RTX 5090, 32 GB); MEASURED 17 Nov 2026 | host runs on the 5090 |

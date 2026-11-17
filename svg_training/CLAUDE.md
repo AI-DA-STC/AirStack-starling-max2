@@ -31,7 +31,7 @@ Isaac Lab task (Task 8b) is not yet built ([docs/S2B_RESULTS.md](docs/S2B_RESULT
 | [docs/RESEARCH.md](docs/RESEARCH.md) | state of the art as of 14 November 2026, with sources; the evidence behind the design |
 | [docs/S0_RESULTS.md](docs/S0_RESULTS.md), [docs/S1_RESULTS.md](docs/S1_RESULTS.md), [docs/S2_RESULTS.md](docs/S2_RESULTS.md), [docs/S2B_RESULTS.md](docs/S2B_RESULTS.md), [docs/GLOSSARY.md](docs/GLOSSARY.md) | S0's, S1's, S2's and S2b's numbers and limits; terms and the one Versions table |
 | [docs/PLUG_IN.md](docs/PLUG_IN.md) | how a partner plugs a strategy or a training method into the game and scores it |
-| [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md) | the human path from a clone to tests and a benchmark run; `run_s0.sh` exit codes |
+| [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md) | setting up any machine (laptop or 5090 workstation, side by side), then tests and a benchmark run; `run_s0.sh` exit codes |
 | [docs/linear/README.md](docs/linear/README.md) | this project in Linear (P-NEAR-31): how an update goes (`updates/` → owner uploads → `synced/` → `snapshots/`), the latest snapshot, the owner's Linear rules |
 | [docs/pipeline/training-pipeline.pptx](docs/pipeline/training-pipeline.pptx) | the diagrams (editable flowchart shapes); rebuilt by `docs/pipeline/build_deck.py` |
 | [../CLAUDE.md](../CLAUDE.md) | the repository's own rules (iron rules, two clones, more than one Claude session) — they still apply here |
@@ -76,17 +76,19 @@ Agents (in `.claude/agents/`, described in [docs/claude/AGENTS_AND_SKILLS.md](do
 `train-flight-interface-reviewer`, `train-gatekeeper` (advisers, read-only) and
 `train-implementer` (the only one that writes code).
 
-## Environment (verified 2026-11-14 on this laptop)
+## Environment (laptop verified 2026-11-14; 5090 set up 2026-11-17)
 
 | Item | Value |
 |---|---|
-| This laptop | RTX 5070 Ti Laptop GPU, 12 GB, driver 580.178; 24 threads; 30 GB RAM — development and smoke tests |
-| Training machines | RTX 5090, RTX PRO 6000 or RTX 6000 Ada workstations, later (none inspected yet) |
+| Laptop (RTX 5070 Ti) | RTX 5070 Ti Laptop GPU, 12 GB, driver 580.178; 24 threads; 30 GB RAM — development and smoke tests |
+| Home RTX 5090 workstation | RTX 5090, 32 GB, driver 580.126.09 (MEASURED 17 Nov). Host env built with hand fixes, container not built, Isaac preflight refuses (OPEN). Setup: [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md); its record and the OPEN decision: [docs/WORKSTATION_SETUP.md](docs/WORKSTATION_SETUP.md) |
+| Other training machines | RTX PRO 6000 or RTX 6000 Ada workstations, later (none inspected yet) |
 | Isaac Lab, in the container (the repository's way) | image `svg-training:isaaclab-2.3.2`, built by `docker/build.sh` on NVIDIA's `nvcr.io/nvidia/isaac-lab:2.3.2`; see [docker/README.md](docker/README.md) |
-| Isaac Lab, on this laptop's host | `~/IsaacLab`, version 2.3.2 plus 25 commits (`f73c331738`; none touch code tier 2 uses), clean; **do not edit it** |
-| Python environment | conda `env_isaaclab`: Python 3.11, torch 2.7.0+cu128, Isaac Sim 5.1.0 (pip), skrl 2.1.0, rsl_rl 5.0.1 |
+| Isaac Lab, on the laptop's host | `~/IsaacLab`, version 2.3.2 plus 25 commits (`f73c331738`; none touch code tier 2 uses), clean; **do not edit it**. The 5090's: tag v2.3.2 (`37ddf62687`) |
+| Python environment (laptop) | conda `env_isaaclab`: Python 3.11, torch 2.7.0+cu128, Isaac Sim 5.1.0 (pip), skrl 2.1.0, rsl_rl 5.0.1 |
 | AirStack simulator | Isaac Sim 5.1.0 + Pegasus + PX4 v1.16.1 in docker (`tools/sim.sh`); real drones run PX4 1.14 |
-| Known trap | starting Isaac Sim with a window over remote desktop has crashed this laptop's WiFi firmware: run headless, or be on Ethernet or at the machine |
+| Known trap (laptop) | starting Isaac Sim with a window over remote desktop has crashed the laptop's WiFi firmware: run headless, or be on Ethernet or at the machine |
+| Known trap (5090) | its shell sources ROS: `unset PYTHONPATH` before any `env_isaaclab` command ([hand fix 6](docs/GETTING_STARTED.md#hand-fixes-after-the-setup-script)) |
 
 ## Git facts that bite
 

@@ -1,52 +1,256 @@
-# Getting started: from a clone to a benchmark run
+# Getting started: set up a machine, then run the tests and a benchmark
 
-This page has three goals, in order. First the tests pass. Then a trial run prints its plan without starting
-anything (a *dry run*). Then the S0 benchmark runs and writes its summary (the *record*). Terms are in the
+This is the one setup guide for every machine: the laptop, the home RTX 5090 workstation, or a new one. It has
+three goals, in order. First the machine is set up and the tests pass. Then a trial run prints its plan without
+starting anything (a *dry run*). Then the S0 benchmark runs and writes its summary (the *record*). Terms are in the
 [glossary](GLOSSARY.md).
 
-Use the container (part A) unless Isaac Lab is already installed on your machine (part B). A *container* is a
-sealed copy of the software that runs the same way on every machine.
+There are two ways to run the pipeline. A *container* is a sealed copy of the software that runs the same way on
+every machine (the *container route*). The *host route* installs Isaac Lab and a Python environment on the machine
+itself. A machine can have both.
 
-## What you need
+## Pick your machine
 
-The table lists what the machine needs before you start.
+Every step below has the same order on every machine. Where a step differs by machine, a small table says how.
+
+| Machine | What it is for | Where it stands (17 November 2026) |
+|---|---|---|
+| Laptop (RTX 5070 Ti, 12 GB) | build, test, record and commit; smoke runs | set up: the container (the S0 run of record T1 ran in it) and the host route |
+| Workstation (home RTX 5090, 32 GB) | long runs | host route built with the hand fixes (step 5); container not built; Isaac preflight refuses (step 7) |
+| Another new machine | — | a fresh install: follow the 5090 column |
+
+In the step tables below, 5090 cells are MEASURED on 17 November 2026; laptop cells come from this folder's
+existing pages and records.
+
+Rebuilding the laptop from scratch: use the same steps. The hand fixes likely apply too (observed on the 5090, not
+run on the laptop). Working with a second machine (pushing first, the private bundle, NUS jobs, bringing results
+back, remote access): [WORKSTATION_SETUP](WORKSTATION_SETUP.md).
+
+**What the machine needs.**
 
 | Item | Detail |
 |---|---|
-| NVIDIA GPU and driver | T1 ran on an RTX 5070 Ti Laptop GPU, driver 580.178.04 |
+| NVIDIA GPU and driver | driver 580 or newer. T1 ran on the laptop's RTX 5070 Ti Laptop GPU, driver 580.178.04 |
 | GPU memory | at least 12 GB: T1 used up to 7.6 GB device-wide on 12 GB; Isaac Sim states a 16 GB minimum |
-| Docker + NVIDIA Container Toolkit | the container starts with `--gpus all` |
-| Disk | about 26 GB for NVIDIA's Isaac Lab image, downloaded once by `docker/build.sh` |
+| Docker + NVIDIA Container Toolkit | for the container route; the container starts with `--gpus all` |
+| Disk | 60 GB free or more (step 2 checks it); NVIDIA's Isaac Lab image alone is about 26 GB |
 | Internet, first tier 2 run | Isaac Lab downloads its drone asset the first time |
 | A free GPU | no AirStack simulator, flight session or other Isaac process running; check with `nvidia-smi` on the host |
 
-T1 is the official run whose numbers we keep (the *run of record*) for S0. Every command below runs from the
-folder: `cd ~/AirStack-starling-max2/svg_training`.
-
-## A. In the container (the repository's way)
-
-**A1 · Build the image, once.**
+## 1. Get the code
 
 ```bash
-docker/build.sh
+git clone https://github.com/AI-DA-STC/AirStack-starling-max2.git ~/AirStack-starling-max2   # new machine, once
+git -C ~/AirStack-starling-max2 pull           # later, to update (workstation or new machine only)
+cd ~/AirStack-starling-max2/svg_training
+mkdir -p runs          # run output goes here; it is not in git, so a fresh clone lacks it and one test fails
 ```
 
-You should see `built svg-training:isaaclab-2.3.2`. The code is mounted when the container starts, so a code
-change needs no rebuild. What the image holds and where it stores things: [docker/README](../docker/README.md).
+Every command on this page runs from `~/AirStack-starling-max2/svg_training`.
 
-**A2 · Run the tests.**
+| Laptop | 5090 workstation |
+|---|---|
+| the live clone: commits land here, so there is nothing to clone | clones from GitHub, so push from the laptop first ([WORKSTATION_SETUP §0](WORKSTATION_SETUP.md#0-before-you-leave-the-laptop-push-first)) |
+
+## 2. Check the machine
+
+```bash
+scripts/workstation/check_machine.sh                  # --skip-docker leaves out the Docker check
+```
+
+It checks the GPU, the driver (580 or newer), the Ubuntu version, free disk (60 GB or more), Docker with the GPU and
+conda. Exit 0 means go; fix every FAIL line first. It changes no settings, but its Docker check downloads the small
+`ubuntu` image the first time.
+
+| Laptop | 5090 workstation |
+|---|---|
+| written there; run only with `--dry-run` | 17 Nov: 0 failed, 2 warnings. The GPU has users (the remote-desktop daemon), and tmux is missing: install it with `sudo apt install tmux`. The Docker check downloaded `ubuntu:latest` (102 MB) |
+
+## 3. Copy the files that are not in git
+
+Everything the pipeline needs lives inside the repository folder, either in git or in a git-ignored folder you
+copy by hand. Nothing is read from other project folders (owner, 17 November 2026). The one exception is the
+AirStack simulator's own output under `~/flight_logs/sim/`, which `scripts/record_steps.sh` collects from
+`tools/sim.sh`.
+
+| What | Where it goes | Needed for |
+|---|---|---|
+| Three real flight logs of 13 November (`log103.ulg`, `log105.ulg`, `08_47_58.ulg`, 51 MB) | `svg_training/data/flight_logs/2026-11-13/` (git-ignored), same sub-folders as in the bundle | the S2b step tests (`configs/s2b.toml [step_tests] real_log`) and the S1 real-log fit (`scripts/fit_real_px4.py`) |
+| Partner's code, checkpoints, reference logs | outside the repository, as the bundle's NOTES say | NUS jobs only |
+| Construction-site world, `source/` and `build/` (about 280 MB, bought asset) | `localisation/scenes/construction_site/` in the clone, beside its README | the construction-site clips and screenshots only; training, scoring, tests and the other worlds do not use it |
+
+The first two rows come in the private bundle (`~/svg_workstation_bundle/` on the laptop). Copy it by USB, a private
+drive or `scp`; it never goes to GitHub. Its NOTES name each folder and give the sha256 of each archive: check them
+before unpacking. The construction-site world is not in the bundle: copy it by hand.
+
+| Laptop | 5090 workstation |
+|---|---|
+| holds the private bundle | none of the three copied yet (17 Nov) |
+
+## 4. The container route (part A)
+
+```bash
+docker/build.sh                 # once; downloads NVIDIA's base image (about 26 GB)
+```
+
+You should see `built svg-training:isaaclab-2.3.2`. The code is mounted when the container starts, so a code change
+needs no rebuild. What the image holds and where it stores things: [docker/README](../docker/README.md).
+
+| Laptop | 5090 workstation |
+|---|---|
+| built; T1 ran in it | not built yet |
+
+## 5. The host route (part B)
+
+The host route needs Isaac Lab 2.3.2 in `~/IsaacLab` and the conda environment `env_isaaclab`. The setup script
+builds both with the laptop's pinned versions (Python 3.11, PyTorch 2.7.0 for CUDA 12.8, Isaac Sim 5.1.0, Isaac Lab
+2.3.2, skrl 2.1.0; the list is `scripts/workstation/env_isaaclab_requirements.txt`).
+
+```bash
+scripts/workstation/setup_isaaclab_host.sh --dry-run    # prints every step; read it
+scripts/workstation/setup_isaaclab_host.sh              # builds it; stops with exit 4 if env_isaaclab exists
+```
+
+Isaac Lab is the tag `v2.3.2` by default. The laptop runs 2.3.2 plus 25 commits (`f73c331738`, none in code the
+pipeline uses); add `--isaaclab-ref f73c331738` to match it exactly. Never edit `~/IsaacLab`. The script does not
+accept NVIDIA's licence for you (fix 4 below). Today it stops with exit 1 on a fresh install: then do the hand fixes.
+
+| Laptop | 5090 workstation |
+|---|---|
+| has `~/IsaacLab` (`f73c331738`) and `env_isaaclab`. The script has not run there (dry run only) | 17 Nov, default `v2.3.2`: exit 1. The script's steps 1–4 ran cleanly; its step 5 left out the core `isaaclab` package and changed torch; its step 9 (the tests) failed. The hand fixes finished it |
+
+Versions on both machines: [GLOSSARY, Versions](GLOSSARY.md#versions).
+
+### Hand fixes after the setup script
+
+A dated workaround (17 November 2026); the script is not yet fixed. `setup_isaaclab_host.sh` does not do these
+yet. Run them after it, in one terminal, in this order. Fixes 1–5 apply to any fresh install today. Fix 6 applies
+only where the shell sources ROS (the 5090's does); its line is in the first block below, so it runs first.
+
+```bash
+cd ~/AirStack-starling-max2/svg_training
+P=~/miniconda3/envs/env_isaaclab/bin/python
+unset PYTHONPATH    # fix 6: only if your shell sources ROS (the 5090's does)
+```
+
+**A. Any fresh install today**
+
+1. **The core `isaaclab` package is missing.** The script's step 5 builds `flatdict==4.0.1` from source with the
+   newest setuptools (84.2.1), which no longer has `pkg_resources`. The installer carries on: the other five Isaac Lab
+   packages install, `isaaclab` does not.
+   ```bash
+   $P -m pip install "setuptools<81"
+   $P -m pip install --no-build-isolation flatdict==4.0.1
+   $P -m pip install --no-build-isolation -e ~/IsaacLab/source/isaaclab
+   ```
+2. **CUDA 13 libraries left behind.** `isaaclab_rl` needs `torch>=2.7`, so the script's step 5 installs torch 2.15.0
+   for CUDA 13 with its libraries. The script's step 6 puts torch back to 2.7.0+cu128 but leaves those libraries.
+   Removing them also deletes files that torch's CUDA 12 libraries share (`ImportError: libcudnn.so.9`), so reinstall
+   those after. On the 5090 this was done by hand; the lines below rebuild it from pip's own data. Their list commands
+   were checked against the 5090 env (the reinstall list matches what was reinstalled by hand); the uninstall has not
+   been run as written (PROPOSED). Read the list before you uninstall. An empty list means there is nothing to do.
+   ```bash
+   G=$($P -m pip list --format=freeze | grep -iE '^(cuda|nvidia)' | grep -viE -- '-cu12==' | cut -d= -f1)
+   echo $G    # expect cuda-toolkit, nvidia-*-cu13 and nvidia-* without a suffix; stop if anything else shows
+   if [ -n "$G" ]; then
+     $P -m pip uninstall -y $G
+     $P -m pip install --force-reinstall --no-deps $($P -c "import importlib.metadata as m; print(' '.join(r.split(';')[0].replace(' ', '') for r in m.requires('torch') if r.startswith(('nvidia-', 'triton'))))")
+   fi
+   ```
+3. **Packages without a pin drift from the laptop.** Isaac Lab leaves `warp-lang` unpinned (the 5090 got 1.19.0;
+   the laptop has 1.14.0), and `stable_baselines3`, `tensordict` and `starlette` came newer too. Match the laptop:
+   ```bash
+   $P -m pip install warp-lang==1.14.0 starlette==0.49.1 tensordict==0.12.4 stable_baselines3==2.8.0 pandas==3.0.3
+   ```
+   The laptop's full list is `scripts/workstation/env_isaaclab_freeze_laptop.txt`; the script's step 8 prints the
+   differences.
+4. **NVIDIA's licence.** On the 5090 the script ran with `OMNI_KIT_ACCEPT_EULA=YES` (the owner's choice). That lasts
+   for one command only. A later process with no terminal, such as pytest's preflight test, then stops with
+   `Unable to bootstrap inner kit kernel: EOF when reading a line`. Start Isaac Sim once from a terminal, read the
+   licence and accept it yourself. That writes `yes` into the file below. On the 5090 the file was written with the
+   owner's approval. Deleting it undoes the acceptance.
+   ```bash
+   cat ~/miniconda3/envs/env_isaaclab/lib/python3.11/site-packages/isaacsim/kit/EULA_ACCEPTED    # must print yes
+   ```
+5. **No `runs/` folder in a fresh clone** (it is git-ignored). `tests/test_record_steps.py` then fails with
+   `FileNotFoundError` in `test_refuses_existing_run_folder`. The `mkdir -p runs` in step 1 of this page makes it.
+
+**B. Only where the shell sources ROS (the 5090)**
+
+6. **ROS on `PYTHONPATH`.** ROS's Python 3.12 folders leak into `env_isaaclab` (Python 3.11). The tests stop with
+   `ModuleNotFoundError: No module named 'lark'` from a ROS pytest plugin; pip prints conflicts for ROS packages, and
+   the script's step 8 diff lists them. Clear it in every new terminal before any `env_isaaclab` command (the first
+   block of this section already does):
+   ```bash
+   unset PYTHONPATH
+   ```
+   To check: `echo $PYTHONPATH`; a path under `/opt/ros/` means your shell sources ROS. From `svg_training/`,
+   `PYTHONPATH=source` works too. `scripts/run_s0.sh` sets that itself.
+
+**Check.** Expect torch `2.7.0+cu128`, `True` (the GPU is seen) and warp `1.14.0`.
+
+```bash
+$P -c "import torch, isaaclab, warp; print(torch.__version__, torch.cuda.is_available(), warp.config.version)"
+```
+
+## 6. First tests
+
+Container route:
 
 ```bash
 docker/run.sh '$SVG_PY -m pytest -q'
 ```
 
-The tests passed if the last line has no `failed`. Two skipped tests in the container are normal: they only run
-on the host.
-
-**A3 · Dry run.** It prints every command the benchmark would run and starts nothing.
+Host route:
 
 ```bash
-docker/run.sh bash scripts/run_s0.sh --dry-run 2026-11-20_s0_trial <approved sha256> | head -40
+unset PYTHONPATH                # only if your shell sources ROS (hand fix 6)
+~/miniconda3/envs/env_isaaclab/bin/python -m pytest -q -p no:cacheprovider
+```
+
+The tests passed if the last line has no `failed`. Two skipped tests in the container are normal: they only run on
+the host.
+
+| Laptop | 5090 workstation |
+|---|---|
+| both routes in use; every S0 run starts with the tests (`runs/<name>/tests.txt`) | host, 17 Nov: 798 passed, 11 skipped, in 5 min 46 s. Eight skips are Isaac tests that need `SVG_ISAAC_TESTS=1` after preflight; three need private files not yet copied. Container: not built |
+
+## 7. The first Isaac check (preflight)
+
+Run this before every Isaac Sim start, and always run Isaac headless (without a window).
+
+```bash
+nvidia-smi                      # the GPU is free: no AirStack simulator, flight session or other Isaac process
+scripts/isaac_preflight.sh      # exit 0 means go
+```
+
+Exit 10: WiFi only, with a remote-desktop program running. Exit 11: another process holds more than 500 MiB of GPU
+memory. `--approved-headless` turns exit 10 into a warning; use it only where the owner has approved it for that
+machine.
+
+| Laptop | 5090 workstation |
+|---|---|
+| starting Isaac Sim with a window over remote desktop has crashed its WiFi firmware. The owner approved headless launches on it over WiFi (16 Nov, "yes dont worry about wifi"); `--approved-headless` returned 0 before each point of the S2b speed run ([record](../records/2026-11-16_s2b_throughput_record.md)). Plain run: not recorded | 17 Nov: exit 10, and exit 11 with `--approved-headless`. Not yet passed: an OPEN owner decision, causes and options in [WORKSTATION_SETUP §2c](WORKSTATION_SETUP.md#2c-preflight-on-the-5090-open-owner-decision) |
+
+## Container or host?
+
+| Situation | Use |
+|---|---|
+| The tests and the S0 benchmark, a run of record | the container: one known image, the same as T1, so the numbers compare |
+| The S2b Isaac stand-in seeds | the host: the stand-in trainer needs skrl 2.x and the container has 1.4.3 |
+| Quick tests | either; the host skips the container start (on the 5090, the host only, until the image is built) |
+| The host's Isaac Lab differs from 2.3.2 | the container |
+
+## The S0 benchmark
+
+**Dry run.** It prints every command the benchmark would run and starts nothing.
+
+```bash
+docker/run.sh bash scripts/run_s0.sh --dry-run 2026-11-20_s0_trial <approved sha256> | head -40   # container route
+```
+
+```bash
+bash scripts/run_s0.sh --dry-run 2026-11-20_s0_trial <approved sha256> | head -40                 # host route
 ```
 
 <a id="approved-sha256"></a>**The approved sha256** (the config T1 ran, [record](../records/2026-11-15_s0_laptop_record.md#config)):
@@ -59,41 +263,23 @@ before a run (the *gates*) are never moved.
 The dry run prints the plan for where it runs: host paths on the host, container paths inside `docker/run.sh`.
 `head -40` keeps it short, because tier 2 adds one long line per point.
 
-**A4 · The benchmark.** Pick a new name, `YYYY-MM-DD_s0_<label>` (lowercase letters, digits, `_`).
+**The benchmark.** Pick a new name, `YYYY-MM-DD_s0_<label>` (lowercase letters, digits, `_`).
 
 ```bash
-docker/run.sh bash scripts/run_s0.sh 2026-11-20_s0_workstation <approved sha256>
+docker/run.sh bash scripts/run_s0.sh 2026-11-20_s0_workstation <approved sha256>   # container route
+```
+
+```bash
+bash scripts/run_s0.sh 2026-11-20_s0_workstation <approved sha256>                 # host route
 ```
 
 At the end you should see `record: records/<name>_record.md` and the verdict line. Run it without a window
-(*headless*), and do not use the GPU for anything else meanwhile.
+(*headless*), and do not use the GPU for anything else meanwhile. On the host the script finds Python and Isaac Lab
+by itself; tier 2 starts through `conda run -n env_isaaclab`.
 
-## B. On the host
-
-For a machine that already has Isaac Lab 2.3.2 in `~/IsaacLab` and conda `env_isaaclab`. This laptop has both.
-On a new machine, `scripts/workstation/setup_isaaclab_host.sh` builds the same set-up with the laptop's pinned
-versions (Python 3.11, PyTorch 2.7.0 for CUDA 12.8, Isaac Sim 5.1.0, Isaac Lab 2.3.2, skrl 2.1.0); run it with
-`--dry-run` first. Files that are not in git (the flight logs in `data/flight_logs/`, the construction-site world) come
-from the private bundle: [WORKSTATION_SETUP §1a](WORKSTATION_SETUP.md#1a-files-that-are-not-in-git).
-
-```bash
-~/miniconda3/envs/env_isaaclab/bin/python -m pytest -q          # tests
-bash scripts/run_s0.sh --dry-run <name> <approved sha256>         # dry run
-bash scripts/run_s0.sh <name> <approved sha256>                   # the benchmark
-```
-
-The script finds Python and Isaac Lab by itself. Tier 2 starts through `conda run -n env_isaaclab`.
-Never edit `~/IsaacLab`. Versions of both set-ups: [GLOSSARY, Versions](GLOSSARY.md#versions).
-
-## Which to use
-
-The table says which set-up fits which situation.
-
-| Situation | Use |
+| Laptop | 5090 workstation |
 |---|---|
-| A new machine, a training workstation, a run of record | the container: one known image, same as T1 |
-| Quick tests on this laptop | either; the host skips the container start |
-| The host's Isaac Lab differs from 2.3.2 | the container |
+| T1 ran in the container | not run yet; a config for 32 GB needs the owner's approval ([WORKSTATION_SETUP §2](WORKSTATION_SETUP.md#2-the-first-evening-in-order)) |
 
 ## Reading the output
 

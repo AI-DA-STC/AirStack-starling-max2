@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Rebuild the laptop's host set-up for Isaac Lab on a workstation (docs/WORKSTATION_SETUP.md, host route).
+# Rebuild the laptop's host set-up for Isaac Lab on a workstation (docs/GETTING_STARTED.md step 5, host route).
 # UNTESTED ON THE 5090: written and checked on the laptop with `bash -n` and --dry-run only (2026-11-17).
 #
 #   scripts/workstation/setup_isaaclab_host.sh [--dry-run] [--env NAME] [--isaaclab-dir DIR]
@@ -143,4 +143,4 @@ else
 fi
 
 echo
-echo "done. Next: docs/WORKSTATION_SETUP.md (Isaac runs start with scripts/isaac_preflight.sh, headless)."
+echo "done. Next: docs/GETTING_STARTED.md step 5 hand fixes, then steps 6-7 (Isaac runs start with scripts/isaac_preflight.sh, headless)."

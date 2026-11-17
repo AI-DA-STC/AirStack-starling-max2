@@ -16,10 +16,10 @@ The table shows what works now and which build step brings the rest.
 
 | Item | Where it stands | Arrives with |
 |---|---|---|
-| Container image, shell in it, tests | works: [GETTING_STARTED](GETTING_STARTED.md) A1–A2, `docker/run.sh` opens a shell | S0 |
+| Container image, shell in it, tests | works: [GETTING_STARTED](GETTING_STARTED.md) steps 4 and 6, `docker/run.sh` opens a shell | S0 |
 | Training libraries in the image | present: `skrl`, `rsl_rl`, `isaaclab_tasks`, `isaaclab_rl`, `tensorboard` (checked 15 Nov) | already there |
-| S0 benchmark, headless | works: [GETTING_STARTED](GETTING_STARTED.md) A3–A4 or B | S0 |
-| Isaac Sim with a window, on the host | available: Isaac Lab's own commands (§5) on NVIDIA's example tasks, not our game; not yet run on this laptop | already there |
+| S0 benchmark, headless | works: [GETTING_STARTED, the S0 benchmark](GETTING_STARTED.md#the-s0-benchmark) | S0 |
+| Isaac Sim with a window, on the host | available: Isaac Lab's own commands (§5) on NVIDIA's example tasks, not our game; not yet run on the laptop or the 5090 | already there |
 | Our game, rewards, `scripts/train.py` and `scripts/evaluate.py` | **planned** | S2 |
 | Our game on tier 2 (the only tier with an Isaac Sim window) | **planned** | S4 (S2 if the fallback of [DESIGN §7](DESIGN.md#7-environments-and-contact-tags) is taken) |
 | A window from the container (X11 option in `docker/run.sh`) | **planned**, not scheduled | not scheduled |
@@ -55,11 +55,11 @@ fingerprint of a file that changes if the file changes.
 | Gates are written | the step's `gates.toml` exists before the first run and is never edited ([STANDARDS §7](../STANDARDS.md#7-evaluation-and-gates)) |
 | Seeds | every run fixes and records its seed; a claim that a method is better needs at least 3 seeds |
 | Name and place | name `YYYY-MM-DD_s2_<label>`; output in `runs/<name>/` (not in git), record in `records/` ([STANDARDS §8](../STANDARDS.md#8-runs-and-records)) |
-| Where you sit | anything that opens a window: at the machine or on Ethernet. Opening Isaac Sim over the remote desktop has crashed this laptop's WiFi firmware ([CLAUDE.md](../CLAUDE.md)) |
+| Where you sit | anything that opens a window: at the machine or on Ethernet. Opening Isaac Sim over the remote desktop has crashed the laptop's (RTX 5070 Ti) WiFi firmware ([CLAUDE.md](../CLAUDE.md)) |
 
 ## 4. Headless training
 
-**In the container** (the repository's way; image from [GETTING_STARTED](GETTING_STARTED.md) A1):
+**In the container** (the repository's way; image from [GETTING_STARTED](GETTING_STARTED.md) step 4):
 
 ```bash
 nvidia-smi                                                       # on the host: GPU free
@@ -67,7 +67,9 @@ docker/run.sh '$SVG_PY scripts/train.py 2026-12-01_s2_guard_seed0 <approved sha2
 docker/run.sh svg-isaaclab -p scripts/train.py 2026-12-01_s2_t2_seed0 <approved sha256> --tier 2 --headless --num-games 1024 --seed 0   # planned (S4)
 ```
 
-**On the host** (conda `env_isaaclab` and `~/IsaacLab`, as in [GETTING_STARTED](GETTING_STARTED.md) B):
+**On the host** (conda `env_isaaclab` and `~/IsaacLab`, as in [GETTING_STARTED](GETTING_STARTED.md) step 5). On a shell
+that sources ROS (the 5090's does), run `unset PYTHONPATH` first in every terminal below
+([GETTING_STARTED, hand fix 6](GETTING_STARTED.md#hand-fixes-after-the-setup-script)).
 
 ```bash
 conda activate env_isaaclab
@@ -112,7 +114,7 @@ the partner's game values must not leave the laptop. Nothing trains yet: the fir
 stand-in trainer in S2b.
 
 **Practise the controls today** on NVIDIA's quadcopter example. It trains one drone to fly to a point. It is not
-our game, and it has not yet been run this way on this laptop. Isaac Lab writes `logs/` into the current folder, so
+our game, and it has not yet been run this way on the laptop or the 5090. Isaac Lab writes `logs/` into the current folder, so
 start in `runs/practice/`:
 
 ```bash
@@ -199,10 +201,10 @@ The table lists common problems and what to do.
 | Symptom | What to do |
 |---|---|
 | GPU busy (S0: exit 66 or 68) | stop the AirStack simulator, the benchmark or the other Isaac process; `nvidia-smi` on the host |
-| Out of memory | fewer games (halve `--num-games` / `--num_envs`); the window costs memory too; the laptop has 12 GB |
+| Out of memory | fewer games (halve `--num-games` / `--num_envs`); the window costs memory too; the laptop has 12 GB, the 5090 32 GB |
 | No window from the container | expected: headless only today. Use the host, or wait for the planned window option |
 | Black window, or the remote desktop drops | do not open Isaac's window over the remote desktop: sit at the machine or use Ethernet; watch TensorBoard remotely instead |
-| WiFi drops when Isaac starts | known on this laptop: Isaac keeps running, the WiFi firmware crashed; reconnect over Ethernet |
+| WiFi drops when Isaac starts | known on the laptop (RTX 5070 Ti): Isaac keeps running, the WiFi firmware crashed; reconnect over Ethernet |
 | Isaac crashes at start-up | the S0 benchmark retries such a point once (`retried_points.txt`); the training start command will too (planned, S2) |
 | Training slow | sensing costs most: tier 1 5 v 3 ran 98.3 million drone-steps / s in the open arena, 382,206 with full sensing ([S0_RESULTS](S0_RESULTS.md)) |
 | No video written | add `--video` (it turns cameras on); check `videos/` in the run folder. The image and the host env have `moviepy` and `imageio_ffmpeg` (checked 15 Nov), so no system `ffmpeg` is needed |

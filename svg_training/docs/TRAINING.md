@@ -107,8 +107,9 @@ the details). Version 2.20 is installed in `env_isaaclab`.
 | `game/` | the game's numbers at each evaluation: how often the trained Guard team holds the zone against each scripted Strike behaviour, the share of games won by time-out, the closest Guard–Strike approach (3-D: minimum and 5th percentile), how often the collision filter changes a command, game-steps per second |
 | text | the run's settings: game config hash, seed, simulator (PyTorch or Isaac Lab), rules preset |
 
-Runs are logged to TensorBoard on the laptop only. No cloud dashboard (Weights & Biases or similar) is used:
-the partner's game values must not leave the laptop. Nothing trains yet: the first run with these curves is the
+Runs are logged to TensorBoard on the owner's own machines only: the laptop and the home RTX 5090 workstation
+(owner, 17 November 2026: partner code and values may live on the 5090, his personal desktop). No cloud dashboard
+(Weights & Biases or similar) is used: the partner's game values must not leave those two machines. Nothing trains yet: the first run with these curves is the
 stand-in trainer in S2b.
 
 **Practise the controls today** on NVIDIA's quadcopter example. It trains one drone to fly to a point. It is not

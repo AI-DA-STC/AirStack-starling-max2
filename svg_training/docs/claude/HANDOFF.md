@@ -45,7 +45,14 @@ git-ignored `configs/local/` and `runs/`.
 2. Accept the Phase 1 FAIL (cause confirmed by NUS); approve the PROPOSED gate numbers in `PORT_PLAN.md`.
 3. Go for a full NUS self-play run on the 5090 (a few hours) on the chosen hangar geometry.
 4. 5090 Isaac preflight: Ethernet/no remote desktop, or change the 500 MiB rule (blocks seed 3 and Isaac phases).
-5. Merge `docs-5090-setup` and `nus-port-phase2` on the laptop; run `test_partner_privacy.py` there (its value scan
+5. **Container route is incomplete (found 17 Nov on the 5090, first container suite run since T1):** image
+   `svg-training:isaaclab-2.3.2` built; `docker/run.sh '$SVG_PY -m pytest -q'` gives 704 passed, 29 failed, 13 errors
+   (host: 820 passed). Causes: skrl 1.4.3 in the image (stand-in trainer tests need 2.x; 27 + 2 adapter tests);
+   `svg_ground_control` not importable because only `svg_training/` is mounted (`docker/run.sh:32`; 7 filter tests);
+   bare `python` subprocesses without torch/toml (3). Not 5090-specific. Fix on the laptop: (a) skip host-only tests
+   in the container, or (b) skrl 2.x in the image + AirStack read-only mount (docker change: CHANGES.md entry).
+   GETTING_STARTED's "two skipped tests in the container are normal" is out of date.
+6. Merge `docs-5090-setup` and `nus-port-phase2` on the laptop; run `test_partner_privacy.py` there (its value scan
    skips on the 5090) and read the diff for short partner numbers.
 
 ### Morning summary, 17 November 2026 (for the owner)

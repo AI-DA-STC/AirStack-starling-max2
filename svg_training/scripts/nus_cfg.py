@@ -109,3 +109,49 @@ def read_code_constants(clone: Path | str) -> dict[str, Any]:
         if isinstance(key, ast.Constant) and isinstance(val, ast.Constant)
     }
     return out
+
+
+def _nn_path(clone: Path) -> Path:
+    return clone / "ma_skills" / "jax" / "nn.py"
+
+
+def _policy_path(clone: Path) -> Path:
+    return clone / "ma_skills" / "jax" / "policy.py"
+
+
+def _class(tree: ast.AST, name: str) -> ast.ClassDef:
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ClassDef) and node.name == name:
+            return node
+    raise LookupError(f"class {name} not found in the partner source")
+
+
+def _only(values: set[float], what: str) -> float:
+    if len(values) != 1:
+        raise LookupError(f"expected exactly one {what} in the partner source, found {len(values)}; read it and update nus_cfg.py")
+    return next(iter(values))
+
+
+def read_policy_constants(clone: Path | str) -> dict[str, float]:
+    """Constants that sit in the partner's actor and scripted-controller code (not in a yaml): the residual blocks' LayerNorm
+    epsilon (``ma_skills/jax/nn.py``), the disk-projection floor (``policy.py``), the Strike controller's gains and the floor of
+    the scripted controllers (``simple_area_denial.py``). Read by parsing the source; nothing is imported."""
+    clone = Path(clone)
+    block = _class(ast.parse(_nn_path(clone).read_text()), "ResidualBlock")
+    eps = {kw.value.value for call in ast.walk(block) if isinstance(call, ast.Call) and getattr(call.func, "id", "") == "Norm"
+           for kw in call.keywords if kw.arg == "epsilon" and isinstance(kw.value, ast.Constant)}
+    disk = _function(ast.parse(_policy_path(clone).read_text()), "project_to_disk")
+    disk_floor = {c.args[1].value for c in ast.walk(disk) if isinstance(c, ast.Call) and getattr(c.func, "attr", "") == "maximum"
+                  and len(c.args) == 2 and isinstance(c.args[1], ast.Constant)}
+    env_tree = ast.parse(env_source_path(clone).read_text())
+    init = _function(env_tree, "__init__")
+    gains = {t.attr: node.value.value for node in ast.walk(init) if isinstance(node, ast.Assign) and isinstance(node.value, ast.Constant)
+             for t in node.targets if isinstance(t, ast.Attribute) and t.attr.startswith("attacker_apf_") and t.attr.endswith("_gain")}
+    if set(gains) != {"attacker_apf_attraction_gain", "attacker_apf_repulsion_gain"}:
+        raise LookupError("partner Strike controller gains not found; read the source and update nus_cfg.py")
+    apf_floor = _only(_small_floors(_function(env_tree, "apf_attacker_actions")), "floor in the Strike controller")
+    if {apf_floor} != _small_floors(_function(env_tree, "apf_defender_actions")) | {apf_floor} or {apf_floor} != _small_floors(_function(env_tree, "_cap_vectors")):
+        raise LookupError("the scripted controllers' floors differ from the cap floor; the port uses one floor")
+    return {"layernorm_epsilon": _only(eps, "LayerNorm epsilon in ResidualBlock"), "disk_floor": _only(disk_floor, "floor in project_to_disk"),
+            "apf_attraction_gain": float(gains["attacker_apf_attraction_gain"]), "apf_repulsion_gain": float(gains["attacker_apf_repulsion_gain"]),
+            "apf_floor": apf_floor}

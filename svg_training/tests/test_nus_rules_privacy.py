@@ -15,7 +15,7 @@ import textwrap
 import pytest
 import torch
 
-from _nus_markers import ROOT, marker_rules, marker_strings, write_toml
+from _nus_markers import MIN_SCANNED_FILES, BATCH, FEW_STEPS, NOT_INTEGER, ROOT, marker_rules, marker_strings, write_toml
 from svg_training.nus import outputs, rules as rules_mod
 from svg_training.nus.replica import NusReplica
 
@@ -106,11 +106,11 @@ def test_g4_marker_values_never_reach_committed_or_output_files(tmp_path):
     # replica + record writer
     sim = NusReplica(loaded)
     gen = torch.Generator().manual_seed(0)
-    state = sim.reset(4, generator=gen)
-    for _ in range(3):
-        state = sim.step(state, torch.randn(4, sim.num_actors, 2, generator=gen))
+    state = sim.reset(BATCH, generator=gen)
+    for _ in range(FEW_STEPS):
+        state = sim.step(state, torch.randn(BATCH, sim.num_actors, 2, generator=gen))
         captured += str(sim.observe(state).shape)
-    outputs.write_record(out_dir / "summary.json", {"games": 4, "reached_fraction": float(state.reached.mean())}, local)
+    outputs.write_record(out_dir / "summary.json", {"games": BATCH, "reached_fraction": float(state.reached.mean())}, local)
     record = json.loads((out_dir / "summary.json").read_text())
     assert record["rules_sha256"] == rules_mod.file_sha256(local) and "area_radius" in record["rules_keys"]
 
@@ -152,7 +152,7 @@ def test_g1_loader_refuses_placeholder_missing_unknown_and_bad_type(tmp_path):
     write_toml(path, {**good, "extra_key": 1.0})
     with pytest.raises(ValueError, match="extra_key"):
         rules_mod.load_rules(path)
-    write_toml(path, {**good, "episode_steps": 1.5})
+    write_toml(path, {**good, "episode_steps": NOT_INTEGER})
     with pytest.raises(ValueError, match="episode_steps"):
         rules_mod.load_rules(path)
     with pytest.raises(FileNotFoundError):
@@ -170,8 +170,9 @@ _ALLOWED = {0, 1, -1, 2}
 
 
 def test_g2_partner_facing_code_has_no_numeric_literals():
-    files = sorted((ROOT / "source/svg_training/nus").glob("*.py")) + sorted((ROOT / "scripts").glob("nus_*.py"))
-    assert len(files) >= 5
+    files = (sorted((ROOT / "source/svg_training/nus").glob("*.py")) + sorted((ROOT / "scripts").glob("nus_*.py"))
+             + sorted((ROOT / "tests").glob("test_nus_*.py")))
+    assert len(files) >= MIN_SCANNED_FILES
     bad = []
     for path in files:
         for node in ast.walk(ast.parse(path.read_text())):
@@ -187,7 +188,7 @@ def test_g3_record_refuses_rule_value_and_fixtures_only_under_runs(tmp_path):
     write_toml(local, values)
     with pytest.raises(ValueError):
         outputs.write_record(tmp_path / "bad.json", {"x": values["area_radius"]}, local)
-    ok = outputs.write_record(tmp_path / "ok.json", {"episodes": 5, "note": "keys only"}, local)
+    ok = outputs.write_record(tmp_path / "ok.json", {"episodes": BATCH, "note": "keys only"}, local)
     assert json.loads(ok.read_text())["rules_sha256"] == rules_mod.file_sha256(local)
     with pytest.raises(ValueError):
         outputs.require_under_runs(tmp_path / "fixtures.npz")

@@ -2,11 +2,25 @@
 
 > **How to use this file.** Read it at the start of a session, after [../../CLAUDE.md](../../CLAUDE.md).
 > §4 is the current state, §5 is what is waiting on people. Update both before you stop.
-> Last updated: 17 November 2026, ~22:30, on the home RTX 5090 (evening summary in §0). Before: ~07:00 (morning summary in §0). Before: ~05:30 (S2b Tasks 1–8 done (T13 FAIL, over/under passing), 9 Isaac seeds running, 10 docs being written, 8b deferred; see §0 S2b line). Before: ~03:00. Earlier: 16 November morning (**S2 CLOSED**: final whole-stage review done on Opus, one fix wave 4d0d409, wording c218cbb; owner ruled A and B; S2b plan approved and ready to start).
+> Last updated: 18 November 2026, ~01:00, on the home RTX 5090 (Phase 3 W2 PASS). Before: 17 November 2026, ~22:30, on the home RTX 5090 (evening summary in §0). Before: ~07:00 (morning summary in §0). Before: ~05:30 (S2b Tasks 1–8 done (T13 FAIL, over/under passing), 9 Isaac seeds running, 10 docs being written, 8b deferred; see §0 S2b line). Before: ~03:00. Earlier: 16 November morning (**S2 CLOSED**: final whole-stage review done on Opus, one fix wave 4d0d409, wording c218cbb; owner ruled A and B; S2b plan approved and ready to start).
 
 ## 0. Resume here (for a new session or another Claude account)
 
 Everything needed is in this folder; nothing depends on the previous chat.
+
+### Phase 3 summary, 18 November 2026 — NUS port, converted policy (for the owner and the laptop session)
+
+Observed in the training simulator (2-D replica); nothing flown; no partner value here (they stay in `configs/local/` and `runs/`).
+Built Tasks 1–9 of `docs/plans/2026-11-18-nus-phase3-converted-policy.md`: privacy guard rails widened (literal scan over `tests/test_nus_*.py`;
+`write_record` refuses any rules, deploy or architecture number), `nus/deploy.py` (git-ignored `configs/local/nus_deploy.toml`, template committed), both
+scripted controllers ported (`nus/apf.py`), msgpack weight loader and bfloat16-faithful actor (`nus/actor.py`), reference export, wrapper
+`svg_training.nus.strategy:NusPolicy`, outcome machinery and JAX action worker, interface draft. Gates on the first hangar checkpoints: (a) action error
+0.0074 (Guard) / 0.0105 (Strike), limit 0.02; (b) converted Strike reach rate inside the JAX arm's Wilson 95 % interval for both teams (Guard 46 v 48 of 1,000;
+Strike 1,000 v 1,000); wrapper test passes. Ledger `W2` (PASS); record `records/2026-11-18_nus_phase3_conversion_record.md` (see the note below if it is missing).
+Videos: `runs/nus_port/videos/`. **Interface layout id `nus_area_denial_v1` (STANDARDS §3 rule 3 entry):** observation = partner layout rebuilt from our
+71-number observation (own, team-mates cyclic, opponents; position / previous sample / last displacement blocks; zone radius; reached flag), action = deterministic mean, held for the hold length, vertical and yaw zero, prior weight 0; keys in `configs/nus_interface.template.toml`.
+`msgpack` added to `pyproject.toml` (new `[project]` table); container image and its `CHANGES.md` line not done.
+**Waiting on the lead:** commit; laptop privacy scans before merge; owner reads W2 before Phase 4.
 
 ### Evening summary, 17 November 2026 — home RTX 5090 session (for the owner and the laptop session)
 

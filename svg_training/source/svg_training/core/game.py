@@ -143,6 +143,12 @@ class SvgGame:
             return self._sc_arenas
         return draw_arenas(self.cfg.arena, self.num_games, self.gen, self.device, self.band)
 
+    def _draw_starts(self, arenas: Arenas) -> tuple[Tensor, Tensor]:
+        """Starts for a new game in every slot: (starts [N, M, 3], miss [N] bool). The default is the random draw of
+        ``core/arena.draw_starts`` from the game's generator; a subclass may replace it (NUS port Phase 4, owner-approved
+        hook: ``nus/hangar_game.py``). Not called when a scenario is set."""
+        return draw_starts(self.cfg, arenas, self.guards, self.strikes, self.gen, return_miss=True)
+
     def _potential(self, pos_m: Tensor, alive: Tensor, ar: Arenas) -> Tensor:
         """[N] nearest live Strike drone's distance to the zone edge / arena half; inf if none."""
         d = (pos_m[..., :2] - ar.zone_centre_m[:, None, :]).norm(dim=-1)
@@ -158,7 +164,7 @@ class SvgGame:
         if self.scenario is not None:
             pos, miss = self._sc_pos, torch.zeros(n, dtype=torch.bool, device=dev)
         else:
-            pos, miss = draw_starts(self.cfg, ar, self.guards, self.strikes, self.gen, return_miss=True)
+            pos, miss = self._draw_starts(ar)
         # drop-out: in a fraction of games, one random drone (any team) leaves at one random step
         hit = torch.rand(n, generator=self.gen, device=dev) < self.cfg.dropout_fraction
         who = (torch.rand(n, generator=self.gen, device=dev) * m).floor().long().clamp(max=m - 1)

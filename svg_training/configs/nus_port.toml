@@ -1,0 +1,20 @@
+# Gates for porting the partner's (NUS) area-denial strategy. Approved by the owner on 17 November 2026 ("i approve
+# all the questions u ask me earlier"); written here before each gate's run and never moved (STANDARDS §7).
+# Tolerances and counts only: no partner value appears in this file. Partner values live in the git-ignored
+# configs/local/nus_rules*.toml (STANDARDS §2 privacy; tests/test_nus_rules_privacy.py).
+
+[gates.phase2_replica_parity]
+# Our batched replica reproduces the partner's 2-D game step by step (scripts/nus_record_fixtures.py recordings).
+cases = ["gate_3v3", "gate_5v3"]          # recordings under runs/nus_port/fixtures/ (git-ignored)
+episodes_per_case = 100
+max_position_error_units = 1.0e-4          # every drone, every step, replica state reset to the recorded one each step
+reached_step_must_match = true             # the sticky reached flag first fires on the same step
+min_steps_per_rule = 1                     # push, team cap, total cap, Guard boundary and reached flip each exercised
+open_loop_drift = "INFO"                   # full-episode drift without per-step reset is reported, not gated
+
+[gates.phase3_converted_policy]
+# The converted PyTorch actor reproduces the partner's JAX actor.
+observations_per_team = 10000
+max_action_error_units_per_step = 0.02     # bfloat16 trunk in the partner's code
+games_per_opponent = 1000
+outcome_parity = "strike_reach_rate_within_95pct_interval_of_jax"   # opponents: scripted APF and the archive partner

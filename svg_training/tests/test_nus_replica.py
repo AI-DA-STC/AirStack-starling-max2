@@ -219,7 +219,9 @@ def test_observation_layout(sim, rules):
 
 # ---------------------------------------------------------------- parity with recordings of the partner's environment
 FIX_DIR = rules_mod.FIXTURE_DIR
-CASES = {"3v3": "nus_rules.toml", "3v3_static": "nus_rules.toml", "5v3": "nus_rules_5v3.toml"}
+CASES = {"3v3": "nus_rules.toml", "3v3_static": "nus_rules.toml", "5v3": "nus_rules_5v3.toml",
+         # Phase 2 gate of record (configs/nus_port.toml [gates.phase2_replica_parity]): 100 recorded episodes each
+         "gate_3v3": "nus_rules.toml", "gate_5v3": "nus_rules_5v3.toml"}
 MIN_COVERAGE = ("steps_with_push", "steps_with_team_cap", "steps_with_total_cap", "steps_with_boundary", "steps_with_flag_flip")
 
 

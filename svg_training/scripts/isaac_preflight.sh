@@ -10,13 +10,13 @@
 #       window over remote desktop on WiFi has crashed this laptop's WiFi firmware (CLAUDE.md "Known trap").
 #       --approved-headless / --approved-windowed turn this into a printed warning that cites the owner's approval
 #       of 16 November 2026 for that kind of launch; use them only for that kind of launch;
-#   11  the GPU is in use: a compute process other than this shell's holds more than 500 MiB (the AirStack
+#   11  the GPU is in use: a compute process other than this shell's holds more than 1024 MiB (the AirStack
 #       simulator, a flight session or another run). The process list is printed for the lead to check;
 #   2   unknown argument.
 # When both 10 and 11 hold, 10 is returned; both are printed.
 set -u
 
-GPU_MIB_MAX=500
+GPU_MIB_MAX=1024   # owner, 18 Nov 2026: raised from 500 so the 5090's remote-desktop daemon (546-589 MiB) does not block
 RD_PATTERN='gnome-remote-desktop|xrdp|x11vnc|vino|rustdesk|anydesk|teamviewer'
 APPROVED=""
 for arg in "$@"; do

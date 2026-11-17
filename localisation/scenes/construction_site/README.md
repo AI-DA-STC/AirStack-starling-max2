@@ -8,12 +8,17 @@ repeating grid (see `results/sim_cam_run*_record.md`). A world with nearby struc
 
 *The site from above. ① cranes and building frames, ② the excavation (the spot picker keeps 8 m away), ③ containers and plant: the near structure stereo VO tracks.*
 
-Source: the lab's UE4-exported scene `~/Documents/Meerkat_robot_JAZZY/Simulation Files/AI_training/Construction_site/Scene02_nohumans.usd`
-(546 × 575 m site, 5.3 k objects, 12 k UsdPreviewSurface materials, all references resolve). Not modified.
+Source: the lab's UE4-exported scene `source/AI_training/Construction_site/Scene02_nohumans.usd` in this folder
+(546 × 575 m site, 5.3 k objects, 12 k UsdPreviewSurface materials, all references resolve). Not modified, except that
+`fix_abs_paths.py` made the terrain's texture paths relative.
+
+**The site files are not in git** (`source/` 180 MB and `build/` 102 MB are gitignored: a bought / lab asset, and this repo is public).
+They sit inside this folder on the laptop. On another machine, copy them from the private bundle by USB or a private drive,
+never through GitHub: unpack it here so that `source/` and `build/` sit beside this README.
 
 Files here
 - `construction_site_arena.usda` — wrapper. References `/World/construction_site_withrobot` and `/World/Added_Assets`
-  from Scene02 (NOT the Meerkat robot, its OmniGraphs, render products or PhysicsScene) under `/stage/site`, translated by
+  from Scene02 (NOT the robot in the scene, its OmniGraphs, render products or PhysicsScene) under `/stage/site`, translated by
   (+32.0, +12.5, −0.17) so the level clear patch at site (−32, −12.5) is the drones' origin at ground level
   (4 m clear radius; pipes/rebar at 3–6 m, cargo container at 5 m, scaffolding at 5 m; 135 props within 12 m).
   Default prim `stage` → Pegasus references it to `/World/stage`; the launcher clears that prim's xform ops, so the
@@ -22,7 +27,7 @@ Files here
   terrain mesh for a height map, rejects spots that are rough (>0.3 m over a 10 m window), within 8 m of the excavation
   ("Landscape" mesh / pit contents below −1 m) or inside objects, and ranks by distinct props within 12 m.
   `--spot X Y` forces a site coordinate.
-- `install.sh` — copies wrapper + Scene02 + its Assets folder (143 MB) into `~/docker/isaac-sim/data/scenes/construction_site`,
+- `install.sh` — copies wrapper + Scene02 + its Assets folder (143 MB) from `source/` into `~/docker/isaac-sim/data/scenes/construction_site`,
   which is mounted into the isaac-sim container at `/isaac-sim/.local/share/ov/data/scenes/construction_site`.
 
 Derivatives built by `crop_site.py` (flatten by hand, one copy per unique material, textures beside the file; the raw wrapper is

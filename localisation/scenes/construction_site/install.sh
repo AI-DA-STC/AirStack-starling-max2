@@ -1,27 +1,28 @@
 #!/usr/bin/env bash
 # Install the construction-site arena where the isaac-sim container can see it.
 # Layout under ~/docker/isaac-sim/data/scenes/construction_site (= /isaac-sim/.local/share/ov/data/scenes/construction_site):
-#   construction_site_arena.usda                       <- this folder (wrapper: site + props, no Meerkat)
-#   AI_training/Construction_site/Scene02*.usd         <- the user's scene (Documents/Meerkat_robot_JAZZY/...)
+#   construction_site_arena.usda                       <- this folder (wrapper: site + props, not the robot in the scene)
+#   AI_training/Construction_site/Scene02*.usd         <- source/ in this folder (copied once from the lab's UE4 export; gitignored)
 #   environments/construction_site/Assets/             <- its 600 asset USDs + 682 textures
 # The data dir is root-owned, so everything goes in through the container (docker cp).
 set -euo pipefail
-SRC="${SCENE_SRC:-$HOME/Documents/Meerkat_robot_JAZZY/Simulation Files}"
-D=/isaac-sim/.local/share/ov/data/scenes/construction_site
 cd "$(dirname "$0")"
+SRC="${SCENE_SRC:-$PWD/source}"      # inside AirStack; get it from the private bundle if missing (README)
+[ -d "$SRC/environments/construction_site/Assets" ] || { echo "no site source in $SRC (see README: private bundle)"; exit 1; }
+D=/isaac-sim/.local/share/ov/data/scenes/construction_site
 docker ps --format '{{.Names}}' | grep -qx isaac-sim || { echo "isaac-sim container is not up"; exit 1; }
 docker exec isaac-sim mkdir -p "$D/AI_training/Construction_site" "$D/environments/construction_site"
 docker cp construction_site_arena.usda "isaac-sim:$D/"
 if ! docker exec isaac-sim test -d "$D/environments/construction_site/Assets"; then
   docker cp "$SRC/environments/construction_site/Assets" "isaac-sim:$D/environments/construction_site/"
   # Scene02's /World/construction_site_withrobot is itself a reference to this file (and Map_draft1 may be referenced too)
-  for f in construction_site_withrobot.usd construction_site_raw.usd Map_draft1; do
+  for f in construction_site_withrobot.usd Map_draft1; do
     [ -e "$SRC/environments/construction_site/$f" ] && docker cp "$SRC/environments/construction_site/$f" "isaac-sim:$D/environments/construction_site/"
   done
   for f in Scene02_nohumans.usd Scene02.usd; do docker cp "$SRC/AI_training/Construction_site/$f" "isaac-sim:$D/AI_training/Construction_site/"; done
 fi
 # Landscape2_asset.usd / Landscape_asset.usd carry ABSOLUTE /home/... paths from the UE4 export -> rewrite to relative in the
-# installed copy (needs usd-core: python3 -m venv /tmp/usdenv && /tmp/usdenv/bin/pip install usd-core). The user's originals are untouched.
+# installed copy (needs usd-core: python3 -m venv /tmp/usdenv && /tmp/usdenv/bin/pip install usd-core). source/ is already fixed; this is a no-op then.
 H="$HOME/docker/isaac-sim/data/scenes/construction_site/environments/construction_site/Assets"
 VENV="$HOME/.venvs/usd"      # persistent (not /tmp: wiped on reboot)
 [ -x "$VENV/bin/python" ] || { python3 -m venv "$VENV" && "$VENV/bin/pip" install -q usd-core scipy numpy; }

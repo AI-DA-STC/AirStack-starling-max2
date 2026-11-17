@@ -250,7 +250,7 @@ The keyboard flight (one drone, simulation) is on video under [Evidence](#eviden
 | What | Where it comes from |
 |---|---|
 | Exploration image `localisation-exploration:cu12` (~30 GB) | `docker/build.sh` (CMU robot image + cuVSLAM 17.0.1 + GTSAM + pyulog) |
-| World files `construction_site_full.usdc`, `_r40.usdc` (gitignored) | `scenes/construction_site/install.sh` builds them from the UE4 export in `~/Documents/Meerkat_robot_JAZZY/…` with `~/.venvs/usd` |
+| World files `construction_site_full.usdc`, `_r40.usdc` (gitignored) | `scenes/construction_site/install.sh` builds them from `scenes/construction_site/source/` (gitignored; private bundle, [README](scenes/construction_site/README.md)) with `~/.venvs/usd` |
 | cuVSLAM wheel, SDK source | `data/downloads/` (SHA256SUMS), `data/cuVSLAM-src/` (gitignored) |
 | Firewall rule for the keyboard session: `sudo ufw allow from 172.31.0.0/24` (lets the cuVSLAM container reach the drone side) | you, once per laptop ([Cold start](#cold-start) step 0); `tools/sim.sh doctor` checks it |
 

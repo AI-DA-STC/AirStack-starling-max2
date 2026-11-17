@@ -60,6 +60,7 @@ if [ "$NET_BLOCKED" -eq 1 ]; then
         echo "WARNING: WiFi only, with a remote-desktop program running. Going ahead under the owner's approval of"
         if [ "$APPROVED" = "headless" ]; then
             echo "16 November 2026 (~07:45, \"yes dont worry about wifi\"): headless Isaac launches in this state."
+            echo "Extended to the home RTX 5090 by the owner on 18 November 2026 (\"wifi: yes\")."
         else
             echo "16 November 2026 (~07:50, \"u can allow window launches\"): windowed Isaac launches, WiFi-crash risk"
             echo "accepted by the owner."

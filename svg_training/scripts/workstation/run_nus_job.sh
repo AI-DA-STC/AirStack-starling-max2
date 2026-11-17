@@ -22,7 +22,7 @@
 #   --env NAME          conda env, default nus_jax
 #   --log-dir DIR       default ~/nus_jax_runs; writes <job>.log, <job>.pid and <job>.cmd.txt (refuses to overwrite)
 #   --foreground        run in this terminal instead of the background (inside tmux)
-#   --allow-shared-gpu  start even if another process holds more than 500 MiB of GPU memory
+#   --allow-shared-gpu  start even if another process holds more than 1024 MiB of GPU memory
 #   --no-jax-overrides  do not append the two jax.* overrides (the environment variables are still set)
 #   --dry-run           print what would run; run and write nothing
 #
@@ -42,7 +42,7 @@ JAX_OVERRIDES=1
 MEM=0.60
 ENV_NAME=nus_jax
 LOG_DIR="$HOME/nus_jax_runs"
-GPU_MIB_MAX=500
+GPU_MIB_MAX=1024   # owner, 18 Nov 2026: same as isaac_preflight.sh; the 5090's remote-desktop daemon (546-589 MiB) passes
 POS=()
 while [ $# -gt 0 ]; do
     case "$1" in

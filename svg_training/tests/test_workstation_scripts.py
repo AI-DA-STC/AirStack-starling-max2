@@ -241,3 +241,15 @@ def test_check_machine_driver_gate(tmp_path, driver, want):
     if "FAIL  " not in r.stdout.replace("FAIL  driver", ""):
         assert r.returncode == want, r.stdout
     assert not sentinel.exists()
+
+
+def test_gpu_limit_matches_preflight_and_clears_remote_desktop():
+    """Owner, 18 Nov 2026: run_nus_job.sh uses the same per-process GPU limit as isaac_preflight.sh, above the home
+    RTX 5090's gnome-remote-desktop-daemon (up to 589 MiB measured) so it does not need --allow-shared-gpu."""
+    def limit(path):
+        m = re.search(r"^GPU_MIB_MAX=(\d+)", (ROOT / path).read_text(), flags=re.M)
+        assert m, path
+        return int(m.group(1))
+    runner, preflight = limit("scripts/workstation/run_nus_job.sh"), limit("scripts/isaac_preflight.sh")
+    assert runner == preflight
+    assert runner > 589

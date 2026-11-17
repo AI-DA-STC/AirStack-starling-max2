@@ -15,6 +15,21 @@ commits ahead of GitHub, and the repository carries about 41 MB of video and GIF
 2. Push `main` from GitHub Desktop. Claude never pushes.
 3. Copy the private bundle (`~/svg_workstation_bundle/`) to the workstation by USB, a private drive or `scp`.
    It holds the partner's code and checkpoints and the flight log. It never goes to GitHub.
+4. Copy the construction-site world too (section 1a): it is not in git and not in the bundle.
+
+## 1a. Files that are not in git
+
+Everything the pipeline needs lives inside the repository folder, either in git or in a git-ignored folder you
+copy by hand. Nothing is read from other project folders.
+
+| What | Where it goes on the workstation | Needed for |
+|---|---|---|
+| Construction-site world, `source/` and `build/` (about 280 MB, bought asset) | `localisation/scenes/construction_site/` in the clone, beside its README | the construction-site clips and screenshots only; training, scoring, tests and the other worlds do not use it |
+| Partner's code, checkpoints, reference logs | outside the repository, as the bundle's NOTES say | NUS jobs only |
+| Flight log `log103.ulg` (13 November, drone_2) | `~/flight_logs/2026-11-13/ulog_drone_2/` (path in `configs/s2b.toml`, `real_log`) | the S2b step tests (T11) only |
+
+The flight log is the one file still read from outside the repository folder; moving it inside needs a config
+change (`real_log`) and the owner's approval.
 
 ## 1. The scripts
 

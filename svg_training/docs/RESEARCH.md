@@ -354,8 +354,8 @@ Games are played in realistic 3D worlds, the lab's construction-site world first
 
 | Item (measured from the repository's USD files) | Value |
 |---|---|
-| Origin | The lab's UE4 export `Scene02_nohumans.usd`, unmodified, kept outside the repository in `~/Documents/Meerkat_robot_JAZZY/…/Construction_site/`. A separate UE 4.21 project in `localisation/ConstructionSite(UE4)/` (1.6 GB, gitignored as "not ours to version") looks like a Marketplace pack; the docs do not say Scene02 came from it |
-| Licence | Not found: no licence or copyright file in `localisation/` |
+| Origin | The lab's UE4 export `Scene02_nohumans.usd`, unmodified, kept inside this repository folder at `localisation/scenes/construction_site/source/AI_training/Construction_site/` (git-ignored; it never goes through GitHub, see `localisation/scenes/construction_site/README.md`). A separate UE 4.21 project in `localisation/ConstructionSite(UE4)/` (1.6 GB, gitignored as "not ours to version") looks like a Marketplace pack; the docs do not say Scene02 came from it |
+| Licence | Bought by the owner from CGTrader (owner, 16 November 2026): rendered clips and stills may be committed; the asset files (`source/`, `build/`) never go in git |
 | Size | 546 × 575 × 137 m (height = crane tops); Z up, 1 m per unit |
 | Geometry, collision | 25,437 prims, 5,622 meshes, 5.79 M triangles, one distant light; 5,613 meshes already carry PhysX colliders (4,963 convex hull, 646 triangle mesh); drones collide with the site in the AirStack simulator |
 | Files (from the repository root) | `localisation/scenes/construction_site/build/construction_site_full.usdc` (50.2 MB); `construction_site_r40.usdc` (34.1 MB: 40 m crop, 4.8k prims, 68 materials); wrapper `construction_site_arena.usda`; scripts `crop_site.py`, `build_arena_usda.py`, `fix_abs_paths.py`, `install.sh`; `README.md`, `VALIDATION.md`. Textures 128×128 px, except a 1024² landscape set |

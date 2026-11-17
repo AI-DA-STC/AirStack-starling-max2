@@ -183,7 +183,9 @@ The owner chose C on 14 November 2026, with Isaac Lab 2.3.2 now and 3.0 later, a
   the laptop is for development and smoke tests.
 - 12 GB of GPU memory on the laptop, below Isaac Sim's stated 16 GB minimum: enough for headless
   physics and ray-casting, not for camera training. The GPU is shared with the AirStack simulator.
-- The construction-site world has no licence file: it is read, never changed, and nothing baked from it enters git.
+- The construction-site world was bought by the owner (CGTrader, 16 November 2026). Its files live inside the
+  repository folder (`localisation/scenes/construction_site/source/` and `build/`) but are git-ignored: they are read,
+  never changed, and nothing baked from them enters git; rendered clips and stills may be committed.
 - Packaging (owner, 14 November 2026): a top-level component of the repository with its own `docker/`
   image carrying Isaac Lab; CMU's `AirStack/` tree is not touched.
 - The repository's hook, its docs checker and other Claude sessions ([STANDARDS §9–10](../STANDARDS.md)).

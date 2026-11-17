@@ -76,8 +76,12 @@ place where its commands enter the flight software is the *plug-in point*. The t
 
 Status labels and sources for every item: [STANDARDS §3](../STANDARDS.md#3-policy-interface-version-0-proposed).
 
-There is no code hook for a partner's strategy yet. The exported policy file and `interface.toml` arrive with
-build step S5 ([STANDARDS §3](../STANDARDS.md#3-policy-interface-version-0-proposed)).
+A partner's strategy plugs into the training simulator through the strategy contract ([PLUG_IN](PLUG_IN.md)). A
+partner's trained JAX policy has a scoring hook since 18 November 2026: `svg_training.nus.strategy:NusPolicy` reads a
+converted checkpoint (layout id `nus_area_denial_v1`) and plays one team, scored like any strategy
+([PLUG_IN](PLUG_IN.md#plug-in-a-trained-nus-policy)). The exported policy file and `interface.toml` for the AirStack
+simulator and for flight still arrive with build step S5
+([STANDARDS §3](../STANDARDS.md#3-policy-interface-version-0-proposed)); the NUS policy's `interface.toml` is a draft.
 
 ## What a benchmark run does
 

@@ -1,0 +1,23 @@
+# Template of the interface.toml keys for the partner policy, layout id nus_area_denial_v1 (STANDARDS §3 rule 1; HANDOFF entry).
+# Keys only: every value is "LOCAL" except the layout id. The real file is written by scripts/nus_write_interface.py under
+# runs/nus_port/weights/<name>/ (git-ignored). Never type a partner value into a tracked file.
+layout_id = "nus_area_denial_v1"
+serves_interface_version = "LOCAL"
+team = "LOCAL"
+guard_count = "LOCAL"
+strike_count = "LOCAL"
+opponents_seen = "LOCAL"
+observation_width = "LOCAL"
+field_order = "LOCAL"
+latch_rule = "LOCAL"
+metres_per_unit = "LOCAL"
+seconds_per_step = "LOCAL"
+hold_ticks = "LOCAL"
+previous_step_sampling = "LOCAL"
+action_form = "LOCAL"
+vertical_speed = "LOCAL"
+yaw_rate = "LOCAL"
+prior_weight = "LOCAL"
+compute_dtype = "LOCAL"
+source_commit = "LOCAL"
+checkpoint_sha256 = "LOCAL"

@@ -111,6 +111,28 @@ A strategy is named `module:Class` (your code) or by a scripted name: Guard `gua
 games per arena band (lab 4–6 m, middle 6–10 m, large 10–16 m) on the GPU. The Starling layer runs 4 to 65 times
 slower than the pure rules (ledger T9, `records/2026-11-16_s2_scripted_reference_2_record.md`).
 
+## Plug in a trained NUS policy
+
+A policy trained with NUS's JAX code runs here without that code. The path (all observed in the training simulator, in our replica of
+NUS's 2-D game; nothing is flown):
+
+1. **Convert the checkpoint.** `scripts/nus_convert_checkpoint.py --checkpoint <folder> --team guard|strike --name <name>` reads a
+   runner checkpoint (`config.json` + `state.msgpack`) or an archive entry (`actor.msgpack` + `metadata.json` + `config.json`) with
+   `msgpack` and numpy, refuses anything else, and writes `runs/nus_port/weights/<name>/`. Only deterministic, non-prior checkpoints
+   are accepted. The weights, the owner's scale and the partner's game values stay under `runs/` and `configs/local/` (git-ignored).
+2. **Name the folders** in `configs/local/nus_deploy.toml` (`guard_weights`, `strike_weights`; made by
+   `scripts/nus_make_local_deploy.py`, keys in `configs/nus_deploy.template.toml`). The same file holds the scale (metres per unit,
+   seconds per step), the hold length in simulator ticks and the checkpoint's geometry.
+3. **Use the class** `svg_training.nus.strategy:NusPolicy` like any `module:Class` strategy (constructor
+   `(team, cfg, num_games, device, seed)`). It rebuilds NUS's observation from ours plus its own memory (the positions at the previous
+   sample and the reached flag), holds each action for the hold length and turns units per step into the `[-1, 1]` command. It
+   refuses a game configuration whose scale or team speeds differ from the deploy file, naming the keys, never the values.
+4. **`interface.toml`** (draft, layout id `nus_area_denial_v1`): `scripts/nus_write_interface.py` writes it into the weights folder.
+
+What it does not do yet: Starling-layer drones, the safety filter, 3-D, a drone that is removed from the game, other team sizes.
+The score against our scripted strategies is not meaningful until the Starling layer rung (Phase 4); the gates of this phase compare
+the converted policy with NUS's own policy, in the replica (`records/2026-11-18_nus_phase3_conversion_record.md`).
+
 ## What the scoring tool prints
 
 One line per batch (preset, size, band, speed) and the hold rate of every Guard v Strike pair. Into `--out` it

@@ -1,3 +1,12 @@
+[project]
+# Run-time dependencies beyond the conda environment's own (PyTorch, skrl, gymnasium). msgpack reads the partner's checkpoint files
+# (source/svg_training/nus/actor.py); owner approved it on 17 November 2026 (NUS port, Phase 3 plan). The pipeline is run from source
+# (PYTHONPATH=source), not installed; this table records the dependency.
+name = "svg_training"
+version = "0"
+requires-python = ">=3.11"
+dependencies = ["msgpack>=1.0"]
+
 [tool.pytest.ini_options]
 pythonpath = ["source"]
 testpaths = ["tests"]

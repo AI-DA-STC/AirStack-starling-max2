@@ -1,0 +1,16 @@
+# Template of the partner-policy deploy keys (G1). Every value is the string "LOCAL" on purpose.
+# The real file is configs/local/nus_deploy.toml (git-ignored), written by scripts/nus_make_local_deploy.py.
+# Never type a partner or owner value into a tracked file.
+metres_per_unit = "LOCAL"
+seconds_per_step = "LOCAL"
+hold_ticks = "LOCAL"
+flying_height_m = "LOCAL"
+spawn_distance = "LOCAL"
+guard_boundary_radius = "LOCAL"
+layernorm_epsilon = "LOCAL"
+disk_floor = "LOCAL"
+apf_attraction_gain = "LOCAL"
+apf_repulsion_gain = "LOCAL"
+apf_floor = "LOCAL"
+guard_weights = "LOCAL"
+strike_weights = "LOCAL"

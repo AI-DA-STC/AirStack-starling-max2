@@ -162,3 +162,10 @@ def test_caps_subtract_paused_time(tmp_path, trainer):
     assert trainer.cap_reached(start, 1.0, pauses, now=start + HOUR) is False
     assert trainer.cap_reached(start, 1.0, pauses, now=start + HOUR + (pause_end - pause_start) / 2) is False
     assert trainer.cap_reached(start, 1.0, pauses, now=start + HOUR + (pause_end - pause_start)) is True
+
+
+def test_memory_fraction_is_cuda_only(tmp_path, trainer):
+    """Separate side-by-side processes cap their share of GPU memory (plan section 10); on the CPU the option is refused."""
+    out = tmp_path / "runs" / "phase5" / "s51" / "frac"
+    with pytest.raises(SystemExit, match="memory-fraction"):
+        trainer.main(_args(tmp_path, "--variant", "nus", "--out", str(out), "--memory-fraction", "0.3"))

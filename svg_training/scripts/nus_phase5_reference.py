@@ -114,19 +114,25 @@ def _load_inputs(args):
 
 
 def check(args, out: Path, gates: dict) -> dict:
-    """Conversion and gate (a) per entry; writes conversions.json."""
+    """Conversion and gate (a) per entry of the reference runs; writes conversions.json."""
+    ref = gates["phase5_reference_rebuild"]
+    return check_runs(args, out, gates["phase3_converted_policy"], list(ref["reference_runs"]), tuple(ref["generations"]),
+                      int(ref["max_failed_conversions"]))
+
+
+def check_runs(args, out: Path, phase3: dict, runs: list[str], generations: tuple[int, int], max_failed: int) -> dict:
+    """Conversion and gate (a) per archive entry of ``runs`` (R0's reference runs, or C0's); writes ``<out>/conversions.json``."""
     import numpy as np
     import torch
 
     import nus_convert_checkpoint as convert
     from svg_training.nus.actor import NusActor
 
-    ref, phase3 = gates["phase5_reference_rebuild"], gates["phase3_converted_policy"]
     limit, rows_needed = float(phase3["max_action_error_units_per_step"]), int(phase3["observations_per_team"])
     rules, deploy = _load_inputs(args)
     weights = _under_runs(out / "weights")
     results = []
-    for e in archive_entries(args.outputs_dir, list(ref["reference_runs"]), tuple(ref["generations"])):
+    for e in archive_entries(args.outputs_dir, runs, generations):
         row = {k: (str(v) if isinstance(v, Path) else v) for k, v in e.items()}
         try:
             convert.main(["--checkpoint", str(e["folder"]), "--team", e["team"], "--name", e["name"], "--rules", str(args.rules),
@@ -145,8 +151,7 @@ def check(args, out: Path, gates: dict) -> dict:
         print(f"[gate a] {e['name']}: {'PASS' if row['pass'] else 'FAIL'}", flush=True)
     failed = [r["name"] for r in results if not r["pass"]]
     summary = {"limit_units": limit, "rows_needed": rows_needed, "entries": results, "failed": failed,
-               "max_failed_conversions": int(ref["max_failed_conversions"]),
-               "stop": len(failed) > int(ref["max_failed_conversions"]), "gates_sha256": _sha256(out / "gates.toml")}
+               "max_failed_conversions": max_failed, "stop": len(failed) > max_failed, "gates_sha256": _sha256(out / "gates.toml")}
     (out / "conversions.json").write_text(json.dumps(summary, indent=2) + "\n")
     print(f"[gate a] {len(results) - len(failed)}/{len(results)} entries pass; stop={summary['stop']}", flush=True)
     return summary

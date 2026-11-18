@@ -301,6 +301,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--generations", type=int, help="tests only: fewer generations (not of record)")
     parser.add_argument("--log-note", help="a note on this run's gpu_hours.log rows (e.g. smoke)")
     parser.add_argument("--pauses-log", type=Path, help="default runs/nus_port/phase5/pauses.log (scripts/gpu_pause.sh)")
+    parser.add_argument("--memory-fraction", type=float, help="CUDA only: torch.cuda.set_per_process_memory_fraction for side-by-side processes")
     args = parser.parse_args(argv)
 
     out = _under_runs(args.out or STAGE_DIR / STAGE[args.variant] / f"seed{args.seed}")
@@ -309,6 +310,10 @@ def main(argv: list[str] | None = None) -> int:
     device = torch.device(args.device)
     if device.type == "cuda" and not torch.cuda.is_available():
         raise SystemExit("--device cuda but no CUDA device")
+    if args.memory_fraction is not None:
+        if device.type != "cuda":
+            raise SystemExit("--memory-fraction applies to --device cuda only")
+        torch.cuda.set_per_process_memory_fraction(args.memory_fraction, device)
     gates = tomllib.loads(GATES.read_text())["gates"]
     deploy = load_deploy(args.deploy)
     method = load_method(args.method)
@@ -348,8 +353,13 @@ def main(argv: list[str] | None = None) -> int:
     previous_handler = install_stop_handler(sp)
     began_wall, began = time.time(), time.monotonic()
     should_stop = (lambda: cap_reached(began_wall, remaining, pauses)) if device.type == "cuda" else None  # pause-aware hard cap
+    from svg_training.nus.mappo import NonFiniteError
     try:
         sp.run(should_stop=should_stop)
+    except NonFiniteError as exc:   # 5.1-a counts non-finite aborts (nus_phase5_score.py reads status.json)
+        (out / "status.json").write_text(json.dumps({"status": "ABORTED: non-finite", "nonfinite_abort": True, "error": str(exc),
+                                                     "archived": len(sp.state["archive"])}, indent=2) + "\n")
+        raise
     finally:
         signal.signal(signal.SIGINT, previous_handler)
         append_log(log, {"group": group, "stage": STAGE[args.variant], "seed": args.seed, "what": "train", "note": args.log_note, "device": str(device),
@@ -358,6 +368,8 @@ def main(argv: list[str] | None = None) -> int:
     status = {"cap": "ABORTED: hard wall-clock cap reached (paused time not counted)", "interrupted": "STOPPED on request (resume: "
               "the same command)", None: "complete"}[sp.stopped]
     inputs = {"rules": args.rules, "deploy": args.deploy, "method": args.method}
+    (out / "status.json").write_text(json.dumps({"status": status, "nonfinite_abort": False, "archived": len(sp.state["archive"])},
+                                                indent=2) + "\n")
     path = record_draft(out, args, shape, sp, seconds, videos.paths, status, inputs)
     print(f"[train] {status}; {len(sp.state['archive'])} generations archived; record draft {path}", flush=True)
     return {"cap": EXIT_ABORTED, "interrupted": EXIT_STOPPED, None: 0}[sp.stopped]

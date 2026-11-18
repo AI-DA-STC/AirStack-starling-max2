@@ -422,3 +422,28 @@ EFFECTIVE_CASE = (50.0, 350.0, 300.0 - 60.0 - 50.0)        # start, end, wall cl
 GPU_ROWS = [("s51", "cuda", 0.0, 3600.0), ("s51", "cuda:0", 1800.0, 5400.0), ("s51", "cpu", 0.0, 36000.0)]
 GPU_PAUSES = [("pause", 3600.0), ("resume", 4500.0)]
 GPU_HOURS_AFTER_PAUSES = 1.25
+
+
+# ------------------------------------------------------------------------------------------------ M8: scoring the arms
+SYNTHETIC_HIDDEN = 46     # the synthetic NUS checkpoints' width (tests/_nus_markers.py MARKER_ARCH): our arm must match it to share
+                          # one stacked forward with the reference
+C0_RUN = "2026-11-18_c0_selfplay_3v3_seed{seed}"
+
+
+def write_fake_ours(phase5_dir, stage, seeds, env, method, generations):
+    """Our archive layout (nus/selfplay.py) for each seed: untrained actors as archived entries, a state file and a status file."""
+    import json
+    import torch
+    from svg_training.nus.mappo import MappoActor
+    for seed in seeds:
+        folder = phase5_dir / stage / f"seed{seed}"
+        archive = []
+        for g in range(1, generations + 1):
+            team = "guard" if g % 2 else "strike"
+            entry = folder / "archive" / f"{g:04d}_{team}"
+            entry.mkdir(parents=True, exist_ok=True)
+            actor = MappoActor(env.obs_dim, method, env.deploy.layernorm_epsilon, torch.Generator().manual_seed(seed + g))
+            torch.save(actor.state_dict(), entry / "actor.pt")
+            archive.append({"generation": g, "team": team, "path": str(entry), "best_update": 1})
+        (folder / "self_play_state.json").write_text(json.dumps({"schema": 1, "seed": seed, "archive": archive, "active": None}))
+        (folder / "status.json").write_text(json.dumps({"status": "complete", "nonfinite_abort": False}))

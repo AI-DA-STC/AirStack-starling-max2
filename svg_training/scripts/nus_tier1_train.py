@@ -12,7 +12,8 @@ What it does, in order:
 1. **Batch shape** (plan P5-7): ``--variant`` ``nus`` (the copied method's), ``5.1b`` or ``5.1c`` (``[gates.phase5_method_variants]``:
    16,384 games per update, rounded up to equal blocks per slot, 47 or 16 updates per generation, the selection evaluations after the
    listed updates, the copied minibatch size in samples), by ``nus_selfplay_train.batch_shape``. 5.2 uses the cheapest variant whose 5.1
-   verdict is PASS; this script does not choose it.
+   verdict is PASS; this script does not choose it: a run of record names ``--variant`` and refuses to start while
+   ``[gates.phase5_tier1_training]`` is not FROZEN (STANDARDS section 7: gates before a run). ``--smoke`` lifts both.
 2. **Safety filter path**: the row's existing path (early stop) by default; ``--filter-cuda-graph`` turns on the opt-in fixed-shape CUDA
    graph path (``core/safety_filter_graph.py``: the fixed loop's answer bit for bit, which on CUDA differs from the early stop's rounding).
    ``run.json`` records which one; a resume with the other path is refused.
@@ -20,7 +21,8 @@ What it does, in order:
    lineage in ``<out>/probe.json``; above the remaining cap a run refuses to start without ``--accept-long``.
 4. **Cap** (plan section 8): ``[caps] training_gpu_hours`` of ``configs/nus_phase5_tier1.toml`` less the GPU-hours already in the stage's
    ``gpu_hours.log`` (group ``s52``; CUDA intervals, overlapping jobs counted once, paused time not counted). On CUDA the remaining cap is a
-   pause-aware hard limit (checkpoint, stop, exit 3, ABORTED). Every run appends its interval to the log. SIGINT checkpoints at the next
+   pause-aware hard limit with a look-ahead of the longest update so far (with its selection evaluation): the run checkpoints and stops
+   (exit 3, ABORTED) before an update that would pass it. Every run appends its interval to the log. SIGINT checkpoints at the next
    update boundary (exit 4, STOPPED); the same command resumes.
 5. **Training curves** (STANDARDS section 7.2): one JSON line per update in ``<out>/train_log.jsonl`` from ``nus/tier1_metrics.training_row``.
 6. **Videos inside the run** (STANDARDS section 8; owner: no separate re-record): the selection evaluation's own games are kept
@@ -212,7 +214,7 @@ def record_draft(out: Path, run: dict, sp, seconds: float, videos: list[str], st
 def make_parser(settings: dict) -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--seed", type=int, required=True)
-    p.add_argument("--variant", choices=tuple(base.STAGE), default="5.1c")
+    p.add_argument("--variant", choices=tuple(base.STAGE), help="required for a run of record: the variant 5.1b / 5.1c chose (plan P5-7)")
     p.add_argument("--out", type=Path, help="default runs/nus_port/phase5/s52/seed<seed>")
     p.add_argument("--device", default="cpu")
     p.add_argument("--filter-cuda-graph", action="store_true", help="opt-in CUDA-graph safety filter (default off)")
@@ -253,6 +255,14 @@ def main(argv: list[str] | None = None) -> int:
         base.apply_memory_fraction(args.memory_fraction, device)
     gates = tomllib.loads(GATES.read_text())["gates"]
     table = gates["phase5_tier1_training"]
+    if not args.smoke:
+        if args.variant is None:
+            raise SystemExit("refusing: a run of record names its --variant (the cheapest 5.1 variant that PASSED; plan P5-7)")
+        if not str(table.get("status", "")).startswith("FROZEN"):
+            print(f"refusing: [gates.phase5_tier1_training] is {table.get('status')!r}, not FROZEN (gates are written before a run, "
+                  "STANDARDS section 7)", file=sys.stderr)
+            return EXIT_REFUSED
+    args.variant = args.variant or "5.1c"   # the smoke overrides the shape anyway
     method_path = args.method or LOCAL_METHOD
     method = load_method(method_path)
     smoke = settings["smoke"] if args.smoke else None
@@ -311,7 +321,11 @@ def main(argv: list[str] | None = None) -> int:
     videos = Tier1Videos(out / "videos", args.video_format, world, method, args.seed)
     train_log = out / "train_log.jsonl"
 
+    span = {"last": time.time(), "longest_s": 0.0}   # the longest update (with its selection evaluation): the cap's look-ahead
+
     def on_update(sp, metrics: dict) -> None:
+        now = time.time()
+        span["longest_s"], span["last"] = max(span["longest_s"], now - span["last"]), now
         active = sp.state["active"]
         row = M.training_row(metrics, sp.env.counters(), active["team"]) | {"generation": active["generation"], "update": active["update"],
                                                                             "time": time.time()}
@@ -325,7 +339,10 @@ def main(argv: list[str] | None = None) -> int:
     if device.type == "cuda":
         torch.cuda.reset_peak_memory_stats()
     began_wall, began = time.time(), time.monotonic()
-    should_stop = (lambda: base.cap_reached(began_wall, remaining, pauses)) if device.type == "cuda" else None   # pause-aware hard cap
+    # pause-aware hard cap with a look-ahead: stop when the next update (a whole game, plus a selection evaluation) would pass the cap
+    span["last"] = began_wall
+    should_stop = ((lambda: base.cap_reached(began_wall, remaining - span["longest_s"] / HOUR_S, pauses))
+                   if device.type == "cuda" else None)
     from svg_training.nus.mappo import NonFiniteError
     try:
         sp.run(should_stop=should_stop)

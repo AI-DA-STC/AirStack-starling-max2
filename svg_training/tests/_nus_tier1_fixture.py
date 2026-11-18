@@ -99,3 +99,4 @@ REACH_PASSING = 700          # a synthetic Strike's reach above S-1's bar
 MIN_SEEDS = 2
 SEED_NAMES = ("seed1001", "seed2001", "seed3001")
 EVAL_GAMES = 4               # games per pairing of the marker-world evaluation (the Phase 4 marker starts)
+GRAPH_DECISIONS = 3          # decisions compared between the CUDA-graph filter path and the fixed loop

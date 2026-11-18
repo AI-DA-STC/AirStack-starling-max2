@@ -12,7 +12,7 @@ import _nus_markers  # noqa: F401  (puts source/ and scripts/ on the path)
 from _nus_markers import ROOT
 from _nus_phase4_fixture import P4_GAMES
 from _nus_tier1_fixture import (AWAY, CLAMP_STEPS, FIRST_REACH_GAMES, OTHER_SEED, OUTSIDE_COUNTED_M, OUTSIDE_NOT_M, POS_ABS_M, REACH_SEED,
-                                REWARD_REL, SLOT, HALF, STICKY_EPISODE_STEPS, TIER1_GAMES, UNITS_SPAN, tier1_world_fixture)
+                                REWARD_REL, SLOT, HALF, STICKY_EPISODE_STEPS, GRAPH_DECISIONS, TIER1_GAMES, UNITS_SPAN, tier1_world_fixture)
 from svg_training.core.observations import OBS_DIM, OBS_DIM_V02, STATE_DIM
 from svg_training.core.play import play_match
 from svg_training.core.rewards import STRIKE_WIN
@@ -252,3 +252,22 @@ def test_every_drone_is_inside_the_box_after_each_step_and_the_counter_changes_n
             p = game.pos_m
             assert bool((p[..., :2].abs() <= lim).all()) and bool(((p[..., 2] >= floor) & (p[..., 2] <= ceiling)).all())
     assert torch.equal(results[0][0], results[1][0]) and torch.equal(results[0][1], results[1][1])
+
+
+def test_cuda_graph_filter_flag_runs_and_equals_the_fixed_loop(tw):
+    """The opt-in filter path (``tier1_world(filter_cuda_graph=True)``; eager blocks on the CPU) through the environment: the same
+    positions, bit for bit, as the existing filter's fixed loop (``filter_check_every = 0``), decision after decision."""
+    from dataclasses import replace
+
+    from svg_training.nus.tier1_env import tier1_world
+    graph = tier1_world(filter_cuda_graph=True)
+    fixed = replace(tw.world, cfg=tw.world.cfg.replace(**{"starling.filter_check_every": 0}))
+    assert graph.cfg.starling.filter_cuda_graph and graph.filter_path.startswith("cuda_graph")
+    states = []
+    for world in (graph, fixed):
+        env = NusTier1Env(world, tw.method)
+        state = env.reset(TIER1_GAMES, _gen(REACH_SEED))
+        for _ in range(GRAPH_DECISIONS):
+            state, out = env.step(state, *_apf_both(env, state), env.method.guard_gamma)
+        states.append((state.game.pos.clone(), state.game.reached.clone(), out.guard_reward.clone()))
+    assert all(torch.equal(a, b) for a, b in zip(*states))

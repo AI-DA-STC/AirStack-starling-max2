@@ -108,6 +108,25 @@ def test_resume_with_another_filter_path_is_refused(setup, tmp_path):
     assert mod.main(_args(tw, out, "--probe-updates", "0")) == mod.EXIT_REFUSED
 
 
+def test_trainer_with_the_cuda_graph_flag_records_its_path(setup, tmp_path):
+    tw, mod = setup
+    out = tmp_path / "runs" / "s52" / "graph"
+    assert mod.main(_args(tw, out, "--probe-updates", "0", "--filter-cuda-graph")) == 0
+    assert json.loads((out / "run.json").read_text())["filter_path"].startswith("cuda_graph")
+    assert "Safety filter path: cuda_graph" in (out / "record_draft.md").read_text()
+    assert mod.main(_args(tw, out, "--probe-updates", "0")) == mod.EXIT_REFUSED      # a resume on the other path is refused
+
+
+def test_a_run_of_record_names_its_variant_and_waits_for_frozen_gates(setup, tmp_path):
+    tw, mod = setup
+    out = tmp_path / "runs" / "s52" / "record"
+    base = ["--seed", str(TRAIN_SEED), "--method", str(tw.method_path), "--out", str(out), "--probe-updates", "0"]
+    with pytest.raises(SystemExit, match="variant"):
+        mod.main(base)
+    assert mod.main([*base, "--variant", "5.1c"]) == mod.EXIT_REFUSED            # the 5.2 table is PROPOSED
+    assert not (out / "run.json").exists()
+
+
 def test_filter_path_names_and_the_opt_in_flag(setup):
     tw, _ = setup
     cfg = tw.world.cfg

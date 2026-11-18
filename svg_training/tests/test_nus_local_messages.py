@@ -11,3 +11,12 @@ def test_missing_deploy_file_names_the_order(tmp_path):
     text = str(ex.value)
     assert "scripts/nus_make_local_deploy.py" in text and "before" in text and "nus_convert_checkpoint.py" in text
     assert "weights-folder names" in text
+
+
+def test_missing_local_files_point_at_the_provisional_installer(tmp_path):
+    """Decision 6 (18 Nov 2026): the lab's own files are in the repository, labelled PROVISIONAL; every missing-file error names the
+    one command that installs them."""
+    from svg_training.nus import hangar as hangar_mod, method_cfg, rules as rules_mod
+    for load in (deploy_mod.load_deploy, rules_mod.load_rules, hangar_mod.load_hangar, method_cfg.load_method):
+        with pytest.raises(FileNotFoundError, match="scripts/nus_install_provisional.sh"):
+            load(tmp_path / "absent.toml")

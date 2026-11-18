@@ -88,7 +88,8 @@ def load_rules(path: Path | str = LOCAL_RULES) -> NusRules:
     """Read the local rules file. Refuses a missing file, missing, unknown or placeholder keys."""
     path = Path(path)
     if not path.exists():
-        raise FileNotFoundError(f"{path} not found: run scripts/nus_make_local_rules.py (it is git-ignored)")
+        raise FileNotFoundError(f"{path} not found: run scripts/nus_make_local_rules.py (it is git-ignored), or install the lab's "
+                                "PROVISIONAL files: scripts/nus_install_provisional.sh")
     raw = tomllib.loads(path.read_text())
     missing = [k for k in RULE_KEYS if k not in raw]
     if missing:

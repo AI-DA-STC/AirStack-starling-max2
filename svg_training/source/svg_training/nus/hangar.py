@@ -47,7 +47,8 @@ def load_hangar(path: Path | str = LOCAL_HANGAR) -> NusHangar:
     """Read the local hangar file. Refuses a missing file, missing, unknown or placeholder keys and a wrong type."""
     path = Path(path)
     if not path.exists():
-        raise FileNotFoundError(f"{path} not found (it is git-ignored; template configs/nus_hangar.template.toml)")
+        raise FileNotFoundError(f"{path} not found (it is git-ignored; template configs/nus_hangar.template.toml, or install the lab's "
+                                "PROVISIONAL files: scripts/nus_install_provisional.sh)")
     raw = tomllib.loads(path.read_text())
     missing = [k for k in HANGAR_KEYS if k not in raw]
     if missing:

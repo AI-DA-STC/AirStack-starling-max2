@@ -1,3 +1,5 @@
+REFERENCE · the rules every change in this folder follows.
+
 # Standards — svg_training
 
 The rules every change in this folder follows. Precedence: the owner's explicit instruction, then the
@@ -47,6 +49,7 @@ The programme's wording rules apply to every document and figure here
 | counter-UAS, defence, area denial | decentralised multi-drone autonomy |
 | under mocap | with motion capture; "camera-only" for flight without it |
 | validated, proven (for a simulator result) | observed in the training simulator |
+| the partner (on a page written for NUS) | NUS, or "you" |
 
 - Paper titles and library names keep their published wording.
 - Three simulators exist; name the one you mean every time: **training simulator** (tier 1 or
@@ -319,10 +322,10 @@ Rules:
   writes no GIFs, so render them afterwards with `ma_skills/scripts/eval.py`). Its raw videos stay with the
   partner's outputs, outside this repository; a small chosen set may be converted and committed under
   `docs/media/` (owner, 18 November 2026, NUS agreed; [docs/media/nus/](docs/media/nus/README.md)). For the NUS
-  port the owner widened this the same day (~14:10): every clip of the port, re-encoded small, may be committed. The record lists
+  port the owner widened this on 18 November 2026: every clip of the port, re-encoded small, may be committed. The record lists
   the video paths. A run that ends without videos says so in its record and why.
-- Ledger rows written on a workstation are numbered T15, T16, … (WORKSTATION_SETUP §4); the lead renumbers them to
-  the next T numbers when the branch merges to `main`.
+- Ledger rows written on a workstation are numbered W1, W2, … (WORKSTATION_SETUP §4) and get the next free T numbers
+  when the branch merges to `main` ([records/README](records/README.md)).
 - `runs/` stays out of git. One exception (owner decision 6, 18 November 2026): the NUS-port files a ladder row and the
   NUS parity tests need (converted weights, local settings, starts, recordings) are committed once, PROVISIONAL, in
   [nus_provisional/](nus_provisional/README.md) and installed into `runs/nus_port/` and `configs/local/` by

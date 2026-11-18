@@ -1,11 +1,13 @@
+INTERNAL · a build plan written for the lab's AI coding assistants; history, not instructions. Results: [../README.md](../README.md).
+
 # NUS port, Phase 5: retraining (route b): NUS's method in PyTorch, then Starling-like drones
 
 **Status: PLAN v3.1 (18 November 2026; v3.1 adds P0's 49,152-game point and the GPU memory risk), after the `train-gatekeeper` reads of v1 and v2 (both PASS WITH FIXES; every fix
 applied, change log at the end) and of v3.1 (PASS, 18 Nov ~16:20). Frozen 16:20: `phase5_reference_rebuild`,
 `phase5_positive_control`, `phase5_negative_control`, `phase5_method_match`; pilot caps fixed; the other Phase 5
 tables stay PROPOSED (`phase5_tier1_training` waits on the owner's observation answer). Only P0 has run (INFO); nothing else built or run.** Written by the lead under
-the owner's delegation of 18 November ~12:20 ("i follow ur recommendations"): the Phase 5 decisions D-P5-1 to D-P5-7 are
-final and live in the private port plan (`~/ma_skills-self-play/PORT_PLAN.md`, "Phase 5 decisions", 5090 only). Phase 4
+the owner's delegation of 18 November: the Phase 5 decisions D-P5-1 to D-P5-7 are
+final and live in the private port plan ("Phase 5 decisions", lab only). Phase 4
 is complete (T17 PASS; T18–T20 and T22–T24 INFO; T21 ABORTED). Gate tables: `configs/nus_port.toml` `[gates.phase5_*]`, `status = "PROPOSED"`,
 frozen before the first run of the stage they gate (STANDARDS §7). Every new value below is **PROPOSED** unless it is
 labelled MEASURED (with its record) or OPEN.
@@ -73,7 +75,7 @@ Wording rules (STANDARDS §2) apply to every record and figure: "observed in the
 | P5-6 | **5.2 training keeps NUS's reward semantics**: the training game runs to the time-out with a sticky reached flag (the Strike team wins on its first reach, as in our game), with NUS's per-step inside-share penalty, first-reach penalty and potential shaping, zero-sum. Evaluation keeps the programme rule (first reach ends the game). The win/lose outcome is the same either way | NUS's reward gives partial credit for keeping some Strike drones out (N/ma_skills/jax/rewards.py:20-28); dropping it changes the method |
 | P5-7 | **5.2's batch shape is decided by data from 5.1.** 5.2's cost is set by the number of ticks played one after another, not by game-steps: every update plays whole games of 2,400 ticks, and the tick cost hardly grows with the game count: P0 measured 0.314 s per tick at 1,000 games and 0.427 at 16,384, so 16 times the games cost 1.36 times the time (F17). Variant 5.1b collects the same episodes per generation as NUS in rollouts of 16,384 games (47 updates per generation instead of 6,000), with NUS's minibatch size and epochs, so the gradient steps per generation stay NUS's; 5.1c does the same with a third of the episodes (16 updates). Both run in 2-D under the 5.1 rule; 5.2 uses the cheapest variant that passes | ESTIMATES from P0's MEASURED rates (§8): per generation on tier 1, NUS's shape about 1,260 h (at 0.314 s per tick; 128 games was not measured), 5.1b about 14.2 h and 5.1c about 5.1 h (at 0.427 s per tick, 16,384 games) |
 | P5-8 | **5.2 trains from scratch** (route b), not from the converted policies (that is route c) | D-P5-1 |
-| P5-9 | **Fixed layout, fixed 3 v 3, no drop-out** in 5.1 and 5.2 (STANDARDS §6.4 exception: one layout; §7.4 team-size and drop-out groups not applicable) | D-P5-3; NUS: the method needs a fixed team size and a policy works only on its own geometry (NUS_PORT §3) |
+| P5-9 | **Fixed layout, fixed 3 v 3, no drop-out** in 5.1 and 5.2 (STANDARDS §6.4 exception: one layout; §7.4 team-size and drop-out groups not applicable) | D-P5-3; the network has no padding, so 3 v 3 only (read from NUS's code); NUS: the method does not support drones dropping out, and a policy trained with one config usually works only with that config (NUS_PORT §3) |
 | P5-10 | **5.1 runs without the safety filter** (STANDARDS §6.2 exception), as Phase 4 rows 1–3 did. It is a 2-D method match; nothing from it is exported. 5.2 and 5.3 restore the filter on every pair | D-P5-1, D10 |
 | P5-11 | **5.2 actor output is 3-D** (vx, vy, vz; tanh, then projection onto the team's speed ball); yaw rate 0, not an output | D-P5-2 (3-D); yaw carries no reward (F13) |
 
@@ -505,7 +507,7 @@ Order matters. **Tasks marked ★ block pilot P1**; they come first so the pilot
 - **S6 5.2 runs** (after the budget stop rule of §8 is cleared and after the owner's interface answer, §12), **S7 5.2 evaluation**, **S8 5.3 run**, **S9** the
   tier 2 fine-tune path, built only if 5.3's trigger fires.
 - **D1 docs**: `docs/NUS_PHASE5_RESULTS.md` with figures from `scripts/make_nus_phase5_figures.py` (numbered captions),
-  NUS_PORT §12, HANDOFF §0/§4/§5, PLUG_IN, TRAINING; PORT_PLAN and `_notes/` outside git. Before merge: the laptop
+  NUS_PORT §12, HANDOFF §0/§4/§5, PLUG_IN, TRAINING; the private port plan and `_notes/` outside git. Before merge: the laptop
   privacy scans and every diff and commit message read by eye.
 
 ## 10. Risks, unknowns and stop points

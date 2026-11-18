@@ -1,3 +1,5 @@
+INTERNAL · a design written for the lab's AI coding assistants; history, not instructions.
+
 # S2 design: the game, varied arena sizes, and a plug-in point for NUS's strategy
 
 > Status: APPROVED by the owner, 15 November 2026 (night). Nothing in it is built yet; the S2 plan comes next.

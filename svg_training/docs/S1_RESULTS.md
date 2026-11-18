@@ -1,8 +1,10 @@
+REFERENCE · results of build step S1, observed in the training simulator.
+
 # S1 results: a drone model and a safety filter
 
 S1 asks two questions. **How does a Starling's speed follow the speed a policy asks for? And can CMU's safety
 filter run inside thousands of games at once?** This page gives the answers in the order we found them. Terms are
-in the [glossary](GLOSSARY.md). How we got here, step by step: [WHAT_WE_DID](WHAT_WE_DID.md#6-s1-a-drone-model-and-a-safety-filter-15-november).
+in the [glossary](GLOSSARY.md). How we got here: [History](README.md#history).
 
 | Item | Value |
 |---|---|
@@ -81,7 +83,7 @@ phase, go past the 0.02 m/s limit; the two marked scenes are the worst.
 difference stays at 0.105 m/s, which is how far CMU's own answer is from the exact one. Emergency agreement passes
 0.99 from 300 sweeps.
 
-**The owner's decision.** The owner accepted T2 on 15 November ('if 1998/2000 checks passed its ok'); that figure is the emergency-agreement count. Asked again with the counts above (13 and 109 scenes), the owner confirmed the same day. T2 stays a FAIL in the ledger, the gates
+**The owner's decision.** The owner accepted T2 on 15 November on the emergency-agreement count (1,998 of 2,000). Asked again with the counts above (13 and 109 scenes), the owner confirmed the same day. T2 stays a FAIL in the ledger, the gates
 are unchanged, and S1 went on with this filter. Two costs remain: 1,000 sweeps is slow (section 6), and in emergency
 scenes the push-apart speeds differ from CMU's (parked for the owner).
 
@@ -217,7 +219,7 @@ stick recorded. This model was **observed in flight logs**. It is not validated 
 ### 6. Tier 1 with the real chain (T4): information only
 
 **What we did.** We put the real-drone chain into tier 1: a copy of the commander's real-drone rules, the PX4 model
-from section 5, and the filter copy at the point where the commander calls it, within each team. We then measured
+from section 5, and the filter copy at the point where the commander calls it, within each team (the S1 setting; the main game now filters every pair, STANDARDS §4). We then measured
 speed with 5 Guard and 3 Strike drones per game ([record](../records/2026-11-15_s1_tier1_fitted_filter_record.md)).
 This run had no gates.
 
@@ -238,7 +240,7 @@ The filter at 1,000 sweeps sets the pace.
 
 **The speed cost.** The real-drone chain alone costs 2.1–3.9 times in the open arena and almost nothing with full
 sensing, where the range rays dominate. The filter at 1,000 sweeps is the big cost: about 227 times slower than
-filter off in the open arena, and about 5 times with full sensing. The lead's arithmetic from T4, not a
+filter off in the open arena, and about 5 times with full sensing. Our arithmetic from T4, not a
 measured training run: with full sensing and the filter at 1,000 sweeps, 2 billion drone-steps would take about
 9 hours of stepping at 4,096 games (7,938 game-steps a second) and about 5 hours at 16,384 games (14,042 game-steps
 a second). S0, with no filter, gave about 1.5 hours. A faster filter is needed before training.

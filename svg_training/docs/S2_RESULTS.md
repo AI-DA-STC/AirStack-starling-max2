@@ -1,10 +1,11 @@
+REFERENCE · results of build step S2, observed in the training simulator.
+
 # S2 results: the game and the plug-in point
 
 S2 asks one question. **Can we run the Strike vs Guard game thousands of times at once, with the real drone's
-limits, so that any team's strategy can be plugged in and scored?** The strategy that will fly comes from NUS,
-and their code is not here yet. So S2 builds the track, not the runner. This page says what was built, what the
-runs showed and what waits on the owner. Terms are in the [glossary](GLOSSARY.md). How we got here, step by step:
-[WHAT_WE_DID](WHAT_WE_DID.md#7-s2-the-game-and-the-plug-in-point-15-and-16-november).
+limits, so that any team's strategy can be plugged in and scored?** S2 was built so that NUS's strategy, and any partner's, could be scored
+here; NUS's code reached this pipeline on 17 November (the NUS port). So S2 builds the track, not the runner. This page says what was built, what the
+runs showed and what waits on the owner. Terms are in the [glossary](GLOSSARY.md). How we got here: [History](README.md#history).
 
 | Item | Value |
 |---|---|
@@ -248,7 +249,7 @@ moved. The whole-game state for a central critic grew from 59 to 61. The layout 
   only).
 - No mixed team sizes inside one batch: each batch has fixed team sizes. The observation is padded to 5 Guard and
   3 Strike slots so one network can later serve every size.
-- No "count the time in the zone" win rule (design §4b): the partner rule is one step in the zone.
+- No "count the time in the zone" win rule (design §4b): the partner rules preset wins on one step in the zone.
 - No limited view of other drones (every drone sees every drone); no range rays, obstacles or worlds (S3–S4); no
   Isaac Lab drones (S2b); no export to AirStack (S5).
 - No refit of the drone model: T5 only checks it. The model of record waits on the planned-pushes flight.

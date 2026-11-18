@@ -1,3 +1,5 @@
+REFERENCE · results of build step S2b, observed in the training simulator.
+
 # S2b results: the game on Isaac Lab drones
 
 S2b asks one question. **Does the S2 game give the same answers when each drone is a rigid-body Starling that
@@ -5,7 +7,7 @@ tilts, lags and saturates like the real one?** In S2 a drone was a point that fo
 adds a third way to move the drones, the *physics drone*: a rigid body in Isaac Lab, flown by a copy of PX4 1.14's
 control loops with the drone's own gains. It then plays the same games on tier 1 and on the physics drone and compares them. This page says
 what was built, what the runs showed and what waits on the owner. Terms are in the [glossary](GLOSSARY.md). How we
-got here, step by step: [WHAT_WE_DID](WHAT_WE_DID.md#8-s2b-the-game-on-isaac-lab-drones-16-and-17-november).
+got here: [History](README.md#history).
 
 | Item | Value |
 |---|---|
@@ -221,7 +223,7 @@ pilots (pure rules, not of record) it held no games against the straight Strike.
   pure rules, yaw rate only on the Starling layer and the physics drone, where height speed now matters;
 - 100 million game-steps per seed instead of 50 million.
 
-The pilots' notes are not of record and not in git. `[standin_v2]` was taken as approved by the lead from the owner's go-ahead for Isaac runs (17 November, 03:25); the owner has not yet confirmed the table itself.
+The pilots' notes are not of record and not in git. `[standin_v2]` was used under the owner's go-ahead for Isaac runs (17 November); the owner has not yet confirmed the table itself.
 ([T14 record](../records/2026-11-17_s2b_standin_isaac_record.md#settings)).
 
 #### 5a. On the physics drone in Isaac Lab
@@ -231,8 +233,8 @@ The pilots' notes are not of record and not in git. `[standin_v2]` was taken as 
 per Strike behaviour and checked against the gate. SIM-ONLY yaw-rate gains
 ([T14 record](../records/2026-11-17_s2b_standin_isaac_record.md)).
 
-- Seeds 1 and 2 ran on this laptop (86 and 69 minutes). Seed 3 was not started: by the lead's ruling it would have
-  ended at the laptop's hard stop, so it is queued for the home RTX 5090.
+- Seeds 1 and 2 ran on this laptop (86 and 69 minutes). Seed 3 was not started: it would have ended at the
+  laptop's hard stop, so it is queued for the lab's RTX 5090.
 - **Deviation, disclosed in the record:** the learning curve was measured every 80 updates instead of the default
   20, so that two seeds fitted in the night. The curves have 11 points per seed instead of 40.
 
@@ -264,7 +266,7 @@ Guards also hold only 1.1 % against the straight Strike on the same games.
 #### 5b. On the PyTorch game
 
 **Not run.** The plan has two PyTorch control runs, pure rules and the Starling layer, each with its own ledger row.
-The lead ruled on 17 November to give the night's GPU time to the Isaac Lab run first; the diagnosis pilots on the pure
+On 17 November the night's GPU time went to the Isaac Lab run first; the diagnosis pilots on the pure
 rules stand in as a control for now, but they are not runs of record. The PyTorch runs are not scheduled.
 
 ## The gates

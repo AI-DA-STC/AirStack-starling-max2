@@ -1,9 +1,11 @@
+INTERNAL · a build plan written for the lab's AI coding assistants; history, not instructions. Results: [../README.md](../README.md).
+
 # NUS port, Phase 3: the partner's policy, converted to PyTorch
 
 **Status: PLAN v2 (17 November 2026, night), after the gatekeeper read of v1 (5 PASS, 8 FAIL; all 8 fixes applied).
-Owner: "follow ur recommendation". Both owner approvals given (17 Nov, night): `msgpack` dependency; layout id
+Both owner approvals given (17 Nov, night): `msgpack` dependency; layout id
 `nus_area_denial_v1`.** Phase 2 passed first (ledger W1). The private plan with partner values is
-on the 5090 (`~/ma_skills-self-play/PORT_PLAN.md`); this file holds none. Gate numbers: `configs/nus_port.toml`
+on the 5090 (the private port plan); this file holds none. Gate numbers: `configs/nus_port.toml`
 `[gates.phase3_converted_policy]`, frozen; this plan only specifies how they are measured.
 
 ## Goal (status: PROPOSED)

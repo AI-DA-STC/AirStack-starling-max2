@@ -25,8 +25,9 @@ cd ~/AirStack-starling-max2/svg_training      # or the svg_training folder of yo
 unset PYTHONPATH                               # the 5090's shell sources ROS
 CUDA_VISIBLE_DEVICES="" PYTHONPATH=source ~/miniconda3/envs/env_isaaclab/bin/python -m pytest -q -p no:cacheprovider
 ```
-NUS tests that need `configs/local/` or NUS's code skip where those are missing (the laptop, a fresh worktree): a skip
-is not a pass. `msgpack` must be installed in `env_isaaclab` (GETTING_STARTED step 5).
+NUS tests that need `configs/local/` or `runs/nus_port/` skip where those are missing; `scripts/nus_install_provisional.sh`
+fills both from the committed PROVISIONAL bundle (`nus_provisional/`) on any machine. Tests that need NUS's code itself
+still skip off the 5090: a skip is not a pass. `msgpack` must be installed in `env_isaaclab` (GETTING_STARTED step 5).
 Anything that needs Isaac Lab uses conda env `env_isaaclab`, headless, with `nvidia-smi` checked first.
 
 ## 4. Edit
@@ -44,7 +45,9 @@ Same command as step 3. If no tests exist for this change yet, say "no tests exi
   and our results; NUS's source code is never committed (no vendored file, no pasted block; cite `file:line`); code
   reads NUS's values from `configs/local/` and partner-facing code holds no numeric literal other than 0, 1, -1, 2
   (`tests/test_nus_rules_privacy.py` G2). Confidential programme reports are named, never quoted.
-- Mark any path that exists on the 5090 only (`~/ma_skills-self-play/`, `configs/local/`, `runs/`) as such.
+- Mark any path that exists on the 5090 only (`~/ma_skills-self-play/`, `~/nus_jax_runs/`, other `runs/` output) as such.
+  `configs/local/nus_*.toml` and the NUS-port weights, starts and recordings are not 5090-only: the PROVISIONAL bundle
+  installs them anywhere.
 
 ## 7. Definition of done (STANDARDS §11)
 Walk the checklist: inside the folder; tests quoted; numbers traceable; labels; wording; run records

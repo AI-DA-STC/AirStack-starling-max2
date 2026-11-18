@@ -1,3 +1,5 @@
+INTERNAL · the lab's AI-assistant hand-over notes. Not needed to read or run anything here: start at [../../README.md](../../README.md).
+
 # Claude handoff: svg_training (vectorised training pipeline)
 
 > **How to use this file.** Read it at the start of a session, after [../../CLAUDE.md](../../CLAUDE.md).
@@ -148,14 +150,14 @@ Videos: `runs/nus_port/videos/`. **Interface layout id `nus_area_denial_v1` (STA
 ### Evening summary, 17 November 2026 — home RTX 5090 session (for the owner and the laptop session)
 
 All observed in the training simulator or on the desktop; nothing flown. Partner numbers are NOT in this file: they
-live only on the 5090 in `~/ma_skills-self-play/` (private plan `PORT_PLAN.md`, notes `_notes/`) and in the
+live only on the 5090 in `~/ma_skills-self-play/` (private port plan, notes `_notes/`) and in the
 git-ignored `configs/local/` and `runs/`.
 
 **Done:**
 - 5090 host env `env_isaaclab` built (setup script exits 1 on a fresh install; hand fixes in
   [../GETTING_STARTED.md](../GETTING_STARTED.md) step 5, on branch `docs-5090-setup` with its note
   `docs/claude/FROM_5090_2026-11-17.md`). Full suite there: 798 passed, 11 skipped.
-- NUS code (three branches) cloned on the 5090 only; owner: partner code on the 5090 is fine (personal desktop),
+- NUS code (three branches) cloned on the 5090 only; owner: NUS's code may live on the workstation,
   so TRAINING.md's "must not leave the laptop" needs updating. NUS confirms the continuous-space branch is the one.
 - **Two tracks (owner, 17 Nov):** (1) area denial = the NUS port, contact-free, filter on every pair (matches the
   programme design review's Scenarios A/B); (2) contact tag = a separate one-on-one track,
@@ -166,7 +168,7 @@ git-ignored `configs/local/` and `runs/`.
 - Phase 1: conda `nus_jax` built; NUS's own tests 65 passed, 1 failed (their stale test vs their config; NUS
   confirmed harmless). Phase 2a: NUS benchmark and two short 3 v 3 fixed-opponent runs (one per team), both teams
   win every evaluation game against NUS's scripted opponents; not runs of record; videos saved with NUS's outputs.
-- **Phase 2 part A (this branch, `nus-port-phase2`):** leak guard rails G1–G4 (`configs/nus_rules.template.toml`,
+- **Phase 2 part A (this branch, `nus-port-phase2`):** privacy checks G1–G4 (`configs/nus_rules.template.toml`,
   `source/svg_training/nus/rules.py`, `outputs.py`, `tests/test_nus_rules_privacy.py`; marker test), a batched
   PyTorch replica of NUS's 2-D game (`source/svg_training/nus/replica.py`), fixture recorder
   (`scripts/nus_record_fixtures.py`), tests (`tests/test_nus_replica.py`). Per-step parity with NUS's code on 3 v 3,
@@ -185,7 +187,7 @@ may be unfinished and uncommitted in this worktree. **Resume note (private, on t
 
 **Waiting on the owner:**
 1. ~~Zone radius and arena~~ decided (lead, from three reviews; owner asked agents to decide).
-2. Accept the Phase 1 FAIL (cause confirmed by NUS); approve the PROPOSED gate numbers in `PORT_PLAN.md`.
+2. Phase 1: 65 of NUS's 66 tests pass (the failure is a test NUS confirmed is out of date); approve the PROPOSED gate numbers in the private port plan.
 3. Go for a full NUS self-play run on the 5090 (a few hours) on the chosen hangar geometry.
 4. ~~5090 Isaac preflight~~ owner chose (18 Nov) to raise the GPU limit: `isaac_preflight.sh` now allows up to 1024 MiB per foreign process (the 5090's remote-desktop daemon holds 546-589 MiB; a NUS JAX job, ~1.7 GB, still blocks). The WiFi rule (exit 10) is unchanged; the owner extended his 16 Nov headless-on-WiFi approval to the 5090 (18 Nov, "wifi: yes"), so headless launches here use `--approved-headless`. `run_nus_job.sh` uses the same 1024 MiB limit (owner, 18 Nov), so NUS jobs no longer need `--allow-shared-gpu`. Branch `docs-5090-setup` still says "500 MiB" in WORKSTATION_SETUP §2c and GETTING_STARTED step 7: update when merging.
 5. **Container route is incomplete (found 17 Nov on the 5090, first container suite run since T1):** image
@@ -330,7 +332,7 @@ Tests (Task 11, 16 November, laptop host, conda `env_isaaclab`, `PYTHONPATH=sour
 | 7 | Tier 2 benchmark (Isaac Lab) | done; FIRST RUN 15 Nov | smoke point in the container: 64 games × 2 drones, ~1,800–2,300 game-steps/s, 0 NaN, 2.5 % resets per step, repeats within 1 %. Found and fixed: `simulation_app.close()` spun forever after the rows were written; the script now always leaves with `os._exit` (commit `08107eb`) |
 | 8 | Record and ledger from results and gates | done | 30 tests pass; reviewed with an attack list, two fix rounds. Reviews closed three ways the record could have shown a false PASS (NaN rate, missing NaN count, negative or duplicated rows). `make_record.py` needs `--seeds` |
 | 9 | Run S0 on the laptop, record, gatekeeper | done: T1 = FAIL on one gate | `records/2026-11-15_s0_laptop_record.md`, ledger T1 (commit `1b50419`). Only `sweep_complete` failed: tier 2 point `t2_k1` at 64 games lost to an Isaac Sim start-up segfault (Kit telemetry thread, before project code). Gatekeeper: every number recomputes exactly from `results.jsonl`; record faults to fix in code for the next run: commit shown as `unknown` (no `.git` in the container) and stale "untracked" text; no status labels (MEASURED / PROPOSED) in the record; ledger date in container UTC. Owner decides: accept T1 and go to S1, or re-run S0 after the fixes |
-| — | Owner's decision on T1 (15 Nov) | "go with ur recommendations" | T1 stands as FAIL as written; its numbers are used. Next, in order: (1) record fixes + automatic retry of an Isaac start-up crash (building); (2) the S1 plan for the owner's approval (research running); (3) documentation written with the technical-writer agent. The next S0 (on the workstation) should come out PASS |
+| — | Owner's decision on T1 (15 Nov) | (the owner followed the recommendations) | T1 stands as FAIL as written; its numbers are used. Next, in order: (1) record fixes + automatic retry of an Isaac start-up crash (building); (2) the S1 plan for the owner's approval (research running); (3) documentation written with the technical-writer agent. The next S0 (on the workstation) should come out PASS |
 | — | Owner, 15 Nov ("yup ok") | S1 plan approved with its gates; root README links the folder | S1 runs subagent-driven from `docs/plans/2026-11-15-s1-drone-model-and-safety-filter.md`; a training guide (headless and with the Isaac Sim window) is being written for when training exists (S2) |
 | — | Owner, 15 Nov, before signing off for the night | "show it by showing generated graphs … (flowchart etc) to visualize the data" | Standing rule: every results or evidence page shows at least one figure generated by a committed script from the run's own data (and a flowchart where a process is explained). Apply to S0_RESULTS now and to every S1 record. He checks tomorrow |
 | — | Owner, 15 Nov, same evening | "ensure that none of the real drone code or sim code in airstack is affected"; "provide explanation in non AI-ish terms … assume reader is new to this" | Verified by git: no commit of this work touches `AirStack/`, `tools/`, `patches/`, `mocap/`, `localisation/` or the drone parameters; now a definition-of-done check (STANDARDS §11). Plain-language rule added to STANDARDS §2; a plain-language pass and a new page `docs/WHAT_WE_DID.md` are being written. Applies to chat replies too |
@@ -401,7 +403,7 @@ agents and skills for the work. Since then S0, S1 and S2 have been built and run
 
 | Decision | Choice |
 |---|---|
-| Partner code on the 5090 | allowed ("my personal desktop, it's ok", 17 Nov) |
+| NUS's code on the workstation | allowed (owner, 17 Nov) |
 | Two tracks | (1) area denial = the NUS port, contact-free, filter on every pair; (2) contact tag = a separate one-on-one track, DRAFT plan (17 Nov) |
 | NUS port values | the hangar geometry decided by the lead from three reviews (owner asked agents to decide, 17 Nov); every PROPOSED gate approved before its run; Phase 1 FAIL accepted |
 | Publication | NUS agreed: code details, settings and our results may be published; NUS's source code may not (18 Nov; STANDARDS §2) |
@@ -409,7 +411,7 @@ agents and skills for the work. Since then S0, S1 and S2 have been built and run
 | GPU limit, WiFi | 1024 MiB per foreign process; headless over WiFi approved on the 5090 (18 Nov) |
 | Phase 4 | all seven plan answers accepted (18 Nov ~05:00); core hook `SvgGame._draw_starts` approved |
 | Root edits | root `README.md` and root `CLAUDE.md` svg_training rows (status and pointers only, 18 Nov) |
-| Phase 5 (~12:20) | delegated to the lead ("i follow ur recommendations"): route (b), our PyTorch copy of NUS's method with a 2-D method match first; 3-D with the filter; hangar geometry kept; gates before any run ([NUS_PORT §12](../NUS_PORT.md#12-next-steps-the-phase-5-plan)) |
+| Phase 5 (~12:20) | delegated to the lead (owner, 18 Nov): route (b), our PyTorch copy of NUS's method with a 2-D method match first; 3-D with the filter; hangar geometry kept; gates before any run ([NUS_PORT §12](../NUS_PORT.md#12-next-steps-the-phase-5-plan)) |
 | Own training (~12:30) | "explore to see if we can train ourselves": time-boxed pilots, not of record, training our own Guard policy on tier 1 with the filter and 3-D |
 | Clips and hangar size (~14:10) | "just put all clips on the github … no need to keep it private": every NUS-port clip published; the 7.5 m arena and the usable flying box may be stated (the motion-capture camera survey is still not needed in the docs) |
 
@@ -488,10 +490,11 @@ stay out of git; real flights of a contact policy should start with a virtual co
 
 ### 5-release. Branch `nus-release` (19 Nov 2026): what is still open
 
-- The docs pass (TRY_IT, TRAINING order, PLUG_IN CPU route) uses the new flags and the installer; the commands verified on
-  a fresh clone are in `~/ma_skills-self-play/_notes/docs_drafts/VERIFIED_CPU_COMMANDS.md`.
-- `nus_phase4.py --estimate-only` did not stop row 1 (a replica-engine row; 2.1 and 2.2 likely the same, not run): the row ran in full (found 19 Nov; not fixed).
-- `.claude/agents/train-implementer.md` and the `train-change` skill still say `configs/local/` and `runs/nus_port/` exist on the 5090 only (now installable anywhere from `nus_provisional/`).
+- The docs restructure for NUS is applied on this branch (19 Nov): front door `README.md`, `docs/NUS_RESULTS.md`,
+  `docs/TRY_IT.md` (the verified fresh-clone commands), `docs/README.md` (page map, labels, history), `records/README.md`,
+  four after-the-fact INFO records (T35–T38; T34 reserved for the P1b rerun), the agents and skills no longer call
+  `configs/local/` and `runs/nus_port/` 5090-only. Not done: the S1/S2/S2b owner to-do sections stay on their pages
+  (other pages link their anchors).
 - Not in the bundle: `runs/nus_port/w3/reference/` (only `--cuda-parity` needs it), the 223 MB Phase 5 one-update exports
   (3 `test_nus_mappo` tests keep skipping), `configs/local/partner_rules.toml` (exists nowhere; 2 privacy scans skip).
 
@@ -609,7 +612,7 @@ each session start by `sync_claude_setup.sh`; the laptop has none and needs none
 | Programme, game, wording rules | `~/Documents/GitHub/Strike-Versus-Guard` (`content/programme/`, `STANDARDS.md`) |
 | Programme reports | `~/Documents/GitHub/Strike-Versus-Guard-sources` — **confidential**: point to them, do not copy from them |
 | Isaac Lab | `~/IsaacLab` (2.3.2), conda `env_isaaclab` |
-| NUS's code (three branches), the private port plan `PORT_PLAN.md`, notes `_notes/`, probes `_probes/` (Run 0, self-play matrices, videos), NUS's outputs | `~/ma_skills-self-play/` — **5090 only**; on the laptop read [../NUS_PORT.md](../NUS_PORT.md) |
+| NUS's code (three branches), the private port plan, notes `_notes/`, probes `_probes/` (Run 0, self-play matrices, videos), NUS's outputs | `~/ma_skills-self-play/` — **5090 only**; on the laptop read [../NUS_PORT.md](../NUS_PORT.md) |
 | NUS job logs and exact commands | `~/nus_jax_runs/*.log`, `*.cmd.txt` — **5090 only** |
 | NUS local values, converted weights, Phase 4 rows | `configs/local/nus_*.toml`, `runs/nus_port/` in `~/AirStack-starling-max2-nus-port/svg_training/` — **5090 only** (git-ignored) |
 | Linear plan snapshot | this project (P-NEAR-31): [svg_training/docs/linear/snapshots/2026-11-16-project-plan-linear.md](../linear/snapshots/2026-11-16-project-plan-linear.md) (folder layout: [../linear/README.md](../linear/README.md)); the flight-stack projects: `docs/linear/snapshots/2026-11-13-project-plan-linear.md` in this repository |

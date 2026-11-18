@@ -1,3 +1,5 @@
+INTERNAL · copies of the lab's project-tracker (Linear) items. Not needed to read or run anything here.
+
 # Linear sync record — 2026-11-16
 
 ## Project

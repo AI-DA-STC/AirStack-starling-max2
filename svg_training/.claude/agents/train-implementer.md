@@ -29,8 +29,10 @@ Rules:
 - NUS (STANDARDS §2, owner 18 Nov 2026): never copy NUS's source code into the repository (describe it, cite
   `file:line`); NUS's values are read from `configs/local/` by key; `nus/`, `scripts/nus_*.py` and `tests/test_nus_*.py`
   hold no numeric literal other than 0, 1, -1, 2 (G2; test constants live in `tests/_nus_markers.py`).
-- On the 5090, `unset PYTHONPATH` before any `env_isaaclab` or `nus_jax` command. `configs/local/`, `runs/nus_port/` and
-  `~/ma_skills-self-play/` exist on the 5090 only; NUS's code is read, never edited, and runs only in conda `nus_jax`.
+- On the 5090, `unset PYTHONPATH` before any `env_isaaclab` or `nus_jax` command. `configs/local/` and `runs/nus_port/`
+  are git-ignored: on any machine `scripts/nus_install_provisional.sh` fills them from the committed PROVISIONAL bundle
+  `nus_provisional/` (STANDARDS §2, decision 6). `~/ma_skills-self-play/` (NUS's code) exists on the 5090 only; NUS's
+  code is read, never edited, and runs only in conda `nus_jax`.
 
 Report: what you changed per plan item (paths); the test commands and their output; what you did
 not verify; any deviation and why. Say "not run" where that is true.

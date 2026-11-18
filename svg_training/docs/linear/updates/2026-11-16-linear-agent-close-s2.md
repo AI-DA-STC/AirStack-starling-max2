@@ -1,3 +1,5 @@
+INTERNAL · copies of the lab's project-tracker (Linear) items. Not needed to read or run anything here.
+
 # Linear update — 2026-11-16, close S2 and open S2b (Isaac Lab)
 
 Instructions for the Linear agent, in the **nearlab** workspace (team NEAR Lab), project **Isaac Lab Pipeline for

@@ -1,7 +1,10 @@
+REFERENCE · the full install with Isaac Lab (container or host), the first tests and the S0 benchmark. Without an NVIDIA GPU, or to try things first: [TRY_IT](TRY_IT.md).
+
 # Getting started: set up a machine, then run the tests and a benchmark
 
-This is the one setup guide for every machine: the laptop, the home RTX 5090 workstation, or a new one. It has
-three goals, in order. First the machine is set up and the tests pass. Then a trial run prints its plan without
+This guide sets up a machine with an NVIDIA GPU and Isaac Lab, for tier 2 and the S0 benchmark. You do not need it to
+read the results, run the game on a CPU, score a strategy or repeat ladder rows 1–5: use [TRY_IT](TRY_IT.md) levels
+A–D. It has three goals, in order. First the machine is set up and the tests pass. Then a trial run prints its plan without
 starting anything (a *dry run*). Then the S0 benchmark runs and writes its summary (the *record*). Terms are in the
 [glossary](GLOSSARY.md).
 
@@ -9,22 +12,7 @@ There are two ways to run the pipeline. A *container* is a sealed copy of the so
 every machine (the *container route*). The *host route* installs Isaac Lab and a Python environment on the machine
 itself. A machine can have both.
 
-## Pick your machine
-
-Every step below has the same order on every machine. Where a step differs by machine, a small table says how.
-
-| Machine | What it is for | Where it stands (18 November 2026) |
-|---|---|---|
-| Laptop (RTX 5070 Ti, 12 GB) | build, test, record and commit; smoke runs | set up: the container (the S0 run of record T1 ran in it) and the host route |
-| Workstation (home RTX 5090, 32 GB) | long runs; NUS's code (5090 only) | host route built with the hand fixes (step 5); conda `nus_jax` for NUS's code ([below](#nus-jax-env-home-rtx-5090-only)); Isaac preflight passes headless when no other GPU job runs (step 7); container image built 17 Nov, its suite not clean (HANDOFF §0) |
-| Another new machine | — | a fresh install: follow the 5090 column |
-
-In the step tables below, 5090 cells are MEASURED on 17 November 2026; laptop cells come from this folder's
-existing pages and records.
-
-Rebuilding the laptop from scratch: use the same steps. The hand fixes likely apply too (observed on the 5090, not
-run on the laptop). Working with a second machine (pushing first, the private bundle, NUS jobs, bringing results
-back, remote access): [WORKSTATION_SETUP](WORKSTATION_SETUP.md).
+The lab's own two machines, step by step, and where each stands: [WORKSTATION_SETUP](WORKSTATION_SETUP.md#1b-where-each-machine-stands-step-by-step).
 
 **What the machine needs.**
 
@@ -40,17 +28,12 @@ back, remote access): [WORKSTATION_SETUP](WORKSTATION_SETUP.md).
 ## 1. Get the code
 
 ```bash
-git clone https://github.com/AI-DA-STC/AirStack-starling-max2.git ~/AirStack-starling-max2   # new machine, once
-git -C ~/AirStack-starling-max2 pull           # later, to update (workstation or new machine only)
-cd ~/AirStack-starling-max2/svg_training
+git clone https://github.com/AI-DA-STC/AirStack-starling-max2.git
+cd AirStack-starling-max2/svg_training
 mkdir -p runs          # run output goes here; it is not in git, so a fresh clone lacks it and one test fails
 ```
 
-Every command on this page runs from `~/AirStack-starling-max2/svg_training`.
-
-| Laptop | 5090 workstation |
-|---|---|
-| the live clone: commits land here, so there is nothing to clone | clones from GitHub, so push from the laptop first ([WORKSTATION_SETUP §0](WORKSTATION_SETUP.md#0-before-you-leave-the-laptop-push-first)) |
+Every command on this page runs from the `svg_training/` folder of your clone.
 
 ## 2. Check the machine
 
@@ -62,10 +45,6 @@ It checks the GPU, the driver (580 or newer), the Ubuntu version, free disk (60 
 conda. Exit 0 means go; fix every FAIL line first. It changes no settings, but its Docker check downloads the small
 `ubuntu` image the first time.
 
-| Laptop | 5090 workstation |
-|---|---|
-| written there; run only with `--dry-run` | 17 Nov: 0 failed, 2 warnings. The GPU has users (the remote-desktop daemon), and tmux is missing: install it with `sudo apt install tmux`. The Docker check downloaded `ubuntu:latest` (102 MB) |
-
 ## 3. Copy the files that are not in git
 
 Everything the pipeline needs lives inside the repository folder, either in git or in a git-ignored folder you
@@ -76,16 +55,12 @@ AirStack simulator's own output under `~/flight_logs/sim/`, which `scripts/recor
 | What | Where it goes | Needed for |
 |---|---|---|
 | Three real flight logs of 13 November (`log103.ulg`, `log105.ulg`, `08_47_58.ulg`, 51 MB) | `svg_training/data/flight_logs/2026-11-13/` (git-ignored), same sub-folders as in the bundle | the S2b step tests (`configs/s2b.toml [step_tests] real_log`) and the S1 real-log fit (`scripts/fit_real_px4.py`) |
-| Partner's code, checkpoints, reference logs | outside the repository, as the bundle's NOTES say; on the 5090 NUS's code is in `~/ma_skills-self-play/` (5090 only) | NUS jobs only ([TRAINING, NUS jobs](TRAINING.md#nus-jobs)) |
+| NUS's code | your own clone, anywhere outside this repository; point `SVG_NUS_CLONE` and the NUS commands at it | NUS jobs only ([TRAINING, NUS jobs](TRAINING.md#nus-jobs)) |
 | Construction-site world, `source/` and `build/` (about 280 MB, bought asset) | `localisation/scenes/construction_site/` in the clone, beside its README | the construction-site clips and screenshots only; training, scoring, tests and the other worlds do not use it |
 
-The first two rows come in the private bundle (`~/svg_workstation_bundle/` on the laptop). Copy it by USB, a private
-drive or `scp`; it never goes to GitHub. Its NOTES name each folder and give the sha256 of each archive: check them
-before unpacking. The construction-site world is not in the bundle: copy it by hand.
-
-| Laptop | 5090 workstation |
-|---|---|
-| holds the private bundle | none of the three copied yet (17 Nov) |
+The flight logs come in the lab's private bundle (lab only: [WORKSTATION_SETUP](WORKSTATION_SETUP.md)); without them
+the tests that need them skip. The construction-site world is a bought asset and is not shared. The NUS-port local
+files and weights are in the committed PROVISIONAL bundle: `scripts/nus_install_provisional.sh`.
 
 ## 4. The container route (part A)
 
@@ -95,10 +70,6 @@ docker/build.sh                 # once; downloads NVIDIA's base image (about 26 
 
 You should see `built svg-training:isaaclab-2.3.2`. The code is mounted when the container starts, so a code change
 needs no rebuild. What the image holds and where it stores things: [docker/README](../docker/README.md).
-
-| Laptop | 5090 workstation |
-|---|---|
-| built; T1 ran in it | built 17 Nov; its suite there is not clean yet: 704 passed, 29 failed, 13 errors (skrl 1.4.3 in the image, `svg_ground_control` not mounted, bare `python` calls; HANDOFF §0, 17 Nov evening, item 5) |
 
 ## 5. The host route (part B)
 
@@ -115,21 +86,12 @@ Isaac Lab is the tag `v2.3.2` by default. The laptop runs 2.3.2 plus 25 commits 
 pipeline uses); add `--isaaclab-ref f73c331738` to match it exactly. Never edit `~/IsaacLab`. The script does not
 accept NVIDIA's licence for you (fix 4 below). Today it stops with exit 1 on a fresh install: then do the hand fixes.
 
-| Laptop | 5090 workstation |
-|---|---|
-| has `~/IsaacLab` (`f73c331738`) and `env_isaaclab`. The script has not run there (dry run only) | 17 Nov, default `v2.3.2`: exit 1. The script's steps 1–4 ran cleanly; its step 5 left out the core `isaaclab` package and changed torch; its step 9 (the tests) failed. The hand fixes finished it |
-
 Versions on both machines: [GLOSSARY, Versions](GLOSSARY.md#versions).
 
-**`msgpack`** (owner approval, 18 November 2026; `pyproject.toml`): the NUS checkpoint loader and its tests need it,
-and `tests/_nus_markers.py` imports it, so the suite stops at collection without it. The 5090's `env_isaaclab` has
-1.2.4. On a machine that lacks it (check: `~/miniconda3/envs/env_isaaclab/bin/pip show msgpack`):
-
-```bash
-~/miniconda3/envs/env_isaaclab/bin/pip install "msgpack>=1.0"
-```
-
-The container image does not have it yet (HANDOFF §5).
+**The pipeline's own packages** (`pyproject.toml`: msgpack, scipy, skrl, gymnasium, opencv and the rest): after the
+Isaac Lab install, add them to the same environment with `<env>/bin/pip install -e ".[test]"` from `svg_training/`
+(`-r requirements-exact.txt` as well for the versions our records used). `env_isaaclab` has msgpack 1.2.4 and the
+container image 1.1.2.
 
 ### Hand fixes after the setup script
 
@@ -174,7 +136,7 @@ unset PYTHONPATH    # fix 6: only if your shell sources ROS (the 5090's does)
    ```
    The laptop's full list is `scripts/workstation/env_isaaclab_freeze_laptop.txt`; the script's step 8 prints the
    differences.
-4. **NVIDIA's licence.** On the 5090 the script ran with `OMNI_KIT_ACCEPT_EULA=YES` (the owner's choice). That lasts
+4. **NVIDIA's licence.** On the 5090 the script ran with `OMNI_KIT_ACCEPT_EULA=YES` (the lab's choice). That lasts
    for one command only. A later process with no terminal, such as pytest's preflight test, then stops with
    `Unable to bootstrap inner kit kernel: EOF when reading a line`. Start Isaac Sim once from a terminal, read the
    licence and accept it yourself. That writes `yes` into the file below. On the 5090 the file was written with the
@@ -215,15 +177,13 @@ Host route:
 
 ```bash
 unset PYTHONPATH                # only if your shell sources ROS (hand fix 6)
-~/miniconda3/envs/env_isaaclab/bin/python -m pytest -q -p no:cacheprovider
+<env_isaaclab>/bin/python -m pytest -q -p no:cacheprovider
 ```
 
-The tests passed if the last line has no `failed`. Two skipped tests in the container are normal: they only run on
-the host.
-
-| Laptop | 5090 workstation |
-|---|---|
-| both routes in use; every S0 run starts with the tests (`runs/<name>/tests.txt`) | host, 17 Nov: 798 passed, 11 skipped, in 5 min 46 s. Eight skips are Isaac tests that need `SVG_ISAAC_TESTS=1` after preflight; three need private files not yet copied. Container, 17 Nov: 704 passed, 29 failed, 13 errors (step 4 table) |
+The tests passed if the last line has no `failed`. Skips are expected and each names its reason: no CUDA GPU, Isaac
+tests not switched on (`SVG_ISAAC_TESTS=1` after preflight), or files you do not have (NUS's clone, the lab's private
+files). A skip is not a pass. On a GPU, `test_t2_scenes_t8_setting_cuda` shows as `xfailed` (an expected failure). In
+the container two more tests skip (host only).
 
 ## 7. The first Isaac check (preflight)
 
@@ -235,31 +195,24 @@ scripts/isaac_preflight.sh      # exit 0 means go
 ```
 
 Exit 10: WiFi only, with a remote-desktop program running. Exit 11: another process holds more than 1024 MiB of GPU
-memory (owner, 18 November 2026: raised from 500 MiB so the 5090's remote-desktop daemon, 546–589 MiB, does not block;
-`scripts/workstation/run_nus_job.sh` uses the same limit). `--approved-headless` turns exit 10 into a warning; the owner
-has approved it on both machines (laptop 16 November, 5090 18 November). Never open a window over remote desktop.
+memory (a remote-desktop daemon uses about 550–590 MiB, so it does not block; `scripts/workstation/run_nus_job.sh` uses
+the same limit). `--approved-headless` turns exit 10 into a warning; use it only where headless runs over WiFi are
+approved for that machine. Never open a window over remote desktop.
 
-| Laptop | 5090 workstation |
-|---|---|
-| starting Isaac Sim with a window over remote desktop has crashed its WiFi firmware. The owner approved headless launches on it over WiFi (16 Nov, "yes dont worry about wifi"); `--approved-headless` returned 0 before each point of the S2b speed run ([record](../records/2026-11-16_s2b_throughput_record.md)). Plain run: not recorded | 18 Nov: `--approved-headless` exits 0 when no other GPU job runs (a NUS JAX job, about 1.7 GB, still blocks it, as it should). 17 Nov, before the owner's two decisions: exit 10, and exit 11 at the old 500 MiB limit ([WORKSTATION_SETUP §2c](WORKSTATION_SETUP.md#2c-preflight-on-the-5090-decided-18-november)) |
-
-## NUS JAX env (home RTX 5090 only)
+## NUS JAX env (with your NUS clone)
 
 NUS's training code is JAX, not PyTorch, and runs in its own conda env, `nus_jax` (Python 3.12), away from
-`env_isaaclab`. Only the 5090 has NUS's code (`~/ma_skills-self-play/`, outside every git repository); the laptop
-does not need this env to read the results or run the tests (the NUS tests that need NUS's code or the local files
-skip there).
+`env_isaaclab`. You need it only to run NUS's code or to rebuild the local settings files from it; the NUS tests that
+need NUS's code skip without it, and `scripts/nus_install_provisional.sh` installs the lab's own local files. If your
+own environment already runs your code, use that instead ([TRY_IT D′](TRY_IT.md#d-rebuild-the-files-from-your-clone)).
 
 ```bash
 unset PYTHONPATH                # ROS 2 Jazzy is Python 3.12 too: it would load quietly into nus_jax
-C=~/ma_skills-self-play/area-denial-continuous-space-self-play
+C=<your clone>
 scripts/workstation/setup_nus_jax.sh --dry-run --skip-gpu-check $C
 scripts/workstation/setup_nus_jax.sh --skip-gpu-check $C
+scripts/workstation/setup_nus_jax.sh --cpu --skip-gpu-check $C       # no NVIDIA GPU: CPU JAX
 ```
-
-| Laptop | 5090 workstation |
-|---|---|
-| not built (no NUS code there) | 17 Nov: built (jax 0.10.2, flax 0.12.8, CUDA 13 JAX); NUS's CPU tests 65 passed, 1 failed (a stale NUS test; exit 5). Note: `pip install -e` writes build files into the NUS clone |
 
 Running NUS jobs and our NUS scripts: [TRAINING, NUS jobs](TRAINING.md#nus-jobs).
 
@@ -307,10 +260,6 @@ bash scripts/run_s0.sh 2026-11-20_s0_workstation <approved sha256>              
 At the end you should see `record: records/<name>_record.md` and the verdict line. Run it without a window
 (*headless*), and do not use the GPU for anything else meanwhile. On the host the script finds Python and Isaac Lab
 by itself; tier 2 starts through `conda run -n env_isaaclab`.
-
-| Laptop | 5090 workstation |
-|---|---|
-| T1 ran in the container | not run yet; a config for 32 GB needs the owner's approval ([WORKSTATION_SETUP §2](WORKSTATION_SETUP.md#2-the-first-evening-in-order)) |
 
 ## Reading the output
 

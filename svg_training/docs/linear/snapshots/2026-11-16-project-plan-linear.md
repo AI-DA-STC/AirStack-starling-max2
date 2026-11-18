@@ -1,3 +1,5 @@
+INTERNAL · copies of the lab's project-tracker (Linear) items. Not needed to read or run anything here.
+
 # Isaac Lab Pipeline for NUS Strategy Training: project plan (Linear milestones and issues)
 
 NEAR Lab · Linear snapshot: 16 November 2026, after the project was created

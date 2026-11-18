@@ -1,3 +1,5 @@
+INTERNAL · copies of the lab's project-tracker (Linear) items. Not needed to read or run anything here.
+
 # Linear files: Isaac Lab Pipeline for NUS Strategy Training
 
 Linear is the source of truth for this project's issues and status (project P-NEAR-31, team NEAR Lab). These files

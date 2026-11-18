@@ -1,3 +1,5 @@
+REFERENCE · the state of the art as of 14 November 2026, with sources; the evidence behind the design.
+
 # Research digest: vectorised drone-team training (as of 14 November 2026)
 
 > **How to read this.** Start with the bullets below, then §1: each finding and what the design does about it.
@@ -23,6 +25,10 @@ This digest is the evidence for decisions the owner has already taken:
 - **Games are played in realistic 3D environments**, the lab's construction-site world first (14 Nov 2026).
 
 The game: the Guard team holds a circular zone, the Strike team tries to reach the zone, and a Guard drone tags a Strike drone by contact. Policies output velocity commands to ModalAI Starling 2 Max drones on PX4, and a safety filter (a control barrier function, CBF) keeps drones of the same team apart. Statements marked "estimate" or "the researcher's suggestion" are judgements from the research, not published results.
+
+> **Note, 18 November 2026.** The same-team-only filter on this page (here, the decisions table and §6 item 6) is now
+> the contact-tag track's rule; the main game and the NUS port filter every pair, as in flight
+> ([STANDARDS §4](../STANDARDS.md#4-game-specification-version-0)).
 
 ## 1. What the findings mean for this pipeline
 

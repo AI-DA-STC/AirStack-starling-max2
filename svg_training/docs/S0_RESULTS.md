@@ -1,8 +1,10 @@
+REFERENCE · results of build step S0, observed in the training simulator.
+
 # S0 results: how fast the training simulator runs
 
 S0 asks one question: **how many games can the training simulator play per second on one GPU, and is that fast
 enough to train on?** The answer sets the compute budget for S2–S4 ([DESIGN §8](DESIGN.md#8-build-order)).
-Terms are in the [glossary](GLOSSARY.md). How we got here, step by step: [WHAT_WE_DID](WHAT_WE_DID.md).
+Terms are in the [glossary](GLOSSARY.md). How we got here: [History](README.md#history).
 
 The training simulator has two parts. *Tier 1* is a fast, simple drone model in plain PyTorch. *Tier 2* is a full
 physics drone in Isaac Lab. The official run whose numbers we keep (the *run of record*) is T1. Its written
@@ -93,7 +95,7 @@ One of 96 sweep points has no measurement: tier 2 case `t2_k1` (1 drone per game
 crashed while starting (segmentation fault in a Kit telemetry thread, exit 139), before any project code ran. So
 the `sweep_complete` gate failed. The other three gates passed: tests `109 passed, 2 skipped` (`runs/2026-11-15_s0_laptop/tests.txt`); worst repeat spread
 0.0562 (limit 0.10); no NaN ("not a number", a sign that the maths broke). The *repeat spread* is how far two
-repeats of one point differ, divided by their mean. The gatekeeper agent recomputed every number in the record
+repeats of one point differ, divided by their mean. A second reviewer recomputed every number in the record
 from `results.jsonl` and found them exact. The owner decided on 15 November 2026 that T1 stands as FAIL and its
 numbers are used. `scripts/run_s0.sh` now retries such a start-up crash once ([GETTING_STARTED](GETTING_STARTED.md#when-it-fails)).
 

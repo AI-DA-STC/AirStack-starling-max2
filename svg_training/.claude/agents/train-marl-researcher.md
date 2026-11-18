@@ -21,7 +21,7 @@ Read `docs/DESIGN.md` §6 and §7, `STANDARDS.md` §4, §6, §7, and `docs/RESEA
   Permutation-invariant encoder over padded lists with present flags.
 - **Reward.** Sparse win or lose per team, a small shaping term that fades out, smoothness added in a
   second phase only, and a small penalty on the safety filter's correction.
-- **Safety filter** in the loop, within each team only; the learner stores the unfiltered action
+- **Safety filter** in the loop on every pair of drones, as in flight (within a team only on the contact-tag track); the learner stores the unfiltered action
   (STANDARDS §6.2). A tag is contact (0.50 m between centres in tier 1); there is no tag radius.
 - **Environments.** Layout, placement and clutter drawn per game; one world held out; the other team
   masked when out of sight, with last-seen memory; the critic unmasked. Ask how the surroundings are

@@ -1,14 +1,16 @@
+INTERNAL · a build plan written for the lab's AI coding assistants; history, not instructions. Results: [../README.md](../README.md).
+
 # NUS port, Phase 4: the transfer ladder (frozen partner policies, one change at a time)
 
 **Status: PLAN v2 (18 November 2026), after the gatekeeper read of v1 (6 PASS, 7 FAIL; all fixes applied). Nothing
 built or run.** Phase 3 passed first (ledger W2). Phase 4 itself is owner-approved as INFO runs (no gates); the one
 gated run in it is W3, which finishes Phase 3's deferred arm. The private plan with partner values is on the 5090
-(`~/ma_skills-self-play/PORT_PLAN.md` §3 Phase 4 and "Hangar geometry — DECIDED"). This file holds no partner value:
+(the private port plan §3 Phase 4 and "Hangar geometry — DECIDED"). This file holds no partner value:
 every partner-derived number is named by its local key in `configs/local/nus_rules.toml`,
 `configs/local/nus_deploy.toml` or the new `configs/local/nus_hangar.toml` (Task 1). Every new value below is
 **PROPOSED** or **OPEN** (STANDARDS status labels).
 
-v2 changes: W3 gates copied verbatim and its archive-arm pass rule written down (D2, D8). PORT_PLAN's rung order kept:
+v2 changes: W3 gates copied verbatim and its archive-arm pass rule written down (D2, D8). the private port plan's rung order kept:
 action hold arrives on rung 3 (owner question 3). Control rows 2.1, 3a and 5a, each checked game by game. A pre-set
 split of rung 2. More metrics (filter correction size, smoothness, an interval on every rate). Reach time in seconds
 only. "At the local value" wording. A text scan of committed pages. A wider marker test. A free GPU for every rung. The
@@ -135,7 +137,7 @@ the deploy file it used.
 
 ### D3. The rows: one behaviour each
 
-The ladder keeps PORT_PLAN's six steps as rungs 1–6, in order. Action hold therefore belongs to rung 3 ("+ action hold
+The ladder keeps the private port plan's six steps as rungs 1–6, in order. Action hold therefore belongs to rung 3 ("+ action hold
 and Starling layer"); moving it is owner question 3. Lettered rows split a rung so that each row changes one
 behaviour. The committed `configs/nus_phase4.toml` `[[row]]` table declares every row by six keys (no partner value):
 `engine` (`replica`/`game`), `boundary` (`guard_circle`/`walls`), `separation` (`partner_push`/`block`/`filter`),
@@ -146,7 +148,7 @@ behaviour. The committed `configs/nus_phase4.toml` `[[row]]` table declares ever
 | 1 | baseline: our replica of the partner's game (W1 parity) | — | always | W2 replay (D2) |
 | 2.1 | our game engine with the partner's own rules: the soft push and the Guard circle, from the replica's `corrections` converted to metres; walls moved out of reach; jump motion | `engine` | if split (below) | equals row 1 game by game; positions within 1e-4 units at every partner step |
 | 2.2 | square walls instead of the Guard circle | `boundary` | if split | — |
-| **2** | `block` push-apart instead of the partner's soft push. Rung 2 = PORT_PLAN step 2: our `partner_rules` (pure), jump motion | `separation` | always | — |
+| **2** | `block` push-apart instead of the partner's soft push. Rung 2 = port plan step 2: our `partner_rules` (pure), jump motion | `separation` | always | — |
 | 3h | action hold: the displacement flown at constant speed over the partner step instead of in one tick | `motion` | always | — |
 | 3a | the rung 3 layer with an identity drone (no commander, delay or lag): the drone flies the held command exactly | `drone` | always | equals 3h game by game |
 | **3** | the drone response: commander copy (ramp, leash), delay, lag (`real_exploratory_v0`); filter still off, push kept | `drone` | always | — |
@@ -356,7 +358,7 @@ config and write under `runs/`).
     rung.
 11. **Summary and docs.** The figure script and `docs/NUS_PHASE4_RESULTS.md`, then a `train-gatekeeper` read of the
     records. HANDOFF §0/§4/§5. PLUG_IN "Plug in a trained NUS policy" (the ladder runner). The private notes and
-    PORT_PLAN updated outside git. **Before merge:** the laptop privacy scans, and every diff and commit message read
+    the private port plan updated outside git. **Before merge:** the laptop privacy scans, and every diff and commit message read
     by eye for short partner numbers (G5/G6).
 
 ## Not in Phase 4
@@ -386,7 +388,7 @@ reading rule, a W3 FAIL or a failed cuda parity check stops the phase earlier, w
 2. **W3 before the ladder**, both arms of the frozen gate (b). Recommended: yes.
 3. **Move action hold to rung 2?** Recommended: yes. A Starling can never fly the partner's one-tick jumps. Rung 2 would
    then hold, jump mode and row 3h would go, and 3a would be checked against rung 2. Until you approve, the plan keeps
-   PORT_PLAN's order.
+   the private port plan's order.
 4. **Rung 2 push rule** `block` or `shove`. Recommended: `block` (each team keeps its own radius, as in the partner's
    rule). Split rows 2.1–2.2 run only on the trigger.
 5. **±1 mm jitter on rung 5.** Recommended: yes; without it, 3-D changes nothing on tier 1.

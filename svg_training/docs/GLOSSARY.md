@@ -1,109 +1,166 @@
+REFERENCE · every word this folder uses, in three parts: your words and ours, the world around this folder, and the pipeline's own terms.
+
 # Glossary
 
-Plain definitions of the words this folder uses. Spelling is British. The rules behind them are in
-[STANDARDS.md](../STANDARDS.md).
+Plain definitions, British spelling. The rules behind them are in [STANDARDS.md](../STANDARDS.md). Part 1 is for the
+NUS team; part 2 explains the drones and software around this folder; part 3 is this folder's own vocabulary.
 
-## Terms
+## 1. Your words and ours
 
-Each row gives a word, what it means in everyday terms, and where to read more.
+Our programme's wording rules rename some of your terms ([STANDARDS §2](../STANDARDS.md#2-wording)). Each reader page
+gives your word once, then ours.
+
+| Your word or setting | Ours | Notes |
+|---|---|---|
+| area denial (your game) | the Strike vs Guard game (SvG) | `svg_training` = Strike vs Guard training |
+| defender | Guard team, Guard drone | holds the zone |
+| attacker | Strike team, Strike drone | tries to reach the zone; 1.5 times as fast as a Guard drone |
+| the "reached" flag (sticky) | a Strike reach (a Strike win) | your game runs on to step 200 after the first reach; our scoring ends the game at the first reach. The win or loss is the same either way |
+| time-out with no reach | a hold (a Guard win) | |
+| your reward: per-step inside-share penalty, −2 on the first reach, potential shaping, zero-sum | our scoring counts the outcome only (reach or hold) | Phase 5.2 training keeps your reward, in metres ([plan](plans/2026-11-18-nus-phase5-retraining.md)) |
+| 1 unit | 0.40 m on our hangar set-up | our choice, so the zone (4 units = 1.6 m radius) sits outside the flight software's 1.10 m keep-out |
+| 1 step | 0.60 s = 12 *ticks* of 0.05 s | each action is held for the 12 ticks |
+| `spawn_distance`, `defender_boundary` | 8.0 units each on the hangar set-up | your defaults are 20 |
+| your soft push between teams | our *push-apart* rule (`block`) in rows 2–3; the *safety filter* from row 4 | your push herds; our push-apart only cuts a move short; the filter makes both drones give way |
+| APF Guard, APF Strike (artificial potential field) | your scripted opponents, ported as `ApfGuard`, `ApfStrike` | gains read from your code |
+| archive, generation | the same | an archived policy of one team, one generation of alternating training |
+| G19, S20 | seed 2's Guard of generation 19 and Strike of generation 20 | trained by us with your code (8 generations, seed 2 continued to 20), hangar set-up |
+| P3G, P3S | the Guard and Strike trained by us with your code against your scripted opponents, hangar set-up | the "Phase 3 pair" |
+| observation, 9N + 2 (56 numbers for 3 v 3) | rebuilt from our 71-number observation by `NusPolicy` | interface layout `nus_area_denial_v1` |
+| `train_self_play` | your training method, alternating best-response multi-agent PPO with the archive pool | Phase 5 ports it to PyTorch (no APEX) |
+
+## 2. The world around this folder
+
+None of this is needed to run anything in this folder. It explains words on the pages.
 
 | Term | Meaning | More |
 |---|---|---|
-| Training simulator | this folder's simulator, tier 1 or tier 2. It is one of three simulators; always say which one you mean | [STANDARDS §2](../STANDARDS.md#2-wording) |
-| AirStack simulator | the simulator of the flight software: Isaac Sim + Pegasus + PX4 software in docker (`tools/sim.sh`); up to 3 drones, near real time | [DESIGN §3](DESIGN.md#3-the-pipeline-seven-stages) |
-| Tier 1 | the fast, simple drone model: a batched game model in plain PyTorch, no Isaac; a drone is a point that follows a velocity command | [HOW_IT_WORKS](HOW_IT_WORKS.md#two-tiers) |
-| Tier 2 | the full physics drone model: Isaac Lab physics; a drone is a rigid body with four rotors | [HOW_IT_WORKS](HOW_IT_WORKS.md#two-tiers) |
-| Policy | a trained strategy: it reads what a drone sees and sends a velocity command | [HOW_IT_WORKS](HOW_IT_WORKS.md#where-a-strategy-plugs-in) |
+| Starling 2 Max (Starling) | ModalAI's small indoor quadrotor drone. The lab has two | root [README](../../README.md) |
+| PX4 | the open-source flight software on the drone: version 1.14 on the real drones, 1.16.1 in the AirStack simulator | [STANDARDS §5](../STANDARDS.md#5-drone-models) |
+| AirStack | CMU's ground-control software that flies the drones; a snapshot lives in the repository's `AirStack/` folder | root [README](../../README.md) |
+| Commander | AirStack's program (`swarm_commander.py`) that, 20 times a second, turns each drone's speed command into an instruction for PX4 | [S1_RESULTS](S1_RESULTS.md#3-why-two-clocks-in-the-simulator) |
+| Safety filter (CBF) | CMU's collision filter in the commander (a control barrier function). In flight it acts on **every pair of drones**: when two drones come close, it changes both speed commands so they give way, keeping them 1.10 m apart. Main game and NUS port: every pair, as in flight. Contact-tag track only: within a team ([STANDARDS §4](../STANDARDS.md#4-game-specification-version-0)) | root [GLOSSARY](../../docs/GLOSSARY.md) |
+| Keep-out distance | 1.10 m centre to centre (0.55 m radius): how close the safety filter lets two drones' commanded speeds bring them. The filter does not correct the position the commander sends, so drones can come slightly closer (1.083 m in a tier 1 test) | [S1_RESULTS](S1_RESULTS.md#6-tier-1-with-the-real-chain-t4-information-only) |
+| Keep-in fence | a box the commander keeps every drone inside; today ±3.25 m around the motion-capture origin | [NUS_PORT §3](NUS_PORT.md#3-phase-0-answers-and-the-hangar-geometry) |
+| Motion capture (mocap) | cameras around the room track markers on each drone and send its position to the drone, in place of GPS | root [GLOSSARY](../../docs/GLOSSARY.md) |
+| The hangar | the lab's indoor flight room with motion capture. Its usable flying box is about 7.6 m × 7.9 m, 0.5–5.0 m high; our arena for your game is a 7.5 m square inside it | [NUS_PORT §3](NUS_PORT.md#3-phase-0-answers-and-the-hangar-geometry) |
+| Isaac Sim | NVIDIA's GPU robot simulator | root [GLOSSARY](../../docs/GLOSSARY.md) |
+| Isaac Lab | NVIDIA's robot-learning framework on top of Isaac Sim; runs thousands of simulated robots on one GPU. Our tier 2 uses it | [HOW_IT_WORKS](HOW_IT_WORKS.md#two-tiers) |
+| ROS 2 | the robot messaging software the flight side uses. This folder needs none of it; if your shell loads it, run `unset PYTHONPATH` first | root [GLOSSARY](../../docs/GLOSSARY.md) |
+| AirStack simulator | the flight software's own simulator: Isaac Sim + Pegasus (a drone plug-in) + PX4 software; up to 3 drones, near real time. Separate from our training simulator | [DESIGN §3](DESIGN.md#3-the-pipeline-seven-stages) |
+| Crazyflie | a palm-sized research drone; the lab also flies these | root [README](../../README.md) |
+| ENU frame | x east, y north, z up: the frame of every speed command | [STANDARDS §3](../STANDARDS.md#3-policy-interface-version-01-proposed) |
+| Plug-in point | `/svg/{name}/teleop_command`: where a strategy's speed command enters the flight software | [STANDARDS §3](../STANDARDS.md#3-policy-interface-version-01-proposed) |
+| Trajectory setpoint | the instruction the commander sends a real drone each tick: a position, a speed and an acceleration together; PX4 closes the position loop itself | [S1_RESULTS](S1_RESULTS.md#4-the-real-drone-takes-a-different-route) |
+| Position gain | PX4's `MPC_XY_P`, 0.95 per second on our drones: extra speed per metre away from the setpoint | [S1_RESULTS](S1_RESULTS.md#5-a-first-fit-from-real-flight-logs-exploratory) |
+| FR&PDR, monthly reports | confidential programme reports; named here, never quoted | [STANDARDS §2](../STANDARDS.md#2-wording) |
+| The owner, the lead, the gatekeeper | roles in the lab's records and internal pages: the owner is the lab member who owns this repository and approves gates and decisions; the lead is the main AI coding-assistant session that plans the work; the gatekeeper is an AI reviewer that checks gates and records | [docs/README](README.md#history) |
+
+## 3. Words in this folder
+
+### Simulators, drones and games
+
+| Term | Meaning | More |
+|---|---|---|
+| Training simulator | this folder's simulator, tier 1 or tier 2. One of three simulators (with the AirStack simulator and real flight); always say which | [STANDARDS §2](../STANDARDS.md#2-wording) |
+| Tier 1 | the fast drone model: a batched game in plain PyTorch, no Isaac; a drone is a point that follows a speed command through a copy of the commander and a fitted response | [HOW_IT_WORKS](HOW_IT_WORKS.md#two-tiers) |
+| Tier 2 | the physics drone model: rigid-body Starlings in Isaac Lab, flown by a copy of PX4's control loops | [HOW_IT_WORKS](HOW_IT_WORKS.md#two-tiers) |
+| Replica | our batched PyTorch copy of your 2-D game, used for Phases 2–3, ladder row 1 and Phase 5.1 | [NUS_RESULTS Q1](NUS_RESULTS.md#q1-does-our-replica-match-your-game) |
+| Exploratory drone model (`real_exploratory_v0`) | tier 1's response model, fitted to one real flight log with no gate; it answers more slowly than the real drone (its check against a real flight, T5, is a FAIL) | [S2_RESULTS](S2_RESULTS.md) |
+| Starling layer (`starling`) | a switch that makes drones fly like our Starlings: each command goes through the commander copy, the safety filter on every pair of drones (both teams) and the exploratory drone model; the push-apart rule is then off | [S2_RESULTS](S2_RESULTS.md#what-was-built) |
+| Pure partner rules (`pure`) | drones as points at fixed team speeds, all at one height, with the push-apart rule | [PLUG_IN](PLUG_IN.md#pure-rules-and-the-starling-layer) |
+| Push-apart rule (`block`) | under the pure rules, a move that would bring a drone inside the other team's keep-out distance is cut short | [PLUG_IN](PLUG_IN.md#words-used-here) |
+| Physics backend (`physics`), physics drone | the third way the game moves drones: the same commander copy and filter, then a rigid body with four rotors flown by the PX4 cascade | [S2B_RESULTS](S2B_RESULTS.md#what-was-built) |
+| PX4 cascade | PX4 1.14's chain of control loops, copied line by line: position → speed → acceleration → tilt → turn rate → rotor commands, 200 times a second | [S2B_RESULTS](S2B_RESULTS.md#what-was-built) |
+| Rotor model | turns rotor commands into one force and one torque; each rotor follows its command with the measured motor lag (55 ms up, 85 ms down) | [S2B_RESULTS](S2B_RESULTS.md#what-was-built) |
+| PyTorch reference world (test oracle) | the physics drone's equations in plain PyTorch, no Isaac; the CPU tests run on it | [S2B_RESULTS](S2B_RESULTS.md#what-was-built) |
 | Game (environment) | one copy of the game; thousands run at once on the GPU. Isaac Lab calls it an environment | config `num_games` |
-| Game-step (environment step) | one tick of game time for one game: one policy step, 1/20 s. Records say "environment steps per second" | [S0_RESULTS](S0_RESULTS.md) |
-| Drone-step | one tick of game time for one drone; drone-steps = game-steps × drones per game | [S0_RESULTS](S0_RESULTS.md) |
-| Case | one named set-up in the benchmark config, for example `t1_5v3_full` | [config](../configs/s0_benchmark.toml) |
-| Sweep point | one case at one number of games; T1 had 96 (65 tier 1, 31 tier 2) | [S0_RESULTS](S0_RESULTS.md) |
-| Repeat spread | how far two repeats of the same point differ: their difference ÷ their mean. S0's gate allows at most 0.10 | [config](../configs/s0_benchmark.toml) |
-| Run of record | the official run whose numbers we keep; it ends in a record and a ledger row, for example T1 | [ledger](../records/LEDGER.md) |
-| Gate | a pass/fail check written before a run and never moved afterwards | [STANDARDS §7](../STANDARDS.md#7-evaluation-and-gates) |
-| Decision rule | a threshold, PROPOSED in advance, that helps choose the next step; read off the numbers, it never passes or fails a run | [S0_RESULTS](S0_RESULTS.md#decision-rules--training-simulator-only) |
-| Record | the written summary of one run, `records/<name>_record.md`, made by `scripts/make_record.py` from the results; never edited | [STANDARDS §8](../STANDARDS.md#8-runs-and-records) |
-| Ledger | the list of all runs, `records/LEDGER.md`, one row each: T1, T2, …; separate from the flight ledger (rows #1, #2, …) | [ledger](../records/LEDGER.md) |
-| Container | a sealed copy of the software and its libraries (here, NVIDIA's Isaac Lab image plus our tools) that runs the same on every machine | [docker/README](../docker/README.md) |
-| Headless | running with no window on screen; faster, and the normal way to train | [TRAINING](TRAINING.md) |
-| Container UTC | T1's dates (rows, record, ledger) are UTC from the container; add 8 h for Singapore time | [S0_RESULTS](S0_RESULTS.md#the-fail) |
-| sha256, hash | a fingerprint of a file: change one character and it changes completely | [GETTING_STARTED](GETTING_STARTED.md#approved-sha256) |
-| Code hash (`code_sha`) | first 12 hex digits of a sha256 over `source/`, `scripts/` and `configs/`; in every result row | [record](../records/2026-11-15_s0_laptop_record.md#code-version) |
-| Approved config hash | sha256 of the config the owner approved; `scripts/run_s0.sh` refuses a different one (exit 65) | [GETTING_STARTED](GETTING_STARTED.md#approved-sha256) |
-| Seed | the starting number for the random draws; the same seed gives the same run | [STANDARDS §6](../STANDARDS.md#6-training-rules) |
-| Held-out | data kept aside and used only to judge a fit or a policy, never to train it. In S1, every other push was held out, chosen before any fit | [DESIGN §7](DESIGN.md#7-environments-and-contact-tags), [S1_RESULTS](S1_RESULTS.md#2-first-fit-to-the-airstack-simulator-t3-fail) |
-| Status labels | FIXED, MEASURED, PROPOSED, OPEN: where a value comes from and whether it may change | [STANDARDS](../STANDARDS.md) |
-| Plug-in point | `/svg/{name}/teleop_command`: the place where a strategy's velocity command enters the flight software | [STANDARDS §3](../STANDARDS.md#3-policy-interface-version-01-proposed) |
-| Guard team | the drone team that holds a circular zone | [STANDARDS §4](../STANDARDS.md#4-game-specification-version-0) |
-| Strike team | the drone team that tries to reach the zone; its drones are 1.5 times as fast | [STANDARDS §4](../STANDARDS.md#4-game-specification-version-0) |
-| Tag | the scoring event of the game between a Guard drone and a Strike drone; defined in [STANDARDS §4](../STANDARDS.md) | [STANDARDS §4](../STANDARDS.md#4-game-specification-version-0) |
-| Safety filter (within each team) | CMU's filter that keeps drones apart; in the game it acts only between drones of one team | [STANDARDS §5](../STANDARDS.md#5-drone-models) |
-| Keep-out distance | 1.10 m centre to centre (0.55 m radius): how close the safety filter lets two drones' commanded speeds bring them. The filter does not correct the position the commander sends, so drones can come slightly closer (1.083 m in a tier 1 test) | [STANDARDS §5](../STANDARDS.md#5-drone-models), [S1_RESULTS](S1_RESULTS.md#6-tier-1-with-the-real-chain-t4-information-only) |
-| Sweep (safety filter) | one round of small corrections to every drone's speed in the filter copy; more sweeps get closer to CMU's answer but cost time. T2 used 1,000. Not the same as a *sweep point* | [S1_RESULTS](S1_RESULTS.md#1-the-safety-filter-copy-t2-fail-accepted-by-the-owner) |
-| Commander | CMU's ground-control program (`swarm_commander.py`); 20 times a second it turns each drone's speed command into an instruction for PX4 | [S1_RESULTS](S1_RESULTS.md#3-why-two-clocks-in-the-simulator) |
-| Commander teleop law | the commander's rules for a speed command: cap it, ramp up to it, move a reference point ("where the drone should be") by it, keep that point within 0.5 m of the drone, apply the safety filter. Tier 1 has a copy of the real-drone version (`models/commander.py`) | [S1_RESULTS](S1_RESULTS.md#6-tier-1-with-the-real-chain-t4-information-only) |
-| PX4 | the flight software on the drone; version 1.14 on the real drones, 1.16.1 in the AirStack simulator | [STANDARDS §5](../STANDARDS.md#5-drone-models) |
-| Trajectory setpoint | the instruction the commander sends a real drone each tick: a position, a speed and an acceleration together. PX4 closes the position loop itself. The AirStack simulator gets a speed only, through MAVROS | [S1_RESULTS](S1_RESULTS.md#4-the-real-drone-takes-a-different-route) |
-| Position gain | PX4's `MPC_XY_P`, 0.95 per second on our drones: how much extra speed PX4 adds per metre the drone is away from its position setpoint | [S1_RESULTS](S1_RESULTS.md#5-a-first-fit-from-real-flight-logs-exploratory) |
-| Time scale | how many seconds pass on the simulated drone's clock for each second on the wall clock; 1.907 in the S1 simulator session, 1.01 on the real drone | [S1_RESULTS](S1_RESULTS.md#3-why-two-clocks-in-the-simulator) |
-| Exploratory | a first look with no gates and no ledger row; its numbers guide the next step but prove nothing | [S1_RESULTS](S1_RESULTS.md) |
-| Observed in flight logs | the wording for a model fitted to real flight logs without a run of record; never "validated" | [S1_RESULTS](S1_RESULTS.md) |
-| Distance field | a 3D grid holding the distance to the nearest structure; one copy on the GPU serves every game | [DESIGN §4](DESIGN.md#4-two-tiers-one-game) |
-| Range ray | a ray from a drone that returns the distance to the first structure it meets | [STANDARDS §3](../STANDARDS.md#3-policy-interface-version-01-proposed) |
-| Line of sight | whether one drone can see another past structures; a hidden drone is masked | [DESIGN §7](DESIGN.md#7-environments-and-contact-tags) |
-| Stand-in (placeholder) model | the drone model used until a fitted one exists: tier 1 delay + lag, tier 2 ARL Robot 1 | [S0_RESULTS](S0_RESULTS.md#limits) |
-| Observed in the training simulator | the only way to describe a result here; no result here is a flight result | [STANDARDS §2](../STANDARDS.md#2-wording) |
-| Partner rules preset | the main game of S2, after NUS's rules: opposite teams kept apart by the push-apart rule, teammates pass through each other, one step inside the zone wins for the Strike team, a time-out wins for the Guard team. The committed values are neutral; the code reads NUS's own values from the git-ignored `configs/local/` (NUS agreed on 18 Nov 2026 that they may be stated in documents: [NUS_PORT](NUS_PORT.md)) | [S2_RESULTS](S2_RESULTS.md#what-was-built), [PLUG_IN](PLUG_IN.md#your-own-game-numbers-stay-local) |
-| NUS port | running NUS's trained team strategy in this pipeline: NUS's own code as the reference, a copy of NUS's 2-D game (the *replica*), NUS's policy converted to PyTorch, then the *transfer ladder* | [NUS_PORT](NUS_PORT.md) |
-| Transfer ladder | Phase 4 of the NUS port: the frozen converted policies scored row by row, each row changing one thing on the way from NUS's game to our drones (engine, walls, push, drone response, safety filter, height, Isaac Lab) | [NUS_PORT §8](NUS_PORT.md#8-phase-4-the-transfer-ladder) |
-| W number (W1, W2, …) | a ledger row written on the home RTX 5090 workstation; the lead gives it the next T number when the branch merges to `main` | [WORKSTATION_SETUP §4](WORKSTATION_SETUP.md#4-getting-results-back-to-the-laptop) |
-| Pure partner rules (`pure`) | the partner rules with drones as points moving at fixed team speeds, all at one height | [PLUG_IN](PLUG_IN.md#pure-rules-and-the-starling-layer) |
-| Push-apart rule | under the pure rules, a move that would bring a drone inside the other team's keep-out distance is cut short | [PLUG_IN](PLUG_IN.md#words-used-here) |
-| Starling layer (`starling`) | a switch that makes drones fly like our Starlings: each command goes through a copy of CMU's commander, the safety filter on every pair of drones (both teams) and the drone model `real_exploratory_v0`; the push-apart rule is then off | [S2_RESULTS](S2_RESULTS.md#what-was-built) |
+| Tick, game-step | one tick of game time for one game, 1/20 s. Records say "environment steps per second" | [S0_RESULTS](S0_RESULTS.md) |
+| Drone-step | one tick for one drone; drone-steps = game-steps × drones per game | [S0_RESULTS](S0_RESULTS.md) |
+| Policy | a trained strategy: it reads what a drone sees and sends a speed command | [HOW_IT_WORKS](HOW_IT_WORKS.md#where-a-strategy-plugs-in) |
+| Strategy contract | the rule a strategy follows to be scored: it plays one team, is called once per step with all its drones' observations in all games, returns all their actions, and is told which games restarted | [PLUG_IN](PLUG_IN.md#three-layers) |
+| Scripted opponent | a hand-written strategy used as an opponent and yardstick: Guard `guard_mark_edge`, `guard_mark_inside`, `guard_field`, `guard_mirror`; Strike `strike_straight`, `strike_flank`; either `random`, `zero` | [S2_RESULTS](S2_RESULTS.md#3-the-scripted-reference-t6-re-run-as-t9) |
+| ParkedGuard | the baseline Guard team: one drone parked at the zone centre, every drone commanding zero speed | [NUS_RESULTS Q5](NUS_RESULTS.md#q5-what-does-a-guard-team-that-stands-still-do) |
+| Guard team, Strike team | the team that holds a circular zone; the team that tries to reach it (1.5 times as fast) | [STANDARDS §4](../STANDARDS.md#4-game-specification-version-0) |
+| Tag (contact tag) | physical contact between a Guard drone and a Strike drone. Only in the separate contact-tag track; the main game and the NUS port have no tag | [STANDARDS §2](../STANDARDS.md#2-wording) |
 | Size band | arena sizes reported separately: lab 4–6 m, middle 6–10 m, large 10–16 m a side | [S2_RESULTS](S2_RESULTS.md#3-the-scripted-reference-t6-re-run-as-t9) |
-| Start miss | a game whose drones could not be placed far enough apart at the start (crowded small arenas: 34.7 % of 5 v 3 lab games in T9); it is played and counted, and flagged | [S2_RESULTS](S2_RESULTS.md#4-how-close-guard-and-strike-drones-came) |
-| Hold rate | the share of games in which no Strike drone reached the zone before the time-out, given with its 95 % interval; for a Strike strategy, its win share is 1 − hold rate | [S2_RESULTS](S2_RESULTS.md#3-the-scripted-reference-t6-re-run-as-t9) |
-| Strategy contract | the rule a strategy follows to be scored: it plays one team, is called once per step with all its drones' observations in all games, returns all their actions, and is told which games just restarted | [PLUG_IN](PLUG_IN.md#three-layers) |
-| Scripted opponent | a hand-written strategy used as an opponent and a yardstick: Guard mark edge, mark inside, field, mirror, random; Strike straight, flank | [S2_RESULTS](S2_RESULTS.md#3-the-scripted-reference-t6-re-run-as-t9) |
 | Scoring tool | `scripts/score.py`: plays strategies against each other per size band, team size and rule set, and reports hold rate, closest approach, breaches, filter use and start misses | [PLUG_IN](PLUG_IN.md#what-the-scoring-tool-prints) |
 | Adapter | a thin wrapper that lets a training library drive the game: `SvgSkrlEnv` (skrl) and `SvgTeamVectorEnv` (Gymnasium) | [PLUG_IN](PLUG_IN.md#plug-a-training-method-in) |
-| Stand-in trainer (pipe test) | a short training run whose only job is to prove the pipe works end to end; never "the policy". Moved from S2 to S2b (owner, 16 November 2026) | [S2_RESULTS](S2_RESULTS.md#5-the-stand-in-trainer-moved-to-s2b) |
-| Rule breach (breach) | a game in which some Guard drone and some Strike drone came closer than the keep-out distance; since T9 judged in 3-D | [S2_RESULTS](S2_RESULTS.md#4-how-close-guard-and-strike-drones-came) |
-| Closest approach, horizontal and 3-D | the smallest distance between any Guard drone and any Strike drone in a game. Horizontal ignores height; 3-D does not. They differ when drones pass one above the other (T6: 0.004 m horizontally, 0.851 m in 3-D in one probe) | [S2_RESULTS](S2_RESULTS.md#4-how-close-guard-and-strike-drones-came) |
-| Early stop, `check_every` | a filter option: every `check_every` sweeps it checks which games still need work and stops when none is left (0 = no early stop). S2 uses 1,000 sweeps with a check every 8 (T8) | [S2_RESULTS](S2_RESULTS.md#1-a-faster-safety-filter-t7-aborted-t8-pass) |
-| Interface change, 69 → 71 | on 16 November 2026 each drone's observation gained the zone centre's place in the arena (indices 69–70), so a drone can find the walls | [S2_RESULTS](S2_RESULTS.md#one-change-to-the-interface) |
-| S2b | the S2 game on rigid-body Starlings in Isaac Lab, with the stand-in trainer on both versions; approved 16 November 2026 | [S2b plan](plans/2026-11-16-s2b-isaac-lab-environment.md), [S2B_RESULTS](S2B_RESULTS.md) |
-| Physics backend (`physics`) | the third way the game can move the drones, added in S2b: each command goes through the same commander copy and safety filter as the Starling layer, then to the physics drone instead of the fitted model | [S2B_RESULTS](S2B_RESULTS.md#what-was-built) |
-| Physics drone | a Starling as a rigid body with four rotors, flown by the PX4 cascade with the drone's own gains (yaw-rate gains SIM-ONLY, owner's ruling of 16 November 2026); it runs in Isaac Lab or the PyTorch reference world | [S2B_RESULTS](S2B_RESULTS.md#what-was-built) |
-| PX4 cascade | PX4 1.14's chain of control loops, copied line by line: position → speed → acceleration → attitude (tilt) → turn rate → rotor commands, run 200 times a second with the true state (no estimator, no delay) | [S2B_RESULTS](S2B_RESULTS.md#what-was-built) |
-| Rotor model | turns the cascade's rotor commands into one force and one torque on the body: each rotor's speed follows its command with the measured motor lag (55 ms up, 85 ms down), thrust grows with speed squared; CAD rotor positions for the body | [S2B_RESULTS](S2B_RESULTS.md#what-was-built) |
-| PyTorch reference world (torch reference world, test oracle) | the physics drone's equations in plain PyTorch, with no Isaac; the CPU tests run on it, and T10 checks Isaac Lab against it. A *test oracle* is the answer a test compares with | [S2B_RESULTS](S2B_RESULTS.md#1-do-isaac-lab-and-the-pytorch-reference-world-move-the-drones-the-same-way-t10-fail-accepted) |
-| Cell (matchup cell) | one matchup in a scoring run: one Guard strategy against one Strike strategy, at one team size, in one arena size band; T13 has 60 cells of 1,000 games each | [S2B_RESULTS](S2B_RESULTS.md#4-the-scripted-games-on-both-backends-t13-fail) |
-| S0's 20,000 line | S0's decision rule: if tier 2 runs at least 20,000 drone-steps a second, it is fast enough to train on directly, not only to cross-check; read off the numbers, it never fails a run | [S0_RESULTS](S0_RESULTS.md#decision-rules--training-simulator-only) |
-| Agreement (run) | T10: the same forces and the same cascade in Isaac Lab and the torch reference world, to measure how far apart they end up | [T10 record](../records/2026-11-16_s2b_agreement_record.md) |
-| Upset | a physics drone that tips past 60° or whose numbers turn non-finite; counted per game; the S2b gates that count upsets allow none | [S2B_RESULTS](S2B_RESULTS.md#the-gates) |
-| Paired games | the same arenas, zones and starts played on two backends (`score.py --batch-per-pair`, same seed), so any difference comes from the drone model, not from chance | [S2B_RESULTS](S2B_RESULTS.md#4-the-scripted-games-on-both-backends-t13-fail) |
-| Preflight | `scripts/isaac_preflight.sh`, run before every Isaac start: it stops on a WiFi-only remote-desktop session (exit 10) or a busy GPU (exit 11). Not the flight-stack's `docs/PREFLIGHT.md` safety card | [S2B_RESULTS](S2B_RESULTS.md#what-was-built) |
-| Build steps S0–S5 | Measure, Drone model, One against one, Two against one, Five against three, Hand-over. S2 became "the game and the plug-in point" ([S2 design](specs/2026-11-15-s2-game-and-plug-in-design.md)), followed by S2b | [DESIGN §8](DESIGN.md#8-build-order) |
-| Versions | which Isaac Lab, Isaac Sim and PX4 run where | [below](#versions) |
+| Stand-in trainer (pipe test) | a short training run whose only job is to prove the pipe works end to end; never "the policy" | [S2B_RESULTS](S2B_RESULTS.md#5-the-stand-in-trainer) |
+| Sweep (safety filter) | one round of small corrections to every drone's speed in the filter copy; more sweeps get closer to CMU's answer but cost time. Not the same as a *sweep point* | [S1_RESULTS](S1_RESULTS.md#1-the-safety-filter-copy-t2-fail-accepted-by-the-owner) |
+| Early stop, `check_every` | a filter option: every `check_every` sweeps it checks which games still need work and stops when none is left (0 = no early stop). The game uses 1,000 sweeps with a check every 8. On a GPU its answer depends on the batch size ([record](../records/2026-11-18_filter_cuda_graph_record.md)) | [S2_RESULTS](S2_RESULTS.md#1-a-faster-safety-filter-t7-aborted-t8-pass) |
+| Commander teleop law | the commander's rules for a speed command: cap it, ramp up to it, move a reference point by it, keep that point within 0.5 m of the drone, apply the safety filter. Tier 1 has a copy of the real-drone version (`models/commander.py`) | [S1_RESULTS](S1_RESULTS.md#6-tier-1-with-the-real-chain-t4-information-only) |
+| Stand-in (placeholder) model | the drone model used before a fitted one existed: tier 1 delay + lag, tier 2 ARL Robot 1 | [S0_RESULTS](S0_RESULTS.md#limits) |
+| Partner rules preset | the main game of S2, after your rules: opposite teams kept apart by the push-apart rule, team-mates pass through each other, one step inside the zone wins for the Strike team, a time-out wins for the Guard team. Committed values are neutral; the code reads your values from the git-ignored `configs/local/` | [S2_RESULTS](S2_RESULTS.md#what-was-built) |
+| Container UTC | T1's dates are UTC from the container; add 8 h for Singapore time | [S0_RESULTS](S0_RESULTS.md#the-fail) |
+| Distance field, range ray, line of sight | a 3-D grid of distances to the nearest structure; a ray that returns the distance to the first structure; whether one drone can see another | [DESIGN §4](DESIGN.md#4-two-tiers-one-game) |
+
+### The NUS port
+
+| Term | Meaning | More |
+|---|---|---|
+| NUS port | running your trained team strategies, and then your training method, in this pipeline | [NUS_PORT](NUS_PORT.md) |
+| Phase | one stage of the NUS port, 0 to 6: questions, your code installed, policies trained with your code (2a), the replica (2), the conversion (3), the transfer ladder (4), your method in PyTorch (5), these documents (6) | [NUS_PORT](NUS_PORT.md#at-a-glance) |
+| Transfer ladder | Phase 4: the frozen converted policies scored row by row, each row changing the game towards our drones (engine, walls, push, drone response, safety filter, height, Isaac Lab) | [NUS_RESULTS Q3](NUS_RESULTS.md#q3-what-does-each-drone-limit-do) |
+| Ladder row (row) | one step of the ladder, numbered 1, 2.1, 2.2, 2, 3a, 3, 4, 5a, 5, 6. Row 2 follows 2.1 and 2.2 because they split it. Record file names say "rung" for row | [NUS_RESULTS Q3](NUS_RESULTS.md#q3-what-does-each-drone-limit-do) |
+| Core pairs | the 12 pairs of every row: G19, P3G, ApfGuard, ParkedGuard against S20, P3S, ApfStrike | [NUS_RESULTS Q3](NUS_RESULTS.md#q3-what-does-each-drone-limit-do) |
+| Paired starts | one file of 1,000 start positions (seed 20261119), the same on every row, so two rows can be compared game by game | [TRY_IT D](TRY_IT.md#d-repeat-our-ladder-rows) |
+| Run 0 | the check of the hangar set-up before any training, with your environment and scripted players | [NUS_PORT §3](NUS_PORT.md#3-phase-0-answers-and-the-hangar-geometry) |
+| R0, C0, N0, 5.1 | Phase 5's steps: R0 your lineages rebuilt as the reference; C0 your code with new seeds (must pass the test); N0 untrained actors (must fail it); 5.1 our copy of your method | [NUS_RESULTS Q6](NUS_RESULTS.md#q6-does-our-copy-of-your-training-method-behave-like-yours) |
+| Pilot (P0, P1, P1b, P2) | a short training run with no gate, to look before planning; INFO only | [NUS_RESULTS Q7](NUS_RESULTS.md#q7-can-we-train-a-guard-team-on-our-drone-model) |
+| Start miss | a game whose drones start closer than the spacing rule wants. In your starts every game has a pair inside the 1.10 m keep-out (1,000 of 1,000); in our own small arenas it flags crowded starts | [NUS_RESULTS Q3](NUS_RESULTS.md#q3-what-does-each-drone-limit-do) |
+| Contact (records column) | games in which any two drones, team-mates included, come closer than 0.50 m. Not a crash count: your packed Guard start already has such a pair in 853 of 1,000 games | [NUS_RESULTS Q3](NUS_RESULTS.md#q3-what-does-each-drone-limit-do) |
+| Rule breach | a game in which some Guard drone and some Strike drone came closer than the keep-out distance; judged in 3-D | [S2_RESULTS](S2_RESULTS.md#4-how-close-guard-and-strike-drones-came) |
+| Closest approach, horizontal and 3-D | the smallest Guard–Strike distance in a game. Horizontal ignores height; they differ when drones pass one above the other | [S2_RESULTS](S2_RESULTS.md#4-how-close-guard-and-strike-drones-came) |
+| Hold rate | the share of games the Guard team held, with its 95 % interval; a Strike strategy's win share is 1 − hold rate | [S2_RESULTS](S2_RESULTS.md#3-the-scripted-reference-t6-re-run-as-t9) |
+| "at the local value" | in records only: a number equal to a value from a git-ignored local settings file was masked. Your settings may now be stated, so reader pages print the number | [records/README](../records/README.md) |
+| PROVISIONAL (weights, settings files) | the converted G19, S20, P3G and P3S and our local settings files, committed only so our numbers can be repeated: trained by us with your code, 8 generations, hangar set-up. You will retrain | [TRY_IT D](TRY_IT.md#d-repeat-our-ladder-rows) |
+
+### Results, records and gates
+
+| Term | Meaning | More |
+|---|---|---|
+| Gate | a pass mark written before a run and never moved afterwards | [STANDARDS §7](../STANDARDS.md#7-evaluation-and-gates) |
+| PASS, FAIL | a run met, or missed, its gates. They grade our code and our copies, never your code. A FAIL stays a FAIL | [records/README](../records/README.md) |
+| "FAIL (accepted)" | the gate was missed, the lab owner judged the cause harmless, and the work went on; the FAIL stays in the ledger | [records/README](../records/README.md) |
+| INFO | a run with no gates: a measurement, not a pass or a fail | [records/README](../records/README.md) |
+| ABORTED | a run stopped before it finished; its partial numbers prove nothing | [records/README](../records/README.md) |
+| Exploratory | a first look with no gates and no ledger row; it guides the next step but proves nothing | [S1_RESULTS](S1_RESULTS.md) |
+| Decision rule | a threshold set in advance that helps choose the next step; it never passes or fails a run | [S0_RESULTS](S0_RESULTS.md#decision-rules--training-simulator-only) |
+| Wilson interval (Wilson 95 %) | the 95 % confidence interval of a rate from k successes in n games; unlike "rate ± 2 standard errors" it stays inside 0–1 near 0 and 1. At 1,000 games it is at most about ±0.03 wide | [STANDARDS §7](../STANDARDS.md#7-evaluation-and-gates) |
+| Run of record | the official run whose numbers we keep; it ends in a record and a ledger row | [ledger](../records/LEDGER.md) |
+| Record | the written summary of one run, `records/<name>_record.md`, made by the tooling; never edited | [records/README](../records/README.md) |
+| Ledger, T rows | `records/LEDGER.md`, one row per run: T1, T2, … T*n* is the *n*-th run of this folder. Separate from the flight ledger | [ledger](../records/LEDGER.md) |
+| W rows | ledger rows written on the lab's second workstation before its branch joins `main`; each gets the next T number at the merge | [records/README](../records/README.md) |
+| Status labels | FIXED, MEASURED, PROPOSED, OPEN: where a value comes from and whether it may change | [STANDARDS](../STANDARDS.md) |
+| Observed in the training simulator | the only way to describe a result here; never "validated". No result here is a flight result | [STANDARDS §2](../STANDARDS.md#2-wording) |
+| Held-out | data kept aside to judge a fit or a policy, never to train it | [S1_RESULTS](S1_RESULTS.md#2-first-fit-to-the-airstack-simulator-t3-fail) |
+| Paired games | the same arenas, zones and starts played on two backends, so any difference comes from the drone model | [S2B_RESULTS](S2B_RESULTS.md#4-the-scripted-games-on-both-backends-t13-fail) |
+| Cell (matchup cell) | one Guard strategy against one Strike strategy, at one team size, in one size band | [S2B_RESULTS](S2B_RESULTS.md#4-the-scripted-games-on-both-backends-t13-fail) |
+| Upset | a physics drone that tips past 60° or whose numbers turn non-finite; counted per game | [S2B_RESULTS](S2B_RESULTS.md#the-gates) |
+| Seed | the starting number for the random draws; the same seed gives the same run on the same machine | [STANDARDS §6](../STANDARDS.md#6-training-rules) |
+| sha256, hash; code hash (`code_sha`) | a fingerprint of a file; the first 12 hex digits of a sha256 over `source/`, `scripts/` and `configs/`, in every result row | [GETTING_STARTED](GETTING_STARTED.md#approved-sha256) |
+| Approved config hash | sha256 of the config the owner approved; `scripts/run_s0.sh` refuses a different one (exit 65) | [GETTING_STARTED](GETTING_STARTED.md#approved-sha256) |
+| Case, sweep point, repeat spread | the benchmark's named set-ups, one set-up at one game count, and how far two repeats differ (S0 allows 0.10) | [S0_RESULTS](S0_RESULTS.md) |
+| S0's 20,000 line | S0's decision rule: tier 2 at 20,000 drone-steps a second or more is fast enough to train on directly | [S0_RESULTS](S0_RESULTS.md#decision-rules--training-simulator-only) |
+| Agreement (run) | T10: the same forces and cascade in Isaac Lab and the PyTorch reference world, to measure how far apart they end up | [T10 record](../records/2026-11-16_s2b_agreement_record.md) |
+| Build steps S0–S5, S2b | this folder's own build order: Measure, Drone model, the game and the plug-in point (S2), the game on Isaac Lab drones (S2b), Two against one, Five against three, Hand-over. Not the AirStack milestones S1–S10 of the root pages | [DESIGN §8](DESIGN.md#8-build-order) |
+| Container, headless | a sealed copy of the software that runs the same on every machine; running with no window on screen | [docker/README](../docker/README.md) |
+| Preflight | `scripts/isaac_preflight.sh`, run before every Isaac start; it stops on a WiFi-only remote desktop (exit 10) or a busy GPU (exit 11). Not the flight stack's `docs/PREFLIGHT.md` | [GETTING_STARTED](GETTING_STARTED.md#7-the-first-isaac-check-preflight) |
+| Interface change, 69 → 71 | on 16 November 2026 each drone's observation gained the zone centre's place in the arena (indices 69–70) | [S2_RESULTS](S2_RESULTS.md#one-change-to-the-interface) |
+| Time scale | seconds on the simulated drone's clock per wall-clock second; 1.907 in the S1 simulator session, 1.01 on the real drone | [S1_RESULTS](S1_RESULTS.md#3-why-two-clocks-in-the-simulator) |
+| Observed in flight logs | the wording for a model fitted to real flight logs without a run of record; never "validated" | [S1_RESULTS](S1_RESULTS.md) |
 
 ## Versions
 
-The table lists which version of each tool runs where.
-
 | What | Version | Used by |
 |---|---|---|
-| Container image | `nvcr.io/nvidia/isaac-lab:2.3.2` = Isaac Lab 2.3.2 on Isaac Sim 5.1.0; ours is `svg-training:isaaclab-2.3.2` (built on the 5090 on 17 Nov 2026; its suite there is not clean yet) | the container ([docker/README](../docker/README.md)); run of record T1 |
-| Host install, laptop (RTX 5070 Ti) | `~/IsaacLab`, 2.3.2 plus 25 commits (`f73c331738`), none touching code tier 2 uses | host runs on the laptop, conda `env_isaaclab` |
-| Host install, 5090 workstation | `~/IsaacLab` at the tag v2.3.2 exactly (`37ddf62687`), clean; MEASURED 17 Nov 2026 | host runs on the 5090, conda `env_isaaclab` |
-| Host Python environment, laptop | conda `env_isaaclab`: Python 3.11, torch 2.7.0+cu128, Isaac Sim 5.1.0, skrl 2.1.0, gymnasium 1.2.1 | host runs on the laptop |
-| Host Python environment, 5090 | conda `env_isaaclab`: Python 3.11, torch 2.7.0+cu128, Isaac Sim 5.1.0, skrl 2.1.0, warp-lang 1.14.0; MEASURED 17 Nov 2026, after the [hand fixes](GETTING_STARTED.md#hand-fixes-after-the-setup-script) | host runs on the 5090 |
-| Isaac Lab 3.0 | needs Isaac Sim 6.2 and Python 3.12 | later, on the training workstations |
+| Container image | `nvcr.io/nvidia/isaac-lab:2.3.2` = Isaac Lab 2.3.2 on Isaac Sim 5.1.0; ours is `svg-training:isaaclab-2.3.2` (its test suite is not clean yet) | the container ([docker/README](../docker/README.md)); run of record T1 |
+| Host Python environment (lab machines) | conda `env_isaaclab`: Python 3.11, torch 2.7.0+cu128, Isaac Sim 5.1.0, Isaac Lab 2.3.2, skrl 2.1.0, gymnasium 1.2.1 | host runs; MEASURED 17 Nov 2026 |
+| CPU environment (TRY_IT B) | Python 3.11, torch 2.7.0+cpu, skrl 2.1.0, gymnasium 1.2.1, numpy < 2, scipy, msgpack, pyyaml, matplotlib, imageio, opencv | levels A–D of [TRY_IT](TRY_IT.md) |
+| Isaac Lab 3.0 | needs Isaac Sim 6.2 and Python 3.12 | later |
 | AirStack simulator | Isaac Sim 5.1.0 + Pegasus + PX4 v1.16.1 | stage 6, simulated flight |
 | Real drones | PX4 1.14 | stage 7, real flight |
-| Laptop GPU driver | 580.178.04 (RTX 5070 Ti Laptop GPU, 12 GB) | T1 |
-| 5090 GPU driver | 580.126.09 (RTX 5090, 32 GB); MEASURED 17 Nov 2026 | host runs on the 5090 |
-| NUS JAX environment, 5090 only | conda `nus_jax`: Python 3.12, jax 0.10.2, flax 0.12.8, CUDA 13 JAX; NUS's code `area-denial-continuous-space-self-play` at `2d2b904`; MEASURED 17 Nov 2026 ([GETTING_STARTED](GETTING_STARTED.md#nus-jax-env-home-rtx-5090-only)) | NUS's own training and evaluation; the JAX reference arms of Phase 3 |
-| `msgpack` | 1.2.4 in the 5090's `env_isaaclab` (`pyproject.toml`: `msgpack>=1.0`, owner approval 17 Nov 2026); not yet in the container image | reading NUS's checkpoint files (`nus/actor.py`) and the NUS tests |
-| NUS policy interface layout | `nus_area_denial_v1` (owner approval 17 Nov 2026): NUS's 9N+2 observation rebuilt from our 71 numbers, a 2-D action held for the hold length, vertical speed and yaw rate zero; keys in `configs/nus_interface.template.toml` | the NUS wrapper `svg_training.nus.strategy:NusPolicy`; draft `interface.toml` ([NUS_PORT](NUS_PORT.md)) |
+| NUS JAX environment (lab workstation) | conda `nus_jax`: Python 3.12, jax 0.10.2, flax 0.12.8, CUDA 13 JAX; your code at `2d2b904` | your own training and evaluation; the JAX reference arms of Phase 3 |
+| `msgpack` | 1.2.4 in `env_isaaclab`, 1.1.2 in the container image | reading your checkpoint files (`nus/actor.py`) and the NUS tests |
+| NUS policy interface layout | `nus_area_denial_v1`: your 9N+2 observation rebuilt from our 71 numbers, a 2-D action held for 12 ticks, vertical speed and yaw rate zero | `svg_training.nus.strategy:NusPolicy` |

@@ -1,11 +1,13 @@
+INTERNAL · the lab's rules for its AI coding assistants. Not on the lab team (for example NUS)? You never need this file: start at [README.md](README.md). If you use your own assistant here, these rules (HANDOFF, Linear, the owner's approvals) are the lab's, not yours.
+
 # CLAUDE.md — svg_training (vectorised training pipeline)
 
 Training pipeline for the **Strike vs Guard** game: thousands of games run at once on one GPU, so
 drone teams can learn strategies that then fly through AirStack on Starling 2 Max drones.
 It is a sibling of `AirStack/`, `tools/` and `localisation/`, and it edits none of them.
 
-**Status (2026-11-18).** S0, S1 and S2 closed; S2b built through Task 8, not closed; NUS port Phases 1–4 done,
-Phase 5 planned; nothing of ours trained into a strategy; nothing flown.
+**Status (2026-11-19).** S0, S1 and S2 closed; S2b built through Task 8, not closed; NUS port Phases 1–4 done,
+Phase 5 in progress (R0 T29, N0 T30 and C0 T33 PASS; 5.1 running); nothing of ours trained into a strategy; nothing flown.
 
 | Work | Where it stands | Read |
 |---|---|---|
@@ -13,13 +15,16 @@ Phase 5 planned; nothing of ours trained into a strategy; nothing flown.
 | S1 drone model, filter | filter copy T2 FAIL (accepted), simulator fit T3 FAIL, tier 1 carries the real command chain with an exploratory PX4 model | [docs/S1_RESULTS.md](docs/S1_RESULTS.md) |
 | S2 the game, plug-in point | closed 16 Nov: faster filter T8 PASS, drone-model check T5 FAIL, scripted reference T9 INFO | [docs/S2_RESULTS.md](docs/S2_RESULTS.md), [docs/PLUG_IN.md](docs/PLUG_IN.md) |
 | S2b game on Isaac Lab drones | T10 FAIL (accepted), T11 FAIL, T12 INFO, T13 FAIL (Strike drones pass over or under Guards; owner kept it, option (a)), stand-in T14 FAIL (seed 3 queued for the 5090); Task 8b not built | [docs/S2B_RESULTS.md](docs/S2B_RESULTS.md) |
-| NUS port (17–18 Nov, home RTX 5090) | Phase 1 NUS's code installed (FAIL as written, accepted); Phase 2a reference policies trained with NUS's code (self-play 3 seeds × 8 generations, seed 2 to 20); Phase 2 replica T15 PASS; Phase 3 conversion T16 PASS, T17 PASS; Phase 4 ladder rows 1–3 T18–T20 INFO, row 4 first attempt T21 ABORTED, rows 4, 5a, 5, 6 T22–T24 INFO (the filter and 3-D break NUS's push-blocking; Isaac Lab agrees with tier 1); Phase 5 planned by the lead (owner delegated): route (b) plus own-training pilots, not started; Phase 6 public docs passes 1 and 2 done (every clip published) | [docs/NUS_PORT.md](docs/NUS_PORT.md) |
+| NUS port (17–18 Nov, home RTX 5090) | Phase 1 NUS's code installed (65 of NUS's 66 tests pass; the one failure is a test NUS confirmed is out of date); Phase 2a reference policies trained with NUS's code (self-play 3 seeds × 8 generations, seed 2 to 20); Phase 2 replica T15 PASS; Phase 3 conversion T16 PASS, T17 PASS; Phase 4 ladder rows 1–3 T18–T20 INFO, row 4 first attempt T21 ABORTED, rows 4, 5a, 5, 6 T22–T24 INFO (the filter and 3-D break NUS's push-blocking; Isaac Lab agrees with tier 1); Phase 5 planned by the lead (owner delegated): route (b) plus own-training pilots, not started; Phase 6 public docs passes 1 and 2 done (every clip published) | [docs/NUS_PORT.md](docs/NUS_PORT.md) |
 | Contact-tag track | DRAFT plan, nothing started; may be described publicly (owner, 18 Nov) | [docs/plans/2026-11-17-contact-tag-track.md](docs/plans/2026-11-17-contact-tag-track.md) |
 
 ## Read first
 
 | File | Use it for |
 |---|---|
+| [README.md](README.md) | the front door, written for NUS: what we did with NUS's code, questions for NUS, try-it levels |
+| [docs/README.md](docs/README.md) | map of every page with its label (Read, Reference, Lab operations, Internal) and the history |
+| [docs/NUS_RESULTS.md](docs/NUS_RESULTS.md), [docs/TRY_IT.md](docs/TRY_IT.md) | the NUS port's results by question; the verified try-it commands |
 | [docs/claude/HANDOFF.md](docs/claude/HANDOFF.md) | where the work stands, what was decided, what is waiting on whom |
 | [STANDARDS.md](STANDARDS.md) | **the rules**: scope, wording, policy interface, game specification, drone models, gates, records, code, git |
 | [docs/DESIGN.md](docs/DESIGN.md) | the design: seven stages, two tiers, four uses, environments and contact tags, build order S0–S5, approaches considered |
@@ -85,7 +90,7 @@ Agents (in `.claude/agents/`, described in [docs/claude/AGENTS_AND_SKILLS.md](do
 | GPU, driver | RTX 5070 Ti Laptop GPU, 12 GB, driver 580.178; 24 threads; 30 GB RAM | RTX 5090, 32 GB, driver 580.126.09; 32 threads; 60 GB RAM |
 | Isaac Lab on the host | `~/IsaacLab` 2.3.2 + 25 commits (`f73c331738`); **do not edit it** | `~/IsaacLab` tag v2.3.2 (`37ddf62687`) |
 | conda `env_isaaclab` | Python 3.11, torch 2.7.0+cu128, Isaac Sim 5.1.0, skrl 2.1.0, rsl_rl 5.0.1. Needs `msgpack` for the NUS tests: `~/miniconda3/envs/env_isaaclab/bin/pip install "msgpack>=1.0"` if missing | same, built with hand fixes ([GETTING_STARTED step 5](docs/GETTING_STARTED.md#5-the-host-route-part-b)); msgpack 1.2.4 |
-| conda `nus_jax` (NUS's JAX code) | none | Python 3.12, jax 0.10.2, flax 0.12.8 ([GETTING_STARTED](docs/GETTING_STARTED.md#nus-jax-env-home-rtx-5090-only)) |
+| conda `nus_jax` (NUS's JAX code) | none | Python 3.12, jax 0.10.2, flax 0.12.8 ([GETTING_STARTED](docs/GETTING_STARTED.md#nus-jax-env-with-your-nus-clone)) |
 | Container | `svg-training:isaaclab-2.3.2` (T1 ran in it) | built 17 Nov; its suite is not clean yet (HANDOFF §0) |
 | Isaac preflight | `scripts/isaac_preflight.sh --approved-headless` (owner, 16 Nov) | same (owner, 18 Nov, "wifi: yes"); exits 0 when no other GPU job runs |
 | GPU limit per foreign process | 1024 MiB in `isaac_preflight.sh` and `run_nus_job.sh` (owner, 18 Nov) | same: the remote-desktop daemon (546–589 MiB) passes; a NUS JAX job (about 1.7 GB) blocks |
@@ -100,7 +105,7 @@ Other rows: AirStack simulator = Isaac Sim 5.1.0 + Pegasus + PX4 v1.16.1 in dock
 
 | Path | What | On the laptop instead |
 |---|---|---|
-| `~/ma_skills-self-play/` | NUS's three branches (private, not a git repository), the private port plan `PORT_PLAN.md`, notes `_notes/`, probes `_probes/` (Run 0, self-play matrices, videos), NUS's outputs (`…/outputs/{fixed_apf,hangar}/`: checkpoints, GIFs), its own `CLAUDE.md` and **copies** of this folder's agents and skills (`.claude/`, refreshed by `sync_claude_setup.sh` at session start) | read [docs/NUS_PORT.md](docs/NUS_PORT.md) and [docs/media/nus](docs/media/nus/README.md); NUS's code comes from NUS |
+| `~/ma_skills-self-play/` | NUS's three branches (private, not a git repository), the private port plan, notes `_notes/`, probes `_probes/` (Run 0, self-play matrices, videos), NUS's outputs (`…/outputs/{fixed_apf,hangar}/`: checkpoints, GIFs), its own `CLAUDE.md` and **copies** of this folder's agents and skills (`.claude/`, refreshed by `sync_claude_setup.sh` at session start) | read [docs/NUS_PORT.md](docs/NUS_PORT.md) and [docs/media/nus](docs/media/nus/README.md); NUS's code comes from NUS |
 | `svg_training/configs/local/nus_*.toml` | NUS's rules, the deploy file (scale, hold), the hangar side: the files the NUS code reads | `scripts/nus_install_provisional.sh` installs the lab's copies from the PROVISIONAL bundle [nus_provisional/](nus_provisional/README.md) (owner decision 6, 18 Nov); or rebuild them with the commands in [TRAINING, NUS jobs](docs/TRAINING.md#nus-jobs) (needs NUS's code for the rules file) |
 | `svg_training/runs/nus_port/` | recordings, reference data, converted weights, Phase 4 rows (`scores.json`, videos) | weights, starts and recordings: the same installer; rows and videos: the records in `records/` and the figures (runs are not in git) |
 | `~/nus_jax_runs/` | logs and exact commands (`*.cmd.txt`) of every NUS job | TRAINING, NUS jobs |
@@ -123,4 +128,10 @@ needs is in this folder's committed files (HANDOFF first).
   still does not scan inside this folder (links resolved, no new warnings). Also approved (owner, 16 November 2026): one row in the root `CLAUDE.md` doc table points at this folder's CLAUDE.md.
   Approved again (owner, 18 November 2026): those two rows may carry status and pointers (the NUS port page); nothing
   else outside this folder.
-- Ledger rows written on the 5090 are W numbers; the lead renumbers them to the next T numbers at merge.
+  Approved (owner, 18 November 2026): a one-line banner under the root `README.md`'s H1 pointing at
+  `svg_training/README.md` (option A text).
+- Ledger rows written on the 5090 are W numbers; the lead renumbers them to the next T numbers at merge
+  (records/README.md explains this to readers).
+- Reader pages (label Read in docs/README.md): speak to NUS ("you", "your code"); NUS's own tests as counts, never a
+  verdict; no owner quotes, clock times, agent roles or "the partner"; mechanisms say "likely" until a control row has
+  run; every number links its record.

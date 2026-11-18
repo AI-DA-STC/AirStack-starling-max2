@@ -1,9 +1,11 @@
+READ · TRAINING SIMULATOR ONLY: replay and Isaac Lab clips of our own scripted games. NUS port clips: [nus/README.md](nus/README.md).
+
 # Replay animations of the training simulator
 
 Training simulator (PyTorch, point drones), scripted strategies, committed neutral game settings; not a real flight.
 Blue circles are Guard drones, orange triangles are Strike drones, the green disc is the zone, a faint x is a drone
 that is out. Drones on top of each other show as nested markers; marker size only tells the drones of a team apart. Clips play at 2x real time (the game step is 0.05 s). MP4: 1280 x 960 px, 20 frames/s. GIF: 800 x 600 px, 10 frames/s (fewer frames to stay small; same 2x speed). Regenerate any clip with
-`PYTHONPATH=source ~/miniconda3/envs/env_isaaclab/bin/python scripts/make_replay.py --only <name>` from `svg_training/`
+`PYTHONPATH=source <pipeline env>/bin/python scripts/make_replay.py --only <name>` from `svg_training/`
 (CPU only; the Starling-layer clip took about 75 s on this laptop on 16 November 2026). Each name gives `<name>.gif` and `<name>.mp4`.
 
 | Name | Caption | Command (`--only`) |
@@ -17,7 +19,7 @@ that is out. Drones on top of each other show as nested markers; marker size onl
 
 ## Isaac Lab clips (S2b): the same game on rigid-body Starling drones
 
-Training simulator (Isaac Lab), scripted strategies, committed neutral game settings (never the partner's local file); not a real flight. A picture of the training simulator, not a measurement: no gates, no ledger row.
+Training simulator (Isaac Lab), scripted strategies, committed neutral game settings (never a partner's local file); not a real flight. A picture of the training simulator, not a measurement: no gates, no ledger row.
 
 What you see:
 

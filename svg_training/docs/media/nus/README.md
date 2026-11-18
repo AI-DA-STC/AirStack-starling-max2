@@ -1,11 +1,12 @@
+READ · TRAINING SIMULATOR ONLY: every clip of the NUS port, one line each.
+
 # Videos of the NUS port
 
-Training simulator only; nothing here is a flight. Published with NUS's agreement (owner, 18 November 2026; STANDARDS
-§2). Since 18 November 2026 ~14:10 every clip is public, the Phase 4 ones included: the owner lifted the hold-back on
-the hangar size ("just put all clips on the github … no need to keep it private"). The story behind each clip:
+Training simulator only; nothing here is a flight. Published with NUS's agreement ([STANDARDS §2](../../../STANDARDS.md#2-wording));
+every clip of the port is public, the Phase 4 ones included. The story behind each clip:
 [NUS_PORT](../../NUS_PORT.md).
 
-**Five kinds of clip** (271 clip files, 17.5 MB).
+**Five kinds of clip** (279 clip files: the 271 of 18 November plus a second Isaac Lab set of 8).
 
 | Folder | What | Simulator | Count |
 |---|---|---|---|
@@ -13,7 +14,7 @@ the hangar size ("just put all clips on the github … no need to keep it privat
 | [`phase3/`](#phase-3-the-converted-policies-in-the-replica-t16) | NUS's policies converted to PyTorch, in our copy (replica) of NUS's game (T16) | replica | 4 |
 | [`w3/`](#t17-the-self-play-pair-through-the-phase-3-gates) | the self-play pair G19 and S20, converted, through the Phase 3 gates (T17) | replica | 4 |
 | [`phase4/row_*/`](#phase-4-the-transfer-ladder-top-down) | the transfer ladder, one folder per row: the first Strike win and the first hold among the first 16 games of each pair | replica, tier 1, tier 2 | 246 |
-| [`isaac/`](#isaac-lab-camera-clips-row-6) | the converted policies on rigid-body Starlings in Isaac Lab, an oblique camera (row 6) | tier 2 (Isaac Lab) | 6 MP4, 3 GIF previews |
+| [`isaac/`](#isaac-lab-camera-clips-row-6) | the converted policies on rigid-body Starlings in Isaac Lab, an oblique camera (row 6) | tier 2 (Isaac Lab) | 6 MP4, 3 GIF previews; second set ([below](#isaac-lab-camera-clips-second-set-more-pairings-and-the-props-world-18-november-2026-evening)): 5 MP4, 3 GIF previews |
 
 **How to read them.**
 
@@ -41,7 +42,7 @@ the hangar size ("just put all clips on the github … no need to keep it privat
 
 On the hangar geometry (0.40 m per unit, 0.60 s per step; [NUS_PORT §3](../../NUS_PORT.md#3-phase-0-answers-and-the-hangar-geometry)).
 
-| File | Caption | Source (5090 only) | Size |
+| File | Caption | Source (lab only) | Size |
 |---|---|---|---|
 | [`nus_fixed_guard_vs_scripted_strike.mp4`](nus_fixed_guard_vs_scripted_strike.mp4) | Fixed-opponent Guard policy (3,000 updates, the run converted as P3G) against NUS's scripted Strike controller. No Strike drone enters the zone in 200 steps (last evaluation: 19 of 20 held). | NUS outputs `hangar/2026-11-17_fixed_apf_3v3_defender/replays/defender_vs_apf_00003000_env0.gif` | 58 kB |
 | [`nus_fixed_strike_vs_scripted_guard.mp4`](nus_fixed_strike_vs_scripted_guard.mp4), [`.gif`](nus_fixed_strike_vs_scripted_guard.gif) | Fixed-opponent Strike policy (the run converted as P3S) against NUS's scripted Guard controller. A Strike drone reaches the zone at about step 7 (last evaluation: 20 of 20 reached). | `hangar/2026-11-17_fixed_apf_3v3_attacker/replays/attacker_vs_apf_00003000_env0.gif` | 76 kB, 161 kB |
@@ -401,13 +402,12 @@ was held, and no `strike_win` clip when none was reached. Records:
 ## Size budget and how they were made
 
 263 files added on 18 November 2026 (Phase 6 pass 2): 16.8 MB (260 MP4, 14.2 MB, and 3 GIF, 2.6 MB); with the 8 files of
-pass 1 (0.7 MB) the folder holds 271 clip files, 17.5 MB. Sources (git-ignored, 5090 only): `runs/nus_port/phase4/row_*/videos/` (59 MB),
+pass 1 (0.7 MB) the folder holds 271 clip files, 17.5 MB. Sources (git-ignored, on the lab's workstation): `runs/nus_port/phase4/row_*/videos/` (59 MB),
 `runs/nus_port/videos/` and `videos/w3/` (8.5 MB), `runs/nus_port/isaac_clips/` (6.8 MB of MP4). Every MP4 keeps
 its frame rate and frame count (checked for all 260). GitHub shows GIFs inline on a page and MP4 files only as
 downloads, hence the three GIF previews.
 
-Home RTX 5090, 18 November 2026, the `ffmpeg` of `imageio-ffmpeg` in `~/miniconda3/envs/env_isaaclab` (pass 2) and
-`~/miniconda3/bin/ffmpeg` (pass 1):
+On the lab's RTX 5090, 18 November 2026, the `ffmpeg` of `imageio-ffmpeg` (pass 2) and a system `ffmpeg` (pass 1):
 
 ```bash
 # pass 2: any run clip -> compact MP4 (H.264, CRF 30, at most 800 px wide, same frame rate, no audio)
@@ -426,9 +426,8 @@ config was edited so the opponent pool holds one archive entry (the self-play ru
 
 ## Isaac Lab camera clips, second set: more pairings and the props world (18 November 2026, evening)
 
-Owner's request (18 Nov): "record more Isaac Lab clips of NUS's policy, including in the props and construction-site
-worlds". Presentation only (no gates, not a measurement, no ledger row): `scripts/nus_isaac_clips.py` with the
-second-set entries of `configs/nus_isaac_clips.toml`, recorded headless on the home RTX 5090. The game is Phase 4 row 6
+Requested by the lab on 18 November 2026: more pairings, and the props and construction-site worlds. Presentation only (no gates, not a measurement, no ledger row): `scripts/nus_isaac_clips.py` with the
+second-set entries of `configs/nus_isaac_clips.toml`, recorded headless on the lab's RTX 5090. The game is Phase 4 row 6
 (tier 2: Isaac Lab rigid-body Starlings, safety filter on, free height with the start jitter) on the hangar arena,
 7.5 m square, unchanged. **Props clips** add the blocks and columns of the S2b props clip (`make_s2b_video.py`'s scene
 layer, seed 11, 8 objects). They are a backdrop only: the drones do not see or avoid them and can fly through them.
@@ -449,13 +448,13 @@ over all 1,000 row-6 games (record T24). Files are in [`isaac/`](isaac/); the MP
 
 **Not recorded yet.** The hold clips: G19 v S20 at game 77 (row 6's first G19 v S20 hold, 21 of 1,000), ParkedGuard
 v S20 in the props world (game 2), and P3G v S20 (a Strike win at game 2, the first hold at game 24). They wait until
-the GPU is less busy (lead, 18 Nov). The construction-site clips (`site_g19_vs_s20`, `site_parked_vs_s20`) need the
+the GPU is less busy. The construction-site clips (`site_g19_vs_s20`, `site_parked_vs_s20`) need the
 laptop's `localisation/scenes/construction_site/build/` bundle; that bundle is not in git and not on the 5090. On a
 machine without it the tool stops with exit 2 before Isaac starts.
 
 **Recording conditions.** The GPU was shared with the Phase 5 jobs (the P1b pilot, NUS's C0 self-play jobs and the
 route (b) trainers, at 91–99 % use). Ticks ran 10–30 times slower than for the first set: 3.4–3.7 s per dry-run
 tick and about 4 s per rendered frame, against 0.1–0.3 s. The five clips above took 1.21 GPU-hours of the 1.5 h
-cap (wall time of each launch, `runs/nus_port/isaac_clips_more/gpu_hours.log`, 5090 only). Re-encoded as the first
+cap (wall time of each launch, `runs/nus_port/isaac_clips_more/gpu_hours.log`, lab only). Re-encoded as the first
 set: H.264 CRF 30 at 800 px; GIFs at 4× real time, 480 px, 5 frames/s, 128 colours
 (`runs/nus_port/isaac_clips_more/publish.sh`).

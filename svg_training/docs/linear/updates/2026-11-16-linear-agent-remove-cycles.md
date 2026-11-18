@@ -1,3 +1,5 @@
+INTERNAL · copies of the lab's project-tracker (Linear) items. Not needed to read or run anything here.
+
 # Linear update — 2026-11-16, take the pipeline issues out of cycles
 
 Instructions for the Linear agent, in the **nearlab** workspace (team NEAR Lab). Apply every step below. Delete

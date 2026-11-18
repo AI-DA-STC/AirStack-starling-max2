@@ -1,3 +1,5 @@
+INTERNAL · a build plan written for the lab's AI coding assistants; history, not instructions. Results: [../README.md](../README.md).
+
 # S1 Drone Model and Safety Filter Implementation Plan
 
 ## Changes during execution (15 November 2026)

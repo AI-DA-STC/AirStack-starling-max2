@@ -1,3 +1,5 @@
+INTERNAL · a build plan written for the lab's AI coding assistants; history, not instructions. Results: [../README.md](../README.md).
+
 # Contact-tag track: a Guard drone that makes contact, tested without crashing drones
 
 **Status: DRAFT for the owner (17 November 2026). Nothing approved or started.** Every gate below is PROPOSED
@@ -85,7 +87,7 @@ Filter on; its radius lowered live in steps 0.55 → 0.45 → 0.35 m per drone; 
 Proves: the filter holds close to the airframe at game closing speeds. **Stop.**
 
 ### Stage 4 — Real Guard drone against a simulated Strike drone
-CMU's real/sim mix (`drone_modes`), proposed by CMU in the October 2026 monthly report. Needs an owner exception to
+CMU's real/sim mix (`drone_modes`; the October 2026 monthly report names it, confidential, not quoted). Needs an owner exception to
 PREFLIGHT's "no simulator on the network" rule, a separate drone name, and care with the simulator clock.
 Proves: real tracking at the moment of contact, with nothing to hit. **Stop.**
 

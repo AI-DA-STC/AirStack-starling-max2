@@ -1,3 +1,5 @@
+INTERNAL · the lab's AI-assistant hand-over notes. Not needed to read or run anything here: start at [../../README.md](../../README.md).
+
 # Agents and skills for the training pipeline
 
 Start Claude from the `svg_training` folder (`cd ~/AirStack-starling-max2/svg_training && claude`) so

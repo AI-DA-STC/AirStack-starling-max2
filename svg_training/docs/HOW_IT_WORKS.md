@@ -1,6 +1,8 @@
+READ · the training pipeline in one picture, and the game as an RL environment.
+
 # How the training pipeline works
 
-New here? The story of what has been done so far, in order, is in [WHAT_WE_DID](WHAT_WE_DID.md).
+New here? Start at the [front page](../README.md); what happened when is in [docs/README.md, History](README.md#history).
 
 This page gives the picture first, then the parts. Terms are in the [glossary](GLOSSARY.md). The full design, with
 reasons, is [DESIGN.md](DESIGN.md). The diagrams are in the deck, [training-pipeline.pptx](pipeline/training-pipeline.pptx).
@@ -9,8 +11,8 @@ Use the deck for pictures and this page for where things stand.
 ## The game
 
 - The **Guard team** holds a circular zone; the **Strike team** tries to reach it. Strike drones are 1.5 times as fast.
-- The Guard team's aim is to tag Strike drones ([glossary](GLOSSARY.md)). Games are played in realistic 3D worlds.
-- A strategy (a *policy*) is trained here. It then flies through AirStack on Starling 2 Max drones without changes.
+- Strike drones try to reach the zone; Guard drones try to keep them out until the time-out. Contact tags are a separate track ([glossary](GLOSSARY.md)). Our own build steps play in 3-D worlds; the NUS port plays an empty hangar arena.
+- A strategy (a *policy*) is trained here. It is meant to fly through AirStack on Starling 2 Max drones without changes; nothing has flown yet.
 
 ## The idea in one picture
 
@@ -34,7 +36,7 @@ Each stage ends on a pass/fail check set before the run (a *gate*). The table li
 | 4 | Cross-check | replays the same checkpoint on the heavier tier 2 drone | gap between tiers within a limit |
 | 5 | Export | writes the policy file and its `interface.toml` | file loads and reproduces recorded outputs |
 | 6 | Simulated flight | flies the policy in the AirStack simulator, PX4 software, up to 3 drones | matches training within a limit |
-| 7 | Real flight | Crazyflies first, then Starlings | the flight stack's own rules |
+| 7 | Real flight | the lab's palm-sized Crazyflie drones first, then Starlings | the flight stack's own rules |
 
 A failed gate sends the work back. A failed training gate sends it back to the reward or the opponents. If the
 cross-check or the simulated flight disagrees with training, the drone model is wrong and goes back to stage 1.
@@ -49,9 +51,7 @@ compares the two tiers.
 
 | | Tier 1: response model | Tier 2: rigid body |
 |---|---|---|
-| A drone is (planned) | a point that answers a velocity command the way PX4 does: lag, delay, limits | a body with four rotors in Isaac Lab, flown by a PX4-style controller |
-| A drone is (S0 today) | a placeholder: 0.15 s delay and 0.55 s lag, not yet fitted | Isaac Lab's ARL Robot 1 airframe; no controller; its state is rewritten each step |
-| A drone is (S1 today) | the real drone's command chain: a copy of the commander's rules, then PX4's response taken from real flight logs (exploratory, no run of record yet); the AirStack simulator's fit describes that simulator only | unchanged |
+| A drone is | a point that follows its speed command through a copy of the commander's rules, then a delay-and-lag response fitted to one real flight log (exploratory: its check against a real flight, T5, is a FAIL) | a rigid body with four rotors in Isaac Lab, flown by a copy of PX4 1.14's control loops (S2b) |
 | Needs Isaac | no; tests run in seconds | yes |
 | Speed (S0, laptop) | 5 v 3: 98.3 million drone-steps / s in the open arena; 382,206 with full sensing | 455,300 drone-steps / s at best (3 drones per game, 100 Hz) |
 | Used for | bulk training | the cross-check; later flight control and cameras |
@@ -72,18 +72,31 @@ place where its commands enter the flight software is the *plug-in point*. The t
 | Rate | 20 commands a second |
 | Topic in AirStack (the plug-in point) | `/svg/{name}/teleop_command` (`TwistStamped`) |
 | No fresh command for 0.5 s | the drone holds position |
-| Safety filter | keeps drones of the same team apart; it does not act between the two teams |
+| Safety filter | CMU's collision filter acts on every pair of drones, both teams, as in flight: both drones of a close pair give way (1.10 m keep-out). The contact-tag track alone filters within a team |
 
 Status labels and sources for every item: [STANDARDS §3](../STANDARDS.md#3-policy-interface-version-01-proposed).
 
-A partner's strategy plugs into the training simulator through the strategy contract ([PLUG_IN](PLUG_IN.md)). A
-partner's trained JAX policy has a scoring hook since 18 November 2026: `svg_training.nus.strategy:NusPolicy` reads a
+Your strategy plugs into the training simulator through the strategy contract ([PLUG_IN](PLUG_IN.md)). A
+trained JAX policy from NUS has a scoring hook since 18 November 2026: `svg_training.nus.strategy:NusPolicy` reads a
 converted checkpoint (layout id `nus_area_denial_v1`) and plays one team, scored like any strategy
 ([PLUG_IN](PLUG_IN.md#plug-in-a-trained-nus-policy)). The exported policy file and `interface.toml` for the AirStack
 simulator and for flight still arrive with build step S5
 ([STANDARDS §3](../STANDARDS.md#3-policy-interface-version-01-proposed)); the NUS policy's `interface.toml` is a draft.
 The whole NUS port (NUS's code run as the reference, the copy of NUS's game, the converted policy and the transfer
 ladder towards our drones), with NUS's settings and our results: [NUS_PORT](NUS_PORT.md).
+
+## The game as an RL environment
+
+| Item | Our game (build steps, `core/game.py`) | The NUS port's hangar game (Phase 4 rows, Phase 5) |
+|---|---|---|
+| Batching | N games at once on one device, plain PyTorch tensors; `reset()`, `step(actions)`; finished games restart inside the same `step` | the same engine, 3 v 3 only |
+| Agents | 1–5 Guard and 1–3 Strike drones per game, drawn per game; one network per drone or one per team | 3 Guard v 3 Strike, fixed |
+| Observation, per drone | 71 numbers: itself, 5 Guard slots and 3 Strike slots of 7 numbers each, the zone ([PLUG_IN](PLUG_IN.md#plug-a-training-method-in)) | ours, or NUS's 9N + 2 (56 numbers) rebuilt from it by `NusPolicy` |
+| Action, per drone | 4 numbers in [−1, 1]: `[vx, vy, vz, yaw_rate]`, scaled by the team's speed, 20 per second | NUS policies: a 2-D move held for 12 ticks (0.60 s) |
+| Reward | +1 / −1 per team at the end (hold / reach), 0 otherwise; optional shaping, off in the committed file | Phase 5.2 plans NUS's own reward (inside-share penalty, first-reach penalty, shaping) |
+| Episode | ends at the first Strike reach or the time-out: 1,200 ticks (60 s) | 2,400 ticks (120 s) |
+| Drone model | tier 1 (fast, CPU or GPU) or tier 2 (Isaac Lab, GPU) | rows 1–5 tier 1, row 6 tier 2 |
+| Libraries | skrl (`SvgSkrlEnv`) and Gymnasium (`SvgTeamVectorEnv`) adapters | NUS's method ported to PyTorch (in progress) |
 
 ## What a benchmark run does
 
@@ -106,17 +119,5 @@ Then it times at least 200 steps and 2 s, twice.
 
 ## What exists today
 
-The table shows each build step and where it stands.
-
-| Step | What it builds | Where it stands |
-|---|---|---|
-| S0 Measure | benchmarks for both tiers, records, ledger, container | done on the laptop: T1 = FAIL on one gate ([results](S0_RESULTS.md)); workstation run to do |
-| S1 Drone model | tier 1 carries the real drone's command chain, with PX4's response from real flight logs; safety filter copy | built and run, no drone-model gate passed yet: T2 and T3 FAIL, real-log fit exploratory, T4 information only ([results](S1_RESULTS.md)); next, a real flight with planned pushes (owner) |
-| S2 The game and the plug-in point | open arena, game rules, scripted opponents, scoring tool, partner guide | closed 16 November: T8 PASS, T5 FAIL, T9 information only ([results](S2_RESULTS.md)) |
-| S2b The game on Isaac Lab drones | rigid-body Starlings with a PX4 1.14 cascade; stand-in trainer | built through Task 8, not closed: T10–T14 ([results](S2B_RESULTS.md)) |
-| NUS port (beside the build steps) | NUS's code as the reference, a copy of NUS's game, NUS's policy converted, the transfer ladder | T15–T17 PASS, ladder rows 1–6 scored (T18–T24 INFO): the safety filter and 3-D undo NUS's push-based blocking; Phase 5 planned ([NUS_PORT](NUS_PORT.md)) |
-| S3 Two against one | random blocks and columns, line of sight, opponent pool | not started |
-| S4 Five against three | the construction-site world, team-size randomisation, tier 2 cross-check | not started |
-| S5 Hand-over | export and `interface.toml`; a ROS 2 policy node needs the owner's separate approval | not started |
-
-Nothing of ours has been trained into a strategy yet: the stand-in trainer is a pipe test (T14), and the NUS policies were trained with NUS's own code. Where each step ends: [DESIGN §8](DESIGN.md#8-build-order).
+Where each build step and the NUS port stand, with their records: [docs/README.md, History](README.md#history).
+Nothing of ours has been trained into a strategy yet.

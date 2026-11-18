@@ -1,0 +1,3410 @@
+{
+ "source": "partner select_opponents (ensemble_self_play_runner.py)",
+ "cases": [
+  {
+   "seed": 1,
+   "generation": 1,
+   "maximum": 11,
+   "recent": 6,
+   "selected_generations": []
+  },
+  {
+   "seed": 1,
+   "generation": 1,
+   "maximum": 11,
+   "recent": 0,
+   "selected_generations": []
+  },
+  {
+   "seed": 1,
+   "generation": 1,
+   "maximum": 11,
+   "recent": 11,
+   "selected_generations": []
+  },
+  {
+   "seed": 1,
+   "generation": 1,
+   "maximum": 3,
+   "recent": 1,
+   "selected_generations": []
+  },
+  {
+   "seed": 1,
+   "generation": 1,
+   "maximum": 5,
+   "recent": 2,
+   "selected_generations": []
+  },
+  {
+   "seed": 1,
+   "generation": 2,
+   "maximum": 11,
+   "recent": 6,
+   "selected_generations": [
+    1
+   ]
+  },
+  {
+   "seed": 1,
+   "generation": 2,
+   "maximum": 11,
+   "recent": 0,
+   "selected_generations": [
+    1
+   ]
+  },
+  {
+   "seed": 1,
+   "generation": 2,
+   "maximum": 11,
+   "recent": 11,
+   "selected_generations": [
+    1
+   ]
+  },
+  {
+   "seed": 1,
+   "generation": 2,
+   "maximum": 3,
+   "recent": 1,
+   "selected_generations": [
+    1
+   ]
+  },
+  {
+   "seed": 1,
+   "generation": 2,
+   "maximum": 5,
+   "recent": 2,
+   "selected_generations": [
+    1
+   ]
+  },
+  {
+   "seed": 1,
+   "generation": 8,
+   "maximum": 11,
+   "recent": 6,
+   "selected_generations": [
+    1,
+    3,
+    5,
+    7
+   ]
+  },
+  {
+   "seed": 1,
+   "generation": 8,
+   "maximum": 11,
+   "recent": 0,
+   "selected_generations": [
+    1,
+    3,
+    5,
+    7
+   ]
+  },
+  {
+   "seed": 1,
+   "generation": 8,
+   "maximum": 11,
+   "recent": 11,
+   "selected_generations": [
+    1,
+    3,
+    5,
+    7
+   ]
+  },
+  {
+   "seed": 1,
+   "generation": 8,
+   "maximum": 3,
+   "recent": 1,
+   "selected_generations": [
+    1,
+    3,
+    7
+   ]
+  },
+  {
+   "seed": 1,
+   "generation": 8,
+   "maximum": 5,
+   "recent": 2,
+   "selected_generations": [
+    1,
+    3,
+    5,
+    7
+   ]
+  },
+  {
+   "seed": 1,
+   "generation": 9,
+   "maximum": 11,
+   "recent": 6,
+   "selected_generations": [
+    2,
+    4,
+    6,
+    8
+   ]
+  },
+  {
+   "seed": 1,
+   "generation": 9,
+   "maximum": 11,
+   "recent": 0,
+   "selected_generations": [
+    2,
+    4,
+    6,
+    8
+   ]
+  },
+  {
+   "seed": 1,
+   "generation": 9,
+   "maximum": 11,
+   "recent": 11,
+   "selected_generations": [
+    2,
+    4,
+    6,
+    8
+   ]
+  },
+  {
+   "seed": 1,
+   "generation": 9,
+   "maximum": 3,
+   "recent": 1,
+   "selected_generations": [
+    2,
+    6,
+    8
+   ]
+  },
+  {
+   "seed": 1,
+   "generation": 9,
+   "maximum": 5,
+   "recent": 2,
+   "selected_generations": [
+    2,
+    4,
+    6,
+    8
+   ]
+  },
+  {
+   "seed": 1,
+   "generation": 20,
+   "maximum": 11,
+   "recent": 6,
+   "selected_generations": [
+    1,
+    3,
+    5,
+    7,
+    9,
+    11,
+    13,
+    15,
+    17,
+    19
+   ]
+  },
+  {
+   "seed": 1,
+   "generation": 20,
+   "maximum": 11,
+   "recent": 0,
+   "selected_generations": [
+    1,
+    3,
+    5,
+    7,
+    9,
+    11,
+    13,
+    15,
+    17,
+    19
+   ]
+  },
+  {
+   "seed": 1,
+   "generation": 20,
+   "maximum": 11,
+   "recent": 11,
+   "selected_generations": [
+    1,
+    3,
+    5,
+    7,
+    9,
+    11,
+    13,
+    15,
+    17,
+    19
+   ]
+  },
+  {
+   "seed": 1,
+   "generation": 20,
+   "maximum": 3,
+   "recent": 1,
+   "selected_generations": [
+    5,
+    11,
+    19
+   ]
+  },
+  {
+   "seed": 1,
+   "generation": 20,
+   "maximum": 5,
+   "recent": 2,
+   "selected_generations": [
+    5,
+    9,
+    13,
+    17,
+    19
+   ]
+  },
+  {
+   "seed": 1,
+   "generation": 31,
+   "maximum": 11,
+   "recent": 6,
+   "selected_generations": [
+    6,
+    8,
+    14,
+    16,
+    18,
+    20,
+    22,
+    24,
+    26,
+    28,
+    30
+   ]
+  },
+  {
+   "seed": 1,
+   "generation": 31,
+   "maximum": 11,
+   "recent": 0,
+   "selected_generations": [
+    2,
+    4,
+    6,
+    8,
+    12,
+    14,
+    16,
+    18,
+    26,
+    28,
+    30
+   ]
+  },
+  {
+   "seed": 1,
+   "generation": 31,
+   "maximum": 11,
+   "recent": 11,
+   "selected_generations": [
+    10,
+    12,
+    14,
+    16,
+    18,
+    20,
+    22,
+    24,
+    26,
+    28,
+    30
+   ]
+  },
+  {
+   "seed": 1,
+   "generation": 31,
+   "maximum": 3,
+   "recent": 1,
+   "selected_generations": [
+    12,
+    18,
+    30
+   ]
+  },
+  {
+   "seed": 1,
+   "generation": 31,
+   "maximum": 5,
+   "recent": 2,
+   "selected_generations": [
+    10,
+    16,
+    26,
+    28,
+    30
+   ]
+  },
+  {
+   "seed": 1,
+   "generation": 32,
+   "maximum": 11,
+   "recent": 6,
+   "selected_generations": [
+    3,
+    5,
+    7,
+    11,
+    15,
+    21,
+    23,
+    25,
+    27,
+    29,
+    31
+   ]
+  },
+  {
+   "seed": 1,
+   "generation": 32,
+   "maximum": 11,
+   "recent": 0,
+   "selected_generations": [
+    3,
+    5,
+    7,
+    11,
+    15,
+    17,
+    19,
+    21,
+    25,
+    27,
+    29
+   ]
+  },
+  {
+   "seed": 1,
+   "generation": 32,
+   "maximum": 11,
+   "recent": 11,
+   "selected_generations": [
+    11,
+    13,
+    15,
+    17,
+    19,
+    21,
+    23,
+    25,
+    27,
+    29,
+    31
+   ]
+  },
+  {
+   "seed": 1,
+   "generation": 32,
+   "maximum": 3,
+   "recent": 1,
+   "selected_generations": [
+    5,
+    17,
+    31
+   ]
+  },
+  {
+   "seed": 1,
+   "generation": 32,
+   "maximum": 5,
+   "recent": 2,
+   "selected_generations": [
+    5,
+    11,
+    15,
+    29,
+    31
+   ]
+  },
+  {
+   "seed": 1,
+   "generation": 40,
+   "maximum": 11,
+   "recent": 6,
+   "selected_generations": [
+    7,
+    13,
+    15,
+    21,
+    23,
+    29,
+    31,
+    33,
+    35,
+    37,
+    39
+   ]
+  },
+  {
+   "seed": 1,
+   "generation": 40,
+   "maximum": 11,
+   "recent": 0,
+   "selected_generations": [
+    1,
+    5,
+    7,
+    9,
+    13,
+    15,
+    21,
+    23,
+    25,
+    27,
+    37
+   ]
+  },
+  {
+   "seed": 1,
+   "generation": 40,
+   "maximum": 11,
+   "recent": 11,
+   "selected_generations": [
+    19,
+    21,
+    23,
+    25,
+    27,
+    29,
+    31,
+    33,
+    35,
+    37,
+    39
+   ]
+  },
+  {
+   "seed": 1,
+   "generation": 40,
+   "maximum": 3,
+   "recent": 1,
+   "selected_generations": [
+    23,
+    25,
+    39
+   ]
+  },
+  {
+   "seed": 1,
+   "generation": 40,
+   "maximum": 5,
+   "recent": 2,
+   "selected_generations": [
+    21,
+    23,
+    33,
+    37,
+    39
+   ]
+  },
+  {
+   "seed": 1,
+   "generation": 41,
+   "maximum": 11,
+   "recent": 6,
+   "selected_generations": [
+    8,
+    10,
+    12,
+    26,
+    28,
+    30,
+    32,
+    34,
+    36,
+    38,
+    40
+   ]
+  },
+  {
+   "seed": 1,
+   "generation": 41,
+   "maximum": 11,
+   "recent": 0,
+   "selected_generations": [
+    6,
+    8,
+    10,
+    12,
+    18,
+    22,
+    24,
+    26,
+    28,
+    30,
+    38
+   ]
+  },
+  {
+   "seed": 1,
+   "generation": 41,
+   "maximum": 11,
+   "recent": 11,
+   "selected_generations": [
+    20,
+    22,
+    24,
+    26,
+    28,
+    30,
+    32,
+    34,
+    36,
+    38,
+    40
+   ]
+  },
+  {
+   "seed": 1,
+   "generation": 41,
+   "maximum": 3,
+   "recent": 1,
+   "selected_generations": [
+    14,
+    20,
+    40
+   ]
+  },
+  {
+   "seed": 1,
+   "generation": 41,
+   "maximum": 5,
+   "recent": 2,
+   "selected_generations": [
+    10,
+    14,
+    18,
+    38,
+    40
+   ]
+  },
+  {
+   "seed": 1,
+   "generation": 64,
+   "maximum": 11,
+   "recent": 6,
+   "selected_generations": [
+    5,
+    15,
+    23,
+    29,
+    37,
+    53,
+    55,
+    57,
+    59,
+    61,
+    63
+   ]
+  },
+  {
+   "seed": 1,
+   "generation": 64,
+   "maximum": 11,
+   "recent": 0,
+   "selected_generations": [
+    5,
+    13,
+    15,
+    23,
+    29,
+    33,
+    37,
+    41,
+    45,
+    61,
+    63
+   ]
+  },
+  {
+   "seed": 1,
+   "generation": 64,
+   "maximum": 11,
+   "recent": 11,
+   "selected_generations": [
+    43,
+    45,
+    47,
+    49,
+    51,
+    53,
+    55,
+    57,
+    59,
+    61,
+    63
+   ]
+  },
+  {
+   "seed": 1,
+   "generation": 64,
+   "maximum": 3,
+   "recent": 1,
+   "selected_generations": [
+    31,
+    51,
+    63
+   ]
+  },
+  {
+   "seed": 1,
+   "generation": 64,
+   "maximum": 5,
+   "recent": 2,
+   "selected_generations": [
+    29,
+    35,
+    49,
+    61,
+    63
+   ]
+  },
+  {
+   "seed": 2,
+   "generation": 1,
+   "maximum": 11,
+   "recent": 6,
+   "selected_generations": []
+  },
+  {
+   "seed": 2,
+   "generation": 1,
+   "maximum": 11,
+   "recent": 0,
+   "selected_generations": []
+  },
+  {
+   "seed": 2,
+   "generation": 1,
+   "maximum": 11,
+   "recent": 11,
+   "selected_generations": []
+  },
+  {
+   "seed": 2,
+   "generation": 1,
+   "maximum": 3,
+   "recent": 1,
+   "selected_generations": []
+  },
+  {
+   "seed": 2,
+   "generation": 1,
+   "maximum": 5,
+   "recent": 2,
+   "selected_generations": []
+  },
+  {
+   "seed": 2,
+   "generation": 2,
+   "maximum": 11,
+   "recent": 6,
+   "selected_generations": [
+    1
+   ]
+  },
+  {
+   "seed": 2,
+   "generation": 2,
+   "maximum": 11,
+   "recent": 0,
+   "selected_generations": [
+    1
+   ]
+  },
+  {
+   "seed": 2,
+   "generation": 2,
+   "maximum": 11,
+   "recent": 11,
+   "selected_generations": [
+    1
+   ]
+  },
+  {
+   "seed": 2,
+   "generation": 2,
+   "maximum": 3,
+   "recent": 1,
+   "selected_generations": [
+    1
+   ]
+  },
+  {
+   "seed": 2,
+   "generation": 2,
+   "maximum": 5,
+   "recent": 2,
+   "selected_generations": [
+    1
+   ]
+  },
+  {
+   "seed": 2,
+   "generation": 8,
+   "maximum": 11,
+   "recent": 6,
+   "selected_generations": [
+    1,
+    3,
+    5,
+    7
+   ]
+  },
+  {
+   "seed": 2,
+   "generation": 8,
+   "maximum": 11,
+   "recent": 0,
+   "selected_generations": [
+    1,
+    3,
+    5,
+    7
+   ]
+  },
+  {
+   "seed": 2,
+   "generation": 8,
+   "maximum": 11,
+   "recent": 11,
+   "selected_generations": [
+    1,
+    3,
+    5,
+    7
+   ]
+  },
+  {
+   "seed": 2,
+   "generation": 8,
+   "maximum": 3,
+   "recent": 1,
+   "selected_generations": [
+    1,
+    3,
+    7
+   ]
+  },
+  {
+   "seed": 2,
+   "generation": 8,
+   "maximum": 5,
+   "recent": 2,
+   "selected_generations": [
+    1,
+    3,
+    5,
+    7
+   ]
+  },
+  {
+   "seed": 2,
+   "generation": 9,
+   "maximum": 11,
+   "recent": 6,
+   "selected_generations": [
+    2,
+    4,
+    6,
+    8
+   ]
+  },
+  {
+   "seed": 2,
+   "generation": 9,
+   "maximum": 11,
+   "recent": 0,
+   "selected_generations": [
+    2,
+    4,
+    6,
+    8
+   ]
+  },
+  {
+   "seed": 2,
+   "generation": 9,
+   "maximum": 11,
+   "recent": 11,
+   "selected_generations": [
+    2,
+    4,
+    6,
+    8
+   ]
+  },
+  {
+   "seed": 2,
+   "generation": 9,
+   "maximum": 3,
+   "recent": 1,
+   "selected_generations": [
+    4,
+    6,
+    8
+   ]
+  },
+  {
+   "seed": 2,
+   "generation": 9,
+   "maximum": 5,
+   "recent": 2,
+   "selected_generations": [
+    2,
+    4,
+    6,
+    8
+   ]
+  },
+  {
+   "seed": 2,
+   "generation": 20,
+   "maximum": 11,
+   "recent": 6,
+   "selected_generations": [
+    1,
+    3,
+    5,
+    7,
+    9,
+    11,
+    13,
+    15,
+    17,
+    19
+   ]
+  },
+  {
+   "seed": 2,
+   "generation": 20,
+   "maximum": 11,
+   "recent": 0,
+   "selected_generations": [
+    1,
+    3,
+    5,
+    7,
+    9,
+    11,
+    13,
+    15,
+    17,
+    19
+   ]
+  },
+  {
+   "seed": 2,
+   "generation": 20,
+   "maximum": 11,
+   "recent": 11,
+   "selected_generations": [
+    1,
+    3,
+    5,
+    7,
+    9,
+    11,
+    13,
+    15,
+    17,
+    19
+   ]
+  },
+  {
+   "seed": 2,
+   "generation": 20,
+   "maximum": 3,
+   "recent": 1,
+   "selected_generations": [
+    5,
+    17,
+    19
+   ]
+  },
+  {
+   "seed": 2,
+   "generation": 20,
+   "maximum": 5,
+   "recent": 2,
+   "selected_generations": [
+    3,
+    5,
+    15,
+    17,
+    19
+   ]
+  },
+  {
+   "seed": 2,
+   "generation": 31,
+   "maximum": 11,
+   "recent": 6,
+   "selected_generations": [
+    2,
+    6,
+    12,
+    14,
+    16,
+    20,
+    22,
+    24,
+    26,
+    28,
+    30
+   ]
+  },
+  {
+   "seed": 2,
+   "generation": 31,
+   "maximum": 11,
+   "recent": 0,
+   "selected_generations": [
+    2,
+    4,
+    6,
+    12,
+    14,
+    16,
+    22,
+    24,
+    26,
+    28,
+    30
+   ]
+  },
+  {
+   "seed": 2,
+   "generation": 31,
+   "maximum": 11,
+   "recent": 11,
+   "selected_generations": [
+    10,
+    12,
+    14,
+    16,
+    18,
+    20,
+    22,
+    24,
+    26,
+    28,
+    30
+   ]
+  },
+  {
+   "seed": 2,
+   "generation": 31,
+   "maximum": 3,
+   "recent": 1,
+   "selected_generations": [
+    2,
+    6,
+    30
+   ]
+  },
+  {
+   "seed": 2,
+   "generation": 31,
+   "maximum": 5,
+   "recent": 2,
+   "selected_generations": [
+    2,
+    4,
+    26,
+    28,
+    30
+   ]
+  },
+  {
+   "seed": 2,
+   "generation": 32,
+   "maximum": 11,
+   "recent": 6,
+   "selected_generations": [
+    1,
+    3,
+    5,
+    7,
+    13,
+    21,
+    23,
+    25,
+    27,
+    29,
+    31
+   ]
+  },
+  {
+   "seed": 2,
+   "generation": 32,
+   "maximum": 11,
+   "recent": 0,
+   "selected_generations": [
+    1,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    21,
+    23,
+    27,
+    31
+   ]
+  },
+  {
+   "seed": 2,
+   "generation": 32,
+   "maximum": 11,
+   "recent": 11,
+   "selected_generations": [
+    11,
+    13,
+    15,
+    17,
+    19,
+    21,
+    23,
+    25,
+    27,
+    29,
+    31
+   ]
+  },
+  {
+   "seed": 2,
+   "generation": 32,
+   "maximum": 3,
+   "recent": 1,
+   "selected_generations": [
+    7,
+    15,
+    31
+   ]
+  },
+  {
+   "seed": 2,
+   "generation": 32,
+   "maximum": 5,
+   "recent": 2,
+   "selected_generations": [
+    3,
+    5,
+    13,
+    29,
+    31
+   ]
+  },
+  {
+   "seed": 2,
+   "generation": 40,
+   "maximum": 11,
+   "recent": 6,
+   "selected_generations": [
+    1,
+    3,
+    13,
+    17,
+    25,
+    29,
+    31,
+    33,
+    35,
+    37,
+    39
+   ]
+  },
+  {
+   "seed": 2,
+   "generation": 40,
+   "maximum": 11,
+   "recent": 0,
+   "selected_generations": [
+    1,
+    3,
+    11,
+    13,
+    17,
+    21,
+    25,
+    27,
+    31,
+    33,
+    37
+   ]
+  },
+  {
+   "seed": 2,
+   "generation": 40,
+   "maximum": 11,
+   "recent": 11,
+   "selected_generations": [
+    19,
+    21,
+    23,
+    25,
+    27,
+    29,
+    31,
+    33,
+    35,
+    37,
+    39
+   ]
+  },
+  {
+   "seed": 2,
+   "generation": 40,
+   "maximum": 3,
+   "recent": 1,
+   "selected_generations": [
+    23,
+    29,
+    39
+   ]
+  },
+  {
+   "seed": 2,
+   "generation": 40,
+   "maximum": 5,
+   "recent": 2,
+   "selected_generations": [
+    1,
+    19,
+    25,
+    37,
+    39
+   ]
+  },
+  {
+   "seed": 2,
+   "generation": 41,
+   "maximum": 11,
+   "recent": 6,
+   "selected_generations": [
+    6,
+    14,
+    18,
+    22,
+    24,
+    30,
+    32,
+    34,
+    36,
+    38,
+    40
+   ]
+  },
+  {
+   "seed": 2,
+   "generation": 41,
+   "maximum": 11,
+   "recent": 0,
+   "selected_generations": [
+    2,
+    4,
+    6,
+    12,
+    14,
+    18,
+    20,
+    22,
+    24,
+    34,
+    38
+   ]
+  },
+  {
+   "seed": 2,
+   "generation": 41,
+   "maximum": 11,
+   "recent": 11,
+   "selected_generations": [
+    20,
+    22,
+    24,
+    26,
+    28,
+    30,
+    32,
+    34,
+    36,
+    38,
+    40
+   ]
+  },
+  {
+   "seed": 2,
+   "generation": 41,
+   "maximum": 3,
+   "recent": 1,
+   "selected_generations": [
+    22,
+    24,
+    40
+   ]
+  },
+  {
+   "seed": 2,
+   "generation": 41,
+   "maximum": 5,
+   "recent": 2,
+   "selected_generations": [
+    20,
+    26,
+    34,
+    38,
+    40
+   ]
+  },
+  {
+   "seed": 2,
+   "generation": 64,
+   "maximum": 11,
+   "recent": 6,
+   "selected_generations": [
+    1,
+    3,
+    9,
+    13,
+    45,
+    53,
+    55,
+    57,
+    59,
+    61,
+    63
+   ]
+  },
+  {
+   "seed": 2,
+   "generation": 64,
+   "maximum": 11,
+   "recent": 0,
+   "selected_generations": [
+    1,
+    3,
+    9,
+    13,
+    21,
+    23,
+    29,
+    43,
+    45,
+    49,
+    59
+   ]
+  },
+  {
+   "seed": 2,
+   "generation": 64,
+   "maximum": 11,
+   "recent": 11,
+   "selected_generations": [
+    43,
+    45,
+    47,
+    49,
+    51,
+    53,
+    55,
+    57,
+    59,
+    61,
+    63
+   ]
+  },
+  {
+   "seed": 2,
+   "generation": 64,
+   "maximum": 3,
+   "recent": 1,
+   "selected_generations": [
+    1,
+    5,
+    63
+   ]
+  },
+  {
+   "seed": 2,
+   "generation": 64,
+   "maximum": 5,
+   "recent": 2,
+   "selected_generations": [
+    1,
+    3,
+    11,
+    61,
+    63
+   ]
+  },
+  {
+   "seed": 3,
+   "generation": 1,
+   "maximum": 11,
+   "recent": 6,
+   "selected_generations": []
+  },
+  {
+   "seed": 3,
+   "generation": 1,
+   "maximum": 11,
+   "recent": 0,
+   "selected_generations": []
+  },
+  {
+   "seed": 3,
+   "generation": 1,
+   "maximum": 11,
+   "recent": 11,
+   "selected_generations": []
+  },
+  {
+   "seed": 3,
+   "generation": 1,
+   "maximum": 3,
+   "recent": 1,
+   "selected_generations": []
+  },
+  {
+   "seed": 3,
+   "generation": 1,
+   "maximum": 5,
+   "recent": 2,
+   "selected_generations": []
+  },
+  {
+   "seed": 3,
+   "generation": 2,
+   "maximum": 11,
+   "recent": 6,
+   "selected_generations": [
+    1
+   ]
+  },
+  {
+   "seed": 3,
+   "generation": 2,
+   "maximum": 11,
+   "recent": 0,
+   "selected_generations": [
+    1
+   ]
+  },
+  {
+   "seed": 3,
+   "generation": 2,
+   "maximum": 11,
+   "recent": 11,
+   "selected_generations": [
+    1
+   ]
+  },
+  {
+   "seed": 3,
+   "generation": 2,
+   "maximum": 3,
+   "recent": 1,
+   "selected_generations": [
+    1
+   ]
+  },
+  {
+   "seed": 3,
+   "generation": 2,
+   "maximum": 5,
+   "recent": 2,
+   "selected_generations": [
+    1
+   ]
+  },
+  {
+   "seed": 3,
+   "generation": 8,
+   "maximum": 11,
+   "recent": 6,
+   "selected_generations": [
+    1,
+    3,
+    5,
+    7
+   ]
+  },
+  {
+   "seed": 3,
+   "generation": 8,
+   "maximum": 11,
+   "recent": 0,
+   "selected_generations": [
+    1,
+    3,
+    5,
+    7
+   ]
+  },
+  {
+   "seed": 3,
+   "generation": 8,
+   "maximum": 11,
+   "recent": 11,
+   "selected_generations": [
+    1,
+    3,
+    5,
+    7
+   ]
+  },
+  {
+   "seed": 3,
+   "generation": 8,
+   "maximum": 3,
+   "recent": 1,
+   "selected_generations": [
+    1,
+    3,
+    7
+   ]
+  },
+  {
+   "seed": 3,
+   "generation": 8,
+   "maximum": 5,
+   "recent": 2,
+   "selected_generations": [
+    1,
+    3,
+    5,
+    7
+   ]
+  },
+  {
+   "seed": 3,
+   "generation": 9,
+   "maximum": 11,
+   "recent": 6,
+   "selected_generations": [
+    2,
+    4,
+    6,
+    8
+   ]
+  },
+  {
+   "seed": 3,
+   "generation": 9,
+   "maximum": 11,
+   "recent": 0,
+   "selected_generations": [
+    2,
+    4,
+    6,
+    8
+   ]
+  },
+  {
+   "seed": 3,
+   "generation": 9,
+   "maximum": 11,
+   "recent": 11,
+   "selected_generations": [
+    2,
+    4,
+    6,
+    8
+   ]
+  },
+  {
+   "seed": 3,
+   "generation": 9,
+   "maximum": 3,
+   "recent": 1,
+   "selected_generations": [
+    2,
+    6,
+    8
+   ]
+  },
+  {
+   "seed": 3,
+   "generation": 9,
+   "maximum": 5,
+   "recent": 2,
+   "selected_generations": [
+    2,
+    4,
+    6,
+    8
+   ]
+  },
+  {
+   "seed": 3,
+   "generation": 20,
+   "maximum": 11,
+   "recent": 6,
+   "selected_generations": [
+    1,
+    3,
+    5,
+    7,
+    9,
+    11,
+    13,
+    15,
+    17,
+    19
+   ]
+  },
+  {
+   "seed": 3,
+   "generation": 20,
+   "maximum": 11,
+   "recent": 0,
+   "selected_generations": [
+    1,
+    3,
+    5,
+    7,
+    9,
+    11,
+    13,
+    15,
+    17,
+    19
+   ]
+  },
+  {
+   "seed": 3,
+   "generation": 20,
+   "maximum": 11,
+   "recent": 11,
+   "selected_generations": [
+    1,
+    3,
+    5,
+    7,
+    9,
+    11,
+    13,
+    15,
+    17,
+    19
+   ]
+  },
+  {
+   "seed": 3,
+   "generation": 20,
+   "maximum": 3,
+   "recent": 1,
+   "selected_generations": [
+    5,
+    13,
+    19
+   ]
+  },
+  {
+   "seed": 3,
+   "generation": 20,
+   "maximum": 5,
+   "recent": 2,
+   "selected_generations": [
+    5,
+    7,
+    9,
+    17,
+    19
+   ]
+  },
+  {
+   "seed": 3,
+   "generation": 31,
+   "maximum": 11,
+   "recent": 6,
+   "selected_generations": [
+    2,
+    4,
+    6,
+    12,
+    18,
+    20,
+    22,
+    24,
+    26,
+    28,
+    30
+   ]
+  },
+  {
+   "seed": 3,
+   "generation": 31,
+   "maximum": 11,
+   "recent": 0,
+   "selected_generations": [
+    2,
+    4,
+    6,
+    12,
+    16,
+    18,
+    20,
+    22,
+    24,
+    28,
+    30
+   ]
+  },
+  {
+   "seed": 3,
+   "generation": 31,
+   "maximum": 11,
+   "recent": 11,
+   "selected_generations": [
+    10,
+    12,
+    14,
+    16,
+    18,
+    20,
+    22,
+    24,
+    26,
+    28,
+    30
+   ]
+  },
+  {
+   "seed": 3,
+   "generation": 31,
+   "maximum": 3,
+   "recent": 1,
+   "selected_generations": [
+    6,
+    12,
+    30
+   ]
+  },
+  {
+   "seed": 3,
+   "generation": 31,
+   "maximum": 5,
+   "recent": 2,
+   "selected_generations": [
+    2,
+    6,
+    10,
+    28,
+    30
+   ]
+  },
+  {
+   "seed": 3,
+   "generation": 32,
+   "maximum": 11,
+   "recent": 6,
+   "selected_generations": [
+    3,
+    5,
+    13,
+    15,
+    19,
+    21,
+    23,
+    25,
+    27,
+    29,
+    31
+   ]
+  },
+  {
+   "seed": 3,
+   "generation": 32,
+   "maximum": 11,
+   "recent": 0,
+   "selected_generations": [
+    3,
+    5,
+    13,
+    15,
+    17,
+    19,
+    21,
+    23,
+    25,
+    27,
+    29
+   ]
+  },
+  {
+   "seed": 3,
+   "generation": 32,
+   "maximum": 11,
+   "recent": 11,
+   "selected_generations": [
+    11,
+    13,
+    15,
+    17,
+    19,
+    21,
+    23,
+    25,
+    27,
+    29,
+    31
+   ]
+  },
+  {
+   "seed": 3,
+   "generation": 32,
+   "maximum": 3,
+   "recent": 1,
+   "selected_generations": [
+    9,
+    29,
+    31
+   ]
+  },
+  {
+   "seed": 3,
+   "generation": 32,
+   "maximum": 5,
+   "recent": 2,
+   "selected_generations": [
+    7,
+    9,
+    25,
+    29,
+    31
+   ]
+  },
+  {
+   "seed": 3,
+   "generation": 40,
+   "maximum": 11,
+   "recent": 6,
+   "selected_generations": [
+    3,
+    5,
+    17,
+    25,
+    27,
+    29,
+    31,
+    33,
+    35,
+    37,
+    39
+   ]
+  },
+  {
+   "seed": 3,
+   "generation": 40,
+   "maximum": 11,
+   "recent": 0,
+   "selected_generations": [
+    1,
+    3,
+    5,
+    7,
+    9,
+    17,
+    25,
+    27,
+    29,
+    33,
+    39
+   ]
+  },
+  {
+   "seed": 3,
+   "generation": 40,
+   "maximum": 11,
+   "recent": 11,
+   "selected_generations": [
+    19,
+    21,
+    23,
+    25,
+    27,
+    29,
+    31,
+    33,
+    35,
+    37,
+    39
+   ]
+  },
+  {
+   "seed": 3,
+   "generation": 40,
+   "maximum": 3,
+   "recent": 1,
+   "selected_generations": [
+    5,
+    29,
+    39
+   ]
+  },
+  {
+   "seed": 3,
+   "generation": 40,
+   "maximum": 5,
+   "recent": 2,
+   "selected_generations": [
+    5,
+    7,
+    25,
+    37,
+    39
+   ]
+  },
+  {
+   "seed": 3,
+   "generation": 41,
+   "maximum": 11,
+   "recent": 6,
+   "selected_generations": [
+    4,
+    14,
+    22,
+    24,
+    28,
+    30,
+    32,
+    34,
+    36,
+    38,
+    40
+   ]
+  },
+  {
+   "seed": 3,
+   "generation": 41,
+   "maximum": 11,
+   "recent": 0,
+   "selected_generations": [
+    2,
+    4,
+    14,
+    16,
+    20,
+    22,
+    24,
+    28,
+    30,
+    32,
+    36
+   ]
+  },
+  {
+   "seed": 3,
+   "generation": 41,
+   "maximum": 11,
+   "recent": 11,
+   "selected_generations": [
+    20,
+    22,
+    24,
+    26,
+    28,
+    30,
+    32,
+    34,
+    36,
+    38,
+    40
+   ]
+  },
+  {
+   "seed": 3,
+   "generation": 41,
+   "maximum": 3,
+   "recent": 1,
+   "selected_generations": [
+    8,
+    26,
+    40
+   ]
+  },
+  {
+   "seed": 3,
+   "generation": 41,
+   "maximum": 5,
+   "recent": 2,
+   "selected_generations": [
+    6,
+    24,
+    36,
+    38,
+    40
+   ]
+  },
+  {
+   "seed": 3,
+   "generation": 64,
+   "maximum": 11,
+   "recent": 6,
+   "selected_generations": [
+    9,
+    13,
+    21,
+    25,
+    43,
+    53,
+    55,
+    57,
+    59,
+    61,
+    63
+   ]
+  },
+  {
+   "seed": 3,
+   "generation": 64,
+   "maximum": 11,
+   "recent": 0,
+   "selected_generations": [
+    7,
+    9,
+    13,
+    15,
+    21,
+    25,
+    39,
+    43,
+    53,
+    57,
+    59
+   ]
+  },
+  {
+   "seed": 3,
+   "generation": 64,
+   "maximum": 11,
+   "recent": 11,
+   "selected_generations": [
+    43,
+    45,
+    47,
+    49,
+    51,
+    53,
+    55,
+    57,
+    59,
+    61,
+    63
+   ]
+  },
+  {
+   "seed": 3,
+   "generation": 64,
+   "maximum": 3,
+   "recent": 1,
+   "selected_generations": [
+    17,
+    35,
+    63
+   ]
+  },
+  {
+   "seed": 3,
+   "generation": 64,
+   "maximum": 5,
+   "recent": 2,
+   "selected_generations": [
+    11,
+    15,
+    33,
+    61,
+    63
+   ]
+  },
+  {
+   "seed": 1001,
+   "generation": 1,
+   "maximum": 11,
+   "recent": 6,
+   "selected_generations": []
+  },
+  {
+   "seed": 1001,
+   "generation": 1,
+   "maximum": 11,
+   "recent": 0,
+   "selected_generations": []
+  },
+  {
+   "seed": 1001,
+   "generation": 1,
+   "maximum": 11,
+   "recent": 11,
+   "selected_generations": []
+  },
+  {
+   "seed": 1001,
+   "generation": 1,
+   "maximum": 3,
+   "recent": 1,
+   "selected_generations": []
+  },
+  {
+   "seed": 1001,
+   "generation": 1,
+   "maximum": 5,
+   "recent": 2,
+   "selected_generations": []
+  },
+  {
+   "seed": 1001,
+   "generation": 2,
+   "maximum": 11,
+   "recent": 6,
+   "selected_generations": [
+    1
+   ]
+  },
+  {
+   "seed": 1001,
+   "generation": 2,
+   "maximum": 11,
+   "recent": 0,
+   "selected_generations": [
+    1
+   ]
+  },
+  {
+   "seed": 1001,
+   "generation": 2,
+   "maximum": 11,
+   "recent": 11,
+   "selected_generations": [
+    1
+   ]
+  },
+  {
+   "seed": 1001,
+   "generation": 2,
+   "maximum": 3,
+   "recent": 1,
+   "selected_generations": [
+    1
+   ]
+  },
+  {
+   "seed": 1001,
+   "generation": 2,
+   "maximum": 5,
+   "recent": 2,
+   "selected_generations": [
+    1
+   ]
+  },
+  {
+   "seed": 1001,
+   "generation": 8,
+   "maximum": 11,
+   "recent": 6,
+   "selected_generations": [
+    1,
+    3,
+    5,
+    7
+   ]
+  },
+  {
+   "seed": 1001,
+   "generation": 8,
+   "maximum": 11,
+   "recent": 0,
+   "selected_generations": [
+    1,
+    3,
+    5,
+    7
+   ]
+  },
+  {
+   "seed": 1001,
+   "generation": 8,
+   "maximum": 11,
+   "recent": 11,
+   "selected_generations": [
+    1,
+    3,
+    5,
+    7
+   ]
+  },
+  {
+   "seed": 1001,
+   "generation": 8,
+   "maximum": 3,
+   "recent": 1,
+   "selected_generations": [
+    1,
+    3,
+    7
+   ]
+  },
+  {
+   "seed": 1001,
+   "generation": 8,
+   "maximum": 5,
+   "recent": 2,
+   "selected_generations": [
+    1,
+    3,
+    5,
+    7
+   ]
+  },
+  {
+   "seed": 1001,
+   "generation": 9,
+   "maximum": 11,
+   "recent": 6,
+   "selected_generations": [
+    2,
+    4,
+    6,
+    8
+   ]
+  },
+  {
+   "seed": 1001,
+   "generation": 9,
+   "maximum": 11,
+   "recent": 0,
+   "selected_generations": [
+    2,
+    4,
+    6,
+    8
+   ]
+  },
+  {
+   "seed": 1001,
+   "generation": 9,
+   "maximum": 11,
+   "recent": 11,
+   "selected_generations": [
+    2,
+    4,
+    6,
+    8
+   ]
+  },
+  {
+   "seed": 1001,
+   "generation": 9,
+   "maximum": 3,
+   "recent": 1,
+   "selected_generations": [
+    2,
+    6,
+    8
+   ]
+  },
+  {
+   "seed": 1001,
+   "generation": 9,
+   "maximum": 5,
+   "recent": 2,
+   "selected_generations": [
+    2,
+    4,
+    6,
+    8
+   ]
+  },
+  {
+   "seed": 1001,
+   "generation": 20,
+   "maximum": 11,
+   "recent": 6,
+   "selected_generations": [
+    1,
+    3,
+    5,
+    7,
+    9,
+    11,
+    13,
+    15,
+    17,
+    19
+   ]
+  },
+  {
+   "seed": 1001,
+   "generation": 20,
+   "maximum": 11,
+   "recent": 0,
+   "selected_generations": [
+    1,
+    3,
+    5,
+    7,
+    9,
+    11,
+    13,
+    15,
+    17,
+    19
+   ]
+  },
+  {
+   "seed": 1001,
+   "generation": 20,
+   "maximum": 11,
+   "recent": 11,
+   "selected_generations": [
+    1,
+    3,
+    5,
+    7,
+    9,
+    11,
+    13,
+    15,
+    17,
+    19
+   ]
+  },
+  {
+   "seed": 1001,
+   "generation": 20,
+   "maximum": 3,
+   "recent": 1,
+   "selected_generations": [
+    13,
+    17,
+    19
+   ]
+  },
+  {
+   "seed": 1001,
+   "generation": 20,
+   "maximum": 5,
+   "recent": 2,
+   "selected_generations": [
+    9,
+    11,
+    13,
+    17,
+    19
+   ]
+  },
+  {
+   "seed": 1001,
+   "generation": 31,
+   "maximum": 11,
+   "recent": 6,
+   "selected_generations": [
+    4,
+    6,
+    8,
+    10,
+    14,
+    20,
+    22,
+    24,
+    26,
+    28,
+    30
+   ]
+  },
+  {
+   "seed": 1001,
+   "generation": 31,
+   "maximum": 11,
+   "recent": 0,
+   "selected_generations": [
+    4,
+    6,
+    8,
+    10,
+    14,
+    20,
+    22,
+    24,
+    26,
+    28,
+    30
+   ]
+  },
+  {
+   "seed": 1001,
+   "generation": 31,
+   "maximum": 11,
+   "recent": 11,
+   "selected_generations": [
+    10,
+    12,
+    14,
+    16,
+    18,
+    20,
+    22,
+    24,
+    26,
+    28,
+    30
+   ]
+  },
+  {
+   "seed": 1001,
+   "generation": 31,
+   "maximum": 3,
+   "recent": 1,
+   "selected_generations": [
+    8,
+    14,
+    30
+   ]
+  },
+  {
+   "seed": 1001,
+   "generation": 31,
+   "maximum": 5,
+   "recent": 2,
+   "selected_generations": [
+    8,
+    12,
+    14,
+    28,
+    30
+   ]
+  },
+  {
+   "seed": 1001,
+   "generation": 32,
+   "maximum": 11,
+   "recent": 6,
+   "selected_generations": [
+    1,
+    3,
+    9,
+    13,
+    19,
+    21,
+    23,
+    25,
+    27,
+    29,
+    31
+   ]
+  },
+  {
+   "seed": 1001,
+   "generation": 32,
+   "maximum": 11,
+   "recent": 0,
+   "selected_generations": [
+    1,
+    3,
+    7,
+    9,
+    13,
+    17,
+    19,
+    21,
+    25,
+    29,
+    31
+   ]
+  },
+  {
+   "seed": 1001,
+   "generation": 32,
+   "maximum": 11,
+   "recent": 11,
+   "selected_generations": [
+    11,
+    13,
+    15,
+    17,
+    19,
+    21,
+    23,
+    25,
+    27,
+    29,
+    31
+   ]
+  },
+  {
+   "seed": 1001,
+   "generation": 32,
+   "maximum": 3,
+   "recent": 1,
+   "selected_generations": [
+    1,
+    5,
+    31
+   ]
+  },
+  {
+   "seed": 1001,
+   "generation": 32,
+   "maximum": 5,
+   "recent": 2,
+   "selected_generations": [
+    1,
+    3,
+    17,
+    29,
+    31
+   ]
+  },
+  {
+   "seed": 1001,
+   "generation": 40,
+   "maximum": 11,
+   "recent": 6,
+   "selected_generations": [
+    1,
+    7,
+    15,
+    19,
+    27,
+    29,
+    31,
+    33,
+    35,
+    37,
+    39
+   ]
+  },
+  {
+   "seed": 1001,
+   "generation": 40,
+   "maximum": 11,
+   "recent": 0,
+   "selected_generations": [
+    1,
+    3,
+    7,
+    15,
+    19,
+    27,
+    29,
+    31,
+    35,
+    37,
+    39
+   ]
+  },
+  {
+   "seed": 1001,
+   "generation": 40,
+   "maximum": 11,
+   "recent": 11,
+   "selected_generations": [
+    19,
+    21,
+    23,
+    25,
+    27,
+    29,
+    31,
+    33,
+    35,
+    37,
+    39
+   ]
+  },
+  {
+   "seed": 1001,
+   "generation": 40,
+   "maximum": 3,
+   "recent": 1,
+   "selected_generations": [
+    25,
+    35,
+    39
+   ]
+  },
+  {
+   "seed": 1001,
+   "generation": 40,
+   "maximum": 5,
+   "recent": 2,
+   "selected_generations": [
+    9,
+    23,
+    31,
+    37,
+    39
+   ]
+  },
+  {
+   "seed": 1001,
+   "generation": 41,
+   "maximum": 11,
+   "recent": 6,
+   "selected_generations": [
+    4,
+    8,
+    12,
+    26,
+    28,
+    30,
+    32,
+    34,
+    36,
+    38,
+    40
+   ]
+  },
+  {
+   "seed": 1001,
+   "generation": 41,
+   "maximum": 11,
+   "recent": 0,
+   "selected_generations": [
+    4,
+    8,
+    12,
+    26,
+    28,
+    30,
+    32,
+    34,
+    36,
+    38,
+    40
+   ]
+  },
+  {
+   "seed": 1001,
+   "generation": 41,
+   "maximum": 11,
+   "recent": 11,
+   "selected_generations": [
+    20,
+    22,
+    24,
+    26,
+    28,
+    30,
+    32,
+    34,
+    36,
+    38,
+    40
+   ]
+  },
+  {
+   "seed": 1001,
+   "generation": 41,
+   "maximum": 3,
+   "recent": 1,
+   "selected_generations": [
+    8,
+    18,
+    40
+   ]
+  },
+  {
+   "seed": 1001,
+   "generation": 41,
+   "maximum": 5,
+   "recent": 2,
+   "selected_generations": [
+    8,
+    12,
+    16,
+    38,
+    40
+   ]
+  },
+  {
+   "seed": 1001,
+   "generation": 64,
+   "maximum": 11,
+   "recent": 6,
+   "selected_generations": [
+    3,
+    13,
+    27,
+    47,
+    49,
+    53,
+    55,
+    57,
+    59,
+    61,
+    63
+   ]
+  },
+  {
+   "seed": 1001,
+   "generation": 64,
+   "maximum": 11,
+   "recent": 0,
+   "selected_generations": [
+    3,
+    7,
+    13,
+    15,
+    27,
+    29,
+    37,
+    41,
+    47,
+    49,
+    53
+   ]
+  },
+  {
+   "seed": 1001,
+   "generation": 64,
+   "maximum": 11,
+   "recent": 11,
+   "selected_generations": [
+    43,
+    45,
+    47,
+    49,
+    51,
+    53,
+    55,
+    57,
+    59,
+    61,
+    63
+   ]
+  },
+  {
+   "seed": 1001,
+   "generation": 64,
+   "maximum": 3,
+   "recent": 1,
+   "selected_generations": [
+    3,
+    19,
+    63
+   ]
+  },
+  {
+   "seed": 1001,
+   "generation": 64,
+   "maximum": 5,
+   "recent": 2,
+   "selected_generations": [
+    3,
+    17,
+    59,
+    61,
+    63
+   ]
+  },
+  {
+   "seed": 7001,
+   "generation": 1,
+   "maximum": 11,
+   "recent": 6,
+   "selected_generations": []
+  },
+  {
+   "seed": 7001,
+   "generation": 1,
+   "maximum": 11,
+   "recent": 0,
+   "selected_generations": []
+  },
+  {
+   "seed": 7001,
+   "generation": 1,
+   "maximum": 11,
+   "recent": 11,
+   "selected_generations": []
+  },
+  {
+   "seed": 7001,
+   "generation": 1,
+   "maximum": 3,
+   "recent": 1,
+   "selected_generations": []
+  },
+  {
+   "seed": 7001,
+   "generation": 1,
+   "maximum": 5,
+   "recent": 2,
+   "selected_generations": []
+  },
+  {
+   "seed": 7001,
+   "generation": 2,
+   "maximum": 11,
+   "recent": 6,
+   "selected_generations": [
+    1
+   ]
+  },
+  {
+   "seed": 7001,
+   "generation": 2,
+   "maximum": 11,
+   "recent": 0,
+   "selected_generations": [
+    1
+   ]
+  },
+  {
+   "seed": 7001,
+   "generation": 2,
+   "maximum": 11,
+   "recent": 11,
+   "selected_generations": [
+    1
+   ]
+  },
+  {
+   "seed": 7001,
+   "generation": 2,
+   "maximum": 3,
+   "recent": 1,
+   "selected_generations": [
+    1
+   ]
+  },
+  {
+   "seed": 7001,
+   "generation": 2,
+   "maximum": 5,
+   "recent": 2,
+   "selected_generations": [
+    1
+   ]
+  },
+  {
+   "seed": 7001,
+   "generation": 8,
+   "maximum": 11,
+   "recent": 6,
+   "selected_generations": [
+    1,
+    3,
+    5,
+    7
+   ]
+  },
+  {
+   "seed": 7001,
+   "generation": 8,
+   "maximum": 11,
+   "recent": 0,
+   "selected_generations": [
+    1,
+    3,
+    5,
+    7
+   ]
+  },
+  {
+   "seed": 7001,
+   "generation": 8,
+   "maximum": 11,
+   "recent": 11,
+   "selected_generations": [
+    1,
+    3,
+    5,
+    7
+   ]
+  },
+  {
+   "seed": 7001,
+   "generation": 8,
+   "maximum": 3,
+   "recent": 1,
+   "selected_generations": [
+    1,
+    5,
+    7
+   ]
+  },
+  {
+   "seed": 7001,
+   "generation": 8,
+   "maximum": 5,
+   "recent": 2,
+   "selected_generations": [
+    1,
+    3,
+    5,
+    7
+   ]
+  },
+  {
+   "seed": 7001,
+   "generation": 9,
+   "maximum": 11,
+   "recent": 6,
+   "selected_generations": [
+    2,
+    4,
+    6,
+    8
+   ]
+  },
+  {
+   "seed": 7001,
+   "generation": 9,
+   "maximum": 11,
+   "recent": 0,
+   "selected_generations": [
+    2,
+    4,
+    6,
+    8
+   ]
+  },
+  {
+   "seed": 7001,
+   "generation": 9,
+   "maximum": 11,
+   "recent": 11,
+   "selected_generations": [
+    2,
+    4,
+    6,
+    8
+   ]
+  },
+  {
+   "seed": 7001,
+   "generation": 9,
+   "maximum": 3,
+   "recent": 1,
+   "selected_generations": [
+    4,
+    6,
+    8
+   ]
+  },
+  {
+   "seed": 7001,
+   "generation": 9,
+   "maximum": 5,
+   "recent": 2,
+   "selected_generations": [
+    2,
+    4,
+    6,
+    8
+   ]
+  },
+  {
+   "seed": 7001,
+   "generation": 20,
+   "maximum": 11,
+   "recent": 6,
+   "selected_generations": [
+    1,
+    3,
+    5,
+    7,
+    9,
+    11,
+    13,
+    15,
+    17,
+    19
+   ]
+  },
+  {
+   "seed": 7001,
+   "generation": 20,
+   "maximum": 11,
+   "recent": 0,
+   "selected_generations": [
+    1,
+    3,
+    5,
+    7,
+    9,
+    11,
+    13,
+    15,
+    17,
+    19
+   ]
+  },
+  {
+   "seed": 7001,
+   "generation": 20,
+   "maximum": 11,
+   "recent": 11,
+   "selected_generations": [
+    1,
+    3,
+    5,
+    7,
+    9,
+    11,
+    13,
+    15,
+    17,
+    19
+   ]
+  },
+  {
+   "seed": 7001,
+   "generation": 20,
+   "maximum": 3,
+   "recent": 1,
+   "selected_generations": [
+    1,
+    7,
+    19
+   ]
+  },
+  {
+   "seed": 7001,
+   "generation": 20,
+   "maximum": 5,
+   "recent": 2,
+   "selected_generations": [
+    1,
+    5,
+    7,
+    17,
+    19
+   ]
+  },
+  {
+   "seed": 7001,
+   "generation": 31,
+   "maximum": 11,
+   "recent": 6,
+   "selected_generations": [
+    6,
+    10,
+    14,
+    16,
+    18,
+    20,
+    22,
+    24,
+    26,
+    28,
+    30
+   ]
+  },
+  {
+   "seed": 7001,
+   "generation": 31,
+   "maximum": 11,
+   "recent": 0,
+   "selected_generations": [
+    2,
+    4,
+    6,
+    8,
+    10,
+    12,
+    14,
+    16,
+    18,
+    20,
+    26
+   ]
+  },
+  {
+   "seed": 7001,
+   "generation": 31,
+   "maximum": 11,
+   "recent": 11,
+   "selected_generations": [
+    10,
+    12,
+    14,
+    16,
+    18,
+    20,
+    22,
+    24,
+    26,
+    28,
+    30
+   ]
+  },
+  {
+   "seed": 7001,
+   "generation": 31,
+   "maximum": 3,
+   "recent": 1,
+   "selected_generations": [
+    14,
+    22,
+    30
+   ]
+  },
+  {
+   "seed": 7001,
+   "generation": 31,
+   "maximum": 5,
+   "recent": 2,
+   "selected_generations": [
+    12,
+    20,
+    26,
+    28,
+    30
+   ]
+  },
+  {
+   "seed": 7001,
+   "generation": 32,
+   "maximum": 11,
+   "recent": 6,
+   "selected_generations": [
+    3,
+    5,
+    7,
+    9,
+    13,
+    21,
+    23,
+    25,
+    27,
+    29,
+    31
+   ]
+  },
+  {
+   "seed": 7001,
+   "generation": 32,
+   "maximum": 11,
+   "recent": 0,
+   "selected_generations": [
+    3,
+    5,
+    7,
+    9,
+    13,
+    21,
+    23,
+    25,
+    27,
+    29,
+    31
+   ]
+  },
+  {
+   "seed": 7001,
+   "generation": 32,
+   "maximum": 11,
+   "recent": 11,
+   "selected_generations": [
+    11,
+    13,
+    15,
+    17,
+    19,
+    21,
+    23,
+    25,
+    27,
+    29,
+    31
+   ]
+  },
+  {
+   "seed": 7001,
+   "generation": 32,
+   "maximum": 3,
+   "recent": 1,
+   "selected_generations": [
+    7,
+    21,
+    31
+   ]
+  },
+  {
+   "seed": 7001,
+   "generation": 32,
+   "maximum": 5,
+   "recent": 2,
+   "selected_generations": [
+    5,
+    11,
+    17,
+    29,
+    31
+   ]
+  },
+  {
+   "seed": 7001,
+   "generation": 40,
+   "maximum": 11,
+   "recent": 6,
+   "selected_generations": [
+    5,
+    7,
+    13,
+    15,
+    27,
+    29,
+    31,
+    33,
+    35,
+    37,
+    39
+   ]
+  },
+  {
+   "seed": 7001,
+   "generation": 40,
+   "maximum": 11,
+   "recent": 0,
+   "selected_generations": [
+    1,
+    5,
+    7,
+    13,
+    15,
+    19,
+    27,
+    29,
+    31,
+    37,
+    39
+   ]
+  },
+  {
+   "seed": 7001,
+   "generation": 40,
+   "maximum": 11,
+   "recent": 11,
+   "selected_generations": [
+    19,
+    21,
+    23,
+    25,
+    27,
+    29,
+    31,
+    33,
+    35,
+    37,
+    39
+   ]
+  },
+  {
+   "seed": 7001,
+   "generation": 40,
+   "maximum": 3,
+   "recent": 1,
+   "selected_generations": [
+    13,
+    27,
+    39
+   ]
+  },
+  {
+   "seed": 7001,
+   "generation": 40,
+   "maximum": 5,
+   "recent": 2,
+   "selected_generations": [
+    11,
+    21,
+    23,
+    37,
+    39
+   ]
+  },
+  {
+   "seed": 7001,
+   "generation": 41,
+   "maximum": 11,
+   "recent": 6,
+   "selected_generations": [
+    8,
+    18,
+    20,
+    24,
+    26,
+    30,
+    32,
+    34,
+    36,
+    38,
+    40
+   ]
+  },
+  {
+   "seed": 7001,
+   "generation": 41,
+   "maximum": 11,
+   "recent": 0,
+   "selected_generations": [
+    8,
+    14,
+    18,
+    20,
+    22,
+    24,
+    26,
+    30,
+    32,
+    38,
+    40
+   ]
+  },
+  {
+   "seed": 7001,
+   "generation": 41,
+   "maximum": 11,
+   "recent": 11,
+   "selected_generations": [
+    20,
+    22,
+    24,
+    26,
+    28,
+    30,
+    32,
+    34,
+    36,
+    38,
+    40
+   ]
+  },
+  {
+   "seed": 7001,
+   "generation": 41,
+   "maximum": 3,
+   "recent": 1,
+   "selected_generations": [
+    30,
+    36,
+    40
+   ]
+  },
+  {
+   "seed": 7001,
+   "generation": 41,
+   "maximum": 5,
+   "recent": 2,
+   "selected_generations": [
+    26,
+    28,
+    32,
+    38,
+    40
+   ]
+  },
+  {
+   "seed": 7001,
+   "generation": 64,
+   "maximum": 11,
+   "recent": 6,
+   "selected_generations": [
+    1,
+    11,
+    31,
+    43,
+    49,
+    53,
+    55,
+    57,
+    59,
+    61,
+    63
+   ]
+  },
+  {
+   "seed": 7001,
+   "generation": 64,
+   "maximum": 11,
+   "recent": 0,
+   "selected_generations": [
+    1,
+    9,
+    11,
+    23,
+    29,
+    31,
+    41,
+    43,
+    49,
+    53,
+    55
+   ]
+  },
+  {
+   "seed": 7001,
+   "generation": 64,
+   "maximum": 11,
+   "recent": 11,
+   "selected_generations": [
+    43,
+    45,
+    47,
+    49,
+    51,
+    53,
+    55,
+    57,
+    59,
+    61,
+    63
+   ]
+  },
+  {
+   "seed": 7001,
+   "generation": 64,
+   "maximum": 3,
+   "recent": 1,
+   "selected_generations": [
+    15,
+    43,
+    63
+   ]
+  },
+  {
+   "seed": 7001,
+   "generation": 64,
+   "maximum": 5,
+   "recent": 2,
+   "selected_generations": [
+    13,
+    39,
+    55,
+    61,
+    63
+   ]
+  }
+ ]
+}

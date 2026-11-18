@@ -9,6 +9,11 @@ counts and the commit of the clone). Values live only in the npz under runs/ (gi
 
 Episodes alternate between random actions and scripted ones that make each rule fire: Strikes driven into Guards (push),
 Guards driven outward past their boundary, oversized requests (caps), Strikes sent to the zone (reached flag).
+
+``--train-fields`` (Phase 5, task M2; ``--config`` must then be a self-play run's resolved ``config.json``): also records, per step,
+the partner's own critic state of the pre-step state (``JAXMPEAdapter.critic_state``, one random opponent slot per episode), the
+Guard team's reward from the partner's ``defender_task_rewards`` with the run's reward settings and the Guard team's discount as the
+shaping discount, the Strike drones inside the zone and the first-reach flag. The default recording is unchanged.
 """
 from __future__ import annotations
 
@@ -94,6 +99,38 @@ def rule_flags(env, pos: np.ndarray, actions: np.ndarray, breach_before: float, 
     }
 
 
+def _train_recorder(args: argparse.Namespace, env_cfg: dict, env_id: str) -> dict:
+    """The partner's adapter and reward function, set up from the run's config.json (Phase 5 M2 fixtures)."""
+    import jax
+    import jax.numpy as jnp
+    from ma_skills.jax.mpe import JAXMPEAdapter
+    import ma_skills.jax.rewards as nus_rewards
+
+    run_cfg = json.loads(args.config.read_text())
+    trainer = run_cfg["trainer"]
+    adapter = JAXMPEAdapter(env_id=env_id, global_state_fields=env_cfg["env"]["global_state_fields"],
+                            max_episode_steps=env_cfg["env"]["max_episode_steps"], env_kwargs=env_cfg["env"].get("physics", {}),
+                            max_pool_slots=int(trainer["max_pool_slots"]))
+    reward_cfg = trainer["rewards"]["defender"]
+    kwargs = {"distance_scale": float(reward_cfg["attacker_distance_scale"]), "breach_penalty": float(reward_cfg["breach_penalty"]),
+              "clean_timeout_reward": float(reward_cfg["clean_timeout_reward"]),
+              "first_breach_penalty": float(reward_cfg.get("first_breach_penalty", 0)),
+              "shaping_gamma": float(trainer["defender"]["task_gamma"])}
+    length = int(env_cfg["env"]["max_episode_steps"])
+
+    def record(state, new_state, info, t: int, slot: int):
+        batched = jax.tree.map(lambda x: jnp.asarray(x)[None], state)
+        critic = np.asarray(adapter.critic_state(batched, jnp.asarray([slot], jnp.int32)))[0]
+        before, after = bool(state.breach), bool(new_state.breach)
+        clean = jnp.asarray(t + 1 >= length) & ~jnp.asarray(after)
+        count = info["attacker_inside_count"]
+        value = nus_rewards.defender_task_rewards(state.p_pos, new_state.p_pos, new_state.area_pos, count / float(adapter.n_attackers), clean,
+                                      n_defenders=adapter.n_agents, first_breach=jnp.asarray(after and not before), **kwargs)
+        return critic, float(np.asarray(value).reshape(-1)[0]), int(count), bool(after and not before)
+
+    return {"record": record, "state_dim": int(adapter.state_dim), "slots": int(trainer["max_pool_slots"])}
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--clone", required=True, type=Path)
@@ -102,6 +139,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--episodes", required=True, type=int)
     parser.add_argument("--seed", required=True, type=int)
     parser.add_argument("--start-mode", choices=("random", "static"), default="random")
+    parser.add_argument("--train-fields", action="store_true", help="also record critic states and rewards (needs a run config.json)")
     parser.add_argument("--out-dir", type=Path, default=Path(__file__).resolve().parents[1] / "runs" / "nus_port" / "fixtures")
     args = parser.parse_args(argv)
     if "runs" not in args.out_dir.resolve().parts:
@@ -114,7 +152,9 @@ def main(argv: list[str] | None = None) -> int:
 
     env_cfg = load_environment_cfg(args.config)
     *head, _mode, version = str(env_cfg["env"]["env_id"]).split("_")
-    env = make_env("_".join([*head, args.start_mode, version]), **dict(env_cfg["env"].get("physics", {})))
+    env_id = "_".join([*head, args.start_mode, version])
+    env = make_env(env_id, **dict(env_cfg["env"].get("physics", {})))
+    train = _train_recorder(args, env_cfg, env_id) if args.train_fields else None
     rng = np.random.default_rng(args.seed)
     steps = int(env.max_steps)
     m = env.num_actors
@@ -128,6 +168,12 @@ def main(argv: list[str] | None = None) -> int:
     names = ("push", "team_cap", "boundary", "flag_flip")
     flags = {k: np.zeros((args.episodes, steps), bool) for k in names}
     total_cap = np.zeros((args.episodes, steps), bool)
+    if train is not None:
+        central = np.zeros((args.episodes, steps, train["state_dim"]), np.float32)
+        reward = np.zeros((args.episodes, steps), np.float32)
+        inside = np.zeros((args.episodes, steps), np.int32)
+        first_reach = np.zeros((args.episodes, steps), bool)
+        slot = rng.integers(0, train["slots"], size=args.episodes)
     modes = [MODES[e % len(MODES)] for e in range(args.episodes)]
 
     def record(e, t, state, observation):
@@ -150,7 +196,9 @@ def main(argv: list[str] | None = None) -> int:
             corrections = env.displacement_corrections(state, intended)
             total_cap[e, t] = bool(np.any(np.linalg.norm(np.asarray(intended + corrections), axis=-1) > env.max_total_displacement))
             key, sub = jax.random.split(key)
-            observation, new_state, _r, _d, _i = env.step_env(sub, state, actions_dict)
+            observation, new_state, _r, _d, info = env.step_env(sub, state, actions_dict)
+            if train is not None:
+                central[e, t], reward[e, t], inside[e, t], first_reach[e, t] = train["record"](state, new_state, info, t, int(slot[e]))
             f = rule_flags(env, pos[e, t], actions, float(state.breach), float(new_state.breach))
             for k in names:
                 flags[k][e, t] = f[k]
@@ -162,6 +210,8 @@ def main(argv: list[str] | None = None) -> int:
     np.savez_compressed(
         out / f"{args.tag}.npz", pos=pos, prev_pos=prev, breach=breach, step=step_no, obs=obs, actions=act,
         total_cap=total_cap, modes=np.array(modes), **{f"flag_{k}": v for k, v in flags.items()},
+        **({"central": central, "guard_reward": reward, "inside_count": inside, "first_reach": first_reach, "slot": slot}
+           if train is not None else {}),
     )
     commit = subprocess.run(["git", "-C", str(args.clone), "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()
     coverage = {
@@ -171,6 +221,7 @@ def main(argv: list[str] | None = None) -> int:
         "steps_with_total_cap": int(total_cap.sum()), "steps_with_boundary": int(flags["boundary"].sum()),
         "steps_with_flag_flip": int(flags["flag_flip"].sum()),
         "episodes_with_flag_flip": int(flags["flag_flip"].any(axis=1).sum()),
+        **({"train_fields": True} if train is not None else {}),
     }
     (out / f"{args.tag}.json").write_text(json.dumps(coverage, indent=2) + "\n")
     print(json.dumps(coverage))

@@ -18,6 +18,8 @@ from typing import Any
 from ..core.game_config import load_game_cfg
 from .deploy import DEPLOY_KEYS, apply_overrides, load_deploy
 from .deploy import numeric_values as deploy_numeric_values
+from .method_cfg import METHOD_KEYS, load_method
+from .method_cfg import numeric_values as method_numeric_values
 from .hangar import HANGAR_GAME, HANGAR_KEYS, load_hangar, load_phase4, protected_derived
 from .rules import RULE_KEYS, RUNS_DIR, file_sha256, load_rules, numeric_values
 
@@ -100,9 +102,10 @@ def derived_numbers(rules_path: Path | str, deploy_path: Path | str, hangar_path
 
 
 def protected_numbers(rules_path: Path | str, deploy_path: Path | str | None = None,
-                      checkpoints: tuple[Path | str, ...] | list[Path | str] = (), hangar_path: Path | str | None = None) -> set[float]:
-    """Every number a record must not hold: the rules file (floats and ints), the deploy file, the checkpoints' architecture, and (with a
-    hangar file, which needs the deploy file) the hangar value and the derived values."""
+                      checkpoints: tuple[Path | str, ...] | list[Path | str] = (), hangar_path: Path | str | None = None,
+                      method_path: Path | str | None = None) -> set[float]:
+    """Every number a record must not hold: the rules file (floats and ints), the deploy file, the checkpoints' architecture, (with a
+    hangar file, which needs the deploy file) the hangar value and the derived values, and (opt-in, Phase 5) the method file."""
     rules = load_rules(rules_path)
     values = set(numeric_values(rules))
     values |= {float(getattr(rules, k)) for k in RULE_KEYS if isinstance(getattr(rules, k), int) and not isinstance(getattr(rules, k), bool)}
@@ -114,6 +117,8 @@ def protected_numbers(rules_path: Path | str, deploy_path: Path | str | None = N
         if deploy_path is None:
             raise ValueError("the derived values need the deploy file")
         values |= derived_numbers(rules_path, deploy_path, hangar_path) | {float(getattr(load_hangar(hangar_path), k)) for k in HANGAR_KEYS}
+    if method_path is not None:
+        values |= set(method_numeric_values(load_method(method_path)))
     values = {v for v in values if v not in STRUCTURAL and not math.isnan(v)}
     return values | {_rounded(v) for v in values}
 
@@ -140,15 +145,18 @@ def check_payload(payload: dict[str, Any], protected: set[float]) -> None:
 
 
 def write_record(path: Path | str, payload: dict[str, Any], rules_path: Path | str, *, deploy_path: Path | str | None = None,
-                 checkpoints: tuple[Path | str, ...] | list[Path | str] = (), hangar_path: Path | str | None = None) -> Path:
-    """Write a JSON record with the rules stamp (and the deploy and checkpoint stamps when given). Refuses a payload number
-    (float or int) that equals a value of those files; see :func:`check_payload`."""
-    check_payload(payload, protected_numbers(rules_path, deploy_path, checkpoints, hangar_path))
+                 checkpoints: tuple[Path | str, ...] | list[Path | str] = (), hangar_path: Path | str | None = None,
+                 method_path: Path | str | None = None) -> Path:
+    """Write a JSON record with the rules stamp (and the deploy, hangar, method and checkpoint stamps when given). Refuses a payload
+    number (float or int) that equals a value of those files; see :func:`check_payload`."""
+    check_payload(payload, protected_numbers(rules_path, deploy_path, checkpoints, hangar_path, method_path))
     stamp: dict[str, Any] = rules_stamp(rules_path)
     if deploy_path is not None:
         stamp |= {"deploy_keys": list(DEPLOY_KEYS), "deploy_sha256": file_sha256(deploy_path)}
     if hangar_path is not None:
         stamp |= {"hangar_keys": list(HANGAR_KEYS), "hangar_sha256": file_sha256(hangar_path)}
+    if method_path is not None:
+        stamp |= {"method_keys": list(METHOD_KEYS), "method_sha256": file_sha256(method_path)}
     if checkpoints:
         stamp["checkpoint_sha256"] = [file_sha256(Path(c) / "state.msgpack") if (Path(c) / "state.msgpack").exists()
                                       else file_sha256(Path(c) / "actor.msgpack") for c in checkpoints]

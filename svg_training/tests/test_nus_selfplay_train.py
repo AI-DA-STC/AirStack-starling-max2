@@ -200,3 +200,24 @@ def test_deferred_videos_are_saved_as_data_and_rendered_by_a_separate_step(tmp_p
     assert [g.stem for g in gifs] == [p.stem for p in pending]
     assert not list((out / "videos" / "pending").glob("*.npz")) and len(list((out / "videos" / "rendered").glob("*.npz"))) == len(pending)
     assert render.main(["--run-dir", str(out), "--format", "gif"]) == 0          # nothing left to do: no error
+
+
+def test_a_resumed_run_clears_the_old_status(tmp_path, trainer):
+    """status.json marks a stopped or finished run (the renderer's --watch waits for it); a resume removes the stale one first."""
+    out = tmp_path / "runs" / "phase5" / "s51" / "resumed"
+    out.mkdir(parents=True)
+    (out / "status.json").write_text(json.dumps({"status": "STOPPED on request", "nonfinite_abort": False}))
+    seen = []
+    import svg_training.nus.selfplay as selfplay_module
+    original = selfplay_module.SelfPlay.run
+
+    def spy(self, *a, **kw):
+        seen.append((out / "status.json").exists())
+        return original(self, *a, **kw)
+
+    selfplay_module.SelfPlay.run = spy
+    try:
+        assert trainer.main(_args(tmp_path, "--variant", "nus", "--out", str(out), "--video-format", "none", "--probe-updates", "0")) == 0
+    finally:
+        selfplay_module.SelfPlay.run = original
+    assert seen == [False] and json.loads((out / "status.json").read_text())["status"] == "complete"

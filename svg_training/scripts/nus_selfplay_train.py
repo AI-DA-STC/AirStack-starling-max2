@@ -386,6 +386,7 @@ def main(argv: list[str] | None = None) -> int:
     sp = SelfPlay(method, env, args.seed, out, device=device, generations=generations, on_selection=videos.on_selection,
                   on_archive=videos.on_archive, **_kw(shape))
     import signal
+    (out / "status.json").unlink(missing_ok=True)   # a resume: the old status (stopped, aborted) no longer describes the run
     previous_handler = install_stop_handler(sp)
     began_wall, began = time.time(), time.monotonic()
     should_stop = (lambda: cap_reached(began_wall, remaining, pauses)) if device.type == "cuda" else None  # pause-aware hard cap

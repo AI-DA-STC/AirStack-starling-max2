@@ -26,7 +26,9 @@ def _fake_bin(tmp: pathlib.Path) -> pathlib.Path:
         "nmcli": 'printf "%s" "${FAKE_NMCLI:-}"\n',
         "pgrep": 'if [ -n "${FAKE_PGREP:-}" ]; then printf "%s" "$FAKE_PGREP"; exit 0; fi\nexit 1\n',
         "nvidia-smi": ('case "$*" in *query-compute-apps*) printf "%s" "${FAKE_APPS:-}";;\n'
+                       '  *query-gpu=memory.total,memory.used*) printf "%s\\n" "${FAKE_MEM:-32607, 2000}";;\n'
                        '  *) echo "fake nvidia-smi table";; esac\n'),
+        "ps": 'for a in "$@"; do last="$a"; done\neval "printf \'%s\' \\"\\${FAKE_ARGS_$last:-}\\""\n',
     }
     for name, body in fakes.items():
         p = b / name
@@ -35,9 +37,10 @@ def _fake_bin(tmp: pathlib.Path) -> pathlib.Path:
     return b
 
 
-def _run(tmp_path, nmcli: str, pgrep: str = "", apps: str = DESKTOP_APP, *flags: str) -> subprocess.CompletedProcess:
+def _run(tmp_path, nmcli: str, pgrep: str = "", apps: str = DESKTOP_APP, *flags: str,
+         extra_env: dict | None = None) -> subprocess.CompletedProcess:
     env = {"PATH": f"{_fake_bin(tmp_path)}:/usr/bin:/bin", "FAKE_NMCLI": nmcli, "FAKE_PGREP": pgrep,
-           "FAKE_APPS": apps, "HOME": str(tmp_path)}
+           "FAKE_APPS": apps, "HOME": str(tmp_path), **(extra_env or {})}
     return subprocess.run(["bash", str(SCRIPT), *flags], env=env, capture_output=True, text=True, timeout=60)
 
 
@@ -90,6 +93,41 @@ def test_approval_turns_block_into_warning(tmp_path, flag, words):
 def test_approval_does_not_hide_a_busy_gpu(tmp_path):
     r = _run(tmp_path, WIFI_ONLY, XRDP, DESKTOP_APP + BIG_FOREIGN, "--approved-headless")
     assert r.returncode == 11 and "WARNING" in r.stdout and "777001" in r.stdout
+
+
+SIBLING = "880001, 4400, python\n"                                              # one of our own training jobs
+SIBLING_ARGS = {"FAKE_ARGS_880001": "python scripts/train_standin.py --game nus_hangar --settings pilot_p1b"}
+
+
+def test_sibling_job_blocks_without_the_flag(tmp_path):
+    r = _run(tmp_path, WITH_ETHERNET, "", DESKTOP_APP + SIBLING, extra_env=SIBLING_ARGS)
+    assert r.returncode == 11, r.stdout + r.stderr
+
+
+def test_sibling_job_is_allowed_with_the_flag(tmp_path):
+    """Owner, 18 Nov 2026 ("parallelize the training"): our own training jobs may share the GPU."""
+    r = _run(tmp_path, WITH_ETHERNET, "", DESKTOP_APP + SIBLING, "--allow-siblings", extra_env=SIBLING_ARGS)
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "sibling" in r.stdout and "880001" in r.stdout
+
+
+@pytest.mark.parametrize("args", ["python3 /isaac-sim/kit/kit.py --airstack", "python3 tools/sim.sh up", ""])
+def test_flag_does_not_allow_a_foreign_process(tmp_path, args):
+    r = _run(tmp_path, WITH_ETHERNET, "", DESKTOP_APP + "777001, 3600, python3\n", "--allow-siblings",
+             extra_env={"FAKE_ARGS_777001": args})
+    assert r.returncode == 11, r.stdout + r.stderr
+
+
+def test_flag_needs_free_memory(tmp_path):
+    r = _run(tmp_path, WITH_ETHERNET, "", DESKTOP_APP + SIBLING, "--allow-siblings",
+             extra_env={**SIBLING_ARGS, "FAKE_MEM": "32607, 26000"})
+    assert r.returncode == 11 and "free" in r.stdout, r.stdout + r.stderr
+
+
+def test_flag_combines_with_headless_approval(tmp_path):
+    r = _run(tmp_path, WIFI_ONLY, XRDP, DESKTOP_APP + SIBLING, "--approved-headless", "--allow-siblings",
+             extra_env=SIBLING_ARGS)
+    assert r.returncode == 0 and "WARNING" in r.stdout, r.stdout + r.stderr
 
 
 def test_unknown_argument_exits_2(tmp_path):

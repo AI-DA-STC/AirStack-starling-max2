@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Check the network and the GPU before every Isaac Sim launch (S2b plan D13). Run it on the host, not in the container.
 #
-#   scripts/isaac_preflight.sh [--approved-headless | --approved-windowed]
+#   scripts/isaac_preflight.sh [--approved-headless | --approved-windowed] [--allow-siblings]
 #
 # Prints `nvidia-smi`, the network state, the remote-desktop programs and the GPU compute processes (always, all
 # four), then exits:
@@ -13,17 +13,24 @@
 #   11  the GPU is in use: a compute process other than this shell's holds more than 1024 MiB (the AirStack
 #       simulator, a flight session or another run). The process list is printed for the lead to check;
 #   2   unknown argument.
+# --allow-siblings (owner, 18 Nov 2026: "parallelize the training"): a busy process whose command line is one of this
+# folder's own training or recording scripts (SIBLING_PATTERN) does not block, as long as at least SIBLING_FREE_MIB of
+# GPU memory is free; anything else (the AirStack simulator, a flight session, an unknown process) still exits 11.
 # When both 10 and 11 hold, 10 is returned; both are printed.
 set -u
 
 GPU_MIB_MAX=1024   # owner, 18 Nov 2026: raised from 500 so the 5090's remote-desktop daemon (546-589 MiB) does not block
 RD_PATTERN='gnome-remote-desktop|xrdp|x11vnc|vino|rustdesk|anydesk|teamviewer'
+SIBLING_PATTERN='scripts/(train_standin|nus_selfplay_train|nus_phase5_reference|nus_phase5_probe|nus_phase4|nus_isaac_clips|make_s2b_video)\.py|run_nus_job\.sh|ma_skills/'
+SIBLING_FREE_MIB=8192
 APPROVED=""
+SIBLINGS_OK=0
 for arg in "$@"; do
     case "$arg" in
         --approved-headless) APPROVED="headless" ;;
         --approved-windowed) APPROVED="windowed" ;;
-        *) echo "unknown argument: $arg (use --approved-headless or --approved-windowed)" >&2; exit 2 ;;
+        --allow-siblings) SIBLINGS_OK=1 ;;
+        *) echo "unknown argument: $arg (use --approved-headless, --approved-windowed or --allow-siblings)" >&2; exit 2 ;;
     esac
 done
 
@@ -54,6 +61,34 @@ APPS="$(nvidia-smi --query-compute-apps=pid,used_memory,process_name --format=cs
 BUSY="$(printf '%s\n' "$APPS" | awk -F', *' -v me="$$" -v parent="$PPID" -v max="$GPU_MIB_MAX" \
     'NF >= 2 && $1 != me && $1 != parent && ($2 + 0) > max { print }')"
 if [ -n "$BUSY" ]; then printf '%s\n' "$BUSY"; else echo "(none)"; fi
+
+if [ "$SIBLINGS_OK" -eq 1 ] && [ -n "$BUSY" ]; then
+    echo "== --allow-siblings: this folder's own jobs may share the GPU (at least $SIBLING_FREE_MIB MiB free)"
+    REST=""
+    SIBS=""
+    while IFS= read -r line; do
+        [ -z "$line" ] && continue
+        pid="${line%%,*}"
+        args="$(ps -o args= -p "$pid" 2>/dev/null || true)"
+        if [ -n "$args" ] && printf '%s' "$args" | grep -q -E "$SIBLING_PATTERN"; then
+            echo "sibling (allowed): $line :: $args"
+            SIBS="$SIBS$line"$'\n'
+        else
+            echo "not a sibling: $line :: ${args:-(command line unknown)}"
+            REST="$REST$line"$'\n'
+        fi
+    done <<< "$BUSY"
+    if [ -n "$SIBS" ] && [ -z "$REST" ]; then
+        MEM="$(nvidia-smi --query-gpu=memory.total,memory.used --format=csv,noheader,nounits 2>/dev/null | head -1)"
+        FREE="$(printf '%s' "$MEM" | awk -F', *' '{ print ($1 + 0) - ($2 + 0) }')"
+        echo "GPU memory free: ${FREE:-unknown} MiB"
+        if [ -n "$FREE" ] && [ "$FREE" -ge "$SIBLING_FREE_MIB" ]; then
+            BUSY=""
+        else
+            echo "too little GPU memory free for a second job (need $SIBLING_FREE_MIB MiB)"
+        fi
+    fi
+fi
 
 if [ "$NET_BLOCKED" -eq 1 ]; then
     if [ -n "$APPROVED" ]; then

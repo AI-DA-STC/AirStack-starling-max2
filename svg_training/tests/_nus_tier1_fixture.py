@@ -27,15 +27,16 @@ REACH_EPISODE_STEPS = 20     # partner steps of the 5.2 marker world: long enoug
 STICKY_EPISODE_STEPS = 30    # long enough to reach the zone (about step 18 against a still Guard team) and then leave it
 
 
-def tier1_world_fixture(tmp_path, monkeypatch, games: int | None = None, episode_steps: int = REACH_EPISODE_STEPS):
-    """The Phase 4 marker world with ``episode_steps`` partner steps and the hangar file pointed at, the Phase 5 marker method, and its
-    ``Tier1World``."""
+def tier1_world_fixture(tmp_path, monkeypatch, games: int | None = None, episode_steps: int | None = REACH_EPISODE_STEPS):
+    """The Phase 4 marker world with ``episode_steps`` partner steps (None: the marker rules' own, which the synthetic NUS checkpoints
+    were written for) and the hangar file pointed at, the Phase 5 marker method, and its ``Tier1World``."""
     from _nus_markers import marker_rules, write_toml
     from svg_training.nus import hangar as hangar_mod
     from svg_training.nus.method_cfg import load_method
     from svg_training.nus.tier1_env import tier1_world
     w = build(tmp_path, monkeypatch) if games is None else build(tmp_path, monkeypatch, games=games)
-    write_toml(w.folder / "nus_rules.toml", {**marker_rules(), "episode_steps": episode_steps})
+    if episode_steps is not None:
+        write_toml(w.folder / "nus_rules.toml", {**marker_rules(), "episode_steps": episode_steps})
     monkeypatch.setattr(hangar_mod, "LOCAL_HANGAR", w.folder / "nus_hangar.toml")
     method_path = tmp_path / "local" / "nus_method.toml"
     write_method_toml(method_path, marker_method())
@@ -60,6 +61,13 @@ format = "deferred"
 games_searched = 2
 eval_video_slots = 2
 
+[evaluation]
+control_guard = "ParkedGuard"
+control_strike = "S20"
+info_guard_strikes = ["P3S"]
+info_strike_guards = ["G19", "ApfGuard"]
+gpu_hours_groups = { gated = "s52_eval", crossplay = "s52_crossplay" }
+
 [smoke]
 generations = 2
 updates_per_generation = 2
@@ -75,3 +83,19 @@ def tiny_tier1_config(tmp_path, monkeypatch):
     path.write_text(TINY_TIER1)
     monkeypatch.setattr(tier1_env, "TIER1_CONFIG", path)
     return path
+
+
+# ------------------------------------------------------------------------------------------------ S5: the evaluation runner
+REF_GAMES = 1000
+# Phase 4 row 5 (T23) counts the plan's bars come from (plan section 5): reach counts out of 1,000
+T23_REACH = {("ParkedGuard", "S20"): 571, ("G19", "S20"): 983, ("guard_mirror", "ApfStrike"): 959, ("ParkedGuard", "ApfStrike"): 1000,
+             ("G19", "strike_straight"): 1000, ("P3G", "strike_straight"): 1000, ("ParkedGuard", "strike_straight"): 1000,
+             ("G19", "strike_flank"): 1000, ("P3G", "strike_flank"): 1000, ("ParkedGuard", "strike_flank"): 1000}
+PLAN_BARS = {"G-1": 0.460, "G-2": 0.055, "G-3": 0.004, "G-4": 0.004, "S-1": 0.601}   # plan section 5, to three decimals
+BAR_PLACES = 3
+HOLDS_PASSING = 600          # a synthetic seed's holds out of 1,000 above every Guard bar
+HOLDS_FAILING = 400          # ... below G-1's
+REACH_PASSING = 700          # a synthetic Strike's reach above S-1's bar
+MIN_SEEDS = 2
+SEED_NAMES = ("seed1001", "seed2001", "seed3001")
+EVAL_GAMES = 4               # games per pairing of the marker-world evaluation (the Phase 4 marker starts)

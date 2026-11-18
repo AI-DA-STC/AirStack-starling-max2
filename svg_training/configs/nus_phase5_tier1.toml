@@ -24,6 +24,15 @@ format = "deferred"               # the trainer saves each video's data; scripts
 games_searched = 16               # = [ladder] video_slots: games kept per slot in a selection evaluation
 eval_video_slots = 16             # FIXED (plan section 5): the 5.2 evaluation's clips come from its first 16 slots
 
+[evaluation]
+# scripts/nus_phase5_eval.py --stage 5.2. The gated pairings, bars, games, seeds and caps are the gate table's; these are the INFO
+# pairings it names (gate table `info`, plan section 5) and the run's own names.
+control_guard = "ParkedGuard"     # FIXED (gate table control): C-1 re-scores ParkedGuard v S20 first
+control_strike = "S20"
+info_guard_strikes = ["P3S"]                                                     # FIXED (gate table info): our Guards v P3S
+info_strike_guards = ["G19", "P3G", "ApfGuard", "guard_mirror", "guard_mark_edge"]   # FIXED (gate table info): our Strikes v these
+gpu_hours_groups = { gated = "s52_eval", crossplay = "s52_crossplay" }   # the GPU-hours log groups of the two caps
+
 [smoke]
 # The CPU smoke of the whole 5.2 path (not of record): tiny counts, the real local files, videos on.
 generations = 2

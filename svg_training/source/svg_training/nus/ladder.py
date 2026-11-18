@@ -150,8 +150,10 @@ def play_replica(sim: NusReplica, guard: ReplicaPlayer, strike: ReplicaPlayer, s
 
 # ------------------------------------------------------------------------------------------------ the pair loop of the game rows
 def play_game_pair(cfg: GameCfg, geo: Geometry, row: dict, starts: dict[str, Tensor], guard_name: str, strike_name: str, guards: int,
-                   strikes: int, device: str, seed: int, video_slots: int, world=None, rules: NusRules | None = None):
-    """Build a fresh ``NusHangarGame`` for the pair and play it with ``core.play.play_match``. Returns (MatchResult, extras, game, seconds)."""
+                   strikes: int, device: str, seed: int, video_slots: int, world=None, rules: NusRules | None = None,
+                   clamp_tol_m: float | None = None):
+    """Build a fresh ``NusHangarGame`` for the pair and play it with ``core.play.play_match``. Returns (MatchResult, extras, game, seconds).
+    ``clamp_tol_m`` (Phase 5 stage 5.2) turns on the game's read-only clamp counter; the extras then carry its counts."""
     import time
 
     from .hangar_game import NusHangarGame
@@ -160,7 +162,7 @@ def play_game_pair(cfg: GameCfg, geo: Geometry, row: dict, starts: dict[str, Ten
     guard = make_player(guard_name, "guard", cfg, n, device, seed, jump)
     strike = make_player(strike_name, "strike", cfg, n, device, seed, jump)
     game = NusHangarGame(cfg, geo, row, starts["starts_units"], starts["jitter_m"], guards, strikes, device=device, seed=seed,
-                         parked=parks_guard0(guard), video_slots=video_slots, world=world, rules=rules)
+                         parked=parks_guard0(guard), video_slots=video_slots, world=world, rules=rules, clamp_tol_m=clamp_tol_m)
     if torch.device(device).type == "cuda":
         torch.cuda.synchronize()
     t0 = time.perf_counter()

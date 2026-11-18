@@ -2,13 +2,39 @@
 
 > **How to use this file.** Read it at the start of a session, after [../../CLAUDE.md](../../CLAUDE.md).
 > §4 is the current state, §5 is what is waiting on people. Update both before you stop.
-> Last updated: 18 November 2026, ~15:15, on the home RTX 5090, NUS-port worktree `~/AirStack-starling-max2-nus-port`, branch `phase6-pass2` (Phase 6 pass 2B: **Phase 4 complete**, its results written into every doc, every NUS-port clip published, the hangar size restored, the Phase 5 plan described; uncommitted, the lead commits). Before: ~06:45, on the home RTX 5090, integration worktree `main-5090` (Phase 6 pass 1: public NUS docs, privacy rails rewritten to the owner's decision, Claude files touched up; Phase 4 rows 4–6 running). Before: ~05:30 (Phase 4: T17 PASS, rungs 1 to 3 scored, rungs 4 to 6 not run). Before: ~01:00 (Phase 3 T16 PASS). Before: 17 November 2026, ~22:30, on the home RTX 5090 (evening summary in §0). Before: ~07:00 (morning summary in §0). Before: ~05:30 (S2b Tasks 1–8 done (T13 FAIL, over/under passing), 9 Isaac seeds running, 10 docs being written, 8b deferred; see §0 S2b line). Before: ~03:00. Earlier: 16 November morning (**S2 CLOSED**: final whole-stage review done on Opus, one fix wave 4d0d409, wording c218cbb; owner ruled A and B; S2b plan approved and ready to start).
+> Last updated: 19 November 2026, ~00:30, on the home RTX 5090, release worktree `~/AirStack-starling-max2-release`, branch `nus-release` (plain-laptop CPU route: code fixes C1–C9 and the PROVISIONAL bundle `nus_provisional/`, owner decision 6; committed, not pushed). Before: 18 November 2026, ~15:15, on the home RTX 5090, NUS-port worktree `~/AirStack-starling-max2-nus-port`, branch `phase6-pass2` (Phase 6 pass 2B: **Phase 4 complete**, its results written into every doc, every NUS-port clip published, the hangar size restored, the Phase 5 plan described; uncommitted, the lead commits). Before: ~06:45, on the home RTX 5090, integration worktree `main-5090` (Phase 6 pass 1: public NUS docs, privacy rails rewritten to the owner's decision, Claude files touched up; Phase 4 rows 4–6 running). Before: ~05:30 (Phase 4: T17 PASS, rungs 1 to 3 scored, rungs 4 to 6 not run). Before: ~01:00 (Phase 3 T16 PASS). Before: 17 November 2026, ~22:30, on the home RTX 5090 (evening summary in §0). Before: ~07:00 (morning summary in §0). Before: ~05:30 (S2b Tasks 1–8 done (T13 FAIL, over/under passing), 9 Isaac seeds running, 10 docs being written, 8b deferred; see §0 S2b line). Before: ~03:00. Earlier: 16 November morning (**S2 CLOSED**: final whole-stage review done on Opus, one fix wave 4d0d409, wording c218cbb; owner ruled A and B; S2b plan approved and ready to start).
 
 ## 0. Resume here (for a new session or another Claude account)
 
 Everything needed is in this folder; nothing depends on the previous chat. Claude's user memory (`~/.claude/…`) and
 the private NUS workspace (`~/ma_skills-self-play/`, 5090 only) do **not** travel with git: if this file and a memory
 note disagree, this file wins.
+
+### Plain-laptop route and the PROVISIONAL bundle, 19 November 2026 ~00:30 — branch `nus-release` (for the lead and the docs writer)
+
+Owner decisions of 18 Nov ~23:15 (docs panel `~/ma_skills-self-play/_notes/docs_panel/PROPOSAL.md`, 5090 only). Done, test
+first, one commit each, on `nus-release` (not pushed):
+
+- **C1–C3** `score.py` and `train_standin.py`: `--device auto` (default; CUDA if PyTorch sees one, else the CPU with a note);
+  `train_standin.py --smoke` (the pipe test in seconds, `train_result.json` `smoke: true`). Module `svg_training/devices.py`.
+- **C4** `pyproject.toml` lists the real dependencies (torch, numpy<2, scipy, msgpack, matplotlib, imageio, imageio-ffmpeg,
+  opencv-python-headless, pyyaml, skrl 2.x, gymnasium, tensorboard; extra `test` = pytest) and installs with
+  `pip install -e .[test]`; `tests/test_dependencies.py` fails on any unlisted import (Isaac, ROS 2, NUS's JAX named apart).
+- **C5** `test_run_s0.py` passes off the lab machines (SVG_PY stub); the unstubbed host-default test skips there.
+- **C6** the numpy-2 line in `test_fit_response.py`'s fixture. **C7** `make_nus_phase4_figures.py` refuses (exit 2) when
+  a row is missing. **C8** the missing-`nus_deploy.toml` error says "before nus_convert_checkpoint.py". **C9**
+  `setup_nus_jax.sh --cpu`.
+- **Decision 6**: `nus_provisional/` (44 MB, 38 files, sha256 list) holds the lab's local settings files, the converted
+  weights G19, S20, P3G, P3S, the Phase 4 starts, T16's reference data and the recordings of NUS's game, byte-identical,
+  labelled PROVISIONAL (NUS will retrain). `scripts/nus_install_provisional.sh` copies it into the git-ignored
+  `configs/local/` and `runs/nus_port/`. Privacy tests exempt that folder only; STANDARDS §2 and §8 say so (dated).
+  STANDARDS §2 also allows NUS's own terms once per page in a translation line.
+- Verified: in this worktree with the bundle installed, env_isaaclab, CPU only: 1074 passed, 47 skipped, 0 failed
+  (11 min); 10 NUS tests that skipped before now run and pass. A fresh clone of `nus-release` in a plain CPU venv with
+  an empty HOME: see `~/ma_skills-self-play/_notes/docs_drafts/VERIFIED_CPU_COMMANDS.md` (5090 only) for the commands,
+  time and counts. On a fresh clone, CPU, ladder row 1 in full took 97 s: 7 of 12 pairs equal the lab's GPU row game
+  count for game count, 5 differ by 1–3 of 1,000 (inside the Wilson intervals); `nus_phase4.py --w2-replay` equals T16
+  exactly (46 and 1,000 of 1,000).
 
 ### Phase 4 complete and Phase 6 pass 2, 18 November 2026 ~15:15 — NUS port (for the owner, the lead and the laptop session)
 
@@ -361,7 +387,7 @@ agents and skills for the work. Since then S0, S1 and S2 have been built and run
 | Item | State |
 |---|---|
 | S2b | built through Task 8, not closed; T14 seed 3 queued for the 5090 (§5a); Task 8b and the S2b final review deferred |
-| NUS port | Phases 1–4 done: T15, T16, T17 PASS; Phase 4 rows 1–3 (T18–T20) and 4, 5a, 5, 6 (T22–T24) INFO, the first row 4 attempt T21 ABORTED. The safety filter and 3-D undo NUS's push-based blocking (G19 v S20 43 → 740 → 983 of 1,000; Isaac Lab 979); a parked Guard team holds about half against S20. Phase 5 planned by the lead (route (b) and own-training pilots), not started; Phase 6 passes 1 and 2 done, every clip published ([NUS_PORT](../NUS_PORT.md)) |
+| NUS port | Phases 1–4 done: T15, T16, T17 PASS; Phase 4 rows 1–3 (T18–T20) and 4, 5a, 5, 6 (T22–T24) INFO, the first row 4 attempt T21 ABORTED. The safety filter and 3-D undo NUS's push-based blocking (G19 v S20 43 → 740 → 983 of 1,000; Isaac Lab 979); a parked Guard team holds about half against S20. Phase 5 planned by the lead (route (b) and own-training pilots), not started; Phase 6 passes 1 and 2 done, every clip published ([NUS_PORT](../NUS_PORT.md)). The lab's NUS files are committed PROVISIONAL in `nus_provisional/` (decision 6, 19 Nov; installer `scripts/nus_install_provisional.sh`) |
 | 5090 host env | `env_isaaclab` built with hand fixes (GETTING_STARTED step 5; the follow-ups in §5); NVIDIA's licence accepted (owner's choice) through the `EULA_ACCEPTED` file; `nus_jax` built; container image built, its suite not clean (§0, 17 Nov evening, item 5) |
 | Preflight | 1024 MiB per foreign process in `isaac_preflight.sh` and `run_nus_job.sh`; `--approved-headless` approved on both machines (laptop 16 Nov, 5090 18 Nov) |
 
@@ -453,6 +479,14 @@ stay out of git; real flights of a contact policy should start with a virtual co
 - The repository holds no Strike vs Guard game code.
 
 ## 5. Open items
+
+### 5-release. Branch `nus-release` (19 Nov 2026): what is still open
+
+- The docs pass (TRY_IT, TRAINING order, PLUG_IN CPU route) uses the new flags and the installer; the commands verified on
+  a fresh clone are in `~/ma_skills-self-play/_notes/docs_drafts/VERIFIED_CPU_COMMANDS.md`.
+- `nus_phase4.py --estimate-only` is ignored on replica rows (1, 2.1, 2.2): the row runs in full (found 19 Nov; not fixed).
+- Not in the bundle: `runs/nus_port/w3/reference/` (only `--cuda-parity` needs it), the 223 MB Phase 5 one-update exports
+  (3 `test_nus_mappo` tests keep skipping), `configs/local/partner_rules.toml` (exists nowhere; 2 privacy scans skip).
 
 ### 5a. On the home RTX 5090: S2b stand-in seed 3 (ledger T14 is FAIL already; seed 3 completes the record)
 

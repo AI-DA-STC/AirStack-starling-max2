@@ -28,6 +28,7 @@ def _fake_bin(tmp: pathlib.Path) -> pathlib.Path:
         "nvidia-smi": ('case "$*" in *query-compute-apps*) printf "%s" "${FAKE_APPS:-}";;\n'
                        '  *query-gpu=memory.total,memory.used*) printf "%s\\n" "${FAKE_MEM:-32607, 2000}";;\n'
                        '  *) echo "fake nvidia-smi table";; esac\n'),
+        "readlink": 'for a in "$@"; do last="$a"; done\npid="${last#/proc/}"; pid="${pid%/exe}"\nprintenv "FAKE_EXE_$pid" || true\n',
         "ps": 'for a in "$@"; do last="$a"; done\neval "printf \'%s\' \\"\\${FAKE_ARGS_$last:-}\\""\n',
     }
     for name, body in fakes.items():
@@ -148,3 +149,22 @@ def test_start_headless_refuses_without_headless():
     r = subprocess.run([sys.executable, "-c", code], cwd=ROOT, env=env, capture_output=True, text=True, timeout=120)
     assert r.returncode == 2, r.stderr
     assert "--headless" in r.stderr
+
+
+RENAMED_NUS = "880002, 1200, 2026.11.18-18.46.11-mappo_ensemble_self_play-area_denial_3v3@marmotmapf\n"
+RENAMED_ARGS = {"FAKE_ARGS_880002": "2026.11.18-18.46.11-mappo_ensemble_self_play-area_denial_3v3@marmotmapf",
+                "FAKE_EXE_880002": "/home/someone/miniconda3/envs/nus_jax/bin/python3.12"}
+
+
+def test_a_renamed_nus_job_is_a_sibling_by_its_executable(tmp_path):
+    """NUS's trainer renames its process (the command line no longer names the script): its executable, nus_jax's python, makes it one
+    of ours (18 Nov 2026, C0 side by side with R0)."""
+    r = _run(tmp_path, WITH_ETHERNET, "", DESKTOP_APP + RENAMED_NUS, "--allow-siblings", extra_env=RENAMED_ARGS)
+    assert r.returncode == 0 and "sibling (allowed)" in r.stdout, r.stdout + r.stderr
+
+
+def test_isaac_sim_kit_python_is_not_a_sibling(tmp_path):
+    """The AirStack simulator runs Isaac Sim's own kit python: never one of ours."""
+    r = _run(tmp_path, WITH_ETHERNET, "", DESKTOP_APP + "777002, 3600, python3\n", "--allow-siblings",
+             extra_env={"FAKE_ARGS_777002": "python3 kit.py", "FAKE_EXE_777002": "/isaac-sim/kit/python/bin/python3"})
+    assert r.returncode == 11, r.stdout + r.stderr

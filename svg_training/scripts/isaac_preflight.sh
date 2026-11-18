@@ -23,6 +23,10 @@ GPU_MIB_MAX=1024   # owner, 18 Nov 2026: raised from 500 so the 5090's remote-de
 RD_PATTERN='gnome-remote-desktop|xrdp|x11vnc|vino|rustdesk|anydesk|teamviewer'
 SIBLING_PATTERN='scripts/(train_standin|nus_selfplay_train|nus_phase5_reference|nus_phase5_probe|nus_phase4|nus_isaac_clips|make_s2b_video)\.py|run_nus_job\.sh|ma_skills/'
 SIBLING_FREE_MIB=8192
+# NUS's trainer renames its process, so its command line no longer names a script: a process whose executable is the python of our
+# own conda environments (nus_jax for NUS's code, env_isaaclab for ours and Isaac Lab) is a sibling too. Isaac Sim's own kit python
+# (the AirStack simulator) is not one of these, so it still blocks.
+SIBLING_EXE_PATTERN="${SIBLING_EXE_PATTERN:-/miniconda3/envs/(nus_jax|env_isaaclab)/bin/python}"
 APPROVED=""
 SIBLINGS_OK=0
 for arg in "$@"; do
@@ -70,7 +74,9 @@ if [ "$SIBLINGS_OK" -eq 1 ] && [ -n "$BUSY" ]; then
         [ -z "$line" ] && continue
         pid="${line%%,*}"
         args="$(ps -o args= -p "$pid" 2>/dev/null || true)"
-        if [ -n "$args" ] && printf '%s' "$args" | grep -q -E "$SIBLING_PATTERN"; then
+        exe="$(readlink -f "/proc/$pid/exe" 2>/dev/null || true)"
+        if { [ -n "$args" ] && printf '%s' "$args" | grep -q -E "$SIBLING_PATTERN"; } \
+            || { [ -n "$exe" ] && printf '%s' "$exe" | grep -q -E "$SIBLING_EXE_PATTERN"; }; then
             echo "sibling (allowed): $line :: $args"
             SIBS="$SIBS$line"$'\n'
         else

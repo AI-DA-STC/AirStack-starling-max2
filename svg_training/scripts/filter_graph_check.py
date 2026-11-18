@@ -6,7 +6,7 @@ training simulator. Writes under ``runs/nus_port/filter_graph/`` only (git-ignor
     PYTHONPATH=source ~/miniconda3/envs/env_isaaclab/bin/python scripts/filter_graph_check.py record     # 200 filter states, flag OFF
     ... filter_graph_check.py equiv       # max differences: gate (graph vs existing, same check_every), fixed loop, the reference's spread
     ... filter_graph_check.py calls --games 16384,32768     # one filter call per state, tiled to N games: existing / graph / graph+compact
-    ... filter_graph_check.py endtoend    # 64 Phase 4 paired starts, ParkedGuard v S20, flag OFF then ON: outcomes game by game
+    ... filter_graph_check.py endtoend    # 64 Phase 4 paired starts, ParkedGuard v S20: OFF, OFF without early stop, ON; game by game
 
 ``record``: the P0 probe's set-up (``nus_phase5_probe._context``, its seed, its starts rule) at 1,000 games, arms ``random`` then
 ``parked_s20``; one game from fresh starts per arm with the flag OFF; the command chain's filter call is recorded (inputs, keywords) at
@@ -190,9 +190,11 @@ def endtoend(args) -> int:
     ctx = P._context(st)
     starts = {k: v[:E2E_GAMES] for k, v in L.load_starts(L.STARTS_FILE).items()}
     results, seconds = {}, {}
-    order = ("off", "on") if not args.max_steps else ("off",)
+    order = ("off", "off_fixed_loop", "on") if not args.max_steps else ("off",)
     for label in order:
         cfg = ctx.cfg.replace(**{"starling.filter_cuda_graph": label == "on"})
+        if label == "off_fixed_loop":      # the existing path without its early stop (check_every 0): what ON reproduces bit for bit
+            cfg = cfg.replace(**{"starling.filter_check_every": 0})
         if args.max_steps:      # cost estimate only: a few ticks
             from svg_training.core.play import play_match
             from svg_training.nus.hangar_game import NusHangarGame
@@ -203,7 +205,8 @@ def endtoend(args) -> int:
                                  seed=st["seed"], parked=parks_guard0(g), video_slots=0, rules=ctx.rules)
             t0 = time.perf_counter()
             play_match(game, g, s, max_steps=args.max_steps)
-            torch.cuda.synchronize()
+            if torch.device(args.device).type == "cuda":
+                torch.cuda.synchronize()
             dt = time.perf_counter() - t0
             print(f"{label}: {args.max_steps} ticks in {dt:.1f} s; the game is {ctx.geo.game_ticks} ticks at most "
                   f"(at most {dt / args.max_steps * ctx.geo.game_ticks:.0f} s)")
@@ -212,21 +215,23 @@ def endtoend(args) -> int:
                                           st["seed"], 0, rules=ctx.rules)
         results[label], seconds[label] = res, sec
         print(f"{label}: {sec:.1f} s, {res.steps_played} ticks", flush=True)
-    a, b = results["off"], results["on"]
-    fields = {}
-    for k in a.__dataclass_fields__:
-        x, y = getattr(a, k), getattr(b, k)
-        if isinstance(x, torch.Tensor) and x.dim() >= 1 and x.shape[0] == E2E_GAMES:
-            same = (x == y) if x.dtype == torch.bool or not x.is_floating_point() else ((x == y) | (x.isnan() & y.isnan()))
-            same = same.reshape(E2E_GAMES, -1).all(dim=1)
-            fields[k] = {"games_differing": int((~same).sum()),
-                         "max_abs": float((x.double() - y.double()).abs().nan_to_num(0.0).max()) if x.is_floating_point() else None}
-    out = {"date": _now(), "games": E2E_GAMES, "guard": st["guard"], "strike": st["strike"], "row": st["row"], "seed": st["seed"],
-           "seconds": seconds, "ticks": {k: results[k].steps_played for k in results},
-           "outcome_games_differing": fields.get("outcome", {}).get("games_differing"), "fields": fields,
-           "outcomes_off": a.outcome.tolist(), "outcomes_on": b.outcome.tolist()}
-    (OUT / "endtoend.json").write_text(json.dumps(out, indent=2) + "\n")
-    print(json.dumps({k: v for k, v in out.items() if k not in ("outcomes_off", "outcomes_on")}, indent=2))
+    def compare(a, b) -> dict:
+        fields = {}
+        for k in a.__dataclass_fields__:
+            x, y = getattr(a, k), getattr(b, k)
+            if isinstance(x, torch.Tensor) and x.dim() >= 1 and x.shape[0] == E2E_GAMES:
+                same = (x == y) if x.dtype == torch.bool or not x.is_floating_point() else ((x == y) | (x.isnan() & y.isnan()))
+                same = same.reshape(E2E_GAMES, -1).all(dim=1)
+                fields[k] = {"games_differing": int((~same).sum()),
+                             "max_abs": float((x.double() - y.double()).abs().nan_to_num(0.0).max()) if x.is_floating_point() else None}
+        return {"outcome_games_differing": fields.get("outcome", {}).get("games_differing"), "fields": fields}
+    out = {"date": _now(), "device": args.device, "games": E2E_GAMES, "guard": st["guard"], "strike": st["strike"], "row": st["row"],
+           "seed": st["seed"], "seconds": seconds, "ticks": {k: results[k].steps_played for k in results},
+           "on_vs_off": compare(results["off"], results["on"]), "on_vs_off_fixed_loop": compare(results["off_fixed_loop"], results["on"]),
+           "off_fixed_loop_vs_off": compare(results["off"], results["off_fixed_loop"]),
+           "outcomes": {k: results[k].outcome.tolist() for k in results}}
+    (OUT / f"endtoend_{torch.device(args.device).type}.json").write_text(json.dumps(out, indent=2) + "\n")
+    print(json.dumps({k: v for k, v in out.items() if k != "outcomes"}, indent=2))
     return 0
 
 

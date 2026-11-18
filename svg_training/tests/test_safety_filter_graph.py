@@ -210,6 +210,18 @@ def test_config_switch_is_off_by_default_and_selects_the_graph_path():
     assert filter_fn(on) is filter_velocities_graph
 
 
+def test_toml_key_turns_the_switch_on(tmp_path):
+    """The key as a config file sets it: a copy of s2_game.toml with ``filter_cuda_graph = true`` in [starling_layer]."""
+    from svg_training.core.game_config import load_game_cfg
+    from svg_training.core.starling_layer import filter_fn
+    text = (ROOT / "configs" / "s2_game.toml").read_text()
+    assert text.count("filter_check_every = 8\n") == 1
+    path = tmp_path / "s2_game_graph.toml"
+    path.write_text(text.replace("filter_check_every = 8\n", "filter_check_every = 8\nfilter_cuda_graph = true\n"))
+    cfg, _ = load_game_cfg(path, use_local=False)
+    assert cfg.starling.filter_cuda_graph is True and filter_fn(cfg) is filter_velocities_graph
+
+
 def test_starling_layer_uses_the_switch():
     from svg_training.core.game_config import load_game_cfg
     from svg_training.core.starling_layer import StarlingLayer

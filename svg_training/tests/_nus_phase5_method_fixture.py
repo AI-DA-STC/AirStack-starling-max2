@@ -410,3 +410,15 @@ HOUR = 3600.0
 LOG_ROWS = [  # (group, device, start s, end s): two overlapping CUDA jobs (one hour of union), a CPU job and another group
     ("s51", "cuda:0", 0.0, 2700.0), ("s51", "cuda", 900.0, 3600.0), ("s51", "cpu", 0.0, 36000.0), ("variants", "cuda", 0.0, 7200.0)]
 LOG_S51_HOURS = 1.0
+
+
+# ------------------------------------------------------------------------------------------------ pauses (owner, 18 Nov 2026)
+# events (event, time s): paused 100-160 and 300-(open)
+PAUSE_EVENTS = [("pause", 100.0), ("pause", 120.0), ("resume", 160.0), ("resume", 170.0), ("pause", 300.0)]
+PAUSE_NOW = 400.0
+PAUSED_SPANS = [(100.0, 160.0), (300.0, 400.0)]
+EFFECTIVE_CASE = (50.0, 350.0, 300.0 - 60.0 - 50.0)        # start, end, wall clock less the two pauses inside
+# gpu_hours rows: two overlapping CUDA jobs 0-3600 s and 1800-5400 s (union 5400 s), one CPU row; a pause 3600-4500 s inside
+GPU_ROWS = [("s51", "cuda", 0.0, 3600.0), ("s51", "cuda:0", 1800.0, 5400.0), ("s51", "cpu", 0.0, 36000.0)]
+GPU_PAUSES = [("pause", 3600.0), ("resume", 4500.0)]
+GPU_HOURS_AFTER_PAUSES = 1.25

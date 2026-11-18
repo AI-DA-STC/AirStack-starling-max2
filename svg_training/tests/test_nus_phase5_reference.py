@@ -65,6 +65,8 @@ def test_run_converts_checks_and_scores(tmp_path, r0):
     matrix = json.loads((out / f"matrix_{R0_GAMES}_not_of_record.json").read_text())
     assert not matrix["of_record"] and len(matrix["guards"]) * len(matrix["strikes"]) == sum(map(len, matrix["reached"]))
     assert all(0 <= v <= R0_GAMES for row in matrix["reached"] for v in row) and not (out / f"matrix_{ref['games_per_pairing']}.json").exists()
+    log = [json.loads(line) for line in (out / "gpu_hours.log").read_text().splitlines()]
+    assert len(log) == 1 and log[0]["group"] == "r0" and log[0]["device"] == "cpu" and log[0]["end"] >= log[0]["start"]
     loo = json.loads((out / "loo_not_of_record.json").read_text())
     assert loo["statistic_c"] in ("gate", "INFO") and len(loo["reference_seed_values_info"]) == 2
     written = [p for p in tmp_path.rglob("*") if p.is_file() and "runs" not in p.relative_to(tmp_path).parts]

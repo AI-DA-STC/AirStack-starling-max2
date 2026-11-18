@@ -63,9 +63,11 @@ def test_gpu_hours_log_counts_overlap_once(tmp_path, trainer):
 
 def test_tiny_run_with_probe_videos_and_record(tmp_path, trainer):
     out = tmp_path / "runs" / "phase5" / "s51" / "seed"
-    assert trainer.main(_args(tmp_path, "--variant", "nus", "--out", str(out), "--video-format", "gif")) == 0
+    assert trainer.main(_args(tmp_path, "--variant", "nus", "--out", str(out), "--video-format", "gif", "--log-note", "smoke")) == 0
     probe = json.loads((out / "probe.json").read_text())
     assert probe["updates_timed"] == PROBE_UPDATES and probe["estimate_hours"] > 0 and probe["within_cap"]
+    assert probe["peak_allocated_gib"] is None and probe["peak_reserved_gib"] is None      # CUDA only
+    assert probe["estimate_hours_three_seeds_one_after_another"] == pytest.approx(probe["estimate_hours"] * (2 + 1))
     state = json.loads((out / "self_play_state.json").read_text())
     assert [e["team"] for e in state["archive"]] == ["guard", "strike"][:TRAIN_GENERATIONS]
     selections = sum(len(json.loads((Path(e["path"]) / "metadata.json").read_text())["evaluations"]) for e in state["archive"])
@@ -75,6 +77,7 @@ def test_tiny_run_with_probe_videos_and_record(tmp_path, trainer):
     assert "training simulator" in draft and "complete" in draft and all(v.name in draft for v in videos)
     log = [json.loads(line) for line in (tmp_path / "runs" / "phase5" / "s51" / "gpu_hours.log").read_text().splitlines()]
     assert [r["what"] for r in log] == ["probe", "train"] and all(r["device"] == "cpu" for r in log)
+    assert all(r["note"] == "smoke" for r in log)
     assert all("runs" in p.relative_to(tmp_path).parts or p.relative_to(tmp_path).parts[0] in ("inputs", "gates.toml")
                for p in tmp_path.rglob("*") if p.is_file())
 
@@ -119,3 +122,43 @@ def test_selection_pools(tmp_path):
     assert len(small[last]) == 2 and small[last][-1] == pools[last][-1]       # the latest entry is always kept
     with pytest.raises(ValueError):
         X.selection_pools(entries + [X.Entry("other", 1, "guard")], RUN_SEED, maximum=2, recent=1)
+
+
+def test_stop_request_checkpoints_at_the_next_update_boundary(tmp_path):
+    """gpu_pause.sh stop sends SIGINT: the trainer's handler sets a flag, and the run checkpoints and returns at the next update
+    boundary (the same command resumes it)."""
+    import os
+    import signal
+
+    from svg_training.nus.selfplay import SelfPlay
+    env = marker_env(tmp_path)
+    sp = SelfPlay(env.method, env, RUN_SEED, tmp_path / "runs" / "stop")
+    previous = signal.getsignal(signal.SIGINT)
+    try:
+        from nus_selfplay_train import install_stop_handler
+        install_stop_handler(sp)
+        sp.on_selection = lambda s, result: os.kill(os.getpid(), signal.SIGINT)
+        sp.run()
+    finally:
+        signal.signal(signal.SIGINT, previous)
+    state = json.loads((tmp_path / "runs" / "stop" / "self_play_state.json").read_text())
+    assert sp.stopped == "interrupted" and not sp.stopped_by_deadline
+    assert state["active"]["update"] == min(sp.selection_after) and state["active"]["checkpoint"] and state["archive"] == []
+    resumed = SelfPlay(env.method, env, RUN_SEED, tmp_path / "runs" / "stop").run()
+    assert len(resumed) == env.method.generations
+
+
+def test_caps_subtract_paused_time(tmp_path, trainer):
+    from _nus_phase5_method_fixture import GPU_HOURS_AFTER_PAUSES, GPU_PAUSES, GPU_ROWS
+    log, pauses = tmp_path / "runs" / "gpu_hours.log", tmp_path / "runs" / "pauses.log"
+    for group, device, start, end in GPU_ROWS:
+        trainer.append_log(log, {"group": group, "device": device, "start": start, "end": end})
+    for event, t in GPU_PAUSES:
+        trainer.append_log(pauses, {"event": event, "time": t})
+    assert trainer.logged_hours(log, "s51", pauses) == pytest.approx(GPU_HOURS_AFTER_PAUSES)
+    pause_start, pause_end = GPU_PAUSES[0][1], GPU_PAUSES[1][1]
+    start = pause_start - HOUR / 2
+    # one hour of budget: without the pause it would be reached at start + 1 h; with it, the paused time later
+    assert trainer.cap_reached(start, 1.0, pauses, now=start + HOUR) is False
+    assert trainer.cap_reached(start, 1.0, pauses, now=start + HOUR + (pause_end - pause_start) / 2) is False
+    assert trainer.cap_reached(start, 1.0, pauses, now=start + HOUR + (pause_end - pause_start)) is True

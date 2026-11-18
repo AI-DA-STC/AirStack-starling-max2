@@ -317,3 +317,23 @@ def _load_trunk_grads(module, d, prefix, proj):
         p.grad = g.detach().clone()
     if hasattr(module, "log_std"):
         module.log_std.grad = torch.from_numpy(d[f"{prefix}/log_std"].copy())
+
+
+def test_rollout_evaluation_in_chunks_equals_one_pass(tmp_path):
+    """The rollout's values and log probabilities are computed in bounded chunks of rows (a whole 16,384-game rollout in one pass needs
+    tens of GiB at the method's width): the same numbers as one pass, within float32 rounding."""
+    env = marker_env(tmp_path)
+    learner = M.Learner(env.method, env, "guard", seed=1)
+    gen = torch.Generator().manual_seed(SEEDS[0])
+    rollout = learner.collect(env, env.reset(TRAIN_GAMES, gen), gen, steps=env.episode_steps,
+                              opponent=lambda s, g: env.apf_actions(s, "strike"))
+    learner.eval_rows = rollout.obs.shape[0] * rollout.obs.shape[1] * rollout.obs.shape[2]
+    whole = learner.evaluate(rollout)
+    learner.eval_rows = env.guard_count + 1          # chunks of one sample (fewer rows than a sample's drones still take one)
+    calls = []
+    forward = learner.actor.forward
+    learner.actor.forward = lambda obs: calls.append(obs.shape) or forward(obs)
+    chunked = learner.evaluate(rollout)
+    assert len(calls) == rollout.obs.shape[0] * rollout.obs.shape[1]
+    torch.testing.assert_close(chunked[0], whole[0], rtol=UNIT_TOL, atol=UNIT_TOL)   # float32 GEMM blocking differs by size
+    torch.testing.assert_close(chunked[1], whole[1], rtol=UNIT_TOL, atol=UNIT_TOL)

@@ -284,6 +284,8 @@ class Learner:
         # the batch shape: the copied method's minibatch count, or a variant's (5.1b/5.1c), which may drop the few samples a
         # permutation leaves over when (time x games) does not divide into the minibatches
         self.minibatches, self.drop_remainder = method.ppo_minibatches, False
+        # most drone rows the rollout evaluation passes through the networks at once (bounded memory at 16,384 games x 200 steps)
+        self.eval_rows = 2 ** (2 * 2 * 2 * 2)
 
     # ------------------------------------------------------------------ acting
     @torch.no_grad()
@@ -325,9 +327,19 @@ class Learner:
     # ------------------------------------------------------------------ learning
     @torch.no_grad()
     def evaluate(self, rollout: Rollout) -> tuple[torch.Tensor, torch.Tensor]:
-        """(values (T, N), log probabilities of the stored latents (T, N, A)) with the current parameters."""
-        mean, log_std = self.actor(rollout.obs)
-        return self.critic(rollout.central), gaussian_log_prob(rollout.latents, mean, log_std)
+        """(values (T, N), log probabilities of the stored latents (T, N, A)) with the current parameters, in chunks of at most
+        ``eval_rows`` drone rows (at least one sample per chunk)."""
+        t, n, a = rollout.obs.shape[:2 + 1]
+        obs, central = rollout.obs.reshape(t * n, a, -1), rollout.central.reshape(t * n, -1)
+        latents = rollout.latents.reshape(t * n, a, -1)
+        step = max(self.eval_rows // a, 1)
+        values, logp = [], []
+        for begin in range(0, t * n, step):
+            part = slice(begin, begin + step)
+            mean, log_std = self.actor(obs[part])
+            values.append(self.critic(central[part]))
+            logp.append(gaussian_log_prob(latents[part], mean, log_std))
+        return torch.cat(values).reshape(t, n), torch.cat(logp).reshape(t, n, a)
 
     def update(self, rollout: Rollout, generator: torch.Generator | None = None, *, permutations: list[torch.Tensor] | None = None,
                entropy_noise: list[torch.Tensor] | None = None) -> dict[str, float]:

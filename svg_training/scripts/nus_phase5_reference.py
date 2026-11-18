@@ -237,7 +237,15 @@ def main(argv: list[str] | None = None) -> int:
             print("[R0] more failed conversions than the gate allows: stop", flush=True)
             return EXIT_STOP
     if args.score or args.run:
-        score(args, out, gates)
+        from svg_training.nus.pauses import append_row
+        import time
+        began = time.time()
+        try:
+            score(args, out, gates)
+        finally:  # GPU-hours of R0 (cap group r0; paused time is subtracted when the log is read, nus/pauses.py)
+            append_row(out / "gpu_hours.log", {"group": "r0", "stage": "r0", "what": "score", "device": str(args.device),
+                                               "note": "not of record" if args.games_override else None, "start": began,
+                                               "end": time.time()})
     return 0
 
 

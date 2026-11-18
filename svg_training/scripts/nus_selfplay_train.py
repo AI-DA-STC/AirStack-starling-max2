@@ -15,8 +15,10 @@ What it does, in order:
    evaluation in ``<out>/probe/``, timed; an ESTIMATE of the whole lineage (every generation's updates plus its evaluations, the
    evaluation cost scaled by the pool's slot count) in ``<out>/probe.json``.
 3. **Cap** (plan section 8): the stage group's cap less the GPU-hours already in its ``gpu_hours.log`` (CUDA entries; overlapping jobs
-   counted once). An estimate above the remaining cap refuses to start without ``--accept-long``; during the run the remaining cap is
-   a hard wall-clock limit (the run checkpoints and stops, exit 3, ABORTED). Each run appends its interval to the log.
+   counted once; paused time, ``scripts/gpu_pause.sh``, not counted). An estimate above the remaining cap refuses to start without
+   ``--accept-long``; during the run the remaining cap is a hard limit on the wall clock less paused time (the run checkpoints and
+   stops, exit 3, ABORTED). Each run appends its interval to the log. SIGINT (``gpu_pause.sh stop``) checkpoints at the next update
+   boundary and exits 4 (STOPPED); the same command resumes.
 4. **Training** (``nus/selfplay.py``): resumable from ``<out>`` (run the same command again).
 5. **Videos** (STANDARDS section 8, plan 4.3): one replica game at every selection evaluation (against the slot the learner did worst
    against) and two per archived entry (the first Strike win and the first hold among the first ``games_searched`` games against its
@@ -51,7 +53,7 @@ GATES = ROOT / "configs" / "nus_port.toml"
 STAGE = {"nus": "s51", "5.1b": "s51b", "5.1c": "s51c"}
 CAP_GROUP = {"nus": "s51", "5.1b": "variants", "5.1c": "variants"}
 HOUR_S = datetime.timedelta(hours=1).total_seconds()
-EXIT_REFUSED, EXIT_ABORTED = 2, 2 + 1
+EXIT_REFUSED, EXIT_ABORTED, EXIT_STOPPED = 2, 2 + 1, 2 + 2
 
 
 def _under_runs(path: Path) -> Path:
@@ -77,29 +79,35 @@ def batch_shape(variant: str, method, episode_steps: int, gates: dict) -> dict:
 
 
 # ------------------------------------------------------------------------------------------------ GPU-hours log and cap
-def logged_hours(log: Path, group: str) -> float:
-    """GPU-hours of one stage group in the log: the union of its CUDA intervals (overlapping jobs counted once)."""
-    if not log.exists():
-        return 0.0
-    rows = [json.loads(line) for line in log.read_text().splitlines() if line.strip()]
-    spans = sorted((r["start"], r["end"]) for r in rows if r["group"] == group and str(r["device"]).startswith("cuda"))
-    total, current = 0.0, None
-    for start, end in spans:
-        if current is None or start > current[1]:
-            if current is not None:
-                total += current[1] - current[0]
-            current = [start, end]
-        else:
-            current[1] = max(current[1], end)
-    if current is not None:
-        total += current[1] - current[0]
-    return total / HOUR_S
+def logged_hours(log: Path, group: str, pauses: Path | None = None) -> float:
+    """GPU-hours of one stage group in the log: the union of its CUDA intervals (overlapping jobs counted once) less the paused time."""
+    from svg_training.nus.pauses import PAUSES_LOG, logged_gpu_hours
+    return logged_gpu_hours(log, group, pauses or PAUSES_LOG)
 
 
 def append_log(log: Path, row: dict) -> None:
-    log.parent.mkdir(parents=True, exist_ok=True)
-    with log.open("a") as stream:
-        stream.write(json.dumps(row) + "\n")
+    from svg_training.nus.pauses import append_row
+    append_row(log, row)
+
+
+def cap_reached(start: float, hours: float, pauses: Path, now: float | None = None) -> bool:
+    """True once the wall clock since ``start`` (unix seconds) less the paused time reaches ``hours`` (the hard cap)."""
+    from svg_training.nus.pauses import effective_seconds
+    return effective_seconds(start, time.time() if now is None else now, pauses) >= hours * HOUR_S
+
+
+def install_stop_handler(sp):
+    """SIGINT (scripts/gpu_pause.sh stop, or Ctrl-C) asks the run to checkpoint and return at the next update boundary. Returns the
+    previous handler (restore it when the run returns)."""
+    import signal
+    previous = signal.getsignal(signal.SIGINT)
+
+    def handler(signum, frame):
+        sp.stop_requested = True
+        print("[train] stop requested: checkpointing at the next update boundary", flush=True)
+
+    signal.signal(signal.SIGINT, handler)
+    return previous
 
 
 # ------------------------------------------------------------------------------------------------ videos
@@ -192,7 +200,12 @@ class Videos:
 # ------------------------------------------------------------------------------------------------ probe and record
 def probe(method, env, seed: int, shape: dict, out: Path, updates: int, generations: int, device) -> dict:
     """Time ``updates`` updates of generation 1 and one selection evaluation; ESTIMATE the lineage's wall clock."""
+    import torch
     from svg_training.nus.selfplay import SelfPlay
+    cuda = torch.device(device).type == "cuda"
+    if cuda:
+        torch.cuda.synchronize()
+        torch.cuda.reset_peak_memory_stats()
     folder = out / "probe"
     sp = SelfPlay(method, env, seed, folder, device=device, generations=generations, **_kw(shape))
     timed = min(updates, sp.updates - 1)   # the generation must stay open for the evaluation that follows
@@ -200,17 +213,26 @@ def probe(method, env, seed: int, shape: dict, out: Path, updates: int, generati
         raise SystemExit("the probe needs at least two updates per generation")
     began = time.monotonic()
     sp.run(max_updates=timed)
+    if cuda:
+        torch.cuda.synchronize()
     per_update = (time.monotonic() - began) / max(sp.state["active"]["update"], 1)
     began = time.monotonic()
     sp.evaluate()
+    if cuda:
+        torch.cuda.synchronize()
     per_slot_evaluation = (time.monotonic() - began) / sp.pool.slots
+    gib = float(2 ** (2 * 2 * 2 + 2 * 2 * 2 + 2 * 2 * 2 + 2 * 2 + 2))   # bytes in a GiB (2^30)
+    peak = ({"peak_allocated_gib": torch.cuda.max_memory_allocated() / gib, "peak_reserved_gib": torch.cuda.max_memory_reserved() / gib}
+            if cuda else {"peak_allocated_gib": None, "peak_reserved_gib": None})
     total = 0.0
     for generation in range(1, generations + 1):
         slots = min(generation // 2, method.max_learned_opponents) + 1   # earlier entries of the other team, plus APF
         total += sp.updates * per_update + len(sp.selection_after) * per_slot_evaluation * slots
     return {"updates_timed": sp.state["active"]["update"], "seconds_per_update": per_update,
             "seconds_per_evaluation_slot": per_slot_evaluation, "games_per_update": sp.state["active"]["games"],
-            "estimate_hours": total / HOUR_S, "estimate": "ESTIMATE: generations x (updates x seconds per update + evaluations x "
+            "estimate_hours": total / HOUR_S, "estimate_hours_three_seeds_one_after_another": (2 + 1) * total / HOUR_S,
+            "side_by_side": "not measured: three seeds in one process were not probed", **peak,
+            "selection_evaluation_seconds_one_slot": per_slot_evaluation, "estimate": "ESTIMATE: generations x (updates x seconds per update + evaluations x "
             "seconds per evaluation slot x slots)", "device": str(device)}
 
 
@@ -277,6 +299,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--deploy", type=Path, default=DEPLOY_REF)
     parser.add_argument("--method", type=Path, default=LOCAL_METHOD)
     parser.add_argument("--generations", type=int, help="tests only: fewer generations (not of record)")
+    parser.add_argument("--log-note", help="a note on this run's gpu_hours.log rows (e.g. smoke)")
+    parser.add_argument("--pauses-log", type=Path, help="default runs/nus_port/phase5/pauses.log (scripts/gpu_pause.sh)")
     args = parser.parse_args(argv)
 
     out = _under_runs(args.out or STAGE_DIR / STAGE[args.variant] / f"seed{args.seed}")
@@ -296,11 +320,13 @@ def main(argv: list[str] | None = None) -> int:
     shape = batch_shape(args.variant, method, env.episode_steps, gates)
     out.mkdir(parents=True, exist_ok=True)
 
-    remaining = float(settings["caps"][group]) - logged_hours(log, group)
+    from svg_training.nus.pauses import PAUSES_LOG
+    pauses = args.pauses_log or PAUSES_LOG
+    remaining = float(settings["caps"][group]) - logged_hours(log, group, pauses)
     if args.probe_updates > 0 and not (out / "self_play_state.json").exists():
         began = time.time()
         result = probe(method, env, args.seed, shape, out, args.probe_updates, generations, device)
-        append_log(log, {"group": group, "stage": STAGE[args.variant], "seed": args.seed, "what": "probe", "device": str(device),
+        append_log(log, {"group": group, "stage": STAGE[args.variant], "seed": args.seed, "what": "probe", "note": args.log_note, "device": str(device),
                          "start": began, "end": time.time()})
         result |= {"cap_group": group, "remaining_cap_hours": remaining, "within_cap": result["estimate_hours"] <= remaining}
         (out / "probe.json").write_text(json.dumps(result, indent=2) + "\n")
@@ -311,26 +337,30 @@ def main(argv: list[str] | None = None) -> int:
         if not result["within_cap"] and not args.accept_long:
             print("[probe] the estimate is above the remaining cap: refusing to start (--accept-long overrides)", flush=True)
             return EXIT_REFUSED
-        remaining = float(settings["caps"][group]) - logged_hours(log, group)
+        remaining = float(settings["caps"][group]) - logged_hours(log, group, pauses)
     elif args.probe_only:
         raise SystemExit("--probe-only needs --probe-updates above 0 and a fresh run folder")
 
     videos = Videos(out / "videos", args.video_format, int(settings["videos"]["games_searched"]))
     sp = SelfPlay(method, env, args.seed, out, device=device, generations=generations, on_selection=videos.on_selection,
                   on_archive=videos.on_archive, **_kw(shape))
-    deadline = time.monotonic() + remaining * HOUR_S if device.type == "cuda" else None
+    import signal
+    previous_handler = install_stop_handler(sp)
     began_wall, began = time.time(), time.monotonic()
+    should_stop = (lambda: cap_reached(began_wall, remaining, pauses)) if device.type == "cuda" else None  # pause-aware hard cap
     try:
-        sp.run(deadline=deadline)
+        sp.run(should_stop=should_stop)
     finally:
-        append_log(log, {"group": group, "stage": STAGE[args.variant], "seed": args.seed, "what": "train", "device": str(device),
+        signal.signal(signal.SIGINT, previous_handler)
+        append_log(log, {"group": group, "stage": STAGE[args.variant], "seed": args.seed, "what": "train", "note": args.log_note, "device": str(device),
                          "start": began_wall, "end": time.time()})
     seconds = time.monotonic() - began
-    status = "ABORTED: hard wall-clock cap reached" if sp.stopped_by_deadline else "complete"
+    status = {"cap": "ABORTED: hard wall-clock cap reached (paused time not counted)", "interrupted": "STOPPED on request (resume: "
+              "the same command)", None: "complete"}[sp.stopped]
     inputs = {"rules": args.rules, "deploy": args.deploy, "method": args.method}
     path = record_draft(out, args, shape, sp, seconds, videos.paths, status, inputs)
     print(f"[train] {status}; {len(sp.state['archive'])} generations archived; record draft {path}", flush=True)
-    return EXIT_ABORTED if sp.stopped_by_deadline else 0
+    return {"cap": EXIT_ABORTED, "interrupted": EXIT_STOPPED, None: 0}[sp.stopped]
 
 
 if __name__ == "__main__":

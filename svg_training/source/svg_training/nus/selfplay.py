@@ -123,6 +123,8 @@ class SelfPlay:
         self.learner: Learner | None = None
         self.pool: OpponentPool | None = None
         self.stopped_by_deadline = False
+        self.stop_requested = False   # set by the trainer's SIGINT handler (scripts/gpu_pause.sh stop)
+        self.stopped: str | None = None   # "deadline", "cap" or "interrupted" after an early return
 
     # ------------------------------------------------------------------ archive
     def load_actor(self, entry: dict[str, Any]) -> MappoActor:
@@ -258,9 +260,11 @@ class SelfPlay:
         self._save()
         self.learner = self.pool = None
 
-    def run(self, max_updates: int | None = None, deadline: float | None = None) -> list[dict[str, Any]]:
+    def run(self, max_updates: int | None = None, deadline: float | None = None,
+            should_stop: Callable[[], bool] | None = None) -> list[dict[str, Any]]:
         """Run every generation; ``max_updates`` stops (with a checkpoint) after that many updates of this call, ``deadline`` (a
-        ``time.monotonic`` value) at the first update boundary past it (``stopped_by_deadline``). Returns the archive."""
+        ``time.monotonic`` value) at the first update boundary past it (``stopped_by_deadline``), ``should_stop`` (a pause-aware cap
+        check) when it returns True, and ``stop_requested`` (SIGINT) at the next update boundary. Returns the archive."""
         done = 0
         while len(self.state["archive"]) < self.generations:
             if self.learner is None:
@@ -268,8 +272,10 @@ class SelfPlay:
             active = self.state["active"]
             while active["update"] < self.updates:
                 over = deadline is not None and time.monotonic() >= deadline
-                if (max_updates is not None and done >= max_updates) or over:
-                    self.stopped_by_deadline = over
+                capped = should_stop is not None and should_stop()
+                if (max_updates is not None and done >= max_updates) or over or capped or self.stop_requested:
+                    self.stopped_by_deadline = over or capped
+                    self.stopped = "deadline" if over else "cap" if capped else "interrupted" if self.stop_requested else None
                     self._checkpoint()
                     return self.state["archive"]
                 self._update()

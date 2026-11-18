@@ -7,6 +7,9 @@ scoring connect, on each motion backend. It is never "the policy" and never a st
   # PyTorch (tier 1), no Isaac: pure partner rules, or the Starling layer (exploratory drone model)
   train_standin.py --config configs/s2.toml --seed <s> --name <date>_s2b_standin_pure_seed<s> [--motion pure]
   train_standin.py --config configs/s2.toml --seed <s> --name <date>_s2b_standin_starling_seed<s> --motion starling
+  # a smoke run on any machine, CPU included (seconds; never a run of record). --device auto (default) = cuda if
+  # PyTorch sees a GPU, else the cpu with a note
+  train_standin.py --seed 1 --name smoke --smoke
   # Isaac Lab (tier 2): physics drone, headless, after scripts/isaac_preflight.sh. ON THE HOST: the container
   # image has skrl 1.4.3 and this trainer needs skrl 2.x (the host's conda env_isaaclab has 2.1.0); it refuses
   # (exit 2, before Isaac starts) on another skrl major version.
@@ -511,6 +514,22 @@ def estimate_eval_s(built: Any, size: int, train_team: str, ticks: int, max_step
     return (time.perf_counter() - t0) / max(ticks, 1) * int(max_steps or game.ticks)
 
 
+# --smoke (docs panel C3, owner 18 Nov 2026): the pipe test in seconds on a CPU (3-5 s measured 18 Nov on the 5090's CPU). It fills these
+# settings unless the command line gives them; the run is a smoke run (train_result.json "smoke": true), never a run of record.
+SMOKE = {"timesteps_override": 256, "num_games_override": 64, "eval_games": 64, "eval_max_steps": 200, "eval_every_updates": 4}
+_PARSER_DEFAULTS = {"timesteps_override": None, "num_games_override": None, "eval_games": None, "eval_max_steps": None,
+                    "eval_every_updates": 20}
+
+
+def apply_smoke(args: argparse.Namespace) -> argparse.Namespace:
+    """With --smoke: every SMOKE setting still at its parser default takes the smoke value. Without it: unchanged."""
+    if getattr(args, "smoke", False):
+        for key, value in SMOKE.items():
+            if getattr(args, key) == _PARSER_DEFAULTS[key]:
+                setattr(args, key, value)
+    return args
+
+
 def make_parser(isaac: bool = False) -> argparse.ArgumentParser:
     """isaac=True leaves --device to Isaac Lab's launcher arguments (it adds its own)."""
     ap = argparse.ArgumentParser(description="Stand-in trainer (pipe test): skrl IPPO, 2 Guard v 1 Strike.")
@@ -525,6 +544,9 @@ def make_parser(isaac: bool = False) -> argparse.ArgumentParser:
     ap.add_argument("--timesteps-override", type=int, help="skrl timesteps (tests and smoke runs only)")
     ap.add_argument("--num-games-override", type=int, help="games per batch (tests and smoke runs only)")
     ap.add_argument("--cap-min-override", type=float, help="wall-clock cap in minutes (tests only)")
+    ap.add_argument("--smoke", action="store_true",
+                    help="smoke run: the pipe test in seconds on a CPU (" + ", ".join(f"--{k.replace('_', '-')} {v}" for k, v in SMOKE.items())
+                         + " unless given); never a run of record")
     ap.add_argument("--eval-games", type=int, default=None,
                     help="evaluation games (default 256 on --game s2; the pilot table's eval_games on --game nus_hangar)")
     ap.add_argument("--eval-every-updates", type=int, default=20)
@@ -552,7 +574,8 @@ def make_parser(isaac: bool = False) -> argparse.ArgumentParser:
     ap.add_argument("--diag-freeze-log-std-axes",
                     help="comma list of action axes (vx, vy, vz, yaw) whose log std stays at its initial value")
     if not isaac:
-        ap.add_argument("--device", default="cuda")
+        ap.add_argument("--device", default="auto",
+                        help="auto (default): cuda if PyTorch sees a GPU, else cpu with a note; or cpu, cuda, cuda:N")
     return ap
 
 
@@ -564,6 +587,7 @@ def run(args: argparse.Namespace, world_factory: Callable | None = None) -> int:
     if problem:
         print(f"refusing: {problem}", file=sys.stderr)
         return 2
+    apply_smoke(args)
     import torch
     from skrl.memories.torch import RandomMemory
     from skrl.multi_agents.torch.ippo import IPPO, IPPO_CFG
@@ -584,8 +608,11 @@ def run(args: argparse.Namespace, world_factory: Callable | None = None) -> int:
     from svg_training.opponents.learned import AGENT_FILE, INTERFACE_FILE, OBS_SPACE, make_models
     from svg_training.opponents.scripted import make_strategy
 
+    from svg_training.devices import resolve_device
+
     t_start = time.time()
-    device = str(args.device)
+    device = resolve_device(str(args.device))     # auto -> cuda or cpu (with a note); explicit devices unchanged
+    args.device = device
     if device.startswith("cpu"):
         # Small CPU batches (tests, smoke runs): one thread. Measured 16 Nov 2026 on this laptop, 32 games 2v1:
         # 6 s with one thread against 83 s with torch's default 24 (thread start-up on tiny tensors).
@@ -1153,7 +1180,7 @@ def run(args: argparse.Namespace, world_factory: Callable | None = None) -> int:
               "evaluations": len(curve), "eval_to_train_time_ratio": clock["eval_s"] / max(clock["train_s"], 1e-9),
               "upset_training_games": int(trainer.upset_games) if trainer.upset_games is not None else 0,
               "nonfinite_count": int(game._starling.drone.nonfinite_count) if motion == "physics" else 0,
-              "git_commit": commit, "device": device,
+              "git_commit": commit, "device": device, "smoke": bool(getattr(args, "smoke", False)),
               "skrl_settings": skrl_settings, "train_team": train_team,
               **({"game": "nus_hangar", "cap_s_effective": cap_s, "estimate_eval_s": est_eval_s, "gpu_seconds": gpu_end - t_start,
                   "render_s": render_s, "videos": videos, "best_evaluation": best["label"], "mid_note": pilot_state["mid_note"],

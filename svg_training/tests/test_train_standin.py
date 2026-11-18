@@ -728,3 +728,33 @@ def test_default_path_bit_identical_after_the_nus_hooks(tmp_path):
     curve = json.loads((tmp_path / "fp" / "curve.json").read_text())
     assert h.hexdigest() == DEFAULT_PATH_AGENT_SHA256
     assert [c["scalars"].get("game/hold_rate") for c in curve] == DEFAULT_PATH_HOLD
+
+
+# ---------------------------------------------------------------- --smoke (docs panel C3, owner 18 Nov 2026): the CPU pipe test in seconds
+def test_smoke_flag_is_documented_and_fills_the_tiny_settings():
+    ap = train_standin.make_parser()
+    assert "--smoke" in ap.format_help()
+    args = ap.parse_args(["--seed", "1", "--name", "s", "--smoke"])
+    train_standin.apply_smoke(args)
+    assert (args.timesteps_override, args.num_games_override, args.eval_games, args.eval_max_steps,
+            args.eval_every_updates) == tuple(train_standin.SMOKE.values())
+    given = ap.parse_args(["--seed", "1", "--name", "s", "--smoke", "--eval-games", "8"])
+    train_standin.apply_smoke(given)
+    assert given.eval_games == 8                            # a value given on the command line is kept
+    plain = ap.parse_args(["--seed", "1", "--name", "s"])
+    train_standin.apply_smoke(plain)
+    assert plain.timesteps_override is None and plain.eval_every_updates == 20
+
+
+def test_smoke_run_on_the_default_device_without_a_gpu(tmp_path):
+    """--smoke with no --device in a child process that sees no GPU: auto falls back to the CPU and the run folder is complete."""
+    env = child_env(str(ROOT / "source"))
+    env["CUDA_VISIBLE_DEVICES"] = ""
+    r = subprocess.run([child_python(), str(SCRIPT), "--seed", "1", "--name", "smoke_cli", "--smoke", "--runs-dir", str(tmp_path)],
+                       cwd=ROOT, env=env, capture_output=True, text=True, timeout=600)
+    assert r.returncode == 0, r.stdout[-2000:] + r.stderr[-4000:]
+    run = tmp_path / "smoke_cli"
+    assert all((run / f).exists() for f in ("agent.pt", "interface.toml", "curve.json", "train_result.json"))
+    res = json.loads((run / "train_result.json").read_text())
+    assert res["device"] == "cpu" and res["smoke"] is True and res["timesteps_done"] == train_standin.SMOKE["timesteps_override"]
+    assert "no CUDA GPU" in r.stderr

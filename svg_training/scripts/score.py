@@ -3,9 +3,12 @@
 
   score.py --guard <spec>[,<spec>...] --strike <spec>[,<spec>...] [--sizes 2v1,5v3] [--presets pure,starling]
            [--games-per-band 1000] [--bands lab,middle,large] [--scenario <name>] [--seed 0] [--no-local]
-           [--local-dir configs/local] [--device cuda] [--batch-per-pair] --out runs/<name>/
+           [--local-dir configs/local] [--device auto] [--batch-per-pair] --out runs/<name>/
   # S2b: the physics drone in Isaac Lab (host conda env_isaaclab python, after scripts/isaac_preflight.sh)
   score.py ... --presets physics --sizes <one size> --batch-per-pair --headless --out runs/<name>/
+
+``--device auto`` (default): cuda when PyTorch sees a GPU, else the cpu with a note on stderr (a plain laptop needs no flag;
+use ``--presets pure`` and ``--games-per-band 100`` there, the starling preset is many times slower on a CPU).
 
 A spec is a scripted opponent's name (``opponents/scripted.py`` REGISTRY: guard_mark_edge, guard_mark_inside,
 guard_field, guard_mirror, strike_straight, strike_flank, random, zero) or ``package.module:ClassName`` (outside
@@ -175,7 +178,8 @@ def make_parser(isaac: bool = False) -> argparse.ArgumentParser:
     ap.add_argument("--batch-per-pair", action="store_true",
                     help="one batch per Guard x Strike pair, same game seed: paired games (S2b D15)")
     if not isaac:
-        ap.add_argument("--device", default="cuda")
+        ap.add_argument("--device", default="auto",
+                        help="auto (default): cuda if PyTorch sees a GPU, else cpu with a note; or cpu, cuda, cuda:N")
     ap.add_argument("--out", required=True)
     return ap
 
@@ -186,7 +190,7 @@ def physics_problem(argv: list[str]) -> str | None:
     pre = argparse.ArgumentParser(add_help=False)
     for flag in ("--presets", "--sizes", "--scenario"):
         pre.add_argument(flag)
-    pre.add_argument("--device", default="cuda")
+    pre.add_argument("--device", default="auto")      # auto means the GPU for physics (torch is not imported here)
     pre.add_argument("--headless", action="store_true")
     pre.add_argument("--batch-per-pair", action="store_true")
     k, _ = pre.parse_known_args(argv)
@@ -198,7 +202,7 @@ def physics_problem(argv: list[str]) -> str | None:
     if not (sizes and len(sizes) == 1) and not (sizes is None and k.scenario):
         return (f"--presets physics plays one size per process (one Isaac world); got --sizes {k.sizes or '(default: '}"
                 f"{'' if k.sizes else 'the scoring sizes)'}: run once per size")
-    if not k.device.startswith("cuda"):
+    if not (k.device == "auto" or k.device.startswith("cuda")):
         return f"--presets physics runs on the GPU (Isaac Lab); got --device {k.device}: use cuda"
     if not k.headless:
         return "--presets physics starts Isaac Sim: add --headless (after scripts/isaac_preflight.sh)"
@@ -221,8 +225,10 @@ def main(argv: list[str] | None = None, world_factory=None) -> int:
     from svg_training.core.play import play_match
     from svg_training.core.starling_layer import resolve_params
     from svg_training.core.strategy import SplitStrategy
+    from svg_training.devices import resolve_device
     from svg_training.opponents.scripted import make_strategy
 
+    a.device = resolve_device(getattr(a, "device", "cuda"))     # auto -> cuda or cpu; meta records the device used
     assert tuple(BANDS) == BAND_NAMES, (BANDS, BAND_NAMES)
     argv_list = sys.argv[1:] if argv is None or isinstance(argv, argparse.Namespace) else list(argv)
     scoring = load_s2_gates()["scoring"]

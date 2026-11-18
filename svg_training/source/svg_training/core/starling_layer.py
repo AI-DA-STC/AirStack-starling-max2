@@ -77,6 +77,15 @@ def filter_pairs(cfg: GameCfg, guards: int, strikes: int, device: str | torch.de
     return (team[:, None] == team[None, :]) & off_diag                         # team-mates only
 
 
+def filter_fn(cfg: GameCfg):
+    """The filter function from ``[starling_layer] filter_cuda_graph``: None (the command chain's default,
+    ``core.safety_filter.filter_velocities``) when off, ``core.safety_filter_graph.filter_velocities_graph`` when on."""
+    if not cfg.starling.filter_cuda_graph:
+        return None
+    from .safety_filter_graph import filter_velocities_graph
+    return filter_velocities_graph
+
+
 def filter_kwargs(cfg: GameCfg) -> dict | None:
     """The filter's early stop from ``[starling_layer] filter_check_every`` (0 = off: no host sync)."""
     k = int(cfg.starling.filter_check_every)
@@ -99,7 +108,7 @@ class StarlingLayer:
         m = guards + strikes
         self.model = FittedResponse(num_games, m, params, device=device, safety_filter=True, pair_mask=pairs,
                                     filter_iterations=cfg.starling.filter_iterations,
-                                    filter_kwargs=filter_kwargs(cfg), hover_seed=True)
+                                    filter_kwargs=filter_kwargs(cfg), hover_seed=True, filter_fn=filter_fn(cfg))
 
     def reset(self, mask: Tensor, pos_m: Tensor, yaw: Tensor | None = None) -> None:
         """Restart the drones where mask [N, M] bool is True: at rest at pos_m [N, M, 3], fresh commander.

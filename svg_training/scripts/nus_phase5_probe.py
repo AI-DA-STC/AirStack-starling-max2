@@ -21,6 +21,10 @@ existing ``probe.json`` with the same device, arms, ticks and seed (earlier entr
 early-stop check), so the extra syncs cost little. INFO: one tick at ``profile_games`` games is run under ``torch.profiler`` and the filter's
 sweeps (``aten::einsum``, once per sweep), early-stop checks (``aten::nonzero``, one host sync each) and CUDA kernel launches are counted.
 
+``--filter-cuda-graph`` turns on the filter's CUDA-graph path (``[starling_layer] filter_cuda_graph``, ``core/safety_filter_graph.py``; off by
+default, as in P0) and is written to ``probe.json`` (``meta.filter_cuda_graph``); the profiled tick then counts graph replays, not sweeps (use
+``--profile-games 0``).
+
 Exit 0 = every arm ran (an out-of-memory stop included); 3 = the probe's own deadline (``budget_hours``) stopped it (the result is still
 written); 2 = refused (``probe.json`` exists, no CUDA device for ``--device cuda``). Tier 1 (PyTorch; no Isaac Sim). No numeric literal (G2):
 counts and times come from ``configs/nus_phase5.toml`` ``[probe]``, lengths and speeds from the local files through ``nus/hangar.py``.
@@ -295,6 +299,8 @@ def make_parser() -> argparse.ArgumentParser:
     p.add_argument("--budget-hours", type=float)
     p.add_argument("--profile-games", type=int, help="game count whose one extra tick is profiled (0: none)")
     p.add_argument("--seed", type=int)
+    p.add_argument("--filter-cuda-graph", action="store_true",
+                   help="turn on [starling_layer] filter_cuda_graph (core/safety_filter_graph.py; default off, as in P0)")
     p.add_argument("--extend", action="store_true",
                    help="add larger counts to an existing probe.json (same device, arms, ticks and seed; earlier entries are kept as they are)")
     return p
@@ -316,6 +322,7 @@ def _meta(ctx, st: dict, args, counts: list[int], arms: list[str], device: str) 
             "warmup_ticks": args.warmup_ticks, "timed_ticks": args.timed_ticks, "seed": args.seed, "budget_hours": args.budget_hours,
             "drones_per_game": ctx.guards + ctx.strikes, "tier": "tier 1 (fitted Starling layer, all-pairs safety filter, 3-D)",
             "filter_iterations": ctx.cfg.starling.filter_iterations, "filter_check_every": ctx.cfg.starling.filter_check_every,
+            "filter_cuda_graph": ctx.cfg.starling.filter_cuda_graph,
             "filter_timing_method": TIMING_METHOD, "sha256": sha, "date": datetime.datetime.now().isoformat(timespec="seconds")}
 
 
@@ -356,8 +363,13 @@ def main(argv: list[str] | None = None) -> int:
         print("refusing: --device cuda but no CUDA device", file=sys.stderr)
         return EXIT_REFUSED
     ctx = _context(st)
+    if args.filter_cuda_graph:
+        ctx.cfg = ctx.cfg.replace(**{"starling.filter_cuda_graph": True})
     if args.extend:
         result = json.loads((out / "probe.json").read_text())
+        if bool(result["meta"].get("filter_cuda_graph", False)) != ctx.cfg.starling.filter_cuda_graph:
+            print("refusing: --extend must use the probe's --filter-cuda-graph setting", file=sys.stderr)
+            return EXIT_REFUSED
         if result["meta"]["device"] != device or any(a not in result["arms"] for a in arms):
             print("refusing: --extend must use the probe's device and arms", file=sys.stderr)
             return EXIT_REFUSED

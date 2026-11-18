@@ -60,13 +60,16 @@ class FilterResult:
 
     velocities [N, M, 3] safe velocities (m/s); corrected [N, M] bool, ``|v - nominal| > 1e-3``;
     residual [N] worst violation of the active pair constraints and speed caps after the filter
-    (emergency action included, as in the original); emergency [N] bool, push-apart used in any group.
+    (emergency action included, as in the original); emergency [N] bool, push-apart used in any group;
+    converged [N] bool, every group of the game met the stopping test within the sweeps, or the game had no active pair
+    (None only where a caller builds a result itself, e.g. a pass-through in ``scripts/filter_speed.py``).
     """
 
     velocities: Tensor
     corrected: Tensor
     residual: Tensor
     emergency: Tensor
+    converged: Tensor | None = None
 
 
 def team_pair_mask(guards: int, strikes: int, device: torch.device | str | None = None) -> Tensor:
@@ -208,6 +211,11 @@ def filter_velocities(nominal_mps: Tensor, pos_m: Tensor, pair_mask: Tensor, saf
 
     if check_every:
         v = out_v.index_copy(0, work, v)
+        # rows left out of the working batch had no active pair or every group converged
+        game_converged = torch.ones(n, dtype=torch.bool, device=dev).index_copy(0, work, converged.all(dim=-1))
+    else:
+        game_converged = converged.all(dim=-1)
+    game_converged = game_converged | ~has_pair  # [N]
 
     # Final safeguard, as the original: zero non-finite rows (group then not converged), clamp to the cap.
     finite = torch.isfinite(v).all(dim=-1) & ~bad  # [N, M]
@@ -241,4 +249,5 @@ def filter_velocities(nominal_mps: Tensor, pos_m: Tensor, pair_mask: Tensor, saf
 
     residual = _drone_residual(v, ii, jj, member, g, bias, active, cap).amax(dim=-1)
     corrected = ((v - nominal_ok).norm(dim=-1) > 1e-3) | bad
-    return FilterResult(velocities=v, corrected=corrected, residual=residual, emergency=emergency_d.any(dim=-1))
+    return FilterResult(velocities=v, corrected=corrected, residual=residual, emergency=emergency_d.any(dim=-1),
+                        converged=game_converged)

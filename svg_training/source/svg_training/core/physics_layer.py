@@ -37,7 +37,7 @@ from svg_training.models.physics_params import PhysicsParams, apply_sim_only_gai
 from svg_training.models.rigid_body import RigidBodyWorld
 
 from .game_config import GameCfg, load_s2b_gates
-from .starling_layer import check_commander, filter_kwargs, filter_pairs, resolve_params
+from .starling_layer import check_commander, filter_fn, filter_kwargs, filter_pairs, resolve_params
 
 
 def load_game_physics_params(cfg: GameCfg) -> PhysicsParams:
@@ -73,7 +73,8 @@ class PhysicsLayer:
         pairs = filter_pairs(cfg, guards, strikes, device)
         self._pairs = pairs[None]                                              # [1, M, M]
         self.chain = CommandChain(num_games, m, params, device, safety_filter=True, pair_mask=pairs,
-                                  filter_iterations=cfg.starling.filter_iterations, filter_kwargs=filter_kwargs(cfg))
+                                  filter_iterations=cfg.starling.filter_iterations, filter_kwargs=filter_kwargs(cfg),
+                                  filter_fn=filter_fn(cfg))
         self.params = load_game_physics_params(cfg)
         self.world = world
         self.drone = PhysicsDrone(world, self.params, device)

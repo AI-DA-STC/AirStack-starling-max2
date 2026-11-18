@@ -72,9 +72,10 @@ class FittedResponse:
     def __init__(self, n_games: int, n_drones: int, params: str | pathlib.Path | dict, dt_s: float | None = None,
                  device="cuda", dtype: torch.dtype = torch.float32, safety_filter: bool = False,
                  pair_mask: Tensor | None = None, filter_iterations: int = 1000, pos_m: Tensor | None = None,
-                 filter_kwargs: dict | None = None, hover_seed: bool = False):
+                 filter_kwargs: dict | None = None, hover_seed: bool = False, filter_fn=None):
         """filter_kwargs, if given, is merged last into the ``filter_velocities`` call (it may override any keyword
-        this class passes, e.g. ``iterations``); None leaves the S1 call unchanged.
+        this class passes, e.g. ``iterations``); None leaves the S1 call unchanged. ``filter_fn``: the filter function
+        (same signature as ``filter_velocities``); None = this module's ``filter_velocities`` (the default).
 
         hover_seed: on ``reset`` fill a drone's delay history with a hover setpoint (its position, zero speed, zero
         acceleration), so PX4 sees "hold here" for the first ``delay_s`` and the first tick's feed-forward arrives
@@ -109,7 +110,7 @@ class FittedResponse:
         # the commander copy and the safety filter: the chain shared with the physics backend (S2b Task 4)
         self.chain = CommandChain(n, m, cfg, device, dtype=dtype, safety_filter=safety_filter, pair_mask=pair_mask,
                                   filter_iterations=filter_iterations, filter_kwargs=filter_kwargs,
-                                  filter_fn=filter_velocities)
+                                  filter_fn=filter_velocities if filter_fn is None else filter_fn)
         self.vel_mps = torch.zeros(n, m, 3, device=device, dtype=dtype)
         self.pos_m = (torch.zeros(n, m, 3, device=device, dtype=dtype) if pos_m is None
                       else pos_m.to(device=device, dtype=dtype).clone())

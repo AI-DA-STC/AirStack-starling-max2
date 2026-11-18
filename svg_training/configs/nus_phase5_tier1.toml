@@ -1,0 +1,33 @@
+# NUS port Phase 5, stage 5.2: our run settings for tasks S1-S5 (plan docs/plans/2026-11-18-nus-phase5-retraining.md sections 5, 8, 9).
+# Counts, times, names and tolerances only: no partner value, none of the owner's hangar values (configs/local/ holds those). The
+# gates are configs/nus_port.toml [gates.phase5_tier1_training] (PROPOSED, not frozen); nothing here moves a gate. Every value is
+# PROPOSED unless labelled otherwise.
+
+[world]
+row = "5"                         # FIXED (gate table phase5_tier1_training row): configs/nus_phase4.toml row "5"
+clamp_tolerance_m = 0.01          # FIXED (gate table info_clamp_share, plan Task S5): pre-clamp distance outside the keep-in box that counts
+critic_reached_flag = false       # PROPOSED (plan section 5: the critic sees build_state's 61 numbers plus the slot one-hot). The
+                                  # reward runs to the time-out and depends on the sticky reached flag, which build_state does not
+                                  # carry (the partner's critic state does). For the gatekeeper: true appends the flag (62 + slots).
+
+[caps]
+# Plan section 8. A cap is GPU-hours of the stage group "s52": wall-clock hours in which its jobs hold the GPU, overlapping jobs
+# counted once, paused time (scripts/gpu_pause.sh) not counted. Each process stops at the remaining cap (hard limit).
+training_gpu_hours = 72           # OPEN; PROPOSED cap 72 (plan section 8), fixed after P0 and 5.1b/5.1c
+probe_updates = 2                 # PROPOSED: updates of generation 1 timed before a run (each update plays one whole game)
+
+[videos]
+# STANDARDS section 8, plan section 5: one game at every selection evaluation (against the slot the learner did worst against) and
+# two per archived entry (the first Strike win and the first hold among the first games_searched games of its best evaluation
+# against its strongest pool member), kept from the evaluation's own games (no game is played again for a video).
+format = "deferred"               # the trainer saves each video's data; scripts/nus_render_pending.py renders mp4s off the clock
+games_searched = 16               # = [ladder] video_slots: games kept per slot in a selection evaluation
+eval_video_slots = 16             # FIXED (plan section 5): the 5.2 evaluation's clips come from its first 16 slots
+
+[smoke]
+# The CPU smoke of the whole 5.2 path (not of record): tiny counts, the real local files, videos on.
+generations = 2
+updates_per_generation = 2
+games_per_update = 4
+selection_games_per_opponent = 2
+eval_games = 16

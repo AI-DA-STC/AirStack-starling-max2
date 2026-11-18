@@ -1,0 +1,42 @@
+"""Test constants for the stage 5.2 tasks S1-S5 (the numeric-literal scan G2 covers tests/test_nus_*.py, so numbers live here), and the
+marker world of the 5.2 environment (the Phase 4 marker files plus the Phase 5 marker method)."""
+from __future__ import annotations
+
+import types
+
+from _nus_phase4_fixture import build
+from _nus_phase5_method_fixture import marker_method, write_method_toml
+
+FIRST_REACH_GAMES = 1000     # plan Task S1: the outcome test plays 1,000 CPU games with scripted players
+TIER1_GAMES = 6              # games of a small environment test
+REACH_SEED = 11              # start generator seed of the outcome test
+OTHER_SEED = 12
+OUTSIDE_COUNTED_M = 0.02     # plan Task S5: a drone 0.02 m outside the box counts one clamped drone-tick
+OUTSIDE_NOT_M = 0.005        # ... 0.005 m outside counts none
+REWARD_REL = 1e-5            # reward in metres v the replica's in units, relative
+POS_ABS_M = 1e-5             # positions the env reports v the game's
+SLOT = 2                     # an opponent slot id in the critic-state test
+UNITS_SPAN = 3.0             # random positions in partner units: [-span, span]
+CLAMP_STEPS = 6              # real steps checked for "every drone inside the box"
+HALF = 0.5
+AWAY = (1.0, 0.0, 0.0)       # a Strike command straight along +x (away from the zone once past it)
+
+
+REACH_EPISODE_STEPS = 20     # partner steps of the 5.2 marker world: long enough for a marker Strike drone to reach the zone (the
+                             # Phase 4 marker world's 7 steps of 2 s cannot: its start ring is about 3.7 m outside the zone at 0.1 m/s)
+STICKY_EPISODE_STEPS = 30    # long enough to reach the zone (about step 18 against a still Guard team) and then leave it
+
+
+def tier1_world_fixture(tmp_path, monkeypatch, games: int | None = None, episode_steps: int = REACH_EPISODE_STEPS):
+    """The Phase 4 marker world with ``episode_steps`` partner steps and the hangar file pointed at, the Phase 5 marker method, and its
+    ``Tier1World``."""
+    from _nus_markers import marker_rules, write_toml
+    from svg_training.nus import hangar as hangar_mod
+    from svg_training.nus.method_cfg import load_method
+    from svg_training.nus.tier1_env import tier1_world
+    w = build(tmp_path, monkeypatch) if games is None else build(tmp_path, monkeypatch, games=games)
+    write_toml(w.folder / "nus_rules.toml", {**marker_rules(), "episode_steps": episode_steps})
+    monkeypatch.setattr(hangar_mod, "LOCAL_HANGAR", w.folder / "nus_hangar.toml")
+    method_path = tmp_path / "local" / "nus_method.toml"
+    write_method_toml(method_path, marker_method())
+    return types.SimpleNamespace(w=w, world=tier1_world(), method=load_method(method_path), method_path=method_path)

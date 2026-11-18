@@ -14,6 +14,11 @@ literal (G2): every count and tolerance comes from ``configs/nus_phase4.toml`` o
 * Recording (first game of each slot only, like ``play_match``): same-team and any-pair closest approach in 3-D, the safety filter's
   correction size (``_filter`` of the command chain wrapped on the instance, read only), the change of the command per tick, Guard 0's
   largest distance from the zone centre, and the positions of the first slots for videos.
+* Clamp share (Phase 5 Task S5, INFO beside gate F-1; opt-in with ``clamp_tol_m``, off by default so Phase 4 is unchanged): the layer's
+  ``keep_in`` is wrapped on the instance, read only, and counts per game the live drone-ticks whose pre-clamp position lies outside the
+  keep-in box by more than ``clamp_tol_m`` (Euclidean distance to the box), the live drone-ticks, and whether any pre-clamp position was
+  not finite. Pre-clamp is the layer's own position before its clamp (``model.pos_m`` fitted, ``drone.pos_m`` physics, ``pos_m``
+  identity). The wrapper calls the original and changes no number.
 """
 from __future__ import annotations
 
@@ -87,7 +92,8 @@ class NusHangarGame(SvgGame):
     first; ``jitter_m`` [N, M] or None; ``row``: the six keys of the ladder row; ``video_slots``: how many slots keep their positions."""
 
     def __init__(self, cfg: GameCfg, geo: Geometry, row: dict, starts_units: Tensor, jitter_m: Tensor | None, guards: int, strikes: int,
-                 device: str = "cpu", seed: int = 0, parked: bool = False, video_slots: int = 0, world=None, rules: NusRules | None = None):
+                 device: str = "cpu", seed: int = 0, parked: bool = False, video_slots: int = 0, world=None, rules: NusRules | None = None,
+                 clamp_tol_m: float | None = None):
         if row["drone"] == "physics" and row["separation"] == "block":
             raise ValueError("the push layer is not built for the physics drone")
         n = starts_units.shape[0]
@@ -113,6 +119,7 @@ class NusHangarGame(SvgGame):
         self._filter_keepout_m = 2 * float(params["filter"]["safety_radius_m"])
         self._last_pos: Tensor | None = None
         self._corr_size: Tensor | None = None
+        self._clamp_tol_m = None if clamp_tol_m is None else float(clamp_tol_m)
         super().__init__(cfg, n, guards, strikes, device=device, seed=seed, world=world)
         self._base_speed_mps = self._speed_mps.clone()
         if cfg.starling.enabled and row["separation"] == "block":
@@ -121,6 +128,7 @@ class NusHangarGame(SvgGame):
             self.motion = "starling"
             self._starling.reset(torch.ones(n, self.M, dtype=torch.bool, device=device), self.pos_m, self.yaw)
         self._wrap_filter()
+        self._wrap_keep_in()
         self.reset()
 
     # ------------------------------------------------------------------ fixed arena and starts
@@ -175,6 +183,28 @@ class NusHangarGame(SvgGame):
             return velocities, corrected
         chain._filter = recording
 
+    def _wrap_keep_in(self) -> None:
+        layer = self._starling
+        if layer is None or self._clamp_tol_m is None:
+            return
+        original, tol = layer.keep_in, self._clamp_tol_m
+
+        def counting(lo_m: Tensor, hi_m: Tensor) -> Tensor:
+            pre = _layer_positions(layer)                                      # [N, M, 3] before the clamp
+            excess = (pre - torch.maximum(torch.minimum(pre, hi_m), lo_m)).norm(dim=-1)
+            live, active = self.alive, ~self._first_done                       # self.alive is still the step's alive_prev here
+            acc = self._safety
+            acc["clamp_ticks"] += active * ((excess > tol) & live).sum(dim=1)
+            acc["live_ticks"] += active * live.sum(dim=1)
+            acc["nonfinite_state"] |= active & ~torch.isfinite(pre).all(dim=-1).all(dim=-1)
+            return original(lo_m, hi_m)
+        layer.keep_in = counting
+
+    def safety(self) -> dict[str, Tensor]:
+        """Per game, device tensors (no host read): clamp_ticks, live_ticks [N] (clamp share = their ratio) and nonfinite_state [N]
+        bool, since the last reset (scoring game: the first game of each slot). Empty without ``clamp_tol_m``."""
+        return dict(self._safety)
+
     def _new_games(self, mask: Tensor) -> None:
         self._last_pos = self.pos_m      # the positions the games that ended this step finished at (the old tensor is kept)
         super()._new_games(mask)
@@ -188,6 +218,9 @@ class NusHangarGame(SvgGame):
         self._acc = {name: torch.zeros(n, device=dev) for name in ("corr_sum", "corr_n", "smooth_sum", "smooth_n", "drift")}
         self._acc["team_min"] = torch.full((n,), big, device=dev)
         self._acc["any_min"] = torch.full((n,), big, device=dev)
+        self._safety = {} if self._clamp_tol_m is None else {
+            "clamp_ticks": torch.zeros(n, dtype=torch.long, device=dev), "live_ticks": torch.zeros(n, dtype=torch.long, device=dev),
+            "nonfinite_state": torch.zeros(n, dtype=torch.bool, device=dev)}
         self._video = torch.zeros(self.ticks + 1, self._video_slots, m, THREE, device=dev) if self._video_slots else None
         if self._video is not None:
             self._video[0] = self.pos_m[:self._video_slots]
@@ -241,4 +274,14 @@ class NusHangarGame(SvgGame):
                "smooth_tick_mps": acc["smooth_sum"] / acc["smooth_n"].clamp(min=1)}
         if self._video is not None:
             out["video"] = self._video.detach().cpu()
+        out.update({k: v.detach().cpu() for k, v in self._safety.items()})
         return out
+
+
+def _layer_positions(layer) -> Tensor:
+    """The layer's own drone positions [N, M, 3] (before ``keep_in`` clamps them): physics ``drone``, fitted ``model``, identity."""
+    for name in ("drone", "model"):
+        inner = getattr(layer, name, None)
+        if inner is not None:
+            return inner.pos_m
+    return layer.pos_m

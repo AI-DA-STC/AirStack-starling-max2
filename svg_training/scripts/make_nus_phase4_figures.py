@@ -3,6 +3,9 @@
 player, one line per Guard player, the parked Guard (the baseline) dashed black. Rates only: no geometry is drawn and no length is written.
 
     cd <svg_training>; unset PYTHONPATH; PYTHONPATH=source ~/miniconda3/envs/env_isaaclab/bin/python scripts/make_nus_phase4_figures.py
+
+Every row of ``[figure] row_order`` must have its ``scores.json``: with any missing the script refuses (exit 2, naming them) and the
+committed figure is left as it is (docs panel C7, 18 Nov 2026: on a fresh clone it used to draw empty axes over it).
 """
 from __future__ import annotations
 
@@ -28,11 +31,13 @@ STYLE = {"G19": ("tab:blue", "-"), "P3G": ("tab:green", "-"), "ApfGuard": ("tab:
 def main() -> int:
     settings = H.load_phase4()
     fig_cfg = settings["figure"]
-    rows = {}
-    for row_id in fig_cfg["row_order"]:
-        path = L.PHASE4_DIR / f"row_{row_id}" / "scores.json"
-        if path.exists():
-            rows[row_id] = {(p["guard"], p["strike"]): p for p in json.loads(path.read_text())["pairs"]}
+    paths = {row_id: L.PHASE4_DIR / f"row_{row_id}" / "scores.json" for row_id in fig_cfg["row_order"]}
+    missing = [f"row_{row_id}/scores.json" for row_id, path in paths.items() if not path.exists()]
+    if missing:
+        print(f"refusing: {len(missing)} ladder row(s) missing under {L.PHASE4_DIR}: {', '.join(missing)}. Run scripts/nus_phase4.py --row "
+              f"<id> for each first (needs the local files; see docs/TRAINING.md, NUS jobs). {OUT} is left unchanged.", file=sys.stderr)
+        return 2
+    rows = {row_id: {(p["guard"], p["strike"]): p for p in json.loads(path.read_text())["pairs"]} for row_id, path in paths.items()}
     strikes, guards = settings["pairs"]["core_strikes"], settings["pairs"]["core_guards"]
     fig, axes = plt.subplots(1, len(strikes), figsize=tuple(fig_cfg["size_in"]), sharey=True)
     ids = [r for r in fig_cfg["row_order"] if r in rows]

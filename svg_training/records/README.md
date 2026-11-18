@@ -24,7 +24,7 @@ ledger of the repository (`../../docs/record/LEDGER.md`, rows #1, #2, …).
 **T and W rows.** A row written on the lab's second workstation, before its branch joins `main`, is numbered W1, W2, …;
 at the merge it gets the next free T number. T15–T21 were W1–W7, and T22–T24 also ran on that workstation; the Phase 5 rows W11–W16 and the filter record
 became T25–T32, and C0 (W17) T33 (the map is in the ledger's header). Records and code comments may still say the W number. T35–T38 are INFO records of the NUS port's Phase 1, Run 0, Phase 2a and
-self-play matrix, written after the fact from their logs (T34 is kept for a pilot that was still running).
+self-play matrix, written after the fact from their logs (T34 is unused; numbers are never reused).
 
 ## Verdict words
 

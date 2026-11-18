@@ -492,7 +492,7 @@ stay out of git; real flights of a contact policy should start with a virtual co
 
 - The docs restructure for NUS is applied on this branch (19 Nov): front door `README.md`, `docs/NUS_RESULTS.md`,
   `docs/TRY_IT.md` (the verified fresh-clone commands), `docs/README.md` (page map, labels, history), `records/README.md`,
-  four after-the-fact INFO records (T35–T38; T34 reserved for the P1b rerun), the agents and skills no longer call
+  four after-the-fact INFO records (T35–T38; T34 unused: the P1b rerun takes the next free number when it ends), the agents and skills no longer call
   `configs/local/` and `runs/nus_port/` 5090-only. Not done: the S1/S2/S2b owner to-do sections stay on their pages
   (other pages link their anchors).
 - Not in the bundle: `runs/nus_port/w3/reference/` (only `--cuda-parity` needs it), the 223 MB Phase 5 one-update exports

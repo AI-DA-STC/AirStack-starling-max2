@@ -118,7 +118,7 @@ videos = "one replica game per selection evaluation; two per archived entry"
 status = "PROPOSED"
 seeds = [1001, 2001, 3001]
 generations = 8
-observation = "OPEN: v0.1 or v0.2 (owner); set before this table is frozen"
+observation = "v0.2 = interface v0.1 + height band floor and ceiling appended (owner approved 18 Nov 2026 ~18:20)"
 checkpoints = "each seed's last archived Guard (generation 7) and last archived Strike (generation 8)"
 row = "5"                                   # configs/nus_phase4.toml row: separation filter, height free_jitter, drone fitted
 starts_file = "runs/nus_port/phase4/starts.npz"

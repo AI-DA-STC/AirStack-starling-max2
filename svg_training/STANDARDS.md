@@ -132,7 +132,7 @@ are parameters in one game config, never constants in code.
 | After a tag, Strike drone | it goes down: it leaves the game | FIXED | owner, 14 November 2026 |
 | After a tag, Guard drone | it leaves too by default: setting `guard_survives_tag_prob` = 0 (both leave); training may draw it per game; evaluation reports 0 and 1 separately | FIXED | owner, 15 November 2026 |
 | Game length | 60 s (1,200 steps) | PROPOSED | S2: `configs/s2_game.toml` `[partner_rules] game_steps` |
-| Arena, lab scale | goals are drawn from a 3 × 3 m box, 0.5–1.8 m high; the boundary that acts on a drone is the 4 × 4 × 4 m keep-in fence | MEASURED | `goal_two_ours.yaml` (`arena_low/high`, `fence_min/max`) |
+| Arena, lab scale | goals are drawn from a 3 × 3 m box, 0.5–1.8 m high; the boundary that acts on a drone is the 6.5 × 6.5 × 4 m keep-in fence (x, y −3.25…3.25 m, z 0…4 m, centred on the mocap origin; CHG-0072, 16 Nov; was 4 × 4 × 4 m, CHG-0062) | MEASURED | `goal_two_ours.yaml` (`arena_low/high`, `fence_min/max`), read 18 Nov 2026 (owner approved the correction) |
 | Environments | games are played in realistic 3D environments, the construction-site world first; an empty arena is only the first build step | FIXED | owner, 14 November 2026 |
 | Environment ladder | E0 open arena; E1 random blocks and columns; E2 the construction-site world plus E1 clutter; E3 more worlds, one held out; E4 a scanned real place; E5 a camera-ready copy | PROPOSED | [docs/DESIGN.md](docs/DESIGN.md) §7 |
 | Per game | its own placement in the world, start positions and clutter | PROPOSED | RESEARCH §10 |

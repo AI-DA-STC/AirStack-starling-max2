@@ -242,7 +242,7 @@ Records list them.
 |---|---|
 | Game | the hangar game of Phase 4 row 5: fixed arena, zone and 3 v 3; the Starling layer with the fitted EXPLORATORY model (`params/real_exploratory_v0.toml`; T5 = FAIL, it answers more slowly than the real drone); the all-pairs safety filter at the flight stack's keep-out with 1,000 sweeps and `check_every` 8; height free inside the committed band; ±1 mm start-height jitter |
 | Starts | drawn fresh for every new game by the replica's start rule (Guards in the start disc, Strike drones on the start ring, random bearings), plus the jitter, in a new `NusHangarTrainGame` (F9). Training generators never reuse the Phase 4 starts seed |
-| Observation | interface v0.1 (71 numbers), or v0.2 (v0.1 + the height band, floor and ceiling in m, appended at indices 71–72) if the owner approves (§12 question 1); **no 5.2 run starts until the owner answers**; pilots use v0.1. The critic sees the central state (`build_state`, 61 numbers) plus the 16-wide slot one-hot |
+| Observation | interface v0.1 (71 numbers), or v0.2 (v0.1 + the height band, floor and ceiling in m, appended at indices 71–72) approved by the owner 18 Nov ~18:20 (§12 item 1); pilots use v0.1. The critic sees the central state (`build_state`, 61 numbers) plus the 16-wide slot one-hot |
 | Action | 3-D (P5-11), one decision every 12 ticks, command repeated every tick (P5-5) |
 | Reward | NUS's, in metres, run to the time-out with a sticky reached flag (P5-6); the shaping scale is converted from units with the deploy file's scale |
 | Method | the 5.1 copy, unchanged apart from the environment, at the batch shape chosen by 5.1b/5.1c (P5-7) |
@@ -555,18 +555,17 @@ games, drones per game, tier and GPU, gates with PASS or FAIL, videos.
 Each stage writes `runs/nus_port/phase5/<stage>/gates.toml` before it starts: a verbatim copy of its
 `[gates.phase5_*]` table, the sha256 of `configs/nus_port.toml`, and the sha256 of every reference file it reads.
 
-## 12. Decisions and the one open question
+## 12. Decisions
 
-1. **Interface for 5.2: waits on the owner.** v0.1 already carries the drone's height and 3-D relative positions (F12).
-   The lead recommends v0.2 (the height band, floor and ceiling, appended at the end), so the policy knows the vertical
-   limits as it knows the walls. It is an interface version change, an owner stop item (`train-change`). No 5.2 run
-   starts until the owner answers; pilots use v0.1.
+1. **Interface for 5.2: v0.2 (owner approved, 18 Nov 2026 ~18:20).** v0.1 already carries the drone's height and 3-D
+   relative positions (F12); v0.2 appends the height band, floor and ceiling in m, at indices 71–72, so the policy knows
+   the vertical limits as it knows the walls. Pilots use v0.1. `[gates.phase5_tier1_training].observation` is set.
 2. **5.2 passes on 2 of 3 seeds** (decided by the lead): self-play is volatile (F4), and the record words the claim by
    the count.
 3. **C0 runs** (decided by the lead; about 3 h of the 5090 with NUS's code): without it a 5.1 FAIL cannot be told
    apart from a rule that is too strict.
 4. **NUS message** (D-P5-6): the draft is in `~/ma_skills-self-play/_notes/nus_message_phase5_draft.md` (private, 5090
-   only); the owner sends it.
+   only); the owner approved it 18 Nov ~18:20 and sends it.
 
 ## 13. Not in Phase 5
 

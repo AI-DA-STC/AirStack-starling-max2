@@ -77,7 +77,9 @@ def load_deploy(path: Path | str = LOCAL_DEPLOY) -> NusDeploy:
     not match the seconds per step (the policy's action is a velocity held for one game step)."""
     path = Path(path)
     if not path.exists():
-        raise FileNotFoundError(f"{path} not found: run scripts/nus_make_local_deploy.py (it is git-ignored)")
+        raise FileNotFoundError(f"{path} not found: make it first with scripts/nus_make_local_deploy.py, before "
+                                "scripts/nus_convert_checkpoint.py (it only records the weights-folder names, so it needs no "
+                                "converted weights); the file is git-ignored")
     raw = tomllib.loads(path.read_text())
     missing = [k for k in DEPLOY_KEYS if k not in raw]
     if missing:

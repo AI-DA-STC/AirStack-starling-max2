@@ -86,7 +86,8 @@ its reason:
 
 Without B2, 10 more NUS tests skip ("fixtures or local files absent"). These tests also run the code blocks of
 [PLUG_IN](PLUG_IN.md), so its examples work on your install. On a shared or busy machine keep `OMP_NUM_THREADS=4`:
-PyTorch otherwise takes every core.
+PyTorch otherwise takes every core. Under heavy load one timing test in `tests/test_record_steps.py` can fail;
+it passes when run on its own (`$P -m pytest -q tests/test_record_steps.py`: 71 passed in our re-test, 19 Nov).
 
 **B4 · `none` · Score a strategy** (10 s).
 ```bash

@@ -18,7 +18,8 @@ variants = 24               # 5.1b and 5.1c together
 # STANDARDS section 8 and plan 4.3: one replica game at every selection evaluation (against the slot the learner did worst against)
 # and two per archived entry (the first Strike win and the first hold among the first games_searched games against its strongest
 # pool member).
-format = "mp4"
+format = "deferred"          # the trainer saves each video's data; scripts/nus_render_pending.py renders mp4s off the training
+                            # wall clock (lead, 18 Nov 2026)
 games_searched = 16
 
 [info_5_1_e]

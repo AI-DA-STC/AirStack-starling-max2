@@ -181,3 +181,22 @@ def test_memory_fraction_gets_a_device_index(trainer, monkeypatch):
     trainer.apply_memory_fraction(MEMORY_FRACTION, torch.device("cuda"))
     trainer.apply_memory_fraction(MEMORY_FRACTION, torch.device("cuda", 1))
     assert calls == [(MEMORY_FRACTION, 0), (MEMORY_FRACTION, 1)]
+
+
+def test_deferred_videos_are_saved_as_data_and_rendered_by_a_separate_step(tmp_path, trainer):
+    """Lead, 18 Nov 2026: video rendering is taken off the training wall clock. The trainer saves each video's replay data
+    (``videos/pending/*.npz``); scripts/nus_render_pending.py renders them (CPU only) and moves the data to ``videos/rendered/``."""
+    out = tmp_path / "runs" / "phase5" / "s51" / "deferred"
+    assert trainer.main(_args(tmp_path, "--variant", "nus", "--out", str(out), "--video-format", "deferred")) == 0
+    pending = sorted((out / "videos" / "pending").glob("*.npz"))
+    state = json.loads((out / "self_play_state.json").read_text())
+    selections = sum(len(json.loads((Path(e["path"]) / "metadata.json").read_text())["evaluations"]) for e in state["archive"])
+    assert len(pending) == selections + 2 * len(state["archive"]) and not list((out / "videos").glob("*.mp4"))
+    spec = importlib.util.spec_from_file_location("nus_render_pending", ROOT / "scripts" / "nus_render_pending.py")
+    render = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(render)
+    assert render.main(["--run-dir", str(out), "--format", "gif"]) == 0
+    gifs = sorted((out / "videos").glob("*.gif"))
+    assert [g.stem for g in gifs] == [p.stem for p in pending]
+    assert not list((out / "videos" / "pending").glob("*.npz")) and len(list((out / "videos" / "rendered").glob("*.npz"))) == len(pending)
+    assert render.main(["--run-dir", str(out), "--format", "gif"]) == 0          # nothing left to do: no error

@@ -22,7 +22,9 @@ What it does, in order:
 4. **Training** (``nus/selfplay.py``): resumable from ``<out>`` (run the same command again).
 5. **Videos** (STANDARDS section 8, plan 4.3): one replica game at every selection evaluation (against the slot the learner did worst
    against) and two per archived entry (the first Strike win and the first hold among the first ``games_searched`` games against its
-   strongest pool member), top-down, ``viz/replay.render_replay``, into ``<out>/videos/``.
+   strongest pool member), top-down, ``viz/replay.render_replay``, into ``<out>/videos/``. With ``deferred`` (the config's default since
+   18 Nov 2026) the trainer only saves each game's data in ``<out>/videos/pending/`` and ``scripts/nus_render_pending.py`` renders them
+   in another, CPU-only process, so rendering does not count against the cap.
 6. **Record draft** ``<out>/record_draft.md`` (training simulator, the replica; commit, local files by sha256, seeds, machine, games at
    once, game-steps per second, the archive, the videos).
 
@@ -162,6 +164,29 @@ def to_recording(frames, first: int, env, team: str, game_index: int, opponent: 
                      "replica of the partner's 2-D game", names[0], names[1], 0, game_index, closest)
 
 
+def save_recording(recording, path: Path) -> Path:
+    """A ``viz.replay.Recording`` as an npz (its fields by name), for a renderer in another process."""
+    import dataclasses
+
+    import numpy as np
+    path.parent.mkdir(parents=True, exist_ok=True)
+    np.savez_compressed(path, **{f.name: np.asarray(getattr(recording, f.name)) for f in dataclasses.fields(recording)})
+    return path
+
+
+def load_recording(path: Path):
+    import dataclasses
+
+    import numpy as np
+    from svg_training.viz.replay import Recording
+    data = np.load(path)
+    values = {}
+    for f in dataclasses.fields(Recording):
+        value = data[f.name]
+        values[f.name] = value if value.ndim else value.item()
+    return Recording(**values)
+
+
 class Videos:
     """The two video hooks of ``SelfPlay`` (STANDARDS section 8)."""
 
@@ -172,6 +197,9 @@ class Videos:
         from make_replay import FORMATS
         from svg_training.viz.replay import render_replay
         if self.kind == "none":
+            return
+        if self.kind == "deferred":   # rendering off the training wall clock: scripts/nus_render_pending.py turns the data into mp4s
+            self.paths.append(str(save_recording(recording, self.out / "pending" / f"{name}.npz")))
             return
         path = render_replay(recording, self.out / f"{name}.{self.kind}", playback_label="replica", **FORMATS[self.kind])
         self.paths.append(str(path))
@@ -301,7 +329,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--probe-updates", type=int, default=int(settings["caps"]["probe_updates"]))
     parser.add_argument("--accept-long", action="store_true")
     parser.add_argument("--gpu-hours-log", type=Path, help="default runs/nus_port/phase5/<cap group>/gpu_hours.log")
-    parser.add_argument("--video-format", choices=("mp4", "gif", "none"), default=str(settings["videos"]["format"]))
+    parser.add_argument("--video-format", choices=("mp4", "gif", "deferred", "none"), default=str(settings["videos"]["format"]),
+                        help="deferred: save each video's data for scripts/nus_render_pending.py (no rendering in the training loop)")
     parser.add_argument("--rules", type=Path, default=LOCAL_RULES)
     parser.add_argument("--deploy", type=Path, default=DEPLOY_REF)
     parser.add_argument("--method", type=Path, default=LOCAL_METHOD)

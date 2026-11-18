@@ -1,0 +1,24 @@
+{
+  "tag": "train_hangar_3v3",
+  "start_mode": "random",
+  "episodes": 100,
+  "steps_per_episode": 200,
+  "seed": 2027,
+  "partner_commit": "2d2b904204289b1a8eb88e9d819f3b00725c82bb",
+  "modes": [
+    "full_game",
+    "guard_outward",
+    "guard_outward_chased",
+    "oversized",
+    "random",
+    "strike_into_guard",
+    "strike_to_zone"
+  ],
+  "steps_with_push": 9963,
+  "steps_with_team_cap": 19257,
+  "steps_with_total_cap": 2011,
+  "steps_with_boundary": 7648,
+  "steps_with_flag_flip": 70,
+  "episodes_with_flag_flip": 70,
+  "train_fields": true
+}

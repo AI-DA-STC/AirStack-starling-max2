@@ -31,6 +31,10 @@ Limits (read these before trusting a pass):
 - Yes/no and text options (``teammates_pass``, ``push_rule``) are not searched for: each has two or three possible
   values that the code itself names.
 - With no local file, or nothing distinctive in it, the scans skip and say why: a skip is not a pass.
+
+The PROVISIONAL bundle (owner decision 6, 18 Nov 2026; ``nus_provisional/``, STANDARDS section 2) is the one tracked folder allowed to
+hold NUS's values and converted checkpoint files (``.msgpack``). The value scans skip that folder and the path rule allows checkpoint
+files there only; every other rule (no NUS source path, file or pasted block) still covers it.
 """
 import html
 import math
@@ -172,6 +176,7 @@ def _deck_text(path: pathlib.Path) -> str:
 
 
 CODE_SUFFIXES = (".py", ".toml", ".sh")
+PROVISIONAL = "nus_provisional/"     # relative to svg_training/: the only tracked folder that may hold NUS values and checkpoints
 
 
 def _tracked_files() -> list[str]:
@@ -182,7 +187,7 @@ def _tracked_files() -> list[str]:
 
 def _tracked_texts() -> dict[str, str]:
     """Tracked code, configs and scripts (owner, 18 Nov 2026: documents may state NUS's values; code must read them locally)."""
-    return {f: _text(ROOT / f) for f in _tracked_files() if f.endswith(CODE_SUFFIXES)}
+    return {f: _text(ROOT / f) for f in _tracked_files() if f.endswith(CODE_SUFFIXES) and not f.startswith(PROVISIONAL)}
 
 
 def _sources() -> dict[str, str]:
@@ -275,10 +280,13 @@ def test_deck_text_is_read():
 
 
 def test_value_scan_covers_code_not_documents():
-    """Owner, 18 Nov 2026 (STANDARDS section 2): documents may state NUS's values; code and configs still may not hold them."""
+    """Owner, 18 Nov 2026 (STANDARDS section 2): documents may state NUS's values; code and configs still may not hold them.
+    Decision 6 (same day): the PROVISIONAL bundle is the one exception; configs/ itself is still scanned."""
     names = set(_sources())
     assert any(n.endswith(".py") for n in names) and any(n.endswith(".toml") for n in names)
     assert not any(n.endswith(".md") for n in names)
+    assert not any(n.startswith(PROVISIONAL) for n in names)
+    assert "configs/s2_game.toml" in names and "configs/nus_rules.template.toml" in names
 
 
 # --- the scans ---
@@ -332,6 +340,20 @@ def _shared_long_lines(text: str, nus_lines: set[str]) -> set[str]:
     return {s for s in (line.strip() for line in text.splitlines()) if len(s) >= LONG_LINE and s in nus_lines}
 
 
+def _path_hits(files: list[str]) -> list[str]:
+    """Tracked paths that look like NUS's code or a checkpoint; a checkpoint file (.msgpack) is allowed in the PROVISIONAL bundle only."""
+    return [f for f in files if NUS_SOURCE_PATHS.search(f) and not (f.startswith(PROVISIONAL) and f.endswith(".msgpack")
+                                                                    and not re.search(r"(^|/)(ma_skills|skill_learning_mpe|third_party)/", f))]
+
+
+def test_provisional_exception_is_narrow():
+    assert _path_hits(["nus_provisional/nus_port/weights/ref/actor.msgpack"]) == []
+    assert _path_hits(["runs/w/actor.msgpack"]) and _path_hits(["configs/actor.msgpack"])
+    assert _path_hits(["docs/nus_provisional/x/actor.msgpack"])               # the prefix counts only at the top of svg_training
+    assert _path_hits(["nus_provisional/ma_skills/jax/policy.py"]) and _path_hits(["nus_provisional/third_party/a/actor.msgpack"])
+    assert _path_hits(["nus_provisional/simple_area_denial.py"])
+
+
 def test_source_path_rule_on_made_up_names():
     assert NUS_SOURCE_PATHS.search("svg_training/third_party/x/env.py")
     assert NUS_SOURCE_PATHS.search("svg_training/ma_skills/jax/policy.py")
@@ -342,9 +364,10 @@ def test_source_path_rule_on_made_up_names():
 
 
 def test_no_nus_source_path_is_tracked():
-    """Always runs: no tracked path looks like NUS's package, its vendored environment or a checkpoint file."""
-    hits = [f for f in _tracked_files() if NUS_SOURCE_PATHS.search(f)]
-    assert not hits, f"tracked paths that look like NUS's code or checkpoints: {hits}"
+    """Always runs: no tracked path looks like NUS's package, its vendored environment or a checkpoint file (checkpoints: the
+    PROVISIONAL bundle only)."""
+    hits = _path_hits(_tracked_files())
+    assert not hits, f"tracked paths that look like NUS's code or checkpoints (allowed in {PROVISIONAL} only): {hits}"
 
 
 def test_no_nus_source_file_or_block_is_tracked():

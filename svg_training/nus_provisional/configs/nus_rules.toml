@@ -1,0 +1,23 @@
+# Local partner-game rules. Git-ignored. Written by scripts/nus_make_local_rules.py; never copy into a tracked file.
+guard_count = 3
+strike_count = 3
+area_radius = 4.0
+agent_size = 1.0
+spawn_distance = 20.0
+spawn_cluster_radius = 3.0
+random_start = true
+start_guard_disc_fraction = 0.5
+start_static_guard_ring_fraction = 0.45
+start_static_strike_cluster_fraction = 0.5
+guard_max_speed = 0.5
+strike_max_speed = 0.75
+guard_safety_distance = 1.0
+strike_safety_distance = 0.5
+push_gain = 1.0
+push_smoothing_margin = 0.01
+total_displacement_cap = 1.0
+guard_boundary_radius = 20.0
+boundary_margin = 0.1
+episode_steps = 200
+norm_floor = 1e-08
+obs_direction_floor = 1e-06

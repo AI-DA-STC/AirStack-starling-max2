@@ -1,0 +1,7 @@
+{
+  "team": "guard",
+  "update": 3000,
+  "source_format": "runner",
+  "source_sha256": "cd16bca68e9abbfe9440d2d4bc4500fbbcb3c86cc8995c5bce1f511918a3203e",
+  "source_path": "/home/jeremychia/ma_skills-self-play/area-denial-continuous-space-self-play/outputs/hangar/2026-11-17_fixed_apf_3v3_defender/checkpoints/final"
+}

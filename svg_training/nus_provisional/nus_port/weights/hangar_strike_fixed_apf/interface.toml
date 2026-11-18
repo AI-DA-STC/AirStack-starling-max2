@@ -1,0 +1,21 @@
+# interface.toml for the partner policy. Holds partner and owner values: git-ignored, under runs/ only.
+layout_id = "nus_area_denial_v1"
+serves_interface_version = "0.1"
+team = "strike"
+guard_count = 3
+strike_count = 3
+opponents_seen = 3
+observation_width = 56
+field_order = "one block per drone: the policy's own drone, then its team-mates in cyclic order starting after it, then the other team in index order (Guard drones first in each game); a block is the unit direction and the length of the drone's position, of its position at the previous sample and of its last displacement, all relative to the zone centre in units; then the zone radius in units and the reached flag"
+latch_rule = "the reached flag is 0 at a game's start; at a sample it becomes 1 once any Strike drone is inside the zone, and stays 1 until the next game starts"
+metres_per_unit = 0.4
+seconds_per_step = 0.6
+hold_ticks = 12
+previous_step_sampling = "the previous positions are the positions at the previous sample, one hold earlier; at a game's start they equal the current positions"
+action_form = "deterministic mean of the policy; squashed with tanh, scaled by the team's speed in units per step and projected onto the speed disk; the command is that displacement over the team's speed in units per step, held for the hold length"
+vertical_speed = 0
+yaw_rate = 0
+prior_weight = 0
+compute_dtype = "bfloat16"
+source_commit = "2d2b904204289b1a8eb88e9d819f3b00725c82bb"
+checkpoint_sha256 = "0eeb938f0dea13f7b95681535cfb1a3ae82a9a6633c8fb83496cebd73556da0c"

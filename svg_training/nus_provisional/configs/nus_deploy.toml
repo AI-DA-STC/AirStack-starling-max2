@@ -1,0 +1,14 @@
+# Local deploy values of the partner policy. Git-ignored. Written by scripts/nus_make_local_deploy.py; never copy into a tracked file.
+metres_per_unit = 0.4
+seconds_per_step = 0.6
+hold_ticks = 12
+flying_height_m = 1.2
+spawn_distance = 8.0
+guard_boundary_radius = 8.0
+layernorm_epsilon = 1e-06
+disk_floor = 1e-08
+apf_attraction_gain = 1.0
+apf_repulsion_gain = 24.0
+apf_floor = 1e-08
+guard_weights = "hangar_guard_fixed_apf"
+strike_weights = "hangar_strike_fixed_apf"

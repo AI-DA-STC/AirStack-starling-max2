@@ -1,0 +1,50 @@
+{
+  "confidence": 0.95,
+  "games": 1000,
+  "gate": "PASS",
+  "starts_sha256": "386cccde0aa270e4621e444a68a549f2b61b6dafba8a348288a9a9e76e4cf448",
+  "teams": {
+    "guard": {
+      "checkpoint_sha256": "cd16bca68e9abbfe9440d2d4bc4500fbbcb3c86cc8995c5bce1f511918a3203e",
+      "confidence": 0.95,
+      "converted_interval": [
+        0.03466249276326499,
+        0.06081220394161906
+      ],
+      "converted_rate": 0.046,
+      "converted_reached": 46,
+      "converted_within_jax_interval": true,
+      "games": 1000,
+      "jax_interval": [
+        0.036393301020807914,
+        0.06306608865013393
+      ],
+      "jax_rate": 0.048,
+      "jax_reached": 48,
+      "jax_within_converted_interval": true,
+      "max_final_position_gap_units": 9.686870574951172,
+      "paired_games_with_different_outcome": 6
+    },
+    "strike": {
+      "checkpoint_sha256": "938b6e6c1f126a0f4422c12f48f2a281bff50e5f33197db50a87135c85cd0a25",
+      "confidence": 0.95,
+      "converted_interval": [
+        0.996173241514445,
+        1.0
+      ],
+      "converted_rate": 1.0,
+      "converted_reached": 1000,
+      "converted_within_jax_interval": true,
+      "games": 1000,
+      "jax_interval": [
+        0.996173241514445,
+        1.0
+      ],
+      "jax_rate": 1.0,
+      "jax_reached": 1000,
+      "jax_within_converted_interval": true,
+      "max_final_position_gap_units": 11.008879661560059,
+      "paired_games_with_different_outcome": 0
+    }
+  }
+}

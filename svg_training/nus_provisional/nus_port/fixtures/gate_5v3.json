@@ -1,0 +1,23 @@
+{
+  "tag": "gate_5v3",
+  "start_mode": "random",
+  "episodes": 100,
+  "steps_per_episode": 200,
+  "seed": 2027,
+  "partner_commit": "2d2b904204289b1a8eb88e9d819f3b00725c82bb",
+  "modes": [
+    "full_game",
+    "guard_outward",
+    "guard_outward_chased",
+    "oversized",
+    "random",
+    "strike_into_guard",
+    "strike_to_zone"
+  ],
+  "steps_with_push": 9140,
+  "steps_with_team_cap": 19573,
+  "steps_with_total_cap": 1956,
+  "steps_with_boundary": 6534,
+  "steps_with_flag_flip": 31,
+  "episodes_with_flag_flip": 31
+}

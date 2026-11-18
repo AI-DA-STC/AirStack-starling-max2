@@ -1,0 +1,172 @@
+{
+  "environment": {
+    "num_defenders": 3,
+    "num_attackers": 3,
+    "num_obstacles": 0,
+    "action_type": "continuous",
+    "reward_mode": "0s",
+    "start_mode": "random",
+    "max_episode_steps": 200,
+    "name": "area_denial_3v3",
+    "runner": {
+      "_target_": "ma_skills.runner.fixed_opponent_runner.FixedOpponentRunner"
+    },
+    "env": {
+      "env_id": "simple_areadenial_3v3_0obs_continuous_0s_random_v0",
+      "max_episode_steps": 200,
+      "gif_fps": 12,
+      "gif_size": 640,
+      "gif_max_frames": 240,
+      "physics": {
+        "area_radius": 4.0,
+        "defender_max_speed": 0.5,
+        "attacker_max_speed": 0.75,
+        "defender_safety_distance": 1.0,
+        "attacker_safety_distance": 0.5,
+        "repulsion_k": 1.0,
+        "repulsion_margin": 0.01,
+        "max_total_displacement": 1.0,
+        "defender_boundary": 8.0,
+        "boundary_margin": 0.1,
+        "max_steps": 200,
+        "spawn_distance": 8.0
+      },
+      "global_state_fields": [
+        "p_pos",
+        "done",
+        "step",
+        "area_pos",
+        "prev_p_pos",
+        "agent_spawn_center",
+        "adversary_spawn_center",
+        "breach"
+      ]
+    }
+  },
+  "algorithm_name": "mappo_fixed_apf",
+  "env_name": "area_denial_3v3",
+  "experiment_name": "area-denial",
+  "user_name": "marmotmapf",
+  "name": "2026.11.17-22.33.00-mappo_fixed_apf-area_denial_3v3",
+  "notes": null,
+  "wandb": {
+    "project": "mappo_fixed_apf",
+    "entity": "marmotmapf",
+    "group": "mappo_fixed_apf-area_denial_3v3",
+    "name": "2026.11.17-22.33.00-mappo_fixed_apf-area_denial_3v3",
+    "job_type": "fixed-opponent-training",
+    "notes": null
+  },
+  "use_wandb": false,
+  "save_eval_gif": true,
+  "log_eval_gif_to_wandb": false,
+  "root_log_level": "WARNING",
+  "runner_log_level": "INFO",
+  "log_interval": 1,
+  "checkpoint_interval_updates": 100,
+  "eval_interval_updates": 100,
+  "deployment_eval_episodes": 20,
+  "eval_gif_episodes": 2,
+  "seed": 7,
+  "checkpoint_path": null,
+  "init_actor_path": null,
+  "apex": {
+    "enabled": false,
+    "prior_source": "specialists",
+    "specialist_paths": [],
+    "schedule": {
+      "kind": "cosine",
+      "start": 1.0,
+      "decay_updates": 3000,
+      "exponential_rate": null,
+      "snap_threshold": 0.01
+    }
+  },
+  "opponent_checkpoint_path": null,
+  "opponent_pool_paths": [],
+  "include_apf_in_pool": false,
+  "scripted_opponent": "apf",
+  "opponent_action_mode": null,
+  "selection_action_mode": "deterministic",
+  "train_team": "attacker",
+  "best_checkpoint": {
+    "enabled": false,
+    "metric": "geo",
+    "eval_episodes": 300,
+    "check_interval_updates": 2000
+  },
+  "plateau_restart": {
+    "enabled": false,
+    "patience": 7,
+    "lr_fraction": 0.1
+  },
+  "generation_gate": {
+    "enabled": false,
+    "target_worst_slot_win_rate": 0.95,
+    "eval_episodes": 300,
+    "check_interval_updates": 2000,
+    "confirm": true
+  },
+  "jax": {
+    "platform": "cuda",
+    "visible_devices": null,
+    "compute_dtype": "bfloat16",
+    "preallocate": false,
+    "memory_fraction": 0.6,
+    "benchmark_warmup_episodes": 2,
+    "benchmark_episodes": 5,
+    "benchmark_output": "fixed_apf_benchmark.json"
+  },
+  "episode_length": 200,
+  "total_environment_steps": 76800000,
+  "obs_dim": 56,
+  "global_state_dim": 54,
+  "action_dim": 2,
+  "trainer": {
+    "rollout_batch_size": 128,
+    "initial_diagnostic_samples": 4096,
+    "lr_schedule": {
+      "kind": "cosine",
+      "final_fraction": 0.01,
+      "decay_updates": null
+    },
+    "rewards": {
+      "defender": {
+        "attacker_distance_scale": 0.2,
+        "breach_penalty": 1.0,
+        "clean_timeout_reward": 0.0,
+        "first_breach_penalty": 2.0
+      }
+    },
+    "per_slot_advantage_norm": false,
+    "policy": {
+      "hidden_dim": 512,
+      "n_hidden_layers": 2,
+      "activation_type": "Mish",
+      "use_layernorm": true,
+      "initial_log_std": -0.5,
+      "zero_init_output": false
+    },
+    "defender": {
+      "actor_lr": 0.0001,
+      "critic_lr": 0.0005,
+      "task_advantage_weight": 1.0,
+      "task_gamma": 0.99,
+      "task_gae_lambda": 0.95
+    },
+    "attacker": {
+      "actor_lr": 0.0001,
+      "critic_lr": 0.0005,
+      "task_advantage_weight": 1.0,
+      "task_gamma": 0.99,
+      "task_gae_lambda": 0.95
+    },
+    "entropy_coef": 0.03,
+    "critic_loss_coef": 0.5,
+    "ppo_clip": 0.1,
+    "ppo_epochs": 4,
+    "ppo_num_mini_batch": 4,
+    "max_grad_norm": 0.5,
+    "max_pool_slots": 16
+  }
+}

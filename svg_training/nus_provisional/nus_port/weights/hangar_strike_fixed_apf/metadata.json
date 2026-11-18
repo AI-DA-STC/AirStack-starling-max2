@@ -1,0 +1,7 @@
+{
+  "team": "strike",
+  "update": 3000,
+  "source_format": "runner",
+  "source_sha256": "938b6e6c1f126a0f4422c12f48f2a281bff50e5f33197db50a87135c85cd0a25",
+  "source_path": "/home/jeremychia/ma_skills-self-play/area-denial-continuous-space-self-play/outputs/hangar/2026-11-17_fixed_apf_3v3_attacker/checkpoints/final"
+}

@@ -1,0 +1,2 @@
+# Local hangar value (owner's decision, PORT_PLAN "Hangar geometry"). Git-ignored; never copy into a tracked file.
+arena_side_m = 7.5

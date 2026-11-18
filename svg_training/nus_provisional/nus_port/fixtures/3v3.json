@@ -1,0 +1,23 @@
+{
+  "tag": "3v3",
+  "start_mode": "random",
+  "episodes": 21,
+  "steps_per_episode": 200,
+  "seed": 7,
+  "partner_commit": "2d2b904204289b1a8eb88e9d819f3b00725c82bb",
+  "modes": [
+    "full_game",
+    "guard_outward",
+    "guard_outward_chased",
+    "oversized",
+    "random",
+    "strike_into_guard",
+    "strike_to_zone"
+  ],
+  "steps_with_push": 1930,
+  "steps_with_team_cap": 4079,
+  "steps_with_total_cap": 225,
+  "steps_with_boundary": 1217,
+  "steps_with_flag_flip": 7,
+  "episodes_with_flag_flip": 7
+}

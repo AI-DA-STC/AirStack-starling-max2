@@ -162,3 +162,19 @@ def test_the_shared_scene_layer_places_props_and_moves_the_site():
         s2b.place_scene(_FakeIsaac(), "construction_site", 0, (0.0, 0.0, 0.0), 2.0, (0.0, 0.0), 0.5, 0.25, 1.8, site={"clear_radius_m": 2.0},
                         backdrop={"spot_m": [0.0, 0.0, 0.0]})
     assert s2b.site_fits(1.0, 2.0) and not s2b.site_fits(2.0, 2.0)
+
+
+def test_mp4_falls_back_to_the_bundled_ffmpeg_when_none_is_on_path(tmp_path, monkeypatch):
+    """A plain machine without a system ffmpeg must still write MP4s (acceptance test, 19 Nov 2026): the replay uses
+    imageio-ffmpeg's bundled binary when PATH has no ffmpeg."""
+    import shutil
+
+    import matplotlib
+
+    from svg_training.viz import replay
+
+    monkeypatch.setattr(shutil, "which", lambda name, *a, **k: None if name == "ffmpeg" else "/usr/bin/" + name)
+    monkeypatch.setitem(matplotlib.rcParams, "animation.ffmpeg_path", "ffmpeg")
+    replay._use_bundled_ffmpeg_if_missing()
+    import imageio_ffmpeg
+    assert matplotlib.rcParams["animation.ffmpeg_path"] == imageio_ffmpeg.get_ffmpeg_exe()

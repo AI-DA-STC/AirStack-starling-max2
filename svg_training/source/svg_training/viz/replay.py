@@ -233,6 +233,23 @@ class Scene:
         return self.trails + self.dots + self.crosses + [self.clock, self.banner]
 
 
+def _use_bundled_ffmpeg_if_missing() -> None:
+    """matplotlib's FFMpegWriter runs ``ffmpeg`` from PATH. A plain machine often has none, but the ``imageio-ffmpeg``
+    dependency ships a binary: point matplotlib at it when no ``ffmpeg`` is on PATH (an ffmpeg already on PATH, or an
+    ``animation.ffmpeg_path`` set by the user, wins)."""
+    import shutil
+
+    import matplotlib
+
+    if matplotlib.rcParams["animation.ffmpeg_path"] != "ffmpeg" or shutil.which("ffmpeg"):
+        return
+    try:
+        import imageio_ffmpeg
+    except ImportError:
+        return
+    matplotlib.rcParams["animation.ffmpeg_path"] = imageio_ffmpeg.get_ffmpeg_exe()
+
+
 def render_replay(rec: Recording, path: str | Path, speed: int = 1, fps: int = 20, trail_s: float = 1.5,
                   size_in: tuple[float, float] = (10.667, 8.0), dpi: int = 120, hold_s: float = 2.5,
                   playback_label: str = "") -> Path:
@@ -259,6 +276,7 @@ def render_replay(rec: Recording, path: str | Path, speed: int = 1, fps: int = 2
     if path.suffix == ".gif":
         anim.save(path, writer=PillowWriter(fps=fps))
     else:
+        _use_bundled_ffmpeg_if_missing()
         anim.save(path, writer=FFMpegWriter(fps=fps, codec="libx264", bitrate=3000,
                                             extra_args=["-pix_fmt", "yuv420p"]))
     sc.plt.close(sc.fig)

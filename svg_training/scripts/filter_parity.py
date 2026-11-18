@@ -421,7 +421,8 @@ def main(argv=None) -> int:
         return 1
     overall = write_record(out, a, gates_path, gates, scenes, stats, ref, port, ev, cross, rows, date)
     text = ledger.read_text()
-    n = 1 + len(re.findall(r"^\| T\d+ \|", text, flags=re.M))
+    # next number after the highest T row (numbers are never reused, so a gap such as an unused T34 must not shift it)
+    n = 1 + max((int(t) for t in re.findall(r"^\| T(\d+) \|", text, flags=re.M)), default=0)
     if not text.endswith("\n"):
         text += "\n"
     ledger.write_text(text + f"| T{n} | {date} | training simulator (safety-filter port vs CMU cbf_filter.py, CPU) | "

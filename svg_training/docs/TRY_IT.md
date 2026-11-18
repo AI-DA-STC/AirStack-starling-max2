@@ -94,8 +94,8 @@ $P scripts/score.py --guard guard_field --strike strike_straight,strike_flank --
     --games-per-band 100 --no-local --out runs/try_score
 ```
 Must see: a note that no CUDA GPU is visible, so it runs on the CPU (`--device auto`, the default); then
-`runs/try_score/scores.md`, one hold rate per arena size band (we saw 0.8 against `strike_straight` and 0.96 against
-`strike_flank`). Your own strategy goes in the same way: [PLUG_IN](PLUG_IN.md#plug-a-strategy-in). Keep
+`runs/try_score/scores.md`, one hold rate per arena size band (three bands; in the large band we saw 0.8 against `strike_straight` and 0.96 against
+`strike_flank`; the other two bands read higher). Your own strategy goes in the same way: [PLUG_IN](PLUG_IN.md#plug-a-strategy-in). Keep
 `--presets pure` on a CPU: the `starling` preset (our drone model and safety filter) is many times slower.
 
 **B5 · `none` · Train for a few seconds** (7 s; a pipe test, never a result).
@@ -150,7 +150,8 @@ Must see: `"games_differ_from_play_arm": 0` for both teams, `"reached": 46` (Gua
 $P scripts/nus_phase4.py --row 1 --pairs G19:S20,P3G:ApfStrike --games 50 --device cpu --out runs/p4_try
 ```
 Must see: `runs/p4_try/` with `scores.json`, `scores.md`, `per_game.npz` and top-down clips in `videos/`. A smoke
-run, not a result. `--out` must lie under `runs/`.
+run, not a result. `--out` must lie under `runs/`. A row folder is never overwritten: delete `runs/p4_try/` to run it
+again. The clips need no system `ffmpeg` (the `imageio-ffmpeg` package's own copy is used); `--no-videos` skips them.
 
 **D3 · `none` · Row 1 in full: 12 pairs × 1,000 games** (97 s on our CPU).
 ```bash

@@ -1,11 +1,38 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
 [project]
-# Run-time dependencies beyond the conda environment's own (PyTorch, skrl, gymnasium). msgpack reads the partner's checkpoint files
-# (source/svg_training/nus/actor.py); owner approved it on 17 November 2026 (NUS port, Phase 3 plan). The pipeline is run from source
-# (PYTHONPATH=source), not installed; this table records the dependency.
+# The packages the pipeline imports (tests/test_dependencies.py checks the list against every import). On a plain CPU machine:
+#   python -m venv .venv && .venv/bin/pip install --extra-index-url https://download.pytorch.org/whl/cpu -e ".[test]"
+# (the extra index gives the CPU build of torch; without it pip fetches the larger CUDA build). docs panel C4, owner 18 Nov 2026.
+# Not listed, because pip does not provide them here (tests that need them skip): Isaac Sim / Isaac Lab (conda env_isaaclab or the
+# container, GETTING_STARTED), ROS 2 (bag tools), NUS's JAX code (conda nus_jax, scripts/workstation/setup_nus_jax.sh).
+# msgpack reads NUS's checkpoint files (owner approved it 17 Nov 2026, NUS port Phase 3 plan). numpy < 2: env_isaaclab (Isaac Sim 5.1)
+# ships numpy 1.26, the version every record was made with.
 name = "svg_training"
 version = "0"
 requires-python = ">=3.11"
-dependencies = ["msgpack>=1.0"]
+dependencies = [
+    "torch>=2.7",
+    "numpy>=1.26,<2",
+    "scipy",
+    "msgpack>=1.0",
+    "matplotlib",
+    "imageio",
+    "imageio-ffmpeg",
+    "opencv-python-headless",
+    "pyyaml",
+    "skrl>=2.1,<3",
+    "gymnasium>=1.0",
+    "tensorboard",
+]
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[tool.setuptools.packages.find]
+where = ["source"]
 
 [tool.pytest.ini_options]
 pythonpath = ["source"]

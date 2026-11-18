@@ -63,8 +63,9 @@ ACTION_DIM = 2 + 1          # vx, vy, vz (P5-11)
 MAX_GAMES = 2               # game sizes kept at once (training and selection evaluation)
 
 
-def load_tier1(path: Path | str = TIER1_CONFIG) -> dict[str, Any]:
-    return tomllib.loads(Path(path).read_text())
+def load_tier1(path: Path | str | None = None) -> dict[str, Any]:
+    """``configs/nus_phase5_tier1.toml`` (the module-level ``TIER1_CONFIG``, read at call time)."""
+    return tomllib.loads(Path(path or TIER1_CONFIG).read_text())
 
 
 # ------------------------------------------------------------------------------------------------ world
@@ -167,6 +168,7 @@ class NusTier1Env:
         self._games: OrderedDict[int, NusHangarTrainGame] = OrderedDict()
         self._recording: dict[str, Any] | None = None
         self.stats: dict[str, Tensor] = {}
+        self._last: Tier1State | None = None
 
     # ------------------------------------------------------------------ teams
     def team_size(self, team: str) -> int:
@@ -205,7 +207,8 @@ class NusTier1Env:
                       "nonfinite_actions": torch.zeros(n, dtype=torch.long, device=dev),
                       "last_cmd_mps": torch.zeros(n, m, ACTION_DIM, device=dev), "decisions": torch.zeros((), dtype=torch.long, device=dev)}
         state = Tier1Game(game.pos_m.clone(), torch.zeros(n, device=dev), torch.zeros(n, dtype=torch.long, device=dev))
-        return Tier1State(state, game, torch.full((n,), -1, dtype=torch.long, device=dev))
+        self._last = Tier1State(state, game, torch.full((n,), -1, dtype=torch.long, device=dev))
+        return self._last
 
     # ------------------------------------------------------------------ views
     def observe(self, state: Tier1State) -> tuple[Tensor, Tensor]:
@@ -282,6 +285,7 @@ class NusTier1Env:
         if rec is not None:
             rec["first_tick"] = first_tick[rec["index"]]
         nxt = Tier1State(Tier1Game(end_pos.clone(), reached.to(self.dtype), step), game, first_tick)
+        self._last = nxt
         return nxt, StepOut(guard_reward=reward, inside_count=inside, first_reach=first, time_limit=time_limit, reached=reached)
 
     # ------------------------------------------------------------------ recording (videos from the evaluation's own games)
@@ -300,6 +304,16 @@ class NusTier1Env:
         frames = torch.stack(rec["frames"]).reshape(len(rec["frames"]), rec["slots"], rec["keep"], self.num_actors, -1).cpu()
         return {"frames": frames, "first_tick": rec["first_tick"].reshape(rec["slots"], rec["keep"]).cpu()}
 
-    def safety(self, state: Tier1State) -> dict[str, Tensor]:
-        """The game's clamp counters since the last reset (``NusHangarGame.safety``), device tensors."""
-        return state.handle.safety()
+    def counters(self) -> dict[str, Tensor]:
+        """The training-curve counters of the games since the last reset (device tensors; ``nus/tier1_metrics.training_row`` reads them
+        once): live, corrected drone-ticks and correction sum, smoothness sums, same-team 3-D minimum, non-finite actions, the sticky
+        reached flag, and the clamp counters of ``NusHangarGame.safety`` (``live_ticks_clamp``)."""
+        out = {k: v for k, v in self.stats.items() if k not in ("last_cmd_mps", "decisions")}
+        if self._last is None:
+            return out
+        out["reached"] = self._last.game.reached > 0
+        safety = self._last.handle.safety()
+        if safety:
+            out.update({"clamp_ticks": safety["clamp_ticks"], "live_ticks_clamp": safety["live_ticks"],
+                        "nonfinite_state": safety["nonfinite_state"]})
+        return out

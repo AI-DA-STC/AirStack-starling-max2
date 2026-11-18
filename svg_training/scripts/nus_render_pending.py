@@ -22,13 +22,13 @@ sys.path.insert(0, str(ROOT / "source"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 
-def render_pending(run: Path, kind: str) -> list[Path]:
+def render_pending(run: Path, kind: str, label: str = "replica") -> list[Path]:
     from make_replay import FORMATS
     from nus_selfplay_train import load_recording
     from svg_training.viz.replay import render_replay
     done = []
     for data in sorted((run / "videos" / "pending").glob("*.npz")):
-        out = render_replay(load_recording(data), run / "videos" / f"{data.stem}.{kind}", playback_label="replica", **FORMATS[kind])
+        out = render_replay(load_recording(data), run / "videos" / f"{data.stem}.{kind}", playback_label=label, **FORMATS[kind])
         target = run / "videos" / "rendered" / data.name
         target.parent.mkdir(parents=True, exist_ok=True)
         data.replace(target)
@@ -41,11 +41,12 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--run-dir", type=Path, action="append", required=True)
     parser.add_argument("--format", choices=("mp4", "gif"), default="mp4")
+    parser.add_argument("--playback-label", default="replica", help="the clip's playback label (stage 5.2: tier 1)")
     parser.add_argument("--watch", type=float, help="poll interval in seconds; stop when every run has finished and nothing is pending")
     args = parser.parse_args(argv)
     while True:
         for run in args.run_dir:
-            render_pending(run, args.format)
+            render_pending(run, args.format, args.playback_label)
         finished = all((run / "status.json").exists() for run in args.run_dir)
         pending = any(any((run / "videos" / "pending").glob("*.npz")) for run in args.run_dir)
         if args.watch is None or (finished and not pending):

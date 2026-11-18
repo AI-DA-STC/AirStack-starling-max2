@@ -40,3 +40,38 @@ def tier1_world_fixture(tmp_path, monkeypatch, games: int | None = None, episode
     method_path = tmp_path / "local" / "nus_method.toml"
     write_method_toml(method_path, marker_method())
     return types.SimpleNamespace(w=w, world=tier1_world(), method=load_method(method_path), method_path=method_path)
+
+
+# ------------------------------------------------------------------------------------------------ S4: the trainer on the marker world
+TRAIN_EPISODE_STEPS = 3      # partner steps of a trainer test game (tiny: the CPU smoke counts below)
+TRAIN_SEED = 1001
+TINY_TIER1 = """
+[world]
+row = "5"
+clamp_tolerance_m = 0.01
+critic_reached_flag = false
+
+[caps]
+training_gpu_hours = 1.0
+probe_updates = 1
+
+[videos]
+format = "deferred"
+games_searched = 2
+eval_video_slots = 2
+
+[smoke]
+generations = 2
+updates_per_generation = 2
+games_per_update = 4
+selection_games_per_opponent = 2
+eval_games = 4
+"""
+
+
+def tiny_tier1_config(tmp_path, monkeypatch):
+    from svg_training.nus import tier1_env
+    path = tmp_path / "nus_phase5_tier1.toml"
+    path.write_text(TINY_TIER1)
+    monkeypatch.setattr(tier1_env, "TIER1_CONFIG", path)
+    return path

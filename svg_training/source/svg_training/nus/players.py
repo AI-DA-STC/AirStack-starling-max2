@@ -3,7 +3,8 @@ strategies for our game, the parked Guard, and the replica callables of rows 1 a
 
 Names: ``G19`` / ``S20`` (the archive entries of the partner's seed 2 generations 19 and 20, deploy file ``DEPLOY_REF``), ``P3G`` /
 ``P3S`` (the Phase 3 pair, W2's deploy file), ``ApfGuard`` / ``ApfStrike`` (the partner's scripted controllers), ``ParkedGuard`` (Run 0's
-parked Guard); any name of ``opponents.scripted.REGISTRY`` plays in our game only.
+parked Guard); any name of ``opponents.scripted.REGISTRY`` plays in our game only. Stage 5.2 (Phase 5 Task S4): an archive entry of a
+5.2 run folder plays as ``TrainedGuard`` / ``TrainedStrike`` under a name given to :func:`register_trained`.
 
 ``NusPolicy`` reads ``type(self).deploy_path`` (None = the module-level ``DEPLOY_PATH``, resolved at construction), so a binding is a thin
 subclass. The ported controllers sample on the policies' schedule: when a game's tick is a multiple of ``hold_ticks`` (and on the first tick
@@ -11,6 +12,9 @@ after its reset) they read the positions, then hold the command between samples.
 puts Guard 0 at the zone centre before the first step (``parks_guard0``).
 """
 from __future__ import annotations
+
+import json
+from pathlib import Path
 
 import torch
 from torch import Tensor
@@ -136,6 +140,74 @@ class JumpPlayer:
         return torch.where(sample, action, torch.zeros_like(action))
 
 
+class TrainedPlayer:
+    """A stage 5.2 archive entry (``<run>/archive/<gggg>_<team>/actor.pt`` and ``metadata.json``, written by ``nus/selfplay.py``) as a
+    strategy of our game: interface v0.2 (``core.observations.obs_v02`` on the game's v0.1 observation), the deterministic mean, squashed
+    onto the unit ball (vx, vy, vz; yaw rate 0), one decision every ``hold_ticks`` ticks of a game (and on its first tick), held in
+    between: the schedule and arithmetic of ``nus/tier1_env.py``. Network shape from the local method file (``method_path``), LayerNorm
+    epsilon, disk floor and hold from the deploy file (``deploy_path``); both default to the module-level local files."""
+    TEAM = ""
+    parks_guard0 = False
+
+    def __init__(self, entry_dir: Path | str, team: str, cfg: GameCfg, num_games: int, device, seed: int = 0,
+                 method_path: Path | str | None = None, deploy_path: Path | str | None = None):
+        from ..core.observations import OBS_DIM_V02
+        from .mappo import MappoActor
+        from .method_cfg import LOCAL_METHOD, load_method
+        from .tier1_env import ACTION_DIM
+        entry = Path(entry_dir)
+        meta = json.loads((entry / "metadata.json").read_text())
+        if meta["team"] != team or (self.TEAM and self.TEAM != team):
+            raise ValueError(f"{entry} holds a {meta['team']} entry, not {team!r}")
+        self.team, self.cfg, self.num_games, self.device = team, cfg, num_games, torch.device(device)
+        self.method = load_method(method_path or LOCAL_METHOD)
+        self.deploy = load_deploy(deploy_path or strategy_module.DEPLOY_PATH)
+        self.actor = MappoActor(OBS_DIM_V02, self.method, self.deploy.layernorm_epsilon, action_dim=ACTION_DIM)
+        self.actor.load_state_dict(torch.load(entry / "actor.pt", map_location="cpu", weights_only=True))
+        self.actor = self.actor.to(self.device).eval()
+        self.generation, self.entry = int(meta["generation"]), entry
+        self.name = f"{type(self).__name__}(g{self.generation})"
+        self.hold = int(self.deploy.hold_ticks)
+        self.tick = torch.zeros(num_games, dtype=torch.long, device=self.device)
+        self.held: Tensor | None = None
+
+    def reset(self, games: Tensor) -> None:
+        self.tick = torch.where(games, torch.zeros_like(self.tick), self.tick)
+
+    @torch.no_grad()
+    def act(self, obs: Tensor) -> Tensor:
+        """obs [N, T, 71] (v0.1, from the game) -> actions [N, T, 4] in [-1, 1]."""
+        from ..core.observations import obs_v02
+        from .mappo import squash
+        mean, _ = self.actor(obs_v02(obs, self.cfg))
+        move = squash(mean, 1.0, self.deploy.disk_floor)
+        command = torch.cat((move, torch.zeros_like(move[..., :1])), dim=-1) * obs[..., _V.alive:_V.alive + 1]
+        sample = (self.tick % self.hold == 0)[:, None, None]
+        self.held = command if self.held is None else torch.where(sample, command, self.held)
+        self.tick = self.tick + 1
+        return self.held.clone()
+
+
+class TrainedGuard(TrainedPlayer):
+    TEAM = "guard"
+
+
+class TrainedStrike(TrainedPlayer):
+    TEAM = "strike"
+
+
+TRAINED: dict[str, tuple[Path, str, Path | None]] = {}   # name -> (archive entry folder, team, method file), filled by register_trained
+
+
+def register_trained(name: str, entry_dir: Path | str, method_path: Path | str | None = None) -> str:
+    """Make a 5.2 archive entry playable by ``make_player(name, ...)`` with the method file it was trained with (None = the local
+    one); returns its team."""
+    entry = Path(entry_dir)
+    team = json.loads((entry / "metadata.json").read_text())["team"]
+    TRAINED[name] = (entry, team, None if method_path is None else Path(method_path))
+    return team
+
+
 STRATEGIES: dict[str, type] = {"G19": RefGuard, "S20": RefStrike, "P3G": P3Guard, "P3S": P3Strike, "ApfGuard": ApfGuard,
                                "ApfStrike": ApfStrike, "ParkedGuard": ParkedGuard}
 TEAM_OF = {"G19": "guard", "S20": "strike", "P3G": "guard", "P3S": "strike", "ApfGuard": "guard", "ApfStrike": "strike",
@@ -152,6 +224,13 @@ def deploy_path_of(name: str):
 def make_player(name: str, team: str, cfg: GameCfg, num_games: int, device, seed: int = 0, jump_hold_ticks: int = 0):
     """A strategy of our game by name: the ladder's own names first, then ``opponents.scripted`` (``strike_straight`` ...). With
     ``jump_hold_ticks`` the player acts on sample ticks only (jump motion; our own scripted players are refused)."""
+    if name in TRAINED:
+        entry, own, method_path = TRAINED[name]
+        if own != team:
+            raise ValueError(f"{name} plays the {own} team, not {team!r}")
+        if jump_hold_ticks:
+            raise ValueError(f"{name!r} is a stage 5.2 player: it holds its own decisions and plays in hold motion only")
+        return (TrainedGuard if team == "guard" else TrainedStrike)(entry, team, cfg, num_games, device, seed, method_path=method_path)
     if name in STRATEGIES:
         if TEAM_OF[name] != team:
             raise ValueError(f"{name} plays the {TEAM_OF[name]} team, not {team!r}")

@@ -32,7 +32,7 @@ from typing import Any, Callable
 import numpy as np
 import torch
 
-from .mappo import Learner, MappoActor, squash, stack_trees, trunk_forward
+from .mappo import ACTION_DIM, Learner, MappoActor, squash, stack_trees, trunk_forward
 from .method_cfg import NusMethod, team_of_generation
 from .replica_train import NusTrainEnv, TrainState
 from .selection import rollout_batch_size, select_opponents, stage_seed
@@ -102,7 +102,8 @@ class SelfPlay:
                  updates_per_generation: int | None = None, games_per_update: int | None = None,
                  selection_after: tuple[int, ...] | None = None, generations: int | None = None, minibatches: int | None = None,
                  drop_remainder: bool = False, on_selection: Callable[["SelfPlay", dict], None] | None = None,
-                 on_archive: Callable[["SelfPlay", dict], None] | None = None):
+                 on_archive: Callable[["SelfPlay", dict], None] | None = None,
+                 on_update: Callable[["SelfPlay", dict], None] | None = None, record_games: int = 0):
         self.method, self.env, self.seed, self.device = method, env, int(seed), torch.device(device)
         self.run_dir = Path(run_dir)
         self.updates = updates_per_generation or method.updates_per_generation
@@ -119,7 +120,10 @@ class SelfPlay:
         else:
             self.state = {"schema": SCHEMA, "seed": self.seed, "archive": [], "active": None}
         self.minibatches, self.drop_remainder = minibatches, drop_remainder
-        self.on_selection, self.on_archive = on_selection, on_archive
+        self.on_selection, self.on_archive, self.on_update = on_selection, on_archive, on_update
+        # an environment with begin_recording / end_recording (nus/tier1_env.py) keeps the first ``record_games`` games of every slot of
+        # each selection evaluation for videos (``last_recording``); 0 (the default) records nothing
+        self.record_games, self.last_recording = int(record_games), None
         self.learner: Learner | None = None
         self.pool: OpponentPool | None = None
         self.stopped_by_deadline = False
@@ -128,7 +132,8 @@ class SelfPlay:
 
     # ------------------------------------------------------------------ archive
     def load_actor(self, entry: dict[str, Any]) -> MappoActor:
-        actor = MappoActor(self.env.obs_dim, self.method, self.env.deploy.layernorm_epsilon)
+        actor = MappoActor(self.env.obs_dim, self.method, self.env.deploy.layernorm_epsilon,
+                           action_dim=getattr(self.env, "action_dim", ACTION_DIM))
         actor.load_state_dict(torch.load(Path(entry["path"]) / "actor.pt", map_location="cpu", weights_only=True))
         return actor.to(self.device).eval()
 
@@ -209,6 +214,9 @@ class SelfPlay:
         slots = self.pool.slots
         generator = _seeded(self.env.device, self.seed, active["generation"], active["update"] + 1)
         state = self.env.reset(slots * per, generator)
+        recording = self.record_games > 0 and hasattr(self.env, "begin_recording")
+        if recording:
+            self.env.begin_recording(slots, per, self.record_games, state)
         team = active["team"]
         for _ in range(self.env.episode_steps):
             guard_obs, strike_obs = self.env.observe(state)
@@ -216,6 +224,8 @@ class SelfPlay:
             other = self.pool.actions(state, per)
             g_act, s_act = (own, other) if team == "guard" else (other, own)
             state, _ = self.env.step(state, g_act, s_act, self.learner.gamma)
+        if recording:
+            self.last_recording = self.env.end_recording()
         reached = state.game.reached > 0
         wins = (reached if team == "strike" else ~reached).reshape(slots, per).float().mean(dim=1)
         rates = wins.tolist()
@@ -278,7 +288,9 @@ class SelfPlay:
                     self.stopped = "deadline" if over else "cap" if capped else "interrupted" if self.stop_requested else None
                     self._checkpoint()
                     return self.state["archive"]
-                self._update()
+                metrics = self._update()
+                if self.on_update is not None:
+                    self.on_update(self, metrics)
                 done += 1
                 if active["update"] in self.selection_after:
                     self._select()

@@ -127,13 +127,15 @@ def _init_trunk(trunk: Trunk, method: NusMethod, generator: torch.Generator, out
 
 
 class MappoActor(nn.Module):
-    """The learner's actor: observations (..., D) -> (mean (..., 2) float32, clipped log std (..., 2))."""
+    """The learner's actor: observations (..., D) -> (mean (..., K) float32, clipped log std (..., K)); K = ``action_dim`` (2 in the
+    replica, 3 in the stage 5.2 hangar game, plan P5-11)."""
 
-    def __init__(self, obs_dim: int, method: NusMethod, layernorm_epsilon: float, generator: torch.Generator | None = None):
+    def __init__(self, obs_dim: int, method: NusMethod, layernorm_epsilon: float, generator: torch.Generator | None = None,
+                 action_dim: int = ACTION_DIM):
         super().__init__()
-        self.method, self.eps = method, layernorm_epsilon
-        self.trunk = Trunk(obs_dim, ACTION_DIM, method)
-        self.log_std = nn.Parameter(torch.full((ACTION_DIM,), method.initial_log_std))
+        self.method, self.eps, self.action_dim = method, layernorm_epsilon, int(action_dim)
+        self.trunk = Trunk(obs_dim, self.action_dim, method)
+        self.log_std = nn.Parameter(torch.full((self.action_dim,), method.initial_log_std))
         _init_trunk(self.trunk, method, generator or torch.Generator().manual_seed(0),
                     "zero" if method.zero_init_output else "orthogonal")
 
@@ -273,7 +275,8 @@ class Learner:
         self.method, self.team, self.device = method, team, torch.device(device)
         eps, self.floor = env.deploy.layernorm_epsilon, env.deploy.disk_floor
         self.max_speed = env.team_speed(team)
-        self.actor = MappoActor(env.obs_dim, method, eps, stage_generator(seed, team, 0)).to(self.device)
+        self.action_dim = int(getattr(env, "action_dim", ACTION_DIM))   # the replica has none: 2
+        self.actor = MappoActor(env.obs_dim, method, eps, stage_generator(seed, team, 0), action_dim=self.action_dim).to(self.device)
         self.critic = MappoCritic(env.state_dim, method, eps, stage_generator(seed, team, 1)).to(self.device)
         wd = method.weight_decay
         self.actor_opt = torch.optim.AdamW(self.actor.parameters(), lr=team_value(method, team, "actor_lr"), weight_decay=wd)
@@ -366,7 +369,7 @@ class Learner:
             raise ValueError("time x games must divide into the minibatches")
         size = samples // minibatches
         obs, central = obs.reshape(samples, a, -1), central.reshape(samples, -1)
-        latents, old_logp = latents.reshape(samples, a, ACTION_DIM).float(), old_logp.reshape(samples, a)
+        latents, old_logp = latents.reshape(samples, a, latents.shape[-1]).float(), old_logp.reshape(samples, a)
         returns = returns.reshape(samples)
         adv = self.advantage_weight * normalise_advantages(advantages.reshape(samples), m)
         actor_params, critic_params = list(self.actor.parameters()), list(self.critic.parameters())

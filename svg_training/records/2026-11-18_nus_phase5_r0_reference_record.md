@@ -36,3 +36,7 @@ Every Guard entry holds the zone against the APF Strike team in 0.939-0.982 of g
 ## Verdict
 
 **PASS** (gate (a) on every entry; no failed conversion). 5.1-c remains a gate. Not run: the JAX cross-check (`jax_crosscheck = "INFO"`; `scripts/nus_jax_crossplay.py` is not built). No videos: R0 trains nothing (it scores NUS's archived entries). Smoke runs before this one (16 games, not of record) are in `runs/nus_port/phase5/smoke/`.
+
+## Ledger
+
+Row `T29` in `records/LEDGER.md` (run on the home RTX 5090 as workstation row W15 of branch `nus-phase5-method` and renumbered at the merge into `main`).

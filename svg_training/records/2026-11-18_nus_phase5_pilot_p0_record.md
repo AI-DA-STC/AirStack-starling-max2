@@ -130,5 +130,4 @@ GPU-hours.
 
 `runs/nus_port/phase5/p0/` (5090 only, git-ignored): `gates.toml`, `probe.json` (per arm and count, the pilot block, the
 side-by-side block, the profile, `meta` with the sha256 of every file read), `probe.log`, `probe_extend.log`,
-`profile.txt`, `preflight.txt`, `gpu_before.txt`. Ledger row W11 (the next free workstation number after T22–T24 = W8–W10;
-renumbered to T at the merge).
+`profile.txt`, `preflight.txt`, `gpu_before.txt`. Ledger row T25 (run on the home RTX 5090 as workstation row W11 and renumbered at the merge into `main`).

@@ -100,4 +100,4 @@ stood at 1.461 of 6.0 h after P1 (P0 0.397, two P1 smokes 0.054, P1 1.010).
 
 `runs/nus_port/phase5/pilots/2026-11-18_nus_phase5_pilot_p1/` (5090 only, git-ignored): `interface.toml`, `agent.pt`
 (final networks), `agent_best.pt`, `curve.json`, `train_result.json`, TensorBoard event files, `videos/`; the log
-`runs/nus_port/phase5/pilots/2026-11-18_nus_phase5_pilot_p1.log`. Ledger row W12.
+`runs/nus_port/phase5/pilots/2026-11-18_nus_phase5_pilot_p1.log`. Ledger row T26 (run on the home RTX 5090 as workstation row W12 and renumbered at the merge into `main`).

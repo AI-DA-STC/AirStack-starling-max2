@@ -1,6 +1,6 @@
 Simulator: training simulator, tier 1 (the hangar game of Phase 4 row 5: the all-pairs safety filter, the commander copy, the EXPLORATORY fitted drone model). Not a flight result.
 
-# 2026-11-18 filter_cuda_graph record (INFO, no ledger number yet; CUDA equivalence gate: FAIL)
+# 2026-11-18 filter_cuda_graph record (INFO, ledger T31; CUDA equivalence gate: FAIL)
 
 **INFO record. The CUDA equivalence gate FAILS as written (T2 scenes); its hangar-state part passes (1,000 games).** The safety filter gets an opt-in
 fixed-shape path whose sweeps run as CUDA graphs: `[starling_layer] filter_cuda_graph = true` (default false; every existing config,
@@ -123,3 +123,7 @@ items: the recorded-state gate test 0.128 h, recording the states 0.092 h.
 - The gate's reference (the early stop on CUDA) is not reproducible across batch shapes; any decision to accept the ON path rests on
   "equal to the fixed loop, bit for bit", which is a different claim from the one the gate was written for. That call is the lead's.
 - Files on the 5090 only: `runs/nus_port/filter_graph/` (states, probe outputs, `equiv.json`, logs).
+
+## Ledger
+
+Row `T31` in `records/LEDGER.md` (numbered at the merge into `main`; the record had no ledger number on branch `filter-cuda-graph`).

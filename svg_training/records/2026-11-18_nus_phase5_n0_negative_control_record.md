@@ -32,3 +32,7 @@ INFO (5.1-e, margin 0.01 and band [0.2, 0.8] from `configs/nus_phase5_method.tom
 ## Verdict
 
 The rule's verdict on N0 is **FAIL**, with both 5.1-d intervals excluding 0, as `[gates.phase5_negative_control]` requires: **N0 PASS** (the rule catches a learner that learned nothing). Its power against a partly broken learner is not measured; it cannot catch small differences (plan section 4.3). No videos: nothing was trained (the plan says so for N0).
+
+## Ledger
+
+Row `T30` in `records/LEDGER.md` (run on the home RTX 5090 as workstation row W16 and renumbered at the merge into `main`).

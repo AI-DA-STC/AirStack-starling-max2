@@ -67,4 +67,4 @@ of 6.0 GPU-h**.
 
 `runs/nus_port/phase5/pilots/2026-11-18_nus_phase5_pilot_p1b/` (interface.toml, TensorBoard files), the log
 `…_pilot_p1b.log`, `preflight_p1b.txt`, `preflight_p1b_2.txt`, `p1b_gpu_neighbours.txt`, `p1b_report.md` (5090 only,
-git-ignored). Ledger row W15.
+git-ignored). Ledger row T32 (run on the home RTX 5090 as workstation row W15 of branch `nus-phase5` and renumbered at the merge into `main`).

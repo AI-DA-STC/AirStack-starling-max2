@@ -36,4 +36,4 @@ session (run 2); the lead then stopped run 2 as well and asked that no pilot be 
 ## Output
 
 `runs/nus_port/phase5/pilots/2026-11-18_nus_phase5_pilot_p2{,_run2}/` and the logs
-`runs/nus_port/phase5/pilots/2026-11-18_nus_phase5_pilot_p2{,_run2}.log` (5090 only). Ledger rows W13 and W14.
+`runs/nus_port/phase5/pilots/2026-11-18_nus_phase5_pilot_p2{,_run2}.log` (5090 only). Ledger rows T27 and T28 (run on the home RTX 5090 as workstation rows W13 and W14 and renumbered at the merge into `main`).

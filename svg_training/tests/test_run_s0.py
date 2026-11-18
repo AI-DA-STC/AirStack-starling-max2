@@ -1,4 +1,8 @@
-"""run_s0.sh front door: argument checks, config-hash gate and --dry-run output. Never runs a real sweep."""
+"""run_s0.sh front door: argument checks, config-hash gate and --dry-run output. Never runs a real sweep.
+
+Off the lab machines (no ~/miniconda3/envs/env_isaaclab, no ~/IsaacLab: a plain CPU venv, an empty HOME) the script's host defaults
+point at nothing, so every test here hands it a working interpreter through SVG_PY (this test's own Python, as _proc.child_python;
+the script reads SVG_PY first, STANDARDS section 9 rule 3). The one test of the unstubbed host defaults skips there (docs panel C5)."""
 import hashlib
 import os
 import pathlib
@@ -15,8 +19,20 @@ CONFIG = ROOT / "configs" / "s0_benchmark.toml"
 NAME = "2099-01-01_s0_pytest"
 
 
+HOST_PY = pathlib.Path.home() / "miniconda3" / "envs" / "env_isaaclab" / "bin" / "python"
+HOST_ISAACLAB = pathlib.Path.home() / "IsaacLab" / "isaaclab.sh"
+LAB_LAYOUT = HOST_PY.exists() and HOST_ISAACLAB.exists()
+
+
+def script_env() -> dict:
+    """The test's environment with SVG_PY set to a working interpreter when the caller did not set one (the container sets it)."""
+    env = dict(os.environ)
+    env.setdefault("SVG_PY", child_python())
+    return env
+
+
 def run(*args):
-    return subprocess.run(["bash", str(SCRIPT), *args], capture_output=True, text=True, cwd=ROOT, timeout=60)
+    return subprocess.run(["bash", str(SCRIPT), *args], capture_output=True, text=True, cwd=ROOT, timeout=60, env=script_env())
 
 
 def real_hash():
@@ -104,7 +120,7 @@ def test_dry_run_tier1_only():
 
 def bash(snippet: str, stdin: str = "") -> subprocess.CompletedProcess:
     """Source the script (functions only: main does not run when sourced) and run a snippet."""
-    env = dict(os.environ)
+    env = script_env()
     return subprocess.run(["bash", "-c", f"source {SCRIPT}\n{snippet}"], input=stdin, capture_output=True,
                           text=True, cwd=ROOT, timeout=120, env=env)
 
@@ -233,6 +249,21 @@ def tier2_lines(r):
 
 
 @pytest.mark.skipif(os.environ.get("SVG_IN_CONTAINER") == "1", reason="host form only")
+def test_dry_run_host_form_with_a_stub_python_uses_conda_and_home():
+    """Runs anywhere: only SVG_PY is given (the point list needs a Python); the tier 2 lines keep the host form."""
+    if isaac_running():
+        pytest.skip("an isaac/airstack container is running")
+    r = run_env({"SVG_PY": child_python()}, "--dry-run", NAME, real_hash())
+    assert r.returncode == 0, r.stdout + r.stderr
+    t2 = tier2_lines(r)
+    assert len(t2) == tier2_points()
+    assert all("conda run -n env_isaaclab" in ln and f"{HOST_ISAACLAB} -p scripts/benchmark_tier2.py" in ln for ln in t2)
+    assert_nothing_created()
+
+
+@pytest.mark.skipif(os.environ.get("SVG_IN_CONTAINER") == "1", reason="host form only")
+@pytest.mark.skipif(not LAB_LAYOUT, reason="lab host layout absent (~/miniconda3/envs/env_isaaclab, ~/IsaacLab): expected off the "
+                                           "lab machines; the stub-Python test above covers the host form")
 def test_dry_run_host_form_uses_conda_and_home():
     if isaac_running():
         pytest.skip("an isaac/airstack container is running")

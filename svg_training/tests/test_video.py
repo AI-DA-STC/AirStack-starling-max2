@@ -128,3 +128,37 @@ def test_sidecar_working_tree_is_the_recording_time_state():   # fix round 1: ne
     assert mod.recorded_working_tree({"working_tree": "clean"}) == "clean"
     assert mod.recorded_working_tree({}) == "unknown (not recorded at recording time)"
     assert "working_tree_state()" not in SCRIPT.read_text().split("def write_sidecar", 1)[1]
+
+
+# ------------------------------------------------------------------------------------------------ the scene layer shared with scripts/nus_isaac_clips.py
+def _s2b():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("make_s2b_video", SCRIPT)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+class _FakeIsaac:
+    def __init__(self):
+        self.calls = []
+
+    def __getattr__(self, name):
+        return lambda *a, **k: self.calls.append((name, a, k))
+
+
+def test_the_shared_scene_layer_places_props_and_moves_the_site():
+    s2b = _s2b()
+    fake = _FakeIsaac()
+    props = s2b.place_scene(fake, "props", 1, (0.0, 0.0, 0.0), 2.0, (0.0, 0.0), 0.5, 0.25, 1.8, props_seed=1, props_count=2)
+    names = [c[0] for c in fake.calls]
+    assert names == ["spawn_arena_visuals", "spawn_props"] and len(props) == 2
+    assert fake.calls[0][2]["floor"] is True
+    fake = _FakeIsaac()
+    site = {"clear_radius_m": 10.4}
+    s2b.place_scene(fake, "construction_site", 1, (0.0, 0.0, 0.0), 2.0, (0.0, 0.0), 0.5, 0.25, 1.8, site=site, backdrop={"spot_m": [1.0, 2.0, 0.0]})
+    assert [c[0] for c in fake.calls] == ["spawn_arena_visuals", "move_backdrop"] and fake.calls[0][2]["floor"] is False
+    with pytest.raises(RuntimeError):
+        s2b.place_scene(_FakeIsaac(), "construction_site", 0, (0.0, 0.0, 0.0), 2.0, (0.0, 0.0), 0.5, 0.25, 1.8, site={"clear_radius_m": 2.0},
+                        backdrop={"spot_m": [0.0, 0.0, 0.0]})
+    assert s2b.site_fits(1.0, 2.0) and not s2b.site_fits(2.0, 2.0)

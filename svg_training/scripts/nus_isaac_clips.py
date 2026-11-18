@@ -6,6 +6,7 @@
         --headless --enable_cameras --clip g19_vs_s20
     ... scripts/nus_isaac_clips.py --list                       # the clips and their players (CPU, no Isaac; checks the player names)
     ... scripts/nus_isaac_clips.py --from-frames --clip <name>   # encode again from the saved raw frames (CPU, no Isaac)
+    ... --headless --enable_cameras --clip props_g19_vs_s20 --allow-siblings --out runs/nus_port/isaac_clips_more   # second set, GPU shared
 
 A thin layer over ``scripts/make_s2b_video.py`` (same world, camera, overlay and encoders; its colours and USD path are imported). The games are the
 ladder's row 6 (``nus/hangar_game.NusHangarGame``: physics drones, all-pairs filter, free height with jitter, the hangar geometry from the git-ignored
@@ -14,6 +15,16 @@ candidate game once without the camera; the first Strike win and the first hold 
 kind); each chosen game is reset with the same seed and played again with the camera on its slot, one frame per tick, until it ends. The recorded game is
 compared with the dry run (position difference) and the result is written to the sidecar. Output under ``runs/nus_port/isaac_clips/`` (git-ignored):
 ``<clip>_<kind>_<k>.mp4`` and ``.gif`` (sizes capped by the settings), a sidecar ``.toml``, and the raw frames and per-frame data in ``_raw/<clip>_<kind>_<k>/``.
+
+Second set (owner, 18 Nov 2026 evening: "more Isaac Lab clips of NUS's policy, including in the props and construction-site worlds"): optional
+per-clip keys, the first set's clips and defaults unchanged. ``scene`` = "plain" (default), "props" (blocks and columns for show, ``props_seed``,
+``props_count``) or "construction_site" (the site world as a backdrop, ``[construction_site]`` of configs/s2b_video_scenes.toml); the scene is
+built by ``make_s2b_video``'s scene layer exactly as the S2b clips build it, around the hangar game's own arena (its geometry is not changed;
+it fits the site's clear patch). Visual only: nothing the game or the drones can sense. ``caption`` replaces ``[video] caption``;
+``candidate_games`` replaces the ladder's ``video_slots`` and ``first_start`` (0-based index into the paired starts, default 0) moves the
+candidates along the starts file; ``kinds`` (["hold"], ["strike_win", "hold"], ...) replaces the
+``games_per_clip`` choice: the first unused candidate of each kind, a missing kind is reported and skipped. A site clip stops with exit 2
+before Isaac starts when the world file is missing (it is on the laptop only). ``--allow-siblings`` is passed to the preflight.
 
 No overlay or sidecar states the arena size (written when the hangar size was kept local; since 18 Nov ~14:10 the owner allows it in documents,
 see docs/NUS_PORT.md §3, but the clips keep the plain overlay); the overlay shows the two players and the drone counts only.
@@ -38,6 +49,8 @@ sys.path.insert(0, str(ROOT / "source"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 CONFIG = ROOT / "configs" / "nus_isaac_clips.toml"
+SCENES = ROOT / "configs" / "s2b_video_scenes.toml"      # [construction_site]: the site world, its spot, camera and lights (S2b)
+KINDS = ("strike_win", "hold")
 OUT_DIR = ROOT / "runs" / "nus_port" / "isaac_clips"
 EXIT_BAD_ARGS, EXIT_CRASH = 2, 1
 
@@ -54,14 +67,44 @@ def find_clip(settings: dict, name: str) -> dict:
     raise KeyError(f"unknown clip {name!r}; known: {[c['name'] for c in settings['clip']]}")
 
 
-def check_clips(settings: dict) -> None:
-    """Every clip names a Guard-team player as its Guard and a Strike-team player as its Strike (``nus/players.py``)."""
+def scene_of(clip: dict) -> str:
+    return clip.get("scene", "plain")
+
+
+def caption_of(settings: dict, clip: dict) -> str:
+    return clip.get("caption", settings["video"]["caption"])
+
+
+def load_site(path: Path | None = None) -> dict:
+    """The construction-site settings of the S2b scenes file (the same world, spot, camera and lights as the S2b clips)."""
+    return tomllib.loads(Path(path or SCENES).read_text())["construction_site"]
+
+
+def team_of(name: str) -> str | None:
+    """The team a player plays: the ladder's players (``nus/players.py``), then our scripted strategies by their prefix (``guard_mirror``)."""
     from svg_training.nus import players
+    from svg_training.opponents.scripted import REGISTRY
+    if name in players.TEAM_OF:
+        return players.TEAM_OF[name]
+    prefix = name.split("_")[0]
+    return prefix if name in REGISTRY and prefix in ("guard", "strike") else None
+
+
+def check_clips(settings: dict) -> None:
+    """Every clip names a Guard-team player as its Guard and a Strike-team player as its Strike (``nus/players.py`` or a scripted strategy), a
+    known scene (props with their seed and count) and known kinds."""
+    import make_s2b_video as s2b
     for clip in settings["clip"]:
         for team in ("guard", "strike"):
             name = clip[team]
-            if players.TEAM_OF.get(name) != team:
+            if team_of(name) != team:
                 raise ValueError(f"clip {clip['name']!r}: {name!r} is not a {team} player of the ladder")
+        if scene_of(clip) not in s2b.SCENES:
+            raise ValueError(f"clip {clip['name']!r}: scene {scene_of(clip)!r} is not one of {s2b.SCENES}")
+        if scene_of(clip) == "props" and not {"props_seed", "props_count"} <= set(clip):
+            raise ValueError(f"clip {clip['name']!r}: a props scene needs props_seed and props_count")
+        if not set(clip.get("kinds", [])) <= set(KINDS):
+            raise ValueError(f"clip {clip['name']!r}: kinds must be among {KINDS}")
 
 
 def pick_slots(outcomes: list[int], want: int, strike_win: int, guard_win: int) -> list[tuple[int, str]]:
@@ -74,9 +117,25 @@ def pick_slots(outcomes: list[int], want: int, strike_win: int, guard_win: int) 
     return sorted(order[:want])
 
 
+def pick_kinds(outcomes: list[int], kinds: list[str], strike_win: int, guard_win: int) -> list[tuple[int, str]]:
+    """Games to record for a clip's ``kinds``: for each kind in order, the first candidate of that outcome not taken yet. A kind with no
+    candidate left is skipped. Sorted by slot."""
+    code = {"strike_win": strike_win, "hold": guard_win}
+    taken: list[tuple[int, str]] = []
+    for kind in kinds:
+        slot = next((i for i, o in enumerate(outcomes) if o == code[kind] and i not in {t[0] for t in taken}), None)
+        if slot is not None:
+            taken.append((slot, kind))
+    return sorted(taken)
+
+
+WORLD_NAMES = {"props": "props world (backdrop only)", "construction_site": "construction-site world (backdrop only)"}
+
+
 def info_line(clip: dict, guards: int, strikes: int) -> str:
-    """The small line above the caption. Players and drone counts only: never the arena size."""
-    return f"{guards} Guard v {strikes} Strike drones | Guard: {clip['guard']}, Strike: {clip['strike']}"
+    """The small line above the caption. Players, drone counts and, outside the plain arena, the world: never the arena size."""
+    line = f"{guards} Guard v {strikes} Strike drones | Guard: {clip['guard']}, Strike: {clip['strike']}"
+    return line if scene_of(clip) == "plain" else f"{line} | {WORLD_NAMES[scene_of(clip)]}"
 
 
 def result_text(outcome: int, end_step: int, ticks: int, tick_s: float, strike_win: int, guard_win: int) -> str | None:
@@ -92,8 +151,9 @@ def take_name(clip: dict, kind: str, index: int) -> str:
 
 
 def sidecar_rows(clip: dict, meta: dict, mp4_bytes: int, crf: int, gif_info: dict | None, gif_bytes: int | None, caption: str) -> dict:
-    """Settings and provenance of one clip. No arena size, no hangar value, no partner value."""
-    return {"clip": meta["name"], "caption": caption, "commit": meta["commit"], "working_tree": meta["working_tree"], "date": meta["date"],
+    """Settings and provenance of one clip. No arena size, no hangar value, no partner value. Outside the plain arena also the scene, the number
+    of props and the backdrop file."""
+    rows = {"clip": meta["name"], "caption": caption, "commit": meta["commit"], "working_tree": meta["working_tree"], "date": meta["date"],
             "guard": clip["guard"], "strike": clip["strike"], "kind": meta["kind"], "slot": meta["slot"], "candidate_games": meta["candidate_games"],
             "row": meta["row"], "seed": meta["seed"], "outcome": meta["result_text"] or "the clip ends before the game does", "upset": meta["upset"],
             "game_length_s": meta["game_length_s"], "recorded_s": meta["recorded_s"], "replay_max_pos_diff_m": meta["replay_max_pos_diff_m"],
@@ -101,6 +161,13 @@ def sidecar_rows(clip: dict, meta: dict, mp4_bytes: int, crf: int, gif_info: dic
             "mp4_bytes": mp4_bytes, "mp4_crf": crf, "gif_bytes": gif_bytes, "gif_width": (gif_info or {}).get("width"), "gif_fps": (gif_info or {}).get("fps"),
             "gif_speed_x_real_time": (gif_info or {}).get("speed"), "vram_used_mib_while_recording": meta["vram_mib"], "isaac": meta["isaac"],
             "record_wall_s": meta["wall_s"]}
+    if "first_start" in meta:                     # the candidates start at this paired start: the game's own index in the starts file
+        rows["paired_start_index"] = meta["first_start"] + meta["slot"]
+    if meta.get("scene", "plain") != "plain":
+        detail = meta.get("scene_detail") or {}
+        rows.update({"scene": meta["scene"], "props_seed": clip.get("props_seed"), "props_count": detail.get("props_count"),
+                     "backdrop_file": detail.get("backdrop_file"), "backdrop_sha256": detail.get("backdrop_sha256")})
+    return rows
 
 
 # ------------------------------------------------------------------------------------------------ the games (Isaac-free given a world and a stage)
@@ -114,8 +181,9 @@ def working_tree_state() -> str:
     return "clean" if not files else "uncommitted changes: " + ", ".join(files)
 
 
-def make_context(settings: dict, device: str, make_world, games: int | None = None) -> SimpleNamespace:
-    """Everything the games need: the row-6 configuration, the geometry, the paired starts of the first candidates and the physics world.
+def make_context(settings: dict, device: str, make_world, games: int | None = None, first: int = 0) -> SimpleNamespace:
+    """Everything the games need: the row-6 configuration, the geometry, the paired starts of the candidates (``games`` of them from paired start
+    index ``first``; the game draws no random numbers, so a game depends only on its own start) and the physics world.
     ``make_world(n, drones, params, device)`` builds the world (Isaac Lab, or a PyTorch rigid-body world in tests)."""
     from svg_training.core.physics_layer import load_game_physics_params
     from svg_training.nus import hangar as H
@@ -135,11 +203,11 @@ def make_context(settings: dict, device: str, make_world, games: int | None = No
     geo = H.geometry(rules, deploy, hangar, base)
     cfg = H.hangar_cfg(base, rules, deploy, hangar, row)
     available = L.load_starts(L.STARTS_FILE)
-    n = min(games or phase4["ladder"]["video_slots"], available["starts_units"].shape[0])
-    starts = {k: v[:n] for k, v in available.items()}
+    n = min(games or phase4["ladder"]["video_slots"], available["starts_units"].shape[0] - first)
+    starts = {k: v[first:first + n] for k, v in available.items()}
     params = load_game_physics_params(cfg)
     world = make_world(n, rules.guard_count + rules.strike_count, params, device, geo, rules.guard_count)
-    return SimpleNamespace(settings=settings, phase4=phase4, row=row, cfg=cfg, geo=geo, rules=rules, starts=starts, world=world, n=n, device=device,
+    return SimpleNamespace(settings=settings, phase4=phase4, row=row, cfg=cfg, geo=geo, rules=rules, starts=starts, world=world, n=n, device=device, first=first,
                            guards=rules.guard_count, strikes=rules.strike_count, seed=phase4["ladder"]["seed"])
 
 
@@ -235,17 +303,34 @@ def record_take(ctx, game, clip: dict, slot: int, kind: str, index: int, stage, 
             "fps": int(v["fps"]), "resolution": list(v["resolution"]), "commit": _git(["rev-parse", "--short=12", "HEAD"]) or "unknown",
             "working_tree": working_tree_state(), "date": datetime.date.today().isoformat(), "vram_mib": stage.vram_mib(),
             "isaac": stage.label, "guards": ctx.guards, "strikes": ctx.strikes, "wall_s": time.time() - t_start, "guard": clip["guard"], "strike": clip["strike"]}
+    if "first_start" in clip:
+        meta["first_start"] = int(clip["first_start"])
+    if scene_of(clip) != "plain":
+        meta.update({"scene": scene_of(clip), "scene_detail": getattr(stage, "scene_detail", None) or {}})
     (work / "meta.json").write_text(json.dumps(meta, indent=1))
     return meta
+
+
+def _now() -> str:
+    return datetime.datetime.now().isoformat(timespec="seconds")
 
 
 def record_clip(ctx, clip: dict, stage_factory, work_root: Path) -> list[str]:
     """Dry run, choose the games, record each. Returns the names of the takes (their folders are under ``work_root``)."""
     from svg_training.core.rewards import GUARD_WIN, STRIKE_WIN
     game = new_game(ctx, clip)
+    print(f"{_now()} {clip['name']}: dry run of {ctx.n} candidate games", flush=True)
     dry = dry_run(ctx, game, clip)
-    chosen = pick_slots([int(o) for o in dry["outcome"]], int(ctx.settings["video"]["games_per_clip"]), STRIKE_WIN, GUARD_WIN)
-    print(f"{clip['name']}: first-game outcomes {dry['outcome'].tolist()}; recording {chosen}", flush=True)
+    outcomes = [int(o) for o in dry["outcome"]]
+    if "kinds" in clip:
+        chosen = pick_kinds(outcomes, list(clip["kinds"]), STRIKE_WIN, GUARD_WIN)
+        for kind in KINDS:
+            missing = list(clip["kinds"]).count(kind) - [k for _, k in chosen].count(kind)
+            if missing > 0:
+                print(f"{clip['name']}: {missing} {kind} wanted, none left among the {ctx.n} candidates", flush=True)
+    else:
+        chosen = pick_slots(outcomes, int(ctx.settings["video"]["games_per_clip"]), STRIKE_WIN, GUARD_WIN)
+    print(f"{_now()} {clip['name']}: first-game outcomes {dry['outcome'].tolist()}; recording {chosen}", flush=True)
     if not chosen:
         raise RuntimeError("no candidate game ended: nothing to record")
     stage = stage_factory(ctx)
@@ -255,7 +340,7 @@ def record_clip(ctx, clip: dict, stage_factory, work_root: Path) -> list[str]:
         counts[kind] = counts.get(kind, 0) + 1
         name = take_name(clip, kind, counts[kind])
         meta = record_take(ctx, game, clip, slot, kind, counts[kind], stage, dry, work_root / name, name)
-        print(f"recorded {name}: {meta['frames']} frames, result {meta['result_text']!r}, upset {meta['upset']}, replay diff {meta['replay_max_pos_diff_m']:.2e} m", flush=True)
+        print(f"{_now()} recorded {name}: {meta['frames']} frames, result {meta['result_text']!r}, upset {meta['upset']}, replay diff {meta['replay_max_pos_diff_m']:.2e} m", flush=True)
         names.append(name)
     return names
 
@@ -264,11 +349,17 @@ def record_clip(ctx, clip: dict, stage_factory, work_root: Path) -> list[str]:
 class IsaacStage:
     """The Isaac Lab scene of the clip: arena visuals of the recorded slot, camera, frames. Needs the app started with cameras on."""
 
-    def __init__(self, ctx, sim, label: str):
+    def __init__(self, ctx, sim, label: str, clip: dict | None = None):
         import numpy as np
+        import make_s2b_video as s2b
         from svg_training.bench.overlay import camera_pose
         from svg_training.compat import isaaclab_232 as isaac
-        self.ctx, self.sim, self.label, self.isaac, self.np, self.camera_pose = ctx, sim, label, isaac, np, camera_pose
+        self.ctx, self.sim, self.label, self.isaac, self.np, self.camera_pose, self.s2b = ctx, sim, label, isaac, np, camera_pose, s2b
+        self.clip = clip or {}
+        self.scene = scene_of(self.clip)
+        self.site = load_site() if self.scene == "construction_site" else None
+        self.backdrop = getattr(ctx.world, "_clip_backdrop", None)
+        self.scene_detail: dict = {}
         self.origins = ctx.world.scene.env_origins.detach().cpu().numpy().astype(float)
         v = ctx.settings["video"]
         self._frame = isaac.make_recorder(sim, tuple(self.origins[0] + np.array([0.0, 0.0, 1.0])), tuple(self.origins[0]), tuple(int(x) for x in v["resolution"]))
@@ -277,10 +368,18 @@ class IsaacStage:
         ctx, np = self.ctx, self.np
         half = ctx.geo.side_m / 2
         top = float(ctx.cfg.arena.height_band_m[1])
-        self.isaac.spawn_arena_visuals(slot, half, (0.0, 0.0), ctx.geo.zone_radius_m, ctx.cfg.arena.wall_margin_m, floor=True, top_m=top)
+        # the hangar game's own arena (zone at the centre); the S2b scene layer adds the props or moves the site under it
+        props = self.s2b.place_scene(self.isaac, self.scene, slot, self.origins[slot], half, (0.0, 0.0), ctx.geo.zone_radius_m,
+                                     ctx.cfg.arena.wall_margin_m, top, site=self.site, backdrop=self.backdrop,
+                                     props_seed=self.clip.get("props_seed"), props_count=self.clip.get("props_count"))
+        self.scene_detail = {"props_count": len(props), "backdrop_file": (self.backdrop or {}).get("file"),
+                             "backdrop_sha256": (self.backdrop or {}).get("sha256")}
         self.isaac.show_only_game(ctx.n, slot)
-        eye, look = self.camera_pose(half, self.origins[slot], top_m=top)
+        eye, look = self.camera_pose(half, self.origins[slot], top_m=top, **self.s2b.site_camera_kw(self.site))
         self._frame.set_view(tuple(float(x) for x in eye), tuple(float(x) for x in look))
+        if self.site is not None:                                      # the site's textures stream in over many frames (as S2b)
+            self.s2b.warm_up(self._frame, self.isaac, self.site)
+            return
         for _ in range(int(ctx.settings["video"]["warm_frames"])):      # the renderer's textures and filters settle
             self._frame()
             if self.isaac.stage_loading_done():
@@ -297,20 +396,23 @@ class IsaacStage:
             return None
 
 
-def make_isaac_world(settings: dict):
-    """A ``make_world`` for ``make_context`` that builds the Starling-visual IsaacWorld (after the app started)."""
+def make_isaac_world(settings: dict, clip: dict | None = None):
+    """A ``make_world`` for ``make_context`` that builds the Starling-visual IsaacWorld (after the app started); for a site clip the world has
+    the site's lights and no floor, and the site is referenced before physics starts (``make_s2b_video``'s scene layer)."""
     import make_s2b_video as s2b
     from svg_training.compat import isaaclab_232 as isaac
+    site = load_site() if scene_of(clip or {}) == "construction_site" else None
 
     def make(n, drones, params, device, geo, guards):
         sim = isaac.make_physics_sim(params.physics_dt_s, device)
-        isaac.spawn_world_lights(sun=True)
-        isaac.spawn_floor()
+        s2b.spawn_scene_world(isaac, site)
         v = settings["video"]
         rgb = [tuple(c / v["rgb_full"] for c in s2b.GUARD_RGB)] * guards + [tuple(c / v["rgb_full"] for c in s2b.STRIKE_RENDER_RGB)] * (drones - guards)
         usd = str(s2b.STARLING_USD.resolve())
         marker = float(v["marker_base_m"]) + float(v["marker_per_side"]) * geo.side_m
         world = isaac.IsaacWorld(sim, n, drones, params.airframe, params.physics_dt_s, visual="starling", slot_rgb=rgb, starling_usd=usd, marker_radius_m=marker)
+        if site is not None:
+            world._clip_backdrop = s2b.spawn_site_backdrop(isaac, site, world.scene.env_origins[0].detach().cpu().numpy())
         isaac.physics_play(sim, world)
         world._clip_sim = sim
         return world
@@ -330,7 +432,8 @@ def encode(settings: dict, clip: dict, work_root: Path, out: Path, no_gif: bool 
         info = info_line(clip, meta["guards"], meta["strikes"])
         reader = imageio.get_reader(str(folder / "raw.mp4"))
         pf = meta["per_frame"]
-        frames = [draw_overlay(img, v["caption"], legend, pf[i]["time_left_s"], meta["result_text"] if i == len(pf) - 1 else None, info)
+        caption = caption_of(settings, clip)
+        frames = [draw_overlay(img, caption, legend, pf[i]["time_left_s"], meta["result_text"] if i == len(pf) - 1 else None, info)
                   for i, img in enumerate(reader)]
         reader.close()
         if len(frames) != len(pf):
@@ -346,7 +449,7 @@ def encode(settings: dict, clip: dict, work_root: Path, out: Path, no_gif: bool 
                                        speed=float(v["gif_speed"]))
             gif_bytes = gif.stat().st_size
             written.append(gif)
-        side = sidecar_rows(clip, meta, mp4.stat().st_size, crf, gif_info, gif_bytes, v["caption"])
+        side = sidecar_rows(clip, meta, mp4.stat().st_size, crf, gif_info, gif_bytes, caption)
         head = "# Isaac Lab clip sidecar, written by scripts/nus_isaac_clips.py. Training simulator, frozen partner policies, not a real flight.\n# Not a measurement: no gates, no ledger row. No arena size.\n"
         (out / f"{meta['name']}.toml").write_text(head + "".join(f"{k} = {json.dumps(val)}\n" if val is not None else f"{k} = \"none\"\n" for k, val in side.items()))
         tomllib.loads((out / f"{meta['name']}.toml").read_text())
@@ -364,6 +467,7 @@ def make_parser() -> argparse.ArgumentParser:
     ap.add_argument("--list", action="store_true", help="print the clips and check the player names (CPU, no Isaac)")
     ap.add_argument("--from-frames", action="store_true", help="encode from the saved raw frames only (no Isaac)")
     ap.add_argument("--no-gif", action="store_true")
+    ap.add_argument("--allow-siblings", action="store_true", help="passed to the preflight: this folder's own GPU jobs may share the GPU")
     return ap
 
 
@@ -373,10 +477,11 @@ def record(args) -> int:
     clip = find_clip(settings, args.clip)
     check_clips(settings)
     dev = args.device if str(args.device).startswith("cuda") else "cuda:0"
-    ctx = make_context(settings, dev, make_isaac_world(settings))
+    ctx = make_context(settings, dev, make_isaac_world(settings, clip), games=clip.get("candidate_games"),
+                       first=int(clip.get("first_start", 0)))
     sim = ctx.world._clip_sim
     from svg_training.compat import isaaclab_232 as isaac
-    record_clip(ctx, clip, lambda c: IsaacStage(c, sim, isaac.ISAAC_WORLD_LABEL), args.out / "_raw")
+    record_clip(ctx, clip, lambda c: IsaacStage(c, sim, isaac.ISAAC_WORLD_LABEL, clip), args.out / "_raw")
     return 0
 
 
@@ -387,7 +492,7 @@ def main() -> int:
     if known.list:
         check_clips(settings)
         for clip in settings["clip"]:
-            print(f"{clip['name']}: Guard {clip['guard']} v Strike {clip['strike']}")
+            print(f"{clip['name']}: Guard {clip['guard']} v Strike {clip['strike']} ({scene_of(clip)})")
         return 0
     if not known.clip:
         print("refusing: give --clip <name> (or --list)", file=sys.stderr)
@@ -400,7 +505,15 @@ def main() -> int:
     if known.from_frames:
         encode(settings, clip, known.out / "_raw", known.out, known.no_gif)
         return 0
-    pre = subprocess.run(["bash", str(ROOT / "scripts" / "isaac_preflight.sh"), "--approved-headless"], capture_output=True, text=True)
+    if scene_of(clip) == "construction_site":
+        import make_s2b_video as s2b
+        usd = s2b.site_usd_path(load_site())
+        if not usd.is_file():
+            print(f"refusing: clip {clip['name']!r} needs the construction-site world {usd} (laptop only, never in git); "
+                  "copy the localisation/scenes/construction_site/build/ bundle first", file=sys.stderr)
+            return EXIT_BAD_ARGS
+    flags = ["--approved-headless"] + (["--allow-siblings"] if known.allow_siblings else [])
+    pre = subprocess.run(["bash", str(ROOT / "scripts" / "isaac_preflight.sh"), *flags], capture_output=True, text=True)
     print(pre.stdout, flush=True)
     known.out.mkdir(parents=True, exist_ok=True)
     (known.out / f"preflight_{clip['name']}.txt").write_text(pre.stdout + pre.stderr)

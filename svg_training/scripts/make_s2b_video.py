@@ -126,6 +126,87 @@ def _path(p: str) -> pathlib.Path:
     return q if q.is_absolute() else (ROOT / q)
 
 
+# --------------------------------------------------------------------------------------------- scene layer
+# Shared with scripts/nus_isaac_clips.py (NUS's policies in the same worlds). ``isaac`` is the compat module
+# (svg_training.compat.isaaclab_232) or, in tests, a stand-in with the same functions.
+SCENES = ("plain", "props", "construction_site")
+WARM_MIN_FRAMES = {"plain": 40, "construction_site": 150}   # renders before a take; textures stream in over many frames
+WARM_MAX_FRAMES = 2000
+
+
+def site_usd_path(site: dict) -> pathlib.Path:
+    """The construction-site world file of configs/s2b_video_scenes.toml [construction_site] (host only, never in git)."""
+    return _path(site["usd"]).resolve()
+
+
+def site_fits(half_m: float, clear_radius_m: float) -> bool:
+    """The arena's corners (half_m * sqrt 2 from its centre) lie inside the site's clear patch."""
+    return half_m * 2 ** 0.5 <= clear_radius_m
+
+
+def spawn_scene_world(isaac, site: dict | None) -> None:
+    """Before the IsaacWorld: the lights (no sun when the site brings its own) and the plain floor (none on the site)."""
+    isaac.spawn_world_lights(sun=site is None)
+    if site is None:
+        isaac.spawn_floor()
+
+
+def spawn_site_backdrop(isaac, site: dict, origin_m) -> dict:
+    """After the IsaacWorld, before physics_play: the site referenced read-only under game ``origin_m``, every physics
+    schema removed (visual only), its lights scaled. Returns the backdrop's provenance (file, sha256, spot, lights)."""
+    import numpy as np
+
+    site_usd = site_usd_path(site)
+    spot = (float(site["spot_m"][0]), float(site["spot_m"][1]), float(site["ground_z_m"]))
+    removed = isaac.spawn_backdrop(str(site_usd), tuple(np.asarray(origin_m, dtype=float) - np.array(spot)))
+    backdrop = {"file": site_usd.name, "sha256": sha256(site_usd), "physics_schemas_removed": removed, "spot_m": list(spot)}
+    backdrop["lights"] = isaac.scale_backdrop_lights(float(site["light_scale"]))
+    print(f"backdrop {site_usd.name}: {removed} physics schemas removed (visual only); lights {backdrop['lights']}",
+          flush=True)
+    return backdrop
+
+
+def place_scene(isaac, scene: str, slot: int, origin_m, half_m: float, zone_xy_m, zone_radius_m: float,
+                wall_margin_m: float, top_m: float, site: dict | None = None, backdrop: dict | None = None,
+                props_seed: int | None = None, props_count: int | None = None) -> list[dict]:
+    """The recorded game's surroundings: arena visuals (no arena floor on the site), the props of a "props" scene, the
+    site moved under the game (refused when the arena does not fit its clear patch). Returns the props placed."""
+    import numpy as np
+
+    from svg_training.bench.overlay import place_props
+
+    if scene not in SCENES:
+        raise ValueError(f"scene must be one of {SCENES}, got {scene!r}")
+    isaac.spawn_arena_visuals(slot, half_m, tuple(zone_xy_m), zone_radius_m, wall_margin_m, floor=site is None,
+                              top_m=top_m)
+    props = []
+    if scene == "props":
+        props = place_props(int(props_seed), half_m, np.array(zone_xy_m), zone_radius_m, int(props_count))
+        isaac.spawn_props(slot, props)
+    if site is not None:
+        if not site_fits(half_m, float(site["clear_radius_m"])):
+            raise RuntimeError(f"arena half {half_m:.2f} m does not fit the clear patch ({site['clear_radius_m']} m)")
+        isaac.move_backdrop(tuple(np.asarray(origin_m, dtype=float) - np.array(backdrop["spot_m"])))
+    return props
+
+
+def site_camera_kw(site: dict | None) -> dict:
+    """camera_pose settings of the site camera (east of the arena, low, stepped back); {} without the site."""
+    if site is None:
+        return {}
+    return {"azimuth_deg": float(site["camera_azimuth_deg"]), "elevation_deg": float(site["camera_elevation_deg"]),
+            "distance_scale": float(site["camera_distance_scale"]), "lookat_lift_m": float(site["camera_lookat_lift_m"])}
+
+
+def warm_up(frame, isaac, site: dict | None) -> None:
+    """Render until the stage has loaded and the image settles (at least WARM_MIN_FRAMES of the scene)."""
+    warm_min = WARM_MIN_FRAMES["construction_site" if site is not None else "plain"]
+    for i in range(WARM_MAX_FRAMES):
+        frame()
+        if i >= warm_min and isaac.stage_loading_done():
+            break
+
+
 # --------------------------------------------------------------------------------------------- Isaac part
 def record(args) -> int:
     """Isaac mode (after the app started): dry run, clip rule, recorded pass. Writes raw.mp4 + meta.json."""
@@ -133,7 +214,7 @@ def record(args) -> int:
     import torch
     import imageio.v2 as imageio
 
-    from svg_training.bench.overlay import camera_pose, pick_clip_slot, place_props
+    from svg_training.bench.overlay import camera_pose, pick_clip_slot
     from svg_training.compat import isaaclab_232 as isaac
     from svg_training.core.arena import BANDS
     from svg_training.core.game import SvgGame
@@ -159,9 +240,7 @@ def record(args) -> int:
     sim = isaac.make_physics_sim(params.physics_dt_s, dev)
     scene = clip["scene"]
     site = sc["construction_site"] if scene == "construction_site" else None
-    isaac.spawn_world_lights(sun=site is None)
-    if site is None:
-        isaac.spawn_floor()
+    spawn_scene_world(isaac, site)
     side_max_m = cfg.arena.bands_m[clip["band"]][1]
     marker_r = 0.03 + 0.0094 * side_max_m
     slot_rgb = [tuple(c / 255 for c in GUARD_RGB)] * g + [tuple(c / 255 for c in STRIKE_RENDER_RGB)] * s
@@ -169,16 +248,7 @@ def record(args) -> int:
     world = isaac.IsaacWorld(sim, n, m, params.airframe, params.physics_dt_s, visual=args.visual, slot_rgb=slot_rgb,
                              starling_usd=usd, marker_radius_m=marker_r)
     origins = world.scene.env_origins.detach().cpu().numpy().astype(float)        # [N, 3] world
-    backdrop = None
-    if site is not None:
-        site_usd = _path(site["usd"]).resolve()
-        spot = (float(site["spot_m"][0]), float(site["spot_m"][1]), float(site["ground_z_m"]))
-        removed = isaac.spawn_backdrop(str(site_usd), tuple(origins[0] - np.array(spot)))
-        backdrop = {"file": site_usd.name, "sha256": sha256(site_usd), "physics_schemas_removed": removed,
-                    "spot_m": list(spot)}
-        backdrop["lights"] = isaac.scale_backdrop_lights(float(site["light_scale"]))
-        print(f"backdrop {site_usd.name}: {removed} physics schemas removed (visual only); lights "
-              f"{backdrop['lights']}", flush=True)
+    backdrop = spawn_site_backdrop(isaac, site, origins[0]) if site is not None else None
     isaac.physics_play(sim, world)                                   # raises if PhysX holds a different body
     readback = {"com_offset_max_m": world.com_offset_max_m(), "inertia_offdiag_max": world.inertia_offdiag_max(),
                 **{k: v for k, v in world.body_settings().items() if k != "prim"}}
@@ -235,31 +305,15 @@ def record(args) -> int:
     half = float(ar.half_m[slot])
     zone_xy = tuple(float(v) for v in ar.zone_centre_m[slot].cpu())
     zone_r = float(ar.zone_radius_m[slot])
-    isaac.spawn_arena_visuals(slot, half, zone_xy, zone_r, cfg.arena.wall_margin_m, floor=site is None,
-                              top_m=float(cfg.arena.height_band_m[1]))
-    props = []
-    if scene == "props":
-        props = place_props(int(clip["props_seed"]), half, np.array(zone_xy), zone_r, int(clip["props_count"]))
-        isaac.spawn_props(slot, props)
-    if site is not None:
-        if half * 2 ** 0.5 > float(site["clear_radius_m"]):
-            raise RuntimeError(f"arena half {half:.2f} m does not fit the clear patch ({site['clear_radius_m']} m)")
-        isaac.move_backdrop(tuple(origins[slot] - np.array(backdrop["spot_m"])))
+    props = place_scene(isaac, scene, slot, origins[slot], half, zone_xy, zone_r, cfg.arena.wall_margin_m,
+                        float(cfg.arena.height_band_m[1]), site=site, backdrop=backdrop,
+                        props_seed=clip.get("props_seed"), props_count=clip.get("props_count"))
     isaac.show_only_game(n, slot)
-    cam_kw = {}
-    if site is not None:
-        cam_kw = {"azimuth_deg": float(site["camera_azimuth_deg"]), "elevation_deg": float(site["camera_elevation_deg"]),
-                  "distance_scale": float(site["camera_distance_scale"]),
-                  "lookat_lift_m": float(site["camera_lookat_lift_m"])}
+    cam_kw = site_camera_kw(site)
     eye, look = camera_pose(half, origins[slot], **cam_kw)
     res = tuple(int(v) for v in video["resolution"])
     frame = isaac.make_recorder(sim, eye, look, res)
-    # warm-up: render until the stage has loaded and the image settles (textures stream in over many frames)
-    warm_min = 150 if site is not None else 40
-    for i in range(2000):
-        frame()
-        if i >= warm_min and isaac.stage_loading_done():
-            break
+    warm_up(frame, isaac, site)
     vram_mib = gpu_used_mib()
     stills = [st for st in sc.get("stills", []) if st["clip"] == clip["name"]]
     max_ticks = int(round(float(video["seconds_max"]) / TICK_S)) if args.smoke_ticks <= 0 else args.smoke_ticks

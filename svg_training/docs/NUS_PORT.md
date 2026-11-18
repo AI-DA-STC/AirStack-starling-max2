@@ -348,6 +348,14 @@ downloads.
 | Row 4 against row 5, G19 against S20, game 1: free height with the 1 mm jitter | [row 4: Guard team holds 120 s](media/nus/phase4/row_4/G19_vs_S20_hold.mp4) → [row 5: Strike team reaches the zone at 22.9 s](media/nus/phase4/row_5/G19_vs_S20_strike_win.mp4) |
 | Row 3 against row 4, the parked Guard team against S20: standing still starts to block | [row 3, game 1: Strike win at 4.8 s](media/nus/phase4/row_3/ParkedGuard_vs_S20_strike_win.mp4) → [row 4, game 2: Guard team holds 120 s](media/nus/phase4/row_4/ParkedGuard_vs_S20_hold.mp4) |
 
+### Isaac Lab clips, second set (18 November 2026, evening)
+
+More pairings of the converted policies on Isaac Lab Starlings (row 6, tier 2), in the open hangar arena and in the
+props world. The props are a backdrop only: the drones do not see or avoid them. Pairings, games, outcomes and sizes,
+one line per clip: [media/nus/README.md](media/nus/README.md#isaac-lab-camera-clips-second-set-more-pairings-and-the-props-world-18-november-2026-evening).
+The construction-site clips are configured but not recorded: the world file is on the laptop only. These are
+pictures of single games observed in the training simulator, not measurements.
+
 ## 10. What it means for flight
 
 Nothing here has flown. What the ladder says, in the training simulator only:

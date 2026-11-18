@@ -35,3 +35,127 @@ strike = "S20"
 name = "g19_vs_apf"
 guard = "G19"
 strike = "ApfStrike"
+
+# ---------------------------------------------------------------------------------------------------------------------------------------------
+# Second set (owner, 18 Nov 2026 evening: "record more Isaac Lab clips of NUS's policy, including in the props and construction-site worlds").
+# Same row-6 game, same hangar geometry (its arena fits the site's clear patch: corners 5.3 m from the centre, patch 10.4 m), recorded with
+# `--out runs/nus_port/isaac_clips_more`. Optional keys (scripts/nus_isaac_clips.py docstring): scene, props_seed, props_count, caption,
+# candidate_games (the first paired starts played in the dry run; it costs per tick, not per game), kinds (the games to record, in order).
+# Candidates follow row 6's own per-game results (runs/nus_port/phase4/row_6/per_game.npz): G19 v S20 held 21 of 1,000 games, the first at
+# paired start 77 (index 76); the other pairs' first games are Strike wins. A hold costs a full 120 s game (2,400 ticks) in the dry run and again
+# on camera. Visual only: props and site are nothing the game senses.
+
+[[clip]]
+name = "open_g19_vs_s20"
+guard = "G19"
+strike = "S20"
+kinds = ["hold"]
+first_start = 76                       # 0-based: paired start 77, row 6's first G19 v S20 hold; the next is at index 124
+candidate_games = 49
+caption = "Training simulator (Isaac Lab): NUS's converted policy, Isaac Lab Starlings, tier 2; frozen policies, not a real flight"
+
+[[clip]]
+name = "open_p3g_vs_s20"
+guard = "P3G"
+strike = "S20"
+kinds = ["strike_win", "hold"]
+first_start = 1                        # index 0 is a 65.6 s game on row 6; index 1 a 15.9 s Strike win, index 23 the first hold
+candidate_games = 23
+caption = "Training simulator (Isaac Lab): NUS's converted policy, Isaac Lab Starlings, tier 2; frozen policies, not a real flight"
+
+[[clip]]
+name = "open_p3g_vs_apf"
+guard = "P3G"
+strike = "ApfStrike"
+kinds = ["strike_win"]
+candidate_games = 1
+caption = "Training simulator (Isaac Lab): NUS's converted policy, Isaac Lab Starlings, tier 2; Strike team: NUS's scripted controller, ported; not a real flight"
+
+[[clip]]
+name = "open_mirror_vs_s20"
+guard = "guard_mirror"
+strike = "S20"
+kinds = ["strike_win"]
+candidate_games = 1
+caption = "Training simulator (Isaac Lab): NUS's converted policy, Isaac Lab Starlings, tier 2; Guard team: our scripted strategy; not a real flight"
+
+[[clip]]
+name = "open_mark_edge_vs_s20"
+guard = "guard_mark_edge"
+strike = "S20"
+kinds = ["strike_win"]
+candidate_games = 1
+caption = "Training simulator (Isaac Lab): NUS's converted policy, Isaac Lab Starlings, tier 2; Guard team: our scripted strategy; not a real flight"
+
+[[clip]]
+name = "open_mirror_vs_p3s"
+guard = "guard_mirror"
+strike = "P3S"
+kinds = ["strike_win"]
+candidate_games = 1
+caption = "Training simulator (Isaac Lab): NUS's converted policy, Isaac Lab Starlings, tier 2; Guard team: our scripted strategy; not a real flight"
+
+[[clip]]
+name = "props_g19_vs_s20"
+guard = "G19"
+strike = "S20"
+scene = "props"
+props_seed = 11
+props_count = 8
+kinds = ["strike_win", "strike_win"]
+candidate_games = 2
+caption = "Training simulator (Isaac Lab): NUS's converted policy, Isaac Lab Starlings, tier 2; blocks and columns are a backdrop only: drones do not see or avoid the objects; not a real flight"
+
+[[clip]]
+name = "props_parked_vs_s20"
+guard = "ParkedGuard"
+strike = "S20"
+scene = "props"
+props_seed = 11
+props_count = 8
+kinds = ["strike_win", "hold"]
+candidate_games = 2
+caption = "Training simulator (Isaac Lab): NUS's converted policy, Isaac Lab Starlings, tier 2; blocks and columns are a backdrop only: drones do not see or avoid the objects; not a real flight"
+
+[[clip]]
+name = "props_p3g_vs_s20"
+guard = "P3G"
+strike = "S20"
+scene = "props"
+props_seed = 11
+props_count = 8
+kinds = ["strike_win"]
+first_start = 1
+candidate_games = 1
+caption = "Training simulator (Isaac Lab): NUS's converted policy, Isaac Lab Starlings, tier 2; blocks and columns are a backdrop only: drones do not see or avoid the objects; not a real flight"
+
+[[clip]]
+name = "props_g19_vs_apf"
+guard = "G19"
+strike = "ApfStrike"
+scene = "props"
+props_seed = 11
+props_count = 8
+kinds = ["strike_win"]
+candidate_games = 1
+caption = "Training simulator (Isaac Lab): NUS's converted policy, Isaac Lab Starlings, tier 2; blocks and columns are a backdrop only: drones do not see or avoid the objects; Strike team: NUS's scripted controller, ported; not a real flight"
+
+# The construction-site world is on the laptop only (localisation/scenes/construction_site/build/, never in git): these two stop with exit 2
+# on a machine without it (the home RTX 5090, 18 Nov 2026).
+[[clip]]
+name = "site_g19_vs_s20"
+guard = "G19"
+strike = "S20"
+scene = "construction_site"
+kinds = ["strike_win"]
+candidate_games = 1
+caption = "Training simulator (Isaac Lab): NUS's converted policy, Isaac Lab Starlings, tier 2; the construction site is a backdrop only: drones do not see or avoid the objects; not a real flight"
+
+[[clip]]
+name = "site_parked_vs_s20"
+guard = "ParkedGuard"
+strike = "S20"
+scene = "construction_site"
+kinds = ["strike_win", "hold"]
+candidate_games = 4
+caption = "Training simulator (Isaac Lab): NUS's converted policy, Isaac Lab Starlings, tier 2; the construction site is a backdrop only: drones do not see or avoid the objects; not a real flight"

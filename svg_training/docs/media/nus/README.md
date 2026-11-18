@@ -423,3 +423,39 @@ Where the run clips come from: `scripts/nus_phase4.py --render <row folder>` (Ph
 `scripts/nus_phase4_w3.py` (T17), the Phase 3 video step (T16, `viz/replay.py`), `scripts/nus_isaac_clips.py`
 (Isaac Lab). NUS's GIFs come from NUS's `eval.py` with `save_eval_gif=True`; for self-play policies the evaluation
 config was edited so the opponent pool holds one archive entry (the self-play runner writes no GIFs itself).
+
+## Isaac Lab camera clips, second set: more pairings and the props world (18 November 2026, evening)
+
+Owner's request (18 Nov): "record more Isaac Lab clips of NUS's policy, including in the props and construction-site
+worlds". Presentation only (no gates, not a measurement, no ledger row): `scripts/nus_isaac_clips.py` with the
+second-set entries of `configs/nus_isaac_clips.toml`, recorded headless on the home RTX 5090. The game is Phase 4 row 6
+(tier 2: Isaac Lab rigid-body Starlings, safety filter on, free height with the start jitter) on the hangar arena,
+7.5 m square, unchanged. **Props clips** add the blocks and columns of the S2b props clip (`make_s2b_video.py`'s scene
+layer, seed 11, 8 objects). They are a backdrop only: the drones do not see or avoid them and can fly through them.
+Every recorded game repeats its dry run exactly (0.0 m position difference, same end and outcome). What these clips show
+was observed in the training simulator; nothing here is a flight.
+
+"Game *n*" is the *n*-th paired start of the Phase 4 starts file, as in the row 6 clips. "Row 6" is that pair's count
+over all 1,000 row-6 games (record T24). Files are in [`isaac/`](isaac/); the MP4s are real time, the GIF previews 4×
+(a 120 s hold: 8×).
+
+| File | World | Guard v Strike | Game, outcome | Row 6 Strike reach | What it shows | Size |
+|---|---|---|---|---|---|---|
+| [`open_p3g_vs_apf_strike_win_1.mp4`](isaac/open_p3g_vs_apf_strike_win_1.mp4), [`.gif`](isaac/open_p3g_vs_apf_strike_win_1.gif) | hangar arena | P3G v ApfStrike | game 1: Strike team reaches the zone at 4.0 s | 1,000 of 1,000 | NUS's fixed-opponent Guard policy against NUS's scripted Strike controller (ported): a Strike drone gets past the Guards within 4 s | 47 kB, 170 kB |
+| [`open_mirror_vs_s20_strike_win_1.mp4`](isaac/open_mirror_vs_s20_strike_win_1.mp4) | hangar arena | guard_mirror v S20 | game 1: Strike team reaches the zone at 6.9 s | 1,000 of 1,000 | NUS's self-play Strike policy S20 against our scripted mirroring Guards | 60 kB |
+| [`open_mirror_vs_p3s_strike_win_1.mp4`](isaac/open_mirror_vs_p3s_strike_win_1.mp4) | hangar arena | guard_mirror v P3S | game 1: Strike team reaches the zone at 4.3 s | 1,000 of 1,000 | NUS's fixed-opponent Strike policy against our scripted mirroring Guards | 49 kB |
+| [`open_mark_edge_vs_s20_strike_win_1.mp4`](isaac/open_mark_edge_vs_s20_strike_win_1.mp4), [`.gif`](isaac/open_mark_edge_vs_s20_strike_win_1.gif) | hangar arena | guard_mark_edge v S20 | game 1: Strike team reaches the zone at 14.5 s | 1,000 of 1,000 | S20 against our scripted Guards that wait on the zone's edge: it takes the Strike team longer than against the mirroring Guards (row 6 medians: 13.7 s and 8.0 s) | 111 kB, 516 kB |
+| [`props_g19_vs_apf_strike_win_1.mp4`](isaac/props_g19_vs_apf_strike_win_1.mp4), [`.gif`](isaac/props_g19_vs_apf_strike_win_1.gif) | props (backdrop only) | G19 v ApfStrike | game 1: Strike team reaches the zone at 4.0 s | 1,000 of 1,000 | the same paired start as the published `g19_vs_apf_strike_win_1` (4.1 s there, with 16 games running at once; row 6: 4.0 s), among blocks and columns that play no part in the game | 52 kB, 164 kB |
+
+**Not recorded yet.** The hold clips: G19 v S20 at game 77 (row 6's first G19 v S20 hold, 21 of 1,000), ParkedGuard
+v S20 in the props world (game 2), and P3G v S20 (a Strike win at game 2, the first hold at game 24). They wait until
+the GPU is less busy (lead, 18 Nov). The construction-site clips (`site_g19_vs_s20`, `site_parked_vs_s20`) need the
+laptop's `localisation/scenes/construction_site/build/` bundle; that bundle is not in git and not on the 5090. On a
+machine without it the tool stops with exit 2 before Isaac starts.
+
+**Recording conditions.** The GPU was shared with the Phase 5 jobs (the P1b pilot, NUS's C0 self-play jobs and the
+route (b) trainers, at 91–99 % use). Ticks ran 10–30 times slower than for the first set: 3.4–3.7 s per dry-run
+tick and about 4 s per rendered frame, against 0.1–0.3 s. The five clips above took 1.21 GPU-hours of the 1.5 h
+cap (wall time of each launch, `runs/nus_port/isaac_clips_more/gpu_hours.log`, 5090 only). Re-encoded as the first
+set: H.264 CRF 30 at 800 px; GIFs at 4× real time, 480 px, 5 frames/s, 128 colours
+(`runs/nus_port/isaac_clips_more/publish.sh`).

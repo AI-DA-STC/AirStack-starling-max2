@@ -96,3 +96,18 @@ def test_installable_layout():
     data = tomllib.loads((ROOT / "pyproject.toml").read_text())
     assert data["build-system"]["build-backend"]
     assert data["tool"]["setuptools"]["packages"]["find"]["where"] == ["source"]
+
+
+def test_requirements_exact_pins_every_listed_package_to_the_lab_versions():
+    """requirements-exact.txt (lead, 19 Nov 2026): pyproject floats; this file pins the versions of conda env_isaaclab that the records
+    and the bit-level fingerprint used, one == pin per package pyproject lists, nothing else."""
+    import importlib.util
+    lines = [ln.split("#", 1)[0].strip() for ln in (ROOT / "requirements-exact.txt").read_text().splitlines()]
+    pins = dict(ln.split("==", 1) for ln in lines if ln and not ln.startswith("-"))
+    assert all("==" in ln for ln in lines if ln and not ln.startswith("-"))
+    assert {_dist_name(n) for n in pins} == _listed()
+    spec = importlib.util.spec_from_file_location("_tts", ROOT / "tests" / "test_train_standin.py")
+    stack = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(stack)
+    assert {k: pins[k] for k in stack.FINGERPRINT_STACK} == stack.FINGERPRINT_STACK
+    assert pins["numpy"].startswith("1.")

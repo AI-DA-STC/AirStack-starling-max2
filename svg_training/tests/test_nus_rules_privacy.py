@@ -173,6 +173,8 @@ def test_g2_partner_facing_code_has_no_numeric_literals():
     files = (sorted((ROOT / "source/svg_training/nus").glob("*.py")) + sorted((ROOT / "scripts").glob("nus_*.py"))
              + sorted((ROOT / "tests").glob("test_nus_*.py")) + [ROOT / "scripts" / "make_nus_phase4_figures.py"])
     assert len(files) >= MIN_SCANNED_FILES
+    # Phase 5 (Task P-T1): the throughput probe and its test are partner-facing; the globs above reach them, and this keeps it so
+    assert {ROOT / "scripts" / "nus_phase5_probe.py", ROOT / "tests" / "test_nus_phase5_probe.py"} <= set(files)
     bad = []
     for path in files:
         for node in ast.walk(ast.parse(path.read_text())):

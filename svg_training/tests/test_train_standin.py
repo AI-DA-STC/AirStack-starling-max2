@@ -699,3 +699,32 @@ def test_refuses_a_table_without_frozen_axes_for_the_motion(tmp_path):
     cfg.write_text(text)
     assert _v2_run(tmp_path, "noaxes", "starling", ("--s2b-config", str(cfg))) == 2
     assert not (tmp_path / "noaxes").exists()
+
+
+# Phase 5 Task P-T3: the --game nus_hangar hooks leave the default S2 path bit-identical. Fingerprint recorded on 18 Nov 2026 from the code
+# BEFORE the hooks (commit e595bfd3, CPU, one thread): sha256 over every tensor of agent.pt (keys sorted) and the evaluations' hold rates.
+DEFAULT_PATH_AGENT_SHA256 = "e21606c26ac342237be04ff32133c5f36022e15ac73addc4e36401960dfcbd41"
+DEFAULT_PATH_HOLD = [0.25, 0.375]
+
+
+def test_default_path_bit_identical_after_the_nus_hooks(tmp_path):
+    rc = _in_process(["--config", "configs/s2.toml", "--seed", "3", "--name", "fp", "--device", "cpu", "--num-games-override", "16",
+                      "--timesteps-override", "64", "--eval-games", "8", "--runs-dir", str(tmp_path)])
+    assert rc == 0
+    ck = torch.load(tmp_path / "fp" / "agent.pt", map_location="cpu", weights_only=False)
+    h = hashlib.sha256()
+
+    def walk(o):
+        if isinstance(o, torch.Tensor):
+            h.update(o.detach().cpu().contiguous().numpy().tobytes())
+        elif isinstance(o, dict):
+            for k in sorted(o, key=str):
+                h.update(str(k).encode())
+                walk(o[k])
+        elif isinstance(o, (list, tuple)):
+            for x in o:
+                walk(x)
+    walk(ck)
+    curve = json.loads((tmp_path / "fp" / "curve.json").read_text())
+    assert h.hexdigest() == DEFAULT_PATH_AGENT_SHA256
+    assert [c["scalars"].get("game/hold_rate") for c in curve] == DEFAULT_PATH_HOLD

@@ -1,0 +1,158 @@
+# NUS port Phase 5: retraining (plan docs/plans/2026-11-18-nus-phase5-retraining.md). Counts, times and names only: no partner
+# value, none of the owner's hangar values (the local files under configs/local/ hold those). Task P-T5 adds the pilot tables
+# ([pilot_p1], [pilot_p2], [pilot_p3_*]); Task P-T1 wrote [probe] first because scripts/nus_phase5_probe.py reads it.
+
+[probe]
+# Pilot P0 (plan section 7): throughput of the hangar game with Phase 4 row 5's settings (filter on, 3-D). INFO, no gates.
+row = "5"                              # FIXED (plan P0): configs/nus_phase4.toml row "5"
+games = [1000, 4096, 16384, 32768, 49152]  # FIXED (plan P0; 49,152 added by the gatekeeper 18 Nov for the side-by-side rule): ascending; stop at the first out-of-memory count
+warmup_ticks = 50                      # FIXED (plan P0): untimed ticks before the timing
+timed_ticks = 400                      # FIXED (plan P0): ticks timed per game count and arm
+arms = ["parked_s20", "random"]        # FIXED (plan P0): ParkedGuard v S20, then both teams random actions
+guard = "ParkedGuard"                  # the parked_s20 arm's players (nus/players.py names)
+strike = "S20"
+pilot_ratio = 1.5                      # FIXED (plan P0 rule): a count qualifies if its seconds per tick <= this x the smallest count's
+pilot_max_games = 32768                # FIXED (plan P0 rule): the pilots' game count is at most this
+pilot_arm = "parked_s20"               # FIXED (lead, 18 Nov 2026): the arm whose rule result is the pilots' count; random is INFO
+side_by_side_games = 49152             # FIXED (gatekeeper, 18 Nov 2026): three seeds x 16,384 games in one process
+side_by_side_ref_games = 16384         # FIXED (gatekeeper): one seed's game count (plan section 8)
+side_by_side_ratio = 1.5               # FIXED (gatekeeper): three seeds run side by side only if s/tick at side_by_side_games <= this x at ref
+gpu_cap_hours = 0.5                    # FIXED (plan P0): the pilot's GPU-hour cap (wall clock holding the GPU)
+budget_hours = 0.42                    # PROPOSED: the probe's own deadline, below the cap, leaving room for start-up and the profile tick
+profile_games = 1000                   # PROPOSED: the count at which one tick is profiled (INFO: where the filter's time goes)
+profile_table_rows = 40                # PROPOSED: rows of the profiler table written to profile.txt
+seed = 20261120                        # PROPOSED: starts, jitter and random actions (one seed: a throughput probe, no method claim)
+
+# ------------------------------------------------------------------------------------------------ pilots P1-P3 (Task P-T5)
+# Not gated, INFO records (plan section 7). Run through scripts/train_standin.py --game nus_hangar --settings <table>
+# (P1, P2) and scripts/nus_pilot_selfplay.py (P3, Task P-T7). The learner is [standin_v2]'s (configs/s2b.toml), the game is
+# Phase 4 row 5 (fitted Starling layer, all-pairs safety filter, 3-D, start-height jitter); team sizes come from the local
+# rules file. Training starts are drawn fresh for every game (nus/train_game.py); evaluations play the first games of the
+# Phase 4 paired starts file with mean actions. Every cap is a hard wall-clock cap INCLUDING the evaluations; there is no
+# --accept-long for a pilot.
+
+[pilots]
+total_gpu_hours = 6.0                  # FIXED (plan section 7): P0-P3 together, evaluations included
+gpu_hours_log = "runs/nus_port/phase5/pilots/gpu_hours.log"   # one line per run: name, start, end, hours (5090 only)
+estimate_ticks = 20                    # PROPOSED: ticks of the final evaluation game timed before the start, to estimate one evaluation
+row = "5"                              # FIXED (plan): configs/nus_phase4.toml row "5"
+video_slots = 16                       # PROPOSED: = [ladder] video_slots; the first evaluation games whose positions are kept
+videos_per_evaluation = 1              # FIXED (plan, STANDARDS section 8): one game per evaluation
+videos_final_best = 2                  # FIXED (plan, STANDARDS section 8): two games each for the final and the best checkpoint
+alloc_conf = "expandable_segments:True"   # MEASURED basis (P0 memory smoke, 18 Nov): PYTORCH_CUDA_ALLOC_CONF for the pilot process, replacing the shell's value
+
+[pilot_p1]
+# P1: Guard learners v S20 (plan section 7). PROPOSED values; the learner keys are [standin_v2]'s.
+algorithm = "IPPO"
+preset = "nus_hangar"
+train_team = "guard"
+opponent_mix = { S20 = 1.0 }           # Strike team 100 % S20 (nus/players.py names or opponents.scripted names), split by game index
+num_games = 32768                      # MEASURED basis: P0's pilots' game count (lead, 18 Nov 2026)
+game_steps_per_seed = 236_000_000      # PROPOSED upper bound (about 225 updates); the cap ends the run first
+gpu_cap_hours = 1.5                    # FIXED (plan section 7): incl. evaluations
+eval_games = 1000                      # final evaluation: all 1,000 Phase 4 paired starts
+eval_games_early = 256                 # start and half-way evaluations: the first 256 paired starts
+eval_at_start = true
+mid_evaluation = true                  # one evaluation when the training time reaches half the training-time budget
+shaping_weight = 1.0
+rollouts = 32
+learning_epochs = 5
+mini_batches = 4
+learning_rate = 3.0e-4
+hidden = [128, 128]
+init_log_std = -1.6
+frozen_log_std_axes = { starling = ["yaw"] }
+discount_factor = 0.99
+gae_lambda = 0.95
+entropy_loss_scale = 0.0
+value_loss_scale = 2.5
+ratio_clip = 0.2
+value_clip = 0.2
+grad_norm_clip = 0.5
+
+[pilot_p2]
+# P2: Guard learners v scripted Strike players, warm start from P1's final networks (--warm-start <P1 run folder>).
+algorithm = "IPPO"
+preset = "nus_hangar"
+train_team = "guard"
+opponent_mix = { S20 = 0.25, ApfStrike = 0.25, strike_straight = 0.25, strike_flank = 0.25 }   # equal game blocks; S20 kept
+num_games = 32768
+game_steps_per_seed = 236_000_000
+gpu_cap_hours = 1.5
+eval_games = 1000
+eval_games_early = 256
+eval_at_start = true
+mid_evaluation = true
+shaping_weight = 1.0
+rollouts = 32
+learning_epochs = 5
+mini_batches = 4
+learning_rate = 3.0e-4
+hidden = [128, 128]
+init_log_std = -1.6
+frozen_log_std_axes = { starling = ["yaw"] }
+discount_factor = 0.99
+gae_lambda = 0.95
+entropy_loss_scale = 0.0
+value_loss_scale = 2.5
+ratio_clip = 0.2
+value_clip = 0.2
+grad_norm_clip = 0.5
+
+[pilot_p3_guard]
+# P3 Guard stages (the driver of Task P-T7 adds the frozen Strike stages to the mix at run time). 2.5 GPU-h for all four stages.
+algorithm = "IPPO"
+preset = "nus_hangar"
+train_team = "guard"
+opponent_mix = { ApfStrike = 1.0 }     # the permanent scripted slot; the driver adds the earlier Strike stages in equal blocks
+num_games = 32768
+game_steps_per_seed = 113_000_000
+gpu_cap_hours = 0.625
+eval_games = 1000
+eval_games_early = 256
+eval_at_start = false                  # P3: one evaluation per stage, at its end only
+mid_evaluation = false
+shaping_weight = 1.0
+rollouts = 32
+learning_epochs = 5
+mini_batches = 4
+learning_rate = 3.0e-4
+hidden = [128, 128]
+init_log_std = -1.6
+frozen_log_std_axes = { starling = ["yaw"] }
+discount_factor = 0.99
+gae_lambda = 0.95
+entropy_loss_scale = 0.0
+value_loss_scale = 2.5
+ratio_clip = 0.2
+value_clip = 0.2
+grad_norm_clip = 0.5
+
+[pilot_p3_strike]
+# P3 Strike stages (Strike from scratch; the driver adds the earlier Guard stages to the mix at run time).
+algorithm = "IPPO"
+preset = "nus_hangar"
+train_team = "strike"
+opponent_mix = { ApfGuard = 1.0 }
+num_games = 32768
+game_steps_per_seed = 113_000_000
+gpu_cap_hours = 0.625
+eval_games = 1000
+eval_games_early = 256
+eval_at_start = false
+mid_evaluation = false
+shaping_weight = 1.0
+rollouts = 32
+learning_epochs = 5
+mini_batches = 4
+learning_rate = 3.0e-4
+hidden = [128, 128]
+init_log_std = -1.6
+frozen_log_std_axes = { starling = ["yaw"] }
+discount_factor = 0.99
+gae_lambda = 0.95
+entropy_loss_scale = 0.0
+value_loss_scale = 2.5
+ratio_clip = 0.2
+value_clip = 0.2
+grad_norm_clip = 0.5

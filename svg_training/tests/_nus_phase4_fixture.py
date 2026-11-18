@@ -94,3 +94,19 @@ QUOTE = chr(34)
 def rate(point: float, low: float, high: float) -> dict:
     return {"rate": point, "ci_low": low, "ci_high": high}
 ROUND_DPI = 40         # a small even frame size for the video test
+
+
+# ---- Phase 5 probe (tests/test_nus_phase5_probe.py): tiny counts and tick numbers, CPU
+PROBE_COUNTS = (2, 3, 4)   # game counts of a CPU probe
+PROBE_WARMUP = 1           # warm-up ticks
+PROBE_TIMED = 3            # timed ticks
+PROBE_SWEEPS = 7           # filter sweeps in the profiler-count check
+
+# ---- Phase 5 pilots (tests/test_nus_phase5_pilot.py)
+START_DRAWS = 10_000       # draws for the start-distribution moments (plan P-T2)
+MOMENT_REL = 0.03          # relative tolerance of a mean or a standard deviation at that many draws (about 5 standard errors)
+BEARING_TOL = 0.03         # absolute tolerance of the mean cosine and sine of a uniform bearing
+PILOT_GAMES = 32           # CPU training games of a pilot test (plan P-T3)
+PILOT_TIMESTEPS = 32       # one update at 32 rollouts
+EVAL_TICKS = 5             # ticks per test evaluation
+CAP_LEFT_H = 1e-5          # hours left in the pilots' budget for the refusal test (0.036 s: less than any evaluation)

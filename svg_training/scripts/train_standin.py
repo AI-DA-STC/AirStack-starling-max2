@@ -56,6 +56,20 @@ Writes ``runs/<name>/``: interface.toml (first, before training), agent.pt (at e
 curve.json (one entry per evaluation), train_result.json (at the end), the event files. Refuses an existing run
 folder. Exit 0 = finished (stopped by the budget or the cap), 1 = crash, 2 = bad arguments or refused, 3 = ABORTED.
 
+Phase 5 pilots (``--game nus_hangar``, Tasks P-T3/P-T4; plan docs/plans/2026-11-18-nus-phase5-retraining.md section 7; not gated,
+INFO records). ``--settings pilot_p1 | pilot_p2 | pilot_p3_guard | pilot_p3_strike`` of ``--pilot-config`` (configs/nus_phase5.toml),
+and only those tables, run on the NUS hangar game of Phase 4 row 5 (``nus/pilot.py``: local files through the ``nus/`` loaders, fresh
+training starts per game, evaluations on the first games of the Phase 4 paired starts with mean actions). The table names the trained team
+(``train_team``) and the opponent mix; ``--warm-start <run folder>`` loads a run of the same team and sizes; ``--no-eval-at-start`` skips
+the first evaluation. The cap is a HARD wall-clock cap including the evaluations (the table's ``gpu_cap_hours``, never above what the
+pilots' ledger ``[pilots] gpu_hours_log`` leaves of ``[pilots] total_gpu_hours``): one evaluation is estimated from a warm-up before
+anything is written, a run whose cap cannot hold it is refused, and training stops at the first update after which the evaluations still
+due would not fit; there is no --accept-long. Evaluations: at the start and half-way on ``eval_games_early`` games, at the end on
+``eval_games``; ``agent_best.pt`` keeps the best one. Videos (one per evaluation, two for the final and the best) are rendered after the
+GPU work into ``runs/<name>/videos/``; one line goes into the pilots' ledger. ``PYTORCH_CUDA_ALLOC_CONF`` is set to ``[pilots] alloc_conf``
+(the shell's value is replaced and recorded). The default ``--game s2`` path is bit-identical to the code before these hooks
+(tests/test_train_standin.py).
+
 Non-finite guard (Task 9 fix round 1): after every update (one host read there) the run checks the rollout's
 actions (the game's ``info["nonfinite_actions"]``), the last losses skrl tracked and every network weight and scaler
 statistic; every evaluation checks its own actions. On the first NaN or inf the run is ABORTED: it stops, keeps the
@@ -98,6 +112,11 @@ FIRST_LINE = "Stand-in (pipe test), not a strategy of record. Observed in the tr
 # S2b Task 9 runs of record (init log std, per-motion frozen log std axes, skrl's defaults written down).
 SETTINGS_TABLES = {"standin": ("--config", "committed S2 table, pinned (plan D14)"),
                    "standin_v2": ("--s2b-config", "approved by the owner 17 Nov 2026 for the S2b Task 9 runs of record")}
+# Phase 5 pilots (plan docs/plans/2026-11-18-nus-phase5-retraining.md section 7, Task P-T3): tables of configs/nus_phase5.toml,
+# run on the NUS hangar game only (--game nus_hangar; nus/pilot.py). Not gated: INFO records.
+PILOT_TABLES = ("pilot_p1", "pilot_p2", "pilot_p3_guard", "pilot_p3_strike")
+SETTINGS_TABLES.update({t: ("--pilot-config", "Phase 5 pilot table, PROPOSED (not gated, INFO record)") for t in PILOT_TABLES})
+GAMES = ("s2", "nus_hangar")
 SKRL_TABLE_KEYS = ("discount_factor", "gae_lambda", "entropy_loss_scale", "value_loss_scale", "ratio_clip",
                    "value_clip", "grad_norm_clip")       # skrl settings a table may write down; passed to IPPO_CFG
 
@@ -395,6 +414,102 @@ def verdict_main(argv: list[str]) -> int:
 
 
 # --------------------------------------------------------------------------------------------- arguments
+# --------------------------------------------------------------------------------------------- the games
+def build_games(args: argparse.Namespace, st: dict, motion: str, n: int, eval_sizes: list[int], guards: int, strikes: int, device: str,
+                seed: int, eval_seed: int, world_factory: Callable | None, train_team: str = "guard", pilot_world: Any = None):
+    """The training game, its opponent team, and one evaluation game per size with its opponent team and mix slices.
+
+    ``--game s2``: the S2 game on the committed neutral values (``use_local=False``), the Strike team of ``[standin] opponent_mix`` (the code
+    of S2b Task 9, moved here unchanged; the evaluation game is built first because building a game resets its world). ``--game nus_hangar``:
+    Phase 4 row 5 through ``nus/pilot.py`` (fresh training starts; evaluation on the Phase 4 paired starts), the opponent team of the
+    pilot table. Returns a namespace: cfg, game, train_opp, evals {size: (game, opponent strategy, slices)}, mix, prov_name,
+    prov_sha256, local_file, physics_meta, eval_world."""
+    import types
+
+    from skrl.utils import set_seed
+
+    from svg_training.core.game import SvgGame
+    from svg_training.core.game_config import load_game_cfg
+    from svg_training.core.starling_layer import resolve_params
+    from svg_training.core.strategy import SplitStrategy
+    from svg_training.opponents.scripted import make_strategy
+    mix = {k: float(v) for k, v in st["opponent_mix"].items()}
+    opp_team = "strike" if train_team == "guard" else "guard"
+    if args.game == "nus_hangar":
+        from svg_training.nus import pilot as nus_pilot
+        cfg = pilot_world.cfg
+        set_seed(seed)
+        game, evals_g = nus_pilot.pilot_games(pilot_world, n, eval_sizes, device, seed, eval_seed)
+
+        def opp_mix(num: int, seed0: int):
+            sl = mix_slices(mix, num)
+            return nus_pilot.mix_strategy(sl, opp_team, cfg, device, seed0), sl
+        train_opp, _ = opp_mix(n, seed + 202)
+        evals = {size: (g, *opp_mix(size, eval_seed + 202)) for size, g in evals_g.items()}
+        local = "sha256 " + ", ".join(f"{k}={v}" for k, v in pilot_world.local_sha256.items())
+        return types.SimpleNamespace(cfg=cfg, game=game, train_opp=train_opp, evals=evals, mix=mix, prov_name=pilot_world.game_file.name,
+                                     prov_sha256=pilot_world.game_sha256, local_file=local, physics_meta={}, eval_world=None)
+    e = eval_sizes[0]
+    cfg, prov = load_game_cfg(args.game_config, local_dir=LOCAL_DIR, use_local=False)
+    cfg = cfg.replace(**{"rewards.shaping_weight": float(st["shaping_weight"])})
+    if motion in ("starling", "physics"):
+        cfg = cfg.replace(**{"starling.enabled": True,
+                             "starling.backend": "physics" if motion == "physics" else "fitted"})
+    set_seed(seed)
+    physics_meta: dict = {}
+    world = eval_world = None
+    if motion == "physics":
+        from svg_training.core.physics_layer import load_game_physics_params
+        from svg_training.models.physics_params import yaw_gains_text
+        params = load_game_physics_params(cfg)
+        world = world_factory(n, guards + strikes, params, device)
+        eval_world = WorldSlice(world, e)
+        pp = resolve_params(cfg.starling.physics_params)
+        physics_meta = {"physics_params": cfg.starling.physics_params, "physics_params_sha256": sha256_file(pp),
+                        "yaw_rate_gains": yaw_gains_text(params), "physics_dt_s": params.physics_dt_s,
+                        "motor_lag": params.motor_lag, "rotor_geometry": params.rotor_geometry,
+                        "world": world.label}
+    # the evaluation game first: building a game resets its world, and the training game's reset must come last
+    eval_game = SvgGame(cfg, e, guards, strikes, device=device, seed=eval_seed, world=eval_world)
+    game = SvgGame(cfg, n, guards, strikes, device=device, seed=seed, world=world)
+
+    def strike_mix(num: int, seed0: int) -> tuple[SplitStrategy, list[tuple[str, slice]]]:
+        sl = mix_slices(mix, num)
+        parts = [(make_strategy(b, "strike", cfg, s.stop - s.start, device, seed0 + j), s)
+                 for j, (b, s) in enumerate(sl)]
+        return SplitStrategy("strike", parts), sl
+
+    train_strike, _ = strike_mix(n, seed + 202)
+    eval_strike, eval_slices = strike_mix(e, eval_seed + 202)
+    return types.SimpleNamespace(cfg=cfg, game=game, train_opp=train_strike, evals={e: (eval_game, eval_strike, eval_slices)}, mix=mix,
+                                 prov_name=pathlib.Path(prov.game_file).name, prov_sha256=prov.game_sha256, local_file="none",
+                                 physics_meta=physics_meta, eval_world=eval_world)
+
+
+def estimate_eval_s(built: Any, size: int, train_team: str, ticks: int, max_steps: int | None, device: str) -> float:
+    """Seconds for one evaluation on the ``size``-game evaluation game: ``ticks`` ticks timed (after one untimed tick) with a zero-action
+    trained team and the evaluation opponents, scaled to the evaluation length. The evaluation resets the game and both teams itself."""
+    import torch
+
+    from svg_training.opponents.scripted import make_strategy
+    game, opp, _ = built.evals[size]
+    zero = make_strategy("zero", train_team, built.cfg, size, device, 0)
+    guard, strike = (zero, opp) if train_team == "guard" else (opp, zero)
+    every = torch.ones(size, dtype=torch.bool, device=device)
+    obs = game.reset()
+    guard.reset(every)
+    strike.reset(every)
+    sync = torch.cuda.synchronize if torch.device(device).type == "cuda" else (lambda: None)
+    t0 = 0.0
+    for k in range(ticks + 1):
+        if k == 1:
+            sync()
+            t0 = time.perf_counter()
+        obs = game.step({"guard": guard.act(obs["guard"]), "strike": strike.act(obs["strike"])}).obs
+    sync()
+    return (time.perf_counter() - t0) / max(ticks, 1) * int(max_steps or game.ticks)
+
+
 def make_parser(isaac: bool = False) -> argparse.ArgumentParser:
     """isaac=True leaves --device to Isaac Lab's launcher arguments (it adds its own)."""
     ap = argparse.ArgumentParser(description="Stand-in trainer (pipe test): skrl IPPO, 2 Guard v 1 Strike.")
@@ -404,17 +519,25 @@ def make_parser(isaac: bool = False) -> argparse.ArgumentParser:
     ap.add_argument("--game-config", default=str(CONFIGS / "s2_game.toml"))
     ap.add_argument("--seed", type=int, required=True)
     ap.add_argument("--name", required=True, help="run folder name under --runs-dir")
-    ap.add_argument("--motion", choices=MOTIONS, default="pure")
+    ap.add_argument("--motion", choices=MOTIONS, default=None,
+                    help="pure (default for --game s2), starling (the only motion of --game nus_hangar), physics")
     ap.add_argument("--timesteps-override", type=int, help="skrl timesteps (tests and smoke runs only)")
     ap.add_argument("--num-games-override", type=int, help="games per batch (tests and smoke runs only)")
     ap.add_argument("--cap-min-override", type=float, help="wall-clock cap in minutes (tests only)")
-    ap.add_argument("--eval-games", type=int, default=256)
+    ap.add_argument("--eval-games", type=int, default=None,
+                    help="evaluation games (default 256 on --game s2; the pilot table's eval_games on --game nus_hangar)")
     ap.add_argument("--eval-every-updates", type=int, default=20)
     ap.add_argument("--eval-max-steps", type=int, help="steps per evaluation (default: the game length; tests)")
     ap.add_argument("--runs-dir", default=str(ROOT / "runs"))
     ap.add_argument("--settings", choices=list(SETTINGS_TABLES), default="standin",
                     help="settings table: standin = configs/s2.toml [standin] (default); standin_v2 = configs/s2b.toml "
                          "[standin_v2] (owner-approved 17 Nov 2026); not combinable with the --diag-* flags")
+    ap.add_argument("--game", choices=GAMES, default="s2",
+                    help="s2 = the S2 game on committed neutral values (default); nus_hangar = the NUS hangar game of Phase 4 row 5 "
+                         "with a pilot table of --pilot-config (Phase 5 pilots; local files through the nus/ loaders)")
+    ap.add_argument("--pilot-config", default=str(CONFIGS / "nus_phase5.toml"), help="file holding the pilot tables and [pilots]")
+    ap.add_argument("--warm-start", help="run folder whose agent.pt starts the networks (same team, team sizes and hidden layers)")
+    ap.add_argument("--no-eval-at-start", action="store_true", help="skip the evaluation at timestep 0")
     # A clean early stop for runs on a shared machine with a deadline: checked at every update boundary, like the cap.
     # The run then does its final evaluation (agent.pt = the networks at the stop), writes status ABORTED with the
     # reason in train_result.json and exits 4. Neither changes training; both are recorded.
@@ -467,7 +590,21 @@ def run(args: argparse.Namespace, world_factory: Callable | None = None) -> int:
         # 6 s with one thread against 83 s with torch's default 24 (thread start-up on tiny tensors).
         torch.set_num_threads(1)
     table_name = str(args.settings)
-    settings_path = pathlib.Path(args.config if SETTINGS_TABLES[table_name][0] == "--config" else args.s2b_config)
+    nus = args.game == "nus_hangar"
+    if nus != (table_name in PILOT_TABLES):
+        print(f"refusing: --game nus_hangar takes a pilot table ({', '.join(PILOT_TABLES)}) and a pilot table needs --game "
+              f"nus_hangar; got --game {args.game} --settings {table_name}", file=sys.stderr)
+        return 2
+    if nus:
+        from svg_training.nus import pilot as nus_pilot
+        pilots = nus_pilot.load_pilots(args.pilot_config)
+        # P0's memory note: with the 5090 shell's PYTORCH_CUDA_ALLOC_CONF (expandable_segments:True,max_split_size_mb:128, ~/.bashrc) the
+        # caching allocator reserved most of the card; expandable segments alone keep the reserve near what is allocated (P0 memory
+        # smoke, 18 Nov 2026). The pilot's value replaces the shell's, before CUDA starts; the shell's value is recorded.
+        alloc_before = os.environ.get("PYTORCH_CUDA_ALLOC_CONF", "none")
+        os.environ["PYTORCH_CUDA_ALLOC_CONF"] = str(pilots["alloc_conf"])
+    settings_path = pathlib.Path({"--config": args.config, "--s2b-config": args.s2b_config,
+                                  "--pilot-config": args.pilot_config}[SETTINGS_TABLES[table_name][0]])
     settings_text = settings_path.read_text()
     st = tomllib.loads(settings_text)[table_name]
     standin_text = pathlib.Path(args.config).read_text()          # the committed [standin], hashed in every run
@@ -486,12 +623,17 @@ def run(args: argparse.Namespace, world_factory: Callable | None = None) -> int:
             return 2
     s2b = tomllib.loads(pathlib.Path(args.s2b_config).read_text())
     caps, tb_cfg = s2b["standin_s2b"], s2b["tensorboard"]
-    motion = args.motion
+    motion = args.motion or ("starling" if nus else "pure")
+    if nus and motion != "starling":
+        print(f"refusing: --game nus_hangar plays Phase 4 row 5 (the fitted Starling layer): --motion starling, not {motion!r}",
+              file=sys.stderr)
+        return 2
     if motion not in caps["motions"]:
         print(f"refusing: motion {motion!r} not in [standin_s2b] motions {caps['motions']}", file=sys.stderr)
         return 2
-    if st["preset"] != "pure" or st["algorithm"] != "IPPO":
-        print(f"refusing: [{table_name}] preset must be 'pure' and algorithm 'IPPO' (as committed)", file=sys.stderr)
+    if st["preset"] != ("nus_hangar" if nus else "pure") or st["algorithm"] != "IPPO":
+        print(f"refusing: [{table_name}] preset must be {'nus_hangar' if nus else 'pure'!r} and algorithm 'IPPO' (as committed)",
+              file=sys.stderr)
         return 2
     frozen_table = st.get("frozen_log_std_axes")
     if frozen_table is not None and motion not in frozen_table:
@@ -510,8 +652,27 @@ def run(args: argparse.Namespace, world_factory: Callable | None = None) -> int:
         return 2
 
     n = int(args.num_games_override or st["num_games"])
-    guards, strikes = int(st["guards"]), int(st["strikes"])
-    e = int(args.eval_games)
+    train_team = str(st.get("train_team", "guard"))
+    opp_team = "strike" if train_team == "guard" else "guard"
+    warm_meta = None
+    if nus:
+        from svg_training.nus import hangar as nus_hangar
+        if int(args.seed) == int(nus_hangar.load_phase4()["ladder"]["seed"]):
+            print("refusing: the seed is the Phase 4 starts seed; training never draws the scoring starts", file=sys.stderr)
+            return 2
+        pw = nus_pilot.pilot_world(float(st["shaping_weight"]))           # the local files, through the nus/ loaders
+        guards, strikes = pw.guards, pw.strikes
+    else:
+        guards, strikes = int(st["guards"]), int(st["strikes"])
+    if args.warm_start:
+        warm_file = pathlib.Path(args.warm_start) / "interface.toml"
+        warm_meta = tomllib.loads(warm_file.read_text()) if warm_file.is_file() else None
+        if (warm_meta is None or warm_meta.get("team") != train_team or warm_meta.get("guards") != guards
+                or warm_meta.get("strikes") != strikes or warm_meta.get("network", {}).get("hidden") != list(st["hidden"])):
+            print(f"refusing: --warm-start {args.warm_start} is not a {train_team} run with {guards} v {strikes} drones and hidden "
+                  f"{list(st['hidden'])}", file=sys.stderr)
+            return 2
+    e = int(args.eval_games if args.eval_games is not None else (st["eval_games"] if nus else 256))
     if e < 2 or (motion == "physics" and e > n):
         print(f"refusing: --eval-games {e} must be >= 2 and (physics) <= the {n} training games", file=sys.stderr)
         return 2
@@ -519,45 +680,45 @@ def run(args: argparse.Namespace, world_factory: Callable | None = None) -> int:
     timesteps = int(args.timesteps_override or budget_game_steps // n)
     cap_min = float(args.cap_min_override if args.cap_min_override is not None else
                     (caps["wall_clock_cap_min_isaac"] if motion == "physics" else caps["wall_clock_cap_min_torch"]))
+    if nus:   # a hard wall-clock cap INCLUDING the evaluations; never above the pilots' budget left in the ledger; never raised
+        logged_h = nus_pilot.logged_hours(nus_pilot.GPU_HOURS_LOG)
+        cap_s = nus_pilot.effective_cap_s(st["gpu_cap_hours"], pilots["total_gpu_hours"], logged_h)
+        if args.cap_min_override is not None:
+            cap_s = min(cap_s, float(args.cap_min_override) * 60.0)
+        cap_min = cap_s / 60.0
+        e_early = min(int(st["eval_games_early"]), e)
+        eval_at_start = bool(st["eval_at_start"]) and not args.no_eval_at_start
+        mid_planned = bool(st["mid_evaluation"])
     rollouts = int(st["rollouts"])
     seed = int(args.seed)
     eval_seed = seed + EVAL_SEED_OFFSET
 
-    # ---- game (committed neutral values only) ----
-    cfg, prov = load_game_cfg(args.game_config, local_dir=LOCAL_DIR, use_local=False)
-    cfg = cfg.replace(**{"rewards.shaping_weight": float(st["shaping_weight"])})
-    if motion in ("starling", "physics"):
-        cfg = cfg.replace(**{"starling.enabled": True,
-                             "starling.backend": "physics" if motion == "physics" else "fitted"})
-    set_seed(seed)
-    physics_meta: dict = {}
-    world = eval_world = None
-    if motion == "physics":
-        from svg_training.core.physics_layer import load_game_physics_params
-        from svg_training.models.physics_params import yaw_gains_text
-        params = load_game_physics_params(cfg)
-        world = world_factory(n, guards + strikes, params, device)
-        eval_world = WorldSlice(world, e)
-        pp = resolve_params(cfg.starling.physics_params)
-        physics_meta = {"physics_params": cfg.starling.physics_params, "physics_params_sha256": sha256_file(pp),
-                        "yaw_rate_gains": yaw_gains_text(params), "physics_dt_s": params.physics_dt_s,
-                        "motor_lag": params.motor_lag, "rotor_geometry": params.rotor_geometry,
-                        "world": world.label}
-    # the evaluation game first: building a game resets its world, and the training game's reset must come last
-    eval_game = SvgGame(cfg, e, guards, strikes, device=device, seed=eval_seed, world=eval_world)
-    game = SvgGame(cfg, n, guards, strikes, device=device, seed=seed, world=world)
-    mix = {k: float(v) for k, v in st["opponent_mix"].items()}
+    # ---- games (s2: committed neutral values only; nus_hangar: Phase 4 row 5 from the local files) ----
+    eval_sizes = sorted({e} | ({e_early} if nus and (eval_at_start or mid_planned) else set())) if nus else [e]
+    if nus:
+        # one evaluation, estimated BEFORE anything is written: the final evaluation game's first ticks with a zero-action trained
+        # team (the cost is the filter's, per tick); a pilot whose cap cannot hold one evaluation is refused (no --accept-long)
+        try:
+            built = build_games(args, st, motion, n, eval_sizes, guards, strikes, device, seed, eval_seed, world_factory,
+                                train_team, pw)
+        except ValueError as ex:
+            print(f"refusing: {ex}", file=sys.stderr)
+            return 2
+        est_eval_s = estimate_eval_s(built, e, train_team, int(pilots["estimate_ticks"]), args.eval_max_steps, device)
+        print(f"estimate: one evaluation about {est_eval_s:.0f} s; cap {cap_s:.0f} s (table {st['gpu_cap_hours']} h, pilots' ledger "
+              f"{logged_h:.3f} of {pilots['total_gpu_hours']} h used)", flush=True)
+        due = 1 + int(eval_at_start)          # the evaluations that run whatever happens: the start one (if any) and the final one
+        if cap_s < est_eval_s * due:
+            print(f"refusing: the cap left ({cap_s:.0f} s) cannot hold the {due} evaluation(s) that always run (about "
+                  f"{est_eval_s * due:.0f} s)", file=sys.stderr)
+            return 2
+    else:
+        built = build_games(args, st, motion, n, eval_sizes, guards, strikes, device, seed, eval_seed, world_factory, train_team)
+    cfg, game, train_opp = built.cfg, built.game, built.train_opp
+    eval_game, eval_strike, eval_slices = built.evals[e]
+    physics_meta, eval_world, mix = built.physics_meta, built.eval_world, built.mix
     behaviours = list(mix)
-
-    def strike_mix(num: int, seed0: int) -> tuple[SplitStrategy, list[tuple[str, slice]]]:
-        sl = mix_slices(mix, num)
-        parts = [(make_strategy(b, "strike", cfg, s.stop - s.start, device, seed0 + j), s)
-                 for j, (b, s) in enumerate(sl)]
-        return SplitStrategy("strike", parts), sl
-
-    train_strike, _ = strike_mix(n, seed + 202)
-    eval_strike, eval_slices = strike_mix(e, eval_seed + 202)
-    env = SvgSkrlEnv(game, train_teams=("guard",), opponents={"strike": train_strike})
+    env = SvgSkrlEnv(game, train_teams=(train_team,), opponents={opp_team: train_opp})
     names = env.possible_agents
 
     # ---- skrl IPPO ----
@@ -619,6 +780,8 @@ def run(args: argparse.Namespace, world_factory: Callable | None = None) -> int:
     run_dir.mkdir(parents=True, exist_ok=True)
     agent = IPPO(possible_agents=names, models=models, memories=memories, observation_spaces=env.observation_spaces,
                  state_spaces=env.state_spaces, action_spaces=env.action_spaces, device=device, cfg=agent_cfg)
+    if args.warm_start:          # checked above: same team, team sizes and hidden layers
+        agent.load(str(pathlib.Path(args.warm_start) / AGENT_FILE))
 
     # ---- interface.toml, before training (STANDARDS §3 rule 1) ----
     v = ObsView()
@@ -651,11 +814,11 @@ def run(args: argparse.Namespace, world_factory: Callable | None = None) -> int:
     settings_sha = hashlib.sha256(table_text(settings_text, table_name).encode()).hexdigest()
     meta = {
         "interface_version": INTERFACE_VERSION, "pipe_test": True, "what": "stand-in (pipe test), not a strategy "
-        "of record; observed in the training simulator", "team": "guard", "guards": guards, "strikes": strikes,
-        "algorithm": "IPPO", "motion": game.motion, "preset": PRESET_OF[motion],
+        "of record; observed in the training simulator", "team": train_team, "guards": guards, "strikes": strikes,
+        "algorithm": "IPPO", "motion": game.motion, "preset": "nus_hangar" if nus else PRESET_OF[motion], "game": args.game,
         "world": physics_meta.get("world", "none"), "parameter_set": param_set,
-        "game_config": pathlib.Path(prov.game_file).name, "game_config_sha256": prov.game_sha256,
-        "local_file": "none", "settings_file": settings_path.name,
+        "game_config": built.prov_name, "game_config_sha256": built.prov_sha256,
+        "local_file": built.local_file, "settings_file": settings_path.name,
         "standin_table_sha256": hashlib.sha256(table_text(standin_text, "standin").encode()).hexdigest(),
         "settings_table": table_name, "settings_table_sha256": settings_sha,
         "settings_table_status": SETTINGS_TABLES[table_name][1],
@@ -681,6 +844,12 @@ def run(args: argparse.Namespace, world_factory: Callable | None = None) -> int:
                      "device": device, "init_log_std": effective_log_std, "frozen_log_std_axes": freeze_axes,
                      "stop_at": args.stop_at or "none", "stop_file": args.stop_file or "none", **skrl_settings},
     }
+    if nus:     # the pilot's own fields (Phase 5): its game row, evaluations, hard cap and warm start
+        meta["training"].update({"train_team": train_team, "nus_row": pw.row["id"], "eval_games_early": e_early,
+                                 "eval_at_start": eval_at_start, "mid_evaluation": mid_planned, "gpu_cap_hours": float(st["gpu_cap_hours"]),
+                                 "cap_s_effective": cap_s, "estimate_eval_s": est_eval_s, "warm_start": args.warm_start or "none",
+                                 "pytorch_cuda_alloc_conf": os.environ.get("PYTORCH_CUDA_ALLOC_CONF", "none"),
+                                 "pytorch_cuda_alloc_conf_replaced": alloc_before})
     if table_name != "standin":
         meta["settings_values"] = dict(st)          # the whole table as read (the committed [standin] is pinned)
     if physics_meta:
@@ -692,8 +861,8 @@ def run(args: argparse.Namespace, world_factory: Callable | None = None) -> int:
 
     # ---- TensorBoard: the game/ scalars and the settings text (skrl writes its own file beside it) ----
     tb = SummaryWriter(log_dir=str(run_dir), filename_suffix=".game")
-    text_of = {"game_config_sha256": prov.game_sha256, "seed": str(seed), "backend": game.motion,
-               "preset": PRESET_OF[motion]}
+    text_of = {"game_config_sha256": built.prov_sha256, "seed": str(seed), "backend": game.motion,
+               "preset": "nus_hangar" if nus else PRESET_OF[motion]}
     for key in tb_cfg["settings_text"]:
         tb.add_text(f"settings/{key}", text_of[key], 0)
     tb.add_text("settings/settings_table", f"[{table_name}] of {settings_path.name} (sha256 {settings_sha}): "
@@ -718,8 +887,9 @@ def run(args: argparse.Namespace, world_factory: Callable | None = None) -> int:
 
     # ---- the evaluation ----
     class LiveGuard:
-        """The networks being trained, as a Guard strategy: mean action after the observation scaler."""
-        team, name = "guard", "standin (current networks, mean action)"
+        """The networks being trained, as a strategy of the trained team (the Guard team on --game s2): mean action after the
+        observation scaler."""
+        team, name = train_team, "standin (current networks, mean action)"
 
         def reset(self, games) -> None:
             pass
@@ -775,12 +945,17 @@ def run(args: argparse.Namespace, world_factory: Callable | None = None) -> int:
     curve: list[dict] = []
     clock = {"train_s": 0.0, "eval_s": 0.0, "last_train_s": 0.0, "last_timestep": 0}
 
-    def evaluate(timestep: int) -> None:
+    best = {"score": None, "label": None}
+    clips_of: dict[str, list] = {}          # nus_hangar: the kept slots' clips of every evaluation, rendered after the GPU work
+
+    def evaluate(timestep: int, kind: str = "periodic") -> None:
         t0 = time.perf_counter()
         snap = eval_world.snapshot() if eval_world is not None else None
-        eval_game.gen.manual_seed(eval_seed)                 # the same evaluation games every time
+        size = e_early if nus and kind in ("start", "mid") else e
+        game_e, opp_e, slices_e = built.evals[size]
+        game_e.gen.manual_seed(eval_seed)                    # the same evaluation games every time
         live.mean_abs_max = None
-        res = play_match(eval_game, live, eval_strike, max_steps=args.eval_max_steps)
+        res = play_match(game_e, *((live, opp_e) if train_team == "guard" else (opp_e, live)), max_steps=args.eval_max_steps)
         if eval_world is not None:
             eval_world.restore(snap)
         check_finite(res.nonfinite_actions.sum(), f"evaluation at timestep {timestep}")
@@ -788,13 +963,13 @@ def run(args: argparse.Namespace, world_factory: Callable | None = None) -> int:
         rows = summarise(res, by=())
         overall = rows[0] if rows else None
         hold = {}
-        for b, sl in eval_slices:
+        for b, sl in slices_e:
             r = summarise(res.slice(sl), by=())
             hold[b] = r[0] if r else None
         oc, es = res.outcome.cpu(), res.end_step.cpu()
         fin = oc != RUNNING
         n_fin = int(fin.sum())
-        timeout = int(((oc == GUARD_WIN) & (es >= eval_game.ticks) & fin).sum())
+        timeout = int(((oc == GUARD_WIN) & (es >= game_e.ticks) & fin).sum())
         scal: dict[str, float] = {}
         if overall is not None:
             scal["game/hold_rate"] = overall["hold_rate"]
@@ -817,13 +992,20 @@ def run(args: argparse.Namespace, world_factory: Callable | None = None) -> int:
         tb.flush()
         clock["last_train_s"], clock["last_timestep"] = clock["train_s"], timestep
         entry.update({"finished": n_fin, "timeout_wins": timeout, "scalars": scal,
-                      "per_behaviour": {b: r for b, r in hold.items()}, "overall": overall})
+                      "per_behaviour": {b: r for b, r in hold.items()}, "overall": overall, "kind": kind, "eval_games": size})
         curve.append(entry)
         (run_dir / "curve.json").write_text(json.dumps(curve, indent=1))
         agent.save(str(run_dir / AGENT_FILE))
+        if nus:      # videos of every evaluation; the best evaluation for the trained team: Guard hold rate, or Strike reach rate
+            label = f"{kind}_t{timestep}"
+            clips_of[label] = nus_pilot.eval_clips(res, game_e.extras(), pw)
+            score = None if overall is None else (overall["hold_rate"] if train_team == "guard" else 1.0 - overall["hold_rate"])
+            if best["label"] is None or (score is not None and (best["score"] is None or score > best["score"])):
+                best.update(score=score, label=label)
+                agent.save(str(run_dir / "agent_best.pt"))
         clock["eval_s"] += time.perf_counter() - t0
         hr = " ".join(f"{b} {scal.get(f'game/hold_rate/{b}', float('nan')):.3f}" for b in behaviours)
-        print(f"[eval] timestep {timestep} game-steps {timestep * n:,} | hold {hr} | finished {n_fin}/{e} | "
+        print(f"[eval {kind}, {size} games] timestep {timestep} game-steps {timestep * n:,} | hold {hr} | finished {n_fin}/{e} | "
               f"train {clock['train_s']:.0f} s eval {clock['eval_s']:.0f} s", flush=True)
 
     # ---- training ----
@@ -863,7 +1045,17 @@ def run(args: argparse.Namespace, world_factory: Callable | None = None) -> int:
                     updates = (timestep + 1) // rollouts
                     check_finite(nonfinite, f"update {updates} (timestep {timestep + 1})")
                     nonfinite = torch.zeros_like(nonfinite)
-                    if clock["train_s"] >= cap_min * 60.0:
+                    if nus:       # hard wall-clock cap incl. evaluations: stop while the evaluations still due fit
+                        update_s = clock["train_s"] - clock.get("train_at_update", 0.0)
+                        clock["train_at_update"] = clock["train_s"]
+                        elapsed = time.time() - t_start
+                        if pilot_state["mid_pending"] and nus_pilot.must_stop(elapsed, 2 * est_eval_s + update_s, cap_s):
+                            pilot_state["mid_pending"] = False
+                            pilot_state["mid_note"] = f"half-way evaluation dropped at update {updates}: no room under the cap"
+                        if nus_pilot.must_stop(elapsed, est_eval_s + update_s, cap_s):
+                            self.stopped_by_cap = True
+                            return
+                    elif clock["train_s"] >= cap_min * 60.0:
                         self.stopped_by_cap = True
                         return
                     if stop_at is not None and time.time() >= stop_at:
@@ -872,7 +1064,13 @@ def run(args: argparse.Namespace, world_factory: Callable | None = None) -> int:
                     if args.stop_file and os.path.exists(args.stop_file):
                         self.stop_reason = f"stopped by the operator: stop file {args.stop_file} present"
                         return
-                    if updates % int(args.eval_every_updates) == 0 and timestep + 1 < total:
+                    if nus:
+                        if pilot_state["mid_pending"] and clock["train_s"] >= pilot_state["half_train_s"] and timestep + 1 < total:
+                            pilot_state["mid_pending"] = False
+                            self.agents.enable_training_mode(False)
+                            evaluate(timestep + 1, "mid")
+                            self.agents.enable_training_mode(True)
+                    elif updates % int(args.eval_every_updates) == 0 and timestep + 1 < total:
                         self.agents.enable_training_mode(False)
                         evaluate(timestep + 1)
                         self.agents.enable_training_mode(True)
@@ -881,14 +1079,19 @@ def run(args: argparse.Namespace, world_factory: Callable | None = None) -> int:
                                                          "disable_progressbar": True,
                                                          "close_environment_at_exit": False})
     print(f"stand-in (pipe test): motion {game.motion}, {n} games, {timesteps} timesteps "
-          f"({timesteps * n:,} game-steps of {budget_game_steps:,}), cap {cap_min:g} min training time, "
+          f"({timesteps * n:,} game-steps of {budget_game_steps:,}), cap {cap_min:g} min "
+          f"{'wall clock incl. evaluations (hard)' if nus else 'training time'}, "
           f"run folder {run_dir}", flush=True)
     status, abort_reason = "FINISHED", None
+    if nus:   # the half-way evaluation: when the training time reaches half of what the cap leaves after the planned evaluations
+        planned = 1 + int(eval_at_start) + int(mid_planned)
+        pilot_state = {"mid_pending": mid_planned, "half_train_s": nus_pilot.mid_point_s(cap_s, est_eval_s, planned), "mid_note": None}
     try:
-        evaluate(0)
+        if not args.no_eval_at_start and (not nus or eval_at_start):
+            evaluate(0, "start")
         trainer.train()
         agent.enable_training_mode(False)
-        evaluate(trainer.timesteps_done)
+        evaluate(trainer.timesteps_done, "final")
         if trainer.stop_reason:
             status, abort_reason = "ABORTED", trainer.stop_reason
             tb.add_text("status", f"ABORTED: {trainer.stop_reason}; agent.pt is the networks at the stop",
@@ -899,10 +1102,30 @@ def run(args: argparse.Namespace, world_factory: Callable | None = None) -> int:
         status, abort_reason = "ABORTED", str(ex)
         tb.add_text("status", f"ABORTED: {ex}; agent.pt is the last evaluation's networks", trainer.timesteps_done)
         print(f"ABORTED: {ex} (agent.pt kept from the last evaluation)", file=sys.stderr, flush=True)
+    except BaseException as ex:      # a crash, an out-of-memory error or Ctrl-C: the pilots' ledger still gets the hours, then re-raise
+        if nus:
+            nus_pilot.append_gpu_hours(nus_pilot.GPU_HOURS_LOG, args.name, t_start, time.time(),
+                                       note=f"{table_name}, CRASHED: {type(ex).__name__}")
+        raise
     if getattr(agent, "writer", None) is not None:
         agent.writer.flush()
         agent.writer.close()
     tb.close()
+    gpu_end = time.time()
+    videos: list[str] = []
+    render_s = 0.0
+    if nus:      # videos after the GPU work (STANDARDS section 8): one per evaluation, two for the final and the best
+        nus_pilot.free_gpu_cache()
+        t_render = time.perf_counter()
+        names_vs = ("standin", "/".join(mix)) if train_team == "guard" else ("/".join(mix), "standin")
+        final_label = next((lb for lb in reversed(list(clips_of)) if lb.startswith("final")), None)
+        for lb, clips in clips_of.items():
+            count = int(pilots["videos_final_best"]) if lb in (final_label, best["label"]) else int(pilots["videos_per_evaluation"])
+            tag = lb + ("_final" if lb == final_label and not lb.startswith("final") else "") + ("_best" if lb == best["label"] else "")
+            videos += [str(v) for v in nus_pilot.render_clips(clips, run_dir / "videos", tag, count, pw, *names_vs, seed)]
+        render_s = time.perf_counter() - t_render
+        nus_pilot.append_gpu_hours(nus_pilot.GPU_HOURS_LOG, args.name, t_start, gpu_end,
+                                   note=f"{table_name}, {status}, videos rendered after the end ({render_s:.0f} s, CPU)")
     result = {"what": FIRST_LINE, "status": status, "abort_reason": abort_reason,
               "motion": game.motion, "seed": seed, "num_games": n,
               "timesteps_planned": timesteps, "timesteps_done": trainer.timesteps_done,
@@ -918,7 +1141,14 @@ def run(args: argparse.Namespace, world_factory: Callable | None = None) -> int:
               "upset_training_games": int(trainer.upset_games) if trainer.upset_games is not None else 0,
               "nonfinite_count": int(game._starling.drone.nonfinite_count) if motion == "physics" else 0,
               "git_commit": commit, "device": device,
-              "skrl_settings": skrl_settings,
+              "skrl_settings": skrl_settings, "train_team": train_team,
+              **({"game": "nus_hangar", "cap_s_effective": cap_s, "estimate_eval_s": est_eval_s, "gpu_seconds": gpu_end - t_start,
+                  "render_s": render_s, "videos": videos, "best_evaluation": best["label"], "mid_note": pilot_state["mid_note"],
+                  "pytorch_cuda_alloc_conf": os.environ.get("PYTORCH_CUDA_ALLOC_CONF", "none"),
+                  "pytorch_cuda_alloc_conf_replaced": alloc_before,
+                  "peak_gpu_bytes": int(torch.cuda.max_memory_allocated()) if device.startswith("cuda") else None,
+                  "peak_gpu_reserved_bytes": int(torch.cuda.max_memory_reserved()) if device.startswith("cuda") else None}
+                 if nus else {}),
               "last_tracked": {k: x for k, x in last_loss.items()}}
     (run_dir / "train_result.json").write_text(json.dumps(result, indent=1, default=str))
     if status == "ABORTED":

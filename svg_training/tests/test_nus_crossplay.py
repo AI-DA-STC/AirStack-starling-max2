@@ -220,3 +220,13 @@ def test_untrained_arm_of_n0(tmp_path):
     again = X.untrained_trees(env, env.method, seed=FROZEN_GATE["generations"], generations=FROZEN_GATE["generations"])
     first = next(iter(n0))
     assert all(a.equal(b) for a, b in zip(n0[first]["proj"], again[first]["proj"]))
+
+
+def test_untrained_arm_follows_the_environment_device(tmp_path):
+    """N0's actors live on the scoring device (a CUDA run failed with CPU trees, 18 Nov 2026); checked with the meta device."""
+    import torch
+    from _nus_phase5_method_fixture import marker_env
+    env = marker_env(tmp_path)
+    env.device = torch.device("meta")
+    trees = X.untrained_trees(env, env.method, seed=FROZEN_GATE["generations"], generations=2)
+    assert all(t.device.type == "meta" for tree in trees.values() for t in tree["proj"])

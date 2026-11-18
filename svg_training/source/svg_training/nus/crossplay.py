@@ -461,7 +461,7 @@ def untrained_trees(env, method, seed: int, generations: int) -> dict[Entry, dic
     for generation in range(1, generations + 1):
         team = team_of_generation(method, generation)
         actor = MappoActor(env.obs_dim, method, env.deploy.layernorm_epsilon, stage_generator(stage_seed(seed, generation), team, 0))
-        out[Entry(f"n{seed}", generation, team)] = {k: v for k, v in _detach_tree(actor.trunk.tree()).items()}
+        out[Entry(f"n{seed}", generation, team)] = _detach_tree(actor.to(env.device).trunk.tree())   # on the scoring device
     return out
 
 

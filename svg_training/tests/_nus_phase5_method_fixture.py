@@ -447,3 +447,4 @@ def write_fake_ours(phase5_dir, stage, seeds, env, method, generations):
             archive.append({"generation": g, "team": team, "path": str(entry), "best_update": 1})
         (folder / "self_play_state.json").write_text(json.dumps({"schema": 1, "seed": seed, "archive": archive, "active": None}))
         (folder / "status.json").write_text(json.dumps({"status": "complete", "nonfinite_abort": False}))
+MEMORY_FRACTION = 0.25    # a made-up share of GPU memory for the memory-fraction test

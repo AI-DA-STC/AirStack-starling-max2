@@ -169,3 +169,15 @@ def test_memory_fraction_is_cuda_only(tmp_path, trainer):
     out = tmp_path / "runs" / "phase5" / "s51" / "frac"
     with pytest.raises(SystemExit, match="memory-fraction"):
         trainer.main(_args(tmp_path, "--variant", "nus", "--out", str(out), "--memory-fraction", "0.3"))
+
+
+def test_memory_fraction_gets_a_device_index(trainer, monkeypatch):
+    """torch.cuda.set_per_process_memory_fraction needs a device index; a bare "cuda" failed at the 5.1 launch (18 Nov 2026)."""
+    import torch
+    calls = []
+    monkeypatch.setattr(torch.cuda, "set_per_process_memory_fraction", lambda fraction, device: calls.append((fraction, device)))
+    monkeypatch.setattr(torch.cuda, "current_device", lambda: 0)
+    from _nus_phase5_method_fixture import MEMORY_FRACTION
+    trainer.apply_memory_fraction(MEMORY_FRACTION, torch.device("cuda"))
+    trainer.apply_memory_fraction(MEMORY_FRACTION, torch.device("cuda", 1))
+    assert calls == [(MEMORY_FRACTION, 0), (MEMORY_FRACTION, 1)]

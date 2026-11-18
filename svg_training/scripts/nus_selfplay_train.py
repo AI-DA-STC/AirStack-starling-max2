@@ -96,6 +96,13 @@ def cap_reached(start: float, hours: float, pauses: Path, now: float | None = No
     return effective_seconds(start, time.time() if now is None else now, pauses) >= hours * HOUR_S
 
 
+def apply_memory_fraction(fraction: float, device) -> None:
+    """Cap this process's share of the GPU's memory (side-by-side processes, plan section 10); the call needs a device index."""
+    import torch
+    index = device.index if device.index is not None else torch.cuda.current_device()
+    torch.cuda.set_per_process_memory_fraction(fraction, index)
+
+
 def install_stop_handler(sp):
     """SIGINT (scripts/gpu_pause.sh stop, or Ctrl-C) asks the run to checkpoint and return at the next update boundary. Returns the
     previous handler (restore it when the run returns)."""
@@ -313,7 +320,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.memory_fraction is not None:
         if device.type != "cuda":
             raise SystemExit("--memory-fraction applies to --device cuda only")
-        torch.cuda.set_per_process_memory_fraction(args.memory_fraction, device)
+        apply_memory_fraction(args.memory_fraction, device)
     gates = tomllib.loads(GATES.read_text())["gates"]
     deploy = load_deploy(args.deploy)
     method = load_method(args.method)

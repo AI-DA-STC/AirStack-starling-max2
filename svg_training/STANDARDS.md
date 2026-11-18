@@ -65,6 +65,16 @@ The programme's wording rules apply to every document and figure here
   from the git-ignored `configs/local/` files (mechanism unchanged), and the record writers keep marking them.
   Tests: `tests/test_partner_privacy.py` (no NUS source file, block or path tracked; no local value hard-coded in
   code or configs). Any other partner's values stay local until that partner agrees.
+- **The PROVISIONAL bundle** (owner decision 6, 18 November 2026). The lab's converted NUS weights (G19, S20, P3G, P3S),
+  its local settings files and its recordings of NUS's game are committed in [nus_provisional/](nus_provisional/README.md),
+  labelled PROVISIONAL (trained by the lab with NUS's code, 8 generations, hangar set-up; kept so anyone can repeat our
+  numbers exactly; not final; NUS will retrain), byte-identical, with a sha256 list. That folder, and only that folder,
+  may hold NUS's values and checkpoint files: the privacy tests exempt it and nothing else. Code still never reads it
+  and never hard-codes a NUS value; `scripts/nus_install_provisional.sh` copies it into the git-ignored `configs/local/`
+  and `runs/nus_port/`, which stay git-ignored. The motion-capture camera survey and NUS's source code stay out.
+- **NUS's own words** (owner, 18 November 2026): NUS's terms (defender, attacker, area denial) may appear once per page
+  in a translation line, for example "your defender = our Guard team, your attacker = our Strike team"; the rest of
+  the page uses our words.
 - **A tag is physical contact** between a Guard drone and a Strike drone (owner, 14 November 2026).
   Write "tag" or "contact tag". The programme's public pages do not describe contact between drones. The
   contact-tag track ([plan](docs/plans/2026-11-17-contact-tag-track.md), DRAFT) may be described in this
@@ -313,6 +323,10 @@ Rules:
   the video paths. A run that ends without videos says so in its record and why.
 - Ledger rows written on a workstation are numbered T15, T16, … (WORKSTATION_SETUP §4); the lead renumbers them to
   the next T numbers when the branch merges to `main`.
+- `runs/` stays out of git. One exception (owner decision 6, 18 November 2026): the NUS-port files a ladder row and the
+  NUS parity tests need (converted weights, local settings, starts, recordings) are committed once, PROVISIONAL, in
+  [nus_provisional/](nus_provisional/README.md) and installed into `runs/nus_port/` and `configs/local/` by
+  `scripts/nus_install_provisional.sh` (§2).
 
 ## 9. Code
 

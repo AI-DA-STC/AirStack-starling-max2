@@ -101,8 +101,8 @@ Other rows: AirStack simulator = Isaac Sim 5.1.0 + Pegasus + PX4 v1.16.1 in dock
 | Path | What | On the laptop instead |
 |---|---|---|
 | `~/ma_skills-self-play/` | NUS's three branches (private, not a git repository), the private port plan `PORT_PLAN.md`, notes `_notes/`, probes `_probes/` (Run 0, self-play matrices, videos), NUS's outputs (`…/outputs/{fixed_apf,hangar}/`: checkpoints, GIFs), its own `CLAUDE.md` and **copies** of this folder's agents and skills (`.claude/`, refreshed by `sync_claude_setup.sh` at session start) | read [docs/NUS_PORT.md](docs/NUS_PORT.md) and [docs/media/nus](docs/media/nus/README.md); NUS's code comes from NUS |
-| `svg_training/configs/local/nus_*.toml` | NUS's rules, the deploy file (scale, hold), the hangar side: the files the NUS code reads | values are stated in NUS_PORT §3; rebuild the files with the commands in [TRAINING, NUS jobs](docs/TRAINING.md#nus-jobs) (needs NUS's code for the rules file) |
-| `svg_training/runs/nus_port/` | recordings, reference data, converted weights, Phase 4 rows (`scores.json`, videos) | the records in `records/` and the figures; runs are not in git |
+| `svg_training/configs/local/nus_*.toml` | NUS's rules, the deploy file (scale, hold), the hangar side: the files the NUS code reads | `scripts/nus_install_provisional.sh` installs the lab's copies from the PROVISIONAL bundle [nus_provisional/](nus_provisional/README.md) (owner decision 6, 18 Nov); or rebuild them with the commands in [TRAINING, NUS jobs](docs/TRAINING.md#nus-jobs) (needs NUS's code for the rules file) |
+| `svg_training/runs/nus_port/` | recordings, reference data, converted weights, Phase 4 rows (`scores.json`, videos) | weights, starts and recordings: the same installer; rows and videos: the records in `records/` and the figures (runs are not in git) |
 | `~/nus_jax_runs/` | logs and exact commands (`*.cmd.txt`) of every NUS job | TRAINING, NUS jobs |
 | the NUS-port worktree `~/AirStack-starling-max2-nus-port/` | branch `nus-port-phase2`, where Phase 4 runs (its `configs/local/` and `runs/` hold the data) | the merged `main` |
 

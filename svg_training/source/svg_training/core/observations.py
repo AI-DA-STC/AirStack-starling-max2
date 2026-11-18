@@ -9,9 +9,16 @@ from .game_config import GameCfg
 
 # Policy interface version (STANDARDS §3). History: "0" = 69 observation numbers (59 state); "0.1" = 71 (61 state),
 # zone centre appended at the end, 16 November 2026. A layout or scaling change raises it.
+# "0.2" (owner approved 18 November 2026 ~18:20; NUS port Phase 5 plan section 12 item 1) = 73: v0.1 plus the height band's
+# floor and ceiling (m, world z) appended at indices 71-72, no earlier index moved. v0.2 is OPT-IN (``obs_v02``): the game's
+# own observation, ``INTERFACE_VERSION`` and ``OBS_DIM`` stay v0.1, so every v0.1 consumer (the adapters, the stand-in, the
+# NUS players, the pilots) is unchanged; only the Phase 5 stage 5.2 hangar games serve v0.2.
 INTERFACE_VERSION = "0.1"
+INTERFACE_VERSION_V02 = "0.2"
 SLOT = 7                      # rel pos 3, rel vel 3, present 1
 OBS_DIM = 71                  # own 8 + game 5 + (pad_guards + pad_strikes) x 7 + zone centre 2 (default pads 5 + 3)
+OBS_DIM_V02 = OBS_DIM + 2     # v0.1 + height band floor and ceiling
+INTERFACE_LAYOUTS = {"0": 69, "0.1": OBS_DIM, "0.2": OBS_DIM_V02}   # observation width of each version
 STATE_DIM = 61                # game 3 + 8 slots x 7 + zone centre 2
 # Interface history: 69 / 59 until 16 November 2026 (S2 Task 9 fix round 1); the zone centre (2 floats) was then
 # appended at the end of both, so no earlier index moved.
@@ -33,6 +40,7 @@ class ObsView:
     alive = 12
     SLOTS_FROM = 13
     zone_centre = slice(69, 71)   # zone centre x, y relative to the arena centre (m): where the walls are
+    height_band = slice(71, 73)   # v0.2 only: the height band's floor and ceiling (m, world z), as the walls for height
 
     def slot(self, k: int) -> slice:
         a = self.SLOTS_FROM + SLOT * k
@@ -79,6 +87,17 @@ def build_obs(cfg: GameCfg, pos_m: Tensor, vel_mps: Tensor, yaw: Tensor, alive: 
     obs = torch.where(alive[..., None], obs, obs * 0)                            # out: zeros ...
     obs = torch.cat((obs[..., :ObsView.team], team, obs[..., ObsView.team + 1:]), dim=-1)   # ... but team kept
     return {"guard": obs[:, :guards], "strike": obs[:, guards:]}
+
+
+def obs_v02(obs_v01: Tensor, cfg: GameCfg) -> Tensor:
+    """Interface v0.2 from v0.1: obs_v01 [..., OBS_DIM] -> [..., OBS_DIM_V02], the height band's floor and ceiling
+    (``cfg.arena.height_band_m``, m, world z, the same frame as the own height at index 2) appended at indices 71-72.
+    A drone that is out (alive 0) gets zeros there, as in every other field but team. Indices 0-70 are copied unchanged."""
+    if obs_v01.shape[-1] != OBS_DIM:
+        raise ValueError(f"obs_v02 takes a v0.1 observation of {OBS_DIM} numbers, got {obs_v01.shape[-1]}")
+    floor, ceiling = cfg.arena.height_band_m
+    band = torch.tensor((floor, ceiling), dtype=obs_v01.dtype, device=obs_v01.device).expand(*obs_v01.shape[:-1], 2)
+    return torch.cat((obs_v01, band * obs_v01[..., ObsView.alive:ObsView.alive + 1]), dim=-1)
 
 
 def build_state(cfg: GameCfg, pos_m: Tensor, vel_mps: Tensor, alive: Tensor, ar: Arenas, time_left_s: Tensor,

@@ -383,7 +383,9 @@ print(gym_env.single_action_space.shape)                       # (4,): one Strik
 
 Each drone's observation is 71 numbers: policy interface version 0.1 (`INTERFACE_VERSION` in
 `core/observations.py`, also `interface_version` on both adapters; version 0 had 69 numbers, before the zone centre
-was added at the end on 16 November 2026). Save the version with any trained strategy. It sees every drone's full state (`obs_view = "full"`); a limited view
+was added at the end on 16 November 2026). Version 0.2 (73 numbers: the same 71, then the height band's floor and ceiling in m)
+is opt-in and is served only by the NUS port's stage 5.2 hangar games (`obs_v02` in `core/observations.py`); the game
+itself still serves 0.1. Save the version with any trained strategy. It sees every drone's full state (`obs_view = "full"`); a limited view
 may come later behind the same switch, with the same layout. Frame: x east, y north, z up; metres, m/s, s.
 
 | Index | What |

@@ -90,7 +90,10 @@ The programme's wording rules apply to every document and figure here
 ## 3. Policy interface (version 0.1, PROPOSED)
 
 Version history: 0 = the S2 layout of 69 observation numbers; 0.1 (16 November 2026) = 71 numbers, the zone
-centre added at the end, no earlier index moved (`INTERFACE_VERSION` in `core/observations.py`).
+centre added at the end, no earlier index moved (`INTERFACE_VERSION` in `core/observations.py`); 0.2 (owner approved
+18 November 2026, NUS port Phase 5 plan §12 item 1) = 73 numbers, v0.1 plus the height band's floor and ceiling (m, world z)
+appended at indices 71–72, **opt-in** (`obs_v02`, `INTERFACE_VERSION_V02`): the game's own observation stays v0.1, so every v0.1
+consumer is unchanged; only the Phase 5 stage 5.2 hangar games serve v0.2 (PROPOSED, Task S2, 19 November 2026).
 
 The interface copies what the flight stack already does, so a policy needs no translation layer.
 It becomes FIXED when the velocity contract with NUS and CMU is written (Linear NEAR-874).

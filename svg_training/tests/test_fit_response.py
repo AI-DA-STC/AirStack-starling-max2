@@ -69,7 +69,7 @@ def _write_session(d: pathlib.Path, plan, scale=SCALE, noise_mps=0.01, seed=0, r
     with open(d / "teleop_command.csv", "w") as f:
         f.write("t_wall_s,vx,vy,vz,yaw_rate\n")
         for t, c in zip(t_cmd, cmd):
-            f.write(f"{t0 + t:.6f},{c[0]!r},{c[1]!r},{c[2]!r},0.0\n")
+            f.write(f"{t0 + t:.6f},{float(c[0])!r},{float(c[1])!r},{float(c[2])!r},0.0\n")
     with open(d / "odometry.csv", "w") as f:
         f.write("t_wall_s,x,y,z,vx,vy,vz,qw,qx,qy,qz\n")
         for t, p, v, qq in zip(t_od, pos, v_b, q):

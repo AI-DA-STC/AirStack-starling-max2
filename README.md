@@ -1,5 +1,7 @@
 # AirStack-starling-max2 — Starling Max 2 × AirStack lab repo
 
+**Policy training for Strike vs Guard (SvG):** to train or test drone-team strategies in simulation, start at [svg_training/README.md](svg_training/README.md). Simulation only: nothing there flies the drones.
+
 > **Any unfamiliar term** (the commander, the panel, the interfaces, mocap bridge…) → [GLOSSARY.md](docs/GLOSSARY.md), one line each.
 
 Two real ModalAI **Starling Max 2** drones, flown indoors with **OptiTrack** motion-capture positioning (mocap) by CMU's

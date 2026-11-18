@@ -1,0 +1,37 @@
+# Isaac Lab camera clips of the Phase 4 players (scripts/nus_isaac_clips.py). Presentation only: not a measurement, no gates, no ledger row.
+# Counts, names and sizes only: no partner value and none of the owner's hangar values (the arena size is never drawn as text).
+# The game is the ladder's row 6 (`[[row]] id = "6"` in configs/nus_phase4.toml: physics drone, all-pairs filter, free height with jitter) played
+# on the first `candidate_games` paired starts (`[ladder] video_slots`), so a clip shows a game that the row-6 run also played.
+
+[video]
+row = "6"                      # the ladder row whose settings the games use
+games_per_clip = 2             # recorded games per matchup: the first Strike win and the first hold among the candidates; a missing kind is made up with a further game of the other kind
+fps = 20                       # one frame per game tick (a tick is TICK_S, so the clip plays at real time)
+resolution = [1280, 720]
+max_mb = 10.0                  # MP4 size cap (crf raised until it fits)
+gif_max_mb = 2.0               # GIF size cap (owner: <= 2 MB, for the docs)
+gif_fps = 10
+gif_speed = 4.0                # the GIF plays at this multiple of real time
+hold_s = 2.0                   # the last frame, with the result, is held this long
+hold_min_s = 1.0
+marker_base_m = 0.03           # team-colour marker sphere above each drone: base radius ...
+marker_per_side = 0.0094       # ... plus this much per metre of arena side (so the marker reads at the camera distance)
+rgb_full = 255                 # colour channel maximum (team colours are stored as 0 to 255)
+warm_frames = 40               # frames rendered before a take so that textures and filters settle
+replay_tolerance_m = 1.0e-3    # the recorded game must repeat the dry run's positions to this
+caption = "Training simulator, tier 2 (Isaac Lab physics drones), frozen partner policies, not a real flight"
+
+[[clip]]
+name = "g19_vs_s20"
+guard = "G19"
+strike = "S20"
+
+[[clip]]
+name = "parked_vs_s20"
+guard = "ParkedGuard"
+strike = "S20"
+
+[[clip]]
+name = "g19_vs_apf"
+guard = "G19"
+strike = "ApfStrike"

@@ -378,6 +378,17 @@ def paired_against(pairs: list[dict[str, Any]], previous: Any, current: Any) -> 
     return out
 
 
+def paired_against_nearest(pairs: list[dict[str, Any]], previous: list[Any], current: Any) -> list[dict[str, Any]]:
+    """Like :func:`paired_against`, but ``previous`` is a list of ``per_game.npz`` files, nearest row first: each pair is compared with the first
+    file that holds it (a row that ran fewer pairs than its neighbour, e.g. control row 5a, leaves the rest to the row before it)."""
+    out = []
+    for r in pairs:
+        key = f"{r['guard']}__{r['strike']}__outcome"
+        source = next((p for p in previous if key in p.files), None)
+        out.append({**r, "paired_change": int((source[key] != current[key]).sum()) if source is not None else None})
+    return out
+
+
 def rung_table_md(pairs: list[dict[str, Any]], protected: set[float], coarse_time: bool = False, vs_row: str | None = None) -> str:
     """The markdown table of one row for a committed record: rates as ``k/n`` with their Wilson 95 % interval, every number passed through
     :func:`fmt` (a protected value reads "at the local value"). Closest approaches and the reach time are lengths and seconds. ``coarse_time``:

@@ -349,6 +349,17 @@ def test_derived_values_are_protected_and_text_collisions_read_at_the_local_valu
         ladder.check_text(f"the arena side is {w.hangar_value!r} m", protected)
 
 
+def test_paired_against_nearest_falls_back_to_the_row_before(tmp_path):
+    import numpy as np
+    near, far, now = tmp_path / "near.npz", tmp_path / "far.npz", tmp_path / "now.npz"
+    np.savez(near, A__B__outcome=np.array([0, 1, 1, 1]))
+    np.savez(far, A__B__outcome=np.array([0, 0, 0, 0]), C__D__outcome=np.array([1, 1, 0, 0]))
+    np.savez(now, A__B__outcome=np.array([0, 1, 1, 0]), C__D__outcome=np.array([1, 0, 0, 0]), E__F__outcome=np.array([0, 0, 0, 0]))
+    pairs = [{"guard": "A", "strike": "B"}, {"guard": "C", "strike": "D"}, {"guard": "E", "strike": "F"}]
+    out = ladder.paired_against_nearest(pairs, [np.load(near), np.load(far)], np.load(now))
+    assert [r["paired_change"] for r in out] == [1, 1, None]    # A-B against the nearer row, C-D only in the farther row, E-F in neither
+
+
 def test_tables_for_committed_records_leak_no_protected_value(world):
     from svg_training.nus import outputs
     w = world

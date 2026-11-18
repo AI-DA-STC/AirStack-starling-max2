@@ -131,7 +131,7 @@ motion = "hold"
 drone = "fitted"
 height = "free"
 changed = ["height"]
-blocks = ["core", "our_strike", "our_guard"]
+blocks = ["core"]          # owner, 18 Nov 2026 ~08:20: control row shrunk to the 12 core pairs to save ~1.5 h (a test also checks 5a = 4 on a small batch)
 equals = "4"
 
 [[row]]

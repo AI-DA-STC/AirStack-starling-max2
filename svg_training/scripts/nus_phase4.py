@@ -373,7 +373,8 @@ def tables(row_ids: str) -> int:
         earlier = [r for r in declared[: declared.index(row_id)] if (L.PHASE4_DIR / f"row_{r}" / "per_game.npz").exists()]
         pairs = data["pairs"]
         if earlier:   # the paired change is against the nearest declared row that ran (recomputed from the per_game files)
-            pairs = L.paired_against(pairs, np.load(L.PHASE4_DIR / f"row_{earlier[-1]}" / "per_game.npz"), np.load(L.PHASE4_DIR / f"row_{row_id}" / "per_game.npz"))
+            pairs = L.paired_against_nearest(pairs, [np.load(L.PHASE4_DIR / f"row_{r}" / "per_game.npz") for r in reversed(earlier)],
+                                             np.load(L.PHASE4_DIR / f"row_{row_id}" / "per_game.npz"))
         coarse = row["engine"] == "replica" or row["motion"] == "jump"
         text = (f"### Row {row_id}\n\n" + L.rung_table_md(pairs, protected, coarse, earlier[-1] if earlier else None) + "\n"
                 + L.extras_table_md(data["pairs"], protected))

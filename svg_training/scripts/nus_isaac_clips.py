@@ -15,7 +15,8 @@ kind); each chosen game is reset with the same seed and played again with the ca
 compared with the dry run (position difference) and the result is written to the sidecar. Output under ``runs/nus_port/isaac_clips/`` (git-ignored):
 ``<clip>_<kind>_<k>.mp4`` and ``.gif`` (sizes capped by the settings), a sidecar ``.toml``, and the raw frames and per-frame data in ``_raw/<clip>_<kind>_<k>/``.
 
-No overlay or sidecar states the arena size (owner, 18 Nov 2026: the hangar size stays local); the overlay shows the two players and the drone counts only.
+No overlay or sidecar states the arena size (written when the hangar size was kept local; since 18 Nov ~14:10 the owner allows it in documents,
+see docs/NUS_PORT.md §3, but the clips keep the plain overlay); the overlay shows the two players and the drone counts only.
 Exit 0 done, 1 crash, 2 bad arguments; the preflight's own code (11 = GPU busy) when it stops the launch.
 """
 from __future__ import annotations

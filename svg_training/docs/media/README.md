@@ -64,3 +64,7 @@ The real Isaac Sim 5.1.0 window on the laptop, with the app's own panels, taken 
 | [s2b_live_props.png](s2b_live_props.png) | Isaac Sim window, training simulator: 5 v 3 among blocks and columns placed at random. The props are for show only: the game has no obstacles yet, so the drones neither see nor avoid them. Scripted strategies; not a flight. |
 | [s2b_live_construction_site.png](s2b_live_construction_site.png) | Isaac Sim window, training simulator: 5 v 3 on an open patch of the construction-site world, used as a backdrop only. The drones do not see or avoid the buildings. Scripted strategies; a screenshot, not a flight. |
 | [s2b_live_standin_training.png](s2b_live_standin_training.png) | Isaac Sim window, training simulator, while the stand-in trainer runs: the first of 8 games, 2 Guard drones learning against 1 scripted Strike drone. A short pipe-test run stopped after a few minutes; nothing was learned and it is not a strategy. Not a flight. |
+
+## NUS port clips
+
+Every clip of the NUS port (NUS's 2-D game, the converted policies, all Phase 4 transfer-ladder rows top-down and Isaac Lab camera clips of row 6; 271 clip files, 17.5 MB) is in [nus/](nus/README.md), one line per clip.

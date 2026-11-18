@@ -4,8 +4,8 @@ Training pipeline for the **Strike vs Guard** game: thousands of games run at on
 drone teams can learn strategies that then fly through AirStack on Starling 2 Max drones.
 It is a sibling of `AirStack/`, `tools/` and `localisation/`, and it edits none of them.
 
-**Status (2026-11-18).** S0, S1 and S2 closed; S2b built through Task 8, not closed; NUS port Phases 1–3 done,
-Phase 4 running; nothing of ours trained into a strategy; nothing flown.
+**Status (2026-11-18).** S0, S1 and S2 closed; S2b built through Task 8, not closed; NUS port Phases 1–4 done,
+Phase 5 planned; nothing of ours trained into a strategy; nothing flown.
 
 | Work | Where it stands | Read |
 |---|---|---|
@@ -13,7 +13,7 @@ Phase 4 running; nothing of ours trained into a strategy; nothing flown.
 | S1 drone model, filter | filter copy T2 FAIL (accepted), simulator fit T3 FAIL, tier 1 carries the real command chain with an exploratory PX4 model | [docs/S1_RESULTS.md](docs/S1_RESULTS.md) |
 | S2 the game, plug-in point | closed 16 Nov: faster filter T8 PASS, drone-model check T5 FAIL, scripted reference T9 INFO | [docs/S2_RESULTS.md](docs/S2_RESULTS.md), [docs/PLUG_IN.md](docs/PLUG_IN.md) |
 | S2b game on Isaac Lab drones | T10 FAIL (accepted), T11 FAIL, T12 INFO, T13 FAIL (Strike drones pass over or under Guards; owner kept it, option (a)), stand-in T14 FAIL (seed 3 queued for the 5090); Task 8b not built | [docs/S2B_RESULTS.md](docs/S2B_RESULTS.md) |
-| NUS port (17–18 Nov, home RTX 5090) | Phase 1 NUS's code installed (FAIL as written, accepted); Phase 2a reference policies trained with NUS's code (self-play 3 seeds × 8 generations, seed 2 to 20); Phase 2 replica T15 PASS; Phase 3 conversion T16 PASS, T17 PASS; Phase 4 ladder rows 1–3 T18–T20 INFO, row 4 first attempt T21 ABORTED, rows 4, 5a, 5, 6: results pending (running since 18 Nov 05:52); Phase 5 waits on the owner; Phase 6 public docs pass 1 done | [docs/NUS_PORT.md](docs/NUS_PORT.md) |
+| NUS port (17–18 Nov, home RTX 5090) | Phase 1 NUS's code installed (FAIL as written, accepted); Phase 2a reference policies trained with NUS's code (self-play 3 seeds × 8 generations, seed 2 to 20); Phase 2 replica T15 PASS; Phase 3 conversion T16 PASS, T17 PASS; Phase 4 ladder rows 1–3 T18–T20 INFO, row 4 first attempt T21 ABORTED, rows 4, 5a, 5, 6 T22–T24 INFO (the filter and 3-D break NUS's push-blocking; Isaac Lab agrees with tier 1); Phase 5 planned by the lead (owner delegated): route (b) plus own-training pilots, not started; Phase 6 public docs passes 1 and 2 done (every clip published) | [docs/NUS_PORT.md](docs/NUS_PORT.md) |
 | Contact-tag track | DRAFT plan, nothing started; may be described publicly (owner, 18 Nov) | [docs/plans/2026-11-17-contact-tag-track.md](docs/plans/2026-11-17-contact-tag-track.md) |
 
 ## Read first

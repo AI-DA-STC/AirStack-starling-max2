@@ -114,7 +114,7 @@ The table shows each build step and where it stands.
 | S1 Drone model | tier 1 carries the real drone's command chain, with PX4's response from real flight logs; safety filter copy | built and run, no drone-model gate passed yet: T2 and T3 FAIL, real-log fit exploratory, T4 information only ([results](S1_RESULTS.md)); next, a real flight with planned pushes (owner) |
 | S2 The game and the plug-in point | open arena, game rules, scripted opponents, scoring tool, partner guide | closed 16 November: T8 PASS, T5 FAIL, T9 information only ([results](S2_RESULTS.md)) |
 | S2b The game on Isaac Lab drones | rigid-body Starlings with a PX4 1.14 cascade; stand-in trainer | built through Task 8, not closed: T10–T14 ([results](S2B_RESULTS.md)) |
-| NUS port (beside the build steps) | NUS's code as the reference, a copy of NUS's game, NUS's policy converted, the transfer ladder | T15–T17 PASS, ladder rows 1–3 scored, rows 4–6: results pending (running since 18 Nov 05:52) ([NUS_PORT](NUS_PORT.md)) |
+| NUS port (beside the build steps) | NUS's code as the reference, a copy of NUS's game, NUS's policy converted, the transfer ladder | T15–T17 PASS, ladder rows 1–6 scored (T18–T24 INFO): the safety filter and 3-D undo NUS's push-based blocking; Phase 5 planned ([NUS_PORT](NUS_PORT.md)) |
 | S3 Two against one | random blocks and columns, line of sight, opponent pool | not started |
 | S4 Five against three | the construction-site world, team-size randomisation, tier 2 cross-check | not started |
 | S5 Hand-over | export and `interface.toml`; a ROS 2 policy node needs the owner's separate approval | not started |

@@ -308,7 +308,8 @@ Rules:
   own recorder (for NUS's JAX code: `save_eval_gif=True` on the fixed-opponent runner; NUS's self-play runner
   writes no GIFs, so render them afterwards with `ma_skills/scripts/eval.py`). Its raw videos stay with the
   partner's outputs, outside this repository; a small chosen set may be converted and committed under
-  `docs/media/` (owner, 18 November 2026, NUS agreed; [docs/media/nus/](docs/media/nus/README.md)). The record lists
+  `docs/media/` (owner, 18 November 2026, NUS agreed; [docs/media/nus/](docs/media/nus/README.md)). For the NUS
+  port the owner widened this the same day (~14:10): every clip of the port, re-encoded small, may be committed. The record lists
   the video paths. A run that ends without videos says so in its record and why.
 - Ledger rows written on a workstation are numbered T15, T16, … (WORKSTATION_SETUP §4); the lead renumbers them to
   the next T numbers when the branch merges to `main`.

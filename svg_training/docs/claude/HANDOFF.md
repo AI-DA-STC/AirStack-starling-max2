@@ -2,13 +2,53 @@
 
 > **How to use this file.** Read it at the start of a session, after [../../CLAUDE.md](../../CLAUDE.md).
 > §4 is the current state, §5 is what is waiting on people. Update both before you stop.
-> Last updated: 18 November 2026, ~06:45, on the home RTX 5090, integration worktree `main-5090` (Phase 6 pass 1: public NUS docs, privacy rails rewritten to the owner's decision, Claude files touched up; Phase 4 rows 4–6 running). Before: ~05:30 (Phase 4: T17 PASS, rungs 1 to 3 scored, rungs 4 to 6 not run). Before: ~01:00 (Phase 3 T16 PASS). Before: 17 November 2026, ~22:30, on the home RTX 5090 (evening summary in §0). Before: ~07:00 (morning summary in §0). Before: ~05:30 (S2b Tasks 1–8 done (T13 FAIL, over/under passing), 9 Isaac seeds running, 10 docs being written, 8b deferred; see §0 S2b line). Before: ~03:00. Earlier: 16 November morning (**S2 CLOSED**: final whole-stage review done on Opus, one fix wave 4d0d409, wording c218cbb; owner ruled A and B; S2b plan approved and ready to start).
+> Last updated: 18 November 2026, ~15:15, on the home RTX 5090, NUS-port worktree `~/AirStack-starling-max2-nus-port`, branch `phase6-pass2` (Phase 6 pass 2B: **Phase 4 complete**, its results written into every doc, every NUS-port clip published, the hangar size restored, the Phase 5 plan described; uncommitted, the lead commits). Before: ~06:45, on the home RTX 5090, integration worktree `main-5090` (Phase 6 pass 1: public NUS docs, privacy rails rewritten to the owner's decision, Claude files touched up; Phase 4 rows 4–6 running). Before: ~05:30 (Phase 4: T17 PASS, rungs 1 to 3 scored, rungs 4 to 6 not run). Before: ~01:00 (Phase 3 T16 PASS). Before: 17 November 2026, ~22:30, on the home RTX 5090 (evening summary in §0). Before: ~07:00 (morning summary in §0). Before: ~05:30 (S2b Tasks 1–8 done (T13 FAIL, over/under passing), 9 Isaac seeds running, 10 docs being written, 8b deferred; see §0 S2b line). Before: ~03:00. Earlier: 16 November morning (**S2 CLOSED**: final whole-stage review done on Opus, one fix wave 4d0d409, wording c218cbb; owner ruled A and B; S2b plan approved and ready to start).
 
 ## 0. Resume here (for a new session or another Claude account)
 
 Everything needed is in this folder; nothing depends on the previous chat. Claude's user memory (`~/.claude/…`) and
 the private NUS workspace (`~/ma_skills-self-play/`, 5090 only) do **not** travel with git: if this file and a memory
 note disagree, this file wins.
+
+### Phase 4 complete and Phase 6 pass 2, 18 November 2026 ~15:15 — NUS port (for the owner, the lead and the laptop session)
+
+Observed in the training simulator only; nothing flown. **Phase 4 is complete.** Rows 4, 5a, 5 and 6 ran in one background
+chain, 05:52 to 13:54 (T22 row 4, T23 rows 5a and 5, T24 row 6; all INFO, exit 0; records
+`records/2026-11-18_nus_phase4_rung{4_2,5,6}_record.md`). What they show:
+
+| Row | Change | G19 v S20 Strike reach (of 1,000) | Reading (likely causes, not tested) |
+|---|---|---|---|
+| 3 | drone response, filter off | 43 | (before) |
+| 4 | the all-pairs safety filter | 740 | both drones give way, so push-based blocking fails; both trained Guards concede every game to NUS's scripted Strike; the parked Guard team now holds 444 |
+| 5a | free height, no jitter (control) | 740 | equals row 4 in all 12 × 1,000 games |
+| 5 | free height, ±1 mm start jitter | 983 | Strike drones pass over or under (as S2b T13): G19 v S20 horizontal closest approach median 1.09 → 0.93 m, 3-D stays 1.09 m |
+| 6 | Isaac Lab physics drone | 979 | agrees with tier 1; parked v S20 571 → 524 (247 games differ); 0 upsets |
+
+A parked (zero-speed) Guard team holds 429–476 of 1,000 against S20 on rows 4–6, more than either trained Guard: the
+filter works as a wall. The records' "Contact" column (853 of 1,000 on rows 4–6, whatever the Strike policy) counts
+any pair under 0.50 m, team-mates included: NUS's start layout already gives 853 such starts (checked on `starts.npz`);
+it is not evidence of a flight hazard (Guard–Strike 3-D closest approach: medians 1.05–1.14 m; one scripted-v-scripted game at 0.48 m; NUS-policy pairs ≥ 0.57 m). Isaac Lab camera clips: six, by `scripts/nus_isaac_clips.py` (commit `e595bfd3`).
+
+**Phase 6 pass 2 (this session; docs only, no code or test edited).** Owner, 18 Nov ~14:10: "just put all clips on the
+github … no need to keep it private": the hangar size is public (supersedes Phase 4 answer 6 and pass 1's hold-back).
+- Filled every pass-2 placeholder: NUS_PORT (at a glance, §3 arena 7.5 m and the usable flying box, §8 table
+  rows 4–6 and "What rows 4–6 show" with the Contact explanation, Figure 2 caption, §9 videos with key clips, §10 flight
+  meaning, §11, §12 renamed "Next steps: the Phase 5 plan"), NUS_PHASE4_RESULTS, PLUG_IN, HOW_IT_WORKS, README,
+  CLAUDE.md, root `CLAUDE.md` svg_training row, `docs/media/README.md` (a pointer).
+- **All clips published:** 263 new files, 16.8 MB, in `docs/media/nus/{phase3,w3,phase4/row_*,isaac}/` (260 MP4
+  re-encoded H.264 CRF 30, at most 800 px, same frame rate and frame count, checked; 3 Isaac Lab GIF previews).
+  Index, one line per clip with game, outcome and size: [../media/nus/README.md](../media/nus/README.md). The
+  top-down titles round the 7.5 m arena to "8 m x 8 m" (`viz/replay.py:148`, `:.0f`); the README says so.
+- **Phase 5 plan** (owner delegated to the lead ~12:20; own-training pilots ~12:30): route (b) with a 2-D method match
+  first, 3-D with the filter, hangar geometry, interface v0.1 plus height, gates before runs, a message to NUS, and
+  own-training pilots not of record. Described as the plan in NUS_PORT §12; nothing started.
+
+- STANDARDS §8 video bullet: one dated sentence added for the owner's ~14:10 decision (all NUS-port clips, re-encoded
+  small, may be committed; it said "a small chosen set").
+
+**Waiting on the lead:** review and commit (`git add` the four new media folders by path; 263 files); the Phase 5 plan
+document and the NUS message (D-P5-5, D-P5-6); the stale comments, the private CLAUDE.md rule and the stale STANDARDS
+fence row listed in §5.
 
 ### Phase 6 pass 1, 18 November 2026 ~06:45 — public NUS docs (for the owner, the lead and the laptop session)
 
@@ -23,8 +63,7 @@ updated (status and pointers only).
   geometry, self-play matrices and settling, T15–T17, Phase 4 rows 1–3, what it means for flight, Phase 5 options, the
   contact-tag track); Figure 1 `docs/figures/nus_selfplay_matrix.png` by the new `scripts/make_nus_selfplay_figures.py`
   (reads the 5090's matrix file); 13 clips in `docs/media/nus/` (1.25 MB, captions in its README).
-- **Pass-2 placeholders** (grep "results pending (running since 18 Nov 05:52)"): NUS_PORT at-a-glance row 4, §8 rows 4/5a/5/6
-  and the "…" cells, §9 Isaac Lab clips, §10 the filter paragraph; NUS_PHASE4_RESULTS; media/nus README; PLUG_IN.
+- **Pass-2 placeholders** in NUS_PORT, NUS_PHASE4_RESULTS, media/nus README and PLUG_IN: all filled in pass 2 (above).
 - **Setup and run docs:** GETTING_STARTED (NUS JAX env section, `msgpack` step, preflight 1024 MiB and both machines'
   approval), TRAINING (new "NUS jobs": `setup_nus_jax.sh`, `run_nus_job.sh` with unique `hydra.run.dir` and
   `save_eval_gif=True`, self-play videos with `eval.py`, the Phase 2–4 scripts in order), WORKSTATION_SETUP (§2c decided,
@@ -42,7 +81,7 @@ updated (status and pointers only).
 today's ledger) in LEDGER and the records that cite them; merge. On the laptop after the pull: install `msgpack` if missing
 (GETTING_STARTED step 5) and run `tests/test_partner_privacy.py` and `tests/test_workstation_scripts.py`, whose value scans
 need the laptop's private reference files (they skip on the 5090). **Waiting on the owner:** confirm publishing the hangar's
-hangar arena side (kept local by owner answer 6; Phase 4 clips with the size in their title are not published); choose Phase 5's route after Phase 4; push `main`.
+hangar arena side (answered ~14:10: publish, see pass 2 above); choose Phase 5's route after Phase 4 (delegated to the lead ~12:20); push `main`.
 **Gap:** Phase 1, Phase 2a, Run 0 and the self-play evaluation have no record or ledger row (their numbers are INFO, from the
 5090's private notes); write records for them if they should count.
 
@@ -322,7 +361,7 @@ agents and skills for the work. Since then S0, S1 and S2 have been built and run
 | Item | State |
 |---|---|
 | S2b | built through Task 8, not closed; T14 seed 3 queued for the 5090 (§5a); Task 8b and the S2b final review deferred |
-| NUS port | Phases 1–3 done (T15, T16, T17 PASS); Phase 4 rows 1–3 scored (T18–T20), row 4 first attempt T21 ABORTED, rows 4, 5a, 5, 6: results pending (running since 18 Nov 05:52), in the background in `~/AirStack-starling-max2-nus-port` (chain `runs/nus_port/phase4/chain_rows_4_to_6.sh`, 5090 only); Phase 5 waits on the owner; Phase 6 pass 1 done, pass 2 after Phase 4 ([NUS_PORT](../NUS_PORT.md)) |
+| NUS port | Phases 1–4 done: T15, T16, T17 PASS; Phase 4 rows 1–3 (T18–T20) and 4, 5a, 5, 6 (T22–T24) INFO, the first row 4 attempt T21 ABORTED. The safety filter and 3-D undo NUS's push-based blocking (G19 v S20 43 → 740 → 983 of 1,000; Isaac Lab 979); a parked Guard team holds about half against S20. Phase 5 planned by the lead (route (b) and own-training pilots), not started; Phase 6 passes 1 and 2 done, every clip published ([NUS_PORT](../NUS_PORT.md)) |
 | 5090 host env | `env_isaaclab` built with hand fixes (GETTING_STARTED step 5; the follow-ups in §5); NVIDIA's licence accepted (owner's choice) through the `EULA_ACCEPTED` file; `nus_jax` built; container image built, its suite not clean (§0, 17 Nov evening, item 5) |
 | Preflight | 1024 MiB per foreign process in `isaac_preflight.sh` and `run_nus_job.sh`; `--approved-headless` approved on both machines (laptop 16 Nov, 5090 18 Nov) |
 
@@ -338,6 +377,9 @@ agents and skills for the work. Since then S0, S1 and S2 have been built and run
 | GPU limit, WiFi | 1024 MiB per foreign process; headless over WiFi approved on the 5090 (18 Nov) |
 | Phase 4 | all seven plan answers accepted (18 Nov ~05:00); core hook `SvgGame._draw_starts` approved |
 | Root edits | root `README.md` and root `CLAUDE.md` svg_training rows (status and pointers only, 18 Nov) |
+| Phase 5 (~12:20) | delegated to the lead ("i follow ur recommendations"): route (b), our PyTorch copy of NUS's method with a 2-D method match first; 3-D with the filter; hangar geometry kept; gates before any run ([NUS_PORT §12](../NUS_PORT.md#12-next-steps-the-phase-5-plan)) |
+| Own training (~12:30) | "explore to see if we can train ourselves": time-boxed pilots, not of record, training our own Guard policy on tier 1 with the filter and 3-D |
+| Clips and hangar size (~14:10) | "just put all clips on the github … no need to keep it private": every NUS-port clip published; the 7.5 m arena and the usable flying box may be stated (the motion-capture camera survey is still not needed in the docs) |
 
 **How to talk to the owner.** Start from the high-level picture, then go deeper step by step. Use
 standard professional terms. Prefer simple diagrams and tables, readable at page width. He is new to
@@ -414,7 +456,7 @@ stay out of git; real flights of a contact policy should start with a virtual co
 
 ### 5a. On the home RTX 5090: S2b stand-in seed 3 (ledger T14 is FAIL already; seed 3 completes the record)
 
-**17 Nov 2026:** the 5090's host env is built (with hand fixes): setup in [../GETTING_STARTED.md](../GETTING_STARTED.md) (5090 column), record in [../WORKSTATION_SETUP.md](../WORKSTATION_SETUP.md) §2a. **18 Nov:** preflight decided (§2c: 1024 MiB, headless on WiFi approved); `--approved-headless` exits 0 when no other GPU job runs, so wait until the Phase 4 chain has finished.
+**17 Nov 2026:** the 5090's host env is built (with hand fixes): setup in [../GETTING_STARTED.md](../GETTING_STARTED.md) (5090 column), record in [../WORKSTATION_SETUP.md](../WORKSTATION_SETUP.md) §2a. **18 Nov:** preflight decided (§2c: 1024 MiB, headless on WiFi approved); `--approved-headless` exits 0 when no other GPU job runs; the Phase 4 chain finished at 13:54 and the Isaac Lab clips at 14:33 (18 Nov), so the GPU is free unless a Phase 5 job has started.
 
 Seeds 1–2 ran on the laptop (17 Nov, record `records/2026-11-17_s2b_standin_isaac_record.md`); both FAIL every gate
 cell, so T14 is FAIL and seed 3 cannot change it, but it completes the record. From `svg_training/`, with
@@ -448,10 +490,13 @@ Then amend the T14 record (it must name the
 | D1 reading of "one keep-out per team" (`push_rule = "block"`) against NUS's report; `shove` is the other switch | owner | a partner-rules result |
 | Real-drone hazards, **HYPOTHESES, not flown, not fixed**: (1) CMU's commander runs the CBF (`swarm_commander.py` ~2140) before the keep-in fence (~2210), so a drone held at the fence may let another inside 1.10 m (T9 diagnosis, training copy); (2) the position setpoint is not filtered, teammates head-on 1.083 m in tier 1 (T4) | owner (tell CMU? test?) | the next multi-drone real flight near a fence |
 | INFO speed run with staggered game restarts (T8 timed all games starting together) | Claude | any training-time claim |
-| Phase 5 route for the NUS port: (a) NUS retrains with hold, delay and our rules; (b) we port NUS's method to PyTorch; (c) fine-tune the converted policies ([NUS_PORT §12](../NUS_PORT.md#12-next-steps-phase-5-owners-choice-after-phase-4)) | owner | after Phase 4 rows 4–6 |
-| Phase 6 pass 2: fill the "results pending (running since 18 Nov 05:52)" placeholders with rows 4, 5a, 5, 6 (records T22 onwards), the ladder figure and Isaac Lab camera clips of the converted policies | lead | rows 4–6 finished |
+| Phase 5, route (b) (decided by the lead, owner delegated, 18 Nov ~12:20): write the plan with its gates (method match in 2-D first, 3 seeds), have the gatekeeper read it, then build ([NUS_PORT §12](../NUS_PORT.md#12-next-steps-the-phase-5-plan)) | lead | before any Phase 5 run |
+| Phase 5 own-training pilots (owner ~12:30): tier 1, hangar geometry, filter and 3-D, the stand-in trainer; Guard first against S20 and our scripted Strike, then self-play; not of record; videos on | lead | when the GPU is free of Phase 5 work |
+| Message to NUS with the Phase 4 findings (the filter and 3-D break push-blocking), asking whether NUS retrains on their side in parallel | lead drafts, owner sends | soon |
+| A flight-side height lock that removes over/under passing (an AirStack change, CHG entry) | owner + CMU | before a 3-D policy flies |
 | Records and ledger rows for Phase 1, Phase 2a (benchmark, fixed-opponent runs), Run 0 and the self-play evaluation (today INFO from the 5090's private notes) | lead + owner | if they should count as runs |
-| Publishing the hangar arena side and the Phase 4 clips that show it (kept local by owner answer 6) | owner | when he decides |
+| STANDARDS §4 row "Arena, lab scale" still says the keep-in fence is 4 × 4 × 4 m; `goal_two_ours.yaml:74-75` is ±3.25 m × 4 m (CHG-0072, owner 16 Nov). A flight-stack value: STANDARDS changes go through the owner | lead → owner | the next STANDARDS edit |
+| Stale "kept local" wording after the owner's ~14:10 decision (the hangar size is public): `scripts/nus_isaac_clips.py:18` docstring and `configs/nus_hangar.template.toml` lines 1–3 (comments only; the `configs/local/` mechanism stays); `~/ma_skills-self-play/CLAUDE.md` rule 1 (5090 only: still lists the hangar size as never committed); the Phase 4 plan's answer 6 (historical, leave it or add a dated note). Not edited in pass 2 (a docs-only pass) | lead | the next code edit |
 | `~/ma_skills-self-play/CLAUDE.md` rules 1 and 3 (5090 only) still say NUS values and videos never enter the repository: update them to STANDARDS §2 (18 Nov) | lead, on the 5090 | the next NUS session |
 | Code and config comments still state the old rule ("never type/copy a partner value into a tracked file"): `configs/nus_{rules,deploy,hangar,interface}.template.toml` line 3; `scripts/nus_make_local_rules.py:63`, `scripts/nus_make_local_deploy.py:51` (the header they write into the local files); `scripts/nus_make_videos.py:10` (videos stay under `runs/`); `source/svg_training/nus/hangar.py:100`. True for code and configs (the mechanism), no longer for documents (STANDARDS §2, 18 Nov). Not edited in Phase 6 pass 1 because the Phase 4 chain runs this code | lead | the next code edit, after Phase 4 |
 | Build the hand fixes into `setup_isaaclab_host.sh` (`flatdict` needs setuptools < 81; `isaaclab_rl` upgrades torch to CUDA 13 and leaves its libraries; unpinned drift), from the 5090's note of 17 Nov | owner decides | the next fresh install |
@@ -503,7 +548,8 @@ each session start by `sync_claude_setup.sh`; the laptop has none and needs none
 1. Run the `train-start` skill.
 2. The design is approved. A change to it goes through the owner first.
 3. S0, S1 and S2 are closed; S2b is built and waits on the owner's choices (§0 morning summary 17 Nov); the NUS port
-   waits on Phase 4 rows 4–6, then Phase 6 pass 2 and the owner's Phase 5 route (§0, [../NUS_PORT.md](../NUS_PORT.md)).
+   has finished Phase 4 and Phase 6 pass 2; next is the Phase 5 plan (route (b)) and the own-training pilots (§0, §5,
+   [../NUS_PORT.md](../NUS_PORT.md#12-next-steps-the-phase-5-plan)).
    Build with `train-implementer`, test first, and have `train-gatekeeper` read each record.
 4. One step at a time, S0 to S5. Each ends on a record and a ledger row.
 5. For a design question, brief the adviser agents in parallel with the files, not your conclusion;

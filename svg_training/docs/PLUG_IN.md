@@ -142,9 +142,10 @@ NUS's 2-D game; nothing is flown):
    row estimated above 2 h stops with exit 4 until `--accept-long`. Row 6 (Isaac Lab) needs `--headless --device cuda` after
    `scripts/isaac_preflight.sh --approved-headless` exits 0. Reading: `docs/NUS_PHASE4_RESULTS.md`.
 
-What it does not do: a drone that is removed from the game, other team sizes. Rungs 1 to 3 of the ladder (replica, our game, drone response
-with the filter off) are scored (`records/2026-11-18_nus_phase4_rung{1,2,3}_record.md`); the filter, 3-D and Isaac Lab rungs:
-results pending (running since 18 Nov 05:52); the first foreground attempt is `records/2026-11-18_nus_phase4_rung4_record.md`, ABORTED. The gates of Phase 3 compare the converted policy with NUS's own policy, in the
+What it does not do: a drone that is removed from the game, other team sizes. All six rungs of the ladder are scored: replica, our game, drone
+response with the filter off (`records/2026-11-18_nus_phase4_rung{1,2,3}_record.md`), then the filter, 3-D and Isaac Lab
+(`records/2026-11-18_nus_phase4_rung{4_2,5,6}_record.md`; the first foreground attempt at rung 4 is `records/2026-11-18_nus_phase4_rung4_record.md`,
+ABORTED). The gates of Phase 3 compare the converted policy with NUS's own policy, in the
 replica (`records/2026-11-18_nus_phase3_conversion_record.md`; the archive pair in `records/2026-11-18_nus_phase4_w3_reference_gates_record.md`).
 
 ## What the scoring tool prints

@@ -486,3 +486,22 @@ def test_slot_picker_and_two_clips_per_pair_are_rendered(world, tmp_path):
         path = render_replay(rec, out / f"{clip['kind']}.mp4", speed=w.deploy.hold_ticks, fps=THREE, dpi=ROUND_DPI)
         assert path.stat().st_size > EXACT
     assert len(list(out.glob("*.mp4"))) == len(clips)
+
+
+def test_estimate_only_runs_nothing_on_a_replica_row(world, monkeypatch, capsys):
+    """--estimate-only on a replica-engine row (1, 2.1, 2.2) used to run the whole row (found 19 Nov 2026 on a fresh clone): the
+    estimate block is skipped for replica rows. It now stops before writing anything, with the same exit code as on the other rows."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("nus_phase4", ROOT / "scripts" / "nus_phase4.py")
+    runner = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(runner)
+    work = ladder.RUNS_DIR / "nus_port" / "_test_estimate_only"
+    monkeypatch.setattr(ladder, "PHASE4_DIR", work)
+    monkeypatch.setattr(hangar_mod, "LOCAL_HANGAR", world.folder / "nus_hangar.toml")
+    import shutil
+    try:
+        assert runner.main(["--row", "1", "--estimate-only", "--out", str(work / "row_1")]) == runner.EXIT_LONG
+        assert not (work / "row_1").exists()
+        assert "estimate only" in capsys.readouterr().err
+    finally:
+        shutil.rmtree(work, ignore_errors=True)

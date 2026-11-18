@@ -144,6 +144,10 @@ def run_row(args, world_factory=None) -> int:
     H.check_row(row)
     H.check_row_lint([r for r in settings["row"]])
     out = require_under_runs(args.out or L.PHASE4_DIR / f"row_{args.row}")
+    if args.estimate_only and row["engine"] == "replica":   # the warm-up estimate exists for game-engine rows only; never run the row
+        print(f"estimate only: row {row['id']} plays on the replica, which has no warm-up estimate (it takes minutes); nothing was run",
+              file=sys.stderr)
+        return EXIT_LONG
     if (out / "scores.json").exists():
         print(f"refusing: {out / 'scores.json'} exists (a row is never overwritten)", file=sys.stderr)
         return EXIT_REFUSED

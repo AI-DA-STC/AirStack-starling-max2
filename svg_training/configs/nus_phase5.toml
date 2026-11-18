@@ -168,7 +168,7 @@ train_team = "guard"
 opponent_mix = { S20 = 1.0 }
 num_games = 32768
 game_steps_per_seed = 1_000_000_000    # an upper bound only: the hard cap ends the run first (about 25 updates per GPU-hour)
-gpu_cap_hours = 1.5                    # FIXED (lead, 18 Nov 2026): incl. evaluations
+gpu_cap_hours = 3.0                    # 18 Nov ~19:00, lead: shared GPU, ticks ~4x slower than solo; pilots' total stays 6.0 h (was 1.5; incl. evaluations)
 eval_games = 1000
 eval_games_early = 256
 eval_at_start = true

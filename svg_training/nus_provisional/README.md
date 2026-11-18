@@ -55,7 +55,9 @@ starts `40c8cc59…`, G19 `ac3dde1e…`, S20 `210165db…`, gate recordings `b43
 - **Rows 1–3 settings.** Rows 1, 2, 2.1, 2.2, 3a and 3 ran with earlier versions of `configs/nus_phase4.toml` (recorded
   sha256 `298a08b9…` and `0732011e…`); rows 4, 5a, 5 and 6 with the current file (`64ae48cf…`). The weights, local
   files and starts are the same for all rows.
-- Repeating a row on another GPU gives the same counts within the Wilson intervals, not game by game (GPU arithmetic
-  and bfloat16).
+- Repeating a row is not exact game by game. Measured 19 Nov 2026 on a fresh clone, CPU: `nus_phase4.py --w2-replay` equals
+  T16 exactly; row 1 in full matches the lab's GPU row in 7 of 12 pairs and differs by 1–3 of 1,000 games in 5, each inside
+  the record's Wilson 95 % interval (the same with torch 2.15 or 2.7). Likely causes, not separated: CPU against GPU
+  arithmetic, and the earlier settings file of rows 1–3 (above).
 - Privacy tests let this folder, and only this folder, hold NUS's values and checkpoint files (STANDARDS §2);
   everywhere else code still reads them from `configs/local/`.

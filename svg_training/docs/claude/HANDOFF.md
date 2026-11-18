@@ -29,12 +29,18 @@ first, one commit each, on `nus-release` (not pushed):
   labelled PROVISIONAL (NUS will retrain). `scripts/nus_install_provisional.sh` copies it into the git-ignored
   `configs/local/` and `runs/nus_port/`. Privacy tests exempt that folder only; STANDARDS §2 and §8 say so (dated).
   STANDARDS §2 also allows NUS's own terms once per page in a translation line.
-- Verified: in this worktree with the bundle installed, env_isaaclab, CPU only: 1074 passed, 47 skipped, 0 failed
-  (11 min); 10 NUS tests that skipped before now run and pass. A fresh clone of `nus-release` in a plain CPU venv with
-  an empty HOME: see `~/ma_skills-self-play/_notes/docs_drafts/VERIFIED_CPU_COMMANDS.md` (5090 only) for the commands,
-  time and counts. On a fresh clone, CPU, ladder row 1 in full took 97 s: 7 of 12 pairs equal the lab's GPU row game
-  count for game count, 5 differ by 1–3 of 1,000 (inside the Wilson intervals); `nus_phase4.py --w2-replay` equals T16
-  exactly (46 and 1,000 of 1,000).
+- Fresh-clone check found one more: a plain venv from `pyproject.toml` gets torch 2.15.0+cpu and skrl 2.1.2, and the
+  default-path bit-level fingerprint test (recorded with torch 2.7.0, skrl 2.1.0) failed; with torch 2.7.0 + skrl 2.1.0
+  in a CPU venv it passes, so the test now skips on other versions and names both. Pin or float the versions in
+  `pyproject.toml`: the lead's call (floating today).
+- Verified: this worktree with the bundle installed, env_isaaclab, CPU only: 1074 passed, 47 skipped, 0 failed (11 min);
+  10 NUS tests that skipped before now run and pass. A fresh clone of `nus-release` (`1fd05474`), plain CPU venv with
+  only `pip install -e .[test]`, bundle installed, empty HOME, `OMP_NUM_THREADS=4`: 1069 passed, 52 skipped, 0 failed
+  in 10 min 21 s, `git status` clean (commands: `~/ma_skills-self-play/_notes/docs_drafts/VERIFIED_CPU_COMMANDS.md`,
+  5090 only). Same clone, CPU: `nus_phase4.py --w2-replay` equals T16 exactly (46 and 1,000 of 1,000); ladder row 1 in
+  full (97 s) equals the lab's GPU row in 7 of 12 pairs and differs by 1–3 of 1,000 games in 5 (each inside the record's
+  Wilson interval; identical with torch 2.7.0, so not the torch version; CPU v GPU or the earlier settings file of rows
+  1–3, not separated).
 
 ### Phase 4 complete and Phase 6 pass 2, 18 November 2026 ~15:15 — NUS port (for the owner, the lead and the laptop session)
 
@@ -484,7 +490,8 @@ stay out of git; real flights of a contact policy should start with a virtual co
 
 - The docs pass (TRY_IT, TRAINING order, PLUG_IN CPU route) uses the new flags and the installer; the commands verified on
   a fresh clone are in `~/ma_skills-self-play/_notes/docs_drafts/VERIFIED_CPU_COMMANDS.md`.
-- `nus_phase4.py --estimate-only` is ignored on replica rows (1, 2.1, 2.2): the row runs in full (found 19 Nov; not fixed).
+- `nus_phase4.py --estimate-only` did not stop row 1 (a replica-engine row; 2.1 and 2.2 likely the same, not run): the row ran in full (found 19 Nov; not fixed).
+- `.claude/agents/train-implementer.md` and the `train-change` skill still say `configs/local/` and `runs/nus_port/` exist on the 5090 only (now installable anywhere from `nus_provisional/`).
 - Not in the bundle: `runs/nus_port/w3/reference/` (only `--cuda-parity` needs it), the 223 MB Phase 5 one-update exports
   (3 `test_nus_mappo` tests keep skipping), `configs/local/partner_rules.toml` (exists nowhere; 2 privacy scans skip).
 

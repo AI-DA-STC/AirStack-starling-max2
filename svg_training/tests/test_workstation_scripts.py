@@ -258,3 +258,15 @@ def test_gpu_limit_matches_preflight_and_clears_remote_desktop():
     runner, preflight = limit("scripts/workstation/run_nus_job.sh"), limit("scripts/isaac_preflight.sh")
     assert runner == preflight
     assert runner > 589
+
+
+def test_setup_nus_jax_cpu_option(tmp_path):
+    """--cpu (docs panel C9, owner 18 Nov 2026): a CPU-only env for NUS's code, no CUDA JAX: installs the [test] extra only and lists
+    the JAX devices on the CPU."""
+    r, sentinel = _run(tmp_path, "setup_nus_jax.sh", "--dry-run", "--cpu", "PARTNER_REPO")
+    assert r.returncode == 0, r.stderr
+    install = [ln for ln in r.stdout.splitlines() if "pip install -e" in ln]
+    assert len(install) == 1 and "PARTNER_REPO\\[test\\]" in install[0] and "cuda13" not in install[0]
+    assert "JAX_PLATFORMS=cpu" in [ln for ln in r.stdout.splitlines() if "jax.devices" in ln][0]
+    assert not sentinel.exists()
+    assert "--cpu" in _run(tmp_path, "setup_nus_jax.sh", "--help")[0].stdout

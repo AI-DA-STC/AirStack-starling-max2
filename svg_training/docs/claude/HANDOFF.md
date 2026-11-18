@@ -558,6 +558,19 @@ stay out of git; real flights of a contact policy should start with a virtual co
 
 ## 5. Open items
 
+### 5-phase5-2. Branch `nus-phase5-2` (19 Nov 2026): what stage 5.2 still needs
+
+- `train-gatekeeper` read of the S1–S5 code and of `[gates.phase5_tier1_training]` (PROPOSED), then the freeze. Items to read: the
+  opt-in v0.2 interface; the critic's missing reached flag (`critic_reached_flag`); the reward choices (sticky flag per tick, inside share
+  at the decision's end, horizontal distances); `configs/nus_phase5_tier1.toml` (training cap 72 GPU-h OPEN, the INFO pairing lists,
+  clamp tolerance 0.01 m); whether training may use the CUDA-graph filter (the evaluation always uses row 5's path, which C-1 needs).
+- 5.1 PASS, then 5.1b and 5.1c (variants run only after it); 5.2 uses the cheapest variant that PASSES. At P0's rates only 5.1c with the
+  three seeds side by side fits 72 GPU-h (about 35 h, plan §8); three seeds in **one process** is not built; separate processes need
+  `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True` plus `--memory-fraction`, tested on the GPU first.
+- Copy the Phase 4 `row_5/` and `row_6/` `scores.json` and `per_game.npz` (sha256 pinned in the gate table) into this worktree's
+  `runs/nus_port/phase4/`; the evaluation refuses without them.
+- The plan's S6–S9 and D1 (runs, evaluation, 5.3, docs) are not started.
+
 ### 5-naming. Branch `docs-naming` (19 Nov 2026): what is still open
 
 - Merge to `main` (the lead) and the owner's read of the front page. The figure `docs/figures/nus_phase4_ladder.png` still

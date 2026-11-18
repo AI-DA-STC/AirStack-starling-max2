@@ -209,18 +209,21 @@ a side it catches only large differences.
 
 ## Q7. Can we train a Guard team on our drone model?
 
-**Not yet a result.** Stage 5.2 (your method on tier 1 with drone lag, the all-pairs filter and 3-D) has not started.
-Short pilots with our simple stand-in learner (skrl IPPO, one seed, no gates) asked whether it finds the "filter as a
-wall" defence quickly:
+**First signal, not yet a gated result.** Stage 5.2 (your method on tier 1 with drone lag, the all-pairs filter and 3-D)
+has not started. Short pilots with our simple stand-in learner (skrl IPPO, one seed, no gates) asked whether it finds the
+"filter as a wall" defence quickly. **Pilot P1b, once its set-up was fixed, did:** its Guard team holds the zone against
+S20 in 829 of 1,000 games on the Phase 4 paired starts, against 429 for a Guard that parks at the centre (likely the
+filter acting as a wall around each Guard, read from the videos, not tested by a control). One seed, one opponent:
 
 | Pilot | What | Result | Evidence |
 |---|---|---|---|
 | P0 | speed of the hangar game with the filter | INFO: the filter takes 89–99 % of each tick | T25, [record](../records/2026-11-18_nus_phase5_pilot_p0_record.md) |
 | P1 | 3 Guard learners v S20, 236 M game-steps | INFO, signal not met: 0 holds of 1,000 [0.000, 0.004]. Its set-up was faulty: γ 0.99 per 0.05 s tick, a hold rewarded only at the 2,400-tick time-out (no training game reached it), and a non-zero starting mean action | T26, [record](../records/2026-11-18_nus_phase5_pilot_p1_record.md) |
-| P1b | P1 fixed (zero-mean start, one decision per 0.60 s, no shaping) | ABORTED: starved on a shared GPU; no result | T32, [record](../records/2026-11-18_nus_phase5_pilot_p1b_record.md) |
+| P1b | P1 fixed (zero-mean start, one decision per 0.60 s, no shaping) | runs 1–3 ABORTED (a shared GPU starved runs 1 and 2; run 3 stopped for a reboot). **Run 4, alone on the GPU: INFO, signal met: 829 holds of 1,000 [0.804, 0.851]** (parked Guard 429; the bar was a lower bound above 0.460). [Videos](media/nus/pilots/) | T32, T39, T40, **T41**, [record](../records/2026-11-19_nus_phase5_pilot_p1b_run4_record.md) |
 | P2 | Guard learners v scripted Strike mix, warm start from P1 | ABORTED twice before any update (a warm start from P1 told us nothing) | T27, T28, [record](../records/2026-11-18_nus_phase5_pilot_p2_record.md) |
 
-P1 tested a mis-set learner. It does not show that a learner cannot find the wall.
+P1 tested a mis-set learner. P1b shows that a simple learner can find a wall-like defence against S20 on our drone
+model; it does not show how that Guard does against other Strike behaviours (P2, not run), in self-play, or in Isaac Lab.
 
 ## Q8. Limits
 

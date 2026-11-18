@@ -458,3 +458,16 @@ tick and about 4 s per rendered frame, against 0.1–0.3 s. The five clips above
 cap (wall time of each launch, `runs/nus_port/isaac_clips_more/gpu_hours.log`, lab only). Re-encoded as the first
 set: H.264 CRF 30 at 800 px; GIFs at 4× real time, 480 px, 5 frames/s, 128 colours
 (`runs/nus_port/isaac_clips_more/publish.sh`).
+
+## Pilot P1b: our own Guard learner against S20 (tier 1, 19 Nov 2026)
+
+Recorded inside the run from its own evaluation games (record:
+[T41](../../../records/2026-11-19_nus_phase5_pilot_p1b_run4_record.md)). Tier 1 hangar game of Phase 4 row 5 (all-pairs
+safety filter, drone lag, free height); our stand-in Guard learner (skrl IPPO, one seed) against your converted Strike
+S20. Observed in the training simulator; one seed, one opponent, not gated.
+
+| Clip | What it shows |
+|---|---|
+| [p1b_run4_final_t1472_best_hold_slot0.mp4](pilots/p1b_run4_final_t1472_best_hold_slot0.mp4) | a hold, final evaluation (best checkpoint): the three Guards spread out inside the zone; S20's drones end pressed against the arena walls, kept out by the safety filter around each Guard |
+| [p1b_run4_final_t1472_best_strike_win_slot6.mp4](pilots/p1b_run4_final_t1472_best_strike_win_slot6.mp4) | one of the 171 of 1,000 games S20 still wins (final evaluation) |
+| [p1b_run4_mid_t768_strike_win_slot2.mp4](pilots/p1b_run4_mid_t768_strike_win_slot2.mp4) | a Strike win at the half-way evaluation (hold rate then 0.758) |

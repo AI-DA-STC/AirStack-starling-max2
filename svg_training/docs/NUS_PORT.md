@@ -22,7 +22,7 @@ our **Strike team**; you call your game "area denial". Last updated 18 November 
 | 2 | your game copied to PyTorch (the *replica*) | PyTorch | replica | T15 PASS: same game step by step | [Q1](NUS_RESULTS.md#q1-does-our-replica-match-your-game) |
 | 3 | your policies converted to PyTorch | PyTorch (JAX for the reference) | replica | T16 PASS; T17 PASS on G19 / S20 | [Q2](NUS_RESULTS.md#q2-does-the-converted-policy-match-yours) |
 | 4 | the transfer ladder: the game changed towards our drones, one row at a time | PyTorch; Isaac Lab for row 6 | replica, tier 1, tier 2 | INFO, T18–T20, T22–T24 (T21 ABORTED): G19 v S20 Strike reaches 9 → 17 → 43 → 740 → 983 → 979 of 1,000 | [Q3](NUS_RESULTS.md#q3-what-does-each-drone-limit-do) |
-| 5 | your training method ported to PyTorch | PyTorch | replica, then tier 1 | in progress: R0 PASS, N0 PASS, C0 PASS; 5.1 running; pilots INFO or ABORTED | §12 |
+| 5 | your training method ported to PyTorch | PyTorch | replica, then tier 1 | in progress: R0 PASS, N0 PASS, C0 PASS; 5.1 running; pilot P1b: our simple learner holds S20 in 829 of 1,000 | §12 |
 | 6 | these documents | — | — | 18 Nov | — |
 
 *Tier 1*: our fast game with a fitted drone model; *tier 2*: rigid-body Starlings in Isaac Lab; *hangar*: our flight room (§3).
@@ -240,7 +240,7 @@ our copy apart from yours; it will not mean "equivalent".
 | N0: untrained actors scored as "ours": the test must fail them | PASS: it failed them, both intervals excluding 0 | T30, [record](../records/2026-11-18_nus_phase5_n0_negative_control_record.md) |
 | C0: your code, seeds 101, 201, 301, scored as "ours": the test must pass them | PASS: both intervals contain 0 (Guards −0.027, Strikes +0.108) | T33, [record](../records/2026-11-19_nus_phase5_c0_positive_control_record.md) |
 | 5.1: our copy, seeds 1001, 2001, 3001 | running, not yet a result | — |
-| Pilots: our simple stand-in learner against S20, with the filter, no gates | P0 INFO (speed); P1 INFO, 0 holds of 1,000: its set-up was faulty (γ 0.99 per tick, a hold rewarded only at the 2,400-tick time-out, a non-zero starting mean); the fixed P1b ABORTED (starved GPU), no result; P2 ABORTED twice | T25–T28, T32; [Q7](NUS_RESULTS.md#q7-can-we-train-a-guard-team-on-our-drone-model) |
+| Pilots: our simple stand-in learner against S20, with the filter, no gates | P0 INFO (speed); P1 INFO, 0 holds of 1,000: its set-up was faulty (γ 0.99 per tick, a hold rewarded only at the 2,400-tick time-out, a non-zero starting mean); the fixed P1b: runs 1–3 ABORTED (starved GPU, reboot), run 4 INFO, **829 holds of 1,000** against S20 (parked Guard 429), its signal met; P2 ABORTED twice | T25–T28, T32, T39–T41; [Q7](NUS_RESULTS.md#q7-can-we-train-a-guard-team-on-our-drone-model) |
 | A faster safety-filter path on the GPU (opt-in, off by default) | INFO; it showed the existing filter's GPU answer depends on the batch size, and about 40 % of ParkedGuard v S20 games do not converge in 1,000 sweeps (ticks 30–33) | T31, [record](../records/2026-11-18_filter_cuda_graph_record.md) |
 
 P1 tested a mis-set learner; it does not show that a learner cannot find the "filter as a wall" defence.

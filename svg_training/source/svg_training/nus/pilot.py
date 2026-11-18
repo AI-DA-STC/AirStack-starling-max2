@@ -12,6 +12,9 @@ ledger, and the pilot videos. Not gated: every pilot is an INFO record.
   which the time so far plus the reserve (the evaluations still due and one more update) would pass the cap (``must_stop``). There is no
   ``--accept-long`` for a pilot.
 * Ledger: one line per run appended to ``[pilots] gpu_hours_log`` (name, start, end, hours of the process holding the GPU).
+* P1b (lead, 18 Nov 2026, after the P1 diagnosis): ``zero_mean_head`` starts a Guard policy at the zero action (the standing-still
+  Guard); ``DecisionHoldEnv`` makes one learner decision per ``decision_ticks`` ticks (the action held in between, the rewards summed
+  until a game ends, the end flagged), and ``HeldStrategy`` plays the evaluation on the same schedule.
 * Videos (STANDARDS section 8): one game per evaluation, two for the final and the best evaluation, top-down, through the Phase 4 clip path
   (``ladder.video_clips``, ``ladder.clip_recording``, ``viz.replay.render_replay``), into the run folder's ``videos/``.
 
@@ -28,6 +31,7 @@ from typing import Any
 import torch
 
 from ..core.game_config import TICK_S, GameCfg, load_game_cfg
+from ..core.rewards import GUARD_WIN, STRIKE_WIN
 from ..core.strategy import SplitStrategy
 from . import hangar as H
 from . import ladder
@@ -41,7 +45,7 @@ from .rules import ROOT, NusRules, file_sha256, load_rules
 from .train_game import NusHangarTrainGame
 
 PHASE5_CONFIG = ROOT / "configs" / "nus_phase5.toml"
-PILOT_TABLES = ("pilot_p1", "pilot_p2", "pilot_p3_guard", "pilot_p3_strike")
+PILOT_TABLES = ("pilot_p1", "pilot_p2", "pilot_p3_guard", "pilot_p3_strike", "pilot_p1b")
 TEAMS = ("guard", "strike")
 HOUR_S = datetime.timedelta(hours=1).total_seconds()
 LOG_HEADER = ("# Phase 5 pilots P0-P3: wall-clock hours holding the RTX 5090 (plan section 7). One line per run.\n"
@@ -159,8 +163,8 @@ def mix_strategy(parts: list[tuple[str, slice]], team: str, cfg: GameCfg, device
 # ------------------------------------------------------------------------------------------------ videos
 def eval_clips(res, extras: dict, world: PilotWorld) -> list[dict[str, Any]]:
     """The kept slots' clips of one evaluation, host tensors: the first Strike win and the first hold (``ladder.video_clips``), then, when
-    fewer than ``[pilots] videos_final_best`` games finished (an evaluation cut short by its step limit), the first unused slots as
-    "unfinished" clips up to the steps played."""
+    fewer than ``[pilots] videos_final_best`` clips exist, the first unused slots: a finished game of a kind already shown
+    ("strike_win_more" / "hold_more", up to its end) or an unfinished one ("unfinished", up to the steps played)."""
     if "video" not in extras:
         return []
     pilots = load_pilots()
@@ -169,8 +173,10 @@ def eval_clips(res, extras: dict, world: PilotWorld) -> list[dict[str, Any]]:
     used = {c["slot"] for c in clips}
     spare = [k for k in range(slots) if k not in used][:max(int(pilots["videos_final_best"]) - len(clips), 0)]
     steps = int(res.steps_played)
-    clips += [{"slot": k, "kind": "unfinished", "outcome": int(res.outcome[k]), "end_step": steps,
-               "closest_cross_m": float(res.closest_cross_m[k]), "pos_m": extras["video"][: steps + 1, k].clone()} for k in spare]
+    label = {STRIKE_WIN: "strike_win_more", GUARD_WIN: "hold_more"}          # a further finished game of a kind already shown
+    clips += [{"slot": k, "kind": label.get(int(res.outcome[k]), "unfinished"), "outcome": int(res.outcome[k]),
+               "end_step": int(res.end_step[k]) if int(res.outcome[k]) in label else steps, "closest_cross_m": float(res.closest_cross_m[k]),
+               "pos_m": extras["video"][: (int(res.end_step[k]) if int(res.outcome[k]) in label else steps) + 1, k].clone()} for k in spare]
     return clips
 
 
@@ -192,3 +198,81 @@ def free_gpu_cache() -> None:
     """Return the caching allocator's free blocks before the CPU-only video rendering."""
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
+
+
+# ------------------------------------------------------------------------------------------------ P1b: zero-mean start and decision hold
+def zero_mean_head(policy: torch.nn.Module) -> None:
+    """Zero the weights and bias of the last linear layer of ``policy.net`` (the mean head before its Tanh): the mean action is then 0
+    for every observation (the standing-still Guard); the layer still receives gradients, so it learns from there. The log std is
+    untouched."""
+    last = [m for m in policy.net if isinstance(m, torch.nn.Linear)][-1]
+    with torch.no_grad():
+        last.weight.zero_()
+        last.bias.zero_()
+
+
+def decision_ticks(value: Any, world: PilotWorld) -> int:
+    """Ticks per learner decision from a pilot table: absent = 1 (every tick), ``"deploy"`` = the deploy file's ``hold_ticks`` (read
+    from the local file), or a whole number."""
+    if value is None:
+        return 1
+    if value == "deploy":
+        return int(world.geo.hold_ticks)
+    if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+        raise ValueError(f"decision_ticks must be 'deploy' or a whole number >= 1, got {value!r}")
+    return value
+
+
+class DecisionHoldEnv:
+    """A skrl multi-agent environment (``SvgSkrlEnv``) with one decision per ``hold`` ticks: ``step`` plays the same actions for
+    ``hold`` ticks of every game at once; the reward of a game is the sum of its rewards up to and including the tick its game ended
+    (none after it: the game that starts after an end belongs to the next decision); terminated is set when a game ended at any of
+    the ticks; ``nonfinite_actions`` is summed and ``upset`` or-ed over the ticks; the observation, the state and the other info are
+    the last tick's. A game that starts inside a hold plays the held action until the next decision. Everything else is the inner
+    environment's. The only loops are over the ticks of the hold and the agent names: no loop over games."""
+
+    def __init__(self, env: Any, hold: int):
+        if int(hold) < 1:
+            raise ValueError(f"hold must be >= 1, got {hold}")
+        self.env, self.hold = env, int(hold)
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self.env, name)
+
+    def step(self, actions: dict):
+        """actions {agent: [N, 4]} -> (obs, reward {agent: [N, 1]}, terminated {agent: [N, 1] bool}, truncated, info)."""
+        acc, ended, nonfinite, upset = None, None, None, None
+        for _ in range(self.hold):
+            obs, rew, term, trunc, info = self.env.step(actions)
+            done = next(iter(term.values()))
+            if acc is None:
+                acc = {a: r.clone() for a, r in rew.items()}
+                ended, nonfinite, upset = done.clone(), info["nonfinite_actions"].clone(), info["upset"].clone()
+            else:
+                acc = {a: acc[a] + torch.where(ended, torch.zeros_like(r), r) for a, r in rew.items()}
+                ended, nonfinite, upset = ended | done, nonfinite + info["nonfinite_actions"], upset | info["upset"]
+        info = {**info, "nonfinite_actions": nonfinite, "upset": upset}
+        return obs, acc, {a: ended for a, _ in term.items()}, trunc, info
+
+
+class HeldStrategy:
+    """A strategy acting on the learner's decision schedule: the inner strategy is asked on every ``hold``-th call (counted from
+    ``restart``) and its action is repeated in between, for all games at once (as ``DecisionHoldEnv`` does in training)."""
+
+    def __init__(self, inner: Any, hold: int):
+        self.inner, self.hold = inner, int(hold)
+        self.team, self.name = inner.team, f"{inner.name} (one decision per {int(hold)} ticks)"
+        self._calls, self._last = 0, None
+
+    def restart(self) -> None:
+        """The next call asks the inner strategy (the start of a match)."""
+        self._calls, self._last = 0, None
+
+    def reset(self, games) -> None:
+        self.inner.reset(games)
+
+    def act(self, obs):
+        if self._last is None or self._calls % self.hold == 0:
+            self._last = self.inner.act(obs)
+        self._calls += 1
+        return self._last

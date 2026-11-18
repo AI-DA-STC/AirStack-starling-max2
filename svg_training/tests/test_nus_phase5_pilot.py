@@ -219,3 +219,115 @@ def test_refusals(world, tmp_path):
     pilot.append_gpu_hours(pilot.GPU_HOURS_LOG, "earlier", 0.0, (total - CAP_LEFT_H) * pilot.HOUR_S)
     assert _in_process(_pilot_args(tmp_path, "pilot_p1")) == 2                 # less than one evaluation left
     assert not (tmp_path / "runs" / "p_pilot_p1").exists()
+
+
+# ------------------------------------------------------------------------------------------------ P1b: zero-mean start and decision hold
+from _nus_phase4_fixture import FAKE_DONE_TICK, FAKE_GAMES, HOLD_TEST  # noqa: E402
+
+
+def test_zero_mean_head_gives_the_zero_action_and_still_learns():
+    from svg_training.core.observations import OBS_DIM
+    from svg_training.opponents.learned import make_models
+    hidden = tomllib.loads(PHASE5.read_text())["pilot_p1b"]["hidden"]
+    pol = make_models(["guard_0"], hidden, "cpu")["guard_0"]["policy"]
+    before = pol.log_std.detach().clone()
+    pilot.zero_mean_head(pol)
+    obs = torch.randn(PILOT_GAMES, OBS_DIM, generator=torch.Generator().manual_seed(1))
+    out = pol.net(obs)
+    assert torch.equal(out, torch.zeros_like(out)) and torch.equal(pol.log_std.detach(), before)
+    out.sum().backward()                                                        # the zeroed layer still gets a gradient
+    last = [m for m in pol.net if isinstance(m, torch.nn.Linear)][-1]
+    assert float(last.weight.grad.abs().sum()) > 0
+
+
+class _FakeEnv:
+    """Two agents, FAKE_GAMES games; reward 1 per tick per game; game 0 ends at tick FAKE_DONE_TICK (then a new game starts)."""
+    possible_agents = ["guard_0", "guard_1"]
+
+    def __init__(self):
+        self.tick = 0
+        self.seen = []
+
+    def step(self, actions):
+        self.tick += 1
+        self.seen.append(actions["guard_0"].clone())
+        done = torch.zeros(FAKE_GAMES, 1, dtype=torch.bool)
+        done[0] = self.tick == FAKE_DONE_TICK
+        ones = torch.ones(FAKE_GAMES, 1)
+        obs = {a: torch.full((FAKE_GAMES, 1), float(self.tick)) for a in self.possible_agents}
+        info = {"nonfinite_actions": torch.ones(FAKE_GAMES, dtype=torch.long), "upset": done[:, 0].clone()}
+        return obs, {a: ones for a in self.possible_agents}, {a: done for a in self.possible_agents}, \
+            {a: torch.zeros_like(done) for a in self.possible_agents}, info
+
+    def reset(self):
+        return {a: torch.zeros(FAKE_GAMES, 1) for a in self.possible_agents}, {}
+
+
+def test_decision_hold_repeats_the_action_sums_rewards_until_the_end_and_flags_it():
+    env = pilot.DecisionHoldEnv(_FakeEnv(), HOLD_TEST)
+    act = {a: torch.full((FAKE_GAMES, 1), float(k + 1)) for k, a in enumerate(env.possible_agents)}
+    obs, rew, term, trunc, info = env.step(act)
+    inner = env.env
+    assert inner.tick == HOLD_TEST and all(torch.equal(x, act["guard_0"]) for x in inner.seen)   # the same action every tick
+    assert float(obs["guard_0"][0]) == HOLD_TEST                                # the observation after the last tick
+    assert float(rew["guard_0"][0]) == FAKE_DONE_TICK and float(rew["guard_0"][1]) == HOLD_TEST   # game 0: rewards until its end only
+    assert bool(term["guard_0"][0]) and not bool(term["guard_0"][1:].any()) and not bool(trunc["guard_0"].any())
+    assert int(info["nonfinite_actions"][0]) == HOLD_TEST and bool(info["upset"][0])           # summed and or-ed over the hold
+    assert env.possible_agents == inner.possible_agents                         # everything else is the inner environment's
+
+
+def test_held_strategy_acts_every_hold_ticks_and_repeats_in_between():
+    class Count:
+        team, name = "guard", "count"
+
+        def __init__(self):
+            self.calls = 0
+
+        def reset(self, games):
+            pass
+
+        def act(self, obs):
+            self.calls += 1
+            return torch.full((obs.shape[0], 1, 1), float(self.calls))
+    held = pilot.HeldStrategy(Count(), HOLD_TEST)
+    obs = torch.zeros(FAKE_GAMES, 1, 1)
+    got = [float(held.act(obs)[0, 0, 0]) for _ in range(HOLD_TEST * 2)]
+    assert got == [1.0] * HOLD_TEST + [2.0] * HOLD_TEST and held.team == "guard"     # asked on decision ticks only, repeated between
+
+
+def test_no_loop_over_games_in_the_hold_code():
+    tree = ast.parse((ROOT / "source/svg_training/nus/pilot.py").read_text())
+    for cls in [n for n in tree.body if isinstance(n, ast.ClassDef) and n.name in ("DecisionHoldEnv", "HeldStrategy")]:
+        for loop in [n for n in ast.walk(cls) if isinstance(n, (ast.For, ast.While, ast.comprehension))]:
+            text = ast.unparse(loop.iter if not isinstance(loop, ast.While) else loop.test)
+            assert "hold" in text or "agents" in text or "items()" in text, text     # ticks of the hold or agent names, never games
+
+
+def test_p1b_start_evaluation_equals_the_zero_action_arm(world, tmp_path):
+    from svg_training.core.metrics import summarise
+    from svg_training.core.play import play_match
+    from svg_training.opponents.scripted import make_strategy
+    args = ["--game", "nus_hangar", "--settings", "pilot_p1b", "--seed", "1", "--name", "p1b", "--device", "cpu",
+            "--num-games-override", str(PILOT_GAMES), "--timesteps-override", "1", "--eval-games", str(P4_GAMES),
+            "--runs-dir", str(tmp_path / "runs")]
+    assert _in_process(args) == 0
+    run = tmp_path / "runs" / "p1b"
+    start = json.loads((run / "curve.json").read_text())[0]
+    assert start["kind"] == "start"
+    meta = tomllib.loads((run / "interface.toml").read_text())["training"]
+    assert meta["decision_ticks"] == world.geo.hold_ticks and meta["zero_mean_init"] is True
+    st = tomllib.loads(PHASE5.read_text())["pilot_p1b"]
+    pw = pilot.pilot_world(st["shaping_weight"])
+    seed, eval_seed = 1, 1 + train_standin.EVAL_SEED_OFFSET
+    _, evals = pilot.pilot_games(pw, PILOT_GAMES, [P4_GAMES], "cpu", seed, eval_seed)
+    game = evals[P4_GAMES]
+    opp = pilot.mix_strategy(train_standin.mix_slices(st["opponent_mix"], P4_GAMES), "strike", pw.cfg, "cpu", eval_seed + train_standin.OPPONENT_SEED_OFFSET)
+    game.gen.manual_seed(eval_seed)
+    res = play_match(game, make_strategy("zero", "guard", pw.cfg, P4_GAMES, "cpu", 0), opp)
+    zero = summarise(res, by=())
+    ours = start["overall"]
+    if not zero:
+        assert ours is None
+    else:
+        assert ours["guard_wins"] == zero[0]["guard_wins"] and ours["games"] == zero[0]["games"]
+        assert ours["mean_end_step"] == pytest.approx(zero[0]["mean_end_step"])

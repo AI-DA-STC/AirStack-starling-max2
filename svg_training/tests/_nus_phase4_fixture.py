@@ -110,3 +110,6 @@ PILOT_GAMES = 32           # CPU training games of a pilot test (plan P-T3)
 PILOT_TIMESTEPS = 32       # one update at 32 rollouts
 EVAL_TICKS = 5             # ticks per test evaluation
 CAP_LEFT_H = 1e-5          # hours left in the pilots' budget for the refusal test (0.036 s: less than any evaluation)
+HOLD_TEST = 3              # decision hold (ticks) of the wrapper tests
+FAKE_DONE_TICK = 2         # the tick (1-based) at which the fake environment ends game 0
+FAKE_GAMES = 4

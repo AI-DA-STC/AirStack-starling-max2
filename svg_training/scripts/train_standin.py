@@ -105,6 +105,7 @@ LOCAL_DIR = CONFIGS / "local"        # never read: every stand-in runs on the co
 MOTIONS = ("pure", "starling", "physics")
 ACTION_AXES = {"vx": 0, "vy": 1, "vz": 2, "yaw": 3}   # order of the 4 action numbers
 PRESET_OF = {"pure": "pure", "starling": "starling", "physics": "physics"}   # score.py's preset names
+OPPONENT_SEED_OFFSET = 202          # the opponent team's seed = the run (or evaluation) seed + this (unchanged since S2b)
 EVAL_SEED_OFFSET = 1000              # = [standin_gates] eval_seed_offset (the learning curve uses the same rule)
 FIRST_LINE = "Stand-in (pipe test), not a strategy of record. Observed in the training simulator."
 # --settings: which settings table the run uses, and where it lives. "standin" = configs/s2.toml [standin] as committed
@@ -114,7 +115,7 @@ SETTINGS_TABLES = {"standin": ("--config", "committed S2 table, pinned (plan D14
                    "standin_v2": ("--s2b-config", "approved by the owner 17 Nov 2026 for the S2b Task 9 runs of record")}
 # Phase 5 pilots (plan docs/plans/2026-11-18-nus-phase5-retraining.md section 7, Task P-T3): tables of configs/nus_phase5.toml,
 # run on the NUS hangar game only (--game nus_hangar; nus/pilot.py). Not gated: INFO records.
-PILOT_TABLES = ("pilot_p1", "pilot_p2", "pilot_p3_guard", "pilot_p3_strike")
+PILOT_TABLES = ("pilot_p1", "pilot_p2", "pilot_p3_guard", "pilot_p3_strike", "pilot_p1b")
 SETTINGS_TABLES.update({t: ("--pilot-config", "Phase 5 pilot table, PROPOSED (not gated, INFO record)") for t in PILOT_TABLES})
 GAMES = ("s2", "nus_hangar")
 SKRL_TABLE_KEYS = ("discount_factor", "gae_lambda", "entropy_loss_scale", "value_loss_scale", "ratio_clip",
@@ -444,8 +445,8 @@ def build_games(args: argparse.Namespace, st: dict, motion: str, n: int, eval_si
         def opp_mix(num: int, seed0: int):
             sl = mix_slices(mix, num)
             return nus_pilot.mix_strategy(sl, opp_team, cfg, device, seed0), sl
-        train_opp, _ = opp_mix(n, seed + 202)
-        evals = {size: (g, *opp_mix(size, eval_seed + 202)) for size, g in evals_g.items()}
+        train_opp, _ = opp_mix(n, seed + OPPONENT_SEED_OFFSET)
+        evals = {size: (g, *opp_mix(size, eval_seed + OPPONENT_SEED_OFFSET)) for size, g in evals_g.items()}
         local = "sha256 " + ", ".join(f"{k}={v}" for k, v in pilot_world.local_sha256.items())
         return types.SimpleNamespace(cfg=cfg, game=game, train_opp=train_opp, evals=evals, mix=mix, prov_name=pilot_world.game_file.name,
                                      prov_sha256=pilot_world.game_sha256, local_file=local, physics_meta={}, eval_world=None)
@@ -479,8 +480,8 @@ def build_games(args: argparse.Namespace, st: dict, motion: str, n: int, eval_si
                  for j, (b, s) in enumerate(sl)]
         return SplitStrategy("strike", parts), sl
 
-    train_strike, _ = strike_mix(n, seed + 202)
-    eval_strike, eval_slices = strike_mix(e, eval_seed + 202)
+    train_strike, _ = strike_mix(n, seed + OPPONENT_SEED_OFFSET)
+    eval_strike, eval_slices = strike_mix(e, eval_seed + OPPONENT_SEED_OFFSET)
     return types.SimpleNamespace(cfg=cfg, game=game, train_opp=train_strike, evals={e: (eval_game, eval_strike, eval_slices)}, mix=mix,
                                  prov_name=pathlib.Path(prov.game_file).name, prov_sha256=prov.game_sha256, local_file="none",
                                  physics_meta=physics_meta, eval_world=eval_world)
@@ -662,7 +663,9 @@ def run(args: argparse.Namespace, world_factory: Callable | None = None) -> int:
             return 2
         pw = nus_pilot.pilot_world(float(st["shaping_weight"]))           # the local files, through the nus/ loaders
         guards, strikes = pw.guards, pw.strikes
+        tps = nus_pilot.decision_ticks(st.get("decision_ticks"), pw)     # game ticks per learner decision (P1b: the deploy hold)
     else:
+        tps = 1
         guards, strikes = int(st["guards"]), int(st["strikes"])
     if args.warm_start:
         warm_file = pathlib.Path(args.warm_start) / "interface.toml"
@@ -677,7 +680,7 @@ def run(args: argparse.Namespace, world_factory: Callable | None = None) -> int:
         print(f"refusing: --eval-games {e} must be >= 2 and (physics) <= the {n} training games", file=sys.stderr)
         return 2
     budget_game_steps = int(st["game_steps_per_seed"])
-    timesteps = int(args.timesteps_override or budget_game_steps // n)
+    timesteps = int(args.timesteps_override or budget_game_steps // (n * tps))
     cap_min = float(args.cap_min_override if args.cap_min_override is not None else
                     (caps["wall_clock_cap_min_isaac"] if motion == "physics" else caps["wall_clock_cap_min_torch"]))
     if nus:   # a hard wall-clock cap INCLUDING the evaluations; never above the pilots' budget left in the ledger; never raised
@@ -719,6 +722,8 @@ def run(args: argparse.Namespace, world_factory: Callable | None = None) -> int:
     physics_meta, eval_world, mix = built.physics_meta, built.eval_world, built.mix
     behaviours = list(mix)
     env = SvgSkrlEnv(game, train_teams=(train_team,), opponents={opp_team: train_opp})
+    if tps > 1:          # P1b: one decision per tps ticks, the action held in between (nus/pilot.py DecisionHoldEnv)
+        env = nus_pilot.DecisionHoldEnv(env, tps)
     names = env.possible_agents
 
     # ---- skrl IPPO ----
@@ -736,6 +741,10 @@ def run(args: argparse.Namespace, world_factory: Callable | None = None) -> int:
         with torch.no_grad():
             for a in names:
                 models[a]["policy"].log_std.fill_(float(init_log_std))
+    zero_mean = bool(nus and st.get("zero_mean_init", False))
+    if zero_mean:        # P1b: the start policy is the standing-still Guard (mean action 0); the log std stays as set
+        for a in names:
+            nus_pilot.zero_mean_head(models[a]["policy"])
     if args.diag_freeze_log_std_axes or freeze_axes:
         # The log std is one Parameter [4] per policy, so requires_grad cannot be set per axis. A gradient hook zeroes the
         # frozen entries of its gradient on every backward pass, from the first update on. skrl's Adam (no weight
@@ -849,7 +858,8 @@ def run(args: argparse.Namespace, world_factory: Callable | None = None) -> int:
                                  "eval_at_start": eval_at_start, "mid_evaluation": mid_planned, "gpu_cap_hours": float(st["gpu_cap_hours"]),
                                  "cap_s_effective": cap_s, "estimate_eval_s": est_eval_s, "warm_start": args.warm_start or "none",
                                  "pytorch_cuda_alloc_conf": os.environ.get("PYTORCH_CUDA_ALLOC_CONF", "none"),
-                                 "pytorch_cuda_alloc_conf_replaced": alloc_before})
+                                 "pytorch_cuda_alloc_conf_replaced": alloc_before, "decision_ticks": tps,
+                                 "zero_mean_init": zero_mean})
     if table_name != "standin":
         meta["settings_values"] = dict(st)          # the whole table as read (the committed [standin] is pinned)
     if physics_meta:
@@ -942,6 +952,7 @@ def run(args: argparse.Namespace, world_factory: Callable | None = None) -> int:
             raise NonFiniteAbort(f"{where}: non-finite " + ", ".join(lossy))
 
     live = LiveGuard()
+    live_eval = nus_pilot.HeldStrategy(live, tps) if tps > 1 else live     # the evaluation on the training's decision schedule
     curve: list[dict] = []
     clock = {"train_s": 0.0, "eval_s": 0.0, "last_train_s": 0.0, "last_timestep": 0}
 
@@ -955,11 +966,13 @@ def run(args: argparse.Namespace, world_factory: Callable | None = None) -> int:
         game_e, opp_e, slices_e = built.evals[size]
         game_e.gen.manual_seed(eval_seed)                    # the same evaluation games every time
         live.mean_abs_max = None
-        res = play_match(game_e, *((live, opp_e) if train_team == "guard" else (opp_e, live)), max_steps=args.eval_max_steps)
+        if live_eval is not live:
+            live_eval.restart()
+        res = play_match(game_e, *((live_eval, opp_e) if train_team == "guard" else (opp_e, live_eval)), max_steps=args.eval_max_steps)
         if eval_world is not None:
             eval_world.restore(snap)
         check_finite(res.nonfinite_actions.sum(), f"evaluation at timestep {timestep}")
-        entry: dict = {"timestep": timestep, "game_steps": timestep * n, "train_s": clock["train_s"]}
+        entry: dict = {"timestep": timestep, "game_steps": timestep * n * tps, "train_s": clock["train_s"]}
         rows = summarise(res, by=())
         overall = rows[0] if rows else None
         hold = {}
@@ -983,7 +996,7 @@ def run(args: argparse.Namespace, world_factory: Callable | None = None) -> int:
                 scal[f"game/hold_rate/{b}"] = r["hold_rate"]
         d_train = clock["train_s"] - clock["last_train_s"]
         if d_train > 0:
-            scal["game/game_steps_per_s"] = (timestep - clock["last_timestep"]) * n / d_train
+            scal["game/game_steps_per_s"] = (timestep - clock["last_timestep"]) * n * tps / d_train
         scal["game/eval_games_finished"] = float(n_fin)
         scal["standin/mean_action_abs_max"] = float(live.mean_abs_max)
         for tag, val in scal.items():
@@ -1005,7 +1018,7 @@ def run(args: argparse.Namespace, world_factory: Callable | None = None) -> int:
                 agent.save(str(run_dir / "agent_best.pt"))
         clock["eval_s"] += time.perf_counter() - t0
         hr = " ".join(f"{b} {scal.get(f'game/hold_rate/{b}', float('nan')):.3f}" for b in behaviours)
-        print(f"[eval {kind}, {size} games] timestep {timestep} game-steps {timestep * n:,} | hold {hr} | finished {n_fin}/{e} | "
+        print(f"[eval {kind}, {size} games] timestep {timestep} game-steps {timestep * n * tps:,} | hold {hr} | finished {n_fin}/{size} | "
               f"train {clock['train_s']:.0f} s eval {clock['eval_s']:.0f} s", flush=True)
 
     # ---- training ----
@@ -1079,7 +1092,7 @@ def run(args: argparse.Namespace, world_factory: Callable | None = None) -> int:
                                                          "disable_progressbar": True,
                                                          "close_environment_at_exit": False})
     print(f"stand-in (pipe test): motion {game.motion}, {n} games, {timesteps} timesteps "
-          f"({timesteps * n:,} game-steps of {budget_game_steps:,}), cap {cap_min:g} min "
+          f"({timesteps * n * tps:,} game-steps of {budget_game_steps:,}), cap {cap_min:g} min "
           f"{'wall clock incl. evaluations (hard)' if nus else 'training time'}, "
           f"run folder {run_dir}", flush=True)
     status, abort_reason = "FINISHED", None
@@ -1129,7 +1142,7 @@ def run(args: argparse.Namespace, world_factory: Callable | None = None) -> int:
     result = {"what": FIRST_LINE, "status": status, "abort_reason": abort_reason,
               "motion": game.motion, "seed": seed, "num_games": n,
               "timesteps_planned": timesteps, "timesteps_done": trainer.timesteps_done,
-              "game_steps_done": trainer.timesteps_done * n, "game_steps_budget": budget_game_steps,
+              "game_steps_done": trainer.timesteps_done * n * tps, "game_steps_budget": budget_game_steps,
               "updates_done": trainer.timesteps_done // rollouts,
               "stopped_by_wall_clock_cap": trainer.stopped_by_cap, "wall_clock_cap_min": cap_min,
               "stopped_by_operator": trainer.stop_reason is not None,

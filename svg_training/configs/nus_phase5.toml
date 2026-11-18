@@ -156,3 +156,37 @@ value_loss_scale = 2.5
 ratio_clip = 0.2
 value_clip = 0.2
 grad_norm_clip = 0.5
+
+[pilot_p1b]
+# P1b (lead, 18 Nov 2026, after the P1 diagnosis runs/nus_port/phase5/pilots/p1_diagnosis.md): P1 with two fixes.
+# (1) zero-mean start: the last layer of every Guard policy's mean head is zeroed, so the start policy is the standing-still
+#     Guard (log std kept at -1.6); (2) one decision every `decision_ticks` ticks (the action is held in between), gamma 0.99
+#     per decision, no shaping (terminal +1 hold / -1 reach only). Same opponent, seed, games, evaluations, signal and cap as P1.
+algorithm = "IPPO"
+preset = "nus_hangar"
+train_team = "guard"
+opponent_mix = { S20 = 1.0 }
+num_games = 32768
+game_steps_per_seed = 1_000_000_000    # an upper bound only: the hard cap ends the run first (about 25 updates per GPU-hour)
+gpu_cap_hours = 1.5                    # FIXED (lead, 18 Nov 2026): incl. evaluations
+eval_games = 1000
+eval_games_early = 256
+eval_at_start = true
+mid_evaluation = true
+zero_mean_init = true                  # FIXED (lead): fix 1
+decision_ticks = "deploy"              # FIXED (lead): fix 2, one decision per the deploy file's hold_ticks (local file; NUS's schedule)
+shaping_weight = 0.0                   # FIXED (lead): fix 2, terminal reward only
+rollouts = 32                          # decisions per update (32 x decision_ticks ticks)
+learning_epochs = 5
+mini_batches = 4
+learning_rate = 3.0e-4
+hidden = [128, 128]
+init_log_std = -1.6
+frozen_log_std_axes = { starling = ["yaw"] }
+discount_factor = 0.99                 # per decision
+gae_lambda = 0.95
+entropy_loss_scale = 0.0
+value_loss_scale = 2.5
+ratio_clip = 0.2
+value_clip = 0.2
+grad_norm_clip = 0.5

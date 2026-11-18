@@ -705,9 +705,19 @@ def test_refuses_a_table_without_frozen_axes_for_the_motion(tmp_path):
 # BEFORE the hooks (commit e595bfd3, CPU, one thread): sha256 over every tensor of agent.pt (keys sorted) and the evaluations' hold rates.
 DEFAULT_PATH_AGENT_SHA256 = "e21606c26ac342237be04ff32133c5f36022e15ac73addc4e36401960dfcbd41"
 DEFAULT_PATH_HOLD = [0.25, 0.375]
+# The fingerprint is bit-level, so it holds only on the library versions it was recorded with (conda env_isaaclab). Measured 19 Nov
+# 2026: a fresh CPU venv (torch 2.15.0+cpu, skrl 2.1.2) trains to a different agent.pt; there the test skips and says why.
+FINGERPRINT_STACK = {"torch": "2.7.0", "skrl": "2.1.0"}
+
+
+def _stack() -> dict:
+    import skrl
+    return {"torch": torch.__version__.split("+")[0], "skrl": skrl.__version__}
 
 
 def test_default_path_bit_identical_after_the_nus_hooks(tmp_path):
+    if _stack() != FINGERPRINT_STACK:
+        pytest.skip(f"bit-level fingerprint recorded with {FINGERPRINT_STACK}; this environment has {_stack()} (not a pass)")
     rc = _in_process(["--config", "configs/s2.toml", "--seed", "3", "--name", "fp", "--device", "cpu", "--num-games-override", "16",
                       "--timesteps-override", "64", "--eval-games", "8", "--runs-dir", str(tmp_path)])
     assert rc == 0

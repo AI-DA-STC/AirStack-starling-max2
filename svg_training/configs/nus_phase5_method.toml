@@ -1,0 +1,30 @@
+# Phase 5 method port, our run settings for tasks M7 and M8 (plan docs/plans/2026-11-18-nus-phase5-retraining.md sections 4.3 and 8).
+# No partner value: the partner's method values live in the git-ignored configs/local/nus_method.toml. Every value here is PROPOSED
+# unless labelled otherwise. The batch shapes of 5.1b and 5.1c are read from configs/nus_port.toml [gates.phase5_method_variants],
+# with two rules of the trainer (scripts/nus_selfplay_train.py), PROPOSED by the implementer and accepted by the lead on 18 Nov 2026:
+#   - games per update are rounded up to a multiple of the pool's slot count, so every slot gets an equal block of games;
+#   - the minibatch count is the update's samples (games x steps) divided by the copied method's minibatch size in samples (its
+#     minimum batch x steps / its minibatches), and the few samples a permutation leaves over are dropped.
+
+[caps]
+# Plan section 8 (PROPOSED). A cap is GPU-hours of one stage group: wall-clock hours in which its jobs hold the GPU, overlapping jobs
+# counted once (the union of their intervals in the stage's gpu_hours.log). Each process stops at the remaining cap (hard limit).
+probe_updates = 50          # 5.1 timing probe (plan task M7, --probe-updates 50)
+probe_gpu_hours = 0.25
+s51 = 36                    # 5.1, three seeds side by side (and the follow-up seeds after an INCONCLUSIVE)
+variants = 24               # 5.1b and 5.1c together
+
+[videos]
+# STANDARDS section 8 and plan 4.3: one replica game at every selection evaluation (against the slot the learner did worst against)
+# and two per archived entry (the first Strike win and the first hold among the first games_searched games against its strongest
+# pool member).
+format = "mp4"
+games_searched = 16
+
+[info_5_1_e]
+# Lead, 18 Nov 2026: the INFO parameters of 5.1-e are the caller's, set here before any run. PROPOSED by the implementer and accepted
+# by the lead on 18 Nov 2026, from the hangar self-play probe
+# (~/ma_skills-self-play/_probes/selfplay_eval/results.md, 5090 only): its cells were all at most 0.008 or at least 0.988, and its
+# criterion (b) band was 0.2 to 0.8.
+near_shutout_margin = 0.01
+generalist_band = [0.2, 0.8]

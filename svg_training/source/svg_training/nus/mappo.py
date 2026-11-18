@@ -281,6 +281,9 @@ class Learner:
         self.gamma = team_value(method, team, "gamma")
         self.lam = team_value(method, team, "gae_lambda")
         self.advantage_weight = team_value(method, team, "advantage_weight")
+        # the batch shape: the copied method's minibatch count, or a variant's (5.1b/5.1c), which may drop the few samples a
+        # permutation leaves over when (time x games) does not divide into the minibatches
+        self.minibatches, self.drop_remainder = method.ppo_minibatches, False
 
     # ------------------------------------------------------------------ acting
     @torch.no_grad()
@@ -334,19 +337,20 @@ class Learner:
         values, old_logp = self.evaluate(rollout)
         returns, advantages = gae(rollout.rewards, values, rollout.dones, self.gamma, self.lam)
         return self.update_from(rollout.obs, rollout.central, rollout.latents, old_logp, returns, advantages, generator,
-                                permutations=permutations, entropy_noise=entropy_noise, minibatches=m.ppo_minibatches, epochs=m.ppo_epochs)
+                                permutations=permutations, entropy_noise=entropy_noise, minibatches=self.minibatches, epochs=m.ppo_epochs,
+                                drop_remainder=self.drop_remainder)
 
     def update_from(self, obs: torch.Tensor, central: torch.Tensor, latents: torch.Tensor, old_logp: torch.Tensor,
                     returns: torch.Tensor, advantages: torch.Tensor, generator: torch.Generator | None, *, minibatches: int, epochs: int,
                     permutations: list[torch.Tensor] | None = None, entropy_noise: list[torch.Tensor] | None = None,
-                    keep_raw_grads: bool = False) -> dict[str, float]:
+                    keep_raw_grads: bool = False, drop_remainder: bool = False) -> dict[str, float]:
         """The PPO epochs on a prepared batch: ``obs`` (T, N, A, D), ``central`` (T, N, S), ``latents`` (T, N, A, 2), ``old_logp``
         (T, N, A), ``returns`` and ``advantages`` (T, N). ``keep_raw_grads`` keeps the last minibatch's gradients before the clip in
         ``self.raw_grads`` (parity test)."""
         m = self.method
         t, n, a = obs.shape[:2 + 1]
         samples = t * n
-        if samples % minibatches:
+        if samples % minibatches and not drop_remainder:
             raise ValueError("time x games must divide into the minibatches")
         size = samples // minibatches
         obs, central = obs.reshape(samples, a, -1), central.reshape(samples, -1)

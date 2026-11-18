@@ -470,3 +470,60 @@ def _detach_tree(tree: dict) -> dict:
         return tuple(t.detach().clone() for t in pair)
     return {"proj": d(tree["proj"]), "input": d(tree["input"]), "output": d(tree["output"]),
             "blocks": [{k: d(v) for k, v in b.items()} for b in tree["blocks"]]}
+
+
+# ------------------------------------------------------------------------------------------------ files
+def crossplay_to_dict(xp: CrossPlay) -> dict[str, Any]:
+    """A JSON-ready form (counts and entry names only)."""
+    def nums(a):
+        return [None if math.isnan(v) else v for v in np.asarray(a, float).ravel().tolist()]
+    return {"guards": [list(e) for e in xp.guards], "strikes": [list(e) for e in xp.strikes], "games": xp.games,
+            "reached": [nums(row) for row in xp.reached], "apf_strike_reached": nums(xp.apf_strike_reached),
+            "apf_guard_reached": nums(xp.apf_guard_reached), "excluded": sorted(list(e) for e in xp.excluded)}
+
+
+def crossplay_from_dict(data: dict[str, Any]) -> CrossPlay:
+    def arr(a):
+        return np.asarray([np.nan if v is None else v for v in a], float)
+    return CrossPlay(tuple(Entry(*e) for e in data["guards"]), tuple(Entry(*e) for e in data["strikes"]),
+                     np.vstack([arr(row) for row in data["reached"]]) if data["reached"] else np.zeros((0, len(data["strikes"]))),
+                     int(data["games"]), arr(data["apf_strike_reached"]), arr(data["apf_guard_reached"]),
+                     frozenset(Entry(*e) for e in data["excluded"]))
+
+
+def merge(first: CrossPlay, second: CrossPlay) -> CrossPlay:
+    """One matrix over the entries of both (cells scored in neither stay NaN); both must share the game count."""
+    if first.games != second.games:
+        raise ValueError("the two matrices must use the same game count")
+    guards = tuple(dict.fromkeys(first.guards + second.guards))
+    strikes = tuple(dict.fromkeys(first.strikes + second.strikes))
+    reached = np.full((len(guards), len(strikes)), np.nan)
+    apf_s, apf_g = np.full(len(guards), np.nan), np.full(len(strikes), np.nan)
+    for xp in (first, second):
+        rows = [guards.index(g) for g in xp.guards]
+        cols = [strikes.index(s) for s in xp.strikes]
+        for i, r in enumerate(rows):
+            for j, c in enumerate(cols):
+                if not math.isnan(xp.reached[i, j]):
+                    reached[r, c] = xp.reached[i, j]
+            apf_s[r] = xp.apf_strike_reached[i]
+        for j, c in enumerate(cols):
+            apf_g[c] = xp.apf_guard_reached[j]
+    return CrossPlay(guards, strikes, reached, first.games, apf_s, apf_g, first.excluded | second.excluded)
+
+
+# ------------------------------------------------------------------------------------------------ 5.1-b pools
+def selection_pools(entries: Sequence[Entry], seed: int, maximum: int, recent: int) -> dict[Entry, list[Entry]]:
+    """Each entry's learned training pool, as the selection rule builds it from the earlier entries of the other team of the same
+    lineage (``selection.select_opponents`` with the lineage's run seed). Serves our arm (the run's own archive) and N0 (the earlier N0
+    entries); APF is added by :func:`worst_win`."""
+    from .selection import select_opponents
+    ordered = sorted(entries, key=lambda e: e.generation)
+    if len({e.lineage for e in ordered}) > 1:
+        raise ValueError("selection_pools takes the entries of one lineage")
+    out = {}
+    for e in ordered:
+        archive = [{"generation": o.generation, "team": o.team, "entry": o} for o in ordered if o.generation < e.generation]
+        chosen = select_opponents(archive, team=e.team, generation=e.generation, seed=seed, maximum=maximum, recent=recent)
+        out[e] = [c["entry"] for c in chosen]
+    return out

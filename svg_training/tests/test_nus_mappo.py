@@ -9,7 +9,7 @@ import pytest
 import torch
 
 from _nus_markers import BATCH, ROOT, write_synthetic_checkpoint, load_marker_files
-from _nus_phase5_method_fixture import (BF16_DELTA_PROPOSED, CLIP_SCALE, GAE_CASE, LATENT_BIG, NORMAL_SAMPLES, PARITY_DTYPES, PARITY_TOL,
+from _nus_phase5_method_fixture import (CLIP_SCALE, NOISE_FLOOR_FACTOR, NOISE_FLOOR_SEEDS, GAE_CASE, LATENT_BIG, NORMAL_SAMPLES, PARITY_DTYPES, PARITY_TOL,
                                         SEEDS, TRAIN_GAMES, UNIT_TOL,
                                         marker_env, marker_method_object)
 from svg_training.nus import mappo as M
@@ -239,15 +239,75 @@ def test_one_update_parity(dtype):
         assert max(res["actor_delta_rel_err"], res["critic_delta_rel_err"]) <= tol["delta_rel"]
 
 
-@pytest.mark.xfail(strict=True, reason="bfloat16 update misses the PROPOSED 2e-2 (measured 18 Nov: actor 0.049, critic 0.033): the first "
-                   "AdamW step is close to lr x sign(gradient), and 0.26 % of the actor's gradient elements (0.04 % of the critic's) flip "
-                   "sign under bfloat16 rounding while the gradients agree to cosine 0.99999; float32 twin matches at 3e-5. Lead to decide")
-def test_bfloat16_update_within_the_proposed_tolerance():
-    result = ROOT / "runs/nus_port/phase5/method_port/m3_parity_bfloat16.json"
-    if not result.exists():
-        pytest.skip("run test_one_update_parity[bfloat16] first (needs the export): not a pass")
-    res = json.loads(result.read_text())
-    assert max(res["actor_delta_rel_err"], res["critic_delta_rel_err"]) <= BF16_DELTA_PROPOSED
+def _ours_on_export(dtype, export):
+    """Our learner loaded with an export's initial parameters, after one update on its batch with its draws: (learner, actor delta,
+    critic delta), in our parameter order."""
+    from dataclasses import replace
+
+    from svg_training.nus import deploy as deploy_mod, method_cfg, rules as rules_mod
+    from svg_training.nus.replica_train import NusTrainEnv
+    d = np.load(export)
+    deploy = deploy_mod.load_deploy()
+    method = replace(method_cfg.load_method(), compute_dtype=dtype)
+    env = NusTrainEnv(deploy_mod.apply_overrides(rules_mod.load_rules(), deploy), deploy, method)
+    learner = M.Learner(method, env, "guard", seed=1)
+    _load_trunk(learner.actor.trunk, d, "actor_before", "obs_proj")
+    _load_trunk(learner.critic.trunk, d, "critic_before", "state_proj")
+    with torch.no_grad():
+        learner.actor.log_std.copy_(torch.from_numpy(d["actor_before/log_std"].copy()))
+    actor0, critic0 = _vector(learner.actor, True), _vector(learner.critic, False)
+    t = {k: torch.from_numpy(d[k].copy()) for k in ("obs", "central", "latents", "old_logp", "returns", "advantages", "entropy_noise")}
+    learner.update_from(t["obs"], t["central"], t["latents"], t["old_logp"], t["returns"], t["advantages"], None, minibatches=1, epochs=1,
+                        permutations=[torch.from_numpy(d["permutation"].astype(np.int64))], entropy_noise=[t["entropy_noise"]])
+    return learner, _vector(learner.actor, True) - actor0, _vector(learner.critic, False) - critic0
+
+
+def test_bfloat16_update_within_twice_the_noise_floor():
+    """Noise-floor rule **v2** (lead, 18 Nov 2026, fixed before any v2 measurement). Floor: K runs of the partner's own bfloat16 update on
+    the parity export's batch with every observation and central-state number multiplied by (1 + u x 2^-8), u drawn i.i.d. uniform in
+    [-1, 1] per element (about one bfloat16 ulp, relative), seeds 1 to K; floor = the largest relative parameter-update difference
+    against the partner's unperturbed bfloat16 update, actor and critic separately. Pass: our bfloat16 update against the partner's
+    bfloat16 update <= factor x floor, actor and critic each. K, the scale and the factor are not changed after seeing numbers. INFO:
+    the partner's own float32 update against its bfloat16 update on the same batch.
+
+    Rule v1 (same day) was degenerate: a one-float32-ulp nudge never crosses a bfloat16 rounding boundary, so the critic floor was 0 and
+    any implementation not bit-identical failed; its numbers stay in m3_noise_floor.json as history. Exports:
+    scripts/nus_jax_export_update.py --batch-from (and --perturb-relative-seed, or --perturb-ulp for v1)."""
+    from svg_training.nus import deploy as deploy_mod, method_cfg, rules as rules_mod
+    folder = ROOT / "runs/nus_port/phase5/method_port"
+    names = ["update_guard_bfloat16", "floor_bf16_base", "floor_f32_base"] + [f"floor_bf16_rel{k}" for k in NOISE_FLOOR_SEEDS]
+    exports = {k: folder / f"{k}.npz" for k in names}
+    if not all(p.exists() for p in (*exports.values(), rules_mod.LOCAL_RULES, deploy_mod.LOCAL_DEPLOY, method_cfg.LOCAL_METHOD)):
+        pytest.skip("noise-floor exports or local files absent (scripts/nus_jax_export_update.py --batch-from): not a pass")
+    learner, ours_actor, ours_critic = _ours_on_export("bfloat16", exports["update_guard_bfloat16"])
+    ours = {"actor": ours_actor, "critic": ours_critic}
+
+    def nus_delta(name, which):
+        d = np.load(exports[name])
+        args = ("actor_after", None) if which == "actor" else (None, "critic_after")
+        before = ("actor_before", None) if which == "actor" else (None, "critic_before")
+        return _flat_like(learner, d, which, *args) - _flat_like(learner, d, which, *before)
+
+    res = {"rule": "v2: ours_vs_nus_bf16 <= factor x max over seeds of nus_bf16_relative_perturbation_vs_nus_bf16, actor and critic",
+           "factor": NOISE_FLOOR_FACTOR, "seeds": list(NOISE_FLOOR_SEEDS), "relative_scale": "2^-8 x u, u uniform in [-1, 1]"}
+    for which in ("actor", "critic"):
+        base = nus_delta("floor_bf16_base", which)
+        res[f"{which}_base_vs_parity_export"] = _rel(base, nus_delta("update_guard_bfloat16", which))
+        runs = [_rel(nus_delta(f"floor_bf16_rel{k}", which), base) for k in NOISE_FLOOR_SEEDS]
+        res[f"{which}_floor_runs"] = runs
+        res[f"{which}_floor"] = max(runs)
+        res[f"{which}_info_nus_f32_vs_nus_bf16"] = _rel(nus_delta("floor_f32_base", which), base)
+        res[f"{which}_ours_vs_nus_bf16"] = _rel(ours[which], base)
+        res[f"{which}_limit"] = NOISE_FLOOR_FACTOR * res[f"{which}_floor"]
+        res[f"{which}_pass"] = res[f"{which}_ours_vs_nus_bf16"] <= res[f"{which}_limit"]
+    path = folder / "m3_noise_floor.json"
+    old = json.loads(path.read_text()) if path.exists() else {}
+    history = old.get("v1_degenerate_history", old if "rule" in old and not str(old["rule"]).startswith("v2") else None)
+    path.write_text(json.dumps({"v2": res, "v1_degenerate_history": history}, indent=2) + "\n")
+    print(f"\n[M3 noise floor v2] {json.dumps(res)}")
+    assert res["actor_pass"] and res["critic_pass"], (
+        f"bfloat16 update outside 2 x the partner's floor: actor {res['actor_ours_vs_nus_bf16']:.4g} vs limit {res['actor_limit']:.4g}, "
+        f"critic {res['critic_ours_vs_nus_bf16']:.4g} vs limit {res['critic_limit']:.4g}")
 
 
 def _load_trunk_grads(module, d, prefix, proj):

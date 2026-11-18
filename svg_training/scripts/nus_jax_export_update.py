@@ -13,6 +13,13 @@ gradient in its state, so the gradients are exported as well. The permutation an
 from its key with ``jax.random`` (split into three; the second key permutes the samples, the third gives one key per minibatch) and
 exported, so the PyTorch side can use the same draws.
 
+``--batch-from <export.npz>`` reuses an earlier export's rollout (observations, central states, latents, rewards, done flags) instead
+of collecting one; ``--perturb-ulp`` then moves every observation and central-state number up by one float32 ulp (noise-floor rule v1, degenerate);
+``--perturb-relative-seed S`` multiplies each of them by (1 + u x 2^-8), u drawn uniform in [-1, 1] per element with seed S (about one
+bfloat16 ulp, relative; rule v2). Together they give
+the bfloat16 noise floor of the update (plan task M3, lead's rule of 18 Nov): the same batch in float32 and in bfloat16, and bfloat16
+on the batch moved by one ulp.
+
 Writes one npz under runs/ (values of the partner's network; git-ignored) and prints its path, the array names and the metrics' names.
 """
 from __future__ import annotations
@@ -41,6 +48,18 @@ def _flat(tree, prefix: str) -> dict[str, np.ndarray]:
     return {prefix: np.asarray(tree, dtype=np.float32)}
 
 
+def _collect(nus_mpe, adapter, actor, actor_params, rollout_key, args, team: str, trainer: dict, reward: dict):
+    """A fresh rollout against the scripted APF controller with the partner's collector: (episode of the learner's team, its rewards)."""
+    out = nus_mpe.collect_fixed_matchups(actor_params, rollout_key, adapter=adapter, actor=actor, episode_length=args.steps, active_team=team,
+                                         batch_size=args.games, distance_scale=float(reward["attacker_distance_scale"]),
+                                         breach_penalty=float(reward["breach_penalty"]),
+                                         clean_timeout_reward=float(reward["clean_timeout_reward"]),
+                                         shaping_gamma=float(trainer[team]["task_gamma"]),
+                                         first_breach_penalty=float(reward.get("first_breach_penalty", 0)), apf_slots=1)
+    _, defender_episode, attacker_episode, defender_rewards, attacker_rewards, *_ = out
+    return (defender_episode, defender_rewards) if team == "defender" else (attacker_episode, attacker_rewards)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--clone", required=True, type=Path)
@@ -51,6 +70,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--games", required=True, type=int)
     parser.add_argument("--seed", required=True, type=int)
     parser.add_argument("--out", required=True, type=Path)
+    parser.add_argument("--batch-from", type=Path, help="reuse the rollout (obs, central, latents, rewards, dones) of an earlier export")
+    parser.add_argument("--perturb-ulp", action="store_true", help="move every observation and central-state number up by one float32 ulp")
+    parser.add_argument("--perturb-relative-seed", type=int,
+                        help="multiply every observation and central-state number by (1 + u x 2^-8), u uniform in [-1, 1] per element")
     args = parser.parse_args(argv)
     if "runs" not in args.out.resolve().parts:
         raise SystemExit("the export holds the partner's network values: --out must be under runs/")
@@ -102,14 +125,22 @@ def main(argv: list[str] | None = None) -> int:
                              critic_opt_state=critic_opt.init(critic_params))
 
     reward = trainer["rewards"]["defender"]
-    out = nus_mpe.collect_fixed_matchups(actor_params, rollout_key, adapter=adapter, actor=actor, episode_length=args.steps, active_team=team,
-                                 batch_size=args.games, distance_scale=float(reward["attacker_distance_scale"]),
-                                 breach_penalty=float(reward["breach_penalty"]), clean_timeout_reward=float(reward["clean_timeout_reward"]),
-                                 shaping_gamma=float(trainer[team]["task_gamma"]),
-                                 first_breach_penalty=float(reward.get("first_breach_penalty", 0)), apf_slots=1)
-    _, defender_episode, attacker_episode, defender_rewards, attacker_rewards, *_ = out
-    episode = defender_episode if team == "defender" else attacker_episode
-    rewards = defender_rewards if team == "defender" else attacker_rewards
+    if args.batch_from is not None:
+        old = np.load(args.batch_from)
+        obs_np, central_np = old["obs"], old["central"]
+        if args.perturb_ulp:
+            obs_np = np.nextafter(obs_np, np.float32(np.inf)).astype(np.float32)
+            central_np = np.nextafter(central_np, np.float32(np.inf)).astype(np.float32)
+        if args.perturb_relative_seed is not None:  # about one bfloat16 ulp, relative (rule v2 of the noise floor)
+            draw = np.random.default_rng(args.perturb_relative_seed)
+            scale = np.float32(2.0 ** -(2 * 2 * 2))
+            obs_np = (obs_np * (1 + draw.uniform(-1, 1, obs_np.shape).astype(np.float32) * scale)).astype(np.float32)
+            central_np = (central_np * (1 + draw.uniform(-1, 1, central_np.shape).astype(np.float32) * scale)).astype(np.float32)
+        episode = SimpleNamespace(obs=jnp.asarray(obs_np), global_state=jnp.asarray(central_np), latents=jnp.asarray(old["latents"]),
+                                  truncated=jnp.asarray(old["dones"])[:, :, None, None])
+        rewards = jnp.asarray(old["rewards"])[..., None]
+    else:
+        episode, rewards = _collect(nus_mpe, adapter, actor, actor_params, rollout_key, args, team, trainer, reward)
     values, old_logp, _ = evaluate_rollout(state, episode.obs, episode.global_state, episode.latents, actor=actor, critic=critic)
     done_flags = episode.truncated[..., 0, :].astype(jnp.float32)
     returns, advantages = returns_and_advantages(rewards, values, done_flags, jnp.zeros_like(values[-1]),
@@ -138,7 +169,9 @@ def main(argv: list[str] | None = None) -> int:
     args.out.parent.mkdir(parents=True, exist_ok=True)
     np.savez_compressed(args.out, **arrays)
     commit = os.popen(f"git -C {args.clone} rev-parse HEAD").read().strip()
-    (args.out.with_suffix(".json")).write_text(json.dumps({"dtype": args.dtype, "team": args.team, "steps": args.steps, "games": args.games,
+    (args.out.with_suffix(".json")).write_text(json.dumps({"dtype": args.dtype, "team": args.team, "batch_from": str(args.batch_from) if args.batch_from else None,
+                                                            "perturb_ulp": bool(args.perturb_ulp),
+                                                            "perturb_relative_seed": args.perturb_relative_seed, "steps": args.steps, "games": args.games,
                                                             "seed": args.seed, "partner_commit": commit, "arrays": sorted(arrays)}, indent=2))
     print(f"wrote {args.out} ({len(arrays)} arrays); metrics: {sorted(metrics)}")
     return 0

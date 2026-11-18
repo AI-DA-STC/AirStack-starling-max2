@@ -25,8 +25,9 @@ import copy
 import json
 import math
 import os
+import time
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 import numpy as np
 import torch
@@ -99,7 +100,9 @@ class SelfPlay:
 
     def __init__(self, method: NusMethod, env: NusTrainEnv, seed: int, run_dir: Path | str, *, device: torch.device | str = "cpu",
                  updates_per_generation: int | None = None, games_per_update: int | None = None,
-                 selection_after: tuple[int, ...] | None = None, generations: int | None = None):
+                 selection_after: tuple[int, ...] | None = None, generations: int | None = None, minibatches: int | None = None,
+                 drop_remainder: bool = False, on_selection: Callable[["SelfPlay", dict], None] | None = None,
+                 on_archive: Callable[["SelfPlay", dict], None] | None = None):
         self.method, self.env, self.seed, self.device = method, env, int(seed), torch.device(device)
         self.run_dir = Path(run_dir)
         self.updates = updates_per_generation or method.updates_per_generation
@@ -115,8 +118,11 @@ class SelfPlay:
                 raise ValueError(f"{path}: another run (schema or seed differs)")
         else:
             self.state = {"schema": SCHEMA, "seed": self.seed, "archive": [], "active": None}
+        self.minibatches, self.drop_remainder = minibatches, drop_remainder
+        self.on_selection, self.on_archive = on_selection, on_archive
         self.learner: Learner | None = None
         self.pool: OpponentPool | None = None
+        self.stopped_by_deadline = False
 
     # ------------------------------------------------------------------ archive
     def load_actor(self, entry: dict[str, Any]) -> MappoActor:
@@ -136,13 +142,16 @@ class SelfPlay:
             chosen = select_opponents(self.state["archive"], team=team, generation=generation, seed=self.seed,
                                       maximum=self.method.max_learned_opponents, recent=self.method.recent_opponents)
             slots = len(chosen) + 1
-            games = self.games_per_update or rollout_batch_size(slots, self.method.episodes_per_opponent, self.method.minimum_rollout_batch)
-            if games % slots:
-                raise ValueError("games per update must split into equal blocks per slot")
+            if self.games_per_update:  # a variant's games per update, rounded up to equal blocks per slot
+                games = slots * math.ceil(self.games_per_update / slots)
+            else:
+                games = rollout_batch_size(slots, self.method.episodes_per_opponent, self.method.minimum_rollout_batch)
             active = {"generation": generation, "team": team, "opponents": chosen, "games": games, "update": 0, "checkpoint": None,
                       "ema": None, "best_rank": None, "best_update": None, "best_ema": None, "best_actor": None, "evaluations": []}
             self.state["active"] = active
         self.learner = Learner(self.method, self.env, team, stage_seed(self.seed, generation), self.device)
+        if self.minibatches:
+            self.learner.minibatches, self.learner.drop_remainder = self.minibatches, self.drop_remainder
         self.pool = OpponentPool(self.env, other_team(team), [self.load_actor(e) for e in active["opponents"]])
         self.generator = _seeded(self.env.device, self.seed, generation, 0)
         if active["checkpoint"]:
@@ -221,6 +230,8 @@ class SelfPlay:
         active = self.state["active"]
         result = self.evaluate()
         active["evaluations"].append(result)
+        if self.on_selection is not None:
+            self.on_selection(self, result)
         if active["best_rank"] is None or tuple(result["rank"]) > tuple(active["best_rank"]):
             active["best_rank"], active["best_update"], active["best_ema"] = result["rank"], active["update"], list(active["ema"])
             folder = self.run_dir / "generations" / f"{active['generation']:04d}_{active['team']}"
@@ -237,21 +248,28 @@ class SelfPlay:
         entry = {"generation": active["generation"], "team": active["team"], "path": str(folder), "best_update": active["best_update"],
                  "best_rank": active["best_rank"], "opponent_generations": [e["generation"] for e in active["opponents"]],
                  "training_win_rate_ema": active["best_ema"], "evaluations": active["evaluations"], "games_per_update": active["games"]}
+        best = next(ev for ev in active["evaluations"] if ev["update"] == active["best_update"])
+        entry["strongest_slot"] = int(np.argmin(best["win_rates"]))   # the pool slot the archived best did worst against
         _write_json(folder / "metadata.json", entry)
+        if self.on_archive is not None:
+            self.on_archive(self, entry)
         self.state["archive"].append({k: entry[k] for k in ("generation", "team", "path", "best_update")})
         self.state["active"] = None
         self._save()
         self.learner = self.pool = None
 
-    def run(self, max_updates: int | None = None) -> list[dict[str, Any]]:
-        """Run every generation; ``max_updates`` stops (with a checkpoint) after that many updates of this call. Returns the archive."""
+    def run(self, max_updates: int | None = None, deadline: float | None = None) -> list[dict[str, Any]]:
+        """Run every generation; ``max_updates`` stops (with a checkpoint) after that many updates of this call, ``deadline`` (a
+        ``time.monotonic`` value) at the first update boundary past it (``stopped_by_deadline``). Returns the archive."""
         done = 0
         while len(self.state["archive"]) < self.generations:
             if self.learner is None:
                 self._start()
             active = self.state["active"]
             while active["update"] < self.updates:
-                if max_updates is not None and done >= max_updates:
+                over = deadline is not None and time.monotonic() >= deadline
+                if (max_updates is not None and done >= max_updates) or over:
+                    self.stopped_by_deadline = over
                     self._checkpoint()
                     return self.state["archive"]
                 self._update()

@@ -14,6 +14,10 @@ so every observation is a valid game state). Half of the rows come from each kin
 Also writes ``apf_states.npz`` (all the states with both scripted controllers' actions, for the scripted-controller parity test)
 and ``starts.npz`` (the partner's own random starts, replayed in both arms of the outcome run).
 
+``--archive-entry <folder>`` (repeatable; Phase 5 R0, gate (a) per entry): instead of the two checkpoints, export only
+``actions_<team>.npz`` for each archive entry (its team read from its ``config.json``) into ``<out-dir>/<run>/<entry>/``, with the same
+two kinds of rollout; no APF or starts file is written in this mode.
+
 Everything is written under runs/ (it holds partner values and is git-ignored); the script prints counts and file hashes only.
 """
 from __future__ import annotations
@@ -95,11 +99,13 @@ def export_team(clone: Path, team: str, checkpoint: Path, episodes: int, seed: i
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--clone", required=True, type=Path)
-    parser.add_argument("--guard-checkpoint", required=True, type=Path)
-    parser.add_argument("--strike-checkpoint", required=True, type=Path)
+    parser.add_argument("--guard-checkpoint", type=Path)
+    parser.add_argument("--strike-checkpoint", type=Path)
+    parser.add_argument("--archive-entry", type=Path, action="append", default=[],
+                        help="Phase 5 R0: an archive entry folder (repeatable); exports only its team's actions")
     parser.add_argument("--seed", required=True, type=int)
     parser.add_argument("--episodes-per-half", required=True, type=int)
-    parser.add_argument("--starts", required=True, type=int)
+    parser.add_argument("--starts", type=int)
     parser.add_argument("--out-dir", type=Path, default=REFERENCE_DIR, help="default: the Phase 3 folder; Phase 4's W3 uses runs/nus_port/w3/reference")
     args = parser.parse_args(argv)
     out_dir = args.out_dir.resolve()
@@ -107,6 +113,19 @@ def main(argv: list[str] | None = None) -> int:
         raise SystemExit("refusing: --out-dir must lie under runs/ (the files hold partner values)")
     add_partner_paths(args.clone)
     import jax
+
+    if args.archive_entry:
+        import json
+        trained = {"defender": "guard", "attacker": "strike"}
+        for entry in args.archive_entry:
+            team = trained[json.loads((entry / "config.json").read_text())["train_team"]]
+            folder = out_dir / entry.parent.parent.name / entry.name
+            result = export_team(args.clone, team, entry, args.episodes_per_half, args.seed, folder)
+            print(f"{entry.parent.parent.name}/{entry.name}: {team}, observation rows {result['rows']}, "
+                  f"sha256 {hashlib.sha256(result['path'].read_bytes()).hexdigest()}")
+        return 0
+    if args.guard_checkpoint is None or args.strike_checkpoint is None or args.starts is None:
+        raise SystemExit("--guard-checkpoint, --strike-checkpoint and --starts are required without --archive-entry")
 
     results = [export_team(args.clone, team, folder, args.episodes_per_half, args.seed + offset, out_dir)
                for offset, (team, folder) in enumerate((("guard", args.guard_checkpoint), ("strike", args.strike_checkpoint)))]

@@ -335,6 +335,8 @@ PARITY_TOL = {
     "bfloat16": {"values": None, "loss_rel": 1e-3, "grad_rel": None, "delta_rel": None, "adamw_rel": 1e-4, "gae": 1e-5},
 }
 BF16_DELTA_PROPOSED = 2e-2   # plan task M3, PROPOSED; measured 18 Nov 2026: actor 0.049, critic 0.033 (see m3_parity_bfloat16.json)
+NOISE_FLOOR_FACTOR = 2       # lead's rule v2, 18 Nov 2026: our bfloat16 update error <= 2 x the partner's bfloat16 floor
+NOISE_FLOOR_SEEDS = (1, 2, 3, 4, 5)   # rule v2: K = 5 relative perturbations, seeds 1 to 5
 SEEDS = (3, 4, 5, 6)  # torch generator seeds of the unit tests
 
 
@@ -351,3 +353,60 @@ SCORE_GAMES = 8
 SCORE_CHUNK = 3          # pairings per batch: smaller than the pairing count, so chunking is exercised
 STARTS_SEED = 20261120   # [gates.phase5_reference_rebuild] starts_seed
 RUN_SEED, OTHER_RUN_SEED = 1001, 2001   # lineage seeds of the self-play tests (spaced like plan P5-12)
+
+
+# ------------------------------------------------------------------------------------------------ M6: R0 reference rebuild
+R0_GAMES = 4             # --games-override of the tests (not of record)
+R0_CHUNK = 5
+R0_ROWS = 10000          # [gates.phase3_converted_policy] observations_per_team (frozen), so the tests meet the real row rule
+R0_SPOIL = 2             # a spoiled entry's reference actions are moved by this many times the gate's limit
+
+
+def write_fake_reference(tmp_path, runs, generations, spoil=()):
+    """NUS's output layout (``<outputs>/<run>/archive/<gggg>_<defender|attacker>``) with synthetic archive entries, and reference
+    actions for each: the converted actor's own actions on replica observations (so gate (a) passes), moved for the entries in
+    ``spoil`` ((run, generation) pairs). Returns (outputs dir, actions dir, rules path, deploy path)."""
+    import math
+    import numpy as np
+    import torch
+    from _nus_markers import load_marker_files, write_synthetic_checkpoint
+    from svg_training.nus.actor import NusActor
+    from svg_training.nus.replica import NusReplica
+    rules, deploy, rules_path, deploy_path = load_marker_files(tmp_path / "inputs")
+    sim = NusReplica(rules)
+    outputs, actions = tmp_path / "outputs", tmp_path / "runs" / "ref" / "actions"
+    states = math.ceil(R0_ROWS / min(rules.guard_count, rules.strike_count))
+    state = sim.reset(states, generator=torch.Generator().manual_seed(len(runs)))
+    state = sim.step(state, torch.randn(states, sim.num_actors, 2, generator=torch.Generator().manual_seed(len(runs) + 1)))
+    obs = sim.observe(state)
+    for r, run in enumerate(runs):
+        for g in generations:
+            team, partner = ("guard", "defender") if g % 2 else ("strike", "attacker")
+            folder = write_synthetic_checkpoint(outputs / run / "archive" / f"{g:04d}_{partner}", team, kind="archive", seed=r * 16 + g)
+            actor = NusActor.load(folder, team=team, rules=rules, deploy=deploy)
+            own = obs[:, : rules.guard_count] if team == "guard" else obs[:, rules.guard_count:]
+            acts = actor.act_units(own)
+            if (run, g) in spoil:
+                acts = acts + R0_SPOIL * 0.02
+            out = actions / run / folder.name
+            out.mkdir(parents=True, exist_ok=True)
+            np.savez(out / f"actions_{team}.npz", obs=own.numpy().astype(np.float32), actions=acts.numpy().astype(np.float32))
+    return outputs, actions, rules_path, deploy_path
+
+
+# ------------------------------------------------------------------------------------------------ M7: trainer
+TRAIN_GENERATIONS = 2
+PROBE_UPDATES = 2
+TINY_VARIANTS = """
+[gates.phase5_method_match]
+generations = 8
+[gates.phase5_method_variants]
+games_per_update = 10
+updates_per_generation = { s51b = 4, s51c = 3 }
+selection_evaluations_after_update = { s51b = [2, 4], s51c = [3] }
+"""
+TINY_CAP = 1e-9          # GPU-hours: any estimate is above it
+HOUR = 3600.0
+LOG_ROWS = [  # (group, device, start s, end s): two overlapping CUDA jobs (one hour of union), a CPU job and another group
+    ("s51", "cuda:0", 0.0, 2700.0), ("s51", "cuda", 900.0, 3600.0), ("s51", "cpu", 0.0, 36000.0), ("variants", "cuda", 0.0, 7200.0)]
+LOG_S51_HOURS = 1.0

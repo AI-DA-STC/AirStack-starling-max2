@@ -236,6 +236,18 @@ def test_starling_layer_uses_the_switch():
 # --- (a) on CUDA: graphs captured and replayed --------------------------------------------------------
 
 @needs_cuda
+@pytest.mark.xfail(
+    strict=True,
+    reason=(
+        "Gate kept as written; expected to FAIL on CUDA (lead's decision at the merge, 18 Nov 2026; record "
+        "records/2026-11-18_filter_cuda_graph_record.md, T31). On CUDA the existing filter's answer for a game depends "
+        "on the working batch size (cuBLAS picks the einsum kernel by batch size, and the check_every=8 early stop "
+        "changes the batch at every check), so the early stop differs from its own fixed loop by up to 1.65 m/s on "
+        "T2's scenes. The graph path equals the fixed loop bit for bit "
+        "(test_bit_identical_to_fixed_loop_cuda); no fixed-shape path can reproduce the early stop's CUDA bits. "
+        "On the CPU the same comparison is bit-identical."
+    ),
+)
 def test_t2_scenes_t8_setting_cuda():
     nom, pos, mask, cap = _t2_batch(device="cuda")
     a = filter_velocities(nom, pos, mask, R_M, cap, iterations=1000, check_every=8)

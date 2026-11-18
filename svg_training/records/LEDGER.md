@@ -2,7 +2,7 @@
 
 Training ledger; separate from the flight ledger `docs/record/LEDGER.md`
 Rows T15–T21 were run on the home RTX 5090 as workstation rows W1–W7 (17–18 Nov 2026) and renumbered at the merge into `main`; code docstrings and the 17–18 Nov plans still say W1…W7 (W*n* = T(14+*n*)).
-Rows T25–T32 were run on the home RTX 5090 on 18 Nov 2026 as workstation rows and renumbered at the merge into `main`, in the order of the Date column (the run's end): W11 → T25 (P0), W12 → T26 (P1), W13 → T27 and W14 → T28 (P2, two attempts), all branch `nus-phase5`; W15 → T29 (R0) and W16 → T30 (N0), branch `nus-phase5-method`; the filter CUDA-graph record (no workstation number, branch `filter-cuda-graph`) → T31; W15 → T32 (P1b, branch `nus-phase5`). W15 was used on both branches. Record titles, the Phase 5 plan and code docstrings still say W11…W16.
+Rows T25–T32 were run on the home RTX 5090 on 18 Nov 2026 as workstation rows and renumbered at the merge into `main`, in the order of the Date column (the run's end): W11 → T25 (P0), W12 → T26 (P1), W13 → T27 and W14 → T28 (P2, two attempts), all branch `nus-phase5`; W15 → T29 (R0) and W16 → T30 (N0), branch `nus-phase5-method`; the filter CUDA-graph record (no workstation number, branch `filter-cuda-graph`) → T31; W15 → T32 (P1b, branch `nus-phase5`). W15 was used on both branches. The records' titles and texts still say W11…W16 (only their ledger lines were changed).
 
 
 | # | Date | Simulator | Run | What | Result | Record |

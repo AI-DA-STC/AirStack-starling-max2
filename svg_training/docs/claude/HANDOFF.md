@@ -4,13 +4,33 @@ INTERNAL · the lab's AI-assistant hand-over notes. Not needed to read or run an
 
 > **How to use this file.** Read it at the start of a session, after [../../CLAUDE.md](../../CLAUDE.md).
 > §4 is the current state, §5 is what is waiting on people. Update both before you stop.
-> Last updated: 19 November 2026, ~12:00, on the home RTX 5090 (laptop takeover note in §0), worktree `~/AirStack-starling-max2-naming`, branch `docs-naming` (owner-approved naming and story pass on the public docs; committed, not pushed, not merged). Before: 19 November 2026, ~00:30, on the home RTX 5090, release worktree `~/AirStack-starling-max2-release`, branch `nus-release` (plain-laptop CPU route: code fixes C1–C9 and the PROVISIONAL bundle `nus_provisional/`, owner decision 6; committed, not pushed). Before: 18 November 2026, ~15:15, on the home RTX 5090, NUS-port worktree `~/AirStack-starling-max2-nus-port`, branch `phase6-pass2` (Phase 6 pass 2B: **Phase 4 complete**, its results written into every doc, every NUS-port clip published, the hangar size restored, the Phase 5 plan described; uncommitted, the lead commits). Before: ~06:45, on the home RTX 5090, integration worktree `main-5090` (Phase 6 pass 1: public NUS docs, privacy rails rewritten to the owner's decision, Claude files touched up; Phase 4 rows 4–6 running). Before: ~05:30 (Phase 4: T17 PASS, rungs 1 to 3 scored, rungs 4 to 6 not run). Before: ~01:00 (Phase 3 T16 PASS). Before: 17 November 2026, ~22:30, on the home RTX 5090 (evening summary in §0). Before: ~07:00 (morning summary in §0). Before: ~05:30 (S2b Tasks 1–8 done (T13 FAIL, over/under passing), 9 Isaac seeds running, 10 docs being written, 8b deferred; see §0 S2b line). Before: ~03:00. Earlier: 16 November morning (**S2 CLOSED**: final whole-stage review done on Opus, one fix wave 4d0d409, wording c218cbb; owner ruled A and B; S2b plan approved and ready to start).
+> Last updated: 20 November 2026, on the home RTX 5090 (STE learning track note at the top of §0; laptop takeover note below it), worktree `~/AirStack-starling-max2-naming`, branch `docs-naming` (owner-approved naming and story pass on the public docs; committed, not pushed, not merged). Before: 19 November 2026, ~00:30, on the home RTX 5090, release worktree `~/AirStack-starling-max2-release`, branch `nus-release` (plain-laptop CPU route: code fixes C1–C9 and the PROVISIONAL bundle `nus_provisional/`, owner decision 6; committed, not pushed). Before: 18 November 2026, ~15:15, on the home RTX 5090, NUS-port worktree `~/AirStack-starling-max2-nus-port`, branch `phase6-pass2` (Phase 6 pass 2B: **Phase 4 complete**, its results written into every doc, every NUS-port clip published, the hangar size restored, the Phase 5 plan described; uncommitted, the lead commits). Before: ~06:45, on the home RTX 5090, integration worktree `main-5090` (Phase 6 pass 1: public NUS docs, privacy rails rewritten to the owner's decision, Claude files touched up; Phase 4 rows 4–6 running). Before: ~05:30 (Phase 4: T17 PASS, rungs 1 to 3 scored, rungs 4 to 6 not run). Before: ~01:00 (Phase 3 T16 PASS). Before: 17 November 2026, ~22:30, on the home RTX 5090 (evening summary in §0). Before: ~07:00 (morning summary in §0). Before: ~05:30 (S2b Tasks 1–8 done (T13 FAIL, over/under passing), 9 Isaac seeds running, 10 docs being written, 8b deferred; see §0 S2b line). Before: ~03:00. Earlier: 16 November morning (**S2 CLOSED**: final whole-stage review done on Opus, one fix wave 4d0d409, wording c218cbb; owner ruled A and B; S2b plan approved and ready to start).
 
 ## 0. Resume here (for a new session or another Claude account)
 
 Everything needed is in this folder; nothing depends on the previous chat. Claude's user memory (`~/.claude/…`) and
 the private NUS workspace (`~/ma_skills-self-play/`, 5090 only) do **not** travel with git: if this file and a memory
 note disagree, this file wins.
+
+### STE LEARNING TRACK PLANNED, 20 November 2026 — read this first for anything after the NUS port
+
+The owner set a new direction on 19–20 Nov: **STE trains its own Guard and Strike policies, in parallel with NUS**
+(the NUS route is paused, lead call D8). Everything is in [`ste_learning/`](../../ste_learning/README.md): the README (what is
+being built, the plan, phase L0 step by step, four flowcharts), `PLAN.md` (version 2, after an independent soundness
+review), `DISCUSSION_2026-11-19_20.md` (every question, decision D1–D9 and open item P1–P12), the track's STANDARDS,
+reference pages and five agents (`ste-*`, copied into `.claude/agents/`).
+
+- **State:** nothing built, nothing run. **Phase L0 (game definition and feasibility, cap 19 GPU-h) awaits the owner's
+  approval**; it ends at gate G0, where the owner rules on the tag and zone, what a tag costs, team sizes, where to
+  train, environments, the demo and the L1–L9 budget.
+- **Why L0 exists:** the review found that the proposed rules (1.6 m proximity tag, 1-for-1) may let head-count decide
+  the game, that the zone radius equals the tag radius, that the programme's sizes are 2v1 and 5v3 (not 3v3), and that
+  tier 2 has never trained anything (PLAN §2, F1–F10).
+- **5.1 scored: FAIL** (T43), route (b) stopped; the NUS route is paused (lead call D8). G19 v P3S in NUS's JAX game and
+  the same-start videos are done (T42).
+- **Owner's standing asks:** the advisor is consulted at every key point; status every 30 min in the owner's format;
+  quality first.
+- **Private notes (5090 only):** `~/ma_skills-self-play/_notes/DISCUSSION_2026-11-19_20_FULL_PRIVATE.md`.
 
 ### LAPTOP TAKEOVER, 19 November 2026 ~11:30 — read this first if the 5090 is out of reach (for the laptop session)
 

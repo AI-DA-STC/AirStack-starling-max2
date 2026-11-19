@@ -63,6 +63,7 @@ STE's own build steps before the NUS port (names kept; [DESIGN §8](DESIGN.md#8-
 |---|---|
 | [../CLAUDE.md](../CLAUDE.md), `../.claude/` | the AI coding assistants' rules, agents and skills ([.claude/README](../.claude/README.md)) |
 | [claude/](claude/) | the assistants' hand-over notes |
+| [../ste_learning/](../ste_learning/README.md) | STE's own learning track: what is being built (with flowcharts), the plan and its first phase, the discussion record, the track's rules and agents. Nothing built or run yet |
 | [linear/](linear/) | copies of the lab's project-tracker items |
 | [plans/](plans/), [specs/](specs/) | build plans and designs written for the assistants; history, not instructions |
 | [notes/](notes/) | investigation notes that records cite |

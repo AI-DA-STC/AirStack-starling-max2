@@ -7,7 +7,7 @@ drone teams can learn strategies that then fly through AirStack on Starling 2 Ma
 It is a sibling of `AirStack/`, `tools/` and `localisation/`, and it edits none of them.
 
 **Status (2026-11-19).** S0, S1 and S2 closed; S2b built through Task 8, not closed; NUS port Phases 1–4 done,
-Phase 5 in progress (R0 T29, N0 T30 and C0 T33 PASS; 5.1 FAIL T43: route (b) stops; STE Guard policy T41 829/1000); nothing of ours trained into a strategy; nothing flown.
+Phase 5 in progress (R0 T29, N0 T30 and C0 T33 PASS; 5.1 FAIL T43: route (b) stops; STE Guard policy T41 829/1000); **STE's own learning track planned (20 Nov): phase L0 awaits the owner's approval, nothing built or run ([ste_learning/](ste_learning/README.md))**; nothing of ours trained into a strategy; nothing flown.
 
 | Work | Where it stands | Read |
 |---|---|---|
@@ -26,6 +26,7 @@ Phase 5 in progress (R0 T29, N0 T30 and C0 T33 PASS; 5.1 FAIL T43: route (b) sto
 | [docs/README.md](docs/README.md) | map of every page with its label (Read, Reference, Lab operations, Internal) and the history |
 | [docs/WHAT_WE_FOUND.md](docs/WHAT_WE_FOUND.md), [docs/RUN_IT_YOURSELF.md](docs/RUN_IT_YOURSELF.md), [docs/TRAIN_A_GUARD.md](docs/TRAIN_A_GUARD.md) | the NUS port's results; the verified run-it-yourself commands; the recipe behind the STE Guard policy (T41) |
 | [docs/claude/HANDOFF.md](docs/claude/HANDOFF.md) | where the work stands, what was decided, what is waiting on whom |
+| [ste_learning/](ste_learning/README.md) | **STE's own learning track** (owner, 20 Nov 2026): README with flowcharts, [PLAN](ste_learning/PLAN.md) (the working plan: phase L0 final, gate G0, L1–L9 intended), [DISCUSSION](ste_learning/DISCUSSION_2026-11-19_20.md) (why; D1–D9, P1–P12), the track's STANDARDS, ARCHITECTURE, CODING_PRACTICES, AUTOMATION, VALIDATION_QC, and its agents (`ste-*`). Read it before any work on the track; consult the advisor at every key point (owner) |
 | [STANDARDS.md](STANDARDS.md) | **the rules**: scope, wording, policy interface, game specification, drone models, gates, records, code, git |
 | [docs/DESIGN.md](docs/DESIGN.md) | the design: seven stages, two tiers, four uses, environments and contact tags, build order S0–S5, approaches considered |
 | [docs/RESEARCH.md](docs/RESEARCH.md) | state of the art as of 14 November 2026, with sources; the evidence behind the design |
@@ -80,7 +81,9 @@ agents and skills below load. Then:
 Agents (in `.claude/agents/`, described in [docs/claude/AGENTS_AND_SKILLS.md](docs/claude/AGENTS_AND_SKILLS.md)):
 `train-isaaclab-engineer`, `train-drone-dynamics`, `train-marl-researcher`,
 `train-flight-interface-reviewer`, `train-gatekeeper` (advisers, read-only) and
-`train-implementer` (the only one that writes code).
+`train-implementer` (the only one that writes code). The STE learning track adds `ste-architect`, `ste-software-engineer`
+(that track's builder), `ste-test-qc-engineer`, `ste-technical-writer` and `ste-orchestrator`; their source of record is
+`ste_learning/agents/` (copies in `.claude/agents/`, keep the two in step).
 
 ## Environment (laptop verified 2026-11-14; 5090 set up 2026-11-17, updated 2026-11-18)
 

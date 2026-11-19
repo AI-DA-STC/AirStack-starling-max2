@@ -28,7 +28,7 @@ has pushed it. On the laptop: `git pull`, then `svg_training/README.md` and this
 
 | Item | Where | State at ~11:30 |
 |---|---|---|
-| 5.1 Method match (STE port of NUS's training method), 3 seeds | worktree `~/AirStack-starling-max2-nus-method` (branch `nus-phase5-method`), `runs/nus_port/phase5/s51/` | training, generation 4 of 8, ~2 h per generation: done about 19 Nov 20:30–21:30; then scoring with `scripts/nus_phase5_score.py --arm s51` (commands in that worktree's `runs/nus_port/phase5/route_b_status.md`); videos made as it trains (renderer running) |
+| 5.1 Method match (STE port of NUS's training method), 3 seeds | worktree `~/AirStack-starling-max2-nus-method` (branch `nus-phase5-method`), `runs/nus_port/phase5/s51/` | DONE 19 Nov 21:06, scored 22:10: **FAIL** (T43; b and c fail on seed 3001 only, d passes). Plan: route (b) stops; 5.2 not started; owner's call |
 | Docs pass 3 (videos viewable in every page: a GIF per clip, folded video list, GIFs beside every result, a "Watch the clips" line appended to records; new front-page section 3 "The game: NUS 2-D game vs STE drone set-up"; root README training rows; old pointer pages deleted with links updated; a list of other possibly stale pages for the owner) | worktree `~/AirStack-starling-max2-naming` (branch `docs-naming`) | a writer agent was working; NOT on main. If lost, redo from the brief in the owner's 19 Nov ~11:00 messages (summarised in this bullet) |
 | Private files: NUS's code, `~/ma_skills-self-play/` (port plan, notes, docs-panel proposal and drafts, resume notes), `configs/local/` with the lab's NUS values, `runs/` | 5090 | the laptop can install the PROVISIONAL bundle instead of `configs/local/`; NUS's code only from NUS |
 
@@ -36,9 +36,9 @@ has pushed it. On the laptop: `git pull`, then `svg_training/README.md` and this
 Test 5 conditions (T41; parked Guard 429). R0, N0, C0 PASS (T29, T30, T33): the 5.1 test is calibrated.
 
 **Waiting on the owner:**
-1. Route decision: promote the STE Guard policy route (more seeds, more Strike behaviours, self-play, Isaac Lab check,
-   then an AirStack hand-over plan with CMU) after 5.1 ends, and shelve 5.1b/5.1c/5.2 unless NUS asks? (lead's
-   recommendation: yes; 5.1 finishes first).
+1. Route decision (5.1 FAILED, T43; the plan stops route (b)): promote the STE Guard policy route (more seeds, more
+   Strike behaviours, self-play, Isaac Lab check, then an AirStack hand-over plan with CMU) and shelve 5.1b/5.1c/5.2
+   unless NUS asks? (lead's recommendation: yes).
 2. Review of docs pass 3 (branch `docs-naming`) before it goes to main; decide on the stale-page list it produces.
 3. Send NUS the cover note (questions on the front page, section "Next steps and open questions").
 

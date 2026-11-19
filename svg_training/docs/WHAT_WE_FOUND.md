@@ -241,7 +241,7 @@ as a wall" defence.
 
 ## 6. STE port of NUS training method: no result yet
 
-**In progress: the test is calibrated; the port has no result yet.** The STE port of NUS's training method (PyTorch)
+**Stage 5.1 result: FAIL on the test fixed in advance (one seed of three, small margins).** The STE port of NUS's training method (PyTorch)
 copies the NUS alternating best-response multi-agent PPO with the archive pool (`train_self_play`, no APEX); the
 records call it "route (b)", and its first stage "5.1": 3 seeds × 8 generations in 2-D, on the Copy of NUS 2-D game.
 Before any of its seeds is scored, a test was fixed in advance:
@@ -251,7 +251,7 @@ Before any of its seeds is scored, a test was fixed in advance:
 | R0 | the 3 NUS-code hangar lineages (24 archived entries; a *lineage* is the chain of archived Guard and Strike policies of one self-play seed, trained by STE with NUS's code) converted and scored as a 12 × 12 matrix at 1,000 games per pairing | PASS: 24 of 24 converted within 0.02 units | T29, [record](../records/2026-11-18_nus_phase5_r0_reference_record.md) |
 | N0 | untrained actors scored as if they were the port: the test must fail them | PASS: the test failed them (Guard difference −0.366 [−0.499, −0.234], Strike −0.594 [−0.848, −0.341]) | T30, [record](../records/2026-11-18_nus_phase5_n0_negative_control_record.md) |
 | C0 | the NUS code, 3 new seeds, scored as if it were the port: the test must pass it | PASS: Guard difference −0.027 [−0.171, +0.117], Strike +0.108 [−0.150, +0.366]; all 24 entries inside the scripted range | T33, [record](../records/2026-11-19_nus_phase5_c0_positive_control_record.md) |
-| 5.1 | the port, 3 seeds × 8 generations | running | — |
+| 5.1 | the port, 3 seeds × 8 generations | FAIL: seeds 1001 and 2001 pass every part; seed 3001 fails the learner check (Strike generations 4 and 6 in a row) and one scripted range (Guard generation 7 holds the APF Strike 0.909, NUS range 0.922–0.989); strength against NUS's lineages passes (Guard +0.157 [−0.008, +0.323], Strike −0.020 [−0.464, +0.424]) | T43, [record](../records/2026-11-19_nus_phase5_s51_method_match_record.md) |
 
 **The test in plain words** (plan [§4.3](plans/2026-11-18-nus-phase5-retraining.md)): every seed finishes; the
 learner does not fail two generations in a row; each entry's score against NUS's scripted opponent lies inside the

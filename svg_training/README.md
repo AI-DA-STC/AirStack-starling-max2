@@ -43,8 +43,10 @@ each Guard holds the zone:
    - **STE Guard policy (pilot P1b):** trained in **Test 5 conditions**, on the STE drone model in PyTorch, not in Isaac
      Lab. **Holds 829 of 1,000.** ✅ It learned a different defence: spread out inside the zone and let the safety
      filter act like a wall.
-   - **STE port of NUS's training method (PyTorch):** being checked in NUS's conditions (stage 5.1). Stage 5.2 would
-     then train with it in STE conditions.
+   - **STE port of NUS's training method (PyTorch):** checked in NUS's conditions (stage 5.1): **FAIL** on the test fixed
+     in advance. Two of three seeds pass every part and the policies are as strong as NUS's, but one seed fails two parts
+     by small margins ([record](records/2026-11-19_nus_phase5_s51_method_match_record.md)). Under the plan this stops
+     stage 5.2 (training with it in STE conditions).
 6. **Next:** test the trained Guard in **Isaac Lab** (5.3), then the AirStack hand-over and a flight plan, with CMU.
 
 **In one line:** trained in NUS's game, tested in the STE drone game in PyTorch (NUS's policies failed), retrained in STE drone conditions

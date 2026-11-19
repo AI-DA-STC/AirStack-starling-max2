@@ -7,7 +7,7 @@ drone teams can learn strategies that then fly through AirStack on Starling 2 Ma
 It is a sibling of `AirStack/`, `tools/` and `localisation/`, and it edits none of them.
 
 **Status (2026-11-19).** S0, S1 and S2 closed; S2b built through Task 8, not closed; NUS port Phases 1–4 done,
-Phase 5 in progress (R0 T29, N0 T30 and C0 T33 PASS; 5.1 running); nothing of ours trained into a strategy; nothing flown.
+Phase 5 in progress (R0 T29, N0 T30 and C0 T33 PASS; 5.1 FAIL T43: route (b) stops; STE Guard policy T41 829/1000); nothing of ours trained into a strategy; nothing flown.
 
 | Work | Where it stands | Read |
 |---|---|---|

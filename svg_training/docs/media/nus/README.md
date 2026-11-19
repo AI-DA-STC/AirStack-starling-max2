@@ -602,6 +602,17 @@ Recorded inside the run from its own evaluation games (evidence: T41, [record](.
 
 <a id="how-they-were-made"></a>
 
+## STE port of NUS's training method: stage 5.1
+
+The STE port of NUS's training method (PyTorch), trained in the Copy of NUS 2-D game, recorded in the run (evidence: T43,
+[record](../../../records/2026-11-19_nus_phase5_s51_method_match_record.md)). `s51/`.
+
+| Clip (click for the MP4) | This game | Size |
+|---|---|---|
+| <a href="s51/seed1001_archive_g07_guard_game00.mp4"><img src="s51/seed1001_archive_g07_guard_game00.gif" width="240" alt="Stage 5.1, seed 1001, Guard generation 7 (archived entry), game 0"></a> | Stage 5.1, seed 1001, Guard generation 7 (archived entry), game 0 | GIF 0.7 MB, MP4 1.5 MB |
+| <a href="s51/seed3001_archive_g07_guard_game00.mp4"><img src="s51/seed3001_archive_g07_guard_game00.gif" width="240" alt="Stage 5.1, seed 3001, Guard generation 7: the entry outside NUS's APF range, game 0"></a> | Stage 5.1, seed 3001, Guard generation 7: the entry outside NUS's APF range, game 0 | GIF 0.6 MB, MP4 1.8 MB |
+| <a href="s51/seed2001_archive_g08_strike_game00.mp4"><img src="s51/seed2001_archive_g08_strike_game00.gif" width="240" alt="Stage 5.1, seed 2001, Strike generation 8 (archived entry), game 0"></a> | Stage 5.1, seed 2001, Strike generation 8 (archived entry), game 0 | GIF 0.6 MB, MP4 1.4 MB |
+
 ## Size budget and how they were made
 
 263 files added on 18 November 2026 (Phase 6 pass 2): 16.8 MB (260 MP4, 14.2 MB, and 3 GIF, 2.6 MB); with the 8 files of

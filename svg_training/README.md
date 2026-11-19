@@ -102,16 +102,22 @@ grades the copy, never NUS's code.
 
 ### The same match in NUS's JAX code and in the PyTorch copy
 
-Each match-up was played on the same 1,000 starts twice: in NUS's own JAX game with NUS's JAX policy, and in the Copy
-of NUS 2-D game (PyTorch) with the converted policy.
+Each match-up was played on the same 1,000 starts with NUS's JAX policies and with the converted PyTorch policies.
+Three ways of playing:
 
-| Match-up (Guard vs Strike) | NUS's JAX code | PyTorch copy | Games that differ | Evidence |
-|---|:-:|:-:|:-:|---|
-| P3G vs APF attacker | 48 | 46 | 6 | T16, [record](records/2026-11-18_nus_phase3_conversion_record.md) |
-| APF defender vs P3S | 1,000 | 1,000 | 0 | T16, [record](records/2026-11-18_nus_phase3_conversion_record.md) |
-| G19 vs S20 | 17 | 15 | — | T17, [record](records/2026-11-18_nus_phase4_w3_reference_gates_record.md) |
+- **NUS's JAX game**: NUS's own game and NUS's JAX policies, end to end;
+- **PyTorch copy + JAX policies**: the Copy of NUS 2-D game (PyTorch), with NUS's JAX policies choosing every action;
+- **PyTorch copy + converted**: the Copy of NUS 2-D game (PyTorch) with the converted PyTorch policies.
 
-*Strike reaches the zone, of 1,000 games. The counts agree within chance.*
+| Match-up (Guard vs Strike) | NUS's JAX game | PyTorch copy + JAX policies | PyTorch copy + converted | Games that differ | Evidence |
+|---|:-:|:-:|:-:|:-:|---|
+| P3G vs APF attacker | not run | 48 | 46 | 6 | T16, [record](records/2026-11-18_nus_phase3_conversion_record.md) |
+| APF defender vs P3S | not run | 1,000 | 1,000 | 0 | T16, [record](records/2026-11-18_nus_phase3_conversion_record.md) |
+| G19 vs S20 | 17 | 17 | 15 | 8 | T17, [record](records/2026-11-18_nus_phase4_w3_reference_gates_record.md); T42, [record](records/2026-11-19_nus_pair_g19_p3s_jax_vs_pytorch_record.md) |
+| G19 vs P3S | 991 | 991 | 991 | 2 | T42, [record](records/2026-11-19_nus_pair_g19_p3s_jax_vs_pytorch_record.md) |
+
+*Strike reaches the zone, of 1,000 games. "Games that differ": games whose outcome with the converted policies differs from
+the JAX policies (in NUS's JAX game where it was run, otherwise in the PyTorch copy). The counts agree within chance.*
 
 **What the policy names mean:**
 
@@ -131,6 +137,22 @@ of NUS 2-D game (PyTorch) with the converted policy.
 | **P3G vs APF attacker**<br>Guard holds | <a href="docs/media/nus/nus_fixed_guard_vs_scripted_strike.mp4"><img src="docs/media/nus/nus_fixed_guard_vs_scripted_strike.gif" width="320" alt="P3G vs APF attacker, NUS JAX game"></a> | <a href="docs/media/nus/phase3/guard_game0.mp4"><img src="docs/media/nus/phase3/guard_game0.gif" width="320" alt="P3G vs APF attacker, PyTorch copy"></a> |
 | **APF defender vs P3S**<br>Strike reaches the zone | <a href="docs/media/nus/nus_fixed_strike_vs_scripted_guard.mp4"><img src="docs/media/nus/nus_fixed_strike_vs_scripted_guard.gif" width="320" alt="APF defender vs P3S, NUS JAX game"></a> | <a href="docs/media/nus/phase3/strike_game0.mp4"><img src="docs/media/nus/phase3/strike_game0.gif" width="320" alt="APF defender vs P3S, PyTorch copy"></a> |
 | **G19 vs S20**<br>Guard holds | <a href="docs/media/nus/nus_selfplay_s2_g19_vs_s2_s20.mp4"><img src="docs/media/nus/nus_selfplay_s2_g19_vs_s2_s20.gif" width="320" alt="G19 vs S20, NUS JAX game"></a> | <a href="docs/media/nus/w3/archive_arm_G19_vs_S20_game0.mp4"><img src="docs/media/nus/w3/archive_arm_G19_vs_S20_game0.gif" width="320" alt="G19 vs S20, PyTorch copy"></a> |
+
+**Same start, side by side** (left: NUS's JAX game; right: Copy of NUS 2-D game (PyTorch) with the converted policies;
+click for the full video):
+
+| Match-up | Same start: NUS's JAX game (left), PyTorch copy (right) |
+|---|:-:|
+| **G19 vs S20**, game 139<br>Guard holds in both | <a href="docs/media/nus/pairs/g19_vs_s20_game139_same_start.mp4"><img src="docs/media/nus/pairs/g19_vs_s20_game139_same_start.gif" width="640" alt="G19 vs S20, game 139, NUS JAX game and PyTorch copy side by side"></a> |
+| **G19 vs P3S**, game 0<br>Strike reaches the zone in both | <a href="docs/media/nus/pairs/g19_vs_p3s_game0_same_start.mp4"><img src="docs/media/nus/pairs/g19_vs_p3s_game0_same_start.gif" width="640" alt="G19 vs P3S, game 0, NUS JAX game and PyTorch copy side by side"></a> |
+
+The paths start equal and drift apart slowly in long games: in G19 vs S20 game 0 the drones are 0.04 units apart at step
+100 and 0.53 at step 200. The drift also appears with NUS's JAX policies in the PyTorch copy, so the conversion does not
+cause it; likely small number differences that grow over many steps (not tested by a control). In NUS's own JAX game,
+every G19 vs S20 game the Guard team holds has a Strike drone go more than 10 units from the zone centre (game 139: one
+Strike drone near x = −15 m in both games). S20's drones wandering away is S20's own behaviour, not an effect of the copy.
+More clips: [G19 vs S20 game 0](docs/media/nus/pairs/g19_vs_s20_game0_same_start.mp4),
+[G19 vs P3S game 121, a Guard hold](docs/media/nus/pairs/g19_vs_p3s_game121_same_start.mp4).
 
 P3G and P3S used NUS's learning settings with two changes: 3,000 updates per team (76.8 million environment steps,
 about 6.5 minutes; NUS's default has no practical limit) and the hangar arena (start distance and Guard boundary 8 units

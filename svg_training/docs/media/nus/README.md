@@ -98,6 +98,19 @@ fixed-opponent pair P3G and P3S against the APF defender and attacker (evidence:
 
 </details>
 
+## Same start: NUS's JAX game beside the PyTorch copy
+
+One game from one start, played in NUS's own JAX game with NUS's JAX policies (left) and in the Copy of NUS 2-D game
+(PyTorch) with the converted policies (right); both panels on one scale (evidence: T42,
+[record](../../../records/2026-11-19_nus_pair_g19_p3s_jax_vs_pytorch_record.md)). `pairs/`.
+
+| Clip (click for the MP4) | This game | Size |
+|---|---|---|
+| <a href="pairs/g19_vs_s20_game139_same_start.mp4"><img src="pairs/g19_vs_s20_game139_same_start.gif" width="480" alt="G19 vs S20, game 139 · Guard holds in both; one Strike drone near x = −15 m in both"></a> | G19 vs S20, game 139 · Guard holds in both; one Strike drone near x = −15 m in both | GIF 0.9 MB, MP4 0.9 MB |
+| <a href="pairs/g19_vs_s20_game0_same_start.mp4"><img src="pairs/g19_vs_s20_game0_same_start.gif" width="480" alt="G19 vs S20, game 0 · Guard holds in both"></a> | G19 vs S20, game 0 · Guard holds in both | GIF 1.3 MB, MP4 1.0 MB |
+| <a href="pairs/g19_vs_p3s_game0_same_start.mp4"><img src="pairs/g19_vs_p3s_game0_same_start.gif" width="480" alt="G19 vs P3S, game 0 · Strike reaches the zone at step 26 in both"></a> | G19 vs P3S, game 0 · Strike reaches the zone at step 26 in both | GIF 0.3 MB, MP4 0.2 MB |
+| <a href="pairs/g19_vs_p3s_game121_same_start.mp4"><img src="pairs/g19_vs_p3s_game121_same_start.gif" width="480" alt="G19 vs P3S, game 121 · Guard holds in both (one of 9 holds)"></a> | G19 vs P3S, game 121 · Guard holds in both (one of 9 holds) | GIF 2.1 MB, MP4 1.4 MB |
+
 <a id="tests-1-6"></a>
 
 ## Tests 1–6, top-down

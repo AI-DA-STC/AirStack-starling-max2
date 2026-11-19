@@ -4,13 +4,64 @@ INTERNAL · the lab's AI-assistant hand-over notes. Not needed to read or run an
 
 > **How to use this file.** Read it at the start of a session, after [../../CLAUDE.md](../../CLAUDE.md).
 > §4 is the current state, §5 is what is waiting on people. Update both before you stop.
-> Last updated: 19 November 2026, ~11:00, on the home RTX 5090, worktree `~/AirStack-starling-max2-naming`, branch `docs-naming` (owner-approved naming and story pass on the public docs; committed, not pushed, not merged). Before: 19 November 2026, ~00:30, on the home RTX 5090, release worktree `~/AirStack-starling-max2-release`, branch `nus-release` (plain-laptop CPU route: code fixes C1–C9 and the PROVISIONAL bundle `nus_provisional/`, owner decision 6; committed, not pushed). Before: 18 November 2026, ~15:15, on the home RTX 5090, NUS-port worktree `~/AirStack-starling-max2-nus-port`, branch `phase6-pass2` (Phase 6 pass 2B: **Phase 4 complete**, its results written into every doc, every NUS-port clip published, the hangar size restored, the Phase 5 plan described; uncommitted, the lead commits). Before: ~06:45, on the home RTX 5090, integration worktree `main-5090` (Phase 6 pass 1: public NUS docs, privacy rails rewritten to the owner's decision, Claude files touched up; Phase 4 rows 4–6 running). Before: ~05:30 (Phase 4: T17 PASS, rungs 1 to 3 scored, rungs 4 to 6 not run). Before: ~01:00 (Phase 3 T16 PASS). Before: 17 November 2026, ~22:30, on the home RTX 5090 (evening summary in §0). Before: ~07:00 (morning summary in §0). Before: ~05:30 (S2b Tasks 1–8 done (T13 FAIL, over/under passing), 9 Isaac seeds running, 10 docs being written, 8b deferred; see §0 S2b line). Before: ~03:00. Earlier: 16 November morning (**S2 CLOSED**: final whole-stage review done on Opus, one fix wave 4d0d409, wording c218cbb; owner ruled A and B; S2b plan approved and ready to start).
+> Last updated: 19 November 2026, ~11:00, on the home RTX 5090 (laptop takeover note in §0). Before: ~11:00, on the home RTX 5090, worktree `~/AirStack-starling-max2-naming`, branch `docs-naming` (owner-approved naming and story pass on the public docs; committed, not pushed, not merged). Before: 19 November 2026, ~00:30, on the home RTX 5090, release worktree `~/AirStack-starling-max2-release`, branch `nus-release` (plain-laptop CPU route: code fixes C1–C9 and the PROVISIONAL bundle `nus_provisional/`, owner decision 6; committed, not pushed). Before: 18 November 2026, ~15:15, on the home RTX 5090, NUS-port worktree `~/AirStack-starling-max2-nus-port`, branch `phase6-pass2` (Phase 6 pass 2B: **Phase 4 complete**, its results written into every doc, every NUS-port clip published, the hangar size restored, the Phase 5 plan described; uncommitted, the lead commits). Before: ~06:45, on the home RTX 5090, integration worktree `main-5090` (Phase 6 pass 1: public NUS docs, privacy rails rewritten to the owner's decision, Claude files touched up; Phase 4 rows 4–6 running). Before: ~05:30 (Phase 4: T17 PASS, rungs 1 to 3 scored, rungs 4 to 6 not run). Before: ~01:00 (Phase 3 T16 PASS). Before: 17 November 2026, ~22:30, on the home RTX 5090 (evening summary in §0). Before: ~07:00 (morning summary in §0). Before: ~05:30 (S2b Tasks 1–8 done (T13 FAIL, over/under passing), 9 Isaac seeds running, 10 docs being written, 8b deferred; see §0 S2b line). Before: ~03:00. Earlier: 16 November morning (**S2 CLOSED**: final whole-stage review done on Opus, one fix wave 4d0d409, wording c218cbb; owner ruled A and B; S2b plan approved and ready to start).
 
 ## 0. Resume here (for a new session or another Claude account)
 
 Everything needed is in this folder; nothing depends on the previous chat. Claude's user memory (`~/.claude/…`) and
 the private NUS workspace (`~/ma_skills-self-play/`, 5090 only) do **not** travel with git: if this file and a memory
 note disagree, this file wins.
+
+### LAPTOP TAKEOVER, 19 November 2026 ~11:30 — read this first if the 5090 is out of reach (for the laptop session)
+
+The owner is moving to the office and may lose remote access to the home RTX 5090. Everything below is what a laptop
+session needs; Claude's user memory on the 5090 does **not** travel, so the owner's working preferences are written
+here too.
+
+**What is on `main` (pushed by the owner):** every Phase 5 result so far, the code fixes and the PROVISIONAL bundle
+(`nus_provisional/`, install with `scripts/nus_install_provisional.sh`), the docs restructure and naming pass (front
+page story, What we found, Run it yourself, Train a Guard, video gallery) and this note. The stage 5.2 code (S1–S5,
+CPU-tested, not yet run on a GPU) is on branch `p52-merge` on the 5090 (worktree `~/AirStack-starling-max2-p52merge`),
+waiting for its full test run before it joins `main`; if the 5090 is unreachable, it is not on GitHub yet. On the laptop: `git pull`, then `svg_training/README.md` and this file.
+
+**What exists only on the 5090 (not reachable from the laptop):**
+
+| Item | Where | State at ~11:30 |
+|---|---|---|
+| 5.1 Method match (STE port of NUS's training method), 3 seeds | worktree `~/AirStack-starling-max2-nus-method` (branch `nus-phase5-method`), `runs/nus_port/phase5/s51/` | training, generation 4 of 8, ~2 h per generation: done about 19 Nov 20:30–21:30; then scoring with `scripts/nus_phase5_score.py --arm s51` (commands in that worktree's `runs/nus_port/phase5/route_b_status.md`); videos made as it trains (renderer running) |
+| Docs pass 3 (videos viewable in every page: a GIF per clip, folded video list, GIFs beside every result, a "Watch the clips" line appended to records; new front-page section 3 "The game: NUS 2-D game vs STE drone set-up"; root README training rows; old pointer pages deleted with links updated; a list of other possibly stale pages for the owner) | worktree `~/AirStack-starling-max2-naming` (branch `docs-naming`) | a writer agent was working; NOT on main. If lost, redo from the brief in the owner's 19 Nov ~11:00 messages (summarised in this bullet) |
+| Private files: NUS's code, `~/ma_skills-self-play/` (port plan, notes, docs-panel proposal and drafts, resume notes), `configs/local/` with the lab's NUS values, `runs/` | 5090 | the laptop can install the PROVISIONAL bundle instead of `configs/local/`; NUS's code only from NUS |
+
+**Pilot results so far (on main):** 5.P1b "STE Guard policy" holds the zone against S20 in **829 of 1,000** games in
+Test 5 conditions (T41; parked Guard 429). R0, N0, C0 PASS (T29, T30, T33): the 5.1 test is calibrated.
+
+**Waiting on the owner:**
+1. Route decision: promote the STE Guard policy route (more seeds, more Strike behaviours, self-play, Isaac Lab check,
+   then an AirStack hand-over plan with CMU) after 5.1 ends, and shelve 5.1b/5.1c/5.2 unless NUS asks? (lead's
+   recommendation: yes; 5.1 finishes first).
+2. Review of docs pass 3 (branch `docs-naming`) before it goes to main; decide on the stale-page list it produces.
+3. Send NUS the cover note (questions on the front page, section "Next steps and open questions").
+
+**The owner's working preferences (from Claude memory on the 5090; follow them on the laptop):**
+- Status updates every ~30 min and on events, always three tables: Phases (Phase | Status | Math library |
+  Simulator | What), the current phase task by task (ID | Plain name | Status | Simulator | Result / ETA), and any
+  other workstream (ID | Plain name | Status); then Next and Waiting on you. While `main` has unpushed commits, add a
+  bold "Ready to push" line; drop it after the owner pushes.
+- Task IDs, always "ID + plain name": 5.0 Plan · 5.R0 Reference rebuild · 5.C0 Fairness check: NUS vs NUS · 5.N0
+  Fairness check: untrained · 5.1 Method match · 5.1b/5.1c Cheaper method variants · 5.2 Train on our drones · 5.3
+  Isaac Lab check · 5.P0 Pilot: speed test · 5.P1 Pilot: Guard learner, first try · 5.P1b Pilot: Guard learner, fixed ·
+  5.P2 Pilot: Guard vs mixed Strikes · 5.P3 Pilot: self-play. Side work: DOC, VID, FLT.
+- The owner delegates technical training calls to the lead (decide, record why, report); still ask for AirStack or
+  flight changes, external messages, pushes and anything published. Propose before large doc changes; the owner
+  reviews before `main`.
+- Run GPU jobs side by side when the GPU has room (`scripts/isaac_preflight.sh --approved-headless
+  --allow-siblings`), but give short pilots the GPU alone (a starved run says nothing); the owner pauses jobs to use
+  the PC with `scripts/gpu_pause.sh` (nus-method worktree's copy; pause-aware caps).
+- Videos are recorded inside every run (never a separate re-record), and every result shown in a doc gets a GIF that
+  plays on GitHub (MP4 links do not play inline).
+- Public docs: neutral report tone (NUS by name, not "you"); every label is NUS's own term or defined where first
+  used; NUS's policies were trained **by STE with NUS's code** (NUS gave no checkpoints).
+- Never push, never `git add -A`; the owner pushes from GitHub Desktop.
 
 ### Naming and story pass, 19 November 2026 ~11:00 — branch `docs-naming` (for the lead and the owner)
 

@@ -12,41 +12,14 @@ no pass mark.
 
 The whole story on one screen; sections 1–8 below give the numbers, caveats and records behind each line.
 
-```mermaid
-flowchart TD
-  A["1 · Train with NUS's code (JAX)<br/>in NUS's 2-D game<br/>→ checkpoints G19, S20, P3G, P3S"] --> B["2 · Copy NUS's game into PyTorch<br/>same conditions, checked exact"]
-  B --> C["3 · Convert the policies to PyTorch<br/>same conditions, checked exact"]
-  C --> D["4 · Test the policies under STE drone conditions<br/>one condition at a time: Tests 1–6<br/>nothing trained here"]
-  D -->|"Strike reaches 9 → 979 of 1,000:<br/>NUS's policies fail on STE drones"| E["5 · Retrain in STE drone conditions"]
-  E --> F["STE Guard policy (pilot P1b)<br/>trained in Test 5 conditions<br/>holds 829 of 1,000 ✅"]
-  E --> G["STE port of NUS's training method<br/>check in NUS's game running (5.1)"]
-  F --> H["6 · Next: Isaac Lab check (5.3)<br/>→ AirStack hand-over → flight plan"]
-  G -.-> H
-  classDef done fill:#dff3df,stroke:#2e7d32,color:#000
-  classDef fail fill:#fde4e4,stroke:#c62828,color:#000
-  classDef todo fill:#f1f1f1,stroke:#757575,stroke-dasharray:4 3,color:#000
-  class A,B,C,F done
-  class D fail
-  class E,G,H todo
-```
+![What was done: train with NUS's code (JAX) in NUS's 2-D game; copy the game and convert the policies to PyTorch (checked exact); test NUS's policies under STE drone conditions (Strike reaches 9 to 979 of 1,000: they fail); retrain in STE conditions: the STE Guard policy holds 829 of 1,000; next: Isaac Lab check, AirStack hand-over, flight plan](docs/figures/overview_story.png)
 
-**The six tests** (G19 vs S20; Strike reaches of 1,000 games, the same 1,000 starts in every test). Each test adds one STE
-drone condition to the one before:
+**The six tests** (G19 vs S20; the same 1,000 starts in every test), and on the right, in Test 5 conditions, how often
+each Guard holds the zone:
 
-```mermaid
-flowchart LR
-  T1["Test 1<br/>NUS's conditions<br/>in PyTorch<br/>9"] --> T2["Test 2<br/>+ STE game engine<br/>0.6 s decisions, walls,<br/>simple keep-apart<br/>17"]
-  T2 --> T3["Test 3<br/>+ drone delay<br/>and lag<br/>43"]
-  T3 --> T4["Test 4<br/>+ safety filter<br/>no pushing<br/>740"]
-  T4 --> T5["Test 5<br/>+ free height (3-D)<br/>over and under<br/>983"]
-  T5 --> T6["Test 6<br/>Isaac Lab<br/>physics drones<br/>979"]
-  classDef ok fill:#dff3df,stroke:#2e7d32,color:#000
-  classDef mid fill:#fff4d6,stroke:#b8860b,color:#000
-  classDef bad fill:#fde4e4,stroke:#c62828,color:#000
-  class T1,T2,T3 ok
-  class T4 mid
-  class T5,T6 bad
-```
+![The six tests: Strike reaches of 1,000 games for G19 vs S20 rise from 9 (Test 1, NUS conditions) through 17 and 43 to 740 (Test 4, safety filter), 983 (Test 5, 3-D) and 979 (Test 6, Isaac Lab); in Test 5 conditions the Guard holds the zone in 17 (G19), 429 (Parked Guard) and 829 (STE Guard policy) of 1,000 games](docs/figures/overview_tests.png)
+
+*Figures drawn by `scripts/make_overview_figures.py`.*
 
 ### The whole story
 

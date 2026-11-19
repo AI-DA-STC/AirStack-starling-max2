@@ -47,7 +47,7 @@ each Guard holds the zone:
      then train with it in STE conditions.
 6. **Next:** test the trained Guard in **Isaac Lab** (5.3), then the AirStack hand-over and a flight plan, with CMU.
 
-**In one line:** trained in NUS's game, tested on STE drones (NUS's policies failed), retrained in STE drone conditions
+**In one line:** trained in NUS's game, tested in the STE drone game in PyTorch (NUS's policies failed), retrained in STE drone conditions
 (the STE Guard policy works), Isaac Lab check next.
 
 ### NUS's conditions vs STE drone conditions
@@ -171,7 +171,7 @@ full video. Terms, one line each (all in the [glossary](docs/GLOSSARY.md)):
 - *Test 5 conditions*: the hangar game of Test 5 (STE drone model, safety filter on every pair, free height), the game
   the STE Guard policy was trained in.
 
-## 4. Testing NUS's policies on STE drones
+## 4. Testing NUS's policies in the STE drone game (simulation) in PyTorch
 
 Phase 4 scored the converted policies (G19, S20, P3G, P3S: trained by STE with NUS's code), frozen, in six tests; each test adds one real-drone condition (Tests 2 and 4
 change two things at once; [test results](docs/WHAT_WE_FOUND.md#3-six-tests-towards-ste-drones)). 1,000 games per

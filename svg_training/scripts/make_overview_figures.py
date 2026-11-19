@@ -152,7 +152,7 @@ def tests() -> Path:
     ax.spines["left"].set_color("#c5cbd3")
     ax.grid(axis="y", color="#e4e7eb", zorder=0)
     ax.set_ylabel("Strike reaches the zone (of 1,000 games)", fontsize=11, color=MUTED)
-    ax.set_title("NUS's trained policies (G19 Guard vs S20 Strike) on STE drones: one condition added per test",
+    ax.set_title("G19 Guard vs S20 Strike in the STE drone game (PyTorch): one condition per test",
                  fontsize=13.5, weight="bold", loc="left", pad=14)
     ax.annotate("pushing no longer works", xy=(3, 740), xytext=(1.6, 640), fontsize=10.5, color=AMBER,
                 arrowprops=dict(arrowstyle="-|>", color=AMBER, lw=1.4), ha="center")

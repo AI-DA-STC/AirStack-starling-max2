@@ -61,14 +61,14 @@ rule-exercising actions).
 
 Evidence: T15, [record](../records/2026-11-17_nus_phase2_parity_record.md). Caveat: the check is step by step from
 NUS's recorded states. Over a whole game two independent float32 programs drift apart, so the STE game engine with
-NUS's rules (sub-test 2.1) matches Test 1 to rounding, not game by game ([T19 record](../records/2026-11-18_nus_phase4_rung2_record.md)).
+NUS's rules (sub-test 2.1) matches Test 1 to rounding, not game by game (T19, [record](../records/2026-11-18_nus_phase4_rung2_record.md)).
 
 ## 2. Converted policies match the JAX originals
 
 `nus/actor.py` reads NUS checkpoint files (msgpack, no JAX) and copies the NUS bfloat16 rounding points; a plain
 float32 copy misses the action limit (0.022 and 0.030).
 
-| Check | Limit | P3G / P3S (T16) | G19 / S20 (T17) | 24 entries of the 3 NUS-code hangar self-play seeds (R0) |
+| Check | Limit | P3G / P3S (T16) | G19 / S20 (T17) | 24 entries of the 3 NUS-code hangar lineages (R0) |
 |---|---|---|---|---|
 | largest action error, converted v JAX, 24,000 observations per team | ≤ 0.02 units | Guard 0.0074, Strike 0.0105 | Guard 0.0079, Strike 0.0095 | 24 of 24 within; largest 0.0092 (10,800 rows each) |
 | Strike reach v NUS's scripted opponent, 1,000 shared starts | converted inside the JAX interval | JAX 48 [0.036, 0.063], converted 46 [0.035, 0.061] | JAX 166 [0.144, 0.190], converted 172 [0.150, 0.197] | — |
@@ -91,7 +91,7 @@ their intervals overlap; the copy does not disagree with itself.
 | P3G v APF attacker | 1 of 20 games | 48 / 46 (T16) | 33 [0.024, 0.046] (T18) |
 
 First column: INFO, [self-play matrix record](../records/2026-11-18_nus_selfplay_matrix_record.md) and [Phase 2a record](../records/2026-11-17_nus_phase2a_training_record.md) (written after the fact).
-Test 1: [T18 record](../records/2026-11-18_nus_phase4_rung1_record.md).
+Test 1: T18, [record](../records/2026-11-18_nus_phase4_rung1_record.md).
 
 ## 3. Six tests towards STE drones
 
@@ -235,14 +235,14 @@ Before any of its seeds is scored, a test was fixed in advance:
 
 | Step | What | Status (18 Nov 2026) | Evidence |
 |---|---|---|---|
-| R0 | the 3 NUS-code hangar self-play seeds (24 archived entries) converted and scored as a 12 × 12 matrix at 1,000 games per pairing | PASS: 24 of 24 converted within 0.02 units | T29, [record](../records/2026-11-18_nus_phase5_r0_reference_record.md) |
+| R0 | the 3 NUS-code hangar lineages (24 archived entries; a *lineage* is the chain of archived Guard and Strike policies of one self-play seed, trained by STE with NUS's code) converted and scored as a 12 × 12 matrix at 1,000 games per pairing | PASS: 24 of 24 converted within 0.02 units | T29, [record](../records/2026-11-18_nus_phase5_r0_reference_record.md) |
 | N0 | untrained actors scored as if they were the port: the test must fail them | PASS: the test failed them (Guard difference −0.366 [−0.499, −0.234], Strike −0.594 [−0.848, −0.341]) | T30, [record](../records/2026-11-18_nus_phase5_n0_negative_control_record.md) |
 | C0 | the NUS code, 3 new seeds, scored as if it were the port: the test must pass it | PASS: Guard difference −0.027 [−0.171, +0.117], Strike +0.108 [−0.150, +0.366]; all 24 entries inside the scripted range | T33, [record](../records/2026-11-19_nus_phase5_c0_positive_control_record.md) |
 | 5.1 | the port, 3 seeds × 8 generations | running | — |
 
 **The test in plain words** (plan [§4.3](plans/2026-11-18-nus-phase5-retraining.md)): every seed finishes; the
 learner does not fail two generations in a row; each entry's score against NUS's scripted opponent lies inside the
-range of the 12 NUS-code entries; and each seed's mean strength against the other seeds, averaged over 3 seeds, is
+range of the 12 NUS-code entries; and each lineage's mean strength against the other NUS-code lineages, averaged over 3 seeds, is
 not told apart from the NUS code's by a two-sample interval (with a cap on how much noisier the port's seeds may be).
 An earlier per-cell rule ("every cross-play cell inside the NUS 95 % interval") was dropped: it would fail the NUS
 code's own seeds against each other.

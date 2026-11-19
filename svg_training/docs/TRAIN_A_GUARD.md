@@ -14,9 +14,9 @@ using NUS's code, then converted to PyTorch; [glossary, policies](GLOSSARY.md#po
 conditions*: the hangar game on the *STE drone model* (a point drone that follows its speed command through a copy of
 CMU's commander and the delay and lag of a model fitted to one Starling flight log), with the *safety filter* on every
 pair of drones (CMU's collision filter: both drones of a close pair give way, keeping them 1.10 m apart) and drones
-free in height (3-D). The result of record: holds the zone against S20 in **829 of 1,000** games, against 429 for the
-*Parked Guard* (an STE baseline that commands zero speed). Evidence:
-[record T41](../records/2026-11-19_nus_phase5_pilot_p1b_run4_record.md); the result in context:
+free in height (3-D). Run 4's result (a pilot: not gated, not a run of record): holds the zone against S20 in **829 of
+1,000** games, against 429 for the *Parked Guard* (an STE baseline that commands zero speed). Evidence: T41,
+[record](../records/2026-11-19_nus_phase5_pilot_p1b_run4_record.md); the result in context:
 [what we found](WHAT_WE_FOUND.md#7-ste-guard-policy-trained-in-test-5-conditions).
 
 | Badge | Means |
@@ -30,10 +30,10 @@ free in height (3-D). The result of record: holds the zone against S20 in **829 
 | [0](#0-prerequisites) | install, then the PROVISIONAL files | `none` | ~5 min | yes (as level B of [how to run it yourself](RUN_IT_YOURSELF.md#b-a-cpu-laptop-install-run-the-game-score-a-strategy-run-the-tests)) |
 | [1](#1-the-one-command) | the one command | — | — | — |
 | [2](#2-what-each-setting-means) | what each setting means | — | — | — |
-| [3](#3-a-tiny-cpu-check-first) | a tiny CPU check | `none` | 1 min 45 s | yes, 19 Nov 2026, in a worktree of this branch with the PROVISIONAL files installed |
+| [3](#3-a-tiny-cpu-check-first) | a tiny CPU check | `none` | 1 min 45 s | no: run on 19 Nov 2026 in a lab worktree of this branch (conda `env_isaaclab`, PROVISIONAL files installed) |
 | [4](#4-the-gpu-run) | the GPU run | `GPU` | 2.1 h on an RTX 5090 alone (capped) | no (run 4 ran on the lab's RTX 5090) |
-| [5](#5-scoring-against-s20-and-the-parked-guard) | scoring against S20 and the Parked Guard | `GPU` (or a long CPU run) | inside the run; Parked Guard about 0.4 h on a CPU (estimate) | the S20 score: yes (part of the run); the Parked Guard re-score: no |
-| [6](#6-videos) | videos | — | seconds, after the run | yes (CPU check) |
+| [5](#5-scoring-against-s20-and-the-parked-guard) | scoring against S20 and the Parked Guard | `GPU` (or a long CPU run) | inside the run; Parked Guard about 0.4 h on a CPU (estimate) | no: the 1,000-game S20 score comes from run 4 on the lab's RTX 5090; the Parked Guard score from Test 5 (T23) |
+| [6](#6-videos) | videos | — | seconds, after the run | no: clips seen in the lab-worktree CPU check |
 
 ## 0. Prerequisites
 
@@ -50,7 +50,7 @@ PYTHONPATH=source $P scripts/train_standin.py --game nus_hangar --settings pilot
     --name <new name> --device cuda
 ```
 
-Run 4 (record T41) used this command with `--runs-dir runs/nus_port/phase5/pilots`, the name
+Run 4 used this command with `--runs-dir runs/nus_port/phase5/pilots`, the name
 `2026-11-19_nus_phase5_pilot_p1b_run4` and `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True` in front (the trainer sets
 that variable itself in any case). `--game nus_hangar` selects the hangar game of Test 5; `--settings pilot_p1b`
 selects the settings table `[pilot_p1b]` in `configs/nus_phase5.toml`; `--no-eval-at-start` skips the evaluation of
@@ -64,21 +64,22 @@ with two fixes found by the P1 diagnosis ([P1 record](../records/2026-11-18_nus_
 
 | Setting | Value | Meaning |
 |---|---|---|
-| zero-mean start (`zero_mean_init`) | true | the last layer of every Guard policy's mean head starts at zero, so the untrained Guards stand still (the Parked Guard's behaviour); the spread of the actions starts at log std −1.6 |
+| zero-mean start (`zero_mean_init`) | true | the last layer of every Guard policy's mean head starts at zero, so the untrained Guards stand still; the spread of the actions starts at log std −1.6. P1's untrained Guards had a non-zero mean action and drifted off their start cluster |
 | one decision per 12 ticks (`decision_ticks = "deploy"`) | 12 ticks = 0.6 s | the Guards choose a new action every 0.60 s and hold it in between, as the converted NUS-code policies do (the deploy file's hold) |
-| γ (`discount_factor`) | 0.99 per decision | the discount per 0.60 s decision, not per 0.05 s tick; P1 used 0.99 per tick, which makes the 120 s time-out nearly invisible |
+| γ (`discount_factor`) | 0.99 per decision | the discount per 0.60 s decision, not per 0.05 s tick; with P1's 0.99 per tick the +1 at the 2,400-tick time-out was discounted by about 3e-11 from the start ([P1 record](../records/2026-11-18_nus_phase5_pilot_p1_record.md)) |
 | no shaping (`shaping_weight`) | 0.0 | reward only at the end of a game: +1 for a hold, −1 for a Strike reach |
 | opponent (`opponent_mix`) | S20 only | the Strike team is always the converted S20 |
 | games at once (`num_games`) | 32,768 | training games played in parallel on the GPU, each from a fresh random start |
 | update | 32 decisions per update; 5 epochs, 4 mini-batches; learning rate 3e-4; λ 0.95; clip 0.2 | standard PPO settings of skrl's IPPO |
 | networks (`hidden`) | two layers of 128 | one policy and one value network per Guard drone |
-| yaw (`frozen_log_std_axes`) | frozen | the turn-rate axis keeps its initial spread; the game does not use heading |
+| yaw (`frozen_log_std_axes`) | frozen | the turn-rate axis keeps its initial spread: the Starling motion ignores it, so its noise is not trained (`configs/s2b.toml`) |
 | evaluations (`eval_games_early`, `eval_games`) | 256 half-way, 1,000 at the end | played on the first games of the *paired starts* (the same starts as Tests 1–6) with mean actions |
 | cap (`gpu_cap_hours`, `[pilots] total_gpu_hours`) | 3.0 h per run; 6.0 h for all pilots together | a hard wall-clock cap that includes the evaluations (section 4) |
 
 ## 3. A tiny CPU check first
 
-`none` · 1 min 45 s · verified 19 Nov 2026 (a 32-thread workstation, `CUDA_VISIBLE_DEVICES=""`, `OMP_NUM_THREADS=4`).
+`none` · 1 min 45 s · run 19 Nov 2026 in a lab worktree of this branch, not a fresh clone (conda `env_isaaclab`, a
+32-thread workstation, `CUDA_VISIBLE_DEVICES=""`, `OMP_NUM_THREADS=4`).
 Two updates on 64 games and one evaluation of 200 ticks: a pipe test, never a result.
 
 ```bash
@@ -107,14 +108,14 @@ git-ignored): the CPU check above used 0.028 h of the 6.0 h that all pilots shar
 ## 4. The GPU run
 
 `GPU` · not verified from a fresh clone. Run it alone on the GPU: runs 1 and 2 of P1b shared the GPU and were starved
-(ABORTED, T32 and T39). Check `nvidia-smi` first.
+(ABORTED; evidence T32, T39). Check `nvidia-smi` first.
 
 ```bash
 PYTHONPATH=source $P scripts/train_standin.py --game nus_hangar --settings pilot_p1b --seed 101 --no-eval-at-start \
     --name <new name> --device cuda
 ```
 
-| Item | Run 4 (record T41) |
+| Item | Run 4 (evidence T41) |
 |---|---|
 | Machine | the lab's RTX 5090, alone on the GPU |
 | Time | 2.14 h of wall clock (04:59 to 07:08, 19 Nov 2026), stopped by its cap |
@@ -138,7 +139,7 @@ the Wilson 95 % interval, closest approach and filter use, are in `runs/<name>/c
 and `train_result.json`. `agent_best.pt` keeps the networks of the best evaluation.
 
 **Against the Parked Guard.** The comparison uses the Parked Guard's own score on the same 1,000 starts in Test 5:
-429 of 1,000 held (record T23, GPU). To re-score it (not verified from a fresh clone):
+429 of 1,000 held (GPU; evidence T23, [record](../records/2026-11-18_nus_phase4_rung5_record.md)). To re-score it (not verified from a fresh clone):
 
 ```bash
 PYTHONPATH=source $P scripts/nus_phase4.py --row 5 --pairs ParkedGuard:S20 --device cuda --out runs/<new folder> --estimate-only
@@ -149,7 +150,7 @@ PYTHONPATH=source $P scripts/nus_phase4.py --row 5 --pairs ParkedGuard:S20 --dev
 result is a check, not a new record. On the CPU (`--device cpu`) the estimate was 1,322 s (0.37 h) for this one pair.
 The safety filter's answer on a GPU depends on the batch size, and in about 40 % of Parked Guard v S20 games it does
 not converge in 1,000 sweeps ([filter record](../records/2026-11-18_filter_cuda_graph_record.md)): a re-score agrees
-within intervals, not game by game. G19 v S20 on the same starts held 17 of 1,000 (T23).
+within intervals, not game by game. G19 v S20 on the same starts held 17 of 1,000 (evidence T23).
 
 ## 6. Videos
 

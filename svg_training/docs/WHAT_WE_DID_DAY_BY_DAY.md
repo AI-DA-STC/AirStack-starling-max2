@@ -236,12 +236,12 @@ same check of the method first. STE chose (b), and asks whether NUS would also d
 | Decision | What |
 |---|---|
 | Method | NUS's `train_self_play`: alternating best-response multi-agent PPO with the archive pool and the scripted slot, no APEX |
-| First check (stage 5.1) | in 2-D, on the Copy of NUS 2-D game, with NUS's observation layout: the port, 3 seeds × 8 generations, scored against the 3 NUS-code hangar self-play seeds by a test written in advance |
+| First check (stage 5.1) | in 2-D, on the Copy of NUS 2-D game, with NUS's observation layout: the port, 3 seeds × 8 generations, scored against the 3 NUS-code hangar lineages (a *lineage*: the archived policies of one self-play seed) by a test written in advance |
 | Then (stages 5.2, 5.3), planned | on the hangar set-up of §3: train on the STE drone model with drone lag and delay, the safety filter on every pair and 3-D, keeping NUS's reward; cross-check on the Isaac Lab physics drones ([plan](plans/2026-11-18-nus-phase5-retraining.md)) |
 
 **The stage 5.1 test.** Every seed finishes; the learner does not fail two generations in a row; each entry's score
-against NUS's scripted opponent lies inside the range of the 12 NUS-code entries; and each seed's mean strength
-against the other seeds, over 3 seeds, is not told apart from the NUS code's by a pooled two-sample interval, with a
+against NUS's scripted opponent lies inside the range of the 12 NUS-code entries; and each lineage's mean strength
+against the other NUS-code lineages, over 3 seeds, is not told apart from the NUS code's by a pooled two-sample interval, with a
 cap on how much noisier the port's seeds may be. It replaced an earlier per-cell rule (every cross-play cell inside the
 NUS 95 % interval), which would fail the NUS code's own seeds against each other. Even a PASS will mean only that this
 screen for a broken learner does not tell the port apart from NUS's code; it will not mean "equivalent".

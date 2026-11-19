@@ -24,7 +24,7 @@ gives NUS's term once, then the term used here.
 | `spawn_distance`, `defender_boundary` | 8.0 units each on the hangar set-up | the NUS defaults are 20 |
 | the NUS soft push between teams | the *push-apart* rule (`block`) in Tests 2–3; the *safety filter* from Test 4 | the NUS push herds; the push-apart only cuts a move short; the filter makes both drones give way |
 | `scripted_opponent: apf` (artificial potential field) | APF defender, APF attacker; in STE code `ApfGuard`, `ApfStrike` | NUS's scripted controllers, ported to PyTorch by STE; gains read from the NUS code |
-| archive, generation | the same | an archived policy of one team; one generation of alternating training |
+| archive, generation, lineage | the same | an archived policy of one team; one generation of alternating training; a lineage is the chain of archived Guard and Strike policies of one self-play seed |
 | `area-denial-continuous-space-self-play` | the NUS code (commit `2d2b904`) | the one NUS branch used |
 | observation, 9N + 2 (56 numbers for 3 v 3) | rebuilt from the 71-number STE observation by `NusPolicy` | interface layout `nus_area_denial_v1` |
 | `train_self_play` | the NUS training method: alternating best-response multi-agent PPO with the archive pool | the STE port of NUS's training method (PyTorch) copies it, without APEX |
@@ -140,7 +140,7 @@ None of this is needed to run anything in this folder. It explains words on the 
 
 | Term | Meaning | More |
 |---|---|---|
-| NUS port | running the NUS team strategies, and then the NUS training method, in this pipeline | [what we did, day by day](WHAT_WE_DID_DAY_BY_DAY.md) |
+| NUS port | running team strategies trained with NUS's code, and then NUS's training method, in this pipeline | [what we did, day by day](WHAT_WE_DID_DAY_BY_DAY.md) |
 | Phase | one stage of the NUS port, 0 to 6: questions, the NUS code installed (1), policies trained with the NUS code (2a), the Copy of NUS 2-D game (2), the conversion (3), the six tests (4), training in STE conditions (5), these documents (6) | [what we did, day by day](WHAT_WE_DID_DAY_BY_DAY.md#at-a-glance) |
 | Test 1–6, sub-tests 2.1, 2.2, 3a, 5a | Phase 4: the frozen converted policies scored in six tests, each bringing the game closer to the STE drones (part 1). The records say "transfer ladder", "ladder row" or "rung": **Test N = ladder row N in the records** | [the six tests](#the-six-tests) |
 | STE game engine (PyTorch) | the batched game of `core/game.py`, used from Test 2 on; its rules, walls and push are set per test | [the game](THE_GAME.md#the-game-as-an-rl-environment) |
@@ -148,7 +148,7 @@ None of this is needed to run anything in this folder. It explains words on the 
 | Paired starts | one file of 1,000 start positions (seed 20261119), the same in every test, so two tests can be compared game by game | [how to run it yourself, level D](RUN_IT_YOURSELF.md#d-repeat-the-six-tests) |
 | Run 0 | the check of the hangar set-up before any training, with the NUS environment and scripted players | [hangar geometry](WHAT_WE_DID_DAY_BY_DAY.md#3-phase-0-answers-and-the-hangar-geometry) |
 | STE port of NUS's training method (PyTorch) | STE's PyTorch copy of `train_self_play`; "route (b)" and "5.1" in the records. 5.1 = this copy in 2-D on the Copy of NUS 2-D game, 3 seeds; 5.2 = the same on the STE drone model (planned) | [what we found, training method](WHAT_WE_FOUND.md#6-ste-port-of-nus-training-method-no-result-yet) |
-| R0, C0, N0 | the checks of the test for that port: R0 the NUS lineages rebuilt as the reference; C0 the NUS code with new seeds (must pass the test); N0 untrained actors (must fail it) | [what we found, training method](WHAT_WE_FOUND.md#6-ste-port-of-nus-training-method-no-result-yet) |
+| R0, C0, N0 | the checks of the test for that port: R0 the three NUS-code hangar lineages (trained by STE with NUS's code) rebuilt as the reference; C0 the NUS code with new seeds (must pass the test); N0 untrained actors (must fail it) | [what we found, training method](WHAT_WE_FOUND.md#6-ste-port-of-nus-training-method-no-result-yet) |
 | Pilot (P0, P1, P1b, P2) | a short training run with no gate, to look before planning; INFO only. Pilot P1b run 4 produced the STE Guard policy | [what we found, STE Guard policy](WHAT_WE_FOUND.md#7-ste-guard-policy-trained-in-test-5-conditions) |
 | Start miss | a game whose drones start closer than the spacing rule wants. In the NUS starts every game has a pair inside the 1.10 m keep-out (1,000 of 1,000); in STE's own small arenas it flags crowded starts | [what we found, the six tests](WHAT_WE_FOUND.md#3-six-tests-towards-ste-drones) |
 | Contact (records column) | games in which any two drones, team-mates included, come closer than 0.50 m. Not a crash count: the packed NUS Guard start already has such a pair in 853 of 1,000 games | [what we found, the six tests](WHAT_WE_FOUND.md#3-six-tests-towards-ste-drones) |

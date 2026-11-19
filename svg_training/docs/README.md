@@ -35,11 +35,21 @@ this repository. Every page carries one of four labels on its first line:
 | [GETTING_STARTED.md](GETTING_STARTED.md) | the full install with Isaac Lab (container or host), the first tests, the S0 benchmark |
 | [../STANDARDS.md](../STANDARDS.md) | the rules: scope, wording, interface, game, drone models, gates, records |
 | [DESIGN.md](DESIGN.md), [RESEARCH.md](RESEARCH.md) | the design and the state of the art as of 14 November 2026 |
-| **STE build history:** [S0_RESULTS.md](S0_RESULTS.md), [S1_RESULTS.md](S1_RESULTS.md), [S2_RESULTS.md](S2_RESULTS.md), [S2B_RESULTS.md](S2B_RESULTS.md) | results of STE's own build steps before the NUS port: S0 speed, S1 drone model and safety filter, S2 the game, S2b the game on Isaac Lab drones |
 | [../records/README.md](../records/README.md), [../records/LEDGER.md](../records/LEDGER.md) | how to read a record; every run, one row each |
 | [figures/](figures/), [pipeline/](pipeline/) | the figures the pages embed; a slide deck of the pipeline (may lag the pages) |
 | [../docker/README.md](../docker/README.md) | the container image |
 | [../nus_provisional/README.md](../nus_provisional/README.md) | the PROVISIONAL bundle: STE's converted NUS-port weights, local settings and recordings, for repeating the numbers |
+
+### STE build history
+
+STE's own build steps before the NUS port (names kept; [DESIGN §8](DESIGN.md#8-build-order) has the build order).
+
+| Page | What it holds |
+|---|---|
+| [S0_RESULTS.md](S0_RESULTS.md) | S0: how fast the two drone models run |
+| [S1_RESULTS.md](S1_RESULTS.md) | S1: a drone model and a copy of the safety filter |
+| [S2_RESULTS.md](S2_RESULTS.md) | S2: the game, varied arena sizes and the plug-in point |
+| [S2B_RESULTS.md](S2B_RESULTS.md) | S2b: the game on rigid-body Starling models in Isaac Lab |
 
 ## Lab operations
 

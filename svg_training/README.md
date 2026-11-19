@@ -44,8 +44,8 @@ grades the copy, never NUS's code.
 |---|---|---|---|---|
 | 1 | NUS's code, installed | NUS 2-D game (JAX) | 65 of NUS's 66 tests pass; the one failure checks an older Guard safety distance, which NUS confirmed is out of date | [record](records/2026-11-17_nus_phase1_install_record.md) (INFO, written after the fact) |
 | 2a | policies trained with NUS's code: 3 self-play seeds × 8 generations (NUS default 32), seed 2 continued to 20 | NUS 2-D game (JAX) | G19 v S20: Strike reaches the zone in 0.023 of 256 games (NUS's evaluator and starts) | [training](records/2026-11-17_nus_phase2a_training_record.md), [matrix](records/2026-11-18_nus_selfplay_matrix_record.md) (INFO, after the fact) |
-| 2 | the game, copied to PyTorch | Copy of NUS 2-D game (PyTorch) | the same game step by step: position error ≤ 5.7e-6 units (limit 1e-4). PASS | T15, [the copy checked](docs/WHAT_WE_FOUND.md#1-copy-of-nus-2-d-game-pytorch-matches-nus-2-d-game-jax) |
-| 3 | the policies, converted to PyTorch | Copy of NUS 2-D game (PyTorch) | action error ≤ 0.0105 units (limit 0.02); reach counts inside the 95 % interval of NUS's code. PASS | T16, T17, [the conversion checked](docs/WHAT_WE_FOUND.md#2-converted-policies-match-the-jax-originals) |
+| 2 | the game, copied to PyTorch | Copy of NUS 2-D game (PyTorch) | the same game step by step: position error ≤ 5.7e-6 units (limit 1e-4). PASS | T15, [record](records/2026-11-17_nus_phase2_parity_record.md), [the copy checked](docs/WHAT_WE_FOUND.md#1-copy-of-nus-2-d-game-pytorch-matches-nus-2-d-game-jax) |
+| 3 | the policies, converted to PyTorch | Copy of NUS 2-D game (PyTorch) | action error ≤ 0.0105 units (limit 0.02); reach counts inside the 95 % interval of NUS's code. PASS | T16, [record](records/2026-11-18_nus_phase3_conversion_record.md); T17, [record](records/2026-11-18_nus_phase4_w3_reference_gates_record.md); [the conversion checked](docs/WHAT_WE_FOUND.md#2-converted-policies-match-the-jax-originals) |
 
 ## 3. Testing NUS's policies on STE drones
 
@@ -55,19 +55,19 @@ pair, the same 1,000 starts in every test.
 
 | Test | Played in | G19 v S20: Strike reaches of 1,000 | Evidence |
 |---|---|---|---|
-| 1 | Copy of NUS 2-D game, in PyTorch | 9 | T18 |
-| 2 | STE game engine (PyTorch), NUS rules, action held for each 0.6 s step | 17 | T19 |
-| 3 | STE drone model (PyTorch): + Starling delay and lag | 43 | T20 |
-| 4 | STE drone model: + safety filter on every drone pair | 740 | T22 |
-| 5 | STE drone model: + free height (3-D) | 983 | T23 |
-| 6 | Isaac Lab physics drones (Isaac Sim 5.1) | 979 | T24 |
+| 1 | Copy of NUS 2-D game, in PyTorch | 9 | T18, [record](records/2026-11-18_nus_phase4_rung1_record.md) |
+| 2 | STE game engine (PyTorch), NUS rules, action held for each 0.6 s step | 17 | T19, [record](records/2026-11-18_nus_phase4_rung2_record.md) |
+| 3 | STE drone model (PyTorch): + Starling delay and lag | 43 | T20, [record](records/2026-11-18_nus_phase4_rung3_record.md) |
+| 4 | STE drone model: + safety filter on every drone pair | 740 | T22, [record](records/2026-11-18_nus_phase4_rung4_2_record.md) |
+| 5 | STE drone model: + free height (3-D) | 983 | T23, [record](records/2026-11-18_nus_phase4_rung5_record.md) |
+| 6 | Isaac Lab physics drones (Isaac Sim 5.1) | 979 | T24, [record](records/2026-11-18_nus_phase4_rung6_record.md) |
 
 *STE game engine*: STE's batched game in PyTorch, here with NUS's speeds, zone and scoring, square walls and an STE
 rule that cuts short a move that would bring a drone within 1.10 m of an opposing drone. *STE drone model*: a point drone that follows its speed
 command through a copy of CMU's commander (the AirStack program that turns speed commands into drone instructions), then the delay and lag of a model fitted to one Starling flight log
 (exploratory: it answers more slowly than the real drone). *Safety filter*: CMU's collision filter in the flight
 software; when two drones come close it makes both give way, keeping them 1.10 m apart. *Isaac Lab physics drones*:
-rigid-body Starling models in NVIDIA Isaac Lab, flown by a copy of PX4's control loops (PX4: the drone's flight
+rigid-body Starling models in NVIDIA Isaac Lab (a robot-learning framework on NVIDIA's Isaac Sim simulator), flown by a copy of PX4's control loops (PX4: the drone's flight
 software). The records call the tests "ladder rows": Test N = ladder row N.
 
 <a id="fig-1"></a>
@@ -92,7 +92,7 @@ T18–T24.*
 ## 5. Training in STE conditions
 
 The STE Guard policy (trained in pilot P1b; a *pilot* is a short training run with no gate) holds the zone against
-S20 in **829 of 1,000** games in Test 5 conditions, against 429 for the Parked Guard (record T41). Its Guards spread
+S20 in **829 of 1,000** games in Test 5 conditions, against 429 for the Parked Guard (evidence: T41, [record](records/2026-11-19_nus_phase5_pilot_p1b_run4_record.md)). Its Guards spread
 out across the zone and the safety filter likely acts as a wall around each one (read from the videos, not tested).
 One seed, one opponent, not checked on the Isaac Lab physics drones:
 [the result](docs/WHAT_WE_FOUND.md#7-ste-guard-policy-trained-in-test-5-conditions),
@@ -138,7 +138,7 @@ Commands for every level, with what each must print: [how to run it yourself](do
 | C | the same at full size | `GPU` | ~1 h | not yet |
 | D | repeat Tests 1–5 from the PROVISIONAL files (the converted weights and STE settings, committed only so the numbers can be repeated) | `none` | under 2 min for Test 1 (CPU) | yes (Test 1) |
 | E | Test 6 and the Isaac Lab clips | `GPU` `Isaac` | hours | not yet |
-| F | train the STE Guard policy: [training recipe](docs/TRAIN_A_GUARD.md) | `none` for the CPU check, `GPU` for the run | 2 min (CPU check); 2.1 h (RTX 5090) | CPU check only |
+| F | train the STE Guard policy: [training recipe](docs/TRAIN_A_GUARD.md) | `none` for the CPU check, `GPU` for the run | 2 min (CPU check); 2.1 h (RTX 5090) | not yet (the CPU check ran in a lab worktree) |
 
 | Page | What it holds |
 |---|---|

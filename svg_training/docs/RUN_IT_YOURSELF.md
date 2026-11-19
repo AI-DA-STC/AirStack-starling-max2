@@ -26,7 +26,7 @@ The scripts number the tests as rows (`--row 1` = Test 1).
 | [D](#d-repeat-the-six-tests) | repeat the six tests from the PROVISIONAL files | `none` | 30 s to 2 min per Test 1 run | yes, 19 Nov 2026 (Test 1) |
 | [D′](#d-rebuild-the-files-from-a-nus-clone) | rebuild those files from a NUS clone | `NUS clone` | minutes | partly (18 Nov 2026, CPU) |
 | [E](#e-isaac-lab-test-6-and-the-clips) | Test 6 (Isaac Lab physics drones) and its clips | `GPU` `Isaac` | hours | not yet |
-| [F](TRAIN_A_GUARD.md) | train the STE Guard policy: [training recipe](TRAIN_A_GUARD.md) | `none` for the CPU check, `GPU` for the run | 2 min (CPU check); 2.1 h on an RTX 5090 | CPU check only |
+| [F](TRAIN_A_GUARD.md) | train the STE Guard policy: [training recipe](TRAIN_A_GUARD.md) | `none` for the CPU check, `GPU` for the run | 2 min (CPU check); 2.1 h on an RTX 5090 | not yet (the CPU check ran in a lab worktree, 19 Nov 2026) |
 
 What "verified" means: on 19 November 2026 the commands of B and D ran from a fresh clone of this branch, CPU only
 (`CUDA_VISIBLE_DEVICES=""`), in a plain Python 3.11 environment, with an empty home folder (so none of STE's files
@@ -169,7 +169,7 @@ package's own copy is used); `--no-videos` skips them.
 ```bash
 $P scripts/nus_phase4.py --row 1 --device cpu
 ```
-Must see: `runs/nus_port/phase4/row_1/scores.json`. Against Test 1 of record (GPU, [T18 record](../records/2026-11-18_nus_phase4_rung1_record.md)):
+Must see: `runs/nus_port/phase4/row_1/scores.json`. Against Test 1 of record (GPU; T18, [record](../records/2026-11-18_nus_phase4_rung1_record.md)):
 7 of the 12 pairs gave the same count; 5 differed by 1–3 of 1,000 games, each inside the record's Wilson 95 % interval
 (G19 v S20: 10 here, 9 in the record). The same 5 differences appear with torch 2.7.0; likely causes, not separated:
 CPU against GPU, or an earlier version of `configs/nus_phase4.toml` that Tests 1–3 ran with. The script refuses a

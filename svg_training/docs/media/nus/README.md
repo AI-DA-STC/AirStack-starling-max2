@@ -21,7 +21,7 @@ link every MP4.
 
 | Folder | What | Simulator | Count |
 |---|---|---|---|
-| `nus_*` (this folder) | **NUS's own 2-D game and NUS's JAX policies**, drawn by NUS's renderer | NUS's 2-D game | 8 files (6 games; 2 also as GIF) |
+| `nus_*` (this folder) | **NUS's own 2-D game and JAX policies trained by STE with NUS's code**, drawn by NUS's renderer | NUS's 2-D game | 8 files (6 games; 2 also as GIF) |
 | [`phase3/`](#phase-3-the-converted-policies-in-the-copy-of-nus-2-d-game-t16) | P3G and P3S converted to PyTorch, in the Copy of NUS 2-D game (PyTorch) (T16) | Copy of NUS 2-D game | 4 |
 | [`w3/`](#g19-and-s20-through-the-phase-3-gates-t17) | the self-play pair G19 and S20, converted, through the Phase 3 gates (T17) | Copy of NUS 2-D game | 4 |
 | [`phase4/row_*/`](#phase-4-the-six-tests-top-down) | the six tests, one folder per test (`row_N` = Test N): the first Strike win and the first hold among the first 16 games of each pair | Copy of NUS 2-D game, STE game engine, STE drone model, Isaac Lab physics drones | 246 |

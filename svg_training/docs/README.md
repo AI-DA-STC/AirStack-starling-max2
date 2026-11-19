@@ -23,8 +23,8 @@ this repository. Every page carries one of four labels on its first line:
 | [THE_GAME.md](THE_GAME.md) | the game, the pipeline in one picture, the game as an RL environment (was `HOW_IT_WORKS.md`) |
 | [PLUG_IN_YOUR_CODE.md](PLUG_IN_YOUR_CODE.md) | plug in your code: connect a strategy or a training method, and score it (was `PLUG_IN.md`) |
 | [GLOSSARY.md](GLOSSARY.md) | every term: NUS terms and the terms used here, the policies, the six tests, the world around this folder |
-| [media/nus/README.md](media/nus/README.md) | videos of the NUS port: every clip, one line each |
-| [media/README.md](media/README.md) | replay clips and Isaac Lab clips of STE's own scripted games |
+| [media/nus/README.md](media/nus/README.md) | videos of the NUS port: all 275 clips, each with a preview that plays in the page, by section |
+| [media/README.md](media/README.md) | replay clips and Isaac Lab clips of STE's own scripted games, each with a preview |
 
 ## Reference
 
@@ -90,6 +90,7 @@ of the run that produced it.
 | 18–19 Nov | NUS port, Phase 5: the STE port of NUS's training method (PyTorch); pilots of STE's stand-in trainer; a faster safety-filter path | in progress: R0 T29 PASS, N0 T30 PASS, C0 T33 PASS; stage 5.1 running; pilots T25–T28, T32, T39, T40 INFO or ABORTED; pilot P1b run 4 T41 INFO: the STE Guard policy holds S20 in 829 of 1,000; filter path T31 INFO | [what we did, day by day, Phase 5](WHAT_WE_DID_DAY_BY_DAY.md#12-phase-5-training-in-ste-conditions-in-progress), [training recipe](TRAIN_A_GUARD.md) |
 | 18 Nov | these pages rewritten for the NUS team | — | this page |
 | 19 Nov | naming pass: pages renamed, Tests 1–6 and the policies named and defined, the training recipe added | — | this page |
+| 19 Nov | videos and the game: a playing preview for every clip, front-page section on NUS's 2-D game against the STE drone set-up, the old-name pointer pages deleted | — | [videos of the NUS port](media/nus/README.md), [front page, the game](../README.md#3-the-game-nus-2-d-game-vs-ste-drone-set-up) |
 | not started | S3 two against one, S4 five against three, S5 hand-over to the drones | — | [DESIGN §8](DESIGN.md#8-build-order) |
 
 One training result so far, a pilot: the STE Guard policy (one seed, not gated). Nothing in this folder has flown.

@@ -4,7 +4,7 @@ INTERNAL · the lab's AI-assistant hand-over notes. Not needed to read or run an
 
 > **How to use this file.** Read it at the start of a session, after [../../CLAUDE.md](../../CLAUDE.md).
 > §4 is the current state, §5 is what is waiting on people. Update both before you stop.
-> Last updated: 19 November 2026, ~11:00, on the home RTX 5090 (laptop takeover note in §0). Before: ~11:00, on the home RTX 5090, worktree `~/AirStack-starling-max2-naming`, branch `docs-naming` (owner-approved naming and story pass on the public docs; committed, not pushed, not merged). Before: 19 November 2026, ~00:30, on the home RTX 5090, release worktree `~/AirStack-starling-max2-release`, branch `nus-release` (plain-laptop CPU route: code fixes C1–C9 and the PROVISIONAL bundle `nus_provisional/`, owner decision 6; committed, not pushed). Before: 18 November 2026, ~15:15, on the home RTX 5090, NUS-port worktree `~/AirStack-starling-max2-nus-port`, branch `phase6-pass2` (Phase 6 pass 2B: **Phase 4 complete**, its results written into every doc, every NUS-port clip published, the hangar size restored, the Phase 5 plan described; uncommitted, the lead commits). Before: ~06:45, on the home RTX 5090, integration worktree `main-5090` (Phase 6 pass 1: public NUS docs, privacy rails rewritten to the owner's decision, Claude files touched up; Phase 4 rows 4–6 running). Before: ~05:30 (Phase 4: T17 PASS, rungs 1 to 3 scored, rungs 4 to 6 not run). Before: ~01:00 (Phase 3 T16 PASS). Before: 17 November 2026, ~22:30, on the home RTX 5090 (evening summary in §0). Before: ~07:00 (morning summary in §0). Before: ~05:30 (S2b Tasks 1–8 done (T13 FAIL, over/under passing), 9 Isaac seeds running, 10 docs being written, 8b deferred; see §0 S2b line). Before: ~03:00. Earlier: 16 November morning (**S2 CLOSED**: final whole-stage review done on Opus, one fix wave 4d0d409, wording c218cbb; owner ruled A and B; S2b plan approved and ready to start).
+> Last updated: 19 November 2026, ~12:00, on the home RTX 5090 (laptop takeover note in §0), worktree `~/AirStack-starling-max2-naming`, branch `docs-naming` (owner-approved naming and story pass on the public docs; committed, not pushed, not merged). Before: 19 November 2026, ~00:30, on the home RTX 5090, release worktree `~/AirStack-starling-max2-release`, branch `nus-release` (plain-laptop CPU route: code fixes C1–C9 and the PROVISIONAL bundle `nus_provisional/`, owner decision 6; committed, not pushed). Before: 18 November 2026, ~15:15, on the home RTX 5090, NUS-port worktree `~/AirStack-starling-max2-nus-port`, branch `phase6-pass2` (Phase 6 pass 2B: **Phase 4 complete**, its results written into every doc, every NUS-port clip published, the hangar size restored, the Phase 5 plan described; uncommitted, the lead commits). Before: ~06:45, on the home RTX 5090, integration worktree `main-5090` (Phase 6 pass 1: public NUS docs, privacy rails rewritten to the owner's decision, Claude files touched up; Phase 4 rows 4–6 running). Before: ~05:30 (Phase 4: T17 PASS, rungs 1 to 3 scored, rungs 4 to 6 not run). Before: ~01:00 (Phase 3 T16 PASS). Before: 17 November 2026, ~22:30, on the home RTX 5090 (evening summary in §0). Before: ~07:00 (morning summary in §0). Before: ~05:30 (S2b Tasks 1–8 done (T13 FAIL, over/under passing), 9 Isaac seeds running, 10 docs being written, 8b deferred; see §0 S2b line). Before: ~03:00. Earlier: 16 November morning (**S2 CLOSED**: final whole-stage review done on Opus, one fix wave 4d0d409, wording c218cbb; owner ruled A and B; S2b plan approved and ready to start).
 
 ## 0. Resume here (for a new session or another Claude account)
 
@@ -62,6 +62,32 @@ Test 5 conditions (T41; parked Guard 429). R0, N0, C0 PASS (T29, T30, T33): the 
 - Public docs: neutral report tone (NUS by name, not "you"); every label is NUS's own term or defined where first
   used; NUS's policies were trained **by STE with NUS's code** (NUS gave no checkpoints).
 - Never push, never `git add -A`; the owner pushes from GitHub Desktop.
+### Videos, the game section and pointer pages deleted, 19 November 2026 ~12:00 — branch `docs-naming` (for the lead and the owner)
+
+Owner-approved (19 Nov ~11:00) follow-up on the same branch; numbers and evidence unchanged.
+
+- **GIF previews**: 261 new GIFs beside the MP4s of `docs/media/nus/` (15.9 MB; 380 px, 5–6 frames/s, 48–64 colours,
+  at most 14.2 s with the last frame held; 18 re-made smaller, `isaac/g19_vs_s20_strike_win_2.gif` 224 kB is the one
+  over 150 kB). `docs/media/nus/README.md` regenerated: every clip as a 240 px preview linking its MP4, captions
+  "Guard vs Strike · played in … · outcome", one `<details>` block per section with stable anchors (`#nus-2-d-game`,
+  `#copy-of-nus-2-d-game`, `#tests-1-6`, `#test-1` … `#test-6` incl. `#test-2-1`, `#test-2-2`, `#test-3a`, `#test-5a`,
+  `#isaac-lab-clips`, `#ste-guard-policy`, `#how-they-were-made`). `docs/media/README.md` the same for S2/S2b.
+- **Reader pages**: previews beside every result with a clip (WHAT_WE_FOUND §2, §3; day by day §4–§8, §12;
+  TRAIN_A_GUARD §5–§6; RUN_IT_YOURSELF A, D2, E, F).
+- **Records**: 11 records gained one final line "Watch the clips: …" (additive only; the owner's one exception).
+- **Front page**: new §3 "The game: NUS 2-D game vs STE drone set-up" (table + one preview per column; the term lines
+  moved there from the tests section); sections renumbered 1–8 (Watch it unnumbered). GLOSSARY: NUS 2-D game, hangar
+  set-up, STE drone set-up.
+- **Root**: README "I want to…" svg_training rows replaced with the owner's text; root CLAUDE.md row link now
+  `WHAT_WE_DID_DAY_BY_DAY.md` (link target only).
+- **Deleted** (`git rm`): HOW_IT_WORKS, NUS_PORT, NUS_RESULTS, TRY_IT, PLUG_IN, NUS_PHASE4_RESULTS, WHAT_WE_DID. Plain-text
+  old names stay in dated history (plans, this file's log, Linear comment copies, two records' "NUS_PORT §3" and
+  "NUS_PORT Figure 1"). The deletions landed in the commit titled for the root CLAUDE.md fix (a staging slip; content
+  correct).
+- Checks: every relative link, image (Markdown and HTML) and anchor in `svg_training/**/*.md`, README.md and
+  CLAUDE.md resolves (scripted, 1,723 links); every `<details>` block well-formed and every MP4 shown with its own
+  preview (scripted); `tools/docs_check/check_docs.sh` 0 FAIL (13 PASS, 7 WARN, 1 SKIP); full CPU suite 1,077 passed,
+  47 skipped, 0 failed (10 min 14 s, `env_isaaclab`). GitHub rendering itself was not viewed (no browser here).
 
 ### Naming and story pass, 19 November 2026 ~11:00 — branch `docs-naming` (for the lead and the owner)
 

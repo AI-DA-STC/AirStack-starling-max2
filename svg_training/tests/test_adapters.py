@@ -1,6 +1,6 @@
 """Training-library adapters (skrl multi-agent, Gymnasium single-team vector) and the partner guide (S2 Task 9).
 
-CPU only, small N. The worked example in docs/PLUG_IN.md is executed here too, so the guide cannot rot."""
+CPU only, small N. The worked example in docs/PLUG_IN_YOUR_CODE.md is executed here too, so the guide cannot rot."""
 import math
 import os
 import pathlib
@@ -238,7 +238,7 @@ def test_core_imports_no_training_library():
 
 
 # ------------------------------------------------------------------ the partner guide runs
-GUIDE = ROOT / "docs" / "PLUG_IN.md"
+GUIDE = ROOT / "docs" / "PLUG_IN_YOUR_CODE.md"
 _BLOCK = re.compile(r"```(python|bash)\n(.*?)```", re.S)
 
 

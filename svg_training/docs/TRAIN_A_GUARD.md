@@ -156,7 +156,7 @@ within intervals, not game by game. G19 v S20 on the same starts held 17 of 1,00
 
 After the GPU work the trainer renders clips of its own evaluation games into `runs/<name>/videos/`: one per
 evaluation, two for the final and the best evaluation (STANDARDS §8: every training run saves videos). Run 4's three
-clips are published in [videos of the NUS port](media/nus/README.md#pilot-p1b-the-ste-guard-policy-against-s20-ste-drone-model-19-nov-2026).
+clips are published in [videos of the NUS port](media/nus/README.md#ste-guard-policy).
 
 ## 7. What a good result looks like
 

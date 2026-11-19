@@ -65,7 +65,7 @@ with two fixes found by the P1 diagnosis ([P1 record](../records/2026-11-18_nus_
 | Setting | Value | Meaning |
 |---|---|---|
 | zero-mean start (`zero_mean_init`) | true | the last layer of every Guard policy's mean head starts at zero, so the untrained Guards stand still (the Parked Guard's behaviour); the spread of the actions starts at log std −1.6 |
-| one decision per 12 ticks (`decision_ticks = "deploy"`) | 12 ticks = 0.6 s | the Guards choose a new action every 0.60 s and hold it in between, as the converted NUS policies do (the deploy file's hold) |
+| one decision per 12 ticks (`decision_ticks = "deploy"`) | 12 ticks = 0.6 s | the Guards choose a new action every 0.60 s and hold it in between, as the converted NUS-code policies do (the deploy file's hold) |
 | γ (`discount_factor`) | 0.99 per decision | the discount per 0.60 s decision, not per 0.05 s tick; P1 used 0.99 per tick, which makes the 120 s time-out nearly invisible |
 | no shaping (`shaping_weight`) | 0.0 | reward only at the end of a game: +1 for a hold, −1 for a Strike reach |
 | opponent (`opponent_mix`) | S20 only | the Strike team is always the converted S20 |

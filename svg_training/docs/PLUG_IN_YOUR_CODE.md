@@ -117,7 +117,7 @@ slower than the pure rules (ledger T9, `records/2026-11-16_s2_scripted_reference
 `--device auto` (the default) picks the GPU when PyTorch sees one and the CPU otherwise. On a CPU add
 `--games-per-band 100` and keep `--presets pure` (about 10 s; [how to run it yourself, B4](RUN_IT_YOURSELF.md#b-a-cpu-laptop-install-run-the-game-score-a-strategy-run-the-tests)).
 
-## Plug in a trained NUS policy
+## Plug in a policy trained with NUS's code
 
 The whole NUS port, phase by phase, with NUS's settings, STE's results and videos: [what we did, day by day](WHAT_WE_DID_DAY_BY_DAY.md).
 Training policies with NUS's own code and every command below in order: [training scripts, NUS jobs](TRAINING.md#nus-jobs). To

@@ -159,7 +159,7 @@ Recordings of NUS's own environment were replayed in it: largest position error 
 
 `nus/actor.py` loads NUS checkpoints (msgpack, no JAX) with NUS's bfloat16 rounding points; `nus.strategy:NusPolicy`
 rebuilds NUS's 56-number observation from STE's and holds each action for 12 ticks
-([plug in a trained NUS policy](PLUG_IN_YOUR_CODE.md#plug-in-a-trained-nus-policy)). Largest action error 0.0105 units
+([plug in a policy trained with NUS's code](PLUG_IN_YOUR_CODE.md#plug-in-a-policy-trained-with-nuss-code)). Largest action error 0.0105 units
 (limit 0.02); outcomes inside the 95 % interval of NUS's code. **T16 PASS** ([record](../records/2026-11-18_nus_phase3_conversion_record.md)), **T17 PASS**
 on G19 / S20 ([record](../records/2026-11-18_nus_phase4_w3_reference_gates_record.md);
 [the conversion checked](WHAT_WE_FOUND.md#2-converted-policies-match-the-jax-originals)).

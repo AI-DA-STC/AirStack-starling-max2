@@ -4,13 +4,32 @@ INTERNAL · the lab's AI-assistant hand-over notes. Not needed to read or run an
 
 > **How to use this file.** Read it at the start of a session, after [../../CLAUDE.md](../../CLAUDE.md).
 > §4 is the current state, §5 is what is waiting on people. Update both before you stop.
-> Last updated: 19 November 2026, ~00:30, on the home RTX 5090, release worktree `~/AirStack-starling-max2-release`, branch `nus-release` (plain-laptop CPU route: code fixes C1–C9 and the PROVISIONAL bundle `nus_provisional/`, owner decision 6; committed, not pushed). Before: 18 November 2026, ~15:15, on the home RTX 5090, NUS-port worktree `~/AirStack-starling-max2-nus-port`, branch `phase6-pass2` (Phase 6 pass 2B: **Phase 4 complete**, its results written into every doc, every NUS-port clip published, the hangar size restored, the Phase 5 plan described; uncommitted, the lead commits). Before: ~06:45, on the home RTX 5090, integration worktree `main-5090` (Phase 6 pass 1: public NUS docs, privacy rails rewritten to the owner's decision, Claude files touched up; Phase 4 rows 4–6 running). Before: ~05:30 (Phase 4: T17 PASS, rungs 1 to 3 scored, rungs 4 to 6 not run). Before: ~01:00 (Phase 3 T16 PASS). Before: 17 November 2026, ~22:30, on the home RTX 5090 (evening summary in §0). Before: ~07:00 (morning summary in §0). Before: ~05:30 (S2b Tasks 1–8 done (T13 FAIL, over/under passing), 9 Isaac seeds running, 10 docs being written, 8b deferred; see §0 S2b line). Before: ~03:00. Earlier: 16 November morning (**S2 CLOSED**: final whole-stage review done on Opus, one fix wave 4d0d409, wording c218cbb; owner ruled A and B; S2b plan approved and ready to start).
+> Last updated: 19 November 2026, ~11:00, on the home RTX 5090, worktree `~/AirStack-starling-max2-naming`, branch `docs-naming` (owner-approved naming and story pass on the public docs; committed, not pushed, not merged). Before: 19 November 2026, ~00:30, on the home RTX 5090, release worktree `~/AirStack-starling-max2-release`, branch `nus-release` (plain-laptop CPU route: code fixes C1–C9 and the PROVISIONAL bundle `nus_provisional/`, owner decision 6; committed, not pushed). Before: 18 November 2026, ~15:15, on the home RTX 5090, NUS-port worktree `~/AirStack-starling-max2-nus-port`, branch `phase6-pass2` (Phase 6 pass 2B: **Phase 4 complete**, its results written into every doc, every NUS-port clip published, the hangar size restored, the Phase 5 plan described; uncommitted, the lead commits). Before: ~06:45, on the home RTX 5090, integration worktree `main-5090` (Phase 6 pass 1: public NUS docs, privacy rails rewritten to the owner's decision, Claude files touched up; Phase 4 rows 4–6 running). Before: ~05:30 (Phase 4: T17 PASS, rungs 1 to 3 scored, rungs 4 to 6 not run). Before: ~01:00 (Phase 3 T16 PASS). Before: 17 November 2026, ~22:30, on the home RTX 5090 (evening summary in §0). Before: ~07:00 (morning summary in §0). Before: ~05:30 (S2b Tasks 1–8 done (T13 FAIL, over/under passing), 9 Isaac seeds running, 10 docs being written, 8b deferred; see §0 S2b line). Before: ~03:00. Earlier: 16 November morning (**S2 CLOSED**: final whole-stage review done on Opus, one fix wave 4d0d409, wording c218cbb; owner ruled A and B; S2b plan approved and ready to start).
 
 ## 0. Resume here (for a new session or another Claude account)
 
 Everything needed is in this folder; nothing depends on the previous chat. Claude's user memory (`~/.claude/…`) and
 the private NUS workspace (`~/ma_skills-self-play/`, 5090 only) do **not** travel with git: if this file and a memory
 note disagree, this file wins.
+
+### Naming and story pass, 19 November 2026 ~11:00 — branch `docs-naming` (for the lead and the owner)
+
+Owner-approved (19 Nov) pass on the public docs; facts, numbers and evidence links unchanged; records not re-worded.
+
+- **Renames** (`git mv`, one-line pointer page left at each old name so records, plans, Linear copies and the root
+  README/CLAUDE.md keep working): `NUS_RESULTS` → `WHAT_WE_FOUND`, `NUS_PORT` → `WHAT_WE_DID_DAY_BY_DAY`, `TRY_IT` →
+  `RUN_IT_YOURSELF`, `PLUG_IN` → `PLUG_IN_YOUR_CODE` (`tests/test_adapters.py` follows), `HOW_IT_WORKS` → `THE_GAME`.
+  New `docs/TRAIN_A_GUARD.md`: the pilot P1b run 4 recipe (T41) with a CPU check run on 19 Nov (1 min 45 s, exit 0).
+- **Story**: front page in seven sections (overview + policies table; porting NUS's code; testing NUS's policies on STE
+  drones; why performance drops; training in STE conditions; next steps and the five questions; run it yourself),
+  gallery after section 5.
+- **Names**: "STE" defined once per page; "defender (Guard team)", "attacker (Strike team)" at first mention; Tests 1–6
+  (sub-tests 2.1, 2.2, 3a, 5a) replace ladder rows on reader pages, "Test N = ladder row N in the records" in GLOSSARY
+  and WHAT_WE_FOUND; Copy of NUS 2-D game (PyTorch), STE game engine, STE drone model, Isaac Lab physics drones, STE
+  port of NUS's training method (PyTorch), STE Guard policy; G19/S20/P3G/P3S said to be trained by STE using NUS's
+  code. Tone neutral (no "you"/"your"): CLAUDE.md's reader-page rule and STANDARDS §2's "the partner" row updated to match.
+- Checks: every relative link and anchor in `svg_training/**/*.md` resolves (scripted); `tools/docs_check/check_docs.sh`
+  0 FAIL; full CPU suite (numbers in the commit of this entry).
 
 ### Plain-laptop route and the PROVISIONAL bundle, 19 November 2026 ~00:30 — branch `nus-release` (for the lead and the docs writer)
 
@@ -487,6 +506,12 @@ stay out of git; real flights of a contact policy should start with a virtual co
 - The repository holds no Strike vs Guard game code.
 
 ## 5. Open items
+
+### 5-naming. Branch `docs-naming` (19 Nov 2026): what is still open
+
+- Merge to `main` (the lead) and the owner's read of the front page. The figure `docs/figures/nus_phase4_ladder.png` still
+  says "row" on its axis (its caption maps row N = Test N); redrawing it needs all ten Phase 4 `scores.json` (5090 only).
+- TRAIN_A_GUARD's GPU run and the Parked Guard re-score are not verified from a fresh clone.
 
 ### 5-release. Branch `nus-release` (19 Nov 2026): what is still open
 

@@ -4,7 +4,8 @@ READ · TRAINING SIMULATOR ONLY: six levels of running it yourself, from watchin
 
 **For** NUS researchers and anyone with a fresh clone. **STE**: the lab that wrote this repository. Start at level A
 or B; each level adds one thing it needs. Every command has a *needs* badge, and the table says which commands were
-run from a fresh clone. Nothing here flies a drone. Terms in *italics* are in the [glossary](GLOSSARY.md); the
+run from a fresh clone. Nothing here flies a drone. NUS's `defender` is the defender (Guard team) here, NUS's `attacker`
+the attacker (Strike team); from here on, Guard and Strike. Terms in *italics* are in the [glossary](GLOSSARY.md); the
 policies (G19, S20, P3G, P3S, the APF defender and attacker, the Parked Guard) are defined in
 [glossary, policies](GLOSSARY.md#policies), and Tests 1–6 in [glossary, the six tests](GLOSSARY.md#the-six-tests).
 The scripts number the tests as rows (`--row 1` = Test 1).

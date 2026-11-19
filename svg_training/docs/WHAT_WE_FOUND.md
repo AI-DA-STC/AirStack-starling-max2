@@ -269,9 +269,9 @@ drones end pressed against the arena walls; the mechanism is likely the filter a
 | Pilot | What | Result | Evidence |
 |---|---|---|---|
 | P0 | speed of the hangar game with the filter | INFO: the filter takes 89–99 % of each tick | T25, [record](../records/2026-11-18_nus_phase5_pilot_p0_record.md) |
-| P1 | 3 Guard learners v S20, 236 M game-steps | INFO, signal not met: 0 holds of 1,000 [0.000, 0.004]. Its set-up was faulty: γ 0.99 per 0.05 s tick, a hold rewarded only at the 2,400-tick time-out (no training game reached it), and a non-zero starting mean action | T26, [record](../records/2026-11-18_nus_phase5_pilot_p1_record.md) |
+| P1 | a Guard team (one learner per drone) trained v S20, 236 M game-steps | INFO, signal not met: 0 holds of 1,000 [0.000, 0.004]. Its set-up was faulty: γ 0.99 per 0.05 s tick, a hold rewarded only at the 2,400-tick time-out (no training game reached it), and a non-zero starting mean action | T26, [record](../records/2026-11-18_nus_phase5_pilot_p1_record.md) |
 | P1b | P1 fixed (zero-mean start, one decision per 0.60 s, no shaping) | runs 1–3 ABORTED (a shared GPU starved runs 1 and 2; run 3 stopped for a reboot). **Run 4, alone on the GPU: INFO, signal met: 829 holds of 1,000 [0.804, 0.851]** (Parked Guard 429; the bar was a lower bound above 0.460). [Videos](media/nus/README.md#pilot-p1b-the-ste-guard-policy-against-s20-ste-drone-model-19-nov-2026) | T32, T39, T40, **T41**, [record](../records/2026-11-19_nus_phase5_pilot_p1b_run4_record.md) |
-| P2 | Guard learners v STE scripted Strikes, warm start from P1 | ABORTED twice before any update (a warm start from P1 told nothing) | T27, T28, [record](../records/2026-11-18_nus_phase5_pilot_p2_record.md) |
+| P2 | a Guard team trained v STE scripted Strikes, warm start from P1 | ABORTED twice before any update (a warm start from P1 told nothing) | T27, T28, [record](../records/2026-11-18_nus_phase5_pilot_p2_record.md) |
 
 P1 tested a mis-set learner. P1b shows that a simple learner can find a wall-like defence against S20 on the STE
 drone model; it does not show how the STE Guard policy does against other Strike behaviours (P2, not run), in

@@ -88,12 +88,12 @@ None of this is needed to run anything in this folder. It explains words on the 
 | Isaac Sim | NVIDIA's GPU robot simulator | root [GLOSSARY](../../docs/GLOSSARY.md) |
 | Isaac Lab | NVIDIA's robot-learning framework on top of Isaac Sim; runs thousands of simulated robots on one GPU. The Isaac Lab physics drones (Test 6) use it | [the game](THE_GAME.md#two-drone-models) |
 | ROS 2 | the robot messaging software the flight side uses. This folder needs none of it; if the shell loads it, run `unset PYTHONPATH` first | root [GLOSSARY](../../docs/GLOSSARY.md) |
-| AirStack simulator | the flight software's own simulator: Isaac Sim + Pegasus (a drone plug-in) + PX4 software; up to 3 drones, near real time. Separate from our training simulator | [DESIGN §3](DESIGN.md#3-the-pipeline-seven-stages) |
+| AirStack simulator | the flight software's own simulator: Isaac Sim + Pegasus (a drone plug-in) + PX4 software; up to 3 drones, near real time. Separate from the training simulator | [DESIGN §3](DESIGN.md#3-the-pipeline-seven-stages) |
 | Crazyflie | a palm-sized research drone; the lab also flies these | root [README](../../README.md) |
 | ENU frame | x east, y north, z up: the frame of every speed command | [STANDARDS §3](../STANDARDS.md#3-policy-interface-version-01-proposed) |
 | Plug-in point | `/svg/{name}/teleop_command`: where a strategy's speed command enters the flight software | [STANDARDS §3](../STANDARDS.md#3-policy-interface-version-01-proposed) |
 | Trajectory setpoint | the instruction the commander sends a real drone each tick: a position, a speed and an acceleration together; PX4 closes the position loop itself | [S1_RESULTS](S1_RESULTS.md#4-the-real-drone-takes-a-different-route) |
-| Position gain | PX4's `MPC_XY_P`, 0.95 per second on our drones: extra speed per metre away from the setpoint | [S1_RESULTS](S1_RESULTS.md#5-a-first-fit-from-real-flight-logs-exploratory) |
+| Position gain | PX4's `MPC_XY_P`, 0.95 per second on the STE drones: extra speed per metre away from the setpoint | [S1_RESULTS](S1_RESULTS.md#5-a-first-fit-from-real-flight-logs-exploratory) |
 | FR&PDR, monthly reports | confidential programme reports; named here, never quoted | [STANDARDS §2](../STANDARDS.md#2-wording) |
 | The owner, the lead, the gatekeeper | roles in the lab's records and internal pages: the owner is the lab member who owns this repository and approves gates and decisions; the lead is the main AI coding-assistant session that plans the work; the gatekeeper is an AI reviewer that checks gates and records | [docs/README](README.md#history) |
 

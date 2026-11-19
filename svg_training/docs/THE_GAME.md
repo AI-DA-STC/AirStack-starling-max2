@@ -81,11 +81,11 @@ place where its commands enter the flight software is the *plug-in point*. The t
 Status labels and sources for every item: [STANDARDS §3](../STANDARDS.md#3-policy-interface-version-01-proposed).
 
 A strategy plugs into the training simulator through the strategy contract ([plug in your code](PLUG_IN_YOUR_CODE.md)). A
-trained JAX policy from NUS has a scoring hook since 18 November 2026: `svg_training.nus.strategy:NusPolicy` reads a
+policy trained with NUS's JAX code has a scoring hook since 18 November 2026: `svg_training.nus.strategy:NusPolicy` reads a
 converted checkpoint (layout id `nus_area_denial_v1`) and plays one team, scored like any strategy
-([plug in a trained NUS policy](PLUG_IN_YOUR_CODE.md#plug-in-a-trained-nus-policy)). The exported policy file and `interface.toml` for the AirStack
+([plug in a policy trained with NUS's code](PLUG_IN_YOUR_CODE.md#plug-in-a-policy-trained-with-nuss-code)). The exported policy file and `interface.toml` for the AirStack
 simulator and for flight still arrive with build step S5
-([STANDARDS §3](../STANDARDS.md#3-policy-interface-version-01-proposed)); the NUS policy's `interface.toml` is a draft.
+([STANDARDS §3](../STANDARDS.md#3-policy-interface-version-01-proposed)); the converted policy's `interface.toml` is a draft.
 The whole NUS port (NUS's code run as the reference, the Copy of NUS 2-D game (PyTorch), the converted policies and
 the six tests towards STE drones), with NUS's settings and STE's results: [what we did, day by day](WHAT_WE_DID_DAY_BY_DAY.md).
 
@@ -96,7 +96,7 @@ the six tests towards STE drones), with NUS's settings and STE's results: [what 
 | Batching | N games at once on one device, plain PyTorch tensors; `reset()`, `step(actions)`; finished games restart inside the same `step` | the same engine, 3 v 3 only |
 | Agents | 1–5 Guard and 1–3 Strike drones per game, drawn per game; one network per drone or one per team | 3 Guard v 3 Strike, fixed |
 | Observation, per drone | 71 numbers: itself, 5 Guard slots and 3 Strike slots of 7 numbers each, the zone ([plug in a training method](PLUG_IN_YOUR_CODE.md#plug-a-training-method-in)) | the STE observation, or NUS's 9N + 2 (56 numbers) rebuilt from it by `NusPolicy` |
-| Action, per drone | 4 numbers in [−1, 1]: `[vx, vy, vz, yaw_rate]`, scaled by the team's speed, 20 per second | NUS policies: a 2-D move held for 12 ticks (0.60 s) |
+| Action, per drone | 4 numbers in [−1, 1]: `[vx, vy, vz, yaw_rate]`, scaled by the team's speed, 20 per second | converted NUS-code policies: a 2-D move held for 12 ticks (0.60 s) |
 | Reward | +1 / −1 per team at the end (hold / reach), 0 otherwise; optional shaping, off in the committed file | stage 5.2 plans NUS's own reward (inside-share penalty, first-reach penalty, shaping); the STE Guard policy used +1 / −1 at the end only |
 | Episode | ends at the first Strike reach or the time-out: 1,200 ticks (60 s) | 2,400 ticks (120 s) |
 | Drone model | STE drone model (fast, CPU or GPU) or Isaac Lab physics drones (GPU) | Tests 3–5 STE drone model (Test 2 points), Test 6 Isaac Lab physics drones |

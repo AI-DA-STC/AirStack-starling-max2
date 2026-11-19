@@ -4,13 +4,16 @@ READ FIRST · TRAINING SIMULATOR ONLY: what this folder is, what was done with N
 
 **For** NUS researchers and anyone new here; no drone, ROS or Isaac knowledge is assumed. **STE**: the lab that wrote
 this repository. *Italic* terms are defined in the [glossary](docs/GLOSSARY.md). Every number was observed in a
-training simulator; nothing in this folder has flown.
+training simulator; nothing in this folder has flown. T numbers (T15, …) are rows of the [run ledger](records/LEDGER.md),
+each with its record; PASS and FAIL mean a pass mark set before the run was met or missed, INFO means measured with
+no pass mark.
 
 ## 1. Overview
 
 STE flies small indoor drones (ModalAI *Starling* 2 Max) with CMU's flight software, AirStack. This folder holds a
 drone-team game that runs thousands of copies at once on one graphics card (GPU): a Guard team holds a circular zone,
-a Strike team tries to reach it. It was used to test NUS's self-play policies under STE drone conditions and to train a Guard team in those conditions.
+a Strike team tries to reach it. It was used to test policies trained with NUS's self-play code under STE drone conditions, and to train a Guard team
+in those conditions.
 
 **Policies named on these pages.** NUS's code calls the teams `defender` and `attacker`: here, defender (Guard team)
 and attacker (Strike team), then Guard and Strike. NUS shared its code, not trained checkpoints, so STE trained the
@@ -28,10 +31,11 @@ NUS-code policies itself with that code. Full definitions: [glossary, policies](
 
 G19 = Guard of generation 19 and S20 = Strike of generation 20 of self-play seed 2; P3G and P3S = the Guard and Strike
 converted in Phase 3 (each trained against NUS's scripted opponent); IPPO = independent PPO, one learner per drone.
+The STE drone model and Test 5 conditions are defined in section 3, pilot P1b in section 5.
 
 ## 2. Porting NUS's code
 
-STE installed NUS's `area-denial-continuous-space-self-play` code (commit `2d2b904`) unchanged, trained the policies
+The port ran in numbered phases. STE installed NUS's `area-denial-continuous-space-self-play` code (commit `2d2b904`) unchanged, trained the policies
 above with it on the STE *hangar set-up* (1 unit = 0.40 m, 1 step = 0.60 s, a 7.5 m square arena), then copied the
 game and the trained policies into the STE pipeline (PyTorch). Each copy was checked against NUS's code; every PASS
 grades the copy, never NUS's code.
@@ -45,7 +49,7 @@ grades the copy, never NUS's code.
 
 ## 3. Testing NUS's policies on STE drones
 
-Phase 4 scored the converted policies, frozen, in six tests; each test adds one real-drone condition (Tests 2 and 4
+Phase 4 scored the converted policies (G19, S20, P3G, P3S: trained by STE with NUS's code), frozen, in six tests; each test adds one real-drone condition (Tests 2 and 4
 change two things at once; [test results](docs/WHAT_WE_FOUND.md#3-six-tests-towards-ste-drones)). 1,000 games per
 pair, the same 1,000 starts in every test.
 
@@ -59,8 +63,8 @@ pair, the same 1,000 starts in every test.
 | 6 | Isaac Lab physics drones (Isaac Sim 5.1) | 979 | T24 |
 
 *STE game engine*: STE's batched game in PyTorch, here with NUS's speeds, zone and scoring, square walls and an STE
-rule that cuts short a move into the other team's keep-out. *STE drone model*: a point drone that follows its speed
-command through a copy of CMU's commander, then the delay and lag of a model fitted to one Starling flight log
+rule that cuts short a move that would bring a drone within 1.10 m of an opposing drone. *STE drone model*: a point drone that follows its speed
+command through a copy of CMU's commander (the AirStack program that turns speed commands into drone instructions), then the delay and lag of a model fitted to one Starling flight log
 (exploratory: it answers more slowly than the real drone). *Safety filter*: CMU's collision filter in the flight
 software; when two drones come close it makes both give way, keeping them 1.10 m apart. *Isaac Lab physics drones*:
 rigid-body Starling models in NVIDIA Isaac Lab, flown by a copy of PX4's control loops (PX4: the drone's flight
@@ -69,8 +73,9 @@ software). The records call the tests "ladder rows": Test N = ladder row N.
 <a id="fig-1"></a>
 ![Strike reach rate along Tests 1 to 6; the axis says "row": row N = Test N](docs/figures/nus_phase4_ladder.png)
 
-*Figure 1. Strike reach rate (Wilson 95 % interval) of the 12 core pairs, Tests 1–6 (the axis says "row": row N =
-Test N); dashed: the Parked Guard. T18–T24.*
+*Figure 1. Strike reach rate (with a Wilson 95 % confidence interval) of 12 pairs, G19, P3G, APF defender and Parked
+Guard against S20, P3S and APF attacker, Tests 1–6 (the axis says "row": row N = Test N); dashed: the Parked Guard.
+T18–T24.*
 
 ## 4. Why performance drops
 
@@ -91,8 +96,9 @@ S20 in **829 of 1,000** games in Test 5 conditions, against 429 for the Parked G
 out across the zone and the safety filter likely acts as a wall around each one (read from the videos, not tested).
 One seed, one opponent, not checked on the Isaac Lab physics drones:
 [the result](docs/WHAT_WE_FOUND.md#7-ste-guard-policy-trained-in-test-5-conditions),
-[training recipe](docs/TRAIN_A_GUARD.md). The STE port of NUS's training method (PyTorch) is in progress: its test is
-calibrated (R0, N0, C0 PASS), its own seeds have no result yet
+[training recipe](docs/TRAIN_A_GUARD.md). The STE port of NUS's training method (PyTorch) is in progress: the test it will face
+is calibrated (it passes NUS's own code run with new seeds and fails untrained policies; R0, N0, C0 PASS), and its own
+seeds have no result yet
 ([training method](docs/WHAT_WE_FOUND.md#6-ste-port-of-nus-training-method-no-result-yet)).
 
 ## Watch it

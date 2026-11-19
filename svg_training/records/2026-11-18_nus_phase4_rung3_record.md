@@ -158,3 +158,5 @@ Reading: the drone response raises the Strike reach rate almost everywhere again
 ## Ledger
 
 Row `T20`.
+
+Watch the clips: [sub-test 3a videos](../docs/media/nus/README.md#test-3a), [Test 3 videos](../docs/media/nus/README.md#test-3).

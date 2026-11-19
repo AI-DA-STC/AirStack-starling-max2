@@ -58,3 +58,5 @@ INFO. Criteria (a) and (b) both PASS after 8 generations; (b) PASS again with th
 ## Ledger
 
 Row `T38` in `records/LEDGER.md` (INFO, after the fact).
+
+Watch the clips: [NUS 2-D game videos](../docs/media/nus/README.md#nus-2-d-game).

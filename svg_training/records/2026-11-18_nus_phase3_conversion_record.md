@@ -75,3 +75,5 @@ value; G4 covers the loader, wrapper and interface writer through a synthetic ch
 ## Ledger
 
 Row `T16` in `records/LEDGER.md` (run on the home RTX 5090 as a workstation row and renumbered at the merge into `main`). The owner reads this record before Phase 4.
+
+Watch the clips: [Copy of NUS 2-D game videos](../docs/media/nus/README.md#copy-of-nus-2-d-game).

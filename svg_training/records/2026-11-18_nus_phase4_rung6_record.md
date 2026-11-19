@@ -108,3 +108,5 @@ Presentation only (no gates, not a measurement). `scripts/nus_isaac_clips.py` wi
 ## Ledger
 
 Row `T24`.
+
+Watch the clips: [Test 6 videos](../docs/media/nus/README.md#test-6), [Isaac Lab camera videos](../docs/media/nus/README.md#isaac-lab-clips).

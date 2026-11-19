@@ -173,3 +173,5 @@ Reading: (rung 2 against rung 1, 1,000 paired games per pair) our rules and the 
 ## Ledger
 
 Rows `T19` (this record).
+
+Watch the clips: [sub-test 2.1 videos](../docs/media/nus/README.md#test-2-1), [sub-test 2.2 videos](../docs/media/nus/README.md#test-2-2), [Test 2 videos](../docs/media/nus/README.md#test-2).

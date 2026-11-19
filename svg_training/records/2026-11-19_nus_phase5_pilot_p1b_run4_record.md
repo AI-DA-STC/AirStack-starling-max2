@@ -52,3 +52,5 @@ S20's drones end pressed against the arena walls, held off by the safety filter,
 ## Ledger
 
 Row `T41` in `records/LEDGER.md`. Run 3 (stopped by the lead at 01:19 for the owner's reboot, before any update) is `T40`.
+
+Watch the clips: [STE Guard policy videos](../docs/media/nus/README.md#ste-guard-policy).

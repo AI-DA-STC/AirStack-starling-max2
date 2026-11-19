@@ -84,3 +84,5 @@ See HANDOFF section 0 (the lead's run after review).
 ## Ledger
 
 Row `T18` in `records/LEDGER.md`.
+
+Watch the clips: [Test 1 videos](../docs/media/nus/README.md#test-1).

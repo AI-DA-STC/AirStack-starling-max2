@@ -97,3 +97,5 @@ Reading (observed in the training simulator; causes are hypotheses, not tested):
 ## Ledger
 
 Row `T22`.
+
+Watch the clips: [Test 4 videos](../docs/media/nus/README.md#test-4).

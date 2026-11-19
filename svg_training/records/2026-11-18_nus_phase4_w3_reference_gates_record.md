@@ -43,3 +43,5 @@ Two replica games per arm from the converted policies, positions interpolated to
 ## Ledger
 
 Row `T17` in `records/LEDGER.md` (run on the home RTX 5090 as a workstation row and renumbered at the merge into `main`).
+
+Watch the clips: [Copy of NUS 2-D game videos](../docs/media/nus/README.md#copy-of-nus-2-d-game).

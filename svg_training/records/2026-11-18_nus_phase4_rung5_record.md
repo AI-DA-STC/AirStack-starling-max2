@@ -133,3 +133,5 @@ Reading (observed in the training simulator): the jitter changes the outcome mai
 ## Ledger
 
 Row `T23` (rows 5a and 5).
+
+Watch the clips: [sub-test 5a videos](../docs/media/nus/README.md#test-5a), [Test 5 videos](../docs/media/nus/README.md#test-5).

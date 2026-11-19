@@ -113,9 +113,16 @@ of NUS 2-D game (PyTorch) with the converted policy.
 
 *Strike reaches the zone, of 1,000 games. The counts agree within chance.*
 
-- **P3G**: Guard trained against NUS's scripted attacker (the set-up of NUS's October report). **P3S**: Strike trained
-  against NUS's scripted defender. **G19 / S20**: the self-play pair. All trained by STE with NUS's code.
-- **APF attacker / APF defender**: NUS's scripted (hand-written, not learned) Strike and Guard.
+**What the policy names mean:**
+
+| Name | Team | What it is |
+|---|---|---|
+| **P3G** | Guard | trained against NUS's scripted attacker (the set-up of NUS's October report); trained by STE with NUS's code |
+| **P3S** | Strike | trained against NUS's scripted defender; trained by STE with NUS's code |
+| **G19** | Guard | from NUS's self-play (Guard and Strike trained in turns), generation 19; trained by STE with NUS's code |
+| **S20** | Strike | the same self-play run, generation 20 |
+| **APF attacker** | Strike | NUS's scripted Strike: hand-written rules (a potential field), no learning |
+| **APF defender** | Guard | NUS's scripted Guard: hand-written rules, no learning |
 
 **Videos** (one game each; the two in a row are not the same start; click for the full video):
 

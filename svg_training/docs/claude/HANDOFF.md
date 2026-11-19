@@ -21,8 +21,8 @@ here too.
 **What is on `main` (pushed by the owner):** every Phase 5 result so far, the code fixes and the PROVISIONAL bundle
 (`nus_provisional/`, install with `scripts/nus_install_provisional.sh`), the docs restructure and naming pass (front
 page story, What we found, Run it yourself, Train a Guard, video gallery) and this note. The stage 5.2 code (S1–S5,
-CPU-tested, not yet run on a GPU) is on branch `p52-merge` on the 5090 (worktree `~/AirStack-starling-max2-p52merge`),
-waiting for its full test run before it joins `main`; if the 5090 is unreachable, it is not on GitHub yet. On the laptop: `git pull`, then `svg_training/README.md` and this file.
+CPU-tested, not yet run on a GPU) is on `main` too (full CPU suite 1,114 passed, 0 failed, 19 Nov ~11:25), once the owner
+has pushed it. On the laptop: `git pull`, then `svg_training/README.md` and this file.
 
 **What exists only on the 5090 (not reachable from the laptop):**
 

@@ -5,8 +5,8 @@ REFERENCE · TRAINING SIMULATOR ONLY: the NUS port as a dated log, phase by phas
 **For** NUS researchers and anyone new to the work: what STE did with NUS's code, phase by phase. **STE**: the lab
 that wrote this repository. Results by finding: [what we found](WHAT_WE_FOUND.md); how to repeat them:
 [how to run it yourself](RUN_IT_YOURSELF.md). Every number was **observed in the training simulator** (NUS's 2-D
-game, STE's copy of it, or the STE game with Starling-like drones). Nothing here has flown. The old name of this page,
-`NUS_PORT.md`, points here.
+game, STE's copy of it, or the STE game with Starling-like drones). Nothing here has flown. Each phase shows its
+clips as previews that play in the page; click one for the full video.
 
 NUS agreed (18 November 2026) that its code details, its game settings and STE's results on its code may be published
 here ([STANDARDS §2](../STANDARDS.md#2-wording)). NUS's source code stays in NUS's repository: these pages describe it
@@ -115,7 +115,11 @@ through `scripts/workstation/run_nus_job.sh` (cloud logging off). INFO runs, no 
 | Self-play, hangar | `train_self_play`, 3 seeds × 8 generations (`self_play.generations=8`; NUS's default is 32), 6,000 updates per generation; seed 2 continued to 20 (run folder `2026-11-17_selfplay_3v3_seed2`) | §5 |
 
 NUS's self-play runner wrote no GIFs even with `save_eval_gif=True` (NUS may know a flag that was missed); clips were
-rendered afterwards with NUS's `ma_skills/scripts/eval.py` (§9). Two jobs started in the same second share one output
+rendered afterwards with NUS's `ma_skills/scripts/eval.py` (§9).
+
+|  |  |
+|:--:|:--:|
+| <a href="media/nus/nus_fixed_guard_vs_scripted_strike.mp4"><img src="media/nus/nus_fixed_guard_vs_scripted_strike.gif" width="300" alt="P3G vs APF attacker · NUS 2-D game (JAX) · Guard holds"></a><br>P3G vs APF attacker · NUS 2-D game (JAX) · Guard holds | <a href="media/nus/nus_fixed_strike_vs_scripted_guard.mp4"><img src="media/nus/nus_fixed_strike_vs_scripted_guard.gif" width="300" alt="APF defender vs P3S · NUS 2-D game (JAX) · Strike reaches the zone"></a><br>APF defender vs P3S · NUS 2-D game (JAX) · Strike reaches the zone | Two jobs started in the same second share one output
 folder, so each job gets its own `hydra.run.dir`.
 
 ## 5. Self-play: who beats whom
@@ -148,12 +152,20 @@ not NUS's method.
 G19 and S20 became the reference pair for Phases 3 and 4. Re-running old cells gave differences up to 0.047 (cause not
 tested).
 
+|  |  |  |
+|:--:|:--:|:--:|
+| <a href="media/nus/nus_selfplay_s2_g7_vs_s2_s8.mp4"><img src="media/nus/nus_selfplay_s2_g7_vs_s2_s8.gif" width="250" alt="Seed 2 Guard gen. 7 vs seed 2 Strike gen. 8 · NUS 2-D game (JAX) · Strike reaches the zone (last mover wins)"></a><br>Seed 2 Guard gen. 7 vs seed 2 Strike gen. 8 · NUS 2-D game (JAX) · Strike reaches the zone (last mover wins) | <a href="media/nus/nus_selfplay_s2_g19_vs_s2_s20.mp4"><img src="media/nus/nus_selfplay_s2_g19_vs_s2_s20.gif" width="250" alt="G19 vs S20 · NUS 2-D game (JAX) · Guard holds"></a><br>G19 vs S20 · NUS 2-D game (JAX) · Guard holds | <a href="media/nus/nus_selfplay_s2_g19_vs_s3_s8.mp4"><img src="media/nus/nus_selfplay_s2_g19_vs_s3_s8.gif" width="250" alt="G19 vs seed 3 Strike gen. 8 · NUS 2-D game (JAX) · Guard holds"></a><br>G19 vs seed 3 Strike gen. 8 · NUS 2-D game (JAX) · Guard holds |
+
 ## 6. Phase 2: the Copy of NUS 2-D game (T15, 17 November 2026)
 
 `source/svg_training/nus/replica.py` copies NUS's game in batched PyTorch (the "replica" of the records).
 Recordings of NUS's own environment were replayed in it: largest position error per step 3.8e-6 units (3 v 3) and
 5.7e-6 (5 v 3), limit 1e-4. **T15 PASS** ([record](../records/2026-11-17_nus_phase2_parity_record.md);
 [the copy checked](WHAT_WE_FOUND.md#1-copy-of-nus-2-d-game-pytorch-matches-nus-2-d-game-jax)).
+
+| [![G19 vs S20 · Test 1: Copy of NUS 2-D game (PyTorch) · Guard holds](media/nus/phase4/row_1/G19_vs_S20_hold.gif)](media/nus/phase4/row_1/G19_vs_S20_hold.mp4) |
+|:--:|
+| G19 vs S20 · Test 1: Copy of NUS 2-D game (PyTorch) · Guard holds (click for the full video) |
 
 ## 7. Phase 3: the policies, converted (T16 and T17, 18 November 2026)
 
@@ -163,6 +175,10 @@ rebuilds NUS's 56-number observation from STE's and holds each action for 12 tic
 (limit 0.02); outcomes inside the 95 % interval of NUS's code. **T16 PASS** ([record](../records/2026-11-18_nus_phase3_conversion_record.md)), **T17 PASS**
 on G19 / S20 ([record](../records/2026-11-18_nus_phase4_w3_reference_gates_record.md);
 [the conversion checked](WHAT_WE_FOUND.md#2-converted-policies-match-the-jax-originals)).
+
+|  |  |  |
+|:--:|:--:|:--:|
+| <a href="media/nus/phase3/guard_game0.mp4"><img src="media/nus/phase3/guard_game0.gif" width="250" alt="P3G vs APF attacker · Copy of NUS 2-D game (PyTorch) · Guard holds"></a><br>P3G vs APF attacker · Copy of NUS 2-D game (PyTorch) · Guard holds | <a href="media/nus/phase3/strike_game0.mp4"><img src="media/nus/phase3/strike_game0.gif" width="250" alt="APF defender vs P3S · Copy of NUS 2-D game (PyTorch) · Strike reaches the zone (4.2 s)"></a><br>APF defender vs P3S · Copy of NUS 2-D game (PyTorch) · Strike reaches the zone (4.2 s) | <a href="media/nus/w3/archive_arm_G19_vs_S20_game0.mp4"><img src="media/nus/w3/archive_arm_G19_vs_S20_game0.gif" width="250" alt="G19 vs S20 · Copy of NUS 2-D game (PyTorch) · Guard holds"></a><br>G19 vs S20 · Copy of NUS 2-D game (PyTorch) · Guard holds |
 
 ## 8. Phase 4: six tests towards STE drones
 
@@ -182,10 +198,18 @@ without the safety filter (a measurement only); Tests 4–6 restore it. Full tab
 Records T18–T20, T22–T24 (T21 ABORTED). Tests 4–6 ran the filter on a GPU, where its answer depends on the batch size
 ([record](../records/2026-11-18_filter_cuda_graph_record.md)), so a repeat agrees within intervals, not game by game.
 
+G19 vs S20 on the same start (game 1) in every test; every clip: [videos of the NUS port, Tests 1–6](media/nus/README.md#tests-1-6).
+
+|  |  |  |
+|:--:|:--:|:--:|
+| <a href="media/nus/phase4/row_1/G19_vs_S20_hold.mp4"><img src="media/nus/phase4/row_1/G19_vs_S20_hold.gif" width="250" alt="G19 vs S20 · Test 1: Copy of NUS 2-D game (PyTorch) · Guard holds"></a><br>G19 vs S20 · Test 1: Copy of NUS 2-D game (PyTorch) · Guard holds | <a href="media/nus/phase4/row_2/G19_vs_S20_hold.mp4"><img src="media/nus/phase4/row_2/G19_vs_S20_hold.gif" width="250" alt="G19 vs S20 · Test 2: STE game engine, action hold · Guard holds"></a><br>G19 vs S20 · Test 2: STE game engine, action hold · Guard holds | <a href="media/nus/phase4/row_3/G19_vs_S20_hold.mp4"><img src="media/nus/phase4/row_3/G19_vs_S20_hold.gif" width="250" alt="G19 vs S20 · Test 3: STE drone model + delay and lag · Guard holds"></a><br>G19 vs S20 · Test 3: STE drone model + delay and lag · Guard holds |
+| <a href="media/nus/phase4/row_4/G19_vs_S20_hold.mp4"><img src="media/nus/phase4/row_4/G19_vs_S20_hold.gif" width="250" alt="G19 vs S20 · Test 4: STE drone model + safety filter · Guard holds"></a><br>G19 vs S20 · Test 4: STE drone model + safety filter · Guard holds | <a href="media/nus/phase4/row_5/G19_vs_S20_strike_win.mp4"><img src="media/nus/phase4/row_5/G19_vs_S20_strike_win.gif" width="250" alt="G19 vs S20 · Test 5: STE drone model + free height · Strike reaches the zone (22.9 s)"></a><br>G19 vs S20 · Test 5: STE drone model + free height · Strike reaches the zone (22.9 s) | <a href="media/nus/phase4/row_6/G19_vs_S20_strike_win.mp4"><img src="media/nus/phase4/row_6/G19_vs_S20_strike_win.gif" width="250" alt="G19 vs S20 · Test 6: Isaac Lab physics drones, top-down · Strike reaches the zone (24.5 s)"></a><br>G19 vs S20 · Test 6: Isaac Lab physics drones, top-down · Strike reaches the zone (24.5 s) |
+
 ## 9. Videos
 
 Every clip is published: NUS's 2-D game, the Copy of NUS 2-D game, every test top-down, and Isaac Lab clips of Test 6
-(a second set in a world with props, a backdrop only). One line per clip: [videos of the NUS port](media/nus/README.md).
+(a second set in a world with props, a backdrop only). Every clip, each with a preview that plays in the page:
+[videos of the NUS port](media/nus/README.md).
 NUS's renderer draws Guard drones D0–D2 blue and Strike drones A0–A2 red; STE's, blue circles and orange triangles.
 
 | | |
@@ -256,6 +280,10 @@ screen for a broken learner does not tell the port apart from NUS's code; it wil
 | A faster safety-filter path on the GPU (opt-in, off by default) | INFO; it showed the existing filter's GPU answer depends on the batch size, and about 40 % of Parked Guard v S20 games do not converge in 1,000 sweeps (ticks 30–33) | T31, [record](../records/2026-11-18_filter_cuda_graph_record.md) |
 
 P1 tested a mis-set learner; it does not show that a learner cannot find the "filter as a wall" defence.
+
+|  |  |  |
+|:--:|:--:|:--:|
+| <a href="media/nus/pilots/p1b_run4_final_t1472_best_hold_slot0.mp4"><img src="media/nus/pilots/p1b_run4_final_t1472_best_hold_slot0.gif" width="250" alt="STE Guard policy vs S20 · Test 5 conditions · Guard holds (829 of 1,000)"></a><br>STE Guard policy vs S20 · Test 5 conditions · Guard holds (829 of 1,000) | <a href="media/nus/pilots/p1b_run4_final_t1472_best_strike_win_slot6.mp4"><img src="media/nus/pilots/p1b_run4_final_t1472_best_strike_win_slot6.gif" width="250" alt="STE Guard policy vs S20 · Test 5 conditions · Strike reaches the zone (171 of 1,000)"></a><br>STE Guard policy vs S20 · Test 5 conditions · Strike reaches the zone (171 of 1,000) | <a href="media/nus/phase4/row_5/ParkedGuard_vs_S20_hold.mp4"><img src="media/nus/phase4/row_5/ParkedGuard_vs_S20_hold.gif" width="250" alt="Parked Guard vs S20 · Test 5: STE drone model + free height · Guard holds (429 of 1,000)"></a><br>Parked Guard vs S20 · Test 5: STE drone model + free height · Guard holds (429 of 1,000) |
 
 **The contact-tag track** (a Guard drone touching a Strike drone) is separate: this port is contact-free, and the
 programme's design review (FR&PDR) treats contact separately ([plan](plans/2026-11-17-contact-tag-track.md), DRAFT).

@@ -5,7 +5,6 @@ READ · TRAINING SIMULATOR ONLY: the results of the NUS port, one section per fi
 **For** NUS researchers and anyone checking the numbers. **STE**: the lab that wrote this repository. Every number was
 observed in a training simulator; nothing here has flown. The dated account is
 [what we did, day by day](WHAT_WE_DID_DAY_BY_DAY.md); words in *italics* are in the [glossary](GLOSSARY.md).
-The old name of this page, `NUS_RESULTS.md`, points here.
 
 **How to read the tables.**
 - NUS's `defender` is the defender (Guard team) here, NUS's `attacker` the attacker (Strike team); from here on,
@@ -64,6 +63,12 @@ NUS's recorded states. Over a whole game two independent float32 programs drift 
 NUS's rules (sub-test 2.1) matches Test 1 to rounding, not game by game (T19, [record](../records/2026-11-18_nus_phase4_rung2_record.md)).
 
 ## 2. Converted policies match the JAX originals
+
+|  |  |  |
+|:--:|:--:|:--:|
+| <a href="media/nus/w3/archive_arm_G19_vs_S20_game0.mp4"><img src="media/nus/w3/archive_arm_G19_vs_S20_game0.gif" width="250" alt="G19 vs S20 · Copy of NUS 2-D game (PyTorch), both converted · Guard holds"></a><br>G19 vs S20 · Copy of NUS 2-D game (PyTorch), both converted · Guard holds | <a href="media/nus/phase3/strike_game0.mp4"><img src="media/nus/phase3/strike_game0.gif" width="250" alt="APF defender vs P3S · Copy of NUS 2-D game (PyTorch), P3S converted · Strike reaches the zone (4.2 s)"></a><br>APF defender vs P3S · Copy of NUS 2-D game (PyTorch), P3S converted · Strike reaches the zone (4.2 s) | <a href="media/nus/phase3/guard_game0.mp4"><img src="media/nus/phase3/guard_game0.gif" width="250" alt="P3G vs APF attacker · Copy of NUS 2-D game (PyTorch), P3G converted · Guard holds"></a><br>P3G vs APF attacker · Copy of NUS 2-D game (PyTorch), P3G converted · Guard holds |
+
+Click a preview for the full video. Every clip of the conversion: [videos of the NUS port, Copy of NUS 2-D game](media/nus/README.md#copy-of-nus-2-d-game).
 
 `nus/actor.py` reads NUS checkpoint files (msgpack, no JAX) and copies the NUS bfloat16 rounding points; a plain
 float32 copy misses the action limit (0.022 and 0.030).
@@ -152,6 +157,14 @@ first attempt stopped as too long, T21 ABORTED: [record](../records/2026-11-18_n
 *Figure 1. Strike reach rate (Wilson 95 % interval) of the 12 core pairs along Tests 1–6, one panel per Strike player,
 one line per Guard player; the dashed line is the Parked Guard. The axis says "row": row N = Test N. Made by
 `scripts/make_nus_phase4_figures.py` from the tests' scores; ledger T18–T24.*
+
+**G19 vs S20 on the same start (game 1), test by test.** Click a preview for the full video; every clip of the six
+tests: [videos of the NUS port, Tests 1–6](media/nus/README.md#tests-1-6).
+
+|  |  |  |
+|:--:|:--:|:--:|
+| <a href="media/nus/phase4/row_1/G19_vs_S20_hold.mp4"><img src="media/nus/phase4/row_1/G19_vs_S20_hold.gif" width="250" alt="G19 vs S20 · Test 1: Copy of NUS 2-D game (PyTorch) · Guard holds"></a><br>G19 vs S20 · Test 1: Copy of NUS 2-D game (PyTorch) · Guard holds | <a href="media/nus/phase4/row_2/G19_vs_S20_hold.mp4"><img src="media/nus/phase4/row_2/G19_vs_S20_hold.gif" width="250" alt="G19 vs S20 · Test 2: STE game engine, action hold · Guard holds"></a><br>G19 vs S20 · Test 2: STE game engine, action hold · Guard holds | <a href="media/nus/phase4/row_3/G19_vs_S20_hold.mp4"><img src="media/nus/phase4/row_3/G19_vs_S20_hold.gif" width="250" alt="G19 vs S20 · Test 3: STE drone model + delay and lag · Guard holds"></a><br>G19 vs S20 · Test 3: STE drone model + delay and lag · Guard holds |
+| <a href="media/nus/phase4/row_4/G19_vs_S20_hold.mp4"><img src="media/nus/phase4/row_4/G19_vs_S20_hold.gif" width="250" alt="G19 vs S20 · Test 4: STE drone model + safety filter · Guard holds"></a><br>G19 vs S20 · Test 4: STE drone model + safety filter · Guard holds | <a href="media/nus/phase4/row_5/G19_vs_S20_strike_win.mp4"><img src="media/nus/phase4/row_5/G19_vs_S20_strike_win.gif" width="250" alt="G19 vs S20 · Test 5: STE drone model + free height · Strike reaches the zone (22.9 s)"></a><br>G19 vs S20 · Test 5: STE drone model + free height · Strike reaches the zone (22.9 s) | <a href="media/nus/phase4/row_6/G19_vs_S20_strike_win.mp4"><img src="media/nus/phase4/row_6/G19_vs_S20_strike_win.gif" width="250" alt="G19 vs S20 · Test 6: Isaac Lab physics drones, top-down · Strike reaches the zone (24.5 s)"></a><br>G19 vs S20 · Test 6: Isaac Lab physics drones, top-down · Strike reaches the zone (24.5 s) |
 
 **Reading, test by test** ([Figure 1](#fig-1)), with the caveat beside each claim:
 

@@ -35,14 +35,16 @@ could help). The machine was STE's 32-thread workstation; a laptop will be slowe
 ## A. Watch the games
 
 `none` · 5 min · verified. Open [videos of the NUS port](media/nus/README.md) in a browser (GitHub shows the GIFs
-inline). Four to start with:
+inline). Six to start with:
 
-| Clip | What it shows |
-|---|---|
-| [G19 vs S20 · NUS 2-D game (JAX) · Guard holds](media/nus/nus_selfplay_s2_g19_vs_s2_s20.gif) | NUS's game and renderer: the Guard holds for 200 steps |
-| [G19 vs S20 · Test 4 · Guard holds](media/nus/phase4/row_4/G19_vs_S20_hold.mp4) → [G19 vs S20 · Test 5 · Strike reaches the zone](media/nus/phase4/row_5/G19_vs_S20_strike_win.mp4) | the same start, before and after drones are free in height |
-| [G19 vs S20 · Test 6: Isaac Lab physics drones · Strike reaches the zone](media/nus/isaac/g19_vs_s20_strike_win_1.gif) | rigid-body Starling models in Isaac Lab |
-| [Parked Guard vs S20 · Test 6: Isaac Lab physics drones · Guard holds](media/nus/isaac/parked_vs_s20_hold_1.gif) | a Guard team that stands still holds S20 for 120 s |
+|  |  |  |
+|:--:|:--:|:--:|
+| <a href="media/nus/nus_selfplay_s2_g19_vs_s2_s20.mp4"><img src="media/nus/nus_selfplay_s2_g19_vs_s2_s20.gif" width="250" alt="G19 vs S20 · NUS 2-D game (JAX) · Guard holds"></a><br>G19 vs S20 · NUS 2-D game (JAX) · Guard holds | <a href="media/nus/phase4/row_4/G19_vs_S20_hold.mp4"><img src="media/nus/phase4/row_4/G19_vs_S20_hold.gif" width="250" alt="G19 vs S20 · Test 4: STE drone model + safety filter · Guard holds (game 1)"></a><br>G19 vs S20 · Test 4: STE drone model + safety filter · Guard holds (game 1) | <a href="media/nus/phase4/row_5/G19_vs_S20_strike_win.mp4"><img src="media/nus/phase4/row_5/G19_vs_S20_strike_win.gif" width="250" alt="G19 vs S20 · Test 5: STE drone model + free height · Strike reaches the zone (game 1)"></a><br>G19 vs S20 · Test 5: STE drone model + free height · Strike reaches the zone (game 1) |
+| <a href="media/nus/isaac/g19_vs_s20_strike_win_1.mp4"><img src="media/nus/isaac/g19_vs_s20_strike_win_1.gif" width="250" alt="G19 vs S20 · Test 6: Isaac Lab physics drones · Strike reaches the zone"></a><br>G19 vs S20 · Test 6: Isaac Lab physics drones · Strike reaches the zone | <a href="media/nus/isaac/parked_vs_s20_hold_1.mp4"><img src="media/nus/isaac/parked_vs_s20_hold_1.gif" width="250" alt="Parked Guard vs S20 · Test 6: Isaac Lab physics drones · Guard holds"></a><br>Parked Guard vs S20 · Test 6: Isaac Lab physics drones · Guard holds | <a href="media/nus/pilots/p1b_run4_final_t1472_best_hold_slot0.mp4"><img src="media/nus/pilots/p1b_run4_final_t1472_best_hold_slot0.gif" width="250" alt="STE Guard policy vs S20 · Test 5 conditions · Guard holds"></a><br>STE Guard policy vs S20 · Test 5 conditions · Guard holds |
+
+The first shows NUS's game and renderer; the second and third are the same start before and after drones are free
+in height; the fourth and fifth are rigid-body Starling models in Isaac Lab (a Guard team that stands still holds S20
+for 120 s in the fifth); the last is the STE Guard policy of level F. Click a preview for the full video.
 
 ## B. A CPU laptop: install, run the game, score a strategy, run the tests
 
@@ -163,7 +165,12 @@ $P scripts/nus_phase4.py --row 1 --pairs G19:S20,P3G:ApfStrike --games 50 --devi
 Must see: `runs/p4_try/` with `scores.json`, `scores.md`, `per_game.npz` and top-down clips in `videos/`. A smoke
 run, not a result. `ApfStrike` is the APF attacker. `--out` must lie under `runs/`. A test folder is never
 overwritten: delete `runs/p4_try/` to run it again. The clips need no system `ffmpeg` (the `imageio-ffmpeg`
-package's own copy is used); `--no-videos` skips them.
+package's own copy is used); `--no-videos` skips them. A clip in `videos/` looks like this one (the published Test 1 clip of the same pair and
+start):
+
+| [![G19 vs S20 · Test 1: Copy of NUS 2-D game (PyTorch) · Guard holds](media/nus/phase4/row_1/G19_vs_S20_hold.gif)](media/nus/phase4/row_1/G19_vs_S20_hold.mp4) |
+|:--:|
+| G19 vs S20 · Test 1: Copy of NUS 2-D game (PyTorch) · Guard holds (click for the full video) |
 
 **D3 · `none` · Test 1 in full: 12 pairs × 1,000 games** (97 s on STE's CPU).
 ```bash
@@ -246,10 +253,18 @@ $P scripts/nus_phase4.py --row 6 --headless --device cuda --accept-long
 Test 6 of record took 2.1 h on an RTX 5090 (T24). The camera clips of [videos of the NUS port](media/nus/README.md)
 come from `scripts/nus_isaac_clips.py`. Never open the Isaac Sim window over a remote desktop.
 
+|  |  |
+|:--:|:--:|
+| <a href="media/nus/phase4/row_6/G19_vs_S20_strike_win.mp4"><img src="media/nus/phase4/row_6/G19_vs_S20_strike_win.gif" width="300" alt="G19 vs S20 · Test 6: Isaac Lab physics drones, top-down (the test's own clip) · Strike reaches the zone"></a><br>G19 vs S20 · Test 6: Isaac Lab physics drones, top-down (the test's own clip) · Strike reaches the zone | <a href="media/nus/isaac/g19_vs_s20_strike_win_1.mp4"><img src="media/nus/isaac/g19_vs_s20_strike_win_1.gif" width="300" alt="G19 vs S20 · Test 6: Isaac Lab physics drones, camera (the clip tool) · Strike reaches the zone"></a><br>G19 vs S20 · Test 6: Isaac Lab physics drones, camera (the clip tool) · Strike reaches the zone |
+
 ## F. Train the STE Guard policy
 
 The recipe for the one training result, with a CPU check that runs in about 2 minutes:
-[training recipe](TRAIN_A_GUARD.md).
+[training recipe](TRAIN_A_GUARD.md). The run renders clips of its own evaluation games, like this one:
+
+| [![STE Guard policy vs S20 · Test 5 conditions · Guard holds (829 of 1,000)](media/nus/pilots/p1b_run4_final_t1472_best_hold_slot0.gif)](media/nus/pilots/p1b_run4_final_t1472_best_hold_slot0.mp4) |
+|:--:|
+| STE Guard policy vs S20 · Test 5 conditions · Guard holds (829 of 1,000) (click for the full video) |
 
 ## Not here yet
 

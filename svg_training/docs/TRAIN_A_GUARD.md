@@ -152,18 +152,27 @@ The safety filter's answer on a GPU depends on the batch size, and in about 40 %
 not converge in 1,000 sweeps ([filter record](../records/2026-11-18_filter_cuda_graph_record.md)): a re-score agrees
 within intervals, not game by game. G19 v S20 on the same starts held 17 of 1,000 (evidence T23).
 
+|  |  |  |
+|:--:|:--:|:--:|
+| <a href="media/nus/pilots/p1b_run4_final_t1472_best_hold_slot0.mp4"><img src="media/nus/pilots/p1b_run4_final_t1472_best_hold_slot0.gif" width="250" alt="STE Guard policy vs S20 · Test 5 conditions · Guard holds (829 of 1,000)"></a><br>STE Guard policy vs S20 · Test 5 conditions · Guard holds (829 of 1,000) | <a href="media/nus/phase4/row_5/ParkedGuard_vs_S20_hold.mp4"><img src="media/nus/phase4/row_5/ParkedGuard_vs_S20_hold.gif" width="250" alt="Parked Guard vs S20 · Test 5: STE drone model + free height · Guard holds (429 of 1,000)"></a><br>Parked Guard vs S20 · Test 5: STE drone model + free height · Guard holds (429 of 1,000) | <a href="media/nus/phase4/row_5/G19_vs_S20_strike_win.mp4"><img src="media/nus/phase4/row_5/G19_vs_S20_strike_win.gif" width="250" alt="G19 vs S20 · Test 5: STE drone model + free height · Strike reaches the zone (983 of 1,000)"></a><br>G19 vs S20 · Test 5: STE drone model + free height · Strike reaches the zone (983 of 1,000) |
+
 ## 6. Videos
 
 After the GPU work the trainer renders clips of its own evaluation games into `runs/<name>/videos/`: one per
 evaluation, two for the final and the best evaluation (STANDARDS §8: every training run saves videos). Run 4's three
-clips are published in [videos of the NUS port](media/nus/README.md#ste-guard-policy).
+clips are published in [videos of the NUS port](media/nus/README.md#ste-guard-policy); click a preview for the full video.
+
+|  |  |  |
+|:--:|:--:|:--:|
+| <a href="media/nus/pilots/p1b_run4_final_t1472_best_hold_slot0.mp4"><img src="media/nus/pilots/p1b_run4_final_t1472_best_hold_slot0.gif" width="250" alt="STE Guard policy vs S20 · Test 5 conditions · Guard holds (final evaluation, best checkpoint)"></a><br>STE Guard policy vs S20 · Test 5 conditions · Guard holds (final evaluation, best checkpoint) | <a href="media/nus/pilots/p1b_run4_final_t1472_best_strike_win_slot6.mp4"><img src="media/nus/pilots/p1b_run4_final_t1472_best_strike_win_slot6.gif" width="250" alt="STE Guard policy vs S20 · Test 5 conditions · Strike reaches the zone (final evaluation)"></a><br>STE Guard policy vs S20 · Test 5 conditions · Strike reaches the zone (final evaluation) | <a href="media/nus/pilots/p1b_run4_mid_t768_strike_win_slot2.mp4"><img src="media/nus/pilots/p1b_run4_mid_t768_strike_win_slot2.gif" width="250" alt="STE Guard policy (half-way) vs S20 · Test 5 conditions · Strike reaches the zone"></a><br>STE Guard policy (half-way) vs S20 · Test 5 conditions · Strike reaches the zone |
 
 ## 7. What a good result looks like
 
 - **Final evaluation:** 829 of 1,000 held against S20 (0.829, Wilson 95 % [0.804, 0.851]); the bar set before the run
   was a lower bound above 0.460, the Parked Guard's upper bound in Test 5. Half-way: 0.758 on 256 games.
 - **In the videos:** the three Guards spread out inside the zone in a triangle that covers it; S20's drones end pressed
-  against the arena walls, held off by the safety filter, which likely acts as a wall around each Guard.
+  against the arena walls, held off by the safety filter, which likely acts as a wall around each Guard (the first
+  clip of section 6).
 - **Other measures** (final evaluation): closest Guard–Strike approach 0.55 m in the horizontal plane (0.87 m in 3-D;
   median 1.50 m); safety filter active in 33 % of ticks; rule-breach share 0.005; mean game end step 2,030 of 2,400.
 

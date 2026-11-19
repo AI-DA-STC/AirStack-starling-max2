@@ -39,6 +39,20 @@ beside each number in [NUS_RESULTS](docs/NUS_RESULTS.md).
 
 *Figure 1. Strike reach rate (Wilson 95 %) of the 12 core pairs, rows 1–6; dashed: a Guard team that stands still. T18–T24.*
 
+## Watch it
+
+The pictures play here; click one for the full video. Top-down view, Guard team blue circles, Strike team orange
+triangles, the zone green. Every clip is observed in the training simulator; nothing here has flown. All
+286 clips, with what each shows: [docs/media/nus/](docs/media/nus/README.md) (GitHub plays GIFs inside a page, but an
+MP4 link opens the file on its own page).
+
+| | |
+|---|---|
+| [![1 · your 2-D game: your Guard G19 holds your Strike S20](docs/media/nus/nus_selfplay_s2_g19_vs_s2_s20.gif)](docs/media/nus/nus_selfplay_s2_g19_vs_s2_s20.mp4)<br>1 · your 2-D game: your Guard G19 holds your Strike S20 | [![2 · our copy of your game (row 1): G19 still holds](docs/media/nus/phase4/row_1/G19_vs_S20_hold.gif)](docs/media/nus/phase4/row_1/G19_vs_S20_hold.mp4)<br>2 · our copy of your game (row 1): G19 still holds |
+| [![3 · our safety filter on every pair (row 4): S20 gets in](docs/media/nus/phase4/row_4/G19_vs_S20_strike_win.gif)](docs/media/nus/phase4/row_4/G19_vs_S20_strike_win.mp4)<br>3 · our safety filter on every pair (row 4): S20 gets in | [![4 · free height, 3-D (row 5): S20 gets in](docs/media/nus/phase4/row_5/G19_vs_S20_strike_win.gif)](docs/media/nus/phase4/row_5/G19_vs_S20_strike_win.mp4)<br>4 · free height, 3-D (row 5): S20 gets in |
+| [![5 · Isaac Lab Starlings (row 6): the same](docs/media/nus/isaac/g19_vs_s20_strike_win_1.gif)](docs/media/nus/isaac/g19_vs_s20_strike_win_1.mp4)<br>5 · Isaac Lab Starlings (row 6): the same | [![6 · Isaac Lab: one of the 21 in 1,000 games G19 still holds](docs/media/nus/isaac/open_g19_vs_s20_hold_1.gif)](docs/media/nus/isaac/open_g19_vs_s20_hold_1.mp4)<br>6 · Isaac Lab: one of the 21 in 1,000 games G19 still holds |
+| [![7 · a Guard team that just parks (row 5): holds 429 of 1,000](docs/media/nus/phase4/row_5/ParkedGuard_vs_S20_hold.gif)](docs/media/nus/phase4/row_5/ParkedGuard_vs_S20_hold.mp4)<br>7 · a Guard team that just parks (row 5): holds 429 of 1,000 | [![8 · our own simple learner (pilot P1b): holds 829 of 1,000](docs/media/nus/pilots/p1b_run4_final_t1472_best_hold_slot0.gif)](docs/media/nus/pilots/p1b_run4_final_t1472_best_hold_slot0.mp4)<br>8 · our own simple learner (pilot P1b): holds 829 of 1,000 |
+
 ## Questions for you
 
 1. Is our copy of your game missing any rule that matters?

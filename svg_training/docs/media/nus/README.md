@@ -6,6 +6,10 @@ Training simulator only; nothing here is a flight. Published with NUS's agreemen
 every clip of the port is public, the Phase 4 ones included. The story behind each clip:
 [NUS_PORT](../../NUS_PORT.md).
 
+**How to watch.** GitHub plays a GIF inside a page but opens an MP4 on its own page (click, then play or download).
+The front page's [Watch it](../../../README.md#watch-it) gallery shows the eight key clips as GIFs; the tables below
+link every MP4.
+
 **Five kinds of clip** (279 clip files: the 271 of 18 November plus a second Isaac Lab set of 8).
 
 | Folder | What | Simulator | Count |

@@ -21,6 +21,10 @@ This page replaces `NUS_PHASE4_RESULTS.md`.
 
 ## Q1. Does our replica match your game?
 
+| [![Row 1, our replica of your game: your G19 holds your S20](media/nus/phase4/row_1/G19_vs_S20_hold.gif)](media/nus/phase4/row_1/G19_vs_S20_hold.mp4) |
+|:--:|
+| Row 1, our replica of your game: your G19 holds your S20 (click for the full video) |
+
 Yes, to the step, within the limit we set. `source/svg_training/nus/replica.py` is a batched PyTorch copy of your game:
 the one-pass soft push, the Guard circle, 200 steps, the sticky reached flag and your random starts (Guard drones
 inside a disc of half the zone radius; each Strike drone at the spawn distance on its own random bearing). We replayed
@@ -67,6 +71,10 @@ First column: INFO, [self-play matrix record](../records/2026-11-18_nus_selfplay
 Row 1: [T18 record](../records/2026-11-18_nus_phase4_rung1_record.md).
 
 ## Q3. What does each drone limit do?
+
+| [![Row 4, our safety filter on every pair of drones: S20 reaches the zone](media/nus/phase4/row_4/G19_vs_S20_strike_win.gif)](media/nus/phase4/row_4/G19_vs_S20_strike_win.mp4) |
+|:--:|
+| Row 4, our safety filter on every pair of drones: S20 reaches the zone (click for the full video) |
 
 The *transfer ladder*: the converted policies stay frozen, and each row changes the game towards our drones. 1,000
 paired games per pair on one starts file. Rows 1–3 run without the safety filter (a measurement, not a training
@@ -156,6 +164,10 @@ one of your policies stays at 0.57 m or more.
 
 ## Q4. Does Isaac Lab agree with our fast drone model?
 
+| [![Row 6, Isaac Lab Starlings: S20 reaches the zone, as on tier 1](media/nus/isaac/g19_vs_s20_strike_win_1.gif)](media/nus/isaac/g19_vs_s20_strike_win_1.mp4) |
+|:--:|
+| Row 6, Isaac Lab Starlings: S20 reaches the zone, as on tier 1 (click for the full video) |
+
 For these frozen policies, yes: row 6 (tier 2, rigid-body Starlings flown by a copy of PX4's control loops) against
 row 5 (tier 1), same starts.
 
@@ -170,6 +182,10 @@ Evidence: T23 [record](../records/2026-11-18_nus_phase4_rung5_record.md), T24
 model; agreement for frozen policies says nothing yet about a policy trained on tier 1.
 
 ## Q5. What does a Guard team that stands still do?
+
+| [![Row 5, a parked Guard team holds S20 off](media/nus/phase4/row_5/ParkedGuard_vs_S20_hold.gif)](media/nus/phase4/row_5/ParkedGuard_vs_S20_hold.mp4) |
+|:--:|
+| Row 5, a parked Guard team holds S20 off (click for the full video) |
 
 On rows 4–6 it holds more games against S20 than either trained Guard: the filter's keep-out around a still drone acts
 as a wall.
@@ -208,6 +224,10 @@ the test fails a learner that learned nothing; C0 shows it does not fail your ow
 a side it catches only large differences.
 
 ## Q7. Can we train a Guard team on our drone model?
+
+| [![Pilot P1b, our own learner: the Guards spread across the zone and hold S20 off](media/nus/pilots/p1b_run4_final_t1472_best_hold_slot0.gif)](media/nus/pilots/p1b_run4_final_t1472_best_hold_slot0.mp4) |
+|:--:|
+| Pilot P1b, our own learner: the Guards spread across the zone and hold S20 off (click for the full video) |
 
 **First signal, not yet a gated result.** Stage 5.2 (your method on tier 1 with drone lag, the all-pairs filter and 3-D)
 has not started. Short pilots with our simple stand-in learner (skrl IPPO, one seed, no gates) asked whether it finds the

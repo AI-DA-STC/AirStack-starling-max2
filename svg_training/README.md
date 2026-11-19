@@ -100,6 +100,24 @@ grades the copy, never NUS's code.
 | 2 | the game, copied to PyTorch | Copy of NUS 2-D game (PyTorch) | the same game step by step: position error ≤ 5.7e-6 units (limit 1e-4). PASS | T15, [record](records/2026-11-17_nus_phase2_parity_record.md), [the copy checked](docs/WHAT_WE_FOUND.md#1-copy-of-nus-2-d-game-pytorch-matches-nus-2-d-game-jax) |
 | 3 | the policies, converted to PyTorch | Copy of NUS 2-D game (PyTorch) | action error ≤ 0.0105 units (limit 0.02); reach counts inside the 95 % interval of NUS's code. PASS | T16, [record](records/2026-11-18_nus_phase3_conversion_record.md); T17, [record](records/2026-11-18_nus_phase4_w3_reference_gates_record.md); [the conversion checked](docs/WHAT_WE_FOUND.md#2-converted-policies-match-the-jax-originals) |
 
+### The same match in NUS's JAX code and in the PyTorch copy
+
+Each match-up was played on the same 1,000 starts twice: once in NUS's own JAX game with NUS's JAX policy, once in the
+Copy of NUS 2-D game (PyTorch) with the converted policy. The counts agree within chance. The two videos of a row are one
+game each, not the same start; click a picture for the full video.
+
+| Match-up (Guard vs Strike) | Strike reaches the zone, of 1,000: NUS's JAX code | Copy of NUS 2-D game (PyTorch) | Games that ended differently | Video: NUS's JAX game | Video: Copy of NUS 2-D game (PyTorch) | Evidence |
+|---|---|---|---|---|---|---|
+| **P3G vs APF attacker** (the Guard trained against NUS's scripted attacker, as in NUS's October report) | **48** | **46** | 6 | <a href="docs/media/nus/nus_fixed_guard_vs_scripted_strike.mp4"><img src="docs/media/nus/nus_fixed_guard_vs_scripted_strike.gif" width="230" alt="P3G vs APF attacker · NUS 2-D game (JAX) · Guard holds"></a><br>P3G vs APF attacker · NUS 2-D game (JAX) · Guard holds | <a href="docs/media/nus/phase3/guard_game0.mp4"><img src="docs/media/nus/phase3/guard_game0.gif" width="230" alt="P3G vs APF attacker · Copy of NUS 2-D game (PyTorch) · Guard holds"></a><br>P3G vs APF attacker · Copy of NUS 2-D game (PyTorch) · Guard holds | T16, [record](records/2026-11-18_nus_phase3_conversion_record.md) |
+| **APF defender vs P3S** (the Strike trained against NUS's scripted defender) | **1,000** | **1,000** | 0 | <a href="docs/media/nus/nus_fixed_strike_vs_scripted_guard.mp4"><img src="docs/media/nus/nus_fixed_strike_vs_scripted_guard.gif" width="230" alt="APF defender vs P3S · NUS 2-D game (JAX) · Strike reaches the zone"></a><br>APF defender vs P3S · NUS 2-D game (JAX) · Strike reaches the zone | <a href="docs/media/nus/phase3/strike_game0.mp4"><img src="docs/media/nus/phase3/strike_game0.gif" width="230" alt="APF defender vs P3S · Copy of NUS 2-D game (PyTorch) · Strike reaches the zone"></a><br>APF defender vs P3S · Copy of NUS 2-D game (PyTorch) · Strike reaches the zone | T16, [record](records/2026-11-18_nus_phase3_conversion_record.md) |
+| **G19 vs S20** (the self-play pair) | **17** | **15** | — | <a href="docs/media/nus/nus_selfplay_s2_g19_vs_s2_s20.mp4"><img src="docs/media/nus/nus_selfplay_s2_g19_vs_s2_s20.gif" width="230" alt="G19 vs S20 · NUS 2-D game (JAX) · Guard holds"></a><br>G19 vs S20 · NUS 2-D game (JAX) · Guard holds | <a href="docs/media/nus/w3/archive_arm_G19_vs_S20_game0.mp4"><img src="docs/media/nus/w3/archive_arm_G19_vs_S20_game0.gif" width="230" alt="G19 vs S20 · Copy of NUS 2-D game (PyTorch) · Guard holds"></a><br>G19 vs S20 · Copy of NUS 2-D game (PyTorch) · Guard holds | T17, [record](records/2026-11-18_nus_phase4_w3_reference_gates_record.md) |
+
+P3G and P3S were trained by STE with NUS's code and NUS's learning settings, with two changes: 3,000 updates per team
+(76.8 million environment steps, about 6.5 minutes; NUS's default has no practical limit) and the hangar arena (start
+distance and Guard boundary 8 units instead of 20). Their strength is therefore not directly comparable with the
+policies in NUS's October report.
+
+
 ## 3. The game: NUS 2-D game vs STE drone set-up
 
 Both sides play the same Strike vs Guard game: 3 Guard drones hold a zone of 1.6 m radius (NUS: 4 units) at the

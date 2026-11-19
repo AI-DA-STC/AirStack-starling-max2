@@ -8,6 +8,86 @@ training simulator; nothing in this folder has flown. T numbers (T15, …) are r
 each with its record; PASS and FAIL mean a pass mark set before the run was met or missed, INFO means measured with
 no pass mark.
 
+## At a glance: what was done
+
+The whole story on one screen; sections 1–8 below give the numbers, caveats and records behind each line.
+
+```mermaid
+flowchart TD
+  A["1 · Train with NUS's code (JAX)<br/>in NUS's 2-D game<br/>→ checkpoints G19, S20, P3G, P3S"] --> B["2 · Copy NUS's game into PyTorch<br/>same conditions, checked exact"]
+  B --> C["3 · Convert the policies to PyTorch<br/>same conditions, checked exact"]
+  C --> D["4 · Test the policies under STE drone conditions<br/>one condition at a time: Tests 1–6<br/>nothing trained here"]
+  D -->|"Strike reaches 9 → 979 of 1,000:<br/>NUS's policies fail on STE drones"| E["5 · Retrain in STE drone conditions"]
+  E --> F["STE Guard policy (pilot P1b)<br/>trained in Test 5 conditions<br/>holds 829 of 1,000 ✅"]
+  E --> G["STE port of NUS's training method<br/>check in NUS's game running (5.1)"]
+  F --> H["6 · Next: Isaac Lab check (5.3)<br/>→ AirStack hand-over → flight plan"]
+  G -.-> H
+  classDef done fill:#dff3df,stroke:#2e7d32,color:#000
+  classDef fail fill:#fde4e4,stroke:#c62828,color:#000
+  classDef todo fill:#f1f1f1,stroke:#757575,stroke-dasharray:4 3,color:#000
+  class A,B,C,F done
+  class D fail
+  class E,G,H todo
+```
+
+**The six tests** (G19 vs S20; Strike reaches of 1,000 games, the same 1,000 starts in every test). Each test adds one STE
+drone condition to the one before:
+
+```mermaid
+flowchart LR
+  T1["Test 1<br/>NUS's conditions<br/>in PyTorch<br/>9"] --> T2["Test 2<br/>+ STE game engine<br/>0.6 s decisions, walls,<br/>simple keep-apart<br/>17"]
+  T2 --> T3["Test 3<br/>+ drone delay<br/>and lag<br/>43"]
+  T3 --> T4["Test 4<br/>+ safety filter<br/>no pushing<br/>740"]
+  T4 --> T5["Test 5<br/>+ free height (3-D)<br/>over and under<br/>983"]
+  T5 --> T6["Test 6<br/>Isaac Lab<br/>physics drones<br/>979"]
+  classDef ok fill:#dff3df,stroke:#2e7d32,color:#000
+  classDef mid fill:#fff4d6,stroke:#b8860b,color:#000
+  classDef bad fill:#fde4e4,stroke:#c62828,color:#000
+  class T1,T2,T3 ok
+  class T4 mid
+  class T5,T6 bad
+```
+
+### The whole story
+
+1. **Trained with NUS's code (JAX)**, in NUS's conditions. Gave G19, S20, P3G and P3S. *(Phase 2a)*
+2. **Copied NUS's game into PyTorch.** Same conditions, checked it matches exactly. *(Phase 2)*
+3. **Converted the policies to PyTorch.** Same conditions, checked they act the same. *(Phase 3)*
+4. **Tested the policies, changing conditions one at a time.** Nothing was trained here. *(Phase 4)*
+
+   | Test | Conditions | Strike reaches, of 1,000 |
+   |---|---|---|
+   | 1 | NUS's conditions, in PyTorch (the baseline) | 9 |
+   | 2 | + STE game engine: 0.6 s decisions, walls, simple keep-apart | 17 |
+   | 3 | + drone delay and lag | 43 |
+   | 4 | + **safety filter**: no pushing | **740** |
+   | 5 | + **3-D**: over and under | **983** |
+   | 6 | same, on **Isaac Lab** physics drones (test only) | **979** |
+
+   **Why it breaks:** NUS's Guards learned to **push** Strikes away, which STE drones cannot do (Test 4). In 3-D,
+   Strikes also slip over or under (Test 5). ("Likely": Test 4 changes two things at once; see section 5.)
+5. **Retraining, so a policy works in STE conditions.** *(Phase 5, in progress)*
+   - **STE Guard policy (pilot P1b):** trained in **Test 5 conditions**, on the STE drone model in PyTorch, not in Isaac
+     Lab. **Holds 829 of 1,000.** ✅ It learned a different defence: spread out inside the zone and let the safety
+     filter act like a wall.
+   - **STE port of NUS's training method (PyTorch):** being checked in NUS's conditions (stage 5.1). Stage 5.2 would
+     then train with it in STE conditions.
+6. **Next:** test the trained Guard in **Isaac Lab** (5.3), then the AirStack hand-over and a flight plan, with CMU.
+
+**In one line:** trained in NUS's game, tested on STE drones (NUS's policies failed), retrained in STE drone conditions
+(the STE Guard policy works), Isaac Lab check next.
+
+### NUS's conditions vs STE drone conditions
+
+| | NUS's game (original) | STE drones | Added in |
+|---|---|---|---|
+| **How a drone moves** | a point; each step it simply jumps to its new position, no inertia | a drone given a **speed command** through CMU's commander, with the **delay and lag** of a real Starling; it speeds up and slows down gradually | Test 3 |
+| **Decision timing** | one action per game step | one action held for **0.6 s** (scale: 1 unit = 0.4 m, 1 step = 0.6 s) | Test 2 |
+| **Contact between drones** | drones may touch; overlapping drones **push each other apart**, so a Guard can shove a Strike away | **no contact allowed.** Test 2 uses a simple keep-apart rule between opposing drones; Test 4 uses the real **safety filter** from the flight software: every pair, team-mates too, slows or swerves to stay **1.10 m apart** | Tests 2 and 4 |
+| **Height** | flat 2-D plane | **free height (3-D)**: drones fly at about 1.2 m, but the filter can move them up or down, so Strikes can pass **over or under** Guards | Test 5 |
+| **Arena** | open plane, no walls (Guards kept inside a circle of 8 units) | the **7.5 m hangar**, with walls | Test 2 |
+| **Physics** | none (simple maths) | **Isaac Lab**: full rigid-body Starling drones with a PX4-style controller | Test 6 |
+
 ## 1. Overview
 
 STE flies small indoor drones (ModalAI *Starling* 2 Max) with CMU's flight software, AirStack. This folder holds a

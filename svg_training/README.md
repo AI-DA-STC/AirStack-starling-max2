@@ -31,7 +31,7 @@ NUS-code policies itself with that code. Full definitions: [glossary, policies](
 
 G19 = Guard of generation 19 and S20 = Strike of generation 20 of self-play seed 2; P3G and P3S = the Guard and Strike
 converted in Phase 3 (each trained against NUS's scripted opponent); IPPO = independent PPO, one learner per drone.
-The STE drone model and Test 5 conditions are defined in section 3, pilot P1b in section 5.
+The STE drone model and Test 5 conditions are defined in section 3, pilot P1b in section 6.
 
 ## 2. Porting NUS's code
 
@@ -47,7 +47,41 @@ grades the copy, never NUS's code.
 | 2 | the game, copied to PyTorch | Copy of NUS 2-D game (PyTorch) | the same game step by step: position error ≤ 5.7e-6 units (limit 1e-4). PASS | T15, [record](records/2026-11-17_nus_phase2_parity_record.md), [the copy checked](docs/WHAT_WE_FOUND.md#1-copy-of-nus-2-d-game-pytorch-matches-nus-2-d-game-jax) |
 | 3 | the policies, converted to PyTorch | Copy of NUS 2-D game (PyTorch) | action error ≤ 0.0105 units (limit 0.02); reach counts inside the 95 % interval of NUS's code. PASS | T16, [record](records/2026-11-18_nus_phase3_conversion_record.md); T17, [record](records/2026-11-18_nus_phase4_w3_reference_gates_record.md); [the conversion checked](docs/WHAT_WE_FOUND.md#2-converted-policies-match-the-jax-originals) |
 
-## 3. Testing NUS's policies on STE drones
+## 3. The game: NUS 2-D game vs STE drone set-up
+
+Both sides play the same Strike vs Guard game: 3 Guard drones hold a zone of 1.6 m radius (NUS: 4 units) at the
+centre, 3 Strike drones, 1.5 times as fast, try to reach it, and a game lasts 200 steps (120 s on the hangar set-up).
+They differ in how the drones move and meet. The STE column is the full set-up of Tests 5 and 6, which the STE Guard
+policy was trained in; the tests of section 4 add its conditions one at a time, and the table says where each enters.
+
+| | NUS 2-D game | STE drone set-up |
+|---|---|---|
+| Movement | point drones that jump each step by a move up to the team's cap (Guard 0.5, Strike 0.75 units: 0.20 m and 0.30 m per step on the hangar set-up) | each speed command goes through a copy of CMU's commander, then the delay and lag of a model fitted to one Starling flight log (from Test 3; exploratory: it answers more slowly than the real drone); in Test 6, rigid-body Starling models flown by a copy of PX4's control loops. Same team speeds: Guard 0.333 m/s, Strike 0.50 m/s |
+| Contact | a soft push keeps the teams apart within each step (1.2 m around a Guard drone, 1.0 m around a Strike drone, on the hangar set-up), so pushing a Strike drone aside is allowed; team-mates may overlap | no contact: the safety filter makes both drones of any close pair give way, team-mates included, keeping them 1.10 m apart (from Test 4; Tests 2–3 use the push-apart). It acts on speed commands, so drones can come slightly closer (1.083 m in a test on the STE drone model) |
+| Height | 2-D: every drone in one plane | every drone at 1.2 m in Tests 2–4; free height from Test 5: the policies send no vertical command, but with a ±1 mm start jitter the filter's give-way can turn vertical, and drones pass over or under each other |
+| Arena and walls | no walls; Guard drones kept inside a circle of 8 units (3.2 m), Strike drones start 8 units (3.2 m) from the centre (`defender_boundary` and `spawn_distance` 8.0 on the hangar set-up; NUS's defaults are 20 units) | the hangar box: a 7.5 m square with walls at ±3.75 m (from sub-test 2.2), inside the hangar's usable flying box of about 7.6 m × 7.9 m; the same zone and starts. Flying it would first need the flight software's keep-in fence (±3.25 m today) moved |
+| Decision rate | one action per step; NUS's game has no seconds, and STE's scale makes a step 0.60 s | one action per 0.60 s, held for 12 ticks of 0.05 s (from Test 2) while the commander and the filter act every tick |
+| Simulator / library | NUS 2-D game, JAX (NUS's code); for Test 1, STE's Copy of NUS 2-D game in PyTorch | STE game engine and STE drone model, PyTorch (Tests 2–5); Isaac Lab physics drones on Isaac Sim 5.1 (Test 6) |
+| One game | [![G19 vs S20 · NUS 2-D game (JAX) · Guard holds](docs/media/nus/nus_selfplay_s2_g19_vs_s2_s20.gif)](docs/media/nus/nus_selfplay_s2_g19_vs_s2_s20.mp4)<br>G19 vs S20 · NUS 2-D game (JAX) · Guard holds | [![G19 vs S20 · Test 5: STE drone model + free height · Strike reaches the zone](docs/media/nus/phase4/row_5/G19_vs_S20_strike_win.gif)](docs/media/nus/phase4/row_5/G19_vs_S20_strike_win.mp4)<br>G19 vs S20 · Test 5: STE drone model + free height · Strike reaches the zone |
+
+Values: [what we did, day by day, NUS's game](docs/WHAT_WE_DID_DAY_BY_DAY.md#1-the-nus-code-three-branches) and
+[the hangar geometry](docs/WHAT_WE_DID_DAY_BY_DAY.md#3-phase-0-answers-and-the-hangar-geometry). Click a picture for the
+full video. Terms, one line each (all in the [glossary](docs/GLOSSARY.md)):
+
+- *Copy of NUS 2-D game*: STE's batched PyTorch copy of NUS's game, checked step by step against it (section 2).
+- *STE game engine*: STE's batched game in PyTorch; in Test 2 with NUS's speeds, zone and scoring, square walls and the push-apart.
+- *Push-apart*: an STE rule that cuts short a move that would bring a drone within 1.10 m of an opposing drone (Tests 2–3).
+- *STE drone model*: a point drone that follows its speed command through a copy of CMU's commander (the AirStack
+  program that turns speed commands into drone instructions), then the delay and lag of a model fitted to one Starling
+  flight log (exploratory: it answers more slowly than the real drone).
+- *Safety filter*: CMU's collision filter in the flight software; when two drones come close it makes both give way,
+  keeping them 1.10 m apart.
+- *Isaac Lab physics drones*: rigid-body Starling models in NVIDIA Isaac Lab (a robot-learning framework on NVIDIA's
+  Isaac Sim simulator), flown by a copy of PX4's control loops (PX4: the drone's flight software).
+- *Test 5 conditions*: the hangar game of Test 5 (STE drone model, safety filter on every pair, free height), the game
+  the STE Guard policy was trained in.
+
+## 4. Testing NUS's policies on STE drones
 
 Phase 4 scored the converted policies (G19, S20, P3G, P3S: trained by STE with NUS's code), frozen, in six tests; each test adds one real-drone condition (Tests 2 and 4
 change two things at once; [test results](docs/WHAT_WE_FOUND.md#3-six-tests-towards-ste-drones)). 1,000 games per
@@ -62,13 +96,7 @@ pair, the same 1,000 starts in every test.
 | 5 | STE drone model: + free height (3-D) | 983 | T23, [record](records/2026-11-18_nus_phase4_rung5_record.md) |
 | 6 | Isaac Lab physics drones (Isaac Sim 5.1) | 979 | T24, [record](records/2026-11-18_nus_phase4_rung6_record.md) |
 
-*STE game engine*: STE's batched game in PyTorch, here with NUS's speeds, zone and scoring, square walls and an STE
-rule that cuts short a move that would bring a drone within 1.10 m of an opposing drone. *STE drone model*: a point drone that follows its speed
-command through a copy of CMU's commander (the AirStack program that turns speed commands into drone instructions), then the delay and lag of a model fitted to one Starling flight log
-(exploratory: it answers more slowly than the real drone). *Safety filter*: CMU's collision filter in the flight
-software; when two drones come close it makes both give way, keeping them 1.10 m apart. *Isaac Lab physics drones*:
-rigid-body Starling models in NVIDIA Isaac Lab (a robot-learning framework on NVIDIA's Isaac Sim simulator), flown by a copy of PX4's control loops (PX4: the drone's flight
-software). The records call the tests "ladder rows": Test N = ladder row N.
+Terms: [the game, section 3](#3-the-game-nus-2-d-game-vs-ste-drone-set-up). The records call the tests "ladder rows": Test N = ladder row N.
 
 <a id="fig-1"></a>
 ![Strike reach rate along Tests 1 to 6; the axis says "row": row N = Test N](docs/figures/nus_phase4_ladder.png)
@@ -77,7 +105,7 @@ software). The records call the tests "ladder rows": Test N = ladder row N.
 Guard against S20, P3S and APF attacker, Tests 1–6 (the axis says "row": row N = Test N); dashed: the Parked Guard.
 T18–T24.*
 
-## 4. Why performance drops
+## 5. Why performance drops
 
 - **No physical contact: the safety filter.** The NUS-code Guards likely hold by pushing Strike drones aside, which
   NUS's game allows. The safety filter makes *both* drones of every close pair give way, team-mates included, so
@@ -89,7 +117,7 @@ T18–T24.*
   trained for NUS's game transfer to STE drones, not NUS's method. Caveats beside each number:
   [test results](docs/WHAT_WE_FOUND.md#3-six-tests-towards-ste-drones).
 
-## 5. Training in STE conditions
+## 6. Training in STE conditions
 
 The STE Guard policy (trained in pilot P1b; a *pilot* is a short training run with no gate) holds the zone against
 S20 in **829 of 1,000** games in Test 5 conditions, against 429 for the Parked Guard (evidence: T41, [record](records/2026-11-19_nus_phase5_pilot_p1b_run4_record.md)). Its Guards spread
@@ -104,8 +132,8 @@ seeds have no result yet
 ## Watch it
 
 Top-down view: Guard team blue circles, Strike team orange triangles, the zone green. The pictures play here; click
-one for the full video. Observed in the training simulator; nothing here has flown. All 286 clips, one line each:
-[videos of the NUS port](docs/media/nus/README.md) (GitHub plays GIFs inside a page; an MP4 link opens on its own page).
+one for the full video. Observed in the training simulator; nothing here has flown. All 275 clips of the NUS port,
+each with a preview that plays in the page: [videos of the NUS port](docs/media/nus/README.md).
 
 | | |
 |---|---|
@@ -114,7 +142,7 @@ one for the full video. Observed in the training simulator; nothing here has flo
 | [![G19 vs S20 · Test 6: Isaac Lab physics drones · Strike reaches the zone](docs/media/nus/isaac/g19_vs_s20_strike_win_1.gif)](docs/media/nus/isaac/g19_vs_s20_strike_win_1.mp4)<br>G19 vs S20 · Test 6: Isaac Lab physics drones · Strike reaches the zone | [![G19 vs S20 · Test 6: Isaac Lab physics drones · Guard holds (21 of 1,000)](docs/media/nus/isaac/open_g19_vs_s20_hold_1.gif)](docs/media/nus/isaac/open_g19_vs_s20_hold_1.mp4)<br>G19 vs S20 · Test 6: Isaac Lab physics drones · Guard holds (21 of 1,000) |
 | [![Parked Guard vs S20 · Test 5: STE drone model + free height · Guard holds (429 of 1,000)](docs/media/nus/phase4/row_5/ParkedGuard_vs_S20_hold.gif)](docs/media/nus/phase4/row_5/ParkedGuard_vs_S20_hold.mp4)<br>Parked Guard vs S20 · Test 5: STE drone model + free height · Guard holds (429 of 1,000) | [![STE Guard policy vs S20 · Test 5 conditions · Guard holds (829 of 1,000)](docs/media/nus/pilots/p1b_run4_final_t1472_best_hold_slot0.gif)](docs/media/nus/pilots/p1b_run4_final_t1472_best_hold_slot0.mp4)<br>STE Guard policy vs S20 · Test 5 conditions · Guard holds (829 of 1,000) |
 
-## 6. Next steps and open questions
+## 7. Next steps and open questions
 
 Next on the STE side: the first results of the STE port of NUS's training method; the STE Guard policy against other
 Strike behaviours and on the Isaac Lab physics drones; two control tests that split the two effects of Test 4.
@@ -126,7 +154,7 @@ Five questions to NUS:
 4. Is 3 v 3 in 3-D with no drop-outs the right first goal?
 5. Should any NUS setting change for a slower environment?
 
-## 7. Run it yourself
+## 8. Run it yourself
 
 Commands for every level, with what each must print: [how to run it yourself](docs/RUN_IT_YOURSELF.md). Badges:
 `none` = any laptop, no GPU; `GPU` = an NVIDIA GPU; `Isaac` = NVIDIA Isaac Lab 2.3.2 on Isaac Sim 5.1.0.

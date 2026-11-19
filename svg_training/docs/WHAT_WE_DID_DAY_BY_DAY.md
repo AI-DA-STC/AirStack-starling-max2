@@ -255,7 +255,7 @@ were weighed: (a) NUS retrains with action hold, delay and STE's rules in its ow
 the result; (b) STE ports NUS's training method to PyTorch and trains on Starling-like drones (the *STE port of NUS's
 training method (PyTorch)*, "route (b)" in the records); (c) STE fine-tunes the converted policies, which needs the
 same check of the method first. STE chose (b), and asks whether NUS would also do (a)
-([question 2](../README.md#6-next-steps-and-open-questions)).
+([question 2](../README.md#7-next-steps-and-open-questions)).
 
 | Decision | What |
 |---|---|

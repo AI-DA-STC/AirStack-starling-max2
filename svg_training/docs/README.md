@@ -16,7 +16,7 @@ this repository. Every page carries one of four labels on its first line:
 
 | Page | What it holds |
 |---|---|
-| [../README.md](../README.md) | the front page: overview and policies, porting NUS's code, testing NUS's policies on STE drones, why performance drops, training in STE conditions, next steps and the five questions to NUS, run it yourself |
+| [../README.md](../README.md) | the front page: overview and policies, porting NUS's code, the game (NUS 2-D game vs STE drone set-up), testing NUS's policies on STE drones, why performance drops, training in STE conditions, next steps and the five questions to NUS, run it yourself |
 | [WHAT_WE_FOUND.md](WHAT_WE_FOUND.md) | what we found: every result of the NUS port, caveats beside the numbers (was `NUS_RESULTS.md`) |
 | [RUN_IT_YOURSELF.md](RUN_IT_YOURSELF.md) | how to run it yourself: six levels, from clips to repeating the six tests (was `TRY_IT.md`) |
 | [TRAIN_A_GUARD.md](TRAIN_A_GUARD.md) | training recipe: the step-by-step recipe behind the STE Guard policy (pilot P1b run 4) |

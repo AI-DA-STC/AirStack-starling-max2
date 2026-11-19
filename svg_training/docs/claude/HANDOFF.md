@@ -29,7 +29,7 @@ Owner-approved (19 Nov) pass on the public docs; facts, numbers and evidence lin
   port of NUS's training method (PyTorch), STE Guard policy; G19/S20/P3G/P3S said to be trained by STE using NUS's
   code. Tone neutral (no "you"/"your"): CLAUDE.md's reader-page rule and STANDARDS §2's "the partner" row updated to match.
 - Checks: every relative link and anchor in `svg_training/**/*.md` resolves (scripted); `tools/docs_check/check_docs.sh`
-  0 FAIL; full CPU suite (numbers in the commit of this entry).
+  0 FAIL (13 PASS, 7 WARN, 1 SKIP); full CPU suite 1,077 passed, 47 skipped, 0 failed (10 min 22 s, `env_isaaclab`).
 
 ### Plain-laptop route and the PROVISIONAL bundle, 19 November 2026 ~00:30 — branch `nus-release` (for the lead and the docs writer)
 

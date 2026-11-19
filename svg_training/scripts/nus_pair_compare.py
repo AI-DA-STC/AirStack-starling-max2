@@ -10,7 +10,7 @@ The three arms, all deterministic, on the starts of ``--jax-game`` (written by `
   1. NUS's JAX game: NUS's environment and NUS's JAX actors (read from the ``--jax-game`` file);
   2. the Copy of NUS 2-D game (PyTorch) with NUS's JAX actors, queried step by step through action workers (only with ``--clone``);
   3. the Copy of NUS 2-D game (PyTorch) with the converted PyTorch actors.
-Counts of Strike reaches, Wilson 95 % intervals, games whose outcome differs from arm 1, and the largest position gap to arm 1 (units,
+Counts of Strike reaches, Wilson intervals at the confidence the Phase 3 gate names, games whose outcome differs from arm 1, and the largest position gap to arm 1 (units,
 over the steps both games are still running). Videos: for each ``--videos`` game index, the same start in arm 1 and arm 3, each to its
 own end, then joined side by side (MP4 and a GIF that plays on GitHub). INFO only: no gate. Results under runs/nus_port/pairs/.
 """
@@ -18,8 +18,10 @@ from __future__ import annotations
 
 import argparse
 import json
+import inspect
 import subprocess
 import sys
+import tomllib
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -32,12 +34,13 @@ import torch  # noqa: E402
 OUT_DIR = ROOT / "runs" / "nus_port" / "pairs"
 
 
-def wilson(k: int, n: int, z: float = 1.959964) -> list[float]:
-    p = k / n
-    d = 1 + z * z / n
-    c = (p + z * z / (2 * n)) / d
-    h = z * ((p * (1 - p) / n + z * z / (4 * n * n)) ** 0.5) / d
-    return [round(c - h, 4), round(c + h, 4)]
+GATES = ROOT / "configs" / "nus_port.toml"
+
+
+def gate_confidence() -> float:
+    """The confidence level the Phase 3 gate text names (as scripts/nus_outcome_parity.py reads it); no level is written here."""
+    from svg_training.nus.outcome import parse_confidence
+    return parse_confidence(tomllib.loads(GATES.read_text())["gates"]["phase3_converted_policy"]["outcome_parity"])
 
 
 def copy_trajectories(sim, guard_fn, strike_fn, starts):
@@ -129,15 +132,19 @@ def main(argv: list[str] | None = None) -> int:
     ref_reached = j_at >= 0
     result = {"name": args.name, "games": games, "jax_game_file_sha256": file_sha256(args.jax_game),
               "guard_converted_sha256": guard.meta["sha256"], "strike_converted_sha256": strike.meta["sha256"], "arms": {}}
+    from svg_training.nus.outcome import wilson_interval
+    confidence = gate_confidence()
+    result["confidence"] = confidence
     for arm, (pos, at) in arms.items():
         reached = at >= 0
+        interval = list(wilson_interval(int(reached.sum()), games, confidence))
         steps = min(pos.shape[1], j_pos.shape[1])
         gap = np.abs(pos[:, :steps] - j_pos[:, :steps])
         live = np.arange(steps)[None, :] <= np.minimum(np.where(at >= 0, at, steps - 1), np.where(j_at >= 0, j_at, steps - 1))[:, None]
-        result["arms"][arm] = {"strike_reaches": int(reached.sum()), "wilson95": wilson(int(reached.sum()), games),
+        result["arms"][arm] = {"strike_reaches": int(reached.sum()), "wilson_interval": interval,
                                "games_differing_from_nus_jax_game": int((reached != ref_reached).sum()),
-                               "max_position_gap_units_while_both_run": float(gap.max(axis=(2, 3))[live].max())}
-        print(f"[{arm}] Strike reaches {int(reached.sum())}/{games} {wilson(int(reached.sum()), games)}  differ from NUS JAX game: "
+                               "max_position_gap_units_while_both_run": float(gap.reshape(*gap.shape[:2], -1).max(axis=-1)[live].max())}
+        print(f"[{arm}] Strike reaches {int(reached.sum())}/{games} [{interval[0]:.4f}, {interval[1]:.4f}]  differ from NUS JAX game: "
               f"{result['arms'][arm]['games_differing_from_nus_jax_game']}  max gap {result['arms'][arm]['max_position_gap_units_while_both_run']:.2e}",
               flush=True)
     OUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -155,7 +162,8 @@ def main(argv: list[str] | None = None) -> int:
         paths = [render_replay(rec, video_dir / f"{args.name}_game{i}_{tag}.mp4", playback_label="NUS JAX game" if tag == "jax" else "PyTorch copy",
                                **FORMATS["mp4"]) for rec, tag in ((left, "jax"), (right, "pytorch"))]
         fmt = FORMATS["mp4"]
-        d = max(r.end_step for r in (left, right)) / fmt["speed"] / fmt["fps"] + 2.5 + 0.5
+        hold_s = inspect.signature(render_replay).parameters["hold_s"].default  # the renderer's closing hold, not a second copy
+        d = max(r.end_step for r in (left, right)) / fmt["speed"] / fmt["fps"] + hold_s
         side_by_side(*paths, video_dir / f"{args.name}_game{i}_same_start.mp4", video_dir / f"{args.name}_game{i}_same_start.gif", d)
         print(f"game {i}: NUS JAX game {'Strike reaches' if j_at[i] >= 0 else 'Guard holds'} (step {j_at[i]}), PyTorch copy "
               f"{'Strike reaches' if c_at[i] >= 0 else 'Guard holds'} (step {c_at[i]}); wrote {args.name}_game{i}_same_start.mp4/.gif", flush=True)

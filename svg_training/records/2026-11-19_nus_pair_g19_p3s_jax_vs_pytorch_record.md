@@ -49,6 +49,13 @@ holds in both; the game with the farthest Strike excursion, one Strike drone nea
 - P3S was trained for 3,000 updates in the hangar arena (start distance and Guard boundary 8 units), as in T16.
 - The NUS JAX game runs every game to NUS's step limit; the reach step is the first step NUS's `breach` flag is set.
 
+## Note, 20 November 2026
+
+The two scripts broke the rule that NUS-facing code holds no numeric literals (`tests/test_nus_rules_privacy.py`, G2); the
+full suite was not run before the first merge. They now read the confidence level from the Phase 3 gate text and the
+video hold time from the renderer, and the step keys are derived by `fold_in`. A rerun on the same starts gives the same
+counts, differing games, intervals and largest gaps as the table above.
+
 ## Ledger
 
 Row `T42` in `records/LEDGER.md`.

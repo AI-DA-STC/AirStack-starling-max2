@@ -58,7 +58,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"starts: {games} games rebuilt in NUS's environment, equal to {args.starts.name}")
     steps = int(adapter.env.max_steps)
     pos, reached_at = [rebuilt], np.full(games, -1, np.int64)
-    key = jax.random.key(args.seed + 7)
+    key = jax.random.fold_in(jax.random.key(args.seed), 1)  # the starts use fold 2 (as nus_export_reference.py)
     for t in range(steps):
         g_act = deterministic_actions(guard, adapter.defender_obs(obs))
         s_act = deterministic_actions(strike, adapter.attacker_obs(obs))

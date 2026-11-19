@@ -614,7 +614,7 @@ Where the run clips come from: `scripts/nus_phase4.py --render <test folder>` (P
 (Isaac Lab). NUS's GIFs come from NUS's `eval.py` with `save_eval_gif=True`; for self-play policies the evaluation
 config was edited so the opponent pool holds one archive entry (the self-play runner writes no GIFs itself).
 
-**GIF previews (19 November 2026).** Every MP4 without a GIF got one of the same base name: 261 files, 15.9 MB, made on the lab's workstation CPU with the `ffmpeg` of `imageio-ffmpeg`. Each is 380 px wide at 6 frames/s with 64 colours, sped up so the moving part lasts at most 12.5 s, with the last frame (the outcome) held 1.5 s. Clips over 150 kB were made again at 5 frames/s with 48 colours (18 files), one long Isaac Lab clip also at 320 px (`g19_vs_s20_strike_win_2.gif`, 224 kB). The folder now holds 41.4 MB of clips, of which 21.8 MB are GIFs.
+**GIF previews (19 November 2026).** Every MP4 without a GIF got one of the same base name: 261 files, 15.9 MB, made on the lab's workstation CPU with the `ffmpeg` of `imageio-ffmpeg`. Each is 380 px wide at 6 frames/s with 64 colours, sped up so the moving part lasts at most 12.5 s, with the last frame (the outcome) held 1.5 s. The 19 previews over 150 kB were made again at 5 frames/s with 48 colours; 4 of them still over 150 kB were made at 320 px (`isaac/open_mirror_vs_s20_strike_win_1`, `isaac/g19_vs_s20_strike_win_2`, `nus_selfplay_s1_g7_vs_s1_s8`, `nus_selfplay_s2_g7_vs_s2_s8`). One stays over 150 kB: `isaac/g19_vs_s20_strike_win_2.gif`, 224 kB. The folder now holds 41.4 MB of clips, of which 21.8 MB are GIFs.
 
 ```bash
 # pass 3: GIF preview of any MP4 (speed = max(1, duration / 12.5 s))

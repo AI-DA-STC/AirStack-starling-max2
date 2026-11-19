@@ -51,13 +51,14 @@ grades the copy, never NUS's code.
 
 Both sides play the same Strike vs Guard game: 3 Guard drones hold a zone of 1.6 m radius (NUS: 4 units) at the
 centre, 3 Strike drones, 1.5 times as fast, try to reach it, and a game lasts 200 steps (120 s on the hangar set-up).
-They differ in how the drones move and meet. The STE column is the full set-up of Tests 5 and 6, which the STE Guard
-policy was trained in; the tests of section 4 add its conditions one at a time, and the table says where each enters.
+They differ in how the drones move and meet. The STE column is the set-up of Test 5 (the STE Guard policy was trained
+in it) and Test 6 (the same on the Isaac Lab physics drones); the tests of section 4 add its conditions one at a time,
+and the table says where each enters.
 
 | | NUS 2-D game | STE drone set-up |
 |---|---|---|
 | Movement | point drones that jump each step by a move up to the team's cap (Guard 0.5, Strike 0.75 units: 0.20 m and 0.30 m per step on the hangar set-up) | each speed command goes through a copy of CMU's commander, then the delay and lag of a model fitted to one Starling flight log (from Test 3; exploratory: it answers more slowly than the real drone); in Test 6, rigid-body Starling models flown by a copy of PX4's control loops. Same team speeds: Guard 0.333 m/s, Strike 0.50 m/s |
-| Contact | a soft push keeps the teams apart within each step (1.2 m around a Guard drone, 1.0 m around a Strike drone, on the hangar set-up), so pushing a Strike drone aside is allowed; team-mates may overlap | no contact: the safety filter makes both drones of any close pair give way, team-mates included, keeping them 1.10 m apart (from Test 4; Tests 2–3 use the push-apart). It acts on speed commands, so drones can come slightly closer (1.083 m in a test on the STE drone model) |
+| Contact | a soft push keeps the teams apart within each step (1.2 m around a Guard drone, 1.0 m around a Strike drone, on the hangar set-up), so pushing a Strike drone aside is allowed; team-mates may overlap | no contact: the safety filter makes both drones of any close pair give way, team-mates included, keeping them 1.10 m apart (from Test 4; Tests 2–3 use the push-apart). It acts on speed commands, not positions, so drones can come closer: 1.083 m in a test on the STE drone model; with the STE Guard policy in Test 5 conditions the closest Guard–Strike approach was 0.87 m in 3-D, and 0.5 % of games had a rule breach (closer than 1.10 m) |
 | Height | 2-D: every drone in one plane | every drone at 1.2 m in Tests 2–4; free height from Test 5: the policies send no vertical command, but with a ±1 mm start jitter the filter's give-way can turn vertical, and drones pass over or under each other |
 | Arena and walls | no walls; Guard drones kept inside a circle of 8 units (3.2 m), Strike drones start 8 units (3.2 m) from the centre (`defender_boundary` and `spawn_distance` 8.0 on the hangar set-up; NUS's defaults are 20 units) | the hangar box: a 7.5 m square with walls at ±3.75 m (from sub-test 2.2), inside the hangar's usable flying box of about 7.6 m × 7.9 m; the same zone and starts. Flying it would first need the flight software's keep-in fence (±3.25 m today) moved |
 | Decision rate | one action per step; NUS's game has no seconds, and STE's scale makes a step 0.60 s | one action per 0.60 s, held for 12 ticks of 0.05 s (from Test 2) while the commander and the filter act every tick |

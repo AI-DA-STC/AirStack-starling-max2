@@ -67,8 +67,8 @@ Test 5 conditions (T41; parked Guard 429). R0, N0, C0 PASS (T29, T30, T33): the 
 Owner-approved (19 Nov ~11:00) follow-up on the same branch; numbers and evidence unchanged.
 
 - **GIF previews**: 261 new GIFs beside the MP4s of `docs/media/nus/` (15.9 MB; 380 px, 5–6 frames/s, 48–64 colours,
-  at most 14.2 s with the last frame held; 18 re-made smaller, `isaac/g19_vs_s20_strike_win_2.gif` 224 kB is the one
-  over 150 kB). `docs/media/nus/README.md` regenerated: every clip as a 240 px preview linking its MP4, captions
+  at most 14.2 s with the last frame held; 19 re-made at 5 frames/s and 48 colours, 4 of them at 320 px;
+  `isaac/g19_vs_s20_strike_win_2.gif` 224 kB is the one over 150 kB). `docs/media/nus/README.md` regenerated: every clip as a 240 px preview linking its MP4, captions
   "Guard vs Strike · played in … · outcome", one `<details>` block per section with stable anchors (`#nus-2-d-game`,
   `#copy-of-nus-2-d-game`, `#tests-1-6`, `#test-1` … `#test-6` incl. `#test-2-1`, `#test-2-2`, `#test-3a`, `#test-5a`,
   `#isaac-lab-clips`, `#ste-guard-policy`, `#how-they-were-made`). `docs/media/README.md` the same for S2/S2b.

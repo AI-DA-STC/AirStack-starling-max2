@@ -165,8 +165,7 @@ $P scripts/nus_phase4.py --row 1 --pairs G19:S20,P3G:ApfStrike --games 50 --devi
 Must see: `runs/p4_try/` with `scores.json`, `scores.md`, `per_game.npz` and top-down clips in `videos/`. A smoke
 run, not a result. `ApfStrike` is the APF attacker. `--out` must lie under `runs/`. A test folder is never
 overwritten: delete `runs/p4_try/` to run it again. The clips need no system `ffmpeg` (the `imageio-ffmpeg`
-package's own copy is used); `--no-videos` skips them. A clip in `videos/` looks like this one (the published Test 1 clip of the same pair and
-start):
+package's own copy is used); `--no-videos` skips them. A clip in `videos/` looks like this one (the published Test 1 clip of the same pair):
 
 | [![G19 vs S20 · Test 1: Copy of NUS 2-D game (PyTorch) · Guard holds](media/nus/phase4/row_1/G19_vs_S20_hold.gif)](media/nus/phase4/row_1/G19_vs_S20_hold.mp4) |
 |:--:|

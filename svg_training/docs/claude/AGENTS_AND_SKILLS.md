@@ -16,7 +16,7 @@ the laptop has no copy and needs none. Claude's user memory (`~/.claude/`) does 
 
 | Skill | Use | What it enforces |
 |---|---|---|
-| `train-start` | Start of every session | Read CLAUDE.md, STANDARDS sections, HANDOFF §4–5 (and NUS_PORT for NUS work); which machine, and what exists on the 5090 only; `unset PYTHONPATH` on the 5090; check working copy and GPU; intent stated before editing |
+| `train-start` | Start of every session | Read CLAUDE.md, STANDARDS sections, HANDOFF §4–5 (and WHAT_WE_DID_DAY_BY_DAY for NUS work); which machine, and what exists on the 5090 only; `unset PYTHONPATH` on the 5090; check working copy and GPU; intent stated before editing |
 | `train-change` | Any edit in the folder | Paths inside the folder, test first, wording and labels, the NUS privacy rule (settings may be stated, source code never committed), 5090-only paths marked, definition of done, HANDOFF updated, `git status` proof, no commit |
 | `train-run` | Launch a benchmark or training run | GPU free (no foreign process above 1024 MiB), no AirStack simulator, `gates.toml` dated first, seeds, headless after preflight, videos on (NUS: `save_eval_gif=True`, own `hydra.run.dir`, self-play rendered with `eval.py`), ABORTED record, record and ledger row (T on the laptop, W on the 5090) |
 | `train-evaluate` | Score a checkpoint | Gates loaded and unchanged, fixed suite, 1,000 games or more, 95 % intervals, tier 2 cross-check, gatekeeper read; NUS policies through `svg_training.nus.strategy:NusPolicy` and `scripts/nus_phase4.py` |

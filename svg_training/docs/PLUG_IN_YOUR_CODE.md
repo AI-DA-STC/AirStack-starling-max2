@@ -6,7 +6,7 @@ READ · connecting a strategy or a training method to the STE game, and scoring 
 before. **STE**: the lab that wrote this repository. The page shows how to connect a Strike vs Guard strategy, or a
 training method, to the STE game, and how to score the result. NUS's `defender` is the defender (Guard team) here and
 NUS's `attacker` the attacker (Strike team); from here on, Guard and Strike. Every result here is observed in the
-training simulator, not in flight. The old name of this page, `PLUG_IN.md`, points here.
+training simulator, not in flight.
 
 - **Where:** everything runs from the `svg_training/` folder of the clone. The code is under `source/svg_training/`; paths below start there.
 - **Python:** a Python 3.11 environment made as in [how to run it yourself, B1](RUN_IT_YOURSELF.md#b-a-cpu-laptop-install-run-the-game-score-a-strategy-run-the-tests)

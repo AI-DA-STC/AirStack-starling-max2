@@ -3,8 +3,7 @@ READ · the game, the training pipeline in one picture, and the game as an RL en
 # The game and the training pipeline
 
 **For** newcomers, NUS researchers included. **STE**: the lab that wrote this repository. The front page is
-[svg_training](../README.md); what happened when is in [the map of the pages, history](README.md#history). The old name of
-this page, `HOW_IT_WORKS.md`, points here.
+[svg_training](../README.md); what happened when is in [the map of the pages, history](README.md#history).
 
 This page gives the game first, then the picture, then the parts. Terms are in the [glossary](GLOSSARY.md). The full design, with
 reasons, is [DESIGN.md](DESIGN.md). The diagrams are in the deck, [training-pipeline.pptx](pipeline/training-pipeline.pptx).

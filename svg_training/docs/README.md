@@ -69,7 +69,8 @@ STE's own build steps before the NUS port (names kept; [DESIGN §8](DESIGN.md#8-
 
 Retired or renamed: `WHAT_WE_DID.md` (its story is the history below), `NUS_PHASE4_RESULTS.md` (now
 [what we found](WHAT_WE_FOUND.md)), and, on 19 November 2026, `NUS_RESULTS.md`, `NUS_PORT.md`, `TRY_IT.md`, `PLUG_IN.md`
-and `HOW_IT_WORKS.md` (new names above). Each keeps a one-line pointer so old links, the records' included, still land.
+and `HOW_IT_WORKS.md` (new names above). Their one-line pointer pages were deleted on 19 November 2026 and every link
+now names the new page; the old texts are in git history.
 
 ## History
 

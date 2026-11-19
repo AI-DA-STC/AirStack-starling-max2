@@ -54,7 +54,7 @@ a Linear field.
 | [NEAR-964](https://linear.app/nearlab/issue/NEAR-964) | Check the drone model against the 12 Nov rosbag | S2 | Done | ledger row T5 = FAIL ([record](../../../records/2026-11-15_s2_bag_check_record.md)) |
 | [NEAR-965](https://linear.app/nearlab/issue/NEAR-965) | Faster collision filter, checked against CMU's | S2 | Done | ledger row T8 PASS |
 | [NEAR-966](https://linear.app/nearlab/issue/NEAR-966) | Scoring tool and scripted opponents | S2 | Done | ledger rows T6, T9 |
-| [NEAR-967](https://linear.app/nearlab/issue/NEAR-967) | Plug-in point for a partner's strategy, with a written guide | S2 | Done | [PLUG_IN.md](../../PLUG_IN.md) |
+| [NEAR-967](https://linear.app/nearlab/issue/NEAR-967) | Plug-in point for a partner's strategy, with a written guide | S2 | Done | [PLUG_IN_YOUR_CODE.md](../../PLUG_IN_YOUR_CODE.md) |
 | [NEAR-968](https://linear.app/nearlab/issue/NEAR-968) | Stand-in trainer: prove the training pipe end to end | S2b | Backlog | S2b Task 9 |
 | [NEAR-969](https://linear.app/nearlab/issue/NEAR-969) | S2 results page | S2 | Done | [S2 results](../../S2_RESULTS.md) |
 | [NEAR-980](https://linear.app/nearlab/issue/NEAR-980) | Wrap the S2 game as an Isaac Lab environment with a PX4-like controller | S2b | In Progress | S2b Tasks 1–5 done (Isaac drones fly; T10 FAIL on one open-loop gate, owner ruling pending) |

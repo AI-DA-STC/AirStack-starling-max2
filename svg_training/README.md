@@ -1,86 +1,148 @@
-READ FIRST · TRAINING SIMULATOR ONLY: what this folder is, what we did with NUS's code, and where to go next.
+READ FIRST · TRAINING SIMULATOR ONLY: what this folder is, what was done with NUS's code, and where to go next.
 
 # svg_training: drone teams that learn in a simulator
 
-**For** anyone new here, including the NUS team. You need no drone, ROS or Isaac knowledge. *Italic* words are in the
-[glossary](docs/GLOSSARY.md). Every number was observed in a training simulator; nothing in this folder has flown.
+**For** NUS researchers and anyone new here; no drone, ROS or Isaac knowledge is assumed. **STE**: the lab that wrote
+this repository. *Italic* terms are defined in the [glossary](docs/GLOSSARY.md). Every number was observed in a
+training simulator; nothing in this folder has flown.
 
-**What this is.** The rest of this repository flies two small indoor drones (ModalAI Starling 2 Max) with CMU's
-ground-control software, AirStack. This folder is separate: a game on one graphics card (GPU) where a *Guard team*
-holds a circular zone and a *Strike team* tries to reach it, thousands of games at once. We use it to train team
-strategies and to test whether a strategy trained elsewhere still works with our drones' limits.
+## 1. Overview
 
-## For the NUS team: what we did with your code
+STE flies small indoor drones (ModalAI *Starling* 2 Max) with CMU's flight software, AirStack. This folder holds a
+drone-team game that runs thousands of copies at once on one graphics card (GPU): a Guard team holds a circular zone,
+a Strike team tries to reach it. It was used to test NUS's self-play policies under STE drone conditions and to train a Guard team in those conditions.
 
-Your *defender* is our Guard team and your *attacker* our Strike team; on our hangar set-up 1 unit = 0.40 m and
-1 step = 0.60 s. We ran your `area-denial-continuous-space-self-play` code (commit `2d2b904`) unchanged and trained
-policies with it on that set-up. We copied your game into PyTorch, converted those policies, then changed the game one
-step at a time towards our drones. Every PASS below grades our copy against your code, never your code.
+**Policies named on these pages.** NUS's code calls the teams `defender` and `attacker`: here, defender (Guard team)
+and attacker (Strike team), then Guard and Strike. NUS shared its code, not trained checkpoints, so STE trained the
+NUS-code policies itself with that code. Full definitions: [glossary, policies](docs/GLOSSARY.md#policies).
+
+| Label | NUS run folder → entry | Trained by | Code / simulator / library |
+|---|---|---|---|
+| G19 | `2026-11-17_selfplay_3v3_seed2` → `archive/0019_defender` | STE, using NUS's code (NUS gave no checkpoints) | NUS self-play runner / NUS 2-D game / JAX |
+| S20 | same run → `archive/0020_attacker` | STE, using NUS's code | same |
+| P3G | `2026-11-17_fixed_apf_3v3_defender` | STE, using NUS's code | NUS fixed-opponent runner / NUS 2-D game / JAX |
+| P3S | `2026-11-17_fixed_apf_3v3_attacker` | STE, using NUS's code | same |
+| APF defender / APF attacker | NUS's scripted `apf` opponent (config `scripted_opponent: apf`) | written by NUS, no training | ported to PyTorch by STE |
+| Parked Guard | — | STE baseline, no training | every Guard drone commands zero speed from its start point; one starts at the zone centre |
+| STE Guard policy | `pilot_p1b` run 4 | STE | skrl IPPO / STE drone model, Test 5 conditions / PyTorch |
+
+G19 = Guard of generation 19 and S20 = Strike of generation 20 of self-play seed 2; P3G and P3S = the Guard and Strike
+converted in Phase 3 (each trained against NUS's scripted opponent); IPPO = independent PPO, one learner per drone.
+
+## 2. Porting NUS's code
+
+STE installed NUS's `area-denial-continuous-space-self-play` code (commit `2d2b904`) unchanged, trained the policies
+above with it on the STE *hangar set-up* (1 unit = 0.40 m, 1 step = 0.60 s, a 7.5 m square arena), then copied the
+game and the trained policies into the STE pipeline (PyTorch). Each copy was checked against NUS's code; every PASS
+grades the copy, never NUS's code.
 
 | Phase | What | Simulator | Result | Evidence |
 |---|---|---|---|---|
-| 1 | your code, installed | your 2-D game (JAX) | 65 of your 66 tests pass; the one failure checks an older Guard safety distance, which you confirmed is out of date | [record](records/2026-11-17_nus_phase1_install_record.md) (INFO, written after the fact) |
-| 2a | policies trained with your code: 3 self-play seeds × 8 generations (your default is 32), seed 2 continued to 20 | your 2-D game | seed 2's Guard *G19* against its Strike *S20*: Strike wins 0.023 of 256 games (your evaluator and starts) | [training](records/2026-11-17_nus_phase2a_training_record.md), [matrix](records/2026-11-18_nus_selfplay_matrix_record.md) (INFO, after the fact) |
-| 2 | your game, copied to PyTorch | our replica | same game step by step: position error ≤ 5.7e-6 units (limit 1e-4). PASS | [T15](records/2026-11-17_nus_phase2_parity_record.md) |
-| 3 | the policies, converted to PyTorch | our replica | action error ≤ 0.0105 units (limit 0.02); reach counts inside your code's 95 % interval. PASS | [T16](records/2026-11-18_nus_phase3_conversion_record.md), [T17](records/2026-11-18_nus_phase4_w3_reference_gates_record.md) |
-| 4 | one change at a time, towards our drones | replica → our drone model → Isaac Lab | G19 v S20, Strike reaches of 1,000: 9 → 17 → 43 → 740 → 983 → 979 | [NUS_RESULTS Q3](docs/WHAT_WE_FOUND.md#q3-what-does-each-drone-limit-do) |
-| 5 | your training method, ported to PyTorch | our replica, then our drone model | **in progress.** Reference rebuilt (R0 PASS); our test fails untrained learners (N0 PASS) and passes your own code with new seeds (C0 PASS), as it must; 5.1 (our copy, 3 seeds) running. Our own simple learner did not learn at first (pilot P1: a faulty set-up); fixed (pilot P1b) it holds the zone against your S20 in 829 of 1,000 games (a parked Guard: 429), one seed, one opponent ([T41](records/2026-11-19_nus_phase5_pilot_p1b_run4_record.md)) | T29, T30, [T33](records/2026-11-19_nus_phase5_c0_positive_control_record.md); [NUS_PORT §12](docs/WHAT_WE_DID_DAY_BY_DAY.md#12-phase-5-your-training-method-in-pytorch-in-progress) |
+| 1 | NUS's code, installed | NUS 2-D game (JAX) | 65 of NUS's 66 tests pass; the one failure checks an older Guard safety distance, which NUS confirmed is out of date | [record](records/2026-11-17_nus_phase1_install_record.md) (INFO, written after the fact) |
+| 2a | policies trained with NUS's code: 3 self-play seeds × 8 generations (NUS default 32), seed 2 continued to 20 | NUS 2-D game (JAX) | G19 v S20: Strike reaches the zone in 0.023 of 256 games (NUS's evaluator and starts) | [training](records/2026-11-17_nus_phase2a_training_record.md), [matrix](records/2026-11-18_nus_selfplay_matrix_record.md) (INFO, after the fact) |
+| 2 | the game, copied to PyTorch | Copy of NUS 2-D game (PyTorch) | the same game step by step: position error ≤ 5.7e-6 units (limit 1e-4). PASS | T15, [the copy checked](docs/WHAT_WE_FOUND.md#1-copy-of-nus-2-d-game-pytorch-matches-nus-2-d-game-jax) |
+| 3 | the policies, converted to PyTorch | Copy of NUS 2-D game (PyTorch) | action error ≤ 0.0105 units (limit 0.02); reach counts inside the 95 % interval of NUS's code. PASS | T16, T17, [the conversion checked](docs/WHAT_WE_FOUND.md#2-converted-policies-match-the-jax-originals) |
 
-**What it shows.** Phase 2a's 0.023 and row 1's 9 of 1,000 come from different start sets
-([Q2](docs/WHAT_WE_FOUND.md#q2-does-the-converted-policy-match-yours)). The ladder measures how policies trained for your
-game transfer to our drones, not your method. The Guards likely hold by pushing Strike drones aside. Our flight
-software's *safety filter* makes *both* drones of every close pair give way, team-mates included, so pushing likely
-stops working (row 4: 43 → 740). With free height, Strike drones pass over or under (row 5: 983). "Likely": row 4
-changes two things at once (no push, and no stacking of team-mates), and we have not split them yet. The caveats sit
-beside each number in [NUS_RESULTS](docs/WHAT_WE_FOUND.md).
+## 3. Testing NUS's policies on STE drones
+
+Phase 4 scored the converted policies, frozen, in six tests; each test adds one real-drone condition (Tests 2 and 4
+change two things at once; [test results](docs/WHAT_WE_FOUND.md#3-six-tests-towards-ste-drones)). 1,000 games per
+pair, the same 1,000 starts in every test.
+
+| Test | Played in | G19 v S20: Strike reaches of 1,000 | Evidence |
+|---|---|---|---|
+| 1 | Copy of NUS 2-D game, in PyTorch | 9 | T18 |
+| 2 | STE game engine (PyTorch), NUS rules, action held for each 0.6 s step | 17 | T19 |
+| 3 | STE drone model (PyTorch): + Starling delay and lag | 43 | T20 |
+| 4 | STE drone model: + safety filter on every drone pair | 740 | T22 |
+| 5 | STE drone model: + free height (3-D) | 983 | T23 |
+| 6 | Isaac Lab physics drones (Isaac Sim 5.1) | 979 | T24 |
+
+*STE game engine*: STE's batched game in PyTorch, here with NUS's speeds, zone and scoring, square walls and an STE
+rule that cuts short a move into the other team's keep-out. *STE drone model*: a point drone that follows its speed
+command through a copy of CMU's commander, then the delay and lag of a model fitted to one Starling flight log
+(exploratory: it answers more slowly than the real drone). *Safety filter*: CMU's collision filter in the flight
+software; when two drones come close it makes both give way, keeping them 1.10 m apart. *Isaac Lab physics drones*:
+rigid-body Starling models in NVIDIA Isaac Lab, flown by a copy of PX4's control loops (PX4: the drone's flight
+software). The records call the tests "ladder rows": Test N = ladder row N.
 
 <a id="fig-1"></a>
-![Strike reach rate along the ladder rows 1 to 6](docs/figures/nus_phase4_ladder.png)
+![Strike reach rate along Tests 1 to 6; the axis says "row": row N = Test N](docs/figures/nus_phase4_ladder.png)
 
-*Figure 1. Strike reach rate (Wilson 95 %) of the 12 core pairs, rows 1–6; dashed: a Guard team that stands still. T18–T24.*
+*Figure 1. Strike reach rate (Wilson 95 % interval) of the 12 core pairs, Tests 1–6 (the axis says "row": row N =
+Test N); dashed: the Parked Guard. T18–T24.*
+
+## 4. Why performance drops
+
+- **No physical contact: the safety filter.** The NUS-code Guards likely hold by pushing Strike drones aside, which
+  NUS's game allows. The safety filter makes *both* drones of every close pair give way, team-mates included, so
+  pushing likely stops working (Test 4: 43 → 740). "Likely": Test 4 changes two things at once (no push, and no
+  stacking of team-mates), and the two have not been split yet.
+- **Drones pass above and below each other: 3-D.** With free height, Strike drones pass over or under the Guards
+  (Test 5: 983); the horizontal closest approach falls while the 3-D one stays at 1.09 m.
+- The Isaac Lab physics drones agree with the STE drone model (Test 6: 979). These numbers measure how policies
+  trained for NUS's game transfer to STE drones, not NUS's method. Caveats beside each number:
+  [test results](docs/WHAT_WE_FOUND.md#3-six-tests-towards-ste-drones).
+
+## 5. Training in STE conditions
+
+The STE Guard policy (trained in pilot P1b; a *pilot* is a short training run with no gate) holds the zone against
+S20 in **829 of 1,000** games in Test 5 conditions, against 429 for the Parked Guard (record T41). Its Guards spread
+out across the zone and the safety filter likely acts as a wall around each one (read from the videos, not tested).
+One seed, one opponent, not checked on the Isaac Lab physics drones:
+[the result](docs/WHAT_WE_FOUND.md#7-ste-guard-policy-trained-in-test-5-conditions),
+[training recipe](docs/TRAIN_A_GUARD.md). The STE port of NUS's training method (PyTorch) is in progress: its test is
+calibrated (R0, N0, C0 PASS), its own seeds have no result yet
+([training method](docs/WHAT_WE_FOUND.md#6-ste-port-of-nus-training-method-no-result-yet)).
 
 ## Watch it
 
-The pictures play here; click one for the full video. Top-down view, Guard team blue circles, Strike team orange
-triangles, the zone green. Every clip is observed in the training simulator; nothing here has flown. All
-286 clips, with what each shows: [docs/media/nus/](docs/media/nus/README.md) (GitHub plays GIFs inside a page, but an
-MP4 link opens the file on its own page).
+Top-down view: Guard team blue circles, Strike team orange triangles, the zone green. The pictures play here; click
+one for the full video. Observed in the training simulator; nothing here has flown. All 286 clips, one line each:
+[videos of the NUS port](docs/media/nus/README.md) (GitHub plays GIFs inside a page; an MP4 link opens on its own page).
 
 | | |
 |---|---|
-| [![1 · your 2-D game: your Guard G19 holds your Strike S20](docs/media/nus/nus_selfplay_s2_g19_vs_s2_s20.gif)](docs/media/nus/nus_selfplay_s2_g19_vs_s2_s20.mp4)<br>1 · your 2-D game: your Guard G19 holds your Strike S20 | [![2 · our copy of your game (row 1): G19 still holds](docs/media/nus/phase4/row_1/G19_vs_S20_hold.gif)](docs/media/nus/phase4/row_1/G19_vs_S20_hold.mp4)<br>2 · our copy of your game (row 1): G19 still holds |
-| [![3 · our safety filter on every pair (row 4): S20 gets in](docs/media/nus/phase4/row_4/G19_vs_S20_strike_win.gif)](docs/media/nus/phase4/row_4/G19_vs_S20_strike_win.mp4)<br>3 · our safety filter on every pair (row 4): S20 gets in | [![4 · free height, 3-D (row 5): S20 gets in](docs/media/nus/phase4/row_5/G19_vs_S20_strike_win.gif)](docs/media/nus/phase4/row_5/G19_vs_S20_strike_win.mp4)<br>4 · free height, 3-D (row 5): S20 gets in |
-| [![5 · Isaac Lab Starlings (row 6): the same](docs/media/nus/isaac/g19_vs_s20_strike_win_1.gif)](docs/media/nus/isaac/g19_vs_s20_strike_win_1.mp4)<br>5 · Isaac Lab Starlings (row 6): the same | [![6 · Isaac Lab: one of the 21 in 1,000 games G19 still holds](docs/media/nus/isaac/open_g19_vs_s20_hold_1.gif)](docs/media/nus/isaac/open_g19_vs_s20_hold_1.mp4)<br>6 · Isaac Lab: one of the 21 in 1,000 games G19 still holds |
-| [![7 · a Guard team that just parks (row 5): holds 429 of 1,000](docs/media/nus/phase4/row_5/ParkedGuard_vs_S20_hold.gif)](docs/media/nus/phase4/row_5/ParkedGuard_vs_S20_hold.mp4)<br>7 · a Guard team that just parks (row 5): holds 429 of 1,000 | [![8 · our own simple learner (pilot P1b): holds 829 of 1,000](docs/media/nus/pilots/p1b_run4_final_t1472_best_hold_slot0.gif)](docs/media/nus/pilots/p1b_run4_final_t1472_best_hold_slot0.mp4)<br>8 · our own simple learner (pilot P1b): holds 829 of 1,000 |
+| [![G19 vs S20 · NUS 2-D game (JAX) · Guard holds](docs/media/nus/nus_selfplay_s2_g19_vs_s2_s20.gif)](docs/media/nus/nus_selfplay_s2_g19_vs_s2_s20.mp4)<br>G19 vs S20 · NUS 2-D game (JAX) · Guard holds | [![G19 vs S20 · Test 1: Copy of NUS 2-D game (PyTorch) · Guard holds](docs/media/nus/phase4/row_1/G19_vs_S20_hold.gif)](docs/media/nus/phase4/row_1/G19_vs_S20_hold.mp4)<br>G19 vs S20 · Test 1: Copy of NUS 2-D game (PyTorch) · Guard holds |
+| [![G19 vs S20 · Test 4: STE drone model + safety filter · Strike reaches the zone](docs/media/nus/phase4/row_4/G19_vs_S20_strike_win.gif)](docs/media/nus/phase4/row_4/G19_vs_S20_strike_win.mp4)<br>G19 vs S20 · Test 4: STE drone model + safety filter · Strike reaches the zone | [![G19 vs S20 · Test 5: STE drone model + free height · Strike reaches the zone](docs/media/nus/phase4/row_5/G19_vs_S20_strike_win.gif)](docs/media/nus/phase4/row_5/G19_vs_S20_strike_win.mp4)<br>G19 vs S20 · Test 5: STE drone model + free height · Strike reaches the zone |
+| [![G19 vs S20 · Test 6: Isaac Lab physics drones · Strike reaches the zone](docs/media/nus/isaac/g19_vs_s20_strike_win_1.gif)](docs/media/nus/isaac/g19_vs_s20_strike_win_1.mp4)<br>G19 vs S20 · Test 6: Isaac Lab physics drones · Strike reaches the zone | [![G19 vs S20 · Test 6: Isaac Lab physics drones · Guard holds (21 of 1,000)](docs/media/nus/isaac/open_g19_vs_s20_hold_1.gif)](docs/media/nus/isaac/open_g19_vs_s20_hold_1.mp4)<br>G19 vs S20 · Test 6: Isaac Lab physics drones · Guard holds (21 of 1,000) |
+| [![Parked Guard vs S20 · Test 5: STE drone model + free height · Guard holds (429 of 1,000)](docs/media/nus/phase4/row_5/ParkedGuard_vs_S20_hold.gif)](docs/media/nus/phase4/row_5/ParkedGuard_vs_S20_hold.mp4)<br>Parked Guard vs S20 · Test 5: STE drone model + free height · Guard holds (429 of 1,000) | [![STE Guard policy vs S20 · Test 5 conditions · Guard holds (829 of 1,000)](docs/media/nus/pilots/p1b_run4_final_t1472_best_hold_slot0.gif)](docs/media/nus/pilots/p1b_run4_final_t1472_best_hold_slot0.mp4)<br>STE Guard policy vs S20 · Test 5 conditions · Guard holds (829 of 1,000) |
 
-## Questions for you
+## 6. Next steps and open questions
 
-1. Is our copy of your game missing any rule that matters?
-2. Would you retrain on your side with action hold, delay, our safety filter and free height?
-3. Is `train_self_play` (no APEX) the right baseline for us to copy?
+Next on the STE side: the first results of the STE port of NUS's training method; the STE Guard policy against other
+Strike behaviours and on the Isaac Lab physics drones; two control tests that split the two effects of Test 4.
+Five questions to NUS:
+
+1. Is any rule that matters missing from the Copy of NUS 2-D game (PyTorch)?
+2. Would NUS retrain with its own code under action hold, delay, the safety filter and free height?
+3. Is `train_self_play` (no APEX) the right baseline for the STE port of NUS's training method?
 4. Is 3 v 3 in 3-D with no drop-outs the right first goal?
-5. Should any of your settings change for a slower environment?
+5. Should any NUS setting change for a slower environment?
 
-## Try it: commands for every level in [TRY_IT](docs/RUN_IT_YOURSELF.md)
+## 7. Run it yourself
 
-| Level | You need | Needs | Time | Verified from a fresh clone |
+Commands for every level, with what each must print: [how to run it yourself](docs/RUN_IT_YOURSELF.md). Badges:
+`none` = any laptop, no GPU; `GPU` = an NVIDIA GPU; `Isaac` = NVIDIA Isaac Lab 2.3.2 on Isaac Sim 5.1.0.
+
+| Level | What | Needs | Time | Verified from a fresh clone |
 |---|---|---|---|---|
-| A · watch the games | a browser | `none` | 5 min | yes |
-| B · install, run the tests, score a strategy | Python 3.11, any CPU | `none` | ~5 min + ~10 min tests | yes (0 failed) |
-| C · the same at full size | an NVIDIA GPU | `GPU` | ~1 h | not yet |
-| D · repeat our ladder rows | our PROVISIONAL files (or your NUS clone) | `none` | under 2 min for row 1 (CPU) | yes (row 1) |
-| E · the Isaac Lab row and clips | + Isaac Lab 2.3.2 | `Isaac` | hours | not yet |
+| A | watch the games | `none` | 5 min | yes |
+| B | install, run the tests, score a strategy | `none` (Python 3.11, any CPU) | ~5 min + ~10 min tests | yes (0 failed) |
+| C | the same at full size | `GPU` | ~1 h | not yet |
+| D | repeat Tests 1–5 from the PROVISIONAL files (the converted weights and STE settings, committed only so the numbers can be repeated) | `none` | under 2 min for Test 1 (CPU) | yes (Test 1) |
+| E | Test 6 and the Isaac Lab clips | `GPU` `Isaac` | hours | not yet |
+| F | train the STE Guard policy: [training recipe](docs/TRAIN_A_GUARD.md) | `none` for the CPU check, `GPU` for the run | 2 min (CPU check); 2.1 h (RTX 5090) | CPU check only |
 
-## Read next
-
-| I want to… | Page |
+| Page | What it holds |
 |---|---|
-| the answers, one table per question | [docs/WHAT_WE_FOUND.md](docs/WHAT_WE_FOUND.md) |
-| every phase, in order | [docs/WHAT_WE_DID_DAY_BY_DAY.md](docs/WHAT_WE_DID_DAY_BY_DAY.md) |
-| the game as an RL environment | [docs/THE_GAME.md](docs/THE_GAME.md) |
-| plug in my own strategy or trainer | [docs/PLUG_IN_YOUR_CODE.md](docs/PLUG_IN_YOUR_CODE.md) |
-| every run | [records/LEDGER.md](records/LEDGER.md) (how to read it: [records/README.md](records/README.md)) |
-| a map of every page | [docs/README.md](docs/README.md) |
+| [What we found](docs/WHAT_WE_FOUND.md) | every result, with its caveat and record |
+| [What we did, day by day](docs/WHAT_WE_DID_DAY_BY_DAY.md) | the NUS port, phase by phase |
+| [The game](docs/THE_GAME.md) | the pipeline in one picture; the game as an RL environment |
+| [Plug in your code](docs/PLUG_IN_YOUR_CODE.md) | connect a strategy or a training method, and score it |
+| [Glossary](docs/GLOSSARY.md) | every term: NUS terms and the terms used here |
+| [Run ledger](records/LEDGER.md) | every run, one row each ([how to read a record](records/README.md)) |
+| [Map of the pages](docs/README.md) | every page with its label, and the history |
 
-Files marked INTERNAL are the lab's working notes and AI-assistant set-up: you never need them.
-We used AI coding assistants for much of this work; every number links to the record of the run that produced it.
+Files marked INTERNAL are STE's working notes and AI-assistant set-up; they are not needed. AI coding assistants did
+much of this work; every number links to the record of the run that produced it.

@@ -13,9 +13,9 @@ Phase 5 in progress (R0 T29, N0 T30 and C0 T33 PASS; 5.1 running); nothing of ou
 |---|---|---|
 | S0 throughput | T1 = FAIL on one gate (an Isaac start-up crash), both decision rules met | [docs/S0_RESULTS.md](docs/S0_RESULTS.md) |
 | S1 drone model, filter | filter copy T2 FAIL (accepted), simulator fit T3 FAIL, tier 1 carries the real command chain with an exploratory PX4 model | [docs/S1_RESULTS.md](docs/S1_RESULTS.md) |
-| S2 the game, plug-in point | closed 16 Nov: faster filter T8 PASS, drone-model check T5 FAIL, scripted reference T9 INFO | [docs/S2_RESULTS.md](docs/S2_RESULTS.md), [docs/PLUG_IN.md](docs/PLUG_IN.md) |
+| S2 the game, plug-in point | closed 16 Nov: faster filter T8 PASS, drone-model check T5 FAIL, scripted reference T9 INFO | [docs/S2_RESULTS.md](docs/S2_RESULTS.md), [docs/PLUG_IN_YOUR_CODE.md](docs/PLUG_IN_YOUR_CODE.md) |
 | S2b game on Isaac Lab drones | T10 FAIL (accepted), T11 FAIL, T12 INFO, T13 FAIL (Strike drones pass over or under Guards; owner kept it, option (a)), stand-in T14 FAIL (seed 3 queued for the 5090); Task 8b not built | [docs/S2B_RESULTS.md](docs/S2B_RESULTS.md) |
-| NUS port (17–18 Nov, home RTX 5090) | Phase 1 NUS's code installed (65 of NUS's 66 tests pass; the one failure is a test NUS confirmed is out of date); Phase 2a reference policies trained with NUS's code (self-play 3 seeds × 8 generations, seed 2 to 20); Phase 2 replica T15 PASS; Phase 3 conversion T16 PASS, T17 PASS; Phase 4 ladder rows 1–3 T18–T20 INFO, row 4 first attempt T21 ABORTED, rows 4, 5a, 5, 6 T22–T24 INFO (the filter and 3-D break NUS's push-blocking; Isaac Lab agrees with tier 1); Phase 5 planned by the lead (owner delegated): route (b) plus own-training pilots, not started; Phase 6 public docs passes 1 and 2 done (every clip published) | [docs/NUS_PORT.md](docs/NUS_PORT.md) |
+| NUS port (17–18 Nov, home RTX 5090) | Phase 1 NUS's code installed (65 of NUS's 66 tests pass; the one failure is a test NUS confirmed is out of date); Phase 2a reference policies trained with NUS's code (self-play 3 seeds × 8 generations, seed 2 to 20); Phase 2 replica T15 PASS; Phase 3 conversion T16 PASS, T17 PASS; Phase 4 ladder rows 1–3 T18–T20 INFO, row 4 first attempt T21 ABORTED, rows 4, 5a, 5, 6 T22–T24 INFO (the filter and 3-D break NUS's push-blocking; Isaac Lab agrees with tier 1); Phase 5 planned by the lead (owner delegated): route (b) plus own-training pilots, not started; Phase 6 public docs passes 1 and 2 done (every clip published) | [docs/WHAT_WE_DID_DAY_BY_DAY.md](docs/WHAT_WE_DID_DAY_BY_DAY.md) |
 | Contact-tag track | DRAFT plan, nothing started; may be described publicly (owner, 18 Nov) | [docs/plans/2026-11-17-contact-tag-track.md](docs/plans/2026-11-17-contact-tag-track.md) |
 
 ## Read first
@@ -24,14 +24,14 @@ Phase 5 in progress (R0 T29, N0 T30 and C0 T33 PASS; 5.1 running); nothing of ou
 |---|---|
 | [README.md](README.md) | the front door, written for NUS: what we did with NUS's code, questions for NUS, try-it levels |
 | [docs/README.md](docs/README.md) | map of every page with its label (Read, Reference, Lab operations, Internal) and the history |
-| [docs/NUS_RESULTS.md](docs/NUS_RESULTS.md), [docs/TRY_IT.md](docs/TRY_IT.md) | the NUS port's results by question; the verified try-it commands |
+| [docs/WHAT_WE_FOUND.md](docs/WHAT_WE_FOUND.md), [docs/RUN_IT_YOURSELF.md](docs/RUN_IT_YOURSELF.md) | the NUS port's results by question; the verified try-it commands |
 | [docs/claude/HANDOFF.md](docs/claude/HANDOFF.md) | where the work stands, what was decided, what is waiting on whom |
 | [STANDARDS.md](STANDARDS.md) | **the rules**: scope, wording, policy interface, game specification, drone models, gates, records, code, git |
 | [docs/DESIGN.md](docs/DESIGN.md) | the design: seven stages, two tiers, four uses, environments and contact tags, build order S0–S5, approaches considered |
 | [docs/RESEARCH.md](docs/RESEARCH.md) | state of the art as of 14 November 2026, with sources; the evidence behind the design |
 | [docs/S0_RESULTS.md](docs/S0_RESULTS.md), [docs/S1_RESULTS.md](docs/S1_RESULTS.md), [docs/S2_RESULTS.md](docs/S2_RESULTS.md), [docs/S2B_RESULTS.md](docs/S2B_RESULTS.md), [docs/GLOSSARY.md](docs/GLOSSARY.md) | S0's, S1's, S2's and S2b's numbers and limits; terms and the one Versions table |
-| [docs/PLUG_IN.md](docs/PLUG_IN.md) | how a partner plugs a strategy or a training method into the game and scores it |
-| [docs/NUS_PORT.md](docs/NUS_PORT.md) | the NUS port: NUS's three branches, phases 0–6, NUS's settings, results and videos; commands in [docs/TRAINING.md](docs/TRAINING.md#nus-jobs) |
+| [docs/PLUG_IN_YOUR_CODE.md](docs/PLUG_IN_YOUR_CODE.md) | how a partner plugs a strategy or a training method into the game and scores it |
+| [docs/WHAT_WE_DID_DAY_BY_DAY.md](docs/WHAT_WE_DID_DAY_BY_DAY.md) | the NUS port: NUS's three branches, phases 0–6, NUS's settings, results and videos; commands in [docs/TRAINING.md](docs/TRAINING.md#nus-jobs) |
 | [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md) | setting up any machine (laptop or 5090 workstation, side by side), then tests and a benchmark run; `run_s0.sh` exit codes |
 | [docs/linear/README.md](docs/linear/README.md) | this project in Linear (P-NEAR-31): how an update goes (`updates/` → owner uploads → `synced/` → `snapshots/`), the latest snapshot, the owner's Linear rules |
 | [docs/pipeline/training-pipeline.pptx](docs/pipeline/training-pipeline.pptx) | the diagrams (editable flowchart shapes); rebuilt by `docs/pipeline/build_deck.py` |
@@ -105,7 +105,7 @@ Other rows: AirStack simulator = Isaac Sim 5.1.0 + Pegasus + PX4 v1.16.1 in dock
 
 | Path | What | On the laptop instead |
 |---|---|---|
-| `~/ma_skills-self-play/` | NUS's three branches (private, not a git repository), the private port plan, notes `_notes/`, probes `_probes/` (Run 0, self-play matrices, videos), NUS's outputs (`…/outputs/{fixed_apf,hangar}/`: checkpoints, GIFs), its own `CLAUDE.md` and **copies** of this folder's agents and skills (`.claude/`, refreshed by `sync_claude_setup.sh` at session start) | read [docs/NUS_PORT.md](docs/NUS_PORT.md) and [docs/media/nus](docs/media/nus/README.md); NUS's code comes from NUS |
+| `~/ma_skills-self-play/` | NUS's three branches (private, not a git repository), the private port plan, notes `_notes/`, probes `_probes/` (Run 0, self-play matrices, videos), NUS's outputs (`…/outputs/{fixed_apf,hangar}/`: checkpoints, GIFs), its own `CLAUDE.md` and **copies** of this folder's agents and skills (`.claude/`, refreshed by `sync_claude_setup.sh` at session start) | read [docs/WHAT_WE_DID_DAY_BY_DAY.md](docs/WHAT_WE_DID_DAY_BY_DAY.md) and [docs/media/nus](docs/media/nus/README.md); NUS's code comes from NUS |
 | `svg_training/configs/local/nus_*.toml` | NUS's rules, the deploy file (scale, hold), the hangar side: the files the NUS code reads | `scripts/nus_install_provisional.sh` installs the lab's copies from the PROVISIONAL bundle [nus_provisional/](nus_provisional/README.md) (owner decision 6, 18 Nov); or rebuild them with the commands in [TRAINING, NUS jobs](docs/TRAINING.md#nus-jobs) (needs NUS's code for the rules file) |
 | `svg_training/runs/nus_port/` | recordings, reference data, converted weights, Phase 4 rows (`scores.json`, videos) | weights, starts and recordings: the same installer; rows and videos: the records in `records/` and the figures (runs are not in git) |
 | `~/nus_jax_runs/` | logs and exact commands (`*.cmd.txt`) of every NUS job | TRAINING, NUS jobs |

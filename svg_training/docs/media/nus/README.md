@@ -4,7 +4,7 @@ READ · TRAINING SIMULATOR ONLY: every clip of the NUS port, one line each.
 
 Training simulator only; nothing here is a flight. Published with NUS's agreement ([STANDARDS §2](../../../STANDARDS.md#2-wording));
 every clip of the port is public, the Phase 4 ones included. The story behind each clip:
-[NUS_PORT](../../NUS_PORT.md).
+[NUS_PORT](../../WHAT_WE_DID_DAY_BY_DAY.md).
 
 **How to watch.** GitHub plays a GIF inside a page but opens an MP4 on its own page (click, then play or download).
 The front page's [Watch it](../../../README.md#watch-it) gallery shows the eight key clips as GIFs; the tables below
@@ -44,7 +44,7 @@ link every MP4.
 
 ## NUS's 2-D game
 
-On the hangar geometry (0.40 m per unit, 0.60 s per step; [NUS_PORT §3](../../NUS_PORT.md#3-phase-0-answers-and-the-hangar-geometry)).
+On the hangar geometry (0.40 m per unit, 0.60 s per step; [NUS_PORT §3](../../WHAT_WE_DID_DAY_BY_DAY.md#3-phase-0-answers-and-the-hangar-geometry)).
 
 | File | Caption | Source (lab only) | Size |
 |---|---|---|---|
@@ -98,7 +98,7 @@ The GIFs are 480 px wide at 4× real time (the 120 s hold: 400 px at 8×), 5 fra
 
 ## Phase 4: the transfer ladder, top-down
 
-One folder per row; each row changes one thing from the row before ([NUS_PORT §8](../../NUS_PORT.md#8-phase-4-the-transfer-ladder)).
+One folder per row; each row changes one thing from the row before ([NUS_PORT §8](../../WHAT_WE_DID_DAY_BY_DAY.md#8-phase-4-the-transfer-ladder)).
 Players: G19 and S20 (the self-play pair), P3G and P3S (the Phase 3 pair), ApfGuard and ApfStrike (NUS's scripted
 controllers, ported), ParkedGuard (every Guard drone commands zero; Guard 0 starts at the zone centre), `strike_*`
 and `guard_*` (our own scripted strategies, from row 2). A pair has no `hold` clip when none of its first 16 games

@@ -62,7 +62,7 @@ The programme's wording rules apply to every document and figure here
 - **Partner privacy, NUS** (owner, 18 November 2026; replaces the rule of 15–17 November that kept every NUS value
   out of git). NUS agreed that their code details, their game settings and our results on their code may be
   published in this repository, which is public. So documents, records, the ledger, figures, videos and commit
-  messages may state NUS's settings and our numbers ([docs/NUS_PORT.md](docs/NUS_PORT.md)). Still kept out:
+  messages may state NUS's settings and our numbers ([docs/WHAT_WE_DID_DAY_BY_DAY.md](docs/WHAT_WE_DID_DAY_BY_DAY.md)). Still kept out:
   **NUS's source code itself** (it stays in NUS's own repository; describe it in words and cite `file:line`, never
   paste a block or vendor a file) and quotes from confidential programme reports. Code keeps reading NUS's values
   from the git-ignored `configs/local/` files (mechanism unchanged), and the record writers keep marking them.
@@ -108,7 +108,7 @@ It becomes FIXED when the velocity contract with NUS and CMU is written (Linear 
 | Observation, others | padded lists of team-mates and of the other team: relative position, relative velocity, present flag; a drone hidden behind a structure is masked, with its last seen position and the time since | PROPOSED | [docs/RESEARCH.md](docs/RESEARCH.md) §10 |
 | Observation, surroundings | 32–64 range rays (a horizontal ring, plus up and down); the number is set from the S0 measurements | PROPOSED | RESEARCH §10 |
 | What the real drone senses its surroundings with | OPEN: a known map (the accepted first step in published work), or an on-board range sensor | OPEN | owner |
-| Observation, game | zone radius, arena half-side, the zone centre's position from the arena centre (so a drone can place the walls), time left, own team. As built in S2: 71 numbers per drone, full view of every drone; layout in `core/observations.py` and [docs/PLUG_IN.md](docs/PLUG_IN.md) | PROPOSED | layout change 16 Nov 2026 (S2 Task 9 review): 69 → 71 numbers, zone centre added at the end; no earlier index moved |
+| Observation, game | zone radius, arena half-side, the zone centre's position from the arena centre (so a drone can place the walls), time left, own team. As built in S2: 71 numbers per drone, full view of every drone; layout in `core/observations.py` and [docs/PLUG_IN_YOUR_CODE.md](docs/PLUG_IN_YOUR_CODE.md) | PROPOSED | layout change 16 Nov 2026 (S2 Task 9 review): 69 → 71 numbers, zone centre added at the end; no earlier index moved |
 | What a drone may know about others | OPEN: full state of every drone, or only what its team shares, with delay and drop-outs | OPEN | owner + partners |
 
 Rules:

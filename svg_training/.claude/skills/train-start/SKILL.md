@@ -15,13 +15,13 @@ Do these in order. Do not skip because the task looks small.
    may already be a recorded decision or a question waiting on the owner.
 4. `docs/linear/README.md` and the newest file in `docs/linear/snapshots/`: which Linear issues (NEAR-nnn) are In
    Progress, so the work and the Linear status stay in step.
-5. For NUS work: `docs/NUS_PORT.md` (phases, settings, results) and `docs/TRAINING.md` "NUS jobs" (commands).
+5. For NUS work: `docs/WHAT_WE_DID_DAY_BY_DAY.md` (phases, settings, results) and `docs/TRAINING.md` "NUS jobs" (commands).
 
 Know which machine you are on (`hostname`; `nvidia-smi` shows RTX 5070 Ti on the laptop, RTX 5090 on the workstation).
 **5090 only, never assume them on the laptop:** `~/ma_skills-self-play/` (NUS's code, the private plan and notes, NUS's
 outputs, copies of these agents and skills), `~/nus_jax_runs/`, conda `nus_jax`, and Phase 4/5 run outputs under
 `runs/nus_port/`. `configs/local/nus_*.toml` and the NUS weights, starts and recordings come on any machine from
-`scripts/nus_install_provisional.sh` (the committed PROVISIONAL bundle). On the laptop, NUS's results are in `docs/NUS_PORT.md` and `records/`. Claude's user memory (`~/.claude/`)
+`scripts/nus_install_provisional.sh` (the committed PROVISIONAL bundle). On the laptop, NUS's results are in `docs/WHAT_WE_DID_DAY_BY_DAY.md` and `records/`. Claude's user memory (`~/.claude/`)
 does not travel with git: the committed files are the state.
 
 ## 2. Check the working copy

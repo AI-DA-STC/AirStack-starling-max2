@@ -23,16 +23,16 @@ step at a time towards our drones. Every PASS below grades our copy against your
 | 2a | policies trained with your code: 3 self-play seeds × 8 generations (your default is 32), seed 2 continued to 20 | your 2-D game | seed 2's Guard *G19* against its Strike *S20*: Strike wins 0.023 of 256 games (your evaluator and starts) | [training](records/2026-11-17_nus_phase2a_training_record.md), [matrix](records/2026-11-18_nus_selfplay_matrix_record.md) (INFO, after the fact) |
 | 2 | your game, copied to PyTorch | our replica | same game step by step: position error ≤ 5.7e-6 units (limit 1e-4). PASS | [T15](records/2026-11-17_nus_phase2_parity_record.md) |
 | 3 | the policies, converted to PyTorch | our replica | action error ≤ 0.0105 units (limit 0.02); reach counts inside your code's 95 % interval. PASS | [T16](records/2026-11-18_nus_phase3_conversion_record.md), [T17](records/2026-11-18_nus_phase4_w3_reference_gates_record.md) |
-| 4 | one change at a time, towards our drones | replica → our drone model → Isaac Lab | G19 v S20, Strike reaches of 1,000: 9 → 17 → 43 → 740 → 983 → 979 | [NUS_RESULTS Q3](docs/NUS_RESULTS.md#q3-what-does-each-drone-limit-do) |
-| 5 | your training method, ported to PyTorch | our replica, then our drone model | **in progress.** Reference rebuilt (R0 PASS); our test fails untrained learners (N0 PASS) and passes your own code with new seeds (C0 PASS), as it must; 5.1 (our copy, 3 seeds) running. Our own simple learner did not learn at first (pilot P1: a faulty set-up); fixed (pilot P1b) it holds the zone against your S20 in 829 of 1,000 games (a parked Guard: 429), one seed, one opponent ([T41](records/2026-11-19_nus_phase5_pilot_p1b_run4_record.md)) | T29, T30, [T33](records/2026-11-19_nus_phase5_c0_positive_control_record.md); [NUS_PORT §12](docs/NUS_PORT.md#12-phase-5-your-training-method-in-pytorch-in-progress) |
+| 4 | one change at a time, towards our drones | replica → our drone model → Isaac Lab | G19 v S20, Strike reaches of 1,000: 9 → 17 → 43 → 740 → 983 → 979 | [NUS_RESULTS Q3](docs/WHAT_WE_FOUND.md#q3-what-does-each-drone-limit-do) |
+| 5 | your training method, ported to PyTorch | our replica, then our drone model | **in progress.** Reference rebuilt (R0 PASS); our test fails untrained learners (N0 PASS) and passes your own code with new seeds (C0 PASS), as it must; 5.1 (our copy, 3 seeds) running. Our own simple learner did not learn at first (pilot P1: a faulty set-up); fixed (pilot P1b) it holds the zone against your S20 in 829 of 1,000 games (a parked Guard: 429), one seed, one opponent ([T41](records/2026-11-19_nus_phase5_pilot_p1b_run4_record.md)) | T29, T30, [T33](records/2026-11-19_nus_phase5_c0_positive_control_record.md); [NUS_PORT §12](docs/WHAT_WE_DID_DAY_BY_DAY.md#12-phase-5-your-training-method-in-pytorch-in-progress) |
 
 **What it shows.** Phase 2a's 0.023 and row 1's 9 of 1,000 come from different start sets
-([Q2](docs/NUS_RESULTS.md#q2-does-the-converted-policy-match-yours)). The ladder measures how policies trained for your
+([Q2](docs/WHAT_WE_FOUND.md#q2-does-the-converted-policy-match-yours)). The ladder measures how policies trained for your
 game transfer to our drones, not your method. The Guards likely hold by pushing Strike drones aside. Our flight
 software's *safety filter* makes *both* drones of every close pair give way, team-mates included, so pushing likely
 stops working (row 4: 43 → 740). With free height, Strike drones pass over or under (row 5: 983). "Likely": row 4
 changes two things at once (no push, and no stacking of team-mates), and we have not split them yet. The caveats sit
-beside each number in [NUS_RESULTS](docs/NUS_RESULTS.md).
+beside each number in [NUS_RESULTS](docs/WHAT_WE_FOUND.md).
 
 <a id="fig-1"></a>
 ![Strike reach rate along the ladder rows 1 to 6](docs/figures/nus_phase4_ladder.png)
@@ -61,7 +61,7 @@ MP4 link opens the file on its own page).
 4. Is 3 v 3 in 3-D with no drop-outs the right first goal?
 5. Should any of your settings change for a slower environment?
 
-## Try it: commands for every level in [TRY_IT](docs/TRY_IT.md)
+## Try it: commands for every level in [TRY_IT](docs/RUN_IT_YOURSELF.md)
 
 | Level | You need | Needs | Time | Verified from a fresh clone |
 |---|---|---|---|---|
@@ -75,10 +75,10 @@ MP4 link opens the file on its own page).
 
 | I want to… | Page |
 |---|---|
-| the answers, one table per question | [docs/NUS_RESULTS.md](docs/NUS_RESULTS.md) |
-| every phase, in order | [docs/NUS_PORT.md](docs/NUS_PORT.md) |
-| the game as an RL environment | [docs/HOW_IT_WORKS.md](docs/HOW_IT_WORKS.md) |
-| plug in my own strategy or trainer | [docs/PLUG_IN.md](docs/PLUG_IN.md) |
+| the answers, one table per question | [docs/WHAT_WE_FOUND.md](docs/WHAT_WE_FOUND.md) |
+| every phase, in order | [docs/WHAT_WE_DID_DAY_BY_DAY.md](docs/WHAT_WE_DID_DAY_BY_DAY.md) |
+| the game as an RL environment | [docs/THE_GAME.md](docs/THE_GAME.md) |
+| plug in my own strategy or trainer | [docs/PLUG_IN_YOUR_CODE.md](docs/PLUG_IN_YOUR_CODE.md) |
 | every run | [records/LEDGER.md](records/LEDGER.md) (how to read it: [records/README.md](records/README.md)) |
 | a map of every page | [docs/README.md](docs/README.md) |
 

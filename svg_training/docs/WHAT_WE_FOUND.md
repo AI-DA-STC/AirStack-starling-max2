@@ -3,7 +3,7 @@ READ · TRAINING SIMULATOR ONLY: the NUS port's results, one table per question,
 # NUS port results, by question
 
 **For** the NUS team and anyone checking our numbers. Every number was observed in a training simulator; nothing
-here has flown. The dated story is in [NUS_PORT](NUS_PORT.md); words in *italics* are in the [glossary](GLOSSARY.md).
+here has flown. The dated story is in [NUS_PORT](WHAT_WE_DID_DAY_BY_DAY.md); words in *italics* are in the [glossary](GLOSSARY.md).
 This page replaces `NUS_PHASE4_RESULTS.md`.
 
 **How to read the tables.**

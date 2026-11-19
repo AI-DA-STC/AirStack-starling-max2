@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Flowchart for docs/PLUG_IN.md: the three layers of the S2 plug-in point and the two ways in.
+"""Flowchart for docs/PLUG_IN_YOUR_CODE.md: the three layers of the S2 plug-in point and the two ways in.
 
 Usage: python scripts/make_s2_plug_in_flowchart.py [out.png]   (default docs/figures/s2_plug_in_flow.png)
 Draws boxes and arrows only; it reads no run data. Palette: scripts/make_s0_figures.py SERIES."""

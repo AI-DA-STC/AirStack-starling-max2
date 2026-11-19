@@ -1,10 +1,10 @@
-REFERENCE · the design as approved on 14 November 2026 (with dated notes). The short version: [HOW_IT_WORKS](HOW_IT_WORKS.md).
+REFERENCE · the design as approved on 14 November 2026 (with dated notes). The short version: [the game](THE_GAME.md).
 
 # Design — vectorised training pipeline for Strike vs Guard
 
 Status: **approved by the owner on 14 November 2026** (contact tag, safety filter within each team and realistic
 environments added the same day). S0 is built and run: [S0_RESULTS.md](S0_RESULTS.md). The short version:
-[HOW_IT_WORKS.md](HOW_IT_WORKS.md). Diagrams: [pipeline/training-pipeline.pptx](pipeline/training-pipeline.pptx).
+[THE_GAME.md](THE_GAME.md). Diagrams: [pipeline/training-pipeline.pptx](pipeline/training-pipeline.pptx).
 Evidence: [RESEARCH.md](RESEARCH.md). Rules: [../STANDARDS.md](../STANDARDS.md).
 
 > **Note, 18 November 2026.** "Safety filter within each team" below became the rule of the contact-tag track only. The

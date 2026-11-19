@@ -7,7 +7,7 @@ shows how to connect your own Strike vs Guard strategy, or your own training cod
 score the result. Every result here is observed in the training simulator, not in flight.
 
 - **Where:** run everything from the `svg_training/` folder of your clone. The code is under `source/svg_training/`; paths below start there.
-- **Python:** a Python 3.11 environment made as in [TRY_IT B1](TRY_IT.md#b-a-cpu-laptop-install-run-the-game-score-a-strategy-run-the-tests)
+- **Python:** a Python 3.11 environment made as in [TRY_IT B1](RUN_IT_YOURSELF.md#b-a-cpu-laptop-install-run-the-game-score-a-strategy-run-the-tests)
   (`pip install -e ".[test]"`; a CPU is enough). The lab's conda environment `env_isaaclab` has the same packages.
 - **Running an example:** save it as a file and run `PYTHONPATH=source:. python example.py`.
 - **Shapes:** N = games played at once, G = Guard drones per game, S = Strike drones per game.
@@ -113,12 +113,12 @@ games per arena band (lab 4–6 m, middle 6–10 m, large 10–16 m) on the GPU.
 slower than the pure rules (ledger T9, `records/2026-11-16_s2_scripted_reference_2_record.md`).
 
 `--device auto` (the default) picks the GPU when PyTorch sees one and the CPU otherwise. On a CPU add
-`--games-per-band 100` and keep `--presets pure` (about 10 s; [TRY_IT B4](TRY_IT.md#b-a-cpu-laptop-install-run-the-game-score-a-strategy-run-the-tests)).
+`--games-per-band 100` and keep `--presets pure` (about 10 s; [TRY_IT B4](RUN_IT_YOURSELF.md#b-a-cpu-laptop-install-run-the-game-score-a-strategy-run-the-tests)).
 
 ## Plug in a trained NUS policy
 
-The whole NUS port, phase by phase, with NUS's settings, our results and videos: [NUS_PORT](NUS_PORT.md). Training NUS's
-policies with NUS's own code and every command below in order: [TRAINING, NUS jobs](TRAINING.md#nus-jobs) To repeat it yourself, from our PROVISIONAL files or your own clone: [TRY_IT D](TRY_IT.md#d-repeat-our-ladder-rows).
+The whole NUS port, phase by phase, with NUS's settings, our results and videos: [NUS_PORT](WHAT_WE_DID_DAY_BY_DAY.md). Training NUS's
+policies with NUS's own code and every command below in order: [TRAINING, NUS jobs](TRAINING.md#nus-jobs) To repeat it yourself, from our PROVISIONAL files or your own clone: [TRY_IT D](RUN_IT_YOURSELF.md#d-repeat-our-ladder-rows).
 
 A policy trained with NUS's JAX code runs here without that code. The path (all observed in the training simulator, in our replica of
 NUS's 2-D game; nothing is flown):
@@ -143,7 +143,7 @@ NUS's 2-D game; nothing is flown):
    `nus/players.py` (`G19`/`S20`, `P3G`/`P3S` bound to their deploy files, the ported controllers, `ParkedGuard`; our scripted strategies by their
    names). `--tables <rows>` prints committed-text tables with every value that equals a local value replaced by "at the local value". A
    row estimated above 2 h stops with exit 4 until `--accept-long`. Row 6 (Isaac Lab) needs `--headless --device cuda` after
-   `scripts/isaac_preflight.sh --approved-headless` exits 0. Reading: [NUS_RESULTS, Q3](NUS_RESULTS.md#q3-what-does-each-drone-limit-do).
+   `scripts/isaac_preflight.sh --approved-headless` exits 0. Reading: [NUS_RESULTS, Q3](WHAT_WE_FOUND.md#q3-what-does-each-drone-limit-do).
 
 What it does not do: a drone that is removed from the game, other team sizes. All six rows of the ladder are scored: replica, our game, drone
 response with the filter off (`records/2026-11-18_nus_phase4_rung{1,2,3}_record.md`), then the filter, 3-D and Isaac Lab
@@ -316,7 +316,7 @@ PYTHONPATH=source python scripts/train_standin.py --seed 1 --name <new name> --m
 tensorboard --logdir runs/        # then open http://localhost:6006; game/ curves at every evaluation
 ```
 
-On a CPU, `--smoke` trains for a few seconds to check the pipe ([TRY_IT B5](TRY_IT.md#b-a-cpu-laptop-install-run-the-game-score-a-strategy-run-the-tests)).
+On a CPU, `--smoke` trains for a few seconds to check the pipe ([TRY_IT B5](RUN_IT_YOURSELF.md#b-a-cpu-laptop-install-run-the-game-score-a-strategy-run-the-tests)).
 
 **Gymnasium.** One team is the learner: its drones' observations side by side (`[N, G × 71]`) and its actions
 side by side (`[N, G × 4]`, drone k at columns 4k to 4k+3). The reward is the team's, `[N]`. The other team is

@@ -315,6 +315,6 @@ All rows are in the [training ledger](../records/LEDGER.md).
 
 - Seed 3 of the Isaac stand-in, on the home RTX 5090, if the owner wants it. The two PyTorch stand-in runs are not
   scheduled.
-- Task 8b, the registered Isaac Lab task, documented in [PLUG_IN](PLUG_IN.md) when built.
+- Task 8b, the registered Isaac Lab task, documented in [plug in your code](PLUG_IN_YOUR_CODE.md) when built.
 - S3 and S4 ([DESIGN §8](DESIGN.md#8-build-order)): the Guard team's strategy now has to cover height as well as
   position.

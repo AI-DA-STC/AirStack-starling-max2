@@ -40,7 +40,7 @@ training library drives the game through an adapter. Both play the same game, `c
 | Strategy contract (`core/strategy.py`) | a strategy plays one team: it is called once per step with all its drones' observations in all games and returns all their actions. A scripted rule, a central planner or a trained network all fit | **NEAR-967: Plug-in point for a partner's strategy, with a written guide.** |
 | Scoring tool (`scripts/score.py`) | plays any strategy against the scripted ones, per arena size band and team size, under the pure rules and with the Starling layer. It reports the *hold rate* with its 95 % interval, how close the teams came (horizontal and in 3-D), rule breaches, filter use and start misses | NEAR-966 |
 | Adapters (`envs/`) | `SvgSkrlEnv` for skrl's multi-agent trainers, `SvgTeamVectorEnv` for any Gymnasium vector learner | NEAR-967 |
-| Partner guide | [PLUG_IN.md](PLUG_IN.md): how to plug a strategy or a training method in and score it; its code examples are run by `tests/test_adapters.py` | NEAR-967 |
+| Partner guide | [Plug in your code](PLUG_IN_YOUR_CODE.md): how to plug a strategy or a training method in and score it; its code examples are run by `tests/test_adapters.py` | NEAR-967 |
 | Drone-model check | the S1 drone model checked against a real flight it never saw (T5) | **NEAR-964: Check the drone model against the 12 Nov rosbag.** |
 | Replay clips | top-down GIF and MP4 clips of single games, in [media/](media/README.md) | — |
 
@@ -221,7 +221,7 @@ From the [S2 design §7](specs/2026-11-15-s2-game-and-plug-in-design.md#7-when-s
 | 2 | The scoring tool gives the hand-worked answer on fixed scenarios | **PASS** (tests) | `tests/test_score.py::test_score_fixed_scenarios_hand_worked`: a straight Strike drone reaches the zone at step 37 (4 m) and step 205 (16 m); with the push-apart in the way the Guard team holds to the time-out |
 | 3 | The chosen filter setting meets the speed gate (at least 100,000 game-steps/s) and is no worse than T2 on T2's checks | **PASS** (T8), under the owner's 4-decimal ruling. Whole game 90,121 game-steps/s: INFO. Staggered restarts: not measured | [T8 record](../records/2026-11-16_s2_filter_speed_2_record.md); T7 ABORTED ([record](../records/2026-11-16_s2_filter_speed_record.md)) |
 | 4 | A stand-in trainer beats random actions by a margin set before the run | **MOVED to S2b** by the owner (16 November); not run in S2 | gates unchanged in `configs/s2.toml` `[standin_gates]`; [S2b plan](plans/2026-11-16-s2b-isaac-lab-environment.md) |
-| 5 | A one-page partner guide with a worked example | **DONE in part**: the guide exists and its examples (a small skrl training script among them) run in the tests. The design's worked example uses the stand-in trainer, so it comes with the stand-in in S2b (lead's ruling, 16 November) | [PLUG_IN.md](PLUG_IN.md); `tests/test_adapters.py` |
+| 5 | A one-page partner guide with a worked example | **DONE in part**: the guide exists and its examples (a small skrl training script among them) run in the tests. The design's worked example uses the stand-in trainer, so it comes with the stand-in in S2b (lead's ruling, 16 November) | [Plug in your code](PLUG_IN_YOUR_CODE.md); `tests/test_adapters.py` |
 
 Information runs: T6 and T9 (scripted reference, no gates) and T5 (drone-model check, **FAIL**). All rows are in the
 [training ledger](../records/LEDGER.md).
@@ -241,7 +241,7 @@ Information runs: T6 and T9 (scripted reference, no gates) and T5 (drone-model c
 On 16 November each drone's observation grew from **69 to 71 numbers**: the zone centre's position from the arena
 centre was added at the end (indices 69–70). Without it a drone could not tell where the walls are. No earlier index
 moved. The whole-game state for a central critic grew from 59 to 61. The layout is in
-[PLUG_IN.md](PLUG_IN.md#what-a-drone-sees-and-does) and [STANDARDS §3](../STANDARDS.md#3-policy-interface-version-01-proposed).
+[Plug in your code](PLUG_IN_YOUR_CODE.md#what-a-drone-sees-and-does) and [STANDARDS §3](../STANDARDS.md#3-policy-interface-version-01-proposed).
 
 ## What S2 does not do
 

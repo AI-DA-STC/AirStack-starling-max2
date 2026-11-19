@@ -1,9 +1,9 @@
-REFERENCE · the full install with Isaac Lab (container or host), the first tests and the S0 benchmark. Without an NVIDIA GPU, or to try things first: [TRY_IT](TRY_IT.md).
+REFERENCE · the full install with Isaac Lab (container or host), the first tests and the S0 benchmark. Without an NVIDIA GPU, or to try things first: [how to run it yourself](RUN_IT_YOURSELF.md).
 
 # Getting started: set up a machine, then run the tests and a benchmark
 
 This guide sets up a machine with an NVIDIA GPU and Isaac Lab, for tier 2 and the S0 benchmark. You do not need it to
-read the results, run the game on a CPU, score a strategy or repeat ladder rows 1–5: use [TRY_IT](TRY_IT.md) levels
+read the results, run the game on a CPU, score a strategy or repeat Tests 1–5 of the NUS port: use [how to run it yourself](RUN_IT_YOURSELF.md) levels
 A–D. It has three goals, in order. First the machine is set up and the tests pass. Then a trial run prints its plan without
 starting anything (a *dry run*). Then the S0 benchmark runs and writes its summary (the *record*). Terms are in the
 [glossary](GLOSSARY.md).
@@ -204,7 +204,7 @@ approved for that machine. Never open a window over remote desktop.
 NUS's training code is JAX, not PyTorch, and runs in its own conda env, `nus_jax` (Python 3.12), away from
 `env_isaaclab`. You need it only to run NUS's code or to rebuild the local settings files from it; the NUS tests that
 need NUS's code skip without it, and `scripts/nus_install_provisional.sh` installs the lab's own local files. If your
-own environment already runs your code, use that instead ([TRY_IT D′](TRY_IT.md#d-rebuild-the-files-from-your-clone)).
+own environment already runs your code, use that instead ([how to run it yourself, level D′](RUN_IT_YOURSELF.md#d-rebuild-the-files-from-your-clone)).
 
 ```bash
 unset PYTHONPATH                # ROS 2 Jazzy is Python 3.12 too: it would load quietly into nus_jax

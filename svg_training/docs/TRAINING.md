@@ -1,10 +1,10 @@
-REFERENCE · every training script and flag, our own and the NUS jobs. To try things first: [TRY_IT](TRY_IT.md).
+REFERENCE · every training script and flag, our own and the NUS jobs. To try things first: [how to run it yourself](RUN_IT_YOURSELF.md).
 
 # Training a policy: headless and with the Isaac Sim window
 
 > **What trains today.** The stand-in trainer (`scripts/train_standin.py`, a pipe test: [S2B_RESULTS §5](S2B_RESULTS.md#5-the-stand-in-trainer)); NUS's own JAX
 > trainer ([NUS jobs](#nus-jobs)); and, in progress, our PyTorch copy of NUS's method (Phase 5,
-> [NUS_PORT §12](NUS_PORT.md#12-phase-5-your-training-method-in-pytorch-in-progress)). Our own `scripts/train.py` and
+> [what we did, day by day, §12](WHAT_WE_DID_DAY_BY_DAY.md#12-phase-5-your-training-method-in-pytorch-in-progress)). Our own `scripts/train.py` and
 > `scripts/evaluate.py` are not built: commands marked `# planned` do not exist. Terms: [glossary](GLOSSARY.md).
 
 *Headless* means running with no window on screen. It is faster, and it is the normal way to train. A *policy* is
@@ -22,7 +22,7 @@ The table shows what works now and which build step brings the rest.
 | Training libraries in the image | present: `skrl`, `rsl_rl`, `isaaclab_tasks`, `isaaclab_rl`, `tensorboard` (checked 15 Nov) | already there |
 | S0 benchmark, headless | works: [GETTING_STARTED, the S0 benchmark](GETTING_STARTED.md#the-s0-benchmark) | S0 |
 | Isaac Sim with a window, on the host | available: Isaac Lab's own commands (§5) on NVIDIA's example tasks, not our game; not yet run on the laptop or the 5090 | already there |
-| Our game and rewards | built ([PLUG_IN](PLUG_IN.md)) | S2 |
+| Our game and rewards | built ([plug in your code](PLUG_IN_YOUR_CODE.md)) | S2 |
 | `scripts/train.py`, `scripts/evaluate.py` | **not built** | S3 or later |
 | Our game on tier 2 (the only tier with an Isaac Sim window) | **planned** | S4 (S2 if the fallback of [DESIGN §7](DESIGN.md#7-environments-and-contact-tags) is taken) |
 | A window from the container (X11 option in `docker/run.sh`) | **planned**, not scheduled | not scheduled |
@@ -202,7 +202,7 @@ list of all runs.
 **Needs `your NUS clone`.** Set `C=<your clone of area-denial-continuous-space-self-play at 2d2b904>`. NUS's
 outputs, the converted weights (`runs/nus_port/`) and the local settings files (`configs/local/nus_*.toml`) are not in
 git; `scripts/nus_install_provisional.sh` installs the lab's own from the committed PROVISIONAL bundle
-([TRY_IT D](TRY_IT.md#d-repeat-our-ladder-rows)). Every command runs from `svg_training/`, after `unset PYTHONPATH` if
+([how to run it yourself, level D](RUN_IT_YOURSELF.md#d-repeat-our-ladder-rows)). Every command runs from `svg_training/`, after `unset PYTHONPATH` if
 your shell sources ROS 2. Long jobs go inside `tmux`. Results are "observed in the training simulator".
 
 **1. The env, once** ([GETTING_STARTED](GETTING_STARTED.md#nus-jax-env-with-your-nus-clone)):
@@ -223,7 +223,7 @@ remote-desktop daemon, 546–589 MiB, does not block it). Two rules from the fir
 (`save_eval_gif=True`, STANDARDS §8). Logs: `~/nus_jax_runs/<job>.log`, `.pid`, `.cmd.txt`.
 
 ```bash
-H="+environment.env.physics.spawn_distance=8.0 environment.env.physics.defender_boundary=8.0"   # the hangar geometry (NUS_PORT §3)
+H="+environment.env.physics.spawn_distance=8.0 environment.env.physics.defender_boundary=8.0"   # the hangar geometry (WHAT_WE_DID_DAY_BY_DAY §3)
 D=$(date +%F)          # new names every time: run_nus_job.sh refuses an existing log (exit 6), and NUS overwrites an output folder
 scripts/workstation/run_nus_job.sh --foreground $C ${D}_benchmark_2048 ma_skills/scripts/benchmark.py --config-name=benchmark_self_play_2048
 scripts/workstation/run_nus_job.sh $C ${D}_hangar_fixed_apf_3v3_defender ma_skills/scripts/train.py --config-name=train_mappo_self_play_mpe \
@@ -261,7 +261,7 @@ gates file; `nus_phase4.py` refuses a finished row. `J` runs in NUS's env (CPU),
 
 ```bash
 J="env PYTHONNOUSERSITE=1 PYTHONDONTWRITEBYTECODE=1 JAX_PLATFORMS=cpu WANDB_MODE=disabled PYTHONPATH=source <env of your code>/bin/python"
-P="env PYTHONPATH=source <pipeline env>/bin/python"     # env_isaaclab, or TRY_IT B1's venv
+P="env PYTHONPATH=source <pipeline env>/bin/python"     # env_isaaclab, or RUN_IT_YOURSELF B1's venv
 # Phase 2: the local rules file, recordings of NUS's game, the replica gate (T15)
 $J scripts/nus_make_local_rules.py --clone $C --config $C/ma_skills/config/train_self_play.yaml --out configs/local/nus_rules.toml
 $J scripts/nus_record_fixtures.py --clone $C --config $C/ma_skills/config/train_self_play.yaml --tag gate_3v3 --episodes 100 --seed 2026
@@ -287,20 +287,20 @@ $P scripts/nus_phase4.py --make-starts
 $P scripts/nus_phase4.py --row 1 --device cuda                         # rows 2.1, 2.2, 2, 3a, 3, 4, 5a, 5 the same way
 scripts/isaac_preflight.sh --approved-headless && $P scripts/nus_phase4.py --row 6 --headless --device cuda   # Isaac Lab
 $P scripts/make_nus_phase4_figures.py                                # refuses (exit 2) unless all ten rows have scores.json
-$P scripts/make_nus_selfplay_figures.py                                # Figure 1 of NUS_PORT, from the lab's matrix file (lab only)
+$P scripts/make_nus_selfplay_figures.py                                # Figure 1 of WHAT_WE_DID_DAY_BY_DAY, from the lab's matrix file (lab only)
 ```
 
 Every option is in each script's `--help` and docstring. A row estimated above 2 h stops with exit 4 until you add
 `--accept-long`; rows 4, 5a, 5 and 6 took 2–6 h each on the lab's RTX 5090 (run them in the background). `--out` of the
 deploy script is refused outside `configs/local/`. The record writers mark any number equal to a local value as "at
-the local value" (the mechanism is kept; NUS's values themselves are stated in [NUS_PORT](NUS_PORT.md); how to read a record:
+the local value" (the mechanism is kept; NUS's values themselves are stated in [what we did, day by day](WHAT_WE_DID_DAY_BY_DAY.md); how to read a record:
 [records/README](../records/README.md)). Instead of rebuilding the local files, `scripts/nus_install_provisional.sh`
-installs the lab's own ([TRY_IT D](TRY_IT.md#d-repeat-our-ladder-rows)).
+installs the lab's own ([how to run it yourself, level D](RUN_IT_YOURSELF.md#d-repeat-our-ladder-rows)).
 
 **5. Phase 5 (in progress).** Our PyTorch copy of NUS's method: `scripts/nus_make_local_method.py`,
 `scripts/nus_selfplay_train.py`, `scripts/nus_phase5_reference.py`, `scripts/nus_phase5_score.py`; plan and gates in
 [the Phase 5 plan](plans/2026-11-18-nus-phase5-retraining.md). R0, N0 and C0 have passed; our own seeds have no result
-yet ([NUS_RESULTS Q6](NUS_RESULTS.md#q6-does-our-copy-of-your-training-method-behave-like-yours)). Each script's
+yet ([what we found, training method](WHAT_WE_FOUND.md#q6-does-our-copy-of-your-training-method-behave-like-yours)). Each script's
 `--help` holds its options.
 
 ## 8. Troubleshooting

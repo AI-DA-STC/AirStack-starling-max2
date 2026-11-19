@@ -1,9 +1,9 @@
-REFERENCE · TRAINING SIMULATOR ONLY: the NUS port as a dated log, phase by phase. Results by question: NUS_RESULTS.md.
+REFERENCE · TRAINING SIMULATOR ONLY: the NUS port as a dated log, phase by phase. Results by question: WHAT_WE_FOUND.md.
 
 # The NUS port: what we did with your code, in order
 
 **For** the NUS team and anyone new to the work: what we did with your code, phase by phase. Results by question:
-[NUS_RESULTS](NUS_RESULTS.md); how to repeat them: [TRY_IT](TRY_IT.md). Every number was **observed in the training
+[NUS_RESULTS](WHAT_WE_FOUND.md); how to repeat them: [TRY_IT](RUN_IT_YOURSELF.md). Every number was **observed in the training
 simulator** (your 2-D game, our copy of it, or our game with Starling-like drones). Nothing here has flown.
 
 You agreed (18 November 2026) that your code details, your game settings and our results on your code may be
@@ -19,9 +19,9 @@ our **Strike team**; you call your game "area denial". Last updated 18 November 
 | 0 | our questions to you | — | — | answered 17 Nov (§3) | §3 |
 | 1 | your code installed | JAX | your 2-D game | 65 of your 66 tests pass; the one failure checks an older Guard distance (you confirmed it is out of date); INFO | [record](../records/2026-11-17_nus_phase1_install_record.md) |
 | 2a | policies trained with your code on our hangar set-up | JAX | your 2-D game | speed check, fixed-opponent runs, Run 0, self-play 3 seeds × 8 generations and seed 2 to 20; INFO | [training](../records/2026-11-17_nus_phase2a_training_record.md), [Run 0](../records/2026-11-17_nus_run0_record.md), [matrix](../records/2026-11-18_nus_selfplay_matrix_record.md) |
-| 2 | your game copied to PyTorch (the *replica*) | PyTorch | replica | T15 PASS: same game step by step | [Q1](NUS_RESULTS.md#q1-does-our-replica-match-your-game) |
-| 3 | your policies converted to PyTorch | PyTorch (JAX for the reference) | replica | T16 PASS; T17 PASS on G19 / S20 | [Q2](NUS_RESULTS.md#q2-does-the-converted-policy-match-yours) |
-| 4 | the transfer ladder: the game changed towards our drones, one row at a time | PyTorch; Isaac Lab for row 6 | replica, tier 1, tier 2 | INFO, T18–T20, T22–T24 (T21 ABORTED): G19 v S20 Strike reaches 9 → 17 → 43 → 740 → 983 → 979 of 1,000 | [Q3](NUS_RESULTS.md#q3-what-does-each-drone-limit-do) |
+| 2 | your game copied to PyTorch (the *replica*) | PyTorch | replica | T15 PASS: same game step by step | [Q1](WHAT_WE_FOUND.md#q1-does-our-replica-match-your-game) |
+| 3 | your policies converted to PyTorch | PyTorch (JAX for the reference) | replica | T16 PASS; T17 PASS on G19 / S20 | [Q2](WHAT_WE_FOUND.md#q2-does-the-converted-policy-match-yours) |
+| 4 | the transfer ladder: the game changed towards our drones, one row at a time | PyTorch; Isaac Lab for row 6 | replica, tier 1, tier 2 | INFO, T18–T20, T22–T24 (T21 ABORTED): G19 v S20 Strike reaches 9 → 17 → 43 → 740 → 983 → 979 of 1,000 | [Q3](WHAT_WE_FOUND.md#q3-what-does-each-drone-limit-do) |
 | 5 | your training method ported to PyTorch | PyTorch | replica, then tier 1 | in progress: R0 PASS, N0 PASS, C0 PASS; 5.1 running; pilot P1b: our simple learner holds S20 in 829 of 1,000 | §12 |
 | 6 | these documents | — | — | 18 Nov | — |
 
@@ -144,22 +144,22 @@ tested).
 
 `source/svg_training/nus/replica.py` copies your game in batched PyTorch. Recordings of your own environment were
 replayed in it: largest position error per step 3.8e-6 units (3 v 3) and 5.7e-6 (5 v 3), limit 1e-4. **T15 PASS**
-([record](../records/2026-11-17_nus_phase2_parity_record.md); [Q1](NUS_RESULTS.md#q1-does-our-replica-match-your-game)).
+([record](../records/2026-11-17_nus_phase2_parity_record.md); [Q1](WHAT_WE_FOUND.md#q1-does-our-replica-match-your-game)).
 
 ## 7. Phase 3: your policies, converted (T16 and T17, 18 November 2026)
 
 `nus/actor.py` loads your checkpoints (msgpack, no JAX) with your bfloat16 rounding points; `nus.strategy:NusPolicy`
-rebuilds your 56-number observation from ours and holds each action for 12 ticks ([PLUG_IN](PLUG_IN.md#plug-in-a-trained-nus-policy)).
+rebuilds your 56-number observation from ours and holds each action for 12 ticks ([PLUG_IN](PLUG_IN_YOUR_CODE.md#plug-in-a-trained-nus-policy)).
 Largest action error 0.0105 units (limit 0.02); outcomes inside your code's 95 % interval. **T16 PASS** ([record](../records/2026-11-18_nus_phase3_conversion_record.md)), **T17 PASS**
 on G19 / S20 ([record](../records/2026-11-18_nus_phase4_w3_reference_gates_record.md);
-[Q2](NUS_RESULTS.md#q2-does-the-converted-policy-match-yours)).
+[Q2](WHAT_WE_FOUND.md#q2-does-the-converted-policy-match-yours)).
 
 ## 8. Phase 4: the transfer ladder
 
 The converted policies stay frozen. Each row changes one thing on the way from your game to our drones, except row 2
 (our push-apart and the 12-tick hold) and row 4 (the filter replaces the push and also keeps team-mates apart). 1,000
 paired games per pair from one starts file, one seed, so no method claim. Rows 1–3 run without the safety filter (a
-measurement only); rows 4–6 restore it. Full table, figure and reading: [NUS_RESULTS Q3](NUS_RESULTS.md#q3-what-does-each-drone-limit-do);
+measurement only); rows 4–6 restore it. Full table, figure and reading: [NUS_RESULTS Q3](WHAT_WE_FOUND.md#q3-what-does-each-drone-limit-do);
 [plan](plans/2026-11-18-nus-phase4-transfer-ladder.md).
 
 | Strike reaches of 1,000 | 1 replica | 2 our engine, push-apart, hold | 3 drone lag | 4 safety filter | 5 free height | 6 Isaac Lab |
@@ -184,7 +184,7 @@ Your renderer draws Guard drones D0–D2 blue and Strike drones A0–A2 red; our
 | ![G19 against S20 on Isaac Lab Starlings: a Strike drone reaches the zone](media/nus/isaac/g19_vs_s20_strike_win_1.gif) | ![A parked Guard team holds S20 on Isaac Lab Starlings](media/nus/isaac/parked_vs_s20_hold_1.gif) |
 | *Row 6, Isaac Lab: G19 v S20, a Strike drone reaches the zone at 24.1 s (979 of 1,000 on this row; 4× real time).* | *Row 6, Isaac Lab: the parked Guard team holds S20 for 120 s (476 of 1,000 held; 8× real time).* |
 
-Before-and-after pairs on the same start (rows 3 → 4 and 4 → 5): [TRY_IT A](TRY_IT.md#a-watch-the-games) and
+Before-and-after pairs on the same start (rows 3 → 4 and 4 → 5): [TRY_IT A](RUN_IT_YOURSELF.md#a-watch-the-games) and
 [media/nus](media/nus/README.md).
 
 ## 10. What it means for flight
@@ -210,7 +210,7 @@ Phases 1 and 2a, Run 0 and the self-play matrix ran with your code before we kep
 were written afterwards from the logs and outputs, and their numbers are INFO (20 or 256 games per pair, below our
 1,000). The other limits (one seed, 8 generations, our
 hangar values, the exploratory drone model, the filter's batch dependence) sit in
-[NUS_RESULTS Q8](NUS_RESULTS.md#q8-limits).
+[NUS_RESULTS Q8](WHAT_WE_FOUND.md#q8-limits).
 
 <a id="12-next-steps-the-phase-5-plan"></a>
 ## 12. Phase 5: your training method in PyTorch (in progress)
@@ -240,7 +240,7 @@ our copy apart from yours; it will not mean "equivalent".
 | N0: untrained actors scored as "ours": the test must fail them | PASS: it failed them, both intervals excluding 0 | T30, [record](../records/2026-11-18_nus_phase5_n0_negative_control_record.md) |
 | C0: your code, seeds 101, 201, 301, scored as "ours": the test must pass them | PASS: both intervals contain 0 (Guards −0.027, Strikes +0.108) | T33, [record](../records/2026-11-19_nus_phase5_c0_positive_control_record.md) |
 | 5.1: our copy, seeds 1001, 2001, 3001 | running, not yet a result | — |
-| Pilots: our simple stand-in learner against S20, with the filter, no gates | P0 INFO (speed); P1 INFO, 0 holds of 1,000: its set-up was faulty (γ 0.99 per tick, a hold rewarded only at the 2,400-tick time-out, a non-zero starting mean); the fixed P1b: runs 1–3 ABORTED (starved GPU, reboot), run 4 INFO, **829 holds of 1,000** against S20 (parked Guard 429), its signal met; P2 ABORTED twice | T25–T28, T32, T39–T41; [Q7](NUS_RESULTS.md#q7-can-we-train-a-guard-team-on-our-drone-model) |
+| Pilots: our simple stand-in learner against S20, with the filter, no gates | P0 INFO (speed); P1 INFO, 0 holds of 1,000: its set-up was faulty (γ 0.99 per tick, a hold rewarded only at the 2,400-tick time-out, a non-zero starting mean); the fixed P1b: runs 1–3 ABORTED (starved GPU, reboot), run 4 INFO, **829 holds of 1,000** against S20 (parked Guard 429), its signal met; P2 ABORTED twice | T25–T28, T32, T39–T41; [Q7](WHAT_WE_FOUND.md#q7-can-we-train-a-guard-team-on-our-drone-model) |
 | A faster safety-filter path on the GPU (opt-in, off by default) | INFO; it showed the existing filter's GPU answer depends on the batch size, and about 40 % of ParkedGuard v S20 games do not converge in 1,000 sweeps (ticks 30–33) | T31, [record](../records/2026-11-18_filter_cuda_graph_record.md) |
 
 P1 tested a mis-set learner; it does not show that a learner cannot find the "filter as a wall" defence.
@@ -250,5 +250,5 @@ programme's design review (FR&PDR) treats contact separately ([plan](plans/2026-
 
 ## How to run it again
 
-[TRY_IT](TRY_IT.md) levels D and E: rebuild the local files from your clone (they come out byte-identical to ours) or
+[TRY_IT](RUN_IT_YOURSELF.md) levels D and E: rebuild the local files from your clone (they come out byte-identical to ours) or
 use our PROVISIONAL files, then repeat a ladder row. Every script and flag: [TRAINING, NUS jobs](TRAINING.md#nus-jobs).

@@ -85,7 +85,7 @@ its reason:
 | 1 | a bit-level fingerprint recorded with torch 2.7.0 and skrl 2.1.0 | the exact versions (below) |
 
 Without B2, 10 more NUS tests skip ("fixtures or local files absent"). These tests also run the code blocks of
-[PLUG_IN](PLUG_IN.md), so its examples work on your install. On a shared or busy machine keep `OMP_NUM_THREADS=4`:
+[PLUG_IN](PLUG_IN_YOUR_CODE.md), so its examples work on your install. On a shared or busy machine keep `OMP_NUM_THREADS=4`:
 PyTorch otherwise takes every core. Under heavy load one timing test in `tests/test_record_steps.py` can fail;
 it passes when run on its own (`$P -m pytest -q tests/test_record_steps.py`: 71 passed in our re-test, 19 Nov).
 
@@ -96,7 +96,7 @@ $P scripts/score.py --guard guard_field --strike strike_straight,strike_flank --
 ```
 Must see: a note that no CUDA GPU is visible, so it runs on the CPU (`--device auto`, the default); then
 `runs/try_score/scores.md`, one hold rate per arena size band (three bands; in the large band we saw 0.8 against `strike_straight` and 0.96 against
-`strike_flank`; the other two bands read higher). Your own strategy goes in the same way: [PLUG_IN](PLUG_IN.md#plug-a-strategy-in). Keep
+`strike_flank`; the other two bands read higher). Your own strategy goes in the same way: [PLUG_IN](PLUG_IN_YOUR_CODE.md#plug-a-strategy-in). Keep
 `--presets pure` on a CPU: the `starling` preset (our drone model and safety filter) is many times slower.
 
 **B5 · `none` · Train for a few seconds** (7 s; a pipe test, never a result).
@@ -130,7 +130,7 @@ $P -m tensorboard.main --logdir runs/
 Expect 1,000 games per band. The stand-in trainer is a pipe test: on our Isaac Lab drones its Guards learned almost
 nothing (T14, [S2B_RESULTS §5](S2B_RESULTS.md#5-the-stand-in-trainer)). On a GPU the test
 `test_t2_scenes_t8_setting_cuda` shows as `xfailed`: it is an expected failure (the filter's GPU answer depends on the
-batch size; [NUS_RESULTS Q3](NUS_RESULTS.md#q3-what-does-each-drone-limit-do)).
+batch size; [NUS_RESULTS Q3](WHAT_WE_FOUND.md#q3-what-does-each-drone-limit-do)).
 
 ## D. Repeat our ladder rows
 
@@ -235,7 +235,7 @@ Our row 6 took 2.1 h on an RTX 5090 (T24). The camera clips of [media/nus](media
 
 ## Not here yet
 
-- Our copy of your training method (Phase 5, [NUS_RESULTS Q6](NUS_RESULTS.md#q6-does-our-copy-of-your-training-method-behave-like-yours)):
+- Our copy of your training method (Phase 5, [NUS_RESULTS Q6](WHAT_WE_FOUND.md#q6-does-our-copy-of-your-training-method-behave-like-yours)):
   its scripts are in the repository and its test is calibrated (C0 PASS), but our own seeds (5.1) have no result yet.
   We will add a level for it when they do.
 - Our own trainer for the game and the export to the drones are not built. Today the trainers are the stand-in (a pipe

@@ -204,7 +204,7 @@ approved for that machine. Never open a window over remote desktop.
 NUS's training code is JAX, not PyTorch, and runs in its own conda env, `nus_jax` (Python 3.12), away from
 `env_isaaclab`. You need it only to run NUS's code or to rebuild the local settings files from it; the NUS tests that
 need NUS's code skip without it, and `scripts/nus_install_provisional.sh` installs the lab's own local files. If your
-own environment already runs your code, use that instead ([how to run it yourself, level D′](RUN_IT_YOURSELF.md#d-rebuild-the-files-from-your-clone)).
+own environment already runs your code, use that instead ([how to run it yourself, level D′](RUN_IT_YOURSELF.md#d-rebuild-the-files-from-a-nus-clone)).
 
 ```bash
 unset PYTHONPATH                # ROS 2 Jazzy is Python 3.12 too: it would load quietly into nus_jax

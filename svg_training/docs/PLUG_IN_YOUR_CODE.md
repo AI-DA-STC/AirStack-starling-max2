@@ -1,13 +1,15 @@
-READ · plug your own strategy or training method into our game, and score it.
+READ · connecting a strategy or a training method to the STE game, and scoring it.
 
-# Plug in: your strategy or your training method
+# Plug in your code: a strategy or a training method
 
-This page is for an engineer from a partner team (the NUS team included) who has not opened the `svg_training/` folder before. It
-shows how to connect your own Strike vs Guard strategy, or your own training code, to our game, and how to
-score the result. Every result here is observed in the training simulator, not in flight.
+**For** an engineer from another team (NUS researchers included) who has not opened the `svg_training/` folder
+before. **STE**: the lab that wrote this repository. The page shows how to connect a Strike vs Guard strategy, or a
+training method, to the STE game, and how to score the result. NUS's `defender` is the defender (Guard team) here and
+NUS's `attacker` the attacker (Strike team); from here on, Guard and Strike. Every result here is observed in the
+training simulator, not in flight. The old name of this page, `PLUG_IN.md`, points here.
 
-- **Where:** run everything from the `svg_training/` folder of your clone. The code is under `source/svg_training/`; paths below start there.
-- **Python:** a Python 3.11 environment made as in [TRY_IT B1](RUN_IT_YOURSELF.md#b-a-cpu-laptop-install-run-the-game-score-a-strategy-run-the-tests)
+- **Where:** everything runs from the `svg_training/` folder of the clone. The code is under `source/svg_training/`; paths below start there.
+- **Python:** a Python 3.11 environment made as in [how to run it yourself, B1](RUN_IT_YOURSELF.md#b-a-cpu-laptop-install-run-the-game-score-a-strategy-run-the-tests)
   (`pip install -e ".[test]"`; a CPU is enough). The lab's conda environment `env_isaaclab` has the same packages.
 - **Running an example:** save it as a file and run `PYTHONPATH=source:. python example.py`.
 - **Shapes:** N = games played at once, G = Guard drones per game, S = Strike drones per game.
@@ -18,7 +20,7 @@ score the result. Every result here is observed in the training simulator, not i
 |---|---|
 | keep-out distance | how close a drone of the other team may come; 1.10 m for both teams in the committed values |
 | push-apart rule | under the pure rules, a move that would break the keep-out is cut short |
-| Starling layer | a switch that makes drones move like our Starling 2 Max drones instead of like points (below) |
+| Starling layer | a switch that makes drones move like STE's Starling 2 Max drones (ModalAI's small indoor drone) instead of like points (below); with it the game is the *STE drone model* |
 | `real_exploratory_v0` | the drone-response model the Starling layer uses, fitted to one flight log; exploratory |
 | slot | 7 numbers in an observation that describe one other drone |
 | `pad_guards`, `pad_strikes` | the number of slots kept for Guard drones (5) and Strike drones (3), used or not |
@@ -97,7 +99,7 @@ check_strategy(MyGuard("guard", cfg, 64, device), game)
 print("MyGuard keeps the contract")
 ```
 
-Score it against our scripted Strike drones, beside one of our scripted Guard strategies for comparison:
+Score it against the STE scripted Strikes (hand-written, no training), beside one of the STE scripted Guards for comparison:
 
 ```bash
 # run
@@ -106,22 +108,25 @@ PYTHONPATH=source:. python scripts/score.py --guard my_guard:MyGuard,guard_field
     --out runs/my_guard_score/
 ```
 
-A strategy is named `module:Class` (your code) or by a scripted name: Guard `guard_mark_edge`,
+A strategy is named `module:Class` (any code on the path) or by a scripted name: Guard `guard_mark_edge`,
 `guard_mark_inside`, `guard_field`, `guard_mirror`; Strike `strike_straight`, `strike_flank`; either team
 `random`, `zero`. A Strike strategy goes in `--strike my_strike:MyStrike` the same way. The defaults play 1,000
 games per arena band (lab 4–6 m, middle 6–10 m, large 10–16 m) on the GPU. The Starling layer runs 4 to 65 times
 slower than the pure rules (ledger T9, `records/2026-11-16_s2_scripted_reference_2_record.md`).
 
 `--device auto` (the default) picks the GPU when PyTorch sees one and the CPU otherwise. On a CPU add
-`--games-per-band 100` and keep `--presets pure` (about 10 s; [TRY_IT B4](RUN_IT_YOURSELF.md#b-a-cpu-laptop-install-run-the-game-score-a-strategy-run-the-tests)).
+`--games-per-band 100` and keep `--presets pure` (about 10 s; [how to run it yourself, B4](RUN_IT_YOURSELF.md#b-a-cpu-laptop-install-run-the-game-score-a-strategy-run-the-tests)).
 
 ## Plug in a trained NUS policy
 
-The whole NUS port, phase by phase, with NUS's settings, our results and videos: [NUS_PORT](WHAT_WE_DID_DAY_BY_DAY.md). Training NUS's
-policies with NUS's own code and every command below in order: [TRAINING, NUS jobs](TRAINING.md#nus-jobs) To repeat it yourself, from our PROVISIONAL files or your own clone: [TRY_IT D](RUN_IT_YOURSELF.md#d-repeat-our-ladder-rows).
+The whole NUS port, phase by phase, with NUS's settings, STE's results and videos: [what we did, day by day](WHAT_WE_DID_DAY_BY_DAY.md).
+Training policies with NUS's own code and every command below in order: [training scripts, NUS jobs](TRAINING.md#nus-jobs). To
+repeat it from the PROVISIONAL files or from a NUS clone: [how to run it yourself, level D](RUN_IT_YOURSELF.md#d-repeat-the-six-tests).
+The NUS-code policies of these pages (G19, S20, P3G, P3S) were trained by STE using NUS's code
+([glossary, policies](GLOSSARY.md#policies)).
 
-A policy trained with NUS's JAX code runs here without that code. The path (all observed in the training simulator, in our replica of
-NUS's 2-D game; nothing is flown):
+A policy trained with NUS's JAX code runs here without that code. The path (all observed in the training simulator, in the Copy of NUS 2-D game
+(PyTorch), STE's batched copy of NUS's game; nothing is flown):
 
 1. **Write the deploy file first** (the converter reads it; it only names the weights folders): `configs/local/nus_deploy.toml` (`guard_weights`, `strike_weights`; made by
    `scripts/nus_make_local_deploy.py`, keys in `configs/nus_deploy.template.toml`). The same file holds the scale (metres per unit,
@@ -129,33 +134,34 @@ NUS's 2-D game; nothing is flown):
 2. **Convert the checkpoint.** `scripts/nus_convert_checkpoint.py --checkpoint <folder> --team guard|strike --name <name>` reads a
    runner checkpoint (`config.json` + `state.msgpack`) or an archive entry (`actor.msgpack` + `metadata.json` + `config.json`) with
    `msgpack` and numpy, refuses anything else, and writes `runs/nus_port/weights/<name>/`. Only deterministic, non-prior checkpoints
-   are accepted. The code reads the weights and the local settings (our hangar scale, NUS's game values) from `runs/` and `configs/local/` (git-ignored); `scripts/nus_install_provisional.sh` fills both from our committed PROVISIONAL bundle ([nus_provisional/](../nus_provisional/README.md)).
+   are accepted. The code reads the weights and the local settings (STE's hangar scale, NUS's game values) from `runs/` and `configs/local/` (git-ignored); `scripts/nus_install_provisional.sh` fills both from the committed PROVISIONAL bundle ([nus_provisional/](../nus_provisional/README.md)).
 3. **Use the class** `svg_training.nus.strategy:NusPolicy` like any `module:Class` strategy (constructor
-   `(team, cfg, num_games, device, seed)`). It rebuilds NUS's observation from ours plus its own memory (the positions at the previous
+   `(team, cfg, num_games, device, seed)`). It rebuilds NUS's observation from the STE observation plus its own memory (the positions at the previous
    sample and the reached flag), holds each action for the hold length and turns units per step into the `[-1, 1]` command. It
    refuses a game configuration whose scale or team speeds differ from the deploy file, naming the keys, never the values.
-4. **`interface.toml`** (draft, layout id `nus_area_denial_v1`): `scripts/nus_write_interface.py --clone <your clone>` writes it into the weights folder.
+4. **`interface.toml`** (draft, layout id `nus_area_denial_v1`): `scripts/nus_write_interface.py --clone <NUS clone>` writes it into the weights folder.
 
-5. **Score it up the transfer ladder (Phase 4).** `scripts/nus_phase4.py --row <id>` plays every Guard x Strike pair of a row from one paired
+5. **Score it in the six tests (Phase 4).** `scripts/nus_phase4.py --row <id>` plays every Guard x Strike pair of a test (the script and the
+   records call a test a row: `--row 5` = Test 5) from one paired
    starts file (`--make-starts` once), 1,000 games per pair, on the hangar geometry (a git-ignored `configs/local/nus_hangar.toml`, template
    `configs/nus_hangar.template.toml`), and writes the extra metrics, `per_game.npz` and top-down videos under `runs/nus_port/phase4/row_<id>/`.
-   Rows are declared in `configs/nus_phase4.toml` (six keys each: engine, boundary, separation, motion, drone, height); players are named in
-   `nus/players.py` (`G19`/`S20`, `P3G`/`P3S` bound to their deploy files, the ported controllers, `ParkedGuard`; our scripted strategies by their
-   names). `--tables <rows>` prints committed-text tables with every value that equals a local value replaced by "at the local value". A
-   row estimated above 2 h stops with exit 4 until `--accept-long`. Row 6 (Isaac Lab) needs `--headless --device cuda` after
-   `scripts/isaac_preflight.sh --approved-headless` exits 0. Reading: [NUS_RESULTS, Q3](WHAT_WE_FOUND.md#q3-what-does-each-drone-limit-do).
+   Tests are declared in `configs/nus_phase4.toml` (six keys each: engine, boundary, separation, motion, drone, height); players are named in
+   `nus/players.py` (`G19`/`S20`, `P3G`/`P3S` bound to their deploy files, NUS's scripted opponent ported as `ApfGuard`/`ApfStrike`, the Parked Guard `ParkedGuard`; the STE scripted
+   strategies by their names). `--tables <rows>` prints committed-text tables with every value that equals a local value replaced by "at the local value". A
+   test estimated above 2 h stops with exit 4 until `--accept-long`. Test 6 (Isaac Lab physics drones) needs `--headless --device cuda` after
+   `scripts/isaac_preflight.sh --approved-headless` exits 0. Reading: [test results](WHAT_WE_FOUND.md#3-six-tests-towards-ste-drones).
 
-What it does not do: a drone that is removed from the game, other team sizes. All six rows of the ladder are scored: replica, our game, drone
-response with the filter off (`records/2026-11-18_nus_phase4_rung{1,2,3}_record.md`), then the filter, 3-D and Isaac Lab
-(`records/2026-11-18_nus_phase4_rung{4_2,5,6}_record.md`; the first foreground attempt at row 4 is `records/2026-11-18_nus_phase4_rung4_record.md`,
-ABORTED). The gates of Phase 3 compare the converted policy with NUS's own policy, in the
-replica (`records/2026-11-18_nus_phase3_conversion_record.md`; the archive pair in `records/2026-11-18_nus_phase4_w3_reference_gates_record.md`).
+What it does not do: a drone that is removed from the game, other team sizes. All six tests are scored: the Copy of NUS 2-D game, the STE game engine, the
+STE drone model with the filter off (`records/2026-11-18_nus_phase4_rung{1,2,3}_record.md`), then the filter, 3-D and Isaac Lab
+(`records/2026-11-18_nus_phase4_rung{4_2,5,6}_record.md`; the first foreground attempt at Test 4 is `records/2026-11-18_nus_phase4_rung4_record.md`,
+ABORTED). The gates of Phase 3 compare the converted policy with the JAX original, in the
+Copy of NUS 2-D game (`records/2026-11-18_nus_phase3_conversion_record.md`; the archive pair in `records/2026-11-18_nus_phase4_w3_reference_gates_record.md`).
 
 ## What the scoring tool prints
 
 One line per batch (preset, size, band, speed) and the hold rate of every Guard v Strike pair. Into `--out` it
 writes `scores.md` (one table per preset and size, one row per band), `scores.json` (the same numbers),
-`per_game.npz` (one value per game, for your own figures) and `gates.toml`. The columns:
+`per_game.npz` (one value per game, for other figures) and `gates.toml`. The columns:
 
 | Column | Meaning |
 |---|---|
@@ -167,8 +173,8 @@ writes `scores.md` (one table per preset and size, one row per band), `scores.js
 | filter | share of drone-steps the safety filter changed (Starling layer only) |
 | start miss | share of games whose starting positions could not keep the spacing (crowded small arenas) |
 
-What to compare with (ledger T9, 2v1 and 5v3, three bands, 1,000 games per cell, committed values): our four
-scripted Guard strategies held 38–100 % under the pure rules and 14–100 % with the Starling layer; random Guard
+What to compare with (ledger T9, 2v1 and 5v3, three bands, 1,000 games per cell, committed values): the four STE
+scripted Guards held 38–100 % under the pure rules and 14–100 % with the Starling layer; random Guard
 moves held 0–37 % (pure) and 0–0.1 % (Starling layer). A Guard strategy worth having beats random clearly and
 should be compared band by band with the scripted ones. The Starling-layer drops come from an exploratory drone model that reaches 63 % of a speed change in 0.6–0.9 s,
 against about 0.35 s on the real drone (its check against a real flight, T5, is a FAIL), so they are not the
@@ -181,13 +187,13 @@ The scoring tool reports every strategy twice:
 - **Pure partner rules** (`pure`): drones are points that move at a fixed speed per team. The push-apart rule
   keeps each team's drones out of its keep-out distance from the other team; team-mates pass through each
   other. Flat: every drone stays at 1.2 m height.
-- **With Starling layer** (`starling`): drones move as our Starling 2 Max drones fly. Each command goes through
-  a copy of our flight commander, the safety filter (it keeps every pair of drones at least 1.10 m apart, in
+- **With Starling layer** (`starling`): drones move as STE's Starling 2 Max drones fly. Each command goes through
+  a copy of CMU's flight commander, the safety filter (it keeps every pair of drones at least 1.10 m apart, in
   3-D) and `real_exploratory_v0`. The push-apart rule is off, so "breach" shows what the filter alone allowed.
 
 ## Plug a training method in
 
-**skrl.** One skrl agent per drone (`guard_0`, `guard_1`, ...); a team you do not train is played by a fixed
+**skrl.** One skrl agent per drone (`guard_0`, `guard_1`, ...); a team that is not trained is played by a fixed
 strategy. Each agent sees `[N, 71]` and acts `[N, 4]`; reward and done are `[N, 1]`. First the networks, in a
 file so the training script and the scoring tool can both load them. `TrainedGuard` has the standard
 constructor, so `score.py` can load it from the saved checkpoint.
@@ -292,9 +298,10 @@ side and time left (3), then 8 slots of 7 (each drone's position from the zone c
 the zone centre (2). A 64-step run learns nothing: it only proves the pipe. A real run uses many games on the GPU
 and far more steps.
 
-**Worked example: our stand-in.** `scripts/train_standin.py` is a complete skrl IPPO training script built this
-way (2 Guard drones v 1 scripted Strike drone, settings in `configs/s2.toml [standin]`). It is a pipe test that
-shows the whole chain works, not a strategy of record. Each run folder `runs/<name>/` holds `agent.pt`,
+**Worked example: the STE stand-in trainer.** `scripts/train_standin.py` is a complete skrl IPPO training script built this
+way (2 Guard drones v 1 scripted Strike drone, settings in `configs/s2.toml [standin]`). On this game it is a pipe test that
+shows the whole chain works, not a strategy of record; the same script with the `pilot_p1b` settings on the hangar game
+produced the STE Guard policy ([training recipe](TRAIN_A_GUARD.md)). Each run folder `runs/<name>/` holds `agent.pt`,
 `interface.toml` (observation version, action scaling, game file and its sha256, seed, commit) and TensorBoard
 curves. Load a run folder as a Guard strategy, score it, or train it again with the same command:
 
@@ -316,7 +323,7 @@ PYTHONPATH=source python scripts/train_standin.py --seed 1 --name <new name> --m
 tensorboard --logdir runs/        # then open http://localhost:6006; game/ curves at every evaluation
 ```
 
-On a CPU, `--smoke` trains for a few seconds to check the pipe ([TRY_IT B5](RUN_IT_YOURSELF.md#b-a-cpu-laptop-install-run-the-game-score-a-strategy-run-the-tests)).
+On a CPU, `--smoke` trains for a few seconds to check the pipe ([how to run it yourself, B5](RUN_IT_YOURSELF.md#b-a-cpu-laptop-install-run-the-game-score-a-strategy-run-the-tests)).
 
 **Gymnasium.** One team is the learner: its drones' observations side by side (`[N, G × 71]`) and its actions
 side by side (`[N, G × 4]`, drone k at columns 4k to 4k+3). The reward is the team's, `[N]`. The other team is
@@ -396,7 +403,7 @@ may come later behind the same switch, with the same layout. Frame: x east, y no
 | 62–68 | slot 7, the third Strike drone |
 | 69–70 | zone centre x, y from the arena centre (m); own x, y + these = own place in the arena, so the walls can be found |
 
-Slots that hold no drone (fewer drones than 5 Guard + 3 Strike, a drone that is out, and your own slot) are all
+Slots that hold no drone (fewer drones than 5 Guard + 3 Strike, a drone that is out, and the drone's own slot) are all
 zeros. `ObsView` in `core/observations.py` names these ranges in code.
 
 An action is four numbers in [−1, 1]: `[vx, vy, vz, yaw_rate]`. The velocity part is capped at length 1 and
@@ -409,28 +416,28 @@ the Strike team gets the opposite. An optional bonus (`shaping_weight` in `[rewa
 adds, every step, that weight times the change in the nearest Strike drone's distance to the zone edge divided
 by half the arena side.
 
-## Your own game numbers stay local
+## A team's own game numbers stay local
 
-The committed game file (`configs/s2_game.toml`) holds neutral values. Put your team's real values in
+The committed game file (`configs/s2_game.toml`) holds neutral values. A team's real values go in
 `configs/local/partner_rules.toml`, copied from `configs/partner_rules.example.toml` (run `mkdir -p configs/local` first). That file may change the
 keep-out distances and the push-apart rule, the team speeds, the game length, the units (metres per unit,
 seconds per step), the zone size range, whether teammates pass through each other and how many steps inside the zone win; nothing else. Only some
 choices are built so far: teammates pass through each other (`teammates_pass = true`), one step inside the zone wins
 (`win_steps_in_zone = 1`) and every drone sees the full state (`obs_view = "full"` in the committed file); any
 other value stops the game at start with an error that names the key. The observation layout and the action meaning never
-change. The game still steps every 0.05 s and converts your speeds and length; the Starling layer refuses a team
+change. The game still steps every 0.05 s and converts the team's speeds and length; the Starling layer refuses a team
 speed above 0.5 m/s (the real drones' stick limit).
 
 That folder is ignored by git: **never commit it, and never copy its numbers into code, tests, documents or
 commit messages.** `load_game_cfg()` and `score.py` read it when it is there; `score.py` names it only by file
 name and checksum (sha256), never by its values. Use `--no-local` (or `load_game_cfg(use_local=False)`) to run
-on the neutral values, as every result we publish does. A test (`tests/test_partner_privacy.py`) looks for the
+on the neutral values, as every published STE result does. A test (`tests/test_partner_privacy.py`) looks for the
 local file's values in committed code, configs and scripts (until 18 November 2026 also in documents, commit messages and the deck), but only where they would be recognisable
 (the key written next to a changed value, or a value with three or more significant digits): small common numbers
 cannot be told apart from ordinary ones, so the rule relies on never typing a partner's values into a committed file.
 
 **NUS, since 18 November 2026** (owner; NUS agreed; STANDARDS §2): documents, records and commit messages may state
-NUS's settings and our results on NUS's code, and the value scan now covers code, configs and scripts only. The code
+NUS's settings and STE's results on NUS's code, and the value scan now covers code, configs and scripts only. The code
 still reads NUS's values from `configs/local/` (the files above and `configs/local/nus_*.toml`), never from a typed
 number, and NUS's source code itself is never committed (`tests/test_partner_privacy.py` checks both). Any other
 partner's values stay local until that partner agrees.

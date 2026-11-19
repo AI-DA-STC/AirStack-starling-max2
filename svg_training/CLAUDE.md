@@ -22,9 +22,9 @@ Phase 5 in progress (R0 T29, N0 T30 and C0 T33 PASS; 5.1 running); nothing of ou
 
 | File | Use it for |
 |---|---|
-| [README.md](README.md) | the front door, written for NUS: what we did with NUS's code, questions for NUS, try-it levels |
+| [README.md](README.md) | the front page, written for NUS: porting NUS's code, the six tests on STE drones, why performance drops, training in STE conditions, questions for NUS, run it yourself |
 | [docs/README.md](docs/README.md) | map of every page with its label (Read, Reference, Lab operations, Internal) and the history |
-| [docs/WHAT_WE_FOUND.md](docs/WHAT_WE_FOUND.md), [docs/RUN_IT_YOURSELF.md](docs/RUN_IT_YOURSELF.md) | the NUS port's results by question; the verified try-it commands |
+| [docs/WHAT_WE_FOUND.md](docs/WHAT_WE_FOUND.md), [docs/RUN_IT_YOURSELF.md](docs/RUN_IT_YOURSELF.md), [docs/TRAIN_A_GUARD.md](docs/TRAIN_A_GUARD.md) | the NUS port's results; the verified run-it-yourself commands; the recipe behind the STE Guard policy (T41) |
 | [docs/claude/HANDOFF.md](docs/claude/HANDOFF.md) | where the work stands, what was decided, what is waiting on whom |
 | [STANDARDS.md](STANDARDS.md) | **the rules**: scope, wording, policy interface, game specification, drone models, gates, records, code, git |
 | [docs/DESIGN.md](docs/DESIGN.md) | the design: seven stages, two tiers, four uses, environments and contact tags, build order S0–S5, approaches considered |
@@ -132,6 +132,9 @@ needs is in this folder's committed files (HANDOFF first).
   `svg_training/README.md` (option A text).
 - Ledger rows written on the 5090 are W numbers; the lead renumbers them to the next T numbers at merge
   (records/README.md explains this to readers).
-- Reader pages (label Read in docs/README.md): speak to NUS ("you", "your code"); NUS's own tests as counts, never a
-  verdict; no owner quotes, clock times, agent roles or "the partner"; mechanisms say "likely" until a control row has
-  run; every number links its record.
+- Reader pages (label Read in docs/README.md): neutral and factual, like a short technical report; no "you"/"your" and no
+  conversational headings (owner, 19 Nov 2026). Every label is NUS's own term or defined in one line where it first
+  appears on each page ([GLOSSARY](docs/GLOSSARY.md) part 1: "defender (Guard team)", "attacker (Strike team)", the
+  policies table, Tests 1–6 = ladder rows 1–6 of the records); link text names the destination in words; T numbers only
+  in Evidence columns. NUS's own tests as counts, never a verdict; no owner quotes, clock times, agent roles or "the
+  partner"; mechanisms say "likely" until a control test has run; every number links its record.

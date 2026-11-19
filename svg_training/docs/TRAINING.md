@@ -4,7 +4,7 @@ REFERENCE · every training script and flag, our own and the NUS jobs. To try th
 
 > **What trains today.** The stand-in trainer (`scripts/train_standin.py`, a pipe test: [S2B_RESULTS §5](S2B_RESULTS.md#5-the-stand-in-trainer)); NUS's own JAX
 > trainer ([NUS jobs](#nus-jobs)); and, in progress, our PyTorch copy of NUS's method (Phase 5,
-> [what we did, day by day, §12](WHAT_WE_DID_DAY_BY_DAY.md#12-phase-5-your-training-method-in-pytorch-in-progress)). Our own `scripts/train.py` and
+> [what we did, day by day, §12](WHAT_WE_DID_DAY_BY_DAY.md#12-phase-5-training-in-ste-conditions-in-progress)). Our own `scripts/train.py` and
 > `scripts/evaluate.py` are not built: commands marked `# planned` do not exist. Terms: [glossary](GLOSSARY.md).
 
 *Headless* means running with no window on screen. It is faster, and it is the normal way to train. A *policy* is
@@ -202,7 +202,7 @@ list of all runs.
 **Needs `your NUS clone`.** Set `C=<your clone of area-denial-continuous-space-self-play at 2d2b904>`. NUS's
 outputs, the converted weights (`runs/nus_port/`) and the local settings files (`configs/local/nus_*.toml`) are not in
 git; `scripts/nus_install_provisional.sh` installs the lab's own from the committed PROVISIONAL bundle
-([how to run it yourself, level D](RUN_IT_YOURSELF.md#d-repeat-our-ladder-rows)). Every command runs from `svg_training/`, after `unset PYTHONPATH` if
+([how to run it yourself, level D](RUN_IT_YOURSELF.md#d-repeat-the-six-tests)). Every command runs from `svg_training/`, after `unset PYTHONPATH` if
 your shell sources ROS 2. Long jobs go inside `tmux`. Results are "observed in the training simulator".
 
 **1. The env, once** ([GETTING_STARTED](GETTING_STARTED.md#nus-jax-env-with-your-nus-clone)):
@@ -295,12 +295,12 @@ Every option is in each script's `--help` and docstring. A row estimated above 2
 deploy script is refused outside `configs/local/`. The record writers mark any number equal to a local value as "at
 the local value" (the mechanism is kept; NUS's values themselves are stated in [what we did, day by day](WHAT_WE_DID_DAY_BY_DAY.md); how to read a record:
 [records/README](../records/README.md)). Instead of rebuilding the local files, `scripts/nus_install_provisional.sh`
-installs the lab's own ([how to run it yourself, level D](RUN_IT_YOURSELF.md#d-repeat-our-ladder-rows)).
+installs the lab's own ([how to run it yourself, level D](RUN_IT_YOURSELF.md#d-repeat-the-six-tests)).
 
 **5. Phase 5 (in progress).** Our PyTorch copy of NUS's method: `scripts/nus_make_local_method.py`,
 `scripts/nus_selfplay_train.py`, `scripts/nus_phase5_reference.py`, `scripts/nus_phase5_score.py`; plan and gates in
 [the Phase 5 plan](plans/2026-11-18-nus-phase5-retraining.md). R0, N0 and C0 have passed; our own seeds have no result
-yet ([what we found, training method](WHAT_WE_FOUND.md#q6-does-our-copy-of-your-training-method-behave-like-yours)). Each script's
+yet ([what we found, training method](WHAT_WE_FOUND.md#6-ste-port-of-nus-training-method-no-result-yet)). Each script's
 `--help` holds its options.
 
 ## 8. Troubleshooting

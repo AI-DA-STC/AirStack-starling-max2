@@ -49,7 +49,7 @@ The programme's wording rules apply to every document and figure here
 | counter-UAS, defence, area denial | decentralised multi-drone autonomy |
 | under mocap | with motion capture; "camera-only" for flight without it |
 | validated, proven (for a simulator result) | observed in the training simulator |
-| the partner (on a page written for NUS) | NUS, or "you" |
+| the partner (on a page written for NUS) | NUS (not "you": owner, 19 Nov 2026) |
 
 - Paper titles and library names keep their published wording.
 - Three simulators exist; name the one you mean every time: **training simulator** (tier 1 or

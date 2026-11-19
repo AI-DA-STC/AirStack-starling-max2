@@ -3,11 +3,18 @@ READ · TRAINING SIMULATOR ONLY: every clip of the NUS port, one line each.
 # Videos of the NUS port
 
 Training simulator only; nothing here is a flight. Published with NUS's agreement ([STANDARDS §2](../../../STANDARDS.md#2-wording));
-every clip of the port is public, the Phase 4 ones included. The story behind each clip:
-[NUS_PORT](../../WHAT_WE_DID_DAY_BY_DAY.md).
+every clip of the port is public, the Phase 4 ones included. **STE**: the lab that wrote this repository. The story
+behind each clip: [what we did, day by day](../../WHAT_WE_DID_DAY_BY_DAY.md). Captions read "Guard vs Strike · played in
+· outcome". NUS's `defender` is the defender (Guard team) here, NUS's `attacker` the attacker (Strike team). The
+policies are defined in the [glossary](../../GLOSSARY.md#policies): G19 and S20 (self-play seed 2) and P3G and P3S
+(fixed-opponent runs) were trained by STE using NUS's code; `ApfGuard` and `ApfStrike` are NUS's scripted opponent
+(the APF defender and attacker), ported to PyTorch by STE; `ParkedGuard` is the Parked Guard, an STE baseline whose
+drones command zero speed; `guard_*` and `strike_*` are STE scripted Guards and Strikes (hand-written, no training).
+The six tests ([glossary, the six tests](../../GLOSSARY.md#the-six-tests)) are folders `row_N` here: **Test N =
+ladder row N in the records**.
 
 **How to watch.** GitHub plays a GIF inside a page but opens an MP4 on its own page (click, then play or download).
-The front page's [Watch it](../../../README.md#watch-it) gallery shows the eight key clips as GIFs; the tables below
+The front page's [video gallery](../../../README.md#watch-it) shows the eight key clips as GIFs; the tables below
 link every MP4.
 
 **Five kinds of clip** (279 clip files: the 271 of 18 November plus a second Isaac Lab set of 8).
@@ -15,31 +22,31 @@ link every MP4.
 | Folder | What | Simulator | Count |
 |---|---|---|---|
 | `nus_*` (this folder) | **NUS's own 2-D game and NUS's JAX policies**, drawn by NUS's renderer | NUS's 2-D game | 8 files (6 games; 2 also as GIF) |
-| [`phase3/`](#phase-3-the-converted-policies-in-the-replica-t16) | NUS's policies converted to PyTorch, in our copy (replica) of NUS's game (T16) | replica | 4 |
-| [`w3/`](#t17-the-self-play-pair-through-the-phase-3-gates) | the self-play pair G19 and S20, converted, through the Phase 3 gates (T17) | replica | 4 |
-| [`phase4/row_*/`](#phase-4-the-transfer-ladder-top-down) | the transfer ladder, one folder per row: the first Strike win and the first hold among the first 16 games of each pair | replica, tier 1, tier 2 | 246 |
-| [`isaac/`](#isaac-lab-camera-clips-row-6) | the converted policies on rigid-body Starlings in Isaac Lab, an oblique camera (row 6) | tier 2 (Isaac Lab) | 6 MP4, 3 GIF previews; second set ([below](#isaac-lab-camera-clips-second-set-more-pairings-and-the-props-world-18-november-2026-evening)): 5 MP4, 3 GIF previews |
+| [`phase3/`](#phase-3-the-converted-policies-in-the-copy-of-nus-2-d-game-t16) | P3G and P3S converted to PyTorch, in the Copy of NUS 2-D game (PyTorch) (T16) | Copy of NUS 2-D game | 4 |
+| [`w3/`](#g19-and-s20-through-the-phase-3-gates-t17) | the self-play pair G19 and S20, converted, through the Phase 3 gates (T17) | Copy of NUS 2-D game | 4 |
+| [`phase4/row_*/`](#phase-4-the-six-tests-top-down) | the six tests, one folder per test (`row_N` = Test N): the first Strike win and the first hold among the first 16 games of each pair | Copy of NUS 2-D game, STE game engine, STE drone model, Isaac Lab physics drones | 246 |
+| [`isaac/`](#isaac-lab-camera-clips-test-6) | the converted policies on rigid-body Starling models in Isaac Lab, an oblique camera (Test 6) | Isaac Lab physics drones | 6 MP4, 3 GIF previews; second set ([below](#isaac-lab-camera-clips-second-set-more-pairings-and-the-props-world-18-november-2026-evening)): 5 MP4, 3 GIF previews |
 
 **How to read them.**
 
-- **NUS's clips** (`nus_*`): blue discs D0–D2 are Guard drones (NUS: "defender"), red discs A0–A2 are Strike drones
+- **NUS-renderer clips** (`nus_*`): blue discs D0–D2 are Guard drones (NUS: "defender"), red discs A0–A2 are Strike drones
   (NUS: "attacker"), the green disc is the zone. The title bar shows NUS's environment name and the step (200 per
   game). NUS's game keeps the "reached" flag once a Strike drone has been inside the zone, and the game runs on to
   step 200, so a Strike drone may leave the zone again: the outcome is the first entry, not the last frame. 12.5
   frames/s (2 steps a second; about 6× real time at 0.6 s per step), all 201 frames.
-- **Our top-down clips** (`phase3/`, `w3/`, `phase4/`): blue circles are Guard drones, orange triangles Strike drones,
+- **STE top-down clips** (`phase3/`, `w3/`, `phase4/`): blue circles are Guard drones, orange triangles Strike drones,
   the green disc the zone (1.6 m radius); marker size only tells the drones of a team apart. The last frame names the
   outcome. Phase 4 clips play at 6× real time (one frame per 8 ticks of 0.05 s, 15 frames/s); `phase3/` and `w3/`
   interpolate between policy steps at 20 frames/s. The title rounds the arena to whole metres: the hangar arena is
-  **7.5 m** square (walls at ±3.75 m), shown as "8 m x 8 m". The replica and Phase 4 row 2.1 have no walls (NUS's
-  Guard circle instead), so on `phase3/`, `w3/` and Phase 4 rows 1 and 2.1 the drawn square is only the view (8 m or
+  **7.5 m** square (walls at ±3.75 m), shown as "8 m x 8 m". The Copy of NUS 2-D game and sub-test 2.1 have no walls (NUS's
+  Guard circle instead), so on `phase3/`, `w3/` and Tests 1 and 2.1 the drawn square is only the view (8 m or
   17 m across, depending on the clip).
 - **Isaac Lab clips** (`isaac/`): real time, 20 frames/s, an oblique camera on Starling models, 2 s still at the end;
   the overlay names the players. Each recorded game repeats its dry run exactly (same positions, end step and
   outcome) and no drone tipped over.
-- "Row's Strike reach" is the row's count over all 1,000 paired games of that pair (the records); one clip is one game.
-  "Game *n*" is the *n*-th paired start, the same on every row, so a pair's clips can be compared row by row. The
-  closest approach in the Phase 4 tables is measured in the horizontal plane; on rows 5 and 6, where drones change
+- "Test's Strike reach" is the test's count over all 1,000 paired games of that pair (the records); one clip is one game.
+  "Game *n*" is the *n*-th paired start, the same in every test, so a pair's clips can be compared test by test. The
+  closest approach in the Phase 4 tables is measured in the horizontal plane; in Tests 5 and 6, where drones change
   height, it can be well under the 1.10 m keep-out while the 3-D distance is not (a drone passing over or under).
 
 ## NUS's 2-D game
@@ -48,44 +55,44 @@ On the hangar geometry (0.40 m per unit, 0.60 s per step; [NUS_PORT §3](../../W
 
 | File | Caption | Source (lab only) | Size |
 |---|---|---|---|
-| [`nus_fixed_guard_vs_scripted_strike.mp4`](nus_fixed_guard_vs_scripted_strike.mp4) | Fixed-opponent Guard policy (3,000 updates, the run converted as P3G) against NUS's scripted Strike controller. No Strike drone enters the zone in 200 steps (last evaluation: 19 of 20 held). | NUS outputs `hangar/2026-11-17_fixed_apf_3v3_defender/replays/defender_vs_apf_00003000_env0.gif` | 58 kB |
-| [`nus_fixed_strike_vs_scripted_guard.mp4`](nus_fixed_strike_vs_scripted_guard.mp4), [`.gif`](nus_fixed_strike_vs_scripted_guard.gif) | Fixed-opponent Strike policy (the run converted as P3S) against NUS's scripted Guard controller. A Strike drone reaches the zone at about step 7 (last evaluation: 20 of 20 reached). | `hangar/2026-11-17_fixed_apf_3v3_attacker/replays/attacker_vs_apf_00003000_env0.gif` | 76 kB, 161 kB |
-| [`nus_selfplay_s1_g7_vs_s1_s8.mp4`](nus_selfplay_s1_g7_vs_s1_s8.mp4) | Self-play seed 1: Guard generation 7 against Strike generation 8. The Guard team holds (that pair: 0.005 Strike wins over 200 games). | `_probes/selfplay_eval/videos/s1_guard7_vs_strike8/` | 49 kB |
-| [`nus_selfplay_s2_g7_vs_s2_s8.mp4`](nus_selfplay_s2_g7_vs_s2_s8.mp4) | Self-play seed 2: Guard generation 7 against Strike generation 8. A Strike drone reaches the zone at about step 25 (that pair: 1.000 over 200 games), the "last mover wins" pattern of generations 1–12. | `_probes/selfplay_eval/videos/s2_guard7_vs_strike8/` | 73 kB |
-| [`nus_selfplay_s2_g19_vs_s2_s20.mp4`](nus_selfplay_s2_g19_vs_s2_s20.mp4), [`.gif`](nus_selfplay_s2_g19_vs_s2_s20.gif) | The reference pair: seed 2 Guard generation 19 (G19) against Strike generation 20 (S20). The Guard team holds for 200 steps (that pair: 0.025 over 200 games). | `_probes/selfplay_eval/videos/s2_guard19_vs_strike20/` | 58 kB, 168 kB |
-| [`nus_selfplay_s2_g19_vs_s3_s8.mp4`](nus_selfplay_s2_g19_vs_s3_s8.mp4) | G19 against a policy it never met: seed 3 Strike generation 8. The Guard team holds (that pair: 0.120 over 200 games). | `_probes/selfplay_eval/videos/s2_guard19_vs_s3strike8/` | 62 kB |
+| [`nus_fixed_guard_vs_scripted_strike.mp4`](nus_fixed_guard_vs_scripted_strike.mp4) | P3G vs APF attacker · NUS 2-D game (JAX) · Guard holds. The fixed-opponent Guard run (3,000 updates; trained by STE with NUS's code, converted as P3G): no Strike drone enters the zone in 200 steps (last evaluation: 19 of 20 held). | NUS outputs `hangar/2026-11-17_fixed_apf_3v3_defender/replays/defender_vs_apf_00003000_env0.gif` | 58 kB |
+| [`nus_fixed_strike_vs_scripted_guard.mp4`](nus_fixed_strike_vs_scripted_guard.mp4), [`.gif`](nus_fixed_strike_vs_scripted_guard.gif) | APF defender vs P3S · NUS 2-D game (JAX) · Strike reaches the zone. The fixed-opponent Strike run (trained by STE with NUS's code, converted as P3S): a Strike drone reaches the zone at about step 7 (last evaluation: 20 of 20 reached). | `hangar/2026-11-17_fixed_apf_3v3_attacker/replays/attacker_vs_apf_00003000_env0.gif` | 76 kB, 161 kB |
+| [`nus_selfplay_s1_g7_vs_s1_s8.mp4`](nus_selfplay_s1_g7_vs_s1_s8.mp4) | Seed 1 Guard gen. 7 vs seed 1 Strike gen. 8 · NUS 2-D game (JAX) · Guard holds (that pair: 0.005 Strike wins over 200 games). | `_probes/selfplay_eval/videos/s1_guard7_vs_strike8/` | 49 kB |
+| [`nus_selfplay_s2_g7_vs_s2_s8.mp4`](nus_selfplay_s2_g7_vs_s2_s8.mp4) | Seed 2 Guard gen. 7 vs seed 2 Strike gen. 8 · NUS 2-D game (JAX) · Strike reaches the zone at about step 25 (that pair: 1.000 over 200 games), the "last mover wins" pattern of generations 1–12. | `_probes/selfplay_eval/videos/s2_guard7_vs_strike8/` | 73 kB |
+| [`nus_selfplay_s2_g19_vs_s2_s20.mp4`](nus_selfplay_s2_g19_vs_s2_s20.mp4), [`.gif`](nus_selfplay_s2_g19_vs_s2_s20.gif) | G19 vs S20 · NUS 2-D game (JAX) · Guard holds for 200 steps (that pair: 0.025 over 200 games). The reference pair: seed 2 Guard generation 19 against Strike generation 20. | `_probes/selfplay_eval/videos/s2_guard19_vs_strike20/` | 58 kB, 168 kB |
+| [`nus_selfplay_s2_g19_vs_s3_s8.mp4`](nus_selfplay_s2_g19_vs_s3_s8.mp4) | G19 vs seed 3 Strike gen. 8 · NUS 2-D game (JAX) · Guard holds (that pair: 0.120 over 200 games); a Strike policy G19 never met in training. | `_probes/selfplay_eval/videos/s2_guard19_vs_s3strike8/` | 62 kB |
 
-## Phase 3: the converted policies in the replica (T16)
+## Phase 3: the converted policies in the Copy of NUS 2-D game (T16)
 
-The fixed-opponent pair converted to PyTorch (P3G, P3S) against NUS's scripted controllers, ported; replica of NUS's
-game on the hangar geometry. Record: [T16](../../../records/2026-11-18_nus_phase3_conversion_record.md).
+The fixed-opponent pair converted to PyTorch (P3G, P3S) against the APF defender and attacker (ported); Copy of NUS
+2-D game on the hangar geometry. Record: [T16](../../../records/2026-11-18_nus_phase3_conversion_record.md).
 
 | File | Guard v Strike | This game | Size |
 |---|---|---|---|
-| [`guard_game0.mp4`](phase3/guard_game0.mp4) | P3G v NUS's scripted Strike | Guard team holds for 120 s | 268 kB |
-| [`guard_game1.mp4`](phase3/guard_game1.mp4) | P3G v NUS's scripted Strike | Guard team holds for 120 s | 267 kB |
-| [`strike_game0.mp4`](phase3/strike_game0.mp4) | NUS's scripted Guard v P3S | Strike team reaches the zone at 4.2 s | 31 kB |
-| [`strike_game1.mp4`](phase3/strike_game1.mp4) | NUS's scripted Guard v P3S | Strike team reaches the zone at 3.6 s | 29 kB |
+| [`guard_game0.mp4`](phase3/guard_game0.mp4) | P3G v APF attacker | Guard team holds for 120 s | 268 kB |
+| [`guard_game1.mp4`](phase3/guard_game1.mp4) | P3G v APF attacker | Guard team holds for 120 s | 267 kB |
+| [`strike_game0.mp4`](phase3/strike_game0.mp4) | APF defender v P3S | Strike team reaches the zone at 4.2 s | 31 kB |
+| [`strike_game1.mp4`](phase3/strike_game1.mp4) | APF defender v P3S | Strike team reaches the zone at 3.6 s | 29 kB |
 
-## T17: the self-play pair through the Phase 3 gates
+## G19 and S20 through the Phase 3 gates (T17)
 
-G19 and S20 converted, in the replica. Record: [T17](../../../records/2026-11-18_nus_phase4_w3_reference_gates_record.md)
+G19 and S20 converted, in the Copy of NUS 2-D game. Record: [T17](../../../records/2026-11-18_nus_phase4_w3_reference_gates_record.md)
 (the "W3" workstation row).
 
 | File | Guard v Strike | This game | Size |
 |---|---|---|---|
 | [`archive_arm_G19_vs_S20_game0.mp4`](w3/archive_arm_G19_vs_S20_game0.mp4) | G19 v S20 (archive arm) | Guard team holds for 120 s | 257 kB |
 | [`archive_arm_G19_vs_S20_game1.mp4`](w3/archive_arm_G19_vs_S20_game1.mp4) | G19 v S20 (archive arm) | Guard team holds for 120 s | 242 kB |
-| [`scripted_arm_G19_game0.mp4`](w3/scripted_arm_G19_game0.mp4) | G19 v NUS's scripted Strike | Guard team holds for 120 s | 269 kB |
-| [`scripted_arm_S20_game0.mp4`](w3/scripted_arm_S20_game0.mp4) | NUS's scripted Guard v S20 | Strike team reaches the zone at 7.8 s | 39 kB |
+| [`scripted_arm_G19_game0.mp4`](w3/scripted_arm_G19_game0.mp4) | G19 v APF attacker | Guard team holds for 120 s | 269 kB |
+| [`scripted_arm_S20_game0.mp4`](w3/scripted_arm_S20_game0.mp4) | APF defender v S20 | Strike team reaches the zone at 7.8 s | 39 kB |
 
-## Isaac Lab camera clips (row 6)
+## Isaac Lab camera clips (Test 6)
 
 Presentation only (no gates, not a measurement): `scripts/nus_isaac_clips.py` with `configs/nus_isaac_clips.toml`
-plays the Phase 4 players on the row 6 game (physics drones, safety filter on, free height with the start jitter) from
+plays the Phase 4 players in Test 6 (Isaac Lab physics drones, safety filter on, free height with the start jitter) from
 the first 16 paired starts. Record: [T24](../../../records/2026-11-18_nus_phase4_rung6_record.md).
 
-| File | Guard v Strike | This game | Row 6 Strike reach (of 1,000) | Size |
+| File | Guard v Strike | This game | Test 6 Strike reach (of 1,000) | Size |
 |---|---|---|---|---|
 | [`g19_vs_s20_strike_win_1.mp4`](isaac/g19_vs_s20_strike_win_1.mp4), [`.gif`](isaac/g19_vs_s20_strike_win_1.gif) | G19 v S20 | game 1: Strike team reaches the zone at 24.1 s (no hold among the 16 candidates) | 979 | 150 kB, 762 kB |
 | [`g19_vs_s20_strike_win_2.mp4`](isaac/g19_vs_s20_strike_win_2.mp4) | G19 v S20 | game 2: Strike team reaches the zone at 28.7 s | 979 | 172 kB |
@@ -96,20 +103,20 @@ the first 16 paired starts. Record: [T24](../../../records/2026-11-18_nus_phase4
 
 The GIFs are 480 px wide at 4× real time (the 120 s hold: 400 px at 8×), 5 frames/s, 128 colours, for inline display on GitHub.
 
-## Phase 4: the transfer ladder, top-down
+## Phase 4: the six tests, top-down
 
-One folder per row; each row changes one thing from the row before ([NUS_PORT §8](../../WHAT_WE_DID_DAY_BY_DAY.md#8-phase-4-the-transfer-ladder)).
-Players: G19 and S20 (the self-play pair), P3G and P3S (the Phase 3 pair), ApfGuard and ApfStrike (NUS's scripted
-controllers, ported), ParkedGuard (every Guard drone commands zero; Guard 0 starts at the zone centre), `strike_*`
-and `guard_*` (our own scripted strategies, from row 2). A pair has no `hold` clip when none of its first 16 games
+One folder per test (`row_N` = Test N); each test changes one thing from the test before ([the six tests, day by day](../../WHAT_WE_DID_DAY_BY_DAY.md#8-phase-4-six-tests-towards-ste-drones)).
+Players: G19 and S20 (the self-play pair), P3G and P3S (the Phase 3 pair), ApfGuard and ApfStrike (the APF defender and
+attacker, NUS's scripted opponent ported to PyTorch), ParkedGuard (every Guard drone commands zero; Guard 0 starts at the zone centre), `strike_*`
+and `guard_*` (STE scripted Guards and Strikes, from Test 2). A pair has no `hold` clip when none of its first 16 games
 was held, and no `strike_win` clip when none was reached. Records:
 [T18](../../../records/2026-11-18_nus_phase4_rung1_record.md), [T19](../../../records/2026-11-18_nus_phase4_rung2_record.md),
 [T20](../../../records/2026-11-18_nus_phase4_rung3_record.md), [T22](../../../records/2026-11-18_nus_phase4_rung4_2_record.md),
 [T23](../../../records/2026-11-18_nus_phase4_rung5_record.md), [T24](../../../records/2026-11-18_nus_phase4_rung6_record.md).
 
-#### Row 1: replica of NUS's game on the hangar geometry (T18)
+#### Test 1: Copy of NUS 2-D game, in PyTorch, on the hangar geometry (T18)
 
-| Clip | Guard v Strike | This game | Row's Strike reach (of 1,000) | Size |
+| Clip | Guard v Strike | This game | Test's Strike reach (of 1,000) | Size |
 |---|---|---|---|---|
 | [`ApfGuard_vs_ApfStrike_strike_win.mp4`](phase4/row_1/ApfGuard_vs_ApfStrike_strike_win.mp4) | ApfGuard v ApfStrike | game 1: Strike team reaches the zone at 15.6 s; closest Guard–Strike in the horizontal plane 1.20 m | 999 | 33 kB |
 | [`ApfGuard_vs_P3S_strike_win.mp4`](phase4/row_1/ApfGuard_vs_P3S_strike_win.mp4) | ApfGuard v P3S | game 1: Strike team reaches the zone at 7.8 s; closest Guard–Strike in the horizontal plane 1.20 m | 1000 | 30 kB |
@@ -126,9 +133,9 @@ was held, and no `strike_win` clip when none was reached. Records:
 | [`ParkedGuard_vs_P3S_strike_win.mp4`](phase4/row_1/ParkedGuard_vs_P3S_strike_win.mp4) | ParkedGuard v P3S | game 1: Strike team reaches the zone at 7.8 s; closest Guard–Strike in the horizontal plane 1.20 m | 991 | 26 kB |
 | [`ParkedGuard_vs_S20_strike_win.mp4`](phase4/row_1/ParkedGuard_vs_S20_strike_win.mp4) | ParkedGuard v S20 | game 1: Strike team reaches the zone at 4.8 s; closest Guard–Strike in the horizontal plane 1.44 m | 1000 | 23 kB |
 
-#### Row 2.1: our game engine with NUS's push and Guard circle (T19)
+#### Sub-test 2.1: the STE game engine with NUS's push and Guard circle (T19)
 
-| Clip | Guard v Strike | This game | Row's Strike reach (of 1,000) | Size |
+| Clip | Guard v Strike | This game | Test's Strike reach (of 1,000) | Size |
 |---|---|---|---|---|
 | [`ApfGuard_vs_ApfStrike_strike_win.mp4`](phase4/row_2.1/ApfGuard_vs_ApfStrike_strike_win.mp4) | ApfGuard v ApfStrike | game 1: Strike team reaches the zone at 15.1 s; closest Guard–Strike in the horizontal plane 1.20 m | 999 | 32 kB |
 | [`ApfGuard_vs_P3S_strike_win.mp4`](phase4/row_2.1/ApfGuard_vs_P3S_strike_win.mp4) | ApfGuard v P3S | game 1: Strike team reaches the zone at 7.2 s; closest Guard–Strike in the horizontal plane 1.20 m | 1000 | 29 kB |
@@ -145,9 +152,9 @@ was held, and no `strike_win` clip when none was reached. Records:
 | [`ParkedGuard_vs_P3S_strike_win.mp4`](phase4/row_2.1/ParkedGuard_vs_P3S_strike_win.mp4) | ParkedGuard v P3S | game 1: Strike team reaches the zone at 7.2 s; closest Guard–Strike in the horizontal plane 1.20 m | 991 | 25 kB |
 | [`ParkedGuard_vs_S20_strike_win.mp4`](phase4/row_2.1/ParkedGuard_vs_S20_strike_win.mp4) | ParkedGuard v S20 | game 1: Strike team reaches the zone at 4.2 s; closest Guard–Strike in the horizontal plane 1.44 m | 1000 | 24 kB |
 
-#### Row 2.2: square walls instead of the Guard circle (T19)
+#### Sub-test 2.2: square walls instead of the Guard circle (T19)
 
-| Clip | Guard v Strike | This game | Row's Strike reach (of 1,000) | Size |
+| Clip | Guard v Strike | This game | Test's Strike reach (of 1,000) | Size |
 |---|---|---|---|---|
 | [`ApfGuard_vs_ApfStrike_strike_win.mp4`](phase4/row_2.2/ApfGuard_vs_ApfStrike_strike_win.mp4) | ApfGuard v ApfStrike | game 1: Strike team reaches the zone at 15.1 s; closest Guard–Strike in the horizontal plane 1.20 m | 1000 | 32 kB |
 | [`ApfGuard_vs_P3S_strike_win.mp4`](phase4/row_2.2/ApfGuard_vs_P3S_strike_win.mp4) | ApfGuard v P3S | game 1: Strike team reaches the zone at 7.2 s; closest Guard–Strike in the horizontal plane 1.20 m | 1000 | 29 kB |
@@ -165,9 +172,9 @@ was held, and no `strike_win` clip when none was reached. Records:
 | [`ParkedGuard_vs_P3S_strike_win.mp4`](phase4/row_2.2/ParkedGuard_vs_P3S_strike_win.mp4) | ParkedGuard v P3S | game 1: Strike team reaches the zone at 7.2 s; closest Guard–Strike in the horizontal plane 1.20 m | 991 | 25 kB |
 | [`ParkedGuard_vs_S20_strike_win.mp4`](phase4/row_2.2/ParkedGuard_vs_S20_strike_win.mp4) | ParkedGuard v S20 | game 1: Strike team reaches the zone at 4.2 s; closest Guard–Strike in the horizontal plane 1.47 m | 1000 | 24 kB |
 
-#### Row 2: our push-apart instead of NUS's push; each action held for 12 ticks (T19)
+#### Test 2: STE game engine (PyTorch), NUS rules, action held for each 0.6 s step; the STE push-apart instead of NUS's push (T19)
 
-| Clip | Guard v Strike | This game | Row's Strike reach (of 1,000) | Size |
+| Clip | Guard v Strike | This game | Test's Strike reach (of 1,000) | Size |
 |---|---|---|---|---|
 | [`ApfGuard_vs_ApfStrike_hold.mp4`](phase4/row_2/ApfGuard_vs_ApfStrike_hold.mp4) | ApfGuard v ApfStrike | game 9: Guard team holds for 120 s; closest Guard–Strike in the horizontal plane 1.00 m | 919 | 70 kB |
 | [`ApfGuard_vs_ApfStrike_strike_win.mp4`](phase4/row_2/ApfGuard_vs_ApfStrike_strike_win.mp4) | ApfGuard v ApfStrike | game 1: Strike team reaches the zone at 17.6 s; closest Guard–Strike in the horizontal plane 0.99 m | 919 | 35 kB |
@@ -203,9 +210,9 @@ was held, and no `strike_win` clip when none was reached. Records:
 | [`ParkedGuard_vs_strike_flank_strike_win.mp4`](phase4/row_2/ParkedGuard_vs_strike_flank_strike_win.mp4) | ParkedGuard v strike_flank | game 1: Strike team reaches the zone at 3.9 s; closest Guard–Strike in the horizontal plane 1.20 m | 879 | 23 kB |
 | [`ParkedGuard_vs_strike_straight_strike_win.mp4`](phase4/row_2/ParkedGuard_vs_strike_straight_strike_win.mp4) | ParkedGuard v strike_straight | game 1: Strike team reaches the zone at 3.2 s; closest Guard–Strike in the horizontal plane 1.20 m | 1000 | 23 kB |
 
-#### Row 3a: control: an identity drone that flies the held command exactly; must equal row 2 (T20)
+#### Sub-test 3a: control: a drone that flies the held command exactly; must equal Test 2 (T20)
 
-| Clip | Guard v Strike | This game | Row's Strike reach (of 1,000) | Size |
+| Clip | Guard v Strike | This game | Test's Strike reach (of 1,000) | Size |
 |---|---|---|---|---|
 | [`ApfGuard_vs_ApfStrike_hold.mp4`](phase4/row_3a/ApfGuard_vs_ApfStrike_hold.mp4) | ApfGuard v ApfStrike | game 9: Guard team holds for 120 s; closest Guard–Strike in the horizontal plane 1.00 m | 919 | 71 kB |
 | [`ApfGuard_vs_ApfStrike_strike_win.mp4`](phase4/row_3a/ApfGuard_vs_ApfStrike_strike_win.mp4) | ApfGuard v ApfStrike | game 1: Strike team reaches the zone at 17.6 s; closest Guard–Strike in the horizontal plane 0.99 m | 919 | 35 kB |
@@ -241,9 +248,9 @@ was held, and no `strike_win` clip when none was reached. Records:
 | [`ParkedGuard_vs_strike_flank_strike_win.mp4`](phase4/row_3a/ParkedGuard_vs_strike_flank_strike_win.mp4) | ParkedGuard v strike_flank | game 1: Strike team reaches the zone at 3.9 s; closest Guard–Strike in the horizontal plane 1.20 m | 879 | 23 kB |
 | [`ParkedGuard_vs_strike_straight_strike_win.mp4`](phase4/row_3a/ParkedGuard_vs_strike_straight_strike_win.mp4) | ParkedGuard v strike_straight | game 1: Strike team reaches the zone at 3.2 s; closest Guard–Strike in the horizontal plane 1.20 m | 1000 | 24 kB |
 
-#### Row 3: the drone response: commander copy, delay and lag of the exploratory fitted model; filter off (T20)
+#### Test 3: STE drone model (PyTorch): + Starling delay and lag (commander copy, exploratory fitted model); filter off (T20)
 
-| Clip | Guard v Strike | This game | Row's Strike reach (of 1,000) | Size |
+| Clip | Guard v Strike | This game | Test's Strike reach (of 1,000) | Size |
 |---|---|---|---|---|
 | [`ApfGuard_vs_ApfStrike_hold.mp4`](phase4/row_3/ApfGuard_vs_ApfStrike_hold.mp4) | ApfGuard v ApfStrike | game 11: Guard team holds for 120 s; closest Guard–Strike in the horizontal plane 1.00 m | 894 | 79 kB |
 | [`ApfGuard_vs_ApfStrike_strike_win.mp4`](phase4/row_3/ApfGuard_vs_ApfStrike_strike_win.mp4) | ApfGuard v ApfStrike | game 1: Strike team reaches the zone at 13.6 s; closest Guard–Strike in the horizontal plane 0.99 m | 894 | 34 kB |
@@ -281,9 +288,9 @@ was held, and no `strike_win` clip when none was reached. Records:
 | [`ParkedGuard_vs_strike_flank_strike_win.mp4`](phase4/row_3/ParkedGuard_vs_strike_flank_strike_win.mp4) | ParkedGuard v strike_flank | game 1: Strike team reaches the zone at 4.2 s; closest Guard–Strike in the horizontal plane 1.20 m | 876 | 24 kB |
 | [`ParkedGuard_vs_strike_straight_strike_win.mp4`](phase4/row_3/ParkedGuard_vs_strike_straight_strike_win.mp4) | ParkedGuard v strike_straight | game 1: Strike team reaches the zone at 3.7 s; closest Guard–Strike in the horizontal plane 1.20 m | 1000 | 23 kB |
 
-#### Row 4: the all-pairs safety filter instead of the push, as in flight (T22)
+#### Test 4: STE drone model: + safety filter on every drone pair, in place of the push, as in flight (T22)
 
-| Clip | Guard v Strike | This game | Row's Strike reach (of 1,000) | Size |
+| Clip | Guard v Strike | This game | Test's Strike reach (of 1,000) | Size |
 |---|---|---|---|---|
 | [`ApfGuard_vs_ApfStrike_strike_win.mp4`](phase4/row_4/ApfGuard_vs_ApfStrike_strike_win.mp4) | ApfGuard v ApfStrike | game 1: Strike team reaches the zone at 9.6 s; closest Guard–Strike in the horizontal plane 1.06 m | 1000 | 29 kB |
 | [`ApfGuard_vs_P3S_strike_win.mp4`](phase4/row_4/ApfGuard_vs_P3S_strike_win.mp4) | ApfGuard v P3S | game 1: Strike team reaches the zone at 7.5 s; closest Guard–Strike in the horizontal plane 1.04 m | 1000 | 28 kB |
@@ -319,9 +326,9 @@ was held, and no `strike_win` clip when none was reached. Records:
 | [`ParkedGuard_vs_strike_flank_strike_win.mp4`](phase4/row_4/ParkedGuard_vs_strike_flank_strike_win.mp4) | ParkedGuard v strike_flank | game 1: Strike team reaches the zone at 5.4 s; closest Guard–Strike in the horizontal plane 1.04 m | 945 | 27 kB |
 | [`ParkedGuard_vs_strike_straight_strike_win.mp4`](phase4/row_4/ParkedGuard_vs_strike_straight_strike_win.mp4) | ParkedGuard v strike_straight | game 1: Strike team reaches the zone at 3.7 s; closest Guard–Strike in the horizontal plane 1.02 m | 1000 | 25 kB |
 
-#### Row 5a: control: drones free in height, no start jitter; must equal row 4 (12 core pairs only) (T23)
+#### Sub-test 5a: control: drones free in height, no start jitter; must equal Test 4 (12 core pairs only) (T23)
 
-| Clip | Guard v Strike | This game | Row's Strike reach (of 1,000) | Size |
+| Clip | Guard v Strike | This game | Test's Strike reach (of 1,000) | Size |
 |---|---|---|---|---|
 | [`ApfGuard_vs_ApfStrike_strike_win.mp4`](phase4/row_5a/ApfGuard_vs_ApfStrike_strike_win.mp4) | ApfGuard v ApfStrike | game 1: Strike team reaches the zone at 9.6 s; closest Guard–Strike in the horizontal plane 1.06 m | 1000 | 29 kB |
 | [`ApfGuard_vs_P3S_strike_win.mp4`](phase4/row_5a/ApfGuard_vs_P3S_strike_win.mp4) | ApfGuard v P3S | game 1: Strike team reaches the zone at 7.5 s; closest Guard–Strike in the horizontal plane 1.04 m | 1000 | 28 kB |
@@ -339,9 +346,9 @@ was held, and no `strike_win` clip when none was reached. Records:
 | [`ParkedGuard_vs_S20_hold.mp4`](phase4/row_5a/ParkedGuard_vs_S20_hold.mp4) | ParkedGuard v S20 | game 2: Guard team holds for 120 s; closest Guard–Strike in the horizontal plane 1.44 m | 556 | 72 kB |
 | [`ParkedGuard_vs_S20_strike_win.mp4`](phase4/row_5a/ParkedGuard_vs_S20_strike_win.mp4) | ParkedGuard v S20 | game 1: Strike team reaches the zone at 34.4 s; closest Guard–Strike in the horizontal plane 1.10 m | 556 | 36 kB |
 
-#### Row 5: drones free in height with a ±1 mm start-height jitter (T23)
+#### Test 5: STE drone model: + free height (3-D), start heights jittered by ±1 mm (T23)
 
-| Clip | Guard v Strike | This game | Row's Strike reach (of 1,000) | Size |
+| Clip | Guard v Strike | This game | Test's Strike reach (of 1,000) | Size |
 |---|---|---|---|---|
 | [`ApfGuard_vs_ApfStrike_strike_win.mp4`](phase4/row_5/ApfGuard_vs_ApfStrike_strike_win.mp4) | ApfGuard v ApfStrike | game 1: Strike team reaches the zone at 9.3 s; closest Guard–Strike in the horizontal plane 1.02 m | 1000 | 29 kB |
 | [`ApfGuard_vs_P3S_strike_win.mp4`](phase4/row_5/ApfGuard_vs_P3S_strike_win.mp4) | ApfGuard v P3S | game 1: Strike team reaches the zone at 7.5 s; closest Guard–Strike in the horizontal plane 1.04 m | 1000 | 28 kB |
@@ -371,9 +378,9 @@ was held, and no `strike_win` clip when none was reached. Records:
 | [`ParkedGuard_vs_strike_flank_strike_win.mp4`](phase4/row_5/ParkedGuard_vs_strike_flank_strike_win.mp4) | ParkedGuard v strike_flank | game 1: Strike team reaches the zone at 4.7 s; closest Guard–Strike in the horizontal plane 1.06 m | 1000 | 25 kB |
 | [`ParkedGuard_vs_strike_straight_strike_win.mp4`](phase4/row_5/ParkedGuard_vs_strike_straight_strike_win.mp4) | ParkedGuard v strike_straight | game 1: Strike team reaches the zone at 3.7 s; closest Guard–Strike in the horizontal plane 1.04 m | 1000 | 25 kB |
 
-#### Row 6: the physics drone: Isaac Lab rigid-body Starlings, headless (tier 2) (T24)
+#### Test 6: Isaac Lab physics drones (Isaac Sim 5.1), headless (T24)
 
-| Clip | Guard v Strike | This game | Row's Strike reach (of 1,000) | Size |
+| Clip | Guard v Strike | This game | Test's Strike reach (of 1,000) | Size |
 |---|---|---|---|---|
 | [`ApfGuard_vs_ApfStrike_strike_win.mp4`](phase4/row_6/ApfGuard_vs_ApfStrike_strike_win.mp4) | ApfGuard v ApfStrike | game 1: Strike team reaches the zone at 4.8 s; closest Guard–Strike in the horizontal plane 1.05 m | 1000 | 26 kB |
 | [`ApfGuard_vs_P3S_strike_win.mp4`](phase4/row_6/ApfGuard_vs_P3S_strike_win.mp4) | ApfGuard v P3S | game 1: Strike team reaches the zone at 7.8 s; closest Guard–Strike in the horizontal plane 1.07 m | 1000 | 28 kB |
@@ -423,7 +430,7 @@ ffmpeg -i <nus.gif> -movflags +faststart -pix_fmt yuv420p -c:v libx264 -crf 28 -
 ffmpeg -i <nus.gif> -vf "fps=6.25,scale=360:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=48[p];[b][p]paletteuse=dither=none" <name>.gif
 ```
 
-Where the run clips come from: `scripts/nus_phase4.py --render <row folder>` (Phase 4, from each row's `clips.npz`),
+Where the run clips come from: `scripts/nus_phase4.py --render <test folder>` (Phase 4, from each test's `clips.npz`),
 `scripts/nus_phase4_w3.py` (T17), the Phase 3 video step (T16, `viz/replay.py`), `scripts/nus_isaac_clips.py`
 (Isaac Lab). NUS's GIFs come from NUS's `eval.py` with `save_eval_gif=True`; for self-play policies the evaluation
 config was edited so the opponent pool holds one archive entry (the self-play runner writes no GIFs itself).
@@ -431,48 +438,48 @@ config was edited so the opponent pool holds one archive entry (the self-play ru
 ## Isaac Lab camera clips, second set: more pairings and the props world (18 November 2026, evening)
 
 Requested by the lab on 18 November 2026: more pairings, and the props and construction-site worlds. Presentation only (no gates, not a measurement, no ledger row): `scripts/nus_isaac_clips.py` with the
-second-set entries of `configs/nus_isaac_clips.toml`, recorded headless on the lab's RTX 5090. The game is Phase 4 row 6
-(tier 2: Isaac Lab rigid-body Starlings, safety filter on, free height with the start jitter) on the hangar arena,
+second-set entries of `configs/nus_isaac_clips.toml`, recorded headless on the lab's RTX 5090. The game is Test 6
+(Isaac Lab physics drones: rigid-body Starling models, safety filter on, free height with the start jitter) on the hangar arena,
 7.5 m square, unchanged. **Props clips** add the blocks and columns of the S2b props clip (`make_s2b_video.py`'s scene
 layer, seed 11, 8 objects). They are a backdrop only: the drones do not see or avoid them and can fly through them.
 Every recorded game repeats its dry run exactly (0.0 m position difference, same end and outcome). What these clips show
 was observed in the training simulator; nothing here is a flight.
 
-"Game *n*" is the *n*-th paired start of the Phase 4 starts file, as in the row 6 clips. "Row 6" is that pair's count
-over all 1,000 row-6 games (record T24). Files are in [`isaac/`](isaac/); the MP4s are real time, the GIF previews 4×
+"Game *n*" is the *n*-th paired start of the Phase 4 starts file, as in the Test 6 clips. "Test 6" is that pair's count
+over all 1,000 Test 6 games (record T24). Files are in [`isaac/`](isaac/); the MP4s are real time, the GIF previews 4×
 (a 120 s hold: 8×).
 
-| File | World | Guard v Strike | Game, outcome | Row 6 Strike reach | What it shows | Size |
+| File | World | Guard v Strike | Game, outcome | Test 6 Strike reach | What it shows | Size |
 |---|---|---|---|---|---|---|
-| [`open_p3g_vs_apf_strike_win_1.mp4`](isaac/open_p3g_vs_apf_strike_win_1.mp4), [`.gif`](isaac/open_p3g_vs_apf_strike_win_1.gif) | hangar arena | P3G v ApfStrike | game 1: Strike team reaches the zone at 4.0 s | 1,000 of 1,000 | NUS's fixed-opponent Guard policy against NUS's scripted Strike controller (ported): a Strike drone gets past the Guards within 4 s | 47 kB, 170 kB |
-| [`open_mirror_vs_s20_strike_win_1.mp4`](isaac/open_mirror_vs_s20_strike_win_1.mp4) | hangar arena | guard_mirror v S20 | game 1: Strike team reaches the zone at 6.9 s | 1,000 of 1,000 | NUS's self-play Strike policy S20 against our scripted mirroring Guards | 60 kB |
-| [`open_mirror_vs_p3s_strike_win_1.mp4`](isaac/open_mirror_vs_p3s_strike_win_1.mp4) | hangar arena | guard_mirror v P3S | game 1: Strike team reaches the zone at 4.3 s | 1,000 of 1,000 | NUS's fixed-opponent Strike policy against our scripted mirroring Guards | 49 kB |
-| [`open_mark_edge_vs_s20_strike_win_1.mp4`](isaac/open_mark_edge_vs_s20_strike_win_1.mp4), [`.gif`](isaac/open_mark_edge_vs_s20_strike_win_1.gif) | hangar arena | guard_mark_edge v S20 | game 1: Strike team reaches the zone at 14.5 s | 1,000 of 1,000 | S20 against our scripted Guards that wait on the zone's edge: it takes the Strike team longer than against the mirroring Guards (row 6 medians: 13.7 s and 8.0 s) | 111 kB, 516 kB |
-| [`props_g19_vs_apf_strike_win_1.mp4`](isaac/props_g19_vs_apf_strike_win_1.mp4), [`.gif`](isaac/props_g19_vs_apf_strike_win_1.gif) | props (backdrop only) | G19 v ApfStrike | game 1: Strike team reaches the zone at 4.0 s | 1,000 of 1,000 | the same paired start as the published `g19_vs_apf_strike_win_1` (4.1 s there, with 16 games running at once; row 6: 4.0 s), among blocks and columns that play no part in the game | 52 kB, 164 kB |
-| [`open_g19_vs_s20_hold_1.mp4`](isaac/open_g19_vs_s20_hold_1.mp4), [`.gif`](isaac/open_g19_vs_s20_hold_1.gif) | hangar arena | G19 v S20 | paired start 77 (index 76): the Guard team holds the zone to the end (120 s); the replay equals its dry run exactly | 979 of 1,000 | one of the 21 games in 1,000 where your G19 still holds S20 on Isaac Lab Starlings with the all-pairs filter (row 6) | 4.1 MB + 1.7 MB GIF |
+| [`open_p3g_vs_apf_strike_win_1.mp4`](isaac/open_p3g_vs_apf_strike_win_1.mp4), [`.gif`](isaac/open_p3g_vs_apf_strike_win_1.gif) | hangar arena | P3G v ApfStrike | game 1: Strike team reaches the zone at 4.0 s | 1,000 of 1,000 | P3G vs APF attacker · Test 6: Isaac Lab physics drones · Strike reaches the zone: a Strike drone gets past the Guards within 4 s | 47 kB, 170 kB |
+| [`open_mirror_vs_s20_strike_win_1.mp4`](isaac/open_mirror_vs_s20_strike_win_1.mp4) | hangar arena | guard_mirror v S20 | game 1: Strike team reaches the zone at 6.9 s | 1,000 of 1,000 | guard_mirror vs S20 · Test 6: Isaac Lab physics drones · Strike reaches the zone (STE scripted mirroring Guards) | 60 kB |
+| [`open_mirror_vs_p3s_strike_win_1.mp4`](isaac/open_mirror_vs_p3s_strike_win_1.mp4) | hangar arena | guard_mirror v P3S | game 1: Strike team reaches the zone at 4.3 s | 1,000 of 1,000 | guard_mirror vs P3S · Test 6: Isaac Lab physics drones · Strike reaches the zone (STE scripted mirroring Guards) | 49 kB |
+| [`open_mark_edge_vs_s20_strike_win_1.mp4`](isaac/open_mark_edge_vs_s20_strike_win_1.mp4), [`.gif`](isaac/open_mark_edge_vs_s20_strike_win_1.gif) | hangar arena | guard_mark_edge v S20 | game 1: Strike team reaches the zone at 14.5 s | 1,000 of 1,000 | guard_mark_edge vs S20 · Test 6: Isaac Lab physics drones · Strike reaches the zone; the STE scripted Guards wait on the zone's edge and it takes the Strike team longer than against the mirroring Guards (Test 6 medians: 13.7 s and 8.0 s) | 111 kB, 516 kB |
+| [`props_g19_vs_apf_strike_win_1.mp4`](isaac/props_g19_vs_apf_strike_win_1.mp4), [`.gif`](isaac/props_g19_vs_apf_strike_win_1.gif) | props (backdrop only) | G19 v ApfStrike | game 1: Strike team reaches the zone at 4.0 s | 1,000 of 1,000 | the same paired start as the published `g19_vs_apf_strike_win_1` (4.1 s there, with 16 games running at once; Test 6: 4.0 s), among blocks and columns that play no part in the game | 52 kB, 164 kB |
+| [`open_g19_vs_s20_hold_1.mp4`](isaac/open_g19_vs_s20_hold_1.mp4), [`.gif`](isaac/open_g19_vs_s20_hold_1.gif) | hangar arena | G19 v S20 | paired start 77 (index 76): the Guard team holds the zone to the end (120 s); the replay equals its dry run exactly | 979 of 1,000 | G19 vs S20 · Test 6: Isaac Lab physics drones · Guard holds: one of the 21 games in 1,000 where G19 still holds S20 with the safety filter on every pair | 4.1 MB + 1.7 MB GIF |
 
-**Not recorded yet.** The hold clips: G19 v S20 at game 77 (row 6's first G19 v S20 hold, 21 of 1,000), ParkedGuard
-v S20 in the props world (game 2), and P3G v S20 (a Strike win at game 2, the first hold at game 24). They wait until
+**Not recorded yet.** The hold clips of ParkedGuard
+v S20 in the props world (game 2) and P3G v S20 (a Strike win at game 2, the first hold at game 24). They wait until
 the GPU is less busy. The construction-site clips (`site_g19_vs_s20`, `site_parked_vs_s20`) need the
 laptop's `localisation/scenes/construction_site/build/` bundle; that bundle is not in git and not on the 5090. On a
 machine without it the tool stops with exit 2 before Isaac starts.
 
 **Recording conditions.** The GPU was shared with the Phase 5 jobs (the P1b pilot, NUS's C0 self-play jobs and the
-route (b) trainers, at 91–99 % use). Ticks ran 10–30 times slower than for the first set: 3.4–3.7 s per dry-run
+trainers of the STE port of NUS's training method, at 91–99 % use). Ticks ran 10–30 times slower than for the first set: 3.4–3.7 s per dry-run
 tick and about 4 s per rendered frame, against 0.1–0.3 s. The five clips above took 1.21 GPU-hours of the 1.5 h
 cap (wall time of each launch, `runs/nus_port/isaac_clips_more/gpu_hours.log`, lab only). Re-encoded as the first
 set: H.264 CRF 30 at 800 px; GIFs at 4× real time, 480 px, 5 frames/s, 128 colours
 (`runs/nus_port/isaac_clips_more/publish.sh`).
 
-## Pilot P1b: our own Guard learner against S20 (tier 1, 19 Nov 2026)
+## Pilot P1b: the STE Guard policy against S20 (STE drone model, 19 Nov 2026)
 
 Recorded inside the run from its own evaluation games (record:
-[T41](../../../records/2026-11-19_nus_phase5_pilot_p1b_run4_record.md)). Tier 1 hangar game of Phase 4 row 5 (all-pairs
-safety filter, drone lag, free height); our stand-in Guard learner (skrl IPPO, one seed) against your converted Strike
-S20. Observed in the training simulator; one seed, one opponent, not gated.
+[T41](../../../records/2026-11-19_nus_phase5_pilot_p1b_run4_record.md)). Test 5 conditions: the hangar game on the STE drone model (safety
+filter on every pair, drone lag, free height); the STE Guard policy (trained in pilot P1b by STE's stand-in trainer,
+skrl IPPO, one seed) against the converted S20. Recipe: [training recipe](../../TRAIN_A_GUARD.md). Observed in the training simulator; one seed, one opponent, not gated.
 
 | Clip | What it shows |
 |---|---|
-| [p1b_run4_final_t1472_best_hold_slot0.mp4](pilots/p1b_run4_final_t1472_best_hold_slot0.mp4) | a hold, final evaluation (best checkpoint): the three Guards spread out inside the zone; S20's drones end pressed against the arena walls, kept out by the safety filter around each Guard |
-| [p1b_run4_final_t1472_best_strike_win_slot6.mp4](pilots/p1b_run4_final_t1472_best_strike_win_slot6.mp4) | one of the 171 of 1,000 games S20 still wins (final evaluation) |
-| [p1b_run4_mid_t768_strike_win_slot2.mp4](pilots/p1b_run4_mid_t768_strike_win_slot2.mp4) | a Strike win at the half-way evaluation (hold rate then 0.758) |
+| [p1b_run4_final_t1472_best_hold_slot0.mp4](pilots/p1b_run4_final_t1472_best_hold_slot0.mp4) | STE Guard policy vs S20 · Test 5 conditions · Guard holds (829 of 1,000). Final evaluation (best checkpoint): the three Guards spread out inside the zone; S20's drones end pressed against the arena walls, kept out by the safety filter around each Guard |
+| [p1b_run4_final_t1472_best_strike_win_slot6.mp4](pilots/p1b_run4_final_t1472_best_strike_win_slot6.mp4) | STE Guard policy vs S20 · Test 5 conditions · Strike reaches the zone: one of the 171 of 1,000 games S20 still wins (final evaluation) |
+| [p1b_run4_mid_t768_strike_win_slot2.mp4](pilots/p1b_run4_mid_t768_strike_win_slot2.mp4) | STE Guard policy (half-way) vs S20 · Test 5 conditions · Strike reaches the zone, at the half-way evaluation (hold rate then 0.758) |

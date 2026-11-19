@@ -31,7 +31,7 @@ three-drone swarms rehearsed in **Isaac Sim** before anything flies for real.
 | **work with the AI assistant on this repo** | [AI_ASSIST.md](docs/AI_ASSIST.md) |
 | **fly in the construction site** (sim): the scored camera run, or drone_1 yourself by keyboard | [localisation/README.md](localisation/README.md), its first table picks the run |
 | **train or test drone-team strategies** (Strike vs Guard game, in simulation; nothing here flies a drone) | [svg_training/README.md](svg_training/README.md): what was done, results and videos. Then: [What we found](svg_training/docs/WHAT_WE_FOUND.md) · [Train a Guard](svg_training/docs/TRAIN_A_GUARD.md) · [Videos](svg_training/docs/media/nus/README.md) |
-| **set up the training pipeline** (any laptop for a CPU try; an NVIDIA GPU or Isaac Lab for full size) | [Run it yourself](svg_training/docs/RUN_IT_YOURSELF.md): five levels by hardware, each with its commands. Full machine setup: [GETTING_STARTED](svg_training/docs/GETTING_STARTED.md) |
+| **set up the training pipeline** (any laptop for a CPU try; an NVIDIA GPU or Isaac Lab for full size) | [Run it yourself](svg_training/docs/RUN_IT_YOURSELF.md): levels A–F by hardware, each with its commands. Full machine setup: [GETTING_STARTED](svg_training/docs/GETTING_STARTED.md) |
 
 ## What we have achieved so far
 

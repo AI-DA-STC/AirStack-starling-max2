@@ -267,7 +267,7 @@ The recipe for the one training result, with a CPU check that runs in about 2 mi
 
 ## Not here yet
 
-- The STE port of NUS's training method (PyTorch) ([training method](WHAT_WE_FOUND.md#6-ste-port-of-nus-training-method-no-result-yet)):
-  its scripts are in the repository and its test is calibrated (C0 PASS), but its own seeds (stage 5.1) have no
-  result yet. A level will be added when they do.
+- The STE port of NUS's training method (PyTorch) ([training method](WHAT_WE_FOUND.md#6-ste-port-of-nus-training-method-stage-51-fail)):
+  its scripts are in the repository; its own seeds failed stage 5.1 (one seed of three, small margins; T43), so no
+  level is offered for it.
 - STE's own trainer for the game (beyond the stand-in trainer of level F) and the export to the drones are not built.

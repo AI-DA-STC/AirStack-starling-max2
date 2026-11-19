@@ -239,9 +239,11 @@ without the filter, so this measures transfer, not the NUS method. Parked Guard 
 filter often does not converge (section 3, filter caveat). Section 7 asks whether a trained Guard finds this "filter
 as a wall" defence.
 
-## 6. STE port of NUS training method: no result yet
+## 6. STE port of NUS training method: stage 5.1 FAIL
 
-**Stage 5.1 result: FAIL on the test fixed in advance (one seed of three, small margins).** The STE port of NUS's training method (PyTorch)
+**Stage 5.1 result: FAIL on the test fixed in advance (one seed of three, small margins).** Not to be confused with the
+converted policies of section 2: this section is about the training method (the recipe that makes policies), not about
+policies. The STE port of NUS's training method (PyTorch)
 copies the NUS alternating best-response multi-agent PPO with the archive pool (`train_self_play`, no APEX); the
 records call it "route (b)", and its first stage "5.1": 3 seeds × 8 generations in 2-D, on the Copy of NUS 2-D game.
 Before any of its seeds is scored, a test was fixed in advance:
@@ -264,6 +266,17 @@ What will not be claimed, even after a PASS: that the port "matches", "reproduce
 method. The claim is only that a pre-registered screen for a broken learner, 3 seeds a side, does not tell them
 apart. N0 shows the test fails a learner that learned nothing; C0 shows it does not fail the NUS code with new seeds.
 With three seeds a side it catches only large differences.
+
+**What the FAIL means.** The port learns and its policies are about as strong as NUS's (both strength intervals
+contain 0); seeds 1001 and 2001 pass every part. The failure is one seed (3001): two failed Strike turns in a row, and
+one Guard 0.013 below the lowest NUS value against the APF Strike. It does not show the conversion is broken, and it
+does not show the port equals NUS's method: three seeds a side cannot tell whether the port has such bad turns more
+often than NUS's code (NUS's own seed 1 had one failed turn, T38, at 256 games per pairing). The verdict is final under
+the rule fixed in advance.
+
+**What follows.** The plan makes stage 5.2 (training with the port in STE drone conditions) depend on a 5.1 PASS, so 5.2
+has not started; its training environment is built. Training in STE drone conditions goes on through the STE Guard
+policy (section 7).
 
 ## 7. STE Guard policy: trained in Test 5 conditions
 

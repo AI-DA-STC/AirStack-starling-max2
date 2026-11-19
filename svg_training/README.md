@@ -233,15 +233,69 @@ T18–T24.*
 
 ## 6. Training in STE conditions
 
-The STE Guard policy (trained in pilot P1b; a *pilot* is a short training run with no gate) holds the zone against
-S20 in **829 of 1,000** games in Test 5 conditions, against 429 for the Parked Guard (evidence: T41, [record](records/2026-11-19_nus_phase5_pilot_p1b_run4_record.md)). Its Guards spread
-out across the zone and the safety filter likely acts as a wall around each one (read from the videos, not tested).
-One seed, one opponent, not checked on the Isaac Lab physics drones:
-[the result](docs/WHAT_WE_FOUND.md#7-ste-guard-policy-trained-in-test-5-conditions),
-[training recipe](docs/TRAIN_A_GUARD.md). The STE port of NUS's training method (PyTorch) is in progress: the test it will face
-is calibrated (it passes NUS's own code run with new seeds and fails untrained policies; R0, N0, C0 PASS), and its own
-seeds have no result yet
-([training method](docs/WHAT_WE_FOUND.md#6-ste-port-of-nus-training-method-no-result-yet)).
+Two different things were taken from NUS's code, and they must not be confused:
+
+| What | What it is | Converted to PyTorch | Checked by |
+|---|---|---|---|
+| NUS's **trained policies** (G19, S20, P3G, P3S) | the finished "brains" of the drones: given what a drone sees, which way to fly | Phase 3 | Tests T16, T17, T42: same results as in JAX |
+| NUS's **training method** (`train_self_play`) | the recipe that makes such policies: Guard and Strike take turns learning against each other and against the archived earlier policies (multi-agent PPO with an archive pool) | Phase 5 ("the STE port of NUS's training method", records: "route (b)") | stage 5.1, below |
+
+No policy has been trained in Isaac Lab. Isaac Lab was used only to test policies (Test 6). Every training run so far
+used the STE game engine in PyTorch: the Copy of NUS 2-D game, or the STE drone model in Test 5 conditions.
+
+### 6.1 Stage 5.1: does the STE port of NUS's training method work in NUS's own game?
+
+The STE port trained from scratch in the Copy of NUS 2-D game (NUS's conditions, no STE drone condition), 3 times with
+different random seeds (1001, 2001, 3001), 8 turns each (Guard, Strike, Guard, …; about 13 hours on the RTX 5090). Its
+24 policies were then scored against the 24 policies that NUS's own code produced in the same game, on a test written
+down before any result was seen (so the test cannot be bent to fit the result):
+
+| Part | Rule fixed in advance | Why this rule | Result |
+|---|---|---|---|
+| a | every seed finishes all 8 turns, no numerical failure | the method runs | pass: 3 of 3 |
+| b | in turns 1–6, the learner never fails two turns of the same team in a row (a turn fails when the new policy wins 50 % or less against some policy it trained against) | the method keeps learning | **fail**: seed 3001, Strike turns 4 and 6; the other two seeds have no failed turn |
+| c | each policy's score against NUS's scripted opponent (APF, hand-written rules) lies inside the range of NUS's 12 policies of the same team | the policies behave like NUS's against a fixed yardstick | **fail**: 23 of 24 inside; seed 3001's Guard of turn 7 holds the zone in 0.909 of games, NUS's range 0.922–0.989 |
+| d | each seed's mean strength against NUS's lineages, compared with NUS's own seeds: the 95 % interval of the difference contains 0 | the policies are as strong as NUS's | pass for both teams (Guard +0.157 [−0.008, +0.323]; Strike −0.020 [−0.464, +0.424]) |
+
+The verdict rule, also fixed in advance: any failed part is a FAIL, and a FAIL is final (three more seeds were allowed
+only for an unclear result, not for a FAIL). Before the port was scored, the test was checked both ways: it **passes**
+NUS's own code run with 3 new seeds (C0) and it **fails** untrained policies (N0). Evidence: T43,
+[record](records/2026-11-19_nus_phase5_s51_method_match_record.md); T30, T33.
+
+**What the FAIL means.** The port learns, and its policies are about as strong as NUS's (part d). Two of the three
+seeds pass every part. The failure sits in one seed and in small margins. It does **not** show that the conversion is
+broken. It also does not show that the port equals NUS's method: three seeds cannot tell whether the port has such bad
+turns more often than NUS's code (NUS's own seed 1 also had one failed turn, T38). The honest reading: not proven equal,
+not proven broken.
+
+**What follows from it.** The plan made stage 5.2, training with the STE port of NUS's training method in STE drone
+conditions, depend on a 5.1 PASS, so stage 5.2 has not started (its training environment is built). Training in STE
+drone conditions is still needed. NUS's policies fail there (Tests 4–6). It goes on through the STE Guard policy
+below, unless the decision is taken to run stage 5.2 anyway as an unofficial trial.
+
+### 6.2 The STE Guard policy: a Guard trained in STE drone conditions
+
+The STE Guard policy is the only policy so far trained in STE drone conditions. It is not a new game: it plays the
+game of Test 5, the same game NUS's policies were tested in. What is STE's own is the trainer and its settings:
+
+| | STE Guard policy (pilot P1b) | NUS's policies (G19, S20) |
+|---|---|---|
+| Game rules | NUS's hangar game: zone, start distance, game length, win rule | the same |
+| Conditions | Test 5: STE drone model (Starling delay and lag), safety filter, free height (3-D), one decision per 0.6 s | NUS 2-D game |
+| Trainer | STE's stand-in trainer (skrl IPPO: one PPO learner per Guard drone) | NUS's self-play MAPPO |
+| Who it learns against | S20 only (fixed, not learning) | each other, in turns |
+| Reward | +1 if the Guard team holds the zone to the end, −1 if a Strike drone reaches it; nothing in between | NUS's reward, with a distance term |
+| What the drone sees | STE's observation format (the lab's policy interface) | NUS's observation layout |
+| Training | 2.1 h on the RTX 5090, one seed | 8–20 turns per seed |
+
+Two fixes from the first pilot (P1, 0 holds of 1,000) made it work: the untrained Guards start by standing still, and
+they decide once per 0.6 s (as NUS's policies do in the tests) so the end-of-game reward is not discounted away.
+Result: it holds the zone against S20 in **829 of 1,000** games in Test 5 conditions, against 429 for the Parked Guard
+(an STE baseline that does not move) and 17 for NUS's G19 (evidence: T41,
+[record](records/2026-11-19_nus_phase5_pilot_p1b_run4_record.md)). Its Guards spread out across the zone and the
+safety filter likely acts as a wall around each one (read from the videos, not tested). Limits: one seed, one
+opponent, not yet run on the Isaac Lab physics drones. Details: [the result](docs/WHAT_WE_FOUND.md#7-ste-guard-policy-trained-in-test-5-conditions),
+[training recipe](docs/TRAIN_A_GUARD.md), [training method results](docs/WHAT_WE_FOUND.md#6-ste-port-of-nus-training-method-stage-51-fail).
 
 ## Watch it
 
@@ -258,8 +312,8 @@ each with a preview that plays in the page: [videos of the NUS port](docs/media/
 
 ## 7. Next steps and open questions
 
-Next on the STE side: the first results of the STE port of NUS's training method; the STE Guard policy against other
-Strike behaviours and on the Isaac Lab physics drones; two control tests that split the two effects of Test 4.
+Next on the STE side: a decision on the STE port of NUS's training method after its stage 5.1 FAIL; the STE Guard policy
+against other Strike behaviours, with more seeds and on the Isaac Lab physics drones; two control tests that split the two effects of Test 4.
 Five questions to NUS:
 
 1. Is any rule that matters missing from the Copy of NUS 2-D game (PyTorch)?

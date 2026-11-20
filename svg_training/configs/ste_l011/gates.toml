@@ -1,0 +1,366 @@
+# STE task L0.11 Screening sweep (INFO): the gate file, written before any run (STANDARDS section 7; ste_learning/
+# VALIDATION_QC.md section 0). The screen itself has NO pass mark: it is INFO and shortlists at most 3 rule variants for
+# L0.12 by the rule in [shortlist], written here before any result exists. What is gated are the CONTROLS: each has a
+# known answer, and every one must hold before any result is read (results.md prints them first; the figure script
+# refuses to draw while one fails).
+#
+# The driver scripts/ste_sweep_l011.py copies this file into its run folder at the first launch and records its sha256;
+# a relaunch with a different file, or with a game file whose sha256 differs from the one pinned in [games], is refused
+# (exit 2). Edit it only BEFORE the sweep's first launch (after the pilot, [run] cells_per_batch and
+# [projection.seconds_per_batch_tick] may be filled in); never after a first result.
+#
+# Labels: every limit and setting here is PROPOSED by the lead's builder; the lead's rulings of 21 Nov 2026 are marked
+# LEAD CALL (the owner delegated the gate limits of INFO runs, PLAN.md section 7). QC reviews the gate file, the limits
+# trivial_at 0.8 and tie_window 0.02 included, before the launch (LEAD CALL 21 Nov 2026: the lead dispatches it).
+#
+# Run notes (LEAD CALL 21 Nov 2026):
+# - NEVER SUSPEND THE MACHINE DURING A GPU JOB (no closed lid, no sleep). The cap clock and the GPU-hour ledger are wall
+#   clock less the owner's gpu_pause.sh pauses only: a suspend is counted in full against the cap and billed as GPU-hours
+#   (tooling task L07-SUSPEND). To stop using the GPU for a while, pause with scripts/gpu_pause.sh instead.
+# - Finding L011-F1: the scripted players decide every tick (0.05 s), not at the sheet's 0.6 s decision period
+#   (timing.decision_s; tests/test_ste_l011.py proves one decision per tick). This sweep measures scripted play at
+#   0.05 s. L0.12's trainers must fix their decision period explicitly (T41's recipe used 12 ticks = 0.6 s).
+# Simulator: training simulator, tier 1 (fast engine), Starling layer on: commander copy, safety filter on every pair
+# (1000 sweeps, check every 8), fitted PX4 response (exploratory). Results are "observed in the training simulator".
+
+[run]
+task = "L0.11"
+kind = "INFO"
+seed = 110000                      # game seed of every batch (starts: one draw of games_per_cell, tiled); players seed + 101 / + 202
+games_per_cell = 1000              # PLAN.md L0.11 and VALIDATION_QC section 0 rule 2: at least 1,000 games per condition
+cells_per_batch = 10               # cells played side by side in one batch (10,000 games); set from the pilot before the launch
+ticks_cap = 2400                   # = the game length (120 s of 0.05 s ticks): no game is cut short
+device = "cuda"
+cap_check_every_ticks = 100        # the cap clock (it reads the pause logs) is read every this many ticks; the stop flag every tick
+
+[players]
+# Every Guard script against every Strike script (PLAN.md L0.10 lists these eleven).
+guards = ["guard_parked_centre", "guard_parked_ring", "guard_mark_edge", "guard_mirror", "guard_field"]
+strikes = ["strike_straight", "strike_flank", "strike_high", "strike_low", "strike_sacrifice", "strike_converge"]
+# With one Strike drone these two fly exactly as strike_straight (GAME_SPEC "Scripted players"; tests/test_ste_l011.py
+# checks bit-identical actions), so at 1v1 and 2v1 their cells are not played (20 cells saved) and the table says so.
+one_strike_duplicates = ["strike_sacrifice", "strike_converge"]
+# Columns labelled in every table and figure: the climb and descent go through tier 1's vertical response, which is not
+# fitted (configs/s2b.toml step "z_up_info"; T13: a 1 mm height offset flips over/under outcomes on the physics drone).
+z_up_info = ["strike_high", "strike_low"]
+z_up_label = "tier 1 vertical response not fitted (s2b.toml z_up_info)"
+
+[games]
+# Variant game files and their sha256 (tests/test_ste_l011.py keeps these equal to the files).
+base = { file = "configs/ste_l011/base.toml", sha256 = "84daa4e930d9fe423b0658978d4e241d7dccc23a0c5bfe2d1d931c585662d084" }
+tag_1p2 = { file = "configs/ste_l011/tag_1p2.toml", sha256 = "f680efc1063cf5a331de6126e9c10efbfedaafedab7f3d41dd6bcf3b33e48460" }
+tag_1p4 = { file = "configs/ste_l011/tag_1p4.toml", sha256 = "4e854b0436d9163f3b7906e2e5a5602a4196eb0418c04f85d90b67ad96bcc1d8" }
+tag_1p8 = { file = "configs/ste_l011/tag_1p8.toml", sha256 = "234072f5acef40828953c32a41b677e47b7f4fa10dc0b18c541b4db89c5666ad" }
+zone_2p4 = { file = "configs/ste_l011/zone_2p4.toml", sha256 = "1ac45a9605fc773c716ed4effb70a7a3d0d84c527805fb4686d6252f12f742a2" }
+survive_1 = { file = "configs/ste_l011/survive_1.toml", sha256 = "34994413da45d1ea31a84da04793531a2671290834085ccde51f0d2911f1aac0" }
+arena_7p5 = { file = "configs/ste_l011/arena_7p5.toml", sha256 = "b055111083063dea18bb135dfadecdd6387985935fb2cb25c01fb855d8b71bdc" }
+tag_off = { file = "configs/ste_l011/tag_off.toml", sha256 = "3d3975b5ec2c9995b6f3a8a2af736d3fef9d050efb858c733acee140d702c856" }
+tag_0p05 = { file = "configs/ste_l011/tag_0p05.toml", sha256 = "57db7a76721cf3d1a7e7a13da4195065b4251459d814f754b5f8d4c82c216410" }
+
+[confounds]
+# The lead's rulings on the two variants that change more than one thing, and the height-offset cell (21 Nov 2026 brief).
+ring_outside_zone_m = 0.3          # the Strike ring is kept at 2.75 m only if it lies at least this far outside the zone edge
+zone_2p4 = "zone radius 2.4 m: the ring stays 2.75 m (2.75 >= 2.4 + 0.3); the alternative 2.4 + (2.75 - 1.6) = 3.55 m does not fit the 3.0 m keep-in limit. Second change: the run-in from the ring to the zone edge is 0.35 m (0.7 s at 0.5 m/s) instead of 1.15 m (2.3 s)"
+arena_7p5 = "7.5 m arena with the hangar ring 3.2 m (the sheet's hangar value): two things change, the arena side (keep-in 3.5 m) and the ring (run-in 1.6 m instead of 1.15 m)"
+height_offset_cell = "built as an INFO sensitivity group (LEAD CALL 21 Nov 2026): group sens_strike_dz_1mm, the base game with every Strike drone started 1 mm higher (strike_start_dz_m 0.001) through the sweep's own starts hook (ste/sweep.py SweepGame._draw_starts; the core game draws every start at one height and is not changed), strike_straight against every Guard script, compared with the base cells of the same pairs. T13 lesson: on the physics drone a 1 mm offset flips Strike over/under outcomes; tier 1 holds heights, so a change here is a tier-1 effect. Every other group: no offset, no jitter"
+
+# ------------------------------------------------------------------------------------------------ groups, in run order
+# The run order IS the cut order read backwards: base case first, then the controls, then team sizes, then the rest.
+# role "sweep" = a screened variant; role "control" = a known-answer check; role "sensitivity" = an INFO comparison with
+# the base cells of the same pairs (never shortlisted; cut like a sweep group). guards / strikes = "all" or a list.
+# strike_start_dz_m (sensitivity only): every Strike drone starts this much higher (the sweep's starts hook).
+# ticks (stand_still_zero_tags only): the group's own tick cap.
+# factor / level: how the tables and figures group the variants (one factor changed at a time against the base case).
+
+[[groups]]
+name = "base"
+role = "sweep"
+factor = "base case"
+level = "3v3, tag 1.6 m, zone 1.6 m, survive 0, 6.5 m"
+game = "base"
+size = "3v3"
+guards = "all"
+strikes = "all"
+
+[[groups]]
+name = "ctl_same_seed"
+role = "control"
+control = "same_seed_twice"
+of_group = "base"
+of_batch = 0
+
+[[groups]]
+name = "ctl_stand_still"
+role = "control"
+control = "stand_still_never_reaches"
+game = "base"
+size = "3v3"
+guards = "all"
+strikes = ["zero"]
+
+[[groups]]
+name = "ctl_still_1v1"
+role = "control"
+control = "stand_still_zero_tags"
+game = "base"
+size = "1v1"
+guards = ["zero"]
+strikes = ["zero"]
+ticks = 200
+
+[[groups]]
+name = "ctl_still_2v1"
+role = "control"
+control = "stand_still_zero_tags"
+game = "base"
+size = "2v1"
+guards = ["zero"]
+strikes = ["zero"]
+ticks = 200
+
+[[groups]]
+name = "ctl_still_3v3"
+role = "control"
+control = "stand_still_zero_tags"
+game = "base"
+size = "3v3"
+guards = ["zero"]
+strikes = ["zero"]
+ticks = 200
+
+[[groups]]
+name = "ctl_still_5v3"
+role = "control"
+control = "stand_still_zero_tags"
+game = "base"
+size = "5v3"
+guards = ["zero"]
+strikes = ["zero"]
+ticks = 200
+
+[[groups]]
+name = "ctl_tiny_tag"
+role = "control"
+control = "zero_tags"
+game = "tag_0p05"
+size = "3v3"
+guards = "all"
+strikes = ["strike_straight", "strike_sacrifice"]
+
+[[groups]]
+name = "ctl_tag_off"
+role = "control"
+control = "zero_tags"
+game = "tag_off"
+size = "3v3"
+guards = "all"
+strikes = "all"
+
+[[groups]]
+name = "sens_strike_dz_1mm"
+role = "sensitivity"
+factor = "sensitivity: Strike start height"
+level = "every Strike drone starts 1 mm higher (tier 1 vertical response not fitted)"
+game = "base"
+size = "3v3"
+guards = "all"
+strikes = ["strike_straight"]
+strike_start_dz_m = 0.001
+
+[[groups]]
+name = "size_1v1"
+role = "sweep"
+factor = "team size"
+level = "1v1"
+game = "base"
+size = "1v1"
+guards = "all"
+strikes = "all"
+
+[[groups]]
+name = "size_2v1"
+role = "sweep"
+factor = "team size"
+level = "2v1"
+game = "base"
+size = "2v1"
+guards = "all"
+strikes = "all"
+
+[[groups]]
+name = "size_5v3"
+role = "sweep"
+factor = "team size"
+level = "5v3"
+game = "base"
+size = "5v3"
+guards = "all"
+strikes = "all"
+
+[[groups]]
+name = "survive_1"
+role = "sweep"
+factor = "guard survives a tag"
+level = "probability 1"
+game = "survive_1"
+size = "3v3"
+guards = "all"
+strikes = "all"
+
+[[groups]]
+name = "tag_1p2"
+role = "sweep"
+factor = "tag radius"
+level = "1.2 m"
+game = "tag_1p2"
+size = "3v3"
+guards = "all"
+strikes = "all"
+
+[[groups]]
+name = "tag_1p4"
+role = "sweep"
+factor = "tag radius"
+level = "1.4 m"
+game = "tag_1p4"
+size = "3v3"
+guards = "all"
+strikes = "all"
+
+[[groups]]
+name = "tag_1p8"
+role = "sweep"
+factor = "tag radius"
+level = "1.8 m"
+game = "tag_1p8"
+size = "3v3"
+guards = "all"
+strikes = "all"
+
+[[groups]]
+name = "zone_2p4"
+role = "sweep"
+factor = "zone radius"
+level = "2.4 m (PROPOSED); ring 2.75 m kept, run-in 0.35 m"
+game = "zone_2p4"
+size = "3v3"
+guards = "all"
+strikes = "all"
+
+[[groups]]
+name = "arena_7p5"
+role = "sweep"
+factor = "arena"
+level = "7.5 m with the hangar ring 3.2 m (two changes)"
+game = "arena_7p5"
+size = "3v3"
+guards = "all"
+strikes = "all"
+
+# ------------------------------------------------------------------------------------------------ the cut
+[cut]
+# If the projection exceeds the cap: at every boundary between groups the driver projects the effective seconds of
+# the groups still to play (seconds per batch tick of the group's size: measured in this run, else
+# [projection.seconds_per_batch_tick], else the slowest measured size scaled by the drone count) x ticks_cap x batches,
+# times safety_factor, and drops whole sweep groups from the END of the run order until it fits the cap left. So the
+# cut order is: arena_7p5, zone_2p4, tag_1p8, tag_1p4, tag_1p2, survive_1, size_5v3, size_2v1, size_1v1,
+# sens_strike_dz_1mm (one batch, run before the team sizes because it is cheap; cut last). The base case
+# and the controls are never cut. A cut group is listed in results.md and the record; a group is never half played
+# by plan (the cap stop, exit 3, can still end one).
+protected = ["base", "ctl_same_seed", "ctl_stand_still", "ctl_still_1v1", "ctl_still_2v1", "ctl_still_3v3", "ctl_still_5v3",
+             "ctl_tiny_tag", "ctl_tag_off"]
+safety_factor = 1.1
+
+[projection.seconds_per_batch_tick]
+# Filled from the pilot (pilot.json prints these lines) before the launch; empty = in-run measurement only.
+
+# ------------------------------------------------------------------------------------------------ the controls
+[controls]
+# Known answers; checked by the driver as soon as their cells exist, written to controls.json and printed first in
+# results.md. stop_on_fail: a failed control stops the run at once (checkpoint kept; exit 6 CONTROL_FAILED, terminal,
+# never retried: the same command on the same run folder ends with 6 again; LEAD CALL 21 Nov 2026).
+stop_on_fail = true
+# same_seed_twice (group ctl_same_seed): batch 0 of the base case played again from the same seed, in the same run.
+# Known answer: per game, the outcome, the end step, the Strike drones tagged, the Strike drones left and the start
+# positions are equal; the closest 3-D approach is equal within same_seed_closest_tol_m. On the CPU the tolerance is 0
+# (bit for bit, CODING_PRACTICES section 5); on CUDA bit identity is not claimed, so the closest approach has this
+# tolerance, while every count above must still be equal.
+same_seed_closest_tol_m = 1e-6
+# stand_still_never_reaches (group ctl_stand_still): Strike drones that command zero start 2.75 m from the zone centre
+# (1.15 m outside the zone edge). Known answer: no game is reached (reach count 0 in every cell).
+# stand_still_zero_tags (groups ctl_still_1v1, _2v1, _3v3 and _5v3, every swept size; lead, 21 Nov 2026, after L0.10's QC found team-mates
+# starting inside the filter distance and the filter push tagging drones nobody moved): every drone of both teams
+# commands zero, the study tag on (1.6 m). Known answer: 0 tags in the first `ticks` ticks (200 = 10 s), every game.
+# zero_tags (groups ctl_tiny_tag and ctl_tag_off): the 0.05 m tag radius lies far inside the 1.10 m filter distance,
+# and with the tag off no tag exists. Known answer: 0 tags in every game.
+# Checked on every batch of every group (global):
+#   tags_at_most_min_team: with guard_survives_tag_prob 0, tags per game <= min(Guard drones, Strike drones); with 1,
+#     tags per game <= Strike drones (a Guard that survives may tag again).
+#   paired_starts: within a group every cell starts its 1,000 games from the same positions; and every group with the
+#     same team size and the same start settings (arena side, Guard disc, Strike ring) has the same starts (base,
+#     the tag variants, survive_1, zone_2p4 and the 3v3 controls share one set; sizes and arena_7p5 have their own).
+#   no_nonfinite_actions: no player produced a NaN or infinite action (else exit 5, as scripts/score.py refuses).
+global_checks = ["tags_at_most_min_team", "paired_starts", "no_nonfinite_actions"]
+
+# ------------------------------------------------------------------------------------------------ the shortlist rule
+[shortlist]
+# Written before any result. The base case always goes to L0.12 as the reference for the proposed 1.6 m rules (P1),
+# even when the rule below would rule it out: it is then reported as "reference, ruled out because ...". The rule adds
+# at most max_variants - len(always) = 2 more, so L0.12 runs at most 3 variants (LEAD CALL 21 Nov 2026).
+# Candidates are the RULE variants (one factor changed against the base, plus the base
+# itself); team sizes are P9, the owner's at gate G0: they are reported with the same numbers but never shortlisted.
+# A variant is a candidate only if all its cells were played (none cut, none stopped).
+#
+# For a candidate v, over its matrix of scripted Guards g x scripted Strikes s (hold + reach = 1 per cell: every game
+# ends in a hold, by time-out or by tagging every Strike drone, or in a reach):
+#   H(v) = max over g of min over s of hold(g, s)     the best scripted Guard's worst-case hold (maximin);  g* = argmax
+#   R(v) = max over s of min over g of reach(g, s)    the best scripted Strike's worst-case reach (maximin); s* = argmax
+#   d(v) = min(1 - H(v), 1 - R(v))                    how far the game is from one side owning a dominant script
+# (H + R <= 1 always, by the minimax inequality.) Point estimates of the 1,000-game rates.
+# Rule:
+#   1. not eligible if H(v) >= trivial_at (a scripted Guard already holds against every scripted Strike: Guard-trivial
+#      looking) or R(v) >= trivial_at (a scripted Strike already reaches against every scripted Guard). trivial_at 0.8
+#      mirrors L0.12's 0.2 band (PLAN.md row L0.12).
+#   2. rank the eligible variants not in `always` by d(v), largest first; add at most max_variants - len(always).
+#   3. ties: two variants whose d differ by less than tie_window are ordered by tie_breaks, in turn:
+#      lab_arena_first (the 6.5 m arena before 7.5 m: it is the lab fence), larger_zone_tag_margin (larger
+#      |zone radius - tag radius|: F2, a 1v1 at one height is otherwise decided by the tie rule), lower_guard_survives
+#      (0 before 1: the D2 value), run_order (the order of [[groups]] above).
+#   4. g* and s* of each shortlisted variant are L0.12's "best scripted Guard" and "best scripted Strike"; a tie inside
+#      the argmax goes to the higher Wilson lower bound, then to the order in [players].
+#   5. sensitivity (INFO, does not change the shortlist): the same rule without the z_up_info columns; if its shortlist
+#      differs, results.md and the record say so for the lead.
+# Zero eligible variants is itself the finding (H2 soundness, PLAN.md section 7): the lead takes it to the owner.
+always = ["base"]
+candidates = ["base", "tag_1p2", "tag_1p4", "tag_1p8", "zone_2p4", "survive_1", "arena_7p5"]
+report_only = ["size_1v1", "size_2v1", "size_5v3"]
+max_variants = 3
+trivial_at = 0.8
+tie_window = 0.02
+tie_breaks = ["lab_arena_first", "larger_zone_tag_margin", "lower_guard_survives", "run_order"]
+
+# ------------------------------------------------------------------------------------------------ videos (STANDARDS section 8)
+[clips]
+# Three replay clips of base-case cells, chosen before the run (not on results): viz/replay.py record_games (CPU, its
+# own starts from the clip seed) and render_replay, small GIFs into <run>/videos/. The game shown is the first one
+# recorded (lowest game index) that finished.
+cells = [["guard_parked_ring", "strike_straight"], ["guard_field", "strike_converge"], ["guard_mark_edge", "strike_sacrifice"]]
+group = "base"
+games = 2
+seed = 110000
+max_ticks = 2400
+speed = 8                          # game steps per drawn frame: at 10 frames/s, 4 x real time
+fps = 10
+dpi = 50
+# Time kept back for the clips (CPU replay inside the GPU job, billed as GPU time): added to every projection, and the
+# clips are skipped (and the record says why) if less than this is left of the cap when the cells are done.
+reserve_s = 600
+
+# ------------------------------------------------------------------------------------------------ the pilot (--pilot)
+[pilot]
+# Rate and memory per team size and batch size, before the sweep (scripts/ste_sweep_l011.py --pilot, its own run
+# folder): base game, the first cells of each size, pilot ticks per point after warm-up ticks (not timed).
+sizes = ["1v1", "2v1", "3v3", "5v3"]
+cells_per_batch = [1, 4, 10, 30]
+ticks = 200
+warmup_ticks = 20

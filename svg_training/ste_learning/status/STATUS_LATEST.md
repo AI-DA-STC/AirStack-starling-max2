@@ -1,6 +1,6 @@
 INTERNAL · the latest status of STE's own learning track and the NUS port, overwritten at every update; the history is in [LOG.md](LOG.md). Produced by the `train-status` skill.
 
-**Status, 2026-11-21 05:48 (+08:00), event: L0.11 DONE and merged (suite 1,685 passed / 0 failed)**                                                · laptop RTX 5070 Ti · GPU idle except the remote-desktop service · 0 training processes (0 paused)
+**Status, 2026-11-21 05:49 (+08:00), event: L0.14 started beside L0.12 (lead's sequencing fix)**                                                 · laptop RTX 5070 Ti · GPU idle except the remote-desktop service · 0 training processes (0 paused)
 
 ## Phases
 
@@ -26,10 +26,10 @@ INTERNAL · the latest status of STE's own learning track and the NUS port, over
 | L0.12 | Best-response test: is the game worth learning? | RUNNING (CPU groundwork) | tier 1 fast engine | builder on `ste-l0.12`: trainer path for both sides on the tag-on game files, a control that reproduces a T44 cell, gate measuring exploiter gain over the best script (lead's call), pilot plan; GPU only after QC of the gate; cap 6 GPU-h |
 | L0.2 | Tier 2 speed in contested play | NOT STARTED | tier 2 Isaac Lab | 5090; cap 1.5 GPU-h |
 | L0.13 | Does tier 2 train at all? | NOT STARTED | tier 2 Isaac Lab | 5090, after L0.2; cap 6 GPU-h |
-| L0.3 | STE Guard policy in tier 2 without retraining | NOT STARTED | tier 2 Isaac Lab | T41 policy in the bundle (installed on the laptop too); cap 1.5 GPU-h |
-| L0.4 | Side-by-side Starling render | NOT STARTED | tier 2 Isaac Lab | cap 0.2 GPU-h |
+| L0.3 | STE Guard policy in tier 2 without retraining | NOT STARTED | tier 2 Isaac Lab | unblocked (T41 on both machines); runs on the laptop GPU, taking turns with L0.12's GPU runs (one GPU job at a time); cap 1.5 GPU-h |
+| L0.4 | Side-by-side Starling render | NOT STARTED | tier 2 Isaac Lab | laptop GPU, taking turns with L0.12; cap 0.2 GPU-h |
 | L0.5 | Starling video look fix | NOT STARTED | tier 2 Isaac Lab | after L0.4; cap 0.3 GPU-h |
-| L0.14 | Crazyflie route check | NOT STARTED | tier 1 fast engine (CPU) | T41 policy installed on the laptop; cap 0 GPU-h |
+| L0.14 | Crazyflie route check | RUNNING (CPU) | tier 1 fast engine (CPU) | builder on `ste-l0.14`: T41 scored with a Crazyflie-like 0.56 s lag beside the Starling's (INFO), the offline-planner team-size check repeated (Crazyflie repository read-only), the adapter spec; one page for G0; 0 GPU-h. Lead's note: it could have run beside lane A since T41 arrived; started now |
 | L0.6 | Gate G0 | NOT STARTED | none | after every task above; the owner decides |
 
 GPU-h used in L0 so far: 0.426 of 19 (RTX 5090: 0, from its last status; laptop: 0.426 = L0.11 pilot 0.034 + CUDA smoke 0.087 + sweep 0.305).

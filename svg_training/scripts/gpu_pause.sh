@@ -39,6 +39,10 @@
 # the STE launcher refuses to start a job while it is open. The lead (a Claude session) pausing only its own sibling jobs to
 # run a solo job (ste_learning/AUTOMATION.md section 2.2) sets GPU_PAUSE_BY=lead (with GPU_PAUSE_PATTERN for those siblings):
 # such a pause does not block a launch. GPU_PAUSE_BY: letters, digits, '.', '_', '-' only; empty = the user name.
+# A resume or stop with GPU_PAUSE_BY=lead is refused (exit 2, before any signal or line) while an owner pause is open: it would
+# continue the owner's jobs and close his pause in the log (L07-C1c; never end a pause the session did not make). The check is
+# `scripts/ste_job.py owner-pauses`, run with GPU_PAUSE_PYTHON (default python3); if it cannot run, the lead's command is
+# refused too. A bare resume or stop (the owner's) runs no check and works as before.
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -119,6 +123,21 @@ log_event() {  # event, pids...
 }
 
 cmd="${1:-status}"
+if [ "${GPU_PAUSE_BY:-}" = "lead" ] && { [ "$cmd" = "resume" ] || [ "$cmd" = "stop" ]; }; then
+  set +e
+  owners="$(env -u PYTHONPATH "${GPU_PAUSE_PYTHON:-python3}" "$HERE/scripts/ste_job.py" owner-pauses 2>&1)"
+  rc=$?
+  set -e
+  if [ "$rc" -eq 2 ]; then
+    echo "refused: the lead may not $cmd while an owner pause is open (it would end his pause too); nothing was done:" >&2
+    printf '%s\n' "$owners" >&2
+    exit 2
+  elif [ "$rc" -ne 0 ]; then
+    echo "refused: could not check for an open owner pause (exit $rc); nothing was done:" >&2
+    printf '%s\n' "$owners" >&2
+    exit 2
+  fi
+fi
 mapfile -t PIDS < <(jobs_pids)
 case "$cmd" in
   status)

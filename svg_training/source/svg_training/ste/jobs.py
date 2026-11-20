@@ -152,6 +152,15 @@ def _start_ticks(pid: int) -> int:
     return state.parse_stat(Path("/proc", str(pid), "stat").read_text())[1]
 
 
+def owner_pause_lines() -> list[str]:
+    """One line per open owner pause (``ste/pauses.py``: any open pause not tagged ``lead``), oldest first."""
+    lines = []
+    for paused in pauses.owner_pauses():
+        made = datetime.datetime.fromtimestamp(paused["time"]).astimezone().isoformat(timespec="seconds")
+        lines.append(f"the owner's pause of {made} (by {paused.get('by', 'unknown')}, pids {paused.get('pids')})")
+    return lines
+
+
 # ================================================================================================ launch
 def launch(task: str, name: str, run_dir: Path | str, cmd: list[str], expected_min_s: float, gpu_h: float,
            settings: Path | str = SETTINGS_FILE, beat_s: float = BEAT_S, cwd: Path | str | None = None) -> dict[str, Any]:
@@ -172,13 +181,10 @@ def launch(task: str, name: str, run_dir: Path | str, cmd: list[str], expected_m
         raise LaunchRefused(f"the beat must be above 0 seconds, got {beat_s!r}")
     run_dir = Path(run_dir).resolve()
     _check_shared_folder(run_dir)                                # before anything reads or makes the shared folder
-    owners = pauses.owner_pauses()                               # the session's own pauses (by "lead") do not block
+    owners = owner_pause_lines()                                 # the session's own pauses (by "lead") do not block
     if owners:
-        paused = owners[0]
-        made = datetime.datetime.fromtimestamp(paused["time"]).astimezone().isoformat(timespec="seconds")
         more = f" and {len(owners) - 1} more" if len(owners) > 1 else ""
-        raise LaunchRefused(f"the owner's pause of {made} (by {paused.get('by', 'unknown')}, pids {paused.get('pids')})"
-                            f"{more} is still open: nothing was launched. Only the owner ends it, with "
+        raise LaunchRefused(f"{owners[0]}{more} is still open: nothing was launched. Only the owner ends it, with "
                             f"scripts/gpu_pause.sh resume; launch again after that")
     try:
         budget.check_launch(task, gpu_h, settings, job=name, run_dir=str(run_dir))

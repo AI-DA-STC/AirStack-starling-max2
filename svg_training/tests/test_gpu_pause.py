@@ -286,3 +286,66 @@ def test_a_tag_that_would_break_the_line_is_refused_before_any_signal(dummy, tag
         return
     assert out.returncode == 2 and "GPU_PAUSE_BY" in out.stderr
     assert _state(proc.pid) in "SR" and not log.exists()
+
+
+# ------------------------------------------------------------------------------------------------ STE track, L07-C1c
+LEAD = {"GPU_PAUSE_BY": "lead"}
+
+
+def _events(env) -> list[tuple[str, str]]:
+    shared_log = Path(env["SVG_SHARED_DIR"]) / "pauses.log"
+    return [(row["event"], row["by"]) for row in map(json.loads, shared_log.read_text().splitlines())]
+
+
+@pytest.mark.parametrize("command", ["resume", "stop"])
+def test_the_lead_cannot_end_an_owner_pause(dummy, command):
+    """L07-C1c, the standing rule "never resume a pause the session did not make", enforced: the lead paused its
+    siblings, then the owner paused too. The lead's resume (or stop) would continue the owner's jobs and close his
+    pause in the log, so it is refused (exit 2) before any signal or line. The owner's own resume works as before."""
+    proc, env, _ = dummy
+    assert _wait(lambda: _state(proc.pid) in "SR")
+    assert _run(dict(env, **LEAD), "pause").returncode == 0
+    assert _run(env, "pause").returncode == 0                                      # the owner, untagged
+    assert _wait(lambda: _state(proc.pid) == "T")
+    out = _run(dict(env, **LEAD), command)
+    assert out.returncode == 2 and "owner" in out.stderr and "nothing was done" in out.stderr, out.stdout + out.stderr
+    time.sleep(0.2)
+    assert _state(proc.pid) == "T" and proc.poll() is None                         # still paused, not interrupted
+    assert [event for event, _ in _events(env)] == ["pause", "pause"]
+    assert _run(env, "resume").returncode == 0                                     # the owner's resume: as before
+    assert _wait(lambda: _state(proc.pid) in "SR")
+
+
+def test_the_lead_resumes_its_own_pause(dummy):
+    proc, env, _ = dummy
+    assert _wait(lambda: _state(proc.pid) in "SR")
+    assert _run(dict(env, **LEAD), "pause").returncode == 0
+    assert _wait(lambda: _state(proc.pid) == "T")
+    out = _run(dict(env, **LEAD), "resume")
+    assert out.returncode == 0, out.stderr
+    assert _wait(lambda: _state(proc.pid) in "SR")
+    assert _events(env) == [("pause", "lead"), ("resume", "lead")]
+
+
+def test_an_untagged_open_line_is_the_owners_and_blocks_the_leads_resume(dummy):
+    """A legacy line without "by", still open, counts as the owner's (L07-C1b): the lead may not end it."""
+    proc, env, _ = dummy
+    shared_log = Path(env["SVG_SHARED_DIR"]) / "pauses.log"
+    shared_log.parent.mkdir(parents=True, exist_ok=True)
+    shared_log.write_text(json.dumps({"event": "pause", "time": time.time() - 5.0, "pids": []}) + "\n")
+    out = _run(dict(env, **LEAD), "resume")
+    assert out.returncode == 2 and len(shared_log.read_text().splitlines()) == 1
+
+
+def test_the_check_fails_closed_and_never_touches_the_owners_commands(dummy):
+    """If the check cannot run (no usable Python), the lead's resume is refused; the owner's bare resume never runs
+    the check and works as before."""
+    proc, env, _ = dummy
+    assert _wait(lambda: _state(proc.pid) in "SR")
+    assert _run(env, "pause").returncode == 0
+    assert _wait(lambda: _state(proc.pid) == "T")
+    broken = dict(env, GPU_PAUSE_PYTHON="/nonexistent/python3")
+    out = _run(dict(broken, **LEAD), "resume")
+    assert out.returncode == 2 and "could not" in out.stderr and _state(proc.pid) == "T"
+    assert _run(broken, "resume").returncode == 0                                  # the owner: no check at all
+    assert _wait(lambda: _state(proc.pid) in "SR")

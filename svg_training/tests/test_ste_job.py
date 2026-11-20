@@ -738,6 +738,21 @@ def test_launch_goes_ahead_only_under_the_sessions_own_pause(bench, bys, refused
         assert bench.wait("solo").returncode == 0
 
 
+def test_owner_pauses_lists_the_open_owner_pauses_for_gpu_pause_sh(bench):
+    """L07-C1c: the check gpu_pause.sh runs before the lead's resume or stop. Exit 0 and one line when none is open;
+    exit 2 and one line per owner pause otherwise; the lead's own pause is not listed."""
+    done = run_py([TOOL, "owner-pauses"], bench.env)
+    assert done.returncode == 0 and done.stdout.strip() == "no owner pause is open"
+    log = shared.pauses_log()
+    log.parent.mkdir(parents=True, exist_ok=True)
+    with log.open("a") as stream:
+        for offset, by in enumerate(("lead", "owner", "owner")):
+            stream.write(json.dumps({"event": "pause", "time": time.time() - 10.0 + offset, "pids": [], "by": by}) + "\n")
+    done = run_py([TOOL, "owner-pauses"], bench.env)
+    assert done.returncode == rc.EXIT_REFUSED and len(done.stdout.splitlines()) == 2
+    assert all("(by owner" in line for line in done.stdout.splitlines())
+
+
 def test_a_pause_left_open_by_a_previous_boot_does_not_refuse_a_launch(bench):
     """After a power cut the relaunch from cmd.txt must go ahead: nothing is paused after a boot (ste/pauses.py)."""
     pause_line("pause", 1000.0, [4242])                                    # 1970: long before this boot

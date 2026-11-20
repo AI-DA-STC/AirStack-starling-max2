@@ -4,6 +4,7 @@
     python scripts/ste_job.py launch --task L0.11 --name <job> --run-dir runs/<folder> --min-s <seconds> --gpu-h <hours> -- <command ...>
     python scripts/ste_job.py wait <job>
     python scripts/ste_job.py status
+    python scripts/ste_job.py owner-pauses
 
 launch   starts <command ...> detached (its own session; output appended to <run-dir>/job.log) behind a thin wrapper
          that records the command's own exit code in <run-dir>/exit_code, and records the job (pid, process start
@@ -31,6 +32,10 @@ status   one line per job: alive | alive (paused) | alive (wrapper gone) | dead 
          faults=<n> (in wait's line and in status) counts bookkeeping writes the wrapper had to retry (a full disk,
          any error): the job was not harmed by them; details in <run-dir>/job.json and job.log.
 
+owner-pauses  lists the open pauses that are not the lead's own (not tagged GPU_PAUSE_BY=lead), one line each; exit
+         0 if there is none, 2 if there is one. scripts/gpu_pause.sh runs it before a resume or stop tagged
+         GPU_PAUSE_BY=lead and refuses while an owner pause is open (never end a pause the session did not make).
+
 A job is told apart by pid, process start time and boot id, never by its name or command line. To stop a job with a
 checkpoint, send SIGINT to the recorded pid (the wrapper passes it on) or use scripts/gpu_pause.sh stop. Logic and the
 full description: source/svg_training/ste/jobs.py.
@@ -54,7 +59,7 @@ SEPARATOR = "--"
 
 def parse(argv: list[str] | None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    commands = parser.add_subparsers(dest="command", required=True, metavar="{launch,wait,status}")
+    commands = parser.add_subparsers(dest="command", required=True, metavar="{launch,wait,status,owner-pauses}")
     launch = commands.add_parser("launch", help="start a command detached and record the job")
     launch.add_argument("--task", required=True, help="task ID, as in configs/ste_learning.toml (L0.11)")
     launch.add_argument("--name", required=True, help="job name: letters, digits, . _ -")
@@ -68,6 +73,7 @@ def parse(argv: list[str] | None) -> argparse.Namespace:
     wait.add_argument("name")
     wait.add_argument("--poll-s", type=float, default=jobs.POLL_S, help="seconds between looks")
     commands.add_parser("status", help="list the jobs")
+    commands.add_parser("owner-pauses", help="list the open owner pauses; exit 2 if there is one")
     wrapper = commands.add_parser(jobs.WRAPPER_COMMAND)             # the wrapper: started by launch, not by hand
     wrapper.add_argument("run_dir", type=Path)
     args = parser.parse_args(argv)                                  # a bad argument exits 2, which is EXIT_REFUSED
@@ -106,6 +112,10 @@ def run(args: argparse.Namespace) -> int:
             return jobs.EXIT_NO_SUCH_JOB
         print(outcome.line, flush=True)
         return outcome.status
+    if args.command == "owner-pauses":
+        lines = jobs.owner_pause_lines()
+        print("\n".join(lines or ["no owner pause is open"]))
+        return EXIT_REFUSED if lines else EXIT_DONE
     print("\n".join(jobs.status_lines()))
     return EXIT_DONE
 

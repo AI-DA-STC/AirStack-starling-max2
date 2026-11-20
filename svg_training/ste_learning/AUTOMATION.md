@@ -85,8 +85,11 @@ or pause only our own siblings the P1b way (pause by pattern, record in `gpu.own
 The lead tags such a pause as its own: `GPU_PAUSE_BY=lead GPU_PAUSE_PATTERN='<the siblings' pattern>'
 scripts/gpu_pause.sh pause`, and the same two variables for the resume. A tagged pause does not block the solo
 launch; an owner pause (a bare `gpu_pause.sh pause`) still does. A resume continues every job its pattern finds and
-closes every open pause in the log, so before resuming check that no owner pause was made meanwhile
-(`svg_training.ste.pauses.owner_pauses()` is empty); if one was, leave it to the owner.
+closes every open pause in the log, so a resume or stop with `GPU_PAUSE_BY=lead` is refused (exit 2, nothing done)
+while an owner pause is open (`scripts/ste_job.py owner-pauses` lists them): the owner made it, the owner ends it, and
+our siblings wait. The guard is enforced by the script; a bare resume (the owner's) is unchanged. The guard runs
+`scripts/ste_job.py`, which needs Python 3.11 or newer: on a machine whose `python3` is older, the lead also sets
+`GPU_PAUSE_PYTHON=~/miniconda3/envs/env_isaaclab/bin/python` (otherwise the lead's resume and stop are always refused).
 
 **Pauses.** Stat `T` = paused, not stalled. Never resume a pause we did not make. Simulator appears mid-run: pause
 our jobs (recorded), raise H4, resume when it is gone (PROPOSED).

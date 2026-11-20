@@ -1,6 +1,6 @@
 INTERNAL · the latest status of STE's own learning track and the NUS port, overwritten at every update; the history is in [LOG.md](LOG.md). Produced by the `train-status` skill.
 
-**Status, 2026-11-21 00:04 (+08:00), event: L07-I3 fixed; I4 being built; L0.8 under independent QC**           · laptop RTX 5070 Ti · GPU 72 % / 22 W / 1.7 GB of 12 GB · 0 training processes (0 paused)
+**Status, 2026-11-21 00:09 (+08:00), event: L0.8 independent QC: NOT DONE (3 Important); fix round started**            · laptop RTX 5070 Ti · GPU 72 % / 22 W / 1.7 GB of 12 GB · 0 training processes (0 paused)
 
 ## Phases
 
@@ -19,7 +19,7 @@ INTERNAL · the latest status of STE's own learning track and the NUS port, over
 |---|---|---|---|---|
 | L0.1 | Track set-up: config and test skeleton | DONE | none | settings file, loader, tests; independent QC closed all findings |
 | L0.7 | Process tooling and drills | RUNNING | none | independent QC: NOT DONE, 1 Critical + 5 Important to fix (below), then full suite on both machines, then the drills |
-| L0.8 | Game spec sheet | RUNNING | none | committed on branch `ste-l0.8` (5a04097): `GAME_SPEC.md` + `configs/ste_game.toml`, 28 values (7 FIXED, 1 MEASURED, 18 PROPOSED, 2 OPEN), 34 tests; independent QC running; merge waits on your answer below |
+| L0.8 | Game spec sheet | RUNNING | none | committed on branch `ste-l0.8` (5a04097): `GAME_SPEC.md` + `configs/ste_game.toml`, 28 values (7 FIXED, 1 MEASURED, 18 PROPOSED, 2 OPEN), 34 tests; QC: every value matches its source and the start-ring finding holds, but tests miss label upgrades and wrong values, and two pending rulings (P10, P12) must read OPEN — fix round running; merge waits on your answer below |
 | L0.9 | Tag rule for the study: 1-for-1, nearest pair first | NOT STARTED | tier 1 fast engine | after L0.8; CPU |
 | L0.10 | Scripted players for the study | NOT STARTED | tier 1 fast engine | after L0.9; CPU |
 | L0.11 | Screening sweep (INFO) | NOT STARTED | tier 1 fast engine | cap 3 GPU-h |

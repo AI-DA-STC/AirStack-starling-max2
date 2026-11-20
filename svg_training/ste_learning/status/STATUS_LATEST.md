@@ -1,6 +1,6 @@
 INTERNAL · the latest status of STE's own learning track and the NUS port, overwritten at every update; the history is in [LOG.md](LOG.md). Produced by the `train-status` skill.
 
-**Status, 2026-11-21 03:30 (+08:00), event: L0.10 fix round committed; re-check running**                                 · laptop RTX 5070 Ti · GPU 72 % / 22 W / 1.7 GB of 12 GB · 0 training processes (0 paused)
+**Status, 2026-11-21 03:44 (+08:00), event: L0.11 committed and rebased onto the fixed L0.10; pre-launch QC running**                                  · laptop RTX 5070 Ti · GPU 72 % / 22 W / 1.7 GB of 12 GB · 0 training processes (0 paused)
 
 ## Phases
 
@@ -22,7 +22,7 @@ INTERNAL · the latest status of STE's own learning track and the NUS port, over
 | L0.8 | Game spec sheet | DONE | none | merged into `development`; QC passed; full suite on `development` 1,461 passed / 0 failed (41 min) |
 | L0.9 | Tag rule for the study: 1-for-1, nearest pair first | DONE | tier 1 fast engine | merged; QC + re-check passed; full suite on `development` 1,517 passed / 0 failed (31 min); the 5090 records its own tag-off positions (L09-5090) |
 | L0.10 | Scripted players for the study | RUNNING | tier 1 fast engine | fix round committed (7c4d761): parked-ring Guards settle by 20 s (3v3) / 30 s (5v3), team-mates start ≥ 1.15 m apart, still players + tag on → 0 tags in 10 s at 3v3 and 5v3, unpinned zone refused, stacked starts caught; 16 of 16 deliberate breakages caught; independent re-check running |
-| L0.11 | Screening sweep (INFO) | RUNNING (build, CPU only) | tier 1 fast engine | built and CPU-tested (349 tests; a CPU run through the launcher: interrupt → resume → done → figures → clip): 280 sweep cells + 59 control cells × 1,000 games, cut order and L0.12 shortlist rule written before any run; lead's rulings being applied; then rebase onto the fixed L0.10, QC of the gate file, GPU-only tests, a 0.15 GPU-h pilot, then the run |
+| L0.11 | Screening sweep (INFO) | RUNNING (pre-launch QC) | tier 1 fast engine | committed on `ste-l0.11` (5 commits), rebased onto the fixed L0.10: 344 cells × 1,000 games; still players + tag on → 0 tags at every size; 5v3 starts ≥ 1.15 m between team-mates, ≥ 1.77 m Guard–Strike; independent pre-launch review of the gate file and driver running; then GPU-only tests, a 0.15 GPU-h pilot, the run (cap 3 GPU-h) |
 | L0.12 | Best-response test: is the game worth learning? | NOT STARTED | tier 1 fast engine | cap 6 GPU-h |
 | L0.2 | Tier 2 speed in contested play | NOT STARTED | tier 2 Isaac Lab | 5090; cap 1.5 GPU-h |
 | L0.13 | Does tier 2 train at all? | NOT STARTED | tier 2 Isaac Lab | 5090, after L0.2; cap 6 GPU-h |
@@ -50,7 +50,8 @@ Laptop full CPU suite (20 Nov, `development` at 5c5d465, after `scripts/nus_inst
 | L0.9 independent QC + re-check | ~239 k | ~31 min | ran its own reference matcher, mutants and old-vs-new games |
 | L0.10 Scripted players: builder (build + rulings + QC fixes) | ~399 k | ~51 min | |
 | L0.10 independent QC | ~274 k | ~35 min | 60 deliberate breakages, 43 caught; its own geometry probes on 30,000+ starts |
-| L0.11 sweep build (CPU) | ~406 k | ~42 min + rulings round | |
+| L0.11 sweep build (CPU, build + rulings + rebase) | ~464 k | ~56 min | |
+| L0.11 pre-launch QC | running | running | |
 | Full CPU test suite | none | ~25 min alone; the L0.7 merge run took 61 min (shared the CPU with L0.9's tests) | rule from now: one heavy test run at a time |
 | GPU | 0 GPU-h | | nothing has used the GPU |
 

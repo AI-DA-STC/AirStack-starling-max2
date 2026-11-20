@@ -81,15 +81,25 @@ def test_the_file_covers_every_item_plan_section_4_names():
         assert needed in keys, needed
 
 
-def test_no_tag_section_before_l09():
-    """[tag] is task L0.9's off-by-default switch (WORK_BREAKDOWN L0.1 note); the sheet records the proposal as tag_rule."""
-    assert "tag" not in tomllib.loads(GOOD)
+def test_the_tag_section_lists_the_games_switch_and_its_defaults():
+    """Task L0.9 changed this test on purpose: until L0.8 it asserted that no [tag] section exists. [tag] now lists the
+    game's own switch for the study tag (core/game_config.py TagCfg, read from a game file's [tag]): the same keys, the
+    code's defaults as values, off, and the proposal's radius, probability and pairing (tag_rule)."""
+    from svg_training.core.game_config import TAG_MODES, TagCfg
+    spec, _ = load_game_spec()
+    table = tomllib.loads(GOOD)["tag"]
+    assert list(table) == [f.name for f in dataclasses.fields(TagCfg)]
+    assert TagCfg(**table) == TagCfg()                                            # the sheet holds the code's defaults
+    assert spec.value("tag.mode") == TAG_MODES[0] == "off" and spec.value("tag_rule.main_game_has_tag") is False
+    assert spec.value("tag.radius_m") == spec.value("tag_rule.radius_m")
+    assert spec.value("tag.guard_survives_tag_prob") == spec.value("tag_rule.guard_survives_tag_prob")
+    assert spec.value("tag_rule.pairing") in TAG_MODES[1:]                        # the pairing the switch turns on
 
 
 # ------------------------------------------------------------------------------------------------ fails closed
 def test_unknown_section_or_key_raises(tmp_path):
-    with pytest.raises(ValueError, match=r"unknown section.*\btag\b"):
-        load_game_spec(write(tmp_path, GOOD + "\n[tag]\nenabled = false   # PROPOSED (P1): off\n"))
+    with pytest.raises(ValueError, match=r"unknown section.*\blanding\b"):
+        load_game_spec(write(tmp_path, GOOD + "\n[landing]\nland_speed_mps = 0.6   # PROPOSED (made up): L2.3\n"))
     with pytest.raises(ValueError, match=r"unknown key.*\[zone\].*diameter_m"):
         load_game_spec(changed(tmp_path, line_of("zone.radius_m"),
                                line_of("zone.radius_m") + "\ndiameter_m = 3.2   # PROPOSED (made up): twice the radius"))
@@ -223,6 +233,9 @@ PINNED_LABELS = {
     "tag_rule.radius_m": "PROPOSED",              # P1 (PLAN section 2: "P1 and P2 PROPOSED")
     "tag_rule.pairing": "PROPOSED",               # PLAN section 4 L0.9
     "tag_rule.guard_survives_tag_prob": "PROPOSED",  # D2 provisional; P12 revisits what a tag costs (lead's ruling 3, 20 Nov 2026)
+    "tag.mode": "FIXED",                          # parent STANDARDS section 4 "Tag": off until the owner rules P1 (L0.9)
+    "tag.radius_m": "PROPOSED",                   # P1, as tag_rule.radius_m
+    "tag.guard_survives_tag_prob": "PROPOSED",    # D2 provisional, P12, as tag_rule.guard_survives_tag_prob
     "filter.pairs": "FIXED",                      # parent STANDARDS sections 4 and 5
     "filter.share": "MEASURED",                   # read from cbf_filter.py (lead's ruling 4, 20 Nov 2026: no FIXED without the owner)
     "filter.keepout_m": "FIXED",                  # parent STANDARDS section 5 "Safety filter in flight today"
@@ -241,7 +254,8 @@ def test_the_sources_name_the_pending_rulings():
     spec, _ = load_game_spec()
     for key, ruling in (("tag_rule.radius_m", "P1"), ("teams.target_sizes", "P9"), ("arena.environment", "P10"),
                         ("zone.radius_m", "P12"), ("tag_rule.guard_survives_tag_prob", "P12"),
-                        ("filter.share", "P2"), ("arena.side_m", "F8"),
+                        ("filter.share", "P2"), ("arena.side_m", "F8"), ("tag.mode", "P1"), ("tag.radius_m", "P1"),
+                        ("tag.guard_survives_tag_prob", "P12"),
                         ("starts.strike_ring_m", "L08-F1")):
         assert re.search(rf"(?<![\w-]){ruling}(?![\w-])", spec.entry(key).source), (key, ruling)
 
@@ -309,6 +323,7 @@ def test_fixed_values_follow_their_parent_rows():
     # main game has no tag
     tag, label = parent_row("Tag")
     assert label == "FIXED" and spec.value("tag_rule.main_game_has_tag") is False and "The main game has no tag" in tag
+    assert spec.value("tag.mode") == "off"                                        # the game's switch follows it (L0.9)
     # filter on every pair, in the game (section 4) and in flight (section 5)
     in_game, label_game = parent_row("Safety filter in the game")
     in_flight, label_flight = parent_row("Safety filter in flight today")

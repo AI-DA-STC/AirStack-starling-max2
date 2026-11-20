@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import dataclasses
 import hashlib
+import math
 import tomllib
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -44,6 +45,34 @@ class PartnerRulesCfg:
 class ContactRulesCfg:
     contact_m: float = 0.50
     guard_survives_tag_prob: float = 0.0
+
+
+TAG_MODES: tuple[str, ...] = ("off", "nearest_pair_1for1")
+
+
+@dataclass(frozen=True)
+class TagCfg:
+    """The STE learning track's study tag (task L0.9), ``[tag]`` in a game file; separate from the contact preset's tag.
+
+    ``mode`` "off" (the default) is today's game, bit for bit. "nearest_pair_1for1": a live Guard drone and a live
+    Strike drone whose 3-D centres are closer than ``radius_m`` tag each other, one Guard drone with one Strike drone,
+    the closest pair first (``core/pair_rules.proximity_tags``); both leave the game on that step, except that the Guard
+    drone stays in the games where "Guard survives" was drawn at the game's start with ``guard_survives_tag_prob``.
+    The radius 1.6 m is PROPOSED (P1, ruled at gate G0) and the probability 0.0 is D2 (owner, provisional): study runs
+    only. The values equal ``configs/ste_game.toml`` ``[tag]`` (a test keeps them equal). A drone that is tagged leaves
+    every filter pair at once; landing as a filter obstacle is task L2.3.
+    """
+    mode: str = "off"
+    radius_m: float = 1.6
+    guard_survives_tag_prob: float = 0.0
+
+    def __post_init__(self) -> None:
+        if self.mode not in TAG_MODES:
+            raise ValueError(f"tag.mode must be one of {TAG_MODES}, got {self.mode!r}")
+        if not (math.isfinite(self.radius_m) and self.radius_m > 0.0):
+            raise ValueError(f"tag.radius_m must be a finite distance above 0 m, got {self.radius_m!r}")
+        if not 0.0 <= self.guard_survives_tag_prob <= 1.0:     # NaN fails both comparisons
+            raise ValueError(f"tag.guard_survives_tag_prob must be in [0, 1], got {self.guard_survives_tag_prob!r}")
 
 
 BACKENDS: tuple[str, ...] = ("fitted", "physics")
@@ -102,6 +131,7 @@ class GameCfg:
     pad_guards: int = 5
     pad_strikes: int = 3
     yaw_rate_max_rad_s: float = 1.0
+    tag: TagCfg = field(default_factory=TagCfg)
 
     def team_speed_mps(self, team: str) -> float:
         """Team speed in m/s = units/step x metres/unit / seconds/step."""
@@ -117,7 +147,7 @@ class GameCfg:
     def replace(self, **dotted: Any) -> "GameCfg":
         """Return a copy with dotted fields changed, e.g. replace(**{"starling.enabled": True})."""
         sections = {"arena": "arena", "rules": "rules", "contact": "contact",
-                    "starling": "starling", "starts": "starts", "rewards": "rewards"}
+                    "starling": "starling", "starts": "starts", "rewards": "rewards", "tag": "tag"}
         top: dict[str, Any] = {}
         sub: dict[str, dict[str, Any]] = {}
         for key, val in dotted.items():
@@ -151,7 +181,7 @@ LOCAL_ALLOWED: frozenset[str] = frozenset(
 
 _GAME_KEYS = ("preset", "dropout_fraction", "obs_view", "pad_guards", "pad_strikes", "yaw_rate_max_rad_s")
 _SECTION_CLASSES = {"arena": ArenaCfg, "partner_rules": PartnerRulesCfg, "contact_rules": ContactRulesCfg,
-                    "starling_layer": StarlingLayerCfg, "starts": StartsCfg, "rewards": RewardsCfg}
+                    "starling_layer": StarlingLayerCfg, "starts": StartsCfg, "rewards": RewardsCfg, "tag": TagCfg}
 
 
 def _tuplify(v: Any) -> Any:
@@ -208,7 +238,7 @@ def load_game_cfg(path: str | Path = CONFIGS / "s2_game.toml", local_dir: Path |
     parts = {name: _build(cls, data.get(name, {}), name) for name, cls in _SECTION_CLASSES.items()}
     cfg = GameCfg(arena=parts["arena"], rules=parts["partner_rules"], contact=parts["contact_rules"],
                   starling=parts["starling_layer"], starts=parts["starts"], rewards=parts["rewards"],
-                  **{"preset": "partner", **game})
+                  tag=parts["tag"], **{"preset": "partner", **game})
     return cfg, Provenance(str(path), _sha(raw), local_file, local_sha)
 
 

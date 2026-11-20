@@ -1,0 +1,147 @@
+{
+ "_how": "tests/test_game_tag_off_golden.py --write-golden from dec9d276 (pre-L0.9), CPU, one capability per call; see the module docstring",
+ "decimal": {
+  "AVX2": {
+   "contact_pure/0": {
+    "closest_cross_3d_m": "d4fd9f5aea8f24660914b0b7099300867b7285bc75f689d04558e5576f3e5315",
+    "pos_m": "fbcb7fd3b73f2592c20c60cbf4a85ab6974c614cfd618683ab2be9b3aed92e4e"
+   },
+   "contact_pure/5": {
+    "closest_cross_3d_m": "ade0647068f13b7ec873d74ff1d26be75c0dbc970031e9e32fb72a85c770bf16",
+    "pos_m": "81378576af89bb502e3ba012d6f7b23a1ecae5c2507030f1010d5886e57aa260"
+   },
+   "contact_starling/0": {
+    "closest_cross_3d_m": "a24288f335d8d0ed82060a87183d571bd6e4ec3a755eaea2a7cdbf06397d1d0d",
+    "pos_m": "9ac10d30e34fe68f8868e5159cface733d2aeb4412cac6c156fd6ce92eef7787"
+   },
+   "contact_starling/5": {
+    "closest_cross_3d_m": "1e6e91f0d40de4aad7cadc6de5355314e0b5af7a780cbc9d5a611ffac7c80499",
+    "pos_m": "4e69a0fc43d2a9e6b7f1ba492e2d5d7ff01ff16295e0760186deb3e45c1d53cd"
+   },
+   "partner_pure/0": {
+    "closest_cross_3d_m": "c224978eb5e4b433d0fb580a56a0ef36a24e9c48b01188aac15b3c22e2dd588f",
+    "pos_m": "d25a8fa7b35e0ee2aa1021c5aef770d46cd4e1346cb6ca4c0719ed2af950961a"
+   },
+   "partner_pure/5": {
+    "closest_cross_3d_m": "16f45708a3ea4ed427a139591d4f3f1003e07ba2955d2cb182ac902ea8fc4ad4",
+    "pos_m": "73bdcc10ed877b75b818a9ba835a4aaea151187c2cb29c27741f742823415bcc"
+   },
+   "partner_starling/0": {
+    "closest_cross_3d_m": "1ad53c43e414ed1a8a4460790d942ceefba4d627d7b287b6d92526d46ef5f0cf",
+    "pos_m": "e0397ee96abe582ccc05bb3e1663edcd338a00bcee8b2160eb8e69ab38a8d490"
+   },
+   "partner_starling/5": {
+    "closest_cross_3d_m": "2dbca35b159749d2840a6103bb5a2a323a027fe628634a7159384883a102a61d",
+    "pos_m": "cb5dead0e3680ef0aac0a5733b0da6b0fcf0aa829f37313ba369bcfb3ff2d86e"
+   }
+  },
+  "NO AVX": {
+   "contact_pure/0": {
+    "closest_cross_3d_m": "bddc8df2671b82e75466a8f5776f349fbdf195fb8350f8f244a77b1af2914533",
+    "pos_m": "53789cb63206e7a86f33e2919581b3db058e2a4c30c105090b72d6d12bd7e4b1"
+   },
+   "contact_pure/5": {
+    "closest_cross_3d_m": "1902616231973f803782c15a7fc3de36b54e6df45b256d1a72731c15b89f9c4b",
+    "pos_m": "22c4fbc728216babd1914ab992fc41aad646a59c703a2a065ebbcceea0acc287"
+   },
+   "contact_starling/0": {
+    "closest_cross_3d_m": "d08ea3abce5077a7de9aee974356eae106cc81d08fd75045db575aad667b1953",
+    "pos_m": "5111607e5a5db289cd9ae3c099ef90c3c794326341aaecfd8e9b243b8f488a33"
+   },
+   "contact_starling/5": {
+    "closest_cross_3d_m": "9c1dd368ef4adb08cd3d217f71532096fa020e62255204c518b10304c1c7412e",
+    "pos_m": "77ac6db7b6fac7fa62c8ee75c5b57bf444fb6bf25ed4150867d739f232be11de"
+   },
+   "partner_pure/0": {
+    "closest_cross_3d_m": "42830251deb7993f7c9c98f02d01d1d14d266b73d7a2f2de0744442c00d19b31",
+    "pos_m": "9219892b3a119bf780010166f58805e6d77f293228849f31a77065ceb508c2b9"
+   },
+   "partner_pure/5": {
+    "closest_cross_3d_m": "12e2cb0488ea817ed0fd575a1b7ba4a0e2f0b89e31e238f279f03b9331806d45",
+    "pos_m": "09e4eca3f96bd2b1bfe68fdf47205472e183eb5c7b08d69b98fa2e37cdb3a1ca"
+   },
+   "partner_starling/0": {
+    "closest_cross_3d_m": "d51b45a97bf3edbb759ab9a3da3407abc3776ccf289a34f0ff6c1b93d5d322b8",
+    "pos_m": "e2ff4eb9f1c56ca72873ff4f3944dee5e2122994b77280e6c264e65eaaee22cd"
+   },
+   "partner_starling/5": {
+    "closest_cross_3d_m": "2bbc34d1dad53c6b5abcd7e5c2afd3bc56c9e3ee070252b6f815e0758d7767cd",
+    "pos_m": "5b6245340749a8316e1012cdd6fd8f88b9c40c7325806f51fd072b2b8844bbe9"
+   }
+  }
+ },
+ "whole": {
+  "contact_pure/0": {
+   "alive": "604d04aba8c26777eae4bc6b8de48b5c354d177793b01a6301813eba0f09239d",
+   "end_step": "495162defa2c9abe8951db2054cde4fb82efae1a6cd6a57dd75edbd9f6cd5f0c",
+   "final_alive": "983acbd9ad770dbdcd3071162e343b0ae96cb894e390e381e9452a92edb058b4",
+   "outcome": "28b2371a6c7ef6727bc8a1cc574ad501757c08ebf1acfb563a21281abe90bbf7",
+   "reward_guard": "f2027469f08b72d17f5e6456aecb870e15fef6af0e479d0441291697433b8e2b",
+   "reward_strike": "e72c15d7fd0d8b33aede5cab6d8a98dc180ab4ac155cf41281695d96d813bd4f",
+   "tagged": "65419a5fa27cd89dea3d3a0f37dedd71394ff9850dfff80e2c1d7a89317e3a5f"
+  },
+  "contact_pure/5": {
+   "alive": "0bd0cc0c98474906160f9dab9747db44742995a017a69e304fde82b2d47546d2",
+   "end_step": "76a0017a0af0ef67a81c4927e452a2e39ef80c7d54c216fb7105b1fde31417c0",
+   "final_alive": "b70d799b4be3b4b145d28c98df9effc2b3c16433fc13908331cd857d1d6bffe0",
+   "outcome": "cc1a52020ef69790296ca40052d4c3db1017dbb3db1dc95f1848c5e024a70beb",
+   "reward_guard": "9d1ee3942ae0b8e304c12483db3e8756a4f39a6ba7e76fe5bb22c74e7e8101a2",
+   "reward_strike": "790f8938a505abff270fb409e63cb7ad575425d740160c534c24ca34e81e2e53",
+   "tagged": "01ba01e012f405caaf6ee8be7e4dafec3d689008bc895eae4582c1707b064bc6"
+  },
+  "contact_starling/0": {
+   "alive": "2a4ab51462b1b8ed9f3d5fccbbf3d9417550686739cbdf0e8cb62389f4d6bf94",
+   "end_step": "d6107500c5a1ab7b8fa52b4c4ed7b14695a800efe927aab758688f5bd61ac45e",
+   "final_alive": "c8c936b5415efb9bedf7184dfdf4676b08a204a9713b27cb3cad1b1a8e280ac7",
+   "outcome": "33ea7ed219d1f877e74e57f891d9aed3f7b4b7e2557b2db39255b30a85dd4fcb",
+   "reward_guard": "4b7ab63e23f5d98aef0ac11ef590a9bd971bf53313e34e9dc330c60d93028a49",
+   "reward_strike": "69463996e11d523c9872e6c900e3d61a921d68576cf896a87ccb4b235bcf706b",
+   "tagged": "b47448e6787363e159c84f52ad41677341c2c4cc636ea7811a15976d4d1a6987"
+  },
+  "contact_starling/5": {
+   "alive": "1c7fe13b9526bed6f20e072b03012a3022c85a58ba075000046f46715f1dc624",
+   "end_step": "d6107500c5a1ab7b8fa52b4c4ed7b14695a800efe927aab758688f5bd61ac45e",
+   "final_alive": "68215021beafc55eb839ae1b870c11bd2c8cff69ef2d2f575c4e02013ab5db48",
+   "outcome": "33ea7ed219d1f877e74e57f891d9aed3f7b4b7e2557b2db39255b30a85dd4fcb",
+   "reward_guard": "4b7ab63e23f5d98aef0ac11ef590a9bd971bf53313e34e9dc330c60d93028a49",
+   "reward_strike": "69463996e11d523c9872e6c900e3d61a921d68576cf896a87ccb4b235bcf706b",
+   "tagged": "d17a83c11e6fe0e8926c60be92c0b933f8ecf968c0875a0f7db393aecfa863b6"
+  },
+  "partner_pure/0": {
+   "alive": "8e9766a3541ddfd4c491428ddf8429cb97ec76427647fe3e078ba542725419c8",
+   "end_step": "88c8a968e35b355f4fbd4993ef6fcfb728a6154087bc8909777b7ae12fd0b53c",
+   "final_alive": "b9ac80dd46663512369378545c9c911e422066943efe7aab169c88bf28224ad8",
+   "outcome": "165c646ecac89c557cd1b81e11f8a8235fa9f87c0e20d7187a22803d1eb3ec89",
+   "reward_guard": "236dbae37e0c97a24eb411e441c67c052f40c5e3fbc7135b9ee9f2e940995fd2",
+   "reward_strike": "dfb3e341018a7054da203dacd6b70ae0714c0df0bd840741dbb62bae1f39a797",
+   "tagged": "0b5d3a68366dfaca70cb23f0272465e85c613c0ff57377572daa0500e553fa4d"
+  },
+  "partner_pure/5": {
+   "alive": "add1cc7bb03ab12f0d91f235b2d7c686543e23847863e50f711d9f3515579966",
+   "end_step": "76a0017a0af0ef67a81c4927e452a2e39ef80c7d54c216fb7105b1fde31417c0",
+   "final_alive": "9341212259291dc39066c40a28f152df32e2c39d2b3a427c62f2af32f2b0c87e",
+   "outcome": "cc1a52020ef69790296ca40052d4c3db1017dbb3db1dc95f1848c5e024a70beb",
+   "reward_guard": "9d1ee3942ae0b8e304c12483db3e8756a4f39a6ba7e76fe5bb22c74e7e8101a2",
+   "reward_strike": "790f8938a505abff270fb409e63cb7ad575425d740160c534c24ca34e81e2e53",
+   "tagged": "0b5d3a68366dfaca70cb23f0272465e85c613c0ff57377572daa0500e553fa4d"
+  },
+  "partner_starling/0": {
+   "alive": "d44eb515c3ff44cc350e5e6ec13ee34e9d3a96126176332f5a0cb1be4c4b5bc3",
+   "end_step": "d6107500c5a1ab7b8fa52b4c4ed7b14695a800efe927aab758688f5bd61ac45e",
+   "final_alive": "0269316fc373649c2bf4430b9f9cf1a7165fec1ba66fea18a0569a690df77680",
+   "outcome": "33ea7ed219d1f877e74e57f891d9aed3f7b4b7e2557b2db39255b30a85dd4fcb",
+   "reward_guard": "4b7ab63e23f5d98aef0ac11ef590a9bd971bf53313e34e9dc330c60d93028a49",
+   "reward_strike": "69463996e11d523c9872e6c900e3d61a921d68576cf896a87ccb4b235bcf706b",
+   "tagged": "f0b76a870a176eb3a83c1d0defd5a8f79d38053580440f959bc6efcf7dae1db8"
+  },
+  "partner_starling/5": {
+   "alive": "51072f92316942ccc051d1c66298f45bd56c3f44bca7e9934747d908de668a9c",
+   "end_step": "d6107500c5a1ab7b8fa52b4c4ed7b14695a800efe927aab758688f5bd61ac45e",
+   "final_alive": "2b904dada109b1ce1dcfd4e5b8593baf6a35b9f70c66040b5878c1fa3a3166fb",
+   "outcome": "33ea7ed219d1f877e74e57f891d9aed3f7b4b7e2557b2db39255b30a85dd4fcb",
+   "reward_guard": "4b7ab63e23f5d98aef0ac11ef590a9bd971bf53313e34e9dc330c60d93028a49",
+   "reward_strike": "69463996e11d523c9872e6c900e3d61a921d68576cf896a87ccb4b235bcf706b",
+   "tagged": "f0b76a870a176eb3a83c1d0defd5a8f79d38053580440f959bc6efcf7dae1db8"
+  }
+ }
+}

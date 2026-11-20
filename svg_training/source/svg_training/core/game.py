@@ -10,8 +10,14 @@ PX4 1.14's cascade in a world given as ``SvgGame(..., world=...)``; ``motion`` n
 or "physics/<world label>") and ``info["upset"]`` flags games where a live drone was upset (D10).
 
 Order inside one step: move (pure rule + push-apart, or the Starling layer), walls (keep_in clamps, leave takes
-the drone out), contact tags (contact preset), scheduled drop-outs, then the zone test. Tie rule: tags come before
-the zone test, so a Strike drone tagged on the step it enters the zone does not score."""
+the drone out), tags (contact preset, or the study tag of ``[tag]``), scheduled drop-outs, then the zone test. Tie
+rule: tags come before the zone test, so a Strike drone tagged on the step it enters the zone does not score.
+
+The study tag (STE task L0.9, ``cfg.tag``; off by default, and off plays today's game bit for bit): one Guard drone
+with one Strike drone, nearest pair first, within ``tag.radius_m`` in 3-D (``pair_rules.proximity_tags``); both leave
+on that step unless the game drew "Guard survives" (``tag.guard_survives_tag_prob``, drawn per game at its start from
+the tag's own generator, so the game's arenas, starts and drop-outs are the same with the tag on or off). It works on
+every motion path and with the partner preset; the contact preset has its own tag and refuses it."""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -24,13 +30,20 @@ from svg_training.models.rigid_body import RigidBodyWorld
 from .arena import BANDS, GUARD, STRIKE, Arenas, draw_arenas, draw_starts  # noqa: F401  (re-exported)
 from .game_config import BACKENDS, TICK_S, GameCfg
 from .observations import build_obs, build_state
-from .pair_rules import contact_tags, push_apart
+from .pair_rules import contact_tags, proximity_tags, push_apart
 from .physics_layer import PhysicsLayer
 from .rewards import GUARD_WIN, RUNNING, STRIKE_WIN, team_rewards
 from .scenarios import SCENARIOS, Scenario, scenario_arenas  # noqa: F401  (re-exported)
 from .starling_layer import StarlingLayer
 
 PARK_M = 1.0e3     # where a drone that is out is parked (x and y)
+_TAG_SEED_MIX = 0x9E3779B97F4A7C15     # odd 64-bit constant: derives the study tag's generator seed from the game seed
+
+
+def _tag_seed(seed: int) -> int:
+    """Seed of the study tag's own generator (CODING_PRACTICES section 5: one generator per purpose), from the game
+    seed: (seed + 1) x an odd 64-bit constant, modulo 2^63, so a small game seed never gives another small seed."""
+    return ((seed + 1) * _TAG_SEED_MIX) % (1 << 63)
 
 
 @dataclass
@@ -43,8 +56,8 @@ class StepOut:
     keepout_strike_m) in 3-D; the pure partner rules hold every drone at one height, so there 3-D = horizontal;
     with the Starling layer the push-apart is off, so this reports what the filter alone allowed), filter_corrected [N, M] bool (Starling layer: live drones the safety
     filter changed this step; all False without it),
-    tagged [N, M] bool (contact preset: drones tagged this step; a Strike drone tagged on the step it enters the
-    zone does not score: tags come before the zone test),
+    tagged [N, M] bool (contact preset or the study tag: drones tagged this step; a Strike drone tagged on the step it
+    enters the zone does not score: tags come before the zone test),
     final_alive [N, M] bool (who was in the game at the end of this step, before any reset),
     start_miss [N] bool (True if the game that played this step started with a miss: its starts could not
     meet the spacing / keep-out; constant over a game, so read it on the done step to count games),
@@ -82,6 +95,8 @@ class SvgGame:
             raise ValueError("only partner_rules.teammates_pass = true is built (team-mates pass through each other)")
         if cfg.obs_view != "full":
             raise ValueError("only game.obs_view = \"full\" is built (every drone sees every drone's full state)")
+        if cfg.preset == "contact" and cfg.tag.mode != "off":
+            raise ValueError('preset "contact" has its own tag: use tag.mode = "off" with it (two tag rules at once)')
         if guards < 1 or strikes < 1:
             raise ValueError("a game needs at least one Guard and one Strike drone")
         if scenario is not None and len(scenario.start_m) != guards + strikes:
@@ -134,6 +149,10 @@ class SvgGame:
         self.start_miss = torch.zeros(n, dtype=torch.bool, device=dev)
         self._phi = torch.zeros(n, device=dev)
         self._guard_survives = torch.zeros(n, dtype=torch.bool, device=dev)
+        self._tag_on = cfg.tag.mode != "off"
+        self._tag_gen = torch.Generator(device=device)
+        self._tag_gen.manual_seed(_tag_seed(seed))
+        self._tag_survives = torch.zeros(n, dtype=torch.bool, device=dev)     # study tag: Guard survives, per game
         self._upset = torch.zeros(n, dtype=torch.bool, device=dev)       # this game had an upset drone (physics)
         self.reset()
 
@@ -185,6 +204,9 @@ class SvgGame:
         if self.cfg.preset == "contact":      # drawn only here, so the partner preset's random stream is unchanged
             surv = torch.rand(n, generator=self.gen, device=dev) < self.cfg.contact.guard_survives_tag_prob
             self._guard_survives = torch.where(mask, surv, self._guard_survives)
+        if self._tag_on:                      # the study tag's own generator: the game's own draws stay as with it off
+            surv = torch.rand(n, generator=self._tag_gen, device=dev) < self.cfg.tag.guard_survives_tag_prob
+            self._tag_survives = torch.where(mask, surv, self._tag_survives)
         phi = self._potential(self.pos_m, self.alive, self.arenas)
         self._phi = torch.where(mask, torch.where(torch.isfinite(phi), phi, torch.zeros_like(phi)), self._phi)
 
@@ -213,6 +235,7 @@ class SvgGame:
         """Start every game afresh; reseed the generator if seed is given. Returns the observations."""
         if seed is not None:
             self.gen.manual_seed(seed)
+            self._tag_gen.manual_seed(_tag_seed(seed))
         self._new_games(torch.ones(self.num_games, dtype=torch.bool, device=self.device))
         if self._physics:          # the world holds the new starts at once (a reader may look before the first step)
             self._starling.flush()
@@ -282,6 +305,8 @@ class SvgGame:
         tagged = torch.zeros_like(alive_prev)
         if cfg.preset == "contact":
             tagged, alive = contact_tags(pos, alive, g, cfg.contact.contact_m, self._guard_survives)
+        elif self._tag_on:                    # the study tag (L0.9): one for one, nearest pair first
+            tagged, alive, _ = proximity_tags(pos, alive, g, cfg.tag.radius_m, self._tag_survives)
         # scheduled drop-outs
         steps_new = self.steps + 1
         alive = alive & ~(self.dropout_step == steps_new[:, None])

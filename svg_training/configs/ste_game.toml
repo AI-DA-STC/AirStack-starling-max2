@@ -1,8 +1,9 @@
 # STE learning track: the game spec sheet as settings (task L0.8). The sheet for readers is ste_learning/GAME_SPEC.md;
 # tests/test_ste_game_spec.py keeps its table and this file equal, value for value and label for label.
 #
-# The sheet LISTS, it does not decide (PLAN.md section 4, row L0.8). Nothing in the game reads this file yet. Task L0.9
-# adds the tag rule's own off-by-default switch in a section of its own; [tag_rule] below records the proposal only.
+# The sheet LISTS, it does not decide (PLAN.md section 4, row L0.8). The game does not read this file. [tag_rule] below
+# records the proposal; [tag] (task L0.9) lists the game's own switch for the study tag, as a game file sets it ([tag],
+# core/game_config.py TagCfg): the values here are the code's defaults, and tests/test_ste_game_spec.py keeps them equal.
 #
 # One value per line: key = value   # LABEL (source): text. LABEL is FIXED, MEASURED, PROPOSED or OPEN, as defined at
 # the top of ../STANDARDS.md; ste_learning/STANDARDS.md section 1: never upgrade a label without the owner. An OPEN line
@@ -17,7 +18,7 @@
 
 [zone]
 shape = "circle"                  # FIXED (parent STANDARDS section 4 "Teams", programme benchmark): the Guard team holds a circular zone
-scored_in = "horizontal_plane"    # PROPOSED (parent STANDARDS section 4 "Height"; core/game.py:289-290 tests the horizontal distance only): a vertical cylinder through the height band
+scored_in = "horizontal_plane"    # PROPOSED (parent STANDARDS section 4 "Height"; core/game.py:314-315 tests the horizontal distance only): a vertical cylinder through the height band
 radius_m = 1.6                    # OPEN (P12, OPEN at gate G0, DISCUSSION section 3; the parent row "Zone radius" is OPEN): today's value is PLAN section 4 L0.11 base case, the hangar game's nus_rules.toml area_radius x nus_deploy.toml metres_per_unit; equals the proposed tag radius (F2)
 centre = "arena_centre"           # PROPOSED (hangar game, nus/hangar_game.py _draw_arenas; PLAN is silent; kept, LEAD CALL 20 Nov 2026): the S2 game draws the centre per game instead
 win_ticks_inside = 1              # PROPOSED (parent STANDARDS section 4 "Strike scores"; s2_game.toml and nus_hangar_game.toml [partner_rules] win_steps_in_zone): one Strike drone inside for one tick wins
@@ -30,7 +31,7 @@ start_m = 1.2                     # PROPOSED (nus_deploy.toml flying_height_m; s
 [arena]
 side_m = 6.5                      # PROPOSED (F8, PLAN section 4 L0.11 base case "the 6.5 m lab arena"): the lab fence, 6.5 x 6.5 x 4 m (parent STANDARDS section 4, MEASURED, goal_two_ours.yaml fence_min/max); the hangar side (configs/local/nus_hangar.toml) is the other size L0.11 sweeps
 wall_margin_m = 0.25              # PROPOSED (s2_game.toml and nus_hangar_game.toml [arena] wall_margin_m): the keep-in limit is half the side less this
-walls = "keep_in"                 # PROPOSED (s2_game.toml and nus_hangar_game.toml [arena] walls; core/game.py:273-276 holds a drone at the wall; the lab fence too, goal_two_ours.yaml fence_behavior): a drone at a wall is held, not out
+walls = "keep_in"                 # PROPOSED (s2_game.toml and nus_hangar_game.toml [arena] walls; core/game.py:296-299 holds a drone at the wall; the lab fence too, goal_two_ours.yaml fence_behavior): a drone at a wall is held, not out
 environment = "open_arena"        # OPEN (P10, OPEN at gate G0): the parent FIXED rule "Environments" asks for realistic 3-D environments, construction-site world first; today's value is E0 of the parent "Environment ladder", the first build step only, not claimed as meeting the rule
 
 [starts]
@@ -55,6 +56,11 @@ main_game_has_tag = false         # FIXED (owner, 14 and 15 Nov 2026; parent STA
 radius_m = 1.6                    # PROPOSED (P1, ruled at gate G0; DISCUSSION section 2.9): a Guard drone and a Strike drone whose 3-D centres are closer are both out; the filter distance plus 0.5 m
 pairing = "nearest_pair_1for1"    # PROPOSED (PLAN section 4 L0.9, F5): one Guard drone tags at most one Strike drone, nearest pair first; today's contact_tags lets one Guard tag every Strike in range (core/pair_rules.py:60-70)
 guard_survives_tag_prob = 0.0     # PROPOSED (D2, owner 20 Nov 2026, "DECIDED, provisional"; P12 revisits what a tag costs at gate G0, both ends swept in L0.11, LEAD CALL 20 Nov 2026; the parent row "After a tag, Guard drone" is FIXED for the contact tag): both drones out; L0.11 also reports 1.0
+
+[tag]
+mode = "off"                      # FIXED (owner, 14 and 15 Nov 2026; parent STANDARDS section 4 "Tag", as tag_rule.main_game_has_tag): the game's switch, off = today's game bit for bit; "nearest_pair_1for1" switches on the study tag of task L0.9 for study runs only, until P1 is ruled at gate G0
+radius_m = 1.6                    # PROPOSED (P1, ruled at gate G0; equals tag_rule.radius_m): the study tag's distance between 3-D centres; a pair strictly closer tags
+guard_survives_tag_prob = 0.0     # PROPOSED (D2, owner 20 Nov 2026, provisional; P12 at gate G0; equals tag_rule.guard_survives_tag_prob): drawn per game at its start from the tag's own random stream; 0 = both drones out
 
 [filter]
 pairs = "every_pair"              # FIXED (owner, 14 and 15 Nov 2026; parent STANDARDS section 4 "Safety filter in the game" and section 5 "Safety filter in flight today"): Guard-Guard, Strike-Strike and Guard-Strike pairs

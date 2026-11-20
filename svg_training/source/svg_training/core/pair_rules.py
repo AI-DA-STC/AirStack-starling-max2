@@ -1,7 +1,7 @@
-"""Pair rules between the two teams: partner push-apart and side-quest contact tags (S2 Task 3).
+"""Pair rules between the two teams: push-apart, side-quest contact tags (S2 Task 3), the study tag (STE L0.9).
 
 All batched tensor operations: no loop over games, no host reads. Only fixed pass counts loop.
-Teammates never interact here. Distances are planar (x, y) for push-apart and 3-D for contact tags."""
+Teammates never interact here. Distances are planar (x, y) for push-apart and 3-D for both tags."""
 from __future__ import annotations
 
 import torch
@@ -68,3 +68,48 @@ def contact_tags(pos_m: Tensor, alive: Tensor, guards: int, contact_m: float, gu
     tagged = torch.cat((hit.any(dim=2), hit.any(dim=1)), dim=1)                      # [N, M]
     leaves = torch.cat((tagged[:, :guards] & ~guard_survives[:, None], tagged[:, guards:]), dim=1)
     return tagged, alive & ~leaves
+
+
+def proximity_tags(pos_m: Tensor, alive: Tensor, guards: int, radius_m: float, guard_survives: Tensor
+                   ) -> tuple[Tensor, Tensor, Tensor]:
+    """The study tag of STE task L0.9 (``[tag] mode = "nearest_pair_1for1"``): one for one, nearest pair first.
+
+    pos_m [N, M, 3] (Guard drones first, then Strike drones), alive [N, M] bool, guard_survives [N] bool, radius_m in
+    metres between 3-D centres (strictly closer tags). A drone takes part in at most one tag per call. Each of the
+    ``min(G, S)`` passes (a fixed count, the most tags a game can hold) tags, in every game at once, the closest live
+    pair whose two drones are both still free; ties go to the lower Guard index, then the lower Strike index (the
+    lowest flat index ``g * S + s`` among the equal distances, chosen explicitly, not left to ``argmin``). Greedy
+    closest-first: it does not search for the largest number of tags. The Strike drone of a tag leaves; the Guard drone
+    leaves unless guard_survives.
+
+    Returns (tagged [N, M] bool, alive_after [N, M] bool, partner [N, M] long: the drone index each tagged drone was
+    paired with, -1 for none)."""
+    n, m = alive.shape
+    s_count = m - guards
+    flat = s_count * guards
+    g_pos, s_pos = pos_m[:, :guards], pos_m[:, guards:]
+    dist = (g_pos[:, :, None, :] - s_pos[:, None, :, :]).norm(dim=-1)                      # [N, G, S]
+    near = alive[:, :guards, None] & alive[:, None, guards:] & (dist < radius_m)
+    index = torch.arange(flat, device=pos_m.device).view(1, guards, s_count)               # g * S + s
+    g_ids = torch.arange(guards, device=pos_m.device)[None, :]
+    s_ids = torch.arange(s_count, device=pos_m.device)[None, :]
+    g_free = torch.ones(n, guards, dtype=torch.bool, device=pos_m.device)
+    s_free = torch.ones(n, s_count, dtype=torch.bool, device=pos_m.device)
+    g_partner = torch.full((n, guards), -1, dtype=torch.long, device=pos_m.device)
+    s_partner = torch.full((n, s_count), -1, dtype=torch.long, device=pos_m.device)
+    inf = torch.full_like(dist, float("inf"))
+    for _ in range(min(guards, s_count)):
+        open_pair = near & g_free[:, :, None] & s_free[:, None, :]
+        d = torch.where(open_pair, dist, inf)
+        closest = open_pair & (d == d.amin(dim=(1, 2), keepdim=True))
+        pick = torch.where(closest, index, torch.full_like(index, flat)).amin(dim=(1, 2))   # [N]; flat = none
+        found = pick < flat
+        g_pick, s_pick = pick // s_count, pick % s_count
+        g_hit = found[:, None] & (g_ids == g_pick[:, None])
+        s_hit = found[:, None] & (s_ids == s_pick[:, None])
+        g_partner = torch.where(g_hit, (s_pick + guards)[:, None], g_partner)
+        s_partner = torch.where(s_hit, g_pick[:, None], s_partner)
+        g_free, s_free = g_free & ~g_hit, s_free & ~s_hit
+    tagged = torch.cat((~g_free, ~s_free), dim=1)
+    leaves = torch.cat((~g_free & ~guard_survives[:, None], ~s_free), dim=1)
+    return tagged, alive & ~leaves, torch.cat((g_partner, s_partner), dim=1)

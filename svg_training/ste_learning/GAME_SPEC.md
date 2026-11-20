@@ -1,4 +1,4 @@
-INTERNAL · the game spec sheet of the STE learning track (task L0.8, 20 Nov 2026; QC fix round 1, 21 Nov 2026). It lists the values of the game the track trains; it decides nothing. The same values, with the same labels, are in [configs/ste_game.toml](../configs/ste_game.toml); `tests/test_ste_game_spec.py` fails if a setting, a value or a label differs between the two (the source texts are not compared).
+INTERNAL · the game spec sheet of the STE learning track (task L0.8, 20 Nov 2026; QC fix round 1, 21 Nov 2026). It lists the values of the game the track trains; it decides nothing. The game does not read it: the `tag.*` rows are the defaults of the game's own `[tag]` switch (`core/game_config.py` `TagCfg`, task L0.9), kept equal by the same test. The same values, with the same labels, are in [configs/ste_game.toml](../configs/ste_game.toml); `tests/test_ste_game_spec.py` fails if a setting, a value or a label differs between the two (the source texts are not compared).
 
 # Game spec sheet
 
@@ -17,7 +17,7 @@ centre a drone may go along x or y: half the side less the wall margin.
 | Item | Setting | Value | Status | Source | Today: hangar game · S2 game |
 |---|---|---|---|---|---|
 | Zone shape | `zone.shape` | `"circle"` | FIXED | parent STANDARDS §4 "Teams" (programme benchmark) | circle · circle |
-| Where the zone counts | `zone.scored_in` | `"horizontal_plane"` | PROPOSED | parent STANDARDS §4 "Height"; `core/game.py:289-290` tests the horizontal distance only, so the zone is a vertical cylinder | same · same |
+| Where the zone counts | `zone.scored_in` | `"horizontal_plane"` | PROPOSED | parent STANDARDS §4 "Height"; `core/game.py:314-315` tests the horizontal distance only, so the zone is a vertical cylinder | same · same |
 | Zone radius (m) | `zone.radius_m` | `1.6` | OPEN | P12, OPEN at gate G0 (DISCUSSION §3; the parent row "Zone radius" is OPEN); today's value: PLAN §4 L0.11 base case; hangar: `nus_rules.toml` `area_radius` × `nus_deploy.toml` `metres_per_unit` | 1.6 · 10–25 % of the arena side |
 | Zone centre | `zone.centre` | `"arena_centre"` | PROPOSED | hangar: `nus/hangar_game.py` `_draw_arenas`; PLAN is silent; kept, LEAD CALL (20 Nov 2026) | arena centre · drawn per game |
 | Strike wins after (ticks inside) | `zone.win_ticks_inside` | `1` | PROPOSED | parent STANDARDS §4 "Strike scores"; `s2_game.toml` and `nus_hangar_game.toml` `[partner_rules] win_steps_in_zone` | 1 · 1 |
@@ -26,7 +26,7 @@ centre a drone may go along x or y: half the side less the wall margin.
 | Start height (m) | `height.start_m` | `1.2` | PROPOSED | `nus_deploy.toml` `flying_height_m` (row 5 adds a 1 mm jitter); `s2_game.toml` `start_height_m` | 1.2 · 1.2 |
 | Arena side (m) | `arena.side_m` | `6.5` | PROPOSED | F8; PLAN §4 L0.11 base case: the lab fence, 6.5 × 6.5 × 4 m (parent STANDARDS §4, MEASURED) | 7.5 (`configs/local/nus_hangar.toml`) · 4–16 in three bands |
 | Wall margin (m) | `arena.wall_margin_m` | `0.25` | PROPOSED | `s2_game.toml` and `nus_hangar_game.toml` `[arena] wall_margin_m`; drones are held this far inside each wall | 0.25 · 0.25 |
-| Walls | `arena.walls` | `"keep_in"` | PROPOSED | `s2_game.toml` and `nus_hangar_game.toml` `[arena] walls`; `core/game.py:273-276` holds a drone at the wall; the lab fence keeps drones in too (`goal_two_ours.yaml` `fence_behavior`) | keep in · keep in |
+| Walls | `arena.walls` | `"keep_in"` | PROPOSED | `s2_game.toml` and `nus_hangar_game.toml` `[arena] walls`; `core/game.py:296-299` holds a drone at the wall; the lab fence keeps drones in too (`goal_two_ours.yaml` `fence_behavior`) | keep in · keep in |
 | Environment | `arena.environment` | `"open_arena"` | OPEN | P10, OPEN at gate G0; the parent FIXED rule "Environments" asks for realistic 3-D worlds, construction site first; today's value is E0 of the parent's "Environment ladder", the first build step only, not claimed as meeting the rule | open · open |
 | Guard start disc (m) | `starts.guard_disc_m` | `0.8` | PROPOSED | hangar: `nus_rules.toml` `start_guard_disc_fraction` × `area_radius` × `nus_deploy.toml` `metres_per_unit`; Guards uniform in radius inside this disc round the zone centre (`nus/replica.py` `reset`) | 0.8 · rings |
 | Strike start ring (m) | `starts.strike_ring_m` | `3.2` | OPEN | hangar: `nus_deploy.toml` `spawn_distance` × `metres_per_unit`, random bearings; L08-F1: **outside the 6.5 m arena's keep-in limit** (3.25 − 0.25 = 3.0 m) on about 45 % of bearings, within ±20° of each axis (it fits on the diagonals); related to F8 | 3.2 · 0.3 m inside the walls |
@@ -41,6 +41,9 @@ centre a drone may go along x or y: half the side less the wall margin.
 | Proposed tag radius (m, 3-D centres) | `tag_rule.radius_m` | `1.6` | PROPOSED | P1; DISCUSSION §2.9: the filter distance + 0.5 m | none · none |
 | Proposed tag pairing | `tag_rule.pairing` | `"nearest_pair_1for1"` | PROPOSED | PLAN §4 L0.9, F5: one Guard tags at most one Strike, nearest pair first | — · one Guard tags all in range |
 | Guard survives a tag (probability) | `tag_rule.guard_survives_tag_prob` | `0.0` | PROPOSED | D2 (owner, provisional); stays PROPOSED, both ends (0 and 1) swept in L0.11, ruled at G0 under P12 (LEAD CALL, 20 Nov 2026); the parent row is FIXED for the contact tag | — · 0.0 |
+| Study tag switch in the game | `tag.mode` | `"off"` | FIXED | parent STANDARDS §4 "Tag" (as `tag_rule.main_game_has_tag`); a game file's `[tag]` table (L0.9); off = today's game bit for bit; `"nearest_pair_1for1"` switches the study tag on, for study runs only until P1 is ruled | off · off |
+| Study tag radius (m, 3-D centres) | `tag.radius_m` | `1.6` | PROPOSED | P1; equals `tag_rule.radius_m`; a pair strictly closer tags | — · — |
+| Study tag: Guard survives (probability) | `tag.guard_survives_tag_prob` | `0.0` | PROPOSED | D2 (owner, provisional), P12; equals `tag_rule.guard_survives_tag_prob`; drawn per game at its start, from the tag's own random stream | — · — |
 | Filter pairs | `filter.pairs` | `"every_pair"` | FIXED | owner, 14–15 Nov 2026; parent STANDARDS §4 "Safety filter in the game" and §5 "Safety filter in flight today" | every pair · none as committed (`[starling_layer] enabled = false`: a push rule keeps opposite teams 1.10 m apart); every pair with the Starling layer on |
 | Filter share | `filter.share` | `"equal"` | MEASURED | read from `AirStack/robot/ros_ws/src/svg_ground_control/svg_ground_control/cbf_filter.py:150-152, 339-341` (each pair's correction split evenly between the two drones) and DISCUSSION §2.9 desk run; option B is P2 | equal · equal with the Starling layer on |
 | Filter distance (m, centre to centre) | `filter.keepout_m` | `1.10` | FIXED | parent STANDARDS §5: `cbf_safety_radius_m` 0.55 m in the `_ours` configs (`params/real_exploratory_v0.toml` `safety_radius_m`) | 1.10 · 1.10 (push rule `[partner_rules] keepout_*_m` as committed; filter with the Starling layer on) |
@@ -58,7 +61,7 @@ centre a drone may go along x or y: half the side less the wall margin.
 
 | # | What is open | Ruled at |
 |---|---|---|
-| P1 | Tag radius 1.6 m; it overturns the parent FIXED row "the main game has no tag". Built behind a setting, off by default (L0.9) | gate G0 |
+| P1 | Tag radius 1.6 m; it overturns the parent FIXED row "the main game has no tag". Built behind a setting, off by default: `[tag] mode` (L0.9) | gate G0 |
 | P12, D2 | Zone radius (OPEN here) against tag radius (both 1.6 m today, F2), and what a tag costs (0 and 1 both reported in L0.11) | gate G0 |
 | P9 | Team sizes to train: 1v1, 2v1, 3v3, 5v3 | gate G0 |
 | P10 | Environments (OPEN here): open arena first, or the construction-site world sooner | gate G0 |

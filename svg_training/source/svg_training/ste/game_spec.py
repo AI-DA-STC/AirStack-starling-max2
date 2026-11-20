@@ -5,8 +5,9 @@ the top of ``STANDARDS.md``) and its source. The labels live in the file's comme
 ``key = value   # LABEL (source): text`` (the convention of ``configs/ste_learning.toml``). The sheet for readers is
 ``ste_learning/GAME_SPEC.md``; a test keeps its table and this file equal.
 
-The sheet lists, it does not decide: nothing in the game reads this file yet. Task L0.9 adds the tag rule's own
-off-by-default switch in a section of its own; the ``tag_rule`` section here records the proposal only.
+The sheet lists, it does not decide: the game does not read this file. The ``tag_rule`` section records the proposal;
+the ``tag`` section (task L0.9) lists the game's own switch for the study tag with the defaults of
+``core/game_config.TagCfg``, which a game file sets in its own ``[tag]`` table (a test keeps the two equal).
 
 The loader fails closed: an unknown or missing section or key, a value of the wrong type, a value spread over more than
 one line, or a value line without exactly one label and a source raises ``ValueError``. Lists load as tuples, so nothing can be
@@ -57,6 +58,9 @@ SCHEMA: dict[str, str] = {
     "tag_rule.radius_m": "decimal",
     "tag_rule.pairing": "text",
     "tag_rule.guard_survives_tag_prob": "decimal",
+    "tag.mode": "text",
+    "tag.radius_m": "decimal",
+    "tag.guard_survives_tag_prob": "decimal",
     "filter.pairs": "text",
     "filter.share": "text",
     "filter.keepout_m": "decimal",

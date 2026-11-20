@@ -101,7 +101,8 @@ Source of truth for direction: [DISCUSSION_2026-11-19_20.md](DISCUSSION_2026-11-
   refuses to start, with a message, before Isaac launches.
 - A non-finite metric aborts the update with a checkpoint kept (`NonFiniteError` pattern); non-finite physics values are
   replaced and **counted**, never silently hidden.
-- Exit codes (`ste/run_contract.py`, L0.7): 0 done, 2 refused, 3 cap (ABORTED), 4 interrupted (STOPPED), 5 non-finite.
+- Exit codes (`ste/run_contract.py`, L0.7): 0 done, 2 refused, 3 cap (ABORTED), 4 interrupted (STOPPED), 5 non-finite,
+  6 a control failed (CONTROL_FAILED, terminal; L0.11).
   The older `train_standin.py` uses 3 for a NaN abort; this track uses 5. Launch, wait and status go through
   `scripts/ste_job.py` ([AUTOMATION](AUTOMATION.md) §7); never find a process by name (`pgrep`, `pkill`: a test fails).
 - No bare `except`.

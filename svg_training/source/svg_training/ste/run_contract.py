@@ -20,7 +20,9 @@ The contract, proved on ``scripts/ste_dummy_job.py`` by ``tests/test_ste_run_con
 Exit codes. 0, 2, 3 and 4 are the repository's existing ones (``scripts/nus_selfplay_train.py``: ``EXIT_REFUSED``,
 ``EXIT_ABORTED`` at its cap, ``EXIT_STOPPED`` on SIGINT; CODING_PRACTICES section 8: "2 refused, 3 cap, 4 operator
 stop"). ``scripts/train_standin.py`` uses 3 for a non-finite abort as well, so there 3 means two things; this track
-needs the two told apart, and gives a non-finite value its own code, 5.
+needs the two told apart, and gives a non-finite value its own code, 5. A job that checks controls with known answers
+(``scripts/ste_sweep_l011.py``) ends with :data:`EXIT_CONTROL_FAILED` (6) when one fails: a terminal state, never retried
+(a relaunch on the same run folder ends with 6 again); the lead reads the controls, and a new run needs a new run folder.
 
 How a trainer uses :class:`RunGuard` (the pattern of ``scripts/ste_dummy_job.py``)::
 
@@ -58,8 +60,9 @@ EXIT_REFUSED = 2          # refused to start: bad arguments, the run folder is i
 EXIT_CAP = 3              # stopped at its cap, with a checkpoint
 EXIT_INTERRUPTED = 4      # SIGINT or SIGTERM: stopped on request, with a checkpoint
 EXIT_NONFINITE = 5        # a NaN or an infinity: stopped, the last good checkpoint kept
+EXIT_CONTROL_FAILED = 6   # a control with a known answer failed: stopped, terminal, never retried (LEAD CALL 21 Nov 2026, L0.11)
 EXIT_NAMES = {EXIT_DONE: "DONE", EXIT_REFUSED: "REFUSED", EXIT_CAP: "CAP", EXIT_INTERRUPTED: "INTERRUPTED",
-              EXIT_NONFINITE: "NONFINITE"}
+              EXIT_NONFINITE: "NONFINITE", EXIT_CONTROL_FAILED: "CONTROL_FAILED"}
 
 STOP_INTERRUPTED = "interrupted"
 STOP_CAP = "cap"

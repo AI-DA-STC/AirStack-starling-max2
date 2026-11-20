@@ -164,6 +164,7 @@ message outsiders; change a FIXED row; commit NUS source; use the GPU before P3 
 | Preflight refused, owner pause | not a failure; re-check each tick; foreign process > 2 h → H8 |
 | Crash, OOM | one retry from the checkpoint (OOM: lower memory fraction); second → ABORTED |
 | NaN/Inf (STE track trainers: exit 5; `train_standin.py`: exit 3) | no retry; ABORTED; `train-debug`, sequential |
+| A control failed (exit 6, CONTROL_FAILED; e.g. `scripts/ste_sweep_l011.py`) | terminal: never retried, not a refusal; the lead reads `controls.json` and `results.md`; ABORTED; a rerun is a new run folder (and a new gate version if the gate was wrong) |
 | Stall (log and CPU time unchanged 30 min, not `T`; PROPOSED per task) | SIGINT, ABORTED, `train-debug` |
 | Reboot | resume (§2.3); not an attempt |
 | Gate FAIL / INCONCLUSIVE | recorded, never retried; a rerun is a new run with new gates (INCONCLUSIVE: as its plan says) |
@@ -194,7 +195,8 @@ Code: `source/svg_training/ste/` (`shared.py`, `pauses.py`, `state.py`, `atomic.
 | Launcher and waiter | `scripts/ste_job.py launch / wait / status`; `launch` refuses while an owner pause is open (a pause tagged `GPU_PAUSE_BY=lead` is the session's own and does not block); `bash <run>/cmd.txt` relaunches with the first launch's `PYTHONPATH`, `CUDA_VISIBLE_DEVICES`, `PYTORCH_CUDA_ALLOC_CONF`, `SVG_SHARED_DIR` and `SVG_PAUSE_LEGACY_LOGS`, each set to the same value or unset as it was; a relaunch with another shared folder than the run folder recorded is refused |
 
 **Exit codes** (`ste/run_contract.py`): 0 done; 2 refused to start; 3 stopped at its cap; 4 interrupted (SIGINT or
-SIGTERM); 5 non-finite value. The waiter adds: 20 ENDED_EARLY (the job returned 0 before its expected minimum
+SIGTERM); 5 non-finite value; 6 a control with a known answer failed (CONTROL_FAILED: terminal, never retried; a
+relaunch on the same run folder ends with 6 again; LEAD CALL 21 Nov 2026, L0.11). The waiter adds: 20 ENDED_EARLY (the job returned 0 before its expected minimum
 duration); 21 DIED (no exit code recorded: killed, or a previous boot); 22 no such job; 23 the tool itself failed.
 127: the command could not start; 128 + n: killed by signal n.
 

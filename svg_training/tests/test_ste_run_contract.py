@@ -36,6 +36,14 @@ def test_exit_codes_are_distinct_and_reuse_the_repositorys():
     assert "EXIT_REFUSED, EXIT_ABORTED, EXIT_STOPPED = 2, 2 + 1, 2 + 2" in text      # the codes reused, still there
 
 
+def test_a_failed_control_has_its_own_exit_code_6():
+    """LEAD CALL 21 Nov 2026 (L0.11): a control with a known answer that fails ends the run with its own code, a terminal
+    state the automation never retries; every other code is unchanged."""
+    assert rc.EXIT_CONTROL_FAILED == 6 and rc.EXIT_NAMES[rc.EXIT_CONTROL_FAILED] == "CONTROL_FAILED"
+    assert len(set(rc.EXIT_NAMES)) == len(rc.EXIT_NAMES) == 6
+    assert [rc.EXIT_DONE, rc.EXIT_REFUSED, rc.EXIT_CAP, rc.EXIT_INTERRUPTED, rc.EXIT_NONFINITE] == [0, 2, 3, 4, 5]
+
+
 # ================================================================================================ the guard, in process
 class Clock:
     def __init__(self, now: float = T0):

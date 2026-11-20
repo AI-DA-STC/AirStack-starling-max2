@@ -996,6 +996,7 @@ def test_the_waiter_and_the_status_show_the_wrappers_faults(tmp_path, monkeypatc
 @pytest.mark.parametrize("exit_code, effective_s, min_s, verdict, status", [
     (0, 100.0, 60.0, "DONE", 0), (0, 60.0, 60.0, "DONE", 0), (0, 59.9, 60.0, "ENDED_EARLY", 20),
     (3, 100.0, 60.0, "CAP", 3), (4, 100.0, 60.0, "INTERRUPTED", 4), (5, 100.0, 60.0, "NONFINITE", 5),
+    (6, 100.0, 60.0, "CONTROL_FAILED", 6), (6, 1.0, 60.0, "ENDED_EARLY", 6),
     (2, 100.0, 60.0, "REFUSED", 2), (1, 100.0, 60.0, "FAILED", 1), (137, 100.0, 60.0, "FAILED", 137),
     (1, 3.0, 60.0, "ENDED_EARLY", 1), (2, 0.1, 60.0, "ENDED_EARLY", 2), (20, 100.0, 0.0, "FAILED", 20),
     (None, 100.0, 60.0, "DIED", 21), (None, 1.0, 60.0, "DIED", 21),

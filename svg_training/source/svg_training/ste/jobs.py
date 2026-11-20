@@ -35,8 +35,8 @@ names the job cannot match itself. Then one line::
 
 and its own exit status:
 
-* the job's exit code, whatever it is (verdict DONE, CAP, NONFINITE, INTERRUPTED, REFUSED as ``ste/run_contract.py``
-  names them, FAILED for any other code);
+* the job's exit code, whatever it is (verdict DONE, CAP, NONFINITE, CONTROL_FAILED, INTERRUPTED, REFUSED as
+  ``ste/run_contract.py`` names them, FAILED for any other code);
 * **ENDED_EARLY** when the effective duration (wall clock less the owner's pauses that stopped the job's command) is
   under the expected minimum given at launch. For a trainer that keeps the run contract (``ste/run_contract.py``)
   the duration judged is the larger of this launch's and the WHOLE run's: the run folder's effective seconds the

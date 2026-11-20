@@ -23,6 +23,7 @@ launch   starts <command ...> detached (its own session; output appended to <run
 wait     blocks until the job has ended, prints one line
              <task> <job> <VERDICT> exit=<code> duration=<s>s effective=<s>s
          and exits with the JOB'S exit code. Verdicts: DONE (0), REFUSED (2), CAP (3), INTERRUPTED (4), NONFINITE (5),
+         CONTROL_FAILED (6: a control with a known answer failed; terminal, never retried),
          FAILED (any other code); ENDED_EARLY when the effective duration is under --min-s (own exit status 20 if the
          job's code was 0, else the job's code); a resumed trainer is judged on its whole run (run_effective, from
          the progress.json it saves with each checkpoint), not on its last launch; DIED when the job is gone and

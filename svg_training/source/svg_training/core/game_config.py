@@ -69,6 +69,10 @@ class TagCfg:
     def __post_init__(self) -> None:
         if self.mode not in TAG_MODES:
             raise ValueError(f"tag.mode must be one of {TAG_MODES}, got {self.mode!r}")
+        for name in ("radius_m", "guard_survives_tag_prob"):    # a TOML true would pass as 1 otherwise
+            value = getattr(self, name)
+            if isinstance(value, bool) or not isinstance(value, (int, float)):
+                raise ValueError(f"tag.{name} must be a number, got {value!r}")
         if not (math.isfinite(self.radius_m) and self.radius_m > 0.0):
             raise ValueError(f"tag.radius_m must be a finite distance above 0 m, got {self.radius_m!r}")
         if not 0.0 <= self.guard_survives_tag_prob <= 1.0:     # NaN fails both comparisons

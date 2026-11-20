@@ -321,3 +321,51 @@ def test_replace_reaches_the_tag_section():
     assert cfg.tag == TagCfg(mode=ON, radius_m=1.2) and CFG.tag == TagCfg()
     with pytest.raises(KeyError, match="tag.land_speed_mps"):        # landing is L2.3, not here
         CFG.replace(**{"tag.land_speed_mps": 0.6})
+
+
+# ------------------------------------------------------------------------------------------------ fix round 1 (QC minors)
+def test_exactly_at_the_radius_does_not_tag():
+    """QC m2: strictly closer tags. 1.5 m apart (exact in float32) with a 1.5 m radius: no tag."""
+    assert match([(0.0, 0.0, 1.0), (1.5, 0.0, 1.0)], 1, radius_m=1.5)[0] == [False, False]
+    assert match([(0.0, 0.0, 1.0), (1.5, 0.0, 1.0)], 1, radius_m=1.5 + 1e-6)[0] == [True, True]
+
+
+def test_tags_come_before_the_scheduled_drop_outs():
+    """QC m1: the order is move, walls, tags, drop-outs, zone test. A Strike drone due to drop out on step 1 and 1.4 m
+    from the Guard drone on step 1 is tagged first (the Guard drone leaves with it)."""
+    g = game([(0.0, 2.0), (1.4, 2.0)])
+    g.schedule_dropout(torch.full((N,), 1), torch.full((N,), 1))
+    out = g.step({"guard": z(1), "strike": z(1)})
+    assert out.info["tagged"].all() and not out.info["final_alive"].any()
+
+
+def test_the_survive_draw_is_kept_for_the_whole_game():
+    """QC m3: "Guard survives" is drawn when a game starts and kept until that game ends (not redrawn each step)."""
+    g = SvgGame(TAG.replace(**{"tag.guard_survives_tag_prob": 0.5}), 512, 1, 1, device="cpu", seed=2)
+    first = g._tag_survives.clone()
+    running = torch.ones(512, dtype=torch.bool)
+    for _ in range(5):
+        running &= ~g.step({"guard": torch.zeros(512, 1, 4), "strike": torch.zeros(512, 1, 4)}).done
+    assert running.sum() > 400 and first[running].any() and not first[running].all()
+    assert torch.equal(g._tag_survives[running], first[running])
+
+
+@pytest.mark.parametrize("bad", [{"radius_m": True}, {"guard_survives_tag_prob": True}, {"radius_m": "1.6"},
+                                 {"guard_survives_tag_prob": "0"}])
+def test_settings_that_are_not_numbers_raise(bad):
+    """QC m4: a TOML true is not 1 m or probability 1; a string is refused with ValueError, not TypeError."""
+    with pytest.raises(ValueError, match=f"tag.{next(iter(bad))} must be a number"):
+        TagCfg(**bad)
+
+
+def test_tags_on_the_physics_backend():
+    """QC m5: the rigid-body drone (S2b physics backend) on the PyTorch reference world, CPU: 1.5 m tags, 1.7 m not."""
+    from svg_training.core.physics_layer import load_game_physics_params
+    from svg_training.models.rigid_body import TorchRigidBodyWorld
+    cfg = TAG.replace(**{"starling.enabled": True, "starling.backend": "physics", "starling.filter_iterations": 20})
+    p = load_game_physics_params(cfg)
+    for gap_m, tags in ((1.5, True), (1.7, False)):
+        world = TorchRigidBodyWorld(N, 2, p.airframe, p.physics_dt_s, "cpu")
+        sc = Scenario("t", 6.0, (0.0, 0.0), 0.4, ((0.0, 2.0), (gap_m, 2.0)))
+        out = SvgGame(cfg, N, 1, 1, device="cpu", scenario=sc, world=world).step({"guard": z(1), "strike": z(1)})
+        assert bool(out.info["tagged"].all()) is tags and bool((out.outcome == GUARD_WIN).all()) is tags

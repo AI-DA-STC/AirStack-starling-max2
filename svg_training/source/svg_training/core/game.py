@@ -16,8 +16,8 @@ rule: tags come before the zone test, so a Strike drone tagged on the step it en
 The study tag (STE task L0.9, ``cfg.tag``; off by default, and off plays today's game bit for bit): one Guard drone
 with one Strike drone, nearest pair first, within ``tag.radius_m`` in 3-D (``pair_rules.proximity_tags``); both leave
 on that step unless the game drew "Guard survives" (``tag.guard_survives_tag_prob``, drawn per game at its start from
-the tag's own generator, so the game's arenas, starts and drop-outs are the same with the tag on or off). It works on
-every motion path and with the partner preset; the contact preset has its own tag and refuses it."""
+the tag's own generator: the first games and those after ``reset(seed)`` start alike with the tag on or off, later
+ones not). Tested on CPU on all three motion paths, partner preset; the contact preset refuses it (own tag)."""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -42,7 +42,7 @@ _TAG_SEED_MIX = 0x9E3779B97F4A7C15     # odd 64-bit constant: derives the study 
 
 def _tag_seed(seed: int) -> int:
     """Seed of the study tag's own generator (CODING_PRACTICES section 5: one generator per purpose), from the game
-    seed: (seed + 1) x an odd 64-bit constant, modulo 2^63, so a small game seed never gives another small seed."""
+    seed: (seed + 1) x an odd 64-bit constant, mod 2^63 (not section 5's SeedSequence: no NumPy in the step files)."""
     return ((seed + 1) * _TAG_SEED_MIX) % (1 << 63)
 
 
@@ -256,7 +256,7 @@ class SvgGame:
     def step(self, actions: dict[str, Tensor]) -> StepOut:
         """actions {"guard": [N, G, 4], "strike": [N, S, 4]} in [-1, 1]: vx, vy, vz, yaw rate. Pure partner rules:
         vz ignored (planar). Starling layer: (vx, vy, vz) norm-capped at the team speed, then the layer.
-        Tie rule (contact preset): tags are applied before the zone test, so a Strike drone tagged on the step it
+        Tie rule (both tags): tags are applied before the zone test, so a Strike drone tagged on the step it
         enters the zone does not score."""
         cfg, g = self.cfg, self.guards
         a = torch.cat((actions[GUARD], actions[STRIKE]), dim=1)                       # [N, M, 4]
@@ -300,7 +300,7 @@ class SvgGame:
             else:                                 # leaving the arena or the height band takes the drone out
                 out = (pos[..., :2].abs() >= lim).any(dim=-1) | (pos[..., 2] < z_lo) | (pos[..., 2] > z_hi)
                 alive = alive & ~out
-        # contact tags, on the positions the drones end the step at (after the walls), and before the zone test
+        # tags (contact or study), on the positions the drones end the step at (after the walls), before the zone test
         # (tie rule above). A drone that left through a wall this step can no longer tag or be tagged.
         tagged = torch.zeros_like(alive_prev)
         if cfg.preset == "contact":

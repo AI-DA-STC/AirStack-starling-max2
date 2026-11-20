@@ -703,9 +703,19 @@ def test_refuses_a_table_without_frozen_axes_for_the_motion(tmp_path):
 
 # Phase 5 Task P-T3: the --game nus_hangar hooks leave the default S2 path bit-identical. Fingerprint recorded on 18 Nov 2026 from the code
 # BEFORE the hooks (commit e595bfd3, CPU, one thread): sha256 over every tensor of agent.pt (keys sorted) and the evaluations' hold rates.
-DEFAULT_PATH_AGENT_SHA256 = "e21606c26ac342237be04ff32133c5f36022e15ac73addc4e36401960dfcbd41"
-DEFAULT_PATH_HOLD = [0.25, 0.375]
-# The fingerprint is bit-level, so it holds only on the library versions it was recorded with (conda env_isaaclab). Measured 19 Nov
+# The agent hash is bit-level, so it also depends on the CPU instruction set PyTorch picks
+# (torch.backends.cpu.get_cpu_capability()). Measured 20 Nov 2026 on the laptop (Intel Core Ultra 9 275HX, capability AVX2):
+# the same stack trains to 75d2a955..., repeatably, with the same hold rates; forcing ATEN_CPU_CAPABILITY=default gives yet
+# another hash (130ad8c4...). So one hash per capability; a capability without a recorded hash skips that line and says why.
+DEFAULT_PATH_AGENT_SHA256 = {
+    # RTX 5090 workstation, 18 Nov 2026 (commit e595bfd3). Capability INFERRED, not recorded: the next 5090 session confirms it
+    # (a different capability there makes this test skip with its name; a wrong hash makes it fail).
+    "AVX512": "e21606c26ac342237be04ff32133c5f36022e15ac73addc4e36401960dfcbd41",
+    # laptop RTX 5070 Ti, Intel Core Ultra 9 275HX, 20 Nov 2026, measured (env_isaaclab, torch 2.7.0, skrl 2.1.0)
+    "AVX2": "75d2a95505766fd480ca0ce4c985b87319af898af1d7b04b157d6ae7a06c67a0",
+}
+DEFAULT_PATH_HOLD = [0.25, 0.375]          # the same on every machine measured: checked before the hash, never skipped
+# The fingerprint holds only on the library versions it was recorded with (conda env_isaaclab). Measured 19 Nov
 # 2026: a fresh CPU venv (torch 2.15.0+cpu, skrl 2.1.2) trains to a different agent.pt; there the test skips and says why.
 FINGERPRINT_STACK = {"torch": "2.7.0", "skrl": "2.1.0"}
 
@@ -736,8 +746,12 @@ def test_default_path_bit_identical_after_the_nus_hooks(tmp_path):
                 walk(x)
     walk(ck)
     curve = json.loads((tmp_path / "fp" / "curve.json").read_text())
-    assert h.hexdigest() == DEFAULT_PATH_AGENT_SHA256
     assert [c["scalars"].get("game/hold_rate") for c in curve] == DEFAULT_PATH_HOLD
+    cap = torch.backends.cpu.get_cpu_capability()
+    if cap not in DEFAULT_PATH_AGENT_SHA256:
+        pytest.skip(f"hold rates match; agent hash recorded for CPU capabilities {sorted(DEFAULT_PATH_AGENT_SHA256)}, this CPU "
+                    f"reports {cap}: record its hash here (not a pass)")
+    assert h.hexdigest() == DEFAULT_PATH_AGENT_SHA256[cap]
 
 
 # ---------------------------------------------------------------- --smoke (docs panel C3, owner 18 Nov 2026): the CPU pipe test in seconds

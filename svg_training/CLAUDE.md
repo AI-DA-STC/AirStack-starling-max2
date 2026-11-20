@@ -127,6 +127,11 @@ other stopped, from git alone.
   GPU-hours), and the lead flags any task whose cost is out of line before spending more on it.
 - **The lead owns the STE learning track** (owner, 20 Nov 2026: "i want you to own this project"): plan, build, review,
   fix, record and report without waiting to be asked; the owner keeps the human gates and the items in the next bullet.
+- **Keep the owner able to follow** (owner, 21 Nov 2026: "i need to know what is going on if not im totally clueless"):
+  every finished task ends with a **plain summary** at the top of the status (three lines: what was tested, what happened,
+  why it matters, plus one picture or clip); after work that ran while the owner was away, a **morning digest** (what got
+  done, the one or two things worth a look, a clip to watch); gate pages show the clips beside the numbers, and the lead
+  walks the owner through them before the decision.
 - **The owner delegates technical calls** (route, proposed gates, observation, budgets inside an approved cap): decide,
   record why, explain in plain words. Still ask before anything outside this folder, anything outward-facing (messages to
   NUS or CMU, publishing, pushing), irreversible steps, and compute beyond what was approved.

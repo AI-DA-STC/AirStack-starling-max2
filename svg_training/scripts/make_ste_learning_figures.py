@@ -18,11 +18,13 @@ no arrow through a label. A failed check raises, so a clipped or overlapping lab
 
 Run from svg_training/:
     unset PYTHONPATH; ~/miniconda3/envs/env_isaaclab/bin/python scripts/make_ste_learning_figures.py
-One figure only:  ... scripts/make_ste_learning_figures.py architecture   (or plan_phases, l0_tasks, task_lifecycle)
+One figure only:  ... scripts/make_ste_learning_figures.py architecture   (or plan_phases, l0_tasks, l0_progress, task_lifecycle)
+Progress figure: edit ste_learning/status/l0_progress.toml, then  ... scripts/make_ste_learning_figures.py l0_progress
 """
 from __future__ import annotations
 
 import sys
+import tomllib
 import warnings
 from pathlib import Path
 
@@ -465,7 +467,68 @@ def plan_phases() -> Path:
 
 
 # ----------------------------------------------------------------------------------------------------- figure 3
+L0_IDS = ("L0.1", "L0.7", "L0.8", "L0.9", "L0.10", "L0.11", "L0.12", "L0.2", "L0.13", "L0.3", "L0.4", "L0.5",
+          "L0.14", "L0.6")                                      # PLAN.md section 4, in the table's order
+PROGRESS_FILE = Path(__file__).resolve().parents[1] / "ste_learning" / "status" / "l0_progress.toml"
+# state -> (fill, edge, line style, word on the box). Colour-blind-safe: the states also differ in word, mark and
+# edge style, so no state depends on telling two colours apart.
+STATES = {
+    "done": ("#9bd3a0", GREEN, "-", "\u2713 done"),
+    "laptop_done": ("#e3f4e4", GREEN, (0, (4, 2.5)), "laptop done"),
+    "running": ("#ffd479", AMBER, "-", "running"),
+    "queued": ("#e4e7eb", GREY, "-", "queued"),
+    "not_started": ("white", GREY, (0, (2, 2)), "not started"),
+}
+
+
+def load_l0_progress(path: Path = PROGRESS_FILE) -> dict:
+    """Read and check the progress file; a wrong task ID, state, missing task or number raises ValueError."""
+    data = tomllib.loads(Path(path).read_text())
+    tasks = data.get("tasks", {})
+    for tid, entry in tasks.items():
+        if tid not in L0_IDS:
+            raise ValueError(f"{path}: unknown task ID {tid!r}; the L0 tasks are {', '.join(L0_IDS)}")
+        if entry.get("state") not in STATES:
+            raise ValueError(f"{path}: task {tid}: unknown state {entry.get('state')!r}; "
+                             f"use one of {', '.join(STATES)}")
+        if "note" in entry and not isinstance(entry["note"], str):
+            raise ValueError(f"{path}: task {tid}: note must be text")
+    missing = [t for t in L0_IDS if t not in tasks]
+    if missing:
+        raise ValueError(f"{path}: no state for {', '.join(missing)}")
+    for key in ("gpu_h_used", "gpu_h_cap"):
+        if not isinstance(data.get(key), (int, float)):
+            raise ValueError(f"{path}: {key} must be a number")
+    if not isinstance(data.get("as_of"), str):
+        raise ValueError(f"{path}: as_of must be a date written as text, like \"2026-11-21\"")
+    return data
+
+
+def _state_key(ax, y):
+    """Key of the progress figure: one swatch per state, one row; y = bottom of the row."""
+    ax.plot([0.35, W - 0.35], [y + 0.78, y + 0.78], color="#d5dae0", lw=1.2)
+    txt(ax, 0.35, y + 0.32, "State", FS_C, "bold", MUTED, va="center")
+    x = 1.25
+    for state, (fc, ec, ls, word) in STATES.items():
+        box(ax, x, y + 0.13, 0.56, 0.38, fc, ec, lw=2.0, ls=ls, r=0.06)
+        label = {"done": "\u2713 done", "laptop_done": "laptop done: laptop\npart done, 5090 part to do",
+                 "running": "running now", "queued": "queued:\nnot started yet",
+                 "not_started": "not started"}[state]
+        txt(ax, x + 0.7, y + 0.32, label, FS_C, va="center")
+        x += {"done": 1.9, "laptop_done": 3.3, "running": 2.2, "queued": 2.2, "not_started": 2.0}[state]
+
+
 def l0_tasks() -> Path:
+    """Phase L0 step by step: four lanes of tasks ending in L0.6, gate G0 (drawn by _draw_l0)."""
+    return _draw_l0(None)
+
+
+def l0_progress(progress_file: Path = PROGRESS_FILE, out_name: str = "l0_progress") -> Path:
+    """The same flowchart, each task box coloured by its state in ste_learning/status/l0_progress.toml."""
+    return _draw_l0(load_l0_progress(progress_file), out_name)
+
+
+def _draw_l0(progress, out_name: str = "l0_tasks") -> Path:
     """Phase L0 step by step: four lanes of tasks ending in L0.6, gate G0.
 
     Task names, order and GPU-hour caps are PLAN.md section 4, word for word; the questions of gate G0 are PLAN
@@ -473,16 +536,30 @@ def l0_tasks() -> Path:
     """
     H = 17.95
     fig, ax = new_fig(H)
-    header(ax, H, "Phase L0 step by step: four lanes of tasks, one gate",
-           "Phase L0 is approved (owner, 20 November 2026); task status is in the status files. "
-           "Each box: task ID, plain name, cap in GPU-hours (hours of the shared graphics card).")
+    if progress is None:
+        header(ax, H, "Phase L0 step by step: four lanes of tasks, one gate",
+               "Phase L0 is approved (owner, 20 November 2026); task status is in the status files. "
+               "Each box: task ID, plain name, cap in GPU-hours (hours of the shared graphics card).")
+    else:
+        header(ax, H, f"Phase L0 progress, {progress['as_of']}: GPU-h used {progress['gpu_h_used']:g} "
+               f"of {progress['gpu_h_cap']:g} cap",
+               "Each box is coloured by its state (see the key below). Source: ste_learning/status/l0_progress.toml; "
+               "the task list is the one in PLAN.md section 4.")
     lx, lw_ = 0.3, 12.1          # lanes
     gx, gw = 12.95, 2.75         # gate column
     top = H - 1.4
 
     def task(x, yb, w, h, tid, name, cap, extra=None):
         fc, ec, ls = KIND["build"]
-        box(ax, x, yb, w, h, fc, ec, lw=2.0)
+        if progress is None:
+            box(ax, x, yb, w, h, fc, ec, lw=2.0)
+        else:
+            sfc, sec, sls, word = STATES[progress["tasks"][tid]["state"]]
+            box(ax, x, yb, w, h, sfc, sec, lw=2.4, ls=sls)
+            txt(ax, x + w - 0.14, yb + h - 0.19, word, FS_C, "bold", INK, ha="right", inside=(x, yb, w, h))
+            note = progress["tasks"][tid].get("note")
+            if note and tid != "L0.6":
+                txt(ax, x + 0.16, yb + 0.78, note, 10, color=INK, style="italic", inside=(x, yb, w, h))
         txt(ax, x + 0.16, yb + h - 0.16, tid, FS_H, "bold", BLUE, inside=(x, yb, w, h))
         txt(ax, x + 0.16, yb + h - 0.5, name, FS_B, inside=(x, yb, w, h))
         chip(ax, x + 0.14, yb + 0.13, 1.42, 0.4, "plain", cap)
@@ -575,6 +652,11 @@ def l0_tasks() -> Path:
     # gate column
     g_bot = d_top - d_h
     box(ax, gx, g_bot, gw, top - g_bot, RED_BG, RED, lw=2.6, r=0.1)
+    if progress is not None:
+        sfc, sec, sls, word = STATES[progress["tasks"]["L0.6"]["state"]]
+        box(ax, gx + gw - 1.62, g_bot + 0.12, 1.5, 0.36, sfc, sec, lw=2.0, ls=sls, r=0.06)
+        txt(ax, gx + gw - 0.87, g_bot + 0.3, word, FS_C, "bold", ha="center", va="center",
+            inside=(gx + gw - 1.62, g_bot + 0.12, 1.5, 0.36))
     diamond(ax, gx + gw / 2, top - 0.75, 0.52, "G0", 15)
     txt(ax, gx + gw / 2, top - 1.42, "L0.6 Gate G0", 15.5, "bold", ha="center")
     txt(ax, gx + gw / 2, top - 1.82, "one decision page for\nthe owner, with every\nnumber from L0", FS_B,
@@ -592,8 +674,11 @@ def l0_tasks() -> Path:
 
     txt(ax, lx, g_bot - 0.25, "L0 budget: at most 19 GPU-h, alone on the GPU for the speed and training probes. "
         "Work estimate: about 80 hours.", FS_B, "bold")
-    legend(ax, 0.12, kinds=("build", "open", "gate"))
-    return save(fig, ax, H, "l0_tasks")
+    if progress is None:
+        legend(ax, 0.12, kinds=("build", "open", "gate"))
+    else:
+        _state_key(ax, 0.12)
+    return save(fig, ax, H, out_name)
 
 
 # ----------------------------------------------------------------------------------------------------- figure 4
@@ -682,7 +767,7 @@ def task_lifecycle() -> Path:
     return save(fig, ax, H, "task_lifecycle")
 
 
-FIGURES = {"architecture": architecture, "plan_phases": plan_phases, "l0_tasks": l0_tasks,
+FIGURES = {"architecture": architecture, "plan_phases": plan_phases, "l0_tasks": l0_tasks, "l0_progress": l0_progress,
            "task_lifecycle": task_lifecycle}
 
 if __name__ == "__main__":

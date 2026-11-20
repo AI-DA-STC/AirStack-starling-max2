@@ -57,8 +57,10 @@ STRIKE_SEED_OFFSET = 202
 ROLE_SWEEP, ROLE_CONTROL, ROLE_SENSITIVITY = "sweep", "control", "sensitivity"
 SAME_SEED, STAND_STILL, ZERO_TAGS = "same_seed_twice", "stand_still_never_reaches", "zero_tags"
 STILL_ZERO_TAGS = "stand_still_zero_tags"     # both teams command zero, tag on: no tag in the group's first ``ticks``
-CONTROL_KINDS = (SAME_SEED, STAND_STILL, ZERO_TAGS, STILL_ZERO_TAGS)
-GLOBAL_CHECKS = ("tags_at_most_min_team", "paired_starts", "no_nonfinite_actions")
+TAG_FIRES = "tag_fires"           # QC C1, known non-zero answer: tag radius > arena diagonal, both teams still
+REACH_FIRES = "reach_fires"       # QC C1, known non-zero answer: tag off, still Guards v strike_straight, zone 2.4 m
+CONTROL_KINDS = (SAME_SEED, STAND_STILL, ZERO_TAGS, STILL_ZERO_TAGS, TAG_FIRES, REACH_FIRES)
+GLOBAL_CHECKS = ("tags_one_for_one", "paired_starts", "no_nonfinite_actions")
 TIE_BREAKS = ("lab_arena_first", "larger_zone_tag_margin", "lower_guard_survives", "run_order")
 ALL = "all"
 SUMMARY_KEYS = ("guard_wins", "hold_rate", "ci_low", "ci_high", "mean_end_step", "closest_cross_m", "closest_cross_p05_m",
@@ -67,22 +69,23 @@ SUMMARY_KEYS = ("guard_wins", "hold_rate", "ci_low", "ci_high", "mean_end_step",
 PER_GAME_EXACT = ("outcome", "end_step", "tags", "strikes_left", "start_pos_m")   # equal in a same-seed replay
 
 _SECTIONS = {
-    "run": {"task", "kind", "seed", "games_per_cell", "cells_per_batch", "ticks_cap", "device", "cap_check_every_ticks"},
-    "players": {"guards", "strikes", "one_strike_duplicates", "z_up_info", "z_up_label"},
+    "run": {"task", "kind", "seed", "games_per_cell", "cells_per_batch", "ticks_cap", "device", "cap_check_every_ticks",
+            "require_projection"},
+    "players": {"guards", "strikes", "one_strike_duplicates", "z_up_info", "z_up_label", "multi_guard_labels"},
     "confounds": {"ring_outside_zone_m", "zone_2p4", "arena_7p5", "height_offset_cell"},
     "cut": {"protected", "safety_factor"},
     "controls": {"stop_on_fail", "same_seed_closest_tol_m", "global_checks"},
-    "shortlist": {"always", "candidates", "report_only", "max_variants", "trivial_at", "tie_window", "tie_breaks"},
+    "shortlist": {"always", "info_reference", "candidates", "report_only", "max_variants", "trivial_at", "tie_window_games", "tie_breaks"},
     "clips": {"cells", "group", "games", "seed", "max_ticks", "speed", "fps", "dpi", "reserve_s"},
-    "pilot": {"sizes", "cells_per_batch", "ticks", "warmup_ticks"},
+    "pilot": {"sizes", "cells_per_batch", "ticks", "warmup_ticks", "guard_order"},
 }
 _GROUP_KEYS = {
     ROLE_SWEEP: {"name", "role", "factor", "level", "game", "size", "guards", "strikes"},
     ROLE_CONTROL: {"name", "role", "control", "game", "size", "guards", "strikes"},
     ROLE_SENSITIVITY: {"name", "role", "factor", "level", "game", "size", "guards", "strikes", "strike_start_dz_m"},
     SAME_SEED: {"name", "role", "control", "of_group", "of_batch"},
-    STILL_ZERO_TAGS: {"name", "role", "control", "game", "size", "guards", "strikes", "ticks"},
 }
+_GROUP_OPTIONAL = {"ticks"}         # any group may cap its own ticks (the stand-still and fires controls, smoke gates)
 
 
 class SweepStopped(RuntimeError):
@@ -159,10 +162,10 @@ def parse_size(size: str) -> tuple[int, int]:
     return int(guards), int(strikes)
 
 
-def _exact_keys(table: Any, keys: set[str], where: str) -> dict:
+def _exact_keys(table: Any, keys: set[str], where: str, optional: frozenset = frozenset()) -> dict:
     if not isinstance(table, dict):
         raise ValueError(f"[{where}] must be a table")
-    unknown, missing = sorted(set(table) - keys), sorted(keys - set(table))
+    unknown, missing = sorted(set(table) - keys - optional), sorted(keys - set(table))
     if unknown:
         raise ValueError(f"unknown key(s) in [{where}]: {unknown}")
     if missing:
@@ -181,11 +184,11 @@ def _names(value: Any, known: list[str], where: str) -> tuple[str, ...]:
 def _group(table: dict, players: dict, games: dict) -> GroupSpec:
     role = table.get("role")
     kind = table.get("control") if role == ROLE_CONTROL else None
-    key = kind if kind in (SAME_SEED, STILL_ZERO_TAGS) else role
+    key = kind if kind == SAME_SEED else role
     if key not in _GROUP_KEYS:
         raise ValueError(f"group {table.get('name')!r}: role must be one of {ROLE_SWEEP!r}, {ROLE_CONTROL!r}, "
                          f"{ROLE_SENSITIVITY!r}")
-    _exact_keys(table, _GROUP_KEYS[key], f"groups {table.get('name')}")
+    _exact_keys(table, _GROUP_KEYS[key], f"groups {table.get('name')}", frozenset(_GROUP_OPTIONAL))
     if kind is not None and kind not in CONTROL_KINDS:
         raise ValueError(f"group {table['name']}: unknown control {kind!r} (known: {CONTROL_KINDS})")
     has_game = "game" in table
@@ -232,7 +235,8 @@ def load_gates(path: str | Path = GATES_FILE) -> Gates:
     for size in projection["seconds_per_batch_tick"]:
         parse_size(size)
     sl = parts["shortlist"]
-    for name in list(sl["candidates"]) + list(sl["report_only"]) + list(parts["cut"]["protected"]) + [parts["clips"]["group"]]:
+    for name in (list(sl["candidates"]) + list(sl["report_only"]) + list(sl["info_reference"]) + list(parts["cut"]["protected"])
+                 + [parts["clips"]["group"]]):
         if name not in names:
             raise ValueError(f"{name!r} (shortlist, cut or clips) is not a group")
     if not set(sl["always"]) <= set(sl["candidates"]) or len(sl["always"]) > sl["max_variants"]:
@@ -351,6 +355,8 @@ class SweepGame(SvgGame):
         n, dev = self.num_games, self.device
         self.first_done = torch.zeros(n, dtype=torch.bool, device=dev)
         self.tags = torch.zeros(n, dtype=torch.long, device=dev)
+        self.guards_tagged = torch.zeros(n, dtype=torch.long, device=dev)
+        self.guards_removed = torch.zeros(n, dtype=torch.long, device=dev)
         self.strikes_left = torch.zeros(n, dtype=torch.long, device=dev)
         self.team_close_first = self.start_team_close.clone()
         return obs
@@ -361,7 +367,10 @@ class SweepGame(SvgGame):
         out = super().step(actions)
         g = self.guards
         first = ~self.first_done
-        self.tags = self.tags + first * out.info["tagged"][:, g:].sum(dim=1)
+        tagged = out.info["tagged"]
+        self.tags = self.tags + first * tagged[:, g:].sum(dim=1)
+        self.guards_tagged = self.guards_tagged + first * tagged[:, :g].sum(dim=1)
+        self.guards_removed = self.guards_removed + first * (tagged[:, :g] & ~out.info["final_alive"][:, :g]).sum(dim=1)
         ended = first & out.done
         self.strikes_left = torch.where(ended, out.info["final_alive"][:, g:].sum(dim=1), self.strikes_left)
         self.first_done = self.first_done | out.done
@@ -450,7 +459,8 @@ def play_batch(cfg: GameCfg, size: str, cells: tuple, run: dict,
     seconds = time.perf_counter() - started
     alive_strikes = game.alive[:, guards:].sum(dim=1)
     host = {
-        "outcome": res.outcome, "end_step": res.end_step, "tags": game.tags,
+        "outcome": res.outcome, "end_step": res.end_step, "tags": game.tags, "guards_tagged": game.guards_tagged,
+        "guards_removed": game.guards_removed,
         "strikes_left": torch.where(game.first_done, game.strikes_left, alive_strikes),
         "closest_3d_m": res.closest_cross_3d_m, "closest_m": res.closest_cross_m, "start_miss": res.start_miss,
         "start_team_close": game.team_close_first, "nonfinite_actions": res.nonfinite_actions,
@@ -460,7 +470,11 @@ def play_batch(cfg: GameCfg, size: str, cells: tuple, run: dict,
     for i, cell in enumerate(cells):
         sl = slice(i * n, (i + 1) * n)
         part = {k: v[sl] for k, v in per_game.items()}
-        rows.append(cell_row(part, summarise(res.slice(sl), by=()), cell, n))
+        row = cell_row(part, summarise(res.slice(sl), by=()), cell, n)
+        row["one_for_one_bad_games"] = int(np.sum(part["guards_tagged"] != part["tags"]))
+        row["removed_bad_games"] = (int(np.sum(part["guards_removed"] != part["tags"]))
+                                    if cfg.tag.guard_survives_tag_prob == 0 else 0)
+        rows.append(row)
         shas.append(hashlib.sha256(np.ascontiguousarray(part["start_pos_m"]).tobytes()).hexdigest())
     games = len(cells) * n
     return BatchResult(per_game=per_game, rows=rows, start_sha256=shas, seconds=seconds, steps_played=res.steps_played,
@@ -494,11 +508,32 @@ def check_never_reaches(per_game: dict) -> tuple[bool, str]:
     return reaches == 0, f"{reaches} reaches in {len(per_game['outcome'])} games"
 
 
-def check_tags_bound(per_game: dict, guards: int, strikes: int, survive_prob: float) -> tuple[bool, str]:
-    """Tags per game <= min(G, S) when a tagged Guard drone always leaves (probability 0), else <= S."""
-    bound = min(guards, strikes) if survive_prob == 0 else strikes
-    most = int(np.max(per_game["tags"])) if len(per_game["tags"]) else 0
-    return most <= bound, f"most tags in a game {most}, bound {bound}"
+def check_one_for_one(per_game: dict, survive_prob: float) -> tuple[bool, str]:
+    """QC I1, every game: Guard drones tagged = Strike drones tagged; at survive probability 0 also Guard drones removed by
+    a tag = Strike drones tagged."""
+    bad = int(np.sum(np.asarray(per_game["guards_tagged"]) != np.asarray(per_game["tags"])))
+    removed = (int(np.sum(np.asarray(per_game["guards_removed"]) != np.asarray(per_game["tags"])))
+               if survive_prob == 0 else 0)
+    return bad == 0 and removed == 0, (f"{bad} games with Guards tagged != Strikes tagged, {removed} with Guards removed "
+                                       f"!= Strikes tagged, of {len(per_game['tags'])}")
+
+
+def check_tag_fires(per_game: dict, guards: int, strikes: int) -> tuple[bool, str]:
+    """QC C1, every game: tags = min(G, S), Guards removed = Strikes tagged, the game ends at step 1 with a Guard win."""
+    tags, removed = np.asarray(per_game["tags"]), np.asarray(per_game["guards_removed"])
+    want = min(guards, strikes)
+    bad = {"tags != min(G, S)": int(np.sum(tags != want)), "Guards removed != Strikes tagged": int(np.sum(removed != tags)),
+           "not ended at step 1": int(np.sum(np.asarray(per_game["end_step"]) != 1)),
+           "not a Guard win": int(np.sum(np.asarray(per_game["outcome"]) != GUARD_WIN))}
+    wrong = {k: v for k, v in bad.items() if v}
+    return not wrong, (f"games wrong: {wrong}" if wrong else f"{len(tags)} games: {want} tags each, all ended at step 1")
+
+
+def check_reach_fires(per_game: dict) -> tuple[bool, str]:
+    """QC C1: a reach in every game."""
+    outcome = np.asarray(per_game["outcome"])
+    reaches = int(np.sum(outcome == STRIKE_WIN))
+    return reaches == len(outcome) and len(outcome) > 0, f"{reaches} reaches in {len(outcome)} games"
 
 
 def check_paired_starts(shas_by_setting: dict) -> tuple[bool, str]:
@@ -534,15 +569,22 @@ def _variant(name: str, rows: list[dict], meta: dict, rule: dict, expected: int 
     if not complete:
         return {**out, "H": None, "R": None, "d": None, "g_star": None, "s_star": None, "eligible": False,
                 "reason": "not every cell was played"}
-    h, g_star = _maximin(rows, "hold_rate", "hold_ci", "guard", "strike", guards)
-    r, s_star = _maximin(rows, "reach_rate", "reach_ci", "strike", "guard", strikes)
-    d = min(1 - h, 1 - r)
+    games = {r["games"] for r in rows}
+    if len(games) != 1:
+        return {**out, "H": None, "R": None, "d": None, "g_star": None, "s_star": None, "eligible": False,
+                "reason": f"cells hold different game counts {sorted(games)}"}
+    n = games.pop()
+    h_games, g_star = _maximin(rows, "holds", "hold_ci", "guard", "strike", guards)
+    r_games, s_star = _maximin(rows, "reaches", "reach_ci", "strike", "guard", strikes)
+    h, r = h_games / n, r_games / n
+    d_games = min(n - h_games, n - r_games)          # whole games: ties are compared on integers (QC I5)
+    d = d_games / n
     trivial = rule["trivial_at"]
     reason = ("Guard-trivial looking: a scripted Guard holds against every scripted Strike" if h >= trivial else
               "Strike-trivial looking: a scripted Strike reaches against every scripted Guard" if r >= trivial else
               "eligible")
-    return {**out, "H": h, "R": r, "d": d, "g_star": g_star, "s_star": s_star, "eligible": reason == "eligible",
-            "reason": reason}
+    return {**out, "H": h, "R": r, "d": d, "d_games": d_games, "g_star": g_star, "s_star": s_star,
+            "eligible": reason == "eligible", "reason": reason}
 
 
 def _tie_key(v: dict, breaks: list[str], order: list[str]) -> tuple:
@@ -579,16 +621,22 @@ def shortlist(rows_by_group: dict, metas: dict, rule: dict, run_order: list[str]
 
     variants = [_variant(n, rows_of(n), metas[n], rule, expected(n)) for n in rule["candidates"] if n in metas]
     report = [_variant(n, rows_of(n), metas[n], rule, expected(n)) for n in rule["report_only"] if n in metas]
+    info = []                              # INFO references (LEAD CALL 21 Nov 2026, QC M-8): numbers only, never shortlisted
+    for n, text in rule.get("info_reference", {}).items():
+        if n in metas:
+            v = _variant(n, rows_of(n), metas[n], rule, expected(n))
+            v.update(label=text, info=True, reason=f"INFO reference ({text}): never shortlisted; {v['reason']}")
+            info.append(v)
     always = [v for v in variants if v["variant"] in rule["always"]]
     for v in always:                       # the reference: carried whatever the rule says (LEAD CALL 21 Nov 2026)
         v["reference"] = True
         v["reason"] = "reference (eligible)" if v["eligible"] else f"reference, ruled out because {v['reason']}"
     eligible = sorted((v for v in variants if v["eligible"] and v["variant"] not in rule["always"]),
-                      key=lambda v: -v["d"])
+                      key=lambda v: -v["d_games"])
     ordered = []
-    while eligible:
-        top = eligible[0]["d"]
-        cluster = [v for v in eligible if top - v["d"] < rule["tie_window"]]
+    while eligible:                        # clusters anchored on the highest d left: within tie_window_games, "<="
+        top = eligible[0]["d_games"]
+        cluster = [v for v in eligible if top - v["d_games"] <= rule["tie_window_games"]]
         cluster.sort(key=lambda v: _tie_key(v, rule["tie_breaks"], run_order))
         ordered += cluster
         eligible = [v for v in eligible if v not in cluster]
@@ -596,4 +644,4 @@ def shortlist(rows_by_group: dict, metas: dict, rule: dict, run_order: list[str]
         v["rank"] = rank + 1
     added = ordered[:rule["max_variants"] - len(always)]
     return {"variants": variants, "shortlist": [v["variant"] for v in always + added],
-            "report_only": report, "excluded_strikes": list(exclude_strikes)}
+            "report_only": report, "info_reference": info, "excluded_strikes": list(exclude_strikes)}

@@ -178,7 +178,8 @@ VARIANT_CHANGES = {      # dotted settings that differ from base.toml, per varia
     "tag_1p2": {"tag.radius_m"}, "tag_1p4": {"tag.radius_m"}, "tag_1p8": {"tag.radius_m"},
     "survive_1": {"tag.guard_survives_tag_prob"}, "zone_2p4": {"arena.zone_radius_frac"},
     "arena_7p5": {"arena.bands_m", "arena.zone_radius_frac", "arena.zone_wall_margin_m", "starts.strike_ring_m"},
-    "tag_off": {"tag.mode"}, "tag_0p05": {"tag.radius_m"},
+    "tag_off": {"tag.mode"}, "tag_0p05": {"tag.radius_m"}, "tag_10m": {"tag.radius_m"},
+    "zone_2p4_tag_off": {"arena.zone_radius_frac", "tag.mode"},
 }
 
 
@@ -232,7 +233,8 @@ def cells_of(plan, name):
 def test_the_gate_file_lists_the_cells_in_the_stated_cut_order():
     plan = sweep.build_plan(GATES)
     names = [p.spec.name for p in plan]
-    assert names[0] == "base"
+    first_sweep = names.index("base")
+    assert all(GATES.group(n).control in (sweep.TAG_FIRES, sweep.REACH_FIRES) for n in names[:first_sweep])
     sweeps = [n for n in names if GATES.group(n).role in ("sweep", "sensitivity")]
     assert sweeps[:5] == ["base", "sens_strike_dz_1mm", "size_1v1", "size_2v1", "size_5v3"]
     assert set(GATES.cut["protected"]) == {"base"} | {n for n in names if GATES.group(n).role == "control"}
@@ -246,7 +248,19 @@ def test_the_gate_file_lists_the_cells_in_the_stated_cut_order():
     assert cells["size_1v1"] == cells["size_2v1"] == g * (s - dup) == 20
     assert cells["ctl_same_seed"] == min(GATES.run["cells_per_batch"], g * s)
     assert sum(n for k, n in cells.items() if GATES.group(k).role == "sweep") == 280
-    assert sum(n for k, n in cells.items() if GATES.group(k).role == "control") == 59
+    # 3 tag-fires + 2 reach-fires + same seed (one base batch: cells_per_batch cells) + 5 stand-still + 4 still-both
+    # + 10 tiny tag + 30 tag off
+    assert sum(n for k, n in cells.items() if GATES.group(k).role == "control") == 54 + cells["ctl_same_seed"]
+    fires = {g.name: g for g in GATES.groups if g.control in (sweep.TAG_FIRES, sweep.REACH_FIRES)}
+    assert {(g.control, g.size) for g in fires.values()} == {(sweep.TAG_FIRES, "2v1"), (sweep.TAG_FIRES, "3v3"),
+                                                            (sweep.TAG_FIRES, "5v3"), (sweep.REACH_FIRES, "1v1"),
+                                                            (sweep.REACH_FIRES, "3v3")}
+    for g in fires.values():
+        cfg = sweep.variant_cfg(GATES, g.game)
+        if g.control == sweep.TAG_FIRES:
+            assert g.guards == g.strikes == ("zero",) and cfg.tag.radius_m > math.hypot(*cfg.arena.bands_m["lab"])
+        else:
+            assert g.guards == ("zero",) and g.strikes == ("strike_straight",) and cfg.tag.mode == "off"
     still = [g for g in GATES.groups if g.control == sweep.STILL_ZERO_TAGS]
     assert {g.size for g in still} == {"1v1", "2v1", "3v3", "5v3"} and all(g.guards == g.strikes == ("zero",) for g in still)
     assert all(g.ticks_cap(GATES.run) * TICK_S == 10.0 for g in still)                   # the lead's "first 10 s"
@@ -269,7 +283,7 @@ def test_the_one_strike_duplicates_play_exactly_as_strike_straight():
 
 def test_the_shortlist_rule_and_controls_are_written_down():
     sl = GATES.shortlist
-    assert sl["max_variants"] == 3 and 0 < sl["trivial_at"] < 1 and sl["tie_window"] > 0
+    assert sl["max_variants"] == 3 and 0 < sl["trivial_at"] < 1 and sl["tie_window_games"] == 50
     assert set(sl["candidates"]) <= {g.name for g in GATES.groups if g.role == "sweep"}
     assert not set(sl["report_only"]) & set(sl["candidates"])
     assert set(GATES.controls["global_checks"]) == set(sweep.GLOBAL_CHECKS)
@@ -358,7 +372,8 @@ def test_same_seed_twice_gives_identical_outputs_on_the_cpu():
 # ================================================================================================ the controls (known answers)
 def per_game(**arrays):
     n = len(next(iter(arrays.values())))
-    base = {k: np.zeros(n, dtype=np.int64) for k in ("outcome", "end_step", "tags", "strikes_left")}
+    base = {k: np.zeros(n, dtype=np.int64) for k in ("outcome", "end_step", "tags", "strikes_left", "guards_tagged",
+                                                     "guards_removed")}
     base["closest_3d_m"] = np.ones(n)
     base["start_pos_m"] = np.zeros((n, 2, 3))
     base.update({k: np.asarray(v) for k, v in arrays.items()})
@@ -380,12 +395,35 @@ def test_zero_tags_and_never_reaches_controls():
     assert not sweep.check_never_reaches(per_game(outcome=[GUARD_WIN, STRIKE_WIN]))[0]
 
 
-def test_tags_bound_depends_on_whether_guards_survive():
-    pg = per_game(tags=[3, 2])
-    assert sweep.check_tags_bound(pg, 3, 3, 0.0)[0]
-    assert not sweep.check_tags_bound(pg, 2, 3, 0.0)[0]          # 3 tags with 2 Guard drones: impossible at survive 0
-    assert sweep.check_tags_bound(pg, 2, 3, 1.0)[0]              # a Guard that survives may tag again
-    assert not sweep.check_tags_bound(per_game(tags=[4]), 2, 3, 1.0)[0]
+def test_one_for_one_guards_tagged_equal_strikes_tagged_and_removed_at_survive_0():
+    """QC I1: the invariant that can fail (the old tags <= min(G, S) could not at G >= S)."""
+    ok = per_game(tags=[3, 1], guards_tagged=[3, 1], guards_removed=[3, 1])
+    assert sweep.check_one_for_one(ok, 0.0)[0]
+    assert not sweep.check_one_for_one(per_game(tags=[3], guards_tagged=[1], guards_removed=[1]), 0.0)[0]   # hit.any
+    assert not sweep.check_one_for_one(per_game(tags=[2], guards_tagged=[2], guards_removed=[0]), 0.0)[0]   # survive
+    assert sweep.check_one_for_one(per_game(tags=[2], guards_tagged=[2], guards_removed=[0]), 1.0)[0]
+    assert not sweep.check_one_for_one(per_game(tags=[0], guards_tagged=[2], guards_removed=[0]), 1.0)[0]   # counter dead
+
+
+def test_tag_fires_and_reach_fires_known_answers():
+    good = per_game(tags=[3, 3], guards_tagged=[3, 3], guards_removed=[3, 3], end_step=[1, 1],
+                    outcome=[GUARD_WIN, GUARD_WIN])
+    assert sweep.check_tag_fires(good, 5, 3)[0]
+    for broken in (dict(tags=[0, 0]), dict(guards_removed=[5, 5]), dict(guards_removed=[0, 0]), dict(end_step=[1, 2]),
+                   dict(outcome=[GUARD_WIN, 0])):
+        assert not sweep.check_tag_fires({**good, **{k: np.asarray(v) for k, v in broken.items()}}, 5, 3)[0], broken
+    assert sweep.check_reach_fires(per_game(outcome=[STRIKE_WIN, STRIKE_WIN]))[0]
+    assert not sweep.check_reach_fires(per_game(outcome=[STRIKE_WIN, 0]))[0]
+    assert not sweep.check_reach_fires(per_game(outcome=[STRIKE_WIN, GUARD_WIN]))[0]
+
+
+@pytest.mark.parametrize("size", ["2v1", "3v3", "5v3"])
+def test_the_tag_fires_game_ends_every_game_at_step_1_with_min_g_s_tags(size):
+    cfg = sweep.variant_cfg(GATES, "tag_10m")
+    res = sweep.play_batch(cfg, size, (("zero", "zero"),), small_run(games_per_cell=32, ticks_cap=5))
+    g, s = sweep.parse_size(size)
+    assert sweep.check_tag_fires(res.per_game, g, s) == (True, sweep.check_tag_fires(res.per_game, g, s)[1])
+    assert np.all(res.per_game["tags"] == min(g, s))
 
 
 def test_paired_starts_control():
@@ -398,8 +436,10 @@ def matrix(group: str, holds: list[list[float]]) -> list[dict]:
     rows = []
     for gi, line in enumerate(holds):
         for si, h in enumerate(line):
-            rows.append({"group": group, "guard": f"g{gi}", "strike": f"s{si}", "games": 1000, "hold_rate": h,
-                         "reach_rate": 1 - h, "hold_ci": [h - 0.03, h + 0.03], "reach_ci": [1 - h - 0.03, 1 - h + 0.03]})
+            k = round(h * 1000)
+            rows.append({"group": group, "guard": f"g{gi}", "strike": f"s{si}", "games": 1000, "holds": k,
+                         "reaches": 1000 - k, "hold_rate": k / 1000, "reach_rate": (1000 - k) / 1000,
+                         "hold_ci": [h - 0.03, h + 0.03], "reach_ci": [1 - h - 0.03, 1 - h + 0.03]})
     return rows
 
 
@@ -407,8 +447,8 @@ def meta(name, side=6.5, zone=1.6, tag=1.6, survive=0.0):
     return {"name": name, "arena_side_m": side, "zone_radius_m": zone, "tag_radius_m": tag, "survive": survive}
 
 
-RULE = {"always": [], "candidates": ["base", "a", "b", "c", "d"], "report_only": ["size"], "max_variants": 3, "trivial_at": 0.8,
-        "tie_window": 0.02, "tie_breaks": ["lab_arena_first", "larger_zone_tag_margin", "lower_guard_survives",
+RULE = {"info_reference": {}, "always": [], "candidates": ["base", "a", "b", "c", "d"], "report_only": ["size"], "max_variants": 3, "trivial_at": 0.8,
+        "tie_window_games": 50, "tie_breaks": ["lab_arena_first", "larger_zone_tag_margin", "lower_guard_survives",
                                            "run_order"]}
 
 
@@ -496,3 +536,52 @@ def test_the_strike_start_offset_is_off_by_default_bit_for_bit_and_moves_only_st
     a = sweep.play_batch(cfg, "3v3", cells, run)
     b = sweep.play_batch(cfg, "3v3", cells, run, strike_start_dz_m=0.0)
     assert sweep.check_same_seed(a.per_game, b.per_game, 0.0)[0]
+
+
+def test_ties_compare_whole_games_anchored_on_the_highest_d_with_less_or_equal():
+    """QC I5 (LEAD CALL 21 Nov 2026): window 50 games of 1,000, compared on integer counts with <=, clusters anchored on
+    the highest d left. QC's float edge (gaps of exactly 20 games) cannot occur with counts; 50 games exactly is a tie."""
+    def flat_matrix(name, hold):
+        return matrix(name, [[hold, hold], [hold, hold]])
+    metas = {"a": meta("a", side=7.5), "b": meta("b", zone=2.4), "c": meta("c", tag=1.2)}
+    rule = dict(RULE, candidates=["a", "b", "c"])
+    # d = min(1 - H, 1 - R) with H = hold, R = 1 - hold: hold 0.45 -> d 0.45 (450 games), 0.40 -> 400
+    rows = {"a": flat_matrix("a", 0.45), "b": flat_matrix("b", 0.40), "c": flat_matrix("c", 0.399)}
+    out = sweep.shortlist(rows, metas, rule, ["a", "b", "c"])
+    by = {v["variant"]: v for v in out["variants"]}
+    assert by["a"]["d_games"] == 450 and by["b"]["d_games"] == 400 and by["c"]["d_games"] == 399
+    assert out["shortlist"] == ["b", "a", "c"]      # 450 - 400 = 50: tied, lab arena first; c is 51 below a: next cluster
+    rows["b"] = flat_matrix("b", 0.399)                                                     # 51 games: not tied any more
+    assert sweep.shortlist(rows, metas, rule, ["a", "b", "c"])["shortlist"][0] == "a"
+
+
+def test_the_cuda_smoke_gate_keeps_the_sweeps_settings_and_qcs_minimums():
+    """QC I6 / section 5 B: the smoke plays the sweep's own settings and game files, every control kind, at least 2 cells
+    per batch, 256 games per cell and 600 ticks on its short groups, and replays one whole base batch at full length."""
+    smoke = sweep.load_gates(sweep.ROOT / "configs" / "ste_l011" / "cuda_smoke_gates.toml")
+    for part in ("run", "players", "controls", "projection", "games", "confounds"):
+        assert getattr(smoke, part) == getattr(GATES, part), part
+    assert smoke.run["device"] == "cuda" and smoke.run["cells_per_batch"] >= 2 and smoke.run["games_per_cell"] >= 256
+    assert {g.control for g in smoke.groups if g.role == "control"} == set(sweep.CONTROL_KINDS)
+    plan = {p.spec.name: p for p in sweep.build_plan(smoke)}
+    base, replay = plan["base"], plan["ctl_same_seed"]
+    assert base.spec.ticks is None and replay.batches[0] == base.batches[0]
+    assert len(base.batches[0]) == smoke.run["cells_per_batch"] and smoke.run["ticks_cap"] == 2400
+    short = [p for p in plan.values() if p.spec.ticks is not None and p.spec.control not in (
+        sweep.TAG_FIRES, sweep.REACH_FIRES, sweep.STILL_ZERO_TAGS)]
+    assert short and all(p.spec.ticks >= 600 for p in short)
+    assert {p.spec.role for p in plan.values()} == {"sweep", "control", "sensitivity"}
+
+
+def test_the_tag_off_cells_are_an_info_reference_never_shortlisted():
+    """LEAD CALL 21 Nov 2026 (QC M-8): the 30 tag-off base cells are reported as the INFO reference "no proximity tag"
+    with H, R and d, and never shortlisted (the tag rule, P1, is the owner's at G0)."""
+    assert GATES.shortlist["info_reference"] == {"ctl_tag_off": "no proximity tag"}
+    assert "ctl_tag_off" not in GATES.shortlist["candidates"] + GATES.shortlist["report_only"]
+    rule = dict(RULE, info_reference={"off": "no proximity tag"})
+    rows = {"a": matrix("a", [[0.6, 0.3], [0.4, 0.5]]), "off": matrix("off", [[0.5, 0.5], [0.5, 0.5]])}
+    out = sweep.shortlist(rows, {"a": meta("a"), "off": meta("off", tag=math.inf)}, dict(rule, candidates=["a"]), ["a", "off"])
+    assert out["shortlist"] == ["a"]                                   # off has the larger d, but is never shortlisted
+    ref = out["info_reference"][0]
+    assert ref["variant"] == "off" and ref["label"] == "no proximity tag" and ref["d_games"] == 500
+    assert ref["reason"].startswith("INFO reference") and "rank" not in ref

@@ -1,6 +1,6 @@
 INTERNAL · the latest status of STE's own learning track and the NUS port, overwritten at every update; the history is in [LOG.md](LOG.md). Produced by the `train-status` skill.
 
-**Status, 2026-11-21 05:52 (+08:00), event: laptop packed Mon 23 Nov 10:00; weekend plan set**                                                     · laptop RTX 5070 Ti · GPU idle except the remote-desktop service · 0 training processes (0 paused)
+**Status, 2026-11-21 05:58 (+08:00), event: owner: every game clip in 3-D (Isaac Lab, top view + 3-D view); VID-1 added**                                                      · laptop RTX 5070 Ti · GPU idle except the remote-desktop service · 0 training processes (0 paused)
 
 ## Phases
 
@@ -89,6 +89,7 @@ Laptop drills (21 Nov, fix branch, shared folder `~/AirStack-starling-max2/svg_t
 | L011-G0 | Finding for gate G0 (T44, scripted play): (1) every hold is a one-for-one trade — no tag-on game times out, and at 1v1 and 3v3 a Guard win leaves no Guard — so head-count decides (PLAN F1; bears on what a tag costs, P12); (2) the programme's sizes 2v1 and 5v3, and 1v1, are Guard-trivial with scripted players at the proposed rules; candidate cause: tag radius 1.6 m = zone radius 1.6 m with Guards starting on a circle near the zone centre (not tested). L0.12 measures whether learning changes either | OPEN: reported at G0 |
 | L010-G0 | Finding for gate G0 (from L0.10 QC): any safety-filter move near the 1.6 m tag radius can create a tag nobody chose (the filter's 1.10 m keep-out is inside the tag radius). Spaced starts remove it at the start; during play it is part of the game the sweep measures (P1) | OPEN: reported at G0 |
 | L09-5090 | On the 5090: record the tag-off golden's positions for its CPU type (AVX512); check the outcome fingerprints there | WAITING: next 5090 session |
+| VID-1 | 3-D game clips: replay a run's chosen games in Isaac Lab with the Starling's own look, two cameras (top view and 3-D view), MP4 + GIF; then re-render L0.11's clips and use it for every later run (owner, 21 Nov) | QUEUED: after L0.4/L0.5 (the Starling look); laptop GPU |
 | L08-M | L0.8 minors left: 3 hangar values unchecked on a clone without the NUS bundle; 3 values whose wrong value still passes; loader refuses some honest wording; tests tied to exact lines and the AirStack fence file | PARKED |
 | L07-DISK | Follow-up: the planned disk-space check (a disk full through 10 retries at a job's end reads DIED) | PARKED (stated limit) |
 | L07-N | Re-check minors N1–N4: a session pause also lands in the old per-worktree log the NUS reader uses; full disk can hold the wrapper 10 min after the end; AUTOMATION §4 still states the old GPU-hour rule; on the 5090 run `scripts/ste_job.py owner-pauses` before the drills | PARKED (N4 goes into the 5090 note) |
@@ -99,7 +100,7 @@ Laptop drills (21 Nov, fix branch, shared folder `~/AirStack-starling-max2/svg_t
 
 **Machines (owner, 21 Nov):** no task is 5090-only. The RTX 5090 (32 GB) suits memory-heavy runs; the laptop RTX 5070 Ti (12 GB) runs everything sized to fit, and the record says which machine. Only machine checks stay with their machine: TEST-F2b, L07-5090, L09-5090. **Schedule:** weekends the laptop runs the pipeline (the 5090 is free for gaming); weekdays the 5090 does (the laptop goes to work). **This weekend:** the owner packs the laptop **Mon 23 Nov 10:00**: no GPU job starts unless it can end by **Mon 08:00**; by **09:30** everything is committed, HANDOFF §0 and status written, ready to push.
 
-**GPU queue on the laptop (one at a time for speed measurements):** L0.12 pilot → L0.12 one variant → L0.2 → L0.3 → rest of L0.12 → L0.13 → L0.4 → L0.5.
+**GPU queue on the laptop (one at a time for speed measurements):** L0.12 pilot → L0.4 → L0.5 → VID-1 (3-D clips, L0.11 re-rendered) → L0.12 trainings → L0.2 → L0.3 → L0.13.
 
 **Next.** (1) L0.11 follow-up checks (CPU). (2) L0.12 Best-response test: the lead's gate change (advisor, Fable 5.2): T44 already settles the PLAN's 0.2 bands for the tag variants, so the gate will read the better of script and trained exploiter and measure how far the exploiter gets above the script, with Guards-left and game length reported; trainer path verified on CPU first (the tag-on game files, Strike side, a positive control reproducing a T44 cell); reviewer reads the gate before launch. (3) Merge L0.11 after its follow-up checks and its own suite.
 

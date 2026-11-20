@@ -143,6 +143,10 @@ other stopped, from git alone.
 - **GPU jobs side by side** when the GPU has room (`--allow-siblings`); short pilots and speed measurements alone. The
   owner pauses jobs with `scripts/gpu_pause.sh` to use the PC: never resume a pause the session did not make.
 - **Videos inside every run** (STANDARDS §8); every result shown on a reader page has a GIF that plays on GitHub.
+  **Every game clip is a 3-D Isaac Lab render** (owner, 21 Nov 2026: "for all the games i should have 3D videos instead of
+  2D, both top view and the 3D game"): the run's chosen games are replayed in Isaac Lab with the Starling's own look and
+  rendered from two cameras, a top view and a 3-D view, as MP4 plus a GIF. 2-D plots are kept only as data figures, not
+  as the game clips. Tooling task VID-1 builds the renderer; until it lands, a run notes that its 3-D clips are pending.
 - **Reply before doing** anything that changes the outcome or the plan; propose large document changes first.
 - **One fix at a time** when debugging; no parallel fixes.
 

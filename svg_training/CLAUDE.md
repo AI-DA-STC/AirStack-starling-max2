@@ -135,6 +135,11 @@ other stopped, from git alone.
   runs that need more GPU memory (more games at once, bigger networks, cameras). On the laptop, size the run to what fits
   and say so in the record; the 5090 may re-run it larger. Machine-specific checks (that machine's suite, drills, CPU-type
   fingerprints) still run on the machine they check.
+- **Machine schedule** (owner, 21 Nov 2026): **weekends** the laptop runs the pipeline (the 5090 is the owner's gaming PC
+  then: do not start or resume work on it); **weekdays** the 5090 builds and trains (the laptop goes to work with the
+  owner: no long job left running on it). Before the switch (Sunday night, Friday evening) stop or finish the machine's
+  jobs, commit, update HANDOFF §0 and the status, and give the owner the "Ready to push" line, so the other machine
+  starts from `development`.
 - **GPU jobs side by side** when the GPU has room (`--allow-siblings`); short pilots and speed measurements alone. The
   owner pauses jobs with `scripts/gpu_pause.sh` to use the PC: never resume a pause the session did not make.
 - **Videos inside every run** (STANDARDS §8); every result shown on a reader page has a GIF that plays on GitHub.

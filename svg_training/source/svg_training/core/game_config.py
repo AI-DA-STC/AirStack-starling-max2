@@ -161,10 +161,11 @@ class GameCfg:
             return
         a = self.arena
         sides = [s for band in a.bands_m.values() for s in band]
-        if max(sides) * (0.5 - a.zone_radius_frac[0]) > a.zone_wall_margin_m:
+        need_m = max(sides) * (0.5 - min(a.zone_radius_frac))      # either order of the pair (QC re-check N2)
+        if need_m > a.zone_wall_margin_m:
             raise ValueError('starts.mode "zone_disc_ring" needs the zone centre pinned at the arena centre: '
                              "arena.zone_wall_margin_m must be at least the largest side x (1/2 - the smallest "
-                             f"zone_radius_frac) = {max(sides) * (0.5 - a.zone_radius_frac[0])!r} m, got {a.zone_wall_margin_m!r}")
+                             f"zone_radius_frac) = {need_m!r} m, got {a.zone_wall_margin_m!r}")
         if self.starts.strike_ring_m > min(sides) / 2 - a.wall_margin_m:
             raise ValueError(f"starts.strike_ring_m = {self.starts.strike_ring_m!r} m does not fit the keep-in box of the "
                              f"smallest arena side ({min(sides) / 2 - a.wall_margin_m!r} m from the centre)")

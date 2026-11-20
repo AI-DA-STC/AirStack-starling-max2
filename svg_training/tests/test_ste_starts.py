@@ -161,6 +161,16 @@ def test_the_mode_is_refused_unless_the_zone_is_pinned_at_the_arena_centre():
     lab_cfg()                                                                      # pinned: accepted
 
 
+def test_the_pinning_check_does_not_depend_on_the_order_of_the_zone_radius_fractions():
+    """QC re-check N2: (0.3, 0.2) is the same range as (0.2, 0.3). Side 6.5 m, zone-to-wall margin 1.5 m: the zone
+    centre can move (6.5 x (1/2 - 0.2) = 1.95 m > 1.5 m), so the mode is refused whichever way round the pair is written;
+    with a margin of 1.95 m it is accepted either way."""
+    for frac in ((0.2, 0.3), (0.3, 0.2)):
+        with pytest.raises(ValueError, match="zone centre"):
+            lab_cfg(**{"arena.zone_radius_frac": frac, "arena.zone_wall_margin_m": 1.5})
+        lab_cfg(**{"arena.zone_radius_frac": frac, "arena.zone_wall_margin_m": 1.95})
+
+
 @pytest.mark.parametrize("stack", ["strike", "guard"])
 def test_stacked_starts_fail_the_check_negative_control(stack):
     """QC I3 (mutant D7: every Strike on one bearing): the start check fails on stacked team-mates."""
@@ -255,9 +265,26 @@ def test_the_team_close_count_is_absent_in_the_other_modes():
 
 
 def test_a_scenario_has_no_team_close_count():
-    """QC M7 (D16): a scenario places its own starts, so the count is not reported with one."""
+    """QC M7 (D16, re-check N4): a scenario places its own starts, so the count is not reported with one, even with two
+    team-mates closer than the filter distance (3v3 scenario, Guards 0 and 1 are 0.5 m apart)."""
     from svg_training.core.scenarios import Scenario
-    sc = Scenario("two", SPEC.value("arena.side_m"), (0.0, 0.0), SPEC.value("zone.radius_m"), ((0.2, 0.0), (2.75, 0.0)))
-    g = SvgGame(lab_cfg(), 2, 1, 1, device="cpu", seed=0, scenario=sc)
-    out = g.step({"guard": torch.zeros(2, 1, 4), "strike": torch.zeros(2, 1, 4)})
+    starts = ((0.2, 0.0), (-0.3, 0.0), (0.0, -0.7), (2.75, 0.0), (0.0, 2.75), (-2.75, 0.0))
+    sc = Scenario("close", SPEC.value("arena.side_m"), (0.0, 0.0), SPEC.value("zone.radius_m"), starts)
+    g = SvgGame(lab_cfg(), 2, 3, 3, device="cpu", seed=0, scenario=sc)
+    out = g.step({"guard": torch.zeros(2, 3, 4), "strike": torch.zeros(2, 3, 4)})
     assert "start_team_close" not in out.info and not g.start_team_close.any()
+
+
+def test_the_team_close_count_on_hand_built_starts():
+    """QC re-check N4 (D12-D14): the count's arithmetic on hand-built starts, through the game's own ``_start_flags``.
+    Game 0: Guards 0-1 at 0.5 m and Strikes 3-4 at 1.0 m (2 team-mate pairs); Guard 2 is 0.3 m from Strike 5 (a cross
+    pair: not counted). Game 1: everyone spaced (0). Game 2 is not a new game: it keeps its old count."""
+    g = SvgGame(lab_cfg(), 3, 3, 3, device="cpu", seed=0, band=0)
+    spaced = ((0.0, 0.0), (2.0, 0.0), (0.0, 2.0), (-2.0, 0.0), (0.0, -2.0), (2.0, 2.0))
+    close = ((0.0, 0.0), (0.5, 0.0), (-2.0, -2.0), (2.0, 2.0), (2.0, 1.0), (-2.0, -1.7))
+    pos = torch.tensor([close, spaced, close])
+    pos = torch.cat((pos, torch.full((3, 6, 1), 1.2)), dim=-1)
+    g.start_team_close = torch.tensor([9, 9, 7])
+    miss = torch.zeros(3, dtype=torch.bool)
+    _, count = g._start_flags(torch.tensor([True, True, False]), miss, pos)
+    assert count.tolist() == [2, 0, 7]

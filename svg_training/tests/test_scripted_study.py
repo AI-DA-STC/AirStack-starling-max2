@@ -87,19 +87,19 @@ def test_the_new_players_are_registered_for_their_team():
 
 # ------------------------------------------------------------------------------------------------ parked Guards
 def test_parked_centre_ignores_strikes_and_is_zero_at_the_centre():
-    """Guard 0 steers to the centre; every other Guard holds where it is (zero command), LEAD CALL 21 Nov 2026."""
+    """One Guard steers to the centre and stops there; with two or more Guards every Guard holds its start (zero command:
+    their start circle is already centred on the zone), LEAD CALL 21 Nov 2026 (QC I4). Strike drones change nothing."""
     gen = torch.Generator().manual_seed(0)
     at_centre = team_obs("guard", [(0.0, 0.0)])
     assert torch.equal(mk("guard_parked_centre", "guard").act(at_centre), torch.zeros(1, 1, 4))
-    off = team_obs("guard", [(0.5, -0.3), (-0.2, 0.6)])
-    base = mk("guard_parked_centre", "guard").act(off)
-    assert torch.equal(base[0, 1], torch.zeros(4))                                  # Guard 1 holds its start
-    for _ in range(5):                                       # any Strike drones anywhere: the same command
-        strikes = [tuple((torch.rand(2, generator=gen) * 6 - 3).tolist()) for _ in range(3)]
-        assert torch.equal(mk("guard_parked_centre", "guard").act(team_obs("guard", [(0.5, -0.3), (-0.2, 0.6)], strikes)),
-                           base)
-    assert torch.allclose(base[0, 0, :2], -torch.tensor([0.5, -0.3]) / math.hypot(0.5, 0.3), atol=1e-5)
-    assert torch.all(base[..., 2:] == 0)
+    alone = mk("guard_parked_centre", "guard").act(team_obs("guard", [(0.5, -0.3)]))
+    assert torch.allclose(alone[0, 0, :2], -torch.tensor([0.5, -0.3]) / math.hypot(0.5, 0.3), atol=1e-5)
+    assert torch.all(alone[..., 2:] == 0)
+    for team in ([(0.5, -0.3), (-0.2, 0.6)], [(0.6, 0.0), (-0.3, 0.5), (-0.3, -0.5)]):
+        for _ in range(3):                                   # any Strike drones anywhere: still zero
+            strikes = [tuple((torch.rand(2, generator=gen) * 6 - 3).tolist()) for _ in range(3)]
+            assert torch.equal(mk("guard_parked_centre", "guard").act(team_obs("guard", team, strikes)),
+                               torch.zeros(1, len(team), 4))
 
 
 def test_parked_ring_stations_are_fixed_by_index_and_zero_there():
@@ -157,25 +157,38 @@ def disc_ring_cfg(starling: bool):
 
 @pytest.mark.parametrize("starling", [False, True])
 def test_parked_centre_team_settles_and_never_moves(starling):
-    """Three Guards from the start disc, Strike drones still on the ring: Guard 0 settles at the centre, the others hold
-    their starts (their command is zero on every step). Once settled no Guard moves: no jostling on the Starling layer."""
+    """Three Guards from their start circle, Strike drones still on the ring: nobody flies in, no Guard moves."""
     cfg = disc_ring_cfg(starling)
     g = SvgGame(cfg, 8, 3, 3, device="cpu", seed=3, band=0)
     guard = make_strategy("guard_parked_centre", "guard", cfg, 8, "cpu", 0)
     obs = g.reset()
     start = g.pos_m[:, :3, :2].clone()
     still = torch.zeros(8, 3, 4)
-    for k in range(400):
+    for k in range(100):
         a = guard.act(obs["guard"])
-        assert torch.all(a[:, 1:] == 0)
+        assert torch.all(a == 0)
         obs = g.step({"guard": a, "strike": still}).obs
-    park = g.pos_m[:, :3, :2].clone()
-    for _ in range(60):
-        obs = g.step({"guard": guard.act(obs["guard"]), "strike": still}).obs
-    assert (g.pos_m[:, :3, :2] - park).norm(dim=-1).max() < 0.02                 # settled: nothing moves
-    assert park[:, 0].norm(dim=-1).max() < 0.05                                   # Guard 0 at the centre
-    if not starling:                                                              # pure path: team-mates pass, so the
-        assert torch.equal(park[:, 1:], start[:, 1:])                             # others never left their starts
+    assert (g.pos_m[:, :3, :2] - start).norm(dim=-1).max() < 0.02
+
+
+@pytest.mark.parametrize("guards,strikes", [(3, 3), (5, 3)])
+def test_parked_centre_trades_no_drones_with_still_strikes(guards, strikes):
+    """QC I4 (LEAD CALL 21 Nov 2026): Starling layer, tag on, Strike drones still: 0 games with a tag in 10 s, and no
+    Guard moves (before the fix, Guard 0 flew into the middle of the 5-Guard start circle and the filter pushed its
+    team-mates into tag range: 193/256 games tagged at 5v3, median 3.05 s)."""
+    cfg = disc_ring_cfg(True).replace(**{"tag.mode": SPEC.value("tag_rule.pairing"), "tag.radius_m": SPEC.value("tag.radius_m")})
+    n = 64
+    g = SvgGame(cfg, n, guards, strikes, device="cpu", seed=12, band=0)
+    guard = make_strategy("guard_parked_centre", "guard", cfg, n, "cpu", 0)
+    obs = g.reset()
+    start = g.pos_m[:, :guards, :2].clone()
+    tagged = torch.zeros(n, dtype=torch.bool)
+    for _ in range(round(10.0 / 0.05)):
+        out = g.step({"guard": guard.act(obs["guard"]), "strike": torch.zeros(n, strikes, 4)})
+        obs = out.obs
+        tagged |= out.info["tagged"].any(-1)
+    assert not tagged.any(), f"{int(tagged.sum())} of {n} games tagged"
+    assert (g.pos_m[:, :guards, :2] - start).norm(dim=-1).max() < 0.02
 
 
 def ring_settle(guards: int, n: int, steps: int, disc_starts: bool, seed: int = 12):
@@ -224,7 +237,7 @@ def test_parked_ring_team_reaches_its_stations_on_the_starling_layer(guards, dis
     """QC C1 (LEAD CALL 21 Nov 2026): stations are taken in the order of the Guards' bearings, so no Guard is sent across
     the ring. Starling layer, 3v3 and 5v3: every Guard is within 0.1 m of an evenly spaced ring of the player's radius
     by RING_SETTLE_S, and stays (moves less than 0.02 m in 2 s more)."""
-    n = 32 if disc_starts else 128                                               # 5 s test budget
+    n = (16 if guards == 5 else 32) if disc_starts else 128                     # 5 s test budget (QC N3)
     g, p, obs = ring_settle(guards, n, round(RING_SETTLE_S[guards, disc_starts] / 0.05), disc_starts)
     r = p.ring_radius_m(guards)
     pos = g.pos_m[:, :guards, :2].clone()

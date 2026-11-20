@@ -156,7 +156,11 @@ def _zone_disc_ring_starts(cfg: GameCfg, ar: Arenas, guards: int, strikes: int, 
     Draw order: Guard radius [N, 1], Guard bearing or rotation [N, 1], Strike rotation [N, 1], Strike gaps [N, S] (S >= 2).
     Positions go through the keep-in clamp (a no-op: ``GameCfg`` refuses a ring that does not fit or a zone centre that
     can move); z = start_height_m. A game is a miss if an opposite pair starts closer than the larger keep-out or a
-    Strike drone starts inside the zone (ruling 3, unchanged)."""
+    Strike drone starts inside the zone (ruling 3, unchanged).
+
+    For later learners (QC re-check N5, information only): in this mode the slot order is the bearing order. Guards are
+    evenly spaced anticlockwise from Guard 0, and Strikes anticlockwise from Strike 0, in every game. A learner fed
+    index-ordered slots sees that pattern every game (relevant to L1's permutation tests)."""
     st = cfg.starts
     n, dev = ar.half_m.shape[0], ar.half_m.device
     lim = (ar.half_m - cfg.arena.wall_margin_m)[:, None, None]                      # [N, 1, 1]

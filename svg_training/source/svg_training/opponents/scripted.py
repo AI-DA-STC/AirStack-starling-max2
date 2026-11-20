@@ -289,13 +289,14 @@ def _circle(own_p: Tensor, radius_m: Tensor, direction: Tensor) -> Tensor:
 
 
 class GuardParkedCentre(_Guard):
-    """Guard 0 flies to the zone centre and stops there; every other Guard holds its start position (zero command), so
-    no Guard moves once settled (LEAD CALL 21 Nov 2026). Ignores the Strike drones (study task L0.10). On the Starling
-    layer the filter may nudge a Guard while Guard 0 settles; after that nothing moves."""
+    """A lone Guard flies to the zone centre and stops there. With two or more Guards every Guard holds its start position
+    (zero command): their start circle is already centred on the zone, and a Guard flying into its middle would bring the
+    filter to push its team-mates out into the Strikes' tag range (QC I4; LEAD CALL 21 Nov 2026, replacing "Guard 0 parks
+    at the centre"). Ignores the Strike drones (study task L0.10)."""
 
     def act(self, obs: Tensor) -> Tensor:
-        first = (torch.arange(obs.shape[1], device=obs.device) == 0)[None, :, None]
-        return _pack(steer(-obs[..., _V.own_pos][..., :2]) * first, obs)
+        alone = 1.0 if obs.shape[1] == 1 else 0.0                                    # team size: fixed per game set-up
+        return _pack(steer(-obs[..., _V.own_pos][..., :2]) * alone, obs)
 
 
 class GuardParkedRing(_Guard):

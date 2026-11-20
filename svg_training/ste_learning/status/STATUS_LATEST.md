@@ -1,6 +1,6 @@
 INTERNAL · the latest status of STE's own learning track and the NUS port, overwritten at every update; the history is in [LOG.md](LOG.md). Produced by the `train-status` skill.
 
-**Status, 2026-11-21 02:44 (+08:00), event: L0.9 DONE (development suite 1,517 passed / 0 failed)**                             · laptop RTX 5070 Ti · GPU 72 % / 22 W / 1.7 GB of 12 GB · 0 training processes (0 paused)
+**Status, 2026-11-21 02:47 (+08:00), event: L0.11 build started (CPU only); correction to an earlier status**                              · laptop RTX 5070 Ti · GPU 72 % / 22 W / 1.7 GB of 12 GB · 0 training processes (0 paused)
 
 ## Phases
 
@@ -22,7 +22,7 @@ INTERNAL · the latest status of STE's own learning track and the NUS port, over
 | L0.8 | Game spec sheet | DONE | none | merged into `development`; QC passed; full suite on `development` 1,461 passed / 0 failed (41 min) |
 | L0.9 | Tag rule for the study: 1-for-1, nearest pair first | DONE | tier 1 fast engine | merged; QC + re-check passed; full suite on `development` 1,517 passed / 0 failed (31 min); the 5090 records its own tag-off positions (L09-5090) |
 | L0.10 | Scripted players for the study | RUNNING | tier 1 fast engine | committed on `ste-l0.10` (2ef29d0) with the lead's 10 rulings applied: 6 new players, start ring 2.75 m, 9 behaviour constants as PROPOSED sheet rows; 315 tests pass; independent QC running |
-| L0.11 | Screening sweep (INFO) | NOT STARTED | tier 1 fast engine | cap 3 GPU-h |
+| L0.11 | Screening sweep (INFO) | RUNNING (build, CPU only) | tier 1 fast engine | driver, one game file per variant, gate file with controls and the L0.12 shortlist rule written before any run; GPU pilot and run only after L0.10 is merged and the GPU-only tests pass; cap 3 GPU-h |
 | L0.12 | Best-response test: is the game worth learning? | NOT STARTED | tier 1 fast engine | cap 6 GPU-h |
 | L0.2 | Tier 2 speed in contested play | NOT STARTED | tier 2 Isaac Lab | 5090; cap 1.5 GPU-h |
 | L0.13 | Does tier 2 train at all? | NOT STARTED | tier 2 Isaac Lab | 5090, after L0.2; cap 6 GPU-h |
@@ -50,6 +50,7 @@ Laptop full CPU suite (20 Nov, `development` at 5c5d465, after `scripts/nus_inst
 | L0.9 independent QC + re-check | ~239 k | ~31 min | ran its own reference matcher, mutants and old-vs-new games |
 | L0.10 Scripted players: builder (build + rulings) | ~326 k | ~37 min | |
 | L0.10 independent QC | running | running | |
+| L0.11 sweep build (CPU) | running | running | |
 | Full CPU test suite | none | ~25 min alone; the L0.7 merge run took 61 min (shared the CPU with L0.9's tests) | rule from now: one heavy test run at a time |
 | GPU | 0 GPU-h | | nothing has used the GPU |
 
@@ -89,3 +90,5 @@ Laptop drills (21 Nov, fix branch, shared folder `~/AirStack-starling-max2/svg_t
 **Next.** (1) L0.7 fixes L07-F1, C1, I1–I4, one at a time, each tested first and committed alone; scoped QC re-check. (2) Full CPU suite, then the wake-up and resume drills on the laptop. (3) L0.8 Game spec sheet (being built), then L0.9 Tag rule.
 
 **Waiting on you.** Nothing.
+
+**Correction.** The 21 Nov question on NUS values listed "speeds 0.6 / 1.2". The L0.8 review reads those two numbers as the decision period (0.6 s) and the flight height (1.2 m); the speeds are 0.5 and 0.333 m/s. Your Yes covers all of them as written on the sheet.

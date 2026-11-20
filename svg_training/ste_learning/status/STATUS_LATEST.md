@@ -1,6 +1,6 @@
 INTERNAL · the latest status of STE's own learning track and the NUS port, overwritten at every update; the history is in [LOG.md](LOG.md). Produced by the `train-status` skill.
 
-**Status, 2026-11-21 04:03 (+08:00), event: L0.10 fix round 2 committed; re-check 2 running**                                    · laptop RTX 5070 Ti · GPU 72 % / 22 W / 1.7 GB of 12 GB · 0 training processes (0 paused)
+**Status, 2026-11-21 04:11 (+08:00), event: FIRST GPU JOB: L0.11 pilot launched (speed and memory only, cap 0.15 GPU-h); sweep NO-GO until QC fixes**                                     · laptop RTX 5070 Ti · GPU 95 % / 22 W / 2.0 GB of 12 GB · 1 training process (0 paused)
 
 ## Phases
 
@@ -22,7 +22,7 @@ INTERNAL · the latest status of STE's own learning track and the NUS port, over
 | L0.8 | Game spec sheet | DONE | none | merged into `development`; QC passed; full suite on `development` 1,461 passed / 0 failed (41 min) |
 | L0.9 | Tag rule for the study: 1-for-1, nearest pair first | DONE | tier 1 fast engine | merged; QC + re-check passed; full suite on `development` 1,517 passed / 0 failed (31 min); the 5090 records its own tag-off positions (L09-5090) |
 | L0.10 | Scripted players for the study | RUNNING | tier 1 fast engine | re-check: all four first-round problems fixed (parked ring 0 off-station, still players 0 tags, unpinned zone refused, stacked starts caught; default game still identical). New: at 5v3 `guard_parked_centre` causes tags in 193 of 256 games (Guard 0 flies into the middle of the start circle and the filter pushes its team-mates into tag range); fixed (1451786: with 2+ Guards every Guard holds its start; 0 tagged games at 3v3 and 5v3 in 10 s); re-check 2 running |
-| L0.11 | Screening sweep (INFO) | RUNNING (pre-launch QC) | tier 1 fast engine | committed on `ste-l0.11` (5 commits), rebased onto the fixed L0.10: 344 cells × 1,000 games; still players + tag on → 0 tags at every size; 5v3 starts ≥ 1.15 m between team-mates, ≥ 1.77 m Guard–Strike; independent pre-launch review of the gate file and driver running; then GPU-only tests, a 0.15 GPU-h pilot, the run (cap 3 GPU-h) |
+| L0.11 | Screening sweep (INFO) | RUNNING | tier 1 fast engine | pre-launch QC: pilot GO, sweep NO-GO (1 Critical: no control had a known non-zero answer, so a dead tag or zone test would pass; 6 Important: a control that cannot fail, projection, cap refusal, record on failure, tie rule below the noise, CUDA paths untested); fixes being built; **GPU pilot running** from commit ed2f7fd (GPU-only tests 134 passed; still-player check 0 tags at every size); then a CUDA smoke of the fixed driver, then the sweep |
 | L0.12 | Best-response test: is the game worth learning? | NOT STARTED | tier 1 fast engine | cap 6 GPU-h |
 | L0.2 | Tier 2 speed in contested play | NOT STARTED | tier 2 Isaac Lab | 5090; cap 1.5 GPU-h |
 | L0.13 | Does tier 2 train at all? | NOT STARTED | tier 2 Isaac Lab | 5090, after L0.2; cap 6 GPU-h |
@@ -51,7 +51,8 @@ Laptop full CPU suite (20 Nov, `development` at 5c5d465, after `scripts/nus_inst
 | L0.10 Scripted players: builder (build + rulings + 2 QC fix rounds) | ~420 k | ~56 min | |
 | L0.10 independent QC (+ re-checks) | ~332 k | ~62 min | 84 deliberate breakages over two rounds; its own geometry probes on 30,000+ starts |
 | L0.11 sweep build (CPU, build + rulings + rebase) | ~464 k | ~56 min | |
-| L0.11 pre-launch QC | running | running | |
+| L0.11 pre-launch QC | ~293 k | ~24 min | broke the code five ways through the real driver |
+| L0.11 GPU pilot | | running | first GPU job of the track; cap 0.15 GPU-h |
 | Full CPU test suite | none | ~25 min alone; the L0.7 merge run took 61 min (shared the CPU with L0.9's tests) | rule from now: one heavy test run at a time |
 | GPU | 0 GPU-h | | nothing has used the GPU |
 
@@ -93,6 +94,6 @@ Laptop drills (21 Nov, fix branch, shared folder `~/AirStack-starling-max2/svg_t
 
 **Next.** (1) L0.7 fixes L07-F1, C1, I1–I4, one at a time, each tested first and committed alone; scoped QC re-check. (2) Full CPU suite, then the wake-up and resume drills on the laptop. (3) L0.8 Game spec sheet (being built), then L0.9 Tag rule.
 
-**Waiting on you.** Nothing.
+**Waiting on you.** Nothing. **Please do not let the laptop sleep while a GPU job runs** (L07-SUSPEND: sleep is counted as GPU time).
 
 **Correction.** The 21 Nov question on NUS values listed "speeds 0.6 / 1.2". The L0.8 review reads those two numbers as the decision period (0.6 s) and the flight height (1.2 m); the speeds are 0.5 and 0.333 m/s. Your Yes covers all of them as written on the sheet.

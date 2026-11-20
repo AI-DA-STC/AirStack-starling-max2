@@ -1,6 +1,6 @@
 INTERNAL · the latest status of STE's own learning track and the NUS port, overwritten at every update; the history is in [LOG.md](LOG.md). Produced by the `train-status` skill.
 
-**Status, 2026-11-21 05:49 (+08:00), event: L0.14 started beside L0.12 (lead's sequencing fix)**                                                 · laptop RTX 5070 Ti · GPU idle except the remote-desktop service · 0 training processes (0 paused)
+**Status, 2026-11-21 05:50 (+08:00), event: owner: train on the laptop too; L0.2 and L0.13 move into the laptop queue**                                                  · laptop RTX 5070 Ti · GPU idle except the remote-desktop service · 0 training processes (0 paused)
 
 ## Phases
 
@@ -24,8 +24,8 @@ INTERNAL · the latest status of STE's own learning track and the NUS port, over
 | L0.10 | Scripted players for the study | DONE | tier 1 fast engine | merged; QC + 2 re-checks passed; full suite on `development` 1,600 passed / 0 failed (56 min, CPU shared with the L0.11 GPU jobs) |
 | L0.11 | Screening sweep (INFO) | DONE | tier 1 fast engine | record T44 (every control PASS; shortlist base (reference), tag 1.2 m, tag 1.4 m; every hold a one-for-one trade) + follow-up checks; merged into `development`; full suite 1,685 passed / 0 failed (27 min) |
 | L0.12 | Best-response test: is the game worth learning? | RUNNING (CPU groundwork) | tier 1 fast engine | builder on `ste-l0.12`: trainer path for both sides on the tag-on game files, a control that reproduces a T44 cell, gate measuring exploiter gain over the best script (lead's call), pilot plan; GPU only after QC of the gate; cap 6 GPU-h |
-| L0.2 | Tier 2 speed in contested play | NOT STARTED | tier 2 Isaac Lab | 5090; cap 1.5 GPU-h |
-| L0.13 | Does tier 2 train at all? | NOT STARTED | tier 2 Isaac Lab | 5090, after L0.2; cap 6 GPU-h |
+| L0.2 | Tier 2 speed in contested play | NOT STARTED | tier 2 Isaac Lab | laptop allowed (owner, 21 Nov): runs alone on the GPU, measures what fits in 12 GB; cap 1.5 GPU-h |
+| L0.13 | Does tier 2 train at all? | NOT STARTED | tier 2 Isaac Lab | laptop allowed (owner, 21 Nov), after L0.2, at the games-at-once L0.2 shows fits; cap 6 GPU-h |
 | L0.3 | STE Guard policy in tier 2 without retraining | NOT STARTED | tier 2 Isaac Lab | unblocked (T41 on both machines); runs on the laptop GPU, taking turns with L0.12's GPU runs (one GPU job at a time); cap 1.5 GPU-h |
 | L0.4 | Side-by-side Starling render | NOT STARTED | tier 2 Isaac Lab | laptop GPU, taking turns with L0.12; cap 0.2 GPU-h |
 | L0.5 | Starling video look fix | NOT STARTED | tier 2 Isaac Lab | after L0.4; cap 0.3 GPU-h |
@@ -96,6 +96,8 @@ Laptop drills (21 Nov, fix branch, shared folder `~/AirStack-starling-max2/svg_t
 | L07-5090 | L0.7 on the 5090: full CPU suite and the two drills there (L0.7 is DONE only after both machines) | WAITING: next 5090 session |
 | TEST-F2 | Fix: bit-level training fingerprint is machine-specific | DONE (447b317; trainer test file 43 passed, 1 skipped) |
 | TEST-F2b | On the 5090: confirm its CPU capability is AVX512 (the key its 18 Nov hash is now filed under) | WAITING: next 5090 session runs the test (fails or skips loudly if wrong) |
+
+**GPU queue on the laptop (one at a time for speed measurements):** L0.12 pilot → L0.12 one variant → L0.2 → L0.3 → rest of L0.12 → L0.13 → L0.4 → L0.5.
 
 **Next.** (1) L0.11 follow-up checks (CPU). (2) L0.12 Best-response test: the lead's gate change (advisor, Fable 5.2): T44 already settles the PLAN's 0.2 bands for the tag variants, so the gate will read the better of script and trained exploiter and measure how far the exploiter gets above the script, with Guards-left and game length reported; trainer path verified on CPU first (the tag-on game files, Strike side, a positive control reproducing a T44 cell); reviewer reads the gate before launch. (3) Merge L0.11 after its follow-up checks and its own suite.
 

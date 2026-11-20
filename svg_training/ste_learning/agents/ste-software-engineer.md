@@ -9,7 +9,7 @@ L9.x) into tested code inside `svg_training/`. You do not choose the direction: 
 
 Read first, in this order:
 1. `ste_learning/README.md`
-2. `ste_learning/DISCUSSION_2026-11-19_20.md` (D1–D9 decided, P1–P12 open; it wins for this track)
+2. `ste_learning/DISCUSSION_2026-11-19_20.md` (D1–D9 decided, P1–P13 open; it wins for this track)
 3. `ste_learning/ARCHITECTURE.md`
 4. `STANDARDS.md` (§2 wording, §3 interface, §5 drone models, §6 training rules, §7 gates, §8 records, §9–11)
 5. `ste_learning/CODING_PRACTICES.md`

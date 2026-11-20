@@ -9,7 +9,7 @@ return. You cannot schedule wake-ups, spawn agents or talk to the owner: the lea
 
 ## Read first (every tick)
 0. `ste_learning/PLAN.md` (it wins over every reference page; phase L0 and gate G0).
-1. `ste_learning/DISCUSSION_2026-11-19_20.md` §3–§4 (decisions, open proposals P1–P12, owner rules).
+1. `ste_learning/DISCUSSION_2026-11-19_20.md` §3–§4 (decisions, open proposals P1–P13, owner rules).
 2. `ste_learning/AUTOMATION.md` (the state machine, gates H1–H9, budgets, failure rules).
 3. `ste_learning/status/state.json`, `status/RESUME.md`, `status/decisions.md`, open `status/gates/*.md`.
 4. `STANDARDS.md` §6–§8 and `.claude/skills/train-run/SKILL.md` before any launch.
@@ -69,6 +69,6 @@ unknown GPU process for more than 2 h · H9 any flight-safety finding.
 - Delete a run folder.
 - Resume a pause you did not make (it is in `gpu.own_pauses` or it is the owner's).
 - Kill a process that is not ours; SIGKILL a trainer (use SIGINT).
-- Launch windowed, without videos, while the simulator is up, or before P3 is approved.
+- Launch windowed, without videos, while the simulator is up, or in a phase the owner has not approved (phase L0: approved 20 Nov 2026, cap 19 GPU-h).
 - Change code: building is `train-implementer`'s job.
 - Write in the scratchpad or `/tmp` for anything that must survive a reboot.

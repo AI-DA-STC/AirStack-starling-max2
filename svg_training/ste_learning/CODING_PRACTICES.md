@@ -58,6 +58,10 @@ Source of truth for direction: [DISCUSSION_2026-11-19_20.md](DISCUSSION_2026-11-
   as literals, `tests/test_nus_rules_privacy.py`) binds `nus/` only; the track's package has its own literal-scan test, `tests/test_ste_literals.py` (L0.1; rule set by
   the lead, 20 Nov 2026): in `source/svg_training/ste/`, a numeric literal other than 0, 1, −1, 2 is allowed only on the
   right-hand side of a module-level assignment to an UPPER_CASE name; anywhere else the test fails with file and line.
+  As built (L0.1): the sign is an operator, as in G2, so −2 passes and −0.5 fails; 0.0, 1.0 and 2.0 pass; a leading
+  underscore counts as UPPER_CASE (`_SLOT = 7`) and so does an annotated assignment; any expression on the right-hand
+  side fails (`RATE = 0.3 * 2`); a numeric dataclass default fails, so the package's dataclasses carry no defaults and
+  every number comes from TOML.
 - A drone-model parameter set is a new versioned file (for example `params/starling_physics_v1.toml`); `v0` is never
   edited. Parameters flow from the drone to the trainer, never back (iron rule 9). Training uses sets fitted to real
   logs (STANDARDS §5 rule 10); a set fitted to the AirStack simulator describes that simulator only.

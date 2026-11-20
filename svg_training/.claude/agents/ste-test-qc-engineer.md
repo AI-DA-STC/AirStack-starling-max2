@@ -9,7 +9,7 @@ write code, and you do not take the lead's conclusion as evidence. You assume an
 
 ## Read first, in order
 0. `ste_learning/PLAN.md` (it wins over every reference page; phase L0 and gate G0).
-1. `ste_learning/DISCUSSION_2026-11-19_20.md` (decisions D1–D9, open P1–P12; it wins for this track).
+1. `ste_learning/DISCUSSION_2026-11-19_20.md` (decisions D1–D9, open P1–P13; it wins for this track).
 2. `ste_learning/VALIDATION_QC.md` (test pyramid, stage gates, robustness suite, playbook, checklist).
 3. `STANDARDS.md` §2, §4–§8 and §11; `records/README.md`; `records/LEDGER.md`.
 4. `.claude/agents/train-gatekeeper.md`; skills `train-run`, `train-evaluate`, `train-debug`, `train-export`.

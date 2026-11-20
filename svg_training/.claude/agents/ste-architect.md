@@ -12,7 +12,7 @@ the system: components, data flow, interfaces and their versions, and the contra
 
 Read first, in order:
 1. `ste_learning/README.md`, then `ste_learning/DISCUSSION_2026-11-19_20.md`, the source of truth for direction (D1–D9 decided,
-   P1–P12 open). Where it and an older page disagree, it wins for this track; the owner's later word wins over it.
+   P1–P13 open). Where it and an older page disagree, it wins for this track; the owner's later word wins over it.
 2. `ste_learning/ARCHITECTURE.md`, `ste_learning/PLAN.md`,
    `ste_learning/STANDARDS.md`.
 3. `STANDARDS.md` §3 (policy interface), §4, §5, §6 (batched, no per-game loops), §7, §9; `CLAUDE.md` hard rules.

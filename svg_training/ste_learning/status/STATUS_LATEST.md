@@ -1,6 +1,6 @@
 INTERNAL · the latest status of STE's own learning track and the NUS port, overwritten at every update; the history is in [LOG.md](LOG.md). Produced by the `train-status` skill.
 
-**Status, 2026-11-21 06:42 (+08:00), event: 30-minute update**                                                              · laptop RTX 5070 Ti · GPU 58 % / 23 W / 5.4 GB of 12 GB · 0 training processes (0 paused)
+**Status, 2026-11-21 07:02 (+08:00), event: L0.12 pre-launch QC: pilot GO, runs NO-GO until fixes (1 Critical, 8 Important); fix round started**                                                               · laptop RTX 5070 Ti · GPU 58 % / 23 W / 5.4 GB of 12 GB · 0 training processes (0 paused)
 
 ## Watch (latest clips and figures)
 
@@ -45,7 +45,7 @@ What the drones look like in the 3-D simulator (Isaac Lab Starlings, from S2b; t
 | L0.9 | Tag rule for the study: 1-for-1, nearest pair first | DONE | tier 1 fast engine | merged; QC + re-check passed; full suite on `development` 1,517 passed / 0 failed (31 min); the 5090 records its own tag-off positions (L09-5090) |
 | L0.10 | Scripted players for the study | DONE | tier 1 fast engine | merged; QC + 2 re-checks passed; full suite on `development` 1,600 passed / 0 failed (56 min, CPU shared with the L0.11 GPU jobs) |
 | L0.11 | Screening sweep (INFO) | DONE | tier 1 fast engine | record T44 (every control PASS; shortlist base (reference), tag 1.2 m, tag 1.4 m; every hold a one-for-one trade) + follow-up checks; merged into `development`; full suite 1,685 passed / 0 failed (27 min) |
-| L0.12 | Best-response test: is the game worth learning? | RUNNING (pre-launch QC) | tier 1 fast engine | committed on `ste-l0.12` (4 commits: height panel, core + gate, trainer, driver + docs; 132 tests pass); its evaluation replays T44 exactly; Strike recipe pre-registered (T41 → distance shaping → not launched, decided on the probe against the training opponent); independent pre-launch QC running; then the GPU pilot |
+| L0.12 | Best-response test: is the game worth learning? | RUNNING (QC fixes) | tier 1 fast engine | pre-launch QC: every verdict branch computes as ruled, but (Critical) results could be published after a failed control, and no control looks at the trained network, so a training bug would read as "no gain"; lead's call: the Strike's training against the parked Guard becomes a must-pass learner check in the pilot; fix round running; pilot after the fixes and once the GPU is free; runs after a re-check |
 | L0.2 | Tier 2 speed in contested play | NOT STARTED | tier 2 Isaac Lab | laptop allowed (owner, 21 Nov): runs alone on the GPU, measures what fits in 12 GB; cap 1.5 GPU-h |
 | L0.13 | Does tier 2 train at all? | NOT STARTED | tier 2 Isaac Lab | laptop allowed (owner, 21 Nov), after L0.2, at the games-at-once L0.2 shows fits; cap 6 GPU-h |
 | L0.3 | STE Guard policy in tier 2 without retraining | NOT STARTED | tier 2 Isaac Lab | unblocked (T41 on both machines); runs on the laptop GPU, taking turns with L0.12's GPU runs (one GPU job at a time); cap 1.5 GPU-h |
@@ -74,7 +74,7 @@ Laptop full CPU suite (20 Nov, `development` at 5c5d465, after `scripts/nus_inst
 | L0.10 independent QC (+ 2 re-checks) | ~353 k | ~71 min | 84 deliberate breakages over two rounds; its own geometry probes on 30,000+ starts |
 | L0.11 sweep build (CPU, build + rulings + rebase + QC fixes + follow-ups) | ~677 k | ~106 min | the largest single task so far; a fresh builder takes L0.12 to avoid re-reading this context |
 | L0.12 groundwork builder | ~550 k | ~54 min | |
-| L0.12 pre-launch QC | running | running | |
+| L0.12 pre-launch QC | running | ~30 min | 19 deliberate breakages, 8 not caught before the fixes |
 | L0.11 pre-launch QC | ~293 k | ~24 min | broke the code five ways through the real driver |
 | L0.11 CUDA smoke | | ~5 min | 0.087 GPU-h |
 | L0.11 independent QC (pre-launch, re-check, results read) | ~419 k | ~45 min | |

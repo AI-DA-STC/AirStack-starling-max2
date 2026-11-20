@@ -14,8 +14,9 @@ import hashlib
 import math
 import tomllib
 from dataclasses import dataclass
+from fractions import Fraction
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterable
 
 from ..core.game_config import CONFIGS  # standard library only: no PyTorch, no Isaac
 
@@ -41,7 +42,8 @@ class BudgetCfg:
 
     ``phase_cap_gpu_h``: the most GPU-hours the whole phase may use. ``task_cap_gpu_h``: one (task ID, cap in GPU-hours)
     pair per task of the phase, in the plan's order; a tuple of pairs, so nothing in it can be changed after loading.
-    The loader has checked that no cap is negative and that the task caps together do not exceed the phase cap.
+    The loader has checked that no cap is negative and that the task caps together do not exceed the phase cap. Caps are
+    added and compared as the decimal numbers written in the file (0.1 + 0.2 is 0.3), not as binary floats.
     """
     phase_cap_gpu_h: float
     task_cap_gpu_h: tuple[tuple[str, float], ...]
@@ -54,8 +56,8 @@ class BudgetCfg:
         raise KeyError(f"no GPU-hour cap for task {task_id!r} (known: {[task for task, _ in self.task_cap_gpu_h]})")
 
     def task_caps_total_gpu_h(self) -> float:
-        """The task caps added up, in GPU-hours."""
-        return math.fsum(cap for _, cap in self.task_cap_gpu_h)
+        """The task caps added up in decimal, in GPU-hours (the float nearest to the exact decimal sum)."""
+        return float(_decimal_sum(cap for _, cap in self.task_cap_gpu_h))
 
 
 @dataclass(frozen=True)
@@ -69,6 +71,15 @@ class Provenance:
     """Where the settings came from: the file's path and the sha256 of its bytes (comments included)."""
     settings_file: str
     settings_sha256: str
+
+
+def _decimal(value: float) -> Fraction:
+    """``value`` as the exact decimal number its shortest written form states: 0.1 is one tenth, exactly."""
+    return Fraction(repr(value))
+
+
+def _decimal_sum(values: Iterable[float]) -> Fraction:
+    return sum((_decimal(value) for value in values), Fraction(0))
 
 
 _KINDS = {int: "a whole number", float: "a decimal number (write 3.0, not 3)", str: "text in quotes"}
@@ -88,19 +99,20 @@ def _cap_gpu_h(value: Any, where: str) -> float:
     return cap
 
 
-def _table(parent: dict[str, Any], name: str, where: str, keys: tuple[str, ...], what: str) -> dict[str, Any]:
+def _table(parent: dict[str, Any], name: str, where: str, keys: tuple[str, ...], what: str,
+           hint: str = "") -> dict[str, Any]:
     """The table ``parent[name]`` once its keys are checked to be exactly ``keys``; ``what`` names a key in messages."""
     table = parent[name]
     if not isinstance(table, dict):
         raise ValueError(f"[{where}] must be a table, got {table!r}")
-    _exact(table, keys, what, f"[{where}]")
+    _exact(table, keys, what, f"[{where}]", hint)
     return table
 
 
-def _exact(table: dict[str, Any], keys: tuple[str, ...], what: str, where: str) -> None:
+def _exact(table: dict[str, Any], keys: tuple[str, ...], what: str, where: str, hint: str = "") -> None:
     unknown = sorted(set(table) - set(keys))
     if unknown:
-        raise ValueError(f"unknown {what}(s) in {where}: {unknown} (known: {list(keys)})")
+        raise ValueError(f"unknown {what}(s) in {where}: {unknown} (known: {list(keys)}){hint}")
     missing = [key for key in keys if key not in table]
     if missing:
         raise ValueError(f"missing {what}(s) in {where}: {missing}")
@@ -109,12 +121,18 @@ def _exact(table: dict[str, Any], keys: tuple[str, ...], what: str, where: str) 
 def load_ste_learning(path: str | Path = SETTINGS_FILE) -> tuple[SteLearningCfg, Provenance]:
     """Load the track's settings file. Returns the settings and where they came from (path, sha256 of the bytes read).
 
-    Raises ``ValueError`` for an unknown or missing section, key or task ID, a value of the wrong type, an unknown
-    phase, a cap that is negative or not finite, or task caps that add up to more than the phase cap.
+    Raises ``ValueError`` for a file that is not UTF-8 text or not valid TOML (the message names the file), an unknown
+    or missing section, key or task ID, a value of the wrong type, an unknown phase, a cap that is negative or not
+    finite, or task caps that add up (in decimal) to more than the phase cap.
     """
     path = Path(path)
     raw = path.read_bytes()
-    data = tomllib.loads(raw.decode())
+    try:
+        data = tomllib.loads(raw.decode("utf-8"))
+    except UnicodeDecodeError as err:
+        raise ValueError(f"{path}: not UTF-8 text ({err})") from err
+    except tomllib.TOMLDecodeError as err:
+        raise ValueError(f"{path}: not valid TOML ({err})") from err
     _exact(data, ("track", "budget"), "section", path.name)
 
     track_table = _table(data, "track", "track", ("plan_version", "phase"), "key")
@@ -127,11 +145,15 @@ def load_ste_learning(path: str | Path = SETTINGS_FILE) -> tuple[SteLearningCfg,
 
     budget_table = _table(data, "budget", "budget", ("phase_cap_gpu_h", "task_cap_gpu_h"), "key")
     tasks = TASK_IDS[track.phase]
-    caps = _table(budget_table, "task_cap_gpu_h", "budget.task_cap_gpu_h", tasks, "task ID")
+    raw_caps = budget_table["task_cap_gpu_h"]
+    unquoted = isinstance(raw_caps, dict) and any(isinstance(value, dict) for value in raw_caps.values())
+    hint = (f'; write task IDs in quotes, as "{tasks[0]}" = 0.0: without the quotes TOML reads the dot as a table '
+            f"inside a table") if unquoted else ""
+    caps = _table(budget_table, "task_cap_gpu_h", "budget.task_cap_gpu_h", tasks, "task ID", hint)
     budget = BudgetCfg(
         phase_cap_gpu_h=_cap_gpu_h(budget_table["phase_cap_gpu_h"], "budget.phase_cap_gpu_h"),
         task_cap_gpu_h=tuple((task, _cap_gpu_h(caps[task], f'budget.task_cap_gpu_h."{task}"')) for task in tasks))
-    if budget.task_caps_total_gpu_h() > budget.phase_cap_gpu_h:
-        raise ValueError(f"the task caps add up to {budget.task_caps_total_gpu_h()} GPU-hours, more than the phase cap "
-                         f"budget.phase_cap_gpu_h = {budget.phase_cap_gpu_h}")
+    if _decimal_sum(cap for _, cap in budget.task_cap_gpu_h) > _decimal(budget.phase_cap_gpu_h):
+        raise ValueError(f"the task caps add up to {budget.task_caps_total_gpu_h()!r} GPU-hours, more than the phase "
+                         f"cap budget.phase_cap_gpu_h = {budget.phase_cap_gpu_h!r} (added and compared in decimal)")
     return SteLearningCfg(track=track, budget=budget), Provenance(str(path), hashlib.sha256(raw).hexdigest())

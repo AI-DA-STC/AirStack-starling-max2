@@ -9,7 +9,7 @@
 # section arrives with the task that builds it.
 
 [track]
-plan_version = 2         # FIXED (an identifier, not a ruling): the version in the header line of ste_learning/PLAN.md (the test reads it there)
+plan_version = 2         # FIXED (an identifier, not a ruling): the version in PLAN.md's header line (a test reads it)
 phase = "L0"             # FIXED (owner, 20 Nov 2026): the approval covers phase L0 only (PLAN.md header, section 12)
 
 [budget]

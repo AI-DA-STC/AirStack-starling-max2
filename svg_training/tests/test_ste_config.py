@@ -10,6 +10,7 @@ import re
 import subprocess
 import sys
 import tomllib
+from fractions import Fraction
 from pathlib import Path
 
 import pytest
@@ -40,6 +41,13 @@ def changed(tmp_path: Path, old: str, new: str) -> Path:
     return write(tmp_path, GOOD.replace(old, new))
 
 
+def settings_text(phase_cap: str, caps: dict[str, str]) -> str:
+    """A settings file for phase L0 with the given phase cap; a task not in ``caps`` gets 0.0 GPU-hours."""
+    lines = ["[track]", "plan_version = 2", 'phase = "L0"', "[budget]", f"phase_cap_gpu_h = {phase_cap}",
+             "[budget.task_cap_gpu_h]"]
+    return "\n".join(lines + [f'"{task}" = {caps.get(task, "0.0")}' for task in TASK_IDS["L0"]]) + "\n"
+
+
 # ------------------------------------------------------------------------------------------------ the committed file
 def test_committed_file_loads_with_the_plans_numbers():
     cfg, provenance = load_ste_learning()
@@ -65,39 +73,164 @@ def test_task_caps_fit_the_phase_cap_and_none_is_negative():
     budget = load_ste_learning()[0].budget
     caps = [cap for _, cap in budget.task_cap_gpu_h]
     assert all(cap >= 0.0 for cap in caps)
-    assert math.fsum(caps) <= budget.phase_cap_gpu_h
+    assert budget.task_caps_total_gpu_h() <= budget.phase_cap_gpu_h              # the loader compares in decimal
     assert budget.task_caps_total_gpu_h() == math.fsum(L0_TASK_CAP_GPU_H.values()) < L0_PHASE_CAP_GPU_H
 
 
 # ------------------------------------------------------------------------------------------------ against PLAN.md
-def plan_l0_rows() -> list[tuple[str, float]]:
-    """(task ID, GPU-h cap) of every row of the table in PLAN.md section 4, in the table's order."""
-    text = PLAN.read_text()
-    section = text[text.index("\n## 4. "):text.index("\n## 5. ")]
+# Each helper takes PLAN.md's text, so the checks can be tried on a made-up plan too. Every assertion says what was
+# expected and where in PLAN.md it looked: the parsing is strict on purpose, and a failure must be readable.
+SETTINGS = "configs/ste_learning.toml"
+
+
+def plan_section(text: str, number: int) -> str:
+    """Section ``number`` of PLAN.md: from its heading line "## <number>. " up to the next section's heading line."""
+    start, end = text.find(f"\n## {number}. "), text.find(f"\n## {number + 1}. ")
+    assert start != -1 and end > start, (
+        f"PLAN.md: expected a heading line starting '## {number}. ' and, after it, one starting '## {number + 1}. ' "
+        f"(section {number} holds the phase's task table and its budget sentence); found '## {number}. ': "
+        f"{'yes' if start != -1 else 'no'}, '## {number + 1}. ' after it: {'yes' if end > start else 'no'}")
+    return text[start:end]
+
+
+def plan_task_rows(text: str) -> list[tuple[str, float]]:
+    """(task ID, GPU-h cap) of every row of the task table in PLAN.md section 4, in the table's order."""
     rows = []
-    for line in section.splitlines():
+    for line in plan_section(text, 4).splitlines():
         if re.match(r"\| L\d+\.\d+ \|", line):
             cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
-            assert len(cells) == 5, line          # ID | Plain name | What it delivers | GPU-h cap | Gate
+            assert len(cells) == 5, (
+                f"PLAN.md section 4, task table, row {cells[0]}: expected 5 cells (ID | Plain name | What it "
+                f"delivers | GPU-h cap | Gate), found {len(cells)}; the row starts {line[:80]!r}")
+            assert re.fullmatch(r"\d+(\.\d+)?", cells[3]), (
+                f"PLAN.md section 4, task table, row {cells[0]}: expected a plain number of GPU-hours in the 4th cell "
+                f"(GPU-h cap), found {cells[3]!r}")
             rows.append((cells[0], float(cells[3])))
     return rows
 
 
+def check_plan_tasks(text: str, task_cap_gpu_h: tuple[tuple[str, float], ...]) -> None:
+    """The task table of PLAN.md section 4 lists the same task IDs, in the same order, with the same caps."""
+    rows = plan_task_rows(text)
+    plan_ids, file_ids = [task for task, _ in rows], [task for task, _ in task_cap_gpu_h]
+    assert plan_ids == file_ids, (
+        f"PLAN.md section 4, task table (lines starting '| L<phase>.<n> |'): expected the {len(file_ids)} task IDs of "
+        f"{SETTINGS} [budget.task_cap_gpu_h] in the same order, {file_ids}; found {len(plan_ids)}: {plan_ids}")
+    differ = {task: {"file": cap, "PLAN.md": plan_cap} for (task, cap), (_, plan_cap) in zip(task_cap_gpu_h, rows)
+              if cap != plan_cap}
+    assert not differ, (f"PLAN.md section 4, task table, 4th cell (GPU-h cap): expected the caps of {SETTINGS} "
+                        f"[budget.task_cap_gpu_h]; these differ: {differ}")
+
+
+def plan_header_version(text: str) -> str:
+    """The version written in PLAN.md's first line, as text ("2", or "2.1" if someone writes that)."""
+    header = text.splitlines()[0] if text else ""
+    found = re.search(r"\bversion (\d+(?:\.\d+)*)", header)
+    assert found, f"PLAN.md line 1: expected the words 'version <number>' (the plan's version), found {header[:120]!r}"
+    return found.group(1)
+
+
+def check_plan_version(text: str, plan_version: int) -> None:
+    version = plan_header_version(text)
+    assert version == str(plan_version), (
+        f"PLAN.md line 1 says 'version {version}'; expected 'version {plan_version}', the whole number of "
+        f"{SETTINGS} [track] plan_version = {plan_version}")
+
+
+def plan_budget_sentence(text: str, phase: str) -> tuple[str, str | None]:
+    """(phase cap, sum of the task caps or None) as written in the budget sentence of PLAN.md section 4:
+    "**L0 budget: at most 19 GPU-h** (the task caps above sum to <number>), ..."; the sum is looked for in the same
+    paragraph, after the words "sum to"."""
+    found = re.search(rf"\*\*{re.escape(phase)} budget: at most (\d+(?:\.\d+)?) GPU-h\*\*((?:[^\n]|\n(?!\n))*)",
+                      plan_section(text, 4))
+    assert found, (f"PLAN.md section 4: expected the budget sentence '**{phase} budget: at most <number> GPU-h**' "
+                   f"(the phase cap, with the two asterisks on each side); found no such sentence")
+    total = re.search(r"\bsum to (\d+(?:\.\d+)?)", found.group(2))
+    return found.group(1), total.group(1) if total else None
+
+
+def check_plan_budget(text: str, phase: str, phase_cap_gpu_h: float, task_caps_total_gpu_h: float) -> None:
+    cap, total = plan_budget_sentence(text, phase)
+    assert float(cap) == phase_cap_gpu_h, (
+        f"PLAN.md section 4, budget sentence, says '{phase} budget: at most {cap} GPU-h'; expected "
+        f"{phase_cap_gpu_h!r}, the value of {SETTINGS} [budget] phase_cap_gpu_h")
+    assert total is None or float(total) == task_caps_total_gpu_h, (
+        f"PLAN.md section 4, budget sentence, says the task caps 'sum to {total}'; expected {task_caps_total_gpu_h!r}, "
+        f"the sum of {SETTINGS} [budget.task_cap_gpu_h]")
+
+
 def test_task_ids_and_caps_are_those_of_plan_section_4():
-    rows = plan_l0_rows()
-    assert len(rows) == len(L0_TASK_CAP_GPU_H)                       # the parser found the table
     cfg, _ = load_ste_learning()
-    assert [task for task, _ in cfg.budget.task_cap_gpu_h] == [task for task, _ in rows]
-    assert TASK_IDS[cfg.track.phase] == tuple(task for task, _ in rows)
-    assert list(tomllib.loads(GOOD)["budget"]["task_cap_gpu_h"]) == [task for task, _ in rows]   # the file's own order
-    assert dict(cfg.budget.task_cap_gpu_h) == dict(rows)
+    check_plan_tasks(PLAN.read_text(), cfg.budget.task_cap_gpu_h)
+    file_order = list(tomllib.loads(GOOD)["budget"]["task_cap_gpu_h"])
+    assert file_order == list(TASK_IDS[cfg.track.phase]) == [task for task, _ in cfg.budget.task_cap_gpu_h], (
+        f"the task IDs are written in three places that must agree in order: the lines of {SETTINGS} {file_order}, "
+        f"TASK_IDS in ste/config.py {list(TASK_IDS[cfg.track.phase])}, and PLAN.md section 4 (checked just above)")
 
 
 def test_plan_version_is_the_one_in_the_plans_header():
-    header = PLAN.read_text().splitlines()[0]
-    found = re.search(r"\bversion (\d+)\b", header)
-    assert found, header
-    assert load_ste_learning()[0].track.plan_version == int(found.group(1))
+    check_plan_version(PLAN.read_text(), load_ste_learning()[0].track.plan_version)
+
+
+def test_phase_cap_and_task_cap_sum_are_those_of_the_plans_budget_sentence():
+    cfg, _ = load_ste_learning()
+    text = PLAN.read_text()
+    check_plan_budget(text, cfg.track.phase, cfg.budget.phase_cap_gpu_h, cfg.budget.task_caps_total_gpu_h())
+    cap, total = plan_budget_sentence(text, cfg.track.phase)
+    assert float(cap) == L0_PHASE_CAP_GPU_H, (
+        f"PLAN.md section 4, budget sentence, says 'at most {cap} GPU-h'; expected {L0_PHASE_CAP_GPU_H!r}, the owner's "
+        f"cap typed as L0_PHASE_CAP_GPU_H at the top of this test file")
+
+
+def made_up_plan(task_cap_gpu_h: tuple[tuple[str, float], ...], version: str = "2", cap: str = "19",
+                 total: str | None = "") -> str:
+    """A small text with the parts of PLAN.md the checks read: line 1, the section 4 table and budget sentence.
+    ``total``: the sum the sentence states; "" = the sum of the given caps, None = the sentence states no sum."""
+    rows = [f"| {task} | a name | what it delivers | {task_cap:g} | none |" for task, task_cap in task_cap_gpu_h]
+    total = f"{float(sum(Fraction(repr(task_cap)) for _, task_cap in task_cap_gpu_h)):g}" if total == "" else total
+    budget = f"**L0 budget: at most {cap} GPU-h**" + (f" (the task caps above sum to {total})," if total else ",")
+    return "\n".join([f"INTERNAL · the master plan, version {version} (20 Nov 2026).", "", "# PLAN", "",
+                      "## 4. Phase L0 in detail", "", "| ID | Plain name | What it delivers | GPU-h cap | Gate |",
+                      "|---|---|---|---|---|", *rows, "", budget, "alone on the GPU.", "", "## 5. Gate G0", ""])
+
+
+def test_the_plan_checks_refuse_a_plan_that_differs_and_say_where():
+    cfg, _ = load_ste_learning()
+    caps, phase = cfg.budget.task_cap_gpu_h, cfg.track.phase
+    cap, total = cfg.budget.phase_cap_gpu_h, cfg.budget.task_caps_total_gpu_h()
+    good = made_up_plan(caps)
+    check_plan_tasks(good, caps), check_plan_version(good, 2), check_plan_budget(good, phase, cap, total)
+    check_plan_budget(made_up_plan(caps, total=None), phase, cap, total)        # the sum is compared only if written
+
+    def refused(match, check, text, *args):
+        with pytest.raises(AssertionError, match=match):
+            check(text, *args)
+
+    # line 1: the version
+    refused(r"line 1 says 'version 2\.1'; expected 'version 2'", check_plan_version, made_up_plan(caps, "2.1"), 2)
+    refused(r"line 1 says 'version 3'; expected 'version 2'", check_plan_version, made_up_plan(caps, "3"), 2)
+    refused(r"line 1 says 'version 12'; expected 'version 1'", check_plan_version, made_up_plan(caps, "12"), 1)
+    refused(r"line 1: expected the words 'version <number>'", check_plan_version, good.replace("version 2", "v2"), 2)
+    # section 4: the budget sentence
+    refused(r"at most 20 GPU-h'; expected 19\.0", check_plan_budget, made_up_plan(caps, cap="20"), phase, cap, total)
+    refused(rf"'sum to 77'; expected {re.escape(repr(total))}", check_plan_budget, made_up_plan(caps, total="77"),
+            phase, cap, total)
+    refused(r"section 4: expected the budget sentence '\*\*L0 budget: at most <number> GPU-h\*\*'", check_plan_budget,
+            good.replace("**L0 budget: at most", "L0 budget: about"), phase, cap, total)
+    # section 4: the task table
+    without_a_row = "\n".join(line for line in good.splitlines() if not line.startswith("| L0.13 |"))
+    refused(r"section 4, task table.*expected the 13 task IDs.*found 12", check_plan_tasks, without_a_row, caps)
+    swapped = good.replace("| L0.1 |", "| L0.x |").replace("| L0.7 |", "| L0.1 |").replace("| L0.x |", "| L0.7 |")
+    refused(r"in the same order", check_plan_tasks, swapped, caps)
+    refused(r"4th cell \(GPU-h cap\).*these differ: \{'L0\.4': \{'file': 0\.2, 'PLAN\.md': 0\.25\}\}", check_plan_tasks,
+            good.replace("| 0.2 | none |", "| 0.25 | none |"), caps)
+    refused(r"row L0\.4: expected 5 cells .*found 4", check_plan_tasks,
+            good.replace("| L0.4 | a name | what it delivers |", "| L0.4 | a name and what it delivers |"), caps)
+    refused(r"row L0\.4: expected a plain number of GPU-hours in the 4th cell \(GPU-h cap\), found 'none'",
+            check_plan_tasks, good.replace("| 0.2 | none |", "| none | none |"), caps)
+    refused(r"expected a heading line starting '## 4\. '.*found '## 4\. ': no", check_plan_tasks,
+            good.replace("## 4. Phase", "## Phase"), caps)
+    refused(r"'## 5\. ' after it: no", check_plan_budget, good.replace("## 5. Gate", "## Gate"), phase, cap, total)
 
 
 # ------------------------------------------------------------------------------------------------ unknown keys raise
@@ -121,9 +254,26 @@ def test_unknown_task_id_raises(tmp_path):
         load_ste_learning(write(tmp_path, GOOD + '"L0.99" = 0.0\n'))
     with pytest.raises(ValueError, match=r"unknown task ID.*L1\.1"):
         load_ste_learning(changed(tmp_path, '"L0.6" =', '"L1.1" = 0.0\n"L0.6" ='))
-    # without the quotes TOML reads L0.6 as a table "L0" holding a key "6"
-    with pytest.raises(ValueError, match=r"unknown task ID.*L0"):
+    # without the quotes TOML reads L0.6 as a table "L0" holding a key "6": the message says to quote task IDs
+    with pytest.raises(ValueError, match=r"unknown task ID.*\['L0'\].*in quotes") as unquoted:
         load_ste_learning(changed(tmp_path, '"L0.6" =', "L0.6 ="))
+    assert '"L0.1" = 0.0' in str(unquoted.value)                                 # with an example line
+    with pytest.raises(ValueError, match=r"unknown task ID.*\['L0'\].*in quotes"):
+        load_ste_learning(write(tmp_path, GOOD.replace('"L0.', "L0.").replace('" = ', " = ")))   # every ID unquoted
+    with pytest.raises(ValueError, match=r"unknown task ID.*L0\.99") as quoted:
+        load_ste_learning(write(tmp_path, GOOD + '"L0.99" = 0.0\n'))
+    assert "quotes" not in str(quoted.value)                                     # no hint where it does not apply
+
+
+def test_a_file_that_cannot_be_read_as_toml_raises_naming_the_file(tmp_path):
+    path = write(tmp_path, GOOD.replace("[budget]\n", "[budget\n"))             # a TOML syntax error
+    with pytest.raises(ValueError, match=r"not valid TOML") as syntax:
+        load_ste_learning(path)
+    assert str(path) in str(syntax.value)
+    path.write_bytes(GOOD.encode() + "# café\n".encode("latin-1"))               # not UTF-8
+    with pytest.raises(ValueError, match=r"not UTF-8") as encoding:
+        load_ste_learning(path)
+    assert str(path) in str(encoding.value)
 
 
 def test_missing_section_key_or_task_raises(tmp_path):
@@ -183,6 +333,24 @@ def test_task_caps_above_the_phase_cap_raise(tmp_path):
     with pytest.raises(ValueError, match=r"task caps.*phase cap"):
         load_ste_learning(changed(tmp_path, '"L0.11" = 3.0', '"L0.11" = 3.6'))    # one tenth of a GPU-hour over
     load_ste_learning(changed(tmp_path, '"L0.11" = 3.0', '"L0.11" = 3.5'))        # exactly the phase cap is allowed
+
+
+def test_task_caps_are_added_and_compared_exactly_in_decimal(tmp_path):
+    """0.1 + 0.2 is 0.3 in a settings file, though not in binary floating point (0.30000000000000004)."""
+    def load(phase_cap, caps):
+        return load_ste_learning(write(tmp_path, settings_text(phase_cap, caps)))[0].budget
+
+    budget = load("0.3", {"L0.11": "0.1", "L0.12": "0.2"})                       # equal to the phase cap: allowed
+    assert budget.phase_cap_gpu_h == 0.3 and budget.task_caps_total_gpu_h() == 0.3
+    assert load("0.3", {"L0.11": "0.1", "L0.12": "0.1", "L0.13": "0.1"}).task_caps_total_gpu_h() == 0.3
+    assert load("3.3", {"L0.11": "1.1", "L0.12": "2.2"}).task_caps_total_gpu_h() == 3.3
+    with pytest.raises(ValueError, match=r"task caps add up to 0\.31 GPU-hours.*phase cap.*0\.3\b"):
+        load("0.3", {"L0.11": "0.11", "L0.12": "0.2"})
+    # the other direction: in decimal 0.1 + 0.7 = 0.8 is more than this cap; the binary sum equals the cap exactly
+    assert math.fsum([0.1, 0.7]) == 0.7999999999999999
+    with pytest.raises(ValueError, match=r"task caps add up to 0\.8 GPU-hours"):
+        load("0.7999999999999999", {"L0.11": "0.1", "L0.12": "0.7"})
+    assert load("1e-07", {"L0.11": "3e-08", "L0.12": "7e-08"}).task_caps_total_gpu_h() == 1e-07   # small values too
 
 
 # ------------------------------------------------------------------------------------------------ status labels
@@ -289,7 +457,7 @@ def test_package_imports_on_the_cpu_without_torch_or_isaac():
     code = ("import sys; before = set(sys.modules); import svg_training.ste, svg_training.ste.config as c; "
             "c.load_ste_learning(); new = {m.split('.')[0] for m in set(sys.modules) - before}; "
             "print(sorted(new & {'torch', 'numpy', 'isaaclab', 'isaacsim', 'omni', 'pxr'}))")
-    run = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True,
+    run = subprocess.run([sys.executable, "-B", "-c", code], capture_output=True, text=True,   # -B: no __pycache__
                          env={"PYTHONPATH": str(ROOT / "source"), "CUDA_VISIBLE_DEVICES": ""})
     assert run.returncode == 0, run.stderr
     assert run.stdout.strip() == "[]"

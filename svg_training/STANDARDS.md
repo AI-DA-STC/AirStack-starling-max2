@@ -75,6 +75,10 @@ The programme's wording rules apply to every document and figure here
   may hold NUS's values and checkpoint files: the privacy tests exempt it and nothing else. Code still never reads it
   and never hard-codes a NUS value; `scripts/nus_install_provisional.sh` copies it into the git-ignored `configs/local/`
   and `runs/nus_port/`, which stay git-ignored. The motion-capture camera survey and NUS's source code stay out.
+- **The STE track's game sheet** (owner, 21 November 2026: "Yes"). `configs/ste_game.toml` and `ste_learning/GAME_SPEC.md`
+  may hold game settings taken from NUS's hangar game (zone radius, start ring and disc, game length, speeds, decision
+  period), each with its source cited, under the 18 November publication rule above. They are the track's own game
+  values, not a copy of NUS's files; code reads them through `ste/game_spec.py`. NUS's source code still stays out.
 - **NUS's own words** (owner, 18 November 2026): NUS's terms (defender, attacker, area denial) may appear once per page
   in a translation line, for example "your defender = our Guard team, your attacker = our Strike team"; the rest of
   the page uses our words.

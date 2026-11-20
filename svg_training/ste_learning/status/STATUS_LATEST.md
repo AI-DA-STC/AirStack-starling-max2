@@ -1,6 +1,6 @@
 INTERNAL · the latest status of STE's own learning track and the NUS port, overwritten at every update; the history is in [LOG.md](LOG.md). Produced by the `train-status` skill.
 
-**Status, 2026-11-21 02:47 (+08:00), event: L0.11 build started (CPU only); correction to an earlier status**                              · laptop RTX 5070 Ti · GPU 72 % / 22 W / 1.7 GB of 12 GB · 0 training processes (0 paused)
+**Status, 2026-11-21 03:16 (+08:00), event: L0.10 QC NOT DONE (1 Critical, 3 Important); fix round started; finding for G0**                               · laptop RTX 5070 Ti · GPU 72 % / 22 W / 1.7 GB of 12 GB · 0 training processes (0 paused)
 
 ## Phases
 
@@ -21,7 +21,7 @@ INTERNAL · the latest status of STE's own learning track and the NUS port, over
 | L0.7 | Process tooling and drills | RUNNING (laptop part DONE) | none | merged into `development`; laptop: full suite 1,420 passed / 0 failed, wake-up drill and resume drill both as expected (below); DONE when the 5090 has run the same (L07-5090) |
 | L0.8 | Game spec sheet | DONE | none | merged into `development`; QC passed; full suite on `development` 1,461 passed / 0 failed (41 min) |
 | L0.9 | Tag rule for the study: 1-for-1, nearest pair first | DONE | tier 1 fast engine | merged; QC + re-check passed; full suite on `development` 1,517 passed / 0 failed (31 min); the 5090 records its own tag-off positions (L09-5090) |
-| L0.10 | Scripted players for the study | RUNNING | tier 1 fast engine | committed on `ste-l0.10` (2ef29d0) with the lead's 10 rulings applied: 6 new players, start ring 2.75 m, 9 behaviour constants as PROPOSED sheet rows; 315 tests pass; independent QC running |
+| L0.10 | Scripted players for the study | RUNNING | tier 1 fast engine | QC: start ring and default mode verified (0 differences vs before); but the parked-ring Guards jam on the Starling layer, team-mates could start closer than the filter distance (the filter push then caused tags with nobody moving: 55 of 256 games at 3v3), the start mode needs a pinned zone, and a stacked-start bug would pass the tests; fix round running (lead's calls: stations by start bearing, team-mates spaced ≥ 1.15 m at the start, refuse an unpinned zone) |
 | L0.11 | Screening sweep (INFO) | RUNNING (build, CPU only) | tier 1 fast engine | driver, one game file per variant, gate file with controls and the L0.12 shortlist rule written before any run; GPU pilot and run only after L0.10 is merged and the GPU-only tests pass; cap 3 GPU-h |
 | L0.12 | Best-response test: is the game worth learning? | NOT STARTED | tier 1 fast engine | cap 6 GPU-h |
 | L0.2 | Tier 2 speed in contested play | NOT STARTED | tier 2 Isaac Lab | 5090; cap 1.5 GPU-h |
@@ -49,7 +49,7 @@ Laptop full CPU suite (20 Nov, `development` at 5c5d465, after `scripts/nus_inst
 | L0.9 Tag rule: builder (build + fix round) | ~358 k | ~66 min | the first 50 min slowed by sharing the CPU with the L0.7 suite |
 | L0.9 independent QC + re-check | ~239 k | ~31 min | ran its own reference matcher, mutants and old-vs-new games |
 | L0.10 Scripted players: builder (build + rulings) | ~326 k | ~37 min | |
-| L0.10 independent QC | running | running | |
+| L0.10 independent QC | ~274 k | ~35 min | 60 deliberate breakages, 43 caught; its own geometry probes on 30,000+ starts |
 | L0.11 sweep build (CPU) | running | running | |
 | Full CPU test suite | none | ~25 min alone; the L0.7 merge run took 61 min (shared the CPU with L0.9's tests) | rule from now: one heavy test run at a time |
 | GPU | 0 GPU-h | | nothing has used the GPU |
@@ -78,6 +78,7 @@ Laptop drills (21 Nov, fix branch, shared folder `~/AirStack-starling-max2/svg_t
 | L07-C1b | Fix: our own "pause the siblings, run solo" step (AUTOMATION §2.2) is now refused too; lead's design: pauses the session makes are tagged and do not block launch, your pauses still do | DONE (ef38534; `GPU_PAUSE_BY=lead` tags the session's pauses; a bare `gpu_pause.sh pause` is still yours and still blocks; red 13 failed, then 298 passed) |
 | L07-C1c | Fix: a session-tagged resume must refuse while any of your pauses is open (a resume today continues every job and closes your pauses too) | DONE (efa9ec1; a bare resume/stop is unchanged; red 4 failed, then 304 passed) |
 | GIT-1 | Fix: my 17 Nov `.gitignore` line `data/` also hid new files in `tests/data/` | DONE (d3572dc: anchored to `/data/`) |
+| L010-G0 | Finding for gate G0 (from L0.10 QC): any safety-filter move near the 1.6 m tag radius can create a tag nobody chose (the filter's 1.10 m keep-out is inside the tag radius). Spaced starts remove it at the start; during play it is part of the game the sweep measures (P1) | OPEN: reported at G0 |
 | L09-5090 | On the 5090: record the tag-off golden's positions for its CPU type (AVX512); check the outcome fingerprints there | WAITING: next 5090 session |
 | L08-M | L0.8 minors left: 3 hangar values unchecked on a clone without the NUS bundle; 3 values whose wrong value still passes; loader refuses some honest wording; tests tied to exact lines and the AirStack fence file | PARKED |
 | L07-DISK | Follow-up: the planned disk-space check (a disk full through 10 retries at a job's end reads DIED) | PARKED (stated limit) |

@@ -1,6 +1,6 @@
 INTERNAL · the latest status of STE's own learning track and the NUS port, overwritten at every update; the history is in [LOG.md](LOG.md). Produced by the `train-status` skill.
 
-**Status, 2026-11-21 03:44 (+08:00), event: L0.11 committed and rebased onto the fixed L0.10; pre-launch QC running**                                  · laptop RTX 5070 Ti · GPU 72 % / 22 W / 1.7 GB of 12 GB · 0 training processes (0 paused)
+**Status, 2026-11-21 03:58 (+08:00), event: L0.10 re-check: first-round fixes confirmed; one new problem (parked-centre at 5v3); fix round 2**                                   · laptop RTX 5070 Ti · GPU 72 % / 22 W / 1.7 GB of 12 GB · 0 training processes (0 paused)
 
 ## Phases
 
@@ -21,7 +21,7 @@ INTERNAL · the latest status of STE's own learning track and the NUS port, over
 | L0.7 | Process tooling and drills | RUNNING (laptop part DONE) | none | merged into `development`; laptop: full suite 1,420 passed / 0 failed, wake-up drill and resume drill both as expected (below); DONE when the 5090 has run the same (L07-5090) |
 | L0.8 | Game spec sheet | DONE | none | merged into `development`; QC passed; full suite on `development` 1,461 passed / 0 failed (41 min) |
 | L0.9 | Tag rule for the study: 1-for-1, nearest pair first | DONE | tier 1 fast engine | merged; QC + re-check passed; full suite on `development` 1,517 passed / 0 failed (31 min); the 5090 records its own tag-off positions (L09-5090) |
-| L0.10 | Scripted players for the study | RUNNING | tier 1 fast engine | fix round committed (7c4d761): parked-ring Guards settle by 20 s (3v3) / 30 s (5v3), team-mates start ≥ 1.15 m apart, still players + tag on → 0 tags in 10 s at 3v3 and 5v3, unpinned zone refused, stacked starts caught; 16 of 16 deliberate breakages caught; independent re-check running |
+| L0.10 | Scripted players for the study | RUNNING | tier 1 fast engine | re-check: all four first-round problems fixed (parked ring 0 off-station, still players 0 tags, unpinned zone refused, stacked starts caught; default game still identical). New: at 5v3 `guard_parked_centre` causes tags in 193 of 256 games (Guard 0 flies into the middle of the start circle and the filter pushes its team-mates into tag range); lead's call: with 2+ Guards every Guard holds its start; fix round 2 running |
 | L0.11 | Screening sweep (INFO) | RUNNING (pre-launch QC) | tier 1 fast engine | committed on `ste-l0.11` (5 commits), rebased onto the fixed L0.10: 344 cells × 1,000 games; still players + tag on → 0 tags at every size; 5v3 starts ≥ 1.15 m between team-mates, ≥ 1.77 m Guard–Strike; independent pre-launch review of the gate file and driver running; then GPU-only tests, a 0.15 GPU-h pilot, the run (cap 3 GPU-h) |
 | L0.12 | Best-response test: is the game worth learning? | NOT STARTED | tier 1 fast engine | cap 6 GPU-h |
 | L0.2 | Tier 2 speed in contested play | NOT STARTED | tier 2 Isaac Lab | 5090; cap 1.5 GPU-h |

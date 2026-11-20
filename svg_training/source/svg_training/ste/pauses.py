@@ -31,8 +31,12 @@ this PC"). A job's time is reduced by a pause only if one of the job's own pids 
 pause while one is open, so a filter after it would miss a job stopped by the second of two pauses); every resume and
 stop is kept, because the script sends SIGCONT to every job it finds. A pause line with no ``"pids"`` list at all (no
 committed copy of the script ever wrote one; a hand-written or foreign line) counts for every job, as before. The
-owner's view, every pause whoever it stopped, is :func:`paused_intervals` without ``pids`` and :func:`open_pause`
-(``ste/jobs.py`` refuses a launch while a pause is open).
+owner's view, every pause whoever it stopped, is :func:`paused_intervals` without ``pids`` and :func:`open_pauses`.
+
+**Whose pause** (L07-C1b). A line's ``by`` is the user name for a bare ``gpu_pause.sh pause``: the owner's pause.
+The lead tags a pause of its own sibling jobs with ``GPU_PAUSE_BY=lead`` (:data:`SESSION_BY`). ``ste/jobs.py``
+refuses a launch while any :func:`owner_pauses` is open (any open pause not tagged ``lead``, an untagged line
+included); the session's own pauses do not block it.
 
 A line that is not a JSON event (a line torn by a power cut) is skipped and reported on stderr. Standard library only.
 """
@@ -53,6 +57,7 @@ _PROC_STAT = Path("/proc/stat")
 _BOOT_KEY = "btime"                                 # "btime <unix seconds>": when this boot started
 _FD_FOLDER = Path("/proc/self/fd")
 _PAUSE = "pause"
+SESSION_BY = "lead"     # "by" of a pause the lead made (GPU_PAUSE_BY=lead scripts/gpu_pause.sh pause): not the owner's
 _CLOSING = ("resume", "stop")
 
 _merged: dict[tuple[Path, ...], tuple[tuple, IO[bytes]]] = {}   # logs -> (how they looked when merged, nameless file)
@@ -186,19 +191,28 @@ def pause_events(logs: Iterable[Path | str] | None = None) -> list[dict]:
     return [json.loads(line) for line in merged_log(logs).read_text().splitlines()]
 
 
-def open_pause(logs: Iterable[Path | str] | None = None) -> dict | None:
-    """The pause event that opened a pause still open now, whoever it stopped (none, or one closed by a later resume,
-    a stop or a boot: None). Pairing as ``nus/pauses.py``: after the last resume or stop, the first pause opens."""
-    spans = nus_pauses.paused_intervals(merged_log(logs), now=math.inf)
-    if not spans or spans[-1][1] != math.inf:
-        return None
-    opener = None
+def open_pauses(logs: Iterable[Path | str] | None = None) -> list[dict]:
+    """Every pause event still open now, oldest first: the pauses after the last resume, stop or boot (the first of
+    them opened the paused span, as ``nus/pauses.py`` pairs them; the later ones were made while it was open)."""
+    found: list[dict] = []
     for event in pause_events(logs):
         if event["event"] in _CLOSING:
-            opener = None
-        elif event["event"] == _PAUSE and opener is None:
-            opener = event
-    return opener
+            found = []
+        elif event["event"] == _PAUSE:
+            found.append(event)
+    return found
+
+
+def open_pause(logs: Iterable[Path | str] | None = None) -> dict | None:
+    """The pause event that opened a pause still open now, whoever made it and whoever it stopped; None if none."""
+    found = open_pauses(logs)
+    return found[0] if found else None
+
+
+def owner_pauses(logs: Iterable[Path | str] | None = None) -> list[dict]:
+    """The open pauses that are not the session's own (L07-C1b): every one whose ``by`` is not exactly
+    :data:`SESSION_BY`, a line without ``by`` included. Each blocks a launch: the owner is using the PC."""
+    return [event for event in open_pauses(logs) if event.get("by") != SESSION_BY]
 
 
 def paused_intervals(now: float | None = None, logs: Iterable[Path | str] | None = None,

@@ -14,7 +14,8 @@ The launcher holds the lock of ``state.json`` from before it starts the wrapper 
 wrapper's first act is to take that lock: the command starts only once the record exists. A launch is refused
 (:class:`LaunchRefused`) while an owner pause is open (``scripts/gpu_pause.sh pause`` with no ``resume`` yet, whether or
 not it stopped a job: a pause is also the owner's "I am using this PC", and a job started during it would run
-unpaused), while a job of the same name, or any job in the same run folder, is alive, and when ``ste/budget.py`` says
+unpaused; a pause the lead tagged ``GPU_PAUSE_BY=lead`` to run a solo job beside its paused siblings does not block,
+``ste/pauses.py``), while a job of the same name, or any job in the same run folder, is alive, and when ``ste/budget.py`` says
 the hours asked for would pass the task's cap or the phase cap. The hours asked for are the
 job's total over all its launches in its run folder, so the hours it has already logged there are not asked for a
 second time at a relaunch; a new run folder under an old job name is a new run and gets no such credit.
@@ -171,12 +172,14 @@ def launch(task: str, name: str, run_dir: Path | str, cmd: list[str], expected_m
         raise LaunchRefused(f"the beat must be above 0 seconds, got {beat_s!r}")
     run_dir = Path(run_dir).resolve()
     _check_shared_folder(run_dir)                                # before anything reads or makes the shared folder
-    paused = pauses.open_pause()
-    if paused is not None:
+    owners = pauses.owner_pauses()                               # the session's own pauses (by "lead") do not block
+    if owners:
+        paused = owners[0]
         made = datetime.datetime.fromtimestamp(paused["time"]).astimezone().isoformat(timespec="seconds")
-        raise LaunchRefused(f"the owner's pause of {made} (by {paused.get('by', 'unknown')}, pids {paused.get('pids')}) "
-                            f"is still open: nothing was launched. Only the owner ends it, with scripts/gpu_pause.sh "
-                            f"resume; launch again after that")
+        more = f" and {len(owners) - 1} more" if len(owners) > 1 else ""
+        raise LaunchRefused(f"the owner's pause of {made} (by {paused.get('by', 'unknown')}, pids {paused.get('pids')})"
+                            f"{more} is still open: nothing was launched. Only the owner ends it, with "
+                            f"scripts/gpu_pause.sh resume; launch again after that")
     try:
         budget.check_launch(task, gpu_h, settings, job=name, run_dir=str(run_dir))
     except budget.BudgetError as err:

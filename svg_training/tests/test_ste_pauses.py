@@ -303,6 +303,42 @@ def test_a_pause_left_open_before_this_boot_is_not_open(logs, monkeypatch):
     assert pauses.open_pause()["time"] == T0 + 600
 
 
+# ------------------------------------------------------------------------------------------------ L07-C1b: whose pause
+def tagged(log: Path, event: str, time_s: float, by: str | None) -> None:
+    row = {"event": event, "time": time_s, "pids": []}
+    if by is not None:
+        row["by"] = by
+    log.parent.mkdir(parents=True, exist_ok=True)
+    with log.open("a") as stream:
+        stream.write(json.dumps(row) + "\n")
+
+
+def test_open_pauses_lists_every_pause_since_the_last_resume(logs):
+    """The launch check needs every open pause, not only the one that opened the span: an owner pause made while the
+    session's own pause is open must still block."""
+    shared_log, _, _ = logs
+    tagged(shared_log, "pause", T0 + 1, "jeremy")
+    tagged(shared_log, "resume", T0 + 2, "jeremy")
+    assert pauses.open_pauses() == []
+    tagged(shared_log, "pause", T0 + 10, pauses.SESSION_BY)
+    tagged(shared_log, "pause", T0 + 20, "jeremy")
+    assert [(e["time"], e["by"]) for e in pauses.open_pauses()] == [(T0 + 10, "lead"), (T0 + 20, "jeremy")]
+    assert pauses.open_pause()["time"] == T0 + 10
+
+
+@pytest.mark.parametrize("bys, owners", [
+    (["lead"], []), (["lead", "lead"], []), (["jeremy"], ["jeremy"]), (["lead", "jeremy"], ["jeremy"]),
+    (["jeremy", "lead"], ["jeremy"]), ([None], [None]), (["boot"], ["boot"]),
+], ids=["session", "session_twice", "owner", "session_then_owner", "owner_then_session", "untagged_legacy", "other"])
+def test_only_a_pause_tagged_by_the_session_is_its_own(logs, bys, owners):
+    """L07-C1b: an open pause is the session's own only if its "by" is exactly SESSION_BY ("lead"). Anything else,
+    a missing "by" included (a legacy line), is the owner's."""
+    shared_log, _, _ = logs
+    for offset, by in enumerate(bys):
+        tagged(shared_log, "pause", T0 + offset, by)
+    assert [event.get("by") for event in pauses.owner_pauses()] == owners
+
+
 def test_importing_loads_no_pytorch():
     code = "import sys\nimport svg_training.ste.pauses\nassert 'torch' not in sys.modules and 'numpy' not in sys.modules\n"
     done = subprocess.run([child_python(), "-c", code], env=child_env(str(SOURCE)), capture_output=True, text=True)

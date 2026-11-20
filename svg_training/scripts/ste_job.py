@@ -13,7 +13,8 @@ launch   starts <command ...> detached (its own session; output appended to <run
          phase cap in configs/ste_learning.toml would be passed (hours this job has already logged in the same
          run folder are not asked for twice; a new run folder under an old name is a new run). Refused too while
          the job, or any job in that run folder, is alive, and while an owner pause (scripts/gpu_pause.sh pause) is
-         open, even one that stopped no job: only the owner resumes it. Run the same line again after a job died (a
+         open, even one that stopped no job: only the owner resumes it (a pause the lead made with
+         GPU_PAUSE_BY=lead, of its own sibling jobs, does not block). Run the same line again after a job died (a
          reboot, a kill): the command resumes from its checkpoint. After a reboot use bash <run-dir>/cmd.txt: it
          sets or unsets PYTHONPATH, CUDA_VISIBLE_DEVICES, PYTORCH_CUDA_ALLOC_CONF, SVG_SHARED_DIR and
          SVG_PAUSE_LEGACY_LOGS as at the first launch. A relaunch with another shared folder than the run folder

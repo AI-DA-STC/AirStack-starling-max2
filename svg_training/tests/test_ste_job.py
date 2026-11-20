@@ -715,6 +715,29 @@ def test_launch_is_refused_while_an_owner_pause_is_open(bench, tmp_path):
     assert bench.wait("late").returncode == 0
 
 
+@pytest.mark.parametrize("bys, refused", [
+    (["lead"], False), (["owner"], True), (["lead", "owner"], True), (["owner", "lead"], True), ([None], True),
+], ids=["session_pause", "owner_pause", "session_then_owner", "owner_then_session", "untagged_legacy"])
+def test_launch_goes_ahead_only_under_the_sessions_own_pause(bench, bys, refused):
+    """L07-C1b: the lead pauses only its own siblings (GPU_PAUSE_BY=lead) to run a solo job (AUTOMATION 2.2). Such a
+    pause does not block a launch; any owner pause still does, alone or mixed, and so does an untagged line."""
+    for offset, by in enumerate(bys):
+        row = {"event": "pause", "time": time.time() - 30.0 + offset, "pids": [4242]}
+        if by is not None:
+            row["by"] = by
+        log = shared.pauses_log()
+        log.parent.mkdir(parents=True, exist_ok=True)
+        with log.open("a") as stream:
+            stream.write(json.dumps(row) + "\n")
+    done = bench.launch("solo", bench.dummy("solo", steps=4))
+    if refused:
+        assert done.returncode == rc.EXIT_REFUSED and "gpu_pause.sh resume" in done.stderr, done.stdout
+        assert len(done.stderr.splitlines()) == 1 and not bench.run_dir("solo").exists()
+    else:
+        assert done.returncode == 0, done.stderr
+        assert bench.wait("solo").returncode == 0
+
+
 def test_a_pause_left_open_by_a_previous_boot_does_not_refuse_a_launch(bench):
     """After a power cut the relaunch from cmd.txt must go ahead: nothing is paused after a boot (ste/pauses.py)."""
     pause_line("pause", 1000.0, [4242])                                    # 1970: long before this boot

@@ -254,3 +254,35 @@ def test_script_syntax_and_the_documented_names():
     text = SCRIPT.read_text()
     for name in ("SVG_SHARED_DIR", "GPU_PAUSE_EXCLUDE", "runs/shared/pauses.log", "runs/nus_port/phase5/pauses.log", r"scripts/ste_"):
         assert name in text, name
+
+
+# ------------------------------------------------------------------------------------------------ STE track, L07-C1b
+def test_a_pause_is_the_owners_unless_the_session_tags_it(dummy):
+    """L07-C1b: the "by" field is the user name, as before, for a bare ``gpu_pause.sh pause`` (what the owner types).
+    The lead tags its own pause with GPU_PAUSE_BY=lead; the CLI is unchanged."""
+    proc, env, log = dummy
+    assert _wait(lambda: _state(proc.pid) in "SR")
+    owner_env = dict(env)
+    owner_env.pop("GPU_PAUSE_BY", None)
+    assert _run(owner_env, "pause").returncode == 0
+    assert _run(owner_env, "resume").returncode == 0
+    assert _run(dict(env, GPU_PAUSE_BY="lead"), "pause").returncode == 0
+    assert _run(dict(env, GPU_PAUSE_BY="lead"), "resume").returncode == 0
+    rows = [json.loads(line) for line in log.read_text().splitlines()]
+    assert [row["by"] for row in rows] == [os.environ.get("USER", "unknown")] * 2 + ["lead"] * 2
+    assert all(row["pids"] == [proc.pid] for row in rows)
+
+
+@pytest.mark.parametrize("tag", ['le"ad', "lead x", "lead\\", ""])
+def test_a_tag_that_would_break_the_line_is_refused_before_any_signal(dummy, tag):
+    """The tag goes into a JSON line unescaped, so only letters, digits, '.', '_' and '-' are accepted; anything else
+    is refused (exit 2) before a process is signalled or a line written. An empty GPU_PAUSE_BY means the default."""
+    proc, env, log = dummy
+    assert _wait(lambda: _state(proc.pid) in "SR")
+    out = _run(dict(env, GPU_PAUSE_BY=tag), "pause")
+    if tag == "":
+        assert out.returncode == 0 and json.loads(log.read_text())["by"] == os.environ.get("USER", "unknown")
+        _run(env, "resume")
+        return
+    assert out.returncode == 2 and "GPU_PAUSE_BY" in out.stderr
+    assert _state(proc.pid) in "SR" and not log.exists()

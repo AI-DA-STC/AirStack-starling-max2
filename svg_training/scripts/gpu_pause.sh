@@ -34,6 +34,11 @@
 # scripts/ste_job.py, which only watch a job; empty = no exclusion), GPU_PAUSE_PIDDIR (run_nus_job.sh's pid files, default
 # ~/nus_jax_runs), GPU_PAUSE_EXE (executables of our conda environments), GPU_PAUSE_LOG (default
 # <svg_training>/runs/nus_port/phase5/pauses.log), SVG_SHARED_DIR (the shared folder). Only Python processes match.
+#
+# Who paused (STE track, L07-C1b): every line's "by" is the user name, so a bare `gpu_pause.sh pause` is the OWNER's pause, and
+# the STE launcher refuses to start a job while it is open. The lead (a Claude session) pausing only its own sibling jobs to
+# run a solo job (ste_learning/AUTOMATION.md section 2.2) sets GPU_PAUSE_BY=lead (with GPU_PAUSE_PATTERN for those siblings):
+# such a pause does not block a launch. GPU_PAUSE_BY: letters, digits, '.', '_', '-' only; empty = the user name.
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -47,6 +52,11 @@ EXCLUDE="${GPU_PAUSE_EXCLUDE-scripts/ste_job\.py}"
 PIDDIR="${GPU_PAUSE_PIDDIR:-$HOME/nus_jax_runs}"
 EXE="${GPU_PAUSE_EXE:-/miniconda3/envs/(nus_jax|env_isaaclab)/bin/python}"
 LOG="${GPU_PAUSE_LOG:-$HERE/runs/nus_port/phase5/pauses.log}"
+BY="${GPU_PAUSE_BY:-${USER:-unknown}}"                        # unset or empty: the user name, as before
+if [ -n "${GPU_PAUSE_BY:-}" ] && [[ ! "$GPU_PAUSE_BY" =~ ^[A-Za-z0-9._-]+$ ]]; then    # it goes into a JSON line as it is
+  echo "GPU_PAUSE_BY must be letters, digits, '.', '_' or '-' only, got '$GPU_PAUSE_BY': nothing was done" >&2
+  exit 2
+fi
 
 shared_log() {  # the one shared pause log (header); prints nothing when the shared folder cannot be found
   local common
@@ -96,7 +106,7 @@ log_event() {  # event, pids...
   local list line shared
   list="$(printf '%s,' "$@")"; list="[${list%,}]"
   # one line, built once (one clock reading): the same text goes to both logs, so a reader of both counts the event once
-  line="$(printf '{"event": "%s", "time": %s, "pids": %s, "by": "%s"}' "$event" "$(date +%s.%N)" "$list" "${USER:-unknown}")"
+  line="$(printf '{"event": "%s", "time": %s, "pids": %s, "by": "%s"}' "$event" "$(date +%s.%N)" "$list" "$BY")"
   mkdir -p "$(dirname "$LOG")"
   printf '%s\n' "$line" >> "$LOG"
   shared="$(shared_log)"

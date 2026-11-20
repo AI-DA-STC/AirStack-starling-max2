@@ -82,6 +82,11 @@ All must hold:
 **Solo vs side by side.** Short pilots and speed measurements (L0.2) run alone (starved runs say nothing). Multi-seed
 training shares (memory fraction set; ≥ 8 GB free; ≤ 3 GPU processes, PROPOSED). A solo task next to siblings: wait,
 or pause only our own siblings the P1b way (pause by pattern, record in `gpu.own_pauses`, resume in an EXIT trap).
+The lead tags such a pause as its own: `GPU_PAUSE_BY=lead GPU_PAUSE_PATTERN='<the siblings' pattern>'
+scripts/gpu_pause.sh pause`, and the same two variables for the resume. A tagged pause does not block the solo
+launch; an owner pause (a bare `gpu_pause.sh pause`) still does. A resume continues every job its pattern finds and
+closes every open pause in the log, so before resuming check that no owner pause was made meanwhile
+(`svg_training.ste.pauses.owner_pauses()` is empty); if one was, leave it to the owner.
 
 **Pauses.** Stat `T` = paused, not stalled. Never resume a pause we did not make. Simulator appears mid-run: pause
 our jobs (recorded), raise H4, resume when it is gone (PROPOSED).
@@ -183,7 +188,7 @@ Code: `source/svg_training/ste/` (`shared.py`, `pauses.py`, `state.py`, `atomic.
 | State file | `state.json` under a lock, written atomically; a job is alive only if its pid exists with the recorded start time in the current boot |
 | Trainer contract | the same command resumes from its last checkpoint; SIGINT or SIGTERM saves and exits; a non-finite value never overwrites the last good checkpoint; the cap counts effective time (time a pause stopped this job excluded) |
 | GPU-hour ledger | used GPU-hours per task and per phase from `gpu_hours.log` (CUDA intervals less the time a pause stopped that job); `launch` refuses a job over the task or phase cap of `configs/ste_learning.toml`; a relaunch of the same job in the same run folder is not charged again for hours it already logged, but a new run folder under an old job name is a new run and gets no credit |
-| Launcher and waiter | `scripts/ste_job.py launch / wait / status`; `launch` refuses while an owner pause is open; `bash <run>/cmd.txt` relaunches with the first launch's `PYTHONPATH`, `CUDA_VISIBLE_DEVICES`, `PYTORCH_CUDA_ALLOC_CONF`, `SVG_SHARED_DIR` and `SVG_PAUSE_LEGACY_LOGS`, each set to the same value or unset as it was; a relaunch with another shared folder than the run folder recorded is refused |
+| Launcher and waiter | `scripts/ste_job.py launch / wait / status`; `launch` refuses while an owner pause is open (a pause tagged `GPU_PAUSE_BY=lead` is the session's own and does not block); `bash <run>/cmd.txt` relaunches with the first launch's `PYTHONPATH`, `CUDA_VISIBLE_DEVICES`, `PYTORCH_CUDA_ALLOC_CONF`, `SVG_SHARED_DIR` and `SVG_PAUSE_LEGACY_LOGS`, each set to the same value or unset as it was; a relaunch with another shared folder than the run folder recorded is refused |
 
 **Exit codes** (`ste/run_contract.py`): 0 done; 2 refused to start; 3 stopped at its cap; 4 interrupted (SIGINT or
 SIGTERM); 5 non-finite value. The waiter adds: 20 ENDED_EARLY (the job returned 0 before its expected minimum
@@ -214,13 +219,14 @@ Resume drill:
    again. Expected: `alive`, then `dead`.
 3. `$PY scripts/ste_job.py wait l07_resume; echo "waiter exit $?"`. Expected: `DIED exit=none`, `waiter exit 21`.
 4. Relaunch with `bash runs/ste_l07/resume/cmd.txt` (it restores the first launch's environment and shared folder; the same line typed again works only from the same shell): it prints `launch=2`. Wait again. Expected:
-   `DONE exit=0`, `waiter exit 0`, a log line `resumed from step 30 of 120` (or 40), and
+   `DONE exit=0 … run_effective≈120s`, `waiter exit 0`, a log line `resumed from step 30 of 120` (or 40), and
    `{"steps": 120, "total": 7260.0}` in `runs/ste_l07/resume/result.json`.
 
 Do not pause during a drill while a real GPU job runs: `gpu_pause.sh pause` pauses every job it finds.
 
 **Known limits (L0.7 as built).** `launch` refuses (exit 2) while an owner pause is open, even one that stopped no
-job; only the owner ends it, with `gpu_pause.sh resume`. A pause takes time off a job only if the pause line lists the
+job; only the owner ends it, with `gpu_pause.sh resume`. Only a pause the lead tagged `GPU_PAUSE_BY=lead` (§2.2) does
+not block; an untagged line counts as the owner's. A pause takes time off a job only if the pause line lists the
 job's command pid. A pause that stopped only a process the command started (a trainer behind `bash -c`) is not matched:
 that job is charged the paused time, the safe side. `--gpu-h` at launch and the trainer's own cap are not linked: the caller keeps them equal. The effective time
 carried in a checkpoint undercounts by up to one checkpoint interval per SIGKILL; the ledger loses at most one minute.

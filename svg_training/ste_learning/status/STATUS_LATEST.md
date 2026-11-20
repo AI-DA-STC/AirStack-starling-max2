@@ -1,6 +1,6 @@
 INTERNAL · the latest status of STE's own learning track and the NUS port, overwritten at every update; the history is in [LOG.md](LOG.md). Produced by the `train-status` skill.
 
-**Status, 2026-11-20 23:13 (+08:00), event: L0.8 started**   · laptop RTX 5070 Ti · GPU 0 % / 15 W / 1.8 GB of 12 GB · 0 training processes (0 paused)
+**Status, 2026-11-20 23:24 (+08:00), event: L0.7 independent QC returned: NOT DONE (1 Critical, 5 Important)**    · laptop RTX 5070 Ti · GPU 0 % / 15 W / 1.8 GB of 12 GB · 0 training processes (0 paused)
 
 ## Phases
 
@@ -18,7 +18,7 @@ INTERNAL · the latest status of STE's own learning track and the NUS port, over
 | ID | Plain name | Status | Simulator | Result / ETA |
 |---|---|---|---|---|
 | L0.1 | Track set-up: config and test skeleton | DONE | none | settings file, loader, tests; independent QC closed all findings |
-| L0.7 | Process tooling and drills | RUNNING | none | laptop: independent QC next, then fix L07-F1, then the wake-up and resume drills |
+| L0.7 | Process tooling and drills | RUNNING | none | independent QC: NOT DONE, 1 Critical + 5 Important to fix (below), then full suite on both machines, then the drills |
 | L0.8 | Game spec sheet | RUNNING | none | builder on branch `ste-l0.8` (CPU; lead's call: runs beside the L0.7 review, disjoint files) |
 | L0.9 | Tag rule for the study: 1-for-1, nearest pair first | NOT STARTED | tier 1 fast engine | after L0.8; CPU |
 | L0.10 | Scripted players for the study | NOT STARTED | tier 1 fast engine | after L0.9; CPU |
@@ -35,7 +35,7 @@ INTERNAL · the latest status of STE's own learning track and the NUS port, over
 GPU-h used in L0 so far: 0 of 19 (RTX 5090: 0, from the 22:20 status; laptop: 0, no job launched).
 
 Laptop full CPU suite (20 Nov, `development` at 5c5d465, after `scripts/nus_install_provisional.sh`): **1,333 passed, 2 failed, 48 skipped** in 24 min. Both failures repeat when run alone:
-- **L07-F1** `test_ste_job.py::test_f_d_a_killed_job_reads_dead_the_waiter_says_died_and_the_same_command_resumes`: the waiter prints 0.3 s, the elapsed time was 0.293 s. Candidate cause: the one-decimal rounding against an exact bound (not yet confirmed).
+- **L07-F1** `test_ste_job.py::test_f_d_a_killed_job…resumes`: CONFIRMED by QC: the tool does not over-report (it measures from the same start; ~0.255 s raw, printed rounded to 0.3); the test compares the rounded text with the exact elapsed time. Fix: allow half a display step.
 - **TEST-F2** `test_train_standin.py::test_default_path_bit_identical_after_the_nus_hooks`: FIXED (447b317). Measured on the laptop: the hash repeats (75d2a955…), hold rates equal the recorded [0.25, 0.375], and forcing PyTorch's CPU capability down changes the hash; threads (trainer runs one) and local files (not read on this path) ruled out. The fingerprint is now one hash per CPU capability; hold rates are checked on every machine.
 
 ## Other workstreams
@@ -46,10 +46,15 @@ Laptop full CPU suite (20 Nov, `development` at 5c5d465, after `scripts/nus_inst
 | SYNC-2 | Status skill `train-status` and the owner's standing rules in CLAUDE.md | DONE |
 | SYNC-3 | Root `CLAUDE.md` and every page: training work lands on `development` | DONE |
 | SYNC-4 | STE Guard policy (T41 run folder) in the PROVISIONAL bundle | DONE; installed on the laptop (46 files, agent.pt c91bea51…) |
-| L07-F1 | Fix: waiter-duration test bound (rounding) | QUEUED (L0.7 independent QC running, read-only) |
+| L07-F1 | Fix: waiter-duration test bound (rounding) (QC I5) | QUEUED, fix 1 of 6 |
+| L07-C1 | Fix: an open pause takes time off every job, and launch does not check for one: a job launched during a pause runs on the GPU with 0 GPU-h counted and its cap never fires | QUEUED, fix 2 of 6 (Critical) |
+| L07-I1 | Fix: a new run reusing an old job name inherits that job's GPU-hours as credit (task cap can be exceeded) | QUEUED, fix 3 of 6 |
+| L07-I2 | Fix: `cmd.txt` relaunch loses the environment (PYTHONPATH, CUDA alloc setting, shared-folder path) | QUEUED, fix 4 of 6 |
+| L07-I3 | Fix: the launcher's wrapper can die (clock step back, full disk) while the job runs on: GPU time stops being logged | QUEUED, fix 5 of 6 |
+| L07-I4 | Fix: a job resumed after a reboot is flagged ENDED_EARLY (exit 20) though it finished correctly | QUEUED, fix 6 of 6 (lead's call: fix, it is the prescribed resume path) |
 | TEST-F2 | Fix: bit-level training fingerprint is machine-specific | DONE (447b317; trainer test file 43 passed, 1 skipped) |
 | TEST-F2b | On the 5090: confirm its CPU capability is AVX512 (the key its 18 Nov hash is now filed under) | WAITING: next 5090 session runs the test (fails or skips loudly if wrong) |
 
-**Next.** (1) L0.7 Process tooling and drills: independent QC (running). (2) L07-F1 and any QC findings, one at a time; L0.8 being built beside it. (3) L0.7 drills on the laptop, then L0.8 Game spec sheet.
+**Next.** (1) L0.7 fixes L07-F1, C1, I1–I4, one at a time, each tested first and committed alone; scoped QC re-check. (2) Full CPU suite, then the wake-up and resume drills on the laptop. (3) L0.8 Game spec sheet (being built), then L0.9 Tag rule.
 
 **Waiting on you.** Nothing (owner, 20 Nov: "go ahead with ur recommendations then continue").

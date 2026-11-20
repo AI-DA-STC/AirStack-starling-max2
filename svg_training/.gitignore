@@ -2,4 +2,4 @@ runs/
 __pycache__/
 *.egg-info/
 configs/local/
-data/
+/data/

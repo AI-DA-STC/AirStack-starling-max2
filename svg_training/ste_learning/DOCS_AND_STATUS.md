@@ -39,7 +39,7 @@ An AirStack session writes both after the owner approves the change plan. This t
 | Run ends (any verdict, ABORTED included) | record, ledger row (W numbers on the 5090, renumbered to T at merge), video paths in the record | tooling and test and QC engineer |
 | Gate verdict | status (event update); `ste_learning/PLAN.md` task row | writer |
 | Stage result (a stage's gates all scored) | `WHAT_WE_FOUND.md` section, `STE_LEARNING.md` section, `README.md` lines, figure by a committed script, GIF | writer, after the lead asks; owner reviews before `main` |
-| Merge to `main` | HANDOFF §0, §4, §5 and "Last updated"; `docs/README.md` map row for any new page; glossary terms; the "Ready to push" line appears | writer drafts, lead commits |
+| Merge to `development` | HANDOFF §0, §4, §5 and "Last updated"; `docs/README.md` map row for any new page; glossary terms; the "Ready to push" line appears | writer drafts, lead commits |
 | Milestone change | Linear update file in `docs/linear/updates/`, owner uploads, record in `synced/`, new snapshot if titles or statuses changed | writer drafts, owner uploads |
 | Owner decision (a P row decided) | DISCUSSION §3 row (append-only), affected STANDARDS rows; GLOSSARY if a term changes | lead; writer for wording |
 

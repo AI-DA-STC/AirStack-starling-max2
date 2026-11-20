@@ -1,6 +1,6 @@
 INTERNAL · the latest status of STE's own learning track and the NUS port, overwritten at every update; the history is in [LOG.md](LOG.md). Produced by the `train-status` skill.
 
-**Status, 2026-11-20 21:45 (+08:00), event: owner moves to the laptop** · RTX 5090 · GPU 0 % / 79 W / 1.3 GB of 32 GB · 0 training processes (0 paused)
+**Status, 2026-11-20 22:20 (+08:00), event: owner's rulings on the working branch and the checkpoint** · RTX 5090 · GPU 0 % / 79 W / 1.3 GB of 32 GB · 0 training processes (0 paused)
 
 ## Phases
 
@@ -26,10 +26,10 @@ INTERNAL · the latest status of STE's own learning track and the NUS port, over
 | L0.12 | Best-response test: is the game worth learning? | NOT STARTED | tier 1 fast engine | cap 6 GPU-h |
 | L0.2 | Tier 2 speed in contested play | NOT STARTED | tier 2 Isaac Lab | 5090; cap 1.5 GPU-h |
 | L0.13 | Does tier 2 train at all? | NOT STARTED | tier 2 Isaac Lab | 5090, after L0.2; cap 6 GPU-h |
-| L0.3 | STE Guard policy in tier 2 without retraining | NOT STARTED | tier 2 Isaac Lab | needs the T41 run folder (5090 only); cap 1.5 GPU-h |
+| L0.3 | STE Guard policy in tier 2 without retraining | NOT STARTED | tier 2 Isaac Lab | T41 policy now in the bundle; cap 1.5 GPU-h |
 | L0.4 | Side-by-side Starling render | NOT STARTED | tier 2 Isaac Lab | cap 0.2 GPU-h |
 | L0.5 | Starling video look fix | NOT STARTED | tier 2 Isaac Lab | after L0.4; cap 0.3 GPU-h |
-| L0.14 | Crazyflie route check | NOT STARTED | tier 1 fast engine (CPU) | part 1 needs the T41 run folder (5090 only); cap 0 GPU-h |
+| L0.14 | Crazyflie route check | NOT STARTED | tier 1 fast engine (CPU) | T41 policy now in the bundle; cap 0 GPU-h |
 | L0.6 | Gate G0 | NOT STARTED | none | after every task above; the owner decides |
 
 GPU-h used in L0 so far: 0 of 19 (RTX 5090: 0; laptop: 0).
@@ -40,11 +40,10 @@ GPU-h used in L0 so far: 0 of 19 (RTX 5090: 0; laptop: 0).
 |---|---|---|
 | SYNC-1 | Branch `development` for working on both machines; machine-switch note in HANDOFF §0 | DONE (to push) |
 | SYNC-2 | Status skill `train-status` and the owner's standing rules in CLAUDE.md, so new sessions on either machine post this without being asked | DONE (to push) |
-| SYNC-3 | Root `CLAUDE.md`: "work lands on `development`" line for training work | WAITING: owner's yes (outside `svg_training/`) |
+| SYNC-3 | Root `CLAUDE.md` and every page: training work lands on `development` | DONE (owner, 20 Nov; to push) |
+| SYNC-4 | STE Guard policy (T41 run folder) in the PROVISIONAL bundle | DONE (owner, 20 Nov; to push) |
 
 **Next.** On the laptop: L0.7 independent QC and the two drills, then L0.8 Game spec sheet (CPU).
 
-**Waiting on you.**
-1. Push branch `development` from GitHub Desktop, then on the laptop follow HANDOFF §0 "MOVING BETWEEN MACHINES".
-2. SYNC-3: may the root `CLAUDE.md` say that training work lands on `development` while it exists? Blocks nothing.
-3. The STE Guard policy's run folder (4.4 MB, 5090 only) is needed by L0.3 and L0.14: commit it, or copy it by hand when needed? Blocks nothing until those tasks.
+**Waiting on you.** Push branch `development` from GitHub Desktop, then on the laptop follow HANDOFF §0 "MOVING BETWEEN
+MACHINES". Nothing else.

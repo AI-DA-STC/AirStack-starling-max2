@@ -45,8 +45,8 @@ Phase 5 in progress (R0 T29, N0 T30 and C0 T33 PASS; 5.1 FAIL T43: route (b) sto
    folder, stop and ask the owner; other Claude sessions work in those places. One approved
    exception: running (not editing) `tools/sim.sh` to record velocity-step logs (STANDARDS §1).
 2. **The folder is part of the repository since 14 November 2026** (owner's decision: the pipeline is
-   added to AirStack). Commit finished, tested work in the live clone with explicit paths, as the root
-   `CLAUDE.md` says; never push (the owner pushes), never `git add -A`, never `--no-verify`. A change
+   added to AirStack). Commit finished, tested work on `development` with explicit paths ("Two machines, one
+   working branch" below; the root `CLAUDE.md` says the same); never push (the owner pushes), never `git add -A`, never `--no-verify`. A change
    under `docker/` or any YAML needs a line in `docs/record/CHANGES.md` (root `docs/CODING_STANDARD.md`).
 3. **Numbers flow from the drone to the trainer, never back.** Nothing here changes a drone
    parameter, an AirStack config or the sim airframe (repository iron rule 9).
@@ -65,8 +65,9 @@ Phase 5 in progress (R0 T29, N0 T30 and C0 T33 PASS; 5.1 FAIL T43: route (b) sto
 
 ## How a session runs
 
-Start Claude **from this folder** (`cd ~/AirStack-starling-max2/svg_training && claude`) so the
-agents and skills below load. Then:
+Start Claude **from this folder on `development`** (`cd ~/AirStack-starling-max2-dev/svg_training && claude`; create the
+worktree once with `git -C ~/AirStack-starling-max2 worktree add ../AirStack-starling-max2-dev development`) so the
+agents and skills below load and the work lands on the shared branch. Then:
 
 | Say or need | Skill |
 |---|---|
@@ -93,8 +94,10 @@ other stopped, from git alone.
 
 - **`development` is the working branch on both machines** while it exists. Work lands on `development` (small edits
   directly, larger ones by fast-forward from a worktree branch cut from `development`); `main` moves only when the owner
-  says so. This replaces "commits land on `main`" of the root `CLAUDE.md` for `svg_training/` work (the root file is
-  outside this folder; the owner was asked to approve the matching line there).
+  says so. The root `CLAUDE.md` says the same for training work (owner, 20 Nov 2026). The working folder is the worktree
+  `~/AirStack-starling-max2-dev` on `development` on both machines; the docker-mounted live clone stays on `main` for
+  flight work. The mirror (`~/Documents/GitHub/AirStack-starling-max2`, where it exists) is kept on `development` and
+  updated with `pull --ff-only ~/AirStack-starling-max2 development`.
 - **Start of a session:** `git fetch origin` (or the owner pulls in GitHub Desktop), then `git status -sb` must show
   `development` level with `origin/development`. If it is behind, the other machine has pushed: fast-forward first. If
   it has diverged, stop and ask the owner.
@@ -105,7 +108,8 @@ other stopped, from git alone.
 - **What does not travel in git:** Claude's user memory (`~/.claude/`; the owner's standing rules are below so they
   travel), `runs/` (run folders, checkpoints, videos, the shared folder `runs/shared/` with its GPU-hour ledger),
   `configs/local/` (rebuilt with `scripts/nus_install_provisional.sh`), and the 5090-only folders listed below.
-  HANDOFF §0 names any run folder the next task needs and where it is.
+  A run folder a later task needs goes into the PROVISIONAL bundle (`nus_provisional/`, installed to the same path under
+  `runs/`), as the STE Guard policy (T41) did on 20 Nov; HANDOFF §0 names it.
 
 ## The owner's standing rules (portable; they were in one machine's Claude memory)
 
@@ -177,7 +181,8 @@ needs is in this folder's committed files (HANDOFF first).
   `svg_training/README.md` (option A text).
   Approved (owner, 20 November 2026): one more row in the root `README.md` "I want to…" table and one sentence in its
   `svg_training/` row, both pointing at `ste_learning/README.md`; and the status text of this folder's row in the root
-  `CLAUDE.md` (stage 5.1, the STE learning track).
+  `CLAUDE.md` (stage 5.1, the STE learning track). Approved (owner, 20 November 2026): the root `CLAUDE.md` says that
+  training work lands on `development` (the two-clones paragraph and the two lines of "More than one Claude session").
 - Ledger rows written on the 5090 are W numbers; the lead renumbers them to the next T numbers at merge
   (records/README.md explains this to readers).
 - Reader pages (label Read in docs/README.md): neutral and factual, like a short technical report; no "you"/"your" and no

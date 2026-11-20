@@ -59,6 +59,7 @@ topology). Network/router details live in the companion repo
 <!-- IRON_RULES:END -->
 
 **Two clones, one workflow:** `~/AirStack-starling-max2` is the **live** clone (docker-mounted) — **commits land HERE**, on `main` (a small edit directly, anything larger by fast-forward from a worktree branch: [More than one Claude session](#more-than-one-claude-session-on-this-repo)). `~/Documents/GitHub/AirStack-starling-max2` is the **mirror** GitHub Desktop pushes from — update it with `git -C ~/Documents/GitHub/AirStack-starling-max2 pull ~/AirStack-starling-max2 main`. **Never push from Claude** — the user pushes via GitHub Desktop. (Every 10-19/10-20 commit was made in the live clone; the older note "commit in the mirror, pull in the live clone" was wrong.) Both clones were put on the new `main` on 2026-10-07; the live clone's old-branch config edits are backed up in `~/AirStack-starling-max2-local-edits-2026-10-07/`.
+**Training work (`svg_training/`) lands on `development`, not `main`** (owner, 2026-11-20): the owner works on the home RTX 5090 and the RTX 5070 Ti laptop in turns, and `development` is the working branch both machines share. Training sessions work in a worktree on `development` (`~/AirStack-starling-max2-dev`, `git worktree add ../AirStack-starling-max2-dev development`), fast-forward their topic branches into it, and the mirror pulls `development` (`git -C ~/Documents/GitHub/AirStack-starling-max2 pull --ff-only ~/AirStack-starling-max2 development` with the mirror on `development`). `main` moves only on the owner's word. Flight-stack work, the docker-mounted live clone and `docs/DOCS_STANDARD.md` keep `main`. Details: [svg_training/CLAUDE.md](svg_training/CLAUDE.md), "Two machines, one working branch".
 
 ## More than one Claude session on this repo
 
@@ -66,8 +67,8 @@ Assume another session may be working here at any time.
 
 - Before editing, look: `git status -sb`, `git worktree list`, and `find . -path ./.git -prune -o -type f -mmin -30 -print`. Uncommitted or untracked files you did not create belong to someone else: leave them alone and tell the owner what you saw.
 - Stage by explicit path only. Never `git add -A`, `git commit -a`, `git stash`, `git reset --hard`, `git checkout -- <file>` or `git clean`.
-- A one-file edit committed within minutes may go straight on `main`. Anything larger goes in its own worktree and branch (`git worktree add ../AirStack-starling-max2-<topic> -b <branch> main`).
-- Back to `main`: rebase the branch on `main`, rerun `tools/docs_check/check_docs.sh` and the unit tests (a fast-forward does not run the pre-commit guard), then `git merge --ff-only <branch>` in the live clone. If git refuses, stop and ask.
+- A one-file edit committed within minutes may go straight on `main` (on `development` for training work). Anything larger goes in its own worktree and branch (`git worktree add ../AirStack-starling-max2-<topic> -b <branch> main`, or `… development` for training work).
+- Back to `main` (to `development` for training work): rebase the branch on it, rerun `tools/docs_check/check_docs.sh` and the unit tests (a fast-forward does not run the pre-commit guard), then `git merge --ff-only <branch>` in the live clone. If git refuses, stop and ask.
 - Then pull the mirror. The owner pushes.
 
 **Session history:** pre-2026-09 session-by-session narrative used to live in `CLAUDE_NOTES.md`

@@ -21,7 +21,7 @@ Write the failing test, run it, watch it fail. `core/` and the tier 1 model are 
 launching Isaac. Run the whole suite on the host and, for anything the container runs, inside it too
 (`docker/run.sh '$SVG_PY -m pytest -q -W error -p no:cacheprovider'`).
 ```bash
-cd ~/AirStack-starling-max2/svg_training      # or the svg_training folder of your worktree
+cd ~/AirStack-starling-max2-dev/svg_training  # or the svg_training folder of your topic worktree
 unset PYTHONPATH                               # the 5090's shell sources ROS
 CUDA_VISIBLE_DEVICES="" PYTHONPATH=source ~/miniconda3/envs/env_isaaclab/bin/python -m pytest -q -p no:cacheprovider
 ```
@@ -61,10 +61,11 @@ If the change finishes, starts or reshapes a Linear issue, offer the owner an in
 
 ## 9. Prove nothing else changed
 ```bash
-git -C ~/AirStack-starling-max2 status -sb
+git status -sb      # in the worktree you work in; for training work that is ~/AirStack-starling-max2-dev or a topic worktree
 ```
 Only `svg_training/` entries from you may appear (plus `docs/record/CHANGES.md` for a `docker/` change).
-Commit finished, tested work with explicit paths (CLAUDE.md rule 2); never push, never `git add -A`.
+Commit finished, tested work with explicit paths on `development` (or a topic branch fast-forwarded into it; CLAUDE.md
+rule 2); never push, never `git add -A`.
 
 ## Stop and ask the owner
 - Any file outside `svg_training/`, including `~/IsaacLab` and the website repository.

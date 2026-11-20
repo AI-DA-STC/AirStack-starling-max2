@@ -82,7 +82,7 @@ A skip is not a pass.
 
 ## 5. QC checklist
 
-**Before any merge to `main`:**
+**Before any merge to `development`:**
 - [ ] Full CPU suite green, with its output quoted. Isaac-marked tests green if `models/`, `envs/`, `compat/` or the filter changed.
 - [ ] `git -C .. status --short -- AirStack tools patches mocap mocap.sh starling_1_indoor_params.params localisation` prints nothing.
 - [ ] `tools/docs_check/check_docs.sh` 0 FAIL; every relative link in `svg_training/**/*.md` resolves (HANDOFF 19 Nov).

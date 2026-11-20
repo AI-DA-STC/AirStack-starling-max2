@@ -4,7 +4,7 @@ INTERNAL · the lab's AI-assistant hand-over notes. Not needed to read or run an
 
 > **How to use this file.** Read it at the start of a session, after [../../CLAUDE.md](../../CLAUDE.md).
 > §4 is the current state, §5 is what is waiting on people. Update both before you stop.
-> Last updated: 20 November 2026 ~21:45, on the home RTX 5090, branch `development` (the owner moves to the RTX 5070 Ti laptop: read "MOVING BETWEEN MACHINES" at the top of §0 first). Before: 20 November 2026 ~16:30 (L0.7 built).
+> Last updated: 20 November 2026 ~22:20, on the home RTX 5090, worktree `~/AirStack-starling-max2-dev` on branch `development` (the owner approved "training work lands on `development`" and the STE Guard policy in the bundle: see "MOVING BETWEEN MACHINES" at the top of §0). Before: 20 November 2026 ~21:45.
 
 ## 0. Resume here (for a new session or another Claude account)
 
@@ -16,7 +16,9 @@ note disagree, this file wins.
 
 The owner works on the home RTX 5090 and the RTX 5070 Ti laptop in turns and moved to the laptop on 20 Nov evening.
 The rules are in [`../../CLAUDE.md`](../../CLAUDE.md), sections "Two machines, one working branch" and "The owner's
-standing rules": **`development` is the working branch on both machines; `main` moves only on the owner's word.**
+standing rules": **`development` is the working branch on both machines; `main` moves only on the owner's word.** The
+root `CLAUDE.md` says the same for training work (owner, 20 Nov 2026). On the 5090 the working folder is the same
+worktree `~/AirStack-starling-max2-dev` (created 20 Nov, tracking `origin/development`); the mirror is on `development`.
 
 **On the laptop, the first time** (the laptop's clone already has `main`; this leaves it and any local change alone):
 ```bash
@@ -30,20 +32,21 @@ flight work; training work happens in the `-dev` worktree. Then: `mkdir -p runs`
 `scripts/nus_install_provisional.sh` (fills `configs/local/` and `runs/nus_port/` for the NUS tests), and the full CPU
 suite (CLAUDE.md, Environment). The session runs `train-start`, which ends with the status (`train-status`).
 
-**What is on `development` (20 Nov ~21:45):** everything on `main` up to `11d9d4f2` (L0 approved, L0.1, L0.14 added to
+**What is on `development` (20 Nov ~22:20):** everything on `main` up to `11d9d4f2` (L0 approved, L0.1, L0.14 added to
 the plan, the fleet record), then L0.7 (process tooling, built; independent QC and drills pending), the track pages
 updated to the tooling as built ([AUTOMATION](../../ste_learning/AUTOMATION.md) §7: commands, exit codes, drills), the
-`train-status` skill, the two-machine rules and the owner's standing rules in CLAUDE.md, and this note.
+`train-status` skill, the two-machine rules and the owner's standing rules in CLAUDE.md, the rule "training work lands
+on `development`" in the root `CLAUDE.md` and every page that named `main` as the target, the STE Guard policy's run
+folder in `nus_provisional/`, and this note.
 
 **Next on the laptop (CPU only; no GPU job on the laptop until the drills below have passed there):**
 1. L0.7 independent QC (`ste-test-qc-engineer`, read-only, on the code of commits `c035cbed`..`be5c6ee9`), then the wake-up
    and resume drills of AUTOMATION §7 on the laptop. Record the result in the status; L0.7 is DONE only then.
 2. L0.8 Game spec sheet, L0.9 Tag rule for the study, L0.10 Scripted players (PLAN §4): all CPU.
 3. Hold on the laptop: L0.2 and L0.13 are specified for the 5090 (tier 2 speed and training at up to 8,192 games; the
-   laptop GPU has 12 GB). L0.3 and L0.14 part 1 need the STE Guard policy's run folder, which is on the 5090 only:
-   `~/AirStack-starling-max2-nus-phase5/svg_training/runs/nus_port/phase5/pilots/2026-11-19_nus_phase5_pilot_p1b_run4/`
-   (4.4 MB: `agent_best.pt`, `agent.pt`, `interface.toml`, `train_result.json`, videos; git-ignored). Whether to commit
-   it or copy it by hand is the owner's call.
+   laptop GPU has 12 GB). The STE Guard policy's run folder, which L0.3 and L0.14 part 1 need, is in the PROVISIONAL
+   bundle since 20 Nov (owner): `scripts/nus_install_provisional.sh` puts it at
+   `runs/nus_port/phase5/pilots/2026-11-19_nus_phase5_pilot_p1b_run4/` on any machine (`agent.pt` is the T41 checkpoint).
 
 **GPU-hours used in phase L0: 0 of 19** on both machines. Each machine keeps its own ledger (`runs/shared/`, not in git):
 before any GPU job, take the other machine's total from the last status and add it by hand.

@@ -12,7 +12,7 @@ Source of truth for direction: [DISCUSSION_2026-11-19_20.md](DISCUSSION_2026-11-
 - One short-lived worktree per task group, cut from `main` (root CLAUDE.md):
   `git worktree add ../AirStack-starling-max2-ste-<topic> -b ste-<topic> main`. Before writing: `git status -sb`,
   `git worktree list`, files changed in the last 30 minutes; files you did not create belong to someone else.
-- Back to `main`: rebase on `main`, run the full suite, `git merge --ff-only` in the live clone. The lead merges; if git
+- Back to `development` (the shared working branch): rebase on `development`, run the full suite, `git merge --ff-only` in the live clone. The lead merges; if git
   refuses, stop and ask. The owner pushes; Claude never pushes.
 
 ## 2. Test first, on the CPU

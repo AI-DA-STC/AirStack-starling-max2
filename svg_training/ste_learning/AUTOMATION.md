@@ -24,7 +24,7 @@ detached jobs survive it; updates, gates and launches do not. IDs follow `WORK_B
 | scoring | QC engineer's verdict (`train-evaluate`), videos rendered → recorded |
 | recorded | record, W ledger row, gatekeeper read → documented |
 | documented | writer updates HANDOFF, drafts, GIFs → merged (reader pages: blocked-on-human) |
-| merged | code and records fast-forwarded into local `main`; the owner pushes |
+| merged | code and records fast-forwarded into local `development`; the owner pushes |
 | paused | owner `gpu_pause.sh` (stat `T`) or own pause → running |
 | blocked-on-human | open gate → the state the answer names |
 | failed | retries exhausted, ABORTED written → lead re-plans as a new run |

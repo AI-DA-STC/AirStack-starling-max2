@@ -30,7 +30,7 @@ If any row fails, stop and say which.
 
 ## 2. Launch in the background
 ```bash
-cd ~/AirStack-starling-max2/svg_training
+cd ~/AirStack-starling-max2-dev/svg_training     # or the svg_training folder of the topic worktree
 ~/IsaacLab/isaaclab.sh -p scripts/<script>.py --headless <args>   # planned; from build step S0
 ```
 Use the Bash tool's background option so the session stays free. Logs and checkpoints go to

@@ -63,7 +63,7 @@ OPEN. Never upgrade a label without the owner.
 |---|---|---|
 | lead (main session) | everything in `svg_training/`, commits, merges to local `main` | push; act on a human gate alone |
 | `ste-orchestrator` | `status/state.json`, `status/RESUME.md`, launches per AUTOMATION §2.2 | spawn agents, schedule wake-ups, retry a gate verdict |
-| `ste-software-engineer` | code and tests in its worktree | commit to `main`, move a gate, edit outside `svg_training/` |
+| `ste-software-engineer` | code and tests in its worktree | commit to `development` or `main`, move a gate, edit outside `svg_training/` |
 | `ste-test-qc-engineer` | gate drafts, scores, QC reports | build what it scores, edit a gate after a run |
 | `ste-technical-writer` | `status/*`, doc sections the lead names | invent numbers, push, pause or start jobs |
 | `ste-architect` | nothing (read-only reviews) | — |

@@ -328,7 +328,7 @@ Rules:
   port the owner widened this on 18 November 2026: every clip of the port, re-encoded small, may be committed. The record lists
   the video paths. A run that ends without videos says so in its record and why.
 - Ledger rows written on a workstation are numbered W1, W2, … (WORKSTATION_SETUP §4) and get the next free T numbers
-  when the branch merges to `main` ([records/README](records/README.md)).
+  when the branch merges to `development` ([records/README](records/README.md)).
 - `runs/` stays out of git. One exception (owner decision 6, 18 November 2026): the NUS-port files a ladder row and the
   NUS parity tests need (converted weights, local settings, starts, recordings) are committed once, PROVISIONAL, in
   [nus_provisional/](nus_provisional/README.md) and installed into `runs/nus_port/` and `configs/local/` by

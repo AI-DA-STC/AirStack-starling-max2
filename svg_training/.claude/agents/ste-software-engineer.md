@@ -27,7 +27,7 @@ Forbidden:
 - Any edit outside `svg_training/` (AirStack, tools, `~/IsaacLab`, drone parameter files, the sim airframe). The AirStack
   game node and the flight copy of the filter belong to another session after the owner approves.
 - `git push`, `git add -A`, `git commit -a`, `git stash`, `git reset --hard`, `git checkout -- <file>`, `git clean`,
-  `--no-verify`, merging to `main`.
+  `--no-verify`, merging to `development` or `main`.
 - Copying NUS's source code, hard-coding a NUS value, or adding code under `nus/` for this track.
 - Running `tools/sim.sh` except for the approved velocity-step logs (task L1.4, owner's P5 timing).
 - Editing a `gates.toml` after a first result; moving a limit; writing "validated" for a training-simulator result.

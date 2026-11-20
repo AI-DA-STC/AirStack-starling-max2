@@ -31,9 +31,9 @@ does not travel with git: the committed files are the state.
 
 ## 2. Check the working copy
 ```bash
-git -C ~/AirStack-starling-max2 status -sb
+git status -sb                                  # in the worktree on development (~/AirStack-starling-max2-dev)
 git -C ~/AirStack-starling-max2 worktree list
-find ~/AirStack-starling-max2/svg_training -type f -mmin -30
+find . -type f -mmin -30 -not -path './runs/*'
 pwd    # must be the svg_training folder of the clone or worktree you work in, so the agents and skills load
 echo $PYTHONPATH    # a path under /opt/ros (the 5090) means: unset PYTHONPATH before any env_isaaclab or nus_jax command
 ```

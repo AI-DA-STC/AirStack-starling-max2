@@ -56,7 +56,7 @@ Rules (owner's format; ste_learning/DISCUSSION_2026-11-19_20.md §4):
 
 **Waiting on you.** <numbered list of owner decisions, each with its ID (e.g. P1 tag radius) and what it blocks; "nothing" if none>
 
-**Ready to push.** <n> commits on `main`, mirror updated; push from GitHub Desktop. <one line: what they contain>
+**Ready to push.** <n> commits on `development` (ahead of `origin/development`), mirror updated; push from GitHub Desktop. <one line: what they contain>
 <!-- Include this line only while the mirror (~/Documents/GitHub/AirStack-starling-max2) is ahead of origin/main.
      If live main and mirror main differ, write instead: "Mirror not updated: the lead pulls it before the owner pushes."
      Drop the line once the owner has pushed. -->

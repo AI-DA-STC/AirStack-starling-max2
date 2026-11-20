@@ -97,7 +97,7 @@ follows §6. Detail of the tasks that existed in version 1 is in [WORK_BREAKDOWN
 | L0.3 | STE Guard policy in tier 2 without retraining | hold rate of the tier-1-trained policy (829 of 1,000, T41) on the Isaac Lab drone, same starts, parked Guard as control (row 6: Strike reaches 524, T24) | 1.5 | P3 |
 | L0.4 | Side-by-side Starling render | the Isaac Lab Starling beside the AirStack simulator's, with and without team paint | 0.2 | P4 |
 | L0.5 | Starling video look fix | clips keep the Starling's own look; team colour as a small marker | 0.3 | owner looks at stills (D9) |
-| L0.14 | Crazyflie route check | one page for gate G0 on flying the game on the lab's Crazyflies ([DISCUSSION](DISCUSSION_2026-11-19_20.md) §2.16): **(1)** the STE Guard policy (T41) scored in tier 1 on the CPU with a Crazyflie-like response beside the Starling's (INFO, planned in writing first; a sensitivity test, not a Crazyflie model: the logged Crazyflie trails its setpoint by about 0.56 s under its default controller, the fitted Starling response is about 0.15 s late); **(2)** which team sizes fit which arena at the Starling's 1.10 m filter distance, from the Crazyflie repository's offline planner (read-only use; the 20 Nov runs repeated with the planner's seeds and written up); **(3)** the specification of what a Crazyflie session would build: one adapter core (observation builder, decision hold, action scaling), a state-to-observation golden fixture, the rule plug-in. Nothing is written in the Crazyflie repository and nothing flies in this task. Needs the T41 run folder (workstation only) | 0 | none; feeds **P13** at G0 |
+| L0.14 | Crazyflie route check | one page for gate G0 on flying the game on the lab's Crazyflies ([DISCUSSION](DISCUSSION_2026-11-19_20.md) §2.16): **(1)** the STE Guard policy (T41) scored in tier 1 on the CPU with a Crazyflie-like response beside the Starling's (INFO, planned in writing first; a sensitivity test, not a Crazyflie model: the logged Crazyflie trails its setpoint by about 0.56 s under its default controller, the fitted Starling response is about 0.15 s late); **(2)** which team sizes fit which arena at the Starling's 1.10 m filter distance, from the Crazyflie repository's offline planner (read-only use; the 20 Nov runs repeated with the planner's seeds and written up); **(3)** the specification of what a Crazyflie session would build: one adapter core (observation builder, decision hold, action scaling), a state-to-observation golden fixture, the rule plug-in. Nothing is written in the Crazyflie repository and nothing flies in this task. Needs the T41 run folder (in the PROVISIONAL bundle since 20 Nov: `scripts/nus_install_provisional.sh`) | 0 | none; feeds **P13** at G0 |
 | L0.6 | **Gate G0** | one decision page for the owner with every number above (§5) | 0 | **owner** |
 
 **L0 budget: at most 19 GPU-h** (the task caps above sum to 18.5), alone on the GPU for the speed and training probes. Work estimate
@@ -131,7 +131,7 @@ documentation follows.
 | 6. Validate | controls first (positive must PASS, negative must FAIL), then the result against the frozen gate | `ste-test-qc-engineer`, independent of the builder | PASS / FAIL / INCONCLUSIVE / INFO |
 | 7. QC | merge checklist: the **full** CPU suite (never a subset: on 19 Nov a merge after a doc-only subset left a rule test failing on `main` until 20 Nov), docs check, record and ledger row, GIFs, gate hash unchanged, nothing outside `svg_training/` (VALIDATION_QC §5) | `ste-test-qc-engineer` | QC OK |
 | 8. Document | record, ledger row, status, the right doc sections ([DOCS_AND_STATUS](DOCS_AND_STATUS.md)) | `ste-technical-writer` | docs current |
-| 9. Merge | rebase on `main`, tests, ff-only merge, mirror updated; reader pages only with the owner's yes | lead | "Ready to push" in the status |
+| 9. Merge | rebase on `development`, tests, ff-only merge into `development`, mirror updated; reader pages only with the owner's yes | lead | "Ready to push" in the status |
 
 ## 7. Human gates: when the automation stops and asks the owner
 
@@ -203,10 +203,11 @@ every 2 hours (PROPOSED; the owner may prefer the full update regardless). Templ
 
 ## 11. Commits, merges and documents
 
-- This folder is on `main` (the owner asked for the documentation there, 20 Nov). It holds no NUS source, names or
+- This folder reached `main` on 20 Nov (the owner asked for the documentation there); since the evening of 20 Nov the
+  work lands on `development`, the branch both machines share (`../CLAUDE.md`, "Two machines, one working branch"). It holds no NUS source, names or
   private messages. L0 was approved by the owner on 20 Nov 2026; no later phase starts without its own approval.
-- Code, tests, records and ledger rows are ff-merged to `main` by the lead after QC. Reader pages go to `main` only
-  with the owner's yes.
+- Code, tests, records and ledger rows are ff-merged to `development` by the lead after QC. Reader pages go to
+  `development` only with the owner's yes; `main` moves only on the owner's word.
 - Status files are committed at session end. HANDOFF §0 gets a dated line per session.
 - Every gated run records its videos in the run; every result shown in docs has a GIF.
 - Agent files are copied into `../.claude/agents/` (with `git add -f`) at the same merge.

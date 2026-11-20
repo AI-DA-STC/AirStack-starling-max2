@@ -1,6 +1,6 @@
 INTERNAL · the latest status of STE's own learning track and the NUS port, overwritten at every update; the history is in [LOG.md](LOG.md). Produced by the `train-status` skill.
 
-**Status, 2026-11-21 07:48 (+08:00), event: L0.14 Crazyflie route check built and run (CPU); record being drafted**                                                                  · laptop RTX 5070 Ti · GPU 43 % / 19 W / 1.4 GB of 12 GB · 0 training processes (0 paused)
+**Status, 2026-11-21 07:51 (+08:00), event: L0.14 recorded (T45); L0.12 fixes in (all 8 surviving breakages now caught)**                                                                   · laptop RTX 5070 Ti · GPU 43 % / 19 W / 1.4 GB of 12 GB · 0 training processes (0 paused)
 
 ## Watch (latest clips and figures)
 
@@ -45,13 +45,13 @@ What the drones look like in the 3-D simulator (Isaac Lab Starlings, from S2b; t
 | L0.9 | Tag rule for the study: 1-for-1, nearest pair first | DONE | tier 1 fast engine | merged; QC + re-check passed; full suite on `development` 1,517 passed / 0 failed (31 min); the 5090 records its own tag-off positions (L09-5090) |
 | L0.10 | Scripted players for the study | DONE | tier 1 fast engine | merged; QC + 2 re-checks passed; full suite on `development` 1,600 passed / 0 failed (56 min, CPU shared with the L0.11 GPU jobs) |
 | L0.11 | Screening sweep (INFO) | DONE | tier 1 fast engine | record T44 (every control PASS; shortlist base (reference), tag 1.2 m, tag 1.4 m; every hold a one-for-one trade) + follow-up checks; merged into `development`; full suite 1,685 passed / 0 failed (27 min) |
-| L0.12 | Best-response test: is the game worth learning? | RUNNING (QC fixes) | tier 1 fast engine | pre-launch QC: every verdict branch computes as ruled, but (Critical) results could be published after a failed control, and no control looks at the trained network, so a training bug would read as "no gain"; lead's call: the Strike's training against the parked Guard becomes a must-pass learner check in the pilot; fix round running; pilot after the fixes and once the GPU is free; runs after a re-check |
+| L0.12 | Best-response test: is the game worth learning? | RUNNING (QC fixes) | tier 1 fast engine | fix round done: nothing is published unless every control passes; a parity test ties training and evaluation; all 8 surviving breakages now caught; lead's call: the learner check runs on one longer probe (10 % of a run, ≤ 0.15 GPU-h), not a 3-update one; then commit, QC re-check, the GPU pilot |
 | L0.2 | Tier 2 speed in contested play | NOT STARTED | tier 2 Isaac Lab | laptop allowed (owner, 21 Nov): runs alone on the GPU, measures what fits in 12 GB; cap 1.5 GPU-h |
 | L0.13 | Does tier 2 train at all? | NOT STARTED | tier 2 Isaac Lab | laptop allowed (owner, 21 Nov), after L0.2, at the games-at-once L0.2 shows fits; cap 6 GPU-h |
 | L0.3 | STE Guard policy in tier 2 without retraining | NOT STARTED | tier 2 Isaac Lab | unblocked (T41 on both machines); runs on the laptop GPU, taking turns with L0.12's GPU runs (one GPU job at a time); cap 1.5 GPU-h |
 | L0.4 | Side-by-side Starling render | RUNNING | tier 2 Isaac Lab | builder on `ste-l0.4`: the AirStack simulator's Starling asset rendered in Isaac Lab beside our clips' look, with and without team paint (stills); cap 0.2 GPU-h |
 | L0.5 | Starling video look fix | RUNNING | tier 2 Isaac Lab | same builder: the Starling's own look, team colour as a small marker; stills for your look (D9); cap 0.3 GPU-h |
-| L0.14 | Crazyflie route check | RUNNING (record, then QC) | tier 1 fast engine (CPU) | ran on the CPU, 0 GPU-h: the T41 Guard policy holds 831 of 1,000 at the Starling's lag, **791 at a Crazyflie-like lag**, but games with drones closer than 1.0 m rise from 7 to 101 (contact under 0.5 m: 0 → 2); the Crazyflie planner found 0 safety failures in 2,868 matches (the 20 Nov "5 of 100" emergencies not reproduced); the adapter spec written; page `ste_learning/CRAZYFLIE_ROUTE.md`; record T45 being drafted, then QC |
+| L0.14 | Crazyflie route check | RUNNING (QC) | tier 1 fast engine (CPU) | ran on the CPU, 0 GPU-h: the T41 Guard policy holds 831 of 1,000 at the Starling's lag, **791 at a Crazyflie-like lag**, but games with drones closer than 1.0 m rise from 7 to 101 (contact under 0.5 m: 0 → 2); the Crazyflie planner found 0 safety failures in 2,868 matches (the 20 Nov "5 of 100" emergencies not reproduced); the adapter spec written; page `ste_learning/CRAZYFLIE_ROUTE.md`; record T45 committed on `ste-l0.14`; independent QC next |
 | L0.6 | Gate G0 | NOT STARTED | none | after every task above; the owner decides |
 
 GPU-h used in L0 so far: 0.426 of 19 (RTX 5090: 0, from its last status; laptop: 0.426 = L0.11 pilot 0.034 + CUDA smoke 0.087 + sweep 0.305).

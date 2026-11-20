@@ -630,8 +630,9 @@ def render_md(result: dict, gates: sweep.Gates) -> str:
         multi = sweep.parse_size(g["size"])[0] >= 2
         lines += ["| Guard | Strike | games | hold (95 %) | reach (95 %) | time-out | all Strikes tagged | tags/game "
                   "(max) | start miss | start team-close games | closest 3-D min / p05 / p50 (m; among drones still in the "
-                  "game after the tag step) | closest horiz. min (m) |",
-                  "|---|---|---|---|---|---|---|---|---|---|---|---|"]
+                  "game after the tag step) | closest horiz. min (m) | holds leaving no Guard | Guards left in holds (mean) | "
+                  "length median / p90 (s) |",
+                  "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
         for r in g["rows"]:
             strike = r["strike"] + (f" ({meta['z_up_label']})" if r["strike"] in z else "")
             lines.append(
@@ -640,7 +641,9 @@ def render_md(result: dict, gates: sweep.Gates) -> str:
                 f"{_pct(r['timeout_rate'], r['timeout_ci'])} | {_pct(r['elimination_rate'], r['elimination_ci'])} | "
                 f"{_m(r['tags_mean'])} ({r['tags_max']}) | {r['start_miss_games']} | {r['start_team_close_games']} | "
                 f"{_m(r.get('closest_cross_3d_m'))} / {_m(r.get('closest_cross_3d_p05_m'))} / "
-                f"{_m(r.get('closest_cross_3d_p50_m'))} | {_m(r.get('closest_cross_m'))} |")
+                f"{_m(r.get('closest_cross_3d_p50_m'))} | {_m(r.get('closest_cross_m'))} | "
+                f"{r.get('holds_no_guard_left', 'n/a')} of {r['holds']} | {_m(r.get('guards_left_mean_in_holds'))} | "
+                f"{_m(r.get('length_median_s'))} / {_m(r.get('length_p90_s'))} |")
         lines.append("")
     lines += ["## Batches (speed and memory)", "", "| Batch | size | games | ticks | s | game-steps/s | peak reserved (GiB) |",
               "|---|---|---|---|---|---|---|"]

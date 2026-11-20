@@ -42,7 +42,7 @@ from torch import Tensor
 
 from ..core.arena import Arenas, draw_starts
 from ..core.game import SvgGame
-from ..core.game_config import GameCfg, load_game_cfg
+from ..core.game_config import TICK_S, GameCfg, load_game_cfg
 from ..core.metrics import summarise, wilson_interval
 from ..core.play import play_match
 from ..core.rewards import GUARD_WIN, RUNNING, STRIKE_WIN
@@ -63,6 +63,8 @@ CONTROL_KINDS = (SAME_SEED, STAND_STILL, ZERO_TAGS, STILL_ZERO_TAGS, TAG_FIRES, 
 GLOBAL_CHECKS = ("tags_one_for_one", "paired_starts", "no_nonfinite_actions")
 TIE_BREAKS = ("lab_arena_first", "larger_zone_tag_margin", "lower_guard_survives", "run_order")
 ALL = "all"
+MEDIAN_Q = 0.5                      # game-length quantiles of the hold composition (QC check 2 after T44)
+P90_Q = 0.9
 SUMMARY_KEYS = ("guard_wins", "hold_rate", "ci_low", "ci_high", "mean_end_step", "closest_cross_m", "closest_cross_p05_m",
                 "closest_cross_p25_m", "closest_cross_p50_m", "closest_cross_3d_m", "closest_cross_3d_p05_m",
                 "closest_cross_3d_p25_m", "closest_cross_3d_p50_m", "rule_breach_rate", "filter_rate", "start_miss_rate")
@@ -409,6 +411,24 @@ def _rate(k: int, n: int) -> tuple[float | None, list | None]:
     return k / n, [low, high]
 
 
+def hold_composition(per_game: dict, guards: int) -> dict:
+    """QC check 2 after T44: what a hold is made of. Over the finished games of one cell: holds that leave no Guard
+    drone (Guards left = G - Guards removed by tags; drop-outs are off in every L0.11 game, so tags are the only way out),
+    the mean Guards left in holds, holds that ran to the time-out (end step at the game's last tick, ``per_game["game_ticks"]``
+    if given, else None), and the median and 90th percentile game length in seconds. None where nothing was finished."""
+    outcome = np.asarray(per_game["outcome"])
+    end_s = np.asarray(per_game["end_step"])[outcome != RUNNING] * TICK_S
+    holds = outcome == GUARD_WIN
+    left = guards - np.asarray(per_game["guards_removed"])[holds]
+    cap = per_game.get("game_ticks")
+    timeouts = int(np.sum(np.asarray(per_game["end_step"])[holds] >= cap)) if cap is not None else None
+    return {"holds_no_guard_left": int(np.sum(left == 0)),
+            "guards_left_mean_in_holds": float(left.mean()) if left.size else None,
+            "timeouts_by_length": timeouts,
+            "length_median_s": float(np.quantile(end_s, MEDIAN_Q)) if end_s.size else None,
+            "length_p90_s": float(np.quantile(end_s, P90_Q)) if end_s.size else None}
+
+
 def cell_row(per_game: dict, summary: list, cell: tuple, games_per_cell: int) -> dict:
     """The summary of one cell: ``summarise``'s row (hold rate, interval, closest approach, ...) plus reach and
     time-out rates with Wilson 95 % intervals, holds by tagging every Strike drone, tags per game and the start counts."""
@@ -472,6 +492,7 @@ def play_batch(cfg: GameCfg, size: str, cells: tuple, run: dict,
         part = {k: v[sl] for k, v in per_game.items()}
         row = cell_row(part, summarise(res.slice(sl), by=()), cell, n)
         row["one_for_one_bad_games"] = int(np.sum(part["guards_tagged"] != part["tags"]))
+        row.update(hold_composition({**part, "game_ticks": game.ticks}, guards))
         row["removed_bad_games"] = (int(np.sum(part["guards_removed"] != part["tags"]))
                                     if cfg.tag.guard_survives_tag_prob == 0 else 0)
         rows.append(row)

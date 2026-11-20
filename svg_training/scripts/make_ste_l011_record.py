@@ -61,6 +61,18 @@ def record_text(run_dir: Path, result: dict, name: str, number: str) -> tuple[st
     games = sum(b["games"] * b["steps_played"] for b in batches)
     seconds = sum(b["seconds"] for b in batches) or float("nan")
     sizes = sorted({b["size"] for b in batches})
+    comp = [g for g in result["groups"] if g["rows"] and all("holds_no_guard_left" in r for r in g["rows"])]
+    hold_lines = ["## Hold composition (QC check 2 after T44)", "",
+                  "| Group | holds | holds that ran to the time-out | holds leaving no Guard | game length, median of cell "
+                  "medians / largest cell p90 (s) |", "|---|---|---|---|---|"]
+    for g in comp:
+        meds = sorted(r["length_median_s"] for r in g["rows"] if r["length_median_s"] is not None)
+        p90s = [r["length_p90_s"] for r in g["rows"] if r["length_p90_s"] is not None]
+        hold_lines.append(f"| {g['name']} | {sum(r['holds'] for r in g['rows'])} | "
+                          f"{sum(r['timeouts_by_length'] or 0 for r in g['rows'])} | "
+                          f"{sum(r['holds_no_guard_left'] for r in g['rows'])} | "
+                          f"{f'{meds[len(meds) // 2]:.2f}' if meds else 'n/a'} / {f'{max(p90s):.2f}' if p90s else 'n/a'} |")
+    hold_lines = hold_lines + [""] if comp else []
     if readable:
         shortlist_lines = [
             "## Shortlist for L0.12 (rule: gate file [shortlist])", "",
@@ -122,6 +134,7 @@ def record_text(run_dir: Path, result: dict, name: str, number: str) -> tuple[st
              *[f"| {k} | {v['status']} | {v['detail']} |" for k, v in result["controls"].items()], "",
              f"Cut by the projection: {', '.join(result['cut']) or 'none'}.", "",
              *shortlist_lines,
+             "", *(hold_lines if readable else []),
              "", "## Figures and videos", "",
              "Figures from the run's own results.json by `scripts/make_ste_l011_figures.py`: `figures/`. Clips "
              "(STANDARDS section 8): " + ("; ".join(result.get("clips", [])) or "none recorded (say why here)") + ".", "",

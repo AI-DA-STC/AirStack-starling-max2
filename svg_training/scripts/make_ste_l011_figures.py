@@ -161,6 +161,38 @@ def main(argv: list[str] | None = None) -> int:
             written.append(out / f"heatmaps_{slug(factor)}.png")
             fig.savefig(written[-1])
             plt.close(fig)
+    # QC check 2 after T44: what a hold is made of, per sweep group (one measure per panel, no second axis)
+    comp = [g for g in result["groups"] if g["role"] == "sweep" and g["rows"]
+            and all("holds_no_guard_left" in r for r in g["rows"])]
+    if comp:
+        names = [g["name"] for g in comp]
+        holds = [sum(r["holds"] for r in g["rows"]) for g in comp]
+        none_left = [sum(r["holds_no_guard_left"] for r in g["rows"]) for g in comp]
+        share = [n / h if h else float("nan") for n, h in zip(none_left, holds)]
+        median = [sorted(r["length_median_s"] for r in g["rows"] if r["length_median_s"] is not None)
+                  for g in comp]
+        median = [m[len(m) // 2] if m else float("nan") for m in median]
+        fig, axes = plt.subplots(1, 2, figsize=(10.0, 3.6), dpi=DPI)
+        axes[0].bar(names, share, color=GUARD_COLOUR, width=0.6)
+        axes[0].set_ylim(0, 1.1)
+        axes[0].set_title("Share of holds that leave no Guard drone", fontsize=9, color=INK)
+        for x, (v, h) in enumerate(zip(share, holds)):           # direct labels: a zero bar is not an empty bar
+            axes[0].text(x, (0 if v != v else v) + 0.02, f"{v:.2f}" if v == v else "no holds",
+                         ha="center", va="bottom", fontsize=6, color=INK)
+        axes[1].bar(names, median, color=MUTED, width=0.6)
+        axes[1].set_title("Game length: median over cells of the cell median (s)", fontsize=9, color=INK)
+        for ax in axes:
+            ax.tick_params(axis="x", labelrotation=40, labelsize=7)
+            for label_ in ax.get_xticklabels():
+                label_.set_horizontalalignment("right")
+            ax.grid(axis="y", color="#e0e0e0", linewidth=0.8)
+            for side in ("top", "right"):
+                ax.spines[side].set_visible(False)
+        fig.text(0.01, 0.01, foot, fontsize=7, color="red" if banner else MUTED)
+        fig.tight_layout(rect=(0, 0.05, 1, 1))
+        written.append(out / "hold_composition.png")
+        fig.savefig(written[-1])
+        plt.close(fig)
     for path in written:
         print(f"wrote {path}")
     return 0

@@ -585,3 +585,27 @@ def test_the_tag_off_cells_are_an_info_reference_never_shortlisted():
     ref = out["info_reference"][0]
     assert ref["variant"] == "off" and ref["label"] == "no proximity tag" and ref["d_games"] == 500
     assert ref["reason"].startswith("INFO reference") and "rank" not in ref
+
+
+# ================================================================================================ follow-ups (T44 QC read)
+def test_hold_composition_counts_guards_left_and_game_length():
+    """QC check 2: Guards left = G - Guards removed by tags (drop-outs are off in every L0.11 game); game length over the
+    finished games, in seconds."""
+    pg = per_game(outcome=[GUARD_WIN, GUARD_WIN, STRIKE_WIN, GUARD_WIN, 0], guards_removed=[3, 2, 1, 3, 0],
+                  end_step=[20, 40, 60, 2400, 7])
+    hc = sweep.hold_composition({**pg, "game_ticks": 2400}, guards=3)
+    assert hc["holds_no_guard_left"] == 2 and math.isclose(hc["guards_left_mean_in_holds"], 1 / 3)
+    assert hc["timeouts_by_length"] == 1                                # the 2,400-tick game ran to the time-out
+    assert math.isclose(hc["length_median_s"], 50 * TICK_S) and hc["length_p90_s"] > hc["length_median_s"]
+    none = sweep.hold_composition(per_game(outcome=[STRIKE_WIN], guards_removed=[0], end_step=[30]), guards=3)
+    assert none["holds_no_guard_left"] == 0 and none["guards_left_mean_in_holds"] is None
+    empty = sweep.hold_composition(per_game(outcome=[0], guards_removed=[0], end_step=[0]), guards=3)
+    assert empty["length_median_s"] is None
+
+
+def test_play_batch_rows_carry_the_hold_composition():
+    cfg = sweep.variant_cfg(GATES, "tag_10m")
+    res = sweep.play_batch(cfg, "3v3", (("zero", "zero"),), small_run(games_per_cell=8, ticks_cap=3))
+    row = res.rows[0]
+    assert row["holds_no_guard_left"] == 8 and row["guards_left_mean_in_holds"] == 0.0    # 3-for-3 trades at step 1
+    assert row["length_median_s"] == TICK_S

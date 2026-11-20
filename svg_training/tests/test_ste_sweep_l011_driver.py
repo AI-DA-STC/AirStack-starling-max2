@@ -68,6 +68,8 @@ def test_a_run_writes_cells_controls_results_and_figures(tmp_path):
     assert result["shortlist"]["shortlist"][0] == "base"                # the reference, always carried
     assert "parked (holds starts; = still at 2+ Guards)" in md          # QC M-10 label, 3v3 base rows
     assert "among drones still in the game after the tag step" in md   # QC M-3 wording
+    assert "holds leaving no Guard | Guards left in holds (mean) | length median / p90 (s) |" in md   # QC check 2
+    assert (out / "figures" / "hold_composition.png").is_file()
     assert "no proximity tag (INFO" in md                                # M-8: the tag-off INFO reference row
     assert result["shortlist"]["info_reference"][0]["variant"] == "ctl_tag_off"
     assert "shortlist" in result and result["shortlist"]["variants"]
@@ -89,6 +91,7 @@ def test_a_run_writes_cells_controls_results_and_figures(tmp_path):
     (out / "exit_code").write_text("0\n")
     assert recorder.main(["--run-dir", str(out), "--number", "W99", "--out-dir", str(tmp_path / "r2")]) == 0
     assert "Verdict: **INFO" in (tmp_path / "r2" / "run_record.md").read_text()
+    assert "## Hold composition" in (tmp_path / "r2" / "run_record.md").read_text()
     assert "no proximity tag (INFO" in (tmp_path / "r2" / "run_record.md").read_text()
 
 

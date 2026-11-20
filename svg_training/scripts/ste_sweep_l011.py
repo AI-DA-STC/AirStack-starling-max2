@@ -59,6 +59,7 @@ PINNED_SHA = "gates.sha256"
 GATES_COPY = "gates.toml"
 CELLS_DIR = "cells"
 CONTROLS_FILE = "controls.json"
+CODE_FILE = "code.json"           # QC M-2: the code a run folder was started with
 PASS, FAIL, PENDING = "PASS", "FAIL", "PENDING"
 SIMULATOR = ("training simulator, tier 1 (fast engine; Starling layer: commander copy, safety filter on every pair, "
              "fitted PX4 response, exploratory)")
@@ -76,6 +77,8 @@ def parse(argv: list[str] | None) -> argparse.Namespace:
     ap.add_argument("--expect-gates-sha256", help="refuse unless the gate file has this sha256")
     ap.add_argument("--pilot", action="store_true", help="measure rate and memory per size and batch size only")
     ap.add_argument("--no-clips", action="store_true", help="skip the replay clips (tests only)")
+    ap.add_argument("--allow-code-change", action="store_true",
+                    help="resume although the code differs from the first launch's (recorded in code.json and results)")
     ap.add_argument("--sleep-between-batches-s", type=float, default=0.0, help=argparse.SUPPRESS)   # tests only
     return ap.parse_args(argv)
 
@@ -90,6 +93,38 @@ def _git(*args: str) -> str:
         return subprocess.run(["git", "-C", str(ROOT), *args], capture_output=True, text=True, check=True).stdout.strip()
     except (OSError, subprocess.CalledProcessError):
         return "unknown"
+
+
+def code_identity() -> dict:
+    """The code a run plays: the commit, and the sha256 of the uncommitted changes under svg_training/ (empty diff = the
+    sha256 of nothing)."""
+    import hashlib
+    try:
+        diff = subprocess.run(["git", "-C", str(ROOT), "diff", "HEAD", "--", "."], capture_output=True, check=True).stdout
+    except (OSError, subprocess.CalledProcessError):
+        diff = b"unknown"
+    return {"commit": _git("rev-parse", "HEAD"), "diff_sha256": hashlib.sha256(diff).hexdigest()}
+
+
+def pin_code(args: argparse.Namespace) -> str | None:
+    """QC M-2: pin the code at the first launch; on a resume refuse other code unless --allow-code-change (recorded)."""
+    path = args.run_dir / CODE_FILE
+    now = code_identity()
+    if not path.is_file():
+        write_json(path, {"first": now, "changes": []})
+        return None
+    pinned = json.loads(path.read_text())
+    last = pinned["changes"][-1] if pinned["changes"] else pinned["first"]
+    if {k: last[k] for k in ("commit", "diff_sha256")} == now:
+        return None
+    if not args.allow_code_change:
+        return (f"the code changed since this run folder was started (pinned commit {last['commit'][:12]}, diff "
+                f"{last['diff_sha256'][:12]}; now {now['commit'][:12]}, {now['diff_sha256'][:12]}): batches from two code "
+                f"versions would mix; start a new run folder, or pass --allow-code-change (recorded)")
+    pinned["changes"].append({**now, "allowed": True, "time": time.time()})
+    write_json(path, pinned)
+    say(f"code changed since the first launch: allowed by --allow-code-change and recorded in {CODE_FILE}")
+    return None
 
 
 def write_json(path: Path, obj) -> None:
@@ -135,6 +170,11 @@ def preflight(args: argparse.Namespace, gates: sweep.Gates) -> str | None:
                 return f"a GPU job (--gpu-h {job['gpu_h']}) with device {device!r} in the gate file"
         elif str(device).startswith("cuda"):
             return "the gate file plays on cuda but the launcher asked for 0 GPU-h (a CPU job)"
+    table = gates.projection["seconds_per_batch_tick"]
+    sizes = {sweep.group_game(gates, g)[1] for g in gates.groups}
+    if gates.run["require_projection"] and not args.pilot and not sizes <= set(table):
+        return (f"the gate file requires [projection.seconds_per_batch_tick] for every planned size {sorted(sizes)}, it "
+                f"holds {sorted(table)}: fill it from the pilot (QC I3)")
     if str(device).startswith("cuda") and not torch.cuda.is_available():
         return "the gate file plays on cuda and PyTorch sees no GPU"
     return None
@@ -165,6 +205,9 @@ def main(argv: list[str] | None = None) -> int:
     args.run_dir.mkdir(parents=True, exist_ok=True)
     try:
         with RunGuard(args.run_dir, cap_s=args.cap_h * HOUR_S) as guard:
+            changed = pin_code(args)
+            if changed:
+                return refuse(changed)
             if not (args.run_dir / PINNED_SHA).is_file():
                 shutil.copyfile(args.gates, args.run_dir / GATES_COPY)
                 atomic.write_text(args.run_dir / PINNED_SHA, gates.sha256 + "\n")
@@ -199,19 +242,22 @@ def evaluate_controls(gates: sweep.Gates, plan: list, run_dir: Path, done: set[s
                 rows += data["rows"]
                 nonfinite += data["nonfinite_actions"]
                 shas.setdefault(setting_of(cfg, size, p.spec.strike_start_dz_m or 0), set()).update(data["start_sha256"])
-        if cfg.tag.mode != "off":
-            survive = cfg.tag.guard_survives_tag_prob
-            for r in rows:
-                ok, detail = sweep.check_tags_bound({"tags": np.array([r["tags_max_all"]])}, g, s, survive)
-                if not ok:
-                    bound_bad.append(f"{p.spec.name} {r['guard']} v {r['strike']}: {detail}")
+        for r in rows:                                 # QC I1: the one-for-one invariant, every game of every cell
+            if r["one_for_one_bad_games"] or r["removed_bad_games"]:
+                bound_bad.append(f"{p.spec.name} {r['guard']} v {r['strike']}: {r['one_for_one_bad_games']} games Guards "
+                                 f"tagged != Strikes tagged, {r['removed_bad_games']} games Guards removed != Strikes tagged")
         if p.spec.role != sweep.ROLE_CONTROL:
             continue
         complete = all(bid in done for bid in ids)
         if not complete:
             out[p.spec.name] = {"status": PENDING, "control": p.spec.control, "detail": "cells not all played"}
             continue
-        if p.spec.control == sweep.SAME_SEED:
+        if p.spec.control in (sweep.TAG_FIRES, sweep.REACH_FIRES):        # QC C1: known non-zero answers, per game
+            per = [dict(np.load(batch_file(run_dir, bid, ".npz"))) for bid in ids]
+            pg = {k: np.concatenate([x[k] for x in per]) for k in per[0]}
+            ok, detail = (sweep.check_tag_fires(pg, g, s) if p.spec.control == sweep.TAG_FIRES
+                          else sweep.check_reach_fires(pg))
+        elif p.spec.control == sweep.SAME_SEED:
             source = by_name[p.spec.of_group].batch_id(p.spec.of_batch)
             a = dict(np.load(batch_file(run_dir, source, ".npz")))
             b = dict(np.load(batch_file(run_dir, ids[0], ".npz")))
@@ -227,9 +273,9 @@ def evaluate_controls(gates: sweep.Gates, plan: list, run_dir: Path, done: set[s
             detail = f"{tags} tags in {sum(r['games'] + r['unfinished'] for r in rows)} games"
         out[p.spec.name] = {"status": PASS if ok else FAIL, "control": p.spec.control, "detail": detail}
     checks = gates.controls["global_checks"]
-    if "tags_at_most_min_team" in checks:
-        out["tags_at_most_min_team"] = {"status": FAIL if bound_bad else PASS, "control": "global",
-                                        "detail": "; ".join(bound_bad) or "every played game within its bound"}
+    if "tags_one_for_one" in checks:
+        out["tags_one_for_one"] = {"status": FAIL if bound_bad else PASS, "control": "global",
+                                   "detail": "; ".join(bound_bad) or "every played game one for one"}
     if "paired_starts" in checks:
         ok, detail = sweep.check_paired_starts(shas)
         out["paired_starts"] = {"status": PASS if ok else FAIL, "control": "global", "detail": detail}
@@ -239,9 +285,15 @@ def evaluate_controls(gates: sweep.Gates, plan: list, run_dir: Path, done: set[s
     return out
 
 
+def timed(spec: sweep.GroupSpec) -> bool:
+    """QC I2: only full-length sweep and sensitivity batches feed the projection, never the controls (still drones, an
+    idle filter, a few ticks)."""
+    return spec.role != sweep.ROLE_CONTROL and spec.ticks is None
+
+
 def seconds_per_tick(size: str, state: dict, gates: sweep.Gates) -> float | None:
-    """Seconds per batch tick for ``size``: measured in this run, else the gate file's pilot value, else the slowest
-    measured size scaled by the drone count; None when nothing is known."""
+    """Seconds per batch tick for ``size``: measured in this run on full-length sweep batches, else the gate file's pilot
+    value, else the slowest known size scaled by the drone count; None when nothing is known."""
     timing = state["timing"]
     if timing.get(size):
         return float(np.mean(timing[size]))
@@ -254,6 +306,10 @@ def seconds_per_tick(size: str, state: dict, gates: sweep.Gates) -> float | None
         return None
     ref = max(known, key=known.get)
     return known[ref] * sum(sweep.parse_size(size)) / sum(sweep.parse_size(ref))
+
+
+class ProtectedDoNotFit(RuntimeError):
+    """The protected groups alone cannot fit the cap left (QC I3, H6)."""
 
 
 def project_cuts(gates: sweep.Gates, plan: list, start: int, state: dict, left_s: float) -> tuple[list[str], float | None]:
@@ -274,6 +330,13 @@ def project_cuts(gates: sweep.Gates, plan: list, start: int, state: dict, left_s
         return total * float(gates.cut["safety_factor"]) + float(gates.clips["reserve_s"])
 
     skip: list[str] = []
+    cuttable_all = {p.spec.name for p in plan[start:] if p.spec.role != sweep.ROLE_CONTROL and p.spec.name not in protected
+                    and not any(p.batch_id(i) in done for i in range(len(p.batches)))}
+    floor = projected(cuttable_all)              # QC I3: the protected groups (and started ones) alone
+    if floor is not None and floor > left_s:
+        raise ProtectedDoNotFit(f"the protected groups alone project to {floor:.0f} s (x {gates.cut['safety_factor']} "
+                                f"+ {gates.clips['reserve_s']} s clip reserve), the cap left is {left_s:.0f} s: H6, "
+                                f"no launch (QC I3)")
     estimate = projected(set())
     while estimate is not None and estimate > left_s:
         cuttable = [p.spec.name for p in plan[start:] if p.spec.role != sweep.ROLE_CONTROL and p.spec.name not in protected
@@ -292,6 +355,8 @@ def run_sweep(gates: sweep.Gates, args: argparse.Namespace, guard: RunGuard) -> 
     plan = sweep.build_plan(gates)
     resumed = guard.load_latest()
     state = resumed.state if resumed is not None else {"done": [], "cut": [], "timing": {}, "projections": []}
+    if resumed is not None:                            # the batches a resume must not replay (smoke check B.8)
+        state.setdefault("resumes", []).append({"time": time.time(), "done": list(state["done"])})
     say(f"{'resumed: ' + str(len(state['done'])) + ' batches done' if resumed else 'fresh start'}; gate sha256 "
         f"{gates.sha256[:12]}; {sum(len(p.batches) for p in plan)} batches, {sum(len(p.cells) for p in plan)} cells")
     every = int(gates.run["cap_check_every_ticks"])
@@ -311,15 +376,20 @@ def run_sweep(gates: sweep.Gates, args: argparse.Namespace, guard: RunGuard) -> 
         write_results(gates, plan, args, guard, state, controls)
         state.pop("stopped")
         say(f"stopped ({reason}) with {len(state['done'])} batches done; checkpoint saved; the same command resumes")
-        return EXIT_FOR_STOP[reason]
+        return EXIT_FOR_STOP.get(reason, EXIT_NONFINITE)
 
     for index, p in enumerate(plan):
         name = p.spec.name
         if name in state["cut"]:
             continue
         ids = [p.batch_id(i) for i in range(len(p.batches))]
+        if not any(b in state["done"] for b in ids):
+            try:
+                cuts, estimate = project_cuts(gates, plan, index, state, guard.cap_s - guard.effective_s())
+            except ProtectedDoNotFit as err:
+                guard.save(len(state["done"]), state)
+                return refuse(str(err))
         if p.spec.role != sweep.ROLE_CONTROL and not any(b in state["done"] for b in ids):
-            cuts, estimate = project_cuts(gates, plan, index, state, guard.cap_s - guard.effective_s())
             state["projections"].append({"before": name, "projected_s": estimate, "cap_left_s": guard.cap_s - guard.effective_s(),
                                          "cut": cuts})
             if cuts:
@@ -345,6 +415,7 @@ def run_sweep(gates: sweep.Gates, args: argparse.Namespace, guard: RunGuard) -> 
             if res.nonfinite_actions:
                 say(f"{bid}: {res.nonfinite_actions} non-finite actions: a player produced NaN or inf; nothing of "
                     f"this batch is kept")
+                stop("non-finite")
                 return EXIT_NONFINITE
             n = int(gates.run["games_per_cell"])
             for k, row in enumerate(res.rows):
@@ -359,7 +430,8 @@ def run_sweep(gates: sweep.Gates, args: argparse.Namespace, guard: RunGuard) -> 
                 "peak_allocated_bytes": res.peak_allocated_bytes, "peak_reserved_bytes": res.peak_reserved_bytes,
                 "nonfinite_actions": res.nonfinite_actions})
             state["done"].append(bid)
-            state["timing"].setdefault(size, []).append(res.seconds / max(res.steps_played, 1))
+            if timed(p.spec):
+                state["timing"].setdefault(size, []).append(res.seconds / max(res.steps_played, 1))
             controls = evaluate_controls(gates, plan, run_dir, set(state["done"]))
             write_json(run_dir / CONTROLS_FILE, controls)
             guard.save(len(state["done"]), state)
@@ -387,7 +459,12 @@ def run_sweep(gates: sweep.Gates, args: argparse.Namespace, guard: RunGuard) -> 
                           f"reserve (gate file [clips])"]
         say(state["clips"][0])
     else:
-        state["clips"] = make_clips(gates, run_dir)
+        state["clips"] = make_clips(gates, run_dir, should_stop=lambda: guard.stop_requested)
+        if guard.stop_requested:                      # QC M-5: a stop during the clips is honoured
+            write_results(gates, plan, args, guard, state, controls)
+            guard.save(len(state["done"]), state)
+            say("stopped (interrupted) during the clips; cells, results and figures are written")
+            return EXIT_FOR_STOP["interrupted"]
     write_results(gates, plan, args, guard, state, controls)
     guard.save(len(state["done"]), state)
     say(f"done: {len(state['done'])} batches; results in {run_dir / 'results.md'}")
@@ -398,7 +475,7 @@ def run_sweep(gates: sweep.Gates, args: argparse.Namespace, guard: RunGuard) -> 
 def metas_of(gates: sweep.Gates, plan: list) -> dict:
     out = {}
     for p in plan:
-        if p.spec.role != sweep.ROLE_SWEEP:
+        if p.spec.role != sweep.ROLE_SWEEP and p.spec.name not in gates.shortlist["info_reference"]:
             continue
         cfg = sweep.variant_cfg(gates, p.spec.game)
         side = cfg.arena.bands_m["lab"][0]
@@ -451,6 +528,8 @@ def write_results(gates: sweep.Gates, plan: list, args, guard: RunGuard, state: 
             "effective_s": guard.effective_s(), "seed": gates.run["seed"], "games_per_cell": gates.run["games_per_cell"],
             "cells_per_batch": gates.run["cells_per_batch"], "ticks_cap": gates.run["ticks_cap"],
             "z_up_label": gates.players["z_up_label"], "z_up_info": list(gates.players["z_up_info"]),
+            "multi_guard_labels": dict(gates.players["multi_guard_labels"]),
+            "code": json.loads((args.run_dir / CODE_FILE).read_text()) if (args.run_dir / CODE_FILE).is_file() else None,
             "confounds": gates.confounds}
     groups = []
     for p in plan:
@@ -465,6 +544,28 @@ def write_results(gates: sweep.Gates, plan: list, args, guard: RunGuard, state: 
               "shortlist_without_z_up": no_z, "clips": state.get("clips", [])}
     write_json(run_dir / "results.json", result)
     atomic.write_text(run_dir / "results.md", render_md(result, gates))
+
+
+def label(meta: dict, guard: str, multi: bool) -> str:
+    """QC M-10: a Guard script's label in a table (with 2+ Guards guard_parked_centre holds its starts)."""
+    return meta["multi_guard_labels"].get(guard, guard) if multi else guard
+
+
+def shortlist_md(sl: dict, result: dict, meta: dict, z: set, gates: sweep.Gates) -> list[str]:
+    lines = ["## Shortlist for L0.12 (rule: gate file [shortlist])", "",
+             f"Shortlist: **{', '.join(sl['shortlist']) or 'none eligible'}**. Without the "
+             f"{', '.join(sorted(z))} columns ({meta['z_up_label']}): "
+             f"{', '.join(result['shortlist_without_z_up']['shortlist']) or 'none eligible'}"
+             f"{' (differs)' if sl['shortlist'] != result['shortlist_without_z_up']['shortlist'] else ' (same)'}.", "",
+             "| Variant | H: best Guard's worst hold | g* | R: best Strike's worst reach | s* | d (games) | eligible | rank |",
+             "|---|---|---|---|---|---|---|---|"]
+    for v in sl["variants"] + sl["report_only"] + sl.get("info_reference", []):
+        rank = ("reference" if v.get("reference") else "INFO, never shortlisted" if v.get("info") else
+                v.get("rank", "—") if v["variant"] in gates.shortlist["candidates"] else "report only")
+        name = f"{v['label']} (INFO; {v['variant']})" if v.get("info") else v["variant"]
+        lines.append(f"| {name} | {_m(v['H'])} | {v['g_star']} | {_m(v['R'])} | {v['s_star']} | "
+                     f"{_m(v['d'])} ({v.get('d_games', 'n/a')}) | {v['reason']} | {rank} |")
+    return lines + [""]
 
 
 def render_md(result: dict, gates: sweep.Gates) -> str:
@@ -493,17 +594,13 @@ def render_md(result: dict, gates: sweep.Gates) -> str:
     if result["cut"]:
         lines += [f"**Cut by the projection (gate file [cut]):** {', '.join(result['cut'])}.", ""]
     sl = result["shortlist"]
-    lines += ["## Shortlist for L0.12 (rule: gate file [shortlist])", "",
-              f"Shortlist: **{', '.join(sl['shortlist']) or 'none eligible'}**. Without the "
-              f"{', '.join(sorted(z))} columns ({meta['z_up_label']}): "
-              f"{', '.join(result['shortlist_without_z_up']['shortlist']) or 'none eligible'}"
-              f"{' (differs)' if sl['shortlist'] != result['shortlist_without_z_up']['shortlist'] else ' (same)'}.", "",
-              "| Variant | H: best Guard's worst hold | g* | R: best Strike's worst reach | s* | d | eligible | rank |",
-              "|---|---|---|---|---|---|---|---|"]
-    for v in sl["variants"] + sl["report_only"]:
-        lines.append(f"| {v['variant']} | {_m(v['H'])} | {v['g_star']} | {_m(v['R'])} | {v['s_star']} | {_m(v['d'])} | "
-                     f"{v['reason']} | {'reference' if v.get('reference') else v.get('rank', '—') if v['variant'] in gates.shortlist['candidates'] else 'report only'} |")
-    lines += [""]
+    if result["controls_all_pass"] and not result["stopped"]:
+        lines += shortlist_md(sl, result, meta, z, gates)
+    else:                                              # QC I4: no shortlist numbers from a run that cannot be read
+        failed = [k for k, c in result["controls"].items() if c["status"] != "PASS"]
+        why = "; ".join(([f"control(s) {', '.join(failed)} not PASS"] if failed else [])
+                        + ([f"the run stopped ({result['stopped']})"] if result["stopped"] else []))
+        lines += ["## Shortlist for L0.12", "", f"Shortlist not read: {why}. No H, R or d is shown.", ""]
     groups = {g["name"]: g for g in result["groups"]}
     for g in result["groups"]:
         if g["role"] != sweep.ROLE_SENSITIVITY or g["cut"] or not g["rows"]:
@@ -518,7 +615,7 @@ def render_md(result: dict, gates: sweep.Gates) -> str:
             b = base_rows.get((r["guard"], r["strike"]))
             diff = ("n/a" if b is None or b["hold_rate"] is None or r["hold_rate"] is None
                     else f"{100 * (r['hold_rate'] - b['hold_rate']):+.1f} points")
-            lines.append(f"| {r['guard']} | {r['strike']} | {_pct(b['hold_rate'], b['hold_ci']) if b else 'n/a'} | "
+            lines.append(f"| {label(meta, r['guard'], True)} | {r['strike']} | {_pct(b['hold_rate'], b['hold_ci']) if b else 'n/a'} | "
                          f"{_pct(r['hold_rate'], r['hold_ci'])} | {diff} |")
         lines.append("")
     for g in result["groups"]:
@@ -530,13 +627,15 @@ def render_md(result: dict, gates: sweep.Gates) -> str:
         if g["skipped_duplicates"]:
             lines += [f"Not played (with one Strike drone they fly as strike_straight): "
                       f"{', '.join(f'{a} v {b}' for a, b in g['skipped_duplicates'])}.", ""]
+        multi = sweep.parse_size(g["size"])[0] >= 2
         lines += ["| Guard | Strike | games | hold (95 %) | reach (95 %) | time-out | all Strikes tagged | tags/game "
-                  "(max) | start miss | start team-close games | closest 3-D min / p05 / p50 (m) | closest horiz. min (m) |",
+                  "(max) | start miss | start team-close games | closest 3-D min / p05 / p50 (m; among drones still in the "
+                  "game after the tag step) | closest horiz. min (m) |",
                   "|---|---|---|---|---|---|---|---|---|---|---|---|"]
         for r in g["rows"]:
             strike = r["strike"] + (f" ({meta['z_up_label']})" if r["strike"] in z else "")
             lines.append(
-                f"| {r['guard']} | {strike} | {r['games']}{' (+' + str(r['unfinished']) + ' unfinished)' if r['unfinished'] else ''} | "
+                f"| {label(meta, r['guard'], multi)} | {strike} | {r['games']}{' (+' + str(r['unfinished']) + ' unfinished)' if r['unfinished'] else ''} | "
                 f"{_pct(r['hold_rate'], r['hold_ci'])} | {_pct(r['reach_rate'], r['reach_ci'])} | "
                 f"{_pct(r['timeout_rate'], r['timeout_ci'])} | {_pct(r['elimination_rate'], r['elimination_ci'])} | "
                 f"{_m(r['tags_mean'])} ({r['tags_max']}) | {r['start_miss_games']} | {r['start_team_close_games']} | "
@@ -562,7 +661,7 @@ def figures(run_dir: Path) -> None:
     say(f"figures: exit {code}")
 
 
-def make_clips(gates: sweep.Gates, run_dir: Path) -> list[str]:
+def make_clips(gates: sweep.Gates, run_dir: Path, should_stop=None) -> list[str]:
     """STANDARDS section 8: small replay GIFs of the clip cells (viz/replay.py, CPU), into <run>/videos/."""
     from svg_training.viz.replay import record_games, render_replay
     c = gates.clips
@@ -572,6 +671,9 @@ def make_clips(gates: sweep.Gates, run_dir: Path) -> list[str]:
     g, s = sweep.parse_size(size)
     out = []
     for guard_spec, strike_spec in c["cells"]:
+        if should_stop is not None and should_stop():
+            out.append("clips stopped: a stop was asked (SIGINT or SIGTERM)")
+            break
         started = time.time()
         recs = record_games(cfg, g, s, guard_spec, strike_spec, int(c["games"]), seed=int(c["seed"]), band=0,
                             max_steps=int(c["max_ticks"]))
@@ -595,14 +697,17 @@ def pilot(gates: sweep.Gates, args: argparse.Namespace, guard: RunGuard) -> int:
     p = gates.pilot
     run, device = gates.run, gates.run["device"]
     cfg = sweep.variant_cfg(gates, gates.group("base").game)
-    every = [(gg, ss) for gg in gates.players["guards"] for ss in gates.players["strikes"]]
+    every = pilot_cells(gates)
     points = []
     for size in p["sizes"]:
         g, s = sweep.parse_size(size)
         for cpb in p["cells_per_batch"]:
             reason = guard.stop_reason()
-            if reason:
+            if reason:                                 # QC M-6: a stopped pilot still writes its table
                 write_json(args.run_dir / "pilot.json", {"points": points, "stopped": reason})
+                atomic.write_text(args.run_dir / "pilot.md", f"# L0.11 pilot: stopped ({reason}) after {len(points)} "
+                                  f"points; do not read partial points (relaunch with a larger cap in a new folder)\n\n"
+                                  + render_pilot(points, project_grid(gates, points), gates))
                 return EXIT_FOR_STOP[reason]
             cells = tuple(every[:cpb])
             n = int(run["games_per_cell"])
@@ -651,6 +756,13 @@ def pilot(gates: sweep.Gates, args: argparse.Namespace, guard: RunGuard) -> int:
     guard.save(len(points), {"points": len(points)})
     say(f"pilot done: {args.run_dir / 'pilot.md'}")
     return EXIT_DONE
+
+
+def pilot_cells(gates: sweep.Gates) -> list[tuple[str, str]]:
+    """QC M-10: every Strike script against the Guard scripts in [pilot] guard_order (moving Guards first), so a point of
+    1, 4 or 10 cells does not time still Guards alone."""
+    order = [g for g in gates.pilot["guard_order"] if g in gates.players["guards"]]
+    return [(gg, ss) for ss in gates.players["strikes"] for gg in order]
 
 
 def gates_cap_h(gates: sweep.Gates | None = None) -> float:

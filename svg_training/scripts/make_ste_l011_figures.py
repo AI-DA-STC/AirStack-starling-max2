@@ -41,7 +41,8 @@ def matrix(rows: list[dict], guards: list[str], strikes: list[str]):
     return m
 
 
-def heatmap(ax, rows, guards, strikes, z_up, title, show_y=True):
+def heatmap(ax, rows, guards, strikes, z_up, title, show_y=True, labels=None):
+    """labels: Guard script -> its label (QC M-10: with 2+ Guards guard_parked_centre holds its starts)."""
     import numpy as np
     m = matrix(rows, guards, strikes)
     ax.imshow(np.ma.masked_invalid(m), cmap=SEQUENTIAL, vmin=0.0, vmax=1.0, aspect="auto")
@@ -55,7 +56,8 @@ def heatmap(ax, rows, guards, strikes, z_up, title, show_y=True):
     ax.set_xticklabels([s.replace("strike_", "") + (" *" if s in z_up else "") for s in strikes], rotation=40,
                        ha="right", fontsize=7, color=INK)
     ax.set_yticks(range(len(guards)))
-    ax.set_yticklabels([g.replace("guard_", "") for g in guards] if show_y else [], fontsize=7, color=INK)
+    ax.set_yticklabels([(labels or {}).get(g, g.replace("guard_", "")) for g in guards] if show_y else [], fontsize=7,
+                       color=INK)
     ax.set_title(title, fontsize=9, color=INK)
     ax.set_xlabel("Strike script", fontsize=8, color=MUTED)
     if show_y:
@@ -101,7 +103,8 @@ def main(argv: list[str] | None = None) -> int:
     base = groups.get("base")
     if base and base["rows"]:
         fig, ax = plt.subplots(figsize=(7.0, 4.2), dpi=DPI)
-        heatmap(ax, base["rows"], guards, strikes, z_up, "Hold rate, base case: 3v3, tag 1.6 m, zone 1.6 m, survive 0, 6.5 m")
+        heatmap(ax, base["rows"], guards, strikes, z_up, "Hold rate, base case: 3v3, tag 1.6 m, zone 1.6 m, survive 0, 6.5 m",
+                labels=meta["multi_guard_labels"])
         fig.text(0.01, 0.01, foot, fontsize=7, color="red" if banner else MUTED)
         fig.tight_layout(rect=(0, 0.04, 1, 1))
         written.append(out / "base_heatmap.png")
@@ -109,16 +112,22 @@ def main(argv: list[str] | None = None) -> int:
         plt.close(fig)
 
     # factors: H and R per level, and the heatmaps per level
-    sl = {v["variant"]: v for v in result["shortlist"]["variants"] + result["shortlist"]["report_only"]}
+    sl = {v["variant"]: v for v in result["shortlist"]["variants"] + result["shortlist"]["report_only"]
+          + result["shortlist"].get("info_reference", [])}
     factors: dict[str, list[dict]] = {}
     for g in result["groups"]:
         if g["role"] == "sweep" and g["factor"] != "base case" and not g["cut"] and g["rows"]:
             factors.setdefault(g["factor"], []).append(g)
+    for ref in result["shortlist"].get("info_reference", []):       # M-8: "no proximity tag" beside the tag radii, INFO
+        g = groups.get(ref["variant"])
+        if g and g["rows"] and "tag radius" in factors:
+            factors["tag radius"].append(dict(g, level=f"{ref['label']} (INFO)"))
     if factors and base:
         fig, axes = plt.subplots(1, len(factors), figsize=(3.0 * len(factors), 3.2), dpi=DPI, sharey=True, squeeze=False)
         for ax, (factor, levels) in zip(axes[0], factors.items()):
             names = ["base"] + [g["name"] for g in levels]
-            labels = ["base"] + [g["level"].split(" (")[0].split(";")[0].split(" with")[0] for g in levels]
+            labels = ["base"] + [g["level"] if g["level"].endswith("(INFO)") else
+                                 g["level"].split(" (")[0].split(";")[0].split(" with")[0] for g in levels]
             xs = list(range(len(names)))
             for key, colour, label in (("H", GUARD_COLOUR, "H: best Guard's worst hold"),
                                        ("R", STRIKE_COLOUR, "R: best Strike's worst reach")):
@@ -145,7 +154,7 @@ def main(argv: list[str] | None = None) -> int:
             for k, (ax, g) in enumerate(zip(axes[0], panels)):
                 title = "base" if g is base else g["level"]
                 heatmap(ax, g["rows"], guards, strikes, z_up, title if len(title) < 40 else title[:37] + "...",
-                        show_y=k == 0)
+                        show_y=k == 0, labels=meta["multi_guard_labels"])
             fig.suptitle(f"Hold rate per level: {factor}", fontsize=10, color=INK)
             fig.text(0.01, 0.01, foot, fontsize=7, color="red" if banner else MUTED)
             fig.tight_layout(rect=(0, 0.05, 1, 0.95))

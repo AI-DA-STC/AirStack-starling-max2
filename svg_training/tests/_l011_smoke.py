@@ -23,13 +23,20 @@ def toml_value(v) -> str:
     raise TypeError(type(v))
 
 
-def smoke_gates(path: Path, run: dict | None = None, games: dict | None = None, clips: dict | None = None) -> Path:
+def smoke_gates(path: Path, run: dict | None = None, games: dict | None = None, clips: dict | None = None,
+                projection: dict | None = None) -> Path:
     g = sweep.load_gates()
-    run = {**g.run, **dict(games_per_cell=4, cells_per_batch=1, ticks_cap=6, device="cpu", cap_check_every_ticks=2),
-           **(run or {})}
+    run = {**g.run, **dict(games_per_cell=4, cells_per_batch=1, ticks_cap=6, device="cpu", cap_check_every_ticks=2,
+                           require_projection=False), **(run or {})}
     pinned = {k: {"file": str(sweep.ROOT / v.file), "sha256": v.sha256} for k, v in g.games.items()}
     pinned.update(games or {})
     groups = [
+        dict(name="ctl_tag_fires_2v1", role="control", control="tag_fires", game="tag_10m", size="2v1",
+             guards=["zero"], strikes=["zero"], ticks=3),
+        dict(name="ctl_tag_fires_5v3", role="control", control="tag_fires", game="tag_10m", size="5v3",
+             guards=["zero"], strikes=["zero"], ticks=3),
+        dict(name="ctl_reach_fires_1v1", role="control", control="reach_fires", game="zone_2p4_tag_off", size="1v1",
+             guards=["zero"], strikes=[SS], ticks=60),
         dict(name="base", role="sweep", factor="base case", level="base", game="base", size="3v3", guards=[GP, GF],
              strikes=[SS]),
         dict(name="ctl_same_seed", role="control", control="same_seed_twice", of_group="base", of_batch=0),
@@ -50,11 +57,12 @@ def smoke_gates(path: Path, run: dict | None = None, games: dict | None = None, 
     ]
     sections = {
         "run": run, "players": g.players, "confounds": g.confounds,
-        "cut": dict(g.cut, protected=["base", "ctl_same_seed", "ctl_stand_still", "ctl_still_3v3", "ctl_tiny_tag", "ctl_tag_off"]),
+        "cut": dict(g.cut, protected=["ctl_tag_fires_2v1", "ctl_tag_fires_5v3", "ctl_reach_fires_1v1", "base",
+                                      "ctl_same_seed", "ctl_stand_still", "ctl_still_3v3", "ctl_tiny_tag", "ctl_tag_off"]),
         "controls": g.controls,
         "shortlist": dict(g.shortlist, candidates=["base", "tag_1p2"], report_only=["size_1v1"]),
         "clips": dict(g.clips, cells=[[GF, SS]], games=2, max_ticks=120, **(clips or {})),
-        "pilot": dict(g.pilot, sizes=["1v1", "3v3"], cells_per_batch=[1, 2], ticks=3, warmup_ticks=1),
+        "pilot": dict(g.pilot, sizes=["1v1", "2v1", "3v3", "5v3"], cells_per_batch=[1, 2], ticks=3, warmup_ticks=1),
     }
     lines = []
     for name, table in sections.items():
@@ -63,6 +71,7 @@ def smoke_gates(path: Path, run: dict | None = None, games: dict | None = None, 
     lines.append("[games]")
     lines += [f"{k} = {toml_value(v)}" for k, v in pinned.items()]
     lines.append("[projection.seconds_per_batch_tick]")
+    lines += [f'"{k}" = {toml_value(v)}' for k, v in (projection or {}).items()]
     for grp in groups:
         lines.append("[[groups]]")
         lines += [f"{k} = {toml_value(v)}" for k, v in grp.items()]

@@ -1,0 +1,263 @@
+# STE task L0.11: the CUDA smoke of the final driver (pre-launch QC runs/ste_l11_qc.md section 5 B, finding I6), run by
+# the lead on the GPU after the pilot and before the sweep, charged to L0.11. NOT the sweep's gate file: its results are
+# a test of the code path, never read as screen results. Command and checks: runs/ste_l11_report.md "QC fix round 1";
+# scripts/check_ste_l011_smoke.py reads the run folder. tests/test_ste_l011.py keeps [run], [players], [controls],
+# [projection] and [games] equal to configs/ste_l011/gates.toml, and checks QC's minimums (2+ cells per batch, 256+
+# games per cell, 600+ ticks on the short groups, every control kind, the same-seed replay at the full game length).
+#
+# What it runs on CUDA: every control kind (the two known-non-zero ones first), the WHOLE base group at the sweep's
+# batch size and full 2,400 ticks, replayed once from the same seed (QC B.7: CUDA repeatability; its first play gives the
+# full-batch timing of B.9), the other controls and a few sweep and sensitivity batches at 600 ticks, figures and one
+# clip. The SIGINT drill (B.8) is part of the command sequence, not of this file.
+
+[run]
+task = "L0.11"
+kind = "INFO"
+seed = 110000
+games_per_cell = 1000
+cells_per_batch = 30
+ticks_cap = 2400
+device = "cuda"
+cap_check_every_ticks = 100
+require_projection = true
+
+[players]
+guards = ["guard_parked_centre", "guard_parked_ring", "guard_mark_edge", "guard_mirror", "guard_field"]
+strikes = ["strike_straight", "strike_flank", "strike_high", "strike_low", "strike_sacrifice", "strike_converge"]
+one_strike_duplicates = ["strike_sacrifice", "strike_converge"]
+z_up_info = ["strike_high", "strike_low"]
+z_up_label = "tier 1 vertical response not fitted (s2b.toml z_up_info)"
+multi_guard_labels = { guard_parked_centre = "parked (holds starts; = still at 2+ Guards)" }
+
+[confounds]
+ring_outside_zone_m = 0.3
+zone_2p4 = "zone radius 2.4 m: the ring stays 2.75 m (2.75 >= 2.4 + 0.3); the alternative 2.4 + (2.75 - 1.6) = 3.55 m does not fit the 3.0 m keep-in limit. Second change: the run-in from the ring to the zone edge is 0.35 m (0.7 s at 0.5 m/s) instead of 1.15 m (2.3 s)"
+arena_7p5 = "7.5 m arena with the hangar ring 3.2 m (the sheet's hangar value): two things change, the arena side (keep-in 3.5 m) and the ring (run-in 1.6 m instead of 1.15 m)"
+height_offset_cell = "built as an INFO sensitivity group (LEAD CALL 21 Nov 2026): group sens_strike_dz_1mm, the base game with every Strike drone started 1 mm higher (strike_start_dz_m 0.001) through the sweep's own starts hook (ste/sweep.py SweepGame._draw_starts; the core game draws every start at one height and is not changed), strike_straight against every Guard script, compared with the base cells of the same pairs. T13 lesson: on the physics drone a 1 mm offset flips Strike over/under outcomes; tier 1 holds heights, so a change here is a tier-1 effect. Every other group: no offset, no jitter"
+
+[cut]
+protected = ["ctl_tag_fires_2v1", "ctl_tag_fires_3v3", "ctl_tag_fires_5v3", "ctl_reach_fires_1v1", "ctl_reach_fires_3v3", "ctl_same_seed", "ctl_stand_still", "ctl_still_1v1", "ctl_still_2v1", "ctl_still_3v3", "ctl_still_5v3", "ctl_tiny_tag", "ctl_tag_off", "base"]
+safety_factor = 1.1
+
+[controls]
+stop_on_fail = true
+same_seed_closest_tol_m = 1e-06
+global_checks = ["tags_one_for_one", "paired_starts", "no_nonfinite_actions"]
+
+[shortlist]
+always = ["base"]
+info_reference = { ctl_tag_off = "no proximity tag" }
+candidates = ["base"]
+report_only = ["size_1v1", "size_5v3"]
+max_variants = 3
+trivial_at = 0.8
+tie_window_games = 50
+tie_breaks = ["lab_arena_first", "larger_zone_tag_margin", "lower_guard_survives", "run_order"]
+
+[clips]
+cells = [["guard_field", "strike_converge"]]
+group = "base"
+games = 2
+seed = 110000
+max_ticks = 600
+speed = 8
+fps = 10
+dpi = 50
+reserve_s = 600
+
+[pilot]
+sizes = ["1v1", "2v1", "3v3", "5v3"]
+cells_per_batch = [1, 4, 10, 30]
+ticks = 200
+warmup_ticks = 20
+guard_order = ["guard_mark_edge", "guard_mirror", "guard_field", "guard_parked_ring", "guard_parked_centre"]
+
+[games]
+base = { file = "configs/ste_l011/base.toml", sha256 = "96e0e7f61a49999da54eee81a544bf64c519cd80833f0dcdfa2a07edfc10cc4d" }
+tag_1p2 = { file = "configs/ste_l011/tag_1p2.toml", sha256 = "60a225a1f6876407edac2a12ac1002a161971e7b4c7923a838e710723ee4e378" }
+tag_1p4 = { file = "configs/ste_l011/tag_1p4.toml", sha256 = "ddcfa1f56fd533907651225260939426617a38db83aec5f94404b6b27202124f" }
+tag_1p8 = { file = "configs/ste_l011/tag_1p8.toml", sha256 = "d27cedb5aa55537d691d07c59b5dc538002ec2b7d7674c52d1567afdc012beeb" }
+zone_2p4 = { file = "configs/ste_l011/zone_2p4.toml", sha256 = "5782327bf434bf19cbeb752811fc6af770fab329e9dbda8dba13046023764bc7" }
+survive_1 = { file = "configs/ste_l011/survive_1.toml", sha256 = "512f46de7612c4a44eede71591d67150807fcfed6c46d38626b8a7c999428804" }
+arena_7p5 = { file = "configs/ste_l011/arena_7p5.toml", sha256 = "ce8cc5f876dfeb4c28130f7692bee0069d6fd479cddf1b30dff77934d5fdd1a9" }
+tag_off = { file = "configs/ste_l011/tag_off.toml", sha256 = "fae94c1f36ec026b4e9778fbb497b576d5dce0b8f67b443b1ed7e77512d000e1" }
+tag_0p05 = { file = "configs/ste_l011/tag_0p05.toml", sha256 = "be8d5b2ef7dc58958c329374370aea026fa7a650950564a3e3dc3b04bcc4db33" }
+tag_10m = { file = "configs/ste_l011/tag_10m.toml", sha256 = "816892b3524829f6fda1646bcea12f0030a713fc7106a50ea1c34727f6fabe78" }
+zone_2p4_tag_off = { file = "configs/ste_l011/zone_2p4_tag_off.toml", sha256 = "86613ffd577fa58f56d865d5527d145a181cfa55335a227d583f83933c60ccd7" }
+
+[projection.seconds_per_batch_tick]
+"1v1" = 0.0321557
+"2v1" = 0.0428184
+"3v3" = 0.0743015
+"5v3" = 0.137539
+
+[[groups]]
+name = "ctl_tag_fires_2v1"
+role = "control"
+control = "tag_fires"
+game = "tag_10m"
+size = "2v1"
+guards = ["zero"]
+strikes = ["zero"]
+ticks = 100
+
+[[groups]]
+name = "ctl_tag_fires_3v3"
+role = "control"
+control = "tag_fires"
+game = "tag_10m"
+size = "3v3"
+guards = ["zero"]
+strikes = ["zero"]
+ticks = 100
+
+[[groups]]
+name = "ctl_tag_fires_5v3"
+role = "control"
+control = "tag_fires"
+game = "tag_10m"
+size = "5v3"
+guards = ["zero"]
+strikes = ["zero"]
+ticks = 100
+
+[[groups]]
+name = "ctl_reach_fires_1v1"
+role = "control"
+control = "reach_fires"
+game = "zone_2p4_tag_off"
+size = "1v1"
+guards = ["zero"]
+strikes = ["strike_straight"]
+ticks = 200
+
+[[groups]]
+name = "ctl_reach_fires_3v3"
+role = "control"
+control = "reach_fires"
+game = "zone_2p4_tag_off"
+size = "3v3"
+guards = ["zero"]
+strikes = ["strike_straight"]
+ticks = 200
+
+[[groups]]
+name = "base"
+role = "sweep"
+factor = "base case"
+level = "3v3, tag 1.6 m, zone 1.6 m, survive 0, 6.5 m"
+game = "base"
+size = "3v3"
+guards = "all"
+strikes = "all"
+
+[[groups]]
+name = "ctl_same_seed"
+role = "control"
+control = "same_seed_twice"
+of_group = "base"
+of_batch = 0
+
+[[groups]]
+name = "ctl_stand_still"
+role = "control"
+control = "stand_still_never_reaches"
+game = "base"
+size = "3v3"
+guards = "all"
+strikes = ["zero"]
+ticks = 600
+
+[[groups]]
+name = "ctl_still_1v1"
+role = "control"
+control = "stand_still_zero_tags"
+game = "base"
+size = "1v1"
+guards = ["zero"]
+strikes = ["zero"]
+ticks = 200
+
+[[groups]]
+name = "ctl_still_2v1"
+role = "control"
+control = "stand_still_zero_tags"
+game = "base"
+size = "2v1"
+guards = ["zero"]
+strikes = ["zero"]
+ticks = 200
+
+[[groups]]
+name = "ctl_still_3v3"
+role = "control"
+control = "stand_still_zero_tags"
+game = "base"
+size = "3v3"
+guards = ["zero"]
+strikes = ["zero"]
+ticks = 200
+
+[[groups]]
+name = "ctl_still_5v3"
+role = "control"
+control = "stand_still_zero_tags"
+game = "base"
+size = "5v3"
+guards = ["zero"]
+strikes = ["zero"]
+ticks = 200
+
+[[groups]]
+name = "ctl_tiny_tag"
+role = "control"
+control = "zero_tags"
+game = "tag_0p05"
+size = "3v3"
+guards = "all"
+strikes = ["strike_straight", "strike_sacrifice"]
+ticks = 600
+
+[[groups]]
+name = "ctl_tag_off"
+role = "control"
+control = "zero_tags"
+game = "tag_off"
+size = "3v3"
+guards = "all"
+strikes = ["strike_straight", "strike_sacrifice"]
+ticks = 600
+
+[[groups]]
+name = "sens_strike_dz_1mm"
+role = "sensitivity"
+factor = "sensitivity: Strike start height"
+level = "every Strike drone starts 1 mm higher (tier 1 vertical response not fitted)"
+game = "base"
+size = "3v3"
+guards = "all"
+strikes = ["strike_straight"]
+strike_start_dz_m = 0.001
+ticks = 600
+
+[[groups]]
+name = "size_1v1"
+role = "sweep"
+factor = "team size"
+level = "1v1"
+game = "base"
+size = "1v1"
+guards = "all"
+strikes = ["strike_straight", "strike_sacrifice"]
+ticks = 600
+
+[[groups]]
+name = "size_5v3"
+role = "sweep"
+factor = "team size"
+level = "5v3"
+game = "base"
+size = "5v3"
+guards = "all"
+strikes = ["strike_straight", "strike_converge"]
+ticks = 600

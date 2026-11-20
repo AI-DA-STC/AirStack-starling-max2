@@ -46,16 +46,41 @@ def exit_word(run_dir: Path) -> str:
 def record_text(run_dir: Path, result: dict, name: str, number: str) -> tuple[str, str]:
     meta = result["meta"]
     code = (run_dir / "exit_code").read_text().strip() if (run_dir / "exit_code").is_file() else None
-    finished = not result.get("stopped") and code in (None, "0")
-    verdict = ("INFO (no gates on the screen; every control PASS)" if result["controls_all_pass"] and finished else
-               f"ABORTED ({result.get('stopped') or 'exit ' + str(code)}; controls "
-               f"{'all PASS' if result['controls_all_pass'] else 'not all PASS'})")
+    finished = not result.get("stopped") and code == "0"          # QC M-4: INFO needs a recorded exit code 0
+    readable = result["controls_all_pass"] and finished              # QC I4: otherwise no shortlist numbers anywhere
+    why = "; ".join(
+        ([f"control(s) {', '.join(k for k, v in result['controls'].items() if v['status'] != 'PASS')} not PASS"]
+         if not result["controls_all_pass"] else [])
+        + ([f"the run stopped ({result['stopped']})"] if result.get("stopped") else [])
+        + (["no exit_code (not launched through scripts/ste_job.py, or still running)"] if code is None else
+           [f"exit {code}"] if code != "0" else []))
+    verdict = "INFO (no gates on the screen; every control PASS)" if readable else f"ABORTED ({why})"
     hours_text, hours = gpu_hours(run_dir)
     sl = result["shortlist"]
     batches = result["batches"]
     games = sum(b["games"] * b["steps_played"] for b in batches)
     seconds = sum(b["seconds"] for b in batches) or float("nan")
     sizes = sorted({b["size"] for b in batches})
+    if readable:
+        shortlist_lines = [
+            "## Shortlist for L0.12 (rule: gate file [shortlist])", "",
+                 f"**{', '.join(sl['shortlist']) or 'no eligible variant'}**; without the z_up_info columns: "
+                 f"{', '.join(result['shortlist_without_z_up']['shortlist']) or 'none'}. The lead picks the shortlist and "
+                 f"records why before L0.12 (PLAN.md row L0.11).", "",
+                 "The base case is always carried as the reference for the proposed 1.6 m rules (LEAD CALL 21 Nov 2026); "
+                 "the rule adds at most two more.", "",
+                 "| Variant | H | g* | R | s* | d | |", "|---|---|---|---|---|---|---|",
+                 *[f"| {v['variant']} | {v['H'] if v['H'] is None else round(v['H'], 3)} | {v['g_star']} | "
+                   f"{v['R'] if v['R'] is None else round(v['R'], 3)} | {v['s_star']} | "
+                   f"{v['d'] if v['d'] is None else round(v['d'], 3)} | {v['reason']} |" for v in sl["variants"] + sl["report_only"]],
+            *[f"| {v['label']} (INFO; {v['variant']}) | {v['H'] if v['H'] is None else round(v['H'], 3)} | {v['g_star']} | "
+              f"{v['R'] if v['R'] is None else round(v['R'], 3)} | {v['s_star']} | "
+              f"{v['d'] if v['d'] is None else round(v['d'], 3)} | INFO reference, never shortlisted (P1 is the owner's at "
+              f"G0) |" for v in sl.get("info_reference", [])]
+        ]
+    else:
+        shortlist_lines = ["## Shortlist for L0.12", "",
+                           f"Not read: {why}. An ABORTED record carries only what ran and why: no shortlist, H, R or d."]
     lines = [f"Simulator: {meta['simulator']}. Observed in the training simulator; not a flight result.", "",
              f"# {name} record", "",
              "## Run notes", "",
@@ -76,6 +101,8 @@ def record_text(run_dir: Path, result: dict, name: str, number: str) -> tuple[st
              *[f"- Game `{k}`: `{v['file']}`, sha256 `{v['sha256']}`." for k, v in meta["games"].items()],
              f"- {meta['games_per_cell']} games per cell, {meta['cells_per_batch']} cells per batch, at most "
              f"{meta['ticks_cap']} ticks per game; device {meta['device']}.", "",
+             "- Closest 3-D approach (results.md): among drones still in the game after the tag step (a pair tagged on "
+             "a step is out before the distance is taken: core/game.py; QC M-3).", "",
              "## Model parameter set", "",
              "Tier 1 Starling layer: `params/real_exploratory_v0.toml` (fitted PX4 response, exploratory); safety filter on "
              "every pair, 1000 sweeps, check every 8.", "",
@@ -94,26 +121,19 @@ def record_text(run_dir: Path, result: dict, name: str, number: str) -> tuple[st
              "| Control | Status | Detail |", "|---|---|---|",
              *[f"| {k} | {v['status']} | {v['detail']} |" for k, v in result["controls"].items()], "",
              f"Cut by the projection: {', '.join(result['cut']) or 'none'}.", "",
-             "## Shortlist for L0.12 (rule: gate file [shortlist])", "",
-             f"**{', '.join(sl['shortlist']) or 'no eligible variant'}**; without the z_up_info columns: "
-             f"{', '.join(result['shortlist_without_z_up']['shortlist']) or 'none'}. The lead picks the shortlist and "
-             f"records why before L0.12 (PLAN.md row L0.11).", "",
-             "The base case is always carried as the reference for the proposed 1.6 m rules (LEAD CALL 21 Nov 2026); "
-             "the rule adds at most two more.", "",
-             "| Variant | H | g* | R | s* | d | |", "|---|---|---|---|---|---|---|",
-             *[f"| {v['variant']} | {v['H'] if v['H'] is None else round(v['H'], 3)} | {v['g_star']} | "
-               f"{v['R'] if v['R'] is None else round(v['R'], 3)} | {v['s_star']} | "
-               f"{v['d'] if v['d'] is None else round(v['d'], 3)} | {v['reason']} |" for v in sl["variants"] + sl["report_only"]],
+             *shortlist_lines,
              "", "## Figures and videos", "",
              "Figures from the run's own results.json by `scripts/make_ste_l011_figures.py`: `figures/`. Clips "
              "(STANDARDS section 8): " + ("; ".join(result.get("clips", [])) or "none recorded (say why here)") + ".", "",
              "## Confounds stated before the run", "",
              *[f"- {k}: {v}" for k, v in meta["confounds"].items() if isinstance(v, str)], ""]
     head = ", ".join(f"{v['variant']} H {v['H']:.2f} R {v['R']:.2f}" for v in sl["variants"] if v["H"] is not None)
+    played = f"{sum(len(g['rows']) for g in result['groups'])} cells played"
+    what = (f"{played} x {meta['games_per_cell']} games; shortlist {', '.join(sl['shortlist']) or 'none'}; {head}"
+            if readable else f"{played}; not read: {why}")
+    hours_cell = f"; {hours:.3f} GPU-h" if hours is not None else ""
     row = (f"| {number} | {datetime.datetime.now().astimezone().isoformat(timespec='seconds')} | {meta['simulator']}; "
-           f"{meta['gpu'] or 'CPU'} | {name} | STE L0.11 Screening sweep: {sum(len(g['rows']) for g in result['groups'])} "
-           f"cells x {meta['games_per_cell']} games; shortlist {', '.join(sl['shortlist']) or 'none'}; {head}"
-           f"{'; ' + format(hours, '.3f') + ' GPU-h' if hours is not None else ''} | {verdict.split(' ')[0]} | "
+           f"{meta['gpu'] or 'CPU'} | {name} | STE L0.11 Screening sweep: {what}{hours_cell} | {verdict.split(' ')[0]} | "
            f"records/{name}_record.md |")
     return "\n".join(lines), row
 

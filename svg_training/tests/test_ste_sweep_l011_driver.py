@@ -15,6 +15,7 @@ from _ste_tools import ROOT, SCRIPTS, reap, run_py, start_py, tool_env, wait_for
 from svg_training.ste import run_contract as rc, shared, sweep
 
 sys.path.insert(0, str(SCRIPTS))
+import check_ste_l011_smoke as smoke_check  # noqa: E402
 import make_ste_l011_record as recorder  # noqa: E402
 import ste_sweep_l011 as driver  # noqa: E402
 
@@ -45,8 +46,9 @@ def test_a_run_writes_cells_controls_results_and_figures(tmp_path):
     assert run(gates, out) == rc.EXIT_DONE
     result = json.loads((out / "results.json").read_text())
     assert result["controls_all_pass"], result["controls"]
-    assert set(result["controls"]) == {"ctl_same_seed", "ctl_stand_still", "ctl_still_3v3", "ctl_tiny_tag", "ctl_tag_off",
-                                       "tags_at_most_min_team", "paired_starts", "no_nonfinite_actions"}
+    assert set(result["controls"]) == {"ctl_tag_fires_2v1", "ctl_tag_fires_5v3", "ctl_reach_fires_1v1", "ctl_same_seed",
+                                       "ctl_stand_still", "ctl_still_3v3", "ctl_tiny_tag", "ctl_tag_off",
+                                       "tags_one_for_one", "paired_starts", "no_nonfinite_actions"}
     groups = {g["name"]: g for g in result["groups"]}
     assert len(groups["base"]["rows"]) == 2 and groups["size_1v1"]["skipped_duplicates"] == [["guard_field", "strike_sacrifice"]]
     row = groups["base"]["rows"][0]
@@ -56,12 +58,18 @@ def test_a_run_writes_cells_controls_results_and_figures(tmp_path):
     assert row["games"] + row["unfinished"] == 4                     # 6 ticks: no game finishes, none is counted
     assert (out / "gates.toml").read_bytes() == gates.read_bytes()
     assert (out / driver.PINNED_SHA).read_text().strip() == sweep.load_gates(gates).sha256
-    assert len(list((out / "cells").glob("*.json"))) == 10
+    assert len(list((out / "cells").glob("*.json"))) == 13
+    timing = json.loads((out / rc.CHECKPOINT_NAME).read_text())["state"]["timing"]
+    assert {k: len(v) for k, v in timing.items()} == {"3v3": 4, "1v1": 1}     # QC I2: sweep and sensitivity batches only
     assert groups["ctl_still_3v3"]["rows"][0]["unfinished"] == 4      # its own 3-tick cap
     md = (out / "results.md").read_text()
     assert "Controls (read these first)" in md and "Sensitivity: every Strike drone starts 1 mm higher" in md
     assert "L011-F1" in md and "Never suspend" in md
     assert result["shortlist"]["shortlist"][0] == "base"                # the reference, always carried
+    assert "parked (holds starts; = still at 2+ Guards)" in md          # QC M-10 label, 3v3 base rows
+    assert "among drones still in the game after the tag step" in md   # QC M-3 wording
+    assert "no proximity tag (INFO" in md                                # M-8: the tag-off INFO reference row
+    assert result["shortlist"]["info_reference"][0]["variant"] == "ctl_tag_off"
     assert "shortlist" in result and result["shortlist"]["variants"]
     # the record writer drafts the record from the run folder alone, and never overwrites one
     records = tmp_path / "records"
@@ -73,8 +81,15 @@ def test_a_run_writes_cells_controls_results_and_figures(tmp_path):
                     "## Steps per second", "## Gates", "## Shortlist for L0.12"):
         assert section in text
     assert sweep.load_gates(gates).sha256 in text and "L011-F1" in text and "never suspend" in text.lower()
+    assert "among drones still in the game after the tag step" in text
+    assert "no proximity tag (INFO" not in text        # this record is not INFO (no exit code): no numbers, no reference
     assert recorder.main(argv) == 1
     assert not (tmp_path / "L.md").exists()                           # the ledger only with --append-ledger
+    assert "ABORTED" in text and "no exit_code" in text                 # QC M-4: no exit code is never INFO
+    (out / "exit_code").write_text("0\n")
+    assert recorder.main(["--run-dir", str(out), "--number", "W99", "--out-dir", str(tmp_path / "r2")]) == 0
+    assert "Verdict: **INFO" in (tmp_path / "r2" / "run_record.md").read_text()
+    assert "no proximity tag (INFO" in (tmp_path / "r2" / "run_record.md").read_text()
 
 
 def test_the_run_refuses_a_changed_gate_file(tmp_path, capsys):
@@ -117,20 +132,35 @@ def test_sigint_stops_and_the_same_command_resumes_to_the_same_results(tmp_path)
     finally:
         reap(proc)
     done_before = json.loads((out / rc.CHECKPOINT_NAME).read_text())["state"]["done"]
-    assert 1 <= len(done_before) < 10
+    assert 1 <= len(done_before) < 13
     stamp = first.stat().st_mtime_ns
     again = run_py([*cmd[:-2]], env)
     assert again.returncode == rc.EXIT_DONE, again.stderr
     assert "resumed" in again.stdout
     assert first.stat().st_mtime_ns == stamp                          # a finished batch is not played again
     assert rows_of(out) == rows_of(whole)                             # same numbers as the run that was never stopped
+    # the I6 check script's SIGINT drill line, on this folder (the launcher's files written as ste_job.py writes them)
+    resumes = json.loads((out / rc.CHECKPOINT_NAME).read_text())["state"]["resumes"]
+    assert resumes and set(resumes[0]["done"]) == set(done_before)
+    (out / "launches.jsonl").write_text("\n".join(json.dumps(e) for e in (
+        {"event": "launch", "launch": 1, "time": 0.0}, {"event": "end", "launch": 1, "time": 1.0, "exit_code": 4},
+        {"event": "launch", "launch": 2, "time": resumes[0]["time"]},
+        {"event": "end", "launch": 2, "time": resumes[0]["time"] + 1, "exit_code": 0})) + "\n")
+    lines = []
+    smoke_check.print = lambda text: lines.append(text)          # capture its lines (module-level print)
+    try:
+        smoke_check.main(["--run-dir", str(out), "--expect-sigint", "--device-expected", "cpu"])
+    finally:
+        del smoke_check.print
+    assert any(x.startswith("PASS SIGINT drill") for x in lines), lines
+    assert any(x.startswith("PASS resumed 1 time(s)") for x in lines), lines
 
 
 def test_the_cap_stops_the_run_with_exit_3_and_results_and_an_aborted_record(tmp_path, monkeypatch):
     gates = smoke_gates(tmp_path / "gates.toml")
     code = driver.main(["--gates", str(gates), "--run-dir", str(tmp_path / "first"), "--cap-h", "1e-9", "--no-clips"])
     assert code == rc.EXIT_CAP
-    out = tmp_path / "run"                           # the cap reached once the first batch is written
+    out = tmp_path / "run"                           # the cap reached once the first base batch is written
     monkeypatch.setattr(rc.RunGuard, "cap_reached", lambda self: (out / "cells" / "base__b00.json").exists())
     assert run(gates, out) == rc.EXIT_CAP
     result = json.loads((out / "results.json").read_text())
@@ -172,7 +202,7 @@ def test_the_pilot_measures_every_point_and_projects_each_batch_size(tmp_path):
     out = tmp_path / "pilot"
     assert driver.main(["--gates", str(gates), "--run-dir", str(out), "--cap-h", CAP_H, "--pilot"]) == rc.EXIT_DONE
     pilot = json.loads((out / "pilot.json").read_text())
-    assert [(p["size"], p["cells"]) for p in pilot["points"]] == [("1v1", 1), ("1v1", 2), ("3v3", 1), ("3v3", 2)]
+    assert [(p["size"], p["cells"]) for p in pilot["points"]] == [(z, c) for z in ("1v1", "2v1", "3v3", "5v3") for c in (1, 2)]
     assert all(p["seconds_per_tick"] > 0 for p in pilot["points"])
     assert [p["cells_per_batch"] for p in pilot["projections"]] == [1, 2]
     assert all(p["projected_s"] is not None for p in pilot["projections"])
@@ -195,6 +225,8 @@ def test_end_to_end_through_the_launcher_with_figures_and_a_clip(tmp_path):
     assert (out / "figures" / "base_heatmap.png").is_file() and (out / "figures" / "factors.png").is_file()
     assert list((out / "videos").glob("*.gif")), result["clips"]
     assert not (tmp_path / "shared" / shared.GPU_HOURS_LOG_NAME).exists()      # a CPU job logs no GPU-hours
+    assert smoke_check.main(["--run-dir", str(out), "--device-expected", "cpu"]) == 0          # the I6 check script
+    assert smoke_check.main(["--run-dir", str(out)]) == 1                                      # not a CUDA run
 
 
 def test_a_laptop_suspend_counts_against_the_cap(tmp_path):
@@ -207,3 +239,161 @@ def test_a_laptop_suspend_counts_against_the_cap(tmp_path):
         assert not guard.cap_reached()
         now[0] += 2 * 3600.0                                          # two hours with the lid closed
         assert guard.effective_s() == 2 * 3600.0 and guard.cap_reached()
+
+
+# ================================================================================================ QC fix round 1
+def _proximity_tags():
+    from svg_training.core import pair_rules
+    return pair_rules.proximity_tags
+
+
+def _hit_any(pos_m, alive, guards, radius_m, guard_survives):
+    """QC M3: one Guard tags every Strike in range (the F5 'hit.any' rule), not one for one."""
+    import torch
+    d = (pos_m[:, :guards, None, :] - pos_m[:, None, guards:, :]).norm(dim=-1)
+    near = alive[:, :guards, None] & alive[:, None, guards:] & (d < radius_m)
+    tagged = torch.cat((near.any(dim=2), near.any(dim=1)), dim=1)
+    leaves = torch.cat((tagged[:, :guards] & ~guard_survives[:, None], tagged[:, guards:]), dim=1)
+    return tagged, alive & ~leaves, torch.full_like(alive, -1, dtype=torch.long)
+
+
+def _mutate(monkeypatch, name):
+    """QC's breakages (runs/ste_l11_qc.md section 3), applied in process to the real game and driver."""
+    import torch
+    from svg_training.core import game as game_module
+    original = _proximity_tags()
+    if name == "M1_tag_counter_dead":
+        step = sweep.SweepGame.step
+
+        def dead(self, actions):
+            out = step(self, actions)
+            self.tags = self.tags * 0
+            return out
+        monkeypatch.setattr(sweep.SweepGame, "step", dead)
+    elif name == "M2_tag_never_fires":
+        monkeypatch.setattr(game_module, "proximity_tags", lambda p, a, g, r, s: original(p, a, g, 0.0, s))
+    elif name == "M3_one_guard_tags_all":
+        monkeypatch.setattr(game_module, "proximity_tags", _hit_any)
+    elif name == "M4_guards_always_survive":
+        monkeypatch.setattr(game_module, "proximity_tags", lambda p, a, g, r, s: original(p, a, g, r, torch.ones_like(s)))
+    elif name == "M11_zone_never_fires":
+        draw = game_module.draw_arenas
+
+        def no_zone(*args, **kwargs):
+            ar = draw(*args, **kwargs)
+            ar.zone_radius_m = ar.zone_radius_m * 0
+            return ar
+        monkeypatch.setattr(game_module, "draw_arenas", no_zone)
+    else:
+        raise KeyError(name)
+
+
+@pytest.mark.parametrize("mutant,caught_by", [
+    ("M1_tag_counter_dead", "ctl_tag_fires_2v1"), ("M2_tag_never_fires", "ctl_tag_fires_2v1"),
+    ("M3_one_guard_tags_all", "ctl_tag_fires_2v1"), ("M4_guards_always_survive", "ctl_tag_fires_2v1"),
+    ("M11_zone_never_fires", "ctl_reach_fires_1v1")])
+def test_qcs_breakages_each_end_the_real_driver_with_exit_6(tmp_path, monkeypatch, mutant, caught_by):
+    """QC C1: each of the breakages that passed every control before now ends in CONTROL_FAILED, before any sweep cell."""
+    gates = smoke_gates(tmp_path / "gates.toml")
+    _mutate(monkeypatch, mutant)
+    out = tmp_path / "run"
+    assert run(gates, out) == rc.EXIT_CONTROL_FAILED
+    controls = json.loads((out / "controls.json").read_text())
+    assert controls[caught_by]["status"] == "FAIL", controls
+    assert not (out / "cells" / "base__b00.json").exists()
+
+
+def test_the_clean_known_answer_controls_pass_exactly(tmp_path):
+    gates = smoke_gates(tmp_path / "gates.toml")
+    out = tmp_path / "run"
+    assert run(gates, out) == rc.EXIT_DONE
+    controls = json.loads((out / "controls.json").read_text())
+    for name in ("ctl_tag_fires_2v1", "ctl_tag_fires_5v3", "ctl_reach_fires_1v1", "tags_one_for_one"):
+        assert controls[name]["status"] == "PASS", controls[name]
+
+
+def test_the_run_refuses_before_play_when_the_protected_groups_alone_cannot_fit_the_cap(tmp_path, capsys):
+    """QC I3 (H6): projection x 1.1 + 600 s of base and the controls alone is over the cap: exit 2, nothing played."""
+    slow = {"1v1": 100.0, "2v1": 100.0, "3v3": 100.0, "5v3": 100.0}
+    gates = smoke_gates(tmp_path / "gates.toml", projection=slow)
+    out = tmp_path / "run"
+    assert run(gates, out) == rc.EXIT_REFUSED
+    assert "protected" in capsys.readouterr().err and not list((out / "cells").glob("*.json"))
+
+
+def test_a_gate_that_requires_the_projection_refuses_without_it(tmp_path, capsys):
+    gates = smoke_gates(tmp_path / "gates.toml", run={"require_projection": True})
+    assert run(gates, tmp_path / "run") == rc.EXIT_REFUSED
+    assert "seconds_per_batch_tick" in capsys.readouterr().err
+
+
+def test_a_failed_control_run_writes_no_shortlist_numbers_into_results_record_or_ledger_row(tmp_path, monkeypatch,
+                                                                                           capsys):
+    """QC I4: an ABORTED row carries only what ran and why."""
+    gates = smoke_gates(tmp_path / "gates.toml")
+    _mutate(monkeypatch, "M4_guards_always_survive")
+    out = tmp_path / "run"
+    assert run(gates, out) == rc.EXIT_CONTROL_FAILED
+    md = (out / "results.md").read_text()
+    assert "Shortlist: **" not in md and "not read" in md
+    (out / "exit_code").write_text("6\n")
+    capsys.readouterr()
+    assert recorder.main(["--run-dir", str(out), "--number", "W97", "--out-dir", str(tmp_path / "rec")]) == 0
+    text = (tmp_path / "rec" / "run_record.md").read_text()
+    row = capsys.readouterr().out.strip().splitlines()[-1]
+    assert "| Variant | H" not in text and "Not read: control" in text and "ABORTED" in text
+    assert " H " not in row and "shortlist" not in row and "ABORTED" in row
+    assert smoke_check.main(["--run-dir", str(out), "--device-expected", "cpu"]) == 1
+
+
+def test_the_code_is_pinned_at_the_first_launch(tmp_path, monkeypatch, capsys):
+    """QC M-2: a resume on other code is refused unless --allow-code-change, which is recorded."""
+    gates = smoke_gates(tmp_path / "gates.toml")
+    out = tmp_path / "run"
+    stop = ["--gates", str(gates), "--run-dir", str(out), "--cap-h", "1e-9", "--no-clips"]
+    assert driver.main(stop) == rc.EXIT_CAP
+    pinned = json.loads((out / driver.CODE_FILE).read_text())
+    monkeypatch.setattr(driver, "code_identity", lambda: {"commit": "0" * 40, "diff_sha256": "x"})
+    assert driver.main(stop) == rc.EXIT_REFUSED
+    assert "code changed" in capsys.readouterr().err
+    assert driver.main(stop + ["--allow-code-change"]) == rc.EXIT_CAP
+    after = json.loads((out / driver.CODE_FILE).read_text())
+    assert after["first"] == pinned["first"] and after["changes"][0]["commit"] == "0" * 40
+
+
+def test_a_non_finite_action_writes_results_before_exit_5(tmp_path, monkeypatch):
+    """QC M-1."""
+    gates = smoke_gates(tmp_path / "gates.toml")
+    real = sweep.play_batch
+
+    def nan_batch(*args, **kwargs):
+        res = real(*args, **kwargs)
+        res.nonfinite_actions = 1
+        return res
+    monkeypatch.setattr(sweep, "play_batch", nan_batch)
+    out = tmp_path / "run"
+    assert run(gates, out) == rc.EXIT_NONFINITE
+    assert json.loads((out / "results.json").read_text())["stopped"] == "non-finite"
+
+
+def test_a_pilot_stopped_at_its_cap_still_writes_its_table(tmp_path):
+    """QC M-6."""
+    gates = smoke_gates(tmp_path / "gates.toml")
+    out = tmp_path / "pilot"
+    assert driver.main(["--gates", str(gates), "--run-dir", str(out), "--cap-h", "1e-9", "--pilot"]) == rc.EXIT_CAP
+    assert (out / "pilot.md").is_file() and "stopped" in (out / "pilot.md").read_text()
+
+
+def test_the_pilot_times_moving_guards_first(tmp_path):
+    """QC M-10: the 1-, 4- and 10-cell pilot points must not time guard_parked_centre (= still at 2+ Guards) alone."""
+    g = sweep.load_gates()
+    cells = driver.pilot_cells(g)
+    assert cells[0][0] not in ("guard_parked_centre", "guard_parked_ring")
+    assert "guard_parked_centre" not in {c[0] for c in cells[:4]}
+
+
+def test_clips_stop_when_a_stop_is_asked(tmp_path):
+    """QC M-5: the clip loop honours SIGINT."""
+    gates = sweep.load_gates(smoke_gates(tmp_path / "gates.toml"))
+    notes = driver.make_clips(gates, tmp_path, should_stop=lambda: True)
+    assert notes and "stopped" in notes[0] and not (tmp_path / "videos").exists()

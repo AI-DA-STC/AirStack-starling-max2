@@ -100,3 +100,42 @@ def test_out_drone_is_drawn_as_cross():
     sc.update(3)
     assert len(sc.dots[1].get_xdata()) == 0 and list(sc.crosses[1].get_xdata()) == [1.0]
     sc.plt.close(sc.fig)
+
+
+def test_a_strategy_object_records_as_its_name_does():
+    """STE L0.12: ``record_games`` also takes strategy objects (a trained team of either side); a name keeps today's
+    path. The same scripts given as objects (seeded as the name path seeds them) record the same games."""
+    by_name = record_games(CFG, 2, 1, "guard_mark_inside", "strike_flank", num_games=2, seed=5)
+    g = make_strategy("guard_mark_inside", "guard", CFG, 2, "cpu", 5 + 101)
+    s = make_strategy("strike_flank", "strike", CFG, 2, "cpu", 5 + 202)
+    by_obj = record_games(CFG, 2, 1, g, s, num_games=2, seed=5)
+    assert len(by_obj) == len(by_name)
+    for a, b in zip(by_obj, by_name):
+        assert np.array_equal(a.pos_m, b.pos_m) and a.outcome == b.outcome
+        assert a.guard_name == g.name and a.strike_name == s.name
+
+
+def test_new_clips_carry_a_height_panel_that_follows_the_game(recs):
+    """Standing rule (svg_training/CLAUDE.md, videos; VID-1 part 1): a 2-D top-down clip has a height panel. On by
+    default; every drone's height up to the frame's step, the height band as dashed lines, a time cursor."""
+    from svg_training.viz.replay import Recording
+    pos = np.zeros((5, 2, 3))
+    pos[:, 0, 2] = [1.2, 1.3, 1.4, 1.5, 1.6]
+    pos[:, 1, 2] = 1.2
+    alive = np.array([[1, 1], [1, 1], [1, 1], [1, 0], [1, 0]], dtype=bool)
+    r = Recording(pos, alive, np.zeros(2), 1.0, 3.0, GUARD_WIN, 4, 1, 1, "lab", "Starling layer", "a", "b", 0, 0, 2.0,
+                  height_band_m=(0.5, 1.8))
+    sc = Scene(r, 1, 20, 1.0, (4, 3), 30, 0.1)
+    assert sc.hax is not None and len(sc.heights) == 2
+    sc.update(2)
+    t, z = sc.heights[0].get_data()
+    assert list(z) == pytest.approx([1.2, 1.3, 1.4]) and list(t) == pytest.approx([0.0, 0.05, 0.1])
+    sc.update(4)
+    z1 = np.asarray(sc.heights[1].get_data()[1], dtype=float)
+    assert np.isnan(z1[3:]).all() and np.isfinite(z1[:3]).all()        # a drone that is out leaves the panel
+    assert sorted(round(float(line.get_ydata()[0]), 2) for line in sc.band_lines) == [0.5, 1.8]
+    sc.plt.close(sc.fig)
+    off = Scene(r, 1, 20, 1.0, (4, 3), 30, 0.1, height_panel=False)
+    assert off.hax is None and off.heights == []
+    off.plt.close(off.fig)
+    assert recs[0].height_band_m == tuple(CFG.arena.height_band_m)       # recorded games carry the band

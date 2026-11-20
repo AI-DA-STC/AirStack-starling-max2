@@ -48,6 +48,8 @@ class Recording:
     seed: int
     game_index: int
     closest_cross_m: float
+    height_band_m: tuple | None = None       # (floor, ceiling) m, drawn in the height panel; None: not known
+
 
     @property
     def end_time_s(self) -> float:
@@ -64,14 +66,19 @@ class _RecordingGame(SvgGame):
         super()._new_games(mask)
 
 
-def record_games(cfg: GameCfg, guards: int, strikes: int, guard_spec: str, strike_spec: str, num_games: int = 8,
+def record_games(cfg: GameCfg, guards: int, strikes: int, guard_spec, strike_spec, num_games: int = 8,
                  seed: int = 0, band: int | None = 1, max_steps: int | None = None) -> list[Recording]:
     """Play num_games games on the CPU (each slot's first game) and return one Recording per slot. The game
-    seed is ``seed``; strategy seeds are seed + 101 (Guard) and seed + 202 (Strike), as in scripts/score.py."""
+    seed is ``seed``; strategy seeds are seed + 101 (Guard) and seed + 202 (Strike), as in scripts/score.py.
+    ``guard_spec`` / ``strike_spec``: a strategy name (``make_strategy``) or a strategy object on the CPU for
+    ``num_games`` games (STE L0.12: a trained team of either side); the recording carries the object's ``name``."""
     dev = "cpu"
     game = _RecordingGame(cfg, num_games, guards, strikes, device=dev, seed=seed, band=band)
-    guard = make_strategy(guard_spec, "guard", cfg, num_games, dev, seed + 101)
-    strike = make_strategy(strike_spec, "strike", cfg, num_games, dev, seed + 202)
+    guard = make_strategy(guard_spec, "guard", cfg, num_games, dev, seed + 101) if isinstance(guard_spec, str) else guard_spec
+    strike = (make_strategy(strike_spec, "strike", cfg, num_games, dev, seed + 202) if isinstance(strike_spec, str)
+              else strike_spec)
+    guard_spec = guard_spec if isinstance(guard_spec, str) else guard.name
+    strike_spec = strike_spec if isinstance(strike_spec, str) else strike.name
     obs = game.reset()
     everyone = torch.ones(num_games, dtype=torch.bool)
     guard.reset(everyone)
@@ -126,7 +133,7 @@ def record_games(cfg: GameCfg, guards: int, strikes: int, guard_spec: str, strik
                     pi[f, m] = last
         recs.append(Recording(pi, ai, centre[i], float(rad[i]), float(half[i]), int(outcome[i]), t, guards,
                               strikes, BANDS[int(band_idx[i])], rules, guard_spec, strike_spec, seed, i,
-                              float(closest[i])))
+                              float(closest[i]), tuple(cfg.arena.height_band_m)))
     return recs
 
 
@@ -159,10 +166,13 @@ def frame_indices(rec: Recording, speed: int = 1, hold_s: float = 2.5, fps: int 
 
 class Scene:
     """The figure of one replay: build it, then ``update(j)`` draws frame j of ``frame_indices``.
-    ``dots`` and ``crosses`` hold one artist per drone: a drone in the game has a dot, one that is out has a cross."""
+    ``dots`` and ``crosses`` hold one artist per drone: a drone in the game has a dot, one that is out has a cross.
+    ``height_panel`` (default on; svg_training/CLAUDE.md "Videos inside every run", VID-1 part 1): a strip under the map
+    with every drone's height (m) against time up to the frame's step, the height band as dashed lines and a time
+    cursor (``hax``, ``heights``, ``band_lines``); off draws today's layout unchanged."""
 
     def __init__(self, rec: Recording, speed: int, fps: int, trail_s: float, size_in: tuple[float, float],
-                 dpi: int, hold_s: float):
+                 dpi: int, hold_s: float, height_panel: bool = True):
         import matplotlib
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
@@ -174,7 +184,10 @@ class Scene:
         n = rec.guards + rec.strikes
         w, hgt = size_in
         self.fig = fig = plt.figure(figsize=size_in, dpi=dpi)
-        ax = fig.add_axes([0.07, 0.15, 0.70 * hgt / w, 0.70])
+        if height_panel:
+            ax = fig.add_axes([0.07, 0.34, 0.52 * hgt / w, 0.52])
+        else:
+            ax = fig.add_axes([0.07, 0.15, 0.70 * hgt / w, 0.70])
         self.ax = ax
         ax.set_aspect("equal")
         pad = 0.04 * h
@@ -209,8 +222,27 @@ class Scene:
                  va="top")
         self.clock = fig.text(0.74, 0.80, "", ha="left", va="center", fontsize=15, family="monospace",
                               linespacing=1.4)
-        self.banner = fig.text(0.5, 0.02, "", ha="center", va="bottom", fontsize=17, weight="bold",
-                               bbox={"fc": "white", "ec": "#444444", "boxstyle": "round,pad=0.4"})
+        banner_at = (0.87, 0.10, 12) if height_panel else (0.5, 0.02, 17)
+        self.banner = fig.text(banner_at[0], banner_at[1], "", ha="center", va="bottom", fontsize=banner_at[2],
+                               weight="bold", bbox={"fc": "white", "ec": "#444444", "boxstyle": "round,pad=0.4"})
+        self.wrap_banner = height_panel
+        self.hax, self.heights, self.band_lines, self.cursor = None, [], [], None
+        if height_panel:
+            hax = fig.add_axes([0.08, 0.07, 0.60, 0.17])
+            self.hax = hax
+            z = rec.pos_m[..., 2][rec.alive]
+            lo, hi = (float(z.min()), float(z.max())) if z.size else (0.0, 1.0)
+            if rec.height_band_m is not None:
+                lo, hi = min(lo, rec.height_band_m[0]), max(hi, rec.height_band_m[1])
+                self.band_lines = [hax.axhline(b, ls="--", color="#777777", lw=1.2) for b in rec.height_band_m]
+            span = max(hi - lo, 0.2)
+            hax.set_ylim(lo - 0.1 * span, hi + 0.1 * span)
+            hax.set_xlim(0.0, max(rec.end_step, 1) * TICK_S)
+            hax.set_xlabel("time (s)", fontsize=11)
+            hax.set_ylabel("height (m)", fontsize=11)
+            hax.tick_params(labelsize=10)
+            self.heights = [hax.plot([], [], "-", color=c, lw=2.0, alpha=0.8)[0] for c in colours]
+            self.cursor = hax.axvline(0.0, color="#444444", lw=1.0)
         self.idx = frame_indices(rec, speed, hold_s, fps)
         self.trail_n = max(1, int(round(trail_s / TICK_S)))
         self.plt = plt
@@ -229,8 +261,19 @@ class Scene:
                 self.dots[m].set_data([], [])
                 self.crosses[m].set_data([x], [y])
         self.clock.set_text(f"t = {k * TICK_S:5.1f} s")
-        self.banner.set_text(result_text(rec) if k >= rec.end_step else "")
-        return self.trails + self.dots + self.crosses + [self.clock, self.banner]
+        text = result_text(rec) if k >= rec.end_step else ""
+        if self.wrap_banner and text:
+            import textwrap
+            text = textwrap.fill(text, width=22)
+        self.banner.set_text(text)
+        extra = []
+        if self.hax is not None:
+            t = np.arange(k + 1) * TICK_S
+            for m, line in enumerate(self.heights):
+                line.set_data(t, np.where(rec.alive[: k + 1, m], rec.pos_m[: k + 1, m, 2], np.nan))
+            self.cursor.set_xdata([k * TICK_S, k * TICK_S])
+            extra = self.heights + [self.cursor]
+        return self.trails + self.dots + self.crosses + [self.clock, self.banner] + extra
 
 
 def _use_bundled_ffmpeg_if_missing() -> None:
@@ -252,17 +295,18 @@ def _use_bundled_ffmpeg_if_missing() -> None:
 
 def render_replay(rec: Recording, path: str | Path, speed: int = 1, fps: int = 20, trail_s: float = 1.5,
                   size_in: tuple[float, float] = (10.667, 8.0), dpi: int = 120, hold_s: float = 2.5,
-                  playback_label: str = "") -> Path:
+                  playback_label: str = "", height_panel: bool = True) -> Path:
     """Write the replay of one game to ``path`` (.gif via pillow, .mp4 via ffmpeg). One game step is TICK_S = 0.05 s,
     one drawn frame shows ``speed`` steps and plays for 1/fps s, so the playback is speed * fps * 0.05 times real
     time (speed 2 at 20 fps = 2x). ``playback_label`` (e.g. "2x real time") is shown next to the clock. Default
-    size 10.667 x 8 in at 120 dpi = 1280 x 960 px (even sizes, as the MP4 codec needs)."""
+    size 10.667 x 8 in at 120 dpi = 1280 x 960 px (even sizes, as the MP4 codec needs). ``height_panel`` (default on):
+    the height strip under the map (``Scene``)."""
     from matplotlib.animation import FFMpegWriter, FuncAnimation, PillowWriter
 
     path = Path(path)
     if path.suffix not in (".gif", ".mp4"):
         raise ValueError(f"path must end in .gif or .mp4, got {path.name!r}")
-    sc = Scene(rec, speed, fps, trail_s, size_in, dpi, hold_s)
+    sc = Scene(rec, speed, fps, trail_s, size_in, dpi, hold_s, height_panel)
     if playback_label:
         base = sc.update
 

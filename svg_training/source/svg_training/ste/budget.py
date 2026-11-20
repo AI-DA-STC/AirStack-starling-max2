@@ -3,16 +3,18 @@
 The ledger is ``gpu_hours.log`` in the shared folder (``ste/shared.py``), append-only, one JSON line per CUDA interval
 of a job, in the line format of the NUS port's ``gpu_hours.log`` so that the same arithmetic reads it::
 
-    {"group": "<task ID>", "job": "<job name>", "device": "cuda", "start": <unix s>, "end": <unix s>}
+    {"group": "<task ID>", "job": "<job name>", "device": "cuda", "start": <unix s>, "end": <unix s>, "pids": [<pid>]}
 
 A job's wrapper (``ste/jobs.py``) appends one line per beat while the job runs, each from the end of the last, and
-one when it ends. So a job that is still running is counted up to its last beat, and a power cut loses at most one
-beat. A CPU job logs nothing.
+one when it ends, with the pid of the job's command. So a job that is still running is counted up to its last beat,
+and a power cut loses at most one beat. A CPU job logs nothing.
 
 GPU-hours used, of a task or of a phase, are the union of the intervals (jobs side by side count once) less the
-paused time inside them. The arithmetic is ``nus/pauses.py::logged_gpu_hours``, imported, not copied: the lines
-wanted are handed to it in a file without a name, beside the merged pause log of ``ste/pauses.py``. A line that is not
-a ledger line (torn by a power cut) is skipped and reported on stderr.
+paused time inside them. A pause counts for a line only if it stopped one of the line's pids (L07-C1, ``ste/pauses.py``):
+each line first loses the time its own job was paused, and only then are the lines united, so a paused job does not
+take time off a sibling that ran on. A line without ``"pids"`` (written before L07-C1) loses every pause, as it did
+then. The union is ``nus/pauses.py::logged_gpu_hours``, imported, not copied: the unpaused pieces are handed to it in a
+file without a name. A line that is not a ledger line (torn by a power cut) is skipped and reported on stderr.
 
 :func:`check_launch` compares used plus asked with the caps of ``configs/ste_learning.toml`` (the task's cap and the
 phase cap) and raises :class:`BudgetError` naming the cap, what is used and what was asked. The hours a job asks for
@@ -24,10 +26,11 @@ from __future__ import annotations
 
 import json
 import math
+import os
 import sys
 import tempfile
 from pathlib import Path
-from typing import NamedTuple
+from typing import Iterable, NamedTuple
 
 from ..nus import pauses as nus_pauses              # standard library only: no PyTorch, no Isaac
 from . import pauses, shared
@@ -51,15 +54,20 @@ class Usage(NamedTuple):
     phase_used_gpu_h: float
 
 
-def log_interval(task: str, job: str, device: str, start_s: float, end_s: float) -> bool:
+def log_interval(task: str, job: str, device: str, start_s: float, end_s: float,
+                 pids: Iterable[int] | None = None) -> bool:
     """Append one interval to the ledger if ``device`` is a CUDA device; a CPU job logs nothing. Returns whether a
-    line was written. ``start_s``, ``end_s``: unix seconds, end not before start."""
+    line was written. ``start_s``, ``end_s``: unix seconds, end not before start. ``pids``: the job's own pids (its
+    command's), so that only a pause that stopped it takes time off; None writes a line without pids, which every
+    pause takes time off (the rule before L07-C1)."""
     if not end_s >= start_s:
         raise ValueError(f"an interval must not end before it starts: start {start_s!r}, end {end_s!r}")
     if not str(device).startswith(CUDA):
         return False
-    nus_pauses.append_row(shared.gpu_hours_log(), {"group": task, "job": job, "device": str(device),
-                                                   "start": float(start_s), "end": float(end_s)})
+    row = {"group": task, "job": job, "device": str(device), "start": float(start_s), "end": float(end_s)}
+    if pids is not None:
+        row["pids"] = sorted(int(pid) for pid in pids)
+    nus_pauses.append_row(shared.gpu_hours_log(), row)
     return True
 
 
@@ -89,17 +97,45 @@ def _rows() -> list[dict]:
     return rows
 
 
+def _unpaused(start_s: float, end_s: float, paused: list[tuple[float, float]]) -> list[tuple[float, float]]:
+    """The pieces of ``start_s`` to ``end_s`` outside ``paused`` (sorted, merged intervals, as ``nus/pauses.py`` gives)."""
+    pieces, at = [], start_s
+    for paused_from, paused_to in paused:
+        if paused_to <= at or paused_from >= end_s:
+            continue
+        if paused_from > at:
+            pieces.append((at, paused_from))
+        at = paused_to
+    if at < end_s:
+        pieces.append((at, end_s))
+    return pieces
+
+
+def _pids_of(row: dict) -> frozenset[int] | None:
+    """The job's own pids of a ledger line; None for a line without them (every pause counts for it)."""
+    listed = row.get("pids")
+    return frozenset(pid for pid in listed if type(pid) is int) if isinstance(listed, list) else None
+
+
 def _gpu_h(tasks: tuple[str, ...], job: str | None = None) -> float:
-    """GPU-hours of the ledger lines of ``tasks`` together (of one job only, if ``job`` is given): union of their
-    CUDA intervals less the paused time."""
-    rows = [dict(row, group=_ONE_GROUP) for row in _rows()
-            if row["group"] in tasks and (job is None or row.get("job") == job)]
-    if not rows:
+    """GPU-hours of the ledger lines of ``tasks`` together (of one job only, if ``job`` is given): each CUDA interval
+    less the time its own job was paused, then the union of what is left."""
+    rows = [row for row in _rows() if row["group"] in tasks and (job is None or row.get("job") == job)
+            and str(row["device"]).startswith(CUDA)]
+    paused: dict[frozenset[int] | None, list[tuple[float, float]]] = {}
+    pieces = []
+    for row in rows:
+        pids = _pids_of(row)
+        if pids not in paused:
+            paused[pids] = pauses.paused_intervals(pids=pids)
+        pieces += [{"group": _ONE_GROUP, "device": CUDA, "start": start_s, "end": end_s}
+                   for start_s, end_s in _unpaused(float(row["start"]), float(row["end"]), paused[pids])]
+    if not pieces:
         return 0.0
     with tempfile.TemporaryFile(dir=shared.shared_dir()) as nameless:       # the NUS arithmetic takes a file
-        nameless.write("".join(json.dumps(row) + "\n" for row in rows).encode())
+        nameless.write("".join(json.dumps(piece) + "\n" for piece in pieces).encode())
         nameless.flush()
-        return nus_pauses.logged_gpu_hours(_FD_FOLDER / str(nameless.fileno()), _ONE_GROUP, pauses.merged_log())
+        return nus_pauses.logged_gpu_hours(_FD_FOLDER / str(nameless.fileno()), _ONE_GROUP, os.devnull)
 
 
 def task_gpu_h(task: str) -> float:

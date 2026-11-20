@@ -20,6 +20,7 @@ from svg_training.nus import pauses as nus_pauses
 from svg_training.ste import pauses, shared
 
 T0 = 1_000_000.0          # made-up clock, seconds
+JOB = (7,)                # the made-up job that write() pauses (L07-C1: a pause counts only for the jobs it stopped)
 
 
 def write(log: Path, events: list[tuple[str, float]], pids: tuple[int, ...] = (7,)) -> None:
@@ -44,14 +45,14 @@ def logs(tmp_path, monkeypatch):
 def test_no_log_no_pause(logs):
     assert pauses.pause_logs() == logs
     assert pauses.pause_events() == [] and pauses.paused_intervals(now=T0) == []
-    assert pauses.effective_seconds(T0, T0 + 100.0) == 100.0
+    assert pauses.effective_seconds(T0, T0 + 100.0, JOB) == 100.0
 
 
 def test_pause_resume_pairs_and_a_stop_closes_a_pause(logs):
     shared_log, _, _ = logs
     write(shared_log, [("pause", T0 + 10), ("resume", T0 + 25), ("pause", T0 + 40), ("stop", T0 + 70), ("resume", T0 + 80)])
     assert pauses.paused_intervals(now=T0 + 500) == [(T0 + 10, T0 + 25), (T0 + 40, T0 + 70)]
-    assert pauses.paused_seconds(T0, T0 + 100) == 45.0
+    assert pauses.paused_seconds(T0, T0 + 100, JOB) == 45.0
 
 
 def test_an_unmatched_pause_runs_to_now(logs):
@@ -59,17 +60,17 @@ def test_an_unmatched_pause_runs_to_now(logs):
     write(shared_log, [("pause", T0 + 10), ("resume", T0 + 20), ("pause", T0 + 50)])
     assert pauses.paused_intervals(now=T0 + 90) == [(T0 + 10, T0 + 20), (T0 + 50, T0 + 90)]
     assert pauses.paused_intervals(now=T0 + 300) == [(T0 + 10, T0 + 20), (T0 + 50, T0 + 300)]     # same log, later clock
-    assert pauses.effective_seconds(T0, T0 + 300) == 300.0 - 10.0 - 250.0
+    assert pauses.effective_seconds(T0, T0 + 300, JOB) == 300.0 - 10.0 - 250.0
 
 
 def test_effective_seconds_across_a_pause(logs):
     """A job from T0 to T0+100 paused from +30 to +70 did 60 s of work; a window inside the pause did none."""
     shared_log, _, _ = logs
     write(shared_log, [("pause", T0 + 30), ("resume", T0 + 70)])
-    assert pauses.effective_seconds(T0, T0 + 100) == 60.0
-    assert pauses.effective_seconds(T0 + 40, T0 + 60) == 0.0
-    assert pauses.effective_seconds(T0 + 50, T0 + 100) == 30.0
-    assert pauses.effective_seconds(T0 + 80, T0 + 100) == 20.0
+    assert pauses.effective_seconds(T0, T0 + 100, JOB) == 60.0
+    assert pauses.effective_seconds(T0 + 40, T0 + 60, JOB) == 0.0
+    assert pauses.effective_seconds(T0 + 50, T0 + 100, JOB) == 30.0
+    assert pauses.effective_seconds(T0 + 80, T0 + 100, JOB) == 20.0
 
 
 def test_an_event_in_two_logs_is_counted_once(logs):
@@ -79,7 +80,7 @@ def test_an_event_in_two_logs_is_counted_once(logs):
         write(log, [("pause", T0 + 10), ("resume", T0 + 30), ("pause", T0 + 50), ("resume", T0 + 60)])
     assert [e["event"] for e in pauses.pause_events()] == ["pause", "resume", "pause", "resume"]
     assert pauses.paused_intervals(now=T0 + 100) == [(T0 + 10, T0 + 30), (T0 + 50, T0 + 60)]
-    assert pauses.paused_seconds(T0, T0 + 100) == 30.0
+    assert pauses.paused_seconds(T0, T0 + 100, JOB) == 30.0
 
 
 def test_f_e_a_pause_made_by_an_old_copy_in_another_worktree_is_counted(logs):
@@ -89,7 +90,7 @@ def test_f_e_a_pause_made_by_an_old_copy_in_another_worktree_is_counted(logs):
     write(legacy_old, [("pause", T0 + 600), ("resume", T0 + 4200)])
     write(shared_log, [("pause", T0 + 5000), ("resume", T0 + 5100)])
     assert nus_pauses.effective_seconds(T0, T0 + 7200, shared_log) == 7100.0      # the failure: one log misses the hour
-    assert pauses.effective_seconds(T0, T0 + 7200) == 3500.0                      # caught: 7200 - 3600 - 100
+    assert pauses.effective_seconds(T0, T0 + 7200, JOB) == 3500.0                      # caught: 7200 - 3600 - 100
     assert pauses.paused_intervals(now=T0 + 7200) == [(T0 + 600, T0 + 4200), (T0 + 5000, T0 + 5100)]
 
 
@@ -112,7 +113,7 @@ def test_same_arithmetic_as_the_nus_module_on_one_log(logs):
     for now in (T0, T0 + 20.5, T0 + 44, T0 + 50, T0 + 1e6):
         assert pauses.paused_intervals(now=now) == nus_pauses.paused_intervals(shared_log, now=now)
     for start, end in ((T0, T0 + 50), (T0 + 7, T0 + 25), (T0 + 44, T0 + 45)):
-        assert pauses.effective_seconds(start, end) == nus_pauses.effective_seconds(start, end, shared_log)
+        assert pauses.effective_seconds(start, end, JOB) == nus_pauses.effective_seconds(start, end, shared_log)
 
 
 def test_a_new_event_is_seen_by_the_next_read(logs):
@@ -127,7 +128,7 @@ def test_a_new_event_is_seen_by_the_next_read(logs):
     assert pauses.merges_done() >= 3
     before = pauses.merges_done()
     for _ in range(50):
-        pauses.effective_seconds(T0, T0 + 50)
+        pauses.effective_seconds(T0, T0 + 50, JOB)
     assert pauses.merges_done() == before                                          # nothing changed: nothing re-read
 
 
@@ -140,7 +141,7 @@ def test_a_pause_left_open_by_a_reboot_ends_at_the_boot(logs, monkeypatch):
     assert pauses.paused_intervals(now=T0 + 900) == [(T0 + 10, T0 + 20), (T0 + 100, T0 + 500)]
     last = pauses.pause_events()[-1]
     assert (last["event"], last["time"], last["synthetic"]) == ("resume", T0 + 500.0, True)
-    assert pauses.effective_seconds(T0 + 600, T0 + 900) == 300.0                   # a job relaunched after the boot
+    assert pauses.effective_seconds(T0 + 600, T0 + 900, JOB) == 300.0                   # a job relaunched after the boot
 
 
 def test_a_pause_made_in_this_boot_stays_open(logs, monkeypatch):
@@ -171,7 +172,7 @@ def test_explicit_logs_replace_the_default_list(logs, tmp_path):
     write(other, [("pause", T0 + 1), ("resume", T0 + 3)])
     assert pauses.paused_intervals(now=T0 + 9) == []
     assert pauses.paused_intervals(now=T0 + 9, logs=[other]) == [(T0 + 1, T0 + 3)]
-    assert pauses.effective_seconds(T0, T0 + 9, logs=[other]) == 7.0
+    assert pauses.effective_seconds(T0, T0 + 9, JOB, logs=[other]) == 7.0
 
 
 def test_with_the_real_script_new_copy_and_old_copy(tmp_path, monkeypatch):
@@ -191,7 +192,115 @@ def test_with_the_real_script_new_copy_and_old_copy(tmp_path, monkeypatch):
     spans = pauses.paused_intervals()
     assert len(spans) == 2 and all(end > start for start, end in spans)
     assert len((shared_dir / "pauses.log").read_text().splitlines()) == 2
-    assert math.isclose(pauses.paused_seconds(spans[0][0], spans[1][1]), sum(end - start for start, end in spans))
+    assert all(event["pids"] == [] for event in events)                            # the pattern matched no process
+    assert pauses.paused_seconds(spans[0][0], spans[1][1], JOB) == 0.0               # L07-C1: they stopped no job
+
+
+# ------------------------------------------------------------------------------------------------ L07-C1: whose pause
+def line(log: Path, event: str, time_s: float, pids: list | None) -> None:
+    """One event line; ``pids=None`` leaves the "pids" key out (a hand-written or foreign line: no committed copy of
+    gpu_pause.sh ever wrote one without it)."""
+    row = {"event": event, "time": time_s, "by": "tester"}
+    if pids is not None:
+        row["pids"] = pids
+    log.parent.mkdir(parents=True, exist_ok=True)
+    with log.open("a") as stream:
+        stream.write(json.dumps(row) + "\n")
+
+
+@pytest.mark.parametrize("pids, counted", [([], False), ([8, 9], False), ([7], True), ([3, 7], True), (None, True)])
+def test_a_pause_counts_only_for_the_jobs_it_stopped(logs, pids, counted):
+    """L07-C1. ``pids: []`` is a pause that stopped nothing (the owner's "I am using this PC"); a pause of other jobs
+    stopped other jobs. Neither takes time off job 7, which ran on. A line without "pids" counts for every job, as
+    before (legacy rule)."""
+    shared_log, _, _ = logs
+    line(shared_log, "pause", T0 + 30, pids)
+    line(shared_log, "resume", T0 + 70, [] if pids is None else pids)
+    assert pauses.paused_intervals(now=T0 + 100) == [(T0 + 30, T0 + 70)]             # the owner's view: every pause
+    assert pauses.effective_seconds(T0, T0 + 100, JOB) == (60.0 if counted else 100.0)
+    assert pauses.paused_seconds(T0, T0 + 100, JOB) == (40.0 if counted else 0.0)
+    assert pauses.paused_intervals(now=T0 + 100, pids=JOB) == ([(T0 + 30, T0 + 70)] if counted else [])
+
+
+def test_qc_reproduction_an_open_pause_that_stopped_nothing_takes_no_time_off(logs):
+    """The QC scratch reproduction: one ``pause`` line with ``pids: []`` written 60 s earlier and never resumed. It
+    gave effective 0.0 s over the last 30 s of real running; the job ran, so it must keep all 30 s."""
+    shared_log, _, _ = logs
+    line(shared_log, "pause", T0 - 60, [])
+    assert pauses.effective_seconds(T0, T0 + 30, JOB) == 30.0
+    assert pauses.effective_seconds(T0, T0 + 30, ()) == 30.0                        # a job whose command never started
+
+
+def test_a_second_pause_that_stopped_the_job_counts_from_its_own_time(logs):
+    """Pauses are filtered BEFORE they are paired: the pairing ignores a pause while one is open, so a filter on paired
+    intervals would miss a job stopped by the second of two pauses."""
+    shared_log, _, _ = logs
+    line(shared_log, "pause", T0 + 10, [])                                           # the owner, nothing running
+    line(shared_log, "pause", T0 + 40, [7])                                          # a later pause stopped job 7
+    line(shared_log, "resume", T0 + 60, [])                                          # a resume closes for every job
+    assert pauses.paused_intervals(now=T0 + 100) == [(T0 + 10, T0 + 60)]
+    assert pauses.paused_intervals(now=T0 + 100, pids=JOB) == [(T0 + 40, T0 + 60)]
+    assert pauses.effective_seconds(T0, T0 + 100, JOB) == 80.0
+    assert pauses.effective_seconds(T0, T0 + 100, (8,)) == 100.0
+
+
+def test_every_resume_and_stop_closes_a_pause_whatever_pids_it_lists(logs):
+    """``gpu_pause.sh resume`` sends SIGCONT to every job it finds, so any resume or stop ends a job's pause."""
+    shared_log, _, _ = logs
+    line(shared_log, "pause", T0 + 10, [7])
+    line(shared_log, "resume", T0 + 20, [])
+    line(shared_log, "pause", T0 + 30, [7])
+    line(shared_log, "stop", T0 + 45, [99])
+    assert pauses.paused_seconds(T0, T0 + 100, JOB) == 25.0
+
+
+def test_a_job_must_say_which_pids_are_its_own(logs):
+    """No default: a caller that forgot the job's pids would count every pause again (the C1 failure)."""
+    with pytest.raises(TypeError):
+        pauses.effective_seconds(T0, T0 + 1)
+    with pytest.raises(TypeError):
+        pauses.paused_seconds(T0, T0 + 1)
+
+
+def test_the_nus_reader_is_unchanged_and_still_counts_every_pause(logs):
+    """The NUS port's own accounting (nus/pauses.py) is not touched by L07-C1: a pause that stopped nothing still
+    counts there, as it always did."""
+    shared_log, _, _ = logs
+    line(shared_log, "pause", T0 + 30, [])
+    line(shared_log, "resume", T0 + 70, [])
+    assert nus_pauses.paused_intervals(shared_log, now=T0 + 100) == [(T0 + 30, T0 + 70)]
+    assert nus_pauses.effective_seconds(T0, T0 + 100, shared_log) == 60.0
+
+
+# ------------------------------------------------------------------------------------------------ L07-C1: open pause
+def test_no_open_pause(logs):
+    shared_log, _, _ = logs
+    assert pauses.open_pause() is None
+    line(shared_log, "pause", T0 + 10, [])
+    line(shared_log, "stop", T0 + 20, [])
+    assert pauses.open_pause() is None
+
+
+def test_an_open_pause_is_found_whoever_made_it(logs):
+    """The launch check reads every pause, of every job or of none: a pause is also the owner's "I am using this PC"."""
+    shared_log, legacy_old, _ = logs
+    line(shared_log, "pause", T0 + 10, [])
+    line(shared_log, "resume", T0 + 20, [])
+    line(legacy_old, "pause", T0 + 30, [])                                           # an old copy in another worktree
+    line(shared_log, "pause", T0 + 35, [5])                                          # a second pause: the first opened it
+    found = pauses.open_pause()
+    assert (found["event"], found["time"], found["pids"], found["by"]) == ("pause", T0 + 30, [], "tester")
+
+
+def test_a_pause_left_open_before_this_boot_is_not_open(logs, monkeypatch):
+    """A power cut during an owner pause: after the boot nothing is paused, and the relaunch from cmd.txt (AUTOMATION
+    section 2.3) must not be refused by a pause nobody may resume."""
+    shared_log, _, _ = logs
+    line(shared_log, "pause", T0 + 10, [7])
+    monkeypatch.setattr(pauses, "boot_time_s", lambda: T0 + 500.0)
+    assert pauses.open_pause() is None
+    line(shared_log, "pause", T0 + 600, [])
+    assert pauses.open_pause()["time"] == T0 + 600
 
 
 def test_importing_loads_no_pytorch():

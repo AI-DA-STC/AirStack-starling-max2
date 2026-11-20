@@ -181,9 +181,9 @@ Code: `source/svg_training/ste/` (`shared.py`, `pauses.py`, `state.py`, `atomic.
 | Shared folder | `SVG_SHARED_DIR`, else `<main clone>/svg_training/runs/shared/` (git-ignored, one per machine): `state.json`, `pauses.log`, `gpu_hours.log` |
 | One pause log | `gpu_pause.sh` writes each event to the legacy log and to the shared one; the reader merges every worktree's legacy log too, so a pause made with an old copy still counts; `scripts/ste_*.py` jobs are paused, the launcher and waiter are not |
 | State file | `state.json` under a lock, written atomically; a job is alive only if its pid exists with the recorded start time in the current boot |
-| Trainer contract | the same command resumes from its last checkpoint; SIGINT or SIGTERM saves and exits; a non-finite value never overwrites the last good checkpoint; the cap counts effective time (paused time excluded) |
-| GPU-hour ledger | used GPU-hours per task and per phase from `gpu_hours.log` (CUDA intervals less paused time); `launch` refuses a job over the task or phase cap of `configs/ste_learning.toml` |
-| Launcher and waiter | `scripts/ste_job.py launch / wait / status` |
+| Trainer contract | the same command resumes from its last checkpoint; SIGINT or SIGTERM saves and exits; a non-finite value never overwrites the last good checkpoint; the cap counts effective time (time a pause stopped this job excluded) |
+| GPU-hour ledger | used GPU-hours per task and per phase from `gpu_hours.log` (CUDA intervals less the time a pause stopped that job); `launch` refuses a job over the task or phase cap of `configs/ste_learning.toml` |
+| Launcher and waiter | `scripts/ste_job.py launch / wait / status`; `launch` refuses while an owner pause is open |
 
 **Exit codes** (`ste/run_contract.py`): 0 done; 2 refused to start; 3 stopped at its cap; 4 interrupted (SIGINT or
 SIGTERM); 5 non-finite value. The waiter adds: 20 ENDED_EARLY (the job returned 0 before its expected minimum
@@ -219,8 +219,10 @@ Resume drill:
 
 Do not pause during a drill while a real GPU job runs: `gpu_pause.sh pause` pauses every job it finds.
 
-**Known limits (L0.7 as built).** `launch` does not check for an open owner pause (the job accrues no time until the
-resume). `--gpu-h` at launch and the trainer's own cap are not linked: the caller keeps them equal. The effective time
+**Known limits (L0.7 as built).** `launch` refuses (exit 2) while an owner pause is open, even one that stopped no
+job; only the owner ends it, with `gpu_pause.sh resume`. A pause takes time off a job only if the pause line lists the
+job's command pid. A pause that stopped only a process the command started (a trainer behind `bash -c`) is not matched:
+that job is charged the paused time, the safe side. `--gpu-h` at launch and the trainer's own cap are not linked: the caller keeps them equal. The effective time
 carried in a checkpoint undercounts by up to one checkpoint interval per SIGKILL; the ledger loses at most one minute.
 A relaunch with the same `--min-s` and little left to do is flagged ENDED_EARLY. The `tasks` block of `state.json` is
 validated but not yet written; `RESUME.md`, the wall-clock limit, the starvation guard and the disk check are not built.

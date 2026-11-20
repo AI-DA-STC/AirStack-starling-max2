@@ -19,7 +19,7 @@ from _ste_tools import (SCRIPTS, SOURCE, WAIT_S, kill_group, pause_script, proc_
                         tool_env, wait_for)
 from _proc import child_env, child_python
 from svg_training.ste import run_contract as rc
-from svg_training.ste import shared
+from svg_training.ste import pauses, shared
 
 DUMMY = SCRIPTS / "ste_dummy_job.py"
 T0 = 2_000_000.0
@@ -52,10 +52,13 @@ def quiet(tmp_path, monkeypatch):
     return tmp_path / "shared" / "pauses.log"
 
 
-def pause_line(log: Path, event: str, time_s: float) -> None:
+def pause_line(log: Path, event: str, time_s: float, pids: list | None = None) -> None:
+    """One gpu_pause.sh line. ``pids``: the processes it stopped; default this test process, where the guard runs (a
+    pause counts only for the jobs it stopped, L07-C1)."""
     log.parent.mkdir(parents=True, exist_ok=True)
     with log.open("a") as stream:
-        stream.write(json.dumps({"event": event, "time": time_s, "pids": [1], "by": "tester"}) + "\n")
+        stream.write(json.dumps({"event": event, "time": time_s, "pids": [os.getpid()] if pids is None else pids,
+                                 "by": "tester"}) + "\n")
 
 
 def test_save_and_load_latest(tmp_path, quiet):
@@ -152,6 +155,29 @@ def test_without_the_pause_in_the_log_the_same_clock_hits_the_cap(tmp_path, quie
     with rc.RunGuard(tmp_path / "run", cap_s=100.0, clock=clock) as guard:
         clock.now = T0 + 5000
         assert guard.effective_s() == 5000.0 and guard.stop_reason() == rc.STOP_CAP
+
+
+@pytest.mark.parametrize("pids", [[], [os.getpid() + 1]], ids=["stopped_nothing", "stopped_another_job"])
+def test_qc_reproduction_a_pause_that_did_not_stop_the_job_does_not_hold_its_cap(tmp_path, quiet, pids, monkeypatch):
+    """L07-C1, the QC scratch reproduction: a pause opened 60 s before the guard started and never resumed, that did not
+    stop this process. Before the fix: effective 0.0 s and no cap after 1.5 s of a 1 s cap. The job runs, so its clock
+    must run too."""
+    monkeypatch.setattr(pauses, "boot_time_s", lambda: 0.0)                     # the made-up clock is after the boot
+    pause_line(quiet, "pause", T0 - 60, pids)
+    clock = Clock()
+    with rc.RunGuard(tmp_path / "run", cap_s=1.0, clock=clock) as guard:
+        clock.now = T0 + 1.5
+        assert guard.effective_s() == 1.5 and guard.cap_reached() and guard.stop_reason() == rc.STOP_CAP
+
+
+def test_a_pause_that_stopped_the_job_still_holds_its_cap(tmp_path, quiet, monkeypatch):
+    """L07-C1, the other side: the same open pause, listing this process, still stops the clock."""
+    monkeypatch.setattr(pauses, "boot_time_s", lambda: 0.0)
+    pause_line(quiet, "pause", T0 - 60, [os.getpid() + 1, os.getpid()])
+    clock = Clock()
+    with rc.RunGuard(tmp_path / "run", cap_s=1.0, clock=clock) as guard:
+        clock.now = T0 + 1.5
+        assert guard.effective_s() == 0.0 and not guard.cap_reached()
 
 
 def test_effective_time_is_carried_through_the_checkpoint(tmp_path, quiet):

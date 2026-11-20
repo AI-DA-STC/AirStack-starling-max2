@@ -7,9 +7,10 @@ The contract, proved on ``scripts/ste_dummy_job.py`` by ``tests/test_ste_run_con
 1. **The same command resumes.** Run again on its run folder, the job loads the latest checkpoint and carries on.
 2. **SIGINT and SIGTERM ask for a stop.** The job checkpoints at its next step boundary and exits with
    :data:`EXIT_INTERRUPTED`. (SIGKILL and a power cut cannot be caught: the job then resumes from its last checkpoint.)
-3. **The cap is counted in effective time**: wall clock less the owner's pauses (``ste/pauses.py``), carried through
-   the checkpoint, so it is one cap for the run folder however often the job is relaunched. At the cap the job
-   checkpoints and exits with :data:`EXIT_CAP`.
+3. **The cap is counted in effective time**: wall clock less the owner's pauses that stopped THIS process (its pid in
+   the pause line, ``ste/pauses.py``), carried through the checkpoint, so it is one cap for the run folder however
+   often the job is relaunched. A pause that stopped other jobs, or none, takes nothing off: this job ran on. At the
+   cap the job checkpoints and exits with :data:`EXIT_CAP`.
 4. **A non-finite value (NaN, infinity) never overwrites the last good checkpoint.** The job exits with
    :data:`EXIT_NONFINITE`; nothing retries it silently.
 5. **One job per run folder.** A second copy started on the same folder is refused (:data:`EXIT_REFUSED`).
@@ -41,6 +42,7 @@ from __future__ import annotations
 import fcntl
 import json
 import math
+import os
 import signal
 import time
 from pathlib import Path
@@ -132,6 +134,7 @@ class RunGuard:
         self.nonfinite: str | None = None         # where the first non-finite value was seen
         self._carried_s = 0.0                     # effective seconds used before this launch (from the checkpoint)
         self._started_s = math.nan
+        self._own_pids = frozenset({os.getpid()})  # a pause counts only if it stopped this process (L07-C1)
         self._saved_here = False
         self._lock = None
         self._previous: dict[int, Any] = {}
@@ -169,8 +172,8 @@ class RunGuard:
 
     def effective_s(self) -> float:
         """Effective seconds the run folder has used: those carried by the checkpoint this launch resumed from, plus
-        this launch's wall clock less the paused time inside it."""
-        return self._carried_s + pauses.effective_seconds(self._started_s, self.clock())
+        this launch's wall clock less the time inside it that a pause had stopped this process."""
+        return self._carried_s + pauses.effective_seconds(self._started_s, self.clock(), self._own_pids)
 
     def cap_reached(self) -> bool:
         return self.effective_s() >= self.cap_s

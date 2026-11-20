@@ -27,14 +27,17 @@ def made_up_machine(tmp_path, monkeypatch):
     monkeypatch.setattr(pauses, "boot_time_s", lambda: 0.0)
 
 
-def pause(start_h: float, end_h: float) -> None:
+def pause(start_h: float, end_h: float | None, pids: tuple | list = (1,)) -> None:
+    """A pause and its resume (``end_h`` None: still open). ``pids``: the processes the pause stopped."""
     with shared.pauses_log().open("a") as stream:
         for event, hours in (("pause", start_h), ("resume", end_h)):
-            stream.write(json.dumps({"event": event, "time": T0 + hours * HOUR, "pids": [1], "by": "tester"}) + "\n")
+            if hours is not None:
+                stream.write(json.dumps({"event": event, "time": T0 + hours * HOUR, "pids": list(pids), "by": "tester"}) + "\n")
 
 
-def ran(task: str, job: str, start_h: float, end_h: float, device: str = "cuda") -> bool:
-    return budget.log_interval(task, job, device, T0 + start_h * HOUR, T0 + end_h * HOUR)
+def ran(task: str, job: str, start_h: float, end_h: float, device: str = "cuda", pids: list[int] | None = None) -> bool:
+    """A ledger line. ``pids=None``: a line without pids, as written before L07-C1 (every pause counts for it)."""
+    return budget.log_interval(task, job, device, T0 + start_h * HOUR, T0 + end_h * HOUR, pids=pids)
 
 
 # ------------------------------------------------------------------------------------------------ the ledger
@@ -89,6 +92,57 @@ def test_a_running_job_is_counted_beat_by_beat():
     for minute in range(90):
         ran("L0.13", "probe", minute / 60, (minute + 1) / 60)
     assert budget.task_gpu_h("L0.13") == pytest.approx(1.5)
+
+
+# ------------------------------------------------------------------------------------------------ L07-C1: whose pause
+def test_a_ledger_line_records_the_pids_of_the_job():
+    assert ran("L0.12", "seed0", 0.0, 1.0, pids=[11])
+    assert json.loads(shared.gpu_hours_log().read_text())["pids"] == [11]
+
+
+@pytest.mark.parametrize("pids, used_h", [([], 3.0), ([12], 3.0), ([11], 2.0), ([12, 11], 2.0)])
+def test_a_pause_takes_hours_off_only_the_jobs_it_stopped(pids, used_h):
+    """Job seed0 (command pid 11) ran 3 h; the owner paused for 1 h of them. Only a pause that stopped pid 11 gives
+    the hour back: one that stopped nothing or another job left seed0 running on the GPU."""
+    ran("L0.12", "seed0", 0.0, 3.0, pids=[11])
+    pause(1.0, 2.0, pids)
+    assert budget.task_gpu_h("L0.12") == pytest.approx(used_h)
+    assert budget.job_gpu_h("L0.12", "seed0") == pytest.approx(used_h)
+    assert budget.phase_gpu_h("L0") == pytest.approx(used_h)
+
+
+def test_qc_reproduction_an_open_pause_that_stopped_nothing_does_not_hide_the_hours(tmp_path):
+    """The QC failure scenario: the owner paused with nothing running (``pids: []``) and never resumed; a job launched
+    later ran on the GPU. Before the fix its hours read 0.000 and the next launch check passed."""
+    path = settings(tmp_path, 19.0, L0_11=3.0)
+    pause(0.0, None, [])
+    ran("L0.11", "sweep", 1.0, 3.5, pids=[11])
+    assert budget.task_gpu_h("L0.11") == pytest.approx(2.5)
+    with pytest.raises(budget.BudgetError, match="used 2.500"):
+        budget.check_launch("L0.11", 1.0, settings=path)
+
+
+def test_a_paused_sibling_takes_no_time_off_the_job_that_ran_on():
+    """Two jobs side by side, 0 to 2 h; the owner's pause from 0.5 to 1.5 h stopped only seed0. The GPU was busy all
+    2 h (seed1 ran): the union is 2 h, seed0 used 1 h and seed1 2 h. Union first, pause after would give 1 h."""
+    ran("L0.12", "seed0", 0.0, 2.0, pids=[11])
+    ran("L0.12", "seed1", 0.0, 2.0, pids=[12])
+    pause(0.5, 1.5, [11])
+    assert budget.task_gpu_h("L0.12") == pytest.approx(2.0)
+    assert budget.job_gpu_h("L0.12", "seed0") == pytest.approx(1.0)
+    assert budget.job_gpu_h("L0.12", "seed1") == pytest.approx(2.0)
+    pause(1.75, 1.9, [11, 12])                                                        # both stopped: 0.15 h off
+    assert budget.task_gpu_h("L0.12") == pytest.approx(1.85)
+
+
+def test_a_line_without_pids_still_loses_every_pause():
+    """Legacy rule: a ledger line written before L07-C1 carries no pids, so it cannot be matched; it keeps the rule it
+    was written under (every pause counts), the same numbers as before."""
+    ran("L0.12", "old", 0.0, 3.0)
+    pause(1.0, 2.0, [])
+    assert budget.task_gpu_h("L0.12") == pytest.approx(2.0)
+    assert budget.task_gpu_h("L0.12") == pytest.approx(
+        nus_pauses.logged_gpu_hours(shared.gpu_hours_log(), "L0.12", shared.pauses_log()))
 
 
 def test_a_torn_line_is_skipped_and_reported(capsys):

@@ -439,6 +439,7 @@ def test_a_gpu_job_logs_its_hours_beat_by_beat_and_at_its_end(bench, tmp_path):
     job = bench.job("sweep")
     rows = [json.loads(line) for line in shared.gpu_hours_log().read_text().splitlines()]
     assert len(rows) >= 3 and {(row["group"], row["job"], row["device"]) for row in rows} == {("L0.11", "sweep", "cuda")}
+    assert all(row["pids"] == [job["child_pid"]] for row in rows)          # L07-C1: whose time it was
     assert all(later["start"] == earlier["end"] for earlier, later in zip(rows, rows[1:]))      # one unbroken interval
     assert job["started"] <= rows[0]["start"] and rows[-1]["end"] == pytest.approx(job["ended"], abs=0.5)
     used_s = budget.task_gpu_h("L0.11") * 3600.0
@@ -493,6 +494,75 @@ def test_an_owner_pause_stops_the_command_not_the_wrapper_and_is_not_counted(ben
     assert paused_s >= 1.2 and duration_s - effective_s == pytest.approx(paused_s, abs=0.11)
     events = [json.loads(line) for line in shared.pauses_log().read_text().splitlines()]
     assert [event["event"] for event in events] == ["pause", "resume"] and events[0]["pids"] == [child]
+
+
+def pause_line(event: str, time_s: float, pids: list | None) -> None:
+    """One gpu_pause.sh line in the bench's shared pause log; ``pids=None`` leaves the key out (legacy line)."""
+    row = {"event": event, "time": time_s, "by": "owner"}
+    if pids is not None:
+        row["pids"] = pids
+    log = shared.pauses_log()
+    log.parent.mkdir(parents=True, exist_ok=True)
+    with log.open("a") as stream:
+        stream.write(json.dumps(row) + "\n")
+
+
+def test_launch_is_refused_while_an_owner_pause_is_open(bench, tmp_path):
+    """L07-C1 (a): a pause is also the owner's "I am using this PC", even one that stopped no job. A job launched
+    during it would run on the GPU unpaused. The launch is refused (exit 2), nothing is started, nothing is written."""
+    pause_line("pause", time.time() - 30.0, [])
+    refused = bench.launch("late", bench.dummy("late"))
+    assert refused.returncode == rc.EXIT_REFUSED and refused.stdout == ""
+    assert len(refused.stderr.splitlines()) == 1, refused.stderr
+    assert "pause" in refused.stderr and "by owner" in refused.stderr and "gpu_pause.sh resume" in refused.stderr
+    assert "nothing was launched" in refused.stderr
+    assert not bench.run_dir("late").exists() and not (bench.shared / "state.json").exists()
+    pause_line("resume", time.time(), [])                                  # the owner's resume: the launch goes ahead
+    assert bench.launch("late", bench.dummy("late")).returncode == 0
+    assert bench.wait("late").returncode == 0
+
+
+def test_a_pause_left_open_by_a_previous_boot_does_not_refuse_a_launch(bench):
+    """After a power cut the relaunch from cmd.txt must go ahead: nothing is paused after a boot (ste/pauses.py)."""
+    pause_line("pause", 1000.0, [4242])                                    # 1970: long before this boot
+    launched = bench.launch("after_boot", bench.dummy("after_boot"))
+    assert launched.returncode == 0, launched.stderr
+    assert bench.wait("after_boot").returncode == 0
+
+
+def test_qc_reproduction_a_pause_that_stopped_nothing_leaves_cap_and_hours_running(bench, tmp_path):
+    """L07-C1 (b) end to end. A GPU job runs; the owner then pauses with a copy that found nothing to stop (``pids:
+    []``) and does not resume. The job was never stopped, so its 1 s cap must fire and its GPU time must be logged.
+    Before the fix the open pause froze its clock (it ran all its steps, DONE) and its hours read 0."""
+    path = settings(tmp_path, 19.0, L0_11=3.0)
+    cmd = bench.dummy("unpaused", steps=200, step_s=0.03, cap_s=1.0)
+    assert bench.launch("unpaused", cmd, gpu_h=0.5, task="L0.11", extra=("--settings", path, "--beat-s", 0.1)).returncode == 0
+    wait_for(lambda: bench.step("unpaused") >= 2, what="the first checkpoint")
+    pause_line("pause", time.time(), [])
+    done = bench.wait("unpaused")
+    assert done.returncode == rc.EXIT_CAP and " CAP exit=3 " in line_of(done), done.stdout
+    assert bench.step("unpaused") < 200                                    # stopped at the cap, not at the end
+    assert budget.task_gpu_h("L0.11") * 3600.0 >= 1.0
+
+
+@pytest.mark.parametrize("pids, effective_s", [([], 90.0), ([2 ** 22 + 9], 90.0), ([2 ** 22 + 3], 60.0),
+                                               ([2 ** 22 + 9, 2 ** 22 + 3], 60.0), (None, 60.0)],
+                         ids=["stopped_nothing", "stopped_another", "stopped_its_command", "stopped_both", "legacy"])
+def test_the_waiter_takes_off_only_a_pause_that_stopped_the_jobs_command(bench, monkeypatch, pids, effective_s):
+    """L07-C1 (b) and (c) for the waiter: a job ran 90 s with a 30 s pause inside. The pause counts only if it lists
+    the job's command (the wrapper is never paused); a line without pids counts, as before (legacy rule)."""
+    run = bench.run_dir("judged")
+    run.mkdir(parents=True)
+    now = time.time()
+    job = {"task": "L0.7", "pid": 2 ** 22 + 1, "pid_start": 1, "boot_id": state.boot_id(), "cmd": ["x"], "cwd": "/",
+           "run_dir": str(run), "log": str(run / "job.log"), "started": now - 100.0, "expected_min_s": 0.0,
+           "gpu_h": 0.0, "launch": 1, "child_pid": 2 ** 22 + 3, "child_start": 3, "exit_code": 0, "ended": now - 10.0}
+    (run / "exit_code").write_text("0\n")                                  # no such pids exist: the job is over
+    pause_line("pause", now - 80.0, pids)
+    pause_line("resume", now - 50.0, [] if pids is None else pids)
+    monkeypatch.setattr(state, "read", lambda: {"jobs": {"judged": job}})
+    outcome = jobs.wait("judged", poll_s=0.01)
+    assert outcome.duration_s == pytest.approx(90.0) and outcome.effective_s == pytest.approx(effective_s)
 
 
 def test_the_owners_stop_interrupts_the_command_and_the_wrapper_records_it(bench, tmp_path):

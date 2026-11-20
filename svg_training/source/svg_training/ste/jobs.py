@@ -12,8 +12,10 @@ processes alone: a paused or interrupted wrapper could not record the exit code.
 
 The launcher holds the lock of ``state.json`` from before it starts the wrapper until the launch is recorded, and the
 wrapper's first act is to take that lock: the command starts only once the record exists. A launch is refused
-(:class:`LaunchRefused`) while a job of the same name, or any job in the same run folder, is alive, and when
-``ste/budget.py`` says the hours asked for would pass the task's cap or the phase cap. The hours asked for are the
+(:class:`LaunchRefused`) while an owner pause is open (``scripts/gpu_pause.sh pause`` with no ``resume`` yet, whether or
+not it stopped a job: a pause is also the owner's "I am using this PC", and a job started during it would run
+unpaused), while a job of the same name, or any job in the same run folder, is alive, and when ``ste/budget.py`` says
+the hours asked for would pass the task's cap or the phase cap. The hours asked for are the
 job's total over all its launches, so the hours it has already logged are not asked for a second time at a relaunch.
 
 Files in the run folder: ``job.json`` (the launch record: the ``state.json`` fields of ``ste/state.py`` plus the job
@@ -32,7 +34,8 @@ and its own exit status:
 
 * the job's exit code, whatever it is (verdict DONE, CAP, NONFINITE, INTERRUPTED, REFUSED as ``ste/run_contract.py``
   names them, FAILED for any other code);
-* **ENDED_EARLY** when the effective duration (wall clock less the owner's pauses) is under the expected minimum given
+* **ENDED_EARLY** when the effective duration (wall clock less the owner's pauses that stopped the job's command) is
+  under the expected minimum given
   at launch: status :data:`EXIT_ENDED_EARLY` if the job's code was 0 (a 0 that came too fast must not pass), else the
   job's own code;
 * **DIED** when the job is gone and no exit code was recorded (killed with its wrapper, or lost with a previous
@@ -139,6 +142,12 @@ def launch(task: str, name: str, run_dir: Path | str, cmd: list[str], expected_m
         raise LaunchRefused(f"the expected minimum duration must be 0 or more seconds, got {expected_min_s!r}")
     if not (math.isfinite(beat_s) and beat_s > 0):
         raise LaunchRefused(f"the beat must be above 0 seconds, got {beat_s!r}")
+    paused = pauses.open_pause()
+    if paused is not None:
+        made = datetime.datetime.fromtimestamp(paused["time"]).astimezone().isoformat(timespec="seconds")
+        raise LaunchRefused(f"the owner's pause of {made} (by {paused.get('by', 'unknown')}, pids {paused.get('pids')}) "
+                            f"is still open: nothing was launched. Only the owner ends it, with scripts/gpu_pause.sh "
+                            f"resume; launch again after that")
     try:
         budget.check_launch(task, gpu_h, settings, job=name)
     except budget.BudgetError as err:
@@ -260,7 +269,7 @@ def run_wrapper(run_dir: Path | str) -> int:
         try:
             heartbeat.touch()
             if on_gpu:
-                budget.log_interval(task, name, budget.CUDA, last_s, now_s)
+                budget.log_interval(task, name, budget.CUDA, last_s, now_s, pids=(child.pid,))
                 return now_s
         except OSError as err:
             print(f"[ste job] beat not written ({err})", flush=True)
@@ -287,6 +296,12 @@ def verdict(exit_code: int | None, effective_s: float, expected_min_s: float) ->
     if effective_s < expected_min_s:
         return ENDED_EARLY, EXIT_ENDED_EARLY if exit_code == EXIT_DONE else exit_code
     return EXIT_NAMES.get(exit_code, FAILED), exit_code
+
+
+def _own_pids(job: dict[str, Any]) -> tuple[int, ...]:
+    """The pids a pause must have stopped to count for this job: its command's (``gpu_pause.sh`` never stops the
+    wrapper). None at all if the command never started: then no pause stopped the job."""
+    return () if job["child_pid"] is None else (job["child_pid"],)
 
 
 def _identity(job: dict[str, Any]) -> tuple:
@@ -345,7 +360,7 @@ def wait(name: str, poll_s: float = POLL_S) -> Outcome:
     else:
         ended_s = job["ended"] if job["ended"] is not None else (_mtime(run_dir / EXIT_FILE) or job["started"])
     duration_s = ended_s - job["started"]
-    effective_s = pauses.effective_seconds(job["started"], ended_s)
+    effective_s = pauses.effective_seconds(job["started"], ended_s, _own_pids(job))
     word, status = verdict(exit_code, effective_s, job["expected_min_s"])
     shown = "none" if exit_code is None else str(exit_code)
     line = f"{job['task']} {name} {word} exit={shown}"

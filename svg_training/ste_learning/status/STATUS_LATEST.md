@@ -1,6 +1,6 @@
 INTERNAL · the latest status of STE's own learning track and the NUS port, overwritten at every update; the history is in [LOG.md](LOG.md). Produced by the `train-status` skill.
 
-**Status, 2026-11-21 05:10 (+08:00), event: L0.10 DONE (development suite 1,600 passed / 0 failed)**                                              · laptop RTX 5070 Ti · GPU idle except the remote-desktop service · 0 training processes (0 paused)
+**Status, 2026-11-21 05:22 (+08:00), event: L0.11 follow-up checks in; L0.11 merge suite running; L0.12 groundwork started (CPU)**                                               · laptop RTX 5070 Ti · GPU idle except the remote-desktop service · 0 training processes (0 paused)
 
 ## Phases
 
@@ -22,8 +22,8 @@ INTERNAL · the latest status of STE's own learning track and the NUS port, over
 | L0.8 | Game spec sheet | DONE | none | merged into `development`; QC passed; full suite on `development` 1,461 passed / 0 failed (41 min) |
 | L0.9 | Tag rule for the study: 1-for-1, nearest pair first | DONE | tier 1 fast engine | merged; QC + re-check passed; full suite on `development` 1,517 passed / 0 failed (31 min); the 5090 records its own tag-off positions (L09-5090) |
 | L0.10 | Scripted players for the study | DONE | tier 1 fast engine | merged; QC + 2 re-checks passed; full suite on `development` 1,600 passed / 0 failed (56 min, CPU shared with the L0.11 GPU jobs) |
-| L0.11 | Screening sweep (INFO) | RUNNING (follow-up checks) | tier 1 fast engine | record T44 accepted by the independent read (controls, every number, hashes and the shortlist trace); **every hold is a one-for-one trade**: no tag-on game reached the 120 s time-out (games last 2–4 s) and at 1v1 and 3v3 every hold ends with all Guards tagged out too; follow-up CPU checks running (does the tag-before-zone rule create holds, Guards left per cell, identical columns, scripts at a 0.6 s decision period); then merge |
-| L0.12 | Best-response test: is the game worth learning? | NOT STARTED | tier 1 fast engine | cap 6 GPU-h |
+| L0.11 | Screening sweep (INFO) | RUNNING (merge suite) | tier 1 fast engine | T44 + follow-up checks (CPU replay of T44's own starts, exact): the tag-before-zone rule decides only a few percent of holds (33 of 808 at base); holds leave 0 Guards at 1v1 and 3v3; scripts deciding every 0.6 s barely change against the straight Strike (808 → 793 holds); base reach 192/1,000 (Wilson 0.169–0.218); full suite on the rebased branch running, then merge |
+| L0.12 | Best-response test: is the game worth learning? | RUNNING (CPU groundwork) | tier 1 fast engine | builder on `ste-l0.12`: trainer path for both sides on the tag-on game files, a control that reproduces a T44 cell, gate measuring exploiter gain over the best script (lead's call), pilot plan; GPU only after QC of the gate; cap 6 GPU-h |
 | L0.2 | Tier 2 speed in contested play | NOT STARTED | tier 2 Isaac Lab | 5090; cap 1.5 GPU-h |
 | L0.13 | Does tier 2 train at all? | NOT STARTED | tier 2 Isaac Lab | 5090, after L0.2; cap 6 GPU-h |
 | L0.3 | STE Guard policy in tier 2 without retraining | NOT STARTED | tier 2 Isaac Lab | T41 policy in the bundle (installed on the laptop too); cap 1.5 GPU-h |
@@ -50,7 +50,8 @@ Laptop full CPU suite (20 Nov, `development` at 5c5d465, after `scripts/nus_inst
 | L0.9 independent QC + re-check | ~239 k | ~31 min | ran its own reference matcher, mutants and old-vs-new games |
 | L0.10 Scripted players: builder (build + rulings + 2 QC fix rounds) | ~420 k | ~56 min | |
 | L0.10 independent QC (+ 2 re-checks) | ~353 k | ~71 min | 84 deliberate breakages over two rounds; its own geometry probes on 30,000+ starts |
-| L0.11 sweep build (CPU, build + rulings + rebase + QC fixes) | ~604 k | ~92 min | the largest single task so far: three review rounds on a complex driver |
+| L0.11 sweep build (CPU, build + rulings + rebase + QC fixes + follow-ups) | ~677 k | ~106 min | the largest single task so far; a fresh builder takes L0.12 to avoid re-reading this context |
+| L0.12 groundwork builder | running | running | |
 | L0.11 pre-launch QC | ~293 k | ~24 min | broke the code five ways through the real driver |
 | L0.11 CUDA smoke | | ~5 min | 0.087 GPU-h |
 | L0.11 independent QC (pre-launch, re-check, results read) | ~419 k | ~45 min | |

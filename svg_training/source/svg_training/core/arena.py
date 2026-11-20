@@ -144,25 +144,45 @@ def draw_starts(cfg: GameCfg, ar: Arenas, guards: int, strikes: int, gen: torch.
 
 def _zone_disc_ring_starts(cfg: GameCfg, ar: Arenas, guards: int, strikes: int, gen: torch.Generator
                            ) -> tuple[Tensor, Tensor]:
-    """Mode ``zone_disc_ring`` (STE task L0.10; the hangar game's starts, sheet rows ``starts.guard_disc_m`` and
-    ``starts.strike_ring_m``): starts [N, M, 3], miss [N] bool. Guard drones uniform in radius in [0, guard_disc_m] round
-    the zone centre, Strike drones at strike_ring_m from it; every bearing uniform in [0, 2 pi), drawn per drone. Draw
-    order: Guard radii [N, G], Guard bearings [N, G], Strike bearings [N, S]. No spacing is drawn for between team-mates
-    (as in the hangar game: team-mates may start closer than the filter distance). Positions are clamped into the keep-in
-    box (a no-op when the ring fits, as the lab ring does); z = start_height_m. A game is a miss if an opposite pair starts
-    closer than the larger keep-out (never when ring - disc exceeds it) or a Strike drone starts inside the zone."""
+    """Mode ``zone_disc_ring`` (STE task L0.10; QC fix round 1, LEAD CALL 21 Nov 2026): starts [N, M, 3], miss [N] bool.
+
+    Team-mates start at least ``spacing`` = the larger keep-out (the filter distance) + ``team_spacing_margin_m`` apart,
+    so the filter has nothing to push apart at the start (QC I1). Guard drones: one Guard uniform in radius in [0,
+    guard_disc_m] at a uniform bearing; two or more evenly spaced on one circle per game, random rotation, radius uniform
+    in [r_c, max(r_c, guard_disc_m)] with r_c = spacing / (2 sin(pi / G)) (inside the disc where it fits, else r_c).
+    Strike drones on the circle strike_ring_m: one at a uniform bearing; two or more at a random rotation plus random
+    gaps, each gap at least the bearing step that keeps neighbours ``spacing`` apart on the ring (gaps = that minimum +
+    the rest of the turn split by normalised exponentials: uniform over the allowed spacings). All round the zone centre.
+    Draw order: Guard radius [N, 1], Guard bearing or rotation [N, 1], Strike rotation [N, 1], Strike gaps [N, S] (S >= 2).
+    Positions go through the keep-in clamp (a no-op: ``GameCfg`` refuses a ring that does not fit or a zone centre that
+    can move); z = start_height_m. A game is a miss if an opposite pair starts closer than the larger keep-out or a
+    Strike drone starts inside the zone (ruling 3, unchanged)."""
     st = cfg.starts
     n, dev = ar.half_m.shape[0], ar.half_m.device
     lim = (ar.half_m - cfg.arena.wall_margin_m)[:, None, None]                      # [N, 1, 1]
     centre = ar.zone_centre_m[:, None, :]                                           # [N, 1, 2]
-    g_rho = torch.rand(n, guards, generator=gen, device=dev) * st.guard_disc_m
-    g_ang = torch.rand(n, guards, generator=gen, device=dev) * (2 * math.pi)
-    s_ang = torch.rand(n, strikes, generator=gen, device=dev) * (2 * math.pi)
+    keepout = max(cfg.rules.keepout_guard_m, cfg.rules.keepout_strike_m)
+    spacing = keepout + st.team_spacing_margin_m
+    u_rho = torch.rand(n, 1, generator=gen, device=dev)
+    u_rot = torch.rand(n, 1, generator=gen, device=dev) * (2 * math.pi)
+    if guards == 1:
+        g_rho, g_ang = u_rho * st.guard_disc_m, u_rot
+    else:
+        chord = spacing / (2 * math.sin(math.pi / guards))
+        g_rho = (chord + u_rho * (max(chord, st.guard_disc_m) - chord)).expand(n, guards)
+        g_ang = u_rot + torch.arange(guards, device=dev)[None] * (2 * math.pi / guards)
+    s_ang = torch.rand(n, 1, generator=gen, device=dev) * (2 * math.pi)
+    if strikes > 1:
+        min_gap = 2 * math.asin(min(1.0, spacing / (2 * st.strike_ring_m)))
+        if strikes * min_gap > 2 * math.pi:
+            raise ValueError(f"{strikes} Strike drones do not fit {spacing!r} m apart on a ring of {st.strike_ring_m!r} m")
+        e = -torch.log1p(-torch.rand(n, strikes, generator=gen, device=dev))        # exponential(1)
+        gaps = min_gap + (2 * math.pi - strikes * min_gap) * e / e.sum(dim=-1, keepdim=True)
+        s_ang = s_ang + gaps.cumsum(dim=-1)
     rho = torch.cat((g_rho, torch.full((n, strikes), st.strike_ring_m, device=dev)), dim=1)     # [N, M]
-    ang = torch.cat((g_ang, s_ang), dim=1)
+    ang = torch.cat((g_ang, s_ang.expand(n, strikes)), dim=1)
     xy = centre + rho[..., None] * torch.stack((ang.cos(), ang.sin()), dim=-1)
     xy = torch.maximum(torch.minimum(xy, lim), -lim)
-    keepout = max(cfg.rules.keepout_guard_m, cfg.rules.keepout_strike_m)
     cross = (xy[:, :guards, None, :] - xy[:, None, guards:, :]).norm(dim=-1)       # [N, G, S]
     inside = (xy[:, guards:] - centre).norm(dim=-1) <= ar.zone_radius_m[:, None]   # [N, S]
     miss = (cross < keepout).any(dim=(1, 2)) | inside.any(dim=1)

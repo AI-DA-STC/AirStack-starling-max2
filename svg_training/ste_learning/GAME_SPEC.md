@@ -30,6 +30,7 @@ centre a drone may go along x or y: half the side less the wall margin.
 | Environment | `arena.environment` | `"open_arena"` | OPEN | P10, OPEN at gate G0; the parent FIXED rule "Environments" asks for realistic 3-D worlds, construction site first; today's value is E0 of the parent's "Environment ladder", the first build step only, not claimed as meeting the rule | open · open |
 | Guard start disc (m) | `starts.guard_disc_m` | `0.8` | PROPOSED | hangar: `nus_rules.toml` `start_guard_disc_fraction` × `area_radius` × `nus_deploy.toml` `metres_per_unit`; Guards uniform in radius inside this disc round the zone centre (`nus/replica.py` `reset`) | 0.8 · rings |
 | Strike start ring (m) | `starts.strike_ring_m` | `2.75` | PROPOSED | LEAD CALL 21 Nov 2026, L08-F1 (task L0.10), ruled at G0 with the arena (F8): the hangar ring (`nus_deploy.toml` `spawn_distance` × `metres_per_unit`, random bearings) scaled by the arena half-side, 3.2 × 3.25 / 3.75 = 2.77, rounded down to 2.75. It fits the keep-in limit (3.0 m) on every bearing with 0.25 m to spare, stays 1.15 m outside the zone edge and 1.95 m from the Guard disc (more than the tag radius: no tag at the first step). Game: `[starts] mode = "zone_disc_ring"` | 3.2 · 0.3 m inside the walls |
+| Team-mates' start spacing margin (m) | `starts.team_spacing_margin_m` | `0.05` | PROPOSED | LEAD CALL 21 Nov 2026 (L0.10 QC finding I1: with team-mates closer than the filter distance, the filter spread them into tag range with nobody moving). Mode `zone_disc_ring`: team-mates start at least the filter distance + 0.05 m apart. **Guard start radius rule:** two or more Guards evenly spaced on one circle per game (random rotation), radius uniform from the chord radius, 1.15 / (2 sin(π / Guards)) (0.66 m for 3, 0.98 m for 5), up to the Guard disc where it fits, else the chord radius; one Guard anywhere in the disc. Strikes on the ring at random gaps, none closer than 1.15 m | — · — |
 | Game length (s) | `timing.game_s` | `120.0` | PROPOSED | hangar: `nus_rules.toml` `episode_steps` × `nus_deploy.toml` `seconds_per_step` (2,400 ticks); PLAN is silent; kept, LEAD CALL (20 Nov 2026); S2: `s2_game.toml` `game_steps` × `seconds_per_step` | 120 · 60 |
 | Decision every (s) | `timing.decision_s` | `0.6` | PROPOSED | `nus_deploy.toml` `seconds_per_step` (a command held 12 ticks); T41; DISCUSSION §2.10 | 0.6 · 0.05 |
 | Strike speed (m/s) | `speeds.strike_mps` | `0.5` | FIXED | owner, 15 Nov 2026; parent STANDARDS §4 | 0.5 · 0.5 |
@@ -81,7 +82,7 @@ start height there.
 | Player | What it does |
 |---|---|
 | `guard_parked_centre` | Guard 0 flies to the zone centre and stops there; every other Guard holds its start position. No Guard moves once settled. It ignores the Strike drones. |
-| `guard_parked_ring` | Guard *i* flies to its own point on a ring round the zone centre, points a whole turn / team size apart, and stops there. The ring is 0.8 m (`players.guard_park_ring_m`), larger when neighbours would be closer than the filter distance + 0.05 m (5 Guards: 0.98 m). It does not close up when a team-mate is lost. |
+| `guard_parked_ring` | The Guards park on a ring round the zone centre, points a whole turn / team size apart, and stop there. The ring is 0.8 m (`players.guard_park_ring_m`), larger when neighbours would be closer than the filter distance + 0.05 m (5 Guards: 0.98 m). The lowest-index Guard keeps its bearing; the others take the next points in the order they stand round the zone, so none crosses the ring (LEAD CALL 21 Nov 2026). After a loss the others hold their points. |
 | `guard_mark_edge` | Each Guard picks one live Strike and sits on the zone edge between it and the centre. |
 | `guard_mirror` | Each Guard holds a ring at 1.2 × the zone radius towards its Strike and copies its sideways speed. |
 | `guard_field` | Each Guard is pulled to the zone edge facing the nearest Strike and pushed off team-mates closer than 1.1 m. |
@@ -89,8 +90,8 @@ start height there.
 | `strike_flank` | Flies straight, unless a Guard is in the way; then it goes round that Guard on its far side. |
 | `strike_high` | Climbs to 0.1 m below the top of the height band, then flies straight in at that height. Plays as `strike_straight` on the pure path. |
 | `strike_low` | The same at 0.1 m above the bottom of the band. |
-| `strike_sacrifice` | Strike 0 flies at the Guard nearest to it, to draw it. The others enter opposite that Guard's bearing, the gap it opens: they circle at a stand-off distance until within 30° of that bearing, then fly straight in. When Strike 0 is out, or only one Strike is left, they fly straight in. |
-| `strike_converge` | The Strikes spread out round the zone at a stand-off distance, at bearings a whole turn / team size apart, starting from Strike 0's bearing. When all are at their bearings, they fly straight in, the nearer ones slower, so that all reach the zone edge together (within 0.3 s in the test). Once they are well on the way in, a loss does not stop them. Accepted as built (LEAD CALL 21 Nov 2026). |
+| `strike_sacrifice` | Strike 0 flies at the Guard nearest to it, to draw it. The others enter opposite that Guard's bearing, the gap it opens (if that Guard is within 0.05 m of the centre, it has no clear bearing and they enter opposite Strike 0 instead): they circle at a stand-off distance until within 30° of that bearing, then fly straight in. When Strike 0 is out, or only one Strike is left, they fly straight in. |
+| `strike_converge` | The Strikes spread out round the zone at a stand-off distance, at bearings a whole turn / team size apart, starting from the bearing of the lowest-index live Strike. When all are at their bearings, they fly straight in, the nearer ones slower, so that all reach the zone edge together (within 0.3 s in the test). Once they are well on the way in, a loss does not stop them. Accepted as built (LEAD CALL 21 Nov 2026). |
 
 ## Scripted player settings
 
@@ -104,6 +105,7 @@ table and the constants equal). Hand picks for the screening sweep, not tuned on
 | High / low Strike: aim this far inside the height band edge | `BAND_INSET_M` | `0.1` | m | PROPOSED | LEAD CALL 21 Nov 2026 |
 | Sacrifice / converge: stand-off circle, outside the zone edge | `STAND_OFF_M` | `1.0` | m | PROPOSED | LEAD CALL 21 Nov 2026; capped inside the keep-in box |
 | Sacrifice: fly straight in within this of the entry bearing | `ENTRY_HALF_ANGLE_DEG` | `30.0` | deg | PROPOSED | LEAD CALL 21 Nov 2026 |
+| Sacrifice: a drawn Guard this close to the centre gives no entry bearing | `SACRIFICE_NO_BEARING_M` | `0.05` | m | PROPOSED | LEAD CALL 21 Nov 2026 (QC M4) |
 | Converge: in place within this of the own bearing | `GATHER_ANGLE_RAD` | `0.1` | rad | PROPOSED | LEAD CALL 21 Nov 2026 |
 | Circling: radial correction reaches full speed this far off the circle | `RADIAL_RAMP_M` | `1.0` | m | PROPOSED | LEAD CALL 21 Nov 2026 |
 | Converge: circle round while farther than this from the own bearing | `CIRCLE_UNTIL_RAD` | `0.5` | rad | PROPOSED | LEAD CALL 21 Nov 2026 |

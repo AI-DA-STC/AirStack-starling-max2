@@ -117,13 +117,17 @@ class StartsCfg:
     the zone centre, Strike drones on the circle ``strike_ring_m`` round it, every bearing drawn per drone; the two keys are
     read in that mode only, so the other modes play as before bit for bit. Their defaults equal ``configs/ste_game.toml``
     ``starts.*`` (a test keeps them equal): the Guard disc 0.8 m (hangar game, PROPOSED) and the Strike ring 2.75 m for the
-    6.5 m lab arena (LEAD CALL 21 Nov 2026, L08-F1, PROPOSED: the hangar ring scaled by the arena half-side)."""
+    6.5 m lab arena (LEAD CALL 21 Nov 2026, L08-F1, PROPOSED: the hangar ring scaled by the arena half-side).
+    ``team_spacing_margin_m`` (QC fix round 1, LEAD CALL 21 Nov 2026, PROPOSED): team-mates start at least the filter
+    distance (the larger keep-out) + this apart in that mode. ``GameCfg`` refuses the mode unless the zone centre is
+    pinned at the arena centre and the ring fits the keep-in box in every band (QC I2)."""
     mode: str = "rings"
     strike_inset_m: float = 0.3
     guard_ring_gap_m: float = 0.3
     spacing_m: float = 1.2
     guard_disc_m: float = 0.8
     strike_ring_m: float = 2.75
+    team_spacing_margin_m: float = 0.05
 
 
 @dataclass(frozen=True)
@@ -147,6 +151,23 @@ class GameCfg:
     pad_strikes: int = 3
     yaw_rate_max_rad_s: float = 1.0
     tag: TagCfg = field(default_factory=TagCfg)
+
+    def __post_init__(self) -> None:
+        """Starts mode "zone_disc_ring" draws round the zone centre in metres from it, so (QC I2, LEAD CALL 21 Nov 2026) it
+        is refused unless the zone centre cannot move off the arena centre (``zone_wall_margin_m`` at least the largest
+        side x (1/2 - smallest zone-radius fraction), every band) and the Strike ring fits the keep-in box of the smallest
+        side (half less ``wall_margin_m``). Other modes are not checked here."""
+        if self.starts.mode != "zone_disc_ring":
+            return
+        a = self.arena
+        sides = [s for band in a.bands_m.values() for s in band]
+        if max(sides) * (0.5 - a.zone_radius_frac[0]) > a.zone_wall_margin_m:
+            raise ValueError('starts.mode "zone_disc_ring" needs the zone centre pinned at the arena centre: '
+                             "arena.zone_wall_margin_m must be at least the largest side x (1/2 - the smallest "
+                             f"zone_radius_frac) = {max(sides) * (0.5 - a.zone_radius_frac[0])!r} m, got {a.zone_wall_margin_m!r}")
+        if self.starts.strike_ring_m > min(sides) / 2 - a.wall_margin_m:
+            raise ValueError(f"starts.strike_ring_m = {self.starts.strike_ring_m!r} m does not fit the keep-in box of the "
+                             f"smallest arena side ({min(sides) / 2 - a.wall_margin_m!r} m from the centre)")
 
     def team_speed_mps(self, team: str) -> float:
         """Team speed in m/s = units/step x metres/unit / seconds/step."""

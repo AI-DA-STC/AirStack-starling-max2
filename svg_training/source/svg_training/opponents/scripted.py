@@ -247,6 +247,7 @@ RADIAL_RAMP_M = 1.0      # while circling: radial correction towards the stand-o
 CIRCLE_UNTIL_RAD = 0.5   # converge: circle round the zone while farther than this from the assigned bearing, then steer to it
 ENTRY_HALF_ANGLE_DEG = 30.0   # sacrifice: within this of the entry bearing, a Strike flies straight in
 ENTRY_HALF_ANGLE_RAD = ENTRY_HALF_ANGLE_DEG * torch.pi / 180
+SACRIFICE_NO_BEARING_M = 0.05   # sacrifice: a drawn Guard this close to the zone centre gives no entry bearing (QC M4)
 GATHER_ANGLE_RAD = 0.1   # converge: a Strike is in place within this of its bearing; the run-in starts when all are
 RUN_IN_COMMIT_M = 0.3    # converge: once a live Strike is this far inside the stand-off circle, the run-in goes on
 
@@ -298,10 +299,16 @@ class GuardParkedCentre(_Guard):
 
 
 class GuardParkedRing(_Guard):
-    """Guard i flies to its station on a ring round the zone centre, at bearing 2 pi i / G (G = team size, the stations
-    fixed by index: no closing up when a team-mate is lost) and stops there; ignores the Strike drones. Ring radius
-    (LEAD CALL 21 Nov 2026) = max(RING_M, chord rule): neighbours at least the filter distance (``rules.keepout_guard_m``)
-    + PARK_RING_SPACING_MARGIN_M apart, r >= (d + margin) / (2 sin(pi / G)); 0.8 m up to 3 Guards, 0.98 m for 5."""
+    """The Guard team parks on a ring round the zone centre, stations a whole turn / G apart (G = team size), and stops
+    there; ignores the Strike drones. Ring radius (LEAD CALL 21 Nov 2026) = max(RING_M, chord rule): neighbours at least
+    the filter distance (``rules.keepout_guard_m``) + PARK_RING_SPACING_MARGIN_M apart, r >= (d + margin) / (2 sin(pi /
+    G)); 0.8 m up to 3 Guards, 0.98 m for 5.
+
+    Which Guard takes which station (QC C1, LEAD CALL 21 Nov 2026): while the whole team is live, the stations follow the
+    Guards' own bearings. The lowest-index Guard keeps its bearing (station 0), the others keep their order round the
+    zone (anticlockwise from it) and take stations 1, 2, ... in that order, so no Guard is sent across the ring through
+    its team-mates. After a loss the survivors do not close up: each holds the station nearest its bearing on the ring
+    whose phase is the G-fold circular mean of the live Guards' bearings (exact once they are parked)."""
     RING_M = PARK_RING_M
 
     def ring_radius_m(self, guards: int) -> float:
@@ -313,9 +320,30 @@ class GuardParkedRing(_Guard):
 
     def act(self, obs: Tensor) -> Tensor:
         g = obs.shape[1]
-        ang = torch.arange(g, device=obs.device, dtype=obs.dtype) * (2 * torch.pi / g)
-        station = self.ring_radius_m(g) * torch.stack((ang.cos(), ang.sin()), dim=-1)[None]          # [1, G, 2]
-        return _pack(steer(station - obs[..., _V.own_pos][..., :2]), obs)
+        own_p = obs[..., _V.own_pos][..., :2]
+        mates, live = _team_slots(obs, 0)                                            # [N, G, G, 2], [N, G, G]
+        idx = torch.arange(g, device=obs.device)
+        own = idx[None, :, None] == idx[None, None, :]                               # [1, G, G] the diagonal
+        n_live = live.sum(-1)                                                        # [N, G]
+        step = 2 * torch.pi / g
+        # whole team live: stations in the order of the bearings, from the lowest-index Guard's bearing
+        ref = torch.where(live, idx, g).amin(-1).clamp(max=g - 1)
+        ref_p = torch.gather(mates, 2, ref[..., None, None].expand(-1, -1, 1, 2))[:, :, 0]     # [N, G, 2]
+        rp = ref_p[:, :, None, :]
+        offset = torch.atan2(rp[..., 0] * mates[..., 1] - rp[..., 1] * mates[..., 0], (rp * mates).sum(-1))
+        offset = torch.where(offset < 0, offset + 2 * torch.pi, offset).masked_fill(~live, float("inf"))
+        rank = offset.argsort(dim=-1, stable=True).argsort(dim=-1)                           # place in the order round the zone
+        own_rank = (rank * own).sum(-1).to(obs.dtype)                                # [N, G]
+        ordered = torch.atan2(ref_p[..., 1], ref_p[..., 0]) + own_rank * step
+        # after a loss: the nearest station on the ring the live Guards define (G-fold circular mean of the bearings)
+        theta = torch.atan2(mates[..., 1], mates[..., 0])                            # [N, G, G]
+        w = live.to(obs.dtype)
+        phase = torch.atan2((w * (g * theta).sin()).sum(-1), (w * (g * theta).cos()).sum(-1)) / g     # [N, G]
+        own_theta = torch.atan2(own_p[..., 1], own_p[..., 0])
+        nearest = phase + torch.round(_wrap(own_theta - phase) / step) * step
+        want = torch.where(n_live >= g, ordered, nearest)
+        station = self.ring_radius_m(g) * torch.stack((want.cos(), want.sin()), dim=-1)
+        return _pack(steer(station - own_p), obs)
 
 
 class _StrikeHeight(_Strike):
@@ -354,8 +382,8 @@ class StrikeSacrifice(_Strike):
     """Strike 0 (by index, fixed: never re-elected) flies at the live Guard drone nearest to it, to draw it. The others
     enter opposite the bearing of that drawn Guard drone, the gap it opens (LEAD CALL 21 Nov 2026): while their bearing is
     more than ENTRY_HALF_ANGLE_RAD from that entry bearing, they circle the zone on the stand-off circle the shorter way
-    round; within it they fly straight in. With no live Guard drone, or the drawn one exactly at the zone centre (no
-    bearing), the entry bearing is opposite Strike 0. When Strike 0 is out, when a Strike drone is alone, or (for Strike
+    round; within it they fly straight in. With no live Guard drone, or the drawn one within SACRIFICE_NO_BEARING_M of the
+    zone centre (no clear bearing), the entry bearing is opposite Strike 0. When Strike 0 is out, when a Strike drone is alone, or (for Strike
     0) when no Guard drone is live, it flies straight in."""
 
     def act(self, obs: Tensor) -> Tensor:
@@ -375,7 +403,7 @@ class StrikeSacrifice(_Strike):
         guard_p = own_p[:, :, None, :] + gp                                           # rel zone
         to_decoy = (guard_p - decoy_p[:, :, None, :]).norm(dim=-1).masked_fill(~gpres, float("inf"))
         drawn = torch.gather(guard_p, 2, to_decoy.argmin(-1)[..., None, None].expand(-1, -1, 1, 2))[:, :, 0]
-        has_bearing = any_guard & (drawn.norm(dim=-1) > 1e-6)
+        has_bearing = any_guard & (drawn.norm(dim=-1) > SACRIFICE_NO_BEARING_M)
         away = torch.where(has_bearing[..., None], drawn, decoy_p)
         far = torch.atan2(-away[..., 1], -away[..., 0])
         diff = _wrap(far - torch.atan2(own_p[..., 1], own_p[..., 0]))

@@ -222,6 +222,7 @@ PINNED_LABELS = {
     "arena.environment": "OPEN",                  # P10, OPEN at G0 (QC I2, 21 Nov 2026)
     "starts.guard_disc_m": "PROPOSED",            # hangar game
     "starts.strike_ring_m": "PROPOSED",           # LEAD CALL 21 Nov 2026, L08-F1 (L0.10): the hangar ring scaled to the 6.5 m arena
+    "starts.team_spacing_margin_m": "PROPOSED",   # LEAD CALL 21 Nov 2026 (L0.10 QC I1): team-mates start spaced
     "timing.game_s": "PROPOSED",                  # LEAD CALL, 20 Nov 2026
     "timing.decision_s": "PROPOSED",              # hangar game, T41
     "speeds.strike_mps": "FIXED",                 # parent STANDARDS section 4 "Speeds in metres per second"
@@ -258,7 +259,7 @@ def test_the_sources_name_the_pending_rulings():
                         ("filter.share", "P2"), ("arena.side_m", "F8"), ("tag.mode", "P1"), ("tag.radius_m", "P1"),
                         ("tag.guard_survives_tag_prob", "P12"),
                         ("starts.strike_ring_m", "L08-F1"), ("starts.strike_ring_m", "LEAD CALL"),
-                        ("players.guard_park_ring_m", "F1")):
+                        ("players.guard_park_ring_m", "F1"), ("starts.team_spacing_margin_m", "LEAD CALL")):
         assert re.search(rf"(?<![\w-]){ruling}(?![\w-])", spec.entry(key).source), (key, ruling)
 
 
@@ -284,6 +285,7 @@ def test_the_game_defaults_equal_the_sheet():
     spec, _ = load_game_spec()
     assert StartsCfg().strike_ring_m == spec.value("starts.strike_ring_m")
     assert StartsCfg().guard_disc_m == spec.value("starts.guard_disc_m")
+    assert StartsCfg().team_spacing_margin_m == spec.value("starts.team_spacing_margin_m")
     assert StartsCfg().mode == "rings"                                            # off by default: today's starts
     assert GuardParkedRing.RING_M == spec.value("players.guard_park_ring_m")
 

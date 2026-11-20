@@ -47,6 +47,7 @@ SCHEMA: dict[str, str] = {
     "arena.environment": "text",
     "starts.guard_disc_m": "decimal",
     "starts.strike_ring_m": "decimal",
+    "starts.team_spacing_margin_m": "decimal",
     "timing.game_s": "decimal",
     "timing.decision_s": "decimal",
     "speeds.strike_mps": "decimal",

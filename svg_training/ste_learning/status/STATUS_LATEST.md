@@ -1,6 +1,6 @@
 INTERNAL · the latest status of STE's own learning track and the NUS port, overwritten at every update; the history is in [LOG.md](LOG.md). Produced by the `train-status` skill.
 
-**Status, 2026-11-21 05:22 (+08:00), event: L0.11 follow-up checks in; L0.11 merge suite running; L0.12 groundwork started (CPU)**                                               · laptop RTX 5070 Ti · GPU idle except the remote-desktop service · 0 training processes (0 paused)
+**Status, 2026-11-21 05:48 (+08:00), event: L0.11 DONE and merged (suite 1,685 passed / 0 failed)**                                                · laptop RTX 5070 Ti · GPU idle except the remote-desktop service · 0 training processes (0 paused)
 
 ## Phases
 
@@ -22,7 +22,7 @@ INTERNAL · the latest status of STE's own learning track and the NUS port, over
 | L0.8 | Game spec sheet | DONE | none | merged into `development`; QC passed; full suite on `development` 1,461 passed / 0 failed (41 min) |
 | L0.9 | Tag rule for the study: 1-for-1, nearest pair first | DONE | tier 1 fast engine | merged; QC + re-check passed; full suite on `development` 1,517 passed / 0 failed (31 min); the 5090 records its own tag-off positions (L09-5090) |
 | L0.10 | Scripted players for the study | DONE | tier 1 fast engine | merged; QC + 2 re-checks passed; full suite on `development` 1,600 passed / 0 failed (56 min, CPU shared with the L0.11 GPU jobs) |
-| L0.11 | Screening sweep (INFO) | RUNNING (merge suite) | tier 1 fast engine | T44 + follow-up checks (CPU replay of T44's own starts, exact): the tag-before-zone rule decides only a few percent of holds (33 of 808 at base); holds leave 0 Guards at 1v1 and 3v3; scripts deciding every 0.6 s barely change against the straight Strike (808 → 793 holds); base reach 192/1,000 (Wilson 0.169–0.218); full suite on the rebased branch running, then merge |
+| L0.11 | Screening sweep (INFO) | DONE | tier 1 fast engine | record T44 (every control PASS; shortlist base (reference), tag 1.2 m, tag 1.4 m; every hold a one-for-one trade) + follow-up checks; merged into `development`; full suite 1,685 passed / 0 failed (27 min) |
 | L0.12 | Best-response test: is the game worth learning? | RUNNING (CPU groundwork) | tier 1 fast engine | builder on `ste-l0.12`: trainer path for both sides on the tag-on game files, a control that reproduces a T44 cell, gate measuring exploiter gain over the best script (lead's call), pilot plan; GPU only after QC of the gate; cap 6 GPU-h |
 | L0.2 | Tier 2 speed in contested play | NOT STARTED | tier 2 Isaac Lab | 5090; cap 1.5 GPU-h |
 | L0.13 | Does tier 2 train at all? | NOT STARTED | tier 2 Isaac Lab | 5090, after L0.2; cap 6 GPU-h |

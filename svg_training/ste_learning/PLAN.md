@@ -160,7 +160,7 @@ pilots and INFO runs, debugging fixes, task order inside a phase, retries within
 | Trigger | Mechanism | Status |
 |---|---|---|
 | A job ends | trainers run detached and write an `exit_code` file; a background watcher's completion notifies the session | **verified**: used all through the NUS port |
-| Heartbeat every 30 min | a background timer job whose completion notifies the session; re-armed each time | **verified by a 2-minute drill on 20 Nov** (L0.7 repeats it as a recorded drill) |
+| Heartbeat every 30 min | a background timer job whose completion notifies the session; re-armed each time | **verified by a 2-minute drill on 20 Nov**; L0.7 built `scripts/ste_job.py` and its drills ([AUTOMATION](AUTOMATION.md) §7), to be run on each machine before its first detached GPU job |
 | Fallback | a timer at each job's expected end + 15 min, and every 3 h | same mechanism |
 | Subagent finishes | its completion notification | verified |
 | Session scheduling tools (wake-ups, cron) | may replace the timer | not relied on until a drill shows they work |

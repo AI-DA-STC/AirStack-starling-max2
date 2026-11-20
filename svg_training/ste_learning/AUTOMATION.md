@@ -53,9 +53,10 @@ task leaves gate-written until its phase is approved (phase L0: approved by the 
 ## 2. The loop
 
 ### 2.1 What wakes the lead
-1. **Job exit.** Trainers run detached: `setsid nohup bash -c '<cmd>; echo $? > <run>/exit_code'`, with `pid`, `cmd.txt`
-   and log in the run folder (`restart_51.sh`). A session-attached watcher (`while kill -0 <pid>; do sleep 60; done`,
-   Bash background) wakes the lead; a dead session loses only it. Dead pid, no `exit_code` = killed or rebooted.
+1. **Job exit.** Trainers run detached through `scripts/ste_job.py launch` and the lead waits with
+   `scripts/ste_job.py wait <name>` as a background command of the session (built in L0.7, §7 below). The waiter's exit
+   status is the job's own exit code; it flags ENDED_EARLY and DIED. No `pgrep -f`, no shell `; echo $?` wrappers: both
+   failed on 20 Nov (§7).
 2. **Heartbeat, 30 min** (ScheduleWakeup, re-armed): a tick, then the **technical writer** gets `state.json` and the
    tick summary and returns the owner's format (DISCUSSION §4: three tables with math library and simulator, Next,
    Waiting on you, "Ready to push"); the lead posts it; writer files per its draft. Finish, failure, new gate: at once.
@@ -154,7 +155,7 @@ message outsiders; change a FIXED row; commit NUS source; use the GPU before P3 
 |---|---|
 | Preflight refused, owner pause | not a failure; re-check each tick; foreign process > 2 h → H8 |
 | Crash, OOM | one retry from the checkpoint (OOM: lower memory fraction); second → ABORTED |
-| NaN/Inf (trainer exit 3) | no retry; ABORTED; `train-debug`, sequential |
+| NaN/Inf (STE track trainers: exit 5; `train_standin.py`: exit 3) | no retry; ABORTED; `train-debug`, sequential |
 | Stall (log and CPU time unchanged 30 min, not `T`; PROPOSED per task) | SIGINT, ABORTED, `train-debug` |
 | Reboot | resume (§2.3); not an attempt |
 | Gate FAIL / INCONCLUSIVE | recorded, never retried; a rerun is a new run with new gates (INCONCLUSIVE: as its plan says) |
@@ -162,8 +163,66 @@ message outsiders; change a FIXED row; commit NUS source; use the GPU before P3 
 **ABORTED** is written at once (what ran, why it stopped, last good step, GPU-hours); the run folder stays.
 
 ## 6. Needed first (outside these two files)
+Items 1 and 2 were built in L0.7 (20 Nov 2026); see §7. Kept for the record:
 1. **One pause log.** `gpu_pause.sh` and `nus/pauses.py` use `<worktree>/runs/nus_port/phase5/pauses.log`, and the
    owner runs the nus-method copy. Proposal: one shared path, STE trainer names in `GPU_PAUSE_PATTERN`. Implementer task.
 2. **Trainer contract**: the same command resumes from its checkpoint; SIGINT checkpoints; distinct exit codes for
    done, cap-stop, NaN. A tested `status` helper (lock, atomic write, boot_id, pid start time).
 3. The lead's task list with IDs.
+
+## 7. The tooling as built (task L0.7, 20 Nov 2026)
+
+Code: `source/svg_training/ste/` (`shared.py`, `pauses.py`, `state.py`, `atomic.py`, `run_contract.py`, `budget.py`,
+`jobs.py`), `scripts/ste_job.py`, `scripts/ste_dummy_job.py`, `scripts/gpu_pause.sh`. Tests: `tests/test_ste_*.py`,
+`tests/test_gpu_pause.py`. Linux only. Standard library only.
+
+| Piece | What it does |
+|---|---|
+| Shared folder | `SVG_SHARED_DIR`, else `<main clone>/svg_training/runs/shared/` (git-ignored, one per machine): `state.json`, `pauses.log`, `gpu_hours.log` |
+| One pause log | `gpu_pause.sh` writes each event to the legacy log and to the shared one; the reader merges every worktree's legacy log too, so a pause made with an old copy still counts; `scripts/ste_*.py` jobs are paused, the launcher and waiter are not |
+| State file | `state.json` under a lock, written atomically; a job is alive only if its pid exists with the recorded start time in the current boot |
+| Trainer contract | the same command resumes from its last checkpoint; SIGINT or SIGTERM saves and exits; a non-finite value never overwrites the last good checkpoint; the cap counts effective time (paused time excluded) |
+| GPU-hour ledger | used GPU-hours per task and per phase from `gpu_hours.log` (CUDA intervals less paused time); `launch` refuses a job over the task or phase cap of `configs/ste_learning.toml` |
+| Launcher and waiter | `scripts/ste_job.py launch / wait / status` |
+
+**Exit codes** (`ste/run_contract.py`): 0 done; 2 refused to start; 3 stopped at its cap; 4 interrupted (SIGINT or
+SIGTERM); 5 non-finite value. The waiter adds: 20 ENDED_EARLY (the job returned 0 before its expected minimum
+duration); 21 DIED (no exit code recorded: killed, or a previous boot); 22 no such job; 23 the tool itself failed.
+127: the command could not start; 128 + n: killed by signal n.
+
+**The three failures of 20 Nov this replaces**, each reproduced by a test and shown caught: a watcher written with
+`pgrep -f` matched its own shell and never fired; `pytest … ; echo "exit $?"` reported 0 for a run with 463 errors; and
+that run ended after 3 minutes instead of 19 with nothing flagging it.
+
+**Drills: run them on each machine before its first detached GPU job.** From the `svg_training` folder of the clone
+the work is in, `unset PYTHONPATH` first. They use the machine's real shared folder.
+
+Wake-up drill (about 2 minutes):
+```
+PY=~/miniconda3/envs/env_isaaclab/bin/python; mkdir -p runs
+$PY scripts/ste_job.py launch --task L0.7 --name l07_wakeup --run-dir runs/ste_l07/wakeup --min-s 100 --gpu-h 0 -- \
+    $PY scripts/ste_dummy_job.py --run-dir runs/ste_l07/wakeup --steps 120 --step-s 1 --cap-s 600 --checkpoint-every 10
+```
+Then, as a background command of the session (its completion is the wake-up):
+`$PY scripts/ste_job.py wait l07_wakeup; echo "waiter exit $?"`. Expected about 120 s after the launch:
+`L0.7 l07_wakeup DONE exit=0 duration=120.1s effective=120.1s`, then `waiter exit 0`.
+
+Resume drill:
+1. Launch: the same line as above with `l07_resume` and `runs/ste_l07/resume` (and `--min-s 60`).
+2. About 40 s later, in a separate command: `$PY scripts/ste_job.py status`; then kill the whole job (the power-cut
+   stand-in) with `kill -KILL -- -<pid>`, where `<pid>` is the `pid` in `runs/ste_l07/resume/job.json`; then `status`
+   again. Expected: `alive`, then `dead`.
+3. `$PY scripts/ste_job.py wait l07_resume; echo "waiter exit $?"`. Expected: `DIED exit=none`, `waiter exit 21`.
+4. Relaunch with the same line (or `bash runs/ste_l07/resume/cmd.txt`): it prints `launch=2`. Wait again. Expected:
+   `DONE exit=0`, `waiter exit 0`, a log line `resumed from step 30 of 120` (or 40), and
+   `{"steps": 120, "total": 7260.0}` in `runs/ste_l07/resume/result.json`.
+
+Do not pause during a drill while a real GPU job runs: `gpu_pause.sh pause` pauses every job it finds.
+
+**Known limits (L0.7 as built).** `launch` does not check for an open owner pause (the job accrues no time until the
+resume). `--gpu-h` at launch and the trainer's own cap are not linked: the caller keeps them equal. The effective time
+carried in a checkpoint undercounts by up to one checkpoint interval per SIGKILL; the ledger loses at most one minute.
+A relaunch with the same `--min-s` and little left to do is flagged ENDED_EARLY. The `tasks` block of `state.json` is
+validated but not yet written; `RESUME.md`, the wall-clock limit, the starvation guard and the disk check are not built.
+**The shared folder is per machine**: the GPU-hours used on the 5090 and on the laptop are counted separately, so the
+phase total is kept by hand in the status (`status/STATUS_LATEST.md`, "GPU-h used in L0") until the ledgers are merged.

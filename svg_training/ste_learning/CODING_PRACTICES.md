@@ -34,7 +34,7 @@ Source of truth for direction: [DISCUSSION_2026-11-19_20.md](DISCUSSION_2026-11-
    unset PYTHONPATH
    CUDA_VISIBLE_DEVICES="" PYTHONPATH=source ~/miniconda3/envs/env_isaaclab/bin/python -m pytest -q -p no:cacheprovider tests/test_<area>.py
    ```
-   During the loop, run the touched test files; before hand-over or merge, the full suite (1,243 tests collected on
+   During the loop, run the touched test files; before hand-over or merge, the full suite (1,383 tests collected on 20 Nov 2026 after L0.7; 1,243 on
    20 Nov 2026 after L0.1; about 19 minutes on the home RTX 5090 with the GPU hidden), quoting the last line. A skip is not a pass.
 
 ## 3. Vectorisation (STANDARDS §6.1)
@@ -101,7 +101,9 @@ Source of truth for direction: [DISCUSSION_2026-11-19_20.md](DISCUSSION_2026-11-
   refuses to start, with a message, before Isaac launches.
 - A non-finite metric aborts the update with a checkpoint kept (`NonFiniteError` pattern); non-finite physics values are
   replaced and **counted**, never silently hidden.
-- Exit codes as the existing trainers: 2 refused, 3 cap (ABORTED), 4 operator stop (STOPPED).
+- Exit codes (`ste/run_contract.py`, L0.7): 0 done, 2 refused, 3 cap (ABORTED), 4 interrupted (STOPPED), 5 non-finite.
+  The older `train_standin.py` uses 3 for a NaN abort; this track uses 5. Launch, wait and status go through
+  `scripts/ste_job.py` ([AUTOMATION](AUTOMATION.md) §7); never find a process by name (`pgrep`, `pkill`: a test fails).
 - No bare `except`.
 
 ## 9. Performance budgets (PROPOSED)

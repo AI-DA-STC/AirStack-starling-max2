@@ -1,6 +1,6 @@
 INTERNAL · the latest status of STE's own learning track and the NUS port, overwritten at every update; the history is in [LOG.md](LOG.md). Produced by the `train-status` skill.
 
-**Status, 2026-11-21 06:13 (+08:00), event: L0.12 rulings built in; 2-D clips now carry a height panel**                                                           · laptop RTX 5070 Ti · GPU 46 % / 19 W / 1.4 GB of 12 GB · 0 training processes (0 paused)
+**Status, 2026-11-21 06:17 (+08:00), event: L0.12 committed on its branch (4 commits); pre-launch QC running**                                                            · laptop RTX 5070 Ti · GPU 46 % / 19 W / 1.4 GB of 12 GB · 0 training processes (0 paused)
 
 ## Watch (latest clips and figures)
 
@@ -45,7 +45,7 @@ What the drones look like in the 3-D simulator (Isaac Lab Starlings, from S2b; t
 | L0.9 | Tag rule for the study: 1-for-1, nearest pair first | DONE | tier 1 fast engine | merged; QC + re-check passed; full suite on `development` 1,517 passed / 0 failed (31 min); the 5090 records its own tag-off positions (L09-5090) |
 | L0.10 | Scripted players for the study | DONE | tier 1 fast engine | merged; QC + 2 re-checks passed; full suite on `development` 1,600 passed / 0 failed (56 min, CPU shared with the L0.11 GPU jobs) |
 | L0.11 | Screening sweep (INFO) | DONE | tier 1 fast engine | record T44 (every control PASS; shortlist base (reference), tag 1.2 m, tag 1.4 m; every hold a one-for-one trade) + follow-up checks; merged into `development`; full suite 1,685 passed / 0 failed (27 min) |
-| L0.12 | Best-response test: is the game worth learning? | RUNNING (CPU groundwork) | tier 1 fast engine | built on `ste-l0.12`: new exploiter trainer (T41 recipe, 0.6 s decisions); its evaluation replays T44's cells exactly (0 of 1,000 games differ); every control passes; CPU smoke trains both sides end to end. Concern: the Strike side gets almost no reward on the T41 recipe (0 reaches in ~500 CPU games) — pre-registered fallback: the game's distance shaping, else Strike INCONCLUSIVE. Lead's rulings built in (Strike recipe decided on the probe against the training opponent; tag 1.4 m trains against strike_low, labelled, with strike_straight scored too); 2-D clips now carry a height panel (VID-1 part 1); then commit, QC of the gate, the GPU pilot |
+| L0.12 | Best-response test: is the game worth learning? | RUNNING (pre-launch QC) | tier 1 fast engine | committed on `ste-l0.12` (4 commits: height panel, core + gate, trainer, driver + docs; 132 tests pass); its evaluation replays T44 exactly; Strike recipe pre-registered (T41 → distance shaping → not launched, decided on the probe against the training opponent); independent pre-launch QC running; then the GPU pilot |
 | L0.2 | Tier 2 speed in contested play | NOT STARTED | tier 2 Isaac Lab | laptop allowed (owner, 21 Nov): runs alone on the GPU, measures what fits in 12 GB; cap 1.5 GPU-h |
 | L0.13 | Does tier 2 train at all? | NOT STARTED | tier 2 Isaac Lab | laptop allowed (owner, 21 Nov), after L0.2, at the games-at-once L0.2 shows fits; cap 6 GPU-h |
 | L0.3 | STE Guard policy in tier 2 without retraining | NOT STARTED | tier 2 Isaac Lab | unblocked (T41 on both machines); runs on the laptop GPU, taking turns with L0.12's GPU runs (one GPU job at a time); cap 1.5 GPU-h |
@@ -73,7 +73,8 @@ Laptop full CPU suite (20 Nov, `development` at 5c5d465, after `scripts/nus_inst
 | L0.10 Scripted players: builder (build + rulings + 2 QC fix rounds) | ~420 k | ~56 min | |
 | L0.10 independent QC (+ 2 re-checks) | ~353 k | ~71 min | 84 deliberate breakages over two rounds; its own geometry probes on 30,000+ starts |
 | L0.11 sweep build (CPU, build + rulings + rebase + QC fixes + follow-ups) | ~677 k | ~106 min | the largest single task so far; a fresh builder takes L0.12 to avoid re-reading this context |
-| L0.12 groundwork builder | running | ~75 min so far | |
+| L0.12 groundwork builder | ~550 k | ~54 min | |
+| L0.12 pre-launch QC | running | running | |
 | L0.11 pre-launch QC | ~293 k | ~24 min | broke the code five ways through the real driver |
 | L0.11 CUDA smoke | | ~5 min | 0.087 GPU-h |
 | L0.11 independent QC (pre-launch, re-check, results read) | ~419 k | ~45 min | |

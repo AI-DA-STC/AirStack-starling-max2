@@ -1,6 +1,6 @@
 INTERNAL · the latest status of STE's own learning track and the NUS port, overwritten at every update; the history is in [LOG.md](LOG.md). Produced by the `train-status` skill.
 
-**Status, 2026-11-21 02:33 (+08:00), event: L0.10 built; lead's rulings round running**                           · laptop RTX 5070 Ti · GPU 72 % / 22 W / 1.7 GB of 12 GB · 0 training processes (0 paused)
+**Status, 2026-11-21 02:40 (+08:00), event: L0.10 committed on its branch; independent QC running**                            · laptop RTX 5070 Ti · GPU 72 % / 22 W / 1.7 GB of 12 GB · 0 training processes (0 paused)
 
 ## Phases
 
@@ -21,7 +21,7 @@ INTERNAL · the latest status of STE's own learning track and the NUS port, over
 | L0.7 | Process tooling and drills | RUNNING (laptop part DONE) | none | merged into `development`; laptop: full suite 1,420 passed / 0 failed, wake-up drill and resume drill both as expected (below); DONE when the 5090 has run the same (L07-5090) |
 | L0.8 | Game spec sheet | DONE | none | merged into `development`; QC passed; full suite on `development` 1,461 passed / 0 failed (41 min) |
 | L0.9 | Tag rule for the study: 1-for-1, nearest pair first | RUNNING | tier 1 fast engine | merged into `development` (QC passed); full suite re-running; DONE when it passes (the 5090 records its own tag-off positions, L09-5090) |
-| L0.10 | Scripted players for the study | RUNNING | tier 1 fast engine | built (6 new players + start ring 2.75 m, checked on 8,192 games: inside the arena, ≥ 1.95 m from Guards, no tag at the first step); lead's rulings on 10 open points being applied; then QC |
+| L0.10 | Scripted players for the study | RUNNING | tier 1 fast engine | committed on `ste-l0.10` (2ef29d0) with the lead's 10 rulings applied: 6 new players, start ring 2.75 m, 9 behaviour constants as PROPOSED sheet rows; 315 tests pass; independent QC running |
 | L0.11 | Screening sweep (INFO) | NOT STARTED | tier 1 fast engine | cap 3 GPU-h |
 | L0.12 | Best-response test: is the game worth learning? | NOT STARTED | tier 1 fast engine | cap 6 GPU-h |
 | L0.2 | Tier 2 speed in contested play | NOT STARTED | tier 2 Isaac Lab | 5090; cap 1.5 GPU-h |
@@ -48,7 +48,8 @@ Laptop full CPU suite (20 Nov, `development` at 5c5d465, after `scripts/nus_inst
 | L0.8 independent QC + re-check | ~209 k | ~12 min | mutation tests on the sheet |
 | L0.9 Tag rule: builder (build + fix round) | ~358 k | ~66 min | the first 50 min slowed by sharing the CPU with the L0.7 suite |
 | L0.9 independent QC + re-check | ~239 k | ~31 min | ran its own reference matcher, mutants and old-vs-new games |
-| L0.10 Scripted players: builder | running | running | |
+| L0.10 Scripted players: builder (build + rulings) | ~326 k | ~37 min | |
+| L0.10 independent QC | running | running | |
 | Full CPU test suite | none | ~25 min alone; the L0.7 merge run took 61 min (shared the CPU with L0.9's tests) | rule from now: one heavy test run at a time |
 | GPU | 0 GPU-h | | nothing has used the GPU |
 

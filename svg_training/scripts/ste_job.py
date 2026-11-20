@@ -25,6 +25,8 @@ wait     blocks until the job has ended, prints one line
          job's code was 0, else the job's code); DIED when the job is gone and recorded no exit code (own status 21).
          An unknown job name: status 22, nothing on stdout. The waiter's own failure (state.json unreadable): 23.
 status   one line per job: alive | alive (paused) | alive (wrapper gone) | dead | dead (previous boot), the exit code.
+         faults=<n> (in wait's line and in status) counts bookkeeping writes the wrapper had to retry (a full disk,
+         any error): the job was not harmed by them; details in <run-dir>/job.json and job.log.
 
 A job is told apart by pid, process start time and boot id, never by its name or command line. To stop a job with a
 checkpoint, send SIGINT to the recorded pid (the wrapper passes it on) or use scripts/gpu_pause.sh stop. Logic and the

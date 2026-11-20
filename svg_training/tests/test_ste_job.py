@@ -676,6 +676,193 @@ def test_the_owners_stop_interrupts_the_command_and_the_wrapper_records_it(bench
     assert done.returncode == rc.EXIT_INTERRUPTED and " INTERRUPTED exit=4 " in line_of(done)
 
 
+# ================================================================================================ the wrapper's own faults (L07-I3)
+# The wrapper runs IN this test process (it checks that job.json records its own pid), with faults injected by
+# monkeypatching: no disk is filled and no system clock is changed. The test's own folder is the shared folder, and no
+# Bench is used: its clean-up kills the process group of every recorded live pid, which here would be pytest's own.
+FAULT_BEAT_S = 0.05
+SHORT_CMD_S = 0.6
+
+
+@pytest.fixture()
+def in_process(tmp_path, monkeypatch):
+    monkeypatch.setenv(shared.SHARED_ENV, str(tmp_path / "shared"))
+    monkeypatch.setenv(shared.LEGACY_LOGS_ENV, "")
+    saved = {number: signal.getsignal(number) for number in (signal.SIGINT, signal.SIGTERM)}
+
+    def make(name: str = "faulty", gpu_h: float = 0.5, end_marker: bool = False) -> Path:
+        """A recorded job whose command sleeps SHORT_CMD_S; ``end_marker``: it then writes ``ended.marker`` in the run
+        folder, just before it exits."""
+        run = tmp_path / "runs" / name
+        run.mkdir(parents=True)
+        me = os.getpid()
+        code = f"import time\ntime.sleep({SHORT_CMD_S})\n"
+        if end_marker:
+            code += f"open({str(run / 'ended.marker')!r}, 'w').close()\n"
+        record = {"task": "L0.11", "pid": me, "pid_start": jobs._start_ticks(me), "boot_id": state.boot_id(),
+                  "cmd": [child_python(), "-c", code], "cwd": str(ROOT),
+                  "run_dir": str(run), "log": str(run / "job.log"), "started": time.time(), "expected_min_s": 0.0,
+                  "gpu_h": gpu_h, "launch": 1, "child_pid": None, "child_start": None, "exit_code": None, "ended": None}
+        state.update(lambda data: data["jobs"].__setitem__(name, dict(record)))
+        (run / "job.json").write_text(json.dumps(dict(record, name=name, beat_s=FAULT_BEAT_S, settings="unused",
+                                                      env={}, shared_dir=str(tmp_path / "shared"))))
+        return run
+
+    yield make
+    for number, handler in saved.items():                                   # the wrapper sets its own handlers
+        signal.signal(number, handler)
+
+
+def ledger_rows() -> list[dict]:
+    return [json.loads(line) for line in shared.gpu_hours_log().read_text().splitlines()]
+
+
+def assert_unbroken(rows: list[dict]) -> None:
+    """GPU time with no negative, no overlapping and no missing piece: each line starts where the last one ended."""
+    assert rows and all(row["end"] > row["start"] for row in rows)
+    assert all(later["start"] == earlier["end"] for earlier, later in zip(rows, rows[1:]))
+
+
+def ended_cleanly(run: Path, name: str = "faulty") -> dict:
+    """The command's exit code 0 is recorded in the run folder and in state.json; returns the state record."""
+    assert (run / "exit_code").read_text() == "0\n"
+    job = state.read()["jobs"][name]
+    assert job["exit_code"] == 0 and job["child_pid"] is not None and job["ended"] >= job["started"]
+    return job
+
+
+@pytest.mark.parametrize("step_s", [30.0, 0.15], ids=["longer_than_the_job", "caught_up_while_it_runs"])
+def test_a_backward_clock_step_neither_ends_the_wrapper_nor_counts_negative_time(in_process, monkeypatch, step_s):
+    """L07-I3 (QC): the wall clock steps back while the command runs (an NTP step). Before the fix the next beat
+    raised ValueError (an interval ending before it starts), the wrapper left, the command ran on unlogged and its
+    clean end read DIED. A short step is caught up while the command still runs: logging then goes on."""
+    run = in_process()
+    calls = []
+
+    def stepped() -> float:
+        calls.append(None)
+        return time.time() - (step_s if len(calls) > 3 else 0.0)
+
+    monkeypatch.setattr(jobs, "time", type("Clock", (), {"time": staticmethod(stepped), "sleep": staticmethod(time.sleep)}))
+    assert jobs.run_wrapper(run) == rc.EXIT_DONE
+    job = ended_cleanly(run)
+    rows = ledger_rows()
+    assert_unbroken(rows)
+    assert rows[-1]["end"] == pytest.approx(job["ended"])
+    if step_s < SHORT_CMD_S:                                                # logged up to the command's real end
+        assert job["ended"] - rows[0]["start"] >= SHORT_CMD_S - step_s - FAULT_BEAT_S
+
+
+def test_a_failed_ledger_write_is_retried_at_the_next_beat_and_flagged(in_process, monkeypatch):
+    """L07-I3: any error from the ledger write (here injected twice) must not end the wrapper. The next beat logs from
+    the last logged time, so the ledger has no gap; job.json counts the faults, for the waiter and the status."""
+    run = in_process()
+    real, calls = budget.log_interval, []
+
+    def flaky(*args, **kwargs):
+        calls.append(None)
+        if len(calls) in (2, 3):
+            raise RuntimeError("injected ledger fault")
+        return real(*args, **kwargs)
+
+    monkeypatch.setattr(budget, "log_interval", flaky)
+    assert jobs.run_wrapper(run) == rc.EXIT_DONE
+    job = ended_cleanly(run)
+    rows = ledger_rows()
+    assert_unbroken(rows)
+    assert rows[-1]["end"] == pytest.approx(job["ended"])
+    record = json.loads((run / "job.json").read_text())
+    assert record["faults"] == 2 and "injected ledger fault" in record["last_fault"]
+
+
+@pytest.mark.parametrize("error", [OSError(28, "No space left on device (injected)"), RuntimeError("injected")],
+                         ids=["full_disk", "any_error"])
+def test_a_failing_state_json_write_does_not_end_the_wrapper(in_process, monkeypatch, error):
+    """L07-I3 (QC): ``state.update`` fails for its first three calls, the first being the command's pid: a full disk,
+    or any other error. Before the fix that ended the wrapper at once. The pid and the exit code reach state.json
+    later."""
+    run = in_process()
+    real, calls = state.update, []
+
+    def full(change):
+        calls.append(None)
+        if len(calls) <= 3:
+            raise error
+        return real(change)
+
+    monkeypatch.setattr(state, "update", full)
+    assert jobs.run_wrapper(run) == rc.EXIT_DONE
+    ended_cleanly(run)
+    assert_unbroken(ledger_rows())
+    assert json.loads((run / "job.json").read_text())["faults"] >= 1
+
+
+def test_the_last_ledger_line_is_retried_after_the_command_ends(in_process, monkeypatch):
+    """L07-I3: the ledger cannot be written when the command ends (its last beats and the end). The wrapper retries the
+    missing line, one beat apart, with the exit code: the GPU time reaches the command's end."""
+    run = in_process(name="late", end_marker=True)
+    marker = run / "ended.marker"
+    real, failed = budget.log_interval, []
+
+    def full(*args, **kwargs):
+        if marker.exists() and len(failed) < 2:
+            failed.append(None)
+            raise OSError(28, "No space left on device (injected)")
+        return real(*args, **kwargs)
+
+    monkeypatch.setattr(budget, "log_interval", full)
+    assert jobs.run_wrapper(run) == rc.EXIT_DONE
+    assert len(failed) == 2
+    job = ended_cleanly(run, "late")
+    rows = ledger_rows()
+    assert_unbroken(rows)
+    assert rows[-1]["end"] == pytest.approx(job["ended"])
+    assert json.loads((run / "job.json").read_text())["faults"] >= 2
+
+
+def test_the_exit_code_is_written_even_if_the_disk_is_full_when_the_command_ends(in_process, monkeypatch):
+    """L07-I3: the exit_code file cannot be written twice when the command ends; the wrapper retries, one beat apart,
+    instead of leaving with the code unrecorded (the waiter would read DIED)."""
+    run = in_process(gpu_h=0.0)
+    real, failed = jobs.atomic.write_text, []
+
+    def full(path, text):
+        if Path(path).name == jobs.EXIT_FILE and len(failed) < 2:
+            failed.append(path)
+            raise OSError(28, "No space left on device (injected)")
+        return real(path, text)
+
+    monkeypatch.setattr(jobs.atomic, "write_text", full)
+    assert jobs.run_wrapper(run) == rc.EXIT_DONE
+    assert len(failed) == 2
+    ended_cleanly(run)
+    assert json.loads((run / "job.json").read_text())["faults"] >= 2
+
+
+def test_the_waiter_and_the_status_show_the_wrappers_faults(tmp_path, monkeypatch):
+    """L07-I3: a job whose wrapper had to retry a write ended DONE, and both the waiter's line and the status say how
+    many writes failed (the details are in job.json and job.log)."""
+    monkeypatch.setenv(shared.SHARED_ENV, str(tmp_path / "shared"))
+    monkeypatch.setenv(shared.LEGACY_LOGS_ENV, "")
+    run = tmp_path / "runs" / "noted"
+    run.mkdir(parents=True)
+    now = time.time()
+    job = {"task": "L0.7", "pid": 2 ** 22 + 1, "pid_start": 1, "boot_id": state.boot_id(), "cmd": ["x"], "cwd": "/",
+           "run_dir": str(run), "log": str(run / "job.log"), "started": now - 10.0, "expected_min_s": 0.0,
+           "gpu_h": 0.0, "launch": 1, "child_pid": 2 ** 22 + 3, "child_start": 3, "exit_code": 0, "ended": now}
+    (run / "exit_code").write_text("0\n")
+    (run / "job.json").write_text(json.dumps(dict(job, name="noted", faults=2, last_fault="ledger: injected")))
+    monkeypatch.setattr(state, "read", lambda: {"jobs": {"noted": job}})
+    outcome = jobs.wait("noted", poll_s=0.01)
+    assert outcome.verdict == "DONE" and outcome.status == 0 and " faults=2 " in outcome.line + " "
+    assert "faults=2" in jobs.status_lines()[0]
+    (run / "job.json").write_text(json.dumps(dict(job, name="noted", faults="two")))         # a malformed note
+    outcome = jobs.wait("noted", poll_s=0.01)
+    assert (outcome.verdict, outcome.status) == ("DONE", 0) and "faults" not in outcome.line
+    (run / "job.json").write_text("[1, 2]")
+    assert jobs.wait("noted", poll_s=0.01).status == 0 and "faults" not in jobs.status_lines()[0]
+
+
 # ================================================================================================ in process
 @pytest.mark.parametrize("exit_code, effective_s, min_s, verdict, status", [
     (0, 100.0, 60.0, "DONE", 0), (0, 60.0, 60.0, "DONE", 0), (0, 59.9, 60.0, "ENDED_EARLY", 20),

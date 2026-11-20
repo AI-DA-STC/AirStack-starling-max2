@@ -48,7 +48,11 @@ A command the wrapper cannot start (a misspelt program) is recorded with exit co
 waiter itself fails (``state.json`` unreadable) its status is :data:`EXIT_TOOL_ERROR`, never one a job could return.
 
 **Status.** One line per job of ``state.json``: alive, alive (paused), alive (wrapper gone), dead, or dead (previous
-boot), with the exit code if one was recorded. Standard library only.
+boot), with the exit code if one was recorded.
+
+**Faults.** A write the wrapper had to retry (a full disk, any error; :func:`run_wrapper`) is counted in ``job.json``
+(``faults``, ``last_fault``); the waiter's line then ends with ``faults=<n> (...)`` and the status line shows
+``faults=<n>``. The verdict and the waiter's status are not changed by it. Standard library only.
 """
 from __future__ import annotations
 
@@ -77,6 +81,7 @@ EXIT_NOT_STARTED = 127       # recorded for a command the wrapper could not star
 SIGNAL_EXIT_BASE = 128       # a command killed by signal n is recorded as 128 + n, as a shell reports it
 POLL_S = 1.0                 # how often the waiter looks
 BEAT_S = 60.0                # how often the wrapper touches the heartbeat and logs GPU time
+RECORD_ATTEMPTS = 10         # how often the wrapper tries to record an ended command's exit code, one beat apart
 
 DONE, FAILED, ENDED_EARLY, DIED = EXIT_NAMES[EXIT_DONE], "FAILED", "ENDED_EARLY", "DIED"
 PAUSED = "alive (paused)"
@@ -241,8 +246,19 @@ def _check_shared_folder(run_dir: Path) -> None:
 
 
 # ================================================================================================ the wrapper
-def _update_own_record(name: str, pid_start: int, **changes: Any) -> None:
-    """Set fields of this wrapper's job in ``state.json``; a record that is no longer this wrapper's is left alone."""
+def _say(text: str) -> None:
+    """One line to the wrapper's output (the run's ``job.log``); a line that cannot be written (a full disk) is lost,
+    never fatal."""
+    try:
+        print(text, flush=True)
+    except OSError:
+        pass
+
+
+def _update_own_record(name: str, pid_start: int, **changes: Any) -> Exception | None:
+    """Set fields of this wrapper's job in ``state.json``; a record that is no longer this wrapper's is left alone.
+    Returns the error if the file could not be written (an unreadable state, a full disk, any error), None if it
+    was."""
     def change(data: dict[str, Any]) -> None:
         job = data["jobs"].get(name)
         if job is not None and (job["pid"], job["pid_start"], job["boot_id"]) == (os.getpid(), pid_start, state.boot_id()):
@@ -250,13 +266,24 @@ def _update_own_record(name: str, pid_start: int, **changes: Any) -> None:
 
     try:
         state.update(change)
-    except state.StateError as err:                              # the exit_code file is the record that counts
-        print(f"[ste job] state.json not updated ({err})", flush=True)
+    except Exception as err:                                     # the exit_code file is the record that counts
+        return err
+    return None
 
 
 def run_wrapper(run_dir: Path | str) -> int:
     """The wrapper process (``scripts/ste_job.py _run <run folder>``): run the launch's command, pass SIGINT and
-    SIGTERM on to it, beat while it runs, record its exit code when it ends."""
+    SIGTERM on to it, beat while it runs, record its exit code when it ends.
+
+    **No bookkeeping error ends the wrapper while its command runs** (L07-I3). A write that fails (the heartbeat, a
+    ledger line, ``state.json``, any error, a full disk included) is said in ``job.log``, counted in ``job.json``
+    (``faults``, ``last_fault``: the waiter and the status show them) and tried again at the next beat; a ledger line
+    that failed is covered by the next one, which starts where the last written one ended. The clock the wrapper uses
+    never goes back: after a backward step of the wall clock it stays at the latest reading until the wall clock
+    catches up, so no interval is negative or counted twice (the GPU time of the step itself is not logged). When the
+    command ends, the ``exit_code`` file and the last ledger line are retried one beat apart until both are written,
+    at most :data:`RECORD_ATTEMPTS` times; ``state.json`` and the ``launches.jsonl`` row are tried alongside but do
+    not keep the wrapper waiting."""
     run_dir = Path(run_dir)
     with state.locked():                                         # held by the launcher until the launch is recorded
         pass
@@ -266,9 +293,52 @@ def run_wrapper(run_dir: Path | str) -> int:
         print(f"[ste job] {run_dir / JOB_FILE} does not record this wrapper (pid {os.getpid()}): nothing is run",
               flush=True)
         return EXIT_REFUSED
-    name, task, on_gpu = record["name"], record["task"], record["gpu_h"] > 0
+    name, task, on_gpu, beat_s = record["name"], record["task"], record["gpu_h"] > 0, record["beat_s"]
     child: subprocess.Popen | None = None
     early: list[int] = []
+    faults: dict[str, Any] = {"faults": 0, "last_fault": None}
+    unsaved: dict[str, Any] = {}                                 # state.json fields not yet written
+    flag_unsaved = [False]                                       # job.json's fault count not yet written
+    latest = [time.time()]
+    logged = [latest[0]]                                         # the end of the last ledger line written
+
+    def log_gpu(now_s: float) -> None:
+        """One ledger line from the end of the last one written to ``now_s`` (a GPU job; nothing if no time passed)."""
+        if on_gpu and child is not None and now_s > logged[0]:
+            try:
+                budget.log_interval(task, name, budget.CUDA, logged[0], now_s, pids=(child.pid,),
+                                    run_dir=record["run_dir"])
+                logged[0] = now_s
+            except Exception as err:
+                fault("GPU-hour line not written", err)
+
+    def clock() -> float:
+        """Unix seconds that never go back (the latest wall-clock reading so far)."""
+        latest[0] = max(latest[0], time.time())
+        return latest[0]
+
+    def fault(what: str, err: BaseException) -> None:
+        faults["faults"] += 1
+        faults["last_fault"] = f"{what}: {type(err).__name__}: {err}"
+        flag_unsaved[0] = True
+        _say(f"[ste job] FAULT {faults['faults']}: {faults['last_fault']} (tried again at the next beat)")
+
+    def save_records() -> bool:
+        """Write what is not yet written (state.json fields, job.json's fault count); True when nothing is left."""
+        if unsaved:
+            err = _update_own_record(name, own_start, **unsaved)
+            if err is None:
+                unsaved.clear()
+            else:
+                fault("state.json not updated", err)
+        if flag_unsaved[0]:
+            try:
+                atomic.write_text(run_dir / JOB_FILE, json.dumps(dict(record, **faults), indent=1) + "\n")
+                flag_unsaved[0] = False
+            except Exception as err:
+                faults["last_fault"] = f"job.json not updated: {type(err).__name__}: {err}"
+                _say(f"[ste job] {faults['last_fault']}")
+        return not unsaved and not flag_unsaved[0]
 
     def pass_on(number: int, frame: Any) -> None:
         if child is None:
@@ -277,46 +347,75 @@ def run_wrapper(run_dir: Path | str) -> int:
             child.send_signal(number)                            # does nothing once the command has ended
 
     def record_end(exit_code: int, ended_s: float, signal_name: str | None) -> None:
-        atomic.write_text(run_dir / EXIT_FILE, f"{exit_code}\n")
-        _append(run_dir / LAUNCHES_FILE, {"event": "end", "launch": record["launch"], "time": ended_s,
-                                          "exit_code": exit_code, "signal": signal_name})
-        _update_own_record(name, own_start, exit_code=exit_code, ended=ended_s)
+        """Record the end: the exit_code file and the last ledger line are retried, one beat apart, until both are
+        written (at most RECORD_ATTEMPTS tries); state.json and the launches.jsonl row are tried alongside but do
+        not hold the wrapper (the exit_code file is the record that counts)."""
+        unsaved.update(exit_code=exit_code, ended=ended_s)
+        written = [False, False]                                 # the exit_code file, the launches.jsonl end row
+        for attempt in range(RECORD_ATTEMPTS):
+            if attempt:
+                time.sleep(beat_s)
+            log_gpu(ended_s)
+            if not written[0]:
+                try:
+                    atomic.write_text(run_dir / EXIT_FILE, f"{exit_code}\n")
+                    written[0] = True
+                except Exception as err:
+                    fault("exit_code not written", err)
+            if not written[1]:
+                try:
+                    _append(run_dir / LAUNCHES_FILE, {"event": "end", "launch": record["launch"], "time": ended_s,
+                                                      "exit_code": exit_code, "signal": signal_name})
+                    written[1] = True
+                except Exception as err:
+                    fault("launches.jsonl end row not written", err)
+            save_records()
+            unlogged = on_gpu and child is not None and logged[0] < ended_s
+            if written[0] and not unlogged:
+                return
+        lost = f"; GPU time from {logged[0]} to {ended_s} not logged" if unlogged else ""
+        _say(f"[ste job] FAULT: the end of the command (exit code {exit_code}) could not be fully recorded after "
+             f"{RECORD_ATTEMPTS} attempts{lost}")
 
     for number in _FORWARDED:
         signal.signal(number, pass_on)
     heartbeat = run_dir / HEARTBEAT_FILE
-    heartbeat.touch()
+    try:
+        heartbeat.touch()
+    except Exception as err:
+        fault("heartbeat not touched", err)
     try:
         child = subprocess.Popen(record["cmd"], cwd=record["cwd"], stdin=subprocess.DEVNULL)
     except OSError as err:
-        print(f"[ste job] the command could not be started ({err}): {record['cmd']}", flush=True)
-        record_end(EXIT_NOT_STARTED, time.time(), None)
+        _say(f"[ste job] the command could not be started ({err}): {record['cmd']}")
+        record_end(EXIT_NOT_STARTED, clock(), None)
         return EXIT_DONE
     for number in early:
         child.send_signal(number)
-    _update_own_record(name, own_start, child_pid=child.pid, child_start=_start_ticks(child.pid))
-    last_s = time.time()
+    try:
+        unsaved.update(child_pid=child.pid, child_start=_start_ticks(child.pid))
+    except Exception as err:                                     # the wrapper's own pid still keeps the job alive
+        fault("the command's start time not read", err)
+    save_records()
+    logged[0] = clock()
 
-    def beat(now_s: float) -> float:
-        """Touch the heartbeat and log the GPU time since the last logged beat; returns the new "last logged" time. A
-        beat that cannot be written (a full disk) must not end the wrapper: the next one covers the gap."""
+    def beat(now_s: float) -> None:
+        """Touch the heartbeat, log the GPU time since the last logged line, write what is not yet written. Never
+        raises: a failure is a fault, and the next beat covers the gap."""
         try:
             heartbeat.touch()
-            if on_gpu:
-                budget.log_interval(task, name, budget.CUDA, last_s, now_s, pids=(child.pid,),
-                                    run_dir=record["run_dir"])
-                return now_s
-        except OSError as err:
-            print(f"[ste job] beat not written ({err})", flush=True)
-        return last_s
+        except Exception as err:
+            fault("heartbeat not touched", err)
+        log_gpu(now_s)
+        save_records()
 
     while True:
         try:
-            code = child.wait(timeout=record["beat_s"])
+            code = child.wait(timeout=beat_s)
             break
         except subprocess.TimeoutExpired:
-            last_s = beat(time.time())
-    ended_s = time.time()
+            beat(clock())
+    ended_s = clock()
     beat(ended_s)
     record_end(code if code >= 0 else SIGNAL_EXIT_BASE - code, ended_s, signal.Signals(-code).name if code < 0 else None)
     return EXIT_DONE
@@ -337,6 +436,18 @@ def _own_pids(job: dict[str, Any]) -> tuple[int, ...]:
     """The pids a pause must have stopped to count for this job: its command's (``gpu_pause.sh`` never stops the
     wrapper). None at all if the command never started: then no pause stopped the job."""
     return () if job["child_pid"] is None else (job["child_pid"],)
+
+
+def _faults(job: dict[str, Any]) -> tuple[int, str | None]:
+    """How many bookkeeping writes the wrapper of this launch had to retry, and the last one (``job.json``)."""
+    try:
+        record = _read_json(Path(job["run_dir"]) / JOB_FILE)
+        if not isinstance(record, dict) or record.get("launch") != job["launch"]:
+            return 0, None
+        count = record.get("faults", 0)
+        return (count, record.get("last_fault")) if type(count) is int and count > 0 else (0, None)
+    except Exception:                                            # a note only: it never changes the waiter's status
+        return 0, None
 
 
 def _identity(job: dict[str, Any]) -> tuple:
@@ -406,6 +517,9 @@ def wait(name: str, poll_s: float = POLL_S) -> Outcome:
         line += f" expected_min={job['expected_min_s']:.1f}s"
     if word == DIED:
         line += f" (no exit code recorded; {state.job_status(job)})"
+    count, last = _faults(job)
+    if count:
+        line += f" faults={count} (bookkeeping writes retried; last: {last}; see {job['log']})"
     return Outcome(line, status, word, exit_code, duration_s, effective_s)
 
 
@@ -424,6 +538,8 @@ def status_lines() -> list[str]:
         exit_code = _recorded_exit_code(job, current=True)
         shown = "none" if exit_code is None else f"{exit_code} ({EXIT_NAMES.get(exit_code, FAILED)})"
         began = datetime.datetime.fromtimestamp(job["started"]).astimezone().isoformat(timespec="seconds")
-        lines.append(f"{name}  {job['task']}  {word}  exit={shown}  pid={job['pid']} launch={job['launch']} "
+        count, _ = _faults(job)
+        noted = f"  faults={count}" if count else ""
+        lines.append(f"{name}  {job['task']}  {word}  exit={shown}{noted}  pid={job['pid']} launch={job['launch']} "
                      f"started={began} gpu_h={job['gpu_h']} run_dir={job['run_dir']}")
     return lines

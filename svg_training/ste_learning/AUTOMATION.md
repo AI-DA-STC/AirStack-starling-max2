@@ -224,6 +224,9 @@ job; only the owner ends it, with `gpu_pause.sh resume`. A pause takes time off 
 job's command pid. A pause that stopped only a process the command started (a trainer behind `bash -c`) is not matched:
 that job is charged the paused time, the safe side. `--gpu-h` at launch and the trainer's own cap are not linked: the caller keeps them equal. The effective time
 carried in a checkpoint undercounts by up to one checkpoint interval per SIGKILL; the ledger loses at most one minute.
+A failed write of the wrapper (a full disk, any error) does not end it: it is retried at the next beat, and `wait`
+and `status` show `faults=<n>` (details in `job.json` and `job.log`). After a backward step of the wall clock the
+wrapper logs nothing until the clock catches up, so the GPU time of the step itself is not counted.
 A relaunch with the same `--min-s` and little left to do is flagged ENDED_EARLY. The `tasks` block of `state.json` is
 validated but not yet written; `RESUME.md`, the wall-clock limit, the starvation guard and the disk check are not built.
 **The shared folder is per machine**: the GPU-hours used on the 5090 and on the laptop are counted separately, so the

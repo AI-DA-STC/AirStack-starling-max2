@@ -16,7 +16,9 @@ The goal is a pair of policies that play under rules that can fly, keep the team
 against attackers they did not train against. They are then checked in the AirStack simulator (the flight
 software's own simulator) and in a real one-against-one (1v1) flight, each with the owner's approval.
 
-**Nothing in this track has been built or run yet.** Phase L0 is final and awaits the owner's approval.
+**Phase L0 was approved by the owner on 20 November 2026, with a cap of 19 GPU-h.** The approval covers L0 only:
+phases L1 to L9 and every PROPOSED value stay open until their own gates. Task-by-task status:
+[status/STATUS_LATEST.md](status/STATUS_LATEST.md).
 
 ## Where it stands
 
@@ -43,8 +45,8 @@ for the owner's ruling. D and P numbers are rows of the [discussion record](DISC
 Two technical calls were made by the lead (the main Claude session) and recorded: the drone's estimator is modelled
 as a delay plus noise first (D7), and work on NUS's training recipe is paused (D8); this track does not depend on it.
 
-**The first gate.** The owner is asked to approve phase L0 now. L0 ends at gate G0, where the owner rules on the game
-and the route with L0's numbers.
+**The first gate.** Phase L0 is approved (owner, 20 November 2026). It ends at gate G0, where the owner rules on the
+game and the route with L0's numbers.
 
 ## What is being built
 
@@ -85,9 +87,9 @@ This is tried in the AirStack simulator first, then in a real 1v1 flight with tw
 
 ## The plan
 
-![Roadmap of phases L0 to L9 with the simulator each uses and where each ends: approval of L0 is asked now; L0 ends at gate G0, where the owner rules on the game and the route; L1 to L8 are the intended path with budgets open; L9, documentation, runs alongside](figures/plan_phases.png)
+![Roadmap of phases L0 to L9 with the simulator each uses and where each ends: L0 was approved by the owner on 20 November 2026; L0 ends at gate G0, where the owner rules on the game and the route; L1 to L8 are the intended path with budgets open; L9, documentation, runs alongside](figures/plan_phases.png)
 
-Phase L0 is final. Phases L1 to L9 are the intended path: their tasks, order and budgets are set again at gate G0.
+Phase L0 is final and approved. Phases L1 to L9 are the intended path: their tasks, order and budgets are set again at gate G0.
 L9, documentation, already runs alongside.
 
 Terms in the table: a *pilot* is a short trial run; a *smoke test* is a very short run that only checks the code
@@ -263,10 +265,12 @@ not maintained.
 
 ## What is asked of the owner now
 
-| # | Question | Recommendation |
+Nothing until gate G0. The two questions asked on 20 November 2026:
+
+| # | Question | Answer |
 |---|---|---|
-| 1 | Approve phase L0, with a cap of 19 GPU-h, alone on the GPU for its probes? | yes |
-| 2 | When everything waits on the owner: the full status every 30 minutes, or one line every 2 hours? | one line every 2 hours |
+| 1 | Approve phase L0, with a cap of 19 GPU-h, alone on the GPU for its probes? | **approved** (owner, 20 November 2026) |
+| 2 | When everything waits on the owner: the full status every 30 minutes, or one line every 2 hours? | not answered; the standing rule holds: the full status every 30 minutes |
 
 Everything else is ruled at its own gate, with numbers: the tag and the zone, what a tag costs, team sizes, where to
 train, environments, the demo, the budgets of L1 to L9, filter option B and the AirStack approach.

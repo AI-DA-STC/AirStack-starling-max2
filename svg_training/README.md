@@ -312,8 +312,10 @@ each with a preview that plays in the page: [videos of the NUS port](docs/media/
 
 ## 7. Next steps and open questions
 
-Next on the STE side: a decision on the STE port of NUS's training method after its stage 5.1 FAIL; the STE Guard policy
-against other Strike behaviours, with more seeds and on the Isaac Lab physics drones; two control tests that split the two effects of Test 4.
+Next on the STE side: STE trains its own Guard and Strike policies in STE drone conditions, alongside NUS's route. The
+plan, its first phase and the current status are in [ste_learning/](ste_learning/README.md) (STE's learning track). Its
+first phase, L0, began on 20 November 2026: it settles which game to train and whether Isaac Lab can train it. Work on
+the STE port of NUS's training method is paused after its stage 5.1 FAIL.
 Five questions to NUS:
 
 1. Is any rule that matters missing from the Copy of NUS 2-D game (PyTorch)?

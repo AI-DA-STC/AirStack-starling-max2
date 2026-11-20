@@ -1,6 +1,7 @@
 INTERNAL · the master plan of STE's learning track, version 2 (20 Nov 2026, after the independent soundness review).
-**Phase L0 is final and awaits the owner's approval. Phases L1–L9 are the intended path; they are re-baselined at gate
-G0, the end of L0, and their budgets are OPEN.** Nothing has started. Where this page and a reference page differ,
+**Phase L0 is final and APPROVED (owner, 20 Nov 2026: L0 only, cap 19 GPU-h). Phases L1–L9 are the intended path; they
+are re-baselined at gate G0, the end of L0, and their budgets are OPEN.** The approval covers no PROPOSED value (the
+1.6 m tag, the 0.2 band) and no phase after L0. Task status: `status/STATUS_LATEST.md`. Where this page and a reference page differ,
 this page wins. Why each choice: [DISCUSSION](DISCUSSION_2026-11-19_20.md).
 
 # PLAN: STE learning track
@@ -65,7 +66,7 @@ asked to be stopped for.
 
 | Phase | Status | What | Math library | Simulator | Ends at |
 |---|---|---|---|---|---|
-| **L0 Game definition and feasibility** | **FINAL, awaiting approval** | which game the track trains; is it worth learning; can tier 2 train, and at what cost | PyTorch | STE game engine (tier 1), Isaac Lab (tier 2) | **gate G0**: the owner rules on the game and the route, with numbers |
+| **L0 Game definition and feasibility** | **APPROVED (owner, 20 Nov 2026), in work** | which game the track trains; is it worth learning; can tier 2 train, and at what cost | PyTorch | STE game engine (tier 1), Isaac Lab (tier 2) | **gate G0**: the owner rules on the game and the route, with numbers |
 | L1 Drone model | intended | estimator effect (delay + noise), drag, fit to logs, comparison with the AirStack simulator | PyTorch | Isaac Lab (tier 2), AirStack simulator (logs only) | lead (exploratory until the NEAR-962 flight) |
 | L2 Game rules in the training copy | intended | the rules chosen at G0, landing obstacles, drone loss, filter option B with its convergence gate | PyTorch | tier 1, then tier 2 | gate per change; **P2 ruling** |
 | L3 Learner | intended | observation v0.3, attention encoder, shared actor, team critic, PPO | PyTorch | tier 1 pilot, tier 2 smoke | owner approves observation v0.3 |
@@ -201,7 +202,7 @@ every 2 hours (PROPOSED; the owner may prefer the full update regardless). Templ
 ## 11. Commits, merges and documents
 
 - This folder is on `main` (the owner asked for the documentation there, 20 Nov). It holds no NUS source, names or
-  private messages. Nothing in it runs: L0 starts only on the owner's approval.
+  private messages. L0 was approved by the owner on 20 Nov 2026; no later phase starts without its own approval.
 - Code, tests, records and ledger rows are ff-merged to `main` by the lead after QC. Reader pages go to `main` only
   with the owner's yes.
 - Status files are committed at session end. HANDOFF §0 gets a dated line per session.
@@ -212,8 +213,8 @@ every 2 hours (PROPOSED; the owner may prefer the full update regardless). Templ
 
 | # | Question | Recommendation |
 |---|---|---|
-| 1 | Approve phase L0 (game definition and feasibility) with a cap of 19 GPU-h, alone on the GPU for its probes? | yes |
-| 2 | Heartbeat when everything waits on you: the full update every 30 min, or one line every 2 h? | one line every 2 h |
+| 1 | Approve phase L0 (game definition and feasibility) with a cap of 19 GPU-h, alone on the GPU for its probes? | yes. **ANSWER: approved (owner, 20 Nov 2026)** |
+| 2 | Heartbeat when everything waits on you: the full update every 30 min, or one line every 2 h? | one line every 2 h. **ANSWER: none; the standing rule holds (full update every 30 min)** |
 
 The merge of this folder to `main`, with its README, flowcharts and agent files, was asked for by the owner on 20 Nov
 and is done with this version.

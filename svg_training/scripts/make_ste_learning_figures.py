@@ -341,7 +341,7 @@ def architecture() -> Path:
 def plan_phases() -> Path:
     """The plan: phases L0 to L9 (PLAN.md section 3), the simulator each uses and where each ends.
 
-    L0 is final and awaits approval; L1 to L9 are the intended path, re-baselined at gate G0 with budgets OPEN;
+    L0 is final and approved (owner, 20 Nov 2026); L1 to L9 are the intended path, re-baselined at gate G0 with budgets OPEN;
     L9 (documentation) already runs alongside. The L0 cap of 19 GPU-h is PLAN section 9.
     """
     rows = [  # id, name, content, simulator, ends at, kind, owner gate?
@@ -367,8 +367,8 @@ def plan_phases() -> Path:
     H = 20.0
     fig, ax = new_fig(H)
     header(ax, H, "The plan: phases L0 to L9, their simulators and their gates",
-           "Phase L0 is final and awaits the owner's approval. L1 to L9 are the intended path; "
-           "L9 (documentation) already runs. No build or training work has started.")
+           "Phase L0 is approved (owner, 20 November 2026) and is the phase in work. L1 to L9 are the intended "
+           "path; L9 (documentation) already runs. Task status: the status files.")
     px, pw, sx, sw, gx = 0.6, 8.2, 9.05, 3.2, 12.5
     spine = px + 0.55
 
@@ -388,7 +388,7 @@ def plan_phases() -> Path:
             ax.add_patch(plt.Circle((gx + 0.3, yb + h / 2), 0.13, fc=GREY_BG, ec=GREY, lw=1.8))
         txt(ax, gx + 0.72, yb + h / 2, s, fb, color=INK if owner else BODY, va="center")
 
-    def phase_cell(yb, h, kind, pid, name, content, badge=None):
+    def phase_cell(yb, h, kind, pid, name, content, badge=None, badge_kind="open"):
         fc, ec, ls = KIND[kind]
         box(ax, px, yb, pw, h, fc, ec, lw=2.0, ls=ls)
         box(ax, px + 0.15, yb + h - 0.56, 0.78, 0.42, ec, ec, r=0.08, lw=1.0)
@@ -397,23 +397,23 @@ def plan_phases() -> Path:
         txt(ax, px + 1.1, yb + h - 0.63, content, fb, color=BODY, inside=(px, yb, pw, h))
         if badge:
             bw = 3.0
-            chip(ax, px + pw - bw - 0.15, yb + h - 0.56, bw, 0.42, "open", badge, weight="bold")
+            chip(ax, px + pw - bw - 0.15, yb + h - 0.56, bw, 0.42, badge_kind, badge, weight="bold")
 
-    # asked now
+    # approved (owner, 20 Nov 2026)
     h0 = 0.72
     y -= h0
     box(ax, px, y, pw, h0, RED_BG, RED, lw=2.0)
-    txt(ax, px + 0.2, y + h0 / 2, "Asked now: approve phase L0, with a cap of 19 GPU-h", fh, "bold", va="center",
+    txt(ax, px + 0.2, y + h0 / 2, "Approved, 20 Nov 2026: phase L0, with a cap of 19 GPU-h", fh, "bold", va="center",
         inside=(px, y, pw, h0))
-    gate_cell(y, h0, "the owner approves\nphase L0", True)
+    gate_cell(y, h0, "the owner approved\nphase L0", True)
     prev = y
 
     # L0
     hl0 = 1.3
     y -= gap + 0.12 + hl0
-    phase_cell(y, hl0, "open", "L0", "Game definition and feasibility",
+    phase_cell(y, hl0, "build", "L0", "Game definition and feasibility",
                "which game the track trains; is it worth learning;\ncan Isaac Lab train, and at what cost",
-               badge="FINAL, awaiting approval")
+               badge="APPROVED, in work", badge_kind="build")
     sim_cell(y, hl0, "STE game engine (tier 1)\nand Isaac Lab (tier 2)")
     gate_cell(y, hl0, "gate G0", True)
     arrow(ax, (spine, prev), (spine, y + hl0))
@@ -474,7 +474,7 @@ def l0_tasks() -> Path:
     H = 15.15
     fig, ax = new_fig(H)
     header(ax, H, "Phase L0 step by step: three lanes of tasks, one gate",
-           "All three lanes start once phase L0 is approved; every task is still to do. "
+           "Phase L0 is approved (owner, 20 November 2026); task status is in the status files. "
            "Each box: task ID, plain name, cap in GPU-hours (hours of the shared graphics card).")
     lx, lw_ = 0.3, 12.1          # lanes
     gx, gw = 12.95, 2.75         # gate column
@@ -494,11 +494,11 @@ def l0_tasks() -> Path:
         txt(ax, lx + 0.25, y_top - 0.18, title, FS_H, "bold", MUTED)
         txt(ax, lx + 1.25, y_top - 0.18, question, FS_H, "bold")
 
-    # asked now
+    # approved (owner, 20 Nov 2026)
     h0 = 0.78
     box(ax, lx, top - h0, lw_, h0, RED_BG, RED, lw=2.0)
     diamond(ax, lx + 0.45, top - h0 / 2, 0.24)
-    txt(ax, lx + 0.9, top - h0 / 2, "Asked now: the owner approves phase L0. Cap for the whole phase: at most "
+    txt(ax, lx + 0.9, top - h0 / 2, "Approved by the owner, 20 Nov 2026. Cap for the whole phase: at most "
         "19 GPU-h.", FS_H, "bold", va="center", inside=(lx, top - h0, lw_, h0))
 
     # lane A: two rows of four and three

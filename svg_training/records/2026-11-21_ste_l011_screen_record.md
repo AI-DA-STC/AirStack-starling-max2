@@ -17,7 +17,7 @@ STE task L0.11 Screening sweep (INFO, PLAN.md section 4): scripted Guards agains
 
 ## Config
 
-- Gate file `/home/jeremychia/AirStack-starling-max2-pilot/svg_training/configs/ste_l011/gates.toml`, sha256 `8bfbc2cb8f1d6551fb3060bc750c24f9b2220ebafb19fcd44e9e3baa1c24e5d4` (copy in the run folder: `gates.toml`).
+- Gate file `svg_training/configs/ste_l011/gates.toml` at commit 9b54dff6, sha256 `8bfbc2cb8f1d6551fb3060bc750c24f9b2220ebafb19fcd44e9e3baa1c24e5d4` (copy in the run folder: `gates.toml`).
 - Game `base`: `configs/ste_l011/base.toml`, sha256 `96e0e7f61a49999da54eee81a544bf64c519cd80833f0dcdfa2a07edfc10cc4d`.
 - Game `tag_1p2`: `configs/ste_l011/tag_1p2.toml`, sha256 `60a225a1f6876407edac2a12ac1002a161971e7b4c7923a838e710723ee4e378`.
 - Game `tag_1p4`: `configs/ste_l011/tag_1p4.toml`, sha256 `ddcfa1f56fd533907651225260939426617a38db83aec5f94404b6b27202124f`.
@@ -115,10 +115,16 @@ look Guard-trivial, a 2.4 m zone and no tag look Strike-trivial.
 
 ![factors](../docs/figures/ste_l011/factors.png)
 
-**Reading (scripted play only; INFO).** At the base rules a scripted Guard already holds 81 % against every scripted
-Strike, and at 1v1, 2v1 and 5v3 a scripted Guard holds every game (5v3: 998 of 1,000): with Guards starting within
-about 0.7–1.0 m of the zone centre and a 1.6 m tag radius equal to the 1.6 m zone radius, a Strike entering the zone is
-already in tag range of a central Guard (candidate cause, not tested). Whether learning changes this is L0.12's question.
+**Reading (scripted play only; INFO).** A "hold" here is a trade, not a defence: across all 280 tag-on sweep cells no
+game reached the 120 s time-out (median game length 1.8–3.9 s per group), and at 1v1 and 3v3 every hold ended with all
+Guards tagged out as well (holds leave 1 Guard at 2v1, 2 at 5v3, 3 when a Guard survives its tag). So at the base rules
+"a scripted Guard holds 81 % against every scripted Strike" means every Strike was traded one-for-one before any reached
+the zone: head-count decides these games, the concern of PLAN finding F1, and it bears on what a tag costs (P12). At 1v1,
+2v1 and 5v3 a scripted Guard holds every game (5v3: 998 of 1,000). Guards start on a circle around the zone centre
+(0.66–0.8 m at 3v3, 0.58–0.8 m at 2v1, 0.98 m at 5v3; since 14517865 no Guard flies to the centre) and the 1.6 m tag
+radius equals the 1.6 m zone radius, so a Strike entering the zone at flight height is likely already in tag range of a
+Guard (candidate cause, not tested; at 1v1 the high and low Strikes, 0.5 m off the Guard's height, reach in all 1,000
+games with 0 tags). Whether learning changes this is L0.12's question.
 
 ## Run notes added by the lead
 
@@ -130,6 +136,10 @@ already in tag range of a central Guard (candidate cause, not tested). Whether l
   than the pilot with a CPU test suite beside it; the projection was raised ×1.24 (commit 9b54dff). A CPU test suite also
   ran beside this sweep for part of it, so its game-steps/s are not a clean speed measurement.
 - GPU-hours: pilot 0.034 + CUDA smoke 0.087 + this sweep 0.305 = 0.426 of the L0.11 cap of 3.0 (laptop ledger).
+- The machine was not suspended during the run: effective time 1,096 s against a wall-clock span of 1,098.6 s in
+  `launches.jsonl`.
+- Gate file: `svg_training/configs/ste_l011/gates.toml` at commit 9b54dff6 (sha256 8bfbc2cb…), run from a detached
+  worktree at that commit.
 
 ## Original figure notes
 

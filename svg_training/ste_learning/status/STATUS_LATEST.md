@@ -1,6 +1,6 @@
 INTERNAL · the latest status of STE's own learning track and the NUS port, overwritten at every update; the history is in [LOG.md](LOG.md). Produced by the `train-status` skill.
 
-**Status, 2026-11-21 04:42 (+08:00), event: CUDA smoke PASS; re-check GO; L0.11 screening sweep LAUNCHED (369 cells, projected 1.21 GPU-h, cap 2.879)**                                           · laptop RTX 5070 Ti · GPU in use · 1 training process (0 paused)
+**Status, 2026-11-21 05:02 (+08:00), event: L0.11 sweep DONE (every control PASS); record T44; shortlist base, tag 1.2 m, tag 1.4 m**                                            · laptop RTX 5070 Ti · GPU idle except the remote-desktop service · 0 training processes (0 paused)
 
 ## Phases
 
@@ -22,7 +22,7 @@ INTERNAL · the latest status of STE's own learning track and the NUS port, over
 | L0.8 | Game spec sheet | DONE | none | merged into `development`; QC passed; full suite on `development` 1,461 passed / 0 failed (41 min) |
 | L0.9 | Tag rule for the study: 1-for-1, nearest pair first | DONE | tier 1 fast engine | merged; QC + re-check passed; full suite on `development` 1,517 passed / 0 failed (31 min); the 5090 records its own tag-off positions (L09-5090) |
 | L0.10 | Scripted players for the study | RUNNING (merged) | tier 1 fast engine | re-check 2 passed (no tags with parked or still players at any size, tag on or off, 90 s; default game still identical); merged into `development`; DONE when the full suite passes (held until the GPU pilot ends, one heavy job at a time) |
-| L0.11 | Screening sweep (INFO) | RUNNING (GPU) | tier 1 fast engine | **sweep running since 04:42** from 9b54dff (369 cells × 1,000 games; projected 1.21 GPU-h incl. margins; cap 2.879 GPU-h = 3.0 − pilot 0.034 − smoke 0.087). CUDA smoke PASS (16 controls on CUDA, same-seed replay equal, interrupt + resume kept all 6 finished batches); pre-launch re-check GO (12 deliberate breakages all end in CONTROL_FAILED); projection raised ×1.24 after the smoke measured the base batch slower than the pilot (CPU load beside it) |
+| L0.11 | Screening sweep (INFO) | RUNNING (results read) | tier 1 fast engine | sweep DONE 05:00 (18 min, 0.305 GPU-h; every one of 16 controls PASS); record T44: shortlist **base (reference), tag 1.2 m, tag 1.4 m**; base 3v3: best scripted Guard holds 81 %, best Strike reaches 19 %; 1v1, 2v1, 5v3 Guard-trivial with scripted players; zone 2.4 m and no tag Strike-trivial; independent read of the record running; then merge |
 | L0.12 | Best-response test: is the game worth learning? | NOT STARTED | tier 1 fast engine | cap 6 GPU-h |
 | L0.2 | Tier 2 speed in contested play | NOT STARTED | tier 2 Isaac Lab | 5090; cap 1.5 GPU-h |
 | L0.13 | Does tier 2 train at all? | NOT STARTED | tier 2 Isaac Lab | 5090, after L0.2; cap 6 GPU-h |
@@ -32,7 +32,7 @@ INTERNAL · the latest status of STE's own learning track and the NUS port, over
 | L0.14 | Crazyflie route check | NOT STARTED | tier 1 fast engine (CPU) | T41 policy installed on the laptop; cap 0 GPU-h |
 | L0.6 | Gate G0 | NOT STARTED | none | after every task above; the owner decides |
 
-GPU-h used in L0 so far: 0.121 of 19 before the sweep (RTX 5090: 0, from its last status; laptop: 0.121 = L0.11 pilot 0.034 + CUDA smoke 0.087).
+GPU-h used in L0 so far: 0.426 of 19 (RTX 5090: 0, from its last status; laptop: 0.426 = L0.11 pilot 0.034 + CUDA smoke 0.087 + sweep 0.305).
 
 Laptop full CPU suite (20 Nov, `development` at 5c5d465, after `scripts/nus_install_provisional.sh`): **1,333 passed, 2 failed, 48 skipped** in 24 min. Both failures repeat when run alone:
 - **L07-F1** `test_ste_job.py::test_f_d_a_killed_job…resumes`: CONFIRMED by QC: the tool does not over-report (it measures from the same start; ~0.255 s raw, printed rounded to 0.3); the test compares the rounded text with the exact elapsed time. Fix: allow half a display step.
@@ -54,7 +54,7 @@ Laptop full CPU suite (20 Nov, `development` at 5c5d465, after `scripts/nus_inst
 | L0.11 pre-launch QC | ~293 k | ~24 min | broke the code five ways through the real driver |
 | L0.11 CUDA smoke | | ~5 min | 0.087 GPU-h |
 | L0.11 pre-launch QC re-check | ~379 k (total) | ~11 min | |
-| L0.11 sweep | | running | projected 1.21 GPU-h |
+| L0.11 sweep | | 18 min | 0.305 GPU-h (L0.11 total 0.426 of 3.0) |
 | L0.11 GPU pilot | | 2 min | 0.034 GPU-h (first GPU job of the track) |
 | Full CPU test suite | none | ~25 min alone; the L0.7 merge run took 61 min (shared the CPU with L0.9's tests) | rule from now: one heavy test run at a time |
 | GPU | 0 GPU-h | | nothing has used the GPU |
@@ -85,6 +85,7 @@ Laptop drills (21 Nov, fix branch, shared folder `~/AirStack-starling-max2/svg_t
 | GIT-1 | Fix: my 17 Nov `.gitignore` line `data/` also hid new files in `tests/data/` | DONE (d3572dc: anchored to `/data/`) |
 | L011-F1 | Finding: scripted players decide every 0.05 s tick, not at the sheet's 0.6 s decision period; the sweep measures scripted play at 0.05 s; L0.12's trainers must set their decision period explicitly (T41 used 0.6 s) | OPEN: written into the L0.11 gate file and record |
 | L07-SUSPEND | Tooling: a laptop sleep during a GPU job is counted as GPU-hours and as time towards the job's cap (wall clock). Rule until fixed: never let the laptop sleep during a GPU job | QUEUED (tooling task); rule in force now |
+| L011-G0 | Finding for gate G0 (from T44, scripted play): the programme's sizes 2v1 and 5v3, and 1v1, are Guard-trivial with scripted players at the proposed rules; candidate cause: tag radius 1.6 m = zone radius 1.6 m with Guards starting near the zone centre, so a Strike entering the zone is already in tag range (not tested). L0.12 tests whether learning changes this | OPEN: reported at G0 |
 | L010-G0 | Finding for gate G0 (from L0.10 QC): any safety-filter move near the 1.6 m tag radius can create a tag nobody chose (the filter's 1.10 m keep-out is inside the tag radius). Spaced starts remove it at the start; during play it is part of the game the sweep measures (P1) | OPEN: reported at G0 |
 | L09-5090 | On the 5090: record the tag-off golden's positions for its CPU type (AVX512); check the outcome fingerprints there | WAITING: next 5090 session |
 | L08-M | L0.8 minors left: 3 hangar values unchecked on a clone without the NUS bundle; 3 values whose wrong value still passes; loader refuses some honest wording; tests tied to exact lines and the AirStack fence file | PARKED |
@@ -97,6 +98,6 @@ Laptop drills (21 Nov, fix branch, shared folder `~/AirStack-starling-max2/svg_t
 
 **Next.** (1) L0.7 fixes L07-F1, C1, I1–I4, one at a time, each tested first and committed alone; scoped QC re-check. (2) Full CPU suite, then the wake-up and resume drills on the laptop. (3) L0.8 Game spec sheet (being built), then L0.9 Tag rule.
 
-**Waiting on you.** Nothing. **Please do not let the laptop sleep: a GPU job is running** (L07-SUSPEND: sleep is counted as GPU time).
+**Waiting on you.** Nothing; no GPU job is running.
 
 **Correction.** The 21 Nov question on NUS values listed "speeds 0.6 / 1.2". The L0.8 review reads those two numbers as the decision period (0.6 s) and the flight height (1.2 m); the speeds are 0.5 and 0.333 m/s. Your Yes covers all of them as written on the sheet.

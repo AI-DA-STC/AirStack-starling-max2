@@ -30,7 +30,7 @@ ladder and chooses the route for Phase 5.
 |---|---|---|
 | F1 | The game draws a random arena side per band, a random zone radius as a fraction of the side, and a random zone centre. `starts.mode` is `rings` or `anywhere`; neither is the partner's start. The local partner file may set only `partner_rules.*` and `arena.zone_radius_frac` | `core/arena.py`, `core/game_config.py` `LOCAL_ALLOWED` |
 | F2 | `SvgGame._draw_arenas` is already a method. Starts are drawn inline in `_new_games` | `core/game.py` |
-| F3 | `SvgGame.__init__` sets the private `self._starling` (`core/game.py:115-119`): `StarlingLayer` or `PhysicsLayer`, both built with the safety filter on. Turning on the Starling layer also turns the push-apart off. `FittedResponse` itself takes `safety_filter=False` | `core/game.py`, `core/starling_layer.py`, `core/physics_layer.py`, `models/fitted.py:73` |
+| F3 | `SvgGame.__init__` sets the private `self._starling` (`core/game.py:130-134`): `StarlingLayer` or `PhysicsLayer`, both built with the safety filter on. Turning on the Starling layer also turns the push-apart off. `FittedResponse` itself takes `safety_filter=False` | `core/game.py`, `core/starling_layer.py`, `core/physics_layer.py`, `models/fitted.py:73` |
 | F4 | `NusPolicy` holds each action for `hold_ticks` in any `SvgGame` | `nus/strategy.py` `act` |
 | F5 | On tier 1, drones that start at one height and are never commanded up or down stay at that height. The filter's escape can only be sideways. On the physics drone, heights differ by millimetres and the escape can turn vertical. A 1 mm higher Strike start took one tier 1 cell from 97.5 % held to 0 % | [S2B_RESULTS §4](../S2B_RESULTS.md), `scripts/diag_vertical_pass.py` |
 | F6 | `NusPolicy` reads one weights folder per team from the module-level `DEPLOY_PATH` (W2's deploy file, sha256 in W2) | `nus/strategy.py`, `nus/deploy.py` |
@@ -168,7 +168,7 @@ Notes:
   interval, rows 2.1 and 2.2 run before rung 3, in that order. Otherwise they stay declared but skipped. The partner
   push in metres (row 2.1) is built only then (Task 4b).
 - **Rung 3 layer swap** (`nus/hangar_game.py`, no core edit). `NusHangarGame.__init__` calls `super().__init__` with the
-  fitted Starling layer on. That sets `self._starling` (`core/game.py:115-119`). It then replaces `self._starling` with
+  fitted Starling layer on. That sets `self._starling` (`core/game.py:130-134`). It then replaces `self._starling` with
   `NusPushLayer`, a `StarlingLayer` subclass whose `FittedResponse` has `safety_filter=False` (row 3a: an identity
   response). After each model step it applies `core.pair_rules.push_apart` to the horizontal positions and writes
   them back into the model. Then it resets again, so the new layer holds the starts. The push moves neither the

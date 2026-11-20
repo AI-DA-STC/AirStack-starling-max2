@@ -26,7 +26,7 @@ Source of truth for direction: [DISCUSSION_2026-11-19_20.md](DISCUSSION_2026-11-
    (`configs/s2b.toml [agreement_gates]`) is rerun once per change of that path.
 4. **Off means identical.** Every new behaviour sits behind a setting whose default reproduces today's output **bit for
    bit** on CPU; that test is written first (the pattern of `tests/test_command_chain.py`). This covers filter option
-   B, the tag preset, delay, noise and drag.
+   B, the study tag (`[tag] mode`), delay, noise and drag.
 5. Hand-checkable cases as fixtures: for the filter, the desk-run cases of DISCUSSION §2.9 (Strike at 0.5 m/s into a
    still Guard; Guard pushing back at 0.33 m/s; closest approach 1.100 m) become named tests with stated tolerances.
 6. Commands (this worktree, either machine):

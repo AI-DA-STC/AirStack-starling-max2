@@ -193,12 +193,12 @@ still Guard: Strike unchanged, Guard takes the whole correction; Guard–Guard s
 minus the tracking tolerance; the emergency fallback triggers only above its residual. Done: tests pass on both filter
 paths; cost measured. 10 h; 0.3 GPU-h. Gate: P2 before any run of record uses it.
 
-**L2.2 Tag at 3-D centre < 1.6 m, 1-for-1.** Goal: a new preset `"tag"`: filter on every pair, a tag when a live
-Guard–Strike pair is closer than `tag_radius_m` (1.6 m, PROPOSED) in 3-D; both drones out (D2,
-`guard_survives_tag_prob` = 0). Files: `core/game_config.py` (preset and key), `core/game.py` (reuse
-`pair_rules.contact_tags` with the radius), `configs/ste_game.toml`, `tests/test_tag_preset.py`. Tests first: 1.59 m
-tags, 1.61 m does not; tags come before the zone test; `partner` and `contact` presets unchanged (existing config tests
-pass). 6 h. Gate: P1 before any run of record (it overturns two FIXED rows of STANDARDS §4).
+**L2.2 Tag at 3-D centre < 1.6 m, 1-for-1.** Goal: the study tag of L0.9 (`[tag] mode = "nearest_pair_1for1"` on the
+partner preset, `pair_rules.proximity_tags`; built, off by default) made the rule of the trained game: filter on every
+pair, a tag when a live Guard–Strike pair is closer than `[tag] radius_m` (1.6 m, PROPOSED) in 3-D; both drones out (D2,
+`guard_survives_tag_prob` = 0). Files: `core/game_config.py` (`TagCfg`), `core/game.py`, `configs/ste_game.toml`,
+`tests/test_tag_rule.py`. Tests (L0.9 has them): 1.59 m tags, 1.61 m does not; tags come before the zone test; off is
+today's game bit for bit; `partner` and `contact` presets unchanged (existing config tests pass). 6 h. Gate: P1 before any run of record (it overturns two FIXED rows of STANDARDS §4).
 
 **L2.3 Landing drones stay filter obstacles.** Goal: a tagged or lost drone descends at the land speed (0.6 m/s, real
 `_ours` configs, MEASURED) and stays in every filter pair until it is down, then is parked. It no longer acts or scores.
@@ -215,7 +215,7 @@ size; observations show absent drones with present = 0; drop-out at the drawn st
 is part of the flown game.
 
 **L2.5 Parked-Guard control and scripted opponents under the new rules.** Goal: check the risk that a 1.6 m tag favours
-a Guard that stands still; make the scripted Strike behaviours (straight, flank, feint, dodge) run in the tag preset.
+a Guard that stands still; make the scripted Strike behaviours (straight, flank, feint, dodge) run with the study tag on (`[tag] mode`).
 Files: `opponents/scripted.py` (any missing behaviour), `tests/test_scripted_tag.py`, an INFO record. Done: parked Guard
 hold rate with and without the tag, option B on and off, 1,000 games each, tier 1. 5 h; 0.5 GPU-h.
 

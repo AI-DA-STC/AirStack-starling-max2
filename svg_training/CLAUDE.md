@@ -70,7 +70,8 @@ agents and skills below load. Then:
 
 | Say or need | Skill |
 |---|---|
-| start of every session | `train-start` |
+| start of every session | `train-start` (it ends with `train-status`) |
+| a status update: at session start, every 30 min while work runs, at once on an event, or when asked | `train-status` |
 | change code, a config or a document in this folder | `train-change` |
 | launch a benchmark or a training run | `train-run` |
 | score a checkpoint against the gates | `train-evaluate` |
@@ -84,6 +85,47 @@ Agents (in `.claude/agents/`, described in [docs/claude/AGENTS_AND_SKILLS.md](do
 `train-implementer` (the only one that writes code). The STE learning track adds `ste-architect`, `ste-software-engineer`
 (that track's builder), `ste-test-qc-engineer`, `ste-technical-writer` and `ste-orchestrator`; their source of record is
 `ste_learning/agents/` (copies in `.claude/agents/`, keep the two in step).
+
+## Two machines, one working branch (owner, 20 Nov 2026)
+
+The owner works on the home RTX 5090 and the RTX 5070 Ti laptop **in turns**. Both must be able to pick up where the
+other stopped, from git alone.
+
+- **`development` is the working branch on both machines** while it exists. Work lands on `development` (small edits
+  directly, larger ones by fast-forward from a worktree branch cut from `development`); `main` moves only when the owner
+  says so. This replaces "commits land on `main`" of the root `CLAUDE.md` for `svg_training/` work (the root file is
+  outside this folder; the owner was asked to approve the matching line there).
+- **Start of a session:** `git fetch origin` (or the owner pulls in GitHub Desktop), then `git status -sb` must show
+  `development` level with `origin/development`. If it is behind, the other machine has pushed: fast-forward first. If
+  it has diverged, stop and ask the owner.
+- **End of a session (and before the owner switches machine):** commit the work, `docs/claude/HANDOFF.md` §0 and
+  `ste_learning/status/` on the branch, merge to `development` (fast-forward only), update this machine's mirror if it
+  has one, and give the owner the "Ready to push" line. Nothing that matters may live only in a session, in Claude's
+  memory or in `runs/`.
+- **What does not travel in git:** Claude's user memory (`~/.claude/`; the owner's standing rules are below so they
+  travel), `runs/` (run folders, checkpoints, videos, the shared folder `runs/shared/` with its GPU-hour ledger),
+  `configs/local/` (rebuilt with `scripts/nus_install_provisional.sh`), and the 5090-only folders listed below.
+  HANDOFF §0 names any run folder the next task needs and where it is.
+
+## The owner's standing rules (portable; they were in one machine's Claude memory)
+
+- **Status updates without being asked**: the `train-status` skill, at session start, every 30 minutes while work runs
+  (a background `sleep 1800` timer, re-armed), at once on an event, and when asked. Three tables (phases with math
+  library and simulator; the current phase task by task; other workstreams), then Next, Waiting on you, and a bold
+  "Ready to push" line while the branch is ahead of its upstream. Tasks always "ID + plain name".
+- **A second opinion at every key point** (before a plan or approach, before documentation, before declaring done, when
+  stuck): on the owner's personal Max account, the `advisor` tool (Fable 5.2); on the owner's work account, where that
+  tool is absent, a read-only advisor agent on the strongest model available, briefed with the full context. The
+  independent QC agent (`ste-test-qc-engineer`) checks code; the advisor checks direction and soundness. Say which
+  advisor was used.
+- **The owner delegates technical calls** (route, proposed gates, observation, budgets inside an approved cap): decide,
+  record why, explain in plain words. Still ask before anything outside this folder, anything outward-facing (messages to
+  NUS or CMU, publishing, pushing), irreversible steps, and compute beyond what was approved.
+- **GPU jobs side by side** when the GPU has room (`--allow-siblings`); short pilots and speed measurements alone. The
+  owner pauses jobs with `scripts/gpu_pause.sh` to use the PC: never resume a pause the session did not make.
+- **Videos inside every run** (STANDARDS §8); every result shown on a reader page has a GIF that plays on GitHub.
+- **Reply before doing** anything that changes the outcome or the plan; propose large document changes first.
+- **One fix at a time** when debugging; no parallel fixes.
 
 ## Environment (laptop verified 2026-11-14; 5090 set up 2026-11-17, updated 2026-11-18)
 

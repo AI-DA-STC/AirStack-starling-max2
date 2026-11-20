@@ -1,4 +1,5 @@
-INTERNAL · fill-in template for the 30-minute status of STE's own learning track. Copy it to `STATUS_LATEST.md`
+INTERNAL · fill-in template for the 30-minute status of STE's own learning track and the NUS port (the `train-status`
+skill fills it; NUS port phases come first in the Phases table). Copy it to `STATUS_LATEST.md`
 (overwrite), append the same text to `LOG.md`, paste it in the chat. Delete every `<!-- … -->` comment before posting.
 
 <!--

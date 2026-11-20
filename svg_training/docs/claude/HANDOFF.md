@@ -4,13 +4,52 @@ INTERNAL · the lab's AI-assistant hand-over notes. Not needed to read or run an
 
 > **How to use this file.** Read it at the start of a session, after [../../CLAUDE.md](../../CLAUDE.md).
 > §4 is the current state, §5 is what is waiting on people. Update both before you stop.
-> Last updated: 20 November 2026 ~16:30, on the home RTX 5090, worktree `~/AirStack-starling-max2-l07`, branch `ste-l0.7` (STE learning track task L0.7 built and committed on the branch, NOT merged: see the top of §0). Before: 20 November 2026 ~12:30 (the owner approved phase L0). Before: 19 November 2026, ~00:30, on the home RTX 5090, release worktree `~/AirStack-starling-max2-release`, branch `nus-release` (plain-laptop CPU route: code fixes C1–C9 and the PROVISIONAL bundle `nus_provisional/`, owner decision 6; committed, not pushed). Before: 18 November 2026, ~15:15, on the home RTX 5090, NUS-port worktree `~/AirStack-starling-max2-nus-port`, branch `phase6-pass2` (Phase 6 pass 2B: **Phase 4 complete**, its results written into every doc, every NUS-port clip published, the hangar size restored, the Phase 5 plan described; uncommitted, the lead commits). Before: ~06:45, on the home RTX 5090, integration worktree `main-5090` (Phase 6 pass 1: public NUS docs, privacy rails rewritten to the owner's decision, Claude files touched up; Phase 4 rows 4–6 running). Before: ~05:30 (Phase 4: T17 PASS, rungs 1 to 3 scored, rungs 4 to 6 not run). Before: ~01:00 (Phase 3 T16 PASS). Before: 17 November 2026, ~22:30, on the home RTX 5090 (evening summary in §0). Before: ~07:00 (morning summary in §0). Before: ~05:30 (S2b Tasks 1–8 done (T13 FAIL, over/under passing), 9 Isaac seeds running, 10 docs being written, 8b deferred; see §0 S2b line). Before: ~03:00. Earlier: 16 November morning (**S2 CLOSED**: final whole-stage review done on Opus, one fix wave 4d0d409, wording c218cbb; owner ruled A and B; S2b plan approved and ready to start).
+> Last updated: 20 November 2026 ~21:45, on the home RTX 5090, branch `development` (the owner moves to the RTX 5070 Ti laptop: read "MOVING BETWEEN MACHINES" at the top of §0 first). Before: 20 November 2026 ~16:30 (L0.7 built).
 
 ## 0. Resume here (for a new session or another Claude account)
 
 Everything needed is in this folder; nothing depends on the previous chat. Claude's user memory (`~/.claude/…`) and
 the private NUS workspace (`~/ma_skills-self-play/`, 5090 only) do **not** travel with git: if this file and a memory
 note disagree, this file wins.
+
+### MOVING BETWEEN MACHINES, 20 November 2026 ~21:45 — read this first on the laptop (and on every switch)
+
+The owner works on the home RTX 5090 and the RTX 5070 Ti laptop in turns and moved to the laptop on 20 Nov evening.
+The rules are in [`../../CLAUDE.md`](../../CLAUDE.md), sections "Two machines, one working branch" and "The owner's
+standing rules": **`development` is the working branch on both machines; `main` moves only on the owner's word.**
+
+**On the laptop, the first time** (the laptop's clone already has `main`; this leaves it and any local change alone):
+```bash
+cd ~/AirStack-starling-max2 && git status -sb          # note any uncommitted change; nothing below touches it
+git fetch origin                                        # needs the owner's GitHub login (GitHub Desktop can fetch too)
+git worktree add ../AirStack-starling-max2-dev development   # a separate folder on branch development
+cd ../AirStack-starling-max2-dev/svg_training && claude      # start Claude HERE so the skills and agents load
+```
+Do not `git pull` `development` into the laptop's `main`. The laptop's docker-mounted live clone stays on `main` for
+flight work; training work happens in the `-dev` worktree. Then: `mkdir -p runs`, `unset PYTHONPATH` if ROS is sourced,
+`scripts/nus_install_provisional.sh` (fills `configs/local/` and `runs/nus_port/` for the NUS tests), and the full CPU
+suite (CLAUDE.md, Environment). The session runs `train-start`, which ends with the status (`train-status`).
+
+**What is on `development` (20 Nov ~21:45):** everything on `main` up to `11d9d4f2` (L0 approved, L0.1, L0.14 added to
+the plan, the fleet record), then L0.7 (process tooling, built; independent QC and drills pending), the track pages
+updated to the tooling as built ([AUTOMATION](../../ste_learning/AUTOMATION.md) §7: commands, exit codes, drills), the
+`train-status` skill, the two-machine rules and the owner's standing rules in CLAUDE.md, and this note.
+
+**Next on the laptop (CPU only; no GPU job on the laptop until the drills below have passed there):**
+1. L0.7 independent QC (`ste-test-qc-engineer`, read-only, on the code of commits `c035cbed`..`be5c6ee9`), then the wake-up
+   and resume drills of AUTOMATION §7 on the laptop. Record the result in the status; L0.7 is DONE only then.
+2. L0.8 Game spec sheet, L0.9 Tag rule for the study, L0.10 Scripted players (PLAN §4): all CPU.
+3. Hold on the laptop: L0.2 and L0.13 are specified for the 5090 (tier 2 speed and training at up to 8,192 games; the
+   laptop GPU has 12 GB). L0.3 and L0.14 part 1 need the STE Guard policy's run folder, which is on the 5090 only:
+   `~/AirStack-starling-max2-nus-phase5/svg_training/runs/nus_port/phase5/pilots/2026-11-19_nus_phase5_pilot_p1b_run4/`
+   (4.4 MB: `agent_best.pt`, `agent.pt`, `interface.toml`, `train_result.json`, videos; git-ignored). Whether to commit
+   it or copy it by hand is the owner's call.
+
+**GPU-hours used in phase L0: 0 of 19** on both machines. Each machine keeps its own ledger (`runs/shared/`, not in git):
+before any GPU job, take the other machine's total from the last status and add it by hand.
+
+**Advisor:** on the owner's personal Max account the `advisor` tool (Fable 5.2); on the work account an advisor agent
+(CLAUDE.md, standing rules). Claude's memory on the 5090 holds nothing that is not in the committed files.
 
 ### STE LEARNING TRACK: PHASE L0 APPROVED, 20 November 2026 — read this first for anything after the NUS port
 
@@ -42,7 +81,7 @@ reference pages and five agents (`ste-*`, copied into `.claude/agents/`).
   §2.16, open item P13. **Owner's ruling (20 Nov): task L0.14 Crazyflie route check added to L0 (0 GPU-h), fleet question
   added to gate G0**; the fleets themselves stay OPEN. Also approved the same day: the status text of this folder's row in
   the root `CLAUDE.md`, and a paragraph in README §2 on why NUS's JAX code was converted to PyTorch.
-- **L0.7 BUILT, NOT MERGED (20 Nov ~16:30), branch `ste-l0.7`, worktree `~/AirStack-starling-max2-l07`:** process tooling
+- **L0.7 BUILT, on `development` (20 Nov ~16:30; QC and drills pending, see the note above):** process tooling
   for every later GPU run, CPU only. `ste/shared.py` (one live-state folder `runs/shared/` in the main clone, or
   `SVG_SHARED_DIR`), `ste/pauses.py` + `scripts/gpu_pause.sh` (one pause log; old copies in other worktrees still counted),
   `ste/state.py` (`state.json`: lock, atomic write; a job is alive only if pid + start time + boot id match),
@@ -50,14 +89,10 @@ reference pages and five agents (`ste-*`, copied into `.claude/agents/`).
   resume after SIGINT or SIGKILL), `ste/budget.py` (GPU-hour ledger, launch refused over a cap), `ste/jobs.py` +
   `scripts/ste_job.py` (`launch` / `wait` / `status`; `wait` returns the job's own exit code, flags ENDED_EARLY 20 and
   DIED 21; no `pgrep -f` in the track's code). Builder's full CPU suite: 1326 passed, 57 skipped, pytest exit 0.
-  **Still to do before merging:** (1) independent QC (`ste-test-qc-engineer`, read-only); (2) one full suite by the lead;
-  (3) the wake-up and resume drills with `scripts/ste_job.py` against the real shared folder (commands in the builder's
-  report; rerun them from `ste_learning/AUTOMATION.md` once updated); (4) update AUTOMATION §1, §2.1, §5, §6,
-  CODING_PRACTICES §2 and §8 (exit code 5), PLAN §4 row L0.7 and §8 to the tooling as built. Known limits: `launch` does
-  not check for an open owner pause; the trainer's own cap and `--gpu-h` are not linked; `state.json`'s task list is
-  not written yet. Then L0.8 (game spec sheet).
-- **Advisor:** the advisor tool was available up to 20 Nov ~16:00 and is not in later sessions; the owner's rule to
-  consult it at key points applies when it is available.
+  **Still to do:** (1) independent QC (`ste-test-qc-engineer`, read-only); (2) the wake-up and resume drills of
+  [AUTOMATION](../../ste_learning/AUTOMATION.md) §7 on each machine. The pages were updated to the tooling as built
+  (AUTOMATION §2.1, §5, §6, §7; CODING_PRACTICES §2, §8; PLAN §8). Known limits are in AUTOMATION §7. Then L0.8.
+- **Advisor:** by account (CLAUDE.md, the owner's standing rules).
 - **Why L0 exists:** the review found that the proposed rules (1.6 m proximity tag, 1-for-1) may let head-count decide
   the game, that the zone radius equals the tag radius, that the programme's sizes are 2v1 and 5v3 (not 3v3), and that
   tier 2 has never trained anything (PLAN §2, F1–F10).

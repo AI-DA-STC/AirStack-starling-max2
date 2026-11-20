@@ -7,6 +7,11 @@ description: Run at the start of every session on the svg_training pipeline, bef
 
 Do these in order. Do not skip because the task looks small.
 
+## 0. Bring the branch up to date
+The owner works on two machines in turns (CLAUDE.md, "Two machines, one working branch"). Before anything else:
+`git fetch origin`, then `git status -sb` on `development` (or the work branch). Behind: fast-forward. Diverged:
+stop and ask the owner. Never start work on a stale branch.
+
 ## 1. Read the rules and the state
 1. `CLAUDE.md` of the folder (hard rules, environment, git facts).
 2. `STANDARDS.md`: §1 scope, §2 wording, §7 gates, §8 records, §10 git, §11 definition of done. Read
@@ -57,3 +62,8 @@ verify. If an open item in HANDOFF §5 blocks the task, say so and ask the owner
 | Something is wrong: NaN, flat reward, slow, unstable | `train-debug` |
 | Hand a policy to AirStack | `train-export` |
 | A design question | brief the advisers in parallel (see `docs/claude/AGENTS_AND_SKILLS.md`) |
+| A status update | `train-status` |
+
+## 6. Post the status
+End the start-up with the `train-status` skill: the owner's three-table status, posted without being asked, and the
+30-minute timer armed if anything runs or is being built.

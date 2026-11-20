@@ -1,6 +1,19 @@
 INTERNAL · the latest status of STE's own learning track and the NUS port, overwritten at every update; the history is in [LOG.md](LOG.md). Produced by the `train-status` skill.
 
-**Status, 2026-11-21 06:04 (+08:00), event: L0.12 groundwork built (CPU): trainer reproduces T44 exactly; lead's rulings being applied**                                                       · laptop RTX 5070 Ti · GPU idle except the remote-desktop service · 0 training processes (0 paused)
+**Status, 2026-11-21 06:07 (+08:00), event: owner asleep; clips added to the status**                                                        · laptop RTX 5070 Ti · GPU idle except the remote-desktop service · 0 training processes (0 paused)
+
+## Watch (latest clips and figures)
+
+L0.11 Screening sweep (T44), scripted players, training simulator tier 1, top-down view (2-D; the 3-D Isaac Lab videos
+of these games come with VID-1). Each ends within about 3 s in a one-for-one trade.
+
+| Guard field v Strike converge (base 3v3) | Guard mark edge v Strike sacrifice (base 3v3) | Parked ring v Strike straight (base 3v3) |
+|---|---|---|
+| ![](../../docs/media/ste_l011/guard_field_v_strike_converge.gif) | ![](../../docs/media/ste_l011/guard_mark_edge_v_strike_sacrifice.gif) | ![](../../docs/media/ste_l011/guard_parked_ring_v_strike_straight.gif) |
+
+Best scripted Guard's worst-case hold (H, blue) and best scripted Strike's worst-case reach (R, orange) per factor:
+
+![](../../docs/figures/ste_l011/factors.png)
 
 ## Phases
 

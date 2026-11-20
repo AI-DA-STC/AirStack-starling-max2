@@ -136,6 +136,8 @@ games with 0 tags). Whether learning changes this is L0.12's question.
   than the pilot with a CPU test suite beside it; the projection was raised ×1.24 (commit 9b54dff). A CPU test suite also
   ran beside this sweep for part of it, so its game-steps/s are not a clean speed measurement.
 - GPU-hours: pilot 0.034 + CUDA smoke 0.087 + this sweep 0.305 = 0.426 of the L0.11 cap of 3.0 (laptop ledger).
+- Edited after the first write (same session, before any push, 762fc6a5): the reading and the ledger row T44 gained the
+  one-for-one trade finding after the QC results read; no number changed.
 - The machine was not suspended during the run: effective time 1,096 s against a wall-clock span of 1,098.6 s in
   `launches.jsonl`.
 - Gate file: `svg_training/configs/ste_l011/gates.toml` at commit 9b54dff6 (sha256 8bfbc2cb…), run from a detached

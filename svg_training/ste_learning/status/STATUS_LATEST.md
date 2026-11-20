@@ -1,6 +1,6 @@
 INTERNAL · the latest status of STE's own learning track and the NUS port, overwritten at every update; the history is in [LOG.md](LOG.md). Produced by the `train-status` skill.
 
-**Status, 2026-11-20 23:09 (+08:00), event: laptop set up, full CPU suite run, two test fixes queued** · laptop RTX 5070 Ti · GPU 6 % / 14 W / 1.8 GB of 12 GB · 0 training processes (0 paused)
+**Status, 2026-11-20 23:12 (+08:00), event: TEST-F2 fixed**  · laptop RTX 5070 Ti · GPU 0 % / 15 W / 1.8 GB of 12 GB · 0 training processes (0 paused)
 
 ## Phases
 
@@ -36,7 +36,7 @@ GPU-h used in L0 so far: 0 of 19 (RTX 5090: 0, from the 22:20 status; laptop: 0,
 
 Laptop full CPU suite (20 Nov, `development` at 5c5d465, after `scripts/nus_install_provisional.sh`): **1,333 passed, 2 failed, 48 skipped** in 24 min. Both failures repeat when run alone:
 - **L07-F1** `test_ste_job.py::test_f_d_a_killed_job_reads_dead_the_waiter_says_died_and_the_same_command_resumes`: the waiter prints 0.3 s, the elapsed time was 0.293 s. Candidate cause: the one-decimal rounding against an exact bound (not yet confirmed).
-- **TEST-F2** `test_train_standin.py::test_default_path_bit_identical_after_the_nus_hooks`: same torch 2.7.0 and skrl 2.1.0 as recorded on the 5090 (18 Nov), different agent hash. Candidate cause: CPU-dependent maths routines (laptop Intel Core Ultra 9 275HX, no AVX-512), not tested.
+- **TEST-F2** `test_train_standin.py::test_default_path_bit_identical_after_the_nus_hooks`: FIXED (447b317). Measured on the laptop: the hash repeats (75d2a955…), hold rates equal the recorded [0.25, 0.375], and forcing PyTorch's CPU capability down changes the hash; threads (trainer runs one) and local files (not read on this path) ruled out. The fingerprint is now one hash per CPU capability; hold rates are checked on every machine.
 
 ## Other workstreams
 
@@ -46,9 +46,10 @@ Laptop full CPU suite (20 Nov, `development` at 5c5d465, after `scripts/nus_inst
 | SYNC-2 | Status skill `train-status` and the owner's standing rules in CLAUDE.md | DONE |
 | SYNC-3 | Root `CLAUDE.md` and every page: training work lands on `development` | DONE |
 | SYNC-4 | STE Guard policy (T41 run folder) in the PROVISIONAL bundle | DONE; installed on the laptop (46 files, agent.pt c91bea51…) |
-| L07-F1 | Fix: waiter-duration test bound (rounding) | QUEUED (inside L0.7 QC) |
-| TEST-F2 | Fix: bit-level training fingerprint is machine-specific | QUEUED (after L07-F1; diagnose threads and local files first) |
+| L07-F1 | Fix: waiter-duration test bound (rounding) | QUEUED (L0.7 independent QC running, read-only) |
+| TEST-F2 | Fix: bit-level training fingerprint is machine-specific | DONE (447b317; trainer test file 43 passed, 1 skipped) |
+| TEST-F2b | On the 5090: confirm its CPU capability is AVX512 (the key its 18 Nov hash is now filed under) | WAITING: next 5090 session runs the test (fails or skips loudly if wrong) |
 
-**Next.** (1) L0.7 Process tooling and drills: independent QC (read-only). (2) L07-F1, then TEST-F2, one at a time. (3) L0.7 drills on the laptop, then L0.8 Game spec sheet.
+**Next.** (1) L0.7 Process tooling and drills: independent QC (running). (2) L07-F1 and any QC findings, one at a time. (3) L0.7 drills on the laptop, then L0.8 Game spec sheet.
 
 **Waiting on you.** Nothing (owner, 20 Nov: "go ahead with ur recommendations then continue").

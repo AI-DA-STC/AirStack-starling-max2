@@ -122,6 +122,8 @@ other stopped, from git alone.
   tool is absent, a read-only advisor agent on the strongest model available, briefed with the full context. The
   independent QC agent (`ste-test-qc-engineer`) checks code; the advisor checks direction and soundness. Say which
   advisor was used.
+- **The lead owns the STE learning track** (owner, 20 Nov 2026: "i want you to own this project"): plan, build, review,
+  fix, record and report without waiting to be asked; the owner keeps the human gates and the items in the next bullet.
 - **The owner delegates technical calls** (route, proposed gates, observation, budgets inside an approved cap): decide,
   record why, explain in plain words. Still ask before anything outside this folder, anything outward-facing (messages to
   NUS or CMU, publishing, pushing), irreversible steps, and compute beyond what was approved.

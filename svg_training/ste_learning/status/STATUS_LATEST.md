@@ -1,6 +1,6 @@
 INTERNAL · the latest status of STE's own learning track and the NUS port, overwritten at every update; the history is in [LOG.md](LOG.md). Produced by the `train-status` skill.
 
-**Status, 2026-11-21 00:24 (+08:00), event: L0.9 started**                  · laptop RTX 5070 Ti · GPU 72 % / 22 W / 1.7 GB of 12 GB · 0 training processes (0 paused)
+**Status, 2026-11-21 00:30 (+08:00), event: owner ruled Yes on NUS values in the game sheet**                   · laptop RTX 5070 Ti · GPU 72 % / 22 W / 1.7 GB of 12 GB · 0 training processes (0 paused)
 
 ## Phases
 
@@ -19,7 +19,7 @@ INTERNAL · the latest status of STE's own learning track and the NUS port, over
 |---|---|---|---|---|
 | L0.1 | Track set-up: config and test skeleton | DONE | none | settings file, loader, tests; independent QC closed all findings |
 | L0.7 | Process tooling and drills | RUNNING | none | all seven fixes verified by the independent re-check (304 passed); full suite running, then the laptop drills, then merge; DONE only after the 5090's suite and drills too |
-| L0.8 | Game spec sheet | WAITING (on you) | none | QC re-check passed (dec9d27 on `ste-l0.8`): 28 values, 7 FIXED, 1 MEASURED, 16 PROPOSED, 4 OPEN, every label pinned; merges after your answer below, then the full suite |
+| L0.8 | Game spec sheet | RUNNING | none | QC passed; your Yes written into parent STANDARDS §2 (91c5ac2 on `ste-l0.8`); merges into `development` after the L0.7 merge, then one full suite |
 | L0.9 | Tag rule for the study: 1-for-1, nearest pair first | RUNNING | tier 1 fast engine | builder on branch `ste-l0.9` (built on L0.8's branch; CPU; off-by-default proven on game outputs, not a training hash) |
 | L0.10 | Scripted players for the study | NOT STARTED | tier 1 fast engine | after L0.9; CPU |
 | L0.11 | Screening sweep (INFO) | NOT STARTED | tier 1 fast engine | cap 3 GPU-h |
@@ -65,5 +65,4 @@ Laptop full CPU suite (20 Nov, `development` at 5c5d465, after `scripts/nus_inst
 
 **Next.** (1) L0.7 fixes L07-F1, C1, I1–I4, one at a time, each tested first and committed alone; scoped QC re-check. (2) Full CPU suite, then the wake-up and resume drills on the laptop. (3) L0.8 Game spec sheet (being built), then L0.9 Tag rule.
 
-**Waiting on you.**
-1. L0.8: `configs/ste_game.toml` holds numbers taken from NUS's hangar game (zone 1.6 m, start ring 3.2 m, Guard disc 0.8 m, 120 s, speeds 0.6 / 1.2). NUS agreed its settings may be published (your decision 6, 18 Nov), but the parent STANDARDS §2 still says only `nus_provisional/` may hold NUS values. May I add one line to parent §2 allowing the track's game sheet to cite them? Until you say so the sheet stays on branch `ste-l0.8` / unpushed.
+**Waiting on you.** Nothing.

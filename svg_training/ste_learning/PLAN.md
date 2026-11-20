@@ -80,7 +80,7 @@ asked to be stopped for.
 ## 4. Phase L0 in detail (final)
 
 Order of work: L0.1 → L0.7 → L0.8 → L0.9 → L0.10 → L0.11 → L0.12 for the game. In parallel, where the GPU allows:
-L0.2 first, then L0.13 and L0.3 for tier 2, and L0.4 → L0.5 for the Starling look. L0.6 closes the phase at gate G0. Every task
+L0.2 first, then L0.13 and L0.3 for tier 2, and L0.4 → L0.5 for the Starling look. L0.14 (added 20 Nov 2026 with the owner's yes) runs on the CPU beside them. L0.6 closes the phase at gate G0. Every task
 follows §6. Detail of the tasks that existed in version 1 is in [WORK_BREAKDOWN](WORK_BREAKDOWN.md).
 
 | ID | Plain name | What it delivers | GPU-h cap | Gate |
@@ -97,10 +97,11 @@ follows §6. Detail of the tasks that existed in version 1 is in [WORK_BREAKDOWN
 | L0.3 | STE Guard policy in tier 2 without retraining | hold rate of the tier-1-trained policy (829 of 1,000, T41) on the Isaac Lab drone, same starts, parked Guard as control (row 6: Strike reaches 524, T24) | 1.5 | P3 |
 | L0.4 | Side-by-side Starling render | the Isaac Lab Starling beside the AirStack simulator's, with and without team paint | 0.2 | P4 |
 | L0.5 | Starling video look fix | clips keep the Starling's own look; team colour as a small marker | 0.3 | owner looks at stills (D9) |
+| L0.14 | Crazyflie route check | one page for gate G0 on flying the game on the lab's Crazyflies ([DISCUSSION](DISCUSSION_2026-11-19_20.md) §2.16): **(1)** the STE Guard policy (T41) scored in tier 1 on the CPU with a Crazyflie-like response beside the Starling's (INFO, planned in writing first; a sensitivity test, not a Crazyflie model: the logged Crazyflie trails its setpoint by about 0.56 s under its default controller, the fitted Starling response is about 0.15 s late); **(2)** which team sizes fit which arena at the Starling's 1.10 m filter distance, from the Crazyflie repository's offline planner (read-only use; the 20 Nov runs repeated with the planner's seeds and written up); **(3)** the specification of what a Crazyflie session would build: one adapter core (observation builder, decision hold, action scaling), a state-to-observation golden fixture, the rule plug-in. Nothing is written in the Crazyflie repository and nothing flies in this task. Needs the T41 run folder (workstation only) | 0 | none; feeds **P13** at G0 |
 | L0.6 | **Gate G0** | one decision page for the owner with every number above (§5) | 0 | **owner** |
 
 **L0 budget: at most 19 GPU-h** (the task caps above sum to 18.5), alone on the GPU for the speed and training probes. Work estimate
-about 70 hours.
+about 80 hours.
 
 ## 5. Gate G0: what the owner rules, with L0's numbers
 
@@ -112,6 +113,7 @@ about 70 hours.
 | **D3 cost: where to train.** | L0.2, L0.13, L0.3 | everything on tier 2; or league on tier 1 with fine-tuning and evaluation on tier 2; with the GPU-hours each implies (reviewer's early estimate for tier 2 from scratch: 3–10× the 36 GPU-h of version 1) |
 | **P10 Environments.** The parent FIXED rule asks for realistic 3-D environments | — | open arena first, construction-site world as a later phase; or sooner |
 | **P11 What the real demo must show.** | L0.11 1v1 baselines | a learned 1v1; a scripted 1v1; team play shown in the AirStack simulator only |
+| **P13 Fleets for real flight.** All Starlings (1v1), all Crazyflies, or a mix in one game | L0.14; L0.11 and L0.12 per size | each fleet alone, Crazyflies first at Starling metres, the Starling 1v1 as planned (lead's recommendation); or that plus one mix later (Starling Guards against Crazyflie Strikes); or a Crazyflie-sized game with its own training (a second training programme) |
 | **Budget** for L1–L9 | all of the above | a ceiling per phase |
 
 After G0 the lead re-baselines L1–L9 (tasks, order, budgets), updates this page and WORK_BREAKDOWN, and the
@@ -175,7 +177,7 @@ watcher was armed. Every launch now arms its watcher in the same step.
 
 | Item | Budget | Status |
 |---|---|---|
-| **L0** (§4 caps) | **19 GPU-h** | **asked now** |
+| **L0** (§4 caps) | **19 GPU-h** | **FIXED: approved by the owner, 20 Nov 2026** (task split PROPOSED by the lead; `configs/ste_learning.toml`) |
 | L1–L9 | OPEN | set at G0 from L0.2 and L0.13. Version 1 guessed ≈ 60 GPU-h; the review estimates tier-2 training from scratch at 3–10× that, and counted costs version 1 left out (3 seeds at the learner stage, six exploiter trainings, a second training for the filter-mismatch study) |
 | Per job | wall clock = cap × 1.5, pauses excluded; progress check at launch + 45 min; no launch below 50 GB free disk | PROPOSED |
 

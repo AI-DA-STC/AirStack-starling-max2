@@ -38,6 +38,7 @@ for the owner's ruling. D and P numbers are rows of the [discussion record](DISC
 | Team sizes: 1v1, 2v1, 3v3 or 5v3 (P9) | OPEN | gate G0 |
 | Environments: open arena first, or the construction-site world sooner (P10) | OPEN | gate G0 |
 | What the real demo must show (P11) | OPEN | gate G0 |
+| Fleets for real flight: all Starlings, all Crazyflies, or a mix (P13); lead's recommendation: Crazyflies first, the Starling 1v1 as planned, the mix later | OPEN | gate G0 |
 | Budgets of phases L1 to L9 | OPEN | gate G0 |
 | Filter option B (P2) | PROPOSED | end of phase L2 |
 | How AirStack is changed (D4) | OPEN | phase L7 |
@@ -114,9 +115,9 @@ Each result is reported as "observed in the training simulator" until it has flo
 
 ## Phase L0 step by step
 
-![Phase L0 in three lanes: lane A, which game and is it worth learning, runs L0.1, L0.7, L0.8, L0.9, L0.10, L0.11, L0.12; lane B, can Isaac Lab train and at what cost, holds the three probes L0.2, L0.13 and L0.3; lane C, the Starling's look in videos, runs L0.4 then L0.5; all three end in L0.6, gate G0](figures/l0_tasks.png)
+![Phase L0 in four lanes: lane A, which game and is it worth learning, runs L0.1, L0.7, L0.8, L0.9, L0.10, L0.11, L0.12; lane B, can Isaac Lab train and at what cost, holds the three probes L0.2, L0.13 and L0.3; lane C, the Starling's look in videos, runs L0.4 then L0.5; lane D, real flight on Crazyflies, holds L0.14; all four end in L0.6, gate G0](figures/l0_tasks.png)
 
-L0 builds no learner. It answers three questions, one per lane, and brings the numbers to the owner at gate G0.
+L0 builds no learner. It answers four questions, one per lane, and brings the numbers to the owner at gate G0.
 A GPU-hour (GPU-h) is one hour of the shared graphics card. INFO means measured, with no pass mark.
 
 | ID and plain name | What it delivers | GPU-h cap |
@@ -133,11 +134,12 @@ A GPU-hour (GPU-h) is one hour of the shared graphics card. INFO means measured,
 | L0.3 STE Guard policy in tier 2 without retraining | how often the tier 1 policy still holds the zone on the Isaac Lab drone | 1.5 |
 | L0.4 Side-by-side Starling render | the Isaac Lab Starling beside the AirStack simulator's | 0.2 |
 | L0.5 Starling video look fix | clips that keep the Starling's own look, team colour as a small marker | 0.3 |
+| L0.14 Crazyflie route check | one page on flying the game on the lab's Crazyflies: does the STE Guard policy cope with a Crazyflie's slower response, which team sizes fit which arena, and what a Crazyflie session would have to build | 0 |
 | L0.6 Gate G0 | one decision page for the owner, with every number above | 0 |
 
-The cap for the whole phase is 19 GPU-h (the task caps sum to 18.5); the work estimate is about 70 hours.
+The cap for the whole phase is 19 GPU-h (the task caps sum to 18.5); the work estimate is about 80 hours.
 
-Notes on four tasks:
+Notes on five tasks:
 
 - **L0.11** starts from one base case (3v3, tag radius 1.6 m, zone radius 1.6 m, the 6.5 m lab arena) and changes one
   thing at a time: team size (1v1, 2v1, 5v3), tag radius (1.2 to 1.8 m), zone size, what a tag costs, arena size. About
@@ -149,6 +151,11 @@ Notes on four tasks:
 - **L0.13** runs after L0.2, because L0.2 shows how many games tier 2 can hold at once; both arms then use the same
   number of games and the same number of game-steps, fixed before the run.
 - **L0.3** starts from the STE Guard policy, which holds the zone in 829 of 1,000 games on tier 1.
+- **L0.14** was added on 20 November 2026 with the owner's yes. The lab has two Starlings, so a Starling flight is a
+  1v1 game; it has many Crazyflies (small 30 g drones, flown from a separate repository of the lab), which could show
+  the programme's team sizes and play that continues after a tag. The task only checks whether that route is sound:
+  nothing is built in the Crazyflie repository and nothing flies. A Crazyflie result would say nothing about the
+  Starling itself. Detail: [discussion record](DISCUSSION_2026-11-19_20.md), section 2.16.
 
 **What gate G0 decides.**
 
@@ -160,6 +167,7 @@ Notes on four tasks:
 | Where to train: everything on tier 2, or the league on tier 1 with tier 2 for fine-tuning and evaluation | L0.2, L0.13, L0.3 |
 | Environments: open arena first, or the construction-site world sooner | — |
 | What the real demo must show | L0.11, 1v1 results |
+| Fleets for real flight: all Starlings (1v1), all Crazyflies, or a mix (P13) | L0.14 |
 | A budget ceiling for each of phases L1 to L9 | all of the above |
 
 ## What the independent review found
@@ -237,7 +245,7 @@ any job a reboot killed. A resume drill in L0.7 proves this before the first ove
 | Read order | File | What it holds |
 |---|---|---|
 | 1 | this page | what the track is, the plan and the first tasks |
-| 2 | [DISCUSSION_2026-11-19_20.md](DISCUSSION_2026-11-19_20.md) | why: every question, decision (D1 to D9) and open proposal (P1 to P12) |
+| 2 | [DISCUSSION_2026-11-19_20.md](DISCUSSION_2026-11-19_20.md) | why: every question, decision (D1 to D9) and open proposal (P1 to P13) |
 | 3 | [PLAN.md](PLAN.md) | the working plan for Claude sessions: phases, tasks, gates, budgets |
 | 4 | [STANDARDS.md](STANDARDS.md) | the track's rules, on top of [the parent rules](../STANDARDS.md) |
 | 5 | [ARCHITECTURE.md](ARCHITECTURE.md) | components, interfaces, what exists and what is new |

@@ -5,7 +5,7 @@ ste_learning/PLAN.md (version 2, 20 Nov 2026) and, for decisions, ste_learning/D
 
 * ``ste_learning/figures/architecture.png``: what is being built, the training loop and the path to the drones.
 * ``ste_learning/figures/plan_phases.png``: the plan, phases L0 to L9 with their simulators and gates.
-* ``ste_learning/figures/l0_tasks.png``: phase L0 step by step, three lanes of tasks ending in gate G0.
+* ``ste_learning/figures/l0_tasks.png``: phase L0 step by step, four lanes of tasks ending in gate G0.
 * ``ste_learning/figures/task_lifecycle.png``: how every task moves, who does each step, where the owner is asked.
 
 Colour code: green = exists today in svg_training; blue = to build in this track; amber with a dashed border =
@@ -426,7 +426,7 @@ def plan_phases() -> Path:
     diamond(ax, px + 0.95, y + hg / 2, 0.58, "G0", 15)
     txt(ax, px + 1.85, y + hg - 0.2, "Gate G0: the owner rules on the game and the route, with numbers", 16.5, "bold")
     txt(ax, px + 1.85, y + hg - 0.66, "the tag and the zone  ·  what a tag costs  ·  team sizes  ·  where to train\n"
-        "environments  ·  what the real demo must show  ·  the budget for L1 to L9", fb, color=BODY)
+        "environments  ·  what the real demo must show  ·  which fleets fly  ·  the budget for L1 to L9", fb, color=BODY)
     arrow(ax, (spine, prev), (spine, y + hg))
     prev = y
 
@@ -466,14 +466,14 @@ def plan_phases() -> Path:
 
 # ----------------------------------------------------------------------------------------------------- figure 3
 def l0_tasks() -> Path:
-    """Phase L0 step by step: three lanes of tasks ending in L0.6, gate G0.
+    """Phase L0 step by step: four lanes of tasks ending in L0.6, gate G0.
 
     Task names, order and GPU-hour caps are PLAN.md section 4, word for word; the questions of gate G0 are PLAN
-    section 5; the phase cap (19 GPU-h) and the work estimate (about 70 hours) are PLAN sections 4 and 9.
+    section 5; the phase cap (19 GPU-h) and the work estimate (about 80 hours) are PLAN sections 4 and 9.
     """
-    H = 15.15
+    H = 17.95
     fig, ax = new_fig(H)
-    header(ax, H, "Phase L0 step by step: three lanes of tasks, one gate",
+    header(ax, H, "Phase L0 step by step: four lanes of tasks, one gate",
            "Phase L0 is approved (owner, 20 November 2026); task status is in the status files. "
            "Each box: task ID, plain name, cap in GPU-hours (hours of the shared graphics card).")
     lx, lw_ = 0.3, 12.1          # lanes
@@ -560,8 +560,20 @@ def l0_tasks() -> Path:
     txt(ax, xb[2] + 0.75, yc + 1.2, "L0.5 ends when the owner\nhas looked at the stills", FS_B, va="center")
     arrow(ax, (xb[2] + 0.54, yc + 0.75), (gx, yc + 0.75))
 
+    # lane D: the Crazyflie route check (added 20 Nov 2026 with the owner's yes)
+    d_top = c_top - c_h - 0.3
+    d_h = 0.72 + 1.5 + 0.25
+    lane(d_top, d_h, "Lane D", "Real flight on Crazyflies: is the route sound?")
+    yd = d_top - 0.72 - 1.5
+    task(xb[0], yd, w3, 1.5, "L0.14", "Crazyflie route check", "0 GPU-h")
+    txt(ax, xb[1] + 0.1, yd + 1.15, "Two Starlings give a 1v1 game. The lab's many Crazyflies could\n"
+        "show the programme's team sizes and play after a tag.\n"
+        "A check only: nothing is built in the Crazyflie repository\n"
+        "and nothing flies.", FS_C, color=BODY)
+    route(ax, [(xb[0] + w3, yd + 0.3), (gx, yd + 0.3)])
+
     # gate column
-    g_bot = c_top - c_h
+    g_bot = d_top - d_h
     box(ax, gx, g_bot, gw, top - g_bot, RED_BG, RED, lw=2.6, r=0.1)
     diamond(ax, gx + gw / 2, top - 0.75, 0.52, "G0", 15)
     txt(ax, gx + gw / 2, top - 1.42, "L0.6 Gate G0", 15.5, "bold", ha="center")
@@ -571,7 +583,7 @@ def l0_tasks() -> Path:
     txt(ax, gx + 0.2, qy, "The owner rules on:", FS_B, "bold")
     qy -= 0.36
     for q in ("the tag and the zone", "what a tag costs", "team sizes", "where to train", "environments",
-              "the real demo", "the budget for L1–L9"):
+              "the real demo", "which fleets fly", "the budget for L1–L9"):
         qy -= 0.5
         chip(ax, gx + 0.18, qy, gw - 0.36, 0.42, "open", q)
     txt(ax, gx + 0.2, qy - 0.45, "After G0 the lead\nre-baselines phases\nL1 to L9: tasks,\norder and budgets.",
@@ -579,7 +591,7 @@ def l0_tasks() -> Path:
     arrow(ax, (xs[3] + bw, y2 + bh / 2), (gx, y2 + bh / 2))
 
     txt(ax, lx, g_bot - 0.25, "L0 budget: at most 19 GPU-h, alone on the GPU for the speed and training probes. "
-        "Work estimate: about 70 hours.", FS_B, "bold")
+        "Work estimate: about 80 hours.", FS_B, "bold")
     legend(ax, 0.12, kinds=("build", "open", "gate"))
     return save(fig, ax, H, "l0_tasks")
 

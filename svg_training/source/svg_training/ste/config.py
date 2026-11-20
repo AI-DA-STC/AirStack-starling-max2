@@ -25,7 +25,8 @@ SETTINGS_FILE = CONFIGS / "ste_learning.toml"
 # Task IDs of each phase the loader knows, in the order of the table in ste_learning/PLAN.md section 4. Names, not
 # numbers; tests/test_ste_config.py reads the IDs out of PLAN.md and fails if this tuple or the file differs from it.
 TASK_IDS: dict[str, tuple[str, ...]] = {
-    "L0": ("L0.1", "L0.7", "L0.8", "L0.9", "L0.10", "L0.11", "L0.12", "L0.2", "L0.13", "L0.3", "L0.4", "L0.5", "L0.6"),
+    "L0": ("L0.1", "L0.7", "L0.8", "L0.9", "L0.10", "L0.11", "L0.12", "L0.2", "L0.13", "L0.3", "L0.4", "L0.5", "L0.14",
+           "L0.6"),
 }
 
 

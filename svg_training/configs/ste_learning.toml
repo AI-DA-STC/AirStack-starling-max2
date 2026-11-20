@@ -32,4 +32,5 @@ phase_cap_gpu_h = 19.0   # FIXED (owner, 20 Nov 2026): GPU-hour cap of phase L0 
 "L0.3" = 1.5             # PROPOSED (lead's split, PLAN.md section 4): STE Guard policy in tier 2 without retraining
 "L0.4" = 0.2             # PROPOSED (lead's split, PLAN.md section 4): Side-by-side Starling render
 "L0.5" = 0.3             # PROPOSED (lead's split, PLAN.md section 4): Starling video look fix
+"L0.14" = 0.0            # PROPOSED (lead's split, PLAN.md section 4): Crazyflie route check (task added 20 Nov 2026, owner)
 "L0.6" = 0.0             # PROPOSED (lead's split, PLAN.md section 4): Gate G0

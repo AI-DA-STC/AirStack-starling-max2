@@ -24,7 +24,7 @@ PLAN = ROOT / "ste_learning" / "PLAN.md"
 # The numbers of ste_learning/PLAN.md section 4 (version 2), typed here once more: a change to the file is then seen.
 L0_PHASE_CAP_GPU_H = 19.0          # the owner's approval of 20 Nov 2026
 L0_TASK_CAP_GPU_H = {"L0.1": 0.0, "L0.7": 0.0, "L0.8": 0.0, "L0.9": 0.0, "L0.10": 0.0, "L0.11": 3.0, "L0.12": 6.0,
-                     "L0.2": 1.5, "L0.13": 6.0, "L0.3": 1.5, "L0.4": 0.2, "L0.5": 0.3, "L0.6": 0.0}
+                     "L0.2": 1.5, "L0.13": 6.0, "L0.3": 1.5, "L0.4": 0.2, "L0.5": 0.3, "L0.14": 0.0, "L0.6": 0.0}
 
 GOOD = SETTINGS_FILE.read_text()
 
@@ -219,7 +219,7 @@ def test_the_plan_checks_refuse_a_plan_that_differs_and_say_where():
             good.replace("**L0 budget: at most", "L0 budget: about"), phase, cap, total)
     # section 4: the task table
     without_a_row = "\n".join(line for line in good.splitlines() if not line.startswith("| L0.13 |"))
-    refused(r"section 4, task table.*expected the 13 task IDs.*found 12", check_plan_tasks, without_a_row, caps)
+    refused(r"section 4, task table.*expected the 14 task IDs.*found 13", check_plan_tasks, without_a_row, caps)
     swapped = good.replace("| L0.1 |", "| L0.x |").replace("| L0.7 |", "| L0.1 |").replace("| L0.x |", "| L0.7 |")
     refused(r"in the same order", check_plan_tasks, swapped, caps)
     refused(r"4th cell \(GPU-h cap\).*these differ: \{'L0\.4': \{'file': 0\.2, 'PLAN\.md': 0\.25\}\}", check_plan_tasks,

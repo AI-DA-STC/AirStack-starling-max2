@@ -50,6 +50,7 @@ task follows `train-run` (preflight, gates or an INFO plan written first, videos
 | L0.5 | Starling video look fix | L0.4 | 4 | 0.3 | owner looks at stills (D9) |
 | L0.6 | Gate G0: one decision page for the owner (PLAN §5; was "Decision: tier 2 training affordable?") | every L0 task | 1 | 0 | **owner** |
 | L0.7–L0.13 | added by PLAN v2: process tooling and drills, game spec sheet, tag rule for the study, scripted players, screening sweep, best-response test, does tier 2 train at all | see [PLAN](PLAN.md) §4 | see PLAN §4 | 0 / 0 / 0 / 0 / 3 / 6 / 6 | see PLAN §4 |
+| L0.14 | Crazyflie route check (added 20 Nov 2026 with the owner's yes; PLAN §4, DISCUSSION §2.16) | L0.1; the T41 run folder | 10 | 0 | none; feeds P13 at G0 |
 | L1.1 | State delay and noise in tier 2 | L0.1 | 8 | 0.2 | none |
 | L1.2 | Drag in tier 2 | L0.1 | 5 | 0.2 | none |
 | L1.3 | Fit delay, noise and drag to real logs | L1.1, L1.2 | 8 | 0 | none now (exploratory); NEAR-962 flight (owner) for the run of record |

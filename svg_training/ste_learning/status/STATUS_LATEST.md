@@ -15,6 +15,15 @@ Best scripted Guard's worst-case hold (H, blue) and best scripted Strike's worst
 
 ![](../../docs/figures/ste_l011/factors.png)
 
+Where phase L0 is (the plan's four lanes ending in gate G0; a version coloured by progress is coming, DOC-1). Done:
+L0.1, L0.8, L0.9, L0.10, L0.11; laptop part done: L0.7; running: L0.12, L0.14; queued: L0.2, L0.3, L0.4, L0.5, L0.13.
+
+![](../figures/l0_tasks.png)
+
+What the drones look like in the 3-D simulator (Isaac Lab Starlings, from S2b; the L0 games get 3-D videos with VID-1):
+
+![](../../docs/media/s2b_still_starlings_close.png)
+
 ## Phases
 
 | Phase | Status | Math library | Simulator | What |
@@ -102,6 +111,7 @@ Laptop drills (21 Nov, fix branch, shared folder `~/AirStack-starling-max2/svg_t
 | L011-G0 | Finding for gate G0 (T44, scripted play): (1) every hold is a one-for-one trade — no tag-on game times out, and at 1v1 and 3v3 a Guard win leaves no Guard — so head-count decides (PLAN F1; bears on what a tag costs, P12); (2) the programme's sizes 2v1 and 5v3, and 1v1, are Guard-trivial with scripted players at the proposed rules; candidate cause: tag radius 1.6 m = zone radius 1.6 m with Guards starting on a circle near the zone centre (not tested). L0.12 measures whether learning changes either | OPEN: reported at G0 |
 | L010-G0 | Finding for gate G0 (from L0.10 QC): any safety-filter move near the 1.6 m tag radius can create a tag nobody chose (the filter's 1.10 m keep-out is inside the tag radius). Spaced starts remove it at the start; during play it is part of the game the sweep measures (P1) | OPEN: reported at G0 |
 | L09-5090 | On the 5090: record the tag-off golden's positions for its CPU type (AVX512); check the outcome fingerprints there | WAITING: next 5090 session |
+| DOC-1 | A phase-L0 flowchart coloured by progress (done / running / queued), regenerated with each status and shown in its Watch section (owner, 21 Nov: "photos or diagram flow charts would be good too") | RUNNING |
 | VID-1 | Clips: a height panel on the 2-D top-down clips of every run; 3-D Isaac Lab videos (Starling look, top view + 3-D view, MP4 + GIF) of each result's key games, starting with L0.11's (lead's recommendation adopted, 21 Nov) | QUEUED: after L0.4/L0.5 (the Starling look); laptop GPU |
 | L08-M | L0.8 minors left: 3 hangar values unchecked on a clone without the NUS bundle; 3 values whose wrong value still passes; loader refuses some honest wording; tests tied to exact lines and the AirStack fence file | PARKED |
 | L07-DISK | Follow-up: the planned disk-space check (a disk full through 10 retries at a job's end reads DIED) | PARKED (stated limit) |

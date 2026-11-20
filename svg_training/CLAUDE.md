@@ -131,7 +131,7 @@ other stopped, from git alone.
   every finished task ends with a **plain summary** at the top of the status (three lines: what was tested, what happened,
   why it matters, plus one picture or clip); after work that ran while the owner was away, a **morning digest** (what got
   done, the one or two things worth a look, a clip to watch); gate pages show the clips beside the numbers, and the lead
-  walks the owner through them before the decision. The status embeds the latest GIFs and figures (owner, 21 Nov 2026) in a
+  walks the owner through them before the decision. The status embeds the latest GIFs, figures, photos and a progress flowchart (owner, 21 Nov 2026) in a
   "Watch" section at its top, linked from `ste_learning/status/` so they play on GitHub.
 - **The owner delegates technical calls** (route, proposed gates, observation, budgets inside an approved cap): decide,
   record why, explain in plain words. Still ask before anything outside this folder, anything outward-facing (messages to

@@ -164,7 +164,7 @@ message outsiders; change a FIXED row; commit NUS source; use the GPU before P3 
 | Preflight refused, owner pause | not a failure; re-check each tick; foreign process > 2 h → H8 |
 | Crash, OOM | one retry from the checkpoint (OOM: lower memory fraction); second → ABORTED |
 | NaN/Inf (STE track trainers: exit 5; `train_standin.py`: exit 3) | no retry; ABORTED; `train-debug`, sequential |
-| A control failed (exit 6, CONTROL_FAILED; e.g. `scripts/ste_sweep_l011.py`) | terminal: never retried, not a refusal; the lead reads `controls.json` and `results.md`; ABORTED; a rerun is a new run folder (and a new gate version if the gate was wrong) |
+| A control failed (exit 6, CONTROL_FAILED; `scripts/ste_sweep_l011.py`, `scripts/ste_exploit_l012.py`) | terminal: never retried, not a refusal; the lead reads `controls.json` and `results.md`; ABORTED; a rerun is a new run folder (and a new gate version if the gate was wrong) |
 | Stall (log and CPU time unchanged 30 min, not `T`; PROPOSED per task) | SIGINT, ABORTED, `train-debug` |
 | Reboot | resume (§2.3); not an attempt |
 | Gate FAIL / INCONCLUSIVE | recorded, never retried; a rerun is a new run with new gates (INCONCLUSIVE: as its plan says) |

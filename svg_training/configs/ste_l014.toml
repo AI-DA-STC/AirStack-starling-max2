@@ -1,0 +1,73 @@
+# STE learning track, task L0.14 "Crazyflie route check" (PLAN.md section 4; DISCUSSION_2026-11-19_20.md section 2.16).
+# INFO only: no gate, no verdict. Read by scripts/ste_l014_response_check.py (part 1) and scripts/ste_l014_arena_fit.py
+# (part 2). Status labels as in STANDARDS.md (FIXED, MEASURED, PROPOSED, OPEN) plus LEAD CALL / L0.14 CHOICE for the
+# settings this task chose before its runs (ste_learning/CRAZYFLIE_ROUTE.md section "Plan").
+
+[response]
+# Part 1: the STE Guard policy (T41) in its own hangar game (Phase 4 row 5), scored on the CPU with a slower drone.
+guard_run = "runs/nus_port/phase5/pilots/2026-11-19_nus_phase5_pilot_p1b_run4"   # T41 (PROVISIONAL bundle)
+opponent = "S20"                    # T41's opponent (records/2026-11-19_nus_phase5_pilot_p1b_run4_record.md)
+decision_ticks = "deploy"           # T41's hold: one decision per 12 ticks = 0.6 s (nus/pilot.py decision_ticks)
+eval_seed = 1101                    # T41's evaluation seed: run seed 101 + 1000 (train_standin.py EVAL_SEED_OFFSET)
+opponent_seed_offset = 202          # the opponent's seed = eval seed + this (train_standin.py OPPONENT_SEED_OFFSET)
+games = 1000                        # T41's own count: all 1,000 Phase 4 paired starts (256 took 7 min on the CPU, 21 Nov)
+base_params = "params/real_exploratory_v0.toml"   # the Starling's fitted response (EXPLORATORY), T41's drone model
+fitted_delay_s = 0.1482             # MEASURED, exploratory: [px4] delay_s of base_params (the check refuses a mismatch)
+# The cells: [px4] delay_s of the derived parameter file. Everything else in the file is unchanged. Not a Crazyflie
+# model: the Crazyflie in the 6 Nov logs trailed its setpoint by 0.54-0.60 s (CrazySwarm2 repository,
+# docs/details/guard-design-notes.md, "Every drone trails its setpoint by ~0.56 s"). 0.48 s is the delay at which tier 1's
+# drone trails a 0.5 m/s command by 0.567 s (the step probe below, measured 21 Nov before any game ran: 0.46 -> 0.527 s,
+# 0.47 -> 0.547 s, 0.48 -> 0.567 s); 0.56 s trails by about 0.73 s (a harsher bound); 0.30 s is a mid point.
+delays_s = [0.1482, 0.30, 0.48, 0.56]
+identity_games = 16                 # control: the base file and a derived file at the fitted delay play these games
+identity_ticks = 600                #   for this many ticks; every output must be equal bit for bit
+
+[step_probe]
+# How late each cell's drone flies a straight path: one drone, no other drone, a constant command from rest.
+speed_mps = 0.5                     # the Strike team's speed in T41's game; within the fit's range (<= 0.5 m/s)
+duration_s = 30.0                   # long enough for the slow PX4 lag (tau 1.65 s) to settle (checked 21 Nov: steady from 20 s)
+settle_from_s = 20.0                # the trailing time is the mean over [settle_from_s, duration_s]
+
+[arena_fit]
+# Part 2: the Crazyflie repository's offline planner (plan_guard), run from a copy outside that repository.
+cf_repo = "~/CrazySwarm2-with-Mocap_Strike-and-Guard"
+package = "src/crazyswarm2/crazyflie_shows/crazyflie_shows"
+arena_yaml = "src/crazyswarm2/crazyflie/config/arena.yaml"
+python = "/usr/bin/python3"         # the repository's own interpreter (needs numpy, scipy, pyyaml)
+threads = 4                         # OMP/MKL threads per planner process (CPU shared with another builder)
+parallel = 2                        # planner processes at once
+seed0 = 0                           # the planner's own seed numbering (plan_guard --seed0 default)
+matches = 100                       # seeds seed0 .. seed0 + matches - 1, as the 20 Nov count
+pairing = ["shell", "coordinated"]  # the planner's default defence v attack (plan_guard --defense / --attack defaults)
+matrix_seeds = 6                    # every built-in defence v every built-in attack, seeds seed0 .. + 5 (16 x 6 = 96)
+tau_s = 0.6                         # the planner's stand-in aircraft lag, s (20 Nov: "lag 0.6 s"; Crazyflie notes ~0.56 s)
+rules = "tag"                       # the planner's default rule set (an attacker in reach 1.15 m of a defender for 1.1 s is downed)
+strike_radius_m = 1.6              # L0.14 CHOICE (21 Nov, after a stopped first launch): the STE zone radius (configs/ste_game.toml
+                                   # [zone] radius_m), not the planner's 2.4 m: at 2.4 m the Strikes start 0.35 m outside it and
+                                   # score in about a second (1v1 square: 0 defence wins in 100, closest pair 3.29 m)
+# GuardConfig fields set for the Starling-sized game (20 Nov list: 1.10 m sphere, 0.33 / 0.5 m/s, band 0.5-1.8 m)
+d_cc_m = 1.10                       # FIXED for the Starling: the flight filter's distance, centre to centre
+cc_z_ratio = 1.0                    # a sphere (the Crazyflie default is 2.2: taller than wide)
+v_max_defense_mps = 0.33            # the Guard team: Strike speed / 1.5 (configs/ste_game.toml [speeds])
+v_max_attack_mps = 0.5              # the Strike team
+floor_m = 0.5                       # PROPOSED height band (configs/ste_game.toml [height] band_m)
+ceiling_m = 1.8
+# Hand-set floor marks (the planner's own marks are refused at 1.10 m in a 6.5 m arena): defenders evenly on a ring
+# round the protected point, attackers on an outer ring, each attacker half-way between two defender bearings.
+vip_z_m = 1.3                       # the planner's own protected-point height (plan_guard VIP_Z)
+defender_ring_m = 1.4               # L0.14 CHOICE: just outside the protected point's 1.2 m keep-out x 1.05 (the planner refuses inside)
+bearing0_deg = 0.0                  # L0.14 CHOICE: defender D1 on +x from the protected point
+attacker_ring_m = 2.75              # L0.14 CHOICE: the STE game's Strike start ring (configs/ste_game.toml strike_ring_m)
+sizes = [[1, 1], [2, 1], [3, 3], [5, 3]]          # Guards (defenders), Strikes (attackers): the P9 sizes
+lag_check = [[5, 3, "square_6_5", 0.15]]          # 20 Nov: 5v3, the 6.5 m arena, the Starling's lag
+# Arenas: "square_6_5" = a 6.5 m square polygon round the room centre (the Starling fence's size, a scratch arena.yaml);
+# "circle_3_25" = the planner's own circle option (arena_radius 3.25 m, the circle inside that square);
+# "room" = the Crazyflie room as surveyed (arena.yaml polygon, about 10.4 x 9.9 m).
+arenas = ["square_6_5", "circle_3_25", "room"]
+square_side_m = 6.5
+matrix_arenas = ["square_6_5", "room"]          # where every pairing is also run (matrix_seeds each), every size
+# Follow-up (added 21 Nov after the sweep found no emergency, before running it): one change at a time from the sweep.
+followup_sizes = [[3, 3], [5, 3]]
+followup_arenas = ["square_6_5", "room"]
+followup_variants = ["finale", "planner_strike_radius"]   # the after-match finale flown; the planner's own strike radius
+planner_strike_radius_m = 2.4       # plan_guard's tag rules default (Rules.COMMON strike_radius)

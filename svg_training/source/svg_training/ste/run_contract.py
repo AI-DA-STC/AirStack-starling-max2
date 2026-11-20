@@ -10,7 +10,9 @@ The contract, proved on ``scripts/ste_dummy_job.py`` by ``tests/test_ste_run_con
 3. **The cap is counted in effective time**: wall clock less the owner's pauses that stopped THIS process (its pid in
    the pause line, ``ste/pauses.py``), carried through the checkpoint, so it is one cap for the run folder however
    often the job is relaunched. A pause that stopped other jobs, or none, takes nothing off: this job ran on. At the
-   cap the job checkpoints and exits with :data:`EXIT_CAP`.
+   cap the job checkpoints and exits with :data:`EXIT_CAP`. Each save also writes ``progress.json`` (JSON, whatever
+   the checkpoint's own format): the step, the run folder's effective seconds and the save time. The waiter
+   (``ste/jobs.py``) judges an early end on it, so a resumed run is judged on its whole run, not on its last launch.
 4. **A non-finite value (NaN, infinity) never overwrites the last good checkpoint.** The job exits with
    :data:`EXIT_NONFINITE`; nothing retries it silently.
 5. **One job per run folder.** A second copy started on the same folder is refused (:data:`EXIT_REFUSED`).
@@ -44,6 +46,7 @@ import json
 import math
 import os
 import signal
+import sys
 import time
 from pathlib import Path
 from typing import Any, Callable, NamedTuple
@@ -63,6 +66,7 @@ STOP_CAP = "cap"
 EXIT_FOR_STOP = {STOP_INTERRUPTED: EXIT_INTERRUPTED, STOP_CAP: EXIT_CAP}
 
 CHECKPOINT_NAME = "checkpoint.latest"
+PROGRESS_NAME = "progress.json"   # {"step", "effective_s", "saved"} of the latest checkpoint, JSON for the waiter
 LOCK_NAME = "run.lock"
 _STOP_SIGNALS = (signal.SIGINT, signal.SIGTERM)
 
@@ -199,7 +203,8 @@ class RunGuard:
     # ------------------------------------------------------------------------------------------ checkpoints
     def save(self, step: int, state: Any) -> None:
         """Write the checkpoint ``{step, state, effective seconds used}`` atomically (``ste/atomic.py``): a crash while
-        saving leaves the previous checkpoint. The numbers of ``state`` are checked first; a non-finite one, now or
+        saving leaves the previous checkpoint. Then ``progress.json`` with the same step and effective seconds (a
+        crash between the two leaves it one checkpoint behind, never ahead). The numbers of ``state`` are checked first; a non-finite one, now or
         earlier in this launch, raises :class:`NonFiniteError` and nothing is written."""
         if self.nonfinite is not None:
             raise NonFiniteError(f"a non-finite value was seen ({self.nonfinite}): nothing is saved, the last good "
@@ -215,6 +220,22 @@ class RunGuard:
             temporary.unlink(missing_ok=True)
             raise
         self._saved_here = True
+        self._note_progress(step, payload["effective_s"], payload["saved"])
+
+    def _note_progress(self, step: Any, effective_s: float, saved_s: float) -> None:
+        """Write ``progress.json`` for the waiter. It is a note: a step JSON cannot hold (a PyTorch or NumPy integer)
+        is written as an int, one with no int value as null, and a failed write is said on stderr, never raised (the
+        waiter then judges the launch alone, the rule before L07-I4)."""
+        try:
+            step = int(step)
+        except (TypeError, ValueError):
+            step = None
+        try:
+            atomic.write_text(self.run_dir / PROGRESS_NAME,
+                              json.dumps({"step": step, "effective_s": effective_s, "saved": saved_s}) + "\n")
+        except Exception as err:
+            print(f"[run guard] {PROGRESS_NAME} not written ({type(err).__name__}: {err}); the checkpoint is saved",
+                  file=sys.stderr, flush=True)
 
     def load_latest(self) -> Checkpoint | None:
         """The latest checkpoint of the run folder, or None on a fresh one. Call it once, before the first step: the

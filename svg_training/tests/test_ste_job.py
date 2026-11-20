@@ -357,6 +357,97 @@ def test_f_d_a_killed_job_reads_dead_the_waiter_says_died_and_the_same_command_r
     assert re.search(r"^cut +L0\.7 +dead +exit=0 \(DONE\) ", bench.status(), re.M)
 
 
+# ================================================================================================ resumed runs (L07-I4)
+RESUME_STEPS, RESUME_STEP_S = 40, 0.05            # 2.0 s of steps for the whole run
+RESUME_KILL_AT = 32                               # the "power cut": launch 2 has only 8 steps (0.4 s) left to do
+
+
+def cut_and_resume(bench: Bench, name: str, min_s: float) -> subprocess.CompletedProcess:
+    """The resume drill, fast: launch, SIGKILL the whole job late in its run (DIED), relaunch with ``bash cmd.txt``,
+    wait. Returns the second waiter's result."""
+    cmd = bench.dummy(name, steps=RESUME_STEPS, step_s=RESUME_STEP_S, every=5)
+    assert bench.launch(name, cmd, min_s=min_s).returncode == 0
+    wait_for(lambda: bench.step(name) >= RESUME_KILL_AT - 2, what="most of the run")
+    os.killpg(bench.job(name)["pid"], signal.SIGKILL)
+    wait_for(lambda: not state.job_alive(bench.job(name)), what="the job to be gone")
+    assert bench.wait(name).returncode == jobs.EXIT_DIED
+    again = subprocess.run(["bash", str(bench.run_dir(name) / "cmd.txt")], env=bench.env, capture_output=True,
+                           text=True, timeout=WAIT_S)
+    assert again.returncode == 0 and "launch=2" in again.stdout, again.stderr
+    return bench.wait(name)
+
+
+def test_a_resumed_run_that_finishes_correctly_reads_done(bench):
+    """L07-I4 (QC): the run needs about 2.0 s of effective time and --min-s is 1.5 s. Killed late and relaunched with
+    cmd.txt (AUTOMATION section 2.3), its second launch lasts well under 1.5 s. Judged on the run's total effective
+    time, as the trainer recorded it in its checkpoints, it is DONE; before the fix it read ENDED_EARLY (20)."""
+    done = cut_and_resume(bench, "resumed", min_s=1.5)
+    assert done.returncode == 0, done.stdout
+    found = re.fullmatch(r"L0\.7 resumed DONE exit=0 duration=(\d+\.\d)s effective=(\d+\.\d)s run_effective=(\d+\.\d)s",
+                         line_of(done))
+    assert found, line_of(done)
+    assert 1.5 <= float(found.group(3))                                        # judged on the whole run
+    assert float(found.group(3)) >= RESUME_STEPS * RESUME_STEP_S - 0.1
+    assert "resumed from step" in (bench.run_dir("resumed") / "job.log").read_text()
+
+
+def test_a_resumed_run_that_is_too_short_in_total_is_still_flagged(bench):
+    """L07-I4: the same resumed run against --min-s 5.0 s: its whole run (about 2 s) is under the minimum, so it is a
+    real early end, flagged 20."""
+    done = cut_and_resume(bench, "short_run", min_s=5.0)
+    assert done.returncode == jobs.EXIT_ENDED_EARLY == 20, done.stdout
+    assert " ENDED_EARLY exit=0 (DONE) " in line_of(done) and line_of(done).endswith("expected_min=5.0s")
+
+
+def test_a_relaunch_that_saves_no_progress_is_judged_on_its_own_time(bench):
+    """L07-I4: the trainer's progress counts only if this launch wrote it. A command that saves nothing (here a quick
+    exit 0, launched under the same name in the same run folder after a killed trainer) cannot borrow the earlier
+    launch's time: it is judged on its own effective time and flagged."""
+    cmd = bench.dummy("borrow", steps=RESUME_STEPS, step_s=RESUME_STEP_S, every=5)
+    assert bench.launch("borrow", cmd, min_s=1.5).returncode == 0
+    wait_for(lambda: bench.step("borrow") >= RESUME_KILL_AT - 2, what="most of the run")
+    os.killpg(bench.job("borrow")["pid"], signal.SIGKILL)
+    wait_for(lambda: not state.job_alive(bench.job("borrow")), what="the job to be gone")
+    assert bench.launch("borrow", exit_cmd(0), min_s=1.5).returncode == 0
+    done = bench.wait("borrow")
+    assert done.returncode == jobs.EXIT_ENDED_EARLY and "run_effective" not in line_of(done), line_of(done)
+
+
+@pytest.mark.parametrize("launch, progress, verdict, status, shown", [
+    (2, {"step": 40, "effective_s": 70.0, "saved": "late"}, "DONE", 0, "run_effective=70.0s"),
+    (2, {"step": 40, "effective_s": 70.0, "saved": "early"}, "ENDED_EARLY", 20, None),       # saved before this launch
+    (2, {"step": 40, "effective_s": 50.0, "saved": "late"}, "ENDED_EARLY", 20, "run_effective=50.0s"),
+    (1, {"step": 40, "effective_s": 50.0, "saved": "late"}, "ENDED_EARLY", 20, None),        # launch-1 line unchanged
+    (1, {"step": 40, "effective_s": 70.0, "saved": "late"}, "DONE", 0, None),
+    (2, {"step": 40, "effective_s": float("nan"), "saved": "late"}, "ENDED_EARLY", 20, None),
+    (2, [1, 2], "ENDED_EARLY", 20, None), (2, "torn{", "ENDED_EARLY", 20, None),
+], ids=["resumed_done", "stale_note", "resumed_too_short", "fresh_too_short", "fresh_done", "nan", "list", "torn"])
+def test_the_waiter_judges_the_whole_run_from_the_trainers_note(bench, monkeypatch, launch, progress, verdict, status,
+                                                                shown):
+    """L07-I4, in process, no timing: this launch ran 30 s of a run that needs 60 s (--min-s). The trainer's note
+    (progress.json) decides only if it was saved during this launch; an unusable note never changes the waiter's own
+    status (never 23)."""
+    run = bench.run_dir("noted")
+    run.mkdir(parents=True)
+    now = time.time()
+    job = {"task": "L0.7", "pid": 2 ** 22 + 1, "pid_start": 1, "boot_id": state.boot_id(), "cmd": ["x"], "cwd": "/",
+           "run_dir": str(run), "log": str(run / "job.log"), "started": now - 30.0, "expected_min_s": 60.0,
+           "gpu_h": 0.0, "launch": launch, "child_pid": 2 ** 22 + 3, "child_start": 3, "exit_code": 0, "ended": now}
+    (run / "exit_code").write_text("0\n")
+    if isinstance(progress, dict):
+        progress = dict(progress, saved=now - (40.0 if progress["saved"] == "early" else 1.0))
+        (run / rc.PROGRESS_NAME).write_text(json.dumps(progress))
+    else:
+        (run / rc.PROGRESS_NAME).write_text(progress if isinstance(progress, str) else json.dumps(progress))
+    monkeypatch.setattr(state, "read", lambda: {"jobs": {"noted": job}})
+    outcome = jobs.wait("noted", poll_s=0.01)
+    assert (outcome.verdict, outcome.status) == (verdict, status), outcome.line
+    if shown is None:
+        assert "run_effective" not in outcome.line
+    else:
+        assert f" {shown}" in outcome.line
+
+
 def previous_boot_job(bench: Bench, name: str, sleeper: subprocess.Popen) -> None:
     """Write the record a power cut leaves: a job launched in another boot, whose pid number is alive again now."""
     run = bench.run_dir(name)

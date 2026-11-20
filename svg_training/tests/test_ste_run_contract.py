@@ -68,9 +68,58 @@ def test_save_and_load_latest(tmp_path, quiet):
         guard.save(3, {"total": 6.0})
         guard.save(4, {"total": 10.0})
         assert guard.load_latest() == rc.Checkpoint(step=4, state={"total": 10.0}, effective_s=guard.load_latest().effective_s)
-    assert sorted(p.name for p in run.iterdir()) == [rc.CHECKPOINT_NAME, rc.LOCK_NAME]            # no temporary file
+    assert sorted(p.name for p in run.iterdir()) == sorted([rc.CHECKPOINT_NAME, rc.LOCK_NAME, rc.PROGRESS_NAME])  # no temporary file
     with rc.RunGuard(run, cap_s=math.inf) as again:
         assert again.load_latest().step == 4 and again.load_latest().state == {"total": 10.0}
+
+
+def test_every_save_also_writes_the_progress_the_waiter_reads(tmp_path, quiet):
+    """L07-I4: the checkpoint may be a PyTorch file the standard-library waiter cannot read, so each save also writes
+    ``progress.json`` (JSON): the step, the run folder's effective seconds and when it was saved."""
+    clock = Clock()
+    run = tmp_path / "run"
+    with rc.RunGuard(run, cap_s=math.inf, clock=clock) as guard:
+        clock.now = T0 + 12.5
+        guard.save(3, {"total": 6.0})
+    assert json.loads((run / rc.PROGRESS_NAME).read_text()) == {"step": 3, "effective_s": 12.5, "saved": T0 + 12.5}
+    with rc.RunGuard(run, cap_s=math.inf, clock=clock) as again:              # a relaunch carries the time on
+        again.load_latest()
+        clock.now = T0 + 20.0
+        again.save(4, {"total": 10.0})
+    assert json.loads((run / rc.PROGRESS_NAME).read_text()) == {"step": 4, "effective_s": 20.0, "saved": T0 + 20.0}
+
+
+def test_the_progress_note_never_breaks_a_save(tmp_path, quiet, monkeypatch, capsys):
+    """L07-I4: ``progress.json`` is a note for the waiter. A step JSON cannot hold (a PyTorch or NumPy integer, here a
+    Fraction) is written as a plain int; a step with no int value is left out; a failed note write (a full disk) is
+    said on stderr. None of them makes the save fail, and the checkpoint loads."""
+    import fractions
+    import pickle
+
+    def dump(obj, path):
+        Path(path).write_bytes(pickle.dumps(obj))
+
+    def load(path):
+        return pickle.loads(Path(path).read_bytes())
+
+    run = tmp_path / "run"
+    with rc.RunGuard(run, cap_s=math.inf, dump=dump, load=load) as guard:
+        guard.save(fractions.Fraction(6, 2), {"total": 6.0})
+        assert json.loads((run / rc.PROGRESS_NAME).read_text())["step"] == 3
+        odd = object()
+        guard.save(odd, {"total": 7.0})
+        assert json.loads((run / rc.PROGRESS_NAME).read_text())["step"] is None
+        real = rc.atomic.write_text
+
+        def full(path, text):
+            if Path(path).name == rc.PROGRESS_NAME:
+                raise OSError(28, "No space left on device (injected)")
+            return real(path, text)
+
+        monkeypatch.setattr(rc.atomic, "write_text", full)
+        guard.save(4, {"total": 10.0})
+        assert guard.load_latest().state == {"total": 10.0}
+    assert "progress.json" in capsys.readouterr().err
 
 
 def test_a_crash_while_saving_keeps_the_last_checkpoint(tmp_path, quiet, monkeypatch):

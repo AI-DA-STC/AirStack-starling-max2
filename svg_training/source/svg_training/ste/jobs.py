@@ -37,9 +37,12 @@ and its own exit status:
 * the job's exit code, whatever it is (verdict DONE, CAP, NONFINITE, INTERRUPTED, REFUSED as ``ste/run_contract.py``
   names them, FAILED for any other code);
 * **ENDED_EARLY** when the effective duration (wall clock less the owner's pauses that stopped the job's command) is
-  under the expected minimum given
-  at launch: status :data:`EXIT_ENDED_EARLY` if the job's code was 0 (a 0 that came too fast must not pass), else the
-  job's own code;
+  under the expected minimum given at launch. For a trainer that keeps the run contract (``ste/run_contract.py``)
+  the duration judged is the larger of this launch's and the WHOLE run's: the run folder's effective seconds the
+  trainer wrote in ``progress.json`` with its checkpoint, if it wrote it during this launch (L07-I4). So a run resumed
+  after a power cut (the same line, or ``bash cmd.txt``) is judged on its whole run, the line then shows
+  ``run_effective=<s>s``; a relaunch that saves nothing is judged on its own time. Status :data:`EXIT_ENDED_EARLY`
+  if the job's code was 0 (a 0 that came too fast must not pass), else the job's own code;
 * **DIED** when the job is gone and no exit code was recorded (killed with its wrapper, or lost with a previous
   boot): status :data:`EXIT_DIED`. The duration then runs to the job's last sign of life: the newest file of its
   run folder (the heartbeat, the log, a checkpoint).
@@ -71,7 +74,7 @@ from typing import Any, NamedTuple
 
 from . import atomic, budget, pauses, shared, state
 from .config import SETTINGS_FILE, load_ste_learning
-from .run_contract import EXIT_DONE, EXIT_NAMES, EXIT_REFUSED
+from .run_contract import EXIT_DONE, EXIT_NAMES, EXIT_REFUSED, PROGRESS_NAME
 
 EXIT_ENDED_EARLY = 20        # waiter: the job exited 0 but in less than its expected minimum
 EXIT_DIED = 21               # waiter: the job is gone and recorded no exit code
@@ -113,6 +116,22 @@ class Outcome(NamedTuple):
     exit_code: int | None
     duration_s: float
     effective_s: float
+    run_effective_s: float | None = None     # the whole run's effective seconds (trainer's progress.json), if judged
+
+
+def _run_effective_s(job: dict[str, Any]) -> float | None:
+    """The run folder's effective seconds as the trainer recorded them with its latest checkpoint (``progress.json``,
+    ``ste/run_contract.py``), only if that was saved during this launch; None otherwise (no trainer contract, nothing
+    saved since the launch, an unreadable file)."""
+    try:
+        progress = json.loads((Path(job["run_dir"]) / PROGRESS_NAME).read_text())
+        effective_s, saved_s = progress["effective_s"], progress["saved"]
+        if type(effective_s) in (int, float) and type(saved_s) in (int, float) and math.isfinite(effective_s) \
+                and saved_s >= job["started"]:
+            return float(effective_s)
+    except Exception:                                            # a missing or torn file: judge the launch alone
+        pass
+    return None
 
 
 def _append(path: Path, row: dict[str, Any]) -> None:
@@ -507,12 +526,16 @@ def wait(name: str, poll_s: float = POLL_S) -> Outcome:
         ended_s = job["ended"] if job["ended"] is not None else (_mtime(run_dir / EXIT_FILE) or job["started"])
     duration_s = ended_s - job["started"]
     effective_s = pauses.effective_seconds(job["started"], ended_s, _own_pids(job))
-    word, status = verdict(exit_code, effective_s, job["expected_min_s"])
+    run_s = _run_effective_s(job) if current else None
+    judged_s = effective_s if run_s is None else max(effective_s, run_s)
+    word, status = verdict(exit_code, judged_s, job["expected_min_s"])
     shown = "none" if exit_code is None else str(exit_code)
     line = f"{job['task']} {name} {word} exit={shown}"
     if word == ENDED_EARLY:
         line += f" ({EXIT_NAMES.get(exit_code, FAILED)})"
     line += f" duration={duration_s:.1f}s effective={effective_s:.1f}s"
+    if run_s is not None and job["launch"] > 1:
+        line += f" run_effective={run_s:.1f}s"
     if word == ENDED_EARLY:
         line += f" expected_min={job['expected_min_s']:.1f}s"
     if word == DIED:
@@ -520,7 +543,7 @@ def wait(name: str, poll_s: float = POLL_S) -> Outcome:
     count, last = _faults(job)
     if count:
         line += f" faults={count} (bookkeeping writes retried; last: {last}; see {job['log']})"
-    return Outcome(line, status, word, exit_code, duration_s, effective_s)
+    return Outcome(line, status, word, exit_code, duration_s, effective_s, run_s)
 
 
 # ================================================================================================ status

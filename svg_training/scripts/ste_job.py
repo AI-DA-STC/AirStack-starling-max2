@@ -22,7 +22,9 @@ wait     blocks until the job has ended, prints one line
              <task> <job> <VERDICT> exit=<code> duration=<s>s effective=<s>s
          and exits with the JOB'S exit code. Verdicts: DONE (0), REFUSED (2), CAP (3), INTERRUPTED (4), NONFINITE (5),
          FAILED (any other code); ENDED_EARLY when the effective duration is under --min-s (own exit status 20 if the
-         job's code was 0, else the job's code); DIED when the job is gone and recorded no exit code (own status 21).
+         job's code was 0, else the job's code); a resumed trainer is judged on its whole run (run_effective, from
+         the progress.json it saves with each checkpoint), not on its last launch; DIED when the job is gone and
+         recorded no exit code (own status 21).
          An unknown job name: status 22, nothing on stdout. The waiter's own failure (state.json unreadable): 23.
 status   one line per job: alive | alive (paused) | alive (wrapper gone) | dead | dead (previous boot), the exit code.
          faults=<n> (in wait's line and in status) counts bookkeeping writes the wrapper had to retry (a full disk,

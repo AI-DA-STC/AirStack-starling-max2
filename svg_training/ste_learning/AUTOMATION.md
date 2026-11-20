@@ -227,7 +227,9 @@ carried in a checkpoint undercounts by up to one checkpoint interval per SIGKILL
 A failed write of the wrapper (a full disk, any error) does not end it: it is retried at the next beat, and `wait`
 and `status` show `faults=<n>` (details in `job.json` and `job.log`). After a backward step of the wall clock the
 wrapper logs nothing until the clock catches up, so the GPU time of the step itself is not counted.
-A relaunch with the same `--min-s` and little left to do is flagged ENDED_EARLY. The `tasks` block of `state.json` is
+A resumed trainer is judged against `--min-s` on its whole run, the effective time it saved with its checkpoints
+(`progress.json`, shown as `run_effective`), so a correct finish after a relaunch reads DONE; a command that saves no
+checkpoint is still judged on its last launch alone. The `tasks` block of `state.json` is
 validated but not yet written; `RESUME.md`, the wall-clock limit, the starvation guard and the disk check are not built.
 **The shared folder is per machine**: the GPU-hours used on the 5090 and on the laptop are counted separately, so the
 phase total is kept by hand in the status (`status/STATUS_LATEST.md`, "GPU-h used in L0") until the ledgers are merged.

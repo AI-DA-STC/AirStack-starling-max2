@@ -130,6 +130,11 @@ other stopped, from git alone.
 - **The owner delegates technical calls** (route, proposed gates, observation, budgets inside an approved cap): decide,
   record why, explain in plain words. Still ask before anything outside this folder, anything outward-facing (messages to
   NUS or CMU, publishing, pushing), irreversible steps, and compute beyond what was approved.
+- **No task is 5090-only** (owner, 21 Nov 2026): any build, test or training runs on whichever machine is in use; don't wait
+  for the 5090. The only difference is memory: the RTX 5090 has 32 GB, the laptop RTX 5070 Ti 12 GB, so the 5090 suits
+  runs that need more GPU memory (more games at once, bigger networks, cameras). On the laptop, size the run to what fits
+  and say so in the record; the 5090 may re-run it larger. Machine-specific checks (that machine's suite, drills, CPU-type
+  fingerprints) still run on the machine they check.
 - **GPU jobs side by side** when the GPU has room (`--allow-siblings`); short pilots and speed measurements alone. The
   owner pauses jobs with `scripts/gpu_pause.sh` to use the PC: never resume a pause the session did not make.
 - **Videos inside every run** (STANDARDS §8); every result shown on a reader page has a GIF that plays on GitHub.

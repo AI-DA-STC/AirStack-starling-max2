@@ -59,7 +59,7 @@ folder in `nus_provisional/`, and this note.
 1. L0.7 independent QC (`ste-test-qc-engineer`, read-only, on the code of commits `c035cbed`..`be5c6ee9`), then the wake-up
    and resume drills of AUTOMATION §7 on the laptop. Record the result in the status; L0.7 is DONE only then.
 2. L0.8 Game spec sheet, L0.9 Tag rule for the study, L0.10 Scripted players (PLAN §4): all CPU.
-3. Hold on the laptop: L0.2 and L0.13 are specified for the 5090 (tier 2 speed and training at up to 8,192 games; the
+3. (Superseded 21 Nov by the owner: no task is 5090-only; the laptop runs L0.2 and L0.13 at what fits in 12 GB.) Formerly: L0.2 and L0.13 are specified for the 5090 (tier 2 speed and training at up to 8,192 games; the
    laptop GPU has 12 GB). The STE Guard policy's run folder, which L0.3 and L0.14 part 1 need, is in the PROVISIONAL
    bundle since 20 Nov (owner): `scripts/nus_install_provisional.sh` puts it at
    `runs/nus_port/phase5/pilots/2026-11-19_nus_phase5_pilot_p1b_run4/` on any machine (`agent.pt` is the T41 checkpoint).

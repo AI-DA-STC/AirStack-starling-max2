@@ -23,7 +23,7 @@ scripts/nus_install_provisional.sh            # --dry-run to see what it would c
 It copies `configs/*` to `configs/local/` and `nus_port/*` to `runs/nus_port/`. The code keeps reading only those two
 places; nothing reads this folder directly.
 
-## Contents (44 MB; sha256 of every file in [SHA256SUMS](SHA256SUMS))
+## Contents (48 MB; sha256 of every file in [SHA256SUMS](SHA256SUMS))
 
 | Path here | Installed to | What | How it was made |
 |---|---|---|---|
@@ -38,9 +38,10 @@ places; nothing reads this folder directly.
 | `nus_port/reference/` | `runs/nus_port/reference/` | NUS's own JAX actor's actions on recorded observations, its scripted controller's states, shared starts | `scripts/nus_export_reference.py` in NUS's environment (T16) |
 | `nus_port/phase3_outcome_parity.json` | `runs/nus_port/` | T16's outcome counts (row 1's exact replay reads them) | `scripts/nus_outcome_parity.py` (T16) |
 | `nus_port/fixtures/` | `runs/nus_port/fixtures/` | step-by-step recordings of NUS's own game (3 v 3, 5 v 3, gate sets, a training-field set) | `scripts/nus_record_fixtures.py` in NUS's environment (T15; `train_hangar_3v3` for the Phase 5 port) |
+| `nus_port/phase5/pilots/2026-11-19_nus_phase5_pilot_p1b_run4/` | `runs/nus_port/phase5/pilots/` | **The STE Guard policy** (pilot P1b run 4; T41: holds the zone in 829 of 1,000 games against S20, final checkpoint `agent.pt`): `agent.pt`, `agent_best.pt`, `interface.toml`, `train_result.json`, `curve.json` and three videos (the run's TensorBoard files are left out). Trained by the lab with its own trainer, not NUS's code; added 20 Nov 2026 so tasks L0.3 and L0.14 of `ste_learning/PLAN.md` can run on any machine | `scripts/train_standin.py --game nus_hangar --settings pilot_p1b` (T41, `records/2026-11-19_nus_phase5_pilot_p1b_run4_record.md`) |
 
 The sha256 values match the records: rules `dd22cc28…`, deploy `c248c6be…`, deploy_ref `6d71c111…`, hangar `b7f2870e…`,
-starts `40c8cc59…`, G19 `ac3dde1e…`, S20 `210165db…`, gate recordings `b43dc8a0…` and `84dc274f…`.
+starts `40c8cc59…`, G19 `ac3dde1e…`, S20 `210165db…`, gate recordings `b43dc8a0…` and `84dc274f…`; the STE Guard policy's `agent.pt` `c91bea51…`.
 
 ## Read before relying on it
 

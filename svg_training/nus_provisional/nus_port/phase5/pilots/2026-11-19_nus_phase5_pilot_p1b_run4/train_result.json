@@ -1,0 +1,123 @@
+{
+ "what": "Stand-in (pipe test), not a strategy of record. Observed in the training simulator.",
+ "status": "FINISHED",
+ "abort_reason": null,
+ "motion": "starling",
+ "seed": 101,
+ "num_games": 32768,
+ "timesteps_planned": 2543,
+ "timesteps_done": 1472,
+ "game_steps_done": 578813952,
+ "game_steps_budget": 1000000000,
+ "updates_done": 46,
+ "stopped_by_wall_clock_cap": true,
+ "wall_clock_cap_min": 130.32,
+ "stopped_by_operator": false,
+ "settings_table": "pilot_p1b",
+ "settings_file": "nus_phase5.toml",
+ "settings_table_sha256": "bc0ea91905c5c29f2938ed6ff78ebbb3dca56fb9fd0338adb3e97d547502c46a",
+ "settings_table_status": "Phase 5 pilot table, PROPOSED (not gated, INFO record)",
+ "settings_values": {
+  "algorithm": "IPPO",
+  "preset": "nus_hangar",
+  "train_team": "guard",
+  "opponent_mix": {
+   "S20": 1.0
+  },
+  "num_games": 32768,
+  "game_steps_per_seed": 1000000000,
+  "gpu_cap_hours": 3.0,
+  "eval_games": 1000,
+  "eval_games_early": 256,
+  "eval_at_start": true,
+  "mid_evaluation": true,
+  "zero_mean_init": true,
+  "decision_ticks": "deploy",
+  "shaping_weight": 0.0,
+  "rollouts": 32,
+  "learning_epochs": 5,
+  "mini_batches": 4,
+  "learning_rate": 0.0003,
+  "hidden": [
+   128,
+   128
+  ],
+  "init_log_std": -1.6,
+  "frozen_log_std_axes": {
+   "starling": [
+    "yaw"
+   ]
+  },
+  "discount_factor": 0.99,
+  "gae_lambda": 0.95,
+  "entropy_loss_scale": 0.0,
+  "value_loss_scale": 2.5,
+  "ratio_clip": 0.2,
+  "value_clip": 0.2,
+  "grad_norm_clip": 0.5
+ },
+ "init_log_std": -1.6,
+ "frozen_log_std_axes": [
+  "yaw"
+ ],
+ "train_s": 6193.74972463601,
+ "eval_s": 1507.7561024849997,
+ "total_s": 7719.639927387238,
+ "evaluations": 2,
+ "eval_to_train_time_ratio": 0.2434318739886776,
+ "upset_training_games": 0,
+ "nonfinite_count": 0,
+ "git_commit": "39a4b4e6",
+ "device": "cuda",
+ "skrl_settings": {
+  "skrl_rollouts": 32,
+  "skrl_learning_epochs": 5,
+  "skrl_mini_batches": 4,
+  "skrl_discount_factor": 0.99,
+  "skrl_gae_lambda": 0.95,
+  "skrl_learning_rate": [
+   0.0003,
+   0.0003
+  ],
+  "skrl_entropy_loss_scale": 0.0,
+  "skrl_value_loss_scale": 2.5,
+  "skrl_ratio_clip": 0.2,
+  "skrl_value_clip": 0.2,
+  "skrl_grad_norm_clip": 0.5,
+  "skrl_kl_threshold": 0.0,
+  "skrl_time_limit_bootstrap": false,
+  "skrl_random_timesteps": 0,
+  "skrl_learning_starts": 0,
+  "skrl_mixed_precision": false,
+  "skrl_version": "2.1.0"
+ },
+ "train_team": "guard",
+ "game": "nus_hangar",
+ "cap_s_effective": 7819.199999999999,
+ "estimate_eval_s": 766.0434660000033,
+ "gpu_seconds": 7709.733650922775,
+ "render_s": 9.899004119999518,
+ "videos": [
+  "runs/nus_port/phase5/pilots/2026-11-19_nus_phase5_pilot_p1b_run4/videos/mid_t768_strike_win_slot2.mp4",
+  "runs/nus_port/phase5/pilots/2026-11-19_nus_phase5_pilot_p1b_run4/videos/final_t1472_best_strike_win_slot6.mp4",
+  "runs/nus_port/phase5/pilots/2026-11-19_nus_phase5_pilot_p1b_run4/videos/final_t1472_best_hold_slot0.mp4"
+ ],
+ "best_evaluation": "final_t1472",
+ "mid_note": null,
+ "pytorch_cuda_alloc_conf": "expandable_segments:True",
+ "pytorch_cuda_alloc_conf_replaced": "expandable_segments:True",
+ "peak_gpu_bytes": 4040457728,
+ "peak_gpu_reserved_bytes": 4622123008,
+ "last_tracked": {
+  "Loss / Policy loss (guard_0)": -0.0005478391380165703,
+  "Loss / Value loss (guard_0)": 0.15493569448590278,
+  "Policy / Standard deviation (guard_0)": 0.17534559965133667,
+  "Loss / Policy loss (guard_1)": -0.0006380964230629615,
+  "Loss / Value loss (guard_1)": 0.19195887669920922,
+  "Policy / Standard deviation (guard_1)": 0.17535127699375153,
+  "Loss / Policy loss (guard_2)": -0.000560513959499076,
+  "Loss / Value loss (guard_2)": 0.1816273383796215,
+  "Policy / Standard deviation (guard_2)": 0.17699232697486877,
+  "Stats / Algorithm update time (ms)": 688.3518695831299
+ }
+}

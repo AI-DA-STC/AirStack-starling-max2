@@ -1,0 +1,122 @@
+[
+ {
+  "timestep": 768,
+  "game_steps": 301989888,
+  "train_s": 3237.6323270629996,
+  "finished": 256,
+  "timeout_wins": 194,
+  "scalars": {
+   "game/hold_rate": 0.7578125,
+   "game/timeout_win_share": 0.7578125,
+   "game/closest_cross_3d_min_m": 0.8697077631950378,
+   "game/closest_cross_3d_p05_m": 1.0620350241661072,
+   "game/filter_share": 0.3292457723291591,
+   "game/hold_rate/S20": 0.7578125,
+   "game/game_steps_per_s": 93274.91743756724,
+   "game/eval_games_finished": 256.0,
+   "standin/mean_action_abs_max": 0.4761432409286499
+  },
+  "per_behaviour": {
+   "S20": {
+    "games": 256,
+    "guard_wins": 194,
+    "hold_rate": 0.7578125,
+    "ci_low": 0.7017711387942602,
+    "ci_high": 0.806230659224225,
+    "mean_end_step": 1883.19140625,
+    "closest_cross_m": 0.8259199261665344,
+    "closest_cross_p05_m": 1.050854742527008,
+    "closest_cross_p25_m": 1.1216449439525604,
+    "closest_cross_p50_m": 1.432036578655243,
+    "closest_cross_3d_m": 0.8697077631950378,
+    "closest_cross_3d_p05_m": 1.0620350241661072,
+    "closest_cross_3d_p25_m": 1.130897969007492,
+    "closest_cross_3d_p50_m": 1.4332757592201233,
+    "rule_breach_rate": 0.0078125,
+    "filter_rate": 0.3292457723291591,
+    "start_miss_rate": 1.0
+   }
+  },
+  "overall": {
+   "games": 256,
+   "guard_wins": 194,
+   "hold_rate": 0.7578125,
+   "ci_low": 0.7017711387942602,
+   "ci_high": 0.806230659224225,
+   "mean_end_step": 1883.19140625,
+   "closest_cross_m": 0.8259199261665344,
+   "closest_cross_p05_m": 1.050854742527008,
+   "closest_cross_p25_m": 1.1216449439525604,
+   "closest_cross_p50_m": 1.432036578655243,
+   "closest_cross_3d_m": 0.8697077631950378,
+   "closest_cross_3d_p05_m": 1.0620350241661072,
+   "closest_cross_3d_p25_m": 1.130897969007492,
+   "closest_cross_3d_p50_m": 1.4332757592201233,
+   "rule_breach_rate": 0.0078125,
+   "filter_rate": 0.3292457723291591,
+   "start_miss_rate": 1.0
+  },
+  "kind": "mid",
+  "eval_games": 256
+ },
+ {
+  "timestep": 1472,
+  "game_steps": 578813952,
+  "train_s": 6193.74972463601,
+  "finished": 1000,
+  "timeout_wins": 829,
+  "scalars": {
+   "game/hold_rate": 0.829,
+   "game/timeout_win_share": 0.829,
+   "game/closest_cross_3d_min_m": 0.8734514117240906,
+   "game/closest_cross_3d_p05_m": 1.0639479398727416,
+   "game/filter_share": 0.334989543505013,
+   "game/hold_rate/S20": 0.829,
+   "game/game_steps_per_s": 93644.47576651529,
+   "game/eval_games_finished": 1000.0,
+   "standin/mean_action_abs_max": 0.6834155321121216
+  },
+  "per_behaviour": {
+   "S20": {
+    "games": 1000,
+    "guard_wins": 829,
+    "hold_rate": 0.829,
+    "ci_low": 0.8044153737871806,
+    "ci_high": 0.8510665269429745,
+    "mean_end_step": 2030.358,
+    "closest_cross_m": 0.5500702857971191,
+    "closest_cross_p05_m": 1.0415347158908843,
+    "closest_cross_p25_m": 1.1051839292049408,
+    "closest_cross_p50_m": 1.4987773299217224,
+    "closest_cross_3d_m": 0.8734514117240906,
+    "closest_cross_3d_p05_m": 1.0639479398727416,
+    "closest_cross_3d_p25_m": 1.1091405749320984,
+    "closest_cross_3d_p50_m": 1.501853585243225,
+    "rule_breach_rate": 0.005,
+    "filter_rate": 0.334989543505013,
+    "start_miss_rate": 1.0
+   }
+  },
+  "overall": {
+   "games": 1000,
+   "guard_wins": 829,
+   "hold_rate": 0.829,
+   "ci_low": 0.8044153737871806,
+   "ci_high": 0.8510665269429745,
+   "mean_end_step": 2030.358,
+   "closest_cross_m": 0.5500702857971191,
+   "closest_cross_p05_m": 1.0415347158908843,
+   "closest_cross_p25_m": 1.1051839292049408,
+   "closest_cross_p50_m": 1.4987773299217224,
+   "closest_cross_3d_m": 0.8734514117240906,
+   "closest_cross_3d_p05_m": 1.0639479398727416,
+   "closest_cross_3d_p25_m": 1.1091405749320984,
+   "closest_cross_3d_p50_m": 1.501853585243225,
+   "rule_breach_rate": 0.005,
+   "filter_rate": 0.334989543505013,
+   "start_miss_rate": 1.0
+  },
+  "kind": "final",
+  "eval_games": 1000
+ }
+]

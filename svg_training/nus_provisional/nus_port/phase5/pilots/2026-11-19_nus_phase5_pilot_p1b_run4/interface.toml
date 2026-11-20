@@ -1,0 +1,141 @@
+# Stand-in (pipe test), not a strategy of record. Observed in the training simulator.
+interface_version = "0.1"
+pipe_test = true
+what = "stand-in (pipe test), not a strategy of record; observed in the training simulator"
+team = "guard"
+guards = 3
+strikes = 3
+algorithm = "IPPO"
+motion = "starling"
+preset = "nus_hangar"
+game = "nus_hangar"
+world = "none"
+parameter_set = "params/real_exploratory_v0.toml (exploratory; commander and safety filter), sha256 4c93543f51ab41ea5bb0f81e6d1b0512f662a3e10126ec2d85fc3bb008cecaa2"
+game_config = "nus_hangar_game.toml"
+game_config_sha256 = "3f771112bd3f03705efa7c12b8e511598c99b8c31dd79a11d2311d001ee87e06"
+local_file = "sha256 rules=dd22cc28ce2042f3947f8427c5b69885187bb0b362498a487b67a753168c5a19, deploy_w2=c248c6bef3f6e17b17f05c766dee34db67ddf443e7d13c80e0d928319577b101, hangar=b7f2870ee17d2d7087e9d7dc9bb1ec954a01b46e57bbc46559125a0c17e7163b, deploy_ref=6d71c111959fd9b2dd6fe48f83a8d3f645c12eff64ecb1a136d854ed30a08158, starts=40c8cc59297f58d5a7c18b2eb89dc67d2c8ec940b8d95243673928cab6cd2a67"
+settings_file = "nus_phase5.toml"
+standin_table_sha256 = "29d71984c226f88cf568d2fbe128b5e8a782ed21f48569002fbc1d8eae980495"
+settings_table = "pilot_p1b"
+settings_table_sha256 = "bc0ea91905c5c29f2938ed6ff78ebbb3dca56fb9fd0338adb3e97d547502c46a"
+settings_table_status = "Phase 5 pilot table, PROPOSED (not gated, INFO record)"
+seed = 101
+git_commit = "39a4b4e6"
+tick_s = 0.05
+rate_hz = 20
+frames = "world ENU (x east, y north, z up); positions from the zone centre"
+created = "2026-11-19T04:59:33+08:00"
+
+[observation]
+dim = 71
+view = "full"
+pad_guards = 5
+pad_strikes = 3
+own_pos = [0, 3]
+own_vel = [3, 6]
+sin_cos_yaw = [6, 8]
+zone_radius = [8, 9]
+arena_half = [9, 10]
+time_left = [10, 11]
+team = [11, 12]
+alive = [12, 13]
+slots = [13, 69]
+zone_centre = [69, 71]
+
+[action]
+order = ["vx", "vy", "vz", "yaw_rate"]
+range = [-1.0, 1.0]
+guard_speed_mps = 0.33333333333333337
+strike_speed_mps = 0.5000000000000001
+yaw_rate_max_rad_s = 1.0
+note = "velocity part capped at length 1, then times the team speed; vz ignored under pure rules"
+
+[network]
+hidden = [128, 128]
+activation = "ELU"
+policy = "Gaussian, mean through Tanh (in [-1, 1]), one log std per axis; sampled actions clipped"
+observation_scaler = "RunningStandardScaler"
+value_scaler = "RunningStandardScaler"
+one_network_per_guard_slot = true
+agent_file = "agent.pt"
+
+[training]
+num_games = 32768
+timesteps = 2543
+game_steps_budget = 1000000000
+wall_clock_cap_min = 130.32
+rollouts = 32
+learning_epochs = 5
+mini_batches = 4
+learning_rate = 0.0003
+shaping_weight = 0.0
+opponent_mix = { S20 = 1.0 }
+eval_games = 1000
+eval_every_updates = 20
+eval_seed = 1101
+eval_max_steps = 2400
+device = "cuda"
+init_log_std = -1.6
+frozen_log_std_axes = ["yaw"]
+stop_at = "none"
+stop_file = "none"
+skrl_rollouts = 32
+skrl_learning_epochs = 5
+skrl_mini_batches = 4
+skrl_discount_factor = 0.99
+skrl_gae_lambda = 0.95
+skrl_learning_rate = [0.0003, 0.0003]
+skrl_entropy_loss_scale = 0.0
+skrl_value_loss_scale = 2.5
+skrl_ratio_clip = 0.2
+skrl_value_clip = 0.2
+skrl_grad_norm_clip = 0.5
+skrl_kl_threshold = 0.0
+skrl_time_limit_bootstrap = false
+skrl_random_timesteps = 0
+skrl_learning_starts = 0
+skrl_mixed_precision = false
+skrl_version = "2.1.0"
+train_team = "guard"
+nus_row = "5"
+eval_games_early = 256
+eval_at_start = false
+mid_evaluation = true
+gpu_cap_hours = 3.0
+cap_s_effective = 7819.199999999999
+estimate_eval_s = 766.0434660000033
+warm_start = "none"
+pytorch_cuda_alloc_conf = "expandable_segments:True"
+pytorch_cuda_alloc_conf_replaced = "expandable_segments:True"
+decision_ticks = 12
+zero_mean_init = true
+
+[settings_values]
+algorithm = "IPPO"
+preset = "nus_hangar"
+train_team = "guard"
+opponent_mix = { S20 = 1.0 }
+num_games = 32768
+game_steps_per_seed = 1000000000
+gpu_cap_hours = 3.0
+eval_games = 1000
+eval_games_early = 256
+eval_at_start = true
+mid_evaluation = true
+zero_mean_init = true
+decision_ticks = "deploy"
+shaping_weight = 0.0
+rollouts = 32
+learning_epochs = 5
+mini_batches = 4
+learning_rate = 0.0003
+hidden = [128, 128]
+init_log_std = -1.6
+frozen_log_std_axes = { starling = ["yaw"] }
+discount_factor = 0.99
+gae_lambda = 0.95
+entropy_loss_scale = 0.0
+value_loss_scale = 2.5
+ratio_clip = 0.2
+value_clip = 0.2
+grad_norm_clip = 0.5

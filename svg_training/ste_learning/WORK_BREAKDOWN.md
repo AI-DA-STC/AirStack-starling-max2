@@ -44,11 +44,12 @@ task follows `train-run` (preflight, gates or an INFO plan written first, videos
 | ID | Name | Depends on | Hours | GPU-h | Gate |
 |---|---|---|---|---|---|
 | L0.1 | Track set-up: config and test skeleton | — | 3 | 0 | none |
-| L0.2 | Step 1a: tier 2 3v3 training speed on the 5090 | L0.1 | 6 | 1.5 | P3 |
-| L0.3 | Step 1b: STE Guard policy in tier 2 without retraining | L0.1 | 6 | 1.5 | P3 |
+| L0.2 | Tier 2 speed in contested play (PLAN §4; was "Step 1a") | L0.7 | 6 | 1.5 | P3 |
+| L0.3 | STE Guard policy in tier 2 without retraining (was "Step 1b") | L0.2 | 6 | 1.5 | P3 |
 | L0.4 | Side-by-side Starling render | — | 3 | 0.2 | P4 |
 | L0.5 | Starling video look fix | L0.4 | 4 | 0.3 | owner looks at stills (D9) |
-| L0.6 | Decision: tier 2 training affordable? | L0.2, L0.3 | 1 | 0 | owner (D3 revisit only if too slow) |
+| L0.6 | Gate G0: one decision page for the owner (PLAN §5; was "Decision: tier 2 training affordable?") | every L0 task | 1 | 0 | **owner** |
+| L0.7–L0.13 | added by PLAN v2: process tooling and drills, game spec sheet, tag rule for the study, scripted players, screening sweep, best-response test, does tier 2 train at all | see [PLAN](PLAN.md) §4 | see PLAN §4 | 0 / 0 / 0 / 0 / 3 / 6 / 6 | see PLAN §4 |
 | L1.1 | State delay and noise in tier 2 | L0.1 | 8 | 0.2 | none |
 | L1.2 | Drag in tier 2 | L0.1 | 5 | 0.2 | none |
 | L1.3 | Fit delay, noise and drag to real logs | L1.1, L1.2 | 8 | 0 | none now (exploratory); NEAR-962 flight (owner) for the run of record |
@@ -93,10 +94,13 @@ are the runs of record, plus about 3 h with the AirStack simulator holding the G
 **L0.1 Track set-up: config and test skeleton.** Goal: one place for the track's settings and a test file that pins
 them. Files: `configs/ste_learning.toml` (sections filled by later tasks; each value labelled), `source/svg_training/
 ste/__init__.py`, `source/svg_training/ste/config.py` (frozen dataclasses, unknown keys raise), `tests/test_ste_config.py`.
-Tests first: unknown key raises; every value has a status label comment; defaults reproduce today's game. Done: tests
-pass on CPU; full suite unchanged. Depends: —. 3 h. Gate: none.
+Tests first: unknown key raises; every value has a status label comment. Done: tests pass on CPU; full suite unchanged.
+Depends: —. 3 h. Gate: none. Lead, 20 Nov 2026: in L0.1 the file holds only `[track]` and `[budget]` (the L0 caps); the
+game sections arrive with the tasks that implement them, so "defaults reproduce today's game" is tested at L0.9, where
+the first game setting (`[tag]`) exists. The game's values live in `configs/ste_game.toml` (L0.8).
 
-**L0.2 Step 1a: tier 2 3v3 training speed on the 5090 (P3).** Goal: how many game-steps per second tier 2 gives with a
+**L0.2 Tier 2 speed in contested play (P3; was "Step 1a").** PLAN §4 wins over the text below: both teams play (not
+random actions), with a learner in the loop, at 3v3 and the G0 candidate sizes, tier 2 and tier 1. Goal: how many game-steps per second tier 2 gives with a
 learner in the loop, so D3's cost is known. Files: `scripts/ste_speed_probe.py` (rollout + PPO update timing with the
 existing skrl stand-in on the S2 game, `--motion physics` and `--motion starling`, 3v3, 1,024 / 2,048 / 4,096 games, a
 fixed number of updates per point, one process per point), `tests/test_ste_speed_probe.py` (argument checks, refusal
@@ -126,7 +130,9 @@ ring or marker), `configs/s2b_video_scenes.toml` (style key), `scripts/make_s2b_
 "visual changed the physics body" check still passes; the style key is checked on load; an `isaac`-marked smoke clip. Done:
 one re-rendered clip and still beside the AirStack look; owner says it reads right. 4 h; 0.3 GPU-h. Gate: owner look.
 
-**L0.6 Decision after step 1.** If L0.2 shows tier 2 cannot reach the planned budget (L5.5) the lead brings options to
+**L0.6 Gate G0 (was "Decision after step 1").** PLAN §5 wins over the text below: one decision page with every L0
+number; the owner rules on the tag and the zone, what a tag costs, team sizes, where to train, environments, the demo
+and the budgets of L1 to L9. Version 1's text: if L0.2 shows tier 2 cannot reach the planned budget (L5.5) the lead brings options to
 the owner: train on tier 1 with tier 2 only for pilots and evaluation, or shorter tier 2 runs started from a tier 1
 policy. D3 stands unless the owner changes it.
 

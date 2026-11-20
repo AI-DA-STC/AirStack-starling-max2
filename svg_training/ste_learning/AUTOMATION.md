@@ -48,7 +48,7 @@ technical writer only reads it (its files: `status/STATUS_LATEST.md`, `status/LO
 
 Beside it: `status/RESUME.md` (restart command of every live job, rewritten each tick), `status/decisions.md` (lead's
 delegated calls, append-only), `status/gates/H-<n>.md`. **Seed state** = DISCUSSION §3: D4 and P1–P8 open gates; no GPU
-task leaves gate-written until P3 (step 1, ~3 GPU-h) is approved.
+task leaves gate-written until its phase is approved (phase L0: approved by the owner on 20 Nov 2026, cap 19 GPU-h).
 
 ## 2. The loop
 
@@ -134,7 +134,7 @@ branch; everything independent continues; the blocked branch gets CPU-only prepa
 
 | Item | Value | Status |
 |---|---|---|
-| Step 1, L0.2 + L0.3 (tier-2 speed, zero-shot transfer) | 3.5 GPU-h, solo | PROPOSED (DISCUSSION P3: ~3 GPU-h) |
+| Phase L0, all tasks | at most 19 GPU-h; the task caps of [PLAN](PLAN.md) §4 sum to 18.5 (L0.11 3, L0.12 6, L0.2 1.5, L0.13 6, L0.3 1.5, L0.4 0.2, L0.5 0.3); the speed and training probes run alone on the GPU | phase cap FIXED (owner approved L0, 20 Nov 2026); task split PROPOSED by the lead (PLAN §4) |
 | Pilots per stage, together | 6 GPU-h | PROPOSED (precedent `configs/nus_phase5.toml [pilots]`) |
 | Training stage of record | set in its plan before the first run (5.1 had 36 GPU-h; 5.2 72 GPU-h OPEN) | OPEN |
 | Wall clock per job | cap × 1.5, pauses excluded; SIGINT at cap + 30 min | PROPOSED (P1b overrun rule) |

@@ -16,7 +16,8 @@ wrapper's first act is to take that lock: the command starts only once the recor
 not it stopped a job: a pause is also the owner's "I am using this PC", and a job started during it would run
 unpaused), while a job of the same name, or any job in the same run folder, is alive, and when ``ste/budget.py`` says
 the hours asked for would pass the task's cap or the phase cap. The hours asked for are the
-job's total over all its launches, so the hours it has already logged are not asked for a second time at a relaunch.
+job's total over all its launches in its run folder, so the hours it has already logged there are not asked for a
+second time at a relaunch; a new run folder under an old job name is a new run and gets no such credit.
 
 Files in the run folder: ``job.json`` (the launch record: the ``state.json`` fields of ``ste/state.py`` plus the job
 name, the beat and a few environment variables), ``cmd.txt`` (the launch command line, to run again by hand),
@@ -148,13 +149,14 @@ def launch(task: str, name: str, run_dir: Path | str, cmd: list[str], expected_m
         raise LaunchRefused(f"the owner's pause of {made} (by {paused.get('by', 'unknown')}, pids {paused.get('pids')}) "
                             f"is still open: nothing was launched. Only the owner ends it, with scripts/gpu_pause.sh "
                             f"resume; launch again after that")
+    run_dir = Path(run_dir).resolve()
     try:
-        budget.check_launch(task, gpu_h, settings, job=name)
+        budget.check_launch(task, gpu_h, settings, job=name, run_dir=str(run_dir))
     except budget.BudgetError as err:
         raise LaunchRefused(str(err)) from err
     settings = Path(settings).resolve()
     phase = load_ste_learning(settings)[0].track.phase
-    run_dir, cwd = Path(run_dir).resolve(), Path(cwd if cwd is not None else os.getcwd()).resolve()
+    cwd = Path(cwd if cwd is not None else os.getcwd()).resolve()
     cmd = [str(part) for part in cmd]
     wrappers: list[subprocess.Popen] = []
     record: dict[str, Any] = {}
@@ -269,7 +271,8 @@ def run_wrapper(run_dir: Path | str) -> int:
         try:
             heartbeat.touch()
             if on_gpu:
-                budget.log_interval(task, name, budget.CUDA, last_s, now_s, pids=(child.pid,))
+                budget.log_interval(task, name, budget.CUDA, last_s, now_s, pids=(child.pid,),
+                                    run_dir=record["run_dir"])
                 return now_s
         except OSError as err:
             print(f"[ste job] beat not written ({err})", flush=True)

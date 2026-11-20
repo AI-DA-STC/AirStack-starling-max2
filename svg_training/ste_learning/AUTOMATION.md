@@ -182,7 +182,7 @@ Code: `source/svg_training/ste/` (`shared.py`, `pauses.py`, `state.py`, `atomic.
 | One pause log | `gpu_pause.sh` writes each event to the legacy log and to the shared one; the reader merges every worktree's legacy log too, so a pause made with an old copy still counts; `scripts/ste_*.py` jobs are paused, the launcher and waiter are not |
 | State file | `state.json` under a lock, written atomically; a job is alive only if its pid exists with the recorded start time in the current boot |
 | Trainer contract | the same command resumes from its last checkpoint; SIGINT or SIGTERM saves and exits; a non-finite value never overwrites the last good checkpoint; the cap counts effective time (time a pause stopped this job excluded) |
-| GPU-hour ledger | used GPU-hours per task and per phase from `gpu_hours.log` (CUDA intervals less the time a pause stopped that job); `launch` refuses a job over the task or phase cap of `configs/ste_learning.toml` |
+| GPU-hour ledger | used GPU-hours per task and per phase from `gpu_hours.log` (CUDA intervals less the time a pause stopped that job); `launch` refuses a job over the task or phase cap of `configs/ste_learning.toml`; a relaunch of the same job in the same run folder is not charged again for hours it already logged, but a new run folder under an old job name is a new run and gets no credit |
 | Launcher and waiter | `scripts/ste_job.py launch / wait / status`; `launch` refuses while an owner pause is open |
 
 **Exit codes** (`ste/run_contract.py`): 0 done; 2 refused to start; 3 stopped at its cap; 4 interrupted (SIGINT or

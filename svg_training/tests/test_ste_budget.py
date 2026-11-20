@@ -35,9 +35,14 @@ def pause(start_h: float, end_h: float | None, pids: tuple | list = (1,)) -> Non
                 stream.write(json.dumps({"event": event, "time": T0 + hours * HOUR, "pids": list(pids), "by": "tester"}) + "\n")
 
 
-def ran(task: str, job: str, start_h: float, end_h: float, device: str = "cuda", pids: list[int] | None = None) -> bool:
-    """A ledger line. ``pids=None``: a line without pids, as written before L07-C1 (every pause counts for it)."""
-    return budget.log_interval(task, job, device, T0 + start_h * HOUR, T0 + end_h * HOUR, pids=pids)
+RUN_A, RUN_B = "/runs/ste_l0/sweep_a", "/runs/ste_l0/sweep_b"     # two run folders (made-up paths)
+
+
+def ran(task: str, job: str, start_h: float, end_h: float, device: str = "cuda", pids: list[int] | None = None,
+        run_dir: str | None = None) -> bool:
+    """A ledger line. ``pids=None``: a line without pids, as written before L07-C1 (every pause counts for it).
+    ``run_dir=None``: a line without the run folder, as written before L07-I1 (never credited to a launch)."""
+    return budget.log_interval(task, job, device, T0 + start_h * HOUR, T0 + end_h * HOUR, pids=pids, run_dir=run_dir)
 
 
 # ------------------------------------------------------------------------------------------------ the ledger
@@ -181,22 +186,61 @@ def test_refused_when_the_task_cap_would_be_exceeded(tmp_path):
 def test_a_job_relaunched_with_the_same_line_is_not_charged_twice(tmp_path):
     """The hours asked for are the job's total over all its launches (its own cap travels in its checkpoint). A job
     that asked for the task's whole cap and used 2 of the 3 hours before a power cut must be able to resume with the
-    SAME line: only the hour it has not used yet is new. Another job asking for 3 is still refused."""
+    SAME line (same name, same run folder): only the hour it has not used yet is new. Another job asking for 3 is
+    still refused."""
     path = settings(tmp_path, 19.0, L0_11=3.0)
-    ran("L0.11", "sweep", 0.0, 2.0)
+    ran("L0.11", "sweep", 0.0, 2.0, run_dir=RUN_A)
     assert budget.job_gpu_h("L0.11", "sweep") == 2.0 and budget.job_gpu_h("L0.11", "other") == 0.0
     assert budget.job_gpu_h("L0.12", "sweep") == 0.0                                  # the same name under another task
     with pytest.raises(budget.BudgetError, match=r"task L0\.11.*cap 3\.0 GPU-h.*used 2\.000.*asked 3\.0"):
         budget.check_launch("L0.11", 3.0, settings=path)                              # the reproduction: no job named
-    assert budget.check_launch("L0.11", 3.0, settings=path, job="sweep").task_used_gpu_h == 2.0
+    assert budget.check_launch("L0.11", 3.0, settings=path, job="sweep", run_dir=RUN_A).task_used_gpu_h == 2.0
     with pytest.raises(budget.BudgetError, match="asked 3.0"):
-        budget.check_launch("L0.11", 3.0, settings=path, job="other")
-    assert budget.check_launch("L0.11", 1.0, settings=path, job="other").task_used_gpu_h == 2.0
+        budget.check_launch("L0.11", 3.0, settings=path, job="other", run_dir=RUN_A)
+    assert budget.check_launch("L0.11", 1.0, settings=path, job="other", run_dir=RUN_A).task_used_gpu_h == 2.0
     with pytest.raises(budget.BudgetError) as refused:                                # asks for more than it did before
-        budget.check_launch("L0.11", 3.5, settings=path, job="sweep")
+        budget.check_launch("L0.11", 3.5, settings=path, job="sweep", run_dir=RUN_A)
     assert "asked 3.5" in str(refused.value) and "2.000 of them already used by job sweep" in str(refused.value)
-    ran("L0.11", "sweep", 2.0, 3.25)                                                  # it overran what it asked for
-    assert budget.check_launch("L0.11", 3.0, settings=path, job="sweep").task_used_gpu_h == 3.25      # nothing new
+    ran("L0.11", "sweep", 2.0, 3.25, run_dir=RUN_A)                                   # it overran what it asked for
+    assert budget.check_launch("L0.11", 3.0, settings=path, job="sweep", run_dir=RUN_A).task_used_gpu_h == 3.25
+
+
+# ------------------------------------------------------------------------------------------------ L07-I1: whose credit
+def test_a_ledger_line_records_the_run_folder():
+    assert ran("L0.11", "sweep", 0.0, 1.0, run_dir=RUN_A)
+    assert json.loads(shared.gpu_hours_log().read_text())["run_dir"] == RUN_A
+
+
+def test_qc_reproduction_a_new_run_under_an_old_name_gets_no_credit(tmp_path):
+    """L07-I1, the QC scenario: job "sweep" finished after 2.9 GPU-h (task cap 3.0). A NEW run folder under the same
+    name asking 3.0 was accepted (charged 0.1), so the task could reach 5.9 GPU-h. A rerun is a new run: no credit.
+    The same run folder (a resume) keeps its credit."""
+    path = settings(tmp_path, 19.0, L0_11=3.0)
+    ran("L0.11", "sweep", 0.0, 2.9, run_dir=RUN_A)
+    with pytest.raises(budget.BudgetError, match=r"used 2\.900.*asked 3\.0"):
+        budget.check_launch("L0.11", 3.0, settings=path, job="sweep", run_dir=RUN_B)
+    assert budget.check_launch("L0.11", 3.0, settings=path, job="sweep", run_dir=RUN_A).task_used_gpu_h == pytest.approx(2.9)
+    assert budget.check_launch("L0.11", 0.1, settings=path, job="sweep", run_dir=RUN_B).task_used_gpu_h == pytest.approx(2.9)
+    assert budget.job_gpu_h("L0.11", "sweep", run_dir=RUN_A) == pytest.approx(2.9)
+    assert budget.job_gpu_h("L0.11", "sweep", run_dir=RUN_B) == 0.0
+
+
+def test_a_line_without_a_run_folder_counts_as_used_but_is_never_credited(tmp_path):
+    """Legacy rule: a line written before L07-I1 cannot be tied to a run folder. It still counts as used; it is not
+    credited to any launch (the safe side: a resume may be refused, a cap is never passed)."""
+    path = settings(tmp_path, 19.0, L0_11=3.0)
+    ran("L0.11", "sweep", 0.0, 2.0)
+    assert budget.task_gpu_h("L0.11") == 2.0 and budget.job_gpu_h("L0.11", "sweep", run_dir=RUN_A) == 0.0
+    with pytest.raises(budget.BudgetError, match=r"used 2\.000.*asked 3\.0"):
+        budget.check_launch("L0.11", 3.0, settings=path, job="sweep", run_dir=RUN_A)
+
+
+def test_a_job_name_without_its_run_folder_is_a_mistake():
+    """Credit by name alone was the I1 failure: the name and the run folder go together."""
+    with pytest.raises(ValueError, match="run_dir"):
+        budget.check_launch("L0.11", 1.0, job="sweep")
+    with pytest.raises(ValueError, match="job"):
+        budget.check_launch("L0.11", 1.0, run_dir=RUN_A)
 
 
 def test_paused_time_gives_the_hours_back(tmp_path):

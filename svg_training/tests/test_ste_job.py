@@ -440,6 +440,7 @@ def test_a_gpu_job_logs_its_hours_beat_by_beat_and_at_its_end(bench, tmp_path):
     rows = [json.loads(line) for line in shared.gpu_hours_log().read_text().splitlines()]
     assert len(rows) >= 3 and {(row["group"], row["job"], row["device"]) for row in rows} == {("L0.11", "sweep", "cuda")}
     assert all(row["pids"] == [job["child_pid"]] for row in rows)          # L07-C1: whose time it was
+    assert all(row["run_dir"] == job["run_dir"] for row in rows)            # L07-I1: which run it was
     assert all(later["start"] == earlier["end"] for earlier, later in zip(rows, rows[1:]))      # one unbroken interval
     assert job["started"] <= rows[0]["start"] and rows[-1]["end"] == pytest.approx(job["ended"], abs=0.5)
     used_s = budget.task_gpu_h("L0.11") * 3600.0
@@ -467,6 +468,25 @@ def test_f_d_a_gpu_job_that_asked_for_its_whole_cap_resumes_with_the_same_line(b
     assert done.returncode == 0 and " DONE exit=0 " in line_of(done)
     assert "resumed from step" in (bench.run_dir("sweep") / "job.log").read_text()
     assert budget.job_gpu_h("L0.11", "sweep") == budget.task_gpu_h("L0.11") > used
+
+
+def test_qc_reproduction_a_new_run_under_a_finished_jobs_name_is_charged_in_full(bench, tmp_path):
+    """L07-I1 end to end: job "sweep" ran in one run folder and finished, asking the task's whole 3 GPU-h. A new run
+    folder under the same name asking 3 again must be refused (it would take the task past its cap); the same line
+    in the old run folder still resumes."""
+    path = settings(tmp_path, 19.0, L0_11=3.0)
+    extra = ("--settings", path, "--beat-s", 0.05)
+    first = bench.launch("sweep", bench.dummy("sweep", steps=10), gpu_h=3.0, task="L0.11", extra=extra)
+    assert first.returncode == 0, first.stderr
+    assert bench.wait("sweep").returncode == 0 and budget.task_gpu_h("L0.11") > 0.0
+    other_run = bench.tmp / "runs" / "sweep_rerun"
+    rerun = run_py([TOOL, "launch", "--task", "L0.11", "--name", "sweep", "--run-dir", other_run, "--min-s", 0.0,
+                    "--gpu-h", 3.0, *extra, "--", *bench.dummy("sweep")], bench.env)
+    assert rerun.returncode == rc.EXIT_REFUSED and "asked 3.0" in rerun.stderr, rerun.stdout
+    assert not other_run.exists()
+    again = bench.launch("sweep", bench.dummy("sweep", steps=10), gpu_h=3.0, task="L0.11", extra=extra)  # same line
+    assert again.returncode == 0, again.stderr
+    assert bench.wait("sweep").returncode == 0
 
 
 def test_an_owner_pause_stops_the_command_not_the_wrapper_and_is_not_counted(bench, tmp_path):

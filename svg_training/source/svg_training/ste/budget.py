@@ -3,10 +3,11 @@
 The ledger is ``gpu_hours.log`` in the shared folder (``ste/shared.py``), append-only, one JSON line per CUDA interval
 of a job, in the line format of the NUS port's ``gpu_hours.log`` so that the same arithmetic reads it::
 
-    {"group": "<task ID>", "job": "<job name>", "device": "cuda", "start": <unix s>, "end": <unix s>, "pids": [<pid>]}
+    {"group": "<task ID>", "job": "<job name>", "device": "cuda", "start": <unix s>, "end": <unix s>, "pids": [<pid>],
+     "run_dir": "<the job's run folder>"}
 
 A job's wrapper (``ste/jobs.py``) appends one line per beat while the job runs, each from the end of the last, and
-one when it ends, with the pid of the job's command. So a job that is still running is counted up to its last beat,
+one when it ends, with the pid of the job's command and its run folder. So a job that is still running is counted up to its last beat,
 and a power cut loses at most one beat. A CPU job logs nothing.
 
 GPU-hours used, of a task or of a phase, are the union of the intervals (jobs side by side count once) less the
@@ -18,8 +19,9 @@ file without a name. A line that is not a ledger line (torn by a power cut) is s
 
 :func:`check_launch` compares used plus asked with the caps of ``configs/ste_learning.toml`` (the task's cap and the
 phase cap) and raises :class:`BudgetError` naming the cap, what is used and what was asked. The hours a job asks for
-are its total over all its launches: at a relaunch the hours it has already logged count as part of that, so the same
-launch line resumes a job. Because used hours are a union, checking every launch this way keeps the union under the
+are its total over all the launches of its run: at a relaunch with the same name in the same run folder the hours
+logged there count as part of that, so the same launch line resumes a job. A new run folder is a new run, even under an
+old name (L07-I1): it gets no credit, and a line without ``"run_dir"`` (written before L07-I1) is never credited. Because used hours are a union, checking every launch this way keeps the union under the
 cap as long as each job stops at the hours it asked for (its own cap, ``ste/run_contract.py``). Standard library only.
 """
 from __future__ import annotations
@@ -55,11 +57,12 @@ class Usage(NamedTuple):
 
 
 def log_interval(task: str, job: str, device: str, start_s: float, end_s: float,
-                 pids: Iterable[int] | None = None) -> bool:
+                 pids: Iterable[int] | None = None, run_dir: str | None = None) -> bool:
     """Append one interval to the ledger if ``device`` is a CUDA device; a CPU job logs nothing. Returns whether a
     line was written. ``start_s``, ``end_s``: unix seconds, end not before start. ``pids``: the job's own pids (its
     command's), so that only a pause that stopped it takes time off; None writes a line without pids, which every
-    pause takes time off (the rule before L07-C1)."""
+    pause takes time off (the rule before L07-C1). ``run_dir``: the job's run folder, the run the hours are credited
+    to at a relaunch; None writes a line that is never credited (the rule since L07-I1)."""
     if not end_s >= start_s:
         raise ValueError(f"an interval must not end before it starts: start {start_s!r}, end {end_s!r}")
     if not str(device).startswith(CUDA):
@@ -67,6 +70,8 @@ def log_interval(task: str, job: str, device: str, start_s: float, end_s: float,
     row = {"group": task, "job": job, "device": str(device), "start": float(start_s), "end": float(end_s)}
     if pids is not None:
         row["pids"] = sorted(int(pid) for pid in pids)
+    if run_dir is not None:
+        row["run_dir"] = str(run_dir)
     nus_pauses.append_row(shared.gpu_hours_log(), row)
     return True
 
@@ -117,11 +122,12 @@ def _pids_of(row: dict) -> frozenset[int] | None:
     return frozenset(pid for pid in listed if type(pid) is int) if isinstance(listed, list) else None
 
 
-def _gpu_h(tasks: tuple[str, ...], job: str | None = None) -> float:
-    """GPU-hours of the ledger lines of ``tasks`` together (of one job only, if ``job`` is given): each CUDA interval
-    less the time its own job was paused, then the union of what is left."""
+def _gpu_h(tasks: tuple[str, ...], job: str | None = None, run_dir: str | None = None) -> float:
+    """GPU-hours of the ledger lines of ``tasks`` together (of one job only, if ``job`` is given; of one run folder
+    only, if ``run_dir`` is given): each CUDA interval less the time its own job was paused, then the union of what is
+    left."""
     rows = [row for row in _rows() if row["group"] in tasks and (job is None or row.get("job") == job)
-            and str(row["device"]).startswith(CUDA)]
+            and (run_dir is None or row.get("run_dir") == str(run_dir)) and str(row["device"]).startswith(CUDA)]
     paused: dict[frozenset[int] | None, list[tuple[float, float]]] = {}
     pieces = []
     for row in rows:
@@ -143,9 +149,10 @@ def task_gpu_h(task: str) -> float:
     return _gpu_h((task,))
 
 
-def job_gpu_h(task: str, job: str) -> float:
-    """GPU-hours the job ``job`` of ``task`` has used so far, over all its launches."""
-    return _gpu_h((task,), job)
+def job_gpu_h(task: str, job: str, run_dir: str | None = None) -> float:
+    """GPU-hours the job ``job`` of ``task`` has used so far, over all its launches; with ``run_dir``, only in that run
+    folder (the credit of a relaunch)."""
+    return _gpu_h((task,), job, run_dir)
 
 
 def phase_gpu_h(phase: str) -> float:
@@ -153,14 +160,19 @@ def phase_gpu_h(phase: str) -> float:
     return _gpu_h(TASK_IDS[phase])
 
 
-def check_launch(task: str, requested_gpu_h: float, settings: Path | str = SETTINGS_FILE, job: str | None = None) -> Usage:
+def check_launch(task: str, requested_gpu_h: float, settings: Path | str = SETTINGS_FILE, job: str | None = None,
+                 run_dir: str | None = None) -> Usage:
     """Raise :class:`BudgetError` if launching a job of ``task`` that asks for ``requested_gpu_h`` GPU-hours would
     take the task past its cap or the phase past the phase cap (``settings``: the track's settings file). A CPU job
     asks for 0 and passes whenever its task exists. Returns the caps and what is used.
 
-    ``requested_gpu_h`` is the job's total over all its launches. With ``job`` (the job's name) the hours that job has
-    already logged are part of what it asked for, not a second request: only the rest is new. So the same launch line
-    starts a job again after a power cut, and a job that has used up what it asked for adds nothing."""
+    ``requested_gpu_h`` is the job's total over all its launches. With ``job`` (the job's name) and ``run_dir`` (its
+    run folder, given together) the hours that job has already logged in that run folder are part of what it asked
+    for, not a second request: only the rest is new. So the same launch line starts a job again after a power cut, and
+    a job that has used up what it asked for adds nothing. A new run folder under an old name gets no credit."""
+    if (job is None) != (run_dir is None):
+        raise ValueError(f"job and run_dir go together (the credit is the job's hours in its run folder): job {job!r}, "
+                         f"run_dir {run_dir!r}")
     cfg, _ = load_ste_learning(settings)
     phase, name = cfg.track.phase, Path(settings).name
     if isinstance(requested_gpu_h, bool) or not isinstance(requested_gpu_h, (int, float)) \
@@ -172,9 +184,9 @@ def check_launch(task: str, requested_gpu_h: float, settings: Path | str = SETTI
         raise BudgetError(f"task {task} is not a task of phase {phase} in {name} "
                           f"(known: {[known for known, _ in cfg.budget.task_cap_gpu_h]})") from None
     usage = Usage(task_cap, task_gpu_h(task), cfg.budget.phase_cap_gpu_h, phase_gpu_h(phase))
-    own = job_gpu_h(task, job) if job is not None else 0.0
+    own = job_gpu_h(task, job, run_dir) if job is not None else 0.0
     new = max(0.0, requested_gpu_h - own)
-    mine = f" ({own:.3f} of them already used by job {job})" if own > 0 else ""
+    mine = f" ({own:.3f} of them already used by job {job} in {run_dir})" if own > 0 else ""
     for what, key, cap, used in ((f"task {task}", "budget.task_cap_gpu_h", usage.task_cap_gpu_h, usage.task_used_gpu_h),
                                  (f"phase {phase}", "budget.phase_cap_gpu_h", usage.phase_cap_gpu_h, usage.phase_used_gpu_h)):
         if new > 0 and used + new > cap + _ROUNDING_GPU_H:

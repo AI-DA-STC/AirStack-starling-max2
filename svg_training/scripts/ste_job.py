@@ -10,11 +10,11 @@ launch   starts <command ...> detached (its own session; output appended to <run
          time, boot id, the exact command, start time, expected minimum duration) in <run-dir>/job.json and in the
          shared state.json. --min-s: the shortest effective duration a real finish can have. --gpu-h: GPU-hours asked
          for, the job's total over all its launches (0 for a CPU job); the launch is refused if the task's cap or the
-         phase cap in configs/ste_learning.toml would be passed (hours this job has already logged are not asked for
-         twice). Refused too while the job, or any job in that run folder, is alive, and while an owner pause
-         (scripts/gpu_pause.sh pause) is open, even one that stopped no job: only the owner resumes it. Run the same
-         line again after a job died (a reboot, a kill): the command resumes from its checkpoint (the line is kept in
-         <run-dir>/cmd.txt).
+         phase cap in configs/ste_learning.toml would be passed (hours this job has already logged in the same
+         run folder are not asked for twice; a new run folder under an old name is a new run). Refused too while
+         the job, or any job in that run folder, is alive, and while an owner pause (scripts/gpu_pause.sh pause) is
+         open, even one that stopped no job: only the owner resumes it. Run the same line again after a job died (a
+         reboot, a kill): the command resumes from its checkpoint (the line is kept in <run-dir>/cmd.txt).
 wait     blocks until the job has ended, prints one line
              <task> <job> <VERDICT> exit=<code> duration=<s>s effective=<s>s
          and exits with the JOB'S exit code. Verdicts: DONE (0), REFUSED (2), CAP (3), INTERRUPTED (4), NONFINITE (5),

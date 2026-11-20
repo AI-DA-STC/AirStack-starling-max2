@@ -1,6 +1,6 @@
 INTERNAL · the latest status of STE's own learning track and the NUS port, overwritten at every update; the history is in [LOG.md](LOG.md). Produced by the `train-status` skill.
 
-**Status, 2026-11-21 00:45 (+08:00), event: owner's rule: rigour before speed, report usage**                    · laptop RTX 5070 Ti · GPU 72 % / 22 W / 1.7 GB of 12 GB · 0 training processes (0 paused)
+**Status, 2026-11-21 01:14 (+08:00), event: L0.9 built; independent QC running**                     · laptop RTX 5070 Ti · GPU 72 % / 22 W / 1.7 GB of 12 GB · 0 training processes (0 paused)
 
 ## Phases
 
@@ -20,7 +20,7 @@ INTERNAL · the latest status of STE's own learning track and the NUS port, over
 | L0.1 | Track set-up: config and test skeleton | DONE | none | settings file, loader, tests; independent QC closed all findings |
 | L0.7 | Process tooling and drills | RUNNING | none | all seven fixes verified by the independent re-check (304 passed); full suite running, then the laptop drills, then merge; DONE only after the 5090's suite and drills too |
 | L0.8 | Game spec sheet | RUNNING | none | QC passed; your Yes written into parent STANDARDS §2 (91c5ac2 on `ste-l0.8`); merges into `development` after the L0.7 merge, then one full suite |
-| L0.9 | Tag rule for the study: 1-for-1, nearest pair first | RUNNING | tier 1 fast engine | builder on branch `ste-l0.9` (built on L0.8's branch; CPU; off-by-default proven on game outputs, not a training hash) |
+| L0.9 | Tag rule for the study: 1-for-1, nearest pair first | RUNNING | tier 1 fast engine | built (a551e4c on `ste-l0.9`): off by default, shown identical to today's game (49,500 outputs equal); CPU cost with tag on −6.7 % pure, +9.6 % Starling layer; independent QC running |
 | L0.10 | Scripted players for the study | NOT STARTED | tier 1 fast engine | after L0.9; CPU |
 | L0.11 | Screening sweep (INFO) | NOT STARTED | tier 1 fast engine | cap 3 GPU-h |
 | L0.12 | Best-response test: is the game worth learning? | NOT STARTED | tier 1 fast engine | cap 6 GPU-h |
@@ -46,8 +46,9 @@ Laptop full CPU suite (20 Nov, `development` at 5c5d465, after `scripts/nus_inst
 | L0.8 Game spec sheet: builder, build + 2 fix rounds | ~320 k | ~50 min | includes its own 25-min full suite |
 | L0.7 independent QC + re-check | ~246 k | ~18 min | reproduced C1 and I1 in a scratch folder |
 | L0.8 independent QC + re-check | ~209 k | ~12 min | mutation tests on the sheet |
-| L0.9 Tag rule: builder | running | running | |
-| Full CPU test suite | none | ~25 min each, 3 runs so far | the slowest single step; run once per merge, not per fix |
+| L0.9 Tag rule: builder | ~279 k | ~50 min | slowed by sharing the CPU with the L0.7 suite |
+| L0.9 independent QC | running | running | |
+| Full CPU test suite | none | ~25 min each alone; the current L0.7 run has taken 50+ min because it shared the CPU with L0.9's tests | rule from now: one heavy test run at a time |
 | GPU | 0 GPU-h | | nothing has used the GPU |
 
 Sub-agents total about 1.2 M tokens so far; the lead's own context is not measured by the tools here.
@@ -69,6 +70,8 @@ Sub-agents total about 1.2 M tokens so far; the lead's own context is not measur
 | L08-F1 | Finding: the hangar's Strike start ring (3.2 m from the zone centre) does not fit the 6.5 m lab arena (drones kept within 3.0 m); a ring for 6.5 m is needed before L0.11's base case | OPEN: lead picks it in L0.10 (PROPOSED value, ruled at G0) |
 | L07-C1b | Fix: our own "pause the siblings, run solo" step (AUTOMATION §2.2) is now refused too; lead's design: pauses the session makes are tagged and do not block launch, your pauses still do | DONE (ef38534; `GPU_PAUSE_BY=lead` tags the session's pauses; a bare `gpu_pause.sh pause` is still yours and still blocks; red 13 failed, then 298 passed) |
 | L07-C1c | Fix: a session-tagged resume must refuse while any of your pauses is open (a resume today continues every job and closes your pauses too) | DONE (efa9ec1; a bare resume/stop is unchanged; red 4 failed, then 304 passed) |
+| GIT-1 | Fix: my 17 Nov `.gitignore` line `data/` also hid new files in `tests/data/` | DONE (d3572dc: anchored to `/data/`) |
+| L09-5090 | On the 5090: record the tag-off golden's positions for its CPU type (AVX512); check the outcome fingerprints there | WAITING: next 5090 session |
 | L08-M | L0.8 minors left: 3 hangar values unchecked on a clone without the NUS bundle; 3 values whose wrong value still passes; loader refuses some honest wording; tests tied to exact lines and the AirStack fence file | PARKED |
 | L07-DISK | Follow-up: the planned disk-space check (a disk full through 10 retries at a job's end reads DIED) | PARKED (stated limit) |
 | L07-N | Re-check minors N1–N4: a session pause also lands in the old per-worktree log the NUS reader uses; full disk can hold the wrapper 10 min after the end; AUTOMATION §4 still states the old GPU-hour rule; on the 5090 run `scripts/ste_job.py owner-pauses` before the drills | PARKED (N4 goes into the 5090 note) |

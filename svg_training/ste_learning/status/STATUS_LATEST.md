@@ -1,6 +1,6 @@
 INTERNAL · the latest status of STE's own learning track and the NUS port, overwritten at every update; the history is in [LOG.md](LOG.md). Produced by the `train-status` skill.
 
-**Status, 2026-11-21 02:03 (+08:00), event: L0.9 re-check passed; L0.10 started**                         · laptop RTX 5070 Ti · GPU 72 % / 22 W / 1.7 GB of 12 GB · 0 training processes (0 paused)
+**Status, 2026-11-21 02:12 (+08:00), event: suite on development 1,461 passed / 0 failed; L0.9 merged; suite re-running**                          · laptop RTX 5070 Ti · GPU 72 % / 22 W / 1.7 GB of 12 GB · 0 training processes (0 paused)
 
 ## Phases
 
@@ -19,8 +19,8 @@ INTERNAL · the latest status of STE's own learning track and the NUS port, over
 |---|---|---|---|---|
 | L0.1 | Track set-up: config and test skeleton | DONE | none | settings file, loader, tests; independent QC closed all findings |
 | L0.7 | Process tooling and drills | RUNNING (laptop part DONE) | none | merged into `development`; laptop: full suite 1,420 passed / 0 failed, wake-up drill and resume drill both as expected (below); DONE when the 5090 has run the same (L07-5090) |
-| L0.8 | Game spec sheet | DONE | none | merged into `development`; QC passed; your Yes in parent STANDARDS §2; one full suite on `development` follows |
-| L0.9 | Tag rule for the study: 1-for-1, nearest pair first | RUNNING | tier 1 fast engine | re-check passed (all 16 broken versions caught; tag-off still equals the pre-L0.9 game, 32 of 32 runs); merges after the running full suite, then one more suite |
+| L0.8 | Game spec sheet | DONE | none | merged into `development`; QC passed; full suite on `development` 1,461 passed / 0 failed (41 min) |
+| L0.9 | Tag rule for the study: 1-for-1, nearest pair first | RUNNING | tier 1 fast engine | merged into `development` (QC passed); full suite re-running; DONE when it passes (the 5090 records its own tag-off positions, L09-5090) |
 | L0.10 | Scripted players for the study | RUNNING | tier 1 fast engine | builder on branch `ste-l0.10` (on top of L0.9): 2 new Guards, 4 new Strikes; lead's call on L08-F1: Strike start ring 2.75 m for the 6.5 m arena (PROPOSED, to be checked against the code) |
 | L0.11 | Screening sweep (INFO) | NOT STARTED | tier 1 fast engine | cap 3 GPU-h |
 | L0.12 | Best-response test: is the game worth learning? | NOT STARTED | tier 1 fast engine | cap 6 GPU-h |

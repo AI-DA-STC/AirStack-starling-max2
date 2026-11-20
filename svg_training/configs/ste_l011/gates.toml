@@ -47,15 +47,15 @@ z_up_label = "tier 1 vertical response not fitted (s2b.toml z_up_info)"
 
 [games]
 # Variant game files and their sha256 (tests/test_ste_l011.py keeps these equal to the files).
-base = { file = "configs/ste_l011/base.toml", sha256 = "84daa4e930d9fe423b0658978d4e241d7dccc23a0c5bfe2d1d931c585662d084" }
-tag_1p2 = { file = "configs/ste_l011/tag_1p2.toml", sha256 = "f680efc1063cf5a331de6126e9c10efbfedaafedab7f3d41dd6bcf3b33e48460" }
-tag_1p4 = { file = "configs/ste_l011/tag_1p4.toml", sha256 = "4e854b0436d9163f3b7906e2e5a5602a4196eb0418c04f85d90b67ad96bcc1d8" }
-tag_1p8 = { file = "configs/ste_l011/tag_1p8.toml", sha256 = "234072f5acef40828953c32a41b677e47b7f4fa10dc0b18c541b4db89c5666ad" }
-zone_2p4 = { file = "configs/ste_l011/zone_2p4.toml", sha256 = "1ac45a9605fc773c716ed4effb70a7a3d0d84c527805fb4686d6252f12f742a2" }
-survive_1 = { file = "configs/ste_l011/survive_1.toml", sha256 = "34994413da45d1ea31a84da04793531a2671290834085ccde51f0d2911f1aac0" }
-arena_7p5 = { file = "configs/ste_l011/arena_7p5.toml", sha256 = "b055111083063dea18bb135dfadecdd6387985935fb2cb25c01fb855d8b71bdc" }
-tag_off = { file = "configs/ste_l011/tag_off.toml", sha256 = "3d3975b5ec2c9995b6f3a8a2af736d3fef9d050efb858c733acee140d702c856" }
-tag_0p05 = { file = "configs/ste_l011/tag_0p05.toml", sha256 = "57db7a76721cf3d1a7e7a13da4195065b4251459d814f754b5f8d4c82c216410" }
+base = { file = "configs/ste_l011/base.toml", sha256 = "96e0e7f61a49999da54eee81a544bf64c519cd80833f0dcdfa2a07edfc10cc4d" }
+tag_1p2 = { file = "configs/ste_l011/tag_1p2.toml", sha256 = "60a225a1f6876407edac2a12ac1002a161971e7b4c7923a838e710723ee4e378" }
+tag_1p4 = { file = "configs/ste_l011/tag_1p4.toml", sha256 = "ddcfa1f56fd533907651225260939426617a38db83aec5f94404b6b27202124f" }
+tag_1p8 = { file = "configs/ste_l011/tag_1p8.toml", sha256 = "d27cedb5aa55537d691d07c59b5dc538002ec2b7d7674c52d1567afdc012beeb" }
+zone_2p4 = { file = "configs/ste_l011/zone_2p4.toml", sha256 = "5782327bf434bf19cbeb752811fc6af770fab329e9dbda8dba13046023764bc7" }
+survive_1 = { file = "configs/ste_l011/survive_1.toml", sha256 = "512f46de7612c4a44eede71591d67150807fcfed6c46d38626b8a7c999428804" }
+arena_7p5 = { file = "configs/ste_l011/arena_7p5.toml", sha256 = "ce8cc5f876dfeb4c28130f7692bee0069d6fd479cddf1b30dff77934d5fdd1a9" }
+tag_off = { file = "configs/ste_l011/tag_off.toml", sha256 = "fae94c1f36ec026b4e9778fbb497b576d5dce0b8f67b443b1ed7e77512d000e1" }
+tag_0p05 = { file = "configs/ste_l011/tag_0p05.toml", sha256 = "be8d5b2ef7dc58958c329374370aea026fa7a650950564a3e3dc3b04bcc4db33" }
 
 [confounds]
 # The lead's rulings on the two variants that change more than one thing, and the height-offset cell (21 Nov 2026 brief).

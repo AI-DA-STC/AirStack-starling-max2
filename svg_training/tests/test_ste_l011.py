@@ -44,6 +44,22 @@ def test_every_game_file_is_pinned_by_its_sha256_and_loads_without_the_local_fil
         assert sweep.variant_cfg(GATES, name) == cfg
 
 
+def test_every_game_file_is_complete_it_names_every_setting_of_every_section():
+    """A complete game file: no value comes from a code default (a default added later, as starts.team_spacing_margin_m
+    by L0.10's QC fix, must be written into the files, with their pinned sha256 updated)."""
+    import dataclasses
+    import tomllib
+
+    from svg_training.core import game_config as gc
+    sections = {"arena": gc.ArenaCfg, "partner_rules": gc.PartnerRulesCfg, "contact_rules": gc.ContactRulesCfg,
+                "starling_layer": gc.StarlingLayerCfg, "starts": gc.StartsCfg, "rewards": gc.RewardsCfg, "tag": gc.TagCfg}
+    for name, ref in GATES.games.items():
+        data = tomllib.loads((ROOT / ref.file).read_text())
+        for sec, cls in sections.items():
+            missing = {f.name for f in dataclasses.fields(cls)} - set(data[sec])
+            assert not missing, (name, sec, missing)
+
+
 def test_an_edited_game_file_is_reported(tmp_path):
     ref = GATES.games["base"]
     copy = tmp_path / "base.toml"
@@ -70,7 +86,13 @@ def realised_base() -> dict:
     cfg = g.cfg
     rho = (g.pos_m[..., :2] - g.arenas.zone_centre_m[:, None, :]).norm(dim=-1)
     params = load_params(resolve_params(cfg.starling.params))
+    gap = (g.pos_m[:, :, None, :2] - g.pos_m[:, None, :, :2]).norm(dim=-1)
+    team = torch.zeros(6, 6, dtype=torch.bool)
+    team[:3, :3] = team[3:, 3:] = True
+    team &= ~torch.eye(6, dtype=torch.bool)
+    keepout = max(cfg.rules.keepout_guard_m, cfg.rules.keepout_strike_m)
     return {
+        "starts.team_spacing_margin_m": gap[:, team].min().item() - keepout,     # closest team-mates at the start
         "zone.radius_m": float(g.arenas.zone_radius_m.unique()), "zone.centre": g.arenas.zone_centre_m.abs().max().item(),
         "zone.win_ticks_inside": cfg.rules.win_steps_in_zone, "height.band_m": tuple(cfg.arena.height_band_m),
         "height.mode": g.motion, "height.start_m": float(g.pos_m[..., 2].unique()),
@@ -87,13 +109,19 @@ def realised_base() -> dict:
     }
 
 
+def cfg_margin(name: str) -> float:
+    return sweep.variant_cfg(GATES, name).starts.team_spacing_margin_m
+
+
 def test_the_base_game_as_built_equals_the_sheet_rows_it_claims():
     got = realised_base()
     checked = set(got)
     assert checked | set(NOT_APPLIED) | set(ON_PURPOSE) | set(ENGINE) | DESIGN == set(SCHEMA)      # every row placed
     for key, value in got.items():
         want = SPEC.value(key)
-        if key == "starts.guard_disc_m":
+        if key == "starts.team_spacing_margin_m":
+            assert value >= want - TOL_M and cfg_margin("base") == want
+        elif key == "starts.guard_disc_m":
             assert value <= want + TOL_M
         elif key == "starts.strike_ring_m":
             assert torch.allclose(value, torch.full_like(value, want), atol=TOL_M)

@@ -72,6 +72,7 @@ strike_inset_m = 0.3               # not read in this mode
 guard_ring_gap_m = 0.3             # not read in this mode
 spacing_m = 1.2                    # not read in this mode
 guard_disc_m = 0.8                 # starts.guard_disc_m (PROPOSED)
+team_spacing_margin_m = 0.05        # starts.team_spacing_margin_m (PROPOSED, L0.10 QC fix round 1): team-mates start >= 1.10 + 0.05 m apart
 strike_ring_m = 3.2                # study value: the hangar ring 3.2 m (sheet row starts.strike_ring_m, column "hangar game")
 
 [rewards]

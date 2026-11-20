@@ -1,6 +1,6 @@
 INTERNAL · the latest status of STE's own learning track and the NUS port, overwritten at every update; the history is in [LOG.md](LOG.md). Produced by the `train-status` skill.
 
-**Status, 2026-11-21 05:07 (+08:00), event: KEY FINDING from T44: with scripted players every 'hold' is a one-for-one trade; head-count decides the game (PLAN F1)**                                             · laptop RTX 5070 Ti · GPU idle except the remote-desktop service · 0 training processes (0 paused)
+**Status, 2026-11-21 05:10 (+08:00), event: L0.10 DONE (development suite 1,600 passed / 0 failed)**                                              · laptop RTX 5070 Ti · GPU idle except the remote-desktop service · 0 training processes (0 paused)
 
 ## Phases
 
@@ -21,7 +21,7 @@ INTERNAL · the latest status of STE's own learning track and the NUS port, over
 | L0.7 | Process tooling and drills | RUNNING (laptop part DONE) | none | merged into `development`; laptop: full suite 1,420 passed / 0 failed, wake-up drill and resume drill both as expected (below); DONE when the 5090 has run the same (L07-5090) |
 | L0.8 | Game spec sheet | DONE | none | merged into `development`; QC passed; full suite on `development` 1,461 passed / 0 failed (41 min) |
 | L0.9 | Tag rule for the study: 1-for-1, nearest pair first | DONE | tier 1 fast engine | merged; QC + re-check passed; full suite on `development` 1,517 passed / 0 failed (31 min); the 5090 records its own tag-off positions (L09-5090) |
-| L0.10 | Scripted players for the study | RUNNING (merged) | tier 1 fast engine | re-check 2 passed (no tags with parked or still players at any size, tag on or off, 90 s; default game still identical); merged into `development`; DONE when the full suite passes (held until the GPU pilot ends, one heavy job at a time) |
+| L0.10 | Scripted players for the study | DONE | tier 1 fast engine | merged; QC + 2 re-checks passed; full suite on `development` 1,600 passed / 0 failed (56 min, CPU shared with the L0.11 GPU jobs) |
 | L0.11 | Screening sweep (INFO) | RUNNING (follow-up checks) | tier 1 fast engine | record T44 accepted by the independent read (controls, every number, hashes and the shortlist trace); **every hold is a one-for-one trade**: no tag-on game reached the 120 s time-out (games last 2–4 s) and at 1v1 and 3v3 every hold ends with all Guards tagged out too; follow-up CPU checks running (does the tag-before-zone rule create holds, Guards left per cell, identical columns, scripts at a 0.6 s decision period); then merge |
 | L0.12 | Best-response test: is the game worth learning? | NOT STARTED | tier 1 fast engine | cap 6 GPU-h |
 | L0.2 | Tier 2 speed in contested play | NOT STARTED | tier 2 Isaac Lab | 5090; cap 1.5 GPU-h |
@@ -96,7 +96,7 @@ Laptop drills (21 Nov, fix branch, shared folder `~/AirStack-starling-max2/svg_t
 | TEST-F2 | Fix: bit-level training fingerprint is machine-specific | DONE (447b317; trainer test file 43 passed, 1 skipped) |
 | TEST-F2b | On the 5090: confirm its CPU capability is AVX512 (the key its 18 Nov hash is now filed under) | WAITING: next 5090 session runs the test (fails or skips loudly if wrong) |
 
-**Next.** (1) L0.11 follow-up checks (CPU). (2) L0.12 Best-response test: the lead's gate change (advisor, Fable 5.2): T44 already settles the PLAN's 0.2 bands for the tag variants, so the gate will read the better of script and trained exploiter and measure how far the exploiter gets above the script, with Guards-left and game length reported; trainer path verified on CPU first (the tag-on game files, Strike side, a positive control reproducing a T44 cell); reviewer reads the gate before launch. (3) Merge L0.11 after the L0.10 suite and its own suite.
+**Next.** (1) L0.11 follow-up checks (CPU). (2) L0.12 Best-response test: the lead's gate change (advisor, Fable 5.2): T44 already settles the PLAN's 0.2 bands for the tag variants, so the gate will read the better of script and trained exploiter and measure how far the exploiter gets above the script, with Guards-left and game length reported; trainer path verified on CPU first (the tag-on game files, Strike side, a positive control reproducing a T44 cell); reviewer reads the gate before launch. (3) Merge L0.11 after its follow-up checks and its own suite.
 
 **Waiting on you.** Nothing; no GPU job is running.
 

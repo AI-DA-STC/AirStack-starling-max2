@@ -95,6 +95,14 @@ above with it on the STE *hangar set-up* (1 unit = 0.40 m, 1 step = 0.60 s, a 7.
 game and the trained policies into the STE pipeline (PyTorch). Each copy was checked against NUS's code; every PASS
 grades the copy, never NUS's code.
 
+**Why NUS's JAX code was converted to PyTorch.** STE's game engine, STE's drone model (delay and lag), the copy of the
+safety filter and Isaac Lab all run in PyTorch on the GPU. Testing NUS's policies under STE drone conditions means
+running them inside that same loop. Keeping the policies in JAX would move data between two libraries at every step
+and hold both libraries' memory on one GPU; that route was not tried. Converted policies also run without NUS's code
+installed, so the tests can be replayed from this repository alone. Retraining in STE conditions needs NUS's training
+method in the same library as the game. The conversion was checked before any other test: the same game step by step
+(Phase 2) and the same actions (Phase 3).
+
 | Phase | What | Simulator | Result | Evidence |
 |---|---|---|---|---|
 | 1 | NUS's code, installed | NUS 2-D game (JAX) | 65 of NUS's 66 tests pass; the one failure checks an older Guard safety distance, which NUS confirmed is out of date | [record](records/2026-11-17_nus_phase1_install_record.md) (INFO, written after the fact) |

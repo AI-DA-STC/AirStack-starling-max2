@@ -34,8 +34,8 @@ Source of truth for direction: [DISCUSSION_2026-11-19_20.md](DISCUSSION_2026-11-
    unset PYTHONPATH
    CUDA_VISIBLE_DEVICES="" PYTHONPATH=source ~/miniconda3/envs/env_isaaclab/bin/python -m pytest -q -p no:cacheprovider tests/test_<area>.py
    ```
-   During the loop, run the touched test files; before hand-over or merge, the full suite (1,161 tests collected on
-   20 Nov 2026; its run time here not yet measured), quoting the last line. A skip is not a pass.
+   During the loop, run the touched test files; before hand-over or merge, the full suite (1,243 tests collected on
+   20 Nov 2026 after L0.1; about 19 minutes on the home RTX 5090 with the GPU hidden), quoting the last line. A skip is not a pass.
 
 ## 3. Vectorisation (STANDARDS §6.1)
 
@@ -55,7 +55,9 @@ Source of truth for direction: [DISCUSSION_2026-11-19_20.md](DISCUSSION_2026-11-
   and filter option B are PROPOSED (P1, P2): they ship as settings, default off, until the owner rules; they contradict
   two FIXED rows of STANDARDS §4 and must not be presented as settled.
 - Code holds no tuned numbers; named physical or structural constants (`G_MPS2`, `SLOT`) are fine. G2 (only 0, 1, −1, 2
-  as literals, `tests/test_nus_rules_privacy.py`) binds `nus/` only; the track's package gets its own literal-scan test.
+  as literals, `tests/test_nus_rules_privacy.py`) binds `nus/` only; the track's package has its own literal-scan test, `tests/test_ste_literals.py` (L0.1; rule set by
+  the lead, 20 Nov 2026): in `source/svg_training/ste/`, a numeric literal other than 0, 1, −1, 2 is allowed only on the
+  right-hand side of a module-level assignment to an UPPER_CASE name; anywhere else the test fails with file and line.
 - A drone-model parameter set is a new versioned file (for example `params/starling_physics_v1.toml`); `v0` is never
   edited. Parameters flow from the drone to the trainer, never back (iron rule 9). Training uses sets fitted to real
   logs (STANDARDS §5 rule 10); a set fitted to the AirStack simulator describes that simulator only.

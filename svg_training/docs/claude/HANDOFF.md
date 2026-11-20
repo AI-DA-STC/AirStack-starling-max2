@@ -17,7 +17,7 @@ note disagree, this file wins.
 The owner set a new direction on 19–20 Nov: **STE trains its own Guard and Strike policies, in parallel with NUS**
 (the NUS route is paused, lead call D8). Everything is in [`ste_learning/`](../../ste_learning/README.md): the README (what is
 being built, the plan, phase L0 step by step, four flowcharts), `PLAN.md` (version 2, after an independent soundness
-review), `DISCUSSION_2026-11-19_20.md` (every question, decision D1–D9 and open item P1–P12), the track's STANDARDS,
+review), `DISCUSSION_2026-11-19_20.md` (every question, decision D1–D9 and open item P1–P13), the track's STANDARDS,
 reference pages and five agents (`ste-*`, copied into `.claude/agents/`).
 
 - **State:** **phase L0 (game definition and feasibility, cap 19 GPU-h) APPROVED by the owner, 20 Nov 2026** (L0 only:
@@ -28,6 +28,20 @@ reference pages and five agents (`ste-*`, copied into `.claude/agents/`).
   "Phase 5 planned": not approved for change, proposed to the owner.
 - **Status files:** `ste_learning/status/STATUS_LATEST.md` (overwritten) and `LOG.md` (append-only), first written 20 Nov.
 - **Heartbeat:** the owner did not answer the heartbeat question; the standing rule holds (full status every 30 min).
+- **L0.1 DONE (20 Nov ~14:30):** `configs/ste_learning.toml` (`[track]`, `[budget]`: the 19 GPU-h phase cap FIXED, the task
+  caps PROPOSED), `source/svg_training/ste/config.py` (frozen, fails closed), `tests/test_ste_config.py` (38 tests; several
+  parse PLAN.md §4's table, budget sentence and header, so an edit there must keep the file in step), `tests/test_ste_literals.py`
+  (no hard-coded number in `ste/` outside a module-level UPPER_CASE constant; rule in ste_learning/CODING_PRACTICES §4). The two marker tests that
+  failed when pytest's temp folder number was 46, 48 or 23 are fixed (`mask_paths` in `tests/_nus_markers.py`). Next: L0.7.
+- **Fleet question (owner, 20 Nov), OPEN:** real flight on Starlings, Crazyflies (`~/CrazySwarm2-with-Mocap_Strike-and-Guard`,
+  another repository, read-only for this folder) or a mix. Recommendation given: Crazyflies first at Starling metres, Starling
+  1v1 as planned, mix deferred; proposed a zero-GPU task "Crazyflie route check" in L0 and a fleet question at G0. Offline check
+  in the Crazyflie planner (1.10 m keep-out, 0.6 s lag): 1v1 and 2v1 clean in a 6.5 m arena, 3v3 and 5v3 show solver
+  emergencies in 5 of 100 matches there and none in the larger room. Owner's facts (20 Nov): both fleets share one room and
+  one OptiTrack rig at different Motive rates; the 6 Nov Crazyflie flight logs are not on the 5090. Full record: DISCUSSION
+  §2.16, open item P13. **Owner's ruling (20 Nov): task L0.14 Crazyflie route check added to L0 (0 GPU-h), fleet question
+  added to gate G0**; the fleets themselves stay OPEN. Also approved the same day: the status text of this folder's row in
+  the root `CLAUDE.md`, and a paragraph in README §2 on why NUS's JAX code was converted to PyTorch.
 - **Why L0 exists:** the review found that the proposed rules (1.6 m proximity tag, 1-for-1) may let head-count decide
   the game, that the zone radius equals the tag radius, that the programme's sizes are 2v1 and 5v3 (not 3v3), and that
   tier 2 has never trained anything (PLAN §2, F1–F10).

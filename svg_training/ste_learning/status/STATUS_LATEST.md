@@ -1,6 +1,6 @@
 INTERNAL · the latest status of STE's own learning track and the NUS port, overwritten at every update; the history is in [LOG.md](LOG.md). Produced by the `train-status` skill.
 
-**Status, 2026-11-21 01:14 (+08:00), event: L0.9 built; independent QC running**                     · laptop RTX 5070 Ti · GPU 72 % / 22 W / 1.7 GB of 12 GB · 0 training processes (0 paused)
+**Status, 2026-11-21 01:28 (+08:00), event: L0.7 suite + both drills PASS on the laptop; L0.7 and L0.8 merged into development**                      · laptop RTX 5070 Ti · GPU 72 % / 22 W / 1.7 GB of 12 GB · 0 training processes (0 paused)
 
 ## Phases
 
@@ -18,8 +18,8 @@ INTERNAL · the latest status of STE's own learning track and the NUS port, over
 | ID | Plain name | Status | Simulator | Result / ETA |
 |---|---|---|---|---|
 | L0.1 | Track set-up: config and test skeleton | DONE | none | settings file, loader, tests; independent QC closed all findings |
-| L0.7 | Process tooling and drills | RUNNING | none | all seven fixes verified by the independent re-check (304 passed); full suite running, then the laptop drills, then merge; DONE only after the 5090's suite and drills too |
-| L0.8 | Game spec sheet | RUNNING | none | QC passed; your Yes written into parent STANDARDS §2 (91c5ac2 on `ste-l0.8`); merges into `development` after the L0.7 merge, then one full suite |
+| L0.7 | Process tooling and drills | RUNNING (laptop part DONE) | none | merged into `development`; laptop: full suite 1,420 passed / 0 failed, wake-up drill and resume drill both as expected (below); DONE when the 5090 has run the same (L07-5090) |
+| L0.8 | Game spec sheet | DONE | none | merged into `development`; QC passed; your Yes in parent STANDARDS §2; one full suite on `development` follows |
 | L0.9 | Tag rule for the study: 1-for-1, nearest pair first | RUNNING | tier 1 fast engine | built (a551e4c on `ste-l0.9`): off by default, shown identical to today's game (49,500 outputs equal); CPU cost with tag on −6.7 % pure, +9.6 % Starling layer; independent QC running |
 | L0.10 | Scripted players for the study | NOT STARTED | tier 1 fast engine | after L0.9; CPU |
 | L0.11 | Screening sweep (INFO) | NOT STARTED | tier 1 fast engine | cap 3 GPU-h |
@@ -48,10 +48,14 @@ Laptop full CPU suite (20 Nov, `development` at 5c5d465, after `scripts/nus_inst
 | L0.8 independent QC + re-check | ~209 k | ~12 min | mutation tests on the sheet |
 | L0.9 Tag rule: builder | ~279 k | ~50 min | slowed by sharing the CPU with the L0.7 suite |
 | L0.9 independent QC | running | running | |
-| Full CPU test suite | none | ~25 min each alone; the current L0.7 run has taken 50+ min because it shared the CPU with L0.9's tests | rule from now: one heavy test run at a time |
+| Full CPU test suite | none | ~25 min alone; the L0.7 merge run took 61 min (shared the CPU with L0.9's tests) | rule from now: one heavy test run at a time |
 | GPU | 0 GPU-h | | nothing has used the GPU |
 
 Sub-agents total about 1.2 M tokens so far; the lead's own context is not measured by the tools here.
+
+Laptop drills (21 Nov, fix branch, shared folder `~/AirStack-starling-max2/svg_training/runs/shared/`, no owner pause open):
+- Wake-up: `L0.7 l07_wakeup DONE exit=0 duration=120.4s effective=120.4s`, `waiter exit 0` (the background waiter's end was the wake-up).
+- Resume: `alive` → simulated power cut (`kill -KILL` of the process group at step 30) → `dead`; waiter `DIED exit=none duration=31.2s`, `waiter exit 21`; relaunch with `bash cmd.txt` from a shell with a wrong `PYTHONPATH` and `SVG_SHARED_DIR` → `launch=2`, `resumed from step 30 of 120`, `DONE exit=0 duration=90.4s effective=90.4s run_effective=120.3s`, `waiter exit 0`, `{"steps": 120, "total": 7260.0}`; the wrong shared folder was never created.
 
 ## Other workstreams
 

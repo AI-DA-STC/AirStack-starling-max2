@@ -21,6 +21,13 @@ training fingerprint recorded on the 5090 differs on the laptop's CPU), see `ste
 Owner (20 Nov): "go ahead with ur recommendations then continue building": L0.7 QC + fixes one at a time, drills, then
 L0.8 onward on the laptop (CPU).
 
+**21 Nov ~01:30 (laptop):** L0.7 fixes (QC C1, I1–I5, plus C1b/C1c: session-tagged pauses) merged into `development`;
+laptop full suite 1,420 passed, wake-up and resume drills as expected (STATUS_LATEST). L0.8 Game spec sheet merged
+(owner said Yes to NUS values in it, parent STANDARDS §2). **On the 5090 next time:** `git pull` development, run
+`scripts/ste_job.py owner-pauses` (an old untagged pause would now block launches), the full suite (TEST-F2b: the 5090's
+CPU capability key; L09-5090: record the tag-off golden positions once L0.9 lands), then the two drills (AUTOMATION §7;
+set `GPU_PAUSE_PYTHON` if `python3` is older than 3.11). L0.9 Tag rule is on branch `ste-l0.9` under QC.
+
 ### MOVING BETWEEN MACHINES, 20 November 2026 ~21:45 — read this first on the laptop (and on every switch)
 
 The owner works on the home RTX 5090 and the RTX 5070 Ti laptop in turns and moved to the laptop on 20 Nov evening.

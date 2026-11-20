@@ -340,10 +340,13 @@ safety_factor = 1.1
 # runs/2026-11-21_ste_l011_pilot (ste-l0.11 at ed2f7fd1, laptop RTX 5070 Ti, remote-desktop service also on the GPU),
 # pilot.md. Projection there at 30 cells per batch: 19 batches, 0.75 GPU-h; 0.99 GPU-h with the 1.1 factor and the
 # clip reserve, against the 3.0 GPU-h cap. MEASURED (200 timed ticks per point).
-"1v1" = 0.0321557
-"2v1" = 0.0428184
-"3v3" = 0.0743015
-"5v3" = 0.137539
+# LEAD CALL 21 Nov 2026 after the CUDA smoke (runs/2026-11-21_ste_l011_cuda_smoke at 9ebcfdb7): its full 30,000-game
+# base batch ran 92.2 ms per tick against the pilot's 74.3 ms (ratio 1.24, over the 1.10 limit; a full CPU test suite
+# ran beside it, so likely CPU load, not tested). Conservative: every pilot figure x 1.24.
+"1v1" = 0.0398731
+"2v1" = 0.0530948
+"3v3" = 0.0922
+"5v3" = 0.1705484
 
 # ------------------------------------------------------------------------------------------------ the controls
 [controls]

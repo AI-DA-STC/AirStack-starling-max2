@@ -86,10 +86,12 @@ tag_10m = { file = "configs/ste_l011/tag_10m.toml", sha256 = "816892b3524829f6fd
 zone_2p4_tag_off = { file = "configs/ste_l011/zone_2p4_tag_off.toml", sha256 = "86613ffd577fa58f56d865d5527d145a181cfa55335a227d583f83933c60ccd7" }
 
 [projection.seconds_per_batch_tick]
-"1v1" = 0.0321557
-"2v1" = 0.0428184
-"3v3" = 0.0743015
-"5v3" = 0.137539
+# LEAD CALL 21 Nov 2026: kept equal to gates.toml after the CUDA smoke (pilot figures x 1.24); the smoke itself ran
+# with the pilot figures (runs/2026-11-21_ste_l011_cuda_smoke, SMOKE PASS).
+"1v1" = 0.0398731
+"2v1" = 0.0530948
+"3v3" = 0.0922
+"5v3" = 0.1705484
 
 [[groups]]
 name = "ctl_tag_fires_2v1"

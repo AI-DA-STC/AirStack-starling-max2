@@ -1,6 +1,6 @@
 INTERNAL · the latest status of STE's own learning track and the NUS port, overwritten at every update; the history is in [LOG.md](LOG.md). Produced by the `train-status` skill.
 
-**Status, 2026-11-21 05:52 (+08:00), event: machine schedule recorded (weekends laptop, weekdays 5090)**                                                    · laptop RTX 5070 Ti · GPU idle except the remote-desktop service · 0 training processes (0 paused)
+**Status, 2026-11-21 05:52 (+08:00), event: laptop packed Mon 23 Nov 10:00; weekend plan set**                                                     · laptop RTX 5070 Ti · GPU idle except the remote-desktop service · 0 training processes (0 paused)
 
 ## Phases
 
@@ -97,7 +97,7 @@ Laptop drills (21 Nov, fix branch, shared folder `~/AirStack-starling-max2/svg_t
 | TEST-F2 | Fix: bit-level training fingerprint is machine-specific | DONE (447b317; trainer test file 43 passed, 1 skipped) |
 | TEST-F2b | On the 5090: confirm its CPU capability is AVX512 (the key its 18 Nov hash is now filed under) | WAITING: next 5090 session runs the test (fails or skips loudly if wrong) |
 
-**Machines (owner, 21 Nov):** no task is 5090-only. The RTX 5090 (32 GB) suits memory-heavy runs; the laptop RTX 5070 Ti (12 GB) runs everything sized to fit, and the record says which machine. Only machine checks stay with their machine: TEST-F2b, L07-5090, L09-5090. **Schedule:** weekends the laptop runs the pipeline (the 5090 is free for gaming); weekdays the 5090 does (the laptop goes to work). Switch Sunday night: laptop jobs finished or stopped, everything committed, ready to push.
+**Machines (owner, 21 Nov):** no task is 5090-only. The RTX 5090 (32 GB) suits memory-heavy runs; the laptop RTX 5070 Ti (12 GB) runs everything sized to fit, and the record says which machine. Only machine checks stay with their machine: TEST-F2b, L07-5090, L09-5090. **Schedule:** weekends the laptop runs the pipeline (the 5090 is free for gaming); weekdays the 5090 does (the laptop goes to work). **This weekend:** the owner packs the laptop **Mon 23 Nov 10:00**: no GPU job starts unless it can end by **Mon 08:00**; by **09:30** everything is committed, HANDOFF §0 and status written, ready to push.
 
 **GPU queue on the laptop (one at a time for speed measurements):** L0.12 pilot → L0.12 one variant → L0.2 → L0.3 → rest of L0.12 → L0.13 → L0.4 → L0.5.
 

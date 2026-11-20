@@ -303,3 +303,22 @@ def write_fake_policy_sources(clone, deploy_values: dict) -> None:
             def apf_defender_actions(self, state):
                 return argmin(offsets)
         """))
+
+
+# ---- the folders the test harness chose are not a leak
+PATH_MASK = "<path>"  # no digit, and no word character at either end: a value written right beside a masked path keeps its word boundary
+
+
+def mask_paths(text: str, *paths) -> str:
+    """``text`` with every given path replaced by PATH_MASK (as written and resolved; the longest first, so a folder inside another
+    leaves no remainder). The marker scans search error text and captured output for the made-up numbers; that text names folders
+    the test harness chose (pytest's numbered temp folder), and their digits are not a leak. Only these exact path strings are
+    taken out: a marker value anywhere else in the text, also in a file or folder name below a masked folder, is still found.
+    A path that is not absolute is refused, so the mask can never be handed a bare number or name."""
+    relative = [str(path) for path in paths if not Path(path).is_absolute()]
+    if relative:
+        raise ValueError(f"only an absolute path can be masked, got {relative}")
+    forms = {form for path in paths for form in (str(path), str(Path(path).resolve()))}
+    for form in sorted(forms, key=len, reverse=True):
+        text = text.replace(form, PATH_MASK)
+    return text

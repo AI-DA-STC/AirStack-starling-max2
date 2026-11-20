@@ -112,8 +112,8 @@ def test_g4_deploy_actor_wrapper_and_interface_chain_leaks_no_marker(tmp_path, m
 
     import torch
 
-    from _nus_markers import (FAKE_COMMIT, HOLDS, MARKER_ARCH, SEED_B, load_marker_files, marker_strings, write_fake_policy_sources,
-                              write_synthetic_checkpoint)
+    from _nus_markers import (FAKE_COMMIT, HOLDS, MARKER_ARCH, SEED_B, load_marker_files, marker_strings, mask_paths,
+                              write_fake_policy_sources, write_synthetic_checkpoint)
     from svg_training.core.game_config import load_game_cfg
     from svg_training.core.observations import OBS_DIM
     from svg_training.nus import interface as interface_mod, strategy as strategy_mod
@@ -127,6 +127,10 @@ def test_g4_deploy_actor_wrapper_and_interface_chain_leaks_no_marker(tmp_path, m
         spec.loader.exec_module(mod)
         return mod
 
+    # The captured output names the folder the deploy file is written to ("wrote <path>"). The folder is this test's choice, not a
+    # leak, so it is masked before the search below; it is named with both searched numbers here, as pytest's numbered temp folder
+    # is on some runs (tests/test_nus_marker_paths.py).
+    tmp_path = tmp_path / f"pytest-{MARKER_ARCH['hidden_dim']}-{MARKER_ARCH['hidden_dim'] // 2}"
     rules, deploy_marker, rules_path, _ = load_marker_files(tmp_path / "inputs")
     values = marker_deploy()
     clone = tmp_path / "clone"
@@ -186,7 +190,8 @@ def test_g4_deploy_actor_wrapper_and_interface_chain_leaks_no_marker(tmp_path, m
             text = path.read_text(errors="ignore")
             hits += [(str(path), m) for m in markers if m in text]
             hits += [(str(path), p.pattern) for p in architecture if p.search(text)]
-    text = captured.getvalue() + capsys.readouterr().out
+    text = mask_paths(captured.getvalue() + capsys.readouterr().out, tmp_path)
+    assert "sha256" in text                                   # only the folder was taken out, the script's lines are still there
     hits += [("captured output", m) for m in markers if m in text]
     hits += [("captured output", p.pattern) for p in architecture if p.search(text)]
     listing = subprocess.run(["git", "ls-files", "-co", "--exclude-standard"], cwd=ROOT, capture_output=True, text=True)

@@ -10,7 +10,7 @@ import pytest
 import torch
 
 from _nus_markers import (BF16_BAND, LOG_STD, SKEW, UPDATE_MARKER, BATCH, MARKER_ARCH, TOL_LOOSE, TOL_TIGHT, distinctive, load_marker_files, marker_rules, marker_strings,
-                          write_synthetic_checkpoint, SEED_B)
+                          mask_paths, write_synthetic_checkpoint, SEED_B)
 from svg_training.nus import deploy as deploy_mod, rules as rules_mod
 from svg_training.nus.actor import NusActor
 
@@ -185,13 +185,18 @@ def test_refuses_nonfinite_or_mismatched_parameters(tmp_path, files):
 
 def test_no_architecture_value_in_error_text(tmp_path, files):
     rules, deploy, _, _ = files
-    folder = write_synthetic_checkpoint(tmp_path / "widths", "guard")
+    # The message names the checkpoint folder. The folder is this test's choice, not a leak, so it is masked before the search; it is
+    # named with both searched numbers here, as pytest's numbered temp folder is on some runs (tests/test_nus_marker_paths.py).
+    work = tmp_path / f"pytest-{MARKER_ARCH['hidden_dim']}-{MARKER_ARCH['hidden_dim'] + 2}"
+    folder = write_synthetic_checkpoint(work / "widths", "guard")
     cfg = json.loads((folder / "config.json").read_text())
     cfg["trainer"]["policy"]["hidden_dim"] += 2
     (folder / "config.json").write_text(json.dumps(cfg))
     with pytest.raises(ValueError) as err:
         NusActor.load(folder, team="guard", rules=rules, deploy=deploy)
-    assert str(MARKER_ARCH["hidden_dim"]) not in str(err.value) and str(MARKER_ARCH["hidden_dim"] + 2) not in str(err.value)
+    text = mask_paths(str(err.value), work)
+    assert "architecture" in text                               # only the folder was taken out, the message is still there
+    assert str(MARKER_ARCH["hidden_dim"]) not in text and str(MARKER_ARCH["hidden_dim"] + 2) not in text
 
 
 REFERENCE_DIR = deploy_mod.REFERENCE_DIR

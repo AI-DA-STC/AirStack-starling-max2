@@ -30,6 +30,7 @@ TOOL = SCRIPTS / "ste_job.py"
 DUMMY = SCRIPTS / "ste_dummy_job.py"
 POLL = "0.02"
 OTHER_BOOT = "00000000-0000-4000-8000-000000000000"
+DISPLAY_HALF_STEP_S = 0.05     # the waiter prints durations to 0.1 s
 
 
 class Bench:
@@ -252,8 +253,9 @@ def test_f_d_a_killed_job_reads_dead_the_waiter_says_died_and_the_same_command_r
     died = re.fullmatch(r"L0\.7 cut DIED exit=none duration=(\d+\.\d)s effective=\d+\.\ds \(no exit code recorded; dead\)\n",
                         waiter.stdout.read())
     # the duration runs to the last sign of life (the newest file of the run folder: here the last checkpoint or log
-    # line), not to the wrapper's last beat, which is a minute apart in real use
-    assert 0.1 <= float(died.group(1)) <= time.time() - first["started"]
+    # line), not to the wrapper's last beat, which is a minute apart in real use. The waiter prints it rounded to 0.1 s, so
+    # the upper bound allows half a display step (L07-F1, laptop 20 Nov 2026: raw 0.255 s printed "0.3" against 0.293 s elapsed)
+    assert 0.1 <= float(died.group(1)) <= time.time() - first["started"] + DISPLAY_HALF_STEP_S
     assert re.search(r"^cut +L0\.7 +dead +exit=none ", bench.status(), re.M)
     assert not (bench.run_dir("cut") / "exit_code").exists()
     survived = bench.step("cut")

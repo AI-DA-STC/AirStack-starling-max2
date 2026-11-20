@@ -12,6 +12,15 @@ Everything needed is in this folder; nothing depends on the previous chat. Claud
 the private NUS workspace (`~/ma_skills-self-play/`, 5090 only) do **not** travel with git: if this file and a memory
 note disagree, this file wins.
 
+### LAPTOP SESSION, 20 November 2026 ~22:00 onwards (RTX 5070 Ti)
+
+Worktree `~/AirStack-starling-max2-dev` on `development` made per the note below; `scripts/nus_install_provisional.sh`
+run (46 files, T41 included). Full CPU suite: 1,333 passed, 2 failed, 48 skipped (24 min); both failures are
+machine-dependent tests, queued as L07-F1 (waiter-duration bound vs one-decimal rounding) and TEST-F2 (bit-level
+training fingerprint recorded on the 5090 differs on the laptop's CPU), see `ste_learning/status/STATUS_LATEST.md`.
+Owner (20 Nov): "go ahead with ur recommendations then continue building": L0.7 QC + fixes one at a time, drills, then
+L0.8 onward on the laptop (CPU).
+
 ### MOVING BETWEEN MACHINES, 20 November 2026 ~21:45 — read this first on the laptop (and on every switch)
 
 The owner works on the home RTX 5090 and the RTX 5070 Ti laptop in turns and moved to the laptop on 20 Nov evening.

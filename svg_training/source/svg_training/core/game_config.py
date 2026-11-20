@@ -107,12 +107,23 @@ class StarlingLayerCfg:
             raise ValueError(f"starling_layer.backend must be one of {BACKENDS}, got {self.backend!r}")
 
 
+START_MODES: tuple[str, ...] = ("rings", "anywhere", "zone_disc_ring")
+
+
 @dataclass(frozen=True)
 class StartsCfg:
+    """Where drones start (``core/arena.draw_starts``). ``mode`` "rings" (the default) and "anywhere" are S2's starts.
+    "zone_disc_ring" (STE task L0.10, the hangar game's starts): Guard drones uniform in radius inside ``guard_disc_m`` round
+    the zone centre, Strike drones on the circle ``strike_ring_m`` round it, every bearing drawn per drone; the two keys are
+    read in that mode only, so the other modes play as before bit for bit. Their defaults equal ``configs/ste_game.toml``
+    ``starts.*`` (a test keeps them equal): the Guard disc 0.8 m (hangar game, PROPOSED) and the Strike ring 2.75 m for the
+    6.5 m lab arena (LEAD CALL 21 Nov 2026, L08-F1, PROPOSED: the hangar ring scaled by the arena half-side)."""
     mode: str = "rings"
     strike_inset_m: float = 0.3
     guard_ring_gap_m: float = 0.3
     spacing_m: float = 1.2
+    guard_disc_m: float = 0.8
+    strike_ring_m: float = 2.75
 
 
 @dataclass(frozen=True)

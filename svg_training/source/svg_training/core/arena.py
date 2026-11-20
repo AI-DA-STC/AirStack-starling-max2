@@ -7,7 +7,7 @@ from dataclasses import dataclass
 import torch
 from torch import Tensor
 
-from .game_config import ArenaCfg, GameCfg
+from .game_config import START_MODES, ArenaCfg, GameCfg
 
 GUARD, STRIKE = "guard", "strike"
 BANDS = ("lab", "middle", "large")
@@ -78,10 +78,14 @@ def draw_starts(cfg: GameCfg, ar: Arenas, guards: int, strikes: int, gen: torch.
     zone) and the larger keep-out from every placed opposite-team drone (Guard drones are placed first, so
     only Strike drones check it). The Guard ring radius is at least spacing / (2 sin(pi / G)) so that team-mates
     can be spacing apart. If no candidate fits (arena too small), candidate 0 is used (a Strike drone inside the
-    zone is pushed out along the radius): that game is a miss. With ``return_miss`` returns (starts, miss [N] bool)."""
+    zone is pushed out along the radius): that game is a miss. With ``return_miss`` returns (starts, miss [N] bool).
+    ``zone_disc_ring``: see ``_zone_disc_ring_starts``."""
     mode = cfg.starts.mode
-    if mode not in ("rings", "anywhere"):
-        raise ValueError(f"starts.mode must be 'rings' or 'anywhere', got {mode!r}")
+    if mode not in START_MODES:
+        raise ValueError(f"starts.mode must be one of {START_MODES}, got {mode!r}")
+    if mode == "zone_disc_ring":
+        starts, miss = _zone_disc_ring_starts(cfg, ar, guards, strikes, gen)
+        return (starts, miss) if return_miss else starts
     st = cfg.starts
     n, m, k = ar.half_m.shape[0], guards + strikes, N_CANDIDATES
     dev = ar.half_m.device
@@ -136,3 +140,31 @@ def draw_starts(cfg: GameCfg, ar: Arenas, guards: int, strikes: int, gen: torch.
     z = torch.full((n, m, 1), cfg.arena.start_height_m, device=dev)
     starts = torch.cat((placed, z), dim=-1)
     return (starts, miss) if return_miss else starts
+
+
+def _zone_disc_ring_starts(cfg: GameCfg, ar: Arenas, guards: int, strikes: int, gen: torch.Generator
+                           ) -> tuple[Tensor, Tensor]:
+    """Mode ``zone_disc_ring`` (STE task L0.10; the hangar game's starts, sheet rows ``starts.guard_disc_m`` and
+    ``starts.strike_ring_m``): starts [N, M, 3], miss [N] bool. Guard drones uniform in radius in [0, guard_disc_m] round
+    the zone centre, Strike drones at strike_ring_m from it; every bearing uniform in [0, 2 pi), drawn per drone. Draw
+    order: Guard radii [N, G], Guard bearings [N, G], Strike bearings [N, S]. No spacing is drawn for between team-mates
+    (as in the hangar game: team-mates may start closer than the filter distance). Positions are clamped into the keep-in
+    box (a no-op when the ring fits, as the lab ring does); z = start_height_m. A game is a miss if an opposite pair starts
+    closer than the larger keep-out (never when ring - disc exceeds it) or a Strike drone starts inside the zone."""
+    st = cfg.starts
+    n, dev = ar.half_m.shape[0], ar.half_m.device
+    lim = (ar.half_m - cfg.arena.wall_margin_m)[:, None, None]                      # [N, 1, 1]
+    centre = ar.zone_centre_m[:, None, :]                                           # [N, 1, 2]
+    g_rho = torch.rand(n, guards, generator=gen, device=dev) * st.guard_disc_m
+    g_ang = torch.rand(n, guards, generator=gen, device=dev) * (2 * math.pi)
+    s_ang = torch.rand(n, strikes, generator=gen, device=dev) * (2 * math.pi)
+    rho = torch.cat((g_rho, torch.full((n, strikes), st.strike_ring_m, device=dev)), dim=1)     # [N, M]
+    ang = torch.cat((g_ang, s_ang), dim=1)
+    xy = centre + rho[..., None] * torch.stack((ang.cos(), ang.sin()), dim=-1)
+    xy = torch.maximum(torch.minimum(xy, lim), -lim)
+    keepout = max(cfg.rules.keepout_guard_m, cfg.rules.keepout_strike_m)
+    cross = (xy[:, :guards, None, :] - xy[:, None, guards:, :]).norm(dim=-1)       # [N, G, S]
+    inside = (xy[:, guards:] - centre).norm(dim=-1) <= ar.zone_radius_m[:, None]   # [N, S]
+    miss = (cross < keepout).any(dim=(1, 2)) | inside.any(dim=1)
+    z = torch.full((n, guards + strikes, 1), cfg.arena.start_height_m, device=dev)
+    return torch.cat((xy, z), dim=-1), miss

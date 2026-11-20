@@ -4,6 +4,8 @@
 # The sheet LISTS, it does not decide (PLAN.md section 4, row L0.8). The game does not read this file. [tag_rule] below
 # records the proposal; [tag] (task L0.9) lists the game's own switch for the study tag, as a game file sets it ([tag],
 # core/game_config.py TagCfg): the values here are the code's defaults, and tests/test_ste_game_spec.py keeps them equal.
+# The same holds for [starts] (the game's start mode "zone_disc_ring", StartsCfg, task L0.10) and [players] (the scripted
+# players' settings, opponents/scripted.py, task L0.10).
 #
 # One value per line: key = value   # LABEL (source): text. LABEL is FIXED, MEASURED, PROPOSED or OPEN, as defined at
 # the top of ../STANDARDS.md; ste_learning/STANDARDS.md section 1: never upgrade a label without the owner. An OPEN line
@@ -35,8 +37,8 @@ walls = "keep_in"                 # PROPOSED (s2_game.toml and nus_hangar_game.t
 environment = "open_arena"        # OPEN (P10, OPEN at gate G0): the parent FIXED rule "Environments" asks for realistic 3-D environments, construction-site world first; today's value is E0 of the parent "Environment ladder", the first build step only, not claimed as meeting the rule
 
 [starts]
-guard_disc_m = 0.8                # PROPOSED (hangar game: nus_rules.toml start_guard_disc_fraction x area_radius x nus_deploy.toml metres_per_unit; nus/replica.py reset): Guards uniform in radius inside this disc round the zone centre
-strike_ring_m = 3.2               # OPEN (L08-F1, related to F8; hangar game: Strikes on this ring round the zone centre, random bearings; nus_deploy.toml spawn_distance x metres_per_unit): outside the 6.5 m arena's keep-in limit of 3.0 m on about 45 % of bearings (within 20 degrees of each axis); a ring that fits is needed before L0.11's base case
+guard_disc_m = 0.8                # PROPOSED (hangar game: nus_rules.toml start_guard_disc_fraction x area_radius x nus_deploy.toml metres_per_unit; nus/replica.py reset): Guards uniform in radius inside this disc round the zone centre; the game's [starts] mode "zone_disc_ring" (L0.10, core/game_config.py StartsCfg) has this default
+strike_ring_m = 2.75              # PROPOSED (LEAD CALL 21 Nov 2026, L08-F1, task L0.10; ruled at gate G0 with the arena, F8): the hangar ring (nus_deploy.toml spawn_distance x metres_per_unit, 3.2 m, random bearings) scaled by the arena half-side, 3.2 x 3.25 / 3.75 = 2.77, rounded down to 2.75; fits the 6.5 m arena's keep-in limit (3.0 m) on every bearing with 0.25 m to spare, 1.15 m outside the zone edge, 1.95 m from the Guard disc (more than the proposed tag radius: no tag at the first step); the default of the game's [starts] mode "zone_disc_ring"
 
 [timing]
 game_s = 120.0                    # PROPOSED (hangar game: nus_rules.toml episode_steps x nus_deploy.toml seconds_per_step, 2,400 ticks; PLAN is silent; kept, LEAD CALL 20 Nov 2026): the S2 game plays 60 s (s2_game.toml game_steps x seconds_per_step)
@@ -66,3 +68,6 @@ guard_survives_tag_prob = 0.0     # PROPOSED (D2, owner 20 Nov 2026, provisional
 pairs = "every_pair"              # FIXED (owner, 14 and 15 Nov 2026; parent STANDARDS section 4 "Safety filter in the game" and section 5 "Safety filter in flight today"): Guard-Guard, Strike-Strike and Guard-Strike pairs
 share = "equal"                   # MEASURED (read from AirStack/robot/ros_ws/src/svg_ground_control/svg_ground_control/cbf_filter.py:150-152, 339-341 and DISCUSSION section 2.9 desk run; lead, 20 Nov 2026: not FIXED without the owner): each pair's correction split evenly between the two drones; option B, only the Guard drone swerves, is P2, PROPOSED, ruled at the L2 gate
 keepout_m = 1.1                   # FIXED (parent STANDARDS section 5: safety radius 0.55 m in the _ours configs, cbf_filter.py): centre to centre
+
+[players]
+guard_park_ring_m = 0.8           # PROPOSED (PLAN section 2 F1, lead's geometry script 20 Nov 2026: three Guards parked on a 0.8 m ring cover the whole zone, worst gap 1.53 m; task L0.10): the smallest ring of the scripted Guard player guard_parked_ring (opponents/scripted.py GuardParkedRing.RING_M), stations a whole turn / team size apart, fixed by Guard index; LEAD CALL 21 Nov 2026: the ring grows to keep neighbours the filter distance + 0.05 m apart (5 Guards: 0.98 m)

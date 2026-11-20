@@ -231,3 +231,226 @@ def make_strategy(spec: str, team: str, cfg: GameCfg, num_games: int, device, se
     else:
         raise KeyError(f"unknown strategy {spec!r}; known: {sorted(REGISTRY)} or 'package.module:ClassName'")
     return klass(team, cfg, num_games, device, seed)
+
+
+# ------------------------------------------------------------------ STE task L0.10: the study's players
+# Added at the end of the module so that the line numbers cited elsewhere (PLAN.md F5, the NUS port plans) still hold.
+import math  # noqa: E402  (imported here, not at the top, so that the line numbers cited above still hold)
+
+# Behaviour constants of hand-written players, not tuned on results: PROPOSED, LEAD CALL 21 Nov 2026; listed with the same
+# values in ste_learning/GAME_SPEC.md "Scripted player settings" (tests/test_scripted_study.py keeps the two equal).
+PARK_RING_M = 0.8        # guard_parked_ring: smallest ring, PLAN section 2 F1; equals configs/ste_game.toml players.guard_park_ring_m
+PARK_RING_SPACING_MARGIN_M = 0.05   # guard_parked_ring: neighbours at least the filter distance + this apart (chord rule)
+BAND_INSET_M = 0.1       # strike_high / strike_low: aim this far inside the height band edge (the band's walls hold or remove)
+STAND_OFF_M = 1.0        # sacrifice / converge: circle and gather this far outside the zone edge (capped at the keep-in box)
+RADIAL_RAMP_M = 1.0      # while circling: radial correction towards the stand-off circle reaches full speed this far off
+CIRCLE_UNTIL_RAD = 0.5   # converge: circle round the zone while farther than this from the assigned bearing, then steer to it
+ENTRY_HALF_ANGLE_DEG = 30.0   # sacrifice: within this of the entry bearing, a Strike flies straight in
+ENTRY_HALF_ANGLE_RAD = ENTRY_HALF_ANGLE_DEG * torch.pi / 180
+GATHER_ANGLE_RAD = 0.1   # converge: a Strike is in place within this of its bearing; the run-in starts when all are
+RUN_IN_COMMIT_M = 0.3    # converge: once a live Strike is this far inside the stand-off circle, the run-in goes on
+
+
+def _team_slots(obs: Tensor, first: int) -> tuple[Tensor, Tensor]:
+    """The team's own drones as seen by each of them: (position rel zone [N, K, K, 2], live [N, K, K] bool), K =
+    obs.shape[1], team slots from ``first``; entry [n, i, k] is drone k as drone i sees it (k = i: itself, live if i is)."""
+    k = obs.shape[1]
+    rp, _, pres = _slots(obs, first, k)
+    own_p = obs[..., _V.own_pos][..., :2]
+    eye = torch.eye(k, dtype=torch.bool, device=obs.device)
+    alive = obs[..., _V.alive] > 0.5                                             # [N, K]
+    pos = own_p[:, :, None, :] + rp * (~eye)[None, :, :, None]
+    return pos, pres | (eye[None] & alive[:, :, None])
+
+
+def _wrap(a: Tensor) -> Tensor:
+    """Angle(s) to (-pi, pi]."""
+    return torch.atan2(a.sin(), a.cos())
+
+
+def _stand_off_m(obs: Tensor, wall_margin_m: float) -> Tensor:
+    """[N, K, 1] stand-off circle radius: zone radius + STAND_OFF_M, capped so the circle stays inside the keep-in box
+    (the arena half, from the observation, less the wall margin, less the zone's offset from the arena centre)."""
+    r = obs[..., _V.zone_radius, None]
+    room = obs[..., _V.arena_half, None] - wall_margin_m - obs[..., _V.zone_centre].abs().amax(-1, keepdim=True)
+    return torch.minimum(r + STAND_OFF_M, room)
+
+
+def _circle(own_p: Tensor, radius_m: Tensor, direction: Tensor) -> Tensor:
+    """Move round the zone centre in ``direction`` [N, K] (+1 anticlockwise, -1 clockwise) while easing onto the circle
+    ``radius_m`` [N, K, 1]. own_p [N, K, 2] (rel zone) -> xy action [N, K, 2], norm <= 1."""
+    rho = own_p.norm(dim=-1, keepdim=True)
+    e_r = _unit(own_p)
+    e_t = torch.stack((-e_r[..., 1], e_r[..., 0]), dim=-1)
+    radial = ((radius_m - rho) / RADIAL_RAMP_M).clamp(-1.0, 1.0)
+    a = e_t * direction[..., None] + e_r * radial
+    return a / a.norm(dim=-1, keepdim=True).clamp(min=1.0)
+
+
+class GuardParkedCentre(_Guard):
+    """Guard 0 flies to the zone centre and stops there; every other Guard holds its start position (zero command), so
+    no Guard moves once settled (LEAD CALL 21 Nov 2026). Ignores the Strike drones (study task L0.10). On the Starling
+    layer the filter may nudge a Guard while Guard 0 settles; after that nothing moves."""
+
+    def act(self, obs: Tensor) -> Tensor:
+        first = (torch.arange(obs.shape[1], device=obs.device) == 0)[None, :, None]
+        return _pack(steer(-obs[..., _V.own_pos][..., :2]) * first, obs)
+
+
+class GuardParkedRing(_Guard):
+    """Guard i flies to its station on a ring round the zone centre, at bearing 2 pi i / G (G = team size, the stations
+    fixed by index: no closing up when a team-mate is lost) and stops there; ignores the Strike drones. Ring radius
+    (LEAD CALL 21 Nov 2026) = max(RING_M, chord rule): neighbours at least the filter distance (``rules.keepout_guard_m``)
+    + PARK_RING_SPACING_MARGIN_M apart, r >= (d + margin) / (2 sin(pi / G)); 0.8 m up to 3 Guards, 0.98 m for 5."""
+    RING_M = PARK_RING_M
+
+    def ring_radius_m(self, guards: int) -> float:
+        """Ring radius (m) for a team of ``guards`` Guard drones (Python float, fixed per team size)."""
+        if guards < 2:
+            return self.RING_M
+        need_m = (self.cfg.rules.keepout_guard_m + PARK_RING_SPACING_MARGIN_M) / (2 * math.sin(math.pi / guards))
+        return max(self.RING_M, need_m)
+
+    def act(self, obs: Tensor) -> Tensor:
+        g = obs.shape[1]
+        ang = torch.arange(g, device=obs.device, dtype=obs.dtype) * (2 * torch.pi / g)
+        station = self.ring_radius_m(g) * torch.stack((ang.cos(), ang.sin()), dim=-1)[None]          # [1, G, 2]
+        return _pack(steer(station - obs[..., _V.own_pos][..., :2]), obs)
+
+
+class _StrikeHeight(_Strike):
+    """Climbs (TOP) or descends to BAND_INSET_M inside the height band edge first, then flies straight at the zone centre
+    at that height: the vertical command has priority, so the drone is at its height before it closes in (the 3-D speed
+    cap would otherwise trade climb for approach). On the pure path heights are held, so it plays as strike_straight."""
+    TOP = True
+
+    def __init__(self, team: str, cfg: GameCfg, num_games: int, device, seed: int = 0):
+        super().__init__(team, cfg, num_games, device, seed)
+        lo, hi = cfg.arena.height_band_m
+        self.target_z_m = hi - BAND_INSET_M if self.TOP else lo + BAND_INSET_M
+        self.three_d = cfg.starling.enabled is True       # a Python bool from the config, read once
+
+    def act(self, obs: Tensor) -> Tensor:
+        xy = steer(-obs[..., _V.own_pos][..., :2])
+        if not self.three_d:
+            return _pack(xy, obs)
+        vz = ((self.target_z_m - obs[..., 2]) / STEER_RAMP_M).clamp(-1.0, 1.0)            # [N, S]
+        xy = xy * (1.0 - vz ** 2).clamp(min=0.0).sqrt()[..., None]
+        a = torch.cat((xy, vz[..., None], torch.zeros_like(vz[..., None])), dim=-1)
+        return a * obs[..., _V.alive:_V.alive + 1]
+
+
+class StrikeHigh(_StrikeHeight):
+    """Enters at the top of the height band (see _StrikeHeight)."""
+    TOP = True
+
+
+class StrikeLow(_StrikeHeight):
+    """Enters at the bottom of the height band (see _StrikeHeight)."""
+    TOP = False
+
+
+class StrikeSacrifice(_Strike):
+    """Strike 0 (by index, fixed: never re-elected) flies at the live Guard drone nearest to it, to draw it. The others
+    enter opposite the bearing of that drawn Guard drone, the gap it opens (LEAD CALL 21 Nov 2026): while their bearing is
+    more than ENTRY_HALF_ANGLE_RAD from that entry bearing, they circle the zone on the stand-off circle the shorter way
+    round; within it they fly straight in. With no live Guard drone, or the drawn one exactly at the zone centre (no
+    bearing), the entry bearing is opposite Strike 0. When Strike 0 is out, when a Strike drone is alone, or (for Strike
+    0) when no Guard drone is live, it flies straight in."""
+
+    def act(self, obs: Tensor) -> Tensor:
+        own_p = obs[..., _V.own_pos][..., :2]
+        straight = steer(-own_p)
+        mates, live = _team_slots(obs, self.cfg.pad_guards)                          # [N, S, S, 2], [N, S, S]
+        decoy_p, decoy_live = mates[:, :, 0], live[:, :, 0]                           # Strike 0 as each sees it
+        others_live = live.sum(-1) >= 2
+        # Strike 0: at the nearest live Guard drone
+        gp, _, gpres = _slots(obs, 0, self.cfg.pad_guards)                            # rel own [N, S, G, 2]
+        dist = gp.norm(dim=-1).masked_fill(~gpres, float("inf"))
+        near = dist.argmin(-1)
+        to_guard = torch.gather(gp, 2, near[..., None, None].expand(-1, -1, 1, 2))[:, :, 0]
+        any_guard = gpres.any(-1)                                                     # [N, S]
+        decoy_a = torch.where(any_guard[..., None], steer(to_guard), straight)
+        # the others: the drawn Guard (nearest Strike 0, as each sees it) and the entry bearing opposite it
+        guard_p = own_p[:, :, None, :] + gp                                           # rel zone
+        to_decoy = (guard_p - decoy_p[:, :, None, :]).norm(dim=-1).masked_fill(~gpres, float("inf"))
+        drawn = torch.gather(guard_p, 2, to_decoy.argmin(-1)[..., None, None].expand(-1, -1, 1, 2))[:, :, 0]
+        has_bearing = any_guard & (drawn.norm(dim=-1) > 1e-6)
+        away = torch.where(has_bearing[..., None], drawn, decoy_p)
+        far = torch.atan2(-away[..., 1], -away[..., 0])
+        diff = _wrap(far - torch.atan2(own_p[..., 1], own_p[..., 0]))
+        direction = torch.where(diff >= 0, 1.0, -1.0)
+        go_in = diff.abs() <= ENTRY_HALF_ANGLE_RAD
+        around = _circle(own_p, _stand_off_m(obs, self.cfg.arena.wall_margin_m), direction)
+        rest_a = torch.where(go_in[..., None], straight, around)
+        is_decoy = (torch.arange(obs.shape[1], device=obs.device) == 0)[None, :, None]
+        a = torch.where(is_decoy, decoy_a, rest_a)
+        a = torch.where((decoy_live & others_live)[..., None], a, straight)
+        return _pack(a, obs)
+
+
+class StrikeConverge(_Strike):
+    """All live Strike drones arrive together from spread bearings. The lowest-index live Strike drone sets the reference
+    bearing; the others keep their order round the zone (anticlockwise from it) and are given the bearings reference +
+    2 pi k / S_live, k = their place in that order (so no two cross on the way). Each goes to its bearing on the stand-off
+    circle, circling round while more than CIRCLE_UNTIL_RAD away. The run-in starts when every live Strike drone is within
+    GATHER_ANGLE_RAD of its bearing (bearings only, so a drone pushed off the circle by a Guard drone does not stall the
+    team); each then flies straight in at the speed fraction (own distance to the zone edge) / (the farthest one's), so
+    all reach the edge together. Once any live Strike drone is RUN_IN_COMMIT_M inside the stand-off circle the run-in
+    goes on, even if a loss changes the bearings wanted (the survivors keep flying in, at the same pace rule). A Strike
+    drone that is alone flies straight in. Accepted as built (LEAD CALL 21 Nov 2026)."""
+
+    def stage_radius_m(self, obs: Tensor) -> Tensor:
+        """[N, S, 1] the stand-off circle the Strike drones gather on."""
+        return _stand_off_m(obs, self.cfg.arena.wall_margin_m)
+
+    def act(self, obs: Tensor) -> Tensor:
+        own_p = obs[..., _V.own_pos][..., :2]
+        straight = steer(-own_p)
+        mates, live = _team_slots(obs, self.cfg.pad_guards)                          # [N, S, S, 2], [N, S, S]
+        s = obs.shape[1]
+        n_live = live.sum(-1)                                                        # [N, S]
+        idx = torch.arange(s, device=obs.device)
+        ref = torch.where(live, idx, s).amin(-1).clamp(max=s - 1)                    # lowest live index
+        ref_p = torch.gather(mates, 2, ref[..., None, None].expand(-1, -1, 1, 2))[:, :, 0]     # [N, S, 2]
+        rp = ref_p[:, :, None, :]
+        cross = rp[..., 0] * mates[..., 1] - rp[..., 1] * mates[..., 0]
+        dot = (rp * mates).sum(-1)
+        offset = torch.atan2(cross, dot)                                             # [N, S, S], 0 for the reference
+        offset = torch.where(offset < 0, offset + 2 * torch.pi, offset)
+        offset = offset.masked_fill(~live, float("inf"))
+        order = offset.argsort(-1)                                                   # live first, in angular order
+        rank = order.argsort(-1).to(obs.dtype)                                       # place of each drone in that order
+        target = rank * (2 * torch.pi) / n_live.clamp(min=1)[..., None].to(obs.dtype)            # offsets wanted
+        err = _wrap(target - offset.masked_fill(~live, 0.0))                          # [N, S, S]
+        radius = self.stage_radius_m(obs)                                            # [N, S, 1]
+        own = idx[None, :, None] == idx[None, None, :]                               # [1, S, S] the diagonal
+        rho = mates.norm(dim=-1)                                                     # [N, S, S]
+        committed = (live & (rho < radius - RUN_IN_COMMIT_M)).any(-1)                # [N, S]
+        go = ((err.abs() <= GATHER_ANGLE_RAD) | ~live).all(-1) | committed           # [N, S]
+        to_edge = (rho - obs[..., _V.zone_radius, None]).clamp(min=0.0) * live         # [N, S, S]
+        own_edge = (to_edge * own).sum(-1)
+        pace = (own_edge / to_edge.amax(-1).clamp(min=1e-9)).clamp(max=1.0)          # [N, S], 1 for the farthest
+        # own move towards the own bearing: circle while far, then steer to the point on the circle
+        own_offset = (offset.masked_fill(~live, 0.0) * own).sum(-1)
+        own_target = (target * own).sum(-1)
+        ref_bearing = torch.atan2(ref_p[..., 1], ref_p[..., 0])
+        want = ref_bearing + own_target                                              # [N, S] bearing wanted
+        diff = own_target - own_offset                                               # signed, inside [-2 pi, 2 pi]
+        direction = torch.where(diff >= 0, 1.0, -1.0)
+        point = radius * torch.stack((want.cos(), want.sin()), dim=-1)
+        place_a = torch.where((_wrap(diff).abs() > CIRCLE_UNTIL_RAD)[..., None],
+                              _circle(own_p, radius, direction), steer(point - own_p))
+        a = torch.where(go[..., None], _unit(-own_p) * pace[..., None], place_a)
+        a = torch.where((n_live >= 2)[..., None], a, straight)
+        return _pack(a, obs)
+
+
+REGISTRY.update({
+    "guard_parked_centre": GuardParkedCentre,
+    "guard_parked_ring": GuardParkedRing,
+    "strike_high": StrikeHigh,
+    "strike_low": StrikeLow,
+    "strike_sacrifice": StrikeSacrifice,
+    "strike_converge": StrikeConverge,
+})

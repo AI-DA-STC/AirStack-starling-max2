@@ -11,7 +11,8 @@
 use ``--presets pure`` and ``--games-per-band 100`` there, the starling preset is many times slower on a CPU).
 
 A spec is a scripted opponent's name (``opponents/scripted.py`` REGISTRY: guard_mark_edge, guard_mark_inside,
-guard_field, guard_mirror, strike_straight, strike_flank, random, zero) or ``package.module:ClassName`` (outside
+guard_field, guard_mirror, guard_parked_centre, guard_parked_ring, strike_straight, strike_flank, strike_high, strike_low,
+strike_sacrifice, strike_converge, random, zero) or ``package.module:ClassName`` (outside
 code with the same constructor). A comma list plays every Guard spec against every Strike spec. Size "GvS" =
 G Guard drones v S Strike drones. Presets: "pure" = pure partner rules; "starling" = with the Starling layer
 (``[starling_layer]`` of the game file as it is at launch, switched on); "physics" (S2b) = the same Starling layer's

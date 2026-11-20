@@ -221,7 +221,7 @@ PINNED_LABELS = {
     "arena.walls": "PROPOSED",                    # game files
     "arena.environment": "OPEN",                  # P10, OPEN at G0 (QC I2, 21 Nov 2026)
     "starts.guard_disc_m": "PROPOSED",            # hangar game
-    "starts.strike_ring_m": "OPEN",               # L08-F1: does not fit the 6.5 m arena
+    "starts.strike_ring_m": "PROPOSED",           # LEAD CALL 21 Nov 2026, L08-F1 (L0.10): the hangar ring scaled to the 6.5 m arena
     "timing.game_s": "PROPOSED",                  # LEAD CALL, 20 Nov 2026
     "timing.decision_s": "PROPOSED",              # hangar game, T41
     "speeds.strike_mps": "FIXED",                 # parent STANDARDS section 4 "Speeds in metres per second"
@@ -239,6 +239,7 @@ PINNED_LABELS = {
     "filter.pairs": "FIXED",                      # parent STANDARDS sections 4 and 5
     "filter.share": "MEASURED",                   # read from cbf_filter.py (lead's ruling 4, 20 Nov 2026: no FIXED without the owner)
     "filter.keepout_m": "FIXED",                  # parent STANDARDS section 5 "Safety filter in flight today"
+    "players.guard_park_ring_m": "PROPOSED",      # PLAN section 2 F1 (lead's geometry script, 20 Nov 2026), task L0.10
 }
 
 
@@ -256,7 +257,8 @@ def test_the_sources_name_the_pending_rulings():
                         ("zone.radius_m", "P12"), ("tag_rule.guard_survives_tag_prob", "P12"),
                         ("filter.share", "P2"), ("arena.side_m", "F8"), ("tag.mode", "P1"), ("tag.radius_m", "P1"),
                         ("tag.guard_survives_tag_prob", "P12"),
-                        ("starts.strike_ring_m", "L08-F1")):
+                        ("starts.strike_ring_m", "L08-F1"), ("starts.strike_ring_m", "LEAD CALL"),
+                        ("players.guard_park_ring_m", "F1")):
         assert re.search(rf"(?<![\w-]){ruling}(?![\w-])", spec.entry(key).source), (key, ruling)
 
 
@@ -267,8 +269,23 @@ def test_starts_that_do_not_fit_the_arena_are_open():
     for key in ("starts.strike_ring_m", "starts.guard_disc_m"):
         if spec.value(key) > limit_m:
             assert spec.status(key) == "OPEN", (key, spec.value(key), limit_m)
-    # as committed (20 Nov 2026): the hangar ring does not fit the lab arena; the Guard disc does
-    assert spec.value("starts.strike_ring_m") > limit_m >= spec.value("starts.guard_disc_m")
+    # L0.10 (LEAD CALL 21 Nov 2026, closes L08-F1): the ring fits the lab arena on every bearing (the hangar's 3.2 m did
+    # not); it stays outside the zone, and every Strike start is farther than the proposed tag radius from the Guard disc
+    ring_m, disc_m = spec.value("starts.strike_ring_m"), spec.value("starts.guard_disc_m")
+    assert limit_m >= ring_m > spec.value("zone.radius_m") > disc_m
+    assert ring_m - disc_m > spec.value("tag.radius_m") > spec.value("filter.keepout_m")
+
+
+def test_the_game_defaults_equal_the_sheet():
+    """The game's own start setting (core/game_config.py StartsCfg, mode "zone_disc_ring", task L0.10) and the parked-ring
+    Guard (opponents/scripted.py) take their defaults from the sheet's values; this test keeps them equal."""
+    from svg_training.core.game_config import StartsCfg
+    from svg_training.opponents.scripted import GuardParkedRing
+    spec, _ = load_game_spec()
+    assert StartsCfg().strike_ring_m == spec.value("starts.strike_ring_m")
+    assert StartsCfg().guard_disc_m == spec.value("starts.guard_disc_m")
+    assert StartsCfg().mode == "rings"                                            # off by default: today's starts
+    assert GuardParkedRing.RING_M == spec.value("players.guard_park_ring_m")
 
 
 # ------------------------------------------------------------------------------------------------ sources agree
@@ -373,6 +390,9 @@ def test_proposed_values_follow_the_files_they_cite():
            f"{spec.value('zone.radius_m')!r} m" in plan
 
 
+RING_STEP_M = 0.05     # the lead's rounding step for the lab ring (LEAD CALL 21 Nov 2026, L08-F1)
+
+
 def test_hangar_values_equal_the_hangar_geometry():
     """The values taken from NUS's hangar game equal what nus/hangar.py computes from the local files (no NUS number is
     typed in this test)."""
@@ -390,7 +410,10 @@ def test_hangar_values_equal_the_hangar_geometry():
     close = lambda key, value: math.isclose(spec.value(key), value, rel_tol=1e-9)  # noqa: E731
     assert close("zone.radius_m", geo.zone_radius_m)
     assert close("starts.guard_disc_m", geo.guard_disc_m)
-    assert close("starts.strike_ring_m", geo.ring_m)
+    # L0.10 (LEAD CALL 21 Nov 2026, L08-F1): the hangar ring scaled by the arena half-side, rounded down to 5 cm
+    scaled_m = geo.ring_m * (spec.value("arena.side_m") / 2) / (geo.side_m / 2)
+    assert close("starts.strike_ring_m", math.floor(scaled_m / RING_STEP_M + 1e-9) * RING_STEP_M)
+    assert spec.value("starts.strike_ring_m") < geo.ring_m
     assert close("height.start_m", geo.height_m)
     assert close("timing.game_s", geo.game_seconds)
     assert close("timing.decision_s", deploy.seconds_per_step)
@@ -498,4 +521,5 @@ def test_the_sheet_is_internal_and_names_the_open_rulings():
         assert re.search(rf"(?<![\w-]){ruling}(?![\w-])", text), ruling
     open_items = text[text.index("## Open items"):]
     assert re.search(r"^\| L08-F1 \|", open_items, re.MULTILINE), "the start-ring finding is filed as L08-F1"
+    assert re.search(r"^\| L08-F1 \|.*\bClosed\b.*LEAD CALL 21 Nov 2026", open_items, re.MULTILINE), "L0.10 closed it"
     assert not re.search(r"^\| F8 \|", open_items, re.MULTILINE), "F8 is PLAN's arena finding; the ring is L08-F1"

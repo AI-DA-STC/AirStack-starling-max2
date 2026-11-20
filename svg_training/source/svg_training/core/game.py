@@ -28,7 +28,7 @@ from torch import Tensor
 from svg_training.models.rigid_body import RigidBodyWorld
 
 from .arena import BANDS, GUARD, STRIKE, Arenas, draw_arenas, draw_starts  # noqa: F401  (re-exported)
-from .game_config import BACKENDS, TICK_S, GameCfg
+from .game_config import BACKENDS, START_MODES, TICK_S, GameCfg
 from .observations import build_obs, build_state
 from .pair_rules import contact_tags, proximity_tags, push_apart
 from .physics_layer import PhysicsLayer
@@ -64,7 +64,7 @@ class StepOut:
     upset [N] bool (physics backend: a live drone of the game that played this step tipped past 60 deg or turned
     non-finite at any step of that game; all False on the other backends),
     nonfinite_actions [N] long (drones whose action this step held NaN or inf; they were commanded zero).
-    ``SvgGame.start_miss`` holds the same flag for the current (new) game."""
+    ``SvgGame.start_miss`` holds the same flag for the current (new) game. Starts mode zone_disc_ring adds start_team_close (``_start_info``)."""
     obs: dict[str, Tensor]
     reward: dict[str, Tensor]
     done: Tensor
@@ -83,8 +83,8 @@ class SvgGame:
             raise ValueError(f"preset must be 'partner' or 'contact', got {cfg.preset!r}")
         if cfg.arena.walls not in ("keep_in", "leave"):
             raise ValueError(f"arena.walls must be 'keep_in' or 'leave', got {cfg.arena.walls!r}")
-        if cfg.starts.mode not in ("rings", "anywhere"):
-            raise ValueError(f"starts.mode must be 'rings' or 'anywhere', got {cfg.starts.mode!r}")
+        if cfg.starts.mode not in START_MODES:
+            raise ValueError(f"starts.mode must be one of {START_MODES}, got {cfg.starts.mode!r}")
         if cfg.rules.win_steps_in_zone != 1:
             raise ValueError("only win_steps_in_zone = 1 is built (one step inside the zone wins)")
         if cfg.rules.push_rule not in ("block", "shove"):
@@ -146,7 +146,7 @@ class SvgGame:
         self.steps = torch.zeros(n, dtype=torch.long, device=dev)
         self.dropout_step = torch.full((n, m), -1, dtype=torch.long, device=dev)
         self.arenas = self._draw_arenas()
-        self.start_miss = torch.zeros(n, dtype=torch.bool, device=dev)
+        self.start_miss, self.start_team_close = torch.zeros(n, dtype=torch.bool, device=dev), torch.zeros(n, dtype=torch.long, device=dev)
         self._phi = torch.zeros(n, device=dev)
         self._guard_survives = torch.zeros(n, dtype=torch.bool, device=dev)
         self._tag_on = cfg.tag.mode != "off"
@@ -190,7 +190,7 @@ class SvgGame:
         when = (torch.rand(n, generator=self.gen, device=dev) * self.ticks).floor().long().clamp(max=self.ticks - 1) + 1
         pick = hit[:, None] & (torch.arange(m, device=dev)[None, :] == who[:, None])
         drop = torch.where(pick, when[:, None].expand(n, m), torch.full((n, m), -1, dtype=torch.long, device=dev))
-        self.start_miss = torch.where(mask, miss, self.start_miss)
+        self.start_miss, self.start_team_close = self._start_flags(mask, miss, pos)
         self.arenas = self.arenas.merge(ar, mask)
         self.pos_m = torch.where(mk[..., None], pos, self.pos_m)
         self.vel_mps = torch.where(mk[..., None], torch.zeros_like(self.vel_mps), self.vel_mps)
@@ -341,8 +341,31 @@ class SvgGame:
                 "final_alive": alive.clone(), "tagged": tagged}
         end_step = torch.where(done, steps_new, torch.zeros_like(steps_new))
         self._phi = phi_now
-        info["start_miss"] = self.start_miss.clone()      # the game that just played
+        info.update(self._start_info())                   # the game that just played (start_team_close: zone_disc_ring only)
         info["upset"] = self._upset.clone()
         info["nonfinite_actions"] = bad_action.sum(dim=1)                    # [N] long: drones commanded NaN/inf
         self._new_games(done)
         return StepOut(self._obs(), reward, done, outcome, end_step, info)
+
+    # ------------------------------------------------------------------ start flags (STE task L0.10)
+    # Kept at the end of the class so that the line numbers cited in ste_learning/ (game.py:296-299, :314-315, ...) hold.
+    def _start_flags(self, mask: Tensor, miss: Tensor, pos_m: Tensor) -> tuple[Tensor, Tensor]:
+        """New games where mask [N] bool: (start_miss [N] bool, start_team_close [N] long). start_team_close counts the
+        team-mate pairs (either team) whose starts pos_m [N, M, 3] are closer than the filter distance (horizontal; all
+        starts share one height), an INFO count for the study (LEAD CALL 21 Nov 2026: it is not a miss and changes no
+        outcome). Computed in starts mode "zone_disc_ring" only; the other modes keep zeros and draw nothing extra."""
+        start_miss = torch.where(mask, miss, self.start_miss)
+        if self.cfg.starts.mode != "zone_disc_ring" or self.scenario is not None:
+            return start_miss, self.start_team_close
+        d = (pos_m[:, :, None, :2] - pos_m[:, None, :, :2]).norm(dim=-1)                  # [N, M, M]
+        upper = torch.ones(self.M, self.M, dtype=torch.bool, device=self.device).triu(1)
+        close = ((d < self._keepout_min) & self._same & upper).sum(dim=(1, 2))
+        return start_miss, torch.where(mask, close, self.start_team_close)
+
+    def _start_info(self) -> dict[str, Tensor]:
+        """info entries about the starts of the game that played this step: start_miss [N] bool always; start_team_close
+        [N] long in starts mode "zone_disc_ring" only (so the other modes' outputs are unchanged)."""
+        info = {"start_miss": self.start_miss.clone()}
+        if self.cfg.starts.mode == "zone_disc_ring" and self.scenario is None:
+            info["start_team_close"] = self.start_team_close.clone()
+        return info

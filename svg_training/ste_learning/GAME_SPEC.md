@@ -1,4 +1,4 @@
-INTERNAL · the game spec sheet of the STE learning track (task L0.8, 20 Nov 2026; QC fix round 1, 21 Nov 2026). It lists the values of the game the track trains; it decides nothing. The game does not read it: the `tag.*` rows are the defaults of the game's own `[tag]` switch (`core/game_config.py` `TagCfg`, task L0.9), kept equal by the same test. The same values, with the same labels, are in [configs/ste_game.toml](../configs/ste_game.toml); `tests/test_ste_game_spec.py` fails if a setting, a value or a label differs between the two (the source texts are not compared).
+INTERNAL · the game spec sheet of the STE learning track (task L0.8, 20 Nov 2026; QC fix round 1, 21 Nov 2026; task L0.10, 21 Nov 2026: the lab start ring and the scripted players). It lists the values of the game the track trains; it decides nothing. The game does not read it: the `tag.*` rows are the defaults of the game's own `[tag]` switch (`core/game_config.py` `TagCfg`, task L0.9), kept equal by the same test, and so are the `starts.*` rows (the game's `[starts]` mode `zone_disc_ring`, task L0.10) and `players.guard_park_ring_m` (the scripted player `guard_parked_ring`). The same values, with the same labels, are in [configs/ste_game.toml](../configs/ste_game.toml); `tests/test_ste_game_spec.py` fails if a setting, a value or a label differs between the two (the source texts are not compared).
 
 # Game spec sheet
 
@@ -29,7 +29,7 @@ centre a drone may go along x or y: half the side less the wall margin.
 | Walls | `arena.walls` | `"keep_in"` | PROPOSED | `s2_game.toml` and `nus_hangar_game.toml` `[arena] walls`; `core/game.py:296-299` holds a drone at the wall; the lab fence keeps drones in too (`goal_two_ours.yaml` `fence_behavior`) | keep in · keep in |
 | Environment | `arena.environment` | `"open_arena"` | OPEN | P10, OPEN at gate G0; the parent FIXED rule "Environments" asks for realistic 3-D worlds, construction site first; today's value is E0 of the parent's "Environment ladder", the first build step only, not claimed as meeting the rule | open · open |
 | Guard start disc (m) | `starts.guard_disc_m` | `0.8` | PROPOSED | hangar: `nus_rules.toml` `start_guard_disc_fraction` × `area_radius` × `nus_deploy.toml` `metres_per_unit`; Guards uniform in radius inside this disc round the zone centre (`nus/replica.py` `reset`) | 0.8 · rings |
-| Strike start ring (m) | `starts.strike_ring_m` | `3.2` | OPEN | hangar: `nus_deploy.toml` `spawn_distance` × `metres_per_unit`, random bearings; L08-F1: **outside the 6.5 m arena's keep-in limit** (3.25 − 0.25 = 3.0 m) on about 45 % of bearings, within ±20° of each axis (it fits on the diagonals); related to F8 | 3.2 · 0.3 m inside the walls |
+| Strike start ring (m) | `starts.strike_ring_m` | `2.75` | PROPOSED | LEAD CALL 21 Nov 2026, L08-F1 (task L0.10), ruled at G0 with the arena (F8): the hangar ring (`nus_deploy.toml` `spawn_distance` × `metres_per_unit`, random bearings) scaled by the arena half-side, 3.2 × 3.25 / 3.75 = 2.77, rounded down to 2.75. It fits the keep-in limit (3.0 m) on every bearing with 0.25 m to spare, stays 1.15 m outside the zone edge and 1.95 m from the Guard disc (more than the tag radius: no tag at the first step). Game: `[starts] mode = "zone_disc_ring"` | 3.2 · 0.3 m inside the walls |
 | Game length (s) | `timing.game_s` | `120.0` | PROPOSED | hangar: `nus_rules.toml` `episode_steps` × `nus_deploy.toml` `seconds_per_step` (2,400 ticks); PLAN is silent; kept, LEAD CALL (20 Nov 2026); S2: `s2_game.toml` `game_steps` × `seconds_per_step` | 120 · 60 |
 | Decision every (s) | `timing.decision_s` | `0.6` | PROPOSED | `nus_deploy.toml` `seconds_per_step` (a command held 12 ticks); T41; DISCUSSION §2.10 | 0.6 · 0.05 |
 | Strike speed (m/s) | `speeds.strike_mps` | `0.5` | FIXED | owner, 15 Nov 2026; parent STANDARDS §4 | 0.5 · 0.5 |
@@ -47,6 +47,7 @@ centre a drone may go along x or y: half the side less the wall margin.
 | Filter pairs | `filter.pairs` | `"every_pair"` | FIXED | owner, 14–15 Nov 2026; parent STANDARDS §4 "Safety filter in the game" and §5 "Safety filter in flight today" | every pair · none as committed (`[starling_layer] enabled = false`: a push rule keeps opposite teams 1.10 m apart); every pair with the Starling layer on |
 | Filter share | `filter.share` | `"equal"` | MEASURED | read from `AirStack/robot/ros_ws/src/svg_ground_control/svg_ground_control/cbf_filter.py:150-152, 339-341` (each pair's correction split evenly between the two drones) and DISCUSSION §2.9 desk run; option B is P2 | equal · equal with the Starling layer on |
 | Filter distance (m, centre to centre) | `filter.keepout_m` | `1.10` | FIXED | parent STANDARDS §5: `cbf_safety_radius_m` 0.55 m in the `_ours` configs (`params/real_exploratory_v0.toml` `safety_radius_m`) | 1.10 · 1.10 (push rule `[partner_rules] keepout_*_m` as committed; filter with the Starling layer on) |
+| Parked-ring Guard: smallest ring radius (m) | `players.guard_park_ring_m` | `0.8` | PROPOSED | PLAN §2 F1 (lead's geometry script, 20 Nov 2026): three Guards parked on a 0.8 m ring cover the whole zone (worst gap 1.53 m); task L0.10. LEAD CALL 21 Nov 2026: the ring grows when neighbours would be closer than the filter distance + 0.05 m (5 Guards: 0.98 m) | — · — |
 
 ## Which source the track uses, and why
 
@@ -66,5 +67,44 @@ centre a drone may go along x or y: half the side less the wall margin.
 | P9 | Team sizes to train: 1v1, 2v1, 3v3, 5v3 | gate G0 |
 | P10 | Environments (OPEN here): open arena first, or the construction-site world sooner | gate G0 |
 | P2 | Filter option B (only the Guard swerves in a Guard–Strike pair) | the L2 gate |
-| L08-F1 | New finding for L0.10 and L0.11 (a consequence of F8, the arena size): the hangar's Strike start ring (3.2 m) lies outside the 6.5 m arena's keep-in limit (3.0 m) on about 45 % of bearings. A start ring that fits the 6.5 m arena must be chosen before L0.11's base case | the lead, before L0.11 |
+| L08-F1 | Closed by LEAD CALL 21 Nov 2026 (task L0.10). The finding: the hangar's Strike start ring (3.2 m) lies outside the 6.5 m arena's keep-in limit (3.0 m) on about 45 % of bearings. The ring is now 2.75 m (PROPOSED, row `starts.strike_ring_m`) | value ruled at G0 with the arena (F8) |
 | — | Game length and zone centre: PLAN is silent. LEAD CALL (20 Nov 2026): 120 s and the zone fixed at the arena centre stay PROPOSED, with the S2 game's 60 s and drawn centre shown beside them | ruled by the lead |
+| — | A fixed 6.5 m base-case game file (arena fixed, zone at the centre, starts `zone_disc_ring`); today the tests fix the arena through the band, zone-radius and zone-margin settings. For L0.11 (its sweep config), LEAD CALL 21 Nov 2026 | for L0.11 |
+| — | Starts mode `zone_disc_ring`: a miss is a Guard–Strike pair inside the keep-out or a Strike drone inside the zone; team-mate pairs closer than the filter distance are a separate INFO count, `info["start_team_close"]` (no change to outcomes). L0.11 reports both. LEAD CALL 21 Nov 2026 | settled by the lead |
+
+## Scripted players
+
+Hand-written players for the L0.11 screening sweep and the L0.12 controls (`source/svg_training/opponents/scripted.py`,
+task L0.10). Each reads only its team's observations. "Pure path" means the Starling layer is off: drones stay at the
+start height there.
+
+| Player | What it does |
+|---|---|
+| `guard_parked_centre` | Guard 0 flies to the zone centre and stops there; every other Guard holds its start position. No Guard moves once settled. It ignores the Strike drones. |
+| `guard_parked_ring` | Guard *i* flies to its own point on a ring round the zone centre, points a whole turn / team size apart, and stops there. The ring is 0.8 m (`players.guard_park_ring_m`), larger when neighbours would be closer than the filter distance + 0.05 m (5 Guards: 0.98 m). It does not close up when a team-mate is lost. |
+| `guard_mark_edge` | Each Guard picks one live Strike and sits on the zone edge between it and the centre. |
+| `guard_mirror` | Each Guard holds a ring at 1.2 × the zone radius towards its Strike and copies its sideways speed. |
+| `guard_field` | Each Guard is pulled to the zone edge facing the nearest Strike and pushed off team-mates closer than 1.1 m. |
+| `strike_straight` | Flies straight at the zone centre at one height. |
+| `strike_flank` | Flies straight, unless a Guard is in the way; then it goes round that Guard on its far side. |
+| `strike_high` | Climbs to 0.1 m below the top of the height band, then flies straight in at that height. Plays as `strike_straight` on the pure path. |
+| `strike_low` | The same at 0.1 m above the bottom of the band. |
+| `strike_sacrifice` | Strike 0 flies at the Guard nearest to it, to draw it. The others enter opposite that Guard's bearing, the gap it opens: they circle at a stand-off distance until within 30° of that bearing, then fly straight in. When Strike 0 is out, or only one Strike is left, they fly straight in. |
+| `strike_converge` | The Strikes spread out round the zone at a stand-off distance, at bearings a whole turn / team size apart, starting from Strike 0's bearing. When all are at their bearings, they fly straight in, the nearer ones slower, so that all reach the zone edge together (within 0.3 s in the test). Once they are well on the way in, a loss does not stop them. Accepted as built (LEAD CALL 21 Nov 2026). |
+
+## Scripted player settings
+
+The behaviour constants of the scripted players (`opponents/scripted.py`; `tests/test_scripted_study.py` keeps this
+table and the constants equal). Hand picks for the screening sweep, not tuned on results.
+
+| Setting | Constant | Value | Unit | Status | Source |
+|---|---|---|---|---|---|
+| Parked ring: smallest radius | `PARK_RING_M` | `0.8` | m | PROPOSED | LEAD CALL 21 Nov 2026 (PLAN §2 F1); same as `players.guard_park_ring_m` |
+| Parked ring: neighbours at least the filter distance + this apart | `PARK_RING_SPACING_MARGIN_M` | `0.05` | m | PROPOSED | LEAD CALL 21 Nov 2026 |
+| High / low Strike: aim this far inside the height band edge | `BAND_INSET_M` | `0.1` | m | PROPOSED | LEAD CALL 21 Nov 2026 |
+| Sacrifice / converge: stand-off circle, outside the zone edge | `STAND_OFF_M` | `1.0` | m | PROPOSED | LEAD CALL 21 Nov 2026; capped inside the keep-in box |
+| Sacrifice: fly straight in within this of the entry bearing | `ENTRY_HALF_ANGLE_DEG` | `30.0` | deg | PROPOSED | LEAD CALL 21 Nov 2026 |
+| Converge: in place within this of the own bearing | `GATHER_ANGLE_RAD` | `0.1` | rad | PROPOSED | LEAD CALL 21 Nov 2026 |
+| Circling: radial correction reaches full speed this far off the circle | `RADIAL_RAMP_M` | `1.0` | m | PROPOSED | LEAD CALL 21 Nov 2026 |
+| Converge: circle round while farther than this from the own bearing | `CIRCLE_UNTIL_RAD` | `0.5` | rad | PROPOSED | LEAD CALL 21 Nov 2026 |
+| Converge: run-in goes on once a Strike is this far inside the stand-off circle | `RUN_IN_COMMIT_M` | `0.3` | m | PROPOSED | LEAD CALL 21 Nov 2026 |

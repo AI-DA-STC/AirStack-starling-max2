@@ -64,6 +64,7 @@ SCHEMA: dict[str, str] = {
     "filter.pairs": "text",
     "filter.share": "text",
     "filter.keepout_m": "decimal",
+    "players.guard_park_ring_m": "decimal",
 }
 
 _KIND_WORDS = {"decimal": "a decimal number (write 2.0, not 2)", "whole": "a whole number", "yes_no": "true or false",

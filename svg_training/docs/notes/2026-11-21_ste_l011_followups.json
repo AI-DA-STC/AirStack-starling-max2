@@ -1,0 +1,964 @@
+{
+ "wilson": {
+  "cell": [
+   "base",
+   "guard_mark_edge",
+   "strike_straight"
+  ],
+  "games": 1000,
+  "unfinished": 0,
+  "holds": 808,
+  "reaches": 192,
+  "hold_ci": [
+   0.7824270733559523,
+   0.8312155571148313
+  ],
+  "reach_ci": [
+   0.1687844428851688,
+   0.21757292664404781
+  ],
+  "reach_upper_above_0p2": true
+ },
+ "tie": [
+  {
+   "group": "base",
+   "guard": "guard_mark_edge",
+   "strike": "strike_straight",
+   "start_sha256": "5aeba7ab2b582f2973034c8203c17ed3e8239fef7029a1f991fe95b82369843c",
+   "tag_radius_m": 1.6,
+   "zone_radius_m": 1.6,
+   "games": 1000,
+   "unfinished": 0,
+   "holds": 808,
+   "reaches": 192,
+   "hold_ci": [
+    0.7824270733559523,
+    0.8312155571148313
+   ],
+   "reach_ci": [
+    0.1687844428851688,
+    0.21757292664404781
+   ],
+   "t44": {
+    "games": 1000,
+    "unfinished": 0,
+    "holds": 808,
+    "reaches": 192,
+    "hold_ci": [
+     0.7824270733559523,
+     0.8312155571148313
+    ],
+    "reach_ci": [
+     0.1687844428851688,
+     0.21757292664404781
+    ]
+   },
+   "agreement_with_t44": {
+    "games": 1000,
+    "differ": 0,
+    "outcome_differ": 0
+   },
+   "holds_any_tag_inside_zone": 33,
+   "holds_last_tag_inside_zone": 33,
+   "inside_tags_already_inside_a_step_earlier": 0
+  },
+  {
+   "group": "base",
+   "guard": "guard_field",
+   "strike": "strike_converge",
+   "start_sha256": "5aeba7ab2b582f2973034c8203c17ed3e8239fef7029a1f991fe95b82369843c",
+   "tag_radius_m": 1.6,
+   "zone_radius_m": 1.6,
+   "games": 1000,
+   "unfinished": 0,
+   "holds": 871,
+   "reaches": 129,
+   "hold_ci": [
+    0.8487955562840396,
+    0.8903648849648588
+   ],
+   "reach_ci": [
+    0.10963511503514137,
+    0.15120444371596045
+   ],
+   "t44": {
+    "games": 1000,
+    "unfinished": 0,
+    "holds": 871,
+    "reaches": 129,
+    "hold_ci": [
+     0.8487955562840396,
+     0.8903648849648588
+    ],
+    "reach_ci": [
+     0.10963511503514137,
+     0.15120444371596045
+    ]
+   },
+   "agreement_with_t44": {
+    "games": 1000,
+    "differ": 0,
+    "outcome_differ": 0
+   },
+   "holds_any_tag_inside_zone": 14,
+   "holds_last_tag_inside_zone": 14,
+   "inside_tags_already_inside_a_step_earlier": 0
+  },
+  {
+   "group": "tag_1p2",
+   "guard": "guard_field",
+   "strike": "strike_straight",
+   "start_sha256": "5aeba7ab2b582f2973034c8203c17ed3e8239fef7029a1f991fe95b82369843c",
+   "tag_radius_m": 1.2,
+   "zone_radius_m": 1.6,
+   "games": 1000,
+   "unfinished": 0,
+   "holds": 645,
+   "reaches": 355,
+   "hold_ci": [
+    0.6148381407568445,
+    0.6740520586531024
+   ],
+   "reach_ci": [
+    0.3259479413468977,
+    0.38516185924315555
+   ],
+   "t44": {
+    "games": 1000,
+    "unfinished": 0,
+    "holds": 645,
+    "reaches": 355,
+    "hold_ci": [
+     0.6148381407568445,
+     0.6740520586531024
+    ],
+    "reach_ci": [
+     0.3259479413468977,
+     0.38516185924315555
+    ]
+   },
+   "agreement_with_t44": {
+    "games": 1000,
+    "differ": 0,
+    "outcome_differ": 0
+   },
+   "holds_any_tag_inside_zone": 0,
+   "holds_last_tag_inside_zone": 0,
+   "inside_tags_already_inside_a_step_earlier": 0
+  },
+  {
+   "group": "tag_1p4",
+   "guard": "guard_mirror",
+   "strike": "strike_low",
+   "start_sha256": "5aeba7ab2b582f2973034c8203c17ed3e8239fef7029a1f991fe95b82369843c",
+   "tag_radius_m": 1.4,
+   "zone_radius_m": 1.6,
+   "games": 1000,
+   "unfinished": 0,
+   "holds": 672,
+   "reaches": 328,
+   "hold_ci": [
+    0.64229107739265,
+    0.7003924694936319
+   ],
+   "reach_ci": [
+    0.2996075305063683,
+    0.35770892260735015
+   ],
+   "t44": {
+    "games": 1000,
+    "unfinished": 0,
+    "holds": 672,
+    "reaches": 328,
+    "hold_ci": [
+     0.64229107739265,
+     0.7003924694936319
+    ],
+    "reach_ci": [
+     0.2996075305063683,
+     0.35770892260735015
+    ]
+   },
+   "agreement_with_t44": {
+    "games": 1000,
+    "differ": 0,
+    "outcome_differ": 0
+   },
+   "holds_any_tag_inside_zone": 31,
+   "holds_last_tag_inside_zone": 31,
+   "inside_tags_already_inside_a_step_earlier": 0
+  }
+ ],
+ "identical": {
+  "cell_files": [
+   {
+    "group": "tag_1p2",
+    "a": [
+     "guard_field",
+     "strike_straight"
+    ],
+    "b": [
+     "guard_field",
+     "strike_high"
+    ],
+    "games": 1000,
+    "differ": 1000,
+    "outcome_differ": 0,
+    "closest_differ": 1000
+   },
+   {
+    "group": "tag_1p2",
+    "a": [
+     "guard_field",
+     "strike_straight"
+    ],
+    "b": [
+     "guard_field",
+     "strike_low"
+    ],
+    "games": 1000,
+    "differ": 1000,
+    "outcome_differ": 0,
+    "closest_differ": 1000
+   },
+   {
+    "group": "tag_1p4",
+    "a": [
+     "guard_parked_centre",
+     "strike_straight"
+    ],
+    "b": [
+     "guard_parked_ring",
+     "strike_straight"
+    ],
+    "games": 1000,
+    "differ": 249,
+    "outcome_differ": 0,
+    "closest_differ": 1000
+   },
+   {
+    "group": "tag_1p4",
+    "a": [
+     "guard_parked_centre",
+     "strike_straight"
+    ],
+    "b": [
+     "guard_parked_centre",
+     "strike_flank"
+    ],
+    "games": 1000,
+    "differ": 1000,
+    "outcome_differ": 14,
+    "closest_differ": 1000
+   },
+   {
+    "group": "tag_1p4",
+    "a": [
+     "guard_parked_centre",
+     "strike_straight"
+    ],
+    "b": [
+     "guard_parked_ring",
+     "strike_flank"
+    ],
+    "games": 1000,
+    "differ": 998,
+    "outcome_differ": 14,
+    "closest_differ": 1000
+   },
+   {
+    "group": "tag_1p4",
+    "a": [
+     "guard_parked_centre",
+     "strike_straight"
+    ],
+    "b": [
+     "guard_parked_centre",
+     "strike_high"
+    ],
+    "games": 1000,
+    "differ": 1000,
+    "outcome_differ": 80,
+    "closest_differ": 1000
+   },
+   {
+    "group": "tag_1p4",
+    "a": [
+     "guard_parked_centre",
+     "strike_straight"
+    ],
+    "b": [
+     "guard_parked_ring",
+     "strike_high"
+    ],
+    "games": 1000,
+    "differ": 1000,
+    "outcome_differ": 70,
+    "closest_differ": 1000
+   },
+   {
+    "group": "tag_1p4",
+    "a": [
+     "guard_parked_centre",
+     "strike_straight"
+    ],
+    "b": [
+     "guard_parked_centre",
+     "strike_low"
+    ],
+    "games": 1000,
+    "differ": 1000,
+    "outcome_differ": 121,
+    "closest_differ": 1000
+   },
+   {
+    "group": "tag_1p4",
+    "a": [
+     "guard_parked_centre",
+     "strike_straight"
+    ],
+    "b": [
+     "guard_parked_ring",
+     "strike_low"
+    ],
+    "games": 1000,
+    "differ": 1000,
+    "outcome_differ": 107,
+    "closest_differ": 1000
+   },
+   {
+    "group": "tag_1p4",
+    "a": [
+     "guard_parked_centre",
+     "strike_straight"
+    ],
+    "b": [
+     "guard_parked_centre",
+     "strike_sacrifice"
+    ],
+    "games": 1000,
+    "differ": 986,
+    "outcome_differ": 131,
+    "closest_differ": 905
+   },
+   {
+    "group": "tag_1p4",
+    "a": [
+     "guard_parked_centre",
+     "strike_straight"
+    ],
+    "b": [
+     "guard_parked_ring",
+     "strike_sacrifice"
+    ],
+    "games": 1000,
+    "differ": 994,
+    "outcome_differ": 126,
+    "closest_differ": 1000
+   },
+   {
+    "group": "tag_1p4",
+    "a": [
+     "guard_parked_centre",
+     "strike_straight"
+    ],
+    "b": [
+     "guard_parked_centre",
+     "strike_converge"
+    ],
+    "games": 1000,
+    "differ": 998,
+    "outcome_differ": 648,
+    "closest_differ": 1000
+   },
+   {
+    "group": "tag_1p4",
+    "a": [
+     "guard_parked_centre",
+     "strike_straight"
+    ],
+    "b": [
+     "guard_parked_ring",
+     "strike_converge"
+    ],
+    "games": 1000,
+    "differ": 1000,
+    "outcome_differ": 648,
+    "closest_differ": 1000
+   }
+  ],
+  "heights": [
+   {
+    "group": "tag_1p2",
+    "guard": "guard_field",
+    "strike": "strike_high",
+    "games": 1000,
+    "strike_dz_max_m_median": 0.5065603852272034,
+    "strike_dz_max_m_max": 0.509513258934021,
+    "agreement_with_t44": {
+     "games": 1000,
+     "differ": 0,
+     "outcome_differ": 0
+    }
+   },
+   {
+    "group": "tag_1p2",
+    "guard": "guard_field",
+    "strike": "strike_low",
+    "games": 1000,
+    "strike_dz_max_m_median": 0.6063657402992249,
+    "strike_dz_max_m_max": 0.6096813082695007,
+    "agreement_with_t44": {
+     "games": 1000,
+     "differ": 0,
+     "outcome_differ": 0
+    }
+   },
+   {
+    "group": "size_1v1",
+    "guard": "guard_parked_centre",
+    "strike": "strike_high",
+    "games": 1000,
+    "strike_dz_max_m_median": 0.5018996000289917,
+    "strike_dz_max_m_max": 0.5018996000289917,
+    "agreement_with_t44": {
+     "games": 1000,
+     "differ": 0,
+     "outcome_differ": 0
+    }
+   }
+  ],
+  "tag_1p4_parked_centre_v_ring": {
+   "strike_straight": {
+    "games": 1000,
+    "differ": 249,
+    "outcome_differ": 0
+   },
+   "strike_flank": {
+    "games": 1000,
+    "differ": 696,
+    "outcome_differ": 0
+   },
+   "strike_high": {
+    "games": 1000,
+    "differ": 239,
+    "outcome_differ": 10
+   },
+   "strike_low": {
+    "games": 1000,
+    "differ": 224,
+    "outcome_differ": 14
+   },
+   "strike_sacrifice": {
+    "games": 1000,
+    "differ": 828,
+    "outcome_differ": 5
+   },
+   "strike_converge": {
+    "games": 1000,
+    "differ": 747,
+    "outcome_differ": 0
+   }
+  },
+  "height_scripts_identical_to_straight": {
+   "arena_7p5": {
+    "cells": 10,
+    "identical": 0,
+    "outcome_identical": 0,
+    "outcome_differ_games": 784
+   },
+   "base": {
+    "cells": 10,
+    "identical": 0,
+    "outcome_identical": 0,
+    "outcome_differ_games": 924
+   },
+   "ctl_same_seed": {
+    "cells": 10,
+    "identical": 0,
+    "outcome_identical": 0,
+    "outcome_differ_games": 924
+   },
+   "ctl_tag_off": {
+    "cells": 10,
+    "identical": 0,
+    "outcome_identical": 4,
+    "outcome_differ_games": 1496
+   },
+   "size_1v1": {
+    "cells": 10,
+    "identical": 0,
+    "outcome_identical": 6,
+    "outcome_differ_games": 1449
+   },
+   "size_2v1": {
+    "cells": 10,
+    "identical": 0,
+    "outcome_identical": 6,
+    "outcome_differ_games": 295
+   },
+   "size_5v3": {
+    "cells": 10,
+    "identical": 0,
+    "outcome_identical": 9,
+    "outcome_differ_games": 1
+   },
+   "survive_1": {
+    "cells": 10,
+    "identical": 0,
+    "outcome_identical": 8,
+    "outcome_differ_games": 27
+   },
+   "tag_1p2": {
+    "cells": 10,
+    "identical": 0,
+    "outcome_identical": 2,
+    "outcome_differ_games": 807
+   },
+   "tag_1p4": {
+    "cells": 10,
+    "identical": 0,
+    "outcome_identical": 0,
+    "outcome_differ_games": 924
+   },
+   "tag_1p8": {
+    "cells": 10,
+    "identical": 0,
+    "outcome_identical": 0,
+    "outcome_differ_games": 600
+   },
+   "zone_2p4": {
+    "cells": 10,
+    "identical": 0,
+    "outcome_identical": 4,
+    "outcome_differ_games": 176
+   }
+  }
+ },
+ "decision": [
+  {
+   "group": "base",
+   "guard": "guard_mark_edge",
+   "strike": "strike_straight",
+   "hold_ticks": 12,
+   "hold_s": 0.6000000000000001,
+   "every_tick": {
+    "games": 1000,
+    "unfinished": 0,
+    "holds": 808,
+    "reaches": 192,
+    "hold_ci": [
+     0.7824270733559523,
+     0.8312155571148313
+    ],
+    "reach_ci": [
+     0.1687844428851688,
+     0.21757292664404781
+    ]
+   },
+   "held": {
+    "games": 1000,
+    "unfinished": 0,
+    "holds": 793,
+    "reaches": 207,
+    "hold_ci": [
+     0.766789946293511,
+     0.8169674911348643
+    ],
+    "reach_ci": [
+     0.18303250886513583,
+     0.23321005370648906
+    ]
+   },
+   "flips": {
+    "hold_to_reach": 28,
+    "reach_to_hold": 13
+   },
+   "every_vs_held": {
+    "games": 1000,
+    "differ": 391,
+    "outcome_differ": 41
+   },
+   "median_end_step": [
+    48.0,
+    48.0
+   ],
+   "t44": {
+    "games": 1000,
+    "unfinished": 0,
+    "holds": 808,
+    "reaches": 192,
+    "hold_ci": [
+     0.7824270733559523,
+     0.8312155571148313
+    ],
+    "reach_ci": [
+     0.1687844428851688,
+     0.21757292664404781
+    ]
+   },
+   "every_tick_agreement_with_t44": {
+    "games": 1000,
+    "differ": 0,
+    "outcome_differ": 0
+   },
+   "z_up_info": false
+  },
+  {
+   "group": "tag_1p2",
+   "guard": "guard_field",
+   "strike": "strike_straight",
+   "hold_ticks": 12,
+   "hold_s": 0.6000000000000001,
+   "every_tick": {
+    "games": 1000,
+    "unfinished": 0,
+    "holds": 645,
+    "reaches": 355,
+    "hold_ci": [
+     0.6148381407568445,
+     0.6740520586531024
+    ],
+    "reach_ci": [
+     0.3259479413468977,
+     0.38516185924315555
+    ]
+   },
+   "held": {
+    "games": 1000,
+    "unfinished": 0,
+    "holds": 645,
+    "reaches": 355,
+    "hold_ci": [
+     0.6148381407568445,
+     0.6740520586531024
+    ],
+    "reach_ci": [
+     0.3259479413468977,
+     0.38516185924315555
+    ]
+   },
+   "flips": {
+    "hold_to_reach": 0,
+    "reach_to_hold": 0
+   },
+   "every_vs_held": {
+    "games": 1000,
+    "differ": 0,
+    "outcome_differ": 0
+   },
+   "median_end_step": [
+    49.0,
+    49.0
+   ],
+   "t44": {
+    "games": 1000,
+    "unfinished": 0,
+    "holds": 645,
+    "reaches": 355,
+    "hold_ci": [
+     0.6148381407568445,
+     0.6740520586531024
+    ],
+    "reach_ci": [
+     0.3259479413468977,
+     0.38516185924315555
+    ]
+   },
+   "every_tick_agreement_with_t44": {
+    "games": 1000,
+    "differ": 0,
+    "outcome_differ": 0
+   },
+   "z_up_info": false
+  },
+  {
+   "group": "tag_1p4",
+   "guard": "guard_mirror",
+   "strike": "strike_low",
+   "hold_ticks": 12,
+   "hold_s": 0.6000000000000001,
+   "every_tick": {
+    "games": 1000,
+    "unfinished": 0,
+    "holds": 672,
+    "reaches": 328,
+    "hold_ci": [
+     0.64229107739265,
+     0.7003924694936319
+    ],
+    "reach_ci": [
+     0.2996075305063683,
+     0.35770892260735015
+    ]
+   },
+   "held": {
+    "games": 1000,
+    "unfinished": 0,
+    "holds": 738,
+    "reaches": 262,
+    "hold_ci": [
+     0.709871862427285,
+     0.7643065338455931
+    ],
+    "reach_ci": [
+     0.23569346615440692,
+     0.290128137572715
+    ]
+   },
+   "flips": {
+    "hold_to_reach": 52,
+    "reach_to_hold": 118
+   },
+   "every_vs_held": {
+    "games": 1000,
+    "differ": 997,
+    "outcome_differ": 170
+   },
+   "median_end_step": [
+    68.0,
+    75.0
+   ],
+   "t44": {
+    "games": 1000,
+    "unfinished": 0,
+    "holds": 672,
+    "reaches": 328,
+    "hold_ci": [
+     0.64229107739265,
+     0.7003924694936319
+    ],
+    "reach_ci": [
+     0.2996075305063683,
+     0.35770892260735015
+    ]
+   },
+   "every_tick_agreement_with_t44": {
+    "games": 1000,
+    "differ": 0,
+    "outcome_differ": 0
+   },
+   "z_up_info": true
+  },
+  {
+   "group": "tag_1p4",
+   "guard": "guard_mirror",
+   "strike": "strike_straight",
+   "hold_ticks": 12,
+   "hold_s": 0.6000000000000001,
+   "every_tick": {
+    "games": 1000,
+    "unfinished": 0,
+    "holds": 695,
+    "reaches": 305,
+    "hold_ci": [
+     0.6657622874602453,
+     0.7227452220910624
+    ],
+    "reach_ci": [
+     0.2772547779089377,
+     0.33423771253975465
+    ]
+   },
+   "held": {
+    "games": 1000,
+    "unfinished": 0,
+    "holds": 693,
+    "reaches": 307,
+    "hold_ci": [
+     0.6637180727753157,
+     0.7208047443703375
+    ],
+    "reach_ci": [
+     0.2791952556296626,
+     0.33628192722468425
+    ]
+   },
+   "flips": {
+    "hold_to_reach": 24,
+    "reach_to_hold": 22
+   },
+   "every_vs_held": {
+    "games": 1000,
+    "differ": 347,
+    "outcome_differ": 46
+   },
+   "median_end_step": [
+    53.5,
+    54.0
+   ],
+   "t44": {
+    "games": 1000,
+    "unfinished": 0,
+    "holds": 695,
+    "reaches": 305,
+    "hold_ci": [
+     0.6657622874602453,
+     0.7227452220910624
+    ],
+    "reach_ci": [
+     0.2772547779089377,
+     0.33423771253975465
+    ]
+   },
+   "every_tick_agreement_with_t44": {
+    "games": 1000,
+    "differ": 0,
+    "outcome_differ": 0
+   },
+   "z_up_info": false
+  }
+ ],
+ "composition": {
+  "groups": {
+   "base": {
+    "holds": 22058,
+    "holds_no_guard_left": 22058,
+    "timeouts": 0,
+    "guards_left_in_holds": [
+     0.0
+    ],
+    "length_median_s_range": [
+     2.0,
+     8.1
+    ],
+    "length_p90_s_max": 13.205000000000002
+   },
+   "sens_strike_dz_1mm": {
+    "holds": 3377,
+    "holds_no_guard_left": 3377,
+    "timeouts": 0,
+    "guards_left_in_holds": [
+     0.0
+    ],
+    "length_median_s_range": [
+     2.0,
+     2.9000000000000004
+    ],
+    "length_p90_s_max": 2.9000000000000004
+   },
+   "size_1v1": {
+    "holds": 14926,
+    "holds_no_guard_left": 14926,
+    "timeouts": 0,
+    "guards_left_in_holds": [
+     0.0
+    ],
+    "length_median_s_range": [
+     2.1,
+     3.6
+    ],
+    "length_p90_s_max": 3.6
+   },
+   "size_2v1": {
+    "holds": 18883,
+    "holds_no_guard_left": 0,
+    "timeouts": 0,
+    "guards_left_in_holds": [
+     1.0
+    ],
+    "length_median_s_range": [
+     1.55,
+     3.0500000000000003
+    ],
+    "length_p90_s_max": 3.6
+   },
+   "size_5v3": {
+    "holds": 29392,
+    "holds_no_guard_left": 0,
+    "timeouts": 0,
+    "guards_left_in_holds": [
+     2.0
+    ],
+    "length_median_s_range": [
+     1.1,
+     9.75
+    ],
+    "length_p90_s_max": 15.9
+   },
+   "survive_1": {
+    "holds": 29948,
+    "holds_no_guard_left": 0,
+    "timeouts": 0,
+    "guards_left_in_holds": [
+     3.0
+    ],
+    "length_median_s_range": [
+     1.7000000000000002,
+     8.1
+    ],
+    "length_p90_s_max": 13.205000000000002
+   },
+   "tag_1p2": {
+    "holds": 14393,
+    "holds_no_guard_left": 14393,
+    "timeouts": 0,
+    "guards_left_in_holds": [
+     0.0
+    ],
+    "length_median_s_range": [
+     2.45,
+     8.9
+    ],
+    "length_p90_s_max": 13.905000000000001
+   },
+   "tag_1p4": {
+    "holds": 18733,
+    "holds_no_guard_left": 18733,
+    "timeouts": 0,
+    "guards_left_in_holds": [
+     0.0
+    ],
+    "length_median_s_range": [
+     2.25,
+     8.55
+    ],
+    "length_p90_s_max": 13.610000000000003
+   },
+   "tag_1p8": {
+    "holds": 24966,
+    "holds_no_guard_left": 24966,
+    "timeouts": 0,
+    "guards_left_in_holds": [
+     0.0
+    ],
+    "length_median_s_range": [
+     1.75,
+     7.65
+    ],
+    "length_p90_s_max": 14.5
+   },
+   "zone_2p4": {
+    "holds": 3485,
+    "holds_no_guard_left": 3485,
+    "timeouts": 0,
+    "guards_left_in_holds": [
+     0.0
+    ],
+    "length_median_s_range": [
+     1.4000000000000001,
+     9.15
+    ],
+    "length_p90_s_max": 15.05
+   },
+   "arena_7p5": {
+    "holds": 22719,
+    "holds_no_guard_left": 22719,
+    "timeouts": 0,
+    "guards_left_in_holds": [
+     0.0
+    ],
+    "length_median_s_range": [
+     2.5,
+     8.700000000000001
+    ],
+    "length_p90_s_max": 13.955000000000002
+   }
+  },
+  "old_columns_unchanged": {
+   "old_rows": 428,
+   "found_as_prefix": 428
+  },
+  "table": "docs/figures/ste_l011/results_2026-11-21_ste_l011_screen.md"
+ }
+}

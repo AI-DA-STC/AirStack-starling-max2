@@ -136,6 +136,10 @@ games with 0 tags). Whether learning changes this is L0.12's question.
   than the pilot with a CPU test suite beside it; the projection was raised ×1.24 (commit 9b54dff). A CPU test suite also
   ran beside this sweep for part of it, so its game-steps/s are not a clean speed measurement.
 - GPU-hours: pilot 0.034 + CUDA smoke 0.087 + this sweep 0.305 = 0.426 of the L0.11 cap of 3.0 (laptop ledger).
+- Follow-up checks (CPU, 21 Nov, INFO): [docs/notes/2026-11-21_ste_l011_followups.md](../docs/notes/2026-11-21_ste_l011_followups.md)
+  — the tag-before-zone rule decides only a few percent of holds (33 of 808 at base mark_edge v straight); Guards left
+  and game length per cell (new `hold_composition.png`, table columns added, old rows unchanged); scripts with commands
+  held 0.6 s barely change against the straight Strike; base reach 192/1,000, Wilson 0.169–0.218.
 - Edited after the first write (same session, before any push, 762fc6a5): the reading and the ledger row T44 gained the
   one-for-one trade finding after the QC results read; no number changed.
 - The machine was not suspended during the run: effective time 1,096 s against a wall-clock span of 1,098.6 s in

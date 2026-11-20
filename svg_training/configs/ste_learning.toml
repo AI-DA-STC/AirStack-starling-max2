@@ -1,0 +1,35 @@
+# STE learning track: the track's own process settings (task L0.1). Loaded by source/svg_training/ste/config.py into
+# frozen dataclasses; an unknown section, key or task ID raises, and so does a value of the wrong type. Caps are
+# GPU-hours, written as decimals (3.0, not 3).
+#
+# Every value line carries its status label and its source: FIXED, MEASURED, PROPOSED or OPEN, as defined at the top of
+# STANDARDS.md and in ste_learning/STANDARDS.md section 1. tests/test_ste_config.py fails on a line without one.
+#
+# No game setting lives here. The game's settings file, configs/ste_game.toml, arrives with task L0.8; each game
+# section arrives with the task that builds it.
+
+[track]
+plan_version = 2         # FIXED (an identifier, not a ruling): the version in the header line of ste_learning/PLAN.md (the test reads it there)
+phase = "L0"             # FIXED (owner, 20 Nov 2026): the approval covers phase L0 only (PLAN.md header, section 12)
+
+[budget]
+phase_cap_gpu_h = 19.0   # FIXED (owner, 20 Nov 2026): GPU-hour cap of phase L0 (PLAN.md sections 4, 9 and 12)
+
+# GPU-hour cap of each task of the phase, in the order of the table in PLAN.md section 4 (the test compares the IDs,
+# their order and the caps with that table). The split is the lead's (a LEAD CALL, PLAN.md version 2), not an owner
+# ruling: the owner approved the phase cap above. So each line is PROPOSED. The caps may add up to less than the phase
+# cap, never to more.
+[budget.task_cap_gpu_h]
+"L0.1" = 0.0             # PROPOSED (lead's split, PLAN.md section 4): Track set-up: config and test skeleton
+"L0.7" = 0.0             # PROPOSED (lead's split, PLAN.md section 4): Process tooling and drills
+"L0.8" = 0.0             # PROPOSED (lead's split, PLAN.md section 4): Game spec sheet
+"L0.9" = 0.0             # PROPOSED (lead's split, PLAN.md section 4): Tag rule for the study
+"L0.10" = 0.0            # PROPOSED (lead's split, PLAN.md section 4): Scripted players for the study
+"L0.11" = 3.0            # PROPOSED (lead's split, PLAN.md section 4): Screening sweep (INFO)
+"L0.12" = 6.0            # PROPOSED (lead's split, PLAN.md section 4): Best-response test
+"L0.2" = 1.5             # PROPOSED (lead's split, PLAN.md section 4): Tier 2 speed in contested play
+"L0.13" = 6.0            # PROPOSED (lead's split, PLAN.md section 4): Does tier 2 train at all?
+"L0.3" = 1.5             # PROPOSED (lead's split, PLAN.md section 4): STE Guard policy in tier 2 without retraining
+"L0.4" = 0.2             # PROPOSED (lead's split, PLAN.md section 4): Side-by-side Starling render
+"L0.5" = 0.3             # PROPOSED (lead's split, PLAN.md section 4): Starling video look fix
+"L0.6" = 0.0             # PROPOSED (lead's split, PLAN.md section 4): Gate G0

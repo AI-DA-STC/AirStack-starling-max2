@@ -1,6 +1,10 @@
 """scripts/gpu_pause.sh (owner, 18 Nov 2026): pause = SIGSTOP, resume = SIGCONT, stop = SIGINT (then SIGCONT, so a paused job receives
 it), status lists the jobs; every pause, resume and stop is appended to the pause log. The test runs a dummy Python process whose command
-line holds a unique marker and points the script at that marker and a private log, so no real job can be touched."""
+line holds a unique marker and points the script at that marker and a private log, so no real job can be touched.
+
+STE track, task L0.7: the same event line also goes to the one shared pause log (``<shared folder>/pauses.log``, the same from every
+worktree), the legacy log and ``GPU_PAUSE_LOG`` work as before, and the default pattern also finds the track's job scripts
+(``scripts/ste_*.py``) but never the track's own launcher, wrapper or waiter (``scripts/ste_job.py``)."""
 import json
 import os
 import subprocess
@@ -50,6 +54,7 @@ def _safe_env(tmp_path, **overrides):
     fake.chmod(0o755)
     (tmp_path / "pids").mkdir(exist_ok=True)
     env = dict(os.environ, PATH=f"{bin_dir}:{os.environ['PATH']}", GPU_PAUSE_LOG=str(tmp_path / "pauses.log"),
+               SVG_SHARED_DIR=str(tmp_path / "shared"),          # the shared pause log: never the machine's real one
                GPU_PAUSE_PIDDIR=str(tmp_path / "pids"), GPU_PAUSE_EXE=f"no_such_exe_{uuid.uuid4().hex}",
                GPU_PAUSE_PATTERN=f"no_such_job_{uuid.uuid4().hex}", FAKE_GPU_PIDS="")
     env.update(overrides)
@@ -130,3 +135,122 @@ def test_default_pattern_covers_every_kind_of_job():
                  "ma_skills/scripts/train", "ma_skills/scripts/eval"):
         assert name in text, name
     assert "nus_jax" in text and "env_isaaclab" in text and "nus_jax_runs" in text
+
+
+# ------------------------------------------------------------------------------------------------ STE track, task L0.7
+def _lines(path: Path) -> list[str]:
+    return path.read_text().splitlines()
+
+
+def test_every_event_line_also_goes_to_the_shared_log(dummy, tmp_path):
+    """One line per event, the SAME text in the legacy log and in the shared log (the reader de-duplicates on it)."""
+    proc, env, log = dummy
+    shared_log = tmp_path / "shared" / "pauses.log"
+    assert _wait(lambda: _state(proc.pid) in "SR")
+    assert _run(env, "status").returncode == 0 and not shared_log.exists() and not log.exists()     # status logs nothing
+    for command in ("pause", "resume", "pause", "stop"):
+        assert _run(env, command).returncode == 0
+    assert _wait(lambda: proc.poll() is not None)
+    assert _lines(shared_log) == _lines(log) and len(_lines(log)) == 4
+    rows = [json.loads(line) for line in _lines(shared_log)]
+    assert [r["event"] for r in rows] == ["pause", "resume", "pause", "stop"] and all(r["pids"] == [proc.pid] for r in rows)
+    assert [r["time"] for r in rows] == sorted(r["time"] for r in rows)
+
+
+def test_one_line_when_the_legacy_log_is_the_shared_log(tmp_path):
+    shared_log = tmp_path / "shared" / "pauses.log"
+    env = _safe_env(tmp_path, GPU_PAUSE_LOG=str(tmp_path / "shared" / "." / "pauses.log"))       # the same file, spelled differently
+    assert _run(env, "pause").returncode == 0
+    assert len(_lines(shared_log)) == 1 and json.loads(_lines(shared_log)[0])["pids"] == []
+
+
+def _copy_of_the_script(worktree: Path) -> Path:
+    copy = worktree / "svg_training" / "scripts" / "gpu_pause.sh"
+    copy.parent.mkdir(parents=True, exist_ok=True)
+    copy.write_text(SCRIPT.read_text())
+    return copy
+
+
+def test_default_logs_from_the_main_clone_and_from_a_worktree(tmp_path):
+    """No variable set: the legacy log stays inside the copy's own worktree (as before), the shared log is
+    ``<main clone>/svg_training/runs/shared/pauses.log`` from both, and it is the folder ste/shared.py computes."""
+    from _ste_tools import make_repo
+    from svg_training.ste import shared
+    main, other = make_repo(tmp_path)
+    env = _safe_env(tmp_path)
+    del env["GPU_PAUSE_LOG"], env["SVG_SHARED_DIR"]
+    legacy = Path("svg_training", "runs", "nus_port", "phase5", "pauses.log")
+    shared_log = main / "svg_training" / "runs" / "shared" / "pauses.log"
+    for count, worktree in enumerate((other, main), start=1):
+        out = subprocess.run(["bash", str(_copy_of_the_script(worktree)), "pause"], env=env, capture_output=True, text=True)
+        assert out.returncode == 0, out.stderr
+        assert len(_lines(worktree / legacy)) == 1 and len(_lines(shared_log)) == count
+        assert _lines(worktree / legacy)[0] == _lines(shared_log)[-1]
+    saved = os.environ.pop("SVG_SHARED_DIR")
+    try:
+        assert shared.shared_dir(create=False, start=other / "svg_training" / "scripts") / "pauses.log" == shared_log
+        assert shared.shared_dir(create=False, start=main / "svg_training" / "scripts") / "pauses.log" == shared_log
+    finally:
+        os.environ["SVG_SHARED_DIR"] = saved
+
+
+def test_a_pause_still_works_where_the_shared_folder_cannot_be_found(tmp_path):
+    """Outside a git repository and without SVG_SHARED_DIR: the owner's pause must not fail; the legacy line is written
+    and a warning says the shared log was not."""
+    env = _safe_env(tmp_path, GIT_CEILING_DIRECTORIES=str(tmp_path))
+    del env["GPU_PAUSE_LOG"], env["SVG_SHARED_DIR"]
+    lone = tmp_path / "not_a_repo"
+    out = subprocess.run(["bash", str(_copy_of_the_script(lone)), "pause"], env=env, capture_output=True, text=True)
+    assert out.returncode == 0 and "paused 0 job(s)" in out.stdout
+    assert "shared pause log" in out.stderr
+    assert len(_lines(lone / "svg_training" / "runs" / "nus_port" / "phase5" / "pauses.log")) == 1
+
+
+def _python_named(path: Path, *args: str) -> subprocess.Popen:
+    """A Python process whose command line is ``python <path> <args>`` and that only sleeps."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("import time\nwhile True: time.sleep(0.05)\n")
+    return subprocess.Popen([sys.executable, str(path), *args])
+
+
+def test_default_pattern_finds_the_tracks_jobs_but_not_its_tooling(tmp_path):
+    """``status`` only (it sends no signal): with the DEFAULT pattern real jobs of this machine may be listed too."""
+    tag = uuid.uuid4().hex
+    job = _python_named(tmp_path / tag / "scripts" / "ste_screen_sweep.py", "--run-dir", "runs/x")
+    tools = [_python_named(tmp_path / tag / "scripts" / "ste_job.py", "wait", "ste_screen_sweep"),              # the waiter
+             _python_named(tmp_path / tag / "scripts" / "ste_job.py", "_run", "runs/scripts/ste_screen_sweep.py"),   # the wrapper
+             _python_named(tmp_path / tag / "scripts" / "not_ste_tool.py", "x")]
+    try:
+        env = _safe_env(tmp_path)
+        del env["GPU_PAUSE_PATTERN"]
+        assert _wait(lambda: all(_state(p.pid) in "SR" for p in [job, *tools]))
+        out = _run(env, "status")
+        assert out.returncode == 0
+        listed = {int(line.split()[0]) for line in out.stdout.splitlines() if line.split() and line.split()[0].isdigit()}
+        assert job.pid in listed
+        assert not listed & {p.pid for p in tools}
+        assert not (tmp_path / "shared").exists() and not (tmp_path / "pauses.log").exists()
+    finally:
+        for proc in [job, *tools]:
+            proc.kill()
+            proc.wait()
+
+
+def test_the_exclusion_can_be_changed_or_switched_off(tmp_path):
+    marker = f"gpu_pause_test_{uuid.uuid4().hex}"
+    proc = _python_named(tmp_path / "scripts" / "ste_job.py", marker)
+    try:
+        assert _wait(lambda: _state(proc.pid) in "SR")
+        assert "no GPU job" in _run(_safe_env(tmp_path, GPU_PAUSE_PATTERN=marker), "status").stdout
+        assert str(proc.pid) in _run(_safe_env(tmp_path, GPU_PAUSE_PATTERN=marker, GPU_PAUSE_EXCLUDE=""), "status").stdout
+        assert "no GPU job" in _run(_safe_env(tmp_path, GPU_PAUSE_PATTERN=marker, GPU_PAUSE_EXCLUDE=marker[-12:]), "status").stdout
+    finally:
+        proc.kill()
+        proc.wait()
+
+
+def test_script_syntax_and_the_documented_names():
+    assert subprocess.run(["bash", "-n", str(SCRIPT)]).returncode == 0
+    text = SCRIPT.read_text()
+    for name in ("SVG_SHARED_DIR", "GPU_PAUSE_EXCLUDE", "runs/shared/pauses.log", "runs/nus_port/phase5/pauses.log", r"scripts/ste_"):
+        assert name in text, name

@@ -18,7 +18,7 @@
 [zone]
 shape = "circle"                  # FIXED (parent STANDARDS section 4 "Teams", programme benchmark): the Guard team holds a circular zone
 scored_in = "horizontal_plane"    # PROPOSED (parent STANDARDS section 4 "Height"; core/game.py:289-290 tests the horizontal distance only): a vertical cylinder through the height band
-radius_m = 1.6                    # PROPOSED (P12, PLAN section 4 L0.11 base case; hangar game: nus_rules.toml area_radius x nus_deploy.toml metres_per_unit): the parent row "Zone radius" is OPEN; equals the proposed tag radius (F2)
+radius_m = 1.6                    # OPEN (P12, OPEN at gate G0, DISCUSSION section 3; the parent row "Zone radius" is OPEN): today's value is PLAN section 4 L0.11 base case, the hangar game's nus_rules.toml area_radius x nus_deploy.toml metres_per_unit; equals the proposed tag radius (F2)
 centre = "arena_centre"           # PROPOSED (hangar game, nus/hangar_game.py _draw_arenas; PLAN is silent; kept, LEAD CALL 20 Nov 2026): the S2 game draws the centre per game instead
 win_ticks_inside = 1              # PROPOSED (parent STANDARDS section 4 "Strike scores"; s2_game.toml and nus_hangar_game.toml [partner_rules] win_steps_in_zone): one Strike drone inside for one tick wins
 
@@ -30,12 +30,12 @@ start_m = 1.2                     # PROPOSED (nus_deploy.toml flying_height_m; s
 [arena]
 side_m = 6.5                      # PROPOSED (F8, PLAN section 4 L0.11 base case "the 6.5 m lab arena"): the lab fence, 6.5 x 6.5 x 4 m (parent STANDARDS section 4, MEASURED, goal_two_ours.yaml fence_min/max); the hangar side (configs/local/nus_hangar.toml) is the other size L0.11 sweeps
 wall_margin_m = 0.25              # PROPOSED (s2_game.toml and nus_hangar_game.toml [arena] wall_margin_m): the keep-in limit is half the side less this
-walls = "keep_in"                 # PROPOSED (parent STANDARDS section 4 "Structures"; s2_game.toml and nus_hangar_game.toml [arena] walls): a drone at a wall is held, not out
-environment = "open_arena"        # PROPOSED (P10, OPEN at gate G0): the parent FIXED rule asks for realistic 3-D environments, construction-site world first; the open arena is the first build step only
+walls = "keep_in"                 # PROPOSED (s2_game.toml and nus_hangar_game.toml [arena] walls; core/game.py:273-276 holds a drone at the wall; the lab fence too, goal_two_ours.yaml fence_behavior): a drone at a wall is held, not out
+environment = "open_arena"        # OPEN (P10, OPEN at gate G0): the parent FIXED rule "Environments" asks for realistic 3-D environments, construction-site world first; today's value is E0 of the parent "Environment ladder", the first build step only, not claimed as meeting the rule
 
 [starts]
 guard_disc_m = 0.8                # PROPOSED (hangar game: nus_rules.toml start_guard_disc_fraction x area_radius x nus_deploy.toml metres_per_unit; nus/replica.py reset): Guards uniform in radius inside this disc round the zone centre
-strike_ring_m = 3.2               # OPEN (hangar game: Strikes on this ring round the zone centre, random bearings; nus_deploy.toml spawn_distance x metres_per_unit): does not fit the 6.5 m arena, whose keep-in limit is 3.0 m; a ring for it is needed before L0.11's base case
+strike_ring_m = 3.2               # OPEN (L08-F1, related to F8; hangar game: Strikes on this ring round the zone centre, random bearings; nus_deploy.toml spawn_distance x metres_per_unit): outside the 6.5 m arena's keep-in limit of 3.0 m on about 45 % of bearings (within 20 degrees of each axis); a ring that fits is needed before L0.11's base case
 
 [timing]
 game_s = 120.0                    # PROPOSED (hangar game: nus_rules.toml episode_steps x nus_deploy.toml seconds_per_step, 2,400 ticks; PLAN is silent; kept, LEAD CALL 20 Nov 2026): the S2 game plays 60 s (s2_game.toml game_steps x seconds_per_step)

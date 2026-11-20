@@ -9,7 +9,7 @@ The sheet lists, it does not decide: nothing in the game reads this file yet. Ta
 off-by-default switch in a section of its own; the ``tag_rule`` section here records the proposal only.
 
 The loader fails closed: an unknown or missing section or key, a value of the wrong type, a value spread over more than
-one line, or a value line without a label and a source raises ``ValueError``. Lists load as tuples, so nothing can be
+one line, or a value line without exactly one label and a source raises ``ValueError``. Lists load as tuples, so nothing can be
 changed after loading. Standard library only: no PyTorch, no Isaac.
 """
 from __future__ import annotations
@@ -65,6 +65,7 @@ SCHEMA: dict[str, str] = {
 _KIND_WORDS = {"decimal": "a decimal number (write 2.0, not 2)", "whole": "a whole number", "yes_no": "true or false",
                "text": "text in quotes", "decimals": "a list of decimal numbers", "texts": "a list of texts in quotes"}
 _LABELLED = re.compile(rf"({'|'.join(LABELS)})\b\s*([(:]\s*\S.*)$")
+_SECOND_LABEL = re.compile(rf"(^\(\s*({'|'.join(LABELS)})\b)|\b({'|'.join(LABELS)})\s*[(:]")
 _HEADER = re.compile(r"\[(\w+)\]$")
 _VALUE_LINE = re.compile(r"(\w+)\s*=\s*\S")
 
@@ -130,10 +131,14 @@ def _labels(text: str, name: str) -> dict[str, tuple[str, str]]:
                              f"found {line!r}")
         key = f"{section}.{found.group(1)}"
         labelled = _LABELLED.match(comment)
-        if not labelled:
-            raise ValueError(f"{name} line {number}, {key}: the comment must start with a status label "
-                             f"{list(LABELS)} and its source, as '# PROPOSED (P1): ...'; found {comment!r}")
-        out[key] = (labelled.group(1), labelled.group(2).strip())
+        source = labelled.group(2).strip() if labelled else ""
+        bracket = re.match(r"\(([^)]*)\)", source)        # "(source): text": the brackets must hold words
+        if (not labelled or not re.search(r"\w", source) or _SECOND_LABEL.search(source)
+                or (bracket is not None and not re.search(r"\w", bracket.group(1)))):
+            raise ValueError(f"{name} line {number}, {key}: the comment must start with one status label "
+                             f"{list(LABELS)} and its source (some words; no second label), as '# PROPOSED (P1): ...'; "
+                             f"found {comment!r}")
+        out[key] = (labelled.group(1), source)
     return out
 
 

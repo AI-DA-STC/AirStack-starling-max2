@@ -139,6 +139,11 @@ def test_wrong_type_raises(tmp_path, key, new_value):
     "   # FIXEDISH (owner): not one of the four labels",
     "   # see PROPOSED (lead) below",           # the label does not lead the comment
     "   # DECIDED (owner): not a label of the settings files",
+    "   # FIXED (): an empty source",
+    "   # FIXED ( ): a source of blanks",
+    "   # FIXED (OPEN) PROPOSED (P12): two labels",
+    "   # PROPOSED (OPEN): a label in place of the source",
+    "   # PROPOSED: P12; also OPEN (P12)",
 ])
 def test_a_value_without_a_label_and_source_raises(tmp_path, comment):
     line = line_of("zone.radius_m")
@@ -190,26 +195,43 @@ def test_module_imports_on_the_cpu_without_torch_or_isaac():
 
 # ------------------------------------------------------------------------------------------------ labels not upgraded
 # ste_learning/STANDARDS.md section 1: "Never upgrade a label without the owner". Section 2 lists the pending rulings.
-# A change to any line below needs the owner's ruling, written into DISCUSSION and the parent STANDARDS first.
+# Every setting's label is pinned here. A change to any line needs a dated ruling (the owner's for FIXED rows and pending
+# rulings, written into DISCUSSION and the parent STANDARDS first; the lead's for LEAD CALL rows), named in the comment.
 PINNED_LABELS = {
-    "tag_rule.main_game_has_tag": "FIXED",        # parent STANDARDS section 4 "Tag": the main game has no tag (P1 would overturn it)
-    "tag_rule.radius_m": "PROPOSED",              # P1
-    "tag_rule.pairing": "PROPOSED",               # PLAN section 4 L0.9
-    "tag_rule.guard_survives_tag_prob": "PROPOSED",  # D2 provisional; P12 revisits what a tag costs
-    "zone.radius_m": "PROPOSED",                  # P12; the parent row "Zone radius" is OPEN
-    "teams.target_sizes": "OPEN",                 # P9
-    "teams.of_interest": "FIXED",                 # parent STANDARDS section 4
-    "arena.environment": "PROPOSED",              # P10
+    "zone.shape": "FIXED",                        # parent STANDARDS section 4 "Teams"
+    "zone.scored_in": "PROPOSED",                 # parent STANDARDS section 4 "Height" (PROPOSED)
+    "zone.radius_m": "OPEN",                      # P12, OPEN at G0; the parent row "Zone radius" is OPEN (QC I2, 21 Nov 2026)
+    "zone.centre": "PROPOSED",                    # LEAD CALL, 20 Nov 2026
+    "zone.win_ticks_inside": "PROPOSED",          # parent STANDARDS section 4 "Strike scores" (PROPOSED)
+    "height.band_m": "PROPOSED",                  # parent STANDARDS section 4 "Height" (PROPOSED)
+    "height.mode": "PROPOSED",                    # T41's game
+    "height.start_m": "PROPOSED",                 # hangar and S2 game files
     "arena.side_m": "PROPOSED",                   # F8: PLAN section 4 L0.11 base case
-    "speeds.strike_mps": "FIXED",                 # parent STANDARDS section 4
-    "speeds.strike_to_guard_ratio": "FIXED",      # parent STANDARDS section 4
+    "arena.wall_margin_m": "PROPOSED",            # game files
+    "arena.walls": "PROPOSED",                    # game files
+    "arena.environment": "OPEN",                  # P10, OPEN at G0 (QC I2, 21 Nov 2026)
+    "starts.guard_disc_m": "PROPOSED",            # hangar game
+    "starts.strike_ring_m": "OPEN",               # L08-F1: does not fit the 6.5 m arena
+    "timing.game_s": "PROPOSED",                  # LEAD CALL, 20 Nov 2026
+    "timing.decision_s": "PROPOSED",              # hangar game, T41
+    "speeds.strike_mps": "FIXED",                 # parent STANDARDS section 4 "Speeds in metres per second"
+    "speeds.strike_to_guard_ratio": "FIXED",      # parent STANDARDS section 4 "Speed ratio"
+    "teams.of_interest": "FIXED",                 # parent STANDARDS section 4 "Team sizes of interest"
+    "teams.target_sizes": "OPEN",                 # P9
+    "teams.base_case": "PROPOSED",                # PLAN section 4 L0.11 base case
+    "tag_rule.main_game_has_tag": "FIXED",        # parent STANDARDS section 4 "Tag": the main game has no tag (P1 would overturn it)
+    "tag_rule.radius_m": "PROPOSED",              # P1 (PLAN section 2: "P1 and P2 PROPOSED")
+    "tag_rule.pairing": "PROPOSED",               # PLAN section 4 L0.9
+    "tag_rule.guard_survives_tag_prob": "PROPOSED",  # D2 provisional; P12 revisits what a tag costs (lead's ruling 3, 20 Nov 2026)
     "filter.pairs": "FIXED",                      # parent STANDARDS sections 4 and 5
-    "filter.share": "MEASURED",                   # read from cbf_filter.py (lead, 20 Nov 2026: no FIXED without the owner); option B is P2
+    "filter.share": "MEASURED",                   # read from cbf_filter.py (lead's ruling 4, 20 Nov 2026: no FIXED without the owner)
+    "filter.keepout_m": "FIXED",                  # parent STANDARDS section 5 "Safety filter in flight today"
 }
 
 
 def test_pending_rulings_keep_their_labels():
     spec, _ = load_game_spec()
+    assert list(PINNED_LABELS) == list(SCHEMA)                                    # every setting is pinned
     found = {key: spec.status(key) for key in PINNED_LABELS}
     assert found == PINNED_LABELS
     assert spec.value("tag_rule.main_game_has_tag") is False
@@ -219,8 +241,9 @@ def test_the_sources_name_the_pending_rulings():
     spec, _ = load_game_spec()
     for key, ruling in (("tag_rule.radius_m", "P1"), ("teams.target_sizes", "P9"), ("arena.environment", "P10"),
                         ("zone.radius_m", "P12"), ("tag_rule.guard_survives_tag_prob", "P12"),
-                        ("filter.share", "P2"), ("arena.side_m", "F8")):
-        assert re.search(rf"\b{ruling}\b", spec.entry(key).source), (key, ruling)
+                        ("filter.share", "P2"), ("arena.side_m", "F8"),
+                        ("starts.strike_ring_m", "L08-F1")):
+        assert re.search(rf"(?<![\w-]){ruling}(?![\w-])", spec.entry(key).source), (key, ruling)
 
 
 def test_starts_that_do_not_fit_the_arena_are_open():
@@ -243,10 +266,96 @@ def test_shared_game_values_equal_the_committed_game_files():
         assert spec.value("arena.wall_margin_m") == game["arena"]["wall_margin_m"], name
         assert spec.value("arena.walls") == game["arena"]["walls"], name
         assert spec.value("zone.win_ticks_inside") == game["partner_rules"]["win_steps_in_zone"], name
-        assert math.isclose(spec.value("speeds.strike_mps"), game["partner_rules"]["strike_units_per_step"]
-                            * game["partner_rules"]["metres_per_unit"] / game["partner_rules"]["seconds_per_step"])
     s2 = tomllib.loads((ROOT / "configs" / "s2_game.toml").read_text())
     assert spec.value("height.start_m") == s2["arena"]["start_height_m"]
+    # speeds from S2's units (nus_hangar_game.toml carries neutral placeholders that hangar_cfg overrides, QC m5)
+    rules = s2["partner_rules"]
+    assert math.isclose(spec.value("speeds.strike_mps"),
+                        rules["strike_units_per_step"] * rules["metres_per_unit"] / rules["seconds_per_step"])
+    assert math.isclose(spec.value("speeds.strike_to_guard_ratio"),
+                        rules["strike_units_per_step"] / rules["guard_units_per_step"])
+
+
+PARENT = ROOT / "STANDARDS.md"
+FENCE_FILE = ROOT.parent / "AirStack" / "robot" / "ros_ws" / "src" / "svg_ground_control" / "config" / "goal_two_ours.yaml"
+FILTER_PARAMS = ROOT / "params" / "real_exploratory_v0.toml"
+
+
+def parent_row(name: str) -> tuple[str, str]:
+    """(value cell, status cell) of the row named ``name`` in the parent STANDARDS.md tables (first cell = name)."""
+    for line in PARENT.read_text().splitlines():
+        cells = [cell.strip() for cell in line.strip().strip("|").split("|")] if line.startswith("|") else []
+        if len(cells) >= 3 and cells[0] == name:
+            return cells[1], cells[2]
+    raise AssertionError(f"../STANDARDS.md: no table row named {name!r}")
+
+
+def test_fixed_values_follow_their_parent_rows():
+    """Each FIXED value is computed from, or matched against, the parent STANDARDS row it cites; that row is FIXED too."""
+    spec, _ = load_game_spec()
+    # zone shape: "the Guard team holds a circular zone"
+    teams, label = parent_row("Teams")
+    assert label == "FIXED" and spec.value("zone.shape") == "circle" and "circular zone" in teams
+    # team sizes of interest: "2 Guard against 1 Strike; 5 Guard against 3 Strike"
+    sizes, label = parent_row("Team sizes of interest")
+    assert label == "FIXED"
+    assert spec.value("teams.of_interest") == tuple(f"{g}v{s}" for g, s in re.findall(r"(\d+) Guard against (\d+) Strike", sizes))
+    assert set(spec.value("teams.of_interest")) <= set(spec.value("teams.target_sizes"))
+    # speeds: "Strike 0.5 m/s, Guard 0.33 m/s"; ratio "1.5 times as fast"
+    speeds, label = parent_row("Speeds in metres per second")
+    assert label == "FIXED" and re.search(rf"Strike {spec.value('speeds.strike_mps')!r} m/s", speeds)
+    ratio, label = parent_row("Speed ratio")
+    assert label == "FIXED" and re.search(rf"\b{spec.value('speeds.strike_to_guard_ratio')!r} times as fast", ratio)
+    # main game has no tag
+    tag, label = parent_row("Tag")
+    assert label == "FIXED" and spec.value("tag_rule.main_game_has_tag") is False and "The main game has no tag" in tag
+    # filter on every pair, in the game (section 4) and in flight (section 5)
+    in_game, label_game = parent_row("Safety filter in the game")
+    in_flight, label_flight = parent_row("Safety filter in flight today")
+    assert label_game == label_flight == "FIXED" and spec.value("filter.pairs") == "every_pair"
+    assert "every pair" in in_game and "every pair of drones" in in_flight
+    # filter distance = 2 x the safety radius of the drone parameter set, and the parent row states both
+    radius_m = tomllib.loads(FILTER_PARAMS.read_text())["filter"]["safety_radius_m"]
+    assert math.isclose(spec.value("filter.keepout_m"), 2 * radius_m)
+    assert f"keep-out radius {radius_m!r} m" in in_flight and f"({2 * radius_m:.2f} m centre to centre)" in in_flight
+    s2 = tomllib.loads((ROOT / "configs" / "s2_game.toml").read_text())["partner_rules"]
+    assert spec.value("filter.keepout_m") == s2["keepout_guard_m"] == s2["keepout_strike_m"]
+
+
+def yaml_triple(text: str, key: str) -> tuple[float, float, float]:
+    found = re.search(rf"^\s*{key}:\s*\[([^\]]+)\]", text, re.MULTILINE)
+    assert found, f"{FENCE_FILE.name}: no line '{key}: [x, y, z]'"
+    return tuple(float(v) for v in found.group(1).split(","))
+
+
+def test_proposed_values_follow_the_files_they_cite():
+    """The literals and the arena side, against what their sources say (read only)."""
+    spec, _ = load_game_spec()
+    # arena side: the lab fence, a square, as PLAN's L0.11 base case says
+    text = FENCE_FILE.read_text()
+    low, high = yaml_triple(text, "fence_min"), yaml_triple(text, "fence_max")
+    assert high[0] - low[0] == high[1] - low[1] == spec.value("arena.side_m")
+    assert f"the {spec.value('arena.side_m')!r} m lab arena" in (ROOT / "ste_learning" / "PLAN.md").read_text()
+    assert re.search(r"^\s*fence_behavior:\s*\"keep_in\"", text, re.MULTILINE) and spec.value("arena.walls") == "keep_in"
+    # height band: the lab's goal box heights
+    assert (yaml_triple(text, "arena_low")[2], yaml_triple(text, "arena_high")[2]) == spec.value("height.band_m")
+    # environment: E0 of the parent's environment ladder, the first build step
+    ladder, _ = parent_row("Environment ladder")
+    assert spec.value("arena.environment") == "open_arena" and ladder.startswith("E0 open arena")
+    # height: free in the band, as in T41's game (Phase 4 row 5)
+    rows = {row["id"]: row for row in tomllib.loads((ROOT / "configs" / "nus_phase4.toml").read_text())["row"]}
+    assert spec.value("height.mode") == "free" and rows["5"]["height"].split("_")[0] == spec.value("height.mode")
+    # zone counted in the horizontal plane: the zone test reads x and y only
+    assert spec.value("zone.scored_in") == "horizontal_plane"
+    assert "d = (pos[..., :2] - self.arenas.zone_centre_m[:, None, :]).norm(dim=-1)" in (
+        ROOT / "source" / "svg_training" / "core" / "game.py").read_text()
+    # zone at the arena centre in the hangar game
+    draw = (ROOT / "source" / "svg_training" / "nus" / "hangar_game.py").read_text()
+    assert spec.value("zone.centre") == "arena_centre" and "torch.zeros(n, 2, device=dev), full(geo.zone_radius_m)" in draw
+    # base case and tag radius: PLAN's L0.11 base case
+    plan = (ROOT / "ste_learning" / "PLAN.md").read_text()
+    assert f"Base case: {spec.value('teams.base_case')}, tag radius {spec.value('tag_rule.radius_m')!r} m, zone radius " \
+           f"{spec.value('zone.radius_m')!r} m" in plan
 
 
 def test_hangar_values_equal_the_hangar_geometry():
@@ -353,8 +462,8 @@ def test_the_sheet_check_refuses_a_sheet_that_differs_and_says_where():
     radius = next(line for line in good.splitlines() if "`zone.radius_m`" in line)
     refused(r"values differ: \{'zone\.radius_m': \{'sheet': 2\.4",
             good.replace(radius, radius.replace(f"`{spec.value('zone.radius_m')!r}`", "`2.4`")))
-    refused(r"status labels differ: \{'zone\.radius_m': \{'sheet': 'FIXED', 'file': 'PROPOSED'\}",
-            good.replace(radius, radius.replace("| PROPOSED |", "| FIXED |")))
+    refused(rf"status labels differ: \{{'zone\.radius_m': \{{'sheet': 'FIXED', 'file': '{spec.status('zone.radius_m')}'\}}",
+            good.replace(radius, radius.replace(f"| {spec.status('zone.radius_m')} |", "| FIXED |")))
     refused(r"only in the file \['zone\.radius_m'\]", good.replace(radius + "\n", ""))
     refused(r"only in the sheet \['zone\.diameter_m'\]",
             good.replace(radius, radius + "\n| an item | `zone.diameter_m` | `3.2` | PROPOSED | a source | — |"))
@@ -370,5 +479,8 @@ def test_the_sheet_check_refuses_a_sheet_that_differs_and_says_where():
 def test_the_sheet_is_internal_and_names_the_open_rulings():
     text = SHEET.read_text()
     assert text.startswith("INTERNAL · ")
-    for ruling in ("P1", "P2", "P9", "P10", "P12", "F8", "D2"):
-        assert re.search(rf"\b{ruling}\b", text), ruling
+    for ruling in ("P1", "P2", "P9", "P10", "P12", "F8", "D2", "L08-F1"):
+        assert re.search(rf"(?<![\w-]){ruling}(?![\w-])", text), ruling
+    open_items = text[text.index("## Open items"):]
+    assert re.search(r"^\| L08-F1 \|", open_items, re.MULTILINE), "the start-ring finding is filed as L08-F1"
+    assert not re.search(r"^\| F8 \|", open_items, re.MULTILINE), "F8 is PLAN's arena finding; the ring is L08-F1"

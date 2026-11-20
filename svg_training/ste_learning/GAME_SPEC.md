@@ -1,4 +1,4 @@
-INTERNAL · the game spec sheet of the STE learning track (task L0.8, 20 Nov 2026). It lists the values of the game the track trains; it decides nothing. The same values, with the same labels, are in [configs/ste_game.toml](../configs/ste_game.toml); `tests/test_ste_game_spec.py` fails if the two differ.
+INTERNAL · the game spec sheet of the STE learning track (task L0.8, 20 Nov 2026; QC fix round 1, 21 Nov 2026). It lists the values of the game the track trains; it decides nothing. The same values, with the same labels, are in [configs/ste_game.toml](../configs/ste_game.toml); `tests/test_ste_game_spec.py` fails if a setting, a value or a label differs between the two (the source texts are not compared).
 
 # Game spec sheet
 
@@ -8,11 +8,17 @@ record), PROPOSED (a working value, not ruled), OPEN (no settled value; the valu
 D, P and F numbers are rows of the [discussion record](DISCUSSION_2026-11-19_20.md) and [PLAN](PLAN.md) §2. A *tick* is
 0.05 s, one command of the flight software. The last column gives today's value in the two games the numbers come from.
 
+Terms: the *hangar game* is NUS's game in metres as the lab ran it (`nus/hangar.py`); *T41* is the training run of the
+STE Guard policy, in *Phase 4 row 5* of that game (safety filter on every pair, height free; `configs/nus_phase4.toml`).
+The *Starling layer* is the S2 game's switch that flies drones through the copy of the flight software's commands and
+filter; with it off, a *push rule* keeps opposite teams apart instead. The *keep-in limit* is how far from the arena
+centre a drone may go along x or y: half the side less the wall margin.
+
 | Item | Setting | Value | Status | Source | Today: hangar game · S2 game |
 |---|---|---|---|---|---|
 | Zone shape | `zone.shape` | `"circle"` | FIXED | parent STANDARDS §4 "Teams" (programme benchmark) | circle · circle |
 | Where the zone counts | `zone.scored_in` | `"horizontal_plane"` | PROPOSED | parent STANDARDS §4 "Height"; `core/game.py:289-290` tests the horizontal distance only, so the zone is a vertical cylinder | same · same |
-| Zone radius (m) | `zone.radius_m` | `1.6` | PROPOSED | P12; PLAN §4 L0.11 base case; hangar: `nus_rules.toml` `area_radius` × `nus_deploy.toml` `metres_per_unit`; the parent row is OPEN | 1.6 · 10–25 % of the arena side |
+| Zone radius (m) | `zone.radius_m` | `1.6` | OPEN | P12, OPEN at gate G0 (DISCUSSION §3; the parent row "Zone radius" is OPEN); today's value: PLAN §4 L0.11 base case; hangar: `nus_rules.toml` `area_radius` × `nus_deploy.toml` `metres_per_unit` | 1.6 · 10–25 % of the arena side |
 | Zone centre | `zone.centre` | `"arena_centre"` | PROPOSED | hangar: `nus/hangar_game.py` `_draw_arenas`; PLAN is silent; kept, LEAD CALL (20 Nov 2026) | arena centre · drawn per game |
 | Strike wins after (ticks inside) | `zone.win_ticks_inside` | `1` | PROPOSED | parent STANDARDS §4 "Strike scores"; `s2_game.toml` and `nus_hangar_game.toml` `[partner_rules] win_steps_in_zone` | 1 · 1 |
 | Height band (m) | `height.band_m` | `[0.5, 1.8]` | PROPOSED | parent STANDARDS §4 "Height"; `s2_game.toml` and `nus_hangar_game.toml` `[arena] height_band_m`; the lab's goal box, `goal_two_ours.yaml` `arena_low/high` (MEASURED) | same · same |
@@ -20,10 +26,10 @@ D, P and F numbers are rows of the [discussion record](DISCUSSION_2026-11-19_20.
 | Start height (m) | `height.start_m` | `1.2` | PROPOSED | `nus_deploy.toml` `flying_height_m` (row 5 adds a 1 mm jitter); `s2_game.toml` `start_height_m` | 1.2 · 1.2 |
 | Arena side (m) | `arena.side_m` | `6.5` | PROPOSED | F8; PLAN §4 L0.11 base case: the lab fence, 6.5 × 6.5 × 4 m (parent STANDARDS §4, MEASURED) | 7.5 (`configs/local/nus_hangar.toml`) · 4–16 in three bands |
 | Wall margin (m) | `arena.wall_margin_m` | `0.25` | PROPOSED | `s2_game.toml` and `nus_hangar_game.toml` `[arena] wall_margin_m`; drones are held this far inside each wall | 0.25 · 0.25 |
-| Walls | `arena.walls` | `"keep_in"` | PROPOSED | parent STANDARDS §4 "Structures"; `s2_game.toml` and `nus_hangar_game.toml` `[arena] walls` | keep in · keep in |
-| Environment | `arena.environment` | `"open_arena"` | PROPOSED | P10; the parent FIXED rule asks for realistic 3-D worlds, construction site first | open · open |
+| Walls | `arena.walls` | `"keep_in"` | PROPOSED | `s2_game.toml` and `nus_hangar_game.toml` `[arena] walls`; `core/game.py:273-276` holds a drone at the wall; the lab fence keeps drones in too (`goal_two_ours.yaml` `fence_behavior`) | keep in · keep in |
+| Environment | `arena.environment` | `"open_arena"` | OPEN | P10, OPEN at gate G0; the parent FIXED rule "Environments" asks for realistic 3-D worlds, construction site first; today's value is E0 of the parent's "Environment ladder", the first build step only, not claimed as meeting the rule | open · open |
 | Guard start disc (m) | `starts.guard_disc_m` | `0.8` | PROPOSED | hangar: `nus_rules.toml` `start_guard_disc_fraction` × `area_radius` × `nus_deploy.toml` `metres_per_unit`; Guards uniform in radius inside this disc round the zone centre (`nus/replica.py` `reset`) | 0.8 · rings |
-| Strike start ring (m) | `starts.strike_ring_m` | `3.2` | OPEN | hangar: `nus_deploy.toml` `spawn_distance` × `metres_per_unit`, random bearings; **does not fit the 6.5 m arena** (keep-in limit 3.25 − 0.25 = 3.0 m) | 3.2 · 0.3 m inside the walls |
+| Strike start ring (m) | `starts.strike_ring_m` | `3.2` | OPEN | hangar: `nus_deploy.toml` `spawn_distance` × `metres_per_unit`, random bearings; L08-F1: **outside the 6.5 m arena's keep-in limit** (3.25 − 0.25 = 3.0 m) on about 45 % of bearings, within ±20° of each axis (it fits on the diagonals); related to F8 | 3.2 · 0.3 m inside the walls |
 | Game length (s) | `timing.game_s` | `120.0` | PROPOSED | hangar: `nus_rules.toml` `episode_steps` × `nus_deploy.toml` `seconds_per_step` (2,400 ticks); PLAN is silent; kept, LEAD CALL (20 Nov 2026); S2: `s2_game.toml` `game_steps` × `seconds_per_step` | 120 · 60 |
 | Decision every (s) | `timing.decision_s` | `0.6` | PROPOSED | `nus_deploy.toml` `seconds_per_step` (a command held 12 ticks); T41; DISCUSSION §2.10 | 0.6 · 0.05 |
 | Strike speed (m/s) | `speeds.strike_mps` | `0.5` | FIXED | owner, 15 Nov 2026; parent STANDARDS §4 | 0.5 · 0.5 |
@@ -53,9 +59,9 @@ D, P and F numbers are rows of the [discussion record](DISCUSSION_2026-11-19_20.
 | # | What is open | Ruled at |
 |---|---|---|
 | P1 | Tag radius 1.6 m; it overturns the parent FIXED row "the main game has no tag". Built behind a setting, off by default (L0.9) | gate G0 |
-| P12, D2 | Zone radius against tag radius (both 1.6 m today, F2), and what a tag costs (0 and 1 both reported in L0.11) | gate G0 |
+| P12, D2 | Zone radius (OPEN here) against tag radius (both 1.6 m today, F2), and what a tag costs (0 and 1 both reported in L0.11) | gate G0 |
 | P9 | Team sizes to train: 1v1, 2v1, 3v3, 5v3 | gate G0 |
-| P10 | Environments: open arena first, or the construction-site world sooner | gate G0 |
+| P10 | Environments (OPEN here): open arena first, or the construction-site world sooner | gate G0 |
 | P2 | Filter option B (only the Guard swerves in a Guard–Strike pair) | the L2 gate |
-| F8 | New finding for L0.10 and L0.11: the Strike start ring (3.2 m) does not fit the 6.5 m arena (keep-in limit 3.0 m). A start ring that fits the 6.5 m arena must be chosen before L0.11's base case | the lead, before L0.11 |
+| L08-F1 | New finding for L0.10 and L0.11 (a consequence of F8, the arena size): the hangar's Strike start ring (3.2 m) lies outside the 6.5 m arena's keep-in limit (3.0 m) on about 45 % of bearings. A start ring that fits the 6.5 m arena must be chosen before L0.11's base case | the lead, before L0.11 |
 | — | Game length and zone centre: PLAN is silent. LEAD CALL (20 Nov 2026): 120 s and the zone fixed at the arena centre stay PROPOSED, with the S2 game's 60 s and drawn centre shown beside them | ruled by the lead |

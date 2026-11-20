@@ -1,6 +1,6 @@
 INTERNAL · the latest status of STE's own learning track and the NUS port, overwritten at every update; the history is in [LOG.md](LOG.md). Produced by the `train-status` skill.
 
-**Status, 2026-11-21 07:02 (+08:00), event: L0.12 pre-launch QC: pilot GO, runs NO-GO until fixes (1 Critical, 8 Important); fix round started**                                                               · laptop RTX 5070 Ti · GPU 58 % / 23 W / 5.4 GB of 12 GB · 0 training processes (0 paused)
+**Status, 2026-11-21 07:12 (+08:00), event: 30-minute update**                                                                · laptop RTX 5070 Ti · GPU 39 % / 18 W / 1.4 GB of 12 GB · 0 training processes (0 paused)
 
 ## Watch (latest clips and figures)
 

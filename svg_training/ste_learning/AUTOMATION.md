@@ -183,7 +183,7 @@ Code: `source/svg_training/ste/` (`shared.py`, `pauses.py`, `state.py`, `atomic.
 | State file | `state.json` under a lock, written atomically; a job is alive only if its pid exists with the recorded start time in the current boot |
 | Trainer contract | the same command resumes from its last checkpoint; SIGINT or SIGTERM saves and exits; a non-finite value never overwrites the last good checkpoint; the cap counts effective time (time a pause stopped this job excluded) |
 | GPU-hour ledger | used GPU-hours per task and per phase from `gpu_hours.log` (CUDA intervals less the time a pause stopped that job); `launch` refuses a job over the task or phase cap of `configs/ste_learning.toml`; a relaunch of the same job in the same run folder is not charged again for hours it already logged, but a new run folder under an old job name is a new run and gets no credit |
-| Launcher and waiter | `scripts/ste_job.py launch / wait / status`; `launch` refuses while an owner pause is open |
+| Launcher and waiter | `scripts/ste_job.py launch / wait / status`; `launch` refuses while an owner pause is open; `bash <run>/cmd.txt` relaunches with the first launch's `PYTHONPATH`, `CUDA_VISIBLE_DEVICES`, `PYTORCH_CUDA_ALLOC_CONF`, `SVG_SHARED_DIR` and `SVG_PAUSE_LEGACY_LOGS`, each set to the same value or unset as it was; a relaunch with another shared folder than the run folder recorded is refused |
 
 **Exit codes** (`ste/run_contract.py`): 0 done; 2 refused to start; 3 stopped at its cap; 4 interrupted (SIGINT or
 SIGTERM); 5 non-finite value. The waiter adds: 20 ENDED_EARLY (the job returned 0 before its expected minimum
@@ -213,7 +213,7 @@ Resume drill:
    stand-in) with `kill -KILL -- -<pid>`, where `<pid>` is the `pid` in `runs/ste_l07/resume/job.json`; then `status`
    again. Expected: `alive`, then `dead`.
 3. `$PY scripts/ste_job.py wait l07_resume; echo "waiter exit $?"`. Expected: `DIED exit=none`, `waiter exit 21`.
-4. Relaunch with the same line (or `bash runs/ste_l07/resume/cmd.txt`): it prints `launch=2`. Wait again. Expected:
+4. Relaunch with `bash runs/ste_l07/resume/cmd.txt` (it restores the first launch's environment and shared folder; the same line typed again works only from the same shell): it prints `launch=2`. Wait again. Expected:
    `DONE exit=0`, `waiter exit 0`, a log line `resumed from step 30 of 120` (or 40), and
    `{"steps": 120, "total": 7260.0}` in `runs/ste_l07/resume/result.json`.
 

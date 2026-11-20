@@ -20,7 +20,8 @@ job's total over all its launches in its run folder, so the hours it has already
 second time at a relaunch; a new run folder under an old job name is a new run and gets no such credit.
 
 Files in the run folder: ``job.json`` (the launch record: the ``state.json`` fields of ``ste/state.py`` plus the job
-name, the beat and a few environment variables), ``cmd.txt`` (the launch command line, to run again by hand),
+name, the beat, the shared folder and a few environment variables), ``cmd.txt`` (the launch command line, to run again
+by hand: ``bash <run folder>/cmd.txt``; see :func:`relaunch_line`),
 ``job.log``, ``exit_code`` (``exit_code.<n>`` once launch ``n`` has been followed by a relaunch), ``heartbeat``
 (touched by the wrapper every beat: its modification time is when the job was last seen alive), ``launches.jsonl``
 (one line per launch and per end). A GPU job (``gpu_h`` above 0) also gets one line per beat in the GPU-hour ledger.
@@ -84,7 +85,8 @@ WRAPPER_SCRIPT = shared.PACKAGE_DIR.parents[2] / "scripts" / "ste_job.py"
 WRAPPER_COMMAND = "_run"
 JOB_FILE, CMD_FILE, LOG_FILE, EXIT_FILE = "job.json", "cmd.txt", "job.log", "exit_code"
 HEARTBEAT_FILE, LAUNCHES_FILE = "heartbeat", "launches.jsonl"
-RECORDED_ENV = ("PYTHONPATH", "CUDA_VISIBLE_DEVICES", "PYTORCH_CUDA_ALLOC_CONF", shared.SHARED_ENV)
+RECORDED_ENV = ("PYTHONPATH", "CUDA_VISIBLE_DEVICES", "PYTORCH_CUDA_ALLOC_CONF", shared.SHARED_ENV,
+                shared.LEGACY_LOGS_ENV)    # set again, or unset, by cmd.txt exactly as at the launch
 _NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
 _FORWARDED = (signal.SIGINT, signal.SIGTERM)
 _STOPPED = "T"
@@ -143,13 +145,14 @@ def launch(task: str, name: str, run_dir: Path | str, cmd: list[str], expected_m
         raise LaunchRefused(f"the expected minimum duration must be 0 or more seconds, got {expected_min_s!r}")
     if not (math.isfinite(beat_s) and beat_s > 0):
         raise LaunchRefused(f"the beat must be above 0 seconds, got {beat_s!r}")
+    run_dir = Path(run_dir).resolve()
+    _check_shared_folder(run_dir)                                # before anything reads or makes the shared folder
     paused = pauses.open_pause()
     if paused is not None:
         made = datetime.datetime.fromtimestamp(paused["time"]).astimezone().isoformat(timespec="seconds")
         raise LaunchRefused(f"the owner's pause of {made} (by {paused.get('by', 'unknown')}, pids {paused.get('pids')}) "
                             f"is still open: nothing was launched. Only the owner ends it, with scripts/gpu_pause.sh "
                             f"resume; launch again after that")
-    run_dir = Path(run_dir).resolve()
     try:
         budget.check_launch(task, gpu_h, settings, job=name, run_dir=str(run_dir))
     except budget.BudgetError as err:
@@ -188,12 +191,14 @@ def launch(task: str, name: str, run_dir: Path | str, cmd: list[str], expected_m
                        "exit_code": None, "ended": None})
         environment = {key: os.environ[key] for key in RECORDED_ENV if key in os.environ}
         atomic.write_text(run_dir / JOB_FILE, json.dumps(dict(record, name=name, beat_s=float(beat_s),
-                                                              settings=str(settings), env=environment), indent=1) + "\n")
+                                                              settings=str(settings), env=environment,
+                                                              shared_dir=str(_shared_folder())), indent=1) + "\n")
         again = [sys.executable, str(WRAPPER_SCRIPT), "launch", "--task", task, "--name", name, "--run-dir", str(run_dir),
                  "--min-s", repr(float(expected_min_s)), "--gpu-h", repr(float(gpu_h)), "--settings", str(settings),
                  "--beat-s", repr(float(beat_s)), "--", *cmd]
-        atomic.write_text(run_dir / CMD_FILE, f"# launch {number} of job {name} (task {task}); environment: "
-                                              f"{environment}\ncd {shlex.quote(str(cwd))} && {shlex.join(again)}\n")
+        atomic.write_text(run_dir / CMD_FILE, f"# launch {number} of job {name} (task {task}); run it with bash: it "
+                                              f"sets or unsets {', '.join(RECORDED_ENV)} as at this launch\n"
+                                              f"{relaunch_line(cwd, again, environment)}\n")
         _append(run_dir / LAUNCHES_FILE, {"event": "launch", "launch": number, "time": started_s, "pid": wrapper.pid,
                                           "pid_start": record["pid_start"], "boot_id": record["boot_id"]})
         data["jobs"][name] = dict(record)
@@ -206,6 +211,33 @@ def launch(task: str, name: str, run_dir: Path | str, cmd: list[str], expected_m
             wrapper.kill()
         raise
     return record
+
+
+def relaunch_line(cwd: Path | str, argv: list[str], environment: dict[str, str]) -> str:
+    """The shell line of ``cmd.txt``: ``cd <cwd> && env -u <absent>... <KEY=VALUE>... <argv>``. ``environment``: the
+    values of :data:`RECORDED_ENV` at the launch, absent keys left out. A key set at the launch is set again to the
+    same text (an empty ``CUDA_VISIBLE_DEVICES`` stays empty: unset would show the GPU); a key absent at the launch is
+    unset, so a new shell's ``PYTHONPATH`` (ROS) or ``SVG_SHARED_DIR`` cannot leak in. Every word is quoted."""
+    unset = [word for key in RECORDED_ENV if key not in environment for word in ("-u", key)]
+    assigned = [f"{key}={environment[key]}" for key in RECORDED_ENV if key in environment]
+    return f"cd {shlex.quote(str(cwd))} && {shlex.join(['env', *unset, *assigned, *argv])}"
+
+
+def _shared_folder() -> Path:
+    """The shared folder this process uses, resolved, without making it."""
+    return shared.shared_dir(create=False).resolve()
+
+
+def _check_shared_folder(run_dir: Path) -> None:
+    """Refuse a relaunch whose shared folder differs from the one the run folder recorded at its last launch: its
+    state, GPU-hours and pauses would be counted where the waiter, the status and the budget check do not look. A
+    ``job.json`` written before L07-I2 records none and is not checked."""
+    previous = _read_json(run_dir / JOB_FILE)
+    recorded = None if previous is None else previous.get("shared_dir")
+    if recorded is not None and Path(recorded) != _shared_folder():
+        raise LaunchRefused(f"run folder {run_dir} was launched with the shared folder {recorded} (state.json, GPU-hour "
+                            f"ledger, pause log); this launch would use {_shared_folder()}: nothing was launched. "
+                            f"Relaunch with bash {run_dir / CMD_FILE}, or set {shared.SHARED_ENV}={recorded}")
 
 
 # ================================================================================================ the wrapper

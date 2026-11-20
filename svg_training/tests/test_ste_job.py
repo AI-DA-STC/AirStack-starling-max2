@@ -12,6 +12,7 @@ shown caught:
 import json
 import os
 import re
+import shlex
 import signal
 import subprocess
 import sys
@@ -144,6 +145,87 @@ def test_launch_records_the_job_and_wait_returns_its_exit_code(bench):
     assert ended["exit_code"] == 0 and ended["ended"] >= ended["started"] and ended["child_pid"] is not None
     assert not state.job_alive(ended)
     assert not shared.gpu_hours_log().exists()                       # a CPU job logs no GPU time
+
+
+# ================================================================================================ cmd.txt (L07-I2)
+ENV_KEYS = ("PYTHONPATH", "CUDA_VISIBLE_DEVICES", "PYTORCH_CUDA_ALLOC_CONF", "SVG_SHARED_DIR", "SVG_PAUSE_LEGACY_LOGS")
+ODD_VALUE = "expandable_segments:True $HOME 'quoted' x"          # a space, a $, quotes: must arrive as written
+
+
+def env_dump_cmd(out: Path) -> list[str]:
+    """A command that appends its own values of ENV_KEYS (None when unset) as one JSON line to ``out``."""
+    code = (f"import json, os\nwith open({str(out)!r}, 'a') as f:\n"
+            f"    f.write(json.dumps({{k: os.environ.get(k) for k in {ENV_KEYS!r}}}) + '\\n')\n")
+    return [child_python(), "-c", code]
+
+
+def test_the_relaunch_line_sets_or_unsets_every_recorded_variable(tmp_path):
+    """L07-I2, the line alone (no launch, so no shared folder is touched): a variable set at launch is set again to the
+    same text, one that was absent is unset (``env -u``), the ``-u`` options come before the assignments, and a
+    polluted shell running the line gives the command exactly the launch's values."""
+    recorded = {"CUDA_VISIBLE_DEVICES": "", "PYTORCH_CUDA_ALLOC_CONF": ODD_VALUE, "SVG_SHARED_DIR": str(tmp_path / "s p")}
+    out = tmp_path / "env.jsonl"
+    line = jobs.relaunch_line(tmp_path, env_dump_cmd(out), recorded)
+    words = shlex.split(line)
+    assert words[:4] == ["cd", str(tmp_path), "&&", "env"]
+    unset = [words[i + 1] for i, word in enumerate(words) if word == "-u"]
+    assert sorted(unset) == sorted(set(jobs.RECORDED_ENV) - set(recorded))
+    assert "PYTHONPATH" in unset and "SVG_PAUSE_LEGACY_LOGS" in unset
+    assigned = [word for word in words if "=" in word.split("\n")[0] and word.split("=")[0] in jobs.RECORDED_ENV]
+    assert assigned == [f"{key}={value}" for key, value in recorded.items()]
+    assert max(i for i, word in enumerate(words) if word == "-u") < words.index(assigned[0])
+    polluted = dict(os.environ, PYTHONPATH="/nonexistent/ros/jazzy", CUDA_VISIBLE_DEVICES="0", SVG_PAUSE_LEGACY_LOGS="x")
+    polluted.pop("PYTORCH_CUDA_ALLOC_CONF", None)
+    done = subprocess.run(["bash", "-c", line], env=polluted, capture_output=True, text=True)
+    assert done.returncode == 0, done.stderr
+    assert json.loads(out.read_text()) == {**{key: None for key in ENV_KEYS}, **recorded}
+
+
+def test_cmd_txt_replays_the_launch_environment_in_a_polluted_shell(bench, tmp_path):
+    """L07-I2 end to end (QC): after a reboot ``bash <run>/cmd.txt`` runs in a new shell. That shell may carry ROS's
+    PYTHONPATH, lack PYTORCH_CUDA_ALLOC_CONF, expose GPU 0 and point SVG_SHARED_DIR elsewhere. The job's command
+    must see the first launch's values, and launch 2 must land in the recorded state.json."""
+    run = bench.run_dir("envjob")
+    first_env = dict(bench.env, CUDA_VISIBLE_DEVICES="", PYTORCH_CUDA_ALLOC_CONF=ODD_VALUE)
+    first_env.pop("PYTHONPATH")                                             # the track's rule: unset at launch
+    out = run / "env.jsonl"
+    first = run_py([TOOL, "launch", "--task", "L0.7", "--name", "envjob", "--run-dir", run, "--min-s", 0.0, "--gpu-h",
+                    0.0, "--", *env_dump_cmd(out)], first_env)
+    assert first.returncode == 0, first.stderr
+    assert bench.wait("envjob").returncode == 0
+    elsewhere = tmp_path / "elsewhere"
+    polluted = dict(os.environ, PYTHONPATH="/nonexistent/ros/jazzy", CUDA_VISIBLE_DEVICES="0",
+                    SVG_SHARED_DIR=str(elsewhere))
+    polluted.pop("PYTORCH_CUDA_ALLOC_CONF", None)
+    polluted.pop("SVG_PAUSE_LEGACY_LOGS", None)
+    line_1 = (run / "cmd.txt").read_text().split("\n", 1)[1]                   # all but the comment line
+    again = subprocess.run(["bash", str(run / "cmd.txt")], env=polluted, cwd=tmp_path, capture_output=True, text=True,
+                           timeout=WAIT_S)
+    assert again.returncode == 0 and "launch=2" in again.stdout, (again.stdout, again.stderr)
+    assert bench.job("envjob")["launch"] == 2 and not elsewhere.exists()    # the recorded state.json, nothing else
+    assert bench.wait("envjob").returncode == 0
+    seen = [json.loads(line) for line in out.read_text().splitlines()]
+    assert len(seen) == 2 and seen[0] == seen[1]
+    assert seen[0] == {"PYTHONPATH": None, "CUDA_VISIBLE_DEVICES": "", "PYTORCH_CUDA_ALLOC_CONF": ODD_VALUE,
+                       "SVG_SHARED_DIR": str(bench.shared), "SVG_PAUSE_LEGACY_LOGS": ""}
+    assert (run / "cmd.txt").read_text().split("\n", 1)[1] == line_1         # the same line again
+
+
+def test_a_relaunch_with_another_shared_folder_is_refused(bench, tmp_path):
+    """L07-I2: the run folder records the shared folder of its launch (state.json, GPU-hour ledger, pause log). A
+    relaunch that would use another one would count its hours and its state somewhere nobody looks: refused."""
+    assert bench.launch("homed", bench.dummy("homed", steps=4)).returncode == 0
+    assert bench.wait("homed").returncode == 0
+    assert json.loads((bench.run_dir("homed") / "job.json").read_text())["shared_dir"] == str(bench.shared.resolve())
+    other = tmp_path / "other_shared"
+    moved = run_py([TOOL, "launch", "--task", "L0.7", "--name", "homed", "--run-dir", bench.run_dir("homed"), "--min-s",
+                    0.0, "--gpu-h", 0.0, "--", *bench.dummy("homed", steps=4)], dict(bench.env, SVG_SHARED_DIR=str(other)))
+    assert moved.returncode == rc.EXIT_REFUSED and moved.stdout == ""
+    assert str(bench.shared.resolve()) in moved.stderr and str(other) in moved.stderr and "cmd.txt" in moved.stderr
+    assert len(moved.stderr.splitlines()) == 1, moved.stderr
+    assert not other.exists() and json.loads((bench.run_dir("homed") / "job.json").read_text())["launch"] == 1
+    assert bench.launch("homed", bench.dummy("homed", steps=4)).returncode == 0     # the recorded folder: goes ahead
+    assert bench.wait("homed").returncode == 0
 
 
 def test_the_job_runs_detached_in_its_own_session(bench):

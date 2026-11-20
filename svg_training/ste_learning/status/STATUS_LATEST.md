@@ -1,6 +1,6 @@
 INTERNAL · the latest status of STE's own learning track and the NUS port, overwritten at every update; the history is in [LOG.md](LOG.md). Produced by the `train-status` skill.
 
-**Status, 2026-11-21 06:17 (+08:00), event: L0.12 committed on its branch (4 commits); pre-launch QC running**                                                            · laptop RTX 5070 Ti · GPU 46 % / 19 W / 1.4 GB of 12 GB · 0 training processes (0 paused)
+**Status, 2026-11-21 06:17 (+08:00), event: L0.4/L0.5 and the 3-D video renderer (VID-1) started**                                                             · laptop RTX 5070 Ti · GPU 46 % / 19 W / 1.4 GB of 12 GB · 0 training processes (0 paused)
 
 ## Watch (latest clips and figures)
 
@@ -49,8 +49,8 @@ What the drones look like in the 3-D simulator (Isaac Lab Starlings, from S2b; t
 | L0.2 | Tier 2 speed in contested play | NOT STARTED | tier 2 Isaac Lab | laptop allowed (owner, 21 Nov): runs alone on the GPU, measures what fits in 12 GB; cap 1.5 GPU-h |
 | L0.13 | Does tier 2 train at all? | NOT STARTED | tier 2 Isaac Lab | laptop allowed (owner, 21 Nov), after L0.2, at the games-at-once L0.2 shows fits; cap 6 GPU-h |
 | L0.3 | STE Guard policy in tier 2 without retraining | NOT STARTED | tier 2 Isaac Lab | unblocked (T41 on both machines); runs on the laptop GPU, taking turns with L0.12's GPU runs (one GPU job at a time); cap 1.5 GPU-h |
-| L0.4 | Side-by-side Starling render | NOT STARTED | tier 2 Isaac Lab | laptop GPU, taking turns with L0.12; cap 0.2 GPU-h |
-| L0.5 | Starling video look fix | NOT STARTED | tier 2 Isaac Lab | after L0.4; cap 0.3 GPU-h |
+| L0.4 | Side-by-side Starling render | RUNNING | tier 2 Isaac Lab | builder on `ste-l0.4`: the AirStack simulator's Starling asset rendered in Isaac Lab beside our clips' look, with and without team paint (stills); cap 0.2 GPU-h |
+| L0.5 | Starling video look fix | RUNNING | tier 2 Isaac Lab | same builder: the Starling's own look, team colour as a small marker; stills for your look (D9); cap 0.3 GPU-h |
 | L0.14 | Crazyflie route check | RUNNING (CPU) | tier 1 fast engine (CPU) | builder on `ste-l0.14`: T41 scored with a Crazyflie-like 0.56 s lag beside the Starling's (INFO), the offline-planner team-size check repeated (Crazyflie repository read-only), the adapter spec; one page for G0; 0 GPU-h. Lead's note: it could have run beside lane A since T41 arrived; started now |
 | L0.6 | Gate G0 | NOT STARTED | none | after every task above; the owner decides |
 
@@ -113,7 +113,7 @@ Laptop drills (21 Nov, fix branch, shared folder `~/AirStack-starling-max2/svg_t
 | L010-G0 | Finding for gate G0 (from L0.10 QC): any safety-filter move near the 1.6 m tag radius can create a tag nobody chose (the filter's 1.10 m keep-out is inside the tag radius). Spaced starts remove it at the start; during play it is part of the game the sweep measures (P1) | OPEN: reported at G0 |
 | L09-5090 | On the 5090: record the tag-off golden's positions for its CPU type (AVX512); check the outcome fingerprints there | WAITING: next 5090 session |
 | DOC-1 | A phase-L0 flowchart coloured by progress (done / running / queued), regenerated with each status and shown in its Watch section (owner, 21 Nov: "photos or diagram flow charts would be good too") | DONE (progress flowchart; regenerated with each status) |
-| VID-1 | Clips: a height panel on the 2-D top-down clips of every run; 3-D Isaac Lab videos (Starling look, top view + 3-D view, MP4 + GIF) of each result's key games, starting with L0.11's (lead's recommendation adopted, 21 Nov) | QUEUED: after L0.4/L0.5 (the Starling look); laptop GPU |
+| VID-1 | Clips: a height panel on the 2-D top-down clips of every run; 3-D Isaac Lab videos (Starling look, top view + 3-D view, MP4 + GIF) of each result's key games, starting with L0.11's (lead's recommendation adopted, 21 Nov) | RUNNING (3-D renderer: replay a recorded game in Isaac Lab, top view + 3-D view; first the L0.11 key games) |
 | L08-M | L0.8 minors left: 3 hangar values unchecked on a clone without the NUS bundle; 3 values whose wrong value still passes; loader refuses some honest wording; tests tied to exact lines and the AirStack fence file | PARKED |
 | L07-DISK | Follow-up: the planned disk-space check (a disk full through 10 retries at a job's end reads DIED) | PARKED (stated limit) |
 | L07-N | Re-check minors N1–N4: a session pause also lands in the old per-worktree log the NUS reader uses; full disk can hold the wrapper 10 min after the end; AUTOMATION §4 still states the old GPU-hour rule; on the 5090 run `scripts/ste_job.py owner-pauses` before the drills | PARKED (N4 goes into the 5090 note) |

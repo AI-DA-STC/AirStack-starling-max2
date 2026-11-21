@@ -43,8 +43,47 @@ def exit_word(run_dir: Path) -> str:
     return f"{code} ({EXIT_NAMES.get(code, 'other')})"
 
 
+def screen_texts(meta: dict, sl: dict) -> tuple[str, str, str]:
+    """(purpose, ledger label, carried note): L0.11's, or another task's screen run by the same driver (L0.12b: one
+    owner variant on T44's loaded starts, g* and s* for its best-response runs)."""
+    task = meta.get("task", "L0.11")
+    if task == "L0.11":
+        return ("STE task L0.11 Screening sweep (INFO, PLAN.md section 4): scripted Guards against scripted Strikes, the "
+                "base case (3v3, tag 1.6 m, zone 1.6 m, Guard survives 0, 6.5 m lab arena) and one factor changed at a "
+                "time; it shortlists at most 3 rule variants for L0.12 by the rule written in the gate file before the "
+                "run.", "STE L0.11 Screening sweep",
+                "The base case is always carried as the reference for the proposed 1.6 m rules (LEAD CALL 21 Nov 2026); "
+                "the rule adds at most two more.")
+    names = ", ".join(v["variant"] for v in sl["variants"])
+    return (f"STE task {task} scripted screen (INFO): every scripted Guard against every scripted Strike in {names} on "
+            f"T44's starts (loaded from the gate file's reference file, replayed as a control), with L0.11's controls; "
+            f"g* and s* by L0.11's rule for {task}'s best-response runs, and the unchosen-tag shares per cell (INFO, "
+            f"defined in the gate file).", f"STE {task} scripted screen",
+            f"Carried whatever the rule says: {names} (the gate file's [shortlist] always).")
+
+
+def unchosen_lines(result: dict) -> list[str]:
+    """L0.12b's unchosen-tag shares summed per group (INFO; per cell in results.md); nothing for an L0.11 run."""
+    groups = [g for g in result["groups"] if g["rows"] and all(r.get("tag_edge_m") is not None for r in g["rows"])]
+    if not groups:
+        return []
+    out = ["## Unchosen tags (INFO, L0.12b)", "",
+           "A tag is unchosen when the safety filter corrected either drone of the tagged pair on the tag's tick (its own "
+           "flag: a velocity change above 1e-3 m/s); at the filter edge when the pair's 3-D distance was at most "
+           f"{groups[0]['rows'][0]['tag_edge_m']:.2f} m (the filter distance plus the gate's margin). Upper bound on "
+           "filter-made tags: the filter also brakes a pair a player closed on purpose. Per cell: results.md.", "",
+           "| Group | tags | filter on (share) | at the filter edge (share) |", "|---|---|---|---|"]
+    for g in groups:
+        n = sum(r["tags_counted"] for r in g["rows"])
+        f = sum(r["tags_filtered"] for r in g["rows"])
+        e = sum(r["tags_at_edge"] for r in g["rows"])
+        out.append(f"| {g['name']} | {n} | {f} ({f / n:.3f}) | {e} ({e / n:.3f}) |" if n else f"| {g['name']} | 0 | - | - |")
+    return out + [""]
+
+
 def record_text(run_dir: Path, result: dict, name: str, number: str) -> tuple[str, str]:
     meta = result["meta"]
+    purpose, ledger_label, carried = screen_texts(meta, result["shortlist"])
     code = (run_dir / "exit_code").read_text().strip() if (run_dir / "exit_code").is_file() else None
     finished = not result.get("stopped") and code == "0"          # QC M-4: INFO needs a recorded exit code 0
     readable = result["controls_all_pass"] and finished              # QC I4: otherwise no shortlist numbers anywhere
@@ -73,14 +112,14 @@ def record_text(run_dir: Path, result: dict, name: str, number: str) -> tuple[st
                           f"{sum(r['holds_no_guard_left'] for r in g['rows'])} | "
                           f"{f'{meds[len(meds) // 2]:.2f}' if meds else 'n/a'} / {f'{max(p90s):.2f}' if p90s else 'n/a'} |")
     hold_lines = hold_lines + [""] if comp else []
+    hold_lines += unchosen_lines(result)
     if readable:
         shortlist_lines = [
             "## Shortlist for L0.12 (rule: gate file [shortlist])", "",
                  f"**{', '.join(sl['shortlist']) or 'no eligible variant'}**; without the z_up_info columns: "
                  f"{', '.join(result['shortlist_without_z_up']['shortlist']) or 'none'}. The lead picks the shortlist and "
                  f"records why before L0.12 (PLAN.md row L0.11).", "",
-                 "The base case is always carried as the reference for the proposed 1.6 m rules (LEAD CALL 21 Nov 2026); "
-                 "the rule adds at most two more.", "",
+                 carried, "",
                  "| Variant | H | g* | R | s* | d | |", "|---|---|---|---|---|---|---|",
                  *[f"| {v['variant']} | {v['H'] if v['H'] is None else round(v['H'], 3)} | {v['g_star']} | "
                    f"{v['R'] if v['R'] is None else round(v['R'], 3)} | {v['s_star']} | "
@@ -104,9 +143,7 @@ def record_text(run_dir: Path, result: dict, name: str, number: str) -> tuple[st
              "period (timing.decision_s). This sweep measures scripted play at 0.05 s. L0.12's trainers must fix their "
              "decision period explicitly (T41's recipe used 12 ticks = 0.6 s).", "",
              "## Purpose", "",
-             "STE task L0.11 Screening sweep (INFO, PLAN.md section 4): scripted Guards against scripted Strikes, the base "
-             "case (3v3, tag 1.6 m, zone 1.6 m, Guard survives 0, 6.5 m lab arena) and one factor changed at a time; it "
-             "shortlists at most 3 rule variants for L0.12 by the rule written in the gate file before the run.", "",
+             purpose, "",
              "## Commit", "", f"`{meta['commit']}`{' (working tree not clean)' if meta['dirty'] else ''}", "",
              "## Config", "",
              f"- Gate file `{meta['gates_file']}`, sha256 `{meta['gates_sha256']}` (copy in the run folder: `gates.toml`).",
@@ -118,8 +155,10 @@ def record_text(run_dir: Path, result: dict, name: str, number: str) -> tuple[st
              "## Model parameter set", "",
              "Tier 1 Starling layer: `params/real_exploratory_v0.toml` (fitted PX4 response, exploratory); safety filter on "
              "every pair, 1000 sweeps, check every 8.", "",
-             "## Seeds", "", f"Game seed {meta['seed']} for every batch (paired starts: one draw of "
-             f"{meta['games_per_cell']} games tiled over the cells); Guard players seed + 101, Strike players seed + 202.", "",
+             "## Seeds", "", f"Game seed {meta['seed']} for every batch (paired starts: "
+             + (f"one draw of {meta['games_per_cell']} games tiled over the cells" if meta.get("task", "L0.11") == "L0.11"
+                else f"T44's first {meta['games_per_cell']} starts, loaded from the reference file, tiled over the cells")
+             + "); Guard players seed + 101, Strike players seed + 202.", "",
              "## Machine", "", f"{meta['host']}; GPU {meta['gpu'] or 'none (CPU)'}; torch {meta['torch']}; Python "
              f"{meta['python']}. Exit code {exit_word(run_dir)}. Effective time {meta['effective_s']:.0f} s of a "
              f"{meta['cap_h']} h cap. {hours_text}.", "",
@@ -146,7 +185,7 @@ def record_text(run_dir: Path, result: dict, name: str, number: str) -> tuple[st
             if readable else f"{played}; not read: {why}")
     hours_cell = f"; {hours:.3f} GPU-h" if hours is not None else ""
     row = (f"| {number} | {datetime.datetime.now().astimezone().isoformat(timespec='seconds')} | {meta['simulator']}; "
-           f"{meta['gpu'] or 'CPU'} | {name} | STE L0.11 Screening sweep: {what}{hours_cell} | {verdict.split(' ')[0]} | "
+           f"{meta['gpu'] or 'CPU'} | {name} | {ledger_label}: {what}{hours_cell} | {verdict.split(' ')[0]} | "
            f"records/{name}_record.md |")
     return "\n".join(lines), row
 

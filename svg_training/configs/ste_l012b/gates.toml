@@ -27,8 +27,10 @@
 #   (ste/exploit.recipe_problem), which equals [trainer] side_overrides.strike below; no code change was needed.
 # - Run 0 is re-run under this file (the driver requires run 0's gate sha256 to equal the runs'). Run 0 must play a
 #   variant of [variants], so it plays tag_1p15 against the parked Guard (L0.12: base, PASS at update 10, 0.06 GPU-h).
-#   Its known answer is unchanged: the trained Strike reaches the parked Guard at least as often as strike_straight, less
-#   0.05; strike_straight's cell is the screen's.
+#   The criterion is L0.12's (the trained Strike reaches the parked Guard at least as often as scripted strike_straight,
+#   less 0.05), but the BAR MOVES: it is the screen's tag 1.15 m cell guard_parked_centre v strike_straight, not base's
+#   466 of 1,000 (T44), and is likely higher (a smaller tag stops fewer Strike drones). The lead reads that cell in the
+#   screen's results.md before launching run 0. A run 0 FAIL means no Strike run (never overridden: L0.12's rule).
 # - Step budget 450 M game-steps (L0.12: 550 M), so a run CANNOT stop at the cap reserve before its budget by
 #   construction (L0.12's tag 1.2 m Strike run, T47, stopped at update 87 of 88: its trained Strike team waited out the
 #   120 s clock, so every learning-curve read ran the full 2,400 ticks). Arithmetic (tests/test_ste_l012b.py checks it),

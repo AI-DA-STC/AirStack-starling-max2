@@ -5,6 +5,7 @@ its reference replay, the best-response gate file (fill steps, pilot reuse, the 
 reserve), and a CPU run of the L0.12 driver under it end to end. Everything on the CPU, tiny sizes."""
 import json
 import math
+import re
 import sys
 from pathlib import Path
 
@@ -20,6 +21,7 @@ from svg_training.ste import exploit, shared, sweep
 from svg_training.ste.run_contract import EXIT_CONTROL_FAILED, EXIT_DONE, EXIT_REFUSED
 
 sys.path.insert(0, str(SCRIPTS))
+import make_ste_l011_record as screen_record  # noqa: E402
 import make_ste_l012_record as record  # noqa: E402
 import ste_exploit_l012 as driver  # noqa: E402
 import ste_l012_reference as ref_script  # noqa: E402
@@ -224,6 +226,20 @@ def test_the_screen_runs_on_the_cpu_with_every_control_passing(screen_run):
     assert np.array_equal(z["start_pos_m"][:4], starts)                         # T44's starts, loaded
 
 
+def test_the_screen_record_names_the_task_the_loaded_starts_and_the_unchosen_tags(screen_run, tmp_path, capsys):
+    code, out = screen_run
+    assert code == EXIT_DONE
+    run = tmp_path / "run"                                                      # a copy: the fixture's folder is shared
+    import shutil
+    shutil.copytree(out, run)
+    (run / "exit_code").write_text("0\n")
+    assert screen_record.main(["--run-dir", str(run), "--number", "W0", "--out-dir", str(tmp_path / "rec")]) == 0
+    text = (tmp_path / "rec" / "run_record.md").read_text()
+    assert "STE task L0.12b scripted screen (INFO)" in text and "STE L0.12b scripted screen:" in capsys.readouterr().out
+    assert "T44's first 4 starts, loaded from the reference file" in text and "## Unchosen tags (INFO, L0.12b)" in text
+    assert "proposed 1.6 m rules" not in text and "L0.11 Screening sweep" not in text
+
+
 def test_the_screen_stops_when_the_reference_replay_fails(tmp_path, monkeypatch):
     monkeypatch.setattr(exploit, "replay_ok", lambda *a, **k: (False, "forced by the test"))
     gates = tiny_screen(tmp_path)
@@ -240,15 +256,25 @@ def test_the_screen_refuses_a_reference_file_that_is_not_the_pinned_one(tmp_path
 
 
 # ------------------------------------------------------------------------------------------------ the best-response gate
-def test_the_runs_gate_file_refuses_until_filled_from_the_screen(tmp_path, capsys):
+def set_line(text: str, key: str, value: str) -> str:
+    """``key = "..."`` at the start of a line (the first one) set to ``value``: works before and after the lead's fill."""
+    out, n = re.subn(rf'^{key} = "[^"]*"', f'{key} = "{value}"', text, count=1, flags=re.M)
+    assert n == 1, key
+    return out
+
+
+def test_the_runs_gate_file_refuses_while_a_value_is_unfilled(tmp_path, capsys):
     g = exploit.load_gates(GATES)
-    assert exploit.unfilled(g) == ["[reference] sha256"]
+    assert exploit.unfilled(g) in ([], ["[reference] sha256"])                  # committed unfilled; the lead fills it
     assert list(g.variants) == ["tag_1p15"] and g.run0["variant"] == "tag_1p15" and g.run["task"] == "L0.12"
     assert g.run["tag_edge_margin_m"] == 0.01 and exploit.reference_label(g) != "T44"
     assert g.reference["t44_gates_sha256"] == sweep.load_gates(SCREEN).sha256     # the screen's gate file
+    unfilled = tmp_path / "gates.toml"
+    unfilled.write_text(set_line(GATES.read_text(), "sha256", "FILL_AFTER_SCREEN"))
+    assert exploit.unfilled(exploit.load_gates(unfilled)) == ["[reference] sha256"]
     pj = tmp_path / "pilot.json"
     pj.write_text(json.dumps({"strike_recipe": {"side_overrides_strike": {"shaping_weight": 1.0}}}))
-    code = driver.main(["--gates", str(GATES), "--variant", "tag_1p15", "--side", "guard", "--run-dir",
+    code = driver.main(["--gates", str(unfilled), "--variant", "tag_1p15", "--side", "guard", "--run-dir",
                         str(tmp_path / "r"), "--cap-h", "0.75", "--pilot-json", str(pj)])
     assert code == EXIT_REFUSED and "not filled yet" in capsys.readouterr().err
 
@@ -318,13 +344,12 @@ def test_screen_to_reference_to_a_guard_run_and_its_record(screen_run, tmp_path,
     ref = exploit.load_reference(ref_path)
     players = exploit.load_gates(GATES).players
     g_star, s_star = exploit.star_players(ref, "tag_1p15", players)
-    text = GATES.read_text()
-    for old, new in {'file = "configs/ste_l012b/screen_reference.npz"': f'file = "{ref_path}"',
-                     'sha256 = "FILL_AFTER_SCREEN"': f'sha256 = "{exploit.sha256_file(ref_path)}"',
-                     'start_sha256 = "5aeba7ab2b582f2973034c8203c17ed3e8239fef7029a1f991fe95b82369843c"':
-                         f'start_sha256 = "{ref.start_sha256}"',
-                     'g_star = "guard_mark_edge", s_star = "strike_straight"': f'g_star = "{g_star}", s_star = "{s_star}"',
-                     'device = "cuda"': 'device = "cpu"', "eval_games = 1000": "eval_games = 4",
+    text = GATES.read_text()                       # filled or not: the fill fields are set by pattern
+    text = set_line(set_line(set_line(text, "file", str(ref_path)), "sha256", exploit.sha256_file(ref_path)),
+                    "start_sha256", ref.start_sha256)
+    text, n = re.subn(r'g_star = "[^"]*", s_star = "[^"]*"', f'g_star = "{g_star}", s_star = "{s_star}"', text, count=1)
+    assert n == 1
+    for old, new in {'device = "cuda"': 'device = "cpu"', "eval_games = 1000": "eval_games = 4",
                      "ticks_cap = 2400": "ticks_cap = 40", "curve_games = 256": "curve_games = 2",
                      "num_games = 16384": "num_games = 4", "game_steps_per_run = 450_000_000": "game_steps_per_run = 192",
                      "rollouts = 32": "rollouts = 2", "learning_epochs = 5": "learning_epochs = 1",
@@ -354,3 +379,10 @@ def test_screen_to_reference_to_a_guard_run_and_its_record(screen_run, tmp_path,
     assert record.main(["--verdict", str(tmp_path / "v" / "verdict.json"), "--out", str(rec), "--task", "L0.12b"]) == 0
     text = rec.read_text()
     assert "STE L0.12b" in text and "Unchosen tags of the trained exploiter" in text and "for each shortlisted" not in text
+    # run 0 under this gate file: tag_1p15 against the parked Guard, its script cell replayed from the screen's reference
+    r0 = tmp_path / "run0"
+    assert driver.main(["--run0", "--gates", str(gates), "--run-dir", str(r0), "--cap-h", "1", "--no-videos",
+                        "--pilot-json", str(pj)]) == EXIT_DONE
+    lc = json.loads((r0 / "learner_control.json").read_text())
+    assert lc["variant"] == "tag_1p15" and lc["opponent"] == PARKED and lc["status"] in ("PASS", "FAIL", "INCONCLUSIVE")
+    assert all(c["status"] == "PASS" for c in json.loads((r0 / "controls.json").read_text()).values())

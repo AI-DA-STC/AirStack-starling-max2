@@ -1,6 +1,6 @@
 INTERNAL · the latest status of STE's own learning track and the NUS port, overwritten at every update; the history is in [LOG.md](LOG.md). Produced by the `train-status` skill.
 
-**Status, 2026-11-21 15:26 (+08:00), 30-minute update: L0.2 and L0.3 DONE (records T48, T49 in QC fixes); bubble-tag test in QC; L0.13 building** · laptop RTX 5070 Ti · GPU idle (waiting on QC) · 0 jobs
+**Status, 2026-11-21 16:00 (+08:00), event: L0.2 and L0.3 merged; bubble-tag test (1.15 m) training; L0.13 under QC** · laptop RTX 5070 Ti · GPU: L0.12b run 0 · 1 job
 
 **Plain summary (L0.3 Guard policy on the Isaac Lab drone).** Tested: does the Guard policy trained in the fast engine
 (T41) still work on the more realistic Isaac Lab drone, without retraining? Happened: every control PASS; it holds **856 of
@@ -14,27 +14,23 @@ interdiction shown in simulation (a proposal for G0).
 
 ## Watch (latest clips and figures)
 
-**New: the L0.11 games in 3-D** (VID-1). The same recorded games, replayed and checked equal to record T44 on all
-90,000 games, then drawn in Isaac Lab with the AirStack simulator's Starling. Base 3v3, best scripted Guard v best
-scripted Strike, half real time. Training simulator tier 1 replayed for drawing only (drones drawn level); not a flight.
+**L0.12 — can a trained team beat the best hand-written one?** Filled dot = trained, hollow = best script, x = untrained:
 
-| Guard holds (3-D view) | Strike reaches (3-D view) |
+![](../../docs/figures/ste_l012/best_response.png)
+
+| Trained Strikes v the best scripted Guard (base): climb, trade two, the last one slips in | Trained Guards v the straight Strike (base) |
 |---|---|
-| ![](../../docs/media/ste_l011/3d/base_hold_3d.gif) | ![](../../docs/media/ste_l011/3d/base_reach_3d.gif) |
+| ![](../../docs/media/ste_l012/base_trained_strike_game0_reach.gif) | ![](../../docs/media/ste_l012/base_trained_guard_game0_hold.gif) |
 
-Top views and the tag 1.2 m / 1.4 m games: [docs/media/ste_l011/3d/](../../docs/media/ste_l011/3d/README.md).
+**L0.3 — the fast-engine Guard (T41) on the Isaac Lab drone, no retraining** (856 v 831 holds; reaches for the parked control):
 
-**Your pick (D9): how should a team show on the drone?** Left: the Starling as the AirStack file draws it. Then a ring
-around the drone, or a small dot on top. The 3-D clips above use the ring for now.
+![](../../docs/figures/ste_l03/transfer.png)
 
-![](../../docs/media/ste_l05/row_l05_close.png)
+**L0.2 — training speed, Isaac Lab v the fast engine:**
 
-**Bug found and fixed (L0.4):** every Isaac clip since S2b drew a grey physics box over the drone (the hide call
-missed it). Before / after:
+![](../../docs/figures/ste_l02/speed.png)
 
-| Before | After |
-|---|---|
-| ![](../../docs/media/ste_l04/clip_drone_before_fix.png) | ![](../../docs/media/ste_l04/clip_drone_after_fix.png) |
+**The 3-D videos** (L0.11 games, Isaac Lab, ring = team): [base_reach_3d.gif](../../docs/media/ste_l011/3d/base_reach_3d.gif), [all](../../docs/media/ste_l011/3d/README.md).
 
 Where phase L0 is: green done, light green laptop part done, amber running, grey queued (state file
 `ste_learning/status/l0_progress.toml`, figure by `scripts/make_ste_learning_figures.py l0_progress`).
@@ -65,9 +61,9 @@ Earlier: L0.11 top-down clips and the factor chart are in the [T44 record](../..
 | L0.10 | Scripted players for the study | DONE | tier 1 fast engine | merged; QC + 2 re-checks passed; full suite on `development` 1,600 passed / 0 failed (56 min, CPU shared with the L0.11 GPU jobs) |
 | L0.11 | Screening sweep (INFO) | DONE | tier 1 fast engine | record T44 (every control PASS; shortlist base (reference), tag 1.2 m, tag 1.4 m; every hold a one-for-one trade) + follow-up checks; merged into `development`; full suite 1,685 passed / 0 failed (27 min) |
 | L0.12 | Best-response test: is the game worth learning? | DONE, merged (T46 INFO, T47 ABORTED; full suite 1,838 passed, its 6 failures fixed before merge) | tier 1 fast engine | pilot PASS; run 0 PASS; **base: worth learning** (Guard 913 v 808, Strike 636 v 192); **tag 1.4 m: worth learning** (Guard 747 v 672, Strike 740 v 328); **tag 1.2 m: incomplete** (Guard 503 v script 645; Strike ABORTED, 87/88 updates, trained Strikes wait out the clock); every control PASS; 3.86 GPU-h of 6; record T46 (verdict) + T47 (aborted run) being written; 3-D clips of the key games need VID-1b (the 3-D tool replays scripted players only) |
-| L0.2 | Tier 2 speed in contested play | DONE (record T48; QC wording fixes; merge next) | tier 2 Isaac Lab | every control PASS; Isaac Lab 3v3: 10 k → 67 k training game-steps/s (1,024 → 16,384 games, 4.7 GB); the fast engine is 4–10× faster per game-step (5× at 3v3); 0.29 GPU-h (+0.10 smokes) |
-| L0.13 | Does tier 2 train at all? | BUILDING | tier 2 Isaac Lab | lead's call: same game and Guard recipe as L0.12's base Guard run (913/1000 in the fast engine), so it compares directly; Isaac Lab and fast-engine arms at 16,384 games and 300 M game-steps each; pass = clearly above a still Guard on Isaac Lab; ~1.6 GPU-h; overnight |
-| L0.3 | STE Guard policy in tier 2 without retraining | DONE (record T49; QC wording fixes; merge next) | tier 2 Isaac Lab | every control PASS; T41 holds 856/1000 on Isaac Lab v 831 fast engine (paired: 76 gained, 51 lost, sign test p = 0.033; higher in this set, no general claim); 1.24 GPU-h |
+| L0.2 | Tier 2 speed in contested play | DONE (T48, merged) | tier 2 Isaac Lab | every control PASS; Isaac Lab 3v3: 10 k → 67 k training game-steps/s (1,024 → 16,384 games, 4.7 GB); the fast engine is 4–10× faster per game-step (5× at 3v3); 0.29 GPU-h (+0.10 smokes) |
+| L0.13 | Does tier 2 train at all? | BUILT, under QC | tier 2 Isaac Lab | built (236 tests); both arms 16,384 games, 302 M game-steps, identical start networks; pass = clearly above a still Guard on Isaac Lab; smoke first (C-1a at full size never measured); ~2.2 GPU-h; overnight after the bubble-tag runs |
+| L0.3 | STE Guard policy in tier 2 without retraining | DONE (T49, merged) | tier 2 Isaac Lab | every control PASS; T41 holds 856/1000 on Isaac Lab v 831 fast engine (paired: 76 gained, 51 lost, sign test p = 0.033; higher in this set, no general claim); 1.24 GPU-h |
 | L0.4 | Side-by-side Starling render | DONE | tier 2 Isaac Lab | found why our clips never looked like the Starling: a grey physics box was drawn over every drone since S2b (the hide call missed it); one-line fix, re-render shows the Starling (before/after in Watch); merged into `development` after independent review; 0.028 of 0.2 GPU-h |
 | L0.5 | Starling video look fix | WAITING ON YOU (D9) | tier 2 Isaac Lab | the drone left unpainted, team shown by a ring or a small dot that casts no shadow; stills in Watch; 0.154 of 0.3 GPU-h (with VID-1) |
 | L0.14 | Crazyflie route check | DONE | tier 1 fast engine (CPU) | record T45: the T41 Guard policy holds 791–768 of 1,000 in the Crazyflie-like lag band (0.48–0.56 s, every drone slowed) against 831 at the Starling's lag, and drones come closer (games under 1.0 m: 7 → 101–149); planner, like for like: 0 of 100 at 3v3 and 5v3 against 20 Nov's 5 of 100 (not a clear difference; only one rule set run); QC + re-check passed; merged into `development` (targeted tests 76 passed; the full suite runs with the next merge — lead's call, the CPU is shared now); page `ste_learning/CRAZYFLIE_ROUTE.md` |
@@ -120,7 +116,7 @@ Laptop drills (21 Nov, fix branch, shared folder `~/AirStack-starling-max2/svg_t
 
 | ID | Plain name | Status |
 |---|---|---|
-| L012-B | Bubble-tag test (tag 1.15 m = the safety distance 1.10 m + 0.05 m; owner approved 21 Nov) | BUILT, fix round | built (407 tests pass); lead's calls: keep 550 M game-steps like L0.12 at a 0.85 h run cap; add a strict "the filter pushed them together" tag count (the loose count is ~100 % at 1.15 m by construction); then QC, screen (~0.15 GPU-h), runs if the screen supports them |
+| L012-B | Bubble-tag test (tag 1.15 m = the safety distance 1.10 m + 0.05 m; owner approved 21 Nov) | RUNNING (run 0) | screen DONE (every control PASS): best scripts hold 645 / reach 355, the same as tag 1.2 m — neither side trivial; tags the filter pushed together: 0–10 % of tags per cell (0 % for the best pair) — nearly every tag is chosen by the players; QC + fixes + re-check GO; run 0 bar is high (scripted straight Strike reaches a parked Guard 899/1000 at 1.15 m, so the trained Strike needs ≥ 849); then Strike (if run 0 PASS) and Guard, ~1.5 GPU-h, done ~18:30 |
 | VID-1c | Re-draw the L0.2 and L0.3 2-D clips with the height panel (the standing rule; those drivers used the older clip drawer) | QUEUED (CPU) | from the saved run data |
 | SYNC-1 | Branch `development` on both machines; laptop worktree `~/AirStack-starling-max2-dev` | DONE |
 | SYNC-2 | Status skill `train-status` and the owner's standing rules in CLAUDE.md | DONE |

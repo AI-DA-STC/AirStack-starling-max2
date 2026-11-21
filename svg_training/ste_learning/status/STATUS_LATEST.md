@@ -1,6 +1,6 @@
 INTERNAL · the latest status of STE's own learning track and the NUS port, overwritten at every update; the history is in [LOG.md](LOG.md). Produced by the `train-status` skill.
 
-**Status, 2026-11-21 17:30 (+08:00), 30-minute update: bubble-tag runs done (1.15 m behaves like 1.2 m); L0.13 runs of record started** · laptop RTX 5070 Ti · GPU: L0.13 t1 · 1 job
+**Status, 2026-11-21 18:00 (+08:00), 30-minute update: L0.13 fast-engine arm done (836/1000); Isaac Lab arm learning** · laptop RTX 5070 Ti · GPU: L0.13 Isaac Lab arm · 1 job
 
 **Plain summary (L0.12b bubble tag, 1.15 m).** Tested: is "touch the safety bubble" (tag at 1.15 m) a game worth learning?
 Happened (training simulator): the scripts alone make it a two-sided game (best Guard holds 645, best Strike reaches 355,
@@ -63,7 +63,7 @@ Earlier: L0.11 top-down clips and the factor chart are in the [T44 record](../..
 | L0.11 | Screening sweep (INFO) | DONE | tier 1 fast engine | record T44 (every control PASS; shortlist base (reference), tag 1.2 m, tag 1.4 m; every hold a one-for-one trade) + follow-up checks; merged into `development`; full suite 1,685 passed / 0 failed (27 min) |
 | L0.12 | Best-response test: is the game worth learning? | DONE, merged (T46 INFO, T47 ABORTED; full suite 1,838 passed, its 6 failures fixed before merge) | tier 1 fast engine | pilot PASS; run 0 PASS; **base: worth learning** (Guard 913 v 808, Strike 636 v 192); **tag 1.4 m: worth learning** (Guard 747 v 672, Strike 740 v 328); **tag 1.2 m: incomplete** (Guard 503 v script 645; Strike ABORTED, 87/88 updates, trained Strikes wait out the clock); every control PASS; 3.86 GPU-h of 6; record T46 (verdict) + T47 (aborted run) being written; 3-D clips of the key games need VID-1b (the 3-D tool replays scripted players only) |
 | L0.2 | Tier 2 speed in contested play | DONE (T48, merged) | tier 2 Isaac Lab | every control PASS; Isaac Lab 3v3: 10 k → 67 k training game-steps/s (1,024 → 16,384 games, 4.7 GB); the fast engine is 4–10× faster per game-step (5× at 3v3); 0.29 GPU-h (+0.10 smokes) |
-| L0.13 | Does tier 2 train at all? | RUNNING (runs of record) | tier 2 Isaac Lab | smoke: every control PASS; physics check at 16,384 games 0.0166 m (limit 0.02); Isaac Lab 70 k game-steps/s, time margin +2,811 s; now the fast-engine arm (update 20 of 48; its curve reads climbing 145 → 176 of 256 holds), then the Isaac Lab arm (~1.3 h); verdict ~19:30 |
+| L0.13 | Does tier 2 train at all? | RUNNING (Isaac Lab arm) | tier 2 Isaac Lab | fast-engine arm DONE: trained Guard holds 836/1000 at 302 M game-steps v still Guard 534 (its own bar cleared); Isaac Lab arm: every control PASS, update 13 of 48 at 70.6 k game-steps/s; its curve reads on Isaac Lab climb 143 → 159 of 256 (learning); verdict ~19:00 |
 | L0.3 | STE Guard policy in tier 2 without retraining | DONE (T49, merged) | tier 2 Isaac Lab | every control PASS; T41 holds 856/1000 on Isaac Lab v 831 fast engine (paired: 76 gained, 51 lost, sign test p = 0.033; higher in this set, no general claim); 1.24 GPU-h |
 | L0.4 | Side-by-side Starling render | DONE | tier 2 Isaac Lab | found why our clips never looked like the Starling: a grey physics box was drawn over every drone since S2b (the hide call missed it); one-line fix, re-render shows the Starling (before/after in Watch); merged into `development` after independent review; 0.028 of 0.2 GPU-h |
 | L0.5 | Starling video look fix | WAITING ON YOU (D9) | tier 2 Isaac Lab | the drone left unpainted, team shown by a ring or a small dot that casts no shadow; stills in Watch; 0.154 of 0.3 GPU-h (with VID-1) |
@@ -120,7 +120,7 @@ Laptop drills (21 Nov, fix branch, shared folder `~/AirStack-starling-max2/svg_t
 
 | ID | Plain name | Status |
 |---|---|---|
-| L012-B | Bubble-tag test (tag 1.15 m; owner approved 21 Nov) | DONE (records being written) | screen: best scripts 645 / 355 (same as 1.2 m), filter-pushed tags 0–10 %; run 0 PASS (909 v bar 849); trained Guard 466 v script 645 (weak); trained Strike ABORTED (time rule, 86/88; info: 103 v 355, waits out the clock); verdict incomplete (one side); ~1.95 GPU-h |
+| L012-B | Bubble-tag test (tag 1.15 m; owner approved 21 Nov) | DONE (T50 screen, T51 INFO, T52 ABORTED; QC PASS; merge after L0.13) | screen: best scripts 645 / 355 (same as 1.2 m), filter-pushed tags 0–10 %; run 0 PASS (909 v bar 849); trained Guard 466 v script 645 (weak); trained Strike ABORTED (time rule, 86/88; info: 103 v 355, waits out the clock); verdict incomplete (one side); ~1.95 GPU-h |
 | VID-1c | Re-draw the L0.2 and L0.3 2-D clips with the height panel (the standing rule; those drivers used the older clip drawer) | QUEUED (CPU) | from the saved run data |
 | SYNC-1 | Branch `development` on both machines; laptop worktree `~/AirStack-starling-max2-dev` | DONE |
 | SYNC-2 | Status skill `train-status` and the owner's standing rules in CLAUDE.md | DONE |

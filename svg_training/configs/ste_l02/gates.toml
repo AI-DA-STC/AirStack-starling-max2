@@ -23,7 +23,7 @@ strike_script = "strike_straight"  # MEASURED: s* of the base case (T44)
 learner_team = "guard"             # L0.2 CHOICE: the Guard team learns (5 networks at 5v3: the heavier update of the two sides)
 seed = 120000                      # game seed of every point; scripted players seed + 101 / + 202 (scripts/score.py)
 threads = 4                        # torch CPU threads (CPU shared with other agents)
-cap_h = 1.5                        # PROPOSED (PLAN section 4, L0.2 cap); the driver refuses another --cap-h
+cap_h = 1.4                        # PROPOSED (PLAN section 4, L0.2 cap); the driver refuses another --cap-h   # LEAD CALL 21 Nov 2026: 1.5 -> 1.4 before the run of record; the two Isaac smokes used 0.096 of the task cap 1.5 (projection ~0.9)
 device = "cuda"
 
 [timing]

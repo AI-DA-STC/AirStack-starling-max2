@@ -392,8 +392,8 @@ def windowed_world(sim, num_games: int, drones: int, a: AirframeParams, physics_
 # Starling USD is referenced under each body with every physics schema removed in the composed stage, never in the
 # file; physics_play's read-back still checks the body). Colours are RGB in 0..1.
 # =====================================================================================================================
-STARLING_ROTORS_FLU_M = ((0.095, -0.13), (-0.095, 0.13), (0.095, 0.13), (-0.095, -0.13))   # CAD layout (PX4 order)
-DRONE_BODY_RGB = (0.22, 0.22, 0.24)
+from svg_training.viz.starling_look import (DRONE_BODY_RGB, STARLING_ROTORS_FLU_M, LookPlan,  # noqa: E402,F401
+                                            look_plan, torus_mesh)
 ARENA_BAR_RGB = (0.13, 0.13, 0.15)
 ARENA_RAIL_RGB = (0.30, 0.30, 0.33)
 ZONE_RGB = (0.0, 0.62, 0.45)
@@ -482,19 +482,127 @@ def _add_drone_visuals(env_paths: list[str], drones: int, visual: str, slot_rgb,
             body = f"{env}/Drone_{s}"
             rgb = slot_rgb[s]
             if visual == "starling":
-                UsdGeom.Imageable(st.GetPrimAtPath(body + "/geometry")).MakeInvisible()
-                v = st.DefinePrim(body + "/Starling", "Xform")        # before play: PhysX has not parsed the stage
-                v.GetReferences().AddReference(starling_usd, "/vehicle")
-                _strip_physics(st.GetPrimAtPath(body + "/Starling"))
-                for name in ("body", "rotor0", "rotor1", "rotor2", "rotor3"):
-                    mesh = st.GetPrimAtPath(f"{body}/Starling/{name}/{name}")
-                    if mesh:
-                        _colour(mesh, DRONE_BODY_RGB if name == "body" else rgb)
-            else:   # primitive: the physics box itself, darkened, and four rotor discs (CAD layout)
-                _colour(st.GetPrimAtPath(body + "/geometry/mesh"), DRONE_BODY_RGB)
-                for r, (x, y) in enumerate(STARLING_ROTORS_FLU_M):
-                    _shape(f"{body}/Rotor_{r}", "cyl", (0.1, 0.1, 0.012), (x, y, 0.035), rgb)
+                # L0.4 finding (21 Nov 2026): "/geometry" is a typeless prim, not Imageable, so hiding it did nothing
+                # and every S2b / NUS Isaac clip drew the grey 0.19 x 0.26 x 0.05 m physics box over the Starling.
+                # Hide the box's own mesh (a Cube, Imageable). Visual only: the box has no collider either way.
+                UsdGeom.Imageable(st.GetPrimAtPath(body + "/geometry/mesh")).MakeInvisible()
+                # before play: PhysX has not parsed the stage. The S2b look ("painted") is the plan of
+                # viz/starling_look.py (L0.5; bit for bit the S2b Task 6 colours and ball, tests/test_starling_look.py)
+                _starling_with_look(body, starling_usd, look_plan("painted", rgb, marker_radius_m=marker_radius_m))
+                continue
+            # primitive: the physics box itself, darkened, and four rotor discs (CAD layout)
+            _colour(st.GetPrimAtPath(body + "/geometry/mesh"), DRONE_BODY_RGB)
+            for r, (x, y) in enumerate(STARLING_ROTORS_FLU_M):
+                _shape(f"{body}/Rotor_{r}", "cyl", (0.1, 0.1, 0.012), (x, y, 0.035), rgb)
             _shape(f"{body}/Marker", "sphere", (2 * marker_radius_m,) * 3, (0.0, 0.0, 0.12 + marker_radius_m), rgb)
+
+
+def _torus(path: str, major_radius_m: float, minor_radius_m: float, xyz_m, rgb, segments: int = 48,
+           tube_segments: int = 8):
+    """A visual-only torus mesh around the local z axis (viz/starling_look.torus_mesh), centred at xyz_m."""
+    from pxr import Gf, UsdGeom, Vt
+
+    pts, counts, idx = torus_mesh(major_radius_m, minor_radius_m, segments, tube_segments)
+    mesh = UsdGeom.Mesh.Define(_stage(), path)
+    mesh.CreatePointsAttr(Vt.Vec3fArray([Gf.Vec3f(*map(float, p)) for p in pts]))
+    mesh.CreateFaceVertexCountsAttr(Vt.IntArray([int(c) for c in counts]))
+    mesh.CreateFaceVertexIndicesAttr(Vt.IntArray([int(i) for i in idx]))
+    mesh.CreateSubdivisionSchemeAttr(UsdGeom.Tokens.none)
+    mesh.CreateDoubleSidedAttr(True)
+    UsdGeom.XformCommonAPI(mesh).SetTranslate(Gf.Vec3d(*[float(v) for v in xyz_m]))
+    _colour(mesh.GetPrim(), rgb)
+    return mesh.GetPrim()
+
+
+def _starling_with_look(parent: str, starling_usd: str, plan: "LookPlan", segments: tuple[int, int] = (48, 8)) -> None:
+    """Under parent: the Starling USD referenced read-only at parent/Starling (every physics schema removed in the
+    composed stage), the plan's display colours on its meshes (none for the own looks: the file's surfaces as they
+    are) and the plan's markers at parent/Marker, parent/Marker_1, ... (visual only)."""
+    st = _stage()
+    v = st.DefinePrim(parent + "/Starling", "Xform")
+    v.GetReferences().AddReference(starling_usd, "/vehicle")
+    _strip_physics(st.GetPrimAtPath(parent + "/Starling"))
+    for name, rgb in plan.paint.items():
+        mesh = st.GetPrimAtPath(f"{parent}/Starling/{name}/{name}")
+        if mesh:
+            _colour(mesh, rgb)
+    for i, m in enumerate(plan.markers):
+        path = f"{parent}/Marker" + (f"_{i}" if i else "")
+        if m.kind == "torus":
+            prim = _torus(path, m.size_m[0], m.size_m[1], m.xyz_m, m.rgb, *segments)
+        else:
+            prim = _shape(path, m.kind, m.size_m, m.xyz_m, m.rgb)
+        if not m.casts_shadow:                  # RTX: the marker casts no shadow (absent = today's behaviour)
+            from pxr import Sdf, UsdGeom
+
+            UsdGeom.PrimvarsAPI(prim).CreatePrimvar("doNotCastShadows", Sdf.ValueTypeNames.Bool).Set(True)
+
+
+# ---------------------------------------------------------------------------------------------------------------------
+# STE L0.4 / L0.5 / VID-1: display-only Starlings (no physics body, no PhysX): stills and the 3-D replay of tier-1 games.
+# A display drone is a plain Xform moved by writing its transform; the game it shows was played elsewhere (tier 1).
+# ---------------------------------------------------------------------------------------------------------------------
+def make_display_sim(device: str = "cuda:0"):
+    """A SimulationContext for drawing only: nothing in the stage has a physics schema, so play() simulates nothing."""
+    cfg = sim_utils.SimulationCfg(dt=TICK_S, device=device, render_interval=1, gravity=(0.0, 0.0, -G_MPS2))
+    return sim_utils.SimulationContext(cfg)
+
+
+def display_play(sim) -> None:
+    """Start the display-only simulation (nothing to simulate; the renderer needs a playing timeline)."""
+    sim.reset()
+
+
+def set_visible(path: str, visible: bool) -> None:
+    """Show or hide any prim (visual only)."""
+    from pxr import UsdGeom
+
+    im = UsdGeom.Imageable(_stage().GetPrimAtPath(path))
+    im.MakeVisible() if visible else im.MakeInvisible()
+
+
+def spawn_display_drone(path: str, starling_usd: str, plan: "LookPlan", segments: tuple[int, int] = (48, 8)) -> None:
+    """A display-only Starling at path (an Xform with translate and a z rotation), drawn with the plan."""
+    from pxr import UsdGeom
+
+    x = UsdGeom.Xform.Define(_stage(), path)
+    x.AddTranslateOp()
+    x.AddRotateZOp()
+    _starling_with_look(path, starling_usd, plan, segments)
+
+
+def set_display_pose(path: str, xyz_m, yaw_rad: float, visible: bool = True) -> None:
+    """Move a display drone (world metres, yaw about +z, radians) and show or hide it."""
+    import math as _m
+
+    from pxr import Gf, UsdGeom
+
+    prim = _stage().GetPrimAtPath(path)
+    ops = UsdGeom.Xformable(prim).GetOrderedXformOps()
+    ops[0].Set(Gf.Vec3d(*[float(v) for v in xyz_m]))
+    ops[1].Set(float(_m.degrees(yaw_rad)))
+    im = UsdGeom.Imageable(prim)
+    im.MakeVisible() if visible else im.MakeInvisible()
+
+
+def spawn_display_arena(root: str, half_m: float, zone_xy_m: tuple, zone_radius_m: float, wall_margin_m: float,
+                        top_m: float, floor: bool = True) -> None:
+    """The arena visuals of spawn_arena_visuals under any root prim (no game environment needed)."""
+    lim = half_m - wall_margin_m
+    if floor:
+        _shape(root + "/Floor", "box", (2 * half_m, 2 * half_m, 0.004), (0.0, 0.0, 0.002), ARENA_FLOOR_RGB)
+    _shape(root + "/Zone", "cyl", (2 * zone_radius_m, 0.0, 0.02), (zone_xy_m[0], zone_xy_m[1], 0.012), ZONE_RGB,
+           opacity=0.75)
+    sides = ((0.0, lim, 1, 0), (0.0, -lim, 1, 0), (lim, 0.0, 0, 1), (-lim, 0.0, 0, 1))
+    for i, (x, y, ax, ay) in enumerate(sides):
+        t, h = 0.06, 0.15
+        _shape(f"{root}/Bar_{i}", "box", (ax * (2 * lim + t) + ay * t, ay * (2 * lim + t) + ax * t, h),
+               (x, y, h / 2), ARENA_BAR_RGB)
+        r = 0.025
+        _shape(f"{root}/Rail_{i}", "box", (ax * (2 * lim + r) + ay * r, ay * (2 * lim + r) + ax * r, r),
+               (x, y, top_m), ARENA_RAIL_RGB)
+    for i, (x, y) in enumerate(((lim, lim), (lim, -lim), (-lim, lim), (-lim, -lim))):
+        _shape(f"{root}/Post_{i}", "box", (0.025, 0.025, top_m), (x, y, top_m / 2), ARENA_RAIL_RGB)
 
 
 def _quat_wxyz_minus_z_to(direction) -> tuple:
@@ -529,22 +637,8 @@ def spawn_arena_visuals(env_index: int, half_m: float, zone_xy_m: tuple, zone_ra
     green), four low wall bars at +-(half_m - wall_margin_m) (where keep_in stops the drones), thin rails at top_m
     (the height band's top) on four corner posts, so a drone in the air is seen inside the box it flies in, and, if
     floor, a light square under the arena. Call after physics_play is fine: nothing here has a physics schema."""
-    env = f"/World/envs/env_{env_index}/VideoArena"
-    lim = half_m - wall_margin_m
-    if floor:
-        _shape(env + "/Floor", "box", (2 * half_m, 2 * half_m, 0.004), (0.0, 0.0, 0.002), ARENA_FLOOR_RGB)
-    _shape(env + "/Zone", "cyl", (2 * zone_radius_m, 0.0, 0.02), (zone_xy_m[0], zone_xy_m[1], 0.012), ZONE_RGB,
-           opacity=0.75)
-    sides = ((0.0, lim, 1, 0), (0.0, -lim, 1, 0), (lim, 0.0, 0, 1), (-lim, 0.0, 0, 1))
-    for i, (x, y, ax, ay) in enumerate(sides):
-        t, h = 0.06, 0.15                                              # ground bar
-        _shape(f"{env}/Bar_{i}", "box", (ax * (2 * lim + t) + ay * t, ay * (2 * lim + t) + ax * t, h),
-               (x, y, h / 2), ARENA_BAR_RGB)
-        r = 0.025                                                      # top rail
-        _shape(f"{env}/Rail_{i}", "box", (ax * (2 * lim + r) + ay * r, ay * (2 * lim + r) + ax * r, r),
-               (x, y, top_m), ARENA_RAIL_RGB)
-    for i, (x, y) in enumerate(((lim, lim), (lim, -lim), (-lim, lim), (-lim, -lim))):
-        _shape(f"{env}/Post_{i}", "box", (0.025, 0.025, top_m), (x, y, top_m / 2), ARENA_RAIL_RGB)
+    spawn_display_arena(f"/World/envs/env_{env_index}/VideoArena", half_m, zone_xy_m, zone_radius_m, wall_margin_m,
+                        top_m, floor)
 
 
 def spawn_props(env_index: int, props: list[dict]) -> None:

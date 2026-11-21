@@ -1,0 +1,53 @@
+# STE tasks L0.4 (side-by-side Starling render), L0.5 (Starling video look fix) and VID-1 part 2 (3-D replay of tier-1
+# games in Isaac Lab). Loaded by source/svg_training/viz/starling_look.load_video_settings: an unknown or missing key
+# raises. Everything here is for drawing only: nothing in this file reaches a game, a drone model or a gate.
+#
+# Status labels: FIXED (an owner rule or an existing value kept), MEASURED, PROPOSED (the builder's choice, open to the
+# owner), OPEN.
+
+[look]
+# The look the 3-D replay draws with. "painted" = today's S2b clip look (body display colour dark grey, rotors in the
+# team colour, a team ball above the drone; compat/isaaclab_232 since S2b Task 6). "own_ring" and "own_dot" leave the
+# Starling USD's own surfaces untouched and add one small team-coloured marker (L0.5).
+replay_look = "own_ring"          # PROPOSED (L0.5, 21 Nov 2026): pending the owner's look at the stills (D9)
+
+[look.own_ring]
+# A thin team-coloured ring (torus) around the drone at the height of its arms, wider than the rotor tips
+# (rotor hubs 0.161 m from the centre, CAD layout STARLING_ROTORS_FLU_M), so it never covers the drone.
+major_radius_m = 0.25             # PROPOSED (L0.5): ring radius to the middle of the tube
+minor_radius_m = 0.014            # PROPOSED (L0.5): tube radius
+z_m = 0.02                        # PROPOSED (L0.5): height above the body frame origin (the arms' plane)
+segments = 48                     # PROPOSED (L0.5): segments around the ring
+tube_segments = 8                 # PROPOSED (L0.5): segments around the tube
+
+[look.own_dot]
+# A small team-coloured disc on top of the drone (like an LED cap): the alternative shown in the L0.5 stills.
+diameter_m = 0.09                 # PROPOSED (L0.5)
+thickness_m = 0.012               # PROPOSED (L0.5)
+z_m = 0.075                       # PROPOSED (L0.5): above the top plate
+
+[cameras]
+resolution = [1280, 720]          # FIXED (S2b Task 6 clips: configs/s2b.toml [video] resolution)
+top_tilt_deg = 2.0                # PROPOSED (VID-1): the top camera leans this far off vertical (straight down is
+                                  # degenerate for a z-up look-at), north (+y) at the top of the image
+perspective_view = "wide"         # FIXED (S2b Task 6): bench/overlay.camera_pose "wide", 32 deg above the horizon
+
+[playback]
+speed_x = 0.5                     # PROPOSED (VID-1): played at half real time (one frame per 0.05 s game tick at
+                                  # 10 frames/s); the games last 2-4 s
+hold_s = 2.0                      # FIXED (S2b Task 6 HOLD_S): the last frame, with the result, is held this long
+gif_max_mb = 5.0                  # FIXED (S2b Task 6 GIF_MAX_MB): plays on GitHub
+mp4_max_mb = 10.0                 # FIXED (configs/s2b.toml [video] max_mb)
+warm_frames = 40                  # FIXED (S2b Task 6 WARM_MIN_FRAMES plain): renders before a take
+settle_frames = 8                 # PROPOSED (VID-1): renders per game tick before the frame is kept (the renderer's
+                                  # temporal filter smears a moving drone; 4 left a ghost of a drone just tagged out)
+
+[key_games]
+# VID-1's first use: the key games of the L0.11 screen (record T44). Rule fixed on 21 Nov 2026 before any replayed
+# outcome was looked at: in each shortlisted variant, the best scripted Guard against the best scripted Strike (g* v s*,
+# from the run's results.json), the lowest game index that ended in a hold and the lowest that ended in a reach.
+record = "T44"                    # FIXED: records/2026-11-21_ste_l011_screen_record.md
+run_folder = "2026-11-21_ste_l011_screen"   # FIXED: the run folder of T44 (not in git; read-only)
+gates_sha256 = "8bfbc2cb8f1d6551fb3060bc750c24f9b2220ebafb19fcd44e9e3baa1c24e5d4"   # FIXED: T44's gate file
+variants = ["base", "tag_1p2", "tag_1p4"]   # FIXED: T44's shortlist
+outcomes = ["hold", "reach"]      # PROPOSED (VID-1): one game of each outcome per variant

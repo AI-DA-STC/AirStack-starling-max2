@@ -4,13 +4,39 @@ INTERNAL · the lab's AI-assistant hand-over notes. Not needed to read or run an
 
 > **How to use this file.** Read it at the start of a session, after [../../CLAUDE.md](../../CLAUDE.md).
 > §4 is the current state, §5 is what is waiting on people. Update both before you stop.
-> Last updated: 20 November 2026 ~22:20, on the home RTX 5090, worktree `~/AirStack-starling-max2-dev` on branch `development` (the owner approved "training work lands on `development`" and the STE Guard policy in the bundle: see "MOVING BETWEEN MACHINES" at the top of §0). Before: 20 November 2026 ~21:45.
+> Last updated: 21 November 2026 ~21:10, on the laptop (RTX 5070 Ti), worktree `~/AirStack-starling-max2-dev` on branch `development`. Before: 20 November 2026 ~22:20 (home RTX 5090).
 
 ## 0. Resume here (for a new session or another Claude account)
 
 Everything needed is in this folder; nothing depends on the previous chat. Claude's user memory (`~/.claude/…`) and
 the private NUS workspace (`~/ma_skills-self-play/`, 5090 only) do **not** travel with git: if this file and a memory
 note disagree, this file wins.
+
+### LAPTOP SESSION, 21 November 2026 — STATE AT ~21:10 (read this first)
+
+**Phase L0's measurements are all done and merged into `development`; the gate G0 page is ready for the owner:**
+[`../../ste_learning/G0_DECISION.md`](../../ste_learning/G0_DECISION.md). Status and pictures:
+[`../../ste_learning/status/STATUS_LATEST.md`](../../ste_learning/status/STATUS_LATEST.md). Records T44–T53
+(`records/LEDGER.md`): T44 L0.11 screen, T45 L0.14 Crazyflie route, T46/T47 L0.12 best response (T47 ABORTED),
+T48 L0.2 tier-2 speed, T49 L0.3 T41 on Isaac Lab (856 v 831), T50–T52 L0.12b bubble tag 1.15 m (T52 ABORTED),
+T53 L0.13 Isaac Lab trains (PASS, 832 v 836). GPU-hours used in L0: **8.93 of 19** (ledger `runs/shared/gpu_hours.log`).
+
+- **Owner decisions of 21 Nov:** in `ste_learning/DISCUSSION_2026-11-19_20.md` §11 (ring marker; no 1.2 m Strike re-run;
+  bubble-tag test approved; proximity tag in the real game, physical intercept shown in simulation as a G0 proposal;
+  tag circles and round zone in 3-D clips).
+- **Waiting on the owner:** (1) longer 1.15 m runs (Guard + Strike, 3× budget, ~3.5–4 GPU-h; lead recommends yes;
+  the closer-tag Guards were still climbing at the budget end, DISCUSSION §11); (2) the G0 walk-through and rulings.
+- **Lead owes:** a costed L1–L9 plan for the walk-through.
+- **Key reading (G0 page, numbers-checked):** only tag 1.6 m has both trained sides clearly beating the scripts; the 1.4 m
+  Guard gain may be the 0.05 s v 0.6 s decision-period difference (scripts held 0.6 s: 738 v trained 747).
+- **On the 5090 next time:** L0.7's 5090 part (full suite, TEST-F2b, L09-5090, the two drills; `scripts/ste_job.py
+  owner-pauses` first). The tier-2 physics check passed at 16,384 games with a thin margin (0.0166 v 0.02 m): a larger
+  world on the 5090 may fail it. L0.3's tests need T45's per-game file (`runs/2026-11-21_ste_l014/response/per_game.npz`,
+  sha 3959d594…), not yet in the PROVISIONAL bundle (lead's to-do before the switch).
+- **Lessons recorded:** size a run's cap from timings on the same rule set (T47, T52 ABORTED by the time rule); tests
+  that read the live progress file must not assume a task's state (two broke today).
+- **Topic worktrees (merged; safe to remove later):** `-l02`, `-l04`, `-l12`, `-l12b`, `-l13`, `-vid1b`, `-g0`. Their
+  `runs/` folders hold the run data the records cite (not in git).
 
 ### LAPTOP SESSION, 20 November 2026 ~22:00 onwards (RTX 5070 Ti)
 

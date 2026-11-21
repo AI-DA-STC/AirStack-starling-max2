@@ -391,8 +391,14 @@ def test_strike_runs_need_run_0_pass_and_guard_runs_do_not(gates):
     assert "run 0" in exploit.pilot_problem(gates, ok, "strike", cap_h=1.0)
     for status in ("FAIL", "INCONCLUSIVE"):
         assert status in exploit.pilot_problem(gates, ok, "strike", run0=_run0(gates, status), cap_h=1.0)
-        assert exploit.pilot_problem(gates, ok, "strike", run0=_run0(gates, status), cap_h=1.0,
-                                     accepted="lead, 21 Nov: go") is None
+    # LEAD CALL 21 Nov 2026 (QC N-1, Q4): the lead's decision overrides run 0 INCONCLUSIVE only, never a FAIL
+    assert exploit.pilot_problem(gates, ok, "strike", run0=_run0(gates, "INCONCLUSIVE"), cap_h=1.0,
+                                 accepted="lead, 21 Nov: go") is None
+    fail = exploit.pilot_problem(gates, ok, "strike", run0=_run0(gates, "FAIL"), cap_h=1.0, accepted="lead: go")
+    assert "FAIL" in fail and "cannot be overridden" in fail and "owner" in fail
+    assert "run 0" in exploit.pilot_problem(gates, ok, "strike", cap_h=1.0, accepted="lead: go")   # name the run 0
+    assert "gate" in exploit.pilot_problem(gates, ok, "strike", run0=_run0(gates, "INCONCLUSIVE", sha="0" * 64),
+                                           cap_h=1.0, accepted="lead: go")
     assert "gate" in exploit.pilot_problem(gates, ok, "strike", run0=_run0(gates, sha="0" * 64), cap_h=1.0)
     assert "cap" in exploit.pilot_problem(gates, ok, "strike", run0=_run0(gates, cap_h=0.75), cap_h=1.0)
     assert "complete" in exploit.pilot_problem(gates, ok, "strike", run0={**_run0(gates), "complete": False}, cap_h=1.0)
@@ -404,3 +410,15 @@ def test_strike_runs_need_run_0_pass_and_guard_runs_do_not(gates):
     for status in ("PASS", "INCONCLUSIVE"):
         assert status in exploit.strike_not_launched_problem(gates, _run0(gates, status))
     assert "gate" in exploit.strike_not_launched_problem(gates, _run0(gates, "FAIL", sha="0" * 64))
+
+
+def test_run_0_budget_fits_its_checkpoint_reads_inside_the_cap():
+    """LEAD CALL 21 Nov 2026 (QC N-1, Q2): the updates run 0 fits are those whose training time plus its checkpoint
+    reads (every ``every`` updates and one at the budget's end) fit in the time left (cap - reserve - controls)."""
+    u = exploit.run0_updates_that_fit(avail_s=1000.0, update_s=10.0, read_s=50.0, every=10)
+    reads = lambda n: n // 10 + (1 if n % 10 else 0)                                      # noqa: E731
+    assert u * 10.0 + reads(u) * 50.0 <= 1000.0 < (u + 1) * 10.0 + reads(u + 1) * 50.0
+    assert exploit.run0_updates_that_fit(avail_s=1000.0, update_s=10.0, read_s=0.0, every=10) == 100
+    assert exploit.run0_updates_that_fit(avail_s=40.0, update_s=10.0, read_s=50.0, every=10) == 0
+    text = exploit.GATES_FILE.read_text()
+    assert "run0_game_steps" in text and "LEAD CALL 21 Nov 2026 (QC N-1, Q2)" in text

@@ -263,8 +263,15 @@ probe_updates = 3
 # (ctl_trained_against, QC mutation T2). A control FAIL ends run 0 with exit 6 and no status; a non-finite action or
 # value, exit 5 and no status (the run contract). Each checkpoint read is played to its end: the cap does not cut a read
 # (its time is inside the reserve; only SIGINT/SIGTERM stops it), as the final phase (QC N-3). Videos as [videos], against
-# `opponent`. Strike runs of record require run 0 = PASS (--run0-json; else refused unless --accept-learner-control
-# records the lead's decision); Guard runs do not depend on run 0 (the Guard recipe is T41's, already shown to learn).
+# `opponent`. Strike runs of record require run 0 = PASS (--run0-json); --accept-learner-control records the lead's
+# decision on a run 0 INCONCLUSIVE ONLY: a run 0 FAIL is refused whatever the flag says (LEAD CALL 21 Nov 2026 (QC N-1,
+# Q4): overriding a failed positive control is the owner's decision and needs a gate change). Guard runs do not depend
+# on run 0 (the Guard recipe is T41's, already shown to learn).
+# Budget margin (LEAD CALL 21 Nov 2026 (QC N-1, Q2)): the lead fills [trainer] game_steps_per_run at most the pilot's
+# run0_game_steps (pilot.json projection; pilot.md "Game-steps run 0 fits") at the chosen num_games and run cap, and at
+# most the runs' projected game-steps: run 0's training plus its checkpoint reads (each timed by the pilot as the
+# untrained Strike against the parked Guard, every game to its end: the slowest read) must fit in the cap less the
+# reserve and the controls batch, so that run 0 cannot read INCONCLUSIVE by construction.
 # If run 0 reads FAIL the Strike runs are not launched and every variant's Strike side is INCONCLUSIVE with [verdict]
 # strike_not_launched. A run 0 INCONCLUSIVE goes to the lead.
 variant = "base"

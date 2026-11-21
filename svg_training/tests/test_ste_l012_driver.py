@@ -487,6 +487,10 @@ def test_the_pilot_names_run_0_and_states_that_nothing_kills_the_final_phase(tmp
     assert "learner_control" not in p and p["strike_recipe"]["recipe"] in (exploit.RECIPE_BARE, exploit.RECIPE_SHAPED)
     md = (r / "pilot.md").read_text()
     assert "run 0" in md and "the ledger records the real hours" in md
+    assert p["run0_read_s"] > 0                            # Q2: run 0's read timed (untrained Strike v the parked Guard)
+    strike = [x for x in p["projection"] if x["side"] == "strike"]
+    assert strike and all(0 <= x["run0_game_steps"] <= x["game_steps"] for x in strike)
+    assert "run 0 fits" in md
     plan = p["plan_hours"]
     assert plan and all(x["total_gpu_h"] == pytest.approx(x["pilot_gpu_h"] + 7 * x["run_cap_h"]) for x in plan)
     assert all(x["task_cap_gpu_h"] == 6.0 for x in plan)
@@ -509,6 +513,15 @@ def test_runs_refuse_a_missing_or_disagreeing_pilot_or_run_0(tmp_path):
                         "--run0-json", str(run0_json(tmp_path))]) == 2
     assert driver.main(["--run0", "--gates", str(SMOKE), "--run-dir", str(tmp_path / "f0"), "--cap-h", "1",
                         "--pilot-json", str(shaped)]) == 2                    # run 0 trains the gate's Strike recipe too
+
+
+def test_a_failed_run_0_cannot_be_overridden_by_the_flag(tmp_path):
+    """LEAD CALL 21 Nov 2026 (QC N-1, Q4): --accept-learner-control overrides run 0 INCONCLUSIVE only."""
+    failed = run0_json(tmp_path / "f", status="FAIL")
+    assert driver.main(["--gates", str(SMOKE), "--variant", "base", "--side", "strike", "--run-dir", str(tmp_path / "r"),
+                        "--cap-h", "1", "--no-videos", "--pilot-json", str(pilot_json(tmp_path)), "--run0-json",
+                        str(failed), "--accept-learner-control", "lead: go anyway"]) == 2
+    assert not (tmp_path / "r" / "run.json").exists()
 
 
 def test_a_lead_decision_on_run_0_is_recorded(tmp_path):

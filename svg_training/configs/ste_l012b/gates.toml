@@ -75,7 +75,7 @@ tag_edge_margin_m = 0.01           # unchosen-tag measurement, as configs/ste_l0
 # The screen's reference: T44's 1,000 starts (loaded by the screen, so the same set) and the per-game results of the
 # screen's 30 tag 1.15 m cells, made by scripts/ste_l012_reference.py from the screen's run folder (FILL step 1).
 file = "configs/ste_l012b/screen_reference.npz"
-sha256 = "FILL_AFTER_SCREEN"       # FILL step 2: the file's sha256 (the driver refuses until it matches)
+sha256 = "49014000d07e8b52ae579deb325dad53d98c5020f533026dfbff778f306b2296"   # FILLED BY THE LEAD 21 Nov 2026 from runs/2026-11-21_ste_l012b_screen (exit 0, every control PASS)
 start_sha256 = "5aeba7ab2b582f2973034c8203c17ed3e8239fef7029a1f991fe95b82369843c"   # T44's 3v3 start set
 t44_gates_sha256 = "881375f054a78ae33c7fd330e271a4e3b27a0a1cf3d58eca4b893cdca8ce2479"   # the screen's gate file (configs/ste_l012b/screen_gates.toml)
 t44_record = "records/<date>_ste_l012b_screen_record.md (the screen's record, written by the lead)"
@@ -92,9 +92,10 @@ z_up_info = ["strike_high", "strike_low"]
 z_up_label = "tier 1 vertical response not fitted (s2b.toml z_up_info)"
 
 [variants]
-# g_star / s_star: PLACEHOLDERS until FILL step 2 (the driver recomputes them from the reference and refuses a mismatch).
+# g_star / s_star: FILLED BY THE LEAD 21 Nov 2026 from the screen (H 0.645 guard_field, R 0.355 strike_straight; s* is not
+# strike_high/low, so no extra opponent). The driver recomputes them from the reference and refuses a mismatch.
 # train_seed: one per side, never the scoring starts' seed (110000), curve_seed or clip_seed, nor an L0.12 seed.
-tag_1p15 = { game = "tag_1p15", g_star = "guard_mark_edge", s_star = "strike_straight", role = "owner variant (bubble tag)", train_seed = { strike = 120401, guard = 120402 }, extra_eval_opponents = { strike = [], guard = [] } }
+tag_1p15 = { game = "tag_1p15", g_star = "guard_field", s_star = "strike_straight", role = "owner variant (bubble tag)", train_seed = { strike = 120401, guard = 120402 }, extra_eval_opponents = { strike = [], guard = [] } }
 
 [trainer]
 # configs/ste_l012/gates.toml [trainer] as the lead filled it (the T41 recipe, the shaped Strike recipe picked by the

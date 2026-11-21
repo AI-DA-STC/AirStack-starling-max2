@@ -122,7 +122,8 @@ def tree_sha256(folder: Path) -> str:
 
 
 def _git(repo: Path, *args: str) -> str:
-    return subprocess.run(["git", "-C", str(repo), *args], capture_output=True, text=True).stdout.strip()
+    # --no-optional-locks: a read-only status must not refresh that repository's .git/index (QC m3, 21 Nov)
+    return subprocess.run(["git", "--no-optional-locks", "-C", str(repo), *args], capture_output=True, text=True).stdout.strip()
 
 
 # ------------------------------------------------------------------------------------------------ the copy

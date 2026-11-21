@@ -79,18 +79,27 @@ Verdict: **INFO (no gate).** Controls:
 
 **Part 1: T41 v S20, 1,000 paired starts per cell.**
 
-| Delay (s) | Trails a 0.5 m/s path by (s) | Holds | Wilson 95 % | Lost / gained v 0.148 s (sign test p) | Games closer than 1.10 / 1.0 / 0.50 m | Closest (m, 3-D) | Filter share | Mean end tick |
+| Delay (s) | Trails a path at 0.5 / 0.33 m/s by (s) | Holds | Wilson 95 % | Lost / gained v 0.148 s (sign test p) | Games closer than 1.10 / 1.0 / 0.50 m | Closest (m, 3-D) | Filter share | Mean end tick |
 |---|---|---|---|---|---|---|---|---|
-| 0.148 (Starling) | 0.19 | 831 | [0.807, 0.853] | — | 198 / 7 / 0 | 0.85 | 33.5 % | 2,035 |
-| 0.30 | 0.35 | 822 | [0.797, 0.844] | 35 / 26 (0.31) | 260 / 31 / 0 | 0.71 | 33.7 % | 2,012 |
-| 0.48 (trails like the logged Crazyflie, ~0.56 s) | 0.57 | 791 | [0.765, 0.815] | 77 / 37 (0.0002) | 305 / 101 / 2 | 0.39 | 32.7 % | 1,946 |
-| 0.56 | 0.73 | 768 | [0.741, 0.793] | 106 / 43 (2.5e-7) | 315 / 149 / 1 | 0.31 | 32.3 % | 1,890 |
+| 0.148 (Starling) | 0.19 / 0.18 | 831 | [0.807, 0.853] | — | 198 / 7 / 0 | 0.85 | 33.5 % | 2,035 |
+| 0.30 | 0.35 / 0.33 | 822 | [0.797, 0.844] | 35 / 26 (0.31) | 260 / 31 / 0 | 0.71 | 33.7 % | 2,012 |
+| 0.48 (Crazyflie-like band) | 0.57 / 0.51 | 791 | [0.765, 0.815] | 77 / 37 (0.0002) | 305 / 101 / 2 | 0.39 | 32.7 % | 1,946 |
+| 0.56 (Crazyflie-like band) | 0.73 / 0.59 | 768 | [0.741, 0.793] | 106 / 43 (2.5e-7) | 315 / 149 / 1 | 0.31 | 32.3 % | 1,890 |
 
 1.10 m: the flight filter's distance; 1.0 m: the hangar game's keep-out (its `rule_breach` measure; T41's record 0.005);
-0.50 m: the game's contact distance. Counts from `per_game.npz`. "Trails": the step probe, one drone, 0.5 m/s from
-rest for 30 s, settled gap over 20–30 s divided by the speed.
+0.50 m: the game's contact distance. Counts from `per_game.npz`. "Trails": the step probe, one drone from rest for 30 s
+at the Strike team's 0.5 m/s and the Guard team's 0.33 m/s, settled gap over 20–30 s divided by the speed
+(`response/step_probe_two_speeds.json`). The logged Crazyflie trails by 0.54–0.60 s (near 1 m/s), so the
+Crazyflie-like case is the 0.48–0.56 s band, not one cell. At 0.5 m/s part of the gap is distance lost once while
+speeding up (likely the fitted acceleration limit and the commander's 0.5 m leash; not isolated). Every drone in a cell
+has the delay, both teams.
 
-**Part 2: the planner at 1.10 m.** 0 solver emergencies and 0 other safety failures in 2,868 matches:
+**Part 2: the planner at 1.10 m, `tag` rules and hand-set start marks only.** Like for like in the 6.5 m square: 0 of
+100 matches with a solver emergency at 3v3 and 0 of 100 at 5v3, against 5 of 100 each in DISCUSSION §2.16 (Fisher
+p ≈ 0.06: not a clear difference); 5v3 at lag 0.15 s 0 of 100, against 20 Nov's 3 of 100 (p ≈ 0.25). Every case had
+0 emergencies and 0 other safety failures, 2,868 matches in all; 788 of them barely met (1v1 and 2v1 in the small
+arenas, 1v1 in the room) and the 800 follow-up matches reuse the sweep's seeds (400, finale on, replay the same
+matches up to the result):
 
 | Cases | Matches | Guard (defence) wins | Closest pair (m) | Matches inside 1.10 m | Mean match (s) |
 |---|---|---|---|---|---|
@@ -102,10 +111,9 @@ rest for 30 s, settled gap over 20–30 s divided by the speed.
 | follow-up (a) finale flown, 3v3 and 5v3, square and room | 4 × 100 | 99, 100, 100, 100 | 1.05–1.06 | 95, 100, 66, 100 | 10.3–16.9 |
 | follow-up (b) strike radius 2.4 m, the same | 4 × 100 | 74, 100, 100, 100 | 1.06–1.07 | 80, 100, 55, 98 | 10.4–17.0 |
 
-DISCUSSION §2.16 (20 Nov) reports solver emergencies in 5 of 100 matches at 3v3 and 5v3 in the 6.5 m arena; this run
-found 0 of 2,868 with a working counter (positive control). The 20 Nov marks, rules and protected-point settings were
-not recorded; the finale and the 2.4 m strike radius were ruled out as the difference; only the `tag` rules were run at
-1.10 m. Recovering the 20 Nov commands is an optional follow-up on the home RTX 5090 (lead's ruling, 21 Nov).
+The counter works (positive control, under the `pressure` and `zone_pressure` rules only; it does not fire under `tag` at d_cc 0.60 m in
+16 × 12 matches): the rule set matters. The 20 Nov marks, rules and protected-point settings were not recorded; the
+finale and the 2.4 m strike radius were ruled out as the difference; the rule set and the marks are not yet tested. Recovering the 20 Nov commands is an optional follow-up on the home RTX 5090 (lead's ruling, 21 Nov).
 
 ## Figures
 
@@ -121,16 +129,21 @@ its own record); part 2 is the planner's text output.
 
 ## Deviations from the plan
 
-- Four delays instead of two: a pure 0.56 s delay makes tier 1's drone trail by 0.73 s, so 0.48 s (trails 0.567 s)
-  was added, chosen from the step probe before any game ran.
+- Four delays instead of two: a pure 0.56 s delay makes tier 1's drone trail a 0.5 m/s path by 0.73 s, so 0.48 s
+  (0.567 s) was added, chosen from the step probe before any game ran. At 0.33 m/s the two trail by 0.51 s and 0.59 s
+  (QC): both are Crazyflie-like.
 - Planner strike radius 1.6 m (the STE zone) instead of the planner's 2.4 m: the first launch at 2.4 m gave Strike wins
-  in about a second (Strikes start 0.35 m outside it); stopped after 1v1 and 2v1, kept as
+  quickly (mean match 2.6 s, 1v1 square; Strikes start 0.35 m outside it); stopped after 1v1 and 2v1, kept as
   `arena_fit_STOPPED_strike_radius_2.4/`; 2.4 m was later run as follow-up (b).
 - Follow-up (a) and (b) added after the sweep found no emergency, written on the page before they ran.
-- Hand-set marks: the planner's own marks are refused at 1.10 m in the small arenas (checked).
+- Hand-set marks: the planner's own marks are refused at 1.10 m in the 3.25 m circle at every size and in the 6.5 m
+  square at 3v3 and 5v3 (`pre_run_checks/planner_own_marks.txt`; written in the QC fix round, same settings).
 - The game's `rule_breach` is the 1.0 m keep-out, not 1.10 m; caught before hand-over; the page and this record report
   1.10, 1.0 and 0.50 m counts from `per_game.npz`.
 - Part 1 and the planner sweep ran side by side on the CPU for a while.
+- The main sweep's `arena.json` was written by the driver before the follow-up keys were added (it lacks `kind_filter`
+  and the case `finale` key; `git_dirty` true); QC re-ran case 3v3 in the 6.5 m square with the committed driver:
+  100 of 100 rows identical.
 
 ## Limits
 
@@ -143,4 +156,17 @@ its own record); part 2 is the planner's text output.
 ## Run folder
 
 `runs/2026-11-21_ste_l014/`: `response/` (results.json, per_game.npz, params/), `arena_fit/` and `arena_fit_followup/`
-(arena.json, cases/ with every match), `arena_fit_STOPPED_strike_radius_2.4/`, `positive_control/`, logs.
+(arena.json, cases/ with every match), `arena_fit_STOPPED_strike_radius_2.4/`, `positive_control/` (with
+COMMANDS.txt), `pre_run_checks/` (seed 1102 and 256-game probes, `agent.pt` = `agent_best.pt` check, the planner's own
+marks, COMMANDS.txt), `response/step_probe_two_speeds.json`, logs.
+
+## Edited after the first write (same session, before any push)
+
+21 Nov 2026, QC fix round (`runs/ste_l14_qc.md`): I1, the Crazyflie-like case is the 0.48–0.56 s band (0.33 m/s step
+probe added, saved in the run folder; "harsher bound" dropped); I2, like-for-like comparison with 20 Nov (0 of 100 v
+5 of 100, Fisher p ≈ 0.06), the pool's make-up, `tag` rules and hand-set marks only, 20 Nov's 3 of 100 at lag 0.15 s
+named; minors: "both teams" in the summaries, scratch evidence copied into the run folder, the planner's own-mark
+refusals corrected (accepted in the 6.5 m square at 1v1 and 2v1), "about a second" replaced by the 2.6 s mean match,
+the main-sweep driver note. Driver changes after the runs (no result affected): `git --no-optional-locks` for the
+Crazyflie repository; the derived files' `delay_s` comment no longer says "fitted" (the files in this run folder keep
+the old comment; their header says SENSITIVITY SET).

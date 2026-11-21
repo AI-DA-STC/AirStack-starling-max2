@@ -92,7 +92,9 @@ def derive_params(base: Path | str, delay_s: float, out: Path | str) -> Path:
     if len(hits) != 1:
         raise ValueError(f"{base}: expected exactly one 'delay_s = ...' line, found {len(hits)}")
     old = hits[0][1]
-    body = _DELAY.sub(lambda m: f"{m.group(1)}{delay_s!r}{m.group(3)}  [L0.14: was {old}]", text, count=1)
+    # the line's own comment is replaced: the base calls its value "fitted", this one is not (QC m6, 21 Nov)
+    body = _DELAY.sub(lambda m: f"{m.group(1)}{delay_s!r}  # s  L0.14 SENSITIVITY value, not fitted (the fitted value was {old})",
+                      text, count=1)
     head = (f"# L0.14 SENSITIVITY SET (not fitted, no source log): {base.name} (sha256 {sha256(base)[:16]}...) with "
             f"[px4] delay_s = {delay_s!r} instead of {old}.\n"
             "# Not a Crazyflie model and not a Starling fit: the same Starling response, made later by a pure delay on the\n"

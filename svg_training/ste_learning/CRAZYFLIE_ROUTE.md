@@ -17,13 +17,17 @@ the fast training simulator. The *hangar game* is the game T41 was trained and s
 filter on every pair of drones, height free, NUS's hangar in metres). A *hold* is a game the Guard team wins.
 
 > **Results in short** (details and limits below):
-> 1. **Slower drone:** with tier 1's drone made as late as the logged Crazyflie (it trails its path by 0.57 s instead of
->    0.19 s), T41 held 791 of 1,000 games against 831 with the Starling's response. Guard and Strike drones came closer
->    than 1.0 m in 101 games instead of 7, and twice under 0.50 m, the game's contact distance.
-> 2. **Arena fit:** the Crazyflie planner found no solver emergency in 2,868 matches at 1.10 m, 1v1 to 5v3, in the 6.5 m
->    square and the Crazyflie room. DISCUSSION §2.16 (20 Nov) reports emergencies in 5 of 100 matches at 3v3 and 5v3 in
->    the 6.5 m arena; this run found 0 of 2,868 with a working counter (positive control). Both stand; the 20 Nov
->    set-up was not recorded.
+> 1. **Slower drone:** with every drone in the game (both teams) made about as late as the logged Crazyflie (delays
+>    0.48–0.56 s; at the Guard team's 0.33 m/s the drone trails its path by 0.51–0.59 s, the logged Crazyflie by
+>    0.54–0.60 s), T41 held 791 and 768 of 1,000 games against 831 with the Starling's response. Guard and Strike drones
+>    came closer than 1.0 m in 101 and 149 games instead of 7, and in 2 and 1 games under 0.50 m, the game's contact
+>    distance.
+> 2. **Arena fit, like for like:** in the 6.5 m square the Crazyflie planner found 0 of 100 matches with a solver
+>    emergency at 3v3 and 0 of 100 at 5v3, where DISCUSSION §2.16 (20 Nov) reports 5 of 100 each (Fisher p ≈ 0.06 for
+>    each pair: not a clear difference); and 0 of 100 at 5v3 with lag 0.15 s, where 20 Nov reports 3 of 100. Every
+>    other case had 0 too (2,868 matches in all, but 788 of them barely met and 800 reuse the same seeds). Only the
+>    planner's `tag` rules and hand-set start marks were run; the 20 Nov rules and marks were not recorded, and the
+>    rule set matters (the positive control fires only under the `pressure` rule sets (`pressure`, `zone_pressure`)).
 > 3. **What a Crazyflie session would build:** one adapter core, a golden fixture, a rule plug-in (specified, not built).
 
 ## Plan (written before the runs, 21 Nov 2026)
@@ -38,8 +42,9 @@ filter on every pair of drones, height free, NUS's hangar in metres). A *hold* i
 - **Slower drone**: tier 1's Starling model (`params/real_exploratory_v0.toml`, fitted to one real flight, EXPLORATORY)
   already delays every setpoint it gets by `[px4] delay_s` = 0.148 s. The cells change that one number: 0.148 s (the
   Starling, the reference), 0.30 s, 0.48 s and 0.56 s. 0.48 s is chosen so that tier 1's drone trails a 0.5 m/s command
-  by 0.567 s, as the logged Crazyflie trails its setpoint (step probe below, measured before any game ran); 0.56 s, the
-  Crazyflie's number used as a delay, trails by about 0.73 s and is the harsher bound. Each cell uses a copy of the file with that line changed, written into the
+  by 0.567 s, as the logged Crazyflie trails its setpoint (step probe below, measured before any game ran); 0.56 s is
+  the Crazyflie's number used as a delay. *Corrected 21 Nov after QC:* at the Guard team's 0.33 m/s the two trail by
+  0.51 s and 0.59 s, so the Crazyflie-like case is the 0.48–0.56 s band, not one cell (Part 1 results). Each cell uses a copy of the file with that line changed, written into the
   run folder; the game reads it through its existing `starling.params` setting. No default and no code of the game or
   the drone model changes.
 - **Not a Crazyflie model.** The logged Crazyflie trails its setpoint by about 0.56 s under its default controller (the
@@ -64,7 +69,8 @@ filter on every pair of drones, height free, NUS's hangar in metres). A *hold* i
 - **Arenas**: a 6.5 m square (the Starling fence's size; a square room written as the planner's arena file); the
   planner's own circle option at 3.25 m (the circle inside that square); the Crazyflie room as surveyed (about
   10.4 × 9.9 m).
-- **Marks**: the planner's own start marks are refused at 1.10 m in the small arenas, so every case uses the same
+- **Marks**: the planner's own start marks are refused at 1.10 m in the 3.25 m circle at every size and in the 6.5 m
+  square at 3v3 and 5v3 (`pre_run_checks/planner_own_marks.txt`), so every case uses the same
   hand-set marks round the protected point at the room centre: Guards evenly on a 1.4 m ring (just outside the protected
   point's keep-out), Strikes on a 2.75 m ring (the STE game's Strike start ring), each Strike half-way between two Guard
   bearings, all on one side.
@@ -72,7 +78,7 @@ filter on every pair of drones, height free, NUS's hangar in metres). A *hold* i
   every built-in defence against every built-in attack (16 pairings × 6 seeds) in the square and the room; the planner's
   `tag` rules (an attacker within 1.15 m of a defender for 1.1 s is downed) with the strike radius set to the STE zone
   radius, 1.6 m. *Changed 21 Nov after a stopped first launch:* the plan first kept the planner's own strike radius,
-  2.4 m. The Strikes start 2.75 m from the protected point, only 0.35 m outside it, and scored in about a second (1v1 in
+  2.4 m. The Strikes start 2.75 m from the protected point, only 0.35 m outside it, and scored quickly (mean match 2.6 s, 1v1 in
   the square: 0 defence wins in 100, closest pair 3.29 m), so the launch was stopped after 1v1 and 2v1 and restarted at
   1.6 m. The stopped run is kept (`arena_fit_STOPPED_strike_radius_2.4`).
 - **Not the STE game's tag**: the planner's tag needs 1.1 s within 1.15 m, a 5 cm band outside the 1.10 m filter
@@ -92,9 +98,9 @@ from the sweep, marks unchanged, 3v3 and 5v3, the square and the room, seeds 0�
 
 ## Part 1 results: the STE Guard policy with a slower drone
 
-**With the drone made as late as a Crazyflie (trailing its path by 0.57 s instead of 0.19 s), T41 still held 791 of
-1,000 games against 831 with the Starling's response; but a Guard drone and a Strike drone came closer than 1.0 m in
-101 games instead of 7, and under 0.50 m (the game's contact distance) in 2, as close as 0.39 m (3-D).** Observed in
+**With every drone made about as late as a Crazyflie (the 0.48–0.56 s band), T41 still held 791 and 768 of 1,000
+games against 831 with the Starling's response; but a Guard drone and a Strike drone came closer than 1.0 m in 101 and
+149 games instead of 7, and under 0.50 m (the game's contact distance) in 2 and 1, as close as 0.31 m (3-D).** Observed in
 the training simulator, CPU, one policy, one opponent, every drone slowed (both teams).
 
 ![Three panels against the drone delay 0.15, 0.30, 0.48 and 0.56 s. Hold rate 831, 822, 791 and 768 of 1,000 with Wilson intervals. Games held at 0.15 s but lost: 35, 77, 106; lost at 0.15 s but held: 26, 37, 43. Games whose closest Guard-Strike approach was inside 1.10 m: 198, 260, 305, 315; inside 1.0 m: 7, 31, 101, 149; inside 0.50 m: 0, 0, 2, 1](figures/l014_hold_by_delay.png)
@@ -102,20 +108,23 @@ the training simulator, CPU, one policy, one opponent, every drone slowed (both 
 *T41 v S20 on the 1,000 Phase 4 paired starts, one tier 1 drone model per column. The hold rate falls by 4 to 6 points
 at the Crazyflie-like delays; games with an opposite pair closer than 1.0 m rise from 7 to 101 and 149.*
 
-| Delay (s) | Trails a 0.5 m/s path by (s) | Holds of 1,000 | Wilson 95 % | Lost / gained v 0.15 s | Games closer than 1.10 m / 1.0 m / 0.50 m | Closest (m, 3-D) | Filter share | Mean game end (tick) |
+| Delay (s) | Trails a path at 0.5 / 0.33 m/s by (s) | Holds of 1,000 | Wilson 95 % | Lost / gained v 0.15 s | Games closer than 1.10 m / 1.0 m / 0.50 m | Closest (m, 3-D) | Filter share | Mean game end (tick) |
 |---|---|---|---|---|---|---|---|---|
-| 0.148 (Starling) | 0.19 | **831** | [0.807, 0.853] | — | 198 / 7 / 0 | 0.85 | 33.5 % | 2,035 |
-| 0.30 | 0.35 | 822 | [0.797, 0.844] | 35 / 26 | 260 / 31 / 0 | 0.71 | 33.7 % | 2,012 |
-| **0.48** (trails like the Crazyflie) | **0.57** | **791** | [0.765, 0.815] | 77 / 37 | 305 / **101** / **2** | **0.39** | 32.7 % | 1,946 |
-| 0.56 | 0.73 | 768 | [0.741, 0.793] | 106 / 43 | 315 / 149 / 1 | 0.31 | 32.3 % | 1,890 |
+| 0.148 (Starling) | 0.19 / 0.18 | **831** | [0.807, 0.853] | — | 198 / 7 / 0 | 0.85 | 33.5 % | 2,035 |
+| 0.30 | 0.35 / 0.33 | 822 | [0.797, 0.844] | 35 / 26 | 260 / 31 / 0 | 0.71 | 33.7 % | 2,012 |
+| **0.48** (Crazyflie-like band) | **0.57 / 0.51** | **791** | [0.765, 0.815] | 77 / 37 | 305 / **101** / **2** | **0.39** | 32.7 % | 1,946 |
+| **0.56** (Crazyflie-like band) | **0.73 / 0.59** | **768** | [0.741, 0.793] | 106 / 43 | 315 / **149** / **1** | **0.31** | 32.3 % | 1,890 |
 
 *Games closer than*: games in which a Guard drone and a Strike drone came closer than that distance (3-D) at least
 once: 1.10 m is the flight filter's distance; 1.0 m is the hangar game's own keep-out (its "rule breach" measure, the one
 T41's record reports as 0.005); 0.50 m is the game's contact distance ("a crash in flight"). Counted from `per_game.npz`
-by the figure script. *Filter share*: share of live drone-ticks the safety filter changed. A game lasts up to 2,400
+by the figure script. *Trails*: the step probe at the Strike team's 0.5 m/s and the Guard team's 0.33 m/s
+(`response/step_probe_two_speeds.json`); the logged Crazyflie trails by 0.54–0.60 s (near 1 m/s). At 0.5 m/s part of the
+gap is distance lost once while the drone speeds up (likely the fitted acceleration limit and the commander's 0.5 m
+leash; not isolated), so the 0.33 m/s column is the steadier measure. *Filter share*: share of live drone-ticks the safety filter changed. A game lasts up to 2,400
 ticks (120 s).
 
-![How far one drone falls behind a constant 0.5 m/s command, over 30 s, at each delay: all four rise to 0.36-0.57 m in the first 2 s, then settle at 0.10, 0.17, 0.28 and 0.36 m](figures/l014_step.png)
+![How far one drone falls behind a constant 0.5 m/s command, over 30 s, at each delay: all four rise to 0.36-0.57 m in about the first 2 s, then settle at 0.10, 0.17, 0.28 and 0.36 m](figures/l014_step.png)
 
 *The step probe behind the "trails" column: the settled gap divided by the speed. Every cell also falls up to 0.57 m
 behind while speeding up, because the fitted Starling response is slow to accelerate.*
@@ -131,7 +140,7 @@ behind while speeding up, because the fitted Starling response is slow to accele
 - The second evaluation seed gives the same games (Plan), so the counts come from one deterministic set of 1,000 starts.
 
 **What this shows, and what it does not.**
-- T41's hold rate survives a Crazyflie-like lag in this game, 4 points down at 0.48 s. Read start by start the drop is
+- T41's hold rate survives a Crazyflie-like lag in this game, 4 to 6 points down across the 0.48–0.56 s band. Read start by start the drop is
   real, not noise: of the 114 games that changed, 77 were lost and 37 gained (exact sign test p = 0.0002; at 0.30 s,
   35 against 26, p = 0.31, no clear change).
 - The safety picture changes more than the score. Tier 1's filter changes each drone's velocity command from where the
@@ -150,12 +159,15 @@ Run folder: `runs/2026-11-21_ste_l014/response/` (`results.json`, `per_game.npz`
 
 ## Part 2 results: team sizes and arenas at 1.10 m
 
-**In 2,868 simulated matches no solver emergency happened and no other safety check failed: every team size in every
-arena, at lag 0.6 s (and 0.15 s for 5v3), with and without the finale, at either strike radius.** Both results stand side by side: DISCUSSION §2.16
-(20 Nov) reports solver emergencies in 5 of 100 matches at 3v3 and 5v3 in the 6.5 m arena; this run found **0 of
-2,868**, with a counter shown to fire on this machine (positive control below). The 20 Nov set-up was not recorded, so
-the difference is not located: the two likeliest changes (the finale, the planner's strike radius) did not bring the
-emergencies back. The lead appends a dated note beside §2.16 (the record is append-only); recovering the 20 Nov
+**Like for like, in the 6.5 m square: 0 of 100 matches with a solver emergency at 3v3 and 0 of 100 at 5v3, where
+DISCUSSION §2.16 (20 Nov) reports 5 of 100 each; and 0 of 100 at 5v3 with lag 0.15 s, where 20 Nov reports 3 of 100.**
+0 against 5 in 100 gives Fisher p ≈ 0.06 (0 against 3: p ≈ 0.25): not a clear difference. Both results stand side by
+side. Every other case had no emergency either and no other safety check failed: 2,868 matches in all, of which 788
+(1v1 and 2v1 in the small arenas, 1v1 in the room) barely met, and the 800 follow-up matches reuse the sweep's seeds
+(400 of them, finale on, replay the same matches up to the result). Only the planner's `tag` rules and the hand-set
+start marks were run. The 20 Nov set-up was not recorded, so the difference is not located: two of the unrecorded
+differences (the finale, the planner's strike radius) did not bring the emergencies back; the rule set and the marks
+are not yet tested, and the rule set matters (the positive control below fires only under the `pressure` rule sets (`pressure`, `zone_pressure`)). The lead appends a dated note beside §2.16 (the record is append-only); recovering the 20 Nov
 commands from the home RTX 5090 is an optional follow-up (lead's ruling, 21 Nov).
 
 ![Two bar charts per team size and arena. Left: matches with a solver emergency, 0 of 100 in every bar. Right: matches whose closest airborne pair came inside 1.10 m: 0 at 1v1; 0, 0 and 85 at 2v1; 91, 81 and 54 at 3v3; 99, 96 and 98 at 5v3 (6.5 m square, 3.25 m circle, Crazyflie room)](figures/l014_arena_fit.png)
@@ -282,7 +294,7 @@ Listed plainly; the recommendation is the lead's to add.
 | Option | What these results say about it |
 |---|---|
 | All Starlings: the 1v1 only, as planned | Two Starlings cannot show 2v1, 3v3 or 5v3, nor play on after a tag (DISCUSSION §2.16). Part 1's Starling cell is T41's own game |
-| All Crazyflies at Starling metres (1.10 m, the same speeds and zone), and the Starling 1v1 as planned | Part 2: the Crazyflie planner found every size from 1v1 to 5v3 free of solver emergencies at 1.10 m, in the 6.5 m square and the Crazyflie room (beside 20 Nov's 5 of 100). Part 1: one Starling-trained policy kept most of its score at a Crazyflie-like lag in tier 1, but Guard–Strike pairs came closer than 1.0 m in 10 % of games (twice under 0.50 m); whether one policy file serves both drones stays open (DISCUSSION §2.16). Part 3 lists the build |
+| All Crazyflies at Starling metres (1.10 m, the same speeds and zone), and the Starling 1v1 as planned | Part 2: the Crazyflie planner found every size from 1v1 to 5v3 free of solver emergencies at 1.10 m, in the 6.5 m square and the Crazyflie room, under the planner's `tag` rules and hand-set marks (0 of 100 at 3v3 and at 5v3 in the square, beside 20 Nov's 5 of 100 each: not a clear difference). Part 1: one Starling-trained policy kept most of its score with every drone (both teams) at a Crazyflie-like lag in tier 1, but Guard–Strike pairs came closer than 1.0 m in 10–15 % of games (1–2 games under 0.50 m); whether one policy file serves both drones stays open (DISCUSSION §2.16). Part 3 lists the build |
 | That, plus one mix later (Starling Guards against Crazyflie Strikes) | Not tested here. DISCUSSION §2.16: downwash unmeasured, no filter between the two stacks today, two drone models in one game |
 | A Crazyflie-sized game with its own training | Not tested here. DISCUSSION §2.16: under that repository's separation floors and a second training programme |
 
@@ -297,8 +309,9 @@ ruling, 21 Nov):
 ## Open questions
 
 1. **Recover the 20 Nov planner commands** on the home RTX 5090 (weekday, optional), to locate the difference between
-   5 of 100 and 0 of 2,868. Known so far: the finale and the 2.4 m strike radius are not it; only the `tag` rules were
-   run at 1.10 m; the counter fires under the `pressure` rules.
+   20 Nov's 5 of 100 and today's 0 of 100 (3v3 and 5v3, 6.5 m square; not a clear difference, Fisher p ≈ 0.06). Known
+   so far: the finale and the 2.4 m strike radius are not it; only the `tag` rules and hand-set marks were run at
+   1.10 m; the counter fires under the `pressure` rule sets, so the rule set matters.
 
 ## Reproduce
 

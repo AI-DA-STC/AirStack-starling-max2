@@ -61,6 +61,9 @@ def test_derived_file_differs_from_the_base_in_delay_only(tmp_path):
     assert new == base
     assert "SENSITIVITY" in out.read_text().splitlines()[0]         # labelled as what it is, on its first line
     assert "Crazyflie model" in out.read_text()                     # ... and says it is NOT a Crazyflie model
+    line = next(x for x in out.read_text().splitlines() if x.startswith("delay_s"))
+    assert "fitted" not in line.split("#", 1)[1].replace("not fitted", "").replace("fitted value", "")   # QC m6
+    assert "SENSITIVITY" in line and "0.1482" in line
 
 
 def test_derived_file_at_the_fitted_delay_loads_equal_to_the_base(tmp_path):
@@ -218,6 +221,18 @@ def test_work_dir_inside_the_crazyflie_repository_is_refused(tmp_path):
     with pytest.raises(ValueError, match="inside"):
         af.check_work_dir(repo, repo)
     af.check_work_dir(repo, tmp_path / "elsewhere")                                    # outside: fine
+
+
+def test_git_calls_on_the_crazyflie_repository_take_no_optional_lock(monkeypatch, tmp_path):
+    """QC m3: a read-only `git status` may still refresh .git/index; the driver must ask git not to (--no-optional-locks)."""
+    seen = []
+
+    class Done:
+        stdout = ""
+
+    monkeypatch.setattr(af.subprocess, "run", lambda args, **kw: seen.append(args) or Done())
+    af._git(tmp_path, "status", "--porcelain")
+    assert seen and "--no-optional-locks" in seen[0] and seen[0].index("--no-optional-locks") < seen[0].index("status")
 
 
 def test_case_summary_counts_matches_not_ticks():

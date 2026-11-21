@@ -103,6 +103,14 @@ side_overrides = { strike = {}, guard = {} }
 checkpoint_every_updates = 1       # the run contract: the same command resumes from the last update boundary
 curve_every_updates = 5   # smoke size
 final_reserve_s = 60   # smoke size
+# QC fix round 1 (I-3): the final phase is reserved UP FRONT and never cut by the cap. Training stops while the cap left
+# still holds final_reserve_factor x (2 evaluation batches, each timed as THIS run's own controls batch, which is its
+# slowest: the untrained exploiter and the zero cell run to the time-out where nothing chases them, e.g. tag 1.2 m Strike
+# side, 267 s against 71 s at base on the CPU; plus clip_reserve_s for the CPU clips), and never less than
+# final_reserve_s. Once the final phase starts only SIGINT stops it, not the cap, so a relaunch never needs a larger cap
+# (the time it uses is reserved and logged). The pilot also times the worst-case batches ([pilot] timing_batches).
+final_reserve_factor = 2.0
+clip_reserve_s = 120               # CPU clips: 4 games of up to 2,400 ticks and 2 GIF renders (PROPOSED; ~10 s each measured on the smoke)
 
 [controls]
 # Run first, before any training, on the evaluation batch with the untrained exploiter, and again in the final batch.
@@ -112,14 +120,21 @@ final_reserve_s = 60   # smoke size
 #     to the CUDA run game for game). CUDA: holds and reaches each within replay_count_tol_cuda_games of T44's, and at
 #     most replay_differ_tol_cuda_games games with another outcome (bit identity is not claimed on CUDA; 10 games is 1 %,
 #     below half the Wilson half-width at 1,000 games, so a pass cannot hide a gain).
-#   ctl_untrained_is_still (KNOWN ANSWER): the untrained exploiter (zero-mean start, mean actions, held 0.6 s) plays every
-#     game exactly as the zero script in the same batch (outcome, end step, tags, Strike drones left), on either device.
-#     On the Guard side this is also T44's guard_parked_centre (at 3 Guards it commands zero): the parked Guard control.
-#   ctl_untrained_no_gain (NEGATIVE, must FAIL the gain test): the untrained exploiter shows no real gain over the best
-#     script (its Wilson lower bound is not above the script's upper bound).
-#   ctl_paired_starts: every cell of every evaluation batch starts from the reference starts (start sha256).
-#   tags_one_for_one: every evaluation game, Guard drones removed by a tag = Strike drones tagged (D2, probability 0).
-#   no_nonfinite_actions: 0 non-finite actions in every evaluation (else exit 5).
+#   ctl_untrained_is_still (KNOWN ANSWER): the untrained exploiter (zero-mean start, mean actions, held 0.6 s) plays as
+#     the zero script in the same batch (outcome, end step, tags, Strike drones left): EVERY game equal on the CPU; on
+#     CUDA within the replay tolerances above (QC fix round 1, I-6: what the code does). On the Guard side this is also
+#     T44's guard_parked_centre (at 3 Guards it commands zero): the parked Guard control.
+#   ctl_untrained_no_gain (an ARITHMETIC CHECK of the gain at the control's call site, not a negative control: by
+#     construction it cannot fail, QC M-3): the untrained exploiter shows no real gain over the best script.
+#   Plumbing, on EVERY evaluation: the controls batch, the final batch and the INFO batch (suffix _info), and the
+#   learning-curve evaluations (suffix _curve; their starts are their own, so no paired-starts check there):
+#     ctl_paired_starts: every cell starts from the reference starts (start sha256);
+#     tags_one_for_one: every game, Guard drones removed by a tag = Strike drones tagged (D2, probability 0);
+#     no_nonfinite_actions: 0 non-finite actions. A non-finite action is the run contract's NON-FINITE case: status
+#       NONFINITE (not FAIL) and exit 5, nothing published, no retry (ste/run_contract.py; AUTOMATION section 5).
+# Nothing is published unless every control is PASS: results.json is written last, after the final controls, the INFO
+# batch and the videos; `verdict` refuses (exit 2) a run with any control not PASS, no complete results.json or a recorded
+# exit other than 0; the record writer's ABORTED mode names what ran and why, with no gain and no category (QC C-1).
 stop_on_fail = true
 replay_count_tol_cuda_games = 10
 replay_differ_tol_cuda_games = 20
@@ -128,7 +143,10 @@ replay_differ_tol_cuda_games = 20
 # Per side (two runs per variant): the trained exploiter (final checkpoint only, mean actions, on the 1,000 reference
 # starts), its untrained twin and the best script, all in one evaluation batch.
 #   learned (learned_rule): trained Wilson lower bound > untrained Wilson upper bound. If not, the side is INCONCLUSIVE
-#     ("the exploiter did not learn"), never "no gain", and the side's better value is the script's.
+#     ("the exploiter did not learn"), and the side's better value is the script's.
+#   a learned exploiter without a real gain reads "weak (learned, below the script)" when its rate is below the best
+#     script's, "weak (learned, not clearly above the script)" otherwise (QC I-2: wording only; no floor on "learned"
+#     now: against an untrained Strike at 0/1,000, 8 reaches already count as learned; gate G0 sees the numbers).
 #   gain (gain_rule): trained Wilson lower bound > best script's Wilson upper bound ("intervals_disjoint"): a REAL gain.
 #     The paired count (games the exploiter won and the script lost, and the reverse; same starts) is reported, INFO.
 #   better: the higher rate of {best script, trained exploiter (if it learned)}, with its Wilson interval.
@@ -137,11 +155,19 @@ replay_differ_tol_cuda_games = 20
 #   Strike-trivial  if the better Guard's hold Wilson upper bound < band
 #   worth learning  otherwise.
 # Base is the reference for the proposed 1.6 m rules (its scripted reach 192 of 1,000, Wilson 0.169-0.218, straddles 0.2).
+# Stated before any run (QC I-8): every best script's Wilson upper bound is already above the band on both sides of all
+# three variants (base Strike 192/1,000, upper 0.218; the rest higher), and "better" is never below the best script, so
+# every variant reads "worth learning" whatever training does: the category alone is uninformative and the GAIN is the
+# measure. Results, the record and the ledger row therefore carry all six side statuses (variant x side: gain, learned /
+# weak / INCONCLUSIVE / no signal, Guards left in holds, game length) next to the category.
+# No follow-up seeds in L0.12 (QC I-7; VALIDATION_QC section 0 rules 5-6): INCONCLUSIVE is final for L0.12 (one seed per
+# side, budget) and goes to gate G0 as INCONCLUSIVE; a follow-up is a new task with its own gate.
 band = 0.2
 gain_rule = "intervals_disjoint"
 learned_rule = "trained_low_above_untrained_high"
 order = ["base", "tag_1p2", "tag_1p4"]
 strike_no_signal = "the T41 recipe gives the Strike no learning signal in this game"   # LEAD CALL 21 Nov 2026
+follow_up_seeds = []
 
 [videos]
 # STANDARDS section 8: the final checkpoint against the run's opponent, CPU, after the GPU work, into <run>/videos/.
@@ -160,6 +186,21 @@ variant = "base"
 num_games = [4, 8]
 updates = 2
 warmup_updates = 1
-probes = [{ side = "strike" }, { side = "strike", shaping_weight = 1.0 }]
+probes = [{ side = "strike" }, { side = "strike", opponent = "guard_parked_centre" }, { side = "strike", shaping_weight = 1.0 }]
 probe_num_games = 4
+# LEARNER POSITIVE CONTROL (pre-registered before the pilot; QC I-1(b), LEAD CALLs 21 Nov 2026): after the Strike recipe
+# is chosen, the pilot trains ONE longer probe: the chosen recipe (bare, or shaped if the fallback is taken; with no
+# Strike runs, the bare one) against the parked Guard, at [trainer] num_games games, for a budget of game_steps_fraction
+# (10 %) of [trainer] game_steps_per_run as filled, or game_steps_if_unfilled (25 M) if not yet filled, capped at
+# cap_gpu_h (0.15 GPU-h) of effective time. Its trained Strike (final networks, mean actions, held 0.6 s) must reach
+# against the parked Guard at least as often as the scripted strike_straight does against the parked Guard on the same
+# starts (the reference's first eval_games starts) minus 0.05 (point estimates): PASS, else FAIL. If the probe hits its
+# cap before its game-steps, the control reads INCONCLUSIVE. The control is read ONLY on this longer probe (the
+# 3-update parked-Guard probes above are information). Unless it reads PASS no run of record launches until the lead
+# decides; every run names its pilot (--pilot-json) and is refused otherwise (--accept-learner-control records the
+# lead's decision). pilot.json "learner_control" computes it (ste/exploit.learner_control, learner_control_status).
+learner_control = { opponent = "guard_parked_centre", script = "strike_straight", margin = 0.05, game_steps_fraction = 0.1, game_steps_if_unfilled = 25_000_000, cap_gpu_h = 0.15 }
+# Worst-case final-phase timing (QC I-3): each listed run's controls batch and INFO batch, timed with the untrained
+# exploiter at full size; pilot.md compares 2 x (main + INFO) + clip_reserve_s with the reserve.
+timing_batches = [{ variant = "tag_1p2", side = "strike" }]
 probe_updates = 2

@@ -146,3 +146,99 @@ def test_a_non_finite_weight_is_caught(gates):
         next(learner.agent.policies["strike_0"].parameters()).fill_(float("nan"))
     with pytest.raises(exploit_train.NonFinite):
         learner.check_finite()
+
+
+# ------------------------------------------------------------------------------------------------ QC fix round 1 (I-1)
+PARITY_TICKS = 360                 # 30 decisions: games of T44's kind end in 36-78 ticks; the cap only bounds the test
+
+
+class FixedTrainGame(exploit.FixedStartsGame):
+    """T44's starts (or any) with the training game's restart: the training path on fixed starts."""
+    restart = exploit_train.TrainGame.restart
+
+
+def _scramble(learner, seed):
+    """Non-trivial weights and observation scalers (a known, large, different network per drone)."""
+    torch.manual_seed(seed)
+    with torch.no_grad():
+        for a in learner.names:
+            for p in learner.agent.policies[a].net.parameters():
+                p.normal_(0.0, 0.5)
+            learner.agent._observation_preprocessor[a](torch.randn(64, 71) * 2.0 + 0.5, train=True)
+
+
+@pytest.mark.parametrize("side", ["guard", "strike"])
+def test_the_training_path_and_the_evaluation_path_play_the_same_games(gates, side):
+    """QC I-1(a): the same weights from the same starts, (1) through the trainer's DecisionEnv with skrl's own mean
+    actions (``agent.act``: its scaler, its network per agent name, one decision per 12 ticks) and (2) through the
+    evaluation (``play_cells`` with ``HeldPlayer`` + ``Learner.team()``), give the same outcome and end step in every
+    game. Catches a scaler, a drone order or a decision phase that differs between the two paths. Both paths are cut
+    at the same PARITY_TICKS (random-weight Strike drones may wander to the time-out); unfinished games must agree too."""
+    n, seed = 12, 7
+    env, cfg = env_for(gates, "base", side, 4)
+    learner = exploit_train.Learner(tiny(gates), env, "cpu", seed=3)
+    _scramble(learner, 5)
+    ref = exploit.load_reference(exploit.ROOT / gates.reference["file"])
+    opp_name = exploit.opponent_of(gates, "base", side)
+    other = "guard" if side == "strike" else "strike"
+    offset = exploit.GUARD_SEED_OFFSET if other == "guard" else exploit.STRIKE_SEED_OFFSET
+    game = FixedTrainGame(cfg, 1, torch.as_tensor(ref.starts_m[:n]), torch.as_tensor(ref.start_miss[:n]), 3, 3, "cpu",
+                          seed)
+    denv = exploit_train.DecisionEnv(game, 12, side, make_strategy(opp_name, other, cfg, n, "cpu", seed + offset))
+    obs, _ = denv.reset()
+    learner.agent.enable_training_mode(False)
+    outcome = torch.zeros(n, dtype=torch.int8)
+    end = torch.zeros(n, dtype=torch.long)
+    done = torch.zeros(n, dtype=torch.bool)
+    for d in range(PARITY_TICKS // 12):
+        with torch.no_grad():
+            _, out = learner.agent.act(obs, denv.state(), timestep=0, timesteps=1)
+        obs, _, _, _, info = denv.step({a: out[a]["mean_actions"].clamp(-1.0, 1.0) for a in learner.names})
+        new = info["decision_ended"] & ~done
+        outcome = torch.where(new, info["decision_outcome"], outcome)
+        end = torch.where(new, d * 12 + info["decision_end_tick"], end)
+        done |= info["decision_ended"]
+        if bool(done.all()):
+            break
+    cell = (opp_name, exploit.EXPLOITER) if side == "strike" else (exploit.EXPLOITER, opp_name)
+    pg = exploit.play_cells(cfg, "3v3", ref, [cell], n, "cpu", seed, PARITY_TICKS, learner=learner.team(),
+                            hold_ticks=12)
+    assert int(done.sum()) >= n // 4, f"only {int(done.sum())} of {n} games ended: the test has no power"
+    assert outcome.tolist() == pg["outcome"].tolist()
+    assert end.tolist() == pg["end_step"].tolist()
+
+
+def test_a_tagged_drone_reads_absent_in_the_decision_envs_observations(gates):
+    """QC I-1(c), mutation T3: the observation the learner trains on (DecisionEnv's, after the boundary restart) shows a
+    tagged drone as out (own alive 0) and absent to its team-mates."""
+    cfg = exploit.variant_cfg(gates, "base")
+    starts = torch.tensor([[[0.0, 0.0, 1.2], [-0.8, 0.0, 1.2], [0.0, -0.8, 1.2],
+                            [1.2, 0.0, 1.2], [-2.75, 0.0, 1.2], [0.0, 2.75, 1.2]]])
+    game = FixedTrainGame(cfg, 1, starts, torch.zeros(1, dtype=torch.bool), 3, 3, "cpu", 0)
+    env = exploit_train.DecisionEnv(game, 12, "strike", make_strategy("zero", "guard", cfg, 1, "cpu", 0))
+    env.reset()
+    obs, _, term, _, _ = env.step({a: torch.zeros(1, 4) for a in env.possible_agents})
+    assert not bool(term["strike_0"].any())
+    assert float(obs["strike_0"][0, V.alive]) == 0.0 and float(obs["strike_1"][0, V.alive]) == 1.0
+    assert float(obs["strike_1"][0][V.slot(cfg.pad_guards)].abs().sum()) == 0.0
+
+
+def test_a_game_that_ends_mid_decision_restarts_fresh_and_the_new_game_is_not_kept(gates):
+    """QC I-1(c), mutation T6: a Strike drone 0.02 m outside the zone flies in and reaches at tick k = 7 (1 < k < 12, measured);
+    the core's own new game then plays the rest of the decision without ending; at the boundary that game is replaced by
+    a fresh one (steps 0), so its stale ticks never reach training. (The 10 m test cannot see this: there every game
+    ends on every tick.)"""
+    cfg = exploit.variant_cfg(gates, "base").replace(**{"tag.mode": "off"})
+    starts = torch.tensor([[[-2.8, -2.8, 1.2], [2.8, -2.8, 1.2], [-2.8, 2.8, 1.2],
+                            [1.62, 0.0, 1.2], [0.0, 2.75, 1.2], [-2.75, 0.0, 1.2]]])
+    game = FixedTrainGame(cfg, 1, starts, torch.zeros(1, dtype=torch.bool), 3, 3, "cpu", 0)
+    env = exploit_train.DecisionEnv(game, 12, "strike", make_strategy("zero", "guard", cfg, 1, "cpu", 0))
+    env.reset()
+    act = {a: torch.zeros(1, 4) for a in env.possible_agents}
+    act["strike_0"] = torch.tensor([[-1.0, 0.0, 0.0, 0.0]])
+    _, rew, term, _, info = env.step(act)
+    k = int(info["decision_end_tick"][0])
+    assert bool(term["strike_0"][0]) and 1 < k < 12, k
+    assert int(info["stale_ticks"][0]) == 12 - k
+    assert float(rew["strike_0"][0]) == 1.0
+    assert int(game.steps[0]) == 0                                      # the boundary's fresh game, not the core's

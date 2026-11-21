@@ -3,12 +3,16 @@
 section 8; the sections of T44's record, records/2026-11-21_ste_l011_screen_record.md).
 
     make_ste_l012_record.py --verdict <folder>/verdict.json --out records/<date>_ste_l012_best_response_record.md
-                            [--name <date>_ste_l012_best_response] [--number T<n>]
+                            [--name <date>_ste_l012_best_response] [--number T<n>] [--pilot <pilot run>/pilot.json]
+    make_ste_l012_record.py --aborted --runs <run>,<run>,... --out records/<...>_record.md [--name ...] [--number ...]
 
 Refuses to overwrite (a record is never edited after it is written; additions go under "Run notes added by the lead").
-The verdict word is INFO when every control of every run is PASS (the variant categories feed gate G0; the owner rules),
-and ABORTED otherwise. GPU-hours: each run's own ledger lines in the shared folder, if launched as a job. Prints the
-ledger row. Exit 0 written, 1 refused."""
+With --verdict the word is INFO: ``verdict`` only accepts runs whose controls all passed (QC C-1), and this writer
+refuses a verdict.json whose ``controls_pass`` is false. The record and its ledger row carry every side's status, gain,
+Guards left in holds and game length next to the variant category (QC I-8: the category alone is set by T44's scripts).
+With --aborted it writes an ABORTED record from the run folders alone: for each run what ran (phase, updates, game-steps)
+and why it ended (controls not PASS, exit code, no complete results), with NO gain, status or category. GPU-hours: each
+run's own ledger lines in the shared folder, if launched as a job. Prints the ledger row. Exit 0 written, 1 refused."""
 from __future__ import annotations
 
 import argparse
@@ -34,7 +38,11 @@ RUN_NOTES = ("- **Never suspend the machine during a GPU job** (no closed lid, n
              "- **Strike recipe** (LEAD CALL 21 Nov 2026, pre-registered in [trainer] strike_fallback): the T41 recipe "
              "if its pilot probe against g* shows at least one reach; else the shaped Strike recipe (the game's distance "
              "shaping 1.0, training reward only) if its probe against g* does; else the Strike runs are not launched "
-             "and the Strike side is INCONCLUSIVE. The parked-Guard probes are information only. The recipe of each run is in the tables below.")
+             "and the Strike side is INCONCLUSIVE. The parked-Guard probes are information only. The recipe of each run is in the tables below.",
+             "- **Resume** (by design): networks, optimisers, scalers, counters and the torch random state are restored at "
+             "the last update boundary, but the training games restart from the run seed's first starts (the game "
+             "generator is not checkpointed), so a resumed run is not identical to an uninterrupted run. Each run's job "
+             "launches say whether it was resumed.")
 
 
 def ci(d: dict | None) -> str:
@@ -117,14 +125,66 @@ def record_text(verdict: dict, runs: dict, name: str, number: str | None) -> tup
     for key, r in runs.items():
         lines += [f"- {key}: {x}" for x in r.get("videos", [])]
     lines += ["", "## Reading", "", "(The lead writes the reading after QC; numbers come from the tables above.)", ""]
-    row = (f"| {number or 'T?'} | {name} | L0.12 Best-response test | {word.split(' ')[0]} | "
-           + "; ".join(f"{v}: {e['category']}" for v, e in verdict["variants"].items()) + " |")
+    parts = []
+    for v, e in verdict["variants"].items():
+        sides = []
+        for side, sr in e["sides"].items():
+            comp = sr.get("exploiter_composition") or {}
+            g = sr["gain"]["gain"]
+            sides.append(f"{v} {side.capitalize()}: {sr['status']}, gain {'-' if g is None else f'{g:+.3f}'}, Guards left "
+                         f"{comp.get('guards_left_mean_in_holds', '-')}, {comp.get('length_median_s', '-')} s median")
+        parts.append("; ".join(sides) + f" (category {e['category']}, set by T44's scripts)")
+    row = (f"| {number or 'T?'} | {name} | L0.12 Best-response test | {word.split(' ')[0]} | " + " / ".join(parts) + " |")
+    lines += ["## Ledger row", "", "Ledger row: " + row, ""]
     return "\n".join(lines) + "\n", row
+
+
+def aborted_text(runs: dict, name: str, number: str | None) -> tuple[str, str]:
+    """An ABORTED record from run folders alone: what ran and why, no gain, no status, no category (QC C-1)."""
+    sim = ("training simulator, tier 1 (fast engine; Starling layer: commander copy, safety filter on every pair, "
+           "fitted PX4 response, exploratory); study tag on (P1, PROPOSED)")
+    lines = [f"Simulator: {sim}. Observed in the training simulator; not a flight result.", "", f"# {name} record", "",
+             "## Gates", "", "Verdict: **ABORTED**. Nothing below is a result: no side status or category is read "
+             "from a run whose controls did not all pass or that did not finish (gate [controls]).", "",
+             "| Run | Variant / side | What ran | Why it ended |", "|---|---|---|---|"]
+    whys = []
+    for d, info in runs.items():
+        lines.append(f"| {d} | {info['what']} | {info['ran']} | {info['why']} |")
+        whys.append(f"{info['what']}: {info['why']}")
+    lines += ["", "## Run notes", "", *RUN_NOTES, ""]
+    row = f"| {number or 'T?'} | {name} | L0.12 Best-response test | ABORTED | " + "; ".join(whys) + " |"
+    lines += ["## Ledger row", "", "Ledger row: " + row, ""]
+    return "\n".join(lines) + "\n", row
+
+
+def run_summary(d: Path) -> dict:
+    """What a run folder shows: its variant and side, what ran, and why it ended (never a result)."""
+    meta = json.loads((d / "run.json").read_text()) if (d / "run.json").is_file() else {}
+    what = f"{meta.get('variant', '?')} / {meta.get('side', '?')}"
+    log = (d / "train_log.jsonl").read_text().splitlines() if (d / "train_log.jsonl").is_file() else []
+    updates = {json.loads(x)["update"] for x in log}
+    steps = json.loads(log[-1])["game_steps_total"] if log else 0
+    ran = (f"controls batch {'played' if (d / 'eval_before.npz').is_file() else 'not finished'}; {len(updates)} "
+           f"training updates, {steps:,} game-steps; final batch "
+           f"{'played' if (d / 'eval_final.npz').is_file() else 'not played'}")
+    why = []
+    if (d / "controls.json").is_file():
+        bad = {k: v["status"] for k, v in json.loads((d / "controls.json").read_text()).items() if v["status"] != "PASS"}
+        if bad:
+            why.append("controls not PASS: " + ", ".join(f"{k} {v}" for k, v in bad.items()))
+    if (d / "exit_code").is_file():
+        why.append(f"exit {l011rec.exit_word(d)}")
+    if not (d / "results.json").is_file():
+        why.append("no complete results.json")
+    return {"what": what, "ran": ran, "why": "; ".join(why) or "unknown (read job.log)"}
 
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    ap.add_argument("--verdict", type=Path, required=True)
+    ap.add_argument("--verdict", type=Path)
+    ap.add_argument("--aborted", action="store_true", help="an ABORTED record from --runs (no verdict)")
+    ap.add_argument("--runs", help="comma list of run folders (--aborted)")
+    ap.add_argument("--pilot", type=Path, help="the pilot's pilot.json: the Strike probes are printed with the recipe")
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--name", default=None)
     ap.add_argument("--number", default=None)
@@ -132,12 +192,35 @@ def main(argv: list[str] | None = None) -> int:
     if a.out.exists():
         print(f"refused: {a.out} exists (a record is never overwritten)", file=sys.stderr)
         return 1
+    name = a.name or a.out.stem.replace("_record", "")
+    if a.aborted:
+        if not a.runs:
+            print("refused: --aborted needs --runs", file=sys.stderr)
+            return 1
+        runs = {d: run_summary(Path(d)) for d in [x.strip() for x in a.runs.split(",") if x.strip()]}
+        text, row = aborted_text(runs, name, a.number)
+        a.out.parent.mkdir(parents=True, exist_ok=True)
+        a.out.write_text(text)
+        print(f"wrote {a.out}\nledger row:\n{row}")
+        return 0
+    if a.verdict is None:
+        print("refused: give --verdict, or --aborted with --runs", file=sys.stderr)
+        return 1
     verdict = json.loads(a.verdict.read_text())
+    if not verdict.get("controls_pass"):
+        print("refused: the verdict's controls_pass is false: write an ABORTED record (--aborted)", file=sys.stderr)
+        return 1
     runs = {}
     for key, d in verdict["runs"].items():
         runs[key] = {"dir": d, **json.loads((Path(d) / "results.json").read_text())}
-    name = a.name or a.out.stem.replace("_record", "")
     text, row = record_text(verdict, runs, name, a.number)
+    if a.pilot is not None:                  # QC M-5: the probe counts with their denominators next to the recipe
+        pj = json.loads(a.pilot.read_text())
+        probes = ["Strike probes of the pilot (reaches / ended training games per update):", ""]
+        probes += [f"- {dict((k, v) for k, v in pr.items() if k not in ('updates', 'learner_control'))}: "
+                   + ", ".join(f"{u['reaches']}/{u['ended']}" for u in pr["updates"]) for pr in pj.get("probes", [])]
+        probes += [f"- recipe picked: {pj.get('strike_recipe')}; learner positive control: {pj.get('learner_control')}"]
+        text = text.replace("## Gates", "\n".join(probes) + "\n\n## Gates", 1)
     a.out.parent.mkdir(parents=True, exist_ok=True)
     a.out.write_text(text)
     print(f"wrote {a.out}\nledger row:\n{row}")

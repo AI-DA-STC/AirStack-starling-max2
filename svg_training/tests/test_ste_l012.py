@@ -179,7 +179,7 @@ def test_a_side_that_did_not_learn_is_inconclusive_and_falls_back_to_the_script(
     side = exploit.side_result("strike", trained=(400, 1000), untrained=(0, 1000), script=(192, 1000))
     assert side["learned"] is True and side["status"] == exploit.SIDE_GAIN and side["better"]["who"] == "exploiter"
     side = exploit.side_result("guard", trained=(700, 1000), untrained=(534, 1000), script=(808, 1000))
-    assert side["learned"] is True and side["status"] == exploit.SIDE_NO_GAIN and side["better"]["who"] == "script"
+    assert side["learned"] is True and side["status"] == exploit.SIDE_WEAK_BELOW and side["better"]["who"] == "script"
 
 
 def test_the_variant_band_is_read_on_the_better_of_script_and_exploiter(gates):
@@ -295,3 +295,90 @@ def test_tag_1p4_scores_strike_straight_as_an_evaluation_only_opponent(gates):
         assert gates.variants[v]["extra_eval_opponents"] == {"strike": [], "guard": []}
     assert "strike_low" in gates.players["z_up_info"]
     assert gates.players["z_up_label"] == "tier 1 vertical response not fitted (s2b.toml z_up_info)"
+
+
+# ------------------------------------------------------------------------------------------------ QC fix round 1
+def test_a_learned_exploiter_without_a_real_gain_reads_weak(gates):
+    """QC I-2 (wording, no rule change): learned but no real gain over the script reads "weak (learned, below the
+    script)" when the exploiter's rate is below the script's, "weak (learned, not clearly above the script)" otherwise."""
+    below = exploit.side_result("strike", trained=(10, 1000), untrained=(0, 1000), script=(192, 1000))
+    assert below["status"] == exploit.SIDE_WEAK_BELOW == "weak (learned, below the script)"
+    above = exploit.side_result("strike", trained=(200, 1000), untrained=(0, 1000), script=(192, 1000))
+    assert above["status"] == exploit.SIDE_WEAK_NOT_ABOVE
+    assert exploit.side_result("strike", trained=(400, 1000), untrained=(0, 1000), script=(192, 1000))["status"] == \
+        exploit.SIDE_GAIN
+
+
+def test_the_learner_positive_control_rule(gates):
+    """QC I-1(b), LEAD CALL 21 Nov 2026: the parked-Guard probe's trained Strike reaches at least the scripted
+    strike_straight's rate against the parked Guard on the same starts minus 0.05 (point estimates)."""
+    lc = gates.pilot["learner_control"]
+    assert lc == {"opponent": "guard_parked_centre", "script": "strike_straight", "margin": 0.05,
+                  "game_steps_fraction": 0.1, "game_steps_if_unfilled": 25_000_000, "cap_gpu_h": 0.15}
+    assert exploit.learner_control((417, 1000), (466, 1000), lc["margin"])["pass"] is True
+    assert exploit.learner_control((415, 1000), (466, 1000), lc["margin"])["pass"] is False
+    assert exploit.learner_control((0, 0), (466, 1000), lc["margin"])["pass"] is False
+
+
+def test_the_gate_states_no_follow_up_seeds_and_the_category_is_set_by_t44s_scripts(gates, ref):
+    """QC I-7 and I-8: no follow-up seeds; every best script's Wilson upper bound is already above the band, so the
+    category reads "worth learning" whatever training does (the gain is the measure); the gate says so."""
+    assert gates.verdict["follow_up_seeds"] == []
+    for v in gates.variants:
+        for side in exploit.SIDES:
+            b = exploit.script_baseline(gates, ref, v, side)
+            assert wilson_interval(b["k"], b["n"])[1] > gates.verdict["band"], (v, side)
+    text = exploit.GATES_FILE.read_text()
+    assert "INCONCLUSIVE is final for L0.12" in text and "the category alone is uninformative" in text
+
+
+def test_the_final_reserve_is_measured_and_floored(gates):
+    """QC I-3: training stops while the cap left still holds final_reserve_factor x (the main and INFO batches, each
+    timed as this run's own controls batch, plus clip_reserve_s), and never less than final_reserve_s."""
+    assert gates.trainer["final_reserve_factor"] == 2.0 and gates.trainer["clip_reserve_s"] > 0
+    assert exploit.final_reserve_s(gates.trainer, 0.0) == gates.trainer["final_reserve_s"]
+    assert exploit.final_reserve_s(gates.trainer, 1000.0) == 2.0 * (2 * 1000.0 + gates.trainer["clip_reserve_s"])
+
+
+
+# ------------------------------------------------------------------------------------------------ lead's items after round 1
+def test_the_learner_control_probe_budget_is_pre_registered(gates):
+    """LEAD CALL: ONE longer probe after the recipe is chosen: 10 % of game_steps_per_run as filled, else a fixed 25 M
+    game-steps, capped at 0.15 GPU-h of effective time."""
+    unfilled = exploit.learner_control_budget(gates)
+    assert gates.trainer["game_steps_per_run"] == 0
+    assert unfilled["game_steps"] == 25_000_000 and unfilled["cap_s"] == 0.15 * 3600
+    filled = exploit.learner_control_budget(gates.__class__(**{**gates.__dict__,
+                                                               "trainer": dict(gates.trainer, game_steps_per_run=300_000_000)}))
+    assert filled["game_steps"] == 30_000_000
+
+
+def test_the_learner_control_reads_only_on_the_long_probe_and_a_capped_probe_is_inconclusive():
+    ok = exploit.learner_control((430, 1000), (466, 1000), 0.05)
+    assert exploit.learner_control_status(ok, reached_budget=True) == "PASS"
+    assert exploit.learner_control_status(ok, reached_budget=False) == "INCONCLUSIVE"
+    bad = exploit.learner_control((100, 1000), (466, 1000), 0.05)
+    assert exploit.learner_control_status(bad, reached_budget=True) == "FAIL"
+
+
+def _pilot(recipe, overrides, status):
+    return {"strike_recipe": {"recipe": recipe, "side_overrides_strike": overrides},
+            "learner_control": {"status": status}}
+
+
+def test_runs_and_the_verdict_are_tied_to_the_pilot(gates):
+    """M-4 (LEAD CALL): a run of record names the pilot it follows. Refused when the learner control is not PASS (unless
+    the lead's decision is given), when the Strike recipe of the gate differs from the pilot's, or for a Strike run the
+    pilot said not to launch; --strike-not-launched only when the pilot said so."""
+    ok = _pilot(exploit.RECIPE_BARE, {}, "PASS")
+    assert exploit.pilot_problem(gates, ok, "strike") is None and exploit.pilot_problem(gates, ok, "guard") is None
+    assert "learner control" in exploit.pilot_problem(gates, _pilot(exploit.RECIPE_BARE, {}, "FAIL"), "guard")
+    assert exploit.pilot_problem(gates, _pilot(exploit.RECIPE_BARE, {}, "INCONCLUSIVE"), "guard",
+                                 accepted="lead decided 21 Nov: probe too short, go") is None
+    shaped = _pilot(exploit.RECIPE_SHAPED, {"shaping_weight": 1.0}, "PASS")
+    assert "side_overrides" in exploit.pilot_problem(gates, shaped, "strike")       # the gate still says {}
+    assert exploit.pilot_problem(gates, shaped, "guard") is None                    # the Guard recipe does not depend on it
+    gone = _pilot(exploit.RECIPE_NOT_LAUNCHED, None, "PASS")
+    assert "not launched" in exploit.pilot_problem(gates, gone, "strike")
+    assert exploit.strike_not_launched_problem(gone) is None
+    assert "not" in exploit.strike_not_launched_problem(ok)

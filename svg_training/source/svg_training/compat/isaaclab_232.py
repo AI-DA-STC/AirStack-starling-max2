@@ -393,7 +393,7 @@ def windowed_world(sim, num_games: int, drones: int, a: AirframeParams, physics_
 # file; physics_play's read-back still checks the body). Colours are RGB in 0..1.
 # =====================================================================================================================
 from svg_training.viz.starling_look import (DRONE_BODY_RGB, STARLING_ROTORS_FLU_M, LookPlan,  # noqa: E402,F401
-                                            look_plan, torus_mesh)
+                                            disc_mesh, look_plan, torus_mesh)
 ARENA_BAR_RGB = (0.13, 0.13, 0.15)
 ARENA_RAIL_RGB = (0.30, 0.30, 0.33)
 ZONE_RGB = (0.0, 0.62, 0.45)
@@ -529,7 +529,7 @@ def _starling_with_look(parent: str, starling_usd: str, plan: "LookPlan", segmen
     for i, m in enumerate(plan.markers):
         path = f"{parent}/Marker" + (f"_{i}" if i else "")
         if m.kind == "torus":
-            prim = _torus(path, m.size_m[0], m.size_m[1], m.xyz_m, m.rgb, *segments)
+            prim = _torus(path, m.size_m[0], m.size_m[1], m.xyz_m, m.rgb, *(m.segments or segments))
         else:
             prim = _shape(path, m.kind, m.size_m, m.xyz_m, m.rgb)
         if not m.casts_shadow:                  # RTX: the marker casts no shadow (absent = today's behaviour)
@@ -585,14 +585,35 @@ def set_display_pose(path: str, xyz_m, yaw_rad: float, visible: bool = True) -> 
     im.MakeVisible() if visible else im.MakeInvisible()
 
 
+def _disc(path: str, radius_m: float, height_m: float, xyz_m, rgb, segments: int, opacity: float | None = None):
+    """A visual-only flat disc mesh of ``segments`` sides (viz/starling_look.disc_mesh), centred at xyz_m."""
+    from pxr import Gf, UsdGeom, Vt
+
+    pts, counts, idx = disc_mesh(radius_m, height_m, segments)
+    mesh = UsdGeom.Mesh.Define(_stage(), path)
+    mesh.CreatePointsAttr(Vt.Vec3fArray([Gf.Vec3f(*map(float, p)) for p in pts]))
+    mesh.CreateFaceVertexCountsAttr(Vt.IntArray([int(c) for c in counts]))
+    mesh.CreateFaceVertexIndicesAttr(Vt.IntArray([int(i) for i in idx]))
+    mesh.CreateSubdivisionSchemeAttr(UsdGeom.Tokens.none)
+    UsdGeom.XformCommonAPI(mesh).SetTranslate(Gf.Vec3d(*[float(v) for v in xyz_m]))
+    _colour(mesh.GetPrim(), rgb, opacity)
+    return mesh.GetPrim()
+
+
 def spawn_display_arena(root: str, half_m: float, zone_xy_m: tuple, zone_radius_m: float, wall_margin_m: float,
-                        top_m: float, floor: bool = True) -> None:
-    """The arena visuals of spawn_arena_visuals under any root prim (no game environment needed)."""
+                        top_m: float, floor: bool = True, zone_segments: int | None = None) -> None:
+    """The arena visuals of spawn_arena_visuals under any root prim (no game environment needed). zone_segments: the
+    zone as a mesh disc of that many sides (a true circle to the eye; VID-1b, owner request 21 Nov 2026); None = the
+    cylinder primitive as before (the S2b clips)."""
     lim = half_m - wall_margin_m
     if floor:
         _shape(root + "/Floor", "box", (2 * half_m, 2 * half_m, 0.004), (0.0, 0.0, 0.002), ARENA_FLOOR_RGB)
-    _shape(root + "/Zone", "cyl", (2 * zone_radius_m, 0.0, 0.02), (zone_xy_m[0], zone_xy_m[1], 0.012), ZONE_RGB,
-           opacity=0.75)
+    if zone_segments is None:
+        _shape(root + "/Zone", "cyl", (2 * zone_radius_m, 0.0, 0.02), (zone_xy_m[0], zone_xy_m[1], 0.012), ZONE_RGB,
+               opacity=0.75)
+    else:
+        _disc(root + "/Zone", zone_radius_m, 0.02, (zone_xy_m[0], zone_xy_m[1], 0.012), ZONE_RGB, int(zone_segments),
+              opacity=0.75)
     sides = ((0.0, lim, 1, 0), (0.0, -lim, 1, 0), (lim, 0.0, 0, 1), (-lim, 0.0, 0, 1))
     for i, (x, y, ax, ay) in enumerate(sides):
         t, h = 0.06, 0.15

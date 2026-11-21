@@ -103,3 +103,40 @@ def test_clip_world_hides_the_physics_box_mesh():
     src = (ROOT / "source" / "svg_training" / "compat" / "isaaclab_232.py").read_text()
     assert 'GetPrimAtPath(body + "/geometry/mesh")).MakeInvisible()' in src
     assert 'GetPrimAtPath(body + "/geometry")).MakeInvisible()' not in src
+
+
+# ------------------------------------------------------------------------------------------------ VID-1b
+def test_tag_circle_only_on_guards_at_the_games_radius():
+    s = sl.load_video_settings()
+    tc = s["look"]["tag_circle"]
+    g = sl.look_plan("own_ring", GUARD, settings=s, tag_radius_m=1.4)
+    k = sl.look_plan("own_ring", (0.9, 0.4, 0.0), settings=s, tag_radius_m=None)
+    assert len(k.markers) == 1                                   # a Strike drone: its ring only
+    ring, circle = g.markers
+    assert circle.kind == "torus" and circle.size_m[:2] == (1.4, tc["minor_radius_m"]) and not circle.casts_shadow
+    assert circle.xyz_m == (0.0, 0.0, 0.0)                       # the Guard's own height: the tag's 3-D slice there
+    assert circle.segments == (tc["segments"], tc["tube_segments"])
+    f = tc["lighten"]
+    assert circle.rgb == pytest.approx(tuple(c + (1 - c) * f for c in GUARD))
+    # without a tag radius the plan is the L0.5 plan, unchanged
+    assert sl.look_plan("own_ring", GUARD, settings=s).markers == (ring,)
+
+
+def test_disc_mesh_is_a_true_circle():
+    pts, counts, idx = sl.disc_mesh(1.6, 0.02, 128)
+    rim = pts[np.abs(np.hypot(pts[:, 0], pts[:, 1]) - 1.6) < 1e-9]
+    assert len(rim) == 2 * 128                                   # top and bottom rims on the circle
+    assert set(np.round(pts[:, 2], 9)) == {-0.01, 0.01}
+    assert idx.min() == 0 and idx.max() == len(pts) - 1 and counts.sum() == len(idx)
+    # the polygon's worst gap to the true circle is under 0.5 mm at 1.6 m with 128 sides
+    assert 1.6 * (1 - np.cos(np.pi / 128)) < 5e-4
+    with pytest.raises(ValueError):
+        sl.disc_mesh(1.6, 0.02, 2)
+
+
+def test_trained_games_settings():
+    s = sl.load_video_settings()
+    t = s["trained_games"]
+    assert t["record"] == "T46" and len(t["runs"]) == 4 and s["arena"]["zone_segments"] >= 64
+    import hashlib
+    assert t["gates_sha256"] == hashlib.sha256((ROOT / "configs" / "ste_l012" / "gates.toml").read_bytes()).hexdigest()

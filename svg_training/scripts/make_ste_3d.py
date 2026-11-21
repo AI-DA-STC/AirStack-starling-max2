@@ -91,13 +91,15 @@ def row_specs() -> dict:
     }
 
 
-def plan_for(look: str | None, team: str, settings: dict, ball: bool = True):
-    """The look plan of one drone; look None = the USD untouched, no marker."""
+def plan_for(look: str | None, team: str, settings: dict, ball: bool = True, tag_radius_m: float | None = None):
+    """The look plan of one drone; look None = the USD untouched, no marker. tag_radius_m: a Guard drone's tag circle
+    (owner request 21 Nov 2026; Strike drones never get one)."""
     from svg_training.viz.starling_look import LookPlan
 
     if look is None:
         return LookPlan("file", {}, ())
-    p = look_plan(look, team_rgb(team), marker_radius_m=painted_marker_radius_m(), settings=settings)
+    p = look_plan(look, team_rgb(team), marker_radius_m=painted_marker_radius_m(), settings=settings,
+                  tag_radius_m=tag_radius_m if team == "guard" else None)
     return p if ball else LookPlan(p.look, p.paint, ())
 
 
@@ -144,6 +146,8 @@ def make_parser() -> argparse.ArgumentParser:
     ap.add_argument("--encode", action="store_true", help="encode from <work> only, no Isaac")
     ap.add_argument("--smoke", action="store_true", help="render a few frames only (PNG checks)")
     ap.add_argument("--media", default=str(MEDIA), help="media root (tests point it at a temporary folder)")
+    ap.add_argument("--clip-dir", default="ste_l011/3d",
+                    help="encode: the clips' folder under --media (VID-1b trained games: ste_l012/3d)")
     ap.add_argument("--clip-drone-dir", default=None,
                     help="encode: folder with before_fix.png / after_fix.png of scripts/ste_l04_clip_drone_still.py")
     ap.add_argument("--record-run-dir", default=None,
@@ -175,21 +179,27 @@ def render(args, isaac, frame_factory=None) -> int:
             raise ValueError("the trajectories play in different arenas; replay them in separate launches")
     if ref is not None:
         isaac.spawn_display_arena("/World/Arena", ref.half_m, tuple(float(v) for v in ref.zone_centre_m),
-                                  ref.zone_radius_m, ref.wall_margin_m, float(ref.height_band_m[1]))
-    # drones: one set per look in the arena (replay look first), and the still rows
+                                  ref.zone_radius_m, ref.wall_margin_m, float(ref.height_band_m[1]),
+                                  zone_segments=int(settings["arena"]["zone_segments"]))
+    # drones: one set per (look, tag radius) in the arena (replay look first), and the still rows. The stills keep the
+    # L0.5 looks without tag circles (what the owner checked); every replay draws its game's tag circles.
     sets = {}
     arena_looks = [settings["look"]["replay_look"]]
     if args.stills:
         arena_looks += [lk for lk in ("painted", "own_ring", "own_dot") if lk not in arena_looks]
     seg = (int(settings["look"]["own_ring"]["segments"]), int(settings["look"]["own_ring"]["tube_segments"]))
+    look = settings["look"]["replay_look"]
+    keys = [(lk, None) for lk in arena_looks] if args.stills else []
+    keys += sorted({(look, float(t.tag_radius_m)) for t in trajs} - set(keys), key=lambda k: k[1])
     if ref is not None:
-        for lk in arena_looks:
+        for lk, radius in keys:
+            name = lk if radius is None else f"{lk}_tag{int(round(radius * 100))}cm"
             paths = []
             for m, team in enumerate(drone_teams(ref)):
-                p = f"/World/Drones_{lk}/Drone_{m}"
-                isaac.spawn_display_drone(p, usd, plan_for(lk, team, settings), seg)
+                p = f"/World/Drones_{name}/Drone_{m}"
+                isaac.spawn_display_drone(p, usd, plan_for(lk, team, settings, tag_radius_m=radius), seg)
                 paths.append(p)
-            sets[lk] = paths
+            sets[(lk, radius)] = paths
     rows = {}
     if args.stills:
         for (name, spec), y in zip(row_specs().items(), ROW_Y_M):
@@ -208,10 +218,10 @@ def render(args, isaac, frame_factory=None) -> int:
     first_view = cams[0] if cams else row_views(4, ROW_Y_M[0])["close"]
     frame = (frame_factory or isaac.make_recorder)(sim, first_view[0], first_view[1], res)
 
-    def show_set(look: str | None) -> None:
-        for lk, paths in sets.items():
+    def show_set(key) -> None:
+        for k2, paths in sets.items():
             for p in paths:
-                isaac.set_visible(p, lk == look)
+                isaac.set_visible(p, k2 == key)
 
     def settle(view, n: int) -> np.ndarray:
         frame.set_view(view[0], view[1])
@@ -245,8 +255,8 @@ def render(args, isaac, frame_factory=None) -> int:
         if ref is not None:
             k = ref.end_step // 2
             for lk in arena_looks:
-                show_set(lk)
-                place(sets[lk], ref, k)
+                show_set((lk, None))
+                place(sets[(lk, None)], ref, k)
                 for cam, view in zip(CAMERAS, cams):
                     img = settle(view, int(pb["warm_frames"]))
                     f = stills_dir / f"arena_{lk}_{cam}.png"
@@ -254,22 +264,23 @@ def render(args, isaac, frame_factory=None) -> int:
                     meta["stills"].append({"file": f.name, "row": "arena", "look": lk, "view": cam,
                                            "tick": int(k), "trajectory": Path(args.arena_frame or args.replay[0]).name,
                                            "eye": list(view[0]), "lookat": list(view[1])})
-    look = settings["look"]["replay_look"]
     for path, t in zip(args.replay, trajs):
-        show_set(look)
+        key = (look, float(t.tag_radius_m))
+        show_set(key)
         stem = Path(path).stem
-        rec = {"trajectory": Path(path).name, "trajectory_path": str(Path(path).resolve()), "stem": stem, "frames": int(t.end_step + 1), "cameras": {}}
+        rec = {"trajectory": Path(path).name, "trajectory_path": str(Path(path).resolve()), "stem": stem,
+               "tag_circles": True, "zone_segments": int(settings["arena"]["zone_segments"]), "frames": int(t.end_step + 1), "cameras": {}}
         last = 3 if args.smoke else t.end_step
         for cam, view in zip(CAMERAS, cams):
             out = work / "render" / stem
             out.mkdir(parents=True, exist_ok=True)
-            place(sets[look], t, 0)
+            place(sets[key], t, 0)
             settle(view, int(pb["warm_frames"]))
             writer = imageio.get_writer(str(out / f"raw_{cam}.mp4"), format="FFMPEG", fps=20, codec="libx264",
                                         quality=None, pixelformat="yuv420p", macro_block_size=2,
                                         ffmpeg_params=["-crf", "10", "-preset", "fast"], ffmpeg_log_level="error")
             for k in range(last + 1):
-                place(sets[look], t, k)
+                place(sets[key], t, k)
                 img = None
                 # the last frame is held with the result: let the renderer settle fully (no ghost of a drone just out)
                 for _ in range(int(pb["warm_frames"] if k == last else pb["settle_frames"])):
@@ -361,7 +372,9 @@ def encode(args) -> int:
         t = r3.load_trajectory(rec["trajectory_path"])
         m = t.meta
         result = r3.outcome_text(t.outcome, t.end_step, int(m["tags"]), int(t.alive[-1, :t.guards].sum()))
-        cap = r3.caption(m["variant"], float(pb["speed_x"]))
+        source = (f"the L0.12 evaluation, trained {m['side'].capitalize()} team" if m.get("kind") == "trained"
+                  else "the L0.11 screen")
+        cap = r3.caption(m["variant"], float(pb["speed_x"]), source=source)
         files = {}
         for cam in CAMERAS:
             info = r3.info_line(m["variant"], t.guards, t.strikes, m["guard"], m["strike"], int(m["game_index"]),
@@ -380,7 +393,7 @@ def encode(args) -> int:
                                            clock=f"t = {k * 0.05:4.2f} s"))
             frames += [frames[-1]] * r3.hold_frames(float(pb["hold_s"]), fps)
             stem = f"{rec['stem']}_{cam}"
-            d3 = media / "ste_l011" / "3d"
+            d3 = media / getattr(args, "clip_dir", "ste_l011/3d")
             mp4, crf = encode_mp4(frames, d3 / f"{stem}.mp4", fps=fps, max_mb=float(pb["mp4_max_mb"]))
             gif, gi = gif_full_rate(frames, d3 / f"{stem}.gif", fps, float(pb["gif_max_mb"]))
             out = work / "render" / rec["stem"]
@@ -389,15 +402,15 @@ def encode(args) -> int:
             imageio.imwrite(str(out / f"overlay_{cam}_last.png"), frames[len(raw) - 1])
             files[cam] = {"mp4": mp4.name, "mp4_mb": round(mp4.stat().st_size / 1e6, 2), "crf": crf,
                           "gif": gi | {"file": gif.name, "mb": round(gif.stat().st_size / 1e6, 2)}}
-        counts = None
-        if rec_dir:
+        counts = m.get("cell_counts")              # trained games: the run's own evaluation, stored by the capture
+        if rec_dir and counts is None:
             with np.load(Path(rec_dir) / "cells" / (m["batch"].replace("/", "__") + ".npz")) as d:
                 out_all = d["outcome"]
             n = games_per_cell(m)
             counts = r3.cell_counts(out_all[int(m["cell_index"]) * n:(int(m["cell_index"]) + 1) * n])
         rows_out.append({"rec": rec, "traj": t, "files": files, "result": result, "counts": counts})
     if rows_out:
-        write_3d_readme(rows_out, meta, settings, media / "ste_l011" / "3d")
+        write_3d_readme(rows_out, meta, settings, media / getattr(args, "clip_dir", "ste_l011/3d"))
     if meta["stills"]:
         write_stills(work, meta, settings, media, getattr(args, "clip_drone_dir", None))
     print("encode done", flush=True)
@@ -437,28 +450,39 @@ def draw_tag_crosses(img: np.ndarray, t: r3.Trajectory, k: int, eye, lookat, res
 
 
 def gif_full_rate(frames: list, path: Path, fps: int, max_mb: float) -> tuple[Path, dict]:
-    """A GIF that keeps every frame (fps = the playback fps) at the widest width that fits max_mb; only if no width
-    fits, the encoder's own fallback (fewer frames per second, same playback speed)."""
-    from svg_training.bench.overlay import encode_gif
+    """A GIF that keeps every frame (fps = the playback fps) at the widest width that fits max_mb; a width where nothing
+    fits is skipped. Only if no width keeps every frame, the encoder's own fallback (fewer frames per second, same
+    playback speed, any width)."""
+    from svg_training.bench import overlay
 
-    gi = None
     for w in GIF_WIDTHS:
-        gif, gi = encode_gif(frames, path, fps=fps, max_mb=max_mb, src_fps=fps, speed=1.0, widths=(w,))
+        try:
+            gif, gi = overlay.encode_gif(frames, path, fps=fps, max_mb=max_mb, src_fps=fps, speed=1.0, widths=(w,))
+        except RuntimeError:
+            continue
         if gi["fps"] == fps:
             return gif, gi
-    return gif, gi
+    return overlay.encode_gif(frames, path, fps=fps, max_mb=max_mb, src_fps=fps, speed=1.0)
 
 
 def replay_caption_md(t: r3.Trajectory, result: str) -> str:
     """The README caption of one game (2-4 sentences, <= 400 characters)."""
     m = t.meta
     result = result.replace("holds:", f"holds at {t.end_time_s:.1f} s:")     # the banner leaves the time to the clock
+    if m.get("kind") == "trained":
+        opp = r3._short(m["guard"] if m["side"] == "strike" else m["strike"])
+        who = (f"Trained Strike team v {opp} Guards" if m["side"] == "strike" else f"Trained Guard team v {opp} Strikes")
+        return (f"{who}, game {m['game_index']} of the {m['variant']} run's evaluation in record {m['record']} (tag "
+                f"radius {t.tag_radius_m:g} m): {result}. Training simulator tier 1, replayed in Isaac Lab for drawing "
+                f"only (drones drawn level); not a flight.")
     return (f"{r3._short(m['guard']).capitalize()} Guards v {r3._short(m['strike'])} Strikes, game {m['game_index']} of "
             f"the {m['variant']} cell in record {m['record']}: {result}. Training simulator tier 1, replayed in Isaac "
             f"Lab for drawing only (drones drawn level); not a flight.")
 
 
 def write_3d_readme(rows: list, meta: dict, settings: dict, dest: Path) -> None:
+    if rows[0]["traj"].meta.get("kind") == "trained":
+        return write_trained_readme(rows, meta, settings, dest)
     kg = settings["key_games"]
     lines = [
         "# 3-D replays of the L0.11 key games (VID-1)",
@@ -477,9 +501,7 @@ def write_3d_readme(rows: list, meta: dict, settings: dict, dest: Path) -> None:
         "",
         "One hold and one reach per variant are shown; the column \"In the record\" gives how often each outcome "
         "happened in that cell, so the pair is not a 50/50 split. A cross marks where a drone was "
-        "tagged out; in these 3v3 holds every Strike drone was traded for a Guard drone (T44). The zone is drawn as a "
-        "10-sided disc inside the true circle, so a Strike drone that reaches the circle's edge can sit just outside "
-        "the drawn edge.",
+        "tagged out; in these 3v3 holds every Strike drone was traded for a Guard drone (T44). " + _drawing_note(rows),
         "",
         "| Variant | Game | In the record | Top view | 3-D view | Caption |",
         "|---|---|---|---|---|---|",
@@ -494,7 +516,26 @@ def write_3d_readme(rows: list, meta: dict, settings: dict, dest: Path) -> None:
                      f"![]({f['top']['gif']['file']}) [MP4]({f['top']['mp4']}) | "
                      f"![]({f['3d']['gif']['file']}) [MP4]({f['3d']['mp4']}) | {cap} |")
     g = rows[0]["files"]["top"]["gif"]
-    lines += ["", f"GIF {g['width']} px wide, {g['fps']} frames/s (every tick kept) unless a row says otherwise; MP4 "
+    lines += _tail_lines(rows, meta)
+    dest.mkdir(parents=True, exist_ok=True)
+    (dest / "README.md").write_text("\n".join(lines))
+
+
+def _drawing_note(rows: list) -> str:
+    """What the drawing shows of the rules: the tag circles and the zone, as rendered for these clips."""
+    if all(r["rec"].get("tag_circles") for r in rows):
+        return ("A faint circle around each Guard drone marks its tag distance (the game's tag radius, at the Guard's "
+                "height: the tag is a 3-D distance), so a tag is seen when a Strike drone crosses it; the zone is drawn "
+                "as a true circle. In the top view a drone in the air shows slightly further from the image centre than "
+                "the floor point under it (perspective), so a Strike drone that reaches the zone's edge can look just "
+                "outside it.")
+    return ("The zone is drawn as a 10-sided disc inside the true circle, so a Strike drone that reaches the circle's "
+            "edge can sit just outside the drawn edge.")
+
+
+def _tail_lines(rows: list, meta: dict) -> list:
+    g = rows[0]["files"]["top"]["gif"]
+    lines = ["", f"GIF {g['width']} px wide, {g['fps']} frames/s (every tick kept) unless a row says otherwise; MP4 "
               f"1280 x 720 at the same rate."]
     for r in rows:
         for cam in CAMERAS:
@@ -505,6 +546,40 @@ def write_3d_readme(rows: list, meta: dict, settings: dict, dest: Path) -> None:
     lines += ["", f"Made by `scripts/make_ste_3d.py` from `scripts/ste_vid1_capture.py` trajectories; commit "
               f"{meta['commit']} (working tree: {tree}), {meta['date']}, {meta['isaac']}, asset "
               f"`{meta['starling_usd']}` (sha256 {meta['starling_usd_sha256'][:12]}...).", ""]
+    return lines
+
+
+def write_trained_readme(rows: list, meta: dict, settings: dict, dest: Path) -> None:
+    """README of the VID-1b clips: the trained players' key games (L0.12, record T46)."""
+    tg = settings["trained_games"]
+    lines = [
+        "# 3-D replays of the L0.12 trained players' key games (VID-1b)",
+        "",
+        f"Training simulator. Each game is a game of an L0.12 run's own evaluation (record {tg['record']}; T44's starts, "
+        "the trained team deciding every 0.6 s with its mean action) played again on the run's device and checked "
+        "equal to that evaluation (outcome, end step, tags, Strike drones left, start positions), then drawn in Isaac "
+        "Lab with the Starling asset of the AirStack simulator. Visual replay only: no physics runs in the drawing. "
+        "Tier 1 has no roll or pitch, so the drones are drawn level; a tagged drone disappears and a cross stays where "
+        f"it went out. Look: `{settings['look']['replay_look']}` (owner, D9). Played at "
+        f"{settings['playback']['speed_x']:g}x real time. Not a flight.",
+        "",
+        "Rule for the games (fixed before the replay): in each run, the lowest game index of the trained team's cell that "
+        "the trained team won (a reach for a trained Strike team, a hold for a trained Guard team). The column \"In the "
+        "evaluation\" gives how often each outcome happened in that cell. " + _drawing_note(rows),
+        "",
+        "| Variant | Game | In the evaluation | Top view | 3-D view | Caption |",
+        "|---|---|---|---|---|---|",
+    ]
+    for r in rows:
+        t, f, c = r["traj"], r["files"], r["counts"]
+        cap = replay_caption_md(t, r["result"])
+        if len(cap) > 400:
+            raise ValueError(f"caption over 400 characters: {cap}")
+        rec_txt = f"{c['holds']} holds and {c['reaches']} reaches of {c['games']}" if c else "not read"
+        lines.append(f"| {t.meta['variant']} | trained {t.meta['side']}, {t.meta['outcome_name']}, game "
+                     f"{t.meta['game_index']} | {rec_txt} | ![]({f['top']['gif']['file']}) [MP4]({f['top']['mp4']}) | "
+                     f"![]({f['3d']['gif']['file']}) [MP4]({f['3d']['mp4']}) | {cap} |")
+    lines += _tail_lines(rows, meta)
     dest.mkdir(parents=True, exist_ok=True)
     (dest / "README.md").write_text("\n".join(lines))
 

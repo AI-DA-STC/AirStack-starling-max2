@@ -15,6 +15,14 @@ and agree on the closest approach within the gate file's same-seed tolerance (0 
 trajectories are deleted before it is played, and only then are the trajectories written (``<out>/trajectories/<variant>_<outcome>.npz`` + ``.json``), with
 ``<out>/capture.json`` (the check, per variant). Visual tooling: no gates, no record, no ledger row.
 
+**Trained players (VID-1b)**, ``--trained-runs-dir <folder holding the L0.12 run folders>``: for each run of
+``[trained_games] runs``: the run's gate file (sha256 pinned), its ``run.json`` (variant, side) and ``agent_final.pt``;
+the run's evaluation batch played again on its device (``viz/replay3d.capture_trained``: T44's starts, every cell, the
+trained team held 0.6 s, mean actions); the key game = the lowest game index of the exploiter cell that the trained team
+won in the run's own ``eval_final.npz``. It is drawn only if the replayed game equals that record game (outcome, end
+step, tags, Strike drones left, start positions; closest approach within the L0.11 gate file's same-seed tolerance); the
+whole batch's agreement is reported. Writes ``<out>/trajectories/l012_<variant>_<side>.npz`` + ``.json``.
+
 Exit codes: 0 done; 1 a replayed batch differs from the record (nothing drawn from it); 2 refused (bad input: gate file
 sha256, a changed game file, a missing file).
 ``--games-per-cell`` / ``--ticks-cap`` / ``--device`` overrides exist for the CPU test on a small fake record only.
@@ -40,7 +48,10 @@ from svg_training.viz.starling_look import SETTINGS_FILE, load_video_settings  #
 
 def parse(argv):
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    ap.add_argument("--record-run-dir", required=True, help="the recorded L0.11 run folder (read only)")
+    ap.add_argument("--record-run-dir", default=None, help="the recorded L0.11 run folder (read only)")
+    ap.add_argument("--trained-runs-dir", default=None,
+                    help="VID-1b: the folder holding the L0.12 run folders of [trained_games] runs (read only)")
+    ap.add_argument("--runs", nargs="*", default=None, help="VID-1b: default the settings' [trained_games] runs")
     ap.add_argument("--out", required=True, help="output folder (runs/..., git-ignored)")
     ap.add_argument("--settings", default=str(SETTINGS_FILE))
     ap.add_argument("--variants", nargs="*", default=None, help="default: the settings' [key_games] variants")
@@ -59,9 +70,104 @@ def git_commit() -> str:
     return r.stdout.strip() or "unknown"
 
 
+def trained_main(a, settings: dict) -> int:
+    """VID-1b: the key games of the trained L0.12 players (module docstring)."""
+    import torch
+
+    from svg_training.core.rewards import GUARD_WIN, STRIKE_WIN
+    from svg_training.ste import exploit, exploit_train
+
+    tg = settings["trained_games"]
+    root, out = Path(a.trained_runs_dir), Path(a.out)
+    out.mkdir(parents=True, exist_ok=True)
+    report = {"record": tg["record"], "runs_dir": str(root), "commit": git_commit(), "runs": {},
+              "rule": "lowest game index of the exploiter cell that the trained team won in eval_final.npz"}
+    code = 0
+    for name in (a.runs if a.runs is not None else tg["runs"]):
+        rd = root / name
+        for p in (rd / "gates.toml", rd / "run.json", rd / "agent_final.pt", rd / "eval_final.npz"):
+            if not p.is_file():
+                say(f"refused: {p} missing")
+                return 2
+        gates = exploit.load_gates(rd / "gates.toml")
+        if gates.sha256 != tg["gates_sha256"]:
+            say(f"refused: {name}: gate file sha256 {gates.sha256}, the settings pin {tg['gates_sha256']}")
+            return 2
+        problems = exploit.game_file_problems(gates)
+        if problems:
+            say(f"refused: {name}: " + "; ".join(problems))
+            return 2
+        meta = json.loads((rd / "run.json").read_text())
+        variant, side = meta["variant"], meta["side"]
+        for stale in (out / "trajectories").glob(f"l012_{variant}_{side}*"):
+            stale.unlink()
+        ref = exploit.load_reference(exploit.ROOT / gates.reference["file"])
+        cfg = exploit.variant_cfg(gates, variant)
+        cells = exploit.eval_cells(gates, variant, side)
+        n = int(a.games_per_cell or gates.run["eval_games"])
+        ticks = int(a.ticks_cap or gates.run["ticks_cap"])
+        device = a.device or gates.run["device"]
+        hold = int(gates.trainer["decision_ticks"])
+        with np.load(rd / "eval_final.npz") as d:
+            record = {k: d[k] for k in r3.EXACT_KEYS + r3.CLOSE_KEYS if k in d.files}
+        want = STRIKE_WIN if side == "strike" else GUARD_WIN
+        won = np.flatnonzero(record["outcome"][:n] == want)
+        row = {"variant": variant, "side": side, "opponent": exploit.opponent_of(gates, variant, side),
+               "cell_counts": r3.cell_counts(record["outcome"][:n]), "game_index": int(won[0]) if won.size else None,
+               "files": []}
+        if not won.size:
+            say(f"{name}: the trained team won no game of its cell: nothing to draw")
+            report["runs"][name] = row
+            continue
+        g = int(won[0])
+        modules = torch.load(rd / "agent_final.pt", map_location=device, weights_only=False)
+        team = exploit_train.team_from_modules(side, modules, list(gates.trainer["hidden"]), device)
+        started = time.time()
+        say(f"{name}: {variant} {side}, game {g} of the exploiter cell; playing {len(cells) * n} games on {device}")
+        try:
+            cap = r3.capture_trained(cfg, gates.run["size"], ref, cells, n, device, int(ref.meta["seed"]), ticks,
+                                     team, hold, [g])
+        except ValueError as err:
+            say(f"refused: {name}: {err}")
+            return 2
+        # the L0.12 gate file has no closest-approach tolerance: the L0.11 one (same game code, same GPU) is used
+        tol = 0.0 if str(device) == "cpu" else float(sweep.load_gates().controls["same_seed_closest_tol_m"])
+        game_check = r3.check_against_record({k: v[g:g + 1] for k, v in cap.per_game.items()},
+                                             {k: v[g:g + 1] for k, v in record.items()}, tol_m=tol)
+        batch_check = r3.check_against_record(cap.per_game, record, tol_m=tol)
+        row.update({"game_check": game_check, "batch_check": batch_check, "games_compared": int(len(cells) * n),
+                    "seconds": round(time.time() - started, 1)})
+        say(f"  game {g}: {'EQUAL' if game_check['equal'] else 'DIFFERENT'} {game_check['mismatches']}; batch "
+            f"mismatches {batch_check['mismatches']} ({row['seconds']} s)")
+        if not game_check["equal"]:
+            code = 1
+            report["runs"][name] = row
+            continue
+        t = cap.trajectories[0]
+        t.meta.update({"kind": "trained", "variant": variant, "side": side, "run": name, "record": tg["record"],
+                       "guard": row["opponent"] if side == "strike" else "trained Guard team",
+                       "strike": row["opponent"] if side == "guard" else "trained Strike team",
+                       "outcome_name": "reach" if want == STRIKE_WIN else "hold", "game_index": g,
+                       "games_per_cell": n, "cell_index": 0, "cell_counts": row["cell_counts"],
+                       "tags": int(record["tags"][g]), "device": str(device), "commit": report["commit"],
+                       "gates_sha256": gates.sha256})
+        p = r3.save_trajectory(out / "trajectories" / f"l012_{variant}_{side}", t)
+        row["files"].append(str(p.relative_to(out)))
+        say(f"  -> {p.name}: {t.end_time_s:.2f} s, tags {t.meta['tags']}")
+        report["runs"][name] = row
+    (out / "capture_trained.json").write_text(json.dumps(report, indent=1))
+    say(f"capture_trained.json written; exit {code}")
+    return code
+
+
 def main(argv=None) -> int:
     a = parse(argv)
     settings = load_video_settings(a.settings)
+    if a.trained_runs_dir:
+        return trained_main(a, settings)
+    if not a.record_run_dir:
+        say("refused: give --record-run-dir (L0.11 key games) or --trained-runs-dir (L0.12 trained players)")
+        return 2
     kg = settings["key_games"]
     rec_dir, out = Path(a.record_run_dir), Path(a.out)
     gates_file = rec_dir / "gates.toml"

@@ -28,7 +28,7 @@ from ..bench.overlay import FRAME_BOX, HFOV_DEG, camera_pose, project
 from ..core.game_config import TICK_S, GameCfg
 from ..core.play import play_match
 from ..core.rewards import GUARD_WIN, STRIKE_WIN
-from ..ste import sweep
+from ..ste import exploit, sweep
 
 EXACT_KEYS = ("outcome", "end_step", "tags", "strikes_left", "start_pos_m")   # sweep.PER_GAME_EXACT
 CLOSE_KEYS = ("closest_3d_m", "closest_m")    # equal within the gate file's same_seed_closest_tol_m (0 on the CPU)
@@ -95,9 +95,9 @@ def load_trajectory(path: str | Path) -> Trajectory:
 
 
 # ------------------------------------------------------------------------------------------------ capture
-class _CaptureGame(sweep.SweepGame):
-    """SweepGame that keeps, after every step and before the auto-reset, the positions, yaw and alive flags of the games
-    ``keep`` (global game indices). Frame 0 is taken right after reset."""
+class _CaptureMixin:
+    """Keeps, after every step and before the auto-reset, the positions, yaw and alive flags of the games ``keep``
+    (global game indices). Frame 0 is taken right after reset. Mixed into a sweep or evaluation game class."""
 
     def __init__(self, *args, keep: list[int], **kw) -> None:
         self._cap = None
@@ -122,27 +122,31 @@ class _CaptureGame(sweep.SweepGame):
         super()._new_games(mask)
 
 
+class _CaptureGame(_CaptureMixin, sweep.SweepGame):
+    """The L0.11 sweep's game, capturing (``sweep.play_batch``)."""
+
+
+class _CaptureFixedGame(_CaptureMixin, exploit.FixedStartsGame):
+    """The L0.12 evaluation game on T44's starts, capturing (``exploit.play_cells``)."""
+
+
 @dataclass
 class Capture:
-    """per_game: host arrays [N] of EXACT_KEYS (start_pos_m [N, M, 3]); trajectories: one per kept game, in order."""
+    """per_game: host arrays [N] of EXACT_KEYS and CLOSE_KEYS (start_pos_m [N, M, 3]); trajectories: one per kept game,
+    in order."""
     per_game: dict
     trajectories: list
 
 
-def capture_batch(cfg: GameCfg, size: str, cells: tuple, run: dict, keep: list[int],
-                  strike_start_dz_m: float = 0) -> Capture:
-    """Play one batch as ``sweep.play_batch`` does (same game, players, seeds, step cap, Strike start offset) and keep
-    every step of the games ``keep`` (global indices: cell index x games per cell + game index). Refuses a game where a
-    tagged Guard may survive: the replay's banner and crosses assume one-for-one tags."""
+def _refuse_surviving_guard(cfg: GameCfg) -> None:
     if cfg.tag.guard_survives_tag_prob != 0:
         raise ValueError(f"tag.guard_survives_tag_prob is {cfg.tag.guard_survives_tag_prob}: the replay assumes "
                          f"one-for-one tags (0)")
-    guards, strikes = sweep.parse_size(size)
-    n, device, seed = int(run["games_per_cell"]), run["device"], int(run["seed"])
-    game = _CaptureGame(cfg, len(cells), n, guards, strikes, device, seed, strike_start_dz_m, keep=list(keep))
-    guard = sweep.split_players(cells, "guard", cfg, n, device, seed)
-    strike = sweep.split_players(cells, "strike", cfg, n, device, seed)
-    res = play_match(game, guard, strike, max_steps=int(run["ticks_cap"]))
+
+
+def _collect(game, res, cfg: GameCfg, guards: int, strikes: int, keep: list[int], ticks_cap: int,
+             batch_games: int) -> Capture:
+    """Per-game numbers (as play_batch / play_cells report them) and one Trajectory per kept game."""
     alive_strikes = game.alive[:, guards:].sum(dim=1)
     host = {"outcome": res.outcome, "end_step": res.end_step, "tags": game.tags,
             "strikes_left": torch.where(game.first_done, game.strikes_left, alive_strikes),
@@ -156,7 +160,7 @@ def capture_batch(cfg: GameCfg, size: str, cells: tuple, run: dict, keep: list[i
     for k, g in enumerate(keep):
         end = int(per_game["end_step"][g])
         if end == 0:
-            raise RuntimeError(f"game {g} did not finish within {run['ticks_cap']} ticks")
+            raise RuntimeError(f"game {g} did not finish within {ticks_cap} ticks")
         p, a = pos[: end + 1, k].copy(), alive[: end + 1, k].copy()
         for m in range(p.shape[1]):                     # a drone that is out: shown where it was last in the game
             last = p[0, m].copy()
@@ -172,8 +176,39 @@ def capture_batch(cfg: GameCfg, size: str, cells: tuple, run: dict, keep: list[i
             zone_centre_m=ar.zone_centre_m[g].detach().cpu().numpy().astype(np.float64),
             zone_radius_m=float(ar.zone_radius_m[g]), tag_radius_m=float(cfg.tag.radius_m),
             outcome=int(per_game["outcome"][g]), end_step=end,
-            meta={"global_index": int(g), "batch_games": int(len(cells) * n)}))
+            meta={"global_index": int(g), "batch_games": int(batch_games)}))
     return Capture(per_game, trajs)
+
+
+def capture_batch(cfg: GameCfg, size: str, cells: tuple, run: dict, keep: list[int],
+                  strike_start_dz_m: float = 0) -> Capture:
+    """Play one batch as ``sweep.play_batch`` does (same game, players, seeds, step cap, Strike start offset) and keep
+    every step of the games ``keep`` (global indices: cell index x games per cell + game index). Refuses a game where a
+    tagged Guard may survive: the replay's banner and crosses assume one-for-one tags."""
+    _refuse_surviving_guard(cfg)
+    guards, strikes = sweep.parse_size(size)
+    n, device, seed = int(run["games_per_cell"]), run["device"], int(run["seed"])
+    game = _CaptureGame(cfg, len(cells), n, guards, strikes, device, seed, strike_start_dz_m, keep=list(keep))
+    guard = sweep.split_players(cells, "guard", cfg, n, device, seed)
+    strike = sweep.split_players(cells, "strike", cfg, n, device, seed)
+    res = play_match(game, guard, strike, max_steps=int(run["ticks_cap"]))
+    return _collect(game, res, cfg, guards, strikes, keep, int(run["ticks_cap"]), len(cells) * n)
+
+
+def capture_trained(cfg: GameCfg, size: str, ref, cells: list, n: int, device: str, seed: int, ticks_cap: int,
+                    learner, hold_ticks: int, keep: list[int]) -> Capture:
+    """Play an L0.12 evaluation batch as ``exploit.play_cells`` does (T44's first ``n`` starts, the same cells, the
+    learner behind every exploiter cell held ``hold_ticks`` ticks, mean actions) and keep every step of the games
+    ``keep``. Refuses a game where a tagged Guard may survive."""
+    _refuse_surviving_guard(cfg)
+    guards, strikes = sweep.parse_size(size)
+    starts = torch.as_tensor(ref.starts_m[:n])
+    miss = torch.as_tensor(ref.start_miss[:n])
+    game = _CaptureFixedGame(cfg, len(cells), starts, miss, guards, strikes, device, seed, keep=list(keep))
+    g = exploit._team_split(cells, "guard", cfg, n, device, seed, learner, hold_ticks)
+    s = exploit._team_split(cells, "strike", cfg, n, device, seed, learner, hold_ticks)
+    res = play_match(game, g, s, max_steps=int(ticks_cap))
+    return _collect(game, res, cfg, guards, strikes, keep, int(ticks_cap), len(cells) * n)
 
 
 def check_against_record(per_game: dict, record: dict, keys: tuple = EXACT_KEYS, tol_m: float = 0.0) -> dict:
@@ -313,9 +348,10 @@ def cell_counts(outcome_cell: np.ndarray) -> dict:
     return {"games": int(o.size), "holds": int((o == GUARD_WIN).sum()), "reaches": int((o == STRIKE_WIN).sum())}
 
 
-def caption(variant: str, speed_x: float) -> str:
-    """The burnt-in caption (<= 400 characters)."""
-    return (f"Training simulator: a tier-1 game of the L0.11 screen ({variant}) replayed in Isaac Lab for drawing only, "
+def caption(variant: str, speed_x: float, source: str = "the L0.11 screen") -> str:
+    """The burnt-in caption (<= 400 characters). source: where the game comes from ("the L0.11 screen", "the L0.12
+    evaluation, trained Strike team")."""
+    return (f"Training simulator: a tier-1 game of {source} ({variant}) replayed in Isaac Lab for drawing only, "
             f"drones drawn level; {speed_x:g}x real time; not a flight")
 
 

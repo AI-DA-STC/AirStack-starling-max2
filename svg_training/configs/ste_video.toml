@@ -9,7 +9,7 @@
 # The look the 3-D replay draws with. "painted" = today's S2b clip look (body display colour dark grey, rotors in the
 # team colour, a team ball above the drone; compat/isaaclab_232 since S2b Task 6). "own_ring" and "own_dot" leave the
 # Starling USD's own surfaces untouched and add one small team-coloured marker (L0.5).
-replay_look = "own_ring"          # PROPOSED (L0.5, 21 Nov 2026): pending the owner's look at the stills (D9)
+replay_look = "own_ring"          # FIXED (owner, D9 check of the L0.5 stills, 21 Nov 2026): the ring look
 
 [look.own_ring]
 # A thin team-coloured ring (torus) around the drone at the height of its arms, wider than the rotor tips
@@ -25,6 +25,19 @@ tube_segments = 8                 # PROPOSED (L0.5): segments around the tube
 diameter_m = 0.09                 # PROPOSED (L0.5)
 thickness_m = 0.012               # PROPOSED (L0.5)
 z_m = 0.075                       # PROPOSED (L0.5): above the top plate
+
+[look.tag_circle]
+# Owner request (21 Nov 2026), every 3-D clip: each Guard drone's tag distance drawn as a faint circle around it at the
+# game's tag radius (the study tag is a 3-D distance: this is its slice at the Guard's own height), so a tag is seen to
+# happen when a Strike drone crosses it. The radius comes from the game (Trajectory.tag_radius_m), never from here.
+minor_radius_m = 0.02             # PROPOSED (VID-1b): tube radius; about 4 px wide in the top view of the 6.5 m arena
+segments = 96                     # PROPOSED (VID-1b): segments around the circle
+tube_segments = 6                 # PROPOSED (VID-1b)
+lighten = 0.55                    # PROPOSED (VID-1b): the Guard colour mixed this far towards white ("faint")
+
+[arena]
+zone_segments = 128               # PROPOSED (VID-1b; owner request 21 Nov 2026): the zone drawn as a true circle (a mesh
+                                  # disc of this many sides; the cylinder primitive rendered with about 10)
 
 [cameras]
 resolution = [1280, 720]          # FIXED (S2b Task 6 clips: configs/s2b.toml [video] resolution)
@@ -51,3 +64,12 @@ run_folder = "2026-11-21_ste_l011_screen"   # FIXED: the run folder of T44 (not 
 gates_sha256 = "8bfbc2cb8f1d6551fb3060bc750c24f9b2220ebafb19fcd44e9e3baa1c24e5d4"   # FIXED: T44's gate file
 variants = ["base", "tag_1p2", "tag_1p4"]   # FIXED: T44's shortlist
 outcomes = ["hold", "reach"]      # PROPOSED (VID-1): one game of each outcome per variant
+
+[trained_games]
+# VID-1b (21 Nov 2026): the key games of the trained players of L0.12 (record T46). Rule fixed before any replay was
+# looked at: in each run named here, the exploiter cell of the run's own evaluation batch (T44's starts), the lowest
+# game index that ended in the trained team's win (a reach for a trained Strike team, a hold for a trained Guard team).
+record = "T46"                    # FIXED: records/2026-11-21_ste_l012_best_response_record.md
+gates_sha256 = "6e2e606053a593185480f8671c406625dc844002395801023005945f58cfbc5b"   # FIXED: configs/ste_l012/gates.toml
+# FIXED (lead's brief, 21 Nov 2026): base and tag 1.4 m, both sides
+runs = ["2026-11-21_ste_l012_base_strike", "2026-11-21_ste_l012_base_guard", "2026-11-21_ste_l012_tag_1p4_strike", "2026-11-21_ste_l012_tag_1p4_guard"]   # FIXED

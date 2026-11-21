@@ -40,8 +40,8 @@ class FakeIsaac:
     def spawn_floor(self):
         self.calls.append("floor")
 
-    def spawn_display_arena(self, root, half, zone_xy, zone_r, margin, top, floor=True):
-        self.calls.append(("arena", half, zone_r))
+    def spawn_display_arena(self, root, half, zone_xy, zone_r, margin, top, floor=True, zone_segments=None):
+        self.calls.append(("arena", half, zone_r, zone_segments))
 
     def spawn_display_drone(self, path, usd, plan, segments=(48, 8)):
         assert usd.endswith("starling2max.usd")
@@ -97,7 +97,7 @@ def test_replay_moves_drones_as_the_trajectory_and_hides_tagged(tmp_path):
     fake = FakeIsaac()
     assert m3.render(_args(tmp_path, replay=[str(p)]), fake) == 0
     look = "own_ring"
-    paths = [f"/World/Drones_{look}/Drone_{i}" for i in range(6)]
+    paths = [f"/World/Drones_{look}_tag160cm/Drone_{i}" for i in range(6)]   # the game's 1.6 m tag circles
     assert set(paths) <= set(fake.drones) and all(fake.drones[q].paint == {} for q in paths)
     # per camera: one place before warm-up + one per tick; positions as the file, drone 3 hidden from tick 4
     poses = fake.poses[paths[3]]
@@ -233,3 +233,70 @@ def test_script_refuses_without_work():
     src = (ROOT / "scripts" / "make_ste_3d.py").read_text()
     assert "--approved-headless" in src and "start_headless" in src and "isaaclab_232" in src
     assert not re.search(r"^\s*(import|from) isaaclab(\.|\s)", src, flags=re.M)   # Isaac only through compat
+
+
+
+# ------------------------------------------------------------------------------------------------ VID-1b
+def test_guards_carry_the_games_tag_circle_and_the_zone_is_a_true_circle(tmp_path):
+    a = _traj(tmp_path, "a")
+    t = r3.load_trajectory(a)
+    t.tag_radius_m = 1.4
+    b = r3.save_trajectory(tmp_path / "trajectories" / "b", t)
+    fake = FakeIsaac()
+    assert m3.render(_args(tmp_path, replay=[str(a), str(b)]), fake) == 0
+    arena = [c for c in fake.calls if isinstance(c, tuple) and c[0] == "arena"]
+    assert arena and arena[0][3] == m3.load_video_settings()["arena"]["zone_segments"]
+    radii = {}
+    for path, plan in fake.drones.items():
+        circles = [mk for mk in plan.markers if mk.kind == "torus" and mk.size_m[0] > 1.0]
+        drone = int(path.rsplit("_", 1)[1])
+        if drone < 3:
+            assert len(circles) == 1
+            radii.setdefault(path.split("/")[2], set()).add(circles[0].size_m[0])
+        else:
+            assert circles == []                                       # Strike drones: no tag circle
+    assert sorted(r for s in radii.values() for r in s) == [1.4, 1.6]     # one drone set per tag radius
+
+
+def _trained_traj(tmp_path) -> Path:
+    p = _traj(tmp_path, "l012_base_strike")
+    t = r3.load_trajectory(p)
+    t.outcome = 1
+    t.meta = {"kind": "trained", "variant": "base", "side": "strike", "run": "2026-11-21_ste_l012_base_strike",
+              "record": "T46", "guard": "guard_mark_edge", "strike": "trained Strike team", "outcome_name": "reach",
+              "game_index": 17, "games_per_cell": 1000, "cell_index": 0, "tags": 1,
+              "cell_counts": {"games": 1000, "holds": 556, "reaches": 444}}
+    return r3.save_trajectory(p.with_suffix(""), t)
+
+
+def test_trained_clips_go_to_their_folder_with_their_wording(tmp_path):
+    p = _trained_traj(tmp_path)
+    m3.render(_args(tmp_path, replay=[str(p)]), FakeIsaac())
+    a = _args(tmp_path, encode=True)
+    a.clip_dir = "ste_l012/3d"
+    assert m3.encode(a) == 0
+    d = tmp_path / "media" / "ste_l012" / "3d"
+    assert (d / "l012_base_strike_top.gif").is_file() and (d / "l012_base_strike_3d.mp4").is_file()
+    readme = (d / "README.md").read_text()
+    assert "L0.12" in readme and "T46" in readme and "556 holds and 444 reaches of 1000" in readme
+    assert "tag" in readme.lower() and "circle" in readme.lower()
+    row = [ln for ln in readme.splitlines() if ln.startswith("| base")][0]
+    cap = row.split("|")[-2].strip()
+    assert len(cap) <= 400 and "Trained Strike team" in cap and "not a flight" in cap
+    assert "L0.12" in r3.caption("base", 0.5, source="the L0.12 evaluation")
+
+
+def test_gif_full_rate_steps_down_in_width_when_a_width_cannot_fit(monkeypatch, tmp_path):
+    """A width where no setting fits the cap raises in encode_gif: the next narrower width is tried, keeping every frame;
+    only if none keeps every frame does the encoder's own fallback (fewer frames per second) run."""
+    calls = []
+
+    def fake(frames, path, fps=10, max_mb=5.0, src_fps=20, speed=1.0, widths=(800,)):
+        calls.append(widths)
+        if widths and widths[0] >= 720:
+            raise RuntimeError("no GIF setting fits")
+        return path, {"width": widths[0], "fps": fps, "colours": 128, "speed": 1.0}
+    import svg_training.bench.overlay as ov
+    monkeypatch.setattr(ov, "encode_gif", fake)
+    _, gi = m3.gif_full_rate([np.zeros((8, 8, 3), np.uint8)], tmp_path / "a.gif", 10, 5.0)
+    assert gi["width"] == 640 and gi["fps"] == 10 and calls[:3] == [(800,), (720,), (640,)]

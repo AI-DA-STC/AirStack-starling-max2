@@ -30,12 +30,15 @@ DRONE_BODY_RGB = (0.22, 0.22, 0.24)          # the S2b clips' body colour (S2b T
 PAINTED_MARKER_LIFT_M = 0.12                 # the S2b ball sits this far above the body origin, plus its radius
 
 _KEYS = {
-    "look": {"replay_look", "own_ring", "own_dot"},
+    "look": {"replay_look", "own_ring", "own_dot", "tag_circle"},
     "look.own_ring": {"major_radius_m", "minor_radius_m", "z_m", "segments", "tube_segments"},
     "look.own_dot": {"diameter_m", "thickness_m", "z_m"},
+    "look.tag_circle": {"minor_radius_m", "segments", "tube_segments", "lighten"},
+    "arena": {"zone_segments"},
     "cameras": {"resolution", "top_tilt_deg", "perspective_view"},
     "playback": {"speed_x", "hold_s", "gif_max_mb", "mp4_max_mb", "warm_frames", "settle_frames"},
     "key_games": {"record", "run_folder", "gates_sha256", "variants", "outcomes"},
+    "trained_games": {"record", "gates_sha256", "runs"},
 }
 
 
@@ -71,6 +74,7 @@ class Marker:
     xyz_m: tuple
     rgb: tuple
     casts_shadow: bool = True
+    segments: tuple | None = None     # torus: (around the ring, around the tube); None = the caller's default
 
 
 @dataclass(frozen=True)
@@ -82,8 +86,24 @@ class LookPlan:
 
 
 def look_plan(look: str, team_rgb: tuple, marker_radius_m: float | None = None,
-              settings: dict | None = None) -> LookPlan:
-    """The plan of one drone. "painted" needs marker_radius_m (the S2b ball); the own looks need the settings."""
+              settings: dict | None = None, tag_radius_m: float | None = None) -> LookPlan:
+    """The plan of one drone. "painted" needs marker_radius_m (the S2b ball); the own looks need the settings.
+    tag_radius_m (Guard drones only; owner request 21 Nov 2026): add a faint circle of that radius around the drone at
+    its own height ([look.tag_circle]); None = no circle, the plan exactly as before."""
+    plan = _base_plan(look, team_rgb, marker_radius_m, settings)
+    if tag_radius_m is None:
+        return plan
+    if settings is None:
+        raise ValueError("a tag circle needs the video settings")
+    tc = settings["look"]["tag_circle"]
+    f = float(tc["lighten"])
+    faint = tuple(float(c) + (1.0 - float(c)) * f for c in team_rgb)
+    circle = Marker("torus", (float(tag_radius_m), float(tc["minor_radius_m"]), 0.0), (0.0, 0.0, 0.0), faint,
+                    casts_shadow=False, segments=(int(tc["segments"]), int(tc["tube_segments"])))
+    return LookPlan(plan.look, plan.paint, plan.markers + (circle,))
+
+
+def _base_plan(look: str, team_rgb: tuple, marker_radius_m: float | None, settings: dict | None) -> LookPlan:
     rgb = tuple(team_rgb)
     if look == "painted":
         if marker_radius_m is None:
@@ -125,3 +145,25 @@ def torus_mesh(major_radius_m: float, minor_radius_m: float, segments: int, tube
     idx = np.stack((a, b, c, d), axis=-1).reshape(-1)
     counts = np.full(segments * tube_segments, 4, dtype=np.int64)
     return pts, counts, idx.astype(np.int64)
+
+
+def disc_mesh(radius_m: float, height_m: float, segments: int) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """A closed flat cylinder (a disc of height_m) around the z axis, centred at the origin, with ``segments`` sides:
+    points [2 S + 2, 3] (bottom rim, top rim, bottom centre, top centre), face vertex counts and indices (triangles
+    on the caps, quads on the side), outward-facing."""
+    if segments < 3 or radius_m <= 0 or height_m <= 0:
+        raise ValueError("need radius > 0, height > 0 and at least 3 segments")
+    a = np.linspace(0.0, 2 * np.pi, segments, endpoint=False)
+    h = height_m / 2
+    ring = np.stack((radius_m * np.cos(a), radius_m * np.sin(a)), axis=-1)
+    pts = np.concatenate((np.c_[ring, np.full(segments, -h)], np.c_[ring, np.full(segments, h)],
+                          [[0.0, 0.0, -h], [0.0, 0.0, h]]))
+    bc, tc = 2 * segments, 2 * segments + 1
+    faces = []
+    for i in range(segments):
+        j = (i + 1) % segments
+        faces.append([i, j, segments + j, segments + i])      # side
+        faces.append([tc, segments + i, segments + j])       # top cap
+        faces.append([bc, j, i])                             # bottom cap
+    counts = np.array([len(f) for f in faces], dtype=np.int64)
+    return pts, counts, np.array([v for f in faces for v in f], dtype=np.int64)

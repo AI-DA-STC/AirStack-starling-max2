@@ -15,21 +15,22 @@
 # maximin, ties to the higher Wilson lower bound, then the order in [players]); they become the opponents of the
 # best-response runs (configs/ste_l012b/gates.toml).
 #
-# NEW INFO measurement, "unchosen tags" (LEAD CALL 21 Nov 2026 (L0.12b)), per cell in results.md and results.json:
+# NEW INFO measurement, "unchosen tags" (LEAD CALL 21 Nov 2026 (L0.12b); definitions LEAD CALL 21 Nov 2026 (L0.12b Q3,
+# Q4)), per cell in results.md and results.json (ste/sweep.SweepGame, ste/sweep.tag_shares):
 # - a tag is one Strike drone tagged (one for one: each tag also removes its Guard partner); counted over the finished
 #   first games of each cell, as T44 counts tags;
-# - UNCHOSEN: on the tag's tick the safety filter was correcting either drone of the tagged pair. "Correcting" is the
-#   filter's own flag (ste/sweep.SweepGame, core/safety_filter.py): |safe velocity - commanded velocity| > 1e-3 m/s,
-#   the smallest change the filter reports (its iterative solver's floor), read here as "correction size > 0". Such a tag
-#   was not purely chosen by the players: the filter was moving one of the two drones at that moment;
-#   unchosen_tag_share = unchosen tags / tags;
+# - PUSHED TOGETHER (the main share, Q4): on the tag's tick the safety filter's correction (safe - nominal velocity of
+#   the commander, per drone) closed the Guard-Strike pair faster than the players' own commands would have: the
+#   relative correction along the Guard-to-Strike line, (dv_strike - dv_guard) . u, is below -1e-3 m/s (the filter's own
+#   floor). So the tag would not have happened on this tick without the filter (e.g. a team-mate inside the 1.10 m
+#   keep-out pushing a drone into an opponent). Limit: it reads the tag's own tick; a push of earlier ticks carried in by
+#   the PX4 response lag, with the filter braking on the tag's tick, is not counted. pushed_tag_share = such tags / tags;
+# - FILTER ACTIVE AT THE TAG (an upper bound, Q4): on the tag's tick the filter corrected either drone of the pair, its
+#   own flag |safe velocity - commanded velocity| > 1e-3 m/s (Q3: the smallest change it reports). It also counts the
+#   filter braking a pair a player closed on purpose. filter_active_share = such tags / tags;
 # - AT THE FILTER EDGE: the tagged pair's 3-D distance (the distance the tag was judged on) was <= 1.10 m (the filter
 #   distance the game reads, partner_rules keepout 1.10) + tag_edge_margin_m 0.01 m; edge_tag_share = such tags / tags.
-#   With the tag at 1.15 m every tag falls between the filter's 1.10 m and 1.15 m, so a large edge share says the tags
-#   happen where the filter holds the drones, not where a player closed in.
-# Both are INFO: no limit, no verdict. Caveat stated before the run: the filter brakes a closing pair before 1.10 m, so a
-# deliberate approach can also count as "unchosen" under this definition (the share is an upper bound on filter-made
-# tags, not a count of them).
+# All are INFO: no limit, no verdict.
 #
 # Run notes (LEAD CALL 21 Nov 2026, carried from L0.11): NEVER SUSPEND THE MACHINE DURING A GPU JOB (a suspend counts in
 # full against the cap and the GPU-hour ledger; tooling task L07-SUSPEND); pause with scripts/gpu_pause.sh instead.

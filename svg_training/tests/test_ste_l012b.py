@@ -62,41 +62,71 @@ def test_both_gate_files_pin_the_committed_game_files():
 
 
 # ------------------------------------------------------------------------------------------------ unchosen tags
-def play_still(starts, guards, strikes, ticks=60):
-    """One game from hand-made starts, every drone commanding zero, until it ends: (game, per-game arrays)."""
+def play_still(starts, guards, strikes, ticks=60, guard0_cmd=None, stop_at_tag=False):
+    """One game from hand-made starts, every drone commanding zero (Guard 0 ``guard0_cmd`` if given, [vx, vy, vz] in
+    [-1, 1]), until it ends (or its first tag, ``stop_at_tag``: the game is then read as ended there): (game,
+    per-game arrays, tag shares)."""
     cfg = cfg_of(TAG_FILE)
     s = torch.tensor(starts, dtype=torch.float32)[None]
     game = sweep.SweepGame(cfg, 1, 1, guards, strikes, "cpu", 5, fixed_starts=(s, torch.zeros(1, dtype=torch.bool)))
     game.reset()
     still = {"guard": torch.zeros(1, guards, 4), "strike": torch.zeros(1, strikes, 4)}
+    if guard0_cmd is not None:
+        still["guard"][0, 0, :3] = torch.tensor(guard0_cmd)
     outcome = torch.zeros(1, dtype=torch.int8)
     for _ in range(ticks):
         out = game.step(still)
         outcome = torch.where(game.first_done & (outcome == RUNNING), out.outcome, outcome)
-        if bool(game.first_done.all()):
+        if bool(game.first_done.all()) or (stop_at_tag and int(game.tags.sum()) > 0):
             break
+    if stop_at_tag:
+        outcome = torch.where(outcome == RUNNING, torch.full_like(outcome, GUARD_WIN), outcome)
     pg = {"outcome": outcome.numpy(), "tags": game.tags.numpy(), "tag_pair_m": game.tag_pair_m.numpy(),
-          "tag_filtered": game.tag_filtered.numpy()}
+          "tag_filtered": game.tag_filtered.numpy(), "tag_pushed": game.tag_pushed.numpy()}
     return game, pg, sweep.tag_shares(pg, sweep.tag_edge_m(cfg, 0.01))
 
 
-def test_the_filter_makes_a_tag_it_is_counted_as_unchosen():
-    """Two Guard team-mates start 1.0 m apart (inside the 1.10 m keep-out): the filter pushes them apart, and the one
-    pushed towards the Strike drone (1.16 m away, outside the 1.15 m tag) reaches it. Nobody chose that tag."""
-    game, pg, s = play_still([[-1.5, 2.5, 1.2], [-0.5, 2.5, 1.2], [0.66, 2.5, 1.2]], guards=2, strikes=1)
-    assert pg["tags"].tolist() == [1] and pg["outcome"].tolist() == [GUARD_WIN]
+def test_the_filter_pushes_a_strike_drone_into_a_guard_it_is_counted_as_pushed_together():
+    """One Guard drone still; a Strike drone 1.16 m from it (outside the 1.15 m tag) with its team-mate 0.3 m behind
+    (inside the 1.10 m keep-out). Everyone commands zero. The filter pushes the two Strike drones apart, so the front
+    one closes on the Guard faster than its own (zero) command, and on the tag's tick the filter's correction still
+    closes the pair: pushed together, the stricter measurement (LEAD CALL 21 Nov 2026 (L0.12b Q4))."""
+    _, pg, s = play_still([[-0.5, 2.5, 1.2], [0.66, 2.5, 1.2], [0.96, 2.5, 1.2]], guards=1, strikes=2,
+                          stop_at_tag=True)                               # one Strike drone is left: read to the tag
+    assert pg["tags"].tolist() == [1]
     assert 1.10 < float(pg["tag_pair_m"][0, 0]) < 1.15                       # tagged inside the bubble band
-    assert bool(pg["tag_filtered"][0, 0])
-    assert s["tags_counted"] == 1 and s["tags_filtered"] == 1 and s["unchosen_tag_share"] == 1.0
+    assert bool(pg["tag_filtered"][0, 0]) and bool(pg["tag_pushed"][0, 0])
+    assert (s["tags_counted"], s["tags_filtered"], s["tags_pushed"]) == (1, 1, 1)
+    assert s["filter_active_share"] == 1.0 and s["pushed_tag_share"] == 1.0
+
+
+def test_the_filter_braking_a_closing_pair_is_active_at_the_tag_but_not_pushed_together():
+    """A Guard drone flies at a still Strike drone 1.5 m away: the filter brakes the closing pair, so it is ACTIVE at
+    the tag (the upper-bound share counts it) but its correction opens the pair (not pushed together)."""
+    _, pg, s = play_still([[-0.5, 2.5, 1.2], [1.0, 2.5, 1.2]], guards=1, strikes=1, guard0_cmd=[1.0, 0.0, 0.0])
+    assert pg["tags"].tolist() == [1]
+    assert bool(pg["tag_filtered"][0, 0]) and not bool(pg["tag_pushed"][0, 0])
+    assert (s["filter_active_share"], s["pushed_tag_share"]) == (1.0, 0.0)
+
+
+def test_the_filter_pushes_a_guard_drone_into_a_strike_it_is_counted_as_pushed_together():
+    """Two Guard team-mates start 1.0 m apart (inside the 1.10 m keep-out), everyone commanding zero: the filter pushes
+    them apart and the one pushed towards the Strike drone (1.16 m away, outside the tag) reaches it. On the tag's tick
+    the team-mate push still outweighs the filter's braking of the Guard-Strike pair: pushed together."""
+    _, pg, s = play_still([[-1.5, 2.5, 1.2], [-0.5, 2.5, 1.2], [0.66, 2.5, 1.2]], guards=2, strikes=1)
+    assert pg["tags"].tolist() == [1] and pg["outcome"].tolist() == [GUARD_WIN]
+    assert bool(pg["tag_filtered"][0, 0]) and bool(pg["tag_pushed"][0, 0])
+    assert (s["tags_pushed"], s["pushed_tag_share"]) == (1, 1.0)
 
 
 def test_a_tag_the_filter_did_not_make_is_not_unchosen_and_the_edge_count_reads_the_distance():
     """A still 1v1 pair 1.14 m apart: tagged on tick 1, no filter correction (nothing moves), not at the edge (> 1.11 m).
     The same at 1.105 m: still not filtered, but at the filter edge (<= 1.10 + 0.01 m)."""
     _, pg, s = play_still([[-0.5, 2.5, 1.2], [0.64, 2.5, 1.2]], guards=1, strikes=1)
-    assert pg["tags"].tolist() == [1] and not bool(pg["tag_filtered"][0, 0])
+    assert pg["tags"].tolist() == [1] and not bool(pg["tag_filtered"][0, 0]) and not bool(pg["tag_pushed"][0, 0])
     assert pg["tag_pair_m"][0, 0] == pytest.approx(1.14, abs=1e-5)
-    assert (s["tags_filtered"], s["unchosen_tag_share"], s["tags_at_edge"], s["edge_tag_share"]) == (0, 0.0, 0, 0.0)
+    assert (s["tags_filtered"], s["filter_active_share"], s["tags_pushed"], s["pushed_tag_share"], s["tags_at_edge"],
+            s["edge_tag_share"]) == (0, 0.0, 0, 0.0, 0, 0.0)
     _, pg, s = play_still([[-0.5, 2.5, 1.2], [0.605, 2.5, 1.2]], guards=1, strikes=1)
     assert (s["tags_counted"], s["tags_filtered"], s["tags_at_edge"], s["edge_tag_share"]) == (1, 0, 1, 1.0)
     assert s["tag_edge_m"] == pytest.approx(1.11)
@@ -105,18 +135,22 @@ def test_a_tag_the_filter_did_not_make_is_not_unchosen_and_the_edge_count_reads_
 def test_no_tag_records_nothing():
     _, pg, s = play_still([[-0.5, 2.5, 1.2], [0.7, 2.5, 1.2]], guards=1, strikes=1, ticks=20)
     assert pg["tags"].tolist() == [0] and math.isinf(pg["tag_pair_m"][0, 0]) and not pg["tag_filtered"].any()
-    assert s["tags_counted"] == 0 and s["unchosen_tag_share"] is None and s["edge_tag_share"] is None
+    assert not pg["tag_pushed"].any()
+    assert s["tags_counted"] == 0 and s["filter_active_share"] is None and s["pushed_tag_share"] is None
+    assert s["edge_tag_share"] is None
 
 
 def test_tag_shares_counts_finished_first_games_only_and_needs_an_edge_limit():
     pg = {"outcome": np.array([GUARD_WIN, RUNNING, GUARD_WIN], dtype=np.int8),
           "tag_pair_m": np.array([[1.105, 1.13], [1.12, np.inf], [np.inf, np.inf]]),
-          "tag_filtered": np.array([[True, False], [True, False], [False, False]])}
+          "tag_filtered": np.array([[True, False], [True, False], [False, False]]),
+          "tag_pushed": np.array([[True, False], [True, False], [False, False]])}
     s = sweep.tag_shares(pg, 1.11)
-    assert (s["tags_counted"], s["tags_filtered"], s["tags_at_edge"]) == (2, 1, 1)   # the unfinished game is not counted
-    assert s["unchosen_tag_share"] == 0.5 and s["edge_tag_share"] == 0.5 and s["tag_pair_min_m"] == pytest.approx(1.105)
+    assert (s["tags_counted"], s["tags_filtered"], s["tags_pushed"], s["tags_at_edge"]) == (2, 1, 1, 1)   # unfinished: out
+    assert s["filter_active_share"] == 0.5 and s["pushed_tag_share"] == 0.5 and s["edge_tag_share"] == 0.5
+    assert s["tag_pair_min_m"] == pytest.approx(1.105)
     s = sweep.tag_shares(pg, None)
-    assert s["tags_at_edge"] is None and s["edge_tag_share"] is None and s["unchosen_tag_share"] == 0.5
+    assert s["tags_at_edge"] is None and s["edge_tag_share"] is None and s["filter_active_share"] == 0.5
     assert sweep.tag_shares({"outcome": pg["outcome"]}, 1.11) == {}
     assert sweep.tag_edge_m(cfg_of(TAG_FILE), None) is None
 
@@ -137,8 +171,10 @@ def test_the_hook_changes_no_game_and_counts_every_tag():
     assert int(a.per_game["tags"].sum()) > 0                                    # the test exercises tags
     finished = a.per_game["outcome"] != RUNNING
     assert int(np.isfinite(a.per_game["tag_pair_m"][finished]).sum()) == int(a.per_game["tags"][finished].sum())
+    assert not (a.per_game["tag_pushed"] & ~a.per_game["tag_filtered"]).any()    # pushed together implies filter active
     for row in a.rows:
-        assert {"tags_counted", "tags_filtered", "unchosen_tag_share", "tags_at_edge", "edge_tag_share"} <= set(row)
+        assert {"tags_counted", "tags_filtered", "filter_active_share", "tags_pushed", "pushed_tag_share", "tags_at_edge",
+                "edge_tag_share"} <= set(row)
 
 
 # ------------------------------------------------------------------------------------------------ old gate files
@@ -213,14 +249,14 @@ def test_the_screen_runs_on_the_cpu_with_every_control_passing(screen_run):
     groups = {g["name"]: g for g in result["groups"]}
     rows = groups["tag_1p15"]["rows"]
     assert len(rows) == 30 and all(r["tag_edge_m"] == pytest.approx(1.11) for r in rows)
-    assert all("unchosen_tag_share" in r and "edge_tag_share" in r for r in rows)
+    assert all("pushed_tag_share" in r and "filter_active_share" in r and "edge_tag_share" in r for r in rows)
     assert result["shortlist"]["shortlist"] == ["tag_1p15"]
     v = result["shortlist"]["variants"][0]
     assert v["variant"] == "tag_1p15" and v.get("reference")                    # carried; g* / s* when every cell ended
     assert v["g_star"] in sweep.load_gates(SCREEN).players["guards"] or "cell" in v["reason"]   # CPU smoke: games cut short
     md = (out / "results.md").read_text()
-    assert "# L0.12b scripted screen (INFO): results" in md and "Unchosen tags (INFO, L0.12b)" in md
-    assert "unchosen tags: filter on (share)" in md
+    assert "# L0.12b scripted screen (INFO): results" in md and "Unchosen tags (INFO, L0.12b; LEAD CALL 21 Nov 2026 (L0.12b Q4))" in md
+    assert "pushed together (share) | filter active at the tag, upper bound (share)" in md
     starts = exploit.load_reference(ROOT / sweep.load_gates(SCREEN).reference["file"]).starts_m[:4]
     z = np.load(out / "cells" / "tag_1p15__b00.npz")
     assert np.array_equal(z["start_pos_m"][:4], starts)                         # T44's starts, loaded
@@ -279,10 +315,10 @@ def test_the_runs_gate_file_refuses_while_a_value_is_unfilled(tmp_path, capsys):
     assert code == EXIT_REFUSED and "not filled yet" in capsys.readouterr().err
 
 
-def test_the_runs_gate_file_keeps_l012s_trainer_but_the_step_budget():
+def test_the_runs_gate_file_keeps_l012s_trainer_and_step_budget():
+    """LEAD CALL 21 Nov 2026 (L0.12b Q1): L0.12's 550 M game-steps, like for like with base, 1.2 m and 1.4 m."""
     new, old = exploit.load_gates(GATES), exploit.load_gates(L012_GATES)
-    assert {k: v for k, v in new.trainer.items() if k != "game_steps_per_run"} == \
-           {k: v for k, v in old.trainer.items() if k != "game_steps_per_run"}
+    assert new.trainer == old.trainer
     assert (new.controls, new.verdict["band"], new.verdict["gain_rule"], new.verdict["learned_rule"]) == \
            (old.controls, old.verdict["band"], old.verdict["gain_rule"], old.verdict["learned_rule"])
     assert {k: v for k, v in new.run.items() if k != "tag_edge_margin_m"} == old.run
@@ -306,6 +342,9 @@ def test_l012s_pilot_json_is_accepted_by_the_runs_gate_file_on_both_sides():
 WORST_STRIKE_UPDATE_S = 20.0           # tag_1p4 Strike, max of every update (median 19.5)
 WORST_CURVE_READ_S = 53.8              # tag_1p4 Strike, max of every curve read (256 games to the 120 s time-out)
 WORST_CONTROLS_BATCH_S = 95.0          # tag_1p2 Strike: final reserve 620 s = 2 x (2 b + 120)
+WORST_ELAPSED_BEFORE_88_S = 2097.7     # tag_1p2 Strike (T47): effective seconds when update 88 would have started
+MEASURED_START_S = 1.0                 # effective seconds before the controls batch (all three Strike runs: 0.9-1.0)
+RUN_CAP_H = 0.85                       # LEAD CALL 21 Nov 2026 (L0.12b Q1): --cap-h 0.85 on run 0 and both runs
 MARGIN = 1.05
 
 
@@ -317,20 +356,26 @@ def updates_that_start(cap_s, batch_s, update_s, read_s, every, start_s, reserve
     return n
 
 
-def test_the_step_budget_cannot_stop_at_the_cap_reserve_by_construction():
+def test_88_updates_fit_the_085_h_cap_with_the_worst_strike_timing_and_the_final_reserve():
+    """LEAD CALL 21 Nov 2026 (L0.12b Q1): 550 M game-steps (88 updates) at --cap-h 0.85 cannot stop at the cap reserve:
+    the worst L0.12 Strike timings + 5 % start every planned update with the cap left above the final reserve."""
     g = exploit.load_gates(GATES)
     tr = g.trainer
     per_update = int(tr["rollouts"]) * int(tr["decision_ticks"]) * int(tr["num_games"])
     planned = math.ceil(int(tr["game_steps_per_run"]) / per_update)
     batch = 100.0                                                             # >= the worst measured, 95 s
     assert batch >= WORST_CONTROLS_BATCH_S
-    reserve = exploit.final_reserve_s(tr, batch)
-    fits = updates_that_start(0.75 * 3600, batch, WORST_STRIKE_UPDATE_S * MARGIN, WORST_CURVE_READ_S * MARGIN,
-                              int(tr["curve_every_updates"]), 60.0, reserve)
-    assert planned == 72 and fits >= planned                                  # every planned update starts
+    reserve = exploit.final_reserve_s(tr, batch)                              # 640 s
+    start = 10.0                                                              # >= the measured 1 s
+    assert start >= MEASURED_START_S
+    cap_s = RUN_CAP_H * 3600
+    fits = updates_that_start(cap_s, batch, WORST_STRIKE_UPDATE_S * MARGIN, WORST_CURVE_READ_S * MARGIN,
+                              int(tr["curve_every_updates"]), start, reserve)
+    assert planned == 88 and fits >= planned                                  # every planned update starts
     assert planned * per_update >= int(tr["game_steps_per_run"])              # and meets the budget
-    old = exploit.load_gates(L012_GATES).trainer                              # L0.12's 550 M did not fit (T47)
-    assert math.ceil(int(old["game_steps_per_run"]) / per_update) > fits
+    assert WORST_ELAPSED_BEFORE_88_S * MARGIN <= cap_s - exploit.final_reserve_s(tr, WORST_CONTROLS_BATCH_S)
+    assert updates_that_start(0.75 * 3600, batch, WORST_STRIKE_UPDATE_S * MARGIN, WORST_CURVE_READ_S * MARGIN,
+                              int(tr["curve_every_updates"]), start, reserve) < planned   # why the cap rose (T47)
 
 
 # ------------------------------------------------------------------------------------------------ end to end (CPU)
@@ -351,7 +396,7 @@ def test_screen_to_reference_to_a_guard_run_and_its_record(screen_run, tmp_path,
     assert n == 1
     for old, new in {'device = "cuda"': 'device = "cpu"', "eval_games = 1000": "eval_games = 4",
                      "ticks_cap = 2400": "ticks_cap = 40", "curve_games = 256": "curve_games = 2",
-                     "num_games = 16384": "num_games = 4", "game_steps_per_run = 450_000_000": "game_steps_per_run = 192",
+                     "num_games = 16384": "num_games = 4", "game_steps_per_run = 550_000_000": "game_steps_per_run = 192",
                      "rollouts = 32": "rollouts = 2", "learning_epochs = 5": "learning_epochs = 1",
                      "mini_batches = 4": "mini_batches = 1", "final_reserve_s = 600": "final_reserve_s = 60",
                      "curve_every_updates = 10": "curve_every_updates = 2"}.items():

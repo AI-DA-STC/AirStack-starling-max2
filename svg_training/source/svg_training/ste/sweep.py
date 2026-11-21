@@ -72,7 +72,8 @@ SUMMARY_KEYS = ("guard_wins", "hold_rate", "ci_low", "ci_high", "mean_end_step",
                 "closest_cross_p25_m", "closest_cross_p50_m", "closest_cross_3d_m", "closest_cross_3d_p05_m",
                 "closest_cross_3d_p25_m", "closest_cross_3d_p50_m", "rule_breach_rate", "filter_rate", "start_miss_rate")
 PER_GAME_EXACT = ("outcome", "end_step", "tags", "strikes_left", "start_pos_m")   # equal in a same-seed replay
-TAG_PAIR_KEYS = ("tag_pair_m", "tag_filtered")    # per game and Strike slot [N, S]: L0.12b's unchosen-tag measurement
+TAG_PAIR_KEYS = ("tag_pair_m", "tag_filtered", "tag_pushed")   # per game and Strike slot [N, S]: L0.12b's tag measurement
+PUSH_FLOOR_MPS = 1e-3      # the filter's own correction floor (core/safety_filter.py "corrected": |safe - nominal| > 1e-3)
 
 _SECTIONS = {
     "run": {"task", "kind", "seed", "games_per_cell", "cells_per_batch", "ticks_cap", "device", "cap_check_every_ticks",
@@ -345,7 +346,9 @@ class SweepGame(SvgGame):
     drones in the game when the slot's first game ended), ``team_close_first`` [N] long (start team-mate pairs closer
     than the filter distance in the first game; starts mode zone_disc_ring), ``first_done`` [N] bool, and per Strike slot
     of the first game (L0.12b) ``tag_pair_m`` [N, S] (3-D distance to its tag partner when tagged, inf if not) and
-    ``tag_filtered`` [N, S] bool (the safety filter corrected either drone of the pair on the tag's tick).
+    ``tag_filtered`` [N, S] bool (the safety filter corrected either drone of the pair on the tag's tick: "filter active",
+    an upper bound) and ``tag_pushed`` [N, S] bool (on the tag's tick the filter's correction closed the pair faster
+    than the players' own commands: "pushed together", LEAD CALL 21 Nov 2026 (L0.12b Q4)).
     ``fixed_starts`` (starts [n, M, 3], miss [n]): play from these starts (a reference's) instead of drawing them."""
 
     def __init__(self, cfg: GameCfg, cells: int, games_per_cell: int, guards: int, strikes: int, device: str,
@@ -355,7 +358,7 @@ class SweepGame(SvgGame):
         if fixed_starts is not None and int(fixed_starts[0].shape[0]) != games_per_cell:
             raise ValueError(f"fixed starts for {fixed_starts[0].shape[0]} games, the cells have {games_per_cell} each")
         self._fixed_starts = None if fixed_starts is None else tuple(x.to(device) for x in fixed_starts)
-        self._tick_tag: tuple[Tensor, Tensor, Tensor] | None = None
+        self._tick_tag: tuple[Tensor, Tensor, Tensor, Tensor] | None = None
         self._start_gen = torch.Generator(device=device)
         self._start_gen.manual_seed(seed)
         self.should_stop: Callable[[], bool] | None = None
@@ -391,13 +394,26 @@ class SweepGame(SvgGame):
         self.team_close_first = self.start_team_close.clone()
         self.tag_pair_m = torch.full((n, self.strikes), math.inf, device=dev)
         self.tag_filtered = torch.zeros(n, self.strikes, dtype=torch.bool, device=dev)
+        self.tag_pushed = torch.zeros(n, self.strikes, dtype=torch.bool, device=dev)
         return obs
+
+    def _filter_correction(self) -> Tensor | None:
+        """The safety filter's correction of this tick (safe - nominal velocity [N, M, 3], ``CommandChain.correction``)
+        of the Starling layer (fitted: ``model.chain``) or the physics layer (``chain``); None on the pure path."""
+        layer = self._starling
+        chain = getattr(layer, "chain", None) or getattr(getattr(layer, "model", None), "chain", None)
+        return None if chain is None else chain.correction
 
     def _study_tags(self, pos_m: Tensor, alive: Tensor, corrected: Tensor) -> tuple[Tensor, Tensor]:
         """``SvgGame._study_tags`` (the same tags) that also keeps, per Strike slot of this tick, whether it was tagged,
         the 3-D distance to the Guard drone it was paired with (the distance the tag was judged on) and whether the
         safety filter corrected either drone of the pair on this tick (``corrected``: the filter's own flag,
-        |safe - nominal velocity| > 1e-3 m/s, ``core/safety_filter.py``)."""
+        |safe - nominal velocity| > 1e-3 m/s, ``core/safety_filter.py``), and whether the filter's correction pushed the
+        pair together on this tick: its relative correction along the Guard-to-Strike line, (dv_strike - dv_guard) . u,
+        below -PUSH_FLOOR_MPS, so the pair closed faster than the players' own commands would have closed it. The
+        correction is the commander's velocity setpoint change on this tick; the drones answer it through the PX4
+        response lag, so a push of earlier ticks that carries a drone into the tag is not counted (the share reads the
+        tag's own tick)."""
         tagged, alive_after, partner = core_game.proximity_tags(pos_m, alive, self.guards, self.cfg.tag.radius_m,
                                                                 self._tag_survives)
         g = self.guards
@@ -406,7 +422,14 @@ class SweepGame(SvgGame):
         g_pos = torch.gather(pos_m[:, :g], 1, idx[..., None].expand(-1, -1, pos_m.shape[-1]))
         dist = (pos_m[:, g:] - g_pos).norm(dim=-1)
         filtered = corrected[:, g:] | torch.gather(corrected[:, :g], 1, idx)
-        self._tick_tag = (s_partner >= 0, dist, filtered)
+        corr = self._filter_correction()
+        if corr is None:
+            pushed = torch.zeros_like(filtered)
+        else:
+            u = torch.nn.functional.normalize(pos_m[:, g:] - g_pos, dim=-1)          # Guard -> Strike, [N, S, 3]
+            g_corr = torch.gather(corr[:, :g], 1, idx[..., None].expand(-1, -1, corr.shape[-1]))
+            pushed = ((corr[:, g:] - g_corr).to(u.dtype) * u).sum(dim=-1) < -PUSH_FLOOR_MPS
+        self._tick_tag = (s_partner >= 0, dist, filtered, pushed)
         return tagged, alive_after
 
     def step(self, actions: dict[str, Tensor]):
@@ -423,10 +446,11 @@ class SweepGame(SvgGame):
         ended = first & out.done
         self.strikes_left = torch.where(ended, out.info["final_alive"][:, g:].sum(dim=1), self.strikes_left)
         if self._tick_tag is not None:          # the study tag ran this tick: record the first game's tags
-            hit, dist, filtered = self._tick_tag
+            hit, dist, filtered, pushed = self._tick_tag
             rec = first[:, None] & hit
             self.tag_pair_m = torch.where(rec, dist, self.tag_pair_m)
             self.tag_filtered = self.tag_filtered | (rec & filtered)
+            self.tag_pushed = self.tag_pushed | (rec & pushed)
         self.first_done = self.first_done | out.done
         return out
 
@@ -490,11 +514,13 @@ def tag_edge_m(cfg: GameCfg, margin_m: float | None) -> float | None:
 
 
 def tag_shares(per_game: dict, edge_m: float | None) -> dict:
-    """L0.12b's unchosen-tag measurement over the FINISHED first games of ``per_game`` (as ``cell_row`` counts tags).
-    A tag is one Strike drone tagged (``tag_pair_m`` finite). ``tags_filtered``: tags on a tick where the safety filter
-    corrected either drone of the tagged pair; ``unchosen_tag_share`` = tags_filtered / tags. ``tags_at_edge``: tags
-    whose 3-D pair distance was <= ``edge_m``; ``edge_tag_share`` = tags_at_edge / tags. A share is None without tags
-    (and the edge numbers are None without ``edge_m``); an empty dict when the arrays are absent (tag off: no hook)."""
+    """L0.12b's tag measurement over the FINISHED first games of ``per_game`` (as ``cell_row`` counts tags). A tag is one
+    Strike drone tagged (``tag_pair_m`` finite). ``tags_pushed`` (the main measurement, LEAD CALL 21 Nov 2026 (L0.12b
+    Q4)): tags on a tick where the filter's correction pushed the pair together; ``pushed_tag_share`` = tags_pushed /
+    tags. ``tags_filtered``: tags on a tick where the filter corrected either drone of the pair (> 1e-3 m/s);
+    ``filter_active_share`` = tags_filtered / tags, an upper bound on filter-made tags. ``tags_at_edge``: tags whose 3-D
+    pair distance was <= ``edge_m``; ``edge_tag_share`` = tags_at_edge / tags. A share is None without tags (and the
+    edge numbers are None without ``edge_m``); an empty dict when the arrays are absent."""
     if "tag_pair_m" not in per_game:
         return {}
     finished = np.asarray(per_game["outcome"]) != RUNNING
@@ -502,8 +528,10 @@ def tag_shares(per_game: dict, edge_m: float | None) -> dict:
     tagged = np.isfinite(dist)
     n = int(tagged.sum())
     filtered = int((tagged & np.asarray(per_game["tag_filtered"])[finished]).sum())
+    pushed = int((tagged & np.asarray(per_game["tag_pushed"])[finished]).sum())
     edge = None if edge_m is None else int((tagged & (dist <= edge_m)).sum())
-    return {"tags_counted": n, "tags_filtered": filtered, "unchosen_tag_share": filtered / n if n else None,
+    return {"tags_counted": n, "tags_pushed": pushed, "pushed_tag_share": pushed / n if n else None,
+            "tags_filtered": filtered, "filter_active_share": filtered / n if n else None,
             "tags_at_edge": edge, "edge_tag_share": edge / n if n and edge is not None else None,
             "tag_edge_m": edge_m, "tag_pair_min_m": float(dist[tagged].min()) if n else None}
 
@@ -566,7 +594,8 @@ def play_batch(cfg: GameCfg, size: str, cells: tuple, run: dict,
         "strikes_left": torch.where(game.first_done, game.strikes_left, alive_strikes),
         "closest_3d_m": res.closest_cross_3d_m, "closest_m": res.closest_cross_m, "start_miss": res.start_miss,
         "start_team_close": game.team_close_first, "nonfinite_actions": res.nonfinite_actions,
-        "start_pos_m": res.start_pos_m, "tag_pair_m": game.tag_pair_m, "tag_filtered": game.tag_filtered}
+        "start_pos_m": res.start_pos_m, "tag_pair_m": game.tag_pair_m, "tag_filtered": game.tag_filtered,
+        "tag_pushed": game.tag_pushed}
     per_game = {k: v.detach().cpu().numpy() for k, v in host.items()}
     rows, shas = [], []
     for i, cell in enumerate(cells):

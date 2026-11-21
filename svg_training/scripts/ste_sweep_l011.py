@@ -62,10 +62,13 @@ CELLS_DIR = "cells"
 CONTROLS_FILE = "controls.json"
 CODE_FILE = "code.json"           # QC M-2: the code a run folder was started with
 PASS, FAIL, PENDING = "PASS", "FAIL", "PENDING"
-UNCHOSEN_NOTE = ("Unchosen tags (INFO, L0.12b): a tag is counted as unchosen when the safety filter corrected either "
-                 "drone of the tagged pair on the tag's tick (the filter's own flag: its velocity change above 1e-3 m/s); "
-                 "a tag is at the filter edge when its 3-D pair distance is at most the filter distance (1.10 m) plus the "
-                 "gate file's [run] tag_edge_margin_m. Shares are of the tags of the finished first games of each cell.")
+UNCHOSEN_NOTE = ("Unchosen tags (INFO, L0.12b; LEAD CALL 21 Nov 2026 (L0.12b Q4)). Pushed together (the main share): on "
+                 "the tag's tick the safety filter's correction closed the Guard-Strike pair faster than the players' "
+                 "own commands (relative correction along the pair line below -1e-3 m/s), so the tag would not have "
+                 "happened on this tick without the filter. Filter active at the tag (an upper bound): the filter "
+                 "corrected either drone of the pair on the tag's tick (velocity change > 1e-3 m/s), braking included. "
+                 "At the filter edge: the 3-D pair distance was at most the filter distance (1.10 m) plus the gate "
+                 "file's [run] tag_edge_margin_m. Shares are of the tags of the finished first games of each cell.")
 SIMULATOR = ("training simulator, tier 1 (fast engine; Starling layer: commander copy, safety filter on every pair, "
              "fitted PX4 response, exploratory)")
 
@@ -713,8 +716,9 @@ def render_md(result: dict, gates: sweep.Gates) -> str:
         lines += ["| Guard | Strike | games | hold (95 %) | reach (95 %) | time-out | all Strikes tagged | tags/game "
                   "(max) | start miss | start team-close games | closest 3-D min / p05 / p50 (m; among drones still in the "
                   "game after the tag step) | closest horiz. min (m) | holds leaving no Guard | Guards left in holds (mean) | "
-                  "length median / p90 (s) | unchosen tags: filter on (share) | tags at the filter edge (share) |",
-                  "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
+                  "length median / p90 (s) | pushed together (share) | filter active at the tag, upper bound (share) | "
+                  "tags at the filter edge (share) |",
+                  "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
         for r in g["rows"]:
             strike = r["strike"] + (f" ({meta['z_up_label']})" if r["strike"] in z else "")
             lines.append(
@@ -725,7 +729,7 @@ def render_md(result: dict, gates: sweep.Gates) -> str:
                 f"{_m(r.get('closest_cross_3d_m'))} / {_m(r.get('closest_cross_3d_p05_m'))} / "
                 f"{_m(r.get('closest_cross_3d_p50_m'))} | {_m(r.get('closest_cross_m'))} | "
                 f"{r.get('holds_no_guard_left', 'n/a')} of {r['holds']} | {_m(r.get('guards_left_mean_in_holds'))} | "
-                f"{_m(r.get('length_median_s'))} / {_m(r.get('length_p90_s'))} | {_tags(r, 'tags_filtered', 'unchosen_tag_share')} | "
+                f"{_m(r.get('length_median_s'))} / {_m(r.get('length_p90_s'))} | {_tags(r, 'tags_pushed', 'pushed_tag_share')} | {_tags(r, 'tags_filtered', 'filter_active_share')} | "
                 f"{_tags(r, 'tags_at_edge', 'edge_tag_share')} |")
         lines.append("")
     lines += ["## Batches (speed and memory)", "", "| Batch | size | games | ticks | s | game-steps/s | peak reserved (GiB) |",

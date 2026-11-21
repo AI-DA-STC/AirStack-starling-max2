@@ -121,13 +121,16 @@ def unchosen_lines(verdict: dict) -> list[str]:
             if sr.get("tag_shares") and sr["tag_shares"].get("tag_edge_m") is not None]
     if not rows:
         return []
-    out = ["", "Unchosen tags of the trained exploiter (INFO; a tag on a tick where the safety filter corrected either "
-           "drone of the pair; at the filter edge = pair distance at most the filter distance plus the gate's margin, "
-           f"{num(rows[0][2]['tag_edge_m'], '{:.2f}')} m):", "",
-           "| Variant | Side | Cell | Tags | Filter on (share) | At the edge (share) |", "|---|---|---|---|---|---|"]
+    out = ["", "Unchosen tags of the trained exploiter (INFO; pushed together = on the tag's tick the safety filter's "
+           "correction closed the pair faster than the players' commands; filter active = the filter corrected either "
+           "drone of the pair on that tick, an upper bound; at the filter edge = pair distance at most the filter "
+           f"distance plus the gate's margin, {num(rows[0][2]['tag_edge_m'], '{:.2f}')} m):", "",
+           "| Variant | Side | Cell | Tags | Pushed together (share) | Filter active (share) | At the edge (share) |",
+           "|---|---|---|---|---|---|---|"]
     for v, s, ts in rows:
-        out.append(f"| {v} | {s} | {ts['cell']} | {ts['tags_counted']} | {ts['tags_filtered']} "
-                   f"({num(ts.get('unchosen_tag_share'), '{:.3f}')}) | {ts['tags_at_edge']} "
+        out.append(f"| {v} | {s} | {ts['cell']} | {ts['tags_counted']} | {ts['tags_pushed']} "
+                   f"({num(ts.get('pushed_tag_share'), '{:.3f}')}) | {ts['tags_filtered']} "
+                   f"({num(ts.get('filter_active_share'), '{:.3f}')}) | {ts['tags_at_edge']} "
                    f"({num(ts.get('edge_tag_share'), '{:.3f}')}) |")
     return out
 

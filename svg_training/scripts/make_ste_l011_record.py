@@ -68,16 +68,20 @@ def unchosen_lines(result: dict) -> list[str]:
     if not groups:
         return []
     out = ["## Unchosen tags (INFO, L0.12b)", "",
-           "A tag is unchosen when the safety filter corrected either drone of the tagged pair on the tag's tick (its own "
-           "flag: a velocity change above 1e-3 m/s); at the filter edge when the pair's 3-D distance was at most "
-           f"{groups[0]['rows'][0]['tag_edge_m']:.2f} m (the filter distance plus the gate's margin). Upper bound on "
-           "filter-made tags: the filter also brakes a pair a player closed on purpose. Per cell: results.md.", "",
-           "| Group | tags | filter on (share) | at the filter edge (share) |", "|---|---|---|---|"]
+           "Pushed together (the main share): on the tag's tick the safety filter's correction closed the pair faster "
+           "than the players' own commands. Filter active (an upper bound: the filter also brakes a pair a player "
+           "closed on purpose): the filter corrected either drone of the pair on that tick (> 1e-3 m/s). At the filter "
+           f"edge: the pair's 3-D distance was at most {groups[0]['rows'][0]['tag_edge_m']:.2f} m (the filter distance "
+           "plus the gate's margin). Per cell: results.md.", "",
+           "| Group | tags | pushed together (share) | filter active (share) | at the filter edge (share) |",
+           "|---|---|---|---|---|"]
     for g in groups:
         n = sum(r["tags_counted"] for r in g["rows"])
+        k = sum(r["tags_pushed"] for r in g["rows"])
         f = sum(r["tags_filtered"] for r in g["rows"])
         e = sum(r["tags_at_edge"] for r in g["rows"])
-        out.append(f"| {g['name']} | {n} | {f} ({f / n:.3f}) | {e} ({e / n:.3f}) |" if n else f"| {g['name']} | 0 | - | - |")
+        out.append(f"| {g['name']} | {n} | {k} ({k / n:.3f}) | {f} ({f / n:.3f}) | {e} ({e / n:.3f}) |" if n
+                   else f"| {g['name']} | 0 | - | - | - |")
     return out + [""]
 
 

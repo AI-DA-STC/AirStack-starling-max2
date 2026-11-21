@@ -62,6 +62,9 @@ class CommandChain:
         # every call (a host sync); same value, so results are unchanged
         self._filter_cap_mps = torch.tensor(float(self.filter_cfg["max_speed_mps"]), device=device, dtype=dtype)
         self.corrected = torch.zeros(n, m, dtype=torch.bool, device=device)
+        # the filter's correction this tick (safe - nominal velocity, [N, M, 3] m/s; zeros when off): read by
+        # ste/sweep.SweepGame for L0.12b's "pushed together" tag measurement; it changes no result
+        self.correction = torch.zeros(n, m, 3, device=device, dtype=dtype)
 
     # ------------------------------------------------------------------------------------- the filter
     def _filter(self, nominal: Tensor, pos_m: Tensor) -> tuple[Tensor, Tensor]:
@@ -70,6 +73,7 @@ class CommandChain:
               **self.filter_kwargs}
         res = self._filter_fn(nominal, pos_m, self.pair_mask, f["safety_radius_m"], self._filter_cap_mps, **kw)
         self.corrected = res.corrected
+        self.correction = res.velocities - nominal
         return res.velocities, res.corrected
 
     def set_pair_mask(self, mask: Tensor) -> None:
@@ -86,6 +90,7 @@ class CommandChain:
         safety = self._filter if self.safety_filter else None
         if not self.safety_filter:
             self.corrected = torch.zeros_like(self.corrected)
+            self.correction = torch.zeros_like(self.correction)
         p_sp, v_ff, a_ff = self.commander.step(cmd_mps.to(self.dtype), pos_m, safety=safety)
         self.setpoint = (p_sp, v_ff, a_ff)
         return p_sp, v_ff, a_ff

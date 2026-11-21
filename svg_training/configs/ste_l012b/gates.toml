@@ -21,7 +21,8 @@
 #
 # LEAD CALLS 21 Nov 2026 (L0.12b), each made before any run:
 # - Budget: charged to task L0.12 (cap 6.0 GPU-h, 3.37 used): scripts/ste_job.py launch --task L0.12. A new key L0.12b
-#   of 1.8 GPU-h would take the task caps to 20.3 GPU-h, past the owner's 19.0 phase cap.
+#   of 1.8 GPU-h would take the task caps to 20.3 GPU-h, past the owner's 19.0 phase cap. LEAD CALL 21 Nov 2026
+#   (L0.12b Q2): agreed, no new key.
 # - Pilot: L0.12's pilot is reused (runs/2026-11-21_ste_l012_pilot/pilot.json, copied into this worktree's runs/): same
 #   sizes (16,384 games), same device (laptop RTX 5070 Ti), same day. The driver reads only its Strike recipe
 #   (ste/exploit.recipe_problem), which equals [trainer] side_overrides.strike below; no code change was needed.
@@ -31,18 +32,23 @@
 #   less 0.05), but the BAR MOVES: it is the screen's tag 1.15 m cell guard_parked_centre v strike_straight, not base's
 #   466 of 1,000 (T44), and is likely higher (a smaller tag stops fewer Strike drones). The lead reads that cell in the
 #   screen's results.md before launching run 0. A run 0 FAIL means no Strike run (never overridden: L0.12's rule).
-# - Step budget 450 M game-steps (L0.12: 550 M), so a run CANNOT stop at the cap reserve before its budget by
-#   construction (L0.12's tag 1.2 m Strike run, T47, stopped at update 87 of 88: its trained Strike team waited out the
-#   120 s clock, so every learning-curve read ran the full 2,400 ticks). Arithmetic (tests/test_ste_l012b.py checks it),
-#   from L0.12's logged runs on the same laptop: cap C = 0.75 h = 2,700 effective s; controls batch B = 100 s (the worst
-#   measured, tag 1.2 m Strike, 95 s); final reserve R = max(600, 2 x (2B + 120)) = 640 s; start-up O = 60 s; one Strike
-#   update U = 21 s (worst of the three Strike runs 20.0 s, + 5 %); one learning-curve read K = 57 s every 10 updates
-#   (worst 53.8 s, + 5 %). Update N starts only if O + B + (N - 1) U + floor((N - 1) / 10) K <= C - R: N = 72 gives
-#   2,050 <= 2,060 s; N = 73 does not. 72 updates x 6,291,456 game-steps = 452,984,832 >= 450 M, so the budget is met at
-#   update 72 with about 10 s and the 5 % margins to spare. Raising final_reserve_s would only stop training sooner.
-#   Both sides (one key): the runs are not at L0.12's budget (82 %); a gain here is compared with L0.12's gains knowing
-#   this. If tag 1.15 m makes the filter slower per tick than tag 1.2 m (more pairs held at the keep-out), the margin is
-#   about 10 s: the lead compares the screen's tag_1p15 and ctl_reference_replay batch seconds before launching.
+# - Step budget and cap, LEAD CALL 21 Nov 2026 (L0.12b Q1): L0.12's 550 M game-steps (88 updates), so tag 1.15 m is like
+#   for like with base, 1.2 m and 1.4 m, and --cap-h 0.85 on run 0 and both runs (the owner approved the extra hours;
+#   L0.12's launcher cap still fits: 3.37 + about 1.4 < 6.0). At 0.85 h a run CANNOT stop at the cap reserve before its
+#   budget by construction (L0.12's tag 1.2 m Strike run, T47, stopped at update 87 of 88 at 0.75 h: its trained Strike
+#   team waited out the 120 s clock, so every learning-curve read ran the full 2,400 ticks). Arithmetic
+#   (tests/test_ste_l012b.py checks it), from L0.12's logged Strike runs on the same laptop: cap C = 0.85 h = 3,060
+#   effective s; controls batch B = 100 s (the worst measured, tag 1.2 m Strike, 95 s); final reserve
+#   R = max(600, 2 x (2B + 120)) = 640 s; start-up O = 10 s (measured 1 s); one Strike update U = 21 s (worst of the three
+#   Strike runs 20.0 s, + 5 %); one learning-curve read K = 56.5 s every 10 updates (worst 53.8 s, + 5 %). Update N
+#   starts only if O + B + (N - 1) U + floor((N - 1) / 10) K <= C - R: N = 88 gives 2,389 <= 2,420 s. Check on the
+#   measured run itself: T47 had used 2,098 effective s when update 88 would have started; + 5 % = 2,203 <= 3,060 - 620.
+#   At 0.75 h (C - R = 2,060 s) update 88 does not start: hence the higher cap. Raising final_reserve_s would only stop
+#   training sooner. If tag 1.15 m makes the filter slower per tick than tag 1.2 m, the margin is about 30 s plus the
+#   5 % margins: the lead compares the screen's tag_1p15 and ctl_reference_replay batch seconds before launching.
+# - Unchosen tags (LEAD CALL 21 Nov 2026 (L0.12b Q3, Q4)): pushed together (the main share) and filter active at the tag
+#   (an upper bound, velocity change > 1e-3 m/s), defined in configs/ste_l012b/screen_gates.toml; reported for every
+#   cell of the final and INFO batches, in verdict.json and in the record.
 #
 # Simulator: training simulator, tier 1 (fast engine), Starling layer on: commander copy, safety filter on every pair
 # (1000 sweeps, check every 8), fitted PX4 response (exploratory); study tag on at 1.15 m (P1; study runs only).
@@ -68,7 +74,7 @@ tag_edge_margin_m = 0.01           # unchosen-tag measurement, as configs/ste_l0
 file = "configs/ste_l012b/screen_reference.npz"
 sha256 = "FILL_AFTER_SCREEN"       # FILL step 2: the file's sha256 (the driver refuses until it matches)
 start_sha256 = "5aeba7ab2b582f2973034c8203c17ed3e8239fef7029a1f991fe95b82369843c"   # T44's 3v3 start set
-t44_gates_sha256 = "2a8c29889efcff53e544a2550c46ccbbfc4f475bf48df2c66c9491624a947d43"   # the screen's gate file (configs/ste_l012b/screen_gates.toml)
+t44_gates_sha256 = "881375f054a78ae33c7fd330e271a4e3b27a0a1cf3d58eca4b893cdca8ce2479"   # the screen's gate file (configs/ste_l012b/screen_gates.toml)
 t44_record = "records/<date>_ste_l012b_screen_record.md (the screen's record, written by the lead)"
 t44_run = "2026-11-21_ste_l012b_screen"
 label = "the L0.12b scripted screen (configs/ste_l012b/screen_gates.toml)"
@@ -89,11 +95,11 @@ tag_1p15 = { game = "tag_1p15", g_star = "guard_mark_edge", s_star = "strike_str
 
 [trainer]
 # configs/ste_l012/gates.toml [trainer] as the lead filled it (the T41 recipe, the shaped Strike recipe picked by the
-# L0.12 pilot), but for game_steps_per_run (LEAD CALL above).
+# L0.12 pilot), with L0.12's 550 M game-steps (LEAD CALL above, Q1): equal to L0.12's [trainer] (a test checks it).
 algorithm = "IPPO"
 decision_ticks = 12
 num_games = 16384
-game_steps_per_run = 450_000_000   # LEAD CALL 21 Nov 2026 (L0.12b): cannot stop at the cap reserve by construction (header)
+game_steps_per_run = 550_000_000   # L0.12's; with --cap-h 0.85 it cannot stop at the cap reserve (header, LEAD CALL Q1)
 rollouts = 32
 learning_epochs = 5
 mini_batches = 4
@@ -156,7 +162,7 @@ probe_updates = 3
 
 [run0]
 # As configs/ste_l012/gates.toml [run0], on tag_1p15 (LEAD CALL above): the shaped Strike recipe against the parked Guard
-# at the runs' budget and cap (--cap-h 0.75), read every 10 updates and at the budget's last update.
+# at the runs' budget and cap (--cap-h 0.85, LEAD CALL Q1), read every 10 updates and at the budget's last update.
 variant = "tag_1p15"
 opponent = "guard_parked_centre"
 script = "strike_straight"

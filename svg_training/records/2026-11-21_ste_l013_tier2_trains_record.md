@@ -72,7 +72,8 @@ Scale (INFO): L0.12's base Guard held 913/1000 on tier 1 at 553,648,128 game-ste
 
 - **Figure and clips.** Learning curves of both arms, each arm's networks on its own tier and on the other tier, with the
   parked Guard's interval as a band: [learning_curves.png](../docs/figures/ste_l013/learning_curves.png) (a copy of the
-  verdict's figure, made by `scripts/ste_tier2_l013.py verdict`). The four 2-D clips, with the height panel:
+  verdict's figure, made by `scripts/ste_tier2_l013.py verdict`). The curves are read on 256 curve starts (seed
+  130900), not T44's 1,000 scoring starts, so their end points (about 0.79–0.81) differ from the 832 and 836 above. The four 2-D clips, with the height panel:
   [docs/media/ste_l013](../docs/media/ste_l013/README.md).
 - **(a) The game** (LEAD CALL 21 Nov 2026): the lead moved L0.13 from the PLAN's pilot P1b hangar game to the L0.12 base
   game and Guard recipe, so the result is comparable with T46's base Guard (913 of 1,000 at 553,648,128 game-steps).
@@ -81,13 +82,16 @@ Scale (INFO): L0.12's base Guard held 913/1000 on tier 1 at 553,648,128 game-ste
   at most 22 games' difference (t2 networks 846 on tier 1, 832 on tier 2; t1 networks 836 on tier 1, 814 on tier 2).
   Lead's reading; one training seed, one opponent.
 - **(c) Speed.** Tier 2 is about 5× slower per game-step (median 70,468 against 360,226 game-steps per second), so the
-  same 302 M game-steps took 1.29 GPU-h on tier 2 against 0.24 on tier 1.
+  same 302 M game-steps took 1.29 GPU-h on tier 2 against 0.24 on tier 1 (whole arms; tier 2 also plays 24 curve reads
+  to tier 1's 8). Training time alone: 4,292 s against 826 s (5.2×).
 - **(d) Physics check.** The tier 2 physics agreement control (C-1a) read 0.0166 m at 16,384 games (limit 0.02 m, PASS);
-  the 3,000-game view of the same world read 0.0164 m; T48 read 0.0036 m at 1,024 games. The largest gap likely grows
-  with the number of games compared (lead's reading; the 3,000-game reading shows it is not proportional; not tested).
-- **(e) Upsets and non-finite values.** Upset (tumbled) games: 0 in every evaluation batch and curve read of both arms,
-  trained and parked, on both tiers. Non-finite physics values (physics_nonfinite): 0 on tier 1 and 0 on tier 2.
-  Non-finite actions: 0.
+  the 3,000-game view of the same world read 0.0164 m; T48 read 0.0036 m at 1,024 games and T49 0.0028 m at 1,000.
+  The cause of the larger reading here is not separated (world size, the recorded inputs, or the number of games
+  compared); the lead's reading is that it grows with the games compared. The margin is 0.0034 m: a larger world (for
+  example on the 5090) may fail this gate.
+- **(e) Upsets and non-finite values** (evaluation batches and curve reads; the training log does not count them).
+  Upset (tumbled) games: 0 in every evaluation batch and curve read of both arms, trained and parked, on both tiers.
+  Non-finite physics values (physics_nonfinite): 0 on tier 1 and 0 on tier 2. Non-finite actions: 0, also in training.
 - **(f) QC before the run:** 40 of 44 deliberate breakages caught; the 4 survivors (N03, N04, N08, N13) are test gaps whose
   effect would show in the run's own files. The lead checked those files: physics_nonfinite is 0 in results.json and in
   every one of the 32 curve reads (8 in t1, 24 in t2); tier_ran equals the tier asked in every curve read; every game in
@@ -96,8 +100,10 @@ Scale (INFO): L0.12's base Guard held 913/1000 on tier 1 at 553,648,128 game-ste
 - **Smokes** (SMOKE, every control PASS): runs/2026-11-21_ste_l013_smoke_t1 (0.008 GPU-h) and _smoke_t2 (0.055 GPU-h;
   physics check 0.0166 m at 16,384 games; projected time margin for the run of record +2,811 s).
 - **Suspend.** Not suspended: one launch per arm, one boot; t1 853 s effective (progress.json) against an 855 s span,
-  t2 4,638 s against 4,642 s. GPU-hours: t1 0.237, t2 1.289 (the 1.527 in the ledger row); with the smokes 1.590.
+  t2 4,638 s against 4,642 s (the 849 s and 4,627 s above come from results.json, written before the final write). GPU-hours: t1 0.237, t2 1.289 (the 1.527 in the ledger row); with the smokes 1.590.
 - **Commit.** The arms name `fa3281ba`, which became `1ba631e8` when the branch was rebased on development.
+- Edited after the first write (same session, before any merge; no number changed): the physics-check reading, the
+  curve starts, whole-arm hours, the scope of the upset counts and the effective-time sources stated.
 
 ## Ledger row
 

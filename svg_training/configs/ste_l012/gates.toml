@@ -98,8 +98,11 @@ decision_ticks = 12                # LEAD CALL 21 Nov 2026 (finding L011-F1): on
 # let a new game play the old game's held action for up to 11 ticks, noise at T41's ~2,000-tick games but a large share
 # of T44's 36-78-tick tag games, and it would put training out of phase with the evaluation (decision at a game's first
 # tick). The discarded ticks are counted per update (train_log.jsonl "stale_tick_share"): they cost time, never data.
-num_games = 16384                  # PROPOSED; the pilot measures 8,192 / 16,384 / 32,768 and the lead fixes it before the runs
-game_steps_per_run = 0             # FILLED BY THE LEAD from the pilot before the first run of record (0 = refused, exit 2)
+num_games = 16384                  # FIXED by the lead from the pilot (21 Nov 2026, runs/2026-11-21_ste_l012_pilot): 16,384 = the probes' size; 32,768 is faster per step but halves the updates per run
+game_steps_per_run = 550_000_000  # FILLED BY THE LEAD from the pilot (21 Nov 2026, gate 9220fd9f, pilot 0.18 GPU-h): at 16,384 games and
+                                   # run cap 0.75 GPU-h (--cap-h 0.75 on every run and run 0) the pilot projects Strike 714 M, Guard 831 M,
+                                   # run 0 617 M; 550 M leaves an 11 % margin under run 0 (the CPU is shared with other builds) and is
+                                   # about 1.8 x the 300 M where T41's Guard got good. Pilot + run 0 + 6 runs = 5.43 GPU-h <= the 6.0 task cap
 rollouts = 32
 learning_epochs = 5
 mini_batches = 4

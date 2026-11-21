@@ -79,59 +79,72 @@ def write_config(path: Path, cfg: dict) -> Path:
 
 @pytest.fixture(scope="module")
 def fixture(tmp_path_factory, drv):
-    """(folder of T46 runs, settings file, the modules by side, the fake screen reference's path)."""
+    """(folder of T46 runs, settings file, the modules by side, {"screen", "base"}: the fake references' paths)."""
     tmp = tmp_path_factory.mktemp("l012d")
     runs = tmp / "runs"
-    gates_text = _small((ROOT / "configs" / "ste_l012" / "gates.toml").read_text())
     real = tomllib.loads(REAL_CONFIG.read_text())
     cfg = json.loads(json.dumps(real))
-    t46_ref = exploit.load_reference(ROOT / "configs" / "ste_l012" / "t44_reference.npz")
-    mods = {}
-    for side, seed in (("guard", 3), ("strike", 4)):
+    real_t46 = exploit.load_gates(ROOT / "configs" / "ste_l012" / "gates.toml")
+    real_screen = exploit.load_gates(ROOT / real["screen"]["gates"])
+    hidden, hold = list(real_t46.trainer["hidden"]), int(real_t46.trainer["decision_ticks"])
+    t46_ref = exploit.load_reference(ROOT / real_t46.reference["file"])
+    screen_ref = exploit.load_reference(ROOT / real_screen.reference["file"])
+    mods = {side: _modules(hidden, seed) for side, seed in (("guard", 3), ("strike", 4))}
+    teams = {side: exploit_train.team_from_modules(side, mods[side], hidden, "cpu") for side in mods}
+    players = {drv.T46_GUARD: teams["guard"], drv.T46_STRIKE: teams["strike"]}
+
+    def fake_reference(cfg_, ref, cells, variant, path):
+        """The driver's own batch played on the CPU, its script cells kept as the reference (real starts, real meta)."""
+        pg = exploit.play_cells(cfg_, "3v3", ref, cells, N, "cpu", int(ref.meta["seed"]), TICKS, hold_ticks=hold,
+                                players=players)
+        kept = {(variant, g, s): exploit.slice_cell(pg, i, N) for i, (g, s) in enumerate(cells)
+                if drv.is_script_cell((g, s))}
+        exploit.write_reference(path, ref.starts_m, ref.start_miss, kept, ref.meta)
+        return kept
+
+    # X4's base-game batch -> the fake T44 reference the T46 gate file copy points at (C4)
+    base_ref = tmp / "t44_reference.npz"
+    x4 = drv.x4_cells(real_screen, "tag_1p15", real_t46, "base")
+    base_cells = fake_reference(exploit.variant_cfg(real_t46, "base"), t46_ref, x4, "base", base_ref)
+    gates_text = _small((ROOT / "configs" / "ste_l012" / "gates.toml").read_text())
+    gates_text = re.sub(r'(?m)^file = "configs/ste_l012/t44_reference.npz"', f'file = "{base_ref}"', gates_text)
+    gates_text = re.sub(r'(?m)^sha256 = "4bc5e011[0-9a-f]*"', f'sha256 = "{_sha(base_ref)}"', gates_text)
+    for side in ("guard", "strike"):
         rd = runs / real["t46"][f"{side}_run"]
         rd.mkdir(parents=True)
         (rd / "gates.toml").write_text(gates_text)
         gates = exploit.load_gates(rd / "gates.toml")
+        assert gates.reference["file"] == str(base_ref)
         (rd / "run.json").write_text(json.dumps({"variant": "base", "side": side}))
-        mods[side] = _modules(list(gates.trainer["hidden"]), seed)
         torch.save(mods[side], rd / "agent_final.pt")
-        team = exploit_train.team_from_modules(side, mods[side], list(gates.trainer["hidden"]), "cpu")
         pg = exploit.play_cells(exploit.variant_cfg(gates, "base"), "3v3", t46_ref,
                                 exploit.eval_cells(gates, "base", side), N, "cpu", int(t46_ref.meta["seed"]), TICKS,
-                                learner=team, hold_ticks=int(gates.trainer["decision_ticks"]))
+                                learner=teams[side], hold_ticks=hold)
         np.savez(rd / "eval_final.npz", **{k: v for k, v in pg.items() if isinstance(v, np.ndarray)})
         won = GUARD_WIN if side == "guard" else STRIKE_WIN
         cfg["t46"][f"{side}_agent_sha256"] = _sha(rd / "agent_final.pt")
         cfg["t46"][f"{side}_eval_sha256"] = _sha(rd / "eval_final.npz")
         cfg["t46"]["guard_holds" if side == "guard" else "strike_reaches"] = int(np.sum(pg["outcome"][:N] == won))
     cfg["t46"]["gates_sha256"] = _sha(runs / real["t46"]["guard_run"] / "gates.toml")
+    cfg["t46"]["reference_sha256"] = _sha(base_ref)
+    g15, s15 = real_screen.variants["tag_1p15"]["g_star"], real_screen.variants["tag_1p15"]["s_star"]
+    cfg["t46"]["x4_script_holds"] = int(np.sum(base_cells[("base", g15, s15)]["outcome"] == GUARD_WIN))
 
-    # the fake screen reference: the driver's own 1.15 m batch played on the CPU, its script cells kept
-    real_screen = exploit.load_gates(ROOT / real["screen"]["gates"])
-    screen_ref = exploit.load_reference(ROOT / real_screen.reference["file"])
-    t46_gates = exploit.load_gates(runs / real["t46"]["guard_run"] / "gates.toml")
-    teams = {side: exploit_train.team_from_modules(side, mods[side], list(t46_gates.trainer["hidden"]), "cpu")
-             for side in mods}
-    cells = drv.x_cells(real_screen, "tag_1p15", t46_gates, real["t46"]["variant"])
-    pg = exploit.play_cells(exploit.variant_cfg(real_screen, "tag_1p15"), "3v3", screen_ref, cells, N, "cpu",
-                            int(screen_ref.meta["seed"]), TICKS, hold_ticks=int(t46_gates.trainer["decision_ticks"]),
-                            players={drv.T46_GUARD: teams["guard"], drv.T46_STRIKE: teams["strike"]})
-    ref_cells = {("tag_1p15", g, s): exploit.slice_cell(pg, i, N) for i, (g, s) in enumerate(cells)
-                 if drv.is_script_cell((g, s))}
+    # the 1.15 m batch -> the fake screen reference (C3)
     ref_path = tmp / "screen_reference.npz"
-    exploit.write_reference(ref_path, screen_ref.starts_m, screen_ref.start_miss, ref_cells, screen_ref.meta)
+    cells = drv.x_cells(real_screen, "tag_1p15", real_t46, "base")
+    ref_cells = fake_reference(exploit.variant_cfg(real_screen, "tag_1p15"), screen_ref, cells, "tag_1p15", ref_path)
     screen_text = _small((ROOT / real["screen"]["gates"]).read_text())
     screen_text = re.sub(r'(?m)^file = "configs/ste_l012b/screen_reference.npz"', f'file = "{ref_path}"', screen_text)
     screen_text = re.sub(r'(?m)^sha256 = "49014000[0-9a-f]*"', f'sha256 = "{_sha(ref_path)}"', screen_text)
     screen_gates = tmp / "screen_gates.toml"
     screen_gates.write_text(screen_text)
     assert exploit.load_gates(screen_gates).reference["file"] == str(ref_path)
-    g_star, s_star = real_screen.variants["tag_1p15"]["g_star"], real_screen.variants["tag_1p15"]["s_star"]
     cfg["screen"].update(gates=str(screen_gates), gates_sha256=_sha(screen_gates), reference_sha256=_sha(ref_path),
-                         screen_holds=int(np.sum(ref_cells[("tag_1p15", g_star, s_star)]["outcome"] == GUARD_WIN)))
+                         screen_holds=int(np.sum(ref_cells[("tag_1p15", g15, s15)]["outcome"] == GUARD_WIN)))
     cfg["clips"]["games"] = 2
     settings = write_config(tmp / "cross_tag.toml", cfg)
-    return runs, settings, mods, ref_path
+    return runs, settings, mods, {"screen": ref_path, "base": base_ref}
 
 
 def _main(drv, runs, settings, run_dir, *extra):
@@ -148,7 +161,7 @@ def _copy(fixture, tmp_path):
 
 
 def _x_keys(text: str) -> bool:
-    return any(k in text for k in ("X1", "X2", "X3"))
+    return re.search(r"\bX[1-4]\b", text) is not None             # word match: "PX4" is not an X cell
 
 
 # ================================================================================================ the driver
@@ -179,16 +192,22 @@ def test_controls_pass_on_a_self_consistent_fixture(good_run, drv):
     assert code == 0
     res = json.loads((rd / "results.json").read_text())
     assert res["complete"] is True and res["controls_pass"] is True
-    assert {k: v["status"] for k, v in res["controls"].items()} == {"C1": "PASS", "C2": "PASS", "C3": "PASS"}
-    for key in ("X1", "X2", "X3"):
+    assert {k: v["status"] for k, v in res["controls"].items()} == {"C1": "PASS", "C2": "PASS", "C3": "PASS",
+                                                                     "C4": "PASS"}
+    for key in ("X1", "X2", "X3", "X4"):
         x = res["cells"][key]
         assert x["n"] + x["unfinished"] == N and 0 <= x["k"] <= x["n"] and len(x["ci"]) == 2
     assert res["cells"]["X1"]["cell"] == [drv.T46_GUARD, "strike_straight"]
     assert res["cells"]["X2"]["cell"] == ["guard_field", drv.T46_STRIKE]
     assert res["cells"]["X3"]["cell"] == ["guard_mark_edge", drv.T46_STRIKE]
     assert set(res["cells"]["X1"]["paired"]) >= {"trained_only", "script_only", "both", "neither", "sign_test_p"}
+    assert res["cells"]["X4"]["cell"] == ["guard_field", drv.T46_STRIKE] and res["cells"]["X4"]["game"] == "base"
+    assert res["cells"]["X4"]["script"]["cell"] == ["guard_field", "strike_straight"] and "paired" in res["cells"]["X4"]
+    assert "against guard_field, an opponent the T46 Strike team never trained against" in res["cells"]["X4"]["reading"]
     assert "X3" in res["cells"] and "paired" not in res["cells"]["X3"]
-    for name in ("c1_base_guard", "c2_base_strike", "x_tag_1p15"):
+    assert res["closest_tol"]["source"] == "configs/ste_l011/gates.toml" and len(res["closest_tol"]["sha256"]) == 64
+    assert res["closest_tol"]["tol_m"] == 0.0 and "gpu" in res and res["clip_seed"] == 120950
+    for name in ("c1_base_guard", "c2_base_strike", "c4_base_field", "x_tag_1p15"):
         assert (rd / "games" / f"{name}.npz").is_file()
     md = (rd / "results.md").read_text()
     assert "1.6 m strategy at 1.15 m:" in md and "observed in the training simulator" in md.lower()
@@ -216,14 +235,16 @@ def test_a_mismatching_record_refuses_with_no_x_numbers(fixture, drv, tmp_path):
     controls = json.loads((out / "controls.json").read_text())
     assert controls["C1"]["status"] == "FAIL"
     assert not (out / "results.json").is_file()
-    assert not (out / "games" / "x_tag_1p15.npz").is_file()
+    assert (out / "games" / "c1_base_guard.npz").is_file()                 # the failed batch kept for diagnosis
+    assert not (out / "games" / "x_tag_1p15.npz").is_file()                # later batches never played
     assert not _x_keys((out / "results.md").read_text())
     assert _main(drv, runs, settings, out) == drv.EXIT_CONTROL_FAILED       # terminal: the same folder ends with 6 again
 
 
 def test_a_mismatching_screen_reference_refuses(fixture, drv, tmp_path):
     """C3: the 1.15 m script cell differs from the screen reference in one game: exit 6, no X number."""
-    runs, settings, _, ref_path = fixture
+    runs, settings, _, refs = fixture
+    ref_path = refs["screen"]
     cfg = tomllib.loads(settings.read_text())
     ref = exploit.load_reference(ref_path)
     cells = {k: {f: np.array(v, copy=True) for f, v in c.items()} for k, c in ref.cells.items()}
@@ -241,8 +262,46 @@ def test_a_mismatching_screen_reference_refuses(fixture, drv, tmp_path):
     controls = json.loads((out / "controls.json").read_text())
     assert controls["C1"]["status"] == "PASS" and controls["C2"]["status"] == "PASS"
     assert controls["C3"]["status"] == "FAIL"
-    assert not (out / "results.json").is_file() and not (out / "games" / "x_tag_1p15.npz").is_file()
+    assert not (out / "results.json").is_file()
+    assert (out / "games" / "x_tag_1p15.npz").is_file()                    # kept for diagnosis, never summarised
     assert not _x_keys((out / "results.md").read_text())
+
+
+def test_a_mismatching_t44_reference_refuses(fixture, drv, tmp_path):
+    """C4: X4's base-game script cell differs from T44's reference in one game: exit 6, no X number (X4's batch is its
+    own, never appended to C2's)."""
+    runs, cfg = _copy(fixture, tmp_path)
+    base = fixture[3]["base"]
+    ref = exploit.load_reference(base)
+    cells = {k: {f: np.array(v, copy=True) for f, v in c.items()} for k, c in ref.cells.items()}
+    cells[("base", "guard_field", "strike_straight")]["tags"][0] += 1
+    bad = tmp_path / "t44_reference.npz"
+    exploit.write_reference(bad, ref.starts_m, ref.start_miss, cells, ref.meta)
+    for side in ("guard", "strike"):
+        g = runs / cfg["t46"][f"{side}_run"] / "gates.toml"
+        g.write_text(g.read_text().replace(str(base), str(bad)).replace(_sha(base), _sha(bad)))
+    cfg["t46"].update(gates_sha256=_sha(g), reference_sha256=_sha(bad))
+    out = tmp_path / "run"
+    assert _main(drv, runs, write_config(tmp_path / "s.toml", cfg), out) == drv.EXIT_CONTROL_FAILED
+    controls = json.loads((out / "controls.json").read_text())
+    assert controls["C1"]["status"] == "PASS" and controls["C2"]["status"] == "PASS"
+    assert controls["C4"]["status"] == "FAIL" and "C3" not in controls
+    assert not (out / "results.json").is_file() and (out / "games" / "c4_base_field.npz").is_file()
+    assert not _x_keys((out / "results.md").read_text())
+
+
+def test_roles_are_found_by_cell_not_by_position(drv):
+    """x_roles looks every X cell and script cell up by name: a reordered batch still maps each role to its cell."""
+    screen = exploit.load_gates(ROOT / "configs" / "ste_l012b" / "gates.toml")
+    t46 = exploit.load_gates(ROOT / "configs" / "ste_l012" / "gates.toml")
+    roles = drv.x_roles(screen, "tag_1p15", t46, "base")
+    assert set(roles) == {"X1", "X2", "X3", "X4"} and roles["X4"]["batch"] == drv.X4_BATCH
+    cells = {drv.X_BATCH: list(reversed(drv.x_cells(screen, "tag_1p15", t46, "base"))),
+             drv.X4_BATCH: list(reversed(drv.x4_cells(screen, "tag_1p15", t46, "base")))}
+    for name, r in roles.items():
+        i, j = drv.role_index(r, cells)
+        assert tuple(cells[r["batch"]][i]) == r["cell"]
+        assert (j is None) == (r["script"] is None) and (j is None or tuple(cells[r["batch"]][j]) == r["script"])
 
 
 @pytest.mark.parametrize("key", ["guard_agent_sha256", "strike_agent_sha256", "gates_sha256", "guard_eval_sha256",
@@ -295,9 +354,11 @@ def test_x_cells_play_the_1p15_game_with_the_base_run_networks(fixture, drv, tmp
 
     monkeypatch.setattr(exploit, "play_cells", spy)
     assert _main(drv, runs, settings, tmp_path / "run") == 0
-    assert [round(c["radius"], 2) for c in calls] == [1.6, 1.6, 1.15]
+    assert [round(c["radius"], 2) for c in calls] == [1.6, 1.6, 1.6, 1.15]
     assert all(c["hold"] == 12 for c in calls)
-    x = calls[2]
+    assert calls[2]["cells"] == [("guard_field", drv.T46_STRIKE), ("guard_field", "strike_straight")]
+    assert calls[1]["cells"][0] == ("guard_mark_edge", "exploiter")        # C2's batch replayed whole, nothing appended
+    x = calls[3]
     assert x["learner"] is None and set(x["players"]) == {drv.T46_GUARD, drv.T46_STRIKE}
 
     def same(team, side):
@@ -370,6 +431,32 @@ def test_clips_render_for_real_on_the_cpu(fixture, drv, tmp_path):
         assert f.startswith("clips/X1/videos/") and (tmp_path / f.split(":")[0]).is_file()
 
 
+def test_a_clip_crash_still_leaves_complete_results(fixture, drv, tmp_path, monkeypatch):
+    """The clips run last: an error there is caught, results.json is complete and the clips are marked missing."""
+    runs, settings, _, _ = fixture
+
+    def boom(*a, **k):
+        raise RuntimeError("renderer fell over")
+    monkeypatch.setattr(drv, "make_clips", boom)
+    out = tmp_path / "run"
+    assert drv.main(["--t46-runs-dir", str(runs), "--settings", str(settings), "--run-dir", str(out),
+                     "--cap-h", "1"]) == 0
+    res = json.loads((out / "results.json").read_text())
+    assert res["complete"] is True and "renderer fell over" in res["clips"]["missing"]
+
+
+def test_no_clips_when_the_cap_is_reached_or_a_stop_was_asked(drv):
+    from types import SimpleNamespace
+    made = []
+    capped = SimpleNamespace(stop_requested=False, cap_reached=lambda: True)
+    stopped = SimpleNamespace(stop_requested=True, cap_reached=lambda: False)
+    free = SimpleNamespace(stop_requested=False, cap_reached=lambda: False)
+    assert "cap" in drv.clips_or_missing(capped, lambda: made.append(1))["missing"]
+    assert "stop" in drv.clips_or_missing(stopped, lambda: made.append(1))["missing"]
+    assert not made
+    assert drv.clips_or_missing(free, lambda: {"X1": {"files": []}}) == {"X1": {"files": []}}
+
+
 # ================================================================================================ the record writer
 @pytest.fixture(scope="module")
 def rec():
@@ -389,6 +476,14 @@ def test_the_record_carries_the_reading_words(good_run, rec, tmp_path):
                      rf"1\.15 m-trained team's 134 and the script's {x2['script']['k']}", text)
     assert "one seed per side, one opponent, one start set" in text.lower()
     assert "observed in the training simulator" in text.lower() and "INFO" in text
+    x4 = res["cells"]["X4"]
+    assert re.search(rf"1\.6 m strategy at 1\.6 m against guard_field, an opponent the T46 Strike team never trained "
+                     rf"against: {x4['k']:,} of {x4['n']:,} ", text)
+    clip_line = f"Clips: the clip seed's own starts (clip_seed 120950), CPU, not the {res['eval_games']:,} scoring starts"
+    seeds = text.split("## Seeds", 1)[1].split("##", 1)[0]
+    figures = text.split("## Figures and videos", 1)[1].split("##", 1)[0]
+    assert clip_line in seeds and clip_line in figures
+    assert "X4" in (tmp_path / "LEDGER.md").read_text()
     assert "validated" not in text.lower() and "category" not in text.lower()
     row = (tmp_path / "LEDGER.md").read_text().strip()
     assert row.startswith("| T56 |") and "STE L0.12d" in row and "| INFO |" in row

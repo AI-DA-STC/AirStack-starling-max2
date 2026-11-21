@@ -12,7 +12,10 @@
 #   C2  the same for T46's base Strike batch, the trained cell's reaches = strike_reaches;
 #   C3  every script cell of the 1.15 m batch (the batch that holds X1-X3) equal to the screen reference game for game
 #       (outcome, end step, tags, Strike drones left; the reference stores no closest approach) on the reference's starts,
-#       and g* v s* at 1.15 m holding screen_holds.
+#       and g* v s* at 1.15 m holding screen_holds;
+#   C4  every script cell of X4's own base-game batch (guard_field v T46 Strike, guard_field v strike_straight; never
+#       appended to C2's batch, which is replayed whole) equal to T44's reference cells game for game (T46's reference,
+#       pinned above), guard_field v strike_straight holding x4_script_holds.
 # Values are FIXED (copied from the records named) unless labelled otherwise.
 
 [t46]
@@ -28,6 +31,7 @@ reference_sha256 = "4bc5e011071adced368b2a0025fc47499839e0bbc8d8d650207bd12c3da0
 game_sha256 = "96e0e7f61a49999da54eee81a544bf64c519cd80833f0dcdfa2a07edfc10cc4d"            # configs/ste_l011/base.toml
 guard_holds = 913                                   # C1: T46 base Guard v strike_straight (T46 record)
 strike_reaches = 636                                # C2: T46 base Strike v guard_mark_edge (T46 record)
+x4_script_holds = 716                               # C4: guard_field v strike_straight at 1.6 m, holds (T44 reference; 284 reaches)
 
 [screen]
 gates = "configs/ste_l012b/gates.toml"              # the L0.12b gate file: the 1.15 m game, g*, s*, the screen reference

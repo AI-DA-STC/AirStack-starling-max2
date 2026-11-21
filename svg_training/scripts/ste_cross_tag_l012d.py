@@ -16,17 +16,21 @@ What it does, in order (settings and every pin: ``configs/ste_l012d/cross_tag.to
    network rebuilt by ``exploit_train.team_from_modules`` as ``scripts/ste_vid1_capture.py`` does): equal to the run's
    eval_final.npz game for game (``viz/replay3d.check_against_record``: exact keys equal, closest approach within the
    L0.11 same_seed_closest_tol_m on CUDA, 0 on the CPU) and the trained cell's count the record's (913, 636);
-3. one 1.15 m batch on the screen reference's starts: X1 (T46 Guard v s* at 1.15 m), X2 (g* at 1.15 m v T46 Strike), X3
+3. X4's own base-game batch (a separate batch: C2's is replayed whole): X4 (guard_field, the 1.15 m g*, v T46 Strike at
+   1.6 m; the T46 Strike team never trained against guard_field) and the script cell guard_field v s* at 1.6 m. C4: its
+   script cell equal to T44's reference game for game (``exploit.replay_ok``'s exact rule on any device: outcome, end
+   step, tags, Strike drones left; the reference stores no closest approach), guard_field v strike_straight holding 716;
+4. one 1.15 m batch on the screen reference's starts: X1 (T46 Guard v s* at 1.15 m), X2 (g* at 1.15 m v T46 Strike), X3
    (the base g* v T46 Strike, INFO), and the script cells g* v s* and base g* v s* at 1.15 m. C3: every script cell equal
-   to the screen reference game for game (``exploit.replay_ok``'s exact rule on any device: outcome, end step, tags,
-   Strike drones left; the reference stores no closest approach) on the reference's starts, g* v s* holding 645;
-4. only when C1, C2 and C3 all PASS: the per-game npz of the 1.15 m batch, results.json / results.md (wins of the trained
-   side with Wilson 95 % intervals, Guards left in holds, game length median, the unchosen-tag shares, and for X1 and X2
-   the paired counts against the script cell of the same batch), and the 2-D clips (the L0.12 driver's ``make_videos``:
-   CPU, own starts from the L0.12b clip seed, never the scored games), one win and one loss of X1 and of X2 where the
-   recorded games hold both.
+   to the screen reference game for game (the same exact rule) on the reference's starts, g* v s* holding 645;
+5. only when C1-C4 all PASS: results.json / results.md (wins of the trained side with Wilson 95 % intervals, Guards left in
+   holds, game length median, the unchosen-tag shares, and for X1, X2 and X4 the paired counts against the script cell of
+   the same batch), and the 2-D clips (the L0.12 driver's ``make_videos``: CPU, own starts from the L0.12b clip seed, never
+   the scored games), one win and one loss of X1 and of X2 where the recorded games hold both. The clips run last, only
+   with cap left; an error there is caught and the clips are marked missing (results.json still complete).
 
-Every per-game record of a control batch is kept in ``games/``; the 1.15 m batch is written only after C3 passes. The run
+Every batch's per-game record is kept in ``games/`` as soon as it is played (for diagnosis, also when its control
+fails); no X number is summarised or reported unless every control passes. The run
 contract (``ste/run_contract.py``): the same command resumes at the next batch not yet checked; SIGINT or SIGTERM stops
 before the next tick (exit 4); the cap is effective seconds = --cap-h x 3600 (exit 3). Exit codes: 0 done; 2 refused; 3
 cap; 4 stopped on request; 5 a non-finite action; 6 CONTROL_FAILED (a control is not PASS: no X number is reported;
@@ -69,7 +73,9 @@ T46_GUARD, T46_STRIKE = "t46_base_guard", "t46_base_strike"      # the trained p
 SIDES = ("guard", "strike")
 BATCH = {"guard": "c1_base_guard", "strike": "c2_base_strike"}
 CONTROL = {"guard": "C1", "strike": "C2"}
-X_BATCH = "x_tag_1p15"
+X_BATCH, X4_BATCH = "x_tag_1p15", "c4_base_field"
+CONTROLS = ("C1", "C2", "C3", "C4")
+TOL_SOURCE = "configs/ste_l011/gates.toml"   # the L0.11 gate file: same_seed_closest_tol_m (sweep.GATES_FILE)
 EXACT_RULE = "cpu"          # exploit.replay_ok's game-for-game branch, applied on any device (C3: "game for game")
 SIMULATOR = l012.SIMULATOR
 OBSERVED = "observed in the training simulator"
@@ -79,7 +85,7 @@ LIMITS = "one seed per side, one opponent, one start set; " + OBSERVED
 _KEYS = {
     "t46": {"variant", "guard_run", "strike_run", "gates_sha256", "guard_agent_sha256", "strike_agent_sha256",
             "guard_eval_sha256", "strike_eval_sha256", "reference_sha256", "game_sha256", "guard_holds",
-            "strike_reaches"},
+            "strike_reaches", "x4_script_holds"},
     "screen": {"gates", "gates_sha256", "variant", "reference_sha256", "game_sha256", "screen_holds"},
     "compare": {"trained_guard_holds", "trained_strike_reaches", "trained_games", "trained_source"},
     "clips": {"games", "keep"},
@@ -131,10 +137,29 @@ def is_script_cell(cell: tuple) -> bool:
     return T46_GUARD not in cell and T46_STRIKE not in cell
 
 
-def x_roles(cells: list, screen: exploit.ExploitGates, screen_variant: str) -> dict:
-    """X1-X3: (cell index, trained side, index of the script cell it is paired with, or None for X3)."""
-    script = cells.index((screen.variants[screen_variant]["g_star"], screen.variants[screen_variant]["s_star"]))
-    return {"X1": (0, "guard", script), "X2": (1, "strike", script), "X3": (2, "strike", None)}
+def x4_cells(screen: exploit.ExploitGates, screen_variant: str, t46: exploit.ExploitGates, t46_variant: str) -> list:
+    """X4's own base-game batch (Guard, Strike): guard_field (the 1.15 m g*) v T46 Strike, then guard_field v the base s*."""
+    g15, s46 = screen.variants[screen_variant]["g_star"], t46.variants[t46_variant]["s_star"]
+    return [(g15, T46_STRIKE), (g15, s46)]
+
+
+def x_roles(screen: exploit.ExploitGates, screen_variant: str, t46: exploit.ExploitGates, t46_variant: str) -> dict:
+    """X1-X4 by cell: {name: {batch, game, cell, side, script}}; ``script`` is the script cell of the same batch it is
+    paired with (None for X3)."""
+    g15, s15 = screen.variants[screen_variant]["g_star"], screen.variants[screen_variant]["s_star"]
+    g_base, s_base = t46.variants[t46_variant]["g_star"], t46.variants[t46_variant]["s_star"]
+    return {"X1": {"batch": X_BATCH, "game": screen_variant, "cell": (T46_GUARD, s15), "side": "guard", "script": (g15, s15)},
+            "X2": {"batch": X_BATCH, "game": screen_variant, "cell": (g15, T46_STRIKE), "side": "strike",
+                   "script": (g15, s15)},
+            "X3": {"batch": X_BATCH, "game": screen_variant, "cell": (g_base, T46_STRIKE), "side": "strike", "script": None},
+            "X4": {"batch": X4_BATCH, "game": t46_variant, "cell": (g15, T46_STRIKE), "side": "strike",
+                   "script": (g15, s_base)}}
+
+
+def role_index(role: dict, cells_by_batch: dict) -> tuple[int, int | None]:
+    """(the X cell's index, its script cell's index or None) in its batch, looked up by cell (never by position)."""
+    cells = [tuple(c) for c in cells_by_batch[role["batch"]]]
+    return cells.index(tuple(role["cell"])), (None if role["script"] is None else cells.index(tuple(role["script"])))
 
 
 # ================================================================================================ the inputs
@@ -234,7 +259,9 @@ def check_inputs(a: argparse.Namespace, s: dict):
             return None, f"T46's {side} eval_final.npz holds {len(records[side]['outcome'])} games, the batch " \
                          f"{len(cells[side])} cells x {n}"
     xc = x_cells(screen, v15, t46, v46)
+    x4 = x4_cells(screen, v15, t46, v46)
     missing = [c for c in xc if is_script_cell(c) and (v15, *c) not in ref15.cells]
+    missing += [c for c in x4 if is_script_cell(c) and (v46, *c) not in ref46.cells]
     if missing:
         return None, f"the screen reference has no cell {missing}"
     hidden = list(t46.trainer["hidden"])
@@ -245,7 +272,8 @@ def check_inputs(a: argparse.Namespace, s: dict):
         teams[side].name = T46_GUARD if side == "guard" else T46_STRIKE
     return SimpleNamespace(t46=t46, screen=screen, v46=v46, v15=v15, cfg46=cfg46, cfg15=cfg15, ref46=ref46, ref15=ref15,
                            device=device, n=n, ticks=int(t46.run["ticks_cap"]), hold=int(t46.trainer["decision_ticks"]),
-                           size=t46.run["size"], cells=cells, records=records, x_cells=xc, teams=teams, dirs=dirs), None
+                           size=t46.run["size"], cells=cells, records=records, x_cells=xc, x4_cells=x4, teams=teams,
+                           dirs=dirs, roles=x_roles(screen, v15, t46, v46)), None
 
 
 # ================================================================================================ controls
@@ -270,9 +298,9 @@ def check_t46_batch(pg: dict, record: dict, ref, n: int, side: str, expected: in
                       f"(record {expected}); " + "; ".join(f"{key} {v['status']}" for key, v in parts.items())}
 
 
-def check_screen_cells(pg: dict, cells: list, ref, variant: str, n: int, ticks: int, g_s: tuple, expected: int) -> dict:
-    """C3: every script cell of the 1.15 m batch equal to the screen reference game for game (exploit.replay_ok's exact
-    rule on any device) from the reference's own starts, and g* v s* holding ``expected``."""
+def check_reference_cells(pg: dict, cells: list, ref, variant: str, n: int, ticks: int, g_s: tuple, expected: int) -> dict:
+    """C3 / C4: every script cell of the batch equal to the reference (the screen's; T44's) game for game
+    (exploit.replay_ok's exact rule on any device) from the reference's own starts, and ``g_s`` holding ``expected``."""
     rows, ok = {}, True
     want_starts = exploit.starts_sha(ref.starts_m[:n])
     for i, cell in enumerate(cells):
@@ -289,7 +317,7 @@ def check_screen_cells(pg: dict, cells: list, ref, variant: str, n: int, ticks: 
     status = _status(parts, ok and holds == int(expected))
     return {"status": status, "cells": rows, "screen_holds": holds, "expected": int(expected), "plumbing": parts,
             "detail": "; ".join(f"{k}: {'ok' if v['equal'] else 'DIFFERS'} ({v['detail']})" for k, v in rows.items())
-                      + f"; {g_s[0]} v {g_s[1]} holds {holds} (screen {expected}); "
+                      + f"; {g_s[0]} v {g_s[1]} holds {holds} (reference {expected}); "
                       + "; ".join(f"{key} {v['status']}" for key, v in parts.items())}
 
 
@@ -314,36 +342,59 @@ def _rate(k: int, n: int) -> dict:
     return {"k": int(k), "n": int(n), "ci": [lo, hi]}
 
 
-def x_rows(ctx, pg: dict, s: dict) -> dict:
-    """X1-X3 (INFO): the trained side's wins with Wilson 95 % intervals, Guards left in holds, game length, unchosen
-    tags; X1, X2: the script cell of the same batch and the paired counts, and the team trained at 1.15 m."""
+def x_rows(ctx, pgs: dict, s: dict) -> dict:
+    """X1-X4 (INFO): the trained side's wins with Wilson 95 % intervals, Guards left in holds, game length, unchosen
+    tags; X1, X2, X4: the script cell of the same batch and the paired counts; X1, X2: the team trained at 1.15 m.
+    ``pgs``: per-game arrays by batch name."""
     guards, _ = sweep.parse_size(ctx.size)
-    edge = exploit.edge_m(ctx.screen, ctx.cfg15)
+    cfgs = {X_BATCH: ctx.cfg15, X4_BATCH: ctx.cfg46}
+    cells = {X_BATCH: ctx.x_cells, X4_BATCH: ctx.x4_cells}
     cmp_ = s["compare"]
     out = {}
-    for name, (i, side, j) in x_roles(ctx.x_cells, ctx.screen, ctx.v15).items():
+    for name, role in ctx.roles.items():
+        pg, side = pgs[role["batch"]], role["side"]
+        i, j = role_index(role, cells)
+        edge = exploit.edge_m(ctx.screen, cfgs[role["batch"]])
         cell_pg = exploit.slice_cell(pg, i, ctx.n)
         k, m = l012.win_count(cell_pg, side)
         comp = sweep.hold_composition({**cell_pg, "game_ticks": pg["game_ticks"]}, guards)
-        row = {"cell": list(ctx.x_cells[i]), "side": side, **_rate(k, m),
+        row = {"cell": list(role["cell"]), "side": side, "game": role["game"], **_rate(k, m),
                "unfinished": int(np.sum(cell_pg["outcome"] == RUNNING)),
                "guards_left_mean_in_holds": comp["guards_left_mean_in_holds"], "length_median_s": comp["length_median_s"],
                "composition": comp, "tag_shares": sweep.tag_shares(cell_pg, edge), "counts": exploit.counts(cell_pg)}
+        ci = f"({row['ci'][0]:.3f}–{row['ci'][1]:.3f})"
         if j is not None:
             s_pg = exploit.slice_cell(pg, j, ctx.n)
-            row["script"] = {"cell": list(ctx.x_cells[j]), **_rate(*l012.win_count(s_pg, side))}
+            row["script"] = {"cell": list(role["script"]), **_rate(*l012.win_count(s_pg, side))}
             row["paired"] = paired_wins(cell_pg["outcome"], s_pg["outcome"], side) \
                 if not (cell_pg["outcome"] == RUNNING).any() and not (s_pg["outcome"] == RUNNING).any() else \
                 {"trained_only": None, "script_only": None, "both": None, "neither": None, "sign_test_p": None,
                  "note": "unfinished games: no paired counts"}
+        if name in ("X1", "X2"):
             trained = cmp_["trained_guard_holds"] if side == "guard" else cmp_["trained_strike_reaches"]
             row["trained_at_1p15"] = {**_rate(trained, cmp_["trained_games"]), "source": cmp_["trained_source"]}
             row["reading"] = READING.format(k=k, n=m, lo=row["ci"][0], hi=row["ci"][1], m=trained, s=row["script"]["k"])
+        elif name == "X4":
+            row["reading"] = (f"1.6 m strategy at 1.6 m against {role['cell'][0]}, an opponent the T46 Strike team never "
+                              f"trained against: {k:,} of {m:,} {ci} against the script's {row['script']['k']} (INFO)")
         else:
-            row["reading"] = (f"1.6 m strategy at 1.15 m: {k:,} of {m:,} ({row['ci'][0]:.3f}–{row['ci'][1]:.3f}) against "
-                              f"{ctx.x_cells[i][0]}, the opponent it trained against (INFO)")
+            row["reading"] = (f"1.6 m strategy at 1.15 m: {k:,} of {m:,} {ci} against {role['cell'][0]}, the opponent "
+                              f"it trained against (INFO)")
         out[name] = row
     return out
+
+
+def clips_or_missing(guard, make) -> dict:
+    """The clips phase: skipped (marked missing) when the cap is reached or a stop was asked; an error while drawing is
+    caught and marked missing, so results.json is still complete."""
+    if guard.stop_requested:
+        return {"missing": "a stop was asked before the clips (SIGINT or SIGTERM)"}
+    if guard.cap_reached():
+        return {"missing": "the cap was reached before the clips"}
+    try:
+        return make()
+    except Exception as err:                            # noqa: BLE001  (any drawing error: the scores stand)
+        return {"missing": f"the clips failed: {type(err).__name__}: {err}"}
 
 
 def make_clips(ctx, s: dict, run_dir: Path) -> dict:
@@ -367,6 +418,17 @@ def _num(x, fmt: str = "{:.3f}") -> str:
     return "-" if x is None or (isinstance(x, float) and x != x) else fmt.format(x)
 
 
+def _trained(x: dict) -> str:
+    t = x.get("trained_at_1p15")
+    return "-" if t is None else f"{t['k']}/{t['n']}"
+
+
+def clip_starts(result: dict) -> str:
+    """Which starts the clips use (the spec's Clips line; the record repeats it)."""
+    return (f"Clips: the clip seed's own starts (clip_seed {result['clip_seed']}), CPU, not the "
+            f"{result['eval_games']:,} scoring starts")
+
+
 def write_md(run_dir: Path, controls: dict, result: dict | None) -> None:
     lines = [f"Simulator: {SIMULATOR}. {OBSERVED.capitalize()}; nothing here is a flight result.", "",
              "# L0.12d Cross-tag check: the 1.6 m-trained players (T46, base) in the 1.15 m game (INFO)", "",
@@ -379,7 +441,8 @@ def write_md(run_dir: Path, controls: dict, result: dict | None) -> None:
                   "Length median (s) | Pushed together (share) | Filter active (share) |", "|---|---|---|---|---|---|---|---|"]
         for key, x in result["cells"].items():
             ts = x["tag_shares"]
-            lines.append(f"| {key} | {x['cell'][0]} | {x['cell'][1]} | {x['k']}/{x['n']} ({x['ci'][0]:.3f}–{x['ci'][1]:.3f})"
+            lines.append(f"| {key} ({x['game']}) | {x['cell'][0]} | {x['cell'][1]} | {x['k']}/{x['n']} "
+                         f"({_num(x['ci'][0])}–{_num(x['ci'][1])})"
                          f" | {_num(x['guards_left_mean_in_holds'])} | {_num(x['length_median_s'])} | "
                          f"{ts.get('tags_pushed')} ({_num(ts.get('pushed_tag_share'))}) | "
                          f"{ts.get('tags_filtered')} ({_num(ts.get('filter_active_share'))}) |")
@@ -390,17 +453,36 @@ def write_md(run_dir: Path, controls: dict, result: dict | None) -> None:
                 p = x["paired"]
                 lines.append(f"| {key} | {' v '.join(x['script']['cell'])} | {x['script']['k']}/{x['script']['n']} | "
                              f"{p['trained_only']} / {p['script_only']} / {p['both']} / {p['neither']} | "
-                             f"{x['trained_at_1p15']['k']}/{x['trained_at_1p15']['n']} |")
+                             f"{_trained(x)} |")
         lines += ["", "## Reading", ""] + [f"- {k}: {x['reading']}." for k, x in result["cells"].items()]
-        lines += ["", "## Clips (2-D with the height panel; CPU, own starts from the L0.12b clip seed, not the scored "
-                  "games)", ""]
-        for key, c in result.get("clips", {}).items():
-            lines += [f"- {key}: {f}" for f in c["files"]] + ([f"- {key}: {c['note']}"] if c.get("note") else [])
+        lines += ["", f"## Clips (2-D with the height panel): {clip_starts(result)}", ""]
+        clips = result.get("clips", {})
+        if "missing" in clips:
+            lines.append(f"- no clips: {clips['missing']}")
+        for key, c in clips.items():
+            if key != "missing":
+                lines += [f"- {key}: {f}" for f in c["files"]] + ([f"- {key}: {c['note']}"] if c.get("note") else [])
     atomic.write_text(run_dir / "results.md", "\n".join(lines) + "\n")
 
 
 # ================================================================================================ the run
+def save_batch(path: Path, pg: dict) -> None:
+    """The batch's per-game arrays plus its start hashes and game length (enough to rebuild the results on a resume)."""
+    arrays = {k: v for k, v in pg.items() if isinstance(v, np.ndarray)}
+    np.savez_compressed(path, **arrays, start_sha256=np.array(pg["start_sha256"]), game_ticks=np.array(pg["game_ticks"]))
+
+
+def load_batch(path: Path) -> dict:
+    with np.load(path) as d:
+        pg = {k: d[k] for k in d.files}
+    pg["start_sha256"] = [str(x) for x in pg["start_sha256"]]
+    pg["game_ticks"] = int(pg["game_ticks"])
+    return pg
+
+
 def run(ctx, a: argparse.Namespace, s: dict, guard: RunGuard) -> int:
+    """C1, C2 (T46's batches), C4 (X4's base-game batch), C3 (the 1.15 m batch), in that order; each batch's npz as soon
+    as it is played; results only when all four controls PASS."""
     run_dir = a.run_dir
     (run_dir / GAMES).mkdir(exist_ok=True)
     controls = json.loads((run_dir / CONTROLS_FILE).read_text()) if (run_dir / CONTROLS_FILE).is_file() else {}
@@ -428,54 +510,52 @@ def run(ctx, a: argparse.Namespace, s: dict, guard: RunGuard) -> int:
         if code is not None:
             write_md(run_dir, controls, None)
             say(f"{'NON-FINITE' if code == EXIT_NONFINITE else 'CONTROL FAILED'}: no cross-tag number is reported "
-                f"(exit {code})")
+                f"(exit {code}); the batch's per-game record is kept in {GAMES}/ for diagnosis")
         return code
-
-    seconds = {}
-    for side in SIDES:                                             # C1, C2: T46's own batches, the base game
-        key = CONTROL[side]
-        if controls.get(key, {}).get("status") == PASS:
-            continue
-        started = time.perf_counter()
-        say(f"{key}: T46 {side} batch, {len(ctx.cells[side])} cells x {ctx.n} on {ctx.device}")
-        try:
-            pg = exploit.play_cells(ctx.cfg46, ctx.size, ctx.ref46, ctx.cells[side], ctx.n, ctx.device,
-                                    int(ctx.ref46.meta["seed"]), ctx.ticks, learner=ctx.teams[side], hold_ticks=ctx.hold,
-                                    should_stop=should_stop)
-        except sweep.SweepStopped:
-            return stopped()
-        seconds[key] = time.perf_counter() - started
-        np.savez_compressed(run_dir / GAMES / f"{BATCH[side]}.npz",
-                            **{k: v for k, v in pg.items() if isinstance(v, np.ndarray)})
-        expected = s["t46"]["guard_holds" if side == "guard" else "strike_reaches"]
-        code = settle(key, {**check_t46_batch(pg, ctx.records[side], ctx.ref46, ctx.n, side, expected, tol),
-                            "seconds": seconds[key]})
-        if code is not None:
-            return code
 
     teams = {T46_GUARD: ctx.teams["guard"], T46_STRIKE: ctx.teams["strike"]}
-    g_s = (ctx.screen.variants[ctx.v15]["g_star"], ctx.screen.variants[ctx.v15]["s_star"])
-    started = time.perf_counter()
-    say(f"1.15 m batch: {ctx.x_cells} x {ctx.n} on {ctx.device}")
-    try:
-        pg = exploit.play_cells(ctx.cfg15, ctx.size, ctx.ref15, ctx.x_cells, ctx.n, ctx.device,
-                                int(ctx.ref15.meta["seed"]), ctx.ticks, hold_ticks=ctx.hold, should_stop=should_stop,
-                                players=teams)
-    except sweep.SweepStopped:
-        return stopped()
-    seconds["C3"] = time.perf_counter() - started
-    code = settle("C3", {**check_screen_cells(pg, ctx.x_cells, ctx.ref15, ctx.v15, ctx.n, ctx.ticks, g_s,
-                                              s["screen"]["screen_holds"]), "seconds": seconds["C3"]})
-    if code is not None:
-        return code
-    if {v["status"] for v in controls.values()} != {PASS} or set(controls) != {"C1", "C2", "C3"}:
+    g15, s15 = ctx.screen.variants[ctx.v15]["g_star"], ctx.screen.variants[ctx.v15]["s_star"]
+    s46 = ctx.t46.variants[ctx.v46]["s_star"]
+    batches = [  # key, batch file, game, reference, cells, play keywords, check
+        ("C1", BATCH["guard"], ctx.cfg46, ctx.ref46, ctx.cells["guard"], {"learner": ctx.teams["guard"]},
+         lambda pg: check_t46_batch(pg, ctx.records["guard"], ctx.ref46, ctx.n, "guard", s["t46"]["guard_holds"], tol)),
+        ("C2", BATCH["strike"], ctx.cfg46, ctx.ref46, ctx.cells["strike"], {"learner": ctx.teams["strike"]},
+         lambda pg: check_t46_batch(pg, ctx.records["strike"], ctx.ref46, ctx.n, "strike", s["t46"]["strike_reaches"],
+                                    tol)),
+        ("C4", X4_BATCH, ctx.cfg46, ctx.ref46, ctx.x4_cells, {"players": teams},
+         lambda pg: check_reference_cells(pg, ctx.x4_cells, ctx.ref46, ctx.v46, ctx.n, ctx.ticks, (g15, s46),
+                                          s["t46"]["x4_script_holds"])),
+        ("C3", X_BATCH, ctx.cfg15, ctx.ref15, ctx.x_cells, {"players": teams},
+         lambda pg: check_reference_cells(pg, ctx.x_cells, ctx.ref15, ctx.v15, ctx.n, ctx.ticks, (g15, s15),
+                                          s["screen"]["screen_holds"])),
+    ]
+    pgs = {}
+    for key, name, cfg, ref, cells, players, check in batches:
+        path = run_dir / GAMES / f"{name}.npz"
+        if controls.get(key, {}).get("status") == PASS and path.is_file():
+            if name in (X_BATCH, X4_BATCH):
+                pgs[name] = load_batch(path)
+            continue
+        started = time.perf_counter()
+        say(f"{key}: batch {name}, {len(cells)} cells x {ctx.n} on {ctx.device}: {cells}")
+        try:
+            pg = exploit.play_cells(cfg, ctx.size, ref, cells, ctx.n, ctx.device, int(ref.meta["seed"]), ctx.ticks,
+                                    hold_ticks=ctx.hold, should_stop=should_stop, **players)
+        except sweep.SweepStopped:
+            return stopped()
+        took = time.perf_counter() - started
+        save_batch(path, pg)                                       # kept for diagnosis even when the control fails
+        l011.write_json(path.with_suffix(".json"), {"cells": [list(c) for c in cells], "games_per_cell": ctx.n})
+        code = settle(key, {**check(pg), "seconds": took})
+        if code is not None:
+            return code
+        pgs[name] = pg
+    if set(controls) != set(CONTROLS) or {v["status"] for v in controls.values()} != {PASS}:
         write_md(run_dir, controls, None)
         return EXIT_CONTROL_FAILED
-    # ---- every control PASS: the 1.15 m batch, results, clips; results.json LAST ----
-    np.savez_compressed(run_dir / GAMES / f"{X_BATCH}.npz", **{k: v for k, v in pg.items() if isinstance(v, np.ndarray)})
-    l011.write_json(run_dir / GAMES / f"{X_BATCH}.json", {"cells": [list(c) for c in ctx.x_cells], "games_per_cell": ctx.n})
-    result = results_of(ctx, a, s, pg, controls, guard)
-    result["clips"] = {} if a.no_videos else make_clips(ctx, s, run_dir)
+    # ---- every control PASS: results, then the clips (last, with cap left); results.json LAST ----
+    result = results_of(ctx, a, s, pgs, controls, guard, tol)
+    result["clips"] = {} if a.no_videos else clips_or_missing(guard, lambda: make_clips(ctx, s, run_dir))
     result["complete"] = True
     l011.write_json(run_dir / RESULTS, result)
     write_md(run_dir, controls, result)
@@ -484,24 +564,28 @@ def run(ctx, a: argparse.Namespace, s: dict, guard: RunGuard) -> int:
     return EXIT_DONE
 
 
-def results_of(ctx, a, s: dict, pg: dict, controls: dict, guard: RunGuard) -> dict:
+def results_of(ctx, a, s: dict, pgs: dict, controls: dict, guard: RunGuard, tol: float) -> dict:
     game = lambda g, v: {"file": g.games[g.variants[v]["game"]].file, "sha256": g.games[g.variants[v]["game"]].sha256}  # noqa: E731
+    machine = l012.machine()
     return {
         "what": "STE L0.12d Cross-tag check: the 1.6 m-trained players (T46, base) in the 1.15 m game; " + OBSERVED,
         "task": "L0.12d", "kind": "INFO", "simulator": SIMULATOR, "limits": LIMITS, "controls_pass": True,
-        "controls": controls, "cells": x_rows(ctx, pg, s),
-        "x_cells": [list(c) for c in ctx.x_cells],
+        "controls": controls, "cells": x_rows(ctx, pgs, s),
+        "x_cells": [list(c) for c in ctx.x_cells], "x4_cells": [list(c) for c in ctx.x4_cells],
         "networks": {side: {"run": s["t46"][f"{side}_run"], "agent_final_sha256": s["t46"][f"{side}_agent_sha256"],
                             "trained_on": ctx.v46, "decision_ticks": ctx.hold} for side in SIDES},
-        "games": {"controls": game(ctx.t46, ctx.v46), "x": game(ctx.screen, ctx.v15)},
+        "games": {"controls": game(ctx.t46, ctx.v46), "x": game(ctx.screen, ctx.v15), "x4": game(ctx.t46, ctx.v46)},
         "pins": {"t46": s["t46"], "screen": s["screen"]}, "compare": s["compare"],
         "references": {"t46": {"file": ctx.t46.reference["file"], "sha256": ctx.t46.reference["sha256"]},
                        "screen": {"file": ctx.screen.reference["file"], "sha256": ctx.screen.reference["sha256"]},
                        "start_sha256": ctx.ref15.start_sha256, "seed": int(ctx.ref15.meta["seed"])},
+        "closest_tol": {"tol_m": tol, "rule": "0 on the CPU; same_seed_closest_tol_m on CUDA",
+                        "source": TOL_SOURCE, "sha256": exploit.sha256_file(ROOT / TOL_SOURCE)},
+        "clip_seed": int(ctx.screen.run["clip_seed"]),
         "parameter_set": l012.parameter_set(ctx.screen, ctx.v15), "device": ctx.device, "eval_games": ctx.n,
         "ticks_cap": ctx.ticks, "batch_seconds": {k: v.get("seconds") for k, v in controls.items()},
         "edge_m": exploit.edge_m(ctx.screen, ctx.cfg15), "effective_s": guard.effective_s(), "cap_h": a.cap_h,
-        "machine": l012.machine(), "code": json.loads((a.run_dir / l011.CODE_FILE).read_text()),
+        "machine": machine, "gpu": machine["gpu"], "code": json.loads((a.run_dir / l011.CODE_FILE).read_text()),
         "t46_runs_dir": str(a.t46_runs_dir), "settings_sha256": exploit.sha256_file(a.settings),
     }
 

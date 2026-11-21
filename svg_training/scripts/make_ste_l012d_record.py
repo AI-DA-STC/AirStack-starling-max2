@@ -24,19 +24,28 @@ sys.path.insert(0, str(ROOT / "scripts"))
 import make_ste_l011_record as l011rec  # noqa: E402  (GPU-hours and exit words)
 from make_ste_l012_record import num  # noqa: E402
 
-CONTROLS = ("C1", "C2", "C3")
+CONTROLS = ("C1", "C2", "C3", "C4")
 CONTROL_WHAT = {"C1": "T46's base Guard evaluation batch replayed whole (base game): equal to its eval_final.npz game "
                       "for game, trained Guard holds as recorded",
                 "C2": "T46's base Strike evaluation batch replayed whole (base game): equal to its eval_final.npz game "
                       "for game, trained Strike reaches as recorded",
                 "C3": "every script cell of the 1.15 m batch equal to the L0.12b screen reference game for game, "
-                      "g* v s* holds as the screen"}
+                      "g* v s* holds as the screen",
+                "C4": "every script cell of X4's own base-game batch equal to T44's reference game for game, "
+                      "guard_field v strike_straight holds as T44 (716)"}
 X_WHAT = {"X1": "T46 base trained Guard team v s* at 1.15 m", "X2": "g* at 1.15 m v T46 base trained Strike team",
-          "X3": "the base g* (the opponent it trained against) v T46 base trained Strike team (INFO)"}
+          "X3": "the base g* (the opponent it trained against) v T46 base trained Strike team (INFO)",
+          "X4": "guard_field v T46 base trained Strike team in the base game (tag 1.6 m); the T46 Strike team never "
+                "trained against guard_field (INFO)"}
 
 
 def ci(x: dict) -> str:
     return f"{x['k']:,} of {x['n']:,} ({num(x['ci'][0], '{:.3f}')}–{num(x['ci'][1], '{:.3f}')})"
+
+
+def clip_starts(res: dict) -> str:
+    return (f"Clips: the clip seed's own starts (clip_seed {res['clip_seed']}), CPU, not the {res['eval_games']:,} "
+            f"scoring starts")
 
 
 def record_text(run_dir: Path, res: dict, name: str, number: str) -> tuple[str, str]:
@@ -48,7 +57,8 @@ def record_text(run_dir: Path, res: dict, name: str, number: str) -> tuple[str, 
              "STE task L0.12d Cross-tag check (INFO; spec ste_learning/drafts/L0_12d_CROSS_TAG_SPEC.md, written by the "
              "lead before any scoring): how well do the strategies trained at tag 1.6 m (T46, base variant) play when "
              "the tag is 1.15 m (the safety filter's 1.10 m keep-out + 0.05 m)? Scoring only, no training, on T44's "
-             "1,000 scoring starts. Feeds G0 row 1 (tag distance).", "",
+             "1,000 scoring starts. Feeds G0 row 1 (tag distance). X4 (guard_field at 1.6 m) separates the opponent from "
+             "the tag: with C2, X2 and X3 it completes tag x opponent.", "",
              "## Commit", "", f"`{res['code']['first']['commit']}` (diff sha256 {res['code']['first']['diff_sha256'][:12]})",
              "", "## Config", "",
              f"- Settings `configs/ste_l012d/cross_tag.toml`, sha256 `{res['settings_sha256']}` (copy in the run folder).",
@@ -67,7 +77,8 @@ def record_text(run_dir: Path, res: dict, name: str, number: str) -> tuple[str, 
              f"Tier 1 Starling layer: `{res['parameter_set']['file']}` (fitted PX4 response, exploratory), sha256 "
              f"`{res['parameter_set']['sha256']}`; safety filter on {res['parameter_set']['filter']}.", "",
              "## Seeds", "", f"Scoring starts T44's (seed {res['references']['seed']}, loaded); scripted players seed + 101 "
-                              f"(Guard) / + 202 (Strike); one training seed per side (T46's); no training here.", "",
+                              f"(Guard) / + 202 (Strike); one training seed per side (T46's); no training here. "
+                              f"{clip_starts(res)}.", "",
              "## Machine", "", f"{res['machine']['host']}, {res['machine']['gpu']}, torch {res['machine']['torch']}, "
                                f"device {res['device']}; exit {l011rec.exit_word(run_dir)}; effective "
                                f"{res['effective_s']:.0f} s of {res['cap_h']} h; {hours}", "",
@@ -77,6 +88,8 @@ def record_text(run_dir: Path, res: dict, name: str, number: str) -> tuple[str, 
              "## Gates", "", "Verdict: **INFO** (no pass/fail gate; the controls are gated: any control not PASS and no "
                              "cross-tag number is reported).", "", "| Control | What | Status |", "|---|---|---|"]
     lines += [f"| {k} | {CONTROL_WHAT[k]} | **{c[k]['status']}** |" for k in CONTROLS]
+    lines += ["", f"Closest-approach tolerance {res['closest_tol']['tol_m']} m ({res['closest_tol']['rule']}; "
+              f"`{res['closest_tol']['source']}`, sha256 `{res['closest_tol']['sha256']}`)."]
     lines += ["", "| Cell | What | Trained side's wins (Wilson 95 %) | Script cell, same starts | Paired: trained only / "
               "script only | Trained at 1.15 m | Guards left in holds | Length median (s) | Pushed together (share) | "
               "Filter active (share) |", "|---|---|---|---|---|---|---|---|---|---|"]
@@ -84,24 +97,31 @@ def record_text(run_dir: Path, res: dict, name: str, number: str) -> tuple[str, 
         ts, p = x["tag_shares"], x.get("paired") or {}
         script = f"{' v '.join(x['script']['cell'])}: {ci(x['script'])}" if "script" in x else "-"
         trained = ci(x["trained_at_1p15"]) if "trained_at_1p15" in x else "-"
-        lines.append(f"| {key} | {X_WHAT[key]} | {ci(x)} | {script} | {p.get('trained_only', '-')} / "
+        lines.append(f"| {key} | {X_WHAT[key]}; game {x['game']} | {ci(x)} | {script} | {p.get('trained_only', '-')} / "
                      f"{p.get('script_only', '-')} | {trained} | {num(x['guards_left_mean_in_holds'], '{:.3f}')} | "
                      f"{num(x['length_median_s'])} | {ts.get('tags_pushed', '-')} "
                      f"({num(ts.get('pushed_tag_share'), '{:.3f}')}) | {ts.get('tags_filtered', '-')} "
                      f"({num(ts.get('filter_active_share'), '{:.3f}')}) |")
-    lines += ["", f"Trained at 1.15 m: {cmp_['trained_source']}.", "", "## Figures and videos", ""]
-    for key, clip in res.get("clips", {}).items():
-        lines += [f"- {key}: {f}" for f in clip["files"]] + ([f"- {key}: {clip['note']}"] if clip.get("note") else [])
-    if not res.get("clips"):
+    lines += ["", f"Trained at 1.15 m: {cmp_['trained_source']}.", "", "## Figures and videos", "",
+              f"{clip_starts(res)}.", ""]
+    clips = res.get("clips") or {}
+    if "missing" in clips:
+        lines.append(f"- no clips: {clips['missing']}")
+    for key, clip in clips.items():
+        if key != "missing":
+            lines += [f"- {key}: {f}" for f in clip["files"]] + ([f"- {key}: {clip['note']}"] if clip.get("note") else [])
+    if not clips:
         lines.append("- no clips in this run folder")
     lines += ["", "## Reading", ""]
     lines += [f"- {key} ({X_WHAT[key]}): {x['reading']}." for key, x in cells.items()]
     lines += [f"- {res['limits'].capitalize()}.", ""]
     what = "; ".join(f"{k} {x['k']}/{x['n']}" + (f" (1.15 m-trained {x['trained_at_1p15']['k']}, script "
-                                                    f"{x['script']['k']})" if "script" in x else "")
+                                                    f"{x['script']['k']})" if "trained_at_1p15" in x else
+                                                    f" (script {x['script']['k']})" if "script" in x else "")
                      for k, x in cells.items())
     row = (f"| {number} | {first_launch(run_dir)} | {res['simulator']}; {res['machine']['gpu']} | {name} | STE L0.12d "
-           f"Cross-tag check (1.6 m-trained T46 base players at tag 1.15 m): {what}; controls C1–C3 PASS"
+           f"Cross-tag check (1.6 m-trained T46 base players at tag 1.15 m; X4 = guard_field at 1.6 m): {what}; controls "
+           f"C1–C4 PASS"
            f"{f'; {used:.3f} GPU-h' if used is not None else ''} | INFO | records/{name}_record.md |")
     lines += ["## Ledger row", "", "Ledger row: " + row, ""]
     return "\n".join(lines), row

@@ -1,0 +1,229 @@
+# STE task L0.2 Tier 2 speed in contested play (PLAN.md section 4; DISCUSSION P3; WORK_BREAKDOWN L0.2). INFO: no gate
+# on a speed, no verdict; the [controls] are checks with known answers and stop the run (exit 6) when one fails.
+# Read by scripts/ste_speed_l02.py through source/svg_training/ste/speed.py (exact keys: an unknown or missing key refuses).
+# Written before any run; copied into the run folder and pinned by sha256 at the first launch, never edited after a first
+# result (STANDARDS section 7). Labels as in ../../STANDARDS.md (FIXED, MEASURED, PROPOSED, OPEN) plus LEAD CALL / L0.2
+# CHOICE for what this task chose before its runs. Machine: written for the laptop RTX 5070 Ti (12 GB; owner 21 Nov 2026,
+# "no task is 5090-only"); the 5090 may re-run it larger with a new gate file.
+#
+# What is timed, per point (ste/speed.py): (1) the scripted reference: both teams play their base-case best script
+# (T44: g* guard_mark_edge, s* strike_straight), reference_decisions x decision_ticks ticks of every game; (2) the
+# learner in the loop: the T41 / L0.12 recipe (skrl IPPO, policy forward pass every decision_ticks ticks, the action
+# held in between) on the Guard team against s*, `updates` x (rollouts decisions + one PPO update of learning_epochs x
+# mini_batches), with the rollout seconds and the update seconds kept apart. ste/exploit_train.py (L0.12) is not on
+# development, so the learner is built from train_standin.py's skrl parts (the brief's fallback).
+
+[run]
+task = "L0.2"
+verdict = "INFO"
+game_file = "configs/ste_l011/base.toml"   # the L0.11 base game (tag on 1.6 m, zone 1.6 m, zone_disc_ring starts), both tiers
+game_sha256 = "96e0e7f61a49999da54eee81a544bf64c519cd80833f0dcdfa2a07edfc10cc4d"   # = configs/ste_l011/gates.toml [games] base
+guard_script = "guard_mark_edge"   # MEASURED: g* of the base case (T44 shortlist table)
+strike_script = "strike_straight"  # MEASURED: s* of the base case (T44)
+learner_team = "guard"             # L0.2 CHOICE: the Guard team learns (5 networks at 5v3: the heavier update of the two sides)
+seed = 120000                      # game seed of every point; scripted players seed + 101 / + 202 (scripts/score.py)
+threads = 4                        # torch CPU threads (CPU shared with other agents)
+cap_h = 1.5                        # PROPOSED (PLAN section 4, L0.2 cap); the driver refuses another --cap-h
+device = "cuda"
+
+[timing]
+warmup_decisions = 2               # L0.2 CHOICE: decisions before the timing (not timed; buffers, kernels); < rollouts
+reference_decisions = 16           # L0.2 CHOICE: 192 ticks of the scripted reference (T44: tag games end in 36-78 ticks)
+updates = 1                        # L0.2 CHOICE: one full PPO update per point (32 decisions + the update)
+isaac_start_s = 150                # ESTIMATE for the cut projection only: a tier 2 child's start (Isaac Sim + world)
+process_start_s = 20               # ESTIMATE: a tier 1 child's start
+
+[trainer]
+# The T41 recipe (configs/nus_phase5.toml [pilot_p1b]; L0.12's [trainer] has the same numbers).
+algorithm = "IPPO"
+decision_ticks = 12                # one learner decision per 0.6 s (T41, L0.12)
+rollouts = 32
+learning_epochs = 5
+mini_batches = 4
+learning_rate = 3.0e-4
+hidden = [128, 128]
+init_log_std = -1.6
+frozen_log_std_axes = ["yaw"]
+zero_mean_init = true
+discount_factor = 0.99
+gae_lambda = 0.95
+entropy_loss_scale = 0.0
+value_loss_scale = 2.5
+ratio_clip = 0.2
+value_clip = 0.2
+grad_norm_clip = 0.5
+
+[controls]
+# Known answers; a failure stops the run with exit 6 (CONTROL_FAILED, terminal). Every record needs the named controls
+# present and passed (LEAD CALL 21 Nov 2026 (QC L02-6)).
+# C-1a PHYSICS (gated; LEAD CALL 21 Nov 2026 (QC L02-1, QC L02-R1)): bare worlds, no game logic. g* v s* on the PyTorch
+# reference world for agree_ticks ticks records, in order, every call the game made to its drone model: the per-drone
+# world writes (restarts, parking of out drones, wall and height-band clamps) and the PX4 cascade copy's setpoints; they
+# are replayed in the same order on the Isaac Lab world and on a fresh reference world, same device (T10's closed loop
+# with the game's own writes); every drone compared after every tick, parked ones included; largest 3-D gap over every game, drone and tick <= agree_max_m
+# (T10's closed_loop_pos_max_m; T10 measured 0.0006 m). C-1b GAME (INFO, not gated): the same game on both worlds,
+# positions compared only for drones in the game in both, up to the first tick a drone is in one and out in the other;
+# first-divergence tick, differing drone-ticks, and ended / reach / tag counts side by side (the smoke's 1,730 m was a
+# drone parked at 1,000 m in one world and flying in the other, QC L02-1).
+# LEAD DECISION RULE for C-1b/C-3b (pre-registered 21 Nov 2026 before any Isaac result of the fixed code; QC L02 re-check 2):
+# the run of record launches only if C-1a/C-3a PASS and the INFO game comparison's ended, reach and tag counts agree between
+# the two worlds within 2 % relative (or 2 games, whichever is larger); otherwise the lead investigates before any run of
+# record, and the investigation is reported in the record. C-1a/C-3a catch mass errors above about 7 % in 20 ticks (QC).
+agree_point = "t2_3v3_1024"
+agree_games = 64                   # kept for the file's shape: both checks now use every game of the point
+agree_ticks = 20                   # 1 s
+agree_max_m = 0.02
+learner_update_point = "t1_3v3_1024"   # C-2 the learner loop: exactly `updates` PPO updates ran and the policy changed
+# C-3 (driver; LEAD CALL 21 Nov 2026 (QC L02-5)): every protected point at its tier's smallest games (1,024) fits, and no
+# protected point crashed (a crash that is not out of memory). "Largest that fit" stops at the first protected size that
+# did not fit. Out of memory = a CUDA / PhysX out-of-memory message in THAT attempt's log (QC L02-4); a row whose log
+# shows one reads "suspect", not "fit". A non-finite count (learner or scripted reference) ends the run with exit 5 and
+# leaves the folder ABORTED for good (QC L02-3). On a failed control results.md carries "CONTROLS FAILED — rates void"
+# (QC L02-7).
+
+[clips]
+# STANDARDS section 8: 2-D top-down clips of the point's own game (g* v s*), recorded after the timing (untimed).
+points = ["t2_3v3_1024", "t1_3v3_1024"]
+games = 8
+max_ticks = 600
+speed = 2
+fps = 10
+dpi = 80
+
+# Points in RUN order; the cut order is this order read backwards, unprotected points only (ste/speed.py plan_cuts).
+# One process per point (an Isaac world is n x m for its process). Protected: 3v3 at 1,024 / 2,048 / 4,096 on both tiers,
+# the 8,192 try, and the G0 candidate sizes 5v3, 2v1, 1v1 at 4,096 on both tiers. Then the rest (cut first).
+[[point]]
+id = "t2_3v3_1024"
+tier = 2
+size = "3v3"
+games = 1024
+protected = true
+[[point]]
+id = "t1_3v3_1024"
+tier = 1
+size = "3v3"
+games = 1024
+protected = true
+[[point]]
+id = "t2_3v3_2048"
+tier = 2
+size = "3v3"
+games = 2048
+protected = true
+[[point]]
+id = "t1_3v3_2048"
+tier = 1
+size = "3v3"
+games = 2048
+protected = true
+[[point]]
+id = "t2_3v3_4096"
+tier = 2
+size = "3v3"
+games = 4096
+protected = true
+[[point]]
+id = "t1_3v3_4096"
+tier = 1
+size = "3v3"
+games = 4096
+protected = true
+[[point]]
+id = "t2_3v3_8192"
+tier = 2
+size = "3v3"
+games = 8192
+protected = true
+[[point]]
+id = "t1_3v3_8192"
+tier = 1
+size = "3v3"
+games = 8192
+protected = true
+[[point]]
+id = "t2_5v3_4096"
+tier = 2
+size = "5v3"
+games = 4096
+protected = true
+[[point]]
+id = "t1_5v3_4096"
+tier = 1
+size = "5v3"
+games = 4096
+protected = true
+[[point]]
+id = "t2_2v1_4096"
+tier = 2
+size = "2v1"
+games = 4096
+protected = true
+[[point]]
+id = "t1_2v1_4096"
+tier = 1
+size = "2v1"
+games = 4096
+protected = true
+[[point]]
+id = "t2_1v1_4096"
+tier = 2
+size = "1v1"
+games = 4096
+protected = true
+[[point]]
+id = "t1_1v1_4096"
+tier = 1
+size = "1v1"
+games = 4096
+protected = true
+[[point]]
+id = "t2_3v3_6144"                 # only if 8,192 did not fit: the largest that fits lies between 4,096 and 8,192
+tier = 2
+size = "3v3"
+games = 6144
+protected = false
+only_if_did_not_fit = "t2_3v3_8192"
+[[point]]
+id = "t2_3v3_16384"                # only if 8,192 fitted: one more try upwards
+tier = 2
+size = "3v3"
+games = 16384
+protected = false
+only_if_fit = "t2_3v3_8192"
+[[point]]
+id = "t2_5v3_8192"
+tier = 2
+size = "5v3"
+games = 8192
+protected = false
+[[point]]
+id = "t1_3v3_16384"
+tier = 1
+size = "3v3"
+games = 16384
+protected = false
+[[point]]
+id = "t2_5v3_1024"
+tier = 2
+size = "5v3"
+games = 1024
+protected = false
+[[point]]
+id = "t2_5v3_2048"
+tier = 2
+size = "5v3"
+games = 2048
+protected = false
+[[point]]
+id = "t1_5v3_1024"
+tier = 1
+size = "5v3"
+games = 1024
+protected = false
+[[point]]
+id = "t1_5v3_2048"
+tier = 1
+size = "5v3"
+games = 2048
+protected = false

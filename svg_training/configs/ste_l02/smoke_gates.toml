@@ -1,0 +1,98 @@
+# SMOKE gate file of STE task L0.2 (not of record): configs/ste_l02/gates.toml with cap_h 0.25 and three points, for
+# the lead's first check of the Isaac path on the laptop (a tier 2 child starts and writes its row; control C-1 on
+# Isaac; SIGINT to the parent exits 4; the out-of-memory signature at 16,384 games). Every other value equals the
+# gate file of record (tests/test_ste_l02.py checks it). Its run folder is a scratch folder; its numbers are not used.
+
+[run]
+task = "L0.2"
+verdict = "INFO"
+game_file = "configs/ste_l011/base.toml"   # the L0.11 base game (tag on 1.6 m, zone 1.6 m, zone_disc_ring starts), both tiers
+game_sha256 = "96e0e7f61a49999da54eee81a544bf64c519cd80833f0dcdfa2a07edfc10cc4d"   # = configs/ste_l011/gates.toml [games] base
+guard_script = "guard_mark_edge"   # MEASURED: g* of the base case (T44 shortlist table)
+strike_script = "strike_straight"  # MEASURED: s* of the base case (T44)
+learner_team = "guard"             # L0.2 CHOICE: the Guard team learns (5 networks at 5v3: the heavier update of the two sides)
+seed = 120000                      # game seed of every point; scripted players seed + 101 / + 202 (scripts/score.py)
+threads = 4                        # torch CPU threads (CPU shared with other agents)
+cap_h = 0.25                       # SMOKE: the lead's first Isaac check of the path, not of record
+device = "cuda"
+
+[timing]
+warmup_decisions = 2               # L0.2 CHOICE: decisions before the timing (not timed; buffers, kernels); < rollouts
+reference_decisions = 16           # L0.2 CHOICE: 192 ticks of the scripted reference (T44: tag games end in 36-78 ticks)
+updates = 1                        # L0.2 CHOICE: one full PPO update per point (32 decisions + the update)
+isaac_start_s = 150                # ESTIMATE for the cut projection only: a tier 2 child's start (Isaac Sim + world)
+process_start_s = 20               # ESTIMATE: a tier 1 child's start
+
+[trainer]
+# The T41 recipe (configs/nus_phase5.toml [pilot_p1b]; L0.12's [trainer] has the same numbers).
+algorithm = "IPPO"
+decision_ticks = 12                # one learner decision per 0.6 s (T41, L0.12)
+rollouts = 32
+learning_epochs = 5
+mini_batches = 4
+learning_rate = 3.0e-4
+hidden = [128, 128]
+init_log_std = -1.6
+frozen_log_std_axes = ["yaw"]
+zero_mean_init = true
+discount_factor = 0.99
+gae_lambda = 0.95
+entropy_loss_scale = 0.0
+value_loss_scale = 2.5
+ratio_clip = 0.2
+value_clip = 0.2
+grad_norm_clip = 0.5
+
+[controls]
+# Known answers; a failure stops the run with exit 6 (CONTROL_FAILED, terminal). Every record needs the named controls
+# present and passed (LEAD CALL 21 Nov 2026 (QC L02-6)).
+# C-1a PHYSICS (gated; LEAD CALL 21 Nov 2026 (QC L02-1, QC L02-R1)): bare worlds, no game logic. g* v s* on the PyTorch
+# reference world for agree_ticks ticks records, in order, every call the game made to its drone model: the per-drone
+# world writes (restarts, parking of out drones, wall and height-band clamps) and the PX4 cascade copy's setpoints; they
+# are replayed in the same order on the Isaac Lab world and on a fresh reference world, same device (T10's closed loop
+# with the game's own writes); every drone compared after every tick, parked ones included; largest 3-D gap over every game, drone and tick <= agree_max_m
+# (T10's closed_loop_pos_max_m; T10 measured 0.0006 m). C-1b GAME (INFO, not gated): the same game on both worlds,
+# positions compared only for drones in the game in both, up to the first tick a drone is in one and out in the other;
+# first-divergence tick, differing drone-ticks, and ended / reach / tag counts side by side (the smoke's 1,730 m was a
+# drone parked at 1,000 m in one world and flying in the other, QC L02-1).
+agree_point = "t2_3v3_1024"
+agree_games = 64                   # kept for the file's shape: both checks now use every game of the point
+agree_ticks = 20                   # 1 s
+agree_max_m = 0.02
+learner_update_point = "t1_3v3_1024"   # C-2 the learner loop: exactly `updates` PPO updates ran and the policy changed
+# C-3 (driver; LEAD CALL 21 Nov 2026 (QC L02-5)): every protected point at its tier's smallest games (1,024) fits, and no
+# protected point crashed (a crash that is not out of memory). "Largest that fit" stops at the first protected size that
+# did not fit. Out of memory = a CUDA / PhysX out-of-memory message in THAT attempt's log (QC L02-4); a row whose log
+# shows one reads "suspect", not "fit". A non-finite count (learner or scripted reference) ends the run with exit 5 and
+# leaves the folder ABORTED for good (QC L02-3). On a failed control results.md carries "CONTROLS FAILED — rates void"
+# (QC L02-7).
+
+[clips]
+# STANDARDS section 8: 2-D top-down clips of the point's own game (g* v s*), recorded after the timing (untimed).
+points = ["t2_3v3_1024", "t1_3v3_1024"]
+games = 8
+max_ticks = 600
+speed = 2
+fps = 10
+dpi = 80
+
+# SMOKE points: the agreement and clip point, the learner-control point, and one large tier 2 point as the
+# out-of-memory probe (unprotected: it may read "did not fit"; that is the behaviour under test).
+[[point]]
+id = "t2_3v3_1024"
+tier = 2
+size = "3v3"
+games = 1024
+protected = true
+[[point]]
+id = "t1_3v3_1024"
+tier = 1
+size = "3v3"
+games = 1024
+protected = true
+[[point]]
+id = "t2_3v3_16384"
+tier = 2
+size = "3v3"
+games = 16384
+protected = false

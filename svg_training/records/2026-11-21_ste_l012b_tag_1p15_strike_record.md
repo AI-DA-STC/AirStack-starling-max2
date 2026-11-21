@@ -29,12 +29,13 @@ Verdict: **ABORTED**. Nothing below is a result: no side status or category is r
 - **For information only (proves nothing):** the trained Strike drones mostly wait out the 120 s clock (771 of 1,000
   games ran to the clock; 1.05 Guards left on average in holds); 103 reaches of 1,000 against 355 for the best scripted
   Strike (guard_field v strike_straight). The training reach rate stayed at about 10–14 % from update 41.
-- **Not re-run** (lead's recommendation; the owner asked): it could not change the category, since the scripts alone
-  already sit above the 0.2 band on both sides.
+- **Not re-run so far:** the lead recommends no; the owner's answer is pending (status, "Waiting on you").
 - **GPU-hours** 0.770; one launch, not suspended (2,770 s effective against a 2,772 s span).
 - **Clips** (2-D with the height panel, both games to the clock):
   [game 0](../docs/media/ste_l012b/tag_1p15_trained_strike_ABORTED_game0_hold.gif),
   [game 1](../docs/media/ste_l012b/tag_1p15_trained_strike_ABORTED_game1_hold.gif).
+
+- Edited after the first write (same session, before any merge; no number changed): scopes, the lead's reading and the owner's pending answer stated plainly.
 
 ## Ledger row
 

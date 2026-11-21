@@ -121,21 +121,25 @@ Figures from the run's own results.json by `scripts/make_ste_l011_figures.py`: `
 - **Why 1.15 m** (owner, 21 Nov 2026): the owner asked for a tag that the drones can really make. 1.15 m is the
   safety filter's 1.10 m keep-out plus 0.05 m, so a tag means "touching the other drone's bubble", and the same rule can
   run in the simulator and on the drones.
-- **Unchosen tags.** "Pushed together" is 0–10 % per tag-on cell of the screen (highest 225 of 2,378 tags, 0.095, mark-edge
+- **Unchosen tags.** "Pushed together" is 0–10 % per tag 1.15 m cell of the screen (highest 225 of 2,378 tags, 0.095, mark-edge
   Guards v flanking Strikes) and 0 % for g* v s* (field Guards v straight Strikes); 1.0 % over the whole tag 1.15 m group
-  (629 of 64,325). "Filter active" is about 100 % (0.985) at 1.15 m because the filter brakes nearly every close
+  (629 of 64,325). (The reference-replay control, T44's 1.6 m cells, runs higher: up to 27 % per cell.) "Filter active" is about 100 % (0.985) at 1.15 m because the filter brakes nearly every close
   approach; it is an upper bound. So nearly every tag is one the players chose. The screen ran before QC fix 6
   ("pushed together" also needs the filter's own flag on one drone of the pair); QC found 0 of 10,871 pushed tags lacking
   the flag, so the shares stand.
 - **Best cells.** g* = guard_field (645 holds) and s* = strike_straight (355 reaches): the same cells, and the same
-  counts, as T44's tag 1.2 m. Clips: [docs/media/ste_l012b](../docs/media/ste_l012b/README.md).
+  counts, as T44's tag 1.2 m. Only this best pair is known to match 1.2 m; the other cells were not compared.
+  Clips: [docs/media/ste_l012b](../docs/media/ste_l012b/README.md).
 - **Ledger date.** This writer stamps the time the record was written (17:19), after the runs of T51 and T52 (15:52 and
   15:58), which take the time of their first launch; the screen itself launched at 15:31.
 - **Commit.** The results name `0d2438b6` (`1b747209` after the branch was rebased on development) with "working tree not
-  clean", while code.json records an empty tracked diff (sha256 e3b0…, the empty string) and no later change; likely
-  untracked files, not looked into.
+  clean", while code.json records an empty tracked diff (sha256 e3b0…, the empty string) and no later change; the flag is
+  set by any `git status --porcelain` entry in the folder, untracked files included, so likely untracked files; not
+  looked into.
 - **Suspend.** Not suspended: one launch, 717 s effective against a 718 s wall-clock span. GPU-hours 0.200, charged to
   L0.12 (lead ruling Q2).
+
+- Edited after the first write (same session, before any merge; no number changed): scopes, the lead's reading and the owner's pending answer stated plainly.
 
 ## Confounds stated before the run
 

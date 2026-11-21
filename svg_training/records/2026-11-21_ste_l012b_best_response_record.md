@@ -87,7 +87,7 @@ Unchosen tags of the trained exploiter (INFO; pushed together = on the tag's tic
 - **(a) Why 1.15 m.** The owner's realism question: a tag the drones can really make. 1.15 m is the safety filter's
   1.10 m keep-out plus 0.05 m ("touching the bubble"), the same rule in the simulator and on the drones.
 - **(b) Unchosen tags.** In the screen ([record T50](2026-11-21_ste_l012b_screen_record.md)) "pushed together" is 0–10 %
-  per cell and 0 % for g* v s*; "filter active" is about 100 % at 1.15 m because the filter brakes nearly every close
+  per tag 1.15 m cell and 0 % for g* v s*; "filter active" is about 100 % at 1.15 m because the filter brakes nearly every close
   approach (an upper bound). So nearly every tag is one the players chose. For the trained Guard team: 0 of 2,263 tags
   pushed together (table above). The screen ran before QC fix 6; QC found 0 of 10,871 pushed tags lacking the flag, so
   the shares stand.
@@ -95,8 +95,10 @@ Unchosen tags of the trained exploiter (INFO; pushed together = on the tag's tic
   0.85 h cap from L0.12's tag 1.6 / 1.4 / 1.2 m Strike timings plus 5 %. At 1.15 m a training update took 20.7 s against
   18.4–19.6 s in those runs, the controls batch 106 s against 95 s at most, and the measured final reserve was 664 s
   against the 640 s assumed: the run stopped at update 86 of 88. Lesson: size caps from timings measured on the same rule
-  set (the screen's batch times). Not re-run (lead's recommendation; the owner asked).
-- **(d) Reading for G0 (lead's, information).** At 1.15 m and 1.2 m learning did not beat the scripts: the trained Guard
+  set (the screen's batch times). Not re-run so far: the lead recommends no, and the owner's answer
+  is pending (status, "Waiting on you").
+- **(d) Reading for G0 (lead's reading, information; one seed per side, one budget, and the Strike half from ABORTED
+  runs, so weak evidence).** At 1.15 m and 1.2 m learning did not beat the scripts: the trained Guard
   team stays below the field Guards' script (466 and 503 against 645), and the trained Strikes of both ABORTED runs wait
   out the clock. At 1.6 m and 1.4 m it did (T46). Tag 1.15 m stays "incomplete: one side only"; its scripts alone already
   sit above the gate's 0.2 band on both sides (Guard 645, Strike 355).
@@ -106,7 +108,10 @@ Unchosen tags of the trained exploiter (INFO; pushed together = on the tag's tic
   above are L0.12's pilot, reused (gate file).
 - **Suspend.** Not suspended: one launch per run, one boot; run 0 343 s effective against 345 s, Guard run 1,881 s
   against 1,882 s. GPU-hours: run 0 0.096, Guard run 0.523 (the 0.619 in the ledger row).
-- **Commit.** The runs name the branch's commits before its rebase on development (same content).
+- **Commit.** The runs name the branch's commits before its rebase on development (same content): db1948d1 is now
+  ce81b166.
+
+- Edited after the first write (same session, before any merge; no number changed): scopes, the lead's reading and the owner's pending answer stated plainly.
 
 ## Ledger row
 

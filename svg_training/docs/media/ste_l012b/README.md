@@ -1,7 +1,9 @@
 # 2-D clips of the bubble tag check, L0.12b (records T50, T51 and T52)
 
-Training simulator, tier 1, 3v3, tag 1.15 m (the safety filter's 1.10 m keep-out plus 0.05 m), on T44's starts; not a
-flight. Each clip is the run's own top-down view with a height panel under it, shown at 4x real time. Strike team orange triangles, Guard
+Training simulator, tier 1, 3v3, tag 1.15 m (the safety filter's 1.10 m keep-out plus 0.05 m); not a flight. Starts:
+the three screen clips use seed 110000 (the scoring seed, `[clips]` of the screen's gate file); the trained-team and
+run 0 clips use the runs' clip starts (`clip_seed` 120950), not T44's scoring starts, so their game numbers are not
+scoring games'. Each clip is the run's own top-down view with a height panel under it, shown at 4x real time. Strike team orange triangles, Guard
 team blue circles, a cross where a drone was tagged out. Numbers:
 [record T50](../../../records/2026-11-21_ste_l012b_screen_record.md),
 [record T51](../../../records/2026-11-21_ste_l012b_best_response_record.md),

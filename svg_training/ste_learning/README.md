@@ -127,11 +127,11 @@ A GPU-hour (GPU-h) is one hour of the shared graphics card. INFO means measured,
 | L0.8 Game spec sheet | one page, `GAME_SPEC.md`: every value of the game with its status and source | 0 |
 | L0.9 Tag rule for the study: 1-for-1, nearest pair first | a new tag matcher behind a setting that is off by default | 0 |
 | L0.10 Scripted players for the study | parked Guard teams; Strike teams that use height and numbers | 0 |
-| L0.11 Screening sweep (INFO) | scripted teams against each other, 1,000 games per setting; a shortlist of rule variants | 3 |
-| L0.12 Best-response test: is the game worth learning? | each shortlisted variant sorted: trivial for one team, or worth learning | 6 |
-| L0.2 Tier 2 speed in contested play | game-steps per second on both tiers, with a learner and both teams playing | 1.5 |
-| L0.13 Does tier 2 train at all? | the recipe behind the STE Guard policy, trained on tier 2 beside a tier 1 control | 6 |
-| L0.3 STE Guard policy in tier 2 without retraining | how often the tier 1 policy still holds the zone on the Isaac Lab drone | 1.5 |
+| L0.11 Screening sweep (INFO) | scripted teams against each other, 1,000 games per setting; a shortlist of rule variants | 0.5 |
+| L0.12 Best-response test: is the game worth learning? | each shortlisted variant sorted: trivial for one team, or worth learning | 13 |
+| L0.2 Tier 2 speed in contested play | game-steps per second on both tiers, with a learner and both teams playing | 0.4 |
+| L0.13 Does tier 2 train at all? | the recipe behind the STE Guard policy, trained on tier 2 beside a tier 1 control | 1.6 |
+| L0.3 STE Guard policy in tier 2 without retraining | how often the tier 1 policy still holds the zone on the Isaac Lab drone | 1.3 |
 | L0.4 Side-by-side Starling render | the Isaac Lab Starling beside the AirStack simulator's | 0.2 |
 | L0.5 Starling video look fix | clips that keep the Starling's own look, team colour as a small marker | 0.3 |
 | L0.14 Crazyflie route check | one page on flying the game on the lab's Crazyflies: does the STE Guard policy cope with a Crazyflie's slower response, which team sizes fit which arena, and what a Crazyflie session would have to build | 0 |

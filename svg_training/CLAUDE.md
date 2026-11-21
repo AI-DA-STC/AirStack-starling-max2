@@ -125,6 +125,15 @@ other stopped, from git alone.
 - **Rigour before speed** (owner, 21 Nov 2026): independent QC, tests first and one fix at a time stay, even when slower. But
   say what is eating the usage: every status carries a **Usage** line (agent tokens and minutes per task, long test suites,
   GPU-hours), and the lead flags any task whose cost is out of line before spending more on it.
+- **Two or more independent reviewers on everything** (owner, 22 Nov 2026: "please always get multi agents to review ur
+  findings and review ur work, it seems that u might be hallucinating and missing out stuff that was done"): every
+  finding (including an explanation of a result given in chat), every write-up and every build gets at least two
+  independent reviewer agents with different briefs (a numbers/source check against the data, and a completeness check
+  for what was missed or contradicts earlier work), given the sources rather than the lead's conclusion, before it is
+  reported as true or done. Until then it is labelled a hypothesis or a draft. The status says which reviewers ran.
+  After every result, and whenever anything changes, two agents also **discuss the results and the next plan** with the
+  lead (owner, 22 Nov 2026), on reviewed facts; the lead brings the owner the agreed reading, the disagreements and the
+  plan change, if any.
 - **The lead owns the STE learning track** (owner, 20 Nov 2026: "i want you to own this project"): plan, build, review,
   fix, record and report without waiting to be asked; the owner keeps the human gates and the items in the next bullet.
 - **Keep the owner able to follow** (owner, 21 Nov 2026: "i need to know what is going on if not im totally clueless"):

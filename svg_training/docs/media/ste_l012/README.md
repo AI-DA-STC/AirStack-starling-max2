@@ -1,6 +1,6 @@
 # 2-D clips of the L0.12 Best-response test (records T46 and T47)
 
-Training simulator, tier 1, 3v3, on T44's starts; not a flight. Each clip is the run's own top-down view with a height
+Training simulator, tier 1, 3v3, on the runs' clip starts (`clip_seed` 120950 in the gate file), not T44's scoring starts; not a flight. Each clip is the run's own top-down view with a height
 panel under it (Strike team orange triangles, Guard team blue circles, a cross where a drone was tagged out). "Trained"
 names the side that was trained; the other side is the best scripted player of that variant. Games are shown at 4x real
 time. Numbers: [record T46](../../../records/2026-11-21_ste_l012_best_response_record.md) and

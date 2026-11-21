@@ -5,7 +5,7 @@
     make_ste_l012d_record.py --run-dir runs/<date>_ste_l012d_cross_tag --number T<n>
                              [--name <date>_ste_l012d_cross_tag] [--out-dir records] [--append-ledger]
 
-Refuses (exit 1) unless the run folder's results.json is complete and its controls C1, C2 and C3 all PASS (the driver
+Refuses (exit 1) unless the run folder's results.json is complete and its controls C1, C2, C3 and C4 all PASS (the driver
 reports no cross-tag number otherwise), and never overwrites a record. The word is INFO: no pass/fail gate, no
 category. The reading words are the spec's (ste_learning/drafts/L0_12d_CROSS_TAG_SPEC.md), written before any scoring.
 Prints the ledger row; --append-ledger appends it to records/LEDGER.md (the lead's step after reading the record)."""
@@ -66,7 +66,8 @@ def record_text(run_dir: Path, res: dict, name: str, number: str) -> tuple[str, 
              f"`{pins['t46']['guard_agent_sha256']}`), Strike `{pins['t46']['strike_run']}` (agent_final.pt "
              f"`{pins['t46']['strike_agent_sha256']}`); their gate file `{pins['t46']['gates_sha256']}`.",
              f"- Games: controls C1, C2 `{res['games']['controls']['file']}` (`{res['games']['controls']['sha256']}`); "
-             f"cross-tag cells and C3 `{res['games']['x']['file']}` (`{res['games']['x']['sha256']}`).",
+             f"cross-tag cells X1–X3 and C3 `{res['games']['x']['file']}` (`{res['games']['x']['sha256']}`); X4 and C4 "
+             f"`{res['games']['x4']['file']}` (`{res['games']['x4']['sha256']}`).",
              f"- L0.12b gate file `{pins['screen']['gates']}` (`{pins['screen']['gates_sha256']}`); references "
              f"`{res['references']['t46']['file']}` (`{res['references']['t46']['sha256']}`) and "
              f"`{res['references']['screen']['file']}` (`{res['references']['screen']['sha256']}`), one start set "

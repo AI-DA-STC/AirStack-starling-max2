@@ -58,7 +58,8 @@ def test_unknown_task_id_is_refused(tmp_path):
 
 
 def test_missing_task_is_refused(tmp_path):
-    text = good_text().replace('[tasks."L0.5"]\nstate = "queued"\n', "")
+    text, n = re.subn(r'\[tasks\."L0\.5"\]\nstate = "[a-z_]+"\n', "", good_text())
+    assert n == 1   # the block is removed whatever L0.5's live state is
     with pytest.raises(ValueError, match="no state for L0.5"):
         figs.load_l0_progress(write(tmp_path, text))
 

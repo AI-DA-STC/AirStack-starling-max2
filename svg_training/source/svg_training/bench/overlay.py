@@ -57,12 +57,13 @@ def _text(img: np.ndarray, s: str, x: int, y: int, scale: float, colour=WHITE, t
 
 
 def draw_overlay(frame: np.ndarray, caption: str, legend: dict[str, tuple[int, int, int]], time_left_s: float,
-                 outcome: str | None, info: str | None = None) -> np.ndarray:
+                 outcome: str | None, info: str | None = None, clock: str | None = None) -> np.ndarray:
     """Burn the overlay into a copy of frame [H, W, 3] uint8 RGB and return it.
 
     caption: bottom band (wrapped to the width, one or more lines); legend: label -> RGB colour, top left;
     time_left_s: top right ("time left 12.3 s"); outcome: a banner at the top centre (None = the game is still running or
-    the clip stops before the end); info: one small grey line above the caption (matchup, arena), optional.
+    the clip stops before the end); info: one small grey line above the caption (matchup, arena), optional;
+    clock: if given, this text replaces "time left ..." in the top-right box (VID-1: the game clock "t = 1.35 s").
     """
     img = np.ascontiguousarray(frame.copy())
     caption, info, outcome = _ascii(caption), _ascii(info), _ascii(outcome)
@@ -95,7 +96,7 @@ def draw_overlay(frame: np.ndarray, caption: str, legend: dict[str, tuple[int, i
         cv2.circle(img, (pad + int(round(22 * k)), cy), int(round(9 * k)), WHITE, max(1, ct - 1), cv2.LINE_AA)
         _text(img, label, pad + int(round(42 * k)), cy + int(round(8 * k)), ls, WHITE, ct)
     # time left (top right)
-    t = f"time left {max(time_left_s, 0.0):4.1f} s"
+    t = _ascii(clock) if clock is not None else f"time left {max(time_left_s, 0.0):4.1f} s"
     tw, th = cv2.getTextSize(t, FONT, 0.72 * k, ct)[0]
     _dark_box(img, w - tw - 3 * pad, pad, w - pad, pad + th + 2 * pad)
     _text(img, t, w - tw - 2 * pad, pad + th + pad, 0.72 * k, WHITE, ct)

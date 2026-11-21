@@ -178,3 +178,11 @@ def test_mp4_falls_back_to_the_bundled_ffmpeg_when_none_is_on_path(tmp_path, mon
     replay._use_bundled_ffmpeg_if_missing()
     import imageio_ffmpeg
     assert matplotlib.rcParams["animation.ffmpeg_path"] == imageio_ffmpeg.get_ffmpeg_exe()
+
+
+def test_overlay_clock_replaces_time_left_only_when_given():
+    frame = np.zeros((720, 1280, 3), np.uint8)
+    a = draw_overlay(frame, CAPTION, LEGEND, 12.3, None)
+    b = draw_overlay(frame, CAPTION, LEGEND, 12.3, None, clock=None)
+    c = draw_overlay(frame, CAPTION, LEGEND, 12.3, None, clock="t = 1.35 s")
+    assert (a == b).all() and (a[:80, 900:] != c[:80, 900:]).any() and (a[200:] == c[200:]).all()

@@ -1,21 +1,29 @@
 INTERNAL · the latest status of STE's own learning track and the NUS port, overwritten at every update; the history is in [LOG.md](LOG.md). Produced by the `train-status` skill.
 
-**Status, 2026-11-21 21:02 (+08:00), event: G0 page ready for your read — [ste_learning/G0_DECISION.md](../G0_DECISION.md)** · laptop RTX 5070 Ti · GPU idle · 0 jobs
+**Status, 2026-11-22 01:45 (+08:00), event: L0.12c Guard run finished; Strike run started** · laptop RTX 5070 Ti · GPU busy · 1 job
 
-**Plain summary (L0.13 Does Isaac Lab train at all?).** Tested: the same Guard recipe trained on the Isaac Lab drone and in
-the fast engine, same game, same 302 M game-steps, same starting networks. Happened (training simulator): **PASS** — the Isaac
-Lab Guard holds **832/1000** v 538 for a still Guard; the fast-engine Guard holds 836; each one's networks work on the other
-drone too (814–846). Isaac Lab is ~5× slower (1.3 h v 15 min). Why it matters: training can move to the more realistic drone
-when it counts, at a known cost — a key input for "where to train" at G0.
+**Plain summary (L0.12c Longer 1.15 m runs, Guard side).** Tested: the trained Guard team at the 1.15 m tag ("touch the
+safety bubble") with 3× the training (1.65 B game-steps), against the best scripted Strike. Happened (training simulator):
+the trained Guards hold **572/1000** (was 466 at 1×, T51) against the best script's **645** and an untrained 101: learned,
+but still below the script (game for game: trained wins where the script loses 45 times, the reverse 118). The curve rose
+fast to ~1 B steps, then slowly (128 → 139 of 256 from update 170 to 250). Why it matters: at 1.15 m, more training helps
+the Guard side but 3× does not reach the hand-written Guard — the key input for the G0 tag decision. Record to follow.
 
-**Correction (lead, 20:30).** Earlier today I said training beats the scripts only at tag 1.4 m and wider. The learning
-curves say otherwise: at 1.2 m and 1.15 m the trained Guards were still climbing steadily when the budget ran out (47 → 108
-and 38 → 105 of 256), unlike 1.6 m (levelling off). So the closer tags were slower to learn, not shown unlearnable — the
-realistic 1.15 m tag is still open (DISCUSSION §11).
+| Run (L0.12c) | State | Result / progress |
+|---|---|---|
+| Guard 1.15 m, 3× (cap 2.7 h) | DONE exit 0, 1.53 h | 572/1000 v script 645: weak (learned, below the script); all controls PASS |
+| Run 0, learner check (cap 4.8 h) | DONE: PASS at update 10, 0.07 h | trainer learns the easy Strike task |
+| Strike 1.15 m, 5× (cap 4.8 h) | RUNNING since 01:18 | 53 of 438 updates, 19.3 s each (sized 25 s); curve 7 → 32 of 256; ends ~04:30 |
 
-**Your decisions today (recorded):** D9 ring kept as the team marker; no re-run of the tag 1.2 m Strike run; **test the
-"touch the safety bubble" tag at 1.15 m** (about 1.3 GPU-h beyond L0.12's 6, approved); real demo = proximity tag, physical
-interdiction shown in simulation (a proposal for G0).
+**Owner decisions (21–22 Nov):** longer 1.15 m runs approved (Guard 3×, Strike 5×, ~6.5 GPU-h); a slow Strike run may finish
+up to its cap. Row 17 (L0.7's 5090 part) stays on the 5090: it checks that machine. **Lead correction:** row 10's lead
+recommendation is "keep D3" = train in Isaac Lab (owner, 20 Nov), not "train on the fast engine" as said in chat.
+
+**Usage:** L0 GPU-h ~10.6 of 19 (L0.12c so far ~1.6). Agents tonight: gate QC ×2 ~220 k tokens, L1–L9 plan draft ~190 k.
+
+**Next:** Strike result ~04:30 → records T54/T55, G0 rows 1d/2 + clips; costed L1–L9 plan reworked (D3 as the main route).
+**Waiting on you:** nothing until the G0 walk-through (Sunday).
+**Ready to push:** not yet (work on branch `ste-l012c`, merged to `development` after the runs).
 
 ## Watch (latest clips and figures)
 

@@ -22,11 +22,11 @@ state = "done"
 [tasks."L0.12"]
 state = "running"
 [tasks."L0.2"]
-state = "queued"
+state = "running"
 [tasks."L0.13"]
 state = "queued"
 [tasks."L0.3"]
-state = "queued"
+state = "running"
 [tasks."L0.4"]
 state = "running"
 [tasks."L0.5"]

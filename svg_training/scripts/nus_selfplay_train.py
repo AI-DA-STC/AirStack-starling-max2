@@ -170,7 +170,10 @@ def save_recording(recording, path: Path) -> Path:
 
     import numpy as np
     path.parent.mkdir(parents=True, exist_ok=True)
-    np.savez_compressed(path, **{f.name: np.asarray(getattr(recording, f.name)) for f in dataclasses.fields(recording)})
+    # height_band_m may be None (not known): stored as an empty float array, never an object array np.load refuses
+    np.savez_compressed(path, **{f.name: (np.zeros(0) if getattr(recording, f.name) is None
+                                         else np.asarray(getattr(recording, f.name)))
+                                 for f in dataclasses.fields(recording)})
     return path
 
 
@@ -183,7 +186,10 @@ def load_recording(path: Path):
     values = {}
     for f in dataclasses.fields(Recording):
         value = data[f.name]
-        values[f.name] = value if value.ndim else value.item()
+        if f.name == "height_band_m":
+            values[f.name] = tuple(float(v) for v in value) if value.size else None
+        else:
+            values[f.name] = value if value.ndim else value.item()
     return Recording(**values)
 
 

@@ -134,7 +134,7 @@ shaping_weight = 0.0
 #   RUN 0 ([run0]) decides whether the Strike runs launch.
 strike_fallback = { shaping_weight = 1.0 }
 strike_fallback_label = "shaped Strike recipe"
-side_overrides = { strike = {}, guard = {} }
+side_overrides = { strike = { shaping_weight = 1.0 }, guard = {} }   # FILLED BY THE LEAD from the pilot (21 Nov 2026): the pre-registered rule picked the shaped Strike recipe (bare probe 0 reaches v g*, fallback 1)
 checkpoint_every_updates = 1       # the run contract: the same command resumes from the last update boundary
 curve_every_updates = 10           # a learning-curve evaluation (curve_games on curve_seed starts) every this many updates
 final_reserve_s = 600              # the floor of the final reserve (effective seconds)

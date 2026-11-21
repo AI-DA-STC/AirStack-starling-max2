@@ -1,6 +1,6 @@
 INTERNAL · the latest status of STE's own learning track and the NUS port, overwritten at every update; the history is in [LOG.md](LOG.md). Produced by the `train-status` skill.
 
-**Status, 2026-11-21 10:23 (+08:00), 30-minute update: run 0 PASS; first L0.12 run done (base, Guard)** · laptop RTX 5070 Ti · GPU 93 % / 2.8 GB · 1 training process (L0.12 base Strike)
+**Status, 2026-11-21 10:53 (+08:00), 30-minute update: L0.12 run 2 (base, Strike) finishing; L0.2/L0.3 fix round 2 under QC** · laptop RTX 5070 Ti · GPU busy · 1 training process (L0.12 base Strike)
 
 **Plain summary (L0.12, first results).** Tested: can our trainer learn at all (run 0), and can a trained Guard beat the
 best hand-written Guard (base rules, 3v3)? Happened: run 0 PASS at its first check (trained Strike reached a parked Guard's
@@ -60,8 +60,8 @@ Earlier: L0.11 top-down clips and the factor chart are in the [T44 record](../..
 | L0.9 | Tag rule for the study: 1-for-1, nearest pair first | DONE | tier 1 fast engine | merged; QC + re-check passed; full suite on `development` 1,517 passed / 0 failed (31 min); the 5090 records its own tag-off positions (L09-5090) |
 | L0.10 | Scripted players for the study | DONE | tier 1 fast engine | merged; QC + 2 re-checks passed; full suite on `development` 1,600 passed / 0 failed (56 min, CPU shared with the L0.11 GPU jobs) |
 | L0.11 | Screening sweep (INFO) | DONE | tier 1 fast engine | record T44 (every control PASS; shortlist base (reference), tag 1.2 m, tag 1.4 m; every hold a one-for-one trade) + follow-up checks; merged into `development`; full suite 1,685 passed / 0 failed (27 min) |
-| L0.12 | Best-response test: is the game worth learning? | RUNNING (run 2 of 6) | tier 1 fast engine | pilot PASS (0.18 GPU-h); run 0 learner check **PASS** at update 10 (478/1000 v 416, 0.06 GPU-h); run 1 base Guard DONE: trained 913/1000 v best script 808/1000, gain +0.105 (real), every control PASS, 554 M game-steps in 24 min; Guards left in holds still 0 (one-for-one trades); now base Strike, then tag 1.2 m and 1.4 m (Guard, Strike); ~2 h left |
-| L0.2 | Tier 2 speed in contested play | RUNNING (fix round) | tier 2 Isaac Lab | Isaac smoke stopped on its own check (exit 6, 0.044 GPU-h): a drone out in one simulator and flying in the other read as 1,730 m apart (out drones are parked 1,000 m away); the game counts agree within 1 %. QC: NO-GO, 3 critical + 8 important (a crashed run could restart and publish a clean result; out-of-memory mis-read; 11 of 20 breakages not caught). Lead's calls: the check splits into a gated physics check (same commands, no game rules, 2 cm, as T10) and an in-game comparison as INFO; every hole closed with a test first; builder on it. The smoke's speed numbers are void |
+| L0.12 | Best-response test: is the game worth learning? | RUNNING (run 2 of 6) | tier 1 fast engine | pilot PASS (0.18 GPU-h); run 0 learner check **PASS** at update 10 (478/1000 v 416, 0.06 GPU-h); run 1 base Guard DONE: trained 913/1000 v best script 808/1000, gain +0.105 (real), every control PASS, 554 M game-steps in 24 min; Guards left in holds still 0 (one-for-one trades); base Strike nearly done (training games reaching the zone at update 84: 14,848 of 25,641 against the best Guard, which the best script reaches 192 of 1,000 times; evaluation pending), then tag 1.2 m and 1.4 m (Guard, Strike); ~2 h left |
+| L0.2 | Tier 2 speed in contested play | RUNNING (fix round 2 under QC) | tier 2 Isaac Lab | smoke exit 6 (parked drones 1,730 m apart; rates void). Fix round 1: check split into gated physics + INFO game; crashed runs can no longer publish; OOM read per attempt; 20 of 20 breakages caught. QC re-check: the physics check was blind to the game's own per-drone moves (parking, restarts, wall clamps), so fix round 2 replays them too; QC's faulty world now fails. Lead's rule: real runs only if the physics check passes and the game counts agree within 2 %. Then commit, then a new Isaac smoke after the L0.12 runs (~12:30) |
 | L0.13 | Does tier 2 train at all? | NOT STARTED | tier 2 Isaac Lab | laptop allowed (owner, 21 Nov), after L0.2, at the games-at-once L0.2 shows fits; cap 6 GPU-h |
 | L0.3 | STE Guard policy in tier 2 without retraining | RUNNING (fix round, with L0.2) | tier 2 Isaac Lab | QC: same flawed check as L0.2, and a non-finite crash could skip a control and still read "every control PASS"; fixed in the same round. Controls as ruled: exact 831 of 1,000 (T45, CPU path), parked Guard in [493, 555] |
 | L0.4 | Side-by-side Starling render | DONE | tier 2 Isaac Lab | found why our clips never looked like the Starling: a grey physics box was drawn over every drone since S2b (the hide call missed it); one-line fix, re-render shows the Starling (before/after in Watch); merged into `development` after independent review; 0.028 of 0.2 GPU-h |
@@ -99,7 +99,8 @@ Laptop full CPU suite (20 Nov, `development` at 5c5d465, after `scripts/nus_inst
 | L0.12 gate fix + follow-up builder | ~280 k | ~55 min | run 0 design, N-2/N-4, tests |
 | L0.12 QC re-checks 1–2 | ~450 k | ~30 min | 8 breakages tried on run 0 |
 | L0.2/L0.3 builder | ~410 k | ~30 min | + fix round now |
-| L0.2/L0.3 pre-launch QC | ~240 k | ~22 min | 20 breakages, 9 caught |
+| L0.2/L0.3 pre-launch QC + 2 re-checks | ~650 k | ~60 min | 39 + 6 breakages tried |
+| L0.2/L0.3 fix rounds 1-2 | ~1.1 M | ~41 min | **the costliest task today**: each round re-reads the code; narrow rounds from here |
 | L0.12 GPU pilot | | 11 min | 0.178 GPU-h |
 | L0.11 GPU pilot | | 2 min | 0.034 GPU-h (first GPU job of the track) |
 | Full CPU test suite | none | ~25 min alone; the L0.7 merge run took 61 min (shared the CPU with L0.9's tests) | rule from now: one heavy test run at a time |

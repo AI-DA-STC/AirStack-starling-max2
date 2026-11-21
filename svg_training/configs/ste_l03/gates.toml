@@ -24,7 +24,7 @@ games = 1000                        # T41's count: the first 1,000 Phase 4 paire
 fitted_row = "5"                    # T41's game: Phase 4 row 5 ([pilots] row of configs/nus_phase5.toml)
 physics_row = "6"                   # its tier 2 game: Phase 4 row 6 (changed = ["drone"]; T24)
 threads = 4                         # CPU threads, as T45 (the C-1 control's exact answer was produced with 4)
-cap_h = 1.5                         # PROPOSED (PLAN section 4, L0.3 cap): the GPU part; = the launcher's --gpu-h
+cap_h = 1.4                         # PROPOSED (PLAN section 4, L0.3 cap): the GPU part; = the launcher's --gpu-h   # LEAD CALL 21 Nov 2026: 1.5 -> 1.4 before the run of record; the smokes used ~0.04 of the task cap 1.5
 cpu_cap_h = 1.0                     # L0.3 CHOICE: wall-clock cap of the CPU part (T45: 729 s for the same 1,000 games)
 device = "cuda"
 

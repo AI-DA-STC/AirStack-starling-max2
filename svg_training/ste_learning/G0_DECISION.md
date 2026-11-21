@@ -27,8 +27,8 @@ were only screened with scripts, and there a good scripted Guard team wins almos
 
 ![Phase L0 progress flowchart: every task done except L0.7's 5090 part and this gate](figures/l0_progress.png)
 
-**Phase L0 by task.** Green is done; L0.7's RTX 5090 part is open; L0.6 is this page. The chart's title carries the
-status's earlier 9.9 GPU-h; the GPU-hour ledger gives 8.93 ([budget](#8-budget-used)).
+**Phase L0 by task.** Green is done; L0.7's RTX 5090 part is open; L0.6 is this page. GPU-hours from the ledger:
+8.93 of 19 ([budget](#8-budget-used)).
 
 ## 1. The decisions
 

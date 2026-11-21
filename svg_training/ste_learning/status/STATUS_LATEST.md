@@ -1,13 +1,15 @@
 INTERNAL · the latest status of STE's own learning track and the NUS port, overwritten at every update; the history is in [LOG.md](LOG.md). Produced by the `train-status` skill.
 
-**Status, 2026-11-21 18:30 (+08:00), 30-minute update: L0.13 Isaac Lab arm at update 32 of 48, still learning** · laptop RTX 5070 Ti · GPU: L0.13 Isaac Lab arm · 1 job
+**Status, 2026-11-21 18:58 (+08:00), event: L0.13 PASS — Isaac Lab trains (832 v the fast engine's 836)** · laptop RTX 5070 Ti · GPU idle · 0 jobs
 
-**Plain summary (L0.12b bubble tag, 1.15 m).** Tested: is "touch the safety bubble" (tag at 1.15 m) a game worth learning?
-Happened (training simulator): the scripts alone make it a two-sided game (best Guard holds 645, best Strike reaches 355,
-the same as 1.2 m), and almost every tag is chosen by the players, not made by the filter (0–10 %); but training did not beat
-the scripts — the trained Guard held 466 v 645, and the trained Strikes hid until the clock ran out (run ABORTED by its time
-rule, information only). Why it matters: across 1.6 / 1.4 / 1.2 / 1.15 m, training beats the scripts only at 1.4 m and wider —
-1.4 m is the closest tag where learning clearly pays off (input to your G0 tag decision).
+**Plain summary (L0.13 Does Isaac Lab train at all?).** Tested: the same Guard recipe trained on the Isaac Lab drone and in
+the fast engine, same game, same 302 M game-steps, same starting networks. Happened (training simulator): **PASS** — the Isaac
+Lab Guard holds **832/1000** v 538 for a still Guard; the fast-engine Guard holds 836; each one's networks work on the other
+drone too (814–846). Isaac Lab is ~5× slower (1.3 h v 15 min). Why it matters: training can move to the more realistic drone
+when it counts, at a known cost — a key input for "where to train" at G0.
+
+**Earlier today (L0.12b bubble tag, 1.15 m):** scripts make a two-sided game; training did not beat the scripts (Guard 466 v
+645; Strikes hid, run ABORTED); training beats the scripts only at tag 1.4 m and wider.
 
 **Your decisions today (recorded):** D9 ring kept as the team marker; no re-run of the tag 1.2 m Strike run; **test the
 "touch the safety bubble" tag at 1.15 m** (about 1.3 GPU-h beyond L0.12's 6, approved); real demo = proximity tag, physical
@@ -63,14 +65,14 @@ Earlier: L0.11 top-down clips and the factor chart are in the [T44 record](../..
 | L0.11 | Screening sweep (INFO) | DONE | tier 1 fast engine | record T44 (every control PASS; shortlist base (reference), tag 1.2 m, tag 1.4 m; every hold a one-for-one trade) + follow-up checks; merged into `development`; full suite 1,685 passed / 0 failed (27 min) |
 | L0.12 | Best-response test: is the game worth learning? | DONE, merged (T46 INFO, T47 ABORTED; full suite 1,838 passed, its 6 failures fixed before merge) | tier 1 fast engine | pilot PASS; run 0 PASS; **base: worth learning** (Guard 913 v 808, Strike 636 v 192); **tag 1.4 m: worth learning** (Guard 747 v 672, Strike 740 v 328); **tag 1.2 m: incomplete** (Guard 503 v script 645; Strike ABORTED, 87/88 updates, trained Strikes wait out the clock); every control PASS; 3.86 GPU-h of 6; record T46 (verdict) + T47 (aborted run) being written; 3-D clips of the key games need VID-1b (the 3-D tool replays scripted players only) |
 | L0.2 | Tier 2 speed in contested play | DONE (T48, merged) | tier 2 Isaac Lab | every control PASS; Isaac Lab 3v3: 10 k → 67 k training game-steps/s (1,024 → 16,384 games, 4.7 GB); the fast engine is 4–10× faster per game-step (5× at 3v3); 0.29 GPU-h (+0.10 smokes) |
-| L0.13 | Does tier 2 train at all? | RUNNING (Isaac Lab arm) | tier 2 Isaac Lab | fast-engine arm DONE: 836/1000 v still Guard 534; Isaac Lab arm at update 32 of 48 (70.5 k game-steps/s); its curve reads on Isaac Lab: 143 → 159 → … → 190 of 256 (the fast-engine arm's networks read 185 on Isaac Lab at the same point) — it is learning at a similar pace; verdict ~19:00 |
+| L0.13 | Does tier 2 train at all? | DONE (PASS; record T53 being written) | tier 2 Isaac Lab | Isaac Lab Guard 832/1000 (Wilson 0.808–0.854) v still Guard 538 on Isaac Lab; fast-engine control 836 at the same 302 M game-steps; networks swap tiers within 22 games; every control PASS; 70.5 k v 360 k game-steps/s; ~1.6 GPU-h |
 | L0.3 | STE Guard policy in tier 2 without retraining | DONE (T49, merged) | tier 2 Isaac Lab | every control PASS; T41 holds 856/1000 on Isaac Lab v 831 fast engine (paired: 76 gained, 51 lost, sign test p = 0.033; higher in this set, no general claim); 1.24 GPU-h |
 | L0.4 | Side-by-side Starling render | DONE | tier 2 Isaac Lab | found why our clips never looked like the Starling: a grey physics box was drawn over every drone since S2b (the hide call missed it); one-line fix, re-render shows the Starling (before/after in Watch); merged into `development` after independent review; 0.028 of 0.2 GPU-h |
 | L0.5 | Starling video look fix | WAITING ON YOU (D9) | tier 2 Isaac Lab | the drone left unpainted, team shown by a ring or a small dot that casts no shadow; stills in Watch; 0.154 of 0.3 GPU-h (with VID-1) |
 | L0.14 | Crazyflie route check | DONE | tier 1 fast engine (CPU) | record T45: the T41 Guard policy holds 791–768 of 1,000 in the Crazyflie-like lag band (0.48–0.56 s, every drone slowed) against 831 at the Starling's lag, and drones come closer (games under 1.0 m: 7 → 101–149); planner, like for like: 0 of 100 at 3v3 and 5v3 against 20 Nov's 5 of 100 (not a clear difference; only one rule set run); QC + re-check passed; merged into `development` (targeted tests 76 passed; the full suite runs with the next merge — lead's call, the CPU is shared now); page `ste_learning/CRAZYFLIE_ROUTE.md` |
 | L0.6 | Gate G0 | NOT STARTED | none | after every task above; the owner decides |
 
-GPU-h used in L0 so far: about 8.3 of 19 (L0.11 0.43, L0.4 0.03, L0.5 + VID-1 0.15, L0.2 0.39, L0.3 1.28, L0.12 3.86, L0.12b 1.95, L0.13 smoke 0.06); L0.13 runs in progress (~2 more).
+GPU-h used in L0: about 9.9 of 19 (L0.11 0.43, L0.4 0.03, L0.5 + VID-1 0.15, L0.2 0.39, L0.3 1.28, L0.12 3.86, L0.12b 1.59, L0.13 1.6 + smoke 0.06). All L0 measurement tasks are done; left: 3-D clips (VID-1b), height-panel re-draw (VID-1c), the G0 page.
 
 Laptop full CPU suite (20 Nov, `development` at 5c5d465, after `scripts/nus_install_provisional.sh`): **1,333 passed, 2 failed, 48 skipped** in 24 min. Both failures repeat when run alone:
 - **L07-F1** `test_ste_job.py::test_f_d_a_killed_job…resumes`: CONFIRMED by QC: the tool does not over-report (it measures from the same start; ~0.255 s raw, printed rounded to 0.3); the test compares the rounded text with the exact elapsed time. Fix: allow half a display step.
@@ -155,7 +157,7 @@ Laptop drills (21 Nov, fix branch, shared folder `~/AirStack-starling-max2/svg_t
 
 **GPU queue on the laptop (one at a time for speed measurements):** L0.12 pilot → L0.12 trainings → L0.2 → L0.3 → L0.13 (L0.4, L0.5, VID-1 for L0.11 done).
 
-**Next.** (1) L0.3 (running). (2) Merge L0.12 (suite running), L0.2 record. (3) Bubble-tag test at 1.15 m: rules written first, scripted screen, then a trained Guard and Strike (~1.3 GPU-h, this evening). (4) L0.13 overnight (≤ 6 GPU-h). (5) 3-D clips of trained players with a visible tag circle (VID-1b). (6) The G0 page, Sunday. Hard stop: GPU jobs end Mon 08:00, wrap-up 09:30.
+**Next.** (1) Merge the bubble-tag branch (full suite running), then L0.13 (record T53 being written → QC → suite → merge). (2) VID-1b: 3-D clips of the trained players with a visible tag circle; VID-1c: height panel on the L0.2/L0.3 clips. (3) The G0 page (Sunday) — every L0 result with its clips and my recommendations. Hard stop: GPU jobs end Mon 08:00, wrap-up 09:30.
 
 **Waiting on you.** One question (not urgent, by Sunday): **re-run the 1.15 m Strike run with a longer time cap?** It needs run 0 again at the same cap: about 1.1 GPU-h more, beyond the ~1.3 you approved (the test has used ~1.9 by tonight). My recommendation: **no** — the Strike reach rate was flat at ~11–13 % for the last 45 updates, the same waiting-out-the-clock play as at 1.2 m, so two more updates would not change the reading; G0 can use the ABORTED run as information. At G0: tag rule, varied tag distance, tag cost, zone size, team sizes, where to train, the real demo, the physical-intercept study, the L1–L9 budget.
 

@@ -67,28 +67,32 @@ class _RecordingGame(SvgGame):
 
 
 def record_games(cfg: GameCfg, guards: int, strikes: int, guard_spec, strike_spec, num_games: int = 8,
-                 seed: int = 0, band: int | None = 1, max_steps: int | None = None) -> list[Recording]:
-    """Play num_games games on the CPU (each slot's first game) and return one Recording per slot. The game
+                 seed: int = 0, band: int | None = 1, max_steps: int | None = None, device: str = "cpu",
+                 world=None) -> list[Recording]:
+    """Play num_games games on ``device`` (each slot's first game) and return one Recording per slot. The game
     seed is ``seed``; strategy seeds are seed + 101 (Guard) and seed + 202 (Strike), as in scripts/score.py.
     ``guard_spec`` / ``strike_spec``: a strategy name (``make_strategy``) or a strategy object on the CPU for
-    ``num_games`` games (STE L0.12: a trained team of either side); the recording carries the object's ``name``."""
-    dev = "cpu"
-    game = _RecordingGame(cfg, num_games, guards, strikes, device=dev, seed=seed, band=band)
+    ``num_games`` games (STE L0.12: a trained team of either side); the recording carries the object's ``name``.
+    STE L0.13: ``device`` and ``world`` (a rigid-body world of ``num_games`` games, for a physics-backend game file: tier
+    2); every frame is copied to the host."""
+    dev = device
+    game = _RecordingGame(cfg, num_games, guards, strikes, device=dev, seed=seed, band=band, world=world)
     guard = make_strategy(guard_spec, "guard", cfg, num_games, dev, seed + 101) if isinstance(guard_spec, str) else guard_spec
     strike = (make_strategy(strike_spec, "strike", cfg, num_games, dev, seed + 202) if isinstance(strike_spec, str)
               else strike_spec)
     guard_spec = guard_spec if isinstance(guard_spec, str) else guard.name
     strike_spec = strike_spec if isinstance(strike_spec, str) else strike.name
     obs = game.reset()
-    everyone = torch.ones(num_games, dtype=torch.bool)
+    everyone = torch.ones(num_games, dtype=torch.bool, device=dev)
     guard.reset(everyone)
     strike.reset(everyone)
     game._keep = True
     ar = game.arenas
-    centre, rad, half = ar.zone_centre_m.clone().numpy(), ar.zone_radius_m.clone().numpy(), ar.half_m.numpy().copy()
-    band_idx = ar.band.clone().numpy()
-    pos = [game.pos_m.clone().numpy()]
-    alive = [game.alive.clone().numpy()]
+    centre, rad = ar.zone_centre_m.clone().cpu().numpy(), ar.zone_radius_m.clone().cpu().numpy()
+    half = ar.half_m.cpu().numpy().copy()
+    band_idx = ar.band.clone().cpu().numpy()
+    pos = [game.pos_m.clone().cpu().numpy()]
+    alive = [game.alive.clone().cpu().numpy()]
     finished = np.zeros(num_games, dtype=bool)
     outcome = np.zeros(num_games, dtype=int)
     end = np.zeros(num_games, dtype=int)
@@ -96,18 +100,18 @@ def record_games(cfg: GameCfg, guards: int, strikes: int, guard_spec, strike_spe
     max_steps = game.ticks if max_steps is None else int(max_steps)
     for k in range(1, max_steps + 1):
         out = game.step({"guard": guard.act(obs["guard"]), "strike": strike.act(obs["strike"])})
-        done = out.done.numpy()
+        done = out.done.cpu().numpy()
         active = ~finished
-        closest = np.where(active, np.minimum(closest, out.info["closest_cross_m"].numpy()), closest)
-        p = game.pos_m.clone().numpy()
-        a = game.alive.clone().numpy()
+        closest = np.where(active, np.minimum(closest, out.info["closest_cross_m"].cpu().numpy()), closest)
+        p = game.pos_m.clone().cpu().numpy()
+        a = game.alive.clone().cpu().numpy()
         if done.any():                                   # the game already restarted: use the saved last state
-            p[done] = game._last_pos.numpy()[done]
-            a[done] = out.info["final_alive"].numpy()[done]
+            p[done] = game._last_pos.cpu().numpy()[done]
+            a[done] = out.info["final_alive"].cpu().numpy()[done]
         pos.append(p)
         alive.append(a)
         first = active & done
-        outcome[first] = out.outcome.numpy()[first]
+        outcome[first] = out.outcome.cpu().numpy()[first]
         end[first] = k
         finished |= done
         guard.reset(out.done)

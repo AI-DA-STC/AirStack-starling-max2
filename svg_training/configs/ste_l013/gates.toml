@@ -1,0 +1,185 @@
+# STE task L0.13 Does tier 2 train at all? The gate file, written before any run (STANDARDS section 7; ste_learning/
+# VALIDATION_QC.md section 0). Copied into each arm's run folder and pinned by sha256 at the first launch; never edited
+# after a first result (a new limit means a new run). Read by scripts/ste_tier2_l013.py through
+# source/svg_training/ste/tier2_train.py (exact keys: an unknown or missing key refuses). Labels: FIXED, MEASURED,
+# PROPOSED, OPEN (../../STANDARDS.md), LEAD CALL for the lead's decisions, L0.13 CHOICE for the builder's (PROPOSED to
+# the lead and QC before the first launch).
+#
+# LEAD CALL 21 Nov 2026 (the game): PLAN.md row L0.13 names pilot P1b's recipe in the NUS hangar game; the lead moves
+# the task to the STE game: the L0.12 Guard run's recipe (the T41 recipe, one decision per 0.6 s, terminal reward only)
+# on the L0.11 base game (tag 1.6 m, 3v3, zone_disc_ring starts), exploiter Guard team against strike_straight. Reason:
+# L0.12 is the STE track's own learning test and its tier 1 numbers exist (base Guard 913 of 1,000 holds on T44's starts
+# at 553,648,128 game-steps, 16,384 games at once; record T46). The PLAN's gate is kept in substance: tier 2 "trains"
+# if its final hold rate (1,000 games, Wilson lower bound) is above the parked Guard's upper bound on tier 2, and reaching
+# the cap before the step count is itself a result (too slow).
+#
+# What runs (scripts/ste_tier2_l013.py; two jobs, two run folders, arm t1 first):
+#   arm t1: the recipe trained on TIER 1 (the game file as committed: fitted Starling response, exploratory);
+#   arm t2: the same recipe, seed, games at once and game-step budget on TIER 2 (the same game file with
+#           starling_layer.backend = "physics": the Isaac Lab rigid-body Starling, one Isaac world of [trainer] num_games
+#           x 6 drones, headless). It scores t1's networks on tier 2 as well (INFO), so it needs t1's finished folder.
+# One procedure in both arms: one Isaac world per process, so every tier 2 evaluation plays on a view of the training
+# world's first games (ste/tier2_train.SliceWorld; the other games parked, never counted), which overwrites the training
+# games: after EVERY evaluation the training games restart afresh, in BOTH arms (L0.13 CHOICE). Training games restart
+# from the run seed's own start draw; the evaluations never use the training starts.
+#
+# Simulator: training simulator; tier 1 = fast engine with the Starling layer (commander copy, safety filter on every
+# pair, fitted PX4 response, exploratory); tier 2 = the same command chain driving the Isaac Lab rigid-body Starling
+# (Isaac Lab 2.3.2, PhysX). Study tag on (P1, PROPOSED). Results are "observed in the training simulator".
+#
+# Run notes (LEAD CALL 21 Nov 2026, carried from L0.11 and L0.12): NEVER SUSPEND THE MACHINE DURING A GPU JOB (a suspend
+# counts in full against the cap and the GPU-hour ledger). Pause with scripts/gpu_pause.sh instead. Nothing kills a run
+# at --gpu-h during its final phase or a curve read (their time is reserved before each update): the ledger records the
+# real hours.
+
+[run]
+task = "L0.13"
+kind = "GATED"                     # verdict PASS / FAIL / TOO_SLOW on the t2 arm ([verdict]); the controls stop a run (exit 6)
+device = "cuda"
+size = "3v3"                       # LEAD CALL 21 Nov 2026: the L0.11 base game, 3v3
+game_file = "configs/ste_l011/base.toml"   # the L0.11 base game: tag 1.6 m, zone 1.6 m, zone_disc_ring starts
+game_sha256 = "96e0e7f61a49999da54eee81a544bf64c519cd80833f0dcdfa2a07edfc10cc4d"   # = configs/ste_l011/gates.toml, L0.12 [games] base
+side = "guard"                     # LEAD CALL 21 Nov 2026: the exploiter Guard team trains
+opponent = "strike_straight"       # MEASURED: s* of the base case (T44), the L0.12 base Guard run's opponent
+parked = "guard_parked_centre"     # the parked Guard (at 3 Guards it commands zero): the gate's bar, measured in the same batch
+eval_games = 1000                  # VALIDATION_QC section 0 rule 2: T44's first 1,000 starts (loaded, never re-drawn)
+ticks_cap = 2400                   # = the game length (120 s): no evaluation game is cut short
+curve_seed = 130900                # learning-curve reads: their OWN starts (never the scoring starts, never the training starts)
+curve_games = 256                  # as L0.12
+clip_seed = 130950                 # clips: their own starts
+train_seed = 130102                # L0.13 CHOICE: ONE training seed, the same in both arms (network start, training starts,
+                                   #   action noise, the opponent's seed = train_seed + 202): the arms differ in the drone only
+cap_check_every_ticks = 100        # the cap clock (it reads the pause logs) every this many ticks; the stop flag every tick
+cap_h_total = 3.25                 # = arms.t1.cap_h + arms.t2.cap_h: the GPU-hours the two runs of record ask (L0.13 task cap 6.0)
+
+[reference]
+# T44's 1,000 starts of the 3v3 6.5 m start setting and its per-game results (L0.12's file, unchanged). The positive
+# control replays T44's guard_parked_centre v strike_straight cell of `variant` on tier 1.
+file = "configs/ste_l012/t44_reference.npz"
+sha256 = "4bc5e011071adced368b2a0025fc47499839e0bbc8d8d650207bd12c3da0f8b5"
+start_sha256 = "5aeba7ab2b582f2973034c8203c17ed3e8239fef7029a1f991fe95b82369843c"
+t44_gates_sha256 = "8bfbc2cb8f1d6551fb3060bc750c24f9b2220ebafb19fcd44e9e3baa1c24e5d4"
+t44_record = "records/2026-11-21_ste_l011_screen_record.md"
+t44_run = "2026-11-21_ste_l011_screen"
+variant = "base"
+
+[l012]
+# INFO only, compared with in the record (never a bar): the L0.12 base Guard run (record T46).
+gates_sha256 = "6e2e606053a593185480f8671c406625dc844002395801023005945f58cfbc5b"
+record = "records/2026-11-21_ste_l012_best_response_record.md"
+run = "2026-11-21_ste_l012_base_guard"
+base_guard_holds = 913
+base_guard_games = 1000
+base_guard_game_steps = 553648128
+
+[arms]
+# cap_h: effective hours (wall clock less the owner's pauses of the job) = the launcher's --gpu-h for that job.
+# L0.13 CHOICE (projection from L0.2, record of 21 Nov 2026: tier 2 3v3 at 16,384 games trained at 67,368 game-steps/s
+# in 4.7 GB; L0.12 base Guard on tier 1 at 396,236): t2 ~ 48 updates x ~94 s = 1.25 h of training + Isaac start, the
+# C-1a check, 9 curve reads (each 2 reads on tier 2 + 1 on tier 1) and the final phase ~ 0.35 h = ~1.6 h projected;
+# t1 ~ 48 x ~16 s = 0.21 h + ~0.1 h = ~0.3 h projected. Caps leave ~55 % margin on t2 and ~2.5x on t1, so a slower
+# tier 2 (down to ~45,000 game-steps/s) still reaches its budget; below that the run reads TOO_SLOW (a result).
+# final_reserve_s: the floor of the final reserve (L0.12 lesson: long games lengthen the final evaluation; a batch that
+# ran to the 2,400-tick cap on the 16,384-game world would take ~10 min at L0.2's ~4 ticks/s).
+order = ["t1", "t2"]
+t1 = { tier = 1, cap_h = 0.75, final_reserve_s = 600 }
+t2 = { tier = 2, cap_h = 2.5, final_reserve_s = 1500 }
+
+[trainer]
+# The T41 recipe as the L0.12 Guard runs trained it (configs/ste_l012/gates.toml [trainer], side guard: no override).
+algorithm = "IPPO"
+decision_ticks = 12                # one learner decision per 0.6 s (LEAD CALL 21 Nov 2026, finding L011-F1); games ending
+                                   #   inside a decision restart at the next decision boundary (ste/exploit_train.DecisionEnv)
+num_games = 16384                  # L0.13 CHOICE: games at once in BOTH arms = L0.2's largest 3v3 tier 2 fit (16,384, 4.7 GB)
+                                   #   = the L0.12 runs' size (PLAN proposed 8,192 before L0.2 measured)
+game_steps_per_run = 300_000_000  # PLAN row L0.13: 300 M if both arms fit the cap (they do, [arms]). One update =
+                                   #   32 x 12 x 16,384 = 6,291,456 game-steps, so both arms train 48 updates =
+                                   #   301,989,888 game-steps (L0.12's base Guard read 209/256 on its curve at 251.7 M)
+rollouts = 32
+learning_epochs = 5
+mini_batches = 4
+learning_rate = 3.0e-4
+hidden = [128, 128]
+init_log_std = -1.6
+frozen_log_std_axes = ["yaw"]
+zero_mean_init = true
+discount_factor = 0.99             # per decision (0.6 s)
+gae_lambda = 0.95
+entropy_loss_scale = 0.0
+value_loss_scale = 2.5
+ratio_clip = 0.2
+value_clip = 0.2
+grad_norm_clip = 0.5
+shaping_weight = 0.0               # terminal reward only (= the game file's [rewards] shaping_weight, checked)
+checkpoint_every_updates = 1       # the run contract: the same command resumes from the last update boundary
+curve_every_updates = 6            # L0.13 CHOICE: a curve read every 6 updates (~37.7 M game-steps) and at the last update:
+                                   #   t1 = its networks on tier 1; t2 = its networks on tier 2 and on tier 1, and t1's
+                                   #   networks of the same update on tier 2 (snapshots saved every update in both arms)
+final_reserve_factor = 2.0         # reserve = max(arm floor, factor x (final_batch_units x the arm's controls batches' s
+final_batch_units = 2              #   + clip_reserve_s)) (L0.12's rule, QC I-3)
+clip_reserve_s = 300               # clips: 4 games of up to 600 ticks (tier 2 on the 16,384-game world: ~4 ticks/s) + renders
+room_factor = 1.5                  # before each update: left >= reserve + 1.5 x (last update s + last curve read s if one follows)
+
+[controls]
+# Run first, before any training; a failed control stops the run at once: exit 6 CONTROL_FAILED, terminal (the same
+# command on the same folder ends with 6 again). A non-finite action is the run contract's case: exit 5, no retry.
+# Nothing is published unless every control is PASS. Gated (all arms unless marked):
+#   ctl_tier_difference: the tier 1 and tier 2 games differ in `tier_difference` only (C-0), and every tier 2 game of the
+#     t2 arm (training and evaluation) reports the physics drone (motion "physics/...": a game that silently ran the
+#     fitted drone fails).
+#   ctl_physics_agreement (t2, EVERY launch; C-1a, L0.2's check; LEAD CALL 21 Nov 2026 QC L02-1, L02-R1): agree_guard v
+#     agree_strike on the PyTorch reference world, agree_ticks ticks, records every call the game made to its drone model;
+#     replayed bare on the Isaac world (the whole training world, then the evaluation view) and on a fresh reference
+#     world: largest 3-D gap over every game, drone and tick <= agree_max_m (T10's closed_loop_pos_max_m; L0.2 0.0036 m).
+#   ctl_reference_replay (POSITIVE, known answer T44): tier 1, the parked Guard v strike_straight on T44's first
+#     eval_games starts replays T44's cell: holds and reaches each within replay_count_tol_cuda_games of T44's and at most
+#     replay_differ_tol_cuda_games games with another outcome (CUDA; on the CPU every game equal). Before training and
+#     again in the final batch.
+#   ctl_untrained_is_still_t1 / _t2 (KNOWN ANSWER; the brief's "untrained equals the parked Guard within its band"):
+#     the untrained exploiter (zero-mean start, mean actions held 0.6 s) and the parked Guard in the same batch: holds
+#     within replay_count_tol_cuda_games and at most replay_differ_tol_cuda_games games with another outcome (L0.13
+#     CHOICE: L0.12's CUDA tolerances; on the CPU every game equal). _t2: t2 arm only, on tier 2.
+#   ctl_negative_bar_t2 (NEGATIVE, t2 arm; VALIDATION_QC section 0 rule 4): the gate's bar applied to the untrained
+#     exploiter on tier 2 must NOT be cleared.
+#   Plumbing on EVERY evaluation batch (suffix names the batch) and curve read: ctl_paired_starts (every cell on T44's
+#     start set), tags_one_for_one (Guard drones removed by a tag = Strike drones tagged, every game),
+#     no_nonfinite_actions (status NONFINITE, exit 5).
+# INFO, never gated: the tier 2 parked Guard before and after training (same starts, same world); tier 2 parked v T44's
+# tier 1 cell; the t1 arm's own final batch v the t2 arm's tier 1 replay of the same networks.
+stop_on_fail = true
+replay_count_tol_cuda_games = 10
+replay_differ_tol_cuda_games = 20
+agree_guard = "guard_mark_edge"    # L0.2's pair: moving drones, tags and parking writes in 20 ticks
+agree_strike = "strike_straight"
+agree_ticks = 20                   # 1 s
+agree_max_m = 0.02
+tier_difference = ["starling.backend"]
+
+[verdict]
+# The t2 arm's final networks (mean actions, held 0.6 s) on tier 2, T44's first eval_games starts, beside the parked
+# Guard in the SAME batch (VALIDATION_QC rule 3: the bar is computed by code from a reference played under the same
+# rules, here on the same tier, in the same batch).
+#   PASS     the arm reached game_steps_per_run AND trained hold Wilson lower bound > parked hold Wilson upper bound;
+#   FAIL     the arm reached its budget and the bar is not cleared (final: no follow-up seed in L0.13);
+#   TOO_SLOW the arm stopped training at its cap reserve before its budget (the brief: "reaching the cap before the step
+#            count is itself a result"); the bar at the game-steps reached is reported (INFO), and the final phase
+#            still runs (its time was reserved), so the run is never ABORTED for being slow.
+# Order FAIL, then TOO_SLOW, then PASS is not needed: the three are exclusive (budget reached or not).
+# Pre-registered READING (wording only, never changes the word): a FAIL whose t1 arm did not clear the same bar on
+# tier 1 reads "the recipe did not learn at this budget on either tier; this does not single out tier 2".
+# INFO beside the verdict: tier 2 v tier 1 trained hold rates at the same game-steps (each arm on its own tier, and
+# the 2 x 2 of networks x tiers at the t2 arm's last update), paired by start; both learning curves; game-steps per
+# second and GPU-hours per arm; L0.12's 913/1000 at 553.6 M for scale.
+rule = "trained_low_above_parked_high"
+budget_rule = "cap_reserve_before_budget_is_too_slow"
+
+[videos]
+# STANDARDS section 8: 2-D top-down clips with the height panel. t1: its final networks v strike_straight on tier 1
+# (CPU); t2: its final networks v strike_straight on tier 2 (a view of the Isaac world). One hold and one reach kept
+# where there are. 3-D clips of the key games: task VID-1b (pending; noted in the record).
+games = 4
+keep = 2
+max_ticks = 600                    # 30 s: every T44 and L0.12 Guard game ended well inside it
+speed = 8                          # game steps per drawn frame: at 10 frames/s, 4 x real time
+fps = 10
+dpi = 50

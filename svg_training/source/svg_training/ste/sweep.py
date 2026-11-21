@@ -352,7 +352,7 @@ class SweepGame(SvgGame):
     ``fixed_starts`` (starts [n, M, 3], miss [n]): play from these starts (a reference's) instead of drawing them."""
 
     def __init__(self, cfg: GameCfg, cells: int, games_per_cell: int, guards: int, strikes: int, device: str,
-                 seed: int, strike_start_dz_m: float = 0, fixed_starts: tuple[Tensor, Tensor] | None = None):
+                 seed: int, strike_start_dz_m: float = 0, fixed_starts: tuple[Tensor, Tensor] | None = None, world=None):
         self.games_per_cell = games_per_cell
         self.strike_start_dz_m = strike_start_dz_m
         if fixed_starts is not None and int(fixed_starts[0].shape[0]) != games_per_cell:
@@ -362,7 +362,8 @@ class SweepGame(SvgGame):
         self._start_gen = torch.Generator(device=device)
         self._start_gen.manual_seed(seed)
         self.should_stop: Callable[[], bool] | None = None
-        super().__init__(cfg, cells * games_per_cell, guards, strikes, device=device, seed=seed, band=0)
+        # world: the rigid-body world of a physics-backend game file (STE L0.13 tier 2); None for every other game
+        super().__init__(cfg, cells * games_per_cell, guards, strikes, device=device, seed=seed, band=0, world=world)
         ar = self.arenas
         for name, value in (("side", ar.side_m), ("zone radius", ar.zone_radius_m), ("zone centre", ar.zone_centre_m)):
             if not bool((value == value[:1]).all()):

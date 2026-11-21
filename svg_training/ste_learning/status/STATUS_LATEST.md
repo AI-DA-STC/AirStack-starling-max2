@@ -1,10 +1,11 @@
 INTERNAL · the latest status of STE's own learning track and the NUS port, overwritten at every update; the history is in [LOG.md](LOG.md). Produced by the `train-status` skill.
 
-**Status, 2026-11-21 09:29 (+08:00), event: L0.4 + VID-1 merged — first 3-D videos; your look pick (D9)** · laptop RTX 5070 Ti · GPU: L0.2 Isaac smoke · 1 GPU job (0 paused)
+**Status, 2026-11-21 09:52 (+08:00), event: L0.12 GPU pilot DONE (all controls PASS); L0.2 smoke stopped on a control → fix round** · laptop RTX 5070 Ti · GPU idle (run 0 next) · 0 training processes
 
-**Plain summary (L0.4 / VID-1).** Tested: the AirStack Starling drawn in Isaac Lab, and the L0.11 games replayed in 3-D.
-Happened: our clips had a grey box drawn over every drone since S2b (fixed), and the first 3-D videos are in (below).
-Why it matters: you can now watch the games as drones, not dots; every replayed game was checked equal to its record first.
+**Plain summary (L0.12 pilot).** Tested: training speed, memory and every replay control on the GPU before the real runs.
+Happened: all controls PASS (the trainer replays T44 game for game), speed 340–530 k game-steps/s — about 4× the estimate — so
+each run gets 550 M game-steps (1.8× where T41's Guard got good) and all of L0.12 fits in its 6 GPU-h; the Strike side takes the
+pre-registered "shaped" recipe (the bare one never reached the zone against the best Guard in 3 rounds). Next: run 0.
 
 ## Watch (latest clips and figures)
 
@@ -58,16 +59,16 @@ Earlier: L0.11 top-down clips and the factor chart are in the [T44 record](../..
 | L0.9 | Tag rule for the study: 1-for-1, nearest pair first | DONE | tier 1 fast engine | merged; QC + re-check passed; full suite on `development` 1,517 passed / 0 failed (31 min); the 5090 records its own tag-off positions (L09-5090) |
 | L0.10 | Scripted players for the study | DONE | tier 1 fast engine | merged; QC + 2 re-checks passed; full suite on `development` 1,600 passed / 0 failed (56 min, CPU shared with the L0.11 GPU jobs) |
 | L0.11 | Screening sweep (INFO) | DONE | tier 1 fast engine | record T44 (every control PASS; shortlist base (reference), tag 1.2 m, tag 1.4 m; every hold a one-for-one trade) + follow-up checks; merged into `development`; full suite 1,685 passed / 0 failed (27 min) |
-| L0.12 | Best-response test: is the game worth learning? | RUNNING (gate fix; then QC reads it; then the pilot) | tier 1 fast engine | QC re-check: GO for the pilot. QC also showed the learner check could not work (25 M game-steps is far too short; T41 needed ~300 M). Fixed (6e7d194): the check is now "run 0", the Strike trained against the parked Guard at a full run's budget, stopping once it passes; Strike runs only if it passes; proven able to fail on CPU (a standing Strike reads FAIL, a wrong opponent stops the run). Small follow-up running, then QC reads the gate, then the GPU pilot (~0.6 GPU-h) |
-| L0.2 | Tier 2 speed in contested play | RUNNING (Isaac smoke) | tier 2 Isaac Lab | built (driver, gate file, record writer; 72 CPU tests pass; not yet committed, QC next): times both teams playing with a learner in the loop at 1v1–5v3 and 1,024–8,192 games, plus an out-of-memory probe; first Isaac smoke running now (cap 0.25 GPU-h); run of record ~0.9 of 1.5 GPU-h |
+| L0.12 | Best-response test: is the game worth learning? | RUNNING (run 0 next) | tier 1 fast engine | gate fix QC-passed (run 0 = learner check at a full run's budget; 7 of 8 breakages caught); GPU pilot DONE: 0.18 GPU-h, every control PASS, 340–530 k game-steps/s; gate filled: 16,384 games, 550 M game-steps per run, run cap 0.75 GPU-h → pilot + run 0 + 6 runs = 5.43 of 6 GPU-h; Strike recipe = shaped (pre-registered); QC checks the fill, then run 0 (~0.6 h) |
+| L0.2 | Tier 2 speed in contested play | RUNNING (fix round) | tier 2 Isaac Lab | Isaac smoke stopped on its own check (exit 6, 0.044 GPU-h): a drone out in one simulator and flying in the other read as 1,730 m apart (out drones are parked 1,000 m away); the game counts agree within 1 %. QC: NO-GO, 3 critical + 8 important (a crashed run could restart and publish a clean result; out-of-memory mis-read; 11 of 20 breakages not caught). Lead's calls: the check splits into a gated physics check (same commands, no game rules, 2 cm, as T10) and an in-game comparison as INFO; every hole closed with a test first; builder on it. The smoke's speed numbers are void |
 | L0.13 | Does tier 2 train at all? | NOT STARTED | tier 2 Isaac Lab | laptop allowed (owner, 21 Nov), after L0.2, at the games-at-once L0.2 shows fits; cap 6 GPU-h |
-| L0.3 | STE Guard policy in tier 2 without retraining | RUNNING (built) | tier 2 Isaac Lab | built with L0.2 (CPU tests pass): exact control = T45's 831 of 1,000 on the CPU path; parked-Guard control must land in T24's interval [493, 555]; smoke after L0.2's; run of record ~0.6 of 1.5 GPU-h |
+| L0.3 | STE Guard policy in tier 2 without retraining | RUNNING (fix round, with L0.2) | tier 2 Isaac Lab | QC: same flawed check as L0.2, and a non-finite crash could skip a control and still read "every control PASS"; fixed in the same round. Controls as ruled: exact 831 of 1,000 (T45, CPU path), parked Guard in [493, 555] |
 | L0.4 | Side-by-side Starling render | DONE | tier 2 Isaac Lab | found why our clips never looked like the Starling: a grey physics box was drawn over every drone since S2b (the hide call missed it); one-line fix, re-render shows the Starling (before/after in Watch); merged into `development` after independent review; 0.028 of 0.2 GPU-h |
 | L0.5 | Starling video look fix | WAITING ON YOU (D9) | tier 2 Isaac Lab | the drone left unpainted, team shown by a ring or a small dot that casts no shadow; stills in Watch; 0.154 of 0.3 GPU-h (with VID-1) |
 | L0.14 | Crazyflie route check | DONE | tier 1 fast engine (CPU) | record T45: the T41 Guard policy holds 791–768 of 1,000 in the Crazyflie-like lag band (0.48–0.56 s, every drone slowed) against 831 at the Starling's lag, and drones come closer (games under 1.0 m: 7 → 101–149); planner, like for like: 0 of 100 at 3v3 and 5v3 against 20 Nov's 5 of 100 (not a clear difference; only one rule set run); QC + re-check passed; merged into `development` (targeted tests 76 passed; the full suite runs with the next merge — lead's call, the CPU is shared now); page `ste_learning/CRAZYFLIE_ROUTE.md` |
 | L0.6 | Gate G0 | NOT STARTED | none | after every task above; the owner decides |
 
-GPU-h used in L0 so far: 0.608 of 19 (RTX 5090: 0; laptop: L0.11 0.426 (pilot 0.034 + CUDA smoke 0.087 + sweep 0.305), L0.4 0.028, L0.5 + VID-1 0.154 incl. a 0.041 re-check of the clips after review).
+GPU-h used in L0 so far: 0.830 of 19 (RTX 5090: 0; laptop: L0.11 0.426, L0.4 0.028, L0.5 + VID-1 0.154, L0.2 smoke 0.044, L0.12 pilot 0.178).
 
 Laptop full CPU suite (20 Nov, `development` at 5c5d465, after `scripts/nus_install_provisional.sh`): **1,333 passed, 2 failed, 48 skipped** in 24 min. Both failures repeat when run alone:
 - **L07-F1** `test_ste_job.py::test_f_d_a_killed_job…resumes`: CONFIRMED by QC: the tool does not over-report (it measures from the same start; ~0.255 s raw, printed rounded to 0.3); the test compares the rounded text with the exact elapsed time. Fix: allow half a display step.
@@ -94,6 +95,11 @@ Laptop full CPU suite (20 Nov, `development` at 5c5d465, after `scripts/nus_inst
 | L0.11 independent QC (pre-launch, re-check, results read) | ~419 k | ~45 min | |
 | L0.11 sweep | | 18 min | 0.305 GPU-h (L0.11 total 0.426 of 3.0) |
 | L0.4 + L0.5 + VID-1 builder (stills, box bug, replay check, 3-D renderer) | ~410 k | ~3 h incl. the 08:30 limit stop | 0.141 GPU-h; the account hit its 5-hour token limit at about 07:30 (three agents at once); resumed 08:44 |
+| L0.12 gate fix + follow-up builder | ~280 k | ~55 min | run 0 design, N-2/N-4, tests |
+| L0.12 QC re-checks 1–2 | ~450 k | ~30 min | 8 breakages tried on run 0 |
+| L0.2/L0.3 builder | ~410 k | ~30 min | + fix round now |
+| L0.2/L0.3 pre-launch QC | ~240 k | ~22 min | 20 breakages, 9 caught |
+| L0.12 GPU pilot | | 11 min | 0.178 GPU-h |
 | L0.11 GPU pilot | | 2 min | 0.034 GPU-h (first GPU job of the track) |
 | Full CPU test suite | none | ~25 min alone; the L0.7 merge run took 61 min (shared the CPU with L0.9's tests) | rule from now: one heavy test run at a time |
 | GPU | 0 GPU-h | | nothing has used the GPU |
@@ -141,8 +147,8 @@ Laptop drills (21 Nov, fix branch, shared folder `~/AirStack-starling-max2/svg_t
 
 **GPU queue on the laptop (one at a time for speed measurements):** L0.12 pilot → L0.12 trainings → L0.2 → L0.3 → L0.13 (L0.4, L0.5, VID-1 for L0.11 done).
 
-**Next.** (1) L0.12: QC re-reads the fixed gate; on GO, the GPU pilot (~0.6 GPU-h), alone on the GPU. (2) L0.2: Isaac smoke running; then QC (running) → commit → the run of record (~0.9 GPU-h). (3) L0.3 after L0.2.
+**Next.** (1) L0.12: QC checks the gate fill (minutes), then run 0 (~0.6 GPU-h, ~40 min), then the six runs (3 Guard, 3 Strike if run 0 passes), one at a time, ~4.5 h. (2) L0.2/L0.3: fix round, then QC re-check, then commit, then a new smoke. (3) L0.13 after L0.2.
 
-**Waiting on you.** (1) D9: ring, dot, or neither (Watch); not urgent, the clips use the ring until you say. Optional: one screenshot of a drone in the AirStack simulator's own window would confirm the lights and colour match. (2) **L0.12 GPU-hours, needed before the last runs (about this evening):** pilot ~0.6 + run 0 ≤ 0.84 + six runs × 0.84 = about **6.6–6.7 GPU-h against the approved 6**. My recommendation: raise L0.12 to **7 GPU-h** (L0 total stays near 8 of 19). The alternative is shorter runs (0.75 h each, about 270 M game-steps instead of the 300 M where T41's Guard got good), which weakens the main measurement. If run 0 fails, only the Guard runs go and L0.12 uses about 4.3. (3) If run 0 hits its cap before finishing (INCONCLUSIVE), whether the Strike runs go ahead is yours; I will bring it with the numbers.
+**Waiting on you.** (1) D9: ring, dot, or neither (Watch); not urgent. (2) ~~L0.12 GPU-hours~~: no longer needed — the pilot was 4× faster than estimated, so everything fits in the approved 6 GPU-h. (3) Only if run 0 runs out of time before passing or failing: whether the Strike runs go ahead.
 
 **Correction.** The 21 Nov question on NUS values listed "speeds 0.6 / 1.2". The L0.8 review reads those two numbers as the decision period (0.6 s) and the flight height (1.2 m); the speeds are 0.5 and 0.333 m/s. Your Yes covers all of them as written on the sheet.

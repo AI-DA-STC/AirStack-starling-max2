@@ -353,6 +353,23 @@ def test_clips_use_the_l012_drawing_with_one_win_and_one_loss_asked(fixture, drv
     assert out["X2"]["note"] is None and out["X2"]["files"][0].startswith("clips/X2/videos/")
 
 
+def test_clips_render_for_real_on_the_cpu(fixture, drv, tmp_path):
+    """Unmocked: make_clips through the L0.12 make_videos and render_replay writes GIFs under clips/X1/videos/ (2
+    games, a short clip length)."""
+    import dataclasses
+    from types import SimpleNamespace
+    runs, settings, _, _ = fixture
+    s = drv.load_settings(settings)
+    screen = exploit.load_gates(s["screen"]["gates"])
+    screen = dataclasses.replace(screen, videos={**screen.videos, "max_ticks": TICKS})
+    ctx = SimpleNamespace(screen=screen, v15="tag_1p15", cfg15=exploit.variant_cfg(screen, "tag_1p15"),
+                          dirs={side: runs / s["t46"][f"{side}_run"] for side in ("guard", "strike")})
+    out = drv.make_clips(ctx, s, tmp_path)
+    assert out["X1"]["files"], out
+    for f in out["X1"]["files"]:
+        assert f.startswith("clips/X1/videos/") and (tmp_path / f.split(":")[0]).is_file()
+
+
 # ================================================================================================ the record writer
 @pytest.fixture(scope="module")
 def rec():

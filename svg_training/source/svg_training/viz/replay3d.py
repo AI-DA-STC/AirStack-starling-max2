@@ -4,8 +4,9 @@ A tier-1 game keeps no trajectory: the L0.11 run folder holds per-game numbers a
 game is **played again**: :func:`capture_batch` re-plays one L0.11 batch exactly as ``ste/sweep.play_batch`` plays it
 (the same ``SweepGame``, the same paired starts, the same players and seeds, the same batch-mates, because the safety
 filter's early stop is batch-wide) and keeps every step of the chosen games. :func:`check_against_record` then compares
-the re-played per-game numbers (outcome, end step, tags, Strike drones left, start positions) with the run's stored
-cell file; a game is drawn only if they are equal, so the game drawn is the game in the record.
+the re-played per-game numbers (outcome, end step, tags, Strike drones left, start positions exactly; the closest 3-D
+and horizontal approach within a tolerance, as the sweep's same-seed control) with the run's stored cell file; a game is
+drawn only if they agree, so the game drawn is the game in the record.
 
 A :class:`Trajectory` is what the renderer needs: positions, yaw and who is in the game at every 0.05 s tick, the arena
 and the result. Tier 1 has no roll or pitch: the renderer draws the drones level. Then the cameras (top view, 3-D view),
@@ -30,6 +31,7 @@ from ..core.rewards import GUARD_WIN, STRIKE_WIN
 from ..ste import sweep
 
 EXACT_KEYS = ("outcome", "end_step", "tags", "strikes_left", "start_pos_m")   # sweep.PER_GAME_EXACT
+CLOSE_KEYS = ("closest_3d_m", "closest_m")    # equal within the gate file's same_seed_closest_tol_m (0 on the CPU)
 OUTCOME_CODES = {"hold": GUARD_WIN, "reach": STRIKE_WIN}
 PARK_LIMIT_M = 100.0          # a coordinate beyond this is a parked drone (the game parks drones that are out at 1 km)
 
@@ -127,19 +129,24 @@ class Capture:
     trajectories: list
 
 
-def capture_batch(cfg: GameCfg, size: str, cells: tuple, run: dict, keep: list[int]) -> Capture:
-    """Play one batch as ``sweep.play_batch`` does (same game, players, seeds, step cap) and keep every step of the
-    games ``keep`` (global indices: cell index x games per cell + game index)."""
+def capture_batch(cfg: GameCfg, size: str, cells: tuple, run: dict, keep: list[int],
+                  strike_start_dz_m: float = 0) -> Capture:
+    """Play one batch as ``sweep.play_batch`` does (same game, players, seeds, step cap, Strike start offset) and keep
+    every step of the games ``keep`` (global indices: cell index x games per cell + game index). Refuses a game where a
+    tagged Guard may survive: the replay's banner and crosses assume one-for-one tags."""
+    if cfg.tag.guard_survives_tag_prob != 0:
+        raise ValueError(f"tag.guard_survives_tag_prob is {cfg.tag.guard_survives_tag_prob}: the replay assumes "
+                         f"one-for-one tags (0)")
     guards, strikes = sweep.parse_size(size)
     n, device, seed = int(run["games_per_cell"]), run["device"], int(run["seed"])
-    game = _CaptureGame(cfg, len(cells), n, guards, strikes, device, seed, keep=list(keep))
+    game = _CaptureGame(cfg, len(cells), n, guards, strikes, device, seed, strike_start_dz_m, keep=list(keep))
     guard = sweep.split_players(cells, "guard", cfg, n, device, seed)
     strike = sweep.split_players(cells, "strike", cfg, n, device, seed)
     res = play_match(game, guard, strike, max_steps=int(run["ticks_cap"]))
     alive_strikes = game.alive[:, guards:].sum(dim=1)
     host = {"outcome": res.outcome, "end_step": res.end_step, "tags": game.tags,
             "strikes_left": torch.where(game.first_done, game.strikes_left, alive_strikes),
-            "start_pos_m": res.start_pos_m}
+            "start_pos_m": res.start_pos_m, "closest_3d_m": res.closest_cross_3d_m, "closest_m": res.closest_cross_m}
     per_game = {k: v.detach().cpu().numpy() for k, v in host.items()}
     pos = torch.stack([c[0] for c in game._cap]).cpu().numpy()          # [S+1, K, M, 3]
     yaw = torch.stack([c[1] for c in game._cap]).cpu().numpy()
@@ -169,8 +176,9 @@ def capture_batch(cfg: GameCfg, size: str, cells: tuple, run: dict, keep: list[i
     return Capture(per_game, trajs)
 
 
-def check_against_record(per_game: dict, record: dict, keys: tuple = EXACT_KEYS) -> dict:
-    """Every key of every game equal (start positions bit for bit)? {"equal", "mismatches": {key: games differing}}."""
+def check_against_record(per_game: dict, record: dict, keys: tuple = EXACT_KEYS, tol_m: float = 0.0) -> dict:
+    """Every key of every game equal (start positions bit for bit), and the CLOSE_KEYS present in both within tol_m
+    (an infinity must equal an infinity; sweep.check_same_seed's rule)? {"equal", "mismatches": {key: games differing}}."""
     mism = {}
     for k in keys:
         a, b = np.asarray(per_game[k]), np.asarray(record[k])
@@ -179,6 +187,15 @@ def check_against_record(per_game: dict, record: dict, keys: tuple = EXACT_KEYS)
             continue
         diff = a != b
         mism[k] = int(diff.reshape(diff.shape[0], -1).any(axis=1).sum()) if diff.ndim > 1 else int(diff.sum())
+    for k in CLOSE_KEYS:
+        if k in per_game and k in record:
+            x, y = np.asarray(per_game[k], float), np.asarray(record[k], float)
+            if x.shape != y.shape:
+                mism[k] = int(max(x.shape[0], y.shape[0]))
+                continue
+            with np.errstate(invalid="ignore"):
+                same = (x == y) | (np.abs(x - y) <= tol_m)
+            mism[k] = int((~same).sum())
     return {"equal": all(v == 0 for v in mism.values()), "mismatches": mism}
 
 

@@ -170,8 +170,8 @@ def render(args, isaac, frame_factory=None) -> int:
     # the arena (one for every trajectory: refused if they differ)
     ref = arena_t if arena_t is not None else None
     for t in trajs:
-        if (t.half_m, t.zone_radius_m, tuple(t.zone_centre_m)) != (ref.half_m, ref.zone_radius_m,
-                                                                  tuple(ref.zone_centre_m)):
+        if (t.half_m, t.zone_radius_m, tuple(t.zone_centre_m), t.guards, t.strikes) != (
+                ref.half_m, ref.zone_radius_m, tuple(ref.zone_centre_m), ref.guards, ref.strikes):
             raise ValueError("the trajectories play in different arenas; replay them in separate launches")
     if ref is not None:
         isaac.spawn_display_arena("/World/Arena", ref.half_m, tuple(float(v) for v in ref.zone_centre_m),
@@ -295,7 +295,8 @@ def _git_commit() -> str:
 
 def _working_tree_state() -> str:
     """'clean', or the pipeline files that differ from the commit (the render was made from a working tree)."""
-    r = subprocess.run(["git", "-C", str(ROOT), "status", "--porcelain", "--", "scripts", "source", "configs"],
+    r = subprocess.run(["git", "-C", str(ROOT), "--no-optional-locks", "status", "--porcelain", "--", "scripts",
+                        "source", "configs"],
                        capture_output=True, text=True)
     files = sorted({ln[3:].strip() for ln in r.stdout.splitlines() if ln.strip()})
     return "clean" if not files else "uncommitted changes: " + ", ".join(files)
@@ -349,6 +350,10 @@ def encode(args) -> int:
         return 0
     media = Path(args.media)
     rec_dir = getattr(args, "record_run_dir", None)
+    if rec_dir:                                     # counts only from the record the settings pin
+        have = _sha256(Path(rec_dir) / "gates.toml")
+        if have != settings["key_games"]["gates_sha256"]:
+            raise ValueError(f"{rec_dir}: gate file sha256 {have}, the settings pin {settings['key_games']['gates_sha256']}")
     res = tuple(meta["resolution"])
     rows_out = []
     fps = r3.playback_fps(float(pb["speed_x"]))
@@ -471,7 +476,7 @@ def write_3d_readme(rows: list, meta: dict, settings: dict, dest: Path) -> None:
         "reach.",
         "",
         "One hold and one reach per variant are shown; the column \"In the record\" gives how often each outcome "
-        "happened in that cell (1,000 games), so the pair is not a 50/50 split. A cross marks where a drone was "
+        "happened in that cell, so the pair is not a 50/50 split. A cross marks where a drone was "
         "tagged out; in these 3v3 holds every Strike drone was traded for a Guard drone (T44). The zone is drawn as a "
         "10-sided disc inside the true circle, so a Strike drone that reaches the circle's edge can sit just outside "
         "the drawn edge.",

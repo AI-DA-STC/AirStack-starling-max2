@@ -162,6 +162,8 @@ def test_encode_marks_tagged_drones_and_counts(tmp_path):
     m3.render(_args(tmp_path, replay=[str(p)]), fake)
     rec = tmp_path / "rec"
     (rec / "cells").mkdir(parents=True)
+    import shutil
+    shutil.copy(ROOT / "configs" / "ste_l011" / "gates.toml", rec / "gates.toml")   # the pinned gate file
     out = np.full(4 * 1000, 2, np.int8)
     out[:1000][[3, 5]] = 1                                        # cell 0: 998 holds, 2 reaches
     np.savez(rec / "cells" / "base__b00.npz", outcome=out)
@@ -172,7 +174,10 @@ def test_encode_marks_tagged_drones_and_counts(tmp_path):
     a.record_run_dir = str(rec)
     assert m3.encode(a) == 0
     readme = (tmp_path / "media" / "ste_l011" / "3d" / "README.md").read_text()
-    assert "998 holds and 2 reaches of 1000" in readme
+    assert "998 holds and 2 reaches of 1000" in readme and "1,000 games" not in readme
+    (rec / "gates.toml").write_text((rec / "gates.toml").read_text() + "\n# changed\n")
+    with pytest.raises(ValueError, match="sha256"):
+        m3.encode(a)                                               # counts only from the pinned record
     assert re.search(r"GIF \d+ px wide, 10 frames/s", readme)
     import imageio.v2 as imageio
     last = imageio.imread(str(tmp_path / "work" / "render" / "base_hold" / "overlay_top_last.png"))
@@ -212,6 +217,16 @@ def test_arenas_must_match(tmp_path):
     b = r3.save_trajectory(tmp_path / "trajectories" / "b", t)
     with pytest.raises(ValueError, match="different arenas"):
         m3.render(_args(tmp_path, replay=[str(a), str(b)]), FakeIsaac())
+    t = r3.load_trajectory(a)
+    t.guards, t.strikes = 2, 4                                     # same arena, other team sizes: other drone sets
+    c = r3.save_trajectory(tmp_path / "trajectories" / "c", t)
+    with pytest.raises(ValueError, match="different arenas"):
+        m3.render(_args(tmp_path, replay=[str(a), str(c)]), FakeIsaac())
+
+
+def test_git_status_takes_no_lock():
+    src = (ROOT / "scripts" / "make_ste_3d.py").read_text()
+    assert '"--no-optional-locks", "status"' in src
 
 
 def test_script_refuses_without_work():

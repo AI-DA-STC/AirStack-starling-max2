@@ -55,6 +55,13 @@ def test_trajectory_matches_the_game(small):
         z = t.pos_m[..., 2][t.alive]
         assert z.min() >= lo - 1e-5 and z.max() <= hi + 1e-5
         assert t.half_m == pytest.approx(3.25) and t.wall_margin_m == pytest.approx(0.25)   # base: 6.5 m lab arena
+        # every later frame belongs to game g (starts are tiled over the cells, so frame 0 cannot tell a wrong cell
+        # index): the closest live Guard-Strike 3-D distance over frames 1..end equals the oracle's for game g
+        p, a = t.pos_m[1:].astype(float), t.alive[1:]
+        d = np.linalg.norm(p[:, :3, None, :] - p[:, None, 3:, :], axis=-1)           # [T, G, S]
+        live = a[:, :3, None] & a[:, None, 3:]
+        got = float(np.where(live, d, np.inf).min())
+        assert got == pytest.approx(float(oracle.per_game["closest_3d_m"][g]), abs=1e-5)
 
 
 def test_check_against_record(small):
@@ -65,6 +72,32 @@ def test_check_against_record(small):
     rec["end_step"][1] += 1
     bad = r3.check_against_record(cap.per_game, rec)
     assert not bad["equal"] and bad["mismatches"]["end_step"] == 1
+
+
+def test_check_compares_closest_approach_within_tolerance(small):
+    """As the sweep's same-seed control: closest 3-D and horizontal approach within tol_m (inf equals inf)."""
+    _, _, _, cap, oracle = small
+    rec = {k: np.array(v) for k, v in oracle.per_game.items()}
+    for key in ("closest_3d_m", "closest_m"):
+        assert key in cap.per_game
+    rec["closest_3d_m"][0] += 1e-4
+    assert r3.check_against_record(cap.per_game, rec, tol_m=1e-3)["equal"]
+    bad = r3.check_against_record(cap.per_game, rec, tol_m=1e-5)
+    assert not bad["equal"] and bad["mismatches"]["closest_3d_m"] == 1
+
+
+def test_capture_refuses_a_surviving_guard(small):
+    """The banner and the crosses assume 1-for-1 tags: a game where a tagged Guard may survive is refused."""
+    cfg, run, _, _, _ = small
+    with pytest.raises(ValueError, match="guard_survives_tag_prob"):
+        r3.capture_batch(cfg.replace(**{"tag.guard_survives_tag_prob": 1.0}), "3v3", CELLS, run, [0])
+
+
+def test_capture_passes_the_strike_start_offset(small):
+    cfg, run, _, _, _ = small
+    cap = r3.capture_batch(cfg, "3v3", CELLS[:1], {**run, "ticks_cap": 2}, [], strike_start_dz_m=0.001)
+    oracle = sweep.play_batch(cfg, "3v3", CELLS[:1], {**run, "ticks_cap": 2}, strike_start_dz_m=0.001)
+    np.testing.assert_array_equal(cap.per_game["start_pos_m"], oracle.per_game["start_pos_m"])
 
 
 def test_trajectory_file_round_trip(small, tmp_path):

@@ -10,8 +10,9 @@ For each variant of ``configs/ste_video.toml [key_games]``: g* and s* from the r
 table), the cell's batch from the run's own copy of the gate file (its sha256 must be the one in the settings), the key
 games by the settings' rule from the run's stored outcomes (``cells/<batch>.npz``), then the whole batch played again
 on the record's device (``viz/replay3d.capture_batch``: the batch-mates matter, the filter's early stop is batch-wide).
-Every game of the batch must equal the record on outcome, end step, tags, Strike drones left and start positions;
-only then are the trajectories written (``<out>/trajectories/<variant>_<outcome>.npz`` + ``.json``), with
+Every game of the batch must equal the record on outcome, end step, tags, Strike drones left and start positions,
+and agree on the closest approach within the gate file's same-seed tolerance (0 on the CPU); a variant's older
+trajectories are deleted before it is played, and only then are the trajectories written (``<out>/trajectories/<variant>_<outcome>.npz`` + ``.json``), with
 ``<out>/capture.json`` (the check, per variant). Visual tooling: no gates, no record, no ledger row.
 
 Exit codes: 0 done; 1 a replayed batch differs from the record (nothing drawn from it); 2 refused (bad input: gate file
@@ -97,7 +98,13 @@ def main(argv=None) -> int:
         batch_id, cells, ci = r3.find_cell(gates, plan, variant, cell)
         npz = rec_dir / "cells" / (batch_id.replace("/", "__") + ".npz")
         with np.load(npz) as d:
-            record = {k: d[k] for k in r3.EXACT_KEYS}
+            record = {k: d[k] for k in r3.EXACT_KEYS + r3.CLOSE_KEYS if k in d.files}
+        for stale in (out / "trajectories").glob(f"{variant}_*"):     # never leave an older run's game to be drawn
+            stale.unlink()
+        vrun = dict(run)
+        if "ticks_cap" not in overrides:                              # the group's own cap, as the sweep plays it
+            vrun["ticks_cap"] = spec.ticks_cap(gates.run)
+        tol = 0.0 if str(vrun["device"]) == "cpu" else float(gates.controls["same_seed_closest_tol_m"])
         n = int(run["games_per_cell"])
         picks = r3.pick_key_games(record["outcome"][ci * n:(ci + 1) * n], kg["outcomes"])
         keep = [(name, ci * n + i) for name, i in picks.items() if i is not None]
@@ -105,8 +112,13 @@ def main(argv=None) -> int:
         started = time.time()
         say(f"{variant}: {cell[0]} v {cell[1]}, batch {batch_id} (cell {ci} of {len(cells)}), key games {picks}; "
             f"playing {len(cells) * n} games on {run['device']}")
-        cap = r3.capture_batch(cfg, size, cells, run, [g for _, g in keep])
-        check = r3.check_against_record(cap.per_game, record)
+        try:
+            cap = r3.capture_batch(cfg, size, cells, vrun, [g for _, g in keep],
+                                   strike_start_dz_m=spec.strike_start_dz_m or 0)
+        except ValueError as err:
+            say(f"refused: {variant}: {err}")
+            return 2
+        check = r3.check_against_record(cap.per_game, record, tol_m=tol)
         row = {"guard": cell[0], "strike": cell[1], "batch": batch_id, "cell_index": ci, "picks": picks,
                "games_compared": int(len(cells) * n), "check": check, "seconds": round(time.time() - started, 1),
                "files": []}
@@ -118,7 +130,8 @@ def main(argv=None) -> int:
             continue
         for (name, g), t in zip(keep, cap.trajectories):
             t.meta.update({"variant": variant, "guard": cell[0], "strike": cell[1], "outcome_name": name,
-                           "game_index": int(g - ci * n), "games_per_cell": n, "batch": batch_id, "cell_index": ci, "game": game_name,
+                           "game_index": int(g - ci * n), "games_per_cell": n, "batch": batch_id, "cell_index": ci,
+                           "game": game_name,
                            "size": size, "record": kg["record"], "gates_sha256": gates.sha256,
                            "tags": int(record["tags"][g]), "seed": int(run["seed"]), "device": run["device"],
                            "commit": report["commit"]})

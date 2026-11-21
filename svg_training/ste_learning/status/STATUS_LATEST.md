@@ -1,11 +1,12 @@
 INTERNAL · the latest status of STE's own learning track and the NUS port, overwritten at every update; the history is in [LOG.md](LOG.md). Produced by the `train-status` skill.
 
-**Status, 2026-11-21 09:52 (+08:00), event: L0.12 GPU pilot DONE (all controls PASS); L0.2 smoke stopped on a control → fix round** · laptop RTX 5070 Ti · GPU idle (run 0 next) · 0 training processes
+**Status, 2026-11-21 10:23 (+08:00), 30-minute update: run 0 PASS; first L0.12 run done (base, Guard)** · laptop RTX 5070 Ti · GPU 93 % / 2.8 GB · 1 training process (L0.12 base Strike)
 
-**Plain summary (L0.12 pilot).** Tested: training speed, memory and every replay control on the GPU before the real runs.
-Happened: all controls PASS (the trainer replays T44 game for game), speed 340–530 k game-steps/s — about 4× the estimate — so
-each run gets 550 M game-steps (1.8× where T41's Guard got good) and all of L0.12 fits in its 6 GPU-h; the Strike side takes the
-pre-registered "shaped" recipe (the bare one never reached the zone against the best Guard in 3 rounds). Next: run 0.
+**Plain summary (L0.12, first results).** Tested: can our trainer learn at all (run 0), and can a trained Guard beat the
+best hand-written Guard (base rules, 3v3)? Happened: run 0 PASS at its first check (trained Strike reached a parked Guard's
+zone 478 of 1,000, pass mark 416); the trained Guard holds **913 of 1,000** against the straight Strike, against 808 for the
+best script (gain +0.105, intervals apart). Why it matters: learning beats scripts here, so the base game is not settled by
+scripts alone — but every hold is still a one-for-one trade (0 Guards left). Five runs to go (~2 h).
 
 ## Watch (latest clips and figures)
 
@@ -59,7 +60,7 @@ Earlier: L0.11 top-down clips and the factor chart are in the [T44 record](../..
 | L0.9 | Tag rule for the study: 1-for-1, nearest pair first | DONE | tier 1 fast engine | merged; QC + re-check passed; full suite on `development` 1,517 passed / 0 failed (31 min); the 5090 records its own tag-off positions (L09-5090) |
 | L0.10 | Scripted players for the study | DONE | tier 1 fast engine | merged; QC + 2 re-checks passed; full suite on `development` 1,600 passed / 0 failed (56 min, CPU shared with the L0.11 GPU jobs) |
 | L0.11 | Screening sweep (INFO) | DONE | tier 1 fast engine | record T44 (every control PASS; shortlist base (reference), tag 1.2 m, tag 1.4 m; every hold a one-for-one trade) + follow-up checks; merged into `development`; full suite 1,685 passed / 0 failed (27 min) |
-| L0.12 | Best-response test: is the game worth learning? | RUNNING (run 0 next) | tier 1 fast engine | gate fix QC-passed (run 0 = learner check at a full run's budget; 7 of 8 breakages caught); GPU pilot DONE: 0.18 GPU-h, every control PASS, 340–530 k game-steps/s; gate filled: 16,384 games, 550 M game-steps per run, run cap 0.75 GPU-h → pilot + run 0 + 6 runs = 5.43 of 6 GPU-h; Strike recipe = shaped (pre-registered); QC checks the fill, then run 0 (~0.6 h) |
+| L0.12 | Best-response test: is the game worth learning? | RUNNING (run 2 of 6) | tier 1 fast engine | pilot PASS (0.18 GPU-h); run 0 learner check **PASS** at update 10 (478/1000 v 416, 0.06 GPU-h); run 1 base Guard DONE: trained 913/1000 v best script 808/1000, gain +0.105 (real), every control PASS, 554 M game-steps in 24 min; Guards left in holds still 0 (one-for-one trades); now base Strike, then tag 1.2 m and 1.4 m (Guard, Strike); ~2 h left |
 | L0.2 | Tier 2 speed in contested play | RUNNING (fix round) | tier 2 Isaac Lab | Isaac smoke stopped on its own check (exit 6, 0.044 GPU-h): a drone out in one simulator and flying in the other read as 1,730 m apart (out drones are parked 1,000 m away); the game counts agree within 1 %. QC: NO-GO, 3 critical + 8 important (a crashed run could restart and publish a clean result; out-of-memory mis-read; 11 of 20 breakages not caught). Lead's calls: the check splits into a gated physics check (same commands, no game rules, 2 cm, as T10) and an in-game comparison as INFO; every hole closed with a test first; builder on it. The smoke's speed numbers are void |
 | L0.13 | Does tier 2 train at all? | NOT STARTED | tier 2 Isaac Lab | laptop allowed (owner, 21 Nov), after L0.2, at the games-at-once L0.2 shows fits; cap 6 GPU-h |
 | L0.3 | STE Guard policy in tier 2 without retraining | RUNNING (fix round, with L0.2) | tier 2 Isaac Lab | QC: same flawed check as L0.2, and a non-finite crash could skip a control and still read "every control PASS"; fixed in the same round. Controls as ruled: exact 831 of 1,000 (T45, CPU path), parked Guard in [493, 555] |
@@ -68,7 +69,7 @@ Earlier: L0.11 top-down clips and the factor chart are in the [T44 record](../..
 | L0.14 | Crazyflie route check | DONE | tier 1 fast engine (CPU) | record T45: the T41 Guard policy holds 791–768 of 1,000 in the Crazyflie-like lag band (0.48–0.56 s, every drone slowed) against 831 at the Starling's lag, and drones come closer (games under 1.0 m: 7 → 101–149); planner, like for like: 0 of 100 at 3v3 and 5v3 against 20 Nov's 5 of 100 (not a clear difference; only one rule set run); QC + re-check passed; merged into `development` (targeted tests 76 passed; the full suite runs with the next merge — lead's call, the CPU is shared now); page `ste_learning/CRAZYFLIE_ROUTE.md` |
 | L0.6 | Gate G0 | NOT STARTED | none | after every task above; the owner decides |
 
-GPU-h used in L0 so far: 0.830 of 19 (RTX 5090: 0; laptop: L0.11 0.426, L0.4 0.028, L0.5 + VID-1 0.154, L0.2 smoke 0.044, L0.12 pilot 0.178).
+GPU-h used in L0 so far: about 1.35 of 19 (laptop: L0.11 0.426, L0.4 0.028, L0.5 + VID-1 0.154, L0.2 smoke 0.044, L0.12 pilot 0.178 + run 0 0.061 + base Guard 0.404).
 
 Laptop full CPU suite (20 Nov, `development` at 5c5d465, after `scripts/nus_install_provisional.sh`): **1,333 passed, 2 failed, 48 skipped** in 24 min. Both failures repeat when run alone:
 - **L07-F1** `test_ste_job.py::test_f_d_a_killed_job…resumes`: CONFIRMED by QC: the tool does not over-report (it measures from the same start; ~0.255 s raw, printed rounded to 0.3); the test compares the rounded text with the exact elapsed time. Fix: allow half a display step.

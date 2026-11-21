@@ -12,14 +12,16 @@ measured rates below. Every rate was observed in the training simulator; nothing
 **The plan follows D3** (owner, 20 Nov: train in Isaac Lab, the fast engine for quick experiments and debugging only;
 G0 recommendation 4: keep D3). Tier 2 trains the learner pilot, the league pilot and the runs of record. Tier 1 runs the
 quick experiments (best-response reads, recipe tests) and the large scoring tables. **Open question for the owner (A12):**
-this draft also trains on tier 1 in L1.9, L1.10, L2.7, L2.8, L3.5 and L5.3 (about 5× cheaper, and comparable with L0's
+this draft also trains on tier 1 in L1.9, L1.10, L1.11, L2.7, L2.8, L3.5 and L5.3 (about 5× cheaper, and comparable with L0's
 tier 1 numbers) and scores runs of record partly on tier 1 (L4.3, L6.1, L6.2); whether these fit D3 is the owner's call.
 
 Other G0 lead answers used: 3v3 main size, 1v1 trained and tested in L1, tag drawn within ±0.1 m in training,
 Crazyflies first at Starling metres, Starling 1v1 demo, physical intercept in simulation only, 3 seeds of record.
 
-The tag is 1.6 m, the only distance where both trained sides beat the scripts (G0 recommendation 1). Tag 1.4 m has the
-same timings (T46). Tag 1.15 m is in section 4.
+The tag is 1.6 m for L1 set-up and pilots (G0 recommendation 1). There each trained team was scored against one
+opponent: the Strike team fails against a second (85 of 1,000 against field Guards), and the Guard team is untested
+against other Strike scripts ([T56](../../records/2026-11-22_ste_l012d_cross_tag_record.md)).
+Tag 1.4 m has the same timings (T46). Tag 1.15 m is in section 4.
 
 | Phase | Low – high GPU-h | Planning figure | Main cost |
 |---|---|---|---|
@@ -55,7 +57,7 @@ same timings (T46). Tag 1.15 m is in section 4.
 | R6 | against a learned opponent, tier 1: **0.27 B per GPU-h**, about 4× slower than R1 | 579 M in 2.14 h on the RTX 5090; older driver, hangar game, 32,768 games, opponent S20 a network ([T41](../../records/2026-11-19_nus_phase5_pilot_p1b_run4_record.md), [TRAIN_A_GUARD](../../docs/TRAIN_A_GUARD.md)) | MEASURED; cause OPEN |
 | R7 | tier 1 scoring: about 0.001 GPU-h per 1,000-game condition for short games; up to 0.015 when games run to the 120 s clock | [T44](../../records/2026-11-21_ste_l011_screen_record.md): 0.305 h for 24 batches of up to 30 conditions; clock games 2.4 M game-steps at about 50k/s (T48) | MEASURED; clock case PROPOSED |
 | R8 | tier 2 scoring: about 0.02 GPU-h per 1,000-game condition inside one running Isaac world (T53 arm t2: 335 s for every evaluation and 24 curve reads); 0.6 as separate small runs ([T49](../../records/2026-11-21_ste_l03_transfer_record.md): 1.24 h for 2 conditions). Rows use 0.02–0.1 for batched suites and 0.02–0.3 for small checks | T53, T49 | bracket MEASURED; row values PROPOSED |
-| R9 | learning length: one side beats a script at 1.6 m in 0.55 B (T46). NUS self-play: 153.6 M per generation, 8–20 generations = 1.2–3.1 B ([NUS Phase 2a](../../records/2026-11-17_nus_phase2a_training_record.md)). **League: 2–5 B per seed** | 6,000 updates × 25,600 game-steps per generation | league length PROPOSED |
+| R9 | learning length: one side beats its training opponent's script at 1.6 m in 0.55 B (T46; for the Strike team against that opponent only, [T56](../../records/2026-11-22_ste_l012d_cross_tag_record.md)). NUS self-play: 153.6 M per generation, 8–20 generations = 1.2–3.1 B ([NUS Phase 2a](../../records/2026-11-17_nus_phase2a_training_record.md)). **League: 2–5 B per seed** | 6,000 updates × 25,600 game-steps per generation | league length PROPOSED |
 | R10 | tag 1.15 m: about 1.1–1.3× slower per game-step | Guard 0.523 against 0.404 GPU-h (T51 against T46); Strike 6–13 % per update ([DISCUSSION](../DISCUSSION_2026-11-19_20.md) §9) | MEASURED |
 | R11 | tag 1.15 m, more training (L0.12c, tier 1, laptop): Guard team at 3× (1.65 B) holds **572 of 1,000** against the best script's 645 (1× gave 466); Strike team at 5× (2.76 B) reaches **134 of 1,000** against 355. Curves (256 curve games): Guard 0.50 → 0.54 from 1.07 to 1.57 B, slowing; Strike 0.102 → 0.176 from 0.57 to 2.76 B, still rising. Rates: Guard 1.08 B per GPU-h, Strike 0.89 | 1.655 B in 1.533 GPU-h, 2.756 B in 3.107 GPU-h ([T54](../../records/2026-11-22_ste_l012c_tag_1p15_guard_record.md), [T55](../../records/2026-11-22_ste_l012c_tag_1p15_strike_record.md)) | MEASURED |
 
@@ -85,12 +87,19 @@ varied-tag reads.
 | L1.9 1v1 best-response read, both sides (*new*; L0.12 driver), plus a scripted 1v1 screen at tag 1.15 m on the CPU (G0 row 8) | run 0 + Strike + Guard, 0.55 B each; tier 2 check | 1 (check 2) | laptop | 0.5 – 1.9 | run 0 0.1; 2 × 0.55 B at R1 × R5 (0.18 h each) to R2 (0.6 h each); check 0.05–0.6 |
 | L1.10 Tag drawn within ±0.1 m, 3v3, both sides (*new*) | Guard + Strike, 0.55 B each, scored at the fixed tag | 1 | laptop | 1.0 – 1.2 | Guard 0.40–0.52 h + Strike 0.57–0.59 h (T46) |
 | **L1** | | | | **2.6 – 6.1** | |
+| L1.11 Strike team trained against guard_field at 1.6 m (*new*, PROPOSED; not in the L1 sum or the 87): separates "field Guards are hard" from "1.15 m is hard" | Strike, 0.55 B | 1 | laptop | about 0.6 | R2 (T46 base Strike 0.594) |
+| L1.12 T46's 1.6 m Guard team scored against every Strike script at 1.6 m (*new*, PROPOSED; not in the L1 sum or the 87): its 913 is against strike_straight only | scoring, one condition per Strike script | 1 | laptop | minutes (under 0.1) | R7 |
 
 L1.9 and L1.10 are quick experiments on tier 1, as D3 allows. Training 1v1 on tier 2 would add about 3 GPU-h (2 × 0.55 B
 at about 0.37 B per GPU-h: tier 2 at 1v1 is about 1.6× faster per game-step than at 3v3, T48).
 
 Human gates: P5 (simulator time, when the owner is not flying); the SIM-ONLY values in tier 2; the NEAR-962 flight
 before any fit is used for a run of record. L1.9 and L1.10 are lead calls (INFO, gates written first).
+
+**Requirement (from L0.12d, T56):** every trained read in L1 is scored against every scripted opponent of the other
+side (cross-play), and the worst cell is reported; one opponent is not enough: the 1.6 m Strike team's gain (+0.444, 636 reaches
+against mark_edge) became 85 reaches against field Guards, below the script's 284. Plan-changing L1 reads also train against a pool of scripts, with two seeds (PROPOSED,
+not costed).
 
 ### L2 Game rules in the training copy
 
@@ -107,7 +116,7 @@ stays worth learning under all of them.
 | L2.6 Scripted games, tier 1 against tier 2, new rules | 5–10 conditions | 2 | 0.2 – 1.5 | R8 |
 | L2.7 3v3 best-response read under the full rules (*new*) | run 0 + Strike + Guard, 0.55 B each | 1 | 1.0 – 1.4 | R1, R2; run 0 0.06–0.1 |
 | **L2** | | | **1.7 – 3.9** | all on the laptop |
-| L2.8 Tag-distance curriculum pilot (*new*, optional: only on the 1.15 m route; not in the L2 sum or the 87): each side trained at 1.6 m, then the tag stepped down to 1.15 m from that checkpoint. Needs a load-from-checkpoint option in the STE driver (`scripts/ste_exploit_l012.py` resumes its own run only; `train_standin.py` has `--warm-start`) | run 0 + Guard 1.65 B + Strike 1.65–2.75 B at 1.15 m | 1 | 3.5 – 5.8 | R11: Guard 1.65 / 1.08 = 1.5 h; Strike 1.65–2.75 / 0.89 = 1.9–3.1 h; run 0 0.07; the 1.6 m stage 0 if T46's networks are reused (on the laptop, not in git), else up to 1.1 (R1, R2) |
+| L2.8 Tag-distance curriculum pilot (*new*, optional: only on the 1.15 m route; not in the L2 sum or the 87; lower priority since L0.12d: the Strike result tracks the opponent, and the warm-start value is not tested): each side trained at 1.6 m, then the tag stepped down to 1.15 m from that checkpoint. Needs a load-from-checkpoint option in the STE driver (`scripts/ste_exploit_l012.py` resumes its own run only; `train_standin.py` has `--warm-start`) | run 0 + Guard 1.65 B + Strike 1.65–2.75 B at 1.15 m | 1 | 3.5 – 5.8 | R11: Guard 1.65 / 1.08 = 1.5 h; Strike 1.65–2.75 / 0.89 = 1.9–3.1 h; run 0 0.07; the 1.6 m stage 0 if T46's networks are reused (on the laptop, not in git), else up to 1.1 (R1, R2) |
 
 Human gates: P2 (option B, ruled at the end of L2); P1 and P7 for runs of record.
 
@@ -154,6 +163,10 @@ Each seed of record takes about 9–28 GPU-h. All three fit one 5090 weekday win
 laptop they would run one at a time and not fit a weekend. Human gates: gates frozen; P1 and P2 ruled; the owner rules
 the L5 budget at its own gate.
 
+**Requirement (from L0.12d, T56):** the league trains against a pool of opponents (scripts, then past selves); every
+team is scored against every opponent and the worst cell is reported. No trained strategy is shown in the AirStack
+simulator or flown until L5 passes this opponent panel (two seeds for plan-changing reads).
+
 ### L6 QC, export, and the physical intercept in simulation
 
 Purpose: score the runs of record on tier 2 (tier 1 for the large tables), export the policy file, show the intercept in
@@ -189,7 +202,7 @@ Human gate: the owner approves the hand-over.
 | Open answer | Effect | Total, GPU-h | Label |
 |---|---|---|---|
 | Base case: D3, tag 1.6 m or 1.4 m | — | 46 – at least 149 (planning 87) | as section 1 |
-| **Tag 1.15 m** | L0.12c (R11): at 3× and 5× both trained sides stay below the scripts; the Strike curve was still rising slowly, so whether more steps or a different recipe closes the gap is not shown, and no cause is established ([DISCUSSION §12](../DISCUSSION_2026-11-19_20.md#12-l012c-findings-22-nov-2026)). One candidate: optional task L2.8, a curriculum pilot of 3.5–5.8 GPU-h (section 3). The training rows then need at least 3.3× the game-steps (R10, R11) | at least 135; no upper figure until a route at 1.15 m is shown | R11 MEASURED; the rest PROPOSED |
+| **Tag 1.15 m** | L0.12c (R11): at 3× and 5× both trained sides stay below the scripts; the Strike curve was still rising slowly, so whether more steps or a different recipe closes the gap is not shown, and no cause is established ([DISCUSSION §12](../DISCUSSION_2026-11-19_20.md#12-l012c-findings-22-nov-2026)). The Guard strategy trained at 1.6 m does not carry over to 1.15 m (195 v 572; the Strike team against field Guards is level within the intervals, 121 v 134, [T56](../../records/2026-11-22_ste_l012d_cross_tag_record.md)), so a 1.15 m policy is trained at 1.15 m. Optional task L2.8, a curriculum pilot of 3.5–5.8 GPU-h (section 3), has lower priority since L0.12d. The training rows then need at least 3.3× the game-steps (R10, R11) | at least 135; no upper figure until a route at 1.15 m is shown | R11 MEASURED; the rest PROPOSED |
 | **If the owner revisits D3 at G0: train on tier 1, check on tier 2** | the pilots and the league at R1–R6 instead of R3; tier 2 used for checks only | 16 – 104 (planning 37) | PROPOSED |
 | League on tier 1, final fine-tune on tier 2 (between the two) | the route above + 3 seeds × 2 sides × 0.3 B at R3 | 24 – 114 | PROPOSED |
 | **5v3 (and 2v1) in the trained range** | tier 2 training rows × 1.03 per step (R4) × 1.5–2 more steps for coverage | + 18 – 98 | PROPOSED; whether 8 drones fit 6.5 m is OPEN (T45) |
@@ -201,8 +214,8 @@ Human gate: the owner approves the hand-over.
 
 | Tag ruling | Proposal | Cap | Arithmetic |
 |---|---|---|---|
-| **1.6 m (lead's recommendation), or 1.4 m** | **L1 + L2 together** | **10 GPU-h + about 1 h of AirStack simulator time** | L1 high 6.1 + L2 high 3.9 |
-| 1.15 m | L1 + L2.8 (the curriculum pilot) first | 15 GPU-h + about 1 h of simulator time | L1 6.1 at 1× read budgets + L2.8 up to 5.8 + margin |
+| **1.6 m (lead's recommendation), or 1.4 m** | **L1 + L2 together** | **10 GPU-h + about 1 h of AirStack simulator time** | L1 high 6.1 + L2 high 3.9; L1.11 (about 0.6), L1.12 and cross-play scoring (minutes each, R7) come on top: about 10.6–11, so 11 covers them |
+| 1.15 m | L1 + L2.8 (the curriculum pilot) first; L2.8 has lower priority since L0.12d, and the lead re-costs this row | 15 GPU-h + about 1 h of simulator time | L1 6.1 at 1× read budgets + L2.8 up to 5.8 + margin |
 | Alternative, any tag | L1 only | 6.5 GPU-h | L1 high 6.1 |
 
 **What L1 delivers.** All results are observed in the training simulator.
@@ -250,7 +263,7 @@ Every rate except R6 is laptop-measured; the 5090's are PROPOSED equal until L1.
 | A9 | GPU-h of L1.1, L1.2, L1.5, L1.6, L2.1, L2.3 and L5.6 are version 1's guesses (WORK_BREAKDOWN) | PROPOSED |
 | A10 | 3-D worlds, 5v3 and a Crazyflie model are outside the base total | OPEN (section 4) |
 | A11 | The physical intercept is shown in simulation only; nothing real intercepts | PROPOSED (owner's proposal, DISCUSSION §11) |
-| A12 | Tier 1 training reads (L1.9, L1.10, L2.7, L2.8, L3.5, L5.3) and tier 1 scoring (L4.3, L6.1, L6.2) fit D3's "quick experiments and debugging only" | OPEN: owner's call |
+| A12 | Tier 1 training reads (L1.9, L1.10, L1.11, L2.7, L2.8, L3.5, L5.3) and tier 1 scoring (L4.3, L6.1, L6.2) fit D3's "quick experiments and debugging only" | OPEN: owner's call |
 
 Sources: [PLAN](../PLAN.md) §3, §5, §9, §13; [G0_DECISION](../G0_DECISION.md); [DISCUSSION](../DISCUSSION_2026-11-19_20.md)
 §2.16, §3, §9, §11, §12; [WORK_BREAKDOWN](../WORK_BREAKDOWN.md); records cited per rate.
@@ -258,7 +271,7 @@ Sources: [PLAN](../PLAN.md) §3, §5, §9, §13; [G0_DECISION](../G0_DECISION.md
 ## Panel proposals to fold in (22 Nov 2026, not yet costed)
 
 From the results-and-plan discussion ([DISCUSSION §12](../DISCUSSION_2026-11-19_20.md#12-l012c-findings-22-nov-2026)):
-a 1.15 m check block in L1 (the 1.6 m Strike team against guard_field, minutes; a shorter-clock 1.15 m Strike run,
+a 1.15 m check block in L1 (the 1.6 m Strike team against guard_field, minutes: **done**, L0.12d, [T56](../../records/2026-11-22_ste_l012d_cross_tag_record.md): 85 at 1.6 m, 121 at 1.15 m; a shorter-clock 1.15 m Strike run,
 about 0.6 GPU-h; a warm start from T46, as L2.8 but earlier); two seeds for plan-changing reads; a Guard-script pool for
 Strike training (L5); flight-side gates in L7/L8 (separation under real lag, scoring at tag ± the real error, arena fit,
 per-tag logging, height play). The lead re-costs the plan with these before the walk-through.

@@ -10,9 +10,14 @@ games came closer, closest 0.85 m, [T45](../records/2026-11-21_ste_l014_crazyfli
 
 ## What phase L0 found
 
-At a tag distance of 1.6 m the game is worth learning: trained teams beat the best scripts on both sides. At 1.4 m the
-trained Strike team clearly beats the scripts; the trained Guard team's small gain may come from deciding every 0.6 s
-rather than from learning. At 1.2 m, and at 1.15 m, the owner's realistic-tag rule (the filter's 1.10 m + 0.05 m), the scripts give a two-sided game (Guards hold 645 of 1,000,
+At a tag distance of 1.6 m each trained team was scored against one opponent: the trained Guard team beats the best
+script against straight Strikes (913 v 808; other Strike scripts untested). The trained Strike team beats the script
+against mark_edge, its training opponent (636 v 192), but of the two opponents tried it fails against the second:
+against field Guards it reaches 85, below the script's 284 ([T56](../records/2026-11-22_ste_l012d_cross_tag_record.md)). At 1.4 m the trained Strike team
+beats the scripts against its training opponent (mirror; no other opponent tried); the trained Guard team's small gain
+may come from deciding every 0.6 s rather than from learning. The Guard strategy trained at 1.6 m does not carry over to
+1.15 m (195 v 572 for the team trained at 1.15 m, T56); the Strike team against field Guards is level within the
+intervals (121 v 134). At 1.2 m, and at 1.15 m, the owner's realistic-tag rule (the filter's 1.10 m + 0.05 m), the scripts give a two-sided game (Guards hold 645 of 1,000,
 Strikes reach 355: [T44](../records/2026-11-21_ste_l011_screen_record.md), [T50](../records/2026-11-21_ste_l012b_screen_record.md)),
 but the trained teams ended below the scripts, also with 3× (Guard) and 5× (Strike) the training (L0.12c, T54, T55). Isaac
 Lab trains as well as the fast engine on the one task tried (one training seed, one opponent, one start set; lead's
@@ -20,22 +25,31 @@ reading), at about 5× the cost per game-step ([T53](../records/2026-11-21_ste_l
 were only screened with scripts, and there a good scripted Guard team wins almost every game.
 
 > **What the lead recommends**
-> 1. **Tag 1.6 m for L1.** It is the only distance where both trained sides clearly beat the scripts (1.4 m: Strike side only).
->    At 1.15 m, the longer runs ([T54](../records/2026-11-22_ste_l012c_tag_1p15_guard_record.md), [T55](../records/2026-11-22_ste_l012c_tag_1p15_strike_record.md)) left both trained sides below the scripts: Guard 572 v 645 (466 at 1×),
->    Strike 134 v 355 at 5×, both curves still rising slowly. No cause is known ([DISCUSSION §12](DISCUSSION_2026-11-19_20.md#12-l012c-findings-22-nov-2026)).
->    1.15 m stays the realistic target; the [costed draft](drafts/L1_L9_COSTED_PLAN_DRAFT.md) prices a curriculum pilot from 1.6 m (optional task L2.8).
->    Panel proposals (22 Nov, not run): two cheap 1.15 m checks first (the 1.6 m Strike team against guard_field; a shorter training
->    clock, because at 1.2 and 1.15 m the Strike training games finish about 13–15× less often), see [DISCUSSION §12](DISCUSSION_2026-11-19_20.md#12-l012c-findings-22-nov-2026).
+> 1. **Tag 1.6 m for L1 set-up and pilots.**
+>    - *Evidence.* Each trained team was scored against one opponent: the Strike team fails against a second (85
+>      against field Guards, [L0.12d](#l012d-cross-tag-check-22-nov-2026)); the Guard team (913) is untested against other Strike scripts. The Guard
+>      strategy trained at 1.6 m does not carry over to 1.15 m (195 v 572); the Strike team against field Guards is level
+>      within the intervals (121 v 134). Any policy for a 1.15 m game is trained at 1.15 m; the ±0.1 m spread around
+>      1.6 m does not reach 1.15 m.
+>    - *Before any trained strategy is shown in the AirStack simulator or flown:* train against a pool of opponents
+>      (scripts, then self-play), score every team against every opponent and report the worst cell, two seeds for
+>      plan-changing reads. Until then the first demo is the scripted 1v1 at 1.6 m (P11).
+>    - *1.15 m.* It stays the realistic target. The longer runs ([T54](../records/2026-11-22_ste_l012c_tag_1p15_guard_record.md), [T55](../records/2026-11-22_ste_l012c_tag_1p15_strike_record.md)) left both trained sides
+>      below the scripts: Guard 572 v 645 (466 at 1×), Strike 134 v 355 at 5×, both curves still rising slowly; no cause
+>      is known ([DISCUSSION §12](DISCUSSION_2026-11-19_20.md#12-l012c-findings-22-nov-2026)). The curriculum pilot from 1.6 m (optional L2.8 of the [costed draft](drafts/L1_L9_COSTED_PLAN_DRAFT.md))
+>      loses priority (its warm-start value is not tested). Panel proposals (22 Nov): the guard_field check ran (L0.12d,
+>      X2 and X4); the shorter-training-clock 1.15 m Strike run is not run (there the Strike training games finish about
+>      13–15× less often than at 1.6 m), see [DISCUSSION §12](DISCUSSION_2026-11-19_20.md#12-l012c-findings-22-nov-2026) and [§13](DISCUSSION_2026-11-19_20.md#13-l012d-cross-tag-check-22-nov-2026).
 > 2. Keep 1-for-1 tags, the 1.6 m zone, the 6.5 m arena with the 2.75 m Strike start ring, 3v3 for training; vary the tag distance by ±0.1 m in training (L1).
 > 3. Train and test 1v1 explicitly in L1: it is the two-Starling demo size and Guard-trivial with scripts.
 > 4. Keep D3 (train in Isaac Lab; the fast engine for quick experiments and debugging only); open arena first.
 > 5. Fleets: Crazyflies first at Starling metres, the Starling 1v1 as planned, the mix later.
-> 6. L1–L9 budget: [costed draft](drafts/L1_L9_COSTED_PLAN_DRAFT.md) on D3, about 87 GPU-h at tag 1.6 m; approve L1 + L2 at 10 GPU-h. The draft still puts some tasks on the fast engine (its open question A12): the owner's call.
+> 6. L1–L9 budget: [costed draft](drafts/L1_L9_COSTED_PLAN_DRAFT.md) on D3, about 87 GPU-h at tag 1.6 m; approve L1 + L2 at 10 GPU-h. On top come L1.11 (the guard_field Strike pilot, about 0.6 GPU-h), cross-play scoring and proposal (b) (minutes each): L1 + L2 then about 10.6–11 GPU-h, so approving 11 GPU-h covers them. The draft still puts some tasks on the fast engine (its open question A12): the owner's call.
 
 ![Phase L0 progress flowchart: every task done except L0.7's 5090 part and this gate](figures/l0_progress.png)
 
 **Phase L0 by task.** Green is done; L0.7's RTX 5090 part is open; L0.6 is this page. GPU-hours from the ledger:
-13.65 of 19 ([budget](#8-budget-used)).
+13.77 of 19 ([budget](#8-budget-used)).
 
 ## 1. The decisions
 
@@ -45,12 +59,13 @@ T44's starts, except T45 and T49 (T41's hangar starts) and the Crazyflie planner
 
 | # | Decision | What L0 measured | Evidence strength | Lead's recommendation | Still open |
 |---|---|---|---|---|---|
-| 1 | **Tag distance** (P1) | rows 1a–1e; [section 2](#2-the-tag-rule) | — | lead: 1.6 m for L1 (both trained sides clearly beat the scripts); 1.15 m stays the target; how to reach it is not shown (rows 1d, 2) | P1 overturns the FIXED "no tag" row ([GAME_SPEC](GAME_SPEC.md)) |
-| 1a | 1.6 m | trained Guards 913 v script 808; trained Strikes 636 v 192 ([T46](../records/2026-11-21_ste_l012_best_response_record.md)) | trained, both sides | — | up to 27 % of a cell's tags are filter pushes |
-| 1b | 1.4 m | trained Guards 747 v 672; trained Strikes 740 v 328 ([T46](../records/2026-11-21_ste_l012_best_response_record.md)) | trained, both sides | — | Guard gain (747) overlaps the low-Strike script with commands held 0.6 s (738, 0.710–0.764): possibly the decision period, not learning; against straight Strikes no gain |
+| 1 | **Tag distance** (P1) | rows 1a–1f; [section 2](#2-the-tag-rule) | — | lead: 1.6 m for L1 set-up and pilots (recommendation 1); 1.15 m stays the target; how to reach it is not shown (rows 1d, 1f, 2) | P1 overturns the FIXED "no tag" row ([GAME_SPEC](GAME_SPEC.md)) |
+| 1a | 1.6 m | trained Guards 913 v script 808; trained Strikes 636 v 192 against mark_edge, their training opponent ([T46](../records/2026-11-21_ste_l012_best_response_record.md)), but 85 v 284 against field Guards ([T56](../records/2026-11-22_ste_l012d_cross_tag_record.md), X4); Guards scored against straight Strikes only | trained, both sides (each scored against one opponent; the Strike team fails against a second) | — | up to 27 % of a cell's tags are filter pushes; one seed per side |
+| 1b | 1.4 m | trained Guards 747 v 672; trained Strikes 740 v 328 against mirror, their training opponent ([T46](../records/2026-11-21_ste_l012_best_response_record.md)); no other opponent tried | trained, both sides (Strike team scored against one opponent) | — | Guard gain (747) overlaps the low-Strike script with commands held 0.6 s (738, 0.710–0.764): possibly the decision period, not learning; against straight Strikes no gain |
 | 1c | 1.2 m | scripts 645 / 355; trained Guards 503 v 645, still climbing; Strike run ABORTED ([T46](../records/2026-11-21_ste_l012_best_response_record.md), [T47](../records/2026-11-21_ste_l012_tag_1p2_strike_record.md)) | trained, one side | — | not re-run (owner, 21 Nov) |
 | 1d | 1.15 m (filter 1.10 m + 0.05 m) | scripts 645 / 355; trained Guards 466 at 1×, **572 at 3×** v 645; trained Strikes **134 at 5×** v 355 ([T50](../records/2026-11-21_ste_l012b_screen_record.md), [T51](../records/2026-11-21_ste_l012b_best_response_record.md), [T54](../records/2026-11-22_ste_l012c_tag_1p15_guard_record.md), [T55](../records/2026-11-22_ste_l012c_tag_1p15_strike_record.md)) | trained, both sides | — | both trained sides below the scripts; one seed per side |
 | 1e | no proximity tag (filter only) | the high scripted Strike reaches in every game; the best scripted Guard holds 0 ([T44](../records/2026-11-21_ste_l011_screen_record.md), INFO cell) | scripted screen only | — | — |
+| 1f | 1.6 m-trained teams at 1.15 m (L0.12d) | Guard team 195 v 572 trained at 1.15 m (script 645); Strike team v field 121 v 134 trained at 1.15 m (script 355), v mark_edge 931 ([T56](../records/2026-11-22_ste_l012d_cross_tag_record.md), [section 2](#l012d-cross-tag-check-22-nov-2026)) | trained, both sides (scoring only) | lead: a 1.15 m policy is trained at 1.15 m | one seed per side, one start set |
 | 2 | **Longer 1.15 m runs** (DONE 22 Nov 2026: L0.12c, 4.71 GPU-h) | Guard 3×: 572 v script 645 (466 at 1×); Strike 5×: 134 v 355; the trained Strikes usually trade two for two, then the last one waits out the clock ([T54](../records/2026-11-22_ste_l012c_tag_1p15_guard_record.md), [T55](../records/2026-11-22_ste_l012c_tag_1p15_strike_record.md)); [figure](../docs/figures/ste_l012c/longer_runs.png) | trained, both sides | lead: neither side reaches the scripts at these budgets; route to 1.15 m not shown (recommendation 1, [DISCUSSION §12](DISCUSSION_2026-11-19_20.md#12-l012c-findings-22-nov-2026)) | one seed per side, one opponent, one start set |
 | 3 | **Varied tag distance in training** | every run used one tag distance | not tested in L0 | lead: yes, the tag distance drawn within ±0.1 m of the chosen value, tested in L1 | — |
 | 4 | **What a tag costs** (D2, `guard_survives_tag_prob`) | Guard survives: scripted Guards hold 1,000; 1-for-1: holds are trades ([T44](../records/2026-11-21_ste_l011_screen_record.md)); [section 3](#3-the-scripted-screen-one-factor-at-a-time) | 1-for-1: trained, both sides; survive: scripted screen only | lead: keep 1-for-1 | values between 0 and 1 not run |
@@ -62,9 +77,9 @@ T44's starts, except T45 and T49 (T41's hangar starts) and the Crazyflie planner
 | 10 | **Where to train** (D3) | Isaac Lab ~5× slower; trains 832 v 836 ([T53](../records/2026-11-21_ste_l013_tier2_trains_record.md)); [section 5](#5-where-to-train) | trained, one side | lead: keep D3: L1–L9 about 87 GPU-h (46 to at least 149); training on tier 1 and checking on tier 2 about 37 (16–104); league on tier 1 with a tier 2 fine-tune 24–114 ([costed draft](drafts/L1_L9_COSTED_PLAN_DRAFT.md) §1, §4) | physics check near its limit at 16,384 games; whether the draft's tier 1 training reads fit D3 is the owner's call ([draft](drafts/L1_L9_COSTED_PLAN_DRAFT.md) A12) |
 | 11 | **Environments** (P10) | every L0 game in the open arena | not tested in L0 | lead: open arena first | parent FIXED rule asks for realistic 3-D worlds |
 | 12 | **Which fleets fly** (P13) | inputs: T41 holds 831 → 791 / 768 at Crazyflie-like lags; planner at 1.10 m: 0 emergencies, but pairs inside 1.10 m in 91 (3v3) and 99 (5v3) of 100 matches ([T45](../records/2026-11-21_ste_l014_crazyflie_route_record.md)); [section 6](#6-fleets-and-the-real-demo) | planning item; inputs: T45 lag re-score and planner sweep | lead: Crazyflies first at Starling metres; Starling 1v1 as planned; mix deferred ([DISCUSSION §2.16](DISCUSSION_2026-11-19_20.md#216-real-flight-on-starlings-crazyflies-or-a-mix-owner-20-nov)) | one policy file for both drones or one each |
-| 13 | **The real demo** (P11) | row 8; two Starlings cannot play on after a tag | planning item (no measurement) | owner's proposal: proximity tag by motion capture, same rule in simulation ([DISCUSSION §11](DISCUSSION_2026-11-19_20.md#11-owner-decisions-and-a-lead-correction-21-nov-2026); earlier contact-tag plan: [contact-tag track](../docs/plans/2026-11-17-contact-tag-track.md), DRAFT) | learned or scripted 1v1 (PLAN §5) |
+| 13 | **The real demo** (P11) | row 8; two Starlings cannot play on after a tag | planning item (no measurement) | owner's proposal: proximity tag by motion capture, same rule in simulation ([DISCUSSION §11](DISCUSSION_2026-11-19_20.md#11-owner-decisions-and-a-lead-correction-21-nov-2026); earlier contact-tag plan: [contact-tag track](../docs/plans/2026-11-17-contact-tag-track.md), DRAFT) | learned or scripted 1v1 (PLAN §5); lead: scripted 1v1 at 1.6 m until a trained strategy passes the opponent panel (recommendation 1) |
 | 14 | **Physical-intercept study** | — | planning item (no measurement) | owner's proposal: simulation only, a terminal intercept at the tag distance ([§11](DISCUSSION_2026-11-19_20.md#11-owner-decisions-and-a-lead-correction-21-nov-2026); see the [contact-tag track](../docs/plans/2026-11-17-contact-tag-track.md), DRAFT) | real intercept: other hardware, flight-safety decision |
-| 15 | **L1–L9 budget** | Isaac Lab: 302 M game-steps 1.29 GPU-h v 0.24 on tier 1 ([T53](../records/2026-11-21_ste_l013_tier2_trains_record.md)); L0 used 13.65 of 19 | planning item; inputs: T53 tier costs, the GPU-hour ledger | lead: [costed draft](drafts/L1_L9_COSTED_PLAN_DRAFT.md) on D3 (Isaac Lab): about 87 GPU-h for L1–L9 at tag 1.6 m (46 to at least 149); approve L1 + L2 at 10 GPU-h | PLAN §9 is OPEN |
+| 15 | **L1–L9 budget** | Isaac Lab: 302 M game-steps 1.29 GPU-h v 0.24 on tier 1 ([T53](../records/2026-11-21_ste_l013_tier2_trains_record.md)); L0 used 13.77 of 19 | planning item; inputs: T53 tier costs, the GPU-hour ledger | lead: [costed draft](drafts/L1_L9_COSTED_PLAN_DRAFT.md) on D3 (Isaac Lab): about 87 GPU-h for L1–L9 at tag 1.6 m (46 to at least 149); approve L1 + L2 at 10 GPU-h | PLAN §9 is OPEN |
 | 16 | **0.6 s decision period** (L011-F1) | scripts held 0.6 s barely change: 808 → 793, except the low Strike at 1.4 m: 672 → 738 ([follow-ups](../docs/notes/2026-11-21_ste_l011_followups.md)) | scripted screen only | lead: keep 0.6 s | scripts decide every 0.05 s in every comparison |
 | 17 | **L0.7's RTX 5090 part** (L07-5090) | laptop part done: suite 1,420 passed, both drills as expected ([status](status/STATUS_LATEST.md)) | planning item (no measurement) | lead: the first item of the next 5090 session (it checks that machine; the owner asked for a laptop run first and was told why it cannot, [DISCUSSION §11](DISCUSSION_2026-11-19_20.md#11-owner-decisions-and-a-lead-correction-21-nov-2026)) | TEST-F2b, L09-5090 wait for the same session |
 
@@ -85,14 +100,17 @@ T44's starts, except T45 and T49 (T41's hangar starts) and the Crazyflie planner
 |---|---|---|---|---|---|
 | none | 0 / 1,000 ([T44](../records/2026-11-21_ste_l011_screen_record.md)) | not trained | not trained | scripted screen only | — |
 | 1.8 m | 932 / 68 ([T44](../records/2026-11-21_ste_l011_screen_record.md)) | not trained | not trained | scripted screen only | not measured |
-| 1.6 m | 808 / 192 | **913** v 808 ([T46](../records/2026-11-21_ste_l012_best_response_record.md)) | **636** v 192 | trained, both sides | up to 27 % per cell ([T50](../records/2026-11-21_ste_l012b_screen_record.md)) |
-| 1.4 m | 672 / 328 | **747** v 672 (v straight Strikes 673 v 701) | **740** v 328 | trained, both sides | not measured |
+| 1.6 m | 808 / 192 | **913** v 808 ([T46](../records/2026-11-21_ste_l012_best_response_record.md)) | **636** v 192 against mark_edge (its training opponent); 85 v 284 against field ([T56](../records/2026-11-22_ste_l012d_cross_tag_record.md)) | trained, both sides (each scored against one opponent; the Strike team fails against a second) | up to 27 % per cell ([T50](../records/2026-11-21_ste_l012b_screen_record.md)) |
+| 1.4 m | 672 / 328 | **747** v 672 (v straight Strikes 673 v 701) | **740** v 328 against mirror (its training opponent; no other tried) | trained, both sides (Strike team scored against one opponent) | not measured |
 | 1.2 m | 645 / 355 | 503 v 645 (untrained 144) | ABORTED ([T47](../records/2026-11-21_ste_l012_tag_1p2_strike_record.md)) | trained, one side | not measured |
 | 1.15 m | 645 / 355 ([T50](../records/2026-11-21_ste_l012b_screen_record.md)) | 466 v 645 at 1× ([T51](../records/2026-11-21_ste_l012b_best_response_record.md)); **572** v 645 at 3× ([T54](../records/2026-11-22_ste_l012c_tag_1p15_guard_record.md)) | ABORTED at 1× ([T52](../records/2026-11-21_ste_l012b_tag_1p15_strike_record.md)); **134** v 355 at 5× ([T55](../records/2026-11-22_ste_l012c_tag_1p15_strike_record.md)) | trained, both sides | 0–10 % per scripted cell; trained Guards 0 of 2,379; trained Strikes' games: 10.6 % of tags |
 
-- **1.6 m: worth learning on both sides.** Trained Guards 913 v 808 (793 with the scripts' commands held 0.6 s);
-  trained Strikes 636 v 192.
-- **1.4 m: clear on the Strike side only.** Trained Strikes 740 v 328. The trained Guards' 747 overlaps the best script
+- **1.6 m: each trained team was scored against one opponent; the Strike team fails against a second.** Trained
+  Guards 913 v 808 (793 with the scripts' commands held 0.6 s), against strike_straight, the same Strike script as at
+  1.15 m; untested against other Strike scripts. Trained Strikes 636 v
+  192 against mark_edge, their training opponent, but 85 v the script's 284 against field Guards (T56).
+- **1.4 m: clear on the Strike side only, against one opponent.** Trained Strikes 740 v 328 against mirror, their
+  training opponent; no other opponent tried. The trained Guards' 747 overlaps the best script
   with its commands held 0.6 s (738, 0.710–0.764, [follow-ups](../docs/notes/2026-11-21_ste_l011_followups.md)), so the
   +0.075 may be the decision period, not learning; against straight Strikes there is no gain (673 v 701).
 - **1.2 m and 1.15 m: slower to learn within the budget, not shown unlearnable** (lead's correction,
@@ -138,8 +156,34 @@ own video games, on separate clip starts (`clip_seed` 120950 in the gate files):
 More: 1.4 m in 3-D ([ste_l012/3d](../docs/media/ste_l012/3d/README.md)); scripted 1.2 m in 3-D
 ([ste_l011/3d](../docs/media/ste_l011/3d/README.md)); the 1× 1.15 m clips ([ste_l012b](../docs/media/ste_l012b/README.md));
 the longer-run clips ([ste_l012c](../docs/media/ste_l012c/README.md)) and their figure
-([longer_runs.png](../docs/figures/ste_l012c/longer_runs.png)). No trained 3-D clip exists at 1.2 m or 1.15 m yet; the
+([longer_runs.png](../docs/figures/ste_l012c/longer_runs.png)); the 1.6 m-trained teams at 1.15 m
+([ste_l012d](../docs/media/ste_l012d/README.md)). No trained 3-D clip exists at 1.2 m or 1.15 m yet; the
 L0.12c 3-D clips are pending.
+
+### L0.12d cross-tag check (22 Nov 2026)
+
+Scoring only, no training ([T56](../records/2026-11-22_ste_l012d_cross_tag_record.md); clips
+[ste_l012d](../docs/media/ste_l012d/README.md)). T46's 1.6 m-trained Strike team, reaches of 1,000:
+
+| Opponent | Tag 1.6 m | Tag 1.15 m |
+|---|---|---|
+| guard_mark_edge (its training opponent) | 636 (T46) | 931 (X3) |
+| guard_field | 85 (X4; script 284) | 121 (X2; 1.15 m-trained 134; script 355) |
+
+- **Strike side:** the opponent moves the Strike team's score far more than the tag does (one seed): against mark_edge the same network goes 636 → 931 when only the tag changes; part of that may come through the opponent itself (mark_edge holds 808 → 422 against straight Strikes). T46 and T55 changed tag and opponent together, so "the
+  Strike team learns at 1.6 m but not at 1.15 m" is not supported. X3 does not show 1.15 m is learnable either:
+  mark_edge is weak at 1.15 m (the straight-Strike script also reaches 578 against it).
+- **Guard side:** the reading stands (same opponent strike_straight at both tags: 913 v 808 at 1.6 m, 572 v 645 at
+  1.15 m). The 1.6 m-trained Guard team at 1.15 m holds 195 (1.15 m-trained 572, script 645, untrained 101): the Guard
+  strategy does not carry over. The Strike team against field Guards: 121 v 134 trained at 1.15 m, intervals overlap.
+- In X1, X2 and X4 the trained team wins 0, 0 and 1 games the script loses: it wins almost only starts the script also wins.
+- **Limits:** one seed per side, one start set; each trained team is overfit to one opponent; the "best script" was
+  chosen against other scripts only; between tags mark_edge falls 808 → 422 holds (field 716 → 645); X2 matches T55
+  in wins only (median game 16.3 s v 120 s).
+
+**Two proposals for the owner (PROPOSED, not run):** (a) a Strike team trained against guard_field at 1.6 m (about
+0.6 GPU-h): separates "field Guards are hard" from "1.15 m is hard"; (b) score T46's 1.6 m Guard team against every
+Strike script at 1.6 m (minutes): its 913 is against strike_straight only.
 
 ## 3. The scripted screen, one factor at a time
 
@@ -208,7 +252,7 @@ in their records; L0.12, L0.2 and L0.3 as parts summing within 0.002; L0.4 and L
 | Task | Cap (PLAN §4) | GPU-h used | Record |
 |---|---|---|---|
 | L0.11 Screening sweep | 0.5 (3 until 21 Nov) | 0.426 | [T44](../records/2026-11-21_ste_l011_screen_record.md) |
-| L0.12 Best-response test | 13 (6 until 21 Nov; L0.12b and L0.12c charged here) | 3.37 | [T46](../records/2026-11-21_ste_l012_best_response_record.md), [T47](../records/2026-11-21_ste_l012_tag_1p2_strike_record.md) |
+| L0.12 Best-response test | 13 (6 until 21 Nov; L0.12b, L0.12c and L0.12d charged here; all four parts 9.79) | 3.37 | [T46](../records/2026-11-21_ste_l012_best_response_record.md), [T47](../records/2026-11-21_ste_l012_tag_1p2_strike_record.md) |
 | L0.12b Bubble tag | charged to L0.12: approved as about 1.3 beyond the then 6 GPU-h cap, inside the 13 since L0.12c (owner, [DISCUSSION §11](DISCUSSION_2026-11-19_20.md#11-owner-decisions-and-a-lead-correction-21-nov-2026)) | 1.59 | [T50](../records/2026-11-21_ste_l012b_screen_record.md), [T51](../records/2026-11-21_ste_l012b_best_response_record.md), [T52](../records/2026-11-21_ste_l012b_tag_1p15_strike_record.md) |
 | L0.13 Does tier 2 train? | 1.6 (6 until 21 Nov) | 1.590 | [T53](../records/2026-11-21_ste_l013_tier2_trains_record.md) |
 | L0.2 Tier 2 speed | 0.4 (1.5 until 21 Nov) | 0.391 | [T48](../records/2026-11-21_ste_l02_speed_record.md) |
@@ -217,7 +261,8 @@ in their records; L0.12, L0.2 and L0.3 as parts summing within 0.002; L0.4 and L
 | L0.5 Video look, with the 3-D clips | 0.3 | 0.258 | ledger only |
 | L0.1, L0.7–L0.10, L0.14 | 0 | 0 | — |
 | L0.12c Longer 1.15 m runs | owner-approved about 6.5 (in L0.12's 13) | 4.71 | [T54](../records/2026-11-22_ste_l012c_tag_1p15_guard_record.md), [T55](../records/2026-11-22_ste_l012c_tag_1p15_strike_record.md) |
-| **Phase L0** | **19** | **13.65** | — |
+| L0.12d Cross-tag check | charged to L0.12 | 0.119 | [T56](../records/2026-11-22_ste_l012d_cross_tag_record.md) |
+| **Phase L0** | **19** | **13.77** | — |
 
 ## 9. ABORTED runs (information only)
 
@@ -229,5 +274,5 @@ An ABORTED run proves nothing: both stopped before their budget because the time
 | Trained Strikes, 1.15 m ([T52](../records/2026-11-21_ste_l012b_tag_1p15_strike_record.md)) | update 86 of 88 | 103 reaches v 355; 771 games to the clock | answered by the 5× run, [T55](../records/2026-11-22_ste_l012c_tag_1p15_strike_record.md) (row 2) |
 
 Sources: [PLAN §5](PLAN.md#5-gate-g0-what-the-owner-rules-with-l0s-numbers), [GAME_SPEC](GAME_SPEC.md),
-[DISCUSSION §3 and §7–12](DISCUSSION_2026-11-19_20.md#3-decisions), [status](status/STATUS_LATEST.md),
+[DISCUSSION §3 and §7–13](DISCUSSION_2026-11-19_20.md#3-decisions), [status](status/STATUS_LATEST.md),
 [CRAZYFLIE_ROUTE](CRAZYFLIE_ROUTE.md), [ledger](../records/LEDGER.md).

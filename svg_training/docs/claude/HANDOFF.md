@@ -4,13 +4,37 @@ INTERNAL · the lab's AI-assistant hand-over notes. Not needed to read or run an
 
 > **How to use this file.** Read it at the start of a session, after [../../CLAUDE.md](../../CLAUDE.md).
 > §4 is the current state, §5 is what is waiting on people. Update both before you stop.
-> Last updated: 21 November 2026 ~23:45, on the laptop (L0.12c launch; before: ~21:10) (RTX 5070 Ti), worktree `~/AirStack-starling-max2-dev` on branch `development`. Before: 20 November 2026 ~22:20 (home RTX 5090).
+> Last updated: 22 November 2026 ~06:30, on the laptop (after L0.12c and L0.12d; before: 21 Nov ~23:45) (RTX 5070 Ti), worktree `~/AirStack-starling-max2-dev` on branch `development`. Before: 20 November 2026 ~22:20 (home RTX 5090).
 
 ## 0. Resume here (for a new session or another Claude account)
 
 Everything needed is in this folder; nothing depends on the previous chat. Claude's user memory (`~/.claude/…`) and
 the private NUS workspace (`~/ma_skills-self-play/`, 5090 only) do **not** travel with git: if this file and a memory
 note disagree, this file wins.
+
+### LAPTOP SESSION, 22 November 2026 ~06:30 — STATE AFTER L0.12c AND L0.12d (read this first)
+
+**Done tonight (training simulator, tier 1, laptop; one seed per run; nothing flown):**
+- **L0.12c longer 1.15 m runs** (owner-approved, records T54/T55, 4.71 GPU-h): Guard 3× 572 v script 645 (466 at 1×);
+  Strike 5× 134 v 355 (trades two for two, then the last Strike waits out the clock). Both learned, both below scripts.
+- **L0.12d cross-tag check** (owner said go, record T56, 0.12 GPU-h, controls C1–C4 game-for-game PASS): T46's 1.6 m
+  Guard team at 1.15 m holds 195 (1.15 m-trained 572): the Guard strategy does not carry over. T46's 1.6 m Strike team
+  reaches 636 / 931 against mark_edge (1.6 / 1.15 m) but 85 / 121 against field: the opponent moves its score far more
+  than the tag (one seed). The earlier "Strike learns at 1.6 m, not at 1.15 m" reading is not supported.
+- **No cause** of the 1.15 m shortfall is established (DISCUSSION §12 table; §13). Measured lead: at 1.2/1.15 m Strike
+  training games finish ~13–15× less often.
+- **Owner rule (22 Nov):** two or more independent reviewers on every finding and write-up, plus a two-agent
+  results-and-plan discussion after each result (svg_training/CLAUDE.md). Tonight: 10+ reviews; they withdrew the lead's
+  chat explanation of "why" and two overclaims.
+- G0 page updated (new recommendation 1: tag 1.6 m for L1 set-up; train at the tag that will be played; opponent pool
+  and cross-play scoring before anything is shown; first demo = scripted 1v1 at 1.6 m). Costed L1–L9 draft (D3: ~87
+  GPU-h) updated. L0 GPU-h: 13.77 of 19.
+
+**Waiting on the owner:** G0 walk-through (Sunday); two proposals (not run): (a) Strike team trained against
+guard_field at 1.6 m (~0.6 GPU-h), (b) T46 Guard team scored against every Strike script at 1.6 m (minutes).
+**Not done yet:** 3-D clips of the L0.12c/L0.12d key games; status page and morning digest (this session, next).
+Worktrees: `-l12c` (merged), `-l12d` (branch `ste-l012d`, merged at session end). Row 17 stays first on the next
+5090 session.
 
 ### LAPTOP SESSION, 21–22 November 2026 — L0.12c LONGER 1.15 m RUNS (read this first)
 
@@ -50,7 +74,7 @@ T53 L0.13 Isaac Lab trains (PASS, 832 v 836). GPU-hours used in L0: **8.93 of 19
 - **Waiting on the owner:** (1) longer 1.15 m runs (Guard + Strike, 3× budget, ~3.5–4 GPU-h; lead recommends yes;
   the closer-tag Guards were still climbing at the budget end, DISCUSSION §11); (2) the G0 walk-through and rulings.
 - **Lead owes:** a costed L1–L9 plan for the walk-through.
-- **Key reading (G0 page, numbers-checked):** only tag 1.6 m has both trained sides clearly beating the scripts; the 1.4 m
+- **Key reading (G0 page, numbers-checked; SUPERSEDED 22 Nov by L0.12d, see the entry above):** only tag 1.6 m has both trained sides clearly beating the scripts; the 1.4 m
   Guard gain may be the 0.05 s v 0.6 s decision-period difference (scripts held 0.6 s: 738 v trained 747).
 - **On the 5090 next time:** L0.7's 5090 part (full suite, TEST-F2b, L09-5090, the two drills; `scripts/ste_job.py
   owner-pauses` first). The tier-2 physics check passed at 16,384 games with a thin margin (0.0166 v 0.02 m): a larger

@@ -165,6 +165,11 @@ Evaluation-only opponents (INFO; script baseline from the T44 reference, same st
   - Effective-time gap of the ABORTED run: results.json's effective_s 2,321.8 s was written before the run's final
     write; progress.json ends at 2,370.8 s, which matches the 2,372 s wall-clock span: a recording-stage difference,
     not a suspend.
+- **Later check (22 Nov 2026, L0.12d, [record T56](2026-11-22_ste_l012d_cross_tag_record.md)).** The Strike gains above
+  (+0.444 at base, +0.412 at tag 1.4 m) were measured against each run's own training opponent only (mark_edge at base,
+  mirror at 1.4 m). Against guard_field at base, the base trained Strike team reaches 85 of 1,000; the straight-Strike
+  script reaches 284 on the same starts. **Hypothesis (not tested):** its climb-and-slip-in tactic (note (b)) exploits
+  mark_edge rather than beating Guard teams in general.
 
 ## Ledger row
 

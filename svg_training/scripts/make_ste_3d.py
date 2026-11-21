@@ -182,7 +182,8 @@ def render(args, isaac, frame_factory=None) -> int:
                                   ref.zone_radius_m, ref.wall_margin_m, float(ref.height_band_m[1]),
                                   zone_segments=int(settings["arena"]["zone_segments"]))
     # drones: one set per (look, tag radius) in the arena (replay look first), and the still rows. The stills keep the
-    # L0.5 looks without tag circles (what the owner checked); every replay draws its game's tag circles.
+    # L0.5 looks without tag circles (what the owner checked) but now stand in the true-circle zone; every replay draws
+    # its game's tag circles.
     sets = {}
     arena_looks = [settings["look"]["replay_look"]]
     if args.stills:
@@ -269,7 +270,7 @@ def render(args, isaac, frame_factory=None) -> int:
         show_set(key)
         stem = Path(path).stem
         rec = {"trajectory": Path(path).name, "trajectory_path": str(Path(path).resolve()), "stem": stem,
-               "tag_circles": True, "zone_segments": int(settings["arena"]["zone_segments"]), "frames": int(t.end_step + 1), "cameras": {}}
+               "tag_circles": key[1] is not None, "zone_segments": int(settings["arena"]["zone_segments"]), "frames": int(t.end_step + 1), "cameras": {}}
         last = 3 if args.smoke else t.end_step
         for cam, view in zip(CAMERAS, cams):
             out = work / "render" / stem

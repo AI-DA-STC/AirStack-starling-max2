@@ -52,12 +52,13 @@ def fake_run(tmp_path_factory):
     return root, pg
 
 
-def _main(root, out, *extra):
+def _main(root, out, *extra, recorded_device="cpu"):
     spec = importlib.util.spec_from_file_location("ste_vid1_capture", ROOT / "scripts" / "ste_vid1_capture.py")
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     return mod.main(["--trained-runs-dir", str(root), "--out", str(out), "--runs", "2026-11-21_ste_l012_base_guard",
-                     "--device", "cpu", "--games-per-cell", str(N), "--ticks-cap", str(TICKS), *extra])
+                     "--device", "cpu", "--games-per-cell", str(N), "--ticks-cap", str(TICKS),
+                     *(["--recorded-device", recorded_device] if recorded_device else []), *extra])
 
 
 def test_trained_mode_draws_only_the_record_game(fake_run, tmp_path):
@@ -66,9 +67,7 @@ def test_trained_mode_draws_only_the_record_game(fake_run, tmp_path):
     rep = json.loads((tmp_path / "capture_trained.json").read_text())
     row = rep["runs"]["2026-11-21_ste_l012_base_guard"]
     holds = np.flatnonzero(pg["outcome"][:N] == exploit.GUARD_WIN)
-    if not holds.size:
-        assert row["game_index"] is None and not row["files"]
-        return
+    assert holds.size, "the fixture must hold a game the trained Guard team won (change the seed of _modules)"
     assert row["game_index"] == int(holds[0]) and row["game_check"]["equal"] and row["batch_check"]["equal"]
     t = r3.load_trajectory(tmp_path / row["files"][0])
     assert t.meta["kind"] == "trained" and t.meta["side"] == "guard" and t.meta["record"] == "T46"
@@ -88,3 +87,48 @@ def test_trained_mode_refuses_a_different_record(fake_run, tmp_path):
     assert not list((tmp_path / "o" / "trajectories").glob("l012_*"))
     (rd / "gates.toml").write_text((rd / "gates.toml").read_text() + "\n# changed\n")
     assert _main(bad, tmp_path / "o2") == 2
+
+
+def _copy(root, tmp_path, name="bad"):
+    bad = tmp_path / name
+    shutil.copytree(root, bad)
+    return bad, bad / "2026-11-21_ste_l012_base_guard"
+
+
+def test_a_mismatch_in_another_game_refuses(fake_run, tmp_path):
+    """The key game equal but another game of the batch different on an exact key: exit 1, nothing drawn."""
+    root, pg = fake_run
+    bad, rd = _copy(root, tmp_path)
+    d = dict(np.load(rd / "eval_final.npz"))
+    other = len(d["end_step"]) - 1                          # a script cell's game, not the key game
+    d["end_step"][other] += 1
+    np.savez(rd / "eval_final.npz", **d)
+    assert _main(bad, tmp_path / "o") == 1
+    assert not list((tmp_path / "o" / "trajectories").glob("l012_*"))
+
+
+def test_a_wrong_network_is_refused(fake_run, tmp_path):
+    """Another network than the one evaluated (perturbed weights) cannot pass for the run's trained team."""
+    root, _ = fake_run
+    bad, rd = _copy(root, tmp_path)
+    mods = torch.load(rd / "agent_final.pt", weights_only=False)
+    for a in mods.values():
+        for k, v in a["policy"].items():
+            if v.dtype.is_floating_point and v.dim() == 2:
+                a["policy"][k] = v + 0.5
+    torch.save(mods, rd / "agent_final.pt")
+    assert _main(bad, tmp_path / "o") == 1
+    assert not list((tmp_path / "o" / "trajectories").glob("l012_*"))
+
+
+def test_cell_zero_must_be_the_exploiter(fake_run, tmp_path, monkeypatch):
+    root, _ = fake_run
+    real = exploit.eval_cells
+    monkeypatch.setattr(exploit, "eval_cells", lambda g, v, s: list(reversed(real(g, v, s))))
+    assert _main(root, tmp_path / "o") == 2
+
+
+def test_another_device_than_the_record_is_refused(fake_run, tmp_path):
+    """The runs were evaluated on CUDA: a CPU replay cannot be checked bit for bit against them."""
+    root, _ = fake_run
+    assert _main(root, tmp_path / "o", recorded_device=None) == 2        # record says cuda, replay asks cpu

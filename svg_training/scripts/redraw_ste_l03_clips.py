@@ -30,7 +30,10 @@ GIF_WIDTH = 720                                                     # as the pub
 
 
 def doc_name(arm: str, kind: str, slot: int) -> str:
-    """The published GIF's name of a clip (docs/media/ste_l03/)."""
+    """The published GIF's name of a clip (docs/media/ste_l03/); only the two kinds the run published."""
+    if kind not in KIND:
+        raise ValueError(f"clip kind {kind!r} has no published GIF (only {sorted(KIND)}): the run published the first "
+                         f"Strike win and the first hold of each arm")
     return f"{TIER[arm]}_v_s20_{KIND[kind]}_slot{slot}.gif"
 
 
@@ -55,6 +58,9 @@ def main(argv=None) -> int:
     a = ap.parse_args(argv)
     tr, cpu, out, work = Path(a.transfer_run), Path(a.cpu_run), Path(a.out), Path(a.work)
     gates = T.load_gates(tr / "gates.toml")
+    if int(gates["clips"]["per_arm"]) != 2:
+        raise ValueError(f"[clips] per_arm is {gates['clips']['per_arm']}: the published GIFs are 2 per arm (first Strike "
+                         f"win, first hold)")
     w5, w6 = T.worlds(gates)
     work.mkdir(parents=True, exist_ok=True)
     done = []

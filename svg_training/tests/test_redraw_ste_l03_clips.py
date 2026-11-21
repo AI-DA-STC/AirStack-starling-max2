@@ -23,3 +23,9 @@ def test_doc_names_match_the_published_gifs():
 def test_the_height_panel_is_on():
     src = (ROOT / "scripts" / "redraw_ste_l03_clips.py").read_text()
     assert "height_panel=True" in src and "height_panel=False" not in src
+
+
+def test_other_clip_kinds_are_refused_clearly():
+    import pytest
+    with pytest.raises(ValueError, match="clip kind"):
+        rd.doc_name("t2_t41", "unfinished", 3)

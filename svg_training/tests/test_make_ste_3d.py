@@ -300,3 +300,18 @@ def test_gif_full_rate_steps_down_in_width_when_a_width_cannot_fit(monkeypatch, 
     monkeypatch.setattr(ov, "encode_gif", fake)
     _, gi = m3.gif_full_rate([np.zeros((8, 8, 3), np.uint8)], tmp_path / "a.gif", 10, 5.0)
     assert gi["width"] == 640 and gi["fps"] == 10 and calls[:3] == [(800,), (720,), (640,)]
+
+
+def test_replays_record_whether_tag_circles_were_drawn(tmp_path):
+    p = _traj(tmp_path)
+    m3.render(_args(tmp_path, replay=[str(p)]), FakeIsaac())
+    import json as _json
+    meta = _json.loads((tmp_path / "work" / "render_meta.json").read_text())
+    assert meta["replays"][0]["tag_circles"] is True
+    src = (ROOT / "scripts" / "make_ste_3d.py").read_text()
+    assert '"tag_circles": True' not in src                         # from the drone set drawn, not a constant
+
+
+def test_the_published_l011_readme_says_its_clips_predate_the_circles():
+    md = (ROOT / "docs" / "media" / "ste_l011" / "3d" / "README.md").read_text()
+    assert "before the tag circles and the true-circle zone" in md

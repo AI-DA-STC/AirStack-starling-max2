@@ -1,5 +1,7 @@
 # 3-D replays of the L0.11 key games (VID-1)
 
+These six clips were rendered on 21 Nov 2026 (VID-1), before the tag circles and the true-circle zone; they show neither. Re-render them in Isaac Lab before regenerating this page (an encode alone would not add them).
+
 Training simulator. Each game is a tier-1 game of the L0.11 screen (record T44) played again on the record's device with the same starts, seeds and batch, checked equal to the record (outcome, end step, tags, Strike drones left, start positions) and then drawn in Isaac Lab with the Starling asset of the AirStack simulator. Visual replay only: no physics runs in the drawing, nothing changes the game. Tier 1 has no roll or pitch, so the drones are drawn level; a tagged drone disappears. Look: `own_ring` (PROPOSED, pending the owner's check of the L0.5 stills, D9). Played at 0.5x real time. Not a flight.
 
 Rule for the games (fixed before the replay): in each shortlisted variant, the best scripted Guard against the best scripted Strike (g* v s*), the lowest game index that ended in a hold and the lowest that ended in a reach.

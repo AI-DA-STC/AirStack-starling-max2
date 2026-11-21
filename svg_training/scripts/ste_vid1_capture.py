@@ -52,6 +52,8 @@ def parse(argv):
     ap.add_argument("--trained-runs-dir", default=None,
                     help="VID-1b: the folder holding the L0.12 run folders of [trained_games] runs (read only)")
     ap.add_argument("--runs", nargs="*", default=None, help="VID-1b: default the settings' [trained_games] runs")
+    ap.add_argument("--recorded-device", default=None,
+                    help="VID-1b, test only: the device the fake record was evaluated on (default: the gate file's)")
     ap.add_argument("--out", required=True, help="output folder (runs/..., git-ignored)")
     ap.add_argument("--settings", default=str(SETTINGS_FILE))
     ap.add_argument("--variants", nargs="*", default=None, help="default: the settings' [key_games] variants")
@@ -104,9 +106,18 @@ def trained_main(a, settings: dict) -> int:
         ref = exploit.load_reference(exploit.ROOT / gates.reference["file"])
         cfg = exploit.variant_cfg(gates, variant)
         cells = exploit.eval_cells(gates, variant, side)
+        if exploit.EXPLOITER not in cells[0]:
+            say(f"refused: {name}: cell 0 of the evaluation batch is {cells[0]}, not the trained team (the key game "
+                f"is taken from cell 0)")
+            return 2
         n = int(a.games_per_cell or gates.run["eval_games"])
         ticks = int(a.ticks_cap or gates.run["ticks_cap"])
         device = a.device or gates.run["device"]
+        recorded = a.recorded_device or gates.run["device"]
+        if str(device) != str(recorded):
+            say(f"refused: {name}: the evaluation ran on {recorded}; a replay on {device} cannot be checked against it "
+                f"game for game (a CPU replay does not reproduce a CUDA run)")
+            return 2
         hold = int(gates.trainer["decision_ticks"])
         with np.load(rd / "eval_final.npz") as d:
             record = {k: d[k] for k in r3.EXACT_KEYS + r3.CLOSE_KEYS if k in d.files}
@@ -139,7 +150,7 @@ def trained_main(a, settings: dict) -> int:
                     "seconds": round(time.time() - started, 1)})
         say(f"  game {g}: {'EQUAL' if game_check['equal'] else 'DIFFERENT'} {game_check['mismatches']}; batch "
             f"mismatches {batch_check['mismatches']} ({row['seconds']} s)")
-        if not game_check["equal"]:
+        if not (game_check["equal"] and batch_check["equal"]):      # any game of the batch: exact keys, closest in tol
             code = 1
             report["runs"][name] = row
             continue

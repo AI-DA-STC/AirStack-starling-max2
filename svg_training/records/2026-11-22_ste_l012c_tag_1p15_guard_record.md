@@ -97,3 +97,7 @@ Ledger row: | T54 | 2026-11-21T23:41:37+08:00 | training simulator, tier 1 (fast
   side of [record T55](2026-11-22_ste_l012c_tag_1p15_strike_record.md), band 0.2, gives **worth learning** (better Strike
   reach upper 0.385, better Guard hold upper 0.674, both above 0.2). That category is set by the scripts (QC I-8): both
   trained sides are below their scripts.
+- **Commit after rebase.** The run's commit `418d5e3c` (field "Commit" above) was rebased onto `development` on 22 Nov
+  2026 as `9d3d5d43`; `git diff 418d5e3c 9d3d5d43 -- svg_training/scripts svg_training/source svg_training/configs`
+  is empty (same code and configs; only `development`'s status commit 4c0224da lies beneath it). The old commit stays
+  reachable in this machine's reflog only.

@@ -1,6 +1,6 @@
 INTERNAL · the latest status of STE's own learning track and the NUS port, overwritten at every update; the history is in [LOG.md](LOG.md). Produced by the `train-status` skill.
 
-**Status, 2026-11-21 21:05 (+08:00), event: everything merged — 3-D clips of the trained players in Watch** · laptop RTX 5070 Ti · GPU idle · 0 jobs
+**Status, 2026-11-21 21:25 (+08:00), event: G0 page drafted (in revision); GPU-hour figure corrected** · laptop RTX 5070 Ti · GPU idle · 0 jobs
 
 **Plain summary (L0.13 Does Isaac Lab train at all?).** Tested: the same Guard recipe trained on the Isaac Lab drone and in
 the fast engine, same game, same 302 M game-steps, same starting networks. Happened (training simulator): **PASS** — the Isaac
@@ -82,9 +82,9 @@ Earlier: L0.11 top-down clips and the factor chart are in the [T44 record](../..
 | L0.4 | Side-by-side Starling render | DONE | tier 2 Isaac Lab | found why our clips never looked like the Starling: a grey physics box was drawn over every drone since S2b (the hide call missed it); one-line fix, re-render shows the Starling (before/after in Watch); merged into `development` after independent review; 0.028 of 0.2 GPU-h |
 | L0.5 | Starling video look fix | WAITING ON YOU (D9) | tier 2 Isaac Lab | the drone left unpainted, team shown by a ring or a small dot that casts no shadow; stills in Watch; 0.154 of 0.3 GPU-h (with VID-1) |
 | L0.14 | Crazyflie route check | DONE | tier 1 fast engine (CPU) | record T45: the T41 Guard policy holds 791–768 of 1,000 in the Crazyflie-like lag band (0.48–0.56 s, every drone slowed) against 831 at the Starling's lag, and drones come closer (games under 1.0 m: 7 → 101–149); planner, like for like: 0 of 100 at 3v3 and 5v3 against 20 Nov's 5 of 100 (not a clear difference; only one rule set run); QC + re-check passed; merged into `development` (targeted tests 76 passed; the full suite runs with the next merge — lead's call, the CPU is shared now); page `ste_learning/CRAZYFLIE_ROUTE.md` |
-| L0.6 | Gate G0 | NOT STARTED | none | after every task above; the owner decides |
+| L0.6 | Gate G0 | DRAFTING | none | `ste_learning/G0_DECISION.md` on branch ste-g0: what L0 found, one decision table with evidence strength per row and the lead's recommendations kept apart, the tag rule in depth (incl. learning curves by tag distance), where to train; independent numbers check next; walk-through Sunday |
 
-GPU-h used in L0: about 9.9 of 19 (L0.11 0.43, L0.4 0.03, L0.5 + VID-1 0.15, L0.2 0.39, L0.3 1.28, L0.12 3.86, L0.12b 1.59, L0.13 1.6 + smoke 0.06). All L0 measurement tasks are done; left: 3-D clips (VID-1b), height-panel re-draw (VID-1c), the G0 page.
+GPU-h used in L0: **8.93 of 19** from the GPU-hour ledger (L0.11 0.43, L0.12 incl. the bubble-tag test 4.96, L0.13 1.59, L0.3 1.28, L0.2 0.39, L0.5 0.26, L0.4 0.03). **Correction:** earlier statuses said ~9.9; that was my over-estimate of L0.12, the ledger is the source.
 
 Laptop full CPU suite (20 Nov, `development` at 5c5d465, after `scripts/nus_install_provisional.sh`): **1,333 passed, 2 failed, 48 skipped** in 24 min. Both failures repeat when run alone:
 - **L07-F1** `test_ste_job.py::test_f_d_a_killed_job…resumes`: CONFIRMED by QC: the tool does not over-report (it measures from the same start; ~0.255 s raw, printed rounded to 0.3); the test compares the rounded text with the exact elapsed time. Fix: allow half a display step.

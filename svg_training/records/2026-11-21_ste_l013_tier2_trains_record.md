@@ -4,7 +4,7 @@ Simulator: training simulator: tier 1 (fast engine; Starling layer: commander co
 
 ## Run notes
 
-- **Never suspend the machine during a GPU job**: the cap clock and the GPU-hour ledger are wall clock less the owner's gpu_pause.sh pauses only. Say here whether the machine was suspended during the runs.
+- Suspend: see the 'Suspend' note below.
 - **The game** (LEAD CALL 21 Nov 2026): PLAN.md row L0.13 named pilot P1b's recipe in the hangar game; the lead moved the task to the STE game: the L0.12 Guard run's recipe (T41's, one decision per 0.6 s, terminal reward only) on the L0.11 base game (tag 1.6 m, 3v3), exploiter Guard team against strike_straight. The PLAN's gate is kept in substance.
 - **One procedure in both arms**: same games at once, game-step budget, seed and evaluation starts; one Isaac world per process, so tier 2 evaluations play on a view of the training world, and after every evaluation the training games restart afresh in both arms.
 - **Resume** (by design): networks, optimisers, scalers, counters and the torch random state are restored at the last update boundary; the training games restart afresh, so a resumed arm is not identical to an unbroken one.
@@ -71,23 +71,24 @@ Scale (INFO): L0.12's base Guard held 913/1000 on tier 1 at 553,648,128 game-ste
 ## Run notes added by the lead
 
 - **Figure and clips.** Learning curves of both arms, each arm's networks on its own tier and on the other tier, with the
-  parked Guard's interval as a band: [learning_curves.png](../docs/figures/ste_l013/learning_curves.png) (a copy of the
-  verdict's figure, made by `scripts/ste_tier2_l013.py verdict`). The curves are read on 256 curve starts (seed
+  parked Guard's interval as a band: [learning_curves.png](../docs/figures/ste_l013/learning_curves.png) (re-drawn after
+  QC by the driver's own `curve_figure` from the two arms' results.json: both bands outlined and hatched, and a note on the
+  image saying what the curves and bands are read on; the verdict folder keeps the first drawing). The curves are read on 256 curve starts (seed
   130900), not T44's 1,000 scoring starts, so their end points (about 0.79–0.81) differ from the 832 and 836 above. The four 2-D clips, with the height panel:
   [docs/media/ste_l013](../docs/media/ste_l013/README.md).
 - **(a) The game** (LEAD CALL 21 Nov 2026): the lead moved L0.13 from the PLAN's pilot P1b hangar game to the L0.12 base
   game and Guard recipe, so the result is comparable with T46's base Guard (913 of 1,000 at 553,648,128 game-steps).
-- **(b) PASS = tier 2 learns.** At the same 301,989,888 game-steps tier 2 and tier 1 reach about the same hold rate (832
+- **(b) PASS = tier 2 learns.** At the same 301,989,888 game-steps tier 2 and tier 1 reach about the same hold rate on one training seed, one opponent, one start set (T44's first 1,000) (832
   against 836 of 1,000, each far above its parked Guard: 538 and 534), and each arm's networks move to the other tier with
   at most 22 games' difference (t2 networks 846 on tier 1, 832 on tier 2; t1 networks 836 on tier 1, 814 on tier 2).
-  Lead's reading; one training seed, one opponent.
+  Lead's reading; one training seed, one opponent, one start set (T44's first 1,000).
 - **(c) Speed.** Tier 2 is about 5× slower per game-step (median 70,468 against 360,226 game-steps per second), so the
   same 302 M game-steps took 1.29 GPU-h on tier 2 against 0.24 on tier 1 (whole arms; tier 2 also plays 24 curve reads
   to tier 1's 8). Training time alone: 4,292 s against 826 s (5.2×).
 - **(d) Physics check.** The tier 2 physics agreement control (C-1a) read 0.0166 m at 16,384 games (limit 0.02 m, PASS);
-  the 3,000-game view of the same world read 0.0164 m; T48 read 0.0036 m at 1,024 games and T49 0.0028 m at 1,000.
-  The cause of the larger reading here is not separated (world size, the recorded inputs, or the number of games
-  compared); the lead's reading is that it grows with the games compared. The margin is 0.0034 m: a larger world (for
+  the 3,000-game view of the same world read 0.0164 m. Readings so far: 0.0036 m (T48, 1,024 games, other
+  inputs) and 0.0028 m (T49), 0.0164 m at 3,000 and 0.0166 m at 16,384 games in this run: it rises between 1,024 and
+  3,000 and is flat after; cause not separated (lead's reading pending). The margin is 0.0034 m: a larger world (for
   example on the 5090) may fail this gate.
 - **(e) Upsets and non-finite values** (evaluation batches and curve reads; the training log does not count them).
   Upset (tumbled) games: 0 in every evaluation batch and curve read of both arms, trained and parked, on both tiers.
@@ -103,7 +104,9 @@ Scale (INFO): L0.12's base Guard held 913/1000 on tier 1 at 553,648,128 game-ste
   t2 4,638 s against 4,642 s (the 849 s and 4,627 s above come from results.json, written before the final write). GPU-hours: t1 0.237, t2 1.289 (the 1.527 in the ledger row); with the smokes 1.590.
 - **Commit.** The arms name `fa3281ba`, which became `1ba631e8` when the branch was rebased on development.
 - Edited after the first write (same session, before any merge; no number changed): the physics-check reading, the
-  curve starts, whole-arm hours, the scope of the upset counts and the effective-time sources stated.
+  curve starts, whole-arm hours, the scope of the upset counts and the effective-time sources stated. Again after QC:
+  the readings bounded to one seed, one opponent and one start set; the physics-check readings listed; the figure
+  re-drawn; the template suspend line replaced.
 
 ## Ledger row
 

@@ -960,15 +960,20 @@ def curve_figure(c1: list, c2: list, parked2: dict, parked1: dict, path: Path) -
         if pts:
             ax.plot([p["game_steps"] / 1e6 for p in pts], [p["rate"] for p in pts], style, marker="o", ms=3,
                     color=colour, label=name)
-    for parked, colour, name in ((parked1, "#2f6db3", "parked Guard, tier 1"), (parked2, "#c2492f", "parked Guard, tier 2")):
-        ax.axhspan(parked["ci"][0], parked["ci"][1], color=colour, alpha=0.12, label=name)
+    for parked, colour, name, hatch in ((parked1, "#2f6db3", "parked Guard, tier 1", "//"),
+                                        (parked2, "#c2492f", "parked Guard, tier 2", "\\\\")):
+        ax.axhspan(parked["ci"][0], parked["ci"][1], facecolor=matplotlib.colors.to_rgba(colour, 0.10),
+                   edgecolor=colour, linewidth=1.2, hatch=hatch, label=name)   # outlined: two overlapping bands stay visible
     ax.set_xlabel("game-steps trained (millions)")
     ax.set_ylabel("hold rate (curve starts)")
     ax.set_ylim(0, 1)
     ax.grid(alpha=0.3)
     ax.legend(fontsize=7, loc="lower right")
     ax.set_title("L0.13: Guard team v strike_straight, tier 1 and tier 2 (training simulator)", fontsize=9)
-    fig.tight_layout()
+    first = (c1 or c2)[0]
+    fig.tight_layout(rect=(0, 0.05, 1, 1))
+    fig.text(0.01, 0.01, f"Curves on {first['n']:,} curve starts (seed {first['seed']}); band = the parked Guard's "
+             f"{parked1['n']:,}-start interval (Wilson 95 %), read once on the final batch.", fontsize=7, color="#444444")
     fig.savefig(path)
     plt.close(fig)
     return path.name

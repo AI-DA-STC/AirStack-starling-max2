@@ -49,7 +49,9 @@ def test_every_plan_task_has_exactly_one_state():
 
 def test_unknown_state_is_refused(tmp_path):
     with pytest.raises(ValueError, match="unknown state 'finished'"):
-        figs.load_l0_progress(write(tmp_path, good_text().replace('"running"', '"finished"', 1)))
+        text, n = re.subn(r'state = "[a-z_]+"', 'state = "finished"', good_text(), count=1)
+        assert n == 1   # whatever the first task's live state is
+        figs.load_l0_progress(write(tmp_path, text))
 
 
 def test_unknown_task_id_is_refused(tmp_path):

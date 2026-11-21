@@ -209,14 +209,18 @@ def test_controls_compare_counts_with_the_device_tolerance(gates):
 
 
 def test_side_overrides_default_to_the_t41_recipe_and_only_take_known_keys(gates, tmp_path):
-    assert gates.trainer["side_overrides"] == {"strike": {}, "guard": {}}
-    text = exploit.GATES_FILE.read_text().replace("side_overrides = { strike = {}, guard = {} }",
-                                                   "side_overrides = { strike = { learning_rate = 1.0 }, guard = {} }")
+    # filled by the lead from the pilot (21 Nov 2026): the pre-registered rule picked the shaped Strike recipe
+    assert gates.trainer["side_overrides"] == {"strike": {"shaping_weight": 1.0}, "guard": {}}
+    import re
+    text = re.sub(r"^side_overrides = .*$", "side_overrides = { strike = { learning_rate = 1.0 }, guard = {} }",
+                  exploit.GATES_FILE.read_text(), count=1, flags=re.M)
     bad = tmp_path / "g.toml"
     bad.write_text(text)
     with pytest.raises(ValueError, match="learning_rate"):
         exploit.load_gates(bad)
-    assert exploit.side_settings(gates, "strike") == {k: v for k, v in gates.trainer.items() if k != "side_overrides"}
+    base = {k: v for k, v in gates.trainer.items() if k != "side_overrides"}
+    assert exploit.side_settings(gates, "guard") == base
+    assert exploit.side_settings(gates, "strike") == {**base, "shaping_weight": 1.0}   # the filled Strike override
 
 
 def test_the_pilot_probes_name_known_settings(gates):
@@ -247,7 +251,8 @@ def test_the_smoke_gate_file_differs_from_the_real_one_only_in_sizes():
              ("trainer", "learning_epochs"), ("trainer", "mini_batches"), ("trainer", "curve_every_updates"),
              ("trainer", "final_reserve_s"), ("videos", "games"), ("videos", "keep"), ("videos", "max_ticks"),
              ("pilot", "num_games"), ("pilot", "updates"), ("pilot", "probes"), ("pilot", "probe_num_games"),
-             ("pilot", "probe_updates")}
+             ("pilot", "probe_updates"),
+             ("trainer", "side_overrides")}   # filled by the lead from the GPU pilot (21 Nov 2026); the smoke keeps the bare recipe
     assert real.keys() == smoke.keys()
     for section in real:
         assert real[section].keys() == smoke[section].keys(), section
@@ -266,7 +271,7 @@ def test_the_strike_fallback_is_pre_registered_and_is_the_only_recipe_change(gat
     assert probes == [{"side": "strike"}, {"side": "strike", "opponent": "guard_parked_centre"},
                       {"side": "strike", "shaping_weight": 1.0},
                       {"side": "strike", "shaping_weight": 1.0, "opponent": "guard_parked_centre"}]
-    assert gates.trainer["side_overrides"] == {"strike": {}, "guard": {}}
+    assert gates.trainer["side_overrides"] == {"strike": {"shaping_weight": 1.0}, "guard": {}}   # the lead's fill from the pilot (21 Nov 2026)
 
 
 def test_the_strike_recipe_decision_follows_the_pilot_probes_against_g_star_only(gates):
@@ -385,7 +390,7 @@ def test_strike_runs_need_run_0_pass_and_guard_runs_do_not(gates):
     """LEAD CALL 21 Nov 2026 (QC N-1): a Strike run of record needs run 0 = PASS under the same gate file and the same
     cap (unless the lead's decision is given); a Guard run does not depend on run 0; the Strike recipe of the gate must
     equal the pilot's; --strike-not-launched needs run 0 = FAIL."""
-    ok = _pilot(exploit.RECIPE_BARE, {})
+    ok = _pilot(exploit.RECIPE_SHAPED, {"shaping_weight": 1.0})                   # the gate as filled from the pilot
     assert exploit.pilot_problem(gates, ok, "guard") is None                      # no run 0 needed
     assert exploit.pilot_problem(gates, ok, "strike", run0=_run0(gates), cap_h=1.0) is None
     assert "run 0" in exploit.pilot_problem(gates, ok, "strike", cap_h=1.0)
@@ -402,10 +407,10 @@ def test_strike_runs_need_run_0_pass_and_guard_runs_do_not(gates):
     assert "gate" in exploit.pilot_problem(gates, ok, "strike", run0=_run0(gates, sha="0" * 64), cap_h=1.0)
     assert "cap" in exploit.pilot_problem(gates, ok, "strike", run0=_run0(gates, cap_h=0.75), cap_h=1.0)
     assert "complete" in exploit.pilot_problem(gates, ok, "strike", run0={**_run0(gates), "complete": False}, cap_h=1.0)
-    shaped = _pilot(exploit.RECIPE_SHAPED, {"shaping_weight": 1.0})
-    assert "side_overrides" in exploit.pilot_problem(gates, shaped, "strike", run0=_run0(gates), cap_h=1.0)
-    assert exploit.pilot_problem(gates, shaped, "guard") is None
-    assert "side_overrides" in exploit.recipe_problem(gates, shaped)             # run 0 trains the gate's recipe too
+    bare = _pilot(exploit.RECIPE_BARE, {})
+    assert "side_overrides" in exploit.pilot_problem(gates, bare, "strike", run0=_run0(gates), cap_h=1.0)
+    assert exploit.pilot_problem(gates, bare, "guard") is None
+    assert "side_overrides" in exploit.recipe_problem(gates, bare)               # run 0 trains the gate's recipe too
     assert exploit.strike_not_launched_problem(gates, _run0(gates, "FAIL")) is None
     for status in ("PASS", "INCONCLUSIVE"):
         assert status in exploit.strike_not_launched_problem(gates, _run0(gates, status))

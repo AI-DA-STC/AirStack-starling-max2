@@ -1,0 +1,83 @@
+# STE task L0.3 STE Guard policy in tier 2 without retraining (PLAN.md section 4; DISCUSSION P3; WORK_BREAKDOWN L0.3).
+# INFO: no gate on the hold rate, no verdict. The [controls] have known answers and stop the run (exit 6) when one fails.
+# Read by scripts/ste_transfer_l03.py through source/svg_training/ste/transfer.py (exact keys). Written before any run;
+# copied into the run folder and pinned by sha256 at the first launch; never edited after a first result (STANDARDS 7).
+# Labels: FIXED, MEASURED, PROPOSED, OPEN (../../STANDARDS.md), LEAD CALL / L0.3 CHOICE for this task's own choices.
+#
+# The question: does T41 (829 of 1,000 holds against S20 on tier 1, home RTX 5090) keep its hold rate when the drone is
+# the Isaac Lab rigid-body Starling (Phase 4 row 6, the game T24 played), on the same 1,000 paired starts, no retraining?
+# Arms (scripts/ste_transfer_l03.py): t1_cpu_t41 (CPU, part "cpu"), then on the GPU (part "isaac", one Isaac world of
+# 1,000 games x 6 drones): C-0 and C-3 checks (C-3b INFO), t2_parked (control C-2), t2_t41 (the result), t1_cuda_t41
+# (INFO). Every record needs C-0, C-1, C-2 and C-3 present and passed (LEAD CALL 21 Nov 2026 (QC L02-6)); a non-finite
+# value (exit 5) leaves the run folder ABORTED for good (QC L02-3).
+
+[run]
+task = "L0.3"
+verdict = "INFO"
+guard_run = "runs/nus_port/phase5/pilots/2026-11-19_nus_phase5_pilot_p1b_run4"   # T41 (PROVISIONAL bundle)
+guard_agent_sha256 = "c91bea51d7ec40323f565e2e09d587165a1345a6a75da3b15f2ab7c9ce5907f6"   # agent.pt, = T45's c91bea51...
+opponent = "S20"                    # T41's opponent (T41 record)
+decision_ticks = "deploy"           # one decision per the deploy file's hold (12 ticks = 0.6 s), as T41 trained and scored
+eval_seed = 1101                    # T41's evaluation seed (run seed 101 + 1000, train_standin.py), = T45's
+opponent_seed_offset = 202          # the opponent's seed = eval seed + this (train_standin.py), = T45's
+games = 1000                        # T41's count: the first 1,000 Phase 4 paired starts (all of them)
+fitted_row = "5"                    # T41's game: Phase 4 row 5 ([pilots] row of configs/nus_phase5.toml)
+physics_row = "6"                   # its tier 2 game: Phase 4 row 6 (changed = ["drone"]; T24)
+threads = 4                         # CPU threads, as T45 (the C-1 control's exact answer was produced with 4)
+cap_h = 1.5                         # PROPOSED (PLAN section 4, L0.3 cap): the GPU part; = the launcher's --gpu-h
+cpu_cap_h = 1.0                     # L0.3 CHOICE: wall-clock cap of the CPU part (T45: 729 s for the same 1,000 games)
+device = "cuda"
+
+[pins]
+# The files of T41's and T24's games; sha256 prefixes equal the T24 record's (rules dd22cc28, deploy_w2 c248c6be, hangar
+# b7f2870e, starts 40c8cc59, game_config 3f771112). A different file refuses the run (exit 2).
+starts_sha256 = "40c8cc59297f58d5a7c18b2eb89dc67d2c8ec940b8d95243673928cab6cd2a67"
+rules_sha256 = "dd22cc28ce2042f3947f8427c5b69885187bb0b362498a487b67a753168c5a19"
+deploy_sha256 = "c248c6bef3f6e17b17f05c766dee34db67ddf443e7d13c80e0d928319577b101"
+hangar_sha256 = "b7f2870ee17d2d7087e9d7dc9bb1ec954a01b46e57bbc46559125a0c17e7163b"
+hangar_game_sha256 = "3f771112bd3f03705efa7c12b8e511598c99b8c31dd79a11d2311d001ee87e06"
+
+[controls]
+# C-1 (CPU, exact; LEAD CALL 21 Nov 2026 (QC L02-8)): T41 v S20 on tier 1 on the CPU path reproduces T45's 0.1482 s
+# cell exactly: 831 holds and the same outcome in every one of the 1,000 games. T41's 829 (the 5090's CUDA) is INFO only
+# (the t1_cuda_t41 arm). T45's per-game file is copied into this worktree's runs/ (runs/ is not in git) and checked at
+# start-up with its sha256 (transfer.pin_problems): a missing or other file refuses the run (exit 2).
+t45_per_game = "runs/2026-11-21_ste_l014/response/per_game.npz"
+t45_per_game_sha256 = "3959d59440f8c9fbd5e381a67f89447fb3f856ac5c190706823263a0c848494b"
+t45_key = "delay_0.1482__outcome"
+t45_holds = 831
+# C-0: T41's game and its tier 2 game differ in these settings only (Phase 4 row 6 changes the drone only)
+row_difference = ["starling.backend", "row.drone"]
+# C-2 (tier 2, a band; LEAD CALL 21 Nov 2026 (QC L02-8): band [493, 555]; GPU PhysX on another GPU need not repeat T24
+# game for game): the parked
+# Guard against S20 through T24's own path; Strike reaches within T24's Wilson 95 % interval [0.493, 0.555] x 1,000.
+# Row 5 (fitted drone) gave 571, outside the band: a tier 2 game that silently ran the fitted drone fails here.
+parked_guard = "ParkedGuard"
+parked_reach_min = 493
+parked_reach_max = 555
+# C-3 PHYSICS (gated; LEAD CALL 21 Nov 2026 (QC L02-2, QC L02-R1)): bare worlds, no game logic. T41 v S20 in the row 6
+# game on the PyTorch reference world for 20 ticks (1 s) records, in order, the game's per-drone world writes (restarts,
+# parking, clamps) and the PX4 cascade copy's setpoints; they are replayed in the same order on the Isaac Lab world and
+# on a fresh reference world (as T10's closed loop, with the game's own writes); largest 3-D gap over every game, drone and tick <= T10's
+# closed_loop_pos_max_m (T10: 0.0006 m). C-3b GAME (INFO, not gated): the game on both worlds, positions compared only for
+# drones in the game in both, up to the first tick a drone is in one and out in the other (the L0.2 smoke's 1,730 m was a
+# parked drone, QC L02-1). agree_games: kept for the file's shape; both checks use every game.
+# LEAD DECISION RULE for C-1b/C-3b (pre-registered 21 Nov 2026 before any Isaac result of the fixed code; QC L02 re-check 2):
+# the run of record launches only if C-1a/C-3a PASS and the INFO game comparison's ended, reach and tag counts agree between
+# the two worlds within 2 % relative (or 2 games, whichever is larger); otherwise the lead investigates before any run of
+# record, and the investigation is reported in the record. C-1a/C-3a catch mass errors above about 7 % in 20 ticks (QC).
+agree_games = 64
+agree_ticks = 20
+agree_max_m = 0.02
+
+[references]
+# Numbers compared with in the record (not gates).
+t41_holds = 829                     # T41, tier 1, home RTX 5090 CUDA
+t41_games = 1000
+t24_parked_reaches = 524            # T24, row 6, ParkedGuard v S20, home RTX 5090
+t23_parked_holds = 429              # T23, row 5, ParkedGuard v S20 (571 reaches)
+row5_parked_reaches = 571
+
+[clips]
+per_arm = 2                         # 2-D top-down clips per arm from the kept video slots (first hold, first reach)
+key_games = 6                       # games listed for 3-D rendering (VID-1): lost / gained between the tiers first

@@ -22,14 +22,17 @@ GUARD_COLOUR = "#0072B2"           # Okabe-Ito blue: the Guard team (as viz/repl
 STRIKE_COLOUR = "#E69F00"          # Okabe-Ito orange: the Strike team
 INK, MUTED, GRID = "#1a1a1a", "#666666", "#e0e0e0"
 TEAM = {"strike": ("Strike team", STRIKE_COLOUR), "guard": ("Guard team", GUARD_COLOUR)}
-VARIANT = {"base": "base (tag 1.6 m)", "tag_1p2": "tag 1.2 m", "tag_1p4": "tag 1.4 m"}
+VARIANT = {"base": "base (tag 1.6 m)", "tag_1p4": "tag 1.4 m", "tag_1p2": "tag 1.2 m", "tag_1p15": "tag 1.15 m (bubble)"}
+ORDER = list(VARIANT)                # widest tag first; a variant not listed goes last
 
 
 def rows(verdict: dict, aborted: list[dict]) -> list[dict]:
-    """One row per variant and side, in the verdict's order, Strike first; ABORTED sides keep their script only."""
+    """One row per variant and side, widest tag first, Strike first; ABORTED sides keep their script only. ``verdict``
+    may hold the variants of several verdict files (main merges them)."""
     cut = {(r["variant"], r["side"]): r for r in aborted}
     out = []
-    for v, e in verdict["variants"].items():
+    names = sorted(verdict["variants"], key=lambda v: ORDER.index(v) if v in ORDER else len(ORDER))
+    for v, e in ((v, verdict["variants"][v]) for v in names):
         for s in ("strike", "guard"):
             sr = e["sides"].get(s)
             if sr is not None:
@@ -38,11 +41,11 @@ def rows(verdict: dict, aborted: list[dict]) -> list[dict]:
             elif (v, s) in cut:
                 r = cut[(v, s)]
                 out.append({"variant": v, "side": s, "trained": None, "script": r["script"], "untrained": None,
-                            "cell": r["script"]["cell"], "note": "trained: not read (run ABORTED, T47)"})
+                            "cell": r["script"]["cell"], "note": f"trained: not read (run ABORTED, {r.get('record', 'T47')})"})
     return out
 
 
-def draw(rs: list[dict], band: float, out: Path) -> None:
+def draw(rs: list[dict], band: float, out: Path, title: str | None = None) -> None:
     fig, ax = plt.subplots(figsize=(9.0, 0.62 * len(rs) + 1.6), dpi=150)
     ax.axvspan(-0.02, band, color="#f0f0f0", zorder=0)
     ax.text(band / 2, -0.75, f"band: a side whose better rate\nstays below {band:g} (upper bound)\nmakes the game trivial\n"
@@ -87,7 +90,7 @@ def draw(rs: list[dict], band: float, out: Path) -> None:
                plt.Line2D([], [], color=STRIKE_COLOUR, linewidth=3, label="Strike team"),
                plt.Line2D([], [], color=GUARD_COLOUR, linewidth=3, label="Guard team")]
     ax.legend(handles=handles, loc="upper center", bbox_to_anchor=(0.5, -0.16), ncol=5, fontsize=7, frameon=False)
-    ax.set_title("L0.12 Best-response test: trained exploiter v best script v untrained, per rule variant and side\n"
+    ax.set_title((title or "L0.12 Best-response test") + ": trained exploiter v best script v untrained, per rule variant and side\n"
                  "training simulator, tier 1, 3v3; observed in the training simulator, not a flight", fontsize=9,
                  color=INK)
     fig.tight_layout()
@@ -98,14 +101,22 @@ def draw(rs: list[dict], band: float, out: Path) -> None:
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    ap.add_argument("--verdict", type=Path, required=True)
-    ap.add_argument("--aborted", default="", help="comma list of ABORTED run folders: their best script only")
+    ap.add_argument("--verdict", type=Path, required=True, action="append", help="a verdict.json; repeat to compare")
+    ap.add_argument("--aborted", default="", help="comma list of ABORTED run folders, each as <folder>[=<T number>]: "
+                    "their best script only")
+    ap.add_argument("--title", default=None)
     ap.add_argument("--out", type=Path, required=True)
     a = ap.parse_args(argv)
-    verdict = json.loads(a.verdict.read_text())
-    aborted = [json.loads((Path(d.strip()) / "results.json").read_text()) for d in a.aborted.split(",") if d.strip()]
+    verdicts = [json.loads(v.read_text()) for v in a.verdict]
+    if len({v["band"] for v in verdicts}) != 1:
+        raise SystemExit("refused: the verdicts have different bands")
+    verdict = {"band": verdicts[0]["band"], "variants": {k: e for v in verdicts for k, e in v["variants"].items()}}
+    aborted = []
+    for item in (x.strip() for x in a.aborted.split(",") if x.strip()):
+        folder, _, number = item.partition("=")
+        aborted.append({**json.loads((Path(folder) / "results.json").read_text()), "record": number or "T47"})
     rs = rows(verdict, aborted)
-    draw(rs, verdict["band"], a.out)
+    draw(rs, verdict["band"], a.out, a.title)
     print(f"wrote {a.out} ({len(rs)} rows)")
     return 0
 

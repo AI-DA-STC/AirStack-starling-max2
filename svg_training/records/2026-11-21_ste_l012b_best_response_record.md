@@ -38,7 +38,7 @@ Tier 1 Starling layer: `params/real_exploratory_v0.toml` (fitted PX4 response, e
 
 ## Machine
 
-- tag_1p15 guard: jeremychia-Legion-Pro-7-16IAX10H, NVIDIA GeForce RTX 5070 Ti Laptop GPU, torch 2.7.0+cu128; exit 0 (DONE); effective 1877 s of 0.85 h; job l012b_tag_1p15_guard (task L0.12), asked 0.85 GPU-h, used 0.523 GPU-h (shared ledger)
+- tag_1p15 guard: jeremychia-Legion-Pro-7-16IAX10H, NVIDIA GeForce RTX 5070 Ti Laptop GPU, torch 2.7.0+cu128; exit 0 (DONE); effective 1881 s of 0.85 h (results.json's 1,877 s was written before the final batch); job l012b_tag_1p15_guard (task L0.12), asked 0.85 GPU-h, used 0.523 GPU-h (shared ledger)
 
 ## Games at once and steps per second
 
@@ -87,14 +87,17 @@ Unchosen tags of the trained exploiter (INFO; pushed together = on the tag's tic
 - **(a) Why 1.15 m.** The owner's realism question: a tag the drones can really make. 1.15 m is the safety filter's
   1.10 m keep-out plus 0.05 m ("touching the bubble"), the same rule in the simulator and on the drones.
 - **(b) Unchosen tags.** In the screen ([record T50](2026-11-21_ste_l012b_screen_record.md)) "pushed together" is 0–10 %
-  per tag 1.15 m cell and 0 % for g* v s*; "filter active" is about 100 % at 1.15 m because the filter brakes nearly every close
-  approach (an upper bound). So nearly every tag is one the players chose. For the trained Guard team: 0 of 2,263 tags
+  per tag 1.15 m cell and 0 % for g* v s*; "filter active" is 92–100 % per 1.15 m cell (98.5 % over the group) because the filter brakes
+  nearly every close approach (an upper bound). On the tag's tick, almost no tag is a filter push (pushed together 0–10 % per 1.15 m
+  cell); filter effects on earlier ticks are not measured. For the trained Guard team: 0 of 2,263 tags
   pushed together (table above). The screen ran before QC fix 6; QC found 0 of 10,871 pushed tags lacking the flag, so
   the shares stand.
 - **(c) The ABORTED Strike run** ([record T52](2026-11-21_ste_l012b_tag_1p15_strike_record.md)). The lead sized the
   0.85 h cap from L0.12's tag 1.6 / 1.4 / 1.2 m Strike timings plus 5 %. At 1.15 m a training update took 20.7 s against
   18.4–19.6 s in those runs, the controls batch 106 s against 95 s at most, and the measured final reserve was 664 s
-  against the 640 s assumed: the run stopped at update 86 of 88. Lesson: size caps from timings measured on the same rule
+  against the 640 s assumed (sources: train_s / trained_updates and controls_batch_s in the results.json of
+  `~/AirStack-starling-max2-l12/svg_training/runs/2026-11-21_ste_l012_{base,tag_1p2,tag_1p4}_strike` (not in git);
+  the 640 s is the cap test in `configs/ste_l012b/gates.toml`): the run stopped at update 86 of 88. Lesson: size caps from timings measured on the same rule
   set (the screen's batch times). Not re-run so far: the lead recommends no, and the owner's answer
   is pending (status, "Waiting on you").
 - **(d) Reading for G0 (lead's reading, information; one seed per side, one budget, and the Strike half from ABORTED
@@ -111,7 +114,8 @@ Unchosen tags of the trained exploiter (INFO; pushed together = on the tag's tic
 - **Commit.** The runs name the branch's commits before its rebase on development (same content): db1948d1 is now
   ce81b166.
 
-- Edited after the first write (same session, before any merge; no number changed): scopes, the lead's reading and the owner's pending answer stated plainly.
+- Edited after the first write (same session, before any merge; again after QC: the unchosen-tag sentence limited to
+  the tag's tick, the filter-active range per cell, effective time 1,881 s, the sources of L0.12's timings; no number changed): scopes, the lead's reading and the owner's pending answer stated plainly.
 
 ## Ledger row
 

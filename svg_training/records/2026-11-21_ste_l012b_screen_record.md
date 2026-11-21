@@ -123,8 +123,9 @@ Figures from the run's own results.json by `scripts/make_ste_l011_figures.py`: `
   run in the simulator and on the drones.
 - **Unchosen tags.** "Pushed together" is 0–10 % per tag 1.15 m cell of the screen (highest 225 of 2,378 tags, 0.095, mark-edge
   Guards v flanking Strikes) and 0 % for g* v s* (field Guards v straight Strikes); 1.0 % over the whole tag 1.15 m group
-  (629 of 64,325). (The reference-replay control, T44's 1.6 m cells, runs higher: up to 27 % per cell.) "Filter active" is about 100 % (0.985) at 1.15 m because the filter brakes nearly every close
-  approach; it is an upper bound. So nearly every tag is one the players chose. The screen ran before QC fix 6
+  (629 of 64,325). (The reference-replay control, T44's 1.6 m cells, runs higher: up to 27 % per cell.) "Filter active" is 92–100 % per 1.15 m cell (98.5 % over the group) because the filter brakes
+  nearly every close approach; it is an upper bound. On the tag's tick, almost no tag is a filter push (pushed together 0–10 % per 1.15 m
+  cell); filter effects on earlier ticks are not measured. The screen ran before QC fix 6
   ("pushed together" also needs the filter's own flag on one drone of the pair); QC found 0 of 10,871 pushed tags lacking
   the flag, so the shares stand.
 - **Best cells.** g* = guard_field (645 holds) and s* = strike_straight (355 reaches): the same cells, and the same
@@ -139,7 +140,8 @@ Figures from the run's own results.json by `scripts/make_ste_l011_figures.py`: `
 - **Suspend.** Not suspended: one launch, 717 s effective against a 718 s wall-clock span. GPU-hours 0.200, charged to
   L0.12 (lead ruling Q2).
 
-- Edited after the first write (same session, before any merge; no number changed): scopes, the lead's reading and the owner's pending answer stated plainly.
+- Edited after the first write (same session, before any merge; no number changed; again after QC: the unchosen-tag
+  sentence limited to the tag's tick, the filter-active range per cell): scopes, the lead's reading and the owner's pending answer stated plainly.
 
 ## Confounds stated before the run
 

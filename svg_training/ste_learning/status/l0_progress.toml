@@ -3,7 +3,7 @@
 # state is one of: done, laptop_done, running, queued, not_started. note is optional, one line.
 # Task IDs and names are PLAN.md section 4; the GPU-hour cap of the phase is 19.
 as_of = "2026-11-21"
-gpu_h_used = 1.35
+gpu_h_used = 1.95
 gpu_h_cap = 19.0
 
 [tasks."L0.1"]

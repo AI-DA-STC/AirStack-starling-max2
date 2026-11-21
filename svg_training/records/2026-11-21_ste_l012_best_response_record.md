@@ -119,8 +119,7 @@ Evaluation-only opponents (INFO; script baseline from the T44 reference, same st
 
 - **In short.** Base (tag 1.6 m) and tag 1.4 m read **worth learning** on both sides: the trained Strike team gains
   +0.444 (base) and +0.412 (tag 1.4 m) over the best scripted player, the trained Guard team +0.105 and +0.075; all four
-  gains are real (Wilson intervals apart). Tag 1.2 m is **incomplete: one side only**. Every category here is already
-  set by T44's scripts alone (the writer's words "set by T44's scripts"); the trained exploiters add the gains. Figure (trained, best script and
+  gains are real (Wilson intervals apart). Tag 1.2 m is **incomplete: one side only**. Figure (trained, best script and
   untrained per variant and side): [best_response.png](../docs/figures/ste_l012/best_response.png). Clips (2-D with the
   height panel): [docs/media/ste_l012](../docs/media/ste_l012/README.md).
 - **(a) Tag 1.2 m.** The scripts alone already sit above the 0.2 band on both sides (Guard team holds 645 of 1,000,
@@ -136,7 +135,8 @@ Evaluation-only opponents (INFO; script baseline from the T44 reference, same st
   nothing).
 - **(c) Guards left in holds stay about 0 for trained Guards**: no Guard is left in any hold of a trained Guard team
   (0.000 in each variant); in holds against a trained Strike team 0.104 Guards on average at base and 0.004 at tag
-  1.4 m. Holds are still one-for-one trades; this bears on finding L011-G0 (what a tag costs).
+  1.4 m: at base 327 of the 364 holds leave no Guard and 37 ran to the 120 s clock (tag 1.4 m: 259 and 1 of 260).
+  Holds are still one-for-one trades; this bears on finding L011-G0 (what a tag costs).
 - **(d) Run 0 is the learner positive control** (QC N-1): PASS at its first read (update 10: 478 of 1,000 reaches
   against Guards parked at the centre; threshold 416 = scripted 466 less 0.05), so the Strike runs were launched.
 - **(e) ENDED_EARLY.** Every `ENDED_EARLY` flag from the waiter came from the lead's `--min-s 1800`, set above the real
@@ -151,6 +151,10 @@ Evaluation-only opponents (INFO; script baseline from the T44 reference, same st
 - **Writer fixes before this record was written** (same branch, test first, `tests/test_ste_l012_record.py`): the
   ledger row in LEDGER.md's seven columns (date = the first launch), rounded numbers, "-" for a missing side instead of
   nan, and "run 0, above" in the probe note. No number changed.
+- **Figure** made by `scripts/make_ste_l012_figures.py` from `runs/2026-11-21_ste_l012_verdict/verdict.json` (the
+  ABORTED side from its run's results.json: best script only).
+- Edited after the first write (same session, before any push): one sentence of the lead's notes removed (it
+  overstated where the categories come from), the hold split in (c) and the figure line added; no number changed.
 
 ## Ledger row
 

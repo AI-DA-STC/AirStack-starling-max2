@@ -28,6 +28,8 @@ def fake_t44(tmp_path, games=5, variants=("base", "tag_1p2"), break_start=False)
     starts = rng.normal(size=(games, 6, 3)).astype(np.float32)
     sha = hashlib.sha256(np.ascontiguousarray(starts).tobytes()).hexdigest()
     (run / "gates.sha256").write_text("ab" * 32 + "\n")
+    (run / "exit_code").write_text("0\n")                        # a finished job, every control PASS (L0.12b QC 1)
+    (run / "controls.json").write_text(json.dumps({"paired_starts": {"status": "PASS", "detail": ""}}))
     for v_i, v in enumerate(variants):
         cells = [[g, s] for g in G for s in S]
         n = games * len(cells)

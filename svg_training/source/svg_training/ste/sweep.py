@@ -410,7 +410,8 @@ class SweepGame(SvgGame):
         safety filter corrected either drone of the pair on this tick (``corrected``: the filter's own flag,
         |safe - nominal velocity| > 1e-3 m/s, ``core/safety_filter.py``), and whether the filter's correction pushed the
         pair together on this tick: its relative correction along the Guard-to-Strike line, (dv_strike - dv_guard) . u,
-        below -PUSH_FLOOR_MPS, so the pair closed faster than the players' own commands would have closed it. The
+        below -PUSH_FLOOR_MPS, so the pair closed faster than the players' own commands would have closed it, with the
+        filter's own flag on for one drone of the pair (so pushed together implies filter active, L0.12b QC 6). The
         correction is the commander's velocity setpoint change on this tick; the drones answer it through the PX4
         response lag, so a push of earlier ticks that carries a drone into the tag is not counted (the share reads the
         tag's own tick)."""
@@ -428,7 +429,8 @@ class SweepGame(SvgGame):
         else:
             u = torch.nn.functional.normalize(pos_m[:, g:] - g_pos, dim=-1)          # Guard -> Strike, [N, S, 3]
             g_corr = torch.gather(corr[:, :g], 1, idx[..., None].expand(-1, -1, corr.shape[-1]))
-            pushed = ((corr[:, g:] - g_corr).to(u.dtype) * u).sum(dim=-1) < -PUSH_FLOOR_MPS
+            closing = ((corr[:, g:] - g_corr).to(u.dtype) * u).sum(dim=-1) < -PUSH_FLOOR_MPS
+            pushed = closing & filtered          # the filter's own flag on the pair too: pushed implies filter active
         self._tick_tag = (s_partner >= 0, dist, filtered, pushed)
         return tagged, alive_after
 

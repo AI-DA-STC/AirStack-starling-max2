@@ -8,7 +8,9 @@ reproduce its start draw, so L0.12 replays T44's OWN starts: this script copies 
 the first variant, 1,000 games) and the per-game results of every cell of the named variants (``ste/exploit.PER_GAME``)
 into one compressed file, with T44's gate sha256 and seed. It refuses (exit 2, nothing written) when a variant is missing
 or when any cell of the named variants started from other positions (they must share one start set: T44's
-``paired_starts`` control). The L0.12 gate file pins the file's sha256 and the start sha256."""
+``paired_starts`` control). It also refuses (L0.12b, QC 1) a run folder whose job did not exit 0 (``exit_code``, written
+by scripts/ste_job.py) or whose ``controls.json`` holds a control that is not PASS: a reference comes from a finished,
+readable run only. The L0.12 gate file pins the file's sha256 and the start sha256."""
 from __future__ import annotations
 
 import argparse
@@ -27,6 +29,17 @@ from svg_training.ste import exploit  # noqa: E402
 DEFAULT_VARIANTS = "base,tag_1p2,tag_1p4"
 
 
+def unreadable(run: Path) -> str | None:
+    """Why a run folder may not give a reference (its job did not exit 0, or a control is not PASS), or None."""
+    code = (run / "exit_code").read_text().strip() if (run / "exit_code").is_file() else None
+    if code != "0":
+        return f"{run}: the job's exit_code is {code!r}, not 0 (launch through scripts/ste_job.py; a finished run only)"
+    if not (run / "controls.json").is_file():
+        return f"{run}: no controls.json"
+    bad = {k: v["status"] for k, v in json.loads((run / "controls.json").read_text()).items() if v["status"] != "PASS"}
+    return f"{run}: control(s) not PASS: {bad}" if bad else None
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--t44", type=Path, required=True, help="T44's run folder (cells/*.json and *.npz; read only)")
@@ -34,6 +47,10 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--variants", default=DEFAULT_VARIANTS)
     a = ap.parse_args(argv)
     variants = [v.strip() for v in a.variants.split(",") if v.strip()]
+    problem = unreadable(a.t44)
+    if problem:
+        print(f"refused: {problem}", file=sys.stderr)
+        return 2
     starts = miss = None
     sha = None
     cells: dict = {}

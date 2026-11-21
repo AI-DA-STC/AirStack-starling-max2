@@ -12,12 +12,15 @@
 # FILL AFTER THE SCREEN (the only edits allowed before run 0; the driver refuses until they are right):
 #   1. build the reference from the screen's run folder (read only):
 #        scripts/ste_l012_reference.py --t44 runs/<screen run> --out configs/ste_l012b/screen_reference.npz --variants tag_1p15
-#      (it refuses unless every cell started from one start set; [reference] start_sha256 below must then match: T44's);
+#      (it refuses unless the screen's job exited 0, every control in its controls.json is PASS and every cell started
+#      from one start set; [reference] start_sha256 below must then match: T44's; the driver also checks that the
+#      reference was made under the screen gate file pinned in [reference] t44_gates_sha256: L0.12b QC 1);
 #   2. put its sha256 in [reference] sha256, and the screen's g* and s* (results.md "Shortlist", or
 #      ste/exploit.star_players on the file) in [variants] tag_1p15 g_star / s_star: the driver recomputes them from the
 #      reference by code and refuses a mismatch (exit 2);
 #   3. if s* is a z_up_info script (strike_high, strike_low), add strike_straight to extra_eval_opponents.guard as L0.12
-#      did at tag 1.4 m (evaluation only); then re-hash this file and launch run 0. The values below are placeholders.
+#      did at tag 1.4 m (evaluation only; the gate file refuses to load without it, QC 3); then re-hash this file and
+#      launch run 0. The values below are placeholders.
 #
 # LEAD CALLS 21 Nov 2026 (L0.12b), each made before any run:
 # - Budget: charged to task L0.12 (cap 6.0 GPU-h, 3.37 used): scripts/ste_job.py launch --task L0.12. A new key L0.12b

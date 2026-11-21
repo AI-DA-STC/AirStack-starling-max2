@@ -132,6 +132,36 @@ def test_a_tag_the_filter_did_not_make_is_not_unchosen_and_the_edge_count_reads_
     assert s["tag_edge_m"] == pytest.approx(1.11)
 
 
+def test_a_pushed_tag_stays_recorded_while_the_game_goes_on():
+    """QC 4: the Strike-side push case played on after the tag (one Strike drone left): the first game's tag keeps its
+    pair distance and both flags on every later tick."""
+    _, pg, _ = play_still([[-0.5, 2.5, 1.2], [0.66, 2.5, 1.2], [0.96, 2.5, 1.2]], guards=1, strikes=2, ticks=50)
+    assert pg["tags"].tolist() == [1] and pg["outcome"].tolist() == [RUNNING]   # still running 20 ticks after the tag
+    assert bool(pg["tag_pushed"][0, 0]) and bool(pg["tag_filtered"][0, 0]) and 1.10 < pg["tag_pair_m"][0, 0] < 1.15
+
+
+def test_the_pair_distance_is_to_the_guard_that_made_the_tag():
+    """QC 5: three Guard drones, the tag made by the third: the pair distance is the distance to that Guard."""
+    _, pg, s = play_still([[-2.5, -2.5, 1.2], [2.5, -2.5, 1.2], [-0.5, 2.5, 1.2], [0.64, 2.5, 1.2]], guards=3, strikes=1)
+    assert pg["tags"].tolist() == [1] and pg["tag_pair_m"][0, 0] == pytest.approx(1.14, abs=1e-5)
+    assert not bool(pg["tag_pushed"][0, 0]) and not bool(pg["tag_filtered"][0, 0])
+
+
+def test_pushed_together_needs_the_filters_own_flag_on_the_pair():
+    """QC 6: a correction that would close the pair counts as pushed together only when the filter's own flag is on
+    for one drone of the pair, so the filter-active share can never sit below the pushed-together share."""
+    cfg = cfg_of(TAG_FILE)
+    s = torch.tensor([[[-0.5, 2.5, 1.2], [0.64, 2.5, 1.2]]])
+    game = sweep.SweepGame(cfg, 1, 1, 1, 1, "cpu", 5, fixed_starts=(s, torch.zeros(1, dtype=torch.bool)))
+    game.reset()
+    chain = game._starling.model.chain
+    chain.correction = torch.tensor([[[0.2, 0.0, 0.0], [-0.2, 0.0, 0.0]]])      # Guard +x, Strike -x: closes the pair
+    alive = torch.ones(1, 2, dtype=torch.bool)
+    for flags, want in (([False, False], False), ([True, False], True), ([False, True], True)):
+        game._study_tags(game.pos_m, alive, torch.tensor([flags]))
+        assert bool(game._tick_tag[3][0, 0]) is want, flags
+
+
 def test_no_tag_records_nothing():
     _, pg, s = play_still([[-0.5, 2.5, 1.2], [0.7, 2.5, 1.2]], guards=1, strikes=1, ticks=20)
     assert pg["tags"].tolist() == [0] and math.isinf(pg["tag_pair_m"][0, 0]) and not pg["tag_filtered"].any()
@@ -379,20 +409,33 @@ def test_88_updates_fit_the_085_h_cap_with_the_worst_strike_timing_and_the_final
 
 
 # ------------------------------------------------------------------------------------------------ end to end (CPU)
-def test_screen_to_reference_to_a_guard_run_and_its_record(screen_run, tmp_path, monkeypatch):
-    """The screen's run folder -> the reference builder -> the runs' gate file filled (CPU sizes) -> a Guard run whose
-    results carry the unchosen-tag shares -> verdict -> record."""
-    code, out = screen_run
-    assert code == EXIT_DONE
+def finished_copy(out: Path, dest: Path, exit_code: str | None = "0") -> Path:
+    """A copy of the screen fixture's run folder as scripts/ste_job.py leaves a finished job: its exit_code written."""
+    import shutil
+    shutil.copytree(out, dest)
+    if exit_code is not None:
+        (dest / "exit_code").write_text(exit_code + "\n")
+    return dest
+
+
+def filled_gates(tmp_path: Path, out: Path, stars: tuple | None = None) -> tuple[Path, "exploit.Reference"]:
+    """The runs' gate file filled from a (CPU) screen run as the gate's FILL steps say, at CPU sizes: the reference built
+    by scripts/ste_l012_reference.py, its sha256, start sha256 and screen gate sha256, g* and s* (or ``stars``), and
+    strike_straight as an evaluation-only opponent when s* is a z_up_info script (FILL step 3)."""
+    screen_dir = finished_copy(out, tmp_path / "screen")
     ref_path = tmp_path / "screen_reference.npz"
-    assert ref_script.main(["--t44", str(out), "--out", str(ref_path), "--variants", "tag_1p15"]) == 0
+    assert ref_script.main(["--t44", str(screen_dir), "--out", str(ref_path), "--variants", "tag_1p15"]) == 0
     ref = exploit.load_reference(ref_path)
     players = exploit.load_gates(GATES).players
-    g_star, s_star = exploit.star_players(ref, "tag_1p15", players)
+    g_star, s_star = stars or exploit.star_players(ref, "tag_1p15", players)
     text = GATES.read_text()                       # filled or not: the fill fields are set by pattern
-    text = set_line(set_line(set_line(text, "file", str(ref_path)), "sha256", exploit.sha256_file(ref_path)),
-                    "start_sha256", ref.start_sha256)
+    text = set_line(set_line(set_line(set_line(text, "file", str(ref_path)), "sha256", exploit.sha256_file(ref_path)),
+                             "start_sha256", ref.start_sha256), "t44_gates_sha256", ref.meta["t44_gates_sha256"])
+    extra = '["strike_straight"]' if s_star in players["z_up_info"] else "[]"
     text, n = re.subn(r'g_star = "[^"]*", s_star = "[^"]*"', f'g_star = "{g_star}", s_star = "{s_star}"', text, count=1)
+    assert n == 1
+    text, n = re.subn(r"extra_eval_opponents = \{ strike = \[\], guard = \[[^\]]*\] \}",
+                      f"extra_eval_opponents = {{ strike = [], guard = {extra} }}", text, count=1)
     assert n == 1
     for old, new in {'device = "cuda"': 'device = "cpu"', "eval_games = 1000": "eval_games = 4",
                      "ticks_cap = 2400": "ticks_cap = 40", "curve_games = 256": "curve_games = 2",
@@ -404,6 +447,71 @@ def test_screen_to_reference_to_a_guard_run_and_its_record(screen_run, tmp_path,
         text = text.replace(old, new, 1)
     gates = tmp_path / "gates.toml"
     gates.write_text(text)
+    return gates, ref
+
+
+def guard_run(gates: Path, tmp_path: Path, run: str = "guard") -> int:
+    pj = tmp_path / "pilot.json"
+    pj.write_text(json.dumps({"strike_recipe": {"side_overrides_strike": {"shaping_weight": 1.0}}}))
+    return driver.main(["--gates", str(gates), "--variant", "tag_1p15", "--side", "guard", "--run-dir",
+                        str(tmp_path / run), "--cap-h", "1", "--no-videos", "--pilot-json", str(pj)])
+
+
+def test_the_reference_builder_refuses_a_screen_that_did_not_finish_with_every_control_passing(screen_run, tmp_path,
+                                                                                               capsys):
+    """QC 1: the reference is built only from a screen run whose job exited 0 and whose controls all read PASS."""
+    code, out = screen_run
+    assert code == EXIT_DONE
+    for name, exit_code in (("no_exit", None), ("exit_3", "3")):
+        d = finished_copy(out, tmp_path / name, exit_code)
+        assert ref_script.main(["--t44", str(d), "--out", str(tmp_path / f"{name}.npz"), "--variants", "tag_1p15"]) == 2
+        assert not (tmp_path / f"{name}.npz").exists()
+    d = finished_copy(out, tmp_path / "control_fail")
+    controls = json.loads((d / "controls.json").read_text())
+    controls["ctl_reference_replay"]["status"] = "FAIL"
+    (d / "controls.json").write_text(json.dumps(controls))
+    assert ref_script.main(["--t44", str(d), "--out", str(tmp_path / "f.npz"), "--variants", "tag_1p15"]) == 2
+    assert "ctl_reference_replay" in capsys.readouterr().err and not (tmp_path / "f.npz").exists()
+
+
+def test_the_runs_refuse_a_reference_whose_screen_gate_or_stars_differ_from_the_gate_file(screen_run, tmp_path, capsys):
+    """QC 1 and 2: preflight compares the reference's screen gate sha256 with [reference] t44_gates_sha256, and
+    recomputes g*, s* from the reference and refuses names that differ."""
+    code, out = screen_run
+    assert code == EXIT_DONE
+    gates, ref = filled_gates(tmp_path / "a", out)
+    other = set_line(gates.read_text(), "t44_gates_sha256", "0" * 64)
+    (tmp_path / "other.toml").write_text(other)
+    assert guard_run(tmp_path / "other.toml", tmp_path / "a", "r1") == EXIT_REFUSED
+    assert "t44_gates_sha256" in capsys.readouterr().err
+    g, s = exploit.star_players(ref, "tag_1p15", exploit.load_gates(GATES).players)
+    wrong = next(x for x in exploit.load_gates(GATES).players["guards"] if x != g)
+    gates_b, _ = filled_gates(tmp_path / "b", out, stars=(wrong, s))
+    assert guard_run(gates_b, tmp_path / "b") == EXIT_REFUSED
+    assert "g*, s* from the reference" in capsys.readouterr().err
+
+
+def test_a_z_up_s_star_needs_strike_straight_as_an_evaluation_only_opponent(tmp_path):
+    """QC 3 (FILL step 3): s* strike_low or strike_high without strike_straight in extra_eval_opponents.guard is refused
+    when the gate file loads; with it, the file loads."""
+    text = re.sub(r'g_star = "[^"]*", s_star = "[^"]*"', 'g_star = "guard_mirror", s_star = "strike_low"',
+                  GATES.read_text(), count=1)
+    (tmp_path / "bad.toml").write_text(text)
+    with pytest.raises(ValueError, match="strike_straight"):
+        exploit.load_gates(tmp_path / "bad.toml")
+    good = re.sub(r"extra_eval_opponents = \{ strike = \[\], guard = \[[^\]]*\] \}",
+                  'extra_eval_opponents = { strike = [], guard = ["strike_straight"] }', text, count=1)
+    (tmp_path / "good.toml").write_text(good)
+    assert exploit.load_gates(tmp_path / "good.toml").variants["tag_1p15"]["s_star"] == "strike_low"
+    exploit.load_gates(L012_GATES)                                              # L0.12's tag 1.4 m entry still loads
+
+
+def test_screen_to_reference_to_a_guard_run_and_its_record(screen_run, tmp_path, monkeypatch):
+    """The screen's run folder -> the reference builder -> the runs' gate file filled (CPU sizes) -> a Guard run whose
+    results carry the unchosen-tag shares -> verdict -> record."""
+    code, out = screen_run
+    assert code == EXIT_DONE
+    gates, ref = filled_gates(tmp_path, out)
     pj = tmp_path / "pilot.json"
     pj.write_text(json.dumps({"strike_recipe": {"side_overrides_strike": {"shaping_weight": 1.0}}}))
     run_dir = tmp_path / "guard"

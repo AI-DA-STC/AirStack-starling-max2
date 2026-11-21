@@ -260,7 +260,8 @@ def test_the_smoke_gate_file_differs_from_the_real_one_only_in_sizes():
 def test_the_strike_fallback_is_pre_registered_and_is_the_only_recipe_change(gates):
     assert gates.trainer["strike_fallback"] == {"shaping_weight": 1.0}
     assert gates.trainer["strike_fallback_label"] == "shaped Strike recipe"
-    assert gates.verdict["strike_no_signal"] == "the T41 recipe gives the Strike no learning signal in this game"
+    assert gates.verdict["strike_not_launched"].startswith("run 0 FAIL: the trainer did not learn the easy Strike task")
+    assert "strike_no_signal" not in gates.verdict                  # LEAD CALL 21 Nov 2026 (QC N-1): no game claim
     probes = [{k: v for k, v in p.items()} for p in gates.pilot["probes"]]
     assert probes == [{"side": "strike"}, {"side": "strike", "opponent": "guard_parked_centre"},
                       {"side": "strike", "shaping_weight": 1.0},
@@ -283,8 +284,10 @@ def test_the_strike_recipe_decision_follows_the_pilot_probes_against_g_star_only
     d = exploit.strike_recipe(gates, probes([0, 0], [5, 9], [0, 3], [0, 0]))      # a parked reach does not decide
     assert d["recipe"] == exploit.RECIPE_SHAPED and d["side_overrides_strike"] == {"shaping_weight": 1.0}
     assert d["bare_reaches"] == 0 and d["bare_reaches_parked_info"] == 14
-    d = exploit.strike_recipe(gates, probes([0, 0], [4, 4], [0, 0], [7, 7]))
-    assert d["recipe"] == exploit.RECIPE_NOT_LAUNCHED and d["side_overrides_strike"] is None
+    d = exploit.strike_recipe(gates, probes([0, 0], [4, 4], [0, 0], [7, 7]))      # LEAD CALL (QC N-1): no branch 3
+    assert d["recipe"] == exploit.RECIPE_SHAPED and d["side_overrides_strike"] == {"shaping_weight": 1.0}
+    assert d["by_default"] is True and "run 0 decides" in d["note"]
+    assert exploit.strike_recipe(gates, probes([0, 0], [0, 0], [0, 3], [0, 0]))["by_default"] is False
     with pytest.raises(ValueError, match="against g"):
         exploit.strike_recipe(gates, [probe(False, [1], True), probe(True, [1])])
 
@@ -312,9 +315,10 @@ def test_a_learned_exploiter_without_a_real_gain_reads_weak(gates):
 def test_the_learner_positive_control_rule(gates):
     """QC I-1(b), LEAD CALL 21 Nov 2026: the parked-Guard probe's trained Strike reaches at least the scripted
     strike_straight's rate against the parked Guard on the same starts minus 0.05 (point estimates)."""
-    lc = gates.pilot["learner_control"]
-    assert lc == {"opponent": "guard_parked_centre", "script": "strike_straight", "margin": 0.05,
-                  "game_steps_fraction": 0.1, "game_steps_if_unfilled": 25_000_000, "cap_gpu_h": 0.15}
+    lc = gates.run0
+    assert lc == {"variant": "base", "opponent": "guard_parked_centre", "script": "strike_straight", "margin": 0.05,
+                  "train_seed": 120001}
+    assert "learner_control" not in gates.pilot                    # LEAD CALL 21 Nov 2026 (QC N-1): out of the pilot
     assert exploit.learner_control((417, 1000), (466, 1000), lc["margin"])["pass"] is True
     assert exploit.learner_control((415, 1000), (466, 1000), lc["margin"])["pass"] is False
     assert exploit.learner_control((0, 0), (466, 1000), lc["margin"])["pass"] is False
@@ -342,43 +346,61 @@ def test_the_final_reserve_is_measured_and_floored(gates):
 
 
 # ------------------------------------------------------------------------------------------------ lead's items after round 1
-def test_the_learner_control_probe_budget_is_pre_registered(gates):
-    """LEAD CALL: ONE longer probe after the recipe is chosen: 10 % of game_steps_per_run as filled, else a fixed 25 M
-    game-steps, capped at 0.15 GPU-h of effective time."""
-    unfilled = exploit.learner_control_budget(gates)
-    assert gates.trainer["game_steps_per_run"] == 0
-    assert unfilled["game_steps"] == 25_000_000 and unfilled["cap_s"] == 0.15 * 3600
-    filled = exploit.learner_control_budget(gates.__class__(**{**gates.__dict__,
-                                                               "trainer": dict(gates.trainer, game_steps_per_run=300_000_000)}))
-    assert filled["game_steps"] == 30_000_000
+def test_run_0_has_the_budget_of_a_run_of_record_and_pre_listed_checkpoints(gates):
+    """LEAD CALL 21 Nov 2026 (QC N-1): run 0 trains for [trainer] game_steps_per_run (as filled from the pilot), read at
+    every curve_every_updates updates and at the budget's last update; the run may stop at the first read that passes."""
+    assert exploit.run0_checkpoints(25, 10) == [10, 20, 25]
+    assert exploit.run0_checkpoints(30, 10) == [10, 20, 30]
+    assert exploit.run0_checkpoints(3, 10) == [3]
+    assert gates.run0["train_seed"] not in (gates.run["curve_seed"], gates.run["clip_seed"], 110000)
+    assert gates.run0["train_seed"] not in [s for v in gates.variants.values() for s in v["train_seed"].values()]
+    text = exploit.GATES_FILE.read_text()
+    for call in ("LEAD CALL 21 Nov 2026 (QC N-1)", "LEAD CALL 21 Nov 2026 (QC N-2)", "LEAD CALL 21 Nov 2026 (QC N-3)",
+                 "LEAD CALL 21 Nov 2026 (QC N-4)"):
+        assert call in text, call
+    assert "the ledger records the real hours" in text                           # N-3, documented, no code change
 
 
-def test_the_learner_control_reads_only_on_the_long_probe_and_a_capped_probe_is_inconclusive():
-    ok = exploit.learner_control((430, 1000), (466, 1000), 0.05)
-    assert exploit.learner_control_status(ok, reached_budget=True) == "PASS"
-    assert exploit.learner_control_status(ok, reached_budget=False) == "INCONCLUSIVE"
+def test_run_0_reads_pass_at_the_first_passing_checkpoint_fail_at_budget_inconclusive_at_the_cap():
+    good = exploit.learner_control((430, 1000), (466, 1000), 0.05)
     bad = exploit.learner_control((100, 1000), (466, 1000), 0.05)
-    assert exploit.learner_control_status(bad, reached_budget=True) == "FAIL"
+    assert exploit.run0_status([bad, good], budget_reached=False) == "PASS"       # a pass at a checkpoint stands
+    assert exploit.run0_status([bad, bad], budget_reached=True) == "FAIL"
+    assert exploit.run0_status([bad], budget_reached=False) == "INCONCLUSIVE"
+    assert exploit.run0_status([], budget_reached=False) == "INCONCLUSIVE"
+    assert exploit.run0_cells(exploit.load_gates()) == [("guard_parked_centre", exploit.EXPLOITER),
+                                                        ("guard_parked_centre", exploit.ZERO),
+                                                        ("guard_parked_centre", "strike_straight")]
 
 
-def _pilot(recipe, overrides, status):
-    return {"strike_recipe": {"recipe": recipe, "side_overrides_strike": overrides},
-            "learner_control": {"status": status}}
+def _pilot(recipe, overrides):
+    return {"strike_recipe": {"recipe": recipe, "side_overrides_strike": overrides}}
 
 
-def test_runs_and_the_verdict_are_tied_to_the_pilot(gates):
-    """M-4 (LEAD CALL): a run of record names the pilot it follows. Refused when the learner control is not PASS (unless
-    the lead's decision is given), when the Strike recipe of the gate differs from the pilot's, or for a Strike run the
-    pilot said not to launch; --strike-not-launched only when the pilot said so."""
-    ok = _pilot(exploit.RECIPE_BARE, {}, "PASS")
-    assert exploit.pilot_problem(gates, ok, "strike") is None and exploit.pilot_problem(gates, ok, "guard") is None
-    assert "learner control" in exploit.pilot_problem(gates, _pilot(exploit.RECIPE_BARE, {}, "FAIL"), "guard")
-    assert exploit.pilot_problem(gates, _pilot(exploit.RECIPE_BARE, {}, "INCONCLUSIVE"), "guard",
-                                 accepted="lead decided 21 Nov: probe too short, go") is None
-    shaped = _pilot(exploit.RECIPE_SHAPED, {"shaping_weight": 1.0}, "PASS")
-    assert "side_overrides" in exploit.pilot_problem(gates, shaped, "strike")       # the gate still says {}
-    assert exploit.pilot_problem(gates, shaped, "guard") is None                    # the Guard recipe does not depend on it
-    gone = _pilot(exploit.RECIPE_NOT_LAUNCHED, None, "PASS")
-    assert "not launched" in exploit.pilot_problem(gates, gone, "strike")
-    assert exploit.strike_not_launched_problem(gone) is None
-    assert "not" in exploit.strike_not_launched_problem(ok)
+def _run0(gates, status="PASS", cap_h=1.0, sha=None):
+    return {"status": status, "complete": True, "gates_sha256": sha or gates.sha256, "cap_h": cap_h}
+
+
+def test_strike_runs_need_run_0_pass_and_guard_runs_do_not(gates):
+    """LEAD CALL 21 Nov 2026 (QC N-1): a Strike run of record needs run 0 = PASS under the same gate file and the same
+    cap (unless the lead's decision is given); a Guard run does not depend on run 0; the Strike recipe of the gate must
+    equal the pilot's; --strike-not-launched needs run 0 = FAIL."""
+    ok = _pilot(exploit.RECIPE_BARE, {})
+    assert exploit.pilot_problem(gates, ok, "guard") is None                      # no run 0 needed
+    assert exploit.pilot_problem(gates, ok, "strike", run0=_run0(gates), cap_h=1.0) is None
+    assert "run 0" in exploit.pilot_problem(gates, ok, "strike", cap_h=1.0)
+    for status in ("FAIL", "INCONCLUSIVE"):
+        assert status in exploit.pilot_problem(gates, ok, "strike", run0=_run0(gates, status), cap_h=1.0)
+        assert exploit.pilot_problem(gates, ok, "strike", run0=_run0(gates, status), cap_h=1.0,
+                                     accepted="lead, 21 Nov: go") is None
+    assert "gate" in exploit.pilot_problem(gates, ok, "strike", run0=_run0(gates, sha="0" * 64), cap_h=1.0)
+    assert "cap" in exploit.pilot_problem(gates, ok, "strike", run0=_run0(gates, cap_h=0.75), cap_h=1.0)
+    assert "complete" in exploit.pilot_problem(gates, ok, "strike", run0={**_run0(gates), "complete": False}, cap_h=1.0)
+    shaped = _pilot(exploit.RECIPE_SHAPED, {"shaping_weight": 1.0})
+    assert "side_overrides" in exploit.pilot_problem(gates, shaped, "strike", run0=_run0(gates), cap_h=1.0)
+    assert exploit.pilot_problem(gates, shaped, "guard") is None
+    assert "side_overrides" in exploit.recipe_problem(gates, shaped)             # run 0 trains the gate's recipe too
+    assert exploit.strike_not_launched_problem(gates, _run0(gates, "FAIL")) is None
+    for status in ("PASS", "INCONCLUSIVE"):
+        assert status in exploit.strike_not_launched_problem(gates, _run0(gates, status))
+    assert "gate" in exploit.strike_not_launched_problem(gates, _run0(gates, "FAIL", sha="0" * 64))

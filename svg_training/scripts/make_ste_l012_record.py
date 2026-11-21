@@ -37,8 +37,16 @@ RUN_NOTES = ("- **Never suspend the machine during a GPU job** (no closed lid, n
              "trained on (T41's hold let the new game play the old held action).",
              "- **Strike recipe** (LEAD CALL 21 Nov 2026, pre-registered in [trainer] strike_fallback): the T41 recipe "
              "if its pilot probe against g* shows at least one reach; else the shaped Strike recipe (the game's distance "
-             "shaping 1.0, training reward only) if its probe against g* does; else the Strike runs are not launched "
-             "and the Strike side is INCONCLUSIVE. The parked-Guard probes are information only. The recipe of each run is in the tables below.",
+             "shaping 1.0, training reward only), also when neither probe shows a reach (LEAD CALL 21 Nov 2026, QC N-1: "
+             "3-update probes no longer stop the Strike runs). The parked-Guard probes are information only. The recipe "
+             "of each run is in the tables below.",
+             "- **Run 0, the learner positive control** (LEAD CALL 21 Nov 2026, QC N-1; gate [run0]): the Strike recipe "
+             "trained against the parked Guard at the budget and cap of a run of record, read at pre-listed checkpoints "
+             "(reach rate at least scripted strike_straight's on the same starts minus 0.05). Strike runs need run 0 = "
+             "PASS; if it reads FAIL the Strike runs are not launched and the Strike side is INCONCLUSIVE (the trainer "
+             "did not learn the easy Strike task at the run budget). Guard runs do not depend on it.",
+             "- **Hours** (LEAD CALL 21 Nov 2026, QC N-3): nothing kills a run at --gpu-h during its final phase; the "
+             "GPU-hours below are the ledger's real hours.",
              "- **Resume** (by design): networks, optimisers, scalers, counters and the torch random state are restored at "
              "the last update boundary, but the training games restart from the run seed's first starts (the game "
              "generator is not checkpointed), so a resumed run is not identical to an uninterrupted run. Each run's job "
@@ -95,6 +103,16 @@ def record_text(verdict: dict, runs: dict, name: str, number: str | None) -> tup
               f"{(r['game_steps_per_s_median'] or 0):,.0f} game-steps/s; {r['trained_updates']} updates, "
               f"{r['game_steps']:,} game-steps ({r['train_stop']}); evaluation {r['eval_games']} games per cell"
               for k, r in runs.items()]
+    r0 = verdict.get("run0")
+    if r0:
+        reads = ", ".join(f"update {x['update']}: {x['trained']['k']}/{x['trained']['n']}" for x in r0.get("reads") or [])
+        lines += ["", "## Run 0 (learner positive control)", "",
+                  f"Run 0: **{r0['status']}** ({r0.get('train_stop')}); scripted {ci(r0.get('script'))}; reads {reads or '-'} "
+                  f"(`{r0['file']}`, sha256 {r0['sha256'][:12]})."]
+    accepted = [f"{v} {s}: {sr['run0']['learner_control_accepted']}" for v, e in verdict["variants"].items()
+                for s, sr in e["sides"].items() if (sr.get("run0") or {}).get("learner_control_accepted")]
+    if accepted:
+        lines += ["", "Lead's decisions on run 0 (--accept-learner-control): " + "; ".join(accepted) + "."]
     lines += ["", "## Gates", "", f"Verdict: **{word}**.", "", "| Variant | Role | Strike side | Guard side | Better Strike "
               "reach upper | Better Guard hold upper | Category |", "|---|---|---|---|---|---|---|"]
     for v, e in verdict["variants"].items():
@@ -172,10 +190,17 @@ def run_summary(d: Path) -> dict:
         bad = {k: v["status"] for k, v in json.loads((d / "controls.json").read_text()).items() if v["status"] != "PASS"}
         if bad:
             why.append("controls not PASS: " + ", ".join(f"{k} {v}" for k, v in bad.items()))
-    if (d / "exit_code").is_file():
+    code = (d / "exit_code").read_text().strip() if (d / "exit_code").is_file() else None
+    if code is not None and code != "0":
         why.append(f"exit {l011rec.exit_word(d)}")
-    if not (d / "results.json").is_file():
+    res = json.loads((d / "results.json").read_text()) if (d / "results.json").is_file() else None
+    if res is None or res.get("complete") is not True:
         why.append("no complete results.json")
+    elif not why:                              # QC N-4 (LEAD CALL 21 Nov 2026): a cleanly finished run says so
+        exit_text = "exit 0" if code == "0" else "no exit_code file"
+        why.append(f"finished, controls PASS ({exit_text}, results.json complete)")
+    if res is not None and res.get("budget_reached") is not True:     # QC N-2: why no side status is read
+        why.append(f"training stopped before its game-step budget ({res.get('train_stop')})")
     return {"what": what, "ran": ran, "why": "; ".join(why) or "unknown (read job.log)"}
 
 
@@ -219,7 +244,7 @@ def main(argv: list[str] | None = None) -> int:
         probes = ["Strike probes of the pilot (reaches / ended training games per update):", ""]
         probes += [f"- {dict((k, v) for k, v in pr.items() if k not in ('updates', 'learner_control'))}: "
                    + ", ".join(f"{u['reaches']}/{u['ended']}" for u in pr["updates"]) for pr in pj.get("probes", [])]
-        probes += [f"- recipe picked: {pj.get('strike_recipe')}; learner positive control: {pj.get('learner_control')}"]
+        probes += [f"- recipe picked: {pj.get('strike_recipe')} (the learner positive control is run 0, below)"]
         text = text.replace("## Gates", "\n".join(probes) + "\n\n## Gates", 1)
     a.out.parent.mkdir(parents=True, exist_ok=True)
     a.out.write_text(text)

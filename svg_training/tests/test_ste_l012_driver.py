@@ -39,20 +39,34 @@ def scratch_shared(tmp_path, monkeypatch):
     monkeypatch.setenv(shared.LEGACY_LOGS_ENV, "")
 
 
-def pilot_json(folder, recipe=exploit.RECIPE_BARE, overrides=None, status="PASS"):
+def pilot_json(folder, recipe=exploit.RECIPE_BARE, overrides=None):
     """A pilot.json stand-in (the runs of record name the pilot they follow: M-4)."""
-    path = Path(folder) / f"pilot_{status}_{len(recipe)}.json"
+    path = Path(folder) / f"pilot_{len(recipe)}.json"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps({"strike_recipe": {"recipe": recipe, "side_overrides_strike": {} if overrides is None
-                                                  else overrides},
-                                "learner_control": {"status": status}}))
+                                                  else overrides}}))
+    return path
+
+
+def run0_json(folder, status="PASS", gates=SMOKE, cap_h=1.0):
+    """A run 0 learner_control.json stand-in (Strike runs of record name the run 0 they follow: QC N-1)."""
+    path = Path(folder) / f"run0_{status}_{cap_h}.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps({"status": status, "complete": True, "cap_h": cap_h,
+                                "gates_sha256": exploit.load_gates(gates).sha256}))
     return path
 
 
 def run(gates, run_dir, variant="base", side="strike", *extra):
     pj = pilot_json(Path(run_dir).parent)
+    r0 = ["--run0-json", str(run0_json(Path(run_dir).parent, gates=gates))] if side == "strike" else []
     return driver.main(["--gates", str(gates), "--variant", variant, "--side", side, "--run-dir", str(run_dir),
-                        "--cap-h", "1", "--no-videos", "--pilot-json", str(pj), *extra])
+                        "--cap-h", "1", "--no-videos", "--pilot-json", str(pj), *r0, *extra])
+
+
+def run_0(gates, run_dir, *extra):
+    return driver.main(["--run0", "--gates", str(gates), "--run-dir", str(run_dir), "--cap-h", "1", "--no-videos",
+                        "--pilot-json", str(pilot_json(Path(run_dir).parent)), *extra])
 
 
 @pytest.fixture(scope="module")
@@ -156,6 +170,7 @@ def test_the_verdict_over_a_variants_two_runs(two_runs, tmp_path):
                                 exploit.BOTH_BELOW_BAND)
     assert set(base["sides"]) == {"strike", "guard"}
     assert v["controls_pass"] is True
+    assert base["sides"]["strike"]["run0"]["run0_json"] and base["sides"]["guard"]["run0"]["run0_json"] is None
     md = record.main(["--verdict", str(out / "verdict.json"), "--out", str(tmp_path / "rec.md"), "--name", "smoke"])
     assert md == 0
     text = (tmp_path / "rec.md").read_text()
@@ -181,7 +196,7 @@ def test_the_pilot_measures_rates_for_both_sides(tmp_path):
     for side in ("strike", "guard"):                          # the controls on the pilot's device, before any run
         assert p["eval"]["per_side"][side]["controls"]["ctl_reference_replay"]["status"] == "PASS"
     assert [len(pr["updates"]) for pr in p["probes"]] == [2, 2, 2]
-    assert p["learner_control"]["status"] in ("PASS", "FAIL", "INCONCLUSIVE")   # read on the long probe only
+    assert "learner_control" not in p                     # LEAD CALL 21 Nov 2026 (QC N-1): the control is run 0
 
 
 def test_the_video_pick_takes_one_of_each_outcome_by_identity():
@@ -241,12 +256,14 @@ def test_a_tag_1p4_guard_run_scores_strike_straight_evaluation_only(tmp_path):
 
 def test_a_strike_side_not_launched_is_inconclusive_with_the_pre_registered_text(two_runs, tmp_path):
     out = tmp_path / "v"
-    gone = pilot_json(tmp_path / "gone", recipe=exploit.RECIPE_NOT_LAUNCHED, overrides=None)
+    failed = run0_json(tmp_path / "r0", status="FAIL")
     assert driver.main(["verdict", "--gates", str(SMOKE), "--runs", str(two_runs["guard"]), "--strike-not-launched",
-                        "--pilot-json", str(gone), "--out", str(out)]) == 0
-    base = json.loads((out / "verdict.json").read_text())["variants"]["base"]
+                        "--run0-json", str(failed), "--out", str(out)]) == 0
+    v = json.loads((out / "verdict.json").read_text())
+    base = v["variants"]["base"]
     strike = base["sides"]["strike"]
-    assert strike["status"].startswith("INCONCLUSIVE") and "no learning signal" in strike["status"]
+    assert strike["status"].startswith("INCONCLUSIVE") and "did not learn the easy Strike task" in strike["status"]
+    assert v["run0"]["status"] == "FAIL"
     assert strike["better"]["who"] == "script" and strike["run"] is None
     assert base["category"] in (exploit.GUARD_TRIVIAL, exploit.WORTH_LEARNING)
 
@@ -383,6 +400,18 @@ def test_the_final_phase_is_never_cut_by_the_cap(tmp_path, monkeypatch):
     assert "reserve" in res["train_stop"] and res["trained_updates"] == 0
     assert res["final_reserve_s"] >= exploit.load_gates(SMOKE).trainer["final_reserve_s"]
     assert res["controls_batch_s"] > 0
+    # QC N-2 (LEAD CALL 21 Nov 2026): a run that stopped before its game-step budget publishes no side status
+    assert res["budget_reached"] is False
+    md = (r / "results.md").read_text()
+    assert "Learned:" not in md and "before its game-step budget" in md
+    assert driver.main(["verdict", "--gates", str(SMOKE), "--runs", str(r), "--out", str(tmp_path / "v")]) == 2
+    assert not (tmp_path / "v" / "verdict.json").exists()
+    out = tmp_path / "rec.md"
+    assert record.main(["--aborted", "--runs", str(r), "--out", str(out), "--name", "x"]) == 0
+    text = out.read_text()
+    assert "before its game-step budget" in text and "unknown" not in text
+    for word in (exploit.SIDE_INCONCLUSIVE, "INCONCLUSIVE:", "worth learning", "gain over"):
+        assert word not in text, word
 
 
 def test_info_batch_and_curve_are_checked_and_a_nonfinite_action_exits_5(two_runs, tmp_path, monkeypatch):
@@ -422,8 +451,7 @@ def test_the_pilot_writes_as_it_goes_and_records_a_point_that_did_not_fit(tmp_pa
     p = json.loads((r / "pilot.json").read_text())
     assert any(pt.get("did_not_fit") for pt in p["points"])
     assert any(pt.get("game_steps_per_s") for pt in p["points"])
-    lc = p["learner_control"]
-    assert set(lc) >= {"rule", "trained", "script", "pass"}
+    assert "learner_control" not in p
     monkeypatch.setattr(exploit_train.Learner, "update", lambda self: (_ for _ in ()).throw(RuntimeError("crash")))
     r2 = tmp_path / "pilot2"
     with pytest.raises(RuntimeError):
@@ -449,50 +477,162 @@ def test_the_ledger_row_and_record_show_all_side_statuses(two_runs, tmp_path):
 
 
 # ------------------------------------------------------------------------------------------------ lead's items after round 1
-def test_the_pilot_reads_the_learner_control_on_one_longer_probe(tmp_path):
-    """LEAD CALL: after the recipe is chosen, ONE longer probe of that recipe against the parked Guard, for the gate's
-    budget (10 % of game_steps_per_run as filled: 144 game-steps in the smoke gate); the control is read on it only."""
+def test_the_pilot_names_run_0_and_states_that_nothing_kills_the_final_phase(tmp_path):
+    """LEAD CALL 21 Nov 2026 (QC N-1): no learner control in the pilot (run 0 is the control); (QC N-3) pilot.md says
+    nothing kills a run at --gpu-h during its final phase and the ledger records the real hours, and projects the
+    task's hours (pilot + run 0 + six runs) against the L0.12 cap."""
     r = tmp_path / "pilot"
     assert driver.main(["--pilot", "--gates", str(SMOKE), "--run-dir", str(r), "--cap-h", "1"]) == 0
-    lc = json.loads((r / "pilot.json").read_text())["learner_control"]
-    assert lc["status"] in ("PASS", "FAIL") and lc["long_probe"]["game_steps_target"] == 144
-    assert lc["long_probe"]["game_steps"] >= 144 and lc["long_probe"]["reached_budget"] is True
-    assert lc["long_probe"]["opponent"] == "guard_parked_centre"
-    assert "learner_control" not in json.loads((r / "pilot.json").read_text())["probes"][1]   # short probes: INFO only
+    p = json.loads((r / "pilot.json").read_text())
+    assert "learner_control" not in p and p["strike_recipe"]["recipe"] in (exploit.RECIPE_BARE, exploit.RECIPE_SHAPED)
+    md = (r / "pilot.md").read_text()
+    assert "run 0" in md and "the ledger records the real hours" in md
+    plan = p["plan_hours"]
+    assert plan and all(x["total_gpu_h"] == pytest.approx(x["pilot_gpu_h"] + 7 * x["run_cap_h"]) for x in plan)
+    assert all(x["task_cap_gpu_h"] == 6.0 for x in plan)
 
 
-def test_a_learner_control_probe_that_hits_its_cap_is_inconclusive(tmp_path):
-    g = tiny_gates(tmp_path, **{"cap_gpu_h = 0.15": "cap_gpu_h = 0.0000001"})
-    r = tmp_path / "pilot"
-    assert driver.main(["--pilot", "--gates", str(g), "--run-dir", str(r), "--cap-h", "1"]) == 0
-    lc = json.loads((r / "pilot.json").read_text())["learner_control"]
-    assert lc["status"] == "INCONCLUSIVE" and lc["long_probe"]["reached_budget"] is False
-
-
-def test_runs_refuse_a_missing_or_disagreeing_pilot(tmp_path):
+def test_runs_refuse_a_missing_or_disagreeing_pilot_or_run_0(tmp_path):
     base = ["--gates", str(SMOKE), "--variant", "base", "--run-dir"]
+    ok = str(pilot_json(tmp_path / "p"))
     assert driver.main([*base, str(tmp_path / "a"), "--side", "guard", "--cap-h", "1"]) == 2                 # no pilot
-    fail = pilot_json(tmp_path / "f", status="FAIL")
-    assert driver.main([*base, str(tmp_path / "b"), "--side", "guard", "--cap-h", "1", "--pilot-json", str(fail)]) == 2
+    assert driver.main([*base, str(tmp_path / "b"), "--side", "strike", "--cap-h", "1", "--pilot-json", ok]) == 2  # no run 0
+    for i, r0 in enumerate([run0_json(tmp_path / "f", status="FAIL"), run0_json(tmp_path / "i", status="INCONCLUSIVE"),
+                            run0_json(tmp_path / "c", cap_h=0.5)]):
+        assert driver.main([*base, str(tmp_path / f"c{i}"), "--side", "strike", "--cap-h", "1", "--pilot-json", ok,
+                            "--run0-json", str(r0)]) == 2
+    other = tiny_gates(tmp_path, **{"band = 0.2": "band = 0.25"})
+    assert driver.main([*base, str(tmp_path / "d"), "--side", "strike", "--cap-h", "1", "--pilot-json", ok,
+                        "--run0-json", str(run0_json(tmp_path / "o", gates=other))]) == 2         # another gate file
     shaped = pilot_json(tmp_path / "s", recipe=exploit.RECIPE_SHAPED, overrides={"shaping_weight": 1.0})
-    assert driver.main([*base, str(tmp_path / "c"), "--side", "strike", "--cap-h", "1", "--pilot-json", str(shaped)]) == 2
-    gone = pilot_json(tmp_path / "g", recipe=exploit.RECIPE_NOT_LAUNCHED, overrides=None)
-    assert driver.main([*base, str(tmp_path / "d"), "--side", "strike", "--cap-h", "1", "--pilot-json", str(gone)]) == 2
+    assert driver.main([*base, str(tmp_path / "e"), "--side", "strike", "--cap-h", "1", "--pilot-json", str(shaped),
+                        "--run0-json", str(run0_json(tmp_path))]) == 2
+    assert driver.main(["--run0", "--gates", str(SMOKE), "--run-dir", str(tmp_path / "f0"), "--cap-h", "1",
+                        "--pilot-json", str(shaped)]) == 2                    # run 0 trains the gate's Strike recipe too
 
 
-def test_a_lead_decision_on_the_learner_control_is_recorded(tmp_path):
+def test_a_lead_decision_on_run_0_is_recorded(tmp_path):
     r = tmp_path / "run"
-    inc = pilot_json(tmp_path / "i", status="INCONCLUSIVE")
-    assert driver.main(["--gates", str(SMOKE), "--variant", "base", "--side", "guard", "--run-dir", str(r), "--cap-h", "1",
-                        "--no-videos", "--pilot-json", str(inc), "--accept-learner-control", "lead, 21 Nov: go"]) == 0
+    inc = run0_json(tmp_path / "i", status="INCONCLUSIVE")
+    pj = pilot_json(tmp_path)
+    assert driver.main(["--gates", str(SMOKE), "--variant", "base", "--side", "strike", "--run-dir", str(r), "--cap-h",
+                        "1", "--no-videos", "--pilot-json", str(pj), "--run0-json", str(inc),
+                        "--accept-learner-control", "lead, 21 Nov: go"]) == 0
     meta = json.loads((r / "run.json").read_text())
-    assert meta["learner_control_accepted"] == "lead, 21 Nov: go" and meta["pilot_json"] == str(inc)
-    assert meta["pilot_json_sha256"] == exploit.sha256_file(inc)
+    assert meta["learner_control_accepted"] == "lead, 21 Nov: go" and meta["pilot_json"] == str(pj)
+    assert meta["run0_json"] == str(inc) and meta["run0_json_sha256"] == exploit.sha256_file(inc)
 
 
-def test_strike_not_launched_needs_the_pilot_to_say_so(two_runs, tmp_path):
-    ok = pilot_json(tmp_path / "ok")
-    assert driver.main(["verdict", "--gates", str(SMOKE), "--runs", str(two_runs["guard"]), "--strike-not-launched",
-                        "--pilot-json", str(ok), "--out", str(tmp_path / "v")]) == 2
+def test_strike_not_launched_needs_run_0_fail(two_runs, tmp_path):
+    for status in ("PASS", "INCONCLUSIVE"):
+        r0 = run0_json(tmp_path / status, status=status)
+        assert driver.main(["verdict", "--gates", str(SMOKE), "--runs", str(two_runs["guard"]), "--strike-not-launched",
+                            "--run0-json", str(r0), "--out", str(tmp_path / f"v{status}")]) == 2
     assert driver.main(["verdict", "--gates", str(SMOKE), "--runs", str(two_runs["guard"]), "--strike-not-launched",
                         "--out", str(tmp_path / "v2")]) == 2
+    other = run0_json(tmp_path / "o", gates=tiny_gates(tmp_path, **{"band = 0.2": "band = 0.25"}))
+    assert driver.main(["verdict", "--gates", str(SMOKE), "--runs", str(two_runs["guard"]), "--run0-json", str(other),
+                        "--out", str(tmp_path / "v3")]) == 2                 # any --run0-json is checked (gate sha)
+
+
+def test_the_aborted_record_of_a_cleanly_finished_run_says_so(two_runs, tmp_path):
+    """QC N-4 (LEAD CALL 21 Nov 2026): a run that finished (exit 0 or no exit file, results complete, controls PASS) is
+    described as such, never "unknown (read job.log)", and still with no gain, status or category."""
+    import shutil
+    for code in ("0", None):
+        r = tmp_path / f"copy{code}"
+        shutil.copytree(two_runs["guard"], r)
+        if code is not None:
+            (r / "exit_code").write_text(code + "\n")
+        out = tmp_path / f"rec{code}.md"
+        assert record.main(["--aborted", "--runs", str(r), "--out", str(out), "--name", "x"]) == 0
+        text = out.read_text()
+        assert "finished, controls PASS" in text and "unknown" not in text, text
+        for word in ("worth learning", "weak (", "gain over", "INCONCLUSIVE:"):
+            assert word not in text, word
+
+
+# ------------------------------------------------------------------------------------------------ run 0 (QC N-1)
+def _straight_team(monkeypatch):
+    """A known-good stand-in for the trained Strike: untrained (standing) before its first update, then the scripted
+    strike_straight behind the learner's networks (held 0.6 s it reaches the parked Guard on the smoke starts exactly
+    as the script does: 3 of 8)."""
+    from svg_training.opponents.scripted import make_strategy
+    from svg_training.ste import exploit_train
+    g = exploit.load_gates(SMOKE)
+    cfg = exploit.variant_cfg(g, "base")
+    real = exploit_train.Learner.team
+    monkeypatch.setattr(exploit_train.Learner, "team", lambda self: real(self) if self.updates == 0 else
+                        make_strategy("strike_straight", "strike", cfg, int(g.run["eval_games"]), "cpu", 7))
+
+
+def test_run_0_with_a_known_good_strike_passes_at_its_first_checkpoint_and_stops(tmp_path, monkeypatch):
+    _straight_team(monkeypatch)
+    r = tmp_path / "run0"
+    assert run_0(SMOKE, r) == 0
+    lc = json.loads((r / "learner_control.json").read_text())
+    every = exploit.load_gates(SMOKE).trainer["curve_every_updates"]
+    assert lc["status"] == "PASS" and lc["complete"] is True and len(lc["reads"]) == 1
+    assert lc["reads"][0]["update"] == every and lc["updates"] == every < lc["planned_updates"]
+    assert lc["reads"][0]["trained"]["k"] == lc["script"]["k"] == 3 and lc["reads"][0]["trained"]["n"] == 8
+    assert lc["gates_sha256"] == exploit.load_gates(SMOKE).sha256 and lc["cap_h"] == 1.0
+    assert lc["trained_against"] == "GuardParkedCentre"
+    controls = json.loads((r / "controls.json").read_text())
+    assert controls and all(v["status"] == "PASS" for v in controls.values()), controls
+    assert run_0(SMOKE, r) == 0                                              # terminal: the same command changes nothing
+    assert json.loads((r / "learner_control.json").read_text()) == lc
+
+
+def test_run_0_with_a_strike_that_learned_nothing_fails_at_the_full_budget(tmp_path, monkeypatch):
+    """The same harness with the untrained (standing) Strike: 0 of 8 reaches at every pre-listed checkpoint -> FAIL at
+    the full budget (the criterion can fail)."""
+    from svg_training.ste import exploit_train
+    g = exploit.load_gates(SMOKE)
+    monkeypatch.setattr(exploit_train.Learner, "team", lambda self: exploit.LearnerTeam.untrained(
+        "strike", 3, list(g.trainer["hidden"]), "cpu"))
+    r = tmp_path / "run0"
+    assert run_0(SMOKE, r) == 0
+    lc = json.loads((r / "learner_control.json").read_text())
+    assert lc["status"] == "FAIL" and lc["budget_reached"] is True
+    assert [x["update"] for x in lc["reads"]] == exploit.run0_checkpoints(lc["planned_updates"],
+                                                                          g.trainer["curve_every_updates"])
+    assert all(x["trained"]["k"] == 0 and not x["pass"] for x in lc["reads"])
+
+
+def test_run_0_trained_against_the_wrong_opponent_never_passes(tmp_path, monkeypatch):
+    """QC mutation T2 on run 0: the known-good stand-in, but the training game plays g* instead of the parked Guard ->
+    a control FAIL (exit 6), never a PASS."""
+    _straight_team(monkeypatch)
+    real = driver.build_learner
+    monkeypatch.setattr(driver, "build_learner", lambda *a, **k: real(*a, **{**k, "opponent": "guard_mark_edge"}))
+    r = tmp_path / "run0"
+    assert run_0(SMOKE, r) == 6
+    controls = json.loads((r / "controls.json").read_text())
+    assert controls["ctl_trained_against"]["status"] == "FAIL"
+    lc = r / "learner_control.json"
+    assert not lc.exists() or json.loads(lc.read_text())["status"] != "PASS"
+
+
+def test_run_0_with_the_real_tiny_trainer_runs_to_a_status(tmp_path):
+    """A healthy tiny run 0 (the real trainer, smoke sizes) does not crash and ends with a status; checkpoints are the
+    pre-listed ones up to the status."""
+    r = tmp_path / "run0"
+    assert run_0(SMOKE, r) == 0
+    lc = json.loads((r / "learner_control.json").read_text())
+    assert lc["status"] in ("PASS", "FAIL") and lc["reads"] and (r / "agent_final.pt").is_file()
+    assert (r / "train_log.jsonl").is_file() and json.loads((r / "run.json").read_text())["run0"] is True
+
+
+def test_run_0_stopped_at_its_cap_reserve_is_inconclusive(tmp_path, monkeypatch):
+    from svg_training.ste.run_contract import RunGuard
+    real = driver.run0_controls
+
+    def after_controls(*a, **k):
+        out = real(*a, **k)
+        monkeypatch.setattr(RunGuard, "effective_s", lambda self: self.cap_s)
+        return out
+    monkeypatch.setattr(driver, "run0_controls", after_controls)
+    r = tmp_path / "run0"
+    assert run_0(SMOKE, r) == 0
+    lc = json.loads((r / "learner_control.json").read_text())
+    assert lc["status"] == "INCONCLUSIVE" and lc["budget_reached"] is False and "reserve" in lc["train_stop"]

@@ -95,8 +95,7 @@ shaping_weight = 0.0
 #   2. else, the strike_fallback probe against g* (the game's existing distance shaping, weight 1.0; it changes the
 #      TRAINING reward only, never the evaluation, which counts reaches) shows >= 1 reach -> side_overrides.strike =
 #      strike_fallback, a declared recipe variant labelled strike_fallback_label in every table and the record;
-#   3. else the Strike runs are NOT launched, their GPU-hours go to nothing (not reallocated), and the Strike side of every
-#      variant is reported INCONCLUSIVE with [verdict] strike_no_signal (ste_exploit_l012.py verdict --strike-not-launched).
+#   (branch 3 removed, LEAD CALL 21 Nov 2026 (QC N-1)): if neither shows a reach, the shaped fallback; run 0 decides.
 strike_fallback = { shaping_weight = 1.0 }
 strike_fallback_label = "shaped Strike recipe"
 side_overrides = { strike = {}, guard = {} }
@@ -166,7 +165,11 @@ band = 0.2
 gain_rule = "intervals_disjoint"
 learned_rule = "trained_low_above_untrained_high"
 order = ["base", "tag_1p2", "tag_1p4"]
-strike_no_signal = "the T41 recipe gives the Strike no learning signal in this game"   # LEAD CALL 21 Nov 2026
+# LEAD CALL 21 Nov 2026 (QC N-1): the Strike side's text when run 0 reads FAIL at its full budget and the Strike runs
+# are not launched (ste_exploit_l012.py verdict --strike-not-launched --run0-json <run 0>/learner_control.json). It
+# replaces "the T41 recipe gives the Strike no learning signal in this game", a claim about the game that a short or
+# broken trainer cannot support.
+strike_not_launched = "run 0 FAIL: the trainer did not learn the easy Strike task (against the parked Guard) at the run budget; no Strike run was launched"
 follow_up_seeds = []
 
 [videos]
@@ -188,19 +191,16 @@ updates = 2
 warmup_updates = 1
 probes = [{ side = "strike" }, { side = "strike", opponent = "guard_parked_centre" }, { side = "strike", shaping_weight = 1.0 }]
 probe_num_games = 4
-# LEARNER POSITIVE CONTROL (pre-registered before the pilot; QC I-1(b), LEAD CALLs 21 Nov 2026): after the Strike recipe
-# is chosen, the pilot trains ONE longer probe: the chosen recipe (bare, or shaped if the fallback is taken; with no
-# Strike runs, the bare one) against the parked Guard, at [trainer] num_games games, for a budget of game_steps_fraction
-# (10 %) of [trainer] game_steps_per_run as filled, or game_steps_if_unfilled (25 M) if not yet filled, capped at
-# cap_gpu_h (0.15 GPU-h) of effective time. Its trained Strike (final networks, mean actions, held 0.6 s) must reach
-# against the parked Guard at least as often as the scripted strike_straight does against the parked Guard on the same
-# starts (the reference's first eval_games starts) minus 0.05 (point estimates): PASS, else FAIL. If the probe hits its
-# cap before its game-steps, the control reads INCONCLUSIVE. The control is read ONLY on this longer probe (the
-# 3-update parked-Guard probes above are information). Unless it reads PASS no run of record launches until the lead
-# decides; every run names its pilot (--pilot-json) and is refused otherwise (--accept-learner-control records the
-# lead's decision). pilot.json "learner_control" computes it (ste/exploit.learner_control, learner_control_status).
-learner_control = { opponent = "guard_parked_centre", script = "strike_straight", margin = 0.05, game_steps_fraction = 0.1, game_steps_if_unfilled = 25_000_000, cap_gpu_h = 0.15 }
+# The learner positive control is run 0 ([run0]), not in the pilot (LEAD CALL 21 Nov 2026 (QC N-1)).
 # Worst-case final-phase timing (QC I-3): each listed run's controls batch and INFO batch, timed with the untrained
 # exploiter at full size; pilot.md compares 2 x (main + INFO) + clip_reserve_s with the reserve.
 timing_batches = [{ variant = "tag_1p2", side = "strike" }]
 probe_updates = 2
+
+[run0]
+# Run 0, the learner positive control: the same as the real gate file (LEAD CALL 21 Nov 2026 (QC N-1)).
+variant = "base"
+opponent = "guard_parked_centre"
+script = "strike_straight"
+margin = 0.05
+train_seed = 120001               # its own: not the scoring starts' 110000, curve_seed, clip_seed or a run's train_seed

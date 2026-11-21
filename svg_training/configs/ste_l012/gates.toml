@@ -26,6 +26,15 @@
 #
 # Run notes (LEAD CALL 21 Nov 2026, carried from L0.11): NEVER SUSPEND THE MACHINE DURING A GPU JOB (a suspend counts
 # in full against the cap and the GPU-hour ledger; tooling task L07-SUSPEND). Pause with scripts/gpu_pause.sh instead.
+#
+# Order of the GPU work (LEAD CALL 21 Nov 2026 (QC N-1), before any GPU job): the pilot ([pilot]), then RUN 0 (the
+# learner positive control, [run0]), then the six runs of record. Guard runs need the pilot only; Strike runs need
+# run 0 = PASS as well.
+#
+# Hours (LEAD CALL 21 Nov 2026 (QC N-3), documented, no code change): the cap reserve stops TRAINING; nothing kills a
+# run at --gpu-h during its final phase (the driver's cap does not cut it, by QC I-3, and scripts/ste_job.py does not
+# kill at --gpu-h), so a run can use more than its asked hours by the final phase's overrun beyond its 2x reserve;
+# the ledger records the real hours (gpu_hours.log, pause-aware), and those are the hours charged to L0.12.
 
 [run]
 task = "L0.12"
@@ -116,8 +125,10 @@ shaping_weight = 0.0
 #   2. else, the strike_fallback probe against g* (the game's existing distance shaping, weight 1.0; it changes the
 #      TRAINING reward only, never the evaluation, which counts reaches) shows >= 1 reach -> side_overrides.strike =
 #      strike_fallback, a declared recipe variant labelled strike_fallback_label in every table and the record;
-#   3. else the Strike runs are NOT launched, their GPU-hours go to nothing (not reallocated), and the Strike side of every
-#      variant is reported INCONCLUSIVE with [verdict] strike_no_signal (ste_exploit_l012.py verdict --strike-not-launched).
+#   (the former branch 3, "Strike runs NOT launched" on the 3-update probes, is REMOVED: LEAD CALL 21 Nov 2026 (QC N-1),
+#   same defect family as the 25 M control: 3 updates cannot tell a broken trainer from a short budget.) If neither probe
+#   against g* shows a reach, the shaped fallback is used by default (pilot.json strike_recipe "by_default": true) and
+#   RUN 0 ([run0]) decides whether the Strike runs launch.
 strike_fallback = { shaping_weight = 1.0 }
 strike_fallback_label = "shaped Strike recipe"
 side_overrides = { strike = {}, guard = {} }
@@ -156,6 +167,12 @@ clip_reserve_s = 120               # CPU clips: 4 games of up to 2,400 ticks and
 # Nothing is published unless every control is PASS: results.json is written last, after the final controls, the INFO
 # batch and the videos; `verdict` refuses (exit 2) a run with any control not PASS, no complete results.json or a recorded
 # exit other than 0; the record writer's ABORTED mode names what ran and why, with no gain and no category (QC C-1).
+# LEAD CALL 21 Nov 2026 (QC N-2): `verdict` also refuses (exit 2) a run whose training stopped before its game-step
+# budget (train_stop at the cap reserve, 0 updates included; results.json "budget_reached" false): such a run never
+# publishes "did not learn"; its results.md says it stopped before its budget, and it gets an ABORTED record.
+# LEAD CALL 21 Nov 2026 (QC N-4): the ABORTED record describes a run that finished cleanly (exit 0 or no exit file,
+# complete results.json, every control PASS) as "finished, controls PASS", with the reason it is not read when there is
+# one (training stopped before its budget), never "unknown (read job.log)".
 stop_on_fail = true
 replay_count_tol_cuda_games = 10
 replay_differ_tol_cuda_games = 20
@@ -180,14 +197,18 @@ replay_differ_tol_cuda_games = 20
 # three variants (base Strike 192/1,000, upper 0.218; the rest higher), and "better" is never below the best script, so
 # every variant reads "worth learning" whatever training does: the category alone is uninformative and the GAIN is the
 # measure. Results, the record and the ledger row therefore carry all six side statuses (variant x side: gain, learned /
-# weak / INCONCLUSIVE / no signal, Guards left in holds, game length) next to the category.
+# weak / INCONCLUSIVE / not launched after run 0 FAIL, Guards left in holds, game length) next to the category.
 # No follow-up seeds in L0.12 (QC I-7; VALIDATION_QC section 0 rules 5-6): INCONCLUSIVE is final for L0.12 (one seed per
 # side, budget) and goes to gate G0 as INCONCLUSIVE; a follow-up is a new task with its own gate.
 band = 0.2
 gain_rule = "intervals_disjoint"
 learned_rule = "trained_low_above_untrained_high"
 order = ["base", "tag_1p2", "tag_1p4"]
-strike_no_signal = "the T41 recipe gives the Strike no learning signal in this game"   # LEAD CALL 21 Nov 2026
+# LEAD CALL 21 Nov 2026 (QC N-1): the Strike side's text when run 0 reads FAIL at its full budget and the Strike runs
+# are not launched (ste_exploit_l012.py verdict --strike-not-launched --run0-json <run 0>/learner_control.json). It
+# replaces "the T41 recipe gives the Strike no learning signal in this game", a claim about the game that a short or
+# broken trainer cannot support.
+strike_not_launched = "run 0 FAIL: the trainer did not learn the easy Strike task (against the parked Guard) at the run budget; no Strike run was launched"
 follow_up_seeds = []
 
 [videos]
@@ -207,27 +228,47 @@ variant = "base"
 num_games = [8192, 16384, 32768]
 updates = 1                        # one timed update after one untimed (an update is 32 decisions x 12 ticks of every game)
 warmup_updates = 1
-# Strike learning probes (LEAD CALL 21 Nov 2026): the bare T41 recipe against g* and against the parked Guard (the Strike
-# learner's positive control: scripted Strikes reach it in 466-570 of 1,000 at base, T44), then the pre-registered
-# fallback (strike_fallback) against the same two. Each trains the Strike side on base for probe_updates updates at
-# probe_num_games games and logs the reaches among the ended training games per update. Only the probes against g*
-# decide the Strike recipe ([trainer] strike_fallback; pilot.json "strike_recipe"); the parked-Guard probes are INFO.
+# Strike learning probes (LEAD CALL 21 Nov 2026): the bare T41 recipe against g* and against the parked Guard (scripted
+# Strikes reach it in 466-570 of 1,000 at base, T44), then the pre-registered fallback (strike_fallback) against the same
+# two. Each trains the Strike side on base for probe_updates updates at probe_num_games games and logs the reaches among
+# the ended training games per update. Only the probes against g* pick the Strike recipe ([trainer] strike_fallback;
+# pilot.json "strike_recipe"); the parked-Guard probes are INFO. They never stop the Strike runs (QC N-1: run 0 does).
 probes = [{ side = "strike" }, { side = "strike", opponent = "guard_parked_centre" }, { side = "strike", shaping_weight = 1.0 },
           { side = "strike", shaping_weight = 1.0, opponent = "guard_parked_centre" }]
 probe_num_games = 16384
-# LEARNER POSITIVE CONTROL (pre-registered before the pilot; QC I-1(b), LEAD CALLs 21 Nov 2026): after the Strike recipe
-# is chosen, the pilot trains ONE longer probe: the chosen recipe (bare, or shaped if the fallback is taken; with no
-# Strike runs, the bare one) against the parked Guard, at [trainer] num_games games, for a budget of game_steps_fraction
-# (10 %) of [trainer] game_steps_per_run as filled, or game_steps_if_unfilled (25 M) if not yet filled, capped at
-# cap_gpu_h (0.15 GPU-h) of effective time. Its trained Strike (final networks, mean actions, held 0.6 s) must reach
-# against the parked Guard at least as often as the scripted strike_straight does against the parked Guard on the same
-# starts (the reference's first eval_games starts) minus 0.05 (point estimates): PASS, else FAIL. If the probe hits its
-# cap before its game-steps, the control reads INCONCLUSIVE. The control is read ONLY on this longer probe (the
-# 3-update parked-Guard probes above are information). Unless it reads PASS no run of record launches until the lead
-# decides; every run names its pilot (--pilot-json) and is refused otherwise (--accept-learner-control records the
-# lead's decision). pilot.json "learner_control" computes it (ste/exploit.learner_control, learner_control_status).
-learner_control = { opponent = "guard_parked_centre", script = "strike_straight", margin = 0.05, game_steps_fraction = 0.1, game_steps_if_unfilled = 25_000_000, cap_gpu_h = 0.15 }
+# The learner positive control is NOT in the pilot (LEAD CALL 21 Nov 2026 (QC N-1)): it is run 0, [run0] below. The
+# pilot keeps the rates, the memory, the timing batches and the 3-update recipe probes.
 # Worst-case final-phase timing (QC I-3): each listed run's controls batch and INFO batch, timed with the untrained
 # exploiter at full size; pilot.md compares 2 x (main + INFO) + clip_reserve_s with the reserve.
 timing_batches = [{ variant = "tag_1p2", side = "strike" }]
 probe_updates = 3
+
+[run0]
+# RUN 0, THE LEARNER POSITIVE CONTROL (LEAD CALL 21 Nov 2026 (QC N-1); replaces the pilot's 25 M-game-step probe). Reason:
+# at 25 M game-steps (4 updates) a healthy trainer is expected to FAIL (T41's Guard needed ~300 M), so that control could
+# not tell a broken trainer from a short budget. Run 0 = the chosen Strike recipe ([trainer] side_overrides.strike, as
+# filled from the pilot; checked equal to pilot.json "strike_recipe") trained on `variant` against `opponent` (the parked
+# Guard) from its own `train_seed`, at the SAME budget and cap as a run of record: [trainer] num_games, game_steps_per_run
+# as filled from the pilot, and the run cap of the six runs (--cap-h; a Strike run refuses a run 0 of another cap).
+# Criterion (unchanged): the trained Strike (current networks, mean actions, held 0.6 s) reaches the parked Guard at least
+# as often as the scripted `script` (strike_straight) does on the same starts (the reference's first [run] eval_games
+# starts, all games counted, an unfinished game as no reach) minus `margin` (point estimates). Read at the pre-listed
+# checkpoints: every [trainer] curve_every_updates updates, and the budget's last update if that is not one of them.
+#   PASS: the first checkpoint that passes; the run stops there.
+#   FAIL: the full budget ends with no checkpoint passing.
+#   INCONCLUSIVE: training stopped at the cap reserve before the budget (the same reserve rule as the runs).
+# Every status is terminal in its run folder (learner_control.json; the same command changes nothing). Before training,
+# controls as in [controls]: the script cell replays T44's cell, the untrained exploiter plays as the zero script, paired
+# starts, one for one, no non-finite action; and on every update the training game's opponent must be `opponent`
+# (ctl_trained_against, QC mutation T2). A control FAIL ends run 0 with exit 6 and no status; a non-finite action or
+# value, exit 5 and no status (the run contract). Each checkpoint read is played to its end: the cap does not cut a read
+# (its time is inside the reserve; only SIGINT/SIGTERM stops it), as the final phase (QC N-3). Videos as [videos], against
+# `opponent`. Strike runs of record require run 0 = PASS (--run0-json; else refused unless --accept-learner-control
+# records the lead's decision); Guard runs do not depend on run 0 (the Guard recipe is T41's, already shown to learn).
+# If run 0 reads FAIL the Strike runs are not launched and every variant's Strike side is INCONCLUSIVE with [verdict]
+# strike_not_launched. A run 0 INCONCLUSIVE goes to the lead.
+variant = "base"
+opponent = "guard_parked_centre"
+script = "strike_straight"
+margin = 0.05
+train_seed = 120001               # its own: not the scoring starts' 110000, curve_seed, clip_seed or a run's train_seed

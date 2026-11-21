@@ -16,7 +16,9 @@ run's own ledger lines in the shared folder, if launched as a job. Prints the le
 from __future__ import annotations
 
 import argparse
+import datetime
 import json
+import math
 import sys
 from pathlib import Path
 
@@ -51,6 +53,36 @@ RUN_NOTES = ("- **Never suspend the machine during a GPU job** (no closed lid, n
              "the last update boundary, but the training games restart from the run seed's first starts (the game "
              "generator is not checkpointed), so a resumed run is not identical to an uninterrupted run. Each run's job "
              "launches say whether it was resumed.")
+
+
+def num(x, fmt: str = "{:.2f}") -> str:
+    """A rounded number, or "-" for a missing or nan value (never a raw float in a record)."""
+    if x is None or x == "-" or (isinstance(x, float) and math.isnan(x)):
+        return "-"
+    return fmt.format(x) if isinstance(x, (int, float)) else str(x)
+
+
+def first_launch(dirs) -> str:
+    """The ledger's Date: the earliest launch in the runs' launches.jsonl (+08:00 here), else now."""
+    times = []
+    for d in dirs:
+        f = Path(d) / "launches.jsonl"
+        if f.is_file():
+            times += [e["time"] for e in map(json.loads, filter(str.strip, f.read_text().splitlines()))
+                      if e.get("event") == "launch"]
+    t = datetime.datetime.fromtimestamp(min(times)) if times else datetime.datetime.now()
+    return t.astimezone().isoformat(timespec="seconds")
+
+
+def hours_cell(dirs) -> str:
+    used = [h for h in (l011rec.gpu_hours(Path(d))[1] for d in dirs) if h is not None]
+    return f"; {sum(used):.3f} GPU-h" if used else ""
+
+
+def ledger_row(number, dirs, simulator, gpu, name, what, word) -> str:
+    """LEDGER.md's seven columns: # | Date | Simulator | Run | What | Result | Record."""
+    return (f"| {number or 'T?'} | {first_launch(dirs)} | {simulator}; {gpu or 'CPU'} | {name} | STE L0.12 "
+            f"Best-response test: {what}{hours_cell(dirs)} | {word} | records/{name}_record.md |")
 
 
 def ci(d: dict | None) -> str:
@@ -118,7 +150,7 @@ def record_text(verdict: dict, runs: dict, name: str, number: str | None) -> tup
     for v, e in verdict["variants"].items():
         s, g = e["sides"].get("strike"), e["sides"].get("guard")
         lines.append(f"| {v} | {e['role']} | {s['status'] if s else '-'} | {g['status'] if g else '-'} | "
-                     f"{e.get('strike_upper', float('nan')):.3f} | {e.get('guard_upper', float('nan')):.3f} | "
+                     f"{num(e.get('strike_upper'), '{:.3f}')} | {num(e.get('guard_upper'), '{:.3f}')} | "
                      f"**{e['category']}** |")
     lines += ["", "| Variant | Side | Recipe | Trained exploiter | Untrained | Best script (cell) | Gain | Real | Paired "
               "(exploiter only / script only) | Guards left in holds (exploiter) | Length median (s) |",
@@ -132,7 +164,7 @@ def record_text(verdict: dict, runs: dict, name: str, number: str | None) -> tup
                          f"{ci(sr['untrained'])} | {ci(sr['gain']['script'])} ({' v '.join(lab(c) for c in sr['script_cell'])})"
                          f" | {'-' if g is None else f'{g:+.3f}'} | {sr['gain']['real']} | "
                          f"{paired.get('exploiter_only', '-')} / {paired.get('script_only', '-')} | "
-                         f"{comp.get('guards_left_mean_in_holds', '-')} | {comp.get('length_median_s', '-')} |")
+                         f"{num(comp.get('guards_left_mean_in_holds'), '{:.3f}')} | {num(comp.get('length_median_s'))} |")
     extras = [(k, o, e) for k, r in runs.items() for o, e in r.get("extra_opponents", {}).items()]
     if extras:
         lines += ["", "Evaluation-only opponents (INFO; script baseline from the T44 reference, same starts):", "",
@@ -150,9 +182,12 @@ def record_text(verdict: dict, runs: dict, name: str, number: str | None) -> tup
             comp = sr.get("exploiter_composition") or {}
             g = sr["gain"]["gain"]
             sides.append(f"{v} {side.capitalize()}: {sr['status']}, gain {'-' if g is None else f'{g:+.3f}'}, Guards left "
-                         f"{comp.get('guards_left_mean_in_holds', '-')}, {comp.get('length_median_s', '-')} s median")
+                         f"{num(comp.get('guards_left_mean_in_holds'), '{:.3f}')}, "
+                         f"{num(comp.get('length_median_s'))} s median")
         parts.append("; ".join(sides) + f" (category {e['category']}, set by T44's scripts)")
-    row = (f"| {number or 'T?'} | {name} | L0.12 Best-response test | {word.split(' ')[0]} | " + " / ".join(parts) + " |")
+    dirs = [r["dir"] for r in runs.values()] + ([str(Path(r0["file"]).parent)] if r0 else [])
+    row = ledger_row(number, dirs, verdict["simulator"], (verdict.get("machine") or {}).get("gpu"), name,
+                     " / ".join(parts), word.split(" ")[0])
     lines += ["## Ledger row", "", "Ledger row: " + row, ""]
     return "\n".join(lines) + "\n", row
 
@@ -170,7 +205,8 @@ def aborted_text(runs: dict, name: str, number: str | None) -> tuple[str, str]:
         lines.append(f"| {d} | {info['what']} | {info['ran']} | {info['why']} |")
         whys.append(f"{info['what']}: {info['why']}")
     lines += ["", "## Run notes", "", *RUN_NOTES, ""]
-    row = f"| {number or 'T?'} | {name} | L0.12 Best-response test | ABORTED | " + "; ".join(whys) + " |"
+    gpus = sorted({info["gpu"] for info in runs.values() if info.get("gpu")})
+    row = ledger_row(number, list(runs), sim, ", ".join(gpus), name, "; ".join(whys), "ABORTED")
     lines += ["## Ledger row", "", "Ledger row: " + row, ""]
     return "\n".join(lines) + "\n", row
 
@@ -198,10 +234,12 @@ def run_summary(d: Path) -> dict:
         why.append("no complete results.json")
     elif not why:                              # QC N-4 (LEAD CALL 21 Nov 2026): a cleanly finished run says so
         exit_text = "exit 0" if code == "0" else "no exit_code file"
-        why.append(f"finished, controls PASS ({exit_text}, results.json complete)")
+        done = "finished, " if res.get("budget_reached") is True else ""     # a run cut before its budget did not finish
+        why.append(f"{done}controls PASS ({exit_text}, results.json complete)")
     if res is not None and res.get("budget_reached") is not True:     # QC N-2: why no side status is read
         why.append(f"training stopped before its game-step budget ({res.get('train_stop')})")
-    return {"what": what, "ran": ran, "why": "; ".join(why) or "unknown (read job.log)"}
+    return {"what": what, "ran": ran, "why": "; ".join(why) or "unknown (read job.log)",
+            "gpu": ((res or {}).get("machine") or {}).get("gpu")}
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -244,7 +282,7 @@ def main(argv: list[str] | None = None) -> int:
         probes = ["Strike probes of the pilot (reaches / ended training games per update):", ""]
         probes += [f"- {dict((k, v) for k, v in pr.items() if k not in ('updates', 'learner_control'))}: "
                    + ", ".join(f"{u['reaches']}/{u['ended']}" for u in pr["updates"]) for pr in pj.get("probes", [])]
-        probes += [f"- recipe picked: {pj.get('strike_recipe')} (the learner positive control is run 0, below)"]
+        probes += [f"- recipe picked: {pj.get('strike_recipe')} (the learner positive control is run 0, above)"]
         text = text.replace("## Gates", "\n".join(probes) + "\n\n## Gates", 1)
     a.out.parent.mkdir(parents=True, exist_ok=True)
     a.out.write_text(text)

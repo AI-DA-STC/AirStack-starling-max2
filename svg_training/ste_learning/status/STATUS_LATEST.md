@@ -1,13 +1,13 @@
 INTERNAL · the latest status of STE's own learning track and the NUS port, overwritten at every update; the history is in [LOG.md](LOG.md). Produced by the `train-status` skill.
 
-**Status, 2026-11-21 12:55 (+08:00), 30-minute update: L0.12 last run (tag 1.4 m, Strike) running** · laptop RTX 5070 Ti · GPU busy · 1 training process
+**Status, 2026-11-21 13:25 (+08:00), event: L0.12 all runs done (base and tag 1.4 m worth learning); L0.2 run of record running** · laptop RTX 5070 Ti · GPU: L0.2 · 1 job
 
-**Plain summary (L0.12, base game, both sides).** Tested: can a trained team beat the best hand-written team, base rules,
-3v3? Happened: trained Guard holds **913/1000** v the best script's 808; trained Strike reaches the zone **636/1000** v the best
-script's 192 against the best scripted Guard (gains +0.105 and +0.444, both real; every control PASS). The trained Strikes
-climb to the height limit (1.8 m, the Guards fly at 1.2 m), trade two drones, and the last one waits at the edge and slips in
-(games run 7.5 s instead of 2.4 s). Why it matters: the base game is worth learning on both sides; the scripted Guard is easy
-to beat by height and patience. Training simulator only. Four runs to go (~1.5 h).
+**Plain summary (L0.12 Best-response test, all runs done).** Tested: can a trained team beat the best hand-written team, three
+rule sets, both sides. Happened (training simulator): base and tag 1.4 m are **worth learning** on both sides (base Guard 913 v
+808, Strike 636 v 192; tag 1.4 m Guard 747 v 672, Strike 740 v 328, all gains real); tag 1.2 m is **incomplete**: the trained
+Guard stayed below its script (503 v 645) and the Strike run was ABORTED by its own time rule (87 of 88 updates). The scripts
+alone already put both sides above the 0.2 band there, so no side is trivial; no re-run (owner agreed). Record T46/T47 being
+written. Why it matters: this is the main input to gate G0 — the game is worth learning.
 
 ## Watch (latest clips and figures)
 
@@ -61,8 +61,8 @@ Earlier: L0.11 top-down clips and the factor chart are in the [T44 record](../..
 | L0.9 | Tag rule for the study: 1-for-1, nearest pair first | DONE | tier 1 fast engine | merged; QC + re-check passed; full suite on `development` 1,517 passed / 0 failed (31 min); the 5090 records its own tag-off positions (L09-5090) |
 | L0.10 | Scripted players for the study | DONE | tier 1 fast engine | merged; QC + 2 re-checks passed; full suite on `development` 1,600 passed / 0 failed (56 min, CPU shared with the L0.11 GPU jobs) |
 | L0.11 | Screening sweep (INFO) | DONE | tier 1 fast engine | record T44 (every control PASS; shortlist base (reference), tag 1.2 m, tag 1.4 m; every hold a one-for-one trade) + follow-up checks; merged into `development`; full suite 1,685 passed / 0 failed (27 min) |
-| L0.12 | Best-response test: is the game worth learning? | RUNNING (run 6 of 6) | tier 1 fast engine | pilot PASS; run 0 PASS; **base: Guard 913 v script 808 (+0.105), Strike 636 v script 192 (+0.444)**; **tag 1.2 m: Guard 503 v script 645** (learned, below the script); **tag 1.2 m Strike: ABORTED** by the pre-registered rule: it stopped at update 87 of 88 to keep time for its final evaluation (602 s left v 620 s needed), so no side status is read from it. Its trained Strikes mostly wait out the 120 s clock (median game 120 s), reaching 114/1000 v the script's 355; their training reach rate was flat at about 11 % from update 41, so the missing update would not have changed that. Cause: games that run to the clock make the final evaluation longer than the pilot measured with untrained players. **tag 1.4 m Guard: 747 v script 672 (+0.075, real)**; now tag 1.4 m Strike (attacking, not waiting: 61 % of training games reach the zone at update 61; ~15 min left); then the verdict |
-| L0.2 | Tier 2 speed in contested play | RUNNING (committed; Isaac re-smoke next) | tier 2 Isaac Lab | QC re-check 2: GO (its faulty-physics world now fails the check at 0.38 m; 10 of 11 breakages caught); lead's agreement rule written into the gate files before any result; committed on `ste-l0.2` (b4e7bc4); new Isaac smoke when the L0.12 runs end (~12:45), then the run of record (~0.9 GPU-h) |
+| L0.12 | Best-response test: is the game worth learning? | DONE (record being written) | tier 1 fast engine | pilot PASS; run 0 PASS; **base: worth learning** (Guard 913 v 808, Strike 636 v 192); **tag 1.4 m: worth learning** (Guard 747 v 672, Strike 740 v 328); **tag 1.2 m: incomplete** (Guard 503 v script 645; Strike ABORTED, 87/88 updates, trained Strikes wait out the clock); every control PASS; 3.86 GPU-h of 6; record T46 (verdict) + T47 (aborted run) being written; 3-D clips of the key games need VID-1b (the 3-D tool replays scripted players only) |
+| L0.2 | Tier 2 speed in contested play | RUNNING (run of record) | tier 2 Isaac Lab | re-smoke PASS: physics check 0.0036 m (limit 0.02), game counts identical in both worlds; smoke speed at 1,024 games: Isaac 9,800 v fast engine 51,000 training game-steps/s; run of record started 13:13, cap lowered 1.5 → 1.4 GPU-h before it (smokes used 0.096); now at 5v3, 4,096 games (~0.9 GPU-h expected) |
 | L0.13 | Does tier 2 train at all? | NOT STARTED | tier 2 Isaac Lab | laptop allowed (owner, 21 Nov), after L0.2, at the games-at-once L0.2 shows fits; cap 6 GPU-h |
 | L0.3 | STE Guard policy in tier 2 without retraining | RUNNING (committed) | tier 2 Isaac Lab | committed (06436e9) with L0.2's fixes; smoke after L0.2's, then the run (~0.6 GPU-h) |
 | L0.4 | Side-by-side Starling render | DONE | tier 2 Isaac Lab | found why our clips never looked like the Starling: a grey physics box was drawn over every drone since S2b (the hide call missed it); one-line fix, re-render shows the Starling (before/after in Watch); merged into `development` after independent review; 0.028 of 0.2 GPU-h |
@@ -70,7 +70,7 @@ Earlier: L0.11 top-down clips and the factor chart are in the [T44 record](../..
 | L0.14 | Crazyflie route check | DONE | tier 1 fast engine (CPU) | record T45: the T41 Guard policy holds 791–768 of 1,000 in the Crazyflie-like lag band (0.48–0.56 s, every drone slowed) against 831 at the Starling's lag, and drones come closer (games under 1.0 m: 7 → 101–149); planner, like for like: 0 of 100 at 3v3 and 5v3 against 20 Nov's 5 of 100 (not a clear difference; only one rule set run); QC + re-check passed; merged into `development` (targeted tests 76 passed; the full suite runs with the next merge — lead's call, the CPU is shared now); page `ste_learning/CRAZYFLIE_ROUTE.md` |
 | L0.6 | Gate G0 | NOT STARTED | none | after every task above; the owner decides |
 
-GPU-h used in L0 so far: about 3.51 of 19 (laptop: L0.11 0.426, L0.4 0.028, L0.5 + VID-1 0.154, L0.2 smoke 0.044, L0.12 pilot 0.178 + run 0 0.061 + base Guard 0.404 + base Strike 0.594 + tag 1.2 m Guard 0.481 + tag 1.2 m Strike 0.659 + tag 1.4 m Guard 0.425).
+GPU-h used in L0 so far: about 4.45 of 19 (laptop: L0.11 0.426, L0.4 0.028, L0.5 + VID-1 0.154, L0.2 smokes 0.096, L0.12 3.86 (pilot 0.178, run 0 0.061, six runs 3.62)); L0.2 run of record in progress.
 
 Laptop full CPU suite (20 Nov, `development` at 5c5d465, after `scripts/nus_install_provisional.sh`): **1,333 passed, 2 failed, 48 skipped** in 24 min. Both failures repeat when run alone:
 - **L07-F1** `test_ste_job.py::test_f_d_a_killed_job…resumes`: CONFIRMED by QC: the tool does not over-report (it measures from the same start; ~0.255 s raw, printed rounded to 0.3); the test compares the rounded text with the exact elapsed time. Fix: allow half a display step.
@@ -150,8 +150,8 @@ Laptop drills (21 Nov, fix branch, shared folder `~/AirStack-starling-max2/svg_t
 
 **GPU queue on the laptop (one at a time for speed measurements):** L0.12 pilot → L0.12 trainings → L0.2 → L0.3 → L0.13 (L0.4, L0.5, VID-1 for L0.11 done).
 
-**Next.** (1) L0.12: QC checks the gate fill (minutes), then run 0 (~0.6 GPU-h, ~40 min), then the six runs (3 Guard, 3 Strike if run 0 passes), one at a time, ~4.5 h. (2) L0.2/L0.3: fix round, then QC re-check, then commit, then a new smoke. (3) L0.13 after L0.2.
+**Next.** (1) L0.2 run of record (~14:30), then its record. (2) L0.12 records T46/T47 → QC read → merge. (3) L0.3 smoke then run (~0.6 GPU-h). (4) Plan and build L0.13 (does tier 2 train at all?). (5) VID-1b: 3-D clips of trained players.
 
-**Waiting on you.** (1) D9: ring, dot, or neither (Watch); not urgent. (2) ~~L0.12 GPU-hours~~: no longer needed — the pilot was 4× faster than estimated, so everything fits in the approved 6 GPU-h. (3) Possibly, after the last run: whether to re-run any ABORTED Strike run with a longer time cap (it would need run 0 again at the same cap; about 0.9–1.8 GPU-h, which would take L0.12 above its 6 GPU-h). I will bring numbers.
+**Waiting on you.** (1) D9: ring, dot, or neither — clips with the ring: `docs/media/ste_l011/3d/base_reach_3d.gif`; dot only as a still (`docs/media/ste_l05/arena_own_dot_3d.png`); I can render a dot clip (~0.05 GPU-h) if you want to compare moving. (2) Done: no re-run of tag 1.2 m Strike (you agreed). (3) Done: the AirStack sim video (`videos/random_CBF_sim_edited.mp4`) shows the same unpainted grey Starling; only the floor differs (blue grid there, grey here).
 
 **Correction.** The 21 Nov question on NUS values listed "speeds 0.6 / 1.2". The L0.8 review reads those two numbers as the decision period (0.6 s) and the flight height (1.2 m); the speeds are 0.5 and 0.333 m/s. Your Yes covers all of them as written on the sheet.

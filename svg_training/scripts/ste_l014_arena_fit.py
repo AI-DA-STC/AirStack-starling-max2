@@ -23,8 +23,9 @@ Rules: the planner's ``rules`` set with its strike radius set to ``strike_radius
 Arenas: ``room`` = the Crazyflie room as surveyed (the repository's arena.yaml polygon); ``circle_3_25`` = the same room
 with the planner's own ``arena_radius`` set to half the square side (a circle round the room centre); ``square_6_5`` = a
 square polygon of side ``square_side_m`` round the room centre (an arena.yaml written in the work folder).
-The planner's own floor marks are refused at 1.10 m in the small arenas, so every case uses the same hand-set marks
-(:func:`hand_marks`), round the protected point placed at the room centre.
+The planner's own floor marks are refused at 1.10 m in the 3.25 m circle at every size and in the 6.5 m square at 3v3
+and 5v3 (accepted there at 1v1 and 2v1, see the run's pre_run_checks/planner_own_marks.txt), so every case uses the
+same hand-set marks (:func:`hand_marks`), round the protected point placed at the room centre.
 
 Per case, one JSON in ``<run-dir>/cases/``; then ``<run-dir>/arena.json``: provenance, settings, marks, and per case the
 matches, defence wins, matches with at least one solver-emergency tick (counted apart from every other safety failure),

@@ -49,6 +49,7 @@ import numpy as np  # noqa: E402
 import torch  # noqa: E402
 
 from svg_training.ste import atomic  # noqa: E402
+from svg_training.ste import exploit  # noqa: E402  (the reference file and the replay check, L0.12b)
 from svg_training.ste import sweep  # noqa: E402
 from svg_training.ste.run_contract import (EXIT_CONTROL_FAILED, EXIT_DONE, EXIT_FOR_STOP,  # noqa: E402
                                            EXIT_NONFINITE, EXIT_REFUSED,
@@ -61,6 +62,10 @@ CELLS_DIR = "cells"
 CONTROLS_FILE = "controls.json"
 CODE_FILE = "code.json"           # QC M-2: the code a run folder was started with
 PASS, FAIL, PENDING = "PASS", "FAIL", "PENDING"
+UNCHOSEN_NOTE = ("Unchosen tags (INFO, L0.12b): a tag is counted as unchosen when the safety filter corrected either "
+                 "drone of the tagged pair on the tag's tick (the filter's own flag: its velocity change above 1e-3 m/s); "
+                 "a tag is at the filter edge when its 3-D pair distance is at most the filter distance (1.10 m) plus the "
+                 "gate file's [run] tag_edge_margin_m. Shares are of the tags of the finished first games of each cell.")
 SIMULATOR = ("training simulator, tier 1 (fast engine; Starling layer: commander copy, safety filter on every pair, "
              "fitted PX4 response, exploratory)")
 
@@ -170,6 +175,9 @@ def preflight(args: argparse.Namespace, gates: sweep.Gates) -> str | None:
                 return f"a GPU job (--gpu-h {job['gpu_h']}) with device {device!r} in the gate file"
         elif str(device).startswith("cuda"):
             return "the gate file plays on cuda but the launcher asked for 0 GPU-h (a CPU job)"
+    reason = reference_problem(gates)
+    if reason:
+        return reason
     table = gates.projection["seconds_per_batch_tick"]
     sizes = {sweep.group_game(gates, g)[1] for g in gates.groups}
     if gates.run["require_projection"] and not args.pilot and not sizes <= set(table):
@@ -178,6 +186,64 @@ def preflight(args: argparse.Namespace, gates: sweep.Gates) -> str | None:
     if str(device).startswith("cuda") and not torch.cuda.is_available():
         return "the gate file plays on cuda and PyTorch sees no GPU"
     return None
+
+
+def reference_problem(gates: sweep.Gates) -> str | None:
+    """L0.12b: the optional [reference] (T44's starts and results) must be the pinned file with the pinned starts, hold
+    at least games_per_cell starts, and every group must be of its team size and start setting (the starts are
+    loaded, so they must fit every group)."""
+    ref_gate = gates.reference
+    if ref_gate is None:
+        return None
+    path = sweep.ROOT / ref_gate["file"]
+    if not path.is_file():
+        return f"the reference file {path} is missing"
+    if exploit.sha256_file(path) != ref_gate["sha256"]:
+        return f"the reference file {path} has sha256 {exploit.sha256_file(path)}, the gate file pins {ref_gate['sha256']}"
+    ref = exploit.load_reference(path)
+    if ref.start_sha256 != ref_gate["start_sha256"]:
+        return f"the reference starts have sha256 {ref.start_sha256}, the gate file pins {ref_gate['start_sha256']}"
+    if int(gates.run["games_per_cell"]) > ref.games:
+        return f"games_per_cell {gates.run['games_per_cell']} is more than the reference's {ref.games} starts"
+    want_cfg = sweep.variant_cfg(gates, ref_gate["variant"])
+    m = ref.starts_m.shape[1]
+    for spec in gates.groups:
+        game, size = sweep.group_game(gates, spec)
+        if sum(sweep.parse_size(size)) != m or spec.strike_start_dz_m:
+            return f"group {spec.name}: size {size} cannot play the reference's {m}-drone starts"
+        if setting_of(sweep.variant_cfg(gates, game), size, 0) != setting_of(want_cfg, size, 0):
+            return f"group {spec.name}: game {game} has another start setting than the reference's"
+    return None
+
+
+def reference_starts(gates: sweep.Gates) -> tuple | None:
+    """The reference's first games_per_cell starts and start misses (tensors), or None without [reference]."""
+    if gates.reference is None:
+        return None
+    ref = exploit.load_reference(sweep.ROOT / gates.reference["file"])
+    n = int(gates.run["games_per_cell"])
+    return torch.as_tensor(ref.starts_m[:n]), torch.as_tensor(ref.start_miss[:n])
+
+
+def check_reference_replay(gates: sweep.Gates, spec: sweep.GroupSpec, pg: dict, cells: list) -> tuple[bool, str]:
+    """L0.12b's positive control: every cell of the group replays the reference's cell of its variant (T44) on the same
+    starts (``exploit.replay_ok``: CPU every game equal; CUDA within the gate's tolerances), and every cell started from
+    the reference's starts."""
+    ref = exploit.load_reference(sweep.ROOT / gates.reference["file"])
+    n = int(gates.run["games_per_cell"])
+    want = exploit.starts_sha(ref.starts_m[:n])
+    tol = {"replay_count_tol_cuda_games": gates.reference["count_tol_cuda_games"],
+           "replay_differ_tol_cuda_games": gates.reference["differ_tol_cuda_games"]}
+    ok, details = True, []
+    for k, (g, s) in enumerate(cells):
+        mine = exploit.slice_cell(pg, k, n)
+        t44 = {f: v[:n] for f, v in ref.cell(gates.reference["variant"], g, s).items()}
+        good, text = exploit.replay_ok(mine, t44, gates.run["device"], tol, ticks_cap=spec.ticks_cap(gates.run))
+        same_starts = exploit.starts_sha(mine["start_pos_m"]) == want
+        ok &= good and same_starts
+        if not (good and same_starts):
+            details.append(f"{g} v {s}: DIFFERS ({text}{'' if same_starts else '; other starts'})")
+    return ok, (f"{len(cells)} cells replay the reference's cells on its starts" if ok else "; ".join(details))
 
 
 def failed_controls(args: argparse.Namespace) -> list[str]:
@@ -252,7 +318,11 @@ def evaluate_controls(gates: sweep.Gates, plan: list, run_dir: Path, done: set[s
         if not complete:
             out[p.spec.name] = {"status": PENDING, "control": p.spec.control, "detail": "cells not all played"}
             continue
-        if p.spec.control in (sweep.TAG_FIRES, sweep.REACH_FIRES):        # QC C1: known non-zero answers, per game
+        if p.spec.control == sweep.REFERENCE_REPLAY:                        # L0.12b: positive control against T44
+            per = [dict(np.load(batch_file(run_dir, bid, ".npz"))) for bid in ids]
+            pg = {k: np.concatenate([x[k] for x in per]) for k in per[0]}
+            ok, detail = check_reference_replay(gates, p.spec, pg, [c for b in p.batches for c in b])
+        elif p.spec.control in (sweep.TAG_FIRES, sweep.REACH_FIRES):      # QC C1: known non-zero answers, per game
             per = [dict(np.load(batch_file(run_dir, bid, ".npz"))) for bid in ids]
             pg = {k: np.concatenate([x[k] for x in per]) for k in per[0]}
             ok, detail = (sweep.check_tag_fires(pg, g, s) if p.spec.control == sweep.TAG_FIRES
@@ -357,6 +427,7 @@ def run_sweep(gates: sweep.Gates, args: argparse.Namespace, guard: RunGuard) -> 
     state = resumed.state if resumed is not None else {"done": [], "cut": [], "timing": {}, "projections": []}
     if resumed is not None:                            # the batches a resume must not replay (smoke check B.8)
         state.setdefault("resumes", []).append({"time": time.time(), "done": list(state["done"])})
+    starts = reference_starts(gates)                  # L0.12b: every group from the reference's starts, if any
     say(f"{'resumed: ' + str(len(state['done'])) + ' batches done' if resumed else 'fresh start'}; gate sha256 "
         f"{gates.sha256[:12]}; {sum(len(p.batches) for p in plan)} batches, {sum(len(p.cells) for p in plan)} cells")
     every = int(gates.run["cap_check_every_ticks"])
@@ -409,7 +480,8 @@ def run_sweep(gates: sweep.Gates, args: argparse.Namespace, guard: RunGuard) -> 
                 return stop(reason)
             try:
                 res = sweep.play_batch(cfg, size, cells, dict(gates.run, ticks_cap=p.spec.ticks_cap(gates.run)),
-                                       should_stop=should_stop, strike_start_dz_m=p.spec.strike_start_dz_m or 0)
+                                       should_stop=should_stop, strike_start_dz_m=p.spec.strike_start_dz_m or 0,
+                                       fixed_starts=starts)
             except sweep.SweepStopped:
                 return stop(guard.stop_reason() or STOP_CAP)
             if res.nonfinite_actions:
@@ -503,6 +575,13 @@ def _pct(rate, ci) -> str:
     return "n/a" if rate is None else f"{100 * rate:.1f} % ({100 * ci[0]:.1f}–{100 * ci[1]:.1f})"
 
 
+def _tags(row: dict, count: str, share: str) -> str:
+    """L0.12b's unchosen-tag cells: "k of n (share)"; "n/a" where a row has no such count (older runs, no edge limit)."""
+    if row.get(count) is None:
+        return "n/a"
+    return f"{row[count]} of {row['tags_counted']}" + (f" ({row[share]:.3f})" if row.get(share) is not None else "")
+
+
 def _m(v) -> str:
     return "n/a" if v is None else f"{v:.2f}"
 
@@ -571,7 +650,8 @@ def shortlist_md(sl: dict, result: dict, meta: dict, z: set, gates: sweep.Gates)
 def render_md(result: dict, gates: sweep.Gates) -> str:
     meta = result["meta"]
     z = set(gates.players["z_up_info"])
-    lines = [f"# L0.11 Screening sweep (INFO): results", "", f"Simulator: {meta['simulator']}. Observed in the training "
+    title = "L0.11 Screening sweep" if meta["task"] == "L0.11" else f"{meta['task']} scripted screen"
+    lines = [f"# {title} (INFO): results", "", f"Simulator: {meta['simulator']}. Observed in the training "
              f"simulator; nothing here is a flight result.", "",
              f"- Gate file `{meta['gates_file']}`, sha256 `{meta['gates_sha256']}`; commit `{meta['commit'][:12]}`"
              f"{' (working tree not clean)' if meta['dirty'] else ''}; device {meta['device']}"
@@ -593,6 +673,8 @@ def render_md(result: dict, gates: sweep.Gates) -> str:
                   f"partial and prove nothing.**", ""]
     if result["cut"]:
         lines += [f"**Cut by the projection (gate file [cut]):** {', '.join(result['cut'])}.", ""]
+    if any(r.get("tag_edge_m") is not None for g in result["groups"] for r in g["rows"]):
+        lines += [UNCHOSEN_NOTE, ""]
     sl = result["shortlist"]
     if result["controls_all_pass"] and not result["stopped"]:
         lines += shortlist_md(sl, result, meta, z, gates)
@@ -631,8 +713,8 @@ def render_md(result: dict, gates: sweep.Gates) -> str:
         lines += ["| Guard | Strike | games | hold (95 %) | reach (95 %) | time-out | all Strikes tagged | tags/game "
                   "(max) | start miss | start team-close games | closest 3-D min / p05 / p50 (m; among drones still in the "
                   "game after the tag step) | closest horiz. min (m) | holds leaving no Guard | Guards left in holds (mean) | "
-                  "length median / p90 (s) |",
-                  "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
+                  "length median / p90 (s) | unchosen tags: filter on (share) | tags at the filter edge (share) |",
+                  "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
         for r in g["rows"]:
             strike = r["strike"] + (f" ({meta['z_up_label']})" if r["strike"] in z else "")
             lines.append(
@@ -643,7 +725,8 @@ def render_md(result: dict, gates: sweep.Gates) -> str:
                 f"{_m(r.get('closest_cross_3d_m'))} / {_m(r.get('closest_cross_3d_p05_m'))} / "
                 f"{_m(r.get('closest_cross_3d_p50_m'))} | {_m(r.get('closest_cross_m'))} | "
                 f"{r.get('holds_no_guard_left', 'n/a')} of {r['holds']} | {_m(r.get('guards_left_mean_in_holds'))} | "
-                f"{_m(r.get('length_median_s'))} / {_m(r.get('length_p90_s'))} |")
+                f"{_m(r.get('length_median_s'))} / {_m(r.get('length_p90_s'))} | {_tags(r, 'tags_filtered', 'unchosen_tag_share')} | "
+                f"{_tags(r, 'tags_at_edge', 'edge_tag_share')} |")
         lines.append("")
     lines += ["## Batches (speed and memory)", "", "| Batch | size | games | ticks | s | game-steps/s | peak reserved (GiB) |",
               "|---|---|---|---|---|---|---|"]

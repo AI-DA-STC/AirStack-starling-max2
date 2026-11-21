@@ -40,6 +40,7 @@ import numpy as np
 import torch
 from torch import Tensor
 
+from ..core import game as core_game         # its proximity_tags, looked up per call (scripts/ste_l011_followups.py wraps it)
 from ..core.arena import Arenas, draw_starts
 from ..core.game import SvgGame
 from ..core.game_config import TICK_S, GameCfg, load_game_cfg
@@ -59,7 +60,9 @@ SAME_SEED, STAND_STILL, ZERO_TAGS = "same_seed_twice", "stand_still_never_reache
 STILL_ZERO_TAGS = "stand_still_zero_tags"     # both teams command zero, tag on: no tag in the group's first ``ticks``
 TAG_FIRES = "tag_fires"           # QC C1, known non-zero answer: tag radius > arena diagonal, both teams still
 REACH_FIRES = "reach_fires"       # QC C1, known non-zero answer: tag off, still Guards v strike_straight, zone 2.4 m
-CONTROL_KINDS = (SAME_SEED, STAND_STILL, ZERO_TAGS, STILL_ZERO_TAGS, TAG_FIRES, REACH_FIRES)
+CONTROL_KINDS = (SAME_SEED, STAND_STILL, ZERO_TAGS, STILL_ZERO_TAGS, TAG_FIRES, REACH_FIRES)   # L0.11's
+REFERENCE_REPLAY = "reference_replay"   # L0.12b: the group's cells replay the reference file's cells (T44) game for game
+ALL_CONTROL_KINDS = CONTROL_KINDS + (REFERENCE_REPLAY,)
 GLOBAL_CHECKS = ("tags_one_for_one", "paired_starts", "no_nonfinite_actions")
 TIE_BREAKS = ("lab_arena_first", "larger_zone_tag_margin", "lower_guard_survives", "run_order")
 ALL = "all"
@@ -69,6 +72,7 @@ SUMMARY_KEYS = ("guard_wins", "hold_rate", "ci_low", "ci_high", "mean_end_step",
                 "closest_cross_p25_m", "closest_cross_p50_m", "closest_cross_3d_m", "closest_cross_3d_p05_m",
                 "closest_cross_3d_p25_m", "closest_cross_3d_p50_m", "rule_breach_rate", "filter_rate", "start_miss_rate")
 PER_GAME_EXACT = ("outcome", "end_step", "tags", "strikes_left", "start_pos_m")   # equal in a same-seed replay
+TAG_PAIR_KEYS = ("tag_pair_m", "tag_filtered")    # per game and Strike slot [N, S]: L0.12b's unchosen-tag measurement
 
 _SECTIONS = {
     "run": {"task", "kind", "seed", "games_per_cell", "cells_per_batch", "ticks_cap", "device", "cap_check_every_ticks",
@@ -88,6 +92,12 @@ _GROUP_KEYS = {
     SAME_SEED: {"name", "role", "control", "of_group", "of_batch"},
 }
 _GROUP_OPTIONAL = {"ticks"}         # any group may cap its own ticks (the stand-still and fires controls, smoke gates)
+# Optional keys and sections (L0.12b, LEAD CALL 21 Nov 2026): absent in the pinned L0.11 gate files, which still load.
+# [run] tag_edge_margin_m: a tag whose pair distance is <= the filter distance + this margin is "at the filter edge".
+# [reference]: the reference file (T44's starts and per-game results, configs/ste_l012/t44_reference.npz); when present
+# every group plays from its starts (loaded, never re-drawn) and the reference_replay control compares with its cells.
+_SECTION_OPTIONAL = {"run": frozenset({"tag_edge_margin_m"})}
+REFERENCE_KEYS = {"file", "sha256", "start_sha256", "variant", "count_tol_cuda_games", "differ_tol_cuda_games"}
 
 
 class SweepStopped(RuntimeError):
@@ -138,6 +148,7 @@ class Gates:
     shortlist: dict
     clips: dict
     pilot: dict
+    reference: dict | None = None           # the optional [reference] section (L0.12b), else None
 
     def group(self, name: str) -> GroupSpec:
         for spec in self.groups:
@@ -191,8 +202,8 @@ def _group(table: dict, players: dict, games: dict) -> GroupSpec:
         raise ValueError(f"group {table.get('name')!r}: role must be one of {ROLE_SWEEP!r}, {ROLE_CONTROL!r}, "
                          f"{ROLE_SENSITIVITY!r}")
     _exact_keys(table, _GROUP_KEYS[key], f"groups {table.get('name')}", frozenset(_GROUP_OPTIONAL))
-    if kind is not None and kind not in CONTROL_KINDS:
-        raise ValueError(f"group {table['name']}: unknown control {kind!r} (known: {CONTROL_KINDS})")
+    if kind is not None and kind not in ALL_CONTROL_KINDS:
+        raise ValueError(f"group {table['name']}: unknown control {kind!r} (known: {ALL_CONTROL_KINDS})")
     has_game = "game" in table
     if has_game:
         if table["game"] not in games:
@@ -213,11 +224,12 @@ def load_gates(path: str | Path = GATES_FILE) -> Gates:
     path = Path(path)
     raw = path.read_bytes()
     data = tomllib.loads(raw.decode())
-    top = set(_SECTIONS) | {"games", "groups", "projection"}
+    top = set(_SECTIONS) | {"games", "groups", "projection", "reference"}
     unknown = sorted(set(data) - top)
     if unknown:
         raise ValueError(f"unknown section(s) in {path.name}: {unknown}")
-    parts = {name: _exact_keys(data.get(name), keys, name) for name, keys in _SECTIONS.items()}
+    parts = {name: _exact_keys(data.get(name), keys, name, _SECTION_OPTIONAL.get(name, frozenset()))
+             for name, keys in _SECTIONS.items()}
     games = {}
     for name, ref in data.get("games", {}).items():
         _exact_keys(ref, {"file", "sha256"}, f"games.{name}")
@@ -232,6 +244,12 @@ def load_gates(path: str | Path = GATES_FILE) -> Gates:
     for g in groups:
         if g.control == SAME_SEED and g.of_group not in names:
             raise ValueError(f"group {g.name}: of_group {g.of_group!r} is not a group")
+    reference = data.get("reference")
+    if reference is not None:
+        _exact_keys(reference, REFERENCE_KEYS, "reference")
+    for g in groups:
+        if g.control == REFERENCE_REPLAY and (reference is None or g.game != reference["variant"]):
+            raise ValueError(f"group {g.name}: a reference_replay group needs [reference] and must play its variant")
     projection = data.get("projection", {})
     _exact_keys(projection, {"seconds_per_batch_tick"}, "projection")
     for size in projection["seconds_per_batch_tick"]:
@@ -250,7 +268,7 @@ def load_gates(path: str | Path = GATES_FILE) -> Gates:
     if bad:
         raise ValueError(f"unknown global check(s) {bad} (known: {GLOBAL_CHECKS})")
     return Gates(path=str(path), sha256=hashlib.sha256(raw).hexdigest(), games=games, groups=groups,
-                 projection=projection, **parts)
+                 projection=projection, reference=reference, **parts)
 
 
 def sha256_file(path: str | Path) -> str:
@@ -325,12 +343,19 @@ class SweepGame(SvgGame):
     cells (module docstring). Every game must have the same arena (a fixed-arena game file): checked at construction.
     After ``reset``: ``tags`` [N] long (Strike drones tagged in the slot's first game), ``strikes_left`` [N] long (Strike
     drones in the game when the slot's first game ended), ``team_close_first`` [N] long (start team-mate pairs closer
-    than the filter distance in the first game; starts mode zone_disc_ring), ``first_done`` [N] bool."""
+    than the filter distance in the first game; starts mode zone_disc_ring), ``first_done`` [N] bool, and per Strike slot
+    of the first game (L0.12b) ``tag_pair_m`` [N, S] (3-D distance to its tag partner when tagged, inf if not) and
+    ``tag_filtered`` [N, S] bool (the safety filter corrected either drone of the pair on the tag's tick).
+    ``fixed_starts`` (starts [n, M, 3], miss [n]): play from these starts (a reference's) instead of drawing them."""
 
     def __init__(self, cfg: GameCfg, cells: int, games_per_cell: int, guards: int, strikes: int, device: str,
-                 seed: int, strike_start_dz_m: float = 0):
+                 seed: int, strike_start_dz_m: float = 0, fixed_starts: tuple[Tensor, Tensor] | None = None):
         self.games_per_cell = games_per_cell
         self.strike_start_dz_m = strike_start_dz_m
+        if fixed_starts is not None and int(fixed_starts[0].shape[0]) != games_per_cell:
+            raise ValueError(f"fixed starts for {fixed_starts[0].shape[0]} games, the cells have {games_per_cell} each")
+        self._fixed_starts = None if fixed_starts is None else tuple(x.to(device) for x in fixed_starts)
+        self._tick_tag: tuple[Tensor, Tensor, Tensor] | None = None
         self._start_gen = torch.Generator(device=device)
         self._start_gen.manual_seed(seed)
         self.should_stop: Callable[[], bool] | None = None
@@ -342,9 +367,12 @@ class SweepGame(SvgGame):
 
     def _draw_starts(self, arenas: Arenas) -> tuple[Tensor, Tensor]:
         n = self.games_per_cell
-        one = Arenas(arenas.side_m[:n], arenas.half_m[:n], arenas.zone_centre_m[:n], arenas.zone_radius_m[:n],
-                     arenas.band[:n])
-        starts, miss = draw_starts(self.cfg, one, self.guards, self.strikes, self._start_gen, return_miss=True)
+        if self._fixed_starts is not None:     # the reference's starts (loaded): nothing is drawn
+            starts, miss = self._fixed_starts
+        else:
+            one = Arenas(arenas.side_m[:n], arenas.half_m[:n], arenas.zone_centre_m[:n], arenas.zone_radius_m[:n],
+                         arenas.band[:n])
+            starts, miss = draw_starts(self.cfg, one, self.guards, self.strikes, self._start_gen, return_miss=True)
         if self.strike_start_dz_m:            # sensitivity groups only; 0 (the default) leaves the draw untouched
             lift = torch.zeros_like(starts)
             lift[:, self.guards:, -1] = self.strike_start_dz_m
@@ -361,11 +389,30 @@ class SweepGame(SvgGame):
         self.guards_removed = torch.zeros(n, dtype=torch.long, device=dev)
         self.strikes_left = torch.zeros(n, dtype=torch.long, device=dev)
         self.team_close_first = self.start_team_close.clone()
+        self.tag_pair_m = torch.full((n, self.strikes), math.inf, device=dev)
+        self.tag_filtered = torch.zeros(n, self.strikes, dtype=torch.bool, device=dev)
         return obs
+
+    def _study_tags(self, pos_m: Tensor, alive: Tensor, corrected: Tensor) -> tuple[Tensor, Tensor]:
+        """``SvgGame._study_tags`` (the same tags) that also keeps, per Strike slot of this tick, whether it was tagged,
+        the 3-D distance to the Guard drone it was paired with (the distance the tag was judged on) and whether the
+        safety filter corrected either drone of the pair on this tick (``corrected``: the filter's own flag,
+        |safe - nominal velocity| > 1e-3 m/s, ``core/safety_filter.py``)."""
+        tagged, alive_after, partner = core_game.proximity_tags(pos_m, alive, self.guards, self.cfg.tag.radius_m,
+                                                                self._tag_survives)
+        g = self.guards
+        s_partner = partner[:, g:]                                                    # [N, S] Guard index or -1
+        idx = s_partner.clamp(min=0)
+        g_pos = torch.gather(pos_m[:, :g], 1, idx[..., None].expand(-1, -1, pos_m.shape[-1]))
+        dist = (pos_m[:, g:] - g_pos).norm(dim=-1)
+        filtered = corrected[:, g:] | torch.gather(corrected[:, :g], 1, idx)
+        self._tick_tag = (s_partner >= 0, dist, filtered)
+        return tagged, alive_after
 
     def step(self, actions: dict[str, Tensor]):
         if self.should_stop is not None and self.should_stop():
             raise SweepStopped("stop requested before a tick")
+        self._tick_tag = None
         out = super().step(actions)
         g = self.guards
         first = ~self.first_done
@@ -375,6 +422,11 @@ class SweepGame(SvgGame):
         self.guards_removed = self.guards_removed + first * (tagged[:, :g] & ~out.info["final_alive"][:, :g]).sum(dim=1)
         ended = first & out.done
         self.strikes_left = torch.where(ended, out.info["final_alive"][:, g:].sum(dim=1), self.strikes_left)
+        if self._tick_tag is not None:          # the study tag ran this tick: record the first game's tags
+            hit, dist, filtered = self._tick_tag
+            rec = first[:, None] & hit
+            self.tag_pair_m = torch.where(rec, dist, self.tag_pair_m)
+            self.tag_filtered = self.tag_filtered | (rec & filtered)
         self.first_done = self.first_done | out.done
         return out
 
@@ -429,7 +481,34 @@ def hold_composition(per_game: dict, guards: int) -> dict:
             "length_p90_s": float(np.quantile(end_s, P90_Q)) if end_s.size else None}
 
 
-def cell_row(per_game: dict, summary: list, cell: tuple, games_per_cell: int) -> dict:
+def tag_edge_m(cfg: GameCfg, margin_m: float | None) -> float | None:
+    """The "at the filter edge" limit of L0.12b: the filter distance the game reads (the smaller partner-rules keep-out,
+    filter.keepout_m 1.10) plus ``margin_m`` from the gate file; None without a margin."""
+    if margin_m is None:
+        return None
+    return min(cfg.rules.keepout_guard_m, cfg.rules.keepout_strike_m) + float(margin_m)
+
+
+def tag_shares(per_game: dict, edge_m: float | None) -> dict:
+    """L0.12b's unchosen-tag measurement over the FINISHED first games of ``per_game`` (as ``cell_row`` counts tags).
+    A tag is one Strike drone tagged (``tag_pair_m`` finite). ``tags_filtered``: tags on a tick where the safety filter
+    corrected either drone of the tagged pair; ``unchosen_tag_share`` = tags_filtered / tags. ``tags_at_edge``: tags
+    whose 3-D pair distance was <= ``edge_m``; ``edge_tag_share`` = tags_at_edge / tags. A share is None without tags
+    (and the edge numbers are None without ``edge_m``); an empty dict when the arrays are absent (tag off: no hook)."""
+    if "tag_pair_m" not in per_game:
+        return {}
+    finished = np.asarray(per_game["outcome"]) != RUNNING
+    dist = np.asarray(per_game["tag_pair_m"])[finished]
+    tagged = np.isfinite(dist)
+    n = int(tagged.sum())
+    filtered = int((tagged & np.asarray(per_game["tag_filtered"])[finished]).sum())
+    edge = None if edge_m is None else int((tagged & (dist <= edge_m)).sum())
+    return {"tags_counted": n, "tags_filtered": filtered, "unchosen_tag_share": filtered / n if n else None,
+            "tags_at_edge": edge, "edge_tag_share": edge / n if n and edge is not None else None,
+            "tag_edge_m": edge_m, "tag_pair_min_m": float(dist[tagged].min()) if n else None}
+
+
+def cell_row(per_game: dict, summary: list, cell: tuple, games_per_cell: int, edge_m: float | None = None) -> dict:
     """The summary of one cell: ``summarise``'s row (hold rate, interval, closest approach, ...) plus reach and
     time-out rates with Wilson 95 % intervals, holds by tagging every Strike drone, tags per game and the start counts."""
     outcome, left = per_game["outcome"], per_game["strikes_left"]
@@ -449,6 +528,7 @@ def cell_row(per_game: dict, summary: list, cell: tuple, games_per_cell: int) ->
     close = per_game["start_team_close"]
     row["start_team_close_games"] = int((close > 0).sum())
     row["start_team_close_pairs"] = int(close.sum())
+    row.update(tag_shares(per_game, edge_m))
     return row
 
 
@@ -458,14 +538,16 @@ def _sync(device: str) -> None:
 
 
 def play_batch(cfg: GameCfg, size: str, cells: tuple, run: dict,
-               should_stop: Callable[[], bool] | None = None, strike_start_dz_m: float = 0) -> BatchResult:
+               should_stop: Callable[[], bool] | None = None, strike_start_dz_m: float = 0,
+               fixed_starts: tuple[Tensor, Tensor] | None = None) -> BatchResult:
     """Play one batch: ``cells`` side by side, ``run["games_per_cell"]`` games each, at most ``run["ticks_cap"]`` ticks
     (``core/play.play_match``), on ``run["device"]`` from ``run["seed"]``. Raises :class:`SweepStopped` when
     ``should_stop`` says yes before a tick. ``strike_start_dz_m``: every Strike drone starts this much higher (sensitivity
-    groups; 0 = the game's own starts)."""
+    groups; 0 = the game's own starts). ``fixed_starts``: the reference's first ``games_per_cell`` starts (L0.12b), played
+    instead of a draw. ``run["tag_edge_margin_m"]`` (optional): the edge limit of :func:`tag_shares`."""
     guards, strikes = parse_size(size)
     n, device, seed = int(run["games_per_cell"]), run["device"], int(run["seed"])
-    game = SweepGame(cfg, len(cells), n, guards, strikes, device, seed, strike_start_dz_m)
+    game = SweepGame(cfg, len(cells), n, guards, strikes, device, seed, strike_start_dz_m, fixed_starts)
     game.should_stop = should_stop
     guard = split_players(cells, "guard", cfg, n, device, seed)
     strike = split_players(cells, "strike", cfg, n, device, seed)
@@ -484,13 +566,13 @@ def play_batch(cfg: GameCfg, size: str, cells: tuple, run: dict,
         "strikes_left": torch.where(game.first_done, game.strikes_left, alive_strikes),
         "closest_3d_m": res.closest_cross_3d_m, "closest_m": res.closest_cross_m, "start_miss": res.start_miss,
         "start_team_close": game.team_close_first, "nonfinite_actions": res.nonfinite_actions,
-        "start_pos_m": res.start_pos_m}
+        "start_pos_m": res.start_pos_m, "tag_pair_m": game.tag_pair_m, "tag_filtered": game.tag_filtered}
     per_game = {k: v.detach().cpu().numpy() for k, v in host.items()}
     rows, shas = [], []
     for i, cell in enumerate(cells):
         sl = slice(i * n, (i + 1) * n)
         part = {k: v[sl] for k, v in per_game.items()}
-        row = cell_row(part, summarise(res.slice(sl), by=()), cell, n)
+        row = cell_row(part, summarise(res.slice(sl), by=()), cell, n, tag_edge_m(cfg, run.get("tag_edge_margin_m")))
         row["one_for_one_bad_games"] = int(np.sum(part["guards_tagged"] != part["tags"]))
         row.update(hold_composition({**part, "game_ticks": game.ticks}, guards))
         row["removed_bad_games"] = (int(np.sum(part["guards_removed"] != part["tags"]))

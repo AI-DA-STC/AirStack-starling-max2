@@ -5,6 +5,7 @@ section 8; the sections of T44's record, records/2026-11-21_ste_l011_screen_reco
     make_ste_l012_record.py --verdict <folder>/verdict.json --out records/<date>_ste_l012_best_response_record.md
                             [--name <date>_ste_l012_best_response] [--number T<n>] [--pilot <pilot run>/pilot.json]
     make_ste_l012_record.py --aborted --runs <run>,<run>,... --out records/<...>_record.md [--name ...] [--number ...]
+    (both: [--task L0.12b] names the task in the record and the ledger row; default L0.12)
 
 Refuses to overwrite (a record is never edited after it is written; additions go under "Run notes added by the lead").
 With --verdict the word is INFO: ``verdict`` only accepts runs whose controls all passed (QC C-1), and this writer
@@ -79,9 +80,9 @@ def hours_cell(dirs) -> str:
     return f"; {sum(used):.3f} GPU-h" if used else ""
 
 
-def ledger_row(number, dirs, simulator, gpu, name, what, word) -> str:
+def ledger_row(number, dirs, simulator, gpu, name, what, word, task: str = "L0.12") -> str:
     """LEDGER.md's seven columns: # | Date | Simulator | Run | What | Result | Record."""
-    return (f"| {number or 'T?'} | {first_launch(dirs)} | {simulator}; {gpu or 'CPU'} | {name} | STE L0.12 "
+    return (f"| {number or 'T?'} | {first_launch(dirs)} | {simulator}; {gpu or 'CPU'} | {name} | STE {task} "
             f"Best-response test: {what}{hours_cell(dirs)} | {word} | records/{name}_record.md |")
 
 
@@ -99,20 +100,49 @@ def lab(name: str) -> str:
     return f"{name} ({Z_LABEL})" if name in Z_UP else name
 
 
-def record_text(verdict: dict, runs: dict, name: str, number: str | None) -> tuple[str, str]:
+def purpose(verdict: dict, task: str) -> str:
+    """The Purpose paragraph: L0.12's, or (a reference not made by T44, L0.12b) the same method on that reference."""
+    label = verdict.get("reference_label", "T44")
+    if label == "T44":
+        return ("STE task L0.12 Best-response test (PLAN.md section 4): for each shortlisted variant of T44, an exploiter "
+                "Strike team trained against the best scripted Guard g* and an exploiter Guard team trained against the "
+                "best scripted Strike s*; the gain of each over the best script on T44's own starts, and the variant's "
+                "category on the better of script and exploiter (LEAD CALL 21 Nov 2026).")
+    return (f"STE task {task}: L0.12's best-response method on the variant(s) {', '.join(verdict['variants'])}: an "
+            f"exploiter Strike team trained against the best scripted Guard g* and an exploiter Guard team trained "
+            f"against the best scripted Strike s*, g* and s* and the script baselines from {label} (on T44's own "
+            f"starts); the gain of each over the best script, the category on the better of script and exploiter, and "
+            f"the unchosen-tag shares (INFO).")
+
+
+def unchosen_lines(verdict: dict) -> list[str]:
+    """L0.12b: the trained exploiter's unchosen-tag shares per side (INFO); nothing when no side has them."""
+    rows = [(v, s, sr["tag_shares"]) for v, e in verdict["variants"].items() for s, sr in e["sides"].items()
+            if sr.get("tag_shares") and sr["tag_shares"].get("tag_edge_m") is not None]
+    if not rows:
+        return []
+    out = ["", "Unchosen tags of the trained exploiter (INFO; a tag on a tick where the safety filter corrected either "
+           "drone of the pair; at the filter edge = pair distance at most the filter distance plus the gate's margin, "
+           f"{num(rows[0][2]['tag_edge_m'], '{:.2f}')} m):", "",
+           "| Variant | Side | Cell | Tags | Filter on (share) | At the edge (share) |", "|---|---|---|---|---|---|"]
+    for v, s, ts in rows:
+        out.append(f"| {v} | {s} | {ts['cell']} | {ts['tags_counted']} | {ts['tags_filtered']} "
+                   f"({num(ts.get('unchosen_tag_share'), '{:.3f}')}) | {ts['tags_at_edge']} "
+                   f"({num(ts.get('edge_tag_share'), '{:.3f}')}) |")
+    return out
+
+
+def record_text(verdict: dict, runs: dict, name: str, number: str | None, task: str = "L0.12") -> tuple[str, str]:
     word = "INFO (every control PASS; the categories feed gate G0)" if verdict["controls_pass"] else \
         "ABORTED (a control is not PASS: read controls.json of each run)"
     lines = [f"Simulator: {verdict['simulator']}. Observed in the training simulator; not a flight result.", "",
-             f"# {name} record", "", "## Run notes", "", *RUN_NOTES, "", "## Purpose", "",
-             "STE task L0.12 Best-response test (PLAN.md section 4): for each shortlisted variant of T44, an exploiter "
-             "Strike team trained against the best scripted Guard g* and an exploiter Guard team trained against the "
-             "best scripted Strike s*; the gain of each over the best script on T44's own starts, and the variant's "
-             "category on the better of script and exploiter (LEAD CALL 21 Nov 2026).", "",
+             f"# {name} record", "", "## Run notes", "", *RUN_NOTES, "", "## Purpose", "", purpose(verdict, task), "",
              "## Config", "", f"- Gate file sha256 `{verdict['gates_sha256']}` (copy in each run folder: `gates.toml`).",
              f"- Band {verdict['band']} (PROPOSED by the lead)."]
     first = next(iter(runs.values()))
+    source = verdict.get("reference_label", "T44")
     lines += [f"- Reference `{first['reference']['file']}`, sha256 `{first['reference']['sha256']}`; T44's starts sha256 "
-              f"`{first['reference']['start_sha256']}`; T44 gate sha256 `{first['reference']['t44_gates_sha256']}`."]
+              f"`{first['reference']['start_sha256']}`; {source} gate sha256 `{first['reference']['t44_gates_sha256']}`."]
     games = {r["game_file"]["file"]: r["game_file"]["sha256"] for r in runs.values()}
     lines += [f"- Game `{f}`, sha256 `{h}`." for f, h in games.items()]
     lines += [f"- {k}: trainer settings {r['settings']}" for k, r in runs.items()]
@@ -165,9 +195,10 @@ def record_text(verdict: dict, runs: dict, name: str, number: str | None) -> tup
                          f" | {'-' if g is None else f'{g:+.3f}'} | {sr['gain']['real']} | "
                          f"{paired.get('exploiter_only', '-')} / {paired.get('script_only', '-')} | "
                          f"{num(comp.get('guards_left_mean_in_holds'), '{:.3f}')} | {num(comp.get('length_median_s'))} |")
+    lines += unchosen_lines(verdict)
     extras = [(k, o, e) for k, r in runs.items() for o, e in r.get("extra_opponents", {}).items()]
     if extras:
-        lines += ["", "Evaluation-only opponents (INFO; script baseline from the T44 reference, same starts):", "",
+        lines += ["", f"Evaluation-only opponents (INFO; script baseline from the {source} reference, same starts):", "",
                   "| Run | Opponent | Trained exploiter | Best script | Gain | Real |", "|---|---|---|---|---|---|"]
         lines += [f"| {k} | {e['label']} | {ci(e['exploiter'])} | {ci(e['script'])} | {e['gain']:+.3f} | {e['real']} |"
                   for k, o, e in extras]
@@ -184,15 +215,15 @@ def record_text(verdict: dict, runs: dict, name: str, number: str | None) -> tup
             sides.append(f"{v} {side.capitalize()}: {sr['status']}, gain {'-' if g is None else f'{g:+.3f}'}, Guards left "
                          f"{num(comp.get('guards_left_mean_in_holds'), '{:.3f}')}, "
                          f"{num(comp.get('length_median_s'))} s median")
-        parts.append("; ".join(sides) + f" (category {e['category']}, set by T44's scripts)")
+        parts.append("; ".join(sides) + f" (category {e['category']}, set by {source}'s scripts)")
     dirs = [r["dir"] for r in runs.values()] + ([str(Path(r0["file"]).parent)] if r0 else [])
     row = ledger_row(number, dirs, verdict["simulator"], (verdict.get("machine") or {}).get("gpu"), name,
-                     " / ".join(parts), word.split(" ")[0])
+                     " / ".join(parts), word.split(" ")[0], task)
     lines += ["## Ledger row", "", "Ledger row: " + row, ""]
     return "\n".join(lines) + "\n", row
 
 
-def aborted_text(runs: dict, name: str, number: str | None) -> tuple[str, str]:
+def aborted_text(runs: dict, name: str, number: str | None, task: str = "L0.12") -> tuple[str, str]:
     """An ABORTED record from run folders alone: what ran and why, no gain, no status, no category (QC C-1)."""
     sim = ("training simulator, tier 1 (fast engine; Starling layer: commander copy, safety filter on every pair, "
            "fitted PX4 response, exploratory); study tag on (P1, PROPOSED)")
@@ -206,7 +237,7 @@ def aborted_text(runs: dict, name: str, number: str | None) -> tuple[str, str]:
         whys.append(f"{info['what']}: {info['why']}")
     lines += ["", "## Run notes", "", *RUN_NOTES, ""]
     gpus = sorted({info["gpu"] for info in runs.values() if info.get("gpu")})
-    row = ledger_row(number, list(runs), sim, ", ".join(gpus), name, "; ".join(whys), "ABORTED")
+    row = ledger_row(number, list(runs), sim, ", ".join(gpus), name, "; ".join(whys), "ABORTED", task)
     lines += ["## Ledger row", "", "Ledger row: " + row, ""]
     return "\n".join(lines) + "\n", row
 
@@ -251,6 +282,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--name", default=None)
     ap.add_argument("--number", default=None)
+    ap.add_argument("--task", default="L0.12", help="the task named in the record and the ledger row (L0.12b)")
     a = ap.parse_args(argv)
     if a.out.exists():
         print(f"refused: {a.out} exists (a record is never overwritten)", file=sys.stderr)
@@ -261,7 +293,7 @@ def main(argv: list[str] | None = None) -> int:
             print("refused: --aborted needs --runs", file=sys.stderr)
             return 1
         runs = {d: run_summary(Path(d)) for d in [x.strip() for x in a.runs.split(",") if x.strip()]}
-        text, row = aborted_text(runs, name, a.number)
+        text, row = aborted_text(runs, name, a.number, a.task)
         a.out.parent.mkdir(parents=True, exist_ok=True)
         a.out.write_text(text)
         print(f"wrote {a.out}\nledger row:\n{row}")
@@ -276,7 +308,7 @@ def main(argv: list[str] | None = None) -> int:
     runs = {}
     for key, d in verdict["runs"].items():
         runs[key] = {"dir": d, **json.loads((Path(d) / "results.json").read_text())}
-    text, row = record_text(verdict, runs, name, a.number)
+    text, row = record_text(verdict, runs, name, a.number, a.task)
     if a.pilot is not None:                  # QC M-5: the probe counts with their denominators next to the recipe
         pj = json.loads(a.pilot.read_text())
         probes = ["Strike probes of the pilot (reaches / ended training games per update):", ""]

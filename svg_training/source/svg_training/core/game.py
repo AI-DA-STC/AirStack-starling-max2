@@ -306,7 +306,7 @@ class SvgGame:
         if cfg.preset == "contact":
             tagged, alive = contact_tags(pos, alive, g, cfg.contact.contact_m, self._guard_survives)
         elif self._tag_on:                    # the study tag (L0.9): one for one, nearest pair first
-            tagged, alive, _ = proximity_tags(pos, alive, g, cfg.tag.radius_m, self._tag_survives)
+            tagged, alive = self._study_tags(pos, alive, corrected)          # hook at the end of the class
         # scheduled drop-outs
         steps_new = self.steps + 1
         alive = alive & ~(self.dropout_step == steps_new[:, None])
@@ -369,3 +369,14 @@ class SvgGame:
         if self.cfg.starts.mode == "zone_disc_ring" and self.scenario is None:
             info["start_team_close"] = self.start_team_close.clone()
         return info
+
+    # ------------------------------------------------------------------ study tag hook (STE task L0.12b)
+    # Kept at the end of the class so that the cited line numbers above hold.
+    def _study_tags(self, pos_m: Tensor, alive: Tensor, corrected: Tensor) -> tuple[Tensor, Tensor]:
+        """The study tag of the step (``core/pair_rules.proximity_tags``) on the positions pos_m [N, M, 3] the drones end
+        the step at, among the drones alive [N, M] bool. ``corrected`` [N, M] bool: the drones the safety filter changed
+        on this step (all False on the pure path). Returns (tagged [N, M] bool, alive_after [N, M] bool). A hook:
+        ``ste/sweep.SweepGame`` overrides it to record each tag's partner, pair distance and filter flag; the game's
+        own result is the same either way."""
+        tagged, alive_after, _ = proximity_tags(pos_m, alive, self.guards, self.cfg.tag.radius_m, self._tag_survives)
+        return tagged, alive_after

@@ -7509,7 +7509,7 @@ Laptop drills (21 Nov, fix branch, shared folder `~/AirStack-starling-max2/svg_t
 
 ## 2026-11-21 09:29
 
-**Status, 2026-11-21 09:35 (+08:00), event: L0.4 + VID-1 merged — first 3-D videos; your look pick (D9)** · laptop RTX 5070 Ti · GPU: L0.2 Isaac smoke · 1 GPU job (0 paused)
+**Status, 2026-11-21 09:29 (+08:00), event: L0.4 + VID-1 merged — first 3-D videos; your look pick (D9)** · laptop RTX 5070 Ti · GPU: L0.2 Isaac smoke · 1 GPU job (0 paused)
 
 **Plain summary (L0.4 / VID-1).** Tested: the AirStack Starling drawn in Isaac Lab, and the L0.11 games replayed in 3-D.
 Happened: our clips had a grey box drawn over every drone since S2b (fixed), and the first 3-D videos are in (below).

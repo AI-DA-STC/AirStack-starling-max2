@@ -104,13 +104,31 @@ def test_the_t2_arm_reads_both_tiers_and_the_t1_networks(two_arms):
     assert {(p["tier"], p["networks"]) for p in c1} == {(1, "t1")}
 
 
-def test_the_arms_train_the_same_networks_from_the_same_seed(two_arms):
+def test_both_arms_start_from_the_same_networks_and_part_through_the_drone(two_arms):
     import torch
-    a = torch.load(two_arms["t1"] / "snapshots" / "u0001.pt", weights_only=False)
-    b = torch.load(two_arms["t2"] / "snapshots" / "u0001.pt", weights_only=False)
-    assert set(a) == set(b)
-    # same start, same seed: the first update differs only through the drone model (tier 1 v tier 2)
-    assert any(not torch.equal(a[k]["policy"][p], b[k]["policy"][p]) for k in a for p in a[k]["policy"])
+    load = lambda arm, u: torch.load(two_arms[arm] / "snapshots" / f"u{u:04d}.pt", weights_only=False)  # noqa: E731
+    a0, b0 = load("t1", 0), load("t2", 0)
+    assert set(a0) == set(b0)
+    for k in a0:                                                  # one seed: the same start networks bit for bit
+        for part in a0[k]:
+            assert all(torch.equal(a0[k][part][p], b0[k][part][p]) for p in a0[k][part]), (k, part)
+    a1, b1 = load("t1", 1), load("t2", 1)                         # the first update differs through the drone model
+    assert any(not torch.equal(a1[k]["policy"][p], b1[k]["policy"][p]) for k in a1 for p in a1[k]["policy"])
+
+
+def test_a_curve_read_stopped_by_sigint_is_done_on_resume(tmp_path, monkeypatch):
+    g = tiny_gates(tmp_path)
+    real = driver.Arm.curve_read
+
+    def interrupted(self, curve):
+        return self.stop("interrupted")                          # as a SIGINT during the read: the update is saved
+    monkeypatch.setattr(driver.Arm, "curve_read", interrupted)
+    r = tmp_path / "t1"
+    assert arm(g, r, "t1") == 4
+    monkeypatch.setattr(driver.Arm, "curve_read", real)
+    assert arm(g, r, "t1") == 0
+    curve = json.loads((r / "curve.json").read_text())
+    assert sorted({p["update"] for p in curve}) == [1, 2]
 
 
 def test_the_same_command_on_a_finished_arm_does_nothing_new(two_arms):

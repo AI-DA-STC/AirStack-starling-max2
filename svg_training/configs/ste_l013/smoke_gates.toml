@@ -80,7 +80,7 @@ base_guard_game_steps = 553648128
 # cap_h: effective hours (wall clock less the owner's pauses of the job) = the launcher's --gpu-h for that job.
 # L0.13 CHOICE (projection from L0.2, record of 21 Nov 2026: tier 2 3v3 at 16,384 games trained at 67,368 game-steps/s
 # in 4.7 GB; L0.12 base Guard on tier 1 at 396,236): t2 ~ 48 updates x ~94 s = 1.25 h of training + Isaac start, the
-# C-1a check, 9 curve reads (each 2 reads on tier 2 + 1 on tier 1) and the final phase ~ 0.35 h = ~1.6 h projected;
+# C-1a check, 8 curve reads (each 2 reads on tier 2 + 1 on tier 1) and the final phase ~ 0.35 h = ~1.6 h projected;
 # t1 ~ 48 x ~16 s = 0.21 h + ~0.1 h = ~0.3 h projected. Caps leave ~55 % margin on t2 and ~2.5x on t1, so a slower
 # tier 2 (down to ~45,000 game-steps/s) still reaches its budget; below that the run reads TOO_SLOW (a result).
 # final_reserve_s: the floor of the final reserve (L0.12 lesson: long games lengthen the final evaluation; a batch that
@@ -128,9 +128,9 @@ room_factor = 1.5                  # before each update: left >= reserve + 1.5 x
 # Run first, before any training; a failed control stops the run at once: exit 6 CONTROL_FAILED, terminal (the same
 # command on the same folder ends with 6 again). A non-finite action is the run contract's case: exit 5, no retry.
 # Nothing is published unless every control is PASS. Gated (all arms unless marked):
-#   ctl_tier_difference: the tier 1 and tier 2 games differ in `tier_difference` only (C-0), and every tier 2 game of the
-#     t2 arm (training and evaluation) reports the physics drone (motion "physics/...": a game that silently ran the
-#     fitted drone fails).
+#   ctl_tier_difference: the tier 1 and tier 2 games differ in `tier_difference` only (C-0), and the t2 arm's training
+#     game reports the physics drone (motion "physics/...": a game that silently ran the fitted drone fails); every tier 2
+#     evaluation game is built on a view of the Isaac world, which the game refuses without the physics backend.
 #   ctl_physics_agreement (t2, EVERY launch; C-1a, L0.2's check; LEAD CALL 21 Nov 2026 QC L02-1, L02-R1): agree_guard v
 #     agree_strike on the PyTorch reference world, agree_ticks ticks, records every call the game made to its drone model;
 #     replayed bare on the Isaac world (the whole training world, then the evaluation view) and on a fresh reference
@@ -145,9 +145,10 @@ room_factor = 1.5                  # before each update: left >= reserve + 1.5 x
 #     CHOICE: L0.12's CUDA tolerances; on the CPU every game equal). _t2: t2 arm only, on tier 2.
 #   ctl_negative_bar_t2 (NEGATIVE, t2 arm; VALIDATION_QC section 0 rule 4): the gate's bar applied to the untrained
 #     exploiter on tier 2 must NOT be cleared.
-#   Plumbing on EVERY evaluation batch (suffix names the batch) and curve read: ctl_paired_starts (every cell on T44's
-#     start set), tags_one_for_one (Guard drones removed by a tag = Strike drones tagged, every game),
-#     no_nonfinite_actions (status NONFINITE, exit 5).
+#   Plumbing on EVERY evaluation batch (suffix names the batch): ctl_paired_starts (every cell on T44's start set),
+#     tags_one_for_one (Guard drones removed by a tag = Strike drones tagged, every game), no_nonfinite_actions (status
+#     NONFINITE, exit 5); on every curve read (its own starts, so no paired-starts check): tags_one_for_one_curve and
+#     no_nonfinite_actions_curve.
 # INFO, never gated: the tier 2 parked Guard before and after training (same starts, same world); tier 2 parked v T44's
 # tier 1 cell; the t1 arm's own final batch v the t2 arm's tier 1 replay of the same networks.
 stop_on_fail = true

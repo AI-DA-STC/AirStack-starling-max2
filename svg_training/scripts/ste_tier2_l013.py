@@ -394,8 +394,9 @@ class Arm:
             say(f"world: {getattr(self.world, 'label', type(self.world).__name__)}, {n} games x "
                 f"{self.guards + self.strikes} drones ({time.perf_counter() - t0:.0f} s)")
             k = self.T.PEER_BATCH_CELLS * self.n_eval
-            for name, w in ((f"ctl_physics_agreement_launch{self.state['launches']}", self.world),
-                            (f"ctl_physics_agreement_view_launch{self.state['launches']}", self.view(k))):
+            for name, size in ((f"ctl_physics_agreement_launch{self.state['launches']}", n),
+                               (f"ctl_physics_agreement_view_launch{self.state['launches']}", k)):
+                w = self.world if size == n else self.view(size)     # the view is built (its idle games parked) here
                 a = self.T.physics_agreement(g, self.cfg2, w, self.device)
                 controls[name] = {"status": PASS if a["pass"] else FAIL, "phase": "launch",
                                   "detail": f"{a['games']} games x {a['drones']} drones x {a['ticks']} ticks on {a['world']}: "
@@ -481,6 +482,8 @@ class Arm:
                                              "note": "INFO: tier 2 is another drone; not a control"}
             write_json(self.run_dir / INFO_FILE, info)
         self.state["before"] = before
+        (self.run_dir / SNAPSHOTS).mkdir(exist_ok=True)              # the start networks (the same in both arms)
+        self.torch.save(T.snapshot(self.learner.modules()), self.run_dir / SNAPSHOTS / "u0000.pt")
         say("controls: " + ", ".join(f"{k} {v['status']}" for k, v in controls.items()))
         code = self.ending(controls, "before training")
         if code is not None:
@@ -500,6 +503,11 @@ class Arm:
         reserve = T.final_reserve_s(g, self.arm, float(self.state.get("batch_s", 0.0)))
         self.state["final_reserve_s"] = reserve
         (self.run_dir / SNAPSHOTS).mkdir(exist_ok=True)
+        u = self.learner.updates           # a read stopped by SIGINT after its update's checkpoint is done on resume
+        if u and T.curve_due(g, u) and not any(p["update"] == u for p in curve):
+            code = self.curve_read(curve)
+            if code is not None:
+                return code
         while self.learner.updates < planned:
             if self.guard.stop_requested:
                 return self.stop("interrupted")

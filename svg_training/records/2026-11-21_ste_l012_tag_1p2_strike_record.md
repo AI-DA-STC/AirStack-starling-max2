@@ -37,6 +37,10 @@ Verdict: **ABORTED**. Nothing below is a result: no side status or category is r
   [tag_1p2_trained_strike_ABORTED_game0_hold](../docs/media/ste_l012/tag_1p2_trained_strike_ABORTED_game0_hold.gif),
   [tag_1p2_trained_strike_ABORTED_game1_hold](../docs/media/ste_l012/tag_1p2_trained_strike_ABORTED_game1_hold.gif).
 
+- **QC note (21 Nov 2026, after independent QC):** the effective-time gap above is a recording-stage difference, not a
+  suspend: results.json's effective_s 2,321.8 s was written before the run's final write; progress.json ends at
+  2,370.8 s, which matches the 2,372 s wall-clock span.
+
 ## Ledger row
 
 Ledger row: | T47 | 2026-11-21T11:25:59+08:00 | training simulator, tier 1 (fast engine; Starling layer: commander copy, safety filter on every pair, fitted PX4 response, exploratory); study tag on (P1, PROPOSED); NVIDIA GeForce RTX 5070 Ti Laptop GPU | 2026-11-21_ste_l012_tag_1p2_strike | STE L0.12 Best-response test: tag_1p2 / strike: controls PASS (exit 0, results.json complete); training stopped before its game-step budget (cap reserve: 602 s left < final reserve 620 s at update 87); 0.659 GPU-h | ABORTED | records/2026-11-21_ste_l012_tag_1p2_strike_record.md |

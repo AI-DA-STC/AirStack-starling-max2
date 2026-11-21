@@ -155,6 +155,16 @@ Evaluation-only opponents (INFO; script baseline from the T44 reference, same st
   ABORTED side from its run's results.json: best script only).
 - Edited after the first write (same session, before any push): one sentence of the lead's notes removed (it
   overstated where the categories come from), the hold split in (c) and the figure line added; no number changed.
+- **QC wording notes (21 Nov 2026, after independent QC; earlier notes not rewritten):**
+  - (a) "neither side is trivial at tag 1.2 m" means: by the gate's 0.2 band, read on the scripts alone.
+  - (b) The height-and-patience description is the lead's reading of one clip; no control run (such as a lower height
+    cap) was made.
+  - (c) Holds are one-for-one trades except against trained Strike teams, where some holds run to the 120 s clock: base
+    37 of 364, tag 1.4 m 1 of 260; in the ABORTED tag 1.2 m Strike run 786 of 1,000 games ran to the clock with 1.123
+    Guards left on average (information only, T47).
+  - Effective-time gap of the ABORTED run: results.json's effective_s 2,321.8 s was written before the run's final
+    write; progress.json ends at 2,370.8 s, which matches the 2,372 s wall-clock span: a recording-stage difference,
+    not a suspend.
 
 ## Ledger row
 

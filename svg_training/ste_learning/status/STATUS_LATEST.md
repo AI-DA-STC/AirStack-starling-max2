@@ -1,6 +1,6 @@
 INTERNAL · the latest status of STE's own learning track and the NUS port, overwritten at every update; the history is in [LOG.md](LOG.md). Produced by the `train-status` skill.
 
-**Status, 2026-11-22 06:45 (+08:00), event: morning digest** · laptop RTX 5070 Ti · GPU idle · 0 jobs
+**Status, 2026-11-22 06:30 (+08:00), event: morning digest** · laptop RTX 5070 Ti · GPU idle · 0 jobs
 
 **Morning digest.** What ran while you slept. Training simulator only, 3v3, one training run per side; nothing flown.
 

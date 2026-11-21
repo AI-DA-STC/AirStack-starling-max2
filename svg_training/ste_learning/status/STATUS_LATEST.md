@@ -1,6 +1,6 @@
 INTERNAL · the latest status of STE's own learning track and the NUS port, overwritten at every update; the history is in [LOG.md](LOG.md). Produced by the `train-status` skill.
 
-**Status, 2026-11-21 20:57 (+08:00), 30-minute update: G0 page revised; independent numbers check running** · laptop RTX 5070 Ti · GPU idle · 0 jobs
+**Status, 2026-11-21 21:02 (+08:00), event: G0 page ready for your read — [ste_learning/G0_DECISION.md](../G0_DECISION.md)** · laptop RTX 5070 Ti · GPU idle · 0 jobs
 
 **Plain summary (L0.13 Does Isaac Lab train at all?).** Tested: the same Guard recipe trained on the Isaac Lab drone and in
 the fast engine, same game, same 302 M game-steps, same starting networks. Happened (training simulator): **PASS** — the Isaac
@@ -82,7 +82,7 @@ Earlier: L0.11 top-down clips and the factor chart are in the [T44 record](../..
 | L0.4 | Side-by-side Starling render | DONE | tier 2 Isaac Lab | found why our clips never looked like the Starling: a grey physics box was drawn over every drone since S2b (the hide call missed it); one-line fix, re-render shows the Starling (before/after in Watch); merged into `development` after independent review; 0.028 of 0.2 GPU-h |
 | L0.5 | Starling video look fix | WAITING ON YOU (D9) | tier 2 Isaac Lab | the drone left unpainted, team shown by a ring or a small dot that casts no shadow; stills in Watch; 0.154 of 0.3 GPU-h (with VID-1) |
 | L0.14 | Crazyflie route check | DONE | tier 1 fast engine (CPU) | record T45: the T41 Guard policy holds 791–768 of 1,000 in the Crazyflie-like lag band (0.48–0.56 s, every drone slowed) against 831 at the Starling's lag, and drones come closer (games under 1.0 m: 7 → 101–149); planner, like for like: 0 of 100 at 3v3 and 5v3 against 20 Nov's 5 of 100 (not a clear difference; only one rule set run); QC + re-check passed; merged into `development` (targeted tests 76 passed; the full suite runs with the next merge — lead's call, the CPU is shared now); page `ste_learning/CRAZYFLIE_ROUTE.md` |
-| L0.6 | Gate G0 | DRAFTED (numbers check running) | none | `ste_learning/G0_DECISION.md` on branch ste-g0: answer + recommendation box + flowchart + 17-row decision table (evidence strength per row, the lead's recommendations apart), tag rule with learning curves by tag distance, 1v1 row, where to train, budget 8.93 GPU-h; open: the costed L1–L9 plan (Sunday) and your answer on longer 1.15 m runs |
+| L0.6 | Gate G0 | READY FOR YOUR READ (merged) | none | [G0_DECISION.md](../G0_DECISION.md): what L0 found, 17-row decision table with evidence strength per row, the tag rule with learning curves, 1v1, where to train, budget 8.93 GPU-h; independent numbers check: 10 claims fixed — **the 1.4 m Guard gain may be the decision-period difference (scripts held 0.6 s reach 738 v trained 747), so only 1.6 m has both trained sides clearly beating the scripts**; open: costed L1–L9 plan (Sunday), your answer on longer 1.15 m runs |
 
 GPU-h used in L0: **8.93 of 19** from the GPU-hour ledger (L0.11 0.43, L0.12 incl. the bubble-tag test 4.96, L0.13 1.59, L0.3 1.28, L0.2 0.39, L0.5 0.26, L0.4 0.03). **Correction:** earlier statuses said ~9.9; that was my over-estimate of L0.12, the ledger is the source.
 

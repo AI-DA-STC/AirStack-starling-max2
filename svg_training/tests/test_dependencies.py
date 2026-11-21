@@ -26,6 +26,8 @@ NOT_FROM_PIP = {
     "NUS's JAX code (conda nus_jax, scripts/workstation/setup_nus_jax.sh; never imported by the PyTorch pipeline)":
         {"jax", "jaxlib", "flax", "optax", "hydra", "omegaconf", "ma_skills", "skill_learning_mpe", "wandb"},
     "the flight stack in this repository (read from ../AirStack by path)": {"svg_ground_control"},
+    "the Crazyflie repository's planner (read only; a scratch copy put on sys.path by scripts/ste_l014_arena_fit.py, L0.14)":
+        {"crazyflie_shows"},
 }
 
 

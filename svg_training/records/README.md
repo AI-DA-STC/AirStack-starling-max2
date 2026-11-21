@@ -35,6 +35,7 @@ self-play matrix, written after the fact from their logs (T34 is unused; numbers
 | **FAIL (accepted)** | a gate was missed; the lab owner read the cause, judged it harmless, and the work went on. Still a FAIL |
 | **INFO** | the run had no gates: a measurement or a pilot. Its numbers describe; they do not pass or fail |
 | **ABORTED** | the run was stopped before it finished (too long, a starved GPU, a wrong set-up). Its partial numbers prove nothing |
+| **TOO_SLOW** | STE task L0.13 only (LEAD CALL 21 Nov 2026): the training stopped at its cap before its game-step budget; that is the result (too slow at that cap), and the gate is read at the steps reached for information only |
 | PASS / FAIL on NUS's port | they grade our code and our copies against NUS's code, never NUS's code |
 
 ## What a record holds

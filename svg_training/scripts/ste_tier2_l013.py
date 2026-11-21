@@ -305,16 +305,22 @@ class Arm:
 
     def batch(self, tier: int, cells: list, team, stopper, players: dict | None = None) -> dict:
         """One evaluation batch on T44's first eval_games starts, on ``tier`` (tier 2: a view of the Isaac world)."""
+        import numpy as np
         world = self.view(len(cells) * self.n_eval) if tier == 2 else None
-        return self.exploit.play_cells(self.cfg(tier), self.gates.run["size"], self.ref, cells, self.n_eval, self.device,
-                                       self.ref.meta["seed"], self.ticks_cap, learner=team, hold_ticks=self.hold,
-                                       should_stop=stopper, world=world, players=players)
+        pg = self.exploit.play_cells(self.cfg(tier), self.gates.run["size"], self.ref, cells, self.n_eval, self.device,
+                                     self.ref.meta["seed"], self.ticks_cap, learner=team, hold_ticks=self.hold,
+                                     should_stop=stopper, world=world, players=players)
+        pg["tier"] = np.full(len(pg["outcome"]), self.T.batch_tier(pg), dtype=np.int8)   # the tier each game RAN on
+        return pg
 
     def per_cell(self, pg: dict, cells: list) -> dict:
         return {c: self.exploit.slice_cell(pg, k, self.n_eval) for k, c in enumerate(cells)}
 
     def holds(self, pg: dict) -> tuple[int, int]:
+        """(holds, finished games) of a cell; the tier its games ran on is kept in ``counted_tier`` (QC T2: a count
+        carries where it came from, so a tier 2 number read from a tier 1 batch is caught)."""
         c = self.exploit.counts(pg)
+        self.counted_tier = tier_ran(pg) if "tier" in pg else None
         return c["holds"], c["games"]
 
     def refresh(self) -> None:
@@ -467,6 +473,7 @@ class Arm:
             controls[f"ctl_untrained_is_still_t{tier}"] = {"status": PASS if good else FAIL, "phase": "before",
                                                            "detail": f"untrained exploiter v {self.parked}, tier {tier}: {text}"}
             controls.update(plumbing(ex, pg, self.ref, self.n_eval, "before", f"_t{tier}_before"))
+            controls.update(batch_controls(T, pg, tier, "before", f"_t{tier}_before"))
         t44 = {k: v[:self.n_eval] for k, v in self.ref.cell(g.reference["variant"], self.parked, self.opp).items()}
         good, text = ex.replay_ok(self.per_cell(pgs[1], self.cells)[self.cells[1]], t44, self.device, g.controls,
                                   ticks_cap=cap)
@@ -490,6 +497,7 @@ class Arm:
             return code
         self.save_controls(controls)
         self.refresh()
+        self.state["pre_s"] = self.guard.effective_s()       # QC C1: the effective seconds before the first update
         self.state["phase"] = "train"
         self.state["learner"] = self.learner.state()
         self.guard.save(self.learner.updates, self.state)
@@ -577,17 +585,24 @@ class Arm:
                               "networks": self.arm if who == "own" else "t1", "k": c["holds"], "n": c["games"],
                               "rate": c["holds"] / c["games"] if c["games"] else None, "unfinished": c["unfinished"],
                               "seconds": time.perf_counter() - t0, "not_one_for_one": c["not_one_for_one"],
-                              "nonfinite_actions": c["nonfinite_actions"]})
+                              "nonfinite_actions": c["nonfinite_actions"], "seed": seed, "motion": c["motion"],
+                              "tier_ran": T.batch_tier(c), "physics_nonfinite": c["physics_nonfinite"],
+                              "upsets": c["upsets"]})
         except self.sweep.SweepStopped:
             return self.stop("interrupted")
         self.state["last_curve_s"] = time.perf_counter() - started
+        self.state.setdefault("curve_s_all", []).append(self.state["last_curve_s"])
         write_json(self.run_dir / CURVE, curve)
         controls = self.controls()
         for key, field, word in (("tags_one_for_one_curve", "not_one_for_one", FAIL),
-                                 ("no_nonfinite_actions_curve", "nonfinite_actions", NONFINITE)):
+                                 ("no_nonfinite_actions_curve", "nonfinite_actions", NONFINITE),
+                                 ("ctl_no_nonfinite_wrench_curve", "physics_nonfinite", FAIL)):
             count = sum(int(p[field]) for p in curve)
             controls[key] = {"status": PASS if count == 0 else word, "phase": "curve", "count": count,
-                             "detail": f"{count} games or actions wrong over {len(curve)} curve reads"}
+                             "detail": f"{count} games, actions or wrenches wrong over {len(curve)} curve reads"}
+        wrong = sum(int(p["tier_ran"] != p["tier"]) for p in curve)
+        controls["ctl_batch_tier_curve"] = {"status": PASS if wrong == 0 else FAIL, "phase": "curve", "count": wrong,
+                                            "detail": f"{wrong} curve reads ran on another tier than they are read as"}
         code = self.ending(controls, "in a learning-curve read")
         if code is not None:
             return code
@@ -623,6 +638,7 @@ class Arm:
             np.savez_compressed(self.run_dir / f"eval_final_t{tier}.npz",
                                 **{k: v for k, v in pg.items() if isinstance(v, np.ndarray)})
             controls.update(plumbing(ex, pg, self.ref, self.n_eval, "final", f"_t{tier}_final"))
+            controls.update(batch_controls(T, pg, tier, "final", f"_t{tier}_final"))
         t44 = {k: v[:self.n_eval] for k, v in self.ref.cell(g.reference["variant"], self.parked, self.opp).items()}
         good, text = ex.replay_ok(self.per_cell(pgs[1], cells)[self.cells[1]], t44, self.device, g.controls,
                                   ticks_cap=self.ticks_cap)
@@ -636,9 +652,10 @@ class Arm:
         if self.args.no_videos:
             result["videos"] = ["videos not made: --no-videos (tests only)"]
         else:
+            from svg_training.viz.replay import RecordingStopped
             try:
                 result["videos"] = self.clips()
-            except self.sweep.SweepStopped:
+            except (self.sweep.SweepStopped, RecordingStopped):           # QC D4: SIGINT during the clips -> exit 4
                 return self.stop("interrupted")
         result["complete"] = True                    # written last: a crash before here leaves no complete results.json
         write_json(self.run_dir / RESULTS, result)
@@ -656,7 +673,9 @@ class Arm:
         g, ex, T, sw = self.gates, self.exploit, self.T, self.sweep
         own = self.per_cell(pgs[self.tier], cells)
         k_t, n_t = self.holds(own[cells[0]])
+        tier_t = self.counted_tier
         k_p, n_p = self.holds(own[cells[1]])
+        tier_p = self.counted_tier
         before = self.state["before"]
         comp = lambda x, tier: sw.hold_composition({**x, "game_ticks": pgs[tier]["game_ticks"]}, self.guards)  # noqa: E731
         batches = {f"tier {tier}": {f"{c[0]} v {c[1]}": ex.counts(v) for c, v in self.per_cell(pg, cells).items()}
@@ -667,8 +686,14 @@ class Arm:
             "what": "STE L0.13 Does tier 2 train at all? One arm; observed in the training simulator",
             "simulator": SIMULATOR[self.tier], "arm": self.arm, "tier": self.tier, "gates_sha256": g.sha256,
             "eval_games": self.n_eval, "opponent": self.opp, "parked_name": self.parked,
-            "trained": {**T.rate(k_t, n_t), "composition": comp(own[cells[0]], self.tier)},
-            "parked": {**T.rate(k_p, n_p), "composition": comp(own[cells[1]], self.tier)},
+            "trained": {**T.rate(k_t, n_t), "composition": comp(own[cells[0]], self.tier),
+                        "tier_ran": tier_t, "upsets": int(np.sum(own[cells[0]].get("upset", 0)))},
+            "parked": {**T.rate(k_p, n_p), "composition": comp(own[cells[1]], self.tier),
+                       "tier_ran": tier_p, "upsets": int(np.sum(own[cells[1]].get("upset", 0)))},
+            "upsets": {f"tier {tier}": {f"{c[0]} v {c[1]}": int(np.sum(v.get("upset", 0)))
+                                        for c, v in self.per_cell(pg, cells).items()} for tier, pg in pgs.items()},
+            "physics_nonfinite": {f"tier {tier}": int(pg["physics_nonfinite"]) for tier, pg in pgs.items()},
+            "motion": {f"tier {tier}": pg["motion"] for tier, pg in pgs.items()},
             "untrained": T.rate(*before[self.tier]["untrained"]),
             "bar": T.trains_bar((k_t, n_t), (k_p, n_p)),
             "batches": batches, "peer_update": peer_update,
@@ -689,6 +714,7 @@ class Arm:
             "game_file": {"file": g.run["game_file"], "sha256": g.run["game_sha256"]},
             "parameter_set": parameter_set(self.cfg(self.tier), self.tier),
         }
+        out["projection_for_run_of_record"] = self.projection(rates and float(np.median([x["seconds"] for x in log])))
         if self.tier == 2:
             parked_before = before[2]["parked"]
             info = read_json(self.run_dir / INFO_FILE, {})
@@ -708,6 +734,22 @@ class Arm:
                                                      "neither": int(np.sum(~t2_on_t2 & ~peer_on_t1))}
         return out
 
+    def projection(self, update_s: float | None) -> dict | None:
+        """QC C1: this arm's measured pre-training time, update time U and curve read time C put into the run of
+        record's gate file (configs/ste_l013/gates.toml): does that arm reach its budget, with what margin, and the
+        break-even rate. Printed at the end of every arm (the smoke's numbers are the run's projection)."""
+        if not update_s:
+            return None
+        import numpy as np
+        reads = self.state.get("curve_s_all") or [0.0]
+        p = self.T.projection(self.T.load_gates(self.T.GATES_FILE), self.arm, float(self.state.get("pre_s", 0.0)),
+                              float(update_s), float(np.median(reads)), float(self.state.get("batch_s", 0.0)))
+        say(f"projection for the run of record, arm {self.arm}: pre {p['pre_s']:.0f} s + {p['updates'] - 1}.5 x U "
+            f"{p['update_s']:.1f} s + {p['reads'] - 1}.5 x C {p['curve_s']:.1f} s = {p['need_s']:.0f} s <= cap - reserve "
+            f"{p['available_s']:.0f} s: margin {p['margin_s']:+.0f} s; break-even "
+            f"{p['break_even_game_steps_per_s']:,.0f} game-steps/s")
+        return p
+
     def clips(self) -> list[str]:
         """STANDARDS section 8: the final networks v the opponent, the arm's own tier, 2-D with the height panel. t1 on
         the CPU; t2 on a view of the Isaac world (frames copied to the host)."""
@@ -723,7 +765,7 @@ class Arm:
         opp = make_strategy(self.opp, "strike", self.cfg(self.tier), n, dev, seed + self.exploit.STRIKE_SEED_OFFSET)
         recs = record_games(self.cfg(self.tier), self.guards, self.strikes, self.exploit.HeldPlayer(team, self.hold), opp,
                             num_games=n, seed=seed, band=0, max_steps=int(v["max_ticks"]), device=dev,
-                            world=self.view(n) if self.tier == 2 else None)
+                            world=self.view(n) if self.tier == 2 else None, should_stop=self.stop_final)
         out = []
         for rec in l012.pick_videos(recs, int(v["keep"])):
             kind = "reach" if rec.outcome == self.exploit.STRIKE_WIN else "hold"
@@ -734,6 +776,24 @@ class Arm:
                        f"({path.stat().st_size / 1e6:.2f} MB)")
             say(out[-1])
         return out or [f"no clip game finished within {v['max_ticks']} ticks: no video"]
+
+
+def tier_ran(cell_pg: dict) -> int | None:
+    """The one tier every game of a cell ran on (the batch's "tier" array), None if they differ (QC T2)."""
+    import numpy as np
+    tiers = np.unique(np.asarray(cell_pg["tier"]))
+    return int(tiers[0]) if len(tiers) == 1 else None
+
+
+def batch_controls(T, pg: dict, tier: int, phase: str, suffix: str) -> dict:
+    """QC F1, T2 (gated): the batch ran on the tier it is read as (its drone model), and the physics drone met no
+    non-finite wrench or setpoint in it (``physics_nonfinite``; 0 on tier 1). The upsets are INFO (results.json)."""
+    ran = T.batch_tier(pg)
+    nf = int(pg["physics_nonfinite"])
+    return {f"ctl_batch_tier{suffix}": {"status": PASS if ran == tier else FAIL, "phase": phase,
+                                        "detail": f"batch read as tier {tier} ran {pg['motion']!r} (tier {ran})"},
+            f"ctl_no_nonfinite_wrench{suffix}": {"status": PASS if nf == 0 else FAIL, "phase": phase,
+                                                 "detail": f"{nf} non-finite wrenches or setpoints in the drone model"}}
 
 
 def plumbing(ex, pg: dict, ref, n: int, phase: str, suffix: str) -> dict:
@@ -820,6 +880,8 @@ def verdict_main(argv: list[str]) -> int:
     ap.add_argument("--t1-run", type=Path, required=True)
     ap.add_argument("--t2-run", type=Path, required=True)
     ap.add_argument("--out", type=Path, required=True)
+    ap.add_argument("--smoke", action="store_true", help="arms run under another gate file than configs/ste_l013/"
+                    "gates.toml (the smoke, tests): the verdict is labelled SMOKE, never PASS / FAIL / TOO_SLOW")
     a = ap.parse_args(argv)
     res = {}
     for arm, d in (("t1", a.t1_run), ("t2", a.t2_run)):
@@ -841,16 +903,26 @@ def verdict_main(argv: list[str]) -> int:
     if res["t1"]["dry_cpu"] != res["t2"]["dry_cpu"]:
         return refuse("a dry CPU arm and a run of record never pair")
     gates = T.load_gates(Path(res["t2"]["dir"]) / GATES_COPY)
+    of_record = T.sha256_file(T.GATES_FILE)
+    if gates.sha256 != of_record and not a.smoke:                       # QC D2
+        return refuse(f"the arms ran under gate sha256 {gates.sha256}, not configs/ste_l013/gates.toml's {of_record}: "
+                      "a smoke or test verdict needs --smoke (labelled SMOKE)")
     t1, t2 = res["t1"], res["t2"]
+    for arm, r in (("t1", t1), ("t2", t2)):                             # QC T2: each arm's numbers from its own tier
+        ran = {who: r[who].get("tier_ran") for who in ("trained", "parked")}
+        if any(x != T.TIERS[arm] for x in ran.values()):
+            return refuse(f"arm {arm}'s trained / parked numbers ran on tier {ran}, not tier {T.TIERS[arm]}")
     v = T.tier2_verdict((t2["trained"]["k"], t2["trained"]["n"]), (t2["parked"]["k"], t2["parked"]["n"]),
-                        t2["budget_reached"], t2["game_steps"], t1["bar"]["cleared"])
+                        t2["budget_reached"], t2["game_steps"], t1["bar"]["cleared"],
+                        t1_budget_reached=t1["budget_reached"])
     b1, b2 = t2["batches"]["tier 1"], t2["batches"]["tier 2"]
     peer = f"{T.PEER} v {t2['opponent']}"
     own = f"{T.EXPLOITER} v {t2['opponent']}"
     matrix = {"t2 networks": {"tier 1": b1[own], "tier 2": b2[own]},
               "t1 networks": {"tier 1": b1.get(peer), "tier 2": b2.get(peer)}, "update": t2["peer_update"]}
     out = {"task": "L0.13", "what": "Does tier 2 train at all? Observed in the training simulator",
-           "gates_sha256": gates.sha256, "verdict": v["verdict"], "detail": v,
+           "gates_sha256": gates.sha256, "verdict": "SMOKE" if a.smoke else v["verdict"], "detail": v,
+           "smoke": bool(a.smoke), "smoke_reading": v["verdict"] if a.smoke else None,
            "t1": {k: t1[k] for k in ("trained", "parked", "untrained", "bar", "budget_reached", "game_steps",
                                      "trained_updates", "game_steps_per_s_median", "effective_s", "train_stop", "dir",
                                      "machine", "videos", "curve", "dry_cpu")},
@@ -906,6 +978,8 @@ def verdict_md(out: dict) -> str:
     d, t1, t2 = out["detail"], out["t1"], out["t2"]
     m = out["matrix_same_update"]
     dry = " **DRY CPU RUN (tests): not of record.**" if t2["dry_cpu"] else ""
+    if out.get("smoke"):                                                # QC D2: a smoke is never a result
+        dry += f" SMOKE (another gate file than gates.toml): the gate's rule would read {out['smoke_reading']}; not a result."
     lines = ["Simulator: training simulator, tier 1 (fitted Starling response) and tier 2 (Isaac Lab rigid-body Starling); "
              "study tag on (P1, PROPOSED). Observed in the training simulator; nothing here is a flight result.", "",
              "# L0.13 Does tier 2 train at all? Verdict", "", f"**{out['verdict']}**{dry}", "",

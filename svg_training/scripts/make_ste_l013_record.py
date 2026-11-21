@@ -87,11 +87,12 @@ def record_text(v: dict, arms: dict, name: str, number: str | None) -> tuple[str
               f"{r['game_steps']:,} game-steps ({r['train_stop']})" for arm, r in arms.items()]
     lines += ["", "## Gates", "", f"Verdict: **{v['verdict']}**." + (f" Reading (pre-registered): {d['reading']}."
                                                                       if d.get("reading") else ""), "",
-              "| Arm | Tier | Trained Guard holds | Parked Guard holds (same batch) | Bar cleared | Budget reached |",
-              "|---|---|---|---|---|---|",
-              f"| t2 | 2 | {ci(t2['trained'])} | {ci(t2['parked'])} | **{t2['bar']['cleared']}** | {t2['budget_reached']} |",
+              "| Arm | Tier | Trained Guard holds | Parked Guard holds (same batch) | Bar cleared | Budget reached | "
+              "Upset games, trained / parked (INFO) |", "|---|---|---|---|---|---|---|",
+              f"| t2 | 2 | {ci(t2['trained'])} | {ci(t2['parked'])} | **{t2['bar']['cleared']}** | {t2['budget_reached']} | "
+              f"{t2['trained'].get('upsets')} / {t2['parked'].get('upsets')} |",
               f"| t1 (control, INFO) | 1 | {ci(t1['trained'])} | {ci(t1['parked'])} | {t1['bar']['cleared']} | "
-              f"{t1['budget_reached']} |"]
+              f"{t1['budget_reached']} | {t1['trained'].get('upsets')} / {t1['parked'].get('upsets')} |"]
     m = v["matrix_same_update"]
     cell = lambda c: "n/a" if not c else f"{c['holds']}/{c['games']}"  # noqa: E731
     lines += ["", f"Networks x tiers at update {m['update']} (T44's starts, INFO):", "",
@@ -164,6 +165,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--runs", help="comma list of arm folders (--aborted)")
     ap.add_argument("--why", help="the lead's one-line reason (--aborted)")
     ap.add_argument("--out", type=Path, required=True)
+    ap.add_argument("--smoke", action="store_true", help="a SMOKE verdict (another gate file than gates.toml): the "
+                    "record is labelled SMOKE, never PASS / FAIL / TOO_SLOW")
     ap.add_argument("--name", default=None)
     ap.add_argument("--number", default=None)
     a = ap.parse_args(argv)
@@ -182,6 +185,14 @@ def main(argv: list[str] | None = None) -> int:
             print("refused: give --verdict, or --aborted with --runs", file=sys.stderr)
             return 1
         v = json.loads(a.verdict.read_text())
+        from svg_training.ste import tier2_train as T
+        of_record = T.sha256_file(T.GATES_FILE)
+        if (v.get("gates_sha256") != of_record or v.get("smoke")) and not a.smoke:      # QC D2
+            print(f"refused: the verdict ran under gate sha256 {v.get('gates_sha256')} (smoke {v.get('smoke')}), not "
+                  f"configs/ste_l013/gates.toml's {of_record}: a smoke record needs --smoke", file=sys.stderr)
+            return 1
+        if a.smoke:
+            v["verdict"] = "SMOKE"
         if not v.get("controls_pass"):
             print("refused: the verdict's controls_pass is false: write an ABORTED record (--aborted)", file=sys.stderr)
             return 1

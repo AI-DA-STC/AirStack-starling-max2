@@ -77,8 +77,11 @@ base_guard_game_steps = 553648128
 # L0.13 CHOICE (projection from L0.2, record of 21 Nov 2026: tier 2 3v3 at 16,384 games trained at 67,368 game-steps/s
 # in 4.7 GB; L0.12 base Guard on tier 1 at 396,236): t2 ~ 48 updates x ~94 s = 1.25 h of training + Isaac start, the
 # C-1a check, 8 curve reads (each 2 reads on tier 2 + 1 on tier 1) and the final phase ~ 0.35 h = ~1.6 h projected;
-# t1 ~ 48 x ~16 s = 0.21 h + ~0.1 h = ~0.3 h projected. Caps leave ~55 % margin on t2 and ~2.5x on t1, so a slower
-# tier 2 (down to ~45,000 game-steps/s) still reaches its budget; below that the run reads TOO_SLOW (a result).
+# t1 ~ 48 x ~16 s = 0.21 h + ~0.1 h = ~0.3 h projected. Break-even (QC C1, fix round 21 Nov 2026): training reaches the
+# 48th update only if pre + 48.5 U + 8.5 C <= cap - reserve = 7,500 s for t2 (pre = effective s before the first update,
+# U = s per update = 6,291,456 game-steps / rate, C = s per curve read; ste/tier2_train.projection), i.e. a tier 2 rate
+# of about 46,000-49,000 game-steps/s for pre 300 s and C 60-120 s; below that the run reads TOO_SLOW (a result). Every
+# arm prints that inequality's margin for this file at its end (the smoke's measured pre, U and C).
 # final_reserve_s: the floor of the final reserve (L0.12 lesson: long games lengthen the final evaluation; a batch that
 # ran to the 2,400-tick cap on the 16,384-game world would take ~10 min at L0.2's ~4 ticks/s).
 order = ["t1", "t2"]
@@ -145,6 +148,11 @@ room_factor = 1.5                  # before each update: left >= reserve + 1.5 x
 #     tags_one_for_one (Guard drones removed by a tag = Strike drones tagged, every game), no_nonfinite_actions (status
 #     NONFINITE, exit 5); on every curve read (its own starts, so no paired-starts check): tags_one_for_one_curve and
 #     no_nonfinite_actions_curve.
+#   ctl_batch_tier_<batch> (QC T2): every evaluation batch and curve read ran on the tier it is read as (its drone model:
+#     "physics/..." for tier 2), recorded per game in the eval files ("tier") and checked again by `verdict`.
+#   ctl_no_nonfinite_wrench_<batch> (QC F1): the physics drone met no non-finite wrench or setpoint in any evaluation
+#     batch or curve read (its nonfinite_count; 0 on tier 1): any -> FAIL, exit 6. Upset games (a live drone tipped past
+#     60 deg or non-finite) are INFO, reported per cell beside the hold rate (results.json "upsets", the record).
 # INFO, never gated: the tier 2 parked Guard before and after training (same starts, same world); tier 2 parked v T44's
 # tier 1 cell; the t1 arm's own final batch v the t2 arm's tier 1 replay of the same networks.
 stop_on_fail = true

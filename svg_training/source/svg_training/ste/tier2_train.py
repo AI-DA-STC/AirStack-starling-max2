@@ -380,6 +380,12 @@ def physics_agreement(gates: Tier2Gates, cfg: GameCfg, world: Any, device: str,
     return out
 
 
+def batch_tier(pg: dict) -> int:
+    """The tier a played batch ran on, from the drone model it reports (``exploit.play_cells`` "motion"): 2 for the
+    physics drone, 1 otherwise (QC T2: a tier 2 number must come from a physics-backend batch)."""
+    return TIERS["t2"] if str(pg["motion"]).startswith(PHYSICS_BACKEND + "/") else TIERS["t1"]
+
+
 # ================================================================================================ budget and time
 def final_reserve_s(gates: Tier2Gates, arm: str, batch_s: float) -> float:
     """Effective seconds kept back for an arm's final phase: final_reserve_factor x (final_batch_units x the arm's own
@@ -401,6 +407,26 @@ def room_needed_s(gates: Tier2Gates, reserve_s: float, update_s: float | None, c
     return float(reserve_s) + f * extra
 
 
+def projection(gates: Tier2Gates, arm: str, pre_s: float, update_s: float, curve_s: float, batch_s: float) -> dict:
+    """Whether an arm of ``gates`` reaches its budget at the measured times (QC C1): training goes on while the cap left
+    covers the reserve plus room_factor x (the next update and its read), so the last of P updates (with its read)
+    starts only if pre + (P - 1) U + (R - 1) C + reserve + f (U + C) <= cap, i.e. with f = 1.5,
+    pre + (P + 0.5) U + (R + 0.5) C <= cap - reserve (R reads; QC's pre + 48.5 U + 8.5 C <= 7,500 s for t2). pre: the
+    effective seconds before the first update; U, C: seconds of one update and one curve read; batch_s: the controls
+    batches (the reserve's unit). Also the break-even training rate (game-steps per second) at that pre and C."""
+    f = float(gates.trainer["room_factor"])
+    p = gates.planned_updates
+    r = sum(1 for u in range(1, p + 1) if curve_due(gates, u))
+    reserve = final_reserve_s(gates, arm, batch_s)
+    available = float(gates.arms[arm]["cap_h"]) * HOUR_S - reserve
+    need = float(pre_s) + (p - 1 + f) * float(update_s) + (r - 1 + f) * float(curve_s)
+    room = available - float(pre_s) - (r - 1 + f) * float(curve_s)
+    u_max = room / (p - 1 + f)
+    return {"updates": p, "reads": r, "pre_s": float(pre_s), "update_s": float(update_s), "curve_s": float(curve_s),
+            "reserve_s": reserve, "need_s": need, "available_s": available, "margin_s": available - need,
+            "break_even_game_steps_per_s": gates.per_update / u_max if u_max > 0 else math.inf}
+
+
 def curve_due(gates: Tier2Gates, update: int) -> bool:
     """A learning-curve read follows update ``update`` (every curve_every_updates, and the budget's last update)."""
     every = int(gates.trainer["curve_every_updates"])
@@ -420,18 +446,22 @@ def trains_bar(trained: tuple[int, int], parked: tuple[int, int]) -> dict:
 
 
 def tier2_verdict(trained: tuple[int, int], parked: tuple[int, int], budget_reached: bool, game_steps: int,
-                  t1_bar_cleared: bool | None = None) -> dict:
+                  t1_bar_cleared: bool | None = None, t1_budget_reached: bool = True) -> dict:
     """PASS: the t2 arm reached its budget and its final Guard clears the bar on tier 2; FAIL: budget reached, bar not
     cleared; TOO_SLOW: the arm stopped at its cap reserve before its budget (``BUDGET_RULE``; the bar at the game-steps
     reached is reported, ``bar_at_steps_reached``). ``reading`` (wording, pre-registered): a FAIL whose tier 1 control
-    did not clear its own bar either says the budget, not the tier, is what was short."""
+    did not clear its own bar either AT ITS FULL BUDGET says the budget, not the tier, is what was short (QC D3: a tier 1
+    control that stopped early says nothing about the budget)."""
     bar = trains_bar(trained, parked)
     if not budget_reached:
         word = TOO_SLOW
     else:
         word = PASS_WORD if bar["cleared"] else FAIL_WORD
     reading = None
-    if word == FAIL_WORD and t1_bar_cleared is False:
+    if word == FAIL_WORD and t1_bar_cleared is False and not t1_budget_reached:
+        reading = ("FAIL with the tier 1 control below its own bar but stopped before its budget: the control does not "
+                   "say whether the budget or the tier was short")
+    elif word == FAIL_WORD and t1_bar_cleared is False:
         reading = ("FAIL with the tier 1 control below its own bar too: the recipe did not learn at this budget on "
                    "either tier; this does not single out tier 2")
     elif word == FAIL_WORD and t1_bar_cleared:

@@ -56,6 +56,10 @@ class Recording:
         return self.end_step * TICK_S
 
 
+class RecordingStopped(RuntimeError):
+    """``record_games``' ``should_stop`` asked for a stop (STE L0.13: SIGINT during the clips)."""
+
+
 class _RecordingGame(SvgGame):
     """SvgGame that remembers each game's last positions just before its auto-reset overwrites them."""
 
@@ -68,13 +72,14 @@ class _RecordingGame(SvgGame):
 
 def record_games(cfg: GameCfg, guards: int, strikes: int, guard_spec, strike_spec, num_games: int = 8,
                  seed: int = 0, band: int | None = 1, max_steps: int | None = None, device: str = "cpu",
-                 world=None) -> list[Recording]:
+                 world=None, should_stop=None) -> list[Recording]:
     """Play num_games games on ``device`` (each slot's first game) and return one Recording per slot. The game
     seed is ``seed``; strategy seeds are seed + 101 (Guard) and seed + 202 (Strike), as in scripts/score.py.
     ``guard_spec`` / ``strike_spec``: a strategy name (``make_strategy``) or a strategy object on the CPU for
     ``num_games`` games (STE L0.12: a trained team of either side); the recording carries the object's ``name``.
     STE L0.13: ``device`` and ``world`` (a rigid-body world of ``num_games`` games, for a physics-backend game file: tier
-    2); every frame is copied to the host."""
+    2); every frame is copied to the host; ``should_stop()`` is asked before every step and True raises
+    :class:`RecordingStopped`."""
     dev = device
     game = _RecordingGame(cfg, num_games, guards, strikes, device=dev, seed=seed, band=band, world=world)
     guard = make_strategy(guard_spec, "guard", cfg, num_games, dev, seed + 101) if isinstance(guard_spec, str) else guard_spec
@@ -99,6 +104,8 @@ def record_games(cfg: GameCfg, guards: int, strikes: int, guard_spec, strike_spe
     closest = np.full(num_games, np.inf)
     max_steps = game.ticks if max_steps is None else int(max_steps)
     for k in range(1, max_steps + 1):
+        if should_stop is not None and should_stop():
+            raise RecordingStopped(f"stopped on request at step {k}")
         out = game.step({"guard": guard.act(obs["guard"]), "strike": strike.act(obs["strike"])})
         done = out.done.cpu().numpy()
         active = ~finished

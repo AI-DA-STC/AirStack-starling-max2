@@ -223,3 +223,58 @@ def test_a_snapshot_keeps_what_a_team_needs(gates):
     team = exploit_train.team_from_modules("guard", snap, list(gates.trainer["hidden"]), "cpu")
     obs = game.reset()["guard"]
     assert torch.equal(team.act(obs), learner.team().act(obs))
+
+
+# ------------------------------------------------------------------------------------------------ fix round (QC F1, T2)
+def test_a_batch_reports_its_drone_model_its_upsets_and_its_non_finite_wrenches(gates, ref):
+    cfg2 = T.tier_cfg(gates, 2)
+    params = load_game_physics_params(cfg2)
+    cells, n = [("guard_parked_centre", "strike_straight")], 4
+    on2 = _play(gates, ref, T.torch_world_factory(n, 6, params, "cpu"), cells, n)
+    assert on2["motion"].startswith("physics/") and on2["physics_nonfinite"] == 0
+    assert on2["upset"].shape == (n,) and on2["upset"].dtype == bool
+    on1 = exploit.play_cells(T.tier_cfg(gates, 1), gates.run["size"], ref, cells, n, "cpu", ref.meta["seed"], 90)
+    assert on1["motion"] == "starling" and on1["physics_nonfinite"] == 0 and not on1["upset"].any()
+    assert T.batch_tier(on2) == 2 and T.batch_tier(on1) == 1
+
+
+def test_the_either_tier_reading_needs_the_tier_1_control_at_its_full_budget():     # QC D3
+    f = T.tier2_verdict((540, 1000), (534, 1000), True, 301_989_888, False, t1_budget_reached=False)
+    assert f["verdict"] == T.FAIL_WORD and "does not single out" not in f["reading"]
+    assert "stopped before its budget" in f["reading"]
+
+
+def test_a_clip_recording_stops_on_request(gates):                                  # QC D4
+    from svg_training.viz.replay import RecordingStopped, record_games
+    cfg = T.tier_cfg(gates, 1)
+    with pytest.raises(RecordingStopped):
+        record_games(cfg, 3, 3, "guard_parked_centre", "strike_straight", num_games=2, seed=1, band=0, max_steps=20,
+                     should_stop=lambda: True)
+
+
+def test_the_projection_for_the_run_of_record(gates):                               # QC C1
+    # QC's inequality for t2: pre + 48.5 U + 8.5 C <= 2.5 h - 1,500 s = 7,500 s
+    p = T.projection(gates, "t2", pre_s=300.0, update_s=94.0, curve_s=60.0, batch_s=30.0)
+    assert p["reads"] == 8 and p["updates"] == 48
+    assert p["need_s"] == 300.0 + 48.5 * 94.0 + 8.5 * 60.0 and p["available_s"] == 7500.0
+    assert math.isclose(p["margin_s"], 7500.0 - p["need_s"])
+    u_max = (7500.0 - 300.0 - 8.5 * 60.0) / 48.5
+    assert math.isclose(p["break_even_game_steps_per_s"], gates.per_update / u_max)
+    assert 45_000 < p["break_even_game_steps_per_s"] < 50_000
+
+
+def test_a_view_parks_its_idle_games_and_never_writes_them(gates):                   # M14, M30
+    params = load_game_physics_params(T.tier_cfg(gates, 2))
+    w = T.torch_world_factory(6, 6, params, "cpu")
+    pos, quat, lin, ang = (t.clone() for t in w.state())
+    every = torch.ones(6, 6, dtype=torch.bool)
+    tilted = torch.tensor([0.9, 0.3, 0.2, 0.2]) / torch.tensor([0.9, 0.3, 0.2, 0.2]).norm()
+    w.write_state(every, pos, tilted.expand(6, 6, 4).contiguous(), torch.ones_like(lin), torch.ones_like(ang))
+    v = T.SliceWorld(w, 4, params.airframe.mass_kg)
+    _p, q, l, a = w.state()
+    assert torch.allclose(q[4:], torch.tensor(T.QUAT_ONE).expand(2, 6, 4)) and float(l[4:].abs().max()) == 0.0
+    assert float(a[4:].abs().max()) == 0.0                                  # parked: level, at rest
+    w.write_state(every & (torch.arange(6)[:, None] >= 4), w.state()[0], w.state()[1], torch.full_like(lin, 0.5),
+                  torch.zeros_like(ang))                                    # the idle games move (as a test probe)
+    v.reset(torch.ones(4, 6, dtype=torch.bool), torch.zeros(4, 6, 3), torch.tensor(T.QUAT_ONE).expand(4, 6, 4))
+    assert torch.allclose(w.state()[2][4:], torch.full((2, 6, 3), 0.5))   # a view's write never reaches them

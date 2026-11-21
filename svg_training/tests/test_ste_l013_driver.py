@@ -20,7 +20,7 @@ sys.path.insert(0, str(SCRIPTS))
 import make_ste_l013_record as record  # noqa: E402
 import ste_tier2_l013 as driver  # noqa: E402
 
-TINY = {"num_games = 16384 ": "num_games = 12 ", "eval_games = 1000 ": "eval_games = 4 ",
+TINY = {"num_games = 16384 ": "num_games = 16 ", "eval_games = 1000 ": "eval_games = 4 ",
         "curve_games = 256 ": "curve_games = 4 ", "ticks_cap = 2400 ": "ticks_cap = 120 ", "rollouts = 32": "rollouts = 2",
         "learning_epochs = 5": "learning_epochs = 1", "mini_batches = 4": "mini_batches = 1",
         "game_steps_per_run = 6_291_456 ": "game_steps_per_run = 576 ", "games = 4\n": "games = 2\n",
@@ -76,7 +76,11 @@ def test_both_arms_write_every_file_and_every_control_passes(two_arms):
         assert controls and all(c["status"] == "PASS" for c in controls.values()), controls
         res = json.loads((r / "results.json").read_text())
         assert res["complete"] and res["arm"] == which and res["tier"] == T.TIERS[which] and res["dry_cpu"]
-        assert res["trained_updates"] == 2 and res["game_steps"] == 576 and res["budget_reached"]
+        assert res["trained_updates"] == 2 and res["budget_reached"]
+        assert res["game_steps"] == T.load_gates(two_arms["gates"]).planned_game_steps == 2 * 2 * 12 * 16
+        assert res["trained"]["tier_ran"] == res["parked"]["tier_ran"] == T.TIERS[which]          # QC T2
+        assert set(res["upsets"]) == set(res["batches"]) and res["physics_nonfinite"]["tier 1"] == 0      # QC F1
+        assert res["projection_for_run_of_record"]["updates"] == 48                              # QC C1
         assert res["trained"]["n"] == res["parked"]["n"] == 4
         log = [json.loads(x) for x in (r / "train_log.jsonl").read_text().splitlines()]
         assert [x["update"] for x in log] == [1, 2] and all(x["tier"] == T.TIERS[which] for x in log)
@@ -140,20 +144,25 @@ def test_the_same_command_on_a_finished_arm_does_nothing_new(two_arms):
 
 def test_the_verdict_and_the_record(two_arms, tmp_path):
     out = tmp_path / "verdict"
-    assert driver.main(["verdict", "--t1-run", str(two_arms["t1"]), "--t2-run", str(two_arms["t2"]),
-                        "--out", str(out)]) == 0
+    args = ["verdict", "--t1-run", str(two_arms["t1"]), "--t2-run", str(two_arms["t2"]), "--out", str(out)]
+    assert driver.main(args) == 2                                  # QC D2: not gates.toml's sha: refused without --smoke
+    assert driver.main(args + ["--smoke"]) == 0
     v = json.loads((out / "verdict.json").read_text())
-    assert v["verdict"] in (T.PASS_WORD, T.FAIL_WORD) and v["same_game_steps"] and v["controls_pass"]
+    assert v["verdict"] == "SMOKE" and v["smoke_reading"] in (T.PASS_WORD, T.FAIL_WORD)
+    assert v["same_game_steps"] and v["controls_pass"] and "SMOKE" in (out / "verdict.md").read_text()
     assert (out / "learning_curves.png").is_file() and "DRY CPU RUN" in (out / "verdict.md").read_text()
     assert v["matrix_same_update"]["t1 networks"]["tier 2"]["games"] == 4
     rec = tmp_path / "rec.md"
-    assert record.main(["--verdict", str(out / "verdict.json"), "--out", str(rec), "--name", "smoke"]) == 0
+    assert record.main(["--verdict", str(out / "verdict.json"), "--out", str(rec), "--name", "smoke"]) == 1   # QC D2
+    assert record.main(["--verdict", str(out / "verdict.json"), "--out", str(rec), "--name", "smoke", "--smoke"]) == 0
     text = rec.read_text()
     assert "observed in the training simulator" in text.lower() and v["gates_sha256"] in text
-    assert record.main(["--verdict", str(out / "verdict.json"), "--out", str(rec), "--name", "smoke"]) == 1   # no overwrite
+    assert "Verdict: **SMOKE**" in text and "Upset games" in text
+    assert record.main(["--verdict", str(out / "verdict.json"), "--out", str(rec), "--name", "smoke",
+                        "--smoke"]) == 1   # no overwrite
     # the arms swapped or one missing: refused
     assert driver.main(["verdict", "--t1-run", str(two_arms["t2"]), "--t2-run", str(two_arms["t1"]),
-                        "--out", str(tmp_path / "v2")]) == 2
+                        "--out", str(tmp_path / "v2"), "--smoke"]) == 2
 
 
 def test_the_aborted_record(two_arms, tmp_path):
@@ -234,9 +243,10 @@ def test_the_cap_reserve_before_the_budget_is_too_slow_and_still_finishes(two_ar
     assert gifs and len(res["videos"]) == len(gifs), res["videos"]
     assert res["peer_update"] == 1
     out = tmp_path / "verdict"
-    assert driver.main(["verdict", "--t1-run", str(two_arms["t1"]), "--t2-run", str(r), "--out", str(out)]) == 0
+    assert driver.main(["verdict", "--t1-run", str(two_arms["t1"]), "--t2-run", str(r), "--out", str(out),
+                        "--smoke"]) == 0
     v = json.loads((out / "verdict.json").read_text())
-    assert v["verdict"] == T.TOO_SLOW and not v["same_game_steps"]
+    assert v["smoke_reading"] == T.TOO_SLOW and not v["same_game_steps"]
 
 
 def test_sigint_stops_with_a_checkpoint_and_the_same_command_resumes(tmp_path):
@@ -255,4 +265,226 @@ def test_sigint_stops_with_a_checkpoint_and_the_same_command_resumes(tmp_path):
     p = subprocess.run(cmd, env=env, capture_output=True, text=True, timeout=600)
     assert p.returncode == 0 and "resumed at update" in p.stdout, p.stdout + p.stderr
     res = json.loads((r / "results.json").read_text())
-    assert res["trained_updates"] == 5 and res["launches"] == 2
+    assert res["trained_updates"] == T.load_gates(g).planned_updates == 4 and res["launches"] == 2
+
+
+# ------------------------------------------------------------------------------------------------ fix round (QC 21 Nov)
+def copy_arms(two_arms, tmp_path):
+    """Copies of the two finished arms (t2 pointing at the copied t1), for verdicts on edited results."""
+    import shutil
+    out = {}
+    for which in ("t1", "t2"):
+        out[which] = tmp_path / f"copy_{which}"
+        shutil.copytree(two_arms[which], out[which], ignore=shutil.ignore_patterns("run.lock", "videos", "snapshots"))
+    res = json.loads((out["t2"] / "results.json").read_text())
+    res["t1_run"] = str(out["t1"])
+    (out["t2"] / "results.json").write_text(json.dumps(res))
+    return out
+
+
+def edit_results(folder, **changes):
+    res = json.loads((folder / "results.json").read_text())
+    for who, (k, n) in changes.items():
+        res[who] = {**res[who], **T.rate(k, n)}
+    (folder / "results.json").write_text(json.dumps(res))
+
+
+def verdict(c, out, *extra):
+    return driver.main(["verdict", "--t1-run", str(c["t1"]), "--t2-run", str(c["t2"]), "--out", str(out), "--smoke",
+                        *extra])
+
+
+def test_the_verdict_reads_the_t2_arms_tier_2_numbers(two_arms, tmp_path):            # QC T2 (M04)
+    c = copy_arms(two_arms, tmp_path)
+    edit_results(c["t1"], trained=(0, 4), parked=(4, 4))
+    edit_results(c["t2"], trained=(4, 4), parked=(0, 4))
+    assert verdict(c, tmp_path / "v") == 0
+    v = json.loads((tmp_path / "v" / "verdict.json").read_text())
+    assert v["smoke_reading"] == T.PASS_WORD and v["detail"]["bar"]["trained"]["k"] == 4
+
+
+@pytest.mark.parametrize("who", ["trained", "parked"])
+def test_the_verdict_refuses_tier_2_numbers_that_ran_on_tier_1(two_arms, tmp_path, who):   # QC T2 (M01, M02)
+    c = copy_arms(two_arms, tmp_path)
+    res = json.loads((c["t2"] / "results.json").read_text())
+    res[who]["tier_ran"] = 1
+    (c["t2"] / "results.json").write_text(json.dumps(res))
+    assert verdict(c, tmp_path / "v") == 2
+
+
+def test_the_verdict_refuses_a_failed_control_or_a_bad_exit(two_arms, tmp_path):      # M17, M29
+    c = copy_arms(two_arms, tmp_path)
+    controls = json.loads((c["t2"] / "controls.json").read_text())
+    good = json.dumps(controls)
+    controls["ctl_reference_replay"]["status"] = "FAIL"
+    (c["t2"] / "controls.json").write_text(json.dumps(controls))
+    assert verdict(c, tmp_path / "v1") == 2
+    (c["t2"] / "controls.json").write_text(good)
+    (c["t2"] / "exit_code").write_text("3\n")
+    assert verdict(c, tmp_path / "v2") == 2
+    (c["t2"] / "exit_code").write_text("0\n")
+    assert verdict(c, tmp_path / "v3") == 0
+
+
+def test_t1_must_be_finished_with_every_control_passed_under_the_same_gate(tmp_path):    # M15, M16
+    t1 = tmp_path / "t1"
+    t1.mkdir()
+    good = {"complete": True, "arm": "t1", "controls_all_pass": True, "gates_sha256": "abc"}
+    (t1 / "results.json").write_text(json.dumps(good))
+    assert driver.t1_problem(t1, "abc") is None
+    (t1 / "results.json").write_text(json.dumps({**good, "controls_all_pass": False}))
+    assert "not PASS" in driver.t1_problem(t1, "abc")
+    (t1 / "results.json").write_text(json.dumps(good))
+    assert "gate sha256" in driver.t1_problem(t1, "other")
+
+
+def test_the_whole_isaac_world_and_the_view_are_both_checked(two_arms):           # M07, T5 (16 games > 12)
+    controls = json.loads((two_arms["t2"] / "controls.json").read_text())
+    whole, view = controls["ctl_physics_agreement_launch1"], controls["ctl_physics_agreement_view_launch1"]
+    g = T.load_gates(two_arms["gates"])
+    assert whole["games"] == g.trainer["num_games"] == 16 and not whole["world"].endswith("]")
+    assert view["games"] == 3 * g.run["eval_games"] == 12 and view["world"].endswith("[:12]")
+
+
+def test_every_tier_2_number_came_from_a_physics_batch(two_arms):                     # QC T2 (M03)
+    import numpy as np
+    controls = json.loads((two_arms["t2"] / "controls.json").read_text())
+    for name in ("ctl_batch_tier_t2_before", "ctl_batch_tier_t2_final", "ctl_batch_tier_t1_final", "ctl_batch_tier_curve",
+                 "ctl_no_nonfinite_wrench_t2_final", "ctl_no_nonfinite_wrench_curve"):
+        assert controls[name]["status"] == "PASS", name
+    assert set(np.load(two_arms["t2"] / "eval_final_t2.npz")["tier"]) == {2}
+    assert set(np.load(two_arms["t2"] / "eval_final_t1.npz")["tier"]) == {1}
+    res = json.loads((two_arms["t2"] / "results.json").read_text())
+    assert res["motion"]["tier 2"].startswith("physics/") and res["motion"]["tier 1"] == "starling"
+    curve = json.loads((two_arms["t2"] / "curve.json").read_text())
+    assert all(p["tier_ran"] == p["tier"] for p in curve)
+    assert {p["seed"] for p in curve} == {T.load_gates(two_arms["gates"]).run["curve_seed"]}      # M22
+
+
+def test_a_tier_2_batch_played_on_the_fitted_drone_fails(two_arms, tmp_path, monkeypatch):   # QC T2
+    real = exploit.play_cells
+
+    def on_tier_1(cfg, *a, world=None, **k):
+        out = real(T.tier_cfg(T.load_gates(two_arms["gates"]), 1), *a, **k)
+        return out
+    monkeypatch.setattr(exploit, "play_cells", on_tier_1)
+    r = tmp_path / "t2"
+    assert arm(two_arms["gates"], r, "t2", two_arms["t1"]) == 6
+    assert json.loads((r / "controls.json").read_text())["ctl_batch_tier_t2_before"]["status"] == "FAIL"
+
+
+def test_a_non_finite_wrench_in_a_tier_2_batch_fails(two_arms, tmp_path, monkeypatch):   # QC F1
+    real = exploit.play_cells
+
+    def bad_wrench(*a, **k):
+        out = real(*a, **k)
+        if str(out["motion"]).startswith("physics/"):
+            out["physics_nonfinite"] = 1
+        return out
+    monkeypatch.setattr(exploit, "play_cells", bad_wrench)
+    r = tmp_path / "t2"
+    assert arm(two_arms["gates"], r, "t2", two_arms["t1"]) == 6
+    c = json.loads((r / "controls.json").read_text())
+    assert c["ctl_no_nonfinite_wrench_t2_before"]["status"] == "FAIL"
+    assert c["ctl_no_nonfinite_wrench_t1_before"]["status"] == "PASS"
+
+
+def test_the_training_world_is_restored_after_every_evaluation(two_arms, tmp_path, monkeypatch):   # QC T1 (M06)
+    real = exploit_train.Learner.update
+    seen = []
+
+    def checked(self):
+        drone = getattr(self.env.game._starling, "drone", None)
+        if drone is not None:
+            world_pos = drone.world.state()[0]
+            seen.append(float((world_pos - drone.pos_m).abs().max()))
+        return real(self)
+    monkeypatch.setattr(exploit_train.Learner, "update", checked)
+    assert arm(two_arms["gates"], tmp_path / "t2", "t2", two_arms["t1"]) == 0
+    assert len(seen) == 2 and max(seen) < 1e-5, seen        # the training drones' state is the world's at every update
+
+
+def test_a_terminal_folder_never_starts_a_world(two_arms, tmp_path, monkeypatch):      # M11
+    monkeypatch.setattr(T, "physics_agreement", lambda *a, **k: {"pass": False, "games": 1, "drones": 6, "ticks": 1,
+                                                                  "world": "w", "max_gap_m": 1.0, "limit_m": 0.02})
+    r = tmp_path / "t2"
+    assert arm(two_arms["gates"], r, "t2", two_arms["t1"]) == 6
+    built = []
+
+    def factory(*a, **k):
+        built.append(a)
+        return T.torch_world_factory(*a, **k)
+    cap = str(T.load_gates(two_arms["gates"]).arms["t2"]["cap_h"])
+    assert driver.main(["--arm", "t2", "--gates", str(two_arms["gates"]), "--run-dir", str(r), "--cap-h", cap,
+                        "--dry-cpu", "--no-videos", "--t1-run", str(two_arms["t1"])], world_factory=factory) == 6
+    assert built == []
+
+
+def test_the_negative_bar_check_fails_when_the_untrained_guard_clears_it(two_arms, tmp_path, monkeypatch):   # M20
+    real = T.trains_bar
+    monkeypatch.setattr(T, "trains_bar", lambda t, p: {**real(t, p), "cleared": True})
+    r = tmp_path / "t2"
+    assert arm(two_arms["gates"], r, "t2", two_arms["t1"]) == 6
+    assert json.loads((r / "controls.json").read_text())["ctl_negative_bar_t2"]["status"] == "FAIL"
+
+
+def test_a_tier_difference_beyond_the_backend_fails(tmp_path, monkeypatch):          # M21
+    monkeypatch.setattr(T, "cfg_differences", lambda a, b, prefix="": ["starling.backend", "tag.radius_m"])
+    r = tmp_path / "t1"
+    assert arm(tiny_gates(tmp_path), r, "t1") == 6
+    assert json.loads((r / "controls.json").read_text())["ctl_tier_difference"]["status"] == "FAIL"
+
+
+def test_the_untrained_guard_must_play_as_the_parked_guard(tmp_path, monkeypatch):    # M25
+    real = exploit.replay_ok
+    monkeypatch.setattr(exploit, "replay_ok", lambda *a, **k: real(*a, **k) if "ticks_cap" in k else (False, "forced"))
+    r = tmp_path / "t1"
+    assert arm(tiny_gates(tmp_path), r, "t1") == 6
+    c = json.loads((r / "controls.json").read_text())
+    assert c["ctl_untrained_is_still_t1"]["status"] == "FAIL" and c["ctl_reference_replay"]["status"] == "PASS"
+
+
+def test_the_final_reference_replay_is_gated(tmp_path, monkeypatch):               # M26
+    real = exploit.replay_ok
+    calls = []
+
+    def second_replay_fails(*a, **k):
+        if "ticks_cap" in k:
+            calls.append(1)
+            if len(calls) > 1:
+                return False, "forced"
+        return real(*a, **k)
+    monkeypatch.setattr(exploit, "replay_ok", second_replay_fails)
+    r = tmp_path / "t1"
+    assert arm(tiny_gates(tmp_path), r, "t1") == 6
+    c = json.loads((r / "controls.json").read_text())
+    assert c["ctl_reference_replay_final"]["status"] == "FAIL" and not (r / "results.json").exists()
+
+
+def test_the_plumbing_checks_fail_on_bad_batches():                                  # M27
+    import numpy as np
+    ref = exploit.load_reference(T.ROOT / T.load_gates().reference["file"])
+    n = 2
+    pg = {"start_sha256": [exploit.starts_sha(ref.starts_m[:n])], "tags": np.array([1, 0]),
+          "guards_removed": np.array([1, 0]), "guards_tagged": np.array([1, 0]), "nonfinite_actions": np.array([0, 0])}
+    ok = driver.plumbing(exploit, pg, ref, n, "x", "_s")
+    assert all(v["status"] == "PASS" for v in ok.values())
+    bad = driver.plumbing(exploit, {**pg, "guards_removed": np.array([0, 0])}, ref, n, "x", "_s")
+    assert bad["tags_one_for_one_s"]["status"] == "FAIL"
+    assert driver.plumbing(exploit, {**pg, "nonfinite_actions": np.array([0, 3])}, ref, n, "x", "_s")[
+        "no_nonfinite_actions_s"]["status"] == "NONFINITE"
+    assert driver.plumbing(exploit, {**pg, "start_sha256": ["x"]}, ref, n, "x", "_s")[
+        "ctl_paired_starts_s"]["status"] == "FAIL"
+
+
+def test_sigint_during_the_clips_exits_4_and_the_same_command_finishes(tmp_path, monkeypatch):   # QC D4
+    import svg_training.viz.replay as replay
+    real = replay.record_games
+    monkeypatch.setattr(replay, "record_games", lambda *a, **k: real(*a, **{**k, "should_stop": lambda: True}))
+    g = tiny_gates(tmp_path)
+    r = tmp_path / "t1"
+    assert arm(g, r, "t1", videos=True) == 4
+    assert not (r / "results.json").exists()
+    monkeypatch.setattr(replay, "record_games", real)
+    assert arm(g, r, "t1", videos=True) == 0
+    assert list((r / "videos").glob("l013_t1_tier1_game*.gif"))

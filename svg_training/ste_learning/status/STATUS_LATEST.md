@@ -1,6 +1,6 @@
 INTERNAL · the latest status of STE's own learning track and the NUS port, overwritten at every update; the history is in [LOG.md](LOG.md). Produced by the `train-status` skill.
 
-**Status, 2026-11-21 07:51 (+08:00), event: L0.14 recorded (T45); L0.12 fixes in (all 8 surviving breakages now caught)**                                                                   · laptop RTX 5070 Ti · GPU 43 % / 19 W / 1.4 GB of 12 GB · 0 training processes (0 paused)
+**Status, 2026-11-21 08:12 (+08:00), event: L0.14 QC wording fixes committed; re-check running**                                                                    · laptop RTX 5070 Ti · GPU 43 % / 19 W / 1.4 GB of 12 GB · 0 training processes (0 paused)
 
 ## Watch (latest clips and figures)
 
@@ -51,7 +51,7 @@ What the drones look like in the 3-D simulator (Isaac Lab Starlings, from S2b; t
 | L0.3 | STE Guard policy in tier 2 without retraining | NOT STARTED | tier 2 Isaac Lab | unblocked (T41 on both machines); runs on the laptop GPU, taking turns with L0.12's GPU runs (one GPU job at a time); cap 1.5 GPU-h |
 | L0.4 | Side-by-side Starling render | RUNNING | tier 2 Isaac Lab | builder on `ste-l0.4`: the AirStack simulator's Starling asset rendered in Isaac Lab beside our clips' look, with and without team paint (stills); cap 0.2 GPU-h |
 | L0.5 | Starling video look fix | RUNNING | tier 2 Isaac Lab | same builder: the Starling's own look, team colour as a small marker; stills for your look (D9); cap 0.3 GPU-h |
-| L0.14 | Crazyflie route check | RUNNING (QC) | tier 1 fast engine (CPU) | ran on the CPU, 0 GPU-h: the T41 Guard policy holds 831 of 1,000 at the Starling's lag, **791 at a Crazyflie-like lag**, but games with drones closer than 1.0 m rise from 7 to 101 (contact under 0.5 m: 0 → 2); the Crazyflie planner found 0 safety failures in 2,868 matches (the 20 Nov "5 of 100" emergencies not reproduced); the adapter spec written; page `ste_learning/CRAZYFLIE_ROUTE.md`; record T45 committed on `ste-l0.14`; independent QC next |
+| L0.14 | Crazyflie route check | RUNNING (re-check) | tier 1 fast engine (CPU) | record T45: the T41 Guard policy holds 791–768 of 1,000 in the Crazyflie-like lag band (0.48–0.56 s, every drone slowed) against 831 at the Starling's lag, and drones come closer (games under 1.0 m: 7 → 101–149); planner, like for like: 0 of 100 at 3v3 and 5v3 against 20 Nov's 5 of 100 (not a clear difference; only one rule set run); QC fixes committed (625fda3); re-check running, then merge |
 | L0.6 | Gate G0 | NOT STARTED | none | after every task above; the owner decides |
 
 GPU-h used in L0 so far: 0.426 of 19 (RTX 5090: 0, from its last status; laptop: 0.426 = L0.11 pilot 0.034 + CUDA smoke 0.087 + sweep 0.305).

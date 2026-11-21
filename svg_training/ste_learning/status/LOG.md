@@ -11528,7 +11528,7 @@ Laptop drills (21 Nov, fix branch, shared folder `~/AirStack-starling-max2/svg_t
 
 ## 2026-11-21 20:52
 
-**Status, 2026-11-21 21:25 (+08:00), event: G0 page drafted (in revision); GPU-hour figure corrected** · laptop RTX 5070 Ti · GPU idle · 0 jobs
+**Status, 2026-11-21 20:53 (+08:00), event: G0 page drafted (in revision); GPU-hour figure corrected** · laptop RTX 5070 Ti · GPU idle · 0 jobs
 
 **Plain summary (L0.13 Does Isaac Lab train at all?).** Tested: the same Guard recipe trained on the Isaac Lab drone and in
 the fast engine, same game, same 302 M game-steps, same starting networks. Happened (training simulator): **PASS** — the Isaac

@@ -1,6 +1,6 @@
 INTERNAL · the latest status of STE's own learning track and the NUS port, overwritten at every update; the history is in [LOG.md](LOG.md). Produced by the `train-status` skill.
 
-**Status, 2026-11-21 20:35 (+08:00), event: L0.13 merged; a correction on the closer tags; one question for you** · laptop RTX 5070 Ti · GPU idle · 0 jobs
+**Status, 2026-11-21 21:05 (+08:00), event: everything merged — 3-D clips of the trained players in Watch** · laptop RTX 5070 Ti · GPU idle · 0 jobs
 
 **Plain summary (L0.13 Does Isaac Lab train at all?).** Tested: the same Guard recipe trained on the Isaac Lab drone and in
 the fast engine, same game, same 302 M game-steps, same starting networks. Happened (training simulator): **PASS** — the Isaac
@@ -18,6 +18,16 @@ realistic 1.15 m tag is still open (DISCUSSION §11).
 interdiction shown in simulation (a proposal for G0).
 
 ## Watch (latest clips and figures)
+
+**New: the trained players in 3-D** (Isaac Lab, ring = team, faint circle = each Guard's tag distance, round zone).
+Each game was replayed and checked equal to its run's own evaluation before drawing. Training simulator; not a flight.
+
+| Trained Strikes reach the zone (base, 1.6 m tag) | Trained Guards hold (base, 1.6 m tag) |
+|---|---|
+| ![](../../docs/media/ste_l012/3d/l012_base_strike_3d.gif) | ![](../../docs/media/ste_l012/3d/l012_base_guard_3d.gif) |
+
+The 1.4 m tag games and the top views: [docs/media/ste_l012/3d/](../../docs/media/ste_l012/3d/README.md).
+
 
 **L0.12 — can a trained team beat the best hand-written one?** Filled dot = trained, hollow = best script, x = untrained:
 
@@ -125,7 +135,7 @@ Laptop drills (21 Nov, fix branch, shared folder `~/AirStack-starling-max2/svg_t
 | ID | Plain name | Status |
 |---|---|---|
 | L012-B | Bubble-tag test (tag 1.15 m; owner approved 21 Nov) | DONE, merged (T50 screen, T51 INFO, T52 ABORTED; full suite 1,906 passed) | screen: best scripts 645 / 355 (same as 1.2 m), filter-pushed tags 0–10 %; run 0 PASS (909 v bar 849); trained Guard 466 v script 645 (weak); trained Strike ABORTED (time rule, 86/88; info: 103 v 355, waits out the clock); verdict incomplete (one side); ~1.95 GPU-h |
-| VID-1c | Height panel on the L0.2 / L0.3 2-D clips | DONE for L0.3 (on branch); L0.2 cannot be redrawn | that run kept no positions; re-playing its clip games needs Isaac Lab; README says so |
+| VID-1c | Height panel on the L0.2 / L0.3 2-D clips | DONE for L0.3 (merged); L0.2 cannot be redrawn | that run kept no positions; re-playing its clip games needs Isaac Lab; README says so |
 | SYNC-1 | Branch `development` on both machines; laptop worktree `~/AirStack-starling-max2-dev` | DONE |
 | SYNC-2 | Status skill `train-status` and the owner's standing rules in CLAUDE.md | DONE |
 | SYNC-3 | Root `CLAUDE.md` and every page: training work lands on `development` | DONE |
@@ -146,7 +156,7 @@ Laptop drills (21 Nov, fix branch, shared folder `~/AirStack-starling-max2/svg_t
 | L010-G0 | Finding for gate G0 (from L0.10 QC): any safety-filter move near the 1.6 m tag radius can create a tag nobody chose (the filter's 1.10 m keep-out is inside the tag radius). Spaced starts remove it at the start; during play it is part of the game the sweep measures (P1) | OPEN: reported at G0 |
 | L09-5090 | On the 5090: record the tag-off golden's positions for its CPU type (AVX512); check the outcome fingerprints there | WAITING: next 5090 session |
 | DOC-1 | A phase-L0 flowchart coloured by progress (done / running / queued), regenerated with each status and shown in its Watch section (owner, 21 Nov: "photos or diagram flow charts would be good too") | DONE (progress flowchart; regenerated with each status) |
-| VID-1 | Clips: 2-D with a height panel on every run; 3-D Isaac Lab videos of each result's key games | L0.11 DONE; **L0.12 trained players DONE (VID-1b, on branch, in review)** | 4 key games (base and 1.4 m, trained Strike and trained Guard), each replayed and checked equal to its run's own evaluation; **tag-distance circle around each Guard and a true-circle zone** (your requests); 0.104 GPU-h (L0.5 now 0.258 of 0.3); the 6 L0.11 clips not yet redrawn with circles (would reach the cap) |
+| VID-1 | Clips: 2-D with a height panel on every run; 3-D Isaac Lab videos of each result's key games | L0.11 DONE; **L0.12 trained players DONE, merged (VID-1b)** | 4 key games (base and 1.4 m, trained Strike and trained Guard), each replayed and checked equal to its run's own evaluation; **tag-distance circle around each Guard and a true-circle zone** (your requests); 0.104 GPU-h (L0.5 now 0.258 of 0.3); the 6 L0.11 clips not yet redrawn with circles (would reach the cap) |
 | L08-M | L0.8 minors left: 3 hangar values unchecked on a clone without the NUS bundle; 3 values whose wrong value still passes; loader refuses some honest wording; tests tied to exact lines and the AirStack fence file | PARKED |
 | L07-DISK | Follow-up: the planned disk-space check (a disk full through 10 retries at a job's end reads DIED) | PARKED (stated limit) |
 | L07-N | Re-check minors N1–N4: a session pause also lands in the old per-worktree log the NUS reader uses; full disk can hold the wrapper 10 min after the end; AUTOMATION §4 still states the old GPU-hour rule; on the 5090 run `scripts/ste_job.py owner-pauses` before the drills | PARKED (N4 goes into the 5090 note) |
@@ -159,7 +169,7 @@ Laptop drills (21 Nov, fix branch, shared folder `~/AirStack-starling-max2/svg_t
 
 **GPU queue on the laptop (one at a time for speed measurements):** L0.12 pilot → L0.12 trainings → L0.2 → L0.3 → L0.13 (L0.4, L0.5, VID-1 for L0.11 done).
 
-**Next.** (1) Merges, one full suite at a time: bubble-tag branch (suite running), L0.13, the clips branch (review running). (2) The G0 page (Sunday): every L0 result with its clips and my recommendations. Hard stop: GPU jobs end Mon 08:00, wrap-up 09:30.
+**Next.** (1) Your answer on the longer 1.15 m runs (if yes: build the gate, QC, run tonight/tomorrow). (2) The G0 page draft (tonight/Sunday) with every L0 result, clips, evidence strength per decision and my recommendations; independent numbers check; then I walk you through it. (3) Wrap-up by Mon 09:30. Hard stop: GPU jobs end Mon 08:00.
 
 **Waiting on you.** **Longer 1.15 m runs?** One Guard and one Strike run at 3× the training (~1.65 B game-steps each), caps sized from today's 1.15 m timings so neither is cut short: about 3.5–4 GPU-h (L0 would go from ~10 to ~14 of 19), tonight or tomorrow. It answers whether training beats the scripts at the realistic tag — the key input for your G0 tag decision. **My recommendation: yes.** (The earlier question on re-running the 1.15 m Strike run is folded into this.) At G0: tag rule, varied tag distance, tag cost, zone size, team sizes, where to train, environments, which fleets fly, the real demo, the physical-intercept study, the L1–L9 budget.
 

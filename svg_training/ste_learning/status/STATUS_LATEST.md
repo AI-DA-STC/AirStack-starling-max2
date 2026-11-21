@@ -1,33 +1,57 @@
 INTERNAL · the latest status of STE's own learning track and the NUS port, overwritten at every update; the history is in [LOG.md](LOG.md). Produced by the `train-status` skill.
 
-**Status, 2026-11-22 01:45 (+08:00), event: L0.12c Guard run finished; Strike run started** · laptop RTX 5070 Ti · GPU busy · 1 job
+**Status, 2026-11-22 06:45 (+08:00), event: morning digest** · laptop RTX 5070 Ti · GPU idle · 0 jobs
 
-**Plain summary (L0.12c Longer 1.15 m runs, Guard side).** Tested: the trained Guard team at the 1.15 m tag ("touch the
-safety bubble") with 3× the training (1.65 B game-steps), against the best scripted Strike. Happened (training simulator):
-the trained Guards hold **572/1000** (was 466 at 1×, T51) against the best script's **645** and an untrained 101: learned,
-but still below the script (game for game: trained wins where the script loses 45 times, the reverse 118). The curve rose
-fast to ~1 B steps, then slowly (128 → 139 of 256 from update 170 to 250). Why it matters: at 1.15 m, more training helps
-the Guard side but 3× does not reach the hand-written Guard — the key input for the G0 tag decision. Record to follow.
+**Morning digest.** What ran while you slept. Training simulator only, 3v3, one training run per side; nothing flown.
 
-| Run (L0.12c) | State | Result / progress |
-|---|---|---|
-| Guard 1.15 m, 3× (cap 2.7 h) | DONE exit 0, 1.53 h | 572/1000 v script 645: weak (learned, below the script); all controls PASS |
-| Run 0, learner check (cap 4.8 h) | DONE: PASS at update 10, 0.07 h | trainer learns the easy Strike task |
-| Strike 1.15 m, 5× (cap 4.8 h) | RUNNING since 01:18 | 53 of 438 updates, 19.3 s each (sized 25 s); curve 7 → 32 of 256; ends ~04:30 |
+| What was tested | Result |
+|---|---|
+| **Longer training at the realistic 1.15 m tag**: the same recipe, trained 3 times longer (Guard team) and 5 times longer (Strike team) | Guard team holds **572** of 1,000 games (466 with the original length); the best hand-written Guards hold 645. Strike team reaches the zone in **134** (script 355): it trades two drones for two, then its last drone waits out the clock. Both learned; both stay below the scripts |
+| **Do teams trained at 1.6 m still work at 1.15 m?** (the check you approved) | Guard team trained at 1.6 m, played at 1.15 m: **195** (the 1.15 m-trained team: 572). Strike team trained at 1.6 m: **636** (1.6 m) and **931** (1.15 m) against the Guard style it trained against ("mark-edge"), but only **85** (1.6 m) and **121** (1.15 m) against a different Guard style ("field") |
 
-**Owner decisions (21–22 Nov):** longer 1.15 m runs approved (Guard 3×, Strike 5×, ~6.5 GPU-h); a slow Strike run may finish
-up to its cap. Row 17 (L0.7's 5090 part) stays on the 5090: it checks that machine. **Lead correction:** row 10's lead
-recommendation is "keep D3" = train in Isaac Lab (owner, 20 Nov), not "train on the fast engine" as said in chat.
+Records T54–T56. "Mark-edge" and "field" are two hand-written Guard play styles.
 
-**Usage:** L0 GPU-h ~10.6 of 19 (L0.12c so far ~1.6). Agents tonight: gate QC ×2 ~220 k tokens, L1–L9 plan draft ~190 k.
+**Worth a look.**
+1. **Guards:** a Guard team trained at 1.6 m fails at 1.15 m (195 v 572). So train the Guards at the tag they will play.
+2. **Strikes:** the opponent matters much more than the tag (one training run). The old claim "the Strike team learns at
+   1.6 m but not at 1.15 m" is not supported: each team was trained against one opponent only.
+3. **My chat explanation of "why" was withdrawn** after reviewers checked it against the data. No cause is known. One
+   measured lead, not yet tested: at 1.2 and 1.15 m the Strike training games end about 13–15 times less often.
 
-**Next:** Strike result ~04:30 → records T54/T55, G0 rows 1d/2 + clips; costed L1–L9 plan reworked (D3 as the main route).
-**Waiting on you:** nothing until the G0 walk-through (Sunday).
-**Ready to push:** not yet (work on branch `ste-l012c`, merged to `development` after the runs).
+**Clip to watch:** the figure and the two clips at the top of Watch below.
+
+**Waiting on you (G0 walk-through, Sunday):**
+- the 17 decision rows on the [G0 page](../G0_DECISION.md);
+- my recommendation 1: tag 1.6 m to set up L1; train each team at the tag it will play; train against several
+  opponents and score against several before anything is shown; first demo = the hand-written 1v1 at 1.6 m;
+- L1 + L2 budget: **10 GPU-h**, or 11 if you also want the two optional checks below.
+
+**Optional checks (not run; you can approve the budget without them):** (a) train a Strike team against the "field"
+Guards at 1.6 m, about 0.6 GPU-h; it tells "field Guards are hard" apart from "1.15 m is hard". (b) Score the 1.6 m
+Guard team against every Strike script, minutes, no training.
+
+**Not done:** 3-D clips of tonight's games (the 3-D block below is from the earlier 1.6 m and 1.4 m runs); a shorter-clock
+1.15 m Strike run (the "games end less often" lead is untested).
+
+**Reviews (your rule, 22 Nov):** every result had at least two independent reviewers and a two-agent discussion. They
+withdrew my "why" and two overclaims, and fixed several stale lines.
+
+**Usage:** GPU-h tonight 4.83; L0 13.77 of 19. About 25 agent runs, about 3.1 M tokens. Full test suite: 1,988 passed,
+2 failed while other tests ran at the same time; both pass alone, and their files passed again after the commit (178).
 
 ## Watch (latest clips and figures)
 
-**New: the trained players in 3-D** (Isaac Lab, ring = team, faint circle = each Guard's tag distance, round zone).
+**New: tag 1.15 m with longer training** (L0.12c, T54/T55). Lines: 256 curve games; points: 1,000 scoring starts.
+
+![](../../docs/figures/ste_l012c/longer_runs.png)
+
+| 1.6 m-trained Guards at 1.15 m: reach (L0.12d X1) | 1.6 m-trained Strikes v field Guards at 1.15 m (X2) |
+|---|---|
+| ![](../../docs/media/ste_l012d/x1_1p6_guard_at_1p15_game0_reach.gif) | ![](../../docs/media/ste_l012d/x2_1p6_strike_at_1p15_v_field_game2_reach.gif) |
+
+All clips: [ste_l012c](../../docs/media/ste_l012c/README.md), [ste_l012d](../../docs/media/ste_l012d/README.md). Training simulator; not a flight.
+
+**Earlier: the trained players in 3-D** (L0.12, tags 1.6 m and 1.4 m; Isaac Lab, ring = team, faint circle = each Guard's tag distance, round zone).
 Each game was replayed and checked equal to its run's own evaluation before drawing. Training simulator; not a flight.
 
 | Trained Strikes reach the zone (base, 1.6 m tag) | Trained Guards hold (base, 1.6 m tag) |
@@ -90,9 +114,9 @@ Earlier: L0.11 top-down clips and the factor chart are in the [T44 record](../..
 | L0.4 | Side-by-side Starling render | DONE | tier 2 Isaac Lab | found why our clips never looked like the Starling: a grey physics box was drawn over every drone since S2b (the hide call missed it); one-line fix, re-render shows the Starling (before/after in Watch); merged into `development` after independent review; 0.028 of 0.2 GPU-h |
 | L0.5 | Starling video look fix | WAITING ON YOU (D9) | tier 2 Isaac Lab | the drone left unpainted, team shown by a ring or a small dot that casts no shadow; stills in Watch; 0.154 of 0.3 GPU-h (with VID-1) |
 | L0.14 | Crazyflie route check | DONE | tier 1 fast engine (CPU) | record T45: the T41 Guard policy holds 791–768 of 1,000 in the Crazyflie-like lag band (0.48–0.56 s, every drone slowed) against 831 at the Starling's lag, and drones come closer (games under 1.0 m: 7 → 101–149); planner, like for like: 0 of 100 at 3v3 and 5v3 against 20 Nov's 5 of 100 (not a clear difference; only one rule set run); QC + re-check passed; merged into `development` (targeted tests 76 passed; the full suite runs with the next merge — lead's call, the CPU is shared now); page `ste_learning/CRAZYFLIE_ROUTE.md` |
-| L0.6 | Gate G0 | READY FOR YOUR READ (merged) | none | [G0_DECISION.md](../G0_DECISION.md): what L0 found, 17-row decision table with evidence strength per row, the tag rule with learning curves, 1v1, where to train, budget 8.93 GPU-h; independent numbers check: 10 claims fixed — **the 1.4 m Guard gain may be the decision-period difference (scripts held 0.6 s reach 738 v trained 747), so only 1.6 m has both trained sides clearly beating the scripts**; open: costed L1–L9 plan (Sunday), your answer on longer 1.15 m runs |
+| L0.6 | Gate G0 | READY FOR YOUR READ (merged) | none | [G0_DECISION.md](../G0_DECISION.md): what L0 found, 17-row decision table with evidence strength per row, the tag rule with learning curves, 1v1, where to train, budget 13.77 GPU-h; independent numbers check: 10 claims fixed — **the 1.4 m Guard gain may be the decision-period difference (scripts held 0.6 s reach 738 v trained 747), so only 1.6 m has both trained sides clearly beating the scripts**; open: costed L1–L9 plan (Sunday), your answer on longer 1.15 m runs |
 
-GPU-h used in L0: **8.93 of 19** from the GPU-hour ledger (L0.11 0.43, L0.12 incl. the bubble-tag test 4.96, L0.13 1.59, L0.3 1.28, L0.2 0.39, L0.5 0.26, L0.4 0.03). **Correction:** earlier statuses said ~9.9; that was my over-estimate of L0.12, the ledger is the source.
+GPU-h used in L0: **13.77 of 19** from the GPU-hour ledger (L0.11 0.43, L0.12 incl. the bubble-tag test, L0.12c and L0.12d 9.79, L0.13 1.59, L0.3 1.28, L0.2 0.39, L0.5 0.26, L0.4 0.03). **Correction:** earlier statuses said ~9.9; that was my over-estimate of L0.12, the ledger is the source.
 
 Laptop full CPU suite (20 Nov, `development` at 5c5d465, after `scripts/nus_install_provisional.sh`): **1,333 passed, 2 failed, 48 skipped** in 24 min. Both failures repeat when run alone:
 - **L07-F1** `test_ste_job.py::test_f_d_a_killed_job…resumes`: CONFIRMED by QC: the tool does not over-report (it measures from the same start; ~0.255 s raw, printed rounded to 0.3); the test compares the rounded text with the exact elapsed time. Fix: allow half a display step.
@@ -177,8 +201,6 @@ Laptop drills (21 Nov, fix branch, shared folder `~/AirStack-starling-max2/svg_t
 
 **GPU queue on the laptop (one at a time for speed measurements):** L0.12 pilot → L0.12 trainings → L0.2 → L0.3 → L0.13 (L0.4, L0.5, VID-1 for L0.11 done).
 
-**Next.** (1) Your answer on the longer 1.15 m runs (if yes: build the gate, QC, run tonight/tomorrow). (2) The G0 page draft (tonight/Sunday) with every L0 result, clips, evidence strength per decision and my recommendations; independent numbers check; then I walk you through it. (3) Wrap-up by Mon 09:30. Hard stop: GPU jobs end Mon 08:00.
-
-**Waiting on you.** **Longer 1.15 m runs?** One Guard and one Strike run at 3× the training (~1.65 B game-steps each), caps sized from today's 1.15 m timings so neither is cut short: about 3.5–4 GPU-h (L0 would go from 8.93 to about 12.4–12.9 of 19), tonight or tomorrow. It answers whether training beats the scripts at the realistic tag — the key input for your G0 tag decision. **My recommendation: yes.** (The earlier question on re-running the 1.15 m Strike run is folded into this.) At G0: tag rule, varied tag distance, tag cost, zone size, team sizes, where to train, environments, which fleets fly, the real demo, the physical-intercept study, the L1–L9 budget.
+**Next.** The G0 walk-through (Sunday); then the Monday wrap-up by 09:30 (commit, HANDOFF, status, ready to push).
 
 **Correction.** The 21 Nov question on NUS values listed "speeds 0.6 / 1.2". The L0.8 review reads those two numbers as the decision period (0.6 s) and the flight height (1.2 m); the speeds are 0.5 and 0.333 m/s. Your Yes covers all of them as written on the sheet.

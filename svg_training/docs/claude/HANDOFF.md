@@ -18,7 +18,7 @@ note disagree, this file wins.
 GPU-h" (DISCUSSION §11). Gate files `configs/ste_l012c/guard_gates.toml` (sha256 `b52dcc23…0d4c81`) and
 `configs/ste_l012c/strike_gates.toml` (sha256 `362b9126…0dfee9`), QC'd twice, locked at the first launch. Task caps
 changed (L0.12 6 → 13; finished tasks lowered; sum 17.3 of 19). Expected use ~5.2 GPU-h; caps are ceilings (7.5 total):
-ask the owner before L0.12c's actual use passes 6.5 GPU-h. Order, one job at a time, alone on the GPU (no renders, no
+owner (22 Nov ~00:10): if Strike runs slow, let it finish (up to the caps). Order, one job at a time, alone on the GPU (no renders, no
 full suite while they run); from `~/AirStack-starling-max2-l12c/svg_training` (branch `ste-l012c`), with
 `JOB="env -u CUDA_VISIBLE_DEVICES -u SVG_SHARED_DIR -u SVG_PAUSE_LEGACY_LOGS PYTHONPATH=source PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True $PY scripts/ste_job.py"`,
 `P=runs/2026-11-21_ste_l012_pilot/pilot.json` (copied from the l12b worktree), `GG`/`GS` = the full hashes above:

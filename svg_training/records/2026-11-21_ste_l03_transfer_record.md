@@ -72,14 +72,16 @@ Verdict: **INFO**. No gate on the hold rate (INFO). Controls:
   [transfer.png](../docs/figures/ste_l03/transfer.png) (made by `scripts/make_ste_l02_l03_figures.py` from the run's
   results.json). The eight 2-D clips, converted from MP4 to GIF: [docs/media/ste_l03](../docs/media/ste_l03/README.md).
 - **Cap 1.5 → 1.4 GPU-h before the run of record** (LEAD CALL; the smokes `runs/scratch_l03_cpu`, 0 GPU-h, and
-  `runs/scratch_l03_gpu`, 0.041 GPU-h, both exit 0). The run folder's `gates.toml` carries 1.4 and the committed sha256
-  (f6c7e815, committed after the run).
+  `runs/scratch_l03_gpu`, 0.041 GPU-h, both exit 0). The change was committed as 023d193d at 13:36:17 (f6c7e815 after the
+  branch was rebased), before the CPU part launched at 13:36:36; every arm records 023d193d with no uncommitted change.
 - **C-3b (information only) shows a 0.26 m gap within 20 ticks** between the Isaac world and the reference world when T41
   plays S20 on row 6, while the counts agree (no game ended, no tag, no reach in either world; filter corrections 69,544
-  against 69,504). Small physics differences feed back through the players and the filter and grow (closed-loop
-  amplification). The physics alone agree: C-3 (C-3a), the replay of the same inputs on bare worlds, 0.0028 m, PASS.
+  against 69,504). Likely closed-loop amplification (lead's reading, no control run): small physics differences
+  feed back through the players and the filter and grow. The physics alone agree: C-3 (C-3a), the replay of the same inputs on bare worlds, 0.0028 m, PASS.
 - **T41 on tier 2: 856 of 1,000 holds against 831 on tier 1 (CPU).** Paired by start: lost on tier 2 51, gained 76;
   sign test p = 0.033. Tier 2 is slightly better, not worse. One policy, one opponent, one set of starts.
 - **The tier 1 CUDA arm (829) is information only**: 10 of 1,000 games differ from the CPU arm.
 - **Suspend.** The machine was not suspended: one launch per part, one boot; CPU part 683 s effective against a 684 s
-  span; Isaac part 4,391 s effective against a 4,465 s span (the 74 s difference was not looked into).
+  span; Isaac part 4,391 s effective against a 4,465 s span: progress.json was last written at 15:01:20, 71 s before the
+  run ended at 15:02:31 (the final write), a recording-stage difference, not a suspend.
+- Edited after the first write (same session, before any push; no number changed): the commit times of the cap change corrected (it was committed before the run, not after), and a mechanism marked as the lead's reading.

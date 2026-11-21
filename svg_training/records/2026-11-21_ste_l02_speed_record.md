@@ -79,20 +79,23 @@ Verdict: **INFO**. No gate on a speed (INFO). Controls:
   results.json). The four 2-D clips as GIFs: [docs/media/ste_l02](../docs/media/ste_l02/README.md).
 - **Smokes and why the check was split.** The first Isaac smoke (`runs/scratch_l02_smoke`, smoke gate file, cap 0.25 h)
   ended with exit 6: the tier 2 agreement control compared whole games against the PyTorch reference world and found a
-  1,730 m gap (limit 0.02 m). The gap came from drones that were out of the game, which the game parks far away, so a
-  drone that went out at a different tick in one world counts as a huge gap. QC L02-1 split the check: **C-1a**, gated,
+  1,730 m gap (limit 0.02 m). The gap likely came from drones that were out of the game, which the game parks far away:
+  a parked drone compared against one still flying counts as a huge gap (lead's reading; not tested on its own). QC L02-1 split the check: **C-1a**, gated,
   replays the recorded drone inputs on bare worlds (0.00359 m here, PASS); **C-1b**, information only, compares the game
   while drones are in it (0.00230 m here). QC L02-R1 then made the replay repeat every operation in order (restarts,
   parking of out drones, wall and height clamps), so parked drones are compared too. The second smoke
   (`runs/scratch_l02_smoke2`, a new folder) ended with exit 0, every control PASS. Smokes: 0.044 + 0.051 GPU-h.
 - **Cap 1.5 → 1.4 GPU-h before the run of record** (LEAD CALL; the smokes had used about 0.096 of the task cap). A launch
   a minute before the run (`runs/2026-11-21_ste_l02_speed`) was refused with exit 2 because its `--cap-h 1.4` differed
-  from the file's 1.5 (0 GPU-h). The run folder's `gates.toml` carries 1.4 and the same sha256 as the committed file
-  (e2b722fb, committed after the run).
-- **"Largest fit" for tier 1 is 8,192 only because 16,384 was not run** (the plan cut it). It is not a memory limit:
+  from the file's 1.5 (0 GPU-h). The change was committed as ff579c7d at 13:11:59 (e2b722fb after the
+  branch was rebased), a second before the run launched at 13:12:00; the run's code.json names ff579c7d with no
+  uncommitted change, and its `gates.toml` copy carries 1.4.
+- **"Largest fit" for tier 1 is 8,192 only because 16,384 was not run** (the driver's point plan cut it:
+  `cuts.json`). It is not a memory limit:
   tier 1 at 8,192 games used 1.3 GB (1,306 MiB for the process).
 - **Out-of-memory detection is still unproven on Isaac:** no point ran out of memory (tier 2 fitted 16,384 games at
   4.7 GB), so the "did not fit" path was never exercised on the GPU.
 - **Tier 2 (Isaac Lab) is slower than tier 1 per game-step:** 4.9–5.3× at 3v3, 4.1× at 5v3, 7.2× at 2v1 and 9.8× at 1v1
   (training rate, same games at once).
 - **Suspend.** The machine was not suspended: one launch, effective time 1,059 s against a 1,060 s wall-clock span.
+- Edited after the first write (same session, before any push; no number changed): the commit times of the cap change corrected (it was committed before the run, not after), and a mechanism marked as the lead's reading.

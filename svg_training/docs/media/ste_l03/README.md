@@ -2,9 +2,10 @@
 
 Training simulator, the hangar game (8 m arena, 3v3) on T41's 1,000 starts; not a flight. The STE Guard policy T41
 (trained on tier 1) plays the S20 Strike team without retraining: on tier 1 (CPU and CUDA) and on tier 2 (Isaac Lab
-physics drone), plus the parked Guard team as the control. Converted from the run's MP4s (10 frames/s, 720 px), shown
-at 6x real time. No height panel (standing rule: every 2-D clip carries one); the clips will be re-drawn later under
-task VID-1c. 3-D Isaac Lab clips are pending (VID-1). Numbers:
+physics drone), plus the parked Guard team as the control. Height panel added (VID-1c, 21 Nov 2026): each clip was
+re-drawn with the height panel under the map from the positions the run kept (`arms/<arm>__video.npz`; no game was
+played again) by `scripts/redraw_ste_l03_clips.py`, 720 px wide, 15 frames/s, every frame kept, shown at 6x real time.
+3-D Isaac Lab clips are pending (VID-1). Numbers:
 [record T49](../../../records/2026-11-21_ste_l03_transfer_record.md).
 
 | Clip | Caption |

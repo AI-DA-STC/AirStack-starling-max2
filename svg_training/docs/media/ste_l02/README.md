@@ -3,8 +3,9 @@
 Training simulator, the L0.11 base game (3v3, tag 1.6 m, 6.5 m lab arena); not a flight. Each clip is a scripted
 reference game of a timed point (1,024 games at once): the mark-edge Guards against the straight Strikes, on tier 1
 (fast engine) and on tier 2 (Isaac Lab physics drone). The clips show what was timed; they carry no result. No height
-panel (standing rule: every 2-D clip carries one); the clips will be re-drawn later under task VID-1c. 3-D Isaac
-Lab clips are pending (VID-1). Numbers:
+panel yet (standing rule: every 2-D clip carries one). VID-1c (21 Nov 2026) could not re-draw them from the run's data:
+the run drew these clips from games held in memory and kept no positions, so a height panel needs the clip games played
+again (tier 2 in Isaac Lab, a GPU job). 3-D Isaac Lab clips are pending (VID-1). Numbers:
 [record T48](../../../records/2026-11-21_ste_l02_speed_record.md).
 
 | Clip | Caption |

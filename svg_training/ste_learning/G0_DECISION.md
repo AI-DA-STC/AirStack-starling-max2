@@ -20,7 +20,7 @@ reading), at about 5× the cost per game-step ([T53](../records/2026-11-21_ste_l
 were only screened with scripts, and there a good scripted Guard team wins almost every game.
 
 > **What the lead recommends**
-> 1. **Run the longer 1.15 m trainings** (one Guard, one Strike, 3× the training; about 3.5–4 GPU-h, est.), then rule the tag; if a ruling is needed now, 1.6 m is the only distance where both trained sides clearly beat the scripts; 1.4 m is clear on the Strike side only.
+> 1. **The longer 1.15 m trainings** (approved 21 Nov 2026, task L0.12c: Guard 3×, Strike 5× the training; about 5.2 GPU-h expected) run first; then rule the tag; if a ruling is needed now, 1.6 m is the only distance where both trained sides clearly beat the scripts; 1.4 m is clear on the Strike side only.
 > 2. Keep 1-for-1 tags, the 1.6 m zone, the 6.5 m arena with the 2.75 m Strike start ring, 3v3 for training; vary the tag distance by ±0.1 m in training (L1).
 > 3. Train and test 1v1 explicitly in L1: it is the two-Starling demo size and Guard-trivial with scripts.
 > 4. Keep D3 (train in Isaac Lab, tier 1 for quick experiments); open arena first.
@@ -46,7 +46,7 @@ T44's starts, except T45 and T49 (T41's hangar starts) and the Crazyflie planner
 | 1c | 1.2 m | scripts 645 / 355; trained Guards 503 v 645, still climbing; Strike run ABORTED ([T46](../records/2026-11-21_ste_l012_best_response_record.md), [T47](../records/2026-11-21_ste_l012_tag_1p2_strike_record.md)) | trained, one side | — | not re-run (owner, 21 Nov) |
 | 1d | 1.15 m (filter 1.10 m + 0.05 m) | scripts 645 / 355; trained Guards 466 v 645, still climbing; Strike run ABORTED ([T50](../records/2026-11-21_ste_l012b_screen_record.md), [T51](../records/2026-11-21_ste_l012b_best_response_record.md), [T52](../records/2026-11-21_ste_l012b_tag_1p15_strike_record.md)) | trained, one side | — | trained Strike side unread |
 | 1e | no proximity tag (filter only) | the high scripted Strike reaches in every game; the best scripted Guard holds 0 ([T44](../records/2026-11-21_ste_l011_screen_record.md), INFO cell) | scripted screen only | — | — |
-| 2 | **Longer 1.15 m runs** (pending) | — | not tested in L0 | lead: yes; about 3.5–4 GPU-h (est., [status](status/STATUS_LATEST.md)) | the owner's answer |
+| 2 | **Longer 1.15 m runs** (APPROVED 21 Nov 2026: L0.12c, running) | — | not tested in L0 | Guard 3×, Strike 5× the step budget, same recipe; about 5.2 GPU-h expected, 6.5 approved | results added here before the walk-through |
 | 3 | **Varied tag distance in training** | every run used one tag distance | not tested in L0 | lead: yes, the tag distance drawn within ±0.1 m of the chosen value, tested in L1 | — |
 | 4 | **What a tag costs** (D2, `guard_survives_tag_prob`) | Guard survives: scripted Guards hold 1,000; 1-for-1: holds are trades ([T44](../records/2026-11-21_ste_l011_screen_record.md)); [section 3](#3-the-scripted-screen-one-factor-at-a-time) | 1-for-1: trained, both sides; survive: scripted screen only | lead: keep 1-for-1 | values between 0 and 1 not run |
 | 5 | **Zone size** (P12) | 2.4 m zone: scripted Guards hold 89 ([T44](../records/2026-11-21_ste_l011_screen_record.md)) | scripted screen only | lead: keep 1.6 m | the 2.4 m cell also shortened the run-in |
@@ -96,10 +96,11 @@ T44's starts, except T45 and T49 (T41's hangar starts) and the Crazyflie planner
   a tag nobody chose. On the tag's own tick: rare at 1.15 m, up to 27 % of a cell's tags at 1.6 m. Earlier ticks not measured.
 - **ABORTED Strike runs** wait out the 120 s clock ([section 9](#9-aborted-runs-information-only), information only).
 
-> **Pending owner question: longer 1.15 m runs.** One Guard and one Strike run at 3× the training (about 1.65 B
-> game-steps each), caps sized from the 1.15 m timings: about 3.5–4 GPU-h (est., [status](status/STATUS_LATEST.md)).
-> It completes the argument: does training beat the scripts under the owner's realistic-tag rule (the filter's 1.10 m + 0.05 m)? The lead recommends
-> yes; the owner decides.
+> **Longer 1.15 m runs: approved by the owner (21 Nov 2026), task L0.12c.** The Guard run at 3× the training (1.65 B
+> game-steps), the Strike run at 5× (2.75 B: at 3× its curve would likely stay below the script), same recipe, caps sized
+> from the 1.15 m runs' own timings: about 5.2 GPU-h expected (gate files `configs/ste_l012c/`).
+> It completes the argument: does training beat the scripts under the owner's realistic-tag rule (the filter's 1.10 m + 0.05 m)? Results are added to
+> this page before the walk-through.
 
 **Clips.** The 3-D clips replay games of the run's scoring evaluation (T44's 1,000 starts). The 2-D clips are each run's
 own video games, on separate clip starts (`clip_seed` 120950 in the gate files): a "game 0" in one is not "game 0" in the other.

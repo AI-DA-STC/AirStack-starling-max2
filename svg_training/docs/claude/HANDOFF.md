@@ -4,13 +4,36 @@ INTERNAL · the lab's AI-assistant hand-over notes. Not needed to read or run an
 
 > **How to use this file.** Read it at the start of a session, after [../../CLAUDE.md](../../CLAUDE.md).
 > §4 is the current state, §5 is what is waiting on people. Update both before you stop.
-> Last updated: 21 November 2026 ~21:10, on the laptop (RTX 5070 Ti), worktree `~/AirStack-starling-max2-dev` on branch `development`. Before: 20 November 2026 ~22:20 (home RTX 5090).
+> Last updated: 21 November 2026 ~23:45, on the laptop (L0.12c launch; before: ~21:10) (RTX 5070 Ti), worktree `~/AirStack-starling-max2-dev` on branch `development`. Before: 20 November 2026 ~22:20 (home RTX 5090).
 
 ## 0. Resume here (for a new session or another Claude account)
 
 Everything needed is in this folder; nothing depends on the previous chat. Claude's user memory (`~/.claude/…`) and
 the private NUS workspace (`~/ma_skills-self-play/`, 5090 only) do **not** travel with git: if this file and a memory
 note disagree, this file wins.
+
+### LAPTOP SESSION, 21–22 November 2026 — L0.12c LONGER 1.15 m RUNS (read this first)
+
+**Owner approved (21 Nov ~23:00):** Guard 3×, Strike 5× L0.12's 550 M game-steps at tag 1.15 m, same recipe, "about 6.5
+GPU-h" (DISCUSSION §11). Gate files `configs/ste_l012c/guard_gates.toml` (sha256 `b52dcc23…0d4c81`) and
+`configs/ste_l012c/strike_gates.toml` (sha256 `362b9126…0dfee9`), QC'd twice, locked at the first launch. Task caps
+changed (L0.12 6 → 13; finished tasks lowered; sum 17.3 of 19). Expected use ~5.2 GPU-h; caps are ceilings (7.5 total):
+ask the owner before L0.12c's actual use passes 6.5 GPU-h. Order, one job at a time, alone on the GPU (no renders, no
+full suite while they run); from `~/AirStack-starling-max2-l12c/svg_training` (branch `ste-l012c`), with
+`JOB="env -u CUDA_VISIBLE_DEVICES -u SVG_SHARED_DIR -u SVG_PAUSE_LEGACY_LOGS PYTHONPATH=source PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True $PY scripts/ste_job.py"`,
+`P=runs/2026-11-21_ste_l012_pilot/pilot.json` (copied from the l12b worktree), `GG`/`GS` = the full hashes above:
+
+```
+$JOB launch --task L0.12 --name l012c_tag_1p15_guard --run-dir runs/2026-11-22_ste_l012c_tag_1p15_guard --min-s 900 --gpu-h 2.7 -- $PY scripts/ste_exploit_l012.py --gates configs/ste_l012c/guard_gates.toml --variant tag_1p15 --side guard --run-dir runs/2026-11-22_ste_l012c_tag_1p15_guard --cap-h 2.7 --expect-gates-sha256 $GG --pilot-json $P
+$JOB launch --task L0.12 --name l012c_run0 --run-dir runs/2026-11-22_ste_l012c_run0 --min-s 120 --gpu-h 4.8 -- $PY scripts/ste_exploit_l012.py --run0 --gates configs/ste_l012c/strike_gates.toml --run-dir runs/2026-11-22_ste_l012c_run0 --cap-h 4.8 --pilot-json $P --expect-gates-sha256 $GS
+# only if run 0's learner_control.json reads PASS:
+$JOB launch --task L0.12 --name l012c_tag_1p15_strike --run-dir runs/2026-11-22_ste_l012c_tag_1p15_strike --min-s 1200 --gpu-h 4.8 -- $PY scripts/ste_exploit_l012.py --gates configs/ste_l012c/strike_gates.toml --variant tag_1p15 --side strike --run-dir runs/2026-11-22_ste_l012c_tag_1p15_strike --cap-h 4.8 --expect-gates-sha256 $GS --pilot-json $P --run0-json runs/2026-11-22_ste_l012c_run0/learner_control.json
+```
+
+After the runs: `scripts/ste_exploit_l012.py verdict` once per gate file (each reports one side), the category formed
+in the record with `ste/exploit.variant_verdict` on the two side results (gate header "Reads"); records, ledger rows,
+clips (2-D + 3-D key games), G0 page row 1d/2 and the tag-rule section. Row 17 (L0.7's 5090 part) stays first on the
+next 5090 session: it checks that machine, not memory (owner asked; answered 21 Nov).
 
 ### LAPTOP SESSION, 21 November 2026 — STATE AT ~21:10 (read this first)
 

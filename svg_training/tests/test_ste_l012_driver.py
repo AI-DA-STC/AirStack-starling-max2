@@ -493,7 +493,7 @@ def test_the_pilot_names_run_0_and_states_that_nothing_kills_the_final_phase(tmp
     assert "run 0 fits" in md
     plan = p["plan_hours"]
     assert plan and all(x["total_gpu_h"] == pytest.approx(x["pilot_gpu_h"] + 7 * x["run_cap_h"]) for x in plan)
-    assert all(x["task_cap_gpu_h"] == 6.0 for x in plan)
+    assert all(x["task_cap_gpu_h"] == 13.0 for x in plan)
 
 
 def test_runs_refuse_a_missing_or_disagreeing_pilot_or_run_0(tmp_path):

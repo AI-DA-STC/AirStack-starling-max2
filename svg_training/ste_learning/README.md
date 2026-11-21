@@ -137,7 +137,7 @@ A GPU-hour (GPU-h) is one hour of the shared graphics card. INFO means measured,
 | L0.14 Crazyflie route check | one page on flying the game on the lab's Crazyflies: does the STE Guard policy cope with a Crazyflie's slower response, which team sizes fit which arena, and what a Crazyflie session would have to build | 0 |
 | L0.6 Gate G0 | one decision page for the owner, with every number above | 0 |
 
-The cap for the whole phase is 19 GPU-h (the task caps sum to 18.5); the work estimate is about 80 hours.
+The cap for the whole phase is 19 GPU-h (the task caps sum to 17.3 since 21 Nov 2026, L0.12c; 18.5 before); the work estimate is about 80 hours.
 
 Notes on five tasks:
 

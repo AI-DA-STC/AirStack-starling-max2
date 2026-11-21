@@ -23,8 +23,8 @@ PLAN = ROOT / "ste_learning" / "PLAN.md"
 
 # The numbers of ste_learning/PLAN.md section 4 (version 2), typed here once more: a change to the file is then seen.
 L0_PHASE_CAP_GPU_H = 19.0          # the owner's approval of 20 Nov 2026
-L0_TASK_CAP_GPU_H = {"L0.1": 0.0, "L0.7": 0.0, "L0.8": 0.0, "L0.9": 0.0, "L0.10": 0.0, "L0.11": 3.0, "L0.12": 6.0,
-                     "L0.2": 1.5, "L0.13": 6.0, "L0.3": 1.5, "L0.4": 0.2, "L0.5": 0.3, "L0.14": 0.0, "L0.6": 0.0}
+L0_TASK_CAP_GPU_H = {"L0.1": 0.0, "L0.7": 0.0, "L0.8": 0.0, "L0.9": 0.0, "L0.10": 0.0, "L0.11": 0.5, "L0.12": 13.0,
+                     "L0.2": 0.4, "L0.13": 1.6, "L0.3": 1.3, "L0.4": 0.2, "L0.5": 0.3, "L0.14": 0.0, "L0.6": 0.0}
 
 GOOD = SETTINGS_FILE.read_text()
 
@@ -56,7 +56,7 @@ def test_committed_file_loads_with_the_plans_numbers():
     assert cfg.budget.phase_cap_gpu_h == L0_PHASE_CAP_GPU_H and type(cfg.budget.phase_cap_gpu_h) is float
     assert cfg.budget.task_cap_gpu_h == tuple(L0_TASK_CAP_GPU_H.items())          # same tasks, same order, same caps
     assert all(type(cap) is float for _, cap in cfg.budget.task_cap_gpu_h)
-    assert cfg.budget.cap_gpu_h("L0.11") == 3.0 and cfg.budget.cap_gpu_h("L0.4") == 0.2
+    assert cfg.budget.cap_gpu_h("L0.11") == 0.5 and cfg.budget.cap_gpu_h("L0.4") == 0.2
     with pytest.raises(KeyError, match="L0.99"):
         cfg.budget.cap_gpu_h("L0.99")
     assert load_ste_learning(SETTINGS_FILE) == (cfg, provenance)
@@ -307,13 +307,13 @@ def test_unknown_phase_raises(tmp_path):
     ("phase_cap_gpu_h = 19.0", "phase_cap_gpu_h = true", "budget.phase_cap_gpu_h"),
     ("phase_cap_gpu_h = 19.0", "phase_cap_gpu_h = inf", "budget.phase_cap_gpu_h"),
     ("phase_cap_gpu_h = 19.0", "phase_cap_gpu_h = -19.0", "budget.phase_cap_gpu_h"),
-    ('"L0.11" = 3.0', '"L0.11" = 3', r"budget.task_cap_gpu_h.*L0\.11"),
-    ('"L0.11" = 3.0', '"L0.11" = "3.0"', r"budget.task_cap_gpu_h.*L0\.11"),
-    ('"L0.11" = 3.0', '"L0.11" = false', r"budget.task_cap_gpu_h.*L0\.11"),
-    ('"L0.11" = 3.0', '"L0.11" = [3.0]', r"budget.task_cap_gpu_h.*L0\.11"),
-    ('"L0.11" = 3.0', '"L0.11" = nan', r"budget.task_cap_gpu_h.*L0\.11"),
-    ('"L0.11" = 3.0', '"L0.11" = inf', r"budget.task_cap_gpu_h.*L0\.11"),
-    ('"L0.11" = 3.0', '"L0.11" = -0.5', r"budget.task_cap_gpu_h.*L0\.11"),
+    ('"L0.11" = 0.5', '"L0.11" = 3', r"budget.task_cap_gpu_h.*L0\.11"),
+    ('"L0.11" = 0.5', '"L0.11" = "3.0"', r"budget.task_cap_gpu_h.*L0\.11"),
+    ('"L0.11" = 0.5', '"L0.11" = false', r"budget.task_cap_gpu_h.*L0\.11"),
+    ('"L0.11" = 0.5', '"L0.11" = [3.0]', r"budget.task_cap_gpu_h.*L0\.11"),
+    ('"L0.11" = 0.5', '"L0.11" = nan', r"budget.task_cap_gpu_h.*L0\.11"),
+    ('"L0.11" = 0.5', '"L0.11" = inf', r"budget.task_cap_gpu_h.*L0\.11"),
+    ('"L0.11" = 0.5', '"L0.11" = -0.5', r"budget.task_cap_gpu_h.*L0\.11"),
 ])
 def test_wrong_type_or_impossible_value_raises(tmp_path, old, new, names):
     with pytest.raises(ValueError, match=names):
@@ -331,8 +331,8 @@ def test_a_section_that_is_not_a_table_raises(tmp_path):
 
 def test_task_caps_above_the_phase_cap_raise(tmp_path):
     with pytest.raises(ValueError, match=r"task caps.*phase cap"):
-        load_ste_learning(changed(tmp_path, '"L0.11" = 3.0', '"L0.11" = 3.6'))    # one tenth of a GPU-hour over
-    load_ste_learning(changed(tmp_path, '"L0.11" = 3.0', '"L0.11" = 3.5'))        # exactly the phase cap is allowed
+        load_ste_learning(changed(tmp_path, '"L0.11" = 0.5', '"L0.11" = 2.3'))    # one tenth of a GPU-hour over
+    load_ste_learning(changed(tmp_path, '"L0.11" = 0.5', '"L0.11" = 2.2'))        # exactly the phase cap is allowed
 
 
 def test_task_caps_are_added_and_compared_exactly_in_decimal(tmp_path):

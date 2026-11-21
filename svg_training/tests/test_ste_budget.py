@@ -160,15 +160,15 @@ def test_a_torn_line_is_skipped_and_reported(capsys):
 
 # ------------------------------------------------------------------------------------------------ the launch check
 def test_the_committed_caps():
-    """configs/ste_learning.toml as committed: L0.11 has 3 GPU-h, L0.7 has none, the phase has 19."""
-    usage = budget.check_launch("L0.11", 3.0)
-    assert usage == budget.Usage(task_cap_gpu_h=3.0, task_used_gpu_h=0.0, phase_cap_gpu_h=19.0, phase_used_gpu_h=0.0)
+    """configs/ste_learning.toml as committed: L0.12 has 13 GPU-h (L0.12c, 21 Nov 2026), L0.7 has none, the phase has 19."""
+    usage = budget.check_launch("L0.12", 13.0)
+    assert usage == budget.Usage(task_cap_gpu_h=13.0, task_used_gpu_h=0.0, phase_cap_gpu_h=19.0, phase_used_gpu_h=0.0)
     assert budget.check_launch("L0.7", 0.0).task_cap_gpu_h == 0.0                     # a CPU job asks for nothing
-    with pytest.raises(budget.BudgetError, match=r"task L0\.11.*cap 3\.0 GPU-h.*used 0\.000.*asked 3\.1"):
-        budget.check_launch("L0.11", 3.1)
+    with pytest.raises(budget.BudgetError, match=r"task L0\.12.*cap 13\.0 GPU-h.*used 0\.000.*asked 13\.1"):
+        budget.check_launch("L0.12", 13.1)
     with pytest.raises(budget.BudgetError, match=r"task L0\.7.*cap 0\.0 GPU-h.*asked 0\.5"):
         budget.check_launch("L0.7", 0.5)
-    assert budget.check_launch("L0.11", 3.0, settings=SETTINGS_FILE).phase_cap_gpu_h == 19.0
+    assert budget.check_launch("L0.12", 13.0, settings=SETTINGS_FILE).phase_cap_gpu_h == 19.0
 
 
 def test_refused_when_the_task_cap_would_be_exceeded(tmp_path):

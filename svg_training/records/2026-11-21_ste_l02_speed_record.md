@@ -4,7 +4,6 @@ Simulator: training simulator: tier 1 (fast engine; Starling layer: commander co
 
 ## Run notes
 
-- Say here whether the machine was suspended during the run (a suspend counts against the cap).
 - One child process per point; Isaac Sim's start is in each tier 2 point's wall time, not in its rates.
 
 ## Purpose
@@ -53,7 +52,7 @@ jeremychia-Legion-Pro-7-16IAX10H; GPU NVIDIA GeForce RTX 5070 Ti Laptop GPU; tor
 | t1_1v1_4096 | 1 | 1v1 | 4,096 | fit | 382,562 | 427,463 | 393,614 | 787,228 | 0.3 | 638 | 438 |
 | t2_3v3_16384 | 2 | 3v3 | 16,384 | fit | 61,187 | 68,814 | 67,368 | 404,206 | 2.0 | 4,703 | 2,234 |
 
-Largest 3v3 games at once that fitted: tier 1 8192, tier 2 16384 (on this GPU's memory; the 5090 may hold more). Tier 1 against tier 2, training rate: 1v1 x 4,096: tier 1 / tier 2 = 9.8; 2v1 x 4,096: tier 1 / tier 2 = 7.2; 3v3 x 1,024: tier 1 / tier 2 = 5.2; 3v3 x 2,048: tier 1 / tier 2 = 4.9; 3v3 x 4,096: tier 1 / tier 2 = 5.3; 3v3 x 8,192: tier 1 / tier 2 = 5.0; 5v3 x 4,096: tier 1 / tier 2 = 4.1. Not run: t2_3v3_6144, t2_5v3_8192, t1_3v3_16384, t2_5v3_1024, t2_5v3_2048, t1_5v3_1024, t1_5v3_2048.
+Largest 3v3 games at once that fitted: tier 1 not run above 8,192 (16,384 not run), tier 2 16384 (on this GPU's memory; the 5090 may hold more). Tier 1 against tier 2, training rate: 1v1 x 4,096: tier 1 / tier 2 = 9.8; 2v1 x 4,096: tier 1 / tier 2 = 7.2; 3v3 x 1,024: tier 1 / tier 2 = 5.2; 3v3 x 2,048: tier 1 / tier 2 = 4.9; 3v3 x 4,096: tier 1 / tier 2 = 5.3; 3v3 x 8,192: tier 1 / tier 2 = 5.0; 5v3 x 4,096: tier 1 / tier 2 = 4.1. Not run: t2_3v3_6144, t2_5v3_8192, t1_3v3_16384, t2_5v3_1024, t2_5v3_2048, t1_5v3_1024, t1_5v3_2048.
 
 ## Gates
 
@@ -65,12 +64,12 @@ Verdict: **INFO**. No gate on a speed (INFO). Controls:
 
 ## Videos
 
-2-D clips (STANDARDS section 8): videos/t2_3v3_1024_hold_game0.gif: guard_mark_edge v strike_straight, hold at 1.8 s; videos/t2_3v3_1024_reach_game2.gif: guard_mark_edge v strike_straight, reach at 2.3 s; videos/t1_3v3_1024_hold_game0.gif: guard_mark_edge v strike_straight, hold at 2.1 s; videos/t1_3v3_1024_reach_game6.gif: guard_mark_edge v strike_straight, reach at 2.9 s. The height panel arrives with L0.12's replay change; 3-D Isaac Lab clips: VID-1, pending.
+2-D clips (STANDARDS section 8): videos/t2_3v3_1024_hold_game0.gif: guard_mark_edge v strike_straight, hold at 1.8 s; videos/t2_3v3_1024_reach_game2.gif: guard_mark_edge v strike_straight, reach at 2.3 s; videos/t1_3v3_1024_hold_game0.gif: guard_mark_edge v strike_straight, hold at 2.1 s; videos/t1_3v3_1024_reach_game6.gif: guard_mark_edge v strike_straight, reach at 2.9 s. No height panel (standing rule: every 2-D clip carries one); the clips will be re-drawn later under task VID-1c. 3-D Isaac Lab clips: VID-1, pending.
 
 ## Limits
 
 - One update per point: the update time is one sample. The learner starts at the zero-mean policy (the standing-still Guard team); a trained team may change game length and filter work.
-- Rates on this machine only; the 5090 rates differ.
+- Rates on this machine only; the 5090 rates may differ.
 
 ## Run notes added by the lead
 
@@ -99,3 +98,4 @@ Verdict: **INFO**. No gate on a speed (INFO). Controls:
   (training rate, same games at once).
 - **Suspend.** The machine was not suspended: one launch, effective time 1,059 s against a 1,060 s wall-clock span.
 - Edited after the first write (same session, before any push; no number changed): the commit times of the cap change corrected (it was committed before the run, not after), and a mechanism marked as the lead's reading.
+- Edited after the first write (same session, before any merge, after QC; no number changed): the placeholder run note removed, the missing height panel named against the standing rule (VID-1c), the tier 1 largest fit reworded and "may differ" for the 5090.

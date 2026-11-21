@@ -4,7 +4,6 @@ Simulator: training simulator, the hangar game of Phase 4 row 6 (tier 2: Isaac L
 
 ## Run notes
 
-- Say here whether the machine was suspended during the run.
 
 ## Purpose
 
@@ -59,7 +58,7 @@ Verdict: **INFO**. No gate on the hold rate (INFO). Controls:
 
 ## Videos
 
-2-D clips (STANDARDS section 8): videos/t1_cpu_t41_strike_win_slot5.mp4; videos/t1_cpu_t41_hold_slot0.mp4; videos/t2_t41_strike_win_slot5.mp4; videos/t2_t41_hold_slot0.mp4; videos/t2_parked_strike_win_slot0.mp4; videos/t2_parked_hold_slot1.mp4; videos/t1_cuda_t41_strike_win_slot6.mp4; videos/t1_cuda_t41_hold_slot0.mp4. 3-D Isaac Lab clips (VID-1) pending; key games (paired starts lost / gained on tier 2): [16, 18, 23, 22, 28, 41].
+2-D clips (STANDARDS section 8): videos/t1_cpu_t41_strike_win_slot5.mp4; videos/t1_cpu_t41_hold_slot0.mp4; videos/t2_t41_strike_win_slot5.mp4; videos/t2_t41_hold_slot0.mp4; videos/t2_parked_strike_win_slot0.mp4; videos/t2_parked_hold_slot1.mp4; videos/t1_cuda_t41_strike_win_slot6.mp4; videos/t1_cuda_t41_hold_slot0.mp4. No height panel (standing rule: every 2-D clip carries one); the clips will be re-drawn later under task VID-1c. 3-D Isaac Lab clips (VID-1) pending; key games (paired starts): lost on tier 2 16, 18, 23; gained on tier 2 22, 28, 41.
 
 ## Limits
 
@@ -79,9 +78,11 @@ Verdict: **INFO**. No gate on the hold rate (INFO). Controls:
   against 69,504). Likely closed-loop amplification (lead's reading, no control run): small physics differences
   feed back through the players and the filter and grow. The physics alone agree: C-3 (C-3a), the replay of the same inputs on bare worlds, 0.0028 m, PASS.
 - **T41 on tier 2: 856 of 1,000 holds against 831 on tier 1 (CPU).** Paired by start: lost on tier 2 51, gained 76;
-  sign test p = 0.033. Tier 2 is slightly better, not worse. One policy, one opponent, one set of starts.
+  sign test p = 0.033. Higher on tier 2 in this set (856 v 831; one policy, one opponent, one start set; p = 0.033
+  uncorrected); no claim of a general difference.
 - **The tier 1 CUDA arm (829) is information only**: 10 of 1,000 games differ from the CPU arm.
 - **Suspend.** The machine was not suspended: one launch per part, one boot; CPU part 683 s effective against a 684 s
   span; Isaac part 4,391 s effective against a 4,465 s span: progress.json was last written at 15:01:20, 71 s before the
   run ended at 15:02:31 (the final write), a recording-stage difference, not a suspend.
 - Edited after the first write (same session, before any push; no number changed): the commit times of the cap change corrected (it was committed before the run, not after), and a mechanism marked as the lead's reading.
+- Edited after the first write (same session, before any merge, after QC; no number changed): the placeholder run note removed, the missing height panel named against the standing rule (VID-1c), the tier 2 comparison reworded (no claim of a general difference) and the key games split into lost and gained.

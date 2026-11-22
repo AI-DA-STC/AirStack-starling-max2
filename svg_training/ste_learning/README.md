@@ -47,7 +47,7 @@ Two technical calls were made by the lead (the main Claude session) and recorded
 as a delay plus noise first (D7), and work on NUS's training recipe is paused (D8); this track does not depend on it.
 
 **The first gate.** Phase L0 is approved (owner, 20 November 2026). It ends at gate G0, where the owner rules on the
-game and the route with L0's numbers.
+game and the route with L0's numbers. The report that explains L0's results for that ruling: [G0_REPORT.md](G0_REPORT.md).
 
 ## What is being built
 

@@ -12,6 +12,13 @@ Everything needed is in this folder; nothing depends on the previous chat. Claud
 the private NUS workspace (`~/ma_skills-self-play/`, 5090 only) do **not** travel with git: if this file and a memory
 note disagree, this file wins.
 
+### 22 November 2026 ~14:30 — G0 REPORT WRITTEN (owner asked for a proper report before G0)
+`ste_learning/G0_REPORT.md`: the G0 decision explained for a project lead (summary, primer, the tag decision first, one
+decision table with cost and "if wrong", evidence, limits, appendices; new game diagram by `scripts/make_g0_report_figures.py`).
+Two reviewers (numbers/sources; newcomer reader), three rounds. It updates recommendation 1 (option (d): drone-model work
+now, demo tag chosen after the game-rules phase; budget 12 GPU-h under (d), 11 under (a)/(b), 15 under (c)).
+G0_DECISION.md is NOT yet changed: rewrite its recommendation 1 and budget after the owner rules.
+
 ### 22 November 2026 ~12:50 — WORKTREE CLEAN-UP (owner approved)
 The 16 finished task worktrees (`~/AirStack-starling-max2-{g0,l02,l04,l07fix,l08,l09,l10,l11,l12,l12b,l12c,l12d,l13,l14,pilot,vid1b}`)
 are removed (`git worktree remove`; every commit is in `development`; the `ste-*` branches stay). Their run folders and

@@ -9,8 +9,8 @@ gpu_h_cap = 19.0
 [tasks."L0.1"]
 state = "done"
 [tasks."L0.7"]
-state = "laptop_done"
-note = "5090 suite and drills to do"
+state = "done"
+note = "5090 part done 23 Nov"
 [tasks."L0.8"]
 state = "done"
 [tasks."L0.9"]

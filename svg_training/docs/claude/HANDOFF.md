@@ -33,6 +33,17 @@ status opens "Main track · Side track". Next side-track step if any: a second s
 (≈0.5 GPU-h), announced first. **L1 caps:** L1.1 0.2 (used), L1.6 0.1, L1.9 1.6, L1.10 0.9, L1.11 1.2, L1.13 2.1, L1.14
 0.3, L1.15 0.3; sum 9.1 + L2 3.9 = 13.
 
+### 23 November 2026 ~03:10 — RTX 5090: L1.0 MACHINE CHECKS DONE (speed part deferred)
+Branch `ste-l1-0` (merged into `development`); record [records/2026-11-23_ste_l10_5090_checks_record.md](../../records/2026-11-23_ste_l10_5090_checks_record.md), two reviewers (numbers, completeness).
+**The carry of the laptop's 2.81 GPU-h is DONE on the 5090 (ledger 2.81 of 13): do not run it again.** TEST-F2b
+passed (AVX512 key confirmed); L09-5090 closed: AVX512 record added to `tests/data/game_tag_off_golden.json` from
+`5ebac526` (the L0.9 commit's parent; `dec9d276` is not in the shared history), current game equal to it natively; closed
+L0 refuses launches (exit 2); wake-up and resume drills as expected under `--task L1.0`; 5090 full suite 2,213 passed,
+54 skipped, 0 failed; GPU-only tests with the GPU visible 203 passed. Deferred with the speed re-measure (laptop lead):
+A8's "three tier 2 seeds fit 32 GB" and the 16,384-game physics check. For the laptop lead: T45's per-game file must be
+copied to `runs/2026-11-21_ste_l014/response/` for the L0.3 tests (the bundle README says nothing needs installing); the
+owner should pause from the `development` worktree's `gpu_pause.sh` (the main clone's copy is older).
+
 ### 22 November 2026 ~16:40 — GATE G0 RULED; PHASE L1 OPEN (read this first)
 The owner ruled every G0 row (DISCUSSION §14; G0_DECISION banner): main game has a 1-for-1 tag (P1, overturns the FIXED
 no-tag rows); option (d): 1.6 m to build the pipeline and for the first demo (scripted 1v1), a 1.15 m side track in L1–L2,

@@ -133,6 +133,138 @@
     "yaw": "e04bfa8b383dc883d24f1cb5ac397952b781fbd9d3387685a163b84677207224"
    }
   },
+  "AVX512": {
+   "contact_pure/0": {
+    "info_closest_cross_3d_m": "4e1486226bd1a273f1d9a37475a9d4b9116b0f57fc622876c2be5e07723d8bc1",
+    "info_closest_cross_m": "4e1486226bd1a273f1d9a37475a9d4b9116b0f57fc622876c2be5e07723d8bc1",
+    "info_closest_team_m": "30d8624231cd954d71d9dc0ecabbe1dbe053cbf63b46b0ec1257e091d64bb075",
+    "obs_guard": "e7765a7b2dd88993d9683ca66562f3233bed5a59a8218500a203daf47b9abfb8",
+    "obs_strike": "fa27447e989fda5a2f0ca460e5ca9782f1096221d7fbc18918bf28a38a792faa",
+    "pos_m": "c82afc8fc2d15f438df17c5294455450fd877f02022a73a88f02c5b9024cd706",
+    "reward_guard": "1272b5e3c49f1e3123e7ff3325db8ae96895097cf0e6c8e1f4937c2de4825d38",
+    "reward_strike": "677f653956b326579e6675e89c4f495fe80bbd83db9415d67fe841b05a747e12",
+    "state": "37fae3e44dd4175eb526c0ede090ba45ac7c19637b7b40eefd200ac334138b98",
+    "vel_mps": "13c48fa98c30b2b3beca8bf7fc6000468cca33ded558c7312a28abf073bc6fba",
+    "yaw": "c5fca1327c6e91c53c633fb9f03fa094839469e0ba540750956a53b5fe166fcd"
+   },
+   "contact_pure/5": {
+    "info_closest_cross_3d_m": "6566d6d172da2cb1b9b65db3cd0995a813ea5cc14507aeb1f526aaee541bf38b",
+    "info_closest_cross_m": "6566d6d172da2cb1b9b65db3cd0995a813ea5cc14507aeb1f526aaee541bf38b",
+    "info_closest_team_m": "6b0ba3309cc9beb21b25ffe4436816f6c32d804184bc637f53db871a679a4834",
+    "obs_guard": "9592cb6f7a16de713aadc0909db63d2a1363e8cb64457f0ad98f12ba1ebb0dcc",
+    "obs_strike": "ae1d655258856c10d36c7695d43bc08b5654e66c66a90585c5b4eadc31dd6b41",
+    "pos_m": "b60676de42a05504d6b5f91ddf59c68d6de6b256d5196d48b2e7ec27e6fd1426",
+    "reward_guard": "1eddda6664637b05d452a72b9f8cd143badd638dbcfaf2ae8fcc1da272182052",
+    "reward_strike": "86647b85e7b78209f1e6daf98216c67cb6cef66a4bf2c1bd5d5a51be6c6b873f",
+    "state": "81f9436846be62e236d8b54d536494e076a1aa2bb9619e068fe5a79ae482a636",
+    "vel_mps": "4940e7b7c470498c5a09fea9a52a8fbfe55b4ba87cf20fbe70e8ca86eb5d6563",
+    "yaw": "3e785b5b8c2a93a43689f1a59bc316af465de3eaa8532f2c21db8b22bd22bbf5"
+   },
+   "contact_starling/0": {
+    "info_closest_cross_3d_m": "eeb17254b1ccd20303f7eb72d6fc3050c01325a5c15809908d9d05477e6c088b",
+    "info_closest_cross_m": "141e35ca92daedf2420203726179cfa83cc94dbc343ee16abfd731f3e32fd719",
+    "info_closest_team_m": "d957fd9e7043bb191ac3679c13e15d802391dec5f0637bf75266c4cfbcb455b1",
+    "obs_guard": "c6c112474d96dc37f3a0821af4fff14c94c64c02be995ea69b675abb068b802d",
+    "obs_strike": "6c8a0129e621fe927f16883f6af7275f7e67dca60de0333e95712fcd2795dce9",
+    "pos_m": "2f1fb1f3d3ff889347a29bf648a137ae00f7376d9e0f679eb547e33a4e293c46",
+    "reward_guard": "8014b95f8b1c2dd5bf2507bf33e19e268a854a50ff7748c73bf8447d40b5d537",
+    "reward_strike": "8754a52cdd0e40ac080d4a8c9642020c0c79274d585ce63c86bdf6d0170e36a7",
+    "state": "54b3eda892cdc23a2b8c39a404b14f96cb1076360357981b92bc9885886ce78c",
+    "vel_mps": "ea46687fe18788ee4a99c8db99aed8e11d99a56e28cac524a822354bf79024ef",
+    "yaw": "ff543851c6a3a6bab71f93efc0c6dd5c543216a295402c6a31a1b3501759ec6d"
+   },
+   "contact_starling/5": {
+    "info_closest_cross_3d_m": "6739cf0dca3a3018747e178e9a066ac6032aeec1d33b4c5545ab1b5b50771156",
+    "info_closest_cross_m": "50490b1a025ba8f5e4a90b813ecf5648be32b94febf3a5bc5b105047789ae73a",
+    "info_closest_team_m": "4a93cc382cc47905847490a94140312c8647afa77f57291297a2b14ea6500287",
+    "obs_guard": "cfac46cb2eab1419fa166f23563ab00baf2922be48877d50e86ca587216373b0",
+    "obs_strike": "4eece89df9e07f1771fcae347f61fc39055c4963da956116a57a049632c64303",
+    "pos_m": "007bcd16f87ce5556d3e7d2026042a3b05e18c02bde0552de124e3f5fdc3ce2a",
+    "reward_guard": "e81a24586c65a5102dcb61d02ba4edf9271c43d11dfdacf0a48678bd1b6342dd",
+    "reward_strike": "7f292d1dccc83fa6b7d68f2a0f35ac07e919653b9882fa14bc1de711abf0194f",
+    "state": "72d8175917cd846f13e454cb64908bc38ee3c66e4c9e9e6f2119ac42f90b5096",
+    "vel_mps": "94bb37fdacb8340d6000c1bfe9cc84932ddfd4e4aae05bfa9fb7ed1122086515",
+    "yaw": "3227a73c26ae05029b0387bc4b78407702ac748bca8b9f2e8c8e1916873f13b8"
+   },
+   "partner_pure/0": {
+    "info_closest_cross_3d_m": "1553aed2c67832886ca6e4af25e5fc681495990f9bfa6365d7008c56bef55fde",
+    "info_closest_cross_m": "1553aed2c67832886ca6e4af25e5fc681495990f9bfa6365d7008c56bef55fde",
+    "info_closest_team_m": "4fe2df5ab3bf962eb53ddbe69b257e0e6ada0bdfbcf8f81fce4d306e82d8514e",
+    "obs_guard": "0f0f60072ecbac6ef35b43d0686bcdc67049bb3bc004acd75b53de87dad77353",
+    "obs_strike": "e3827c4a094da20f2ababcb54439aac6dfc6c2d335490949ffa008995a26262b",
+    "pos_m": "7ec22f9012342b2aa2e57b686ac36887c7b1ea77dfc14fe83493ac4e8df8dc56",
+    "reward_guard": "1272b5e3c49f1e3123e7ff3325db8ae96895097cf0e6c8e1f4937c2de4825d38",
+    "reward_strike": "677f653956b326579e6675e89c4f495fe80bbd83db9415d67fe841b05a747e12",
+    "state": "9fcbfc6b2a9973ff36b00b5e9924a2c968c61fbaa2412cf288018e2a0e2b9b10",
+    "vel_mps": "e2c5edf48d3568e7025b9f1e13bdd23f8c8a57be69785cc93e79e703cc0bb037",
+    "yaw": "948c4e8b0979d50bd9bc2520b170133ea76fbd442a643d39291344ff81433c42"
+   },
+   "partner_pure/5": {
+    "info_closest_cross_3d_m": "73e803f794202034675f31ece80dee9bb3a1336fa3b16d87151a9d81585863eb",
+    "info_closest_cross_m": "73e803f794202034675f31ece80dee9bb3a1336fa3b16d87151a9d81585863eb",
+    "info_closest_team_m": "dcc5679232373e0c74bd7b05ec69881772d3baeca8805bd24b59a99d0d96c755",
+    "obs_guard": "f97941caca3d7e988c6defd2d4eaf5560ab25eab607104c18aae1853f69edeeb",
+    "obs_strike": "cf81139707e706a0b6707f9cb09f0d0bb18d3299d9a40a0dc35118d3c2586b3a",
+    "pos_m": "bb0f535846d058ea78177e49b609dacc11fbd942ce6c82068acae4b72f973125",
+    "reward_guard": "1eddda6664637b05d452a72b9f8cd143badd638dbcfaf2ae8fcc1da272182052",
+    "reward_strike": "86647b85e7b78209f1e6daf98216c67cb6cef66a4bf2c1bd5d5a51be6c6b873f",
+    "state": "04c2706158b4ec97de1bd51dcea7b3e9f827665fbcc89f59c9305646e132762d",
+    "vel_mps": "5db90a70677c8c749ce36cffc6a214e333d4f693c2f3d02ba038f02e6a44a5e4",
+    "yaw": "28ac769361727c7e7721e172357527ae556c09eb65d694beb09d867a0a44c983"
+   },
+   "partner_pure_5v3/0": {
+    "info_closest_cross_3d_m": "4c0741260d1b79df2be4fb8c4fda7cda037a52bce8c9ad02ecb3e2b3a42345a4",
+    "info_closest_cross_m": "4c0741260d1b79df2be4fb8c4fda7cda037a52bce8c9ad02ecb3e2b3a42345a4",
+    "info_closest_team_m": "1f271456fc556030e16b7ce02ef99e94bc6b8d75c6358735d18e57aa934a3d66",
+    "obs_guard": "7d2082eea0684477392cfaddd92846417e5ecdf2d1c3508f4d0c8f4e088ebacc",
+    "obs_strike": "9a622b11f774095bd6281c5bcda26c039f48e1b3587b5148c63eeb515e35010f",
+    "pos_m": "f20e7055bb18bf103ebf54f565469d49935a1da33a0aa311f2ef8998d7605b47",
+    "reward_guard": "2e471bca999fac4bc024d15fe96cd2b5e0f835b15a39a9fd4de4958ebaba859d",
+    "reward_strike": "677f653956b326579e6675e89c4f495fe80bbd83db9415d67fe841b05a747e12",
+    "state": "c20ea63585cc09bf50d326c70b486d1f8a50dfa0143092115302a5380e5c57d6",
+    "vel_mps": "065d6700a27791d8c5b21f77af6c5890be4fa6ebdc0949ab9c0a3f0ca135fe51",
+    "yaw": "358414d5ec12e784375f2a45d1d2f1abdbbf0f1b5aa544884fefe0a99046574a"
+   },
+   "partner_pure_5v3/5": {
+    "info_closest_cross_3d_m": "35624719ca4b53234b3b16b4959d077f180fec4d593d51c15a5e073115a26a27",
+    "info_closest_cross_m": "35624719ca4b53234b3b16b4959d077f180fec4d593d51c15a5e073115a26a27",
+    "info_closest_team_m": "547e55f22d595c3dee33d9de63fd5282d6eb71437331eb3f3ce98d3c4e3d30af",
+    "obs_guard": "3dffc5f729962d9f6c8da320ecb2d4ba94e23630e4636de5ca1e0a8e3d663667",
+    "obs_strike": "25303442f45b8ca2d5d10ab5d19a49651c2825e338de0556fa28aa5311cadce5",
+    "pos_m": "4a25a38a2db03da35ed3ef66c5e68c3c66939ed85e0afad7a9bcdb93193364da",
+    "reward_guard": "6d17b0b15666b54d1a0091fc268f5b0fd1d8730d461736eb52c9af0cfbabed1c",
+    "reward_strike": "553364d356e18f22c8826ed626bc427f98d797f5191840ba5b751c79ca649752",
+    "state": "484a897a6de649af2494197e7945e55aaedecf5605fad7bceac8ad2c9218847f",
+    "vel_mps": "0f22d6ee2fb92d734040f0ecd35b7bb06b09d95c93f05a458b74910ca48a4939",
+    "yaw": "504d9ab9c83b4ec147ba93e74224e95899029bd22419f6399c710c328dbb83ee"
+   },
+   "partner_starling/0": {
+    "info_closest_cross_3d_m": "be9c602e49f45c4e4fa83790ed2236c4fe01f554b01f4e0bdc19478f980e046d",
+    "info_closest_cross_m": "09f630576088362027305b20e24e9c3bd9d43b6b42e6057f2e9f0b239b98abca",
+    "info_closest_team_m": "ec31107368795973aa46a8b2e0646052b0f3628e83bc7e67a012295f9d7ab2ec",
+    "obs_guard": "a2b303d000a5611e2ec91c57fcdfffb5a00ea63cbefdf82aa7557a6009053208",
+    "obs_strike": "17b1a0adbdfd55ae7b3a4831e78c0bbd851d9cc4fdbab59848fa8569b5458085",
+    "pos_m": "6262a9a744d02a40789062fa181094c6226a384883454c7460ee01d1db656468",
+    "reward_guard": "e81a24586c65a5102dcb61d02ba4edf9271c43d11dfdacf0a48678bd1b6342dd",
+    "reward_strike": "7f292d1dccc83fa6b7d68f2a0f35ac07e919653b9882fa14bc1de711abf0194f",
+    "state": "696d20ef9dc7d6f31ad127d3ed5e4bed746784baad0deb074187717a77137e27",
+    "vel_mps": "5c84b6e05803f5b36209fa21e4b2c4c72a9fad3ae8e2ead920fb4d908bb0acf5",
+    "yaw": "48b766f84790ae259e6ce59b04311f4a1cbd3912c6cd29f61be97e8024d4e448"
+   },
+   "partner_starling/5": {
+    "info_closest_cross_3d_m": "24589050e34c596949321a2ae89b36bcfbbbc5cb05b96f72f2bed53944564030",
+    "info_closest_cross_m": "50dc0c35ead8cd1b2553b8c249506bd81633e683031c257fe6ff74f9cb70758d",
+    "info_closest_team_m": "f9e7cbdff649d655b6aebb2a7f29780087c564cfd2f05104b9b2b643d46de222",
+    "obs_guard": "8491ce4107b290942ed419d1a409b0b547cf58663a664d5428246f262421260b",
+    "obs_strike": "bad7912549c43b3c10e8f6844b48aebf04bb890579cb9bb0d5cfb88133aaaaf9",
+    "pos_m": "90cb34baf35749e2875bb6ea364c0855e4092d688b19e8aa0473488d5f86ce42",
+    "reward_guard": "e81a24586c65a5102dcb61d02ba4edf9271c43d11dfdacf0a48678bd1b6342dd",
+    "reward_strike": "7f292d1dccc83fa6b7d68f2a0f35ac07e919653b9882fa14bc1de711abf0194f",
+    "state": "5bbb5af1bc6ad02c40d8ab3133190e9bed26107c763dc82908ed77f304839369",
+    "vel_mps": "a801384e4d2b47c4190df4610907576031359239077eb24cec9cc55df9b60922",
+    "yaw": "e04bfa8b383dc883d24f1cb5ac397952b781fbd9d3387685a163b84677207224"
+   }
+  },
   "NO AVX": {
    "contact_pure/0": {
     "info_closest_cross_3d_m": "7169791d6b76b2ac8d2f035753c41e505e7c6219b3f2e33509185dbaf5d0dcca",

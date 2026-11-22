@@ -33,7 +33,13 @@ on the repository and goes outside it:
     rm -rf /tmp/l09_old
 
 (``--write-golden`` adds this capability and refuses if the whole-number fingerprints disagree with the record; the
-first call with the record file absent starts it.) This file imports only names that existed before L0.9
+first call with the record file absent starts it.)
+
+AVX512 (the home RTX 5090, AMD Ryzen 9 9950X3D), recorded 23 Nov 2026 on that machine: dec9d276 is not in the shared
+history (its branch was never pushed), so the record was made from 5ebac526, the parent of the L0.9 commit 50d8f8f2 on
+``development``. That tree first reproduced the AVX2 and NO AVX records exactly there (``--check`` under
+``ATEN_CPU_CAPABILITY=avx2`` and ``=default``), then ``--write-golden`` added AVX512; its decimal fingerprints equal
+AVX2's. The ``_how`` line in the record still names dec9d276 for the first two capabilities. This file imports only names that existed before L0.9
 (``SvgGame``, ``load_game_cfg``, ``CONFIGS``), so the same code records from the old tree and checks the new one. CPU,
 float32, scripted commands from a fixed generator.
 """

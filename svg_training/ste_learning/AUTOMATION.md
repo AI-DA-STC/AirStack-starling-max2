@@ -206,6 +206,9 @@ that run ended after 3 minutes instead of 19 with nothing flagging it.
 
 **Drills: run them on each machine before its first detached GPU job.** From the `svg_training` folder of the clone
 the work is in, `unset PYTHONPATH` first. They use the machine's real shared folder.
+**Task ID:** phase L0 is closed (G0, 22 Nov 2026), so `--task L0.7` below is now refused (exit 2, the closed-phase
+check). Run the drills under the current phase's machine-check task instead (on the RTX 5090, 23 Nov 2026: `--task L1.0`,
+`--gpu-h 0`), with the names and run folders changed to match; the expected lines are otherwise the same.
 
 Wake-up drill (about 2 minutes):
 ```

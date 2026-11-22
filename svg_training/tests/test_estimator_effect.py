@@ -1,4 +1,6 @@
 """STE task L1.1: the PX4 cascade of the physics drone sees a delayed, noisy state, as PX4 1.14 sees EKF2's estimate.
+Since L1.1b the delay is a small residual of position and velocity only (attitude never delayed) and the main term is a
+correlated estimate error (tests in ``tests/test_estimator_error.py``).
 
 ``models/estimator_effect.EstimatorEffect`` (ring buffer of past states in physics steps, seeded Gaussian noise per
 quantity, batched) sits after the world read of ``models/physics_drone.PhysicsDrone``; the game keeps the true state.
@@ -128,7 +130,8 @@ def test_delay_of_k_steps_returns_the_state_of_k_steps_earlier_exactly(k):
     for t in range(1, 3 * k + 5):
         pos, quat, vel, ang = e.push(*states(t))
         want = states(max(t - k, 0))                 # before k steps have passed: the reset state (buffer filled)
-        assert torch.equal(pos, want[0]) and torch.equal(quat, want[1]) and torch.equal(vel, want[2]), t
+        assert torch.equal(pos, want[0]) and torch.equal(vel, want[2]), t
+        assert torch.equal(quat, states(t)[1]), t    # attitude: never delayed (EKF2's output predictor, L1.1b)
         assert torch.equal(ang, states(t)[3]), t     # body rates come from the gyro: never delayed
 
 
@@ -164,7 +167,7 @@ def test_reset_fills_the_buffer_with_the_reset_state():
     assert torch.equal(est[0][1, 2], fresh[0][1, 2])                         # at once: the reset state
     for t in range(10, 10 + k):
         pos, quat, vel, _ = e.push(*states(t))
-        assert torch.equal(pos[1, 2], fresh[0][1, 2]) and torch.equal(quat[1, 2], fresh[1][1, 2])
+        assert torch.equal(pos[1, 2], fresh[0][1, 2]) and torch.equal(quat[1, 2], states(t)[1][1, 2])
         assert torch.equal(vel[1, 2], fresh[2][1, 2])
         assert torch.equal(pos[0, 0], states(t - k)[0][0, 0])                 # the others keep their history
     pos, _, _, _ = e.push(*states(10 + k))
@@ -245,7 +248,9 @@ def test_v0_loads_with_every_effect_off():
     assert all(getattr(p, k) == 0.0 for k in EFFECT_KEYS)
     assert p.state_delay_steps() == 0
     assert set(EFFECT_KEYS) == {"state_delay_s", "state_noise_pos_m", "state_noise_vel_mps", "state_noise_att_rad",
-                                "state_noise_rate_rad_s", "drag_x_n_per_mps", "drag_y_n_per_mps", "drag_z_n_per_mps"}
+                                "state_noise_rate_rad_s", "drag_x_n_per_mps", "drag_y_n_per_mps", "drag_z_n_per_mps",
+                                "state_error_pos_m", "state_error_pos_tau_s", "state_error_vel_mps",
+                                "state_error_vel_tau_s", "state_error_att_rad", "state_error_att_tau_s"}
 
 
 def test_v1_is_v0_plus_effect_keys_all_open_at_zero():
@@ -265,10 +270,12 @@ def test_v1_is_v0_plus_effect_keys_all_open_at_zero():
 
 
 def test_effect_keys_can_be_overridden_and_are_checked():
-    p = load_physics_params(V0, overrides={"state_delay_s": 0.1482, "state_noise_pos_m": 0.01,
+    p = load_physics_params(V0, overrides={"state_delay_s": 0.0482, "state_noise_pos_m": 0.01,
                                            "drag_x_n_per_mps": 0.2})
-    assert p.state_delay_s == 0.1482 and p.state_noise_pos_m == 0.01 and p.drag_x_n_per_mps == 0.2
-    assert p.state_delay_steps() == 30                 # 29.64 physics steps of 5 ms, rounded to the nearest
+    assert p.state_delay_s == 0.0482 and p.state_noise_pos_m == 0.01 and p.drag_x_n_per_mps == 0.2
+    assert p.state_delay_steps() == 10                 # 9.64 physics steps of 5 ms, rounded to the nearest
+    with pytest.raises(ValueError, match="state_delay_max_s"):      # L1.1b: 0.1482 s is no longer a residual delay
+        load_physics_params(V0, overrides={"state_delay_s": 0.1482})
     for key in EFFECT_KEYS:
         with pytest.raises(ValueError, match=key):
             load_physics_params(V0, overrides={key: -0.01})
@@ -343,13 +350,16 @@ def test_model_check_dry_cpu_end_to_end(run_dir):
     for name in ("tier2_isaac", "tier2_torch"):          # --dry-cpu: both on the torch world
         row = parts[name]
         assert row["mean_game_steps_per_s"]["off"] > 0 and row["mean_game_steps_per_s"]["on"] > 0
-        assert row["on_arm"]["delay_steps"] == 10 and row["on_arm"]["drag"] is True
+        assert row["on_arm"]["delay_steps"] == 0 and row["on_arm"]["drag"] is True      # L1.1b: error, not a delay
         assert row["on_arm"]["noise"] == ["pos", "att", "vel", "rate"]
+        assert row["on_arm"]["error"] == ["pos", "att", "vel"]
+        assert row["on_arm"]["noise_seed"] == check.load_settings()["run"]["seed"]      # the game seed
         assert row["cost_fraction"] is not None and row["dry_cpu"] is True
     assert "on" not in parts["tier1"]["mean_game_steps_per_s"] and "L1.7" in parts["tier1"]["on_arm"]
     assert "MADE UP" in (run_dir / "params_on.toml").read_text()
     on = load_physics_params(run_dir / "params_on.toml")
-    assert on.state_delay_steps() == 10 and on.gains == load_physics_params(V1).gains
+    assert on.state_delay_steps() == 0 and on.gains == load_physics_params(V1).gains
+    assert on.state_error_pos_m > 0 and on.state_error_pos_tau_s > 0
     assert "# L1.1 / L1.2 model check" in (run_dir / "results.md").read_text()
     stamp = (run_dir / "results.json").stat().st_mtime_ns
     r = subprocess.run(cmd, cwd=ROOT, env=env, capture_output=True, text=True, timeout=120)
@@ -357,7 +367,41 @@ def test_model_check_dry_cpu_end_to_end(run_dir):
     assert (run_dir / "results.json").stat().st_mtime_ns >= stamp
 
 
-# ------------------------------------------------------------------------------------- the Isaac Lab world
+# ------------------------------------------------------------------------------------- the smoke (Isaac and CPU)
+def assert_smoke(res):
+    """What --smoke must show (tests below): the residual delay exact, white-noise and correlated-error statistics within
+    sampling tolerance (the error's with its effective sample size), the [hover] bounds, the agreement gates."""
+    assert res["delay"]["max_err"] == 0.0 and res["delay"]["substeps_checked"] > 0
+    assert res["delay_torch"]["max_err"] == 0.0
+    for key, row in res["noise"].items():
+        assert abs(row["mean"]) < 5.0 * row["sigma"] / math.sqrt(row["count"]), key
+        assert row["std"] == pytest.approx(row["sigma"], rel=0.05), key
+    assert set(res["error"]) == {"pos", "vel", "att"}
+    for key, row in res["error"].items():                       # L1.1b: Gauss-Markov, correlated draws
+        a, n_eff = row["a_expected"], row["n_eff"]
+        assert a == pytest.approx(math.exp(-DT / row["tau_s"]))
+        assert abs(row["mean"]) < 5.0 * row["sigma"] / math.sqrt(n_eff), (key, row)
+        assert row["std"] == pytest.approx(row["sigma"], rel=5.0 / math.sqrt(2.0 * n_eff) + 0.01), (key, row)
+        assert row["rho1"] == pytest.approx(a, abs=5.0 * math.sqrt((1 - a * a) / row["count"]) + 0.01), (key, row)
+    h, hv = check.load_settings()["hover"], res["hover"]
+    assert hv["error_on"] == ["pos", "att", "vel"] and hv["upsets"] == 0 and hv["nonfinite"] == 0, hv
+    assert hv["rms_m"] <= h["rms_max_m"] and hv["max_m"] <= h["max_m"] and hv["max_tilt_rad"] <= h["tilt_max_rad"], hv
+    gates = load_s2b_gates()["agreement_gates"]
+    assert res["agreement"]["pos_max_m"] <= gates["closed_loop_pos_max_m"]
+    assert res["agreement"]["vel_rms_mps"] <= gates["closed_loop_vel_rms_max_mps"]
+    assert res["agreement"]["nonfinite"] == 0
+    assert res["agreement"]["params"]["state_error_pos_m"] > 0               # the error model is on in the agreement
+
+
+def test_smoke_checks_on_two_torch_worlds_cpu():
+    """The --smoke checks with the real [smoke] table, a torch world standing in for IsaacWorld (CPU): the Isaac run
+    can then fail only on the world itself."""
+    n = check.load_settings()["smoke"]["games"]
+    res = check.smoke_checks(world(n, 3, P1), world(n, 3, P1), P1, "cpu")
+    print("smoke on the CPU:", {k: res[k] for k in ("error", "hover")})
+    assert_smoke(res)
+
+
 @pytest.mark.isaac
 def test_isaac_world_same_results_as_torch(tmp_path):
     """scripts/l1_model_check.py --smoke runs the same checks on IsaacWorld and flies one effects-on step set on
@@ -370,11 +414,4 @@ def test_isaac_world_same_results_as_torch(tmp_path):
     assert r.returncode == 0 and out.exists(), (r.stdout[-3000:], r.stderr[-3000:])
     res = json.loads(out.read_text())
     assert res["world"].lower().startswith("isaac")             # IsaacWorld.label is "isaaclab-<version>" (first GPU run, 22 Nov)
-    assert res["delay"]["max_err"] == 0.0 and res["delay"]["substeps_checked"] > 0
-    for key, row in res["noise"].items():
-        assert abs(row["mean"]) < 5.0 * row["sigma"] / math.sqrt(row["count"]), key
-        assert row["std"] == pytest.approx(row["sigma"], rel=0.05), key
-    gates = load_s2b_gates()["agreement_gates"]
-    assert res["agreement"]["pos_max_m"] <= gates["closed_loop_pos_max_m"]
-    assert res["agreement"]["vel_rms_mps"] <= gates["closed_loop_vel_rms_max_mps"]
-    assert res["agreement"]["nonfinite"] == 0
+    assert_smoke(res)

@@ -1,12 +1,14 @@
 #!/usr/bin/env python
-"""STE tasks L1.1 and L1.2 on the GPU: the isaac-marked tests of the new physics path, then what the state delay, noise
-and drag cost in throughput (CODING_PRACTICES section 9 budget: at most 10 % at 4,096 games; INFO, not a gate).
+"""STE tasks L1.1, L1.1b and L1.2 on the GPU: the isaac-marked tests of the new physics path, then what the estimator
+effect (L1.1b: correlated estimate error, white noise; no delay in the "on" arm) and the drag cost in throughput
+(CODING_PRACTICES section 9 budget: at most 10 % at 4,096 games; INFO, not a gate).
 
     # after nvidia-smi and scripts/isaac_preflight.sh --approved-headless (exit 0), alone on the GPU:
     scripts/ste_job.py launch --task L1.1 --name ste_l1_model_check --run-dir runs/<date>_ste_l1_model_check \\
         --min-s 120 --gpu-h 0.2 -- <python> scripts/l1_model_check.py --run-dir runs/<date>_ste_l1_model_check \\
         --cap-h 0.2 --headless
-    l1_model_check.py --smoke --headless --out <file.json>     # what tests/test_estimator_effect.py (isaac) runs
+    l1_model_check.py --smoke --headless --out <file.json>     # what tests/test_estimator_effect.py (isaac) runs:
+                                                               # delay, white noise, correlated error, hover, agreement
     l1_model_check.py --run-dir runs/<dir> --cap-h 0.05 --dry-cpu     # tests only: the torch world on the CPU
 
 Settings: ``configs/ste_l1/model_check.toml``. One parent process (no Isaac, no CUDA work) runs, in order, each part
@@ -23,7 +25,8 @@ not yet done (``points/<part>.json``; the same command resumes):
    baseline L1.7 will compare against, and its "on" arm is reported as not built.
 
 ``results.json`` and ``results.md``: game-steps/s per arm and repeat, cost = 1 - mean(on) / mean(off) per world, upsets
-and non-finite counts per arm (the "on" arm is a made-up, large delay: upsets there are a finding, not a crash).
+and non-finite counts per arm (the "on" arm's values are made up: upsets there are a finding, not a crash). The game
+arms seed the estimator noise with the game seed (``PhysicsLayer``, L1.1b).
 Contract (``ste/run_contract.py``): exit 0 done; 2 refused (bad arguments, run folder busy, --cap-h != the launcher's
 --gpu-h); 3 cap (the running child is stopped, its part redone on resume); 4 stopped on request; 6 the isaac tests
 failed (the throughput parts still run). Observed in the training simulator; nothing here is a flight result.
@@ -103,16 +106,21 @@ def _ned_inputs(pos, quat, vel, ang):
             torch.stack((ang[..., 0], -ang[..., 1], -ang[..., 2]), dim=-1))
 
 
+def _effects_off() -> dict:
+    """Every estimator and drag key at 0 (the delay too)."""
+    from svg_training.models.physics_params import EFFECT_KEYS
+    return {k: 0.0 for k in EFFECT_KEYS}
+
+
 def delay_check(world, params, delay_steps: int, ticks: int, device) -> dict:
-    """Fly a step setpoint with a state delay of ``delay_steps`` physics steps (no noise, no drag) and compare every
-    cascade input with the inputs the true state of ``delay_steps`` steps earlier makes (the reset state before that;
-    body rates: the state of the same step). Returns the largest absolute difference (0.0 = exact)."""
+    """Fly a step setpoint with a residual state delay of ``delay_steps`` physics steps (no noise, no error, no drag) and
+    compare every cascade input with the inputs the true state makes: position and velocity of ``delay_steps`` steps
+    earlier (the reset state before that), attitude and body rates of the same step (never delayed, L1.1b). Returns the
+    largest absolute difference (0.0 = exact)."""
     import torch
 
     from svg_training.models.physics_drone import PhysicsDrone
-    zero = {k: 0.0 for k in ("state_noise_pos_m", "state_noise_vel_mps", "state_noise_att_rad",
-                             "state_noise_rate_rad_s", "drag_x_n_per_mps", "drag_y_n_per_mps", "drag_z_n_per_mps")}
-    p = dataclasses.replace(params, state_delay_s=delay_steps * params.physics_dt_s, **zero)
+    p = dataclasses.replace(params, **{**_effects_off(), "state_delay_s": delay_steps * params.physics_dt_s})
     n, m = world.num_games, world.drones
     d = PhysicsDrone(world, p, device)
     start = _starts(n, m, device)
@@ -126,7 +134,8 @@ def delay_check(world, params, delay_steps: int, ticks: int, device) -> dict:
     worst = 0.0
     for j, (inputs, _truth) in enumerate(log):
         lagged = log[max(j - delay_steps, 0)][1]
-        want = _ned_inputs(lagged[0], lagged[1], lagged[2], log[j][1][3])
+        now = log[j][1]
+        want = _ned_inputs(lagged[0], now[1], lagged[2], now[3])
         for a, b in zip(inputs, want):
             worst = max(worst, float((a - b).abs().max()))
     moved = float((log[-1][1][0] - log[0][1][0]).norm(dim=-1).max())
@@ -151,9 +160,9 @@ def noise_check(world, params, ticks: int, device, sigma: dict | None = None, se
     on = load_settings()["effects_on"]
     sigma = sigma or {"pos": on["state_noise_pos_m"], "vel": on["state_noise_vel_mps"],
                       "att": on["state_noise_att_rad"], "rate": on["state_noise_rate_rad_s"]}
-    p = dataclasses.replace(params, state_delay_s=0.0, state_noise_pos_m=sigma["pos"], state_noise_vel_mps=sigma["vel"],
-                            state_noise_att_rad=sigma["att"], state_noise_rate_rad_s=sigma["rate"],
-                            drag_x_n_per_mps=0.0, drag_y_n_per_mps=0.0, drag_z_n_per_mps=0.0)
+    p = dataclasses.replace(params, **{**_effects_off(), "state_noise_pos_m": sigma["pos"],
+                                       "state_noise_vel_mps": sigma["vel"], "state_noise_att_rad": sigma["att"],
+                                       "state_noise_rate_rad_s": sigma["rate"]})
     n, m = world.num_games, world.drones
     seed = load_settings()["run"]["noise_seed"] if seed is None else seed
     d = PhysicsDrone(world, p, device, noise_seed=seed)
@@ -178,8 +187,83 @@ def noise_check(world, params, ticks: int, device, sigma: dict | None = None, se
     return out
 
 
+def error_check(world, params, ticks: int, device, tau_s: float, sigma: dict | None = None,
+                seed: int | None = None) -> dict:
+    """Hover with the correlated estimate error only (L1.1b; sigmas default ``[effects_on]``, one MADE-UP correlation
+    time ``tau_s`` for all three, short so that a few seconds hold many independent samples) and return, per quantity,
+    the mean, standard deviation and lag-1 autocorrelation (one physics step) of (cascade input - the inputs the true
+    state makes), with the expected autocorrelation a = exp(-dt / tau) and the effective sample size n (1 - a) / (1 + a)
+    the tolerances need."""
+    import torch
+
+    from svg_training.models.physics_drone import PhysicsDrone
+    on = load_settings()["effects_on"]
+    sigma = sigma or {"pos": on["state_error_pos_m"], "vel": on["state_error_vel_mps"], "att": on["state_error_att_rad"]}
+    unit = {"pos": "m", "vel": "mps", "att": "rad"}
+    p = dataclasses.replace(params, **{**_effects_off(),
+                                       **{f"state_error_{q}_{unit[q]}": sigma[q] for q in unit},
+                                       **{f"state_error_{q}_tau_s": tau_s for q in unit}})
+    n, m = world.num_games, world.drones
+    seed = load_settings()["run"]["noise_seed"] if seed is None else seed
+    d = PhysicsDrone(world, p, device, noise_seed=seed)
+    start = _starts(n, m, device)
+    d.reset(torch.ones(n, m, dtype=torch.bool, device=device), start, torch.zeros(n, m, device=device))
+    log: list = []
+    _spy_cascade(d, world, log)
+    zero3 = torch.zeros(n, m, 3, device=device)
+    for _ in range(ticks):
+        d.step_setpoint(start, zero3, zero3, torch.zeros(n, m, device=device), torch.zeros(n, m, device=device))
+    err = {"pos": [], "vel": [], "att": []}
+    for inputs, truth in log:                       # one entry per physics step, in order
+        want = _ned_inputs(*truth)
+        err["pos"].append(inputs[0] - want[0])
+        err["vel"].append(inputs[1] - want[1])
+        err["att"].append(_rotvec_small(want[2], inputs[2]))
+    a = math.exp(-p.physics_dt_s / tau_s)
+    out = {}
+    for k, xs in err.items():
+        x = torch.stack(xs).double()                # [steps, N, M, 3]
+        x0, x1 = x[:-1].flatten(), x[1:].flatten()
+        out[k] = {"sigma": float(sigma[k]), "tau_s": float(tau_s), "a_expected": a, "mean": float(x.mean()),
+                  "std": float(x.std()), "rho1": float((x0 * x1).sum() / (x0 * x0).sum()), "count": int(x.numel()),
+                  "n_eff": float(x.numel() * (1 - a) / (1 + a))}
+    return out
+
+
+def hover_check(world, params, ticks: int, device, seed: int | None = None) -> dict:
+    """Hold a hover setpoint for ``ticks`` ticks with ``params`` as given (the effects it carries) and return how far the
+    TRUE drones stray: 3-D RMS and largest distance from the hover point over every drone and tick end, the largest
+    tilt, upsets and non-finite counts."""
+    import torch
+
+    from svg_training.models.physics_drone import PhysicsDrone
+    from svg_training.models.physics_params import ERROR_KEYS
+    n, m = world.num_games, world.drones
+    seed = load_settings()["run"]["noise_seed"] if seed is None else seed
+    d = PhysicsDrone(world, params, device, noise_seed=seed)
+    start = _starts(n, m, device)
+    d.reset(torch.ones(n, m, dtype=torch.bool, device=device), start, torch.zeros(n, m, device=device))
+    zero3 = torch.zeros(n, m, 3, device=device)
+    dist = []
+    for _ in range(ticks):
+        d.step_setpoint(start, zero3, zero3, torch.zeros(n, m, device=device), torch.zeros(n, m, device=device))
+        dist.append((d.pos_m - start).norm(dim=-1))
+    r = torch.stack(dist).double()
+    return {"rms_m": float(r.pow(2).mean().sqrt()), "max_m": float(r.max()), "max_tilt_rad": float(d.max_tilt_rad.max()),
+            "upsets": int(d.upset.sum()), "nonfinite": int(d.nonfinite_count), "ticks": ticks, "drones": n * m,
+            "error_on": list(d.estimator.correlated), "noise_seed": seed,
+            "state_error": {k: getattr(params, k) for k in ERROR_KEYS}}
+
+
+def hover_params(params) -> "object":
+    """``params`` with the ``[hover]`` table's MADE-UP exploratory error values (and nothing else on)."""
+    h = load_settings()["hover"]
+    return dataclasses.replace(params, **{**_effects_off(), **{k: v for k, v in h.items() if k.startswith("state_")}})
+
+
 def agreement(iw, tw, params, ticks: int, step_m, delay_s: float, device, seed: int | None = None) -> dict:
-    """The same effects-on flight (delay ``delay_s``, ``[effects_on]`` noise and drag, the same noise seed) on two
+    """The same effects-on flight (residual delay ``delay_s``, ``[effects_on]`` error, noise and drag, the same noise
+    seed) on two
     worlds of the same size on the same device; the largest position gap at the end of each tick and the RMS velocity
     gap, as configs/s2b.toml [agreement_gates] closed-loop measures."""
     import torch
@@ -254,8 +338,9 @@ def measure_part(part: str, settings: dict, run_dir: Path, device: str, dry_cpu:
                 drone = game._starling.drone
                 info[arm]["delay_steps"] = drone.estimator.delay_steps
                 info[arm]["noise"] = list(drone.estimator.noisy)
+                info[arm]["error"] = list(drone.estimator.correlated)
                 info[arm]["drag"] = drone.drag_coeff is not None
-                info[arm]["noise_seed"] = "0 (PhysicsLayer does not pass the game seed yet: OPEN)"
+                info[arm]["noise_seed"] = drone.noise_seed          # the game seed (PhysicsLayer, L1.1b)
             upsets = torch.zeros((), dtype=torch.long, device=device)
 
             def step(game=game):
@@ -326,23 +411,33 @@ def run_child(args) -> int:
     return 0
 
 
+def smoke_checks(iw, tw, p, device) -> dict:
+    """The smoke's checks (``[smoke]``) on the world under test ``iw`` (IsaacWorld in --smoke; a second torch world in
+    the CPU test), and the agreement flight on ``iw`` and the torch world ``tw`` (same size, same device)."""
+    import torch
+    s = load_settings()["smoke"]
+    delay_steps = round(s["state_delay_s"] / p.physics_dt_s)
+    return {"world": getattr(iw, "label", type(iw).__name__), "device": device, "games": iw.num_games,
+            "drones": iw.drones,
+            "delay": delay_check(iw, p, delay_steps, s["ticks"] // 4, device),
+            "delay_torch": delay_check(tw, p, delay_steps, s["ticks"] // 4, device),
+            "noise": noise_check(iw, p, s["noise_ticks"], device),
+            "error": error_check(iw, p, s["error_ticks"], device, tau_s=s["error_tau_s"]),
+            "hover": hover_check(iw, hover_params(p), s["hover_ticks"], device),
+            "agreement": agreement(iw, tw, p, s["ticks"], s["step_m"], s["state_delay_s"], device),
+            "torch": torch.__version__}
+
+
 def run_smoke(args) -> int:
     """Isaac Lab already started: the checks on IsaacWorld, and the agreement flight on IsaacWorld and the torch
     world on the same device. Writes --out only (no run folder, no lock)."""
-    import torch
     s = load_settings()["smoke"]
     device = args.device_name
     p = _base_params()
     n, m = s["games"], 3
     iw = isaac_world_factory(p, device)(n, m)
     tw = torch_world_factory(p, device)(n, m)
-    delay_steps = round(s["state_delay_s"] / p.physics_dt_s)
-    res = {"world": iw.label, "device": device, "games": n, "drones": m,
-           "delay": delay_check(iw, p, delay_steps, s["ticks"] // 4, device),
-           "delay_torch": delay_check(tw, p, delay_steps, s["ticks"] // 4, device),
-           "noise": noise_check(iw, p, s["noise_ticks"], device),
-           "agreement": agreement(iw, tw, p, s["ticks"], s["step_m"], s["state_delay_s"], device),
-           "torch": torch.__version__}
+    res = smoke_checks(iw, tw, p, device)
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
     Path(args.out).write_text(json.dumps(res, indent=2) + "\n")
     say(f"smoke written: {args.out}")

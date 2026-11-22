@@ -30,7 +30,7 @@ L0_TASK_CAP_GPU_H = {"L0.1": 0.0, "L0.7": 0.0, "L0.8": 0.0, "L0.9": 0.0, "L0.10"
 # lead's split of the costed draft (ste_learning/drafts/L1_L9_COSTED_PLAN_DRAFT.md section 3), in this order. PLAN.md
 # has no L1 task table yet, so no test compares these with it; L2's task IDs arrive when L2 starts.
 L1_L2_CAP_GPU_H = 13.0
-L1_TASK_CAP_GPU_H = {"L1.0": 0.5, "L1.1": 0.2, "L1.2": 0.2, "L1.3": 0.0, "L1.4": 0.0, "L1.5": 0.3, "L1.6": 0.1,
+L1_TASK_CAP_GPU_H = {"L1.0": 0.5, "L1.1": 0.4, "L1.2": 0.0, "L1.3": 0.0, "L1.4": 0.0, "L1.5": 0.3, "L1.6": 0.1,
                      "L1.7": 0.1, "L1.8": 1.2, "L1.9": 1.6, "L1.10": 0.9, "L1.11": 1.2, "L1.12": 0.1, "L1.13": 2.1,
                      "L1.14": 0.3, "L1.15": 0.3}
 

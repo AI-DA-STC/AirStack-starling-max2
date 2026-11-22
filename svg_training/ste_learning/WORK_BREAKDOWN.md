@@ -183,6 +183,14 @@ wrong shape for EKF2: its output predictor hands the controllers current-time st
 error (slow, correlated noise, e.g. a Gauss–Markov process per quantity) with at most a small residual delay; pass the
 game seed to the noise (today every run draws the same noise); L1.3 fits error statistics, not a transport delay. The
 0.1482 s of params/real_exploratory_v0.toml stays the tier-1 command-to-motion delay. Tests first. Gate: none.
+Built (23 Nov 2026, branch `ste-l1-1b`): `models/estimator_effect.py` adds a first-order Gauss–Markov error per
+quantity (position, velocity, attitude as a small body rotation; keys `state_error_*` with sigma and tau, 0 = off,
+OPEN in v1), drawn from its stationary distribution at each reset; body rates keep white gyro noise. Attitude is never
+delayed (`state_delay_att_s` must be 0); `state_delay_s` is a residual delay of position and velocity, refused above
+0.05 s (fixed in code). The game seed reaches the noise (`PhysicsLayer`, both replays, `SvgGame.reset(seed)`).
+`scripts/l1_model_check.py`'s "on" arm uses the error model; its smoke adds error statistics and a hover check.
+Tests: `tests/test_estimator_error.py`. CPU hover with made-up values (0.02 m / 0.5 s, 0.02 m/s / 0.2 s, 0.005 rad /
+0.5 s), observed in the training simulator (torch world): RMS 0.039 m, largest 0.115 m, tilt 0.030 rad, no upset.
 
 **L1.2 Drag in tier 2.** Goal: a linear drag force (form taken from Pegasus's simple drag, read only) computed in our
 wrench path so both worlds get it. Files: `models/starling_airframe.py` or `models/physics_drone.py` (drag force added
@@ -191,8 +199,10 @@ first: off = today bit for bit; zero velocity gives zero drag (hover unchanged);
 terminal speed in the torch world. 5 h; 0.2 GPU-h. Gate: none.
 
 **L1.3 Fit delay, noise and drag to real logs.** Goal: values for `starling_physics_v1.toml` from real flight
-(STANDARDS §5 rule 10). Files: `scripts/fit_physics_delay.py`, `tests/test_fit_physics_delay.py`, a record. Tests first:
-recovers a known delay and drag from a synthetic log made by the torch world. Data: the 13 Nov drone_2 log (T11) now;
+(STANDARDS §5 rule 10). Since L1.1b the estimator part is fitted as error statistics: sigma and correlation time tau
+per quantity (`state_error_*`) from the logs, not a transport delay. Files:
+`scripts/fit_physics_delay.py`, `tests/test_fit_physics_delay.py`, a record. Tests first: recovers known error
+statistics (sigma, tau) and drag from a synthetic log made by the torch world. Data: the 13 Nov drone_2 log (T11) now;
 the NEAR-962 planned-push flight when flown. Done: record against the stage 1 limits (held-out RMS ≤ 0.10 m/s, t63 error
 ≤ 0.10 s; FIXED). With log103 alone (6 held-out legs, fewer than 8) the values are labelled EXPLORATORY, like
 `params/real_exploratory_v0.toml`, and `starling_physics_v1.toml` says so; pilots (L3.5–L5.4) train on it. The runs of

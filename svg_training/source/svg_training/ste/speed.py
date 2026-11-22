@@ -544,7 +544,8 @@ def record_inputs(game: SvgGame, guard: Any, strike: Any, ticks: int) -> dict:
     to its PhysicsDrone: ops = [(kind, tensors...)] with kind "reset" (mask [N, M], pos_m [N, M, 3], yaw [N, M]),
     "setpoint" (p_sp, v_ff, a_ff [N, M, 3], yaw_sp, yaw_rate [N, M]) or "clamp" (mask [N, M], pos_m, vel_mps [N, M, 3]),
     and "tick" after each tick; drone_pos [T, N, M, 3] = the drone's world positions after each tick (parked drones at
-    the parking spot)."""
+    the parking spot); noise_seed and estimator (its ``state_dict`` at the start of the recording) let the
+    replays draw exactly the game's estimator noise."""
     layer = game._starling
     drone = getattr(layer, "drone", None)
     if drone is None:
@@ -561,6 +562,7 @@ def record_inputs(game: SvgGame, guard: Any, strike: Any, ticks: int) -> dict:
         return call
     for name in _OPS:
         setattr(drone, name, spy(name))
+    est = drone.estimator.state_dict()               # before the recorded reset: the replay restores it (L1.1b)
     try:
         obs = game.reset()
         every = torch.ones(game.num_games, dtype=torch.bool, device=game.device)
@@ -580,14 +582,18 @@ def record_inputs(game: SvgGame, guard: Any, strike: Any, ticks: int) -> dict:
     n_set = sum(op[0] == "setpoint" for op in ops)
     if n_set != ticks:
         raise ValueError(f"recorded {n_set} setpoints for {ticks} ticks")
-    return {"ops": ops, "drone_pos": torch.stack(drone_pos)}
+    return {"ops": ops, "drone_pos": torch.stack(drone_pos), "noise_seed": drone.noise_seed, "estimator": est}
 
 
 def replay_positions(world: Any, params: Any, device: str, rec: dict) -> Tensor:
-    """The recorded operations, in order, through a fresh PhysicsDrone on ``world`` (bare: no game). Returns the drone
-    positions after each tick [T, N, M, 3]."""
+    """The recorded operations, in order, through a fresh PhysicsDrone on ``world`` (bare: no game), its estimator noise
+    seeded with the recorded game's seed (``rec["noise_seed"]``) and restored to its state at the start of the recording
+    (``rec["estimator"]``), so it reproduces the game with the estimator effect on. Returns the drone positions after
+    each tick [T, N, M, 3]."""
     from ..models.physics_drone import PhysicsDrone
-    drone = PhysicsDrone(world, params, device)
+    drone = PhysicsDrone(world, params, device, noise_seed=rec.get("noise_seed", 0))   # the recorded game's seed (L1.1b)
+    if "estimator" in rec:            # the game's drone had drawn more before the recording: restore its estimator
+        drone.estimator.load_state_dict(rec["estimator"])
     act = {"reset": drone.reset, "setpoint": drone.step_setpoint, "clamp": drone.write_clamped}
     out = []
     for op in rec["ops"]:

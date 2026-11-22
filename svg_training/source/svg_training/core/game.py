@@ -129,7 +129,7 @@ class SvgGame:
             raise ValueError('a world is used only by the physics backend (starling_layer.backend = "physics")')
         self._starling: StarlingLayer | PhysicsLayer | None = None
         if physics:
-            self._starling = PhysicsLayer(cfg, n, guards, strikes, dev, world)
+            self._starling = PhysicsLayer(cfg, n, guards, strikes, dev, world, seed=seed)   # estimator noise (L1.1b)
         elif cfg.starling.enabled:
             self._starling = StarlingLayer(cfg, n, guards, strikes, dev)
         self.motion = f"physics/{world.label}" if physics else ("starling" if cfg.starling.enabled else "pure")
@@ -238,7 +238,7 @@ class SvgGame:
             self._tag_gen.manual_seed(_tag_seed(seed))
         self._new_games(torch.ones(self.num_games, dtype=torch.bool, device=self.device))
         if self._physics:          # the world holds the new starts at once (a reader may look before the first step)
-            self._starling.flush()
+            self._starling.flush(seed)     # seed: the estimator noise restarts too (its own generators, STE L1.1b)
         return self._obs()
 
     def state(self) -> Tensor:

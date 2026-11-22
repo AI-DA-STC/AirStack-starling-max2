@@ -63,7 +63,8 @@ class PhysicsLayer:
 
     status = "physics"
 
-    def __init__(self, cfg: GameCfg, num_games: int, guards: int, strikes: int, device, world: RigidBodyWorld):
+    def __init__(self, cfg: GameCfg, num_games: int, guards: int, strikes: int, device, world: RigidBodyWorld,
+                 seed: int = 0):                         # seed: the game seed, for the estimator noise (STE L1.1b)
         m = guards + strikes
         if (world.num_games, world.drones) != (num_games, m):
             raise ValueError(f"the world holds {world.num_games} games x {world.drones} drones; the game needs "
@@ -77,7 +78,7 @@ class PhysicsLayer:
                                   filter_fn=filter_fn(cfg))
         self.params = load_game_physics_params(cfg)
         self.world = world
-        self.drone = PhysicsDrone(world, self.params, device)
+        self.drone = PhysicsDrone(world, self.params, device, noise_seed=seed)
         n = num_games
         self._pending = torch.zeros(n, m, dtype=torch.bool, device=device)    # restarts waiting for the next step
         self._pending_pos = torch.zeros(n, m, 3, device=device)
@@ -99,8 +100,10 @@ class PhysicsLayer:
         self._pending_yaw = torch.where(mask, yaw.to(self._pending_yaw.dtype), self._pending_yaw)
         self._has_pending = True
 
-    def flush(self) -> None:
-        """Apply the pending restarts now (class docstring): one world write; nothing at all when none is pending."""
+    def flush(self, seed: int | None = None) -> None:
+        """Apply the pending restarts now (class docstring): one world write; nothing at all when none is pending.
+        ``seed`` (``SvgGame.reset(seed)``): the estimator noise restarts from it first (STE L1.1b)."""
+        self.drone.reseed_noise(seed)                  # None: nothing
         if not self._has_pending:
             return
         pend = self._pending

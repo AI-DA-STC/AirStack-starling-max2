@@ -54,8 +54,8 @@ phase_cap_gpu_h = 13.0   # FIXED (owner, G0, 22 Nov 2026): GPU-hour cap of L1 an
 
 [budget_l1_l2.task_cap_gpu_h]
 "L1.0" = 0.5             # PROPOSED (lead's split, costed draft ste_learning/drafts/L1_L9_COSTED_PLAN_DRAFT.md section 3): 5090 checks and speed re-measure
-"L1.1" = 0.2             # PROPOSED (lead's split, costed draft ste_learning/drafts/L1_L9_COSTED_PLAN_DRAFT.md section 3): State delay and noise in tier 2
-"L1.2" = 0.2             # PROPOSED (lead's split, costed draft ste_learning/drafts/L1_L9_COSTED_PLAN_DRAFT.md section 3): Drag in tier 2
+"L1.1" = 0.4             # PROPOSED (raised 23 Nov 2026 with L1.2\'s 0.2: the Isaac check re-run on the L1.1b model covers drag too; lead's split, costed draft ste_learning/drafts/L1_L9_COSTED_PLAN_DRAFT.md section 3): State delay and noise in tier 2
+"L1.2" = 0.0             # PROPOSED (0.2 moved to L1.1 on 23 Nov 2026: drag is checked by L1.1\'s Isaac check; lead's split, costed draft ste_learning/drafts/L1_L9_COSTED_PLAN_DRAFT.md section 3): Drag in tier 2
 "L1.3" = 0.0             # PROPOSED (lead's split, costed draft ste_learning/drafts/L1_L9_COSTED_PLAN_DRAFT.md section 3): Fit delay, noise and drag to real logs (CPU)
 "L1.4" = 0.0             # PROPOSED (lead's split, costed draft ste_learning/drafts/L1_L9_COSTED_PLAN_DRAFT.md section 3): AirStack-simulator velocity-step logs (about 1 h of simulator time, not GPU-h)
 "L1.5" = 0.3             # PROPOSED (lead's split, costed draft ste_learning/drafts/L1_L9_COSTED_PLAN_DRAFT.md section 3): Tier 2 against the AirStack simulator

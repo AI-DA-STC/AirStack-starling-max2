@@ -5,8 +5,9 @@
 approved 200 Hz). Per physics step, the closed loop of ``scripts/physics_design_check.py`` ``fly``:
 
 1. read the world state (ENU position and velocity, WXYZ body -> world quaternion, FLU body rates); the cascade gets
-   it through ``models/estimator_effect.EstimatorEffect`` (STE L1.1: ``state_delay_s``, ``state_noise_*``; off by
-   default, then the true state passes unchanged);
+   it through ``models/estimator_effect.EstimatorEffect`` (STE L1.1b: a correlated estimate error ``state_error_*``,
+   white noise ``state_noise_*`` and at most a small residual delay of position and velocity ``state_delay_s``;
+   attitude never delayed; off by default, then the true state passes unchanged);
 2. cross into PX4's frames (``models/frames.py``, the only crossing): ``vec_enu_to_ned`` for position, velocity
    and the three setpoint vectors; ``rot_enu_flu_to_ned_frd`` for the attitude; omega_FRD = (x, -y, -z) of the
    FLU rates; ``yaw_enu_to_ned`` for the yaw setpoint and yaw rate NED = -yaw rate ENU;
@@ -27,8 +28,8 @@ a non-finite yaw setpoint becomes the drone's heading at the start of the tick. 
 Upset (D10): a drone whose tilt passes ``PhysicsParams.upset_tilt_deg`` (60) or whose state or wrench turns
 non-finite is ``upset`` until its next reset. ``max_tilt_rad`` is the largest tilt since the reset.
 
-D7: no transport delay (``setpoint_delay_s`` must be 0). The estimator is an effect, not a filter: a delay and noise
-on the true state (STE L1.1), not a copy of EKF2. The game, the commander (``pos_m``, ``vel_mps``), the upset check,
+D7: no transport delay (``setpoint_delay_s`` must be 0). The estimator is an effect, not a filter: the true state plus
+an estimate error (STE L1.1, L1.1b), not a copy of EKF2. The game, the commander (``pos_m``, ``vel_mps``), the upset check,
 ``write_clamped`` and the drag always use the true state; ``est_pos_m``, ``est_vel_mps``, ``est_quat_wxyz`` and
 ``est_ang_vel_b`` are what the cascade saw last.
 Shapes: N games x M drones; vectors [N, M, 3]; masks [N, M] bool. Batched; no host reads; the only loop is the
@@ -72,8 +73,9 @@ class PhysicsDrone:
     """
 
     def __init__(self, world: RigidBodyWorld, p: PhysicsParams, device, noise_seed: int = 0) -> None:
-        """``noise_seed``: seed of the estimator noise's own generators (never the game's, S2b D15); used only when a
-        ``state_noise_*`` is above 0."""
+        """``noise_seed``: seed of the estimator noise's own generators (``PhysicsLayer`` passes the game seed; the
+        generators are the estimator's own, never the game's, S2b D15); used only when a ``state_noise_*`` or
+        ``state_error_*`` is above 0."""
         if abs(world.dt_s - p.physics_dt_s) > 1e-12:
             raise ValueError(f"the world steps {world.dt_s} s, the physics parameters say {p.physics_dt_s} s")
         sub = GAME_TICK_S / p.physics_dt_s
@@ -91,8 +93,10 @@ class PhysicsDrone:
         self.upset = torch.zeros(n, m, dtype=torch.bool, device=self.device)
         self.max_tilt_rad = torch.zeros(n, m, device=self.device)
         self.nonfinite_count = torch.zeros((), dtype=torch.long, device=self.device)
+        self.noise_seed = noise_seed
         self.estimator = EstimatorEffect(n, m, p.state_delay_steps(), p.state_noise_pos_m, p.state_noise_vel_mps,
-                                         p.state_noise_att_rad, p.state_noise_rate_rad_s, self.device, seed=noise_seed)
+                                         p.state_noise_att_rad, p.state_noise_rate_rad_s, self.device, seed=noise_seed,
+                                         error=p.state_error(), dt_s=p.physics_dt_s)
         drag = (p.drag_x_n_per_mps, p.drag_y_n_per_mps, p.drag_z_n_per_mps)
         self.drag_coeff = (torch.tensor(drag, dtype=torch.float32).to(self.device) if any(d > 0 for d in drag)
                            else None)                                         # [3] once; None = no drag term
@@ -117,6 +121,14 @@ class PhysicsDrone:
         self.max_tilt_rad = torch.maximum(self.max_tilt_rad, torch.where(ok, self.tilt_rad,
                                                                          torch.full_like(self.tilt_rad, math.pi)))
         self.upset = self.upset | ~ok | (self.tilt_rad > self._upset_tilt_rad)
+
+    def reseed_noise(self, seed: int | None) -> None:
+        """Restart the estimator's noise streams from ``seed`` (``SvgGame.reset(seed)``; None: nothing); the correlated
+        errors are drawn afresh at the next ``reset`` of the drones."""
+        if seed is None:
+            return
+        self.noise_seed = seed
+        self.estimator.reseed(seed)
 
     def _count(self, bad: Tensor) -> None:
         self.nonfinite_count = self.nonfinite_count + bad.sum()

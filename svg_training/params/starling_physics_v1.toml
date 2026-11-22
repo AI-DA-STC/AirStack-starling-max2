@@ -1,9 +1,10 @@
-# Tier 2 rigid-body Starling, version 1. EXPLORATORY: version 0 plus the STE L1.1 state delay and noise and the L1.2 drag.
+# Tier 2 rigid-body Starling, version 1. EXPLORATORY: version 0 plus the STE L1.1 / L1.1b estimator effect and the L1.2 drag.
 # [source], [gains] and [airframe] are copied verbatim from params/starling_physics_v0.toml (sha256 888f4aea1b5a8440c9685744df62459e9f09cb9907eb8b6a1006c89350a90eb2),
 #   which scripts/make_physics_params.py wrote from the drone's own file; v0 is never edited (CODING_PRACTICES section 4).
 #   Gains copied from the drone, never tuned (tests/test_estimator_effect.py checks [gains] and [airframe] equal v0's).
-# New in [model]: state_delay_s, state_noise_*, drag_*. Every one is 0 and OPEN until L1.3 fits them to real flight logs
-#   (STANDARDS section 5 rule 10); at 0 the physics drone flies exactly as with v0. Written by hand on 2026-11-22 (L1.1).
+# New in [model]: state_delay_s, state_noise_*, drag_* (L1.1, L1.2) and state_error_* (L1.1b). Every one is 0 and OPEN until
+#   L1.3 fits them to real flight logs (STANDARDS section 5 rule 10); at 0 the physics drone flies exactly as with v0.
+#   Written by hand on 2026-11-22 (L1.1); L1.1b keys and the attitude-delay guard added 2026-11-23.
 # Read by source/svg_training/models/physics_params.py (load_physics_params).
 # Units: SI, except [gains], which keep PX4's own units (deg, deg/s, Hz) and names (lower case).
 
@@ -89,8 +90,17 @@ rotor_geometry = "cad"                    # D4: plant rotor positions; PX4's all
 motor_lag = true                          # D5: first-order rotor-speed lag (tau_up_s / tau_down_s)
 setpoint_delay_s = 0.0                    # D7: no transport delay, no estimator
 upset_tilt_deg = 60.0                     # D10: tilt past this (or a non-finite state) is an upset
-# STE L1.1: what PX4's cascade sees (models/estimator_effect.py). L1.2: linear body drag (models/starling_airframe.py).
-state_delay_s = 0.0                       # s. OPEN, to be fitted in L1.3. NOT the 0.1482 s delay_s of params/real_exploratory_v0.toml: that is tier 1's lumped delay on the three SETPOINT parts (setpoint -> EKF2's logged estimate; it also absorbs transport, EKF smoothing and any lag tier 1 does not model, records/2026-11-15_s1_real_px4_exploratory.md section 4, "Delay"), and tier 2 already makes part of that lag with its cascade and rotor lag; reusing it here would count it twice
+# STE L1.1 / L1.1b: what PX4's cascade sees (models/estimator_effect.py). L1.2: linear body drag (models/starling_airframe.py).
+# L1.1b: EKF2's output predictor hands the controllers current-time states, so the estimate is modelled as the true state
+# plus a correlated error (state_error_*: first-order Gauss-Markov per quantity, sigma and correlation time tau), not a delay.
+state_error_pos_m = 0.0                   # m, stationary standard deviation per axis. OPEN, to be fitted in L1.3 (error statistics from logs)
+state_error_pos_tau_s = 0.0               # s, correlation time. OPEN, to be fitted in L1.3
+state_error_vel_mps = 0.0                 # m/s, per axis. OPEN, to be fitted in L1.3
+state_error_vel_tau_s = 0.0               # s. OPEN, to be fitted in L1.3
+state_error_att_rad = 0.0                 # rad, small body rotation per axis. OPEN, to be fitted in L1.3
+state_error_att_tau_s = 0.0               # s. OPEN, to be fitted in L1.3
+state_delay_att_s = 0.0                   # FIXED at 0 (L1.1b): attitude is never delayed; any other value is refused
+state_delay_s = 0.0                       # s, RESIDUAL delay of position and velocity only (WARNING: not the estimator model). At most 0.05 s, a FIXED limit in code (models/physics_params.py STATE_DELAY_MAX_S): the z loop (MPC_Z_P 5 x MPC_Z_VEL_P_ACC 8) went unstable at about 0.117 s of feedback delay in the L1.1 code review's CPU check. OPEN, to be fitted in L1.3. NOT the 0.1482 s delay_s of params/real_exploratory_v0.toml: that is tier 1's lumped delay on the three SETPOINT parts (setpoint -> EKF2's logged estimate; it also absorbs transport, EKF smoothing and any lag tier 1 does not model, records/2026-11-15_s1_real_px4_exploratory.md section 4, "Delay"), and tier 2 already makes part of that lag with its cascade and rotor lag; reusing it here would count it twice
 state_noise_pos_m = 0.0                   # m, per axis, per physics step. OPEN, to be fitted in L1.3
 state_noise_vel_mps = 0.0                 # m/s, per axis, per physics step. OPEN, to be fitted in L1.3
 state_noise_att_rad = 0.0                 # rad, small body rotation per axis, per physics step. OPEN, to be fitted in L1.3

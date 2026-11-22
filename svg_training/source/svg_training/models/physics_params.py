@@ -10,9 +10,12 @@ pre-written fallback (``apply_rate_gain_fallback``); each records itself in ``Ph
 Frames: rotor positions are (x, y) in PX4's body frame FRD (x forward, y right), PX4 rotor order 0..3; inertia is
 the diagonal (roll, pitch, yaw) about the centre of mass.
 
-STE track L1.1 and L1.2 add optional [model] keys (``EFFECT_KEYS``), each 0 by default so that a file without them
-(``params/starling_physics_v0.toml``) flies exactly as before: ``state_delay_s`` and ``state_noise_*`` (what PX4's
-cascade sees: ``models/estimator_effect.py``) and ``drag_*`` (a linear body drag, ``models/starling_airframe.py``).
+STE track L1.1, L1.1b and L1.2 add optional [model] keys (``EFFECT_KEYS``), each 0 by default so that a file without
+them (``params/starling_physics_v0.toml``) flies exactly as before: ``state_error_*`` (L1.1b: a correlated estimate error
+per quantity, sigma and correlation time), ``state_noise_*`` (white noise) and ``state_delay_s`` (a small residual delay
+of position and velocity) (what PX4's cascade sees: ``models/estimator_effect.py``) and ``drag_*`` (a linear body drag,
+``models/starling_airframe.py``). Two guards (L1.1b), not effects: ``state_delay_att_s`` must be 0 (attitude is never
+delayed) and ``state_delay_s`` may not pass ``STATE_DELAY_MAX_S`` (0.05 s, FIXED in code: no config can raise it).
 """
 from __future__ import annotations
 
@@ -29,16 +32,30 @@ G_MPS2: float = 9.81
 TICK_S: float = 0.05                                # the game tick (core.game_config.TICK_S)
 ROTOR_GEOMETRIES: tuple[str, ...] = ("cad", "params")
 # STE L1.1 / L1.2: optional effects, all 0 by default (off = the physics drone of S2b, bit for bit). Units in the name.
+# L1.1b: correlated (first-order Gauss-Markov) estimate error per quantity: stationary standard deviation per axis and
+# correlation time. The main estimator term; L1.3 fits these from flight logs (not a transport delay).
+ERROR_KEYS: tuple[str, ...] = (
+    "state_error_pos_m", "state_error_pos_tau_s",
+    "state_error_vel_mps", "state_error_vel_tau_s",
+    "state_error_att_rad", "state_error_att_tau_s")       # attitude: a small body rotation, per axis
 EFFECT_KEYS: tuple[str, ...] = (
-    "state_delay_s",              # the cascade sees position, velocity and attitude this much late (whole physics steps)
+    "state_delay_s",              # RESIDUAL delay of position and velocity only (whole physics steps; attitude never)
     "state_noise_pos_m",          # standard deviation of Gaussian noise per axis on what the cascade sees, per step
     "state_noise_vel_mps",
     "state_noise_att_rad",        # a small random rotation (body frame) per step, per axis
     "state_noise_rate_rad_s",     # body rates (from the gyro in PX4: noisy, never delayed)
     "drag_x_n_per_mps",           # linear drag, body FLU axes: F_b = -diag(d_x, d_y, d_z) v_b (Pegasus's simple drag)
     "drag_y_n_per_mps",
-    "drag_z_n_per_mps")
-OVERRIDABLE: tuple[str, ...] = ("physics_dt_s", "rotor_geometry", "motor_lag", "setpoint_delay_s") + EFFECT_KEYS
+    "drag_z_n_per_mps") + ERROR_KEYS
+# L1.1b guards. A pure delay on the estimate is the wrong shape for EKF2 (its output predictor hands the controllers
+# current-time states): a CPU check of the L1.1 code review (22 Nov 2026) found the z loop (MPC_Z_P 5 x MPC_Z_VEL_P_ACC
+# 8) unstable at about 0.117 s of feedback delay (limit cycles of 0.36 m at 0.10 s), so a residual delay above
+# STATE_DELAY_MAX_S is refused, and attitude is never delayed.
+GUARD_KEYS: tuple[str, ...] = ("state_delay_att_s",)
+STATE_DELAY_MAX_S: float = 0.05     # FIXED (lead, L1.1b fix round 1): the residual-delay limit, well under the ~0.117 s;
+                                    # in code only: a parameter file or override that sets state_delay_max_s is refused
+OVERRIDABLE: tuple[str, ...] = (("physics_dt_s", "rotor_geometry", "motor_lag", "setpoint_delay_s") + EFFECT_KEYS
+                                + GUARD_KEYS)
 IGNORED_OVERRIDES: tuple[str, ...] = ("params", "fallback_physics_dt_s")   # other keys of configs/s2b.toml [physics]
 
 
@@ -153,6 +170,19 @@ class PhysicsParams:
     drag_x_n_per_mps: float = 0.0
     drag_y_n_per_mps: float = 0.0
     drag_z_n_per_mps: float = 0.0
+    state_error_pos_m: float = 0.0                           # ERROR_KEYS (L1.1b): sigma 0 = off
+    state_error_pos_tau_s: float = 0.0
+    state_error_vel_mps: float = 0.0
+    state_error_vel_tau_s: float = 0.0
+    state_error_att_rad: float = 0.0
+    state_error_att_tau_s: float = 0.0
+    state_delay_att_s: float = 0.0                           # GUARD_KEYS (L1.1b): must be 0
+
+    def state_error(self) -> dict[str, tuple[float, float]]:
+        """The correlated errors for ``EstimatorEffect``: {quantity: (sigma, tau_s)} (sigma 0 = off)."""
+        return {"pos": (self.state_error_pos_m, self.state_error_pos_tau_s),
+                "att": (self.state_error_att_rad, self.state_error_att_tau_s),
+                "vel": (self.state_error_vel_mps, self.state_error_vel_tau_s)}
 
     def state_delay_steps(self) -> int:
         """The state delay in whole physics steps: ``state_delay_s / physics_dt_s`` rounded to the nearest (a fitted
@@ -164,6 +194,19 @@ class PhysicsParams:
             val = getattr(self, key)
             if isinstance(val, bool) or not isinstance(val, (int, float)) or not math.isfinite(val) or val < 0:
                 raise ValueError(f"{key} must be a finite number >= 0, got {val!r}")
+        for q, unit in (("pos", "m"), ("vel", "mps"), ("att", "rad")):
+            if getattr(self, f"state_error_{q}_{unit}") > 0 and getattr(self, f"state_error_{q}_tau_s") <= 0:
+                raise ValueError(f"state_error_{q}_{unit} above 0 needs state_error_{q}_tau_s above 0 (white noise: "
+                                 f"state_noise_*)")
+        if self.state_delay_att_s != 0.0:
+            raise ValueError(f"state_delay_att_s must be 0.0, got {self.state_delay_att_s!r}: attitude is never delayed "
+                             "(EKF2's output predictor hands the controllers current-time attitude; L1.1b)")
+        if self.state_delay_s > STATE_DELAY_MAX_S + 1e-12:
+            raise ValueError(f"state_delay_s {self.state_delay_s} s is above the FIXED limit state_delay_max_s "
+                             f"{STATE_DELAY_MAX_S} s: the delay is "
+                             "only a small residual of position and velocity (the z loop goes unstable at about "
+                             "0.117 s of feedback delay, L1.1 code review); model the estimate's error with "
+                             "state_error_* instead")
         if self.rotor_geometry not in ROTOR_GEOMETRIES:
             raise ValueError(f"rotor_geometry must be one of {ROTOR_GEOMETRIES}, got {self.rotor_geometry!r}")
         n = TICK_S / self.physics_dt_s if self.physics_dt_s > 0 else 0.0
@@ -183,7 +226,7 @@ def load_physics_params(path: str | Path, overrides: dict | None = None) -> Phys
     """Read a physics parameter file (absolute, or relative to svg_training/).
 
     ``overrides`` is typically the [physics] table of configs/s2b.toml: it may set physics_dt_s, rotor_geometry,
-    motor_lag, setpoint_delay_s and the ``EFFECT_KEYS`` (its ``params`` and ``fallback_physics_dt_s`` keys are ignored). Gains and the
+    motor_lag, setpoint_delay_s, the ``EFFECT_KEYS`` and the ``GUARD_KEYS`` (its ``params`` and ``fallback_physics_dt_s`` keys are ignored). Gains and the
     airframe cannot be overridden; any other key raises ValueError.
     """
     p = Path(path)
@@ -217,6 +260,9 @@ def load_physics_params(path: str | Path, overrides: dict | None = None) -> Phys
         raise ValueError(f"[airframe] of {p.name}: inertia needs 3 values and rotor_xy_cad_m 4 rotors")
 
     model = dict(data.get("model", {}))
+    if "state_delay_max_s" in model or "state_delay_max_s" in (overrides or {}):
+        raise ValueError(f"state_delay_max_s is FIXED in code ({STATE_DELAY_MAX_S} s, models/physics_params.py "
+                         f"STATE_DELAY_MAX_S): {p.name} or its overrides may not set it")
     for key, val in (overrides or {}).items():
         if key in IGNORED_OVERRIDES:
             continue
@@ -230,7 +276,7 @@ def load_physics_params(path: str | Path, overrides: dict | None = None) -> Phys
                          rotor_geometry=str(model["rotor_geometry"]), motor_lag=model["motor_lag"],
                          setpoint_delay_s=float(model["setpoint_delay_s"]),
                          upset_tilt_deg=float(model.get("upset_tilt_deg", 60.0)), source=dict(data.get("source", {})),
-                         **{k: _number(model[k]) for k in EFFECT_KEYS if k in model})
+                         **{k: _number(model[k]) for k in EFFECT_KEYS + GUARD_KEYS if k in model})
 
 
 def _number(v: Any) -> Any:

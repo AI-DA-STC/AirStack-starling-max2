@@ -1,0 +1,120 @@
+# Tier 2 rigid-body Starling, version 1, conservative estimate-error condition of STE task L1.8. EXPLORATORY.
+# A copy of params/starling_physics_v1.toml with ONLY the six state_error_* keys changed (tests/test_ste_tier2_score_l18.py
+#   checks that every other section and key equals v1's); v1 itself stays at 0.
+# Source of the error values: record T63 (records/2026-11-23_ste_l13_fit_record.md, STE L1.3, EXPLORATORY): EKF2's estimate
+#   minus the mocap it fuses, drone_2 log103 hover 81 s; sigma and the 1/e correlation time tau per quantity.
+#   Conservative = 2 x T63's sigma with T63's own taus (task L1.8 brief). The flight panel's note in T63 rounds this
+#   to 0.02 m / 0.05 m/s / 0.005 rad and adds a tau 0.5 s variant; neither is used here.
+#   Not a drone value and not a fitted value: one log, PROPOSED for the lead (STANDARDS section 5). Read by scripts/ste_tier2_score_l18.py.
+#
+# --- v1's own header follows ---
+# Tier 2 rigid-body Starling, version 1. EXPLORATORY: version 0 plus the STE L1.1 / L1.1b estimator effect and the L1.2 drag.
+# [source], [gains] and [airframe] are copied verbatim from params/starling_physics_v0.toml (sha256 888f4aea1b5a8440c9685744df62459e9f09cb9907eb8b6a1006c89350a90eb2),
+#   which scripts/make_physics_params.py wrote from the drone's own file; v0 is never edited (CODING_PRACTICES section 4).
+#   Gains copied from the drone, never tuned (tests/test_estimator_effect.py checks [gains] and [airframe] equal v0's).
+# New in [model]: state_delay_s, state_noise_*, drag_* (L1.1, L1.2) and state_error_* (L1.1b). Every one is 0 and OPEN until
+#   L1.3 fits them to real flight logs (STANDARDS section 5 rule 10); at 0 the physics drone flies exactly as with v0.
+#   Written by hand on 2026-11-22 (L1.1); L1.1b keys and the attitude-delay guard added 2026-11-23.
+# Read by source/svg_training/models/physics_params.py (load_physics_params).
+# Units: SI, except [gains], which keep PX4's own units (deg, deg/s, Hz) and names (lower case).
+
+[source]
+path = "../starling_1_indoor_params.params"
+sha256 = "758c96f2cc5a749a2793df92fd173ef53bf7a206e4310a5524c3b7de3c0f1be0"
+git_commit = "a9ac3f7"
+date = "2026-11-16"
+
+[gains]                                   # the drone's PX4 1.14 parameters, value text copied verbatim
+mpc_xy_p = 0.95                           # MEASURED ../starling_1_indoor_params.params MPC_XY_P
+mpc_z_p = 5                               # MEASURED ../starling_1_indoor_params.params MPC_Z_P
+mpc_xy_vel_p_acc = 1.8                    # MEASURED ../starling_1_indoor_params.params MPC_XY_VEL_P_ACC
+mpc_xy_vel_i_acc = 0.4                    # MEASURED ../starling_1_indoor_params.params MPC_XY_VEL_I_ACC
+mpc_xy_vel_d_acc = 0.2                    # MEASURED ../starling_1_indoor_params.params MPC_XY_VEL_D_ACC
+mpc_z_vel_p_acc = 8                       # MEASURED ../starling_1_indoor_params.params MPC_Z_VEL_P_ACC
+mpc_z_vel_i_acc = 2                       # MEASURED ../starling_1_indoor_params.params MPC_Z_VEL_I_ACC
+mpc_z_vel_d_acc = 0                       # MEASURED ../starling_1_indoor_params.params MPC_Z_VEL_D_ACC
+mpc_veld_lp = 5                           # MEASURED ../starling_1_indoor_params.params MPC_VELD_LP
+mpc_xy_vel_max = 3                        # MEASURED ../starling_1_indoor_params.params MPC_XY_VEL_MAX
+mpc_z_vel_max_up = 2                      # MEASURED ../starling_1_indoor_params.params MPC_Z_VEL_MAX_UP
+mpc_z_vel_max_dn = 0.6                    # MEASURED ../starling_1_indoor_params.params MPC_Z_VEL_MAX_DN
+mpc_tiltmax_air = 45                      # MEASURED ../starling_1_indoor_params.params MPC_TILTMAX_AIR
+mpc_thr_hover = 0.165                     # MEASURED ../starling_1_indoor_params.params MPC_THR_HOVER
+mpc_thr_min = 0.04                        # MEASURED ../starling_1_indoor_params.params MPC_THR_MIN
+mpc_thr_max = 0.6                         # MEASURED ../starling_1_indoor_params.params MPC_THR_MAX
+mpc_thr_xy_marg = 0.3                     # MEASURED ../starling_1_indoor_params.params MPC_THR_XY_MARG
+mc_roll_p = 8                             # MEASURED ../starling_1_indoor_params.params MC_ROLL_P
+mc_pitch_p = 8                            # MEASURED ../starling_1_indoor_params.params MC_PITCH_P
+mc_yaw_p = 2.8                            # MEASURED ../starling_1_indoor_params.params MC_YAW_P
+mc_yaw_weight = 0.4                       # MEASURED ../starling_1_indoor_params.params MC_YAW_WEIGHT
+mc_rollrate_p = 0.064                     # MEASURED ../starling_1_indoor_params.params MC_ROLLRATE_P
+mc_rollrate_i = 0.1                       # MEASURED ../starling_1_indoor_params.params MC_ROLLRATE_I
+mc_rollrate_d = 0.0013                    # MEASURED ../starling_1_indoor_params.params MC_ROLLRATE_D
+mc_pitchrate_p = 0.064                    # MEASURED ../starling_1_indoor_params.params MC_PITCHRATE_P
+mc_pitchrate_i = 0.096                    # MEASURED ../starling_1_indoor_params.params MC_PITCHRATE_I
+mc_pitchrate_d = 0.0011                   # MEASURED ../starling_1_indoor_params.params MC_PITCHRATE_D
+mc_yawrate_p = 0.07                       # MEASURED ../starling_1_indoor_params.params MC_YAWRATE_P
+mc_yawrate_i = 0.5                        # MEASURED ../starling_1_indoor_params.params MC_YAWRATE_I
+mc_yawrate_d = 0                          # MEASURED ../starling_1_indoor_params.params MC_YAWRATE_D
+mc_rollrate_k = 1                         # MEASURED ../starling_1_indoor_params.params MC_ROLLRATE_K
+mc_pitchrate_k = 1                        # MEASURED ../starling_1_indoor_params.params MC_PITCHRATE_K
+mc_yawrate_k = 1                          # MEASURED ../starling_1_indoor_params.params MC_YAWRATE_K
+mc_rollrate_ff = 0                        # MEASURED ../starling_1_indoor_params.params MC_ROLLRATE_FF
+mc_pitchrate_ff = 0                       # MEASURED ../starling_1_indoor_params.params MC_PITCHRATE_FF
+mc_yawrate_ff = 0                         # MEASURED ../starling_1_indoor_params.params MC_YAWRATE_FF
+mc_rollrate_max = 1.3e+02                 # MEASURED ../starling_1_indoor_params.params MC_ROLLRATE_MAX
+mc_pitchrate_max = 1.3e+02                # MEASURED ../starling_1_indoor_params.params MC_PITCHRATE_MAX
+mc_yawrate_max = 1.5e+02                  # MEASURED ../starling_1_indoor_params.params MC_YAWRATE_MAX
+mc_rr_int_lim = 0.3                       # MEASURED ../starling_1_indoor_params.params MC_RR_INT_LIM
+mc_pr_int_lim = 0.3                       # MEASURED ../starling_1_indoor_params.params MC_PR_INT_LIM
+mc_yr_int_lim = 0.3                       # MEASURED ../starling_1_indoor_params.params MC_YR_INT_LIM
+mc_yaw_cutoff = 15                        # MEASURED ../starling_1_indoor_params.params MC_YAW_CUTOFF
+imu_dgyro_cutoff = 4e+01                  # MEASURED ../starling_1_indoor_params.params IMU_DGYRO_CUTOFF
+imu_gyro_ratemax = 800                    # MEASURED ../starling_1_indoor_params.params IMU_GYRO_RATEMAX
+mc_airmode = 0                            # MEASURED ../starling_1_indoor_params.params MC_AIRMODE
+ca_rotor0_px = 0.085                      # MEASURED ../starling_1_indoor_params.params CA_ROTOR0_PX
+ca_rotor0_py = 0.0625                     # MEASURED ../starling_1_indoor_params.params CA_ROTOR0_PY
+ca_rotor1_px = -0.085                     # MEASURED ../starling_1_indoor_params.params CA_ROTOR1_PX
+ca_rotor1_py = -0.0625                    # MEASURED ../starling_1_indoor_params.params CA_ROTOR1_PY
+ca_rotor2_px = 0.085                      # MEASURED ../starling_1_indoor_params.params CA_ROTOR2_PX
+ca_rotor2_py = -0.0625                    # MEASURED ../starling_1_indoor_params.params CA_ROTOR2_PY
+ca_rotor3_px = -0.085                     # MEASURED ../starling_1_indoor_params.params CA_ROTOR3_PX
+ca_rotor3_py = 0.0625                     # MEASURED ../starling_1_indoor_params.params CA_ROTOR3_PY
+ca_rotor0_km = 0.05                       # MEASURED ../starling_1_indoor_params.params CA_ROTOR0_KM
+ca_rotor1_km = 0.05                       # MEASURED ../starling_1_indoor_params.params CA_ROTOR1_KM
+ca_rotor2_km = -0.05                      # MEASURED ../starling_1_indoor_params.params CA_ROTOR2_KM
+ca_rotor3_km = -0.05                      # MEASURED ../starling_1_indoor_params.params CA_ROTOR3_KM
+
+[airframe]                                # CMU system identification of the Starling 2 Max
+mass_kg = 0.557                           # kg, body 477 g + 4 x 20 g rotors. MEASURED ../docs/CONFIG.md "Inertials" / CMU sys-ID PDF
+inertia_kgm2 = [0.002943, 0.001857, 0.004649] # kg m^2, roll / pitch / yaw. MEASURED ../docs/CONFIG.md "Inertials" / CMU sys-ID PDF
+k_f = 3.964738e-6                         # N/(rad/s)^2, rotor thrust. MEASURED ../docs/CONFIG.md "Thrust / motors" / CMU sys-ID PDF
+k_m = 5.38697e-8                          # N m/(rad/s)^2, rotor drag torque. MEASURED ../docs/CONFIG.md "Thrust / motors" / CMU sys-ID PDF
+omega_max_rad_s = 1450.0                  # rad/s, full rotor speed. MEASURED ../docs/CONFIG.md "Thrust / motors" / CMU sys-ID PDF
+tau_up_s = 0.055                          # s, rotor-speed lag speeding up. MEASURED CMU sys-ID PDF "Time Constant" (../isaac_sim/, step response; ../docs/CONFIG.md quotes only their 72 ms mean)
+tau_down_s = 0.085                        # s, rotor-speed lag slowing down. MEASURED CMU sys-ID PDF "Time Constant" (../isaac_sim/, step response; ../docs/CONFIG.md quotes only their 72 ms mean)
+rotor_xy_cad_m = [[0.095, 0.13], [-0.095, -0.13], [0.095, -0.13], [-0.095, 0.13]] # m, (x fwd, y right) FRD, rotors 0..3. MEASURED ../docs/CONFIG.md "Rotor geometry" (CMU CAD; sim airframe 10090, same order and signs as CA_ROTOR*)
+
+[model]                                   # backend defaults (S2b plan); configs/s2b.toml [physics] overrides them
+physics_dt_s = 0.005                      # D6: 200 Hz, 10 physics steps per 0.05 s game tick
+rotor_geometry = "cad"                    # D4: plant rotor positions; PX4's allocation always uses [gains] CA_ROTOR*
+motor_lag = true                          # D5: first-order rotor-speed lag (tau_up_s / tau_down_s)
+setpoint_delay_s = 0.0                    # D7: no transport delay, no estimator
+upset_tilt_deg = 60.0                     # D10: tilt past this (or a non-finite state) is an upset
+# STE L1.1 / L1.1b: what PX4's cascade sees (models/estimator_effect.py). L1.2: linear body drag (models/starling_airframe.py).
+# L1.1b: EKF2's output predictor hands the controllers current-time states, so the estimate is modelled as the true state
+# plus a correlated error (state_error_*: first-order Gauss-Markov per quantity, sigma and correlation time tau), not a delay.
+state_error_pos_m = 0.0198                # m, per axis. EXPLORATORY: 2 x T63 sigma 0.0099 m (L1.8 conservative)
+state_error_pos_tau_s = 1.2               # s. EXPLORATORY: T63 tau (1/e rule) 1.2 s (L1.8 conservative)
+state_error_vel_mps = 0.044               # m/s, per axis. EXPLORATORY: 2 x T63 sigma 0.022 m/s (L1.8 conservative)
+state_error_vel_tau_s = 1.3               # s. EXPLORATORY: T63 tau (1/e rule) 1.3 s (L1.8 conservative)
+state_error_att_rad = 0.0054              # rad, per axis. EXPLORATORY: 2 x T63 sigma 0.0027 rad (L1.8 conservative)
+state_error_att_tau_s = 2.0               # s. EXPLORATORY: T63 tau (1/e rule) 2.0 s (L1.8 conservative)
+state_delay_att_s = 0.0                   # FIXED at 0 (L1.1b): attitude is never delayed; any other value is refused
+state_delay_s = 0.0                       # s, RESIDUAL delay of position and velocity only (WARNING: not the estimator model). At most 0.05 s, a FIXED limit in code (models/physics_params.py STATE_DELAY_MAX_S): the z loop (MPC_Z_P 5 x MPC_Z_VEL_P_ACC 8) went unstable at about 0.117 s of feedback delay in the L1.1 code review's CPU check. OPEN, to be fitted in L1.3. NOT the 0.1482 s delay_s of params/real_exploratory_v0.toml: that is tier 1's lumped delay on the three SETPOINT parts (setpoint -> EKF2's logged estimate; it also absorbs transport, EKF smoothing and any lag tier 1 does not model, records/2026-11-15_s1_real_px4_exploratory.md section 4, "Delay"), and tier 2 already makes part of that lag with its cascade and rotor lag; reusing it here would count it twice
+state_noise_pos_m = 0.0                   # m, per axis, per physics step. OPEN, to be fitted in L1.3
+state_noise_vel_mps = 0.0                 # m/s, per axis, per physics step. OPEN, to be fitted in L1.3
+state_noise_att_rad = 0.0                 # rad, small body rotation per axis, per physics step. OPEN, to be fitted in L1.3
+state_noise_rate_rad_s = 0.0              # rad/s, body rates (gyro), per axis, per physics step. OPEN, to be fitted in L1.3
+drag_x_n_per_mps = 0.0                    # N per m/s, body x. OPEN (not identified, STANDARDS section 5), to be fitted in L1.3; Pegasus's 0.5 is its Iris default, not a Starling value
+drag_y_n_per_mps = 0.0                    # N per m/s, body y. OPEN, to be fitted in L1.3
+drag_z_n_per_mps = 0.0                    # N per m/s, body z. OPEN, to be fitted in L1.3

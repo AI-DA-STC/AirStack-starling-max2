@@ -1,0 +1,116 @@
+# STE task L1.8 (main track, INFO): T46's base players re-scored on TIER 2 (the Isaac Lab rigid-body Starling under the
+# PX4 1.14 cascade copy) with the L1.1b estimate error off, nominal and conservative. Scoring only, no training.
+# Driver: scripts/ste_tier2_score_l18.py; tests: tests/test_ste_tier2_score_l18.py. Written before any run; copied into
+# the run folder and pinned by sha256 at the first launch (a changed file needs a new run folder).
+# Labels: FIXED (copied from the record named), PROPOSED (L1.8 builder's choice, for the lead), EXPLORATORY (T63).
+#
+# Conditions (the brief, costed draft row L1.8): (1) off = params/starling_physics_v1.toml, every error key 0 (the
+# L1.1b model at 0 = today's tier 2); (2) nominal = T63's proposal; (3) conservative = 2 x T63's sigma, T63's taus;
+# (4) tier 1 = T46's and T44's own per-game files (no new run; ctl tier1_replay re-plays this batch's layout on tier 1
+# and must equal them game for game, so the tier 1 column is the same games on the same starts).
+# One batch layout for every condition and for the tier 1 replay ([cells]): the Guard player against every Strike script,
+# every Guard script against the Strike player, then the script cells, then the repeat cells (the same script cells a
+# second time, same starts, same seed). One Isaac world of (cells x games) games for the whole run.
+#
+# Controls (exit 6, terminal, no number reported on a failure; NOT_CHECKED in a smoke):
+#   tier1_replay   the batch on tier 1: player cells = the players' eval_info.npz game for game (exact keys, closest
+#                  approach within L0.11's same_seed_closest_tol_m on CUDA, 0 on the CPU), script and repeat cells = T44's
+#                  reference game for game, the training-opponent cells at own_wins (913, 636); plumbing.
+#   condition_<c>  the condition's game differs from configs/ste_l011/base.toml in condition_difference only, its
+#                  parameter file is the pinned one, and the parameters it flies (after configs/s2b.toml [physics])
+#                  differ from v1's in the state_error_* keys only and equal its file's.
+#   physics_agreement_<c>_launch<k>  L0.13's C-1a on the Isaac world, every launch, before the condition's batch.
+#   tier2_<c>      the batch ran the physics drone (tier 2), no non-finite wrench or setpoint, plumbing (paired starts,
+#                  tags one for one, no non-finite action: NONFINITE = exit 5).
+#   repeat_<c>     each repeat cell against its first copy: holds differ by <= repeat_count_tol_games and <=
+#                  repeat_differ_tol_games games end otherwise. Gated in gated_repeat_condition only (no error draws);
+#                  INFO in the error conditions (each copy draws its own estimate error: the gap is the error's own
+#                  game-to-game spread).
+#   known_<c>      in known_condition only: known_cell's holds inside T53's Wilson 95 % interval (tier 2, same game,
+#                  same starts, v0 = v1 at 0, other world size and process: a band, not game for game; L0.3's C-2 rule).
+
+[job]
+task = "L1.8"
+what = "T46's base Guard and Strike teams re-scored on tier 2 with the estimate error off, nominal and conservative"
+kind = "INFO"
+device = "cuda"
+games = 1000                       # starts per cell: T44's first 1,000 (the T46 evaluation starts). PROPOSED
+ticks_cap = 2400                   # = the game length (120 s): no game cut short. FIXED (T46)
+cap_h = 0.9                        # PROPOSED: expected ~0.6 GPU-h on the laptop (sizing in the driver's docstring); task L1.8 cap 1.2
+cap_check_every_ticks = 100        # the cap clock every this many ticks; the stop flag every tick
+
+[game]
+file = "configs/ste_l011/base.toml"                  # the L0.11 base game, tag 1.6 m (T46's game)
+sha256 = "96e0e7f61a49999da54eee81a544bf64c519cd80833f0dcdfa2a07edfc10cc4d"
+reference = "configs/ste_l012/t44_reference.npz"     # T44's starts and per-game script results
+reference_sha256 = "4bc5e011071adced368b2a0025fc47499839e0bbc8d8d650207bd12c3da0f8b5"
+start_sha256 = "5aeba7ab2b582f2973034c8203c17ed3e8239fef7029a1f991fe95b82369843c"
+reference_variant = "base"
+
+[guard_player]
+label = "T46 base Guard team (trained at tag 1.6 m v strike_straight)"
+dir = "ste_provisional/players/2026-11-21_ste_l012_base_guard"
+variant = "base"
+gates_sha256 = "6e2e606053a593185480f8671c406625dc844002395801023005945f58cfbc5b"
+agent_sha256 = "e981ac7e7045db4e2edc183087329667a6ab9f8b56ce3c19f65e98a8c077d22a"
+eval_sha256 = "80171ad73c6f251d5ab900b3117a41a865baba30695445f6a62a5d8eb9328961"
+info_sha256 = "d6970144ec3cd9f6d66d54cacdaf07e6c03804c793f1af0e415fce4b654bdd9d"
+results_sha256 = "17ceb78e3abd992495c02a72116d10e6704c000ab27f7b00a951cdda9c35df9b"
+own_wins = 913
+own_source = "T46 base Guard v strike_straight, holds (records/2026-11-21_ste_l012_best_response_record.md)"
+
+[strike_player]
+label = "T46 base Strike team (trained at tag 1.6 m v guard_mark_edge)"
+dir = "ste_provisional/players/2026-11-21_ste_l012_base_strike"
+variant = "base"
+gates_sha256 = "6e2e606053a593185480f8671c406625dc844002395801023005945f58cfbc5b"
+agent_sha256 = "3c264ddd9face8e4f7622a6004b6573b280c85295eae6f5c2fd59894539ee187"
+eval_sha256 = "1611a935b56d1ebb004da338e945637c6001838e997265098f5912ba81eec900"
+info_sha256 = "603c90ca5353b2f44e7ad074f893610bcd51c062b7d10db2c37c690cf4c809d0"
+results_sha256 = "3a386aa98b8e52af6c9570443cd71af3cddcd09676cac8a1b80ec0d24334ce7c"
+own_wins = 636
+own_source = "T46 base Strike v guard_mark_edge, reaches (records/2026-11-21_ste_l012_best_response_record.md)"
+
+[cells]
+# guard_mark_edge v strike_straight: the best script of each side against the other player's training opponent on T44
+# (808 holds / 192 reaches); guard_parked_centre v strike_straight: the known-answer cell (T53 tier 2: 538 holds).
+scripts = [["guard_mark_edge", "strike_straight"], ["guard_parked_centre", "strike_straight"]]
+repeat = [["guard_mark_edge", "strike_straight"], ["guard_parked_centre", "strike_straight"]]
+
+[controls]
+condition_difference = ["starling.backend", "starling.physics_params"]
+gated_repeat_condition = "off"
+repeat_count_tol_games = 10        # FIXED: L0.13 replay_count_tol_cuda_games (configs/ste_l013/gates.toml)
+repeat_differ_tol_games = 20       # FIXED: L0.13 replay_differ_tol_cuda_games
+known_condition = "off"
+known_cell = ["guard_parked_centre", "strike_straight"]
+known_games = 1000                 # the band is for 1,000 games x 2,400 ticks; other sizes: NOT_CHECKED
+known_holds_min = 507              # FIXED: T53 tier 2 parked Guard 538/1000, Wilson 95 % 0.507-0.569 (records/2026-11-21_ste_l013_tier2_trains_record.md)
+known_holds_max = 569
+known_source = "T53 (L0.13) tier 2 guard_parked_centre v strike_straight 538/1000 (0.507-0.569), T44's first 1,000 starts, params v0"
+agree_guard = "guard_mark_edge"    # FIXED: L0.13 C-1a pair, ticks, limit (configs/ste_l013/gates.toml [controls])
+agree_strike = "strike_straight"
+agree_ticks = 20
+agree_max_m = 0.02
+agree_seed = 130102                # FIXED: L0.13 train_seed (the C-1a game's own starts; never the scoring starts)
+
+[tier1]
+source = "condition 4, tier 1 (fitted PX4 response, exploratory): T46's eval_info.npz (player cells) and T44's reference (script cells), the same starts; no new run"
+
+[[conditions]]
+name = "off"
+label = "tier 2, estimate error off (v1 at 0 = today's tier 2)"
+params = "params/starling_physics_v1.toml"
+params_sha256 = "e8968026995b5507a49744a78bc7a97cfc115f89a588bbe3e139b5b42de4bf06"
+
+[[conditions]]
+name = "nominal"
+label = "tier 2, nominal estimate error (T63 proposal, EXPLORATORY)"
+params = "params/starling_physics_v1_nominal.toml"
+params_sha256 = "9963e39fbca08916a1ca68eda102a24750e47817f85fe53135519be56fb0ddcd"
+
+[[conditions]]
+name = "conservative"
+label = "tier 2, conservative estimate error (2 x T63 sigma, EXPLORATORY)"
+params = "params/starling_physics_v1_conservative.toml"
+params_sha256 = "dd7dc1886f83082d51616b19d1c560118f615cbbdf061030009a1c7920146b77"

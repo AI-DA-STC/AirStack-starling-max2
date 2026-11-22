@@ -5,15 +5,23 @@
 # Every value line carries its status label and its source: FIXED, MEASURED, PROPOSED or OPEN, as defined at the top of
 # STANDARDS.md and in ste_learning/STANDARDS.md section 1. tests/test_ste_config.py fails on a line without one.
 #
-# No game setting lives here. The game's settings file, configs/ste_game.toml, arrives with task L0.8; each game
-# section arrives with the task that builds it.
+# No game setting lives here: the game's settings are in configs/ste_game.toml (task L0.8 onwards).
+#
+# Budget sections (gate G0, owner, 22 Nov 2026): the section "budget" holds the caps of phase L0, CLOSED at G0 (13.77 of
+# its 19 GPU-h used); it keeps its first name so the L0 tools and tests read its caps as before, and being closed it
+# launches nothing. The section "budget_l1_l2" holds the one cap of phases L1 and L2 together and the caps of their
+# tasks (L2's task IDs are added when L2 starts). A launch is checked against the section that holds its task. The
+# 13.0 is shared by the laptop and the RTX 5090, each with its own ledger: the other machine's hours are added with
+# scripts/ste_job.py carry --gpu-h <hours> --note "<machine> <date>" (counted toward the 13.0, not toward a task).
 
 [track]
 plan_version = 2         # FIXED (an identifier, not a ruling): the version in PLAN.md's header line (a test reads it)
-phase = "L0"             # FIXED (owner, 20 Nov 2026): the approval covers phase L0 only (PLAN.md header, section 12)
+phase = "L1"             # FIXED (owner, G0, 22 Nov 2026): L1 and L2 approved together at gate G0 (DISCUSSION section 14; PLAN.md section 9); L0 closed
 
+# Phase L0, CLOSED at gate G0 (22 Nov 2026): kept as history.
 [budget]
-phase_cap_gpu_h = 19.0   # FIXED (owner, 20 Nov 2026): GPU-hour cap of phase L0 (PLAN.md sections 4, 9 and 12)
+closed = true            # FIXED (owner, G0, 22 Nov 2026): phase L0 closed; its caps stay readable, no L0 task launches
+phase_cap_gpu_h = 19.0   # FIXED (owner, 20 Nov 2026): GPU-hour cap of phase L0 (PLAN.md sections 4, 9 and 12); phase closed at G0, 22 Nov 2026
 
 # GPU-hour cap of each task of the phase, in the order of the table in PLAN.md section 4 (the test compares the IDs,
 # their order and the caps with that table). The split is the lead's (a LEAD CALL, PLAN.md version 2), not an owner
@@ -34,3 +42,28 @@ phase_cap_gpu_h = 19.0   # FIXED (owner, 20 Nov 2026): GPU-hour cap of phase L0 
 "L0.5" = 0.3             # PROPOSED (lead's split, PLAN.md section 4): Starling video look fix
 "L0.14" = 0.0            # PROPOSED (lead's split, PLAN.md section 4): Crazyflie route check (task added 20 Nov 2026, owner)
 "L0.6" = 0.0             # PROPOSED (lead's split, PLAN.md section 4): Gate G0
+
+# Phases L1 and L2 together (gate G0, owner, 22 Nov 2026): one cap for both, and the cap of each task. The cap is the
+# owner's; the task split is the lead's (a LEAD CALL on the costed draft), so each task line is PROPOSED. PLAN.md has no
+# L1 task table; the IDs and their order are those of TASK_IDS["L1"] in ste/config.py. The task caps may add up to less
+# than the cap (they sum to 8.1 GPU-h; L2's tasks get theirs when L2 starts), never to more.
+[budget_l1_l2]
+phases = ["L1", "L2"]    # FIXED (owner, G0, 22 Nov 2026): one GPU-hour cap covers phases L1 and L2 together (DISCUSSION section 14)
+closed = false           # FIXED (owner, G0, 22 Nov 2026): L1 and L2 approved, phase L1 in work
+phase_cap_gpu_h = 13.0   # FIXED (owner, G0, 22 Nov 2026): GPU-hour cap of L1 and L2 together, 12 + one confirming seed (PLAN.md section 9)
+
+[budget_l1_l2.task_cap_gpu_h]
+"L1.0" = 0.5             # PROPOSED (lead's split, costed draft ste_learning/drafts/L1_L9_COSTED_PLAN_DRAFT.md section 3): 5090 checks and speed re-measure
+"L1.1" = 0.2             # PROPOSED (lead's split, costed draft ste_learning/drafts/L1_L9_COSTED_PLAN_DRAFT.md section 3): State delay and noise in tier 2
+"L1.2" = 0.2             # PROPOSED (lead's split, costed draft ste_learning/drafts/L1_L9_COSTED_PLAN_DRAFT.md section 3): Drag in tier 2
+"L1.3" = 0.0             # PROPOSED (lead's split, costed draft ste_learning/drafts/L1_L9_COSTED_PLAN_DRAFT.md section 3): Fit delay, noise and drag to real logs (CPU)
+"L1.4" = 0.0             # PROPOSED (lead's split, costed draft ste_learning/drafts/L1_L9_COSTED_PLAN_DRAFT.md section 3): AirStack-simulator velocity-step logs (about 1 h of simulator time, not GPU-h)
+"L1.5" = 0.3             # PROPOSED (lead's split, costed draft ste_learning/drafts/L1_L9_COSTED_PLAN_DRAFT.md section 3): Tier 2 against the AirStack simulator
+"L1.6" = 0.5             # PROPOSED (lead's split, costed draft ste_learning/drafts/L1_L9_COSTED_PLAN_DRAFT.md section 3): Batched estimator (only if needed)
+"L1.7" = 0.1             # PROPOSED (lead's split, costed draft ste_learning/drafts/L1_L9_COSTED_PLAN_DRAFT.md section 3): Same effects in tier 1
+"L1.8" = 1.2             # PROPOSED (lead's split, costed draft ste_learning/drafts/L1_L9_COSTED_PLAN_DRAFT.md section 3): T46's base policies re-scored on the new tier 2
+"L1.9" = 1.9             # PROPOSED (lead's split, costed draft ste_learning/drafts/L1_L9_COSTED_PLAN_DRAFT.md section 3): 1v1 best-response read, plus a scripted 1v1 screen at tag 1.15 m
+"L1.10" = 1.2            # PROPOSED (lead's split, costed draft ste_learning/drafts/L1_L9_COSTED_PLAN_DRAFT.md section 3): Tag drawn within 1.5-1.7 m, 3v3, both sides
+"L1.11" = 0.9            # PROPOSED (lead's split, costed draft section 3; raised 22 Nov 2026 by the L1 side-track spec v2: run 0 + the 720 s final reserve): Strike team trained against guard_field at 1.6 m
+"L1.12" = 0.1            # PROPOSED (lead's split, costed draft ste_learning/drafts/L1_L9_COSTED_PLAN_DRAFT.md section 3): T46's 1.6 m Guard team scored against every Strike script
+"L1.13" = 1.0            # PROPOSED (lead's split, costed draft section 3; raised 22 Nov 2026 by the L1 side-track spec v2: two arms of 0.30 B, run 0 each): Shorter-training-clock 1.15 m Strike run

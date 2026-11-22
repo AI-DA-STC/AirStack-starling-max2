@@ -13,7 +13,7 @@ from _ste_tools import SOURCE, settings
 from _proc import child_env, child_python
 from svg_training.nus import pauses as nus_pauses
 from svg_training.ste import budget, pauses, shared
-from svg_training.ste.config import SETTINGS_FILE
+from svg_training.ste.config import SETTINGS_FILE, TASK_IDS, load_ste_learning
 
 T0 = 3_000_000.0
 HOUR = 3600.0
@@ -160,15 +160,106 @@ def test_a_torn_line_is_skipped_and_reported(capsys):
 
 # ------------------------------------------------------------------------------------------------ the launch check
 def test_the_committed_caps():
-    """configs/ste_learning.toml as committed: L0.12 has 13 GPU-h (L0.12c, 21 Nov 2026), L0.7 has none, the phase has 19."""
-    usage = budget.check_launch("L0.12", 13.0)
-    assert usage == budget.Usage(task_cap_gpu_h=13.0, task_used_gpu_h=0.0, phase_cap_gpu_h=19.0, phase_used_gpu_h=0.0)
-    assert budget.check_launch("L0.7", 0.0).task_cap_gpu_h == 0.0                     # a CPU job asks for nothing
-    with pytest.raises(budget.BudgetError, match=r"task L0\.12.*cap 13\.0 GPU-h.*used 0\.000.*asked 13\.1"):
-        budget.check_launch("L0.12", 13.1)
-    with pytest.raises(budget.BudgetError, match=r"task L0\.7.*cap 0\.0 GPU-h.*asked 0\.5"):
-        budget.check_launch("L0.7", 0.5)
-    assert budget.check_launch("L0.12", 13.0, settings=SETTINGS_FILE).phase_cap_gpu_h == 19.0
+    """configs/ste_learning.toml as committed: phase L0 is CLOSED (owner, G0, 22 Nov 2026), so no L0 task launches,
+    not even a CPU job; its caps stay readable (L0.12 has 13 GPU-h, L0.12c; L0.7 none; the phase 19)."""
+    cfg = load_ste_learning()[0]
+    assert cfg.budget.closed and cfg.budget.cap_gpu_h("L0.12") == 13.0 and cfg.budget.phase_cap_gpu_h == 19.0
+    for task, asked in (("L0.12", 1.0), ("L0.7", 0.0), ("L0.11", 0.0)):
+        with pytest.raises(budget.BudgetError, match=rf"task {task.replace('.', '[.]')} .*\[budget\].*closed"):
+            budget.check_launch(task, asked, settings=SETTINGS_FILE)
+
+
+def test_the_committed_l1_caps():
+    """Gate G0 (owner, 22 Nov 2026): phase L1 is in work; its tasks launch against their own caps and the one cap of
+    phases L1 and L2 together, 13 GPU-h ([budget_l1_l2] in configs/ste_learning.toml)."""
+    usage = budget.check_launch("L1.9", 1.9)
+    assert usage == budget.Usage(task_cap_gpu_h=1.9, task_used_gpu_h=0.0, phase_cap_gpu_h=13.0, phase_used_gpu_h=0.0)
+    assert budget.check_launch("L1.3", 0.0).task_cap_gpu_h == 0.0                     # a CPU task asks for nothing
+    with pytest.raises(budget.BudgetError, match=r"task L1\.9.*cap 1\.9 GPU-h.*budget_l1_l2\.task_cap_gpu_h.*asked 2\.0"):
+        budget.check_launch("L1.9", 2.0)
+    with pytest.raises(budget.BudgetError, match=r"task L1\.4.*cap 0\.0 GPU-h.*asked 0\.1"):
+        budget.check_launch("L1.4", 0.1)                                              # simulator time, not GPU-h
+
+
+def l1_settings(tmp_path, cap: float, **caps: float):
+    """The L0-shaped file of ``settings`` with phase L1 in work, L0 closed, and [budget_l1_l2]: the given cap, the given
+    L1 caps."""
+    path = settings(tmp_path, 19.0, L0_11=3.0)
+    named = {name.replace("_", "."): value for name, value in caps.items()}
+    text = path.read_text().replace('phase = "L0"', 'phase = "L1"').replace("closed = false", "closed = true")
+    text += "\n".join(["[budget_l1_l2]", 'phases = ["L1", "L2"]', "closed = false", f"phase_cap_gpu_h = {cap!r}",
+                       "[budget_l1_l2.task_cap_gpu_h]",
+                       *(f'"{task}" = {named.get(task, 0.0)!r}' for task in TASK_IDS["L1"])]) + "\n"
+    path.write_text(text)
+    return path
+
+
+def test_the_l1_and_l2_cap_counts_l1_rows_only_and_holds(tmp_path):
+    """The cap of [budget_l1_l2] counts the union of every L1 (and later L2) task's rows; L0's rows count against L0's
+    cap only, and phase_gpu_h("L1") counts the rows of tasks "L1.<n>"."""
+    path = l1_settings(tmp_path, 3.0, L1_9=0.5, L1_10=2.5)
+    ran("L1.9", "read", 0.0, 2.0)
+    ran("L1.10", "tag", 1.0, 2.5)                                                     # overlaps L1.9 by 1 h: union 2.5
+    ran("L0.11", "sweep", 10.0, 13.0)
+    assert budget.phase_gpu_h("L1") == pytest.approx(2.5) and budget.phase_gpu_h("L0") == pytest.approx(3.0)
+    usage = budget.check_launch("L1.10", 0.5, settings=path)                          # 2.5 + 0.5 = the cap: allowed
+    assert usage == budget.Usage(2.5, pytest.approx(1.5), 3.0, pytest.approx(2.5))
+    with pytest.raises(budget.BudgetError) as refused:
+        budget.check_launch("L1.10", 0.51, settings=path)                         # the task cap holds, the L1 + L2 cap does not
+    message = str(refused.value)
+    assert "phases L1 + L2" in message and "budget_l1_l2.phase_cap_gpu_h" in message and "used 2.500" in message
+    with pytest.raises(budget.BudgetError, match=r"task L0\.11 .*\[budget\].*closed"):        # L0 is closed
+        budget.check_launch("L0.11", 0.0, settings=path)
+
+
+def test_carried_hours_count_toward_the_l1_and_l2_cap_only(tmp_path):
+    """One ledger per machine, one 13.0 for both machines: a carried row (the other machine's hours) counts toward the
+    budget section's cap, never toward a task or a phase alone, and is not a ledger interval (no union, no pause)."""
+    path = l1_settings(tmp_path, 3.0, L1_9=0.5, L1_10=2.5)
+    in_work = load_ste_learning(path)[0].budget_in_work()
+    ran("L1.10", "tag", 0.0, 1.0)
+    row = budget.log_carried(in_work, 1.5, "rtx5090 2026-11-24")
+    assert row["group"] == "carried:L1+L2" == budget.carried_group(in_work) and row["device"] == budget.CARRIED_DEVICE
+    assert row["carried_gpu_h"] == 1.5 and row["note"] == "rtx5090 2026-11-24"
+    assert budget.carried_gpu_h(in_work) == 1.5 and budget.budget_gpu_h(in_work) == pytest.approx(2.5)
+    assert budget.task_gpu_h("L1.10") == pytest.approx(1.0) and budget.phase_gpu_h("L1") == pytest.approx(1.0)
+    usage = budget.check_launch("L1.10", 0.5, settings=path)                  # 2.5 + 0.5 = 3.0: the cap, allowed
+    assert usage.phase_used_gpu_h == pytest.approx(2.5) and usage.task_used_gpu_h == pytest.approx(1.0)
+    with pytest.raises(budget.BudgetError, match=r"phases L1 \+ L2.*used 2\.500"):
+        budget.check_launch("L1.10", 0.6, settings=path)
+    assert budget.budget_summary(path) == ("budget_l1_l2 (phases L1 + L2): used 2.500 of 3.0 GPU-h "
+                                           "(own rows 1.000, carried 1.500)")
+
+
+@pytest.mark.parametrize("hours", [-0.1, float("nan"), float("inf"), float("-inf"), True, "1.0", None])
+def test_a_senseless_carry_is_refused_and_writes_nothing(tmp_path, hours):
+    in_work = load_ste_learning(l1_settings(tmp_path, 3.0))[0].budget_in_work()
+    with pytest.raises(budget.BudgetError, match="carried"):
+        budget.log_carried(in_work, hours, "laptop 2026-11-23")
+    assert not shared.gpu_hours_log().exists()
+
+
+def test_a_carry_needs_a_note_and_an_open_budget(tmp_path):
+    cfg = load_ste_learning(l1_settings(tmp_path, 3.0))[0]
+    for note in ("", "   ", None):
+        with pytest.raises(budget.BudgetError, match="note"):
+            budget.log_carried(cfg.budget_in_work(), 1.0, note)
+    with pytest.raises(budget.BudgetError, match="closed"):
+        budget.log_carried(cfg.budget, 1.0, "laptop 2026-11-23")                  # phase L0 is closed
+    assert not shared.gpu_hours_log().exists()
+
+
+def test_rows_of_l1_1_l1_10_and_l10_count_to_their_own_tasks_only(tmp_path):
+    """Guard (fix round 1): task IDs are matched whole, never by prefix: "L1.1" is not "L1.10", and "L10" is no L1 task."""
+    path = l1_settings(tmp_path, 13.0)
+    ran("L1.1", "a", 0.0, 1.0)
+    ran("L1.10", "b", 2.0, 4.0)
+    ran("L10", "c", 5.0, 9.0)
+    assert budget.task_gpu_h("L1.1") == pytest.approx(1.0) and budget.task_gpu_h("L1.10") == pytest.approx(2.0)
+    assert budget.task_gpu_h("L10") == pytest.approx(4.0)
+    assert budget.phase_gpu_h("L1") == pytest.approx(3.0)
+    assert budget.budget_gpu_h(load_ste_learning(path)[0].budget_in_work()) == pytest.approx(3.0)
+    assert budget.check_launch("L1.1", 0.0, settings=path).task_used_gpu_h == pytest.approx(1.0)
 
 
 def test_refused_when_the_task_cap_would_be_exceeded(tmp_path):
@@ -275,7 +366,8 @@ def test_an_exact_fit_is_allowed_despite_binary_rounding(tmp_path):
 
 
 @pytest.mark.parametrize("task, asked, message", [
-    ("L0.99", 1.0, "L0.99"), ("L1.1", 0.0, "L1.1"), ("L0.11", -1.0, "asked"), ("L0.11", float("nan"), "asked"),
+    ("L0.99", 1.0, "L0.99"), ("L1.99", 0.0, "L1.99"), ("L2.1", 0.0, "L2.1"), ("L0.11", -1.0, "asked"),
+    ("L0.11", float("nan"), "asked"),
     ("L0.11", float("inf"), "asked"),
 ])
 def test_an_unknown_task_or_a_senseless_request_is_refused(task, asked, message):

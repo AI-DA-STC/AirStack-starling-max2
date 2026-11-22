@@ -82,7 +82,7 @@ filter on every pair of drones, height free, NUS's hangar in metres). A *hold* i
   the square: 0 defence wins in 100, closest pair 3.29 m), so the launch was stopped after 1v1 and 2v1 and restarted at
   1.6 m. The stopped run is kept (`arena_fit_STOPPED_strike_radius_2.4`).
 - **Not the STE game's tag**: the planner's tag needs 1.1 s within 1.15 m, a 5 cm band outside the 1.10 m filter
-  distance; the STE study tag (1.6 m, PROPOSED) is a different rule. The planner's protected point also keeps every drone
+  distance; the STE game's tag (1.6 m first, ruled at G0, 22 Nov 2026) is a different rule. The planner's protected point also keeps every drone
   1.2 m away from the zone centre, which the STE game does not.
 - **Reported**: matches with at least one solver-emergency tick (apart from every other safety failure), the closest
   pair in metres against 1.10 m, defence wins. The planner's own SAFE verdict uses the Crazyflie's 0.35 m floor and is
@@ -262,7 +262,7 @@ actions (to 1e-5): this checks the observation builder, the slot order, the scal
 The fixture belongs to interface v0.1; a layout change raises the version (STANDARDS §3) and makes a new fixture.
 
 **3. The rule plug-in.** A `Rules` subclass in the same outside module, the STE study tag of L0.9: a Guard drone and a
-Strike drone whose centres are closer than the tag radius (1.6 m, PROPOSED, P1) are both out, nearest pair first, each
+Strike drone whose centres are closer than the tag radius (1.6 m first, 1.15 m later; P1, ruled at G0, 22 Nov 2026) are both out, nearest pair first, each
 drone in at most one tag per tick; a Strike drone wins by reaching the zone (horizontal distance to the zone centre
 inside the zone radius); the Guard team wins when time runs out. In the engine's terms: both teams downable, a down rate
 that fills the meter in one tick for the drones of a matched pair, a strike rate on horizontal distance. The engine asks

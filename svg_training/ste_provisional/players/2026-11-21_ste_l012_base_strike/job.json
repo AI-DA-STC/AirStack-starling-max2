@@ -1,0 +1,43 @@
+{
+ "task": "L0.12",
+ "pid": 754415,
+ "pid_start": 4621184,
+ "boot_id": "b65a0705-b76b-4f1e-a333-ded6e0d85bfc",
+ "cmd": [
+  "/home/jeremychia/miniconda3/envs/env_isaaclab/bin/python",
+  "scripts/ste_exploit_l012.py",
+  "--variant",
+  "base",
+  "--side",
+  "strike",
+  "--run-dir",
+  "runs/2026-11-21_ste_l012_base_strike",
+  "--cap-h",
+  "0.75",
+  "--expect-gates-sha256",
+  "6e2e606053a593185480f8671c406625dc844002395801023005945f58cfbc5b",
+  "--pilot-json",
+  "runs/2026-11-21_ste_l012_pilot/pilot.json",
+  "--run0-json",
+  "runs/2026-11-21_ste_l012_run0/learner_control.json"
+ ],
+ "cwd": "/home/jeremychia/AirStack-starling-max2-l12/svg_training",
+ "run_dir": "/home/jeremychia/AirStack-starling-max2-l12/svg_training/runs/2026-11-21_ste_l012_base_strike",
+ "log": "/home/jeremychia/AirStack-starling-max2-l12/svg_training/runs/2026-11-21_ste_l012_base_strike/job.log",
+ "started": 1795227659.683504,
+ "expected_min_s": 1800.0,
+ "gpu_h": 0.75,
+ "launch": 1,
+ "child_pid": null,
+ "child_start": null,
+ "exit_code": null,
+ "ended": null,
+ "name": "l012_base_strike",
+ "beat_s": 60.0,
+ "settings": "/home/jeremychia/AirStack-starling-max2-l12/svg_training/configs/ste_learning.toml",
+ "env": {
+  "PYTHONPATH": "source",
+  "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True"
+ },
+ "shared_dir": "/home/jeremychia/AirStack-starling-max2/svg_training/runs/shared"
+}

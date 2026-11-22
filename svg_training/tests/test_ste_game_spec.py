@@ -90,7 +90,9 @@ def test_the_tag_section_lists_the_games_switch_and_its_defaults():
     table = tomllib.loads(GOOD)["tag"]
     assert list(table) == [f.name for f in dataclasses.fields(TagCfg)]
     assert TagCfg(**table) == TagCfg()                                            # the sheet holds the code's defaults
-    assert spec.value("tag.mode") == TAG_MODES[0] == "off" and spec.value("tag_rule.main_game_has_tag") is False
+    # G0 (owner, 22 Nov 2026, P1): the main game has a 1-for-1 tag; the switch's default stays off (the pre-tag game bit
+    # for bit), and the track's game files switch it on
+    assert spec.value("tag.mode") == TAG_MODES[0] == "off" and spec.value("tag_rule.main_game_has_tag") is True
     assert spec.value("tag.radius_m") == spec.value("tag_rule.radius_m")
     assert spec.value("tag.guard_survives_tag_prob") == spec.value("tag_rule.guard_survives_tag_prob")
     assert spec.value("tag_rule.pairing") in TAG_MODES[1:]                        # the pairing the switch turns on
@@ -132,7 +134,7 @@ def test_a_file_that_cannot_be_read_as_toml_raises_naming_the_file(tmp_path):
     ("height.band_m", "[0.5, 2]"),              # every element a decimal
     ("height.band_m", "0.5"),
     ("teams.target_sizes", '["1v1", 2]'),
-    ("tag_rule.main_game_has_tag", "0"),
+    ("tag_rule.main_game_has_tag", "1"),
 ])
 def test_wrong_type_raises(tmp_path, key, new_value):
     line = line_of(key)
@@ -210,33 +212,33 @@ def test_module_imports_on_the_cpu_without_torch_or_isaac():
 PINNED_LABELS = {
     "zone.shape": "FIXED",                        # parent STANDARDS section 4 "Teams"
     "zone.scored_in": "PROPOSED",                 # parent STANDARDS section 4 "Height" (PROPOSED)
-    "zone.radius_m": "OPEN",                      # P12, OPEN at G0; the parent row "Zone radius" is OPEN (QC I2, 21 Nov 2026)
+    "zone.radius_m": "FIXED",                     # owner, G0, 22 Nov 2026 (P12, G0 ruling R5); OPEN until then (QC I2, 21 Nov 2026)
     "zone.centre": "PROPOSED",                    # LEAD CALL, 20 Nov 2026
     "zone.win_ticks_inside": "PROPOSED",          # parent STANDARDS section 4 "Strike scores" (PROPOSED)
     "height.band_m": "PROPOSED",                  # parent STANDARDS section 4 "Height" (PROPOSED)
     "height.mode": "PROPOSED",                    # T41's game
     "height.start_m": "PROPOSED",                 # hangar and S2 game files
-    "arena.side_m": "PROPOSED",                   # F8: PLAN section 4 L0.11 base case
+    "arena.side_m": "FIXED",                      # owner, G0, 22 Nov 2026 (G0 ruling R9); PROPOSED until then (F8)
     "arena.wall_margin_m": "PROPOSED",            # game files
     "arena.walls": "PROPOSED",                    # game files
-    "arena.environment": "OPEN",                  # P10, OPEN at G0 (QC I2, 21 Nov 2026)
+    "arena.environment": "FIXED",                 # owner, G0, 22 Nov 2026 (P10, G0 ruling R11); OPEN until then (QC I2, 21 Nov 2026)
     "starts.guard_disc_m": "PROPOSED",            # hangar game
-    "starts.strike_ring_m": "PROPOSED",           # LEAD CALL 21 Nov 2026, L08-F1 (L0.10): the hangar ring scaled to the 6.5 m arena
+    "starts.strike_ring_m": "FIXED",              # owner, G0, 22 Nov 2026 (G0 ruling R9); LEAD CALL 21 Nov 2026 (L08-F1) until then
     "starts.team_spacing_margin_m": "PROPOSED",   # LEAD CALL 21 Nov 2026 (L0.10 QC I1): team-mates start spaced
-    "timing.game_s": "PROPOSED",                  # LEAD CALL, 20 Nov 2026
+    "timing.game_s": "FIXED",                     # owner, G0, 22 Nov 2026 (G0 ruling E); LEAD CALL, 20 Nov 2026 until then
     "timing.decision_s": "PROPOSED",              # hangar game, T41
     "speeds.strike_mps": "FIXED",                 # parent STANDARDS section 4 "Speeds in metres per second"
     "speeds.strike_to_guard_ratio": "FIXED",      # parent STANDARDS section 4 "Speed ratio"
     "teams.of_interest": "FIXED",                 # parent STANDARDS section 4 "Team sizes of interest"
-    "teams.target_sizes": "OPEN",                 # P9
-    "teams.base_case": "PROPOSED",                # PLAN section 4 L0.11 base case
-    "tag_rule.main_game_has_tag": "FIXED",        # parent STANDARDS section 4 "Tag": the main game has no tag (P1 would overturn it)
-    "tag_rule.radius_m": "PROPOSED",              # P1 (PLAN section 2: "P1 and P2 PROPOSED")
-    "tag_rule.pairing": "PROPOSED",               # PLAN section 4 L0.9
-    "tag_rule.guard_survives_tag_prob": "PROPOSED",  # D2 provisional; P12 revisits what a tag costs (lead's ruling 3, 20 Nov 2026)
-    "tag.mode": "FIXED",                          # parent STANDARDS section 4 "Tag": off until the owner rules P1 (L0.9)
-    "tag.radius_m": "PROPOSED",                   # P1, as tag_rule.radius_m
-    "tag.guard_survives_tag_prob": "PROPOSED",    # D2 provisional, P12, as tag_rule.guard_survives_tag_prob
+    "teams.target_sizes": "FIXED",                # owner, G0, 22 Nov 2026 (P9, G0 ruling R6-8); OPEN until then
+    "teams.base_case": "FIXED",                   # owner, G0, 22 Nov 2026 (G0 ruling R6-8): train 3v3
+    "tag_rule.main_game_has_tag": "FIXED",        # owner, G0, 22 Nov 2026 (P1, G0 ruling R1): the main game has a 1-for-1 tag
+    "tag_rule.radius_m": "FIXED",                 # owner, G0, 22 Nov 2026 (P1, option (d)); PROPOSED until then
+    "tag_rule.pairing": "FIXED",                  # owner, G0, 22 Nov 2026 (P1, G0 ruling R1); PROPOSED until then (PLAN section 4 L0.9)
+    "tag_rule.guard_survives_tag_prob": "FIXED",  # owner, G0, 22 Nov 2026 (D2, G0 ruling R4); PROPOSED until then
+    "tag.mode": "FIXED",                          # owner, G0, 22 Nov 2026 (P1, G0 ruling R1): default off, the track's game files switch it on
+    "tag.radius_m": "FIXED",                      # owner, G0, 22 Nov 2026 (P1, option (d)), as tag_rule.radius_m
+    "tag.guard_survives_tag_prob": "FIXED",       # owner, G0, 22 Nov 2026 (D2, G0 ruling R4), as tag_rule.guard_survives_tag_prob
     "filter.pairs": "FIXED",                      # parent STANDARDS sections 4 and 5
     "filter.share": "MEASURED",                   # read from cbf_filter.py (lead's ruling 4, 20 Nov 2026: no FIXED without the owner)
     "filter.keepout_m": "FIXED",                  # parent STANDARDS section 5 "Safety filter in flight today"
@@ -249,7 +251,7 @@ def test_pending_rulings_keep_their_labels():
     assert list(PINNED_LABELS) == list(SCHEMA)                                    # every setting is pinned
     found = {key: spec.status(key) for key in PINNED_LABELS}
     assert found == PINNED_LABELS
-    assert spec.value("tag_rule.main_game_has_tag") is False
+    assert spec.value("tag_rule.main_game_has_tag") is True                       # G0, 22 Nov 2026 (P1)
 
 
 def test_the_sources_name_the_pending_rulings():
@@ -339,10 +341,11 @@ def test_fixed_values_follow_their_parent_rows():
     assert label == "FIXED" and re.search(rf"Strike {spec.value('speeds.strike_mps')!r} m/s", speeds)
     ratio, label = parent_row("Speed ratio")
     assert label == "FIXED" and re.search(rf"\b{spec.value('speeds.strike_to_guard_ratio')!r} times as fast", ratio)
-    # main game has no tag
+    # main game has a 1-for-1 tag (owner, G0, 22 Nov 2026, P1); the switch's default stays off (the pre-tag game bit for
+    # bit) and the track's game files switch it on
     tag, label = parent_row("Tag")
-    assert label == "FIXED" and spec.value("tag_rule.main_game_has_tag") is False and "The main game has no tag" in tag
-    assert spec.value("tag.mode") == "off"                                        # the game's switch follows it (L0.9)
+    assert label == "FIXED" and spec.value("tag_rule.main_game_has_tag") is True and "Main game: a 1-for-1 tag" in tag
+    assert spec.value("tag.mode") == "off"                                        # the code default (L0.9)
     # filter on every pair, in the game (section 4) and in flight (section 5)
     in_game, label_game = parent_row("Safety filter in the game")
     in_flight, label_flight = parent_row("Safety filter in flight today")
@@ -502,8 +505,8 @@ def test_the_sheet_check_refuses_a_sheet_that_differs_and_says_where():
     radius = next(line for line in good.splitlines() if "`zone.radius_m`" in line)
     refused(r"values differ: \{'zone\.radius_m': \{'sheet': 2\.4",
             good.replace(radius, radius.replace(f"`{spec.value('zone.radius_m')!r}`", "`2.4`")))
-    refused(rf"status labels differ: \{{'zone\.radius_m': \{{'sheet': 'FIXED', 'file': '{spec.status('zone.radius_m')}'\}}",
-            good.replace(radius, radius.replace(f"| {spec.status('zone.radius_m')} |", "| FIXED |")))
+    refused(rf"status labels differ: \{{'zone\.radius_m': \{{'sheet': 'OPEN', 'file': '{spec.status('zone.radius_m')}'\}}",
+            good.replace(radius, radius.replace(f"| {spec.status('zone.radius_m')} |", "| OPEN |")))
     refused(r"only in the file \['zone\.radius_m'\]", good.replace(radius + "\n", ""))
     refused(r"only in the sheet \['zone\.diameter_m'\]",
             good.replace(radius, radius + "\n| an item | `zone.diameter_m` | `3.2` | PROPOSED | a source | — |"))

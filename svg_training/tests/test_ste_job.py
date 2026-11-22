@@ -26,6 +26,7 @@ from _ste_tools import (ROOT, SCRIPTS, SOURCE, WAIT_S, kill_group, pause_script,
                         tool_env, wait_for)
 from _proc import child_env, child_python
 from svg_training.ste import budget, jobs, pauses, run_contract as rc, shared, state
+from svg_training.ste.config import TASK_IDS
 
 TOOL = SCRIPTS / "ste_job.py"
 DUMMY = SCRIPTS / "ste_dummy_job.py"
@@ -52,7 +53,7 @@ class Bench:
         return [child_python(), str(DUMMY), "--run-dir", str(self.run_dir(name)), "--steps", str(steps), "--step-s",
                 str(step_s), "--cap-s", str(cap_s), "--checkpoint-every", str(every), *map(str, extra)]
 
-    def launch(self, name: str, cmd: list[str], min_s: float = 0.0, gpu_h: float = 0.0, task: str = "L0.7",
+    def launch(self, name: str, cmd: list[str], min_s: float = 0.0, gpu_h: float = 0.0, task: str = "L1.3",
                extra: tuple = ()) -> subprocess.CompletedProcess:
         return run_py([TOOL, "launch", "--task", task, "--name", name, "--run-dir", self.run_dir(name), "--min-s", min_s,
                        "--gpu-h", gpu_h, *extra, "--", *cmd], self.env)
@@ -120,16 +121,16 @@ def test_launch_records_the_job_and_wait_returns_its_exit_code(bench):
     launched = bench.launch("drill", cmd)
     assert launched.returncode == 0, launched.stderr
     job = bench.job("drill")
-    assert f"pid={job['pid']}" in launched.stdout and "L0.7 drill" in launched.stdout
-    assert job["task"] == "L0.7" and job["cmd"] == cmd and job["launch"] == 1 and job["boot_id"] == state.boot_id()
+    assert f"pid={job['pid']}" in launched.stdout and "L1.3 drill" in launched.stdout
+    assert job["task"] == "L1.3" and job["cmd"] == cmd and job["launch"] == 1 and job["boot_id"] == state.boot_id()
     assert before <= job["started"] <= time.time() and job["expected_min_s"] == 0.0 and job["gpu_h"] == 0.0
     assert job["run_dir"] == str(bench.run_dir("drill")) and job["log"] == str(bench.run_dir("drill") / "job.log")
     assert job["cwd"] == str(ROOT)
-    assert state.read()["phase"] == "L0"
+    assert state.read()["phase"] == "L1"                           # the phase in work ([track] phase; L1 since G0)
 
     done = bench.wait("drill")
     assert done.returncode == rc.EXIT_DONE == 0, done.stderr
-    assert re.fullmatch(r"L0\.7 drill DONE exit=0 duration=\d+\.\ds effective=\d+\.\ds", line_of(done))
+    assert re.fullmatch(r"L1\.3 drill DONE exit=0 duration=\d+\.\ds effective=\d+\.\ds", line_of(done))
 
     run = bench.run_dir("drill")
     assert (run / "exit_code").read_text() == "0\n"
@@ -138,7 +139,7 @@ def test_launch_records_the_job_and_wait_returns_its_exit_code(bench):
     record = json.loads((run / "job.json").read_text())
     assert record["name"] == "drill" and record["pid"] == job["pid"] and record["pid_start"] == job["pid_start"]
     relaunch = (run / "cmd.txt").read_text()
-    assert "ste_job.py launch --task L0.7 --name drill" in relaunch and "ste_dummy_job.py" in relaunch
+    assert "ste_job.py launch --task L1.3 --name drill" in relaunch and "ste_dummy_job.py" in relaunch
     rows = [json.loads(line) for line in (run / "launches.jsonl").read_text().splitlines()]
     assert [(row["event"], row["launch"]) for row in rows] == [("launch", 1), ("end", 1)] and rows[1]["exit_code"] == 0
     ended = bench.job("drill")
@@ -189,7 +190,7 @@ def test_cmd_txt_replays_the_launch_environment_in_a_polluted_shell(bench, tmp_p
     first_env = dict(bench.env, CUDA_VISIBLE_DEVICES="", PYTORCH_CUDA_ALLOC_CONF=ODD_VALUE)
     first_env.pop("PYTHONPATH")                                             # the track's rule: unset at launch
     out = run / "env.jsonl"
-    first = run_py([TOOL, "launch", "--task", "L0.7", "--name", "envjob", "--run-dir", run, "--min-s", 0.0, "--gpu-h",
+    first = run_py([TOOL, "launch", "--task", "L1.3", "--name", "envjob", "--run-dir", run, "--min-s", 0.0, "--gpu-h",
                     0.0, "--", *env_dump_cmd(out)], first_env)
     assert first.returncode == 0, first.stderr
     assert bench.wait("envjob").returncode == 0
@@ -218,7 +219,7 @@ def test_a_relaunch_with_another_shared_folder_is_refused(bench, tmp_path):
     assert bench.wait("homed").returncode == 0
     assert json.loads((bench.run_dir("homed") / "job.json").read_text())["shared_dir"] == str(bench.shared.resolve())
     other = tmp_path / "other_shared"
-    moved = run_py([TOOL, "launch", "--task", "L0.7", "--name", "homed", "--run-dir", bench.run_dir("homed"), "--min-s",
+    moved = run_py([TOOL, "launch", "--task", "L1.3", "--name", "homed", "--run-dir", bench.run_dir("homed"), "--min-s",
                     0.0, "--gpu-h", 0.0, "--", *bench.dummy("homed", steps=4)], dict(bench.env, SVG_SHARED_DIR=str(other)))
     assert moved.returncode == rc.EXIT_REFUSED and moved.stdout == ""
     assert str(bench.shared.resolve()) in moved.stderr and str(other) in moved.stderr and "cmd.txt" in moved.stderr
@@ -252,7 +253,7 @@ def test_f_b_the_waiter_returns_the_jobs_own_exit_code(bench, tmp_path):
     assert bench.launch("fails", exit_cmd(7)).returncode == 0
     done = bench.wait("fails")
     assert done.returncode == 7
-    assert line_of(done).startswith("L0.7 fails FAILED exit=7 duration=")
+    assert line_of(done).startswith("L1.3 fails FAILED exit=7 duration=")
     assert (bench.run_dir("fails") / "exit_code").read_text() == "7\n"
     for code, word in ((rc.EXIT_CAP, "CAP"), (rc.EXIT_NONFINITE, "NONFINITE"), (rc.EXIT_REFUSED, "REFUSED")):
         assert bench.launch(f"code{code}", exit_cmd(code)).returncode == 0
@@ -265,7 +266,7 @@ def test_f_c_a_job_that_ends_much_too_early_is_flagged(bench):
     assert bench.launch("quick", exit_cmd(0), min_s=60.0).returncode == 0
     done = bench.wait("quick")
     assert done.returncode == jobs.EXIT_ENDED_EARLY == 20
-    assert re.fullmatch(r"L0\.7 quick ENDED_EARLY exit=0 \(DONE\) duration=\d+\.\ds effective=\d+\.\ds expected_min=60\.0s",
+    assert re.fullmatch(r"L1\.3 quick ENDED_EARLY exit=0 \(DONE\) duration=\d+\.\ds effective=\d+\.\ds expected_min=60\.0s",
                         line_of(done))
 
 
@@ -303,7 +304,7 @@ def test_f_a_the_waiter_returns_only_when_the_job_ends_though_its_own_command_li
     os.kill(bench.job(name)["pid"], signal.SIGINT)                         # to the recorded pid: the wrapper passes it on
     assert waiter.wait(timeout=WAIT_S) == rc.EXIT_INTERRUPTED
     out = waiter.stdout.read()
-    assert out.startswith(f"L0.7 {name} INTERRUPTED exit=4 ") and len(out.splitlines()) == 1
+    assert out.startswith(f"L1.3 {name} INTERRUPTED exit=4 ") and len(out.splitlines()) == 1
     assert (bench.run_dir(name) / "exit_code").read_text() == "4\n" and not state.job_alive(bench.job(name))
     assert f"stopped (interrupted) at step {bench.step(name)}" in (bench.run_dir(name) / "job.log").read_text()
 
@@ -332,13 +333,13 @@ def test_f_d_a_killed_job_reads_dead_the_waiter_says_died_and_the_same_command_r
     wait_for(lambda: not state.job_alive(bench.job("cut")), what="the job to be gone")
 
     assert waiter.wait(timeout=WAIT_S) == jobs.EXIT_DIED == 21
-    died = re.fullmatch(r"L0\.7 cut DIED exit=none duration=(\d+\.\d)s effective=\d+\.\ds \(no exit code recorded; dead\)\n",
+    died = re.fullmatch(r"L1\.3 cut DIED exit=none duration=(\d+\.\d)s effective=\d+\.\ds \(no exit code recorded; dead\)\n",
                         waiter.stdout.read())
     # the duration runs to the last sign of life (the newest file of the run folder: here the last checkpoint or log
     # line), not to the wrapper's last beat, which is a minute apart in real use. The waiter prints it rounded to 0.1 s, so
     # the upper bound allows half a display step (L07-F1, laptop 20 Nov 2026: raw 0.255 s printed "0.3" against 0.293 s elapsed)
     assert 0.1 <= float(died.group(1)) <= time.time() - first["started"] + DISPLAY_HALF_STEP_S
-    assert re.search(r"^cut +L0\.7 +dead +exit=none ", bench.status(), re.M)
+    assert re.search(r"^cut +L1\.3 +dead +exit=none ", bench.status(), re.M)
     assert not (bench.run_dir("cut") / "exit_code").exists()
     survived = bench.step("cut")
     assert 6 <= survived < 30
@@ -354,7 +355,7 @@ def test_f_d_a_killed_job_reads_dead_the_waiter_says_died_and_the_same_command_r
     assert json.loads((bench.run_dir("cut") / "result.json").read_text()) == {"steps": 30, "total": 465.0}
     rows = [json.loads(line) for line in (bench.run_dir("cut") / "launches.jsonl").read_text().splitlines()]
     assert [(row["event"], row["launch"]) for row in rows] == [("launch", 1), ("launch", 2), ("end", 2)]
-    assert re.search(r"^cut +L0\.7 +dead +exit=0 \(DONE\) ", bench.status(), re.M)
+    assert re.search(r"^cut +L1\.3 +dead +exit=0 \(DONE\) ", bench.status(), re.M)
 
 
 # ================================================================================================ resumed runs (L07-I4)
@@ -383,7 +384,7 @@ def test_a_resumed_run_that_finishes_correctly_reads_done(bench):
     time, as the trainer recorded it in its checkpoints, it is DONE; before the fix it read ENDED_EARLY (20)."""
     done = cut_and_resume(bench, "resumed", min_s=1.5)
     assert done.returncode == 0, done.stdout
-    found = re.fullmatch(r"L0\.7 resumed DONE exit=0 duration=(\d+\.\d)s effective=(\d+\.\d)s run_effective=(\d+\.\d)s",
+    found = re.fullmatch(r"L1\.3 resumed DONE exit=0 duration=(\d+\.\d)s effective=(\d+\.\d)s run_effective=(\d+\.\d)s",
                          line_of(done))
     assert found, line_of(done)
     assert 1.5 <= float(found.group(3))                                        # judged on the whole run
@@ -430,7 +431,7 @@ def test_the_waiter_judges_the_whole_run_from_the_trainers_note(bench, monkeypat
     run = bench.run_dir("noted")
     run.mkdir(parents=True)
     now = time.time()
-    job = {"task": "L0.7", "pid": 2 ** 22 + 1, "pid_start": 1, "boot_id": state.boot_id(), "cmd": ["x"], "cwd": "/",
+    job = {"task": "L1.3", "pid": 2 ** 22 + 1, "pid_start": 1, "boot_id": state.boot_id(), "cmd": ["x"], "cwd": "/",
            "run_dir": str(run), "log": str(run / "job.log"), "started": now - 30.0, "expected_min_s": 60.0,
            "gpu_h": 0.0, "launch": launch, "child_pid": 2 ** 22 + 3, "child_start": 3, "exit_code": 0, "ended": now}
     (run / "exit_code").write_text("0\n")
@@ -452,7 +453,7 @@ def previous_boot_job(bench: Bench, name: str, sleeper: subprocess.Popen) -> Non
     """Write the record a power cut leaves: a job launched in another boot, whose pid number is alive again now."""
     run = bench.run_dir(name)
     run.mkdir(parents=True)
-    record = {"task": "L0.7", "pid": sleeper.pid, "pid_start": state.process_start_time(sleeper.pid),
+    record = {"task": "L1.3", "pid": sleeper.pid, "pid_start": state.process_start_time(sleeper.pid),
               "boot_id": OTHER_BOOT, "cmd": bench.dummy(name), "cwd": str(ROOT), "run_dir": str(run),
               "log": str(run / "job.log"), "started": time.time() - 500.0, "expected_min_s": 0.0, "gpu_h": 0.0,
               "launch": 1, "child_pid": None, "child_start": None, "exit_code": None, "ended": None}
@@ -466,10 +467,10 @@ def test_f_d_a_record_from_a_previous_boot_is_dead_never_alive(bench):
     sleeper = subprocess.Popen([sys.executable, "-c", "import time\nwhile True: time.sleep(0.05)"])
     try:
         previous_boot_job(bench, "stale", sleeper)
-        assert re.search(r"^stale +L0\.7 +dead \(previous boot\) +exit=none ", bench.status(), re.M)
+        assert re.search(r"^stale +L1\.3 +dead \(previous boot\) +exit=none ", bench.status(), re.M)
         done = bench.wait("stale")                                         # returns at once: it does not watch the pid
         assert done.returncode == jobs.EXIT_DIED
-        assert line_of(done).startswith("L0.7 stale DIED exit=none ")
+        assert line_of(done).startswith("L1.3 stale DIED exit=none ")
         assert line_of(done).endswith("(no exit code recorded; dead (previous boot))")
         assert sleeper.poll() is None                                      # the stranger with that pid was not touched
 
@@ -488,7 +489,7 @@ def test_a_job_that_ended_before_the_reboot_keeps_its_real_exit_code(bench):
         (bench.run_dir("finished") / "exit_code").write_text("3\n")
         done = bench.wait("finished")
         assert done.returncode == rc.EXIT_CAP and " CAP exit=3 " in line_of(done)
-        assert re.search(r"^finished +L0\.7 +dead \(previous boot\) +exit=3 \(CAP\) ", bench.status(), re.M)
+        assert re.search(r"^finished +L1\.3 +dead \(previous boot\) +exit=3 \(CAP\) ", bench.status(), re.M)
     finally:
         reap(sleeper)
 
@@ -511,7 +512,7 @@ def test_the_wrapper_killed_alone_leaves_a_live_job_that_cannot_be_relaunched(be
     child = bench.child("orphan")
     os.kill(bench.job("orphan")["pid"], signal.SIGKILL)
     wait_for(lambda: state.job_status(bench.job("orphan")) == state.ALIVE_NO_WRAPPER, what="the wrapper to be gone")
-    assert re.search(r"^orphan +L0\.7 +alive \(wrapper gone\) +exit=none ", bench.status(), re.M)
+    assert re.search(r"^orphan +L1\.3 +alive \(wrapper gone\) +exit=none ", bench.status(), re.M)
     refused = bench.launch("orphan", cmd)
     assert refused.returncode == rc.EXIT_REFUSED and "alive" in refused.stderr
     waiter = bench.start_wait("orphan")
@@ -530,7 +531,7 @@ def test_a_live_job_is_not_launched_twice(bench):
     first = bench.job("once")
     refused = bench.launch("once", cmd)
     assert refused.returncode == rc.EXIT_REFUSED == 2 and "once" in refused.stderr and "alive" in refused.stderr
-    other_name = run_py([TOOL, "launch", "--task", "L0.7", "--name", "twice", "--run-dir", bench.run_dir("once"), "--min-s", 0,
+    other_name = run_py([TOOL, "launch", "--task", "L1.3", "--name", "twice", "--run-dir", bench.run_dir("once"), "--min-s", 0,
                          "--gpu-h", 0, "--", *cmd], bench.env)
     assert other_name.returncode == rc.EXIT_REFUSED and "run folder" in other_name.stderr
     assert bench.job("once") == dict(first, child_pid=bench.child("once"), child_start=bench.job("once")["child_start"])
@@ -538,10 +539,10 @@ def test_a_live_job_is_not_launched_twice(bench):
 
 
 def test_launch_refuses_what_the_budget_does_not_allow(bench, tmp_path):
-    """Task L0.7 has no GPU-hours in configs/ste_learning.toml: a job that asks for some is not started."""
+    """Task L1.3 (a CPU task) has no GPU-hours in configs/ste_learning.toml: a job that asks for some is not started."""
     refused = bench.launch("greedy", bench.dummy("greedy"), gpu_h=0.5)
     assert refused.returncode == rc.EXIT_REFUSED
-    assert "task L0.7" in refused.stderr and "cap 0.0 GPU-h" in refused.stderr and "asked 0.5" in refused.stderr
+    assert "task L1.3" in refused.stderr and "cap 0.0 GPU-h" in refused.stderr and "asked 0.5" in refused.stderr
     assert "greedy" not in state.read()["jobs"] and not bench.run_dir("greedy").exists()
     unknown = bench.launch("nowhere", bench.dummy("nowhere"), task="L0.99")
     assert unknown.returncode == rc.EXIT_REFUSED and "L0.99" in unknown.stderr
@@ -551,8 +552,68 @@ def test_launch_refuses_what_the_budget_does_not_allow(bench, tmp_path):
     assert full.returncode == rc.EXIT_REFUSED and "used 3.000" in full.stderr and "sweep" not in state.read()["jobs"]
 
 
+def test_an_l1_task_launches_against_its_own_cap(bench):
+    """Gate G0 (owner, 22 Nov 2026): phase L1 is in work; ste_job.py launches its tasks against their caps in
+    configs/ste_learning.toml [budget_l1_l2] (L1.3 is a CPU task: 0 GPU-h)."""
+    done = bench.launch("fit", bench.dummy("fit", steps=4), task="L1.3")
+    assert done.returncode == 0, done.stderr
+    assert bench.wait("fit").returncode == 0 and state.read()["phase"] == "L1"
+    refused = bench.launch("greedy", bench.dummy("greedy"), gpu_h=0.5, task="L1.3")
+    assert refused.returncode == rc.EXIT_REFUSED and "task L1.3" in refused.stderr and "cap 0.0 GPU-h" in refused.stderr
+    assert "greedy" not in state.read()["jobs"] and not bench.run_dir("greedy").exists()
+
+
+def test_a_task_of_a_closed_phase_is_not_launched(bench):
+    """Phase L0 is closed (owner, G0, 22 Nov 2026): no L0 task launches against the committed settings, not even a CPU
+    job; its caps stay readable."""
+    for task, gpu_h in (("L0.7", 0.0), ("L0.12", 1.0)):
+        refused = bench.launch("old", bench.dummy("old"), gpu_h=gpu_h, task=task)
+        assert refused.returncode == rc.EXIT_REFUSED and f"task {task}" in refused.stderr and "closed" in refused.stderr
+    assert "old" not in state.read()["jobs"] and not bench.run_dir("old").exists()
+
+
+def l1_in_work_with_l0_open(tmp_path: Path) -> Path:
+    """A test-only settings file: phase L1 in work, L0 still open (so an L0 task can launch), the L1 + L2 cap 13.0."""
+    path = settings(tmp_path, 19.0, L0_11=3.0)
+    text = path.read_text().replace('phase = "L0"', 'phase = "L1"')
+    text += "\n".join(["[budget_l1_l2]", 'phases = ["L1", "L2"]', "closed = false", "phase_cap_gpu_h = 13.0",
+                       "[budget_l1_l2.task_cap_gpu_h]", *(f'"{task}" = 0.0' for task in TASK_IDS["L1"])]) + "\n"
+    path.write_text(text)
+    return path
+
+
+def test_the_state_records_the_phase_of_the_launched_task(bench, tmp_path):
+    """Fix round 1 (item 5): state.json's phase is the launched task's phase, not the phase in work."""
+    path = l1_in_work_with_l0_open(tmp_path)
+    done = bench.launch("old", bench.dummy("old", steps=4), task="L0.11", extra=("--settings", path))
+    assert done.returncode == 0, done.stderr
+    assert bench.wait("old").returncode == 0 and state.read()["phase"] == "L0"
+    assert bench.launch("new", bench.dummy("new", steps=4), task="L1.3", extra=("--settings", path)).returncode == 0
+    assert bench.wait("new").returncode == 0 and state.read()["phase"] == "L1"
+
+
+def test_carry_adds_the_other_machines_hours_to_the_l1_and_l2_cap(bench):
+    """One ledger per machine, one 13.0 for both: ``carry`` appends one marked row that counts toward the L1 + L2 cap,
+    not toward any task; status shows used (own rows + carried) of 13.0."""
+    assert "used 0.000 of 13.0 GPU-h (own rows 0.000, carried 0.000)" in bench.status()
+    done = run_py([TOOL, "carry", "--gpu-h", 2.5, "--note", "rtx5090 2026-11-24"], bench.env)
+    assert done.returncode == 0, done.stderr
+    assert "carried 2.5 GPU-h" in done.stdout and "budget_l1_l2" in done.stdout
+    (row,) = [json.loads(line) for line in shared.gpu_hours_log().read_text().splitlines()]
+    assert row["group"] == "carried:L1+L2" and row["device"] == budget.CARRIED_DEVICE and row["carried_gpu_h"] == 2.5
+    assert row["note"] == "rtx5090 2026-11-24"
+    assert "used 2.500 of 13.0 GPU-h (own rows 0.000, carried 2.500)" in bench.status()
+    assert budget.task_gpu_h("L1.9") == 0.0 and budget.phase_gpu_h("L1") == 0.0
+    for bad in ("-1", "nan", "inf", "-inf"):
+        refused = run_py([TOOL, "carry", f"--gpu-h={bad}", "--note", "x"], bench.env)
+        assert refused.returncode == rc.EXIT_REFUSED and "carried" in refused.stderr, bad
+    assert run_py([TOOL, "carry", "--gpu-h", 1.0, "--note", " "], bench.env).returncode == rc.EXIT_REFUSED
+    assert run_py([TOOL, "carry", "--gpu-h", 1.0], bench.env).returncode == rc.EXIT_REFUSED       # --note is required
+    assert len(shared.gpu_hours_log().read_text().splitlines()) == 1                             # nothing more written
+
+
 def test_bad_arguments_and_unknown_jobs(bench):
-    assert run_py([TOOL, "launch", "--task", "L0.7", "--name", "x", "--run-dir", bench.run_dir("x"), "--min-s", 0, "--gpu-h", 0],
+    assert run_py([TOOL, "launch", "--task", "L1.3", "--name", "x", "--run-dir", bench.run_dir("x"), "--min-s", 0, "--gpu-h", 0],
                   bench.env).returncode == rc.EXIT_REFUSED                # no command
     assert bench.launch("bad name", exit_cmd(0)).returncode == rc.EXIT_REFUSED
     assert bench.launch("neg", exit_cmd(0), min_s=-1.0).returncode == rc.EXIT_REFUSED
@@ -560,7 +621,7 @@ def test_bad_arguments_and_unknown_jobs(bench):
     assert state.read()["jobs"] == {}
     unknown = bench.wait("never_launched")
     assert unknown.returncode == jobs.EXIT_NO_SUCH_JOB == 22 and unknown.stdout == "" and "never_launched" in unknown.stderr
-    assert bench.status() == "no job has been launched\n"
+    assert bench.status().splitlines()[0] == "no job has been launched"
 
 
 def test_a_command_that_cannot_be_started_is_recorded_not_lost(bench):
@@ -618,7 +679,7 @@ def test_a_gpu_job_logs_its_hours_beat_by_beat_and_at_its_end(bench, tmp_path):
     assert job["started"] <= rows[0]["start"] and rows[-1]["end"] == pytest.approx(job["ended"], abs=0.5)
     used_s = budget.task_gpu_h("L0.11") * 3600.0
     assert used_s == pytest.approx(rows[-1]["end"] - rows[0]["start"]) and 0.5 <= used_s <= job["ended"] - job["started"]
-    assert budget.phase_gpu_h("L0") == budget.task_gpu_h("L0.11") and budget.task_gpu_h("L0.7") == 0.0
+    assert budget.phase_gpu_h("L0") == budget.task_gpu_h("L0.11") and budget.task_gpu_h("L1.3") == 0.0
 
 
 def test_f_d_a_gpu_job_that_asked_for_its_whole_cap_resumes_with_the_same_line(bench, tmp_path):
@@ -674,14 +735,14 @@ def test_an_owner_pause_stops_the_command_not_the_wrapper_and_is_not_counted(ben
     pause_script("pause", tmp_path, bench.shared, pattern)
     wait_for(lambda: proc_state(child) == "T", what="the command to be stopped")
     assert proc_state(job["pid"]) != "T"
-    assert re.search(r"^held +L0\.7 +alive \(paused\) +exit=none ", bench.status(), re.M)
+    assert re.search(r"^held +L1\.3 +alive \(paused\) +exit=none ", bench.status(), re.M)
     held_at = bench.step("held")
     time.sleep(1.2)                                                        # the pause itself: a fixed wait is the point
     assert bench.step("held") == held_at
     pause_script("resume", tmp_path, bench.shared, pattern)
     done = bench.wait("held")
     assert done.returncode == 0, done.stderr
-    found = re.fullmatch(r"L0\.7 held DONE exit=0 duration=(\d+\.\d)s effective=(\d+\.\d)s", line_of(done))
+    found = re.fullmatch(r"L1\.3 held DONE exit=0 duration=(\d+\.\d)s effective=(\d+\.\d)s", line_of(done))
     duration_s, effective_s = float(found.group(1)), float(found.group(2))
     paused_s = sum(end - start for start, end in pauses.paused_intervals())
     assert paused_s >= 1.2 and duration_s - effective_s == pytest.approx(paused_s, abs=0.11)
@@ -785,7 +846,7 @@ def test_the_waiter_takes_off_only_a_pause_that_stopped_the_jobs_command(bench, 
     run = bench.run_dir("judged")
     run.mkdir(parents=True)
     now = time.time()
-    job = {"task": "L0.7", "pid": 2 ** 22 + 1, "pid_start": 1, "boot_id": state.boot_id(), "cmd": ["x"], "cwd": "/",
+    job = {"task": "L1.3", "pid": 2 ** 22 + 1, "pid_start": 1, "boot_id": state.boot_id(), "cmd": ["x"], "cwd": "/",
            "run_dir": str(run), "log": str(run / "job.log"), "started": now - 100.0, "expected_min_s": 0.0,
            "gpu_h": 0.0, "launch": 1, "child_pid": 2 ** 22 + 3, "child_start": 3, "exit_code": 0, "ended": now - 10.0}
     (run / "exit_code").write_text("0\n")                                  # no such pids exist: the job is over
@@ -976,7 +1037,7 @@ def test_the_waiter_and_the_status_show_the_wrappers_faults(tmp_path, monkeypatc
     run = tmp_path / "runs" / "noted"
     run.mkdir(parents=True)
     now = time.time()
-    job = {"task": "L0.7", "pid": 2 ** 22 + 1, "pid_start": 1, "boot_id": state.boot_id(), "cmd": ["x"], "cwd": "/",
+    job = {"task": "L1.3", "pid": 2 ** 22 + 1, "pid_start": 1, "boot_id": state.boot_id(), "cmd": ["x"], "cwd": "/",
            "run_dir": str(run), "log": str(run / "job.log"), "started": now - 10.0, "expected_min_s": 0.0,
            "gpu_h": 0.0, "launch": 1, "child_pid": 2 ** 22 + 3, "child_start": 3, "exit_code": 0, "ended": now}
     (run / "exit_code").write_text("0\n")
@@ -1010,7 +1071,7 @@ def test_a_relaunch_under_the_waiter_does_not_mix_up_the_two_launches(bench, mon
     launch 1 from ``exit_code.1``, not the new launch's state."""
     run = bench.run_dir("twice")
     run.mkdir(parents=True)
-    first = {"task": "L0.7", "pid": 2 ** 22 + 1, "pid_start": 1, "boot_id": state.boot_id(), "cmd": ["x"], "cwd": "/",
+    first = {"task": "L1.3", "pid": 2 ** 22 + 1, "pid_start": 1, "boot_id": state.boot_id(), "cmd": ["x"], "cwd": "/",
              "run_dir": str(run), "log": str(run / "job.log"), "started": time.time() - 50.0, "expected_min_s": 0.0,
              "gpu_h": 0.0, "launch": 1, "child_pid": None, "child_start": None, "exit_code": None, "ended": None}
     second = dict(first, pid=2 ** 22 + 2, pid_start=2, launch=2, started=time.time())       # no such pids exist
@@ -1019,7 +1080,7 @@ def test_a_relaunch_under_the_waiter_does_not_mix_up_the_two_launches(bench, mon
     monkeypatch.setattr(state, "read", lambda: next(reads, {"jobs": {"twice": second}}))
     outcome = jobs.wait("twice", poll_s=0.01)
     assert (outcome.verdict, outcome.exit_code, outcome.status) == ("CAP", 3, 3)
-    assert outcome.line.startswith("L0.7 twice CAP exit=3 ")
+    assert outcome.line.startswith("L1.3 twice CAP exit=3 ")
 
 
 def test_the_waiters_own_codes_collide_with_no_job_code():

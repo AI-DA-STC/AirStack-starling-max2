@@ -63,12 +63,12 @@ No videos: the record says why.
 ### 1.4 Glossary terms to add
 
 Each is one line in `docs/GLOSSARY.md` §3. Terms tied to an open proposal are marked "proposed" until the owner rules;
-the existing rows "Tag (contact tag)" (physical contact, no tag in the main game) and STANDARDS §2 change only after the
-ruling on P1.
+P1 was ruled at G0 (owner, 22 Nov 2026: the main game has a 1-for-1 tag): STANDARDS §2 and §4 are changed; the reader
+page's row "Tag (contact tag)" in `docs/GLOSSARY.md` waits for the owner's yes (reader pages).
 
 | Term | One-line definition | Status |
 |---|---|---|
-| Tag radius | the 3-D distance between a Guard drone's and a Strike drone's centres below which both are out and land: 1.6 m (the filter's 1.10 m plus 0.5 m) | proposed (P1) |
+| Tag radius | the 3-D distance between a Guard drone's and a Strike drone's centres below which both are out and land: 1.6 m (the filter's 1.10 m plus 0.5 m) while the pipeline is built, 1.15 m main training after L2 | ruled (P1, G0, 22 Nov 2026) |
 | Option B filter | a safety-filter variant: for a Guard–Strike pair only the Guard drone swerves; team-mate pairs keep the even split | proposed (P2) |
 | Shared policy | one trained network copied onto every drone of a team; each drone feeds it its own view and gets its own command | decided (D6) |
 | Team critic | the part of training that scores the whole team's situation; used only during training, never flown | decided (D6) |

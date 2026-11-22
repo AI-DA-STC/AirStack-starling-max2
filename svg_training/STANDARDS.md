@@ -83,7 +83,9 @@ The programme's wording rules apply to every document and figure here
   in a translation line, for example "your defender = our Guard team, your attacker = our Strike team"; the rest of
   the page uses our words.
 - **A tag is physical contact** between a Guard drone and a Strike drone (owner, 14 November 2026).
-  Write "tag" or "contact tag". The programme's public pages do not describe contact between drones. The
+  Write "tag" or "contact tag". Since gate G0 (owner, 22 November 2026) the main game also has a tag at a
+  distance (§4 "Tag"); "contact tag" always means the side quest's. The programme's public pages do not describe
+  contact between drones. The
   contact-tag track ([plan](docs/plans/2026-11-17-contact-tag-track.md), DRAFT) may be described in this
   repository's public documents (owner, 18 November 2026; until then it was kept out of public and
   partner-facing material). The programme website still needs the owner's say-so.
@@ -146,18 +148,18 @@ are parameters in one game config, never constants in code.
 | Structures | a drone that touches a structure leaves the game; avoiding structures is learned. The flight stack has no obstacle avoidance, only a box fence | PROPOSED | `fence.py` |
 | Trained size range | 1–5 Guard, 1–3 Strike, drawn per game | PROPOSED | — |
 | Strike scores | a Strike drone is inside the zone | PROPOSED | S2: `configs/s2_game.toml` `[partner_rules] win_steps_in_zone` (one step) |
-| Tag | **side quest only** (owner, 15 November 2026): physical contact between a Guard drone and a Strike drone; there is no tag radius. The main game has no tag: the partner rules preset keeps opposite teams apart ([docs/specs/2026-11-15-s2-game-and-plug-in-design.md](docs/specs/2026-11-15-s2-game-and-plug-in-design.md) §4a) | FIXED | owner, 14 and 15 November 2026 |
+| Tag | **Main game: a 1-for-1 tag** (owner, gate G0, 22 November 2026, P1; [ste_learning/DISCUSSION §14](ste_learning/DISCUSSION_2026-11-19_20.md#14-gate-g0-rulings-owner-22-nov-2026)): a Guard drone and a Strike drone whose 3-D centres are closer than the tag distance both leave the game; in STE's learning track 1.6 m while the pipeline is built, 1.15 m main training after phase L2 ([ste_learning/GAME_SPEC.md](ste_learning/GAME_SPEC.md)). **Side quest, unchanged** (owner, 15 November 2026): the contact tag, physical contact between a Guard drone and a Strike drone. Until 22 November 2026 this row ruled that the main game had no tag and no tag radius, with the partner rules preset keeping opposite teams apart ([docs/specs/2026-11-15-s2-game-and-plug-in-design.md](docs/specs/2026-11-15-s2-game-and-plug-in-design.md) §4a) | FIXED | owner, 14 and 15 November 2026; gate G0, 22 November 2026 |
 | Contact, tier 1 | the two centres closer than **0.50 m**: twice the 0.248 m radius of the smallest sphere that encloses the airframe with its propellers. A property of the airframe, not a game rule; a sphere is slightly generous | MEASURED | vertices of `AirStack/simulation/isaac-sim/assets/robots/starling2max.usd`, read 14 November 2026 |
 | Contact, tier 2 | a PhysX contact between the two bodies | PROPOSED | — |
 | After a tag, Strike drone | it goes down: it leaves the game | FIXED | owner, 14 November 2026 |
 | After a tag, Guard drone | it leaves too by default: setting `guard_survives_tag_prob` = 0 (both leave); training may draw it per game; evaluation reports 0 and 1 separately | FIXED | owner, 15 November 2026 |
-| Game length | 60 s (1,200 steps) | PROPOSED | S2: `configs/s2_game.toml` `[partner_rules] game_steps` |
+| Game length | 60 s (1,200 steps). STE's learning track: 120 s, shorter clocks only as training experiments (owner, gate G0, 22 November 2026; [ste_learning/GAME_SPEC.md](ste_learning/GAME_SPEC.md)) | PROPOSED | S2: `configs/s2_game.toml` `[partner_rules] game_steps` |
 | Arena, lab scale | goals are drawn from a 3 × 3 m box, 0.5–1.8 m high; the boundary that acts on a drone is the 6.5 × 6.5 × 4 m keep-in fence (x, y −3.25…3.25 m, z 0…4 m, centred on the mocap origin; CHG-0072, 16 Nov; was 4 × 4 × 4 m, CHG-0062) | MEASURED | `goal_two_ours.yaml` (`arena_low/high`, `fence_min/max`), read 18 Nov 2026 (owner approved the correction) |
 | Environments | games are played in realistic 3D environments, the construction-site world first; an empty arena is only the first build step | FIXED | owner, 14 November 2026 |
 | Environment ladder | E0 open arena; E1 random blocks and columns; E2 the construction-site world plus E1 clutter; E3 more worlds, one held out; E4 a scanned real place; E5 a camera-ready copy | PROPOSED | [docs/DESIGN.md](docs/DESIGN.md) §7 |
 | Per game | its own placement in the world, start positions and clutter | PROPOSED | RESEARCH §10 |
 | The zone's size and place in each world; the playing volume | OPEN | OPEN | owner |
-| Zone radius | OPEN in metres; NUS's balanced ratio is in the October 2026 monthly report | OPEN | owner + NUS; S2 draws 10–25 % of the arena side, `configs/s2_game.toml` `[arena] zone_radius_frac` |
+| Zone radius | OPEN in metres; NUS's balanced ratio is in the October 2026 monthly report. STE's learning track: 1.6 m (owner, gate G0, 22 November 2026; [ste_learning/GAME_SPEC.md](ste_learning/GAME_SPEC.md)) | OPEN | owner + NUS; S2 draws 10–25 % of the arena side, `configs/s2_game.toml` `[arena] zone_radius_frac` |
 | Height | games are scored in the horizontal plane; height is held in a band at first | PROPOSED | S2: `configs/s2_game.toml` `[arena] height_band_m`, `start_height_m`; S2 also reports closest approach in 3-D ([docs/S2_RESULTS.md](docs/S2_RESULTS.md)) |
 | Drop-out | a drone is removed at a random time in a set fraction of games | PROPOSED | S2: `configs/s2_game.toml` `[game] dropout_fraction` (0) |
 | Start positions | anywhere in the playing volume that is clear of structures and respects the keep-out distance within a team, drawn per game | PROPOSED | [docs/RESEARCH.md](docs/RESEARCH.md) §7; S2 open arena: rings, `configs/s2_game.toml` `[starts]` |

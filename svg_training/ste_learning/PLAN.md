@@ -1,7 +1,8 @@
 INTERNAL · the master plan of STE's learning track, version 2 (20 Nov 2026, after the independent soundness review).
-**Phase L0 is final and APPROVED (owner, 20 Nov 2026: L0 only, cap 19 GPU-h). Phases L1–L9 are the intended path; they
-are re-baselined at gate G0, the end of L0, and their budgets are OPEN.** The approval covers no PROPOSED value (the
-1.6 m tag, the 0.2 band) and no phase after L0. Task status: `status/STATUS_LATEST.md`. Where this page and a reference page differ,
+**Phase L0 is done (approved 20 Nov 2026, cap 19 GPU-h, 13.77 used). Gate G0 was RULED by the owner on 22 Nov 2026**
+([DISCUSSION §14](DISCUSSION_2026-11-19_20.md#14-gate-g0-rulings-owner-22-nov-2026)): the main game has a 1-for-1 tag, 1.6 m to build the pipeline and 1.15 m main training after L2
+(option (d)); **L1 + L2 are approved together at 13 GPU-h and L1 is in work**; L3–L9 are the intended path, their
+budgets OPEN until re-baselined. Task status: `status/STATUS_LATEST.md`. Where this page and a reference page differ,
 this page wins. Why each choice: [DISCUSSION](DISCUSSION_2026-11-19_20.md).
 
 # PLAN: STE learning track
@@ -66,8 +67,8 @@ asked to be stopped for.
 
 | Phase | Status | What | Math library | Simulator | Ends at |
 |---|---|---|---|---|---|
-| **L0 Game definition and feasibility** | **APPROVED (owner, 20 Nov 2026), in work** | which game the track trains; is it worth learning; can tier 2 train, and at what cost | PyTorch | STE game engine (tier 1), Isaac Lab (tier 2) | **gate G0**: the owner rules on the game and the route, with numbers |
-| L1 Drone model | intended | estimator effect (delay + noise), drag, fit to logs, comparison with the AirStack simulator | PyTorch | Isaac Lab (tier 2), AirStack simulator (logs only) | lead (exploratory until the NEAR-962 flight) |
+| **L0 Game definition and feasibility** | **done; G0 ruled (owner, 22 Nov 2026)** | which game the track trains; is it worth learning; can tier 2 train, and at what cost | PyTorch | STE game engine (tier 1), Isaac Lab (tier 2) | **gate G0**: the owner rules on the game and the route, with numbers |
+| L1 Drone model | **in work (approved with L2 at G0, 22 Nov 2026)** | estimator effect (delay + noise), drag, fit to logs, comparison with the AirStack simulator; its training reads at tag 1.6 m, with a 1.15 m side track (G0, option (d)) | PyTorch | Isaac Lab (tier 2), AirStack simulator (logs only) | lead; human gates: the NEAR-962 flight before the fit is used for a run of record, and the SIM-ONLY values in tier 2 |
 | L2 Game rules in the training copy | intended | the rules chosen at G0, landing obstacles, drone loss, filter option B with its convergence gate | PyTorch | tier 1, then tier 2 | gate per change; **P2 ruling** |
 | L3 Learner | intended | observation v0.3, attention encoder, shared actor, team critic, PPO | PyTorch | tier 1 pilot, tier 2 smoke | owner approves observation v0.3 |
 | L4 Evaluation suite and gates | intended | suite, gates file, calibration on known players | PyTorch | tier 1, tier 2 | owner approves gate limits |
@@ -117,7 +118,8 @@ about 80 hours.
 | **Budget** for L1–L9 | all of the above | a ceiling per phase |
 
 After G0 the lead re-baselines L1–L9 (tasks, order, budgets), updates this page and WORK_BREAKDOWN, and the
-documentation follows.
+documentation follows. **Ruled 22 Nov 2026:** every question above except the L3–L9 budget, as G0_REPORT section 3 recommended, with option
+(d) for the tag and L1 + L2 at 13 GPU-h; the rulings and what stays open are in [DISCUSSION §14](DISCUSSION_2026-11-19_20.md#14-gate-g0-rulings-owner-22-nov-2026).
 
 ## 6. How each task moves: develop → test run → debug → validate → QC → document
 
@@ -173,12 +175,17 @@ this before the first overnight run.
 **Stage 5.1 lesson.** It finished at 21:06 on 19 Nov and was scored only when the owner asked at 22:00, because no
 watcher was armed. Every launch now arms its watcher in the same step.
 
+**Machine switch (owner, 22 Nov 2026).** A task still running at the Monday laptop → RTX 5090 switch is not cut short or
+skipped: the laptop job stops cleanly, everything is logged (records, LEDGER, status, HANDOFF §0, `~/claude-handoff.md`),
+merged to `development`, and the work resumes on the 5090 ([DISCUSSION §14](DISCUSSION_2026-11-19_20.md#14-gate-g0-rulings-owner-22-nov-2026)).
+
 ## 9. Budgets
 
 | Item | Budget | Status |
 |---|---|---|
 | **L0** (§4 caps) | **19 GPU-h** | **FIXED: approved by the owner, 20 Nov 2026** (task split PROPOSED by the lead; `configs/ste_learning.toml`) |
-| L1–L9 | OPEN | set at G0 from L0.2 and L0.13. Version 1 guessed ≈ 60 GPU-h; the review estimates tier-2 training from scratch at 3–10× that, and counted costs version 1 left out (3 seeds at the learner stage, six exploiter trainings, a second training for the filter-mismatch study) |
+| **L1 + L2** | **13 GPU-h** (12 + one confirming seed), plus about 1 h of AirStack simulator time | **FIXED: approved by the owner at G0, 22 Nov 2026** ([DISCUSSION §14](DISCUSSION_2026-11-19_20.md#14-gate-g0-rulings-owner-22-nov-2026)); inside it: L1.11 Strike team trained against guard_field at 1.6 m, L1.12 T46's 1.6 m Guard team scored against every Strike script, the cross-play scoring, and L1.13 the shorter-training-clock 1.15 m Strike run; the training-settings sweep (G0 ruling R18) is not |
+| L3–L9 | OPEN | re-baselined later (costed draft planning figure about 87 GPU-h at tag 1.6 m). Version 1 guessed ≈ 60 GPU-h; the review estimates tier-2 training from scratch at 3–10× that, and counted costs version 1 left out (3 seeds at the learner stage, six exploiter trainings, a second training for the filter-mismatch study) |
 | Per job | wall clock = cap × 1.5, pauses excluded; progress check at launch + 45 min; no launch below 50 GB free disk | PROPOSED |
 
 The GPU is shared:
@@ -205,7 +212,7 @@ every 2 hours (PROPOSED; the owner may prefer the full update regardless). Templ
 
 - This folder reached `main` on 20 Nov (the owner asked for the documentation there); since the evening of 20 Nov the
   work lands on `development`, the branch both machines share (`../CLAUDE.md`, "Two machines, one working branch"). It holds no NUS source, names or
-  private messages. L0 was approved by the owner on 20 Nov 2026; no later phase starts without its own approval.
+  private messages. L0 was approved by the owner on 20 Nov 2026, and L1 + L2 at gate G0 on 22 Nov 2026 (13 GPU-h); no later phase starts without its own approval.
 - Code, tests, records and ledger rows are ff-merged to `development` by the lead after QC. Reader pages go to
   `development` only with the owner's yes; `main` moves only on the owner's word.
 - Status files are committed at session end. HANDOFF §0 gets a dated line per session.
@@ -218,20 +225,30 @@ every 2 hours (PROPOSED; the owner may prefer the full update regardless). Templ
 |---|---|---|
 | 1 | Approve phase L0 (game definition and feasibility) with a cap of 19 GPU-h, alone on the GPU for its probes? | yes. **ANSWER: approved (owner, 20 Nov 2026)** |
 | 2 | Heartbeat when everything waits on you: the full update every 30 min, or one line every 2 h? | one line every 2 h. **ANSWER: none; the standing rule holds (full update every 30 min)** |
+| 3 | Gate G0: the game, the route and the L1 + L2 budget | **ANSWER: ruled 22 Nov 2026** ([DISCUSSION §14](DISCUSSION_2026-11-19_20.md#14-gate-g0-rulings-owner-22-nov-2026)) |
 
 The merge of this folder to `main`, with its README, flowcharts and agent files, was asked for by the owner on 20 Nov
 and is done with this version.
 
-Everything else (tag and zone, what a tag costs, team sizes, where to train, environments, the demo, the L1–L9
-budget, filter option B, the AirStack approach) is ruled at its gate, with numbers.
+Still open after G0 (not needed before L1; each is brought when its phase starts, with numbers):
+
+| Item | Brought at |
+|---|---|
+| D4 the AirStack approach | L7 |
+| P7 drone loss in the game | L2 |
+| P8 do attacker drones run the filter (a question for the programme / NUS) | — |
+| P4 video style | — |
+| P2 filter option B | the L2 gate |
+| P6 a CMU filter-change proposal (the owner sends it) | OPEN: when option B is ruled |
+| The L3–L9 budget | re-baselined later |
 
 ## 13. Main risks
 
 | Risk | Check | If it happens |
 |---|---|---|
-| The proposed rules make the game trivial for one side (F1, F2) | L0.11, L0.12 | G0: another variant (radius, margin, what a tag costs, sizes), or no proximity tag |
-| Tier 2 cannot train, or costs too much (F7) | L0.2, L0.13 | G0: league on tier 1 with tier 2 for fine-tuning and evaluation |
-| A scripted Guard is enough for the demo (F9) | L0.11 1v1 | G0: the demo shows a scripted 1v1; learning is shown in simulation |
+| The rules ruled at G0 make the game trivial for one side (F1, F2) | L0.11, L0.12 (worth learning at 1.6 m; G0 ruled 22 Nov 2026); L1.9, L1.10, L2.7 | the owner rules another variant (radius, margin, what a tag costs, sizes), or no proximity tag |
+| Tier 2 cannot train, or costs too much (F7) | L0.2, L0.13 (T53 PASS; D3 kept at G0) | the owner revisits D3: league on tier 1 with tier 2 for fine-tuning and evaluation |
+| A scripted Guard is enough for the demo (F9) | L0.11 1v1; L1.9 | ruled at G0: the demo shows the scripted 1v1 at 1.6 m until a trained team passes the opponent panel; learning is shown in simulation |
 | Option B makes the filter fail to converge | L2 gate (T31 statistic) | keep the equal split for training |
 | The strategy depends on attackers running our filter | robustness suite | H2 |
 | Self-play cycles or forgets | league with a pool and a held-out set | change the mix (lead); H1 if it persists |

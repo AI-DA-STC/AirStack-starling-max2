@@ -1,0 +1,11 @@
+{
+ "variant": "tag_1p15",
+ "side": "strike",
+ "cap_h": 4.8,
+ "run0": false,
+ "pilot_json": "runs/2026-11-21_ste_l012_pilot/pilot.json",
+ "pilot_json_sha256": "b029a9013098260679159a97a27471a0f6c15ae6239d367fc35f2f0c694a9d12",
+ "run0_json": "runs/2026-11-22_ste_l012c_run0/learner_control.json",
+ "run0_json_sha256": "a05c0f0c6df956a7414140b61a039c44b3c98c8e315d0b47ad3c6e815fbafe11",
+ "learner_control_accepted": null
+}

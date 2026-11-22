@@ -111,9 +111,10 @@ def pause_script(command: str, tmp_path: Path, shared: Path, pattern: str, legac
 
 
 def settings(tmp_path: Path, phase_cap: float, **caps: float) -> Path:
-    """A settings file for phase L0: the given phase cap, the given task caps (L0_11=3.0 means "L0.11" = 3.0)."""
+    """A test-only settings file with phase L0 in work and OPEN (the committed file's L0 is closed since G0, 22 Nov
+    2026): the given phase cap, the given task caps (L0_11=3.0 means "L0.11" = 3.0)."""
     named = {name.replace("_", "."): cap for name, cap in caps.items()}
-    lines = ["[track]", "plan_version = 2", 'phase = "L0"', "[budget]", f"phase_cap_gpu_h = {phase_cap!r}",
+    lines = ["[track]", "plan_version = 2", 'phase = "L0"', "[budget]", "closed = false", f"phase_cap_gpu_h = {phase_cap!r}",
              "[budget.task_cap_gpu_h]", *(f'"{task}" = {named.get(task, 0.0)!r}' for task in TASK_IDS["L0"])]
     path = tmp_path / "ste_learning.toml"
     path.write_text("\n".join(lines) + "\n")

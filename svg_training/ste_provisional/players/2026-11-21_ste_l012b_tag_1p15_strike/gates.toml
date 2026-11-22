@@ -1,0 +1,174 @@
+# STE task L0.12b Bubble tag check, part 2: the BEST-RESPONSE RUNS (INFO). The gate file, written before any run of this
+# part (STANDARDS section 7), in the format of configs/ste_l012/gates.toml (driver scripts/ste_exploit_l012.py, logic
+# ste/exploit.py, ste/exploit_train.py). QC reviews it before the first launch.
+#
+# Why (owner decision 21 Nov 2026): tag radius 1.15 m, the safety filter's 1.10 m keep-out (0.55 m bubble each) + 0.05 m,
+# the closest safe equivalent of physical contact (configs/ste_l011/tag_1p15.toml; screen: configs/ste_l012b/
+# screen_gates.toml). L0.12's method on one variant: an EXPLOITER GUARD TEAM trained against the best scripted Strike s*
+# and an EXPLOITER STRIKE TEAM trained against the best scripted Guard g*, g* and s* from the screen by the L0.11 rule.
+# The measured quantity, the controls, the verdict rule and the band are L0.12's (configs/ste_l012/gates.toml header,
+# [controls], [verdict]); read that file's comments for each.
+#
+# FILL AFTER THE SCREEN (the only edits allowed before run 0; the driver refuses until they are right):
+#   1. build the reference from the screen's run folder (read only):
+#        scripts/ste_l012_reference.py --t44 runs/<screen run> --out configs/ste_l012b/screen_reference.npz --variants tag_1p15
+#      (it refuses unless the screen's job exited 0, every control in its controls.json is PASS and every cell started
+#      from one start set; [reference] start_sha256 below must then match: T44's; the driver also checks that the
+#      reference was made under the screen gate file pinned in [reference] t44_gates_sha256: L0.12b QC 1);
+#   2. put its sha256 in [reference] sha256, and the screen's g* and s* (results.md "Shortlist", or
+#      ste/exploit.star_players on the file) in [variants] tag_1p15 g_star / s_star: the driver recomputes them from the
+#      reference by code and refuses a mismatch (exit 2);
+#   3. if s* is a z_up_info script (strike_high, strike_low), add strike_straight to extra_eval_opponents.guard as L0.12
+#      did at tag 1.4 m (evaluation only; the gate file refuses to load without it, QC 3); then re-hash this file and
+#      launch run 0. The values below are placeholders.
+#
+# LEAD CALLS 21 Nov 2026 (L0.12b), each made before any run:
+# - Budget: charged to task L0.12 (cap 6.0 GPU-h, 3.37 used): scripts/ste_job.py launch --task L0.12. A new key L0.12b
+#   of 1.8 GPU-h would take the task caps to 20.3 GPU-h, past the owner's 19.0 phase cap. LEAD CALL 21 Nov 2026
+#   (L0.12b Q2): agreed, no new key.
+# - Pilot: L0.12's pilot is reused (runs/2026-11-21_ste_l012_pilot/pilot.json, copied into this worktree's runs/): same
+#   sizes (16,384 games), same device (laptop RTX 5070 Ti), same day. The driver reads only its Strike recipe
+#   (ste/exploit.recipe_problem), which equals [trainer] side_overrides.strike below; no code change was needed.
+# - Run 0 is re-run under this file (the driver requires run 0's gate sha256 to equal the runs'). Run 0 must play a
+#   variant of [variants], so it plays tag_1p15 against the parked Guard (L0.12: base, PASS at update 10, 0.06 GPU-h).
+#   The criterion is L0.12's (the trained Strike reaches the parked Guard at least as often as scripted strike_straight,
+#   less 0.05), but the BAR MOVES: it is the screen's tag 1.15 m cell guard_parked_centre v strike_straight, not base's
+#   466 of 1,000 (T44), and is likely higher (a smaller tag stops fewer Strike drones). The lead reads that cell in the
+#   screen's results.md before launching run 0. A run 0 FAIL means no Strike run (never overridden: L0.12's rule).
+# - Step budget and cap, LEAD CALL 21 Nov 2026 (L0.12b Q1): L0.12's 550 M game-steps (88 updates), so tag 1.15 m is like
+#   for like with base, 1.2 m and 1.4 m, and --cap-h 0.85 on run 0 and both runs (the owner approved the extra hours;
+#   L0.12's launcher cap still fits: 3.37 + about 1.4 < 6.0). At 0.85 h a run CANNOT stop at the cap reserve before its
+#   budget by construction (L0.12's tag 1.2 m Strike run, T47, stopped at update 87 of 88 at 0.75 h: its trained Strike
+#   team waited out the 120 s clock, so every learning-curve read ran the full 2,400 ticks). Arithmetic
+#   (tests/test_ste_l012b.py checks it), from L0.12's logged Strike runs on the same laptop: cap C = 0.85 h = 3,060
+#   effective s; controls batch B = 100 s (the worst measured, tag 1.2 m Strike, 95 s); final reserve
+#   R = max(600, 2 x (2B + 120)) = 640 s; start-up O = 10 s (measured 1 s); one Strike update U = 21 s (worst of the three
+#   Strike runs 20.0 s, + 5 %); one learning-curve read K = 56.5 s every 10 updates (worst 53.8 s, + 5 %). Update N
+#   starts only if O + B + (N - 1) U + floor((N - 1) / 10) K <= C - R: N = 88 gives 2,389 <= 2,420 s. Check on the
+#   measured run itself: T47 had used 2,098 effective s when update 88 would have started; + 5 % = 2,203 <= 3,060 - 620.
+#   At 0.75 h (C - R = 2,060 s) update 88 does not start: hence the higher cap. Raising final_reserve_s would only stop
+#   training sooner. If tag 1.15 m makes the filter slower per tick than tag 1.2 m, the margin is about 30 s plus the
+#   5 % margins: the lead compares the screen's tag_1p15 and ctl_reference_replay batch seconds before launching.
+# - Unchosen tags (LEAD CALL 21 Nov 2026 (L0.12b Q3, Q4)): pushed together (the main share) and filter active at the tag
+#   (an upper bound, velocity change > 1e-3 m/s), defined in configs/ste_l012b/screen_gates.toml; reported for every
+#   cell of the final and INFO batches, in verdict.json and in the record.
+#
+# Simulator: training simulator, tier 1 (fast engine), Starling layer on: commander copy, safety filter on every pair
+# (1000 sweeps, check every 8), fitted PX4 response (exploratory); study tag on at 1.15 m (P1; study runs only).
+# Results are "observed in the training simulator". NEVER SUSPEND THE MACHINE DURING A GPU JOB (tooling task
+# L07-SUSPEND); pause with scripts/gpu_pause.sh instead.
+
+[run]
+task = "L0.12"                     # the budget key (LEAD CALL above); the run folders and records are named l012b
+kind = "INFO"
+device = "cuda"
+size = "3v3"
+eval_games = 1000                  # VALIDATION_QC section 0 rule 2; T44's 1,000 starts (the screen's are the same, loaded)
+ticks_cap = 2400                   # = the game length (120 s): no evaluation game is cut short
+curve_seed = 120900                # L0.12's curve starts (so the learning curves are comparable with L0.12's)
+curve_games = 256
+clip_seed = 120950
+cap_check_every_ticks = 100
+tag_edge_margin_m = 0.01           # unchosen-tag measurement, as configs/ste_l012b/screen_gates.toml (definition there)
+
+[reference]
+# The screen's reference: T44's 1,000 starts (loaded by the screen, so the same set) and the per-game results of the
+# screen's 30 tag 1.15 m cells, made by scripts/ste_l012_reference.py from the screen's run folder (FILL step 1).
+file = "configs/ste_l012b/screen_reference.npz"
+sha256 = "49014000d07e8b52ae579deb325dad53d98c5020f533026dfbff778f306b2296"   # FILLED BY THE LEAD 21 Nov 2026 from runs/2026-11-21_ste_l012b_screen (exit 0, every control PASS)
+start_sha256 = "5aeba7ab2b582f2973034c8203c17ed3e8239fef7029a1f991fe95b82369843c"   # T44's 3v3 start set
+t44_gates_sha256 = "881375f054a78ae33c7fd330e271a4e3b27a0a1cf3d58eca4b893cdca8ce2479"   # the screen's gate file (configs/ste_l012b/screen_gates.toml)
+t44_record = "records/<date>_ste_l012b_screen_record.md (the screen's record, written by the lead)"
+t44_run = "2026-11-21_ste_l012b_screen"
+label = "the L0.12b scripted screen (configs/ste_l012b/screen_gates.toml)"
+
+[games]
+tag_1p15 = { file = "configs/ste_l011/tag_1p15.toml", sha256 = "b2e09683f7088964a7d1ca15dfc9c98d1e04c15e96b14196d6971afb75f27580" }
+
+[players]
+guards = ["guard_parked_centre", "guard_parked_ring", "guard_mark_edge", "guard_mirror", "guard_field"]
+strikes = ["strike_straight", "strike_flank", "strike_high", "strike_low", "strike_sacrifice", "strike_converge"]
+z_up_info = ["strike_high", "strike_low"]
+z_up_label = "tier 1 vertical response not fitted (s2b.toml z_up_info)"
+
+[variants]
+# g_star / s_star: FILLED BY THE LEAD 21 Nov 2026 from the screen (H 0.645 guard_field, R 0.355 strike_straight; s* is not
+# strike_high/low, so no extra opponent). The driver recomputes them from the reference and refuses a mismatch.
+# train_seed: one per side, never the scoring starts' seed (110000), curve_seed or clip_seed, nor an L0.12 seed.
+tag_1p15 = { game = "tag_1p15", g_star = "guard_field", s_star = "strike_straight", role = "owner variant (bubble tag)", train_seed = { strike = 120401, guard = 120402 }, extra_eval_opponents = { strike = [], guard = [] } }
+
+[trainer]
+# configs/ste_l012/gates.toml [trainer] as the lead filled it (the T41 recipe, the shaped Strike recipe picked by the
+# L0.12 pilot), with L0.12's 550 M game-steps (LEAD CALL above, Q1): equal to L0.12's [trainer] (a test checks it).
+algorithm = "IPPO"
+decision_ticks = 12
+num_games = 16384
+game_steps_per_run = 550_000_000   # L0.12's; with --cap-h 0.85 it cannot stop at the cap reserve (header, LEAD CALL Q1)
+rollouts = 32
+learning_epochs = 5
+mini_batches = 4
+learning_rate = 3.0e-4
+hidden = [128, 128]
+init_log_std = -1.6
+frozen_log_std_axes = ["yaw"]
+zero_mean_init = true
+discount_factor = 0.99
+gae_lambda = 0.95
+entropy_loss_scale = 0.0
+value_loss_scale = 2.5
+ratio_clip = 0.2
+value_clip = 0.2
+grad_norm_clip = 0.5
+shaping_weight = 0.0
+strike_fallback = { shaping_weight = 1.0 }
+strike_fallback_label = "shaped Strike recipe"
+side_overrides = { strike = { shaping_weight = 1.0 }, guard = {} }   # = L0.12's pilot pick (pilot.json strike_recipe)
+checkpoint_every_updates = 1
+curve_every_updates = 10
+final_reserve_s = 600
+final_reserve_factor = 2.0
+clip_reserve_s = 120
+
+[controls]
+# As configs/ste_l012/gates.toml [controls]; the script cells replay the SCREEN's cells (the reference above).
+stop_on_fail = true
+replay_count_tol_cuda_games = 10
+replay_differ_tol_cuda_games = 20
+
+[verdict]
+# As configs/ste_l012/gates.toml [verdict] (gain over the best script, learned, the 0.2 band on the better of script and
+# exploiter), on the one variant. Also reported (INFO): the unchosen-tag shares of every evaluated cell.
+band = 0.2
+gain_rule = "intervals_disjoint"
+learned_rule = "trained_low_above_untrained_high"
+order = ["tag_1p15"]
+strike_not_launched = "run 0 FAIL: the trainer did not learn the easy Strike task (against the parked Guard) at the run budget; no Strike run was launched"
+follow_up_seeds = []
+
+[videos]
+games = 4
+keep = 2
+max_ticks = 2400
+speed = 8
+fps = 10
+dpi = 50
+
+[pilot]
+# Not run under this file (L0.12's pilot is reused, LEAD CALL above); the format requires the section.
+variant = "tag_1p15"
+num_games = [16384]
+updates = 1
+warmup_updates = 1
+probes = [{ side = "strike" }, { side = "strike", shaping_weight = 1.0 }]
+probe_num_games = 16384
+timing_batches = [{ variant = "tag_1p15", side = "strike" }]
+probe_updates = 3
+
+[run0]
+# As configs/ste_l012/gates.toml [run0], on tag_1p15 (LEAD CALL above): the shaped Strike recipe against the parked Guard
+# at the runs' budget and cap (--cap-h 0.85, LEAD CALL Q1), read every 10 updates and at the budget's last update.
+variant = "tag_1p15"
+opponent = "guard_parked_centre"
+script = "strike_straight"
+margin = 0.05
+train_seed = 120403

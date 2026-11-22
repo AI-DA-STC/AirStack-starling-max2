@@ -109,7 +109,7 @@ A skip is not a pass.
 
 ## Open questions
 
-1. STANDARDS conflicts: a 1.6 m tag (P1) replaces §4's FIXED "no tag radius" and "main game has no tag"; filter on every pair contradicts §5 rule 7 and `train-debug`'s per-team check. Owner ruling, then a STANDARDS edit.
+1. STANDARDS conflicts: a 1.6 m tag (P1) replaces §4's FIXED "no tag radius" and "main game has no tag"; filter on every pair contradicts §5 rule 7 and `train-debug`'s per-team check. Owner ruling, then a STANDARDS edit. **RULED 22 Nov 2026** ([DISCUSSION §14](DISCUSSION_2026-11-19_20.md#14-gate-g0-rulings-owner-22-nov-2026)): the main game has a 1-for-1 tag and STANDARDS §4 "Tag" is changed; §5 rule 7 and `train-debug`'s per-team check are not changed yet.
 2. Option B (P2) or every pair for training? It decides which mismatch cell is gated.
 3. Tag radius equals zone radius (1.6 m): is the game degenerate? Stage 3's design check answers; owner reads it.
 4. How should converted NUS Strike policies behave when a team-mate is tagged? Undefined today.

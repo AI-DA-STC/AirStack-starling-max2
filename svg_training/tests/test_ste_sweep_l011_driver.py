@@ -11,7 +11,7 @@ import sys
 import pytest
 
 from _l011_smoke import smoke_gates
-from _ste_tools import ROOT, SCRIPTS, reap, run_py, start_py, tool_env, wait_for
+from _ste_tools import ROOT, SCRIPTS, reap, run_py, settings, start_py, tool_env, wait_for
 from svg_training.ste import run_contract as rc, shared, sweep
 
 sys.path.insert(0, str(SCRIPTS))
@@ -216,9 +216,10 @@ def test_end_to_end_through_the_launcher_with_figures_and_a_clip(tmp_path):
     gates = smoke_gates(tmp_path / "gates.toml", run={"ticks_cap": 4})
     env = tool_env(tmp_path / "shared", OMP_NUM_THREADS="4")
     out = tmp_path / "runs" / "e2e"
+    open_l0 = settings(tmp_path, 19.0, L0_11=0.5)       # test-only settings: phase L0 is closed in the committed file (G0)
     launched = run_py([TOOL, "launch", "--task", "L0.11", "--name", "l011_e2e", "--run-dir", out, "--min-s", "0",
-                       "--gpu-h", "0", "--", sys.executable, DRIVER, "--gates", gates, "--run-dir", out, "--cap-h", CAP_H],
-                      env)
+                       "--gpu-h", "0", "--settings", open_l0, "--", sys.executable, DRIVER, "--gates", gates, "--run-dir",
+                       out, "--cap-h", CAP_H], env)
     assert launched.returncode == 0, launched.stderr
     waited = run_py([TOOL, "wait", "l011_e2e", "--poll-s", "0.2"], env, timeout_s=300)
     assert waited.returncode == 0, (waited.stdout, (out / "job.log").read_text())
@@ -400,3 +401,12 @@ def test_clips_stop_when_a_stop_is_asked(tmp_path):
     gates = sweep.load_gates(smoke_gates(tmp_path / "gates.toml"))
     notes = driver.make_clips(gates, tmp_path, should_stop=lambda: True)
     assert notes and "stopped" in notes[0] and not (tmp_path / "videos").exists()
+
+
+def test_the_pilot_cap_is_the_cap_of_the_gates_task_in_any_budget_section():
+    """Fix round 1 (G0): the cap comes from the gate file's task, whichever budget section holds it (L0 closed, L1 in
+    work), so the same driver serves an L1 task; without a gate file it is L0.11's, as before."""
+    from types import SimpleNamespace
+    assert driver.gates_cap_h() == 0.5
+    assert driver.gates_cap_h(SimpleNamespace(run={"task": "L0.11"})) == 0.5
+    assert driver.gates_cap_h(SimpleNamespace(run={"task": "L1.9"})) == 1.9

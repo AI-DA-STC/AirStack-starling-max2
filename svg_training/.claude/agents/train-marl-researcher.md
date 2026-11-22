@@ -22,7 +22,9 @@ Read `docs/DESIGN.md` §6 and §7, `STANDARDS.md` §4, §6, §7, and `docs/RESEA
 - **Reward.** Sparse win or lose per team, a small shaping term that fades out, smoothness added in a
   second phase only, and a small penalty on the safety filter's correction.
 - **Safety filter** in the loop on every pair of drones, as in flight (within a team only on the contact-tag track); the learner stores the unfiltered action
-  (STANDARDS §6.2). A tag is contact (0.50 m between centres in tier 1); there is no tag radius.
+  (STANDARDS §6.2). Since gate G0 (owner, 22 Nov 2026) the main game has a 1-for-1 tag at a distance (3-D centres
+  closer than the tag radius, 1.6 m first, 1.15 m later; STANDARDS §4 "Tag"); the contact tag (0.50 m between centres
+  in tier 1) stays the side quest.
 - **Environments.** Layout, placement and clutter drawn per game; one world held out; the other team
   masked when out of sight, with last-seen memory; the critic unmasked. Ask how the surroundings are
   encoded: a nearest-obstacle list failed in published work where a local distance patch worked.

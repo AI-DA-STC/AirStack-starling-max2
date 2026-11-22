@@ -199,7 +199,7 @@ next real flight. Real drones use game mode only after PREFLIGHT is updated and 
 
 | Item | What this architecture needs |
 |---|---|
-| P1 tag radius 1.6 m | `[tag] radius_m`. Overturns STANDARDS §4 "Tag" (no tag radius) and "Safety filter in the game", §5 rule 7 ("once per team"), AGENTS_AND_SKILLS "Rejected: a tag radius", and the `train-marl-researcher` body ("there is no tag radius"). All must change together after the ruling |
+| P1 tag radius 1.6 m | `[tag] radius_m`. **RULED 22 Nov 2026** ([DISCUSSION §14](DISCUSSION_2026-11-19_20.md#14-gate-g0-rulings-owner-22-nov-2026)): the main game has a 1-for-1 tag, 1.6 m to build the pipeline, 1.15 m main training after L2; STANDARDS §4 "Tag" is changed. Still to change with it: "Safety filter in the game", §5 rule 7 ("once per team"), AGENTS_AND_SKILLS "Rejected: a tag radius", and the `train-marl-researcher` body ("there is no tag radius") |
 | P2 option B | `[filter] share`; flight change A |
 | P3 | throughput step before any long run |
 | P7 drop-out part of the game | `[game] dropout_fraction > 0` and the roster in evaluation |

@@ -7,7 +7,7 @@ drone teams can learn strategies that then fly through AirStack on Starling 2 Ma
 It is a sibling of `AirStack/`, `tools/` and `localisation/`, and it edits none of them.
 
 **Status (2026-11-20).** S0, S1 and S2 closed; S2b built through Task 8, not closed; NUS port Phases 1–4 done,
-Phase 5 in progress (R0 T29, N0 T30 and C0 T33 PASS; 5.1 FAIL T43: route (b) stops; STE Guard policy T41 829/1000); **STE's own learning track: phase L0 approved by the owner (20 Nov, cap 19 GPU-h), in work; status in `ste_learning/status/STATUS_LATEST.md` ([ste_learning/](ste_learning/README.md))**; nothing of ours trained into a strategy; nothing flown.
+Phase 5 in progress (R0 T29, N0 T30 and C0 T33 PASS; 5.1 FAIL T43: route (b) stops; STE Guard policy T41 829/1000); **STE's own learning track: phase L0 done, gate G0 ruled by the owner 22 Nov 2026 (main game has a 1-for-1 tag, 1.6 m first; L1 + L2 cap 13 GPU-h), phase L1 in work; status in `ste_learning/status/STATUS_LATEST.md` ([ste_learning/](ste_learning/README.md))**; nothing of ours trained into a strategy; nothing flown.
 
 | Work | Where it stands | Read |
 |---|---|---|
@@ -155,6 +155,13 @@ other stopped, from git alone.
   owner: no long job left running on it). Before the switch (Sunday night, Friday evening) stop or finish the machine's
   jobs, commit, update HANDOFF §0 and the status, and give the owner the "Ready to push" line, so the other machine
   starts from `development`.
+- **Machine switch: never cut a task short** (owner, 22 Nov 2026: "if more time is needed after monday morning (i.e
+  still at task B or task x, slower than scheduled), dont worry you dont have to end the task prematurely to skip it and
+  move on, i can move to 5090 desktop on monday and resume the tests. Just make sure to log everything, update claude
+  handoff file and i will gitclone the dev branch on 5090 to continue working from there."): a task still running at
+  the Monday laptop → RTX 5090 switch is not cut short or skipped. The laptop job stops cleanly, everything is logged
+  (records, LEDGER, status, HANDOFF §0, `~/claude-handoff.md`), merged to `development`, and the work resumes on the 5090
+  ([DISCUSSION §14](ste_learning/DISCUSSION_2026-11-19_20.md#14-gate-g0-rulings-owner-22-nov-2026)).
 - **GPU jobs side by side** when the GPU has room (`--allow-siblings`); short pilots and speed measurements alone. The
   owner pauses jobs with `scripts/gpu_pause.sh` to use the PC: never resume a pause the session did not make.
 - **Videos inside every run** (STANDARDS §8); every result shown on a reader page has a GIF that plays on GitHub.

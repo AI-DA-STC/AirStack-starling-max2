@@ -16,8 +16,8 @@ wrapper's first act is to take that lock: the command starts only once the recor
 not it stopped a job: a pause is also the owner's "I am using this PC", and a job started during it would run
 unpaused; a pause the lead tagged ``GPU_PAUSE_BY=lead`` to run a solo job beside its paused siblings does not block,
 ``ste/pauses.py``), while a job of the same name, or any job in the same run folder, is alive, and when ``ste/budget.py`` says
-the hours asked for would pass the task's cap or the phase cap. The hours asked for are the
-job's total over all its launches in its run folder, so the hours it has already logged there are not asked for a
+the hours asked for would pass the task's cap or the phase cap, or the task's phase is closed. The hours asked for
+are the job's total over all its launches in its run folder, so the hours it has already logged there are not asked for a
 second time at a relaunch; a new run folder under an old job name is a new run and gets no such credit.
 
 Files in the run folder: ``job.json`` (the launch record: the ``state.json`` fields of ``ste/state.py`` plus the job
@@ -74,7 +74,7 @@ from pathlib import Path
 from typing import Any, NamedTuple
 
 from . import atomic, budget, pauses, shared, state
-from .config import SETTINGS_FILE, load_ste_learning
+from .config import SETTINGS_FILE, phase_of
 from .run_contract import EXIT_DONE, EXIT_NAMES, EXIT_REFUSED, PROGRESS_NAME
 
 EXIT_ENDED_EARLY = 20        # waiter: the job exited 0 but in less than its expected minimum
@@ -191,7 +191,7 @@ def launch(task: str, name: str, run_dir: Path | str, cmd: list[str], expected_m
     except budget.BudgetError as err:
         raise LaunchRefused(str(err)) from err
     settings = Path(settings).resolve()
-    phase = load_ste_learning(settings)[0].track.phase
+    phase = phase_of(task)                                       # the launched task's phase, not the phase in work
     cwd = Path(cwd if cwd is not None else os.getcwd()).resolve()
     cmd = [str(part) for part in cmd]
     wrappers: list[subprocess.Popen] = []

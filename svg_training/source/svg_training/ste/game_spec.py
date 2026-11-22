@@ -5,8 +5,9 @@ the top of ``STANDARDS.md``) and its source. The labels live in the file's comme
 ``key = value   # LABEL (source): text`` (the convention of ``configs/ste_learning.toml``). The sheet for readers is
 ``ste_learning/GAME_SPEC.md``; a test keeps its table and this file equal.
 
-The sheet lists, it does not decide: the game does not read this file. The ``tag_rule`` section records the proposal;
-the ``tag`` section (task L0.9) lists the game's own switch for the study tag with the defaults of
+The sheet lists, it does not decide: the game does not read this file. The ``tag_rule`` section records the tag rule
+ruled at gate G0 (owner, 22 Nov 2026: the main game has a 1-for-1 tag, 1.6 m first); the ``tag`` section (task L0.9)
+lists the game's own switch for the tag (code default off, switched on in the track's game files) with the defaults of
 ``core/game_config.TagCfg``, which a game file sets in its own ``[tag]`` table (a test keeps the two equal).
 
 The loader fails closed: an unknown or missing section or key, a value of the wrong type, a value spread over more than

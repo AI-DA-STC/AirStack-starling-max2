@@ -96,7 +96,8 @@ are the runs of record, plus about 3 h with the AirStack simulator holding the G
 them. Files: `configs/ste_learning.toml` (sections filled by later tasks; each value labelled), `source/svg_training/
 ste/__init__.py`, `source/svg_training/ste/config.py` (frozen dataclasses, unknown keys raise), `tests/test_ste_config.py`.
 Tests first: unknown key raises; every value has a status label comment. Done: tests pass on CPU; full suite unchanged.
-Depends: —. 3 h. Gate: none. Lead, 20 Nov 2026: in L0.1 the file holds only `[track]` and `[budget]` (the L0 caps); the
+Depends: —. 3 h. Gate: none. Lead, 20 Nov 2026: in L0.1 the file holds only `[track]` and `[budget]` (the L0 caps; since G0, 22 Nov 2026, also
+`[budget_l1_l2]`, the L1 + L2 cap of 13 GPU-h and the L1 task caps); the
 game sections arrive with the tasks that implement them, so "defaults reproduce today's game" is tested at L0.9, where
 the first game setting (`[tag]`) exists. The game's values live in `configs/ste_game.toml` (L0.8).
 
@@ -138,6 +139,31 @@ the owner: train on tier 1 with tier 2 only for pilots and evaluation, or shorte
 policy. D3 stands unless the owner changes it.
 
 ## L1 Drone model: estimator effect and drag (D7)
+
+### Phase L1 (in work, 22 Nov 2026)
+
+Approved with L2 at gate G0 ([DISCUSSION §14](DISCUSSION_2026-11-19_20.md#14-gate-g0-rulings-owner-22-nov-2026)): one cap of 13 GPU-h for L1 + L2. The task list is the L1 table of the
+[costed draft](drafts/L1_L9_COSTED_PLAN_DRAFT.md) (section 3). Config caps are `configs/ste_learning.toml`
+`[budget_l1_l2.task_cap_gpu_h]` (lead's split, PROPOSED; they sum to 8.1 after the side-track spec raised L1.11 to 0.9 and L1.13 to 1.0); the draft's figures are estimates.
+
+| Task | Draft estimate (GPU-h) | Config cap (GPU-h) |
+|---|---|---|
+| L1.0 5090 checks and speed re-measure | 0.3–0.5 | 0.5 |
+| L1.1 State delay and noise in tier 2 | 0.2 | 0.2 |
+| L1.2 Drag in tier 2 | 0.2 | 0.2 |
+| L1.3 Fit delay, noise and drag to real logs (CPU) | 0 | 0 |
+| L1.4 AirStack-simulator velocity-step logs (P5, approved) | about 1 h of simulator time | 0 |
+| L1.5 Tier 2 against the AirStack simulator | 0.3 | 0.3 |
+| L1.6 Batched estimator (only if needed) | 0–0.5 | 0.5 |
+| L1.7 Same effects in tier 1 | 0–0.1 | 0.1 |
+| L1.8 T46's base policies re-scored on the new tier 2 | 0.1–1.2 | 1.2 |
+| L1.9 1v1 best-response read at tag 1.6 m, plus a scripted 1v1 screen also at 1.15 m | 0.5–1.9 | 1.9 |
+| L1.10 Tag drawn within 1.5–1.7 m, 3v3, both sides | 1.0–1.2 | 1.2 |
+| L1.11 Strike team trained against guard_field at 1.6 m (side track: separates the opponent from the tag) | about 0.6 | 0.9 |
+| L1.12 T46's 1.6 m Guard team scored against every Strike script (side track) | minutes (under 0.1) | 0.1 |
+| L1.13 Shorter-training-clock Strike run at 1.15 m (side track; clock value set in its spec) | about 0.7 (two arms, spec v2) | 1.0 |
+
+The task texts below (L1.1–L1.6) are version 1's; the costed draft adds L1.0 and L1.7–L1.13.
 
 **L1.1 State delay and noise in tier 2.** Goal: the PX4 cascade sees a delayed, noisy state as with EKF2. Files:
 `source/svg_training/models/estimator_effect.py` (ring buffer of past states in physics steps, seeded Gaussian noise per
@@ -195,17 +221,17 @@ paths; cost measured. 10 h; 0.3 GPU-h. Gate: P2 before any run of record uses it
 
 **L2.2 Tag at 3-D centre < 1.6 m, 1-for-1.** Goal: the study tag of L0.9 (`[tag] mode = "nearest_pair_1for1"` on the
 partner preset, `pair_rules.proximity_tags`; built, off by default) made the rule of the trained game: filter on every
-pair, a tag when a live Guard–Strike pair is closer than `[tag] radius_m` (1.6 m, PROPOSED) in 3-D; both drones out (D2,
+pair, a tag when a live Guard–Strike pair is closer than `[tag] radius_m` (1.6 m first, 1.15 m after L2; ruled at G0, 22 Nov 2026) in 3-D; both drones out (D2,
 `guard_survives_tag_prob` = 0). Files: `core/game_config.py` (`TagCfg`), `core/game.py`, `configs/ste_game.toml`,
 `tests/test_tag_rule.py`. Tests (L0.9 has them): 1.59 m tags, 1.61 m does not; tags come before the zone test; off is
-today's game bit for bit; `partner` and `contact` presets unchanged (existing config tests pass). 6 h. Gate: P1 before any run of record (it overturns two FIXED rows of STANDARDS §4).
+today's game bit for bit; `partner` and `contact` presets unchanged (existing config tests pass). 6 h. Gate: P1, ruled at G0 (owner, 22 Nov 2026; STANDARDS §4 "Tag" changed).
 
 **L2.3 Landing drones stay filter obstacles.** Goal: a tagged or lost drone descends at the land speed (0.6 m/s, real
 `_ours` configs, MEASURED) and stays in every filter pair until it is down, then is parked. It no longer acts or scores.
 Files: `core/game.py` (a `landing` mask beside `alive`), `core/starling_layer.py` and `core/physics_layer.py` (pairs
 include landing drones; their command is the descent), `tests/test_landing.py`. Tests first: a landing drone keeps
 other drones ≥ 1.10 m away; it reaches the floor in the expected time; it neither tags nor scores. 8 h; 0.2 GPU-h.
-Gate: P1 for runs of record (landing is part of the proposed tag rule).
+Gate: none from P1 (ruled at G0, 22 Nov 2026; landing is part of the tag rule).
 
 **L2.4 Drone loss and random team size.** Goal: games with 1–5 Guard and 1–3 Strike drones drawn per game (STANDARDS §4,
 PROPOSED; 3v3 the main size), and a drone

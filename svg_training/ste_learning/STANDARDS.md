@@ -18,15 +18,17 @@ OPEN. Never upgrade a label without the owner.
 
 | Item | Until the owner rules |
 |---|---|
-| P1 tag radius 1.6 m (overturns parent §4 "main game has no tag", "no tag radius") | built behind a setting, off by default; INFO runs only; no run of record depends on it; ruled at gate G0 with L0's numbers |
+| P1 tag radius 1.6 m (overturned parent §4 "main game has no tag", "no tag radius") | **RULED 22 Nov 2026:** the main game has a 1-for-1 tag, 1.6 m to build the pipeline, 1.15 m main training after L2; the parent §4 "Tag" row is changed; the track's game files switch the tag on (code default off). Before the ruling: built behind a setting, off by default; INFO runs only; no run of record depends on it; ruled at gate G0 with L0's numbers |
 | P2 filter option B (only the Guard swerves in Guard–Strike pairs) | the same; ruled at the L2 gate, when it is built and measured |
 | D4 the AirStack approach | no AirStack change plan is acted on; specs only |
 | P7 drone loss in the flight rules | drone loss is trained (it costs nothing in flight) but not claimed as a flight capability |
 | P8 do attackers run the filter? | the robustness suite reports both cases |
-| P9 team sizes (programme 2v1 and 5v3, NUS 3v3, demo 1v1) | L0 studies all four; no learner is sized until gate G0 |
-| P10 environments (parent FIXED: realistic 3-D, construction-site world first) | open arena as the first build step only; not claimed as meeting the rule |
-| P11 what the real demo must show | L0 reports scripted 1v1 baselines; no demo is promised |
-| P12 zone radius against tag radius; what a tag costs (D2 revisit) | both ends are measured in L0 (`guard_survives_tag_prob` 0 and 1); ruled at G0 |
+| P9 team sizes (programme 2v1 and 5v3, NUS 3v3, demo 1v1) | **RULED 22 Nov 2026:** train 3v3, plus the 1v1 reads in L1; every trained team also scored at 2v1 and 5v3; random team size in L2. Before the ruling: L0 studies all four; no learner is sized until gate G0 |
+| P10 environments (parent FIXED: realistic 3-D, construction-site world first) | **RULED 22 Nov 2026:** E0 open arena until a trained team passes the opponent panel, then E1, then E2; the parent rule stands, E0 is its first build step. Before the ruling: open arena as the first build step only; not claimed as meeting the rule |
+| P11 what the real demo must show | **RULED 22 Nov 2026:** the scripted 1v1 at 1.6 m until a trained team passes the opponent panel. Before the ruling: L0 reports scripted 1v1 baselines; no demo is promised |
+| P12 zone radius against tag radius; what a tag costs (D2 revisit) | **RULED 22 Nov 2026:** zone 1.6 m (zone = tag = 1.6 m accepted as tested in L0); both drones leave after a tag. Before the ruling: both ends are measured in L0 (`guard_survives_tag_prob` 0 and 1); ruled at G0 |
+
+Gate G0 was ruled on 22 Nov 2026 ([DISCUSSION §14](DISCUSSION_2026-11-19_20.md#14-gate-g0-rulings-owner-22-nov-2026)); P2, P7, P8 and D4 stay open as above.
 
 ## 3. Rules that bind every task
 

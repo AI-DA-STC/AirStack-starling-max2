@@ -31,8 +31,9 @@ Forbidden:
 - Copying NUS's source code, hard-coding a NUS value, or adding code under `nus/` for this track.
 - Running `tools/sim.sh` except for the approved velocity-step logs (task L1.4, owner's P5 timing).
 - Editing a `gates.toml` after a first result; moving a limit; writing "validated" for a training-simulator result.
-- Treating PROPOSED items (tag radius 1.6 m, filter option B, interface v0.3) as settled: ship them behind settings,
-  default off, until the owner rules.
+- Treating PROPOSED items (filter option B, interface v0.3) as settled: ship them behind settings, default off, until
+  the owner rules. The tag (1-for-1, 1.6 m first, 1.15 m later) was ruled at G0 (owner, 22 Nov 2026): it stays a
+  per-file setting, code default off, switched on in the track's game files.
 - A new dependency, an interface version change, or a drone-parameter change without the owner: stop and ask the lead.
 
 The test-first loop, for every change:

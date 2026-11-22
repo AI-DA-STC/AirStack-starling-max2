@@ -1,0 +1,79 @@
+{
+ "ctl_reference_replay": {
+  "status": "PASS",
+  "detail": "guard_parked_centre v strike_straight: ok (holds 101 v T44 101, reaches 899 v 899; 0 of 1000 games differ (0 in outcome)); guard_parked_ring v strike_straight: ok (holds 127 v T44 127, reaches 873 v 873; 0 of 1000 games differ (0 in outcome)); guard_mark_edge v strike_straight: ok (holds 422 v T44 422, reaches 578 v 578; 0 of 1000 games differ (0 in outcome)); guard_mirror v strike_straight: ok (holds 425 v T44 425, reaches 575 v 575; 0 of 1000 games differ (0 in outcome)); guard_field v strike_straight: ok (holds 645 v T44 645, reaches 355 v 355; 0 of 1000 games differ (0 in outcome))",
+  "phase": "before"
+ },
+ "ctl_untrained_is_still": {
+  "status": "PASS",
+  "phase": "before",
+  "detail": "untrained exploiter v zero script: holds 101 v T44 101, reaches 899 v 899; 0 of 1000 games differ (0 in outcome)"
+ },
+ "ctl_untrained_no_gain": {
+  "status": "PASS",
+  "phase": "before",
+  "detail": "untrained 101/1000 v best script 645/1000: gain -0.544, real False (must be False)"
+ },
+ "ctl_paired_starts": {
+  "status": "PASS",
+  "phase": "before",
+  "detail": "1 start set(s), reference 5aeba7ab2b58"
+ },
+ "tags_one_for_one": {
+  "status": "PASS",
+  "phase": "before",
+  "detail": "0 games not one for one of 7000"
+ },
+ "no_nonfinite_actions": {
+  "status": "PASS",
+  "phase": "before",
+  "detail": "0 non-finite actions"
+ },
+ "tags_one_for_one_curve": {
+  "status": "PASS",
+  "phase": "curve",
+  "count": 0,
+  "detail": "0 games or actions wrong over the curve evaluations"
+ },
+ "no_nonfinite_actions_curve": {
+  "status": "PASS",
+  "phase": "curve",
+  "count": 0,
+  "detail": "0 games or actions wrong over the curve evaluations"
+ },
+ "ctl_reference_replay_final": {
+  "status": "PASS",
+  "detail": "guard_parked_centre v strike_straight: ok (holds 101 v T44 101, reaches 899 v 899; 0 of 1000 games differ (0 in outcome)); guard_parked_ring v strike_straight: ok (holds 127 v T44 127, reaches 873 v 873; 0 of 1000 games differ (0 in outcome)); guard_mark_edge v strike_straight: ok (holds 422 v T44 422, reaches 578 v 578; 0 of 1000 games differ (0 in outcome)); guard_mirror v strike_straight: ok (holds 425 v T44 425, reaches 575 v 575; 0 of 1000 games differ (0 in outcome)); guard_field v strike_straight: ok (holds 645 v T44 645, reaches 355 v 355; 0 of 1000 games differ (0 in outcome))",
+  "phase": "final"
+ },
+ "ctl_paired_starts_final": {
+  "status": "PASS",
+  "phase": "final",
+  "detail": "1 start set(s), reference 5aeba7ab2b58"
+ },
+ "tags_one_for_one_final": {
+  "status": "PASS",
+  "phase": "final",
+  "detail": "0 games not one for one of 7000"
+ },
+ "no_nonfinite_actions_final": {
+  "status": "PASS",
+  "phase": "final",
+  "detail": "0 non-finite actions"
+ },
+ "ctl_paired_starts_info": {
+  "status": "PASS",
+  "phase": "final",
+  "detail": "1 start set(s), reference 5aeba7ab2b58"
+ },
+ "tags_one_for_one_info": {
+  "status": "PASS",
+  "phase": "final",
+  "detail": "0 games not one for one of 6000"
+ },
+ "no_nonfinite_actions_info": {
+  "status": "PASS",
+  "phase": "final",
+  "detail": "0 non-finite actions"
+ }
+}

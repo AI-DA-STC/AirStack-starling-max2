@@ -2,7 +2,8 @@
 # tests/test_ste_game_spec.py keeps its table and this file equal, value for value and label for label.
 #
 # The sheet LISTS, it does not decide (PLAN.md section 4, row L0.8). The game does not read this file. [tag_rule] below
-# records the proposal; [tag] (task L0.9) lists the game's own switch for the study tag, as a game file sets it ([tag],
+# records the tag rule (the main game has a 1-for-1 tag since gate G0, owner, 22 Nov 2026); [tag] (task L0.9) lists the
+# game's own switch for the tag, as a game file sets it ([tag],
 # core/game_config.py TagCfg): the values here are the code's defaults, and tests/test_ste_game_spec.py keeps them equal.
 # The same holds for [starts] (the game's start mode "zone_disc_ring", StartsCfg, task L0.10) and [players] (the scripted
 # players' settings, opponents/scripted.py, task L0.10).
@@ -21,7 +22,7 @@
 [zone]
 shape = "circle"                  # FIXED (parent STANDARDS section 4 "Teams", programme benchmark): the Guard team holds a circular zone
 scored_in = "horizontal_plane"    # PROPOSED (parent STANDARDS section 4 "Height"; core/game.py:314-315 tests the horizontal distance only): a vertical cylinder through the height band
-radius_m = 1.6                    # OPEN (P12, OPEN at gate G0, DISCUSSION section 3; the parent row "Zone radius" is OPEN): today's value is PLAN section 4 L0.11 base case, the hangar game's nus_rules.toml area_radius x nus_deploy.toml metres_per_unit; equals the proposed tag radius (F2)
+radius_m = 1.6                    # FIXED (owner, G0, 22 Nov 2026, P12, G0 ruling R5; OPEN until then, DISCUSSION section 3): zone radius 1.6 m; zone = tag = 1.6 m accepted as tested in L0; hangar: nus_rules.toml area_radius x nus_deploy.toml metres_per_unit; equals the tag radius (F2)
 centre = "arena_centre"           # PROPOSED (hangar game, nus/hangar_game.py _draw_arenas; PLAN is silent; kept, LEAD CALL 20 Nov 2026): the S2 game draws the centre per game instead
 win_ticks_inside = 1              # PROPOSED (parent STANDARDS section 4 "Strike scores"; s2_game.toml and nus_hangar_game.toml [partner_rules] win_steps_in_zone): one Strike drone inside for one tick wins
 
@@ -31,18 +32,18 @@ mode = "free"                     # PROPOSED (DISCUSSION sections 2.4 and 2.6: T
 start_m = 1.2                     # PROPOSED (nus_deploy.toml flying_height_m; s2_game.toml [arena] start_height_m): row 5 adds a 1 mm start jitter (nus_phase4.toml [ladder] jitter_m)
 
 [arena]
-side_m = 6.5                      # PROPOSED (F8, PLAN section 4 L0.11 base case "the 6.5 m lab arena"): the lab fence, 6.5 x 6.5 x 4 m (parent STANDARDS section 4, MEASURED, goal_two_ours.yaml fence_min/max); the hangar side (configs/local/nus_hangar.toml) is the other size L0.11 sweeps
+side_m = 6.5                      # FIXED (owner, G0, 22 Nov 2026, G0 ruling R9; F8; PLAN section 4 L0.11 base case "the 6.5 m lab arena"): the 6.5 m square, the lab fence, 6.5 x 6.5 x 4 m (parent STANDARDS section 4, MEASURED, goal_two_ours.yaml fence_min/max); the hangar side (configs/local/nus_hangar.toml) is the other size L0.11 swept
 wall_margin_m = 0.25              # PROPOSED (s2_game.toml and nus_hangar_game.toml [arena] wall_margin_m): the keep-in limit is half the side less this
 walls = "keep_in"                 # PROPOSED (s2_game.toml and nus_hangar_game.toml [arena] walls; core/game.py:296-299 holds a drone at the wall; the lab fence too, goal_two_ours.yaml fence_behavior): a drone at a wall is held, not out
-environment = "open_arena"        # OPEN (P10, OPEN at gate G0): the parent FIXED rule "Environments" asks for realistic 3-D environments, construction-site world first; today's value is E0 of the parent "Environment ladder", the first build step only, not claimed as meeting the rule
+environment = "open_arena"        # FIXED (owner, G0, 22 Nov 2026, P10, G0 ruling R11; OPEN until then): E0 open arena until a trained team passes the opponent panel, then E1 (random blocks and columns), then E2 (the construction-site world); the parent FIXED rule "Environments" (realistic 3-D worlds, construction site first) stands, E0 is its first build step
 
 [starts]
 guard_disc_m = 0.8                # PROPOSED (hangar game: nus_rules.toml start_guard_disc_fraction x area_radius x nus_deploy.toml metres_per_unit; nus/replica.py reset): Guards uniform in radius inside this disc round the zone centre (hangar game); the game's [starts] mode (QC fix round 1) puts two or more Guards on one evenly spaced circle inside it where they fit, see team_spacing_margin_m; "zone_disc_ring" (L0.10, core/game_config.py StartsCfg) has this default
-strike_ring_m = 2.75              # PROPOSED (LEAD CALL 21 Nov 2026, L08-F1, task L0.10; ruled at gate G0 with the arena, F8): the hangar ring (nus_deploy.toml spawn_distance x metres_per_unit, 3.2 m, random bearings) scaled by the arena half-side, 3.2 x 3.25 / 3.75 = 2.77, rounded down to 2.75; fits the 6.5 m arena's keep-in limit (3.0 m) on every bearing with 0.25 m to spare, 1.15 m outside the zone edge, 1.95 m from the Guard disc (more than the proposed tag radius: no tag at the first step); the default of the game's [starts] mode "zone_disc_ring"
+strike_ring_m = 2.75              # FIXED (owner, G0, 22 Nov 2026, G0 ruling R9; before: LEAD CALL 21 Nov 2026, L08-F1, task L0.10, ruled at G0 with the arena, F8): the hangar ring (nus_deploy.toml spawn_distance x metres_per_unit, 3.2 m, random bearings) scaled by the arena half-side, 3.2 x 3.25 / 3.75 = 2.77, rounded down to 2.75; fits the 6.5 m arena's keep-in limit (3.0 m) on every bearing with 0.25 m to spare, 1.15 m outside the zone edge, 1.95 m from the Guard disc (more than the tag radius: no tag at the first step); the default of the game's [starts] mode "zone_disc_ring"
 team_spacing_margin_m = 0.05      # PROPOSED (LEAD CALL 21 Nov 2026, L0.10 QC fix round 1, finding I1): in the game's [starts] mode "zone_disc_ring" team-mates start at least the filter distance (1.1 m) + this apart, so the filter pushes nobody into the other team's tag range at the start; Guards evenly spaced on one circle per game (random rotation), radius uniform from the chord radius (spacing / (2 sin(pi / Guards)): 0.66 m for 3, 0.98 m for 5) up to the Guard disc where it fits, else the chord radius; Strikes on the ring at random gaps of at least that spacing
 
 [timing]
-game_s = 120.0                    # PROPOSED (hangar game: nus_rules.toml episode_steps x nus_deploy.toml seconds_per_step, 2,400 ticks; PLAN is silent; kept, LEAD CALL 20 Nov 2026): the S2 game plays 60 s (s2_game.toml game_steps x seconds_per_step)
+game_s = 120.0                    # FIXED (owner, G0, 22 Nov 2026, G0 ruling E; before: hangar game nus_rules.toml episode_steps x nus_deploy.toml seconds_per_step, 2,400 ticks, kept by LEAD CALL 20 Nov 2026): 120 s for the main game; shorter clocks only as training experiments; the S2 game plays 60 s (s2_game.toml game_steps x seconds_per_step)
 decision_s = 0.6                  # PROPOSED (nus_deploy.toml seconds_per_step, hold 12 ticks; T41; DISCUSSION section 2.10): the S2 game decides every 0.05 s tick
 
 [speeds]
@@ -51,19 +52,19 @@ strike_to_guard_ratio = 1.5       # FIXED (parent STANDARDS section 4 "Speed rat
 
 [teams]
 of_interest = ["2v1", "5v3"]      # FIXED (parent STANDARDS section 4 "Team sizes of interest", programme simulation page): Guard drones first
-target_sizes = ["1v1", "2v1", "3v3", "5v3"]   # OPEN (P9, ruled at gate G0): the candidates; L0 studies all four (ste_learning/STANDARDS.md section 2); 3v3 is NUS's game, 1v1 the only real game with two Starlings
-base_case = "3v3"                 # PROPOSED (PLAN section 4 L0.11 base case; hangar game: nus_rules.toml guard_count, strike_count)
+target_sizes = ["1v1", "2v1", "3v3", "5v3"]   # FIXED (owner, G0, 22 Nov 2026, P9, G0 ruling R6-8; OPEN until then): train 3v3, plus the 1v1 reads in L1; every trained team is also scored at 2v1 and 5v3 (the programme's sizes of interest); random team size in L2 as planned
+base_case = "3v3"                 # FIXED (owner, G0, 22 Nov 2026, G0 ruling R6-8: train 3v3; PLAN section 4 L0.11 base case; hangar game: nus_rules.toml guard_count, strike_count)
 
 [tag_rule]
-main_game_has_tag = false         # FIXED (owner, 14 and 15 Nov 2026; parent STANDARDS section 4 "Tag"): today's main game has no tag; P1 would overturn this row, and only the owner can
-radius_m = 1.6                    # PROPOSED (P1, ruled at gate G0; DISCUSSION section 2.9): a Guard drone and a Strike drone whose 3-D centres are closer are both out; the filter distance plus 0.5 m
-pairing = "nearest_pair_1for1"    # PROPOSED (PLAN section 4 L0.9, F5): one Guard drone tags at most one Strike drone, nearest pair first; today's contact_tags lets one Guard tag every Strike in range (core/pair_rules.py:60-70)
-guard_survives_tag_prob = 0.0     # PROPOSED (D2, owner 20 Nov 2026, "DECIDED, provisional"; P12 revisits what a tag costs at gate G0, both ends swept in L0.11, LEAD CALL 20 Nov 2026; the parent row "After a tag, Guard drone" is FIXED for the contact tag): both drones out; L0.11 also reports 1.0
+main_game_has_tag = true          # FIXED (owner, G0, 22 Nov 2026, P1, G0 ruling R1, DISCUSSION section 14): the main game has a 1-for-1 tag; this overturns the earlier FIXED "no tag" (owner, 14 and 15 Nov 2026; parent STANDARDS section 4 "Tag"); the contact-tag side quest is unchanged
+radius_m = 1.6                    # FIXED (owner, G0, 22 Nov 2026, P1, option (d); DISCUSSION section 2.9): 1.6 m for building the pipeline and the first demo; a 1.15 m side track in L1-L2 and 1.15 m main training after L2; a Guard drone and a Strike drone whose 3-D centres are closer both leave; the filter distance plus 0.5 m
+pairing = "nearest_pair_1for1"    # FIXED (owner, G0, 22 Nov 2026, P1, G0 ruling R1; PLAN section 4 L0.9, F5): 1-for-1: one Guard drone tags at most one Strike drone, nearest pair first; today's contact_tags lets one Guard tag every Strike in range (core/pair_rules.py:60-70)
+guard_survives_tag_prob = 0.0     # FIXED (owner, G0, 22 Nov 2026, D2, G0 ruling R4; P12 asked what a tag costs, both ends swept in L0.11): both drones leave; D2 is no longer provisional; the parent row "After a tag, Guard drone" says the same
 
 [tag]
-mode = "off"                      # FIXED (owner, 14 and 15 Nov 2026; parent STANDARDS section 4 "Tag", as tag_rule.main_game_has_tag): the game's switch, off = today's game bit for bit; "nearest_pair_1for1" switches on the study tag of task L0.9 for study runs only, until P1 is ruled at gate G0
-radius_m = 1.6                    # PROPOSED (P1, ruled at gate G0; equals tag_rule.radius_m): the study tag's distance between 3-D centres; a pair strictly closer tags
-guard_survives_tag_prob = 0.0     # PROPOSED (D2, owner 20 Nov 2026, provisional; P12 at gate G0; equals tag_rule.guard_survives_tag_prob): drawn per game at its start from the tag's own random stream; 0 = both drones out
+mode = "off"                      # FIXED (owner, G0, 22 Nov 2026, P1, G0 ruling R1): the switch stays a per-file setting; off is the code default and this file's default value (the pre-tag game bit for bit, which golden tests rely on); the track's game files (configs/ste_l011/*.toml and later) set "nearest_pair_1for1"; the main game has the tag since the G0 ruling (tag_rule.main_game_has_tag)
+radius_m = 1.6                    # FIXED (owner, G0, 22 Nov 2026, P1, option (d): 1.6 m to build the pipeline, a game file may set 1.15 m; equals tag_rule.radius_m): the tag's distance between 3-D centres; a pair strictly closer tags
+guard_survives_tag_prob = 0.0     # FIXED (owner, G0, 22 Nov 2026, D2, P12, G0 ruling R4: both drones leave; equals tag_rule.guard_survives_tag_prob): drawn per game at its start from the tag's own random stream; 0 = both drones out
 
 [filter]
 pairs = "every_pair"              # FIXED (owner, 14 and 15 Nov 2026; parent STANDARDS section 4 "Safety filter in the game" and section 5 "Safety filter in flight today"): Guard-Guard, Strike-Strike and Guard-Strike pairs

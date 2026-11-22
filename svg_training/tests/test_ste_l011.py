@@ -73,7 +73,7 @@ def test_an_edited_game_file_is_reported(tmp_path):
 # a property of the engine that no setting changes (ENGINE, with the code that fixes it), set differently ON PURPOSE for
 # the study, a row about the study design checked on the gate file (DESIGN), or NOT APPLIED by this engine path.
 NOT_APPLIED = {"timing.decision_s": "the scripted players act every tick (0.05 s), see the decision-period test"}
-ON_PURPOSE = {"tag.mode": "nearest_pair_1for1", "tag_rule.main_game_has_tag": True}
+ON_PURPOSE = {"tag.mode": "nearest_pair_1for1"}       # the switch's default is off; the track's game files set it on
 ENGINE = {"zone.shape": "core/game.py:314-315 tests a distance to one centre",
           "zone.scored_in": "core/game.py:314-315 tests the horizontal distance only",
           "arena.environment": "tier 1 has no obstacles", "filter.share": "safety filter: equal split, its only mode"}
@@ -101,6 +101,7 @@ def realised_base() -> dict:
         "starts.strike_ring_m": rho[:, 3:], "timing.game_s": g.ticks * TICK_S,
         "speeds.strike_mps": cfg.team_speed_mps("strike"),
         "speeds.strike_to_guard_ratio": cfg.team_speed_mps("strike") / cfg.team_speed_mps("guard"),
+        "tag_rule.main_game_has_tag": cfg.tag.mode != "off",                        # G0, 22 Nov 2026 (P1)
         "tag_rule.radius_m": cfg.tag.radius_m, "tag.radius_m": cfg.tag.radius_m, "tag_rule.pairing": cfg.tag.mode,
         "tag_rule.guard_survives_tag_prob": cfg.tag.guard_survives_tag_prob,
         "tag.guard_survives_tag_prob": cfg.tag.guard_survives_tag_prob,

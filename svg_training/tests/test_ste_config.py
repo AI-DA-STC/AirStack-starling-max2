@@ -1,7 +1,8 @@
 """STE learning track, task L0.1: the track's settings file (configs/ste_learning.toml) and its loader (ste/config.py).
 
-L0.1 holds process settings only: which plan and phase, and the GPU-hour caps of phase L0. Game settings arrive with the
-tasks that build them (L0.8 onwards), so there is no "defaults reproduce today's game" test here yet.
+L0.1 holds process settings only: which plan and phase, and the GPU-hour caps. Game settings live in
+configs/ste_game.toml (L0.8 onwards). Since gate G0 (owner, 22 Nov 2026) the phase in work is L1: [budget] keeps the
+caps of phase L0, closed, and [budget_l1_l2] holds the one cap of phases L1 and L2 together and the L1 task caps.
 """
 import dataclasses
 import hashlib
@@ -16,7 +17,7 @@ from pathlib import Path
 import pytest
 
 from svg_training.ste.config import (
-    SETTINGS_FILE, TASK_IDS, BudgetCfg, Provenance, SteLearningCfg, TrackCfg, load_ste_learning)
+    BUDGET_PHASES, SETTINGS_FILE, TASK_IDS, BudgetCfg, Provenance, SteLearningCfg, TrackCfg, load_ste_learning, phase_of)
 
 ROOT = Path(__file__).resolve().parents[1]
 PLAN = ROOT / "ste_learning" / "PLAN.md"
@@ -25,6 +26,12 @@ PLAN = ROOT / "ste_learning" / "PLAN.md"
 L0_PHASE_CAP_GPU_H = 19.0          # the owner's approval of 20 Nov 2026
 L0_TASK_CAP_GPU_H = {"L0.1": 0.0, "L0.7": 0.0, "L0.8": 0.0, "L0.9": 0.0, "L0.10": 0.0, "L0.11": 0.5, "L0.12": 13.0,
                      "L0.2": 0.4, "L0.13": 1.6, "L0.3": 1.3, "L0.4": 0.2, "L0.5": 0.3, "L0.14": 0.0, "L0.6": 0.0}
+# Gate G0 (owner, 22 Nov 2026): phases L1 and L2 together at most 13 GPU-h (PLAN.md section 9). The L1 task caps are the
+# lead's split of the costed draft (ste_learning/drafts/L1_L9_COSTED_PLAN_DRAFT.md section 3), in this order. PLAN.md
+# has no L1 task table yet, so no test compares these with it; L2's task IDs arrive when L2 starts.
+L1_L2_CAP_GPU_H = 13.0
+L1_TASK_CAP_GPU_H = {"L1.0": 0.5, "L1.1": 0.2, "L1.2": 0.2, "L1.3": 0.0, "L1.4": 0.0, "L1.5": 0.3, "L1.6": 0.5,
+                     "L1.7": 0.1, "L1.8": 1.2, "L1.9": 1.9, "L1.10": 1.2, "L1.11": 0.9, "L1.12": 0.1, "L1.13": 1.0}
 
 GOOD = SETTINGS_FILE.read_text()
 
@@ -43,7 +50,7 @@ def changed(tmp_path: Path, old: str, new: str) -> Path:
 
 def settings_text(phase_cap: str, caps: dict[str, str]) -> str:
     """A settings file for phase L0 with the given phase cap; a task not in ``caps`` gets 0.0 GPU-hours."""
-    lines = ["[track]", "plan_version = 2", 'phase = "L0"', "[budget]", f"phase_cap_gpu_h = {phase_cap}",
+    lines = ["[track]", "plan_version = 2", 'phase = "L0"', "[budget]", "closed = false", f"phase_cap_gpu_h = {phase_cap}",
              "[budget.task_cap_gpu_h]"]
     return "\n".join(lines + [f'"{task}" = {caps.get(task, "0.0")}' for task in TASK_IDS["L0"]]) + "\n"
 
@@ -52,7 +59,9 @@ def settings_text(phase_cap: str, caps: dict[str, str]) -> str:
 def test_committed_file_loads_with_the_plans_numbers():
     cfg, provenance = load_ste_learning()
     assert isinstance(cfg, SteLearningCfg) and isinstance(provenance, Provenance)
-    assert cfg.track == TrackCfg(plan_version=2, phase="L0")
+    assert cfg.track == TrackCfg(plan_version=2, phase="L1")                         # G0, 22 Nov 2026
+    assert cfg.budget.section == "budget" and cfg.budget.phases == BUDGET_PHASES == ("L0",)
+    assert cfg.budget.closed is True                                             # phase L0 closed (owner, G0, 22 Nov 2026)
     assert cfg.budget.phase_cap_gpu_h == L0_PHASE_CAP_GPU_H and type(cfg.budget.phase_cap_gpu_h) is float
     assert cfg.budget.task_cap_gpu_h == tuple(L0_TASK_CAP_GPU_H.items())          # same tasks, same order, same caps
     assert all(type(cap) is float for _, cap in cfg.budget.task_cap_gpu_h)
@@ -64,9 +73,44 @@ def test_committed_file_loads_with_the_plans_numbers():
 
 
 def test_l01_holds_process_settings_only():
-    """No game section before the task that builds it (L0.8 creates configs/ste_game.toml; L0.9 adds [tag])."""
-    assert set(tomllib.loads(GOOD)) == {"track", "budget"}
-    assert [f.name for f in dataclasses.fields(SteLearningCfg)] == ["track", "budget"]
+    """No game section here (L0.8 created configs/ste_game.toml; L0.9 added [tag] there)."""
+    assert set(tomllib.loads(GOOD)) == {"track", "budget", "budget_l1_l2"}
+    assert [f.name for f in dataclasses.fields(SteLearningCfg)] == ["track", "budget", "later_budgets"]
+
+
+def test_the_l1_and_l2_budget_of_gate_g0():
+    """[budget_l1_l2]: one cap for phases L1 and L2 together (13 GPU-h, owner, G0, 22 Nov 2026) and the L1 task caps in
+    the lead's order; the phase in work, L1, takes its caps from it. L0's caps stay loadable and launchable."""
+    cfg, _ = load_ste_learning()
+    (later,) = cfg.later_budgets
+    assert later == BudgetCfg(section="budget_l1_l2", phases=("L1", "L2"), closed=False, phase_cap_gpu_h=L1_L2_CAP_GPU_H,
+                              task_cap_gpu_h=tuple(L1_TASK_CAP_GPU_H.items()))
+    assert type(later.phase_cap_gpu_h) is float and all(type(cap) is float for _, cap in later.task_cap_gpu_h)
+    assert TASK_IDS["L1"] == tuple(L1_TASK_CAP_GPU_H) and TASK_IDS["L2"] == ()      # L2's IDs arrive when L2 starts
+    assert list(tomllib.loads(GOOD)["budget_l1_l2"]["task_cap_gpu_h"]) == list(TASK_IDS["L1"])   # file order
+    assert later.task_caps_total_gpu_h() == 8.1 <= later.phase_cap_gpu_h          # added in decimal
+    assert cfg.budget_in_work() is later and cfg.budgets() == (cfg.budget, later)
+    assert cfg.budget_of("L1.9") is later and cfg.budget_of("L0.12") is cfg.budget
+    assert cfg.cap_gpu_h("L1.9") == 1.9 and cfg.cap_gpu_h("L1.3") == 0.0 and cfg.cap_gpu_h("L0.12") == 13.0
+    assert cfg.budget.cap_gpu_h("L0.11") == 0.5                                 # L0's caps stay readable
+    assert [phase_of(task) for task in ("L0.11", "L1.1", "L1.10", "L1.13")] == ["L0", "L1", "L1", "L1"]
+    with pytest.raises(KeyError, match=r"L10"):
+        phase_of("L10")
+    for unknown in ("L1.99", "L2.1", "L0.99"):
+        with pytest.raises(KeyError, match=re.escape(unknown)):
+            cfg.budget_of(unknown)
+        with pytest.raises(KeyError, match=re.escape(unknown)):
+            cfg.cap_gpu_h(unknown)
+
+
+def test_a_file_in_the_shape_of_phase_l0_still_loads(tmp_path):
+    """A settings file written for phase L0 ([budget] only, as the tests' made-up files are) loads as it did."""
+    cfg, _ = load_ste_learning(write(tmp_path, settings_text("19.0", {"L0.11": "3.0"})))
+    assert cfg.track.phase == "L0" and cfg.later_budgets == () and cfg.budget_in_work() is cfg.budget
+    assert cfg.budget.closed is False
+    assert cfg.cap_gpu_h("L0.11") == 3.0
+    with pytest.raises(KeyError, match=r"L1\.9"):
+        cfg.cap_gpu_h("L1.9")
 
 
 def test_task_caps_fit_the_phase_cap_and_none_is_negative():
@@ -75,6 +119,9 @@ def test_task_caps_fit_the_phase_cap_and_none_is_negative():
     assert all(cap >= 0.0 for cap in caps)
     assert budget.task_caps_total_gpu_h() <= budget.phase_cap_gpu_h              # the loader compares in decimal
     assert budget.task_caps_total_gpu_h() == math.fsum(L0_TASK_CAP_GPU_H.values()) < L0_PHASE_CAP_GPU_H
+    for later in load_ste_learning()[0].later_budgets:
+        assert all(cap >= 0.0 for _, cap in later.task_cap_gpu_h)
+        assert later.task_caps_total_gpu_h() <= later.phase_cap_gpu_h
 
 
 # ------------------------------------------------------------------------------------------------ against PLAN.md
@@ -160,12 +207,13 @@ def check_plan_budget(text: str, phase: str, phase_cap_gpu_h: float, task_caps_t
 
 
 def test_task_ids_and_caps_are_those_of_plan_section_4():
+    """PLAN.md section 4 is phase L0's table; [budget] holds L0's caps (closed at G0, kept as history)."""
     cfg, _ = load_ste_learning()
     check_plan_tasks(PLAN.read_text(), cfg.budget.task_cap_gpu_h)
     file_order = list(tomllib.loads(GOOD)["budget"]["task_cap_gpu_h"])
-    assert file_order == list(TASK_IDS[cfg.track.phase]) == [task for task, _ in cfg.budget.task_cap_gpu_h], (
+    assert file_order == list(TASK_IDS["L0"]) == [task for task, _ in cfg.budget.task_cap_gpu_h], (
         f"the task IDs are written in three places that must agree in order: the lines of {SETTINGS} {file_order}, "
-        f"TASK_IDS in ste/config.py {list(TASK_IDS[cfg.track.phase])}, and PLAN.md section 4 (checked just above)")
+        f"TASK_IDS in ste/config.py {list(TASK_IDS['L0'])}, and PLAN.md section 4 (checked just above)")
 
 
 def test_plan_version_is_the_one_in_the_plans_header():
@@ -175,11 +223,20 @@ def test_plan_version_is_the_one_in_the_plans_header():
 def test_phase_cap_and_task_cap_sum_are_those_of_the_plans_budget_sentence():
     cfg, _ = load_ste_learning()
     text = PLAN.read_text()
-    check_plan_budget(text, cfg.track.phase, cfg.budget.phase_cap_gpu_h, cfg.budget.task_caps_total_gpu_h())
-    cap, total = plan_budget_sentence(text, cfg.track.phase)
+    check_plan_budget(text, "L0", cfg.budget.phase_cap_gpu_h, cfg.budget.task_caps_total_gpu_h())
+    cap, total = plan_budget_sentence(text, "L0")
     assert float(cap) == L0_PHASE_CAP_GPU_H, (
         f"PLAN.md section 4, budget sentence, says 'at most {cap} GPU-h'; expected {L0_PHASE_CAP_GPU_H!r}, the owner's "
         f"cap typed as L0_PHASE_CAP_GPU_H at the top of this test file")
+
+
+def test_the_l1_and_l2_cap_is_the_one_in_plan_section_9():
+    """PLAN.md section 9, the budgets table: the row "**L1 + L2**" states the owner's cap ruled at G0."""
+    section = plan_section(PLAN.read_text(), 9)
+    found = re.search(r"^\| \*\*L1 \+ L2\*\* \| \*\*(\d+(?:\.\d+)?) GPU-h\*\*", section, re.MULTILINE)
+    assert found, "PLAN.md section 9: expected a row starting '| **L1 + L2** | **<number> GPU-h**'"
+    later = load_ste_learning()[0].budget_in_work()
+    assert later.phases == ("L1", "L2") and float(found.group(1)) == later.phase_cap_gpu_h == L1_L2_CAP_GPU_H
 
 
 def made_up_plan(task_cap_gpu_h: tuple[tuple[str, float], ...], version: str = "2", cap: str = "19",
@@ -196,7 +253,7 @@ def made_up_plan(task_cap_gpu_h: tuple[tuple[str, float], ...], version: str = "
 
 def test_the_plan_checks_refuse_a_plan_that_differs_and_say_where():
     cfg, _ = load_ste_learning()
-    caps, phase = cfg.budget.task_cap_gpu_h, cfg.track.phase
+    caps, phase = cfg.budget.task_cap_gpu_h, "L0"
     cap, total = cfg.budget.phase_cap_gpu_h, cfg.budget.task_caps_total_gpu_h()
     good = made_up_plan(caps)
     check_plan_tasks(good, caps), check_plan_version(good, 2), check_plan_budget(good, phase, cap, total)
@@ -259,7 +316,11 @@ def test_unknown_task_id_raises(tmp_path):
         load_ste_learning(changed(tmp_path, '"L0.6" =', "L0.6 ="))
     assert '"L0.1" = 0.0' in str(unquoted.value)                                 # with an example line
     with pytest.raises(ValueError, match=r"unknown task ID.*\['L0'\].*in quotes"):
-        load_ste_learning(write(tmp_path, GOOD.replace('"L0.', "L0.").replace('" = ', " = ")))   # every ID unquoted
+        load_ste_learning(write(tmp_path, re.sub(r'"(L0\.\d+)" = ', r"\1 = ", GOOD)))   # every L0 ID unquoted
+    with pytest.raises(ValueError, match=r"unknown task ID.*\[budget_l1_l2.task_cap_gpu_h\].*L0\.6"):
+        load_ste_learning(changed(tmp_path, '"L1.13" =', '"L0.6" = 0.0\n"L1.13" ='))   # an L0 task under the L1 cap
+    with pytest.raises(ValueError, match=r"unknown task ID.*\[budget_l1_l2.task_cap_gpu_h\].*\['L1'\].*in quotes"):
+        load_ste_learning(changed(tmp_path, '"L1.13" =', "L1.14 = 0.0\n\"L1.13\" ="))
     with pytest.raises(ValueError, match=r"unknown task ID.*L0\.99") as quoted:
         load_ste_learning(write(tmp_path, GOOD + '"L0.99" = 0.0\n'))
     assert "quotes" not in str(quoted.value)                                     # no hint where it does not apply
@@ -281,18 +342,62 @@ def test_missing_section_key_or_task_raises(tmp_path):
     with pytest.raises(ValueError, match=r"missing section.*budget"):
         load_ste_learning(write(tmp_path, track_only))
     with pytest.raises(ValueError, match=r"missing key.*\[track\].*phase"):
-        load_ste_learning(changed(tmp_path, 'phase = "L0"', "# phase removed"))
+        load_ste_learning(changed(tmp_path, 'phase = "L1"', "# phase removed"))
     with pytest.raises(ValueError, match=r"missing key.*\[budget\].*phase_cap_gpu_h"):
         load_ste_learning(changed(tmp_path, "phase_cap_gpu_h = 19.0", "# cap removed"))
     with pytest.raises(ValueError, match=r"missing task ID.*L0\.13"):
         load_ste_learning(changed(tmp_path, '"L0.13" =', '# "L0.13" ='))
+    with pytest.raises(ValueError, match=r"missing task ID.*\[budget_l1_l2.task_cap_gpu_h\].*L1\.13"):
+        load_ste_learning(changed(tmp_path, '"L1.13" =', '# "L1.13" ='))
+    without_l1 = GOOD[:GOOD.index("[budget_l1_l2]")]
+    with pytest.raises(ValueError, match=r"phase in work.*L1.*no budget section"):
+        load_ste_learning(write(tmp_path, without_l1))
+    open_l0 = without_l1.replace('phase = "L1"', 'phase = "L0"').replace("closed = true", "closed = false")
+    load_ste_learning(write(tmp_path, open_l0))                                  # phase L0 in work (open) needs none
+    with pytest.raises(ValueError, match=r"missing key.*\[budget_l1_l2\].*phases"):
+        load_ste_learning(changed(tmp_path, 'phases = ["L1", "L2"]', "# phases removed"))
     with pytest.raises(FileNotFoundError):
         load_ste_learning(tmp_path / "absent.toml")
 
 
 def test_unknown_phase_raises(tmp_path):
-    with pytest.raises(ValueError, match=r"track\.phase.*L1"):
-        load_ste_learning(changed(tmp_path, 'phase = "L0"', 'phase = "L1"'))
+    with pytest.raises(ValueError, match=r"track\.phase.*L3"):
+        load_ste_learning(changed(tmp_path, 'phase = "L1"', 'phase = "L3"'))
+    with pytest.raises(ValueError, match=r"phase in work.*L0.*\[budget\].*closed"):
+        load_ste_learning(changed(tmp_path, 'phase = "L1"', 'phase = "L0"'))     # a closed phase cannot be in work
+
+
+@pytest.mark.parametrize("old, new, match", [
+    ("closed = true", "closed = 1", r"budget\.closed.*yes/no"),
+    ("closed = true", 'closed = "true"', r"budget\.closed.*yes/no"),
+    ("closed = true", "# closed removed", r"missing key.*\[budget\].*closed"),
+    ("closed = false", "closed = 0", r"budget_l1_l2\.closed.*yes/no"),
+    ("closed = false", "# closed removed", r"missing key.*\[budget_l1_l2\].*closed"),
+])
+def test_every_budget_section_says_whether_it_is_closed(tmp_path, old, new, match):
+    with pytest.raises(ValueError, match=match):
+        load_ste_learning(changed(tmp_path, old, new))
+
+
+def test_a_later_budget_section_is_checked(tmp_path):
+    """[budget_<phases>]: its name spells its phases, each a known phase in one budget only; same caps rules as [budget]."""
+    cases = [
+        ('phases = ["L1", "L2"]', 'phases = ["L1"]', r"\[budget_l1_l2\].*name.*budget_l1"),
+        ('phases = ["L1", "L2"]', 'phases = ["L1", "L3"]', r"\[budget_l1_l2\].*phase.*L3"),
+        ('phases = ["L1", "L2"]', 'phases = ["L0", "L1", "L2"]', r"phase L0.*two budget sections"),
+        ('phases = ["L1", "L2"]', 'phases = "L1"', r"budget_l1_l2\.phases.*list"),
+        ('phases = ["L1", "L2"]', 'phases = ["L1", 2]', r"budget_l1_l2\.phases.*text"),
+        ('phases = ["L1", "L2"]', "phases = []", r"budget_l1_l2\.phases.*at least one"),
+        ("phase_cap_gpu_h = 13.0", "phase_cap_gpu_h = 13", r"budget_l1_l2\.phase_cap_gpu_h"),
+        ("phase_cap_gpu_h = 13.0", "phase_cap_gpu_h = -13.0", r"budget_l1_l2\.phase_cap_gpu_h"),
+        ('"L1.9" = 1.9', '"L1.9" = 2', r"budget_l1_l2\.task_cap_gpu_h.*L1\.9"),
+        ('"L1.9" = 1.9', '"L1.9" = 6.9', r"task caps add up to 13\.1 .*budget_l1_l2\.phase_cap_gpu_h = 13\.0"),
+    ]
+    for old, new, match in cases:
+        with pytest.raises(ValueError, match=match):
+            load_ste_learning(changed(tmp_path, old, new))
+    exactly = load_ste_learning(changed(tmp_path, '"L1.9" = 1.9', '"L1.9" = 6.8'))[0]      # exactly 13.0: allowed
+    assert exactly.budget_in_work().task_caps_total_gpu_h() == 13.0
 
 
 # ------------------------------------------------------------------------------------------------ wrong types raise
@@ -301,7 +406,7 @@ def test_unknown_phase_raises(tmp_path):
     ("plan_version = 2", "plan_version = 2.0", "track.plan_version"),
     ("plan_version = 2", "plan_version = true", "track.plan_version"),            # a TOML boolean is not a whole number
     ("plan_version = 2", "plan_version = 0", "track.plan_version"),
-    ('phase = "L0"', "phase = 0", "track.phase"),
+    ('phase = "L1"', "phase = 0", "track.phase"),
     ("phase_cap_gpu_h = 19.0", "phase_cap_gpu_h = 19", "budget.phase_cap_gpu_h"),  # caps are written as decimals
     ("phase_cap_gpu_h = 19.0", 'phase_cap_gpu_h = "19.0"', "budget.phase_cap_gpu_h"),
     ("phase_cap_gpu_h = 19.0", "phase_cap_gpu_h = true", "budget.phase_cap_gpu_h"),
@@ -391,7 +496,7 @@ def leaves(table: dict) -> int:
 
 def test_every_value_line_carries_a_status_label_and_source():
     lines = value_lines(GOOD)
-    assert len(lines) == leaves(tomllib.loads(GOOD)) == 3 + len(L0_TASK_CAP_GPU_H)   # one value per line, none skipped
+    assert len(lines) == leaves(tomllib.loads(GOOD)) == 4 + len(L0_TASK_CAP_GPU_H) + 3 + len(L1_TASK_CAP_GPU_H)
     assert unlabelled(GOOD) == []
 
 
@@ -420,7 +525,8 @@ def test_the_label_check_fails_a_line_without_a_label():
 # ------------------------------------------------------------------------------------------------ frozen
 def test_dataclasses_are_frozen():
     cfg, provenance = load_ste_learning()
-    for obj, name, value in ((cfg, "track", cfg.track), (cfg.track, "phase", "L1"), (cfg.track, "plan_version", 3),
+    for obj, name, value in ((cfg, "track", cfg.track), (cfg, "later_budgets", ()), (cfg.track, "phase", "L0"),
+                             (cfg.track, "plan_version", 3), (cfg.budget, "phases", ("L1",)),
                              (cfg.budget, "phase_cap_gpu_h", 100.0), (cfg.budget, "task_cap_gpu_h", ()),
                              (provenance, "settings_sha256", "0")):
         with pytest.raises(dataclasses.FrozenInstanceError):

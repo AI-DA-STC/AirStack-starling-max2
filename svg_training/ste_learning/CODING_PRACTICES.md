@@ -51,9 +51,10 @@ Source of truth for direction: [DISCUSSION_2026-11-19_20.md](DISCUSSION_2026-11-
 
 - Values that could change a result live in TOML (`configs/ste_*.toml`, `params/*.toml`), loaded into frozen
   dataclasses that **raise on unknown keys** (as `core/game_config.py`). Never YAML.
-- Each value carries its status label (FIXED, MEASURED, PROPOSED, OPEN) and source in a comment. The tag radius 1.6 m
-  and filter option B are PROPOSED (P1, P2): they ship as settings, default off, until the owner rules; they contradict
-  two FIXED rows of STANDARDS §4 and must not be presented as settled.
+- Each value carries its status label (FIXED, MEASURED, PROPOSED, OPEN) and source in a comment. Filter option B is
+  PROPOSED (P2): it ships as a setting, default off, until the owner rules at the L2 gate. The tag (P1) was ruled at G0
+  (owner, 22 Nov 2026; STANDARDS §4 "Tag" changed): a per-file setting, code default off, switched on in the track's
+  game files (1.6 m first, 1.15 m later).
 - Code holds no tuned numbers; named physical or structural constants (`G_MPS2`, `SLOT`) are fine. G2 (only 0, 1, −1, 2
   as literals, `tests/test_nus_rules_privacy.py`) binds `nus/` only; the track's package has its own literal-scan test, `tests/test_ste_literals.py` (L0.1; rule set by
   the lead, 20 Nov 2026): in `source/svg_training/ste/`, a numeric literal other than 0, 1, −1, 2 is allowed only on the

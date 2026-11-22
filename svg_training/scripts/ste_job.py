@@ -4,6 +4,7 @@
     python scripts/ste_job.py launch --task L0.11 --name <job> --run-dir runs/<folder> --min-s <seconds> --gpu-h <hours> -- <command ...>
     python scripts/ste_job.py wait <job>
     python scripts/ste_job.py status
+    python scripts/ste_job.py carry --gpu-h <hours> --note "<machine> <date>"
     python scripts/ste_job.py owner-pauses
 
 launch   starts <command ...> detached (its own session; output appended to <run-dir>/job.log) behind a thin wrapper
@@ -31,7 +32,12 @@ wait     blocks until the job has ended, prints one line
          An unknown job name: status 22, nothing on stdout. The waiter's own failure (state.json unreadable): 23.
 status   one line per job: alive | alive (paused) | alive (wrapper gone) | dead | dead (previous boot), the exit code.
          faults=<n> (in wait's line and in status) counts bookkeeping writes the wrapper had to retry (a full disk,
-         any error): the job was not harmed by them; details in <run-dir>/job.json and job.log.
+         any error): the job was not harmed by them; details in <run-dir>/job.json and job.log. A last line gives the
+         budget section in work: used (this machine's ledger rows + carried hours) of its cap.
+carry    one ledger per machine, one cap for both (the 13.0 of L1 + L2 is shared by the laptop and the RTX 5090):
+         appends one marked row (group "carried:L1+L2") of GPU-hours the other machine used, which counts toward the
+         cap of the budget section in work, never toward a task. --gpu-h: a finite number, 0 or more. --note: the
+         machine and the date. Refused (status 2, nothing written) otherwise.
 
 owner-pauses  lists the open pauses that are not the lead's own (not tagged GPU_PAUSE_BY=lead), one line each; exit
          0 if there is none, 2 if there is one. scripts/gpu_pause.sh runs it before a resume or stop tagged
@@ -51,8 +57,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "source"))
 
-from svg_training.ste import jobs  # noqa: E402
-from svg_training.ste.config import SETTINGS_FILE  # noqa: E402
+from svg_training.ste import budget, jobs  # noqa: E402
+from svg_training.ste.config import SETTINGS_FILE, load_ste_learning  # noqa: E402
 from svg_training.ste.run_contract import EXIT_DONE, EXIT_REFUSED  # noqa: E402
 
 SEPARATOR = "--"
@@ -60,9 +66,10 @@ SEPARATOR = "--"
 
 def parse(argv: list[str] | None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    commands = parser.add_subparsers(dest="command", required=True, metavar="{launch,wait,status,owner-pauses}")
+    commands = parser.add_subparsers(dest="command", required=True,
+                                     metavar="{launch,wait,status,carry,owner-pauses}")
     launch = commands.add_parser("launch", help="start a command detached and record the job")
-    launch.add_argument("--task", required=True, help="task ID, as in configs/ste_learning.toml (L0.11)")
+    launch.add_argument("--task", required=True, help="task ID, as in configs/ste_learning.toml (L1.9)")
     launch.add_argument("--name", required=True, help="job name: letters, digits, . _ -")
     launch.add_argument("--run-dir", required=True, type=Path, help="the job's run folder")
     launch.add_argument("--min-s", required=True, type=float, help="expected minimum effective duration, seconds")
@@ -73,7 +80,12 @@ def parse(argv: list[str] | None) -> argparse.Namespace:
     wait = commands.add_parser("wait", help="block until a job has ended; exit with its exit code")
     wait.add_argument("name")
     wait.add_argument("--poll-s", type=float, default=jobs.POLL_S, help="seconds between looks")
-    commands.add_parser("status", help="list the jobs")
+    status = commands.add_parser("status", help="list the jobs and the budget in work")
+    status.add_argument("--settings", type=Path, default=SETTINGS_FILE, help="the track's settings file (caps)")
+    carry = commands.add_parser("carry", help="add GPU-hours another machine used to the budget in work")
+    carry.add_argument("--gpu-h", required=True, type=float, help="GPU-hours the other machine used SINCE ITS LAST CARRY (an increment of its own ledger rows only, never a running total; the ledger is append-only)")
+    carry.add_argument("--note", required=True, help="the machine and the date, as \"rtx5090 2026-11-24\"")
+    carry.add_argument("--settings", type=Path, default=SETTINGS_FILE, help="the track's settings file (caps)")
     commands.add_parser("owner-pauses", help="list the open owner pauses; exit 2 if there is one")
     wrapper = commands.add_parser(jobs.WRAPPER_COMMAND)             # the wrapper: started by launch, not by hand
     wrapper.add_argument("run_dir", type=Path)
@@ -117,7 +129,17 @@ def run(args: argparse.Namespace) -> int:
         lines = jobs.owner_pause_lines()
         print("\n".join(lines or ["no owner pause is open"]))
         return EXIT_REFUSED if lines else EXIT_DONE
-    print("\n".join(jobs.status_lines()))
+    if args.command == "carry":
+        in_work = load_ste_learning(args.settings)[0].budget_in_work()
+        try:
+            row = budget.log_carried(in_work, args.gpu_h, args.note)
+        except budget.BudgetError as err:
+            print(f"refused: {err}", file=sys.stderr)
+            return EXIT_REFUSED
+        print(f"carried {row['carried_gpu_h']!r} GPU-h to [{in_work.section}] ({row['note']}); "
+              f"{budget.budget_summary(args.settings)}")
+        return EXIT_DONE
+    print("\n".join([*jobs.status_lines(), f"budget {budget.budget_summary(args.settings)}"]))
     return EXIT_DONE
 
 

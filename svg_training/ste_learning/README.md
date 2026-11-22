@@ -16,8 +16,9 @@ The goal is a pair of policies that play under rules that can fly, keep the team
 against attackers they did not train against. They are then checked in the AirStack simulator (the flight
 software's own simulator) and in a real one-against-one (1v1) flight, each with the owner's approval.
 
-**Phase L0 was approved by the owner on 20 November 2026, with a cap of 19 GPU-h.** The approval covers L0 only:
-phases L1 to L9 and every PROPOSED value stay open until their own gates. Task-by-task status:
+**Phase L0 is done (13.77 of its 19 GPU-h), and the owner ruled gate G0 on 22 November 2026** ([DISCUSSION §14](DISCUSSION_2026-11-19_20.md#14-gate-g0-rulings-owner-22-nov-2026)):
+the main game has a 1-for-1 tag, 1.6 m to build the pipeline and 1.15 m main training after L2; phases L1 and L2 are
+approved together with a cap of 13 GPU-h, and L1 is in work. L3 to L9 stay open until their own gates. Task-by-task status:
 [status/STATUS_LATEST.md](status/STATUS_LATEST.md).
 
 ## Where it stands
@@ -28,26 +29,26 @@ for the owner's ruling. D and P numbers are rows of the [discussion record](DISC
 | Item | Status | Ruled at |
 |---|---|---|
 | STE runs its own learning track, in parallel with NUS (D1) | DECIDED | — |
-| A tag takes out one Guard drone and one Strike drone (D2) | DECIDED, provisional | revisited at gate G0 |
-| Training happens in Isaac Lab; the fast engine is for quick experiments (D3) | DECIDED | cost re-checked at gate G0 |
+| A tag takes out one Guard drone and one Strike drone (D2) | DECIDED (gate G0, 22 Nov 2026) | — |
+| Training happens in Isaac Lab; the fast engine is for quick experiments and checks (D3, A12) | DECIDED (gate G0, 22 Nov 2026) | — |
 | Policies run on the mission-control laptop, not on the drones (D5) | DECIDED | — |
 | Learner: one shared policy per team, drone loss, self-play against a pool (D6) | DECIDED | — |
 | Isaac Lab videos show the Starling as it looks in the AirStack simulator (D9) | DECIDED | — |
-| Tag radius of 1.6 m, and the zone radius against it (P1, P12) | PROPOSED | gate G0 |
-| Where to train, once the cost of D3 is measured: all in Isaac Lab, or the league on the fast engine | OPEN | gate G0 |
-| Team sizes: 1v1, 2v1, 3v3 or 5v3 (P9) | OPEN | gate G0 |
-| Environments: open arena first, or the construction-site world sooner (P10) | OPEN | gate G0 |
-| What the real demo must show (P11) | OPEN | gate G0 |
-| Fleets for real flight: all Starlings, all Crazyflies, or a mix (P13); lead's recommendation: Crazyflies first, the Starling 1v1 as planned, the mix later | OPEN | gate G0 |
-| Budgets of phases L1 to L9 | OPEN | gate G0 |
+| The main game has a 1-for-1 tag: 1.6 m to build the pipeline, a 1.15 m side track in L1–L2, 1.15 m main training after L2; zone radius 1.6 m (P1, P12) | DECIDED (gate G0, 22 Nov 2026) | the trained demo's tag: end of L2 |
+| Team sizes: train 3v3, plus the 1v1 reads in L1; every trained team also scored at 2v1 and 5v3 (P9) | DECIDED (gate G0, 22 Nov 2026) | — |
+| Environments: open arena (E0) until a trained team passes the opponent panel, then E1 blocks, then E2 the construction site (P10) | DECIDED (gate G0, 22 Nov 2026) | — |
+| The real demo: the scripted 1v1 at 1.6 m until a trained team passes the opponent panel (P11) | DECIDED (gate G0, 22 Nov 2026) | — |
+| Fleets: Crazyflies first at Starling distances, the Starling 1v1 as planned (P13) | DECIDED (gate G0, 22 Nov 2026) | — |
+| Budget of L1 + L2: 13 GPU-h | DECIDED (gate G0, 22 Nov 2026) | — |
+| Budgets of phases L3 to L9 | OPEN | re-baselined later |
 | Filter option B (P2) | PROPOSED | end of phase L2 |
 | How AirStack is changed (D4) | OPEN | phase L7 |
 
 Two technical calls were made by the lead (the main Claude session) and recorded: the drone's estimator is modelled
 as a delay plus noise first (D7), and work on NUS's training recipe is paused (D8); this track does not depend on it.
 
-**The first gate.** Phase L0 is approved (owner, 20 November 2026). It ends at gate G0, where the owner rules on the
-game and the route with L0's numbers. The report that explains L0's results for that ruling: [G0_REPORT.md](G0_REPORT.md).
+**The first gate.** Phase L0 (approved 20 November 2026) ended at gate G0, ruled by the owner on 22 November 2026
+([DISCUSSION §14](DISCUSSION_2026-11-19_20.md#14-gate-g0-rulings-owner-22-nov-2026)). The report that explains L0's results for that ruling: [G0_REPORT.md](G0_REPORT.md).
 
 ## What is being built
 
@@ -83,14 +84,15 @@ This is tried in the AirStack simulator first, then in a real 1v1 flight with tw
 | Tier 1 | STE's fast game engine: a simplified drone, used for quick experiments and debugging | exists |
 | Tier 2 | The Isaac Lab physics drone: a Starling with rotors and PX4-style control loops | exists |
 | Estimator effect | A real drone flies on a position estimate that is slightly late and noisy; tier 2 gets a delay-plus-noise model of that | to build |
-| Tag | A Guard drone and a Strike drone closer than the tag radius are both out and land. Proposed radius: 1.6 m between centres | PROPOSED (P1) |
+| Tag | A Guard drone and a Strike drone closer than the tag radius are both out and land. 1.6 m between centres while the pipeline is built, 1.15 m main training after L2 | DECIDED (P1, gate G0, 22 Nov 2026) |
 | Option B | A safety-filter variant: in a Guard–Strike pair only the Guard drone swerves | PROPOSED (P2) |
 
 ## The plan
 
-![Roadmap of phases L0 to L9 with the simulator each uses and where each ends: L0 was approved by the owner on 20 November 2026; L0 ends at gate G0, where the owner rules on the game and the route; L1 to L8 are the intended path with budgets open; L9, documentation, runs alongside](figures/plan_phases.png)
+![Roadmap of phases L0 to L9 with the simulator each uses and where each ends: L0 was approved by the owner on 20 November 2026 and ended at gate G0, ruled on 22 November 2026 (the picture predates the ruling); L1 is in work with L1 and L2 capped at 13 GPU-hours, L3 to L8 are the intended path with budgets open; L9, documentation, runs alongside](figures/plan_phases.png)
 
-Phase L0 is final and approved. Phases L1 to L9 are the intended path: their tasks, order and budgets are set again at gate G0.
+Phase L0 is done and gate G0 is ruled (22 November 2026). L1 and L2 are approved together (13 GPU-h) and L1 is in work;
+L3 to L9 are the intended path, re-baselined later.
 L9, documentation, already runs alongside.
 
 Terms in the table: a *pilot* is a short trial run; a *smoke test* is a very short run that only checks the code
@@ -274,12 +276,14 @@ not maintained.
 
 ## What is asked of the owner now
 
-Nothing until gate G0. The two questions asked on 20 November 2026:
+Nothing now: gate G0 was ruled on 22 November 2026 ([DISCUSSION §14](DISCUSSION_2026-11-19_20.md#14-gate-g0-rulings-owner-22-nov-2026)). The questions asked earlier:
 
 | # | Question | Answer |
 |---|---|---|
 | 1 | Approve phase L0, with a cap of 19 GPU-h, alone on the GPU for its probes? | **approved** (owner, 20 November 2026) |
 | 2 | When everything waits on the owner: the full status every 30 minutes, or one line every 2 hours? | not answered; the standing rule holds: the full status every 30 minutes |
+| 3 | Gate G0: the game, the route and the L1 + L2 budget | **ruled** (owner, 22 November 2026) |
 
-Everything else is ruled at its own gate, with numbers: the tag and the zone, what a tag costs, team sizes, where to
-train, environments, the demo, the budgets of L1 to L9, filter option B and the AirStack approach.
+Still open, each brought when its phase starts: the AirStack approach (D4, L7), drone loss in the game (P7, L2), whether
+attacker drones run the filter (P8), the video style (P4), the CMU filter-change proposal (P6), filter option B (P2,
+end of L2) and the budgets of L3 to L9.

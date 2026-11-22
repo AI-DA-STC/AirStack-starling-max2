@@ -1,6 +1,6 @@
 INTERNAL · DRAFT of 22 Nov 2026 for gate G0 (PLAN row L0.6, [G0_DECISION](../G0_DECISION.md) row 15). The costed plan for
-phases L1–L9 that the lead brings to the walk-through. Nothing here is approved; every hour is an estimate built from the
-measured rates below. Every rate was observed in the training simulator; nothing here is a flight result.
+phases L1–L9 that the lead brings to the walk-through. Budget for L1 + L2 ruled 13 GPU-h (owner, 22 Nov; [DISCUSSION §14](../DISCUSSION_2026-11-19_20.md#14-gate-g0-rulings-owner-22-nov-2026));
+nothing else here is approved, and every hour is an estimate built from the measured rates below. Every rate was observed in the training simulator; nothing here is a flight result.
 
 # L1–L9 costed plan (draft for gate G0)
 
@@ -11,28 +11,31 @@ measured rates below. Every rate was observed in the training simulator; nothing
 
 **The plan follows D3** (owner, 20 Nov: train in Isaac Lab, the fast engine for quick experiments and debugging only;
 G0 recommendation 4: keep D3). Tier 2 trains the learner pilot, the league pilot and the runs of record. Tier 1 runs the
-quick experiments (best-response reads, recipe tests) and the large scoring tables. **Open question for the owner (A12):**
-this draft also trains on tier 1 in L1.9, L1.10, L1.11, L2.7, L2.8, L3.5 and L5.3 (about 5× cheaper, and comparable with L0's
-tier 1 numbers) and scores runs of record partly on tier 1 (L4.3, L6.1, L6.2); whether these fit D3 is the owner's call.
+quick experiments (best-response reads, recipe tests) and the large scoring tables. **A12, RULED (owner, 22 Nov 2026):**
+the fast engine (tier 1) is used for quick experiments and checks, main training in Isaac Lab: the training reads L1.9,
+L1.10, L1.11, L1.13, L2.7, L2.8, L3.5 and L5.3 (about 5× cheaper, and comparable with L0's tier 1 numbers) and the tier-1
+scoring L4.3, L6.1 and L6.2.
 
-Other G0 lead answers used: 3v3 main size, 1v1 trained and tested in L1, tag drawn within ±0.1 m in training,
+Other G0 rulings used (owner, 22 Nov 2026, all as the lead recommended): 3v3 main size, 1v1 trained and tested in L1, tag drawn within ±0.1 m in training,
 Crazyflies first at Starling metres, Starling 1v1 demo, physical intercept in simulation only, 3 seeds of record.
 
-The tag is 1.6 m for L1 set-up and pilots (G0 recommendation 1). There each trained team was scored against one
+The tag is 1.6 m for building the pipeline (G0 ruling R1, option (d)); the 1.15 m side track runs in L1–L2: L1.11 (Strike team trained against guard_field at 1.6 m, which separates the
+opponent from the tag), L1.12 (T46's 1.6 m Guard team scored against every Strike script) and L1.13 (the
+shorter-training-clock Strike run at 1.15 m); 1.15 m main training follows L2. At 1.6 m each trained team was scored against one
 opponent: the Strike team fails against a second (85 of 1,000 against field Guards), and the Guard team is untested
 against other Strike scripts ([T56](../../records/2026-11-22_ste_l012d_cross_tag_record.md)).
 Tag 1.4 m has the same timings (T46). Tag 1.15 m is in section 4.
 
 | Phase | Low – high GPU-h | Planning figure | Main cost |
 |---|---|---|---|
-| L1 Drone model, with the 1v1 and varied-tag reads | 2.6 – 6.1 | 4 | two tier 1 best-response reads |
+| L1 Drone model, with the 1v1 and varied-tag reads | 3.3 – 6.8 (2.6 – 6.1 before L1.13) | 4.7 | two tier 1 best-response reads |
 | L2 Game rules in the training copy | 1.7 – 3.9 | 2.5 | best-response read under the full rules |
 | L3 Learner | 3.4 – 6.7 | 5 | tier 2 learner pilot |
 | L4 Evaluation suite and gates | 0.7 – 4.5 | 2 | calibration on tier 2 |
 | L5 League self-play, 3 seeds of record on tier 2 | 33 – at least 100 | 63 | runs of record (26–83) |
 | L6 QC, export, intercept in simulation | 4.3 – 27 | 10 | scoring the runs of record on tier 2 |
 | L7 AirStack side, L8 real flight, L9 docs | 0 (+ about 3 h of AirStack simulator time) | 0 | — |
-| **Total** | **46 – at least 149** | **87** | |
+| **Total** | **46 – at least 149** before L1.13 (about 47 – at least 150 with it) | **87** (about 88 with L1.13) | |
 
 - **What drives the range:** the length of a league run (2–5 B game-steps per seed, PROPOSED) at the tier 2 rate
   (0.18–0.23 B per GPU-h, T53). The high end is "at least" because T41 trained about 4× slower against a learned
@@ -42,8 +45,8 @@ Tag 1.4 m has the same timings (T46). Tag 1.15 m is in section 4.
 - **Calendar (est.):** L1–L4 take about 3–4 weeks, bound by build work and owner gates. L5 takes about 1–2 weeks of the
   RTX 5090, bound by the GPU. L6 takes about 1 week. L7–L8 then depend on an AirStack session and flight slots: about
   2–4 more weeks.
-- **Proposed now (section 5):** approve L1 + L2 together, with a cap of 10 GPU-h plus about 1 h of AirStack simulator
-  time.
+- **Ruled at G0 (section 5):** L1 + L2 together, with a cap of 13 GPU-h plus about 1 h of AirStack simulator time
+  (owner, 22 Nov 2026).
 
 ## 2. Rates used (IDs referenced below)
 
@@ -84,13 +87,14 @@ varied-tag reads.
 | L1.6 Batched estimator (only if needed) | smoke | 2 | laptop | 0 – 0.5 | WORK_BREAKDOWN |
 | L1.7 Same effects in tier 1, so quick experiments stay comparable (*new*) | short check | 1 | laptop | 0 – 0.1 | R7 |
 | L1.8 T46's base policies re-scored on the new tier 2 (*new*) | 4 conditions | 2 | laptop | 0.1 – 1.2 | R8: 4 × 0.02–0.3 |
-| L1.9 1v1 best-response read, both sides (*new*; L0.12 driver), plus a scripted 1v1 screen at tag 1.15 m on the CPU (G0 row 8) | run 0 + Strike + Guard, 0.55 B each; tier 2 check | 1 (check 2) | laptop | 0.5 – 1.9 | run 0 0.1; 2 × 0.55 B at R1 × R5 (0.18 h each) to R2 (0.6 h each); check 0.05–0.6 |
-| L1.10 Tag drawn within ±0.1 m, 3v3, both sides (*new*) | Guard + Strike, 0.55 B each, scored at the fixed tag | 1 | laptop | 1.0 – 1.2 | Guard 0.40–0.52 h + Strike 0.57–0.59 h (T46) |
-| **L1** | | | | **2.6 – 6.1** | |
-| L1.11 Strike team trained against guard_field at 1.6 m (*new*, PROPOSED; not in the L1 sum or the 87): separates "field Guards are hard" from "1.15 m is hard" | Strike, 0.55 B | 1 | laptop | about 0.6 | R2 (T46 base Strike 0.594) |
-| L1.12 T46's 1.6 m Guard team scored against every Strike script at 1.6 m (*new*, PROPOSED; not in the L1 sum or the 87): its 913 is against strike_straight only | scoring, one condition per Strike script | 1 | laptop | minutes (under 0.1) | R7 |
+| L1.9 1v1 best-response read, both sides, trained at tag 1.6 m (*new*; L0.12 driver), plus a scripted 1v1 screen also at tag 1.15 m on the CPU (G0 row 8) | run 0 + Strike + Guard, 0.55 B each; tier 2 check | 1 (check 2) | laptop | 0.5 – 1.9 | run 0 0.1; 2 × 0.55 B at R1 × R5 (0.18 h each) to R2 (0.6 h each); check 0.05–0.6 |
+| L1.10 Tag drawn within ±0.1 m (1.5–1.7 m), 3v3, both sides (*new*) | Guard + Strike, 0.55 B each, scored at the fixed tag | 1 | laptop | 1.0 – 1.2 | Guard 0.40–0.52 h + Strike 0.57–0.59 h (T46) |
+| L1.13 Shorter-training-clock 1.15 m Strike run (*new*, G0 ruling R15): tests the "too few finished games" lead ([DISCUSSION §12](../DISCUSSION_2026-11-19_20.md#12-l012c-findings-22-nov-2026)) | Strike, base budget, shorter training game clock (value set in its spec) | 1 | laptop | about 0.7 | lead's estimate: T46 base Strike 0.594 GPU-h × 1.1–1.3 (R10); config cap 0.8 |
+| **L1** | | | | **3.3 – 6.8** | 2.6 – 6.1 + L1.13 about 0.7 |
+| L1.11 Strike team trained against guard_field at 1.6 m (*new*; inside the ruled 13 GPU-h, G0 ruling R15; not in the L1 sum or the 87): separates "field Guards are hard" from "1.15 m is hard" | Strike, 0.55 B | 1 | laptop | about 0.6 | R2 (T46 base Strike 0.594); config cap 0.7 |
+| L1.12 T46's 1.6 m Guard team scored against every Strike script at 1.6 m (*new*; inside the ruled 13 GPU-h, G0 ruling R15; not in the L1 sum or the 87): its 913 is against strike_straight only | scoring, one condition per Strike script | 1 | laptop | minutes (under 0.1) | R7 |
 
-L1.9 and L1.10 are quick experiments on tier 1, as D3 allows. Training 1v1 on tier 2 would add about 3 GPU-h (2 × 0.55 B
+L1.9, L1.10 and L1.13 are quick experiments on tier 1, as D3 allows (A12, ruled 22 Nov 2026). Training 1v1 on tier 2 would add about 3 GPU-h (2 × 0.55 B
 at about 0.37 B per GPU-h: tier 2 at 1v1 is about 1.6× faster per game-step than at 3v3, T48).
 
 Human gates: P5 (simulator time, when the owner is not flying); the SIM-ONLY values in tier 2; the NEAR-962 flight
@@ -131,6 +135,10 @@ pilot.
 | L3.5 Quick pilot, both sides against scripts, sizes 1v1–3v3, drone loss | 2 runs | 0.55 – 1.1 B each | 1 | 0.85 – 3.1 | 2 × 0.55 / 1.3 to 2 × 1.1 / 0.7 (0.7 allows for the encoder, PROPOSED) |
 | L3.6 Tier 2 path and pilot (Guard side against scripts) | smoke + 1 run | 0.55 B | 2 | 2.5 – 3.6 | 0.55 / 0.23 to 0.55 / 0.18, + smoke 0.1–0.5 |
 | **L3** | | | | **3.4 – 6.7** | |
+
+**Added at G0 (owner, 22 Nov 2026, ruling R18):** a training-settings sweep (learning rate, exploration, discount,
+training game clock, decision period), run at 1.6 m and 1.15 m and costed in the L3 plan. Cost OPEN: not in the L3 sum,
+the 87 or the 13.
 
 Human gate: the owner approves observation v0.3.
 
@@ -210,13 +218,15 @@ Human gate: the owner approves the hand-over.
 | 5 seeds of record instead of 3 | L5.5 × 5/3 | + 17 – 55 | PROPOSED |
 | Crazyflies need their own drone model and training (if L6.5 shows the policy does not tolerate the 0.48–0.56 s lag) | a tier 1 Crazyflie model + one more set of runs of record | + 6 – 56, plus 25–40 h of build work | OPEN |
 
-## 5. Proposed cap for the owner at G0 (D3, tag 1.6 m)
+## 5. Cap ruled at G0 (owner, 22 Nov 2026)
 
-| Tag ruling | Proposal | Cap | Arithmetic |
-|---|---|---|---|
-| **1.6 m (lead's recommendation), or 1.4 m** | **L1 + L2 together** | **10 GPU-h + about 1 h of AirStack simulator time** | L1 high 6.1 + L2 high 3.9; L1.11 (about 0.6), L1.12 and cross-play scoring (minutes each, R7) come on top: about 10.6–11, so 11 covers them |
-| 1.15 m | L1 + L2.8 (the curriculum pilot) first; L2.8 has lower priority since L0.12d, and the lead re-costs this row | 15 GPU-h + about 1 h of simulator time | L1 6.1 at 1× read budgets + L2.8 up to 5.8 + margin |
-| Alternative, any tag | L1 only | 6.5 GPU-h | L1 high 6.1 |
+| Ruling | Cap | Arithmetic |
+|---|---|---|
+| **L1 + L2 together, tag option (d)** | **13 GPU-h + about 1 h of AirStack simulator time** | L1 high 6.1 before L1.13 + L2 high 3.9 = 10 base; L1.11 (about 0.6), L1.12 and the cross-play scoring (minutes each, R7): about 10.6–11; L1.13 (about 0.7, lead's estimate): about 11.3–11.7, rounded to 12; plus one confirming seed: 13 |
+
+The owner's words and every other ruling: [DISCUSSION §14](../DISCUSSION_2026-11-19_20.md#14-gate-g0-rulings-owner-22-nov-2026). Before the ruling this section proposed 10 GPU-h for
+L1 + L2 at tag 1.6 m (11 with the optional checks), 15 GPU-h for a 1.15 m route (L1 + L2.8) and 6.5 GPU-h for L1 alone;
+L3–L9 stay OPEN, re-baselined later.
 
 **What L1 delivers.** All results are observed in the training simulator.
 - **The Isaac Lab Starling the plan trains on**, with the estimator's delay and noise and with drag (exploratory fit),
@@ -224,7 +234,10 @@ Human gate: the owner approves the hand-over.
 - **The 5090 checked and its speeds measured; T46's trained teams re-scored** on the new Isaac Lab drone.
 - **A first 1v1 read:** a trained Strike team and a trained Guard team at 1v1 against scripts that hold 1,000 of 1,000.
   Does learning change the two-Starling demo size?
-- **A first read of training with the tag drawn within ±0.1 m**, scored at the fixed tag.
+- **A first read of training with the tag drawn within ±0.1 m** (1.5–1.7 m), scored at the fixed tag.
+- **The 1.15 m side track:** the Strike team trained against field Guards at 1.6 m, which separates the opponent from
+  the tag (L1.11); T46's 1.6 m Guard team scored against every Strike script (L1.12); and the shorter-training-clock
+  Strike run at 1.15 m (L1.13).
 
 L1 does not deliver a league, a run of record, or anything flown. L2 adds option B's numbers for the P2 ruling and a
 best-response read under the full rules.
@@ -262,8 +275,8 @@ Every rate except R6 is laptop-measured; the 5090's are PROPOSED equal until L1.
 | A8 | The 5090 is at least as fast as the laptop, and three tier 2 seeds side by side fit its 32 GB | OPEN (L1.0) |
 | A9 | GPU-h of L1.1, L1.2, L1.5, L1.6, L2.1, L2.3 and L5.6 are version 1's guesses (WORK_BREAKDOWN) | PROPOSED |
 | A10 | 3-D worlds, 5v3 and a Crazyflie model are outside the base total | OPEN (section 4) |
-| A11 | The physical intercept is shown in simulation only; nothing real intercepts | PROPOSED (owner's proposal, DISCUSSION §11) |
-| A12 | Tier 1 training reads (L1.9, L1.10, L1.11, L2.7, L2.8, L3.5, L5.3) and tier 1 scoring (L4.3, L6.1, L6.2) fit D3's "quick experiments and debugging only" | OPEN: owner's call |
+| A11 | The physical intercept is shown in simulation only; nothing real intercepts | RULED (owner, 22 Nov 2026, G0 ruling R14; owner's proposal, DISCUSSION §11) |
+| A12 | Tier 1 training reads (L1.9, L1.10, L1.11, L1.13, L2.7, L2.8, L3.5, L5.3) and tier 1 scoring (L4.3, L6.1, L6.2) fit D3's "quick experiments and debugging only" | RULED (owner, 22 Nov 2026): the fast engine for quick experiments and checks, main training in Isaac Lab |
 
 Sources: [PLAN](../PLAN.md) §3, §5, §9, §13; [G0_DECISION](../G0_DECISION.md); [DISCUSSION](../DISCUSSION_2026-11-19_20.md)
 §2.16, §3, §9, §11, §12; [WORK_BREAKDOWN](../WORK_BREAKDOWN.md); records cited per rate.
@@ -272,7 +285,7 @@ Sources: [PLAN](../PLAN.md) §3, §5, §9, §13; [G0_DECISION](../G0_DECISION.md
 
 From the results-and-plan discussion ([DISCUSSION §12](../DISCUSSION_2026-11-19_20.md#12-l012c-findings-22-nov-2026)):
 a 1.15 m check block in L1 (the 1.6 m Strike team against guard_field, minutes: **done**, L0.12d, [T56](../../records/2026-11-22_ste_l012d_cross_tag_record.md): 85 at 1.6 m, 121 at 1.15 m; a shorter-clock 1.15 m Strike run,
-about 0.6 GPU-h; a warm start from T46, as L2.8 but earlier); two seeds for plan-changing reads; a Guard-script pool for
+about 0.6 GPU-h (now L1.13, about 0.7, ruled 22 Nov 2026); a warm start from T46, as L2.8 but earlier); two seeds for plan-changing reads; a Guard-script pool for
 Strike training (L5); flight-side gates in L7/L8 (separation under real lag, scoring at tag ± the real error, arena fit,
 per-tag logging, height play). The lead re-costs the plan with these before the walk-through.
 

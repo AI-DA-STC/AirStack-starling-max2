@@ -12,6 +12,21 @@ Everything needed is in this folder; nothing depends on the previous chat. Claud
 the private NUS workspace (`~/ma_skills-self-play/`, 5090 only) do **not** travel with git: if this file and a memory
 note disagree, this file wins.
 
+### 22 November 2026 ~18:30 — GATE G0 RULED; PHASE L1 OPEN (read this first)
+The owner ruled every G0 row (DISCUSSION §14; G0_DECISION banner): main game has a 1-for-1 tag (P1, overturns the FIXED
+no-tag rows); option (d): 1.6 m to build the pipeline and for the first demo (scripted 1v1), a 1.15 m side track in L1–L2,
+1.15 m main training after L2; A12: fast engine for quick experiments and checks, main training in Isaac Lab; L1 + L2 cap
+13 GPU-h; 120 s game; P5 approved (laptop or 5090); E0 → E1 → E2; train 3v3 (+1v1), score 2v1 and 5v3 too; new row 18
+(training-settings sweep, cost in the L3 plan). Code: `configs/ste_learning.toml` has `[budget_l1_l2]` (cap 13.0, L1 caps
+sum 8.1), L0 `closed = true` (launches refused); **one ledger per machine: at each switch run
+`scripts/ste_job.py carry --gpu-h <the other machine's L1+L2 hours since its last carry> --note "<machine> <date>"`**.
+L1+L2 hours used so far: 0 (laptop). Trained players for L1 are in git: `ste_provisional/` (T46 base Guard/Strike, T54,
+T55, T52 ABORTED, T45 per_game.npz). Next: the L1 side-track spec (L1.11 Strike v guard_field at 1.6 m; L1.12 T46 Guard v
+every Strike script; L1.13 two arms at 1.15 m: 30 s training clock / discount 0.997, T52 comparator), its driver build,
+then the runs; L1.0 (5090 checks) first on the 5090. Machine-switch rule: a slow task is handed over, never cut short.
+NUS-facing pages still saying "no tag" (GLOSSARY, RESEARCH, THE_GAME, DESIGN, docs/README, contact-tag plan, README):
+ask the owner before editing.
+
 ### 22 November 2026 ~14:30 — G0 REPORT WRITTEN (owner asked for a proper report before G0)
 `ste_learning/G0_REPORT.md`: the G0 decision explained for a project lead (summary, primer, the tag decision first, one
 decision table with cost and "if wrong", evidence, limits, appendices; new game diagram by `scripts/make_g0_report_figures.py`).

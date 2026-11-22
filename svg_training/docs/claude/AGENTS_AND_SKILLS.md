@@ -64,5 +64,7 @@ lead handles git only on the owner's say-so.
 - YAML configs (the repository hook treats them as behaviour changes).
 - Fixed start positions (starts are random from the first run).
 - Training without the safety filter in the loop.
-- A tag radius, or a safety filter between the two teams (owner, 14 November 2026: a tag is contact).
+- On the contact-tag side quest: a tag radius, or a safety filter between the two teams (owner, 14 November 2026: a tag
+  is contact). The main game differs: the filter acts on every pair (owner, 15 November 2026) and, since gate G0 (owner,
+  22 November 2026), it has a 1-for-1 tag at a distance (STANDARDS §4 "Tag").
 - Google Photorealistic 3D Tiles or OneMap3D as training worlds (their terms do not allow it).

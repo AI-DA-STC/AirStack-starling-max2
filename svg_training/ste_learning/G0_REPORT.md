@@ -2,6 +2,9 @@ INTERNAL · report for the G0 decision, written by the lead 22 Nov 2026; all gam
 
 # Gate G0 report: what phase L0 found, and what is to be decided
 
+> **RULED 22 Nov 2026:** the owner accepted every recommendation in section 3, with option (d) for the tag and 13 GPU-h for L1 + L2;
+> the rulings and what stays open are in [DISCUSSION §14](DISCUSSION_2026-11-19_20.md#14-gate-g0-rulings-owner-22-nov-2026). The text below is the report as written before the ruling.
+
 ## Summary
 
 Scores below count games won out of 1,000 fixed starts: the Guard team "holds" (stops the attack), the Strike team

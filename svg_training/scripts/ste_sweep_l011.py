@@ -856,9 +856,11 @@ def pilot_cells(gates: sweep.Gates) -> list[tuple[str, str]]:
 
 
 def gates_cap_h(gates: sweep.Gates | None = None) -> float:
-    """The L0.11 task cap of configs/ste_learning.toml (GPU-h)."""
+    """The cap (GPU-h) in configs/ste_learning.toml of the gate file's task, whichever budget section holds it (L0's,
+    closed, or L1 + L2's); without a gate file, L0.11's."""
     from svg_training.ste.config import load_ste_learning
-    return float(load_ste_learning()[0].budget.cap_gpu_h("L0.11"))
+    task = gates.run["task"] if gates is not None else "L0.11"
+    return float(load_ste_learning()[0].cap_gpu_h(task))
 
 
 def project_grid(gates: sweep.Gates, points: list[dict]) -> list[dict]:

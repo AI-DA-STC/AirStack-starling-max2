@@ -18,7 +18,10 @@ then. The union is ``nus/pauses.py::logged_gpu_hours``, imported, not copied: th
 file without a name. A line that is not a ledger line (torn by a power cut) is skipped and reported on stderr.
 
 :func:`check_launch` compares used plus asked with the caps of ``configs/ste_learning.toml`` (the task's cap and the
-phase cap) and raises :class:`BudgetError` naming the cap, what is used and what was asked. The hours a job asks for
+phase cap of the budget section that holds the task: ``[budget]`` for an L0 task, ``[budget_l1_l2]``, one cap for phases
+L1 and L2 together, for an L1 task; a section's used hours are the union over all its tasks plus its carried hours)
+and raises :class:`BudgetError` naming the cap, what is used and what was asked; a task of a closed section (phase L0
+since G0) is refused whatever it asks. The hours a job asks for
 are its total over all the launches of its run: at a relaunch with the same name in the same run folder the hours
 logged there count as part of that, so the same launch line resumes a job. A new run folder is a new run, even under an
 old name (L07-I1): it gets no credit, and a line without ``"run_dir"`` (written before L07-I1) is never credited. Because used hours are a union, checking every launch this way keeps the union under the
@@ -31,14 +34,21 @@ import math
 import os
 import sys
 import tempfile
+import time
 from pathlib import Path
 from typing import Iterable, NamedTuple
 
 from ..nus import pauses as nus_pauses              # standard library only: no PyTorch, no Isaac
 from . import pauses, shared
-from .config import SETTINGS_FILE, TASK_IDS, load_ste_learning
+from .config import SETTINGS_FILE, TASK_IDS, BudgetCfg, load_ste_learning
 
 CUDA = "cuda"                                       # a device name that starts with this used the GPU
+# Carried hours (fix round 1, G0): one ledger per machine, one cap for both machines. A carried row records GPU-hours
+# another machine used under a budget section; it is not an interval (no union, no pause) and counts toward that
+# section's cap only, never toward a task. Its group is "carried:" + the section's phases joined by "+".
+CARRIED_PREFIX = "carried:"
+CARRIED_DEVICE = "carried"                          # not "cuda...": the interval arithmetic never reads the row
+CARRIED_JOB = "carried"
 _ONE_GROUP = "selected"
 _FD_FOLDER = Path("/proc/self/fd")
 _ROUNDING_GPU_H = 1e-9                              # 0.1 + 0.2 is 0.30000000000000004 in binary; a cap of 0.3 still fits
@@ -49,7 +59,7 @@ class BudgetError(ValueError):
 
 
 class Usage(NamedTuple):
-    """Caps and GPU-hours used at a launch check, for the task and for its phase."""
+    """Caps and GPU-hours used at a launch check, for the task and for its budget section (its phase or phases)."""
     task_cap_gpu_h: float
     task_used_gpu_h: float
     phase_cap_gpu_h: float
@@ -160,10 +170,70 @@ def phase_gpu_h(phase: str) -> float:
     return _gpu_h(TASK_IDS[phase])
 
 
+def own_gpu_h(budget: BudgetCfg) -> float:
+    """GPU-hours this machine's ledger holds for a budget section: the union over all its tasks (L1's and L2's)."""
+    return _gpu_h(tuple(task for task, _ in budget.task_cap_gpu_h))
+
+
+def carried_group(budget: BudgetCfg) -> str:
+    """The ledger group of a budget section's carried rows, as "carried:L1+L2"."""
+    return CARRIED_PREFIX + "+".join(budget.phases)
+
+
+def carried_gpu_h(budget: BudgetCfg) -> float:
+    """GPU-hours carried to a budget section from another machine: the sum of its carried rows (a malformed one is
+    skipped and reported on stderr)."""
+    total, bad = 0.0, 0
+    for row in _rows():
+        if row["group"] != carried_group(budget) or row["device"] != CARRIED_DEVICE:
+            continue
+        hours = row.get("carried_gpu_h")
+        if type(hours) in (int, float) and math.isfinite(hours) and hours >= 0:
+            total += hours
+        else:
+            bad += 1
+    if bad:
+        print(f"[ste budget] {bad} carried line(s) without a usable carried_gpu_h skipped", file=sys.stderr)
+    return total
+
+
+def budget_gpu_h(budget: BudgetCfg) -> float:
+    """GPU-hours a budget section has used so far, on both machines: this ledger's rows of all its tasks (their union)
+    plus the hours carried from the other machine. For [budget_l1_l2] that is L1 and L2 together."""
+    return own_gpu_h(budget) + carried_gpu_h(budget)
+
+
+def log_carried(budget: BudgetCfg, gpu_h: float, note: str) -> dict:
+    """Append one carried row to this machine's ledger: ``gpu_h`` GPU-hours another machine used under ``budget`` (a
+    section that is not closed), with ``note`` (machine and date). Returns the row. Raises :class:`BudgetError` for
+    hours that are not a finite number of 0 or more, an empty note, or a closed section; then nothing is written."""
+    if isinstance(gpu_h, bool) or not isinstance(gpu_h, (int, float)) or not math.isfinite(gpu_h) or gpu_h < 0:
+        raise BudgetError(f"carried hours must be a finite number of GPU-hours, 0 or more, got {gpu_h!r}")
+    if not isinstance(note, str) or not note.strip():
+        raise BudgetError(f"a carried row needs a note naming the machine and the date, got {note!r}")
+    if budget.closed:
+        raise BudgetError(f"[{budget.section}] is closed: no hours are carried to it")
+    now = time.time()
+    row = {"group": carried_group(budget), "job": CARRIED_JOB, "device": CARRIED_DEVICE, "start": now, "end": now,
+           "carried_gpu_h": float(gpu_h), "note": note.strip()}
+    nus_pauses.append_row(shared.gpu_hours_log(), row)
+    return row
+
+
+def budget_summary(settings: Path | str = SETTINGS_FILE) -> str:
+    """One line on the budget section in work: used (this ledger's rows + carried) of its cap."""
+    in_work = load_ste_learning(settings)[0].budget_in_work()
+    own, carried = own_gpu_h(in_work), carried_gpu_h(in_work)
+    phases = f"phase {in_work.phases[0]}" if len(in_work.phases) == 1 else f"phases {' + '.join(in_work.phases)}"
+    return (f"{in_work.section} ({phases}): used {own + carried:.3f} of {in_work.phase_cap_gpu_h!r} GPU-h "
+            f"(own rows {own:.3f}, carried {carried:.3f})")
+
+
 def check_launch(task: str, requested_gpu_h: float, settings: Path | str = SETTINGS_FILE, job: str | None = None,
                  run_dir: str | None = None) -> Usage:
     """Raise :class:`BudgetError` if launching a job of ``task`` that asks for ``requested_gpu_h`` GPU-hours would
-    take the task past its cap or the phase past the phase cap (``settings``: the track's settings file). A CPU job
+    take the task past its cap or its budget section past the phase cap (``settings``: the track's settings file; the
+    section is the one that holds the task, so an L0 task meets L0's caps and an L1 task the L1 + L2 cap). A CPU job
     asks for 0 and passes whenever its task exists. Returns the caps and what is used.
 
     ``requested_gpu_h`` is the job's total over all its launches. With ``job`` (the job's name) and ``run_dir`` (its
@@ -174,21 +244,27 @@ def check_launch(task: str, requested_gpu_h: float, settings: Path | str = SETTI
         raise ValueError(f"job and run_dir go together (the credit is the job's hours in its run folder): job {job!r}, "
                          f"run_dir {run_dir!r}")
     cfg, _ = load_ste_learning(settings)
-    phase, name = cfg.track.phase, Path(settings).name
+    name = Path(settings).name
     if isinstance(requested_gpu_h, bool) or not isinstance(requested_gpu_h, (int, float)) \
             or not math.isfinite(requested_gpu_h) or requested_gpu_h < 0:
         raise BudgetError(f"asked must be a finite number of GPU-hours, 0 or more, got {requested_gpu_h!r}")
     try:
-        task_cap = cfg.budget.cap_gpu_h(task)
+        held_by = cfg.budget_of(task)
     except KeyError:
-        raise BudgetError(f"task {task} is not a task of phase {phase} in {name} "
-                          f"(known: {[known for known, _ in cfg.budget.task_cap_gpu_h]})") from None
-    usage = Usage(task_cap, task_gpu_h(task), cfg.budget.phase_cap_gpu_h, phase_gpu_h(phase))
+        raise BudgetError(f"task {task} has no cap in {name} (known: "
+                          f"{[known for each in cfg.budgets() for known, _ in each.task_cap_gpu_h]})") from None
+    if held_by.closed:
+        raise BudgetError(f"task {task} is in [{held_by.section}] of {name}, which is closed (phases "
+                          f"{' + '.join(held_by.phases)}): nothing is launched; the phase in work is {cfg.track.phase}")
+    phases = f"phase {held_by.phases[0]}" if len(held_by.phases) == 1 else f"phases {' + '.join(held_by.phases)}"
+    usage = Usage(held_by.cap_gpu_h(task), task_gpu_h(task), held_by.phase_cap_gpu_h, budget_gpu_h(held_by))
     own = job_gpu_h(task, job, run_dir) if job is not None else 0.0
     new = max(0.0, requested_gpu_h - own)
     mine = f" ({own:.3f} of them already used by job {job} in {run_dir})" if own > 0 else ""
-    for what, key, cap, used in ((f"task {task}", "budget.task_cap_gpu_h", usage.task_cap_gpu_h, usage.task_used_gpu_h),
-                                 (f"phase {phase}", "budget.phase_cap_gpu_h", usage.phase_cap_gpu_h, usage.phase_used_gpu_h)):
+    for what, key, cap, used in ((f"task {task}", f"{held_by.section}.task_cap_gpu_h", usage.task_cap_gpu_h,
+                                  usage.task_used_gpu_h),
+                                 (phases, f"{held_by.section}.phase_cap_gpu_h", usage.phase_cap_gpu_h,
+                                  usage.phase_used_gpu_h)):
         if new > 0 and used + new > cap + _ROUNDING_GPU_H:
             raise BudgetError(f"{what}: cap {cap!r} GPU-h ({key} in {name}), used {used:.3f}, asked {requested_gpu_h!r}"
                               f"{mine}: the launch could take it to {used + new:.3f} GPU-h, over the cap")

@@ -1,0 +1,15 @@
+{
+ "variant": "base",
+ "side": "strike",
+ "cap_h": 1.07,
+ "run0": false,
+ "gates_sha256": "84aea8592800f0d3fc205bbf879df9252ce3b6775fe3515b070d73ae9df80ef0",
+ "opponent": "guard_field",
+ "opponent_choice": "explicit, not the maximin pick",
+ "train_game": "base",
+ "pilot_json": "ste_provisional/pilots/2026-11-21_ste_l012_pilot/pilot.json",
+ "pilot_json_sha256": "b029a9013098260679159a97a27471a0f6c15ae6239d367fc35f2f0c694a9d12",
+ "run0_json": "runs/2026-11-22_ste_l111_run0/learner_control.json",
+ "run0_json_sha256": "fd3f6e0054655a03d086177fd64b27dbb235e26ea7552091c4ff5b914f0dff66",
+ "learner_control_accepted": null
+}

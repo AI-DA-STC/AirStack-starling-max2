@@ -1,0 +1,57 @@
+[
+ {
+  "update": 10,
+  "game_steps": 62914560,
+  "k": 17,
+  "n": 256,
+  "rate": 0.06640625,
+  "unfinished": 0,
+  "seconds": 51.17166609299602,
+  "not_one_for_one": 0,
+  "nonfinite_actions": 0
+ },
+ {
+  "update": 20,
+  "game_steps": 125829120,
+  "k": 26,
+  "n": 256,
+  "rate": 0.1015625,
+  "unfinished": 0,
+  "seconds": 51.42576618498424,
+  "not_one_for_one": 0,
+  "nonfinite_actions": 0
+ },
+ {
+  "update": 30,
+  "game_steps": 188743680,
+  "k": 30,
+  "n": 256,
+  "rate": 0.1171875,
+  "unfinished": 0,
+  "seconds": 50.74432431400055,
+  "not_one_for_one": 0,
+  "nonfinite_actions": 0
+ },
+ {
+  "update": 40,
+  "game_steps": 251658240,
+  "k": 31,
+  "n": 256,
+  "rate": 0.12109375,
+  "unfinished": 0,
+  "seconds": 54.714737784001045,
+  "not_one_for_one": 0,
+  "nonfinite_actions": 0
+ },
+ {
+  "update": 48,
+  "game_steps": 301989888,
+  "k": 33,
+  "n": 256,
+  "rate": 0.12890625,
+  "unfinished": 0,
+  "seconds": 50.0830731280148,
+  "not_one_for_one": 0,
+  "nonfinite_actions": 0
+ }
+]

@@ -15,6 +15,9 @@ the ones phase L1 reads, byte for byte (sha256 of every file in [SHA256SUMS](SHA
 | `2026-11-22_ste_l012c_tag_1p15_strike` | [T55](../records/2026-11-22_ste_l012c_tag_1p15_strike_record.md) | Strike team trained at tag 1.15 m, 5× budget (134) | the 1.15 m side track (L1.13), cross-play scoring |
 | `2026-11-21_ste_l012b_tag_1p15_strike` | [T52](../records/2026-11-21_ste_l012b_best_response_record.md) | Strike team trained at tag 1.15 m against guard_field, standard budget, **ABORTED** at 0.54 B (information only; reaches 103) | L1.13 comparator (re-scored at 30 s and 120 s) |
 | `../pilots/2026-11-21_ste_l012_pilot/` (`pilot.json`, `pilot.md`, its `gates.toml`) | L0.12 pilot (gate `9220fd9f…`) | the L0.12 pilot: picked the shaped Strike recipe (bare probe 0 reaches against g*, fallback 1); the file every L0.12, L0.12b and L0.12c run of record named (sha256 `b029a9…`) | `--pilot-json` of the L1.11 and L1.13 runs and run 0s (the driver checks the recipe only; added 22 Nov 2026 for the L1 side track) |
+| `2026-11-22_ste_l111_strike` | [T58](../records/2026-11-22_ste_l111_strike_record.md) | Strike team trained against guard_field at tag 1.6 m (277 v script 284) | cross-play scoring, the L1 opponent pool |
+| `2026-11-22_ste_l113_arm_a` | [T59](../records/2026-11-22_ste_l113_record.md) | Strike team at tag 1.15 m, 30 s training clock (199 at 30 s; 172 at 120 s with time-left clamped, [T60](../records/2026-11-22_ste_l114_record.md)) | the 1.15 m side track, a second-seed comparison |
+| `2026-11-22_ste_l113_arm_b` | [T59](../records/2026-11-22_ste_l113_record.md) | Strike team at tag 1.15 m, discount 0.997 (99) | the 1.15 m side track |
 | `2026-11-21_ste_l014/response/per_game.npz` | [T45](../records/2026-11-21_ste_l014_crazyflie_route_record.md) | per-game results of the Crazyflie-response re-score | L6.5 method (T45) |
 
 Each player folder keeps `agent_final.pt`, its `gates.toml`, the results (`results.json`, `results.md`), the evaluation

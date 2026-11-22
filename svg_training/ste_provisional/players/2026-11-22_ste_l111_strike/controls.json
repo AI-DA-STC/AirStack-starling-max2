@@ -1,0 +1,79 @@
+{
+ "ctl_reference_replay": {
+  "status": "PASS",
+  "detail": "guard_field v strike_straight: ok (holds 716 v T44 716, reaches 284 v 284; 0 of 1000 games differ (0 in outcome)); guard_field v strike_flank: ok (holds 808 v T44 808, reaches 192 v 192; 0 of 1000 games differ (0 in outcome)); guard_field v strike_high: ok (holds 734 v T44 734, reaches 266 v 266; 0 of 1000 games differ (0 in outcome)); guard_field v strike_low: ok (holds 739 v T44 739, reaches 261 v 261; 0 of 1000 games differ (0 in outcome)); guard_field v strike_sacrifice: ok (holds 862 v T44 862, reaches 138 v 138; 0 of 1000 games differ (0 in outcome)); guard_field v strike_converge: ok (holds 871 v T44 871, reaches 129 v 129; 0 of 1000 games differ (0 in outcome))",
+  "phase": "before"
+ },
+ "ctl_untrained_is_still": {
+  "status": "PASS",
+  "phase": "before",
+  "detail": "untrained exploiter v zero script: holds 1000 v T44 1000, reaches 0 v 0; 0 of 1000 games differ (0 in outcome)"
+ },
+ "ctl_untrained_no_gain": {
+  "status": "PASS",
+  "phase": "before",
+  "detail": "untrained 0/1000 v best script 284/1000: gain -0.284, real False (must be False)"
+ },
+ "ctl_paired_starts": {
+  "status": "PASS",
+  "phase": "before",
+  "detail": "1 start set(s), reference 5aeba7ab2b58"
+ },
+ "tags_one_for_one": {
+  "status": "PASS",
+  "phase": "before",
+  "detail": "0 games not one for one of 8000"
+ },
+ "no_nonfinite_actions": {
+  "status": "PASS",
+  "phase": "before",
+  "detail": "0 non-finite actions"
+ },
+ "tags_one_for_one_curve": {
+  "status": "PASS",
+  "phase": "curve",
+  "count": 0,
+  "detail": "0 games or actions wrong over the curve evaluations"
+ },
+ "no_nonfinite_actions_curve": {
+  "status": "PASS",
+  "phase": "curve",
+  "count": 0,
+  "detail": "0 games or actions wrong over the curve evaluations"
+ },
+ "ctl_reference_replay_final": {
+  "status": "PASS",
+  "detail": "guard_field v strike_straight: ok (holds 716 v T44 716, reaches 284 v 284; 0 of 1000 games differ (0 in outcome)); guard_field v strike_flank: ok (holds 808 v T44 808, reaches 192 v 192; 0 of 1000 games differ (0 in outcome)); guard_field v strike_high: ok (holds 734 v T44 734, reaches 266 v 266; 0 of 1000 games differ (0 in outcome)); guard_field v strike_low: ok (holds 739 v T44 739, reaches 261 v 261; 0 of 1000 games differ (0 in outcome)); guard_field v strike_sacrifice: ok (holds 862 v T44 862, reaches 138 v 138; 0 of 1000 games differ (0 in outcome)); guard_field v strike_converge: ok (holds 871 v T44 871, reaches 129 v 129; 0 of 1000 games differ (0 in outcome))",
+  "phase": "final"
+ },
+ "ctl_paired_starts_final": {
+  "status": "PASS",
+  "phase": "final",
+  "detail": "1 start set(s), reference 5aeba7ab2b58"
+ },
+ "tags_one_for_one_final": {
+  "status": "PASS",
+  "phase": "final",
+  "detail": "0 games not one for one of 8000"
+ },
+ "no_nonfinite_actions_final": {
+  "status": "PASS",
+  "phase": "final",
+  "detail": "0 non-finite actions"
+ },
+ "ctl_paired_starts_info": {
+  "status": "PASS",
+  "phase": "final",
+  "detail": "1 start set(s), reference 5aeba7ab2b58"
+ },
+ "tags_one_for_one_info": {
+  "status": "PASS",
+  "phase": "final",
+  "detail": "0 games not one for one of 5000"
+ },
+ "no_nonfinite_actions_info": {
+  "status": "PASS",
+  "phase": "final",
+  "detail": "0 non-finite actions"
+ }
+}

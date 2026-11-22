@@ -1,0 +1,15 @@
+{
+ "variant": "arm_b_discount",
+ "side": "strike",
+ "cap_h": 0.68,
+ "run0": false,
+ "gates_sha256": "e602a4e68553f80e28dca728c6794dd7eec980dc4a33ed176c311516482cfa13",
+ "opponent": "guard_field",
+ "opponent_choice": "the maximin pick (g* / s*)",
+ "train_game": "tag_1p15",
+ "pilot_json": "ste_provisional/pilots/2026-11-21_ste_l012_pilot/pilot.json",
+ "pilot_json_sha256": "b029a9013098260679159a97a27471a0f6c15ae6239d367fc35f2f0c694a9d12",
+ "run0_json": "runs/2026-11-22_ste_l113_run0_arm_b/learner_control.json",
+ "run0_json_sha256": "d592ec18c1cd11108c799457e0368a75d9153571a72db992dc08a27b725e0342",
+ "learner_control_accepted": null
+}

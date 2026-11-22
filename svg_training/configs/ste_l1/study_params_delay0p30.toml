@@ -1,0 +1,64 @@
+# STUDY-ONLY parameter file, never a drone value: STE L1 side track task L1.15, the delay check (spec
+# ste_learning/drafts/L1_SIDE_TRACK_SPEC.md, addendum 3). A copy of params/real_exploratory_v0.toml with ONLY [px4]
+# delay_s changed, 0.1482 -> 0.30 s, to ask whether the 1.15 m results depend on the response delay. It describes no
+# drone and is never copied to a drone, the AirStack simulator or a fit (iron rule 9); it lives in configs/, not params/.
+# tests/test_ste_l115.py checks that every other value line equals v0's. v0's own header follows, unchanged.
+#
+# EXPLORATORY. Real-drone response model for the tier 1 training simulator, version 0.
+# Fitted from real flight logs at <= 0.5 m/s, no gates.
+# Source log: ~/flight_logs/2026-11-13/ulog_drone_2/log103.ulg (sha256 4db5b1fcf33e69c6..., flight ledger #36,
+#   drone_2, PX4 1.14, one drone flown by gamepad, 156.8 s).
+# Fit date: 2026-11-15. Fit code: scripts/fit_real_px4.py + models/px4_trajectory.py at commit b467aa5
+#   (record: records/2026-11-15_s1_real_px4_exploratory.md; values copied from
+#   runs/2026-11-15_s1_real_px4_exploratory/real_exploratory.toml, kept family lag1, derived feed-forward).
+# Read by: source/svg_training/models/fitted.py (FittedResponse). Status labels as in STANDARDS.md.
+# Commander line numbers refer to AirStack/robot/ros_ws/src/svg_ground_control at the checkout of 2026-11-15
+#   (last commit touching it: db931e4).
+
+[px4]
+# PX4's horizontal response to one trajectory setpoint (position, feed-forward speed, feed-forward acceleration).
+# Field names are px4_trajectory.TrajectoryParams. Only the kept family (lag1) is implemented in torch.
+family = "lag1"
+kp_xy = 0.95             # 1/s    MEASURED  MPC_XY_P, read from log103's parameter section
+tau_s = 1.6496           # s      fitted, exploratory (velocity lag; poorly pinned: +25 % moves train RMS 0.0002 m/s)
+delay_s = 0.30           # s      STUDY-ONLY (L1.15): 0.30 s; v0's fitted value is 0.1482
+acc_max_mps2 = 1.7178    # m/s^2  fitted, exploratory (horizontal acceleration limit, on the norm)
+vel_max_mps = 3.0        # m/s    MEASURED  MPC_XY_VEL_MAX, log103
+ff_gain = 1.0            # -      FIXED     acceleration feed-forward added as PX4 adds it
+vel_p = 1.8              # -      MEASURED  MPC_XY_VEL_P_ACC (pid family only; unused by lag1)
+vel_i = 0.4              # -      MEASURED  MPC_XY_VEL_I_ACC (pid family only)
+vel_d = 0.2              # -      MEASURED  MPC_XY_VEL_D_ACC (pid family only)
+model_dt_s = 0.01        # s      the fit's grid (fit_real_px4.py DT_S); tier 1 runs this many sub-steps per tick
+# Feed-forward caveat: the fit saw a "derived" acceleration feed-forward (slope of the 5 Hz speed setpoint); tier 1
+# feeds the commander's exact 20 Hz ramp acceleration (5 m/s^2 for 0.1 s). acc_max_mps2 mostly absorbs the difference,
+# but results are sensitive to that limit (task-8b-review.md m1, I1).
+
+[px4_vertical]
+# NOT FITTED. The fit covers the horizontal plane only. The vertical channel uses the same lag1 shape with the
+# drone's own vertical gains, so that height is held; every value here is PROPOSED until a vertical fit exists.
+kp_z = 5.0               # 1/s    MEASURED  MPC_Z_P, starling_1_indoor_params.params
+vel_max_up_mps = 2.0     # m/s    MEASURED  MPC_Z_VEL_MAX_UP, same file
+vel_max_down_mps = 0.6   # m/s    MEASURED  MPC_Z_VEL_MAX_DN, same file
+tau_z_s = 0.125          # s      PROPOSED  1 / MPC_Z_VEL_P_ACC (8): the time constant of a pure P velocity loop
+acc_max_z_mps2 = inf     # m/s^2  PROPOSED  no limit (MPC_ACC_UP/DOWN_MAX are flight-task limits, not offboard)
+# delay: the [px4] delay_s, applied to all three axes together
+
+[commander]
+# CMU's swarm_commander.py, real-mode position teleop on the trajectory output, as configured by
+# svg_ground_control/config/teleop_real_ours.yaml (the config flown on 2026-11-13).
+tick_s = 0.05                  # s     FIXED  control_rate_hz 20.0 (teleop_real_ours.yaml:60; swarm_commander.py:984-985)
+teleop_max_speed_mps = 0.5     # m/s   FIXED  stick cap (teleop_real_ours.yaml:79; swarm_commander.py:1886-1889, +1e-3 slack)
+teleop_accel_mps2 = 5.0        # m/s^2 FIXED  stick ramp (teleop_real_ours.yaml:89; swarm_commander.py:1896-1910; position_hold.py:116-147)
+ramp_reattach_mps = 0.05       # m/s   FIXED  ramp re-attaches to the published speed beyond this (position_hold.py:118, :141-142)
+teleop_lead_m = 0.5            # m     FIXED  reference leash, horizontal and vertical separately (teleop_real_ours.yaml:85; swarm_commander.py:1951-1960; position_hold.py:62-113)
+hold_lead_m = 0.2              # m     FIXED  leash after the safety filter changed the command (teleop_real_ours.yaml:68; swarm_commander.py:2229-2234)
+goal_accel_mps2 = 3.0          # m/s^2 FIXED  cap on the feed-forward of a filtered command (default, swarm_commander.py:374, :715; used at :2217-2220 via command_feedforward :193-224); not set in teleop_real_ours.yaml
+teleop_kp = 1.0                # 1/s   FIXED  NOT USED on the trajectory output (teleop_real_ours.yaml:84; swarm_commander.py:1923-1924); kept for the record
+teleop_timeout_s = 0.5         # s     FIXED  NOT MODELLED: a policy commands every tick, so the stick is never stale (teleop_real_ours.yaml:62; swarm_commander.py:1881-1884)
+
+[filter]
+# The collision filter (CBF) as the commander calls it (swarm_commander.py:2140-2146), per team in the game.
+safety_radius_m = 0.55         # m     FIXED  cbf_safety_radius_m (teleop_real_ours.yaml:76)
+max_speed_mps = 1.0            # m/s   FIXED  cbf_max_speed_mps (teleop_real_ours.yaml:77)
+alpha = 2.5                    # 1/s   FIXED  cbf_alpha (teleop_real_ours.yaml:78)
+tolerance = 2.0e-3             # -     FIXED  cbf_filter.py default (filter_velocities, tolerance)

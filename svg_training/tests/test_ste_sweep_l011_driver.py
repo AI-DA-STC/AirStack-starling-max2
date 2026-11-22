@@ -409,4 +409,4 @@ def test_the_pilot_cap_is_the_cap_of_the_gates_task_in_any_budget_section():
     from types import SimpleNamespace
     assert driver.gates_cap_h() == 0.5
     assert driver.gates_cap_h(SimpleNamespace(run={"task": "L0.11"})) == 0.5
-    assert driver.gates_cap_h(SimpleNamespace(run={"task": "L1.9"})) == 1.9
+    assert driver.gates_cap_h(SimpleNamespace(run={"task": "L1.9"})) == 1.6

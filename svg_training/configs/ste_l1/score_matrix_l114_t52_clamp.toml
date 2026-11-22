@@ -1,0 +1,41 @@
+# Scoring settings of scripts/ste_score_matrix.py for L1.14, the time-left test (STE L1 side track; spec
+# ste_learning/drafts/L1_SIDE_TRACK_SPEC.md, addendum 2), fixed before the scoring. Every file is pinned by sha256 and
+# checked before anything plays (exit 2 on a mismatch). The player and the game are pinned exactly as in
+# score_matrix_t52.toml; only the time-left input the player's network sees is changed ([player] time_left, in-game
+# drones only; out-of-game drones keep their zeroed inputs), and only guard_field is scored ([job] opponents; the spec's
+# test is against guard_field).
+# Controls (exit 6, terminal, no number reported on any failure): own_replay (the player's own evaluation replayed
+# WITHOUT the override, equal to its eval_final.npz game for game with its trained cell at own_wins) and the script
+# cells of the batch equal to the reference game for game.
+# Test T-clamp: T52 in the 120 s game with its time-left input clamped to at most 30 s. Reading words (spec addendum 2):
+# reaches' Wilson interval above T52's 120 s interval (103: 0.086-0.123): "the 1.15 m Strike team attacks earlier and
+# reaches more when its time-left input says time is short: N against 103"; overlap: "clamping the time-left input did
+# not change its reaches"; below: said as such. One network, one start set. On T52's own game and opponent the
+# own_cell check is not applied (the clamp changes that cell by design; recorded).
+
+[job]
+task = "L1.14"
+what = "test T-clamp: T52 in the 120 s game with its time-left input clamped to at most 30 s, against guard_field"
+kind = "INFO"
+opponents = ["guard_field"]   # PROPOSED (spec addendum 2: the test is against guard_field): a named subset, recorded
+
+[player]
+label = "The 1.15 m-trained Strike team (T52)"
+dir = "ste_provisional/players/2026-11-21_ste_l012b_tag_1p15_strike"
+side = "strike"
+variant = "tag_1p15"
+gates_sha256 = "ace5e18d77c214ca0a3e31d3613a20c3291e0f873ff6d1c5b90b8fec246fb592"
+agent_sha256 = "6ca45c318389ada0ab741e3ea76acf8feab79f359a94d6abbb12431f3aba846d"
+eval_sha256 = "7337ed32e7a4a9d2dc13b7143c365a37171db6150e9b17d00c254de65b07c79d"
+own_wins = 103
+own_source = "T52 tag 1.15 m Strike v guard_field, reaches (records/2026-11-21_ste_l012b_best_response_record.md)"
+time_left = { clamp_max_s = 30.0 }   # PROPOSED (spec addendum 2, T-clamp): at most the 30 s clock's start value
+
+[[games]]
+name = "tag_1p15_120s"
+file = "configs/ste_l011/tag_1p15.toml"
+sha256 = "b2e09683f7088964a7d1ca15dfc9c98d1e04c15e96b14196d6971afb75f27580"
+reference = "configs/ste_l012b/screen_reference.npz"
+reference_sha256 = "49014000d07e8b52ae579deb325dad53d98c5020f533026dfbff778f306b2296"
+reference_variant = "tag_1p15"
+clock_label = "tag 1.15 m, 120 s clock (2,400 ticks)"

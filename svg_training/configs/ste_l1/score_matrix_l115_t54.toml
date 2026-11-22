@@ -1,0 +1,59 @@
+# Scoring settings of scripts/ste_score_matrix.py for L1.15, the delay check (STE L1 side track; spec
+# ste_learning/drafts/L1_SIDE_TRACK_SPEC.md, addendum 3), fixed before the scoring. Every file is pinned by sha256 and
+# checked before anything plays (exit 2 on a mismatch). The 1.15 m-trained Guard team, 3x budget (T54) against its training opponent
+# strike_straight at the fitted response delay 0.148 s (the existing game, with its screen reference: script cells equal the
+# screen game for game, and the player's cell equals its own evaluation, own_cell) and at 0 and 0.30 s (study-only
+# parameter files, no screen reference: every cell reported, INFO). Each batch also holds every script of the player's
+# team against strike_straight, among them guard_field v strike_straight, the spec's script cell. Per cell: wins with Wilson
+# 95 % intervals, how games end, the distance at each tag (minimum, median) and the closest approach of any pair
+# (per game min(tag distances, closest approach of pairs never tagged)). The guard_field v strike_straight cell read for
+# the delay comparison is the T55 run's copy (score_matrix_l115_t55.toml, cell guard_field v strike_straight of each
+# game's batch); the T54 run's copy is not read. Paired counts between delays are not in results: they come from the
+# per-game records games/*.npz (same starts, same order; the lead computes them). Each game pins the sha256 of the
+# response parameter file its game file names (params_sha256). Controls (exit 6, terminal, no
+# number reported): own_replay (the player's own evaluation replayed equal to its eval_final.npz with its trained cell at
+# own_wins), the screen comparison at 0.148 s, and the plumbing controls (paired starts, one for one, finite) at 0 and
+# 0.30 s. Reading words: the spec, addendum 3.
+
+[job]
+task = "L1.15"
+what = "delay check: The 1.15 m-trained Guard team, 3x budget (T54) against strike_straight at response delay 0, 0.148 and 0.30 s"
+kind = "INFO"
+opponents = ["strike_straight"]   # PROPOSED (spec addendum 3: the training opponent only): a named subset, recorded
+
+[player]
+label = "The 1.15 m-trained Guard team, 3x budget (T54)"
+dir = "ste_provisional/players/2026-11-22_ste_l012c_tag_1p15_guard"
+side = "guard"
+variant = "tag_1p15"
+gates_sha256 = "b52dcc23580640c7a9d5a99f95e523eaa9c21b00125e3ff56172f6a5210d4c81"
+agent_sha256 = "78c6dbdf0beb354bdebe834e6cd7c1d6b321c195dc0dc7ef7cfded00e1f5a4f2"
+eval_sha256 = "0f0c523c020bb8cf37534e2a19cf0004c3179b369bfe3e4fb3b22f89d31ee0ff"
+own_wins = 572
+own_source = "T54 tag 1.15 m Guard v strike_straight, holds (records/2026-11-22_ste_l012c_tag_1p15_guard_record.md)"
+
+[[games]]
+name = "tag_1p15_120s"
+file = "configs/ste_l011/tag_1p15.toml"
+sha256 = "b2e09683f7088964a7d1ca15dfc9c98d1e04c15e96b14196d6971afb75f27580"
+reference = "configs/ste_l012b/screen_reference.npz"
+reference_sha256 = "49014000d07e8b52ae579deb325dad53d98c5020f533026dfbff778f306b2296"
+reference_variant = "tag_1p15"
+params_sha256 = "4c93543f51ab41ea5bb0f81e6d1b0512f662a3e10126ec2d85fc3bb008cecaa2"   # params/real_exploratory_v0.toml, the response file the game file names
+clock_label = "tag 1.15 m, 120 s clock (2,400 ticks)"
+
+[[games]]
+name = "tag_1p15_delay0"
+file = "configs/ste_l1/tag_1p15_delay0.toml"
+sha256 = "2cc38662f5b9d709aca18333283e564b2d4544dc3fa62b2cfce255a6e5ceee92"
+reference = false   # no screen reference at this delay: script cells reported, not compared (INFO)
+params_sha256 = "b10571bd419b9a843016637186ce9f250eba57bcadb3e08e972151f651b6eead"   # configs/ste_l1/study_params_delay0.toml, the response file the game file names
+clock_label = "tag 1.15 m, 120 s clock (2,400 ticks), response delay 0 s (STUDY-ONLY parameter file configs/ste_l1/study_params_delay0.toml)"
+
+[[games]]
+name = "tag_1p15_delay0p30"
+file = "configs/ste_l1/tag_1p15_delay0p30.toml"
+sha256 = "84e0c7289340a1c7b3e6aed056d93955cc03034bd72f61c899f0cd2360bcd04b"
+reference = false   # no screen reference at this delay: script cells reported, not compared (INFO)
+params_sha256 = "2b827cd25f82ae3eec42659d1aa47d0a479f414cc4e8c7f1b0d25f295e68e5a2"   # configs/ste_l1/study_params_delay0p30.toml, the response file the game file names
+clock_label = "tag 1.15 m, 120 s clock (2,400 ticks), response delay 0.30 s (STUDY-ONLY parameter file configs/ste_l1/study_params_delay0p30.toml)"

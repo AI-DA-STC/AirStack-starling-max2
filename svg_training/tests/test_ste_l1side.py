@@ -422,6 +422,12 @@ def test_the_l1_tasks_launch_against_the_l1_l2_budget():
         assert section.phases == ("L1", "L2") or list(section.phases) == ["L1", "L2"]
         assert not section.closed and cfg.cap_gpu_h(task) > 0
     assert [cfg.cap_gpu_h(t) for t in ("L1.11", "L1.12", "L1.13")] == [1.2, 0.1, 2.1]
+    # spec addendum 2 (22 Nov 2026): L1.14, the time-left test (scoring only), 0.3 GPU-h taken from L1.9 (1.9 -> 1.6)
+    assert cfg.cap_gpu_h("L1.14") == 0.3 and cfg.cap_gpu_h("L1.9") == 1.6
+    # spec addendum 3 (22 Nov 2026): L1.15, the delay check (scoring only), 0.3 GPU-h taken from L1.10 (1.2 -> 0.9)
+    assert cfg.cap_gpu_h("L1.15") == 0.3 and cfg.cap_gpu_h("L1.10") == 0.9
+    assert cfg.budget_of("L1.15").phases == cfg.budget_of("L1.13").phases
+    assert cfg.budget_of("L1.14").phases == cfg.budget_of("L1.13").phases
     for path in (L111, L113):
         assert cfg.budget_of(exploit.load_gates(path).run["task"]).phases == cfg.budget_of("L1.12").phases
 

@@ -1,0 +1,88 @@
+# STE task L0.12b Bubble tag check (INFO): game file of the variant "tag_1p15" (owner decision 21 Nov 2026), in the
+# L0.11 file family (PLAN.md section 4, row L0.11).
+# A complete game file for core/game_config.py load_game_cfg; always loaded with use_local=False (the partner's local
+# file must never change a sweep value). tests/test_ste_l011.py builds the game from this file and checks it against the
+# sheet (ste_learning/GAME_SPEC.md, configs/ste_game.toml); tests/test_ste_l012b.py checks it equals base.toml but for the
+# tag radius. The gate files configs/ste_l012b/screen_gates.toml and configs/ste_l012b/gates.toml pin this file's
+# sha256: editing it makes the screen and the runs refuse to start or resume.
+#
+# Variant: tag radius 1.15 m, one factor changed against the base case (every other value as base.toml). Why (owner,
+# 21 Nov 2026): the safety filter keeps opposite drones >= 1.10 m apart centre to centre (0.55 m bubble each), so a tag
+# when the two bubbles touch is the closest safe equivalent of physical contact, the same rule in the simulator and on
+# the real drones; 1.15 = 1.10 + 0.05 m so the tag does not flicker at the filter edge.
+# Labels as in ../../STANDARDS.md (FIXED, MEASURED, PROPOSED, OPEN); the sheet row named in each comment is the source.
+# Sheet rows this engine path does not apply (tests/test_ste_l011.py lists and checks them): timing.decision_s 0.6
+# (the scripted players act every 0.05 s tick, one decision per tick). Rows the study sets on purpose: tag.mode is
+# "nearest_pair_1for1", not the sheet's "off" (FIXED: the main game has no tag; the study tag is P1, study runs only).
+# No start-height jitter is drawn (the hangar game's row 5 adds 1 mm; the core game has no such setting).
+
+[game]
+preset = "partner"                 # the partner rules with the Starling layer on (the push-apart is off there)
+dropout_fraction = 0.0             # no scheduled drop-outs: drones leave only by the study tag
+obs_view = "full"
+pad_guards = 5                     # slots for up to 5 Guard drones (5v3 is the largest size swept)
+pad_strikes = 3
+yaw_rate_max_rad_s = 1.0
+
+[arena]
+# One fixed square arena, the zone at its centre, through today's settings (GAME_SPEC open item "a fixed 6.5 m base-case
+# game file", LEAD CALL 21 Nov 2026): every band is the one side, the zone radius is one fraction of it, and the
+# zone-to-wall margin is half the side, so the zone centre can only be the arena centre.
+band_weights = [1.0, 1.0, 1.0]
+zone_radius_frac = [0.24615384615384617, 0.24615384615384617]   # zone.radius_m 1.6 (OPEN, P12) / arena.side_m 6.5
+zone_wall_margin_m = 3.25          # = arena.side_m / 2: zone.centre "arena_centre" (PROPOSED)
+height_band_m = [0.5, 1.8]         # height.band_m (PROPOSED)
+start_height_m = 1.2               # height.start_m (PROPOSED); no jitter
+walls = "keep_in"                  # arena.walls (PROPOSED)
+wall_margin_m = 0.25               # arena.wall_margin_m (PROPOSED): keep-in limit 3.0 m
+
+[arena.bands_m]
+lab = [6.5, 6.5]                   # arena.side_m 6.5 (PROPOSED, F8): the lab fence
+middle = [6.5, 6.5]
+large = [6.5, 6.5]
+
+[partner_rules]
+keepout_guard_m = 1.1              # filter.keepout_m 1.10 (FIXED): read by the breach count and the start-miss test
+keepout_strike_m = 1.1
+push_rule = "block"                # not used with the Starling layer on (D3)
+teammates_pass = true
+win_steps_in_zone = 1              # zone.win_ticks_inside 1 (PROPOSED)
+strike_units_per_step = 0.025      # speeds.strike_mps 0.5 (FIXED) with the two lines below
+guard_units_per_step = 0.016666666666666666   # speeds.strike_to_guard_ratio 1.5 (FIXED): 0.333 m/s
+game_steps = 2400                  # timing.game_s 120 (PROPOSED): 2,400 ticks of 0.05 s
+metres_per_unit = 1.0
+seconds_per_step = 0.05
+
+[contact_rules]
+contact_m = 0.5                    # the contact preset is not used (preset "partner")
+guard_survives_tag_prob = 0.0
+
+[starling_layer]
+# Tier 1 with the filter on (PLAN.md section 4 L0.11): the commander copy, the safety filter on every pair (filter.pairs
+# "every_pair", FIXED; equal share), then the fitted PX4 response (exploratory). 1000 sweeps, check every 8 (T8 PASS).
+enabled = true
+params = "configs/ste_l1/study_params_delay0.toml"   # L1.15 delay check: STUDY-ONLY, delay_s 0 s; every other byte = configs/ste_l011/tag_1p15.toml
+filter_iterations = 1000
+filter_check_every = 8
+filter_cuda_graph = false
+backend = "fitted"
+physics_params = "params/starling_physics_v0.toml"
+physics_sim_only_gains = "params/sim_only_yaw_v0.toml"
+
+[starts]
+mode = "zone_disc_ring"            # the hangar game's starts (L0.10)
+strike_inset_m = 0.3               # not read in this mode
+guard_ring_gap_m = 0.3             # not read in this mode
+spacing_m = 1.2                    # not read in this mode
+guard_disc_m = 0.8                 # starts.guard_disc_m (PROPOSED)
+team_spacing_margin_m = 0.05        # starts.team_spacing_margin_m (PROPOSED, L0.10 QC fix round 1): team-mates start >= 1.10 + 0.05 m apart
+strike_ring_m = 2.75               # starts.strike_ring_m (PROPOSED, LEAD CALL 21 Nov 2026, L08-F1)
+
+[rewards]
+win = 1.0
+shaping_weight = 0.0
+
+[tag]
+mode = "nearest_pair_1for1"        # tag_rule.pairing (PROPOSED, P1): the study tag ON, study runs only
+radius_m = 1.15                    # study value: tag radius 1.15 m (owner decision 21 Nov 2026, L0.12b; the sheet row tag.radius_m is 1.6, PROPOSED)
+guard_survives_tag_prob = 0.0      # tag.guard_survives_tag_prob 0.0 (PROPOSED, D2)

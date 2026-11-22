@@ -31,7 +31,8 @@ L0_TASK_CAP_GPU_H = {"L0.1": 0.0, "L0.7": 0.0, "L0.8": 0.0, "L0.9": 0.0, "L0.10"
 # has no L1 task table yet, so no test compares these with it; L2's task IDs arrive when L2 starts.
 L1_L2_CAP_GPU_H = 13.0
 L1_TASK_CAP_GPU_H = {"L1.0": 0.5, "L1.1": 0.2, "L1.2": 0.2, "L1.3": 0.0, "L1.4": 0.0, "L1.5": 0.3, "L1.6": 0.1,
-                     "L1.7": 0.1, "L1.8": 1.2, "L1.9": 1.9, "L1.10": 1.2, "L1.11": 1.2, "L1.12": 0.1, "L1.13": 2.1}
+                     "L1.7": 0.1, "L1.8": 1.2, "L1.9": 1.6, "L1.10": 0.9, "L1.11": 1.2, "L1.12": 0.1, "L1.13": 2.1,
+                     "L1.14": 0.3, "L1.15": 0.3}
 
 GOOD = SETTINGS_FILE.read_text()
 
@@ -91,7 +92,7 @@ def test_the_l1_and_l2_budget_of_gate_g0():
     assert later.task_caps_total_gpu_h() == 9.1 <= later.phase_cap_gpu_h          # added in decimal
     assert cfg.budget_in_work() is later and cfg.budgets() == (cfg.budget, later)
     assert cfg.budget_of("L1.9") is later and cfg.budget_of("L0.12") is cfg.budget
-    assert cfg.cap_gpu_h("L1.9") == 1.9 and cfg.cap_gpu_h("L1.3") == 0.0 and cfg.cap_gpu_h("L0.12") == 13.0
+    assert cfg.cap_gpu_h("L1.9") == 1.6 and cfg.cap_gpu_h("L1.3") == 0.0 and cfg.cap_gpu_h("L0.12") == 13.0
     assert cfg.budget.cap_gpu_h("L0.11") == 0.5                                 # L0's caps stay readable
     assert [phase_of(task) for task in ("L0.11", "L1.1", "L1.10", "L1.13")] == ["L0", "L1", "L1", "L1"]
     with pytest.raises(KeyError, match=r"L10"):
@@ -320,7 +321,7 @@ def test_unknown_task_id_raises(tmp_path):
     with pytest.raises(ValueError, match=r"unknown task ID.*\[budget_l1_l2.task_cap_gpu_h\].*L0\.6"):
         load_ste_learning(changed(tmp_path, '"L1.13" =', '"L0.6" = 0.0\n"L1.13" ='))   # an L0 task under the L1 cap
     with pytest.raises(ValueError, match=r"unknown task ID.*\[budget_l1_l2.task_cap_gpu_h\].*\['L1'\].*in quotes"):
-        load_ste_learning(changed(tmp_path, '"L1.13" =', "L1.14 = 0.0\n\"L1.13\" ="))
+        load_ste_learning(changed(tmp_path, '"L1.13" =', "L1.16 = 0.0\n\"L1.13\" ="))
     with pytest.raises(ValueError, match=r"unknown task ID.*L0\.99") as quoted:
         load_ste_learning(write(tmp_path, GOOD + '"L0.99" = 0.0\n'))
     assert "quotes" not in str(quoted.value)                                     # no hint where it does not apply
@@ -390,13 +391,13 @@ def test_a_later_budget_section_is_checked(tmp_path):
         ('phases = ["L1", "L2"]', "phases = []", r"budget_l1_l2\.phases.*at least one"),
         ("phase_cap_gpu_h = 13.0", "phase_cap_gpu_h = 13", r"budget_l1_l2\.phase_cap_gpu_h"),
         ("phase_cap_gpu_h = 13.0", "phase_cap_gpu_h = -13.0", r"budget_l1_l2\.phase_cap_gpu_h"),
-        ('"L1.9" = 1.9', '"L1.9" = 2', r"budget_l1_l2\.task_cap_gpu_h.*L1\.9"),
-        ('"L1.9" = 1.9', '"L1.9" = 5.9', r"task caps add up to 13\.1 .*budget_l1_l2\.phase_cap_gpu_h = 13\.0"),
+        ('"L1.9" = 1.6', '"L1.9" = 2', r"budget_l1_l2\.task_cap_gpu_h.*L1\.9"),
+        ('"L1.9" = 1.6', '"L1.9" = 5.6', r"task caps add up to 13\.1 .*budget_l1_l2\.phase_cap_gpu_h = 13\.0"),
     ]
     for old, new, match in cases:
         with pytest.raises(ValueError, match=match):
             load_ste_learning(changed(tmp_path, old, new))
-    exactly = load_ste_learning(changed(tmp_path, '"L1.9" = 1.9', '"L1.9" = 5.8'))[0]      # exactly 13.0: allowed
+    exactly = load_ste_learning(changed(tmp_path, '"L1.9" = 1.6', '"L1.9" = 5.5'))[0]      # exactly 13.0: allowed
     assert exactly.budget_in_work().task_caps_total_gpu_h() == 13.0
 
 

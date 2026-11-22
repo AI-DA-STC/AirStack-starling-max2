@@ -172,11 +172,11 @@ def test_the_committed_caps():
 def test_the_committed_l1_caps():
     """Gate G0 (owner, 22 Nov 2026): phase L1 is in work; its tasks launch against their own caps and the one cap of
     phases L1 and L2 together, 13 GPU-h ([budget_l1_l2] in configs/ste_learning.toml)."""
-    usage = budget.check_launch("L1.9", 1.9)
-    assert usage == budget.Usage(task_cap_gpu_h=1.9, task_used_gpu_h=0.0, phase_cap_gpu_h=13.0, phase_used_gpu_h=0.0)
+    usage = budget.check_launch("L1.9", 1.6)
+    assert usage == budget.Usage(task_cap_gpu_h=1.6, task_used_gpu_h=0.0, phase_cap_gpu_h=13.0, phase_used_gpu_h=0.0)
     assert budget.check_launch("L1.3", 0.0).task_cap_gpu_h == 0.0                     # a CPU task asks for nothing
-    with pytest.raises(budget.BudgetError, match=r"task L1\.9.*cap 1\.9 GPU-h.*budget_l1_l2\.task_cap_gpu_h.*asked 2\.0"):
-        budget.check_launch("L1.9", 2.0)
+    with pytest.raises(budget.BudgetError, match=r"task L1\.9.*cap 1\.6 GPU-h.*budget_l1_l2\.task_cap_gpu_h.*asked 1\.7"):
+        budget.check_launch("L1.9", 1.7)
     with pytest.raises(budget.BudgetError, match=r"task L1\.4.*cap 0\.0 GPU-h.*asked 0\.1"):
         budget.check_launch("L1.4", 0.1)                                              # simulator time, not GPU-h
 

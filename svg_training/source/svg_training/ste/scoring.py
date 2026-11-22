@@ -8,11 +8,16 @@ trained side's: holds for the Guard team, reaches for the Strike team. Standard 
 number lives here (tests/test_ste_literals.py)."""
 from __future__ import annotations
 
+import math
 from pathlib import Path
 
 import numpy as np
+import torch
+from torch import Tensor
 
+from ..core.game_config import TICK_S
 from ..core.metrics import wilson_interval
+from ..core.observations import ObsView
 from ..core.rewards import GUARD_WIN, RUNNING, STRIKE_WIN
 from . import exploit, sweep
 from .run_contract import EXIT_CONTROL_FAILED, EXIT_NONFINITE
@@ -22,6 +27,9 @@ PASS, FAIL, NONFINITE = "PASS", "FAIL", "NONFINITE"
 EXACT_RULE = "cpu"          # exploit.replay_ok's game-for-game branch, applied on any device ("game for game")
 SHA_SHOWN = 12              # hex digits of a sha256 shown in a control's detail
 END_REASONS = ("reach", "all_strikes_tagged", "clock", "other_hold", "unfinished")
+TIME_LEFT_KEYS = ("offset_s", "clamp_max_s")   # [player] time_left: exactly one (L1.14, spec addendum 2)
+GAMES_SHOWN = 12            # game indices shown per kind of mismatch in a control's record
+WHOLE_TICK_TOL = 1e-6       # an offset must be a whole number of ticks within this many ticks (90 s / 0.05 s = 1800)
 
 
 def win_count(pg: dict, side: str) -> tuple[int, int]:
@@ -164,3 +172,137 @@ def load_batch(path: Path) -> dict:
     pg["start_sha256"] = [str(x) for x in pg["start_sha256"]]
     pg["game_ticks"] = int(pg["game_ticks"])
     return pg
+
+
+# ================================================================================================ L1.14: the time-left test
+def parse_time_left(spec) -> dict:
+    """[player] time_left of the score tool (spec L1_SIDE_TRACK_SPEC addendum 2): a table with exactly one of
+    ``offset_s`` (finite, 0 or more, a whole number of ticks of ``TICK_S``) or ``clamp_max_s`` (finite, above 0).
+    Returns {"offset_s": float, "offset_ticks": int} or {"clamp_max_s": float}; ValueError names what is wrong."""
+    if not isinstance(spec, dict):
+        raise ValueError(f"[player] time_left must be a table, {{ offset_s = <s> }} or {{ clamp_max_s = <s> }}, got {spec!r}")
+    if len(spec) != 1 or next(iter(spec)) not in TIME_LEFT_KEYS:
+        raise ValueError(f"[player] time_left takes exactly one of {list(TIME_LEFT_KEYS)}, got {sorted(spec)}")
+    (key, value), = spec.items()
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise ValueError(f"[player] time_left.{key} must be a number of seconds, got {value!r}")
+    value = float(value)
+    if not math.isfinite(value):
+        raise ValueError(f"[player] time_left.{key} must be finite, got {value!r}")
+    if key == "clamp_max_s":
+        if not value > 0:
+            raise ValueError(f"[player] time_left.clamp_max_s must be above 0 s, got {value!r}")
+        return {"clamp_max_s": value}
+    if value < 0:
+        raise ValueError(f"[player] time_left.offset_s must be 0 s or more, got {value!r}")
+    ticks = value / TICK_S
+    if abs(ticks - round(ticks)) > WHOLE_TICK_TOL:
+        raise ValueError(f"[player] time_left.offset_s must be a whole number of ticks of {TICK_S} s, got {value!r} "
+                         f"({ticks} ticks)")
+    return {"offset_s": value, "offset_ticks": int(round(ticks))}
+
+
+def time_left_text(override: dict) -> str:
+    """The override in words, for titles and readings."""
+    if "offset_s" in override:
+        return f"time-left input + {override['offset_s']:g} s"
+    return f"time-left input clamped to at most {override['clamp_max_s']:g} s"
+
+
+class TimeLeftOverride:
+    """A player whose network sees another time left (L1.14): the column ``ObsView.time_left`` of every in-game drone
+    (alive column not 0) is changed before ``inner.act``; every other input, and every input of a drone that is out (all
+    zeros but team), is passed unchanged. Batched over games and drones; the caller's tensor is not modified.
+
+    ``offset_s``: the time left a game ``offset_ticks`` ticks longer shows, computed as the game computes its own
+    (``core/game._time_left_s``: whole ticks left x ``TICK_S`` in float32), so the value is bit for bit that game's (a
+    float add of the seconds would differ in the last bit at about one tick in five). ``clamp_max_s``: at most that."""
+
+    def __init__(self, inner, override: dict):
+        self.inner, self.override = inner, dict(override)
+        self.team, self.name = inner.team, inner.name
+
+    def reset(self, games: Tensor) -> None:
+        self.inner.reset(games)
+
+    def time_left(self, time_left_s: Tensor) -> Tensor:
+        """The time left the network sees, from the game's [...] (seconds)."""
+        if "offset_ticks" in self.override:
+            ticks_left = torch.round(time_left_s / TICK_S).to(torch.long) + int(self.override["offset_ticks"])
+            return (ticks_left.to(torch.float32) * TICK_S).to(time_left_s.dtype)
+        return torch.clamp(time_left_s, max=float(self.override["clamp_max_s"]))
+
+    def act(self, obs: Tensor) -> Tensor:
+        """obs [N, K, D] -> the inner player's [N, K, 4]."""
+        col = obs[..., ObsView.time_left]
+        seen = torch.where(obs[..., ObsView.alive] != 0, self.time_left(col), col)
+        changed = obs.clone()
+        changed[..., ObsView.time_left] = seen
+        return self.inner.act(changed)
+
+
+def check_offset_prefix(cell_pg: dict, own_cell: dict, game_ticks: int, ticks_cap: int) -> dict:
+    """Control c_offset (L1.14): the trained cell played on a game ``game_ticks`` long with the time left offset to the
+    player's own game length (``cell_pg``) against its own evaluation's trained cell on the same starts (``own_cell``).
+    It checks the reaches before the short game's end only (tags, holds and the rest of each game are not compared).
+    PASS: every game of ``own_cell`` that reached by tick T = min(``game_ticks``, ``ticks_cap``) (end step at or below
+    it; a reach on the last tick beats the clock, core/game) reaches at the same tick, no other game reaches, and every
+    game finished (unfinished games are allowed only when the play cap ``ticks_cap`` is below the game length: tests)."""
+    o, e = np.asarray(cell_pg["outcome"]), np.asarray(cell_pg["end_step"])
+    ro, re = np.asarray(own_cell["outcome"]), np.asarray(own_cell["end_step"])
+    if o.shape != ro.shape:
+        raise ValueError(f"c_offset compares {o.shape} games with {ro.shape}")
+    cut = min(int(game_ticks), int(ticks_cap))
+    want = (ro == STRIKE_WIN) & (re <= cut)
+    got = o == STRIKE_WIN
+    same = want & got & (e == re)
+    shifted = want & got & (e != re)
+    extra, missing = got & ~want, want & ~got
+    unfinished = int(np.sum(o == RUNNING))
+    ok = not extra.any() and not missing.any() and not shifted.any() and (unfinished == 0 or cut < int(game_ticks))
+    first = lambda mask: [int(i) for i in np.flatnonzero(mask)[:GAMES_SHOWN]]      # noqa: E731
+    return {"status": PASS if ok else FAIL, "game_ticks": int(game_ticks), "ticks_cap": int(ticks_cap),
+            "games": int(o.size),
+            "reaches_expected": int(want.sum()), "reaches": int(got.sum()), "same_tick": int(same.sum()),
+            "shifted": int(shifted.sum()), "extra": int(extra.sum()), "missing": int(missing.sum()),
+            "unfinished": unfinished, "first_games": {"shifted": first(shifted), "extra": first(extra),
+                                                      "missing": first(missing)},
+            "detail": f"own evaluation: {int(want.sum())} reaches by tick {cut}; offset games: "
+                      f"{int(got.sum())} reaches, {int(same.sum())} at the same tick, {int(shifted.sum())} at another "
+                      f"tick, {int(extra.sum())} extra, {int(missing.sum())} missing, {unfinished} unfinished"}
+
+
+# ================================================================================================ L1.15: the delay check
+NO_REFERENCE = "no screen reference for this game: script cells reported, not compared (INFO)"
+
+
+def _finite_stats(values: np.ndarray, prefix: str) -> dict:
+    v = values[np.isfinite(values)]
+    return {f"{prefix}_min_m": float(v.min()) if v.size else None,
+            f"{prefix}_median_m": float(np.median(v)) if v.size else None}
+
+
+def tag_stats(cell_pg: dict) -> dict:
+    """Spec addendum 3 (L1.15), over the FINISHED first games of one cell (3-D distances, m):
+    - ``tag_distance``: the distance at each tag (``tag_pair_m`` [n, S], finite where a Strike drone was tagged; pooled
+      over games and drones), minimum and median;
+    - ``closest_any_pair``: per game the closest approach of any opposite pair = min(its tag distances, ``closest_3d_m``),
+      minimum and median over games. Needed because ``closest_3d_m`` is measured after the study tag has removed the
+      tagged pair on that tick (core/game.py), so it never sees a tag's own distance;
+    - ``closest_never_tagged``: ``closest_3d_m`` itself, the closest approach of pairs not removed by a tag on that tick.
+    None where there is nothing to measure."""
+    finished = np.asarray(cell_pg["outcome"]) != RUNNING
+    pair = np.asarray(cell_pg["tag_pair_m"], dtype=float)[finished]
+    closest = np.asarray(cell_pg["closest_3d_m"], dtype=float)[finished]
+    tag_min = pair.min(axis=1) if pair.size else np.full(closest.shape, np.inf)
+    return {"tags": int(np.isfinite(pair).sum()), **_finite_stats(pair.ravel(), "tag_distance"),
+            **_finite_stats(np.minimum(tag_min, closest), "closest_any_pair"),
+            **_finite_stats(closest, "closest_never_tagged")}
+
+
+def check_plumbing_only(pg: dict, ref, n: int, phase: str = "matrix") -> dict:
+    """A batch on a game without a screen reference: only the plumbing controls (paired starts against ``ref``'s
+    starts, tags one for one, no non-finite action); the script cells are reported, not compared."""
+    parts = plumbing_controls(pg, ref, n, phase)
+    return {"status": control_status(parts, True), "plumbing": parts, "reference_compared": False,
+            "detail": f"{NO_REFERENCE}; " + "; ".join(f"{key} {v['status']}" for key, v in parts.items())}

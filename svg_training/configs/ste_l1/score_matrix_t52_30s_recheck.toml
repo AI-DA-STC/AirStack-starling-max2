@@ -1,0 +1,29 @@
+# Re-check (L1.13, spec addendum 3 note; records T59): T52's 30 s score against guard_field (145 in the first re-score,
+# which ran before the scoring tool was reviewed and committed, across a cap stop and resume) played again with the
+# reviewed tool. The player and the game file are pinned exactly as in score_matrix_t52.toml.
+
+[job]
+task = "L1.13"
+what = "re-check of T52's 30 s score against guard_field with the reviewed, committed scoring tool"
+opponents = ["guard_field"]   # LEAD CALL 22 Nov 2026: the comparator cell behind L1.13 arm A's gain only
+kind = "INFO"
+
+[player]
+label = "The 1.15 m-trained Strike team (T52)"
+dir = "ste_provisional/players/2026-11-21_ste_l012b_tag_1p15_strike"
+side = "strike"
+variant = "tag_1p15"
+gates_sha256 = "ace5e18d77c214ca0a3e31d3613a20c3291e0f873ff6d1c5b90b8fec246fb592"
+agent_sha256 = "6ca45c318389ada0ab741e3ea76acf8feab79f359a94d6abbb12431f3aba846d"
+eval_sha256 = "7337ed32e7a4a9d2dc13b7143c365a37171db6150e9b17d00c254de65b07c79d"
+own_wins = 103
+own_source = "T52 tag 1.15 m Strike v guard_field, reaches (records/2026-11-21_ste_l012b_best_response_record.md)"
+
+[[games]]
+name = "tag_1p15_30s"
+file = "configs/ste_l1/tag_1p15_clock30.toml"
+sha256 = "a29fcd3394d4ade6087c45a2fd164a51ffb9b481058cb6356332600b7f98403b"
+reference = "configs/ste_l012b/screen_reference.npz"
+reference_sha256 = "49014000d07e8b52ae579deb325dad53d98c5020f533026dfbff778f306b2296"
+reference_variant = "tag_1p15"
+clock_label = "tag 1.15 m, 30 s clock (600 ticks; the 120 s screen reference holds, every script game there ends by tick 434)"

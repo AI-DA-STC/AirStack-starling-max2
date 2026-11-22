@@ -144,7 +144,7 @@ policy. D3 stands unless the owner changes it.
 
 Approved with L2 at gate G0 ([DISCUSSION §14](DISCUSSION_2026-11-19_20.md#14-gate-g0-rulings-owner-22-nov-2026)): one cap of 13 GPU-h for L1 + L2. The task list is the L1 table of the
 [costed draft](drafts/L1_L9_COSTED_PLAN_DRAFT.md) (section 3). Config caps are `configs/ste_learning.toml`
-`[budget_l1_l2.task_cap_gpu_h]` (lead's split, PROPOSED; they sum to 9.1 after the side-track spec and its addendum raised L1.11 to 1.2 and L1.13 to 1.7); the draft's figures are estimates.
+`[budget_l1_l2.task_cap_gpu_h]` (lead's split, PROPOSED; they sum to 9.1 after the side-track spec and its addenda raised L1.11 to 1.2 and L1.13 to 2.1 and added L1.14 (0.3 from L1.9) and L1.15 (0.3 from L1.10)); the draft's figures are estimates.
 
 | Task | Draft estimate (GPU-h) | Config cap (GPU-h) |
 |---|---|---|
@@ -157,13 +157,15 @@ Approved with L2 at gate G0 ([DISCUSSION §14](DISCUSSION_2026-11-19_20.md#14-ga
 | L1.6 Batched estimator (only if needed) | 0–0.5 | 0.1 (0.4 moved to L1.13, 22 Nov) |
 | L1.7 Same effects in tier 1 | 0–0.1 | 0.1 |
 | L1.8 T46's base policies re-scored on the new tier 2 | 0.1–1.2 | 1.2 |
-| L1.9 1v1 best-response read at tag 1.6 m, plus a scripted 1v1 screen also at 1.15 m | 0.5–1.9 | 1.9 |
-| L1.10 Tag drawn within 1.5–1.7 m, 3v3, both sides | 1.0–1.2 | 1.2 |
+| L1.9 1v1 best-response read at tag 1.6 m, plus a scripted 1v1 screen also at 1.15 m | 0.5–1.9 | 1.6 (0.3 moved to L1.14, 22 Nov) |
+| L1.10 Tag drawn within 1.5–1.7 m, 3v3, both sides | 1.0–1.2 | 0.9 (0.3 moved to L1.15, 22 Nov) |
 | L1.11 Strike team trained against guard_field at 1.6 m (side track: separates the opponent from the tag) | about 0.6 | 1.2 |
 | L1.12 T46's 1.6 m Guard team scored against every Strike script (side track) | minutes (under 0.1) | 0.1 |
 | L1.13 Shorter-training-clock Strike run at 1.15 m (side track; clock value set in its spec) | about 0.7 (two arms, spec v2; used 1.29 for training, plus re-scores at the other clock) | 2.1 |
+| L1.14 Time-left test: T52 and arm A scored with the time-left input changed (side track, scoring only; spec addendum 2) | about 0.2 | 0.3 |
+| L1.15 Delay check: T55, T54 and guard_field v strike_straight re-scored at response delay 0 and 0.30 s (side track, scoring only; spec addendum 3) | about 0.2 | 0.3 |
 
-The task texts below (L1.1–L1.6) are version 1's; the costed draft adds L1.0 and L1.7–L1.13.
+The task texts below (L1.1–L1.6) are version 1's; the costed draft adds L1.0 and L1.7–L1.13; the side-track spec adds L1.14 and L1.15.
 
 **L1.1 State delay and noise in tier 2.** Goal: the PX4 cascade sees a delayed, noisy state as with EKF2. Files:
 `source/svg_training/models/estimator_effect.py` (ring buffer of past states in physics steps, seeded Gaussian noise per

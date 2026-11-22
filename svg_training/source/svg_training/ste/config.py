@@ -38,7 +38,7 @@ TASK_IDS: dict[str, tuple[str, ...]] = {
     "L0": ("L0.1", "L0.7", "L0.8", "L0.9", "L0.10", "L0.11", "L0.12", "L0.2", "L0.13", "L0.3", "L0.4", "L0.5", "L0.14",
            "L0.6"),
     "L1": ("L1.0", "L1.1", "L1.2", "L1.3", "L1.4", "L1.5", "L1.6", "L1.7", "L1.8", "L1.9", "L1.10", "L1.11", "L1.12",
-           "L1.13"),
+           "L1.13", "L1.14", "L1.15"),
     "L2": (),
 }
 BUDGET_PHASES: tuple[str, ...] = ("L0",)    # the phases [budget] covers (its first name, kept for the L0 tools)

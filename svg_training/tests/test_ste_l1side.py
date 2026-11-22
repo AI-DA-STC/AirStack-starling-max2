@@ -32,7 +32,17 @@ PILOT = ROOT / "ste_provisional" / "pilots" / "2026-11-21_ste_l012_pilot" / "pil
 PILOT_SHA = "b029a9013098260679159a97a27471a0f6c15ae6239d367fc35f2f0c694a9d12"   # what T46, T52 and T55 named
 EARLIER = [ROOT / "configs" / "ste_l012" / "gates.toml", ROOT / "configs" / "ste_l012" / "smoke_gates.toml",
            ROOT / "configs" / "ste_l012b" / "gates.toml", L012C, ROOT / "configs" / "ste_l012c" / "guard_gates.toml",
-           *sorted((ROOT / "ste_provisional" / "players").glob("*/gates.toml"))]
+           *sorted(p for p in (ROOT / "ste_provisional" / "players").glob("*/gates.toml")   # the bundled L0 players;
+                   if not p.parent.name.startswith("2026-11-22_ste_l11"))]                     # L1 runs use the new keys
+L1_BUNDLED = sorted((ROOT / "ste_provisional" / "players").glob("2026-11-22_ste_l11*/gates.toml"))
+
+
+def test_the_bundled_l1_runs_load_with_the_l1_keys():
+    """Tonight's bundled L1 side-track runs (L1.11, L1.13 arms) load and use the L1 variant keys they were built for."""
+    assert len(L1_BUNDLED) == 3
+    for path in L1_BUNDLED:
+        g = exploit.load_gates(path)
+        assert any(set(v) & exploit._VARIANT_OPTIONAL for v in g.variants.values()), path
 
 
 @pytest.fixture(autouse=True)

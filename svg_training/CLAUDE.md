@@ -162,6 +162,10 @@ other stopped, from git alone.
   the Monday laptop → RTX 5090 switch is not cut short or skipped. The laptop job stops cleanly, everything is logged
   (records, LEDGER, status, HANDOFF §0, `~/claude-handoff.md`), merged to `development`, and the work resumes on the 5090
   ([DISCUSSION §14](ste_learning/DISCUSSION_2026-11-19_20.md#14-gate-g0-rulings-owner-22-nov-2026)).
+- **Side-track additions: say why when adding** (owner, 22 Nov 2026: "u can have side track additions but u msut tell
+  me why"): extra runs, arms, re-scores, new small tasks and budget moves between task caps are allowed, but each is
+  announced to the owner when it is added (chat and status): the question it answers, what triggered it, its GPU-h and
+  where the hours come from. Not afterwards.
 - **GPU jobs side by side** when the GPU has room (`--allow-siblings`); short pilots and speed measurements alone. The
   owner pauses jobs with `scripts/gpu_pause.sh` to use the PC: never resume a pause the session did not make.
 - **Videos inside every run** (STANDARDS §8); every result shown on a reader page has a GIF that plays on GitHub.

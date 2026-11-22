@@ -12628,7 +12628,7 @@ Laptop drills (21 Nov, fix branch, shared folder `~/AirStack-starling-max2/svg_t
 
 ## 2026-11-22 16:43
 
-**Status, 2026-11-22 16:50 (+08:00), event: gate G0 ruled, phase L1 open** · laptop RTX 5070 Ti · GPU idle · 0 jobs
+**Status, 2026-11-22 16:43 (+08:00), event: gate G0 ruled, phase L1 open** · laptop RTX 5070 Ti · GPU idle · 0 jobs
 
 **Plain summary.** You ruled gate G0 today. Phase L0 is closed, phase L1 (the drone model, plus a small 1.15 m side track)
 is open with 13 GPU-hours for L1 and L2 together. Nothing has run on the GPU since this morning.

@@ -12734,7 +12734,7 @@ full test suites (36–60 min each).
 
 ## 2026-11-23 07:09
 
-**Status, 2026-11-23 07:20 (+08:00) (morning digest; laptop work 22 Nov 18:00 – 23 Nov 07:30 +08:00; RTX 5090 L1.0 overnight)** · laptop RTX 5070 Ti · GPU idle · 0 jobs
+**Status, 2026-11-23 07:09 (+08:00) (morning digest; laptop work 22 Nov 18:00 – 23 Nov 07:10 +08:00; RTX 5090 L1.0 overnight)** · laptop RTX 5070 Ti · GPU idle · 0 jobs
 
 **Main track:** phase L1, making the training drone realistic: the 5090 checks, the estimate-error model in both simulators, the first fit from flight logs, and the trained teams re-scored on the physics drone are done and reviewed; the 1v1 and varied-tag training runs are built, GPU runs next on the 5090; the AirStack comparison waits for a simulator session with you · **Side track:** 1.15 m tests T57–T61 (yesterday evening) done; no side-track work overnight.
 

@@ -165,7 +165,9 @@ other stopped, from git alone.
 - **Side-track additions: say why when adding** (owner, 22 Nov 2026: "u can have side track additions but u msut tell
   me why"): extra runs, arms, re-scores, new small tasks and budget moves between task caps are allowed, but each is
   announced to the owner when it is added (chat and status): the question it answers, what triggered it, its GPU-h and
-  where the hours come from. Not afterwards.
+  where the hours come from. Not afterwards. Every status and check-in opens with one line "Main track: … · Side track: …"
+  so the owner sees at a glance where the main phase stands (owner: otherwise "i will be puzzled at why are we still
+  stuck at L0 and not even at L1").
 - **GPU jobs side by side** when the GPU has room (`--allow-siblings`); short pilots and speed measurements alone. The
   owner pauses jobs with `scripts/gpu_pause.sh` to use the PC: never resume a pause the session did not make.
 - **Videos inside every run** (STANDARDS §8); every result shown on a reader page has a GIF that plays on GitHub.

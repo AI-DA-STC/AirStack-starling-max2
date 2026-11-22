@@ -12,6 +12,27 @@ Everything needed is in this folder; nothing depends on the previous chat. Claud
 the private NUS workspace (`~/ma_skills-self-play/`, 5090 only) do **not** travel with git: if this file and a memory
 note disagree, this file wins.
 
+### 22–23 November 2026 night — L1 FIRST NIGHT, HAND-OVER TO THE RTX 5090 (read this first)
+**Start on the 5090:** pull `development`; `mkdir -p runs`; **before the first L1 launch** run
+`scripts/ste_job.py carry --gpu-h 2.81 --note "laptop 2026-11-22"` (laptop L1 hours; the 13 GPU-h cap is shared).
+Then in order: (1) **L1.0** 5090 checks (TEST-F2b, L09-5090, drills, 5090 suite); (2) **L1.1b** (WORK_BREAKDOWN: model
+the estimate's error, not a transport delay; never delay attitude; pass the game seed to the noise; tests first, two
+code reviews); (3) **Isaac check re-run** of L1.1/L1.2: `scripts/ste_job.py launch --task L1.1 --name ste_l1_model_check
+--run-dir runs/<date>_ste_l1_model_check --min-s 120 --gpu-h <h> -- <python> scripts/l1_model_check.py --run-dir <same>
+--cap-h <h> --headless` (the laptop run stopped at the 0.2 cap: 6 isaac tests passed, 1 failed on the world label — fixed
+in 99bc767e/06ba724e, not re-run, so the delay/noise/agreement checks have not run on Isaac; Isaac cost 11.1 %;
+torch-twin and tier-1 speed parts not run; L1.1 cap 0.2 is used: move hours with a "why" message to the owner first);
+(4) L1.3/L1.4 when the AirStack simulator is free (P5 approved, laptop or 5090).
+**Done tonight (all reviewed by two agents):** side track T57–T61 (records + ledger + figures docs/figures/ste_l1_side,
+clips docs/media/ste_l1_side); DISCUSSION §15 = the agreed reading and plan (two panellists); main track L1.1/L1.2 built
+(models/estimator_effect.py, drag in starling_airframe/physics_drone, params/starling_physics_v1.toml all OPEN at 0).
+Trained players for the 5090 in `ste_provisional/players/` (T46, T52, T54, T55, L1.11, L1.13 arms A/B). Laptop run
+folders archived in `~/AirStack-starling-max2/svg_training/runs/ste_archive/l1side/` (laptop only).
+**Side-track rule (owner, 22 Nov):** additions allowed, each announced with why + GPU-h + where the hours come from; every
+status opens "Main track · Side track". Next side-track step if any: a second seed of the clamped 1.15 m read / arm A
+(≈0.5 GPU-h), announced first. **L1 caps:** L1.1 0.2 (used), L1.6 0.1, L1.9 1.6, L1.10 0.9, L1.11 1.2, L1.13 2.1, L1.14
+0.3, L1.15 0.3; sum 9.1 + L2 3.9 = 13.
+
 ### 22 November 2026 ~16:40 — GATE G0 RULED; PHASE L1 OPEN (read this first)
 The owner ruled every G0 row (DISCUSSION §14; G0_DECISION banner): main game has a 1-for-1 tag (P1, overturns the FIXED
 no-tag rows); option (d): 1.6 m to build the pipeline and for the first demo (scripted 1v1), a 1.15 m side track in L1–L2,

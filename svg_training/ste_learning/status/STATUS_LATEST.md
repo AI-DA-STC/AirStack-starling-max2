@@ -1,46 +1,58 @@
 INTERNAL · the latest status of STE's own learning track and the NUS port, overwritten at every update; the history is in [LOG.md](LOG.md). Produced by the `train-status` skill.
 
-**Status, 2026-11-22 16:43 (+08:00), event: gate G0 ruled, phase L1 open** · laptop RTX 5070 Ti · GPU idle · 0 jobs
+**Status, 2026-11-23 (morning digest; work ran 22 Nov 18:00–23:30 +08:00)** · laptop RTX 5070 Ti · GPU idle · 0 jobs
 
-**Plain summary.** You ruled gate G0 today. Phase L0 is closed, phase L1 (the drone model, plus a small 1.15 m side track)
-is open with 13 GPU-hours for L1 and L2 together. Nothing has run on the GPU since this morning.
+**Main track:** L1 drone model: L1.1/L1.2 (position-estimate delay and noise, drag) built and reviewed; first Isaac Lab
+check stopped at its cap (6 tests passed, 1 failed on a label, fixed but not re-run); new task L1.1b (model the
+estimate's error, not a delay) · **Side track:** 1.15 m tests T57–T61 done and reviewed (why and cost announced as they
+were added).
 
-**Your rulings** ([DISCUSSION §14](../DISCUSSION_2026-11-19_20.md#14-gate-g0-rulings-owner-22-nov-2026)):
-- the main game has a 1-for-1 tag (your old "no tag" rule is overturned);
-- tag 1.6 m to build the pipeline and for the first demo (the hand-written 1v1); 1.15 m trained after L2, with a small
-  1.15 m side track in L1;
-- the fast simulator for quick experiments and checks, the main training in Isaac Lab;
-- 13 GPU-h for L1 + L2; 120 s games (shorter clocks only as experiments); the AirStack-simulator logs approved;
-- open arena first, then random blocks, then the construction site;
-- train 3v3 (and 1v1), score every trained team at 2v1 and 5v3 too; a training-settings sweep added to the plan;
-- a task still running at the Monday switch is handed over to the 5090, never cut short.
+## Watch
 
-**What I did since** (each reviewed by two agents):
-- recorded the rulings in the plan, the decision page, the game spec, the standards and the costed plan;
-- the budget settings know phase L1 (13 GPU-h shared by the laptop and the 5090: hours are carried across at each
-  switch with `ste_job.py carry`); L0 is closed to new runs; full test suite 2,048 passed;
-- the trained players L1 needs are now in git (`ste_provisional/`), so the 5090 can load them;
-- the side-track spec is written and fixed before any run ([L1_SIDE_TRACK_SPEC](../drafts/L1_SIDE_TRACK_SPEC.md)).
+| The 1.15 m Strike runs and the comparison team, both clocks | The time-left test and the delay check |
+|---|---|
+| ![](../../docs/figures/ste_l1_side/l113_arms.png) | ![](../../docs/figures/ste_l1_side/l114_l115.png) |
 
-**Next (tonight, laptop, fast simulator):** build the driver additions (an implementer is on it now, then two code
-reviewers), then three runs: the 1.6 m Guard team against every Strike script (minutes); a Strike team trained against
-the second Guard script at 1.6 m (about 0.6 GPU-h); and two small 1.15 m Strike runs, one with a 30 s training clock and
-one weighting a clock loss more (about 0.8 GPU-h together). I will message you when the first GPU run starts.
+| 1.6 m Strike team trained against field Guards: a reach | 1.15 m, 30 s training clock: a hold (the Strike team fails) |
+|---|---|
+| ![](../../docs/media/ste_l1_side/l111_strike_v_field_game0_reach.gif) | ![](../../docs/media/ste_l1_side/l113_arm_a_v_field_30s_game0_hold.gif) |
 
-**Phases**
+Clips use their own starting positions, not the 1,000 scoring starts. Training simulator only; nothing flown.
 
-| Phase | Status | Simulator |
-|---|---|---|
-| L0 Game definition and feasibility | **done; G0 ruled 22 Nov** (13.77 of 19 GPU-h) | fast engine, Isaac Lab |
-| L1 Drone model (+ side track) | **open**: side-track build in progress | Isaac Lab, fast engine for checks |
-| L2–L9 | intended | — |
+## Morning digest
 
-**Waiting on you:** nothing for L1. Later: whether the NUS-facing pages that still say "the main game has no tag" may be
-updated (svg_training README, GLOSSARY, RESEARCH, THE_GAME, DESIGN, docs/README, the contact-tag plan); I will show you
-the wording first.
+**What ran** (fast simulator for the side track, Isaac Lab for the main-track check; one run each):
 
-**Usage:** today about 45 agent runs since the morning digest (reviews, writers, two implementers), about 5 M tokens;
-two full test suites (36 min each); 0 GPU-h. L1 + L2 used 0 of 13.
+| Test | Result |
+|---|---|
+| 1.6 m Guard team v all 6 Strike scripts (T57) | holds at least 913 every time; above the best hand-written Guard on 4, below on 2 (converge 913 v 986, sacrifice 922 v 960) |
+| 1.6 m Strike team trained v field Guards (T58) | level with the script against them (277 v 284); below the best script against the others (clearly so only against the two parked Guards) |
+| 1.15 m Strike: 30 s training clock / a clock loss weighted more (T59) | 199 v the comparison team's 145 at 30 s, a gain, only just; but at the normal 120 s it did worse (76 v 103); weighting a clock loss more did nothing (99 v 103) |
+| **1.15 m time-left test (T60)** | **the 1.15 m Strike team (one network) attacks earlier and reaches more when its time-left input says time is short: 152 instead of 103** |
+| 1.15 m delay check (T61) | wins stay within the margin set in advance for response delays 0–0.3 s (small game-by-game changes); tags about 1 cm deeper at 0.3 s (closest 1.106 m, 6 mm outside the safety keep-out); re-check at L1.3's values |
+| Isaac Lab drone with delay, noise, drag (L1.1/L1.2) | runs in Isaac Lab; 11 % slower with the effects on (target 10 %, missed); the physics checks of one test did not run (label failure, fixed) |
 
-**Ready to push:** `development` is 1 commit ahead of GitHub in the mirror (the G0 rulings, f914423e) — plus this
-status commit.
+**Worth a look.**
+1. **A reading, not yet a conclusion:** the 1.15 m Strike team's "waiting" looks driven by its clock input, and most
+   of the 30 s clock's gain seems to come through how the network reads time (clamped, the two teams are close: 172 v 152).
+   Both panellists want a second seed before anything is built on it.
+2. **No 1.15 m change reached the hand-written Strike (355).** 1.15 m stays "simulator only, margin unproven".
+3. **Main-track lesson:** the real drone's position estimator projects late measurements forward to "now", so the
+   controller does not see a 0.15 s-old position; modelling it as a pure delay made the height loop unstable. L1.1b models
+   the estimate's small error instead, and L1.3 fits that error from flight logs.
+
+**Two panellists' plan (DISCUSSION §15):** main track first; side track at most about 1 GPU-h more, starting with a second
+seed, each addition announced with its why.
+
+**On the 5090 today, in order:** (1) start from `development`; before the first L1 launch run
+`scripts/ste_job.py carry --gpu-h 2.81 --note "laptop 2026-11-22"` (the laptop's L1 hours, so the 13 GPU-h cap holds);
+(2) L1.0, the 5090 checks; (3) L1.1b (CPU build: error model, seed passed through); (4) the Isaac check re-run (the
+isaac tests plus the two speed parts not measured; lead's estimate about 0.15 GPU-h); (5) L1.3/L1.4 when the AirStack
+simulator is free. **Waiting on you:** nothing to rule; later, your OK on wording for the NUS-facing pages that still say
+"no tag".
+
+**Usage:** L1 + L2 used **2.81 of 13 GPU-h** (L1.1 0.20, L1.11 0.46, L1.12 0.02, L1.13 1.83, L1.14 0.15, L1.15 0.15);
+about 60 agent runs since the afternoon (builders, writers, two reviewers per item, two panellists), ~12 M tokens; four
+full test suites (36–60 min each).
+
+**Ready to push:** `development` is ahead of GitHub in the mirror (see the line in chat).

@@ -107,6 +107,55 @@ class StarlingLayerCfg:
             raise ValueError(f"starling_layer.backend must be one of {BACKENDS}, got {self.backend!r}")
 
 
+COMMANDER_READS: tuple[str, ...] = ("true", "estimate")
+
+
+@dataclass(frozen=True)
+class EstimateErrorCfg:
+    """Tier 1's estimate error (STE task L1.7), ``[estimate_error]`` in a game file; absent or ``enabled = false`` = off
+    (nothing else is read, today's game bit for bit).
+
+    The same first-order Gauss-Markov error as tier 2's L1.1b (``models/estimator_effect.EstimatorEffect``): per
+    quantity and axis, stationary standard deviation sigma and correlation time tau, drawn from the stationary
+    distribution at every restart, stepped on the fitted PX4 model's 0.01 s sub-step grid, seeded with the game seed.
+    Position (m) and velocity (m/s) only: the fitted model has no attitude state. PX4's feedback (the position and
+    velocity errors of the fitted lag1 law) always reads the estimate; the game, tags, walls and scoring read the true
+    state. ``commander_reads`` picks what the commander copy and its safety filter read: "true" (as tier 2's
+    ``PhysicsLayer`` does since L1.1b, so tier 1 and tier 2 stay comparable) or "estimate" (as on the real drone, whose
+    commander reads EKF2's odometry). Values: PROPOSED by L1.3 (T63, EXPLORATORY); 0 here (a sigma of 0 is off).
+    Needs the Starling layer on with backend "fitted" (tier 2 has its own, ``state_error_*``)."""
+    enabled: bool = False
+    pos_sigma_m: float = 0.0
+    pos_tau_s: float = 0.0
+    vel_sigma_mps: float = 0.0
+    vel_tau_s: float = 0.0
+    commander_reads: str = "true"
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.enabled, bool):
+            raise ValueError(f"estimate_error.enabled must be true or false, got {self.enabled!r}")
+        if self.commander_reads not in COMMANDER_READS:
+            raise ValueError(f"estimate_error.commander_reads must be one of {COMMANDER_READS}, "
+                             f"got {self.commander_reads!r}")
+        for q, unit in (("pos", "m"), ("vel", "mps")):
+            sigma, tau = getattr(self, f"{q}_sigma_{unit}"), getattr(self, f"{q}_tau_s")
+            for name, value in ((f"{q}_sigma_{unit}", sigma), (f"{q}_tau_s", tau)):
+                if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) \
+                        or value < 0:
+                    raise ValueError(f"estimate_error.{name} must be a finite number >= 0 (sigma / tau), got {value!r}")
+            if sigma > 0 and tau == 0:
+                raise ValueError(f"estimate_error.{q}_sigma_{unit} above 0 needs {q}_tau_s above 0 (the correlation "
+                                 "time tau)")
+
+    def error(self) -> dict[str, tuple[float, float]]:
+        """{quantity: (sigma, tau_s)} of the quantities switched on (sigma above 0), as ``EstimatorEffect`` takes it;
+        empty when off."""
+        if not self.enabled:
+            return {}
+        pairs = {"pos": (self.pos_sigma_m, self.pos_tau_s), "vel": (self.vel_sigma_mps, self.vel_tau_s)}
+        return {q: (float(s), float(t)) for q, (s, t) in pairs.items() if s > 0}
+
+
 START_MODES: tuple[str, ...] = ("rings", "anywhere", "zone_disc_ring")
 
 
@@ -151,12 +200,17 @@ class GameCfg:
     pad_strikes: int = 3
     yaw_rate_max_rad_s: float = 1.0
     tag: TagCfg = field(default_factory=TagCfg)
+    estimate_error: EstimateErrorCfg = field(default_factory=EstimateErrorCfg)
 
     def __post_init__(self) -> None:
-        """Starts mode "zone_disc_ring" draws round the zone centre in metres from it, so (QC I2, LEAD CALL 21 Nov 2026) it
+        """An enabled ``[estimate_error]`` needs the Starling layer with backend "fitted" (else it would do nothing).
+        Starts mode "zone_disc_ring" draws round the zone centre in metres from it, so (QC I2, LEAD CALL 21 Nov 2026) it
         is refused unless the zone centre cannot move off the arena centre (``zone_wall_margin_m`` at least the largest
         side x (1/2 - smallest zone-radius fraction), every band) and the Strike ring fits the keep-in box of the smallest
         side (half less ``wall_margin_m``). Other modes are not checked here."""
+        if self.estimate_error.enabled and not (self.starling.enabled and self.starling.backend == "fitted"):
+            raise ValueError('estimate_error needs the Starling layer on with backend "fitted" (tier 1); the physics '
+                             "backend has its own (state_error_* in its parameter file)")
         if self.starts.mode != "zone_disc_ring":
             return
         a = self.arena
@@ -184,7 +238,8 @@ class GameCfg:
     def replace(self, **dotted: Any) -> "GameCfg":
         """Return a copy with dotted fields changed, e.g. replace(**{"starling.enabled": True})."""
         sections = {"arena": "arena", "rules": "rules", "contact": "contact",
-                    "starling": "starling", "starts": "starts", "rewards": "rewards", "tag": "tag"}
+                    "starling": "starling", "starts": "starts", "rewards": "rewards", "tag": "tag",
+                    "estimate_error": "estimate_error"}
         top: dict[str, Any] = {}
         sub: dict[str, dict[str, Any]] = {}
         for key, val in dotted.items():
@@ -218,7 +273,8 @@ LOCAL_ALLOWED: frozenset[str] = frozenset(
 
 _GAME_KEYS = ("preset", "dropout_fraction", "obs_view", "pad_guards", "pad_strikes", "yaw_rate_max_rad_s")
 _SECTION_CLASSES = {"arena": ArenaCfg, "partner_rules": PartnerRulesCfg, "contact_rules": ContactRulesCfg,
-                    "starling_layer": StarlingLayerCfg, "starts": StartsCfg, "rewards": RewardsCfg, "tag": TagCfg}
+                    "starling_layer": StarlingLayerCfg, "starts": StartsCfg, "rewards": RewardsCfg, "tag": TagCfg,
+                    "estimate_error": EstimateErrorCfg}
 
 
 def _tuplify(v: Any) -> Any:
@@ -275,7 +331,7 @@ def load_game_cfg(path: str | Path = CONFIGS / "s2_game.toml", local_dir: Path |
     parts = {name: _build(cls, data.get(name, {}), name) for name, cls in _SECTION_CLASSES.items()}
     cfg = GameCfg(arena=parts["arena"], rules=parts["partner_rules"], contact=parts["contact_rules"],
                   starling=parts["starling_layer"], starts=parts["starts"], rewards=parts["rewards"],
-                  tag=parts["tag"], **{"preset": "partner", **game})
+                  tag=parts["tag"], estimate_error=parts["estimate_error"], **{"preset": "partner", **game})
     return cfg, Provenance(str(path), _sha(raw), local_file, local_sha)
 
 

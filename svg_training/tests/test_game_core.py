@@ -251,6 +251,7 @@ _ALLOWED = {
     ("models/fitted.py", 'self.vertical = {k: float(v) for k, v in cfg["px4_vertical"].items()}'): "parameter file",
     ("models/fitted.py", "self.delay_n = int(math.floor(d))"): "parameter file, in __init__",
     ("models/fitted.py", "self.hover_seed = bool(hover_seed)"): "argument, in __init__",
+    ("models/fitted.py", "self.commander_reads_estimate = bool(commander_reads_estimate)"): "argument, in __init__ (L1.7)",
     # the commander + filter moved from fitted.py into the shared chain (S2b Task 4), lines unchanged
     ("models/command_chain.py", "self.safety_filter = bool(safety_filter)"): "argument, in __init__",
     ("models/command_chain.py", "self.filter_iterations = int(filter_iterations)"): "argument, in __init__",

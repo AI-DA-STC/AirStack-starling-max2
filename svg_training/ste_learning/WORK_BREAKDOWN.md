@@ -232,6 +232,21 @@ airframe values (STANDARDS §5 rule 2 allows them only by owner ruling, preceden
 **L1.6 Batched PyTorch estimator (only if needed).** Only if L1.3, L1.5 and NEAR-962 show delay plus noise is not
 enough (D7 step 4). A simplified batched EKF in `models/`, tested on CPU against hand-worked cases. ~20 h. Gate: lead.
 
+**L1.7 Same effects in tier 1 (costed draft).** Built (23 Nov 2026, branch `ste-l1-7`): an optional `[estimate_error]`
+game-file table (off when absent: no change to today's game) gives tier 1's fitted PX4 model tier 2's L1.1b error
+(`EstimatorEffect` reused). Position and velocity only, each with sigma and tau. Tier 1 has no attitude state. The
+error steps every 0.01 s sub-step, is drawn from its stationary distribution at each restart, and is seeded with the
+game seed (`reset(seed)` included). The PX4 law's feedback reads the estimate. The game, tags, walls and scoring read
+true states. `commander_reads` sets what the commander copy and its filter read: "true" (the default, as tier 2) or
+"estimate" (as on the real drone). Study files: `configs/ste_l1/base_err_nominal.toml` and
+`base_err_conservative.toml` (L1.3 values, T63, PROPOSED; conservative = 2 × sigma). Tests:
+`tests/test_tier1_estimate_error.py`. CPU speed check, laptop shared with another job (load about 45, 4 threads,
+medians of interleaved runs; a session scratchpad script, not committed): the in-game cost is NOT resolved. Base
+game 3v3, 64 games, as shipped (early stop): off 28.1, nominal 12.6, conservative 24.0 ticks/s (3 runs; unreadable);
+with a fixed 50 filter sweeps: 12.6 / 13.2 / 12.1 (7 runs; inconclusive). Fitted model alone (1024 × 6 drones, no
+filter, 7 runs): 153 v 126 ticks/s, about 18 % slower with the error on (indicative: the ranges overlap). Re-measure
+on an idle machine. Not run on a GPU. Follow-ups from the two code reviews (23 Nov, low): a test isolating the velocity-error term; in commander_reads = "estimate" the hover-seed history and chain.keep_in still read true position (~0.15 s); model.reset(~alive) redraws a full error tensor every tick (cost); a constructor-only FittedResponse reuses its first draw (game paths unaffected); a disabled [estimate_error] table is still validated; T63's τ 0.5 s arm not provided; tier-1 recording/replay of the error state is not supported (record_inputs refuses non-physics games). Speed cost to re-measure on an idle machine.
+
 ## L2 Game rules in the training copy (§2.9, §2.14)
 
 **L2.1 Filter option B in the training copy.** Goal: in Guard–Strike pairs only the Guard gives way; team-mate pairs

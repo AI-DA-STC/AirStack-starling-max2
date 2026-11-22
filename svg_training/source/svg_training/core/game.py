@@ -131,7 +131,7 @@ class SvgGame:
         if physics:
             self._starling = PhysicsLayer(cfg, n, guards, strikes, dev, world, seed=seed)   # estimator noise (L1.1b)
         elif cfg.starling.enabled:
-            self._starling = StarlingLayer(cfg, n, guards, strikes, dev)
+            self._starling = StarlingLayer(cfg, n, guards, strikes, dev, seed=seed)   # estimate error (L1.7)
         self.motion = f"physics/{world.label}" if physics else ("starling" if cfg.starling.enabled else "pure")
         self._physics = physics
         if scenario is not None:
@@ -237,7 +237,7 @@ class SvgGame:
             self.gen.manual_seed(seed)
             self._tag_gen.manual_seed(_tag_seed(seed))
         self._new_games(torch.ones(self.num_games, dtype=torch.bool, device=self.device))
-        if self._physics:          # the world holds the new starts at once (a reader may look before the first step)
+        if self._physics or isinstance(self._starling, StarlingLayer):   # new starts held now; error restarts (L1.7)
             self._starling.flush(seed)     # seed: the estimator noise restarts too (its own generators, STE L1.1b)
         return self._obs()
 

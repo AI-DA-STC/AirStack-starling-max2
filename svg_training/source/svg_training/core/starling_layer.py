@@ -24,6 +24,11 @@ and the PX4 model's fixed sub-steps are the only loops). One exception, by choic
 filter_check_every = k > 0`` turns on the filter's early stop, which reads one number back from the GPU every k
 sweeps (one host sync per check, S2 plan decision D10; counted in the Task 7 filter-speed record). With k = 0 the
 step makes no host sync. Shapes: N games, M drones (Guard drones first).
+
+Estimate error (STE L1.7; ``[estimate_error]``, off when absent): the PX4 model's feedback reads the true state plus
+tier 2's Gauss-Markov estimate error (``models/fitted.FittedResponse``), seeded with the game seed; the commander copy
+and its filter read the true or the estimated position (``commander_reads``); everything this layer returns to the game
+(positions, velocities, the walls) is true. ``flush(seed)`` (``SvgGame.reset(seed)``) restarts the error's streams.
 """
 from __future__ import annotations
 
@@ -100,7 +105,8 @@ class StarlingLayer:
 
     status = "exploratory"
 
-    def __init__(self, cfg: GameCfg, num_games: int, guards: int, strikes: int, device: str | torch.device):
+    def __init__(self, cfg: GameCfg, num_games: int, guards: int, strikes: int, device: str | torch.device,
+                 seed: int = 0):                         # seed: the game seed, for the estimate error (STE L1.7)
         params = load_params(resolve_params(cfg.starling.params))
         self.stick_cap_mps = check_commander(cfg, params)
         pairs = filter_pairs(cfg, guards, strikes, device)
@@ -108,12 +114,20 @@ class StarlingLayer:
         m = guards + strikes
         self.model = FittedResponse(num_games, m, params, device=device, safety_filter=True, pair_mask=pairs,
                                     filter_iterations=cfg.starling.filter_iterations,
-                                    filter_kwargs=filter_kwargs(cfg), hover_seed=True, filter_fn=filter_fn(cfg))
+                                    filter_kwargs=filter_kwargs(cfg), hover_seed=True, filter_fn=filter_fn(cfg),
+                                    estimate_error=cfg.estimate_error.error(), estimate_seed=seed,
+                                    commander_reads_estimate=cfg.estimate_error.commander_reads == "estimate")
 
     def reset(self, mask: Tensor, pos_m: Tensor, yaw: Tensor | None = None) -> None:
         """Restart the drones where mask [N, M] bool is True: at rest at pos_m [N, M, 3], fresh commander.
         ``yaw`` [N, M] is accepted and ignored (the physics backend uses it)."""
         self.model.reset(mask, pos_m)
+
+    def flush(self, seed: int | None = None) -> None:
+        """``SvgGame.reset(seed)``: the estimate error restarts from ``seed`` (every drone drawn afresh), as tier 2's
+        ``PhysicsLayer.flush`` restarts its estimator noise. Nothing when seed is None or the error is off."""
+        if seed is not None:
+            self.model.reseed_estimate(seed)
 
     def step(self, cmd_mps: Tensor, pos_m: Tensor, alive: Tensor, yaw: Tensor | None = None,
              yaw_rate_rad_s: Tensor | None = None) -> tuple[Tensor, Tensor, Tensor]:

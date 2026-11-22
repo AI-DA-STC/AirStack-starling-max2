@@ -32,6 +32,10 @@ buffer entry of the drones in ``mask`` with their reset state and draws their er
 physics step; ``replace_latest(...)`` when the game writes the state without a physics step (``write_clamped``: the entry
 of the current instant is replaced, not added). Each returns the estimate (pos_m, quat_wxyz, vel_mps, ang_vel_b).
 
+Tier 1 (STE L1.7, ``models/fitted.FittedResponse``) reuses this class for position and velocity errors only, with no
+delay and no white noise; it has no attitude state and passes ``quat`` and ``ang`` as None, which pass through as None
+while no attitude error and no attitude or rate noise is set.
+
 Shapes: N games x M drones; pos, vel, body rates [N, M, 3], quaternions WXYZ [N, M, 4], masks [N, M] bool. Batched;
 no host reads; the ring index is a Python integer advanced once per physics step (no loop over games or drones).
 """

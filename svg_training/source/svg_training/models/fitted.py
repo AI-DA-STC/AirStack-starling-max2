@@ -22,6 +22,14 @@ this class unchanged, S2b Task 4; checked bit for bit by ``tests/test_command_ch
    The vertical channel is NOT fitted: the same lag1 shape with the drone's own vertical gains (PROPOSED values in
    the parameter file's ``[px4_vertical]`` table).
 
+Estimate error (STE L1.7, off by default): ``estimate_error`` = {quantity: (sigma, tau_s)} for "pos" and "vel" gives
+the PX4 law tier 2's first-order Gauss-Markov estimate error (``models/estimator_effect.EstimatorEffect``, reused with no
+delay and no white noise), stepped once per 0.01 s sub-step and drawn from its stationary distribution at every reset,
+seeded with ``estimate_seed``. Only the law's two feedback reads use the estimate (p_sp - p and vel_sp - v); the
+integration, ``pos_m`` and ``vel_mps`` stay true. ``commander_reads_estimate``: the commander copy and its safety filter
+read the estimated position at the tick start (the same error the law reads then), else the true one. No attitude: the
+lag1 model has none. Off (None, or every sigma 0): nothing is built or drawn and every operation is as before.
+
 The model owns each drone's position (trapezoid integration, as the reference). ``step(cmd, pos_m)`` first adopts
 the caller's positions (so a caller that moves or places drones is obeyed), and ``self.pos_m`` holds the positions
 after the step. Parameters come from a TOML such as ``params/real_exploratory_v0.toml``.
@@ -38,6 +46,7 @@ from torch import Tensor
 from svg_training.core.safety_filter import filter_velocities
 from svg_training.models.command_chain import CommandChain
 from svg_training.models.commander import CommanderParams
+from svg_training.models.estimator_effect import EstimatorEffect
 from svg_training.models.px4_trajectory import TrajectoryParams
 from svg_training.models._filters import lag_alpha
 
@@ -72,7 +81,9 @@ class FittedResponse:
     def __init__(self, n_games: int, n_drones: int, params: str | pathlib.Path | dict, dt_s: float | None = None,
                  device="cuda", dtype: torch.dtype = torch.float32, safety_filter: bool = False,
                  pair_mask: Tensor | None = None, filter_iterations: int = 1000, pos_m: Tensor | None = None,
-                 filter_kwargs: dict | None = None, hover_seed: bool = False, filter_fn=None):
+                 filter_kwargs: dict | None = None, hover_seed: bool = False, filter_fn=None,
+                 estimate_error: dict[str, tuple[float, float]] | None = None, estimate_seed: int = 0,
+                 commander_reads_estimate: bool = False):
         """filter_kwargs, if given, is merged last into the ``filter_velocities`` call (it may override any keyword
         this class passes, e.g. ``iterations``); None leaves the S1 call unchanged. ``filter_fn``: the filter function
         (same signature as ``filter_velocities``); None = this module's ``filter_velocities`` (the default).
@@ -117,6 +128,20 @@ class FittedResponse:
         self._buf = torch.zeros(self.hist, n, m, 9, device=device, dtype=dtype)  # delay history, ring buffer
         self._head = 0                                                          # slot the next sample goes to
         self._fresh = torch.ones(n, m, dtype=torch.bool, device=device)        # history not started yet
+        # the estimate error (L1.7, module docstring): None = off, nothing built or drawn
+        error = dict(estimate_error or {})       # Python numbers (the game file); EstimatorEffect checks them
+        bad = sorted(set(error) - {"pos", "vel"})
+        if bad:
+            raise ValueError(f"tier 1's estimate error has position and velocity only (no attitude state), got {bad}")
+        error = {q: v for q, v in error.items() if v[0] != 0.0}
+        self.commander_reads_estimate = bool(commander_reads_estimate)
+        self.estimator: EstimatorEffect | None = None
+        if error:
+            self.estimator = EstimatorEffect(n, m, 0, 0.0, 0.0, 0.0, 0.0, device, dtype=dtype, seed=estimate_seed,
+                                             error=error, dt_s=model_dt_s)
+            self.estimator.reset(torch.ones(n, m, dtype=torch.bool, device=device), self.pos_m, None, self.vel_mps,
+                                 None)
+            self.estimator.reseed(estimate_seed)   # the first reset after this draws as a reseed's would (replay)
 
     # ------------------------------------------------------------------------------------- the chain's state
     # Kept as attributes of this class (S1/S2 callers and tests read and write them); they live in ``self.chain``.
@@ -153,16 +178,19 @@ class FittedResponse:
         self.chain.set_pair_mask(mask)
 
     # ------------------------------------------------------------------------------------- PX4, one 0.01 s step
-    def _px4_step(self, x: Tensor) -> None:
-        """x [N, M, 9] = delayed (p_sp, v_ff, a_ff). The lag1 law of px4_trajectory.simulate, plus z."""
+    def _px4_step(self, x: Tensor, p_est: Tensor | None = None, v_est: Tensor | None = None) -> None:
+        """x [N, M, 9] = delayed (p_sp, v_ff, a_ff). The lag1 law of px4_trajectory.simulate, plus z. ``p_est`` /
+        ``v_est`` [N, M, 3]: the state the law's feedback reads (L1.7's estimate); None = the true state."""
         q, dt, vz = self.px4, self.model_dt_s, self.vertical
         p_sp, v_ff, a_ff = x[..., 0:3], x[..., 3:6], x[..., 6:9] * q.ff_gain
         p, v = self.pos_m, self.vel_mps
-        vel_sp = _cap_norm(v_ff[..., :2] + q.kp_xy * (p_sp[..., :2] - p[..., :2]), q.vel_max_mps)
-        dv_xy = _cap_norm(a_ff[..., :2] * dt + self.alpha_xy * (vel_sp - v[..., :2]), q.acc_max_mps2 * dt)
-        vel_sp_z = torch.clamp(v_ff[..., 2] + vz["kp_z"] * (p_sp[..., 2] - p[..., 2]),
+        pe = p if p_est is None else p_est
+        ve = v if v_est is None else v_est
+        vel_sp = _cap_norm(v_ff[..., :2] + q.kp_xy * (p_sp[..., :2] - pe[..., :2]), q.vel_max_mps)
+        dv_xy = _cap_norm(a_ff[..., :2] * dt + self.alpha_xy * (vel_sp - ve[..., :2]), q.acc_max_mps2 * dt)
+        vel_sp_z = torch.clamp(v_ff[..., 2] + vz["kp_z"] * (p_sp[..., 2] - pe[..., 2]),
                                min=-vz["vel_max_down_mps"], max=vz["vel_max_up_mps"])
-        dv_z = a_ff[..., 2] * dt + self.alpha_z * (vel_sp_z - v[..., 2])
+        dv_z = a_ff[..., 2] * dt + self.alpha_z * (vel_sp_z - ve[..., 2])
         if math.isfinite(vz["acc_max_z_mps2"]):
             lim = vz["acc_max_z_mps2"] * dt
             dv_z = torch.clamp(dv_z, min=-lim, max=lim)
@@ -178,7 +206,12 @@ class FittedResponse:
         """
         if pos_m is not None:
             self.pos_m = pos_m.to(device=self.device, dtype=self.dtype)
-        p_sp, v_ff, a_ff = self.chain.step(cmd_mps, self.pos_m)
+        est = self.estimator
+        if est is None:
+            p_sp, v_ff, a_ff = self.chain.step(cmd_mps, self.pos_m)
+        else:                                   # the estimate now: this instant's error on the (adopted) true state
+            p_est, _, v_est, _ = est.replace_latest(self.pos_m, None, self.vel_mps, None)
+            p_sp, v_ff, a_ff = self.chain.step(cmd_mps, p_est if self.commander_reads_estimate else self.pos_m)
         x = torch.cat([p_sp, v_ff, a_ff], dim=-1)
         # a fresh drone's history is its first setpoint (the reference holds x[0] before t_0)
         self._buf = torch.where(self._fresh[None, ..., None], x[None], self._buf)
@@ -189,7 +222,11 @@ class FittedResponse:
             a = self._buf[(self._head - n) % h]          # x[k - n]
             b = self._buf[(self._head - n - 1) % h]      # x[k - n - 1]
             self._head = (self._head + 1) % h
-            self._px4_step((1.0 - f) * a + f * b)
+            if est is None:
+                self._px4_step((1.0 - f) * a + f * b)
+            else:                               # the law reads the estimate; then one sub-step of the error passes
+                self._px4_step((1.0 - f) * a + f * b, p_est, v_est)
+                p_est, _, v_est, _ = est.push(self.pos_m, None, self.vel_mps, None)
         return self.vel_mps
 
     def reset(self, mask: Tensor, pos_m: Tensor | None = None) -> None:
@@ -206,3 +243,29 @@ class FittedResponse:
         else:
             self._fresh = self._fresh | mask
         self.chain.reset(mask)
+        if self.estimator is not None:          # restarted drones: the error drawn from its stationary distribution
+            self.estimator.reset(mask, self.pos_m, None, self.vel_mps, None)
+
+    # ------------------------------------------------------------------------------------- the estimate (L1.7)
+    @property
+    def est_pos_m(self) -> Tensor:
+        """[N, M, 3] the position PX4's law reads now (true + error); the true position when the error is off."""
+        if self.estimator is None:
+            return self.pos_m
+        return self.estimator.replace_latest(self.pos_m, None, self.vel_mps, None)[0]
+
+    @property
+    def est_vel_mps(self) -> Tensor:
+        """[N, M, 3] the velocity PX4's law reads now; the true velocity when the error is off."""
+        if self.estimator is None:
+            return self.vel_mps
+        return self.estimator.replace_latest(self.pos_m, None, self.vel_mps, None)[2]
+
+    def reseed_estimate(self, seed: int) -> None:
+        """Restart the error's streams from ``seed`` (the game seed) and draw every drone's error afresh from the
+        stationary distribution; nothing when the error is off."""
+        if self.estimator is None:
+            return
+        self.estimator.reseed(seed)
+        all_drones = torch.ones(self.pos_m.shape[:2], dtype=torch.bool, device=self.device)
+        self.estimator.reset(all_drones, self.pos_m, None, self.vel_mps, None)

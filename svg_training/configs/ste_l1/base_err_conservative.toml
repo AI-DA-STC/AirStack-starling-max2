@@ -1,0 +1,91 @@
+# STE task L1.7 (tier 1 estimate error), study game file "base_err_conservative": the conservative arm
+# (2 x each sigma, tau unchanged).
+# = configs/ste_l011/base.toml (the L0.11 base case) from [game] on, its comments kept, plus the [estimate_error] table
+# at the end. Study runs only; always loaded with use_local=False. tests/test_tier1_estimate_error.py proves the only
+# difference from base.toml is that table, and that the nominal and conservative files differ in the two sigmas only.
+#
+# Values: EXPLORATORY, PROPOSED by L1.3 (record T63, records/2026-11-23_ste_l13_fit_record.md): EKF2's estimate minus
+# the mocap it fuses, one 81 s hover of drone_2 (log103, 13 Nov 2026). Hover only: while moving, the position spread
+# reaches 0.025 m per axis. Never a drone value.
+#
+# --- base.toml from [game] on ---
+[game]
+preset = "partner"                 # the partner rules with the Starling layer on (the push-apart is off there)
+dropout_fraction = 0.0             # no scheduled drop-outs: drones leave only by the study tag
+obs_view = "full"
+pad_guards = 5                     # slots for up to 5 Guard drones (5v3 is the largest size swept)
+pad_strikes = 3
+yaw_rate_max_rad_s = 1.0
+
+[arena]
+# One fixed square arena, the zone at its centre, through today's settings (GAME_SPEC open item "a fixed 6.5 m base-case
+# game file", LEAD CALL 21 Nov 2026): every band is the one side, the zone radius is one fraction of it, and the
+# zone-to-wall margin is half the side, so the zone centre can only be the arena centre.
+band_weights = [1.0, 1.0, 1.0]
+zone_radius_frac = [0.24615384615384617, 0.24615384615384617]   # zone.radius_m 1.6 (OPEN, P12) / arena.side_m 6.5
+zone_wall_margin_m = 3.25          # = arena.side_m / 2: zone.centre "arena_centre" (PROPOSED)
+height_band_m = [0.5, 1.8]         # height.band_m (PROPOSED)
+start_height_m = 1.2               # height.start_m (PROPOSED); no jitter
+walls = "keep_in"                  # arena.walls (PROPOSED)
+wall_margin_m = 0.25               # arena.wall_margin_m (PROPOSED): keep-in limit 3.0 m
+
+[arena.bands_m]
+lab = [6.5, 6.5]                   # arena.side_m 6.5 (PROPOSED, F8): the lab fence
+middle = [6.5, 6.5]
+large = [6.5, 6.5]
+
+[partner_rules]
+keepout_guard_m = 1.1              # filter.keepout_m 1.10 (FIXED): read by the breach count and the start-miss test
+keepout_strike_m = 1.1
+push_rule = "block"                # not used with the Starling layer on (D3)
+teammates_pass = true
+win_steps_in_zone = 1              # zone.win_ticks_inside 1 (PROPOSED)
+strike_units_per_step = 0.025      # speeds.strike_mps 0.5 (FIXED) with the two lines below
+guard_units_per_step = 0.016666666666666666   # speeds.strike_to_guard_ratio 1.5 (FIXED): 0.333 m/s
+game_steps = 2400                  # timing.game_s 120 (PROPOSED): 2,400 ticks of 0.05 s
+metres_per_unit = 1.0
+seconds_per_step = 0.05
+
+[contact_rules]
+contact_m = 0.5                    # the contact preset is not used (preset "partner")
+guard_survives_tag_prob = 0.0
+
+[starling_layer]
+# Tier 1 with the filter on (PLAN.md section 4 L0.11): the commander copy, the safety filter on every pair (filter.pairs
+# "every_pair", FIXED; equal share), then the fitted PX4 response (exploratory). 1000 sweeps, check every 8 (T8 PASS).
+enabled = true
+params = "params/real_exploratory_v0.toml"
+filter_iterations = 1000
+filter_check_every = 8
+filter_cuda_graph = false
+backend = "fitted"
+physics_params = "params/starling_physics_v0.toml"
+physics_sim_only_gains = "params/sim_only_yaw_v0.toml"
+
+[starts]
+mode = "zone_disc_ring"            # the hangar game's starts (L0.10)
+strike_inset_m = 0.3               # not read in this mode
+guard_ring_gap_m = 0.3             # not read in this mode
+spacing_m = 1.2                    # not read in this mode
+guard_disc_m = 0.8                 # starts.guard_disc_m (PROPOSED)
+team_spacing_margin_m = 0.05        # starts.team_spacing_margin_m (PROPOSED, L0.10 QC fix round 1): team-mates start >= 1.10 + 0.05 m apart
+strike_ring_m = 2.75               # starts.strike_ring_m (PROPOSED, LEAD CALL 21 Nov 2026, L08-F1)
+
+[rewards]
+win = 1.0
+shaping_weight = 0.0
+
+[tag]
+mode = "nearest_pair_1for1"        # tag_rule.pairing (PROPOSED, P1): the study tag ON, study runs only
+radius_m = 1.6                     # tag.radius_m 1.6 (PROPOSED, P1)
+guard_survives_tag_prob = 0.0      # tag.guard_survives_tag_prob 0.0 (PROPOSED, D2)
+
+[estimate_error]
+# Tier 1's copy of tier 2's L1.1b estimate error (core/game_config.EstimateErrorCfg): first-order Gauss-Markov per axis.
+enabled = true
+pos_sigma_m = 0.0198                # m per axis. PROPOSED: 2 x 0.0099 (T63 guidance rounds it to 0.02)
+pos_tau_s = 1.2                    # s, correlation time (1/e crossing). PROPOSED (T63)
+vel_sigma_mps = 0.044               # m/s per axis. PROPOSED: 2 x 0.022 (T63 guidance rounds it to 0.05)
+vel_tau_s = 1.3                    # s. PROPOSED (T63)
+commander_reads = "true"           # the commander copy and its filter read the true position, as tier 2 (L1.1b) does;
+                                   # "estimate" = as on the real drone (EKF2 odometry). LEAD CALL (L1.7 report)

@@ -24,7 +24,7 @@ Each player folder keeps `agent_final.pt`, its `gates.toml`, the results (`resul
 batches (`eval_*.npz`), `curve.json` where it exists and `train_log.jsonl`. Left out: `checkpoint.latest` (a resume
 state) and the videos (they are in `docs/media/`).
 
-**Use.** The drivers take the folder as an argument, so nothing needs installing: for example
+**Use.** The drivers take the folder as an argument, so nothing needs installing for them; one exception: the L0.3 tests read T45's per-game file from `runs/2026-11-21_ste_l014/response/per_game.npz`, so on a fresh machine copy `players/2026-11-21_ste_l014/response/per_game.npz` there (found by the 5090's L1.0 checks, 23 Nov): for example
 `scripts/ste_cross_tag_l012d.py --t46-runs-dir ste_provisional/players …`. The pinned sha256 values in
 `configs/ste_l012d/cross_tag.toml` match these files. The full run folders (videos, checkpoints, logs) stay on the laptop
 in `~/AirStack-starling-max2/svg_training/runs/ste_archive/` (map in its README).

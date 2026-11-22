@@ -12,7 +12,24 @@ Everything needed is in this folder; nothing depends on the previous chat. Claud
 the private NUS workspace (`~/ma_skills-self-play/`, 5090 only) do **not** travel with git: if this file and a memory
 note disagree, this file wins.
 
-### 22–23 November 2026 night — L1 FIRST NIGHT, HAND-OVER TO THE RTX 5090 (read this first)
+### 23 November 2026 ~07:15 — LAPTOP NIGHT 2 DONE; RTX 5090 PICKS UP (read this first)
+**Merged to development tonight (each built, two code reviews, full suite at merge):** L1.1b (Gauss–Markov estimate
+error in tier 2), L1.3 first fit (T63, EXPLORATORY: hover position ~1 cm/1.2 s, velocity ~2 cm/s/1.3 s, attitude ≤0.15°;
+mocap age 6–9 ms), Isaac checks (T62: 7/7 pass, no measurable cost), L1.7 (estimate error in tier 1, off by default,
+commander_reads switch), L1.8 (T64: T46 players on tier 2 — simulator shifts −33..+47 per cell; with the measured error
+no change detected; 2× error moves Strike v parked Guards 351→399), L1.9/L1.10 tooling (spec
+ste_learning/drafts/L1_9_10_SPEC.md; caps L1.9 1.6, L1.10 1.7 — moved from L1.8/L1.6/L1.15 unused, announced).
+**On the 5090, in order:** (1) pull `development`; `scripts/ste_job.py carry --gpu-h 0.73 --note "laptop 2026-11-23"`
+(laptop L1 hours 3.533 minus the 2.808 already carried = 0.725, rounded up); (2) L1.7 speed re-measure on an idle GPU (laptop numbers were
+under load); (3) L1.9 then L1.10 exactly as the spec's launch order (step 1 CPU screen; step 2b: if the 1v1 parked
+Guard v straight cell shows ≥ 950 reaches, change run 0's opponent first); L1.9's cap leaves ~0.1 GPU-h for its tier-2
+check — announce any move first; (4) L1.4/L1.5 need an AirStack-simulator session with the owner. Follow-ups listed
+in WORK_BREAKDOWN: L1.1c (second-order error), L1.7 review lows, z-sign ULog test, a duplicate-carry guard (5090
+suggestion). T45's per_game.npz must be copied to runs/2026-11-21_ste_l014/response/ for the L0.3 tests on a fresh
+machine (ste_provisional/README.md now says so).
+Laptop run folders archived in ~/AirStack-starling-max2/svg_training/runs/ste_archive/{l11b,l13,l17,l18,l19}/ (laptop only).
+
+### 22–23 November 2026 night — L1 FIRST NIGHT, HAND-OVER TO THE RTX 5090 (SUPERSEDED by the 23 Nov ~07:15 entry above; kept for history)
 **Start on the 5090:** pull `development`; `mkdir -p runs`. **The carry of the laptop's 2.81 GPU-h was DONE on the 5090
 on 23 Nov ~02:00 (ledger 2.81 of 13): do not run it again** (the tool has no duplicate guard; see the 23 Nov entry below).
 Then in order: (1) **L1.0** 5090 checks (TEST-F2b, L09-5090, drills, 5090 suite); (2) **L1.1b** (WORK_BREAKDOWN: model

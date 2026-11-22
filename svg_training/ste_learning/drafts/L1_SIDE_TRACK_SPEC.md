@@ -107,3 +107,21 @@ other inputs and the game untouched; out-of-game drones keep their zeroed inputs
 Budget: new task **L1.14** (cap 0.3 GPU-h; expected about 0.2) taken from L1.9 (1.9 → 1.6, its estimate is 0.5–1.9);
 the L1 caps still sum to 9.1. Tooling: a per-player time-left override in `scripts/ste_score_matrix.py`
 (`offset_s` or `clamp_max_s`), recorded in results; test first; two code reviews.
+
+**Addendum 3 (22 Nov 2026 ~22:30, owner approved the plan after two reviewers; before these run).**
+- **L1.14 run order (both code reviews):** C-offset runs first; the T-clamp and arm-A-clamp runs start only after it
+  PASSES (the run chain stops otherwise).
+- **L1.15 delay check (INFO, scoring only, new task, cap 0.3 GPU-h taken from L1.10: 1.2 → 0.9).** Why: the tier-1
+  game already carries the fitted Starling response delay (`params/real_exploratory_v0.toml` `delay_s` 0.1482: a delay
+  from command to motion, not a late position; tags are judged on true positions, as motion capture would). Whether the
+  1.15 m picture depends on that delay is unmeasured; L0.14 found more delay lets drones come closer than the filter's
+  1.10 m. Re-score at `delay_s` **0** and **0.30 s** (0.148 s = the existing results; nothing else changed: two
+  study parameter files, copies of v0 with only `delay_s` changed, labelled study-only, never a drone value), tag 1.15 m,
+  120 s, T44's 1,000 starts: the 1.15 m-trained Strike team T55 (5×) and Guard team T54 (3×) against their training
+  opponents (guard_field; strike_straight), and the script cell guard_field v strike_straight. Report wins with Wilson
+  95 % intervals, paired counts, how games end, and the distance at each tag (minimum, median) and the closest approach.
+  Reading words, fixed now: "the 1.15 m picture **depends on the response delay**" if, at 0 or 0.30 s, any of the three
+  cells' wins move outside both its own interval at 0.148 s and the new one (non-overlap), or the median tag distance
+  moves by more than 1 cm; then the 1.15 m training side track pauses until L1.7 (realistic drone in tier 1).
+  Otherwise "the 1.15 m results hold across response delays 0–0.30 s" and the side track continues. One start set; no
+  training.

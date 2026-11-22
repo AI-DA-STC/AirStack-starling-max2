@@ -15,13 +15,13 @@ kind = "INFO"
 
 [player]
 label = "The L1.13 arm A Strike team"
-dir = "FILL_FROM_THE_RUN"
+dir = "runs/2026-11-22_ste_l113_arm_a"
 side = "strike"
 variant = "arm_a_clock30"
-gates_sha256 = "FILL_FROM_THE_RUN"
-agent_sha256 = "FILL_FROM_THE_RUN"
-eval_sha256 = "FILL_FROM_THE_RUN"
-own_wins = "FILL_FROM_THE_RUN"
+gates_sha256 = "e602a4e68553f80e28dca728c6794dd7eec980dc4a33ed176c311516482cfa13"
+agent_sha256 = "dd67c35ca69f4f62fe81655c2ebf13fec6f8fb68985e7e0629d44ba400d6ad02"
+eval_sha256 = "f1eab4b073c952b6721e42aa16eb8c3b55af0dcb8a1b8eb2ce35245bc5cf6578"
+own_wins = 199
 own_source = "L1.13 arm A's own evaluation (results.json exploiter k)"
 
 [[games]]

@@ -154,14 +154,14 @@ Approved with L2 at gate G0 ([DISCUSSION §14](DISCUSSION_2026-11-19_20.md#14-ga
 | L1.3 Fit delay, noise and drag to real logs (CPU) | 0 | 0 |
 | L1.4 AirStack-simulator velocity-step logs (P5, approved) | about 1 h of simulator time | 0 |
 | L1.5 Tier 2 against the AirStack simulator | 0.3 | 0.3 |
-| L1.6 Batched estimator (only if needed) | 0–0.5 | 0.5 |
+| L1.6 Batched estimator (only if needed) | 0–0.5 | 0.1 (0.4 moved to L1.13, 22 Nov) |
 | L1.7 Same effects in tier 1 | 0–0.1 | 0.1 |
 | L1.8 T46's base policies re-scored on the new tier 2 | 0.1–1.2 | 1.2 |
 | L1.9 1v1 best-response read at tag 1.6 m, plus a scripted 1v1 screen also at 1.15 m | 0.5–1.9 | 1.9 |
 | L1.10 Tag drawn within 1.5–1.7 m, 3v3, both sides | 1.0–1.2 | 1.2 |
 | L1.11 Strike team trained against guard_field at 1.6 m (side track: separates the opponent from the tag) | about 0.6 | 1.2 |
 | L1.12 T46's 1.6 m Guard team scored against every Strike script (side track) | minutes (under 0.1) | 0.1 |
-| L1.13 Shorter-training-clock Strike run at 1.15 m (side track; clock value set in its spec) | about 0.7 (two arms, spec v2; expected use about 1.2 with run 0s and re-scores) | 1.7 |
+| L1.13 Shorter-training-clock Strike run at 1.15 m (side track; clock value set in its spec) | about 0.7 (two arms, spec v2; used 1.29 for training, plus re-scores at the other clock) | 2.1 |
 
 The task texts below (L1.1–L1.6) are version 1's; the costed draft adds L1.0 and L1.7–L1.13.
 

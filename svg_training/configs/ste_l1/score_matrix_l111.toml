@@ -14,13 +14,13 @@ kind = "INFO"
 
 [player]
 label = "The L1.11 Strike team"
-dir = "FILL_FROM_THE_RUN"
+dir = "runs/2026-11-22_ste_l111_strike"
 side = "strike"
 variant = "base"
-gates_sha256 = "FILL_FROM_THE_RUN"
-agent_sha256 = "FILL_FROM_THE_RUN"
-eval_sha256 = "FILL_FROM_THE_RUN"
-own_wins = "FILL_FROM_THE_RUN"
+gates_sha256 = "84aea8592800f0d3fc205bbf879df9252ce3b6775fe3515b070d73ae9df80ef0"
+agent_sha256 = "12a10bf68db580e6a0276dcf34dc1591d4b8086d723f9dbc7ca8a5d13586f406"
+eval_sha256 = "a7ba0884315b2a99c621db2a03a30447b5d34aa5a299f9b8f30eb8f212a6a0bf"
+own_wins = 277
 own_source = "L1.11's own evaluation (results.json exploiter k)"
 
 [[games]]

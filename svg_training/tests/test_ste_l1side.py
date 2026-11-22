@@ -421,7 +421,7 @@ def test_the_l1_tasks_launch_against_the_l1_l2_budget():
         section = cfg.budget_of(task)
         assert section.phases == ("L1", "L2") or list(section.phases) == ["L1", "L2"]
         assert not section.closed and cfg.cap_gpu_h(task) > 0
-    assert [cfg.cap_gpu_h(t) for t in ("L1.11", "L1.12", "L1.13")] == [1.2, 0.1, 1.7]
+    assert [cfg.cap_gpu_h(t) for t in ("L1.11", "L1.12", "L1.13")] == [1.2, 0.1, 2.1]
     for path in (L111, L113):
         assert cfg.budget_of(exploit.load_gates(path).run["task"]).phases == cfg.budget_of("L1.12").phases
 

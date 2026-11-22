@@ -369,7 +369,7 @@ def test_isaac_world_same_results_as_torch(tmp_path):
                        cwd=ROOT, env=env, capture_output=True, text=True, timeout=1800)
     assert r.returncode == 0 and out.exists(), (r.stdout[-3000:], r.stderr[-3000:])
     res = json.loads(out.read_text())
-    assert res["world"].startswith("Isaac")
+    assert res["world"].lower().startswith("isaac")             # IsaacWorld.label is "isaaclab-<version>" (first GPU run, 22 Nov)
     assert res["delay"]["max_err"] == 0.0 and res["delay"]["substeps_checked"] > 0
     for key, row in res["noise"].items():
         assert abs(row["mean"]) < 5.0 * row["sigma"] / math.sqrt(row["count"]), key

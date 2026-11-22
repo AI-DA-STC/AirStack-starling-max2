@@ -4,12 +4,15 @@
 ``models/command_chain.CommandChain`` makes it) and flies it for ``round(0.05 / dt)`` physics steps (10 at the
 approved 200 Hz). Per physics step, the closed loop of ``scripts/physics_design_check.py`` ``fly``:
 
-1. read the world state (ENU position and velocity, WXYZ body -> world quaternion, FLU body rates);
+1. read the world state (ENU position and velocity, WXYZ body -> world quaternion, FLU body rates); the cascade gets
+   it through ``models/estimator_effect.EstimatorEffect`` (STE L1.1: ``state_delay_s``, ``state_noise_*``; off by
+   default, then the true state passes unchanged);
 2. cross into PX4's frames (``models/frames.py``, the only crossing): ``vec_enu_to_ned`` for position, velocity
    and the three setpoint vectors; ``rot_enu_flu_to_ned_frd`` for the attitude; omega_FRD = (x, -y, -z) of the
    FLU rates; ``yaw_enu_to_ned`` for the yaw setpoint and yaw rate NED = -yaw rate ENU;
 3. ``models/px4_cascade.Px4Cascade.step`` -> rotor commands u [N, M, 4];
-4. ``models/starling_airframe.RotorModel.step`` (motor lag) -> thrusts -> ``body_wrench_flu`` (plant geometry D4);
+4. ``models/starling_airframe.RotorModel.step`` (motor lag) -> thrusts -> ``body_wrench_flu`` (plant geometry D4),
+   plus ``linear_drag_force_b`` of the TRUE velocity and attitude (STE L1.2: ``drag_*``; no term at all while 0);
 5. the wrench through ``torch.nan_to_num`` (D10: one NaN body can break a whole PhysX scene; each drone-step with a
    non-finite wrench is counted in ``nonfinite_count``), then ``world.apply_wrench_b`` and ``world.step``.
    A fresh wrench is applied before every physics step (``world.reset`` zeroes the held one).
@@ -18,12 +21,16 @@ Setpoints: the cascade needs finite setpoints (``px4_cascade`` docstring). At th
 part is replaced, as PX4 treats NaN, and counted in ``nonfinite_count``: a non-finite feed-forward (v_ff, a_ff,
 yaw rate) acts as 0 (PX4's ``addIfNotNanVector3f``); a non-finite position setpoint becomes the drone's position
 at the start of the tick, held over the tick's physics steps (a short position hold, not velocity-only control);
-a non-finite yaw setpoint becomes the drone's heading at the start of the tick.
+a non-finite yaw setpoint becomes the drone's heading at the start of the tick. Both use the state the cascade sees
+(the estimate; the true state while the estimator effect is off), as PX4 holds where it believes it is.
 
 Upset (D10): a drone whose tilt passes ``PhysicsParams.upset_tilt_deg`` (60) or whose state or wrench turns
 non-finite is ``upset`` until its next reset. ``max_tilt_rad`` is the largest tilt since the reset.
 
-D7: no transport delay and no estimator: the cascade reads the true state; ``setpoint_delay_s`` must be 0.
+D7: no transport delay (``setpoint_delay_s`` must be 0). The estimator is an effect, not a filter: a delay and noise
+on the true state (STE L1.1), not a copy of EKF2. The game, the commander (``pos_m``, ``vel_mps``), the upset check,
+``write_clamped`` and the drag always use the true state; ``est_pos_m``, ``est_vel_mps``, ``est_quat_wxyz`` and
+``est_ang_vel_b`` are what the cascade saw last.
 Shapes: N games x M drones; vectors [N, M, 3]; masks [N, M] bool. Batched; no host reads; the only loop is the
 fixed loop over the physics sub-steps of one tick.
 """
@@ -38,8 +45,9 @@ from .frames import (quat_from_yaw_enu, quat_wxyz_to_rotmat, rot_enu_flu_to_ned_
                      yaw_enu_to_ned)
 from .physics_params import PhysicsParams
 from .px4_cascade import Px4Cascade
+from .estimator_effect import EstimatorEffect
 from .rigid_body import RigidBodyWorld
-from .starling_airframe import RotorModel, body_wrench_flu
+from .starling_airframe import RotorModel, body_wrench_flu, linear_drag_force_b
 
 GAME_TICK_S: float = 0.05     # one game tick = core.game_config.TICK_S (models/ does not import core/; a test pins it)
 
@@ -63,7 +71,9 @@ class PhysicsDrone:
     scalar long (non-finite wrenches and setpoint parts replaced, all drones, since construction).
     """
 
-    def __init__(self, world: RigidBodyWorld, p: PhysicsParams, device) -> None:
+    def __init__(self, world: RigidBodyWorld, p: PhysicsParams, device, noise_seed: int = 0) -> None:
+        """``noise_seed``: seed of the estimator noise's own generators (never the game's, S2b D15); used only when a
+        ``state_noise_*`` is above 0."""
         if abs(world.dt_s - p.physics_dt_s) > 1e-12:
             raise ValueError(f"the world steps {world.dt_s} s, the physics parameters say {p.physics_dt_s} s")
         sub = GAME_TICK_S / p.physics_dt_s
@@ -81,13 +91,27 @@ class PhysicsDrone:
         self.upset = torch.zeros(n, m, dtype=torch.bool, device=self.device)
         self.max_tilt_rad = torch.zeros(n, m, device=self.device)
         self.nonfinite_count = torch.zeros((), dtype=torch.long, device=self.device)
-        self._read()
+        self.estimator = EstimatorEffect(n, m, p.state_delay_steps(), p.state_noise_pos_m, p.state_noise_vel_mps,
+                                         p.state_noise_att_rad, p.state_noise_rate_rad_s, self.device, seed=noise_seed)
+        drag = (p.drag_x_n_per_mps, p.drag_y_n_per_mps, p.drag_z_n_per_mps)
+        self.drag_coeff = (torch.tensor(drag, dtype=torch.float32).to(self.device) if any(d > 0 for d in drag)
+                           else None)                                         # [3] once; None = no drag term
+        self._read("reset", torch.ones(n, m, dtype=torch.bool, device=self.device))
 
     # ------------------------------------------------------------------------------------------- helpers
-    def _read(self) -> None:
-        """Cache the world state; update tilt, the largest tilt and the upset flags."""
+    def _read(self, event: str = "step", mask: Tensor | None = None) -> None:
+        """Cache the world state; update tilt, the largest tilt and the upset flags; pass the state through the
+        estimator effect. ``event``: "step" (a physics step has passed), "reset" (the drones in ``mask`` were
+        restarted) or "write" (the state was written without a physics step)."""
         pos, quat, vel, ang = self.world.state()
         self.pos_m, self.quat_wxyz, self.vel_mps, self._ang_vel_b = pos, quat, vel, ang
+        if event == "step":
+            est = self.estimator.push(pos, quat, vel, ang)
+        elif event == "reset":
+            est = self.estimator.reset(mask, pos, quat, vel, ang)
+        else:
+            est = self.estimator.replace_latest(pos, quat, vel, ang)
+        self.est_pos_m, self.est_quat_wxyz, self.est_vel_mps, self.est_ang_vel_b = est
         self.tilt_rad = tilt_rad(quat)
         ok = _finite(pos) & _finite(quat) & _finite(vel) & _finite(ang)
         self.max_tilt_rad = torch.maximum(self.max_tilt_rad, torch.where(ok, self.tilt_rad,
@@ -106,7 +130,7 @@ class PhysicsDrone:
         self.cascade.reset(mask)
         self.upset = self.upset & ~mask
         self.max_tilt_rad = torch.where(mask, torch.zeros_like(self.max_tilt_rad), self.max_tilt_rad)
-        self._read()
+        self._read("reset", mask)
 
     def step_setpoint(self, p_sp_m: Tensor, v_ff_mps: Tensor, a_ff_mps2: Tensor, yaw_sp_rad: Tensor,
                       yaw_rate_rad_s: Tensor) -> None:
@@ -115,22 +139,24 @@ class PhysicsDrone:
         bad = [~_finite(p_sp_m), ~_finite(v_ff_mps), ~_finite(a_ff_mps2), ~torch.isfinite(yaw_sp_rad),
                ~torch.isfinite(yaw_rate_rad_s)]
         self._count(torch.stack(bad))
-        p_sp_m = torch.where(bad[0][..., None], self.pos_m, p_sp_m)
+        p_sp_m = torch.where(bad[0][..., None], self.est_pos_m, p_sp_m)
         v_ff_mps = torch.where(bad[1][..., None], torch.zeros_like(v_ff_mps), v_ff_mps)
         a_ff_mps2 = torch.where(bad[2][..., None], torch.zeros_like(a_ff_mps2), a_ff_mps2)
-        yaw_sp_rad = torch.where(bad[3], _heading_enu(self.quat_wxyz), yaw_sp_rad)
+        yaw_sp_rad = torch.where(bad[3], _heading_enu(self.est_quat_wxyz), yaw_sp_rad)
         yaw_rate_rad_s = torch.where(bad[4], torch.zeros_like(yaw_rate_rad_s), yaw_rate_rad_s)
         # the crossing into PX4's frames, once per tick for the held setpoint
         p_sp, v_ff, a_ff = vec_enu_to_ned(p_sp_m), vec_enu_to_ned(v_ff_mps), vec_enu_to_ned(a_ff_mps2)
         yaw_sp, yaw_ff = yaw_enu_to_ned(yaw_sp_rad), -yaw_rate_rad_s
         a, geometry = self.p.airframe, self.p.rotor_geometry
         for _ in range(self.sub):                     # fixed physics sub-steps of one tick, not a loop over games
-            ang = self._ang_vel_b
-            r_ned_frd = rot_enu_flu_to_ned_frd(quat_wxyz_to_rotmat(self.quat_wxyz))
+            ang = self.est_ang_vel_b                  # what the cascade sees (the true state when the effect is off)
+            r_ned_frd = rot_enu_flu_to_ned_frd(quat_wxyz_to_rotmat(self.est_quat_wxyz))
             omega_frd = torch.stack((ang[..., 0], -ang[..., 1], -ang[..., 2]), dim=-1)
-            u = self.cascade.step(p_sp, v_ff, a_ff, yaw_sp, yaw_ff, vec_enu_to_ned(self.pos_m),
-                                  vec_enu_to_ned(self.vel_mps), r_ned_frd, omega_frd)
+            u = self.cascade.step(p_sp, v_ff, a_ff, yaw_sp, yaw_ff, vec_enu_to_ned(self.est_pos_m),
+                                  vec_enu_to_ned(self.est_vel_mps), r_ned_frd, omega_frd)
             force, torque = body_wrench_flu(self.rotors.step(u), a, geometry)
+            if self.drag_coeff is not None:            # physics: the TRUE velocity and attitude
+                force = force + linear_drag_force_b(self.vel_mps, self.quat_wxyz, self.drag_coeff)
             ok = _finite(force) & _finite(torque)
             self._count(~ok)
             self.upset = self.upset | ~ok
@@ -143,4 +169,4 @@ class PhysicsDrone:
         """Where mask [N, M]: position pos_m and world velocity vel_mps [N, M, 3] (ENU) from the game's walls and
         height band; attitude and body rates kept. One world write."""
         self.world.write_state(mask, pos_m, self.quat_wxyz, vel_mps, self._ang_vel_b)
-        self._read()
+        self._read("write")

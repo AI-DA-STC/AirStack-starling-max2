@@ -9,11 +9,16 @@ pre-written fallback (``apply_rate_gain_fallback``); each records itself in ``Ph
 
 Frames: rotor positions are (x, y) in PX4's body frame FRD (x forward, y right), PX4 rotor order 0..3; inertia is
 the diagonal (roll, pitch, yaw) about the centre of mass.
+
+STE track L1.1 and L1.2 add optional [model] keys (``EFFECT_KEYS``), each 0 by default so that a file without them
+(``params/starling_physics_v0.toml``) flies exactly as before: ``state_delay_s`` and ``state_noise_*`` (what PX4's
+cascade sees: ``models/estimator_effect.py``) and ``drag_*`` (a linear body drag, ``models/starling_airframe.py``).
 """
 from __future__ import annotations
 
 import dataclasses
 import hashlib
+import math
 import tomllib
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -23,7 +28,17 @@ ROOT = Path(__file__).resolve().parents[3]          # svg_training/
 G_MPS2: float = 9.81
 TICK_S: float = 0.05                                # the game tick (core.game_config.TICK_S)
 ROTOR_GEOMETRIES: tuple[str, ...] = ("cad", "params")
-OVERRIDABLE: tuple[str, ...] = ("physics_dt_s", "rotor_geometry", "motor_lag", "setpoint_delay_s")
+# STE L1.1 / L1.2: optional effects, all 0 by default (off = the physics drone of S2b, bit for bit). Units in the name.
+EFFECT_KEYS: tuple[str, ...] = (
+    "state_delay_s",              # the cascade sees position, velocity and attitude this much late (whole physics steps)
+    "state_noise_pos_m",          # standard deviation of Gaussian noise per axis on what the cascade sees, per step
+    "state_noise_vel_mps",
+    "state_noise_att_rad",        # a small random rotation (body frame) per step, per axis
+    "state_noise_rate_rad_s",     # body rates (from the gyro in PX4: noisy, never delayed)
+    "drag_x_n_per_mps",           # linear drag, body FLU axes: F_b = -diag(d_x, d_y, d_z) v_b (Pegasus's simple drag)
+    "drag_y_n_per_mps",
+    "drag_z_n_per_mps")
+OVERRIDABLE: tuple[str, ...] = ("physics_dt_s", "rotor_geometry", "motor_lag", "setpoint_delay_s") + EFFECT_KEYS
 IGNORED_OVERRIDES: tuple[str, ...] = ("params", "fallback_physics_dt_s")   # other keys of configs/s2b.toml [physics]
 
 
@@ -130,8 +145,25 @@ class PhysicsParams:
     setpoint_delay_s: float                                  # D7
     upset_tilt_deg: float = 60.0                             # D10
     source: dict = field(default_factory=dict)
+    state_delay_s: float = 0.0                               # EFFECT_KEYS (L1.1, L1.2): 0 = off
+    state_noise_pos_m: float = 0.0
+    state_noise_vel_mps: float = 0.0
+    state_noise_att_rad: float = 0.0
+    state_noise_rate_rad_s: float = 0.0
+    drag_x_n_per_mps: float = 0.0
+    drag_y_n_per_mps: float = 0.0
+    drag_z_n_per_mps: float = 0.0
+
+    def state_delay_steps(self) -> int:
+        """The state delay in whole physics steps: ``state_delay_s / physics_dt_s`` rounded to the nearest (a fitted
+        delay is rarely a multiple of the 5 ms step; 0.1482 s -> 30 steps = 0.150 s)."""
+        return round(self.state_delay_s / self.physics_dt_s)
 
     def __post_init__(self) -> None:
+        for key in EFFECT_KEYS:
+            val = getattr(self, key)
+            if isinstance(val, bool) or not isinstance(val, (int, float)) or not math.isfinite(val) or val < 0:
+                raise ValueError(f"{key} must be a finite number >= 0, got {val!r}")
         if self.rotor_geometry not in ROTOR_GEOMETRIES:
             raise ValueError(f"rotor_geometry must be one of {ROTOR_GEOMETRIES}, got {self.rotor_geometry!r}")
         n = TICK_S / self.physics_dt_s if self.physics_dt_s > 0 else 0.0
@@ -151,7 +183,7 @@ def load_physics_params(path: str | Path, overrides: dict | None = None) -> Phys
     """Read a physics parameter file (absolute, or relative to svg_training/).
 
     ``overrides`` is typically the [physics] table of configs/s2b.toml: it may set physics_dt_s, rotor_geometry,
-    motor_lag and setpoint_delay_s (its ``params`` and ``fallback_physics_dt_s`` keys are ignored). Gains and the
+    motor_lag, setpoint_delay_s and the ``EFFECT_KEYS`` (its ``params`` and ``fallback_physics_dt_s`` keys are ignored). Gains and the
     airframe cannot be overridden; any other key raises ValueError.
     """
     p = Path(path)
@@ -197,7 +229,13 @@ def load_physics_params(path: str | Path, overrides: dict | None = None) -> Phys
     return PhysicsParams(airframe=airframe, gains=gains, physics_dt_s=float(model["physics_dt_s"]),
                          rotor_geometry=str(model["rotor_geometry"]), motor_lag=model["motor_lag"],
                          setpoint_delay_s=float(model["setpoint_delay_s"]),
-                         upset_tilt_deg=float(model.get("upset_tilt_deg", 60.0)), source=dict(data.get("source", {})))
+                         upset_tilt_deg=float(model.get("upset_tilt_deg", 60.0)), source=dict(data.get("source", {})),
+                         **{k: _number(model[k]) for k in EFFECT_KEYS if k in model})
+
+
+def _number(v: Any) -> Any:
+    """A TOML number as float; anything else is passed on unchanged so that PhysicsParams refuses it by name."""
+    return float(v) if isinstance(v, (int, float)) and not isinstance(v, bool) else v
 
 
 DEFAULT_SIM_ONLY_GAINS: str = "params/sim_only_yaw_v0.toml"   # = core.game_config.StarlingLayerCfg default

@@ -12,6 +12,9 @@ Body wrench of the four thrusts, worked out in PX4's body frame FRD (as PX4's Ac
 then turned into FLU with B_FLU_FRD (models/frames.py), the frame the worlds take. Rotor order and signs are PX4's
 (0 front right, 1 back left, 2 front left, 3 back right; KM > 0 for rotors 0 and 1). ``geometry`` picks the rotor
 positions: "cad" (CMU's CAD arms, the plant default, D4) or "params" (the drone's CA_ROTOR* values).
+
+Drag (STE task L1.2, ``linear_drag_force_b``): a linear body drag the physics drone adds to the rotor force before the
+world gets the wrench, so the Isaac Lab and torch worlds both get it; off (no term at all) while every coefficient is 0.
 """
 from __future__ import annotations
 
@@ -21,6 +24,7 @@ import math
 import torch
 from torch import Tensor
 
+from .frames import quat_wxyz_to_rotmat
 from .physics_params import G_MPS2, ROTOR_GEOMETRIES, AirframeParams
 
 
@@ -96,3 +100,20 @@ def body_wrench_flu(thrust_n: Tensor, a: AirframeParams, geometry: str) -> tuple
     w = _mixer_flu(a, geometry, thrust_n.device, thrust_n.dtype)
     wrench = (thrust_n.unsqueeze(-2) * w).sum(-1)                    # [..., 1, 4] * [6, 4] -> [..., 6]
     return wrench[..., :3], wrench[..., 3:]
+
+
+def linear_drag_force_b(vel_w_mps: Tensor, quat_wxyz: Tensor, coeff_n_per_mps: Tensor) -> Tensor:
+    """Linear body drag (STE task L1.2): F_b = -diag(d_x, d_y, d_z) (R^T v_w), in newtons, body FLU.
+
+    vel_w_mps [N, M, 3] world ENU velocity, quat_wxyz [N, M, 4] body -> world, coeff_n_per_mps [3] the drag
+    coefficients along body x, y, z (N per m/s). Zero velocity gives exactly zero force.
+    Form taken (read only) from Pegasus's simple drag, ``LinearDrag.update``: ``-np.dot(diag(drag_coefficients),
+    state.linear_body_velocity)``, in AirStack/simulation/isaac-sim/extensions/PegasusSimulator/extensions/
+    pegasus.simulator/pegasus/simulator/logic/dynamics/linear_drag.py (applied as a body force by
+    ``vehicles/multirotor.py``). Its docstrings name the body frame both FLU and "FRU"; with a diagonal of coefficients
+    the sign of an axis cancels (F_y = -d_y v_y in either), so the frame does not change the force. Pegasus's default
+    coefficients (0.5, 0.3, 0.0, its Iris model) are not a Starling value; the Starling's are OPEN (STANDARDS section 5).
+    """
+    r = quat_wxyz_to_rotmat(quat_wxyz)                                       # [N, M, 3, 3] body -> world
+    vel_b = (r.transpose(-1, -2) @ vel_w_mps.unsqueeze(-1)).squeeze(-1)      # R^T v
+    return -coeff_n_per_mps * vel_b

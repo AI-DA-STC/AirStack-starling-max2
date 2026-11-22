@@ -176,6 +176,14 @@ of k steps earlier exactly; noise mean and spread within sampling tolerance with
 buffer with the reset state; same results on `TorchRigidBodyWorld` and (marked `isaac`) `IsaacWorld`. Done: tests pass;
 throughput cost measured (≤ 10 %). 8 h; 0.2 GPU-h. Gate: none.
 
+**L1.1b Estimator model shape (new, 22 Nov 2026, from the L1.1 code review).** A pure delay on the whole state is the
+wrong shape for EKF2: its output predictor hands the controllers current-time states, and a CPU check showed the z loop
+(MPC_Z_P 5 × MPC_Z_VEL_P_ACC 8) goes unstable at about 0.117 s of feedback delay (limit cycles of 0.36 m at 0.10 s and
+1.42 m at 0.15 s; attitude delayed as well: tilt 0.92 rad at 0.15 s). Change: never delay attitude; model the estimate's
+error (slow, correlated noise, e.g. a Gauss–Markov process per quantity) with at most a small residual delay; pass the
+game seed to the noise (today every run draws the same noise); L1.3 fits error statistics, not a transport delay. The
+0.1482 s of params/real_exploratory_v0.toml stays the tier-1 command-to-motion delay. Tests first. Gate: none.
+
 **L1.2 Drag in tier 2.** Goal: a linear drag force (form taken from Pegasus's simple drag, read only) computed in our
 wrench path so both worlds get it. Files: `models/starling_airframe.py` or `models/physics_drone.py` (drag force added
 before `apply_wrench_b`), `models/physics_params.py` (`drag_*`, default 0, OPEN value), `tests/test_drag.py`. Tests

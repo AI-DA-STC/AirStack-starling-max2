@@ -1,0 +1,46 @@
+# STE tasks L1.1 (state delay and noise) and L1.2 (drag): settings of scripts/l1_model_check.py, the GPU check that
+# (a) runs the isaac-marked tests of the changed physics path and (b) measures what the effects cost in throughput.
+# Labels as in ../../STANDARDS.md. Nothing here is a drone value: the "on" values below only switch the effects on for
+# the cost measurement; the Starling's own values are OPEN until L1.3 (params/starling_physics_v1.toml).
+
+[run]
+game_file = "configs/ste_l011/base.toml"   # FIXED: the L0.2 speed game (study tag on, every-pair filter); tier 2 = the same with backend "physics", set in code
+params_base = "params/starling_physics_v1.toml"   # FIXED: the "off" arm flies this file (all effects 0); the "on" arm a copy with [effects_on] written in
+guards = 3                                 # FIXED: the main game's size
+strikes = 3
+games = 4096                               # FIXED: CODING_PRACTICES section 9, "at 4,096 games"
+repeats = 3                                # PROPOSED: off and on alternate on one world, 3 times each
+seed = 1100                                # FIXED: game seed (random actions draw from the measuring process's torch seed, seed + repeat)
+noise_seed = 7                             # FIXED: the estimator noise's own generators in --smoke's checks (PhysicsDrone noise_seed); the game arms use the drone's default, 0
+max_cost_fraction = 0.10                   # PROPOSED: CODING_PRACTICES section 9, "<= 10 % throughput loss"; INFO here, not a gate
+
+[timing]                                   # as configs/s0_benchmark.toml [timing], shorter windows (the cap is 0.2 GPU-h)
+warmup_steps = 50
+timed_steps = 200
+min_warmup_s = 2.0
+min_timed_s = 3.0
+
+[effects_on]                               # MADE UP for the cost measurement only, NOT a drone value
+state_delay_s = 0.05                       # 10 physics steps. Per physics step one slot is written and one read whatever the delay; a restart rewrites every slot of the restarted drones, so that part grows with the delay. 0.10 s and more (whole-state delay) made the torch-world drone oscillate in a CPU check on 22 Nov 2026, so the arm stays at a delay the drone flies
+state_noise_pos_m = 0.005
+state_noise_vel_mps = 0.02
+state_noise_att_rad = 0.005
+state_noise_rate_rad_s = 0.02
+drag_x_n_per_mps = 0.1
+drag_y_n_per_mps = 0.1
+drag_z_n_per_mps = 0.1
+
+[smoke]                                    # --smoke (the isaac-marked test): a few drones on both worlds, effects on
+games = 4
+state_delay_s = 0.02                       # MADE UP: 4 physics steps
+ticks = 40                                 # 2 s of a step setpoint
+step_m = [0.6, -0.4, 0.2]                  # MADE UP: setpoint offset from the start
+noise_ticks = 20
+
+[dry_cpu]                                  # --dry-cpu (tests only): the torch world on the CPU, tiny
+games = 4
+repeats = 1
+warmup_steps = 3
+timed_steps = 5
+min_warmup_s = 0.0
+min_timed_s = 0.0

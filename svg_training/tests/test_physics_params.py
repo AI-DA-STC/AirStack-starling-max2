@@ -173,7 +173,9 @@ def test_sim_only_yaw_values_live_only_in_the_override_file():
                 continue
             if pat.search(f.read_text(errors="replace")):
                 found.add(f.relative_to(ROOT).as_posix())
-    assert found == {"params/starling_physics_v0.toml", "params/sim_only_yaw_v0.toml"}, found
+    # v1 (STE L1.1) carries v0's [gains] verbatim (tests/test_estimator_effect.py checks they are equal)
+    assert found == {"params/starling_physics_v0.toml", "params/starling_physics_v1.toml",
+                     "params/sim_only_yaw_v0.toml"}, found
     drone = load_physics_params(PARAMS).gains
     sim = tomllib.loads(SIM_ONLY_YAW.read_text())["gains"]
     assert (sim["mc_yawrate_p"], sim["mc_yawrate_i"]) != (drone.mc_yawrate_p, drone.mc_yawrate_i)

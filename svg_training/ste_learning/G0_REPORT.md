@@ -55,11 +55,12 @@ about ±30 games at 1,000 games. A difference counts as real only when the two r
 
 **The short answer to "why train at 1.6 m if a team must train at the tag it plays?"** What carries over to another tag
 is the drone-model work of the next phase: delay, noise and drag in the simulated drone are the same at any tag. A
-trained strategy does not carry over: the Guard team trained at 1.6 m holds 195 of 1,000 at 1.15 m, against 572 for the
-team trained there, so in the lead's reading it is not usable for a 1.15 m demo (one seed, one opponent). If the demo
+trained Guard strategy did not carry over: the Guard team trained at 1.6 m holds 195 of 1,000 at 1.15 m, against 572 for the
+team trained there, so in the lead's reading it is not usable for a 1.15 m demo (one seed, one opponent; the Strike
+result was level within the intervals, 121 against 134). If the demo
 ends up at 1.15 m, the few 1.6 m training runs in the next phase are worth only as method checks and as the 1.6 m answer;
-repeating them at 1.15 m would cost at least about 5 GPU-h, likely 5–13 (lead's estimate: 1.5–3.1 GPU-h at 1.6 m for the 1v1 and
-varied-tag reads, times at least 3.3 for 1.15 m, and 1.1–1.3 times slower per game-step there, [costed draft](drafts/L1_L9_COSTED_PLAN_DRAFT.md) section 4).
+repeating them at 1.15 m would cost at least about 5–10 GPU-h (lead's estimate: 1.5–3.1 GPU-h at 1.6 m for the 1v1 and
+varied-tag reads, times the costed draft's factor of at least 3.3 for 1.15 m, [costed draft](drafts/L1_L9_COSTED_PLAN_DRAFT.md) section 4).
 
 **What the next phase is.** Phase L1 is the drone-model phase: it adds the position estimate's delay and noise, and drag,
 to the simulated Starling in Isaac Lab and in the fast engine. On the AirStack side it only records about 1 h of
@@ -118,6 +119,74 @@ Under every option, every trained result so far is 3v3 while the demo is 1v1, an
 1.6 m. This updates recommendation 1 of [G0_DECISION](G0_DECISION.md) ("1.6 m for L1 set-up and pilots"); the lead will
 rewrite it after the owner rules.
 
+### 2.1 What phase L0 can and cannot say about 1.6 m against 1.15 m
+
+**Short answer: L0 does not show which tag gives the better swarm strategy.** It answers a narrower question, one side at
+a time, with a simple recipe.
+
+- **What L0 trained.** One side at a time, against one fixed script, one seed, one network per drone, in the fast engine
+  (section 5.5). The planned main training (the league phase) is different: both teams learn, against each other and a
+  pool of past opponents, with the learner built in phase L3, in Isaac Lab, three seeds.
+- **The 1.6 m runs were short; the 1.15 m runs were longer.** A standard run is 0.55 billion game-steps. At 1.15 m the
+  Guard team trained three times that (1.65 billion) and the Strike team five times (2.76 billion, section 5.6). The
+  Strike run is inside the range planned for one league run (2–5 billion per seed, [costed draft](drafts/L1_L9_COSTED_PLAN_DRAFT.md) section 1 and
+  task L5.5, PROPOSED), but only loosely comparable: fast engine, one side learning, a different learner. Both trained
+  sides still stayed below the scripts, and no cause is known.
+- **Guard side: the 1.15 m game was harder to learn.** Against the same opponent at both tags, the trained Guard team
+  beat the script at 1.6 m (913 against 808) and stayed below it at 1.15 m (572 against 645, with three times the
+  training). One seed.
+- **Strike side: not shown either way.** The Strike team's opponent changed with the tag, and the same 1.6 m-trained
+  Strike team reaches 636 against its training opponent but 85 against a second Guard script (section 5.7). Whether the
+  tag or the opponent is the difficulty is not separated; the optional Strike run against field Guards at 1.6 m
+  (task L1.11, about 0.6 GPU-h) would separate them.
+- **The scores of the two tags do not compare directly.** The tag changes the game: the best scripted Guards hold 808
+  at 1.6 m and 645 at 1.15 m. "Better" here means "the trained team beats the scripts of the same game".
+- **So 1.6 m is the set-up tag, not the answer to which tag is better.** It is the tag where the Guard side's training
+  worked, and where the Strike side's worked against one opponent (it fails against a second), so the pipeline can be
+  built and checked there. It is also the tag of the first demo, the scripted 1v1, because of its safety margin over
+  the filter's 1.10 m. 1.15 m stays the realistic target; whether the full pipeline can train it is open, and option (d)
+  above leaves that choice until the end of the game-rules phase.
+
+### 2.2 Training at another tag distance
+
+**Short answer: phases L0 to L9 build the pipeline once; a new tag reruns a large part of it, but no new code.** The
+tag is one setting in a game file (`configs/ste_l011/tag_*.toml`). This section is the lead's reading of the
+[costed draft](drafts/L1_L9_COSTED_PLAN_DRAFT.md); the plan does not spell out a new-tag procedure.
+
+| Done once, reused for every tag | Phase |
+|---|---|
+| The realistic drone model (redone only if the drone changes) | L1 |
+| The game rules in the training code (only their checks rerun, row 1 of the next table) | L2 |
+| The learner | L3 |
+| The scoring suite's code | L4 |
+| The documentation (a results update per tag) | L9 |
+
+| Repeated for each new tag, in order | From | GPU-h (costed draft, at 1.6 m) |
+|---|---|---|
+| 1. Check the game is learnable at the new tag: the scripts re-screened under the full rules (task L2.5), then one training read per side under the full rules (task L2.7), scored against every script | L2 | 0.3–0.5, then 1.0–1.4 |
+| 2. Re-calibrate the scoring on known players (task L4.3) and freeze new pass/fail limits; the owner approves them | L4 | 0.7–4.5 |
+| 3. League pilots, then the long training runs in Isaac Lab, three seeds (tasks L5.3–L5.5) | L5 | 33 to at least 100 |
+| 4. Score the runs, cross-checks, export, the intercept hand-over at the new tag (L6) | L6 | 4.3–27 |
+| 5. Games in the AirStack simulator (L7.2) | L7 | about 2 h of simulator time |
+| 6. Flight, with the flight checks redone for the new tag (scoring at the tag, separation, arena fit, logging) and the owner's approval | L8 | a flight campaign |
+
+Steps 2–4 alone are about 75 of the 87 GPU-h planned (planning figures 2 + 63 + 10) for phases L1–L9 at 1.6 m. At 1.15 m the training rows need at
+least 3.3 times the game-steps (costed draft section 4), with no upper figure, because no recipe has been shown to work there.
+
+Two cautions:
+
+- **Step 1 can fail.** At 1.15 m, training stayed below the scripts even at three to five times the standard budget
+  (section 5.6). A tag that fails needs a new recipe before step 3, at a cost nobody can give yet.
+- **A new tag can change the game, not only the numbers.** At 1.6 m the tag equals the zone radius; at 1.15 m the tag
+  sits just outside the safety filter's 1.10 m. Step 1 also tests that the game still makes sense.
+
+A trained Guard strategy did not carry over between tags (the 1.6 m Guard team holds 195 at 1.15 m against 572 for one
+trained there, section 5.7, one seed); the Strike result was level within the intervals (121 against 134). Training
+with the tag drawn within ±0.1 m only makes a strategy robust near one tag. Two routes between tags are written down,
+both untested: starting 1.15 m training from the 1.6 m networks (a warm start, panel proposal,
+[DISCUSSION §12](DISCUSSION_2026-11-19_20.md#12-l012c-findings-22-nov-2026)), and the optional curriculum pilot that
+steps the tag down from 1.6 m (costed draft task L2.8).
+
 ---
 
 ## 3. All decisions at a glance
@@ -127,7 +196,7 @@ lead's view of what a wrong call would cost.
 
 | Row | Decision | Options | Recommended | Cost (GPU-h) | If the recommendation is wrong |
 |---|---|---|---|---|---|
-| 1 | Tag distance | 1.6 m, 1.4 m, 1.15 m, or decide later | decide later; drone-model work now, the few training reads at 1.6 m, a small 1.15 m side track | next two phases: (a) or (b) 11; (c) 15 (costed draft); (d) 12 (lead's estimate)<br>all later phases, drone model through documentation: about 87 at 1.6 m or 1.4 m; at least 135 at 1.15 m | the 1.6 m training reads are redone at 1.15 m: at least about 5 GPU-h, likely 5–13 (lead's estimate) |
+| 1 | Tag distance | 1.6 m, 1.4 m, 1.15 m, or decide later | decide later; drone-model work now, the few training reads at 1.6 m, a small 1.15 m side track | next two phases: (a) or (b) 11; (c) 15 (costed draft); (d) 12 (lead's estimate)<br>all later phases, drone model through documentation: about 87 at 1.6 m or 1.4 m; at least 135 at 1.15 m | the 1.6 m training reads are redone at 1.15 m: at least about 5–10 GPU-h (lead's estimate) |
 | 2 | Longer 1.15 m runs | — | done; nothing to rule | 4.71 used | — |
 | 3 | Vary the tag in training | fixed tag, or drawn within ±0.1 m | vary, tested in the next phase | 1.0–1.2 | strategies stay brittle to tag error, or about 1 GPU-h is spent for nothing |
 | 4 | What a tag costs | both drones leave, or the Guard survives | both leave | none | with a surviving Guard the scripted game is one-sided (Guards hold every game) |

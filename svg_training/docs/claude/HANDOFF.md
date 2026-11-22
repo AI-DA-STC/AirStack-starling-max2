@@ -20,7 +20,7 @@ the estimate's error, not a transport delay; never delay attitude; pass the game
 code reviews); (3) **Isaac check re-run** of L1.1/L1.2: `scripts/ste_job.py launch --task L1.1 --name ste_l1_model_check
 --run-dir runs/<date>_ste_l1_model_check --min-s 120 --gpu-h <h> -- <python> scripts/l1_model_check.py --run-dir <same>
 --cap-h <h> --headless` (the laptop run stopped at the 0.2 cap: 6 isaac tests passed, 1 failed on the world label — fixed
-in 99bc767e/06ba724e, not re-run, so the delay/noise/agreement checks have not run on Isaac; Isaac cost 11.1 %;
+by the commit "isaac test accepts the IsaacWorld label", not re-run, so the delay/noise/agreement checks have not run on Isaac; Isaac cost 11.1 %;
 torch-twin and tier-1 speed parts not run; L1.1 cap 0.2 is used: move hours with a "why" message to the owner first);
 (4) L1.3/L1.4 when the AirStack simulator is free (P5 approved, laptop or 5090).
 **Done tonight (all reviewed by two agents):** side track T57–T61 (records + ledger + figures docs/figures/ste_l1_side,

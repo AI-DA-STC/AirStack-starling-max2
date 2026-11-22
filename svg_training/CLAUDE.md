@@ -168,6 +168,10 @@ other stopped, from git alone.
   where the hours come from. Not afterwards. Every status and check-in opens with one line "Main track: … · Side track: …"
   so the owner sees at a glance where the main phase stands (owner: otherwise "i will be puzzled at why are we still
   stuck at L0 and not even at L1").
+- **Parallel or one at a time** (owner, 23 Nov 2026): run work in parallel when it is independent and in different
+  files (for example the L1 drone model alongside L3 design, or records writing alongside a build); one at a time when
+  steps depend on each other or share files. The full test suite runs once per merge into `development`, in the
+  background, so merging does not block other work; builders run only the tests of the code they touched.
 - **GPU jobs side by side** when the GPU has room (`--allow-siblings`); short pilots and speed measurements alone. The
   owner pauses jobs with `scripts/gpu_pause.sh` to use the PC: never resume a pause the session did not make.
 - **Videos inside every run** (STANDARDS §8); every result shown on a reader page has a GIF that plays on GitHub.

@@ -1,0 +1,12 @@
+02:03:39
+l10_resume  L1.0  alive  exit=none  pid=19486 launch=1 started=2026-11-23T02:02:54+08:00 gpu_h=0.0 run_dir=~/AirStack-starling-max2-l10/svg_training/runs/ste_l10_drills/resume
+l10_wakeup  L1.0  alive  exit=none  pid=19412 launch=1 started=2026-11-23T02:02:48+08:00 gpu_h=0.0 run_dir=~/AirStack-starling-max2-l10/svg_training/runs/ste_l10_drills/wakeup
+budget budget_l1_l2 (phases L1 + L2): used 2.810 of 13.0 GPU-h (own rows 0.000, carried 2.810)
+killing group 19486
+l10_resume  L1.0  dead  exit=none  pid=19486 launch=1 started=2026-11-23T02:02:54+08:00 gpu_h=0.0 run_dir=~/AirStack-starling-max2-l10/svg_training/runs/ste_l10_drills/resume
+l10_wakeup  L1.0  alive  exit=none  pid=19412 launch=1 started=2026-11-23T02:02:48+08:00 gpu_h=0.0 run_dir=~/AirStack-starling-max2-l10/svg_training/runs/ste_l10_drills/wakeup
+budget budget_l1_l2 (phases L1 + L2): used 2.810 of 13.0 GPU-h (own rows 0.000, carried 2.810)
+L1.0 l10_resume DIED exit=none duration=45.1s effective=45.1s (no exit code recorded; dead)
+waiter exit 21
+
+[exited with code 0]

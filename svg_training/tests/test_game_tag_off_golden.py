@@ -16,8 +16,8 @@ Two tests use it (fix round 1 of L0.9, QC items I1 and I2):
 Measured 21 Nov 2026 on the laptop (Intel Core Ultra 9 275HX), from dec9d276: whole-number and yes/no outputs are the
 same under PyTorch CPU capabilities AVX2 (native) and NO AVX (``ATEN_CPU_CAPABILITY=default``); decimal outputs
 (positions, velocity, observations, ...) differ in the last bits. So whole-number fingerprints are one record for every
-CPU, decimal ones one record per capability (AVX2, NO AVX). On a CPU whose capability has no record (the home RTX 5090
-is believed to report AVX512), the check does not skip: it re-runs itself in a subprocess under
+CPU, decimal ones one record per capability (AVX2, NO AVX, and since 23 Nov AVX512, below). On a CPU whose
+capability has no record, the check does not skip: it re-runs itself in a subprocess under
 ``ATEN_CPU_CAPABILITY=avx2`` and checks the AVX2 record there (``--check``). ``test_the_check_runs_under_another_
 capability`` exercises that subprocess path under NO AVX on every machine.
 
@@ -35,13 +35,14 @@ on the repository and goes outside it:
 (``--write-golden`` adds this capability and refuses if the whole-number fingerprints disagree with the record; the
 first call with the record file absent starts it.)
 
-AVX512 (the home RTX 5090, AMD Ryzen 9 9950X3D), recorded 23 Nov 2026 on that machine: dec9d276 is not in the shared
-history (its branch was never pushed), so the record was made from 5ebac526, the parent of the L0.9 commit 50d8f8f2 on
-``development``. That tree first reproduced the AVX2 and NO AVX records exactly there (``--check`` under
-``ATEN_CPU_CAPABILITY=avx2`` and ``=default``), then ``--write-golden`` added AVX512; its decimal fingerprints equal
-AVX2's. The ``_how`` line in the record still names dec9d276 for the first two capabilities. This file imports only names that existed before L0.9
-(``SvgGame``, ``load_game_cfg``, ``CONFIGS``), so the same code records from the old tree and checks the new one. CPU,
-float32, scripted commands from a fixed generator.
+This file imports only names that existed before L0.9 (``SvgGame``, ``load_game_cfg``, ``CONFIGS``), so the same code
+records from the old tree and checks the new one. CPU, float32, scripted commands from a fixed generator.
+
+AVX512 (the home RTX 5090, AMD Ryzen 9 9950X3D), recorded 23 Nov 2026 on that machine: dec9d276 is not in the
+shared history (its branch was never pushed), so the record was made from 5ebac526, the parent of the L0.9
+commit 50d8f8f2 on ``development``. That tree first reproduced the AVX2 and NO AVX records exactly there
+(``--check`` under ``ATEN_CPU_CAPABILITY=avx2`` and ``=default``), then ``--write-golden`` added AVX512; its
+decimal fingerprints equal AVX2's. The ``_how`` line in the record still names dec9d276.
 """
 import hashlib
 import json

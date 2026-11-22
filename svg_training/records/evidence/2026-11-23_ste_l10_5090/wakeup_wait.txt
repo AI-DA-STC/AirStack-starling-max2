@@ -1,0 +1,5 @@
+L1.0 l10_wakeup DONE exit=0 duration=120.2s effective=120.2s
+waiter exit 0
+02:04:49
+
+[exited with code 0]

@@ -1,0 +1,12 @@
+........................................................................ [ 35%]
+................................................................x....... [ 70%]
+.s...........................................................            [100%]
+=============================== warnings summary ===============================
+tests/test_adapters.py::test_adapter_steps_run_under_sync_debug_error
+  ~/miniconda3/envs/env_isaaclab/lib/python3.11/site-packages/torch/cuda/__init__.py:1150: UserWarning: Synchronization debug mode is a prototype feature and does not yet detect all synchronizing operations (Triggered internally at /pytorch/torch/csrc/cuda/Module.cpp:978.)
+    torch._C._cuda_set_sync_debug_mode(debug_mode)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+SKIPPED [1] tests/test_safety_filter_graph.py:343: recorded states not on this machine (~/AirStack-starling-max2-l10/svg_training/runs/nus_port/filter_graph/states.pt; 5090 only)
+203 passed, 1 skipped, 1 xfailed, 1 warning in 93.02s (0:01:33)

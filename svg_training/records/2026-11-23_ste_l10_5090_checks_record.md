@@ -1,6 +1,6 @@
 INTERNAL · record of task L1.0 (RTX 5090 machine checks) of STE's learning track. Not a training result.
 
-# L1.0 on the RTX 5090: machine checks (23 November 2026, ~02:00–03:10 +08:00)
+# L1.0 on the RTX 5090: machine checks (23 November 2026, ~02:00–02:45 +08:00)
 
 **Machine:** home RTX 5090 workstation (AMD Ryzen 9 9950X3D, PyTorch CPU capability AVX512, Python 3.13.5 for
 `gpu_pause.sh`). **Tree:** worktree `~/AirStack-starling-max2-l10`, branch `ste-l1-0` cut from `development` at
@@ -36,5 +36,6 @@ HANDOFF warned might fail on a larger world. Two independent reviewers checked t
 3. The drill lines in `ste_learning/AUTOMATION.md` §7 use `--task L0.7`, refused since L0 closed; a note there now says to
    use the current phase's machine-check task.
 
-Evidence (raw outputs) was kept in the session scratchpad for the reviewers; the lines quoted above are the outputs.
+Evidence: the raw outputs are in [evidence/2026-11-23_ste_l10_5090/](evidence/2026-11-23_ste_l10_5090/) (commands and
+outputs, the full suite's summary, the drill logs, the GPU-visible and L0.3 runs).
 Run folders: `runs/ste_l10_drills/` of the `-l10` worktree (git-ignored).

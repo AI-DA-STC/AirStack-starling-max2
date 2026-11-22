@@ -13,8 +13,8 @@ the private NUS workspace (`~/ma_skills-self-play/`, 5090 only) do **not** trave
 note disagree, this file wins.
 
 ### 22–23 November 2026 night — L1 FIRST NIGHT, HAND-OVER TO THE RTX 5090 (read this first)
-**Start on the 5090:** pull `development`; `mkdir -p runs`; **before the first L1 launch** run
-`scripts/ste_job.py carry --gpu-h 2.81 --note "laptop 2026-11-22"` (laptop L1 hours; the 13 GPU-h cap is shared).
+**Start on the 5090:** pull `development`; `mkdir -p runs`. **The carry of the laptop's 2.81 GPU-h was DONE on the 5090
+on 23 Nov ~02:00 (ledger 2.81 of 13): do not run it again** (the tool has no duplicate guard; see the 23 Nov entry below).
 Then in order: (1) **L1.0** 5090 checks (TEST-F2b, L09-5090, drills, 5090 suite); (2) **L1.1b** (WORK_BREAKDOWN: model
 the estimate's error, not a transport delay; never delay attitude; pass the game seed to the noise; tests first, two
 code reviews); (3) **Isaac check re-run** of L1.1/L1.2: `scripts/ste_job.py launch --task L1.1 --name ste_l1_model_check
@@ -33,7 +33,7 @@ status opens "Main track · Side track". Next side-track step if any: a second s
 (≈0.5 GPU-h), announced first. **L1 caps:** L1.1 0.2 (used), L1.6 0.1, L1.9 1.6, L1.10 0.9, L1.11 1.2, L1.13 2.1, L1.14
 0.3, L1.15 0.3; sum 9.1 + L2 3.9 = 13.
 
-### 23 November 2026 ~03:10 — RTX 5090: L1.0 MACHINE CHECKS DONE (speed part deferred)
+### 23 November 2026 ~02:45 — RTX 5090: L1.0 MACHINE CHECKS DONE (speed part deferred)
 Branch `ste-l1-0` (merged into `development`); record [records/2026-11-23_ste_l10_5090_checks_record.md](../../records/2026-11-23_ste_l10_5090_checks_record.md), two reviewers (numbers, completeness).
 **The carry of the laptop's 2.81 GPU-h is DONE on the 5090 (ledger 2.81 of 13): do not run it again.** TEST-F2b
 passed (AVX512 key confirmed); L09-5090 closed: AVX512 record added to `tests/data/game_tag_off_golden.json` from

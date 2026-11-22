@@ -44,8 +44,8 @@ Clips use their own starting positions, not the 1,000 scoring starts. Training s
 **Two panellists' plan (DISCUSSION §15):** main track first; side track at most about 1 GPU-h more, starting with a second
 seed, each addition announced with its why.
 
-**On the 5090 today, in order:** (1) start from `development`; before the first L1 launch run
-`scripts/ste_job.py carry --gpu-h 2.81 --note "laptop 2026-11-22"` (the laptop's L1 hours, so the 13 GPU-h cap holds);
+**On the 5090 today, in order:** (1) start from `development`; the carry of the laptop's 2.81 GPU-h is DONE (5090, 23 Nov
+~02:00, ledger 2.81 of 13): do not run it again;
 (2) L1.0, the 5090 checks; (3) L1.1b (CPU build: error model, seed passed through); (4) the Isaac check re-run (the
 isaac tests plus the two speed parts not measured; lead's estimate about 0.15 GPU-h); (5) L1.3/L1.4 when the AirStack
 simulator is free. **Waiting on you:** nothing to rule; later, your OK on wording for the NUS-facing pages that still say

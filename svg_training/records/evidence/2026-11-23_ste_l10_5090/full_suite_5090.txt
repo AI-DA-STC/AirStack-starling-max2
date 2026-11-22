@@ -1,0 +1,79 @@
+.............sss........................................................ [  3%]
+...................................................s.................... [  6%]
+........................................................................ [  9%]
+...................sss.................................................. [ 12%]
+.........sssssss........................................................ [ 15%]
+.......................................sss.............................. [ 19%]
+........................................................................ [ 22%]
+........................................................................ [ 25%]
+...............................................................ss....... [ 28%]
+...............................................ssssssssss............... [ 31%]
+........s............................................................... [ 34%]
+........................................................................ [ 38%]
+.................................ss..................................... [ 41%]
+.......................s.................ss.......................ssssss [ 44%]
+ssss.................................................................... [ 47%]
+........................................................................ [ 50%]
+...s.................................................................... [ 53%]
+........................................................................ [ 57%]
+........................................................................ [ 60%]
+........................................................................ [ 63%]
+........................................................................ [ 66%]
+........................................................................ [ 69%]
+........................................................................ [ 73%]
+...........................................................s.......ss..s [ 76%]
+s..s.................................................................... [ 79%]
+........................................................................ [ 82%]
+........................................................................ [ 85%]
+........................................................................ [ 88%]
+........................................................................ [ 92%]
+........................................................................ [ 95%]
+..................................s..................................... [ 98%]
+..............................s....                                      [100%]
+=============================== warnings summary ===============================
+tests/test_filter_speed.py::test_speed_phase_cpu_smoke_writes_tables_and_selection
+  ~/AirStack-starling-max2-l10/svg_training/scripts/make_s2_figures.py:187: UserWarning: Tight layout not applied. The left and right margins cannot be made large enough to accommodate all Axes decorations.
+    fig.tight_layout()
+
+tests/test_ste_sweep_l011_driver.py::test_a_run_writes_cells_controls_results_and_figures
+tests/test_ste_sweep_l011_driver.py::test_sigint_stops_and_the_same_command_resumes_to_the_same_results
+tests/test_ste_sweep_l011_driver.py::test_the_clean_known_answer_controls_pass_exactly
+  ~/AirStack-starling-max2-l10/svg_training/scripts/make_ste_l011_figures.py:192: UserWarning: Tight layout not applied. tight_layout cannot make Axes width small enough to accommodate all Axes decorations
+    fig.tight_layout(rect=(0, 0.05, 1, 1))
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+SKIPPED [1] tests/test_adapters.py:336: CUDA only
+SKIPPED [2] tests/test_adapters.py:367: CUDA only
+SKIPPED [1] tests/test_estimator_effect.py:361: starts Isaac Sim: set SVG_ISAAC_TESTS=1 after scripts/isaac_preflight.sh
+SKIPPED [3] tests/test_game_core.py:285: CUDA only
+SKIPPED [6] tests/test_isaac_world.py: starts Isaac Sim: set SVG_ISAAC_TESTS=1 after scripts/isaac_preflight.sh
+SKIPPED [1] tests/test_isaac_world.py:58: starts Isaac Sim: set SVG_ISAAC_TESTS=1 after scripts/isaac_preflight.sh
+SKIPPED [2] tests/test_nus_mappo.py:171: parity export or local files absent (scripts/nus_jax_export_update.py, nus_make_local_*.py): not a pass
+SKIPPED [1] tests/test_nus_mappo.py:281: noise-floor exports or local files absent (scripts/nus_jax_export_update.py --batch-from): not a pass
+SKIPPED [1] tests/test_partner_privacy.py:294: no local partner file on this machine: nothing to search for (not a pass)
+SKIPPED [1] tests/test_partner_privacy.py:304: no local partner file on this machine: nothing to search for (not a pass)
+SKIPPED [10] tests/test_play.py:147: CUDA only
+SKIPPED [1] tests/test_px4_cascade.py:317: CUDA only
+SKIPPED [2] tests/test_rigid_body.py:239: CUDA only
+SKIPPED [1] tests/test_safety_filter.py:196: no CUDA device
+SKIPPED [1] tests/test_safety_filter.py:432: no CUDA device
+SKIPPED [1] tests/test_safety_filter.py:445: no CUDA device
+SKIPPED [1] tests/test_safety_filter_graph.py:238: no CUDA device
+SKIPPED [2] tests/test_safety_filter_graph.py:258: no CUDA device
+SKIPPED [1] tests/test_safety_filter_graph.py:270: no CUDA device
+SKIPPED [1] tests/test_safety_filter_graph.py:283: no CUDA device
+SKIPPED [2] tests/test_safety_filter_graph.py:293: no CUDA device
+SKIPPED [1] tests/test_safety_filter_graph.py:302: no CUDA device
+SKIPPED [1] tests/test_safety_filter_graph.py:314: no CUDA device
+SKIPPED [1] tests/test_safety_filter_graph.py:343: recorded states not on this machine (~/AirStack-starling-max2-l10/svg_training/runs/nus_port/filter_graph/states.pt; 5090 only)
+SKIPPED [1] tests/test_starling_layer.py:291: CUDA only
+SKIPPED [1] tests/test_ste_l03.py:68: the bundle or T45's per-game file is missing
+SKIPPED [1] tests/test_ste_l03.py:196: the bundle or T45's per-game file is missing
+SKIPPED [1] tests/test_ste_l03.py:229: the bundle or T45's per-game file is missing
+SKIPPED [1] tests/test_ste_l03.py:267: the bundle or T45's per-game file is missing
+SKIPPED [1] tests/test_ste_l03.py:287: the bundle or T45's per-game file is missing
+SKIPPED [1] tests/test_ste_l03.py:337: the bundle or T45's per-game file is missing
+SKIPPED [1] tests/test_train_standin.py:382: starts Isaac Sim: set SVG_ISAAC_TESTS=1 after scripts/isaac_preflight.sh
+SKIPPED [1] tests/test_workstation_scripts.py:221: no private reference files on this machine: the value scan cannot run (a skip is not a pass)
+2213 passed, 54 skipped, 4 warnings in 1595.88s (0:26:35)

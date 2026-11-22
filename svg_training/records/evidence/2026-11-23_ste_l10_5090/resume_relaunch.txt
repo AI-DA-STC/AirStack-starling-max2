@@ -1,0 +1,11 @@
+launched L1.0 l10_resume pid=20070 launch=2 log=~/AirStack-starling-max2-l10/svg_training/runs/ste_l10_drills/resume/job.log
+relaunch exit 0
+L1.0 l10_resume DONE exit=0 duration=80.2s effective=80.2s run_effective=120.1s
+waiter exit 0
+1:[dummy] fresh start, 120 steps
+47:[dummy] resumed from step 40 of 120
+128:[dummy] done: 120 steps, total 7260.0
+{"steps": 120, "total": 7260.0}
+
+
+[exited with code 0]

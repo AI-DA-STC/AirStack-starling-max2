@@ -55,9 +55,10 @@ were only screened with scripts, and there a good scripted Guard team wins almos
 > 5. Fleets: Crazyflies first at Starling metres, the Starling 1v1 as planned, the mix later.
 > 6. **Budget, RULED 22 Nov 2026: L1 + L2 = 13 GPU-h** (12 + one confirming seed), plus about 1 h of AirStack simulator time. Inside the 13: L1.11 (the guard_field Strike pilot, about 0.6 GPU-h), L1.12 (proposal (b)) and the cross-play scoring (minutes each), and L1.13 (the shorter-training-clock 1.15 m Strike run, about 0.7, lead's estimate). L3–L9 stay OPEN, re-baselined later ([costed draft](drafts/L1_L9_COSTED_PLAN_DRAFT.md) on D3: about 87 GPU-h at tag 1.6 m). A12 RULED: the fast engine for quick experiments and checks, main training in Isaac Lab. The training-settings sweep (row 18) is not inside the 13.
 
-![Phase L0 progress flowchart: every task done except L0.7's 5090 part and this gate](figures/l0_progress.png)
+![Phase L0 progress flowchart, redrawn 23 Nov 2026: every task done except this gate](figures/l0_progress.png)
 
-**Phase L0 by task.** Green is done; L0.7's RTX 5090 part is open; L0.6 is this page. GPU-hours from the ledger:
+**Phase L0 by task.** Green is done; L0.6 is this page. (At this page's writing L0.7's RTX 5090 part was open; it was
+done on 23 Nov 2026, [record](../records/2026-11-23_ste_l10_5090_checks_record.md), and the figure was redrawn.) GPU-hours from the ledger:
 13.77 of 19 ([budget](#8-budget-used)).
 
 ## 1. The decisions

@@ -192,6 +192,12 @@ delayed (`state_delay_att_s` must be 0); `state_delay_s` is a residual delay of 
 Tests: `tests/test_estimator_error.py`. CPU hover with made-up values (0.02 m / 0.5 s, 0.02 m/s / 0.2 s, 0.005 rad /
 0.5 s), observed in the training simulator (torch world): RMS 0.039 m, largest 0.115 m, tilt 0.030 rad, no upset.
 
+**L1.1c Second-order estimate error (new, 23 Nov 2026, from L1.3's fit, T63).** The real hover error swings back
+(position ζ ≈ 0.28, ωn ≈ 0.97 rad/s, mostly z; a damped second-order process fits about 16–20× better than first order to
+6 s, and first order is rougher step to step). Option: a second-order Gauss–Markov term per axis beside the first-order
+one, default off; fit from the NEAR-962 logs before use. Also: a ULog-path test that catches a flipped ENU z sign. Gate:
+none. Not started.
+
 **L1.2 Drag in tier 2.** Goal: a linear drag force (form taken from Pegasus's simple drag, read only) computed in our
 wrench path so both worlds get it. Files: `models/starling_airframe.py` or `models/physics_drone.py` (drag force added
 before `apply_wrench_b`), `models/physics_params.py` (`drag_*`, default 0, OPEN value), `tests/test_drag.py`. Tests
@@ -201,7 +207,7 @@ terminal speed in the torch world. 5 h; 0.2 GPU-h. Gate: none.
 **L1.3 Fit delay, noise and drag to real logs.** Goal: values for `starling_physics_v1.toml` from real flight
 (STANDARDS §5 rule 10). Since L1.1b the estimator part is fitted as error statistics: sigma and correlation time tau
 per quantity (`state_error_*`) from the logs, not a transport delay. Files:
-`scripts/fit_physics_delay.py`, `tests/test_fit_physics_delay.py`, a record. Tests first: recovers known error
+`scripts/fit_estimate_error.py` (the error statistics; built 23 Nov, record T63, EXPLORATORY), `tests/test_fit_estimate_error.py`; drag and the stage-1 limits still to fit; a record. Tests first: recovers known error
 statistics (sigma, tau) and drag from a synthetic log made by the torch world. Data: the 13 Nov drone_2 log (T11) now;
 the NEAR-962 planned-push flight when flown. Done: record against the stage 1 limits (held-out RMS ≤ 0.10 m/s, t63 error
 ≤ 0.10 s; FIXED). With log103 alone (6 held-out legs, fewer than 8) the values are labelled EXPLORATORY, like

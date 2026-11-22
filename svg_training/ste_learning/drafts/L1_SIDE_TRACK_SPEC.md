@@ -89,3 +89,21 @@ re-scores at the other clock (T52 and both arms). The lead raised the task caps 
 (L1.11) and 1.2 (L1.13). Nothing else in this spec changes. Arm A is trained and scored on the 30 s game file
 (`configs/ste_l1/tag_1p15_clock30.toml`); the variant key `reference_variant` and a per-variant run 0 were added by the
 build so each arm has its own run 0 and its own screen reference cells.
+
+**Addendum 2 (22 Nov 2026 ~20:45, after L1.12 and T52's re-score, before this test runs): L1.14, the time-left test
+(INFO, scoring only).** T52 (trained at 120 s) reaches more against guard_field when the game is 30 s long (145) than
+it does in the first 30 s of a 120 s game (61, paired 17 v 59); at 120 s its late attacks mostly fail (in 99 of 126 games
+where every Strike drone was tagged, the last fell after 90 s). Hypothesis (a reviewer's reading, not tested): the
+network holds back while its time-left input is large. Test, by changing only the time-left value the policy sees (all
+other inputs and the game untouched; out-of-game drones keep their zeroed inputs), against guard_field, T44's starts:
+- **Control C-offset:** T52 in the 30 s game with time-left + 90 s. It must reproduce the first 600 ticks of T52's own
+  120 s games game for game (every reach before tick 600 at the same tick; 61 reaches). Not PASS: no number reported.
+- **Test T-clamp:** T52 in the 120 s game with time-left clamped to at most 30 s. Reading words: if its reaches' Wilson
+  interval lies above T52's 120 s interval (103: 0.086–0.123): "the 1.15 m Strike team attacks earlier and reaches more
+  when its time-left input says time is short: N against 103"; overlap: "clamping the time-left input did not change
+  its reaches"; below: said as such. One network, one start set.
+- **Arm A at 120 s, clamped to at most 30 s** (INFO): arm A never saw a time-left above 30 s; this is the fair 120 s read
+  of arm A, beside its plain 120 s score.
+Budget: new task **L1.14** (cap 0.3 GPU-h; expected about 0.2) taken from L1.9 (1.9 → 1.6, its estimate is 0.5–1.9);
+the L1 caps still sum to 9.1. Tooling: a per-player time-left override in `scripts/ste_score_matrix.py`
+(`offset_s` or `clamp_max_s`), recorded in results; test first; two code reviews.

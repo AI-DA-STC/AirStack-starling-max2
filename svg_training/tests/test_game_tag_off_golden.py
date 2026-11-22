@@ -25,7 +25,7 @@ Record (only from a commit whose game is known good, here dec9d276), one capabil
 on the repository and goes outside it:
 
     rm -rf /tmp/l09_old && mkdir -p /tmp/l09_old
-    git -C ~/AirStack-starling-max2-l09 archive dec9d276 svg_training/source svg_training/configs svg_training/params \\
+    git -C ~/AirStack-starling-max2 archive dec9d276 svg_training/source svg_training/configs svg_training/params \\
         | tar -x -C /tmp/l09_old
     cd svg_training && PYTHONPATH=/tmp/l09_old/svg_training/source python tests/test_game_tag_off_golden.py --write-golden
     ATEN_CPU_CAPABILITY=default PYTHONPATH=/tmp/l09_old/svg_training/source \\

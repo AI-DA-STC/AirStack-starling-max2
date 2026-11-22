@@ -12,6 +12,15 @@ Everything needed is in this folder; nothing depends on the previous chat. Claud
 the private NUS workspace (`~/ma_skills-self-play/`, 5090 only) do **not** travel with git: if this file and a memory
 note disagree, this file wins.
 
+### 22 November 2026 ~12:50 — WORKTREE CLEAN-UP (owner approved)
+The 16 finished task worktrees (`~/AirStack-starling-max2-{g0,l02,l04,l07fix,l08,l09,l10,l11,l12,l12b,l12c,l12d,l13,l14,pilot,vid1b}`)
+are removed (`git worktree remove`; every commit is in `development`; the `ste-*` branches stay). Their run folders and
+`configs/local` were moved first, unchanged, to `~/AirStack-starling-max2/svg_training/runs/ste_archive/<name>/` (git-ignored;
+map in its README.md). Records and LOG.md still quote the old paths: read them through that map (example: T46's players
+are in `ste_archive/l12/runs/`, hashes unchanged). Two reviewers checked before removal. Left alone (not training work):
+`~/AirStack-starling-max2-docs` and six `.claude/worktrees/agent-*` folders from 2 Nov flight-stack sessions (four hold
+commits not on `main`). From now on: remove a task's worktree after it merges, moving its runs into `ste_archive` first.
+
 ### LAPTOP SESSION, 22 November 2026 ~06:30 — STATE AFTER L0.12c AND L0.12d (read this first)
 
 **Done tonight (training simulator, tier 1, laptop; one seed per run; nothing flown):**

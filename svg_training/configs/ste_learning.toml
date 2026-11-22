@@ -46,7 +46,7 @@ phase_cap_gpu_h = 19.0   # FIXED (owner, 20 Nov 2026): GPU-hour cap of phase L0 
 # Phases L1 and L2 together (gate G0, owner, 22 Nov 2026): one cap for both, and the cap of each task. The cap is the
 # owner's; the task split is the lead's (a LEAD CALL on the costed draft), so each task line is PROPOSED. PLAN.md has no
 # L1 task table; the IDs and their order are those of TASK_IDS["L1"] in ste/config.py. The task caps may add up to less
-# than the cap (they sum to 8.1 GPU-h; L2's tasks get theirs when L2 starts), never to more.
+# than the cap (they sum to 9.1 GPU-h; L2's tasks get theirs when L2 starts), never to more.
 [budget_l1_l2]
 phases = ["L1", "L2"]    # FIXED (owner, G0, 22 Nov 2026): one GPU-hour cap covers phases L1 and L2 together (DISCUSSION section 14)
 closed = false           # FIXED (owner, G0, 22 Nov 2026): L1 and L2 approved, phase L1 in work
@@ -64,6 +64,6 @@ phase_cap_gpu_h = 13.0   # FIXED (owner, G0, 22 Nov 2026): GPU-hour cap of L1 an
 "L1.8" = 1.2             # PROPOSED (lead's split, costed draft ste_learning/drafts/L1_L9_COSTED_PLAN_DRAFT.md section 3): T46's base policies re-scored on the new tier 2
 "L1.9" = 1.9             # PROPOSED (lead's split, costed draft ste_learning/drafts/L1_L9_COSTED_PLAN_DRAFT.md section 3): 1v1 best-response read, plus a scripted 1v1 screen at tag 1.15 m
 "L1.10" = 1.2            # PROPOSED (lead's split, costed draft ste_learning/drafts/L1_L9_COSTED_PLAN_DRAFT.md section 3): Tag drawn within 1.5-1.7 m, 3v3, both sides
-"L1.11" = 0.9            # PROPOSED (lead's split, costed draft section 3; raised 22 Nov 2026 by the L1 side-track spec v2: run 0 + the 720 s final reserve): Strike team trained against guard_field at 1.6 m
+"L1.11" = 1.2            # PROPOSED (lead's split, costed draft section 3; raised 22 Nov 2026 by the L1 side-track spec v2: run 0 + the 720 s final reserve): Strike team trained against guard_field at 1.6 m
 "L1.12" = 0.1            # PROPOSED (lead's split, costed draft ste_learning/drafts/L1_L9_COSTED_PLAN_DRAFT.md section 3): T46's 1.6 m Guard team scored against every Strike script
-"L1.13" = 1.0            # PROPOSED (lead's split, costed draft section 3; raised 22 Nov 2026 by the L1 side-track spec v2: two arms of 0.30 B, run 0 each): Shorter-training-clock 1.15 m Strike run
+"L1.13" = 1.7            # PROPOSED (lead's split, costed draft section 3; raised 22 Nov 2026 by the L1 side-track spec v2: two arms of 0.30 B, run 0 each): Shorter-training-clock 1.15 m Strike run

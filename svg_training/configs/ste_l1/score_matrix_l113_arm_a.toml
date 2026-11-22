@@ -1,0 +1,43 @@
+# Scoring settings of scripts/ste_score_matrix.py (STE L1 side track; spec ste_learning/drafts/L1_SIDE_TRACK_SPEC.md v2,
+# item 5), fixed before the scoring. Every file is pinned by sha256 and checked before anything plays (exit 2 on a
+# mismatch or a FILL_ value). Controls (exit 6, terminal, no number reported on any failure): own_replay, the player's
+# whole evaluation batch replayed equal to its eval_final.npz game for game with its trained cell at own_wins; and per
+# scoring game and script x of the other team, every script cell of the batch equal to the reference game for game.
+# L1.13 arm A (arm_a_clock30; trained and scored by the driver at the 30 s clock): re-scored against every
+# Guard script at both clocks (the main read at 30 s; the other clock INFO), on the same starts as T52's re-score.
+# FILL_ values: from the arm's finished run folder (dir, the three sha256 values, own_wins = results.json exploiter k),
+# before the scoring; the tool refuses until then.
+
+[job]
+task = "L1.13"
+what = "L1.13 arm A (arm_a_clock30) scored at the 120 s and the 30 s clock against every Guard script"
+kind = "INFO"
+
+[player]
+label = "The L1.13 arm A Strike team"
+dir = "FILL_FROM_THE_RUN"
+side = "strike"
+variant = "arm_a_clock30"
+gates_sha256 = "FILL_FROM_THE_RUN"
+agent_sha256 = "FILL_FROM_THE_RUN"
+eval_sha256 = "FILL_FROM_THE_RUN"
+own_wins = "FILL_FROM_THE_RUN"
+own_source = "L1.13 arm A's own evaluation (results.json exploiter k)"
+
+[[games]]
+name = "tag_1p15_120s"
+file = "configs/ste_l011/tag_1p15.toml"
+sha256 = "b2e09683f7088964a7d1ca15dfc9c98d1e04c15e96b14196d6971afb75f27580"
+reference = "configs/ste_l012b/screen_reference.npz"
+reference_sha256 = "49014000d07e8b52ae579deb325dad53d98c5020f533026dfbff778f306b2296"
+reference_variant = "tag_1p15"
+clock_label = "tag 1.15 m, 120 s clock (2,400 ticks)"
+
+[[games]]
+name = "tag_1p15_30s"
+file = "configs/ste_l1/tag_1p15_clock30.toml"
+sha256 = "a29fcd3394d4ade6087c45a2fd164a51ffb9b481058cb6356332600b7f98403b"
+reference = "configs/ste_l012b/screen_reference.npz"
+reference_sha256 = "49014000d07e8b52ae579deb325dad53d98c5020f533026dfbff778f306b2296"
+reference_variant = "tag_1p15"
+clock_label = "tag 1.15 m, 30 s clock (600 ticks; the 120 s screen reference holds, every script game there ends by tick 434)"

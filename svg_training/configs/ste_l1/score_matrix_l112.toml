@@ -1,0 +1,32 @@
+# Scoring settings of scripts/ste_score_matrix.py (STE L1 side track; spec ste_learning/drafts/L1_SIDE_TRACK_SPEC.md v2,
+# item 5), fixed before the scoring. Every file is pinned by sha256 and checked before anything plays (exit 2 on a
+# mismatch or a FILL_ value). Controls (exit 6, terminal, no number reported on any failure): own_replay, the player's
+# whole evaluation batch replayed equal to its eval_final.npz game for game with its trained cell at own_wins; and per
+# scoring game and script x of the other team, every script cell of the batch equal to the reference game for game.
+# L1.12 (Q3): T46's base Guard team (trained at tag 1.6 m against strike_straight, 913 of 1,000) against each of the 6
+# Strike scripts at tag 1.6 m, worst cell first, against the best Guard script on the same starts (T44's cells, replayed).
+
+[job]
+task = "L1.12"
+what = "T46's 1.6 m Guard team scored against every Strike script (tag 1.6 m)"
+kind = "INFO"
+
+[player]
+label = "The 1.6 m-trained Guard team (T46)"
+dir = "ste_provisional/players/2026-11-21_ste_l012_base_guard"
+side = "guard"
+variant = "base"
+gates_sha256 = "6e2e606053a593185480f8671c406625dc844002395801023005945f58cfbc5b"
+agent_sha256 = "e981ac7e7045db4e2edc183087329667a6ab9f8b56ce3c19f65e98a8c077d22a"
+eval_sha256 = "80171ad73c6f251d5ab900b3117a41a865baba30695445f6a62a5d8eb9328961"
+own_wins = 913
+own_source = "T46 base Guard v strike_straight, holds (records/2026-11-21_ste_l012_best_response_record.md)"
+
+[[games]]
+name = "base_120s"
+file = "configs/ste_l011/base.toml"
+sha256 = "96e0e7f61a49999da54eee81a544bf64c519cd80833f0dcdfa2a07edfc10cc4d"
+reference = "configs/ste_l012/t44_reference.npz"
+reference_sha256 = "4bc5e011071adced368b2a0025fc47499839e0bbc8d8d650207bd12c3da0f8b5"
+reference_variant = "base"
+clock_label = "tag 1.6 m, 120 s clock (2,400 ticks)"

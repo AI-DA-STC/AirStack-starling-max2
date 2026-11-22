@@ -1,0 +1,512 @@
+{
+ "machine": {
+  "host": "jeremychia-Legion-Pro-7-16IAX10H",
+  "gpu": "NVIDIA GeForce RTX 5070 Ti Laptop GPU",
+  "torch": "2.7.0+cu128",
+  "python": "3.11.15"
+ },
+ "device": "cuda",
+ "gates_sha256": "9220fd9f0eba545a18d6cc3779a35aaf97618eacf7a9e74b30f0c1efbc31f060",
+ "eval": {
+  "per_side": {
+   "strike": {
+    "seconds": 23.13030344100116,
+    "cells": 8,
+    "ticks": 600,
+    "controls": {
+     "ctl_reference_replay": {
+      "status": "PASS",
+      "detail": "guard_mark_edge v strike_straight: ok (holds 808 v T44 808, reaches 192 v 192; 0 of 1000 games differ (0 in outcome)); guard_mark_edge v strike_flank: ok (holds 887 v T44 887, reaches 113 v 113; 0 of 1000 games differ (0 in outcome)); guard_mark_edge v strike_high: ok (holds 850 v T44 850, reaches 150 v 150; 0 of 1000 games differ (0 in outcome)); guard_mark_edge v strike_low: ok (holds 844 v T44 844, reaches 156 v 156; 0 of 1000 games differ (0 in outcome)); guard_mark_edge v strike_sacrifice: ok (holds 960 v T44 960, reaches 40 v 40; 0 of 1000 games differ (0 in outcome)); guard_mark_edge v strike_converge: ok (holds 974 v T44 974, reaches 26 v 26; 0 of 1000 games differ (0 in outcome))",
+      "phase": "pilot"
+     },
+     "ctl_untrained_is_still": {
+      "status": "PASS",
+      "phase": "pilot",
+      "detail": "untrained exploiter v zero script: holds 1000 v T44 1000, reaches 0 v 0; 0 of 1000 games differ (0 in outcome)"
+     },
+     "ctl_untrained_no_gain": {
+      "status": "PASS",
+      "phase": "pilot",
+      "detail": "untrained 0/1000 v best script 192/1000: gain -0.192, real False (must be False)"
+     },
+     "ctl_paired_starts": {
+      "status": "PASS",
+      "phase": "pilot",
+      "detail": "1 start set(s), reference 5aeba7ab2b58"
+     },
+     "tags_one_for_one": {
+      "status": "PASS",
+      "phase": "pilot",
+      "detail": "0 games not one for one of 8000"
+     },
+     "no_nonfinite_actions": {
+      "status": "PASS",
+      "phase": "pilot",
+      "detail": "0 non-finite actions"
+     }
+    }
+   },
+   "guard": {
+    "seconds": 3.1316493329941295,
+    "cells": 7,
+    "ticks": 100,
+    "controls": {
+     "ctl_reference_replay": {
+      "status": "PASS",
+      "detail": "guard_parked_centre v strike_straight: ok (holds 534 v T44 534, reaches 466 v 466; 0 of 1000 games differ (0 in outcome)); guard_parked_ring v strike_straight: ok (holds 523 v T44 523, reaches 477 v 477; 0 of 1000 games differ (0 in outcome)); guard_mark_edge v strike_straight: ok (holds 808 v T44 808, reaches 192 v 192; 0 of 1000 games differ (0 in outcome)); guard_mirror v strike_straight: ok (holds 796 v T44 796, reaches 204 v 204; 0 of 1000 games differ (0 in outcome)); guard_field v strike_straight: ok (holds 716 v T44 716, reaches 284 v 284; 0 of 1000 games differ (0 in outcome))",
+      "phase": "pilot"
+     },
+     "ctl_untrained_is_still": {
+      "status": "PASS",
+      "phase": "pilot",
+      "detail": "untrained exploiter v zero script: holds 534 v T44 534, reaches 466 v 466; 0 of 1000 games differ (0 in outcome)"
+     },
+     "ctl_untrained_no_gain": {
+      "status": "PASS",
+      "phase": "pilot",
+      "detail": "untrained 534/1000 v best script 808/1000: gain -0.274, real False (must be False)"
+     },
+     "ctl_paired_starts": {
+      "status": "PASS",
+      "phase": "pilot",
+      "detail": "1 start set(s), reference 5aeba7ab2b58"
+     },
+     "tags_one_for_one": {
+      "status": "PASS",
+      "phase": "pilot",
+      "detail": "0 games not one for one of 7000"
+     },
+     "no_nonfinite_actions": {
+      "status": "PASS",
+      "phase": "pilot",
+      "detail": "0 non-finite actions"
+     }
+    }
+   }
+  },
+  "seconds": 23.13030344100116
+ },
+ "timing": [
+  {
+   "variant": "tag_1p2",
+   "side": "strike",
+   "main_s": 94.06639368999458,
+   "info_s": 74.33096511199983,
+   "reserve_needed_s": 576.7947176039888,
+   "reserve_rule_s": 616.2655747599783
+  }
+ ],
+ "probes": [
+  {
+   "side": "strike",
+   "num_games": 16384,
+   "updates": [
+    {
+     "reaches": 0,
+     "ended": 31614,
+     "losses": {
+      "Loss / Policy loss (strike_0)": -0.0009636099712224677,
+      "Loss / Policy loss (strike_1)": -0.002058719826163724,
+      "Loss / Policy loss (strike_2)": -0.0023524076721514577
+     }
+    },
+    {
+     "reaches": 0,
+     "ended": 33417,
+     "losses": {
+      "Loss / Policy loss (strike_0)": -0.00043947809026576576,
+      "Loss / Policy loss (strike_1)": -0.000711425524787046,
+      "Loss / Policy loss (strike_2)": -0.0011171764112077654
+     }
+    },
+    {
+     "reaches": 0,
+     "ended": 28208,
+     "losses": {
+      "Loss / Policy loss (strike_0)": -0.0005292111454764381,
+      "Loss / Policy loss (strike_1)": -0.0007810370909282938,
+      "Loss / Policy loss (strike_2)": -0.0009100989787839353
+     }
+    }
+   ]
+  },
+  {
+   "side": "strike",
+   "opponent": "guard_parked_centre",
+   "num_games": 16384,
+   "updates": [
+    {
+     "reaches": 0,
+     "ended": 3,
+     "losses": {
+      "Loss / Policy loss (strike_0)": -0.01163489961763844,
+      "Loss / Policy loss (strike_1)": -0.007448025711346418,
+      "Loss / Policy loss (strike_2)": -0.010924771893769503
+     }
+    },
+    {
+     "reaches": 9,
+     "ended": 42,
+     "losses": {
+      "Loss / Policy loss (strike_0)": -0.0037420716020278634,
+      "Loss / Policy loss (strike_1)": -0.004392295883735642,
+      "Loss / Policy loss (strike_2)": -0.0034059692407026887
+     }
+    },
+    {
+     "reaches": 107,
+     "ended": 216,
+     "losses": {
+      "Loss / Policy loss (strike_0)": -0.00043236121273366735,
+      "Loss / Policy loss (strike_1)": -0.0015627783912350423,
+      "Loss / Policy loss (strike_2)": -0.0005556862539378926
+     }
+    }
+   ]
+  },
+  {
+   "side": "strike",
+   "shaping_weight": 1.0,
+   "num_games": 16384,
+   "updates": [
+    {
+     "reaches": 0,
+     "ended": 31614,
+     "losses": {
+      "Loss / Policy loss (strike_0)": -0.0006366922898450866,
+      "Loss / Policy loss (strike_1)": -0.0012834807042963804,
+      "Loss / Policy loss (strike_2)": -0.0012985134962946177
+     }
+    },
+    {
+     "reaches": 0,
+     "ended": 34051,
+     "losses": {
+      "Loss / Policy loss (strike_0)": -0.0003282041332568042,
+      "Loss / Policy loss (strike_1)": -0.00042308625270379705,
+      "Loss / Policy loss (strike_2)": -0.00027703068044502286
+     }
+    },
+    {
+     "reaches": 1,
+     "ended": 31384,
+     "losses": {
+      "Loss / Policy loss (strike_0)": -0.0005643920521833934,
+      "Loss / Policy loss (strike_1)": -0.000610282356501557,
+      "Loss / Policy loss (strike_2)": -0.0009484427457209677
+     }
+    }
+   ]
+  },
+  {
+   "side": "strike",
+   "shaping_weight": 1.0,
+   "opponent": "guard_parked_centre",
+   "num_games": 16384,
+   "updates": [
+    {
+     "reaches": 0,
+     "ended": 3,
+     "losses": {
+      "Loss / Policy loss (strike_0)": -0.007737794377317186,
+      "Loss / Policy loss (strike_1)": -0.0052227937092538925,
+      "Loss / Policy loss (strike_2)": -0.007523671275703236
+     }
+    },
+    {
+     "reaches": 12,
+     "ended": 51,
+     "losses": {
+      "Loss / Policy loss (strike_0)": -0.002070641300815623,
+      "Loss / Policy loss (strike_1)": -0.0037486275774426757,
+      "Loss / Policy loss (strike_2)": -0.0033440556231653317
+     }
+    },
+    {
+     "reaches": 162,
+     "ended": 370,
+     "losses": {
+      "Loss / Policy loss (strike_0)": -0.0015010629052994774,
+      "Loss / Policy loss (strike_1)": -0.0012393774493830278,
+      "Loss / Policy loss (strike_2)": -0.0016366370451578404
+     }
+    }
+   ]
+  }
+ ],
+ "points": [
+  {
+   "side": "strike",
+   "num_games": 8192,
+   "updates": 1,
+   "game_steps": 3145728,
+   "seconds": 13.751874567999039,
+   "game_steps_per_s": 228749.0323188512,
+   "seconds_per_update": 13.751874567999039,
+   "stale_tick_share": 0.028860092163085938,
+   "peak_allocated_bytes": 3019750400,
+   "peak_reserved_bytes": 3162505216
+  },
+  {
+   "side": "strike",
+   "num_games": 16384,
+   "updates": 1,
+   "game_steps": 6291456,
+   "seconds": 18.305333912001515,
+   "game_steps_per_s": 343695.232779946,
+   "seconds_per_update": 18.305333912001515,
+   "stale_tick_share": 0.0291140874226888,
+   "peak_allocated_bytes": 4512163840,
+   "peak_reserved_bytes": 4729077760
+  },
+  {
+   "side": "strike",
+   "num_games": 32768,
+   "updates": 1,
+   "game_steps": 12582912,
+   "seconds": 27.85353955800383,
+   "game_steps_per_s": 451752.7107747513,
+   "seconds_per_update": 27.85353955800383,
+   "stale_tick_share": 0.028981685638427734,
+   "peak_allocated_bytes": 7499297792,
+   "peak_reserved_bytes": 7832862720
+  },
+  {
+   "side": "guard",
+   "num_games": 8192,
+   "updates": 1,
+   "game_steps": 3145728,
+   "seconds": 12.655386509999516,
+   "game_steps_per_s": 248568.30706153758,
+   "seconds_per_update": 12.655386509999516,
+   "stale_tick_share": 0.07636070251464844,
+   "peak_allocated_bytes": 6528688128,
+   "peak_reserved_bytes": 6698303488
+  },
+  {
+   "side": "guard",
+   "num_games": 16384,
+   "updates": 1,
+   "game_steps": 6291456,
+   "seconds": 15.87240875200223,
+   "game_steps_per_s": 396376.888870529,
+   "seconds_per_update": 15.87240875200223,
+   "stale_tick_share": 0.07603661219278972,
+   "peak_allocated_bytes": 8021101568,
+   "peak_reserved_bytes": 8248098816
+  },
+  {
+   "side": "guard",
+   "num_games": 32768,
+   "updates": 1,
+   "game_steps": 12582912,
+   "seconds": 23.88294052400306,
+   "game_steps_per_s": 526857.7371096244,
+   "seconds_per_update": 23.88294052400306,
+   "stale_tick_share": 0.07633654276529948,
+   "peak_allocated_bytes": 7457088512,
+   "peak_reserved_bytes": 7593787392
+  }
+ ],
+ "run0_read_s": 26.982236805997672,
+ "strike_recipe": {
+  "recipe": "shaped Strike recipe",
+  "bare_reaches": 0,
+  "fallback_reaches": 1,
+  "side_overrides_strike": {
+   "shaping_weight": 1.0
+  },
+  "by_default": false,
+  "note": "picked by the probes against g*; run 0 decides whether the Strike runs launch",
+  "bare_reaches_parked_info": 116,
+  "fallback_reaches_parked_info": 174,
+  "label": "shaped Strike recipe"
+ },
+ "projection": [
+  {
+   "side": "strike",
+   "num_games": 8192,
+   "cap_h": 0.75,
+   "train_s": 2076.869696558999,
+   "game_steps": 475081933.3402171,
+   "updates": 151.02447933839707,
+   "run0_updates": 125,
+   "run0_game_steps": 393216000.0
+  },
+  {
+   "side": "strike",
+   "num_games": 8192,
+   "cap_h": 0.9,
+   "train_s": 2616.869696558999,
+   "game_steps": 598606410.7923968,
+   "updates": 190.29185320294596,
+   "run0_updates": 158,
+   "run0_game_steps": 497025024.0
+  },
+  {
+   "side": "strike",
+   "num_games": 8192,
+   "cap_h": 1.0,
+   "train_s": 2976.869696558999,
+   "game_steps": 680956062.4271833,
+   "updates": 216.47010244597857,
+   "run0_updates": 180,
+   "run0_game_steps": 566231040.0
+  },
+  {
+   "side": "strike",
+   "num_games": 16384,
+   "cap_h": 0.75,
+   "train_s": 2076.869696558999,
+   "game_steps": 713810213.8124609,
+   "updates": 113.45707795023297,
+   "run0_updates": 98,
+   "run0_game_steps": 616562688.0
+  },
+  {
+   "side": "strike",
+   "num_games": 16384,
+   "cap_h": 0.9,
+   "train_s": 2616.869696558999,
+   "game_steps": 899405639.5136318,
+   "updates": 142.95667640584816,
+   "run0_updates": 123,
+   "run0_game_steps": 773849088.0
+  },
+  {
+   "side": "strike",
+   "num_games": 16384,
+   "cap_h": 1.0,
+   "train_s": 2976.869696558999,
+   "game_steps": 1023135923.3144124,
+   "updates": 162.62307537625827,
+   "run0_updates": 140,
+   "run0_game_steps": 880803840.0
+  },
+  {
+   "side": "strike",
+   "num_games": 32768,
+   "cap_h": 0.75,
+   "train_s": 2076.869696558999,
+   "game_steps": 938231515.346463,
+   "updates": 74.56394158573652,
+   "run0_updates": 67,
+   "run0_game_steps": 843055104.0
+  },
+  {
+   "side": "strike",
+   "num_games": 32768,
+   "cap_h": 0.9,
+   "train_s": 2616.869696558999,
+   "game_steps": 1182177979.1648285,
+   "updates": 93.95106467921165,
+   "run0_updates": 85,
+   "run0_game_steps": 1069547520.0
+  },
+  {
+   "side": "strike",
+   "num_games": 32768,
+   "cap_h": 1.0,
+   "train_s": 2976.869696558999,
+   "game_steps": 1344808955.043739,
+   "updates": 106.8758134081951,
+   "run0_updates": 97,
+   "run0_game_steps": 1220542464.0
+  },
+  {
+   "side": "guard",
+   "num_games": 8192,
+   "cap_h": 0.75,
+   "train_s": 2096.868350667006,
+   "game_steps": 521215016.0562162,
+   "updates": 165.68979137936154
+  },
+  {
+   "side": "guard",
+   "num_games": 8192,
+   "cap_h": 0.9,
+   "train_s": 2636.868350667006,
+   "game_steps": 655441901.8694465,
+   "updates": 208.35936923645227
+  },
+  {
+   "side": "guard",
+   "num_games": 8192,
+   "cap_h": 1.0,
+   "train_s": 2996.868350667006,
+   "game_steps": 744926492.4116,
+   "updates": 236.80575447451272
+  },
+  {
+   "side": "guard",
+   "num_games": 16384,
+   "cap_h": 0.75,
+   "train_s": 2096.868350667006,
+   "game_steps": 831150153.2084652,
+   "updates": 132.1077590320055
+  },
+  {
+   "side": "guard",
+   "num_games": 16384,
+   "cap_h": 0.9,
+   "train_s": 2636.868350667006,
+   "game_steps": 1045193673.1985509,
+   "updates": 166.1290602999609
+  },
+  {
+   "side": "guard",
+   "num_games": 16384,
+   "cap_h": 1.0,
+   "train_s": 2996.868350667006,
+   "game_steps": 1187889353.1919413,
+   "updates": 188.80992781193117
+  },
+  {
+   "side": "guard",
+   "num_games": 32768,
+   "cap_h": 0.75,
+   "train_s": 2096.868350667006,
+   "game_steps": 1104751314.2492092,
+   "updates": 87.7977462012934
+  },
+  {
+   "side": "guard",
+   "num_games": 32768,
+   "cap_h": 0.9,
+   "train_s": 2636.868350667006,
+   "game_steps": 1389254492.2884064,
+   "updates": 110.40802735395482
+  },
+  {
+   "side": "guard",
+   "num_games": 32768,
+   "cap_h": 1.0,
+   "train_s": 2996.868350667006,
+   "game_steps": 1578923277.6478713,
+   "updates": 125.48154812239578
+  }
+ ],
+ "plan_hours": [
+  {
+   "run_cap_h": 0.75,
+   "pilot_gpu_h": 0.17755319191349878,
+   "total_gpu_h": 5.427553191913499,
+   "if_run0_fails_gpu_h": 3.177553191913499,
+   "task_cap_gpu_h": 6.0
+  },
+  {
+   "run_cap_h": 0.9,
+   "pilot_gpu_h": 0.17755319191349878,
+   "total_gpu_h": 6.477553191913499,
+   "if_run0_fails_gpu_h": 3.777553191913499,
+   "task_cap_gpu_h": 6.0
+  },
+  {
+   "run_cap_h": 1.0,
+   "pilot_gpu_h": 0.17755319191349878,
+   "total_gpu_h": 7.177553191913499,
+   "if_run0_fails_gpu_h": 4.177553191913499,
+   "task_cap_gpu_h": 6.0
+  }
+ ]
+}

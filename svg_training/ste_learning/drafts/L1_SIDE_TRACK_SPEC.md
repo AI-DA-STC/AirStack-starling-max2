@@ -81,3 +81,11 @@ write-up for the owner; two reviewers + the results-and-plan discussion before r
    given game file and clock, with the controls above; used by L1.12, T52's re-score, and every cross-play table.
 6. T52's network (`runs/ste_archive/l12b/runs/2026-11-21_ste_l012b_tag_1p15_strike/`) added to `ste_provisional/`.
 7. The driver launches L1 tasks against the L1+L2 caps (done in the config change, check).
+
+**Addendum (22 Nov 2026, before any run).** The build measured the driver's time rule: L1.11's run asks 1.07 h of
+allowance (run 0 + training + the 720 s final reserve) and L1.13 needs about 1.6 h for two run 0s, two arms and the
+re-scores at the other clock (T52 and both arms). The lead raised the task caps to **L1.11 1.2** and **L1.13 1.7** GPU-h
+(L1 caps sum 9.1; with L2's high 3.9 that is 13.0, the owner's cap). Caps are ceilings: expected use stays about 0.85
+(L1.11) and 1.2 (L1.13). Nothing else in this spec changes. Arm A is trained and scored on the 30 s game file
+(`configs/ste_l1/tag_1p15_clock30.toml`); the variant key `reference_variant` and a per-variant run 0 were added by the
+build so each arm has its own run 0 and its own screen reference cells.

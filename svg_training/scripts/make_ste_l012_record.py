@@ -100,8 +100,15 @@ def lab(name: str) -> str:
     return f"{name} ({Z_LABEL})" if name in Z_UP else name
 
 
-def purpose(verdict: dict, task: str) -> str:
-    """The Purpose paragraph: L0.12's, or (a reference not made by T44, L0.12b) the same method on that reference."""
+def purpose(verdict: dict, task: str, runs: dict | None = None) -> str:
+    """The Purpose paragraph: L0.12's, or (a reference not made by T44, L0.12b) the same method on that reference; a run
+    whose gate file named its training opponent (train_opponent, L1 side track) is said to train against it."""
+    explicit = [f"{k} trained against its explicit opponent {r['opponent']} ({r['opponent_choice']})"
+                for k, r in (runs or {}).items() if r.get("opponent_choice") == "explicit, not the maximin pick"]
+    if explicit:
+        return (f"STE task {task}: L0.12's best-response method, with the training opponent named in the gate file: "
+                f"{'; '.join(explicit)}; the gain over the best script against that opponent on T44's own starts "
+                f"(INFO).")
     label = verdict.get("reference_label", "T44")
     if label == "T44":
         return ("STE task L0.12 Best-response test (PLAN.md section 4): for each shortlisted variant of T44, an exploiter "
@@ -139,7 +146,7 @@ def record_text(verdict: dict, runs: dict, name: str, number: str | None, task: 
     word = "INFO (every control PASS; the categories feed gate G0)" if verdict["controls_pass"] else \
         "ABORTED (a control is not PASS: read controls.json of each run)"
     lines = [f"Simulator: {verdict['simulator']}. Observed in the training simulator; not a flight result.", "",
-             f"# {name} record", "", "## Run notes", "", *RUN_NOTES, "", "## Purpose", "", purpose(verdict, task), "",
+             f"# {name} record", "", "## Run notes", "", *RUN_NOTES, "", "## Purpose", "", purpose(verdict, task, runs), "",
              "## Config", "", f"- Gate file sha256 `{verdict['gates_sha256']}` (copy in each run folder: `gates.toml`).",
              f"- Band {verdict['band']} (PROPOSED by the lead)."]
     first = next(iter(runs.values()))
@@ -149,6 +156,15 @@ def record_text(verdict: dict, runs: dict, name: str, number: str | None, task: 
     games = {r["game_file"]["file"]: r["game_file"]["sha256"] for r in runs.values()}
     lines += [f"- Game `{f}`, sha256 `{h}`." for f, h in games.items()]
     lines += [f"- {k}: trainer settings {r['settings']}" for k, r in runs.items()]
+    # STE L1 side track: a run whose opponent the gate file named (train_opponent) says so; its preflight skipped the
+    # g*/s* maximin check for that side only. Also a training game other than the scoring game.
+    lines += [f"- {k}: trained against {r['opponent']} ({r['opponent_choice']}; the g*/s* maximin check was skipped for "
+              f"this side only); the Purpose's g*/s* wording does not apply to it." for k, r in runs.items()
+              if r.get("opponent_choice") == "explicit, not the maximin pick"]
+    lines += [f"- {k}: trained on `{r['train_game_file']['file']}` (sha256 `{r['train_game_file']['sha256']}`), scored on "
+              f"`{r['game_file']['file']}`." for k, r in runs.items()
+              if r.get("train_game_file") and r["train_game_file"] != r["game_file"]]
+    lines += [f"- {k}: {r['clock_note']}." for k, r in runs.items() if r.get("clock_note")]
     lines += ["", "## Model parameter set", ""]
     sets = {(r["parameter_set"]["file"], r["parameter_set"]["sha256"], r["parameter_set"]["filter"]) for r in runs.values()}
     lines += [f"Tier 1 Starling layer: `{f}` (fitted PX4 response, exploratory), sha256 `{h}`; safety filter on {flt}."

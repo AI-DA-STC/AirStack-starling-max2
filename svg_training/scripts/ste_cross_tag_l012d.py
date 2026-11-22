@@ -56,12 +56,10 @@ import torch  # noqa: E402
 
 import ste_exploit_l012 as l012  # noqa: E402  (win counts, plumbing controls, the exit rule, clips, the simulator words)
 import ste_sweep_l011 as l011  # noqa: E402  (code pinning, JSON writing)
-from svg_training.core.metrics import wilson_interval  # noqa: E402
 from svg_training.core.rewards import RUNNING  # noqa: E402
-from svg_training.ste import atomic, exploit, exploit_train, sweep  # noqa: E402
+from svg_training.ste import atomic, exploit, exploit_train, scoring, sweep  # noqa: E402
 from svg_training.ste.run_contract import (EXIT_CONTROL_FAILED, EXIT_DONE, EXIT_FOR_STOP, EXIT_NONFINITE,  # noqa: E402
                                            EXIT_REFUSED, STOP_CAP, RunBusyError, RunGuard)
-from svg_training.ste.transfer import paired as transfer_paired  # noqa: E402
 from svg_training.viz import replay3d as r3  # noqa: E402
 
 SETTINGS_FILE = ROOT / "configs" / "ste_l012d" / "cross_tag.toml"
@@ -76,7 +74,7 @@ CONTROL = {"guard": "C1", "strike": "C2"}
 X_BATCH, X4_BATCH = "x_tag_1p15", "c4_base_field"
 CONTROLS = ("C1", "C2", "C3", "C4")
 TOL_SOURCE = "configs/ste_l011/gates.toml"   # the L0.11 gate file: same_seed_closest_tol_m (sweep.GATES_FILE)
-EXACT_RULE = "cpu"          # exploit.replay_ok's game-for-game branch, applied on any device (C3: "game for game")
+EXACT_RULE = scoring.EXACT_RULE   # exploit.replay_ok's game-for-game branch, applied on any device (C3)
 SIMULATOR = l012.SIMULATOR
 OBSERVED = "observed in the training simulator"
 READING = ("1.6 m strategy at 1.15 m: {k:,} of {n:,} ({lo:.3f}–{hi:.3f}) against the 1.15 m-trained team's {m} and the "
@@ -163,11 +161,7 @@ def role_index(role: dict, cells_by_batch: dict) -> tuple[int, int | None]:
 
 
 # ================================================================================================ the inputs
-def _sha_problem(path: Path, want: str, what: str) -> str | None:
-    if not path.is_file():
-        return f"{what} {path} is missing"
-    got = exploit.sha256_file(path)
-    return None if got == want else f"{what} {path} has sha256 {got}, the settings pin {want}"
+_sha_problem = scoring.sha_problem            # the shared scoring parts (ste/scoring.py, factored out for L1)
 
 
 def _reference(gates: exploit.ExploitGates, pin: str, what: str) -> tuple[object, str | None]:
@@ -277,69 +271,26 @@ def check_inputs(a: argparse.Namespace, s: dict):
 
 
 # ================================================================================================ controls
-def _status(parts: dict, ok: bool) -> str:
-    statuses = {v["status"] for v in parts.values()}
-    if l012.NONFINITE in statuses:
-        return l012.NONFINITE
-    return PASS if ok and statuses == {PASS} else FAIL
+_status = scoring.control_status
 
 
 def check_t46_batch(pg: dict, record: dict, ref, n: int, side: str, expected: int, tol: float) -> dict:
     """C1 / C2: the whole batch equal to T46's eval_final.npz (exact keys; closest approach within ``tol``) and the
-    trained cell's wins equal ``expected``; with the batch's paired starts, one for one and non-finite checks."""
-    check = r3.check_against_record(pg, record, tol_m=tol)
-    k, m = l012.win_count(exploit.slice_cell(pg, 0, n), side)
-    parts = l012.plumbing_controls(pg, ref, n, "replay")
-    status = _status(parts, check["equal"] and k == int(expected))
-    won = "holds" if side == "guard" else "reaches"
-    return {"status": status, "games_compared": int(len(pg["outcome"])), "mismatches": check["mismatches"],
-            "tol_m": tol, "trained": {"k": k, "n": m}, "expected": int(expected), "plumbing": parts,
-            "detail": f"{'EQUAL' if check['equal'] else 'DIFFERENT'} {check['mismatches']}; trained {won} {k}/{m} "
-                      f"(record {expected}); " + "; ".join(f"{key} {v['status']}" for key, v in parts.items())}
+    trained cell's wins equal ``expected``; with the batch's paired starts, one for one and non-finite checks
+    (``scoring.check_replay_batch``)."""
+    return scoring.check_replay_batch(pg, record, ref, n, side, expected, tol)
 
 
 def check_reference_cells(pg: dict, cells: list, ref, variant: str, n: int, ticks: int, g_s: tuple, expected: int) -> dict:
     """C3 / C4: every script cell of the batch equal to the reference (the screen's; T44's) game for game
-    (exploit.replay_ok's exact rule on any device) from the reference's own starts, and ``g_s`` holding ``expected``."""
-    rows, ok = {}, True
-    want_starts = exploit.starts_sha(ref.starts_m[:n])
-    for i, cell in enumerate(cells):
-        if not is_script_cell(cell):
-            continue
-        mine = exploit.slice_cell(pg, i, n)
-        theirs = {k: np.asarray(v)[:n] for k, v in ref.cell(variant, *cell).items()}
-        same, text = exploit.replay_ok(mine, theirs, EXACT_RULE, {}, ticks_cap=ticks)
-        starts = pg["start_sha256"][i] == want_starts
-        rows[f"{cell[0]} v {cell[1]}"] = {"equal": bool(same and starts), "starts_equal": bool(starts), "detail": text}
-        ok &= same and starts
-    holds = exploit.counts(exploit.slice_cell(pg, cells.index(tuple(g_s)), n))["holds"]
-    parts = l012.plumbing_controls(pg, ref, n, "x")
-    status = _status(parts, ok and holds == int(expected))
-    return {"status": status, "cells": rows, "screen_holds": holds, "expected": int(expected), "plumbing": parts,
-            "detail": "; ".join(f"{k}: {'ok' if v['equal'] else 'DIFFERS'} ({v['detail']})" for k, v in rows.items())
-                      + f"; {g_s[0]} v {g_s[1]} holds {holds} (reference {expected}); "
-                      + "; ".join(f"{key} {v['status']}" for key, v in parts.items())}
+    (exploit.replay_ok's exact rule on any device) from the reference's own starts, and ``g_s`` holding ``expected``
+    (``scoring.check_script_cells``)."""
+    return scoring.check_script_cells(pg, cells, ref, variant, n, ticks, is_script_cell, g_s, expected)
 
 
 # ================================================================================================ results
-def paired_wins(trained: np.ndarray, script: np.ndarray, side: str) -> dict:
-    """Paired by start, in wins of the trained side (holds for the Guard team, reaches for the Strike team):
-    ``transfer.paired`` (hold-based) relabelled. Every game must be finished (then not holding = reaching)."""
-    trained, script = np.asarray(trained), np.asarray(script)
-    if (trained == RUNNING).any() or (script == RUNNING).any():
-        raise ValueError("a game did not finish: paired counts need finished games")
-    p = transfer_paired(script, trained)
-    if side == "guard":
-        both, t_only, s_only, neither = p["both_hold"], p["gained_here"], p["lost_here"], p["both_lost"]
-    else:
-        both, t_only, s_only, neither = p["both_lost"], p["lost_here"], p["gained_here"], p["both_hold"]
-    return {"both": both, "trained_only": t_only, "script_only": s_only, "neither": neither,
-            "games": int(trained.size), "sign_test_p": p["sign_test_p"]}
-
-
-def _rate(k: int, n: int) -> dict:
-    lo, hi = wilson_interval(k, n)
-    return {"k": int(k), "n": int(n), "ci": [lo, hi]}
+paired_wins = scoring.paired_wins
+_rate = scoring.rate
 
 
 def x_rows(ctx, pgs: dict, s: dict) -> dict:
@@ -466,18 +417,7 @@ def write_md(run_dir: Path, controls: dict, result: dict | None) -> None:
 
 
 # ================================================================================================ the run
-def save_batch(path: Path, pg: dict) -> None:
-    """The batch's per-game arrays plus its start hashes and game length (enough to rebuild the results on a resume)."""
-    arrays = {k: v for k, v in pg.items() if isinstance(v, np.ndarray)}
-    np.savez_compressed(path, **arrays, start_sha256=np.array(pg["start_sha256"]), game_ticks=np.array(pg["game_ticks"]))
-
-
-def load_batch(path: Path) -> dict:
-    with np.load(path) as d:
-        pg = {k: d[k] for k in d.files}
-    pg["start_sha256"] = [str(x) for x in pg["start_sha256"]]
-    pg["game_ticks"] = int(pg["game_ticks"])
-    return pg
+save_batch, load_batch = scoring.save_batch, scoring.load_batch
 
 
 def run(ctx, a: argparse.Namespace, s: dict, guard: RunGuard) -> int:

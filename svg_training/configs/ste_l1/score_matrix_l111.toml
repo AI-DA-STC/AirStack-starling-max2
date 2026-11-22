@@ -1,0 +1,33 @@
+# Scoring settings of scripts/ste_score_matrix.py (STE L1 side track; spec ste_learning/drafts/L1_SIDE_TRACK_SPEC.md v2,
+# item 5), fixed before the scoring. Every file is pinned by sha256 and checked before anything plays (exit 2 on a
+# mismatch or a FILL_ value). Controls (exit 6, terminal, no number reported on any failure): own_replay, the player's
+# whole evaluation batch replayed equal to its eval_final.npz game for game with its trained cell at own_wins; and per
+# scoring game and script x of the other team, every script cell of the batch equal to the reference game for game.
+# L1.11: the Strike team trained against guard_field at tag 1.6 m, scored against every Guard script at 1.6 m, worst
+# cell first, against the best Strike script on the same starts (T44's cells, replayed). FILL_ values: from the run's
+# finished folder before the scoring; the tool refuses until then.
+
+[job]
+task = "L1.11"
+what = "L1.11's Strike team (trained against guard_field at tag 1.6 m) scored against every Guard script"
+kind = "INFO"
+
+[player]
+label = "The L1.11 Strike team"
+dir = "FILL_FROM_THE_RUN"
+side = "strike"
+variant = "base"
+gates_sha256 = "FILL_FROM_THE_RUN"
+agent_sha256 = "FILL_FROM_THE_RUN"
+eval_sha256 = "FILL_FROM_THE_RUN"
+own_wins = "FILL_FROM_THE_RUN"
+own_source = "L1.11's own evaluation (results.json exploiter k)"
+
+[[games]]
+name = "base_120s"
+file = "configs/ste_l011/base.toml"
+sha256 = "96e0e7f61a49999da54eee81a544bf64c519cd80833f0dcdfa2a07edfc10cc4d"
+reference = "configs/ste_l012/t44_reference.npz"
+reference_sha256 = "4bc5e011071adced368b2a0025fc47499839e0bbc8d8d650207bd12c3da0f8b5"
+reference_variant = "base"
+clock_label = "tag 1.6 m, 120 s clock (2,400 ticks)"

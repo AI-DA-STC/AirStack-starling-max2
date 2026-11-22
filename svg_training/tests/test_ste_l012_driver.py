@@ -654,6 +654,6 @@ def test_run_0_stopped_at_its_cap_reserve_is_inconclusive(tmp_path, monkeypatch)
 def test_plan_hours_reads_the_cap_of_an_l0_or_an_l1_task():
     """Fix round 1 (G0): L1.11 and L1.13 reuse this driver; their caps sit in [budget_l1_l2], L0.12's in [budget]."""
     from types import SimpleNamespace
-    for task, cap in (("L0.12", 13.0), ("L1.11", 0.9), ("L1.13", 1.0)):
+    for task, cap in (("L0.12", 13.0), ("L1.11", 1.2), ("L1.13", 1.7)):
         plan = driver.plan_hours(SimpleNamespace(run={"task": task}), 0.1)
         assert plan and all(x["task_cap_gpu_h"] == cap for x in plan), task

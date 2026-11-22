@@ -31,7 +31,7 @@ L0_TASK_CAP_GPU_H = {"L0.1": 0.0, "L0.7": 0.0, "L0.8": 0.0, "L0.9": 0.0, "L0.10"
 # has no L1 task table yet, so no test compares these with it; L2's task IDs arrive when L2 starts.
 L1_L2_CAP_GPU_H = 13.0
 L1_TASK_CAP_GPU_H = {"L1.0": 0.5, "L1.1": 0.2, "L1.2": 0.2, "L1.3": 0.0, "L1.4": 0.0, "L1.5": 0.3, "L1.6": 0.5,
-                     "L1.7": 0.1, "L1.8": 1.2, "L1.9": 1.9, "L1.10": 1.2, "L1.11": 0.9, "L1.12": 0.1, "L1.13": 1.0}
+                     "L1.7": 0.1, "L1.8": 1.2, "L1.9": 1.9, "L1.10": 1.2, "L1.11": 1.2, "L1.12": 0.1, "L1.13": 1.7}
 
 GOOD = SETTINGS_FILE.read_text()
 
@@ -88,7 +88,7 @@ def test_the_l1_and_l2_budget_of_gate_g0():
     assert type(later.phase_cap_gpu_h) is float and all(type(cap) is float for _, cap in later.task_cap_gpu_h)
     assert TASK_IDS["L1"] == tuple(L1_TASK_CAP_GPU_H) and TASK_IDS["L2"] == ()      # L2's IDs arrive when L2 starts
     assert list(tomllib.loads(GOOD)["budget_l1_l2"]["task_cap_gpu_h"]) == list(TASK_IDS["L1"])   # file order
-    assert later.task_caps_total_gpu_h() == 8.1 <= later.phase_cap_gpu_h          # added in decimal
+    assert later.task_caps_total_gpu_h() == 9.1 <= later.phase_cap_gpu_h          # added in decimal
     assert cfg.budget_in_work() is later and cfg.budgets() == (cfg.budget, later)
     assert cfg.budget_of("L1.9") is later and cfg.budget_of("L0.12") is cfg.budget
     assert cfg.cap_gpu_h("L1.9") == 1.9 and cfg.cap_gpu_h("L1.3") == 0.0 and cfg.cap_gpu_h("L0.12") == 13.0
@@ -391,12 +391,12 @@ def test_a_later_budget_section_is_checked(tmp_path):
         ("phase_cap_gpu_h = 13.0", "phase_cap_gpu_h = 13", r"budget_l1_l2\.phase_cap_gpu_h"),
         ("phase_cap_gpu_h = 13.0", "phase_cap_gpu_h = -13.0", r"budget_l1_l2\.phase_cap_gpu_h"),
         ('"L1.9" = 1.9', '"L1.9" = 2', r"budget_l1_l2\.task_cap_gpu_h.*L1\.9"),
-        ('"L1.9" = 1.9', '"L1.9" = 6.9', r"task caps add up to 13\.1 .*budget_l1_l2\.phase_cap_gpu_h = 13\.0"),
+        ('"L1.9" = 1.9', '"L1.9" = 5.9', r"task caps add up to 13\.1 .*budget_l1_l2\.phase_cap_gpu_h = 13\.0"),
     ]
     for old, new, match in cases:
         with pytest.raises(ValueError, match=match):
             load_ste_learning(changed(tmp_path, old, new))
-    exactly = load_ste_learning(changed(tmp_path, '"L1.9" = 1.9', '"L1.9" = 6.8'))[0]      # exactly 13.0: allowed
+    exactly = load_ste_learning(changed(tmp_path, '"L1.9" = 1.9', '"L1.9" = 5.8'))[0]      # exactly 13.0: allowed
     assert exactly.budget_in_work().task_caps_total_gpu_h() == 13.0
 
 

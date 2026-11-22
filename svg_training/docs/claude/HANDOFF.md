@@ -12,7 +12,7 @@ Everything needed is in this folder; nothing depends on the previous chat. Claud
 the private NUS workspace (`~/ma_skills-self-play/`, 5090 only) do **not** travel with git: if this file and a memory
 note disagree, this file wins.
 
-### 22 November 2026 ~18:30 — GATE G0 RULED; PHASE L1 OPEN (read this first)
+### 22 November 2026 ~16:40 — GATE G0 RULED; PHASE L1 OPEN (read this first)
 The owner ruled every G0 row (DISCUSSION §14; G0_DECISION banner): main game has a 1-for-1 tag (P1, overturns the FIXED
 no-tag rows); option (d): 1.6 m to build the pipeline and for the first demo (scripted 1v1), a 1.15 m side track in L1–L2,
 1.15 m main training after L2; A12: fast engine for quick experiments and checks, main training in Isaac Lab; L1 + L2 cap

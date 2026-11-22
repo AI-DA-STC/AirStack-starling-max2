@@ -1,206 +1,46 @@
 INTERNAL · the latest status of STE's own learning track and the NUS port, overwritten at every update; the history is in [LOG.md](LOG.md). Produced by the `train-status` skill.
 
-**Status, 2026-11-22 06:30 (+08:00), event: morning digest** · laptop RTX 5070 Ti · GPU idle · 0 jobs
+**Status, 2026-11-22 16:50 (+08:00), event: gate G0 ruled, phase L1 open** · laptop RTX 5070 Ti · GPU idle · 0 jobs
 
-**Morning digest.** What ran while you slept. Training simulator only, 3v3, one training run per side; nothing flown.
+**Plain summary.** You ruled gate G0 today. Phase L0 is closed, phase L1 (the drone model, plus a small 1.15 m side track)
+is open with 13 GPU-hours for L1 and L2 together. Nothing has run on the GPU since this morning.
 
-| What was tested | Result |
-|---|---|
-| **Longer training at the realistic 1.15 m tag**: the same recipe, trained 3 times longer (Guard team) and 5 times longer (Strike team) | Guard team holds **572** of 1,000 games (466 with the original length); the best hand-written Guards hold 645. Strike team reaches the zone in **134** (script 355): it trades two drones for two, then its last drone waits out the clock. Both learned; both stay below the scripts |
-| **Do teams trained at 1.6 m still work at 1.15 m?** (the check you approved) | Guard team trained at 1.6 m, played at 1.15 m: **195** (the 1.15 m-trained team: 572). Strike team trained at 1.6 m: **636** (1.6 m) and **931** (1.15 m) against the Guard style it trained against ("mark-edge"), but only **85** (1.6 m) and **121** (1.15 m) against a different Guard style ("field") |
+**Your rulings** ([DISCUSSION §14](../DISCUSSION_2026-11-19_20.md#14-gate-g0-rulings-owner-22-nov-2026)):
+- the main game has a 1-for-1 tag (your old "no tag" rule is overturned);
+- tag 1.6 m to build the pipeline and for the first demo (the hand-written 1v1); 1.15 m trained after L2, with a small
+  1.15 m side track in L1;
+- the fast simulator for quick experiments and checks, the main training in Isaac Lab;
+- 13 GPU-h for L1 + L2; 120 s games (shorter clocks only as experiments); the AirStack-simulator logs approved;
+- open arena first, then random blocks, then the construction site;
+- train 3v3 (and 1v1), score every trained team at 2v1 and 5v3 too; a training-settings sweep added to the plan;
+- a task still running at the Monday switch is handed over to the 5090, never cut short.
 
-Records T54–T56. "Mark-edge" and "field" are two hand-written Guard play styles.
+**What I did since** (each reviewed by two agents):
+- recorded the rulings in the plan, the decision page, the game spec, the standards and the costed plan;
+- the budget settings know phase L1 (13 GPU-h shared by the laptop and the 5090: hours are carried across at each
+  switch with `ste_job.py carry`); L0 is closed to new runs; full test suite 2,048 passed;
+- the trained players L1 needs are now in git (`ste_provisional/`), so the 5090 can load them;
+- the side-track spec is written and fixed before any run ([L1_SIDE_TRACK_SPEC](../drafts/L1_SIDE_TRACK_SPEC.md)).
 
-**Worth a look.**
-1. **Guards:** a Guard team trained at 1.6 m fails at 1.15 m (195 v 572). So train the Guards at the tag they will play.
-2. **Strikes:** the opponent matters much more than the tag (one training run). The old claim "the Strike team learns at
-   1.6 m but not at 1.15 m" is not supported: each team was trained against one opponent only.
-3. **My chat explanation of "why" was withdrawn** after reviewers checked it against the data. No cause is known. One
-   measured lead, not yet tested: at 1.2 and 1.15 m the Strike training games end about 13–15 times less often.
+**Next (tonight, laptop, fast simulator):** build the driver additions (an implementer is on it now, then two code
+reviewers), then three runs: the 1.6 m Guard team against every Strike script (minutes); a Strike team trained against
+the second Guard script at 1.6 m (about 0.6 GPU-h); and two small 1.15 m Strike runs, one with a 30 s training clock and
+one weighting a clock loss more (about 0.8 GPU-h together). I will message you when the first GPU run starts.
 
-**Clip to watch:** the figure and the two clips at the top of Watch below.
+**Phases**
 
-**Waiting on you (G0 walk-through, Sunday):**
-- the 17 decision rows on the [G0 page](../G0_DECISION.md);
-- my recommendation 1: tag 1.6 m to set up L1; train each team at the tag it will play; train against several
-  opponents and score against several before anything is shown; first demo = the hand-written 1v1 at 1.6 m;
-- L1 + L2 budget: **10 GPU-h**, or 11 if you also want the two optional checks below.
-
-**Optional checks (not run; you can approve the budget without them):** (a) train a Strike team against the "field"
-Guards at 1.6 m, about 0.6 GPU-h; it tells "field Guards are hard" apart from "1.15 m is hard". (b) Score the 1.6 m
-Guard team against every Strike script, minutes, no training.
-
-**Not done:** 3-D clips of tonight's games (the 3-D block below is from the earlier 1.6 m and 1.4 m runs); a shorter-clock
-1.15 m Strike run (the "games end less often" lead is untested).
-
-**Reviews (your rule, 22 Nov):** every result had at least two independent reviewers and a two-agent discussion. They
-withdrew my "why" and two overclaims, and fixed several stale lines.
-
-**Usage:** GPU-h tonight 4.83; L0 13.77 of 19. About 25 agent runs, about 3.1 M tokens. Full test suite: 1,988 passed,
-2 failed while other tests ran at the same time; both pass alone, and their files passed again after the commit (178).
-
-## Watch (latest clips and figures)
-
-**New: tag 1.15 m with longer training** (L0.12c, T54/T55). Lines: 256 curve games; points: 1,000 scoring starts.
-
-![](../../docs/figures/ste_l012c/longer_runs.png)
-
-| 1.6 m-trained Guards at 1.15 m: reach (L0.12d X1) | 1.6 m-trained Strikes v field Guards at 1.15 m (X2) |
-|---|---|
-| ![](../../docs/media/ste_l012d/x1_1p6_guard_at_1p15_game0_reach.gif) | ![](../../docs/media/ste_l012d/x2_1p6_strike_at_1p15_v_field_game2_reach.gif) |
-
-All clips: [ste_l012c](../../docs/media/ste_l012c/README.md), [ste_l012d](../../docs/media/ste_l012d/README.md). Training simulator; not a flight.
-
-**Earlier: the trained players in 3-D** (L0.12, tags 1.6 m and 1.4 m; Isaac Lab, ring = team, faint circle = each Guard's tag distance, round zone).
-Each game was replayed and checked equal to its run's own evaluation before drawing. Training simulator; not a flight.
-
-| Trained Strikes reach the zone (base, 1.6 m tag) | Trained Guards hold (base, 1.6 m tag) |
-|---|---|
-| ![](../../docs/media/ste_l012/3d/l012_base_strike_3d.gif) | ![](../../docs/media/ste_l012/3d/l012_base_guard_3d.gif) |
-
-The 1.4 m tag games and the top views: [docs/media/ste_l012/3d/](../../docs/media/ste_l012/3d/README.md).
-
-
-**L0.12 — can a trained team beat the best hand-written one?** Filled dot = trained, hollow = best script, x = untrained:
-
-![](../../docs/figures/ste_l012/best_response.png)
-
-| Trained Strikes v the best scripted Guard (base): climb, trade two, the last one slips in | Trained Guards v the straight Strike (base) |
-|---|---|
-| ![](../../docs/media/ste_l012/base_trained_strike_game0_reach.gif) | ![](../../docs/media/ste_l012/base_trained_guard_game0_hold.gif) |
-
-**L0.3 — the fast-engine Guard (T41) on the Isaac Lab drone, no retraining** (856 v 831 holds; reaches for the parked control):
-
-![](../../docs/figures/ste_l03/transfer.png)
-
-**L0.2 — training speed, Isaac Lab v the fast engine:**
-
-![](../../docs/figures/ste_l02/speed.png)
-
-**The 3-D videos** (L0.11 games, Isaac Lab, ring = team): [base_reach_3d.gif](../../docs/media/ste_l011/3d/base_reach_3d.gif), [all](../../docs/media/ste_l011/3d/README.md).
-
-Where phase L0 is: green done, light green laptop part done, amber running, grey queued (state file
-`ste_learning/status/l0_progress.toml`, figure by `scripts/make_ste_learning_figures.py l0_progress`).
-
-![](../figures/l0_progress.png)
-
-Earlier: L0.11 top-down clips and the factor chart are in the [T44 record](../../records/2026-11-21_ste_l011_screen_record.md).
-
-## Phases
-
-| Phase | Status | Math library | Simulator | What |
-|---|---|---|---|---|
-| NUS port Phases 1–4 | DONE | JAX (NUS), PyTorch | NUS 2-D game (JAX), Copy of NUS 2-D game (PyTorch), tier 2 Isaac Lab | NUS's code installed, game and policies copied to PyTorch, six tests towards STE drones |
-| NUS port Phase 5 | PAUSED (lead call D8) | PyTorch | Copy of NUS 2-D game (PyTorch), tier 1 fast engine | 5.1 Method match FAIL (T43); STE Guard policy 829 of 1,000 (T41) |
-| NUS port Phase 6 | DONE | none | none | public documents with videos |
-| ▶ L0 Game definition and feasibility | RUNNING (approved 20 Nov, cap 19 GPU-h) | PyTorch | tier 1 fast engine, tier 2 Isaac Lab | which game, worth learning, can tier 2 train, is the Crazyflie route sound |
-| L1–L8 | NOT STARTED | PyTorch | as ruled at gate G0 | drone model, rules, learner, evaluation, league, export, AirStack side, real flight |
-| L9 Documentation | RUNNING | none | none | status, records, results page |
-
-## Phase L0 Game definition and feasibility, task by task
-
-| ID | Plain name | Status | Simulator | Result / ETA |
-|---|---|---|---|---|
-| L0.1 | Track set-up: config and test skeleton | DONE | none | settings file, loader, tests; independent QC closed all findings |
-| L0.7 | Process tooling and drills | RUNNING (laptop part DONE) | none | merged into `development`; laptop: full suite 1,420 passed / 0 failed, wake-up drill and resume drill both as expected (below); DONE when the 5090 has run the same (L07-5090) |
-| L0.8 | Game spec sheet | DONE | none | merged into `development`; QC passed; full suite on `development` 1,461 passed / 0 failed (41 min) |
-| L0.9 | Tag rule for the study: 1-for-1, nearest pair first | DONE | tier 1 fast engine | merged; QC + re-check passed; full suite on `development` 1,517 passed / 0 failed (31 min); the 5090 records its own tag-off positions (L09-5090) |
-| L0.10 | Scripted players for the study | DONE | tier 1 fast engine | merged; QC + 2 re-checks passed; full suite on `development` 1,600 passed / 0 failed (56 min, CPU shared with the L0.11 GPU jobs) |
-| L0.11 | Screening sweep (INFO) | DONE | tier 1 fast engine | record T44 (every control PASS; shortlist base (reference), tag 1.2 m, tag 1.4 m; every hold a one-for-one trade) + follow-up checks; merged into `development`; full suite 1,685 passed / 0 failed (27 min) |
-| L0.12 | Best-response test: is the game worth learning? | DONE, merged (T46 INFO, T47 ABORTED; full suite 1,838 passed, its 6 failures fixed before merge) | tier 1 fast engine | pilot PASS; run 0 PASS; **base: worth learning** (Guard 913 v 808, Strike 636 v 192); **tag 1.4 m: worth learning** (Guard 747 v 672, Strike 740 v 328); **tag 1.2 m: incomplete** (Guard 503 v script 645; Strike ABORTED, 87/88 updates, trained Strikes wait out the clock); every control PASS; 3.86 GPU-h of 6; record T46 (verdict) + T47 (aborted run) being written; 3-D clips of the key games need VID-1b (the 3-D tool replays scripted players only) |
-| L0.2 | Tier 2 speed in contested play | DONE (T48, merged) | tier 2 Isaac Lab | every control PASS; Isaac Lab 3v3: 10 k → 67 k training game-steps/s (1,024 → 16,384 games, 4.7 GB); the fast engine is 4–10× faster per game-step (5× at 3v3); 0.29 GPU-h (+0.10 smokes) |
-| L0.13 | Does tier 2 train at all? | DONE, merged (PASS; T53; full suite 1,963 passed after one fragile test of mine fixed) | tier 2 Isaac Lab | Isaac Lab Guard 832/1000 (Wilson 0.808–0.854) v still Guard 538 on Isaac Lab; fast-engine control 836 at the same 302 M game-steps; networks swap tiers within 22 games; every control PASS; 70.5 k v 360 k game-steps/s; ~1.6 GPU-h |
-| L0.3 | STE Guard policy in tier 2 without retraining | DONE (T49, merged) | tier 2 Isaac Lab | every control PASS; T41 holds 856/1000 on Isaac Lab v 831 fast engine (paired: 76 gained, 51 lost, sign test p = 0.033; higher in this set, no general claim); 1.24 GPU-h |
-| L0.4 | Side-by-side Starling render | DONE | tier 2 Isaac Lab | found why our clips never looked like the Starling: a grey physics box was drawn over every drone since S2b (the hide call missed it); one-line fix, re-render shows the Starling (before/after in Watch); merged into `development` after independent review; 0.028 of 0.2 GPU-h |
-| L0.5 | Starling video look fix | WAITING ON YOU (D9) | tier 2 Isaac Lab | the drone left unpainted, team shown by a ring or a small dot that casts no shadow; stills in Watch; 0.154 of 0.3 GPU-h (with VID-1) |
-| L0.14 | Crazyflie route check | DONE | tier 1 fast engine (CPU) | record T45: the T41 Guard policy holds 791–768 of 1,000 in the Crazyflie-like lag band (0.48–0.56 s, every drone slowed) against 831 at the Starling's lag, and drones come closer (games under 1.0 m: 7 → 101–149); planner, like for like: 0 of 100 at 3v3 and 5v3 against 20 Nov's 5 of 100 (not a clear difference; only one rule set run); QC + re-check passed; merged into `development` (targeted tests 76 passed; the full suite runs with the next merge — lead's call, the CPU is shared now); page `ste_learning/CRAZYFLIE_ROUTE.md` |
-| L0.6 | Gate G0 | READY FOR YOUR READ (merged) | none | [G0_DECISION.md](../G0_DECISION.md): what L0 found, 17-row decision table with evidence strength per row, the tag rule with learning curves, 1v1, where to train, budget 13.77 GPU-h; independent numbers check: 10 claims fixed — **the 1.4 m Guard gain may be the decision-period difference (scripts held 0.6 s reach 738 v trained 747), so only 1.6 m has both trained sides clearly beating the scripts**; open: costed L1–L9 plan (Sunday), your answer on longer 1.15 m runs |
-
-GPU-h used in L0: **13.77 of 19** from the GPU-hour ledger (L0.11 0.43, L0.12 incl. the bubble-tag test, L0.12c and L0.12d 9.79, L0.13 1.59, L0.3 1.28, L0.2 0.39, L0.5 0.26, L0.4 0.03). **Correction:** earlier statuses said ~9.9; that was my over-estimate of L0.12, the ledger is the source.
-
-Laptop full CPU suite (20 Nov, `development` at 5c5d465, after `scripts/nus_install_provisional.sh`): **1,333 passed, 2 failed, 48 skipped** in 24 min. Both failures repeat when run alone:
-- **L07-F1** `test_ste_job.py::test_f_d_a_killed_job…resumes`: CONFIRMED by QC: the tool does not over-report (it measures from the same start; ~0.255 s raw, printed rounded to 0.3); the test compares the rounded text with the exact elapsed time. Fix: allow half a display step.
-- **TEST-F2** `test_train_standin.py::test_default_path_bit_identical_after_the_nus_hooks`: FIXED (447b317). Measured on the laptop: the hash repeats (75d2a955…), hold rates equal the recorded [0.25, 0.375], and forcing PyTorch's CPU capability down changes the hash; threads (trainer runs one) and local files (not read on this path) ruled out. The fingerprint is now one hash per CPU capability; hold rates are checked on every machine.
-
-## Usage (laptop session, 20 Nov 22:00 to now)
-
-| What | Agent tokens | Wall time | Note |
-|---|---|---|---|
-| L0.7 fixes: builder, 7 fixes one at a time | ~400 k | ~51 min | the largest: each fix re-reads the tooling and its tests |
-| L0.8 Game spec sheet: builder, build + 2 fix rounds | ~320 k | ~50 min | includes its own 25-min full suite |
-| L0.7 independent QC + re-check | ~246 k | ~18 min | reproduced C1 and I1 in a scratch folder |
-| L0.8 independent QC + re-check | ~209 k | ~12 min | mutation tests on the sheet |
-| L0.9 Tag rule: builder (build + fix round) | ~358 k | ~66 min | the first 50 min slowed by sharing the CPU with the L0.7 suite |
-| L0.9 independent QC + re-check | ~239 k | ~31 min | ran its own reference matcher, mutants and old-vs-new games |
-| L0.10 Scripted players: builder (build + rulings + 2 QC fix rounds) | ~420 k | ~56 min | |
-| L0.10 independent QC (+ 2 re-checks) | ~353 k | ~71 min | 84 deliberate breakages over two rounds; its own geometry probes on 30,000+ starts |
-| L0.11 sweep build (CPU, build + rulings + rebase + QC fixes + follow-ups) | ~677 k | ~106 min | the largest single task so far; a fresh builder takes L0.12 to avoid re-reading this context |
-| L0.12 groundwork builder | ~550 k | ~54 min | |
-| L0.12 pre-launch QC | ~322 k | ~48 min | 19 deliberate breakages, 8 not caught before the fixes |
-| L0.14 builder | ~368 k | ~118 min | the Crazyflie planner sweep ran on the CPU (2,868 matches) |
-| L0.11 pre-launch QC | ~293 k | ~24 min | broke the code five ways through the real driver |
-| L0.11 CUDA smoke | | ~5 min | 0.087 GPU-h |
-| L0.11 independent QC (pre-launch, re-check, results read) | ~419 k | ~45 min | |
-| L0.11 sweep | | 18 min | 0.305 GPU-h (L0.11 total 0.426 of 3.0) |
-| L0.4 + L0.5 + VID-1 builder (stills, box bug, replay check, 3-D renderer) | ~410 k | ~3 h incl. the 08:30 limit stop | 0.141 GPU-h; the account hit its 5-hour token limit at about 07:30 (three agents at once); resumed 08:44 |
-| L0.12 gate fix + follow-up builder | ~280 k | ~55 min | run 0 design, N-2/N-4, tests |
-| L0.12 QC re-checks 1–2 | ~450 k | ~30 min | 8 breakages tried on run 0 |
-| L0.2/L0.3 builder | ~410 k | ~30 min | + fix round now |
-| L0.2/L0.3 pre-launch QC + 2 re-checks | ~650 k | ~60 min | 39 + 6 breakages tried |
-| L0.12b bubble-tag build + 2 fix rounds | ~490 k | ~95 min | |
-| L0.12b QC + re-checks | ~210 k | ~40 min | |
-| L0.13 build + QC (+ fix round now) | ~650 k + | ~60 min | |
-| L0.2/L0.3 fix rounds 1-2 | ~1.1 M | ~41 min | **the costliest task today**: each round re-reads the code; narrow rounds from here |
-| L0.12 GPU pilot | | 11 min | 0.178 GPU-h |
-| L0.11 GPU pilot | | 2 min | 0.034 GPU-h (first GPU job of the track) |
-| Full CPU test suite | none | ~25 min alone; the L0.7 merge run took 61 min (shared the CPU with L0.9's tests) | rule from now: one heavy test run at a time |
-| GPU | 0 GPU-h | | nothing has used the GPU |
-
-Sub-agents total about 1.2 M tokens so far; the lead's own context is not measured by the tools here.
-
-Laptop drills (21 Nov, fix branch, shared folder `~/AirStack-starling-max2/svg_training/runs/shared/`, no owner pause open):
-- Wake-up: `L0.7 l07_wakeup DONE exit=0 duration=120.4s effective=120.4s`, `waiter exit 0` (the background waiter's end was the wake-up).
-- Resume: `alive` → simulated power cut (`kill -KILL` of the process group at step 30) → `dead`; waiter `DIED exit=none duration=31.2s`, `waiter exit 21`; relaunch with `bash cmd.txt` from a shell with a wrong `PYTHONPATH` and `SVG_SHARED_DIR` → `launch=2`, `resumed from step 30 of 120`, `DONE exit=0 duration=90.4s effective=90.4s run_effective=120.3s`, `waiter exit 0`, `{"steps": 120, "total": 7260.0}`; the wrong shared folder was never created.
-
-## Other workstreams
-
-| ID | Plain name | Status |
+| Phase | Status | Simulator |
 |---|---|---|
-| L012-B | Bubble-tag test (tag 1.15 m; owner approved 21 Nov) | DONE, merged (T50 screen, T51 INFO, T52 ABORTED; full suite 1,906 passed) | screen: best scripts 645 / 355 (same as 1.2 m), filter-pushed tags 0–10 %; run 0 PASS (909 v bar 849); trained Guard 466 v script 645 (weak); trained Strike ABORTED (time rule, 86/88; info: 103 v 355, waits out the clock); verdict incomplete (one side); ~1.95 GPU-h |
-| VID-1c | Height panel on the L0.2 / L0.3 2-D clips | DONE for L0.3 (merged); L0.2 cannot be redrawn | that run kept no positions; re-playing its clip games needs Isaac Lab; README says so |
-| SYNC-1 | Branch `development` on both machines; laptop worktree `~/AirStack-starling-max2-dev` | DONE |
-| SYNC-2 | Status skill `train-status` and the owner's standing rules in CLAUDE.md | DONE |
-| SYNC-3 | Root `CLAUDE.md` and every page: training work lands on `development` | DONE |
-| SYNC-4 | STE Guard policy (T41 run folder) in the PROVISIONAL bundle | DONE; installed on the laptop (46 files, agent.pt c91bea51…) |
-| L07-F1 | Fix: waiter-duration test bound (rounding) (QC I5) | DONE (a4100d0; 30 of 30 runs pass; L0.7 test files 217 passed) |
-| L07-C1 | Fix: an open pause takes time off every job, and launch does not check for one: a job launched during a pause runs on the GPU with 0 GPU-h counted and its cap never fires | DONE (79effa0 on branch ste-l0.7-fix; red 48 failed, then L0.7 + NUS pause tests 251 passed). Pauses still always logged; launch refuses while one is open; a pause counts only against the jobs it stopped |
-| L07-I1 | Fix: a new run reusing an old job name inherits that job's GPU-hours as credit (task cap can be exceeded) | DONE (05dd547; credit keyed by job name + run folder; red 24 failed, then 256 passed) |
-| L07-I2 | Fix: `cmd.txt` relaunch loses the environment (PYTHONPATH, CUDA alloc setting, shared-folder path) | DONE (d0661f4; cmd.txt replays the first launch's environment; a different shared folder is refused; resume drill uses bash cmd.txt; red 3 failed, then 259 passed) |
-| L07-I3 | Fix: the launcher's wrapper can die (clock step back, full disk) while the job runs on: GPU time stops being logged | DONE (1ca8a70; every wrapper write survives an error, records a fault and retries; red 8 failed, then 267 passed) |
-| L07-I4 | Fix: a job resumed after a reboot is flagged ENDED_EARLY (exit 20) though it finished correctly | DONE (70fc1a3; judged on the trainer's saved progress across launches; red: drill pattern read 20; then 280 passed) |
-| L08-F1 | Finding: the hangar's Strike start ring (3.2 m from the zone centre) does not fit the 6.5 m lab arena (drones kept within 3.0 m); a ring for 6.5 m is needed before L0.11's base case | CLOSED (lead's call): Strike start ring 2.75 m for the 6.5 m arena, PROPOSED, ruled at G0 |
-| L07-C1b | Fix: our own "pause the siblings, run solo" step (AUTOMATION §2.2) is now refused too; lead's design: pauses the session makes are tagged and do not block launch, your pauses still do | DONE (ef38534; `GPU_PAUSE_BY=lead` tags the session's pauses; a bare `gpu_pause.sh pause` is still yours and still blocks; red 13 failed, then 298 passed) |
-| L07-C1c | Fix: a session-tagged resume must refuse while any of your pauses is open (a resume today continues every job and closes your pauses too) | DONE (efa9ec1; a bare resume/stop is unchanged; red 4 failed, then 304 passed) |
-| GIT-1 | Fix: my 17 Nov `.gitignore` line `data/` also hid new files in `tests/data/` | DONE (d3572dc: anchored to `/data/`) |
-| L011-F1 | Finding: scripted players decide every 0.05 s tick, not at the sheet's 0.6 s decision period; the sweep measures scripted play at 0.05 s; L0.12's trainers must set their decision period explicitly (T41 used 0.6 s) | OPEN: written into the L0.11 gate file and record |
-| L07-SUSPEND | Tooling: a laptop sleep during a GPU job is counted as GPU-hours and as time towards the job's cap (wall clock). Rule until fixed: never let the laptop sleep during a GPU job | QUEUED (tooling task); rule in force now |
-| L011-G0 | Finding for gate G0 (T44, scripted play): (1) every hold is a one-for-one trade — no tag-on game times out, and at 1v1 and 3v3 a Guard win leaves no Guard — so head-count decides (PLAN F1; bears on what a tag costs, P12); (2) the programme's sizes 2v1 and 5v3, and 1v1, are Guard-trivial with scripted players at the proposed rules; candidate cause: tag radius 1.6 m = zone radius 1.6 m with Guards starting on a circle near the zone centre (not tested). L0.12 measures whether learning changes either | OPEN: reported at G0 |
-| L010-G0 | Finding for gate G0 (from L0.10 QC): any safety-filter move near the 1.6 m tag radius can create a tag nobody chose (the filter's 1.10 m keep-out is inside the tag radius). Spaced starts remove it at the start; during play it is part of the game the sweep measures (P1) | OPEN: reported at G0 |
-| L09-5090 | On the 5090: record the tag-off golden's positions for its CPU type (AVX512); check the outcome fingerprints there | WAITING: next 5090 session |
-| DOC-1 | A phase-L0 flowchart coloured by progress (done / running / queued), regenerated with each status and shown in its Watch section (owner, 21 Nov: "photos or diagram flow charts would be good too") | DONE (progress flowchart; regenerated with each status) |
-| VID-1 | Clips: 2-D with a height panel on every run; 3-D Isaac Lab videos of each result's key games | L0.11 DONE; **L0.12 trained players DONE, merged (VID-1b)** | 4 key games (base and 1.4 m, trained Strike and trained Guard), each replayed and checked equal to its run's own evaluation; **tag-distance circle around each Guard and a true-circle zone** (your requests); 0.104 GPU-h (L0.5 now 0.258 of 0.3); the 6 L0.11 clips not yet redrawn with circles (would reach the cap) |
-| L08-M | L0.8 minors left: 3 hangar values unchecked on a clone without the NUS bundle; 3 values whose wrong value still passes; loader refuses some honest wording; tests tied to exact lines and the AirStack fence file | PARKED |
-| L07-DISK | Follow-up: the planned disk-space check (a disk full through 10 retries at a job's end reads DIED) | PARKED (stated limit) |
-| L07-N | Re-check minors N1–N4: a session pause also lands in the old per-worktree log the NUS reader uses; full disk can hold the wrapper 10 min after the end; AUTOMATION §4 still states the old GPU-hour rule; on the 5090 run `scripts/ste_job.py owner-pauses` before the drills | PARKED (N4 goes into the 5090 note) |
-| L07-M | QC's 10 minor findings (+3 from the C1 build: pid-only matching, test pause pattern shared across sessions, pid reuse) (runs/ste_l07/qc_report.md) | PARKED until the six fixes land |
-| L07-5090 | L0.7 on the 5090: full CPU suite and the two drills there (L0.7 is DONE only after both machines) | WAITING: next 5090 session |
-| TEST-F2 | Fix: bit-level training fingerprint is machine-specific | DONE (447b317; trainer test file 43 passed, 1 skipped) |
-| TEST-F2b | On the 5090: confirm its CPU capability is AVX512 (the key its 18 Nov hash is now filed under) | WAITING: next 5090 session runs the test (fails or skips loudly if wrong) |
+| L0 Game definition and feasibility | **done; G0 ruled 22 Nov** (13.77 of 19 GPU-h) | fast engine, Isaac Lab |
+| L1 Drone model (+ side track) | **open**: side-track build in progress | Isaac Lab, fast engine for checks |
+| L2–L9 | intended | — |
 
-**Machines (owner, 21 Nov):** no task is 5090-only. The RTX 5090 (32 GB) suits memory-heavy runs; the laptop RTX 5070 Ti (12 GB) runs everything sized to fit, and the record says which machine. Only machine checks stay with their machine: TEST-F2b, L07-5090, L09-5090. **Schedule:** weekends the laptop runs the pipeline (the 5090 is free for gaming); weekdays the 5090 does (the laptop goes to work). **This weekend:** the owner packs the laptop **Mon 23 Nov 10:00**: no GPU job starts unless it can end by **Mon 08:00**; by **09:30** everything is committed, HANDOFF §0 and status written, ready to push.
+**Waiting on you:** nothing for L1. Later: whether the NUS-facing pages that still say "the main game has no tag" may be
+updated (svg_training README, GLOSSARY, RESEARCH, THE_GAME, DESIGN, docs/README, the contact-tag plan); I will show you
+the wording first.
 
-**GPU queue on the laptop (one at a time for speed measurements):** L0.12 pilot → L0.12 trainings → L0.2 → L0.3 → L0.13 (L0.4, L0.5, VID-1 for L0.11 done).
+**Usage:** today about 45 agent runs since the morning digest (reviews, writers, two implementers), about 5 M tokens;
+two full test suites (36 min each); 0 GPU-h. L1 + L2 used 0 of 13.
 
-**Next.** The G0 walk-through (Sunday); then the Monday wrap-up by 09:30 (commit, HANDOFF, status, ready to push).
-
-**Correction.** The 21 Nov question on NUS values listed "speeds 0.6 / 1.2". The L0.8 review reads those two numbers as the decision period (0.6 s) and the flight height (1.2 m); the speeds are 0.5 and 0.333 m/s. Your Yes covers all of them as written on the sheet.
+**Ready to push:** `development` is 1 commit ahead of GitHub in the mirror (the G0 rulings, f914423e) — plus this
+status commit.

@@ -416,8 +416,8 @@ class SweepGame(SvgGame):
         correction is the commander's velocity setpoint change on this tick; the drones answer it through the PX4
         response lag, so a push of earlier ticks that carries a drone into the tag is not counted (the share reads the
         tag's own tick)."""
-        tagged, alive_after, partner = core_game.proximity_tags(pos_m, alive, self.guards, self.cfg.tag.radius_m,
-                                                                self._tag_survives)
+        tagged, alive_after, partner = core_game.proximity_tags(pos_m, alive, self.guards, self._study_radius(),
+                                                                self._tag_survives)    # per game with L1.10's range
         g = self.guards
         s_partner = partner[:, g:]                                                    # [N, S] Guard index or -1
         idx = s_partner.clamp(min=0)

@@ -70,7 +70,7 @@ def contact_tags(pos_m: Tensor, alive: Tensor, guards: int, contact_m: float, gu
     return tagged, alive & ~leaves
 
 
-def proximity_tags(pos_m: Tensor, alive: Tensor, guards: int, radius_m: float, guard_survives: Tensor
+def proximity_tags(pos_m: Tensor, alive: Tensor, guards: int, radius_m: float | Tensor, guard_survives: Tensor
                    ) -> tuple[Tensor, Tensor, Tensor]:
     """The study tag of STE task L0.9 (``[tag] mode = "nearest_pair_1for1"``): one for one, nearest pair first.
 
@@ -83,13 +83,15 @@ def proximity_tags(pos_m: Tensor, alive: Tensor, guards: int, radius_m: float, g
     leaves unless guard_survives.
 
     Returns (tagged [N, M] bool, alive_after [N, M] bool, partner [N, M] long: the drone index each tagged drone was
-    paired with, -1 for none)."""
+    paired with, -1 for none). ``radius_m``: one radius for every game (a float), or one per game ([N] tensor, STE
+    L1.10's drawn radius)."""
     n, m = alive.shape
     s_count = m - guards
     flat = s_count * guards
     g_pos, s_pos = pos_m[:, :guards], pos_m[:, guards:]
     dist = (g_pos[:, :, None, :] - s_pos[:, None, :, :]).norm(dim=-1)                      # [N, G, S]
-    near = alive[:, :guards, None] & alive[:, None, guards:] & (dist < radius_m)
+    radius = radius_m[:, None, None] if isinstance(radius_m, Tensor) else radius_m             # [N, 1, 1] or a float
+    near = alive[:, :guards, None] & alive[:, None, guards:] & (dist < radius)
     index = torch.arange(flat, device=pos_m.device).view(1, guards, s_count)               # g * S + s
     g_ids = torch.arange(guards, device=pos_m.device)[None, :]
     s_ids = torch.arange(s_count, device=pos_m.device)[None, :]

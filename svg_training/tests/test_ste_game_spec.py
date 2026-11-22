@@ -85,10 +85,12 @@ def test_the_tag_section_lists_the_games_switch_and_its_defaults():
     """Task L0.9 changed this test on purpose: until L0.8 it asserted that no [tag] section exists. [tag] now lists the
     game's own switch for the study tag (core/game_config.py TagCfg, read from a game file's [tag]): the same keys, the
     code's defaults as values, off, and the proposal's radius, probability and pairing (tag_rule)."""
-    from svg_training.core.game_config import TAG_MODES, TagCfg
+    from svg_training.core.game_config import TAG_MODES, TAG_OPTIONAL_KEYS, TagCfg
     spec, _ = load_game_spec()
     table = tomllib.loads(GOOD)["tag"]
-    assert list(table) == [f.name for f in dataclasses.fields(TagCfg)]
+    # STE L1.10: the opt-in keys (absent = off; radius_m_range, a study setting with no sheet value) are not listed
+    assert list(table) == [f.name for f in dataclasses.fields(TagCfg) if f.name not in TAG_OPTIONAL_KEYS]
+    assert TAG_OPTIONAL_KEYS == ("radius_m_range",) and TagCfg().radius_m_range is None
     assert TagCfg(**table) == TagCfg()                                            # the sheet holds the code's defaults
     # G0 (owner, 22 Nov 2026, P1): the main game has a 1-for-1 tag; the switch's default stays off (the pre-tag game bit
     # for bit), and the track's game files switch it on

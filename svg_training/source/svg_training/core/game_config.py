@@ -48,6 +48,7 @@ class ContactRulesCfg:
 
 
 TAG_MODES: tuple[str, ...] = ("off", "nearest_pair_1for1")
+TAG_OPTIONAL_KEYS: tuple[str, ...] = ("radius_m_range",)   # opt-in [tag] keys, absent = off: not in every game file
 
 
 @dataclass(frozen=True)
@@ -61,12 +62,41 @@ class TagCfg:
     The radius 1.6 m is PROPOSED (P1, ruled at gate G0) and the probability 0.0 is D2 (owner, provisional): study runs
     only. The values equal ``configs/ste_game.toml`` ``[tag]`` (a test keeps them equal). A drone that is tagged leaves
     every filter pair at once; landing as a filter obstacle is task L2.3.
+
+    ``radius_m_range`` (STE task L1.10; optional, ``TAG_OPTIONAL_KEYS``): absent (None) = the fixed ``radius_m``,
+    today's game bit for bit. ``[lo, hi]``: every game draws its own tag radius uniformly in [lo, hi] when it starts,
+    from a generator of its own seeded from the game seed (``core/game.py``), and its tag uses that radius;
+    ``radius_m`` must lie inside the range (its nominal value). Needs the tag on. The learner does not observe the
+    drawn radius.
     """
     mode: str = "off"
     radius_m: float = 1.6
     guard_survives_tag_prob: float = 0.0
+    radius_m_range: tuple[float, float] | None = None
 
     def __post_init__(self) -> None:
+        self._check_fixed()
+        r = self.radius_m_range
+        if r is None:
+            return
+        if not isinstance(r, (tuple, list)) or len(r) != 2 or \
+                any(isinstance(x, bool) or not isinstance(x, (int, float)) for x in r):
+            raise ValueError(f"tag.radius_m_range must be two numbers [lo, hi] in metres, got {r!r}")
+        lo, hi = float(r[0]), float(r[1])
+        if not (math.isfinite(lo) and math.isfinite(hi)):
+            raise ValueError(f"tag.radius_m_range must be finite, got {r!r}")
+        if not lo > 0.0:
+            raise ValueError(f"tag.radius_m_range must be above 0 m, got {r!r}")
+        if not lo <= hi:
+            raise ValueError(f"tag.radius_m_range must have lo <= hi, got {r!r}")
+        if self.mode == "off":
+            raise ValueError("tag.radius_m_range needs the tag on (tag.mode); with the tag off it would do nothing")
+        if not lo <= self.radius_m <= hi:
+            raise ValueError(f"tag.radius_m {self.radius_m!r} must lie inside tag.radius_m_range {r!r} (its nominal "
+                             "value)")
+        object.__setattr__(self, "radius_m_range", (lo, hi))
+
+    def _check_fixed(self) -> None:
         if self.mode not in TAG_MODES:
             raise ValueError(f"tag.mode must be one of {TAG_MODES}, got {self.mode!r}")
         for name in ("radius_m", "guard_survives_tag_prob"):    # a TOML true would pass as 1 otherwise

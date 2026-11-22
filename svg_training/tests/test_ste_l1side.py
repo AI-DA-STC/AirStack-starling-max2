@@ -435,7 +435,8 @@ def test_the_l1_tasks_launch_against_the_l1_l2_budget():
     # spec addendum 2 (22 Nov 2026): L1.14, the time-left test (scoring only), 0.3 GPU-h taken from L1.9 (1.9 -> 1.6)
     assert cfg.cap_gpu_h("L1.14") == 0.3 and cfg.cap_gpu_h("L1.9") == 1.6
     # spec addendum 3 (22 Nov 2026): L1.15, the delay check (scoring only), 0.3 GPU-h taken from L1.10 (1.2 -> 0.9)
-    assert cfg.cap_gpu_h("L1.15") == 0.3 and cfg.cap_gpu_h("L1.10") == 0.9
+    # 23 Nov 2026 (L1.9/L1.10 fix round 1): L1.15 0.3 -> 0.2 (used 0.154), L1.10 0.9 -> 1.7 (tests/test_ste_l19_l110.py)
+    assert cfg.cap_gpu_h("L1.15") == 0.2 and cfg.cap_gpu_h("L1.10") == 1.7
     assert cfg.budget_of("L1.15").phases == cfg.budget_of("L1.13").phases
     assert cfg.budget_of("L1.14").phases == cfg.budget_of("L1.13").phases
     for path in (L111, L113):

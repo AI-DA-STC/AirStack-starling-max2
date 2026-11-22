@@ -151,7 +151,7 @@ class SvgGame:
         self._guard_survives = torch.zeros(n, dtype=torch.bool, device=dev)
         self._tag_on = cfg.tag.mode != "off"
         self._tag_gen = torch.Generator(device=device)
-        self._tag_gen.manual_seed(_tag_seed(seed))
+        self._seed_tag_streams(seed)          # the survive draw's generator, and the drawn radius's (L1.10), from seed
         self._tag_survives = torch.zeros(n, dtype=torch.bool, device=dev)     # study tag: Guard survives, per game
         self._upset = torch.zeros(n, dtype=torch.bool, device=dev)       # this game had an upset drone (physics)
         self.reset()
@@ -206,7 +206,7 @@ class SvgGame:
             self._guard_survives = torch.where(mask, surv, self._guard_survives)
         if self._tag_on:                      # the study tag's own generator: the game's own draws stay as with it off
             surv = torch.rand(n, generator=self._tag_gen, device=dev) < self.cfg.tag.guard_survives_tag_prob
-            self._tag_survives = torch.where(mask, surv, self._tag_survives)
+            self._tag_survives, self._tag_radius_m = torch.where(mask, surv, self._tag_survives), self._radii(mask)
         phi = self._potential(self.pos_m, self.alive, self.arenas)
         self._phi = torch.where(mask, torch.where(torch.isfinite(phi), phi, torch.zeros_like(phi)), self._phi)
 
@@ -235,7 +235,7 @@ class SvgGame:
         """Start every game afresh; reseed the generator if seed is given. Returns the observations."""
         if seed is not None:
             self.gen.manual_seed(seed)
-            self._tag_gen.manual_seed(_tag_seed(seed))
+            self._seed_tag_streams(seed)
         self._new_games(torch.ones(self.num_games, dtype=torch.bool, device=self.device))
         if self._physics or isinstance(self._starling, StarlingLayer):   # new starts held now; error restarts (L1.7)
             self._starling.flush(seed)     # seed: the estimator noise restarts too (its own generators, STE L1.1b)
@@ -378,5 +378,47 @@ class SvgGame:
         on this step (all False on the pure path). Returns (tagged [N, M] bool, alive_after [N, M] bool). A hook:
         ``ste/sweep.SweepGame`` overrides it to record each tag's partner, pair distance and filter flag; the game's
         own result is the same either way."""
-        tagged, alive_after, _ = proximity_tags(pos_m, alive, self.guards, self.cfg.tag.radius_m, self._tag_survives)
+        tagged, alive_after, _ = proximity_tags(pos_m, alive, self.guards, self._study_radius(), self._tag_survives)
         return tagged, alive_after
+
+    # ------------------------------------------------------------------ drawn tag radius (STE task L1.10)
+    # ``[tag] radius_m_range`` (optional; absent = the fixed ``radius_m``, today's game bit for bit: nothing is drawn
+    # and the matcher gets the same float). With it set, every game draws its radius uniformly in [lo, hi] when it
+    # starts (``_new_games``: the first games, auto-resets, ``reset`` and ``TrainGame.restart``), from a generator of its own
+    # seeded from the game seed (``_tag_radius_seed``), so the arenas, starts, drop-outs and the survive draw are the
+    # same as with the range off; ``reset(seed)`` reseeds it. Kept here so that the cited line numbers above hold.
+    def _seed_tag_streams(self, seed: int) -> None:
+        """(Re)seed the study tag's own generators from the game seed: the survive draw's and the drawn radius's."""
+        self._tag_gen.manual_seed(_tag_seed(seed))
+        if self.cfg.tag.radius_m_range is None:
+            self._tag_radius_m: Tensor | None = None
+            return
+        if getattr(self, "_radius_gen", None) is None:
+            self._radius_gen = torch.Generator(device=self.device)
+            self._tag_radius_m = torch.full((self.num_games,), self.cfg.tag.radius_m, dtype=torch.float32,
+                                            device=self.device)      # replaced by the first draw in _new_games
+        self._radius_gen.manual_seed(_tag_radius_seed(seed))
+
+    def _radii(self, mask: Tensor) -> Tensor | None:
+        """The per-game tag radius after new games start where mask [N] bool: a fresh uniform draw in [lo, hi] for every
+        game (one batched draw, the survive draw's pattern), kept where mask; None with the range off (no draw)."""
+        rng = self.cfg.tag.radius_m_range
+        if rng is None:
+            return None
+        lo, hi = rng
+        u = torch.rand(self.num_games, generator=self._radius_gen, device=self.device)
+        return torch.where(mask, lo + (hi - lo) * u, self._tag_radius_m)
+
+    def _study_radius(self) -> float | Tensor:
+        """The study tag's radius: ``[tag] radius_m`` (a float) with no range, else each game's drawn radius [N]."""
+        return self.cfg.tag.radius_m if self._tag_radius_m is None else self._tag_radius_m
+
+
+def _tag_radius_seed(seed: int) -> int:
+    """Seed of the drawn tag radius's own generator (STE L1.10), from the game seed, as ``_tag_seed`` with another odd
+    64-bit constant (one generator per purpose, CODING_PRACTICES section 5). Kept at the end of the module so that the
+    cited line numbers above hold."""
+    return ((seed + 1) * _TAG_RADIUS_SEED_MIX) % (1 << 63)
+
+
+_TAG_RADIUS_SEED_MIX = 0xD1B54A32D192ED03   # odd 64-bit constant (not _TAG_SEED_MIX): the drawn radius's stream

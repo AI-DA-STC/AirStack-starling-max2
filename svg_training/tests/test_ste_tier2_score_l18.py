@@ -146,10 +146,16 @@ def test_the_batch_layout_and_its_size():
     assert int(s["job"]["games"]) == 1000 and int(s["job"]["ticks_cap"]) == 2400
 
 
+L18_TASK_CAP_AT_LAUNCH_H, L18_USED_H = 1.2, 0.598     # T64 (records/LEDGER.md): the task cap when it ran, its hours
+
+
 def test_the_cap_fits_the_task_cap():
+    """The run's cap fitted the task cap at launch (1.2). Task done (T64, 0.598 GPU-h): on 23 Nov 2026 (L1.9/L1.10 fix
+    round 1, announced to the owner) the task cap was lowered to 0.6 and 0.6 moved to L1.10; the used hours still fit."""
     s = tool.load_settings(SETTINGS)
     task_cap = float(re.search(r'(?m)^"L1\.8" = ([0-9.]+)', (ROOT / "configs" / "ste_learning.toml").read_text())[1])
-    assert 0 < float(s["job"]["cap_h"]) <= task_cap
+    assert 0 < float(s["job"]["cap_h"]) <= L18_TASK_CAP_AT_LAUNCH_H
+    assert L18_USED_H <= task_cap == 0.6
 
 
 def test_known_check_band():

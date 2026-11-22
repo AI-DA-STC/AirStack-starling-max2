@@ -30,9 +30,11 @@ L0_TASK_CAP_GPU_H = {"L0.1": 0.0, "L0.7": 0.0, "L0.8": 0.0, "L0.9": 0.0, "L0.10"
 # lead's split of the costed draft (ste_learning/drafts/L1_L9_COSTED_PLAN_DRAFT.md section 3), in this order. PLAN.md
 # has no L1 task table yet, so no test compares these with it; L2's task IDs arrive when L2 starts.
 L1_L2_CAP_GPU_H = 13.0
-L1_TASK_CAP_GPU_H = {"L1.0": 0.5, "L1.1": 0.4, "L1.2": 0.0, "L1.3": 0.0, "L1.4": 0.0, "L1.5": 0.3, "L1.6": 0.1,
-                     "L1.7": 0.1, "L1.8": 1.2, "L1.9": 1.6, "L1.10": 0.9, "L1.11": 1.2, "L1.12": 0.1, "L1.13": 2.1,
-                     "L1.14": 0.3, "L1.15": 0.3}
+# 23 Nov 2026 (announced to the owner): L1.10 0.9 -> 1.7 with 0.6 from L1.8 (used 0.598), 0.1 from L1.6, 0.1 from
+# L1.15 (used 0.154): L1.10's runs need 1.7 at the time rule (ste_learning/drafts/L1_9_10_SPEC.md). The sum stays 9.1.
+L1_TASK_CAP_GPU_H = {"L1.0": 0.5, "L1.1": 0.4, "L1.2": 0.0, "L1.3": 0.0, "L1.4": 0.0, "L1.5": 0.3, "L1.6": 0.0,
+                     "L1.7": 0.1, "L1.8": 0.6, "L1.9": 1.6, "L1.10": 1.7, "L1.11": 1.2, "L1.12": 0.1, "L1.13": 2.1,
+                     "L1.14": 0.3, "L1.15": 0.2}
 
 GOOD = SETTINGS_FILE.read_text()
 

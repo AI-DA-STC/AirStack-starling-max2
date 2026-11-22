@@ -46,7 +46,8 @@ def test_every_game_file_is_pinned_by_its_sha256_and_loads_without_the_local_fil
 
 def test_every_game_file_is_complete_it_names_every_setting_of_every_section():
     """A complete game file: no value comes from a code default (a default added later, as starts.team_spacing_margin_m
-    by L0.10's QC fix, must be written into the files, with their pinned sha256 updated)."""
+    by L0.10's QC fix, must be written into the files, with their pinned sha256 updated). STE L1.10: the opt-in [tag]
+    keys (``game_config.TAG_OPTIONAL_KEYS``, absent = off, today's game) are not required, as [estimate_error] is not."""
     import dataclasses
     import tomllib
 
@@ -56,7 +57,8 @@ def test_every_game_file_is_complete_it_names_every_setting_of_every_section():
     for name, ref in GATES.games.items():
         data = tomllib.loads((ROOT / ref.file).read_text())
         for sec, cls in sections.items():
-            missing = {f.name for f in dataclasses.fields(cls)} - set(data[sec])
+            optional = set(gc.TAG_OPTIONAL_KEYS) if cls is gc.TagCfg else set()
+            missing = {f.name for f in dataclasses.fields(cls)} - set(data[sec]) - optional
             assert not missing, (name, sec, missing)
 
 

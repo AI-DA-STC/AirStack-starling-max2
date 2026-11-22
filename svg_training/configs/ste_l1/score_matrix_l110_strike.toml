@@ -1,0 +1,55 @@
+# Scoring settings of scripts/ste_score_matrix.py (STE task L1.10; spec ste_learning/drafts/L1_9_10_SPEC.md, written
+# before any run). Every file is pinned by sha256 and checked before anything plays (exit 2 on a mismatch or a FILL_
+# value). Controls (exit 6, terminal, no number reported on any failure): own_replay (the player's whole evaluation
+# batch, on its own no-error scoring game, replayed equal to its eval_final.npz game for game, its trained cell at
+# own_wins); per scoring game with a reference, every script cell equal to the reference game for game; per game with
+# `reference = false` (the with-error games: the estimate error is drawn per batch slot, so script cells cannot replay a
+# reference), the plumbing controls only (paired starts, one for one, finite) and every script cell played in the same
+# batch, the best of them the comparison (INFO).
+# L1.10: the 3v3 Strike team trained with the tag drawn per game in [1.5, 1.7] m and the nominal estimate error, scored against
+# every Guard script: (main, lead's ruling 23 Nov 2026) at the fixed 1.6 m tag with the error; (INFO) at 1.6 m without the error, T46's game and
+# T44's cells (the like-for-like comparison with T46); (INFO) on its own training game (tag drawn, error).
+# FILL_ values: from the run's finished folder (and, L1.9, the screen's reference) before the scoring; the tool refuses
+# until then. Launch: scripts/ste_job.py launch --task L1.10 --gpu-h 0.2 ... -- scripts/ste_score_matrix.py --settings
+# <this file> --run-dir runs/<date>_ste_l110_strike_score --cap-h 0.2 (expected about 0.06-0.1 GPU-h: three games; L1.12 used 0.019 for one).
+
+[job]
+task = "L1.10"
+what = "L1.10's Strike team (trained with the tag drawn in 1.5-1.7 m and the estimate error) scored against every Guard script at the fixed 1.6 m tag, with and without the error"
+kind = "INFO"
+
+[player]
+label = "The L1.10 Strike team (tag drawn 1.5-1.7 m, estimate error)"
+dir = "FILL_RUN_DIR"
+side = "strike"
+variant = "base_tagdraw"
+gates_sha256 = "FILL_FROM_RUN"
+agent_sha256 = "FILL_FROM_RUN"
+eval_sha256 = "FILL_FROM_RUN"
+own_wins = "FILL_FROM_RUN"
+own_source = "FILL_FROM_RUN"
+
+[[games]]
+name = "base_err"
+file = "configs/ste_l1/base_err_nominal.toml"
+sha256 = "8be1b2468c0b0fda80683ba1b0f9ec2766ae444d16e39c32d47d1982ed70eb24"
+reference = false   # with the estimate error: script cells played in the same batch, not compared to a reference (INFO)
+params_sha256 = "4c93543f51ab41ea5bb0f81e6d1b0512f662a3e10126ec2d85fc3bb008cecaa2"   # params/real_exploratory_v0.toml, the response file the game file names
+clock_label = "3v3, tag 1.6 m fixed, 120 s clock, nominal estimate error (main)"
+
+[[games]]
+name = "base"
+file = "configs/ste_l011/base.toml"
+sha256 = "96e0e7f61a49999da54eee81a544bf64c519cd80833f0dcdfa2a07edfc10cc4d"
+reference = "configs/ste_l012/t44_reference.npz"
+reference_sha256 = "4bc5e011071adced368b2a0025fc47499839e0bbc8d8d650207bd12c3da0f8b5"
+reference_variant = "base"
+clock_label = "3v3, tag 1.6 m fixed, 120 s clock, no estimate error (INFO; T46's game)"
+
+[[games]]
+name = "tagdraw_err"
+file = "configs/ste_l1/base_err_tagdraw.toml"
+sha256 = "336a7b028007c696f6d7041192f1e782f6dbae76816083a449b299104da71b39"
+reference = false   # with the estimate error: script cells played in the same batch, not compared to a reference (INFO)
+params_sha256 = "4c93543f51ab41ea5bb0f81e6d1b0512f662a3e10126ec2d85fc3bb008cecaa2"   # params/real_exploratory_v0.toml, the response file the game file names
+clock_label = "3v3, tag drawn per game in 1.5-1.7 m, 120 s clock, nominal estimate error (INFO; the training game)"

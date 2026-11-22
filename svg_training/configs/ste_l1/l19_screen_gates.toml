@@ -1,0 +1,224 @@
+# STE task L1.9, part 1: the SCRIPTED 1v1 SCREEN (INFO; CPU, scoring only). The gate file, written before any run
+# (STANDARDS section 7; ste_learning/VALIDATION_QC.md section 0), in the format of configs/ste_l011/gates.toml (driver
+# scripts/ste_sweep_l011.py, logic ste/sweep.py). Spec, pre-registered before any run: ste_learning/drafts/
+# L1_9_10_SPEC.md. Edit it only BEFORE the screen's first launch; never after a result.
+#
+# What it measures (two sweep groups, every scripted Guard against every scripted Strike at 1v1, 1,000 games per cell,
+# no estimate error, as L0.11 and L0.12b screened):
+#   base_1v1      tag 1.6 m (configs/ste_l011/base.toml, T44's file): the REFERENCE of L1.9's best-response runs
+#                 (configs/ste_l1/l19_gates.toml): their starts, their script cells, g* and s* by L0.11's rule. T44
+#                 screened 1v1 at 1.6 m on CUDA (size_1v1: guard_mark_edge held 1,000 of 1,000 against every Strike
+#                 script); its starts are not in any reference file and a CPU generator does not reproduce a CUDA
+#                 draw, so the 1v1 starts are drawn here, on the CPU, from T44's game seed 110000 (a new start set);
+#                 T44's size_1v1 rates are the INFO cross-check (spec);
+#   tag_1p15_1v1  tag 1.15 m (configs/ste_l1/base_1v1_1p15.toml = configs/ste_l011/tag_1p15.toml value for value): the
+#                 G0 report's row 8 open item "1v1 was not screened at 1.15 m". Same starts as base_1v1 (one draw).
+# With one Strike drone strike_sacrifice and strike_converge fly as strike_straight (GAME_SPEC; tests/test_ste_l011.py):
+# their cells are not played, as at T44's size_1v1.
+#
+# FILL AFTER THE SCREEN (the lead; the L0.12b recipe, configs/ste_l012b/gates.toml header):
+#   scripts/ste_l012_reference.py --t44 runs/<screen run> --out configs/ste_l1/l19_reference.npz \
+#       --variants base_1v1,tag_1p15_1v1
+# then fill configs/ste_l1/l19_gates.toml's FILL_ values ([reference] sha256, start_sha256, t44_gates_sha256 = this
+# file's sha256; [variants] base_1v1 g_star / s_star from the screen's results.md "Shortlist").
+#
+# Device and time (LEAD CALL 23 Nov 2026, the brief: "on the CPU"): device "cpu", a CPU job (scripts/ste_job.py launch
+# --gpu-h 0); --cap-h is the effective-hour cap of the job (1.5). Projection: measured on the laptop CPU (4 threads,
+# machine load about 20) 0.10 s per batch tick of 20 cells x 1,000 games at 1.6 m and 0.07 s at 1.15 m (30 ticks each;
+# a scratch script, not committed); 0.2 s below is 2x the slower, UNMEASURED on an idle machine. Worst case: every
+# group to its tick cap = 6 x 2,400 + 700 control ticks = 15,100 batch ticks x 0.2 x 1.1 + the 600 s clip reserve =
+# 3,922 s = 1.09 h <= 1.5 h. Expected much less: T44's 1v1 games all ended within 100 ticks (size_1v1 b00, 100 steps).
+# No GPU-hours (task L1.9's GPU cap is untouched).
+#
+# Run notes (LEAD CALL 21 Nov 2026, carried from L0.11): never suspend the machine during a job; pause with
+# scripts/gpu_pause.sh. Simulator: training simulator, tier 1 (fast engine), Starling layer on: commander copy, safety
+# filter on every pair (1000 sweeps, check every 8), fitted PX4 response (exploratory); study tag on (P1, PROPOSED).
+# Results are "observed in the training simulator".
+
+[run]
+task = "L1.9"
+kind = "INFO"
+seed = 110000                      # T44's game seed (players seed + 101 / + 202, as T44); on the CPU: a new start set
+games_per_cell = 1000              # VALIDATION_QC section 0 rule 2: at least 1,000 games per condition
+cells_per_batch = 20               # every 20-cell 1v1 group in one batch (5 Guard x 4 Strike scripts), as T44's size_1v1
+ticks_cap = 2400                   # = the game length (120 s of 0.05 s ticks): no game is cut short
+device = "cpu"                     # the brief: the scripted 1v1 screen on the CPU (no GPU-hours)
+cap_check_every_ticks = 100        # the cap clock (it reads the pause logs) is read every this many ticks; the stop flag every tick
+require_projection = true          # QC I3: refuse (exit 2) unless [projection.seconds_per_batch_tick] holds every planned size
+tag_edge_margin_m = 0.01           # L0.12b's unchosen-tag measurement: "at the filter edge" = pair distance <= 1.10 + 0.01 m
+
+[players]
+guards = ["guard_parked_centre", "guard_parked_ring", "guard_mark_edge", "guard_mirror", "guard_field"]
+strikes = ["strike_straight", "strike_flank", "strike_high", "strike_low", "strike_sacrifice", "strike_converge"]
+one_strike_duplicates = ["strike_sacrifice", "strike_converge"]   # at 1v1 = strike_straight: not played (as T44)
+z_up_info = ["strike_high", "strike_low"]
+z_up_label = "tier 1 vertical response not fitted (s2b.toml z_up_info)"
+multi_guard_labels = { guard_parked_centre = "parked (holds starts; = still at 2+ Guards)" }
+
+[games]
+# The game files and their sha256 (tests/test_ste_l19_l110.py keeps these equal to the files). All but tag_1p15_1v1 are
+# the files T44 played.
+base = { file = "configs/ste_l011/base.toml", sha256 = "96e0e7f61a49999da54eee81a544bf64c519cd80833f0dcdfa2a07edfc10cc4d" }
+tag_1p15_1v1 = { file = "configs/ste_l1/base_1v1_1p15.toml", sha256 = "730ac336260055920f501005d892718d20e7041e8e1f28f2db8a3735b32d74f0" }
+tag_10m = { file = "configs/ste_l011/tag_10m.toml", sha256 = "816892b3524829f6fda1646bcea12f0030a713fc7106a50ea1c34727f6fabe78" }
+zone_2p4_tag_off = { file = "configs/ste_l011/zone_2p4_tag_off.toml", sha256 = "86613ffd577fa58f56d865d5527d145a181cfa55335a227d583f83933c60ccd7" }
+tag_0p05 = { file = "configs/ste_l011/tag_0p05.toml", sha256 = "be8d5b2ef7dc58958c329374370aea026fa7a650950564a3e3dc3b04bcc4db33" }
+tag_off = { file = "configs/ste_l011/tag_off.toml", sha256 = "fae94c1f36ec026b4e9778fbb497b576d5dce0b8f67b443b1ed7e77512d000e1" }
+
+[confounds]
+# The format's required keys. Only the 1v1 6.5 m start setting is played here.
+ring_outside_zone_m = 0.3
+zone_2p4 = "not screened here; the zone 2.4 m game file is used only by the reach_fires control (tag off)"
+arena_7p5 = "not screened here"
+height_offset_cell = "not screened here (no strike_start_dz_m group)"
+
+# ------------------------------------------------------------------------------------------------ groups, in run order
+# The known-non-zero controls first (cheap), then the two screen groups, then the known-zero controls, as L0.11 and
+# L0.12b. Every group is protected: none is cut.
+
+[[groups]]
+name = "ctl_tag_fires_1v1"
+role = "control"
+control = "tag_fires"
+game = "tag_10m"
+size = "1v1"
+guards = ["zero"]
+strikes = ["zero"]
+ticks = 100
+
+[[groups]]
+name = "ctl_reach_fires_1v1"
+role = "control"
+control = "reach_fires"
+game = "zone_2p4_tag_off"
+size = "1v1"
+guards = ["zero"]
+strikes = ["strike_straight"]
+ticks = 200
+
+[[groups]]
+name = "base_1v1"
+role = "sweep"
+factor = "team size and tag radius"
+level = "1v1, tag 1.6 m (the L1.9 runs' reference)"
+game = "base"
+size = "1v1"
+guards = "all"
+strikes = "all"
+
+[[groups]]
+name = "tag_1p15_1v1"
+role = "sweep"
+factor = "team size and tag radius"
+level = "1v1, tag 1.15 m (bubble touch: filter 1.10 m + 0.05 m; G0 row 8)"
+game = "tag_1p15_1v1"
+size = "1v1"
+guards = "all"
+strikes = "all"
+
+[[groups]]
+name = "ctl_same_seed"
+role = "control"
+control = "same_seed_twice"
+of_group = "base_1v1"
+of_batch = 0
+
+[[groups]]
+name = "ctl_stand_still"
+role = "control"
+control = "stand_still_never_reaches"
+game = "base"
+size = "1v1"
+guards = "all"
+strikes = ["zero"]
+
+[[groups]]
+name = "ctl_still_1v1"
+role = "control"
+control = "stand_still_zero_tags"
+game = "base"
+size = "1v1"
+guards = ["zero"]
+strikes = ["zero"]
+ticks = 200
+
+[[groups]]
+name = "ctl_still_1v1_1p15"
+role = "control"
+control = "stand_still_zero_tags"
+game = "tag_1p15_1v1"
+size = "1v1"
+guards = ["zero"]
+strikes = ["zero"]
+ticks = 200
+
+[[groups]]
+name = "ctl_tiny_tag"
+role = "control"
+control = "zero_tags"
+game = "tag_0p05"
+size = "1v1"
+guards = "all"
+strikes = ["strike_straight"]
+
+# ctl_tag_off: zero tags with the tag off (known answer); its cells are also the INFO "no proximity tag" reference.
+[[groups]]
+name = "ctl_tag_off"
+role = "control"
+control = "zero_tags"
+game = "tag_off"
+size = "1v1"
+guards = "all"
+strikes = "all"
+
+# ------------------------------------------------------------------------------------------------ the cut
+[cut]
+protected = ["ctl_tag_fires_1v1", "ctl_reach_fires_1v1", "base_1v1", "tag_1p15_1v1", "ctl_same_seed", "ctl_stand_still",
+             "ctl_still_1v1", "ctl_still_1v1_1p15", "ctl_tiny_tag", "ctl_tag_off"]
+safety_factor = 1.1
+
+[projection.seconds_per_batch_tick]
+"1v1" = 0.2                        # CPU, 2 x the measured 0.10 s under load (header); UNMEASURED on an idle machine
+
+# ------------------------------------------------------------------------------------------------ the controls
+[controls]
+stop_on_fail = true
+same_seed_closest_tol_m = 1e-6     # not read on the CPU (the same-seed control is exact there)
+global_checks = ["tags_one_for_one", "paired_starts", "no_nonfinite_actions"]
+
+# ------------------------------------------------------------------------------------------------ g* and s*
+[shortlist]
+# Both groups are carried (no choice to make); the rule computes H, R, d, g* and s* per group (configs/ste_l011/
+# gates.toml [shortlist]). base_1v1's g* and s* are the opponents of the L1.9 runs (configs/ste_l1/l19_gates.toml): the
+# lead fills them there and the L0.12 driver recomputes them from the reference by code and refuses a mismatch.
+always = ["base_1v1", "tag_1p15_1v1"]
+info_reference = { ctl_tag_off = "no proximity tag" }
+candidates = ["base_1v1", "tag_1p15_1v1"]
+report_only = []
+max_variants = 2
+trivial_at = 0.8
+tie_window_games = 50
+tie_breaks = ["lab_arena_first", "larger_zone_tag_margin", "lower_guard_survives", "run_order"]
+
+# ------------------------------------------------------------------------------------------------ videos (STANDARDS section 8)
+[clips]
+# Two replay clips per chosen cell (CPU, own starts from the clip seed): the 1.15 m group, one cell per moving Guard
+# script that T44 or L0.12b named as g* at some tag.
+cells = [["guard_mark_edge", "strike_straight"], ["guard_field", "strike_flank"], ["guard_mirror", "strike_low"]]
+group = "tag_1p15_1v1"
+games = 2
+seed = 110000
+max_ticks = 2400
+speed = 8                          # game steps per drawn frame: at 10 frames/s, 4 x real time
+fps = 10
+dpi = 50
+reserve_s = 600
+
+# ------------------------------------------------------------------------------------------------ the pilot (not run)
+[pilot]
+# Required by the format; this screen has no pilot (the CPU rate above is used).
+sizes = ["1v1"]
+cells_per_batch = [20]
+ticks = 200
+warmup_ticks = 20
+guard_order = ["guard_mark_edge", "guard_mirror", "guard_field", "guard_parked_ring", "guard_parked_centre"]

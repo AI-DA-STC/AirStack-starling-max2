@@ -1,4 +1,4 @@
-INTERNAL · design for one overview page on the game rules and the main learnings; panel 23 Nov 2026; APPROVED by the owner 23 Nov 2026 (build today; page name docs/OVERVIEW.md).
+ARCHIVED 2026-11-23 · design for one overview page on the game rules and the main learnings; panel 23 Nov 2026; APPROVED by the owner 23 Nov 2026 (built 23 Nov 2026: [../OVERVIEW.md](../OVERVIEW.md)); kept for the record. Start at [../README.md](../README.md).
 
 # Design: one overview page for the lab lead (rules of the game, main learnings)
 

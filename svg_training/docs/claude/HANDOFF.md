@@ -48,8 +48,8 @@ bodies for a later change with the owner's OK. Next on the 5090: the 07:15 entry
 **What and why.** The owner's lab lead wants the game rules and the main learnings (NUS port + STE track) on one page.
 Run through the `quality-change` process: panel of four (technical writer, flight-test engineer, engineering manager,
 newcomer reader; positions + vote), builder check, **design APPROVED by the owner 23 Nov**
-(`docs/superpowers/specs/2026-11-23-game-overview-design.md`, page name `docs/OVERVIEW.md`), plan
-`docs/superpowers/plans/2026-11-23-game-overview.md` (three tasks). Owner asked to stop the laptop build and finish on
+(`docs/archive/2026-11-23-game-overview-design.md`, page name `docs/OVERVIEW.md`), plan
+`docs/archive/2026-11-23-game-overview-plan.md` (three tasks). Owner asked to stop the laptop build and finish on
 the 5090.
 **Done (committed with this entry, not yet reviewed):** plan Tasks 2 and 3: dated "Superseded on 22 November 2026"
 notes on README §6 and §7, `docs/NUS_PORT_REPORT.md` §12 and `docs/WHAT_WE_FOUND.md`; the THE_GAME tag sentence; one

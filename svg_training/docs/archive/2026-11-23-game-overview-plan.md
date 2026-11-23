@@ -1,3 +1,5 @@
+ARCHIVED 2026-11-23 · superseded by [../OVERVIEW.md](../OVERVIEW.md), the page it planned; kept for the record. Start at [../README.md](../README.md).
+
 # Game overview page Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
@@ -10,7 +12,7 @@ existing pages get banners, not rewrites.
 
 **Tech Stack:** GitHub-flavoured Markdown; Python 3 one-liners for the link and number checks.
 
-**Spec:** `svg_training/docs/superpowers/specs/2026-11-23-game-overview-design.md` (approved by the owner 23 Nov 2026,
+**Spec:** [2026-11-23-game-overview-design.md](2026-11-23-game-overview-design.md) (approved by the owner 23 Nov 2026,
 page name `docs/OVERVIEW.md`, build today).
 
 ## Global Constraints

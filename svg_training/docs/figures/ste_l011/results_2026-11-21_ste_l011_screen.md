@@ -1,3 +1,5 @@
+INTERNAL · results page of the L0.11 screening sweep (INFO, no gate): the full table of scored cells behind its record, observed in the training simulator · start at [../../../README.md](../../../README.md); the record: [2026-11-21_ste_l011_screen_record.md](../../../records/2026-11-21_ste_l011_screen_record.md)
+
 # L0.11 Screening sweep (INFO): results
 
 Simulator: training simulator, tier 1 (fast engine; Starling layer: commander copy, safety filter on every pair, fitted PX4 response, exploratory). Observed in the training simulator; nothing here is a flight result.

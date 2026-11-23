@@ -1,4 +1,4 @@
-REFERENCE · results of build step S2b, observed in the training simulator.
+REFERENCE · results of build step S2b (the game on Isaac Lab drones), observed in the training simulator · start at [../README.md](../README.md); the pipeline the build steps make: [the game and the pipeline](THE_GAME.md)
 
 # S2b results: the game on Isaac Lab drones
 

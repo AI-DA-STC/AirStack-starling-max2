@@ -1,4 +1,4 @@
-REFERENCE · the design as approved on 14 November 2026 (with dated notes). The short version: [the game](THE_GAME.md).
+REFERENCE · the design as approved on 14 November 2026, with dated notes; what changed since: gate G0 (22 November 2026) gave STE's own game a tag at a distance and set its rules · start at [../README.md](../README.md); the current state: [overview](OVERVIEW.md)
 
 # Design — vectorised training pipeline for Strike vs Guard
 

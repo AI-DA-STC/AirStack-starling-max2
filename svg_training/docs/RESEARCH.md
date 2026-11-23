@@ -1,4 +1,4 @@
-REFERENCE · the state of the art as of 14 November 2026, with sources; the evidence behind the design.
+REFERENCE · the state of the art as of 14 November 2026, with sources: the evidence behind the design; what changed since: gate G0 (22 November 2026) set the rules of STE's own game · start at [../README.md](../README.md); the current state: [overview](OVERVIEW.md)
 
 # Research digest: vectorised drone-team training (as of 14 November 2026)
 

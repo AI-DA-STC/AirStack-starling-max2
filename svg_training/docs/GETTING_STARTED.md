@@ -1,4 +1,4 @@
-REFERENCE · the full install with Isaac Lab (container or host), the first tests and the S0 benchmark. Without an NVIDIA GPU, or to try things first: [how to run it yourself](RUN_IT_YOURSELF.md).
+REFERENCE · the full install with Isaac Lab (container or host), the first tests and the S0 benchmark · start at [../README.md](../README.md); without an NVIDIA GPU, or to try things first: [how to run it yourself](RUN_IT_YOURSELF.md)
 
 # Getting started: set up a machine, then run the tests and a benchmark
 

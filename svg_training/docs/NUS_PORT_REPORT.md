@@ -1,9 +1,9 @@
-REFERENCE · TRAINING SIMULATOR ONLY: the NUS port as a dated log, phase by phase. Results by finding: WHAT_WE_FOUND.md.
+REFERENCE · TRAINING SIMULATOR ONLY: the NUS port (to 20 November 2026) as a dated log, phase by phase · start at [../README.md](../README.md); results by finding: [what we found](WHAT_WE_FOUND.md)
 
 # NUS port report
 
-**For** NUS researchers and anyone new to the work: what STE did with NUS's code, phase by phase. **STE**: the lab
-that wrote this repository. Results by finding: [what we found](WHAT_WE_FOUND.md); how to repeat them:
+What STE, the lab that wrote this repository, did with NUS's code, phase by phase, until the route was paused on
+20 November 2026. Results by finding: [what we found](WHAT_WE_FOUND.md); how to repeat them:
 [how to run it yourself](RUN_IT_YOURSELF.md). Every number was **observed in the training simulator** (NUS's 2-D
 game, STE's copy of it, or the STE game with Starling-like drones). Nothing here has flown. Each phase shows its
 clips as previews that play in the page; click one for the full video.
@@ -250,9 +250,7 @@ filter's batch dependence) sit in [what we found, limits](WHAT_WE_FOUND.md#8-lim
 <a id="12-next-steps-the-phase-5-plan"></a>
 ## 12. Phase 5: training in STE conditions (in progress)
 
-> **Superseded on 22 November 2026.** The NUS route was paused on 20 November and STE trains its own strategies in a game with a tag (rules fixed at gate G0, 22 November). The rules and the main learnings: [overview](OVERVIEW.md).
-
-
+> This page covers the NUS port (to 20 November 2026): Phase 5 ran to stage 5.1, and the route was paused on 20 November 2026 (the table at the end of this section). Its results stand. STE's own game since then: [overview](OVERVIEW.md).
 
 **Why.** Phase 4 shows that policies trained for NUS's game do not transfer to STE drones as they are. Three routes
 were weighed: (a) NUS retrains with action hold, delay and STE's rules in its own code, and STE repeats Phases 3–4 on

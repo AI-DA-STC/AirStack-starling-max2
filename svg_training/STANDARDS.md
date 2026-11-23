@@ -1,4 +1,4 @@
-REFERENCE · the rules every change in this folder follows.
+REFERENCE · the rules every change in this folder follows: scope, wording, the policy interface, the game specification, drone models, training, gates, runs and records, code and git · start at [README.md](README.md); terms: [glossary](docs/GLOSSARY.md)
 
 # Standards — svg_training
 

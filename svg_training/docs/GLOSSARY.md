@@ -1,4 +1,4 @@
-REFERENCE · every term these pages use: NUS's terms and the terms used here, the policies and the six tests, the world around this folder, and the pipeline's own terms.
+REFERENCE · every term these pages use: NUS's terms and the terms used here, the policies and the six tests, the world around this folder, and the pipeline's own terms · start at [../README.md](../README.md); the rules behind the terms: [STANDARDS](../STANDARDS.md)
 
 # Glossary
 

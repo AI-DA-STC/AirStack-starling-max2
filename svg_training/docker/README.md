@@ -1,3 +1,5 @@
+REFERENCE · the container image of the training simulator: what it holds, how a job is started in it and on the host, where runs and caches are kept · start at [../README.md](../README.md); step by step, with what to expect: [GETTING_STARTED](../docs/GETTING_STARTED.md)
+
 # Docker: the training simulator in a container
 
 A *container* is a sealed copy of the software that runs the same way on every machine. Ours starts from NVIDIA's

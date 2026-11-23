@@ -1,4 +1,4 @@
-REFERENCE · results of build step S1, observed in the training simulator.
+REFERENCE · results of build step S1 (a drone model and a safety filter), observed in the training simulator · start at [../README.md](../README.md); the pipeline the build steps make: [the game and the pipeline](THE_GAME.md)
 
 # S1 results: a drone model and a safety filter
 

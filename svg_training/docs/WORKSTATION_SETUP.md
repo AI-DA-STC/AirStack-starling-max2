@@ -1,4 +1,4 @@
-LAB OPERATIONS · the lab's own two machines (laptop and RTX 5090 workstation). Not needed to read or run anything: start at [../README.md](../README.md).
+LAB OPERATIONS · how the lab moves long training runs from its laptop to its RTX 5090 workstation; not needed to read or run anything · start at [../README.md](../README.md)
 
 # Working with the lab's training workstation (RTX 5090, Ubuntu 24.04)
 

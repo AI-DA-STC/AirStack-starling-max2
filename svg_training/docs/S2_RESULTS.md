@@ -1,4 +1,4 @@
-REFERENCE · results of build step S2, observed in the training simulator.
+REFERENCE · results of build step S2 (the game and the plug-in point), observed in the training simulator · start at [../README.md](../README.md); the pipeline the build steps make: [the game and the pipeline](THE_GAME.md)
 
 # S2 results: the game and the plug-in point
 

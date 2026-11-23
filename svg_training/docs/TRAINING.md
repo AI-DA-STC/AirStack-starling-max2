@@ -1,11 +1,15 @@
-REFERENCE · every training script and flag, our own and the NUS jobs. To try things first: [how to run it yourself](RUN_IT_YOURSELF.md).
+REFERENCE · every training script and flag: STE's own trainers, the stand-in trainer and the NUS jobs · start at [../README.md](../README.md); to try things first: [how to run it yourself](RUN_IT_YOURSELF.md)
 
 # Training a policy: headless and with the Isaac Sim window
 
-> **What trains today.** The stand-in trainer (`scripts/train_standin.py`, a pipe test: [S2B_RESULTS §5](S2B_RESULTS.md#5-the-stand-in-trainer)); NUS's own JAX
-> trainer ([NUS jobs](#nus-jobs)); and, in progress, our PyTorch copy of NUS's method (Phase 5,
-> [NUS port report, §12](NUS_PORT_REPORT.md#12-phase-5-training-in-ste-conditions-in-progress)). Our own `scripts/train.py` and
-> `scripts/evaluate.py` are not built: commands marked `# planned` do not exist. Terms: [glossary](GLOSSARY.md).
+> **What trains today.** STE's own learning track trains with `scripts/ste_exploit_l012.py` (either team, 3 v 3, on the
+> fast drone model with the tag on; [PLAN, row L0.12](../ste_learning/PLAN.md)) and `scripts/ste_tier2_l013.py` (the same
+> Guard recipe on the Isaac Lab physics drones, beside a fast-model control). The stand-in trainer (`scripts/train_standin.py`,
+> a pipe test: [S2B_RESULTS §5](S2B_RESULTS.md#5-the-stand-in-trainer)) made the STE Guard policy ([training recipe](TRAIN_A_GUARD.md)).
+> NUS's own JAX trainer runs from a NUS clone ([NUS jobs](#nus-jobs)). STE's PyTorch copy of NUS's method
+> (`scripts/nus_selfplay_train.py`, Phase 5) is paused since 20 November 2026, after stage 5.1
+> ([NUS port report, §12](NUS_PORT_REPORT.md#12-phase-5-training-in-ste-conditions-in-progress); [overview](OVERVIEW.md)).
+> `scripts/train.py` and `scripts/evaluate.py` are not built: commands marked `# planned` do not exist. Terms: [glossary](GLOSSARY.md).
 
 *Headless* means running with no window on screen. It is faster, and it is the normal way to train. A *policy* is
 the trained strategy. A *container* is a sealed copy of the software that runs the same way on every machine.

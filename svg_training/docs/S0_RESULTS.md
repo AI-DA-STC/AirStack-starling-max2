@@ -1,4 +1,4 @@
-REFERENCE · results of build step S0, observed in the training simulator.
+REFERENCE · results of build step S0 (how fast the training simulator runs), observed in the training simulator · start at [../README.md](../README.md); the pipeline the build steps make: [the game and the pipeline](THE_GAME.md)
 
 # S0 results: how fast the training simulator runs
 

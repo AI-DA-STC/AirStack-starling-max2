@@ -1,4 +1,4 @@
-INTERNAL · the lab's rules for its AI coding assistants. Not on the lab team (for example NUS)? You never need this file: start at [README.md](README.md). If you use your own assistant here, these rules (HANDOFF, Linear, the owner's approvals) are the lab's, not yours.
+INTERNAL · the lab's rules for its AI coding assistants (HANDOFF, Linear, the owner's approvals); they bind the lab's own sessions and no one else, and nothing here is needed to read or run the work · start at [README.md](README.md)
 
 # CLAUDE.md — svg_training (vectorised training pipeline)
 

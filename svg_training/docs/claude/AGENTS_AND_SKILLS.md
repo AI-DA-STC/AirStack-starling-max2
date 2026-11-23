@@ -1,4 +1,4 @@
-INTERNAL · the lab's AI-assistant hand-over notes. Not needed to read or run anything here: start at [../../README.md](../../README.md).
+INTERNAL · the lab's AI-assistant set-up for this folder: its agents and skills, where they live and how the two machines keep them in step; not needed to read or run anything · start at [../../README.md](../../README.md)
 
 # Agents and skills for the training pipeline
 

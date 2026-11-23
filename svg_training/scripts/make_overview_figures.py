@@ -112,12 +112,12 @@ def story() -> Path:
     box(ax, 13.25, 1.05, 2.3, 1.1, GREY_BG, GREY, ls="--")
     ax.text(14.4, 1.85, "NUS's method", fontsize=11, weight="bold", ha="center", va="center", color=MUTED)
     ax.text(14.4, 1.52, "copied into PyTorch", fontsize=10, ha="center", va="center", color=MUTED)
-    ax.text(14.4, 1.2, "check running (5.1)", fontsize=9.5, ha="center", va="center", color=MUTED)
+    ax.text(14.4, 1.2, "5.1 FAIL; route paused", fontsize=9.5, ha="center", va="center", color=MUTED)
     arrow(ax, (12.4, 2.45), (12.0, 2.18), GREEN)
     arrow(ax, (14.0, 2.45), (14.4, 2.18), GREY, ls="--")
 
     # next
-    ax.text(8.0, 0.4, "Next  ➜  Isaac Lab check  ➜  AirStack hand-over  ➜  flight plan",
+    ax.text(8.0, 0.4, "Since 20 Nov: STE trains its own teams in a game with a tag (see the overview page)",
             fontsize=11.5, color=MUTED, ha="center", va="center", style="italic")
     fig.tight_layout(pad=0.2)
     p = OUT / "overview_story.png"

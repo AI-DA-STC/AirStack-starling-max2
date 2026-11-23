@@ -1,6 +1,9 @@
-INTERNAL · spec of tasks L1.9 and L1.10 (the 1v1 read and the tag-draw read), written before any of their runs; DRAFT until the lead's two reviews · [../README.md](../README.md); the tasks' place in the plan: [costed plan draft](L1_L9_COSTED_PLAN_DRAFT.md), rows L1.9 and L1.10
+INTERNAL · spec of tasks L1.9 and L1.10 (the 1v1 read and the tag-draw read), written before any of their runs; FROZEN 24 Nov 2026 after one review (owner ruling R22: one reviewer) and the fixes it asked for · [../README.md](../README.md); the tasks' place in the plan: [costed plan draft](L1_L9_COSTED_PLAN_DRAFT.md), rows L1.9 and L1.10
 
-Written 23 Nov 2026 by the L1.9/L1.10 implementer, before any of its runs (main track).
+Written 23 Nov 2026 by the L1.9/L1.10 implementer, before any of its runs (main track). Fixed and frozen 24 Nov 2026 by
+the lead after a spec review (owner hold R20, the 2b branch, the cap-refusal rule, the screen's gate pin; no number
+changed). **Owner ruling R20 (24 Nov 2026): after L1.9's screen (steps 1, 2 and 2b) the L1.9 work STOPS; run 0, Guard,
+Strike and the L1.9 score matrices wait for the owner's word.** L1.10 is not held ([DISCUSSION §16](../DISCUSSION_2026-11-19_20.md#16-rulings-for-l1-to-l6-owner-24-nov-2026)).
 
 # L1.9 and L1.10: the 1v1 read and the tag-draw read (INFO)
 
@@ -80,7 +83,7 @@ only, never seed-to-seed spread):**
    lower > untrained upper), with the score matrix on the no-error game (paired counts reported, not pre-registered).
 3. INFO, error effect on the trained team: "the error changes the result: N with v M without" only if the trained team's
    two intervals (with, without) do not overlap; otherwise "**no change detected (intervals overlap; the test cannot see
-   shifts under about 40–60 games)**". Same starts, different draws (as T64).
+   shifts under about 40–60 games)** (prose guidance from the Wilson interval widths at 1,000 games; not a code constant)". Same starts, different draws (as T64).
 4. L1.10 v T46 (no error, fixed 1.6 m, the same 1,000 starts): "**different from T46**: N v M" if the Wilson intervals do
    not overlap, else "**not distinguishable from T46**". Not attributable to the tag draw alone: L1.10 differs from T46 in
    three things (the tag draw, the estimate error in training, the seed). Its with-error read is compared with T46's
@@ -113,7 +116,9 @@ Caps moved (23 Nov 2026, fix round 1, announced to the owner: L1.10's runs need 
 1.7 with 0.6 from L1.8 (1.2 → 0.6, used 0.598, T64), 0.1 from L1.6 (0.1 → 0.0) and 0.1 from L1.15 (0.3 → 0.2, used
 0.154, T61); the L1 task caps still sum to 9.1 (`configs/ste_learning.toml`). L1.9 keeps 1.6: about 0.005 GPU-h of
 margin at its last launch and about 0.1 for its tier-2 check (row L1.9 "check 2", costed 0.05–0.6); if that check needs
-more, the 5090 session moves hours to L1.9 first, announced to the owner before it does.
+more, the 5090 session moves hours to L1.9 first, announced to the owner before it does. **Cap refusal (both tasks):**
+if `ste_job.py launch` refuses a launch on the task cap, nothing is relaunched with a smaller ask and no hours are
+moved overnight: the refusal is recorded and brought to the owner, who rules the move.
 1v1 is likely cheaper than these 3v3 figures (unmeasured).
 
 **Two further unknowns, checked at run 0.** (a) The L1.9 reference is made on the CPU and replayed on CUDA by the
@@ -130,15 +135,15 @@ Check `nvidia-smi` first (STANDARDS: the GPU is shared).
 # L1.9 — 1. the scripted 1v1 screen (CPU, 0 GPU-h; about 0.1-1.1 h of CPU)
 scripts/ste_job.py launch --task L1.9 --name l19_screen --run-dir runs/<d>_ste_l19_screen --min-s 30 --gpu-h 0 \
   --settings configs/ste_learning.toml -- python scripts/ste_sweep_l011.py --gates configs/ste_l1/l19_screen_gates.toml \
-  --run-dir runs/<d>_ste_l19_screen --cap-h 1.5
+  --run-dir runs/<d>_ste_l19_screen --cap-h 1.5 --expect-gates-sha256 <sha>
 # 2. the reference, then fill l19_gates.toml (its header, FILL steps 1-3) and the two L1.9 score matrices' reference sha
 python scripts/ste_l012_reference.py --t44 runs/<d>_ste_l19_screen --out configs/ste_l1/l19_reference.npz \
   --variants base_1v1,tag_1p15_1v1
 # 2b. CHECK BEFORE RUN 0 (from the screen's results, no GPU): run 0's bar is the base_1v1 cell guard_parked_centre v
-#     strike_straight, minus 0.05. T44 at 1v1: 307 reaches of 1,000 (the parked Guard held 693), so it can be won. If
-#     the screen's cell shows 950 or more reaches (a bar of 0.90 or more: run 0 can hardly pass, and a FAIL would block
-#     the Strike run for the wrong reason), do NOT launch run 0: run 0's opponent ([run0] opponent) must change first,
-#     a gate edit before any run, announced to the owner with the reason, and the file re-hashed.
+#     strike_straight, minus 0.05. If the screen's cell shows 950 or more reaches (a bar of 0.90 or more: run 0 can
+#     hardly pass, and a FAIL would block the Strike run for the wrong reason), do NOT launch run 0. The only branch:
+#     stop and bring it to the owner with the cell's numbers; no replacement opponent is chosen by the runner.
+# --- OWNER HOLD (R20, 24 Nov 2026): L1.9 stops here. Steps 3-7 run only on the owner's word after the screen. ---
 # 3. run 0 (asks 0.94, expected about 0.13 GPU-h)
 scripts/ste_job.py launch --task L1.9 --name l19_run0 --run-dir runs/<d>_ste_l19_run0 --min-s 120 --gpu-h 0.94 \
   --settings configs/ste_learning.toml -- python scripts/ste_exploit_l012.py --run0 --gates configs/ste_l1/l19_gates.toml \

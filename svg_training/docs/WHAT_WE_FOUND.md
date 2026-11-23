@@ -4,7 +4,7 @@ READ · TRAINING SIMULATOR ONLY: the results of the NUS port, one section per fi
 
 **For** NUS researchers and anyone checking the numbers. **STE**: the lab that wrote this repository. Every number was
 observed in a training simulator; nothing here has flown. The dated account is
-[what we did, day by day](WHAT_WE_DID_DAY_BY_DAY.md); words in *italics* are in the [glossary](GLOSSARY.md).
+[NUS port report](NUS_PORT_REPORT.md); words in *italics* are in the [glossary](GLOSSARY.md).
 
 **How to read the tables.**
 - NUS's `defender` is the defender (Guard team) here, NUS's `attacker` the attacker (Strike team); from here on,

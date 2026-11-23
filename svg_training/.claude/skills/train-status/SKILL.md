@@ -30,7 +30,7 @@ git rev-list --left-right --count HEAD...@{upstream} 2>/dev/null       # ahead /
 On the 5090 also the mirror GitHub Desktop pushes from: `git -C ~/Documents/GitHub/AirStack-starling-max2 status -sb`.
 Then read: `ste_learning/status/STATUS_LATEST.md` (the last status), `docs/claude/HANDOFF.md` §0 (top entries),
 `ste_learning/PLAN.md` §3–§4 (phase and task IDs and names), and for NUS port rows `docs/claude/HANDOFF.md`
-(Phase 5 task IDs) and `docs/WHAT_WE_DID_DAY_BY_DAY.md` "At a glance".
+(Phase 5 task IDs) and `docs/NUS_PORT_REPORT.md` "At a glance".
 
 ## Write it in exactly this shape
 Header line: `**Status, <YYYY-MM-DD HH:MM> (+08:00)** · <machine: RTX 5090 or laptop RTX 5070 Ti> · GPU <util %> / <W> /

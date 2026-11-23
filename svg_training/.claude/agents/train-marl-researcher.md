@@ -34,7 +34,7 @@ Read `docs/DESIGN.md` §6 and §7, `STANDARDS.md` §4, §6, §7, and `docs/RESEA
   policy at 5 against 3, collapse of the intervention rate to zero by avoiding contact.
 - **Evidence.** The fixed suite with at least 1,000 games per condition and 95 % intervals; at least
   3 seeds for a method claim; a cross-play table against saved versions (STANDARDS §7).
-- **NUS's method as the reference** (`docs/WHAT_WE_DID_DAY_BY_DAY.md`): alternating MAPPO with an archive pool; on the hangar
+- **NUS's method as the reference** (`docs/NUS_PORT_REPORT.md`): alternating MAPPO with an archive pool; on the hangar
   geometry its self-play cycled ("last mover wins") for 12 generations and then settled towards the Guard team,
   with about 0.95 of cross-play cells near-shutouts. NUS: a policy works only on the geometry it was trained on, and
   the method needs a fixed team size.

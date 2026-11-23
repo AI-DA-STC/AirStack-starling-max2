@@ -28,7 +28,7 @@ docker ps --format '{{.Names}}'
 | Preflight exit 11, or `run_nus_job.sh` refuses | another process holds more than 1024 MiB (`nvidia-smi --query-compute-apps=pid,used_memory --format=csv`); wait for it, do not raise the limit |
 | Tests fail at import on the 5090 | ROS on `PYTHONPATH`: `unset PYTHONPATH` (GETTING_STARTED hand fix 6); `msgpack` missing in `env_isaaclab` |
 | Two NUS jobs wrote one folder; a NUS self-play run has no GIFs | give each job its own `hydra.run.dir`; render self-play videos with NUS's `eval.py` (docs/TRAINING.md, NUS jobs) |
-| A NUS policy plays badly on a new geometry | NUS: a policy works only on the config it was trained on; train on the deployment geometry (docs/WHAT_WE_DID_DAY_BY_DAY.md §3) |
+| A NUS policy plays badly on a new geometry | NUS: a policy works only on the config it was trained on; train on the deployment geometry (docs/NUS_PORT_REPORT.md §3) |
 
 ## 3. One hypothesis at a time
 State it in one sentence. Find the log line, number or code line that proves or disproves it. Discard

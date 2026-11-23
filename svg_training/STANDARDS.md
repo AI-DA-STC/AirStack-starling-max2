@@ -62,7 +62,7 @@ The programme's wording rules apply to every document and figure here
 - **Partner privacy, NUS** (owner, 18 November 2026; replaces the rule of 15–17 November that kept every NUS value
   out of git). NUS agreed that their code details, their game settings and our results on their code may be
   published in this repository, which is public. So documents, records, the ledger, figures, videos and commit
-  messages may state NUS's settings and our numbers ([docs/WHAT_WE_DID_DAY_BY_DAY.md](docs/WHAT_WE_DID_DAY_BY_DAY.md)). Still kept out:
+  messages may state NUS's settings and our numbers ([docs/NUS_PORT_REPORT.md](docs/NUS_PORT_REPORT.md)). Still kept out:
   **NUS's source code itself** (it stays in NUS's own repository; describe it in words and cite `file:line`, never
   paste a block or vendor a file) and quotes from confidential programme reports. Code keeps reading NUS's values
   from the git-ignored `configs/local/` files (mechanism unchanged), and the record writers keep marking them.

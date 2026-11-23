@@ -86,7 +86,7 @@ converted checkpoint (layout id `nus_area_denial_v1`) and plays one team, scored
 simulator and for flight still arrive with build step S5
 ([STANDARDS §3](../STANDARDS.md#3-policy-interface-version-01-proposed)); the converted policy's `interface.toml` is a draft.
 The whole NUS port (NUS's code run as the reference, the Copy of NUS 2-D game (PyTorch), the converted policies and
-the six tests towards STE drones), with NUS's settings and STE's results: [what we did, day by day](WHAT_WE_DID_DAY_BY_DAY.md).
+the six tests towards STE drones), with NUS's settings and STE's results: [NUS port report](NUS_PORT_REPORT.md).
 
 ## The game as an RL environment
 

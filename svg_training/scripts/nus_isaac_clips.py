@@ -27,7 +27,7 @@ candidates along the starts file; ``kinds`` (["hold"], ["strike_win", "hold"], .
 before Isaac starts when the world file is missing (it is on the laptop only). ``--allow-siblings`` is passed to the preflight.
 
 No overlay or sidecar states the arena size (written when the hangar size was kept local; since 18 Nov ~14:10 the owner allows it in documents,
-see docs/WHAT_WE_DID_DAY_BY_DAY.md §3, but the clips keep the plain overlay); the overlay shows the two players and the drone counts only.
+see docs/NUS_PORT_REPORT.md §3, but the clips keep the plain overlay); the overlay shows the two players and the drone counts only.
 Exit 0 done, 1 crash, 2 bad arguments; the preflight's own code (11 = GPU busy) when it stops the launch.
 """
 from __future__ import annotations

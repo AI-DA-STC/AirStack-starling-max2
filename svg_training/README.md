@@ -186,8 +186,8 @@ and the table says where each enters.
 | Simulator / library | NUS 2-D game, JAX (NUS's code); for Test 1, STE's Copy of NUS 2-D game in PyTorch | STE game engine and STE drone model, PyTorch (Tests 2–5); Isaac Lab physics drones on Isaac Sim 5.1 (Test 6) |
 | One game | [![G19 vs S20 · NUS 2-D game (JAX) · Guard holds](docs/media/nus/nus_selfplay_s2_g19_vs_s2_s20.gif)](docs/media/nus/nus_selfplay_s2_g19_vs_s2_s20.mp4)<br>G19 vs S20 · NUS 2-D game (JAX) · Guard holds | [![G19 vs S20 · Test 5: STE drone model + free height · Strike reaches the zone](docs/media/nus/phase4/row_5/G19_vs_S20_strike_win.gif)](docs/media/nus/phase4/row_5/G19_vs_S20_strike_win.mp4)<br>G19 vs S20 · Test 5: STE drone model + free height · Strike reaches the zone |
 
-Values: [what we did, day by day, NUS's game](docs/WHAT_WE_DID_DAY_BY_DAY.md#1-the-nus-code-three-branches) and
-[the hangar geometry](docs/WHAT_WE_DID_DAY_BY_DAY.md#3-phase-0-answers-and-the-hangar-geometry). Click a picture for the
+Values: [NUS port report, NUS's game](docs/NUS_PORT_REPORT.md#1-the-nus-code-three-branches) and
+[the hangar geometry](docs/NUS_PORT_REPORT.md#3-phase-0-answers-and-the-hangar-geometry). Click a picture for the
 full video. Terms, one line each (all in the [glossary](docs/GLOSSARY.md)):
 
 - *Copy of NUS 2-D game*: STE's batched PyTorch copy of NUS's game, checked step by step against it (section 2).
@@ -349,7 +349,7 @@ Commands for every level, with what each must print: [how to run it yourself](do
 | Page | What it holds |
 |---|---|
 | [What we found](docs/WHAT_WE_FOUND.md) | every result, with its caveat and record |
-| [What we did, day by day](docs/WHAT_WE_DID_DAY_BY_DAY.md) | the NUS port, phase by phase |
+| [NUS port report](docs/NUS_PORT_REPORT.md) | the NUS port, phase by phase |
 | [The game](docs/THE_GAME.md) | the pipeline in one picture; the game as an RL environment |
 | [Plug in your code](docs/PLUG_IN_YOUR_CODE.md) | connect a strategy or a training method, and score it |
 | [Glossary](docs/GLOSSARY.md) | every term: NUS terms and the terms used here |

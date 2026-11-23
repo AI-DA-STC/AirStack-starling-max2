@@ -341,7 +341,7 @@ Owner-approved (19 Nov ~11:00) follow-up on the same branch; numbers and evidenc
   moved there from the tests section); sections renumbered 1–8 (Watch it unnumbered). GLOSSARY: NUS 2-D game, hangar
   set-up, STE drone set-up.
 - **Root**: README "I want to…" svg_training rows replaced with the owner's text; root CLAUDE.md row link now
-  `WHAT_WE_DID_DAY_BY_DAY.md` (link target only).
+  `NUS_PORT_REPORT.md` (link target only).
 - **Deleted** (`git rm`): HOW_IT_WORKS, NUS_PORT, NUS_RESULTS, TRY_IT, PLUG_IN, NUS_PHASE4_RESULTS, WHAT_WE_DID. Plain-text
   old names stay in dated history (plans, this file's log, Linear comment copies, two records' "NUS_PORT §3" and
   "NUS_PORT Figure 1"). The deletions landed in the commit titled for the root CLAUDE.md fix (a staging slip; content
@@ -356,7 +356,7 @@ Owner-approved (19 Nov ~11:00) follow-up on the same branch; numbers and evidenc
 Owner-approved (19 Nov) pass on the public docs; facts, numbers and evidence links unchanged; records not re-worded.
 
 - **Renames** (`git mv`, one-line pointer page left at each old name so records, plans, Linear copies and the root
-  README/CLAUDE.md keep working): `NUS_RESULTS` → `WHAT_WE_FOUND`, `NUS_PORT` → `WHAT_WE_DID_DAY_BY_DAY`, `TRY_IT` →
+  README/CLAUDE.md keep working): `NUS_RESULTS` → `WHAT_WE_FOUND`, `NUS_PORT` → `NUS_PORT_REPORT`, `TRY_IT` →
   `RUN_IT_YOURSELF`, `PLUG_IN` → `PLUG_IN_YOUR_CODE` (`tests/test_adapters.py` follows), `HOW_IT_WORKS` → `THE_GAME`.
   New `docs/TRAIN_A_GUARD.md`: the pilot P1b run 4 recipe (T41) with a CPU check run on 19 Nov (1 min 45 s, exit 0).
 - **Story**: front page in seven sections (overview + policies table; porting NUS's code; testing NUS's policies on STE
@@ -451,7 +451,7 @@ results on their code may be published (STANDARDS §2 rewritten, dated; NUS's so
 out); the contact-tag track may be described publicly (STANDARDS §2); root `README.md` and root `CLAUDE.md` svg_training rows
 updated (status and pointers only).
 
-- **New:** [../WHAT_WE_DID_DAY_BY_DAY.md](../WHAT_WE_DID_DAY_BY_DAY.md) (NUS's three branches, Phases 0–6 with library and simulator, Run 0, hangar
+- **New:** [../NUS_PORT_REPORT.md](../NUS_PORT_REPORT.md) (NUS's three branches, Phases 0–6 with library and simulator, Run 0, hangar
   geometry, self-play matrices and settling, T15–T17, Phase 4 rows 1–3, what it means for flight, Phase 5 options, the
   contact-tag track); Figure 1 `docs/figures/nus_selfplay_matrix.png` by the new `scripts/make_nus_selfplay_figures.py`
   (reads the 5090's matrix file); 13 clips in `docs/media/nus/` (1.25 MB, captions in its README).
@@ -724,7 +724,7 @@ Jeremy (Robotics AI Engineer, NEAR Lab, ST Engineering) wants training for the S
 run in parallel on a GPU. On 14 November 2026 a first session read the flight stack and the programme
 website, ran web research on drone training in Isaac Lab, proposed a pipeline, and the owner chose an
 approach. This folder now holds the rules, the design, the research digest, the diagrams, and the
-agents and skills for the work. Since then S0, S1 and S2 have been built and run (T1–T9), S2b built and run (T10–T14), and NUS's strategy ported (T15–T21, [WHAT_WE_DID_DAY_BY_DAY](../WHAT_WE_DID_DAY_BY_DAY.md)); **no strategy of ours has been trained** (NUS's policies were trained with NUS's code).
+agents and skills for the work. Since then S0, S1 and S2 have been built and run (T1–T9), S2b built and run (T10–T14), and NUS's strategy ported (T15–T21, [NUS_PORT_REPORT](../NUS_PORT_REPORT.md)); **no strategy of ours has been trained** (NUS's policies were trained with NUS's code).
 
 ## 2. Read these first
 
@@ -753,7 +753,7 @@ agents and skills for the work. Since then S0, S1 and S2 have been built and run
 | Item | State |
 |---|---|
 | S2b | built through Task 8, not closed; T14 seed 3 queued for the 5090 (§5a); Task 8b and the S2b final review deferred |
-| NUS port | Phases 1–4 done: T15, T16, T17 PASS; Phase 4 rows 1–3 (T18–T20) and 4, 5a, 5, 6 (T22–T24) INFO, the first row 4 attempt T21 ABORTED. The safety filter and 3-D undo NUS's push-based blocking (G19 v S20 43 → 740 → 983 of 1,000; Isaac Lab 979); a parked Guard team holds about half against S20. Phase 5 planned by the lead (route (b) and own-training pilots), not started; Phase 6 passes 1 and 2 done, every clip published ([WHAT_WE_DID_DAY_BY_DAY](../WHAT_WE_DID_DAY_BY_DAY.md)). The lab's NUS files are committed PROVISIONAL in `nus_provisional/` (decision 6, 19 Nov; installer `scripts/nus_install_provisional.sh`) |
+| NUS port | Phases 1–4 done: T15, T16, T17 PASS; Phase 4 rows 1–3 (T18–T20) and 4, 5a, 5, 6 (T22–T24) INFO, the first row 4 attempt T21 ABORTED. The safety filter and 3-D undo NUS's push-based blocking (G19 v S20 43 → 740 → 983 of 1,000; Isaac Lab 979); a parked Guard team holds about half against S20. Phase 5 planned by the lead (route (b) and own-training pilots), not started; Phase 6 passes 1 and 2 done, every clip published ([NUS_PORT_REPORT](../NUS_PORT_REPORT.md)). The lab's NUS files are committed PROVISIONAL in `nus_provisional/` (decision 6, 19 Nov; installer `scripts/nus_install_provisional.sh`) |
 | 5090 host env | `env_isaaclab` built with hand fixes (GETTING_STARTED step 5; the follow-ups in §5); NVIDIA's licence accepted (owner's choice) through the `EULA_ACCEPTED` file; `nus_jax` built; container image built, its suite not clean (§0, 17 Nov evening, item 5) |
 | Preflight | 1024 MiB per foreign process in `isaac_preflight.sh` and `run_nus_job.sh`; `--approved-headless` approved on both machines (laptop 16 Nov, 5090 18 Nov) |
 
@@ -769,7 +769,7 @@ agents and skills for the work. Since then S0, S1 and S2 have been built and run
 | GPU limit, WiFi | 1024 MiB per foreign process; headless over WiFi approved on the 5090 (18 Nov) |
 | Phase 4 | all seven plan answers accepted (18 Nov ~05:00); core hook `SvgGame._draw_starts` approved |
 | Root edits | root `README.md` and root `CLAUDE.md` svg_training rows (status and pointers only, 18 Nov) |
-| Phase 5 (~12:20) | delegated to the lead (owner, 18 Nov): route (b), our PyTorch copy of NUS's method with a 2-D method match first; 3-D with the filter; hangar geometry kept; gates before any run ([WHAT_WE_DID_DAY_BY_DAY §12](../WHAT_WE_DID_DAY_BY_DAY.md#12-next-steps-the-phase-5-plan)) |
+| Phase 5 (~12:20) | delegated to the lead (owner, 18 Nov): route (b), our PyTorch copy of NUS's method with a 2-D method match first; 3-D with the filter; hangar geometry kept; gates before any run ([NUS_PORT_REPORT §12](../NUS_PORT_REPORT.md#12-next-steps-the-phase-5-plan)) |
 | Own training (~12:30) | "explore to see if we can train ourselves": time-boxed pilots, not of record, training our own Guard policy on tier 1 with the filter and 3-D |
 | Clips and hangar size (~14:10) | "just put all clips on the github … no need to keep it private": every NUS-port clip published; the 7.5 m arena and the usable flying box may be stated (the motion-capture camera survey is still not needed in the docs) |
 
@@ -911,7 +911,7 @@ Then amend the T14 record (it must name the
 | D1 reading of "one keep-out per team" (`push_rule = "block"`) against NUS's report; `shove` is the other switch | owner | a partner-rules result |
 | Real-drone hazards, **HYPOTHESES, not flown, not fixed**: (1) CMU's commander runs the CBF (`swarm_commander.py` ~2140) before the keep-in fence (~2210), so a drone held at the fence may let another inside 1.10 m (T9 diagnosis, training copy); (2) the position setpoint is not filtered, teammates head-on 1.083 m in tier 1 (T4) | owner (tell CMU? test?) | the next multi-drone real flight near a fence |
 | INFO speed run with staggered game restarts (T8 timed all games starting together) | Claude | any training-time claim |
-| Phase 5, route (b) (decided by the lead, owner delegated, 18 Nov ~12:20): write the plan with its gates (method match in 2-D first, 3 seeds), have the gatekeeper read it, then build ([WHAT_WE_DID_DAY_BY_DAY §12](../WHAT_WE_DID_DAY_BY_DAY.md#12-next-steps-the-phase-5-plan)) | lead | before any Phase 5 run |
+| Phase 5, route (b) (decided by the lead, owner delegated, 18 Nov ~12:20): write the plan with its gates (method match in 2-D first, 3 seeds), have the gatekeeper read it, then build ([NUS_PORT_REPORT §12](../NUS_PORT_REPORT.md#12-next-steps-the-phase-5-plan)) | lead | before any Phase 5 run |
 | Phase 5 own-training pilots (owner ~12:30): tier 1, hangar geometry, filter and 3-D, the stand-in trainer; Guard first against S20 and our scripted Strike, then self-play; not of record; videos on | lead | when the GPU is free of Phase 5 work |
 | Message to NUS with the Phase 4 findings (the filter and 3-D break push-blocking), asking whether NUS retrains on their side in parallel | lead drafts, owner sends | soon |
 | A flight-side height lock that removes over/under passing (an AirStack change, CHG entry) | owner + CMU | before a 3-D policy flies |
@@ -931,7 +931,7 @@ Then amend the T14 record (it must name the
 | What the real drone senses its surroundings with: a known map, or an on-board range sensor | owner | S3 |
 | Control level for contact tags: stay at velocity, or add a final-approach skill at thrust and body rates | owner | side quest (S2 trained nothing with tags) |
 | The real flight with planned pushes (NEAR-962; list: [../S1_RESULTS.md](../S1_RESULTS.md#what-the-owner-needs-to-do-next)); T5 shows the exploratory model rises too slowly | owner | the `real` parameter set's run of record |
-| Metres per partner unit and seconds per step (NEAR-970): decided for the hangar, 0.40 m per unit and 0.60 s per step (NUS: the units are scaled to the arena; [WHAT_WE_DID_DAY_BY_DAY §3](../WHAT_WE_DID_DAY_BY_DAY.md#3-phase-0-answers-and-the-hangar-geometry)) | closed (lead, 17 Nov) | — |
+| Metres per partner unit and seconds per step (NEAR-970): decided for the hangar, 0.40 m per unit and 0.60 s per step (NUS: the units are scaled to the arena; [NUS_PORT_REPORT §3](../NUS_PORT_REPORT.md#3-phase-0-answers-and-the-hangar-geometry)) | closed (lead, 17 Nov) | — |
 | What a drone may observe about others (full state, or shared with delay and loss); S2 gives the full state behind the `obs_view` switch | owner + partners | S3 |
 | How a drop-out is simulated | owner + partners | S4 |
 | Written velocity contract with NUS and CMU (Linear NEAR-874, NEAR-875) | owner + NUS + CMU | use 2, S5 |
@@ -970,7 +970,7 @@ each session start by `sync_claude_setup.sh`; the laptop has none and needs none
 2. The design is approved. A change to it goes through the owner first.
 3. S0, S1 and S2 are closed; S2b is built and waits on the owner's choices (§0 morning summary 17 Nov); the NUS port
    has finished Phase 4 and Phase 6 pass 2; next is the Phase 5 plan (route (b)) and the own-training pilots (§0, §5,
-   [../WHAT_WE_DID_DAY_BY_DAY.md](../WHAT_WE_DID_DAY_BY_DAY.md#12-next-steps-the-phase-5-plan)).
+   [../NUS_PORT_REPORT.md](../NUS_PORT_REPORT.md#12-next-steps-the-phase-5-plan)).
    Build with `train-implementer`, test first, and have `train-gatekeeper` read each record.
 4. One step at a time, S0 to S5. Each ends on a record and a ledger row.
 5. For a design question, brief the adviser agents in parallel with the files, not your conclusion;
@@ -989,7 +989,7 @@ each session start by `sync_claude_setup.sh`; the laptop has none and needs none
 | Programme, game, wording rules | `~/Documents/GitHub/Strike-Versus-Guard` (`content/programme/`, `STANDARDS.md`) |
 | Programme reports | `~/Documents/GitHub/Strike-Versus-Guard-sources` — **confidential**: point to them, do not copy from them |
 | Isaac Lab | `~/IsaacLab` (2.3.2), conda `env_isaaclab` |
-| NUS's code (three branches), the private port plan, notes `_notes/`, probes `_probes/` (Run 0, self-play matrices, videos), NUS's outputs | `~/ma_skills-self-play/` — **5090 only**; on the laptop read [../WHAT_WE_DID_DAY_BY_DAY.md](../WHAT_WE_DID_DAY_BY_DAY.md) |
+| NUS's code (three branches), the private port plan, notes `_notes/`, probes `_probes/` (Run 0, self-play matrices, videos), NUS's outputs | `~/ma_skills-self-play/` — **5090 only**; on the laptop read [../NUS_PORT_REPORT.md](../NUS_PORT_REPORT.md) |
 | NUS job logs and exact commands | `~/nus_jax_runs/*.log`, `*.cmd.txt` — **5090 only** |
 | NUS local values, converted weights, Phase 4 rows | `configs/local/nus_*.toml`, `runs/nus_port/` in `~/AirStack-starling-max2-nus-port/svg_training/` — **5090 only** (git-ignored) |
 | Linear plan snapshot | this project (P-NEAR-31): [svg_training/docs/linear/snapshots/2026-11-16-project-plan-linear.md](../linear/snapshots/2026-11-16-project-plan-linear.md) (folder layout: [../linear/README.md](../linear/README.md)); the flight-stack projects: `docs/linear/snapshots/2026-11-13-project-plan-linear.md` in this repository |

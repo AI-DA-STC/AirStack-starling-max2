@@ -4,7 +4,7 @@ REFERENCE · every training script and flag, our own and the NUS jobs. To try th
 
 > **What trains today.** The stand-in trainer (`scripts/train_standin.py`, a pipe test: [S2B_RESULTS §5](S2B_RESULTS.md#5-the-stand-in-trainer)); NUS's own JAX
 > trainer ([NUS jobs](#nus-jobs)); and, in progress, our PyTorch copy of NUS's method (Phase 5,
-> [what we did, day by day, §12](WHAT_WE_DID_DAY_BY_DAY.md#12-phase-5-training-in-ste-conditions-in-progress)). Our own `scripts/train.py` and
+> [NUS port report, §12](NUS_PORT_REPORT.md#12-phase-5-training-in-ste-conditions-in-progress)). Our own `scripts/train.py` and
 > `scripts/evaluate.py` are not built: commands marked `# planned` do not exist. Terms: [glossary](GLOSSARY.md).
 
 *Headless* means running with no window on screen. It is faster, and it is the normal way to train. A *policy* is
@@ -223,7 +223,7 @@ remote-desktop daemon, 546–589 MiB, does not block it). Two rules from the fir
 (`save_eval_gif=True`, STANDARDS §8). Logs: `~/nus_jax_runs/<job>.log`, `.pid`, `.cmd.txt`.
 
 ```bash
-H="+environment.env.physics.spawn_distance=8.0 environment.env.physics.defender_boundary=8.0"   # the hangar geometry (WHAT_WE_DID_DAY_BY_DAY §3)
+H="+environment.env.physics.spawn_distance=8.0 environment.env.physics.defender_boundary=8.0"   # the hangar geometry (NUS_PORT_REPORT §3)
 D=$(date +%F)          # new names every time: run_nus_job.sh refuses an existing log (exit 6), and NUS overwrites an output folder
 scripts/workstation/run_nus_job.sh --foreground $C ${D}_benchmark_2048 ma_skills/scripts/benchmark.py --config-name=benchmark_self_play_2048
 scripts/workstation/run_nus_job.sh $C ${D}_hangar_fixed_apf_3v3_defender ma_skills/scripts/train.py --config-name=train_mappo_self_play_mpe \
@@ -287,13 +287,13 @@ $P scripts/nus_phase4.py --make-starts
 $P scripts/nus_phase4.py --row 1 --device cuda                         # rows 2.1, 2.2, 2, 3a, 3, 4, 5a, 5 the same way
 scripts/isaac_preflight.sh --approved-headless && $P scripts/nus_phase4.py --row 6 --headless --device cuda   # Isaac Lab
 $P scripts/make_nus_phase4_figures.py                                # refuses (exit 2) unless all ten rows have scores.json
-$P scripts/make_nus_selfplay_figures.py                                # Figure 1 of WHAT_WE_DID_DAY_BY_DAY, from the lab's matrix file (lab only)
+$P scripts/make_nus_selfplay_figures.py                                # Figure 1 of NUS_PORT_REPORT, from the lab's matrix file (lab only)
 ```
 
 Every option is in each script's `--help` and docstring. A row estimated above 2 h stops with exit 4 until you add
 `--accept-long`; rows 4, 5a, 5 and 6 took 2–6 h each on the lab's RTX 5090 (run them in the background). `--out` of the
 deploy script is refused outside `configs/local/`. The record writers mark any number equal to a local value as "at
-the local value" (the mechanism is kept; NUS's values themselves are stated in [what we did, day by day](WHAT_WE_DID_DAY_BY_DAY.md); how to read a record:
+the local value" (the mechanism is kept; NUS's values themselves are stated in [NUS port report](NUS_PORT_REPORT.md); how to read a record:
 [records/README](../records/README.md)). Instead of rebuilding the local files, `scripts/nus_install_provisional.sh`
 installs the lab's own ([how to run it yourself, level D](RUN_IT_YOURSELF.md#d-repeat-the-six-tests)).
 

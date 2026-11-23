@@ -1,4 +1,4 @@
-"""The NUS self-play cross-play figure for docs/WHAT_WE_DID_DAY_BY_DAY.md (Figure 1).
+"""The NUS self-play cross-play figure for docs/NUS_PORT_REPORT.md (Figure 1).
 
 Reads the cross-play matrix written on the home RTX 5090 by the evaluation of NUS's self-play runs on the hangar geometry (NUS's own
 evaluator, 256 games per pair, deterministic actions; the matrix file is 5090 only, outside every git repository) and draws the Strike

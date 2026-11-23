@@ -119,7 +119,7 @@ slower than the pure rules (ledger T9, `records/2026-11-16_s2_scripted_reference
 
 ## Plug in a policy trained with NUS's code
 
-The whole NUS port, phase by phase, with NUS's settings, STE's results and videos: [what we did, day by day](WHAT_WE_DID_DAY_BY_DAY.md).
+The whole NUS port, phase by phase, with NUS's settings, STE's results and videos: [NUS port report](NUS_PORT_REPORT.md).
 Training policies with NUS's own code and every command below in order: [training scripts, NUS jobs](TRAINING.md#nus-jobs). To
 repeat it from the PROVISIONAL files or from a NUS clone: [how to run it yourself, level D](RUN_IT_YOURSELF.md#d-repeat-the-six-tests).
 The NUS-code policies of these pages (G19, S20, P3G, P3S) were trained by STE using NUS's code

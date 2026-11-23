@@ -11,7 +11,7 @@ target date only where this file gives one. New issues need no completion date: 
 was set to Done is enough.
 
 Evidence is in the repo https://github.com/AI-DA-STC/AirStack-starling-max2, branch **`development`**, folder
-`svg_training/` (`records/LEDGER.md`, `docs/S2B_RESULTS.md`, `docs/WHAT_WE_DID_DAY_BY_DAY.md`,
+`svg_training/` (`records/LEDGER.md`, `docs/S2B_RESULTS.md`, `docs/NUS_PORT_REPORT.md`,
 `docs/claude/HANDOFF.md`, `ste_learning/PLAN.md`, `ste_learning/WORK_BREAKDOWN.md`). Write "ledger row T8", never
 "#T8". Every result below was observed in the training simulator, except T63, which is an analysis of real flight
 logs; nothing here is a flight result.
@@ -24,7 +24,7 @@ logs; nothing here is a flight result.
 > recent on the lab's RTX 5090 workstation on 17 Nov, ledger row T35 (65 of NUS's 66 tests pass; NUS confirmed the
 > one failure is an out-of-date test). The target said "on the laptop": the code stays on the 5090 by the owner's
 > decision; the laptop works from the lab's own converted policies and settings files. NUS's game has no metres or
-> seconds and NUS said to scale it to the arena, so STE chose a scale for the hangar. Details: `svg_training/docs/WHAT_WE_DID_DAY_BY_DAY.md` §1–3.
+> seconds and NUS said to scale it to the arena, so STE chose a scale for the hangar. Details: `svg_training/docs/NUS_PORT_REPORT.md` §1–3.
 
 **NEAR-971: Score NUS's strategy: NUS's rules against Starling limits.** (milestone S3 · NUS strategy scored)
 

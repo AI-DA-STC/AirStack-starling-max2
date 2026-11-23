@@ -4,7 +4,7 @@ READ · TRAINING SIMULATOR ONLY: every clip of the NUS port, each with a preview
 
 Training simulator only; nothing here is a flight. Published with NUS's agreement ([STANDARDS §2](../../../STANDARDS.md#2-wording));
 every clip of the port is public, the Phase 4 ones included. **STE**: the lab that wrote this repository. The story
-behind each clip: [what we did, day by day](../../WHAT_WE_DID_DAY_BY_DAY.md). NUS's `defender` is the defender (Guard
+behind each clip: [NUS port report](../../NUS_PORT_REPORT.md). NUS's `defender` is the defender (Guard
 team) here, NUS's `attacker` the attacker (Strike team). The policies are defined in the
 [glossary](../../GLOSSARY.md#policies): G19 and S20 (self-play seed 2) and P3G and P3S (fixed-opponent runs) were
 trained by STE using NUS's code; the APF defender and APF attacker (`ApfGuard`, `ApfStrike` in file names) are NUS's
@@ -55,7 +55,7 @@ clips.
 
 ## NUS's 2-D game
 
-On the hangar set-up (0.40 m per unit, 0.60 s per step; [what we did, day by day, the hangar geometry](../../WHAT_WE_DID_DAY_BY_DAY.md#3-phase-0-answers-and-the-hangar-geometry)).
+On the hangar set-up (0.40 m per unit, 0.60 s per step; [NUS port report, the hangar geometry](../../NUS_PORT_REPORT.md#3-phase-0-answers-and-the-hangar-geometry)).
 Evidence: [Phase 2a record](../../../records/2026-11-17_nus_phase2a_training_record.md) (the fixed-opponent runs) and
 [self-play matrix record](../../../records/2026-11-18_nus_selfplay_matrix_record.md) (the self-play clips), both INFO, written after the fact.
 
@@ -115,7 +115,7 @@ One game from one start, played in NUS's own JAX game with NUS's JAX policies (l
 
 ## Tests 1–6, top-down
 
-One folder per test (`row_N` = Test N); each test changes one thing from the test before ([what we did, day by day, the six tests](../../WHAT_WE_DID_DAY_BY_DAY.md#8-phase-4-six-tests-towards-ste-drones)). Players: G19 and S20 (the self-play pair), P3G and P3S (the Phase 3 pair), ApfGuard and ApfStrike (the APF defender and attacker, NUS's scripted opponent ported to PyTorch), ParkedGuard (every Guard drone commands zero; Guard 0 starts at the zone centre), `strike_*` and `guard_*` (STE scripted Guards and Strikes, from Test 2). A pair has no `hold` clip when none of its first 16 games was held, and no `strike_win` clip when none was reached.
+One folder per test (`row_N` = Test N); each test changes one thing from the test before ([NUS port report, the six tests](../../NUS_PORT_REPORT.md#8-phase-4-six-tests-towards-ste-drones)). Players: G19 and S20 (the self-play pair), P3G and P3S (the Phase 3 pair), ApfGuard and ApfStrike (the APF defender and attacker, NUS's scripted opponent ported to PyTorch), ParkedGuard (every Guard drone commands zero; Guard 0 starts at the zone centre), `strike_*` and `guard_*` (STE scripted Guards and Strikes, from Test 2). A pair has no `hold` clip when none of its first 16 games was held, and no `strike_win` clip when none was reached.
 
 | Test | Clips | Evidence |
 |---|---|---|

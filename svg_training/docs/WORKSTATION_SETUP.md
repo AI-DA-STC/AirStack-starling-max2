@@ -12,7 +12,7 @@ Status (18 November 2026): the scripts in `scripts/workstation/` were written on
 `bash -n` and `--dry-run`. On the 5090, `check_machine.sh` ran (0 failed, 2 warnings) and `setup_isaaclab_host.sh`
 stopped with exit 1; hand fixes finished the host route, and the full test suite passes there (MEASURED).
 `setup_nus_jax.sh` built `nus_jax` and `run_nus_job.sh` ran NUS's benchmark and training jobs (17–18 November;
-[what we did, day by day](WHAT_WE_DID_DAY_BY_DAY.md)). Isaac preflight passes headless on the 5090 since the owner's two decisions of 18 November
+[NUS port report](NUS_PORT_REPORT.md)). Isaac preflight passes headless on the 5090 since the owner's two decisions of 18 November
 (§2c). `sync_results.sh`, the S0 benchmark and the S2b stand-in seed 3 have not run on the 5090 yet.
 
 ## 0. Before you leave the laptop: push first
@@ -125,7 +125,7 @@ run on the laptop). The rest of this page covers working with a second machine.
    `scripts/isaac_preflight.sh --approved-headless` (§2c). Always headless.
 5. **NUS jobs.** `scripts/workstation/setup_nus_jax.sh <NUS folder>`, then `run_nus_job.sh` with the settings in
    the bundle's NOTES and in [TRAINING, NUS jobs](TRAINING.md#nus-jobs). Run them inside `tmux`. Done on the 5090,
-   17–18 November ([what we did, day by day](WHAT_WE_DID_DAY_BY_DAY.md)).
+   17–18 November ([NUS port report](NUS_PORT_REPORT.md)).
 
 ## 2a. What ran on the 5090
 
@@ -153,7 +153,7 @@ the training simulator. It ran without preflight passing (§2c), so it is not a 
 `fit_real_px4.py`; `sync_results.sh`; any launch with the Isaac Sim window; TensorBoard. The container image was built
 on 17 November; its test suite is not clean yet (HANDOFF §0). The private bundle, the flight logs and the
 construction-site world are not copied yet. Ran since 17 November: `setup_nus_jax.sh`, `run_nus_job.sh`, the NUS port
-Phases 1–4 ([what we did, day by day](WHAT_WE_DID_DAY_BY_DAY.md)), Isaac Lab headless after preflight (the Phase 4 row 6 warm-up estimate, 18 November).
+Phases 1–4 ([NUS port report](NUS_PORT_REPORT.md)), Isaac Lab headless after preflight (the Phase 4 row 6 warm-up estimate, 18 November).
 
 ## 2c. Preflight on the 5090 (decided 18 November)
 

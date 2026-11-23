@@ -1,6 +1,6 @@
 REFERENCE · TRAINING SIMULATOR ONLY: the NUS port as a dated log, phase by phase. Results by finding: WHAT_WE_FOUND.md.
 
-# What we did, day by day
+# NUS port report
 
 **For** NUS researchers and anyone new to the work: what STE did with NUS's code, phase by phase. **STE**: the lab
 that wrote this repository. Results by finding: [what we found](WHAT_WE_FOUND.md); how to repeat them:

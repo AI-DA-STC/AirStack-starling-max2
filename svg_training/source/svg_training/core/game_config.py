@@ -246,6 +246,40 @@ class FilterCfg:
             raise ValueError(f"filter.share must be one of {FILTER_SHARES}, got {self.share!r}")
 
 
+TEAM_SIZE_MODES: tuple[str, ...] = ("fixed", "drawn")
+
+
+@dataclass(frozen=True)
+class TeamSizeCfg:
+    """Team size per game (STE task L2.4), ``[team_size]`` in a game file; absent or ``mode = "fixed"`` = today's game bit
+    for bit (nothing else is read and nothing is drawn: the team sizes are the game's ``guards`` and ``strikes``).
+
+    ``mode = "drawn"`` (PROPOSED; STANDARDS section 4 lists random team sizes as PROPOSED, P7 decides whether they are part
+    of the flown game): the game's ``guards`` and ``strikes`` are slot counts (at least each range's top) and every game,
+    when it starts, draws its Guard and Strike counts uniformly from the whole numbers in ``guards_range`` and
+    ``strikes_range`` ([lo, hi], both ends included), from a generator of its own seeded from the game seed
+    (``core/game.py``). The first g Guard slots and the first s Strike slots are present; the others are absent: out of
+    the game from its start (never alive, parked), so they never act, tag, are tagged, score or enter a filter pair, and
+    every observation shows them with present 0. Values PROPOSED: 1-5 Guard and 1-3 Strike drones (WORK_BREAKDOWN L2.4;
+    the observation's pads 5 + 3), 3v3 the main size (a uniform draw: no weight on it). Drawn sizes need the partner
+    preset and starts mode "zone_disc_ring" (the only starts drawn per size so far; ``GameCfg`` refuses the rest)."""
+    mode: str = "fixed"
+    guards_range: tuple[int, int] = (1, 5)
+    strikes_range: tuple[int, int] = (1, 3)
+
+    def __post_init__(self) -> None:
+        if self.mode not in TEAM_SIZE_MODES:
+            raise ValueError(f"team_size.mode must be one of {TEAM_SIZE_MODES}, got {self.mode!r}")
+        for name in ("guards_range", "strikes_range"):
+            r = getattr(self, name)
+            if not isinstance(r, (tuple, list)) or len(r) != 2 or \
+                    any(isinstance(x, bool) or not isinstance(x, int) for x in r):
+                raise ValueError(f"team_size.{name} must be two whole numbers [lo, hi], got {r!r}")
+            if not 1 <= r[0] <= r[1]:
+                raise ValueError(f"team_size.{name} must have 1 <= lo <= hi, got {r!r}")
+            object.__setattr__(self, name, (int(r[0]), int(r[1])))
+
+
 START_MODES: tuple[str, ...] = ("rings", "anywhere", "zone_disc_ring")
 
 
@@ -293,6 +327,7 @@ class GameCfg:
     estimate_error: EstimateErrorCfg = field(default_factory=EstimateErrorCfg)
     landing: LandingCfg = field(default_factory=LandingCfg)
     filter: FilterCfg = field(default_factory=FilterCfg)
+    team_size: TeamSizeCfg = field(default_factory=TeamSizeCfg)
 
     def __post_init__(self) -> None:
         """An enabled ``[estimate_error]`` needs the Starling layer with backend "fitted" (else it would do nothing).
@@ -305,6 +340,7 @@ class GameCfg:
                              "backend has its own (state_error_* in its parameter file)")
         self._check_landing()
         self._check_filter()
+        self._check_team_size()
         if self.starts.mode != "zone_disc_ring":
             return
         a = self.arena
@@ -345,6 +381,22 @@ class GameCfg:
             raise ValueError(f'filter.share {self.filter.share!r} is built for preset "partner" only (the contact preset '
                              "filters team-mates only: no Guard-Strike pair)")
 
+    def _check_team_size(self) -> None:
+        """``[team_size] mode = "drawn"`` (STE L2.4) needs each range's top inside the observation's pads (absent slots are
+        padding), the partner preset (the contact preset is a side quest: not built) and starts mode "zone_disc_ring"
+        (the only starts drawn per team size; ``core/arena.draw_starts_sized``)."""
+        ts = self.team_size
+        if ts.mode == "fixed":
+            return
+        if ts.guards_range[1] > self.pad_guards or ts.strikes_range[1] > self.pad_strikes:
+            raise ValueError(f"team_size ranges {ts.guards_range!r} / {ts.strikes_range!r} do not fit the pads "
+                             f"{self.pad_guards} + {self.pad_strikes}")
+        if self.preset != "partner":
+            raise ValueError('team_size.mode "drawn" is built for preset "partner" only')
+        if self.starts.mode != "zone_disc_ring":
+            raise ValueError('team_size.mode "drawn" needs starts.mode "zone_disc_ring" (the only starts drawn per team '
+                             f"size), got {self.starts.mode!r}")
+
     def team_speed_mps(self, team: str) -> float:
         """Team speed in m/s = units/step x metres/unit / seconds/step."""
         if team not in ("strike", "guard"):
@@ -360,7 +412,8 @@ class GameCfg:
         """Return a copy with dotted fields changed, e.g. replace(**{"starling.enabled": True})."""
         sections = {"arena": "arena", "rules": "rules", "contact": "contact",
                     "starling": "starling", "starts": "starts", "rewards": "rewards", "tag": "tag",
-                    "estimate_error": "estimate_error", "landing": "landing", "filter": "filter"}
+                    "estimate_error": "estimate_error", "landing": "landing", "filter": "filter",
+                    "team_size": "team_size"}
         top: dict[str, Any] = {}
         sub: dict[str, dict[str, Any]] = {}
         for key, val in dotted.items():
@@ -395,7 +448,8 @@ LOCAL_ALLOWED: frozenset[str] = frozenset(
 _GAME_KEYS = ("preset", "dropout_fraction", "obs_view", "pad_guards", "pad_strikes", "yaw_rate_max_rad_s")
 _SECTION_CLASSES = {"arena": ArenaCfg, "partner_rules": PartnerRulesCfg, "contact_rules": ContactRulesCfg,
                     "starling_layer": StarlingLayerCfg, "starts": StartsCfg, "rewards": RewardsCfg, "tag": TagCfg,
-                    "estimate_error": EstimateErrorCfg, "landing": LandingCfg, "filter": FilterCfg}
+                    "estimate_error": EstimateErrorCfg, "landing": LandingCfg, "filter": FilterCfg,
+                    "team_size": TeamSizeCfg}
 
 
 def _tuplify(v: Any) -> Any:
@@ -453,7 +507,7 @@ def load_game_cfg(path: str | Path = CONFIGS / "s2_game.toml", local_dir: Path |
     cfg = GameCfg(arena=parts["arena"], rules=parts["partner_rules"], contact=parts["contact_rules"],
                   starling=parts["starling_layer"], starts=parts["starts"], rewards=parts["rewards"],
                   tag=parts["tag"], estimate_error=parts["estimate_error"], landing=parts["landing"],
-                  filter=parts["filter"],
+                  filter=parts["filter"], team_size=parts["team_size"],
                   **{"preset": "partner", **game})
     return cfg, Provenance(str(path), _sha(raw), local_file, local_sha)
 

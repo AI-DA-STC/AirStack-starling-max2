@@ -18,7 +18,7 @@ The Strike team trained tonight with the tag distance drawn per game and the est
 3. **L1.10 tag drawn 1.5–1.7 m** (T67, 0.662 GPU-h): run 0 PASS; the Guard team beats the best script against 4 of 6 Strike tactics (928 v 811 against its own), the Strike team against 2 of 5 (681 v 181), below elsewhere; no effect of the estimate error detected; not distinguishable from T46.
 4. **L2.3 landing drones** (merged): a tagged or lost drone descends at 0.6 m/s and stays in the safety filter until down. Off by default.
 5. **L2.1 filter option B** (merged): in Guard–Strike pairs only the Guard swerves. Off by default; **finding for P2: next to a wall a pinned Guard lets a Strike drone reach 0.39 m** (today's even split: 0.97 m).
-6. **L2.4 drone loss and drawn team sizes** (built, reviewed, full suite running, then merged): off by default; study file only.
+6. **L2.4 drone loss and drawn team sizes** (merged after its full suite, 2,425 passed): off by default; study file only.
 7. **L3 design note** for the two routes (draft for you, no code): `ste_learning/drafts/L3_TWO_ROUTES_DESIGN.md`.
 
 **Worth a look:** the L1.9 table in [T66](../../records/2026-11-24_ste_l19_screen_record.md) (why 1v1 needs a rules decision) and the wall finding in WORK_BREAKDOWN L2.1.
@@ -28,7 +28,7 @@ The Strike team trained tonight with the tag distance drawn per game and the est
 | Phase | What | Math library | Simulator | Where it stands |
 |---|---|---|---|---|
 | L1 Drone model | estimate error, drag, fits, speed, tag reads | PyTorch | fast engine; Isaac Lab | done except L1.4/L1.5 (blocked) and L1.9 training (held, R20) |
-| L2 Game rules in training | option B, landing, drone loss, team sizes | PyTorch | fast engine; Isaac Lab | L2.1, L2.3 merged, L2.4 merging; L2.5, L2.6 (INFO runs) wait for P2/P7 |
+| L2 Game rules in training | option B, landing, drone loss, team sizes | PyTorch | fast engine; Isaac Lab | L2.1, L2.3, L2.4 merged; L2.5, L2.6 (INFO runs) wait for P2/P7 |
 | L3 Learner (two routes) | pure RL and the mixed route, one learner | PyTorch | fast engine pilot, Isaac Lab smoke | design note drafted; waits for decision 7 |
 | L4–L6 pipeline check | scoring suite, one seed per route, export | PyTorch | both | not started; cap 20 GPU-h (R23) |
 
@@ -65,4 +65,4 @@ The Strike team trained tonight with the tag distance drawn per game and the est
 
 **Usage:** agents tonight (Opus builders ~760k tokens over three builds; Sonnet reviewers ~620k over six reviews); four full suites (~28 min each, CPU); GPU 0.724 GPU-h (L1.7 0.062, L1.10 0.662); ledger budget_l1_l2 4.244 of 13.0. Checks: full suite on every code merge; short document check on docs merges.
 
-**Ready to push.** 17+ commits on `development` (ahead of `origin/development`), mirror updated; push from GitHub Desktop. `main` unchanged (code changed tonight: your word moves it).
+**Ready to push.** 24 commits on `development` (ahead of `origin/development`), mirror updated; push from GitHub Desktop. `main` unchanged (code changed tonight: your word moves it).

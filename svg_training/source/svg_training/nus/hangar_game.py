@@ -45,6 +45,8 @@ class NusIdentityLayer:
     status = "identity"
 
     def __init__(self, cfg: GameCfg, num_games: int, guards: int, strikes: int, device):
+        if getattr(getattr(cfg, "landing", None), "enabled", False):
+            raise ValueError("[landing] enabled is not built for the NUS hangar layers (L2.3); switch it off")
         params = load_params(resolve_params(cfg.starling.params))
         self.stick_cap_mps = check_commander(cfg, params)
         m = guards + strikes
@@ -71,6 +73,8 @@ class NusPushLayer(StarlingLayer):
     status = "exploratory (filter off, push-apart kept)"
 
     def __init__(self, cfg: GameCfg, num_games: int, guards: int, strikes: int, device):
+        if getattr(getattr(cfg, "landing", None), "enabled", False):
+            raise ValueError("[landing] enabled is not built for the NUS hangar layers (L2.3); switch it off")
         super().__init__(cfg, num_games, guards, strikes, device)
         params = load_params(resolve_params(cfg.starling.params))
         m = guards + strikes

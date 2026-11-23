@@ -245,17 +245,23 @@ def test_a_landing_drone_descending_onto_a_drone_at_the_floor(backend, at, on_mi
         g = make(cfg_of(backend, landing=on), ((0.0, 0.0), (-1.2, 0.0)))
         drop(g, 0, at)
         lo = 9.0
+        landed_on = False
         for k in range(1, at + 80):
             s = toward(g.pos_m[:, 1], target)
             out = g.step(act([(0.0, 0.0, 0.0)], [tuple(s[0].tolist())]))
             assert (out.outcome == RUNNING).all()
             if on and out.info["landing"][:, 0].all():
+                landed_on = True
                 ghost[k] = g.pos_m[:, 0].clone()
                 lo = min(lo, float((g.pos_m[:, 0] - g.pos_m[:, 1]).norm(dim=-1).min()))
             elif not on and k in ghost:
                 lo = min(lo, float((ghost[k] - g.pos_m[:, 1]).norm(dim=-1).min()))
         closest[on] = lo
-    assert len(ghost) > 20 and not g.landing.any()
+        if on:
+            assert landed_on and not g.landing.any()   # it landed, then touched down and was parked
+        else:
+            assert not landed_on and not g.landing.any()   # landing off: nothing ever lands
+    assert len(ghost) > 20
     assert closest[True] >= on_min_m and closest[False] < off_max_m, closest
 
 

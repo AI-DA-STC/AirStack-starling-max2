@@ -54,7 +54,8 @@ class StepOut:
     passing one above the other is close horizontally but not in 3-D), closest_team_m [N] (inf if no live
     same-team pair), rule_breach [N] bool (a live opposite pair closer than min(keepout_guard_m,
     keepout_strike_m) in 3-D; the pure partner rules hold every drone at one height, so there 3-D = horizontal;
-    with the Starling layer the push-apart is off, so this reports what the filter alone allowed), filter_corrected [N, M] bool (Starling layer: live drones the safety
+    with the Starling layer the push-apart is off, so this reports what the filter alone allowed; these closeness
+    and breach figures count live drones only: a landing drone ([landing], L2.3) is not in them), filter_corrected [N, M] bool (Starling layer: live drones the safety
     filter changed this step; all False without it),
     tagged [N, M] bool (contact preset or the study tag: drones tagged this step; a Strike drone tagged on the step it
     enters the zone does not score: tags come before the zone test),

@@ -12889,3 +12889,5 @@ The Strike team trained tonight with the tag distance drawn per game and the est
 **Usage:** agents tonight (Opus builders ~760k tokens over three builds; Sonnet reviewers ~620k over six reviews); four full suites (~28 min each, CPU); GPU 0.724 GPU-h (L1.7 0.062, L1.10 0.662); ledger budget_l1_l2 4.244 of 13.0. Checks: full suite on every code merge; short document check on docs merges.
 
 **Ready to push.** 17+ commits on `development` (ahead of `origin/development`), mirror updated; push from GitHub Desktop. `main` unchanged (code changed tonight: your word moves it).
+
+**Correction, 24 Nov 2026 ~07:50 (advisor):** L2.5/L2.6 need no ruling and run next; P2 and P7 wait for L2.5's record; the wall (0.39 m) and floor (0.95–1.05 m) figures are builder test scenes, not reviewed measurements; full suites ran on the CPU; T66's T44 cross-check is a summary match only (one cell 307 v 317 unresolved). STATUS_LATEST carries the corrected version.

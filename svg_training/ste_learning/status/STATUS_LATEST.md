@@ -16,8 +16,8 @@ The Strike team trained tonight with the tag distance drawn per game and the est
 1. **L1.7 speed re-measure** (T65): the estimate error costs the fast engine about 1 % at 16,384 games, 2–3.5 % at 4,096; inside the 10 % budget.
 2. **L1.9 1v1 screen** (T66, CPU): **one against one is lopsided toward the Guard**: every moving Guard script holds 100 % of games at the 1.6 m tag and 84–90 % at 1.15 m. The 1v1 training stays held (R20); my view: training 1v1 as set would teach nothing; the 1v1 flight game likely needs different rules first (your decision).
 3. **L1.10 tag drawn 1.5–1.7 m** (T67, 0.662 GPU-h): run 0 PASS; the Guard team beats the best script against 4 of 6 Strike tactics (928 v 811 against its own), the Strike team against 2 of 5 (681 v 181), below elsewhere; no effect of the estimate error detected; not distinguishable from T46.
-4. **L2.3 landing drones** (merged): a tagged or lost drone descends at 0.6 m/s and stays in the safety filter until down. Off by default.
-5. **L2.1 filter option B** (merged): in Guard–Strike pairs only the Guard swerves. Off by default; **finding for P2: next to a wall a pinned Guard lets a Strike drone reach 0.39 m** (today's even split: 0.97 m).
+4. **L2.3 landing drones** (merged): a tagged or lost drone descends at 0.6 m/s and stays in the safety filter until down. Off by default. A builder's test scene shows it closing to 0.95–1.05 m when it lands onto a drone held at the floor (one code review, cause not tested).
+5. **L2.1 filter option B** (merged): in Guard–Strike pairs only the Guard swerves. Off by default; **finding for P2 (a builder's test scene, one code review, cause not tested): next to a wall a pinned Guard lets a Strike drone reach 0.39 m** (today's even split: 0.97 m). L2.5 measures it properly before P2 is asked.
 6. **L2.4 drone loss and drawn team sizes** (merged after its full suite, 2,425 passed): off by default; study file only.
 7. **L3 design note** for the two routes (draft for you, no code): `ste_learning/drafts/L3_TWO_ROUTES_DESIGN.md`.
 
@@ -53,16 +53,16 @@ The Strike team trained tonight with the tag distance drawn per game and the est
 | Process | models by role and scaled reviews in CLAUDE.md; job/agent watchdog every 20 min |
 | Documentation | WORK_BREAKDOWN L2 build notes; HANDOFF §0 |
 
-**Next.** After your decisions: L2.5 (parked-Guard control under the new rules, INFO, about 0.5 GPU-h) and L2.6 (tier 1 v tier 2 under the new rules, about 1.5 GPU-h); then L3 build.
+**Next** (no ruling needed; gate "none (INFO)", inside the 13 GPU-h): L2.5 parked-Guard control and scripted opponents under the new rules, option B on and off (about 0.5 GPU-h): the measurement P2 is ruled on; then L2.6 tier 1 v tier 2 under the new rules (about 1.5 GPU-h). Then P2 and P7 come to you with L2.5's record. L3 build after decision 7.
 
 **Waiting on you.**
 1. **L1.9 1v1 training:** run as specified, or first screen changed 1v1 rules (smaller tag, bigger arena, faster Strike)? (T66)
 2. **L1.4/L1.5:** set up AirStack on the 5090 (`airstack.sh setup`, outside my folder), or run them on the laptop?
-3. **P2 filter option B:** accept with the wall shortfall, or ask for a wall-aware fix first?
-4. **P7 drone loss and drawn team sizes:** part of the flown game? Fraction of drop-outs? Weight 3v3?
-5. **Landing (L2.3):** touchdown at 0.15 m (`_ours` configs) or 0.1 m; the floor shortfall (0.95–1.05 m).
-6. **Decision 7 (L3):** approve the two-route design and the skill list (draft note).
+3. **Decision 7 (L3):** the two-route design and skill list (`ste_learning/drafts/L3_TWO_ROUTES_DESIGN.md`, **unreviewed draft**; it lists its own open items).
+4. **PLAN.md:** I propose adding to PLAN the two routes (R19) and the 20 GPU-h pipeline check for L3–L6 (R23); not applied until you say so.
+5. **Landing touchdown height:** 0.15 m (the `_ours` configs) or 0.1 m (ARCHITECTURE).
+Later, with L2.5's record: P2 (filter option B, with the wall measurement) and P7 (drone loss, drawn team sizes).
 
-**Usage:** agents tonight (Opus builders ~760k tokens over three builds; Sonnet reviewers ~620k over six reviews); four full suites (~28 min each, CPU); GPU 0.724 GPU-h (L1.7 0.062, L1.10 0.662); ledger budget_l1_l2 4.244 of 13.0. Checks: full suite on every code merge; short document check on docs merges.
+**Usage:** agents tonight (Opus builders ~760k tokens over three builds; Sonnet reviewers ~620k over six reviews); four full suites (~28 min each, CPU); GPU 0.724 GPU-h (L1.7 0.062, L1.10 0.662); ledger budget_l1_l2 4.244 of 13.0. Checks: full suite on every code merge, run on the CPU (GPU hidden); the touched tests rerun with the GPU visible afterwards (see HANDOFF); short document check on docs merges. Advisor: Fable 5.2 (advisor tool) before the night's plan and before closing; its fixes applied.
 
 **Ready to push.** 24 commits on `development` (ahead of `origin/development`), mirror updated; push from GitHub Desktop. `main` unchanged (code changed tonight: your word moves it).

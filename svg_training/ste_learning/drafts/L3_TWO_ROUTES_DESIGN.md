@@ -1,4 +1,4 @@
-INTERNAL · design note for phase L3 of the STE learning track: one learner with two action types, so pure RL and the mixed route (RL chooses among hand-written skills) can be compared fairly (owner ruling R19, 24 Nov 2026). DRAFT for the owner; no code is written until the owner approves it · [../README.md](../README.md); the ruling: [DISCUSSION §16](../DISCUSSION_2026-11-19_20.md#16-rulings-for-l1-to-l6-owner-24-nov-2026)
+INTERNAL · design note for phase L3 of the STE learning track: one learner with two action types, so pure RL and the mixed route (RL chooses among hand-written skills) can be compared fairly (owner ruling R19, 24 Nov 2026). DRAFT for the owner, not yet reviewed; no code is written until the owner approves it · [../README.md](../README.md); the ruling: [DISCUSSION §16](../DISCUSSION_2026-11-19_20.md#16-rulings-for-l1-to-l6-owner-24-nov-2026)
 
 # L3: one learner, two routes (design note, DRAFT)
 

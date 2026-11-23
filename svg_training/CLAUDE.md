@@ -113,8 +113,9 @@ other stopped, from git alone.
 
 ## The owner's standing rules (portable; they were in one machine's Claude memory)
 
-- **Status updates without being asked**: the `train-status` skill, at session start, every 30 minutes while work runs
-  (a background `sleep 1800` timer, re-armed), at once on an event, and when asked. Three tables (phases with math
+- **Status updates without being asked**: the `train-status` skill, at session start, at once on an event, when asked,
+  and every 30 minutes while the owner is watching (a background `sleep 1800` timer, re-armed); while the owner is away
+  (overnight), on events plus one morning digest (R22, 24 Nov 2026). Three tables (phases with math
   library and simulator; the current phase task by task; other workstreams), then Next, Waiting on you, and a bold
   "Ready to push" line while the branch is ahead of its upstream. Tasks always "ID + plain name".
 - **Models (owner, 24 Nov 2026): Opus 5.5 does the work, Fable 5.2 advises at forks and gates.** The main session runs

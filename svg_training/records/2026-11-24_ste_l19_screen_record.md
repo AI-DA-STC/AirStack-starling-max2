@@ -46,7 +46,12 @@ is lopsided towards the Guard. Likely cause (a hypothesis, not tested): a single
 the Guard away, and the Guard needs only to come within the tag distance once.
 
 **Cross-check with T44** (spec): T44's 1v1 cell (`size_1v1`, [record](2026-11-21_ste_l011_screen_record.md)) read best
-Guard's worst hold 1.0 and best Strike's worst reach 0.0; this screen's base_1v1 reads the same: **agrees with T44**.
+Guard's worst hold 1.0 and best Strike's worst reach 0.0; this screen's base_1v1 reads the same summary. **Cell by cell
+it is not checked:** T44's per-cell results are on the laptop only (its run folder is not on the 5090). One cell is
+known both ways: the spec quoted T44's 1v1 parked-at-centre v straight as 307 reaches (from the laptop's data); this
+screen shows 317. The intervals overlap, but a CPU replay of the same game and seed would match game for game, so the
+two may differ in game file or starts, or the quoted 307 may be from another cell: unresolved. To do on the laptop:
+compare every base_1v1 cell with T44's `size_1v1` cells before the L1.9 reference is made from this screen.
 
 **Check 2b of the spec** (before any run 0): the base_1v1 cell parked-at-centre v straight shows 317 reaches of 1,000,
 below the 950 limit, so run 0 could be launched. It was not: owner hold R20.

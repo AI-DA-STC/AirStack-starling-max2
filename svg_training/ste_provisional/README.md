@@ -18,6 +18,8 @@ the ones phase L1 reads, byte for byte (sha256 of every file in [SHA256SUMS](SHA
 | `2026-11-22_ste_l111_strike` | [T58](../records/2026-11-22_ste_l111_strike_record.md) | Strike team trained against guard_field at tag 1.6 m (277 v script 284) | cross-play scoring, the L1 opponent pool |
 | `2026-11-22_ste_l113_arm_a` | [T59](../records/2026-11-22_ste_l113_record.md) | Strike team at tag 1.15 m, 30 s training clock (199 at 30 s; 172 at 120 s with time-left clamped, [T60](../records/2026-11-22_ste_l114_record.md)) | the 1.15 m side track, a second-seed comparison |
 | `2026-11-22_ste_l113_arm_b` | [T59](../records/2026-11-22_ste_l113_record.md) | Strike team at tag 1.15 m, discount 0.997 (99) | the 1.15 m side track |
+| `2026-11-24_ste_l110_guard` | [T67](../records/2026-11-24_ste_l110_record.md) | Guard team trained with the tag drawn in 1.5–1.7 m and the nominal estimate error, against strike_straight (928 with the error at fixed 1.6 m) | the L1.10 score matrix; later comparisons |
+| `2026-11-24_ste_l110_strike` | [T67](../records/2026-11-24_ste_l110_record.md) | Strike team trained with the tag drawn in 1.5–1.7 m and the nominal estimate error, against guard_mark_edge (681 with the error at fixed 1.6 m) | the L1.10 score matrix; later comparisons |
 | `2026-11-21_ste_l014/response/per_game.npz` | [T45](../records/2026-11-21_ste_l014_crazyflie_route_record.md) | per-game results of the Crazyflie-response re-score | L6.5 method (T45) |
 
 Each player folder keeps `agent_final.pt`, its `gates.toml`, the results (`results.json`, `results.md`), the evaluation

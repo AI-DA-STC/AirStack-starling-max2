@@ -33,7 +33,7 @@ PILOT_SHA = "b029a9013098260679159a97a27471a0f6c15ae6239d367fc35f2f0c694a9d12"  
 EARLIER = [ROOT / "configs" / "ste_l012" / "gates.toml", ROOT / "configs" / "ste_l012" / "smoke_gates.toml",
            ROOT / "configs" / "ste_l012b" / "gates.toml", L012C, ROOT / "configs" / "ste_l012c" / "guard_gates.toml",
            *sorted(p for p in (ROOT / "ste_provisional" / "players").glob("*/gates.toml")   # the bundled L0 players;
-                   if not p.parent.name.startswith("2026-11-22_ste_l11"))]                     # L1 runs use the new keys
+                   if not p.parent.name.startswith(("2026-11-22_ste_l11", "2026-11-24_ste_l110")))]   # L1 runs use the new keys
 L1_BUNDLED = sorted((ROOT / "ste_provisional" / "players").glob("2026-11-22_ste_l11*/gates.toml"))
 
 

@@ -1,0 +1,287 @@
+# STE task L1.10 (INFO): the TAG-DRAW read, 3v3, both sides: trained with the tag radius drawn per game in [1.5, 1.7] m
+# and the nominal estimate error (L1.7), SCORED AT THE FIXED 1.6 m TAG. Spec, pre-registered before any run:
+# ste_learning/drafts/L1_9_10_SPEC.md. Costed draft row L1.10 (G0 row 17): Guard + Strike, 0.55 B game-steps each, T46's
+# recipe; a Strike run needs a run 0 under this file (L0.12's rule), so run 0 is added and counted.
+#
+# Driver: scripts/ste_exploit_l012.py. Everything below is configs/ste_l012/gates.toml (T46's file) EXCEPT, each checked
+# by tests/test_ste_l19_l110.py: [run] task; [games] (T44's base.toml, the scoring game, and
+# configs/ste_l1/base_err_tagdraw.toml, the training game); [variants] the one variant base_tagdraw (train_game, T46's
+# opponents g* guard_mark_edge and s* strike_straight, reference_variant base, new seeds); [verdict] order; [pilot] variant and timing_batches
+# (not run: L0.12's pilot is reused); [run0] variant and train_seed. The reference is T44's, as T46's: no screen.
+#
+# DESIGN (LEAD CALLS 23 Nov 2026; spec): the runs TRAIN on the tag-draw game with the error (train_game) and the driver
+# SCORES them on the fixed 1.6 m no-error game T46 was scored on (game base, T44's 1,000 starts and script cells), so the
+# driver's verdict compares like for like with T46 (base Strike reach 636 v guard_mark_edge, base Guard hold 913 v
+# strike_straight). READS (lead's ruling 23 Nov 2026, fix round 1): the MAIN read is the fixed 1.6 m game WITH the
+# nominal error (configs/ste_l1/base_err_nominal.toml: the row says "scored at the fixed tag"; L1.7 makes the error the
+# realistic default), by scripts/ste_score_matrix.py with `reference = false` (configs/ste_l1/score_matrix_l110_*.toml,
+# game base_err); INFO: the tag-draw training game with the error (game tagdraw_err) and the fixed 1.6 m game without
+# the error (game base: this driver's scoring game, also in the matrix). Why the driver cannot score with the error: it
+# is drawn per batch slot, so a script cell does not replay T44's cell game for game and the driver's known-answer
+# controls would fail by construction (see configs/ste_l1/l19_gates.toml).
+#
+# Cap per run (the driver's time rule, as configs/ste_l012b/gates.toml; tests/test_ste_l19_l110.py checks it): update N
+# starts only if O + B + (N-1) U + floor((N-1)/10) K <= C - R. The runs TRAIN on the error game but every evaluation
+# (controls batch, curve reads, final and INFO batches) plays the no-error game T46 played, so B and K are L0.12b's
+# sizing from L0.12's logged runs on this laptop (B = 100 s, K = 56.5 s: T46's base Strike reads 52.5-53.2 s, waiting out
+# the clock) and only U carries the error: U = 25 s = T46's base Strike update maximum 19.6 s x 1.27, a margin for the
+# estimate error's training cost, which is UNMEASURED on a GPU (L1.7: the fitted model alone about 18 % slower on the
+# CPU; in-game unresolved); O = 10 s; R = max(600, 2 x (2B + 120)) = 640 s. N = 88 updates (550 M game-steps at 16,384
+# games x 32 x 12): 2,737 <= 3,384 - 640 at C = 0.94 h, so --cap-h 0.94 on run 0 and on both runs (the rule bites at
+# 0.92 h). Run 0's first updates (train_log.jsonl "seconds") are the check of U before the runs launch: if its median
+# update exceeds 25 s, the lead stops and re-sizes before any run of record. Caps are ceilings.
+# Task cap (configs/ste_learning.toml): L1.10 1.7 GPU-h (raised from 0.9 on 23 Nov 2026, fix round 1, announced to the
+# owner; at 0.9 run 0 alone, asking 0.94, did not fit). Needed, in launch order (each asking its cap), with expected use = T46's x 1.28 (the same error factor as U: 25 / 19.6): run 0 (asks
+# 0.94, uses about 0.13), the Guard run (asks 0.94, uses about 0.51: T46's base Guard 0.40), the Strike run (asks 0.94,
+# uses about 0.75: T46's base Strike 0.59), then two score matrices (each asks 0.2, uses about 0.1): the largest total
+# the launcher sees is the last matrix's, 0.13 + 0.51 + 0.75 + 0.1 + 0.2 = 1.69. So the task cap must be
+# at least 1.7 GPU-h (tests/test_ste_l19_l110.py computes it).
+#
+# Simulator: training simulator, tier 1 (fast engine), Starling layer on; study tag on, drawn per game in [1.5, 1.7] m in
+# training, fixed at 1.6 m in scoring; training with the nominal estimate error (EXPLORATORY values, T63). Results are
+# "observed in the training simulator". NEVER SUSPEND THE MACHINE DURING A GPU JOB.
+
+[run]
+task = "L1.10"                     # the budget key: [budget_l1_l2] task L1.10 (configs/ste_learning.toml)
+kind = "INFO"                      # the variant categories feed gate G0 (the owner rules); the CONTROLS are gated (exit 6)
+device = "cuda"
+size = "3v3"                       # every shortlisted variant is 3v3 (T44 shortlist; team sizes are P9, the owner's at G0)
+eval_games = 1000                  # VALIDATION_QC section 0 rule 2: at least 1,000 games per condition; T44's 1,000 starts
+ticks_cap = 2400                   # = the game length (120 s): no evaluation game is cut short (T44: none reached the time-out)
+curve_seed = 120900                # learning-curve evaluations: their OWN starts (never the 1,000 scoring starts: the final
+curve_games = 256                  #   checkpoint alone is scored, so nothing is picked on the scoring starts)
+clip_seed = 120950                 # videos: their own starts (CPU)
+cap_check_every_ticks = 100        # the cap clock (it reads the pause logs) every this many ticks; the stop flag every tick
+
+[reference]
+# T44's own 1,000 starts of the 3v3 6.5 m start setting (loaded, never re-drawn: a CPU generator does not reproduce the
+# CUDA draw) and the per-game results of all 30 cells of base, tag_1p2 and tag_1p4; made by scripts/ste_l012_reference.py
+# from T44's run folder. The script baselines and g*, s* are computed from it by code (VALIDATION_QC section 0 rule 3).
+file = "configs/ste_l012/t44_reference.npz"
+sha256 = "4bc5e011071adced368b2a0025fc47499839e0bbc8d8d650207bd12c3da0f8b5"
+start_sha256 = "5aeba7ab2b582f2973034c8203c17ed3e8239fef7029a1f991fe95b82369843c"   # the follow-up note's 3v3 start set
+t44_gates_sha256 = "8bfbc2cb8f1d6551fb3060bc750c24f9b2220ebafb19fcd44e9e3baa1c24e5d4"
+t44_record = "records/2026-11-21_ste_l011_screen_record.md"
+t44_run = "2026-11-21_ste_l011_screen"
+
+[games]
+# base: T44's file (the same sha256 as configs/ste_l011/gates.toml), the SCORING game (fixed 1.6 m tag, no error, T46's).
+# base_err_tagdraw: the TRAINING game (base_err_nominal.toml plus radius_m_range = [1.5, 1.7]; tests check it).
+base = { file = "configs/ste_l011/base.toml", sha256 = "96e0e7f61a49999da54eee81a544bf64c519cd80833f0dcdfa2a07edfc10cc4d" }
+base_err_tagdraw = { file = "configs/ste_l1/base_err_tagdraw.toml", sha256 = "336a7b028007c696f6d7041192f1e782f6dbae76816083a449b299104da71b39" }
+
+[players]
+# T44's scripts. The script baseline of a side is the best of its team's scripts against the run's opponent.
+guards = ["guard_parked_centre", "guard_parked_ring", "guard_mark_edge", "guard_mirror", "guard_field"]
+strikes = ["strike_straight", "strike_flank", "strike_high", "strike_low", "strike_sacrifice", "strike_converge"]
+# Labelled in every table: the climb and descent go through tier 1's vertical response, which is not fitted
+# (configs/s2b.toml step z_up_info). LEAD CALL 21 Nov 2026: at tag 1.4 m s* is strike_low (a z_up_info column whose hold
+# moved 672 -> 738 with commands held 0.6 s, follow-up check 4); the Guard exploiter trains against it as the rule says,
+# labelled with z_up_label, and strike_straight is scored as an evaluation-only opponent of that run
+# ([variants] tag_1p4 extra_eval_opponents; no extra training).
+z_up_info = ["strike_high", "strike_low"]
+z_up_label = "tier 1 vertical response not fitted (s2b.toml z_up_info)"
+
+[variants]
+# g* / s*: T44's maximin players at base (T46's opponents, so the comparison with T46 is like for like), recomputed from
+# [reference] by code and checked equal. train_game: the tag-draw game with the error (DESIGN above). reference_variant:
+# the reference file's cells are T44's "base" cells (the scoring game's). train_seed: new
+# (tests/test_ste_l19_l110.py), never the scoring starts' seed (110000), curve_seed or clip_seed.
+base_tagdraw = { game = "base", train_game = "base_err_tagdraw", reference_variant = "base", g_star = "guard_mark_edge", s_star = "strike_straight", role = "L1.10 tag drawn in 1.5-1.7 m with the estimate error, scored at 1.6 m", train_seed = { strike = 130201, guard = 130202 }, extra_eval_opponents = { strike = [], guard = [] } }
+
+[trainer]
+# The T41 recipe (configs/nus_phase5.toml [pilot_p1b], record T41; docs/TRAIN_A_GUARD.md), on either side: skrl IPPO, one
+# Gaussian policy and one value network per drone (two ELU layers of 128, Tanh on the mean), RunningStandardScaler on
+# observations and values, zero-mean start (the untrained team stands still), log std -1.6, yaw noise frozen, terminal
+# reward only (+1 win, -1 loss; the game files' [rewards] shaping_weight 0.0, checked equal).
+algorithm = "IPPO"
+decision_ticks = 12                # LEAD CALL 21 Nov 2026 (finding L011-F1): one learner decision per 0.6 s (timing.decision_s)
+# LEAD CALL 21 Nov 2026: games that end inside a decision restart AT THE NEXT DECISION BOUNDARY (the ticks after a game's
+# end inside a 0.6 s decision are played, counted, never trained on; ste/exploit_train.DecisionEnv). T41's hold
+# let a new game play the old game's held action for up to 11 ticks, noise at T41's ~2,000-tick games but a large share
+# of T44's 36-78-tick tag games, and it would put training out of phase with the evaluation (decision at a game's first
+# tick). The discarded ticks are counted per update (train_log.jsonl "stale_tick_share"): they cost time, never data.
+num_games = 16384                  # FIXED by the lead from the pilot (21 Nov 2026, runs/2026-11-21_ste_l012_pilot): 16,384 = the probes' size; 32,768 is faster per step but halves the updates per run
+game_steps_per_run = 550_000_000  # FILLED BY THE LEAD from the pilot (21 Nov 2026, gate 9220fd9f, pilot 0.18 GPU-h): at 16,384 games and
+                                   # run cap 0.75 GPU-h (--cap-h 0.75 on every run and run 0) the pilot projects Strike 714 M, Guard 831 M,
+                                   # run 0 617 M; 550 M leaves an 11 % margin under run 0 (the CPU is shared with other builds) and is
+                                   # about 1.8 x the 300 M where T41's Guard got good. Pilot + run 0 + 6 runs = 5.43 GPU-h <= the 6.0 task cap
+rollouts = 32
+learning_epochs = 5
+mini_batches = 4
+learning_rate = 3.0e-4
+hidden = [128, 128]
+init_log_std = -1.6
+frozen_log_std_axes = ["yaw"]
+zero_mean_init = true
+discount_factor = 0.99             # per decision (0.6 s)
+gae_lambda = 0.95
+entropy_loss_scale = 0.0
+value_loss_scale = 2.5
+ratio_clip = 0.2
+value_clip = 0.2
+grad_norm_clip = 0.5
+shaping_weight = 0.0
+# side_overrides: empty = the T41 recipe on both sides. CPU finding (21 Nov 2026, 64 games, base and tag 1.2 m): the
+# zero-mean Strike team reached the zone in 0 of ~500 ended training games; an all-loss Strike side has no learning signal.
+# PRE-REGISTERED STRIKE FALLBACK (LEAD CALL 21 Nov 2026; the only recipe change allowed in L0.12), decided by code from
+# the pilot's Strike probes AGAINST g* ONLY, the opponent the Strike trains against (ste/exploit.strike_recipe;
+# pilot.json "strike_recipe"); the probes against the parked Guard are reported as information and never decide:
+#   1. the bare-recipe probe against g* shows >= 1 reach -> the T41 recipe, unchanged;
+#   2. else, the strike_fallback probe against g* (the game's existing distance shaping, weight 1.0; it changes the
+#      TRAINING reward only, never the evaluation, which counts reaches) shows >= 1 reach -> side_overrides.strike =
+#      strike_fallback, a declared recipe variant labelled strike_fallback_label in every table and the record;
+#   (the former branch 3, "Strike runs NOT launched" on the 3-update probes, is REMOVED: LEAD CALL 21 Nov 2026 (QC N-1),
+#   same defect family as the 25 M control: 3 updates cannot tell a broken trainer from a short budget.) If neither probe
+#   against g* shows a reach, the shaped fallback is used by default (pilot.json strike_recipe "by_default": true) and
+#   RUN 0 ([run0]) decides whether the Strike runs launch.
+strike_fallback = { shaping_weight = 1.0 }
+strike_fallback_label = "shaped Strike recipe"
+side_overrides = { strike = { shaping_weight = 1.0 }, guard = {} }   # FILLED BY THE LEAD from the pilot (21 Nov 2026): the pre-registered rule picked the shaped Strike recipe (bare probe 0 reaches v g*, fallback 1)
+checkpoint_every_updates = 1       # the run contract: the same command resumes from the last update boundary
+curve_every_updates = 10           # a learning-curve evaluation (curve_games on curve_seed starts) every this many updates
+final_reserve_s = 600              # the floor of the final reserve (effective seconds)
+# QC fix round 1 (I-3): the final phase is reserved UP FRONT and never cut by the cap. Training stops while the cap left
+# still holds final_reserve_factor x (2 evaluation batches, each timed as THIS run's own controls batch, which is its
+# slowest: the untrained exploiter and the zero cell run to the time-out where nothing chases them, e.g. tag 1.2 m Strike
+# side, 267 s against 71 s at base on the CPU; plus clip_reserve_s for the CPU clips), and never less than
+# final_reserve_s. Once the final phase starts only SIGINT stops it, not the cap, so a relaunch never needs a larger cap
+# (the time it uses is reserved and logged). The pilot also times the worst-case batches ([pilot] timing_batches).
+final_reserve_factor = 2.0
+clip_reserve_s = 120               # CPU clips: 4 games of up to 2,400 ticks and 2 GIF renders (PROPOSED; ~10 s each measured on the smoke)
+
+[controls]
+# Run first, before any training, on the evaluation batch with the untrained exploiter, and again in the final batch.
+# A failed control stops the run at once: exit 6 CONTROL_FAILED, terminal (the same command ends with 6 again).
+#   ctl_reference_replay (POSITIVE, known answer T44): every script cell of the batch replays T44's cell on T44's starts.
+#     CPU: every game equal (outcome, end step, tags, Strike drones left; the follow-up note found all 8 CPU replays equal
+#     to the CUDA run game for game). CUDA: holds and reaches each within replay_count_tol_cuda_games of T44's, and at
+#     most replay_differ_tol_cuda_games games with another outcome (bit identity is not claimed on CUDA; 10 games is 1 %,
+#     below half the Wilson half-width at 1,000 games, so a pass cannot hide a gain).
+#   ctl_untrained_is_still (KNOWN ANSWER): the untrained exploiter (zero-mean start, mean actions, held 0.6 s) plays as
+#     the zero script in the same batch (outcome, end step, tags, Strike drones left): EVERY game equal on the CPU; on
+#     CUDA within the replay tolerances above (QC fix round 1, I-6: what the code does). On the Guard side this is also
+#     T44's guard_parked_centre (at 3 Guards it commands zero): the parked Guard control.
+#   ctl_untrained_no_gain (an ARITHMETIC CHECK of the gain at the control's call site, not a negative control: by
+#     construction it cannot fail, QC M-3): the untrained exploiter shows no real gain over the best script.
+#   Plumbing, on EVERY evaluation: the controls batch, the final batch and the INFO batch (suffix _info), and the
+#   learning-curve evaluations (suffix _curve; their starts are their own, so no paired-starts check there):
+#     ctl_paired_starts: every cell starts from the reference starts (start sha256);
+#     tags_one_for_one: every game, Guard drones removed by a tag = Strike drones tagged (D2, probability 0);
+#     no_nonfinite_actions: 0 non-finite actions. A non-finite action is the run contract's NON-FINITE case: status
+#       NONFINITE (not FAIL) and exit 5, nothing published, no retry (ste/run_contract.py; AUTOMATION section 5).
+# Nothing is published unless every control is PASS: results.json is written last, after the final controls, the INFO
+# batch and the videos; `verdict` refuses (exit 2) a run with any control not PASS, no complete results.json or a recorded
+# exit other than 0; the record writer's ABORTED mode names what ran and why, with no gain and no category (QC C-1).
+# LEAD CALL 21 Nov 2026 (QC N-2): `verdict` also refuses (exit 2) a run whose training stopped before its game-step
+# budget (train_stop at the cap reserve, 0 updates included; results.json "budget_reached" false): such a run never
+# publishes "did not learn"; its results.md says it stopped before its budget, and it gets an ABORTED record.
+# LEAD CALL 21 Nov 2026 (QC N-4): the ABORTED record describes a run that finished cleanly (exit 0 or no exit file,
+# complete results.json, every control PASS) as "finished, controls PASS", with the reason it is not read when there is
+# one (training stopped before its budget), never "unknown (read job.log)".
+stop_on_fail = true
+replay_count_tol_cuda_games = 10
+replay_differ_tol_cuda_games = 20
+
+[verdict]
+# Per side (two runs per variant): the trained exploiter (final checkpoint only, mean actions, on the 1,000 reference
+# starts), its untrained twin and the best script, all in one evaluation batch.
+#   learned (learned_rule): trained Wilson lower bound > untrained Wilson upper bound. If not, the side is INCONCLUSIVE
+#     ("the exploiter did not learn"), and the side's better value is the script's.
+#   a learned exploiter without a real gain reads "weak (learned, below the script)" when its rate is below the best
+#     script's, "weak (learned, not clearly above the script)" otherwise (QC I-2: wording only; no floor on "learned"
+#     now: against an untrained Strike at 0/1,000, 8 reaches already count as learned; gate G0 sees the numbers).
+#   gain (gain_rule): trained Wilson lower bound > best script's Wilson upper bound ("intervals_disjoint"): a REAL gain.
+#     The paired count (games the exploiter won and the script lost, and the reverse; same starts) is reported, INFO.
+#   better: the higher rate of {best script, trained exploiter (if it learned)}, with its Wilson interval.
+# Per variant (PLAN.md row L0.12 band, limit PROPOSED by the lead, 0.2):
+#   Guard-trivial   if the better Strike's reach Wilson upper bound < band
+#   Strike-trivial  if the better Guard's hold Wilson upper bound < band
+#   worth learning  otherwise.
+# Base is the reference for the proposed 1.6 m rules (its scripted reach 192 of 1,000, Wilson 0.169-0.218, straddles 0.2).
+# Stated before any run (QC I-8): every best script's Wilson upper bound is already above the band on both sides of all
+# three variants (base Strike 192/1,000, upper 0.218; the rest higher), and "better" is never below the best script, so
+# every variant reads "worth learning" whatever training does: the category alone is uninformative and the GAIN is the
+# measure. Results, the record and the ledger row therefore carry all six side statuses (variant x side: gain, learned /
+# weak / INCONCLUSIVE / not launched after run 0 FAIL, Guards left in holds, game length) next to the category.
+# No follow-up seeds in L0.12 (QC I-7; VALIDATION_QC section 0 rules 5-6): INCONCLUSIVE is final for L0.12 (one seed per
+# side, budget) and goes to gate G0 as INCONCLUSIVE; a follow-up is a new task with its own gate.
+band = 0.2
+gain_rule = "intervals_disjoint"
+learned_rule = "trained_low_above_untrained_high"
+order = ["base_tagdraw"]
+# LEAD CALL 21 Nov 2026 (QC N-1): the Strike side's text when run 0 reads FAIL at its full budget and the Strike runs
+# are not launched (ste_exploit_l012.py verdict --strike-not-launched --run0-json <run 0>/learner_control.json). It
+# replaces "the T41 recipe gives the Strike no learning signal in this game", a claim about the game that a short or
+# broken trainer cannot support.
+strike_not_launched = "run 0 FAIL: the trainer did not learn the easy Strike task (against the parked Guard) at the run budget; no Strike run was launched"
+follow_up_seeds = []
+
+[videos]
+# STANDARDS section 8: the final checkpoint against the run's opponent, CPU, after the GPU work, into <run>/videos/.
+games = 4
+keep = 2
+max_ticks = 2400
+speed = 8                          # game steps per drawn frame: at 10 frames/s, 4 x real time
+fps = 10
+dpi = 50
+
+[pilot]
+# --pilot (its own run folder, charged to L0.12): training game-steps per second for each side at each batch size
+# (updates after warmup_updates untimed ones), GPU memory, and one evaluation batch timed; pilot.md projects the
+# game-steps one run fits in its cap.
+variant = "base_tagdraw"           # not run (L0.12's pilot is reused); a variant of this file
+num_games = [8192, 16384, 32768]
+updates = 1                        # one timed update after one untimed (an update is 32 decisions x 12 ticks of every game)
+warmup_updates = 1
+# Strike learning probes (LEAD CALL 21 Nov 2026): the bare T41 recipe against g* and against the parked Guard (scripted
+# Strikes reach it in 466-570 of 1,000 at base, T44), then the pre-registered fallback (strike_fallback) against the same
+# two. Each trains the Strike side on base for probe_updates updates at probe_num_games games and logs the reaches among
+# the ended training games per update. Only the probes against g* pick the Strike recipe ([trainer] strike_fallback;
+# pilot.json "strike_recipe"); the parked-Guard probes are INFO. They never stop the Strike runs (QC N-1: run 0 does).
+probes = [{ side = "strike" }, { side = "strike", opponent = "guard_parked_centre" }, { side = "strike", shaping_weight = 1.0 },
+          { side = "strike", shaping_weight = 1.0, opponent = "guard_parked_centre" }]
+probe_num_games = 16384
+# The learner positive control is NOT in the pilot (LEAD CALL 21 Nov 2026 (QC N-1)): it is run 0, [run0] below. The
+# pilot keeps the rates, the memory, the timing batches and the 3-update recipe probes.
+# Worst-case final-phase timing (QC I-3): each listed run's controls batch and INFO batch, timed with the untrained
+# exploiter at full size; pilot.md compares 2 x (main + INFO) + clip_reserve_s with the reserve.
+timing_batches = [{ variant = "base_tagdraw", side = "strike" }]   # not run
+probe_updates = 3
+
+[run0]
+# RUN 0, THE LEARNER POSITIVE CONTROL (LEAD CALL 21 Nov 2026 (QC N-1); replaces the pilot's 25 M-game-step probe). Reason:
+# at 25 M game-steps (4 updates) a healthy trainer is expected to FAIL (T41's Guard needed ~300 M), so that control could
+# not tell a broken trainer from a short budget. Run 0 = the chosen Strike recipe ([trainer] side_overrides.strike, as
+# filled from the pilot; checked equal to pilot.json "strike_recipe") trained on `variant` against `opponent` (the parked
+# Guard) from its own `train_seed`, at the SAME budget and cap as a run of record: [trainer] num_games, game_steps_per_run
+# as filled from the pilot, and the run cap of the six runs (--cap-h; a Strike run refuses a run 0 of another cap).
+# Criterion (unchanged): the trained Strike (current networks, mean actions, held 0.6 s) reaches the parked Guard at least
+# as often as the scripted `script` (strike_straight) does on the same starts (the reference's first [run] eval_games
+# starts, all games counted, an unfinished game as no reach) minus `margin` (point estimates). Read at the pre-listed
+# checkpoints: every [trainer] curve_every_updates updates, and the budget's last update if that is not one of them.
+#   PASS: the first checkpoint that passes; the run stops there.
+#   FAIL: the full budget ends with no checkpoint passing.
+#   INCONCLUSIVE: training stopped at the cap reserve before the budget (the same reserve rule as the runs).
+# Every status is terminal in its run folder (learner_control.json; the same command changes nothing). Before training,
+# controls as in [controls]: the script cell replays T44's cell, the untrained exploiter plays as the zero script, paired
+# starts, one for one, no non-finite action; and on every update the training game's opponent must be `opponent`
+# (ctl_trained_against, QC mutation T2). A control FAIL ends run 0 with exit 6 and no status; a non-finite action or
+# value, exit 5 and no status (the run contract). Each checkpoint read is played to its end: the cap does not cut a read
+# (its time is inside the reserve; only SIGINT/SIGTERM stops it), as the final phase (QC N-3). Videos as [videos], against
+# `opponent`. Strike runs of record require run 0 = PASS (--run0-json); --accept-learner-control records the lead's
+# decision on a run 0 INCONCLUSIVE ONLY: a run 0 FAIL is refused whatever the flag says (LEAD CALL 21 Nov 2026 (QC N-1,
+# Q4): overriding a failed positive control is the owner's decision and needs a gate change). Guard runs do not depend
+# on run 0 (the Guard recipe is T41's, already shown to learn).
+# Budget margin (LEAD CALL 21 Nov 2026 (QC N-1, Q2)): the lead fills [trainer] game_steps_per_run at most the pilot's
+# run0_game_steps (pilot.json projection; pilot.md "Game-steps run 0 fits") at the chosen num_games and run cap, and at
+# most the runs' projected game-steps: run 0's training plus its checkpoint reads (each timed by the pilot as the
+# untrained Strike against the parked Guard, every game to its end: the slowest read) must fit in the cap less the
+# reserve and the controls batch, so that run 0 cannot read INCONCLUSIVE by construction.
+# If run 0 reads FAIL the Strike runs are not launched and every variant's Strike side is INCONCLUSIVE with [verdict]
+# strike_not_launched. A run 0 INCONCLUSIVE goes to the lead.
+variant = "base_tagdraw"           # trains on base_err_tagdraw (train_game) against the parked Guard, read on base
+opponent = "guard_parked_centre"
+script = "strike_straight"
+margin = 0.05
+train_seed = 130203               # L1.10's own: not the scoring starts' 110000, curve_seed, clip_seed or a run's train_seed

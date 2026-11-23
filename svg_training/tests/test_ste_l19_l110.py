@@ -190,7 +190,8 @@ def test_the_seeds_are_new():
         if path not in (L19, L110):
             used |= _seeds(path.read_text())
     for path in (ROOT / "ste_provisional" / "players").glob("*/gates.toml"):
-        used |= _seeds(path.read_text())
+        if not path.parent.name.startswith(("2026-11-24_ste_l110", "2026-11-24_ste_l19")):   # L1.9/L1.10's own runs (24 Nov 2026)
+            used |= _seeds(path.read_text())
     assert {120001, 120101, 130111, 110000, 120900, 120950} <= used
     mine = []
     for path in (L19, L110):
@@ -304,9 +305,13 @@ def _filled(path: Path, tmp_path: Path) -> Path:
 @pytest.mark.parametrize("key", list(MATRICES), ids=lambda k: f"{k[0]}_{k[1]}")
 def test_the_score_matrices_load_once_filled_and_pin_their_games(key, tmp_path):
     path = MATRICES[key]
-    with pytest.raises(ValueError, match="not filled yet"):
-        matrix.load_settings(path)
-    data = matrix.load_settings(_filled(path, tmp_path))
+    if "FILL_" in path.read_text().split("[player]")[1].split("[[games]]")[0]:   # before its run: refused until filled
+        with pytest.raises(ValueError, match="not filled yet"):
+            matrix.load_settings(path)
+        data = matrix.load_settings(_filled(path, tmp_path))
+    else:                                                                       # filled from the finished run (L1.10, 24 Nov 2026)
+        data = matrix.load_settings(path)
+        assert isinstance(data["player"]["own_wins"], int) and data["player"]["own_wins"] > 0
     task, side = key
     assert data["job"]["task"] == {"l19": "L1.9", "l110": "L1.10"}[task] and data["player"]["side"] == side
     assert data["player"]["variant"] == {"l19": "base_1v1", "l110": "base_tagdraw"}[task]

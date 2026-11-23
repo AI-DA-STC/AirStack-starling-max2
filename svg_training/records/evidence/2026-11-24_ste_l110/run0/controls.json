@@ -1,0 +1,47 @@
+{
+ "ctl_reference_replay": {
+  "status": "PASS",
+  "phase": "before",
+  "detail": "guard_parked_centre v strike_straight: holds 534 v T44 534, reaches 466 v 466; 0 of 1000 games differ (0 in outcome)"
+ },
+ "ctl_untrained_is_still": {
+  "status": "PASS",
+  "phase": "before",
+  "detail": "untrained exploiter v zero script: holds 1000 v T44 1000, reaches 0 v 0; 0 of 1000 games differ (0 in outcome)"
+ },
+ "ctl_paired_starts": {
+  "status": "PASS",
+  "phase": "before",
+  "detail": "1 start set(s), reference 5aeba7ab2b58"
+ },
+ "tags_one_for_one": {
+  "status": "PASS",
+  "phase": "before",
+  "detail": "0 games not one for one of 3000"
+ },
+ "no_nonfinite_actions": {
+  "status": "PASS",
+  "phase": "before",
+  "detail": "0 non-finite actions"
+ },
+ "ctl_paired_starts_read": {
+  "status": "PASS",
+  "phase": "read",
+  "detail": "1 start set(s), reference 5aeba7ab2b58"
+ },
+ "tags_one_for_one_read": {
+  "status": "PASS",
+  "phase": "read",
+  "detail": "0 games not one for one of 1000"
+ },
+ "no_nonfinite_actions_read": {
+  "status": "PASS",
+  "phase": "read",
+  "detail": "0 non-finite actions"
+ },
+ "ctl_trained_against": {
+  "status": "PASS",
+  "phase": "train",
+  "detail": "every update played GuardParkedCentre"
+ }
+}

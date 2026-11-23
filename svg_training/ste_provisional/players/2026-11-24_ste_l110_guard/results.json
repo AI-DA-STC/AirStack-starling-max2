@@ -1,0 +1,534 @@
+{
+ "what": "STE L1.10 best-response run (scripts/ste_exploit_l012.py), one exploiter run; observed in the training simulator",
+ "clock_s": 120.0,
+ "clock_note": "learning curve and scores at the 120 s clock: curves at different clocks (L1.13 arm A at 30 s; T52 and arm B at 120 s) are not comparable update by update",
+ "simulator": "training simulator, tier 1 (fast engine; Starling layer: commander copy, safety filter on every pair, fitted PX4 response, exploratory); study tag on (P1, PROPOSED)",
+ "variant": "base_tagdraw",
+ "side": "guard",
+ "opponent": "strike_straight",
+ "opponent_choice": "the maximin pick (g* / s*)",
+ "trained_against": "StrikeStraight",
+ "final_reserve_s": 600.0,
+ "controls_batch_s": 1.7642811659998188,
+ "gates_sha256": "ae597e378a475abfff2196a993a29ea664258ae76be324263a2738ed9906ddc0",
+ "reference_sha256": "4bc5e011071adced368b2a0025fc47499839e0bbc8d8d650207bd12c3da0f8b5",
+ "eval_games": 1000,
+ "exploiter": {
+  "k": 921,
+  "n": 1000,
+  "ci": [
+   0.9026247164327947,
+   0.9361530349574647
+  ],
+  "composition": {
+   "holds_no_guard_left": 921,
+   "guards_left_mean_in_holds": 0.0,
+   "timeouts_by_length": 0,
+   "length_median_s": 2.45,
+   "length_p90_s": 2.9000000000000004
+  }
+ },
+ "untrained": {
+  "k": 534,
+  "n": 1000,
+  "ci": [
+   0.5030102405760234,
+   0.5647295303201022
+  ]
+ },
+ "script": {
+  "k": 808,
+  "n": 1000,
+  "cell": [
+   "guard_mark_edge",
+   "strike_straight"
+  ],
+  "ci": [
+   0.7824270733559523,
+   0.8312155571148313
+  ],
+  "composition": {
+   "holds_no_guard_left": 808,
+   "guards_left_mean_in_holds": 0.0,
+   "timeouts_by_length": 0,
+   "length_median_s": 2.4000000000000004,
+   "length_p90_s": 2.9000000000000004
+  }
+ },
+ "paired": {
+  "exploiter_only": 154,
+  "script_only": 41
+ },
+ "side_result": {
+  "side": "guard",
+  "learned": true,
+  "untrained": {
+   "k": 534,
+   "n": 1000,
+   "rate": 0.534,
+   "ci": [
+    0.5030102405760234,
+    0.5647295303201022
+   ]
+  },
+  "gain": {
+   "trained": {
+    "k": 921,
+    "n": 1000,
+    "rate": 0.921,
+    "ci": [
+     0.9026247164327947,
+     0.9361530349574647
+    ]
+   },
+   "script": {
+    "k": 808,
+    "n": 1000,
+    "rate": 0.808,
+    "ci": [
+     0.7824270733559523,
+     0.8312155571148313
+    ]
+   },
+   "gain": 0.11299999999999999,
+   "real": true
+  },
+  "status": "gain",
+  "better": {
+   "k": 921,
+   "n": 1000,
+   "rate": 0.921,
+   "ci": [
+    0.9026247164327947,
+    0.9361530349574647
+   ],
+   "who": "exploiter"
+  }
+ },
+ "cells": {
+  "exploiter v strike_straight": {
+   "games": 1000,
+   "unfinished": 0,
+   "holds": 921,
+   "reaches": 79,
+   "hold_ci": [
+    0.9026247164327947,
+    0.9361530349574647
+   ],
+   "reach_ci": [
+    0.06384696504253543,
+    0.0973752835672054
+   ]
+  },
+  "zero v strike_straight": {
+   "games": 1000,
+   "unfinished": 0,
+   "holds": 534,
+   "reaches": 466,
+   "hold_ci": [
+    0.5030102405760234,
+    0.5647295303201022
+   ],
+   "reach_ci": [
+    0.43527046967989796,
+    0.4969897594239768
+   ]
+  },
+  "guard_parked_centre v strike_straight": {
+   "games": 1000,
+   "unfinished": 0,
+   "holds": 534,
+   "reaches": 466,
+   "hold_ci": [
+    0.5030102405760234,
+    0.5647295303201022
+   ],
+   "reach_ci": [
+    0.43527046967989796,
+    0.4969897594239768
+   ]
+  },
+  "guard_parked_ring v strike_straight": {
+   "games": 1000,
+   "unfinished": 0,
+   "holds": 523,
+   "reaches": 477,
+   "hold_ci": [
+    0.49201363243599017,
+    0.5538103302290359
+   ],
+   "reach_ci": [
+    0.44618966977096414,
+    0.5079863675640099
+   ]
+  },
+  "guard_mark_edge v strike_straight": {
+   "games": 1000,
+   "unfinished": 0,
+   "holds": 808,
+   "reaches": 192,
+   "hold_ci": [
+    0.7824270733559523,
+    0.8312155571148313
+   ],
+   "reach_ci": [
+    0.1687844428851688,
+    0.21757292664404781
+   ]
+  },
+  "guard_mirror v strike_straight": {
+   "games": 1000,
+   "unfinished": 0,
+   "holds": 796,
+   "reaches": 204,
+   "hold_ci": [
+    0.7699130750438999,
+    0.8198214009929571
+   ],
+   "reach_ci": [
+    0.18017859900704303,
+    0.23008692495610017
+   ]
+  },
+  "guard_field v strike_straight": {
+   "games": 1000,
+   "unfinished": 0,
+   "holds": 716,
+   "reaches": 284,
+   "hold_ci": [
+    0.6872653238598468,
+    0.7430814559508324
+   ],
+   "reach_ci": [
+    0.2569185440491676,
+    0.31273467614015316
+   ]
+  }
+ },
+ "info": {
+  "exploiter v strike_straight": {
+   "games": 1000,
+   "unfinished": 0,
+   "holds": 921,
+   "reaches": 79,
+   "hold_ci": [
+    0.9026247164327947,
+    0.9361530349574647
+   ],
+   "reach_ci": [
+    0.06384696504253543,
+    0.0973752835672054
+   ]
+  },
+  "exploiter v strike_flank": {
+   "games": 1000,
+   "unfinished": 0,
+   "holds": 960,
+   "reaches": 40,
+   "hold_ci": [
+    0.9459900625744302,
+    0.9704891907260906
+   ],
+   "reach_ci": [
+    0.02951080927390945,
+    0.05400993742556984
+   ]
+  },
+  "exploiter v strike_high": {
+   "games": 1000,
+   "unfinished": 0,
+   "holds": 938,
+   "reaches": 62,
+   "hold_ci": [
+    0.9213116000993365,
+    0.9513360367389853
+   ],
+   "reach_ci": [
+    0.04866396326101466,
+    0.07868839990066345
+   ]
+  },
+  "exploiter v strike_low": {
+   "games": 1000,
+   "unfinished": 0,
+   "holds": 896,
+   "reaches": 104,
+   "hold_ci": [
+    0.8755398308973383,
+    0.9134292654222405
+   ],
+   "reach_ci": [
+    0.08657073457775956,
+    0.12446016910266174
+   ]
+  },
+  "exploiter v strike_sacrifice": {
+   "games": 1000,
+   "unfinished": 0,
+   "holds": 930,
+   "reaches": 70,
+   "hold_ci": [
+    0.912484997993282,
+    0.9442238692224224
+   ],
+   "reach_ci": [
+    0.055776130777577704,
+    0.08751500200671816
+   ]
+  },
+  "exploiter v strike_converge": {
+   "games": 1000,
+   "unfinished": 0,
+   "holds": 928,
+   "reaches": 72,
+   "hold_ci": [
+    0.9102878591617453,
+    0.9424363156483045
+   ],
+   "reach_ci": [
+    0.05756368435169555,
+    0.08971214083825475
+   ]
+  }
+ },
+ "tag_shares": {
+  "edge_m": null,
+  "cells": {
+   "exploiter v strike_straight": {
+    "tags_counted": 2921,
+    "tags_pushed": 1371,
+    "pushed_tag_share": 0.469359808284834,
+    "tags_filtered": 1456,
+    "filter_active_share": 0.4984594317014721,
+    "tags_at_edge": null,
+    "edge_tag_share": null,
+    "tag_edge_m": null,
+    "tag_pair_min_m": 1.5590713024139404
+   },
+   "zero v strike_straight": {
+    "tags_counted": 2529,
+    "tags_pushed": 36,
+    "pushed_tag_share": 0.014234875444839857,
+    "tags_filtered": 132,
+    "filter_active_share": 0.05219454329774614,
+    "tags_at_edge": null,
+    "edge_tag_share": null,
+    "tag_edge_m": null,
+    "tag_pair_min_m": 1.572609305381775
+   },
+   "guard_parked_centre v strike_straight": {
+    "tags_counted": 2529,
+    "tags_pushed": 36,
+    "pushed_tag_share": 0.014234875444839857,
+    "tags_filtered": 132,
+    "filter_active_share": 0.05219454329774614,
+    "tags_at_edge": null,
+    "edge_tag_share": null,
+    "tag_edge_m": null,
+    "tag_pair_min_m": 1.572609305381775
+   },
+   "guard_parked_ring v strike_straight": {
+    "tags_counted": 2518,
+    "tags_pushed": 44,
+    "pushed_tag_share": 0.017474185861795076,
+    "tags_filtered": 120,
+    "filter_active_share": 0.04765687053216839,
+    "tags_at_edge": null,
+    "edge_tag_share": null,
+    "tag_edge_m": null,
+    "tag_pair_min_m": 1.5738705396652222
+   },
+   "guard_mark_edge v strike_straight": {
+    "tags_counted": 2806,
+    "tags_pushed": 767,
+    "pushed_tag_share": 0.27334283677833215,
+    "tags_filtered": 893,
+    "filter_active_share": 0.3182466143977192,
+    "tags_at_edge": null,
+    "edge_tag_share": null,
+    "tag_edge_m": null,
+    "tag_pair_min_m": 1.5537834167480469
+   },
+   "guard_mirror v strike_straight": {
+    "tags_counted": 2794,
+    "tags_pushed": 690,
+    "pushed_tag_share": 0.24695776664280603,
+    "tags_filtered": 821,
+    "filter_active_share": 0.2938439513242663,
+    "tags_at_edge": null,
+    "edge_tag_share": null,
+    "tag_edge_m": null,
+    "tag_pair_min_m": 1.5542272329330444
+   },
+   "guard_field v strike_straight": {
+    "tags_counted": 2716,
+    "tags_pushed": 155,
+    "pushed_tag_share": 0.05706921944035346,
+    "tags_filtered": 297,
+    "filter_active_share": 0.1093519882179676,
+    "tags_at_edge": null,
+    "edge_tag_share": null,
+    "tag_edge_m": null,
+    "tag_pair_min_m": 1.5538411140441895
+   }
+  },
+  "info": {
+   "exploiter v strike_straight": {
+    "tags_counted": 2921,
+    "tags_pushed": 1371,
+    "pushed_tag_share": 0.469359808284834,
+    "tags_filtered": 1456,
+    "filter_active_share": 0.4984594317014721,
+    "tags_at_edge": null,
+    "edge_tag_share": null,
+    "tag_edge_m": null,
+    "tag_pair_min_m": 1.5590713024139404
+   },
+   "exploiter v strike_flank": {
+    "tags_counted": 2960,
+    "tags_pushed": 1475,
+    "pushed_tag_share": 0.4983108108108108,
+    "tags_filtered": 1633,
+    "filter_active_share": 0.5516891891891892,
+    "tags_at_edge": null,
+    "edge_tag_share": null,
+    "tag_edge_m": null,
+    "tag_pair_min_m": 1.5640437602996826
+   },
+   "exploiter v strike_high": {
+    "tags_counted": 2935,
+    "tags_pushed": 1488,
+    "pushed_tag_share": 0.506984667802385,
+    "tags_filtered": 1563,
+    "filter_active_share": 0.5325383304940374,
+    "tags_at_edge": null,
+    "edge_tag_share": null,
+    "tag_edge_m": null,
+    "tag_pair_min_m": 1.5632078647613525
+   },
+   "exploiter v strike_low": {
+    "tags_counted": 2892,
+    "tags_pushed": 1567,
+    "pushed_tag_share": 0.5418395573997233,
+    "tags_filtered": 1651,
+    "filter_active_share": 0.5708852005532503,
+    "tags_at_edge": null,
+    "edge_tag_share": null,
+    "tag_edge_m": null,
+    "tag_pair_min_m": 1.5632513761520386
+   },
+   "exploiter v strike_sacrifice": {
+    "tags_counted": 2912,
+    "tags_pushed": 1467,
+    "pushed_tag_share": 0.5037774725274725,
+    "tags_filtered": 1696,
+    "filter_active_share": 0.5824175824175825,
+    "tags_at_edge": null,
+    "edge_tag_share": null,
+    "tag_edge_m": null,
+    "tag_pair_min_m": 1.5590019226074219
+   },
+   "exploiter v strike_converge": {
+    "tags_counted": 2927,
+    "tags_pushed": 1871,
+    "pushed_tag_share": 0.639221045439016,
+    "tags_filtered": 1984,
+    "filter_active_share": 0.6778271267509395,
+    "tags_at_edge": null,
+    "edge_tag_share": null,
+    "tag_edge_m": null,
+    "tag_pair_min_m": 1.5642679929733276
+   }
+  }
+ },
+ "reference_label": "T44",
+ "trained_updates": 88,
+ "game_steps": 553648128,
+ "train_stop": "budget: 553,648,128 of 550,000,000 game-steps",
+ "budget_reached": true,
+ "train_s": 533.4636346390016,
+ "game_steps_per_s_median": 1049510.8495882587,
+ "num_games": 16384,
+ "decision_ticks": 12,
+ "stale_tick_share_mean": 0.08604868072451967,
+ "train_seed": 130202,
+ "device": "cuda",
+ "parameter_set": {
+  "file": "params/real_exploratory_v0.toml",
+  "sha256": "4c93543f51ab41ea5bb0f81e6d1b0512f662a3e10126ec2d85fc3bb008cecaa2",
+  "filter": "every pair, 1000 sweeps, check every 8"
+ },
+ "game_file": {
+  "file": "configs/ste_l011/base.toml",
+  "sha256": "96e0e7f61a49999da54eee81a544bf64c519cd80833f0dcdfa2a07edfc10cc4d"
+ },
+ "train_game_file": {
+  "file": "configs/ste_l1/base_err_tagdraw.toml",
+  "sha256": "336a7b028007c696f6d7041192f1e782f6dbae76816083a449b299104da71b39"
+ },
+ "reference": {
+  "file": "configs/ste_l012/t44_reference.npz",
+  "sha256": "4bc5e011071adced368b2a0025fc47499839e0bbc8d8d650207bd12c3da0f8b5",
+  "start_sha256": "5aeba7ab2b582f2973034c8203c17ed3e8239fef7029a1f991fe95b82369843c",
+  "t44_gates_sha256": "8bfbc2cb8f1d6551fb3060bc750c24f9b2220ebafb19fcd44e9e3baa1c24e5d4"
+ },
+ "settings": {
+  "algorithm": "IPPO",
+  "decision_ticks": 12,
+  "num_games": 16384,
+  "game_steps_per_run": 550000000,
+  "rollouts": 32,
+  "learning_epochs": 5,
+  "mini_batches": 4,
+  "learning_rate": 0.0003,
+  "hidden": [
+   128,
+   128
+  ],
+  "init_log_std": -1.6,
+  "frozen_log_std_axes": [
+   "yaw"
+  ],
+  "zero_mean_init": true,
+  "discount_factor": 0.99,
+  "gae_lambda": 0.95,
+  "entropy_loss_scale": 0.0,
+  "value_loss_scale": 2.5,
+  "ratio_clip": 0.2,
+  "value_clip": 0.2,
+  "grad_norm_clip": 0.5,
+  "shaping_weight": 0.0,
+  "strike_fallback": {
+   "shaping_weight": 1.0
+  },
+  "strike_fallback_label": "shaped Strike recipe",
+  "checkpoint_every_updates": 1,
+  "curve_every_updates": 10,
+  "final_reserve_s": 600,
+  "final_reserve_factor": 2.0,
+  "clip_reserve_s": 120
+ },
+ "discount_factor": 0.99,
+ "recipe": "T41 recipe",
+ "extra_opponents": {},
+ "effective_s": 555.8545880317688,
+ "cap_h": 0.94,
+ "machine": {
+  "host": "jeremychia-X870-EAGLE-WIFI7",
+  "gpu": "NVIDIA GeForce RTX 5090",
+  "torch": "2.7.0+cu128",
+  "python": "3.11.18"
+ },
+ "code": {
+  "first": {
+   "commit": "42ba46bb980bef792e46576d67f42cb9e71a238a",
+   "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "changes": []
+ },
+ "videos": [
+  "videos/base_tagdraw_guard_game0_hold.gif: game 0, hold at 2.7 s (0.05 MB)",
+  "videos/base_tagdraw_guard_game1_hold.gif: game 1, hold at 2.6 s (0.05 MB)"
+ ],
+ "complete": true
+}

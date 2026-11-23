@@ -22,7 +22,7 @@ from typing import Callable
 import torch
 from torch import Tensor
 
-from svg_training.core.safety_filter import filter_velocities
+from svg_training.core.safety_filter import filter_velocities, filter_velocities_shared
 from svg_training.models.commander import CommanderParams, TeleopCommander
 
 
@@ -65,13 +65,23 @@ class CommandChain:
         # the filter's correction this tick (safe - nominal velocity, [N, M, 3] m/s; zeros when off): read by
         # ste/sweep.SweepGame for L0.12b's "pushed together" tag measurement; it changes no result
         self.correction = torch.zeros(n, m, 3, device=device, dtype=dtype)
+        # STE L2.1: the per-pair share of the filter's correction ([N, P, 2] or [P, 2]; None = the even split, today's
+        # call bit for bit), set per step by the Starling layer (``set_pair_share``); ``fallback`` [N] bool, the games
+        # that took the even split by option B's emergency rule this tick (all False when the share is None)
+        self.pair_share: Tensor | None = None
+        self.fallback = torch.zeros(n, dtype=torch.bool, device=device)
 
     # ------------------------------------------------------------------------------------- the filter
     def _filter(self, nominal: Tensor, pos_m: Tensor) -> tuple[Tensor, Tensor]:
         f = self.filter_cfg
         kw = {"alpha": f["alpha"], "iterations": self.filter_iterations, "tolerance": f["tolerance"],
               **self.filter_kwargs}
-        res = self._filter_fn(nominal, pos_m, self.pair_mask, f["safety_radius_m"], self._filter_cap_mps, **kw)
+        if self.pair_share is None:
+            res = self._filter_fn(nominal, pos_m, self.pair_mask, f["safety_radius_m"], self._filter_cap_mps, **kw)
+        else:                    # option B with its emergency rule (core/safety_filter.filter_velocities_shared)
+            res = filter_velocities_shared(nominal, pos_m, self.pair_mask, f["safety_radius_m"], self._filter_cap_mps,
+                                           self.pair_share, filter_fn=self._filter_fn, **kw)
+            self.fallback = res.fallback
         self.corrected = res.corrected
         self.correction = res.velocities - nominal
         return res.velocities, res.corrected
@@ -80,6 +90,11 @@ class CommandChain:
         """Replace the filter's pair mask: [M, M] (all games) or [N, M, M] bool (per game, e.g. live drones only).
         Same rules as ``filter_velocities``: symmetric, False on the diagonal, block shaped."""
         self.pair_mask = mask.to(self.device)
+
+    def set_pair_share(self, share: Tensor | None) -> None:
+        """Replace the filter's per-pair share (STE L2.1): [P, 2] or [N, P, 2] float (``triu_indices`` pair order; e.g.
+        ``core.safety_filter.guard_yields_share``), or None for the even split (today's call, bit for bit)."""
+        self.pair_share = None if share is None else share.to(device=self.device, dtype=self.dtype)
 
     # ------------------------------------------------------------------------------------- interface
     def step(self, cmd_mps: Tensor, pos_m: Tensor, landing: Tensor | None = None) -> tuple[Tensor, Tensor, Tensor]:

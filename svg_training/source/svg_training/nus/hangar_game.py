@@ -47,6 +47,8 @@ class NusIdentityLayer:
     def __init__(self, cfg: GameCfg, num_games: int, guards: int, strikes: int, device):
         if getattr(getattr(cfg, "landing", None), "enabled", False):
             raise ValueError("[landing] enabled is not built for the NUS hangar layers (L2.3); switch it off")
+        if getattr(getattr(cfg, "filter", None), "share", "equal") != "equal":
+            raise ValueError('[filter] share other than "equal" is not built for the NUS hangar layers (L2.1)')
         params = load_params(resolve_params(cfg.starling.params))
         self.stick_cap_mps = check_commander(cfg, params)
         m = guards + strikes
@@ -75,6 +77,8 @@ class NusPushLayer(StarlingLayer):
     def __init__(self, cfg: GameCfg, num_games: int, guards: int, strikes: int, device):
         if getattr(getattr(cfg, "landing", None), "enabled", False):
             raise ValueError("[landing] enabled is not built for the NUS hangar layers (L2.3); switch it off")
+        if getattr(getattr(cfg, "filter", None), "share", "equal") != "equal":
+            raise ValueError('[filter] share other than "equal" is not built for the NUS hangar layers (L2.1)')
         super().__init__(cfg, num_games, guards, strikes, device)
         params = load_params(resolve_params(cfg.starling.params))
         m = guards + strikes

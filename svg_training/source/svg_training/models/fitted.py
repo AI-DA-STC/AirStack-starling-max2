@@ -177,6 +177,10 @@ class FittedResponse:
         Same rules as ``filter_velocities``: symmetric, False on the diagonal, block shaped."""
         self.chain.set_pair_mask(mask)
 
+    def set_pair_share(self, share: Tensor | None) -> None:
+        """The filter's per-pair share (STE L2.1; ``CommandChain.set_pair_share``); None = the even split."""
+        self.chain.set_pair_share(share)
+
     # ------------------------------------------------------------------------------------- PX4, one 0.01 s step
     def _px4_step(self, x: Tensor, p_est: Tensor | None = None, v_est: Tensor | None = None) -> None:
         """x [N, M, 9] = delayed (p_sp, v_ff, a_ff). The lag1 law of px4_trajectory.simulate, plus z. ``p_est`` /

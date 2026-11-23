@@ -221,6 +221,31 @@ class LandingCfg:
                 raise ValueError(f"landing.{name} must be a finite number {'>=' if low_ok else '>'} 0, got {value!r}")
 
 
+FILTER_SHARES: tuple[str, ...] = ("equal", "guard_yields")   # = core/safety_filter.SHARE_MODES (a test keeps them equal)
+
+
+@dataclass(frozen=True)
+class FilterCfg:
+    """How the safety filter splits a pair's correction (STE task L2.1, filter option B), ``[filter]`` in a game file;
+    absent = ``share = "equal"``, today's filter bit for bit (nothing else is read).
+
+    * ``share`` "equal" (default; MEASURED: the flight filter, ``cbf_filter.py``, splits every pair 50/50): each pair's
+      correction is split evenly between its two drones.
+    * ``share`` "guard_yields" (option B, PROPOSED, P2 open, ruled by the owner at the L2 gate; no run of record uses it
+      before that): in a pair of a live Guard drone and a live Strike drone the Guard drone takes the whole correction and
+      the Strike drone's command is left as it is; Guard-Guard and Strike-Strike pairs, and every pair with a landing drone
+      (``[landing]``, L2.3), keep the even split. Emergency rule: a game whose option B answer would need the filter's
+      emergency action (the Guard drone cannot escape: residual above 5 x tolerance, the filter's own emergency residual)
+      takes today's even-split filter that tick, push-apart included (``core/safety_filter.filter_velocities_shared``).
+      Needs the Starling layer (the filter runs there) and the partner preset (the contact preset has no Guard-Strike pair).
+    """
+    share: str = "equal"
+
+    def __post_init__(self) -> None:
+        if self.share not in FILTER_SHARES:
+            raise ValueError(f"filter.share must be one of {FILTER_SHARES}, got {self.share!r}")
+
+
 START_MODES: tuple[str, ...] = ("rings", "anywhere", "zone_disc_ring")
 
 
@@ -267,6 +292,7 @@ class GameCfg:
     tag: TagCfg = field(default_factory=TagCfg)
     estimate_error: EstimateErrorCfg = field(default_factory=EstimateErrorCfg)
     landing: LandingCfg = field(default_factory=LandingCfg)
+    filter: FilterCfg = field(default_factory=FilterCfg)
 
     def __post_init__(self) -> None:
         """An enabled ``[estimate_error]`` needs the Starling layer with backend "fitted" (else it would do nothing).
@@ -278,6 +304,7 @@ class GameCfg:
             raise ValueError('estimate_error needs the Starling layer on with backend "fitted" (tier 1); the physics '
                              "backend has its own (state_error_* in its parameter file)")
         self._check_landing()
+        self._check_filter()
         if self.starts.mode != "zone_disc_ring":
             return
         a = self.arena
@@ -306,6 +333,18 @@ class GameCfg:
             raise ValueError(f"landing.touchdown_z_m {self.landing.touchdown_z_m!r} must be below the height band's "
                              f"floor {self.arena.height_band_m[0]!r} m")
 
+    def _check_filter(self) -> None:
+        """``[filter] share = "guard_yields"`` (STE L2.1) needs the Starling layer (the only place the filter runs) and the
+        partner preset (the contact preset's filter pairs are team-mates only, so the setting would do nothing)."""
+        if self.filter.share == "equal":
+            return
+        if not self.starling.enabled:
+            raise ValueError(f"filter.share {self.filter.share!r} needs the Starling layer on (starling_layer.enabled = "
+                             "true): the safety filter runs there")
+        if self.preset != "partner":
+            raise ValueError(f'filter.share {self.filter.share!r} is built for preset "partner" only (the contact preset '
+                             "filters team-mates only: no Guard-Strike pair)")
+
     def team_speed_mps(self, team: str) -> float:
         """Team speed in m/s = units/step x metres/unit / seconds/step."""
         if team not in ("strike", "guard"):
@@ -321,7 +360,7 @@ class GameCfg:
         """Return a copy with dotted fields changed, e.g. replace(**{"starling.enabled": True})."""
         sections = {"arena": "arena", "rules": "rules", "contact": "contact",
                     "starling": "starling", "starts": "starts", "rewards": "rewards", "tag": "tag",
-                    "estimate_error": "estimate_error", "landing": "landing"}
+                    "estimate_error": "estimate_error", "landing": "landing", "filter": "filter"}
         top: dict[str, Any] = {}
         sub: dict[str, dict[str, Any]] = {}
         for key, val in dotted.items():
@@ -356,7 +395,7 @@ LOCAL_ALLOWED: frozenset[str] = frozenset(
 _GAME_KEYS = ("preset", "dropout_fraction", "obs_view", "pad_guards", "pad_strikes", "yaw_rate_max_rad_s")
 _SECTION_CLASSES = {"arena": ArenaCfg, "partner_rules": PartnerRulesCfg, "contact_rules": ContactRulesCfg,
                     "starling_layer": StarlingLayerCfg, "starts": StartsCfg, "rewards": RewardsCfg, "tag": TagCfg,
-                    "estimate_error": EstimateErrorCfg, "landing": LandingCfg}
+                    "estimate_error": EstimateErrorCfg, "landing": LandingCfg, "filter": FilterCfg}
 
 
 def _tuplify(v: Any) -> Any:
@@ -414,6 +453,7 @@ def load_game_cfg(path: str | Path = CONFIGS / "s2_game.toml", local_dir: Path |
     cfg = GameCfg(arena=parts["arena"], rules=parts["partner_rules"], contact=parts["contact_rules"],
                   starling=parts["starling_layer"], starts=parts["starts"], rewards=parts["rewards"],
                   tag=parts["tag"], estimate_error=parts["estimate_error"], landing=parts["landing"],
+                  filter=parts["filter"],
                   **{"preset": "partner", **game})
     return cfg, Provenance(str(path), _sha(raw), local_file, local_sha)
 

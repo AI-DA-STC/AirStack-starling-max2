@@ -19,6 +19,12 @@ Guard; Guard pushing back at 0.33 m/s; closest approach 1.10 m); a Guard pinned 
 feasibility limit for the fallback. Both filter paths (``filter_velocities``, ``filter_velocities_graph`` eager on the CPU;
 the CUDA-graph replay is not run here).
 
+Part 3: the game setting ``[filter] share`` (``core/game_config.FilterCfg``; absent = "equal") through the Starling layer,
+both backends (tier 1 fitted, tier 2 physics on the PyTorch reference world): absent and "equal" play the same game bit for
+bit; the desk case in the game; pairs with a landing drone stay equal; a Guard drone pinned at a wall (KNOWN SHORTFALL,
+pinned at its measured value: the Strike drone closes to 0.39-0.60 m). Through the Starling layer the keep-out holds to 1.10 m less the tracking tolerance (the
+commander copy's position-setpoint leak and the PX4 lag; the Starling-layer tests accept >= 1.0 m).
+
 CPU, float32 unless stated, made-up scenes. Observed in the training simulator, not a flight result.
 """
 import importlib.util
@@ -369,6 +375,157 @@ def test_share_shape_is_checked(path):
     nom, pos, mask = scene([(0, 0, 1), (DESK_GAP_M, 0, 1)], [(0, 0, 0), (-0.5, 0, 0)])
     with pytest.raises(ValueError, match="pair_share"):
         run(path, nom, pos, mask, share=torch.full((1, 2, 2), 0.5))
+
+
+# --- part 3: the game setting -----------------------------------------------------------------------------------------
+
+from svg_training.core import safety_filter as sf  # noqa: E402
+from svg_training.core.game import RUNNING, Scenario, SvgGame  # noqa: E402
+from svg_training.core.game_config import FILTER_SHARES, FilterCfg, load_game_cfg  # noqa: E402
+from svg_training.core.physics_layer import load_game_physics_params  # noqa: E402
+from svg_training.models.rigid_body import TorchRigidBodyWorld  # noqa: E402
+
+CFG = load_game_cfg(use_local=False)[0]
+BACKENDS = ("fitted", "physics")
+TRACKING_TOL_M = 0.10         # DISCUSSION section 2.9: tracking lag 0.03-0.10 m measured (HTX-R2); the Starling-layer tests' 1.0 m
+
+
+def cfg_of(backend="fitted", share=None, landing=False, iterations=50):
+    """The committed s2 game, Starling layer on (50 sweeps keep the CPU tests fast); share None = no [filter] change."""
+    kw = {"starling.enabled": True, "starling.filter_iterations": iterations, "landing.enabled": landing}
+    if share is not None:
+        kw["filter.share"] = share
+    if backend == "physics":
+        kw["starling.backend"] = "physics"
+    return CFG.replace(**kw)
+
+
+def make(cfg, starts, guards=1, strikes=1, side=8.0, n=2):
+    sc = Scenario("t", side, (-2.5, 2.5), 0.4, tuple(starts))
+    world = None
+    if cfg.starling.backend == "physics":
+        p = load_game_physics_params(cfg)
+        world = TorchRigidBodyWorld(n, guards + strikes, p.airframe, p.physics_dt_s, "cpu")
+    return SvgGame(cfg, n, guards, strikes, device="cpu", scenario=sc, world=world, seed=0)
+
+
+def act(g_cmd, s_cmd, n=2):
+    def team(cmds):
+        a = torch.zeros(n, len(cmds), 4)
+        a[..., :3] = torch.tensor(cmds, dtype=torch.float32)
+        return a
+    return {"guard": team(g_cmd), "strike": team(s_cmd)}
+
+
+def chain(g):
+    return g._starling.chain if g.cfg.starling.backend == "physics" else g._starling.model.chain
+
+
+def test_setting_absent_is_equal_and_values_are_checked(tmp_path):
+    assert FilterCfg() == CFG.filter and CFG.filter.share == "equal"
+    assert FILTER_SHARES == sf.SHARE_MODES
+    path = tmp_path / "g.toml"
+    text = (ROOT / "configs" / "s2_game.toml").read_text().replace("enabled = false", "enabled = true", 1)
+    path.write_text(text + '\n[filter]\nshare = "guard_yields"\n')
+    assert load_game_cfg(path, use_local=False)[0].filter == FilterCfg(share="guard_yields")
+    path.write_text(text + '\n[filter]\nshare = "equal"\nemergency = "equal"\n')
+    with pytest.raises(ValueError, match="unknown key"):
+        load_game_cfg(path, use_local=False)
+    with pytest.raises(ValueError, match="filter.share"):
+        FilterCfg(share="strike_yields")
+
+
+def test_guard_yields_needs_the_starling_layer_and_the_partner_preset():
+    with pytest.raises(ValueError, match="filter.share"):
+        CFG.replace(**{"filter.share": "guard_yields"})                         # no filter at all without the layer
+    with pytest.raises(ValueError, match="filter.share"):
+        cfg_of(share="guard_yields").replace(preset="contact")                   # contact: no Guard-Strike pairs
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_equal_written_out_plays_the_absent_setting_bit_for_bit(backend):
+    starts = ((0.0, 0.0), (-1.3, 0.0))
+    rows = {}
+    for share in (None, "equal"):
+        g = make(cfg_of(backend, share), starts)
+        rows[share] = []
+        for _ in range(30):
+            o = g.step(act([(0.3, 0.2, 0.0)], [(1.0, 0.0, -0.3)]))
+            rows[share].append((g.pos_m.clone(), g.vel_mps.clone(), o.info["filter_corrected"].clone()))
+        assert chain(g).pair_share is None
+    assert any(r[2].any() for r in rows[None])
+    for a, b in zip(rows[None], rows["equal"]):
+        assert all(torch.equal(x, y) for x, y in zip(a, b))
+
+
+def _desk_game(backend, share, ticks=60):
+    """1v1: a still Guard drone at the origin, the Strike drone from 2.0 m flying at it at full speed (0.5 m/s).
+    Returns (closest 3-D gap m, Strike filter corrections [T, N, 3], Guard corrected any tick)."""
+    g = make(cfg_of(backend, share), ((0.0, 0.0), (-2.0, 0.0)))
+    closest, s_corr, g_hit = 9.0, [], False
+    for _ in range(ticks):
+        o = g.step(act([(0.0, 0.0, 0.0)], [(1.0, 0.0, 0.0)]))
+        assert (o.outcome == RUNNING).all()
+        closest = min(closest, float((g.pos_m[:, 0] - g.pos_m[:, 1]).norm(dim=-1).min()))
+        s_corr.append(chain(g).correction[:, 1].clone())
+        g_hit = g_hit or bool(o.info["filter_corrected"][:, 0].any())
+    return closest, torch.stack(s_corr), g_hit
+
+
+# measured 24 Nov 2026, CPU, 60 ticks: closest approach (guard_yields / equal) fitted 1.058 / 1.072 m, physics 1.080 /
+# 1.080 m; the Strike drone's largest correction with equal 0.260 m/s (fitted), 0.258 m/s (physics)
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_desk_case_in_the_game(backend):
+    """guard_yields: the filter never changes the Strike drone's command (bit for bit zero correction), the Guard drone
+    gives way, and the pair stays >= 1.10 m - the tracking tolerance apart; equal: the Strike drone is corrected too."""
+    gap_b, corr_b, hit_b = _desk_game(backend, "guard_yields")
+    gap_e, corr_e, _ = _desk_game(backend, None)
+    assert hit_b and (corr_b == 0).all() and corr_e.abs().max() > 0.05
+    assert min(gap_b, gap_e) >= KEEPOUT_M - TRACKING_TOL_M, (gap_b, gap_e)
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_pairs_with_a_landing_drone_stay_equal_in_the_game(backend):
+    """[landing] on with guard_yields, 1 Guard + 2 Strike drones (pairs (0,1) (0,2) (1,2)): Guard-Strike pairs (1, 0)
+    while all play; once Strike drone 1 is lost and lands (L2.3: an ordinary filter row), its pairs are (1/2, 1/2)."""
+    g = make(cfg_of(backend, "guard_yields", landing=True), ((0.0, 0.0), (-1.3, 0.0), (2.5, -2.5)), strikes=2)
+    g.schedule_dropout(torch.full((2,), 1, dtype=torch.long), torch.full((2,), 2, dtype=torch.long))
+    g.step(act([(0.0, 0.0, 0.0)], [(0.0, 0.0, 0.0)] * 2))
+    assert chain(g).pair_share.tolist() == [[[1.0, 0.0], [1.0, 0.0], [0.5, 0.5]]] * 2 and not g.landing.any()
+    g.step(act([(0.0, 0.0, 0.0)], [(0.0, 0.0, 0.0)] * 2))           # lost at the end of step 2: landing from then
+    assert g.landing[:, 1].all()
+    o = g.step(act([(0.0, 0.0, 0.0)], [(0.0, 0.0, 0.0)] * 2))
+    assert (o.outcome == RUNNING).all() and g.landing[:, 1].all()
+    assert chain(g).pair_share.tolist() == [[[0.5, 0.5], [1.0, 0.0], [0.5, 0.5]]] * 2
+
+
+# (backend: guard_yields closest band, equal minimum): measured 24 Nov 2026, CPU, 120 ticks: guard_yields 0.393 m fitted,
+# 0.597 m physics (fallback on 98 / 46 game-ticks); equal 0.967 m fitted, 0.998 m physics (no fallback: share "equal")
+WALL_CASES = {"fitted": ((0.35, 0.45), 0.95), "physics": ((0.55, 0.65), 0.95)}
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_a_guard_pinned_at_a_wall_known_shortfall(backend):
+    """KNOWN SHORTFALL of option B, pinned at its measured value (a regression guard, not an acceptance; for the owner's
+    P2 ruling): a still Guard drone at x = 3.6 m, against the +x wall (keep-in edge 3.75 m), and the Strike drone from
+    x = 1.6 m flying at it at full speed. The filter does not know the walls: with guard_yields it keeps the Strike drone's
+    command and sends the Guard drone through the wall, where the walls clamp it, so the pair closes until the Guard drone
+    would need more than the cap (1.0 m/s) and the emergency rule falls back to the even split, which then still gives
+    half of every correction to the pinned drone. The pair closes to 0.39 m (fitted; physics 0.60 m, where the Guard drone
+    also escapes down to the height band's floor); with equal it stops at 0.97 m (physics 1.00 m), as today."""
+    band, eq_min = WALL_CASES[backend]
+    closest, fell_back = {}, {}
+    for share in ("guard_yields", None):
+        g = make(cfg_of(backend, share), ((3.6, 0.0), (1.6, 0.0)))
+        lo, fb = 9.0, 0
+        for _ in range(120):
+            o = g.step(act([(0.0, 0.0, 0.0)], [(1.0, 0.0, 0.0)]))
+            assert (o.outcome == RUNNING).all()
+            lo = min(lo, float((g.pos_m[:, 0] - g.pos_m[:, 1]).norm(dim=-1).min()))
+            fb += int(chain(g).fallback.sum())
+        closest[share], fell_back[share] = lo, fb
+    assert band[0] <= closest["guard_yields"] <= band[1] and fell_back["guard_yields"] > 0, closest
+    assert closest[None] >= eq_min and fell_back[None] == 0, closest
 
 
 if __name__ == "__main__" and "--write-golden" in sys.argv:

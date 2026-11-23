@@ -38,7 +38,8 @@ from svg_training.models.physics_params import PhysicsParams, apply_sim_only_gai
 from svg_training.models.rigid_body import RigidBodyWorld
 
 from .game_config import GameCfg, load_s2b_gates
-from .starling_layer import check_commander, filter_fn, filter_kwargs, filter_pairs, resolve_params
+from .starling_layer import (check_commander, filter_fn, filter_kwargs, filter_pairs, resolve_params, share_guards,
+                             step_share)
 
 
 def load_game_physics_params(cfg: GameCfg) -> PhysicsParams:
@@ -77,6 +78,7 @@ class PhysicsLayer:
         self.chain = CommandChain(num_games, m, params, device, safety_filter=True, pair_mask=pairs,
                                   filter_iterations=cfg.starling.filter_iterations, filter_kwargs=filter_kwargs(cfg),
                                   filter_fn=filter_fn(cfg))
+        self._guard = share_guards(cfg, guards, strikes, device)               # None: [filter] share "equal" (L2.1)
         self.params = load_game_physics_params(cfg)
         self.world = world
         self.drone = PhysicsDrone(world, self.params, device, noise_seed=seed)
@@ -131,6 +133,8 @@ class PhysicsLayer:
         land = {} if landing is None else {"landing": landing}
         self._alive = flying
         self.chain.set_pair_mask(self._pairs & flying[:, :, None] & flying[:, None, :])
+        if self._guard is not None:                    # option B (STE L2.1): pairs with a landing drone stay equal
+            self.chain.set_pair_share(step_share(self._guard, cmd_mps.shape[0], landing))
         # restarts: pending new games, and the drones that are out (at their parked positions); one world write
         restart = self._pending | ~flying
         pend = self._pending

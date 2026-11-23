@@ -17,6 +17,12 @@ zero, and is restarted fresh (at rest, new commander reference) every step it is
 (STE L2.3), a drone that is landing (``step(..., landing=mask)``) is out of the game but still flying: it stays in every
 pair, is not restarted, and flies the descent the game gives it as the commander's LANDING nominal.
 
+How a pair's correction is split (STE L2.1, ``[filter] share``; absent or "equal" = today's call bit for bit): with
+"guard_yields" (option B, PROPOSED, P2) the Guard drone of a Guard-Strike pair takes the whole correction, every other
+pair and every pair with a landing drone keeps the even split, and a game whose Guard drone cannot escape takes the even
+split that tick (``core/safety_filter.filter_velocities_shared``). Both backends set the share each step
+(``share_guards``, ``step_share``).
+
 Every (re)start seeds the PX4 model's delay history with a hover setpoint at the drone's position
 (``FittedResponse(hover_seed=True)``): a real drone hovering at its start has been sent "hold here", so the first
 command reaches PX4 after the fitted delay like every later one.
@@ -39,6 +45,7 @@ from pathlib import Path
 import torch
 from torch import Tensor
 
+from svg_training.core.safety_filter import guard_yields_share
 from svg_training.models.commander import CommanderParams
 from svg_training.models.fitted import FittedResponse, load_params
 
@@ -93,6 +100,20 @@ def filter_fn(cfg: GameCfg):
     return filter_velocities_graph
 
 
+def share_guards(cfg: GameCfg, guards: int, strikes: int, device: str | torch.device) -> Tensor | None:
+    """The Guard drones [M] bool when ``[filter] share = "guard_yields"`` (STE L2.1, option B: the Guard drone of a
+    Guard-Strike pair takes the whole correction); None for "equal" (the even split, today's call bit for bit)."""
+    if cfg.filter.share == "equal":
+        return None
+    return torch.arange(guards + strikes, device=device) < guards
+
+
+def step_share(guard: Tensor | None, n: int, landing: Tensor | None) -> Tensor | None:
+    """This step's per-pair share [N, P, 2] (``core.safety_filter.guard_yields_share``: pairs with a landing drone,
+    ``landing`` [N, M] bool, keep the even split), or None when ``guard`` is None. Batched; no host read."""
+    return None if guard is None else guard_yields_share(guard, n, landing=landing)
+
+
 def filter_kwargs(cfg: GameCfg) -> dict | None:
     """The filter's early stop from ``[starling_layer] filter_check_every`` (0 = off: no host sync)."""
     k = int(cfg.starling.filter_check_every)
@@ -114,6 +135,7 @@ class StarlingLayer:
         pairs = filter_pairs(cfg, guards, strikes, device)
         self._pairs = pairs[None]                                              # [1, M, M]
         m = guards + strikes
+        self._guard = share_guards(cfg, guards, strikes, device)               # None: [filter] share "equal"
         self.model = FittedResponse(num_games, m, params, device=device, safety_filter=True, pair_mask=pairs,
                                     filter_iterations=cfg.starling.filter_iterations,
                                     filter_kwargs=filter_kwargs(cfg), hover_seed=True, filter_fn=filter_fn(cfg),
@@ -145,6 +167,8 @@ class StarlingLayer:
         flying = alive if landing is None else alive | landing
         land = {} if landing is None else {"landing": landing}
         self.model.set_pair_mask(self._pairs & flying[:, :, None] & flying[:, None, :])
+        if self._guard is not None:                    # option B (STE L2.1): pairs with a landing drone stay equal
+            self.model.set_pair_share(step_share(self._guard, cmd_mps.shape[0], landing))
         self.model.reset(~flying)                      # out drones: at rest, fresh; they are in no pair
         vel = self.model.step(cmd_mps * flying[..., None], pos_m, **land)
         return self.model.pos_m, vel, self.model.corrected & alive

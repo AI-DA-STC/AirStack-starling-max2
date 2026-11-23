@@ -117,11 +117,18 @@ other stopped, from git alone.
   (a background `sleep 1800` timer, re-armed), at once on an event, and when asked. Three tables (phases with math
   library and simulator; the current phase task by task; other workstreams), then Next, Waiting on you, and a bold
   "Ready to push" line while the branch is ahead of its upstream. Tasks always "ID + plain name".
-- **A second opinion at every key point** (before a plan or approach, before documentation, before declaring done, when
-  stuck): on the owner's personal Max account, the `advisor` tool (Fable 5.2); on the owner's work account, where that
-  tool is absent, a read-only advisor agent on the strongest model available, briefed with the full context. The
-  independent QC agent (`ste-test-qc-engineer`) checks code; the advisor checks direction and soundness. Say which
-  advisor was used.
+- **Models (owner, 24 Nov 2026): Opus 5.5 does the work, Fable 5.2 advises at forks and gates.** The main session runs
+  Opus 5.5 at high effort (`~/.claude/settings.json`: `model` opus, `effortLevel` high). The advisor is Fable 5.2 (the
+  `advisor` tool on the owner's personal Max account; on the work account, a read-only advisor agent on the strongest
+  model available, briefed with the full context), called before a plan or approach, at a fork, before a gate and before
+  declaring a phase done; not at every step. Agents by role (their `model:` lines in `.claude/agents/` and
+  `ste_learning/agents/`): **Opus** for building code and design (`train-implementer`, `ste-software-engineer`,
+  `ste-architect`, `train-drone-dynamics`, `train-isaaclab-engineer`, `train-marl-researcher`); **Sonnet 5.5** for
+  checking and mechanical work (`ste-test-qc-engineer`, `train-gatekeeper`, `train-flight-interface-reviewer`,
+  `ste-technical-writer`, `ste-orchestrator`, and any ad-hoc reviewer, file mover or doc editor: pass `model: sonnet`).
+  Fable 5.2 as the main model only for a one-off deep session the owner names (for example designing L3 if the route
+  turns hierarchical), then back to Opus 5.5. Why: Fable costs about twice Opus per token and the weekly allowance ran
+  out on 23 Nov with most tokens spent by agents on mechanical work. Say which advisor was used.
 - **Rigour before speed** (owner, 21 Nov 2026): independent QC, tests first and one fix at a time stay, even when slower. But
   say what is eating the usage: every status carries a **Usage** line (agent tokens and minutes per task, long test suites,
   GPU-hours), and the lead flags any task whose cost is out of line before spending more on it.

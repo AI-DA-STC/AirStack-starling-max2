@@ -250,6 +250,10 @@ filter's batch dependence) sit in [what we found, limits](WHAT_WE_FOUND.md#8-lim
 <a id="12-next-steps-the-phase-5-plan"></a>
 ## 12. Phase 5: training in STE conditions (in progress)
 
+> **Superseded on 22 November 2026.** The NUS route was paused on 20 November and STE trains its own strategies in a game with a tag (rules fixed at gate G0, 22 November). The rules and the main learnings: [overview](OVERVIEW.md).
+
+
+
 **Why.** Phase 4 shows that policies trained for NUS's game do not transfer to STE drones as they are. Three routes
 were weighed: (a) NUS retrains with action hold, delay and STE's rules in its own code, and STE repeats Phases 3–4 on
 the result; (b) STE ports NUS's training method to PyTorch and trains on Starling-like drones (the *STE port of NUS's

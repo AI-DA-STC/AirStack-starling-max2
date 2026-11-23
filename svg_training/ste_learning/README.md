@@ -1,4 +1,4 @@
-INTERNAL · the lab's working folder for the STE learning track, and the page to read first. The working plan for Claude sessions is [PLAN.md](PLAN.md); reader pages for NUS and others stay in [../README.md](../README.md) and `../docs/`.
+INTERNAL · the lab's working folder for the STE learning track. The working plan for Claude sessions is [PLAN.md](PLAN.md); reader pages for NUS and others stay in [../README.md](../README.md) and `../docs/`.
 
 # STE learning track
 

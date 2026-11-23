@@ -12,6 +12,26 @@ Everything needed is in this folder; nothing depends on the previous chat. Claud
 the private NUS workspace (`~/ma_skills-self-play/`, 5090 only) do **not** travel with git: if this file and a memory
 note disagree, this file wins.
 
+### 23 November 2026 ~10:15 — OVERVIEW PAGE FOR THE LAB LEAD: HALF BUILT, RTX 5090 FINISHES IT (read this first)
+**What and why.** The owner's lab lead wants the game rules and the main learnings (NUS port + STE track) on one page.
+Run through the `quality-change` process: panel of four (technical writer, flight-test engineer, engineering manager,
+newcomer reader; positions + vote), builder check, **design APPROVED by the owner 23 Nov**
+(`docs/superpowers/specs/2026-11-23-game-overview-design.md`, page name `docs/OVERVIEW.md`), plan
+`docs/superpowers/plans/2026-11-23-game-overview.md` (three tasks). Owner asked to stop the laptop build and finish on
+the 5090.
+**Done (committed with this entry, not yet reviewed):** plan Tasks 2 and 3: dated "Superseded on 22 November 2026"
+notes on README §6 and §7, `docs/NUS_PORT_REPORT.md` §12 and `docs/WHAT_WE_FOUND.md`; the THE_GAME tag sentence; one
+line under README's **For** paragraph; first row of the `docs/README.md` Read table; `ste_learning/README.md` line 1
+no longer says "the page to read first". **These seven links point at `docs/OVERVIEW.md`, which does not exist yet:
+they are broken until Task 1 lands.**
+**To do on the 5090, in order:** (1) Task 1: write `docs/OVERVIEW.md` per the plan and the spec's "The page" and
+"Builder check, answers" (every number checked against its record; evidence = the records named there); (2) plan's
+link check → `broken: 0`; (3) one reviewer per task (numbers v records; reader-page rules in `CLAUDE.md` "Git facts
+that bite", last bullet; FIXED-only STE values), fixes; (4) final review on the strongest model, one fix wave; (5)
+newcomer acceptance: from `README.md`, the three questions (rules now; why STE left NUS's policies; what STE's own
+training showed) each ≤ 60 lines and ≤ 1 click; (6) commit by path, "Ready to push". The 07:15 entry below still holds
+for the training work (carry 0.73, L1.7 speed re-measure, L1.9 → L1.10).
+
 ### 23 November 2026 ~07:15 — LAPTOP NIGHT 2 DONE; RTX 5090 PICKS UP (read this first)
 **Merged to development tonight (each built, two code reviews, full suite at merge):** L1.1b (Gauss–Markov estimate
 error in tier 2), L1.3 first fit (T63, EXPLORATORY: hover position ~1 cm/1.2 s, velocity ~2 cm/s/1.3 s, attitude ≤0.15°;

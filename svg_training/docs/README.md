@@ -16,6 +16,7 @@ this repository. Every page carries one of four labels on its first line:
 
 | Page | What it holds |
 |---|---|
+| [OVERVIEW.md](OVERVIEW.md) | the two games' rules and the seven main learnings, each with its record |
 | [../README.md](../README.md) | the front page: overview and policies, porting NUS's code, the game (NUS 2-D game vs STE drone set-up), testing NUS's policies in the STE drone game (simulation) in PyTorch, why performance drops, training in STE conditions, next steps and the five questions to NUS, run it yourself |
 | [WHAT_WE_FOUND.md](WHAT_WE_FOUND.md) | what we found: every result of the NUS port, caveats beside the numbers (was `NUS_RESULTS.md`) |
 | [RUN_IT_YOURSELF.md](RUN_IT_YOURSELF.md) | how to run it yourself: six levels, from clips to repeating the six tests (was `TRY_IT.md`) |

@@ -2,6 +2,10 @@ READ · TRAINING SIMULATOR ONLY: the results of the NUS port, one section per fi
 
 # What we found
 
+> **Superseded on 22 November 2026.** The NUS route was paused on 20 November and STE trains its own strategies in a game with a tag (rules fixed at gate G0, 22 November). The rules and the main learnings: [overview](OVERVIEW.md).
+
+
+
 **For** NUS researchers and anyone checking the numbers. **STE**: the lab that wrote this repository. Every number was
 observed in a training simulator; nothing here has flown. The dated account is
 [NUS port report](NUS_PORT_REPORT.md); words in *italics* are in the [glossary](GLOSSARY.md).

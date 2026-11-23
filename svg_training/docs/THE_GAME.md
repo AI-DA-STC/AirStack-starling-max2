@@ -13,7 +13,7 @@ Use the deck for pictures and this page for where things stand.
 
 - The **Guard team** holds a circular zone; the **Strike team** tries to reach it (NUS's code calls them `defender`
   and `attacker`: defender (Guard team), attacker (Strike team)). Strike drones are 1.5 times as fast.
-- Strike drones try to reach the zone; Guard drones try to keep them out until the time-out. Contact tags are a separate track ([glossary](GLOSSARY.md)). STE's own build steps play in 3-D worlds; the NUS port plays an empty 7.5 m square arena sized to STE's flight room (the hangar).
+- Strike drones try to reach the zone; Guard drones try to keep them out until the time-out. STE's own game (rules fixed at gate G0, 22 November 2026) adds a tag: a Guard drone that comes within the tag distance of a Strike drone takes it out and is out too ([overview](OVERVIEW.md)). STE's own build steps play in 3-D worlds; the NUS port plays an empty 7.5 m square arena sized to STE's flight room (the hangar).
 - A strategy (a *policy*) is trained here. It is meant to fly through AirStack (CMU's flight software) on Starling 2 Max
   drones (ModalAI's small indoor drone) without changes; nothing has flown yet.
 

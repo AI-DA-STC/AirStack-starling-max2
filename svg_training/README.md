@@ -8,6 +8,8 @@ training simulator; nothing in this folder has flown. T numbers (T15, …) are r
 each with its record; PASS and FAIL mean a pass mark set before the run was met or missed, INFO means measured with
 no pass mark.
 
+**The rules and the main learnings on one page:** [overview](docs/OVERVIEW.md).
+
 ## At a glance: what was done
 
 The whole story on one screen; sections 1–8 below give the numbers, caveats and records behind each line.
@@ -241,6 +243,10 @@ T18–T24.*
 
 ## 6. Training in STE conditions
 
+> **Superseded on 22 November 2026.** The NUS route was paused on 20 November and STE trains its own strategies in a game with a tag (rules fixed at gate G0, 22 November). The rules and the main learnings: [overview](docs/OVERVIEW.md).
+
+
+
 Two different things were taken from NUS's code, and they must not be confused:
 
 | What | What it is | Converted to PyTorch | Checked by |
@@ -319,6 +325,10 @@ each with a preview that plays in the page: [videos of the NUS port](docs/media/
 | [![Parked Guard vs S20 · Test 5: STE drone model + free height · Guard holds (429 of 1,000)](docs/media/nus/phase4/row_5/ParkedGuard_vs_S20_hold.gif)](docs/media/nus/phase4/row_5/ParkedGuard_vs_S20_hold.mp4)<br>Parked Guard vs S20 · Test 5: STE drone model + free height · Guard holds (429 of 1,000) | [![STE Guard policy vs S20 · Test 5 conditions · Guard holds (829 of 1,000)](docs/media/nus/pilots/p1b_run4_final_t1472_best_hold_slot0.gif)](docs/media/nus/pilots/p1b_run4_final_t1472_best_hold_slot0.mp4)<br>STE Guard policy vs S20 · Test 5 conditions · Guard holds (829 of 1,000) |
 
 ## 7. Next steps and open questions
+
+> **Superseded on 22 November 2026.** The NUS route was paused on 20 November and STE trains its own strategies in a game with a tag (rules fixed at gate G0, 22 November). The rules and the main learnings: [overview](docs/OVERVIEW.md).
+
+
 
 Next on the STE side: STE trains its own Guard and Strike policies in STE drone conditions, alongside NUS's route. The
 plan, its first phase and the current status are in [ste_learning/](ste_learning/README.md) (STE's learning track). Its

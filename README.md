@@ -31,7 +31,7 @@ three-drone swarms rehearsed in **Isaac Sim** before anything flies for real.
 | **work with the AI assistant on this repo** | [AI_ASSIST.md](docs/AI_ASSIST.md) |
 | **fly in the construction site** (sim): the scored camera run, or drone_1 yourself by keyboard | [localisation/README.md](localisation/README.md), its first table picks the run |
 | **see the Strike vs Guard game's rules and what the training has shown** (drone teams trained in a simulator; nothing here flies a drone) | [overview](svg_training/docs/OVERVIEW.md): the rules and the main results on one page, each with its record. Then the whole story, with videos: [svg_training/README.md](svg_training/README.md) |
-| **follow STE's own Guard and Strike training: the plan and where it stands** (simulation only) | [svg_training/ste_learning/README.md](svg_training/ste_learning/README.md): what is being built, the plan and the decisions taken; where each task stands: [status page](svg_training/ste_learning/status/STATUS_LATEST.md) |
+| **follow the lab's (STE's) own Guard and Strike training: the plan and where it stands** (simulation only) | [svg_training/ste_learning/README.md](svg_training/ste_learning/README.md): what is being built, the plan, the decisions taken, and a link to where each task stands |
 | **set up the training pipeline** (any laptop for a CPU try; an NVIDIA GPU or Isaac Lab for full size) | [Run it yourself](svg_training/docs/RUN_IT_YOURSELF.md): levels A–F by hardware, each with its commands. Full machine setup: [GETTING_STARTED](svg_training/docs/GETTING_STARTED.md) |
 
 ## What we have achieved so far

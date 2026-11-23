@@ -68,14 +68,14 @@ asked to be stopped for.
 | Phase | Status | What | Math library | Simulator | Ends at |
 |---|---|---|---|---|---|
 | **L0 Game definition and feasibility** | **done; G0 ruled (owner, 22 Nov 2026)** | which game the track trains; is it worth learning; can tier 2 train, and at what cost | PyTorch | STE game engine (tier 1), Isaac Lab (tier 2) | **gate G0**: the owner rules on the game and the route, with numbers |
-| L1 Drone model | **in work (approved with L2 at G0, 22 Nov 2026)** | estimator effect (delay + noise), drag, fit to logs, comparison with the AirStack simulator; its training reads at tag 1.6 m, with a 1.15 m side track (G0, option (d)) | PyTorch | Isaac Lab (tier 2), AirStack simulator (logs only) | lead; human gates: the NEAR-962 flight before the fit is used for a run of record, and the SIM-ONLY values in tier 2 |
+| L1 Drone model | **in work (approved with L2 at G0, 22 Nov 2026)** | estimator effect (since L1.1b an estimate-error model, not a delay), drag, fit to logs, comparison with the AirStack simulator; its training reads at tag 1.6 m, with a 1.15 m side track (G0, option (d)) | PyTorch | Isaac Lab (tier 2), AirStack simulator (logs only) | lead; human gates: the NEAR-962 flight before the fit is used for a run of record, and the SIM-ONLY values in tier 2 |
 | L2 Game rules in the training copy | intended | the rules chosen at G0, landing obstacles, drone loss, filter option B with its convergence gate | PyTorch | tier 1, then tier 2 | gate per change; **P2 ruling** |
 | L3 Learner | intended | observation v0.3, attention encoder, shared actor, team critic, PPO | PyTorch | tier 1 pilot, tier 2 smoke | owner approves observation v0.3 |
 | L4 Evaluation suite and gates | intended | suite, gates file, calibration on known players | PyTorch | tier 1, tier 2 | owner approves gate limits |
 | L5 League self-play | intended | pilots, then runs of record (3 seeds) | PyTorch | as ruled at G0 | gates frozen; budget ruled |
 | L6 QC and export | intended | scoring, cross-checks, policy file | PyTorch | tier 1, tier 2 | owner approves hand-over |
 | L7 AirStack side | intended | specs here; build and AirStack-simulator games by an AirStack session | PX4 | AirStack simulator (real PX4 + EKF2) | owner (D4) |
-| L8 Real flight | intended | real 1v1 | PX4 | real Starlings (2 drones) | owner |
+| L8 Real flight | intended | real games: Crazyflies first at Starling distances, then the Starling 1v1 (G0 ruling R12) | PX4 | Crazyflies; real Starlings (2 drones) | owner |
 | L9 Documentation | running | status, records, results page, STANDARDS updates after rulings | — | — | owner for reader pages |
 
 ## 4. Phase L0 in detail (final)

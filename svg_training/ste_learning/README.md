@@ -7,7 +7,7 @@ circular zone and the Strike team tries to reach it. A *policy* is the trained p
 into a speed command.
 
 The reason is in the six tests on the [front page of svg_training](../README.md). Policies trained with NUS's code
-fail under STE drone conditions: the Strike team reaches the zone in 43 of 1,000 games, then in 740 once the safety
+lose most games under STE drone conditions: the Strike team reaches the zone in 43 of 1,000 games, then in 740 once the safety
 filter of AirStack (the flight software, from CMU) is added, then in 983 once drones may change height (3-D). These
 counts were observed in the training simulator.
 
@@ -15,7 +15,8 @@ The track runs in parallel with NUS's work and does not wait for it (decision D1
 The goal is a pair of policies that play under rules that can fly, keep the team plan when a drone is lost, and hold
 against attackers they did not train against. They are then checked in the AirStack simulator (the flight
 software's own simulator) and in real flights, each with the owner's approval: first on the lab's small Crazyflie
-drones at Starling distances, then a one-against-one (1v1) game on the two Starlings (gate G0 ruling R12).
+drones at Starling distances, then a one-against-one (1v1) game on the two Starlings (gate G0 ruling R12; the rulings R1 to R18 are in
+[DISCUSSION §14](DISCUSSION_2026-11-19_20.md#14-gate-g0-rulings-owner-22-nov-2026)).
 
 **Phase L0 is done (13.77 of its 19 GPU-h), and the owner ruled gate G0 on 22 November 2026** ([DISCUSSION §14](DISCUSSION_2026-11-19_20.md#14-gate-g0-rulings-owner-22-nov-2026)):
 the main game has a 1-for-1 tag, 1.6 m to build the pipeline and 1.15 m main training after L2; phases L1 and L2 are
@@ -31,14 +32,14 @@ for the owner's ruling. D and P numbers are rows of the [discussion record](DISC
 |---|---|---|
 | STE runs its own learning track, in parallel with NUS (D1) | DECIDED | — |
 | A tag takes out one Guard drone and one Strike drone (D2) | DECIDED (gate G0, 22 Nov 2026) | — |
-| Training happens in Isaac Lab; the fast engine is for quick experiments and checks (D3, A12) | DECIDED (gate G0, 22 Nov 2026) | — |
+| Main training happens in Isaac Lab; the fast engine is for quick experiments and checks, as in the L0 and L1 studies so far (D3, ruling A12) | DECIDED (gate G0, 22 Nov 2026) | — |
 | Policies run on the mission-control laptop, not on the drones (D5) | DECIDED | — |
 | Learner: one shared policy per team, drone loss, self-play against a pool (D6) | DECIDED | — |
 | Isaac Lab videos show the Starling as it looks in the AirStack simulator (D9) | DECIDED | — |
 | The main game has a 1-for-1 tag: 1.6 m to build the pipeline, a 1.15 m side track in L1–L2, 1.15 m main training after L2; zone radius 1.6 m (P1, P12) | DECIDED (gate G0, 22 Nov 2026) | the trained demo's tag: end of L2 |
 | Team sizes: train 3v3, plus the 1v1 reads in L1; every trained team also scored at 2v1 and 5v3 (P9) | DECIDED (gate G0, 22 Nov 2026) | — |
-| Environments: open arena (E0) until a trained team passes the opponent panel, then E1 blocks, then E2 the construction site (P10) | DECIDED (gate G0, 22 Nov 2026) | — |
-| The real demo: the scripted 1v1 at 1.6 m until a trained team passes the opponent panel (P11) | DECIDED (gate G0, 22 Nov 2026) | — |
+| Environments: open arena (E0) until a trained team passes the *opponent panel* (every trained team against every opponent, worst result reported), then E1 blocks, then E2 the construction site (P10) | DECIDED (gate G0, 22 Nov 2026) | — |
+| The track's real-flight demo (not the 26 November flights): the scripted 1v1 at 1.6 m until a trained team passes the opponent panel (P11) | DECIDED (gate G0, 22 Nov 2026) | — |
 | Fleets: Crazyflies first at Starling distances, the Starling 1v1 as planned (P13) | DECIDED (gate G0, 22 Nov 2026) | — |
 | Budget of L1 + L2: 13 GPU-h | DECIDED (gate G0, 22 Nov 2026) | — |
 | Budgets of phases L3 to L9 | OPEN | re-baselined later |
@@ -46,7 +47,7 @@ for the owner's ruling. D and P numbers are rows of the [discussion record](DISC
 | How AirStack is changed (D4) | OPEN | phase L7 |
 
 Two technical calls were made by the lead (the main Claude session) and recorded: the drone's estimator is modelled
-first as a delay plus noise (D7; since task L1.1b, 22 November, as a slowly drifting estimate error instead, off by
+first as a delay plus noise (D7; since task L1.1b, decided 22 and built 23 November, as a slowly drifting estimate error instead, off by
 default, with sizes from a first, exploratory fit to real flight logs), and work on NUS's training recipe is paused (D8); this track does not depend on it.
 
 **The first gate.** Phase L0 (approved 20 November 2026) ended at gate G0, ruled by the owner on 22 November 2026
@@ -231,8 +232,8 @@ something fails or a human gate is reached. It carries no invented numbers.
 
 **The limit.** Nothing is scored, launched or reported when no Claude session is alive. Training jobs already
 started keep running. A new session reads the state files in [status/](status/), adopts the live jobs and restarts
-any job a reboot killed. The resume drill of task L0.7 showed this on both machines (laptop 21 November, RTX 5090
-23 November).
+any job a reboot killed. The resume drill of task L0.7 showed this on both machines (laptop 21 November; RTX 5090 23 November,
+run under task L1.0 since L0 had closed).
 
 ## The team
 
@@ -251,7 +252,7 @@ any job a reboot killed. The resume drill of task L0.7 showed this on both machi
 | Read order | File | What it holds |
 |---|---|---|
 | 1 | this page | what the track is, the plan and the first tasks |
-| 2 | [DISCUSSION_2026-11-19_20.md](DISCUSSION_2026-11-19_20.md) | why: every question, decision (D1 to D9) and open proposal (P1 to P13) |
+| 2 | [DISCUSSION_2026-11-19_20.md](DISCUSSION_2026-11-19_20.md) | why: every question, decision (D1 to D9), proposal (P1 to P13, most ruled at gate G0) and the G0 rulings |
 | 3 | [PLAN.md](PLAN.md) | the working plan for Claude sessions: phases, tasks, gates, budgets |
 | 4 | [STANDARDS.md](STANDARDS.md) | the track's rules, on top of [the parent rules](../STANDARDS.md) |
 | 5 | [ARCHITECTURE.md](ARCHITECTURE.md) | components, interfaces, what exists and what is new |

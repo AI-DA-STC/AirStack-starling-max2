@@ -12,6 +12,16 @@ both sides stay below them. Every result was observed in a training simulator, e
 
 > **Training simulator only. Nothing here has flown. A tag is a game rule, not a contact.**
 
+**Terms.** *NUS port*: STE's copy of NUS's code and trained policies in STE's own pipeline; *hangar scale*: NUS's game
+scaled to STE's hangar (0.40 m per NUS unit). *Gate G0*: the owner's decision point at the end of STE's first phase.
+*G19* (Guard) and *S20* (Strike): policies STE trained in NUS's game with NUS's own code. *Tests 1 to 6* play G19
+against S20 while STE's conditions are added: NUS's game in STE's PyTorch code (1); STE's game engine with 0.6 s
+decisions and walls (2); the drone's delay and lag (3); the safety filter in place of the push rule (4); free height
+(5); Isaac Lab physics drones (6). *STE Guard policy*: the Guard team of learning 2. *Field Guards*: each Guard moves to
+the zone edge facing the nearest Strike. *Parked Guards*: Guards that stay still in the zone, at its centre or on a ring
+round it. *Fast engine*: STE's point-drone simulator; *Isaac Lab* simulates the Starling as a rigid body. A *seed* is
+one training run from one random start. Counts are games out of 1,000.
+
 ## The two games
 
 | | NUS's game, as the NUS port ran it (hangar scale) | STE's game (rules set at gate G0, 22 November 2026) |
@@ -33,16 +43,6 @@ position estimate differs from motion capture by about 1 cm (one standard deviat
 cm), its spread reaches about 2.5 cm per axis while moving, and between two drones the errors add, so a tag judged on
 the estimate would not be clean at that edge ([flight-log analysis](../records/2026-11-23_ste_l13_fit_record.md));
 judging tags on motion capture avoids it.
-
-**Terms.** *NUS port*: STE's copy of NUS's code and trained policies in STE's own pipeline; *hangar scale*: NUS's game
-scaled to STE's hangar (0.40 m per NUS unit). *Gate G0*: the owner's decision point at the end of STE's first phase.
-*G19* (Guard) and *S20* (Strike): policies STE trained in NUS's game with NUS's own code. *Tests 1 to 6* play G19
-against S20 while STE's conditions are added: NUS's game in STE's PyTorch code (1); STE's game engine with 0.6 s
-decisions and walls (2); the drone's delay and lag (3); the safety filter in place of the push rule (4); free height
-(5); Isaac Lab physics drones (6). *STE Guard policy*: the Guard team of learning 2. *Field Guards*: each Guard moves to
-the zone edge facing the nearest Strike. *Parked Guards*: Guards that stay still in the zone, at its centre or on a ring
-round it. *Fast engine*: STE's point-drone simulator; *Isaac Lab* simulates the Starling as a rigid body. A *seed* is
-one training run from one random start. Counts are games out of 1,000.
 
 ![STE's game seen from above: the 6.5 m arena, the 1.6 m zone, the 2.75 m Strike start ring and the tag distances](figures/g0_report/game_diagram.png)
 
@@ -76,4 +76,5 @@ often each Guard team holds the zone against S20. The notes on the bars are like
 - No strategy is ready to deploy. Open work: the [status page](../ste_learning/status/STATUS_LATEST.md) and Linear.
 
 **Read more:** [game spec sheet](../ste_learning/GAME_SPEC.md) · [gate G0 report](../ste_learning/G0_REPORT.md) ·
-[NUS port report](NUS_PORT_REPORT.md) · [what was found in the NUS port](WHAT_WE_FOUND.md) · [glossary](GLOSSARY.md)
+[NUS port report](NUS_PORT_REPORT.md) · [what was found in the NUS port](WHAT_WE_FOUND.md) · [glossary](GLOSSARY.md) ·
+the plan and where the work stands: [STE learning track](../ste_learning/README.md)

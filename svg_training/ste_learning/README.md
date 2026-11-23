@@ -18,10 +18,11 @@ simulator) and in real flights, each with the owner's approval: first on the lab
 distances, then a one-against-one (1v1) game on the two Starlings (gate G0 ruling R12; the rulings R1 to R18 are in
 [DISCUSSION §14](DISCUSSION_2026-11-19_20.md#14-gate-g0-rulings-owner-22-nov-2026)).
 
-**Where it stands (23 November 2026).** Phase L0 is done and the owner ruled gate G0 on 22 November: the main game
-has a 1-for-1 tag, 1.6 m while the pipeline is built and 1.15 m for the main training after phase L2; phases L1 and L2
-are approved together with a cap of 13 GPU-h, and L1 (the drone model) is in work. L3 to L9 open at their own gates.
-Task by task: [the status page](status/STATUS_LATEST.md). Results so far: [the overview](../docs/OVERVIEW.md).
+**Where it stands (23 November 2026).** Phase L0 is done and the owner ruled gate G0 on 22 November: the main game has a
+1-for-1 tag, 1.6 m while the pipeline is built and 1.15 m for the main training after phase L2; phases L1 and L2 are
+approved together with a cap of 13 GPU-h, and L1 (the drone model) is in work. L3 to L9 open at their own gates. Task by
+task: [the working status page](status/STATUS_LATEST.md) (internal: written for the owner). Results so far: [the
+overview](../docs/OVERVIEW.md).
 
 ## Where it stands
 
@@ -32,7 +33,7 @@ for the owner's ruling. D and P numbers are rows of the [discussion record](DISC
 |---|---|---|
 | STE runs its own learning track, in parallel with NUS (D1) | DECIDED | — |
 | A tag takes out one Guard drone and one Strike drone (D2) | DECIDED (gate G0, 22 Nov 2026) | — |
-| Main training happens in Isaac Lab; the fast engine is for quick experiments and checks, as in the L0 and L1 studies so far (D3, ruling A12) | DECIDED (gate G0, 22 Nov 2026) | — |
+| Main training happens in Isaac Lab; the fast engine is for quick experiments and checks, as in the L0 and L1 studies so far (D3; G0 decision page, point 4) | DECIDED (gate G0, 22 Nov 2026) | — |
 | Policies run on the mission-control laptop, not on the drones (D5) | DECIDED | — |
 | Learner: one shared policy per team, drone loss, self-play against a pool (D6) | DECIDED | — |
 | Isaac Lab videos show the Starling as it looks in the AirStack simulator (D9) | DECIDED | — |
@@ -46,7 +47,7 @@ for the owner's ruling. D and P numbers are rows of the [discussion record](DISC
 | Filter option B (P2) | PROPOSED | end of phase L2 |
 | How AirStack is changed (D4) | OPEN | phase L7 |
 
-Two technical calls were made by the lead (the main Claude session) and recorded: the drone's estimator is modelled
+Two technical calls were made by the track lead and recorded: the drone's estimator is modelled
 first as a delay plus noise (D7; since task L1.1b, decided 22 and built 23 November, as a slowly drifting estimate error
 instead, off by default, with sizes from a first, exploratory fit to real flight logs), and work on NUS's training
 recipe is paused (D8); this track does not depend on it.
@@ -138,7 +139,7 @@ its task list, the questions it set out to answer and the review that shaped it,
 |---|---|---|
 | 1 | this page | what the track is, the decisions taken and the plan |
 | 2 | [DISCUSSION_2026-11-19_20.md](DISCUSSION_2026-11-19_20.md) | why: every question, decision (D1 to D9), proposal (P1 to P13, most ruled at gate G0) and the G0 rulings |
-| 3 | [PLAN.md](PLAN.md) | the working plan for Claude sessions: phases, tasks, gates, budgets |
+| 3 | [PLAN.md](PLAN.md) | the working plan: phases, tasks, gates, budgets |
 | 4 | [STANDARDS.md](STANDARDS.md) | the track's rules, on top of [the parent rules](../STANDARDS.md) |
 | 5 | [ARCHITECTURE.md](ARCHITECTURE.md) | components, interfaces, what exists and what is new |
 | 6 | [CODING_PRACTICES.md](CODING_PRACTICES.md) | how code is written, tested, reviewed and merged |
@@ -147,7 +148,7 @@ its task list, the questions it set out to answer and the review that shaped it,
 | 9 | [AUTOMATION.md](AUTOMATION.md) | what wakes the work, launch rules, resume, human gates |
 | 10 | [DOCS_AND_STATUS.md](DOCS_AND_STATUS.md) | which pages change when; the 30-minute status |
 | 11 | [HOW_THE_WORK_RUNS.md](HOW_THE_WORK_RUNS.md) | how a task moves, the human gates, the team of agents and the rules that never bend |
-| 12 | [status/](status/) | the latest status ([STATUS_LATEST.md](status/STATUS_LATEST.md)), its history (LOG.md) and the template |
+| 12 | [status/](status/) | the working status, written for the owner ([STATUS_LATEST.md](status/STATUS_LATEST.md)), its history (LOG.md) and the template |
 | 13 | [agents/](agents/) | the definitions of the agents named in HOW_THE_WORK_RUNS |
 | — | [L0_HISTORY.md](L0_HISTORY.md) | phase L0's task list and the review that shaped it, kept for the record |
 | — | [G0_REPORT.md](G0_REPORT.md), [G0_DECISION.md](G0_DECISION.md) | gate G0: the report on L0's results, and the decision page |

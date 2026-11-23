@@ -34,7 +34,7 @@ each Guard holds the zone:
 
 ### The whole story
 
-1. **Trained with NUS's code (JAX)**, in NUS's conditions. Gave G19, S20, P3G and P3S. *(Phase 2a)*
+1. **Trained with NUS's code (JAX)**, in NUS's conditions. Gave G19, S20, P3G and P3S (the four policies; their labels are defined in section 1). *(Phase 2a)*
 2. **Copied NUS's game into PyTorch.** Same conditions, checked it matches exactly. *(Phase 2)*
 3. **Converted the policies to PyTorch.** Same conditions, checked they act the same. *(Phase 3)*
 4. **Tested the policies, changing conditions one at a time.** Nothing was trained here. *(Phase 4)*
@@ -99,7 +99,7 @@ NUS-code policies itself with that code. Full definitions: [glossary, policies](
 | P3G | `2026-11-17_fixed_apf_3v3_defender` | STE, using NUS's code | NUS fixed-opponent runner / NUS 2-D game / JAX |
 | P3S | `2026-11-17_fixed_apf_3v3_attacker` | STE, using NUS's code | same |
 | APF defender / APF attacker | NUS's scripted `apf` opponent (config `scripted_opponent: apf`) | written by NUS, no training | ported to PyTorch by STE |
-| Parked Guard | — | STE baseline, no training | every Guard drone commands zero speed from its start point; one starts at the zone centre |
+| Parked Guard | — | STE baseline, no training | every Guard drone commands zero speed from its start point; one starts at the zone centre (the NUS-port baseline; the overview's "parked Guards" are the STE game's two stay-still tactics) |
 | STE Guard policy | `pilot_p1b` run 4 | STE | skrl IPPO / STE drone model, Test 5 conditions / PyTorch |
 
 G19 = Guard of generation 19 and S20 = Strike of generation 20 of self-play seed 2; P3G and P3S = the Guard and Strike
@@ -144,7 +144,8 @@ Three ways of playing:
 | G19 vs S20 | 17 | 17 | 15 | 8 | T17, [record](records/2026-11-18_nus_phase4_w3_reference_gates_record.md); T42, [record](records/2026-11-19_nus_pair_g19_p3s_jax_vs_pytorch_record.md) |
 | G19 vs P3S | 991 | 991 | 991 | 2 | T42, [record](records/2026-11-19_nus_pair_g19_p3s_jax_vs_pytorch_record.md) |
 
-*Strike reaches the zone, of 1,000 games. "Games that differ": games whose outcome with the converted policies differs from
+*Strike reaches the zone, of 1,000 games. The 17 here and the 9 of Test 1 (section 4) are the same pair on different
+start sets (NUS's environment's starts here, STE's paired starts in Test 1); their intervals overlap ([what we found](docs/WHAT_WE_FOUND.md#2-converted-policies-match-the-jax-originals)). "Games that differ": games whose outcome with the converted policies differs from
 the JAX policies (in NUS's JAX game where it was run, otherwise in the PyTorch copy). The counts agree within chance.*
 
 **What the policy names mean:**
@@ -337,7 +338,7 @@ STE now trains its own Guard and Strike teams in its own game. What stays the sa
 and the safety filter on every pair. What is new:
 
 - a **tag**: a Guard drone within the tag distance of a Strike drone takes it out, and both leave the game;
-- a 6.5 m arena, the size of the lab's flight space;
+- a 6.5 m arena, the square inside the flight software's keep-in fence (±3.25 m);
 - the tag distance, the arena and the game length were set at gate G0 (22 November); the tag is 1.6 m first and 1.15 m
   in later training (first runs at 1.15 m already made).
 
@@ -370,7 +371,7 @@ each with a preview that plays in the page: [videos of the NUS port](docs/media/
 *Brought up to date on 23 November 2026.* STE's learning track ([ste_learning/](ste_learning/README.md)): its first
 phase, L0, settled which game to train and whether Isaac Lab can train it, and closed at gate G0 on 22 November; its
 second, L1, makes the training drone more like the real Starling. Where the work stands: the
-[status page](ste_learning/status/STATUS_LATEST.md). Work on the STE port of NUS's training method is paused after
+[working status page](ste_learning/status/STATUS_LATEST.md) (internal: written for the owner, task by task). Work on the STE port of NUS's training method is paused after
 its stage 5.1 FAIL (20 November).
 
 Five questions put to NUS on 19 November 2026 about the port (kept as asked; question 4 predates STE's own game,

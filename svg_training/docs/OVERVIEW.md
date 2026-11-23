@@ -3,9 +3,10 @@ READ · TRAINING SIMULATOR ONLY: the rules of the two games and the seven main l
 # Overview: the game and what the work has shown
 
 Two teams of drones play one game: a Guard team holds a circular zone and a Strike team tries to reach it. STE (the lab
-that wrote this repository) first tested how controllers trained in NUS's game (*policies*) do under STE's drone
-conditions. There, a Guard team trained in NUS's game likely lost its main tool, pushing Strike drones aside. These
-tests measure how trained policies carry over to STE's drones, not NUS's training method.
+that wrote this repository) first tested how controllers trained in NUS's game (*policies*; NUS is the partner
+university whose code and policies were used) do under STE's drone conditions. There, a Guard team trained in NUS's game
+likely lost its main tool, pushing Strike drones aside. These tests measure how trained policies carry over to STE's
+drones, not NUS's training method.
 
 STE then trains its own teams in a game with a *tag*: a game rule by which a Guard drone close enough to a Strike drone
 takes it out. At a 1.6 m tag, two of three trained teams beat STE's *hand-written tactics* (scripted teams, no training)
@@ -14,7 +15,9 @@ observed in a training simulator, except one flight-log analysis.
 
 > **Training simulator only. Nothing here has flown. A tag is a game rule, not a contact.**
 
-**Terms used on this page.** Counts are games out of 1,000.
+**Terms used on this page.** Counts are games out of 1,000. T numbers (T18, …) in the Evidence column are rows of the
+[run ledger](../records/LEDGER.md), each linking the record of its run. *The owner* is the lab member who owns this
+repository and rules every gate.
 
 | Term | Meaning |
 |---|---|

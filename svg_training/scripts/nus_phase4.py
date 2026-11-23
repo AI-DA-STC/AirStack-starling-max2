@@ -1,4 +1,4 @@
-"""One row of the Phase 4 transfer ladder (plan docs/plans/2026-11-18-nus-phase4-transfer-ladder.md, INFO runs: no gates).
+"""One row of the Phase 4 transfer ladder (plan docs/archive/2026-11-18-nus-phase4-transfer-ladder.md, INFO runs: no gates).
 
     cd <svg_training>; unset PYTHONPATH; PYTHONPATH=source ~/miniconda3/envs/env_isaaclab/bin/python scripts/nus_phase4.py \
         --row 4 [--device cuda] [--games N] [--accept-long]

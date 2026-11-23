@@ -12,7 +12,7 @@ in the [glossary](GLOSSARY.md). How we got here: [History](README.md#history).
 | Verdicts | T2 **FAIL**, accepted by the owner on the exact counts; T3 **FAIL**; real-log fit exploratory, no gates; T4 information only, no gates |
 | Main finding | the real drone and the AirStack simulator feed PX4 in different ways, so the drone model for training must come from real flight logs |
 | Drone model now in tier 1 | the commander's real-drone law plus a small PX4 model **observed in flight logs** at up to 0.5 m/s; not validated, not a run of record. No S1 gate on the drone model has passed yet |
-| Plan and gates | [S1 plan](plans/2026-11-15-s1-drone-model-and-safety-filter.md), gates in `configs/s1.toml`, approved by the owner on 15 November 2026 |
+| Plan and gates | [S1 plan](archive/2026-11-15-s1-drone-model-and-safety-filter.md), gates in `configs/s1.toml`, approved by the owner on 15 November 2026 |
 
 A *run of record* is an official run whose numbers we keep. A *gate* is a pass/fail check written before the run
 and never moved. *Exploratory* means a first look with no gates: its numbers guide the next step but prove nothing.

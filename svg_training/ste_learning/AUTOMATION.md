@@ -1,4 +1,4 @@
-INTERNAL · reference page of the STE learning track, from the specialist draft `drafts/AUTOMATION_draft.md` (20 Nov 2026). **[PLAN.md](PLAN.md) takes precedence** where the two differ; its section 2 lists every change made at integration.
+INTERNAL · reference page of the STE learning track, from the specialist draft `archive/AUTOMATION_draft.md` (20 Nov 2026). **[PLAN.md](PLAN.md) takes precedence** where the two differ; its section 2 lists every change made at integration.
 
 # Automation and orchestration: STE learning track
 
@@ -10,7 +10,7 @@ INTERNAL · reference page of the STE learning track, from the specialist draft 
 > L0) is the first planned stop.
 
 Work runs unattended through a state machine and stops only at the §3 gates. **A session acts only while alive**:
-detached jobs survive it; updates, gates and launches do not. IDs follow `WORK_BREAKDOWN_draft.md`.
+detached jobs survive it; updates, gates and launches do not. IDs follow `WORK_BREAKDOWN.md`.
 
 ## 1. State machine and state file
 

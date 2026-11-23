@@ -14,7 +14,7 @@ runs showed and what waits on the owner. Terms are in the [glossary](GLOSSARY.md
 | Main result | the game, the scoring tool and the plug-in point exist and are tested; the chosen filter setting gives the same answers about 12 times faster than S1's (9 times over a whole game) |
 | Main finding | with the real drone's limits, a Guard drone and a Strike drone can come about 0.3 m inside the 1.10 m keep-out when one of them is held against a wall; CMU's real commander has the same blind spot (a hypothesis for the real drone, not flown) |
 | Trained | nothing. The stand-in trainer moved to S2b (owner, 16 November) |
-| Plan and gates | [S2 design](specs/2026-11-15-s2-game-and-plug-in-design.md), [S2 plan](plans/2026-11-15-s2-game-and-plug-in.md), gates in `configs/s2.toml`, approved by the owner on 15 November 2026 |
+| Plan and gates | [S2 design](archive/2026-11-15-s2-game-and-plug-in-design.md), [S2 plan](archive/2026-11-15-s2-game-and-plug-in.md), gates in `configs/s2.toml`, approved by the owner on 15 November 2026 |
 | Linear | project P-NEAR-31, milestone S2: NEAR-963 to NEAR-969 ([snapshot of 16 November](linear/snapshots/2026-11-16-project-plan-linear.md)) |
 
 Every number here was observed in the training simulator, or, for T5, in flight logs. None is a flight result, and
@@ -213,14 +213,14 @@ S2b, where it runs on both the PyTorch game and the Isaac Lab drones with the un
 
 ## When S2 is done: the design's five conditions
 
-From the [S2 design §7](specs/2026-11-15-s2-game-and-plug-in-design.md#7-when-s2-is-done).
+From the [S2 design §7](archive/2026-11-15-s2-game-and-plug-in-design.md#7-when-s2-is-done).
 
 | # | Condition | Result | Evidence |
 |---|---|---|---|
 | 1 | Game-rule tests pass without Isaac, with hand-worked cases (a tag, a score, a drop-out, a time-out) at the smallest and largest arena | **PASS** (tests) | `tests/test_game_core.py`, `tests/test_pair_rules.py`: each hand-worked case at 4 m and 16 m; full suite quoted in [HANDOFF §0](claude/HANDOFF.md#0-resume-here-for-a-new-session-or-another-claude-account) |
 | 2 | The scoring tool gives the hand-worked answer on fixed scenarios | **PASS** (tests) | `tests/test_score.py::test_score_fixed_scenarios_hand_worked`: a straight Strike drone reaches the zone at step 37 (4 m) and step 205 (16 m); with the push-apart in the way the Guard team holds to the time-out |
 | 3 | The chosen filter setting meets the speed gate (at least 100,000 game-steps/s) and is no worse than T2 on T2's checks | **PASS** (T8), under the owner's 4-decimal ruling. Whole game 90,121 game-steps/s: INFO. Staggered restarts: not measured | [T8 record](../records/2026-11-16_s2_filter_speed_2_record.md); T7 ABORTED ([record](../records/2026-11-16_s2_filter_speed_record.md)) |
-| 4 | A stand-in trainer beats random actions by a margin set before the run | **MOVED to S2b** by the owner (16 November); not run in S2 | gates unchanged in `configs/s2.toml` `[standin_gates]`; [S2b plan](plans/2026-11-16-s2b-isaac-lab-environment.md) |
+| 4 | A stand-in trainer beats random actions by a margin set before the run | **MOVED to S2b** by the owner (16 November); not run in S2 | gates unchanged in `configs/s2.toml` `[standin_gates]`; [S2b plan](archive/2026-11-16-s2b-isaac-lab-environment.md) |
 | 5 | A one-page partner guide with a worked example | **DONE in part**: the guide exists and its examples (a small skrl training script among them) run in the tests. The design's worked example uses the stand-in trainer, so it comes with the stand-in in S2b (lead's ruling, 16 November) | [Plug in your code](PLUG_IN_YOUR_CODE.md); `tests/test_adapters.py` |
 
 Information runs: T6 and T9 (scripted reference, no gates) and T5 (drone-model check, **FAIL**). All rows are in the
@@ -262,7 +262,7 @@ moved. The whole-game state for a central critic grew from 59 to 61. The layout 
 
 | # | Item | Why it matters | Recommendation |
 |---|---|---|---|
-| A | The S2b gate "closest approach on the Isaac Lab drones at least 1.0 m in every game" (`physics_closest_cross_min_m` in the S2b plan) | it fails by construction: the same command chain already reaches 0.75–0.80 m near walls, and 0.025 m in crowded starts (T9). No S2b run has started, so the gate can still be replaced | **decided by the owner, 16 November 2026:** replaced before any S2b run by `closest_cross_3d_gap_max_m = 0.10` — per matchup cell, games without a start miss, the Isaac Lab drones' 3-D closest approach (minimum and 5th percentile) at most 0.10 m below tier 1's on the same paired games ([S2b plan](plans/2026-11-16-s2b-isaac-lab-environment.md)) |
+| A | The S2b gate "closest approach on the Isaac Lab drones at least 1.0 m in every game" (`physics_closest_cross_min_m` in the S2b plan) | it fails by construction: the same command chain already reaches 0.75–0.80 m near walls, and 0.025 m in crowded starts (T9). No S2b run has started, so the gate can still be replaced | **decided by the owner, 16 November 2026:** replaced before any S2b run by `closest_cross_3d_gap_max_m = 0.10` — per matchup cell, games without a start miss, the Isaac Lab drones' 3-D closest approach (minimum and 5th percentile) at most 0.10 m below tier 1's on the same paired games ([S2b plan](archive/2026-11-16-s2b-isaac-lab-environment.md)) |
 | B | Keep the training filter faithful to CMU's, or give it the walls | a wall-aware filter would close most of the 0.3 m gap but would no longer match the real commander | **decided by the owner, 16 November 2026:** keep it faithful to CMU; the wall effect is a real-drone hazard hypothesis, a fix belongs in CMU's commander |
 | C | How to read "one keep-out distance per team" (plan decision D1, the `block` push rule) | to be checked against NUS's report | owner checks; the other reading (`shove`) is a switch in the local file |
 | D | NUS: metres per game unit, seconds per step, the strategy's code and its inputs and outputs (**NEAR-970: Get NUS's strategy and its rule details.**) | needed before any partner-rules result is quoted in metres, and before NUS's strategy can be scored | owner asks NUS |
@@ -272,7 +272,7 @@ moved. The whole-game state for a central critic grew from 59 to 61. The layout 
 
 ## Next
 
-- **S2b, the S2 game on Isaac Lab drones** ([plan](plans/2026-11-16-s2b-isaac-lab-environment.md)), approved by
+- **S2b, the S2 game on Isaac Lab drones** ([plan](archive/2026-11-16-s2b-isaac-lab-environment.md)), approved by
   the owner on 16 November with his answers to its seven questions. It adds rigid-body Starlings flown by a copy of
   PX4's control loops with the real gains, compares them with the PyTorch game, runs the stand-in trainer on both,
   and makes an Isaac Lab clip.

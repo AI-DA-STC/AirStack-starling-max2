@@ -1,4 +1,4 @@
-INTERNAL · reference page of the STE learning track, from the specialist draft `drafts/ARCHITECTURE_draft.md` (20 Nov 2026). **[PLAN.md](PLAN.md) takes precedence** where the two differ; its section 2 lists every change made at integration.
+INTERNAL · reference page of the STE learning track, from the specialist draft `archive/ARCHITECTURE_draft.md` (20 Nov 2026). **[PLAN.md](PLAN.md) takes precedence** where the two differ; its section 2 lists every change made at integration.
 Source of truth for direction: [DISCUSSION_2026-11-19_20.md](DISCUSSION_2026-11-19_20.md) (D1–D9, P1–P8). Rules: `../../STANDARDS.md`.
 Status labels follow STANDARDS: **FIXED**, **MEASURED**, **PROPOSED**, **OPEN**. **UNVERIFIED** marks an assumption this draft could not check.
 `file:line` references are to the `ste-learning` worktree at `4422772d`.

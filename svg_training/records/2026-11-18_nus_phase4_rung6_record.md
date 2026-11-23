@@ -5,7 +5,7 @@ Simulator: training simulator, tier 2 (Isaac Lab physics drones: rigid-body Star
 | Item | Value |
 |---|---|
 | Purpose | Row 6: row 5's settings with the drone changed from the fitted response model to the Isaac Lab rigid-body Starling (`drone = "physics"`, the plan's rung 6). 24 pairs, 1,000 games each, the same paired starts file |
-| Plan | `docs/plans/2026-11-18-nus-phase4-transfer-ladder.md` v2 with the owner's answers (INFO run: each `gates.toml` has `gates = []` and the reading rules as text, written before the run) |
+| Plan | `docs/archive/2026-11-18-nus-phase4-transfer-ladder.md` v2 with the owner's answers (INFO run: each `gates.toml` has `gates = []` and the reading rules as text, written before the run) |
 | Pre-flight | `scripts/isaac_preflight.sh --approved-headless` exit 0 at 11:48 (+08:00; `runs/nus_port/phase4/preflight_row6.txt`, 5090 only); headless Isaac Lab, no AirStack simulator up, GPU otherwise idle |
 | Date, machine | 2026-11-18, 11:48 to 13:54 (+08:00), home RTX 5090 workstation |
 | Code | branch `phase6-pass2` (current `main`, commit `fcbdfa72`) plus one uncommitted configuration edit (`configs/nus_phase4.toml`, row 5a `blocks = ["core"]`, owner's decision 18 Nov 2026 ~08:20); the lead commits. Rows 4, 5a, 5 and 6 ran one after the other in one detached chain (`runs/nus_port/phase4/chain_rows_4_to_6.log`, 5090 only), all exit 0 |

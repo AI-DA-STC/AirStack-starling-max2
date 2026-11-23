@@ -5,7 +5,7 @@ Simulator: training simulator — replica of the partner's 2-D game (Phase 2, T1
 | Item | Value |
 |---|---|
 | Purpose | Run a policy trained by the partner's JAX code inside `svg_training` without the partner's code: same actions, and the same game outcomes observed in the training simulator. Shows that the actor converts and that our wrapper feeds it the observation it expects; says nothing about Starling-like drones (Phase 4) |
-| Plan | `docs/plans/2026-11-18-nus-phase3-converted-policy.md` (v2, after the gatekeeper read; owner approved the `msgpack` dependency and layout id `nus_area_denial_v1`) |
+| Plan | `docs/archive/2026-11-18-nus-phase3-converted-policy.md` (v2, after the gatekeeper read; owner approved the `msgpack` dependency and layout id `nus_area_denial_v1`) |
 | Date, machine | 2026-11-18T00:30:00+08:00, home RTX 5090 workstation (CPU only; the GPU was running other jobs). Pipeline env `env_isaaclab`; partner env `nus_jax` |
 | Code | branch `nus-port-phase2` on `f3ea6ac1` plus this phase's files, committed with this record |
 | Partner code | NUS `area-denial-continuous-space-self-play` @ `2d2b904` (private clone on the 5090) |

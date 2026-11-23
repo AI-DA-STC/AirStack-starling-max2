@@ -11,7 +11,7 @@ INTERNAL · a build plan written for the lab's AI coding assistants; history, no
 
 **Tech Stack:** Python 3.11, conda `env_isaaclab`: torch 2.7.0+cu128, skrl **2.1.0**, gymnasium **1.2.1** (both checked in the env on 15 November 2026; the brief said skrl 1.4.3 / gymnasium 1.2.3, the env wins), numpy/scipy for offline scripts only, matplotlib for figures. No `pip install`. No Isaac Lab import anywhere in S2.
 
-**Spec:** [../specs/2026-11-15-s2-game-and-plug-in-design.md](../specs/2026-11-15-s2-game-and-plug-in-design.md) (APPROVED 15 November 2026, night) §4, §4a, §4b, §5, §6, §7; [../../STANDARDS.md](../../STANDARDS.md) §3, §4, §6, §7, §8, §9, §11.
+**Spec:** [2026-11-15-s2-game-and-plug-in-design.md](2026-11-15-s2-game-and-plug-in-design.md) (APPROVED 15 November 2026, night) §4, §4a, §4b, §5, §6, §7; [../../STANDARDS.md](../../STANDARDS.md) §3, §4, §6, §7, §8, §9, §11.
 
 **Status:** written 15 November 2026 (night); **approved with its gates by the owner ("just execute the rest", 15 November, late night)**; execution: subagent-driven, the lead commits.
 

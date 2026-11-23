@@ -5,7 +5,7 @@ Simulator: training simulator, tier 1 (replica of the partner's 2-D game, CPU): 
 | Item | Value |
 |---|---|
 | Purpose | Finish the archive arm of Phase 3's frozen gate (b), deferred at T16 (plan D2, F13), before the transfer ladder uses G19 and S20. Owner's answer 2 (18 Nov 2026): T17 first |
-| Plan | `docs/plans/2026-11-18-nus-phase4-transfer-ladder.md` v2 with the owner's answers |
+| Plan | `docs/archive/2026-11-18-nus-phase4-transfer-ladder.md` v2 with the owner's answers |
 | Date, machine | 2026-11-18, home RTX 5090 workstation (CPU only for this run; JAX workers in `nus_jax`, CPU) |
 | Code | branch `nus-port-phase2` over `afe6b993`, working copy NOT committed (the lead commits); files in HANDOFF section 0. Rows 1, 2, 3a and 3 ran before the jump-row fix of the partner push (it touches rows 2.1 and 2.2 only); rows 2.1 and 2.2 ran after it. |
 | Gates | `runs/nus_port/w3/gates.toml` (sha256 `ca2a2e6a07ec9d08`): a verbatim copy of `configs/nus_port.toml` `[gates.phase3_converted_policy]` (sha256 of the file `6bf80e5a31e19553`, unchanged since T16), written before the run, together with the archive-arm pass rule. Nothing moved |

@@ -11,7 +11,7 @@ INTERNAL · a build plan written for the lab's AI coding assistants; history, no
 
 **Tech Stack:** Python 3.11, conda `env_isaaclab` (torch 2.7.0+cu128, Isaac Sim 5.1.0, Isaac Lab 2.3.2 at `~/IsaacLab`, skrl 2.1.0, gymnasium 1.2.1, imageio + imageio-ffmpeg, opencv-python-headless, all present on 16 November 2026), container image `svg-training:isaaclab-2.3.2` (`docker/run.sh`). PX4 source is read with `git -C ~/PX4-Autopilot show v1.14.0:<path>` (read-only). No `pip install`.
 
-**Spec:** the S2 design [../specs/2026-11-15-s2-game-and-plug-in-design.md](../specs/2026-11-15-s2-game-and-plug-in-design.md) §4a, §5, §7, plus this plan's own [Design](#design) section below (the owner's decision of 16 November 2026 is the spec; no separate spec file). Rules: [../../STANDARDS.md](../../STANDARDS.md) §3, §5, §6 (rules 7 and 8), §7, §8, §9, §11.
+**Spec:** the S2 design [2026-11-15-s2-game-and-plug-in-design.md](2026-11-15-s2-game-and-plug-in-design.md) §4a, §5, §7, plus this plan's own [Design](#design) section below (the owner's decision of 16 November 2026 is the spec; no separate spec file). Rules: [../../STANDARDS.md](../../STANDARDS.md) §3, §5, §6 (rules 7 and 8), §7, §8, §9, §11.
 
 **Status:** approved by the owner 16 November 2026 with the answers at the end of this file; starts after S2 closes.
 

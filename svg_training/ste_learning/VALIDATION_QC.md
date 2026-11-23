@@ -1,4 +1,4 @@
-INTERNAL · reference page of the STE learning track, from the specialist draft `drafts/VALIDATION_QC_draft.md` (20 Nov 2026). **[PLAN.md](PLAN.md) takes precedence** where the two differ; its section 2 lists every change made at integration.
+INTERNAL · reference page of the STE learning track, from the specialist draft `archive/VALIDATION_QC_draft.md` (20 Nov 2026). **[PLAN.md](PLAN.md) takes precedence** where the two differ; its section 2 lists every change made at integration.
 
 # Validation and QC plan: STE learning track
 

@@ -5,7 +5,7 @@ Simulator: training simulator, tier 1 (the hangar game with the all-pairs safety
 | Item | Value |
 |---|---|
 | Purpose | Row 4 of the transfer ladder: the one change from row 3 is `separation`, from our block push to the all-pairs safety filter (height still pinned, drone response as in row 3). 24 pairs (all three blocks), 1,000 games each, the paired starts of every earlier row |
-| Plan | `docs/plans/2026-11-18-nus-phase4-transfer-ladder.md` v2 with the owner's answers (INFO run: each `gates.toml` has `gates = []` and the reading rules as text, written before the run) |
+| Plan | `docs/archive/2026-11-18-nus-phase4-transfer-ladder.md` v2 with the owner's answers (INFO run: each `gates.toml` has `gates = []` and the reading rules as text, written before the run) |
 | Earlier attempt | `records/2026-11-18_nus_phase4_rung4_record.md` (T21, ABORTED, no score): that first start was stopped by hand after 7 minutes because the warm-up estimate was over the 2 h foreground limit. This record is the completed run, started afterwards in the background with `--accept-long` |
 | Date, machine | 2026-11-18, started 05:52, finished 08:55 (+08:00), home RTX 5090 workstation, GPU otherwise idle |
 | Code | branch `phase6-pass2` (current `main`, commit `fcbdfa72`) plus one uncommitted configuration edit (`configs/nus_phase4.toml`, row 5a `blocks = ["core"]`, owner's decision 18 Nov 2026 ~08:20); the lead commits. Rows 4, 5a, 5 and 6 ran one after the other in one detached chain (`runs/nus_port/phase4/chain_rows_4_to_6.log`, 5090 only), all exit 0 |

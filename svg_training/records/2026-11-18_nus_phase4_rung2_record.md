@@ -5,7 +5,7 @@ Simulator: training simulator, tier 1 (the hangar game on point drones: our game
 | Item | Value |
 |---|---|
 | Purpose | Move the frozen policies from the replica into our game engine (rows 2.1, 2.2: the split, because the pre-set trigger fired), then give them our rules at one-tick timing (row 2: our `block` push-apart and the policy's command held for the partner step's ticks, owner answers 3 and 4) |
-| Plan | `docs/plans/2026-11-18-nus-phase4-transfer-ladder.md` v2 with the owner's answers; `gates.toml` of each row: `gates = []` plus the reading rules, written before the run |
+| Plan | `docs/archive/2026-11-18-nus-phase4-transfer-ladder.md` v2 with the owner's answers; `gates.toml` of each row: `gates = []` plus the reading rules, written before the run |
 | Date, machine | 2026-11-18, home RTX 5090 workstation |
 | Code | branch `nus-port-phase2` over `afe6b993`, working copy NOT committed (the lead commits); files in HANDOFF section 0. Rows 1, 2, 3a and 3 ran before the jump-row fix of the partner push (it touches rows 2.1 and 2.2 only); rows 2.1 and 2.2 ran after it. |
 | Config and local files | `configs/nus_phase4.toml` (rows, pairs, counts), `configs/nus_hangar_game.toml` (generic game settings), the Starling parameter file `params/real_exploratory_v0.toml` (EXPLORATORY drone model, T5 = FAIL: it answers more slowly than the real drone, so rows 3 to 5 overstate the lag cost), git-ignored `configs/local/nus_rules.toml`, `nus_deploy.toml`, `nus_deploy_ref.toml`, `nus_hangar.toml` (no value is written here). Row 2 sha256 prefixes at run time: deploy_ref `6d71c111959fd9b2`, deploy_w2 `c248c6bef3f6e17b`, game_config `3f771112bd3f0370`, hangar `b7f2870ee17d2d70`, rules `dd22cc28ce2042f3`, settings `298a08b9f56240a0`, starts `40c8cc59297f58d5` |

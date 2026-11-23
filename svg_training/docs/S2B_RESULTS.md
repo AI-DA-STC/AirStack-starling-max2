@@ -16,7 +16,7 @@ got here: [History](README.md#history).
 | Main result | with random actions, the game runs on Isaac Lab drones at 42,590–262,190 drone-steps a second on this laptop. That is above 20,000, S0's [decision rule](S0_RESULTS.md#decision-rules--training-simulator-only) for "tier 2 is fast enough to train on, not only to cross-check" |
 | Main finding | on the physics drone a Strike drone often passes over or under a Guard drone, so against a straight Strike the scripted Guards hold 0–13 % of games, where tier 1 gave up to 95.1 %. The owner chose to keep this in the game (17 November 2026; option (a) of three put to him, §4) |
 | Trained | no strategy. The stand-in trainer (a pipe test, not a strategy) trained 2 seeds on Isaac Lab; the pipe worked end to end, but the Guards learned almost nothing (T14) |
-| Plan and gates | [S2b plan](plans/2026-11-16-s2b-isaac-lab-environment.md), gates in `configs/s2b.toml`, approved by the owner on 16 November 2026 |
+| Plan and gates | [S2b plan](archive/2026-11-16-s2b-isaac-lab-environment.md), gates in `configs/s2b.toml`, approved by the owner on 16 November 2026 |
 | Linear | project P-NEAR-31, milestone S2b: NEAR-968, NEAR-973, NEAR-980, NEAR-981 ([snapshot of 16 November](linear/snapshots/2026-11-16-project-plan-linear.md)) |
 
 Every number here was observed in the training simulator (tier 1 or tier 2, named in each section); T11 also uses
@@ -202,7 +202,7 @@ same height; other cells were not tested. A diagnosis, not a run of record: `scr
 **The owner's choice, 17 November 2026: option (a).** Three options were put to him: (a) keep it, (b) pin every
 drone's height in the game, (c) a narrower height band. He chose (a): passing over or under stays part of the game on the Starling
 layer and the physics drone; the Guard team will have to learn to cover height. The pure partner rules stay flat, as
-NUS's game is. The gate was not moved and the FAIL stands ([S2b plan, third round](plans/2026-11-16-s2b-isaac-lab-environment.md#owners-answer-third-round-17-november-2026-the-game-design-should-follow-a)).
+NUS's game is. The gate was not moved and the FAIL stands ([S2b plan, third round](archive/2026-11-16-s2b-isaac-lab-environment.md#owners-answer-third-round-17-november-2026-the-game-design-should-follow-a)).
 
 ### 5. The stand-in trainer
 

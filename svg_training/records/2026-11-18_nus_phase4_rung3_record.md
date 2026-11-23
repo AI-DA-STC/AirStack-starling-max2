@@ -5,7 +5,7 @@ Simulator: training simulator, tier 1 (the hangar game with the Starling layer's
 | Item | Value |
 |---|---|
 | Purpose | Rows 3a and 3. Row 3a: the rung 3 layer with an identity drone (no commander, delay or lag; it flies the held command exactly): the control that must equal row 2. Row 3: the drone response (commander copy with ramp and leash, delay, lag, `real_exploratory_v0`), filter still off, push kept |
-| Plan | `docs/plans/2026-11-18-nus-phase4-transfer-ladder.md` v2 with the owner's answers (action hold moved into rung 2, so there is no row 3h); `gates.toml`: `gates = []` plus the reading rules, written before each run |
+| Plan | `docs/archive/2026-11-18-nus-phase4-transfer-ladder.md` v2 with the owner's answers (action hold moved into rung 2, so there is no row 3h); `gates.toml`: `gates = []` plus the reading rules, written before each run |
 | Date, machine | 2026-11-18, home RTX 5090 workstation |
 | Code | branch `nus-port-phase2` over `afe6b993`, working copy NOT committed (the lead commits); files in HANDOFF section 0. Rows 1, 2, 3a and 3 ran before the jump-row fix of the partner push (it touches rows 2.1 and 2.2 only); rows 2.1 and 2.2 ran after it. |
 | Layer swap | `SvgGame.__init__` builds the fitted Starling layer with the safety filter on and turns the push-apart off; `NusHangarGame` then replaces the private `self._starling` with `NusPushLayer` (filter off) or `NusIdentityLayer` and resets it to the starts. The push moves neither the velocity nor the commander's reference, so the commander pulls a pushed drone back |

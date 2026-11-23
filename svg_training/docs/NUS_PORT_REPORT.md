@@ -186,7 +186,7 @@ The converted policies stay frozen. Each test changes one thing on the way from 
 Test 2 (the STE push-apart and the 12-tick hold) and Test 4 (the safety filter replaces the push and also keeps
 team-mates apart). 1,000 paired games per pair from one starts file, one seed, so no method claim. Tests 1–3 run
 without the safety filter (a measurement only); Tests 4–6 restore it. Full table, figure and reading:
-[test results](WHAT_WE_FOUND.md#3-six-tests-towards-ste-drones); [plan](plans/2026-11-18-nus-phase4-transfer-ladder.md)
+[test results](WHAT_WE_FOUND.md#3-six-tests-towards-ste-drones); [plan](archive/2026-11-18-nus-phase4-transfer-ladder.md)
 (the plan says "transfer ladder").
 
 | Strike reaches of 1,000 | Test 1: Copy of NUS 2-D game | Test 2: STE game engine, hold | Test 3: + delay and lag | Test 4: + safety filter | Test 5: + free height | Test 6: Isaac Lab physics drones |

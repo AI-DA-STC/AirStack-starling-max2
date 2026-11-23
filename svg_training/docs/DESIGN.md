@@ -147,13 +147,13 @@ Each step ends on a number. S0–S5 deliver use 1.
 > route and clock from the real drone, so the owner ruled that the training model comes from real flight logs and
 > simulator fits describe the simulator only (STANDARDS §5 rule 10). The S1 row below is the original plan; what
 > was built and measured is in [S1_RESULTS](S1_RESULTS.md), and the changes are listed at the top of the
-> [S1 plan](plans/2026-11-15-s1-drone-model-and-safety-filter.md).
+> [S1 plan](archive/2026-11-15-s1-drone-model-and-safety-filter.md).
 >
 > **Status note, 16 November 2026.** S2 changed before it started. NUS's strategy became the main use, so S2 builds
 > the game, varied arena sizes, a plug-in point and a scoring tool instead of training one against one. The approved
-> [S2 design](specs/2026-11-15-s2-game-and-plug-in-design.md) replaces the S2 row below; what was built and measured
+> [S2 design](archive/2026-11-15-s2-game-and-plug-in-design.md) replaces the S2 row below; what was built and measured
 > is in [S2_RESULTS](S2_RESULTS.md). The owner then added S2b, the S2 game on Isaac Lab drones
-> ([S2b plan](plans/2026-11-16-s2b-isaac-lab-environment.md)), which pulls part of S4's cross-check forward and
+> ([S2b plan](archive/2026-11-16-s2b-isaac-lab-environment.md)), which pulls part of S4's cross-check forward and
 > runs the stand-in trainer moved out of S2.
 >
 > **Status note, 17 November 2026.** S2b is built and run through its Task 8, not closed; the S2b row below says what

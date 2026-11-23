@@ -1,9 +1,9 @@
-READ · TRAINING SIMULATOR ONLY: six levels of running it yourself, from watching clips to repeating the six tests and training the STE Guard policy.
+READ · TRAINING SIMULATOR ONLY: six levels of running the work from a fresh clone, from watching clips to repeating the six tests and training the STE Guard policy · start at [../README.md](../README.md); the results these commands repeat: [what we found](WHAT_WE_FOUND.md)
 
 # Run it yourself
 
-**For** NUS researchers and anyone with a fresh clone. **STE**: the lab that wrote this repository. Start at level A
-or B; each level adds one thing it needs. Every command has a *needs* badge, and the table says which commands were
+Written for anyone with a fresh clone. STE, the lab that wrote this repository, wrote the commands below. Level A or B
+is the place to start; each level adds one thing it needs. Every command has a *needs* badge, and the table says which commands were
 run from a fresh clone. Nothing here flies a drone. NUS's `defender` is the defender (Guard team) here, NUS's `attacker`
 the attacker (Strike team); from here on, Guard and Strike. Terms in *italics* are in the [glossary](GLOSSARY.md); the
 policies (G19, S20, P3G, P3S, the APF defender and attacker, the Parked Guard) are defined in

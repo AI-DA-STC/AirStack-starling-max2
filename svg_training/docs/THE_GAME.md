@@ -1,21 +1,17 @@
-READ · the game, the training pipeline in one picture, and the game as an RL environment.
+READ · the training pipeline in one picture: its seven stages, the two drone models, where a strategy plugs in, the game as an RL environment, and what a benchmark run does · start at [../README.md](../README.md); the game's rules and the results so far: [overview](OVERVIEW.md)
 
 # The game and the training pipeline
 
-**For** newcomers, NUS researchers included. **STE**: the lab that wrote this repository. The front page is
-[svg_training](../README.md); what happened when is in [the map of the pages, history](README.md#history).
+Two teams of drones play one game: a **Guard team** holds a circular zone and a **Strike team** tries to reach it
+(NUS's code calls them `defender` and `attacker`: defender (Guard team), attacker (Strike team)). A strategy (a
+*policy*) is trained here, by STE, the lab that wrote this repository. It is meant to fly through AirStack (CMU's
+flight software) on Starling 2 Max drones (ModalAI's small indoor drone) without changes; nothing has flown yet. The
+rules of both games, NUS's as the NUS port ran it and STE's own since gate G0 (22 November 2026), and the results so
+far are in the [overview](OVERVIEW.md); what happened when is in [the map of the pages, history](README.md#history).
 
-This page gives the game first, then the picture, then the parts. Terms are in the [glossary](GLOSSARY.md). The full design, with
-reasons, is [DESIGN.md](DESIGN.md). The diagrams are in the deck, [training-pipeline.pptx](pipeline/training-pipeline.pptx).
-Use the deck for pictures and this page for where things stand.
-
-## The game
-
-- The **Guard team** holds a circular zone; the **Strike team** tries to reach it (NUS's code calls them `defender`
-  and `attacker`: defender (Guard team), attacker (Strike team)). Strike drones are 1.5 times as fast.
-- Strike drones try to reach the zone; Guard drones try to keep them out until the time-out. STE's own game (rules fixed at gate G0, 22 November 2026) adds a tag: a Guard drone that comes within the tag distance of a Strike drone takes it out and is out too ([overview](OVERVIEW.md)). STE's own game starts in an empty 6.5 m arena, with obstacle worlds and the construction site later (gate G0); the NUS port plays an empty 7.5 m square arena sized to STE's flight room (the hangar).
-- A strategy (a *policy*) is trained here. It is meant to fly through AirStack (CMU's flight software) on Starling 2 Max
-  drones (ModalAI's small indoor drone) without changes; nothing has flown yet.
+This page gives the picture first, then the parts. Terms are in the [glossary](GLOSSARY.md). The full design, with
+reasons, is [DESIGN.md](DESIGN.md). The diagrams are in the deck, [training-pipeline.pptx](pipeline/training-pipeline.pptx):
+the deck holds the pictures, this page says where things stand.
 
 ## The idea in one picture
 
@@ -96,10 +92,10 @@ the six tests towards STE drones), with NUS's settings and STE's results: [NUS p
 | Agents | 1–5 Guard and 1–3 Strike drones per game, drawn per game; one network per drone or one per team | 3 Guard v 3 Strike, fixed |
 | Observation, per drone | 71 numbers: itself, 5 Guard slots and 3 Strike slots of 7 numbers each, the zone ([plug in a training method](PLUG_IN_YOUR_CODE.md#plug-a-training-method-in)) | the STE observation, or NUS's 9N + 2 (56 numbers) rebuilt from it by `NusPolicy` |
 | Action, per drone | 4 numbers in [−1, 1]: `[vx, vy, vz, yaw_rate]`, scaled by the team's speed, 20 per second | converted NUS-code policies: a 2-D move held for 12 ticks (0.60 s) |
-| Reward | +1 / −1 per team at the end (hold / reach), 0 otherwise; optional shaping, off in the committed file | stage 5.2 plans NUS's own reward (inside-share penalty, first-reach penalty, shaping); the STE Guard policy used +1 / −1 at the end only |
+| Reward | +1 / −1 per team at the end (hold / reach), 0 otherwise; optional shaping, off in the committed file | stage 5.2 (never run: the route was paused on 20 November 2026) planned NUS's own reward (inside-share penalty, first-reach penalty, shaping); the STE Guard policy used +1 / −1 at the end only |
 | Episode | ends at the first Strike reach or the time-out: 1,200 ticks (60 s) | 2,400 ticks (120 s) |
 | Drone model | STE drone model (fast, CPU or GPU) or Isaac Lab physics drones (GPU) | Tests 3–5 STE drone model (Test 2 points), Test 6 Isaac Lab physics drones |
-| Libraries | skrl (`SvgSkrlEnv`) and Gymnasium (`SvgTeamVectorEnv`) adapters | the STE port of NUS's training method (PyTorch, in progress); skrl IPPO for the STE Guard policy ([training recipe](TRAIN_A_GUARD.md)) |
+| Libraries | skrl (`SvgSkrlEnv`) and Gymnasium (`SvgTeamVectorEnv`) adapters | the STE port of NUS's training method (PyTorch; its route was paused on 20 November 2026 after stage 5.1); skrl IPPO for the STE Guard policy ([training recipe](TRAIN_A_GUARD.md)) |
 
 ## What a benchmark run does
 
@@ -122,5 +118,10 @@ Then it times at least 200 steps and 2 s, twice.
 
 ## What exists today
 
-Where each build step and the NUS port stand, with their records: [the map of the pages, history](README.md#history).
-One training result so far: the STE Guard policy (a pilot, one seed, not gated; [what we found](WHAT_WE_FOUND.md#7-ste-guard-policy-trained-in-test-5-conditions)). Nothing has flown.
+STE's own learning track trains teams for both sides in the game with a tag: its first phase (L0) is done, gate G0
+was ruled on 22 November 2026 and set the game's rules, and phase L1, making the training drone realistic, is in
+work. The trained teams and their scores are in the [overview, seven learnings](OVERVIEW.md#seven-learnings); the
+latest state is on the [status page](../ste_learning/status/STATUS_LATEST.md). The NUS port, paused on 20 November
+2026, left one training result: the STE Guard policy (a pilot, one seed, not gated;
+[what we found](WHAT_WE_FOUND.md#7-ste-guard-policy-trained-in-test-5-conditions)). Where each build step and the NUS
+port stand, with their records: [the map of the pages, history](README.md#history). Nothing has flown.

@@ -1,9 +1,9 @@
-READ · connecting a strategy or a training method to the STE game, and scoring it.
+READ · connecting a strategy or a training method to the STE game, and scoring it · start at [../README.md](../README.md); the game's rules: [overview](OVERVIEW.md)
 
 # Plug in your code: a strategy or a training method
 
-**For** an engineer from another team (NUS researchers included) who has not opened the `svg_training/` folder
-before. **STE**: the lab that wrote this repository. The page shows how to connect a Strike vs Guard strategy, or a
+Written for an engineer from another team who has not opened the `svg_training/` folder before. STE, the lab that
+wrote this repository, built the game. The page shows how to connect a Strike vs Guard strategy, or a
 training method, to the STE game, and how to score the result. NUS's `defender` is the defender (Guard team) here and
 NUS's `attacker` the attacker (Strike team); from here on, Guard and Strike. Every result here is observed in the
 training simulator, not in flight.

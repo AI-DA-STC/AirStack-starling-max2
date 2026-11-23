@@ -1,9 +1,9 @@
-READ · TRAINING SIMULATOR ONLY: the step-by-step recipe that produced the STE Guard policy (pilot P1b run 4, record T41).
+READ · TRAINING SIMULATOR ONLY: the step-by-step recipe that produced the STE Guard policy (pilot P1b, run 4), the one training result of the NUS port · start at [../README.md](../README.md); the result itself: [what we found, section 7](WHAT_WE_FOUND.md#7-ste-guard-policy-trained-in-test-5-conditions)
 
 # Train a Guard: the recipe behind the STE Guard policy
 
-**For** NUS researchers and anyone who wants to repeat the one training result of the NUS port. **STE**: the lab that
-wrote this repository. NUS's `defender` is the defender (Guard team) here and NUS's `attacker` the attacker (Strike
+Written for anyone who wants to repeat the one training result of the NUS port. STE, the lab that wrote this
+repository, trained it. NUS's `defender` is the defender (Guard team) here and NUS's `attacker` the attacker (Strike
 team); from here on, Guard and Strike. Every number was observed in a training simulator; nothing here flies a drone.
 Terms in *italics* are in the [glossary](GLOSSARY.md).
 

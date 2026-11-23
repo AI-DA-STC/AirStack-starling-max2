@@ -12,6 +12,15 @@ Everything needed is in this folder; nothing depends on the previous chat. Claud
 the private NUS workspace (`~/ma_skills-self-play/`, 5090 only) do **not** travel with git: if this file and a memory
 note disagree, this file wins.
 
+### 23 November 2026 ~11:50 — README BROUGHT UP TO DATE WITH GATE G0; NEW RULE ON DOCS-ONLY MERGES (read this first)
+Owner (23 Nov): "bring those sections up to date". `README.md` at a glance, §1, §3, §6 (new 6.3) and §7 now tell the story
+through gate G0 and point at `docs/OVERVIEW.md` for the numbers; the story figure's last box and footer are redrawn; the
+GLOSSARY "Tag" row gives both meanings (separate commits, droppable). Reviews: numbers (no wrong statement), rules and
+contradictions (fixed), a scoped re-check and a newcomer re-read (all three questions pass). Not changed, owner to
+decide: the five questions to NUS in §7 (Q4 "no drop-outs" no longer fits STE's game), `THE_GAME.md` "3-D worlds" and
+`WHAT_WE_FOUND.md` "a tag is a separate track", STANDARDS §2's first line "A tag is physical contact". **New rule (owner,
+23 Nov): documentation-only merges skip the full suite** and run the short document check (CLAUDE.md, standing rules).
+
 ### 23 November 2026 ~11:20 — OVERVIEW PAGE DONE ON THE RTX 5090 (read this first)
 `docs/OVERVIEW.md` built (plan Task 1), 80 lines; link check `broken: 0`. Reviews: Task 1 by two reviewers (numbers v
 records: no wrong number; reader rules and spec coverage), Tasks 2–3 by one (READY), a final review on the strongest

@@ -82,10 +82,10 @@ The programme's wording rules apply to every document and figure here
 - **NUS's own words** (owner, 18 November 2026): NUS's terms (defender, attacker, area denial) may appear once per page
   in a translation line, for example "your defender = our Guard team, your attacker = our Strike team"; the rest of
   the page uses our words.
-- **A tag is physical contact** between a Guard drone and a Strike drone (owner, 14 November 2026).
-  Write "tag" or "contact tag". Since gate G0 (owner, 22 November 2026) the main game also has a tag at a
-  distance (§4 "Tag"); "contact tag" always means the side quest's. The programme's public pages do not describe
-  contact between drones. The
+- **Two tags.** Since gate G0 (owner, 22 November 2026) the main game's tag is a game rule judged at a distance
+  (§4 "Tag"); write "tag". The side quest's tag is physical contact between a Guard drone and a Strike drone
+  (owner, 14 November 2026); write "contact tag", which always means the side quest's. The programme's public pages
+  do not describe contact between drones. The
   contact-tag track ([plan](docs/plans/2026-11-17-contact-tag-track.md), DRAFT) may be described in this
   repository's public documents (owner, 18 November 2026; until then it was kept out of public and
   partner-facing material). The programme website still needs the owner's say-so.

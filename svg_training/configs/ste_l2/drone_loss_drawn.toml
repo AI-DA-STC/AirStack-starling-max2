@@ -1,6 +1,9 @@
 # STE task L2.4 (drone loss and random team size), STUDY game file, PROPOSED: P7 (is drone loss / random team size part
 # of the flown game?) is NOT ruled. No run of record uses this file until the owner rules P7; configs/ste_game.toml and
 # every other committed game file keep team sizes fixed and their dropout_fraction (tests/test_drone_loss.py checks it).
+# Values copied from base.toml keep base.toml's own labels (FIXED, OPEN, PROPOSED or none); only the L2.4 lines are new.
+# Before any training on this file: the learner must mask absent slots (they still get the team reward; QC review
+# of L2.4, 24 Nov 2026), see WORK_BREAKDOWN L2.4.
 #
 # = configs/ste_l011/base.toml (the base case: 6.5 m lab arena, zone at the centre, zone_disc_ring starts, the study tag
 # at 1.6 m, tier 1 with the filter on) value for value from [game] on, except the lines marked L2.4: dropout_fraction,

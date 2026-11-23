@@ -132,15 +132,14 @@ other stopped, from git alone.
 - **Rigour before speed** (owner, 21 Nov 2026): independent QC, tests first and one fix at a time stay, even when slower. But
   say what is eating the usage: every status carries a **Usage** line (agent tokens and minutes per task, long test suites,
   GPU-hours), and the lead flags any task whose cost is out of line before spending more on it.
-- **Two or more independent reviewers on everything** (owner, 22 Nov 2026: "please always get multi agents to review ur
-  findings and review ur work, it seems that u might be hallucinating and missing out stuff that was done"): every
-  finding (including an explanation of a result given in chat), every write-up and every build gets at least two
-  independent reviewer agents with different briefs (a numbers/source check against the data, and a completeness check
-  for what was missed or contradicts earlier work), given the sources rather than the lead's conclusion, before it is
-  reported as true or done. Until then it is labelled a hypothesis or a draft. The status says which reviewers ran.
-  After every result, and whenever anything changes, two agents also **discuss the results and the next plan** with the
-  lead (owner, 22 Nov 2026), on reviewed facts; the lead brings the owner the agreed reading, the disagreements and the
-  plan change, if any.
+- **Reviews scaled to the stakes** (owner, 24 Nov 2026, ruling R22 "scaled"; it narrows the 22 Nov rule "please always
+  get multi agents to review ur findings"): **two independent reviewers** (a numbers/source check against the data and a
+  completeness check, given the sources, not the lead's conclusion) for a result that changes a decision or goes on a
+  reader page, and before a phase or gate is reported done; **one reviewer** for everything else (exploratory runs,
+  internal records, documentation edits, a code build: its QC review). Until reviewed, a finding is labelled a draft. The
+  status says which reviewers ran. Status on events plus one daily digest (the 30-minute status while the owner is
+  watching); reader pages are updated at gates. Unchanged: pass marks before runs of record, a record and ledger row per
+  run, one fix at a time ([DISCUSSION §16](ste_learning/DISCUSSION_2026-11-19_20.md#16-rulings-for-l1-to-l6-owner-24-nov-2026)).
 - **The lead owns the STE learning track** (owner, 20 Nov 2026: "i want you to own this project"): plan, build, review,
   fix, record and report without waiting to be asked; the owner keeps the human gates and the items in the next bullet.
 - **Keep the owner able to follow** (owner, 21 Nov 2026: "i need to know what is going on if not im totally clueless"):

@@ -27,7 +27,7 @@ from torch import Tensor
 
 from svg_training.models.rigid_body import RigidBodyWorld
 
-from .arena import BANDS, GUARD, STRIKE, Arenas, draw_arenas, draw_starts  # noqa: F401  (re-exported)
+from .arena import BANDS, GUARD, STRIKE, Arenas, draw_arenas, draw_starts, draw_starts_sized  # noqa: F401
 from .game_config import BACKENDS, START_MODES, TICK_S, GameCfg
 from .observations import build_obs, build_state
 from .pair_rules import contact_tags, proximity_tags, push_apart
@@ -152,7 +152,7 @@ class SvgGame:
         self._guard_survives = torch.zeros(n, dtype=torch.bool, device=dev)
         self._tag_on = cfg.tag.mode != "off"
         self._tag_gen = torch.Generator(device=device)
-        self._seed_tag_streams(seed)          # the survive draw's generator, and the drawn radius's (L1.10), from seed
+        self._seed_streams(seed)              # the tag's generators (L0.9, L1.10) and the team sizes' (L2.4), from seed
         self._tag_survives = torch.zeros(n, dtype=torch.bool, device=dev)     # study tag: Guard survives, per game
         self._upset = torch.zeros(n, dtype=torch.bool, device=dev)       # this game had an upset drone (physics)
         self.reset()
@@ -184,10 +184,10 @@ class SvgGame:
         if self.scenario is not None:
             pos, miss = self._sc_pos, torch.zeros(n, dtype=torch.bool, device=dev)
         else:
-            pos, miss = self._draw_starts(ar)
+            pos, miss = self._sized_starts(ar) if self._sizes_on else self._draw_starts(ar)   # L2.4: drawn sizes
         # drop-out: in a fraction of games, one random drone (any team) leaves at one random step
         hit = torch.rand(n, generator=self.gen, device=dev) < self.cfg.dropout_fraction
-        who = (torch.rand(n, generator=self.gen, device=dev) * m).floor().long().clamp(max=m - 1)
+        who = self._dropout_who(torch.rand(n, generator=self.gen, device=dev))     # a present drone (L2.4)
         when = (torch.rand(n, generator=self.gen, device=dev) * self.ticks).floor().long().clamp(max=self.ticks - 1) + 1
         pick = hit[:, None] & (torch.arange(m, device=dev)[None, :] == who[:, None])
         drop = torch.where(pick, when[:, None].expand(n, m), torch.full((n, m), -1, dtype=torch.long, device=dev))
@@ -196,7 +196,7 @@ class SvgGame:
         self.pos_m = torch.where(mk[..., None], pos, self.pos_m)
         self.vel_mps = torch.where(mk[..., None], torch.zeros_like(self.vel_mps), self.vel_mps)
         self.yaw = torch.where(mk, torch.zeros_like(self.yaw), self.yaw)
-        self.alive, self.landing = torch.where(mk, torch.ones_like(self.alive), self.alive), self.landing & ~mk   # L2.3
+        self.alive, self.landing = self._start_alive(mk), self.landing & ~mk   # L2.3; L2.4: absent drones start out
         self.steps = torch.where(mask, torch.zeros_like(self.steps), self.steps)
         self.dropout_step = torch.where(mk, drop, self.dropout_step)
         self._upset = self._upset & ~mask
@@ -236,7 +236,7 @@ class SvgGame:
         """Start every game afresh; reseed the generator if seed is given. Returns the observations."""
         if seed is not None:
             self.gen.manual_seed(seed)
-            self._seed_tag_streams(seed)
+            self._seed_streams(seed)
         self._new_games(torch.ones(self.num_games, dtype=torch.bool, device=self.device))
         if self._physics or isinstance(self._starling, StarlingLayer):   # new starts held now; error restarts (L1.7)
             self._starling.flush(seed)     # seed: the estimator noise restarts too (its own generators, STE L1.1b)
@@ -339,12 +339,12 @@ class SvgGame:
         info = {"band": self.arenas.band, "closest_cross_m": closest_cross, "closest_cross_3d_m": closest_cross_3d,
                 "closest_team_m": closest_team,
                 "rule_breach": closest_cross_3d < self._keepout_min - 1e-6, "filter_corrected": corrected,
-                "final_alive": alive.clone(), "tagged": tagged}
+                "final_alive": alive.clone(), "tagged": tagged, **self._present_info()}     # L2.4: present (drawn)
         end_step = torch.where(done, steps_new, torch.zeros_like(steps_new))
         self._phi = phi_now
         info.update(self._start_info())                   # the game that just played (start_team_close: zone_disc_ring only)
         info["upset"] = self._upset.clone()
-        info["nonfinite_actions"] = bad_action.sum(dim=1)                    # [N] long: drones commanded NaN/inf
+        info["nonfinite_actions"] = self._nonfinite(bad_action)              # [N] long: drones commanded NaN/inf
         self._landing_info(info)                                              # L2.3: info["landing"] when on
         self._new_games(done)
         return StepOut(self._obs(), reward, done, outcome, end_step, info)
@@ -361,7 +361,7 @@ class SvgGame:
             return start_miss, self.start_team_close
         d = (pos_m[:, :, None, :2] - pos_m[:, None, :, :2]).norm(dim=-1)                  # [N, M, M]
         upper = torch.ones(self.M, self.M, dtype=torch.bool, device=self.device).triu(1)
-        close = ((d < self._keepout_min) & self._same & upper).sum(dim=(1, 2))
+        close = ((d < self._keepout_min) & self._same & upper & self._both_present()).sum(dim=(1, 2))
         return start_miss, torch.where(mask, close, self.start_team_close)
 
     def _start_info(self) -> dict[str, Tensor]:
@@ -467,6 +467,98 @@ class SvgGame:
             info["landing"] = self.landing.clone()
 
 
+    # ------------------------------------------------------------------ drawn team sizes (STE task L2.4)
+    # Kept at the end of the class so that the line numbers cited in ste_learning/ hold; ``__init__``, ``reset``,
+    # ``_new_games``, ``step`` and ``_start_flags`` reach them through one-line hooks.
+    #
+    # ``[team_size] mode = "drawn"`` (``game_config.TeamSizeCfg``; off = "fixed" by default, and off plays today's game bit
+    # for bit: no generator is made, nothing is drawn, every hook returns today's value). On: ``guards`` and ``strikes``
+    # are slot counts; each game draws its Guard and Strike counts when it starts (``_new_games``: the first games,
+    # auto-resets, ``reset`` and ``TrainGame.restart``) from a generator of its own, seeded from the game seed
+    # (``_size_seed``; ``reset(seed)`` reseeds it), so the same seed gives the same sizes, and the game's own generator
+    # draws what a fixed game with ``strikes`` Strike drones draws. ``present`` [N, M] bool: the first g Guard slots and
+    # the first s Strike slots. An absent drone is out from its game's start (``alive`` False, parked at PARK_M), so
+    # every rule that reads ``alive`` leaves it out: it never acts, tags, is tagged, scores, lands, enters a filter pair
+    # or is seen (present 0 in every observation and the critic's state). The drop-out draw picks among the present
+    # drones; info["present"] [N, M] bool (drawn only) is who played the step's game; info["nonfinite_actions"] counts
+    # present drones only (absent slots never act). Rewards are unchanged: every slot of a team gets the team's value, as
+    # an out drone does today; a learner masks absent rows with ``present``.
+    def _seed_streams(self, seed: int) -> None:
+        """(Re)seed the side generators from the game seed: the study tag's (``_seed_tag_streams``) and, with drawn team
+        sizes, the sizes' own (made on the first call, with the checks of the setting)."""
+        self._seed_tag_streams(seed)
+        self._sizes_on = self.cfg.team_size.mode == "drawn"
+        if not self._sizes_on:
+            return
+        if getattr(self, "_size_gen", None) is None:
+            self._check_sized()
+            self._size_gen = torch.Generator(device=self.device)
+            self._present = torch.ones(self.num_games, self.M, dtype=torch.bool, device=self.device)
+            self._new_present = self._present
+        self._size_gen.manual_seed(_size_seed(seed))
+
+    def _check_sized(self) -> None:
+        ts = self.cfg.team_size
+        if ts.guards_range[1] > self.guards or ts.strikes_range[1] > self.strikes:
+            raise ValueError(f"drawn team sizes up to {ts.guards_range[1]}v{ts.strikes_range[1]} need that many slots; "
+                             f"the game has {self.guards}v{self.strikes} slots")
+        if self.scenario is not None:
+            raise ValueError("drawn team sizes do not take a scenario (a scenario places every drone)")
+        if type(self)._draw_starts is not SvgGame._draw_starts:
+            raise ValueError(f"{type(self).__name__} draws its own starts: drawn team sizes are not built for it")
+
+    @property
+    def present(self) -> Tensor:
+        """[N, M] bool: the drones that play the current game (all True with team sizes fixed)."""
+        if self._sizes_on:
+            return self._present
+        return torch.ones(self.num_games, self.M, dtype=torch.bool, device=self.device)
+
+    def _sized_starts(self, ar: Arenas) -> tuple[Tensor, Tensor]:
+        """Draw every game's team sizes (one batched draw per team from the sizes' generator) and its starts for those
+        sizes (``draw_starts_sized``, from the game's generator); absent slots are parked. Sets ``_new_present`` [N, M];
+        ``_start_alive`` keeps it where a game starts."""
+        n, dev = self.num_games, self.device
+        (g_lo, g_hi), (s_lo, s_hi) = self.cfg.team_size.guards_range, self.cfg.team_size.strikes_range
+        g_n = torch.randint(g_lo, g_hi + 1, (n,), generator=self._size_gen, device=dev)
+        s_n = torch.randint(s_lo, s_hi + 1, (n,), generator=self._size_gen, device=dev)
+        slot = torch.arange(self.M, device=dev)[None]
+        self._new_present = torch.where(slot < self.guards, slot < g_n[:, None], slot - self.guards < s_n[:, None])
+        pos, miss = draw_starts_sized(self.cfg, ar, g_n, s_n, self.guards, self.strikes, self.gen)
+        return torch.where(self._new_present[..., None], pos, torch.full_like(pos, PARK_M)), miss
+
+    def _dropout_who(self, u: Tensor) -> Tensor:
+        """The drop-out's drone [N] long from a uniform draw u [N]: any of the M drones (fixed, today's expression), or
+        the k-th present drone of the new game, k = floor(u x its count) (drawn)."""
+        if not self._sizes_on:
+            return (u * self.M).floor().long().clamp(max=self.M - 1)
+        p = self._new_present
+        count = p.sum(dim=1)
+        k = (u * count).floor().long().clamp(max=count - 1)
+        return ((p.cumsum(dim=1) == (k + 1)[:, None]) & p).long().argmax(dim=1)
+
+    def _start_alive(self, mk: Tensor) -> Tensor:
+        """``alive`` after new games start where mk [N, 1]: every drone (fixed), or the present ones (drawn; ``present``
+        is updated there too)."""
+        if not self._sizes_on:
+            return torch.where(mk, torch.ones_like(self.alive), self.alive)
+        self._present = torch.where(mk, self._new_present, self._present)
+        return torch.where(mk, self._new_present, self.alive)
+
+    def _both_present(self) -> Tensor | bool:
+        """[N, M, M] bool: both drones of a pair present in the new games (drawn), for the start flags; True when fixed."""
+        if not self._sizes_on:
+            return True
+        return self._new_present[:, :, None] & self._new_present[:, None, :]
+
+    def _present_info(self) -> dict[str, Tensor]:
+        """info["present"] [N, M] bool with drawn sizes (who played the step's game); nothing when fixed."""
+        return {"present": self._present.clone()} if self._sizes_on else {}
+
+    def _nonfinite(self, bad_action: Tensor) -> Tensor:
+        """[N] long: drones whose action held NaN or inf: every drone (fixed, today's count), present drones (drawn)."""
+        return (bad_action & self._present).sum(dim=1) if self._sizes_on else bad_action.sum(dim=1)
+
 def _tag_radius_seed(seed: int) -> int:
     """Seed of the drawn tag radius's own generator (STE L1.10), from the game seed, as ``_tag_seed`` with another odd
     64-bit constant (one generator per purpose, CODING_PRACTICES section 5). Kept at the end of the module so that the
@@ -475,3 +567,12 @@ def _tag_radius_seed(seed: int) -> int:
 
 
 _TAG_RADIUS_SEED_MIX = 0xD1B54A32D192ED03   # odd 64-bit constant (not _TAG_SEED_MIX): the drawn radius's stream
+
+
+def _size_seed(seed: int) -> int:
+    """Seed of the drawn team sizes' own generator (STE L2.4), from the game seed, as ``_tag_seed`` with another odd
+    64-bit constant (one generator per purpose, CODING_PRACTICES section 5)."""
+    return ((seed + 1) * _SIZE_SEED_MIX) % (1 << 63)
+
+
+_SIZE_SEED_MIX = 0x94D049BB133111EB   # odd 64-bit constant (not the tag's two): the drawn team sizes' stream

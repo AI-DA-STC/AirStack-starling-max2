@@ -4,13 +4,46 @@ INTERNAL · the lab's AI-assistant hand-over notes: where the work stands, what 
 
 > **How to use this file.** Read it at the start of a session, after [../../CLAUDE.md](../../CLAUDE.md).
 > §4 is the current state, §5 is what is waiting on people. Update both before you stop.
-> Last updated: 22 November 2026 ~06:30, on the laptop (after L0.12c and L0.12d; before: 21 Nov ~23:45) (RTX 5070 Ti), worktree `~/AirStack-starling-max2-dev` on branch `development`. Before: 20 November 2026 ~22:20 (home RTX 5090).
+> Last updated: 23 November 2026 ~13:30, on the home RTX 5090 (documentation clean-up; before: 22 Nov ~06:30 on the laptop), worktree `~/AirStack-starling-max2-docs` on branch `docs-cleanup`, merged to `development`.
 
 ## 0. Resume here (for a new session or another Claude account)
 
 Everything needed is in this folder; nothing depends on the previous chat. Claude's user memory (`~/.claude/…`) and
 the private NUS workspace (`~/ma_skills-self-play/`, 5090 only) do **not** travel with git: if this file and a memory
 note disagree, this file wins.
+
+### 23 November 2026 ~13:30 — DOCUMENTATION CLEAN-UP: STORY PAGES FOR ANY READER, EVERY PAGE LABELLED, SUPERSEDED PAGES ARCHIVED (read this first)
+Owner (23 Nov): "use that story line and further polish up the readability, content and flow. dont have to indicate nus
+or lab lead just make it generic for any reader" and "clean up the other mds. every md must be directed somewhere and
+the reader must know what each md is for. outdated mds or contents can be archived." Then: "i only asking u to polish
+up documentation": the queued L1 GPU work was **not** started (an agent had begun preparing L1.7; stopped before any
+launch, 0 GPU-h, nothing committed). Documentation only; no code changed.
+Done on branch `docs-cleanup` (worktree `~/AirStack-starling-max2-docs`), in four batches by three agents and the lead:
+(1) story pages: `README.md` generic opener and five-row "Where to go" table, §6.3 as a three-column table, the five
+NUS questions dated with Q4 marked as predating STE's game; `docs/OVERVIEW.md` intro in two paragraphs and a Terms
+table; `ste_learning/README.md` is the reader half only, its process sections moved verbatim to
+`ste_learning/HOW_THE_WORK_RUNS.md` and the L0 step-by-step and review sections to `ste_learning/L0_HISTORY.md`.
+(2) every page's first line: label (READ, REFERENCE, LAB OPERATIONS, INTERNAL, ARCHIVED) · what it is for · where to go
+next (48 pages; THE_GAME trimmed to the pipeline, rules live in OVERVIEW; NUS port pages dated to 20 Nov; G0_DECISION no
+longer DRAFT; TRAINING "what trains today" box current; NUS_PORT_REPORT §12 heading now "(paused 20 November 2026)",
+its anchor followed in three pages). (3) `docs/README.md` rewritten as a directory grouped by reader goal with the
+history to 23 Nov. (4) archived with indexes: seven finished build plans and the S2 design → `docs/archive/`, the six
+specialist drafts → `ste_learning/archive/`, the overview page's design and plan → `docs/archive/`; `docs/specs/` and
+`docs/superpowers/` are gone; `ste_learning/drafts/README.md` indexes the live specs; every citation follows (records
+and two pinned TOML comments were left as they were, see commit 18d0899a's message). Decision 3 items: STANDARDS §2 tag
+rule opens with the two tags; root `CLAUDE.md` `svg_training` row at gate G0 (approved exception). New rules in
+`CLAUDE.md`: pages written for any reader; documentation-only merges with file moves run only the touched test file.
+Checks: link reachability 171 pages, 0 orphans, 0 broken inside `svg_training`; docs check 13 PASS · 0 FAIL; short
+document check (privacy, bundle and tie tests plus every test file naming a changed page): 228 passed, 4 skipped. Reviews:
+the newcomer walk from the root README ran (PASS on the root README, overview and front page with fixes; the learning-track
+page and the status link failed as a newcomer destination; its ten fixes applied, commit a3d9bc13). **The numbers review
+and the flow/contradiction review did not run: both reviewer agents stopped on the account's 5-hour usage limit (resets
+14:10 +08:00) and the owner reported 3 % of the weekly allowance left. They are owed: run them first when usage allows,
+before any further change to these pages.** Each agent's own checks ran (heads: 48 first lines, 0 form problems; archive:
+every changed link resolves, anchors included).
+Not done: the two pinned TOML comment paths (`configs/s1.toml:2`, `configs/nus_phase4.toml:1`) still name the old plan
+paths because their sha256 is recorded; `docs/linear/updates/…isaac-lab-pipeline.md:12` is a posted copy and keeps its
+old path. Training: nothing running; L1.7 speed re-measure, L1.9 and L1.10 still queued, start only on the owner's word.
 
 ### 23 November 2026 ~12:40 — READING FLOW FROM THE ROOT README; MAIN BROUGHT UP TO DEVELOPMENT (read this first)
 Owner (23 Nov): update the root README, `svg_training/README.md` and `ste_learning/README.md` so readers starting at the

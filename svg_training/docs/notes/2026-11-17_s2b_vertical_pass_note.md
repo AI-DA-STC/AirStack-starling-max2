@@ -1,4 +1,4 @@
-INTERNAL · an investigation note that a record cites; kept as written.
+INTERNAL · an investigation note that a record cites, kept as written: why scripted Guards stop holding on the physics drone (S2b) · start at [../../README.md](../../README.md); the result it explains: [S2b results](../S2B_RESULTS.md)
 
 > 17 November 2026 · S2b Task 8 fix round 1 · status: the diagnosis behind the "Why" bullets of the [T13 record](../../records/2026-11-17_s2b_scripted_compare_record.md), committed and run again. Training simulator only, CPU; not a flight result.
 

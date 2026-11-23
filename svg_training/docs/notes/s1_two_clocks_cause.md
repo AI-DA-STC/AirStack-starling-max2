@@ -1,4 +1,4 @@
-INTERNAL · an investigation note that a record cites; kept as written.
+INTERNAL · an investigation note that a record cites, kept as written: why the teleop response peaks, sags and reverses (S1, the cause behind the simulator fit's FAIL) · start at [../../README.md](../../README.md); the result it explains: [S1 results](../S1_RESULTS.md)
 
 > 15 November 2026 · author: investigator agent, reviewed by the lead · status: confirmed in code and in the bag; the cause behind T3 = FAIL ([S1 results](../S1_RESULTS.md)); copied unchanged from the working notes for the final review, except one note on a local folder.
 

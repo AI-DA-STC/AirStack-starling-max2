@@ -1,4 +1,4 @@
-INTERNAL · a build plan written for the lab's AI coding assistants; history, not instructions. Results: [../README.md](../README.md).
+INTERNAL · a build plan written for the lab's AI coding assistants (18 November 2026), kept for history, not instructions: Phase 5 of the NUS port, retraining with STE's PyTorch copy of NUS's method; stage 5.1 ran and read FAIL, and the route was paused on 20 November 2026 · start at [../../README.md](../../README.md); the outcome: [NUS port report §12](../NUS_PORT_REPORT.md#12-phase-5-training-in-ste-conditions-in-progress)
 
 # NUS port, Phase 5: retraining (route b): NUS's method in PyTorch, then Starling-like drones
 

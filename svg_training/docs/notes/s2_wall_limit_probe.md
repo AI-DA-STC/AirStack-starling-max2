@@ -1,4 +1,4 @@
-INTERNAL · an investigation note that a record cites; kept as written.
+INTERNAL · an investigation note that a record cites, kept as written: why scripted pairs still come 0.75–0.80 m apart next to walls (S2) · start at [../../README.md](../../README.md); the result it explains: [S2 results](../S2_RESULTS.md)
 
 > 16 November 2026 · S2 final review fix wave · status: the probe behind the wall-limit diagnosis in the [T9 record](../../records/2026-11-16_s2_scripted_reference_2_record.md#limits), committed and run again. Training simulator only, exploratory drone model; not a flight result.
 

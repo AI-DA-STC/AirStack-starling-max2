@@ -1,4 +1,4 @@
-INTERNAL · an investigation note that a record cites; kept as written.
+INTERNAL · an investigation note that a record cites, kept as written: what a scripted "hold" is made of (STE task L0.11 follow-ups) · start at [../../README.md](../../README.md); the record: [2026-11-21_ste_l011_screen_record.md](../../records/2026-11-21_ste_l011_screen_record.md)
 
 > 21 November 2026 · STE task L0.11 follow-ups to T44, before L0.12 is designed · INFO, no gates · training simulator,
 > tier 1 (Starling layer, safety filter on every pair), CPU. Observed in the training simulator; not a flight result.

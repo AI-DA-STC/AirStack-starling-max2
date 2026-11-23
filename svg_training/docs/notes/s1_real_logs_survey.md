@@ -1,4 +1,4 @@
-INTERNAL · an investigation note that a record cites; kept as written.
+INTERNAL · an investigation note that a record cites, kept as written: a survey of the real flight logs, asking whether a setpoint-to-velocity response can be fitted on the real Starling (S1) · start at [../../README.md](../../README.md); the result it feeds: [S1 results](../S1_RESULTS.md)
 
 > 15 November 2026 · author: investigator agent, reviewed by the lead · status: read-only survey, copied unchanged from the working notes; §6 lists proposals for the owner and authorises no flight (real flights follow [docs/PREFLIGHT.md](../../../docs/PREFLIGHT.md) and [docs/RUNBOOK.md](../../../docs/RUNBOOK.md)).
 

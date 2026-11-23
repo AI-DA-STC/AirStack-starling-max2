@@ -1,4 +1,4 @@
-INTERNAL · a build plan written for the lab's AI coding assistants; history, not instructions. Results: [../README.md](../README.md).
+INTERNAL · a build plan written for the lab's AI coding assistants (17 November 2026), kept for history, not instructions: the contact-tag track, a side quest in which a tag is physical contact; never approved or started, and still a side quest after gate G0 gave the main game a tag at a distance · start at [../../README.md](../../README.md); the side quest's standing today: [STANDARDS §2](../../STANDARDS.md#2-wording)
 
 # Contact-tag track: a Guard drone that makes contact, tested without crashing drones
 

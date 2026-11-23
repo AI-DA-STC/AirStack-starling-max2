@@ -22,6 +22,6 @@ How one update goes:
 
 Files in `updates/` and `synced/` are dated history: keep their text as written; only fix a link that a move broke.
 
-Latest snapshot: [snapshots/2026-11-16-project-plan-linear.md](snapshots/2026-11-16-project-plan-linear.md).
+Latest snapshot: [snapshots/2026-11-23-project-plan-linear.md](snapshots/2026-11-23-project-plan-linear.md).
 Owner's rules for this project: no cycles and no due dates on issues; every issue is assigned to the owner; target
 dates only on completed milestones; issue comments never carry the partner's confidential game numbers.

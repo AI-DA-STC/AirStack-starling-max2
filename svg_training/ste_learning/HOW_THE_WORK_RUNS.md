@@ -42,11 +42,11 @@ run under task L1.0 since L0 had closed).
 | Agent | Role |
 |---|---|
 | lead | the main Claude session: plans, launches, commits and merges |
-| `ste-architect` | architecture and interfaces; reviews designs before code |
-| `ste-software-engineer` | builds and tests code, test first, inside `svg_training/` only |
-| `ste-test-qc-engineer` | writes gates before runs, scores results, checks before merges |
-| `ste-technical-writer` | the 30-minute status and every document update |
-| `ste-orchestrator` | keeps the process moving unattended; stops at human gates |
+| [`ste-architect`](agents/ste-architect.md) | architecture and interfaces; reviews designs before code |
+| [`ste-software-engineer`](agents/ste-software-engineer.md) | builds and tests code, test first, inside `svg_training/` only |
+| [`ste-test-qc-engineer`](agents/ste-test-qc-engineer.md) | writes gates before runs, scores results, checks before merges |
+| [`ste-technical-writer`](agents/ste-technical-writer.md) | the 30-minute status and every document update |
+| [`ste-orchestrator`](agents/ste-orchestrator.md) | keeps the process moving unattended; stops at human gates |
 | existing advisers | specialist reviews, read-only: [the list](../docs/claude/AGENTS_AND_SKILLS.md) |
 
 ## Rules that never bend

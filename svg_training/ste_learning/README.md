@@ -155,5 +155,5 @@ its task list, the questions it set out to answer and the review that shaped it,
 | — | [GAME_SPEC.md](GAME_SPEC.md) | the game spec sheet: every value of the game the track trains, with its status and source (task L0.8); the same values in `configs/ste_game.toml` |
 | — | [figures/](figures/) | the flowcharts, drawn by [make_ste_learning_figures.py](../scripts/make_ste_learning_figures.py), and the L0.14 figures |
 
-PLAN.md wins where it and a reference page (5 to 10) differ. `drafts/` holds the pre-registered specs that runs and
+PLAN.md wins where it and a reference page (5 to 10) differ. [drafts/](drafts/README.md) holds the pre-registered specs that runs and
 tests read; superseded pages are in [archive/](archive/README.md).

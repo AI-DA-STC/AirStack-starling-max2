@@ -1,26 +1,31 @@
-READ · TRAINING SIMULATOR ONLY: the two games' rules and the seven main learnings so far, each with its record.
+READ · TRAINING SIMULATOR ONLY: the rules of the two games and the seven main learnings so far, each with its record. The whole story: [../README.md](../README.md); the plan and where the work stands: [STE learning track](../ste_learning/README.md).
 
 # Overview: the game and what the work has shown
 
-Two teams of drones play one game: a Guard team holds a circular zone and a Strike team tries to reach it. STE first
-tested how controllers trained in NUS's game (*policies*) do under STE's drone conditions; there, a Guard team trained
-in NUS's game likely lost its main tool, pushing Strike drones aside. These tests measure how trained policies carry
-over to STE's drones, not NUS's training method. STE then trains its own teams in a game with a *tag* (a game rule: a
-Guard drone close enough to a Strike drone takes it out). At a 1.6 m tag, two of three trained teams beat STE's
-*hand-written tactics* (scripted teams, no training) against the opponent they trained on and one draws level; at 1.15 m
-both sides stay below them. Every result was observed in a training simulator, except one flight-log analysis.
+Two teams of drones play one game: a Guard team holds a circular zone and a Strike team tries to reach it. STE (the lab
+that wrote this repository) first tested how controllers trained in NUS's game (*policies*) do under STE's drone
+conditions. There, a Guard team trained in NUS's game likely lost its main tool, pushing Strike drones aside. These
+tests measure how trained policies carry over to STE's drones, not NUS's training method.
+
+STE then trains its own teams in a game with a *tag*: a game rule by which a Guard drone close enough to a Strike drone
+takes it out. At a 1.6 m tag, two of three trained teams beat STE's *hand-written tactics* (scripted teams, no training)
+against the opponent they trained on and one draws level; at 1.15 m both sides stay below them. Every result was
+observed in a training simulator, except one flight-log analysis.
 
 > **Training simulator only. Nothing here has flown. A tag is a game rule, not a contact.**
 
-**Terms.** *NUS port*: STE's copy of NUS's code and trained policies in STE's own pipeline; *hangar scale*: NUS's game
-scaled to STE's hangar (0.40 m per NUS unit). *Gate G0*: the owner's decision point at the end of STE's first phase.
-*G19* (Guard) and *S20* (Strike): policies STE trained in NUS's game with NUS's own code. *Tests 1 to 6* play G19
-against S20 while STE's conditions are added: NUS's game in STE's PyTorch code (1); STE's game engine with 0.6 s
-decisions and walls (2); the drone's delay and lag (3); the safety filter in place of the push rule (4); free height
-(5); Isaac Lab physics drones (6). *STE Guard policy*: the Guard team of learning 2. *Field Guards*: each Guard moves to
-the zone edge facing the nearest Strike. *Parked Guards*: Guards that stay still in the zone, at its centre or on a ring
-round it. *Fast engine*: STE's point-drone simulator; *Isaac Lab* simulates the Starling as a rigid body. A *seed* is
-one training run from one random start. Counts are games out of 1,000.
+**Terms used on this page.** Counts are games out of 1,000.
+
+| Term | Meaning |
+|---|---|
+| NUS port; hangar scale | STE's copy of NUS's code and trained policies in STE's own pipeline; NUS's game scaled to STE's hangar (0.40 m per NUS unit) |
+| Gate G0 | the owner's decision point at the end of STE's first phase (22 November 2026) |
+| G19, S20 | a Guard policy and a Strike policy that STE trained in NUS's game with NUS's own code |
+| Tests 1 to 6 | G19 against S20 while STE's conditions are added: NUS's game in STE's PyTorch code (1); STE's game engine with 0.6 s decisions and walls (2); the drone's delay and lag (3); the safety filter in place of the push rule (4); free height (5); Isaac Lab physics drones (6) |
+| STE Guard policy | the Guard team of learning 2 |
+| Field Guards; parked Guards | hand-written Guard tactics: each Guard moves to the zone edge facing the nearest Strike; Guards that stay still in the zone, at its centre or on a ring round it |
+| Fast engine; Isaac Lab | STE's point-drone simulator; the simulator that models the Starling as a rigid body |
+| Seed | one training run from one random start |
 
 ## The two games
 

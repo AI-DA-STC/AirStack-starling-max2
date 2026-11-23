@@ -1,21 +1,22 @@
-READ FIRST · TRAINING SIMULATOR ONLY: what this folder is, what was done with NUS's code, and where to go next.
+READ · TRAINING SIMULATOR ONLY: the whole story of the training work, from NUS's code to STE's own game, with the numbers, videos and records behind each step. The rules and results on one page: [overview](docs/OVERVIEW.md).
 
 # svg_training: drone teams that learn in a simulator
 
-**For** NUS researchers and anyone new here; no drone, ROS or Isaac knowledge is assumed. **STE**: the lab that wrote
-this repository. *Italic* terms are defined in the [glossary](docs/GLOSSARY.md). Every number was observed in a
-training simulator; nothing in this folder has flown. T numbers (T15, …) are rows of the [run ledger](records/LEDGER.md),
-each with its record; PASS and FAIL mean a pass mark set before the run was met or missed, INFO means measured with
-no pass mark.
+No drone, ROS or Isaac knowledge is assumed. **STE** is the lab that wrote this repository; **NUS** is the partner
+university whose code and policies the first part of the story is about. *Italic* terms are defined in the
+[glossary](docs/GLOSSARY.md). Every number was observed in a training simulator; nothing in this folder has flown. T
+numbers (T15, …) are rows of the [run ledger](records/LEDGER.md), each with its record; PASS and FAIL mean a pass mark
+set before the run was met or missed, INFO means measured with no pass mark.
 
 **Where to go.**
 
 | To find | Read |
 |---|---|
 | the game's rules and what the work has shown, on one page | [overview](docs/OVERVIEW.md) |
-| the NUS port: NUS's code copied, its policies tested under STE drone conditions, retraining | this page, sections 1–6, and the [NUS port report](docs/NUS_PORT_REPORT.md) |
+| the story in order: NUS's code copied, its policies tested under STE drone conditions, retraining, then STE's own game | this page |
+| the NUS port in full, phase by phase, with every clip | [NUS port report](docs/NUS_PORT_REPORT.md) |
 | STE's own training since 20 November 2026: the plan, the decisions and where each task stands | [STE learning track](ste_learning/README.md) |
-| how to run it | section 8 |
+| how to run any of it | [section 8](#8-run-it-yourself) |
 
 ## At a glance: what was done
 
@@ -332,16 +333,23 @@ processor (829 was the GPU run; evidence: T49,
 
 ### 6.3 STE's own training, since 20 November 2026
 
-STE now trains its own Guard and Strike teams in its own game: the same zone, speeds and 120 s game, with the safety
-filter on every pair as before, in a 6.5 m arena, and with a **tag**: a Guard drone within the tag distance of a Strike
-drone takes it out and both leave. The tag, the arena and the game length were set at gate G0; the tag distance is 1.6 m
-first and 1.15 m in later training (first runs at 1.15 m already made). What the first runs showed, each observed in the
-training simulator against the opponent the team trained on: at 1.6 m, the trained Guard team and Strike team each beat
-the best hand-written tactic, and a Strike team trained against a different Guard tactic draws level with the best
-hand-written tactic there; at 1.15 m both sides stay below them; a Guard team trains as well on the Isaac Lab drones as
-in the STE game engine in PyTorch, at about 5 times the GPU time. The aim is unchanged: a strategy that flies through
-AirStack on Starling drones. Numbers, figures and limits on one page: [overview](docs/OVERVIEW.md); the plan and its
-working folder: [ste_learning/](ste_learning/README.md). Nothing has flown.
+STE now trains its own Guard and Strike teams in its own game. What stays the same: the zone, the speeds, the 120 s game
+and the safety filter on every pair. What is new:
+
+- a **tag**: a Guard drone within the tag distance of a Strike drone takes it out, and both leave the game;
+- a 6.5 m arena, the size of the lab's flight space;
+- the tag distance, the arena and the game length were set at gate G0 (22 November); the tag is 1.6 m first and 1.15 m
+  in later training (first runs at 1.15 m already made).
+
+What the first runs showed, each observed in the training simulator against the opponent the team trained on:
+
+| At the 1.6 m tag | At the 1.15 m tag | Isaac Lab |
+|---|---|---|
+| the trained Guard team and Strike team each beat the best hand-written tactic; a Strike team trained against a different Guard tactic draws level with the best hand-written tactic there | both sides stay below the hand-written tactics | a Guard team trains as well on the Isaac Lab drones as in the STE game engine in PyTorch, at about 5 times the GPU time |
+
+Numbers, figures and limits on one page: [overview](docs/OVERVIEW.md). The plan, the decisions and where the work
+stands: [STE learning track](ste_learning/README.md). The aim is unchanged: a strategy that flies through AirStack on
+Starling drones. Nothing has flown.
 
 ## Watch it
 
@@ -365,7 +373,8 @@ second, L1, makes the training drone more like the real Starling. Where the work
 [status page](ste_learning/status/STATUS_LATEST.md). Work on the STE port of NUS's training method is paused after
 its stage 5.1 FAIL (20 November).
 
-Five questions to NUS:
+Five questions put to NUS on 19 November 2026 about the port (kept as asked; question 4 predates STE's own game,
+where a tag removes drones):
 
 1. Is any rule that matters missing from the Copy of NUS 2-D game (PyTorch)?
 2. Would NUS retrain with its own code under action hold, delay, the safety filter and free height?

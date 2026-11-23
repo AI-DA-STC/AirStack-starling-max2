@@ -174,8 +174,10 @@ other stopped, from git alone.
   changes code** (anything under `source/`, `scripts/` other than a figure script, `tests/`, `configs/`, `params/`),
   in the background, so merging does not block other work; builders run only the tests of the code they touched.
 - **Documentation-only merges skip the full suite** (owner, 23 Nov 2026: "do not run full suite when updating
-  documentation only. do that only for code that is running"). For a merge that changes only pages, records, figures,
-  status files or a figure-drawing script, run the short document check instead: `tools/docs_check/check_docs.sh`
+  documentation only. do that only for code that is running"; and, on moving pages: "isnt it just file path changes
+  what, dont need to do full test suite"). For a merge that changes only pages, records, figures, status files, a
+  figure-drawing script, or a file-path string inside a test (run that test file, seconds), run the short document
+  check instead: `tools/docs_check/check_docs.sh`
   from the repository root; from this folder the privacy, bundle and tie tests (`tests/test_partner_privacy.py`,
   `test_nus_rules_privacy.py`, `test_nus_phase3_privacy.py`, `test_nus_method_privacy.py`, `test_nus_provisional.py`,
   `test_ste_config.py`, `test_ste_game_spec.py`, `test_ste_l0_progress.py`, `test_g0_report_figures.py`); every test
@@ -249,7 +251,10 @@ needs is in this folder's committed files (HANDOFF first).
 - Ledger rows written on the 5090 are W numbers; the lead renumbers them to the next T numbers at merge
   (records/README.md explains this to readers).
 - Reader pages (label Read in docs/README.md): neutral and factual, like a short technical report; no "you"/"your" and no
-  conversational headings (owner, 19 Nov 2026). Every label is NUS's own term or defined in one line where it first
+  conversational headings (owner, 19 Nov 2026). **Written for any reader** (owner, 23 Nov 2026: "dont have to indicate nus
+  or lab lead just make it generic for any reader"): no "For NUS researchers…" openers and no named audience; NUS stays
+  the subject of the port, not the addressee. Every page's first line says what the page is for and where to go next;
+  superseded pages are moved to an `archive/` folder with an index, and the links that cited them follow. Every label is NUS's own term or defined in one line where it first
   appears on each page ([GLOSSARY](docs/GLOSSARY.md) part 1: "defender (Guard team)", "attacker (Strike team)", the
   policies table, Tests 1–6 = ladder rows 1–6 of the records); link text names the destination in words; T numbers only
   in Evidence columns. NUS's own tests as counts, never a verdict; no owner quotes, clock times, agent roles or "the

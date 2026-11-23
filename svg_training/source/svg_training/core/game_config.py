@@ -61,7 +61,7 @@ class TagCfg:
     drone stays in the games where "Guard survives" was drawn at the game's start with ``guard_survives_tag_prob``.
     The radius 1.6 m is PROPOSED (P1, ruled at gate G0) and the probability 0.0 is D2 (owner, provisional): study runs
     only. The values equal ``configs/ste_game.toml`` ``[tag]`` (a test keeps them equal). A drone that is tagged leaves
-    every filter pair at once; landing as a filter obstacle is task L2.3.
+    every filter pair at once, unless ``[landing]`` is on (``LandingCfg``, task L2.3).
 
     ``radius_m_range`` (STE task L1.10; optional, ``TAG_OPTIONAL_KEYS``): absent (None) = the fixed ``radius_m``,
     today's game bit for bit. ``[lo, hi]``: every game draws its own tag radius uniformly in [lo, hi] when it starts,
@@ -186,6 +186,41 @@ class EstimateErrorCfg:
         return {q: (float(s), float(t)) for q, (s, t) in pairs.items() if s > 0}
 
 
+@dataclass(frozen=True)
+class LandingCfg:
+    """Landing drones stay filter obstacles (STE task L2.3), ``[landing]`` in a game file; absent or ``enabled = false``
+    = off (nothing else is read, today's game bit for bit: a drone that is tagged or lost is parked at once).
+
+    On: a drone that leaves the game by a tag (the study tag) or a drop-out does not vanish. It descends from where it is
+    at ``land_speed_mps`` as an ordinary row of every safety-filter pair, as the flight commander's LANDING state does
+    (``swarm_commander.py`` :2086-2087: the nominal command is (0, 0, -land_speed), filtered 50/50, no stick cap or ramp,
+    the hold leash, no fence), until its height is at or below ``touchdown_z_m``; then it is parked as an out drone is
+    today. While it lands it no longer acts (its action is ignored), tags, is tagged or scores, and the policy sees it as
+    out (observation v0.1/v0.2: present 0; v0.3's landing flags are not approved). A drone that leaves through a wall or
+    the height band (``walls = "leave"``) is out at once, as today. Needs the Starling layer (either backend) and the
+    partner preset (``GameCfg`` refuses the rest). Values, all PROPOSED until the owner rules:
+
+    * ``enabled`` false: off by default (the owner's rule for every new behaviour).
+    * ``land_speed_mps`` 0.6: the real ``_ours`` configs' ``land_speed_mps`` (for example
+      ``AirStack/robot/ros_ws/src/svg_ground_control/config/goal_two_ours.yaml``: 0.6, "validated 2026-09-03"; the
+      commander's own default is 0.3); MEASURED there, PROPOSED as the training value.
+    * ``touchdown_z_m`` 0.15: the same configs' ``land_complete_altitude_m`` (ARCHITECTURE proposed 0.1 m); must be
+      below the height band's floor.
+    """
+    enabled: bool = False
+    land_speed_mps: float = 0.6
+    touchdown_z_m: float = 0.15
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.enabled, bool):
+            raise ValueError(f"landing.enabled must be true or false, got {self.enabled!r}")
+        for name, low_ok in (("land_speed_mps", False), ("touchdown_z_m", True)):
+            value = getattr(self, name)
+            if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) \
+                    or value < 0 or (value == 0 and not low_ok):
+                raise ValueError(f"landing.{name} must be a finite number {'>=' if low_ok else '>'} 0, got {value!r}")
+
+
 START_MODES: tuple[str, ...] = ("rings", "anywhere", "zone_disc_ring")
 
 
@@ -231,6 +266,7 @@ class GameCfg:
     yaw_rate_max_rad_s: float = 1.0
     tag: TagCfg = field(default_factory=TagCfg)
     estimate_error: EstimateErrorCfg = field(default_factory=EstimateErrorCfg)
+    landing: LandingCfg = field(default_factory=LandingCfg)
 
     def __post_init__(self) -> None:
         """An enabled ``[estimate_error]`` needs the Starling layer with backend "fitted" (else it would do nothing).
@@ -241,6 +277,7 @@ class GameCfg:
         if self.estimate_error.enabled and not (self.starling.enabled and self.starling.backend == "fitted"):
             raise ValueError('estimate_error needs the Starling layer on with backend "fitted" (tier 1); the physics '
                              "backend has its own (state_error_* in its parameter file)")
+        self._check_landing()
         if self.starts.mode != "zone_disc_ring":
             return
         a = self.arena
@@ -253,6 +290,21 @@ class GameCfg:
         if self.starts.strike_ring_m > min(sides) / 2 - a.wall_margin_m:
             raise ValueError(f"starts.strike_ring_m = {self.starts.strike_ring_m!r} m does not fit the keep-in box of the "
                              f"smallest arena side ({min(sides) / 2 - a.wall_margin_m!r} m from the centre)")
+
+    def _check_landing(self) -> None:
+        """An enabled ``[landing]`` (STE L2.3) needs the Starling layer (the pure rules are planar: nothing descends) and
+        the partner preset (the contact preset's filter pairs are team-mates only and it has its own tag), and a
+        touchdown height below the height band's floor (a landing drone is exempt from the band)."""
+        if not self.landing.enabled:
+            return
+        if not self.starling.enabled:
+            raise ValueError("landing needs the Starling layer on (starling_layer.enabled = true): the pure partner rules "
+                             "are planar, so nothing could descend")
+        if self.preset != "partner":
+            raise ValueError('landing is built for preset "partner" only (the contact preset filters team-mates only)')
+        if not self.landing.touchdown_z_m < self.arena.height_band_m[0]:
+            raise ValueError(f"landing.touchdown_z_m {self.landing.touchdown_z_m!r} must be below the height band's "
+                             f"floor {self.arena.height_band_m[0]!r} m")
 
     def team_speed_mps(self, team: str) -> float:
         """Team speed in m/s = units/step x metres/unit / seconds/step."""
@@ -269,7 +321,7 @@ class GameCfg:
         """Return a copy with dotted fields changed, e.g. replace(**{"starling.enabled": True})."""
         sections = {"arena": "arena", "rules": "rules", "contact": "contact",
                     "starling": "starling", "starts": "starts", "rewards": "rewards", "tag": "tag",
-                    "estimate_error": "estimate_error"}
+                    "estimate_error": "estimate_error", "landing": "landing"}
         top: dict[str, Any] = {}
         sub: dict[str, dict[str, Any]] = {}
         for key, val in dotted.items():
@@ -304,7 +356,7 @@ LOCAL_ALLOWED: frozenset[str] = frozenset(
 _GAME_KEYS = ("preset", "dropout_fraction", "obs_view", "pad_guards", "pad_strikes", "yaw_rate_max_rad_s")
 _SECTION_CLASSES = {"arena": ArenaCfg, "partner_rules": PartnerRulesCfg, "contact_rules": ContactRulesCfg,
                     "starling_layer": StarlingLayerCfg, "starts": StartsCfg, "rewards": RewardsCfg, "tag": TagCfg,
-                    "estimate_error": EstimateErrorCfg}
+                    "estimate_error": EstimateErrorCfg, "landing": LandingCfg}
 
 
 def _tuplify(v: Any) -> Any:
@@ -361,7 +413,8 @@ def load_game_cfg(path: str | Path = CONFIGS / "s2_game.toml", local_dir: Path |
     parts = {name: _build(cls, data.get(name, {}), name) for name, cls in _SECTION_CLASSES.items()}
     cfg = GameCfg(arena=parts["arena"], rules=parts["partner_rules"], contact=parts["contact_rules"],
                   starling=parts["starling_layer"], starts=parts["starts"], rewards=parts["rewards"],
-                  tag=parts["tag"], estimate_error=parts["estimate_error"], **{"preset": "partner", **game})
+                  tag=parts["tag"], estimate_error=parts["estimate_error"], landing=parts["landing"],
+                  **{"preset": "partner", **game})
     return cfg, Provenance(str(path), _sha(raw), local_file, local_sha)
 
 

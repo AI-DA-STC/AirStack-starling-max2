@@ -142,7 +142,7 @@ class SvgGame:
         self.pos_m = torch.zeros(n, m, 3, device=dev)
         self.vel_mps = torch.zeros(n, m, 3, device=dev)
         self.yaw = torch.zeros(n, m, device=dev)
-        self.alive = torch.ones(n, m, dtype=torch.bool, device=dev)
+        self.alive, self.landing = torch.ones(n, m, dtype=torch.bool, device=dev), torch.zeros(n, m, dtype=torch.bool, device=dev)
         self.steps = torch.zeros(n, dtype=torch.long, device=dev)
         self.dropout_step = torch.full((n, m), -1, dtype=torch.long, device=dev)
         self.arenas = self._draw_arenas()
@@ -195,7 +195,7 @@ class SvgGame:
         self.pos_m = torch.where(mk[..., None], pos, self.pos_m)
         self.vel_mps = torch.where(mk[..., None], torch.zeros_like(self.vel_mps), self.vel_mps)
         self.yaw = torch.where(mk, torch.zeros_like(self.yaw), self.yaw)
-        self.alive = torch.where(mk, torch.ones_like(self.alive), self.alive)
+        self.alive, self.landing = torch.where(mk, torch.ones_like(self.alive), self.alive), self.landing & ~mk   # L2.3
         self.steps = torch.where(mask, torch.zeros_like(self.steps), self.steps)
         self.dropout_step = torch.where(mk, drop, self.dropout_step)
         self._upset = self._upset & ~mask
@@ -290,19 +290,19 @@ class SvgGame:
             v = a[..., :3]
             v = v / v.norm(dim=-1, keepdim=True).clamp(min=1.0) * self._speed_mps
             yaw_rate = a[..., 3] * cfg.yaw_rate_max_rad_s * alive_prev
-            pos, _, corrected = self._starling.step(v, pos_prev, alive_prev, self.yaw, yaw_rate)
+            pos, _, corrected = self._layer_step(v, pos_prev, alive_prev, yaw_rate)    # landing hook (L2.3), end of class
             if self._physics:                     # D10: any live drone upset this game
                 self._upset = self._upset | (self._starling.upset & alive_prev).any(dim=1)
             if cfg.arena.walls == "keep_in":      # walls and the height band stop the drone (and its model)
                 lo = torch.cat((-lim, -lim, torch.full_like(lim, z_lo)), dim=-1)          # [N, 1, 3]
                 hi = torch.cat((lim, lim, torch.full_like(lim, z_hi)), dim=-1)
-                pos = self._starling.keep_in(lo, hi)
+                pos = self._starling.keep_in(*self._landing_box(lo, hi))     # L2.3: landing drones have no walls
             else:                                 # leaving the arena or the height band takes the drone out
                 out = (pos[..., :2].abs() >= lim).any(dim=-1) | (pos[..., 2] < z_lo) | (pos[..., 2] > z_hi)
                 alive = alive & ~out
         # tags (contact or study), on the positions the drones end the step at (after the walls), before the zone test
         # (tie rule above). A drone that left through a wall this step can no longer tag or be tagged.
-        tagged = torch.zeros_like(alive_prev)
+        tagged, alive_walls = torch.zeros_like(alive_prev), alive     # alive_walls: in the game after the walls (L2.3)
         if cfg.preset == "contact":
             tagged, alive = contact_tags(pos, alive, g, cfg.contact.contact_m, self._guard_survives)
         elif self._tag_on:                    # the study tag (L0.9): one for one, nearest pair first
@@ -316,9 +316,9 @@ class SvgGame:
         guard_win = (steps_new >= self.ticks) | ~(alive & self._is_strike).any(dim=1)
         outcome = torch.where(strike_win, STRIKE_WIN, torch.where(guard_win, GUARD_WIN, RUNNING)).to(torch.int8)
         done = outcome > 0
-        # park drones that are out; velocity from the realised move
-        pos = torch.where(alive[..., None], pos, torch.full_like(pos, PARK_M))
-        both = (alive & alive_prev)[..., None]
+        flying, flying_prev = self._land(alive_walls, alive, alive_prev, pos)   # park drones out; velocity from the move
+        pos = torch.where(flying[..., None], pos, torch.full_like(pos, PARK_M))
+        both = (flying & flying_prev)[..., None]
         vel = (pos - pos_prev) / TICK_S
         if self._starling is None:                          # planar path (D2): no vertical speed
             vel = torch.cat((vel[..., :2], torch.zeros_like(vel[..., 2:])), dim=-1)
@@ -344,6 +344,7 @@ class SvgGame:
         info.update(self._start_info())                   # the game that just played (start_team_close: zone_disc_ring only)
         info["upset"] = self._upset.clone()
         info["nonfinite_actions"] = bad_action.sum(dim=1)                    # [N] long: drones commanded NaN/inf
+        self._landing_info(info)                                              # L2.3: info["landing"] when on
         self._new_games(done)
         return StepOut(self._obs(), reward, done, outcome, end_step, info)
 
@@ -412,6 +413,57 @@ class SvgGame:
     def _study_radius(self) -> float | Tensor:
         """The study tag's radius: ``[tag] radius_m`` (a float) with no range, else each game's drawn radius [N]."""
         return self.cfg.tag.radius_m if self._tag_radius_m is None else self._tag_radius_m
+
+    # ------------------------------------------------------------------ landing drones (STE task L2.3)
+    # Kept at the end of the class so that the line numbers cited in ste_learning/ hold; ``step`` reaches them through
+    # one-line hooks (``_layer_step``, ``_landing_box``, ``_land``, ``_landing_info``).
+    #
+    # ``[landing] enabled`` (``game_config.LandingCfg``; off by default, and off plays today's game bit for bit: every
+    # hook then returns its inputs unchanged and adds nothing). On: a drone that leaves the game by a tag or a drop-out on
+    # a step (alive after the walls, not alive after the tags and drop-outs) is landing at the end of that step, at its
+    # position (not parked). ``SvgGame.landing`` [N, M] bool holds it; ``alive`` and ``landing`` are never both True.
+    # While landing, its command is (0, 0, -land_speed_mps) whatever its action (its yaw is held: the yaw update reads
+    # alive), it is a row of every filter pair, the walls and the height band do not act on it (the flight fence does not
+    # act on a LANDING drone), and it neither tags, is tagged, nor counts for the zone or the "no Strike drone left" test
+    # (all of them read alive). When its height is at or below ``touchdown_z_m`` (or not finite) after a step it is out:
+    # parked, as today. A new game clears it (``_new_games``). The policy sees it as out (``build_obs`` reads alive:
+    # present 0, zeros). info["landing"] [N, M] bool (on only): who is landing at the end of the step, before any reset
+    # (as final_alive). A drone that leaves through a wall or the height band (walls = "leave") is out at once, as today
+    # (PROPOSED).
+    def _layer_step(self, v: Tensor, pos_prev: Tensor, alive_prev: Tensor, yaw_rate: Tensor):
+        """The Starling layer's step; with landing on, the landing drones' commands are replaced by the descent and the
+        layer is told who is landing. Off: the call as before L2.3."""
+        if not self.cfg.landing.enabled:
+            return self._starling.step(v, pos_prev, alive_prev, self.yaw, yaw_rate)
+        land = self.landing[..., None]
+        sink = torch.full_like(v[..., 2:], -self.cfg.landing.land_speed_mps)
+        descent = torch.cat((torch.zeros_like(v[..., :2]), sink), dim=-1)          # [N, M, 3] world ENU m/s
+        return self._starling.step(torch.where(land, descent, v), pos_prev, alive_prev, self.yaw, yaw_rate,
+                                   landing=self.landing)
+
+    def _landing_box(self, lo: Tensor, hi: Tensor) -> tuple[Tensor, Tensor]:
+        """keep_in's box (lo, hi [N, 1, 3]); with landing on, [N, M, 3] with no limit for the landing drones."""
+        if not self.cfg.landing.enabled:
+            return lo, hi
+        land = self.landing[..., None]
+        return torch.where(land, torch.full_like(land, float("-inf"), dtype=lo.dtype), lo), \
+            torch.where(land, torch.full_like(land, float("inf"), dtype=hi.dtype), hi)
+
+    def _land(self, alive_walls: Tensor, alive: Tensor, alive_prev: Tensor, pos_m: Tensor) -> tuple[Tensor, Tensor]:
+        """Update ``landing`` after the tags and drop-outs of a step: touchdown first, then the drones that left the game
+        by a tag or a drop-out. Returns (flying [N, M], flying before the step [N, M]) for the parking and the velocity; off:
+        (alive, alive_prev), today's."""
+        if not self.cfg.landing.enabled:
+            return alive, alive_prev
+        before = self.landing
+        down = ~(pos_m[..., 2] > self.cfg.landing.touchdown_z_m)        # at or below the touchdown height, or not finite
+        self.landing = (before & ~down) | (alive_walls & ~alive)
+        return alive | self.landing, alive_prev | before
+
+    def _landing_info(self, info: dict) -> None:
+        """info["landing"] [N, M] bool with landing on; nothing when off (today's info keys)."""
+        if self.cfg.landing.enabled:
+            info["landing"] = self.landing.clone()
 
 
 def _tag_radius_seed(seed: int) -> int:

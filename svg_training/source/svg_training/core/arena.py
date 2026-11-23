@@ -192,3 +192,62 @@ def _zone_disc_ring_starts(cfg: GameCfg, ar: Arenas, guards: int, strikes: int, 
     miss = (cross < keepout).any(dim=(1, 2)) | inside.any(dim=1)
     z = torch.full((n, guards + strikes, 1), cfg.arena.start_height_m, device=dev)
     return torch.cat((xy, z), dim=-1), miss
+
+
+def draw_starts_sized(cfg: GameCfg, ar: Arenas, guards_n: Tensor, strikes_n: Tensor, guards: int, strikes: int,
+                      gen: torch.Generator) -> tuple[Tensor, Tensor]:
+    """Starts for drawn team sizes (STE task L2.4, ``[team_size] mode = "drawn"``): (starts [N, M, 3], miss [N] bool),
+    M = guards + strikes slots (Guard slots first). guards_n, strikes_n [N] long: each game's own counts (1 <= g <=
+    guards, 1 <= s <= strikes); the present drones are the first g Guard slots and the first s Strike slots.
+
+    Mode "zone_disc_ring" only, by its rules (``_zone_disc_ring_starts``) applied to each game's own counts: one Guard
+    uniform in radius in the Guard disc at a uniform bearing; g >= 2 Guards evenly spaced (2 pi / g) on one circle,
+    random rotation, radius uniform in [r_c, max(r_c, guard_disc_m)] with r_c = spacing / (2 sin(pi / g)); s >= 2 Strike
+    drones on the Strike ring at a random rotation plus random gaps of at least the spacing's bearing step (the rest of
+    the turn split by normalised exponentials over the s present drones). The draws are those of a fixed game with
+    ``strikes`` Strike drones, in the same order and shapes (Guard radius [N, 1], Guard rotation [N, 1], Strike
+    rotation [N, 1], Strike gaps [N, strikes] when strikes >= 2), so a range of one size gives the fixed game's starts
+    bit for bit. Absent slots' positions are left as drawn (the game parks them); the miss test (an opposite pair closer
+    than the larger keep-out, or a Strike drone inside the zone) reads present drones only. Batched; no loop."""
+    st = cfg.starts
+    if st.mode != "zone_disc_ring":
+        raise ValueError(f'drawn team sizes need starts.mode "zone_disc_ring", got {st.mode!r}')
+    n, dev = ar.half_m.shape[0], ar.half_m.device
+    lim = (ar.half_m - cfg.arena.wall_margin_m)[:, None, None]                      # [N, 1, 1]
+    centre = ar.zone_centre_m[:, None, :]                                           # [N, 1, 2]
+    keepout = max(cfg.rules.keepout_guard_m, cfg.rules.keepout_strike_m)
+    spacing = keepout + st.team_spacing_margin_m
+    g_n, s_n = guards_n.to(dev)[:, None], strikes_n.to(dev)[:, None]               # [N, 1] long
+    u_rho = torch.rand(n, 1, generator=gen, device=dev)
+    u_rot = torch.rand(n, 1, generator=gen, device=dev) * (2 * math.pi)
+    # per-game constants in float64, then float32: the fixed draw's Python floats rounded the same way
+    g64 = g_n.to(torch.float64).clamp(min=2.0)
+    chord = (spacing / (2 * torch.sin(math.pi / g64))).to(torch.float32)           # [N, 1]
+    span = (torch.clamp(spacing / (2 * torch.sin(math.pi / g64)), min=st.guard_disc_m)
+            - spacing / (2 * torch.sin(math.pi / g64))).to(torch.float32)
+    step = (2 * math.pi / g64).to(torch.float32)                                   # [N, 1] rad between Guards
+    one = g_n == 1
+    g_rho = torch.where(one, u_rho * st.guard_disc_m, chord + u_rho * span).expand(n, guards)
+    g_ang = torch.where(one, u_rot, u_rot + torch.arange(guards, device=dev)[None] * step)
+    s_ang = torch.rand(n, 1, generator=gen, device=dev) * (2 * math.pi)
+    slot_s = torch.arange(strikes, device=dev)[None]                                # [1, S]
+    if strikes > 1:
+        min_gap = 2 * math.asin(min(1.0, spacing / (2 * st.strike_ring_m)))
+        if strikes * min_gap > 2 * math.pi:
+            raise ValueError(f"{strikes} Strike drones do not fit {spacing!r} m apart on a ring of {st.strike_ring_m!r} m")
+        e = -torch.log1p(-torch.rand(n, strikes, generator=gen, device=dev))        # exponential(1)
+        e = torch.where(slot_s < s_n, e, torch.zeros_like(e))                        # absent Strike slots take no gap
+        rest = (2 * math.pi - s_n.to(torch.float64) * min_gap).to(torch.float32)     # [N, 1]
+        gaps = min_gap + rest * e / e.sum(dim=-1, keepdim=True)
+        s_ang = torch.where(s_n > 1, s_ang + gaps.cumsum(dim=-1), s_ang.expand(n, strikes))
+    rho = torch.cat((g_rho, torch.full((n, strikes), st.strike_ring_m, device=dev)), dim=1)     # [N, M]
+    ang = torch.cat((g_ang, s_ang.expand(n, strikes)), dim=1)
+    xy = centre + rho[..., None] * torch.stack((ang.cos(), ang.sin()), dim=-1)
+    xy = torch.maximum(torch.minimum(xy, lim), -lim)
+    p_g = torch.arange(guards, device=dev)[None] < g_n                              # [N, G] present Guard slots
+    p_s = slot_s < s_n                                                              # [N, S]
+    cross = (xy[:, :guards, None, :] - xy[:, None, guards:, :]).norm(dim=-1)       # [N, G, S]
+    inside = (xy[:, guards:] - centre).norm(dim=-1) <= ar.zone_radius_m[:, None]   # [N, S]
+    miss = ((cross < keepout) & p_g[:, :, None] & p_s[:, None, :]).any(dim=(1, 2)) | (inside & p_s).any(dim=1)
+    z = torch.full((n, guards + strikes, 1), cfg.arena.start_height_m, device=dev)
+    return torch.cat((xy, z), dim=-1), miss

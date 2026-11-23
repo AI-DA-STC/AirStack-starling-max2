@@ -1,6 +1,6 @@
 # AirStack-starling-max2 — Starling Max 2 × AirStack lab repo
 
-**Policy training for Strike vs Guard (SvG):** to train or test drone-team strategies in simulation, start at [svg_training/README.md](svg_training/README.md). Simulation only: nothing there flies the drones.
+**Policy training for Strike vs Guard (SvG):** drone teams trained in a simulator; nothing there flies the drones. The game's rules and what the training has shown, on one page: [svg_training/docs/OVERVIEW.md](svg_training/docs/OVERVIEW.md). The whole story, with videos: [svg_training/README.md](svg_training/README.md).
 
 > **Any unfamiliar term** (the commander, the panel, the interfaces, mocap bridge…) → [GLOSSARY.md](docs/GLOSSARY.md), one line each.
 
@@ -30,8 +30,8 @@ three-drone swarms rehearsed in **Isaac Sim** before anything flies for real.
 | **see where each project is, what passed, what is next** | [MILESTONES.md](docs/MILESTONES.md) (one screen) → [docs/projects/](docs/projects/HTX-R1.md) |
 | **work with the AI assistant on this repo** | [AI_ASSIST.md](docs/AI_ASSIST.md) |
 | **fly in the construction site** (sim): the scored camera run, or drone_1 yourself by keyboard | [localisation/README.md](localisation/README.md), its first table picks the run |
-| **train or test drone-team strategies** (Strike vs Guard game, in simulation; nothing here flies a drone) | [svg_training/README.md](svg_training/README.md): what was done, results and videos. Then: [What we found](svg_training/docs/WHAT_WE_FOUND.md) · [Train a Guard](svg_training/docs/TRAIN_A_GUARD.md) · [Videos](svg_training/docs/media/nus/README.md) |
-| **see the plan for STE's own Guard and Strike training** (STE's learning track; simulation only) | [svg_training/ste_learning/README.md](svg_training/ste_learning/README.md): what is being built, the plan and its first phase, with flowcharts; the current status is on that page |
+| **see the Strike vs Guard game's rules and what the training has shown** (drone teams trained in a simulator; nothing here flies a drone) | [overview](svg_training/docs/OVERVIEW.md): the rules and the main results on one page, each with its record. Then the whole story, with videos: [svg_training/README.md](svg_training/README.md) |
+| **follow STE's own Guard and Strike training: the plan and where it stands** (simulation only) | [svg_training/ste_learning/README.md](svg_training/ste_learning/README.md): what is being built, the plan and the decisions taken; where each task stands: [status page](svg_training/ste_learning/status/STATUS_LATEST.md) |
 | **set up the training pipeline** (any laptop for a CPU try; an NVIDIA GPU or Isaac Lab for full size) | [Run it yourself](svg_training/docs/RUN_IT_YOURSELF.md): levels A–F by hardware, each with its commands. Full machine setup: [GETTING_STARTED](svg_training/docs/GETTING_STARTED.md) |
 
 ## What we have achieved so far
@@ -99,7 +99,7 @@ Milestone by milestone, with evidence: [record/LEDGER.md](docs/record/LEDGER.md)
 | [GLOSSARY.md](docs/GLOSSARY.md) · [AI_ASSIST.md](docs/AI_ASSIST.md) | Terms · working with the assistant |
 | [CLAUDE.md](CLAUDE.md) | The assistant's brief and the iron rules |
 | [localisation/](localisation/README.md) | Camera-world sim runs: construction-site world, stereo VO (cuVSLAM), scoring, and the one-drone [keyboard session](localisation/README.md#fly-it-with-the-keyboard-one-drone-sim-only). A sibling of `AirStack/`, never inside CMU's tree |
-| [svg_training/](svg_training/README.md) | Training pipeline for the Strike vs Guard game: thousands of simulated games at once on one GPU (Isaac Lab in docker). Training simulator only; nothing in it flies. STE's own learning track is in [ste_learning/](svg_training/ste_learning/README.md). A sibling of `AirStack/` |
+| [svg_training/](svg_training/README.md) | Training pipeline for the Strike vs Guard game: thousands of simulated games at once on one GPU (Isaac Lab in docker). Training simulator only; nothing in it flies. Rules and results: [overview](svg_training/docs/OVERVIEW.md); STE's own learning track: [ste_learning/](svg_training/ste_learning/README.md). A sibling of `AirStack/` |
 | [AirStack/](AirStack/) | CMU AirStack snapshot, `yikuan/SVG_ground_control_dev` @ `b21d28c` ([its README](AirStack/README.md)) |
 | [`starling_1_indoor_params.params`](starling_1_indoor_params.params) | The drone's parameter set (QGC export) |
 | [tools/](tools/) · [patches/](patches/) | Sim session launcher, docs checker, the real-drone gamepad check [`tools/real.sh`](tools/README.md#real-drone-the-gamepad-check) · our bug-fix patches |

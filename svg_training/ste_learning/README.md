@@ -1,4 +1,4 @@
-INTERNAL · the lab's working folder for the STE learning track. The working plan for Claude sessions is [PLAN.md](PLAN.md); reader pages for NUS and others stay in [../README.md](../README.md) and `../docs/`.
+INTERNAL · the lab's working folder for the STE learning track. The game's rules and the results so far, on one page: [the overview](../docs/OVERVIEW.md); the whole story from the NUS port on: [../README.md](../README.md). The working plan for Claude sessions is [PLAN.md](PLAN.md).
 
 # STE learning track
 
@@ -14,12 +14,13 @@ counts were observed in the training simulator.
 The track runs in parallel with NUS's work and does not wait for it (decision D1); NUS's results plug in when ready.
 The goal is a pair of policies that play under rules that can fly, keep the team plan when a drone is lost, and hold
 against attackers they did not train against. They are then checked in the AirStack simulator (the flight
-software's own simulator) and in a real one-against-one (1v1) flight, each with the owner's approval.
+software's own simulator) and in real flights, each with the owner's approval: first on the lab's small Crazyflie
+drones at Starling distances, then a one-against-one (1v1) game on the two Starlings (gate G0 ruling R12).
 
 **Phase L0 is done (13.77 of its 19 GPU-h), and the owner ruled gate G0 on 22 November 2026** ([DISCUSSION §14](DISCUSSION_2026-11-19_20.md#14-gate-g0-rulings-owner-22-nov-2026)):
 the main game has a 1-for-1 tag, 1.6 m to build the pipeline and 1.15 m main training after L2; phases L1 and L2 are
 approved together with a cap of 13 GPU-h, and L1 is in work. L3 to L9 stay open until their own gates. Task-by-task status:
-[status/STATUS_LATEST.md](status/STATUS_LATEST.md).
+[status/STATUS_LATEST.md](status/STATUS_LATEST.md). What the runs have shown so far, each with its record: [the overview](../docs/OVERVIEW.md).
 
 ## Where it stands
 
@@ -45,7 +46,8 @@ for the owner's ruling. D and P numbers are rows of the [discussion record](DISC
 | How AirStack is changed (D4) | OPEN | phase L7 |
 
 Two technical calls were made by the lead (the main Claude session) and recorded: the drone's estimator is modelled
-as a delay plus noise first (D7), and work on NUS's training recipe is paused (D8); this track does not depend on it.
+first as a delay plus noise (D7; since task L1.1b, 22 November, as a slowly drifting estimate error instead, off by
+default, with sizes from a first, exploratory fit to real flight logs), and work on NUS's training recipe is paused (D8); this track does not depend on it.
 
 **The first gate.** Phase L0 (approved 20 November 2026) ended at gate G0, ruled by the owner on 22 November 2026
 ([DISCUSSION §14](DISCUSSION_2026-11-19_20.md#14-gate-g0-rulings-owner-22-nov-2026)). The report that explains L0's results for that ruling: [G0_REPORT.md](G0_REPORT.md).
@@ -69,7 +71,7 @@ that passes is exported as two files: the policy itself and an interface file th
 **Below the boundary.** Everything above is built inside `svg_training`. The flight side is only specified here; an
 AirStack session builds it after the owner approves. The mission-control laptop runs the policy once per drone every
 0.6 s and sends the commands through CMU's commander and flight filter to PX4, the flight controller on each drone.
-This is tried in the AirStack simulator first, then in a real 1v1 flight with two drones.
+This is tried in the AirStack simulator first, then on real drones: Crazyflies first, then the two Starlings in a 1v1 game.
 
 **Terms used in the figure.**
 
@@ -83,7 +85,7 @@ This is tried in the AirStack simulator first, then in a real 1v1 flight with tw
 | League | The pool of opponents a team trains against: earlier saved versions of the other team, plus scripted players | DECIDED (D6) |
 | Tier 1 | STE's fast game engine: a simplified drone, used for quick experiments and debugging | exists |
 | Tier 2 | The Isaac Lab physics drone: a Starling with rotors and PX4-style control loops | exists |
-| Estimator effect | A real drone flies on a position estimate that is slightly late and noisy; tier 2 gets a delay-plus-noise model of that | to build |
+| Estimator effect | A real drone flies on a position estimate that is slightly off; both tiers get a model of that error (task L1.1b, L1.7), off by default | exists |
 | Tag | A Guard drone and a Strike drone closer than the tag radius are both out and land. 1.6 m between centres while the pipeline is built, 1.15 m main training after L2 | DECIDED (P1, gate G0, 22 Nov 2026) |
 | Option B | A safety-filter variant: in a Guard–Strike pair only the Guard drone swerves | PROPOSED (P2) |
 
@@ -110,7 +112,7 @@ merge. The AirStack simulator runs the real PX4 code.
 | L5 League self-play | pilots, then the runs of record with 3 seeds | as ruled at G0 | owner rules the budget |
 | L6 QC and export | scoring, cross-checks, the policy file | tier 1, tier 2 | owner approves the hand-over |
 | L7 AirStack side | specifications here; built and played by an AirStack session | AirStack simulator | owner |
-| L8 Real flight | a real 1v1 game | real Starlings (two drones) | owner |
+| L8 Real flight | real games: Crazyflies first at Starling distances, then a 1v1 on the Starlings (ruling R12) | Crazyflies; real Starlings (two drones) | owner |
 | L9 Documentation | status, records, results page | — | owner, for reader pages |
 
 Each result is reported as "observed in the training simulator" until it has flown.
@@ -119,7 +121,8 @@ Each result is reported as "observed in the training simulator" until it has flo
 
 ![Phase L0 in four lanes: lane A, which game and is it worth learning, runs L0.1, L0.7, L0.8, L0.9, L0.10, L0.11, L0.12; lane B, can Isaac Lab train and at what cost, holds the three probes L0.2, L0.13 and L0.3; lane C, the Starling's look in videos, runs L0.4 then L0.5; lane D, real flight on Crazyflies, holds L0.14; all four end in L0.6, gate G0](figures/l0_tasks.png)
 
-L0 builds no learner. It answers four questions, one per lane, and brings the numbers to the owner at gate G0.
+*Done; kept as the record of how gate G0 was reached.* L0 built no learner. It answered four questions, one per lane,
+and brought the numbers to the owner at gate G0.
 A GPU-hour (GPU-h) is one hour of the shared graphics card. INFO means measured, with no pass mark.
 
 | ID and plain name | What it delivers | GPU-h cap |
@@ -159,7 +162,7 @@ Notes on five tasks:
   nothing is built in the Crazyflie repository and nothing flies. A Crazyflie result would say nothing about the
   Starling itself. Detail: [discussion record](DISCUSSION_2026-11-19_20.md), section 2.16.
 
-**What gate G0 decides.**
+**What gate G0 decided** (ruled 22 November 2026; the rulings: [DISCUSSION §14](DISCUSSION_2026-11-19_20.md#14-gate-g0-rulings-owner-22-nov-2026)).
 
 | Question | Fed by |
 |---|---|
@@ -174,9 +177,9 @@ Notes on five tasks:
 
 ## What the independent review found
 
-An independent reviewer attacked the first version of the plan, and the lead checked the main claims in the code.
-The findings are why L0 became a game-definition phase. Nothing below has been measured yet; each line names its
-basis.
+*Kept for the record (20 November 2026, before L0).* An independent reviewer attacked the first version of the plan,
+and the lead checked the main claims in the code. The findings are why L0 became a game-definition phase. Each line
+names its basis as it stood then; L0 measured them, and gate G0 ruled on them.
 
 | # | Finding | Basis | What the plan does |
 |---|---|---|---|
@@ -228,7 +231,8 @@ something fails or a human gate is reached. It carries no invented numbers.
 
 **The limit.** Nothing is scored, launched or reported when no Claude session is alive. Training jobs already
 started keep running. A new session reads the state files in [status/](status/), adopts the live jobs and restarts
-any job a reboot killed. A resume drill in L0.7 proves this before the first overnight run.
+any job a reboot killed. The resume drill of task L0.7 showed this on both machines (laptop 21 November, RTX 5090
+23 November).
 
 ## The team
 
@@ -256,10 +260,12 @@ any job a reboot killed. A resume drill in L0.7 proves this before the first ove
 | 8 | [VALIDATION_QC.md](VALIDATION_QC.md) | test levels, gates per stage, the robustness suite |
 | 9 | [AUTOMATION.md](AUTOMATION.md) | what wakes the work, launch rules, resume, human gates |
 | 10 | [DOCS_AND_STATUS.md](DOCS_AND_STATUS.md) | which pages change when; the 30-minute status |
-| 11 | [status/](status/) | the status template; later the latest status and the state files |
+| 11 | [status/](status/) | the latest status ([STATUS_LATEST.md](status/STATUS_LATEST.md)), its history (LOG.md) and the template |
 | 12 | [agents/](agents/) | the definitions of the agents above |
+| — | [G0_REPORT.md](G0_REPORT.md), [G0_DECISION.md](G0_DECISION.md) | gate G0: the report on L0's results, and the decision page |
+| — | [CRAZYFLIE_ROUTE.md](CRAZYFLIE_ROUTE.md) | task L0.14: could the game be flown on the lab's Crazyflies |
 | — | [GAME_SPEC.md](GAME_SPEC.md) | the game spec sheet: every value of the game the track trains, with its status and source (task L0.8); the same values in `configs/ste_game.toml` |
-| — | [figures/](figures/) | the four flowcharts, drawn by [make_ste_learning_figures.py](../scripts/make_ste_learning_figures.py) |
+| — | [figures/](figures/) | the flowcharts, drawn by [make_ste_learning_figures.py](../scripts/make_ste_learning_figures.py), and the L0.14 figures |
 
 PLAN.md wins where it and a reference page (5 to 10) differ. `drafts/` holds first drafts, kept for the record and
 not maintained.

@@ -244,6 +244,8 @@ needs is in this folder's committed files (HANDOFF first).
   `svg_training/` row, both pointing at `ste_learning/README.md`; and the status text of this folder's row in the root
   `CLAUDE.md` (stage 5.1, the STE learning track). Approved (owner, 20 November 2026): the root `CLAUDE.md` says that
   training work lands on `development` (the two-clones paragraph and the two lines of "More than one Claude session").
+  Approved (owner, 23 November 2026): the root `README.md`'s training banner and its two training rows in "I want to…"
+  and the `svg_training/` row point readers to `docs/OVERVIEW.md` first, then this folder's README and `ste_learning/`.
 - Ledger rows written on the 5090 are W numbers; the lead renumbers them to the next T numbers at merge
   (records/README.md explains this to readers).
 - Reader pages (label Read in docs/README.md): neutral and factual, like a short technical report; no "you"/"your" and no

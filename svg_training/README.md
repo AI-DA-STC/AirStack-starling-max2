@@ -8,7 +8,14 @@ training simulator; nothing in this folder has flown. T numbers (T15, …) are r
 each with its record; PASS and FAIL mean a pass mark set before the run was met or missed, INFO means measured with
 no pass mark.
 
-**The rules and the main learnings on one page:** [overview](docs/OVERVIEW.md).
+**Where to go.**
+
+| To find | Read |
+|---|---|
+| the game's rules and what the work has shown, on one page | [overview](docs/OVERVIEW.md) |
+| the NUS port: NUS's code copied, its policies tested under STE drone conditions, retraining | this page, sections 1–6, and the [NUS port report](docs/NUS_PORT_REPORT.md) |
+| STE's own training since 20 November 2026: the plan, the decisions and where each task stands | [STE learning track](ste_learning/README.md) |
+| how to run it | section 8 |
 
 ## At a glance: what was done
 
@@ -382,7 +389,9 @@ Commands for every level of the NUS port, with what each must print: [how to run
 
 | Page | What it holds |
 |---|---|
-| [What we found](docs/WHAT_WE_FOUND.md) | every result, with its caveat and record |
+| [Overview](docs/OVERVIEW.md) | the game's rules and the main results on one page |
+| [STE learning track](ste_learning/README.md) | STE's own training: plan, decisions, status |
+| [What we found](docs/WHAT_WE_FOUND.md) | every result of the NUS port, with its caveat and record |
 | [NUS port report](docs/NUS_PORT_REPORT.md) | the NUS port, phase by phase |
 | [The game](docs/THE_GAME.md) | the pipeline in one picture; the game as an RL environment |
 | [Plug in your code](docs/PLUG_IN_YOUR_CODE.md) | connect a strategy or a training method, and score it |

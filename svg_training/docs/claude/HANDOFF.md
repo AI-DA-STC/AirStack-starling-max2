@@ -12,6 +12,17 @@ Everything needed is in this folder; nothing depends on the previous chat. Claud
 the private NUS workspace (`~/ma_skills-self-play/`, 5090 only) do **not** travel with git: if this file and a memory
 note disagree, this file wins.
 
+### 23 November 2026 ~12:40 — READING FLOW FROM THE ROOT README; MAIN BROUGHT UP TO DEVELOPMENT (read this first)
+Owner (23 Nov): update the root README, `svg_training/README.md` and `ste_learning/README.md` so readers starting at the
+root README find their way. Path: root README (banner and two "I want to…" rows) → `docs/OVERVIEW.md` (rules and
+results) → `svg_training/README.md` ("Where to go" table; the whole story) and `ste_learning/README.md` (plan,
+decisions, link to the status page). The learning-track page now says real flight is Crazyflies first, then the
+Starling 1v1 (R12), and marks the L0 sections as history; PLAN rows L1 and L8 follow it. Two on-path stale lines fixed
+(THE_GAME arena, WHAT_WE_FOUND tag; separate commit). Reviews: facts (no wrong statement), newcomer from the root
+README (FLOW PASS: four questions, one click each). **Owner chose option B: `main` was fast-forwarded to `development`
+on 23 Nov ~12:40** (GitHub shows `main` by default; it stood at 20 Nov). `main` and `development` are the same commit
+until the next training commit; training work still lands on `development`.
+
 ### 23 November 2026 ~11:50 — README BROUGHT UP TO DATE WITH GATE G0; NEW RULE ON DOCS-ONLY MERGES (read this first)
 Owner (23 Nov): "bring those sections up to date". `README.md` at a glance, §1, §3, §6 (new 6.3) and §7 now tell the story
 through gate G0 and point at `docs/OVERVIEW.md` for the numbers; the story figure's last box and footer are redrawn; the

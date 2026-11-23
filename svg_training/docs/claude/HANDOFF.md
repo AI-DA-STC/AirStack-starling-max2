@@ -16,7 +16,9 @@ note disagree, this file wins.
 Owner rulings of 24 Nov (DISCUSSION §16, R19–R23): build both routes (pure RL, mixed) and compare; L1.9 screen first,
 training after the owner's word; L1.5 yes; process scaled (two reviewers only where a decision or reader page depends on
 it); L3–L6 = pipeline check, cap 20 GPU-h. Models by role in CLAUDE.md (Opus 5.5 main, Fable 5.2 advisor at forks,
-Sonnet agents for checking). Done (records reviewed by a numbers and a completeness reviewer, fixes applied; full suites on the CPU, touched tests then rerun on the GPU, Isaac-marked tests NOT run since L2.3 changed the physics layer: run them (as T62) before the next tier-2 run):
+Sonnet agents for checking). Done (records reviewed by a numbers and a completeness reviewer, fixes applied; full suites on the CPU; after the merges, on the GPU: the touched tests 230 passed, the L1.10 Guard score matrix
+replayed on merged development with every cell identical (19 controls PASS, 0.016 GPU-h), and the Isaac-marked tests
+7 passed + 1 expected failure, as T62):
 T65 L1.7 speed (estimate error ≈1–3.5 % cost); T66 L1.9 1v1 screen (1v1 Guard-lopsided: moving Guard scripts hold 100 %
 at 1.6 m, 84–90 % at 1.15 m; training held, R20); T67 L1.10 tag drawn 1.5–1.7 m (run 0 PASS; Guard above the scripts v
 4 of 6, Strike v 2 of 5; no error effect; not distinguishable from T46; players in ste_provisional). Built, QC-reviewed,
@@ -24,7 +26,7 @@ full suite at each merge, all off by default: L2.3 landing (`[landing]`; floor s
 (`[filter] share`; wall shortfall 0.39 m tier 1), L2.4 drone loss and drawn sizes (`[team_size]`; study file only;
 the learner must mask absent slots before any drawn training). L3 two-routes design note drafted (no code). **Blocked:**
 L1.4/L1.5: AirStack has never been set up on the 5090 (no built ros_ws, no containers; `airstack.sh setup` is outside
-the approved exception): owner to choose 5090 setup or the laptop. Ledger budget_l1_l2 4.244 of 13.0. Nothing runs on
+the approved exception): owner to choose 5090 setup or the laptop. Ledger budget_l1_l2 4.260 of 13.0. Nothing runs on
 the GPU now. Next: owner decisions (STATUS "Waiting on you"), then L2.5/L2.6 INFO runs and the L3 build. Worktrees
 -l2, -l21, -l24 are merged branches (can be removed); -l2 had a symlink trap (runs/nus_port linked from another
 worktree makes the NUS phase-4 tests refuse to write: do not link runs/ across worktrees).

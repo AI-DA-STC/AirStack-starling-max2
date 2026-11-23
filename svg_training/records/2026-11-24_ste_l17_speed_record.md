@@ -11,7 +11,8 @@ section 9; INFO here).
 
 ## Commit
 
-`242953c598e63d3564b0a4ef76c1d1b41832090c` on `development`; measurement script
+`9f9ce2d5` on `development` at launch (04:18:55; the measurement script was in the working tree, written for this run,
+and first committed 3 min later in `242953c5`, unchanged since); measurement script
 `records/evidence/2026-11-24_ste_l17_speed/measure_l17_speed.py` (sha256 `2ff7397fcb85…`, an evidence script, not pipeline
 code). The script was written for this run (the laptop's was a session scratchpad, not committed).
 

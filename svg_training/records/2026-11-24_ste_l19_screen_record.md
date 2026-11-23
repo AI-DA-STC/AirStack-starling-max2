@@ -14,7 +14,8 @@ after the screen; the 1v1 training waits for the owner's word.
 
 Commit `4010dededf13` on `development`. Gate file `configs/ste_l1/l19_screen_gates.toml`, sha256
 `fd79fd861e9f32bddf6ad3ddb317286b20109213e09ee685da8642f82c9ecef1` (pinned at launch; copy in the evidence folder).
-`scripts/ste_sweep_l011.py`, device CPU, seed 110000, 1,000 games per cell, 2,400 ticks (120 s). Launched by
+`scripts/ste_sweep_l011.py`, device CPU, seed 110000, 1,000 games per cell, 2,400 ticks (120 s); fitted PX4 response
+with a 0.1482 s response delay (`params/real_exploratory_v0.toml`); effective time 164 s of the 1.5 h cap. Launched by
 `scripts/ste_job.py launch --task L1.9 --gpu-h 0`; exit 0.
 
 ## Controls
@@ -40,19 +41,26 @@ scripted Guard holds against every scripted Strike". At 1.6 m the best Guard's w
 worst reach 0.00; at 1.15 m 0.84 and 0.16 (157 games).
 
 **Plain reading.** One against one, any Guard that moves (mark the edge, mirror, field) stops every scripted Strike at
-the 1.6 m tag, and about 84–90 % of them at 1.15 m. The 1v1 game as set today is lopsided towards the Guard: a single
-Strike drone has no team-mate to draw the Guard away, and the Guard needs only to reach within the tag distance once.
+the 1.6 m tag (worst cell 1,000 of 1,000, 99.6–100.0 %), and about 84–90 % of them at 1.15 m. The 1v1 game as set today
+is lopsided towards the Guard. Likely cause (a hypothesis, not tested): a single Strike drone has no team-mate to draw
+the Guard away, and the Guard needs only to come within the tag distance once.
+
+**Cross-check with T44** (spec): T44's 1v1 cell (`size_1v1`, [record](2026-11-21_ste_l011_screen_record.md)) read best
+Guard's worst hold 1.0 and best Strike's worst reach 0.0; this screen's base_1v1 reads the same: **agrees with T44**.
 
 **Check 2b of the spec** (before any run 0): the base_1v1 cell parked-at-centre v straight shows 317 reaches of 1,000,
 below the 950 limit, so run 0 could be launched. It was not: owner hold R20.
 
 ## What it means for the 1v1 training (for the owner, R20)
 
-Training a 1v1 Guard at 1.6 m cannot show anything: the scripts already hold every game. Training a 1v1 Strike at 1.6 m
+Training a 1v1 Guard at 1.6 m can only be a ceiling read (spec): the scripts already hold every game, so a gain over
+them is impossible by construction. Training a 1v1 Strike at 1.6 m
 would ask whether learning finds a way past a Guard that scripts never beat; that is a fair question but a narrow one.
 The lead's recommendation: do not run L1.9's 1v1 training as specified; first decide whether the 1v1 flight game needs
 different rules to be a contest (for example a smaller tag, a larger arena, a faster Strike, or a Strike start nearer the
 zone), and screen those on the CPU, as this run did, before any GPU hour. That is a game-rules decision for the owner.
+**No L1.9 run was started:** run 0, Guard, Strike and the L1.9 score matrices stay held (R20); new screens run only if
+the owner asks.
 
 ## What this does not show
 

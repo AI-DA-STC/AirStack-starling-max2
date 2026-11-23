@@ -12,7 +12,19 @@ Everything needed is in this folder; nothing depends on the previous chat. Claud
 the private NUS workspace (`~/ma_skills-self-play/`, 5090 only) do **not** travel with git: if this file and a memory
 note disagree, this file wins.
 
-### 23 November 2026 ~10:15 — OVERVIEW PAGE FOR THE LAB LEAD: HALF BUILT, RTX 5090 FINISHES IT (read this first)
+### 23 November 2026 ~11:20 — OVERVIEW PAGE DONE ON THE RTX 5090 (read this first)
+`docs/OVERVIEW.md` built (plan Task 1), 80 lines; link check `broken: 0`. Reviews: Task 1 by two reviewers (numbers v
+records: no wrong number; reader rules and spec coverage), Tasks 2–3 by one (READY), a final review on the strongest
+model (no wrong number; one fix wave applied), a scoped re-review of that wave, and the newcomer acceptance test
+(ALL PASS: each of the three questions answered on OVERVIEW, one click from README, 8–24 lines). Departures from the
+design, each from a review: the 1.15 m caveat uses the flight-log record's figures (about 1 cm hover sigma, 2.5 cm
+moving spread), not the design's "3–10 cm", which came from a different measurement; T61's closest tag (1.106 m) is
+left out because it comes from the 0.30 s delay stress test; a Terms paragraph defines the labels; working values are
+marked. **Owner's call, not done:** `docs/GLOSSARY.md` "Tag" row still says tags exist only in a separate track, and
+README's body (at-a-glance, §3 "both sides play the same game", §6–7 lines) still predates G0; the design left README
+bodies for a later change with the owner's OK. Next on the 5090: the 07:15 entry (carry 0.73, L1.7 speed, L1.9 → L1.10).
+
+### 23 November 2026 ~10:15 — OVERVIEW PAGE FOR THE LAB LEAD: HALF BUILT (SUPERSEDED by the ~11:20 entry above)
 **What and why.** The owner's lab lead wants the game rules and the main learnings (NUS port + STE track) on one page.
 Run through the `quality-change` process: panel of four (technical writer, flight-test engineer, engineering manager,
 newcomer reader; positions + vote), builder check, **design APPROVED by the owner 23 Nov**

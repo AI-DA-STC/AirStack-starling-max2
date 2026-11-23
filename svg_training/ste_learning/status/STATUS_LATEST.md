@@ -1,4 +1,4 @@
-INTERNAL · the latest status of STE's own learning track and the NUS port, overwritten at every update; the history is in [LOG.md](LOG.md). Produced by the `train-status` skill.
+INTERNAL · the latest status of STE's own learning track and the NUS port, overwritten at every update by the `train-status` skill · [../README.md](../README.md); the history: [LOG.md](LOG.md)
 
 **Status, 2026-11-23 07:09 (+08:00) (morning digest; laptop work 22 Nov 18:00 – 23 Nov 07:10 +08:00; RTX 5090 L1.0 overnight)** · laptop RTX 5070 Ti · GPU idle · 0 jobs
 

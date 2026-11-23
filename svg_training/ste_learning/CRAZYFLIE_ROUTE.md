@@ -1,4 +1,6 @@
-INTERNAL · result page of the STE learning track, task L0.14 "Crazyflie route check" ([PLAN](PLAN.md) §4; written 21 Nov 2026). It feeds the fleet question P13 at gate G0 ([DISCUSSION](DISCUSSION_2026-11-19_20.md) §2.16). INFO only: no gate, no verdict. Record: [2026-11-21_ste_l014_crazyflie_route_record.md](../records/2026-11-21_ste_l014_crazyflie_route_record.md). Every number was observed in the training simulator or in the Crazyflie repository's offline planner; nothing here is a flight result, and nothing was flown.
+INTERNAL · result page of task L0.14 "Crazyflie route check" of the STE learning track (PLAN §4; written 21 Nov 2026): whether the game could be flown on the lab's Crazyflies at Starling sizes, and what that would need; INFO only, no gate, no verdict · [README.md](README.md); the record: [2026-11-21_ste_l014_crazyflie_route_record.md](../records/2026-11-21_ste_l014_crazyflie_route_record.md)
+
+It feeds the fleet question P13 at gate G0 ([DISCUSSION](DISCUSSION_2026-11-19_20.md) §2.16). Every number was observed in the training simulator or in the Crazyflie repository's offline planner; nothing here is a flight result, and nothing was flown.
 
 # Crazyflie route check
 

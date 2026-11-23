@@ -1,5 +1,6 @@
-INTERNAL · spec written 23 Nov 2026 by the L1.9/L1.10 implementer, before any of its runs (main track; costed draft rows
-L1.9 and L1.10). DRAFT until the lead's two reviews.
+INTERNAL · spec of tasks L1.9 and L1.10 (the 1v1 read and the tag-draw read), written before any of their runs; DRAFT until the lead's two reviews · [../README.md](../README.md); the tasks' place in the plan: [costed plan draft](L1_L9_COSTED_PLAN_DRAFT.md), rows L1.9 and L1.10
+
+Written 23 Nov 2026 by the L1.9/L1.10 implementer, before any of its runs (main track).
 
 # L1.9 and L1.10: the 1v1 read and the tag-draw read (INFO)
 

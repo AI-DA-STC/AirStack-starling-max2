@@ -1,4 +1,6 @@
-INTERNAL · spec written by the lead 23 Nov 2026 ~04:20, before the L1.8 run (main track; costed draft row L1.8).
+INTERNAL · spec of task L1.8 (the 1.6 m-trained players re-scored on the new tier-2 drone), written before the run and kept as written · [../README.md](../README.md); the task's place in the plan: [costed plan draft](L1_L9_COSTED_PLAN_DRAFT.md), row L1.8
+
+Written by the lead 23 Nov 2026 ~04:20, before the L1.8 run (main track; costed draft row L1.8).
 
 # L1.8: T46's 1.6 m-trained players re-scored on the new tier-2 drone (INFO)
 

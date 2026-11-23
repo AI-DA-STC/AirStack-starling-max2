@@ -1,9 +1,10 @@
-INTERNAL · the master plan of STE's learning track, version 2 (20 Nov 2026, after the independent soundness review).
+INTERNAL · the master plan of STE's learning track (version 2, 20 Nov 2026): phases L0–L9 with their tasks, budgets and gates; where it and a reference page differ, this page wins · [README.md](README.md); why each choice: [DISCUSSION](DISCUSSION_2026-11-19_20.md)
+
+Version 2 (20 Nov 2026, after the independent soundness review).
 **Phase L0 is done (approved 20 Nov 2026, cap 19 GPU-h, 13.77 used). Gate G0 was RULED by the owner on 22 Nov 2026**
 ([DISCUSSION §14](DISCUSSION_2026-11-19_20.md#14-gate-g0-rulings-owner-22-nov-2026)): the main game has a 1-for-1 tag, 1.6 m to build the pipeline and 1.15 m main training after L2
 (option (d)); **L1 + L2 are approved together at 13 GPU-h and L1 is in work**; L3–L9 are the intended path, their
-budgets OPEN until re-baselined. Task status: `status/STATUS_LATEST.md`. Where this page and a reference page differ,
-this page wins. Why each choice: [DISCUSSION](DISCUSSION_2026-11-19_20.md).
+budgets OPEN until re-baselined. Task status: `status/STATUS_LATEST.md`.
 
 # PLAN: STE learning track
 

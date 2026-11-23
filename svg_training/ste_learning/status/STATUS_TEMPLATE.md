@@ -1,6 +1,7 @@
-INTERNAL · fill-in template for the 30-minute status of STE's own learning track and the NUS port (the `train-status`
-skill fills it; NUS port phases come first in the Phases table). Copy it to `STATUS_LATEST.md`
-(overwrite), append the same text to `LOG.md`, paste it in the chat. Delete every `<!-- … -->` comment before posting.
+INTERNAL · fill-in template for the 30-minute status of STE's own learning track and the NUS port; the `train-status` skill fills it, writes it to `STATUS_LATEST.md` and appends it to `LOG.md` · [../README.md](../README.md); the format's rules: [DISCUSSION §4](../DISCUSSION_2026-11-19_20.md#4-owners-working-rules-restated-for-this-track-from-the-conversation-and-memory)
+
+NUS port phases come first in the Phases table. Copy it to `STATUS_LATEST.md` (overwrite), append the same text to
+`LOG.md`, paste it in the chat. Delete every `<!-- … -->` comment before posting.
 
 <!--
 Rules (owner's format; ste_learning/DISCUSSION_2026-11-19_20.md §4):

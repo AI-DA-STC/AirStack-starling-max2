@@ -1,4 +1,6 @@
-INTERNAL · reference page of the STE learning track, from the specialist draft `archive/VALIDATION_QC_draft.md` (20 Nov 2026). **[PLAN.md](PLAN.md) takes precedence** where the two differ; its section 2 lists every change made at integration.
+INTERNAL · reference page of the STE learning track: the validation and QC plan (the test pyramid, the stage gates, the robustness suite, the debugging playbook and the QC checklist), from the specialist draft of 20 Nov 2026 · [README.md](README.md); [PLAN.md](PLAN.md) takes precedence where the two differ
+
+From `archive/VALIDATION_QC_draft.md` (20 Nov 2026); PLAN section 2 lists every change made at integration.
 
 # Validation and QC plan: STE learning track
 

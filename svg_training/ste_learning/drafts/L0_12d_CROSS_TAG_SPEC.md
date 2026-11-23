@@ -1,4 +1,6 @@
-INTERNAL · spec written by the lead 22 Nov 2026 ~04:55, before any scoring (owner: "ok if u think 1 is worth it then go").
+INTERNAL · spec of task L0.12d (the cross-tag check: the 1.6 m-trained players in the 1.15 m game), written before any scoring and kept as written · [../README.md](../README.md); the outcome: [PLAN](../PLAN.md), row L0.12
+
+Written by the lead 22 Nov 2026 ~04:55, before any scoring (owner: "ok if u think 1 is worth it then go").
 
 # L0.12d Cross-tag check: the 1.6 m-trained players in the 1.15 m game (INFO)
 

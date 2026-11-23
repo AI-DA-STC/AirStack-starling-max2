@@ -1,5 +1,7 @@
-INTERNAL · reference page of the STE learning track, from the specialist draft `archive/DOCS_AND_STATUS_draft.md` (20 Nov 2026). **[PLAN.md](PLAN.md) takes precedence** where the two differ; its section 2 lists every change made at integration.
-style rules for STE's own learning track. Input to PLAN.md and the track's STANDARDS.md; kept for the record.
+INTERNAL · reference page of the STE learning track: the documentation plan, the 30-minute status process and the style rules of the track's documents, from the specialist draft of 20 Nov 2026 · [README.md](README.md); [PLAN.md](PLAN.md) takes precedence where the two differ
+
+From `archive/DOCS_AND_STATUS_draft.md` (20 Nov 2026); PLAN section 2 lists every change made at integration. Input to
+PLAN.md and the track's STANDARDS.md; kept for the record.
 
 # Documents and status: draft
 

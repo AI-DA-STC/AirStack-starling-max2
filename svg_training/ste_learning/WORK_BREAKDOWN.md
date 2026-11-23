@@ -1,4 +1,6 @@
-INTERNAL · reference page of the STE learning track, from the specialist draft `archive/WORK_BREAKDOWN_draft.md` (20 Nov 2026). **[PLAN.md](PLAN.md) takes precedence** where the two differ; its section 2 lists every change made at integration.
+INTERNAL · reference page of the STE learning track: the ordered work breakdown, phase by phase (L0–L9) and task by task, from the specialist draft of 20 Nov 2026 · [README.md](README.md); [PLAN.md](PLAN.md) takes precedence where the two differ
+
+From `archive/WORK_BREAKDOWN_draft.md` (20 Nov 2026); PLAN section 2 lists every change made at integration. Direction:
 [DISCUSSION_2026-11-19_20.md](DISCUSSION_2026-11-19_20.md) (D1–D9 decided; P1–P8 open). Practices:
 [CODING_PRACTICES.md](CODING_PRACTICES.md). Rules: [STANDARDS.md](STANDARDS.md).
 

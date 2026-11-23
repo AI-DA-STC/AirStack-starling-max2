@@ -1,6 +1,8 @@
-INTERNAL · spec written by the lead 22 Nov 2026, before any of its runs (owner's G0 rulings R1, R15: DISCUSSION §14).
-Version 2 (same day, before any run): after two spec reviews (facts/driver fit; method), L1.13 split into two arms, T52 as
-comparator, 30 s scoring as the main read, margins and run-0 costs added.
+INTERNAL · spec of the L1 side track (tasks L1.11, L1.12, L1.13), written before any of its runs under the owner's G0 rulings R1 and R15; version 2 after two spec reviews · [../README.md](../README.md); the rulings: [DISCUSSION §14](../DISCUSSION_2026-11-19_20.md#14-gate-g0-rulings-owner-22-nov-2026)
+
+Written by the lead 22 Nov 2026, before any of its runs. Version 2 (same day, before any run): after two spec reviews
+(facts/driver fit; method), L1.13 split into two arms, T52 as comparator, 30 s scoring as the main read, margins and
+run-0 costs added.
 
 # L1 side track: L1.11, L1.12, L1.13 (INFO)
 

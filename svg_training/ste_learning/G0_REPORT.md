@@ -1,4 +1,6 @@
-INTERNAL · report for the G0 decision, written by the lead 22 Nov 2026; all game results observed in the training simulator (the Crazyflie planner results in the Crazyflie repository's offline planner); nothing flown.
+INTERNAL · the report behind the G0 decision, written 22 Nov 2026: what phase L0 found and what was to be decided; ruled the same day, text kept as written · [README.md](README.md); the rulings: [DISCUSSION §14](DISCUSSION_2026-11-19_20.md#14-gate-g0-rulings-owner-22-nov-2026)
+
+All game results were observed in the training simulator (the Crazyflie planner results in the Crazyflie repository's offline planner); nothing flown.
 
 # Gate G0 report: what phase L0 found, and what is to be decided
 

@@ -1,6 +1,7 @@
-INTERNAL · DRAFT of 22 Nov 2026 for gate G0 (PLAN row L0.6, [G0_DECISION](../G0_DECISION.md) row 15). The costed plan for
-phases L1–L9 that the lead brings to the walk-through. Budget for L1 + L2 ruled 13 GPU-h (owner, 22 Nov; [DISCUSSION §14](../DISCUSSION_2026-11-19_20.md#14-gate-g0-rulings-owner-22-nov-2026));
-nothing else here is approved, and every hour is an estimate built from the measured rates below. Every rate was observed in the training simulator; nothing here is a flight result.
+INTERNAL · the costed plan for phases L1–L9 that the lead brought to gate G0 (DRAFT of 22 Nov 2026; PLAN row L0.6, G0_DECISION row 15): only the L1 + L2 budget of 13 GPU-h is ruled, every other hour is an estimate · [../README.md](../README.md); the ruling: [DISCUSSION §14](../DISCUSSION_2026-11-19_20.md#14-gate-g0-rulings-owner-22-nov-2026)
+
+Budget for L1 + L2 ruled 13 GPU-h (owner, 22 Nov); nothing else here is approved, and every hour is an estimate built
+from the measured rates below. Every rate was observed in the training simulator; nothing here is a flight result.
 
 # L1–L9 costed plan (draft for gate G0)
 

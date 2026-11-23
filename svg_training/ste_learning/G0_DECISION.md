@@ -1,4 +1,4 @@
-INTERNAL · the decision page of gate G0, the end of phase L0 of STE's learning track (PLAN §5, task L0.6): written 22 Nov 2026 from the committed records as the page the owner was walked through, and ruled the same day · [README.md](README.md); the rulings: [DISCUSSION §14](DISCUSSION_2026-11-19_20.md#14-gate-g0-rulings-owner-22-nov-2026)
+INTERNAL · the decision page of gate G0, the end of phase L0 of STE's learning track (PLAN §5, task L0.6): written 22 Nov 2026 from the committed records as the draft for the ruling, which came the same day · [README.md](README.md); the rulings: [DISCUSSION §14](DISCUSSION_2026-11-19_20.md#14-gate-g0-rulings-owner-22-nov-2026)
 
 Every number was observed in the training simulator (or, for the Crazyflie check, in the Crazyflie repository's offline planner); nothing here is a flight result, and nothing was flown.
 

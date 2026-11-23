@@ -5,9 +5,11 @@ READ · the training pipeline in one picture: its seven stages, the two drone mo
 Two teams of drones play one game: a **Guard team** holds a circular zone and a **Strike team** tries to reach it
 (NUS's code calls them `defender` and `attacker`: defender (Guard team), attacker (Strike team)). A strategy (a
 *policy*) is trained here, by STE, the lab that wrote this repository. It is meant to fly through AirStack (CMU's
-flight software) on Starling 2 Max drones (ModalAI's small indoor drone) without changes; nothing has flown yet. The
-rules of both games, NUS's as the NUS port ran it and STE's own since gate G0 (22 November 2026), and the results so
-far are in the [overview](OVERVIEW.md); what happened when is in [the map of the pages, history](README.md#history).
+flight software) on Starling 2 Max drones (ModalAI's small indoor drone) without changes; nothing has flown yet. Two
+games appear below: NUS's game as the NUS port ran it, at *hangar scale* (NUS's game scaled to STE's flight room, the
+hangar), and STE's own game since *gate G0* (the owner's decision point at the end of STE's first phase, 22 November
+2026). The rules of both, and the results so far, are in the [overview](OVERVIEW.md); what happened when is in
+[the map of the pages, history](README.md#history).
 
 This page gives the picture first, then the parts. Terms are in the [glossary](GLOSSARY.md). The full design, with
 reasons, is [DESIGN.md](DESIGN.md). The diagrams are in the deck, [training-pipeline.pptx](pipeline/training-pipeline.pptx):

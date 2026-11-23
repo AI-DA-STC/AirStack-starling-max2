@@ -1,4 +1,4 @@
-INTERNAL · reference page of the STE learning track: how runs are launched, watched and ended without a person present (the state machine, the loop, human gates, budgets and failure handling), from the specialist draft of 20 Nov 2026 · [README.md](README.md); [PLAN.md](PLAN.md) takes precedence where the two differ
+INTERNAL · reference page of the STE learning track: how the orchestrator launches, watches and ends runs, and where it stops for a person (the state machine, the loop, human gates, budgets and failure handling), from the specialist draft of 20 Nov 2026 · [README.md](README.md); [PLAN.md](PLAN.md) takes precedence where the two differ
 
 From `archive/AUTOMATION_draft.md` (20 Nov 2026); PLAN section 2 lists every change made at integration.
 

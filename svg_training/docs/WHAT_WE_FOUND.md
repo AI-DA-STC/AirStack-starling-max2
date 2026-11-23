@@ -322,4 +322,4 @@ self-play, or on the Isaac Lab physics drones.
 - The converted G19, S20, P3G and P3S weights and the STE local settings files are in the repository marked
   PROVISIONAL (trained by STE with the NUS code, 8 generations, hangar set-up), only so that the numbers here can be
   repeated. NUS will retrain.
-- Contact between drones (a *tag*) is a separate track; this port is contact-free.
+- This port has no tag and is contact-free; STE's own game added a tag at gate G0, 22 November 2026 ([overview](OVERVIEW.md)).

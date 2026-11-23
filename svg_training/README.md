@@ -279,7 +279,7 @@ conditions). STE's own track has since trained a Guard team on the Isaac Lab dro
 ### 6.1 Stage 5.1: does the STE port of NUS's training method work in NUS's own game?
 
 The STE port trained from scratch in the Copy of NUS 2-D game (NUS's conditions, no STE drone condition), 3 times with
-different random seeds (1001, 2001, 3001), 8 turns each (Guard, Strike, Guard, …; about 13 hours on the RTX 5090). Its
+different random seeds (1001, 2001, 3001), 8 turns each (Guard, Strike, Guard, …; on the RTX 5090, launched 18 November and complete 19 November 2026, with pauses). Its
 24 policies were then scored against the 24 policies that NUS's own code produced in the same game, on a test written
 down before any result was seen (so the test cannot be bent to fit the result):
 

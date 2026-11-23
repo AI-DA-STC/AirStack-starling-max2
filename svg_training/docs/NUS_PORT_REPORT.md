@@ -14,7 +14,7 @@ in words and cite `file:line`. The converted G19, S20, P3G and P3S and STE's loc
 repository marked PROVISIONAL, only so the numbers can be repeated. Terms: NUS's `defender` is the defender (Guard
 team) here, NUS's `attacker` the attacker (Strike team); NUS calls its game "area denial". The policies and the six
 tests are defined in the [glossary](GLOSSARY.md#policies); the records number the tests as ladder rows (Test N =
-ladder row N). Last updated 19 November 2026: Phase 5 in progress (§12).
+ladder row N). Last updated 20 November 2026: Phase 5 paused after the stage 5.1 FAIL (§12).
 
 ## At a glance
 
@@ -26,7 +26,7 @@ ladder row N). Last updated 19 November 2026: Phase 5 in progress (§12).
 | 2 | NUS's game copied to PyTorch: the Copy of NUS 2-D game | PyTorch | Copy of NUS 2-D game (PyTorch) | T15 PASS: same game step by step | [the copy checked](WHAT_WE_FOUND.md#1-copy-of-nus-2-d-game-pytorch-matches-nus-2-d-game-jax) |
 | 3 | the policies converted to PyTorch | PyTorch (JAX for the reference) | Copy of NUS 2-D game (PyTorch) | T16 PASS; T17 PASS on G19 / S20 | [the conversion checked](WHAT_WE_FOUND.md#2-converted-policies-match-the-jax-originals) |
 | 4 | six tests: the game brought towards STE drones, one test at a time | PyTorch; Isaac Lab for Test 6 | Copy of NUS 2-D game, STE drone model, Isaac Lab physics drones | INFO, T18–T20, T22–T24 (T21 ABORTED): G19 v S20 Strike reaches 9 → 17 → 43 → 740 → 983 → 979 of 1,000 | [test results](WHAT_WE_FOUND.md#3-six-tests-towards-ste-drones) |
-| 5 | training in STE conditions: the STE port of NUS's training method (PyTorch), and STE pilots | PyTorch | Copy of NUS 2-D game, then STE drone model | in progress: R0 PASS, N0 PASS, C0 PASS; stage 5.1 running; the STE Guard policy (pilot P1b) holds S20 in 829 of 1,000 | §12 |
+| 5 | training in STE conditions: the STE port of NUS's training method (PyTorch), and STE pilots | PyTorch | Copy of NUS 2-D game, then STE drone model | paused 20 Nov 2026: R0 PASS, N0 PASS, C0 PASS; stage 5.1 FAIL (T43); the STE Guard policy (pilot P1b) holds S20 in 829 of 1,000 | §12 |
 | 6 | these documents | — | — | 18–19 Nov | — |
 
 *STE drone model (PyTorch)*: the fast STE game with a drone model fitted to one Starling flight log ("tier 1" in the

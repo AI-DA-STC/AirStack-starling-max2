@@ -1,4 +1,4 @@
-INTERNAL · every status of STE's own learning track, oldest first, one dated heading per update; append-only.
+INTERNAL · every status of STE's own learning track, oldest first, one dated heading per update; append-only · the latest: [STATUS_LATEST.md](STATUS_LATEST.md); the folder: [../README.md](../README.md)
 
 ## 2026-11-20 12:25
 

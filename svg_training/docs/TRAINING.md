@@ -301,7 +301,7 @@ the local value" (the mechanism is kept; NUS's values themselves are stated in [
 [records/README](../records/README.md)). Instead of rebuilding the local files, `scripts/nus_install_provisional.sh`
 installs the lab's own ([how to run it yourself, level D](RUN_IT_YOURSELF.md#d-repeat-the-six-tests)).
 
-**5. Phase 5 (in progress).** Our PyTorch copy of NUS's method: `scripts/nus_make_local_method.py`,
+**5. Phase 5 (paused 20 November 2026).** Our PyTorch copy of NUS's method: `scripts/nus_make_local_method.py`,
 `scripts/nus_selfplay_train.py`, `scripts/nus_phase5_reference.py`, `scripts/nus_phase5_score.py`; plan and gates in
 [the Phase 5 plan](plans/2026-11-18-nus-phase5-retraining.md). R0, N0 and C0 have passed; our own seeds FAIL stage 5.1 (T43;
 [what we found, training method](WHAT_WE_FOUND.md#6-ste-port-of-nus-training-method-stage-51-fail)). Each script's

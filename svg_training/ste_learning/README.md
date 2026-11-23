@@ -18,9 +18,10 @@ simulator) and in real flights, each with the owner's approval: first on the lab
 distances, then a one-against-one (1v1) game on the two Starlings (gate G0 ruling R12; the rulings R1 to R18 are in
 [DISCUSSION §14](DISCUSSION_2026-11-19_20.md#14-gate-g0-rulings-owner-22-nov-2026)).
 
-**Where it stands (23 November 2026).** Phase L0 is done and the owner ruled gate G0 on 22 November: the main game has a
+**Where it stands (24 November 2026).** Phase L0 is done and the owner ruled gate G0 on 22 November: the main game has a
 1-for-1 tag, 1.6 m while the pipeline is built and 1.15 m for the main training after phase L2; phases L1 and L2 are
-approved together with a cap of 13 GPU-h, and L1 (the drone model) is in work. L3 to L9 open at their own gates. Task by
+approved together with a cap of 13 GPU-h. L1 (the drone model) is done except two tasks; L2's game rules are built
+behind settings that are off by default. L3 to L9 open at their own gates. Task by
 task: [the working status page](status/STATUS_LATEST.md) (internal: written for the owner). Results so far: [the
 overview](../docs/OVERVIEW.md).
 
@@ -43,7 +44,8 @@ for the owner's ruling. D and P numbers are rows of the [discussion record](DISC
 | The track's real-flight demo (not the 26 November flights): the scripted 1v1 at 1.6 m until a trained team passes the opponent panel (P11) | DECIDED (gate G0, 22 Nov 2026) | — |
 | Fleets: Crazyflies first at Starling distances, the Starling 1v1 as planned (P13) | DECIDED (gate G0, 22 Nov 2026) | — |
 | Budget of L1 + L2: 13 GPU-h | DECIDED (gate G0, 22 Nov 2026) | — |
-| Budgets of phases L3 to L9 | OPEN | re-baselined later |
+| Budget of L3 to L6: a pipeline check, 20 GPU-h (one short seed per route) | DECIDED (owner, 24 Nov 2026, R23) | — |
+| Budgets of the training of record and of L7 to L9 | OPEN | ruled after the pipeline check |
 | Filter option B (P2) | PROPOSED | end of phase L2 |
 | How AirStack is changed (D4) | OPEN | phase L7 |
 
@@ -148,7 +150,7 @@ its task list, the questions it set out to answer and the review that shaped it,
 | 9 | [AUTOMATION.md](AUTOMATION.md) | what wakes the work, launch rules, resume, human gates |
 | 10 | [DOCS_AND_STATUS.md](DOCS_AND_STATUS.md) | which pages change when; the 30-minute status |
 | 11 | [HOW_THE_WORK_RUNS.md](HOW_THE_WORK_RUNS.md) | how a task moves, the human gates, the team of agents and the rules that never bend |
-| 12 | [status/](status/) | the working status, written for the owner ([STATUS_LATEST.md](status/STATUS_LATEST.md)), its history (LOG.md) and the template |
+| 12 | [status/](status/) | the working status, written for the owner ([STATUS_LATEST.md](status/STATUS_LATEST.md)), its history ([LOG.md](status/LOG.md)) and the [template](status/STATUS_TEMPLATE.md) |
 | 13 | [agents/](agents/) | the definitions of the agents named in HOW_THE_WORK_RUNS |
 | — | [L0_HISTORY.md](L0_HISTORY.md) | phase L0's task list and the review that shaped it, kept for the record |
 | — | [G0_REPORT.md](G0_REPORT.md), [G0_DECISION.md](G0_DECISION.md) | gate G0: the report on L0's results, and the decision page |

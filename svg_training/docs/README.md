@@ -110,6 +110,7 @@ of the run that produced it. T numbers are rows of the [run ledger](../records/L
 | 18–19 Nov | these pages written for any reader: naming pass, Tests 1–6 and the policies defined, a playing preview for every clip | — | this page, [videos of the NUS port](media/nus/README.md) |
 | 20–22 Nov | STE's own learning track, phase L0: the game with a tag built and tested on the fast engine and Isaac Lab, hand-written tactics, first trained teams at 1.6 m and 1.15 m | phase L0 done (13.77 of 19 GPU-h); gate G0 ruled 22 Nov: the main game has a 1-for-1 tag, 1.6 m first, 1.15 m later | [overview](OVERVIEW.md), [G0 report](../ste_learning/G0_REPORT.md), [L0 history](../ste_learning/L0_HISTORY.md) |
 | 23 Nov | phase L1 (the drone model) in work; overview page added; pages reorganised for any reader, superseded pages archived | L1 and L2 approved together, cap 13 GPU-h | [status](../ste_learning/status/STATUS_LATEST.md), this page |
+| 24 Nov | phase L1's reads done (speed, the 1v1 screen, the drawn tag); phase L2's game rules built behind settings that are off by default | L1.4/L1.5 blocked, L1.9 training held; L2 rulings P2/P7 to come | [status](../ste_learning/status/STATUS_LATEST.md), [run ledger](../records/LEDGER.md) |
 | not started | S3 two against one, S4 five against three, S5 hand-over to the drones; phases L3 to L9 open at their own gates | — | [DESIGN §8](DESIGN.md#8-build-order), [PLAN](../ste_learning/PLAN.md) |
 
 Nothing in this folder has flown.

@@ -1,5 +1,6 @@
 INTERNAL · the STE learning track's trained players, carried in git so the RTX 5090 desktop (or any fresh clone) can
-run phase L1 from `development` alone. Bundled by the lead on 22 Nov 2026, before the laptop → 5090 switch.
+run phase L1 from `development` alone. Bundled by the lead on 22 Nov 2026, before the laptop → 5090 switch · start at
+[../ste_learning/README.md](../ste_learning/README.md)
 
 # STE provisional bundle: trained players for phase L1
 

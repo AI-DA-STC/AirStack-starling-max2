@@ -121,8 +121,8 @@ Then it times at least 200 steps and 2 s, twice.
 ## What exists today
 
 STE's own learning track trains teams for both sides in the game with a tag: its first phase (L0) is done, gate G0
-was ruled on 22 November 2026 and set the game's rules, and phase L1, making the training drone realistic, is in
-work. The trained teams and their scores are in the [overview, seven learnings](OVERVIEW.md#seven-learnings); the
+was ruled on 22 November 2026 and set the game's rules; phases L1 (making the training drone realistic) and L2 (the
+game's rules in training) followed. The trained teams and their scores are in the [overview, seven learnings](OVERVIEW.md#seven-learnings); the
 latest state is on the [status page](../ste_learning/status/STATUS_LATEST.md). The NUS port, paused on 20 November
 2026, left one training result: the STE Guard policy (a pilot, one seed, not gated;
 [what we found](WHAT_WE_FOUND.md#7-ste-guard-policy-trained-in-test-5-conditions)). Where each build step and the NUS

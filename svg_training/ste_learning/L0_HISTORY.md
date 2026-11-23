@@ -1,6 +1,6 @@
 INTERNAL · phase L0 of the STE learning track as planned (20 November 2026): its task list, the questions it set out to
 answer at gate G0, and the independent review that shaped it. Kept for the record; the phase is done and gate G0 was
-ruled on 22 November 2026. Start at [README.md](README.md); what L0 found: [G0_REPORT.md](G0_REPORT.md).
+ruled on 22 November 2026 · start at [README.md](README.md); what L0 found: [G0_REPORT.md](G0_REPORT.md).
 
 # Phase L0, as planned
 

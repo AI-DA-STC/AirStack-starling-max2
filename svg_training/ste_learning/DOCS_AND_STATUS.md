@@ -12,7 +12,7 @@ Sources: [DISCUSSION](DISCUSSION_2026-11-19_20.md) §3–4, `../../CLAUDE.md` (r
 
 ### 1.1 Pages and their labels
 
-Labels as in `docs/README.md`: **Read** (newcomers, NUS included), **Reference** (full detail), **Internal** (the lab's
+Labels as in `docs/README.md`: **Read** (any reader), **Reference** (full detail), **Internal** (the lab's
 working notes).
 
 | Page | Label | Audience | Holds |

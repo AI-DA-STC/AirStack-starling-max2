@@ -8,7 +8,7 @@ REFERENCE · every training script and flag: STE's own trainers, the stand-in tr
 > a pipe test: [S2B_RESULTS §5](S2B_RESULTS.md#5-the-stand-in-trainer)) made the STE Guard policy ([training recipe](TRAIN_A_GUARD.md)).
 > NUS's own JAX trainer runs from a NUS clone ([NUS jobs](#nus-jobs)). STE's PyTorch copy of NUS's method
 > (`scripts/nus_selfplay_train.py`, Phase 5) is paused since 20 November 2026, after stage 5.1
-> ([NUS port report, §12](NUS_PORT_REPORT.md#12-phase-5-training-in-ste-conditions-in-progress); [overview](OVERVIEW.md)).
+> ([NUS port report, §12](NUS_PORT_REPORT.md#12-phase-5-training-in-ste-conditions-paused-20-november-2026); [overview](OVERVIEW.md)).
 > `scripts/train.py` and `scripts/evaluate.py` are not built: commands marked `# planned` do not exist. Terms: [glossary](GLOSSARY.md).
 
 *Headless* means running with no window on screen. It is faster, and it is the normal way to train. A *policy* is

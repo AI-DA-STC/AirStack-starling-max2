@@ -1,4 +1,4 @@
-INTERNAL · the lab's AI-assistant hand-over notes. Not needed to read or run anything here: start at [../../README.md](../../README.md).
+INTERNAL · the lab's AI-assistant hand-over notes: where the work stands, what was decided and what waits on whom, newest entry first (§0); not needed to read or run anything · start at [../../README.md](../../README.md); the pages for readers: [directory](../README.md)
 
 # Claude handoff: svg_training (vectorised training pipeline)
 

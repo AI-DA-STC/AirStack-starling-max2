@@ -1,5 +1,5 @@
 INTERNAL · how the STE learning track's work runs: the nine steps of a task, the human gates, the team of agents and the
-rules that never bend. Start at [README.md](README.md); the working plan is [PLAN.md](PLAN.md).
+rules that never bend · start at [README.md](README.md); the working plan: [PLAN.md](PLAN.md).
 
 # How the work runs
 

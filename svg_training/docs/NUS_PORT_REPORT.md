@@ -248,7 +248,7 @@ were written afterwards from the logs and outputs, and their numbers are INFO (2
 filter's batch dependence) sit in [what we found, limits](WHAT_WE_FOUND.md#8-limits).
 
 <a id="12-next-steps-the-phase-5-plan"></a>
-## 12. Phase 5: training in STE conditions (in progress)
+## 12. Phase 5: training in STE conditions (paused 20 November 2026)
 
 > This page covers the NUS port (to 20 November 2026): Phase 5 ran to stage 5.1, and the route was paused on 20 November 2026 (the table at the end of this section). Its results stand. STE's own game since then: [overview](OVERVIEW.md).
 

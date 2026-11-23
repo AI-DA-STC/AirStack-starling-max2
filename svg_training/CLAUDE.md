@@ -22,8 +22,8 @@ Phase 5 in progress (R0 T29, N0 T30 and C0 T33 PASS; 5.1 FAIL T43: route (b) sto
 
 | File | Use it for |
 |---|---|
-| [README.md](README.md) | the front page, written for NUS: porting NUS's code, the six tests on STE drones, why performance drops, training in STE conditions, questions for NUS, run it yourself |
-| [docs/README.md](docs/README.md) | map of every page with its label (Read, Reference, Lab operations, Internal) and the history |
+| [README.md](README.md) | the front page, written for any reader: the whole story from NUS's code to STE's own game, with the numbers, videos and records behind each step; [docs/OVERVIEW.md](docs/OVERVIEW.md) has the rules and the seven learnings on one page |
+| [docs/README.md](docs/README.md) | the directory of every page, grouped by reader goal, with its label (Read, Reference, Lab operations, Internal, Archived) and the history |
 | [docs/WHAT_WE_FOUND.md](docs/WHAT_WE_FOUND.md), [docs/RUN_IT_YOURSELF.md](docs/RUN_IT_YOURSELF.md), [docs/TRAIN_A_GUARD.md](docs/TRAIN_A_GUARD.md) | the NUS port's results; the verified run-it-yourself commands; the recipe behind the STE Guard policy (T41) |
 | [docs/claude/HANDOFF.md](docs/claude/HANDOFF.md) | where the work stands, what was decided, what is waiting on whom |
 | [ste_learning/](ste_learning/README.md) | **STE's own learning track** (owner, 20 Nov 2026): README with flowcharts, [PLAN](ste_learning/PLAN.md) (the working plan: phase L0 approved 20 Nov, gate G0, L1–L9 intended), [DISCUSSION](ste_learning/DISCUSSION_2026-11-19_20.md) (why; D1–D9, P1–P13), the track's STANDARDS, ARCHITECTURE, CODING_PRACTICES, AUTOMATION, VALIDATION_QC, and its agents (`ste-*`). Read it before any work on the track; consult the advisor at every key point (owner) |

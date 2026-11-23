@@ -279,7 +279,8 @@ def test_fallback_fires_only_above_its_residual():
 
 @pytest.mark.parametrize("path", sorted(PATHS))
 def test_fallback_games_are_todays_filter_and_the_rest_meet_the_tolerance(path):
-    """T2 scenes, every pair, scene team 0 = Guard team: the games that fall back carry today's answer bit for bit;
+    """T2 scenes, every pair, scene team 0 = Guard team: the games that fall back carry today's answer bit for bit (the
+    fixed loop, check_every 0, on the CPU; with the early stop the working batch differs and only rounding is promised);
     every other game has no emergency, residual <= 5 x tolerance, and its Strike rows change only through
     Strike-Strike pairs or the speed cap (never more than an equal-only Strike-team solve, within 0.02 m/s)."""
     nom, pos, mask, cap, scenes = t2_batch(200, "every")
@@ -324,8 +325,8 @@ def test_two_stage_oracle_with_cmus_fixed_rows():
     and no fallback: where every Strike drone is held (measured 24 Nov 2026: 43 of 80 such scenes in the first 240), the
     answers are the same (<= 1e-9 m/s). Elsewhere a Strike drone is itself corrected, the share's pruning keeps today's
     bound for its pairs, and the Guard rows reach another feasible point (up to 0.19 m/s off CMU's two-stage answer;
-    today's even split is itself up to 0.21 m/s off the exact projection on these scenes, the averaging weights of the
-    parallel sweeps): there the test asks only for feasibility (residual <= 5 x tolerance)."""
+    likely cause, not verified: pairs CMU prunes stay active here and change the averaging weights of the parallel
+    sweeps): there the test asks only for feasibility (residual <= 5 x tolerance)."""
     fp = _parity()
     import numpy as np
     scenes = [s for s in fp.make_scenes(240, T2_SEED) if s.teams == 2]
@@ -499,9 +500,11 @@ def test_pairs_with_a_landing_drone_stay_equal_in_the_game(backend):
     assert chain(g).pair_share.tolist() == [[[0.5, 0.5], [1.0, 0.0], [0.5, 0.5]]] * 2
 
 
-# (backend: guard_yields closest band, equal minimum): measured 24 Nov 2026, CPU, 120 ticks: guard_yields 0.393 m fitted,
-# 0.597 m physics (fallback on 98 / 46 game-ticks); equal 0.967 m fitted, 0.998 m physics (no fallback: share "equal")
-WALL_CASES = {"fitted": ((0.35, 0.45), 0.95), "physics": ((0.55, 0.65), 0.95)}
+# (backend: guard_yields minimum, equal minimum): measured 24 Nov 2026, CPU, 120 ticks: guard_yields 0.393 m fitted,
+# 0.597 m physics (fallback on 98 / 46 game-ticks of 240); equal 0.967 m fitted, 0.998 m physics (no fallback: "equal").
+# One-sided, as L2.3's floor pin: no worse than about 0.1 m under the measured value, and the shortfall still there.
+WALL_CASES = {"fitted": (0.3, 0.95), "physics": (0.5, 0.95)}
+WALL_SHORTFALL_BELOW_M = 0.9
 
 
 @pytest.mark.parametrize("backend", BACKENDS)
@@ -513,7 +516,7 @@ def test_a_guard_pinned_at_a_wall_known_shortfall(backend):
     would need more than the cap (1.0 m/s) and the emergency rule falls back to the even split, which then still gives
     half of every correction to the pinned drone. The pair closes to 0.39 m (fitted; physics 0.60 m, where the Guard drone
     also escapes down to the height band's floor); with equal it stops at 0.97 m (physics 1.00 m), as today."""
-    band, eq_min = WALL_CASES[backend]
+    b_min, eq_min = WALL_CASES[backend]
     closest, fell_back = {}, {}
     for share in ("guard_yields", None):
         g = make(cfg_of(backend, share), ((3.6, 0.0), (1.6, 0.0)))
@@ -524,7 +527,7 @@ def test_a_guard_pinned_at_a_wall_known_shortfall(backend):
             lo = min(lo, float((g.pos_m[:, 0] - g.pos_m[:, 1]).norm(dim=-1).min()))
             fb += int(chain(g).fallback.sum())
         closest[share], fell_back[share] = lo, fb
-    assert band[0] <= closest["guard_yields"] <= band[1] and fell_back["guard_yields"] > 0, closest
+    assert b_min <= closest["guard_yields"] < WALL_SHORTFALL_BELOW_M and fell_back["guard_yields"] > 0, closest
     assert closest[None] >= eq_min and fell_back[None] == 0, closest
 
 

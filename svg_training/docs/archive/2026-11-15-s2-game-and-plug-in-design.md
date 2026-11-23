@@ -1,3 +1,4 @@
+ARCHIVED 2026-11-23 · superseded by [S2_RESULTS.md](../S2_RESULTS.md) (what was built) and, for the game rules, [STANDARDS.md §7](../../STANDARDS.md) (gate G0, 22 Nov 2026); kept for the record. Start at [../README.md](../README.md).
 INTERNAL · a design written for the lab's AI coding assistants; history, not instructions.
 
 # S2 design: the game, varied arena sizes, and a plug-in point for NUS's strategy

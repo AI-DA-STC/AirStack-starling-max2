@@ -1,3 +1,4 @@
+ARCHIVED 2026-11-23 · superseded by [AUTOMATION.md](../AUTOMATION.md); kept for the record. Start at [../README.md](../README.md).
 INTERNAL · DRAFT (automation engineer, 20 Nov 2026). The owner's word and `ste_learning/DISCUSSION_2026-11-19_20.md` win over this page.
 
 # Automation and orchestration: STE learning track

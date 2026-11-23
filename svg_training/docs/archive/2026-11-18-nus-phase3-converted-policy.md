@@ -1,3 +1,4 @@
+ARCHIVED 2026-11-23 · superseded by [NUS_PORT_REPORT.md](../NUS_PORT_REPORT.md) and the [Phase 3 conversion record](../../records/2026-11-18_nus_phase3_conversion_record.md); kept for the record. Start at [../README.md](../README.md).
 INTERNAL · a build plan written for the lab's AI coding assistants; history, not instructions. Results: [../README.md](../README.md).
 
 # NUS port, Phase 3: the partner's policy, converted to PyTorch

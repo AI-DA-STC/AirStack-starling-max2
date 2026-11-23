@@ -1,3 +1,4 @@
+ARCHIVED 2026-11-23 · superseded by [WORK_BREAKDOWN.md](../WORK_BREAKDOWN.md); kept for the record. Start at [../README.md](../README.md).
 INTERNAL · DRAFT (20 Nov 2026, software engineer) · ordered work breakdown for STE's own learning track. Direction:
 [DISCUSSION_2026-11-19_20.md](../DISCUSSION_2026-11-19_20.md) (D1–D9 decided; P1–P8 open). Practices:
 [CODING_PRACTICES_draft.md](CODING_PRACTICES_draft.md). Rules: [STANDARDS.md](../../STANDARDS.md).

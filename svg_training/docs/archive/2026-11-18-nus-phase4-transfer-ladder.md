@@ -1,3 +1,4 @@
+ARCHIVED 2026-11-23 · superseded by [NUS_PORT_REPORT.md](../NUS_PORT_REPORT.md) and [WHAT_WE_FOUND.md §3](../WHAT_WE_FOUND.md#3-six-tests-towards-ste-drones); kept for the record. Start at [../README.md](../README.md).
 INTERNAL · a build plan written for the lab's AI coding assistants; history, not instructions. Results: [../README.md](../README.md).
 
 # NUS port, Phase 4: the transfer ladder (frozen partner policies, one change at a time)

@@ -1,3 +1,4 @@
+ARCHIVED 2026-11-23 · superseded by [ARCHITECTURE.md](../ARCHITECTURE.md); kept for the record. Start at [../README.md](../README.md).
 INTERNAL · DRAFT by the `ste-architect` role, 20 November 2026. This is input to `ste_learning/ARCHITECTURE.md`, not that page.
 Source of truth for direction: [DISCUSSION_2026-11-19_20.md](../DISCUSSION_2026-11-19_20.md) (D1–D9, P1–P8). Rules: `../../STANDARDS.md`.
 Status labels follow STANDARDS: **FIXED**, **MEASURED**, **PROPOSED**, **OPEN**. **UNVERIFIED** marks an assumption this draft could not check.

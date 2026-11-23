@@ -1,3 +1,4 @@
+ARCHIVED 2026-11-23 · superseded by [VALIDATION_QC.md](../VALIDATION_QC.md); kept for the record. Start at [../README.md](../README.md).
 INTERNAL · DRAFT, 20 November 2026, by the test, validation and QC role for STE's own learning track. Not approved. Every threshold below is **PROPOSED**; the owner approves the limits before the first run that uses them (STANDARDS §7.1).
 
 # Validation and QC plan: STE learning track (draft)

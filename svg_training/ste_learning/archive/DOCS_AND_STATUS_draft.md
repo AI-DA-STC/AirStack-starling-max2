@@ -1,3 +1,4 @@
+ARCHIVED 2026-11-23 · superseded by [DOCS_AND_STATUS.md](../DOCS_AND_STATUS.md); kept for the record. Start at [../README.md](../README.md).
 INTERNAL · draft by the technical writer, 20 November 2026: the documentation plan, the 30-minute status process and the
 style rules for STE's own learning track. Input to PLAN.md and the track's STANDARDS.md; kept for the record.
 

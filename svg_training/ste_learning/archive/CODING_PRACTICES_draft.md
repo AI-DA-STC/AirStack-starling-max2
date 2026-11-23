@@ -1,3 +1,4 @@
+ARCHIVED 2026-11-23 · superseded by [CODING_PRACTICES.md](../CODING_PRACTICES.md); kept for the record. Start at [../README.md](../README.md).
 INTERNAL · DRAFT (20 Nov 2026, software engineer) · coding practices for STE's own learning track. Builds on
 [STANDARDS.md](../../STANDARDS.md) and does not replace it: where the two differ, STANDARDS wins until the owner rules.
 Source of truth for direction: [DISCUSSION_2026-11-19_20.md](../DISCUSSION_2026-11-19_20.md) (D1–D9, P1–P8).

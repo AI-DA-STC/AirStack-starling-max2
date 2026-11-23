@@ -1,3 +1,4 @@
+ARCHIVED 2026-11-23 · superseded by [S1_RESULTS.md](../S1_RESULTS.md); kept for the record. Start at [../README.md](../README.md).
 INTERNAL · a build plan written for the lab's AI coding assistants; history, not instructions. Results: [../README.md](../README.md).
 
 # S1 Drone Model and Safety Filter Implementation Plan

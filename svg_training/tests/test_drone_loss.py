@@ -148,7 +148,9 @@ def test_study_file_is_proposed_and_every_committed_game_file_stays_fixed():
     for path in CONFIGS.rglob("*.toml"):
         if path == STUDY or "local" in path.parts:
             continue
-        assert "team_size" not in tomllib.loads(path.read_text()), path
+        data_other = tomllib.loads(path.read_text())
+        assert "team_size" not in data_other, path
+        assert data_other.get("game", {}).get("dropout_fraction", 0.0) == 0.0, path      # drop-outs stay off (P7)
     assert tomllib.loads((CONFIGS / "ste_game.toml").read_text()).get("team_size") is None
 
 

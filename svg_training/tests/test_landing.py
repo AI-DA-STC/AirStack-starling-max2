@@ -224,14 +224,22 @@ def test_a_landing_drone_keeps_other_drones_away(backend):
     assert closest[False] < KEEPOUT_M - KEEPOUT_TOL_M, closest
 
 
+# (drop tick, limit with landing on, limit with it off): measured 24 Nov 2026, CPU (closest with landing on / off):
+# drop 40: fitted 1.039 / 0.662 m, physics 1.048 / 0.713 m; drop 80: fitted 0.953 / 0.844 m, physics 0.972 / 0.877 m.
+FLOOR_CASES = ((40, 1.0, 0.8), (80, 0.93, 0.9))
+
+
 @pytest.mark.parametrize("backend", BACKENDS)
-def test_a_landing_drone_descending_onto_a_drone_near_the_floor_is_held_off(backend):
-    """The harder case: the Strike drone presses toward (0, 0, 0.5) under a live Guard drone hovering at (0, 0, 1.2);
-    the Guard drone is lost at step 40 (2 s) and lands onto it. Landing on: the pair stays >= 1.0 m apart (measured 24
-    Nov 2026, CPU: 1.039 m fitted, 1.048 m physics; the Strike drone is near the band's floor, where the filter's known
-    wall leak (S2 Task 7b; the Starling-layer tests' limit is 1.0 m) also lets two live drones close in). Control,
-    landing off: the Strike drone flies through where the landing drone was (measured 0.662 m fitted, 0.713 m physics)."""
-    target, at = (0.0, 0.0, 0.5), 40
+@pytest.mark.parametrize("at, on_min_m, off_max_m", FLOOR_CASES)
+def test_a_landing_drone_descending_onto_a_drone_at_the_floor(backend, at, on_min_m, off_max_m):
+    """KNOWN SHORTFALL, pinned at its measured value (a regression guard, not an acceptance): the Strike drone presses
+    toward (0, 0, 0.5) under a live Guard drone hovering at (0, 0, 1.2) (the filter holds the live pair at 1.065-1.11 m,
+    pushing the Guard drone up to 1.24-1.42 m); the Guard drone is lost at tick ``at`` and lands onto the Strike drone,
+    which is pinned at the height band's floor. With landing on the pair closes below 1.10 m: to about 1.04 m (drop 40)
+    and 0.95-0.97 m (drop 80), during the landing, not before it. Likely cause (not verified): the 50/50 share
+    (ARCHITECTURE: landing pairs 50/50, ``landing_share`` not built) gives half of each correction to the drone that the
+    floor stops. Control, landing off: the Strike drone flies closer to where the landing drone was."""
+    target = (0.0, 0.0, 0.5)
     closest, ghost = {}, {}
     for on in (True, False):
         g = make(cfg_of(backend, landing=on), ((0.0, 0.0), (-1.2, 0.0)))
@@ -248,7 +256,32 @@ def test_a_landing_drone_descending_onto_a_drone_near_the_floor_is_held_off(back
                 lo = min(lo, float((ghost[k] - g.pos_m[:, 1]).norm(dim=-1).min()))
         closest[on] = lo
     assert len(ghost) > 20 and not g.landing.any()
-    assert closest[True] >= 1.0 and closest[False] < 0.8, closest
+    assert closest[True] >= on_min_m and closest[False] < off_max_m, closest
+
+
+def test_the_descent_with_tier_1_estimate_error_on():
+    """Tier 1 with ``[estimate_error]`` on and the commander reading the estimate (as the ste_l1 base games): the landing
+    drone still descends at the land speed, stays a filter row, and touches down in the expected time."""
+    cfg = cfg_of(**{"estimate_error.enabled": True, "estimate_error.pos_sigma_m": 0.02, "estimate_error.pos_tau_s": 1.0,
+                    "estimate_error.vel_sigma_mps": 0.02, "estimate_error.vel_tau_s": 0.5,
+                    "estimate_error.commander_reads": "estimate"})
+    g = make(cfg, ((0.0, 0.0), (2.5, -2.5)))
+    drop(g, 0)
+    g.step(act([(0.0, 0.0, 0.0)], [(0.0, 0.0, 0.0)]))
+    ideal = round((1.2 - cfg.landing.touchdown_z_m) / cfg.landing.land_speed_mps / TICK_S)
+    vz, ticks = [], torch.zeros(N, dtype=torch.long)          # each game has its own error stream: its own touchdown
+    for k in range(1, 80):
+        landing_before = g.landing[:, 0].clone()
+        out = g.step(act([(0.0, 0.0, 0.0)], [(0.0, 0.0, 0.0)]))
+        assert pair_mask(g)[:, 0, 1].equal(landing_before)                        # a filter row while it lands
+        ticks = torch.where(landing_before & ~out.info["landing"][:, 0], k, ticks)
+        if out.info["landing"][:, 0].all():
+            vz.append(g.vel_mps[:, 0, 2].clone())
+        if not out.info["landing"].any():
+            break
+    assert ((ticks >= ideal) & (ticks <= ideal + 8)).all(), (ticks, ideal)
+    mid = torch.stack(vz[len(vz) // 3: 2 * len(vz) // 3])
+    assert torch.allclose(mid, torch.full_like(mid, -cfg.landing.land_speed_mps), atol=0.05)
 
 
 # ------------------------------------------------------------------------------------------------ tags and scoring

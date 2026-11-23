@@ -1,4 +1,4 @@
-INTERNAL · design for one overview page on the game rules and the main learnings; panel 23 Nov 2026; awaiting the owner's approval.
+INTERNAL · design for one overview page on the game rules and the main learnings; panel 23 Nov 2026; APPROVED by the owner 23 Nov 2026 (build today; page name docs/OVERVIEW.md).
 
 # Design: one overview page for the lab lead (rules of the game, main learnings)
 

@@ -111,7 +111,7 @@ def story() -> Path:
     ax.text(11.95, 1.2, "✓ works (pilot P1b)", fontsize=9.5, ha="center", va="center", color=GREEN)
     box(ax, 13.25, 1.05, 2.3, 1.1, GREY_BG, GREY, ls="--")
     ax.text(14.4, 1.85, "NUS's method", fontsize=11, weight="bold", ha="center", va="center", color=MUTED)
-    ax.text(14.4, 1.52, "copied into PyTorch", fontsize=10, ha="center", va="center", color=MUTED)
+    ax.text(14.4, 1.52, "STE's PyTorch copy", fontsize=10, ha="center", va="center", color=MUTED)
     ax.text(14.4, 1.2, "5.1 FAIL; route paused", fontsize=9.5, ha="center", va="center", color=MUTED)
     arrow(ax, (12.4, 2.45), (12.0, 2.18), GREEN)
     arrow(ax, (14.0, 2.45), (14.4, 2.18), GREY, ls="--")

@@ -12,7 +12,8 @@ no pass mark.
 
 ## At a glance: what was done
 
-The whole story on one screen; sections 1–8 below give the numbers, caveats and records behind each line.
+The whole story on one screen; sections 1–8 below give the numbers, caveats and records behind each line (for step 6,
+the [overview](docs/OVERVIEW.md)).
 
 ![What was done: train with NUS's code (JAX) in NUS's 2-D game; copy the game and convert the policies to PyTorch (checked exact); test NUS's policies under STE drone conditions (Strike reaches 9 to 979 of 1,000: they fail); retrain in STE conditions: the STE Guard policy holds 829 of 1,000; STE's copy of NUS's training method: stage 5.1 FAIL, route paused; since 20 November STE trains its own teams in a game with a tag](docs/figures/overview_story.png)
 
@@ -45,20 +46,23 @@ each Guard holds the zone:
    - **STE Guard policy (pilot P1b):** trained in **Test 5 conditions**, on the STE drone model in PyTorch, not in Isaac
      Lab. **Holds 829 of 1,000.** ✅ It learned a different defence: spread out inside the zone and the safety filter
      likely acts like a wall. On the Isaac Lab physics drones, without retraining, it holds 856 (831 in the PyTorch
-     game on the same starts; [record](records/2026-11-21_ste_l03_transfer_record.md)).
+     game on the same starts, run on the processor; 829 was the GPU run; [record](records/2026-11-21_ste_l03_transfer_record.md)).
    - **STE port of NUS's training method (PyTorch):** checked in NUS's conditions (stage 5.1): **FAIL** on the test fixed
      in advance. Two of three seeds pass every part and the policies are as strong as NUS's, but one seed fails two parts
      by small margins ([record](records/2026-11-19_nus_phase5_s51_method_match_record.md)). Under the plan this stops
      stage 5.2 (training with it in STE conditions); on 20 November STE paused this route.
 6. **Since 20 November: STE's own training** in a game with a **tag** (a Guard drone close enough to a Strike drone
-   takes it out, and both leave; rules set at gate G0, 22 November): a 6.5 m arena, tag distance 1.6 m first. At
-   1.6 m, trained teams beat STE's hand-written tactics against the opponent they trained on in two of three cases;
-   at 1.15 m they stay below them. The rules and these results, each with its record: [overview](docs/OVERVIEW.md).
+   takes it out, and both leave; set at gate G0, the owner's decision point on 22 November): a 6.5 m arena, a tag
+   distance of 1.6 m first and 1.15 m in later training. At 1.6 m, trained teams beat STE's *hand-written tactics*
+   (scripted teams, no training) against the opponent they trained on in two of three cases; at 1.15 m they stay
+   below them. The rules and these results, each with its record: [overview](docs/OVERVIEW.md).
 
-**In one line:** trained in NUS's game, tested in the STE drone game in PyTorch (NUS's policies failed), retrained in STE drone conditions
+**In one line:** trained in NUS's game, tested in the STE drone game in PyTorch (NUS's trained policies did not hold the zone), retrained in STE drone conditions
 (the STE Guard policy works), then STE's own game with a tag (see the [overview](docs/OVERVIEW.md)).
 
 ### NUS's conditions vs STE drone conditions
+
+The two set-ups of the NUS port's tests; STE's own game (a tag, a 6.5 m arena) is on the [overview](docs/OVERVIEW.md).
 
 | | NUS's game (original) | STE drones | Added in |
 |---|---|---|---|
@@ -290,7 +294,8 @@ not proven broken.
 
 **What follows from it.** The plan made stage 5.2, training with the STE port of NUS's training method in STE drone
 conditions, depend on a 5.1 PASS, so stage 5.2 did not start (its training environment is built). On 20 November STE
-paused this route and went on with its own training: the STE Guard policy below, then STE's own game (section 6.3).
+paused this route. It had already trained the STE Guard policy below (19 November) and went on with its own game
+(section 6.3).
 
 ### 6.2 The STE Guard policy: a Guard trained in STE drone conditions
 
@@ -313,25 +318,28 @@ Result: it holds the zone against S20 in **829 of 1,000** games in Test 5 condit
 (an STE baseline that does not move) and 17 for NUS's G19 (evidence: T41,
 [record](records/2026-11-19_nus_phase5_pilot_p1b_run4_record.md)). Its Guards spread out across the zone and the
 safety filter likely acts as a wall around each one (read from the videos, not tested). On the Isaac Lab physics
-drones, without retraining, it holds 856 of 1,000 against 831 in the PyTorch game on the same starts (evidence: T49,
+drones, without retraining, it holds 856 of 1,000 against 831 in the PyTorch game on the same starts, run on the
+processor (829 was the GPU run; evidence: T49,
 [record](records/2026-11-21_ste_l03_transfer_record.md)). Limits: one seed, one opponent. Details: [the result](docs/WHAT_WE_FOUND.md#7-ste-guard-policy-trained-in-test-5-conditions),
 [training recipe](docs/TRAIN_A_GUARD.md), [training method results](docs/WHAT_WE_FOUND.md#6-ste-port-of-nus-training-method-stage-51-fail).
 
 ### 6.3 STE's own training, since 20 November 2026
 
 STE now trains its own Guard and Strike teams in its own game: the same zone, speeds and 120 s game, with the safety
-filter on every pair, in a 6.5 m arena, and with a **tag**: a Guard drone within the tag distance of a Strike drone
-takes it out and both leave. The rules were set at gate G0 (the owner's decision point, 22 November): 1.6 m first,
+filter on every pair as before, in a 6.5 m arena, and with a **tag**: a Guard drone within the tag distance of a
+Strike drone takes it out and both leave. The tag, the arena and the game length were set at gate G0: 1.6 m first,
 1.15 m in later training. What the first runs showed, each observed in the training simulator against the opponent
-the team trained on: at 1.6 m, trained teams beat STE's hand-written tactics in two of three cases and draw level in
-the third; at 1.15 m both sides stay below them; a Guard team trains as well on the Isaac Lab drones as in the fast
-PyTorch engine, at about 5 times the GPU time. Numbers, figures and limits on one page: [overview](docs/OVERVIEW.md);
+the team trained on: at 1.6 m, the trained Guard team and Strike team each beat the best hand-written tactic, and a
+Strike team trained against a different Guard tactic draws level with it; at 1.15 m both sides stay below them; a
+Guard team trains as well on the Isaac Lab drones as in the STE game engine in PyTorch, at about 5 times the GPU
+time. The aim is unchanged: a strategy that flies through AirStack on Starling drones. Numbers, figures and limits on one page: [overview](docs/OVERVIEW.md);
 the plan and its working folder: [ste_learning/](ste_learning/README.md). Nothing has flown.
 
 ## Watch it
 
 Top-down view: Guard team blue circles, Strike team orange triangles, the zone green. The pictures play here; click
-one for the full video. Observed in the training simulator; nothing here has flown. All 275 clips of the NUS port,
+one for the full video. These clips are of the NUS port; clips of STE's own game are in the records the
+[overview](docs/OVERVIEW.md) links. Observed in the training simulator; nothing here has flown. All 275 clips of the NUS port,
 each with a preview that plays in the page: [videos of the NUS port](docs/media/nus/README.md).
 
 | | |
@@ -348,6 +356,7 @@ phase, L0, settled which game to train and whether Isaac Lab can train it, and c
 second, L1, makes the training drone more like the real Starling. Where the work stands: the
 [status page](ste_learning/status/STATUS_LATEST.md). Work on the STE port of NUS's training method is paused after
 its stage 5.1 FAIL (20 November).
+
 Five questions to NUS:
 
 1. Is any rule that matters missing from the Copy of NUS 2-D game (PyTorch)?
@@ -358,7 +367,7 @@ Five questions to NUS:
 
 ## 8. Run it yourself
 
-Commands for every level, with what each must print: [how to run it yourself](docs/RUN_IT_YOURSELF.md). Badges:
+Commands for every level of the NUS port, with what each must print: [how to run it yourself](docs/RUN_IT_YOURSELF.md). Badges:
 `none` = any laptop, no GPU; `GPU` = an NVIDIA GPU; `Isaac` = NVIDIA Isaac Lab 2.3.2 on Isaac Sim 5.1.0.
 
 | Level | What | Needs | Time | Verified from a fresh clone |

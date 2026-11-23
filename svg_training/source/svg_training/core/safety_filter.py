@@ -40,6 +40,16 @@ Differences from the original, by design:
 * ``max_speed_mps`` may be per drone; the pruning bound and the push speed then use each drone's own
   cap (identical to the original when the cap is one number).
 
+Per-pair share (STE L2.1, filter option B; ``pair_share``, None = the code path above, bit for bit). A pair's share
+``(sigma_i, sigma_j)``, ``sigma_i + sigma_j = 1``, splits its correction: drone i moves by ``sigma_i c g / |g|^2``, drone j
+by ``-sigma_j c g / |g|^2`` (c the violation); ``(1/2, 1/2)`` is the even split above, ``(1, 0)`` the original's ``fixed``
+drone j for this pair only (``cbf_filter.py`` :339-341). In the sweep the pair's multiplier ``s`` and ``2 |g|^2`` stay as
+they are; only the incidence becomes per game (``+2 sigma_i`` on drone i, ``-2 sigma_j`` on drone j), and a drone with
+share 0 does not count the pair in its averaging weight (its projection there is itself). Pruning, the stopping test,
+the residual and the emergency push-apart (both drones) are unchanged, except that pruning treats a drone the share holds
+at its nominal as the original treats a ``fixed`` row (``_share_setup``). ``guard_yields_share`` builds option B's shares;
+``filter_velocities_shared`` adds its emergency rule (the even split when the Guard drone cannot escape).
+
 Early stop (``check_every = k > 0``, S2 Task 7; ``k = 0``, the default, is the fixed loop of run T2, bit for
 bit): games with no active pair skip the sweeps (their answer is the speed clamp after the loop); every ``k``
 sweeps, starting at sweep 0, the games that still have an unconverged group are gathered into a smaller working
@@ -62,7 +72,9 @@ class FilterResult:
     residual [N] worst violation of the active pair constraints and speed caps after the filter
     (emergency action included, as in the original); emergency [N] bool, push-apart used in any group;
     converged [N] bool, every group of the game met the stopping test within the sweeps, or the game had no active pair
-    (None only where a caller builds a result itself, e.g. a pass-through in ``scripts/filter_speed.py``).
+    (None only where a caller builds a result itself, e.g. a pass-through in ``scripts/filter_speed.py``);
+    fallback [N] bool, the game took the even split by option B's emergency rule (``filter_velocities_shared`` only;
+    None elsewhere).
     """
 
     velocities: Tensor
@@ -70,6 +82,61 @@ class FilterResult:
     residual: Tensor
     emergency: Tensor
     converged: Tensor | None = None
+    fallback: Tensor | None = None
+
+
+SHARE_MODES: tuple[str, ...] = ("equal", "guard_yields")   # the game's [filter] share (core/game_config.FilterCfg)
+
+
+def guard_yields_share(guard: Tensor, n: int, landing: Tensor | None = None,
+                       dtype: torch.dtype = torch.float32) -> Tensor:
+    """Option B's shares [N, P, 2] (``triu_indices`` pair order): in a pair of a Guard drone and a Strike drone the Guard
+    drone takes the whole correction ((1, 0) when drone i is the Guard, (0, 1) when drone j is); every other pair, and
+    every pair with a landing drone (STE L2.3: out of the game, still descending as an ordinary filter row), keeps the
+    even split (1/2, 1/2). guard [M] or [N, M] bool (True = Guard drone); landing [N, M] bool or None (none landing).
+    Batched; no host read."""
+    m = guard.shape[-1]
+    ii, jj = torch.triu_indices(m, m, offset=1, device=guard.device)
+    g = guard.expand(n, m)
+    gi, gj = g[:, ii], g[:, jj]
+    cross = gi != gj                                                               # [N, P] Guard-Strike pairs
+    if landing is not None:
+        cross = cross & ~landing[:, ii] & ~landing[:, jj]
+    half = torch.full(gi.shape, 0.5, dtype=dtype, device=guard.device)
+    return torch.stack([torch.where(cross, gi.to(dtype), half), torch.where(cross, gj.to(dtype), half)], dim=-1)
+
+
+def _share_setup(pair_share: Tensor, active: Tensor, in_mask: Tensor, g: Tensor, g_norm: Tensor, bias: Tensor,
+                 nominal: Tensor, cap: Tensor, ii: Tensor, jj: Tensor, is_i: Tensor, is_j: Tensor,
+                 dt: torch.dtype) -> tuple[Tensor, Tensor, Tensor]:
+    """The per-pair share's set-up (module docstring, "Per-pair share"), shared by both filter paths.
+
+    pair_share [P, 2] or [N, P, 2]; active, in_mask [N, P] (today's pruning); g [N, P, 3]; g_norm, bias [N, P]; nominal
+    [N, M, 3] (finite); cap [N, M, 1]; ii, jj [P]; is_i, is_j [P, M] bool. Returns (active [N, P], involvement [N, M],
+    weighted incidence [N, P, M]: +2 sigma_i on drone i, -2 sigma_j on drone j).
+
+    Pruning follows the original's ``fixed`` rows (``cbf_filter.py`` :198-216): a drone is *held* when its nominal is within
+    its cap and no active pair gives it a share above 0, so the sweeps leave it at its nominal exactly; in its share-0 pairs
+    its part of the constraint is a constant, and the pair is dropped when the moving drone's cap cannot violate it
+    (``bias + fixed part >= |g| x the moving drones' caps``) or when both drones are held. With no held drone this is today's
+    pruning. A drone counts only the pairs where its share is above 0 in its averaging weight. Shape checked; share values
+    are not (no host read)."""
+    n, p = active.shape
+    if pair_share.shape not in ((p, 2), (n, p, 2)):
+        raise ValueError(f"pair_share must be [P, 2] or [N, P, 2] with P = {p} pairs and N = {n} games; "
+                         f"got {tuple(pair_share.shape)}")
+    share = pair_share.to(device=active.device, dtype=dt).expand(n, p, 2)
+    s_i, s_j = share[..., 0], share[..., 1]                                       # [N, P]
+    moves = (((s_i > 0)[..., None] & is_i) | ((s_j > 0)[..., None] & is_j)).to(dt)   # [N, P, M]
+    involvement = torch.einsum("np,npm->nm", active.to(dt), moves)
+    held = (nominal.norm(dim=-1) <= cap[..., 0]) & (involvement == 0)              # [N, M]
+    pin_i, pin_j = held[:, ii] & (s_i == 0), held[:, jj] & (s_j == 0)               # [N, P]
+    fixed_part = (g * (nominal[:, ii] * pin_i[..., None] - nominal[:, jj] * pin_j[..., None])).sum(-1)
+    reach = g_norm * (cap[:, ii, 0] * (~pin_i).to(dt) + cap[:, jj, 0] * (~pin_j).to(dt))
+    active = in_mask & (bias + fixed_part < reach) & ~(pin_i & pin_j)
+    involvement = torch.einsum("np,npm->nm", active.to(dt), moves)
+    inc = 2.0 * s_i[..., None] * is_i.to(dt) - 2.0 * s_j[..., None] * is_j.to(dt)
+    return active, involvement, inc
 
 
 def team_pair_mask(guards: int, strikes: int, device: torch.device | str | None = None) -> Tensor:
@@ -102,7 +169,8 @@ def _drone_residual(v: Tensor, ii: Tensor, jj: Tensor, member: Tensor, g: Tensor
 
 def filter_velocities(nominal_mps: Tensor, pos_m: Tensor, pair_mask: Tensor, safety_radius_m: float,
                       max_speed_mps: float | Tensor, alpha: float = 2.5, iterations: int = 1000,
-                      tolerance: float = 2e-3, fixed: None = None, check_every: int = 0) -> FilterResult:
+                      tolerance: float = 2e-3, fixed: None = None, check_every: int = 0,
+                      pair_share: Tensor | None = None) -> FilterResult:
     """Project nominal velocities onto the safe set of every masked pair, all games at once.
 
     nominal_mps [N, M, 3], pos_m [N, M, 3]; pair_mask [M, M] or [N, M, M] bool, which must be symmetric,
@@ -117,6 +185,8 @@ def filter_velocities(nominal_mps: Tensor, pos_m: Tensor, pair_mask: Tensor, saf
     original. ``check_every`` = k > 0 stops early (module docstring, "Early stop"): one host sync every k
     sweeps; 0 runs all ``iterations`` sweeps on every game with no host sync. A speed cap given as a Python
     number is copied to the device on every call (a host sync on CUDA); pass a device tensor in the step.
+    ``pair_share`` [P, 2] or [N, P, 2] (STE L2.1, module docstring "Per-pair share"; each row's two shares >= 0 and
+    summing to 1, not checked): the split of each pair's correction; None = the even split, by today's code path.
     """
     if fixed is not None:
         raise ValueError("fixed rows are not supported: the training game has no external drones")
@@ -155,7 +225,12 @@ def filter_velocities(nominal_mps: Tensor, pos_m: Tensor, pair_mask: Tensor, saf
     infeasible_p = in_mask & (g_norm < 1e-5) & (bias < -tolerance)  # coincident drones
     cap_i, cap_j = cap[:, ii, 0], cap[:, jj, 0]
     active = in_mask & (bias < g_norm * (cap_i + cap_j))  # pruning, as the original
-    involvement = active.to(dt) @ member.to(dt)  # [N, M] active pairs per drone
+    if pair_share is None:
+        involvement = active.to(dt) @ member.to(dt)  # [N, M] active pairs per drone
+        w_sinc = None
+    else:  # option B: per-game incidence; a share-0 drone does not count the pair
+        active, involvement, w_sinc = _share_setup(pair_share, active, in_mask, g, g_norm, bias, nominal_ok, cap, ii,
+                                                   jj, is_i, is_j, dt)
     weight = (involvement + 1.0)[..., None]  # +1 for the speed-cap set
 
     # Dykstra state. The pair correction of the original is (-s g) on drone i and (+s g) on drone j, so one
@@ -184,6 +259,7 @@ def filter_velocities(nominal_mps: Tensor, pos_m: Tensor, pair_mask: Tensor, saf
             v, cap_corr, s, converged = v[live], cap_corr[live], s[live], converged[live]
             w_g, w_bias, w_active, w_pns, w_cap = w_g[live], w_bias[live], w_active[live], w_pns[live], w_cap[live]
             w_inv, w_weight, w_same = w_inv[live], w_weight[live], w_same[live]
+            w_sinc = None if w_sinc is None else w_sinc[live]
         capped = v + cap_corr
         norms = capped.norm(dim=-1, keepdim=True)
         cap_proj = torch.where(norms > w_cap, capped * (w_cap / norms.clamp(min=1e-12)), capped)
@@ -197,7 +273,10 @@ def filter_velocities(nominal_mps: Tensor, pos_m: Tensor, pair_mask: Tensor, saf
         step = (s_new - s)[..., None] * w_g  # [W, P, 3]
         bad_step = w_active & ~torch.isfinite(step).all(dim=-1)  # [W, P]
         step = torch.where((w_active & ~bad_step)[..., None], step, torch.zeros_like(step))
-        acc = cap_proj + w_inv[..., None] * v + torch.einsum("npd,pm->nmd", step, inc)
+        if w_sinc is None:
+            acc = cap_proj + w_inv[..., None] * v + torch.einsum("npd,pm->nmd", step, inc)
+        else:
+            acc = cap_proj + w_inv[..., None] * v + torch.einsum("npd,npm->nmd", step, w_sinc)
         spoilt = (bad_step[..., None] & member[None]).any(dim=1)  # [W, M] drones of a non-finite pair step
         new_v = torch.where(spoilt[..., None], torch.full_like(acc, float("nan")), acc / w_weight)
 
@@ -251,3 +330,33 @@ def filter_velocities(nominal_mps: Tensor, pos_m: Tensor, pair_mask: Tensor, saf
     corrected = ((v - nominal_ok).norm(dim=-1) > 1e-3) | bad
     return FilterResult(velocities=v, corrected=corrected, residual=residual, emergency=emergency_d.any(dim=-1),
                         converged=game_converged)
+
+
+def filter_velocities_shared(nominal_mps: Tensor, pos_m: Tensor, pair_mask: Tensor, safety_radius_m: float,
+                             max_speed_mps: float | Tensor, pair_share: Tensor, filter_fn=None,
+                             **filter_kw) -> FilterResult:
+    """Option B with its emergency rule (STE L2.1; DISCUSSION 2026-11-19/20 section 2.9: "a fallback to 50/50 when the Guard
+    truly cannot escape is an emergency rule, not a game rule"). Arguments as ``filter_velocities`` (``filter_fn``: that
+    function, the default, or ``safety_filter_graph.filter_velocities_graph``; ``filter_kw`` its keywords).
+
+    1. The filter with ``pair_share`` (e.g. ``guard_yields_share``).
+    2. A game whose step-1 answer would take the emergency action (residual after the speed clamp above 5 x tolerance,
+       the original's emergency residual; or a non-finite row or coincident drones) falls back: it takes today's even-split
+       filter, its push-apart included. The fallback pass runs with the other games' pairs masked off, so with
+       ``check_every > 0`` they leave its working batch at the first check (one host sync more per call); with
+       ``check_every = 0`` it sweeps the whole batch again (no host sync; about twice the filter's work).
+    Result: per game step 1's or step 2's fields; ``fallback`` [N] bool marks step 2. No per-game loop, no host read of
+    its own."""
+    fn = filter_velocities if filter_fn is None else filter_fn
+    b = fn(nominal_mps, pos_m, pair_mask, safety_radius_m, max_speed_mps, pair_share=pair_share, **filter_kw)
+    fb = b.emergency                                                              # [N]
+    n, m, _ = nominal_mps.shape
+    mask = pair_mask.to(fb.device)
+    mask = mask.expand(n, m, m) if mask.dim() == 2 else mask
+    e = fn(nominal_mps, pos_m, mask & fb[:, None, None], safety_radius_m, max_speed_mps, **filter_kw)
+
+    def pick(x: Tensor, y: Tensor) -> Tensor:
+        return torch.where(fb.view(-1, *([1] * (x.dim() - 1))), y, x)
+    return FilterResult(velocities=pick(b.velocities, e.velocities), corrected=pick(b.corrected, e.corrected),
+                        residual=pick(b.residual, e.residual), emergency=pick(b.emergency, e.emergency),
+                        converged=pick(b.converged, e.converged), fallback=fb)

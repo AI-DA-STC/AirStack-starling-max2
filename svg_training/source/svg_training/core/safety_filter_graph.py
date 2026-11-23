@@ -50,7 +50,7 @@ from collections import OrderedDict, deque
 import torch
 from torch import Tensor
 
-from .safety_filter import FilterResult, _drone_residual, _group_max
+from .safety_filter import FilterResult, _drone_residual, _group_max, _share_setup
 
 DEFAULT_BLOCK = 8          # PROPOSED: sweeps per graph when check_every is 0 (the hangar game's check_every is 8)
 CAPACITY_FLOOR = 128       # PROPOSED: the working capacity never goes below min(N, this)
@@ -75,9 +75,10 @@ def _rung(n: int, live: int, floor: int = CAPACITY_FLOOR) -> int:
 def _sweep(state: tuple, inp: tuple, cst: tuple, tolerance: float) -> tuple:
     """One parallel Dykstra sweep, masked: ``filter_velocities``' loop body, unchanged. state = (v [C, M, 3], cap_corr [C, M, 3],
     s [C, P], converged [C, M]); inp = (g [C, P, 3], bias, active, pns [C, P], cap [C, M, 1], inv [C, M], weight [C, M, 1],
-    same [C, M, M]); cst = (ii, jj [P], member [P, M] bool, inc [P, M])."""
+    same [C, M, M]) and, with a per-pair share (STE L2.1), a ninth entry: the weighted incidence [C, P, M];
+    cst = (ii, jj [P], member [P, M] bool, inc [P, M])."""
     v, cap_corr, s, converged = state
-    w_g, w_bias, w_active, w_pns, w_cap, w_inv, w_weight, w_same = inp
+    w_g, w_bias, w_active, w_pns, w_cap, w_inv, w_weight, w_same = inp[:8]
     ii, jj, member, inc = cst
     capped = v + cap_corr
     norms = capped.norm(dim=-1, keepdim=True)
@@ -87,7 +88,10 @@ def _sweep(state: tuple, inp: tuple, cst: tuple, tolerance: float) -> tuple:
     step = (s_new - s)[..., None] * w_g  # [C, P, 3]
     bad_step = w_active & ~torch.isfinite(step).all(dim=-1)  # [C, P]
     step = torch.where((w_active & ~bad_step)[..., None], step, torch.zeros_like(step))
-    acc = cap_proj + w_inv[..., None] * v + torch.einsum("npd,pm->nmd", step, inc)
+    if len(inp) == 8:
+        acc = cap_proj + w_inv[..., None] * v + torch.einsum("npd,pm->nmd", step, inc)
+    else:
+        acc = cap_proj + w_inv[..., None] * v + torch.einsum("npd,npm->nmd", step, inp[8])
     spoilt = (bad_step[..., None] & member[None]).any(dim=1)  # [C, M]
     new_v = torch.where(spoilt[..., None], torch.full_like(acc, float("nan")), acc / w_weight)
 
@@ -123,12 +127,15 @@ class _EagerRunner:
 class _GraphRunner:
     """Static buffers for one working capacity and one CUDA graph per block length, captured on first use."""
 
-    def __init__(self, c: int, m: int, p: int, device: torch.device, dtype: torch.dtype, cst: tuple, tolerance: float):
+    def __init__(self, c: int, m: int, p: int, device: torch.device, dtype: torch.dtype, cst: tuple, tolerance: float,
+                 shared: bool = False):
         with torch.inference_mode(False), torch.no_grad():
             z = lambda *shape, dt=dtype: torch.zeros(*shape, device=device, dtype=dt)  # noqa: E731
             self.state = (z(c, m, 3), z(c, m, 3), z(c, p), z(c, m, dt=torch.bool))
             self.inp = (z(c, p, 3), z(c, p), z(c, p, dt=torch.bool), torch.ones(c, p, device=device, dtype=dtype), z(c, m, 1),
                         z(c, m), torch.ones(c, m, 1, device=device, dtype=dtype), z(c, m, m, dt=torch.bool))
+            if shared:                                        # STE L2.1: the per-pair share's weighted incidence
+                self.inp = self.inp + (z(c, p, m),)
             self.cst = tuple(t.clone() for t in cst)
             self.live = torch.zeros((), dtype=torch.long, device=device)   # rows still sweeping, written by every graph
         self.tolerance, self.device = tolerance, device
@@ -189,13 +196,14 @@ def _read(pending) -> int:
     return int(host[k])
 
 
-def _runner(c: int, m: int, p: int, device: torch.device, dtype: torch.dtype, cst: tuple, tolerance: float, use_graph: bool):
+def _runner(c: int, m: int, p: int, device: torch.device, dtype: torch.dtype, cst: tuple, tolerance: float, use_graph: bool,
+            shared: bool = False):
     if not use_graph:
         return _EagerRunner(cst, tolerance)
-    key = (str(device), dtype, c, m, float(tolerance))
+    key = (str(device), dtype, c, m, float(tolerance), bool(shared))       # a shared graph reads one more buffer
     r = _RUNNERS.pop(key, None)
     if r is None:
-        r = _GraphRunner(c, m, p, device, dtype, cst, tolerance)
+        r = _GraphRunner(c, m, p, device, dtype, cst, tolerance, shared)
     _RUNNERS[key] = r
     while len(_RUNNERS) > MAX_CACHED:
         _RUNNERS.popitem(last=False)
@@ -205,11 +213,14 @@ def _runner(c: int, m: int, p: int, device: torch.device, dtype: torch.dtype, cs
 def filter_velocities_graph(nominal_mps: Tensor, pos_m: Tensor, pair_mask: Tensor, safety_radius_m: float,
                             max_speed_mps: float | Tensor, alpha: float = 2.5, iterations: int = 1000,
                             tolerance: float = 2e-3, fixed: None = None, check_every: int = 0, block: int = 0,
-                            use_graph: bool | None = None, compact: bool = False) -> FilterResult:
+                            use_graph: bool | None = None, compact: bool = False,
+                            pair_share: Tensor | None = None) -> FilterResult:
     """``filter_velocities`` with its sweep loop run as fixed-shape blocks (module docstring). Arguments and result as there;
     nominal_mps, pos_m [N, M, 3], pair_mask [M, M] or [N, M, M] bool. ``block`` = sweeps per block (0: ``check_every``, or
     ``DEFAULT_BLOCK`` when that is 0); ``use_graph`` None = CUDA graphs on a CUDA device, eager elsewhere; ``compact`` (needs
-    ``check_every > 0``) pre-freezes games with no active pair and moves the live games into smaller capacities (module docstring)."""
+    ``check_every > 0``) pre-freezes games with no active pair and moves the live games into smaller capacities (module docstring).
+    ``pair_share`` [P, 2] or [N, P, 2] (STE L2.1, as ``filter_velocities``): its weighted incidence rides in the inputs (a ninth
+    static buffer, graphs cached apart from the no-share ones); None = this path as before, bit for bit."""
     if fixed is not None:
         raise ValueError("fixed rows are not supported: the training game has no external drones")
     check_every, block, iterations = int(check_every), int(block), int(iterations)
@@ -255,7 +266,12 @@ def filter_velocities_graph(nominal_mps: Tensor, pos_m: Tensor, pair_mask: Tenso
     infeasible_p = in_mask & (g_norm < 1e-5) & (bias < -tolerance)  # coincident drones
     cap_i, cap_j = cap[:, ii, 0], cap[:, jj, 0]
     active = in_mask & (bias < g_norm * (cap_i + cap_j))  # pruning, as the original
-    involvement = active.to(dt) @ member.to(dt)  # [N, M] active pairs per drone
+    if pair_share is None:
+        involvement = active.to(dt) @ member.to(dt)  # [N, M] active pairs per drone
+        sinc = None
+    else:  # option B (STE L2.1), as filter_velocities
+        active, involvement, sinc = _share_setup(pair_share, active, in_mask, g, g_norm, bias, nominal_ok, cap, ii, jj,
+                                                 is_i, is_j, dt)
     weight = (involvement + 1.0)[..., None]  # +1 for the speed-cap set
 
     v = nominal_ok.clone()
@@ -270,6 +286,8 @@ def filter_velocities_graph(nominal_mps: Tensor, pos_m: Tensor, pair_mask: Tenso
     # ---- the sweeps: fixed-shape blocks on a working batch (rows `work` of the games), frozen rows kept ----------------------
     cst = (ii, jj, member, inc)
     inputs = (g, bias, active, pair_norm_sq, cap.contiguous(), involvement, weight, same.contiguous())
+    if sinc is not None:
+        inputs = inputs + (sinc.contiguous(),)
     state = (v, cap_corr, s, converged)
     p = ii.numel()
     work = torch.arange(n, device=dev)
@@ -287,7 +305,7 @@ def filter_velocities_graph(nominal_mps: Tensor, pos_m: Tensor, pair_mask: Tenso
                 state = tuple(t[sel] for t in state)
                 inputs = tuple(t[sel] for t in inputs)
     if done < iterations:
-        runner = _runner(c, m, p, dev, dt, cst, tolerance, use_graph)
+        runner = _runner(c, m, p, dev, dt, cst, tolerance, use_graph, sinc is not None)
         runner.load(state, inputs)
     pending: deque = deque()
     blocks, read_every = 0, max(1, READ_EVERY_SWEEPS // block)    # the same cadence eager and on graphs: the same ladder
@@ -315,7 +333,7 @@ def filter_velocities_graph(nominal_mps: Tensor, pos_m: Tensor, pair_mask: Tenso
             state = tuple(t[sel] for t in st)
             inputs = tuple(t[sel] for t in runner.inp)
             c = c_new
-            runner = _runner(c, m, p, dev, dt, cst, tolerance, use_graph)
+            runner = _runner(c, m, p, dev, dt, cst, tolerance, use_graph, sinc is not None)
             runner.load(state, inputs)
     if runner is not None:
         out_v = out_v.index_copy(0, work, runner.state[0])

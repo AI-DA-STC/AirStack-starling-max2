@@ -82,8 +82,10 @@ class CommandChain:
         self.pair_mask = mask.to(self.device)
 
     # ------------------------------------------------------------------------------------- interface
-    def step(self, cmd_mps: Tensor, pos_m: Tensor) -> tuple[Tensor, Tensor, Tensor]:
-        """One 0.05 s tick: commands [N, M, 3] and measured positions [N, M, 3], world ENU.
+    def step(self, cmd_mps: Tensor, pos_m: Tensor, landing: Tensor | None = None) -> tuple[Tensor, Tensor, Tensor]:
+        """One 0.05 s tick: commands [N, M, 3] and measured positions [N, M, 3], world ENU. ``landing`` [N, M] bool
+        (STE L2.3; None = none, today's path): those drones' commands are the LANDING nominal
+        (``TeleopCommander.step``).
 
         Returns the trajectory setpoint (p_sp_m, v_ff_mps, a_ff_mps2), each [N, M, 3] ENU; also kept in
         ``setpoint``. ``corrected`` is updated (all False when the filter is off)."""
@@ -91,7 +93,10 @@ class CommandChain:
         if not self.safety_filter:
             self.corrected = torch.zeros_like(self.corrected)
             self.correction = torch.zeros_like(self.correction)
-        p_sp, v_ff, a_ff = self.commander.step(cmd_mps.to(self.dtype), pos_m, safety=safety)
+        if landing is None:
+            p_sp, v_ff, a_ff = self.commander.step(cmd_mps.to(self.dtype), pos_m, safety=safety)
+        else:
+            p_sp, v_ff, a_ff = self.commander.step(cmd_mps.to(self.dtype), pos_m, safety=safety, landing=landing)
         self.setpoint = (p_sp, v_ff, a_ff)
         return p_sp, v_ff, a_ff
 

@@ -42,7 +42,9 @@ Left out, on purpose (each is listed in params/real_exploratory_v0.toml and the 
   the reference is clamped and the outward published speed and ramp are clipped to zero. The real fence's
   slow-down before the wall (``fence.py`` ``keep_in_velocity``, its margin and braking) is not copied;
 * yaw (the teleop yaw rate, :2271-2283): it does not change the translation law;
-* the takeoff, landing and hold states, and stale-odometry zero commands: a training drone is always ACTIVE;
+* the takeoff and hold states, and stale-odometry zero commands: a training drone is ACTIVE, or (STE L2.3, ``step(...,
+  landing=mask)``, off unless the game's ``[landing]`` is on) LANDING: its nominal is the descent as given, no cap or
+  ramp, on the hold leash; the disarm and the landing-complete wait are the game's touchdown height;
 * the emergency flag's re-leash of a filter group's drones whose command was NOT changed (:2229-2230,
   ``used_emergency_stop``): ``core/safety_filter.py`` reports emergency per game, not per team, so only
   ``corrected`` drones are re-leashed (every drone the push-apart moves is ``corrected``).
@@ -134,10 +136,16 @@ class TeleopCommander:
         self.published = torch.zeros(shape, device=device, dtype=dtype)
 
     # ------------------------------------------------------------------------------------- the three stages
-    def advance_reference(self, pos_m: Tensor) -> None:
-        """Step 1: move each reference by what was published, leash it; seed fresh drones at pos_m [N, M, 3]."""
+    def advance_reference(self, pos_m: Tensor, landing: Tensor | None = None) -> None:
+        """Step 1: move each reference by what was published, leash it; seed fresh drones at pos_m [N, M, 3].
+        ``landing`` [N, M] bool (STE L2.3; None = none): those drones are leashed to ``hold_lead_m``, as the flight
+        commander leashes a LANDING drone (:1955-1958, ``hold_lead``)."""
         r = self.ref + self.published * self.dt
         lead, pulled = leash(r - pos_m, self.p.teleop_lead_m)
+        if landing is not None:
+            lead_hold, pulled_hold = leash(r - pos_m, self.p.hold_lead_m)
+            lead = torch.where(landing[..., None], lead_hold, lead)
+            pulled = torch.where(landing, pulled_hold, pulled)
         r = torch.where(pulled[..., None], pos_m + lead, r)
         fresh = ~self.seeded
         self.ref = torch.where(fresh[..., None], pos_m, r)
@@ -181,10 +189,18 @@ class TeleopCommander:
         return self.ref.clone(), safe.clone(), a_ff
 
     # ------------------------------------------------------------------------------------- one tick
-    def step(self, stick_mps: Tensor, pos_m: Tensor, safety: SafetyFn | None = None) -> tuple[Tensor, Tensor, Tensor]:
-        """One 0.05 s tick. stick [N, M, 3] (world ENU, m/s), pos_m [N, M, 3] measured -> (p_sp, v_ff, a_ff)."""
-        self.advance_reference(pos_m)
+    def step(self, stick_mps: Tensor, pos_m: Tensor, safety: SafetyFn | None = None,
+             landing: Tensor | None = None) -> tuple[Tensor, Tensor, Tensor]:
+        """One 0.05 s tick. stick [N, M, 3] (world ENU, m/s), pos_m [N, M, 3] measured -> (p_sp, v_ff, a_ff).
+
+        ``landing`` [N, M] bool (STE L2.3; None = today's law, bit for bit): those drones are in the flight commander's
+        LANDING state (:2086-2087): their ``stick_mps`` row is the nominal command as given (the descent; no stick cap,
+        no ramp, no ramp feed-forward), leashed to ``hold_lead_m``, and filtered as an ordinary row."""
+        self.advance_reference(pos_m, landing)
         nominal, accel_ff = self.shape(stick_mps)
+        if landing is not None:
+            nominal = torch.where(landing[..., None], stick_mps, nominal)
+            accel_ff = torch.where(landing[..., None], torch.zeros_like(accel_ff), accel_ff)
         if safety is None:
             safe, corrected = nominal, torch.zeros(nominal.shape[:2], dtype=torch.bool, device=nominal.device)
         else:

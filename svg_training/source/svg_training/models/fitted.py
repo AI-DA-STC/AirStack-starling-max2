@@ -199,19 +199,21 @@ class FittedResponse:
         self.vel_mps = v_new
 
     # ------------------------------------------------------------------------------------- interface
-    def step(self, cmd_mps: Tensor, pos_m: Tensor | None = None) -> Tensor:
+    def step(self, cmd_mps: Tensor, pos_m: Tensor | None = None, landing: Tensor | None = None) -> Tensor:
         """One 0.05 s tick with commands [N, M, 3]; pos_m [N, M, 3], if given, replaces the model's positions first.
+        ``landing`` [N, M] bool (STE L2.3; None = none): passed to the command chain (``CommandChain.step``).
 
         Returns the velocity [N, M, 3] at the end of the tick; ``self.pos_m`` is the position then.
         """
         if pos_m is not None:
             self.pos_m = pos_m.to(device=self.device, dtype=self.dtype)
         est = self.estimator
+        land = {} if landing is None else {"landing": landing}       # None: the chain's call as before L2.3
         if est is None:
-            p_sp, v_ff, a_ff = self.chain.step(cmd_mps, self.pos_m)
+            p_sp, v_ff, a_ff = self.chain.step(cmd_mps, self.pos_m, **land)
         else:                                   # the estimate now: this instant's error on the (adopted) true state
             p_est, _, v_est, _ = est.replace_latest(self.pos_m, None, self.vel_mps, None)
-            p_sp, v_ff, a_ff = self.chain.step(cmd_mps, p_est if self.commander_reads_estimate else self.pos_m)
+            p_sp, v_ff, a_ff = self.chain.step(cmd_mps, p_est if self.commander_reads_estimate else self.pos_m, **land)
         x = torch.cat([p_sp, v_ff, a_ff], dim=-1)
         # a fresh drone's history is its first setpoint (the reference holds x[0] before t_0)
         self._buf = torch.where(self._fresh[None, ..., None], x[None], self._buf)

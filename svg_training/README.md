@@ -326,14 +326,15 @@ processor (829 was the GPU run; evidence: T49,
 ### 6.3 STE's own training, since 20 November 2026
 
 STE now trains its own Guard and Strike teams in its own game: the same zone, speeds and 120 s game, with the safety
-filter on every pair as before, in a 6.5 m arena, and with a **tag**: a Guard drone within the tag distance of a
-Strike drone takes it out and both leave. The tag, the arena and the game length were set at gate G0: 1.6 m first,
-1.15 m in later training. What the first runs showed, each observed in the training simulator against the opponent
-the team trained on: at 1.6 m, the trained Guard team and Strike team each beat the best hand-written tactic, and a
-Strike team trained against a different Guard tactic draws level with it; at 1.15 m both sides stay below them; a
-Guard team trains as well on the Isaac Lab drones as in the STE game engine in PyTorch, at about 5 times the GPU
-time. The aim is unchanged: a strategy that flies through AirStack on Starling drones. Numbers, figures and limits on one page: [overview](docs/OVERVIEW.md);
-the plan and its working folder: [ste_learning/](ste_learning/README.md). Nothing has flown.
+filter on every pair as before, in a 6.5 m arena, and with a **tag**: a Guard drone within the tag distance of a Strike
+drone takes it out and both leave. The tag, the arena and the game length were set at gate G0; the tag distance is 1.6 m
+first and 1.15 m in later training (first runs at 1.15 m already made). What the first runs showed, each observed in the
+training simulator against the opponent the team trained on: at 1.6 m, the trained Guard team and Strike team each beat
+the best hand-written tactic, and a Strike team trained against a different Guard tactic draws level with the best
+hand-written tactic there; at 1.15 m both sides stay below them; a Guard team trains as well on the Isaac Lab drones as
+in the STE game engine in PyTorch, at about 5 times the GPU time. The aim is unchanged: a strategy that flies through
+AirStack on Starling drones. Numbers, figures and limits on one page: [overview](docs/OVERVIEW.md); the plan and its
+working folder: [ste_learning/](ste_learning/README.md). Nothing has flown.
 
 ## Watch it
 

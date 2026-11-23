@@ -253,6 +253,13 @@ on an idle machine. Not run on a GPU. Follow-ups from the two code reviews (23 N
 
 ## L2 Game rules in the training copy (§2.9, §2.14)
 
+**Built 24 Nov 2026** (merged, off by default; T-row none: no run): `[filter] share = "equal" | "guard_yields"`, both
+filter paths, landing pairs stay equal, emergency fallback to today's filter per game and tick (residual > 5 × tolerance,
+PROPOSED). Desk case as DISCUSSION §2.9. **Known shortfall for P2:** next to a wall a pinned Guard drone cannot give way,
+and a Strike drone closes to 0.39 m (tier 1) / 0.60 m (tier 2), where the even split stops at 0.97 / 1.00 m; pinned by a
+test. Option B equals "Strike held" exactly only when every Strike keeps its command (43 of 80 test scenes); otherwise
+checked for feasibility only. The fallback pass doubles filter cost at check_every 0 (1.24× at the track's check_every 8).
+
 **L2.1 Filter option B in the training copy.** Goal: in Guard–Strike pairs only the Guard gives way; team-mate pairs
 keep the even split; when the Guard cannot escape, the even split returns as an emergency rule. Files: `core/
 safety_filter.py` (per-pair share instead of the `fixed` refusal), `core/safety_filter_graph.py` (same change, or refuse
@@ -271,12 +278,23 @@ pair, a tag when a live Guard–Strike pair is closer than `[tag] radius_m` (1.6
 `tests/test_tag_rule.py`. Tests (L0.9 has them): 1.59 m tags, 1.61 m does not; tags come before the zone test; off is
 today's game bit for bit; `partner` and `contact` presets unchanged (existing config tests pass). 6 h. Gate: P1, ruled at G0 (owner, 22 Nov 2026; STANDARDS §4 "Tag" changed).
 
+**Built 24 Nov 2026** (merged, off by default): `[landing] enabled`, `land_speed_mps = 0.6`, `touchdown_z_m = 0.15`
+(PROPOSED, the `_ours` configs); both tiers; the descent goes to the commander copy as flight's LANDING command.
+**Known shortfall:** a drone landing onto a drone held at the height-band floor closes to 0.95–1.05 m (pinned by a test;
+likely the 50/50 split giving half the correction to the drone the floor stops). Closeness and breach metrics count live
+drones only. Observation v0.3's landing flags are not built (not approved): live drones cannot see a landing drone.
+
 **L2.3 Landing drones stay filter obstacles.** Goal: a tagged or lost drone descends at the land speed (0.6 m/s, real
 `_ours` configs, MEASURED) and stays in every filter pair until it is down, then is parked. It no longer acts or scores.
 Files: `core/game.py` (a `landing` mask beside `alive`), `core/starling_layer.py` and `core/physics_layer.py` (pairs
 include landing drones; their command is the descent), `tests/test_landing.py`. Tests first: a landing drone keeps
 other drones ≥ 1.10 m away; it reaches the floor in the expected time; it neither tags nor scores. 8 h; 0.2 GPU-h.
 Gate: none from P1 (ruled at G0, 22 Nov 2026; landing is part of the tag rule).
+
+**Built 24 Nov 2026** (off by default; merged after its full suite): `[team_size] mode = "fixed" | "drawn"` (1–5 v 1–3,
+uniform, PROPOSED), drawn starts for zone_disc_ring only, drop-out picks a present drone; study file
+`configs/ste_l2/drone_loss_drawn.toml` (dropout 0.25, PROPOSED). **Before any training with drawn sizes:** the learner
+must mask absent slots (they still get the team reward; `ste/exploit_train.py` records every slot): an L3 item.
 
 **L2.4 Drone loss and random team size.** Goal: games with 1–5 Guard and 1–3 Strike drones drawn per game (STANDARDS §4,
 PROPOSED; 3v3 the main size), and a drone

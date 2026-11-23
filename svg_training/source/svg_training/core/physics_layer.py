@@ -15,6 +15,7 @@ team's speed) goes through
 Pairs, out drones and walls follow ``StarlingLayer`` (S2 Task 4): the filter sees the live pairs only; a drone that
 is out is restarted at its (parked) position every step, at rest, with a fresh commander and cascade, and is
 commanded zero; ``keep_in`` clamps the positions, stops the clamped axes and clamps the commander's reference.
+Landing drones (STE L2.3, ``step(..., landing=mask)``) are flying, as in ``StarlingLayer``: in every pair, not restarted.
 
 World writes (D9): at most two batched writes per tick. Restarts (new games from ``reset`` and the drones that are
 out) are applied together, in one ``world.reset`` at the start of the next ``step``; ``keep_in`` makes the other
@@ -113,26 +114,32 @@ class PhysicsLayer:
         self._has_pending = False
 
     def step(self, cmd_mps: Tensor, pos_m: Tensor, alive: Tensor, yaw: Tensor | None = None,
-             yaw_rate_rad_s: Tensor | None = None) -> tuple[Tensor, Tensor, Tensor]:
+             yaw_rate_rad_s: Tensor | None = None, landing: Tensor | None = None) -> tuple[Tensor, Tensor, Tensor]:
         """One 0.05 s tick. cmd_mps [N, M, 3] world ENU m/s (already capped to each team's speed); pos_m [N, M, 3]
         the game's positions (used to place the drones that are out; the commander reads the world's positions);
         alive [N, M] bool; yaw (rad, ENU) and yaw_rate_rad_s [N, M] (default 0).
+
+        ``landing`` [N, M] bool (STE L2.3, ``[landing]``; None = today's path): drones out of the game that are still
+        flying down, as in ``StarlingLayer.step``: in every pair, not restarted, their ``cmd_mps`` row flown as the
+        commander's LANDING nominal; ``keep_in`` may write them.
 
         Returns (pos_m [N, M, 3], vel_mps [N, M, 3], corrected [N, M] bool: live drones the filter changed)."""
         zero = torch.zeros_like(alive, dtype=self._pending_yaw.dtype)
         yaw = zero if yaw is None else yaw
         yaw_rate_rad_s = zero if yaw_rate_rad_s is None else yaw_rate_rad_s
-        self._alive = alive
-        self.chain.set_pair_mask(self._pairs & alive[:, :, None] & alive[:, None, :])
+        flying = alive if landing is None else alive | landing
+        land = {} if landing is None else {"landing": landing}
+        self._alive = flying
+        self.chain.set_pair_mask(self._pairs & flying[:, :, None] & flying[:, None, :])
         # restarts: pending new games, and the drones that are out (at their parked positions); one world write
-        restart = self._pending | ~alive
+        restart = self._pending | ~flying
         pend = self._pending
         self.drone.reset(restart, torch.where(pend[..., None], self._pending_pos, pos_m),
                          torch.where(pend, self._pending_yaw, yaw))
         self.chain.reset(restart)
         self._pending = torch.zeros_like(self._pending)
         self._has_pending = False
-        p_sp, v_ff, a_ff = self.chain.step(cmd_mps * alive[..., None], self.drone.pos_m)
+        p_sp, v_ff, a_ff = self.chain.step(cmd_mps * flying[..., None], self.drone.pos_m, **land)
         self.drone.step_setpoint(p_sp, v_ff, a_ff, yaw, yaw_rate_rad_s * alive)
         return self.drone.pos_m, self.drone.vel_mps, self.chain.corrected & alive
 

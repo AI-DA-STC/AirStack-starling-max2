@@ -13,7 +13,9 @@ Which pairs the safety filter sees, per step and per game:
 * preset "contact" (side quest): live team-mates only, so opposite drones can meet and tag.
 
 A drone that is out of the game takes part in no pair (an isolated drone is its own filter group), is commanded
-zero, and is restarted fresh (at rest, new commander reference) every step it is out.
+zero, and is restarted fresh (at rest, new commander reference) every step it is out. With the game's ``[landing]`` on
+(STE L2.3), a drone that is landing (``step(..., landing=mask)``) is out of the game but still flying: it stays in every
+pair, is not restarted, and flies the descent the game gives it as the commander's LANDING nominal.
 
 Every (re)start seeds the PX4 model's delay history with a hover setpoint at the drone's position
 (``FittedResponse(hover_seed=True)``): a real drone hovering at its start has been sent "hold here", so the first
@@ -130,15 +132,21 @@ class StarlingLayer:
             self.model.reseed_estimate(seed)
 
     def step(self, cmd_mps: Tensor, pos_m: Tensor, alive: Tensor, yaw: Tensor | None = None,
-             yaw_rate_rad_s: Tensor | None = None) -> tuple[Tensor, Tensor, Tensor]:
+             yaw_rate_rad_s: Tensor | None = None, landing: Tensor | None = None) -> tuple[Tensor, Tensor, Tensor]:
         """One 0.05 s tick. cmd_mps [N, M, 3] world ENU m/s (already capped to each team's speed), pos_m [N, M, 3]
         (the game's positions; the model adopts them first), alive [N, M] bool. ``yaw`` / ``yaw_rate_rad_s`` [N, M]
         are accepted and ignored (the fitted model has no yaw; the physics backend uses them).
 
+        ``landing`` [N, M] bool (STE L2.3, ``[landing]``; None = today's path): drones out of the game that are still
+        flying down. They stay rows of every filter pair, are not restarted, and their ``cmd_mps`` row is the descent,
+        flown as the commander's LANDING nominal (``TeleopCommander.step``).
+
         Returns (pos_m [N, M, 3], vel_mps [N, M, 3], corrected [N, M] bool: live drones the filter changed)."""
-        self.model.set_pair_mask(self._pairs & alive[:, :, None] & alive[:, None, :])
-        self.model.reset(~alive)                       # out drones: at rest, fresh; they are in no pair
-        vel = self.model.step(cmd_mps * alive[..., None], pos_m)
+        flying = alive if landing is None else alive | landing
+        land = {} if landing is None else {"landing": landing}
+        self.model.set_pair_mask(self._pairs & flying[:, :, None] & flying[:, None, :])
+        self.model.reset(~flying)                      # out drones: at rest, fresh; they are in no pair
+        vel = self.model.step(cmd_mps * flying[..., None], pos_m, **land)
         return self.model.pos_m, vel, self.model.corrected & alive
 
     def keep_in(self, lo_m: Tensor, hi_m: Tensor) -> Tensor:

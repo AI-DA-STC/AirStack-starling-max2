@@ -1,4 +1,4 @@
-INTERNAL · the rules of STE's learning track; they add to the folder's [STANDARDS](../STANDARDS.md), which still applies in full · [README.md](README.md)
+INTERNAL · the rules of STE's learning track; they add to the folder's own standards, which still apply in full · [README.md](README.md); the parent rules: [STANDARDS](../STANDARDS.md)
 
 Where the two seem to conflict, the parent wins until the owner rules; a ruling is then written into the parent
 (FIXED rows change only there).

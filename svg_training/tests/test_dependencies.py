@@ -37,7 +37,9 @@ def _dist_name(requirement: str) -> str:
 
 def _listed() -> set[str]:
     project = tomllib.loads((ROOT / "pyproject.toml").read_text())["project"]
-    reqs = list(project["dependencies"]) + list(project.get("optional-dependencies", {}).get("test", []))
+    extras = project.get("optional-dependencies", {})
+    # the export extra: STE L6.2 (ste/export.py)
+    reqs = list(project["dependencies"]) + list(extras.get("test", [])) + list(extras.get("export", []))
     return {_dist_name(r) for r in reqs}
 
 

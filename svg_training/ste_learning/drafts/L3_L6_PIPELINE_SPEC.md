@@ -243,10 +243,10 @@ one network per slot, so it uses its own schemas (lead, 24 Nov 2026), both writt
       observations.
 - **Status, required:** `status = "pipeline check, not for flight"` in `interface.toml` and in every ONNX file's
   metadata (`metadata_props`). The reload refuses a file without it or with another value.
-- **The reload check** runs in a fresh Python process **without onnxruntime** (not installed; ARCHITECTURE §3, line
-  214: whether onnxruntime or torch can run in the AirStack ground container is UNVERIFIED, and this check does not
-  settle it). It uses `onnx.reference.ReferenceEvaluator` (numpy) on the exported ONNX files; `torch.onnx.export` works
-  with the `onnx` package alone (checked, onnx 1.23.2).
+- **The reload check** runs in a fresh Python process with **onnxruntime 1.20.1 (CPU) as the primary runtime** (owner
+  approved, 24 Nov 2026; the `export` extra in `pyproject.toml`) and `onnx.reference.ReferenceEvaluator` (numpy) as an
+  independent second check on the same files. Whether onnxruntime or torch can run in the AirStack ground container is
+  UNVERIFIED (ARCHITECTURE §3, line 214); this check does not settle it.
   - It refuses a sha256, schema or status mismatch.
   - The golden rows: outputs within 1e-6 (absolute; the ONNX evaluator and torch round differently, so not bit for
     bit), the argmax of each head, the leader's choice, the flown skill and the skill names and lists exactly. For the

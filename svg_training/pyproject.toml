@@ -30,6 +30,9 @@ dependencies = [
 
 [project.optional-dependencies]
 test = ["pytest"]
+# The export and its reload check (STE L6.2, ste/export.py; owner approved onnxruntime 24 Nov 2026). Not needed by the
+# rest of the suite: tests/test_ste_l3_export.py skips without onnxruntime. pip install -e ".[test,export]".
+export = ["onnx>=1.16", "onnxruntime>=1.20"]
 
 [tool.setuptools.packages.find]
 where = ["source"]

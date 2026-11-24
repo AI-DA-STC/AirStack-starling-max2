@@ -296,7 +296,10 @@ def test_f_a_the_waiter_returns_only_when_the_job_ends_though_its_own_command_li
     name = f"sweep_{uuid.uuid4().hex}"
     assert bench.launch(name, bench.dummy(name, steps=100_000)).returncode == 0
     waiter = bench.start_wait(name)
-    assert name in Path(f"/proc/{waiter.pid}/cmdline").read_text()          # the waiter's command line holds the name
+    deadline = time.monotonic() + 5.0          # under a loaded suite the child may not have exec'd yet: cmdline reads ""
+    while not (cmd := Path(f"/proc/{waiter.pid}/cmdline").read_text()) and time.monotonic() < deadline:
+        time.sleep(0.02)
+    assert name in cmd                                                       # the waiter's command line holds the name
     wait_for(lambda: bench.step(name) >= 4, what="the job to make progress")
     seen = bench.step(name)
     wait_for(lambda: bench.step(name) >= seen + 6, what="more progress")

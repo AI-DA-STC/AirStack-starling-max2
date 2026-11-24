@@ -1,4 +1,4 @@
-INTERNAL · spec of the L3-L6 pipeline check of the STE learning track (owner R23: cap 20 GPU-h, "pipeline check, not for flight"; R19 both routes; R30 two-level skills; R31 even filter split; R32 landing off): the budget split, the game and gate files, the reading words fixed before any run, the Isaac smoke and the export; DRAFT for the lead and two reviewers (R22), NO run launched · gate files: [configs/ste_l3/](../../configs/ste_l3/) · budget: [configs/ste_learning.toml](../../configs/ste_learning.toml) `[budget_l3_l4_l5_l6]` · design notes: [L3_TWO_ROUTES_DESIGN.md](L3_TWO_ROUTES_DESIGN.md), [L3_SLICE2_DESIGN.md](L3_SLICE2_DESIGN.md), [L3_SLICE3_DESIGN.md](L3_SLICE3_DESIGN.md)
+INTERNAL · spec of the L3-L6 pipeline check of the STE learning track (owner R23: cap 20 GPU-h, "pipeline check, not for flight"; R19 both routes; R30 two-level skills; R31 even filter split; R32 landing off): the budget split, the game and gate files, the reading words fixed before any run, the Isaac smoke and the export; reviewed by two reviewers 24 Nov 2026 (no blocking finding) and revised for the lead's answers; NO run launched · gate files: [configs/ste_l3/](../../configs/ste_l3/) · budget: [configs/ste_learning.toml](../../configs/ste_learning.toml) `[budget_l3_l4_l5_l6]` · design notes: [L3_TWO_ROUTES_DESIGN.md](L3_TWO_ROUTES_DESIGN.md), [L3_SLICE2_DESIGN.md](L3_SLICE2_DESIGN.md), [L3_SLICE3_DESIGN.md](L3_SLICE3_DESIGN.md)
 
 # L3-L6 pipeline check: spec (24 Nov 2026)
 
@@ -44,6 +44,10 @@ task cap covers its first run's expected use plus its last run's ask, as the lau
 | L6.2 | export and reload check, both routes (section 5) | CPU (a GPU reload at most) | < 0.05 | 0.1 |
 | | **total of the caps** | | **≈ 8.4 / ≈ 3.5** | **11.4** |
 
+**Launch condition for L5.2's Strike run (B1):** the skills pilot must confirm the ×2.25 factor: its measured
+game-steps per second, with the dispatch and the pool, at least 1/2.25 of the velocity pilot's at the same size. If it
+is slower, the lead re-plans the asks and caps (announced) before the launch.
+
 The remaining 8.6 GPU-h are **unallocated**. They are for re-runs after a failed control, and for an added read (for
 example a second seed or the tier-2 cross-check of question 4). Each use is announced with its question, trigger and
 hours (owner's side-track rule). Order: L3.2 and L3.3 (pilots) and L3.1 (smoke) first, then the fill step, then run 0
@@ -75,50 +79,110 @@ the Guard side only: a Guard run needs no run 0 (the Guard recipe is T41's), so 
     and the comment that a `kl_threshold`, if ever set, is for the sum of the two per-head KLs.
   - The mask is on in the main files and off in the pool-only controls.
 - **Skills run 0 mark:** `[run0] skills_reach_min = 0.90` (it loads only with `eval_games = 1000`).
-- **The fill step** (each file's header): each route's pilot fills `[trainer] side_overrides.strike` (the pre-registered
-  Strike recipe rule over the probes against g*; the probes are not on the pool) and confirms `game_steps_per_run`. The
-  same number goes in all four files.
+- **The fill step** (each file's header): the fill rule of section 2b.
+
+## 2b. What differs between the routes (fairness), and the fill rule
+
+The two routes share the game, the opponents (the same pool draws), the starts, the seeds, the step budget, the
+network size, the PPO settings and the scoring. They still differ in these ways, by design or by construction, and
+each read names them:
+- **Action:** a velocity command held 12 ticks against a two-level skill choice held 12 ticks, the chosen skills
+  running closed loop every tick inside each hold. This reaction-speed advantage belongs to the skills route; L4.1
+  measures it for the scripts.
+- **Entropy:** 0.0 for the velocity route (T41's recipe; its Gaussian log-std is learned and frozen on yaw) against
+  0.01 per head for the skills route (two categorical heads).
+- **The start:** the velocity route starts at a zero mean (standing still); the skills route starts at p(free) = 0.5,
+  playing free + its first drone skill (strike_straight / guard_parked_centre) at argmax.
+- **The Strike recipe:** `side_overrides.strike` is filled per route from that route's own pilot, so it may differ
+  between the routes.
+
+**The fill rule** (pre-registered; the lead applies it after both pilots and before any run 0):
+1. **`side_overrides.strike` of each route** is the value its own pilot's pre-registered rule picks
+   (`exploit.strike_recipe` over the probes against g*). The same value goes into that route's pool-only file.
+2. **`game_steps_per_run`** is one number for all four files: the smallest of 550,000,000 and each pilot's projected
+   game-steps that fit its run ask (pilot.json `projection`), rounded down to whole updates. One update is
+   32 × 12 × 16,384 = 6,291,456 game-steps; at 550 M that is 88 updates, 553,648,128 game-steps. If the two pilots
+   disagree, the smaller number holds for both routes (the same budget, R19). If it falls below 60 updates
+   (377,487,360), the lead re-plans before any run (the budget would no longer be T46's) and announces it.
 
 ## 3. Reading words (fixed before any run; R22: two reviewers; INFO; "pipeline check, not for flight")
 
-**Per route, one of three words:**
-- **PIPELINE WORKS:** all of the following hold.
-  - The pilot completes and its controls PASS.
-  - Run 0 reads PASS (velocity: L0.12's rule; skills: ≥ 900 of 1,000 at the final checkpoint).
-  - Both sides train to the step budget, with every control PASS (before, curve, final, INFO; non-finite 0).
-  - The final phase writes the score cells against every script of the other team, the pooled row, the best single
-    fixed choice and (skills) the choice share by decision index.
-  - The export reloads in a fresh process with its golden rows equal (section 5).
-- **PIPELINE WORKS, RUN 0 FAILED:** everything works up to run 0, which reads FAIL (or INCONCLUSIVE). The Strike side
-  is not launched; the Guard side reads as above. Meaning: the learner did not learn the easy task at this budget.
-- **PIPELINE DOES NOT WORK at <stage>:** a control fails (exit 6), a run crashes or exits 5, or the export does not
+Every word reads **"these two trained policies"** (one seed each), never "the route". The intervals cover the sampling
+of the 1,000 starts only, not the spread over seeds.
+
+**Per route, the required tasks and the word.** PIPELINE WORKS needs all of these:
+- the route's pilot (L3.2 or L3.3), its controls PASS;
+- run 0 (L3.4 or L3.5);
+- both main runs (L5.1 or L5.2), every control PASS, trained to the step budget;
+- the final scoring of each main run;
+- the export and reload check of each main run's policy (L6.2).
+
+The pool-only controls (L5.3, L5.4 and L5.4's pilot), the held-command arm (L4.1) and the scoring-suite check (L4.2)
+are not part of a route's word; they are separate reads, below. The words:
+- **PIPELINE WORKS:** every required task as above. The final phase writes the cells against every script of the
+  other team, the pooled row, the best single fixed choice and (skills) the choice share. The export reloads in a
+  fresh process with its golden rows matching (section 5).
+- **PIPELINE WORKS, RUN 0 FAILED:** run 0 reads FAIL at the full budget. The trainer did not learn the easy Strike task
+  at this budget. The Strike run is not launched; the Guard run, its scoring and its export and reload must hold as
+  above.
+- **PIPELINE WORKS, RUN 0 INCONCLUSIVE:** run 0 stopped at its cap reserve before the budget. This is not a failure to
+  learn: the run did not get its time.
+  - Velocity route: the lead may record a decision (`--accept-learner-control`, L0.12's rule) and launch the Strike run.
+  - Skills route: the Strike run is never launched (PASS only), and the lead re-plans run 0.
+  - The Guard side reads as above.
+- **PIPELINE DOES NOT WORK at <stage>:** a control fails (exit 6), a run crashes or exits 5, or an export does not
   reload with its golden rows. The stage and the first failing control are named.
 
-**The route comparison (INFO only).** Per side, on T44's 1,000 starts:
-- **The worst cell is the headline:** the trained team's lowest rate over the opponent scripts, with its Wilson 95 %
-  interval. Each route's worst cell against the other's reads **above / below** when the intervals are disjoint, else
-  **not distinguishable**.
-- **The pooled row:** the mean of the K cell rates. The difference between the routes is paired by start (same starts),
-  with a 95 % interval from the per-start standard error. **Above / below** when it excludes 0, else **not
-  distinguishable**. Flagged when trivial cells (rate 0 or 1) pull the mean.
-- **Each route against its best single fixed choice over the pool** (the best script played every tick closed loop, on
-  the same starts): the same paired words.
-- **Attribution (Guard side):** pool + mask against pool only, per route, the same paired words. It says what the mask
-  changes on this one seed.
-- **Choice share by decision index** (skills): described, not worded. The late bins hold only long games
-  (survivor-biased).
+**The separate reads:**
+- **Attribution (L5.3, L5.4):** pool + mask against pool only, Guard side. Read with the paired words below. A
+  pool-only run (or L5.4's pilot) that fails or crashes reads **ATTRIBUTION NOT READ at <stage>**; the route's word does
+  not change.
+- **Held-command arm (L4.1):** per script and opponent, the held against the closed-loop wins, INFO. A failed control
+  (hold 1 ≠ the reference) reads **HELD ARM NOT READ**.
+- **Scoring-suite check (L4.2):** on scripted teams with known answers (the pooled row equals the mean of the script
+  cells on the reference; the best single choice equals the reference's best; the choice share of a fixed choice is
+  one skill). **Required before the route comparison is written.** A failure reads **COMPARISON NOT READ** until fixed.
+
+**The route comparison (INFO), per side, on T44's 1,000 starts.** K = 6 opponent scripts for the trained Guard team
+(the Strike scripts), K = 5 for the trained Strike team (the Guard scripts).
+- **The headline is the worst cell:** the trained team's lowest rate over the opponent cells, with its Wilson 95 %
+  interval.
+  - The interval of a minimum over K cells is optimistic (the minimum is biased low and its interval is not adjusted
+    for the K).
+  - The cells against `strike_high` and `strike_low` are labelled "vertical response not fitted in tier 1"
+    (z_up_info). The headline is the worst cell **among the other cells**, and the z_up_info cells are shown beside it.
+  - Each policy's worst cell against the other's: **above / below** if the Wilson intervals are disjoint, else **not
+    distinguishable**.
+- **Paired same-cell differences:** the two worst cells may be against different opponents. So, for every opponent
+  cell, the difference between the two policies is taken paired by start (the same starts), with a 95 % interval from
+  the per-start standard error. **Above / below** if it excludes 0, else **not distinguishable**. Reported for every
+  cell, the headline cell first.
+- **The pooled row:** the mean of the K cell rates. Its difference is paired by start with the per-start standard
+  error, read with the same words. Flagged when trivial cells (rate 0 or 1) pull the mean.
+- **Each policy against the best single fixed choice over the pool** (the best script played every tick closed loop,
+  on the same starts): paired, the same words.
+- **Choice shares (skills, R30):**
+  - per opponent cell, the share of each flown skill or strategy over all decisions;
+  - by decision index (0, 1, 2, 3-5, 6-11, 12+), the late bins survivor-biased.
+  - Described, not worded. A share that changes with the opponent on the same starts is the only sign of adaptation
+    this check can give.
 
 **What it cannot show** (each read says so):
-- one seed per route and side (no seed spread);
+- one seed per route and side (no seed spread; the intervals are over the starts only);
 - the 1.6 m tag only;
 - tier 1 training only (tier 2 only through the scripted smoke);
 - no flight;
 - the estimate error off;
 - scripted opponents only (no self-play or league);
+- **no held-out opponent:** every scored script was in the training pool, so adaptation to an unseen opponent is not
+  tested;
 - today's per-slot MLP and observation v0.1 (not the attention encoder or v0.3);
 - a policy without memory or opponent identity (it can adapt only to what it observes);
-- the skills route's closed-loop advantage (measured separately by L4.1);
+- the skills route's closed-loop advantage (measured for the scripts by L4.1);
 - a 550 M budget, not a budget of record.
+
+A second seed or any other read paid from the unallocated hours is labelled **an added read**. It never replaces a
+pre-registered one.
 
 ## 4. The Isaac smoke of the tier-2 skills replay (task L3.1)
 
@@ -139,7 +203,8 @@ cd ~/AirStack-starling-max2-dev/svg_training && unset PYTHONPATH
   --run-dir runs/<d>_ste_l3_isaac_smoke --cap-h 0.3 --headless --games 1000
 ```
 
-(The form of L2.6's smoke, `ste_learning/drafts/L2_6_SPEC.md`; the driver's own flags are fixed when it is built.)
+(The form of L2.6's smoke, `ste_learning/drafts/L2_6_SPEC.md`, run from the machine's development worktree
+`~/AirStack-starling-max2-dev`, its `svg_training/` folder; the driver's flags as built, section 4's script.)
 
 It must check (QC's list), each a control that ends the smoke on failure:
 1. **CUDA replay tolerance:** each fixed-choice cell against its script cell on Isaac. Outcome counts within
@@ -160,42 +225,40 @@ No tier-2 skills run of record starts before this smoke passes (slice 3 design �
 ## 5. Export and reload (task L6.2)
 
 `ste-policy-1` (ARCHITECTURE §3) is defined for observation v0.3 (81 inputs). The pipeline check runs v0.1 (71) with
-one network per slot, so it needs its own schemas (question 3), both written by `ste/export.py`. That module is not
-built yet: ARCHITECTURE's export row, status N.
-- **Velocity route** (`policy_schema = "ste-check-velocity-0"`, PROPOSED):
-  - per slot `policy_<team>_<slot>.onnx`, input `obs [B, 71] float32`, output `action_mean [B, 4]` (deterministic,
-    the Tanh inside), the observation scaler folded in;
+one network per slot, so it uses its own schemas (lead, 24 Nov 2026), both written by `ste/export.py`:
+- **Velocity route** (`policy_schema = "ste-check-velocity-0"`):
+  - per slot `policy_<team>_<slot>.onnx`, input `obs [B, 71] float32` (raw observation; the observation scaler is
+    folded into the graph), output `action_mean [B, 4]` (deterministic, the Tanh inside);
   - `interface.toml`: STANDARDS §3 rule 1's fields, `team`, `hold_ticks = 12`, `tag_radius_m`, `filter_share`, the
     ONNX sha256s, and 8 `[[golden]]` rows per slot (71 inputs, 4 outputs).
-- **Skills route** (`policy_schema = "ste-check-skills-0"`, PROPOSED):
+- **Skills route** (`policy_schema = "ste-check-skills-0"`):
   - per slot `policy_<team>_<slot>.onnx`, input `obs [B, 71]`, output `logits [B, T+1+K_d]`;
   - `interface.toml` additionally carries:
-    - the ordered player list, `team_strategies`, `drone_skills` and `free_index = 0` (`skills.skills_meta`);
+    - the skill lists and `free_index = 0` (`skills.skills_meta`);
     - the leader rule;
     - the hold rule (the choice held 12 ticks, the chosen skill closed loop every tick);
-    - the sha256 of `opponents/scripted.py` and its constants;
+    - the sha256 of `opponents/scripted.py`;
     - the team size;
     - 8 `[[golden]]` rows per slot: the logits, both heads' argmax, the flown skill and the final command on recorded
       observations.
-- **The reload check:** in a fresh Python process, load the ONNX files with onnxruntime (UNVERIFIED in the AirStack
-  container, ARCHITECTURE §3) and the interface. Refuse on a sha256 or schema mismatch. The golden rows must be equal
-  (bit for bit on the CPU, the velocity commands; for the skills route the logits within 1e-6 and the choices, flown
-  skill and command exactly, with the scripts loaded from the pinned `scripted.py`).
+- **Status, required:** `status = "pipeline check, not for flight"` in `interface.toml` and in every ONNX file's
+  metadata (`metadata_props`). The reload refuses a file without it or with another value.
+- **The reload check** runs in a fresh Python process **without onnxruntime** (not installed; ARCHITECTURE §3, line
+  214: whether onnxruntime or torch can run in the AirStack ground container is UNVERIFIED, and this check does not
+  settle it). It uses `onnx.reference.ReferenceEvaluator` (numpy) on the exported ONNX files; `torch.onnx.export` works
+  with the `onnx` package alone (checked, onnx 1.23.2).
+  - It refuses a sha256, schema or status mismatch.
+  - The golden rows: outputs within 1e-6 (absolute; the ONNX evaluator and torch round differently, so not bit for
+    bit), the argmax of each head, the leader's choice, the flown skill and the skill names and lists exactly. For the
+    skills route the final commands come from the pinned `scripted.py`, within 1e-6.
 - **Flight side:** flying the skills route needs a 20 Hz port of the scripts into the game node. That is L7, an
   AirStack change the owner gates; nothing here touches AirStack.
 
-## Open questions for the lead
+## Lead's answers (24 Nov 2026, after two reviewers, no blocking finding)
 
-1. **The skills pool-only control's pilot:** the run-of-record check compares the whole `[learner]` table, `mask_absent`
-   included, so the pool-only skills file needs its own pilot (0.6 GPU-h, in L5.4's cap). A one-line change could leave
-   `mask_absent` out of that comparison (the mask does not change the rates), saving 0.6. Keep strict (proposed), or
-   change it?
-2. **Estimate error:** T44's base game has it off, so the known answers and T44's cells hold (proposed). L1.10's main
-   read used the nominal error (L1.7). Off for the pipeline check?
-3. **Build items before the runs:** the Isaac smoke driver (section 4); `ste/export.py` with the two pipeline-check
-   schemas (section 5); a small reader for the route comparison (section 3, L6.1). Schema names as proposed?
-4. **Tier-2 cross-check of the finals** (PLAN row L6, "tier 1, tier 2"): the tier-2 scoring drivers do not take the
-   skills route yet. Proposed: the pipeline check's tier-2 part is the smoke only, and a tier-2 re-score of the four
-   finals comes from the unallocated hours after the drivers are wired. Agree?
-5. **Machine:** the asks are the laptop's worst case; the RTX 5090 is expected to use about 40 % of them. Run on the
-   5090 on weekdays as usual?
+1. Strict `[learner]` matching kept: L5.4 has its own pilot.
+2. Estimate error off.
+3. Build the Isaac smoke driver, `ste/export.py` and the comparison reader. Schema names `ste-check-velocity-0` and
+   `ste-check-skills-0` accepted.
+4. The smoke is the pipeline check's tier-2 part.
+5. The RTX 5090 on weekdays.

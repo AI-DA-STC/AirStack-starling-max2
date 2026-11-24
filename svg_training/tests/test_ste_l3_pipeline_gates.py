@@ -50,6 +50,7 @@ def test_the_game_is_g0s_with_landing_off_and_the_even_split(gates):
     cfg = exploit.variant_cfg(gates["skills"], "base")
     assert cfg.tag.mode == "nearest_pair_1for1" and cfg.tag.radius_m == 1.6
     assert cfg.landing.enabled is False and cfg.filter.share == "equal"
+    assert cfg.estimate_error.enabled is False                          # lead's answer 2 (24 Nov 2026)
     assert gates["skills"].run["size"] == "3v3"
 
 

@@ -2,8 +2,8 @@ Simulator: training simulator, tier 1 (fast engine; Starling layer: commander co
 
 # 2026-11-24_ste_l26_tier12 record
 
-**DRAFT, not reviewed yet.** This record feeds the P2 and P7 rulings, so R22 asks for two independent reviewers (numbers
-and completeness) before it is read as final.
+Reviewed 24 Nov 2026 by two independent reviewers (numbers: every recomputed figure matched, 2 items; completeness: 3
+MUST and 6 SHOULD), as R22 asks for a record that feeds the P2 and P7 rulings. Their fixes are in `1a44accf`.
 
 ## Purpose
 

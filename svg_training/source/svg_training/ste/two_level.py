@@ -48,6 +48,7 @@ from .skills import FREE
 SKRL_VERSION = "2.1.0"
 # sha256 of inspect.getsource(skrl.multi_agents.torch.ippo.IPPO.update) at 2.1.0, when TwoLevelIPPO.update was copied
 IPPO_UPDATE_SHA256 = "4ca3138eb33b90e13b3cc94fe44781c8da73eaffd5e43a6a0c560d83dc611490"
+SHA_SHOWN_CHARS = 12          # hex characters of a sha256 shown in an error message
 HEAD_NAMES = ("team", "drone")
 
 
@@ -100,7 +101,7 @@ class TwoLevelIPPO(IPPO):
     def __init__(self, *, entropy_scale: dict, **kwargs: Any) -> None:
         if skrl.__version__ != SKRL_VERSION or update_source_sha256() != IPPO_UPDATE_SHA256:
             raise RuntimeError(f"TwoLevelIPPO.update is a copy of skrl {SKRL_VERSION}'s IPPO.update; installed skrl "
-                               f"{skrl.__version__} (update source sha256 {update_source_sha256()[:12]}): re-read the "
+                               f"{skrl.__version__} (update source sha256 {update_source_sha256()[:SHA_SHOWN_CHARS]}): re-read the "
                                f"copy before training")
         scales = tuple(float(entropy_scale[h]) for h in HEAD_NAMES)
         if not all(math.isfinite(s) and s > 0 for s in scales):

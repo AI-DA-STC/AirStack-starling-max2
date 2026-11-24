@@ -450,17 +450,17 @@ committed before the full ceiling run; no number below is chosen after it is see
   less 0.05: it found that choice, or a play that changes with the state and is as good. It no longer means "near
   1,000". The spec's "the easy Strike task" (§3, RUN 0 FAILED) reads "the Strike task against the parked Guard".
 - **The requirement: the untrained team sits below the mark.** The untrained team plays free + strike_straight on
-  every drone: 466 of 1,000, Wilson upper bound 0.497. The mark must be **above 0.497** (k_best ≥ 547). At run time
-  `ctl_untrained_below_mark` checks the point estimate against the mark, unchanged; it needs no change for a mark below
-  0.90 (tests in `tests/test_ste_l3_run0.py`).
-- **If the mark is not above 0.497** (k_best ≤ 546; the script writes `LEAD_RE_PLANS`): the rule sets no mark, no
-  skills run 0 is launched, and the lead re-plans run 0 before any skills run 0. Options include another run 0
-  opponent, or a criterion relative to the best constant choice with an interval rule. The re-plan is recorded here
-  before any run.
+  every drone: 466 of 1,000, Wilson upper bound 0.49699. The mark must be **above that bound**: mark count ≥ 497 of
+  1,000, so k_best ≥ 547. At run time `ctl_untrained_below_mark` checks the point estimate against the mark,
+  unchanged; it needs no change for a mark below 0.90 (tests in `tests/test_ste_l3_run0.py`).
+- **If the mark is not above the bound** (mark count ≤ 496, k_best ≤ 546; the script writes `LEAD_RE_PLANS`): the
+  rule sets no mark, no skills run 0 is launched, and the lead re-plans run 0 before any skills run 0. Options include
+  another run 0 opponent, or a criterion relative to the best constant choice with an interval rule. The re-plan is
+  recorded here before any run.
 - **The number (the lead fills it after the full ceiling run):**
   - best constant choice `____`: k_best = `____` of 1,000 (Wilson `____`–`____`);
   - `skills_reach_min = ____` (mark count `____` of 1,000);
-  - above the untrained team's upper bound 0.497: `____`;
+  - above the untrained team's upper bound 0.49699 (mark count ≥ 497): `____`;
   - ceiling run: `runs/____` (T`__`), device `____`, gate sha256 `____`.
 
   Then the lead writes the value and its comment into `configs/ste_l3/skills_gates.toml` and

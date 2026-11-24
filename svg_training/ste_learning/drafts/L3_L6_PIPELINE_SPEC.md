@@ -87,8 +87,8 @@ the Guard side only: a Guard run needs no run 0 (the Guard recipe is T41's), so 
     game).
   - k_best comes from `scripts/ste_l3_run0_ceiling.py` (CPU of record, 1,000 games, controls: the one-script choices
     replay T44, the choice log, plumbing).
-  - The mark must lie above the untrained team's Wilson upper bound (free + strike_straight, 466 of 1,000: 0.497),
-    else the lead re-plans run 0 and no skills run 0 is launched.
+  - The mark must lie above the untrained team's Wilson upper bound (free + strike_straight, 466 of 1,000: 0.49699;
+    mark count ≥ 497 of 1,000, so k_best ≥ 547), else the lead re-plans run 0 and no skills run 0 is launched.
   - The number: `____` (the lead fills it after the full run, in both skills gate files, before any skills run 0).
   - Full text: [L3_SLICE2_DESIGN.md](L3_SLICE2_DESIGN.md), "Addendum, 25 Nov 2026".
 - **The fill step** (each file's header): the fill rule of section 2b.

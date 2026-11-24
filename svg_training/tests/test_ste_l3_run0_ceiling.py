@@ -190,3 +190,10 @@ def test_a_failed_control_publishes_nothing_exit_6(tmp_path, monkeypatch, gates)
     assert not (out / "results.json").exists()
     controls = json.loads((out / "controls.json").read_text())
     assert controls["ctl_one_script_choices_are_reference"]["status"] == "FAIL"
+
+
+def test_only_a_cpu_run_on_the_1000_evaluation_games_is_of_record():
+    """Addendum of 25 Nov 2026: the device of record is the CPU (it replays T44 exactly; CUDA only within tolerance)."""
+    assert ceiling.of_record(1000, "cpu") is True
+    assert ceiling.of_record(1000, "cuda") is False and ceiling.of_record(1000, "cuda:0") is False
+    assert ceiling.of_record(999, "cpu") is False

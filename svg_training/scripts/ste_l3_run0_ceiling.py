@@ -28,7 +28,8 @@ each player once per drone that flies it per game); and the plumbing controls (p
 non-finite action) of every batch.
 
 Writes <out>/controls.json, results.json (per choice: reaches k of n with the Wilson 95 % interval, holds, unfinished;
-the best; the untrained team; the mark rule's numbers; ``complete`` last) and results.md. Exit codes: 0 done; 2 refused
+the best; the untrained team; the mark rule's numbers; ``of_record``, true only for 1,000 games on the CPU, the device
+of record; ``complete`` last) and results.md. Exit codes: 0 done; 2 refused
 (bad arguments, a finished folder, a gate file that is not the two-level skills route, an input off its pin); 5 a
 non-finite action; 6 a control failed. Launched through scripts/ste_job.py (it records exit_code). Training simulator,
 tier 1: results are "observed in the training simulator"; a pipeline check, not for flight."""
@@ -199,6 +200,12 @@ def mark_rule(k_best: int, k_untrained: int, n: int, margin: float) -> dict:
             "status": MARK_SET if above else LEAD_RE_PLANS}
 
 
+def of_record(n: int, device: str) -> bool:
+    """The ceiling of record (addendum of 25 Nov 2026): run 0's 1,000 evaluation games on the CPU (the device of record:
+    it replays T44 exactly; a CUDA run agrees only within the CUDA tolerance and is INFO)."""
+    return bool(int(n) == exploit.SKILLS_RUN0_EVAL_GAMES and str(device) == "cpu")
+
+
 def row(c: dict, cell: dict, n: int) -> dict:
     outcome = np.asarray(cell["outcome"])
     k = int(np.sum(outcome == exploit.STRIKE_WIN))
@@ -262,7 +269,7 @@ def main(argv: list[str] | None = None) -> int:
               "ticks_cap": int(gates.run["ticks_cap"]), "device": a.device, "chunk": chunk,
               "gates_file": str(a.gates), "gates_sha256": gates.sha256, "reference_sha256": gates.reference["sha256"],
               "learner": skills.learner_table(gates.learner),
-              "of_record": bool(n == exploit.SKILLS_RUN0_EVAL_GAMES),
+              "of_record": of_record(n, a.device),
               "current_mark": gates.run0.get("skills_reach_min"),
               "controls": controls, "choices": rows,
               "best": {k: best[k] for k in ("name", "flies", "k", "n", "rate", "ci")},

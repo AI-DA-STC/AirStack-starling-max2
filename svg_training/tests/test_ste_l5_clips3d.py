@@ -111,8 +111,10 @@ def test_the_rule_on_the_driver_runs(pooled_runs):  # noqa: F811
                 assert k == worst["cell_index"] and g == int(np.flatnonzero(cell == cli.won_code(side))[0])
             elif p["pick"] == "worst_lost":
                 assert k == worst["cell_index"] and g == int(np.flatnonzero(cell == cli.lost_code(side))[0])
-            else:
+            elif p["pick"] == "most_met":
                 assert p["opponent"] == meet["most"] != worst["opponent"]
+            else:
+                assert p["pick"].startswith("next_worst_") and k != worst["cell_index"] and len(picks) <= 2
         assert len({p["global_index"] for p in picks}) == len(picks)
         assert not [p for p in cli.pick_games(d, rows, worst, worst["opponent"]) if p["pick"] == "most_met"]
 
@@ -181,3 +183,122 @@ def test_a_cuda_record_is_not_replayed_on_the_cpu(pooled_runs, tmp_path, monkeyp
     monkeypatch.setattr(torch.cuda, "is_available", lambda: False)
     with pytest.raises(cli.Refused, match="CUDA"):
         cli.capture(d, cli.plan(d)["picks"], tmp_path / "o", "test")
+
+
+# ========================================================================================= fix round (lead, 25 Nov)
+def test_gif_ticks_compress_a_long_game_and_keep_its_first_and_last_tick():
+    for frames in (52, 149, 130, 131, 2401, 1777):
+        step, keep = cli.gif_ticks(frames, 20, 150)
+        assert keep[0] == 0 and keep[-1] == frames - 1 and len(keep) + 20 <= 150
+        assert keep == sorted(set(keep)) and all(b - a <= step for a, b in zip(keep, keep[1:]))
+        assert (step == 1) == (frames <= 130)
+    assert cli.gif_ticks(2401, 20, 150)[0] >= 19
+
+
+def _fake_d(outcomes_by_cell, side="guard"):
+    n = len(outcomes_by_cell[0])
+    gates = argparse.Namespace(run={"eval_games": n})
+    return {"side": side, "info": {"outcome": np.concatenate([np.asarray(c, np.int8) for c in outcomes_by_cell])},
+            "gates": gates}
+
+
+def test_fewer_than_two_games_take_the_next_worst_cell():
+    won, lost = cli.won_code("guard"), cli.lost_code("guard")
+    d = _fake_d([[lost, lost, lost], [won, lost, won], [lost, won, won]])
+    rows = [{"cell_index": k, "opponent": f"o{k}", "rate": r, "z_up_info": False}
+            for k, r in enumerate((0.0, 2 / 3, 2 / 3))]
+    worst = cli.worst_cell(rows)
+    picks = cli.pick_games(d, rows, worst, worst["opponent"])          # most met = the worst cell's opponent
+    assert [p["pick"] for p in picks] == ["worst_lost", "next_worst_won"]
+    assert (picks[1]["cell_index"], picks[1]["game_index"]) == (1, 0)    # next worst by rate, then cell order
+    d = _fake_d([[won, won, won], [won, lost, won], [lost, lost, won]])  # only wins in the worst cell: a loss next
+    rows = [{"cell_index": k, "opponent": f"o{k}", "rate": r, "z_up_info": z}
+            for k, (r, z) in enumerate(((1.0, False), (2 / 3, True), (1 / 3, False)))]
+    worst = cli.worst_cell(rows)
+    assert worst["cell_index"] == 2
+    d = _fake_d([[won, won, won], [won, lost, won], [won, won, won]])
+    rows = [{"cell_index": k, "opponent": f"o{k}", "rate": r, "z_up_info": z}
+            for k, (r, z) in enumerate(((1.0, False), (2 / 3, True), (1.0, False)))]
+    worst = cli.worst_cell(rows)                                          # cell 0 (z_up_info cell 1 left out)
+    picks = cli.pick_games(d, rows, worst, worst["opponent"])
+    assert [p["pick"] for p in picks] == ["worst_won", "next_worst_lost"] and picks[1]["cell_index"] == 1
+    assert "(3) Fewer than two games" in cli.RULE
+
+
+def test_the_ask_scales_with_the_ticks_to_render(pooled_runs):  # noqa: F811
+    d = cli.load_run(pooled_runs["guard"][1])
+    p = cli.plan(d)
+    e = p["estimate"]
+    assert e["ticks_to_render"] == sum(int(d["info"]["end_step"][x["global_index"]]) + 1 for x in p["picks"])
+    longer = [dict(x) for x in p["picks"]]
+    d["info"] = dict(d["info"], end_step=d["info"]["end_step"] + 2000)
+    e2 = cli.estimate(d, longer)
+    assert e2["ticks_to_render"] == e["ticks_to_render"] + 2000 * len(longer) and e2["ask_gpu_h"] > e["ask_gpu_h"]
+
+
+def _long_traj(tmp_path, end=400):
+    from svg_training.core.rewards import STRIKE_WIN
+    t = end + 1
+    pos = np.zeros((t, 6, 3), np.float32)
+    pos[:, :, 2] = 1.2
+    pos[:, :, 0] = np.linspace(-2, 2, 6)[None]
+    pos[:, 3:, 1] = np.linspace(2.5, 0.0, t)[:, None]
+    alive = np.ones((t, 6), bool)
+    alive[200:, 0] = False
+    tr = r3.Trajectory(pos, np.zeros((t, 6), np.float32), alive, 3, 3, 3.25, 0.25, (0.5, 1.8), np.zeros(2), 1.6, 1.6,
+                       STRIKE_WIN, end,
+                       {"kind": "l5_trained", "task": "L5.1", "route": "velocity", "side": "strike", "variant": "base",
+                        "pick": "worst_won", "guard": "guard_field", "strike": "trained Strike team",
+                        "game_index": 8, "tags": 1})
+    return r3.save_trajectory(tmp_path / "trajectories" / "long", tr)
+
+
+def test_a_long_game_keeps_every_tick_in_the_mp4_and_a_time_compressed_gif(tmp_path, small_settings):
+    import imageio.v2 as imageio
+    p = _long_traj(tmp_path)
+    work = tmp_path / "work"
+    a = argparse.Namespace(work=str(work), settings=small_settings, stills=False, replay=[str(p)], arena_frame=None,
+                           encode=False, smoke=False)
+    assert m3.render(a, FakeIsaac()) == 0
+    out = tmp_path / "out"
+    out.mkdir()
+    enc = cli.encode_clips(out, work, small_settings)["long"]
+    hold = 20
+    for cam in ("top", "3d"):
+        f = enc["files"][cam]
+        assert "mp4_error" not in f and "gif_error" not in f, f
+        assert sum(1 for _ in imageio.get_reader(str(out / f["mp4"]))) == 401 + hold == f["mp4_frames"]
+        g = f["gif"]
+        step, keep = cli.gif_ticks(401, hold, cli.GIF_FRAME_CAPS[0])
+        assert g["tick_step"] == step > 1 and g["frames"] == len(keep) + hold <= cli.GIF_FRAME_CAPS[0]
+        assert g["speed_x"] == 0.5 * step and f"{0.5 * step:g}x real time" in g["caption"]
+        assert sum(1 for _ in imageio.get_reader(str(out / g["file"]))) == g["frames"]
+        assert g["mb"] <= 5.0
+
+
+def test_a_gif_that_fails_keeps_the_mp4_and_the_other_clips(pooled_runs, tmp_path, fake_render, small_settings,  # noqa: F811
+                                                            monkeypatch):
+    run = _copy(pooled_runs["guard"][1], tmp_path)
+    calls = []
+
+    def no_fit(frames, path, fps, max_mb):
+        calls.append(path.name)
+        return None if path.name == calls[0] else real(frames, path, fps, max_mb)
+    real = cli.fit_gif
+    monkeypatch.setattr(cli, "fit_gif", no_fit)
+    out = tmp_path / "out"
+    assert cli.main(["--run-dir", str(run), "--out", str(out), "--settings", small_settings]) == 0
+    rep = json.loads((out / "clips3d.json").read_text())
+    assert rep["complete"] and len(rep["clip_failures"]) == 1 and "gif_error" in rep["clip_failures"][0]
+    first = rep["picks"][0]["files"]["top"]
+    assert "gif_error" in first and (out / first["mp4"]).is_file()
+    assert rep["clips_made"] == 4 * len(rep["picks"]) - 1
+
+    def boom(*a, **k):
+        raise RuntimeError("encoder down")
+    monkeypatch.setattr(cli, "fit_gif", lambda *a, **k: None)
+    monkeypatch.setattr(cli, "stream_mp4", boom)
+    out2 = tmp_path / "out2"
+    assert cli.main(["--run-dir", str(run), "--out", str(out2), "--settings", small_settings]) == 3
+    rep = json.loads((out2 / "clips3d.json").read_text())
+    assert rep["clips_made"] == 0 and rep["clip_failures"]

@@ -64,7 +64,7 @@ def test_the_skills_route_is_r30s_with_its_run0_mark(gates):
         assert g.learner.choice == skills.TWO_LEVEL and g.learner.entropy_scale == {"team": 0.01, "drone": 0.01}
         assert g.learner.drone_skills["strike"][0] == exploit.SKILLS_RUN0_FIRST_STRIKE_SKILL
         assert list(g.learner.drone_skills["guard"]) == ["guard_parked_centre", "guard_mark_edge", "guard_mirror"]
-        assert g.run0["skills_reach_min"] == 0.90 and g.run0["opponent"] == "guard_parked_centre"
+        assert g.run0["skills_reach_min"] == 0.554 and g.run0["opponent"] == "guard_parked_centre"
     assert "skills_reach_min" not in gates["velocity"].run0
     assert "SUM of the two per-head KLs" in FILES["skills"].read_text()
 

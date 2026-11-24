@@ -119,9 +119,12 @@ opponent = "guard_parked_centre"
 script = "strike_straight"
 margin = 0.05                      # the velocity route's criterion (L0.12's): scripted strike_straight's reach - 0.05
 train_seed = 140203                # its own: not the scoring starts' 110000, curve_seed, clip_seed or a run's train_seed
-skills_reach_min = 0.90            # the skills route's run 0 mark (lead's call 24 Nov 2026): reach >= 900 of 1,000 v the
-#   parked Guard at the FINAL checkpoint; the untrained team (free + strike_straight) reaches about 466 (T70), a
-#   learner that picks high or low near 1,000 (T44 / T70); FAIL never overridden; skills Strike runs launch on PASS only
+skills_reach_min = 0.554           # the skills route's run 0 mark, re-set 25 Nov 2026 (was 0.90, from the 1v1 screen T66):
+#   reach >= 554 of 1,000 v the parked Guard at the FINAL checkpoint = the best constant choice's reaches less 0.05 x
+#   1,000 (free:strike_low+strike_low+strike_straight 604 of 1,000; CPU ceiling of record runs/2026-11-25_ste_l3_run0_ceiling,
+#   oracle check PASS); above the untrained team's (free + strike_straight, 466 of 1,000, T70) Wilson upper bound 0.497.
+#   Rule: ste_learning/drafts/L3_SLICE2_DESIGN.md "Addendum, 25 Nov 2026". FAIL never overridden; skills Strike runs
+#   launch on PASS only
 
 [pool]
 # Both routes train against every script of the other team except random, one drawn per game (lead's answers 2-3 of

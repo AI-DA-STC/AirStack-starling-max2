@@ -176,3 +176,30 @@ class SkrlPolicyStrategy:
         if bool(self._bad):
             raise ValueError(f"{self.name}: the networks produced non-finite actions (NaN or inf); a diverged "
                              f"stand-in is not scored")
+
+
+# ------------------------------------------------------------------ STE phase L3, first slice (B8): the mixed route
+# Added at the end of the module so that the line numbers cited elsewhere (the L3 design note v2) still hold.
+from skrl.models.torch import CategoricalMixin  # noqa: E402
+
+
+class SkillPolicy(CategoricalMixin, Model):
+    """Categorical policy of the mixed route: obs [B, OBS_DIM] (already scaled) -> logits [B, K] over the team's K
+    skills (``ste/skills.py``). The same MLP as ``StandinPolicy`` (Linear + ELU per hidden size) with a K-wide linear
+    output and no Tanh; ``net`` is what scoring calls (argmax of the logits)."""
+
+    def __init__(self, hidden: list[int], skills: int, device) -> None:
+        Model.__init__(self, observation_space=OBS_SPACE, action_space=gymnasium.spaces.Discrete(int(skills)),
+                       device=device)
+        CategoricalMixin.__init__(self, unnormalized_log_prob=True)
+        self.net = _mlp(list(hidden), int(skills))
+
+    def compute(self, inputs, role=""):
+        return self.net(inputs["observations"]), {}
+
+
+def make_skill_models(names: list[str], hidden: list[int], skills: int, device) -> dict[str, dict[str, Model]]:
+    """{agent name: {"policy": SkillPolicy, "value": StandinValue}}: separate networks per name (IPPO), as
+    ``make_models`` for the velocity route."""
+    return {a: {"policy": SkillPolicy(hidden, skills, device).to(device),
+                "value": StandinValue(hidden, device).to(device)} for a in names}

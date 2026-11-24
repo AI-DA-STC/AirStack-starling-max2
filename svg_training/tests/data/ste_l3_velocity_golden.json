@@ -1,4 +1,5 @@
 {
+ "_capability": "AVX512",
  "_how": "recorded from 850d4967 (development, before the L3 slice) on CPU capability AVX512",
  "guard": {
   "decimal": {

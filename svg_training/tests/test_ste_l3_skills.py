@@ -300,6 +300,22 @@ def test_the_training_path_and_the_scoring_path_play_the_same_games(gates, ref, 
     assert end.tolist() == pg["end_step"].tolist()
 
 
+def test_a_skill_index_stored_as_float_scores_the_same_log_probability():
+    """skrl's memory stores actions as float32; the PPO step scores the stored index again (``taken_actions``): a
+    scrambled categorical policy must give the same log-probability for the float copy as for the sampled long index."""
+    from svg_training.opponents.learned import SkillPolicy
+    torch.manual_seed(0)
+    pol = SkillPolicy([16, 16], 6, "cpu")
+    with torch.no_grad():
+        for p in pol.parameters():
+            p.normal_(0.0, 1.0)
+    obs = torch.randn(50, OBS_DIM)
+    act, out = pol.act({"observations": obs}, role="policy")
+    _, again = pol.act({"observations": obs, "taken_actions": act.float()}, role="policy")
+    assert act.unique().numel() > 1, "one index only: the test cannot see a mix-up"
+    assert torch.equal(out["log_prob"], again["log_prob"])
+
+
 # ------------------------------------------------------------------------------------------------ test 3: save, reload
 CHILD = textwrap.dedent("""
     import sys, torch

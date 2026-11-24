@@ -7,9 +7,10 @@ the losses, sums of every agent's policy, value and observation-scaler tensors a
 ``Learner.team()`` on fixed observations. This file imports only names that existed at 850d4967, so the same code records
 from the old tree and checks the new one.
 
-Whole numbers (games ended, reaches, stale ticks) are compared exactly; decimal numbers within ``RTOL``/``ATOL``: PyTorch
-CPU kernels differ in the last bits by CPU capability (tests/test_game_tag_off_golden.py, measured 21 and 23 Nov 2026),
-and two PPO updates carry such bits forward. The bit-for-bit check of the switch itself (no ``[learner]`` table against
+Whole numbers (games ended, reaches, stale ticks) are compared exactly. Decimal numbers are compared exactly on the
+recording's CPU capability (``_capability``, AVX512: repeated equal there) and within ``RTOL``/``ATOL`` on any other:
+PyTorch CPU kernels differ in the last bits by CPU capability (tests/test_game_tag_off_golden.py, measured 21 and 23 Nov
+2026), and two PPO updates carry such bits forward (passes under ATEN_CPU_CAPABILITY avx2 and default, 24 Nov 2026). The bit-for-bit check of the switch itself (no ``[learner]`` table against
 ``action = "velocity"``) is in tests/test_ste_l3_skills.py.
 
 Record (from a tree of the commit before the slice; the archive goes outside the repository):
@@ -76,16 +77,21 @@ SIDES = ("guard", "strike")
 
 @pytest.mark.parametrize("side", SIDES)
 def test_the_velocity_route_trains_as_before_the_l3_slice(side):
-    record = json.loads(GOLDEN.read_text())[side]
+    data = json.loads(GOLDEN.read_text())
+    record = data[side]
     now = golden_values(side)
     assert now["whole"] == record["whole"]
     assert set(now["decimal"]) == set(record["decimal"])
+    if torch.backends.cpu.get_cpu_capability() == data["_capability"]:
+        assert now["decimal"] == record["decimal"]                      # bit for bit on the recording's capability
+        return
     for k, v in record["decimal"].items():
         assert now["decimal"][k] == pytest.approx(v, rel=RTOL, abs=ATOL), k
 
 
 if __name__ == "__main__" and "--write-golden" in sys.argv:
     data = {side: golden_values(side) for side in SIDES}
+    data["_capability"] = torch.backends.cpu.get_cpu_capability()
     data["_how"] = ("recorded from 850d4967 (development, before the L3 slice) on CPU capability "
                     f"{torch.backends.cpu.get_cpu_capability()}")
     GOLDEN.write_text(json.dumps(data, indent=1, sort_keys=True) + "\n")

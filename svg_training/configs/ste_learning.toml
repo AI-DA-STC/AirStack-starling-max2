@@ -71,3 +71,28 @@ phase_cap_gpu_h = 13.0   # FIXED (owner, G0, 22 Nov 2026): GPU-hour cap of L1 an
 "L1.15" = 0.2            # PROPOSED (lowered to 0.2 (23 Nov 2026, announced to the owner: L1.10's runs need 1.7 at the time rule; used 0.154, T61), 0.1 moved to L1.10; added 22 Nov 2026 by the L1 side-track spec addendum 3, 0.3 from L1.10; expected about 0.2): the delay check, T55, T54 and guard_field v strike_straight scored at response delay 0 and 0.30 s (scoring only)
 "L2.5" = 0.5             # PROPOSED (24 Nov 2026, the L2.5 builder for the lead to keep or drop: the task row's 0.5 GPU-h, WORK_BREAKDOWN L2.5; its screen runs on the CPU and asks 0, spec ste_learning/drafts/L2_5_SPEC.md): Parked-Guard control and scripted opponents under the new rules
 "L2.6" = 1.5             # PROPOSED (24 Nov 2026, the L2.6 builder for the lead to keep or drop: the task row's 1.5 GPU-h, WORK_BREAKDOWN L2.6; expected about 0.5, worst case of its protected groups 1.16 h, spec ste_learning/drafts/L2_6_SPEC.md): Scripted games, tier 1 against tier 2, new rules
+
+# The L3-L6 pipeline check (owner, 24 Nov 2026, R23 and R27): one cap of 20 GPU-h for learner pilots, the scoring suite,
+# one short seed per route and side, scoring and export with a reload check; not a training budget of record. The task
+# split is the builder's for the lead (ste_learning/drafts/L3_L6_PIPELINE_SPEC.md section 1, projections from T46, T67,
+# T71), so each task line is PROPOSED; the caps add up to 11.4 GPU-h, the rest stays unallocated (a re-run or an added
+# read is announced with its hours). L1 stays the phase in work; a launch is checked against this section.
+[budget_l3_l4_l5_l6]
+phases = ["L3", "L4", "L5", "L6"]   # FIXED (owner, R23 and R27, 24 Nov 2026): one GPU-hour cap covers the L3-L6 pipeline check
+closed = false           # FIXED (owner, R23, 24 Nov 2026): the pipeline check is approved; nothing launched yet
+phase_cap_gpu_h = 20.0   # FIXED (owner, R23, 24 Nov 2026): GPU-hour cap of the L3-L6 pipeline check (PLAN.md section 9)
+
+[budget_l3_l4_l5_l6.task_cap_gpu_h]
+"L3.1" = 0.3             # PROPOSED (spec section 1 and 4; T71's Isaac smoke used 0.085): Isaac smoke of the tier-2 skills fixed-choice replay
+"L3.2" = 0.4             # PROPOSED (spec section 1; L0.12's pilot used 0.18 on the laptop): velocity pilot (rates, Strike probes, timing)
+"L3.3" = 0.6             # PROPOSED (spec section 1; the velocity pilot x 1.5 for the skills dispatch and the pool): skills pilot
+"L3.4" = 1.0             # PROPOSED (spec section 1; the run's ask, T67's run 0 used 0.031 at its first PASS): velocity run 0 v the parked Guard
+"L3.5" = 1.5             # PROPOSED (spec section 1; the full budget, decided at the final checkpoint): skills run 0 v the parked Guard
+"L4.1" = 0.0             # PROPOSED (spec section 1; CPU): held-command arm, every script held 12 ticks v closed loop
+"L4.2" = 0.0             # PROPOSED (spec section 1; CPU): scoring-suite check on known players (pooled row, best single choice, choice share)
+"L5.1" = 1.8             # PROPOSED (spec section 1; Guard used about 0.6 + Strike asks 1.0): velocity route, pool and mask, both sides
+"L5.2" = 2.6             # PROPOSED (spec section 1; Guard used about 0.9 + Strike asks 1.5): skills route, pool and mask, both sides
+"L5.3" = 1.0             # PROPOSED (spec section 1; the Guard run's ask): velocity route, pool only (attribution control), Guard side
+"L5.4" = 2.1             # PROPOSED (spec section 1; its own skills pilot 0.6 + the Guard run's ask 1.5): skills route, pool only, Guard side
+"L6.1" = 0.0             # PROPOSED (spec section 1; CPU): the per-route reads and the route comparison (INFO)
+"L6.2" = 0.1             # PROPOSED (spec section 1; CPU, a GPU reload check at most): export and reload check of both routes

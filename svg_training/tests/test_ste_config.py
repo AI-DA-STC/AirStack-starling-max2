@@ -40,6 +40,11 @@ L1_TASK_CAP_GPU_H = {"L1.0": 0.5, "L1.1": 0.4, "L1.2": 0.0, "L1.3": 0.0, "L1.4":
 # their caps from the lead. 24 Nov 2026 (L2.6 builder, for the lead to keep or drop): L2.6 with the task row's 1.5 GPU-h
 # (WORK_BREAKDOWN L2.6; spec ste_learning/drafts/L2_6_SPEC.md), so that its run can be launched through scripts/ste_job.py.
 L2_TASK_CAP_GPU_H = {"L2.5": 0.5, "L2.6": 1.5}
+# The L3-L6 pipeline check (owner, 24 Nov 2026, R23: cap 20 GPU-h, FIXED); the task split is the builder's for the lead
+# (spec ste_learning/drafts/L3_L6_PIPELINE_SPEC.md section 1), each PROPOSED; the caps add up to 11.4, the rest unallocated.
+L3_L6_CAP_GPU_H = 20.0
+L3_L6_TASK_CAP_GPU_H = {"L3.1": 0.3, "L3.2": 0.4, "L3.3": 0.6, "L3.4": 1.0, "L3.5": 1.5, "L4.1": 0.0, "L4.2": 0.0,
+                        "L5.1": 1.8, "L5.2": 2.6, "L5.3": 1.0, "L5.4": 2.1, "L6.1": 0.0, "L6.2": 0.1}
 
 GOOD = SETTINGS_FILE.read_text()
 
@@ -82,7 +87,7 @@ def test_committed_file_loads_with_the_plans_numbers():
 
 def test_l01_holds_process_settings_only():
     """No game section here (L0.8 created configs/ste_game.toml; L0.9 added [tag] there)."""
-    assert set(tomllib.loads(GOOD)) == {"track", "budget", "budget_l1_l2"}
+    assert set(tomllib.loads(GOOD)) == {"track", "budget", "budget_l1_l2", "budget_l3_l4_l5_l6"}
     assert [f.name for f in dataclasses.fields(SteLearningCfg)] == ["track", "budget", "later_budgets"]
 
 
@@ -90,7 +95,7 @@ def test_the_l1_and_l2_budget_of_gate_g0():
     """[budget_l1_l2]: one cap for phases L1 and L2 together (13 GPU-h, owner, G0, 22 Nov 2026) and the L1 task caps in
     the lead's order; the phase in work, L1, takes its caps from it. L0's caps stay loadable and launchable."""
     cfg, _ = load_ste_learning()
-    (later,) = cfg.later_budgets
+    later = cfg.later_budgets[0]
     assert later == BudgetCfg(section="budget_l1_l2", phases=("L1", "L2"), closed=False, phase_cap_gpu_h=L1_L2_CAP_GPU_H,
                               task_cap_gpu_h=tuple({**L1_TASK_CAP_GPU_H, **L2_TASK_CAP_GPU_H}.items()))
     assert type(later.phase_cap_gpu_h) is float and all(type(cap) is float for _, cap in later.task_cap_gpu_h)
@@ -99,7 +104,7 @@ def test_the_l1_and_l2_budget_of_gate_g0():
     assert later.task_caps_total_gpu_h() == 11.1 <= later.phase_cap_gpu_h   # in decimal (L1 9.1 + L2.5 0.5 + L2.6 1.5)
     assert cfg.budget_of("L2.6") is later and cfg.cap_gpu_h("L2.6") == 1.5 and phase_of("L2.6") == "L2"
     assert cfg.budget_of("L2.5") is later and cfg.cap_gpu_h("L2.5") == 0.5 and phase_of("L2.5") == "L2"
-    assert cfg.budget_in_work() is later and cfg.budgets() == (cfg.budget, later)
+    assert cfg.budget_in_work() is later and cfg.budgets() == (cfg.budget, later, cfg.later_budgets[1])
     assert cfg.budget_of("L1.9") is later and cfg.budget_of("L0.12") is cfg.budget
     assert cfg.cap_gpu_h("L1.9") == 1.6 and cfg.cap_gpu_h("L1.3") == 0.0 and cfg.cap_gpu_h("L0.12") == 13.0
     assert cfg.budget.cap_gpu_h("L0.11") == 0.5                                 # L0's caps stay readable
@@ -371,8 +376,8 @@ def test_missing_section_key_or_task_raises(tmp_path):
 
 
 def test_unknown_phase_raises(tmp_path):
-    with pytest.raises(ValueError, match=r"track\.phase.*L3"):
-        load_ste_learning(changed(tmp_path, 'phase = "L1"', 'phase = "L3"'))
+    with pytest.raises(ValueError, match=r"track\.phase.*L9"):            # L3-L6 are known since the pipeline check
+        load_ste_learning(changed(tmp_path, 'phase = "L1"', 'phase = "L9"'))
     with pytest.raises(ValueError, match=r"phase in work.*L0.*\[budget\].*closed"):
         load_ste_learning(changed(tmp_path, 'phase = "L1"', 'phase = "L0"'))     # a closed phase cannot be in work
 
@@ -381,8 +386,8 @@ def test_unknown_phase_raises(tmp_path):
     ("closed = true", "closed = 1", r"budget\.closed.*yes/no"),
     ("closed = true", 'closed = "true"', r"budget\.closed.*yes/no"),
     ("closed = true", "# closed removed", r"missing key.*\[budget\].*closed"),
-    ("closed = false", "closed = 0", r"budget_l1_l2\.closed.*yes/no"),
-    ("closed = false", "# closed removed", r"missing key.*\[budget_l1_l2\].*closed"),
+    ("closed = false           # FIXED (owner, G0, 22 Nov 2026): L1 and L2 approved", "closed = 0 # L1 and L2 approved", r"budget_l1_l2\.closed.*yes/no"),
+    ("closed = false           # FIXED (owner, G0, 22 Nov 2026): L1 and L2 approved", "# closed removed", r"missing key.*\[budget_l1_l2\].*closed"),
 ])
 def test_every_budget_section_says_whether_it_is_closed(tmp_path, old, new, match):
     with pytest.raises(ValueError, match=match):
@@ -506,7 +511,8 @@ def leaves(table: dict) -> int:
 
 def test_every_value_line_carries_a_status_label_and_source():
     lines = value_lines(GOOD)
-    assert len(lines) == leaves(tomllib.loads(GOOD)) == 4 + len(L0_TASK_CAP_GPU_H) + 3 + len(L1_TASK_CAP_GPU_H) + len(L2_TASK_CAP_GPU_H)
+    assert len(lines) == leaves(tomllib.loads(GOOD)) == (4 + len(L0_TASK_CAP_GPU_H) + 3 + len(L1_TASK_CAP_GPU_H)
+                                                        + len(L2_TASK_CAP_GPU_H) + 3 + len(L3_L6_TASK_CAP_GPU_H))
     assert unlabelled(GOOD) == []
 
 
@@ -577,3 +583,18 @@ def test_package_imports_on_the_cpu_without_torch_or_isaac():
                          env={"PYTHONPATH": str(ROOT / "source"), "CUDA_VISIBLE_DEVICES": ""})
     assert run.returncode == 0, run.stderr
     assert run.stdout.strip() == "[]"
+
+
+def test_the_l3_to_l6_pipeline_check_budget():
+    """[budget_l3_l4_l5_l6]: one cap of 20 GPU-h for the L3-L6 pipeline check (owner, R23, 24 Nov 2026), the task caps in
+    the spec's order (ste_learning/drafts/L3_L6_PIPELINE_SPEC.md section 1), adding up to at most the cap; L1 stays the
+    phase in work, and an L3-L6 task takes its cap from this section."""
+    cfg, _ = load_ste_learning()
+    pipe = cfg.later_budgets[1]
+    assert pipe == BudgetCfg(section="budget_l3_l4_l5_l6", phases=("L3", "L4", "L5", "L6"), closed=False,
+                             phase_cap_gpu_h=L3_L6_CAP_GPU_H, task_cap_gpu_h=tuple(L3_L6_TASK_CAP_GPU_H.items()))
+    assert tuple(L3_L6_TASK_CAP_GPU_H) == TASK_IDS["L3"] + TASK_IDS["L4"] + TASK_IDS["L5"] + TASK_IDS["L6"]
+    assert pipe.task_caps_total_gpu_h() == 11.4 <= pipe.phase_cap_gpu_h
+    assert cfg.budget_of("L5.2") is pipe and cfg.cap_gpu_h("L5.2") == 2.6 and phase_of("L5.2") == "L5"
+    assert cfg.budget_of("L3.1") is pipe and phase_of("L6.2") == "L6"
+    assert cfg.track.phase == "L1" and cfg.budget_in_work().section == "budget_l1_l2"

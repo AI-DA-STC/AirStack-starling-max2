@@ -40,6 +40,11 @@ TASK_IDS: dict[str, tuple[str, ...]] = {
     "L1": ("L1.0", "L1.1", "L1.2", "L1.3", "L1.4", "L1.5", "L1.6", "L1.7", "L1.8", "L1.9", "L1.10", "L1.11", "L1.12",
            "L1.13", "L1.14", "L1.15"),
     "L2": ("L2.5", "L2.6"),   # L2.5 first (24 Nov 2026, its CPU screen), then L2.6; the other L2 IDs arrive with their caps
+    # The L3-L6 pipeline check (owner, R23, 24 Nov 2026; spec ste_learning/drafts/L3_L6_PIPELINE_SPEC.md section 1)
+    "L3": ("L3.1", "L3.2", "L3.3", "L3.4", "L3.5"),
+    "L4": ("L4.1", "L4.2"),
+    "L5": ("L5.1", "L5.2", "L5.3", "L5.4"),
+    "L6": ("L6.1", "L6.2"),
 }
 BUDGET_PHASES: tuple[str, ...] = ("L0",)    # the phases [budget] covers (its first name, kept for the L0 tools)
 _FIRST_BUDGET = "budget"

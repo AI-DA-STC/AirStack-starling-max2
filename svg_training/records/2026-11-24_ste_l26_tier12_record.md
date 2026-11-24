@@ -138,7 +138,7 @@ tier-1 to tier-2 gap is largest there and in the one height script (strike_low).
 cell: tier 1's vertical response is not fitted, and tier 1 carries a lumped 0.1482 s setpoint delay where tier 2 has
 none. At 1.15 m the 0.5–1.8 m height band allows passes under or over the tag radius (spec). The tier-1 clip below shows
 a strike_low drone flying at about 0.6 m under a Guard drone at 1.2 m and reaching the zone. It is the only evidence of
-a pass under in this run: there is no tier-2 clip (Clips). That the 0.117 gap comes from passes under is likely; passes are
+a pass under in this run; the tier-2 clip of the same game (added 25 Nov 2026, Clips) also ends in a reach. That the 0.117 gap comes from passes under is likely; passes are
 not counted.
 
 **Reading 3, same-outcome share (no word):** 0.87–1.00 per cell. Tier 2's own copy agreement in the same batch is
@@ -170,7 +170,7 @@ No pair has the tiers disagreeing on a direction.
 - **Why it matters:** for scripted play, tier 1 agrees with tier 2 at 1.6 m and at 1.15 m without option B. For a
   trained team, or for option B at 1.15 m, that is not shown, and a tier-2 check is needed there.
 
-Clips: tier 1 only; tier 2 pending (Clips, below).
+Clips: tier 1 and tier 2 of the same games (Clips, below).
 
 ![tier 1, landing + option B at 1.15 m, mark_edge v low, game 0: the Strike team reaches under a Guard drone](evidence/2026-11-24_ste_l26_tier12/clips/l26_landing_gy_1p15_guard_mark_edge_v_strike_low_tier1_game0_reach.gif)
 
@@ -251,8 +251,23 @@ The spec's follow-up render (lead's decision), with `scripts/ste_l26_clips.py --
 | mark_edge v low | `l26_landing_gy_1p15_guard_mark_edge_v_strike_low_tier1_game0_reach.gif` (reach at 3.6 s, under a Guard drone) | `…_strike_low_tier1_game2_hold.gif` (2.5 s) |
 | mark_edge v straight | `…_strike_straight_tier1_game0_reach.gif` (2.9 s) | `…_strike_straight_tier1_game2_hold.gif` (1.9 s) |
 
-**Tier 2 clips: pending** until CLIP-T2 reports on the Isaac clip path (above). 3-D Isaac clips: pending (VID-1). The
-tier-1 reach-under clip therefore stands alone as the evidence of a pass under.
+**Tier 2 clips (added 25 Nov 2026, after CLIP-T2's fix):** `scripts/ste_l26_clips.py --headless` on the fixed path
+(starts drawn once on the CPU and given to both tiers), job `l26_clips_t2`, 0.008 GPU-h, run folder
+`runs/2026-11-25_ste_l26_clips_t2/` (dev worktree).
+- Both tiers give the same outcome in all 8 games of both cells (4 reaches, 4 holds each; `clips/clips_t2.json`). The
+  earlier "a reach in all 8 games" on tier 2 is therefore gone: it came from the CUDA-drawn starts.
+- The script's fixed rule (the first game whose outcome differs between the tiers, else game 0) drew game 0 in both
+  cells: a reach on both tiers.
+
+| Cell | Game 0, tier 1 | Game 0, tier 2 |
+|---|---|---|
+| mark_edge v low | `…_strike_low_tier1_game0_reach.gif` (3.6 s) | `l26_landing_gy_1p15_guard_mark_edge_v_strike_low_tier2_game0_reach.gif` (3.25 s) |
+| mark_edge v straight | `…_strike_straight_tier1_game0_reach.gif` (2.9 s) | `…_strike_straight_tier2_game0_reach.gif` (2.35 s) |
+
+![tier 2, landing + option B at 1.15 m, mark_edge v low, game 0: a reach on tier 2 as on tier 1](evidence/2026-11-24_ste_l26_tier12/clips/l26_landing_gy_1p15_guard_mark_edge_v_strike_low_tier2_game0_reach.gif)
+
+Whether the tier-2 reach also passes under a Guard drone is read from the clip, not counted (passes are not counted).
+3-D Isaac clips: pending (VID-1).
 
 ## What this does not show
 
@@ -279,7 +294,8 @@ GPU-hours for task L2.6, from the shared ledger (`runs/shared/gpu_hours.log`, gr
 | run | 0.085 |
 | clip job (its tier-2 GIFs are not used) | 0.006 |
 | clip diagnostic | 0.011 |
-| **total** | **0.145 of the 1.5 cap** |
+| tier-2 clips on the fixed path (25 Nov 2026) | 0.008 |
+| **total** | **0.153 of the 1.5 cap** |
 
 The tier-1 clips ran on the CPU.
 
@@ -289,7 +305,7 @@ Evidence in `records/evidence/2026-11-24_ste_l26_tier12/`:
 - `plan.json`;
 - `l26_gates.toml` (the pinned copy);
 - `smoke_results.md` (the Isaac smoke's page);
-- `clips/` (4 GIFs, `clips.json`).
+- `clips/` (6 GIFs, `clips.json`, `clips_t2.json`).
 
 Run folders `runs/2026-11-24_ste_l26_isaac_smoke/` and `runs/2026-11-24_ste_l26_tier12/` (dev worktree), and
 `runs/2026-11-24_ste_l26_clips/` and `runs/2026-11-24_ste_l26_clip_diag/` (l26 worktree). None of them is in git.

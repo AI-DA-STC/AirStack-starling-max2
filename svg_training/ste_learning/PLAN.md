@@ -3,8 +3,9 @@ INTERNAL · the master plan of STE's learning track (version 2, 20 Nov 2026): ph
 Version 2 (20 Nov 2026, after the independent soundness review).
 **Phase L0 is done (approved 20 Nov 2026, cap 19 GPU-h, 13.77 used). Gate G0 was RULED by the owner on 22 Nov 2026**
 ([DISCUSSION §14](DISCUSSION_2026-11-19_20.md#14-gate-g0-rulings-owner-22-nov-2026)): the main game has a 1-for-1 tag, 1.6 m to build the pipeline and 1.15 m main training after L2
-(option (d)); **L1 + L2 are approved together at 13 GPU-h and L1 is in work**; L3–L9 are the intended path, their
-budgets OPEN until re-baselined. Task status: `status/STATUS_LATEST.md`.
+(option (d)); **L1 + L2 are approved together at 13 GPU-h and L1 is in work**; L3–L9 are the intended path. **L3–L6
+are a pipeline check (owner, 24 Nov 2026, R19 and R23, applied to this plan by R27):** two routes built into one learner
+and compared on the same budget, cap 20 GPU-h; the L5 runs of record and L7–L9 budgets stay OPEN until re-baselined. Task status: `status/STATUS_LATEST.md`.
 
 # PLAN: STE learning track
 
@@ -71,10 +72,10 @@ asked to be stopped for.
 | **L0 Game definition and feasibility** | **done; G0 ruled (owner, 22 Nov 2026)** | which game the track trains; is it worth learning; can tier 2 train, and at what cost | PyTorch | STE game engine (tier 1), Isaac Lab (tier 2) | **gate G0**: the owner rules on the game and the route, with numbers |
 | L1 Drone model | **in work (approved with L2 at G0, 22 Nov 2026)** | estimator effect (since L1.1b an estimate-error model, not a delay), drag, fit to logs, comparison with the AirStack simulator; its training reads at tag 1.6 m, with a 1.15 m side track (G0, option (d)) | PyTorch | Isaac Lab (tier 2), AirStack simulator (logs only) | lead; human gates: the NEAR-962 flight before the fit is used for a run of record, and the SIM-ONLY values in tier 2 |
 | L2 Game rules in the training copy | intended | the rules chosen at G0, landing obstacles, drone loss, filter option B with its convergence gate | PyTorch | tier 1, then tier 2 | gate per change; **P2 ruling** |
-| L3 Learner | intended | observation v0.3, attention encoder, shared actor, team critic, PPO | PyTorch | tier 1 pilot, tier 2 smoke | owner approves observation v0.3 |
-| L4 Evaluation suite and gates | intended | suite, gates file, calibration on known players | PyTorch | tier 1, tier 2 | owner approves gate limits |
-| L5 League self-play | intended | pilots, then runs of record (3 seeds) | PyTorch | as ruled at G0 | gates frozen; budget ruled |
-| L6 QC and export | intended | scoring, cross-checks, policy file | PyTorch | tier 1, tier 2 | owner approves hand-over |
+| L3 Learner | intended; **two-route design approved (owner, 24 Nov 2026, R26)** | one learner with a switch for the action type: **pure RL** (the network outputs a velocity command) or **mixed** (the network chooses one hand-written skill per drone); observation v0.3, attention encoder, shared actor, team critic, PPO ([design note](drafts/L3_TWO_ROUTES_DESIGN.md)) | PyTorch | tier 1 pilot, tier 2 smoke | owner approves observation v0.3; design review of the note before code |
+| L4 Evaluation suite and gates | intended | suite, gates file, calibration on known players; the same pass marks for both routes, headline = worst cell | PyTorch | tier 1, tier 2 | owner approves gate limits |
+| L5 League self-play | intended | **pipeline check first (R23):** one short seed per route on the same budget, scored the same way, labelled "pipeline check, not for flight"; runs of record (3 seeds) later, on the chosen route | PyTorch | as ruled at G0 | gates frozen; budget of record ruled after the pipeline check |
+| L6 QC and export | intended | scoring, cross-checks, policy file; export and reload check for both routes | PyTorch | tier 1, tier 2 | owner approves hand-over |
 | L7 AirStack side | intended | specs here; build and AirStack-simulator games by an AirStack session | PX4 | AirStack simulator (real PX4 + EKF2) | owner (D4) |
 | L8 Real flight | intended | real games: Crazyflies first at Starling distances, then the Starling 1v1 (G0 ruling R12) | PX4 | Crazyflies; real Starlings (2 drones) | owner |
 | L9 Documentation | running | status, records, results page, STANDARDS updates after rulings | — | — | owner for reader pages |
@@ -186,7 +187,8 @@ merged to `development`, and the work resumes on the 5090 ([DISCUSSION §14](DIS
 |---|---|---|
 | **L0** (§4 caps) | **19 GPU-h** | **FIXED: approved by the owner, 20 Nov 2026** (task split PROPOSED by the lead; `configs/ste_learning.toml`) |
 | **L1 + L2** | **13 GPU-h** (12 + one confirming seed), plus about 1 h of AirStack simulator time | **FIXED: approved by the owner at G0, 22 Nov 2026** ([DISCUSSION §14](DISCUSSION_2026-11-19_20.md#14-gate-g0-rulings-owner-22-nov-2026)); inside it: L1.11 Strike team trained against guard_field at 1.6 m, L1.12 T46's 1.6 m Guard team scored against every Strike script, the cross-play scoring, and L1.13 the shorter-training-clock 1.15 m Strike run; the training-settings sweep (G0 ruling R18) is not |
-| L3–L9 | OPEN | re-baselined later (costed draft planning figure about 87 GPU-h at tag 1.6 m). Version 1 guessed ≈ 60 GPU-h; the review estimates tier-2 training from scratch at 3–10× that, and counted costs version 1 left out (3 seeds at the learner stage, six exploiter trainings, a second training for the filter-mismatch study) |
+| **L3–L6 pipeline check** | **20 GPU-h** | **FIXED: approved by the owner, 24 Nov 2026 (R23)**: learner pilots, the scoring suite, one short seed per route (pure RL and mixed, R19), scoring and export with a reload check; not a training budget of record ([DISCUSSION §16](DISCUSSION_2026-11-19_20.md#16-rulings-for-l1-to-l6-owner-24-nov-2026)) |
+| L5 runs of record, L7–L9 | OPEN | re-baselined after the pipeline check and the choice of route (costed draft planning figure about 87 GPU-h at tag 1.6 m). Version 1 guessed ≈ 60 GPU-h; the review estimates tier-2 training from scratch at 3–10× that, and counted costs version 1 left out (3 seeds at the learner stage, six exploiter trainings, a second training for the filter-mismatch study) |
 | Per job | wall clock = cap × 1.5, pauses excluded; progress check at launch + 45 min; no launch below 50 GB free disk | PROPOSED |
 
 The GPU is shared:
@@ -241,7 +243,7 @@ Still open after G0 (not needed before L1; each is brought when its phase starts
 | P4 video style | — |
 | P2 filter option B | the L2 gate |
 | P6 a CMU filter-change proposal (the owner sends it) | OPEN: when option B is ruled |
-| The L3–L9 budget | re-baselined later |
+| The budget of record for L5 and L7–L9 | after the L3–L6 pipeline check |
 
 ## 13. Main risks
 

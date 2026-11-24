@@ -1,6 +1,6 @@
-INTERNAL · design note for phase L3 of the STE learning track: one learner with two action types, so pure RL and the mixed route (RL chooses among hand-written skills) can be compared fairly (owner ruling R19, 24 Nov 2026). DRAFT for the owner, not yet reviewed; no code is written until the owner approves it · [../README.md](../README.md); the ruling: [DISCUSSION §16](../DISCUSSION_2026-11-19_20.md#16-rulings-for-l1-to-l6-owner-24-nov-2026)
+INTERNAL · design note for phase L3 of the STE learning track: one learner with two action types, so pure RL and the mixed route (RL chooses among hand-written skills) can be compared fairly (owner ruling R19, 24 Nov 2026). APPROVED by the owner 24 Nov 2026 (R26: design, skill list, per drone by default); design review still owed before code · [../README.md](../README.md); the ruling: [DISCUSSION §16](../DISCUSSION_2026-11-19_20.md#16-rulings-for-l1-to-l6-owner-24-nov-2026)
 
-# L3: one learner, two routes (design note, DRAFT)
+# L3: one learner, two routes (design note, approved 24 Nov 2026)
 
 Written 24 Nov 2026 by the lead, before any L3 code. Observation v0.3 is not approved by the owner; this note does not
 change the observation.
@@ -58,8 +58,10 @@ four numbers is not possible, so the slot carries the chosen skill's own command
 - GPU: the mixed route likely needs fewer game-steps to learn (a smaller choice), so the pipeline-check seed may be
   shorter; both routes get the same budget anyway so the comparison stays fair. Inside the 20 GPU-h of R23.
 
-## Open, for the owner
+## Owner's ruling and what stays open
 
-1. Approve the two-route design (decision 7, start of L3).
-2. Approve the skill list, and per drone v per team.
-3. Observation v0.3 (landing flags, needed once L2.3's landing is switched on in training) is a separate approval.
+1. Two-route design: **approved** (owner, 24 Nov 2026, R26: "yes approve").
+2. Skill list as above, per drone by default with per team as a setting: **approved** (R26).
+3. Before any L3 code: a design review of this note (two reviewers, R22), covering the previous-choice slot in the
+   observation and the masking of absent drones (L2.4: an absent slot still gets the team reward).
+4. Observation v0.3 (landing flags, needed once L2.3's landing is switched on in training) is a separate approval.

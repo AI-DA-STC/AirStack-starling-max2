@@ -431,9 +431,10 @@ class Session:
         env = dict(os.environ, PATH=f"{b}{os.pathsep}{os.environ['PATH']}", SVG_HOST_PY=child_python(),
                    SVG_TEST_HOST_BAGS=str(self.bags), SVG_TEST_SIM=str(b / "fakesim"), SVG_TEST_RUNS=str(self.runs),
                    SVG_TEST_POLL_S="0.05", HOME=str(self.home), FAKE_DIR=str(self.fd))
-        # SIGINT at its default in the script: a bash started with SIGINT ignored (a backgrounded suite) cannot trap it
-        self.r = subprocess.run(["bash", str(SCRIPT), name], capture_output=True, text=True, cwd=ROOT, env=env,
-                                timeout=180, preexec_fn=lambda: signal.signal(signal.SIGINT, signal.SIG_DFL))
+        # SIGINT at its default in the script: a bash started with SIGINT ignored (a backgrounded suite) cannot trap it.
+        # env resets it and execs bash in place (same pid, argv[0] "bash", as main_pid() expects)
+        self.r = subprocess.run(["env", "--default-signal=INT", "bash", str(SCRIPT), name], capture_output=True, text=True,
+                                cwd=ROOT, env=env, timeout=180)
         self.calls = (self.fd / "calls.log").read_text().splitlines() if (self.fd / "calls.log").exists() else []
         self.bag = f"svg_s1_{name}_20991231_235959"
         self.sentinel = f"svg_s1_{name}_00000000_000000"

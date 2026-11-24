@@ -37,9 +37,12 @@ def _wait(predicate) -> bool:
 @pytest.fixture()
 def dummy(tmp_path):
     marker = f"gpu_pause_test_{uuid.uuid4().hex}"
-    # its own SIGINT handler, as our jobs install one: Python installs none if SIGINT was ignored when it started
-    code = "import signal, time\nsignal.signal(signal.SIGINT, signal.default_int_handler)\nwhile True: time.sleep(0.05)"
-    proc = subprocess.Popen([sys.executable, "-c", code, marker], stderr=subprocess.PIPE)
+    # its own SIGINT handler, as our jobs install one (Python installs none if SIGINT was ignored when it started), and
+    # a line once it is in place: no signal is sent before that, or one sent during start-up would be lost
+    code = ("import signal, time\nsignal.signal(signal.SIGINT, signal.default_int_handler)\nprint('ready', flush=True)\n"
+            "while True: time.sleep(0.05)")
+    proc = subprocess.Popen([sys.executable, "-c", code, marker], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    assert proc.stdout.readline() == b"ready\n"
     env = _safe_env(tmp_path, GPU_PAUSE_PATTERN=marker)
     yield proc, env, tmp_path / "pauses.log"
     if proc.poll() is None:

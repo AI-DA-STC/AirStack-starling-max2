@@ -151,3 +151,11 @@ guard_parked_centre), not a uniform mix; the uniform-random control is a separat
 for the skills head yet (the recipe's single `entropy_loss_scale` is 0.0): to set in the L3 gate file. (5) Game lengths:
 converge cells run longer (T44 medians 102–162 ticks). (6) The drivers build `DecisionEnv` directly, so until they are
 wired they must refuse `action = "skills"` (added before merge).
+
+**Slice 1 merged (24 Nov 2026; QC one reviewer, no blocking finding). Before any skills-route training (slice 2):**
+an explicit entropy scale for the skills head in its gate file plus a test that `update()` runs with it (the pinned
+recipe's 0.0 switches entropy off, and a zero-initialised categorical head can collapse to one skill); the skill names
+saved in the checkpoint (or the gates sha checked at load) so a changed `[players]` order cannot remap skills; the
+absent-drone mask (v2 list); one scoring-path equality check of the velocity route against the old tree (e.g. an
+`eval_final.npz` replay); the drivers wired (they refuse "skills" until then); the held-command arm; the export; the
+tier-2 dispatch-equality test.

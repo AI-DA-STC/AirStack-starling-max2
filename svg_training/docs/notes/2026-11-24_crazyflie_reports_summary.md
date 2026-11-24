@@ -13,9 +13,9 @@ which some drone had `drones.*.envelope.airborne_s` of at least 5 s.
 > **Results in short** (sources in §2; limits in §4):
 > 1. **Data:** 37 report.json read; 14 of the 37 never got a drone airborne for 5 s (aborted or failed at start),
 >    leaving 23 flown flights and 159 drone-flights (91 Guard, 68 Strike) with tracking numbers.
-> 2. **The best-fit lag splits by controller, not by drone role.** `tracking.lag_s` median 0.58 s (Guard) and 0.56 s
+> 2. **The best-fit lag splits with the controller, not with drone role** (a co-occurrence: controller, date, code revision and mocap rate 50 v 59 Hz changed together). `tracking.lag_s` median 0.58 s (Guard) and 0.56 s
 >    (Strike) in the 63 PID drone-flights, 0.10 s and 0.08 s in the 62 Mellinger drone-flights; the 34 drone-flights of
->    6 Nov (controller not logged) fall in the same range (median 0.56 s). 22 PID/unlogged drone-flights (and 1 Mellinger) sit at 0.60 s, the top of the
+>    6 Nov (controller not logged) fall in the same range (median 0.56 s). 21 PID/unlogged drone-flights (and 1 Mellinger, 22 in all) sit at 0.60 s, the top of the
 >    values seen, so a search limit may be capping them. The tracking error p95 median falls from about 0.44 m to
 >    0.14 m with it, while `tracking.residual.p95` stays about 0.08-0.10 m in both.
 > 3. **Closest approaches were 0.34-0.90 m (median 0.40 m) per flown flight**, far under the 1.10 m filter distance
@@ -179,7 +179,7 @@ Label rule (`classify_pair`): 'plan' if cmd_gap - gap <= the sum of the two dron
 - **Tracking error.** Guard, PID: mean (weighted by `tracking.samples`) 0.133 m, p95 median 0.442 m, max 0.959 m. Strike,
   PID: 0.174 m, 0.433 m, 2.121 m (the 2.12 m is one crashed drone). Guard, Mellinger: 0.053 m, 0.144 m, 0.320 m.
   Strike, Mellinger: 0.044 m, 0.128 m, 0.369 m. The residual after the best lag (`resid p95`) is about 0.08-0.10 m
-  in every group: the error is mostly a delay in the PID flights.
+  in every group: the error is likely mostly a delay in the PID flights (an inference from the lag fit and the residual, not measured directly).
 - **Rates.** `commands.hz` median 16.6-19.9 (range 15.5-20.0), with `commands.stalls` median 2 per drone-flight, at most 47,
   longest `commands.longest_stall_s` 0.99 s. `mocap.hz` 50.0 (PID/unlogged) and 59.0 (Mellinger) median;
   `mocap.dropouts` median 4, at most 20 per drone-flight.
@@ -200,6 +200,9 @@ Label rule (`classify_pair`): 'plan' if cmd_gap - gap <= the sum of the two dron
   the latter tumbled), cf10 (23 Nov 13:57 tumbled, 23 Nov 16:45). Strike and Guard names both appear.
 
 ## 4. What this gives the Crazyflie route
+
+The PID and Mellinger columns below differ in controller, date, code revision and mocap rate together; read them as two
+groups of flights, not as the controller's effect alone.
 
 **Candidate numbers for a Crazyflie drone model** (all from the owner's flights; speeds below 1.2 m/s, `envelope.top_speed`
 about 1.0-1.5 m/s in normal flights; no model was fitted here):
@@ -229,7 +232,7 @@ only). No mechanism is claimed for any of them.
 
 **What this does not give:**
 - no step pushes or system-identification inputs: a model fitted to these logs is a fit to show motion with
-  the planner's own commands, with lag read from a 0.02 s grid whose top end (0.60 s) is reached by 23 drone-flights;
+  the planner's own commands, with lag values that appear on a 0.02 s grid (read from the reported values; the reports do not state the grid) whose top end (0.60 s) is reached by 22 drone-flights;
 - no controller gains: `config/crazyflies.yaml` names only `stabilizer.controller: 1` (PID), `estimator: 2` (Kalman),
   `extPosStdDev` 1e-3 and `extQuatStdDev` 0.05; the Mellinger setting comes from the show's log line, with no gains
   recorded;

@@ -1,0 +1,98 @@
+# STE task L2.6 Scripted games, tier 1 against tier 2, new rules (INFO): game file "l26_landing_tag_1p15_err".
+# Variant: l26_landing_tag_1p15 plus tier 1's nominal estimate error (tier 1 only: the physics backend refuses [estimate_error]).
+# Spec ste_learning/drafts/L2_6_SPEC.md; the gate file configs/ste_l2/l26_gates.toml pins this file's sha256
+# (editing it makes the run refuse to start or resume). Always loaded with use_local=False. Study file: no run of
+# record uses it (option B, where on, is PROPOSED, P2 open; drone loss and team sizes are not in it, P7 open).
+#
+# = configs/ste_l011/base.toml (T44's base game: 6.5 m lab arena, zone 1.6 m at the centre, zone_disc_ring starts, 3v3
+# by the game's arguments, the study tag 1.6 m one for one, tier 1 with the safety filter on every pair) value for value
+# from [game] on, except the lines marked L2.5 or L2.6: tag.radius_m, [landing], [estimate_error]. Values copied from base.toml keep base.toml's own
+# labels (FIXED, MEASURED, PROPOSED, OPEN or none). tests/test_ste_l26.py checks it. Tier 2 plays the same file with
+# starling_layer.backend "physics" and the parameter file the gate file names (the driver's only two changes).
+
+[game]
+preset = "partner"                 # the partner rules with the Starling layer on (the push-apart is off there)
+dropout_fraction = 0.0             # no scheduled drop-outs: drones leave only by the study tag
+obs_view = "full"
+pad_guards = 5                     # slots for up to 5 Guard drones (5v3 is the largest size swept)
+pad_strikes = 3
+yaw_rate_max_rad_s = 1.0
+
+[arena]
+# One fixed square arena, the zone at its centre, through today's settings (GAME_SPEC open item "a fixed 6.5 m base-case
+# game file", LEAD CALL 21 Nov 2026): every band is the one side, the zone radius is one fraction of it, and the
+# zone-to-wall margin is half the side, so the zone centre can only be the arena centre.
+band_weights = [1.0, 1.0, 1.0]
+zone_radius_frac = [0.24615384615384617, 0.24615384615384617]   # zone.radius_m 1.6 (OPEN, P12) / arena.side_m 6.5
+zone_wall_margin_m = 3.25          # = arena.side_m / 2: zone.centre "arena_centre" (PROPOSED)
+height_band_m = [0.5, 1.8]         # height.band_m (PROPOSED)
+start_height_m = 1.2               # height.start_m (PROPOSED); no jitter
+walls = "keep_in"                  # arena.walls (PROPOSED)
+wall_margin_m = 0.25               # arena.wall_margin_m (PROPOSED): keep-in limit 3.0 m
+
+[arena.bands_m]
+lab = [6.5, 6.5]                   # arena.side_m 6.5 (PROPOSED, F8): the lab fence
+middle = [6.5, 6.5]
+large = [6.5, 6.5]
+
+[partner_rules]
+keepout_guard_m = 1.1              # filter.keepout_m 1.10 (FIXED): read by the breach count and the start-miss test
+keepout_strike_m = 1.1
+push_rule = "block"                # not used with the Starling layer on (D3)
+teammates_pass = true
+win_steps_in_zone = 1              # zone.win_ticks_inside 1 (PROPOSED)
+strike_units_per_step = 0.025      # speeds.strike_mps 0.5 (FIXED) with the two lines below
+guard_units_per_step = 0.016666666666666666   # speeds.strike_to_guard_ratio 1.5 (FIXED): 0.333 m/s
+game_steps = 2400                  # timing.game_s 120 (PROPOSED): 2,400 ticks of 0.05 s
+metres_per_unit = 1.0
+seconds_per_step = 0.05
+
+[contact_rules]
+contact_m = 0.5                    # the contact preset is not used (preset "partner")
+guard_survives_tag_prob = 0.0
+
+[starling_layer]
+# Tier 1 with the filter on (PLAN.md section 4 L0.11): the commander copy, the safety filter on every pair (filter.pairs
+# "every_pair", FIXED; equal share), then the fitted PX4 response (exploratory). 1000 sweeps, check every 8 (T8 PASS).
+enabled = true
+params = "params/real_exploratory_v0.toml"
+filter_iterations = 1000
+filter_check_every = 8
+filter_cuda_graph = false
+backend = "fitted"
+physics_params = "params/starling_physics_v0.toml"
+physics_sim_only_gains = "params/sim_only_yaw_v0.toml"
+
+[starts]
+mode = "zone_disc_ring"            # the hangar game's starts (L0.10)
+strike_inset_m = 0.3               # not read in this mode
+guard_ring_gap_m = 0.3             # not read in this mode
+spacing_m = 1.2                    # not read in this mode
+guard_disc_m = 0.8                 # starts.guard_disc_m (PROPOSED)
+team_spacing_margin_m = 0.05        # starts.team_spacing_margin_m (PROPOSED, L0.10 QC fix round 1): team-mates start >= 1.10 + 0.05 m apart
+strike_ring_m = 2.75               # starts.strike_ring_m (PROPOSED, LEAD CALL 21 Nov 2026, L08-F1)
+
+[rewards]
+win = 1.0
+shaping_weight = 0.0
+
+[tag]
+mode = "nearest_pair_1for1"        # tag_rule.pairing (PROPOSED, P1): the study tag ON, study runs only
+radius_m = 1.15                    # L2.6: tag radius 1.15 m (ruled at G0, 22 Nov 2026: 1.6 m first, 1.15 m main training after L2; owner decision 21 Nov 2026, as configs/ste_l011/tag_1p15.toml)
+guard_survives_tag_prob = 0.0      # tag.guard_survives_tag_prob 0.0 (PROPOSED, D2)
+
+[landing]
+enabled = true                     # L2.5 (kept in L2.6): on (L2.3, code default off): a tagged drone lands as a filter obstacle; part of the tag rule (WORK_BREAKDOWN L2.3: no gate beyond P1, ruled at G0)
+land_speed_mps = 0.6               # L2.5 (L2.3 LandingCfg): the _ours configs' land_speed_mps (MEASURED there)
+touchdown_z_m = 0.15               # L2.5 (kept in L2.6): FIXED (owner ruling R28, 24 Nov 2026: "0.15m follow real configs")
+
+[estimate_error]
+# L2.6: tier 1's nominal estimate error, = configs/ste_l1/base_err_nominal.toml's table (L1.7; T63 values, EXPLORATORY).
+# Tier 1's copy of tier 2's L1.1b estimate error (core/game_config.EstimateErrorCfg): first-order Gauss-Markov per axis.
+enabled = true
+pos_sigma_m = 0.0099                # m per axis. PROPOSED (T63)
+pos_tau_s = 1.2                    # s, correlation time (1/e crossing). PROPOSED (T63)
+vel_sigma_mps = 0.022               # m/s per axis. PROPOSED (T63)
+vel_tau_s = 1.3                    # s. PROPOSED (T63)
+commander_reads = "true"           # the commander copy and its filter read the true position, as tier 2 (L1.1b) does;
+                                   # "estimate" = as on the real drone (EKF2 odometry). LEAD CALL (L1.7 report)

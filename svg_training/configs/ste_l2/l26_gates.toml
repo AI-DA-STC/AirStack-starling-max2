@@ -1,0 +1,208 @@
+# STE task L2.6 Scripted games, tier 1 against tier 2, new rules (INFO, no gate; the controls are gated). The gate file,
+# written before any run (STANDARDS section 7; ste_learning/VALIDATION_QC.md section 0) and pinned by sha256 at the
+# first launch (a changed file needs a new run folder). Spec with the reading words: ste_learning/drafts/L2_6_SPEC.md.
+# Driver: scripts/ste_tier12_l26.py; tests: tests/test_ste_l26.py. Edit it only BEFORE the first launch; never after a
+# result.
+#
+# Question (WORK_BREAKDOWN L2.6: "the fast engine still predicts tier 2 (T13 repeated with tag, option B, delay and
+# drag)"): with the new rules on (the 1.6 m and 1.15 m one-for-one tag, landing L2.3, filter option B L2.1 PROPOSED),
+# do scripted 3v3 games on tier 1 (fast engine) give the hold counts tier 2 (Isaac Lab rigid-body Starling) gives,
+# cell by cell, from the same starts; and do the two tiers agree on what each new rule does (P2: option B; P7: landing)?
+#
+# Layout: every batch is the same 7 cells x 1,000 games on T44's first 1,000 3v3 starts (loaded, never re-drawn): the 6
+# main cells below and one repeat copy of the first (the same-seed control and each batch's copy-noise floor). One
+# Isaac world of 7,000 games x 6 drones for the whole run. Each group = one rule set x one arm, played on tier 1 and on
+# tier 2 with the same starts and the same seed (T44's 110000). Groups run in the order below; "protected" groups must
+# fit the cap in the worst case (the driver refuses the launch otherwise); a droppable group is played only if its
+# worst case, re-timed from this run's own batches, fits what is left of the cap, else it is recorded "not played
+# (projected over the cap)". Labels: FIXED (copied from the record named), PROPOSED (L2.6 builder, for the lead).
+#
+# Delay and drag (the task row's words) are NOT arms: params/starling_physics_v1.toml has drag_* = 0 and state_delay_s =
+# 0, both OPEN and not fitted (L1.3 fitted the estimate error only, T63; L1.5, T69, could not see a 0.05 s residual
+# delay at its 0.1 s resolution). The estimate error (L1.1b in tier 2, L1.7 in tier 1; T63 nominal values) is the L1
+# arm that stands for the estimator. Spec, "What it cannot show".
+#
+# Simulators: training simulator, tier 1 (fast engine; Starling layer: commander copy, safety filter on every pair,
+# fitted PX4 response, exploratory) and tier 2 (the same command chain driving the Isaac Lab 2.3.2 rigid-body Starling,
+# PX4 1.14 cascade copy); study tag on (P1, ruled at G0). Results are "observed in the training simulator".
+
+[job]
+task = "L2.6"
+what = "scripted 3v3 cells, tier 1 against tier 2, under the new rules (tag 1.6 m and 1.15 m, landing, option B), estimate error off and nominal"
+kind = "INFO"
+device = "cuda"                    # tier 1 and tier 2 both on the GPU (L1.8's tier-1 replay matched T44 game for game on CUDA)
+games = 1000                       # FIXED (VALIDATION_QC section 0 rule 2: at least 1,000 games per condition): T44's first 1,000 starts
+ticks_cap = 2400                   # FIXED = the game length (120 s of 0.05 s ticks): no game is cut short
+cap_h = 1.5                        # PROPOSED = the task cap (WORK_BREAKDOWN L2.6: 1.5 GPU-h); expected about 0.5 h (projection below)
+cap_check_every_ticks = 100        # the cap clock every this many ticks; the stop flag every tick
+
+[reference]
+# T44's starts and per-game script results (the L0.12 reference file, pinned as in configs/ste_l2/l25_screen_gates.toml).
+file = "configs/ste_l012/t44_reference.npz"
+sha256 = "4bc5e011071adced368b2a0025fc47499839e0bbc8d8d650207bd12c3da0f8b5"
+start_sha256 = "5aeba7ab2b582f2973034c8203c17ed3e8239fef7029a1f991fe95b82369843c"
+variant = "base"
+
+[cells]
+# PROPOSED (spec, "The cells"): the cells L3-L6 and the P2 / P7 rulings read.
+main = [
+  ["guard_mark_edge", "strike_straight"],      # T44's g* v s* at 1.6 m, L0.12's training opponents; T13's collapsing cell type; T64 tier 2 800
+  ["guard_parked_centre", "strike_straight"],  # the still Guard (L2.5's risk); tier-2 known answer T53 538 (507-569)
+  ["guard_parked_ring", "strike_flank"],       # filter-as-wall cell: option B with the tag off took its hold 752 -> 86 (T70)
+  ["guard_field", "strike_flank"],             # T13's 5v3 flank gap; T70 clip cell
+  ["guard_mark_edge", "strike_low"],           # the landing cell (T70: +51 at 1.6 m) and a height script (passing under at 1.15 m)
+  ["guard_field", "strike_straight"],          # g* v s* at 1.15 m (L0.12b, T-screen 0.645); the Strike team's hardest Guard script (T64, T67)
+]
+repeat = ["guard_mark_edge", "strike_straight"]   # one more copy in every batch: same seed, same starts
+
+[params]
+# Tier 2's parameter files per arm (tier 1's arm is in its game file).
+off = { file = "params/starling_physics_v1.toml", sha256 = "e8968026995b5507a49744a78bc7a97cfc115f89a588bbe3e139b5b42de4bf06" }
+nominal = { file = "params/starling_physics_v1_nominal.toml", sha256 = "9963e39fbca08916a1ca68eda102a24750e47817f85fe53135519be56fb0ddcd" }
+
+[games]
+# Every game file and its sha256 (tests/test_ste_l26.py keeps them equal to the files).
+base = { file = "configs/ste_l011/base.toml", sha256 = "96e0e7f61a49999da54eee81a544bf64c519cd80833f0dcdfa2a07edfc10cc4d" }
+l25_landing = { file = "configs/ste_l2/l25_landing.toml", sha256 = "f0322c258ebdb1309aaef662e63227d903ec666b5fbced68ec144530dae8e30c" }
+l25_landing_gy = { file = "configs/ste_l2/l25_landing_gy.toml", sha256 = "c4463c247b59c19695269c0b60325ea288858b4f67f21c41cb39183669a0d83f" }
+l25_landing_gy_tag_10m = { file = "configs/ste_l2/l25_landing_gy_tag_10m.toml", sha256 = "670b3f28698d479152ed56c78bbcd9645c431ba8b9b62d7f9a7331c2bd5184d6" }
+l26_landing_tag_1p15 = { file = "configs/ste_l2/l26_landing_tag_1p15.toml", sha256 = "42d18251ebe6cc3d0b62dc60920aa5f31628d381319eca5888a229db3542df5f" }
+l26_landing_gy_tag_1p15 = { file = "configs/ste_l2/l26_landing_gy_tag_1p15.toml", sha256 = "b8ca7308ef07cb56472556ac533cc6abaf4a5871a6356032e689712f71ead5b2" }
+l26_landing_tag_1p15_err = { file = "configs/ste_l2/l26_landing_tag_1p15_err.toml", sha256 = "5aaabff5f759eb6101e430382de693677ae4f68f14b76f44fbcce2c5340ee216" }
+l26_landing_gy_tag_1p15_err = { file = "configs/ste_l2/l26_landing_gy_tag_1p15_err.toml", sha256 = "6ce0e8f6d9db30613b6bfc450fbc76e92f2500371729c5ee6d0ff1334c1598e2" }
+
+# ------------------------------------------------------------------------------------------------ groups, in run order
+# tier1_game: the tier-1 game file. tier2_game + arm: tier 2 plays that file with starling_layer.backend "physics" and
+# [params].<arm>. tier1_known: "t44" = the tier-1 batch's main and repeat cells equal T44's per-game results game for
+# game (exploit.replay_ok's exact rule, as L1.8's tier1_replay); "counts" = each main cell's holds within
+# [known] t1_count_tol_games of tier1_known_holds (T70, played on the CPU; this run plays tier 1 on CUDA); "none" = no
+# known answer (1.15 m: no earlier run of these rules). Known answers are read at the full size only (1,000 games x 2,400
+# ticks); a smaller test run records NOT_CHECKED.
+
+[[groups]]
+name = "base_1p6"
+label = "base rules, tag 1.6 m (T44's game): the anchor, both tiers known"
+tier1_game = "base"
+tier2_game = "base"
+arm = "off"
+protected = true
+tier1_known = "t44"
+tier1_known_holds = []
+tier1_known_source = "T44 (L0.11 screen) per-game results, configs/ste_l012/t44_reference.npz variant base"
+
+[[groups]]
+name = "landing_1p15"
+label = "landing on, even split, tag 1.15 m (the ruled tag rule at the main-training radius)"
+tier1_game = "l26_landing_tag_1p15"
+tier2_game = "l26_landing_tag_1p15"
+arm = "off"
+protected = true
+tier1_known = "none"
+tier1_known_holds = []
+tier1_known_source = "no earlier run of these rules at 1.15 m"
+
+[[groups]]
+name = "landing_gy_1p15"
+label = "landing on, option B, tag 1.15 m (the filter acts before the tag: where option B can show)"
+tier1_game = "l26_landing_gy_tag_1p15"
+tier2_game = "l26_landing_gy_tag_1p15"
+arm = "off"
+protected = true
+tier1_known = "none"
+tier1_known_holds = []
+tier1_known_source = "no earlier run of these rules at 1.15 m"
+
+[[groups]]
+name = "landing_1p6"
+label = "landing on, even split, tag 1.6 m (L2.5's 'landing' rule set)"
+tier1_game = "l25_landing"
+tier2_game = "l25_landing"
+arm = "off"
+protected = true
+tier1_known = "counts"
+tier1_known_holds = [802, 534, 477, 807, 895, 716]   # FIXED: T70 group "landing", the 6 main cells in [cells] order (records/2026-11-24_ste_l25_screen_record.md; run folder cells/landing__b00.npz)
+tier1_known_source = "T70 (L2.5) group landing, CPU, same starts and seed"
+
+[[groups]]
+name = "landing_gy_1p15_err"
+label = "landing on, option B, tag 1.15 m, estimate error nominal on both tiers (T63 values, EXPLORATORY)"
+tier1_game = "l26_landing_gy_tag_1p15_err"
+tier2_game = "l26_landing_gy_tag_1p15"
+arm = "nominal"
+protected = false
+tier1_known = "none"
+tier1_known_holds = []
+tier1_known_source = "no earlier run of these rules at 1.15 m"
+
+[[groups]]
+name = "landing_1p15_err"
+label = "landing on, even split, tag 1.15 m, estimate error nominal on both tiers (T63 values, EXPLORATORY)"
+tier1_game = "l26_landing_tag_1p15_err"
+tier2_game = "l26_landing_tag_1p15"
+arm = "nominal"
+protected = false
+tier1_known = "none"
+tier1_known_holds = []
+tier1_known_source = "no earlier run of these rules at 1.15 m"
+
+[[groups]]
+name = "landing_gy_1p6"
+label = "landing on, option B, tag 1.6 m (L2.5's 'landing_gy' rule set; option B not testable there with scripted play, T70)"
+tier1_game = "l25_landing_gy"
+tier2_game = "l25_landing_gy"
+arm = "off"
+protected = false
+tier1_known = "counts"
+tier1_known_holds = [803, 534, 477, 808, 902, 716]   # FIXED: T70 group "landing_gy", the 6 main cells in [cells] order
+tier1_known_source = "T70 (L2.5) group landing_gy, CPU, same starts and seed"
+
+# ------------------------------------------------------------------------------------------------ controls
+[known]
+t1_count_tol_games = 10            # FIXED: L0.13 replay_count_tol_cuda_games (configs/ste_l013/gates.toml): tier 1 on CUDA against T70's CPU counts
+t2_group = "base_1p6"
+t2_cell = ["guard_parked_centre", "strike_straight"]
+t2_holds_min = 507                 # FIXED: T53 tier 2 parked Guard 538/1000, Wilson 95 % 0.507-0.569 (records/2026-11-21_ste_l013_tier2_trains_record.md); T64 541
+t2_holds_max = 569
+t2_source = "T53 (L0.13) tier 2 guard_parked_centre v strike_straight 538/1000 (0.507-0.569), T44's first 1,000 starts; T64 (L1.8, v1 at 0) 541"
+
+[controls]
+# A control not PASS (INFO where marked, NOT_CHECKED in a test-size run) stops the run before any reading: exit 6
+# CONTROL_FAILED (terminal; no number is reported), exit 5 on a non-finite value.
+repeat_count_tol_games = 10        # FIXED: L0.13 replay_count_tol_cuda_games: tier 2 "off" repeat copy, holds
+repeat_differ_tol_games = 20       # FIXED: L0.13 replay_differ_tol_cuda_games: tier 2 "off" repeat copy, games ending otherwise
+agree_guard = "guard_mark_edge"    # FIXED: L0.13 C-1a pair, ticks, limit (configs/ste_l013/gates.toml [controls]), every launch and every tier-2 game
+agree_strike = "strike_straight"
+agree_ticks = 20
+agree_max_m = 0.02
+agree_seed = 130102                # FIXED: L0.13 train_seed (the C-1a game's own starts; never the scoring starts)
+tag_fires_game = "l25_landing_gy_tag_10m"   # tier 2, first (landing and option B have never run in Isaac Lab): a 10 m tag, zero v zero
+tag_fires_ticks = 100              # every game 3 tags at step 1, a Guard win (sweep.check_tag_fires)
+
+# ------------------------------------------------------------------------------------------------ the projection
+[projection]
+# Worst case = every batch runs all 2,400 ticks (a batch lasts as long as its longest game). Rates per batch tick at 7,000
+# games, PROPOSED from the laptop RTX 5070 Ti (the 5090's tier-2 rate is not measured; L1.0 deferred it): tier 2 = L0.2
+# (T48) scripted 3v3 0.162 s/tick at 4,096 and 0.200 at 8,192 games, T64 0.257 at 15,000: 0.19; tier 1 = L0.2 0.030 at
+# 4,096 and 0.035 at 8,192, T64's replay 0.082 at 15,000 with two learned players: 0.05. Option B (busy filter) factors:
+# tier 1 5.3 (T70: the tag-off pair 1,597 s v 301 s on the CPU); tier 2 2.5 (the builder's CPU probe at 1.15 m: torch
+# world 1.75x, tier 1 2.5x; spec). fixed_s: Isaac start, the world, one C-1a per tier-2 group, the tag-fires batch.
+tier1_s_per_tick = 0.05
+tier2_s_per_tick = 0.19
+option_b_factor_tier1 = 5.3
+option_b_factor_tier2 = 2.5
+fixed_s = 300
+safety_factor = 1.1                # as L0.11 [cut]
+
+# ------------------------------------------------------------------------------------------------ the reading
+[reading]
+t13_gap = 0.10                     # FIXED: T13's per-cell hold gap (configs/s2b.toml [compare_games_gates] max_cell_hold_gap); here a word, not a gate
+# The rule pairs (one rule changed between the two groups); a pair is read only when both groups were played.
+rule_pairs = [
+  { name = "landing_1p6", rule = "landing", ruling = "P7 (landing part)", from = "base_1p6", to = "landing_1p6" },
+  { name = "option_b_1p15", rule = "option B", ruling = "P2", from = "landing_1p15", to = "landing_gy_1p15" },
+  { name = "option_b_1p15_err", rule = "option B", ruling = "P2", from = "landing_1p15_err", to = "landing_gy_1p15_err" },
+  { name = "option_b_1p6", rule = "option B", ruling = "P2", from = "landing_1p6", to = "landing_gy_1p6" },
+  { name = "tag_1p15", rule = "tag 1.15 m", ruling = "main training radius after L2", from = "landing_1p6", to = "landing_1p15" },
+  { name = "error_1p15", rule = "estimate error", ruling = "L1 (the estimator)", from = "landing_1p15", to = "landing_1p15_err" },
+  { name = "error_gy_1p15", rule = "estimate error", ruling = "L1 (the estimator)", from = "landing_gy_1p15", to = "landing_gy_1p15_err" },
+]

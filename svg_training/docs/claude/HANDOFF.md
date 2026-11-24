@@ -4,13 +4,47 @@ INTERNAL · the lab's AI-assistant hand-over notes: where the work stands, what 
 
 > **How to use this file.** Read it at the start of a session, after [../../CLAUDE.md](../../CLAUDE.md).
 > §4 is the current state, §5 is what is waiting on people. Update both before you stop.
-> Last updated: 24 November 2026 ~13:30, on the home RTX 5090 (day: rulings R24–R28, AirStack set up, L1.4, L1.5, L2.5 done, L3 note v2; before: ~07:30 night run: L1 reads, L2.1/L2.3/L2.4; before: 23 Nov ~13:30 documentation clean-up), worktree `~/AirStack-starling-max2-dev` on branch `development`.
+> Last updated: 24 November 2026 ~18:20, on the home RTX 5090 (late day: rulings R29–R33, L2.6 and the figure-eight check, L3 slice 2 merged; before: ~13:30 day: rulings R24–R28, AirStack set up, L1.4, L1.5, L2.5 done, L3 note v2; before: ~07:30 night run: L1 reads, L2.1/L2.3/L2.4; before: 23 Nov ~13:30 documentation clean-up), worktree `~/AirStack-starling-max2-dev` on branch `development`.
 
 ## 0. Resume here (for a new session or another Claude account)
 
 Everything needed is in this folder; nothing depends on the previous chat. Claude's user memory (`~/.claude/…`) and
 the private NUS workspace (`~/ma_skills-self-play/`, 5090 only) do **not** travel with git: if this file and a memory
 note disagree, this file wins.
+
+### 24 November 2026 ~18:20 — RTX 5090 DAY, LATE: RULINGS R29–R33, L3 SLICE 2 MERGED, FLIGHT LOGS READ (read this first)
+
+- **Rulings (owner, ~15:35 and ~16:25):** R29 1v1 training skipped; R30 "Team strategy, with individual drone skills which
+  can adapt to the opponent's strategy" (two-level choice: a team head and a drone head); R31 P2 option B deferred (even
+  split stays the default); R32 landing off in the L3–L6 pipeline check; R33 no flight with the filter off: the
+  planned-pushes flight flies one drone alone with the filter on. Text: end of
+  [DISCUSSION](../../ste_learning/DISCUSSION_2026-11-19_20.md).
+- **L2.6 done (T71 INFO, 0.145 GPU-h, two reviewers):** [record](../../records/2026-11-24_ste_l26_tier12_record.md). Tier 1
+  agrees with tier 2 for scripted play at 1.6 m and at 1.15 m without option B (40 of 42 cell readings); option B at
+  1.15 m lowers mark_edge v straight on both tiers.
+- **Side task CLIP-T2 done:** the tier-2 clip script drew its starts on CUDA; fixed (`record_games` `starts=`); the L0.13
+  clip caption is corrected; run numbers are unaffected.
+- **Flight logs (owner, 24 Nov):** [survey](../notes/2026-11-24_flight_logs_survey.md): the figure-eight flight is a
+  held-out check only; the planned-pushes flight NEAR-962 is still needed. Figure-eight check (T72 INFO, two reviewers,
+  [record](../../records/2026-11-24_fig8_heldout_record.md)): at 2–3 m/s tier 1's exploratory model flies about half to
+  two thirds of the real speed, likely its fitted acceleration limit (1.72 m/s²) against about 2.6 m/s² measured; game
+  speeds are inside the fit range, nothing re-scored; NEAR-962 should add fast pushes and turns reaching 2–4 m/s².
+  Crazyflie [summary](../notes/2026-11-24_crazyflie_reports_summary.md) (one reviewer): lag about 0.56 s with the PID
+  controller v 0.08–0.10 s with Mellinger (a co-occurrence); commanded gaps below the show's own 0.80 m separation
+  minimum in 73 of 78 close events.
+- **L3:** slice 1 merged earlier; slice 2 merged ([design](../../ste_learning/drafts/L3_SLICE2_DESIGN.md)): two-level
+  learner `TwoLevelIPPO`, per-head ratios, entropy and KL, p(free) = 0.5 start, checkpoint skill lists, driver wired,
+  skills pilot wired, held-command arm script; QC once per step. Next: step 4b (run 0 for the skills route: skills Strike
+  v guard_parked_centre, PASS at 900 or more of 1,000; lead's call) on branch `l3-run0`, then slice 3 (absent-drone mask,
+  opponent pool, tier 2 wiring), then the pipeline-check pilots.
+- **Tests and budget:** full suite on `fa549048`: 2,672 passed, 1 failed (a literals rule), fixed in `9a982c69` and
+  re-run. budget_l1_l2 (phases L1 + L2): used 4.439 of 13.0 GPU-h (own rows 0.899, carried 3.540)
+  (`scripts/ste_job.py status`).
+- **Main track:** L2 done; L3 slice 2 merged, run 0 for the skills route next · **Side track:** none open.
+- **Waiting on the owner:** the planned-pushes flight NEAR-962 (one drone alone, filter on, single-axis pushes from rest
+  at 0.25–1.0 m/s plus a few fast pushes and turns; record `/svg/drone_N/teleop_command`; note the config, the PX4 build
+  and `MPC_XY_VEL_MAX`); a look at the Crazyflie show's commanded gaps below its own 0.80 m minimum before the next
+  Crazyflie flight. No other decision is open.
 
 ### 24 November 2026 ~13:30 — RTX 5090 DAY: OWNER RULINGS R24–R28, AIRSTACK SET UP ON THE 5090, L1.4, L1.5 AND L2.5 DONE, L3 NOTE v2 (read this first)
 

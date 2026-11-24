@@ -24,8 +24,9 @@ the team's value, `core/rewards.py:17-22`), the same reward whatever it "does". 
 gradient, and they move the observation scaler towards zero and the advantage statistics.
 
 **The setting.** `[learner] mask_absent = true | false` (absent: false), legal for both routes
-(`ste/skills.learner_spec`gains the key; `LearnerSpec.mask_absent`), so one line switches it for the pair of runs. Off: today's learners exactly
-(the velocity route on stock skrl IPPO, `exploit_train.py:260`; `TwoLevelIPPO` as merged).
+(`ste/skills.learner_spec` gains the key; `LearnerSpec.mask_absent`), so one line switches it for the pair of runs.
+Off: today's learners exactly (the velocity route on stock skrl IPPO, `exploit_train.py:260`; `TwoLevelIPPO` as
+merged).
 
 **What is masked, when on** (per agent, per sample, weight a_t = alive at the decision):
 
@@ -58,8 +59,9 @@ scaler; simpler, but departs from v2's list.
 h'_t = h_t · a_t (team mask L·a, drone mask F·a), stored as today in `head_mask` and multiplied in the update, so
 `two_level_policy_terms` (`ste/two_level.py:60`) takes h' and the live-sample count as its denominator. The leader is
 live by construction (`skills.py:265`, `resolve_two_level`), except when no drone of the team is live: then the
-leader is the last slot on all-zero observations (slice 2's case, Guard team only); with the mask on, L·a = 0 and F·a = 0 for
-every slot, so that decision trains nothing (correct: nobody flies). Off, it trains as today (slice 2, test 17).
+leader is the last slot on all-zero observations (slice 2's case, Guard team only); with the mask on, L·a = 0 and
+F·a = 0 for every slot, so that decision trains nothing (correct: nobody flies). Off, it trains as today (slice 2,
+test 17).
 
 **Where.** A `MaskedIPPO(IPPO)` (`ste/masked_ippo.py`) whose `update` and `post_interaction` are the masked copies,
 built only when `mask_absent` is on (the velocity route); `TwoLevelIPPO` takes the same masked pieces as functions

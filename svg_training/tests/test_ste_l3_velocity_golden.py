@@ -80,12 +80,14 @@ SIDES = ("guard", "strike")
 
 def fresh_process_values(side: str) -> dict:
     """``golden_values`` computed in a fresh Python process (24 Nov 2026): in the full suite an earlier module leaves
-    global torch state behind (threads, and more than threads: a thread pin alone did not make the decimals equal), so
-    the bit-for-bit comparison runs where nothing else has run."""
+    global torch state behind, and the suite may run with OMP_NUM_THREADS set; the bit-for-bit comparison runs where
+    nothing else has run, at the default thread count the golden was recorded with."""
     import subprocess
 
     from _proc import child_env, child_python
     env = {**child_env("source" + os.pathsep + "tests"), "CUDA_VISIBLE_DEVICES": ""}
+    for k in ("OMP_NUM_THREADS", "MKL_NUM_THREADS"):     # the golden was recorded at torch's default thread count;
+        env.pop(k, None)                                  # a suite run with OMP_NUM_THREADS=8 changed the last bits
     r = subprocess.run([child_python(), str(pathlib.Path(__file__)), "--print-values", side], cwd=ROOT, env=env,
                        capture_output=True, text=True, timeout=600)
     assert r.returncode == 0, r.stderr[-2000:]

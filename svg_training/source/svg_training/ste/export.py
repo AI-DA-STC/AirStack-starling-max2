@@ -8,9 +8,10 @@ ste_learning/drafts/L3_L6_PIPELINE_SPEC.md section 5; lead's answer 3: schemas `
   schema, the status, the files' sha256, the skills route's lists and rules, golden rows on real observations).
 * :func:`reload_check`: in a fresh process, the folder read back WITHOUT torch's modules: onnxruntime (the primary
   runtime) and ``onnx.reference.ReferenceEvaluator`` (an independent second check). Refuses (ValueError) a missing or
-  changed status, an unknown schema, a changed file. Outputs within ``GOLDEN_TOL`` of the golden rows; for the skills
+  changed status, an unknown schema, a changed file, skill lists unlike the ONNX files' own. Outputs within
+  :func:`within` (``GOLDEN_ATOL + GOLDEN_RTOL * max |golden row|``) of the golden rows; for the skills
   route each head's argmax, the flown skills and the skill lists exactly and the final commands (the pinned
-  ``opponents/scripted.py``) within ``GOLDEN_TOL``.
+  ``opponents/scripted.py``) within :func:`within`.
 
 Every file carries ``status = "pipeline check, not for flight"`` (in ``interface.toml`` and in each ONNX file's
 metadata). This does not settle whether onnxruntime or torch runs in the AirStack ground container (ARCHITECTURE
@@ -19,6 +20,7 @@ from __future__ import annotations
 
 import hashlib
 import io
+import json
 import subprocess
 import tomllib
 from pathlib import Path
@@ -33,12 +35,28 @@ from . import exploit, skills, sweep
 
 STATUS = "pipeline check, not for flight"
 SCHEMAS = {"velocity": "ste-check-velocity-0", "skills": "ste-check-skills-0"}
-GOLDEN_TOL = 1e-6                 # absolute: the ONNX runtimes round differently from torch (not bit for bit)
+GOLDEN_ATOL = 1e-6                # the ONNX runtimes round differently from torch (not bit for bit): absolute part
+GOLDEN_RTOL = 1e-6                # and relative part (float32 rounding grows with the logit scale)
 OPSET = 17
 GOLDEN_GAMES = 8
 GOLDEN_SEED = 5                   # the scripted game's seed of the golden observations
 GOLDEN_TICKS = 30                 # ticks of scripted play before the golden observations are taken (some drones out)
 SCRIPTED = exploit.ROOT / "source" / "svg_training" / "opponents" / "scripted.py"
+
+
+def within(got, want) -> tuple[bool, float, float]:
+    """|got - want| <= GOLDEN_ATOL + GOLDEN_RTOL * max |want row| everywhere (a row: one output vector, the last axis;
+    float32 rounding in a layer's sums grows with the row's scale, not with the one element) -> (ok, max |got -
+    want|, max |want|)."""
+    got, want = np.asarray(got, dtype=np.float64), np.asarray(want, dtype=np.float64)
+    diff = np.abs(got - want)
+    row = np.abs(want).max(axis=-1, keepdims=True) if want.ndim else np.abs(want)
+    ok = bool(np.all(diff <= GOLDEN_ATOL + GOLDEN_RTOL * row))
+    return ok, float(diff.max()) if diff.size else 0.0, float(np.abs(want).max()) if want.size else 0.0
+
+
+def tolerance_text() -> str:
+    return f"{GOLDEN_ATOL:g} + {GOLDEN_RTOL:g} * max |golden row|"
 
 
 def sha256_file(path) -> str:
@@ -101,6 +119,7 @@ def export_policy(saved: dict, gates, side: str, out_dir, obs: torch.Tensor, sou
     out.mkdir(parents=True, exist_ok=True)
     d = _dispatch(gates, side, obs.shape[0]) if route == "skills" else None
     files, outputs = [], []
+    skills_json = json.dumps(skills.skills_meta(d), sort_keys=True) if route == "skills" else None
     for slot, a in enumerate(names):
         pol = TwoLevelPolicy(hidden, d.widths, "cpu") if route == "skills" else StandinPolicy(hidden, "cpu")
         pol.load_state_dict(modules[a]["policy"])
@@ -114,6 +133,9 @@ def export_policy(saved: dict, gates, side: str, out_dir, obs: torch.Tensor, sou
         for key, value in (("status", STATUS), ("policy_schema", SCHEMAS[route]), ("team", side), ("slot", str(slot))):
             entry = m.metadata_props.add()
             entry.key, entry.value = key, value
+        if skills_json is not None:                     # the skill lists in every file too (the reload compares them)
+            entry = m.metadata_props.add()
+            entry.key, entry.value = "skills", skills_json
         onnx.checker.check_model(m)
         path = out / f"policy_{side}_{slot}.onnx"
         onnx.save(m, str(path))
@@ -167,7 +189,9 @@ def _interface(gates, side: str, route: str, files: list, golden: list, d, sourc
              f'filter_share = "{cfg.filter.share}"', f'game_file = "{game.file}"', f'game_sha256 = "{game.sha256}"',
              f'drone_model_file = "{cfg.starling.params}"', f'drone_model_sha256 = "{sha256_file(params)}"',
              f'git_commit = "{commit}"', f"seed = {int(gates.variants['base']['train_seed'][side])}",
-             f'gates_sha256 = "{gates.sha256}"']
+             f'gates_sha256 = "{gates.sha256}"',
+             f"golden_output_scale = {float(np.abs(np.asarray([r['outputs'] for r in golden])).max())!r}",
+             f'golden_tolerance = "{tolerance_text()}"']
     for key in ("run", "checkpoint", "checkpoint_sha256"):
         if source is not None:
             lines.append(f'source_{key} = "{source[key]}"')
@@ -234,6 +258,14 @@ def reload_check(folder) -> dict:
         if props.get("status") != STATUS or props.get("policy_schema") != meta["policy_schema"]:
             raise ValueError(f"{f['file']}: ONNX metadata status {props.get('status')!r} / schema "
                              f"{props.get('policy_schema')!r}, must be {STATUS!r} / {meta['policy_schema']!r}")
+        if route == "skills":
+            sk = meta["skills"]
+            mine = {"team": meta["team"], "players": list(sk["players"]), "choice": skills.TWO_LEVEL,
+                    "team_strategies": list(sk["team_strategies"]), "drone_skills": list(sk["drone_skills"]),
+                    "free_index": sk["free_index"]}
+            if json.loads(props.get("skills", "null")) != mine:
+                raise ValueError(f"{f['file']}: the skill lists in interface.toml {mine} are not the file's own "
+                                 f"{props.get('skills')}")
         sess = ort.InferenceSession(str(path), providers=["CPUExecutionProvider"])
         ref = ReferenceEvaluator(m)
         runners.append((sess, ref))
@@ -243,15 +275,15 @@ def reload_check(folder) -> dict:
     for slot, (sess, ref) in enumerate(runners):
         got["onnxruntime"].append(sess.run(None, {"obs": obs[:, slot]})[0])
         got["onnx.reference"].append(ref.run(None, {"obs": obs[:, slot]})[0])
-    worst = 0.0
+    worst, scale = 0.0, 0.0
     for name, outs in got.items():
-        arr = np.stack(outs, axis=1)
-        diff = float(np.abs(arr - want).max())
+        ok, diff, scale = within(np.stack(outs, axis=1), want)
         worst = max(worst, diff)
-        if diff > GOLDEN_TOL:
-            raise ValueError(f"golden rows: {name} differs by {diff:.2e} (> {GOLDEN_TOL:g})")
+        if not ok:
+            raise ValueError(f"golden rows: {name} differs by up to {diff:.2e} (tolerance {tolerance_text()}, "
+                             f"outputs up to {scale:.3g})")
     out = {"ok": True, "runtimes": list(got), "max_abs_diff": worst, "golden_rows": int(obs.shape[0] * obs.shape[1]),
-           "route": route, "status": STATUS}
+           "route": route, "status": STATUS, "output_scale": scale, "tolerance": tolerance_text()}
     if route == "skills":
         out.update(_skills_reload(meta, obs, np.stack(got["onnxruntime"], axis=1)))
     return out
@@ -280,8 +312,8 @@ def _skills_reload(meta: dict, obs: np.ndarray, logits: np.ndarray) -> dict:
     want_flown = torch.tensor([row["flown"] for row in meta["golden"]])
     want_cmd = torch.tensor([row["command"] for row in meta["golden"]], dtype=command.dtype)
     choices_equal = bool(torch.equal(heads, want_heads) and torch.equal(flown, want_flown))
-    cmd_diff = float((command - want_cmd).abs().max())
-    if not (lists_equal and choices_equal and cmd_diff <= GOLDEN_TOL):
+    cmd_ok, cmd_diff, _ = within(command.numpy(), want_cmd.numpy())
+    if not (lists_equal and choices_equal and cmd_ok):
         raise ValueError(f"skills golden rows: lists equal {lists_equal}, choices equal {choices_equal}, commands "
                          f"differ by {cmd_diff:.2e}")
     return {"choices_equal": choices_equal, "skill_lists_equal": lists_equal, "commands_max_abs_diff": cmd_diff}

@@ -12,7 +12,7 @@ which refuses other skill lists). Exports with ``ste/export.py`` (``golden_obser
 one ONNX file per drone slot and ``interface.toml``, which records ``source_run``, ``source_checkpoint``,
 ``source_checkpoint_sha256`` and the run's ``gates_sha256``. Control ``ctl_team_equals_export`` (controls.json): the
 loaded team's own outputs (velocity: mean actions; skills: logits) on the golden observations equal the exported
-golden rows within ``export.GOLDEN_TOL``.
+golden rows within ``export.within`` (absolute + relative).
 
 Exit codes: 0 done; 2 refused (a finished export folder, an unfinished run, a gate file copy that is not the pin,
 a checkpoint the route's loader refuses); 6 the control failed. The reload check in a fresh process is the
@@ -91,12 +91,12 @@ def main(argv: list[str] | None = None) -> int:
     folder = export.export_policy(saved, gates, side, out, obs, source=source)
     meta = tomllib.loads((folder / "interface.toml").read_text())
     got = torch.tensor([row["outputs"] for row in meta["golden"]], dtype=want.dtype)
-    diff = float((got - want.detach()).abs().max())
-    ok = diff <= export.GOLDEN_TOL
+    ok, diff, scale = export.within(got.numpy(), want.detach().numpy())
     controls = {"ctl_team_equals_export": {
         "status": PASS if ok else FAIL, "phase": "export",
         "detail": f"the run's team (route loader) against the exported golden rows: max abs diff {diff:.2e} "
-                  f"(tolerance {export.GOLDEN_TOL:g}), {got.shape[0]} games x {got.shape[1]} drones"}}
+                  f"(tolerance {export.tolerance_text()}, outputs up to {scale:.3g}), {got.shape[0]} games x "
+                  f"{got.shape[1]} drones"}}
     (out / "controls.json").write_text(json.dumps(controls, indent=1))
     print(f"export {'done' if ok else 'CONTROL FAILED'}: {folder} ({meta['policy_schema']}, {side}; {export.STATUS})")
     return EXIT_DONE if ok else EXIT_CONTROL_FAILED

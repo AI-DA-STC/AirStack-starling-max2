@@ -134,3 +134,73 @@ def test_onnxruntime_is_listed_as_the_export_extra():
     data = tomllib.loads((exploit.ROOT / "pyproject.toml").read_text())
     extra = {r.split(">")[0].split("=")[0].strip() for r in data["project"]["optional-dependencies"]["export"]}
     assert {"onnx", "onnxruntime"} <= extra
+
+
+# ------------------------------------------------------------------------------------------- QC round (S3, S4)
+def _bump(v, by):
+    """The first number of a (nested) list moved by ``by`` (ints: by 1)."""
+    if isinstance(v, list):
+        return [_bump(v[0], by)] + v[1:]
+    return v + (1 if isinstance(v, int) else by)
+
+
+def tamper(folder, key, fn):
+    """Rewrite the first ``key = ...`` line of interface.toml (the first golden row, or [skills]) with fn(value)."""
+    import re
+    path = folder / "interface.toml"
+    text = path.read_text()
+    m = re.search(rf"^{key} = .*$", text, flags=re.M)
+    value = tomllib.loads(m.group(0))[key]
+    path.write_text(text[:m.start()] + f"{key} = {export._arr(fn(value))}" + text[m.end():])
+
+
+@pytest.mark.parametrize("key,fn", [
+    ("outputs", lambda v: _bump(v, 1e-3)), ("heads", lambda v: _bump(v, 1)), ("flown", lambda v: _bump(v, 1)),
+    ("command", lambda v: _bump(v, 1e-3)), ("drone_skills", lambda v: v[::-1]), ("team_strategies", lambda v: v[::-1])])
+def test_the_reload_refuses_tampered_golden_rows_and_skill_lists(exported, tmp_path, key, fn):
+    import shutil
+    route, side, gates, learner, folder, obs = exported
+    if route != "skills" and key != "outputs":
+        pytest.skip("heads, flown skills, commands and skill lists exist on the skills route only")
+    copy = tmp_path / "copy"
+    shutil.copytree(folder, copy)
+    tamper(copy, key, fn)
+    with pytest.raises(ValueError, match="golden|skill lists"):
+        export.reload_check(copy)
+
+
+def test_a_disagreement_of_the_reference_evaluator_alone_fails_the_check(exported, monkeypatch):
+    from onnx.reference import ReferenceEvaluator
+    route, side, gates, learner, folder, obs = exported
+    real = ReferenceEvaluator.run
+    monkeypatch.setattr(ReferenceEvaluator, "run", lambda self, *a, **k: [x + 1e-3 for x in real(self, *a, **k)])
+    with pytest.raises(ValueError, match="onnx.reference"):
+        export.reload_check(folder)
+
+
+def test_the_tolerance_is_relative_and_absolute():
+    import numpy as np
+    big = np.array([1.0e5, -2.0e5], dtype=np.float32)
+    assert export.within(big + np.float32(0.05), big)[0]                      # 0.05 <= 1e-6 + 1e-6 * 1e5
+    assert not export.within(big + np.float32(1.0), big)[0]
+    assert export.within(np.array([5e-7]), np.array([0.0]))[0]
+    assert not export.within(np.array([2e-6]), np.array([0.0]))[0]
+
+
+def test_large_logits_reload_and_their_scale_is_recorded(tmp_path):
+    """A policy whose last layer is scaled by 1e5: logits ~1e5, float rounding far above 1e-6 absolute."""
+    gates, learner = tiny_learner("skills", "strike")
+    saved = learner.saved()
+    for mod in saved["modules"].values():
+        pol = mod["policy"]
+        last = [k for k in pol if k.endswith("weight") and k.startswith("net.")][-1]
+        pol[last] = pol[last] * 1e5
+        pol[last.replace("weight", "bias")] = pol[last.replace("weight", "bias")] * 1e5
+    obs = export.golden_observations(gates, "strike", games=8, seed=5)
+    folder = export.export_policy(saved, gates, "strike", tmp_path / "big", obs)
+    meta = tomllib.loads((folder / "interface.toml").read_text())
+    assert meta["golden_output_scale"] > 1e3 and "1e-06" in meta["golden_tolerance"]
+    r = reload_in_a_fresh_process(folder)
+    assert r.returncode == 0, r.stderr[-2000:]
+    out = json.loads(r.stdout.strip().splitlines()[-1])
+    assert out["ok"] and out["output_scale"] == pytest.approx(meta["golden_output_scale"]) and out["tolerance"]

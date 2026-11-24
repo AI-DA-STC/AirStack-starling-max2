@@ -61,23 +61,50 @@ class RecordingStopped(RuntimeError):
 
 
 class _RecordingGame(SvgGame):
-    """SvgGame that remembers each game's last positions just before its auto-reset overwrites them. ``starts``
-    (starts_m [N, M, 3], miss [N]): every game starts there (``record_games``' ``starts``); None: the game's own draw."""
-
-    def __init__(self, *args, starts=None, **kw):
-        self._given_starts = starts          # set before SvgGame's constructor, whose reset draws the first starts
-        super().__init__(*args, **kw)
-
-    def _draw_starts(self, arenas):
-        if self._given_starts is None:
-            return super()._draw_starts(arenas)
-        return tuple(x.to(self.device) for x in self._given_starts)
+    """SvgGame that remembers each game's last positions just before its auto-reset overwrites them."""
 
     def _new_games(self, mask):
         if getattr(self, "_keep", False):
             self._last_pos = self.pos_m.clone()
             self._last_alive = self.alive.clone()
         super()._new_games(mask)
+
+
+class _GivenStartsRecordingGame(_RecordingGame):
+    """``_RecordingGame`` whose games all start at given starts (starts_m [N, M, 3], miss [N]; ``record_games``'
+    ``starts``). A class of its own, used only when starts are given: SvgGame refuses drawn team sizes for any class
+    that replaces ``_draw_starts``, and ``_RecordingGame`` must keep recording those."""
+
+    def __init__(self, *args, starts, **kw):
+        self._given_starts = starts          # set before SvgGame's constructor, whose reset draws the first starts
+        super().__init__(*args, **kw)
+
+    def _draw_starts(self, arenas):
+        return tuple(x.to(self.device) for x in self._given_starts)
+
+
+def check_starts(cfg: GameCfg, num_games: int, guards: int, strikes: int, starts) -> None:
+    """Refuse (ValueError) given starts that are not (starts_m [num_games, guards + strikes, 3], miss [num_games]), or
+    that a game with drawn team sizes would ignore (its starts come from its own sized draw,
+    ``SvgGame._sized_starts``)."""
+    pos, miss = starts
+    want = (num_games, guards + strikes, 3)
+    if tuple(pos.shape) != want:
+        raise ValueError(f"given starts_m has shape {tuple(pos.shape)}, the game needs {want} (games, drones, xyz)")
+    if tuple(miss.shape) != (num_games,):
+        raise ValueError(f"given starts miss has shape {tuple(miss.shape)}, the game needs ({num_games},)")
+    if cfg.team_size.mode == "drawn":
+        raise ValueError('given starts with team_size.mode "drawn": the sized draw would ignore them')
+
+
+def cpu_starts(cfg: GameCfg, num_games: int, guards: int, strikes: int, seed: int, band: int | None = 1):
+    """The starts ``record_games`` draws on the CPU for these arguments (the constructor's draw, then ``reset()``'s):
+    (starts_m [num_games, guards + strikes, 3] m, miss [num_games] bool), on the CPU. Give them as ``starts`` to every
+    device that must play these starts (CLIP-T2). ``cfg``: a game file without the physics backend (tier 1's; the start
+    draw does not read the drone model)."""
+    game = SvgGame(cfg, num_games, guards, strikes, device="cpu", seed=seed, band=band)
+    game.reset()
+    return game.pos_m.clone(), game.start_miss.clone()
 
 
 def record_games(cfg: GameCfg, guards: int, strikes: int, guard_spec, strike_spec, num_games: int = 8,
@@ -91,11 +118,20 @@ def record_games(cfg: GameCfg, guards: int, strikes: int, guard_spec, strike_spe
     2); every frame is copied to the host; ``should_stop()`` is asked before every step and True raises
     :class:`RecordingStopped`.
     ``starts`` (CLIP-T2, 24 Nov 2026): (starts_m [num_games, M, 3] m, miss [num_games] bool) on any device: every game
-    starts there instead of the game's own draw, for a fixed-arena game file (the starts must fit its arena). The draw
-    depends on the device (a CUDA generator gives other starts than a CPU one from the same seed), so the same games on
-    two devices need starts drawn once and given to both. None (the default): the game's own draw, unchanged."""
+    starts there instead of the game's own draw, for a fixed-arena game file (the starts must fit its arena); refused
+    (ValueError) on a wrong shape or with drawn team sizes (``check_starts``). The start draw depends on the device (a
+    CUDA generator gives other starts than a CPU one from the same seed), so two devices meant to play the same starts
+    need them drawn once (``cpu_starts``) and given to both: same starts, same game file; the tag, strategy and
+    estimator noise streams are each device's own. With given starts the game's generator skips the start draws, so its
+    later draws (drop-out) shift: the same games as the own draw only with ``dropout_fraction`` 0 (every clip game file
+    so far). None (the default): the game's own draw, unchanged."""
     dev = device
-    game = _RecordingGame(cfg, num_games, guards, strikes, device=dev, seed=seed, band=band, world=world, starts=starts)
+    if starts is None:
+        game = _RecordingGame(cfg, num_games, guards, strikes, device=dev, seed=seed, band=band, world=world)
+    else:
+        check_starts(cfg, num_games, guards, strikes, starts)
+        game = _GivenStartsRecordingGame(cfg, num_games, guards, strikes, device=dev, seed=seed, band=band, world=world,
+                                         starts=starts)
     guard = make_strategy(guard_spec, "guard", cfg, num_games, dev, seed + 101) if isinstance(guard_spec, str) else guard_spec
     strike = (make_strategy(strike_spec, "strike", cfg, num_games, dev, seed + 202) if isinstance(strike_spec, str)
               else strike_spec)

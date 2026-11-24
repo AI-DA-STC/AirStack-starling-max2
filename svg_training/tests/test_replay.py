@@ -159,3 +159,49 @@ def test_given_starts_are_played_by_every_slot_and_none_is_unchanged():
     assert [(r.game_index, r.outcome, r.end_step) for r in again] == [(r.game_index, r.outcome, r.end_step) for r in own]
     for a, b in zip(again, own):
         assert np.array_equal(a.pos_m, b.pos_m)
+
+
+@pytest.mark.parametrize("bad", ["games", "drones", "xyz", "miss"])
+def test_given_starts_of_the_wrong_shape_are_refused(bad):
+    """CLIP-T2 QC: starts_m [N, M, 3] with N = num_games, M = the game's drones, and miss [N]; anything else refused."""
+    n, m = 3, 3
+    pos, miss = torch.zeros(n, m, 3), torch.zeros(n, dtype=torch.bool)
+    if bad == "games":
+        pos = torch.zeros(n + 1, m, 3)
+    elif bad == "drones":
+        pos = torch.zeros(n, m + 1, 3)
+    elif bad == "xyz":
+        pos = torch.zeros(n, m, 2)
+    else:
+        miss = torch.zeros(n + 1, dtype=torch.bool)
+    with pytest.raises(ValueError, match="starts"):
+        record_games(CFG, 2, 1, "guard_mark_inside", "strike_flank", num_games=n, seed=5, max_steps=2,
+                     starts=(pos, miss))
+
+
+def test_drawn_team_sizes_still_record_without_given_starts():
+    """Regression (CLIP-T2 QC): the given-starts hook must not make every drawn-size game refuse (``SvgGame`` refuses a
+    subclass that replaces ``_draw_starts`` when sizes are drawn)."""
+    cfg = load_game_cfg(ROOT / "configs" / "ste_l2" / "drone_loss_drawn.toml", use_local=False)[0]
+    recs = record_games(cfg, 5, 3, "guard_mark_edge", "strike_straight", num_games=2, seed=5, band=0)
+    assert recs
+
+
+def test_given_starts_are_refused_with_drawn_team_sizes():
+    """Drawn team sizes start through their own draw (``_sized_starts``), which would ignore given starts silently."""
+    cfg = load_game_cfg(ROOT / "configs" / "ste_l2" / "drone_loss_drawn.toml", use_local=False)[0]
+    assert cfg.team_size.mode == "drawn"
+    with pytest.raises(ValueError, match="given starts"):
+        record_games(cfg, 5, 3, "guard_mark_edge", "strike_straight", num_games=2, seed=5, band=0, max_steps=2,
+                     starts=(torch.zeros(2, 8, 3), torch.zeros(2, dtype=torch.bool)))
+
+
+def test_cpu_starts_are_record_games_own_cpu_draw():
+    """``cpu_starts``: the starts record_games draws on the CPU (constructor's draw, then reset()'s), on the CPU."""
+    from svg_training.viz.replay import cpu_starts
+    pos, miss = cpu_starts(CFG, 3, 2, 1, seed=5, band=1)
+    assert pos.device.type == "cpu" and pos.shape == (3, 3, 3) and miss.shape == (3,)
+    recs = record_games(CFG, 2, 1, "guard_mark_inside", "strike_flank", num_games=3, seed=5)
+    assert recs
+    for r in recs:
+        assert np.array_equal(r.pos_m[0], pos[r.game_index].numpy())

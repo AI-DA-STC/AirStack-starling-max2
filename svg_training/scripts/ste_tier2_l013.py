@@ -1,8 +1,8 @@
 #!/usr/bin/env python
-"""STE task L0.13 Does tier 2 train at all? (PLAN.md section 4 row L0.13; LEAD CALL 21 Nov 2026): the L0.12 Guard
-recipe trained on tier 2 (the Isaac Lab rigid-body Starling) beside a fresh tier 1 control with the same games at once,
-game-steps, seed and procedure; both scored on T44's starts. Logic: ``source/svg_training/ste/tier2_train.py``; trainer:
-``ste/exploit_train.py``; settings, controls and the verdict: ``configs/ste_l013/gates.toml``.
+"""STE task L0.13 Does tier 2 train at all? (PLAN.md section 4 row L0.13; LEAD CALL 21 Nov 2026): the L0.12 Guard recipe
+trained on tier 2 (the Isaac Lab rigid-body Starling) beside a fresh tier 1 control with the same number of games at
+once, game-steps, seed and procedure; both scored on T44's starts. Logic: ``source/svg_training/ste/tier2_train.py``;
+trainer: ``ste/exploit_train.py``; settings, controls and the verdict: ``configs/ste_l013/gates.toml``.
 
 Two jobs, two run folders, arm t1 first (t2 scores t1's networks on tier 2, so it names t1's finished folder):
 
@@ -752,20 +752,24 @@ class Arm:
 
     def clips(self) -> list[str]:
         """STANDARDS section 8: the final networks v the opponent, the arm's own tier, 2-D with the height panel. t1 on
-        the CPU; t2 on a view of the Isaac world (frames copied to the host)."""
+        the CPU; t2 on a view of the Isaac world (frames copied to the host). CLIP-T2 (24 Nov 2026): both arms play the
+        clip starts drawn once on the CPU from the clip seed and the tier-1 game file (``viz.replay.cpu_starts``; the t1
+        arm's own draw), not t2's own CUDA draw: same starts, same game file; the tag, strategy and estimator noise
+        streams are each device's own."""
         import ste_exploit_l012 as l012
         from svg_training.opponents.scripted import make_strategy
         from svg_training.ste import exploit_train
-        from svg_training.viz.replay import record_games, render_replay
+        from svg_training.viz.replay import cpu_starts, record_games, render_replay
         g, v = self.gates, self.gates.videos
         n, seed = int(v["games"]), int(g.run["clip_seed"])
         dev = "cpu" if self.tier == 1 else self.device
         team = exploit_train.team_from_modules("guard", self.learner.modules(), list(g.trainer["hidden"]), dev)
         team.name = f"Guard team trained on tier {self.tier} (arm {self.arm})"
         opp = make_strategy(self.opp, "strike", self.cfg(self.tier), n, dev, seed + self.exploit.STRIKE_SEED_OFFSET)
+        starts = cpu_starts(self.cfg1, n, self.guards, self.strikes, seed, band=0)
         recs = record_games(self.cfg(self.tier), self.guards, self.strikes, self.exploit.HeldPlayer(team, self.hold), opp,
                             num_games=n, seed=seed, band=0, max_steps=int(v["max_ticks"]), device=dev,
-                            world=self.view(n) if self.tier == 2 else None, should_stop=self.stop_final)
+                            world=self.view(n) if self.tier == 2 else None, should_stop=self.stop_final, starts=starts)
         out = []
         for rec in l012.pick_videos(recs, int(v["keep"])):
             kind = "reach" if rec.outcome == self.exploit.STRIKE_WIN else "hold"

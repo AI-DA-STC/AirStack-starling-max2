@@ -488,3 +488,26 @@ def test_sigint_during_the_clips_exits_4_and_the_same_command_finishes(tmp_path,
     monkeypatch.setattr(replay, "record_games", real)
     assert arm(g, r, "t1", videos=True) == 0
     assert list((r / "videos").glob("l013_t1_tier1_game*.gif"))
+
+
+def test_the_tier2_clips_play_the_cpu_drawn_clip_starts(two_arms, tmp_path, monkeypatch):
+    """CLIP-T2 QC: the t2 arm's clips run on the arm's device, whose generator draws other starts than tier 1's CPU draw
+    from the same clip seed; both arms must get the clip starts drawn once on the CPU (``viz.replay.cpu_starts`` on the
+    tier-1 game file)."""
+    import svg_training.viz.replay as replay
+    real, seen = replay.record_games, []
+
+    def spy(cfg, *a, **k):
+        seen.append(k.get("starts"))
+        return real(cfg, *a, **k)
+    monkeypatch.setattr(replay, "record_games", spy)
+    r = tmp_path / "t2"
+    assert arm(two_arms["gates"], r, "t2", two_arms["t1"], videos=True) == 0
+    gates = T.load_gates(two_arms["gates"])
+    from svg_training.ste import sweep
+    guards, strikes = sweep.parse_size(gates.run["size"])
+    want = replay.cpu_starts(T.tier_cfg(gates, 1), int(gates.videos["games"]), guards, strikes,
+                             int(gates.run["clip_seed"]), band=0)
+    assert len(seen) == 1 and seen[0] is not None, "the tier-2 clips drew their own starts on the arm's device"
+    assert seen[0][0].device.type == "cpu"
+    assert bool((seen[0][0] == want[0]).all()) and bool((seen[0][1] == want[1]).all())

@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 """STE task L2.6 follow-up clips (spec ste_learning/drafts/L2_6_SPEC.md, "Clips"; lead's decision 24 Nov 2026: a render
-after the run, not a driver step). 2-D replays with the height panel (viz/replay.py) of the SAME games on tier 1 and
+after the run, not a driver step). 2-D replays with the height panel (viz/replay.py) of the same starts on tier 1 and
 tier 2: the same game file (tier 2 = the physics backend and the off parameter file, as the driver plays it), the same
 clip seed, and the same starts: drawn once on the CPU from the clip seed (``clip_starts``) and given to both tiers, so
 game i starts the same on both (CLIP-T2, 24 Nov 2026: tier 2 runs on CUDA, whose generator draws other starts from the
-same seed). Own starts from the clip seed (as L2.5's clips), never T44's scoring starts. The cells: landing + option B
-at 1.15 m, guard_mark_edge v strike_low (the one cell beyond T13's 0.10 gap, T71) and guard_mark_edge v strike_straight
-(option B lowers its hold on both tiers).
+same seed). Same starts, same game file; the tag, strategy and estimator noise streams are each device's own. Own starts
+from the clip seed (as L2.5's clips), never T44's scoring starts. The cells: landing + option B at 1.15 m,
+guard_mark_edge v strike_low (the one cell beyond T13's 0.10 gap, T71) and guard_mark_edge v strike_straight (option B
+lowers its hold on both tiers).
 
 Which game is drawn (fixed before rendering, in this code): the first game index whose outcome differs between the two
 tiers; if none, game 0. The same index on both tiers. Every game's outcome on both tiers goes to ``clips.json``.
@@ -71,13 +72,11 @@ def choose(t1: list[int], t2: list[int]) -> tuple[int, str]:
 
 
 def clip_starts(cfg, games: int):
-    """The clip games' starts (starts_m [games, 6, 3] m, miss [games] bool), drawn once on the CPU from CLIP_SEED exactly
-    as ``record_games`` draws them on the CPU (the constructor's draw, then ``reset()``'s), so tier 1 is unchanged and
-    tier 2 plays the same games whatever its device."""
-    from svg_training.core.game import SvgGame
-    game = SvgGame(cfg, games, 3, 3, device="cpu", seed=CLIP_SEED, band=0)
-    game.reset()
-    return game.pos_m.clone(), game.start_miss.clone()
+    """The clip games' starts (starts_m [games, 6, 3] m, miss [games] bool): ``viz.replay.cpu_starts`` from CLIP_SEED
+    (``record_games``' own CPU draw), so tier 1 is unchanged and tier 2 plays the same starts whatever its device.
+    ``cfg``: the tier-1 game file."""
+    from svg_training.viz.replay import cpu_starts
+    return cpu_starts(cfg, games, 3, 3, CLIP_SEED, band=0)
 
 
 def pick_tier1(t1: list[int]) -> list[int]:
@@ -109,12 +108,14 @@ def run(a: argparse.Namespace) -> int:
     dev2 = "cpu" if a.dry_cpu else "cuda"
     factory = torch_world_factory if a.dry_cpu else isaac_world_factory
     a.out_dir.mkdir(parents=True, exist_ok=True)
-    world, meta = None, {"what": "STE L2.6 follow-up clips: the same games on tier 1 and tier 2", "seed": CLIP_SEED,
+    world, meta = None, {"what": "STE L2.6 follow-up clips: the same starts on tier 1 and tier 2", "seed": CLIP_SEED,
                          "games": a.games, "max_ticks": a.max_ticks, "dry_cpu": bool(a.dry_cpu),
                          "tier1_only": bool(a.tier1_only),
                          "rule": ("tier 1 only, the first reach and the first hold; tier 2 pending" if a.tier1_only
                                   else "the first game whose outcome differs between the tiers, else game 0"),
-                         "starts": "drawn once on the CPU from the seed, the same on both tiers (clip_starts, CLIP-T2)",
+                         "starts": ("drawn once on the CPU from the seed, the same on both tiers (clip_starts, "
+                                    "CLIP-T2); same starts, same game file; the tag, strategy and estimator noise "
+                                    "streams are each device's own"),
                          "gates_sha256": drv._sha(GATES), "cells": []}
     for group, guard, strike in CELLS:
         g = by[group]

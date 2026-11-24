@@ -1,6 +1,7 @@
 INTERNAL · spec of task L2.5 (the parked-Guard control and the scripted screen under the new rules), written before any of its runs; DRAFT until the lead's review freezes it · [../README.md](../README.md); the task's row: [WORK_BREAKDOWN](../WORK_BREAKDOWN.md) L2.5
 
-Written 24 Nov 2026 by the L2.5 builder, before any run. Nothing here has been run except a CPU speed probe (below).
+Written 24 Nov 2026 by the L2.5 builder, before any run of the screen. Run by the builder: a CPU speed probe and a
+96-game scratch check (both below, neither a result), the tests, and the driver's preflight and projection (no play).
 
 # L2.5: Parked-Guard control and scripted opponents under the new rules (INFO)
 
@@ -91,7 +92,9 @@ their intervals do not overlap (stricter than a 5 % test; at 1,000 games it cann
 prose guidance, as L1.9). One seed, one start set: the intervals cover scoring noise only. About 30 cells per
 comparison and no multiplicity correction: a single "distinguishable" cell is read with care.
 
-1. **The risk (main reading).** For each tag-on rule set (base, landing, gy, landing_gy) and each parked script (still,
+1. **The risk (main reading).** Words fixed in advance for the three new-rule sets (landing, gy, landing_gy); base
+   is T44's game, whose answer is already known (still Guard 43.0 % at worst against mark_edge 80.8 %), and is shown
+   beside them. For each rule set and each parked script (still,
    ring): its worst-cell hold H_p (lowest over the six Strike scripts) against the best moving script's worst-cell hold
    H_m (highest over mark_edge, mirror, field of their lowest over the six). The best moving script is picked after the
    fact, so the comparison leans towards "below". Words: "**parked above the moving scripts**" if H_p's lower bound >
@@ -116,7 +119,9 @@ comparison and no multiplicity correction: a single "distinguishable" cell is re
 
 Scripts only, no trained team (L3.5 must beat the parked Guard); tier 1 only (tier 2 with the new rules is L2.6); one
 start set; 3v3 only; vertical Strike scripts not fitted in tier 1; scripted players decide every tick (L011-F1); option
-B is PROPOSED; landing's known shortfall (a drone landing onto one held at the height-band floor closes to 0.95–1.05 m);
+B is PROPOSED; the closest-approach and breach columns count live drones only, so they cannot show how close a drone
+comes to a landing one (a clean breach column under landing does not say landing is safe; L2.3's own tests do);
+landing's known shortfall (a drone landing onto one held at the height-band floor closes to 0.95–1.05 m);
 feint and dodge not built; no drop-out, no drawn sizes.
 
 ## Time (projected; CPU only)
@@ -145,7 +150,8 @@ batches ran 2,400: parked v flank holds by time-out).
 
 187 cells, 12 batches, about 140 M game-ticks. The driver refuses a launch whose protected groups' worst case does not
 fit the cap (QC I3), so the job's cap is **4.5 effective hours**; it re-times from its own sweep batches as it goes.
-Clips: three 2-D GIFs of landing_gy (still Guard v straight, mark_edge v straight, field v flank), a few seconds each.
+Clips: three 2-D GIFs of landing_gy (still Guard v straight, mark_edge v straight, field v flank), a few seconds each
+(the clip path was run once by the builder on l25_landing_gy: a GIF was written).
 The probe ran on 2 and 8 threads only; a launch on more threads is likely faster but competes with the AirStack
 simulator (the brief: it records real-time logs on this machine). **Recommended: launch with `OMP_NUM_THREADS=8`**
 (inherited by the job), or when the simulator is not recording.

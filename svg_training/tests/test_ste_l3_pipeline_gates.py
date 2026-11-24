@@ -31,17 +31,21 @@ def test_every_file_loads_with_its_route_mask_and_task(gates):
 
 
 def test_the_four_files_are_one_template(gates):
-    """Same game, recipe, step budget, seeds and pool draws: the files differ only in [run] task, [learner] and the
-    skills route's [run0] skills_reach_min."""
+    """Same game, recipe, step budget, seeds and pool draws: the files differ only in [run] task, [learner], the
+    skills route's [run0] skills_reach_min and, after the fill step (spec 2b rule 1), the Strike recipe per route
+    (`[trainer] side_overrides.strike`), which is the same within a route's main and pool-only files."""
     def core(path):
         d = tomllib.loads(path.read_text())
         d["run"].pop("task")
         d.pop("learner")
         d["run0"].pop("skills_reach_min", None)
+        d["trainer"]["side_overrides"].pop("strike")
         return d
     first = core(FILES["velocity"])
     for name, path in FILES.items():
         assert core(path) == first, name
+    strike = {name: tomllib.loads(path.read_text())["trainer"]["side_overrides"]["strike"] for name, path in FILES.items()}
+    assert strike["velocity"] == strike["velocity_poolonly"] and strike["skills"] == strike["skills_poolonly"]
     tr = {g.trainer["game_steps_per_run"] for g in gates.values()}
     assert tr == {550_000_000}
 

@@ -74,7 +74,7 @@ grad_norm_clip = 0.5
 shaping_weight = 0.0
 strike_fallback = { shaping_weight = 1.0 }
 strike_fallback_label = "shaped Strike recipe"
-side_overrides = { strike = {}, guard = {} }   # FILL STEP (header): strike from this route's pilot before run 0
+side_overrides = { strike = { shaping_weight = 1.0 }, guard = {} }   # FILLED 25 Nov 2026 from runs/2026-11-25_ste_l3_pilot_velocity/pilot.json: the shaped Strike recipe (no reach in either probe v g*)
 checkpoint_every_updates = 1
 curve_every_updates = 10
 final_reserve_s = 600

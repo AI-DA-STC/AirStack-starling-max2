@@ -1,0 +1,7487 @@
+{
+ "spec": "ste_learning/drafts/L2_5_SPEC.md",
+ "run_dir": "runs/2026-11-24_ste_l25_screen",
+ "plumbing": {
+  "P-b": {
+   "holds": true,
+   "games_differ": 11429,
+   "games": 12000,
+   "compared": "ctl_tag_off_landing v ctl_tag_off_landing_gy: outcome, end_step or closest_3d_m",
+   "words": "option B shown to reach the game"
+  },
+  "P-c": {
+   "holds": true,
+   "games_differ": 6978,
+   "games": 30000,
+   "compared": "landing v ctl_reference_replay: end_step or closest_3d_m",
+   "words": "landing shown to reach the game"
+  }
+ },
+ "withheld": [],
+ "landing_label": null,
+ "option_b_label": null,
+ "reading1": {
+  "base": {
+   "group": "ctl_reference_replay",
+   "known_from_t44": true,
+   "words_withheld": false,
+   "still": {
+    "worst": {
+     "holds": 430,
+     "games": 1000,
+     "strike": "strike_low"
+    },
+    "v": {
+     "guard_mark_edge": {
+      "worst": {
+       "holds": 808,
+       "games": 1000,
+       "strike": "strike_straight"
+      },
+      "word": "still Guard below mark_edge"
+     },
+     "guard_mirror": {
+      "worst": {
+       "holds": 796,
+       "games": 1000,
+       "strike": "strike_straight"
+      },
+      "word": "still Guard below mirror"
+     },
+     "guard_field": {
+      "worst": {
+       "holds": 716,
+       "games": 1000,
+       "strike": "strike_straight"
+      },
+      "word": "still Guard below field"
+     }
+    },
+    "cells": [
+     {
+      "strike": "strike_straight",
+      "parked": {
+       "holds": 534,
+       "games": 1000,
+       "rate": 0.534,
+       "ci": [
+        0.5030102405760234,
+        0.5647295303201022
+       ]
+      },
+      "mark_edge": {
+       "holds": 808,
+       "games": 1000,
+       "rate": 0.808,
+       "ci": [
+        0.7824270733559523,
+        0.8312155571148313
+       ]
+      },
+      "word": "still Guard below mark_edge"
+     },
+     {
+      "strike": "strike_flank",
+      "parked": {
+       "holds": 450,
+       "games": 1000,
+       "rate": 0.45,
+       "ci": [
+        0.4194148276959868,
+        0.4809678621626524
+       ]
+      },
+      "mark_edge": {
+       "holds": 887,
+       "games": 1000,
+       "rate": 0.887,
+       "ci": [
+        0.86587803145935,
+        0.9051599490347838
+       ]
+      },
+      "word": "still Guard below mark_edge"
+     },
+     {
+      "strike": "strike_high",
+      "parked": {
+       "holds": 466,
+       "games": 1000,
+       "rate": 0.466,
+       "ci": [
+        0.43527046967989796,
+        0.4969897594239768
+       ]
+      },
+      "mark_edge": {
+       "holds": 850,
+       "games": 1000,
+       "rate": 0.85,
+       "ci": [
+        0.8265308859716873,
+        0.8707902850178393
+       ]
+      },
+      "word": "still Guard below mark_edge"
+     },
+     {
+      "strike": "strike_low",
+      "parked": {
+       "holds": 430,
+       "games": 1000,
+       "rate": 0.43,
+       "ci": [
+        0.3996403690487447,
+        0.46089539675335006
+       ]
+      },
+      "mark_edge": {
+       "holds": 844,
+       "games": 1000,
+       "rate": 0.844,
+       "ci": [
+        0.8201980443506668,
+        0.8651690494218965
+       ]
+      },
+      "word": "still Guard below mark_edge"
+     },
+     {
+      "strike": "strike_sacrifice",
+      "parked": {
+       "holds": 525,
+       "games": 1000,
+       "rate": 0.525,
+       "ci": [
+        0.4940119014700143,
+        0.5557967536006662
+       ]
+      },
+      "mark_edge": {
+       "holds": 960,
+       "games": 1000,
+       "rate": 0.96,
+       "ci": [
+        0.9459900625744302,
+        0.9704891907260906
+       ]
+      },
+      "word": "still Guard below mark_edge"
+     },
+     {
+      "strike": "strike_converge",
+      "parked": {
+       "holds": 986,
+       "games": 1000,
+       "rate": 0.986,
+       "ci": [
+        0.9766377520234698,
+        0.9916425025505587
+       ]
+      },
+      "mark_edge": {
+       "holds": 974,
+       "games": 1000,
+       "rate": 0.974,
+       "ci": [
+        0.9621759154980226,
+        0.9821961846420791
+       ]
+      },
+      "word": "still Guard not distinguishable from mark_edge"
+     }
+    ]
+   },
+   "ring": {
+    "worst": {
+     "holds": 424,
+     "games": 1000,
+     "strike": "strike_low"
+    },
+    "v": {
+     "guard_mark_edge": {
+      "worst": {
+       "holds": 808,
+       "games": 1000,
+       "strike": "strike_straight"
+      },
+      "word": "ring Guard below mark_edge"
+     },
+     "guard_mirror": {
+      "worst": {
+       "holds": 796,
+       "games": 1000,
+       "strike": "strike_straight"
+      },
+      "word": "ring Guard below mirror"
+     },
+     "guard_field": {
+      "worst": {
+       "holds": 716,
+       "games": 1000,
+       "strike": "strike_straight"
+      },
+      "word": "ring Guard below field"
+     }
+    },
+    "cells": [
+     {
+      "strike": "strike_straight",
+      "parked": {
+       "holds": 523,
+       "games": 1000,
+       "rate": 0.523,
+       "ci": [
+        0.49201363243599017,
+        0.5538103302290359
+       ]
+      },
+      "mark_edge": {
+       "holds": 808,
+       "games": 1000,
+       "rate": 0.808,
+       "ci": [
+        0.7824270733559523,
+        0.8312155571148313
+       ]
+      },
+      "word": "ring Guard below mark_edge"
+     },
+     {
+      "strike": "strike_flank",
+      "parked": {
+       "holds": 477,
+       "games": 1000,
+       "rate": 0.477,
+       "ci": [
+        0.44618966977096414,
+        0.5079863675640099
+       ]
+      },
+      "mark_edge": {
+       "holds": 887,
+       "games": 1000,
+       "rate": 0.887,
+       "ci": [
+        0.86587803145935,
+        0.9051599490347838
+       ]
+      },
+      "word": "ring Guard below mark_edge"
+     },
+     {
+      "strike": "strike_high",
+      "parked": {
+       "holds": 454,
+       "games": 1000,
+       "rate": 0.454,
+       "ci": [
+        0.42337574645433246,
+        0.4849763282156156
+       ]
+      },
+      "mark_edge": {
+       "holds": 850,
+       "games": 1000,
+       "rate": 0.85,
+       "ci": [
+        0.8265308859716873,
+        0.8707902850178393
+       ]
+      },
+      "word": "ring Guard below mark_edge"
+     },
+     {
+      "strike": "strike_low",
+      "parked": {
+       "holds": 424,
+       "games": 1000,
+       "rate": 0.424,
+       "ci": [
+        0.39371789757876074,
+        0.45486379100637064
+       ]
+      },
+      "mark_edge": {
+       "holds": 844,
+       "games": 1000,
+       "rate": 0.844,
+       "ci": [
+        0.8201980443506668,
+        0.8651690494218965
+       ]
+      },
+      "word": "ring Guard below mark_edge"
+     },
+     {
+      "strike": "strike_sacrifice",
+      "parked": {
+       "holds": 503,
+       "games": 1000,
+       "rate": 0.503,
+       "ci": [
+        0.4720581081153037,
+        0.533918930493178
+       ]
+      },
+      "mark_edge": {
+       "holds": 960,
+       "games": 1000,
+       "rate": 0.96,
+       "ci": [
+        0.9459900625744302,
+        0.9704891907260906
+       ]
+      },
+      "word": "ring Guard below mark_edge"
+     },
+     {
+      "strike": "strike_converge",
+      "parked": {
+       "holds": 983,
+       "games": 1000,
+       "rate": 0.983,
+       "ci": [
+        0.9729438156287651,
+        0.9893594003367818
+       ]
+      },
+      "mark_edge": {
+       "holds": 974,
+       "games": 1000,
+       "rate": 0.974,
+       "ci": [
+        0.9621759154980226,
+        0.9821961846420791
+       ]
+      },
+      "word": "ring Guard not distinguishable from mark_edge"
+     }
+    ]
+   }
+  },
+  "landing": {
+   "group": "landing",
+   "known_from_t44": false,
+   "words_withheld": false,
+   "still": {
+    "worst": {
+     "holds": 432,
+     "games": 1000,
+     "strike": "strike_low"
+    },
+    "v": {
+     "guard_mark_edge": {
+      "worst": {
+       "holds": 802,
+       "games": 1000,
+       "strike": "strike_straight"
+      },
+      "word": "still Guard below mark_edge"
+     },
+     "guard_mirror": {
+      "worst": {
+       "holds": 796,
+       "games": 1000,
+       "strike": "strike_straight"
+      },
+      "word": "still Guard below mirror"
+     },
+     "guard_field": {
+      "worst": {
+       "holds": 716,
+       "games": 1000,
+       "strike": "strike_straight"
+      },
+      "word": "still Guard below field"
+     }
+    },
+    "cells": [
+     {
+      "strike": "strike_straight",
+      "parked": {
+       "holds": 534,
+       "games": 1000,
+       "rate": 0.534,
+       "ci": [
+        0.5030102405760234,
+        0.5647295303201022
+       ]
+      },
+      "mark_edge": {
+       "holds": 802,
+       "games": 1000,
+       "rate": 0.802,
+       "ci": [
+        0.7761657052655129,
+        0.8255228479883074
+       ]
+      },
+      "word": "still Guard below mark_edge"
+     },
+     {
+      "strike": "strike_flank",
+      "parked": {
+       "holds": 451,
+       "games": 1000,
+       "rate": 0.451,
+       "ci": [
+        0.420404869897352,
+        0.4819701661641144
+       ]
+      },
+      "mark_edge": {
+       "holds": 879,
+       "games": 1000,
+       "rate": 0.879,
+       "ci": [
+        0.8573226741029558,
+        0.8977765367685602
+       ]
+      },
+      "word": "still Guard below mark_edge"
+     },
+     {
+      "strike": "strike_high",
+      "parked": {
+       "holds": 467,
+       "games": 1000,
+       "rate": 0.467,
+       "ci": [
+        0.4362625046284455,
+        0.4979900706782564
+       ]
+      },
+      "mark_edge": {
+       "holds": 843,
+       "games": 1000,
+       "rate": 0.843,
+       "ci": [
+        0.8191437085463132,
+        0.8642310390234228
+       ]
+      },
+      "word": "still Guard below mark_edge"
+     },
+     {
+      "strike": "strike_low",
+      "parked": {
+       "holds": 432,
+       "games": 1000,
+       "rate": 0.432,
+       "ci": [
+        0.40161554299484964,
+        0.4629049152128995
+       ]
+      },
+      "mark_edge": {
+       "holds": 895,
+       "games": 1000,
+       "rate": 0.895,
+       "ci": [
+        0.8744642376371892,
+        0.9125125124795623
+       ]
+      },
+      "word": "still Guard below mark_edge"
+     },
+     {
+      "strike": "strike_sacrifice",
+      "parked": {
+       "holds": 523,
+       "games": 1000,
+       "rate": 0.523,
+       "ci": [
+        0.49201363243599017,
+        0.5538103302290359
+       ]
+      },
+      "mark_edge": {
+       "holds": 963,
+       "games": 1000,
+       "rate": 0.963,
+       "ci": [
+        0.9494173165894553,
+        0.9730389753195472
+       ]
+      },
+      "word": "still Guard below mark_edge"
+     },
+     {
+      "strike": "strike_converge",
+      "parked": {
+       "holds": 986,
+       "games": 1000,
+       "rate": 0.986,
+       "ci": [
+        0.9766377520234698,
+        0.9916425025505587
+       ]
+      },
+      "mark_edge": {
+       "holds": 972,
+       "games": 1000,
+       "rate": 0.972,
+       "ci": [
+        0.9598295551975795,
+        0.9805578525368679
+       ]
+      },
+      "word": "still Guard not distinguishable from mark_edge"
+     }
+    ]
+   },
+   "ring": {
+    "worst": {
+     "holds": 426,
+     "games": 1000,
+     "strike": "strike_low"
+    },
+    "v": {
+     "guard_mark_edge": {
+      "worst": {
+       "holds": 802,
+       "games": 1000,
+       "strike": "strike_straight"
+      },
+      "word": "ring Guard below mark_edge"
+     },
+     "guard_mirror": {
+      "worst": {
+       "holds": 796,
+       "games": 1000,
+       "strike": "strike_straight"
+      },
+      "word": "ring Guard below mirror"
+     },
+     "guard_field": {
+      "worst": {
+       "holds": 716,
+       "games": 1000,
+       "strike": "strike_straight"
+      },
+      "word": "ring Guard below field"
+     }
+    },
+    "cells": [
+     {
+      "strike": "strike_straight",
+      "parked": {
+       "holds": 524,
+       "games": 1000,
+       "rate": 0.524,
+       "ci": [
+        0.4930127051149756,
+        0.5548036037528778
+       ]
+      },
+      "mark_edge": {
+       "holds": 802,
+       "games": 1000,
+       "rate": 0.802,
+       "ci": [
+        0.7761657052655129,
+        0.8255228479883074
+       ]
+      },
+      "word": "ring Guard below mark_edge"
+     },
+     {
+      "strike": "strike_flank",
+      "parked": {
+       "holds": 477,
+       "games": 1000,
+       "rate": 0.477,
+       "ci": [
+        0.44618966977096414,
+        0.5079863675640099
+       ]
+      },
+      "mark_edge": {
+       "holds": 879,
+       "games": 1000,
+       "rate": 0.879,
+       "ci": [
+        0.8573226741029558,
+        0.8977765367685602
+       ]
+      },
+      "word": "ring Guard below mark_edge"
+     },
+     {
+      "strike": "strike_high",
+      "parked": {
+       "holds": 454,
+       "games": 1000,
+       "rate": 0.454,
+       "ci": [
+        0.42337574645433246,
+        0.4849763282156156
+       ]
+      },
+      "mark_edge": {
+       "holds": 843,
+       "games": 1000,
+       "rate": 0.843,
+       "ci": [
+        0.8191437085463132,
+        0.8642310390234228
+       ]
+      },
+      "word": "ring Guard below mark_edge"
+     },
+     {
+      "strike": "strike_low",
+      "parked": {
+       "holds": 426,
+       "games": 1000,
+       "rate": 0.426,
+       "ci": [
+        0.39569154544653623,
+        0.4568748355442496
+       ]
+      },
+      "mark_edge": {
+       "holds": 895,
+       "games": 1000,
+       "rate": 0.895,
+       "ci": [
+        0.8744642376371892,
+        0.9125125124795623
+       ]
+      },
+      "word": "ring Guard below mark_edge"
+     },
+     {
+      "strike": "strike_sacrifice",
+      "parked": {
+       "holds": 502,
+       "games": 1000,
+       "rate": 0.502,
+       "ci": [
+        0.47106162688393816,
+        0.5329230655217162
+       ]
+      },
+      "mark_edge": {
+       "holds": 963,
+       "games": 1000,
+       "rate": 0.963,
+       "ci": [
+        0.9494173165894553,
+        0.9730389753195472
+       ]
+      },
+      "word": "ring Guard below mark_edge"
+     },
+     {
+      "strike": "strike_converge",
+      "parked": {
+       "holds": 983,
+       "games": 1000,
+       "rate": 0.983,
+       "ci": [
+        0.9729438156287651,
+        0.9893594003367818
+       ]
+      },
+      "mark_edge": {
+       "holds": 972,
+       "games": 1000,
+       "rate": 0.972,
+       "ci": [
+        0.9598295551975795,
+        0.9805578525368679
+       ]
+      },
+      "word": "ring Guard not distinguishable from mark_edge"
+     }
+    ]
+   }
+  },
+  "gy": {
+   "group": "gy",
+   "known_from_t44": false,
+   "words_withheld": false,
+   "still": {
+    "worst": {
+     "holds": 431,
+     "games": 1000,
+     "strike": "strike_low"
+    },
+    "v": {
+     "guard_mark_edge": {
+      "worst": {
+       "holds": 808,
+       "games": 1000,
+       "strike": "strike_straight"
+      },
+      "word": "still Guard below mark_edge"
+     },
+     "guard_mirror": {
+      "worst": {
+       "holds": 799,
+       "games": 1000,
+       "strike": "strike_straight"
+      },
+      "word": "still Guard below mirror"
+     },
+     "guard_field": {
+      "worst": {
+       "holds": 716,
+       "games": 1000,
+       "strike": "strike_straight"
+      },
+      "word": "still Guard below field"
+     }
+    },
+    "cells": [
+     {
+      "strike": "strike_straight",
+      "parked": {
+       "holds": 534,
+       "games": 1000,
+       "rate": 0.534,
+       "ci": [
+        0.5030102405760234,
+        0.5647295303201022
+       ]
+      },
+      "mark_edge": {
+       "holds": 808,
+       "games": 1000,
+       "rate": 0.808,
+       "ci": [
+        0.7824270733559523,
+        0.8312155571148313
+       ]
+      },
+      "word": "still Guard below mark_edge"
+     },
+     {
+      "strike": "strike_flank",
+      "parked": {
+       "holds": 450,
+       "games": 1000,
+       "rate": 0.45,
+       "ci": [
+        0.4194148276959868,
+        0.4809678621626524
+       ]
+      },
+      "mark_edge": {
+       "holds": 891,
+       "games": 1000,
+       "rate": 0.891,
+       "ci": [
+        0.8701670973953542,
+        0.9088402679100885
+       ]
+      },
+      "word": "still Guard below mark_edge"
+     },
+     {
+      "strike": "strike_high",
+      "parked": {
+       "holds": 467,
+       "games": 1000,
+       "rate": 0.467,
+       "ci": [
+        0.4362625046284455,
+        0.4979900706782564
+       ]
+      },
+      "mark_edge": {
+       "holds": 852,
+       "games": 1000,
+       "rate": 0.852,
+       "ci": [
+        0.8286444970153862,
+        0.872661366379795
+       ]
+      },
+      "word": "still Guard below mark_edge"
+     },
+     {
+      "strike": "strike_low",
+      "parked": {
+       "holds": 431,
+       "games": 1000,
+       "rate": 0.431,
+       "ci": [
+        0.4006278926003595,
+        0.46190021940456244
+       ]
+      },
+      "mark_edge": {
+       "holds": 847,
+       "games": 1000,
+       "rate": 0.847,
+       "ci": [
+        0.8233629868076504,
+        0.8679811455733946
+       ]
+      },
+      "word": "still Guard below mark_edge"
+     },
+     {
+      "strike": "strike_sacrifice",
+      "parked": {
+       "holds": 524,
+       "games": 1000,
+       "rate": 0.524,
+       "ci": [
+        0.4930127051149756,
+        0.5548036037528778
+       ]
+      },
+      "mark_edge": {
+       "holds": 962,
+       "games": 1000,
+       "rate": 0.962,
+       "ci": [
+        0.9482727912457906,
+        0.9721911544603846
+       ]
+      },
+      "word": "still Guard below mark_edge"
+     },
+     {
+      "strike": "strike_converge",
+      "parked": {
+       "holds": 986,
+       "games": 1000,
+       "rate": 0.986,
+       "ci": [
+        0.9766377520234698,
+        0.9916425025505587
+       ]
+      },
+      "mark_edge": {
+       "holds": 963,
+       "games": 1000,
+       "rate": 0.963,
+       "ci": [
+        0.9494173165894553,
+        0.9730389753195472
+       ]
+      },
+      "word": "still Guard above mark_edge"
+     }
+    ]
+   },
+   "ring": {
+    "worst": {
+     "holds": 424,
+     "games": 1000,
+     "strike": "strike_low"
+    },
+    "v": {
+     "guard_mark_edge": {
+      "worst": {
+       "holds": 808,
+       "games": 1000,
+       "strike": "strike_straight"
+      },
+      "word": "ring Guard below mark_edge"
+     },
+     "guard_mirror": {
+      "worst": {
+       "holds": 799,
+       "games": 1000,
+       "strike": "strike_straight"
+      },
+      "word": "ring Guard below mirror"
+     },
+     "guard_field": {
+      "worst": {
+       "holds": 716,
+       "games": 1000,
+       "strike": "strike_straight"
+      },
+      "word": "ring Guard below field"
+     }
+    },
+    "cells": [
+     {
+      "strike": "strike_straight",
+      "parked": {
+       "holds": 523,
+       "games": 1000,
+       "rate": 0.523,
+       "ci": [
+        0.49201363243599017,
+        0.5538103302290359
+       ]
+      },
+      "mark_edge": {
+       "holds": 808,
+       "games": 1000,
+       "rate": 0.808,
+       "ci": [
+        0.7824270733559523,
+        0.8312155571148313
+       ]
+      },
+      "word": "ring Guard below mark_edge"
+     },
+     {
+      "strike": "strike_flank",
+      "parked": {
+       "holds": 477,
+       "games": 1000,
+       "rate": 0.477,
+       "ci": [
+        0.44618966977096414,
+        0.5079863675640099
+       ]
+      },
+      "mark_edge": {
+       "holds": 891,
+       "games": 1000,
+       "rate": 0.891,
+       "ci": [
+        0.8701670973953542,
+        0.9088402679100885
+       ]
+      },
+      "word": "ring Guard below mark_edge"
+     },
+     {
+      "strike": "strike_high",
+      "parked": {
+       "holds": 454,
+       "games": 1000,
+       "rate": 0.454,
+       "ci": [
+        0.42337574645433246,
+        0.4849763282156156
+       ]
+      },
+      "mark_edge": {
+       "holds": 852,
+       "games": 1000,
+       "rate": 0.852,
+       "ci": [
+        0.8286444970153862,
+        0.872661366379795
+       ]
+      },
+      "word": "ring Guard below mark_edge"
+     },
+     {
+      "strike": "strike_low",
+      "parked": {
+       "holds": 424,
+       "games": 1000,
+       "rate": 0.424,
+       "ci": [
+        0.39371789757876074,
+        0.45486379100637064
+       ]
+      },
+      "mark_edge": {
+       "holds": 847,
+       "games": 1000,
+       "rate": 0.847,
+       "ci": [
+        0.8233629868076504,
+        0.8679811455733946
+       ]
+      },
+      "word": "ring Guard below mark_edge"
+     },
+     {
+      "strike": "strike_sacrifice",
+      "parked": {
+       "holds": 502,
+       "games": 1000,
+       "rate": 0.502,
+       "ci": [
+        0.47106162688393816,
+        0.5329230655217162
+       ]
+      },
+      "mark_edge": {
+       "holds": 962,
+       "games": 1000,
+       "rate": 0.962,
+       "ci": [
+        0.9482727912457906,
+        0.9721911544603846
+       ]
+      },
+      "word": "ring Guard below mark_edge"
+     },
+     {
+      "strike": "strike_converge",
+      "parked": {
+       "holds": 983,
+       "games": 1000,
+       "rate": 0.983,
+       "ci": [
+        0.9729438156287651,
+        0.9893594003367818
+       ]
+      },
+      "mark_edge": {
+       "holds": 963,
+       "games": 1000,
+       "rate": 0.963,
+       "ci": [
+        0.9494173165894553,
+        0.9730389753195472
+       ]
+      },
+      "word": "ring Guard not distinguishable from mark_edge"
+     }
+    ]
+   }
+  },
+  "landing_gy": {
+   "group": "landing_gy",
+   "known_from_t44": false,
+   "words_withheld": false,
+   "still": {
+    "worst": {
+     "holds": 432,
+     "games": 1000,
+     "strike": "strike_low"
+    },
+    "v": {
+     "guard_mark_edge": {
+      "worst": {
+       "holds": 803,
+       "games": 1000,
+       "strike": "strike_straight"
+      },
+      "word": "still Guard below mark_edge"
+     },
+     "guard_mirror": {
+      "worst": {
+       "holds": 798,
+       "games": 1000,
+       "strike": "strike_straight"
+      },
+      "word": "still Guard below mirror"
+     },
+     "guard_field": {
+      "worst": {
+       "holds": 716,
+       "games": 1000,
+       "strike": "strike_straight"
+      },
+      "word": "still Guard below field"
+     }
+    },
+    "cells": [
+     {
+      "strike": "strike_straight",
+      "parked": {
+       "holds": 534,
+       "games": 1000,
+       "rate": 0.534,
+       "ci": [
+        0.5030102405760234,
+        0.5647295303201022
+       ]
+      },
+      "mark_edge": {
+       "holds": 803,
+       "games": 1000,
+       "rate": 0.803,
+       "ci": [
+        0.7772086517608134,
+        0.8264722476958342
+       ]
+      },
+      "word": "still Guard below mark_edge"
+     },
+     {
+      "strike": "strike_flank",
+      "parked": {
+       "holds": 451,
+       "games": 1000,
+       "rate": 0.451,
+       "ci": [
+        0.420404869897352,
+        0.4819701661641144
+       ]
+      },
+      "mark_edge": {
+       "holds": 884,
+       "games": 1000,
+       "rate": 0.884,
+       "ci": [
+        0.862666307122199,
+        0.9023946347634532
+       ]
+      },
+      "word": "still Guard below mark_edge"
+     },
+     {
+      "strike": "strike_high",
+      "parked": {
+       "holds": 467,
+       "games": 1000,
+       "rate": 0.467,
+       "ci": [
+        0.4362625046284455,
+        0.4979900706782564
+       ]
+      },
+      "mark_edge": {
+       "holds": 845,
+       "games": 1000,
+       "rate": 0.845,
+       "ci": [
+        0.821252700977952,
+        0.8661067389974386
+       ]
+      },
+      "word": "still Guard below mark_edge"
+     },
+     {
+      "strike": "strike_low",
+      "parked": {
+       "holds": 432,
+       "games": 1000,
+       "rate": 0.432,
+       "ci": [
+        0.40161554299484964,
+        0.4629049152128995
+       ]
+      },
+      "mark_edge": {
+       "holds": 902,
+       "games": 1000,
+       "rate": 0.902,
+       "ci": [
+        0.8820049011851514,
+        0.9189182723513907
+       ]
+      },
+      "word": "still Guard below mark_edge"
+     },
+     {
+      "strike": "strike_sacrifice",
+      "parked": {
+       "holds": 524,
+       "games": 1000,
+       "rate": 0.524,
+       "ci": [
+        0.4930127051149756,
+        0.5548036037528778
+       ]
+      },
+      "mark_edge": {
+       "holds": 963,
+       "games": 1000,
+       "rate": 0.963,
+       "ci": [
+        0.9494173165894553,
+        0.9730389753195472
+       ]
+      },
+      "word": "still Guard below mark_edge"
+     },
+     {
+      "strike": "strike_converge",
+      "parked": {
+       "holds": 986,
+       "games": 1000,
+       "rate": 0.986,
+       "ci": [
+        0.9766377520234698,
+        0.9916425025505587
+       ]
+      },
+      "mark_edge": {
+       "holds": 965,
+       "games": 1000,
+       "rate": 0.965,
+       "ci": [
+        0.9517130967996695,
+        0.9747278875149873
+       ]
+      },
+      "word": "still Guard above mark_edge"
+     }
+    ]
+   },
+   "ring": {
+    "worst": {
+     "holds": 426,
+     "games": 1000,
+     "strike": "strike_low"
+    },
+    "v": {
+     "guard_mark_edge": {
+      "worst": {
+       "holds": 803,
+       "games": 1000,
+       "strike": "strike_straight"
+      },
+      "word": "ring Guard below mark_edge"
+     },
+     "guard_mirror": {
+      "worst": {
+       "holds": 798,
+       "games": 1000,
+       "strike": "strike_straight"
+      },
+      "word": "ring Guard below mirror"
+     },
+     "guard_field": {
+      "worst": {
+       "holds": 716,
+       "games": 1000,
+       "strike": "strike_straight"
+      },
+      "word": "ring Guard below field"
+     }
+    },
+    "cells": [
+     {
+      "strike": "strike_straight",
+      "parked": {
+       "holds": 524,
+       "games": 1000,
+       "rate": 0.524,
+       "ci": [
+        0.4930127051149756,
+        0.5548036037528778
+       ]
+      },
+      "mark_edge": {
+       "holds": 803,
+       "games": 1000,
+       "rate": 0.803,
+       "ci": [
+        0.7772086517608134,
+        0.8264722476958342
+       ]
+      },
+      "word": "ring Guard below mark_edge"
+     },
+     {
+      "strike": "strike_flank",
+      "parked": {
+       "holds": 477,
+       "games": 1000,
+       "rate": 0.477,
+       "ci": [
+        0.44618966977096414,
+        0.5079863675640099
+       ]
+      },
+      "mark_edge": {
+       "holds": 884,
+       "games": 1000,
+       "rate": 0.884,
+       "ci": [
+        0.862666307122199,
+        0.9023946347634532
+       ]
+      },
+      "word": "ring Guard below mark_edge"
+     },
+     {
+      "strike": "strike_high",
+      "parked": {
+       "holds": 454,
+       "games": 1000,
+       "rate": 0.454,
+       "ci": [
+        0.42337574645433246,
+        0.4849763282156156
+       ]
+      },
+      "mark_edge": {
+       "holds": 845,
+       "games": 1000,
+       "rate": 0.845,
+       "ci": [
+        0.821252700977952,
+        0.8661067389974386
+       ]
+      },
+      "word": "ring Guard below mark_edge"
+     },
+     {
+      "strike": "strike_low",
+      "parked": {
+       "holds": 426,
+       "games": 1000,
+       "rate": 0.426,
+       "ci": [
+        0.39569154544653623,
+        0.4568748355442496
+       ]
+      },
+      "mark_edge": {
+       "holds": 902,
+       "games": 1000,
+       "rate": 0.902,
+       "ci": [
+        0.8820049011851514,
+        0.9189182723513907
+       ]
+      },
+      "word": "ring Guard below mark_edge"
+     },
+     {
+      "strike": "strike_sacrifice",
+      "parked": {
+       "holds": 502,
+       "games": 1000,
+       "rate": 0.502,
+       "ci": [
+        0.47106162688393816,
+        0.5329230655217162
+       ]
+      },
+      "mark_edge": {
+       "holds": 963,
+       "games": 1000,
+       "rate": 0.963,
+       "ci": [
+        0.9494173165894553,
+        0.9730389753195472
+       ]
+      },
+      "word": "ring Guard below mark_edge"
+     },
+     {
+      "strike": "strike_converge",
+      "parked": {
+       "holds": 983,
+       "games": 1000,
+       "rate": 0.983,
+       "ci": [
+        0.9729438156287651,
+        0.9893594003367818
+       ]
+      },
+      "mark_edge": {
+       "holds": 965,
+       "games": 1000,
+       "rate": 0.965,
+       "ci": [
+        0.9517130967996695,
+        0.9747278875149873
+       ]
+      },
+      "word": "ring Guard not distinguishable from mark_edge"
+     }
+    ]
+   }
+  }
+ },
+ "reading2": {
+  "rule_sets": [
+   {
+    "rule_set": "landing",
+    "tag_off_group": "ctl_tag_off_landing",
+    "withheld": false,
+    "cells": [
+     {
+      "guard": "guard_parked_centre",
+      "strike": "strike_straight",
+      "with_tag": {
+       "holds": 534,
+       "games": 1000,
+       "rate": 0.534,
+       "ci": [
+        0.5030102405760234,
+        0.5647295303201022
+       ]
+      },
+      "without_tag": {
+       "holds": 0,
+       "games": 1000,
+       "rate": 0.0,
+       "ci": [
+        0.0,
+        0.003826898586390522
+       ]
+      },
+      "word": "the tag raises the parked Guard's hold"
+     },
+     {
+      "guard": "guard_parked_centre",
+      "strike": "strike_flank",
+      "with_tag": {
+       "holds": 451,
+       "games": 1000,
+       "rate": 0.451,
+       "ci": [
+        0.420404869897352,
+        0.4819701661641144
+       ]
+      },
+      "without_tag": {
+       "holds": 331,
+       "games": 1000,
+       "rate": 0.331,
+       "ci": [
+        0.30252900425429646,
+        0.3607644874679036
+       ]
+      },
+      "word": "the tag raises the parked Guard's hold"
+     },
+     {
+      "guard": "guard_parked_centre",
+      "strike": "strike_high",
+      "with_tag": {
+       "holds": 467,
+       "games": 1000,
+       "rate": 0.467,
+       "ci": [
+        0.4362625046284455,
+        0.4979900706782564
+       ]
+      },
+      "without_tag": {
+       "holds": 0,
+       "games": 1000,
+       "rate": 0.0,
+       "ci": [
+        0.0,
+        0.003826898586390522
+       ]
+      },
+      "word": "the tag raises the parked Guard's hold"
+     },
+     {
+      "guard": "guard_parked_centre",
+      "strike": "strike_low",
+      "with_tag": {
+       "holds": 432,
+       "games": 1000,
+       "rate": 0.432,
+       "ci": [
+        0.40161554299484964,
+        0.4629049152128995
+       ]
+      },
+      "without_tag": {
+       "holds": 0,
+       "games": 1000,
+       "rate": 0.0,
+       "ci": [
+        0.0,
+        0.003826898586390522
+       ]
+      },
+      "word": "the tag raises the parked Guard's hold"
+     },
+     {
+      "guard": "guard_parked_centre",
+      "strike": "strike_sacrifice",
+      "with_tag": {
+       "holds": 523,
+       "games": 1000,
+       "rate": 0.523,
+       "ci": [
+        0.49201363243599017,
+        0.5538103302290359
+       ]
+      },
+      "without_tag": {
+       "holds": 0,
+       "games": 1000,
+       "rate": 0.0,
+       "ci": [
+        0.0,
+        0.003826898586390522
+       ]
+      },
+      "word": "the tag raises the parked Guard's hold"
+     },
+     {
+      "guard": "guard_parked_centre",
+      "strike": "strike_converge",
+      "with_tag": {
+       "holds": 986,
+       "games": 1000,
+       "rate": 0.986,
+       "ci": [
+        0.9766377520234698,
+        0.9916425025505587
+       ]
+      },
+      "without_tag": {
+       "holds": 0,
+       "games": 1000,
+       "rate": 0.0,
+       "ci": [
+        0.0,
+        0.003826898586390522
+       ]
+      },
+      "word": "the tag raises the parked Guard's hold"
+     },
+     {
+      "guard": "guard_parked_ring",
+      "strike": "strike_straight",
+      "with_tag": {
+       "holds": 524,
+       "games": 1000,
+       "rate": 0.524,
+       "ci": [
+        0.4930127051149756,
+        0.5548036037528778
+       ]
+      },
+      "without_tag": {
+       "holds": 0,
+       "games": 1000,
+       "rate": 0.0,
+       "ci": [
+        0.0,
+        0.003826898586390522
+       ]
+      },
+      "word": "the tag raises the parked Guard's hold"
+     },
+     {
+      "guard": "guard_parked_ring",
+      "strike": "strike_flank",
+      "with_tag": {
+       "holds": 477,
+       "games": 1000,
+       "rate": 0.477,
+       "ci": [
+        0.44618966977096414,
+        0.5079863675640099
+       ]
+      },
+      "without_tag": {
+       "holds": 752,
+       "games": 1000,
+       "rate": 0.752,
+       "ci": [
+        0.7243030327449996,
+        0.7777682103674596
+       ]
+      },
+      "word": "the tag lowers it"
+     },
+     {
+      "guard": "guard_parked_ring",
+      "strike": "strike_high",
+      "with_tag": {
+       "holds": 454,
+       "games": 1000,
+       "rate": 0.454,
+       "ci": [
+        0.42337574645433246,
+        0.4849763282156156
+       ]
+      },
+      "without_tag": {
+       "holds": 0,
+       "games": 1000,
+       "rate": 0.0,
+       "ci": [
+        0.0,
+        0.003826898586390522
+       ]
+      },
+      "word": "the tag raises the parked Guard's hold"
+     },
+     {
+      "guard": "guard_parked_ring",
+      "strike": "strike_low",
+      "with_tag": {
+       "holds": 426,
+       "games": 1000,
+       "rate": 0.426,
+       "ci": [
+        0.39569154544653623,
+        0.4568748355442496
+       ]
+      },
+      "without_tag": {
+       "holds": 0,
+       "games": 1000,
+       "rate": 0.0,
+       "ci": [
+        0.0,
+        0.003826898586390522
+       ]
+      },
+      "word": "the tag raises the parked Guard's hold"
+     },
+     {
+      "guard": "guard_parked_ring",
+      "strike": "strike_sacrifice",
+      "with_tag": {
+       "holds": 502,
+       "games": 1000,
+       "rate": 0.502,
+       "ci": [
+        0.47106162688393816,
+        0.5329230655217162
+       ]
+      },
+      "without_tag": {
+       "holds": 0,
+       "games": 1000,
+       "rate": 0.0,
+       "ci": [
+        0.0,
+        0.003826898586390522
+       ]
+      },
+      "word": "the tag raises the parked Guard's hold"
+     },
+     {
+      "guard": "guard_parked_ring",
+      "strike": "strike_converge",
+      "with_tag": {
+       "holds": 983,
+       "games": 1000,
+       "rate": 0.983,
+       "ci": [
+        0.9729438156287651,
+        0.9893594003367818
+       ]
+      },
+      "without_tag": {
+       "holds": 0,
+       "games": 1000,
+       "rate": 0.0,
+       "ci": [
+        0.0,
+        0.003826898586390522
+       ]
+      },
+      "word": "the tag raises the parked Guard's hold"
+     }
+    ],
+    "worst": {
+     "still": {
+      "with_tag": {
+       "holds": 432,
+       "games": 1000,
+       "strike": "strike_low"
+      },
+      "without_tag": {
+       "holds": 0,
+       "games": 1000,
+       "strike": "strike_straight"
+      },
+      "word": "the tag raises the parked Guard's hold"
+     },
+     "ring": {
+      "with_tag": {
+       "holds": 426,
+       "games": 1000,
+       "strike": "strike_low"
+      },
+      "without_tag": {
+       "holds": 0,
+       "games": 1000,
+       "strike": "strike_straight"
+      },
+      "word": "the tag raises the parked Guard's hold"
+     }
+    }
+   },
+   {
+    "rule_set": "landing_gy",
+    "tag_off_group": "ctl_tag_off_landing_gy",
+    "withheld": false,
+    "cells": [
+     {
+      "guard": "guard_parked_centre",
+      "strike": "strike_straight",
+      "with_tag": {
+       "holds": 534,
+       "games": 1000,
+       "rate": 0.534,
+       "ci": [
+        0.5030102405760234,
+        0.5647295303201022
+       ]
+      },
+      "without_tag": {
+       "holds": 0,
+       "games": 1000,
+       "rate": 0.0,
+       "ci": [
+        0.0,
+        0.003826898586390522
+       ]
+      },
+      "word": "the tag raises the parked Guard's hold"
+     },
+     {
+      "guard": "guard_parked_centre",
+      "strike": "strike_flank",
+      "with_tag": {
+       "holds": 451,
+       "games": 1000,
+       "rate": 0.451,
+       "ci": [
+        0.420404869897352,
+        0.4819701661641144
+       ]
+      },
+      "without_tag": {
+       "holds": 171,
+       "games": 1000,
+       "rate": 0.171,
+       "ci": [
+        0.1489334730570256,
+        0.1955846262128194
+       ]
+      },
+      "word": "the tag raises the parked Guard's hold"
+     },
+     {
+      "guard": "guard_parked_centre",
+      "strike": "strike_high",
+      "with_tag": {
+       "holds": 467,
+       "games": 1000,
+       "rate": 0.467,
+       "ci": [
+        0.4362625046284455,
+        0.4979900706782564
+       ]
+      },
+      "without_tag": {
+       "holds": 0,
+       "games": 1000,
+       "rate": 0.0,
+       "ci": [
+        0.0,
+        0.003826898586390522
+       ]
+      },
+      "word": "the tag raises the parked Guard's hold"
+     },
+     {
+      "guard": "guard_parked_centre",
+      "strike": "strike_low",
+      "with_tag": {
+       "holds": 432,
+       "games": 1000,
+       "rate": 0.432,
+       "ci": [
+        0.40161554299484964,
+        0.4629049152128995
+       ]
+      },
+      "without_tag": {
+       "holds": 0,
+       "games": 1000,
+       "rate": 0.0,
+       "ci": [
+        0.0,
+        0.003826898586390522
+       ]
+      },
+      "word": "the tag raises the parked Guard's hold"
+     },
+     {
+      "guard": "guard_parked_centre",
+      "strike": "strike_sacrifice",
+      "with_tag": {
+       "holds": 524,
+       "games": 1000,
+       "rate": 0.524,
+       "ci": [
+        0.4930127051149756,
+        0.5548036037528778
+       ]
+      },
+      "without_tag": {
+       "holds": 0,
+       "games": 1000,
+       "rate": 0.0,
+       "ci": [
+        0.0,
+        0.003826898586390522
+       ]
+      },
+      "word": "the tag raises the parked Guard's hold"
+     },
+     {
+      "guard": "guard_parked_centre",
+      "strike": "strike_converge",
+      "with_tag": {
+       "holds": 986,
+       "games": 1000,
+       "rate": 0.986,
+       "ci": [
+        0.9766377520234698,
+        0.9916425025505587
+       ]
+      },
+      "without_tag": {
+       "holds": 0,
+       "games": 1000,
+       "rate": 0.0,
+       "ci": [
+        0.0,
+        0.003826898586390522
+       ]
+      },
+      "word": "the tag raises the parked Guard's hold"
+     },
+     {
+      "guard": "guard_parked_ring",
+      "strike": "strike_straight",
+      "with_tag": {
+       "holds": 524,
+       "games": 1000,
+       "rate": 0.524,
+       "ci": [
+        0.4930127051149756,
+        0.5548036037528778
+       ]
+      },
+      "without_tag": {
+       "holds": 0,
+       "games": 1000,
+       "rate": 0.0,
+       "ci": [
+        0.0,
+        0.003826898586390522
+       ]
+      },
+      "word": "the tag raises the parked Guard's hold"
+     },
+     {
+      "guard": "guard_parked_ring",
+      "strike": "strike_flank",
+      "with_tag": {
+       "holds": 477,
+       "games": 1000,
+       "rate": 0.477,
+       "ci": [
+        0.44618966977096414,
+        0.5079863675640099
+       ]
+      },
+      "without_tag": {
+       "holds": 86,
+       "games": 1000,
+       "rate": 0.086,
+       "ci": [
+        0.07016826133956046,
+        0.10500041068997089
+       ]
+      },
+      "word": "the tag raises the parked Guard's hold"
+     },
+     {
+      "guard": "guard_parked_ring",
+      "strike": "strike_high",
+      "with_tag": {
+       "holds": 454,
+       "games": 1000,
+       "rate": 0.454,
+       "ci": [
+        0.42337574645433246,
+        0.4849763282156156
+       ]
+      },
+      "without_tag": {
+       "holds": 0,
+       "games": 1000,
+       "rate": 0.0,
+       "ci": [
+        0.0,
+        0.003826898586390522
+       ]
+      },
+      "word": "the tag raises the parked Guard's hold"
+     },
+     {
+      "guard": "guard_parked_ring",
+      "strike": "strike_low",
+      "with_tag": {
+       "holds": 426,
+       "games": 1000,
+       "rate": 0.426,
+       "ci": [
+        0.39569154544653623,
+        0.4568748355442496
+       ]
+      },
+      "without_tag": {
+       "holds": 0,
+       "games": 1000,
+       "rate": 0.0,
+       "ci": [
+        0.0,
+        0.003826898586390522
+       ]
+      },
+      "word": "the tag raises the parked Guard's hold"
+     },
+     {
+      "guard": "guard_parked_ring",
+      "strike": "strike_sacrifice",
+      "with_tag": {
+       "holds": 502,
+       "games": 1000,
+       "rate": 0.502,
+       "ci": [
+        0.47106162688393816,
+        0.5329230655217162
+       ]
+      },
+      "without_tag": {
+       "holds": 0,
+       "games": 1000,
+       "rate": 0.0,
+       "ci": [
+        0.0,
+        0.003826898586390522
+       ]
+      },
+      "word": "the tag raises the parked Guard's hold"
+     },
+     {
+      "guard": "guard_parked_ring",
+      "strike": "strike_converge",
+      "with_tag": {
+       "holds": 983,
+       "games": 1000,
+       "rate": 0.983,
+       "ci": [
+        0.9729438156287651,
+        0.9893594003367818
+       ]
+      },
+      "without_tag": {
+       "holds": 0,
+       "games": 1000,
+       "rate": 0.0,
+       "ci": [
+        0.0,
+        0.003826898586390522
+       ]
+      },
+      "word": "the tag raises the parked Guard's hold"
+     }
+    ],
+    "worst": {
+     "still": {
+      "with_tag": {
+       "holds": 432,
+       "games": 1000,
+       "strike": "strike_low"
+      },
+      "without_tag": {
+       "holds": 0,
+       "games": 1000,
+       "strike": "strike_straight"
+      },
+      "word": "the tag raises the parked Guard's hold"
+     },
+     "ring": {
+      "with_tag": {
+       "holds": 426,
+       "games": 1000,
+       "strike": "strike_low"
+      },
+      "without_tag": {
+       "holds": 0,
+       "games": 1000,
+       "strike": "strike_straight"
+      },
+      "word": "the tag raises the parked Guard's hold"
+     }
+    }
+   }
+  ]
+ },
+ "risk": {
+  "landing": {
+   "word": "not seen with scripted Strikes in this rule set",
+   "reading1": "still Guard below mark_edge",
+   "reading2": "the tag raises the parked Guard's hold",
+   "withheld": false
+  },
+  "landing_gy": {
+   "word": "not seen with scripted Strikes in this rule set",
+   "reading1": "still Guard below mark_edge",
+   "reading2": "the tag raises the parked Guard's hold",
+   "withheld": false
+  }
+ },
+ "reading3": {
+  "pairs": [
+   {
+    "name": "landing_gy v landing",
+    "on": "landing_gy",
+    "off": "landing",
+    "withheld": false,
+    "cells": [
+     {
+      "guard": "guard_parked_centre",
+      "strike": "strike_straight",
+      "on": {
+       "holds": 534,
+       "games": 1000,
+       "rate": 0.534,
+       "ci": [
+        0.5030102405760234,
+        0.5647295303201022
+       ]
+      },
+      "off": {
+       "holds": 534,
+       "games": 1000,
+       "rate": 0.534,
+       "ci": [
+        0.5030102405760234,
+        0.5647295303201022
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 0,
+       "reach_to_hold": 0,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 2
+      },
+      "on_cols": {
+       "filter_active_share": 0.0660340055357849,
+       "pushed_tag_share": 0.028469750889679714,
+       "filter_rate": 0.021232274159090594,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000006198883057
+      },
+      "off_cols": {
+       "filter_active_share": 0.0660340055357849,
+       "pushed_tag_share": 0.02807433768287861,
+       "filter_rate": 0.02123326104064472,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000006198883057
+      }
+     },
+     {
+      "guard": "guard_parked_centre",
+      "strike": "strike_flank",
+      "on": {
+       "holds": 451,
+       "games": 1000,
+       "rate": 0.451,
+       "ci": [
+        0.420404869897352,
+        0.4819701661641144
+       ]
+      },
+      "off": {
+       "holds": 451,
+       "games": 1000,
+       "rate": 0.451,
+       "ci": [
+        0.420404869897352,
+        0.4819701661641144
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 0,
+       "reach_to_hold": 0,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 5
+      },
+      "on_cols": {
+       "filter_active_share": 0.09807139926138696,
+       "pushed_tag_share": 0.0,
+       "filter_rate": 0.0357463592342101,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000057458877563
+      },
+      "off_cols": {
+       "filter_active_share": 0.09807139926138696,
+       "pushed_tag_share": 0.0,
+       "filter_rate": 0.03575994621356949,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.600001573562622
+      }
+     },
+     {
+      "guard": "guard_parked_centre",
+      "strike": "strike_high",
+      "on": {
+       "holds": 467,
+       "games": 1000,
+       "rate": 0.467,
+       "ci": [
+        0.4362625046284455,
+        0.4979900706782564
+       ]
+      },
+      "off": {
+       "holds": 467,
+       "games": 1000,
+       "rate": 0.467,
+       "ci": [
+        0.4362625046284455,
+        0.4979900706782564
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 0,
+       "reach_to_hold": 0,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 4
+      },
+      "on_cols": {
+       "filter_active_share": 0.07770545158665582,
+       "pushed_tag_share": 0.029292107404393815,
+       "filter_rate": 0.018237377184908837,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000052690505981
+      },
+      "off_cols": {
+       "filter_active_share": 0.07729861676159479,
+       "pushed_tag_share": 0.029292107404393815,
+       "filter_rate": 0.018232593979220838,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000052690505981
+      }
+     },
+     {
+      "guard": "guard_parked_centre",
+      "strike": "strike_low",
+      "on": {
+       "holds": 432,
+       "games": 1000,
+       "rate": 0.432,
+       "ci": [
+        0.40161554299484964,
+        0.4629049152128995
+       ]
+      },
+      "off": {
+       "holds": 432,
+       "games": 1000,
+       "rate": 0.432,
+       "ci": [
+        0.40161554299484964,
+        0.4629049152128995
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 0,
+       "reach_to_hold": 0,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 88
+      },
+      "on_cols": {
+       "filter_active_share": 0.09297520661157024,
+       "pushed_tag_share": 0.03347107438016529,
+       "filter_rate": 0.031417823993833735,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000025272369385
+      },
+      "off_cols": {
+       "filter_active_share": 0.09218685407193054,
+       "pushed_tag_share": 0.03224472922695329,
+       "filter_rate": 0.031060512025142088,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000025272369385
+      }
+     },
+     {
+      "guard": "guard_parked_centre",
+      "strike": "strike_sacrifice",
+      "on": {
+       "holds": 524,
+       "games": 1000,
+       "rate": 0.524,
+       "ci": [
+        0.4930127051149756,
+        0.5548036037528778
+       ]
+      },
+      "off": {
+       "holds": 523,
+       "games": 1000,
+       "rate": 0.523,
+       "ci": [
+        0.49201363243599017,
+        0.5538103302290359
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 0,
+       "reach_to_hold": 1,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 27
+      },
+      "on_cols": {
+       "filter_active_share": 0.050316957210776544,
+       "pushed_tag_share": 0.03248811410459588,
+       "filter_rate": 0.01898685428313911,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000010967254639
+      },
+      "off_cols": {
+       "filter_active_share": 0.05033690051525961,
+       "pushed_tag_share": 0.03250099088386841,
+       "filter_rate": 0.018988020753487943,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000010967254639
+      }
+     },
+     {
+      "guard": "guard_parked_centre",
+      "strike": "strike_converge",
+      "on": {
+       "holds": 986,
+       "games": 1000,
+       "rate": 0.986,
+       "ci": [
+        0.9766377520234698,
+        0.9916425025505587
+       ]
+      },
+      "off": {
+       "holds": 986,
+       "games": 1000,
+       "rate": 0.986,
+       "ci": [
+        0.9766377520234698,
+        0.9916425025505587
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 0,
+       "reach_to_hold": 0,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 0
+      },
+      "on_cols": {
+       "filter_active_share": 0.0,
+       "pushed_tag_share": 0.0,
+       "filter_rate": 0.0,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000080108642578
+      },
+      "off_cols": {
+       "filter_active_share": 0.0,
+       "pushed_tag_share": 0.0,
+       "filter_rate": 0.0,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000080108642578
+      }
+     },
+     {
+      "guard": "guard_parked_ring",
+      "strike": "strike_straight",
+      "on": {
+       "holds": 524,
+       "games": 1000,
+       "rate": 0.524,
+       "ci": [
+        0.4930127051149756,
+        0.5548036037528778
+       ]
+      },
+      "off": {
+       "holds": 524,
+       "games": 1000,
+       "rate": 0.524,
+       "ci": [
+        0.4930127051149756,
+        0.5548036037528778
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 0,
+       "reach_to_hold": 0,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 4
+      },
+      "on_cols": {
+       "filter_active_share": 0.05835649067090115,
+       "pushed_tag_share": 0.028582770940849545,
+       "filter_rate": 0.019461682799737902,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.600002408027649
+      },
+      "off_cols": {
+       "filter_active_share": 0.05835649067090115,
+       "pushed_tag_share": 0.028582770940849545,
+       "filter_rate": 0.01944003703026101,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.600002408027649
+      }
+     },
+     {
+      "guard": "guard_parked_ring",
+      "strike": "strike_flank",
+      "on": {
+       "holds": 477,
+       "games": 1000,
+       "rate": 0.477,
+       "ci": [
+        0.44618966977096414,
+        0.5079863675640099
+       ]
+      },
+      "off": {
+       "holds": 477,
+       "games": 1000,
+       "rate": 0.477,
+       "ci": [
+        0.44618966977096414,
+        0.5079863675640099
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 0,
+       "reach_to_hold": 0,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 4
+      },
+      "on_cols": {
+       "filter_active_share": 0.08154158215010142,
+       "pushed_tag_share": 0.0,
+       "filter_rate": 0.03010931457276456,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000213623046875
+      },
+      "off_cols": {
+       "filter_active_share": 0.08154158215010142,
+       "pushed_tag_share": 0.0,
+       "filter_rate": 0.030145558700663967,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000213623046875
+      }
+     },
+     {
+      "guard": "guard_parked_ring",
+      "strike": "strike_high",
+      "on": {
+       "holds": 454,
+       "games": 1000,
+       "rate": 0.454,
+       "ci": [
+        0.42337574645433246,
+        0.4849763282156156
+       ]
+      },
+      "off": {
+       "holds": 454,
+       "games": 1000,
+       "rate": 0.454,
+       "ci": [
+        0.42337574645433246,
+        0.4849763282156156
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 0,
+       "reach_to_hold": 0,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 3
+      },
+      "on_cols": {
+       "filter_active_share": 0.07078559738134206,
+       "pushed_tag_share": 0.031096563011456628,
+       "filter_rate": 0.016129407785832883,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000075340270996
+      },
+      "off_cols": {
+       "filter_active_share": 0.07037643207855974,
+       "pushed_tag_share": 0.031096563011456628,
+       "filter_rate": 0.0161289566103369,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000075340270996
+      }
+     },
+     {
+      "guard": "guard_parked_ring",
+      "strike": "strike_low",
+      "on": {
+       "holds": 426,
+       "games": 1000,
+       "rate": 0.426,
+       "ci": [
+        0.39569154544653623,
+        0.4568748355442496
+       ]
+      },
+      "off": {
+       "holds": 426,
+       "games": 1000,
+       "rate": 0.426,
+       "ci": [
+        0.39569154544653623,
+        0.4568748355442496
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 0,
+       "reach_to_hold": 0,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 112
+      },
+      "on_cols": {
+       "filter_active_share": 0.08039784500621633,
+       "pushed_tag_share": 0.03439701616245338,
+       "filter_rate": 0.03258127364539541,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000124216079712
+      },
+      "off_cols": {
+       "filter_active_share": 0.079983423124741,
+       "pushed_tag_share": 0.03439701616245338,
+       "filter_rate": 0.03217710689664818,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000124216079712
+      }
+     },
+     {
+      "guard": "guard_parked_ring",
+      "strike": "strike_sacrifice",
+      "on": {
+       "holds": 502,
+       "games": 1000,
+       "rate": 0.502,
+       "ci": [
+        0.47106162688393816,
+        0.5329230655217162
+       ]
+      },
+      "off": {
+       "holds": 502,
+       "games": 1000,
+       "rate": 0.502,
+       "ci": [
+        0.47106162688393816,
+        0.5329230655217162
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 0,
+       "reach_to_hold": 0,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 23
+      },
+      "on_cols": {
+       "filter_active_share": 0.04876099120703437,
+       "pushed_tag_share": 0.026778577138289367,
+       "filter_rate": 0.018303723503369836,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000187397003174
+      },
+      "off_cols": {
+       "filter_active_share": 0.04876099120703437,
+       "pushed_tag_share": 0.026778577138289367,
+       "filter_rate": 0.01830355823459104,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000187397003174
+      }
+     },
+     {
+      "guard": "guard_parked_ring",
+      "strike": "strike_converge",
+      "on": {
+       "holds": 983,
+       "games": 1000,
+       "rate": 0.983,
+       "ci": [
+        0.9729438156287651,
+        0.9893594003367818
+       ]
+      },
+      "off": {
+       "holds": 983,
+       "games": 1000,
+       "rate": 0.983,
+       "ci": [
+        0.9729438156287651,
+        0.9893594003367818
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 0,
+       "reach_to_hold": 0,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 0
+      },
+      "on_cols": {
+       "filter_active_share": 0.0,
+       "pushed_tag_share": 0.0,
+       "filter_rate": 0.0,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000087261199951
+      },
+      "off_cols": {
+       "filter_active_share": 0.0,
+       "pushed_tag_share": 0.0,
+       "filter_rate": 0.0,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000087261199951
+      }
+     },
+     {
+      "guard": "guard_mark_edge",
+      "strike": "strike_straight",
+      "on": {
+       "holds": 803,
+       "games": 1000,
+       "rate": 0.803,
+       "ci": [
+        0.7772086517608134,
+        0.8264722476958342
+       ]
+      },
+      "off": {
+       "holds": 802,
+       "games": 1000,
+       "rate": 0.802,
+       "ci": [
+        0.7761657052655129,
+        0.8255228479883074
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 6,
+       "reach_to_hold": 7,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 117
+      },
+      "on_cols": {
+       "filter_active_share": 0.35273116744019994,
+       "pushed_tag_share": 0.27275972866833276,
+       "filter_rate": 0.250362329563126,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000012159347534
+      },
+      "off_cols": {
+       "filter_active_share": 0.3514285714285714,
+       "pushed_tag_share": 0.2739285714285714,
+       "filter_rate": 0.24962887154892088,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000181436538696
+      }
+     },
+     {
+      "guard": "guard_mark_edge",
+      "strike": "strike_flank",
+      "on": {
+       "holds": 884,
+       "games": 1000,
+       "rate": 0.884,
+       "ci": [
+        0.862666307122199,
+        0.9023946347634532
+       ]
+      },
+      "off": {
+       "holds": 879,
+       "games": 1000,
+       "rate": 0.879,
+       "ci": [
+        0.8573226741029558,
+        0.8977765367685602
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 4,
+       "reach_to_hold": 9,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 192
+      },
+      "on_cols": {
+       "filter_active_share": 0.3314840499306519,
+       "pushed_tag_share": 0.26664355062413314,
+       "filter_rate": 0.25503435376985,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000101566314697
+      },
+      "off_cols": {
+       "filter_active_share": 0.32835302293259205,
+       "pushed_tag_share": 0.2678943710910354,
+       "filter_rate": 0.25360595863638447,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.60000741481781
+      }
+     },
+     {
+      "guard": "guard_mark_edge",
+      "strike": "strike_high",
+      "on": {
+       "holds": 845,
+       "games": 1000,
+       "rate": 0.845,
+       "ci": [
+        0.821252700977952,
+        0.8661067389974386
+       ]
+      },
+      "off": {
+       "holds": 843,
+       "games": 1000,
+       "rate": 0.843,
+       "ci": [
+        0.8191437085463132,
+        0.8642310390234228
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 6,
+       "reach_to_hold": 8,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 135
+      },
+      "on_cols": {
+       "filter_active_share": 0.32454289732770747,
+       "pushed_tag_share": 0.25843881856540085,
+       "filter_rate": 0.2424606852917932,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000134944915771
+      },
+      "off_cols": {
+       "filter_active_share": 0.324181626187962,
+       "pushed_tag_share": 0.2615276311158043,
+       "filter_rate": 0.24197254107287153,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000055074691772
+      }
+     },
+     {
+      "guard": "guard_mark_edge",
+      "strike": "strike_low",
+      "on": {
+       "holds": 902,
+       "games": 1000,
+       "rate": 0.902,
+       "ci": [
+        0.8820049011851514,
+        0.9189182723513907
+       ]
+      },
+      "off": {
+       "holds": 895,
+       "games": 1000,
+       "rate": 0.895,
+       "ci": [
+        0.8744642376371892,
+        0.9125125124795623
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 6,
+       "reach_to_hold": 13,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 287
+      },
+      "on_cols": {
+       "filter_active_share": 0.3864734299516908,
+       "pushed_tag_share": 0.24396135265700483,
+       "filter_rate": 0.2578722346324939,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.60000741481781
+      },
+      "off_cols": {
+       "filter_active_share": 0.38719723183391,
+       "pushed_tag_share": 0.24636678200692042,
+       "filter_rate": 0.25799808301148003,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000028848648071
+      }
+     },
+     {
+      "guard": "guard_mark_edge",
+      "strike": "strike_sacrifice",
+      "on": {
+       "holds": 963,
+       "games": 1000,
+       "rate": 0.963,
+       "ci": [
+        0.9494173165894553,
+        0.9730389753195472
+       ]
+      },
+      "off": {
+       "holds": 963,
+       "games": 1000,
+       "rate": 0.963,
+       "ci": [
+        0.9494173165894553,
+        0.9730389753195472
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 2,
+       "reach_to_hold": 2,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 291
+      },
+      "on_cols": {
+       "filter_active_share": 0.30631543397500843,
+       "pushed_tag_share": 0.22965214454576158,
+       "filter_rate": 0.22410320895072072,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000185012817383
+      },
+      "off_cols": {
+       "filter_active_share": 0.3066531577169875,
+       "pushed_tag_share": 0.22998986828774062,
+       "filter_rate": 0.22372215808648616,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000033617019653
+      }
+     },
+     {
+      "guard": "guard_mark_edge",
+      "strike": "strike_converge",
+      "on": {
+       "holds": 965,
+       "games": 1000,
+       "rate": 0.965,
+       "ci": [
+        0.9517130967996695,
+        0.9747278875149873
+       ]
+      },
+      "off": {
+       "holds": 972,
+       "games": 1000,
+       "rate": 0.972,
+       "ci": [
+        0.9598295551975795,
+        0.9805578525368679
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 20,
+       "reach_to_hold": 13,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 390
+      },
+      "on_cols": {
+       "filter_active_share": 0.11909581646423752,
+       "pushed_tag_share": 0.09986504723346828,
+       "filter_rate": 0.19976093072956427,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000056266784668
+      },
+      "off_cols": {
+       "filter_active_share": 0.11339165545087483,
+       "pushed_tag_share": 0.09488559892328398,
+       "filter_rate": 0.19963263128837572,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.600000262260437
+      }
+     },
+     {
+      "guard": "guard_mirror",
+      "strike": "strike_straight",
+      "on": {
+       "holds": 798,
+       "games": 1000,
+       "rate": 0.798,
+       "ci": [
+        0.7719963323687683,
+        0.8217228360737431
+       ]
+      },
+      "off": {
+       "holds": 796,
+       "games": 1000,
+       "rate": 0.796,
+       "ci": [
+        0.7699130750438999,
+        0.8198214009929571
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 4,
+       "reach_to_hold": 6,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 118
+      },
+      "on_cols": {
+       "filter_active_share": 0.3240343347639485,
+       "pushed_tag_share": 0.2532188841201717,
+       "filter_rate": 0.2342935962001793,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000291109085083
+      },
+      "off_cols": {
+       "filter_active_share": 0.31675017895490337,
+       "pushed_tag_share": 0.24946313528990693,
+       "filter_rate": 0.2337131009544246,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.600006341934204
+      }
+     },
+     {
+      "guard": "guard_mirror",
+      "strike": "strike_flank",
+      "on": {
+       "holds": 861,
+       "games": 1000,
+       "rate": 0.861,
+       "ci": [
+        0.8381730246613444,
+        0.8810639545592818
+       ]
+      },
+      "off": {
+       "holds": 857,
+       "games": 1000,
+       "rate": 0.857,
+       "ci": [
+        0.833934563145855,
+        0.8773330312634622
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 6,
+       "reach_to_hold": 10,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 206
+      },
+      "on_cols": {
+       "filter_active_share": 0.29555788737320743,
+       "pushed_tag_share": 0.23434767401189227,
+       "filter_rate": 0.2400104084853083,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000025272369385
+      },
+      "off_cols": {
+       "filter_active_share": 0.29492119089316987,
+       "pushed_tag_share": 0.2329246935201401,
+       "filter_rate": 0.2392030456084758,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.60000479221344
+      }
+     },
+     {
+      "guard": "guard_mirror",
+      "strike": "strike_high",
+      "on": {
+       "holds": 842,
+       "games": 1000,
+       "rate": 0.842,
+       "ci": [
+        0.8180896910880748,
+        0.8632927102788341
+       ]
+      },
+      "off": {
+       "holds": 841,
+       "games": 1000,
+       "rate": 0.841,
+       "ci": [
+        0.817035989537914,
+        0.8623540656261677
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 4,
+       "reach_to_hold": 5,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 144
+      },
+      "on_cols": {
+       "filter_active_share": 0.2942625835973249,
+       "pushed_tag_share": 0.23512847588877156,
+       "filter_rate": 0.2264300917573273,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.600001573562622
+      },
+      "off_cols": {
+       "filter_active_share": 0.29306093694963015,
+       "pushed_tag_share": 0.2381120112715745,
+       "filter_rate": 0.2260919966362417,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000008583068848
+      }
+     },
+     {
+      "guard": "guard_mirror",
+      "strike": "strike_low",
+      "on": {
+       "holds": 899,
+       "games": 1000,
+       "rate": 0.899,
+       "ci": [
+        0.8787698568381758,
+        0.9161762780898847
+       ]
+      },
+      "off": {
+       "holds": 898,
+       "games": 1000,
+       "rate": 0.898,
+       "ci": [
+        0.8776926335652987,
+        0.9152611551599347
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 9,
+       "reach_to_hold": 10,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 309
+      },
+      "on_cols": {
+       "filter_active_share": 0.3518646408839779,
+       "pushed_tag_share": 0.22168508287292818,
+       "filter_rate": 0.24309290051530116,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.600003719329834
+      },
+      "off_cols": {
+       "filter_active_share": 0.3532665053577601,
+       "pushed_tag_share": 0.2229519529899758,
+       "filter_rate": 0.24309006192511878,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.600000023841858
+      }
+     },
+     {
+      "guard": "guard_mirror",
+      "strike": "strike_sacrifice",
+      "on": {
+       "holds": 927,
+       "games": 1000,
+       "rate": 0.927,
+       "ci": [
+        0.9091906155334873,
+        0.9415412130737354
+       ]
+      },
+      "off": {
+       "holds": 925,
+       "games": 1000,
+       "rate": 0.925,
+       "ci": [
+        0.9069986980202727,
+        0.9397484381812955
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 0,
+       "reach_to_hold": 2,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 313
+      },
+      "on_cols": {
+       "filter_active_share": 0.24478632478632478,
+       "pushed_tag_share": 0.16786324786324786,
+       "filter_rate": 0.18283878950355575,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000005006790161
+      },
+      "off_cols": {
+       "filter_active_share": 0.250769757098871,
+       "pushed_tag_share": 0.17071501881628465,
+       "filter_rate": 0.18285775970621035,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000049114227295
+      }
+     },
+     {
+      "guard": "guard_mirror",
+      "strike": "strike_converge",
+      "on": {
+       "holds": 971,
+       "games": 1000,
+       "rate": 0.971,
+       "ci": [
+        0.958661377168108,
+        0.9797336843635122
+       ]
+      },
+      "off": {
+       "holds": 968,
+       "games": 1000,
+       "rate": 0.968,
+       "ci": [
+        0.9551749890510055,
+        0.977243033872133
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 4,
+       "reach_to_hold": 7,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 312
+      },
+      "on_cols": {
+       "filter_active_share": 0.060922248401211715,
+       "pushed_tag_share": 0.052170986199932684,
+       "filter_rate": 0.1347772891432978,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.600013256072998
+      },
+      "off_cols": {
+       "filter_active_share": 0.0589622641509434,
+       "pushed_tag_share": 0.04919137466307277,
+       "filter_rate": 0.13383868200937285,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000115871429443
+      }
+     },
+     {
+      "guard": "guard_field",
+      "strike": "strike_straight",
+      "on": {
+       "holds": 716,
+       "games": 1000,
+       "rate": 0.716,
+       "ci": [
+        0.6872653238598468,
+        0.7430814559508324
+       ]
+      },
+      "off": {
+       "holds": 716,
+       "games": 1000,
+       "rate": 0.716,
+       "ci": [
+        0.6872653238598468,
+        0.7430814559508324
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 0,
+       "reach_to_hold": 0,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 0
+      },
+      "on_cols": {
+       "filter_active_share": 0.1174521354933726,
+       "pushed_tag_share": 0.05706921944035346,
+       "filter_rate": 0.06401350502576679,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000032424926758
+      },
+      "off_cols": {
+       "filter_active_share": 0.1170839469808542,
+       "pushed_tag_share": 0.05780559646539028,
+       "filter_rate": 0.0639914999557659,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000032424926758
+      }
+     },
+     {
+      "guard": "guard_field",
+      "strike": "strike_flank",
+      "on": {
+       "holds": 808,
+       "games": 1000,
+       "rate": 0.808,
+       "ci": [
+        0.7824270733559523,
+        0.8312155571148313
+       ]
+      },
+      "off": {
+       "holds": 807,
+       "games": 1000,
+       "rate": 0.807,
+       "ci": [
+        0.7813828923861693,
+        0.830267391881787
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 0,
+       "reach_to_hold": 1,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 4
+      },
+      "on_cols": {
+       "filter_active_share": 0.11894586894586895,
+       "pushed_tag_share": 0.06517094017094018,
+       "filter_rate": 0.0628618886610493,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000101566314697
+      },
+      "off_cols": {
+       "filter_active_share": 0.11898824367652298,
+       "pushed_tag_share": 0.06519415746348414,
+       "filter_rate": 0.06292737163137645,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000101566314697
+      }
+     },
+     {
+      "guard": "guard_field",
+      "strike": "strike_high",
+      "on": {
+       "holds": 732,
+       "games": 1000,
+       "rate": 0.732,
+       "ci": [
+        0.7036980405782712,
+        0.7585262784776435
+       ]
+      },
+      "off": {
+       "holds": 732,
+       "games": 1000,
+       "rate": 0.732,
+       "ci": [
+        0.7036980405782712,
+        0.7585262784776435
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 0,
+       "reach_to_hold": 0,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 1
+      },
+      "on_cols": {
+       "filter_active_share": 0.12408491947291361,
+       "pushed_tag_share": 0.06698389458272327,
+       "filter_rate": 0.06389079541806132,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000053882598877
+      },
+      "off_cols": {
+       "filter_active_share": 0.12408491947291361,
+       "pushed_tag_share": 0.06771595900439238,
+       "filter_rate": 0.06395489847008139,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000053882598877
+      }
+     },
+     {
+      "guard": "guard_field",
+      "strike": "strike_low",
+      "on": {
+       "holds": 744,
+       "games": 1000,
+       "rate": 0.744,
+       "ci": [
+        0.7160521973177114,
+        0.7700802761721302
+       ]
+      },
+      "off": {
+       "holds": 744,
+       "games": 1000,
+       "rate": 0.744,
+       "ci": [
+        0.7160521973177114,
+        0.7700802761721302
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 0,
+       "reach_to_hold": 0,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 21
+      },
+      "on_cols": {
+       "filter_active_share": 0.17055393586005832,
+       "pushed_tag_share": 0.07252186588921283,
+       "filter_rate": 0.07546376448613591,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000241041183472
+      },
+      "off_cols": {
+       "filter_active_share": 0.17018950437317784,
+       "pushed_tag_share": 0.07361516034985423,
+       "filter_rate": 0.07548488083225675,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000241041183472
+      }
+     },
+     {
+      "guard": "guard_field",
+      "strike": "strike_sacrifice",
+      "on": {
+       "holds": 863,
+       "games": 1000,
+       "rate": 0.863,
+       "ci": [
+        0.84029446126432,
+        0.8829272103619605
+       ]
+      },
+      "off": {
+       "holds": 863,
+       "games": 1000,
+       "rate": 0.863,
+       "ci": [
+        0.84029446126432,
+        0.8829272103619605
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 0,
+       "reach_to_hold": 0,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 28
+      },
+      "on_cols": {
+       "filter_active_share": 0.12661769849597762,
+       "pushed_tag_share": 0.06575725778244142,
+       "filter_rate": 0.06567085022246465,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.600000262260437
+      },
+      "off_cols": {
+       "filter_active_share": 0.12661769849597762,
+       "pushed_tag_share": 0.06610703043022036,
+       "filter_rate": 0.06582322051143273,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.600000262260437
+      }
+     },
+     {
+      "guard": "guard_field",
+      "strike": "strike_converge",
+      "on": {
+       "holds": 875,
+       "games": 1000,
+       "rate": 0.875,
+       "ci": [
+        0.8530557319763017,
+        0.8940740940839056
+       ]
+      },
+      "off": {
+       "holds": 872,
+       "games": 1000,
+       "rate": 0.872,
+       "ci": [
+        0.8498599807293441,
+        0.8912928067223815
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 0,
+       "reach_to_hold": 3,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 63
+      },
+      "on_cols": {
+       "filter_active_share": 0.10191304347826087,
+       "pushed_tag_share": 0.07026086956521739,
+       "filter_rate": 0.05819165078527294,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000036001205444
+      },
+      "off_cols": {
+       "filter_active_share": 0.10201949860724234,
+       "pushed_tag_share": 0.07172701949860724,
+       "filter_rate": 0.058242555752163756,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000036001205444
+      }
+     }
+    ],
+    "words_by_guard": {
+     "guard_parked_centre": {
+      "no change detected": 6
+     },
+     "guard_parked_ring": {
+      "no change detected": 6
+     },
+     "guard_mark_edge": {
+      "no change detected": 6
+     },
+     "guard_mirror": {
+      "no change detected": 6
+     },
+     "guard_field": {
+      "no change detected": 6
+     }
+    },
+    "paired_by_guard": {
+     "guard_parked_centre": {
+      "hold_to_reach": 0,
+      "reach_to_hold": 1,
+      "other_outcome": 0,
+      "same_outcome_end_step_changed": 126
+     },
+     "guard_parked_ring": {
+      "hold_to_reach": 0,
+      "reach_to_hold": 0,
+      "other_outcome": 0,
+      "same_outcome_end_step_changed": 146
+     },
+     "guard_mark_edge": {
+      "hold_to_reach": 44,
+      "reach_to_hold": 52,
+      "other_outcome": 0,
+      "same_outcome_end_step_changed": 1412
+     },
+     "guard_mirror": {
+      "hold_to_reach": 27,
+      "reach_to_hold": 40,
+      "other_outcome": 0,
+      "same_outcome_end_step_changed": 1402
+     },
+     "guard_field": {
+      "hold_to_reach": 0,
+      "reach_to_hold": 4,
+      "other_outcome": 0,
+      "same_outcome_end_step_changed": 117
+     }
+    },
+    "paired_total": {
+     "hold_to_reach": 71,
+     "reach_to_hold": 97,
+     "other_outcome": 0,
+     "same_outcome_end_step_changed": 3203
+    }
+   },
+   {
+    "name": "gy v base",
+    "on": "gy",
+    "off": "base",
+    "withheld": false,
+    "cells": [
+     {
+      "guard": "guard_parked_centre",
+      "strike": "strike_straight",
+      "on": {
+       "holds": 534,
+       "games": 1000,
+       "rate": 0.534,
+       "ci": [
+        0.5030102405760234,
+        0.5647295303201022
+       ]
+      },
+      "off": {
+       "holds": 534,
+       "games": 1000,
+       "rate": 0.534,
+       "ci": [
+        0.5030102405760234,
+        0.5647295303201022
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 0,
+       "reach_to_hold": 0,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 3
+      },
+      "on_cols": {
+       "filter_active_share": 0.05219454329774614,
+       "pushed_tag_share": 0.014630288651640965,
+       "filter_rate": 0.014407924217404798,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000006198883057
+      },
+      "off_cols": {
+       "filter_active_share": 0.05219454329774614,
+       "pushed_tag_share": 0.014234875444839857,
+       "filter_rate": 0.014398009379627184,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000006198883057
+      }
+     },
+     {
+      "guard": "guard_parked_centre",
+      "strike": "strike_flank",
+      "on": {
+       "holds": 450,
+       "games": 1000,
+       "rate": 0.45,
+       "ci": [
+        0.4194148276959868,
+        0.4809678621626524
+       ]
+      },
+      "off": {
+       "holds": 450,
+       "games": 1000,
+       "rate": 0.45,
+       "ci": [
+        0.4194148276959868,
+        0.4809678621626524
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 0,
+       "reach_to_hold": 0,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 6
+      },
+      "on_cols": {
+       "filter_active_share": 0.09815195071868583,
+       "pushed_tag_share": 0.0,
+       "filter_rate": 0.02538351719197817,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000057458877563
+      },
+      "off_cols": {
+       "filter_active_share": 0.09815195071868583,
+       "pushed_tag_share": 0.0,
+       "filter_rate": 0.02541066857543774,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.600001573562622
+      }
+     },
+     {
+      "guard": "guard_parked_centre",
+      "strike": "strike_high",
+      "on": {
+       "holds": 467,
+       "games": 1000,
+       "rate": 0.467,
+       "ci": [
+        0.4362625046284455,
+        0.4979900706782564
+       ]
+      },
+      "off": {
+       "holds": 466,
+       "games": 1000,
+       "rate": 0.466,
+       "ci": [
+        0.43527046967989796,
+        0.4969897594239768
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 0,
+       "reach_to_hold": 1,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 5
+      },
+      "on_cols": {
+       "filter_active_share": 0.06305939788445891,
+       "pushed_tag_share": 0.015866558177379985,
+       "filter_rate": 0.012632106572156772,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000052690505981
+      },
+      "off_cols": {
+       "filter_active_share": 0.06308506308506308,
+       "pushed_tag_share": 0.01628001628001628,
+       "filter_rate": 0.012623388634761796,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000052690505981
+      }
+     },
+     {
+      "guard": "guard_parked_centre",
+      "strike": "strike_low",
+      "on": {
+       "holds": 431,
+       "games": 1000,
+       "rate": 0.431,
+       "ci": [
+        0.4006278926003595,
+        0.46190021940456244
+       ]
+      },
+      "off": {
+       "holds": 430,
+       "games": 1000,
+       "rate": 0.43,
+       "ci": [
+        0.3996403690487447,
+        0.46089539675335006
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 0,
+       "reach_to_hold": 1,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 5
+      },
+      "on_cols": {
+       "filter_active_share": 0.0707196029776675,
+       "pushed_tag_share": 0.018610421836228287,
+       "filter_rate": 0.012939964164746924,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000025272369385
+      },
+      "off_cols": {
+       "filter_active_share": 0.07074886222589988,
+       "pushed_tag_share": 0.018618121638394703,
+       "filter_rate": 0.012929141581756995,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000025272369385
+      }
+     },
+     {
+      "guard": "guard_parked_centre",
+      "strike": "strike_sacrifice",
+      "on": {
+       "holds": 524,
+       "games": 1000,
+       "rate": 0.524,
+       "ci": [
+        0.4930127051149756,
+        0.5548036037528778
+       ]
+      },
+      "off": {
+       "holds": 525,
+       "games": 1000,
+       "rate": 0.525,
+       "ci": [
+        0.4940119014700143,
+        0.5557967536006662
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 1,
+       "reach_to_hold": 0,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 20
+      },
+      "on_cols": {
+       "filter_active_share": 0.04635499207606973,
+       "pushed_tag_share": 0.029318541996830427,
+       "filter_rate": 0.013819888492114843,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000010967254639
+      },
+      "off_cols": {
+       "filter_active_share": 0.046336633663366336,
+       "pushed_tag_share": 0.029306930693069305,
+       "filter_rate": 0.013826973947696388,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000010967254639
+      }
+     },
+     {
+      "guard": "guard_parked_centre",
+      "strike": "strike_converge",
+      "on": {
+       "holds": 986,
+       "games": 1000,
+       "rate": 0.986,
+       "ci": [
+        0.9766377520234698,
+        0.9916425025505587
+       ]
+      },
+      "off": {
+       "holds": 986,
+       "games": 1000,
+       "rate": 0.986,
+       "ci": [
+        0.9766377520234698,
+        0.9916425025505587
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 0,
+       "reach_to_hold": 0,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 0
+      },
+      "on_cols": {
+       "filter_active_share": 0.0,
+       "pushed_tag_share": 0.0,
+       "filter_rate": 0.0,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000080108642578
+      },
+      "off_cols": {
+       "filter_active_share": 0.0,
+       "pushed_tag_share": 0.0,
+       "filter_rate": 0.0,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000080108642578
+      }
+     },
+     {
+      "guard": "guard_parked_ring",
+      "strike": "strike_straight",
+      "on": {
+       "holds": 523,
+       "games": 1000,
+       "rate": 0.523,
+       "ci": [
+        0.49201363243599017,
+        0.5538103302290359
+       ]
+      },
+      "off": {
+       "holds": 523,
+       "games": 1000,
+       "rate": 0.523,
+       "ci": [
+        0.49201363243599017,
+        0.5538103302290359
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 0,
+       "reach_to_hold": 0,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 2
+      },
+      "on_cols": {
+       "filter_active_share": 0.04765687053216839,
+       "pushed_tag_share": 0.017474185861795076,
+       "filter_rate": 0.012801844160538168,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.600002408027649
+      },
+      "off_cols": {
+       "filter_active_share": 0.04765687053216839,
+       "pushed_tag_share": 0.017474185861795076,
+       "filter_rate": 0.012788112505804748,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.600002408027649
+      }
+     },
+     {
+      "guard": "guard_parked_ring",
+      "strike": "strike_flank",
+      "on": {
+       "holds": 477,
+       "games": 1000,
+       "rate": 0.477,
+       "ci": [
+        0.44618966977096414,
+        0.5079863675640099
+       ]
+      },
+      "off": {
+       "holds": 477,
+       "games": 1000,
+       "rate": 0.477,
+       "ci": [
+        0.44618966977096414,
+        0.5079863675640099
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 0,
+       "reach_to_hold": 0,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 3
+      },
+      "on_cols": {
+       "filter_active_share": 0.08157467532467533,
+       "pushed_tag_share": 0.0,
+       "filter_rate": 0.02168589279195294,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000213623046875
+      },
+      "off_cols": {
+       "filter_active_share": 0.08157467532467533,
+       "pushed_tag_share": 0.0,
+       "filter_rate": 0.021712487430777402,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000213623046875
+      }
+     },
+     {
+      "guard": "guard_parked_ring",
+      "strike": "strike_high",
+      "on": {
+       "holds": 454,
+       "games": 1000,
+       "rate": 0.454,
+       "ci": [
+        0.42337574645433246,
+        0.4849763282156156
+       ]
+      },
+      "off": {
+       "holds": 454,
+       "games": 1000,
+       "rate": 0.454,
+       "ci": [
+        0.42337574645433246,
+        0.4849763282156156
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 0,
+       "reach_to_hold": 0,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 5
+      },
+      "on_cols": {
+       "filter_active_share": 0.05932896890343699,
+       "pushed_tag_share": 0.020867430441898527,
+       "filter_rate": 0.010932531680911779,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000075340270996
+      },
+      "off_cols": {
+       "filter_active_share": 0.05932896890343699,
+       "pushed_tag_share": 0.020867430441898527,
+       "filter_rate": 0.010932584434747697,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000075340270996
+      }
+     },
+     {
+      "guard": "guard_parked_ring",
+      "strike": "strike_low",
+      "on": {
+       "holds": 424,
+       "games": 1000,
+       "rate": 0.424,
+       "ci": [
+        0.39371789757876074,
+        0.45486379100637064
+       ]
+      },
+      "off": {
+       "holds": 424,
+       "games": 1000,
+       "rate": 0.424,
+       "ci": [
+        0.39371789757876074,
+        0.45486379100637064
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 0,
+       "reach_to_hold": 0,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 5
+      },
+      "on_cols": {
+       "filter_active_share": 0.06221484861053505,
+       "pushed_tag_share": 0.022397345499792616,
+       "filter_rate": 0.011227018224075437,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000105142593384
+      },
+      "off_cols": {
+       "filter_active_share": 0.06221484861053505,
+       "pushed_tag_share": 0.022812111157196183,
+       "filter_rate": 0.01122124368697405,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000124216079712
+      }
+     },
+     {
+      "guard": "guard_parked_ring",
+      "strike": "strike_sacrifice",
+      "on": {
+       "holds": 502,
+       "games": 1000,
+       "rate": 0.502,
+       "ci": [
+        0.47106162688393816,
+        0.5329230655217162
+       ]
+      },
+      "off": {
+       "holds": 503,
+       "games": 1000,
+       "rate": 0.503,
+       "ci": [
+        0.4720581081153037,
+        0.533918930493178
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 1,
+       "reach_to_hold": 0,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 17
+      },
+      "on_cols": {
+       "filter_active_share": 0.0451638689048761,
+       "pushed_tag_share": 0.023980815347721823,
+       "filter_rate": 0.013268948240671307,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000187397003174
+      },
+      "off_cols": {
+       "filter_active_share": 0.04514582500998801,
+       "pushed_tag_share": 0.023971234518577706,
+       "filter_rate": 0.013274866153020412,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000187397003174
+      }
+     },
+     {
+      "guard": "guard_parked_ring",
+      "strike": "strike_converge",
+      "on": {
+       "holds": 983,
+       "games": 1000,
+       "rate": 0.983,
+       "ci": [
+        0.9729438156287651,
+        0.9893594003367818
+       ]
+      },
+      "off": {
+       "holds": 983,
+       "games": 1000,
+       "rate": 0.983,
+       "ci": [
+        0.9729438156287651,
+        0.9893594003367818
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 0,
+       "reach_to_hold": 0,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 0
+      },
+      "on_cols": {
+       "filter_active_share": 0.0,
+       "pushed_tag_share": 0.0,
+       "filter_rate": 0.0,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000087261199951
+      },
+      "off_cols": {
+       "filter_active_share": 0.0,
+       "pushed_tag_share": 0.0,
+       "filter_rate": 0.0,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000087261199951
+      }
+     },
+     {
+      "guard": "guard_mark_edge",
+      "strike": "strike_straight",
+      "on": {
+       "holds": 808,
+       "games": 1000,
+       "rate": 0.808,
+       "ci": [
+        0.7824270733559523,
+        0.8312155571148313
+       ]
+      },
+      "off": {
+       "holds": 808,
+       "games": 1000,
+       "rate": 0.808,
+       "ci": [
+        0.7824270733559523,
+        0.8312155571148313
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 5,
+       "reach_to_hold": 5,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 121
+      },
+      "on_cols": {
+       "filter_active_share": 0.3161083392729865,
+       "pushed_tag_share": 0.27049180327868855,
+       "filter_rate": 0.21929852068331093,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000012159347534
+      },
+      "off_cols": {
+       "filter_active_share": 0.3182466143977192,
+       "pushed_tag_share": 0.27334283677833215,
+       "filter_rate": 0.2188049261411652,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000175476074219
+      }
+     },
+     {
+      "guard": "guard_mark_edge",
+      "strike": "strike_flank",
+      "on": {
+       "holds": 891,
+       "games": 1000,
+       "rate": 0.891,
+       "ci": [
+        0.8701670973953542,
+        0.9088402679100885
+       ]
+      },
+      "off": {
+       "holds": 887,
+       "games": 1000,
+       "rate": 0.887,
+       "ci": [
+        0.86587803145935,
+        0.9051599490347838
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 5,
+       "reach_to_hold": 9,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 222
+      },
+      "on_cols": {
+       "filter_active_share": 0.32525951557093424,
+       "pushed_tag_share": 0.2657439446366782,
+       "filter_rate": 0.23029823371814565,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000101566314697
+      },
+      "off_cols": {
+       "filter_active_share": 0.323977823977824,
+       "pushed_tag_share": 0.2681912681912682,
+       "filter_rate": 0.2293704139380716,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.60000741481781
+      }
+     },
+     {
+      "guard": "guard_mark_edge",
+      "strike": "strike_high",
+      "on": {
+       "holds": 852,
+       "games": 1000,
+       "rate": 0.852,
+       "ci": [
+        0.8286444970153862,
+        0.872661366379795
+       ]
+      },
+      "off": {
+       "holds": 850,
+       "games": 1000,
+       "rate": 0.85,
+       "ci": [
+        0.8265308859716873,
+        0.8707902850178393
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 5,
+       "reach_to_hold": 7,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 154
+      },
+      "on_cols": {
+       "filter_active_share": 0.3023500526131182,
+       "pushed_tag_share": 0.2602595580498071,
+       "filter_rate": 0.22258364303549752,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000012159347534
+      },
+      "off_cols": {
+       "filter_active_share": 0.3026685393258427,
+       "pushed_tag_share": 0.26615168539325845,
+       "filter_rate": 0.22244735871860757,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.600005865097046
+      }
+     },
+     {
+      "guard": "guard_mark_edge",
+      "strike": "strike_low",
+      "on": {
+       "holds": 847,
+       "games": 1000,
+       "rate": 0.847,
+       "ci": [
+        0.8233629868076504,
+        0.8679811455733946
+       ]
+      },
+      "off": {
+       "holds": 844,
+       "games": 1000,
+       "rate": 0.844,
+       "ci": [
+        0.8201980443506668,
+        0.8651690494218965
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 5,
+       "reach_to_hold": 8,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 149
+      },
+      "on_cols": {
+       "filter_active_share": 0.29430379746835444,
+       "pushed_tag_share": 0.25773558368495075,
+       "filter_rate": 0.2233597300183028,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.60000741481781
+      },
+      "off_cols": {
+       "filter_active_share": 0.2926056338028169,
+       "pushed_tag_share": 0.2602112676056338,
+       "filter_rate": 0.22328496724925936,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000069379806519
+      }
+     },
+     {
+      "guard": "guard_mark_edge",
+      "strike": "strike_sacrifice",
+      "on": {
+       "holds": 962,
+       "games": 1000,
+       "rate": 0.962,
+       "ci": [
+        0.9482727912457906,
+        0.9721911544603846
+       ]
+      },
+      "off": {
+       "holds": 960,
+       "games": 1000,
+       "rate": 0.96,
+       "ci": [
+        0.9459900625744302,
+        0.9704891907260906
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 3,
+       "reach_to_hold": 5,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 293
+      },
+      "on_cols": {
+       "filter_active_share": 0.297972972972973,
+       "pushed_tag_share": 0.22972972972972974,
+       "filter_rate": 0.202746188797988,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000192165374756
+      },
+      "off_cols": {
+       "filter_active_share": 0.29682217714672077,
+       "pushed_tag_share": 0.22954699121027722,
+       "filter_rate": 0.2021850942512974,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000033617019653
+      }
+     },
+     {
+      "guard": "guard_mark_edge",
+      "strike": "strike_converge",
+      "on": {
+       "holds": 963,
+       "games": 1000,
+       "rate": 0.963,
+       "ci": [
+        0.9494173165894553,
+        0.9730389753195472
+       ]
+      },
+      "off": {
+       "holds": 974,
+       "games": 1000,
+       "rate": 0.974,
+       "ci": [
+        0.9621759154980226,
+        0.9821961846420791
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 22,
+       "reach_to_hold": 11,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 388
+      },
+      "on_cols": {
+       "filter_active_share": 0.11343686698176908,
+       "pushed_tag_share": 0.09790681971640783,
+       "filter_rate": 0.19644093526178039,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000056266784668
+      },
+      "off_cols": {
+       "filter_active_share": 0.10692669804976462,
+       "pushed_tag_share": 0.09145931405514458,
+       "filter_rate": 0.196506119661266,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.600000262260437
+      }
+     },
+     {
+      "guard": "guard_mirror",
+      "strike": "strike_straight",
+      "on": {
+       "holds": 799,
+       "games": 1000,
+       "rate": 0.799,
+       "ci": [
+        0.7730383163308918,
+        0.8226731983144469
+       ]
+      },
+      "off": {
+       "holds": 796,
+       "games": 1000,
+       "rate": 0.796,
+       "ci": [
+        0.7699130750438999,
+        0.8198214009929571
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 4,
+       "reach_to_hold": 7,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 118
+      },
+      "on_cols": {
+       "filter_active_share": 0.2981766178047908,
+       "pushed_tag_share": 0.24883804075795496,
+       "filter_rate": 0.20610008079558612,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000291109085083
+      },
+      "off_cols": {
+       "filter_active_share": 0.2938439513242663,
+       "pushed_tag_share": 0.24695776664280603,
+       "filter_rate": 0.20565747978538274,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000065803527832
+      }
+     },
+     {
+      "guard": "guard_mirror",
+      "strike": "strike_flank",
+      "on": {
+       "holds": 863,
+       "games": 1000,
+       "rate": 0.863,
+       "ci": [
+        0.84029446126432,
+        0.8829272103619605
+       ]
+      },
+      "off": {
+       "holds": 864,
+       "games": 1000,
+       "rate": 0.864,
+       "ci": [
+        0.84135574270147,
+        0.8838582751276378
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 7,
+       "reach_to_hold": 6,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 206
+      },
+      "on_cols": {
+       "filter_active_share": 0.2691366655015729,
+       "pushed_tag_share": 0.21740650122334848,
+       "filter_rate": 0.21424439056869596,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000025272369385
+      },
+      "off_cols": {
+       "filter_active_share": 0.2679008033531261,
+       "pushed_tag_share": 0.21935033181976948,
+       "filter_rate": 0.21352052849251776,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.60000741481781
+      }
+     },
+     {
+      "guard": "guard_mirror",
+      "strike": "strike_high",
+      "on": {
+       "holds": 853,
+       "games": 1000,
+       "rate": 0.853,
+       "ci": [
+        0.8297018143400393,
+        0.873596395257969
+       ]
+      },
+      "off": {
+       "holds": 848,
+       "games": 1000,
+       "rate": 0.848,
+       "ci": [
+        0.8244186211654393,
+        0.868917857418433
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 4,
+       "reach_to_hold": 9,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 156
+      },
+      "on_cols": {
+       "filter_active_share": 0.2812061711079944,
+       "pushed_tag_share": 0.23877980364656382,
+       "filter_rate": 0.20850118914083576,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.600001573562622
+      },
+      "off_cols": {
+       "filter_active_share": 0.27898805340829236,
+       "pushed_tag_share": 0.24033731553056922,
+       "filter_rate": 0.20832147566811182,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000008583068848
+      }
+     },
+     {
+      "guard": "guard_mirror",
+      "strike": "strike_low",
+      "on": {
+       "holds": 846,
+       "games": 1000,
+       "rate": 0.846,
+       "ci": [
+        0.8223076809446219,
+        0.8670441052335958
+       ]
+      },
+      "off": {
+       "holds": 847,
+       "games": 1000,
+       "rate": 0.847,
+       "ci": [
+        0.8233629868076504,
+        0.8679811455733946
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 9,
+       "reach_to_hold": 8,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 158
+      },
+      "on_cols": {
+       "filter_active_share": 0.2711924023918396,
+       "pushed_tag_share": 0.23320436158986985,
+       "filter_rate": 0.20911206540861166,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000055074691772
+      },
+      "off_cols": {
+       "filter_active_share": 0.2694336967991558,
+       "pushed_tag_share": 0.23461132606401688,
+       "filter_rate": 0.20908296053600497,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000055074691772
+      }
+     },
+     {
+      "guard": "guard_mirror",
+      "strike": "strike_sacrifice",
+      "on": {
+       "holds": 928,
+       "games": 1000,
+       "rate": 0.928,
+       "ci": [
+        0.9102878591617453,
+        0.9424363156483045
+       ]
+      },
+      "off": {
+       "holds": 927,
+       "games": 1000,
+       "rate": 0.927,
+       "ci": [
+        0.9091906155334873,
+        0.9415412130737354
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 1,
+       "reach_to_hold": 2,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 319
+      },
+      "on_cols": {
+       "filter_active_share": 0.23889268626110732,
+       "pushed_tag_share": 0.1657552973342447,
+       "filter_rate": 0.1705402642788831,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000049114227295
+      },
+      "off_cols": {
+       "filter_active_share": 0.2441025641025641,
+       "pushed_tag_share": 0.16923076923076924,
+       "filter_rate": 0.170124148480827,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000036001205444
+      }
+     },
+     {
+      "guard": "guard_mirror",
+      "strike": "strike_converge",
+      "on": {
+       "holds": 972,
+       "games": 1000,
+       "rate": 0.972,
+       "ci": [
+        0.9598295551975795,
+        0.9805578525368679
+       ]
+      },
+      "off": {
+       "holds": 968,
+       "games": 1000,
+       "rate": 0.968,
+       "ci": [
+        0.9551749890510055,
+        0.977243033872133
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 3,
+       "reach_to_hold": 7,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 317
+      },
+      "on_cols": {
+       "filter_active_share": 0.05820995962314939,
+       "pushed_tag_share": 0.05013458950201884,
+       "filter_rate": 0.13384826139034703,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.600013256072998
+      },
+      "off_cols": {
+       "filter_active_share": 0.05527468823727671,
+       "pushed_tag_share": 0.045837546343107514,
+       "filter_rate": 0.13279802887002007,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000033617019653
+      }
+     },
+     {
+      "guard": "guard_field",
+      "strike": "strike_straight",
+      "on": {
+       "holds": 716,
+       "games": 1000,
+       "rate": 0.716,
+       "ci": [
+        0.6872653238598468,
+        0.7430814559508324
+       ]
+      },
+      "off": {
+       "holds": 716,
+       "games": 1000,
+       "rate": 0.716,
+       "ci": [
+        0.6872653238598468,
+        0.7430814559508324
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 0,
+       "reach_to_hold": 0,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 0
+      },
+      "on_cols": {
+       "filter_active_share": 0.10972017673048601,
+       "pushed_tag_share": 0.05633284241531664,
+       "filter_rate": 0.044273253587074575,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000032424926758
+      },
+      "off_cols": {
+       "filter_active_share": 0.1093519882179676,
+       "pushed_tag_share": 0.05706921944035346,
+       "filter_rate": 0.04425427734758705,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000032424926758
+      }
+     },
+     {
+      "guard": "guard_field",
+      "strike": "strike_flank",
+      "on": {
+       "holds": 809,
+       "games": 1000,
+       "rate": 0.809,
+       "ci": [
+        0.7834715055777532,
+        0.8321634710958576
+       ]
+      },
+      "off": {
+       "holds": 808,
+       "games": 1000,
+       "rate": 0.808,
+       "ci": [
+        0.7824270733559523,
+        0.8312155571148313
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 0,
+       "reach_to_hold": 1,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 10
+      },
+      "on_cols": {
+       "filter_active_share": 0.11783552865788537,
+       "pushed_tag_share": 0.06514773940904237,
+       "filter_rate": 0.04732879271963611,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000101566314697
+      },
+      "off_cols": {
+       "filter_active_share": 0.11787749287749288,
+       "pushed_tag_share": 0.06517094017094018,
+       "filter_rate": 0.04734513541543856,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000101566314697
+      }
+     },
+     {
+      "guard": "guard_field",
+      "strike": "strike_high",
+      "on": {
+       "holds": 734,
+       "games": 1000,
+       "rate": 0.734,
+       "ci": [
+        0.7057552662973483,
+        0.760453745164221
+       ]
+      },
+      "off": {
+       "holds": 734,
+       "games": 1000,
+       "rate": 0.734,
+       "ci": [
+        0.7057552662973483,
+        0.760453745164221
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 0,
+       "reach_to_hold": 0,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 1
+      },
+      "on_cols": {
+       "filter_active_share": 0.11265544989027067,
+       "pushed_tag_share": 0.06693489392831017,
+       "filter_rate": 0.04670817186171189,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000053882598877
+      },
+      "off_cols": {
+       "filter_active_share": 0.11265544989027067,
+       "pushed_tag_share": 0.06766642282370154,
+       "filter_rate": 0.04675060241902247,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000053882598877
+      }
+     },
+     {
+      "guard": "guard_field",
+      "strike": "strike_low",
+      "on": {
+       "holds": 740,
+       "games": 1000,
+       "rate": 0.74,
+       "ci": [
+        0.7119312432576527,
+        0.76623184542088
+       ]
+      },
+      "off": {
+       "holds": 739,
+       "games": 1000,
+       "rate": 0.739,
+       "ci": [
+        0.7109014620594993,
+        0.765269280416206
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 0,
+       "reach_to_hold": 1,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 1
+      },
+      "on_cols": {
+       "filter_active_share": 0.11751824817518249,
+       "pushed_tag_share": 0.07262773722627737,
+       "filter_rate": 0.049200736557133494,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000241041183472
+      },
+      "off_cols": {
+       "filter_active_share": 0.11756115370573202,
+       "pushed_tag_share": 0.0737495436290617,
+       "filter_rate": 0.049233590734191236,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000241041183472
+      }
+     },
+     {
+      "guard": "guard_field",
+      "strike": "strike_sacrifice",
+      "on": {
+       "holds": 863,
+       "games": 1000,
+       "rate": 0.863,
+       "ci": [
+        0.84029446126432,
+        0.8829272103619605
+       ]
+      },
+      "off": {
+       "holds": 862,
+       "games": 1000,
+       "rate": 0.862,
+       "ci": [
+        0.8392335563875687,
+        0.8819957690358847
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 0,
+       "reach_to_hold": 1,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 39
+      },
+      "on_cols": {
+       "filter_active_share": 0.12102133613151451,
+       "pushed_tag_share": 0.06540748513466246,
+       "filter_rate": 0.04738483778084628,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.600000262260437
+      },
+      "off_cols": {
+       "filter_active_share": 0.12106368089573127,
+       "pushed_tag_share": 0.06578026592022393,
+       "filter_rate": 0.04738417064840905,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.600000262260437
+      }
+     },
+     {
+      "guard": "guard_field",
+      "strike": "strike_converge",
+      "on": {
+       "holds": 872,
+       "games": 1000,
+       "rate": 0.872,
+       "ci": [
+        0.8498599807293441,
+        0.8912928067223815
+       ]
+      },
+      "off": {
+       "holds": 871,
+       "games": 1000,
+       "rate": 0.871,
+       "ci": [
+        0.8487955562840396,
+        0.8903648849648588
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 1,
+       "reach_to_hold": 2,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 66
+      },
+      "on_cols": {
+       "filter_active_share": 0.10027855153203342,
+       "pushed_tag_share": 0.06998607242339833,
+       "filter_rate": 0.048681014258647334,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000036001205444
+      },
+      "off_cols": {
+       "filter_active_share": 0.10031347962382445,
+       "pushed_tag_share": 0.07210031347962383,
+       "filter_rate": 0.04862268278957345,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000036001205444
+      }
+     }
+    ],
+    "words_by_guard": {
+     "guard_parked_centre": {
+      "no change detected": 6
+     },
+     "guard_parked_ring": {
+      "no change detected": 6
+     },
+     "guard_mark_edge": {
+      "no change detected": 6
+     },
+     "guard_mirror": {
+      "no change detected": 6
+     },
+     "guard_field": {
+      "no change detected": 6
+     }
+    },
+    "paired_by_guard": {
+     "guard_parked_centre": {
+      "hold_to_reach": 1,
+      "reach_to_hold": 2,
+      "other_outcome": 0,
+      "same_outcome_end_step_changed": 39
+     },
+     "guard_parked_ring": {
+      "hold_to_reach": 1,
+      "reach_to_hold": 0,
+      "other_outcome": 0,
+      "same_outcome_end_step_changed": 32
+     },
+     "guard_mark_edge": {
+      "hold_to_reach": 45,
+      "reach_to_hold": 45,
+      "other_outcome": 0,
+      "same_outcome_end_step_changed": 1327
+     },
+     "guard_mirror": {
+      "hold_to_reach": 28,
+      "reach_to_hold": 39,
+      "other_outcome": 0,
+      "same_outcome_end_step_changed": 1274
+     },
+     "guard_field": {
+      "hold_to_reach": 1,
+      "reach_to_hold": 5,
+      "other_outcome": 0,
+      "same_outcome_end_step_changed": 117
+     }
+    },
+    "paired_total": {
+     "hold_to_reach": 76,
+     "reach_to_hold": 91,
+     "other_outcome": 0,
+     "same_outcome_end_step_changed": 2789
+    }
+   }
+  ],
+  "withheld": false
+ },
+ "reading4": {
+  "pairs": [
+   {
+    "name": "landing v base",
+    "on": "landing",
+    "off": "base",
+    "withheld": false,
+    "cells": [
+     {
+      "guard": "guard_parked_centre",
+      "strike": "strike_straight",
+      "on": {
+       "holds": 534,
+       "games": 1000,
+       "rate": 0.534,
+       "ci": [
+        0.5030102405760234,
+        0.5647295303201022
+       ]
+      },
+      "off": {
+       "holds": 534,
+       "games": 1000,
+       "rate": 0.534,
+       "ci": [
+        0.5030102405760234,
+        0.5647295303201022
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 0,
+       "reach_to_hold": 0,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 45
+      },
+      "on_cols": {
+       "filter_active_share": 0.0660340055357849,
+       "pushed_tag_share": 0.02807433768287861,
+       "filter_rate": 0.02123326104064472,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000006198883057
+      },
+      "off_cols": {
+       "filter_active_share": 0.05219454329774614,
+       "pushed_tag_share": 0.014234875444839857,
+       "filter_rate": 0.014398009379627184,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000006198883057
+      }
+     },
+     {
+      "guard": "guard_parked_centre",
+      "strike": "strike_flank",
+      "on": {
+       "holds": 451,
+       "games": 1000,
+       "rate": 0.451,
+       "ci": [
+        0.420404869897352,
+        0.4819701661641144
+       ]
+      },
+      "off": {
+       "holds": 450,
+       "games": 1000,
+       "rate": 0.45,
+       "ci": [
+        0.4194148276959868,
+        0.4809678621626524
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 0,
+       "reach_to_hold": 1,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 138
+      },
+      "on_cols": {
+       "filter_active_share": 0.09807139926138696,
+       "pushed_tag_share": 0.0,
+       "filter_rate": 0.03575994621356949,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.600001573562622
+      },
+      "off_cols": {
+       "filter_active_share": 0.09815195071868583,
+       "pushed_tag_share": 0.0,
+       "filter_rate": 0.02541066857543774,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.600001573562622
+      }
+     },
+     {
+      "guard": "guard_parked_centre",
+      "strike": "strike_high",
+      "on": {
+       "holds": 467,
+       "games": 1000,
+       "rate": 0.467,
+       "ci": [
+        0.4362625046284455,
+        0.4979900706782564
+       ]
+      },
+      "off": {
+       "holds": 466,
+       "games": 1000,
+       "rate": 0.466,
+       "ci": [
+        0.43527046967989796,
+        0.4969897594239768
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 0,
+       "reach_to_hold": 1,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 22
+      },
+      "on_cols": {
+       "filter_active_share": 0.07729861676159479,
+       "pushed_tag_share": 0.029292107404393815,
+       "filter_rate": 0.018232593979220838,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000052690505981
+      },
+      "off_cols": {
+       "filter_active_share": 0.06308506308506308,
+       "pushed_tag_share": 0.01628001628001628,
+       "filter_rate": 0.012623388634761796,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000052690505981
+      }
+     },
+     {
+      "guard": "guard_parked_centre",
+      "strike": "strike_low",
+      "on": {
+       "holds": 432,
+       "games": 1000,
+       "rate": 0.432,
+       "ci": [
+        0.40161554299484964,
+        0.4629049152128995
+       ]
+      },
+      "off": {
+       "holds": 430,
+       "games": 1000,
+       "rate": 0.43,
+       "ci": [
+        0.3996403690487447,
+        0.46089539675335006
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 0,
+       "reach_to_hold": 2,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 274
+      },
+      "on_cols": {
+       "filter_active_share": 0.09218685407193054,
+       "pushed_tag_share": 0.03224472922695329,
+       "filter_rate": 0.031060512025142088,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000025272369385
+      },
+      "off_cols": {
+       "filter_active_share": 0.07074886222589988,
+       "pushed_tag_share": 0.018618121638394703,
+       "filter_rate": 0.012929141581756995,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000025272369385
+      }
+     },
+     {
+      "guard": "guard_parked_centre",
+      "strike": "strike_sacrifice",
+      "on": {
+       "holds": 523,
+       "games": 1000,
+       "rate": 0.523,
+       "ci": [
+        0.49201363243599017,
+        0.5538103302290359
+       ]
+      },
+      "off": {
+       "holds": 525,
+       "games": 1000,
+       "rate": 0.525,
+       "ci": [
+        0.4940119014700143,
+        0.5557967536006662
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 2,
+       "reach_to_hold": 0,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 100
+      },
+      "on_cols": {
+       "filter_active_share": 0.05033690051525961,
+       "pushed_tag_share": 0.03250099088386841,
+       "filter_rate": 0.018988020753487943,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000010967254639
+      },
+      "off_cols": {
+       "filter_active_share": 0.046336633663366336,
+       "pushed_tag_share": 0.029306930693069305,
+       "filter_rate": 0.013826973947696388,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000010967254639
+      }
+     },
+     {
+      "guard": "guard_parked_centre",
+      "strike": "strike_converge",
+      "on": {
+       "holds": 986,
+       "games": 1000,
+       "rate": 0.986,
+       "ci": [
+        0.9766377520234698,
+        0.9916425025505587
+       ]
+      },
+      "off": {
+       "holds": 986,
+       "games": 1000,
+       "rate": 0.986,
+       "ci": [
+        0.9766377520234698,
+        0.9916425025505587
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 0,
+       "reach_to_hold": 0,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 0
+      },
+      "on_cols": {
+       "filter_active_share": 0.0,
+       "pushed_tag_share": 0.0,
+       "filter_rate": 0.0,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000080108642578
+      },
+      "off_cols": {
+       "filter_active_share": 0.0,
+       "pushed_tag_share": 0.0,
+       "filter_rate": 0.0,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000080108642578
+      }
+     },
+     {
+      "guard": "guard_parked_ring",
+      "strike": "strike_straight",
+      "on": {
+       "holds": 524,
+       "games": 1000,
+       "rate": 0.524,
+       "ci": [
+        0.4930127051149756,
+        0.5548036037528778
+       ]
+      },
+      "off": {
+       "holds": 523,
+       "games": 1000,
+       "rate": 0.523,
+       "ci": [
+        0.49201363243599017,
+        0.5538103302290359
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 0,
+       "reach_to_hold": 1,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 55
+      },
+      "on_cols": {
+       "filter_active_share": 0.05835649067090115,
+       "pushed_tag_share": 0.028582770940849545,
+       "filter_rate": 0.01944003703026101,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.600002408027649
+      },
+      "off_cols": {
+       "filter_active_share": 0.04765687053216839,
+       "pushed_tag_share": 0.017474185861795076,
+       "filter_rate": 0.012788112505804748,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.600002408027649
+      }
+     },
+     {
+      "guard": "guard_parked_ring",
+      "strike": "strike_flank",
+      "on": {
+       "holds": 477,
+       "games": 1000,
+       "rate": 0.477,
+       "ci": [
+        0.44618966977096414,
+        0.5079863675640099
+       ]
+      },
+      "off": {
+       "holds": 477,
+       "games": 1000,
+       "rate": 0.477,
+       "ci": [
+        0.44618966977096414,
+        0.5079863675640099
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 0,
+       "reach_to_hold": 0,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 148
+      },
+      "on_cols": {
+       "filter_active_share": 0.08154158215010142,
+       "pushed_tag_share": 0.0,
+       "filter_rate": 0.030145558700663967,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000213623046875
+      },
+      "off_cols": {
+       "filter_active_share": 0.08157467532467533,
+       "pushed_tag_share": 0.0,
+       "filter_rate": 0.021712487430777402,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000213623046875
+      }
+     },
+     {
+      "guard": "guard_parked_ring",
+      "strike": "strike_high",
+      "on": {
+       "holds": 454,
+       "games": 1000,
+       "rate": 0.454,
+       "ci": [
+        0.42337574645433246,
+        0.4849763282156156
+       ]
+      },
+      "off": {
+       "holds": 454,
+       "games": 1000,
+       "rate": 0.454,
+       "ci": [
+        0.42337574645433246,
+        0.4849763282156156
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 0,
+       "reach_to_hold": 0,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 22
+      },
+      "on_cols": {
+       "filter_active_share": 0.07037643207855974,
+       "pushed_tag_share": 0.031096563011456628,
+       "filter_rate": 0.0161289566103369,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000075340270996
+      },
+      "off_cols": {
+       "filter_active_share": 0.05932896890343699,
+       "pushed_tag_share": 0.020867430441898527,
+       "filter_rate": 0.010932584434747697,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000075340270996
+      }
+     },
+     {
+      "guard": "guard_parked_ring",
+      "strike": "strike_low",
+      "on": {
+       "holds": 426,
+       "games": 1000,
+       "rate": 0.426,
+       "ci": [
+        0.39569154544653623,
+        0.4568748355442496
+       ]
+      },
+      "off": {
+       "holds": 424,
+       "games": 1000,
+       "rate": 0.424,
+       "ci": [
+        0.39371789757876074,
+        0.45486379100637064
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 0,
+       "reach_to_hold": 2,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 320
+      },
+      "on_cols": {
+       "filter_active_share": 0.079983423124741,
+       "pushed_tag_share": 0.03439701616245338,
+       "filter_rate": 0.03217710689664818,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000124216079712
+      },
+      "off_cols": {
+       "filter_active_share": 0.06221484861053505,
+       "pushed_tag_share": 0.022812111157196183,
+       "filter_rate": 0.01122124368697405,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000124216079712
+      }
+     },
+     {
+      "guard": "guard_parked_ring",
+      "strike": "strike_sacrifice",
+      "on": {
+       "holds": 502,
+       "games": 1000,
+       "rate": 0.502,
+       "ci": [
+        0.47106162688393816,
+        0.5329230655217162
+       ]
+      },
+      "off": {
+       "holds": 503,
+       "games": 1000,
+       "rate": 0.503,
+       "ci": [
+        0.4720581081153037,
+        0.533918930493178
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 1,
+       "reach_to_hold": 0,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 105
+      },
+      "on_cols": {
+       "filter_active_share": 0.04876099120703437,
+       "pushed_tag_share": 0.026778577138289367,
+       "filter_rate": 0.01830355823459104,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000187397003174
+      },
+      "off_cols": {
+       "filter_active_share": 0.04514582500998801,
+       "pushed_tag_share": 0.023971234518577706,
+       "filter_rate": 0.013274866153020412,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000187397003174
+      }
+     },
+     {
+      "guard": "guard_parked_ring",
+      "strike": "strike_converge",
+      "on": {
+       "holds": 983,
+       "games": 1000,
+       "rate": 0.983,
+       "ci": [
+        0.9729438156287651,
+        0.9893594003367818
+       ]
+      },
+      "off": {
+       "holds": 983,
+       "games": 1000,
+       "rate": 0.983,
+       "ci": [
+        0.9729438156287651,
+        0.9893594003367818
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 0,
+       "reach_to_hold": 0,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 0
+      },
+      "on_cols": {
+       "filter_active_share": 0.0,
+       "pushed_tag_share": 0.0,
+       "filter_rate": 0.0,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000087261199951
+      },
+      "off_cols": {
+       "filter_active_share": 0.0,
+       "pushed_tag_share": 0.0,
+       "filter_rate": 0.0,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000087261199951
+      }
+     },
+     {
+      "guard": "guard_mark_edge",
+      "strike": "strike_straight",
+      "on": {
+       "holds": 802,
+       "games": 1000,
+       "rate": 0.802,
+       "ci": [
+        0.7761657052655129,
+        0.8255228479883074
+       ]
+      },
+      "off": {
+       "holds": 808,
+       "games": 1000,
+       "rate": 0.808,
+       "ci": [
+        0.7824270733559523,
+        0.8312155571148313
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 11,
+       "reach_to_hold": 5,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 169
+      },
+      "on_cols": {
+       "filter_active_share": 0.3514285714285714,
+       "pushed_tag_share": 0.2739285714285714,
+       "filter_rate": 0.24962887154892088,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000181436538696
+      },
+      "off_cols": {
+       "filter_active_share": 0.3182466143977192,
+       "pushed_tag_share": 0.27334283677833215,
+       "filter_rate": 0.2188049261411652,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000175476074219
+      }
+     },
+     {
+      "guard": "guard_mark_edge",
+      "strike": "strike_flank",
+      "on": {
+       "holds": 879,
+       "games": 1000,
+       "rate": 0.879,
+       "ci": [
+        0.8573226741029558,
+        0.8977765367685602
+       ]
+      },
+      "off": {
+       "holds": 887,
+       "games": 1000,
+       "rate": 0.887,
+       "ci": [
+        0.86587803145935,
+        0.9051599490347838
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 17,
+       "reach_to_hold": 9,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 221
+      },
+      "on_cols": {
+       "filter_active_share": 0.32835302293259205,
+       "pushed_tag_share": 0.2678943710910354,
+       "filter_rate": 0.25360595863638447,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.60000741481781
+      },
+      "off_cols": {
+       "filter_active_share": 0.323977823977824,
+       "pushed_tag_share": 0.2681912681912682,
+       "filter_rate": 0.2293704139380716,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.60000741481781
+      }
+     },
+     {
+      "guard": "guard_mark_edge",
+      "strike": "strike_high",
+      "on": {
+       "holds": 843,
+       "games": 1000,
+       "rate": 0.843,
+       "ci": [
+        0.8191437085463132,
+        0.8642310390234228
+       ]
+      },
+      "off": {
+       "holds": 850,
+       "games": 1000,
+       "rate": 0.85,
+       "ci": [
+        0.8265308859716873,
+        0.8707902850178393
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 11,
+       "reach_to_hold": 4,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 111
+      },
+      "on_cols": {
+       "filter_active_share": 0.324181626187962,
+       "pushed_tag_share": 0.2615276311158043,
+       "filter_rate": 0.24197254107287153,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000055074691772
+      },
+      "off_cols": {
+       "filter_active_share": 0.3026685393258427,
+       "pushed_tag_share": 0.26615168539325845,
+       "filter_rate": 0.22244735871860757,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.600005865097046
+      }
+     },
+     {
+      "guard": "guard_mark_edge",
+      "strike": "strike_low",
+      "on": {
+       "holds": 895,
+       "games": 1000,
+       "rate": 0.895,
+       "ci": [
+        0.8744642376371892,
+        0.9125125124795623
+       ]
+      },
+      "off": {
+       "holds": 844,
+       "games": 1000,
+       "rate": 0.844,
+       "ci": [
+        0.8201980443506668,
+        0.8651690494218965
+       ]
+      },
+      "word": "landing raises the Guard team's hold",
+      "paired": {
+       "hold_to_reach": 0,
+       "reach_to_hold": 51,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 283
+      },
+      "on_cols": {
+       "filter_active_share": 0.38719723183391,
+       "pushed_tag_share": 0.24636678200692042,
+       "filter_rate": 0.25799808301148003,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000028848648071
+      },
+      "off_cols": {
+       "filter_active_share": 0.2926056338028169,
+       "pushed_tag_share": 0.2602112676056338,
+       "filter_rate": 0.22328496724925936,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000069379806519
+      }
+     },
+     {
+      "guard": "guard_mark_edge",
+      "strike": "strike_sacrifice",
+      "on": {
+       "holds": 963,
+       "games": 1000,
+       "rate": 0.963,
+       "ci": [
+        0.9494173165894553,
+        0.9730389753195472
+       ]
+      },
+      "off": {
+       "holds": 960,
+       "games": 1000,
+       "rate": 0.96,
+       "ci": [
+        0.9459900625744302,
+        0.9704891907260906
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 0,
+       "reach_to_hold": 3,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 203
+      },
+      "on_cols": {
+       "filter_active_share": 0.3066531577169875,
+       "pushed_tag_share": 0.22998986828774062,
+       "filter_rate": 0.22372215808648616,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000033617019653
+      },
+      "off_cols": {
+       "filter_active_share": 0.29682217714672077,
+       "pushed_tag_share": 0.22954699121027722,
+       "filter_rate": 0.2021850942512974,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000033617019653
+      }
+     },
+     {
+      "guard": "guard_mark_edge",
+      "strike": "strike_converge",
+      "on": {
+       "holds": 972,
+       "games": 1000,
+       "rate": 0.972,
+       "ci": [
+        0.9598295551975795,
+        0.9805578525368679
+       ]
+      },
+      "off": {
+       "holds": 974,
+       "games": 1000,
+       "rate": 0.974,
+       "ci": [
+        0.9621759154980226,
+        0.9821961846420791
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 2,
+       "reach_to_hold": 0,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 99
+      },
+      "on_cols": {
+       "filter_active_share": 0.11339165545087483,
+       "pushed_tag_share": 0.09488559892328398,
+       "filter_rate": 0.19963263128837572,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.600000262260437
+      },
+      "off_cols": {
+       "filter_active_share": 0.10692669804976462,
+       "pushed_tag_share": 0.09145931405514458,
+       "filter_rate": 0.196506119661266,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.600000262260437
+      }
+     },
+     {
+      "guard": "guard_mirror",
+      "strike": "strike_straight",
+      "on": {
+       "holds": 796,
+       "games": 1000,
+       "rate": 0.796,
+       "ci": [
+        0.7699130750438999,
+        0.8198214009929571
+       ]
+      },
+      "off": {
+       "holds": 796,
+       "games": 1000,
+       "rate": 0.796,
+       "ci": [
+        0.7699130750438999,
+        0.8198214009929571
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 10,
+       "reach_to_hold": 10,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 164
+      },
+      "on_cols": {
+       "filter_active_share": 0.31675017895490337,
+       "pushed_tag_share": 0.24946313528990693,
+       "filter_rate": 0.2337131009544246,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.600006341934204
+      },
+      "off_cols": {
+       "filter_active_share": 0.2938439513242663,
+       "pushed_tag_share": 0.24695776664280603,
+       "filter_rate": 0.20565747978538274,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000065803527832
+      }
+     },
+     {
+      "guard": "guard_mirror",
+      "strike": "strike_flank",
+      "on": {
+       "holds": 857,
+       "games": 1000,
+       "rate": 0.857,
+       "ci": [
+        0.833934563145855,
+        0.8773330312634622
+       ]
+      },
+      "off": {
+       "holds": 864,
+       "games": 1000,
+       "rate": 0.864,
+       "ci": [
+        0.84135574270147,
+        0.8838582751276378
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 12,
+       "reach_to_hold": 5,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 233
+      },
+      "on_cols": {
+       "filter_active_share": 0.29492119089316987,
+       "pushed_tag_share": 0.2329246935201401,
+       "filter_rate": 0.2392030456084758,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.60000479221344
+      },
+      "off_cols": {
+       "filter_active_share": 0.2679008033531261,
+       "pushed_tag_share": 0.21935033181976948,
+       "filter_rate": 0.21352052849251776,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.60000741481781
+      }
+     },
+     {
+      "guard": "guard_mirror",
+      "strike": "strike_high",
+      "on": {
+       "holds": 841,
+       "games": 1000,
+       "rate": 0.841,
+       "ci": [
+        0.817035989537914,
+        0.8623540656261677
+       ]
+      },
+      "off": {
+       "holds": 848,
+       "games": 1000,
+       "rate": 0.848,
+       "ci": [
+        0.8244186211654393,
+        0.868917857418433
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 12,
+       "reach_to_hold": 5,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 112
+      },
+      "on_cols": {
+       "filter_active_share": 0.29306093694963015,
+       "pushed_tag_share": 0.2381120112715745,
+       "filter_rate": 0.2260919966362417,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000008583068848
+      },
+      "off_cols": {
+       "filter_active_share": 0.27898805340829236,
+       "pushed_tag_share": 0.24033731553056922,
+       "filter_rate": 0.20832147566811182,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000008583068848
+      }
+     },
+     {
+      "guard": "guard_mirror",
+      "strike": "strike_low",
+      "on": {
+       "holds": 898,
+       "games": 1000,
+       "rate": 0.898,
+       "ci": [
+        0.8776926335652987,
+        0.9152611551599347
+       ]
+      },
+      "off": {
+       "holds": 847,
+       "games": 1000,
+       "rate": 0.847,
+       "ci": [
+        0.8233629868076504,
+        0.8679811455733946
+       ]
+      },
+      "word": "landing raises the Guard team's hold",
+      "paired": {
+       "hold_to_reach": 1,
+       "reach_to_hold": 52,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 293
+      },
+      "on_cols": {
+       "filter_active_share": 0.3532665053577601,
+       "pushed_tag_share": 0.2229519529899758,
+       "filter_rate": 0.24309006192511878,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.600000023841858
+      },
+      "off_cols": {
+       "filter_active_share": 0.2694336967991558,
+       "pushed_tag_share": 0.23461132606401688,
+       "filter_rate": 0.20908296053600497,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000055074691772
+      }
+     },
+     {
+      "guard": "guard_mirror",
+      "strike": "strike_sacrifice",
+      "on": {
+       "holds": 925,
+       "games": 1000,
+       "rate": 0.925,
+       "ci": [
+        0.9069986980202727,
+        0.9397484381812955
+       ]
+      },
+      "off": {
+       "holds": 927,
+       "games": 1000,
+       "rate": 0.927,
+       "ci": [
+        0.9091906155334873,
+        0.9415412130737354
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 3,
+       "reach_to_hold": 1,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 151
+      },
+      "on_cols": {
+       "filter_active_share": 0.250769757098871,
+       "pushed_tag_share": 0.17071501881628465,
+       "filter_rate": 0.18285775970621035,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000049114227295
+      },
+      "off_cols": {
+       "filter_active_share": 0.2441025641025641,
+       "pushed_tag_share": 0.16923076923076924,
+       "filter_rate": 0.170124148480827,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000036001205444
+      }
+     },
+     {
+      "guard": "guard_mirror",
+      "strike": "strike_converge",
+      "on": {
+       "holds": 968,
+       "games": 1000,
+       "rate": 0.968,
+       "ci": [
+        0.9551749890510055,
+        0.977243033872133
+       ]
+      },
+      "off": {
+       "holds": 968,
+       "games": 1000,
+       "rate": 0.968,
+       "ci": [
+        0.9551749890510055,
+        0.977243033872133
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 0,
+       "reach_to_hold": 0,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 41
+      },
+      "on_cols": {
+       "filter_active_share": 0.0589622641509434,
+       "pushed_tag_share": 0.04919137466307277,
+       "filter_rate": 0.13383868200937285,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000115871429443
+      },
+      "off_cols": {
+       "filter_active_share": 0.05527468823727671,
+       "pushed_tag_share": 0.045837546343107514,
+       "filter_rate": 0.13279802887002007,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000033617019653
+      }
+     },
+     {
+      "guard": "guard_field",
+      "strike": "strike_straight",
+      "on": {
+       "holds": 716,
+       "games": 1000,
+       "rate": 0.716,
+       "ci": [
+        0.6872653238598468,
+        0.7430814559508324
+       ]
+      },
+      "off": {
+       "holds": 716,
+       "games": 1000,
+       "rate": 0.716,
+       "ci": [
+        0.6872653238598468,
+        0.7430814559508324
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 1,
+       "reach_to_hold": 1,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 48
+      },
+      "on_cols": {
+       "filter_active_share": 0.1170839469808542,
+       "pushed_tag_share": 0.05780559646539028,
+       "filter_rate": 0.0639914999557659,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000032424926758
+      },
+      "off_cols": {
+       "filter_active_share": 0.1093519882179676,
+       "pushed_tag_share": 0.05706921944035346,
+       "filter_rate": 0.04425427734758705,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000032424926758
+      }
+     },
+     {
+      "guard": "guard_field",
+      "strike": "strike_flank",
+      "on": {
+       "holds": 807,
+       "games": 1000,
+       "rate": 0.807,
+       "ci": [
+        0.7813828923861693,
+        0.830267391881787
+       ]
+      },
+      "off": {
+       "holds": 808,
+       "games": 1000,
+       "rate": 0.808,
+       "ci": [
+        0.7824270733559523,
+        0.8312155571148313
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 2,
+       "reach_to_hold": 1,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 50
+      },
+      "on_cols": {
+       "filter_active_share": 0.11898824367652298,
+       "pushed_tag_share": 0.06519415746348414,
+       "filter_rate": 0.06292737163137645,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000101566314697
+      },
+      "off_cols": {
+       "filter_active_share": 0.11787749287749288,
+       "pushed_tag_share": 0.06517094017094018,
+       "filter_rate": 0.04734513541543856,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000101566314697
+      }
+     },
+     {
+      "guard": "guard_field",
+      "strike": "strike_high",
+      "on": {
+       "holds": 732,
+       "games": 1000,
+       "rate": 0.732,
+       "ci": [
+        0.7036980405782712,
+        0.7585262784776435
+       ]
+      },
+      "off": {
+       "holds": 734,
+       "games": 1000,
+       "rate": 0.734,
+       "ci": [
+        0.7057552662973483,
+        0.760453745164221
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 2,
+       "reach_to_hold": 0,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 23
+      },
+      "on_cols": {
+       "filter_active_share": 0.12408491947291361,
+       "pushed_tag_share": 0.06771595900439238,
+       "filter_rate": 0.06395489847008139,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000053882598877
+      },
+      "off_cols": {
+       "filter_active_share": 0.11265544989027067,
+       "pushed_tag_share": 0.06766642282370154,
+       "filter_rate": 0.04675060241902247,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000053882598877
+      }
+     },
+     {
+      "guard": "guard_field",
+      "strike": "strike_low",
+      "on": {
+       "holds": 744,
+       "games": 1000,
+       "rate": 0.744,
+       "ci": [
+        0.7160521973177114,
+        0.7700802761721302
+       ]
+      },
+      "off": {
+       "holds": 739,
+       "games": 1000,
+       "rate": 0.739,
+       "ci": [
+        0.7109014620594993,
+        0.765269280416206
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 2,
+       "reach_to_hold": 7,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 142
+      },
+      "on_cols": {
+       "filter_active_share": 0.17018950437317784,
+       "pushed_tag_share": 0.07361516034985423,
+       "filter_rate": 0.07548488083225675,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000241041183472
+      },
+      "off_cols": {
+       "filter_active_share": 0.11756115370573202,
+       "pushed_tag_share": 0.0737495436290617,
+       "filter_rate": 0.049233590734191236,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000241041183472
+      }
+     },
+     {
+      "guard": "guard_field",
+      "strike": "strike_sacrifice",
+      "on": {
+       "holds": 863,
+       "games": 1000,
+       "rate": 0.863,
+       "ci": [
+        0.84029446126432,
+        0.8829272103619605
+       ]
+      },
+      "off": {
+       "holds": 862,
+       "games": 1000,
+       "rate": 0.862,
+       "ci": [
+        0.8392335563875687,
+        0.8819957690358847
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 0,
+       "reach_to_hold": 1,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 102
+      },
+      "on_cols": {
+       "filter_active_share": 0.12661769849597762,
+       "pushed_tag_share": 0.06610703043022036,
+       "filter_rate": 0.06582322051143273,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.600000262260437
+      },
+      "off_cols": {
+       "filter_active_share": 0.12106368089573127,
+       "pushed_tag_share": 0.06578026592022393,
+       "filter_rate": 0.04738417064840905,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.600000262260437
+      }
+     },
+     {
+      "guard": "guard_field",
+      "strike": "strike_converge",
+      "on": {
+       "holds": 872,
+       "games": 1000,
+       "rate": 0.872,
+       "ci": [
+        0.8498599807293441,
+        0.8912928067223815
+       ]
+      },
+      "off": {
+       "holds": 871,
+       "games": 1000,
+       "rate": 0.871,
+       "ci": [
+        0.8487955562840396,
+        0.8903648849648588
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 1,
+       "reach_to_hold": 2,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 50
+      },
+      "on_cols": {
+       "filter_active_share": 0.10201949860724234,
+       "pushed_tag_share": 0.07172701949860724,
+       "filter_rate": 0.058242555752163756,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000036001205444
+      },
+      "off_cols": {
+       "filter_active_share": 0.10031347962382445,
+       "pushed_tag_share": 0.07210031347962383,
+       "filter_rate": 0.04862268278957345,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000036001205444
+      }
+     }
+    ],
+    "words_by_guard": {
+     "guard_parked_centre": {
+      "no change detected": 6
+     },
+     "guard_parked_ring": {
+      "no change detected": 6
+     },
+     "guard_mark_edge": {
+      "no change detected": 5,
+      "landing raises the Guard team's hold": 1
+     },
+     "guard_mirror": {
+      "no change detected": 5,
+      "landing raises the Guard team's hold": 1
+     },
+     "guard_field": {
+      "no change detected": 6
+     }
+    },
+    "paired_by_guard": {
+     "guard_parked_centre": {
+      "hold_to_reach": 2,
+      "reach_to_hold": 4,
+      "other_outcome": 0,
+      "same_outcome_end_step_changed": 579
+     },
+     "guard_parked_ring": {
+      "hold_to_reach": 1,
+      "reach_to_hold": 3,
+      "other_outcome": 0,
+      "same_outcome_end_step_changed": 650
+     },
+     "guard_mark_edge": {
+      "hold_to_reach": 41,
+      "reach_to_hold": 72,
+      "other_outcome": 0,
+      "same_outcome_end_step_changed": 1086
+     },
+     "guard_mirror": {
+      "hold_to_reach": 38,
+      "reach_to_hold": 73,
+      "other_outcome": 0,
+      "same_outcome_end_step_changed": 994
+     },
+     "guard_field": {
+      "hold_to_reach": 8,
+      "reach_to_hold": 12,
+      "other_outcome": 0,
+      "same_outcome_end_step_changed": 415
+     }
+    },
+    "paired_total": {
+     "hold_to_reach": 90,
+     "reach_to_hold": 164,
+     "other_outcome": 0,
+     "same_outcome_end_step_changed": 3724
+    }
+   },
+   {
+    "name": "landing_gy v gy",
+    "on": "landing_gy",
+    "off": "gy",
+    "withheld": false,
+    "cells": [
+     {
+      "guard": "guard_parked_centre",
+      "strike": "strike_straight",
+      "on": {
+       "holds": 534,
+       "games": 1000,
+       "rate": 0.534,
+       "ci": [
+        0.5030102405760234,
+        0.5647295303201022
+       ]
+      },
+      "off": {
+       "holds": 534,
+       "games": 1000,
+       "rate": 0.534,
+       "ci": [
+        0.5030102405760234,
+        0.5647295303201022
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 0,
+       "reach_to_hold": 0,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 46
+      },
+      "on_cols": {
+       "filter_active_share": 0.0660340055357849,
+       "pushed_tag_share": 0.028469750889679714,
+       "filter_rate": 0.021232274159090594,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000006198883057
+      },
+      "off_cols": {
+       "filter_active_share": 0.05219454329774614,
+       "pushed_tag_share": 0.014630288651640965,
+       "filter_rate": 0.014407924217404798,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000006198883057
+      }
+     },
+     {
+      "guard": "guard_parked_centre",
+      "strike": "strike_flank",
+      "on": {
+       "holds": 451,
+       "games": 1000,
+       "rate": 0.451,
+       "ci": [
+        0.420404869897352,
+        0.4819701661641144
+       ]
+      },
+      "off": {
+       "holds": 450,
+       "games": 1000,
+       "rate": 0.45,
+       "ci": [
+        0.4194148276959868,
+        0.4809678621626524
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 0,
+       "reach_to_hold": 1,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 141
+      },
+      "on_cols": {
+       "filter_active_share": 0.09807139926138696,
+       "pushed_tag_share": 0.0,
+       "filter_rate": 0.0357463592342101,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000057458877563
+      },
+      "off_cols": {
+       "filter_active_share": 0.09815195071868583,
+       "pushed_tag_share": 0.0,
+       "filter_rate": 0.02538351719197817,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000057458877563
+      }
+     },
+     {
+      "guard": "guard_parked_centre",
+      "strike": "strike_high",
+      "on": {
+       "holds": 467,
+       "games": 1000,
+       "rate": 0.467,
+       "ci": [
+        0.4362625046284455,
+        0.4979900706782564
+       ]
+      },
+      "off": {
+       "holds": 467,
+       "games": 1000,
+       "rate": 0.467,
+       "ci": [
+        0.4362625046284455,
+        0.4979900706782564
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 0,
+       "reach_to_hold": 0,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 21
+      },
+      "on_cols": {
+       "filter_active_share": 0.07770545158665582,
+       "pushed_tag_share": 0.029292107404393815,
+       "filter_rate": 0.018237377184908837,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000052690505981
+      },
+      "off_cols": {
+       "filter_active_share": 0.06305939788445891,
+       "pushed_tag_share": 0.015866558177379985,
+       "filter_rate": 0.012632106572156772,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000052690505981
+      }
+     },
+     {
+      "guard": "guard_parked_centre",
+      "strike": "strike_low",
+      "on": {
+       "holds": 432,
+       "games": 1000,
+       "rate": 0.432,
+       "ci": [
+        0.40161554299484964,
+        0.4629049152128995
+       ]
+      },
+      "off": {
+       "holds": 431,
+       "games": 1000,
+       "rate": 0.431,
+       "ci": [
+        0.4006278926003595,
+        0.46190021940456244
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 0,
+       "reach_to_hold": 1,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 281
+      },
+      "on_cols": {
+       "filter_active_share": 0.09297520661157024,
+       "pushed_tag_share": 0.03347107438016529,
+       "filter_rate": 0.031417823993833735,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000025272369385
+      },
+      "off_cols": {
+       "filter_active_share": 0.0707196029776675,
+       "pushed_tag_share": 0.018610421836228287,
+       "filter_rate": 0.012939964164746924,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000025272369385
+      }
+     },
+     {
+      "guard": "guard_parked_centre",
+      "strike": "strike_sacrifice",
+      "on": {
+       "holds": 524,
+       "games": 1000,
+       "rate": 0.524,
+       "ci": [
+        0.4930127051149756,
+        0.5548036037528778
+       ]
+      },
+      "off": {
+       "holds": 524,
+       "games": 1000,
+       "rate": 0.524,
+       "ci": [
+        0.4930127051149756,
+        0.5548036037528778
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 0,
+       "reach_to_hold": 0,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 101
+      },
+      "on_cols": {
+       "filter_active_share": 0.050316957210776544,
+       "pushed_tag_share": 0.03248811410459588,
+       "filter_rate": 0.01898685428313911,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000010967254639
+      },
+      "off_cols": {
+       "filter_active_share": 0.04635499207606973,
+       "pushed_tag_share": 0.029318541996830427,
+       "filter_rate": 0.013819888492114843,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000010967254639
+      }
+     },
+     {
+      "guard": "guard_parked_centre",
+      "strike": "strike_converge",
+      "on": {
+       "holds": 986,
+       "games": 1000,
+       "rate": 0.986,
+       "ci": [
+        0.9766377520234698,
+        0.9916425025505587
+       ]
+      },
+      "off": {
+       "holds": 986,
+       "games": 1000,
+       "rate": 0.986,
+       "ci": [
+        0.9766377520234698,
+        0.9916425025505587
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 0,
+       "reach_to_hold": 0,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 0
+      },
+      "on_cols": {
+       "filter_active_share": 0.0,
+       "pushed_tag_share": 0.0,
+       "filter_rate": 0.0,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000080108642578
+      },
+      "off_cols": {
+       "filter_active_share": 0.0,
+       "pushed_tag_share": 0.0,
+       "filter_rate": 0.0,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000080108642578
+      }
+     },
+     {
+      "guard": "guard_parked_ring",
+      "strike": "strike_straight",
+      "on": {
+       "holds": 524,
+       "games": 1000,
+       "rate": 0.524,
+       "ci": [
+        0.4930127051149756,
+        0.5548036037528778
+       ]
+      },
+      "off": {
+       "holds": 523,
+       "games": 1000,
+       "rate": 0.523,
+       "ci": [
+        0.49201363243599017,
+        0.5538103302290359
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 0,
+       "reach_to_hold": 1,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 55
+      },
+      "on_cols": {
+       "filter_active_share": 0.05835649067090115,
+       "pushed_tag_share": 0.028582770940849545,
+       "filter_rate": 0.019461682799737902,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.600002408027649
+      },
+      "off_cols": {
+       "filter_active_share": 0.04765687053216839,
+       "pushed_tag_share": 0.017474185861795076,
+       "filter_rate": 0.012801844160538168,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.600002408027649
+      }
+     },
+     {
+      "guard": "guard_parked_ring",
+      "strike": "strike_flank",
+      "on": {
+       "holds": 477,
+       "games": 1000,
+       "rate": 0.477,
+       "ci": [
+        0.44618966977096414,
+        0.5079863675640099
+       ]
+      },
+      "off": {
+       "holds": 477,
+       "games": 1000,
+       "rate": 0.477,
+       "ci": [
+        0.44618966977096414,
+        0.5079863675640099
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 0,
+       "reach_to_hold": 0,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 146
+      },
+      "on_cols": {
+       "filter_active_share": 0.08154158215010142,
+       "pushed_tag_share": 0.0,
+       "filter_rate": 0.03010931457276456,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000213623046875
+      },
+      "off_cols": {
+       "filter_active_share": 0.08157467532467533,
+       "pushed_tag_share": 0.0,
+       "filter_rate": 0.02168589279195294,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000213623046875
+      }
+     },
+     {
+      "guard": "guard_parked_ring",
+      "strike": "strike_high",
+      "on": {
+       "holds": 454,
+       "games": 1000,
+       "rate": 0.454,
+       "ci": [
+        0.42337574645433246,
+        0.4849763282156156
+       ]
+      },
+      "off": {
+       "holds": 454,
+       "games": 1000,
+       "rate": 0.454,
+       "ci": [
+        0.42337574645433246,
+        0.4849763282156156
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 0,
+       "reach_to_hold": 0,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 20
+      },
+      "on_cols": {
+       "filter_active_share": 0.07078559738134206,
+       "pushed_tag_share": 0.031096563011456628,
+       "filter_rate": 0.016129407785832883,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000075340270996
+      },
+      "off_cols": {
+       "filter_active_share": 0.05932896890343699,
+       "pushed_tag_share": 0.020867430441898527,
+       "filter_rate": 0.010932531680911779,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000075340270996
+      }
+     },
+     {
+      "guard": "guard_parked_ring",
+      "strike": "strike_low",
+      "on": {
+       "holds": 426,
+       "games": 1000,
+       "rate": 0.426,
+       "ci": [
+        0.39569154544653623,
+        0.4568748355442496
+       ]
+      },
+      "off": {
+       "holds": 424,
+       "games": 1000,
+       "rate": 0.424,
+       "ci": [
+        0.39371789757876074,
+        0.45486379100637064
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 0,
+       "reach_to_hold": 2,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 322
+      },
+      "on_cols": {
+       "filter_active_share": 0.08039784500621633,
+       "pushed_tag_share": 0.03439701616245338,
+       "filter_rate": 0.03258127364539541,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000124216079712
+      },
+      "off_cols": {
+       "filter_active_share": 0.06221484861053505,
+       "pushed_tag_share": 0.022397345499792616,
+       "filter_rate": 0.011227018224075437,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000105142593384
+      }
+     },
+     {
+      "guard": "guard_parked_ring",
+      "strike": "strike_sacrifice",
+      "on": {
+       "holds": 502,
+       "games": 1000,
+       "rate": 0.502,
+       "ci": [
+        0.47106162688393816,
+        0.5329230655217162
+       ]
+      },
+      "off": {
+       "holds": 502,
+       "games": 1000,
+       "rate": 0.502,
+       "ci": [
+        0.47106162688393816,
+        0.5329230655217162
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 0,
+       "reach_to_hold": 0,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 109
+      },
+      "on_cols": {
+       "filter_active_share": 0.04876099120703437,
+       "pushed_tag_share": 0.026778577138289367,
+       "filter_rate": 0.018303723503369836,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000187397003174
+      },
+      "off_cols": {
+       "filter_active_share": 0.0451638689048761,
+       "pushed_tag_share": 0.023980815347721823,
+       "filter_rate": 0.013268948240671307,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000187397003174
+      }
+     },
+     {
+      "guard": "guard_parked_ring",
+      "strike": "strike_converge",
+      "on": {
+       "holds": 983,
+       "games": 1000,
+       "rate": 0.983,
+       "ci": [
+        0.9729438156287651,
+        0.9893594003367818
+       ]
+      },
+      "off": {
+       "holds": 983,
+       "games": 1000,
+       "rate": 0.983,
+       "ci": [
+        0.9729438156287651,
+        0.9893594003367818
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 0,
+       "reach_to_hold": 0,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 0
+      },
+      "on_cols": {
+       "filter_active_share": 0.0,
+       "pushed_tag_share": 0.0,
+       "filter_rate": 0.0,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000087261199951
+      },
+      "off_cols": {
+       "filter_active_share": 0.0,
+       "pushed_tag_share": 0.0,
+       "filter_rate": 0.0,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000087261199951
+      }
+     },
+     {
+      "guard": "guard_mark_edge",
+      "strike": "strike_straight",
+      "on": {
+       "holds": 803,
+       "games": 1000,
+       "rate": 0.803,
+       "ci": [
+        0.7772086517608134,
+        0.8264722476958342
+       ]
+      },
+      "off": {
+       "holds": 808,
+       "games": 1000,
+       "rate": 0.808,
+       "ci": [
+        0.7824270733559523,
+        0.8312155571148313
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 10,
+       "reach_to_hold": 5,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 188
+      },
+      "on_cols": {
+       "filter_active_share": 0.35273116744019994,
+       "pushed_tag_share": 0.27275972866833276,
+       "filter_rate": 0.250362329563126,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000012159347534
+      },
+      "off_cols": {
+       "filter_active_share": 0.3161083392729865,
+       "pushed_tag_share": 0.27049180327868855,
+       "filter_rate": 0.21929852068331093,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000012159347534
+      }
+     },
+     {
+      "guard": "guard_mark_edge",
+      "strike": "strike_flank",
+      "on": {
+       "holds": 884,
+       "games": 1000,
+       "rate": 0.884,
+       "ci": [
+        0.862666307122199,
+        0.9023946347634532
+       ]
+      },
+      "off": {
+       "holds": 891,
+       "games": 1000,
+       "rate": 0.891,
+       "ci": [
+        0.8701670973953542,
+        0.9088402679100885
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 14,
+       "reach_to_hold": 7,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 245
+      },
+      "on_cols": {
+       "filter_active_share": 0.3314840499306519,
+       "pushed_tag_share": 0.26664355062413314,
+       "filter_rate": 0.25503435376985,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000101566314697
+      },
+      "off_cols": {
+       "filter_active_share": 0.32525951557093424,
+       "pushed_tag_share": 0.2657439446366782,
+       "filter_rate": 0.23029823371814565,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000101566314697
+      }
+     },
+     {
+      "guard": "guard_mark_edge",
+      "strike": "strike_high",
+      "on": {
+       "holds": 845,
+       "games": 1000,
+       "rate": 0.845,
+       "ci": [
+        0.821252700977952,
+        0.8661067389974386
+       ]
+      },
+      "off": {
+       "holds": 852,
+       "games": 1000,
+       "rate": 0.852,
+       "ci": [
+        0.8286444970153862,
+        0.872661366379795
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 10,
+       "reach_to_hold": 3,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 123
+      },
+      "on_cols": {
+       "filter_active_share": 0.32454289732770747,
+       "pushed_tag_share": 0.25843881856540085,
+       "filter_rate": 0.2424606852917932,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000134944915771
+      },
+      "off_cols": {
+       "filter_active_share": 0.3023500526131182,
+       "pushed_tag_share": 0.2602595580498071,
+       "filter_rate": 0.22258364303549752,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000012159347534
+      }
+     },
+     {
+      "guard": "guard_mark_edge",
+      "strike": "strike_low",
+      "on": {
+       "holds": 902,
+       "games": 1000,
+       "rate": 0.902,
+       "ci": [
+        0.8820049011851514,
+        0.9189182723513907
+       ]
+      },
+      "off": {
+       "holds": 847,
+       "games": 1000,
+       "rate": 0.847,
+       "ci": [
+        0.8233629868076504,
+        0.8679811455733946
+       ]
+      },
+      "word": "landing raises the Guard team's hold",
+      "paired": {
+       "hold_to_reach": 2,
+       "reach_to_hold": 57,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 268
+      },
+      "on_cols": {
+       "filter_active_share": 0.3864734299516908,
+       "pushed_tag_share": 0.24396135265700483,
+       "filter_rate": 0.2578722346324939,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.60000741481781
+      },
+      "off_cols": {
+       "filter_active_share": 0.29430379746835444,
+       "pushed_tag_share": 0.25773558368495075,
+       "filter_rate": 0.2233597300183028,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.60000741481781
+      }
+     },
+     {
+      "guard": "guard_mark_edge",
+      "strike": "strike_sacrifice",
+      "on": {
+       "holds": 963,
+       "games": 1000,
+       "rate": 0.963,
+       "ci": [
+        0.9494173165894553,
+        0.9730389753195472
+       ]
+      },
+      "off": {
+       "holds": 962,
+       "games": 1000,
+       "rate": 0.962,
+       "ci": [
+        0.9482727912457906,
+        0.9721911544603846
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 1,
+       "reach_to_hold": 2,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 201
+      },
+      "on_cols": {
+       "filter_active_share": 0.30631543397500843,
+       "pushed_tag_share": 0.22965214454576158,
+       "filter_rate": 0.22410320895072072,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000185012817383
+      },
+      "off_cols": {
+       "filter_active_share": 0.297972972972973,
+       "pushed_tag_share": 0.22972972972972974,
+       "filter_rate": 0.202746188797988,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000192165374756
+      }
+     },
+     {
+      "guard": "guard_mark_edge",
+      "strike": "strike_converge",
+      "on": {
+       "holds": 965,
+       "games": 1000,
+       "rate": 0.965,
+       "ci": [
+        0.9517130967996695,
+        0.9747278875149873
+       ]
+      },
+      "off": {
+       "holds": 963,
+       "games": 1000,
+       "rate": 0.963,
+       "ci": [
+        0.9494173165894553,
+        0.9730389753195472
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 1,
+       "reach_to_hold": 3,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 101
+      },
+      "on_cols": {
+       "filter_active_share": 0.11909581646423752,
+       "pushed_tag_share": 0.09986504723346828,
+       "filter_rate": 0.19976093072956427,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000056266784668
+      },
+      "off_cols": {
+       "filter_active_share": 0.11343686698176908,
+       "pushed_tag_share": 0.09790681971640783,
+       "filter_rate": 0.19644093526178039,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000056266784668
+      }
+     },
+     {
+      "guard": "guard_mirror",
+      "strike": "strike_straight",
+      "on": {
+       "holds": 798,
+       "games": 1000,
+       "rate": 0.798,
+       "ci": [
+        0.7719963323687683,
+        0.8217228360737431
+       ]
+      },
+      "off": {
+       "holds": 799,
+       "games": 1000,
+       "rate": 0.799,
+       "ci": [
+        0.7730383163308918,
+        0.8226731983144469
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 10,
+       "reach_to_hold": 9,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 162
+      },
+      "on_cols": {
+       "filter_active_share": 0.3240343347639485,
+       "pushed_tag_share": 0.2532188841201717,
+       "filter_rate": 0.2342935962001793,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000291109085083
+      },
+      "off_cols": {
+       "filter_active_share": 0.2981766178047908,
+       "pushed_tag_share": 0.24883804075795496,
+       "filter_rate": 0.20610008079558612,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000291109085083
+      }
+     },
+     {
+      "guard": "guard_mirror",
+      "strike": "strike_flank",
+      "on": {
+       "holds": 861,
+       "games": 1000,
+       "rate": 0.861,
+       "ci": [
+        0.8381730246613444,
+        0.8810639545592818
+       ]
+      },
+      "off": {
+       "holds": 863,
+       "games": 1000,
+       "rate": 0.863,
+       "ci": [
+        0.84029446126432,
+        0.8829272103619605
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 5,
+       "reach_to_hold": 3,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 261
+      },
+      "on_cols": {
+       "filter_active_share": 0.29555788737320743,
+       "pushed_tag_share": 0.23434767401189227,
+       "filter_rate": 0.2400104084853083,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000025272369385
+      },
+      "off_cols": {
+       "filter_active_share": 0.2691366655015729,
+       "pushed_tag_share": 0.21740650122334848,
+       "filter_rate": 0.21424439056869596,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000025272369385
+      }
+     },
+     {
+      "guard": "guard_mirror",
+      "strike": "strike_high",
+      "on": {
+       "holds": 842,
+       "games": 1000,
+       "rate": 0.842,
+       "ci": [
+        0.8180896910880748,
+        0.8632927102788341
+       ]
+      },
+      "off": {
+       "holds": 853,
+       "games": 1000,
+       "rate": 0.853,
+       "ci": [
+        0.8297018143400393,
+        0.873596395257969
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 14,
+       "reach_to_hold": 3,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 108
+      },
+      "on_cols": {
+       "filter_active_share": 0.2942625835973249,
+       "pushed_tag_share": 0.23512847588877156,
+       "filter_rate": 0.2264300917573273,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.600001573562622
+      },
+      "off_cols": {
+       "filter_active_share": 0.2812061711079944,
+       "pushed_tag_share": 0.23877980364656382,
+       "filter_rate": 0.20850118914083576,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.600001573562622
+      }
+     },
+     {
+      "guard": "guard_mirror",
+      "strike": "strike_low",
+      "on": {
+       "holds": 899,
+       "games": 1000,
+       "rate": 0.899,
+       "ci": [
+        0.8787698568381758,
+        0.9161762780898847
+       ]
+      },
+      "off": {
+       "holds": 846,
+       "games": 1000,
+       "rate": 0.846,
+       "ci": [
+        0.8223076809446219,
+        0.8670441052335958
+       ]
+      },
+      "word": "landing raises the Guard team's hold",
+      "paired": {
+       "hold_to_reach": 0,
+       "reach_to_hold": 53,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 301
+      },
+      "on_cols": {
+       "filter_active_share": 0.3518646408839779,
+       "pushed_tag_share": 0.22168508287292818,
+       "filter_rate": 0.24309290051530116,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.600003719329834
+      },
+      "off_cols": {
+       "filter_active_share": 0.2711924023918396,
+       "pushed_tag_share": 0.23320436158986985,
+       "filter_rate": 0.20911206540861166,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000055074691772
+      }
+     },
+     {
+      "guard": "guard_mirror",
+      "strike": "strike_sacrifice",
+      "on": {
+       "holds": 927,
+       "games": 1000,
+       "rate": 0.927,
+       "ci": [
+        0.9091906155334873,
+        0.9415412130737354
+       ]
+      },
+      "off": {
+       "holds": 928,
+       "games": 1000,
+       "rate": 0.928,
+       "ci": [
+        0.9102878591617453,
+        0.9424363156483045
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 2,
+       "reach_to_hold": 1,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 166
+      },
+      "on_cols": {
+       "filter_active_share": 0.24478632478632478,
+       "pushed_tag_share": 0.16786324786324786,
+       "filter_rate": 0.18283878950355575,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000005006790161
+      },
+      "off_cols": {
+       "filter_active_share": 0.23889268626110732,
+       "pushed_tag_share": 0.1657552973342447,
+       "filter_rate": 0.1705402642788831,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000049114227295
+      }
+     },
+     {
+      "guard": "guard_mirror",
+      "strike": "strike_converge",
+      "on": {
+       "holds": 971,
+       "games": 1000,
+       "rate": 0.971,
+       "ci": [
+        0.958661377168108,
+        0.9797336843635122
+       ]
+      },
+      "off": {
+       "holds": 972,
+       "games": 1000,
+       "rate": 0.972,
+       "ci": [
+        0.9598295551975795,
+        0.9805578525368679
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 1,
+       "reach_to_hold": 0,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 52
+      },
+      "on_cols": {
+       "filter_active_share": 0.060922248401211715,
+       "pushed_tag_share": 0.052170986199932684,
+       "filter_rate": 0.1347772891432978,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.600013256072998
+      },
+      "off_cols": {
+       "filter_active_share": 0.05820995962314939,
+       "pushed_tag_share": 0.05013458950201884,
+       "filter_rate": 0.13384826139034703,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.600013256072998
+      }
+     },
+     {
+      "guard": "guard_field",
+      "strike": "strike_straight",
+      "on": {
+       "holds": 716,
+       "games": 1000,
+       "rate": 0.716,
+       "ci": [
+        0.6872653238598468,
+        0.7430814559508324
+       ]
+      },
+      "off": {
+       "holds": 716,
+       "games": 1000,
+       "rate": 0.716,
+       "ci": [
+        0.6872653238598468,
+        0.7430814559508324
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 1,
+       "reach_to_hold": 1,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 48
+      },
+      "on_cols": {
+       "filter_active_share": 0.1174521354933726,
+       "pushed_tag_share": 0.05706921944035346,
+       "filter_rate": 0.06401350502576679,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000032424926758
+      },
+      "off_cols": {
+       "filter_active_share": 0.10972017673048601,
+       "pushed_tag_share": 0.05633284241531664,
+       "filter_rate": 0.044273253587074575,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000032424926758
+      }
+     },
+     {
+      "guard": "guard_field",
+      "strike": "strike_flank",
+      "on": {
+       "holds": 808,
+       "games": 1000,
+       "rate": 0.808,
+       "ci": [
+        0.7824270733559523,
+        0.8312155571148313
+       ]
+      },
+      "off": {
+       "holds": 809,
+       "games": 1000,
+       "rate": 0.809,
+       "ci": [
+        0.7834715055777532,
+        0.8321634710958576
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 2,
+       "reach_to_hold": 1,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 54
+      },
+      "on_cols": {
+       "filter_active_share": 0.11894586894586895,
+       "pushed_tag_share": 0.06517094017094018,
+       "filter_rate": 0.0628618886610493,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000101566314697
+      },
+      "off_cols": {
+       "filter_active_share": 0.11783552865788537,
+       "pushed_tag_share": 0.06514773940904237,
+       "filter_rate": 0.04732879271963611,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000101566314697
+      }
+     },
+     {
+      "guard": "guard_field",
+      "strike": "strike_high",
+      "on": {
+       "holds": 732,
+       "games": 1000,
+       "rate": 0.732,
+       "ci": [
+        0.7036980405782712,
+        0.7585262784776435
+       ]
+      },
+      "off": {
+       "holds": 734,
+       "games": 1000,
+       "rate": 0.734,
+       "ci": [
+        0.7057552662973483,
+        0.760453745164221
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 2,
+       "reach_to_hold": 0,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 23
+      },
+      "on_cols": {
+       "filter_active_share": 0.12408491947291361,
+       "pushed_tag_share": 0.06698389458272327,
+       "filter_rate": 0.06389079541806132,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000053882598877
+      },
+      "off_cols": {
+       "filter_active_share": 0.11265544989027067,
+       "pushed_tag_share": 0.06693489392831017,
+       "filter_rate": 0.04670817186171189,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000053882598877
+      }
+     },
+     {
+      "guard": "guard_field",
+      "strike": "strike_low",
+      "on": {
+       "holds": 744,
+       "games": 1000,
+       "rate": 0.744,
+       "ci": [
+        0.7160521973177114,
+        0.7700802761721302
+       ]
+      },
+      "off": {
+       "holds": 740,
+       "games": 1000,
+       "rate": 0.74,
+       "ci": [
+        0.7119312432576527,
+        0.76623184542088
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 3,
+       "reach_to_hold": 7,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 146
+      },
+      "on_cols": {
+       "filter_active_share": 0.17055393586005832,
+       "pushed_tag_share": 0.07252186588921283,
+       "filter_rate": 0.07546376448613591,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000241041183472
+      },
+      "off_cols": {
+       "filter_active_share": 0.11751824817518249,
+       "pushed_tag_share": 0.07262773722627737,
+       "filter_rate": 0.049200736557133494,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000241041183472
+      }
+     },
+     {
+      "guard": "guard_field",
+      "strike": "strike_sacrifice",
+      "on": {
+       "holds": 863,
+       "games": 1000,
+       "rate": 0.863,
+       "ci": [
+        0.84029446126432,
+        0.8829272103619605
+       ]
+      },
+      "off": {
+       "holds": 863,
+       "games": 1000,
+       "rate": 0.863,
+       "ci": [
+        0.84029446126432,
+        0.8829272103619605
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 0,
+       "reach_to_hold": 0,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 100
+      },
+      "on_cols": {
+       "filter_active_share": 0.12661769849597762,
+       "pushed_tag_share": 0.06575725778244142,
+       "filter_rate": 0.06567085022246465,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.600000262260437
+      },
+      "off_cols": {
+       "filter_active_share": 0.12102133613151451,
+       "pushed_tag_share": 0.06540748513466246,
+       "filter_rate": 0.04738483778084628,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.600000262260437
+      }
+     },
+     {
+      "guard": "guard_field",
+      "strike": "strike_converge",
+      "on": {
+       "holds": 875,
+       "games": 1000,
+       "rate": 0.875,
+       "ci": [
+        0.8530557319763017,
+        0.8940740940839056
+       ]
+      },
+      "off": {
+       "holds": 872,
+       "games": 1000,
+       "rate": 0.872,
+       "ci": [
+        0.8498599807293441,
+        0.8912928067223815
+       ]
+      },
+      "word": "no change detected",
+      "paired": {
+       "hold_to_reach": 1,
+       "reach_to_hold": 4,
+       "other_outcome": 0,
+       "same_outcome_end_step_changed": 51
+      },
+      "on_cols": {
+       "filter_active_share": 0.10191304347826087,
+       "pushed_tag_share": 0.07026086956521739,
+       "filter_rate": 0.05819165078527294,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000036001205444
+      },
+      "off_cols": {
+       "filter_active_share": 0.10027855153203342,
+       "pushed_tag_share": 0.06998607242339833,
+       "filter_rate": 0.048681014258647334,
+       "rule_breach_rate": 0.0,
+       "closest_cross_3d_m": 1.6000036001205444
+      }
+     }
+    ],
+    "words_by_guard": {
+     "guard_parked_centre": {
+      "no change detected": 6
+     },
+     "guard_parked_ring": {
+      "no change detected": 6
+     },
+     "guard_mark_edge": {
+      "no change detected": 5,
+      "landing raises the Guard team's hold": 1
+     },
+     "guard_mirror": {
+      "no change detected": 5,
+      "landing raises the Guard team's hold": 1
+     },
+     "guard_field": {
+      "no change detected": 6
+     }
+    },
+    "paired_by_guard": {
+     "guard_parked_centre": {
+      "hold_to_reach": 0,
+      "reach_to_hold": 2,
+      "other_outcome": 0,
+      "same_outcome_end_step_changed": 590
+     },
+     "guard_parked_ring": {
+      "hold_to_reach": 0,
+      "reach_to_hold": 3,
+      "other_outcome": 0,
+      "same_outcome_end_step_changed": 652
+     },
+     "guard_mark_edge": {
+      "hold_to_reach": 38,
+      "reach_to_hold": 77,
+      "other_outcome": 0,
+      "same_outcome_end_step_changed": 1126
+     },
+     "guard_mirror": {
+      "hold_to_reach": 32,
+      "reach_to_hold": 69,
+      "other_outcome": 0,
+      "same_outcome_end_step_changed": 1050
+     },
+     "guard_field": {
+      "hold_to_reach": 9,
+      "reach_to_hold": 13,
+      "other_outcome": 0,
+      "same_outcome_end_step_changed": 422
+     }
+    },
+    "paired_total": {
+     "hold_to_reach": 79,
+     "reach_to_hold": 164,
+     "other_outcome": 0,
+     "same_outcome_end_step_changed": 3840
+    }
+   }
+  ],
+  "withheld": false
+ },
+ "driver_shortlist": {
+  "landing": {
+   "H": 0.802,
+   "R": 0.198,
+   "g_star": "guard_mark_edge",
+   "s_star": "strike_straight"
+  },
+  "gy": {
+   "H": 0.808,
+   "R": 0.192,
+   "g_star": "guard_mark_edge",
+   "s_star": "strike_straight"
+  },
+  "landing_gy": {
+   "H": 0.803,
+   "R": 0.197,
+   "g_star": "guard_mark_edge",
+   "s_star": "strike_straight"
+  },
+  "ctl_reference_replay": {
+   "H": 0.808,
+   "R": 0.192,
+   "g_star": "guard_mark_edge",
+   "s_star": "strike_straight"
+  },
+  "ctl_tag_off_landing": {
+   "H": 0.0,
+   "R": 1.0,
+   "g_star": "guard_parked_centre",
+   "s_star": "strike_straight"
+  },
+  "ctl_tag_off_landing_gy": {
+   "H": 0.0,
+   "R": 1.0,
+   "g_star": "guard_parked_centre",
+   "s_star": "strike_straight"
+  }
+ },
+ "filter_before_tag": "Guard\u2013Strike filter activations before a tag: not shown (not recorded by the driver)",
+ "no_effect_note": "\"No change detected\" means no change larger than this test can see, not \"no effect\" (Wilson 95 % intervals at 1,000 games cannot see shifts under about 40\u201360 games)."
+}

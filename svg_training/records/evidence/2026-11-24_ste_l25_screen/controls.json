@@ -1,0 +1,62 @@
+{
+ "ctl_tag_fires_3v3": {
+  "status": "PASS",
+  "control": "tag_fires",
+  "detail": "1000 games: 3 tags each, all ended at step 1"
+ },
+ "ctl_reach_fires_3v3": {
+  "status": "PASS",
+  "control": "reach_fires",
+  "detail": "1000 reaches in 1000 games"
+ },
+ "ctl_reference_replay": {
+  "status": "PASS",
+  "control": "reference_replay",
+  "detail": "30 cells replay the reference's cells on its starts"
+ },
+ "ctl_tag_off_landing": {
+  "status": "PASS",
+  "control": "zero_tags",
+  "detail": "0 tags in 12000 games"
+ },
+ "ctl_tag_off_landing_gy": {
+  "status": "PASS",
+  "control": "zero_tags",
+  "detail": "0 tags in 12000 games"
+ },
+ "ctl_same_seed": {
+  "status": "PASS",
+  "control": "same_seed_twice",
+  "detail": "30000 games equal"
+ },
+ "ctl_stand_still": {
+  "status": "PASS",
+  "control": "stand_still_never_reaches",
+  "detail": "0 reaches in 5000 games"
+ },
+ "ctl_still_3v3": {
+  "status": "PASS",
+  "control": "stand_still_zero_tags",
+  "detail": "0 tags in 1000 games"
+ },
+ "ctl_tiny_tag": {
+  "status": "PASS",
+  "control": "zero_tags",
+  "detail": "0 tags in 5000 games"
+ },
+ "tags_one_for_one": {
+  "status": "PASS",
+  "control": "global",
+  "detail": "every played game one for one"
+ },
+ "paired_starts": {
+  "status": "PASS",
+  "control": "global",
+  "detail": "1 start setting(s), one set of starts each"
+ },
+ "no_nonfinite_actions": {
+  "status": "PASS",
+  "control": "global",
+  "detail": "0 non-finite actions"
+ }
+}

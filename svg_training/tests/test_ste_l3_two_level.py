@@ -164,13 +164,16 @@ def _toml(v):
     return f'"{v}"' if isinstance(v, str) else repr(v)
 
 
-def test_the_two_level_learner_is_refused_until_it_is_built(gates):
+def test_the_two_level_learner_builds_on_the_two_level_ippo(gates):
+    """Step 2 built it (step 1 refused it): MultiDiscrete actions, ``TwoLevelIPPO``, the spec's entropy scales."""
+    from svg_training.ste.two_level import TwoLevelIPPO
     cfg = exploit.variant_cfg(gates, "base")
     env = exploit_train.decision_env(exploit_train.TrainGame(cfg, 4, 3, 3, device="cpu", seed=7), HOLD, "strike",
                                      make_strategy("guard_mark_edge", "guard", cfg, 4, "cpu", 1), SPEC_A,
                                      gates.players, 7)
-    with pytest.raises(ValueError, match="not built yet"):
-        exploit_train.Learner(dict(gates.trainer, num_games=4, rollouts=2), env, "cpu", seed=3)
+    learner = exploit_train.Learner(dict(gates.trainer, num_games=4, rollouts=2), env, "cpu", seed=3)
+    assert isinstance(learner.agent, TwoLevelIPPO)
+    assert learner.agent.entropy_scale == (0.01, 0.01)
 
 
 # ================================================================================================ test 2: the rule

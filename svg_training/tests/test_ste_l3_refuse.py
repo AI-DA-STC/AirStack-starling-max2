@@ -21,6 +21,24 @@ import ste_tier2_score_l18 as l18  # noqa: E402
 import ste_vid1_capture as vid1  # noqa: E402
 
 SKILLS = '\n[learner]\naction = "skills"\nchoice = "team"\n'
+TWO_LEVEL = """
+[learner]
+action = "skills"
+choice = "two_level"
+
+[learner.team_strategies]
+strike = ["strike_sacrifice", "strike_converge"]
+guard = ["guard_parked_ring", "guard_field"]
+
+[learner.drone_skills]
+strike = ["strike_straight", "strike_flank", "strike_high", "strike_low"]
+guard = ["guard_parked_centre", "guard_mark_edge", "guard_mirror"]
+
+[learner.entropy_scale]
+team = 0.01
+drone = 0.01
+"""
+TABLES = [SKILLS, TWO_LEVEL]          # L3 slice 2 test 18: a two-level run folder is refused the same way
 VELOCITY = '\n[learner]\naction = "velocity"\n'
 WHY = "not wired into"
 
@@ -85,27 +103,30 @@ def test_tier2_l013_main_refuses_a_skills_gate_file(tmp_path, capsys):
 
 
 # ------------------------------------------------------------------------------------------------ team_from_modules callers
-def test_score_matrix_refuses_a_skills_player(tmp_path):
-    h = run_folder(tmp_path / "player", SKILLS)
+@pytest.mark.parametrize("table", TABLES)
+def test_score_matrix_refuses_a_skills_player(tmp_path, table):
+    h = run_folder(tmp_path / "player", table)
     s = {"player": {"dir": str(tmp_path / "player"), "gates_sha256": h["gates"], "agent_sha256": h["agent"],
                     "eval_sha256": h["eval"], "variant": "base", "side": "guard"}}
     loaded, why = matrix.check_inputs(SimpleNamespace(), s)
     assert loaded is None and WHY in why and "ste_score_matrix" in why
 
 
-def test_vid1_capture_refuses_a_skills_player(tmp_path, capsys):
-    h = run_folder(tmp_path / "runs" / "r1", SKILLS)
+@pytest.mark.parametrize("table", TABLES)
+def test_vid1_capture_refuses_a_skills_player(tmp_path, capsys, table):
+    h = run_folder(tmp_path / "runs" / "r1", table)
     a = SimpleNamespace(trained_runs_dir=str(tmp_path / "runs"), out=str(tmp_path / "out"), runs=None)
     settings = {"trained_games": {"record": "test", "runs": ["r1"], "gates_sha256": h["gates"]}}
     assert vid1.trained_main(a, settings) == 2
     assert WHY in capsys.readouterr().out
 
 
+@pytest.mark.parametrize("table", TABLES)
 @pytest.mark.parametrize("skills_side", ["guard", "strike"])
-def test_tier2_score_l18_refuses_a_skills_player_on_either_side(tmp_path, skills_side):
+def test_tier2_score_l18_refuses_a_skills_player_on_either_side(tmp_path, skills_side, table):
     s = {}
     for side in ("guard", "strike"):
-        run_folder(tmp_path / side, SKILLS if side == skills_side else VELOCITY)
+        run_folder(tmp_path / side, table if side == skills_side else VELOCITY)
         s[f"{side}_player"] = {"dir": str(tmp_path / side)}
     s["job"] = {"games": 1, "ticks_cap": 1}
     with pytest.raises(skills.LearnerNotWired, match="ste_tier2_score_l18"):
@@ -115,11 +136,12 @@ def test_tier2_score_l18_refuses_a_skills_player_on_either_side(tmp_path, skills
             l18.layout(s)
 
 
-def test_cross_tag_l012d_refuses_skills_networks(tmp_path):
+@pytest.mark.parametrize("table", TABLES)
+def test_cross_tag_l012d_refuses_skills_networks(tmp_path, table):
     """The driver pins one gate file (sha256) for both T46 runs, so both hold the same skills gate file here."""
     t = {"guard_run": "g", "strike_run": "s"}
     for side, name in (("guard", "g"), ("strike", "s")):
-        h = run_folder(tmp_path / name, SKILLS)
+        h = run_folder(tmp_path / name, table)
         t[f"{side}_agent_sha256"], t[f"{side}_eval_sha256"], t["gates_sha256"] = h["agent"], h["eval"], h["gates"]
     loaded, why = cross.check_inputs(SimpleNamespace(t46_runs_dir=tmp_path), {"t46": t})
     assert loaded is None and WHY in why and "ste_cross_tag_l012d" in why

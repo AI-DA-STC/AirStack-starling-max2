@@ -157,9 +157,11 @@ masks known only after `env.step`. Slice 2 adds:
   `Loss / Value loss (<agent>)`, `Loss / Entropy loss (<agent>)`, which `Learner.update` reads by the `Loss` prefix,
   `exploit_train.py:275`) and adds `Loss / Entropy team (<agent>)`, `Loss / Entropy drone (<agent>)` and the two KLs.
   It does not track `Policy / Standard deviation` (a categorical head has none; `Learner.update` already skips it for
-  the skills route, `:276`). It is also the hook slice 3's absent-drone mask will use (§4). The copy is pinned: the
-  module asserts `skrl.__version__ == "2.1.0"`, and a test checks the sha256 of `inspect.getsource(IPPO.update)`, so an
-  upgrade of skrl stops the run until the copy is re-read.
+  the skills route, `:276`). It is also the hook slice 3's absent-drone mask will use (§4). The copy is pinned: **as
+  built (step 2), `TwoLevelIPPO.__init__`** (not the module import, so a skrl upgrade does not stop velocity runs)
+  refuses a skrl other than 2.1.0 or an `IPPO.update` source whose sha256 differs from the one recorded at the copy
+  (`ste/two_level.py` `IPPO_UPDATE_SHA256`), and test 13 checks both, so an upgrade of skrl stops a two-level run until
+  the copy is re-read.
 - `Learner` (`exploit_train.py:166`) builds `TwoLevelIPPO` for `choice = "two_level"` only. The velocity route and slice
   1's single-head modes stay on stock IPPO, bit for bit.
 
@@ -192,7 +194,11 @@ logged for it.
 A choice (both heads) every 12 ticks; the leader and the masks are fixed for the decision; the flown skills run closed
 loop every tick (v2 hold rule). Training (`DecisionEnv.step`, `exploit_train.py:87-135`) and scoring (`HeldPlayer`
 `exploit.py:509-545`, which holds the resolved choice `[N, M]` and needs no change) go through the same
-`resolve_two_level` and `SkillDispatch.act`. A tagged leader keeps its choice to the end of the decision; the next
+`resolve_two_level` and `SkillDispatch.act`. A decision can start with **no live Guard** (a game ends only when no Strike drone is live or the clock runs out,
+`core/game.py:317`), so a Guard learner meets it: the leader is then the last slot, as in slice 1 (its team sample
+counts, L = 1; every slot's drone sample counts when it chose "free"), on all-zero observations, until slice 3's absent
+mask; a decision never starts with no live Strike (that game has ended and restarts at the boundary). A tagged leader
+keeps its choice to the end of the decision; the next
 decision elects the next live drone.
 
 ## 4. QC's items before any skills-route training, placed
@@ -315,3 +321,23 @@ training run.
 Revisions made for the lead (same day): per-head ratios and KLs (A), the team-head start bias (B), "adapts" not
 evidenced until the pool and the pooled-opponent row (C), tests 4-8 revised and 12-18 added (D), the subclass's
 replaced methods and tracking keys, estimate 4-5 days (E).
+
+## Step 2 as built (24 Nov 2026): where the design turned out wrong or was made precise
+
+- The skrl pin is checked in `TwoLevelIPPO.__init__`, not at module import (§2, corrected above).
+- `TwoLevelPolicy.act` samples only when no `taken_actions` is given; skrl's own mixins also sample when scoring stored
+  actions. It changes only random-number use inside an update, not any loss; under `set_seed` the samples equal
+  `MultiCategoricalMixin`'s (test 6, second case).
+- The start bias needs `zero_mean_init = true` (refused otherwise): p(free) = 0.5 is defined only from a zeroed output
+  layer.
+- The two scales reach `Learner` through `decision_env` (`env.entropy_scale`); a two-level env built otherwise is
+  refused.
+- The checkpoint layout `{"skills", "modules"}` (`Learner.saved()`) applies to every skills-route mode, slice 1's
+  "team" and "drone" included (`skill_team_from_modules` takes it); `Learner.load_state` refuses a run-contract
+  checkpoint whose skill lists differ (a velocity checkpoint has none and still loads into a velocity learner).
+  `team_from_modules` refuses a mixed-route checkpoint, naming the loader to use.
+- Test 4's "stock path, to rtol 1e-5" was not needed: the stored per-head log-probabilities equal the recomputed ones
+  bit for bit when the recomputation uses the scaler in eval mode and the same batch shape as `act` (one decision at a
+  time).
+- Test 14 asserts the summed KL with a threshold between the larger per-head KL of the first minibatch and the sum
+  (the update stops there; a rule on either head alone would not), using `TwoLevelIPPO.last_kls`.

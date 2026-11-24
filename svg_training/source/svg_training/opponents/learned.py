@@ -203,3 +203,52 @@ def make_skill_models(names: list[str], hidden: list[int], skills: int, device) 
     ``make_models`` for the velocity route."""
     return {a: {"policy": SkillPolicy(hidden, skills, device).to(device),
                 "value": StandinValue(hidden, device).to(device)} for a in names}
+
+
+# ------------------------------------------------------------------ STE phase L3, slice 2: the two-level policy (R30)
+# Added at the end of the module so that the line numbers cited elsewhere still hold.
+from torch.distributions import Categorical  # noqa: E402
+
+
+class TwoLevelPolicy(Model):
+    """Two-level policy of the mixed route (design ste_learning/drafts/L3_SLICE2_DESIGN.md §2): obs [B, OBS_DIM]
+    (already scaled) -> one output [B, T + 1 + K_d] split into the team head's logits [B, T + 1] (index 0 = "free")
+    and the drone head's [B, K_d]; the same MLP as ``StandinPolicy`` with a (T + 1 + K_d)-wide linear output, no Tanh.
+
+    ``act``: the actions [B, 2] long ([team, drone]; sampled team first, then drone, the order of skrl's
+    ``MultiCategoricalMixin``; or ``inputs["taken_actions"]`` scored again, float or long) and outputs ``net_output``,
+    ``head_log_prob`` [B, 2] and ``log_prob`` [B, 1] = their sum (the masks are applied by ``ste/two_level.py``).
+    ``get_entropy``: per-head entropies [B, 2] of the last ``act``."""
+
+    def __init__(self, hidden: list[int], widths: tuple[int, int], device) -> None:
+        self.widths = (int(widths[0]), int(widths[1]))
+        space = gymnasium.spaces.MultiDiscrete(list(self.widths))
+        Model.__init__(self, observation_space=OBS_SPACE, action_space=space, device=device)
+        self.net = _mlp(list(hidden), sum(self.widths))
+        self._dists: tuple[Categorical, Categorical] | None = None
+
+    def compute(self, inputs, role=""):
+        return self.net(inputs["observations"]), {}
+
+    def act(self, inputs, *, role=""):
+        logits, outputs = self.compute(inputs, role)
+        t = self.widths[0]
+        self._dists = (Categorical(logits=logits[..., :t]), Categorical(logits=logits[..., t:]))
+        taken = inputs.get("taken_actions")
+        if taken is None:
+            actions = torch.stack([d.sample() for d in self._dists], dim=-1)
+        else:
+            actions = taken.to(torch.long).reshape(-1, 2)
+        head_lp = torch.stack([d.log_prob(actions[:, i]) for i, d in enumerate(self._dists)], dim=-1)
+        outputs.update(net_output=logits, head_log_prob=head_lp, log_prob=head_lp.sum(-1, keepdim=True))
+        return actions, outputs
+
+    def get_entropy(self, *, role=""):
+        return torch.stack([d.entropy() for d in self._dists], dim=-1)
+
+
+def make_two_level_models(names: list[str], hidden: list[int], widths: tuple[int, int],
+                          device) -> dict[str, dict[str, Model]]:
+    """{agent name: {"policy": TwoLevelPolicy, "value": StandinValue}}: separate networks per name (IPPO)."""
+    return {a: {"policy": TwoLevelPolicy(hidden, widths, device).to(device),
+                "value": StandinValue(hidden, device).to(device)} for a in names}

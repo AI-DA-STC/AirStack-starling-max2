@@ -327,7 +327,7 @@ CHILD = textwrap.dedent("""
     cfg = exploit.variant_cfg(gates, "base")
     obs = saved["obs"]
     d = skills.SkillDispatch(saved["team"], saved["skills"], cfg, obs.shape[0], "cpu", 0, saved["choice"])
-    team = exploit_train.skill_team_from_modules(saved["team"], saved["modules"], saved["hidden"], d, "cpu")
+    team = exploit_train.skill_team_from_modules(saved["team"], saved["learner"], saved["hidden"], d, "cpu")
     logits = team.logits(obs)
     skill = team.choose(obs)
     torch.save({"logits": logits, "skill": skill, "command": team.command(obs, skill)}, sys.argv[2])
@@ -355,7 +355,8 @@ def test_two_updates_then_save_and_reload_in_a_fresh_process_give_the_golden_row
     rows["command"] = team.command(obs, rows["skill"])
     assert rows["logits"].shape == (6, 3, env.skills.k) and rows["skill"].dtype == torch.long
     saved = tmp_path / "saved.pt"
-    torch.save({"modules": learner.modules(), "hidden": list(gates.trainer["hidden"]), "team": side,
+    assert set(learner.saved()) == {"skills", "modules"}               # L3 slice 2: the skill lists travel along
+    torch.save({"learner": learner.saved(), "hidden": list(gates.trainer["hidden"]), "team": side,
                 "skills": env.skills.names, "choice": choice, "obs": obs}, saved)
     out = tmp_path / "rows.pt"
     r = subprocess.run([child_python(), "-c", CHILD, str(saved), str(out)], env={**child_env(), "CUDA_VISIBLE_DEVICES": ""},

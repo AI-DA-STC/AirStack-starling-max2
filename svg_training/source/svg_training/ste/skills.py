@@ -160,14 +160,15 @@ class SkillDispatch:
 
     def resolve(self, choice: Tensor, obs: Tensor) -> Tensor:
         """Each drone's network choice [N, M] -> the choice that flies [N, M] long: unchanged per drone; per team, the
-        choice of the lowest-index live drone in ``obs`` [N, M, D], given to every drone of the team."""
+        choice of the lowest-index live drone in ``obs`` [N, M, D], given to every drone of the team (with no live
+        drone, the last drone's: such a game has ended and restarts at the decision boundary)."""
         choice = choice.to(torch.long)
         if self.choice == DRONE:
             return choice
         m = obs.shape[1]
         live = obs[..., _V.alive] > ALIVE_FLAG_MIN
         idx = torch.arange(m, device=obs.device)
-        lead = torch.where(live, idx, m).amin(-1).clamp(max=m - 1)                  # [N]; drone 0 if none is live
+        lead = torch.where(live, idx, m).amin(-1).clamp(max=m - 1)                  # [N]; the last if none is live
         return torch.gather(choice, 1, lead[:, None]).expand(-1, m)
 
 
@@ -264,9 +265,10 @@ class TwoLevelDispatch(SkillDispatch):
     def resolve_two_level(self, action: Tensor, obs: Tensor) -> tuple[Tensor, Tensor]:
         """action [N, M, 2] (each drone's [team, drone] sample), obs [N, M, D] -> (flown [N, M] long: the player index
         each drone flies, head_mask [N, M, 2] float 0/1). The leader is the lowest-index live drone in ``obs`` (with no
-        live drone, the last one: the rule of slice 1's ``resolve``, whose comment says drone 0; such a game has ended
-        and restarts); its team index is the team's. head_mask[..., 0] = 1 for the leader only (its team
-        sample counts), head_mask[..., 1] = 1 for every drone when the leader chose "free" (its drone sample counts)."""
+        live drone, the last one, as slice 1's ``resolve``: a Strike team with no live drone has ended its game, a
+        Guard team with none has not, core/game.py:317); its team index is the team's. head_mask[..., 0] = 1 for the
+        leader only (its team sample counts), head_mask[..., 1] = 1 for every drone when the leader chose "free" (its
+        drone sample counts)."""
         a = action.to(torch.long)
         team_a, drone_a = a[..., 0], a[..., 1]
         m = obs.shape[1]
@@ -292,3 +294,12 @@ def two_level_dispatch(spec: LearnerSpec, players: dict, team: str, cfg: GameCfg
     """The ``TwoLevelDispatch`` of ``team`` from a two-level spec and the gate file's ``[players]``."""
     return TwoLevelDispatch(team, team_skills(players, team), list(spec.team_strategies[team]),
                             list(spec.drone_skills[team]), cfg, num_games, device, seed)
+
+
+def skills_meta(dispatch: SkillDispatch) -> dict:
+    """What a mixed-route checkpoint carries so that a reload can refuse other skill lists (design §4): the team, the
+    ordered player list, the choice mode and, two-level only, the two lists and the index of "free"."""
+    two = getattr(dispatch, "two_level", False)
+    return {"team": dispatch.team, "players": list(dispatch.names), "choice": dispatch.choice,
+            "team_strategies": list(dispatch.team_strategies) if two else None,
+            "drone_skills": list(dispatch.drone_skills) if two else None, "free_index": FREE if two else None}

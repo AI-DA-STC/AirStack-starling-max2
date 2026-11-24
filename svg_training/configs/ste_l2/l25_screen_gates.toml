@@ -31,9 +31,12 @@
 # the projection holds at any thread count of 2 or more. WORST CASE (every batch to its tick cap): 12 batches,
 # 5 x 2,400 (the 30-cell batches) + 2 x 2,400 (tag off) + 600 + 600 + 200 + 200 + 100 = 18,500 batch ticks x 0.7 x 1.1
 # + the 600 s clip reserve = 14,845 s = 4.12 h <= 4.5 h. EXPECTED much less (spec): T44's 3v3 tag-on batches ended in
-# 400-500 ticks; about 140 M game-ticks in all, about 27 min on 8 threads, about 48 min on 2 threads. The two zero-answer
-# controls with still or blocked play (ctl_stand_still, ctl_tiny_tag) are capped at 600 ticks (30 s; T44's 3v3 tag-on
-# games all ended by 11 s at the 90th percentile), a change from L1.9 to keep the screen near 30 min.
+# 400-500 ticks; about 140 M game-ticks in all, about 27 min on 8 threads, about 48 min on 2 threads. The two
+# zero-answer controls ctl_stand_still and ctl_tiny_tag are capped at 600 ticks (30 s), a change from L1.9 to keep the
+# screen near 30 min. Why the answers hold at 600 ticks (spec, Controls): a Strike drone commanding zero can reach the zone
+# only if the filter carried it 1.15 m inwards, and the filter only pushes drones apart (the moving Guards reach their
+# posts within 30 s); a 0.05 m tag needs two drones inside the 1.10 m filter distance, a filter failure the full-length
+# groups' breach columns would show.
 # No GPU-hours.
 #
 # Run notes (LEAD CALL 21 Nov 2026, carried from L0.11): never suspend the machine during a job. The CPU is shared with

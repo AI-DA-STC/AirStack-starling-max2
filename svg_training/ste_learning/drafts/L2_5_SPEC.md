@@ -66,18 +66,39 @@ As L1.9 and L0.12b, at 3v3, on the new-rules game (landing + option B) where the
 | global | every group | tags one for one; one start set (T44's); no non-finite action |
 
 Change from L1.9: ctl_stand_still and ctl_tiny_tag stop at 600 ticks (30 s), not 2,400, to keep the screen near 30
-minutes; T44's 3v3 tag-on games all ended by 11 s at the 90th percentile, and still or blocked play changes nothing after
-the moving Guards settle.
+minutes. Why that does not weaken what they test: in ctl_stand_still every Strike drone commands zero, so it can reach
+the zone only if the safety filter carries it 1.15 m inwards (ring 2.75 m, zone 1.6 m), and the filter only pushes drones
+apart; within 30 s every moving Guard script has reached its post, after which nothing moves a still Strike drone. In
+ctl_tiny_tag a tag needs two drones within 0.05 m of each other, far inside the 1.10 m distance the filter keeps every
+pair apart; a breach of that size would be a filter failure, which the breach and closest-approach columns of the
+main groups (full length) would show. Both answers are "never", which a longer game tests no better once play has
+settled.
 
-**Plumbing checks, read before any number (pre-registered; computed from the run's `cells/*.npz`, per cell with
-`ste/exploit.agreement` on outcome, end step, tags and Strike drones left, paired on T44's starts):**
+**Plumbing checks, read before any number (pre-registered; computed after the run from its own `cells/*.npz`, which
+the driver already writes per game: outcome, end_step, tags, strikes_left, closest_3d_m, start_pos_m; no code change).**
+The cells being compared are paired: same T44 start, same player seeds, CPU (exact replay: the same-seed control and the
+T44 replay check it). So two cells differ in a game only if the rule that separates them changed that game; with no
+effect at all they are equal bit for bit (the builder's scratch check: landing on with the tag off, where no drone ever
+lands, played T44's tag-off game identically).
 
-- **P-b option B reached the game.** With the tag off the filter acts on Guard–Strike pairs, so ctl_tag_off_landing and
-  ctl_tag_off_landing_gy must differ in at least one game. If no game differs, option B did not reach the screen's
-  game: no option B word below is written, and the record says so.
-- **P-c landing reached the game.** The tag-fires control on the landing file passes, and `tests/test_ste_l25.py` shows
-  the screen's game landing a tagged pair. The number of games that landing changes (landing v base, landing_gy v gy)
-  is reported per cell; zero changed games then reads "landing changed no game here", not a fault.
+- **P-b option B reached the game.** ctl_tag_off_landing and ctl_tag_off_landing_gy (the filter acts on Guard–Strike
+  pairs when no tag ends them) must differ, in at least one of their 12,000 paired games, in outcome, end_step or
+  closest_3d_m. If not: "**option B not shown to reach the game**".
+- **P-c landing reached the game.** landing and ctl_reference_replay (base), over their 30 paired cells (30,000 games),
+  must differ in at least one game in end_step or closest_3d_m (only a drone landing as a filter obstacle can change a
+  live drone's path; the closest-approach column itself counts live drones only). If not: "**landing not shown to reach
+  the game; no landing word (reading 4) is written**". The tag-fires control (every pair tagged at step 1 with landing
+  on) and `tests/test_ste_l25.py` (the screen's game lands a tagged pair) back it, but do not replace it.
+
+**What a failed plumbing check withholds** (the numbers of every group are still reported, labelled):
+
+| Fails | Withheld | Still reported as plain numbers, labelled |
+|---|---|---|
+| P-b | reading 3 entirely; the option B rows of reading 2; reading 1's words for gy and landing_gy; reading 4's landing_gy v gy pair | gy and landing_gy, labelled "option B not shown to reach the game" |
+| P-c | reading 4 entirely; reading 3's landing_gy v landing pair (gy v base stays) | landing and landing_gy, labelled "landing not shown to reach the game"; readings 1 and 2 on them keep their words (tag on v off does not depend on landing) with that label |
+
+When P-b holds, the tag-on gy arms are read with full words even if option B changed few games there (below).
+
 - Builder's scratch check (24 Nov 2026, 32 of T44's starts × 3 cells, CPU, not a result): landing with the tag off
   played T44's tag-off game identically; option B with the tag off changed 13 of 96 outcomes; with the tag on,
   landing and option B each changed 0–1 of 96 outcomes and 4–10 end steps.
@@ -89,31 +110,46 @@ the moving Guards settle.
 
 Hold rate = Guard team wins of 1,000 games, with its Wilson 95 % interval. Two rates are "distinguishable" only when
 their intervals do not overlap (stricter than a 5 % test; at 1,000 games it cannot see shifts under about 40–60 games:
-prose guidance, as L1.9). One seed, one start set: the intervals cover scoring noise only. About 30 cells per
-comparison and no multiplicity correction: a single "distinguishable" cell is read with care.
+prose guidance, as L1.9). **"No change detected" means no change larger than this test can see, not "no effect".** One
+seed, one start set: the intervals cover scoring noise only. About 30 cells per comparison and no multiplicity
+correction: a single "distinguishable" cell is read with care.
 
-1. **The risk (main reading).** Words fixed in advance for the three new-rule sets (landing, gy, landing_gy); base
-   is T44's game, whose answer is already known (still Guard 43.0 % at worst against mark_edge 80.8 %), and is shown
-   beside them. For each rule set and each parked script (still,
-   ring): its worst-cell hold H_p (lowest over the six Strike scripts) against the best moving script's worst-cell hold
-   H_m (highest over mark_edge, mirror, field of their lowest over the six). The best moving script is picked after the
-   fact, so the comparison leans towards "below". Words: "**parked above the moving scripts**" if H_p's lower bound >
-   H_m's upper bound; "**parked below the moving scripts**" if H_p's upper bound < H_m's lower bound; else "**parked not
-   distinguishable from the moving scripts**". For the still Guard (guard_parked_centre): "above" or "not
-   distinguishable" in a rule set reads "**the 1.6 m tag favours a Guard team that stands still, against scripted
-   Strikes, in this rule set**"; "below" reads "**not seen with scripted Strikes in this rule set**". The same words per
-   Strike script (cell by cell) in a table; the driver's g* is quoted, and a parked g* is said so.
+1. **Still Guard v the moving scripts.** Words fixed in advance for the three new-rule sets (landing, gy,
+   landing_gy); base is T44's game, whose answer is already known (still Guard 43.0 % at worst against mark_edge
+   80.8 %), and is shown beside them. For each rule set and each parked script (still = guard_parked_centre, ring =
+   guard_parked_ring): its worst-cell hold H_p (lowest over the six Strike scripts) against **each** moving script's
+   worst-cell hold H_m (mark_edge, mirror, field separately; none is picked after the run). The **named comparator is
+   guard_mark_edge** (T44's g* at 1.6 m and the L0.12 opponent, named before this run). Words, per pair: "**still Guard
+   above mark_edge**" if H_p's lower bound > H_m's upper bound; "**still Guard below mark_edge**" if H_p's upper bound <
+   H_m's lower bound; else "**still Guard not distinguishable from mark_edge**" (and the same with "ring Guard", mirror,
+   field). The same words per Strike script (cell by cell) in a table; the driver's g* is quoted, and a parked g* is
+   said so. Reading 1 alone never says the tag favours anything.
 2. **With and without the tag** (the task's "parked Guard hold rate with and without the tag"), even split (landing v
-   ctl_tag_off_landing) and option B (landing_gy v ctl_tag_off_landing_gy), per parked script and Strike script: "**the
-   tag raises the parked Guard's hold**" (with-tag lower > without-tag upper), "**the tag lowers it**", else "**no change
-   detected**".
+   ctl_tag_off_landing) and option B (landing_gy v ctl_tag_off_landing_gy), per parked script and Strike script and on
+   the worst-cell holds: "**the tag raises the parked Guard's hold**" (with-tag lower > without-tag upper), "**the tag
+   lowers it**", else "**no change detected**". **The risk word**, for landing and landing_gy only (the arms with a
+   tag-off twin), needs both readings: "**the 1.6 m tag favours a Guard team that stands still, against scripted
+   Strikes, in this rule set**" if the tag raises the still Guard's worst-cell hold (reading 2) **and** the still
+   Guard is above or not distinguishable from mark_edge (reading 1); "**not seen with scripted Strikes in this rule
+   set**" if the still Guard is below mark_edge; otherwise (the tag raises the hold but the still Guard stays below, or
+   no tag effect is detected while it is not below) the two readings are stated side by side with no risk word.
 3. **Option B on and off** (for P2), landing_gy v landing and gy v base, per cell: "**option B raises the Guard team's
    hold**", "**option B lowers it**", else "**no change detected**", counted per Guard script; H, R, g*, s* of each group
    side by side (the driver's shortlist rule, configs/ste_l011/gates.toml [shortlist]); the changed-game counts (INFO);
    the closest 3-D approach and breach rate per cell (L2.1 known shortfall: a Guard drone pinned at a wall lets a Strike
-   drone close to 0.39 m in tier 1).
+   drone close to 0.39 m in tier 1). Filter activity for P2, as the driver records it: the share of tags with the
+   filter active on the tag's own tick (an upper bound) and with the pair pushed together (L0.12b's columns), and the
+   filter rate (share of live drone-steps corrected, every pair). **Guard–Strike filter activations before a tag are not
+   shown** (the driver does not record them; a later measurement if P2 needs it).
 4. **Landing on and off** (for P7's landing part), landing v base and landing_gy v gy: the same words with "landing"
    for "option B".
+
+**Paired readout for readings 3 and 4 (pre-registered, INFO, no verdict).** The Wilson words cannot see a paired effect
+of about 1 % (10 games in 1,000). So for each compared pair of cells (same Guard and Strike script, same 1,000 T44
+starts), from the per-game outcome arrays: the discordant games and their direction, **hold → reach** (the Guard team
+held without the rule and lost with it) and **reach → hold**, and the games whose end step changed with the same
+outcome; summed per Guard script and per rule set. Reported as counts beside the Wilson words, without a pass mark; the
+record states that one seed and one start set make these counts the effect on these starts only.
 
 ## Limits, stated in the record
 

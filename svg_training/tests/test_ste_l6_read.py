@@ -499,3 +499,43 @@ def test_unparseable_reload_output_is_caught(tmp_path, monkeypatch):
                         lambda *a, **k: subprocess.CompletedProcess(a, 0, stdout="garbage\n", stderr=""))
     r = reader.reload_in_a_fresh_process(tmp_path)
     assert r["ok"] is False and "unparseable" in r["error"]
+
+
+# ---------------------------------------------------------------------------------- a pilot before the fill step
+def _pre_fill_pilot(folder, route, edit):
+    """A pilot that ran under its own copy of the gate file as it stood before the fill step (``edit`` changes the
+    copy's text), recorded with that copy's sha256, as the driver writes it."""
+    make_pilot(folder, route)
+    text = edit((CFG / f"{route}_gates.toml").read_text())
+    (folder / "gates.toml").write_text(text)
+    data = json.loads((folder / "pilot.json").read_text())
+    data["gates_sha256"] = exploit.sha256_file(folder / "gates.toml")
+    write(folder / "pilot.json", data)
+    return folder
+
+
+def _unfill(text):
+    import re
+    text = re.sub(r"(?m)^side_overrides = .*$", "side_overrides = { strike = {}, guard = {} }", text)
+    text = re.sub(r"(?m)^game_steps_per_run = .*$", "game_steps_per_run = 377_487_360", text)
+    return re.sub(r"(?m)^skills_reach_min = .*$", "skills_reach_min = 0.90", text)
+
+
+def test_a_pilot_under_the_gate_file_before_the_fill_step_is_read(tmp_path, fake_reload):
+    """The fill step writes side_overrides, game_steps_per_run and the skills run 0 mark after the pilots (spec 2b;
+    the slice-2 addendum): a pilot under the file as it stood before differs only there and is read."""
+    pilots = {r: _pre_fill_pilot(tmp_path / f"pre_{r}", r, _unfill) for r in ("velocity", "skills")}
+    assert all(json.loads((p / "pilot.json").read_text())["gates_sha256"] != GATES[r].sha256 for r, p in pilots.items())
+    code, out = read(tmp_path, build(tmp_path, velocity__pilot=pilots["velocity"], skills__pilot=pilots["skills"]))
+    assert code == 0 and out["routes"]["velocity"]["word"] == out["routes"]["skills"]["word"] == "PIPELINE WORKS"
+
+
+def test_a_pilot_under_a_gate_file_that_differs_beyond_the_fill_fields_is_refused(tmp_path, fake_reload):
+    import re
+    other = lambda t: re.sub(r"(?m)^train_seed = (\d+)", lambda m: f"train_seed = {int(m.group(1)) + 1}", _unfill(t), 1)
+    for name, folder in (("seed", _pre_fill_pilot(tmp_path / "seed", "velocity", other)),
+                         ("nocopy", _pre_fill_pilot(tmp_path / "nocopy", "velocity", _unfill))):
+        if name == "nocopy":
+            (folder / "gates.toml").unlink()
+        m = build(_mk(tmp_path / f"x_{name}"), velocity__pilot=folder)
+        assert reader.main(["--manifest", str(m), "--out", str(tmp_path / f"x_{name}" / "out")]) == 2

@@ -146,6 +146,34 @@ def check_sha(got, gates, stage: str) -> None:
         raise Refused(f"{stage}: ran under gate sha256 {got}, the pre-registered gate file is {gates.sha256}")
 
 
+# The fill step (spec section 2b, and the skills run 0 mark of the slice-2 addendum, 25 Nov 2026) writes these values
+# AFTER the pilots, by design: a pilot ran under the gate file as it stood before the fill.
+FILL_FIELDS = (("trainer", "side_overrides"), ("trainer", "game_steps_per_run"), ("run0", "skills_reach_min"))
+
+
+def without_fill(doc: dict) -> dict:
+    doc = {k: (dict(v) if isinstance(v, dict) else v) for k, v in doc.items()}
+    for table, key in FILL_FIELDS:
+        if isinstance(doc.get(table), dict):
+            doc[table].pop(key, None)
+    return doc
+
+
+def check_pilot_sha(folder: Path, got, gates, stage: str) -> None:
+    """A pilot ran under the pre-registered gate file, or under it as it stood before the fill step: its own copy
+    (``<pilot>/gates.toml``, sha256 = the pilot's) equal to the gate file in every value but the fill fields."""
+    if got == gates.sha256:
+        return
+    copy = folder / "gates.toml"
+    if not copy.is_file() or exploit.sha256_file(copy) != got:
+        raise Refused(f"{stage}: ran under gate sha256 {got}, the pre-registered gate file is {gates.sha256}, and "
+                      f"the pilot's own copy {copy} is missing or is not that file")
+    pre, now = tomllib.loads(copy.read_text()), tomllib.loads(Path(gates.path).read_text())
+    if without_fill(pre) != without_fill(now):
+        raise Refused(f"{stage}: ran under gate sha256 {got}, which differs from the pre-registered gate file "
+                      f"{gates.sha256} in more than the fill step's fields {FILL_FIELDS}")
+
+
 def read_pilot(folder: Path, gates, stage: str) -> str | None:
     why = stopped(folder, stage)
     if why:
@@ -153,7 +181,7 @@ def read_pilot(folder: Path, gates, stage: str) -> str | None:
     data = load_json(folder / "pilot.json", stage)
     if data.get("stopped") or not (folder / "pilot.md").is_file():
         raise Refused(f"{stage}: the pilot did not finish (stopped {data.get('stopped')!r}, pilot.md missing?)")
-    check_sha(data.get("gates_sha256"), gates, stage)
+    check_pilot_sha(folder, data.get("gates_sha256"), gates, stage)
     controls = {k: v for side in data.get("eval", {}).get("per_side", {}).values()
                 for k, v in side.get("controls", {}).items()}
     if not controls:

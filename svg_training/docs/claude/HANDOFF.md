@@ -4,13 +4,42 @@ INTERNAL · the lab's AI-assistant hand-over notes: where the work stands, what 
 
 > **How to use this file.** Read it at the start of a session, after [../../CLAUDE.md](../../CLAUDE.md).
 > §4 is the current state, §5 is what is waiting on people. Update both before you stop.
-> Last updated: 24 November 2026 ~07:30, on the home RTX 5090 (night run: L1 reads, L2.1/L2.3/L2.4; before: 23 Nov ~13:30 documentation clean-up), worktree `~/AirStack-starling-max2-dev` on branch `development`.
+> Last updated: 24 November 2026 ~12:40, on the home RTX 5090 (day: rulings R24–R28, AirStack set up, L1.4, L2.5 running, L3 note v2; before: ~07:30 night run: L1 reads, L2.1/L2.3/L2.4; before: 23 Nov ~13:30 documentation clean-up), worktree `~/AirStack-starling-max2-dev` on branch `development`.
 
 ## 0. Resume here (for a new session or another Claude account)
 
 Everything needed is in this folder; nothing depends on the previous chat. Claude's user memory (`~/.claude/…`) and
 the private NUS workspace (`~/ma_skills-self-play/`, 5090 only) do **not** travel with git: if this file and a memory
 note disagree, this file wins.
+
+### 24 November 2026 ~12:40 — RTX 5090 DAY: OWNER RULINGS R24–R28, AIRSTACK SET UP ON THE 5090, L1.4 DONE, L2.5 RUNNING, L3 NOTE v2 (read this first)
+
+- **Rulings (owner, ~11:00):** R24 1v1: "what do u recommed" (a question: R20 hold stands; lead recommends skipping 1v1
+  training, the scripted 1v1 stays the demo as ruled at G0; or a free CPU screen of flyable variants); R25 set AirStack
+  up on the 5090; R26 L3 two-route design and skill list approved; R27 PLAN.md updated (two routes, L3–L6 pipeline check
+  20 GPU-h); R28 touchdown 0.15 m fixed. DISCUSSION §16; commit `c1f268a6`.
+- **Host changes on the RTX 5090 (R25), outside git:** containers `isaac-sim`, `airstack-robot-desktop-1`,
+  `airstack-gcs-1` created (`./airstack.sh up`, left up and idle, no GPU held); robot workspace built in the container
+  (`bws`, 59 packages); `tools/sim.sh setup` set `core.hooksPath = tools/git-hooks` in the shared git config (the
+  repository's pre-commit hook now runs on every worktree's commits: never bypass it); empty gitignored folder
+  `AirStack/robot/ros_ws/bags`. Already there from earlier: NatNet SDK, the `airstack` shell function, `omni_pass.env`,
+  `user.config.json`, the robot image. `tools/sim.sh doctor`: 21 OK, 2 WARN (no `pyulog`, no `obs`), 0 FAIL. No AirStack
+  file, config or drone parameter edited.
+- **L1.4 done (T68 INFO):** 36 of 36 velocity steps in the AirStack simulator, logs in
+  `runs/2026-11-24_ste_l14_steps_r3/` (568 MB, not in git; L1.5 needs it: copy it to the laptop if L1.5 moves there).
+  `scripts/record_steps.sh` had never run; two fixes (`f7e87089`, `452b260d`, each reviewed once): our commander now
+  launches with `use_mocap:=false`; the guard reads published topics only, leaves out the simulator's MAVROS, and fails
+  closed on an unreadable topic list (also after the flight: a missing robot container then exits 67 without `down`;
+  bring it down by hand). Run it from this worktree with `SVG_STACK_REPO=~/AirStack-starling-max2` (the containers mount
+  the live clone).
+- **L2.5 running** (CPU, 0 GPU-h, launched 11:56, `runs/2026-11-24_ste_l25_screen/`); spec reviewed and fixed before
+  launch (`ste_learning/drafts/L2_5_SPEC.md`, gate sha256 `bc5a585d…`). Its record feeds P2 and P7: two reviewers.
+  L2.5 got a 0.5 GPU-h task cap (announced; L1 + L2 task caps 9.6 of 13).
+- **L1.5 builder** on branch `l15-build` (worktree `~/AirStack-starling-max2-l15`); no GPU run yet (cap 0.3 GPU-h).
+- **L3 note v2** after two design reviewers and the advisor (`b651a05f`): no previous-choice slot, per-slot networks,
+  closed-loop skills under a 0.6 s choice plus a held-command arm, both routes train against the same opponent pool,
+  masking list, export needs, first slice. **Waiting on the owner:** per team (lead's recommendation) or per drone as
+  the default; 1v1 "skip" or "screen".
 
 ### 24 November 2026 ~07:30 — RTX 5090 NIGHT: L1 READS DONE, L2.1/L2.3/L2.4 BUILT (read this first)
 Owner rulings of 24 Nov (DISCUSSION §16, R19–R23): build both routes (pure RL, mixed) and compare; L1.9 screen first,

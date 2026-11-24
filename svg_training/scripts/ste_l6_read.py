@@ -8,10 +8,10 @@ no game is played.
 The manifest names the run folders (absolute, or relative to svg_training/), each launched through
 ``scripts/ste_job.py`` (its ``exit_code`` file is how a stop is told from a crash)::
 
-    suite_check = "<L4.2's result JSON>"         # {"complete": true, "status": "PASS"}; required before the comparison
+    suite_check = "<L4.2 folder>/suite_check.json"   # scripts/ste_l4_suite.py; required before the comparison
     held_arm = "<L4.1 folder>"                   # scripts/ste_l3_held_arm.py's --out (optional)
     [velocity]                                   # and [skills]
-    pilot = "..."; run0 = "..."; guard = "..."; export_guard = "..."
+    pilot = "..."; run0 = "..."; guard = "..."; export_guard = "..."   # exports: scripts/ste_l6_export.py's --out
     strike = "..."; export_strike = "..."        # absent when the Strike run was not launched (run 0 FAIL, ...)
     poolonly_guard = "..."                       # L5.3 / L5.4 (optional); [skills] also poolonly_pilot (L5.4's own)
 
@@ -231,11 +231,20 @@ def reload_in_a_fresh_process(folder: Path) -> dict:
     return json.loads(r.stdout.strip().splitlines()[-1])
 
 
-def read_export(folder: Path, route: str, side: str, gates, stage: str) -> tuple[str | None, dict]:
+def read_export(folder: Path, route: str, side: str, gates, run: Path, stage: str) -> tuple[str | None, dict]:
+    """An export folder of ``scripts/ste_l6_export.py`` (launched through ste_job.py): its exit, schema, team, gate
+    sha, the source checkpoint's sha256 equal to ``run``'s agent_final.pt, then the reload in a fresh process."""
+    why = stopped(folder, stage)
+    if why:
+        return why, {}
     meta = tomllib.loads(load_json_text(folder / "interface.toml", stage))
     if (meta.get("policy_schema"), meta.get("team"), meta.get("gates_sha256")) != (SCHEMAS[route], side, gates.sha256):
         raise Refused(f"{stage}: the export is {meta.get('policy_schema')} / {meta.get('team')} under gate sha256 "
                       f"{meta.get('gates_sha256')}, expected {SCHEMAS[route]} / {side} / {gates.sha256}")
+    agent = Path(run) / "agent_final.pt"
+    if not agent.is_file() or meta.get("source_checkpoint_sha256") != exploit.sha256_file(agent):
+        raise Refused(f"{stage}: the export's source checkpoint sha256 {meta.get('source_checkpoint_sha256')} is not "
+                      f"the run's {agent} ({exploit.sha256_file(agent) if agent.is_file() else 'missing'})")
     r = reload_in_a_fresh_process(folder)
     return (None if r.get("ok") else f"the reload check: {r.get('error')}"), r
 
@@ -278,7 +287,7 @@ def route_read(route: str, m: dict) -> dict:
             return does_not_work(stage, why)
         out["runs"][side] = run
         stage = f"{EXPORT_TASK} {route} {SIDE_NAME[side]} export"
-        why, rel = read_export(need(m, f"export_{side}", stage), route, side, gates, stage)
+        why, rel = read_export(need(m, f"export_{side}", stage), route, side, gates, Path(run["folder"]), stage)
         if why:
             return does_not_work(stage, why)
         out["exports"][side] = rel
@@ -397,7 +406,14 @@ def comparison(m: dict, rr: dict) -> dict:
         return {"word": "COMPARISON NOT READ", "why": "the scoring-suite check (L4.2) is not given; it is required "
                                                       "before the comparison is written"}
     suite = load_json(path_of(m["suite_check"]), "L4.2 scoring-suite check")
-    if suite.get("complete") is not True or suite.get("status") != PASS:
+    want = {r: gates_of(r).sha256 for r in ROUTES}
+    if suite.get("gates_sha256") != want:
+        raise Refused(f"L4.2 scoring-suite check: ran on gate files {suite.get('gates_sha256')}, not {want}")
+    games = min(int(gates_of(r).run["eval_games"]) for r in ROUTES)
+    if int(suite.get("games", 0)) < games:
+        raise Refused(f"L4.2 scoring-suite check: {suite.get('games')} games, the comparison's {games} starts need "
+                      f"at least as many")
+    if suite.get("complete") is not True or suite.get("status") != PASS:   # scripts/ste_l4_suite.py's file
         return {"word": "COMPARISON NOT READ", "why": f"the scoring-suite check (L4.2) reads {suite.get('status')}"}
     return {"word": "read", "label": "INFO", **{side: compare_side(side, rr) for side in SIDES}}
 

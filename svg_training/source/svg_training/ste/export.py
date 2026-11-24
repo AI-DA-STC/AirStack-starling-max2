@@ -81,9 +81,11 @@ def _dispatch(gates, side: str, games: int):
                                      "cpu", 0)
 
 
-def export_policy(saved: dict, gates, side: str, out_dir, obs: torch.Tensor) -> Path:
+def export_policy(saved: dict, gates, side: str, out_dir, obs: torch.Tensor, source: dict | None = None) -> Path:
     """Export ``saved`` (``Learner.saved()`` of ``gates``' route, team ``side``) to ``out_dir``; golden rows on ``obs``
-    [G, M, 71]. Returns the folder."""
+    [G, M, 71]. ``source``: {"run", "checkpoint", "checkpoint_sha256"} of the run it came from (written as
+    ``source_run``, ``source_checkpoint``, ``source_checkpoint_sha256``; ``scripts/ste_l6_export.py``). Returns the
+    folder."""
     import onnx
     from skrl.resources.preprocessors.torch import RunningStandardScaler
 
@@ -129,11 +131,11 @@ def export_policy(saved: dict, gates, side: str, out_dir, obs: torch.Tensor) -> 
         command = d.act(obs, flown)                                              # [G, M, 4]
         for gi, row in enumerate(golden):
             row.update(heads=heads[gi].tolist(), flown=flown[gi].tolist(), command=command[gi].tolist())
-    (out / "interface.toml").write_text(_interface(gates, side, route, files, golden, d))
+    (out / "interface.toml").write_text(_interface(gates, side, route, files, golden, d, source))
     return out
 
 
-def _interface(gates, side: str, route: str, files: list, golden: list, d) -> str:
+def _interface(gates, side: str, route: str, files: list, golden: list, d, source: dict | None = None) -> str:
     cfg = exploit.variant_cfg(gates, "base")
     game = gates.games[gates.variants["base"]["game"]]
     params = exploit.ROOT / cfg.starling.params
@@ -166,6 +168,9 @@ def _interface(gates, side: str, route: str, files: list, golden: list, d) -> st
              f'drone_model_file = "{cfg.starling.params}"', f'drone_model_sha256 = "{sha256_file(params)}"',
              f'git_commit = "{commit}"', f"seed = {int(gates.variants['base']['train_seed'][side])}",
              f'gates_sha256 = "{gates.sha256}"']
+    for key in ("run", "checkpoint", "checkpoint_sha256"):
+        if source is not None:
+            lines.append(f'source_{key} = "{source[key]}"')
     if route == "skills":
         meta = skills.skills_meta(d)
         lines += [f'scripted_sha256 = "{sha256_file(SCRIPTED)}"', "", "[skills]",

@@ -142,6 +142,8 @@ are not part of a route's word; they are separate reads, below. The words:
 - **Scoring-suite check (L4.2):** on scripted teams with known answers (the pooled row equals the mean of the script
   cells on the reference; the best single choice equals the reference's best; the choice share of a fixed choice is
   one skill). **Required before the route comparison is written.** A failure reads **COMPARISON NOT READ** until fixed.
+  Driver: `scripts/ste_l4_suite.py --out <dir>` (through `ste_job.py`, task L4.2, CPU, T44's 1,000 starts) writes
+  `suite_check.json`, which the reader (`scripts/ste_l6_read.py`) reads.
 
 **The route comparison (INFO), per side, on T44's 1,000 starts.** K = 6 opponent scripts for the trained Guard team
 (the Strike scripts), K = 5 for the trained Strike team (the Guard scripts).
@@ -251,6 +253,9 @@ one network per slot, so it uses its own schemas (lead, 24 Nov 2026), both writt
   - The golden rows: outputs within 1e-6 (absolute; the ONNX evaluator and torch round differently, so not bit for
     bit), the argmax of each head, the leader's choice, the flown skill and the skill names and lists exactly. For the
     skills route the final commands come from the pinned `scripted.py`, within 1e-6.
+- **The export command:** `scripts/ste_l6_export.py --run-dir <run> --out <dir>` (through `ste_job.py`, task L6.2,
+  CPU) loads `agent_final.pt` through the route's loader and records `source_checkpoint_sha256` and the run's
+  `gates_sha256` in `interface.toml`; the reader refuses an export whose checkpoint sha256 is not the run's.
 - **Flight side:** flying the skills route needs a 20 Hz port of the scripts into the game node. That is L7, an
   AirStack change the owner gates; nothing here touches AirStack.
 

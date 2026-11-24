@@ -92,6 +92,7 @@ def make_main(folder, gates_name, side, wins, exit_code=0, controls=None, choice
     outcome = np.concatenate([np.where(wins[o], won, lost) for o in opps]).astype(np.int64)
     folder.mkdir(parents=True)
     np.savez_compressed(folder / "eval_info.npz", outcome=outcome)
+    (folder / "agent_final.pt").write_bytes(f"networks of {folder.name}".encode())
     (folder / jobs.EXIT_FILE).write_text(f"{exit_code}\n")
     ctl = {"ctl_reference_replay_final": {"status": "PASS"}, "ctl_paired_starts_info": {"status": "PASS"}}
     ctl.update(controls or {})
@@ -130,11 +131,15 @@ def make_run0(folder, gates_name, status, exit_code=0):
     return folder
 
 
-def make_export(folder, route, side):
-    sk = {"velocity": "velocity", "skills": "skills"}[route]
+def make_export(folder, route, side, run=None, exit_code=0):
+    """An export folder stand-in (the reload itself is ``fake_reload``): schema, team, gate sha, the checkpoint's
+    sha256 (of ``run``'s agent_final.pt), exit_code as scripts/ste_job.py writes it."""
     folder.mkdir(parents=True)
-    (folder / "interface.toml").write_text(f'policy_schema = "ste-check-{sk}-0"\nteam = "{side}"\n'
-                                           f'gates_sha256 = "{GATES[route].sha256}"\n')
+    sha = exploit.sha256_file(run / "agent_final.pt") if run is not None else "0" * 64
+    (folder / "interface.toml").write_text(f'policy_schema = "ste-check-{route}-0"\nteam = "{side}"\n'
+                                           f'gates_sha256 = "{GATES[route].sha256}"\n'
+                                           f'source_checkpoint_sha256 = "{sha}"\n')
+    (folder / jobs.EXIT_FILE).write_text(f"{exit_code}\n")
     return folder
 
 
@@ -162,11 +167,11 @@ def build(tmp, run0=("PASS", "PASS"), strike=(True, True), suite="PASS", poolonl
         e = {"pilot": make_pilot(r / "pilot", route), "run0": make_run0(r / "run0", route, run0[i]),
              "guard": make_main(r / "guard", route, "guard", wins_rows("guard", {}, 10 + i),
                                 choice=skill_choice("guard") if route == "skills" else None),
-             "export_guard": make_export(r / "export_guard", route, "guard")}
+             "export_guard": make_export(r / "export_guard", route, "guard", r / "guard")}
         if strike[i]:
             e["strike"] = make_main(r / "strike", route, "strike", wins_rows("strike", {}, 20 + i),
                                     choice=skill_choice("strike") if route == "skills" else None)
-            e["export_strike"] = make_export(r / "export_strike", route, "strike")
+            e["export_strike"] = make_export(r / "export_strike", route, "strike", r / "strike")
         if poolonly:
             e["poolonly_guard"] = make_main(r / "poolonly", f"{route}_poolonly", "guard",
                                             wins_rows("guard", {}, 30 + i),
@@ -175,7 +180,8 @@ def build(tmp, run0=("PASS", "PASS"), strike=(True, True), suite="PASS", poolonl
                 e["poolonly_pilot"] = make_pilot(r / "poolonly_pilot", "skills_poolonly")
         m[route] = {k: str(v) for k, v in e.items()}
     if suite is not None:
-        write(tmp / "suite.json", {"complete": True, "status": suite})
+        write(tmp / "suite.json", {"complete": True, "status": suite, "games": GATES["velocity"].run["eval_games"],
+                                   "gates_sha256": {r: GATES[r].sha256 for r in ("velocity", "skills")}})
         m["suite_check"] = str(tmp / "suite.json")
     if held is not None:
         write(tmp / "held" / "controls.json", {"ctl_hold_one_is_reference": {"status": held}})
@@ -298,6 +304,25 @@ def test_the_comparison_is_not_read_without_a_passing_scoring_suite_check(tmp_pa
     assert "guard" not in out["comparison"]
     code, out = read(tmp_path / "b", build(_mk(tmp_path / "b"), suite="FAIL"))
     assert code == 0 and out["comparison"]["word"] == "COMPARISON NOT READ"
+
+
+@pytest.mark.parametrize("key,value", [("games", 3), ("gates_sha256", {"velocity": "0" * 64, "skills": "0" * 64})])
+def test_a_suite_check_on_fewer_games_or_other_gate_files_is_refused(tmp_path, fake_reload, key, value):
+    m = build(tmp_path)
+    s = json.loads((tmp_path / "suite.json").read_text())
+    s[key] = value
+    (tmp_path / "suite.json").write_text(json.dumps(s))
+    assert reader.main(["--manifest", str(m), "--out", str(tmp_path / "out")]) == 2
+
+
+def test_an_export_of_another_checkpoint_is_refused_and_a_crashed_export_does_not_work(tmp_path, fake_reload):
+    m = build(_mk(tmp_path / "a"))
+    (tmp_path / "a" / "velocity" / "guard" / "agent_final.pt").write_bytes(b"retrained")
+    assert reader.main(["--manifest", str(m), "--out", str(tmp_path / "a" / "out")]) == 2
+    crashed = make_export(tmp_path / "crashed", "velocity", "guard", exit_code=1)     # read before its sha
+    code, out = read(tmp_path / "b", build(_mk(tmp_path / "b"), velocity__export_guard=crashed))
+    assert out["routes"]["velocity"]["word"] == "PIPELINE DOES NOT WORK at L6.2 velocity Guard export"
+    assert "crashed (exit 1)" in out["routes"]["velocity"]["why"]
 
 
 def test_attribution_and_held_arm_not_read_words(tmp_path, fake_reload):

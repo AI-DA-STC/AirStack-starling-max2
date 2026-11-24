@@ -74,18 +74,29 @@ def test_the_mark_is_the_point_estimate_at_or_above_0_90(k, ok):
 
 def test_the_status_is_decided_at_the_final_checkpoint():
     passing, failing = {"update": 5, "pass": True}, {"update": 10, "pass": False}
-    assert exploit.skills_run0_status([failing | {"update": 5}, passing | {"update": 10}], True) == "PASS"
-    assert exploit.skills_run0_status([passing, failing], True) == "FAIL"          # an earlier pass does not count
-    assert exploit.skills_run0_status([passing], False) == "INCONCLUSIVE"         # stopped at the cap
-    assert exploit.skills_run0_status([], True) == "FAIL"
+    assert exploit.skills_run0_status([failing | {"update": 5}, passing | {"update": 10}], True, 10) == "PASS"
+    assert exploit.skills_run0_status([passing, failing], True, 10) == "FAIL"      # an earlier pass does not count
+    assert exploit.skills_run0_status([passing], False, 10) == "INCONCLUSIVE"     # stopped at the cap
+    # QC S1: with the budget reached, the last read must be the final mark; otherwise no verdict
+    assert exploit.skills_run0_status([], True, 10) == "INCONCLUSIVE"
+    assert exploit.skills_run0_status([passing], True, 10) == "INCONCLUSIVE"     # the passing read is not the final
 
 
-def test_skills_reach_min_is_checked_at_load(tmp_path):
+def test_skills_reach_min_is_checked_at_load(tmp_path, monkeypatch):
+    monkeypatch.setattr(exploit, "SKILLS_RUN0_EVAL_GAMES", 8)                # the smoke file's 8 evaluation games
     g = exploit.load_gates(write(tmp_path / "a.toml", gate_text("0.90")))
     assert g.run0["skills_reach_min"] == 0.90
     for bad in ("0.0", "1.5", '"high"'):
         with pytest.raises(ValueError, match="skills_reach_min"):
             exploit.load_gates(write(tmp_path / "b.toml", gate_text(bad)))
+
+
+def test_skills_reach_min_needs_the_1000_evaluation_games(tmp_path):
+    """QC S3: the mark is pre-registered on 1,000 evaluation games (T44's / T70's counts); another count is refused."""
+    assert exploit.SKILLS_RUN0_EVAL_GAMES == 1000
+    with pytest.raises(ValueError, match="1000"):
+        exploit.load_gates(write(tmp_path / "s.toml", gate_text("0.90")))          # smoke: eval_games = 8
+    exploit.load_gates(write(tmp_path / "n.toml", gate_text(None)))               # without the mark: loads
 
 
 # ================================================================================================ pilot_problem
@@ -99,7 +110,8 @@ def _run0(gates, status="PASS", **over):
             "learner": skills.learner_table(gates.learner), **over}
 
 
-def test_a_skills_strike_run_reads_the_skills_run_0s_verdict(tmp_path):
+def test_a_skills_strike_run_reads_the_skills_run_0s_verdict(tmp_path, monkeypatch):
+    monkeypatch.setattr(exploit, "SKILLS_RUN0_EVAL_GAMES", 8)
     gates = exploit.load_gates(write(tmp_path / "g.toml", gate_text()))
     pilot = _pilot(gates)
     assert exploit.pilot_problem(gates, pilot, "strike", run0=_run0(gates), cap_h=1.0) is None
@@ -107,6 +119,9 @@ def test_a_skills_strike_run_reads_the_skills_run_0s_verdict(tmp_path):
     assert "FAIL" in exploit.pilot_problem(gates, pilot, "strike", "the lead says go", _run0(gates, "FAIL"), 1.0)
     assert "INCONCLUSIVE" in exploit.pilot_problem(gates, pilot, "strike", run0=_run0(gates, "INCONCLUSIVE"),
                                                    cap_h=1.0)
+    # QC S2: the lead's flag does not launch a skills Strike run on an INCONCLUSIVE run 0 (launch only on PASS)
+    assert "PASS" in exploit.pilot_problem(gates, pilot, "strike", "the lead says go", _run0(gates, "INCONCLUSIVE"),
+                                           1.0)
     velocity_run0 = {k: v for k, v in _run0(gates).items() if k != "learner"}
     assert "skills" in exploit.pilot_problem(gates, pilot, "strike", run0=velocity_run0, cap_h=1.0)
     other = _run0(gates, learner={**skills.learner_table(gates.learner), "entropy_scale": {"team": 0.5, "drone": 0.5}})
@@ -119,6 +134,9 @@ def test_a_velocity_strike_run_still_reads_a_velocity_run_0():
     pilot = {"strike_recipe": {"side_overrides_strike": gates.trainer["side_overrides"]["strike"]}}
     run0 = {"complete": True, "gates_sha256": gates.sha256, "status": "PASS", "cap_h": 1.0}
     assert exploit.pilot_problem(gates, pilot, "strike", run0=run0, cap_h=1.0) is None
+    inconclusive = {**run0, "status": "INCONCLUSIVE"}               # the velocity route's flag: unchanged (QC S2)
+    assert exploit.pilot_problem(gates, pilot, "strike", run0=inconclusive, cap_h=1.0) is not None
+    assert exploit.pilot_problem(gates, pilot, "strike", "the lead says go", inconclusive, 1.0) is None
 
 
 # ================================================================================================ a tiny CPU run 0
@@ -127,6 +145,7 @@ def tiny_run0(tmp_path_factory):
     """The real sequence on the CPU: the skills pilot on gate file A, A filled from it (B), run 0 on B."""
     tmp = tmp_path_factory.mktemp("l3_run0")
     mp = pytest.MonkeyPatch()
+    mp.setattr(exploit, "SKILLS_RUN0_EVAL_GAMES", 8)        # test-only: the smoke file plays 8 evaluation games
     mp.setenv(shared.SHARED_ENV, str(tmp / "shared"))
     mp.setenv(shared.LEGACY_LOGS_ENV, "")
     a = write(tmp / "a" / "gates.toml", gate_text())
@@ -144,7 +163,12 @@ def tiny_run0(tmp_path_factory):
     return code, g, r, pilot
 
 
-def test_the_tiny_skills_run_0_trains_its_budget_and_writes_a_status(tiny_run0):
+@pytest.fixture
+def smoke_mark(monkeypatch):
+    monkeypatch.setattr(exploit, "SKILLS_RUN0_EVAL_GAMES", 8)
+
+
+def test_the_tiny_skills_run_0_trains_its_budget_and_writes_a_status(tiny_run0, smoke_mark):
     code, g, r, _ = tiny_run0
     assert code == 0
     gates = exploit.load_gates(g)
@@ -165,7 +189,7 @@ def test_the_tiny_skills_run_0_trains_its_budget_and_writes_a_status(tiny_run0):
     assert set(saved) == {"skills", "modules"}
 
 
-def test_a_strike_run_of_record_follows_the_skills_run_0s_verdict(tiny_run0, tmp_path, capsys):
+def test_a_strike_run_of_record_follows_the_skills_run_0s_verdict(tiny_run0, smoke_mark, tmp_path, capsys):
     code, g, r, pilot = tiny_run0
     status = json.loads((r / "learner_control.json").read_text())["status"]
     args = ["--gates", str(g), "--variant", "base", "--side", "strike", "--run-dir", str(tmp_path / "s"), "--cap-h",
@@ -178,7 +202,7 @@ def test_a_strike_run_of_record_follows_the_skills_run_0s_verdict(tiny_run0, tmp
         assert driver.main(args) == 0
 
 
-def test_the_same_command_on_a_finished_run_0_does_nothing_new(tiny_run0):
+def test_the_same_command_on_a_finished_run_0_does_nothing_new(tiny_run0, smoke_mark):
     code, g, r, pilot = tiny_run0
     before = (r / "learner_control.json").read_text()
     assert driver.main(["--run0", "--gates", str(g), "--run-dir", str(r), "--cap-h", "1", "--no-videos",
@@ -186,8 +210,25 @@ def test_the_same_command_on_a_finished_run_0_does_nothing_new(tiny_run0):
     assert (r / "learner_control.json").read_text() == before
 
 
-def test_a_skills_run_0_without_its_mark_is_refused(tmp_path, capsys):
+def test_a_skills_run_0_without_its_mark_is_refused(tmp_path, capsys, smoke_mark):
     g = write(tmp_path / "g" / "gates.toml", gate_text(None))
     code = driver.main(["--run0", "--gates", str(g), "--run-dir", str(tmp_path / "r"), "--cap-h", "1", "--no-videos",
                         "--pilot-json", str(write(tmp_path / "p.json", json.dumps(_pilot(exploit.load_gates(g)))))])
     assert code == 2 and "skills_reach_min" in capsys.readouterr().err
+
+
+def test_a_skills_run_0_whose_first_strike_drone_skill_is_not_strike_straight_is_refused(tmp_path, capsys,
+                                                                                          smoke_mark):
+    """QC minor: the untrained control's known answer (free + strike_straight, about 466 of 1,000) needs
+    strike_straight first in the Strike drone list."""
+    table = TWO_LEVEL.replace('strike = ["strike_straight", "strike_flank", "strike_high", "strike_low"]',
+                              'strike = ["strike_flank", "strike_straight", "strike_high", "strike_low"]')
+    table = table.replace("[learner.drone_skills]", "[learner.drone_skills]", 1)
+    text = gate_text(table=table).replace('strikes = ["strike_straight", "strike_flank"',
+                                          'strikes = ["strike_flank", "strike_straight"', 1)
+    g = write(tmp_path / "g" / "gates.toml", text)
+    gates = exploit.load_gates(g)
+    assert gates.learner.drone_skills["strike"][0] == "strike_flank"
+    code = driver.main(["--run0", "--gates", str(g), "--run-dir", str(tmp_path / "r"), "--cap-h", "1", "--no-videos",
+                        "--pilot-json", str(write(tmp_path / "p.json", json.dumps(_pilot(gates))))])
+    assert code == 2 and "strike_straight" in capsys.readouterr().err

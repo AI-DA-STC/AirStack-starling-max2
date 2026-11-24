@@ -404,6 +404,11 @@ gate files are not edited after their results).
   at `--run0`.
 - **The Strike run reads it:** `exploit.pilot_problem` asks a skills Strike run for a run 0 of the same `[learner]`
   table (learner_control.json records it), complete, under its gate file, at its cap, reading PASS.
+- **After QC (24 Nov 2026):** the status needs a read of the final checkpoint itself (the budget reached but no read
+  at the budget's last update: INCONCLUSIVE, no verdict); `--accept-learner-control` does not apply to the skills
+  route (an INCONCLUSIVE skills run 0 launches no Strike run; launch on PASS only; the velocity route's flag is
+  unchanged); `skills_reach_min` loads only with `[run] eval_games = 1000` (the counts the mark was set on); a skills
+  `--run0` whose first Strike drone skill is not strike_straight is refused (the known answer depends on it).
 - **Strike recipe:** the shaped / unshaped Strike recipe for the skills route is chosen by the skills pilot as built:
   the same pre-registered rule (`exploit.strike_recipe` over the pilot's Strike probes) applied to the skills pilot,
   whose probes train the two-level learner; run 0 and the Strike runs use the gate's `side_overrides.strike` filled

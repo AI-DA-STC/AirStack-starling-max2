@@ -1,4 +1,4 @@
-Simulator: AirStack simulator (Isaac Sim 5.1.0 + Pegasus + PX4 v1.16.1 SITL with real EKF2, docker, headless), SIM-ONLY
+Simulator: AirStack simulator (Isaac Sim 5.1.0 + Pegasus + PX4 v1.16.1 SITL, versions per `docs/GLOSSARY.md` with real EKF2, docker, headless), SIM-ONLY
 airframe `10090_pegasus_starling2max`; RTX 5090 workstation. Not the training simulator; not a flight result.
 
 # 2026-11-24_ste_l14_steps record
@@ -13,7 +13,7 @@ CMU's host setup was already in place (NatNet SDK, the `airstack` shell function
 `airstack.sh setup` found each and skipped it); the robot image rebuilt from cache. New: the three containers
 (`./airstack.sh up`), the robot workspace build (`bws`, 59 packages), the git hooks path (`tools/sim.sh setup`, which
 sets `core.hooksPath = tools/git-hooks` in the shared git config), and the empty, gitignored bags folder
-`AirStack/robot/ros_ws/bags`. `tools/sim.sh doctor`: 21 OK, 2 WARN (no host `pyulog`, no `obs`), 0 FAIL. No AirStack file,
+`AirStack/robot/ros_ws/bags`. `tools/sim.sh doctor`: 21 OK, 2 WARN (no host `pyulog`, no `obs`), 0 FAIL (read in the session's terminal; no log file kept). No AirStack file,
 config or drone parameter was edited. The containers are left up and idle.
 
 ## Commit and inputs
@@ -40,7 +40,8 @@ folder); a copy of the bag in `~/flight_logs/sim/_stack/`.
   `/drone_N/pose`. Fix `f7e87089`: only published topics count; the simulator's MAVROS is left out.
 - Run 2 (11:24): the stick's own simulator check refused on `/drone_N/fmu/in/vehicle_visual_odometry`, correctly. Root
   cause: `ground_control.launch.py` defaults `use_mocap` to `true` (`:210`), so our commander started a `mocap_bridge`
-  that publishes the `/fmu/in/` relay. Fix `452b260d`: the launch passes `use_mocap:=false`, `/fmu/in/` publishers
+  (`ground_control.launch.py:126-131`), which publishes the `/fmu/in/` relay (`mocap_bridge.py:85,125-128`); run 3,
+  with `use_mocap:=false`, showed no such topic and flew. Fix `452b260d`: the launch passes `use_mocap:=false`, `/fmu/in/` publishers
   count as a real-drone signal again, and a topic list without its "Published topics:" header counts as a signal (fail
   closed; reviewer's hardening).
 This was the script's first full run since it was written for S1 (15 Nov, "not yet run"). One independent reviewer read

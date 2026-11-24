@@ -153,7 +153,12 @@ def read_pilot(folder: Path, gates, stage: str) -> str | None:
     if data.get("stopped") or not (folder / "pilot.md").is_file():
         raise Refused(f"{stage}: the pilot did not finish (stopped {data.get('stopped')!r}, pilot.md missing?)")
     check_sha(data.get("gates_sha256"), gates, stage)
-    return None
+    controls = {k: v for side in data.get("eval", {}).get("per_side", {}).values()
+                for k, v in side.get("controls", {}).items()}
+    if not controls:
+        raise Refused(f"{stage}: pilot.json records no controls")
+    bad = first_not_pass(controls)                 # the pilot records its controls in pilot.json and exits 0
+    return f"control {bad[0]} {bad[1]} (pilot.json)" if bad else None
 
 
 def read_run0(folder: Path, gates, stage: str) -> tuple[str | None, str | None]:
@@ -194,11 +199,16 @@ def read_main(folder: Path, gates, side: str, stage: str) -> tuple[str | None, d
         raise Refused(f"{stage}: the INFO cells {list(res.get('info', {}))} are not the gate file's {opps}")
     if controls_of(folder).get("ctl_paired_starts_info", {}).get("status") != PASS:
         raise Refused(f"{stage}: no passing ctl_paired_starts_info (the INFO batch on the reference starts)")
+    need_blocks = ["pooled", "best_single_choice"] if gates.pool["enabled"] else []
+    need_blocks += ["choice_by_decision"] if gates.learner.skills else []
+    missing = [k for k in need_blocks if k not in res]
+    if missing:
+        raise Refused(f"{stage}: results.json lacks {missing} (section 3: the final phase writes them)")
     n = int(res["eval_games"])
     z = np.load(folder / "eval_info.npz")
     wins = compare.wins_by_cell(z["outcome"], opps, n, side)
     members = pool.pool_members(gates.players, "strike" if side == "guard" else "guard")
-    if "pooled" in res:
+    if "pooled" in res:                            # the run's own pooled rate, recomputed from its per-game file
         mine = float(compare.per_start_mean(wins, members).mean())
         if abs(mine - float(res["pooled"]["rate"])) > POOLED_TOL:
             raise Refused(f"{stage}: the pooled rate from eval_info.npz {mine} is not results.json's "

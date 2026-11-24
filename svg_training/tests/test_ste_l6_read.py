@@ -104,7 +104,8 @@ def make_main(folder, gates_name, side, wins, exit_code=0, controls=None, choice
            "reference": {k: gates.reference[k] for k in ("file", "sha256", "start_sha256", "t44_gates_sha256")},
            "game_file": {"file": "configs/ste_l011/base.toml", "sha256": "g" * 8},
            "info": {key(o): {"games": N} for o in opps},
-           "pooled": {"rate": float(np.mean([wins[o].mean() for o in members])) + pooled_off}}
+           "pooled": {"rate": float(np.mean([wins[o].mean() for o in members])) + pooled_off},
+           "best_single_choice": {"best": "x"}}
     if choice is not None:
         res["choice_by_decision"] = choice
     res.update(extra)
@@ -112,8 +113,10 @@ def make_main(folder, gates_name, side, wins, exit_code=0, controls=None, choice
     return folder
 
 
-def make_pilot(folder, gates_name, exit_code=0):
-    write(folder / "pilot.json", {"gates_sha256": GATES[gates_name].sha256})
+def make_pilot(folder, gates_name, exit_code=0, control="PASS"):
+    ctl = {"ctl_reference_replay_pilot": {"status": control}}
+    write(folder / "pilot.json", {"gates_sha256": GATES[gates_name].sha256,
+                                  "eval": {"per_side": {"guard": {"controls": ctl}, "strike": {"controls": ctl}}}})
     (folder / "pilot.md").write_text("pilot\n")
     (folder / jobs.EXIT_FILE).write_text(f"{exit_code}\n")
     return folder
@@ -135,9 +138,10 @@ def make_export(folder, route, side):
     return folder
 
 
-SKILL_CHOICE = {o: {"bins": ["0", "1"], "counts": [6, 4],
-                    "share": {"strike_straight": [0.5, 1.0], "strike_flank": [0.5, 0.0]}}
-                for o in ["guard_parked_centre", "guard_parked_ring", "guard_mark_edge", "guard_mirror", "guard_field"]}
+def skill_choice(side):
+    """A choice share per opponent cell: the first two skills of ``side``, 0.7 / 0.3 over all decisions."""
+    a, b = GATES["skills"].players["strikes" if side == "strike" else "guards"][:2]
+    return {o: {"bins": ["0", "1"], "counts": [6, 4], "share": {a: [0.5, 1.0], b: [0.5, 0.0]}} for o in opponents(side)}
 
 
 @pytest.fixture
@@ -156,15 +160,17 @@ def build(tmp, run0=("PASS", "PASS"), strike=(True, True), suite="PASS", poolonl
     for i, route in enumerate(("velocity", "skills")):
         r = tmp / route
         e = {"pilot": make_pilot(r / "pilot", route), "run0": make_run0(r / "run0", route, run0[i]),
-             "guard": make_main(r / "guard", route, "guard", wins_rows("guard", {}, 10 + i)),
+             "guard": make_main(r / "guard", route, "guard", wins_rows("guard", {}, 10 + i),
+                                choice=skill_choice("guard") if route == "skills" else None),
              "export_guard": make_export(r / "export_guard", route, "guard")}
         if strike[i]:
             e["strike"] = make_main(r / "strike", route, "strike", wins_rows("strike", {}, 20 + i),
-                                    choice=SKILL_CHOICE if route == "skills" else None)
+                                    choice=skill_choice("strike") if route == "skills" else None)
             e["export_strike"] = make_export(r / "export_strike", route, "strike")
         if poolonly:
             e["poolonly_guard"] = make_main(r / "poolonly", f"{route}_poolonly", "guard",
-                                            wins_rows("guard", {}, 30 + i))
+                                            wins_rows("guard", {}, 30 + i),
+                                            choice=skill_choice("guard") if route == "skills" else None)
             if route == "skills":
                 e["poolonly_pilot"] = make_pilot(r / "poolonly_pilot", "skills_poolonly")
         m[route] = {k: str(v) for k, v in e.items()}
@@ -368,3 +374,49 @@ def test_the_reload_runs_in_a_fresh_process_on_a_real_export(tmp_path):
     (folder / "interface.toml").write_text((folder / "interface.toml").read_text().replace(export.STATUS, "x"))
     r = reader.reload_in_a_fresh_process(folder)
     assert not r["ok"] and "status" in r["error"]
+
+
+def test_a_pilot_control_that_failed_reads_does_not_work_at_the_pilot(tmp_path, fake_reload):
+    """The pilot records its controls in pilot.json and exits 0 (it never exits 6): a FAIL there is read."""
+    bad = make_pilot(tmp_path / "bad", "velocity", control="FAIL")
+    code, out = read(tmp_path, build(tmp_path, velocity__pilot=bad))
+    assert out["routes"]["velocity"]["word"] == "PIPELINE DOES NOT WORK at L3.2 velocity pilot"
+    assert "ctl_reference_replay_pilot" in out["routes"]["velocity"]["why"]
+
+
+def test_a_main_run_without_its_final_scoring_blocks_is_refused(tmp_path, fake_reload):
+    """Section 3: the final phase writes the pooled row, the best single fixed choice and (skills) the choice share."""
+    for name, drop in (("a", "best_single_choice"), ("b", "pooled"), ("c", "choice_by_decision")):
+        m = build(_mk(tmp_path / name))
+        path = tmp_path / name / "skills" / "strike" / "results.json"
+        res = json.loads(path.read_text())
+        res.pop(drop)
+        path.write_text(json.dumps(res))
+        assert reader.main(["--manifest", str(m), "--out", str(tmp_path / name / "out")]) == 2, drop
+
+
+# ------------------------------------------------------------------- folders the real drivers wrote (the file contract)
+from test_ste_l3_pool import pooled_runs  # noqa: E402,F401  (module fixture: a velocity Guard and a skills Strike run)
+from test_ste_l3_run0 import tiny_run0  # noqa: E402,F401   (module fixture: the skills pilot and run 0, CPU)
+from test_ste_l3_held_arm import done as held_done  # noqa: E402,F401
+
+
+def test_the_reader_reads_folders_the_drivers_wrote(pooled_runs, tiny_run0, held_done, monkeypatch):  # noqa: F811
+    for side, (g, r) in pooled_runs.items():
+        gates = exploit.load_gates(g)
+        (r / jobs.EXIT_FILE).write_text("0\n")                      # as scripts/ste_job.py writes it
+        why, run = reader.read_main(r, gates, side, f"{side} run")
+        assert why is None and run["n"] == run["results"]["eval_games"]
+        assert set(run["wins"]) == set(reader.opponents_of(gates, side))
+        if side == "strike":
+            assert all(compare.overall_share(e) for e in run["results"]["choice_by_decision"].values())
+    monkeypatch.setattr(exploit, "SKILLS_RUN0_EVAL_GAMES", 8)       # tiny_run0's test-only evaluation size
+    code, g, r0, pilot = tiny_run0
+    gates = exploit.load_gates(g)
+    pilot_gates = exploit.load_gates(pilot.parent.parent / "a" / "gates.toml")
+    for folder in (r0, pilot.parent):
+        (folder / jobs.EXIT_FILE).write_text(f"{code if folder == r0 else 0}\n")
+    assert reader.read_pilot(pilot.parent, pilot_gates, "pilot") is None
+    why, status = reader.read_run0(r0, gates, "run 0")
+    assert why is None and status in ("PASS", "FAIL", "INCONCLUSIVE")
+    assert reader.held_arm({"held_arm": str(held_done)})["word"] == "read"

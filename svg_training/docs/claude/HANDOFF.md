@@ -4,13 +4,36 @@ INTERNAL · the lab's AI-assistant hand-over notes: where the work stands, what 
 
 > **How to use this file.** Read it at the start of a session, after [../../CLAUDE.md](../../CLAUDE.md).
 > §4 is the current state, §5 is what is waiting on people. Update both before you stop.
-> Last updated: 24 November 2026 ~18:20, on the home RTX 5090 (late day: rulings R29–R33, L2.6 and the figure-eight check, L3 slice 2 merged; before: ~13:30 day: rulings R24–R28, AirStack set up, L1.4, L1.5, L2.5 done, L3 note v2; before: ~07:30 night run: L1 reads, L2.1/L2.3/L2.4; before: 23 Nov ~13:30 documentation clean-up), worktree `~/AirStack-starling-max2-dev` on branch `development`.
+> Last updated: 25 November 2026 ~05:00, on the home RTX 5090 (night: L3–L6 pipeline check done, both routes PIPELINE WORKS; before: 24 Nov ~18:20 late day: rulings R29–R33, L2.6 and the figure-eight check, L3 slice 2 merged; before: ~13:30 day: rulings R24–R28, AirStack set up, L1.4, L1.5, L2.5 done, L3 note v2; before: ~07:30 night run: L1 reads, L2.1/L2.3/L2.4; before: 23 Nov ~13:30 documentation clean-up), worktree `~/AirStack-starling-max2-dev` on branch `development`.
 
 ## 0. Resume here (for a new session or another Claude account)
 
 Everything needed is in this folder; nothing depends on the previous chat. Claude's user memory (`~/.claude/…`) and
 the private NUS workspace (`~/ma_skills-self-play/`, 5090 only) do **not** travel with git: if this file and a memory
 note disagree, this file wins.
+
+### 25 November 2026 ~05:00 — RTX 5090 NIGHT: L3–L6 PIPELINE CHECK RUN END TO END, BOTH ROUTES PIPELINE WORKS (read this first)
+
+- **Owner's go (night of 24–25 Nov): "go 1 to 4"** (the L3–L6 pipeline check; the three flaky tests; the L2.6 tier-2
+  clips; status + this entry) **and the 3-D clips of every L5 run; R34** (bug re-runs from the unallocated hours, cap
+  2 GPU-h, announced; a real result never re-run) recorded in DISCUSSION §16.
+- **The pipeline check** ([record](../../records/2026-11-25_ste_l3_l6_pipeline_record.md), T73–T89, INFO, two reviewers):
+  both routes **PIPELINE WORKS** (`runs/2026-11-25_ste_l61_read_r`). 2.291 of 20 GPU-h. Skills run 0 mark re-set by the
+  pre-registered rule from the CPU ceiling (604 → 0.554; oracle check PASS); skills run 0 PASS 644/1000. The skills Strike
+  run's own driver word is INCONCLUSIVE (176 v best script 192 v guard_mark_edge; all controls PASS; a real result, not
+  re-run). Guard: velocity above skills on the pooled row (0.963 v 0.895). Strike: pooled rows level.
+- **Built and merged tonight:** `scripts/ste_l3_run0_ceiling.py --oracle-check`; `scripts/ste_l5_clips3d.py` (3-D clips of a
+  finished L5 run, 68 clips over six runs in `runs/2026-11-25_ste_l5_*/videos3d/`); the reader accepts a pilot that ran
+  before the fill step (`026fc00c`); the suite-flake fix (SIGINT ignored in background-launched suites). Each had one
+  reviewer.
+- **L2.6 tier-2 clips** rendered on the fixed path: both tiers agree game for game; T71's record updated.
+- **R34 use:** 0 GPU-h. Launch errors of ours (CPU only): four CPU jobs launched one folder level too high (re-launched,
+  byte-identical); the full suite's first run tripped on a merge made while it ran (`test_timing` read HEAD twice).
+- **Rules learned:** launch L4.1/L4.2/L6.2 with `--run-dir` equal to the script's `--out` (the reader reads `exit_code`
+  beside the output); never merge into `development` while the full suite or a run is going.
+- **Main track:** L3–L6 pipeline check done · **Side track:** none open.
+- **Waiting on the owner:** the read of the pipeline check (which route(s) next, budget; L7 is the owner's gate); the
+  planned-pushes flight NEAR-962; the Crazyflie commanded gaps. Nothing is running.
 
 ### 24 November 2026 ~18:20 — RTX 5090 DAY, LATE: RULINGS R29–R33, L3 SLICE 2 MERGED, FLIGHT LOGS READ (read this first)
 
@@ -930,6 +953,8 @@ agents and skills for the work. Since then S0, S1 and S2 have been built and run
 
 ## 4. Current state
 
+**25 November 2026 ~05:00:** STE track: L0–L3 done, the L3–L6 pipeline check done (both routes PIPELINE WORKS, T73–T89); the owner's read of it is the next gate. The newest §0 entry is the current state; the table below is older.
+
 **State on 18 November 2026** (details in §0 and the results pages):
 
 | Item | State |
@@ -1027,6 +1052,8 @@ stay out of git; real flights of a contact policy should start with a virtual co
 - The repository holds no Strike vs Guard game code.
 
 ## 5. Open items
+
+**25 November 2026:** the owner's read of the L3–L6 pipeline check (which route(s) next, with what budget; L7 is the owner's gate); NEAR-962; the Crazyflie commanded gaps. Older items below.
 
 ### 5-phase5-2. Branch `nus-phase5-2` (19 Nov 2026): what stage 5.2 still needs
 

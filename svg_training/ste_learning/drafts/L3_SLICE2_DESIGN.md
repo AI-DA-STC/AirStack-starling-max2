@@ -2,7 +2,7 @@ INTERNAL · design addendum for phase L3, slice 2 of the STE learning track: the
 
 # L3 slice 2: team strategy with individual drone skills (design addendum, 24 Nov 2026)
 
-Written 24 Nov 2026 by the builder (`ste-software-engineer`, Opus 5.5; advisor Fable 5.2 consulted before writing), on
+Written 24 Nov 2026 by the builder (`ste-software-engineer`, Opus 5.5; the advisor tool consulted before writing and before hand-back), on
 branch `l3-slice2` cut from `development` at `c9575314`. Line numbers are of that commit. Nothing here changes the
 observation (v0.1, 71 numbers, slice 1 finding 1), the game, the drone model or the velocity route.
 
@@ -61,11 +61,21 @@ tables that `learner_spec` (`skills.py:60-80`, which today refuses unknown keys 
 [learner]
 action = "skills"
 choice = "two_level"
-team_strategies = { strike = ["strike_sacrifice", "strike_converge"], guard = ["guard_parked_ring", "guard_field"] }
-drone_skills = { strike = ["strike_straight", "strike_flank", "strike_high", "strike_low"],
-                 guard = ["guard_parked_centre", "guard_mark_edge", "guard_mirror"] }
-entropy_scale = { team = <set at the gate file>, drone = <set at the gate file> }
+
+[learner.team_strategies]
+strike = ["strike_sacrifice", "strike_converge"]
+guard = ["guard_parked_ring", "guard_field"]
+
+[learner.drone_skills]
+strike = ["strike_straight", "strike_flank", "strike_high", "strike_low"]
+guard = ["guard_parked_centre", "guard_mark_edge", "guard_mirror"]
+
+[learner.entropy_scale]          # values set in the gate file before the run; 0.01 here only so the snippet parses
+team = 0.01
+drone = 0.01
 ```
+
+(Checked with `tomllib.loads`, 24 Nov 2026.)
 
 Checks at load (ValueError, exit 2): every name a player of that team's `[players]` list; the two lists disjoint, their
 union the whole `[players]` list (no player silently dropped); the drone list non-empty; the order inside each list =
@@ -110,8 +120,11 @@ and has one entropy scale (`:447-448`), so it cannot apply masks known only afte
 - `TwoLevelPolicy(Model)` (`opponents/learned.py`, appended so cited lines hold): `act` returns the two samples
   [B, 2], `outputs["head_log_prob"]` [B, 2] and `log_prob` = the masked sum when `inputs["head_mask"]` is given (all
   ones at `act` time); `get_entropy` returns per-head entropies [B, 2].
-- `TwoLevelIPPO(IPPO)` (`ste/`): `init` adds a memory tensor `head_mask` (size 2); `record_transition` takes
-  `infos["head_mask"][:, i]` for slot i and stores the **masked** old log-probability computed from `head_log_prob`;
+- `TwoLevelIPPO(IPPO)` (`ste/`): `init` adds a memory tensor `head_mask` (size 2); an `act` override calls the stock
+  `act` and keeps `outputs[uid]["head_log_prob"]` on the agent (stock `act` keeps only `log_prob`, `ippo.py:254-261`,
+  and `Learner.update` drops the outputs, `exploit_train.py:256`); `record_transition` takes
+  `infos["head_mask"][:, i]` for slot i and stores the **masked** old log-probability computed from that kept
+  `head_log_prob`;
   `update` is a copy of skrl 2.1.0's `IPPO.update` (`ippo.py:368-...`) with two changes: `head_mask` is sampled with the
   batch and passed to `policy.act`, and the entropy term is the one above. It is also the hook slice 3's absent-drone
   mask will use (§4).
@@ -150,7 +163,7 @@ decision elects the next live drone.
 | Skill names saved and checked at load | **2** | `Learner.state()` gains `skills = {team, players order, team_strategies, drone_skills, free_index = 0, choice}`; `load_state` refuses a mismatch. `agent_final.pt` of the skills route becomes `{"skills": meta, "modules": modules}`: an extra top-level key would break the loaders, which sort keys by integer suffix (`exploit_train.py:340,358`). `skill_team_from_modules` checks the meta against the gate file's lists and refuses a changed order or membership. Velocity layout unchanged |
 | Absent-drone mask (v2 list) | **3** | It touches both routes (fair comparison) and the velocity golden, so it lands as one setting, default off with off = bit for bit, in `TwoLevelIPPO.update` and a velocity twin of it, before the pipeline-check run. Until then a tagged slot under "free" still trains on its zeroed observation and the team reward, as the velocity route does today (parity kept). R32 rules no drawn sizes, so absence comes from tags only |
 | Velocity scoring-path equality vs the old tree | **2** | Test 8: a CPU golden of `play_cells` with a fixed velocity team (outcome, end_step, tags), recorded in a child process from the pre-slice-1 commit `8421efdd`, compared with this tree game for game. `ste_score_matrix.py`'s own_replay runs on the current tree only, so it is not this check |
-| Drivers wired | **2** (tier 1 enabled; tier 2 wired, still refused) | `scripts/ste_exploit_l012.py`: `:224` and `:300` refusals lifted for `two_level`; `:312` builds through `exploit_train.decision_env`; controls `:332-343`: for the skills route the untrained twin is the first drone skill's script cell (not `zero`), compared game for game; `agent_final.pt` `:511,972` with the meta; videos `:697` through `skill_team_from_modules`; pilot `:1036` gets a `SkillTeam.untrained` (timing of 6 / 5 scripts per tick). `--run0` and `verdict` keep refusing skills (run 0's known answer is the velocity learner's). Single-head modes "team"/"drone" refused for training (library and tests only). Tier 2: `ste_tier2_l013.py:371` builds through `decision_env`, `:381` and `:465-475` take the skills team and its twin, but `tier2_train.py:138` keeps refusing a skills gate file, its message changed to "until the tier-2 dispatch-equality test". No tier-2 skills run starts before that test (slice 3). `ste_score_matrix.py`, `ste_vid1_capture.py`, `ste_tier2_score_l18.py`, `ste_cross_tag_l012d.py`: still refuse |
+| Drivers wired | **2** for tier 1; **3** for tier 2 (deviation from the brief, see the end) | `scripts/ste_exploit_l012.py`: `:224` and `:300` refusals lifted for `two_level`; `:312` builds through `exploit_train.decision_env`; controls `:332-343`: for the skills route the untrained twin is the first drone skill's script cell (not `zero`), compared game for game; `agent_final.pt` `:511,972` with the meta; videos `:697` through `skill_team_from_modules`; pilot `:1036` gets a `SkillTeam.untrained` (timing of 6 / 5 scripts per tick). `--run0` and `verdict` keep refusing skills (run 0's known answer is the velocity learner's). Single-head modes "team"/"drone" refused for training (library and tests only). Tier 2 is **not** wired in slice 2: `Tier2Gates` (`tier2_train.py:86-97`) carries neither a `[players]` list nor a loaded `[learner]`, so `decision_env` cannot be called there without adding both to the tier-2 gate file. Code behind the refusal at `tier2_train.py:138` would also be reached by no test. Slice 3 does it together with the dispatch-equality test: the gate-file tables, `ste_tier2_l013.py:371` through `decision_env`, `:381` (snapshot team) and `:465-475` (untrained twin). `ste_score_matrix.py`, `ste_vid1_capture.py`, `ste_tier2_score_l18.py`, `ste_cross_tag_l012d.py`: still refuse |
 | Held-command arm | **2** (driver and test; no run) | `HeldPlayer`'s command path (`exploit.py:530-536`) already freezes a script's command for 12 ticks. New: `scripts/ste_l3_held_arm.py` plays every script of both teams held (`play_cells(players=..., hold_ticks=12)`) against every script of the other team on T44's starts, beside the closed-loop reference cells; paired counts per cell. Control: hold 1 = the reference game for game. Its run is part of the pipeline check's budget, not this slice |
 | Export; tier-2 dispatch equality | 3+ | §5 |
 
@@ -183,10 +196,21 @@ decision elects the next live drone.
    the scoring golden against `8421efdd` above.
 9. Driver: `ste_exploit_l012.py` with a `two_level` gate file runs a tiny CPU run end to end (controls including the
    untrained twin, two updates, final batch, `agent_final.pt` with meta, one CPU clip) and refuses run 0, verdict and the
-   single-head modes; the tier-2 loader still refuses with the new message.
+   single-head modes; the tier-2 loader still refuses (`test_ste_l3_refuse.py:73`, unchanged).
 10. Held arm: hold 1 equals the reference cells game for game; hold 12 plays and reports paired counts (small CPU batch).
+11. Training = scoring: the two-level extension of slice 1's `test_ste_l3_skills.py:260`. The same scrambled two-level
+    networks play T44's starts (1) through `decision_env` on a `FixedTrainGame` with skrl's own logits (argmax of each
+    head) and (2) through `play_cells` with `HeldPlayer` + `Learner.team()`. Outcome and end step must be equal in every
+    game. Power checks: the team choice must switch between "free" and a strategy inside some games, and the leader must
+    change after a tag in at least one game.
 
-Training = scoring is tests 3 (both paths, same games) and 9 (the driver's final batch through `HeldPlayer`).
+Test 3 runs the fixed choices through both paths as slice 1's `:171` does. Test 11 is the training = scoring check
+with learned choices.
+
+**Goldens (tests 6-8) follow slice 1's rules** (commits `ef1aee98`, `4bee640b`, `c9575314`): computed in a fresh child
+process at torch's default thread count, with the CPU-capability key of the velocity golden. The `8421efdd` scoring
+golden is a fixture recorded once, by a script run from a temporary worktree of that commit, and committed with its
+recording command; the test never checks out the old tree.
 
 ## 5. Build order, estimate, and what is not in slice 2
 
@@ -197,14 +221,14 @@ Smallest first, each step with its tests before its code:
    are most of it).
 3. Checkpoint meta, `skill_team_from_modules` checks + test 7. About 0.25 day.
 4. Velocity scoring golden against `8421efdd` + test 8 (independent; can go first). About 0.25 day.
-5. `ste_exploit_l012.py` wiring, tier-2 build path, + test 9. About 0.5-0.75 day.
+5. `ste_exploit_l012.py` wiring + test 9. About 0.5-0.75 day.
 6. Held-command arm driver + test 10. About 0.25-0.5 day.
 
 **Estimate: about 3 days** of build and CPU tests, then QC (one reviewer, R22 code build). No GPU. Estimate, not
 measured.
 
 **Not in slice 2:** the export (ONNX logits [B, T+1+K_d], the ordered lists, a `policy_schema` bump, the scripts' sha256;
-v2 B3); the tier-2 dispatch-equality test and so any tier-2 skills run; the absent-drone mask (slice 3); the opponent
+v2 B3); the tier-2 driver wiring, its gate-file tables and the dispatch-equality test (slice 3), so no tier-2 skills run; the absent-drone mask (slice 3); the opponent
 pool of v2 A3 (both routes, one script drawn per game; slice 3, see below); the scoring controls rows (uniform-random,
 best single skill, oracle per cell) and the score-matrix and clip drivers for skills; the attention encoder and shared
 actor; observation v0.3 (landing is off in the pipeline check, R32); any training run.
@@ -213,9 +237,10 @@ actor; observation v0.3 (landing is off in the pipeline check, R32); any trainin
 
 1. **mark_edge and mirror:** list A (drone skills, proposed) or list B? Under B the Guard team has no individual skill
    to choose (one-skill drone head).
-2. **Tier 2 in slice 2:** this note wires the tier-2 build path but keeps tier-2 skills runs refused until the
-   dispatch-equality test (slice 3). The brief named tier 2 among the drivers to wire; enabling it before that test
-   would allow an unverified run.
+2. **Tier 2 moved to slice 3 (a deviation from the brief, which named it among the drivers to wire):** `Tier2Gates`
+   has no `[players]` or `[learner]`, wiring it needs new tier-2 gate-file tables, and a wired path behind the refusal
+   would be tested by nothing. In slice 3 it lands with the dispatch-equality test. Accept, or wire it in slice 2 with
+   an extra test?
 3. **Absent-drone mask:** slice 3 before the pipeline-check run (proposed), or, since R32 rules out drawn sizes, after
    the pipeline check?
 4. **Opponent pool (v2 A3)** is not in QC's list or this brief, but both routes need it before the pipeline-check run:

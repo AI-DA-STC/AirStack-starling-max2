@@ -1,0 +1,273 @@
+# STE task L2.5 Parked-Guard control and scripted opponents under the new rules: the SCRIPTED 3v3 SCREEN (INFO; CPU,
+# scoring only). The gate file, written before any run (STANDARDS section 7; ste_learning/VALIDATION_QC.md section 0), in
+# the format of configs/ste_l011/gates.toml (driver scripts/ste_sweep_l011.py, logic ste/sweep.py). Spec, pre-registered
+# before any run, with the reading words: ste_learning/drafts/L2_5_SPEC.md. Edit it only BEFORE the screen's first
+# launch; never after a result.
+#
+# Why (WORK_BREAKDOWN L2.5; DISCUSSION section 2.14 "a large radius favours a parked Guard - gate against it"): does the
+# 1.6 m one-for-one tag favour a Guard team that stands still, once the new rules of L2.1 and L2.3 are on, and how do
+# landing (L2.3) and filter option B (L2.1, P2 OPEN) change what the scripted players do? The owner's P2 and P7 rulings
+# read this record.
+#
+# What it measures: the main game (3v3, tag 1.6 m one for one, zone 1.6 m, 6.5 m lab arena), every scripted Guard against
+# every scripted Strike, 1,000 games per cell, on T44's own 1,000 starts (LOADED from the reference file, never re-drawn,
+# as L0.12b), in four rule sets, one change at a time from T44's game:
+#   ctl_reference_replay  base: landing off, even split (T44's game; its 30 cells must replay T44 game for game: CPU)
+#   landing               landing on, even split
+#   gy                    landing off, option B (guard_yields)
+#   landing_gy            landing on, option B (the new rules with option B)
+# and the PARKED-GUARD CONTROL without the tag: the two parked Guard scripts against every Strike script with the tag
+# off (ctl_tag_off_landing, ctl_tag_off_landing_gy: each is its tag-on group's game but for tag.mode; known answer zero
+# tags; their cells are the INFO "no tag" references). At 3v3 guard_parked_centre holds its start (zero command: the
+# Guard team that stands still); guard_parked_ring flies to a ring station and stops. Feint and dodge Strike scripts do
+# not exist (opponents/scripted.py); they are not built for this screen (spec).
+# Landing changes nothing with the tag off here: no drop-outs, walls keep drones in, so no drone ever leaves.
+#
+# Device and time (the brief: "on the CPU", 0 GPU-h): device "cpu", a CPU job (scripts/ste_job.py launch --gpu-h 0);
+# --cap-h is the effective-hour cap of the job (4.5). Projection rate MEASURED on the RTX 5090 workstation's CPU, 24 Nov
+# 2026 (a session scratch script, not committed; game l25_landing_gy, 30 cells x 1,000 games, ticks 5-105, nice 19,
+# machine load 2-10, the AirStack simulator idle or recording): 0.610 s per batch tick on 2 threads, 0.355 s on 8 threads
+# (base.toml 0.531 s on 2 threads); 12,000 games 0.252 s on 2 threads. 0.7 s below = the 2-thread figure rounded up, so
+# the projection holds at any thread count of 2 or more. WORST CASE (every batch to its tick cap): 12 batches,
+# 5 x 2,400 (the 30-cell batches) + 2 x 2,400 (tag off) + 600 + 600 + 200 + 200 + 100 = 18,500 batch ticks x 0.7 x 1.1
+# + the 600 s clip reserve = 14,845 s = 4.12 h <= 4.5 h. EXPECTED much less (spec): T44's 3v3 tag-on batches ended in
+# 400-500 ticks; about 140 M game-ticks in all, about 27 min on 8 threads, about 48 min on 2 threads. The two zero-answer
+# controls with still or blocked play (ctl_stand_still, ctl_tiny_tag) are capped at 600 ticks (30 s; T44's 3v3 tag-on
+# games all ended by 11 s at the 90th percentile), a change from L1.9 to keep the screen near 30 min.
+# No GPU-hours.
+#
+# Run notes (LEAD CALL 21 Nov 2026, carried from L0.11): never suspend the machine during a job. The CPU is shared with
+# the AirStack simulator on this machine: launch when it is not recording, or with OMP_NUM_THREADS set (spec).
+# Simulator: training simulator, tier 1 (fast engine), Starling layer on: commander copy, safety filter on every pair
+# (1000 sweeps, check every 8), fitted PX4 response (exploratory); study tag on (P1, ruled at G0). Results are
+# "observed in the training simulator".
+
+[run]
+task = "L2.5"
+kind = "INFO"
+seed = 110000                      # T44's game seed (players seed + 101 / + 202, as T44); the starts are T44's, loaded
+games_per_cell = 1000              # VALIDATION_QC section 0 rule 2: at least 1,000 games per condition; T44's 1,000 starts
+cells_per_batch = 30               # T44's batch size: every 30-cell group in one batch, as T44 played it
+ticks_cap = 2400                   # = the game length (120 s of 0.05 s ticks): no game is cut short
+device = "cpu"                     # the brief: the screen on the CPU (no GPU-hours)
+cap_check_every_ticks = 100        # the cap clock (it reads the pause logs) is read every this many ticks; the stop flag every tick
+require_projection = true          # QC I3: refuse (exit 2) unless [projection.seconds_per_batch_tick] holds every planned size
+tag_edge_margin_m = 0.01           # L0.12b's unchosen-tag measurement: "at the filter edge" = pair distance <= 1.10 + 0.01 m
+
+[reference]
+# T44's starts and per-game results (the L0.12 reference file, pinned there and in configs/ste_l012b/screen_gates.toml
+# with these values). Every group plays from its first games_per_cell starts; group ctl_reference_replay replays the base
+# cells and must match them game for game on the CPU (the CUDA tolerances are not read on the CPU).
+file = "configs/ste_l012/t44_reference.npz"
+sha256 = "4bc5e011071adced368b2a0025fc47499839e0bbc8d8d650207bd12c3da0f8b5"
+start_sha256 = "5aeba7ab2b582f2973034c8203c17ed3e8239fef7029a1f991fe95b82369843c"   # T44's 3v3 start set
+variant = "base"
+count_tol_cuda_games = 10
+differ_tol_cuda_games = 20
+
+[players]
+# Every Guard script against every Strike script (T44's eleven). No feint or dodge script exists (spec: not built).
+guards = ["guard_parked_centre", "guard_parked_ring", "guard_mark_edge", "guard_mirror", "guard_field"]
+strikes = ["strike_straight", "strike_flank", "strike_high", "strike_low", "strike_sacrifice", "strike_converge"]
+one_strike_duplicates = ["strike_sacrifice", "strike_converge"]   # not used: every group here has 3 Strike drones
+z_up_info = ["strike_high", "strike_low"]
+z_up_label = "tier 1 vertical response not fitted (s2b.toml z_up_info)"
+multi_guard_labels = { guard_parked_centre = "parked (holds starts; = still at 2+ Guards)" }
+
+[games]
+# The game files and their sha256 (tests/test_ste_l25.py keeps these equal to the files). base and zone_2p4_tag_off are
+# the files T44 played; every l25_ file is base.toml value for value but for the keys its header marks.
+base = { file = "configs/ste_l011/base.toml", sha256 = "96e0e7f61a49999da54eee81a544bf64c519cd80833f0dcdfa2a07edfc10cc4d" }
+zone_2p4_tag_off = { file = "configs/ste_l011/zone_2p4_tag_off.toml", sha256 = "86613ffd577fa58f56d865d5527d145a181cfa55335a227d583f83933c60ccd7" }
+l25_landing = { file = "configs/ste_l2/l25_landing.toml", sha256 = "f0322c258ebdb1309aaef662e63227d903ec666b5fbced68ec144530dae8e30c" }
+l25_gy = { file = "configs/ste_l2/l25_gy.toml", sha256 = "722be4adf3efef66c1ccf4dab2295105dae3d868ae5d882caf4cf844529bb79e" }
+l25_landing_gy = { file = "configs/ste_l2/l25_landing_gy.toml", sha256 = "c4463c247b59c19695269c0b60325ea288858b4f67f21c41cb39183669a0d83f" }
+l25_landing_tag_off = { file = "configs/ste_l2/l25_landing_tag_off.toml", sha256 = "990b2247872739816339979c15bf9aacbeeb7503cdb7236bd9323080d71b7afe" }
+l25_landing_gy_tag_off = { file = "configs/ste_l2/l25_landing_gy_tag_off.toml", sha256 = "494d0b4e8514fc72e6e6034a69f183f8ab25a163eb270f0cb262e4d17c07103b" }
+l25_landing_gy_tag_10m = { file = "configs/ste_l2/l25_landing_gy_tag_10m.toml", sha256 = "670b3f28698d479152ed56c78bbcd9645c431ba8b9b62d7f9a7331c2bd5184d6" }
+l25_landing_gy_tag_0p05 = { file = "configs/ste_l2/l25_landing_gy_tag_0p05.toml", sha256 = "db8dfd50a8ae589858ab5ee43071597dd9eaba596a9e03c5f2ddf8cfde476cf4" }
+
+[confounds]
+# The format's required keys. Only the 3v3 6.5 m start setting is played here (every group loads T44's starts).
+ring_outside_zone_m = 0.3
+zone_2p4 = "not screened here; the zone 2.4 m game file is used only by the reach_fires control (tag off)"
+arena_7p5 = "not screened here"
+height_offset_cell = "not screened here (no strike_start_dz_m group: the loaded starts are T44's as they were)"
+
+# ------------------------------------------------------------------------------------------------ groups, in run order
+# The known-non-zero controls first (cheap), then the reference replay (the engine and the loaded starts reproduce T44
+# before any new-rules number is read), then the three new-rules groups, then the parked Guards without the tag, then the
+# known-zero controls on the new-rules game (landing + option B). Every group is protected: none is cut.
+
+[[groups]]
+name = "ctl_tag_fires_3v3"
+role = "control"
+control = "tag_fires"
+game = "l25_landing_gy_tag_10m"
+size = "3v3"
+guards = ["zero"]
+strikes = ["zero"]
+ticks = 100
+
+[[groups]]
+name = "ctl_reach_fires_3v3"
+role = "control"
+control = "reach_fires"
+game = "zone_2p4_tag_off"
+size = "3v3"
+guards = ["zero"]
+strikes = ["strike_straight"]
+ticks = 200
+
+# ctl_reference_replay (POSITIVE, known answer T44): the 30 base cells on T44's starts replay T44's base cells game for
+# game. Its cells are also the INFO "base rules" reference ([shortlist] info_reference): the previous state.
+[[groups]]
+name = "ctl_reference_replay"
+role = "control"
+control = "reference_replay"
+game = "base"
+size = "3v3"
+guards = "all"
+strikes = "all"
+
+[[groups]]
+name = "landing"
+role = "sweep"
+factor = "new rules"
+level = "landing on (L2.3), even split: the 1.6 m tag with tagged drones landing as filter obstacles"
+game = "l25_landing"
+size = "3v3"
+guards = "all"
+strikes = "all"
+
+[[groups]]
+name = "gy"
+role = "sweep"
+factor = "new rules"
+level = "option B alone (L2.1 guard_yields, PROPOSED, P2 open), landing off"
+game = "l25_gy"
+size = "3v3"
+guards = "all"
+strikes = "all"
+
+[[groups]]
+name = "landing_gy"
+role = "sweep"
+factor = "new rules"
+level = "landing on and option B (L2.3 + L2.1 guard_yields, PROPOSED, P2 open)"
+game = "l25_landing_gy"
+size = "3v3"
+guards = "all"
+strikes = "all"
+
+# The parked-Guard control without the tag: known answer zero tags; the cells are the INFO "no tag" references of the
+# landing and landing_gy groups (same game but for tag.mode).
+[[groups]]
+name = "ctl_tag_off_landing"
+role = "control"
+control = "zero_tags"
+game = "l25_landing_tag_off"
+size = "3v3"
+guards = ["guard_parked_centre", "guard_parked_ring"]
+strikes = "all"
+
+[[groups]]
+name = "ctl_tag_off_landing_gy"
+role = "control"
+control = "zero_tags"
+game = "l25_landing_gy_tag_off"
+size = "3v3"
+guards = ["guard_parked_centre", "guard_parked_ring"]
+strikes = "all"
+
+[[groups]]
+name = "ctl_same_seed"
+role = "control"
+control = "same_seed_twice"
+of_group = "landing_gy"
+of_batch = 0
+
+[[groups]]
+name = "ctl_stand_still"
+role = "control"
+control = "stand_still_never_reaches"
+game = "l25_landing_gy"
+size = "3v3"
+guards = "all"
+strikes = ["zero"]
+ticks = 600
+
+[[groups]]
+name = "ctl_still_3v3"
+role = "control"
+control = "stand_still_zero_tags"
+game = "l25_landing_gy"
+size = "3v3"
+guards = ["zero"]
+strikes = ["zero"]
+ticks = 200
+
+[[groups]]
+name = "ctl_tiny_tag"
+role = "control"
+control = "zero_tags"
+game = "l25_landing_gy_tag_0p05"
+size = "3v3"
+guards = "all"
+strikes = ["strike_straight"]
+ticks = 600
+
+# ------------------------------------------------------------------------------------------------ the cut
+[cut]
+protected = ["ctl_tag_fires_3v3", "ctl_reach_fires_3v3", "ctl_reference_replay", "landing", "gy", "landing_gy",
+             "ctl_tag_off_landing", "ctl_tag_off_landing_gy", "ctl_same_seed", "ctl_stand_still", "ctl_still_3v3",
+             "ctl_tiny_tag"]
+safety_factor = 1.1
+
+[projection.seconds_per_batch_tick]
+"3v3" = 0.7                        # CPU, the measured 2-thread 0.610 s rounded up (header); the driver re-times from this run's sweep batches
+
+# ------------------------------------------------------------------------------------------------ the controls
+[controls]
+# As configs/ste_l012b/screen_gates.toml [controls] (known answers; a failure stops the run: exit 6 CONTROL_FAILED,
+# terminal). The known-zero controls and the tag-fires control play the new-rules game (landing + option B).
+stop_on_fail = true
+same_seed_closest_tol_m = 1e-6     # not read on the CPU (the same-seed control is exact there)
+global_checks = ["tags_one_for_one", "paired_starts", "no_nonfinite_actions"]
+
+# ------------------------------------------------------------------------------------------------ g* and s*
+[shortlist]
+# Nothing is chosen here: the rule only computes H, R, d, g* and s* per group (configs/ste_l011/gates.toml [shortlist]),
+# for every new-rules group and, as INFO references, for the base cells and the two no-tag groups. The reading words
+# (parked Guard against the moving scripts, with and without the tag, option B on and off) are in the spec.
+always = ["landing", "gy", "landing_gy"]
+info_reference = { ctl_reference_replay = "base rules (T44's game, replayed)", ctl_tag_off_landing = "no tag, landing on, even split", ctl_tag_off_landing_gy = "no tag, landing on, option B" }
+candidates = ["landing", "gy", "landing_gy"]
+report_only = []
+max_variants = 3
+trivial_at = 0.8
+tie_window_games = 50
+tie_breaks = ["lab_arena_first", "larger_zone_tag_margin", "lower_guard_survives", "run_order"]
+
+# ------------------------------------------------------------------------------------------------ videos (STANDARDS section 8)
+[clips]
+# Three replay clips of the new-rules game (landing + option B), chosen before the run: the Guard team that stands still
+# and two moving Guard scripts (CPU, own starts from the clip seed, small GIFs into <run>/videos/).
+cells = [["guard_parked_centre", "strike_straight"], ["guard_mark_edge", "strike_straight"], ["guard_field", "strike_flank"]]
+group = "landing_gy"
+games = 2
+seed = 110000
+max_ticks = 2400
+speed = 8                          # game steps per drawn frame: at 10 frames/s, 4 x real time
+fps = 10
+dpi = 50
+reserve_s = 600
+
+# ------------------------------------------------------------------------------------------------ the pilot (not run)
+[pilot]
+# Required by the format; this screen has no pilot (the CPU rate above is used; --pilot needs a group named "base").
+sizes = ["3v3"]
+cells_per_batch = [30]
+ticks = 200
+warmup_ticks = 20
+guard_order = ["guard_mark_edge", "guard_mirror", "guard_field", "guard_parked_ring", "guard_parked_centre"]

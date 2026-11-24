@@ -92,6 +92,11 @@ def trained_main(a, settings: dict) -> int:
                 say(f"refused: {p} missing")
                 return 2
         gates = exploit.load_gates(rd / "gates.toml")
+        try:
+            exploit.skills.require_velocity_learner(gates, "scripts/ste_vid1_capture.py")   # STE L3: not wired yet
+        except ValueError as err:
+            say(f"refused: {name}: {err}")
+            return 2
         if gates.sha256 != tg["gates_sha256"]:
             say(f"refused: {name}: gate file sha256 {gates.sha256}, the settings pin {tg['gates_sha256']}")
             return 2

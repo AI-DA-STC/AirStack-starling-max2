@@ -8,6 +8,8 @@ lists in that order). What flies is the chosen skill's own command.
 * :func:`learner_spec`: the one config switch, ``[learner] action = "velocity" | "skills"`` (absent: "velocity", today's
   learner unchanged), and for the skills route ``choice = "team" | "drone"``.
 * :class:`SkillDispatch`: runs all K skills on the batch every tick and gathers the chosen one per drone.
+* :func:`require_velocity_learner`: what every driver that builds a ``DecisionEnv`` or a team directly calls on its gate
+  file, so that a skills gate file is refused (exit 2) until that driver is wired, never trained as velocity silently.
 
 **Hold rule (v2, A1 / B1).** A choice is made every decision (12 ticks = 0.6 s); the chosen skill runs closed loop every
 tick in between (it reads the current observation and decides every 0.05 s, as a script does). Training
@@ -16,8 +18,9 @@ both go through :meth:`SkillDispatch.act`.
 
 **Choice modes.** ``drone``: each drone flies the skill its own network chose. ``team``: one choice for the whole team,
 every skill as written. With today's one network per drone slot (v2 correction 2) v2 does not say whose choice is the
-team's; built here (lead to rule): the choice of the lowest-index live drone at the decision tick, held for the decision
-(not slot 0 always: a tagged drone's observation is zeroed, so it would choose blind). The other slots' networks still
+team's; built here (lead's call, 24 Nov 2026): the choice of the lowest-index LIVE drone at the decision tick, held for the
+decision. If slot 0 is tagged, the next live slot leads; a tagged slot never leads (its observation is zeroed, so it
+would choose blind), except in a game with no live drone of the team, which has ended and is restarted. The other slots' networks still
 sample, and their actions are ignored by the game; skrl trains each on its own log-probability, so the update stays
 valid PPO with a noisier signal for those slots.
 
@@ -75,6 +78,22 @@ def learner_spec(table: dict | None) -> LearnerSpec:
     if choice not in CHOICES:
         raise ValueError(f"[learner] action = \"skills\" needs choice one of {CHOICES}, got {choice!r}")
     return LearnerSpec(SKILLS, choice)
+
+
+class LearnerNotWired(ValueError):
+    """A gate file asks for the skills route in a driver that only knows the velocity route (STE L3 first slice)."""
+
+
+def require_velocity_learner(gates, who: str) -> None:
+    """Refuse (:class:`LearnerNotWired`, a ValueError: the drivers' refusal path, exit 2) a gate file whose
+    ``[learner] action = "skills"``: ``who`` (the driver) builds a ``DecisionEnv`` or a velocity team directly and is not
+    wired to the skills route yet. ``gates``: a loaded gate file (its ``learner``; absent = the velocity route) or a
+    :class:`LearnerSpec`."""
+    spec = gates if isinstance(gates, LearnerSpec) else getattr(gates, "learner", None)
+    if spec is not None and spec.skills:
+        raise LearnerNotWired(f"[learner] action = \"skills\" (choice {spec.choice!r}) is not wired into {who} yet "
+                              f"(STE L3 first slice: only the velocity route runs there); refused, nothing trained or "
+                              f"played")
 
 
 def team_skills(players: dict, team: str) -> list[str]:

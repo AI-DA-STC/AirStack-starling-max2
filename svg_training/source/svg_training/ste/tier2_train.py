@@ -130,9 +130,13 @@ def load_gates(path: str | Path = GATES_FILE) -> Tier2Gates:
     path = Path(path)
     raw = path.read_bytes()
     data = tomllib.loads(raw.decode())
-    unknown = sorted(set(data) - set(_SECTIONS))
+    unknown = sorted(set(data) - set(_SECTIONS) - {"learner"})
     if unknown:
         raise ValueError(f"unknown section(s) in {path.name}: {unknown}")
+    # STE L3: an optional [learner] table; the skills route is not wired into tier 2 training yet, so it is refused here
+    # (velocity, or no table: as before)
+    exploit.skills.require_velocity_learner(exploit.skills.learner_spec(data.get("learner")),
+                                            "ste/tier2_train.py (scripts/ste_tier2_l013.py)")
     parts = {name: _exact(data.get(name), keys, name) for name, keys in _SECTIONS.items()}
     arms = parts["arms"]
     if list(arms["order"]) != list(ARMS):

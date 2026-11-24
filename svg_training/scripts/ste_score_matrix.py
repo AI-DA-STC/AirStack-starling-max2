@@ -212,6 +212,7 @@ def check_inputs(a: argparse.Namespace, s: dict):
             return None, why
     try:
         pg_gates = exploit.load_gates(pdir / "gates.toml")
+        exploit.skills.require_velocity_learner(pg_gates, "scripts/ste_score_matrix.py")   # STE L3: not wired yet
     except (OSError, ValueError) as err:
         return None, f"the player's gate file: {err}"
     variant, side = p["variant"], p["side"]

@@ -79,6 +79,9 @@ _KEYS = {
 }
 
 
+WHO = "scripts/ste_tier2_score_l18.py"         # named in a refusal of a skills gate file (STE L3)
+
+
 def say(text: str) -> None:
     print(f"[l18] {text}", flush=True)
 
@@ -183,6 +186,7 @@ def layout(s: dict) -> SimpleNamespace:
     player, the script cells, the repeat cells; with the index of each kind."""
     from svg_training.ste import exploit
     gates = exploit.load_gates(_path(s["guard_player"]["dir"]) / "gates.toml")
+    exploit.skills.require_velocity_learner(gates, WHO)                  # STE L3: the skills route is not wired here
     guards, strikes = list(gates.players["guards"]), list(gates.players["strikes"])
     scripts = [tuple(c) for c in s["cells"]["scripts"]]
     repeat = [tuple(c) for c in s["cells"]["repeat"]]
@@ -304,6 +308,9 @@ class Context:
 
         from svg_training.ste import exploit, exploit_train, sweep
         self.s, self.a, self.device, self.np, self.exploit = s, a, device, np, exploit
+        for side in ("guard", "strike"):      # STE L3: a skills player is refused before anything else is read
+            exploit.skills.require_velocity_learner(exploit.load_gates(_path(s[f"{side}_player"]["dir"]) / "gates.toml"),
+                                                    WHO)
         self.n = int(a.games or s["job"]["games"])
         self.ticks = int(a.max_ticks or s["job"]["ticks_cap"])
         self.lay = layout(s)

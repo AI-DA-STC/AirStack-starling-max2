@@ -201,6 +201,8 @@ def check_inputs(a: argparse.Namespace, s: dict):
                 return None, why
     try:
         t46 = exploit.load_gates(dirs["guard"] / "gates.toml")
+        for rd in dirs.values():              # STE L3: a skills network is refused (not wired here yet)
+            exploit.skills.require_velocity_learner(exploit.load_gates(rd / "gates.toml"), "scripts/ste_cross_tag_l012d.py")
         screen_file = ROOT / s["screen"]["gates"]
         why = _sha_problem(screen_file, s["screen"]["gates_sha256"], "the L0.12b gate file")
         if why:

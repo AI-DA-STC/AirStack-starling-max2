@@ -68,6 +68,9 @@ def test_the_folder_holds_one_onnx_per_slot_and_the_interface(exported):
         props = {p.key: p.value for p in m.metadata_props}
         assert props["status"] == export.STATUS and props["policy_schema"] == meta["policy_schema"]
     assert len(meta["golden"]) == 8
+    cfg = exploit.variant_cfg(gates, "base")
+    assert meta["team_speed_mps"] == cfg.team_speed_mps(side) and meta["yaw_rate_max_rad_s"] == cfg.yaw_rate_max_rad_s
+    assert "zone centre 69-70" in meta["obs_layout"] and "13-68" in meta["obs_layout"]   # ObsView, interface v0.1
     if route == "skills":
         assert meta["skills"]["team_strategies"] == list(gates.learner.team_strategies[side])
         assert meta["skills"]["free_index"] == 0 and meta["scripted_sha256"]

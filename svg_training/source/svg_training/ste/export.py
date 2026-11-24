@@ -148,10 +148,15 @@ def _interface(gates, side: str, route: str, files: list, golden: list, d) -> st
              'a flight.',
              f'policy_schema = "{SCHEMAS[route]}"', f'status = "{STATUS}"',
              f'interface_version = "{INTERFACE_VERSION}"', f"obs_dim = {OBS_DIM}",
-             'obs_layout = "own position 3, own velocity 3, sin/cos yaw 2, zone radius, arena half, time left, team, '
-             'alive, 8 slots x 7 (rel position 3, rel velocity 3, present 1; Guard slots first), zone centre 2"',
-             'frames = "positions relative to the zone centre, world ENU; slots relative to the own drone"',
-             ('action = "vx, vy, vz, yaw rate in [-1, 1]; velocity part capped at length 1 then times the team speed"'
+             f'obs_layout = "{_obs_layout(cfg)}"',
+             'frames = "own x, y relative to the zone centre, own z the world height (m); own velocity world (m/s); '
+             'yaw world (rad, sin and cos); slot k: the other drone minus this one in world axes (position m, velocity '
+             'm/s), all zeros when that drone is out or padding; zone centre relative to the arena centre (m); a drone '
+             'that is out sees zeros except team"',
+             f"team_speed_mps = {float(cfg.team_speed_mps(side))!r}",
+             f"yaw_rate_max_rad_s = {float(cfg.yaw_rate_max_rad_s)!r}",
+             ('action = "vx, vy, vz, yaw rate, clamped to [-1, 1] (non-finite: zero); the velocity part divided by '
+              'max(its length, 1) times team_speed_mps; the yaw rate times yaw_rate_max_rad_s"'
               if route == "velocity" else
               'action = "logits over [free, team strategies] then [drone skills]; the leader\'s team head, else each '
               'drone\'s drone skill (skills below)"'),
@@ -175,6 +180,22 @@ def _interface(gates, side: str, route: str, files: list, golden: list, d) -> st
     for row in golden:
         lines += ["", "[[golden]]"] + [f"{k} = {_arr(v) if isinstance(v, list) else v}" for k, v in row.items()]
     return "\n".join(lines) + "\n"
+
+
+def _obs_layout(cfg) -> str:
+    """The observation's index layout, from ``core.observations.ObsView`` (interface v0.1)."""
+    from ..core.observations import SLOT, ObsView
+
+    def span(s) -> str:
+        return f"{s.start}-{s.stop - 1}"
+    slots = cfg.pad_guards + cfg.pad_strikes
+    last = ObsView.SLOTS_FROM + SLOT * slots - 1
+    return (f"own position {span(ObsView.own_pos)}, own velocity {span(ObsView.own_vel)}, sin and cos of yaw "
+            f"{span(ObsView.sin_cos_yaw)}, zone radius {ObsView.zone_radius}, arena half width {ObsView.arena_half}, "
+            f"time left (s) {ObsView.time_left}, team {ObsView.team} (-1 Guard, +1 Strike), alive {ObsView.alive}, "
+            f"{slots} slots of {SLOT} at {ObsView.SLOTS_FROM}-{last} (Guard drones first, padded to {cfg.pad_guards}, "
+            f"then Strike drones, padded to {cfg.pad_strikes}; each relative position 3, relative velocity 3, present "
+            f"1), zone centre {span(ObsView.zone_centre)}")
 
 
 def _arr(v) -> str:

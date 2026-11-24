@@ -134,6 +134,9 @@ are not part of a route's word; they are separate reads, below. The words:
   reload with its golden rows. The stage and the first failing control are named.
 
 **The separate reads:**
+- **Not given:** a separate read (attribution, held arm) that no folder was named for reads **not given**, a fact,
+  not a result. The cells against `strike_high` and `strike_low` carry the label "vertical response not fitted in
+  tier 1" wherever they are shown.
 - **Attribution (L5.3, L5.4):** pool + mask against pool only, Guard side. Read with the paired words below. A
   pool-only run (or L5.4's pilot) that fails or crashes reads **ATTRIBUTION NOT READ at <stage>**; the route's word does
   not change.

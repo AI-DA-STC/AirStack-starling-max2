@@ -179,14 +179,19 @@ def build(tmp, run0=("PASS", "PASS"), strike=(True, True), suite="PASS", poolonl
             if route == "skills":
                 e["poolonly_pilot"] = make_pilot(r / "poolonly_pilot", "skills_poolonly")
         m[route] = {k: str(v) for k, v in e.items()}
-    if suite is not None:
-        write(tmp / "suite.json", {"complete": True, "status": suite, "games": GATES["velocity"].run["eval_games"],
-                                   "gates_sha256": {r: GATES[r].sha256 for r in ("velocity", "skills")}})
-        m["suite_check"] = str(tmp / "suite.json")
-    if held is not None:
+    if suite is not None:                       # scripts/ste_l4_suite.py's file and ste_job.py's exit_code
+        checks = {r: {s: {"ctl_best_single_choice": {"status": suite}} for s in ("guard", "strike")}
+                  for r in ("velocity", "skills")}
+        write(tmp / "suite" / "suite_check.json",
+              {"complete": True, "status": suite, "games": GATES["velocity"].run["eval_games"], "checks": checks,
+               "gates_sha256": {r: GATES[r].sha256 for r in ("velocity", "skills")}})
+        (tmp / "suite" / jobs.EXIT_FILE).write_text("0\n" if suite == "PASS" else "6\n")
+        m["suite_check"] = str(tmp / "suite" / "suite_check.json")
+    if held is not None:                        # scripts/ste_l3_held_arm.py: exit 6 when its control failed
         write(tmp / "held" / "controls.json", {"ctl_hold_one_is_reference": {"status": held}})
         if held == "PASS":
             write(tmp / "held" / "results.json", {"complete": True})
+        (tmp / "held" / jobs.EXIT_FILE).write_text("0\n" if held == "PASS" else "6\n")
         m["held_arm"] = str(tmp / "held")
     for key, value in over.items():
         route, k = key.split("__")
@@ -234,6 +239,12 @@ def test_every_task_done_reads_pipeline_works_and_the_comparison_is_written(tmp_
     text = (tmp_path / "out" / "read.md").read_text() + json.dumps(out)
     assert "these two trained policies" in text and "no held-out opponent" in text
     assert "the route" not in text.lower()
+    z = {c["opponent"]: c for c in out["comparison"]["guard"]["paired_cells"]}
+    assert z["strike_high"]["label"] == z["strike_low"]["label"] == "vertical response not fitted in tier 1"
+    assert "label" not in z["strike_straight"]
+    zc = out["comparison"]["guard"]["policies"]["velocity"]["headline"]["z_up_info_cells"]
+    assert zc["strike_high"]["label"] == "vertical response not fitted in tier 1"
+    assert "strike_high (vertical response not fitted in tier 1)" in (tmp_path / "out" / "read.md").read_text()
     assert "observed in the training simulator" in text
 
 
@@ -309,9 +320,9 @@ def test_the_comparison_is_not_read_without_a_passing_scoring_suite_check(tmp_pa
 @pytest.mark.parametrize("key,value", [("games", 3), ("gates_sha256", {"velocity": "0" * 64, "skills": "0" * 64})])
 def test_a_suite_check_on_fewer_games_or_other_gate_files_is_refused(tmp_path, fake_reload, key, value):
     m = build(tmp_path)
-    s = json.loads((tmp_path / "suite.json").read_text())
+    s = json.loads((tmp_path / "suite" / "suite_check.json").read_text())
     s[key] = value
-    (tmp_path / "suite.json").write_text(json.dumps(s))
+    (tmp_path / "suite" / "suite_check.json").write_text(json.dumps(s))
     assert reader.main(["--manifest", str(m), "--out", str(tmp_path / "out")]) == 2
 
 
@@ -444,4 +455,47 @@ def test_the_reader_reads_folders_the_drivers_wrote(pooled_runs, tiny_run0, held
     assert reader.read_pilot(pilot.parent, pilot_gates, "pilot") is None
     why, status = reader.read_run0(r0, gates, "run 0")
     assert why is None and status in ("PASS", "FAIL", "INCONCLUSIVE")
+    (held_done / jobs.EXIT_FILE).write_text("0\n")
     assert reader.held_arm({"held_arm": str(held_done)})["word"] == "read"
+
+
+# ------------------------------------------------------------------------------------- QC round (S2, NITs)
+def test_a_partial_suite_or_one_without_its_exit_code_is_refused(tmp_path, fake_reload):
+    m = build(_mk(tmp_path / "a"))
+    path = tmp_path / "a" / "suite" / "suite_check.json"
+    s = json.loads(path.read_text())
+    del s["checks"]["skills"]["strike"]                                  # three of the 2 x 2 entries
+    path.write_text(json.dumps(s))
+    assert reader.main(["--manifest", str(m), "--out", str(tmp_path / "a" / "out")]) == 2
+    m = build(_mk(tmp_path / "b"))
+    (tmp_path / "b" / "suite" / jobs.EXIT_FILE).unlink()
+    assert reader.main(["--manifest", str(m), "--out", str(tmp_path / "b" / "out")]) == 2
+    m = build(_mk(tmp_path / "c"))
+    (tmp_path / "c" / "suite" / jobs.EXIT_FILE).write_text("6\n")       # exit 6 with a PASS file: inconsistent
+    assert reader.main(["--manifest", str(m), "--out", str(tmp_path / "c" / "out")]) == 2
+
+
+def test_the_held_arm_reads_its_exit_code(tmp_path, fake_reload):
+    m = build(_mk(tmp_path / "a"))
+    (tmp_path / "a" / "held" / jobs.EXIT_FILE).unlink()
+    assert reader.main(["--manifest", str(m), "--out", str(tmp_path / "a" / "out")]) == 2
+    m = build(_mk(tmp_path / "b"))
+    (tmp_path / "b" / "held" / jobs.EXIT_FILE).write_text("1\n")       # crashed: no word for it
+    assert reader.main(["--manifest", str(m), "--out", str(tmp_path / "b" / "out")]) == 2
+
+
+def test_a_missing_runtime_is_an_environment_refusal_not_a_failed_export(tmp_path, monkeypatch):
+    fake = tmp_path / "fake"
+    (fake / "onnxruntime").mkdir(parents=True)
+    (fake / "onnxruntime" / "__init__.py").write_text("raise ImportError('No module named onnxruntime (test)')\n")
+    monkeypatch.setenv("PYTHONPATH", str(fake))
+    with pytest.raises(reader.Refused, match="environment"):
+        reader.reload_in_a_fresh_process(tmp_path)
+
+
+def test_unparseable_reload_output_is_caught(tmp_path, monkeypatch):
+    import subprocess
+    monkeypatch.setattr(reader.subprocess, "run",
+                        lambda *a, **k: subprocess.CompletedProcess(a, 0, stdout="garbage\n", stderr=""))
+    r = reader.reload_in_a_fresh_process(tmp_path)
+    assert r["ok"] is False and "unparseable" in r["error"]

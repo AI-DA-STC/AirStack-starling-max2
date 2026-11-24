@@ -59,6 +59,7 @@ TASKS = {"velocity": {"pilot": "L3.2", "run0": "L3.4", "main": "L5.1", "poolonly
 EXPORT_TASK = "L6.2"
 GATE_DIR = ROOT / "configs" / "ste_l3"
 SCHEMAS = {"velocity": "ste-check-velocity-0", "skills": "ste-check-skills-0"}
+Z_UP_LABEL = "vertical response not fitted in tier 1"     # spec section 3's label of the strike_high / strike_low cells
 POOLED_TOL = 1e-9          # the pooled rate recomputed here against the run's own results.json (both exact means)
 RELOAD_TIMEOUT_S = 600
 POLICIES = "these two trained policies (one seed each; the intervals cover the sampling of the starts only)"
@@ -219,16 +220,25 @@ def read_main(folder: Path, gates, side: str, stage: str) -> tuple[str | None, d
 
 def reload_in_a_fresh_process(folder: Path) -> dict:
     """``export.reload_check`` in a new Python process (CPU): its numbers, or {"ok": False, "error": why}."""
-    code = ("import json, sys\nfrom svg_training.ste import export\n"
-            "try:\n    out = export.reload_check(sys.argv[1])\n"
+    code = ("import json, sys\n"
+            "try:\n    from svg_training.ste import export\n    out = export.reload_check(sys.argv[1])\n"
+            "except ImportError as err:\n    out = {'ok': False, 'environment': str(err)}\n"
             "except ValueError as err:\n    out = {'ok': False, 'error': str(err)}\n"
             "print(json.dumps(out))")
-    env = {**os.environ, "PYTHONPATH": str(ROOT / "source"), "CUDA_VISIBLE_DEVICES": ""}
+    path = os.pathsep.join(p for p in (str(ROOT / "source"), os.environ.get("PYTHONPATH", "")) if p)
+    env = {**os.environ, "PYTHONPATH": path, "CUDA_VISIBLE_DEVICES": ""}
     r = subprocess.run([sys.executable, "-c", code, str(folder)], env=env, capture_output=True, text=True,
                        timeout=RELOAD_TIMEOUT_S)
     if r.returncode != 0:
         return {"ok": False, "error": f"the reload process exited {r.returncode}: {r.stderr[-500:]}"}
-    return json.loads(r.stdout.strip().splitlines()[-1])
+    try:
+        out = json.loads(r.stdout.strip().splitlines()[-1])
+    except (IndexError, json.JSONDecodeError):
+        return {"ok": False, "error": f"unparseable reload output: {r.stdout[-300:]!r}"}
+    if "environment" in out:                       # the export extra is missing: the environment, not the export
+        raise Refused(f"the reload check cannot run in this environment ({out['environment']}): install the "
+                      f"export extra (onnx, onnxruntime)")
+    return out
 
 
 def read_export(folder: Path, route: str, side: str, gates, run: Path, stage: str) -> tuple[str | None, dict]:
@@ -329,7 +339,15 @@ def held_arm(m: dict) -> dict:
     if "held_arm" not in m:
         return {"word": "not given"}
     folder = path_of(m["held_arm"])
+    p = folder / jobs.EXIT_FILE
+    if not p.is_file():
+        raise Refused(f"L4.1 held-command arm: {folder} holds no {jobs.EXIT_FILE} (launch it through ste_job.py)")
+    code = int(p.read_text().strip())
+    if code not in (EXIT_DONE, EXIT_CONTROL_FAILED):
+        raise Refused(f"L4.1 held-command arm: exit {code}: section 3 has no word for it")
     bad = first_not_pass(controls_of(folder))
+    if (code == EXIT_CONTROL_FAILED) != bool(bad):
+        raise Refused(f"L4.1 held-command arm: exit {code} with controls {bad or 'all PASS'} (inconsistent folder)")
     if bad:
         return {"word": "HELD ARM NOT READ", "why": f"control {bad[0]} {bad[1]} (hold 1 is not the reference)"}
     res = load_json(folder / "results.json", "L4.1 held-command arm")
@@ -374,7 +392,7 @@ def compare_side(side: str, rr: dict) -> dict:
     policies = {}
     for route, run in (("velocity", v), ("skills", s)):
         y = compare.per_start_mean(run["wins"], run["members"])
-        p = {"headline": compare.headline(run["wins"], z_up), "pooled": scoring.pooled_row(
+        p = {"headline": labelled(compare.headline(run["wins"], z_up)), "pooled": scoring.pooled_row(
             {o: run["wins"][o] for o in run["members"]}),
              "against_best_single_choice": {"best": best["best"], **compare.paired_difference(y, best["y"])}}
         if route == "skills" and "choice_by_decision" in run["results"]:
@@ -394,18 +412,36 @@ def compare_side(side: str, rr: dict) -> dict:
             "worst_cells": {"velocity": wv, "skills": ws, "word": compare.intervals_word(wv["ci"], ws["ci"]),
                             "rule": "velocity's worst cell against skills' worst cell: above / below when the Wilson "
                                     "intervals are disjoint, else not distinguishable"},
-            "paired_cells": [{"opponent": o, "z_up_info": o in z_up,
+            "paired_cells": [{"opponent": o, "z_up_info": o in z_up, **({"label": Z_UP_LABEL} if o in z_up else {}),
                               **compare.paired_difference(v["wins"][o], s["wins"][o])} for o in order],
             "pooled_difference": {**compare.paired_difference(yv, ys), "trivial_cells": trivial,
                                   "flag": "trivial cells (rate 0 or 1) pull the mean" if trivial else ""},
             "best_single_choice": {k: best[k] for k in ("best", "rate", "per_choice_rate", "source")}}
 
 
+def labelled(head: dict) -> dict:
+    """The spec's label on each z_up_info cell beside the headline."""
+    head["z_up_info_cells"] = {o: {**c, "label": Z_UP_LABEL} for o, c in head["z_up_info_cells"].items()}
+    return head
+
+
 def comparison(m: dict, rr: dict) -> dict:
     if "suite_check" not in m:
         return {"word": "COMPARISON NOT READ", "why": "the scoring-suite check (L4.2) is not given; it is required "
                                                       "before the comparison is written"}
-    suite = load_json(path_of(m["suite_check"]), "L4.2 scoring-suite check")
+    suite_path = path_of(m["suite_check"])
+    suite = load_json(suite_path, "L4.2 scoring-suite check")
+    code_file = suite_path.parent / jobs.EXIT_FILE
+    if not code_file.is_file():
+        raise Refused(f"L4.2 scoring-suite check: {suite_path.parent} holds no {jobs.EXIT_FILE} (launch it through "
+                      f"ste_job.py)")
+    code = int(code_file.read_text().strip())
+    if (code, suite.get("status")) not in ((EXIT_DONE, PASS), (EXIT_CONTROL_FAILED, "FAIL")):
+        raise Refused(f"L4.2 scoring-suite check: exit {code} with status {suite.get('status')} (0 with PASS, 6 with "
+                      f"FAIL)")
+    missing = [f"{r} {s}" for r in ROUTES for s in SIDES if s not in suite.get("checks", {}).get(r, {})]
+    if missing:
+        raise Refused(f"L4.2 scoring-suite check: a partial suite, no entry for {missing}")
     want = {r: gates_of(r).sha256 for r in ROUTES}
     if suite.get("gates_sha256") != want:
         raise Refused(f"L4.2 scoring-suite check: ran on gate files {suite.get('gates_sha256')}, not {want}")
@@ -465,7 +501,7 @@ def render(out: dict) -> str:
         lines += ["", f"Worst cells, velocity against skills: **{sc['worst_cells']['word']}**.", "",
                   "| Opponent | velocity minus skills, paired [95 %] | Word |", "|---|---|---|"]
         for d in sc["paired_cells"]:
-            tag = " (z_up_info)" if d["z_up_info"] else ""
+            tag = f" ({Z_UP_LABEL})" if d["z_up_info"] else ""
             lines.append(f"| {d['opponent']}{tag} | {d['diff']:+.3f} [{d['ci'][0]:+.3f}, {d['ci'][1]:+.3f}] | "
                          f"{d['word']} |")
         pd = sc["pooled_difference"]

@@ -66,10 +66,13 @@ or speed cap (3.0 m/s); the measured horizontal acceleration (95th percentile). 
 
 ## Results
 
-In short: tier 1's model, fitted at up to 0.5 m/s, flies this 2 m/s figure eight at about half the real drones' speed
-(median 0.84 m/s against 1.51–1.61 m/s measured; peaks 1.59–1.62 against 2.35–2.69) and late. Its velocity error is
-0.77–0.84 m/s RMS, 6–7 times the 12 Nov check's worst leg, and 1.36–1.64 times the error of simply assuming the drone
-flies the setpoint speed. Every RMS number is outside the 12 Nov check's range (above). The shift search does not
+In short: tier 1's model, fitted at up to 0.5 m/s, flies this 2 m/s figure eight slower than the real drones and late.
+With the pre-registered method (derived acceleration) it reaches about half their speed (median 0.84 m/s against
+1.51–1.61 measured; peaks 1.59–1.62 against 2.35–2.69), velocity error 0.77–0.84 m/s RMS, 6–7 times the 12 Nov check's
+worst leg and 1.36–1.64 times the error of simply assuming the drone flies the setpoint speed. Fed the acceleration
+field PX4 actually received (closer to how tier 1 runs: it feeds the commander's acceleration; information only), it
+reaches about two thirds (median 1.05–1.06 m/s, peaks 1.91–1.94), error 0.49–0.58 m/s RMS, 0.86–1.13 times the
+setpoint baseline, still 4–5 times the 12 Nov worst leg. Every RMS number is outside the 12 Nov check's range (above). The shift search does not
 rescue it: the best shift sits on the search edge (−0.10 s) in every subset and still at or near the wide edge
 (−0.20 to −0.30 s): the gap is amplitude, not timing.
 
@@ -104,41 +107,46 @@ drone_2 (0.066 against 0.093).
 
 ### Information only (named before the run; they move no reading word)
 
-| Variant (all samples) | drone_1 model RMS | drone_2 model RMS | Best shift (s) | Model / setpoint |
-|---|---|---|---|---|
-| primary (held setpoint, derived acceleration) | 0.840 | 0.769 | −0.10 / −0.10 (edge) | 1.64 / 1.36 |
-| logged acceleration field (what PX4 received) | 0.577 | 0.487 | −0.06 / −0.06 | 1.13 / 0.86 |
-| setpoint joined by lines | 0.521 | 0.440 | −0.01 / −0.01 | 0.94 / 0.73 |
-| restarted every 5 s (19 windows, 1 s run-in) | 0.857 | 0.800 | −0.10 / −0.10 (edge) | 1.67 / 1.42 |
+Per drone, drone_1 / drone_2. Model speed: median (peak) of the model at the measured samples; the real drones:
+median 1.61 / 1.51 m/s, peak 2.69 / 2.35. "On acc. limit": share of the model's 0.01 s steps at its 1.72 m/s² limit.
 
-- The model sits on its acceleration limit (1.72 m/s²) in 43 % of its 0.01 s steps on both drones, and its PX4
-  speed request on the 3.0 m/s cap in 31 %. The real drones' horizontal acceleration (slope over 0.1 s) has median
-  2.58 / 2.55 m/s² and 95th percentile 4.35 / 3.83 m/s²; the logged setpoint acceleration reaches its 3.0 m/s² cap
-  (95th percentile 3.00 on both).
+| Variant (all samples) | Model RMS | Best shift (s) | Model / setpoint | Model speed, median (peak) | On acc. limit |
+|---|---|---|---|---|---|
+| primary (held setpoint, derived acceleration) | 0.840 / 0.769 | −0.10 / −0.10 (edge) | 1.64 / 1.36 | 0.84 (1.59) / 0.85 (1.62) | 43 % / 43 % |
+| logged acceleration field (what PX4 received) | 0.577 / 0.487 | −0.06 / −0.06 | 1.13 / 0.86 | 1.06 (1.91) / 1.05 (1.94) | 87 % / 86 % |
+| setpoint joined by lines | 0.521 / 0.440 | −0.01 / −0.01 | 0.94 / 0.73 | 1.13 (1.91) / 1.12 (1.94) | 90 % / 91 % |
+| restarted every 5 s (19 windows, 1 s run-in) | 0.857 / 0.800 | −0.10 / −0.10 (edge) | 1.67 / 1.42 | not computed | not computed |
+
+- With the held setpoint and derived acceleration, the feed-forward is a spike every 0.05 s that the model's limit
+  clips (the 12 Nov record names this); its 43 % on the limit likely counts those spikes. With a smooth acceleration
+  (logged field, or the setpoint joined by lines) the model is on its limit 86–91 % of the time. The real drones'
+  horizontal acceleration (slope over 0.1 s) has median 2.58 / 2.55 m/s² and 95th percentile 4.35 / 3.83 m/s²; the
+  logged setpoint acceleration reaches its 3.0 m/s² cap (95th percentile 3.00 on both). The model's PX4 speed request
+  is on the 3.0 m/s cap in 31 % of steps (primary; 24–26 % logged acceleration, 12–14 % joined by lines).
 - Restarting every 5 s does not help (0.80–0.86 m/s), so the error is not a drift built up over the long open-loop
   window: the model is too slow within each few seconds.
 
 ![tier 1 model against the real drones, 24 Nov figure eight](evidence/2026-11-24_fig8_heldout/fig8_heldout.png)
 
 *Left: horizontal speed over the whole mission, setpoint (amber), real drone (blue, PX4's estimate) and tier 1's model
-(orange); shaded where the safety filter listed the drone. Right: east speed over 10 s. The model reaches about half the
-real drone's swing and lags it.*
+(orange, pre-registered method: derived acceleration); shaded where the safety filter listed the drone. Right: east
+speed over 10 s. The model reaches about half the real drone's swing and lags it; fed the logged acceleration
+(information, not drawn) it reaches about two thirds.*
 
 ### What this likely means (mechanisms say "likely": no control run)
 
-- The model is likely too slow for this regime because of two fitted values that low-speed pushes could not pin: the
-  acceleration limit 1.72 m/s² (the real drones accelerate at a median 2.6 m/s² here) and the velocity lag 1.65 s (the
-  parameter file already notes it is poorly pinned: +25 % moved the fit's RMS by 0.0002 m/s). A first-order lag of
-  1.65 s alone, without the position term, would pass about 40 % of the 4.5 s east-speed swing in the figure's right
-  panels.
-- The derived acceleration (spiky from a held 20 Hz setpoint, then clipped by the limit) likely costs part of it: the
-  logged-acceleration and joined-by-lines variants cut the RMS by 31–43 %, but stay 3.7–4.8 times above the 12 Nov
-  check's worst leg.
+- The model is likely too slow for this regime mainly because of its fitted acceleration limit, 1.72 m/s²: fed a
+  smooth acceleration it sits on that limit 86–91 % of the time, while the real drones accelerate at a median 2.6 m/s²
+  here. The fitted velocity lag (1.65 s, which the parameter file notes is poorly pinned: +25 % moved the fit's RMS by
+  0.0002 m/s) may add to it; this check cannot separate the two.
+- The derived acceleration of the pre-registered method (spiky from a held 20 Hz setpoint, then clipped) likely costs
+  part of the error: the logged-acceleration and joined-by-lines variants cut the RMS by 31–43 %, but stay 3.7–4.8
+  times above the 12 Nov check's worst leg.
 - With and without the filter the model misses in the same way; the error is lower with the filter on, likely because
   the filter slows the setpoint there (the figure: shaded stretches sit on the setpoint dips).
 - Nothing here changes `params/`. It supports flying faster pushes (and turns) in the NEAR-962 flight, so the fit of
-  record sees the acceleration and lag the game will ask for (the simulator's 2–6 m/s, 12 Nov record Limits); the planned 0.25–1.0
-  m/s pushes alone would likely not pin them either.
+  record sees the accelerations the game will ask for (the simulator's 2–6 m/s, 12 Nov record Limits); whether the
+  planned 0.25–1.0 m/s pushes reach accelerations near 2–4 m/s² is not known from this check.
 
 ## Commit, config, parameter set
 
@@ -146,8 +154,10 @@ real drone's swing and lags it.*
   `tests/test_fig8_check.py` (10, synthetic bag, < 1 MB). The pre-registered reading above was committed (f095b440)
   before the replay. One bug in an information variant was found and fixed after the first replay, test first: the
   restarted-every-5 s windows took their baselines from the pre-delayed setpoint (ratio 2.87 for drone_1); the
-  primary numbers did not change. The model's own speed (median, peak) was added as information after the first
-  replay.
+  primary numbers did not change. After the first replay, as information only: the model's own speed (median, peak),
+  and the acceleration-limit share and model speed for the logged-acceleration and joined-by-lines variants (added on
+  review, because the primary method's 43 % likely counts clipped derivative spikes); the primary numbers are identical
+  on rerun.
 - Command: `python scripts/fig8_check.py --bag <bag dir> --params params/real_exploratory_v0.toml --out
   records/evidence/2026-11-24_fig8_heldout`.
 - Bag (read-only, owner's, not in git): `svg_20261124_073433_0.mcap`, sha256 `5fc12207ed159529…`, 196.3 MB.

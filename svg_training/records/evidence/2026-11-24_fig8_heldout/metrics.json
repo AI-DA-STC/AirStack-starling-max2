@@ -283,6 +283,16 @@
        "measured_speed_median_mps": 1.62449,
        "measured_speed_max_mps": 2.68764
       }
+     },
+     "model_limits": {
+      "share_on_acc_limit": 0.86633,
+      "share_on_speed_cap": 0.23712,
+      "acc_limit_mps2": 1.7178,
+      "speed_cap_mps": 3.0
+     },
+     "model_speed": {
+      "median_mps": 1.05765,
+      "max_mps": 1.91018
      }
     },
     "setpoint_linear": {
@@ -384,6 +394,16 @@
        "measured_speed_median_mps": 1.62449,
        "measured_speed_max_mps": 2.68764
       }
+     },
+     "model_limits": {
+      "share_on_acc_limit": 0.89877,
+      "share_on_speed_cap": 0.12254,
+      "acc_limit_mps2": 1.7178,
+      "speed_cap_mps": 3.0
+     },
+     "model_speed": {
+      "median_mps": 1.12664,
+      "max_mps": 1.90544
      }
     },
     "restarted_5s": {
@@ -889,6 +909,16 @@
        "measured_speed_median_mps": 1.52536,
        "measured_speed_max_mps": 2.35166
       }
+     },
+     "model_limits": {
+      "share_on_acc_limit": 0.86203,
+      "share_on_speed_cap": 0.25665,
+      "acc_limit_mps2": 1.7178,
+      "speed_cap_mps": 3.0
+     },
+     "model_speed": {
+      "median_mps": 1.05389,
+      "max_mps": 1.94077
      }
     },
     "setpoint_linear": {
@@ -990,6 +1020,16 @@
        "measured_speed_median_mps": 1.52536,
        "measured_speed_max_mps": 2.35166
       }
+     },
+     "model_limits": {
+      "share_on_acc_limit": 0.90686,
+      "share_on_speed_cap": 0.14168,
+      "acc_limit_mps2": 1.7178,
+      "speed_cap_mps": 3.0
+     },
+     "model_speed": {
+      "median_mps": 1.12092,
+      "max_mps": 1.9381
      }
     },
     "restarted_5s": {

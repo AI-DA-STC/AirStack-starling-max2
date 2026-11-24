@@ -196,6 +196,9 @@ def test_variants_present(tmp_path):
     res = _run(tmp_path, _build_bag(tmp_path, _params(), inject=False))
     v = res["drones"]["drone_1"]["variants"]
     assert set(v) == {"accel_logged", "setpoint_linear", "restarted_5s"}
+    for k in ("accel_logged", "setpoint_linear"):                 # one-window variants carry the model's limits too
+        assert 0.0 <= v[k]["model_limits"]["share_on_acc_limit"] <= 1.0
+        assert v[k]["model_speed"]["median_mps"] > 0.0 and v[k]["model_speed"]["max_mps"] > 0.3
     assert v["restarted_5s"]["subsets"]["all"]["model"]["rms_both_mps"] < 5e-3
     # the restarted windows carry an already-delayed setpoint for the model; their baselines must still use the
     # setpoint as sent (same scored span as the primary window, so the same baseline to rounding)

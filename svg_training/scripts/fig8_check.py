@@ -325,6 +325,11 @@ def score_drone(f: dict, params: m.TrajectoryParams, events: dict, drone: str, l
     for variant in ("primary", "accel_logged", "setpoint_linear", "restarted_5s"):
         parts = make_parts(f, lo, hi, variant, params.delay_s)
         res[variant] = {"windows": len(parts), "subsets": score_parts(parts, params, on_known)}
+        if variant in ("accel_logged", "setpoint_linear") and parts:      # one window: the model's limits, its speed
+            w = parts[0][0]
+            speed = np.linalg.norm(m.simulate_window(params, w)[w.meas_idx], axis=1)
+            res[variant]["model_limits"] = model_limits(w, params)
+            res[variant]["model_speed"] = {"median_mps": float(np.median(speed)), "max_mps": float(speed.max())}
     prim_parts = make_parts(f, lo, hi, "primary")
     out = {"primary": res.pop("primary"), "variants": res}
     out["reading"] = reading(out["primary"])

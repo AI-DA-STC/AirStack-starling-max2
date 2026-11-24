@@ -260,17 +260,17 @@ this check can give.
 ## Launch errors and re-launches
 
 Not of record, and not a result (R34's context: a failure of our own launch, not of the policies):
-- **First launches of L4.1, L4.2, L6.2 and L6.1.** `2026-11-25_ste_l41_held_arm`, `..._l42_suite`,
-  `..._l62_export_{velocity_guard,velocity_strike,skills_guard,skills_strike}` (no `_r`) and `..._l61_read` were
-  launched with the job folder one level above the script's output (`arm/`, `suite/`, `export/`). The reader
-  (`scripts/ste_l6_read.py`) reads `exit_code` beside the output, so it refused. The same commands were re-launched
-  into one folder each (the `_r` folders): CPU only, 0 GPU-h. The suite's `suite_check.json`, the arm's `results.md` and
-  the four `interface.toml` of the first launches are byte-identical (`cmp`) to those of the `_r` folders.
-- **The pilot's gate.** The reader's first read (`..._l61_read`, 04:24:03, exit 2) also refused the L3.2 pilot: the
+- **The pilot's gate.** The reader's first read (`..._l61_read`, 04:24:03, exit 2) refused the L3.2 pilot: the
   pilot ran before the fill step, so its gate sha (`8d8d5b9e523f1d2e`) differs from the filled file's (`c3c9c84845d65b42`)
   by design. Fixed in commits `8c53fcdc` and `026fc00c`: a pilot under its own gate-file copy equal to the filled file
-  except `side_overrides.strike`, `game_steps_per_run` and `skills_reach_min` is read. One reviewer checked the fix
-  (`026fc00c`), then the read of record (`..._l61_read_r`) ran.
+  except `side_overrides.strike`, `game_steps_per_run` and `skills_reach_min` is read. One reviewer checked the fix.
+- **Job folders of L4.1, L4.2 and L6.2.** A trial read with the fixed reader (output in the session's scratch folder,
+  not of record) then refused the first L6.2 export: `2026-11-25_ste_l41_held_arm`, `..._l42_suite` and
+  `..._l62_export_{velocity_guard,velocity_strike,skills_guard,skills_strike}` (no `_r`) were launched with the job
+  folder one level above the script's output (`arm/`, `suite/`, `export/`), and the reader reads `exit_code` beside
+  the output. The same commands were re-launched into one folder each (the `_r` folders): CPU only, 0 GPU-h. The
+  suite's `suite_check.json` checks, the arm's `results.md` and the four exports' `interface.toml` are byte-identical
+  (`cmp`) to those of the first launches. Then the read of record (`..._l61_read_r`) ran.
 - No GPU run was repeated, and the unallocated hours were not used (R34's re-run allowance, at most 2 GPU-h, not spent).
 
 ## Videos

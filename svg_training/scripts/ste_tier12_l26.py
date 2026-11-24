@@ -77,6 +77,9 @@ AGREE = "both tiers agree on the rule's effect"
 DISAGREE = "the tiers disagree on its direction"
 ONLY_T1, ONLY_T2 = "only tier 1 detects an effect", "only tier 2 detects an effect"
 NOT_SHOWN = "the rule not shown to reach this tier beyond copy noise: no word"
+REASON_PROTECTED, REASON_FITS = "protected", "fits what is left of the cap"
+REASON_OVER_CAP = "not played (projected over the cap)"
+REASON_AFTER_DROP = "not played (an earlier group in the drop order was dropped)"
 
 _KEYS = {
     "job": {"task", "what", "kind", "device", "games", "ticks_cap", "cap_h", "cap_check_every_ticks"},
@@ -280,9 +283,19 @@ def launch_projection(s: dict, ticks: int | None = None) -> dict:
             "fits": prot * float(s["projection"]["safety_factor"]) <= cap}
 
 
-def should_play(protected: bool, effective_s: float, worst_s: float, cap_s: float, safety: float) -> bool:
-    """A protected group always plays (the launch checked it fits); a droppable one only if its worst case fits."""
-    return protected or effective_s + worst_s * safety <= cap_s
+def should_play(protected: bool, effective_s: float, worst_s: float, cap_s: float, safety: float,
+                earlier_dropped: bool = False) -> bool:
+    """A protected group always plays (the launch checked it fits); a droppable one only if no earlier group was dropped
+    (the drop order is fixed) and its worst case fits what is left of the cap."""
+    return protected or (not earlier_dropped and effective_s + worst_s * safety <= cap_s)
+
+
+def replay_controls(s: dict) -> dict:
+    """exploit.replay_ok's CUDA tolerances for the T44 replay (L0.13's values, the gate file's repeat tolerances);
+    the CPU stays game for game."""
+    c = s["controls"]
+    return {"replay_count_tol_cuda_games": int(c["repeat_count_tol_games"]),
+            "replay_differ_tol_cuda_games": int(c["repeat_differ_tol_games"])}
 
 
 # ================================================================================================ the reading words
@@ -333,9 +346,27 @@ def cross_word(w1: str, w2: str) -> str:
     return DISAGREE
 
 
-def beyond_noise(differ: int, noise: int, cells: int) -> bool:
-    """A rule reached a tier: more games changed between the two groups than the repeat copy's own noise allows."""
-    return differ > cells * noise and differ >= 1
+def copy_floor(noises: list[dict]) -> dict:
+    """The run's copy noise on one tier: per measure, the largest repeat-cell count over the tier's off-arm batches.
+    Paired groups of one arm share their estimate-error draws slot by slot (models/estimator_effect.py keeps the streams
+    aligned), so only the device's own jitter separates them, never the error's redraw (the repeat cell's own slot)."""
+    keys = ("outcome_differs", "outcome_or_end_differs")
+    return {k: max((int(x[k]) for x in noises), default=0) for k in keys}
+
+
+def rule_reached(arm_change: bool, cells: int, differ_outcome: int, differ_any: int, noise_from: dict,
+                 noise_to: dict) -> bool:
+    """Did the rule reach this tier beyond copy noise? (spec, reading 5). ``noise_*``: the repeat cell's
+    outcome_differs and outcome_or_end_differs in each batch. The arm changes (the estimate error): the error's copies
+    differ more than the other arm's (adding the error and redrawing it cannot be told apart by changed games). Exact
+    copies in both batches: at least one game changed in outcome or end step (L2.5's rule). Otherwise outcomes only:
+    more than ``cells`` x the larger repeat outcome count (end-step jitter on CUDA is not measured; the x cells
+    extrapolates from one repeat cell)."""
+    if arm_change:
+        return noise_to["outcome_or_end_differs"] > noise_from["outcome_or_end_differs"]
+    if noise_from["outcome_or_end_differs"] == 0 and noise_to["outcome_or_end_differs"] == 0:
+        return differ_any >= 1
+    return differ_outcome > cells * max(noise_from["outcome_differs"], noise_to["outcome_differs"]) and differ_outcome >= 1
 
 
 # ================================================================================================ the run
@@ -466,10 +497,16 @@ class Context:
         upsets = int(self.np.sum(pg["upset"])) if "upset" in pg else None
         known, known_ok, kdetail = None, True, "no known answer"
         if tier == 1 and g["tier1_known"] == "t44":
-            chk = scoring.check_script_cells(pg, self.lay.cells, self.ref, self.s["reference"]["variant"], self.n,
-                                             self.ticks, lambda c: True, phase=phase)
-            known, known_ok = chk["cells"], chk["status"] == PASS
-            kdetail = f"T44 game for game: {'EQUAL' if known_ok else 'DIFFERENT'}"
+            rule, want = replay_controls(self.s), self.ex.starts_sha(self.ref.starts_m[:self.n])
+            known = {}
+            for i, c in enumerate(self.lay.cells):
+                theirs = {k: self.np.asarray(v)[:self.n] for k, v in self.ref.cell(self.s["reference"]["variant"], *c).items()}
+                same, text = self.ex.replay_ok(self.cell(pg, i), theirs, self.device, rule, ticks_cap=self.ticks)
+                same &= pg["start_sha256"][i] == want
+                known[f"{c[0]} v {c[1]} ({i})"] = {"equal": bool(same), "detail": text}
+                known_ok &= bool(same)
+            kdetail = (f"T44 replay ({'game for game' if not str(self.device).startswith('cuda') else 'CUDA tolerances ' + str(rule)}): "
+                       f"{'EQUAL' if known_ok else 'DIFFERENT ' + str([k for k, v in known.items() if not v['equal']])}")
         elif tier == 1 and g["tier1_known"] == "counts":
             if self.full:
                 tol = int(self.s["known"]["t1_count_tol_games"])
@@ -606,12 +643,13 @@ class Context:
                 name = g["name"]
                 if name not in plan:
                     worst = sum(worst_seconds(self.s, g, self.measured or None, ticks=self.ticks).values())
+                    dropped = any(not v["played"] for v in plan.values())
                     go = should_play(g["protected"], guard.effective_s(), worst, guard.cap_s,
-                                     float(self.s["projection"]["safety_factor"]))
+                                     float(self.s["projection"]["safety_factor"]), earlier_dropped=dropped)
                     plan[name] = {"played": go, "worst_s": worst, "effective_s_at_decision": guard.effective_s(),
                                   "measured_s_per_tick": {f"tier{k[0]}_{k[1]}": v for k, v in self.measured.items()},
-                                  "reason": "protected" if g["protected"] else
-                                  ("fits what is left of the cap" if go else "not played (projected over the cap)")}
+                                  "reason": REASON_PROTECTED if g["protected"] else REASON_FITS if go else
+                                  REASON_AFTER_DROP if dropped else REASON_OVER_CAP}
                     l011.write_json(rd / PLAN_FILE, plan)
                     say(f"group {name}: {plan[name]['reason']} (worst case {worst:.0f} s)")
                 if not plan[name]["played"]:
@@ -680,10 +718,11 @@ def _cell_rate(ctx: Context, pg: dict, i: int) -> dict:
             "upsets": int(ctx.np.sum(cp["upset"])) if "upset" in cp else None}
 
 
-def _differ(ctx: Context, a: dict, b: dict) -> int:
-    """Games of the main cells whose outcome or end step differ between two batches (paired by start)."""
+def _differ(ctx: Context, a: dict, b: dict, outcome_only: bool = False) -> int:
+    """Games of the main cells whose outcome (or end step, unless ``outcome_only``) differ between two batches."""
     m = len(ctx.lay.main) * ctx.n
-    return int(ctx.np.sum((a["outcome"][:m] != b["outcome"][:m]) | (a["end_step"][:m] != b["end_step"][:m])))
+    d = a["outcome"][:m] != b["outcome"][:m]
+    return int(ctx.np.sum(d if outcome_only else d | (a["end_step"][:m] != b["end_step"][:m])))
 
 
 def results_of(ctx: Context, controls: dict, plan: dict, pgs: dict, guard) -> dict:
@@ -716,11 +755,19 @@ def results_of(ctx: Context, controls: dict, plan: dict, pgs: dict, guard) -> di
             pairs.append({**p, "read": False, "reason": "a group was not played"})
             continue
         reach = {}
+        by = {g["name"]: g for g in s["groups"]}
+        arm_change = by[p["from"]]["arm"] != by[p["to"]]["arm"]
         for tier in (1, 2):
             a, b = pgs[f"{p['from']}_t{tier}"], pgs[f"{p['to']}_t{tier}"]
-            noise = max(ctx.repeat_noise(a)["outcome_or_end_differs"], ctx.repeat_noise(b)["outcome_or_end_differs"])
-            d = _differ(ctx, a, b)
-            reach[tier] = {"games_differ": d, "copy_noise": noise, "beyond_noise": beyond_noise(d, noise, len(ctx.lay.main))}
+            if arm_change:                             # the error's own copies against the off arm's
+                na, nb = ctx.repeat_noise(a), ctx.repeat_noise(b)
+            else:                                      # same arm: the tier's run-wide device jitter (spec, reading 5)
+                na = nb = copy_floor([ctx.repeat_noise(pgs[f"{x}_t{tier}"]) for x in played
+                                      if by[x]["arm"] == "off"])
+            d_any, d_out = _differ(ctx, a, b), _differ(ctx, a, b, outcome_only=True)
+            reach[tier] = {"games_differ": d_any, "outcomes_differ": d_out, "copy_noise_from": na, "copy_noise_to": nb,
+                           "arm_change": arm_change,
+                           "beyond_noise": rule_reached(arm_change, len(ctx.lay.main), d_out, d_any, na, nb)}
         cells = []
         for i, c in enumerate(ctx.lay.main):
             row = {"cell": list(c)}
@@ -750,6 +797,11 @@ def results_of(ctx: Context, controls: dict, plan: dict, pgs: dict, guard) -> di
             "code": json.loads((ctx.a.run_dir / "code.json").read_text()), "settings_sha256": _sha(ctx.a.settings)}
 
 
+def _m(r: dict) -> str:
+    v = r["tag_stats"].get("closest_any_pair_min_m")
+    return "-" if v is None else f"{v:.3f}"
+
+
 def _r(r: dict) -> str:
     lo, hi = r["ci"]
     return f"{r['k']}/{r['n']}" + ("" if lo is None else f" ({lo:.3f}-{hi:.3f})")
@@ -774,18 +826,21 @@ def write_md(run_dir: Path, ctx: Context, controls: dict, plan: dict, result: di
             lines += [f"**{g['name']}** ({g['label']}): **{g['word']}**; T13's 0.10 limit "
                       f"{'met' if g['t13_limit_met'] else 'NOT met'} in every cell; tier 2's own copy agreement "
                       f"{g['tier2_copy_agreement']:.3f}.", "",
-                      "| Cell (Guard v Strike) | Tier 1 | Tier 2 | Tier 2 minus tier 1 | Word | Same outcome (share of starts) |",
-                      "|---|---|---|---|---|---|"]
+                      "| Cell (Guard v Strike) | Tier 1 | Tier 2 | Tier 2 minus tier 1 | Word | Same outcome (share of starts) "
+                      "| Closest approach, any pair, min (m), tier 1 / tier 2 |",
+                      "|---|---|---|---|---|---|---|"]
             lines += [f"| {c['cell'][0]} v {c['cell'][1]} | {_r(c['tier1'])} | {_r(c['tier2'])} | {'-' if c['gap'] is None else format(c['gap'], '+.3f')} | "
-                      f"{c['word']} | {c['agreement']:.3f} |" for c in g["cells"]]
+                      f"{c['word']} | {c['agreement']:.3f} | {_m(c['tier1'])} / {_m(c['tier2'])} |" for c in g["cells"]]
             lines.append("")
         lines += ["## Rule effects on each tier", ""]
         for p in result["rule_pairs"]:
             if not p["read"]:
                 lines += [f"**{p['name']}** ({p['rule']}): not read ({p['reason']}).", ""]
                 continue
-            reach = "; ".join(f"{k}: {v['games_differ']} games changed, copy noise {v['copy_noise']}"
-                              for k, v in p["reach"].items())
+            reach = "; ".join(f"{k}: {v['outcomes_differ']} outcomes and {v['games_differ']} outcomes or end steps changed, "
+                              f"repeat copies {v['copy_noise_from']['outcome_differs']} / "
+                              f"{v['copy_noise_to']['outcome_differs']} outcomes, "
+                              f"{'reached' if v['beyond_noise'] else 'NOT shown to reach'}" for k, v in p["reach"].items())
             lines += [f"**{p['name']}** ({p['rule']}, {p['from']} -> {p['to']}; {p['ruling']}): both tiers agree in "
                       f"{p['agree_cells']} of {len(p['cells'])} cells ({reach}).", "",
                       "| Cell | Tier 1 | Tier 1 word | Tier 2 | Tier 2 word | Across tiers |", "|---|---|---|---|---|---|"]

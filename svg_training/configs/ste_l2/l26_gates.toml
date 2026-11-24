@@ -33,7 +33,7 @@ kind = "INFO"
 device = "cuda"                    # tier 1 and tier 2 both on the GPU (L1.8's tier-1 replay matched T44 game for game on CUDA)
 games = 1000                       # FIXED (VALIDATION_QC section 0 rule 2: at least 1,000 games per condition): T44's first 1,000 starts
 ticks_cap = 2400                   # FIXED = the game length (120 s of 0.05 s ticks): no game is cut short
-cap_h = 1.5                        # PROPOSED = the task cap (WORK_BREAKDOWN L2.6: 1.5 GPU-h); expected about 0.5 h (projection below)
+cap_h = 1.3                        # PROPOSED: the task cap (WORK_BREAKDOWN L2.6: 1.5 GPU-h) less 0.2 for the required Isaac smoke (spec); the protected worst case 1.16 h fits; expected about 0.5 h
 cap_check_every_ticks = 100        # the cap clock every this many ticks; the stop flag every tick
 
 [reference]

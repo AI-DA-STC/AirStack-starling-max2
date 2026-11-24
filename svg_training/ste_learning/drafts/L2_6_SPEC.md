@@ -29,8 +29,9 @@ Every group plays the same 7 cells × 1,000 games. Tier 1 plays first, then tier
 (loaded from `configs/ste_l012/t44_reference.npz`, never re-drawn) and T44's seed 110000. Tier 2 plays the group's game
 file with exactly two changes: `starling_layer.backend = "physics"` and the arm's parameter file. A group is
 "protected" if it must fit the cap in the worst case (the driver refuses the launch otherwise). A droppable group plays
-only if its worst case still fits what is left of the cap, using rates timed from this run's own batches. Otherwise it
-is recorded as "not played (projected over the cap)". The order below is the drop order, fixed now.
+only if no earlier group was dropped and its worst case still fits what is left of the cap, using rates timed from this
+run's own batches. Otherwise it is recorded as "not played (projected over the cap)". Every later group is then recorded
+"not played (an earlier group in the drop order was dropped)". The order below is the drop order, fixed now.
 
 | # | Group | Tier-1 game | Tier-2 game, arm | Tag | Landing | Share | Tier-1 known answer | Worst case (s) | Kept |
 |---|---|---|---|---|---|---|---|---|---|
@@ -83,9 +84,9 @@ the estimator (L1.1b replaced the delay model with it).
 
 | Control | Where | Known answer |
 |---|---|---|
-| tag_fires_t2 | first, tier 2, `l25_landing_gy_tag_10m` (10 m tag), zero v zero, 100 ticks | every game 3 tags at step 1, a Guard win. Landing and option B have never run in Isaac Lab (no Isaac-marked test of either), so this is the first contact |
+| tag_fires_t2 | first, tier 2, `l25_landing_gy_tag_10m` (10 m tag), zero v zero, 100 ticks | every game 3 tags at step 1, a Guard win: the tag fires on the physics drone. It does **not** exercise landing or option B (every game ends at step 1, nothing descends, the filter never acts). Landing and option B have never run in Isaac Lab (no Isaac-marked test of either). Their first contact is the required Isaac smoke before launch (below) |
 | condition_\<g\> | every group | tier-2 game = tier-1 game but for `starling.backend` and `starling.physics_params` (plus the tier-1 `[estimate_error]` in the error arm); the parameter file differs from the off file in `state_error_*` only and flies its own values |
-| tier1_\<g\> | every tier-1 batch | ran tier 1; paired starts, tags one for one, no non-finite action; base_1p6: every cell equals T44 game for game (as L1.8's tier1_replay, which held on CUDA); landing_1p6 and landing_gy_1p6: each main cell's holds within 10 of T70's (T70 ran on the CPU) |
+| tier1_\<g\> | every tier-1 batch | ran tier 1; paired starts, tags one for one, no non-finite action; base_1p6: every cell replays T44 by `exploit.replay_ok`'s rule (game for game on the CPU; on CUDA holds within 10 of T44 and at most 20 games with another outcome, L0.13's tolerances: L1.8 matched exactly on the laptop's CUDA, but no 5090 CUDA run has replayed T44 exactly, and a miss is terminal); landing_1p6 and landing_gy_1p6: each main cell's holds within 10 of T70's (T70 ran on the CPU) |
 | physics_agreement_\<g\>_launch\<k\> | before every tier-2 batch, every launch | L0.13's C-1a: Isaac Lab against the torch twin, 20 ticks, ≤ 0.02 m |
 | tier2_\<g\> | every tier-2 batch | ran the physics drone; 0 non-finite wrench or setpoint; plumbing as tier 1; upsets counted (INFO) |
 | repeat_t1_\<g\>, repeat_t2_\<g\> | every batch | the two copies' holds within 10 and ≤ 20 games ending otherwise (L0.13's CUDA tolerances) in the off arm; INFO in the error arm (each copy draws its own error) |
@@ -129,18 +130,28 @@ Holds are Guard-team wins of the 1,000 games, with Wilson 95 % intervals. Paired
    direction**", "**only tier 1 detects an effect**" or "**only tier 2 detects an effect**". Per pair, the record gives
    the count of cells where both tiers agree. For P2 the record states: "at 1.15 m, tier 1 and tier 2 agree on option
    B's effect in k of 6 scripted cells". For P7: the same with landing at 1.6 m.
-5. **Plumbing, before any rule-effect word** (pre-registered, per pair and tier). On tier 2 on CUDA two same-seed
-   copies already differ (T64: 4–7 games off, 35–86 with the error). So "the rule reached this tier" needs the games of
-   the 6 main cells that differ in outcome or end step between the two groups to number more than 6 × the repeat
-   cell's own count (the larger of the two batches), and at least 1. If not, that tier's words for the pair are
-   withheld ("the rule not shown to reach this tier beyond copy noise: no word"), and so is the cross-tier word. The
-   numbers are still reported.
+5. **Plumbing, before any rule-effect word** (pre-registered, per pair and tier). Copy noise comes from the repeat
+   cell, which plays the first cell's starts again in another slot.
+   - **The same arm on both sides.** The floor is the tier's run-wide noise: the largest repeat-cell count over the
+     tier's off-arm batches. Error-arm groups share their error draws slot by slot (`models/estimator_effect.py` keeps
+     the streams aligned), so only the device's jitter separates two paired groups, never the error's redraw.
+     - If that floor is 0 games in outcome and in end step (exact copies, as tier 1 is expected to be), the rule
+       reached the tier when at least one game of the 6 main cells changed outcome or end step (L2.5's rule).
+     - Otherwise, outcomes only: more games of the 6 main cells must change outcome than 6 × the floor's outcome
+       count, and at least 1. T64 measured outcome differences on CUDA tier 2 (4–7 games off). End-step jitter is not
+       measured, so end steps are not counted there. The × 6 extrapolates one repeat cell to six cells.
+   - **The arm changes** (error_1p15, error_gy_1p15). Adding the error cannot be told apart from redrawing it by
+     counting changed games. So the error reached the tier when the error batch's repeat copies differ (outcome or end
+     step) in more games than the off batch's.
+   - If a pair fails, that tier's words for the pair are withheld ("the rule not shown to reach this tier beyond copy
+     noise: no word"), and so is the cross-tier word. The counts are still reported.
 
 Every reading is "observed in the training simulator". Tier 2 is another drone model, not a correction of tier 1.
-Also reported, INFO: closest approach and tag distance per cell on both tiers (`scoring.tag_stats`), game length, end
-reasons, upsets.
+Also reported, INFO: closest approach of any opposite pair per cell on both tiers (minimum on the results page;
+minimum, median and tag distances in `results.json`, `scoring.tag_stats`): T13's second quantity, and at 1.15 m the
+place where option B's known wall shortfall could show. Also game length, end reasons and upsets.
 
-## Time and GPU-hours (projected; the cap ≤ 1.5 GPU-h)
+## Time and GPU-hours (projected; run cap 1.3 GPU-h + Isaac smoke ≤ 0.2 = the task cap 1.5)
 
 The world holds 7,000 games × 6 drones. A batch lasts as long as its longest game. Rates per batch tick at 7,000 games
 are from the laptop RTX 5070 Ti. The 5090's tier-2 rate is not measured (L1.0 deferred it), so the laptop figure is
@@ -156,7 +167,7 @@ used as the conservative one.
 
 | | Seconds | GPU-h |
 |---|---|---|
-| Worst case, protected groups 1–4 (every batch 2,400 ticks) + fixed | 3,804 | 1.06 (× 1.1 = **1.16 ≤ 1.5**: the launch check) |
+| Worst case, protected groups 1–4 (every batch 2,400 ticks) + fixed | 3,804 | 1.06 (× 1.1 = **1.16 ≤ 1.3**, the run's cap: the launch check) |
 | Worst case, all 7 groups + fixed | 7,932 | 2.20: groups 5–7 drop in their fixed order |
 | **Expected**, all 7 groups at 500 ticks per batch | about 1,890 | **about 0.53** |
 
@@ -172,22 +183,39 @@ physics path with 0 non-finite values and 0 upsets.
 Budget: task L2.6 gets a cap of 1.5 GPU-h in `configs/ste_learning.toml` (a PROPOSED line for the lead to keep or drop;
 the L1 + L2 task caps then sum to 11.1 of 13.0). The status of 24 Nov 13:30 shows 4.271 of 13 used.
 
-## Launch (the lead launches; not run by the builder)
+## Launch (the lead launches after branch `l26-spec` is merged to `development`; not run by the builder)
 
 On the 5090 (weekday), after `nvidia-smi` and `scripts/isaac_preflight.sh --approved-headless` exit 0, alone on the GPU.
-`<d>` is the launch date; `<sha>` = `sha256sum configs/ste_l2/l26_gates.toml` at launch (on this branch's commit:
-`74b367625ebea9a5ad733cceca20be4d5b35cc3a96ffbc9e325c39a12b46268a`).
+`<d>` is the launch date. The driver pins its own copy of the gate file and its sha256 at the first launch. The record
+quotes it: `4a4f4d68f62c6631d0071684d2a5ee453e9bb632fb57bec854ae5eae21cf7204` on this branch.
+
+**1. Required Isaac smoke** (not of record, a few minutes, its own run folder; logged against the L2.6 cap: it asks 0.2 GPU-h, expected under 0.05. `ste_job.py` counts every launch of a task against its cap, so the run asks 1.3 and the two stay inside 1.5). It is the first time this driver
+starts Isaac Lab, and the first time landing and option B run on the physics drone:
 
 ```
 cd ~/AirStack-starling-max2-dev/svg_training && unset PYTHONPATH
-~/miniconda3/envs/env_isaaclab/bin/python scripts/ste_job.py launch --task L2.6 --name l26_tier12 \
-  --run-dir runs/<d>_ste_l26_tier12 --min-s 1200 --gpu-h 1.5 --settings configs/ste_learning.toml -- \
+~/miniconda3/envs/env_isaaclab/bin/python scripts/ste_job.py launch --task L2.6 --name l26_isaac_smoke \
+  --run-dir runs/<d>_ste_l26_isaac_smoke --min-s 60 --gpu-h 0.2 --settings configs/ste_learning.toml -- \
   ~/miniconda3/envs/env_isaaclab/bin/python scripts/ste_tier12_l26.py --settings configs/ste_l2/l26_gates.toml \
-  --run-dir runs/<d>_ste_l26_tier12 --cap-h 1.5 --headless
+  --run-dir runs/<d>_ste_l26_isaac_smoke --cap-h 0.2 --headless --games 16 --max-ticks 200
 ```
 
-Optional Isaac smoke first (not of record, about 2 minutes): the same driver command with `--games 16 --max-ticks 200
---cap-h 0.1` into a scratch run folder under `runs/`.
+The lead reads, before the real launch:
+- exit 0 and every control PASS, INFO or NOT_CHECKED;
+- `tier2_*`: 0 non-finite wrench or setpoint and the upset counts, for landing_gy_1p15 especially;
+- the repeat cells' outcome and end-step differ counts on tier 2: CUDA jitter, the floor of reading 5;
+- tier1_base_1p6's T44 line.
+
+A FAIL here means no launch: report it.
+
+**2. The run:**
+
+```
+~/miniconda3/envs/env_isaaclab/bin/python scripts/ste_job.py launch --task L2.6 --name l26_tier12 \
+  --run-dir runs/<d>_ste_l26_tier12 --min-s 1200 --gpu-h 1.3 --settings configs/ste_learning.toml -- \
+  ~/miniconda3/envs/env_isaaclab/bin/python scripts/ste_tier12_l26.py --settings configs/ste_l2/l26_gates.toml \
+  --run-dir runs/<d>_ste_l26_tier12 --cap-h 1.3 --headless
+```
 
 After the run: a record `records/<d>_ste_l26_tier12_record.md` (INFO) with the readings above, the plumbing lines first,
 and a ledger row. Evidence (`results.md`, `results.json`, `controls.json`, `plan.json`, the gate file) goes under
@@ -215,7 +243,7 @@ render from the per-game files (open question 3).
 
 1. Cap line `"L2.6" = 1.5` (PROPOSED, separate commit): keep or drop.
 2. Drop order. The error arms rank below landing_1p6, on T64's "holds with the error". If the lead wants the error arm
-   protected, protecting group 5 too takes the protected worst case to 5,580 s × 1.1 = 1.7 h, over the 1.5 h cap. That
+   protected, protecting group 5 too takes the protected worst case to 5,580 s × 1.1 = 1.7 h, over the 1.3 h run cap. That
    would need fewer cells or a measured 5090 rate first.
 3. Clips. The driver writes none. Render them from the per-game files in a follow-up (a small script), or add a clip
    step to the driver before launch (tests first)?

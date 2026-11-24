@@ -63,7 +63,7 @@ def test_gate_file_loads_and_pins_the_real_files():
     s = tool.load_settings(GATES)
     assert tool.pin_problems(s) == []
     assert s["job"]["task"] == "L2.6" and s["job"]["games"] == 1000 and s["job"]["ticks_cap"] == 2400
-    assert s["job"]["cap_h"] <= 1.5                                   # the task cap (WORK_BREAKDOWN L2.6)
+    assert s["job"]["cap_h"] + 0.2 <= 1.5                             # the run and the 0.2 h Isaac smoke inside the task cap
 
 
 def test_gate_file_refuses_an_unknown_key(tmp_path):
@@ -103,6 +103,11 @@ def test_condition_check_fails_a_tier2_game_with_another_rule(tmp_path):
     s = tool.load_settings(GATES)
     g = dict(next(x for x in s["groups"] if x["name"] == "landing_1p6"), tier2_game="l25_landing_gy")
     assert tool.condition_check(s, g)["status"] == tool.FAIL
+
+
+def test_t44_replay_rule_is_exact_on_the_cpu_and_toleranced_on_cuda():
+    s = tool.load_settings(GATES)
+    assert tool.replay_controls(s) == {"replay_count_tol_cuda_games": 10, "replay_differ_tol_cuda_games": 20}
 
 
 def test_counts_known_answers_are_t70s():
@@ -170,11 +175,30 @@ def test_effect_and_cross_words():
     assert tool.cross_word(tool.NO_CHANGE, tool.LOWERS) == tool.ONLY_T2
 
 
-def test_beyond_copy_noise():
-    assert tool.beyond_noise(1, 0, 6) is True                     # an exact repeat: one changed game is enough
-    assert tool.beyond_noise(0, 0, 6) is False
-    assert tool.beyond_noise(30, 5, 6) is False                   # 30 <= 6 x 5
-    assert tool.beyond_noise(31, 5, 6) is True
+def test_rule_reached_a_tier():
+    exact, cuda = {"outcome_differs": 0, "outcome_or_end_differs": 0}, {"outcome_differs": 5, "outcome_or_end_differs": 400}
+    # exact copies (tier 1, CPU): one changed game, outcome or end step, is enough (L2.5's rule)
+    assert tool.rule_reached(False, 6, 0, 1, exact, exact) is True
+    assert tool.rule_reached(False, 6, 0, 0, exact, exact) is False
+    # copies not exact (CUDA tier 2): outcomes only, more than cells x the larger repeat's outcome count
+    assert tool.rule_reached(False, 6, 30, 5000, cuda, exact) is False          # 30 <= 6 x 5; end-step jitter ignored
+    assert tool.rule_reached(False, 6, 31, 31, exact, cuda) is True
+    # the arm changes (the estimate error): its copies differ more than the other arm's copies
+    err = {"outcome_differs": 40, "outcome_or_end_differs": 300}
+    assert tool.rule_reached(True, 6, 0, 0, exact, err) is True
+    assert tool.rule_reached(True, 6, 999, 999, err, err) is False
+
+
+def test_copy_floor_is_the_largest_off_arm_repeat():
+    a = {"outcome_differs": 4, "outcome_or_end_differs": 90}
+    b = {"outcome_differs": 7, "outcome_or_end_differs": 60}
+    assert tool.copy_floor([a, b]) == {"outcome_differs": 7, "outcome_or_end_differs": 90}
+    assert tool.copy_floor([]) == {"outcome_differs": 0, "outcome_or_end_differs": 0}
+
+
+def test_drop_order_is_fixed():
+    assert tool.should_play(False, 0.0, 1.0, 5400.0, 1.1, earlier_dropped=True) is False   # after a drop, all later drop
+    assert tool.should_play(True, 0.0, 1.0, 5400.0, 1.1, earlier_dropped=True) is True
 
 
 # ================================================================================================ the driver, end to end
@@ -212,7 +236,7 @@ def dry_case(tmp_path_factory):
     mp.setenv(shared.LEGACY_LOGS_ENV, "")
     settings = write_settings(tmp / "s.toml")
     rd = tmp / "run"
-    args = ["--settings", str(settings), "--run-dir", str(rd), "--cap-h", "1.5", "--dry-cpu"]
+    args = ["--settings", str(settings), "--run-dir", str(rd), "--cap-h", "1.3", "--dry-cpu"]
     code = tool.main(args)
     again = tool.main(args)                                        # a finished folder: nothing to do
     mp.undo()
@@ -268,7 +292,7 @@ def test_tier2_batches_ran_the_physics_drone(dry_case):
 def test_a_changed_pin_is_refused(tmp_path):
     settings = tmp_path / "s.toml"
     settings.write_text(GATES.read_text().replace("42d18251", "00000000", 1))
-    code = tool.main(["--settings", str(settings), "--run-dir", str(tmp_path / "run"), "--cap-h", "1.5", "--dry-cpu"])
+    code = tool.main(["--settings", str(settings), "--run-dir", str(tmp_path / "run"), "--cap-h", "1.3", "--dry-cpu"])
     assert code == 2
 
 
@@ -281,3 +305,27 @@ def test_cap_must_equal_the_settings(tmp_path):
 def test_isaac_launch_needs_headless(tmp_path):
     assert tool.pre_isaac_problem(["--run-dir", str(tmp_path)])[0] == 2
     assert tool.pre_isaac_problem(["--headless", "--run-dir", str(tmp_path)]) is None
+
+
+def test_droppable_groups_are_skipped_in_order_and_the_results_say_so(tmp_path, monkeypatch):
+    monkeypatch.setenv(shared.SHARED_ENV, str(tmp_path / "shared"))
+    monkeypatch.setenv(shared.LEGACY_LOGS_ENV, "")
+    s = tomllib.loads(GATES.read_text())
+    settings = write_settings(tmp_path / "s.toml")
+    settings.write_text(settings.read_text().replace("safety_factor = 1.1", "safety_factor = 1000000.0"))
+    rd = tmp_path / "run"
+    code = tool.main(["--settings", str(settings), "--run-dir", str(rd), "--cap-h", "1.3", "--dry-cpu",
+                      "--games", str(N), "--max-ticks", "20"])        # a smoke: the launch check is not applied
+    assert code == 0
+    plan = json.loads((rd / "plan.json").read_text())
+    dropped = [g["name"] for g in s["groups"] if not g["protected"]]
+    assert [n for n, v in plan.items() if not v["played"]] == dropped
+    assert plan[dropped[0]]["reason"] == tool.REASON_OVER_CAP
+    assert all(plan[n]["reason"] == tool.REASON_AFTER_DROP for n in dropped[1:])
+    res = json.loads((rd / "results.json").read_text())
+    by = {g["name"]: g for g in res["groups"]}
+    assert all(by[n]["played"] is False for n in dropped) and by["base_1p6"]["played"] is True
+    unread = {p["name"] for p in res["rule_pairs"] if not p["read"]}
+    assert unread == {p["name"] for p in s["reading"]["rule_pairs"] if p["from"] in dropped or p["to"] in dropped}
+    md = (rd / "results.md").read_text()
+    assert tool.REASON_OVER_CAP in md and "not read" in md

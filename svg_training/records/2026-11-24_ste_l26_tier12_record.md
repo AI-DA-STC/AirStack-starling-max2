@@ -12,7 +12,10 @@ whether the fast engine still predicts tier 2 ("T13 repeated with tag, option B,
 tiers agree on what each new rule does. L3–L6 train on tier 1 and check on tier 2; the owner's P2 (option B) and P7
 (drone loss, landing part) rulings read tier-1 screens (T70). Delay and drag are not in this run: both are 0 and not
 fitted in `params/starling_physics_v1.toml`. The lead accepted this as a gap against the task text, so this run repeats
-T13 with tag, option B and the estimate error.
+T13 with tag, option B and the estimate error. "Not modelled" is not "not detectable": L1.5 (T69) could not resolve a
+delay under about 0.1 s, so a small delay's effect on these cells is unknown. T13 itself was 2v1 and 5v3 with no tag, and
+failed because Strike drones passed over or under the Guards on tier 2. Here the 1.6 m tag likely suppresses that
+failure, because the height band allows at most a 1.3 m vertical gap, inside the tag.
 
 Spec `ste_learning/drafts/L2_6_SPEC.md`, written and reviewed before the run (cells, groups, drop order, reading
 words, plumbing rules, limits).
@@ -56,7 +59,9 @@ No group was dropped: every group fitted the cap at the smoke's measured rates (
   - At 1.15 m, option B's tier-2 batch took 21.5 s against 7.7 s for the even split (× 2.8; tier 1 × 3.6).
   - With these rates the protected worst case was 1,826 s against a 4,680 s cap (1.3 h).
 - **The run** (`runs/2026-11-24_ste_l26_tier12/`): launched 13:43:43 with `--rates-from` the smoke folder, ended
-  13:48:50, exit 0, effective 304 s.
+  13:48:50, exit 0: 307 s of wall time, 306.7 s in the GPU-hour ledger (0.085 GPU-h; the driver's own effective count
+  is 303.5 s).
+- **GPU-hours, all of L2.6:** 0.145 of the 1.5 cap (table at the end).
 
 ## Controls
 
@@ -94,14 +99,19 @@ both tiers.
 
 ## Result (INFO), in the spec's words
 
+Every "likely" in this record names a mechanism that has not been tested.
+
 Holds = Guard-team wins of 1,000 games (Wilson 95 %). "Predicts" means **agrees within the test's resolution** only:
-no difference larger than this test can see (about 40–60 games in 1,000). 42 cell words (7 rule sets × 6 cells), no
-multiplicity correction, unpaired intervals on paired games.
+no difference larger than this test can see (about 40–60 games in 1,000). The spec allows up to 48 cell words (8
+groups × 6 cells). The counts below use **42** (7 rule sets × 6 cells): base_1p6_copy is left out, because it is a noise
+measurement whose 6 words repeat base_1p6's exactly. With it the 48 words read 38 / 8 / 2. No multiplicity correction;
+unpaired intervals on paired games.
 
 **Reading 1, per cell:**
 - 33 "tier 1 predicts tier 2";
 - 7 "tier 2 differs, inside T13's 0.10";
-- 2 "tier 2 differs by more than T13's 0.10". Both are guard_mark_edge v strike_low with option B at 1.15 m:
+- 2 "tier 2 differs by more than T13's 0.10". They are **the same cell twice**, guard_mark_edge v strike_low with
+  option B at 1.15 m, without and with the estimate error:
   - error off: 432 → 315 holds (−0.117), same outcome on 883 of 1,000 starts;
   - nominal error: 435 → 307 (−0.128), 870 of 1,000.
 
@@ -115,25 +125,28 @@ Of the seven "inside 0.10" separations:
 
 | Rule set | Word | Cells beyond 0.10 / separated |
 |---|---|---|
-| base_1p6 | predicts tier 2 within T13's 0.10, not in every cell | 0 / 1 (parked_ring v flank +0.087) |
-| landing_1p6 | predicts within 0.10, not in every cell | 0 / 1 (the same cell) |
-| landing_gy_1p6 | predicts within 0.10, not in every cell | 0 / 1 (the same cell) |
-| landing_1p15 | predicts within 0.10, not in every cell | 0 / 1 (mark_edge v low −0.071) |
-| landing_1p15_err | predicts within 0.10, not in every cell | 0 / 1 (mark_edge v low −0.078) |
-| **landing_gy_1p15** | **does not predict tier 2 in this rule set (a gap larger than T13's 0.10)** | 1 (mark_edge v low −0.117) / 1 more (mark_edge v straight −0.061) |
-| **landing_gy_1p15_err** | **does not predict tier 2 (a gap larger than T13's 0.10)** | 1 (mark_edge v low −0.128) / 1 more (mark_edge v straight −0.079) |
+| base_1p6 | the fast engine predicts tier 2 within T13's 0.10 in this rule set, not in every cell | 0 / 1 (parked_ring v flank +0.087) |
+| landing_1p6 | the fast engine predicts tier 2 within T13's 0.10 in this rule set, not in every cell | 0 / 1 (the same cell) |
+| landing_gy_1p6 | the fast engine predicts tier 2 within T13's 0.10 in this rule set, not in every cell | 0 / 1 (the same cell) |
+| landing_1p15 | the fast engine predicts tier 2 within T13's 0.10 in this rule set, not in every cell | 0 / 1 (mark_edge v low −0.071) |
+| landing_1p15_err | the fast engine predicts tier 2 within T13's 0.10 in this rule set, not in every cell | 0 / 1 (mark_edge v low −0.078) |
+| **landing_gy_1p15** | **the fast engine does not predict tier 2 in this rule set (a gap larger than T13's 0.10)** | 1 (mark_edge v low −0.117) / 1 more (mark_edge v straight −0.061) |
+| **landing_gy_1p15_err** | **the fast engine does not predict tier 2 in this rule set (a gap larger than T13's 0.10)** | 1 (mark_edge v low −0.128) / 1 more (mark_edge v straight −0.079) |
 
-No rule set has every cell inside the test's resolution. The tier-1 to tier-2 gap is largest where both option B and
-the 1.15 m tag are on, and in the one height script (strike_low). Tier 1's vertical response is not fitted. At 1.15 m
-the 0.5–1.8 m height band allows passes under or over the tag radius (spec). The tier-1 clip below shows a strike_low
-drone flying at about 0.6 m under a Guard drone at 1.2 m and reaching the zone. That the 0.117 gap comes from passes
-under is likely, not tested: passes are not counted in this run.
+No rule set has every cell inside the test's resolution. Both "does not predict" sets are option B at 1.15 m. The
+tier-1 to tier-2 gap is largest there and in the one height script (strike_low). Two model differences sit under that
+cell: tier 1's vertical response is not fitted, and tier 1 carries a lumped 0.1482 s setpoint delay where tier 2 has
+none. At 1.15 m the 0.5–1.8 m height band allows passes under or over the tag radius (spec). The tier-1 clip below shows
+a strike_low drone flying at about 0.6 m under a Guard drone at 1.2 m and reaching the zone. It is the only evidence of
+a pass under in this run: there is no tier-2 clip (Clips). That the 0.117 gap comes from passes under is likely; passes are
+not counted.
 
 **Reading 3, same-outcome share (no word):** 0.87–1.00 per cell. Tier 2's own copy agreement in the same batch is
 0.996–1.000 (off arm) and 0.957–0.968 (error arm). For the two known cells at base_1p6: 0.913 and 0.993 (T64: 0.912,
 0.993).
 
-**Reading 4, rule effects across tiers** (rule-effect words; hold → reach / reach → hold counts per tier):
+**Reading 4, rule effects across tiers.** In the table, "a → b" are hold counts of 1,000 games before and after the
+rule; "(x / y)" are paired counts of the same starts, hold → reach / reach → hold.
 
 | Pair | Both tiers agree | Cells where only one tier detects an effect |
 |---|---|---|
@@ -149,13 +162,13 @@ No pair has the tiers disagreeing on a direction.
 
 **Plain reading.**
 - **Tested:** whether the fast engine (tier 1) gives the Isaac Lab drone's (tier 2) results for six scripted 3v3
-  pairings under the new rules (tag 1.6 m and 1.15 m, landing, option B, the estimate error), and whether both agree
-  on what each rule does.
-- **What happened:** they agree within about 0.10 in 40 of 42 cell readings and agree on every rule's direction. The
-  exceptions are at 1.15 m with option B: tier 2 holds fewer games than tier 1, most of all against the low-flying
-  Strike script (0.117 and 0.128 lower).
-- **Why it matters:** tier 1 is fit to screen the new rules and to train on at 1.6 m and 1.15 m. A 1.15 m result near a
-  bar, or one that rests on height play, needs a tier-2 check.
+  pairings under the new rules (tag 1.6 m and 1.15 m, landing, option B, the estimate error), and whether both tiers
+  agree on what each rule does. Delay and drag are not modelled (a gap the lead accepted).
+- **What happened:** they agree within T13's 0.10 in 40 of 42 cell readings (no multiplicity correction, unpaired
+  intervals) and never disagree on a rule's direction. The two exceptions are one cell, the low-flying Strike script
+  against mark_edge with option B at 1.15 m, without and with the error: tier 2 holds 0.117 and 0.128 fewer.
+- **Why it matters:** for scripted play, tier 1 agrees with tier 2 at 1.6 m and at 1.15 m without option B. For a
+  trained team, or for option B at 1.15 m, that is not shown, and a tier-2 check is needed there.
 
 Clips: tier 1 only; tier 2 pending (Clips, below).
 
@@ -164,17 +177,23 @@ Clips: tier 1 only; tier 2 pending (Clips, below).
 ## For the owner's P2 and P7 rulings
 
 **P2 (filter option B): what the data show.**
+- **Whether a lower Guard hold under option B is a cost or the intended effect is the owner's call.** This record
+  does not decide it.
+- At 1.6 m option B is not testable with scripted play on either tier (no cell changes; T70 found the same on tier 1).
 - At the 1.15 m tag, option B lowers the Guard team's hold against mark_edge v straight on both tiers:
   - tier 1: 442 → 368 (80 hold → reach, 6 reach → hold);
   - tier 2: 382 → 307 (78 / 3).
-- No change detected in the other 5 cells on either tier. Both tiers agree in 6 of 6 cells.
-- With the nominal estimate error they agree in 4 of 6: tier 2 also detects a drop in mark_edge v straight and
-  mark_edge v low, where tier 1's drop is smaller (429 → 379, 452 → 435) and within its intervals.
-- At 1.6 m option B changes no cell on either tier: it is not testable there with scripted play, on tier 2 as on tier 1
-  (T70).
-- The one cell beyond T13's 0.10 between the tiers is mark_edge v low with option B at 1.15 m (0.117, and 0.128 with
-  the error). strike_low is a height script, and tier 1's vertical response is not fitted.
-- Likely mechanism (not tested): at 1.15 m the filter acts before the tag, so a Strike drone that no longer gives way
+- No change detected in the other 5 cells on either tier. Both tiers agree on the effect's word in 6 of 6 cells.
+- **The effect's size is uncertain between the tiers.** With option B at 1.15 m tier 1 does not predict tier 2 (the
+  rule set's word above), so the levels differ: 442 → 368 on tier 1 against 382 → 307 on tier 2.
+- With the nominal estimate error the tiers agree in 4 of 6. Tier 2 also detects a drop in mark_edge v straight
+  (380 → 300) and mark_edge v low (374 → 307), where tier 1's drops are smaller (429 → 379, 452 → 435) and within its
+  intervals. The error is a different model on each tier (position and velocity on tier 1; also attitude, inside the
+  cascade copy, on tier 2), so "tier 2 detects more with the error" compares two models, not one error.
+- The cell beyond T13's 0.10 between the tiers is mark_edge v low with option B at 1.15 m (0.117; 0.128 with the
+  error). strike_low is a height script, tier 1's vertical response is not fitted, and tier 1 carries a lumped setpoint
+  delay that tier 2 lacks.
+- Likely mechanism: at 1.15 m the filter acts before the tag, so a Strike drone that no longer gives way
   gets past moving Guards more often.
 
 **P2, what they do not show:**
@@ -186,10 +205,11 @@ Clips: tier 1 only; tier 2 pending (Clips, below).
 
 **P7 (landing part): what the data show.**
 - At 1.6 m, landing gives the same word on both tiers in 5 of 6 cells (no change detected).
-- The cell where only tier 1 sees it is again mark_edge v low: tier 1 844 → 895 (0 / 51) "raises", tier 2 863 → 878
-  (2 / 17) "no change detected". Tier 2 moves the same way, by less.
-- T70's one landing effect (a height-script cell, tier 1 not fitted vertically) is therefore smaller on tier 2 and not
-  detected at this resolution. Likely because tier 2's vertical response differs; not tested.
+- L2.5 (T70) found two landing cells on tier 1, mark_edge and mirror against strike_low. This run plays mark_edge v
+  low, the one of T70's two cells it covers; mirror v low is not played.
+- In that cell: tier 1 844 → 895 holds (0 / 51 paired) "raises"; tier 2 863 → 878 (2 / 17) "no change detected". Tier 2
+  moves the same way by less: not detected at this resolution, which is not the same as absent. Likely because tier 2's
+  vertical response differs.
 
 **P7, what they do not show:** scheduled drop-outs, drawn team sizes, sizes other than 3v3, how close a live drone comes
 to a landing one (live drones only in the closeness columns), L2.3's floor shortfall, absent slots in a learner, a real
@@ -204,6 +224,10 @@ descent.
     (`exploit.play_cells` on T44's starts) on an 8-game Isaac world reproduced the run's first 8 tier-2 games exactly in
     both cells. The run's numbers are not in question.
   - `record_games` on an Isaac world is. Cause not diagnosed. Those 4 tier-2 GIFs are not used.
+  - **Consequence:** every earlier tier-2 GIF made through `record_games` on an Isaac world is suspect until side task
+    CLIP-T2 (running now) reports. Among the records, that path drew the two tier-2 GIFs of T53 (L0.13,
+    `scripts/ste_tier2_l013.py`). Tier-2 clips drawn by other paths are not yet checked: L0.2's (T48, `ste/speed.py`
+    `record_clips`), L0.3's (T45) and the NUS port's tier-2 rows.
 - **The between-batch copy found no noise** (0 games on both tiers). The run-wide floor therefore came from the
   within-batch repeat alone.
 - **Option B's tier-2 cost** at 7,000 games was × 2.8 per tick, under the 3.7 fallback (smoke).
@@ -221,13 +245,15 @@ The spec's follow-up render (lead's decision), with `scripts/ste_l26_clips.py --
 | mark_edge v low | `l26_landing_gy_1p15_guard_mark_edge_v_strike_low_tier1_game0_reach.gif` (reach at 3.6 s, under a Guard drone) | `…_strike_low_tier1_game2_hold.gif` (2.5 s) |
 | mark_edge v straight | `…_strike_straight_tier1_game0_reach.gif` (2.9 s) | `…_strike_straight_tier1_game2_hold.gif` (1.9 s) |
 
-**Tier 2 clips: pending** until the Isaac clip path is fixed (above). 3-D Isaac clips: pending (VID-1).
+**Tier 2 clips: pending** until CLIP-T2 reports on the Isaac clip path (above). 3-D Isaac clips: pending (VID-1). The
+tier-1 reach-under clip therefore stands alone as the evidence of a pass under.
 
 ## What this does not show
 
 - Scripts only (they act every tick, L011-F1), no trained team.
 - One start set, 3v3, 6 cells, one seed.
-- Delay and drag not modelled (accepted gap).
+- Delay and drag not modelled (a gap the lead accepted). Not modelled is not "not detectable": L1.5's resolution was
+  about 0.1 s.
 - **The estimate error is not the same on both tiers:**
   - tier 1 has position and velocity only;
   - tier 2 also has attitude, inside the cascade copy, while the game, commander and filter read the true state.

@@ -35,6 +35,10 @@ L1_L2_CAP_GPU_H = 13.0
 L1_TASK_CAP_GPU_H = {"L1.0": 0.5, "L1.1": 0.4, "L1.2": 0.0, "L1.3": 0.0, "L1.4": 0.0, "L1.5": 0.3, "L1.6": 0.0,
                      "L1.7": 0.1, "L1.8": 0.6, "L1.9": 1.6, "L1.10": 1.7, "L1.11": 1.2, "L1.12": 0.1, "L1.13": 2.1,
                      "L1.14": 0.3, "L1.15": 0.2}
+# 24 Nov 2026 (L2.5 builder, for the lead to keep or drop): L2's first ID, L2.5, with the task row's 0.5 GPU-h
+# (WORK_BREAKDOWN L2.5), so that its CPU screen can be launched through scripts/ste_job.py; the other L2 IDs arrive with
+# their caps from the lead.
+L2_TASK_CAP_GPU_H = {"L2.5": 0.5}
 
 GOOD = SETTINGS_FILE.read_text()
 
@@ -87,11 +91,12 @@ def test_the_l1_and_l2_budget_of_gate_g0():
     cfg, _ = load_ste_learning()
     (later,) = cfg.later_budgets
     assert later == BudgetCfg(section="budget_l1_l2", phases=("L1", "L2"), closed=False, phase_cap_gpu_h=L1_L2_CAP_GPU_H,
-                              task_cap_gpu_h=tuple(L1_TASK_CAP_GPU_H.items()))
+                              task_cap_gpu_h=tuple({**L1_TASK_CAP_GPU_H, **L2_TASK_CAP_GPU_H}.items()))
     assert type(later.phase_cap_gpu_h) is float and all(type(cap) is float for _, cap in later.task_cap_gpu_h)
-    assert TASK_IDS["L1"] == tuple(L1_TASK_CAP_GPU_H) and TASK_IDS["L2"] == ()      # L2's IDs arrive when L2 starts
-    assert list(tomllib.loads(GOOD)["budget_l1_l2"]["task_cap_gpu_h"]) == list(TASK_IDS["L1"])   # file order
-    assert later.task_caps_total_gpu_h() == 9.1 <= later.phase_cap_gpu_h          # added in decimal
+    assert TASK_IDS["L1"] == tuple(L1_TASK_CAP_GPU_H) and TASK_IDS["L2"] == tuple(L2_TASK_CAP_GPU_H)   # L2.5 first
+    assert list(tomllib.loads(GOOD)["budget_l1_l2"]["task_cap_gpu_h"]) == list(TASK_IDS["L1"] + TASK_IDS["L2"])   # order
+    assert later.task_caps_total_gpu_h() == 9.6 <= later.phase_cap_gpu_h          # added in decimal (L1 9.1 + L2.5 0.5)
+    assert cfg.budget_of("L2.5") is later and cfg.cap_gpu_h("L2.5") == 0.5 and phase_of("L2.5") == "L2"
     assert cfg.budget_in_work() is later and cfg.budgets() == (cfg.budget, later)
     assert cfg.budget_of("L1.9") is later and cfg.budget_of("L0.12") is cfg.budget
     assert cfg.cap_gpu_h("L1.9") == 1.6 and cfg.cap_gpu_h("L1.3") == 0.0 and cfg.cap_gpu_h("L0.12") == 13.0
@@ -394,12 +399,12 @@ def test_a_later_budget_section_is_checked(tmp_path):
         ("phase_cap_gpu_h = 13.0", "phase_cap_gpu_h = 13", r"budget_l1_l2\.phase_cap_gpu_h"),
         ("phase_cap_gpu_h = 13.0", "phase_cap_gpu_h = -13.0", r"budget_l1_l2\.phase_cap_gpu_h"),
         ('"L1.9" = 1.6', '"L1.9" = 2', r"budget_l1_l2\.task_cap_gpu_h.*L1\.9"),
-        ('"L1.9" = 1.6', '"L1.9" = 5.6', r"task caps add up to 13\.1 .*budget_l1_l2\.phase_cap_gpu_h = 13\.0"),
+        ('"L1.9" = 1.6', '"L1.9" = 5.1', r"task caps add up to 13\.1 .*budget_l1_l2\.phase_cap_gpu_h = 13\.0"),
     ]
     for old, new, match in cases:
         with pytest.raises(ValueError, match=match):
             load_ste_learning(changed(tmp_path, old, new))
-    exactly = load_ste_learning(changed(tmp_path, '"L1.9" = 1.6', '"L1.9" = 5.5'))[0]      # exactly 13.0: allowed
+    exactly = load_ste_learning(changed(tmp_path, '"L1.9" = 1.6', '"L1.9" = 5.0'))[0]      # exactly 13.0 (with L2.5's 0.5): allowed
     assert exactly.budget_in_work().task_caps_total_gpu_h() == 13.0
 
 
@@ -499,7 +504,7 @@ def leaves(table: dict) -> int:
 
 def test_every_value_line_carries_a_status_label_and_source():
     lines = value_lines(GOOD)
-    assert len(lines) == leaves(tomllib.loads(GOOD)) == 4 + len(L0_TASK_CAP_GPU_H) + 3 + len(L1_TASK_CAP_GPU_H)
+    assert len(lines) == leaves(tomllib.loads(GOOD)) == 4 + len(L0_TASK_CAP_GPU_H) + 3 + len(L1_TASK_CAP_GPU_H) + len(L2_TASK_CAP_GPU_H)
     assert unlabelled(GOOD) == []
 
 

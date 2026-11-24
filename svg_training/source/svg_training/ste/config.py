@@ -39,7 +39,7 @@ TASK_IDS: dict[str, tuple[str, ...]] = {
            "L0.6"),
     "L1": ("L1.0", "L1.1", "L1.2", "L1.3", "L1.4", "L1.5", "L1.6", "L1.7", "L1.8", "L1.9", "L1.10", "L1.11", "L1.12",
            "L1.13", "L1.14", "L1.15"),
-    "L2": (),
+    "L2": ("L2.5",),          # L2.5 first (24 Nov 2026, its CPU screen); the other L2 IDs arrive with their caps
 }
 BUDGET_PHASES: tuple[str, ...] = ("L0",)    # the phases [budget] covers (its first name, kept for the L0 tools)
 _FIRST_BUDGET = "budget"

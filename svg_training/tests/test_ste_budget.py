@@ -189,7 +189,7 @@ def l1_settings(tmp_path, cap: float, **caps: float):
     text = path.read_text().replace('phase = "L0"', 'phase = "L1"').replace("closed = false", "closed = true")
     text += "\n".join(["[budget_l1_l2]", 'phases = ["L1", "L2"]', "closed = false", f"phase_cap_gpu_h = {cap!r}",
                        "[budget_l1_l2.task_cap_gpu_h]",
-                       *(f'"{task}" = {named.get(task, 0.0)!r}' for task in TASK_IDS["L1"])]) + "\n"
+                       *(f'"{task}" = {named.get(task, 0.0)!r}' for task in TASK_IDS["L1"] + TASK_IDS["L2"])]) + "\n"
     path.write_text(text)
     return path
 

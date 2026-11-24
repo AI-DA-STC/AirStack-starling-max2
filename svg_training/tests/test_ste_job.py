@@ -577,7 +577,7 @@ def l1_in_work_with_l0_open(tmp_path: Path) -> Path:
     path = settings(tmp_path, 19.0, L0_11=3.0)
     text = path.read_text().replace('phase = "L0"', 'phase = "L1"')
     text += "\n".join(["[budget_l1_l2]", 'phases = ["L1", "L2"]', "closed = false", "phase_cap_gpu_h = 13.0",
-                       "[budget_l1_l2.task_cap_gpu_h]", *(f'"{task}" = 0.0' for task in TASK_IDS["L1"])]) + "\n"
+                       "[budget_l1_l2.task_cap_gpu_h]", *(f'"{task}" = 0.0' for task in TASK_IDS["L1"] + TASK_IDS["L2"])]) + "\n"
     path.write_text(text)
     return path
 

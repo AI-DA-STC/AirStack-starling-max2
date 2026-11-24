@@ -93,6 +93,10 @@ Isaac Lab install, add them to the same environment with `<env>/bin/pip install 
 (`-r requirements-exact.txt` as well for the versions our records used). `env_isaaclab` has msgpack 1.2.4 and the
 container image 1.1.2.
 
+**For the policy export's reload check** (STE L6, `ste/export.py`): `onnxruntime` (CPU), installed on the RTX 5090 on
+24 Nov 2026 with `~/miniconda3/envs/env_isaaclab/bin/pip install onnxruntime==1.20.1` (owner's go-ahead; numpy and torch
+unchanged); `onnx` 1.23.2 was already there. The laptop needs the same line before an export runs there.
+
 ### Hand fixes after the setup script
 
 A dated workaround (17 November 2026); the script is not yet fixed. `setup_isaaclab_host.sh` does not do these

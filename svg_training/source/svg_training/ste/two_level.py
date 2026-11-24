@@ -58,7 +58,8 @@ def update_source_sha256() -> str:
 
 
 def two_level_policy_terms(head_lp: Tensor, old_head_lp: Tensor, head_entropy: Tensor, mask: Tensor,
-                           advantages: Tensor, ratio_clip: float, scales: tuple[float, float]) -> dict[str, Tensor]:
+                           advantages: Tensor, ratio_clip: float, scales: tuple[float, float],
+                           live: Tensor | None = None) -> dict[str, Tensor]:
     """head_lp, old_head_lp, head_entropy, mask [B, 2] (team, drone); advantages [B, 1] -> {"policy_loss" (scalar),
     "entropy_loss" (scalar), "entropy_loss_heads" [2], "kl" [2] (no grad), "entropy" [2] (no grad: mean entropy over
     the samples with that head's mask on, nats)}.
@@ -66,14 +67,26 @@ def two_level_policy_terms(head_lp: Tensor, old_head_lp: Tensor, head_entropy: T
     policy loss = sum over heads of -mean_B[ m_h * min(A r_h, A clip(r_h, 1 +- eps)) ], r_h = exp(m_h (lp_h - old_h)):
     a masked sample has ratio exactly 1 and no gradient, whatever its stored action or old log-probability.
     entropy loss = sum over heads of -s_h * mean_B[ m_h * H_h ]. kl_h = mean over the samples with m_h on of
-    ((r - 1) - log r), 0 when there is none."""
+    ((r - 1) - log r), 0 when there is none.
+
+    ``live`` [B] bool (L3 slice 3, the absent-drone mask; None: as before, bit for bit): the head masks become
+    h' = h * live and the means are over the live samples (sum / live count) instead of all B; KL and entropy logs
+    use h' (revision A4)."""
     m = mask.to(head_lp.dtype)
+    if live is not None:
+        m = m * live.to(head_lp.dtype)[:, None]
     log_ratio = (head_lp - old_head_lp) * m
     ratio = torch.exp(log_ratio)
     surrogate = advantages * ratio
     clipped = advantages * torch.clip(ratio, 1.0 - ratio_clip, 1.0 + ratio_clip)
-    policy_heads = -(torch.min(surrogate, clipped) * m).mean(0)
-    entropy_heads = -torch.as_tensor(scales, dtype=head_lp.dtype, device=head_lp.device) * (m * head_entropy).mean(0)
+    s = torch.as_tensor(scales, dtype=head_lp.dtype, device=head_lp.device)
+    if live is None:
+        policy_heads = -(torch.min(surrogate, clipped) * m).mean(0)
+        entropy_heads = -s * (m * head_entropy).mean(0)
+    else:
+        n_live = live.sum().clamp(min=1).to(head_lp.dtype)
+        policy_heads = -(torch.min(surrogate, clipped) * m).sum(0) / n_live
+        entropy_heads = -s * (m * head_entropy).sum(0) / n_live
     with torch.no_grad():
         count = m.sum(0).clamp(min=1.0)
         kl = (((ratio - 1.0) - log_ratio) * m).sum(0) / count

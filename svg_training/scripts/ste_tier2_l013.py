@@ -368,8 +368,19 @@ class Arm:
         game = exploit_train.TrainGame(cfg, n, self.guards, self.strikes, device=self.device, seed=seed,
                                        world=self.world if self.tier == 2 else None)
         opp = make_strategy(self.opp, "strike", cfg, n, self.device, seed + self.exploit.STRIKE_SEED_OFFSET)
-        env = exploit_train.DecisionEnv(game, self.hold, g.run["side"], opp)
+        env = exploit_train.decision_env(game, self.hold, g.run["side"], opp, g.learner, g.players, seed)   # STE L3
         return exploit_train.Learner(dict(tr), env, self.device, seed, g.planned_updates)
+
+    def team_from(self, saved: dict, device):
+        """Saved networks (a snapshot or ``Learner.saved()``) as the Guard team: velocity through
+        ``team_from_modules``; the skills route (STE L3 slice 3) through ``skill_team_from_modules``, its skill lists
+        checked against the gate file's."""
+        from svg_training.ste import exploit_train
+        g = self.gates
+        if not g.learner.skills:
+            return exploit_train.team_from_modules("guard", saved, list(g.trainer["hidden"]), device)
+        d = self.exploit.skills.two_level_dispatch(g.learner, g.players, "guard", self.cfg(self.tier), 1, device, 0)
+        return exploit_train.skill_team_from_modules("guard", saved, list(g.trainer["hidden"]), d, device)
 
     def peer_team(self, update: int):
         """The t1 arm's networks at ``update`` (its snapshot), on this device; None when t1 has none."""
@@ -378,7 +389,7 @@ class Arm:
         if not path.is_file():
             return None
         snap = self.torch.load(path, weights_only=False)
-        team = exploit_train.team_from_modules("guard", snap, list(self.gates.trainer["hidden"]), self.device)
+        team = self.team_from(snap, self.device)
         team.name = f"t1 arm networks, update {update}"
         return team
 
@@ -470,8 +481,9 @@ class Arm:
             exp, parked = cp[self.cells[0]], cp[self.cells[1]]
             before[tier] = {"untrained": list(self.holds(exp)), "parked": list(self.holds(parked))}
             good, text = ex.replay_ok(exp, parked, self.device, g.controls)
-            controls[f"ctl_untrained_is_still_t{tier}"] = {"status": PASS if good else FAIL, "phase": "before",
-                                                           "detail": f"untrained exploiter v {self.parked}, tier {tier}: {text}"}
+            key = "ctl_untrained_is_first_skill" if g.learner.skills else "ctl_untrained_is_still"   # STE L3 slice 3
+            controls[f"{key}_t{tier}"] = {"status": PASS if good else FAIL, "phase": "before",
+                                          "detail": f"untrained exploiter v {self.parked}, tier {tier}: {text}"}
             controls.update(plumbing(ex, pg, self.ref, self.n_eval, "before", f"_t{tier}_before"))
             controls.update(batch_controls(T, pg, tier, "before", f"_t{tier}_before"))
         t44 = {k: v[:self.n_eval] for k, v in self.ref.cell(g.reference["variant"], self.parked, self.opp).items()}
@@ -490,7 +502,7 @@ class Arm:
             write_json(self.run_dir / INFO_FILE, info)
         self.state["before"] = before
         (self.run_dir / SNAPSHOTS).mkdir(exist_ok=True)              # the start networks (the same in both arms)
-        self.torch.save(T.snapshot(self.learner.modules()), self.run_dir / SNAPSHOTS / "u0000.pt")
+        self.torch.save(T.snapshot(self.learner.saved()), self.run_dir / SNAPSHOTS / "u0000.pt")
         say("controls: " + ", ".join(f"{k} {v['status']}" for k, v in controls.items()))
         code = self.ending(controls, "before training")
         if code is not None:
@@ -540,7 +552,7 @@ class Arm:
                     "motion": self.learner.env.game.motion}
             with open(self.run_dir / TRAIN_LOG, "a") as f:
                 f.write(json.dumps(line) + "\n")
-            self.torch.save(T.snapshot(self.learner.modules()),
+            self.torch.save(T.snapshot(self.learner.saved()),
                             self.run_dir / SNAPSHOTS / f"u{self.learner.updates:04d}.pt")
             if self.learner.updates % int(g.trainer["checkpoint_every_updates"]) == 0:
                 self.state["learner"] = self.learner.state()
@@ -616,7 +628,7 @@ class Arm:
     def phase_final(self) -> int:
         import numpy as np
         g, ex, T = self.gates, self.exploit, self.T
-        self.torch.save(self.learner.modules(), self.run_dir / AGENT_FINAL)
+        self.torch.save(self.learner.saved(), self.run_dir / AGENT_FINAL)       # skills route: with its lists (L3)
         team = self.learner.team()
         players, cells = None, list(self.cells)
         peer_update = None
@@ -686,6 +698,7 @@ class Arm:
             "what": "STE L0.13 Does tier 2 train at all? One arm; observed in the training simulator",
             "simulator": SIMULATOR[self.tier], "arm": self.arm, "tier": self.tier, "gates_sha256": g.sha256,
             "eval_games": self.n_eval, "opponent": self.opp, "parked_name": self.parked,
+            **({"learner": self.exploit.skills.learner_table(g.learner)} if g.learner.skills else {}),   # STE L3
             "trained": {**T.rate(k_t, n_t), "composition": comp(own[cells[0]], self.tier),
                         "tier_ran": tier_t, "upsets": int(np.sum(own[cells[0]].get("upset", 0)))},
             "parked": {**T.rate(k_p, n_p), "composition": comp(own[cells[1]], self.tier),
@@ -763,7 +776,7 @@ class Arm:
         g, v = self.gates, self.gates.videos
         n, seed = int(v["games"]), int(g.run["clip_seed"])
         dev = "cpu" if self.tier == 1 else self.device
-        team = exploit_train.team_from_modules("guard", self.learner.modules(), list(g.trainer["hidden"]), dev)
+        team = self.team_from(self.learner.saved(), dev)
         team.name = f"Guard team trained on tier {self.tier} (arm {self.arm})"
         opp = make_strategy(self.opp, "strike", self.cfg(self.tier), n, dev, seed + self.exploit.STRIKE_SEED_OFFSET)
         starts = cpu_starts(self.cfg1, n, self.guards, self.strikes, seed, band=0)

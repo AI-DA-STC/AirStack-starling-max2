@@ -95,6 +95,10 @@ class Tier2Gates:
     controls: dict
     verdict: dict
     videos: dict
+    # STE L3 slice 3 (step 5): optional tables, absent in the L0.13 files of record (which load unchanged)
+    players: dict | None = None
+    learner: Any = dataclasses.field(default_factory=lambda: exploit.skills.learner_spec(None))
+    pool: dict = dataclasses.field(default_factory=lambda: {"enabled": False})
 
     @property
     def per_update(self) -> int:
@@ -130,13 +134,14 @@ def load_gates(path: str | Path = GATES_FILE) -> Tier2Gates:
     path = Path(path)
     raw = path.read_bytes()
     data = tomllib.loads(raw.decode())
-    unknown = sorted(set(data) - set(_SECTIONS) - {"learner"})
+    unknown = sorted(set(data) - set(_SECTIONS) - {"learner", "players", "pool"})
     if unknown:
         raise ValueError(f"unknown section(s) in {path.name}: {unknown}")
-    # STE L3: an optional [learner] table; the skills route is not wired into tier 2 training yet, so it is refused here
-    # (velocity, or no table: as before)
-    exploit.skills.require_velocity_learner(exploit.skills.learner_spec(data.get("learner")),
-                                            "ste/tier2_train.py (scripts/ste_tier2_l013.py)")
+    # STE L3: an optional [learner] table. Slice 3 (step 5) wires choice = "two_level" into the Guard-side L0.13 arms;
+    # slice 1's flat modes are still refused here (velocity, or no table: as before)
+    learner = exploit.skills.learner_spec(data.get("learner"))
+    if learner.skills and learner.choice != exploit.skills.TWO_LEVEL:
+        exploit.skills.require_velocity_learner(learner, "ste/tier2_train.py (scripts/ste_tier2_l013.py)")
     parts = {name: _exact(data.get(name), keys, name) for name, keys in _SECTIONS.items()}
     arms = parts["arms"]
     if list(arms["order"]) != list(ARMS):
@@ -171,7 +176,47 @@ def load_gates(path: str | Path = GATES_FILE) -> Tier2Gates:
     sweep.parse_size(run["size"])
     if len({int(run["train_seed"]), int(run["curve_seed"]), int(run["clip_seed"])}) != len(("train", "curve", "clip")):
         raise ValueError("run.train_seed, curve_seed and clip_seed must differ")
-    return Tier2Gates(path=str(path), sha256=hashlib.sha256(raw).hexdigest(), **parts)
+    players, pool = _skills_tables(data, learner, parts)
+    return Tier2Gates(path=str(path), sha256=hashlib.sha256(raw).hexdigest(), players=players, learner=learner,
+                      pool=pool, **parts)
+
+
+def _skills_tables(data: dict, learner, parts: dict) -> tuple[dict | None, dict]:
+    """STE L3 slice 3 (step 5): the optional ``[players]`` and ``[pool]`` and the two-level route's checks. ValueError
+    names the first problem: a two-level ``[learner]`` without ``[players]``; ``[players]`` other than the tier-1 gate
+    file's (the L0.12 file this gate pins, ``[l012] gates_sha256``); the lists against ``[players]``
+    (``skills.check_two_level``); ``[run] parked`` other than the first Guard drone skill (the untrained team's known
+    answer: it plays free + that skill, the parked cell); an enabled ``[pool]`` (not wired into the L0.13 arms)."""
+    players = data.get("players")
+    if players is not None:
+        _exact(players, {"guards", "strikes"}, "players")
+        bad = [p for team in ("guards", "strikes") for p in players[team] if p not in REGISTRY]
+        if bad:
+            raise ValueError(f"players: unknown player(s) {bad}")
+        tier1 = exploit.GATES_FILE
+        if exploit.sha256_file(tier1) != parts["l012"]["gates_sha256"]:
+            raise ValueError(f"players: the tier-1 gate file {tier1} is not the one [l012] gates_sha256 pins")
+        want = exploit.load_gates(tier1).players
+        if any(list(players[t]) != list(want[t]) for t in ("guards", "strikes")):
+            raise ValueError("players: the lists must equal the tier 1 gate file's [players] (the same skills)")
+    if learner.skills:
+        if players is None:
+            raise ValueError("a two-level [learner] needs [players] (the lists of the skills)")
+        exploit.skills.check_two_level(learner, players)
+        if learner.drone_skills["guard"][0] != parts["run"]["parked"]:
+            raise ValueError(f"run.parked {parts['run']['parked']!r} must be the first Guard drone skill "
+                             f"{learner.drone_skills['guard'][0]!r}: the untrained two-level team plays free + that "
+                             f"skill, and the control compares it with the parked cell")
+    table = data.get("pool")
+    if table is None:
+        return players, {"enabled": False}
+    _exact(table, {"enabled", "seed"}, "pool")
+    if not isinstance(table["enabled"], bool) or isinstance(table["seed"], bool) or not isinstance(table["seed"], int):
+        raise ValueError("pool: enabled true or false, seed an int")
+    if table["enabled"]:
+        raise ValueError("pool.enabled: the opponent pool is not wired into the L0.13 arms (they train against "
+                         "run.opponent)")
+    return players, {"enabled": False, "seed": table["seed"]}
 
 
 def sha256_file(path: str | Path) -> str:
@@ -484,6 +529,9 @@ def tier2_verdict(trained: tuple[int, int], parked: tuple[int, int], budget_reac
 
 
 def snapshot(modules: dict) -> dict:
-    """What a learning-curve snapshot keeps of ``Learner.modules()``: each agent's policy and observation scaler (enough
-    for ``exploit_train.team_from_modules``)."""
+    """What a learning-curve snapshot keeps of ``Learner.modules()`` (or ``Learner.saved()``): each agent's policy and
+    observation scaler (enough for ``exploit_train.team_from_modules``); the skills route (``{"skills", "modules"}``,
+    L3 slice 3): the same, with the skill lists kept beside them (for ``skill_team_from_modules``)."""
+    if set(modules) == {"skills", "modules"}:
+        return {"skills": modules["skills"], "modules": snapshot(modules["modules"])}
     return {a: {k: v for k, v in m.items() if k in SNAPSHOT_KEYS} for a, m in modules.items()}

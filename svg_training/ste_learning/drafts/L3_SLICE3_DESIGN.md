@@ -297,3 +297,38 @@ the Guard-side arms and the dispatch-equality tests (answer 4).
   tested); `masked_policy_terms` blanks an absent row's entropy as its log-ratio and value (NaN and inf garbage
   tested); `team_bootstrap`'s docstring calls the own-value fallback a heuristic (it values the state at the slot's
   last live step, not at the rollout's end).
+
+## After QC of step 4 (24 Nov 2026)
+
+- The state preprocessor is not masked: the states are the one global state of the game (critics only), the same
+  for every slot, so absence does not apply to them; no state scaler is configured today (none trains).
+- "Built only when on" means constructed only when on: `ste/masked_ippo.py` is imported by `exploit_train` and
+  `two_level` either way; with the mask off no `MaskedIPPO` is constructed and `TwoLevelIPPO`'s masked branch never
+  runs.
+- A masked update called without its rollout's pre-pass raises (the pre-pass result is cleared after every
+  `post_interaction`, so a later update never reads stale values). `check_pins` also pins the sources of skrl's
+  `IPPO.record_transition` and `IPPO.post_interaction` (the pre-pass depends on what the first stores and on when and
+  in which order the second runs the updates).
+- Tests added: the absent rows' observation features (all but the alive flag) are perturbed too, with every weight
+  and scaler statistic unchanged on both routes; both constructors refuse `time_limit_bootstrap` with the mask.
+
+## Step 5 as built (24 Nov 2026): the skills route in tier 2
+
+- `ste/tier2_train.load_gates` accepts optional `[players]`, `[learner]`, `[pool]` (absent: None, the velocity route,
+  off); the L0.13 gate file of record loads with its sha256 unchanged (tested against the committed file). Slice 1's
+  flat modes are still refused (`require_velocity_learner`). A two-level table needs `[players]`; `[players]` must equal
+  the tier-1 gate file's (the L0.12 file `[l012] gates_sha256` pins); the lists are checked as in tier 1.
+- **Deviation 1:** `[run] parked` must be the first Guard drone skill (refused at load otherwise). The L0.13 arms play
+  two cells only (the exploiter and the parked Guard); the untrained two-level Guard team plays free + its first drone
+  skill, `guard_parked_centre` under list A, which is the parked cell, so the untrained control keeps its two cells
+  and is renamed `ctl_untrained_is_first_skill_t<tier>`.
+- **Deviation 2:** an enabled `[pool]` is refused in tier 2 (the L0.13 arms train against `run.opponent`); a disabled
+  table loads. Wiring the pool into the arms is not in this slice (lead's answer 4).
+- `scripts/ste_tier2_l013.py`: the learner through `exploit_train.decision_env`; `team_from` loads snapshots, the
+  peer team and the clip team through `skill_team_from_modules` for the skills route; snapshots and `agent_final.pt`
+  are `Learner.saved()` (with the skill lists; `tier2_train.snapshot` keeps them); results carry the `learner` table.
+- Tests on the CPU reference world: on tier-2 observations the dispatch gives each script's own command; a fixed
+  two-level Guard team replays the tier-2 script cells (each team strategy and uniform drone skill against the scripts
+  on tier 2, a sample of mixed "free" combinations against the composite player); training = scoring on tier 2; the
+  L0.13 driver on `--dry-cpu` runs both arms with a two-level gate file, every control passes, the snapshots carry the
+  skill lists and t2 reads t1's networks and makes its clips. No Isaac run: the lead launches the Isaac smoke once.

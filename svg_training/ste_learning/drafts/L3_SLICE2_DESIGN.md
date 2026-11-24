@@ -341,3 +341,27 @@ replaced methods and tracking keys, estimate 4-5 days (E).
   time).
 - Test 14 asserts the summed KL with a threshold between the larger per-head KL of the first minibatch and the sum
   (the update stops there; a rule on either head alone would not), using `TwoLevelIPPO.last_kls`.
+
+## Step 4 as built (24 Nov 2026), with QC's step 2 notes folded in
+
+- **KL threshold (QC S1).** The KL early stop and `KLAdaptiveLR` see kl_team + kl_drone, each a mean over that head's
+  masked-in samples only. The sum is larger than stock skrl's one KL over all samples, and the team head's term (one
+  leader per game, few per minibatch) is noisy, so a `kl_threshold` triggers earlier than the same number would in
+  stock skrl. **A two-level gate file that sets `kl_threshold` (or `KLAdaptiveLR`'s) sets it for this sum, and says so
+  in the comment on that line**; the pinned recipe sets neither. No gate file of record exists yet for the skills
+  route: the pilot's gate file carries the comment when it is written.
+- **T = 1 (QC N1).** With one team strategy the free bias is ln 1 = 0, a tie: p(free) = 0.5 still, and the argmax plays
+  "free" by its first-index rule (tested).
+- **Slot order (QC N2).** `record_transition` refuses agents not named in slot order 0..M-1.
+- **The driver (`scripts/ste_exploit_l012.py`).** A run of record trains the velocity route or `choice = "two_level"`
+  through `exploit_train.decision_env`. The untrained control for the skills route is `ctl_untrained_is_first_skill`:
+  the untrained team's cell equals the first drone skill's script cell game for game (the velocity route keeps
+  `ctl_untrained_is_still`). The `zero` twin cell stays in the evaluation batch for both routes (INFO for the skills
+  route). `agent_final.pt` is `Learner.saved()`; the clips load it through `skill_team_from_modules`; `results.json`
+  gains a `learner` block (skills route only).
+- **Deviation: `--pilot` still refuses the skills route** (as `--run0`, `verdict`, slice 1's single-head modes and the
+  other drivers). §4 had the pilot wired; it is the next small step (an untrained skills team for its timing batches),
+  and it is needed before a run of record can be launched, since a run names its pilot.
+- **Deviation: the held-command arm (`scripts/ste_l3_held_arm.py`) is not under the run contract** (no cap, no resume):
+  a CPU job or a short GPU batch the lead launches. Its control (hold 1 = the reference, every cell) and its result
+  files are as §4 says.

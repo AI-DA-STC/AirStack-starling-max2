@@ -14,7 +14,11 @@ drone sample flies). A masked-out sample does not change the game, so it is left
   ``infos["head_mask"]`` and the old per-head log-probabilities; skrl's own ``log_prob`` gets their masked sum) and
   ``update`` (a copy of skrl 2.1.0's ``IPPO.update`` with :func:`two_level_policy_terms` in place of its single ratio
   and single entropy; the KL early stop and ``KLAdaptiveLR`` use the summed per-head KL, the KL of the joint policy over
-  the heads in play). skrl's ``entropy_loss_scale`` is not read: the two scales are the ``[learner.entropy_scale]``.
+  the heads in play). QC S1: each per-head KL is a mean over that head's masked-in samples only, so the sum is larger
+  than stock's one KL over all samples and the team head's term (few leaders per minibatch) is noisy: a
+  ``kl_threshold`` (or ``KLAdaptiveLR``'s) is set for this sum and triggers earlier than the same number would in stock
+  skrl; the pinned recipe sets neither. Tracking: skrl's keys and per-head additions (QC N3: left as built). skrl's
+  ``entropy_loss_scale`` is not read: the two scales are the ``[learner.entropy_scale]``.
   The copy is pinned: constructing one refuses another skrl version or another ``IPPO.update`` source.
 * :func:`free_start_bias`: the start (design choice): with the output layer zeroed, the "free" logit's bias = ln T, so
   p(free) = 0.5 and each team strategy (1 - 0.5) / T; the drone head uniform; the argmax (free, first drone skill).
@@ -79,7 +83,8 @@ def two_level_policy_terms(head_lp: Tensor, old_head_lp: Tensor, head_entropy: T
 
 def free_start_bias(policy: nn.Module, strategies: int) -> None:
     """Set the "free" logit's bias of ``policy.net``'s output layer to ln(strategies) (after ``zero_mean_head``: p(free)
-    = 0.5; the argmax stays "free", strictly the largest team logit)."""
+    = 0.5). The argmax plays "free": the largest team logit for T >= 2, and for T = 1 (ln 1 = 0) tied with the one
+    strategy, the tie broken to "free" by the argmax's first index (QC N1)."""
     if strategies < 1:
         raise ValueError("the team head needs at least one team strategy")
     last = [mod for mod in policy.net if isinstance(mod, nn.Linear)][-1]
@@ -131,6 +136,10 @@ class TwoLevelIPPO(IPPO):
         masks = infos["head_mask"]
         if masks.shape[1] != len(self.possible_agents):
             raise ValueError(f"head_mask has {masks.shape[1]} drone slots, the agent {len(self.possible_agents)}")
+        slots = [int(uid.rsplit("_", 1)[1]) for uid in self.possible_agents]
+        if slots != list(range(len(slots))):            # QC N2: head_mask's drone axis is in slot order
+            raise ValueError(f"the trained agents {self.possible_agents} are not in slot order 0..{len(slots) - 1}; "
+                             f"head_mask would be read for the wrong drones")
         self._current_next_observations = next_observations
         self._current_next_states = next_states
         for i, uid in enumerate(self.possible_agents):

@@ -72,13 +72,14 @@ def tl_learner(gates, side, n=6, **over):
 
 
 # --------------------------------------------------------------------------------------------- a learner without a game
-def synth_agent(gates, widths, n=8, rollouts=4, seed=0, scales=None, **cfg_over):
-    """A one-agent ``TwoLevelIPPO`` with the recipe's settings (cut down), no game: transitions are injected."""
+def synth_agent(gates, widths, n=8, rollouts=4, seed=0, scales=None, names=("guard_0",), **cfg_over):
+    """A ``TwoLevelIPPO`` (one agent by default) with the recipe's settings (cut down), no game: transitions are
+    injected."""
     from svg_training.opponents.learned import OBS_SPACE, make_two_level_models
     from svg_training.ste.two_level import TwoLevelIPPO
     from skrl.memories.torch import RandomMemory
     torch.manual_seed(seed)
-    names = ["guard_0"]
+    names = list(names)
     settings = dict(gates.trainer, rollouts=rollouts, learning_epochs=1, mini_batches=2)
     models = make_two_level_models(names, [16, 16], widths, "cpu")
     cfg = exploit_train.ippo_cfg(settings, names, "cpu", **cfg_over)
@@ -224,6 +225,24 @@ def test_stored_and_recomputed_head_log_probabilities_agree_with_the_scaler_in_e
 
 
 # =============================================================================================== test 5: hand reference
+def _hand_terms(new, old, ent, mask, adv, clip, s):
+    """The design's formulas, sample by sample in Python floats: (policy loss, entropy loss, [kl_team, kl_drone])."""
+    n = new.shape[0]
+    pol = ent_l = 0.0
+    kl, cnt = [0.0, 0.0], [0, 0]
+    for i in range(n):
+        a = float(adv[i, 0])
+        for h in range(2):
+            if mask[i, h] == 0:
+                continue
+            r = math.exp(float(new[i, h]) - float(old[i, h]))
+            pol -= min(a * r, a * min(max(r, 1 - clip), 1 + clip)) / n
+            ent_l -= s[h] * float(ent[i, h]) / n
+            kl[h] += (r - 1) - math.log(r)
+            cnt[h] += 1
+    return pol, ent_l, [kl[h] / cnt[h] if cnt[h] else 0.0 for h in range(2)]
+
+
 def test_the_masked_loss_equals_a_hand_written_reference():
     """Random masks, s_team != s_drone, random advantages: policy loss, entropy loss and per-head KLs equal the design's
     formulas written here sample by sample in plain Python floats."""
@@ -236,22 +255,11 @@ def test_the_masked_loss_equals_a_hand_written_reference():
     mask = (torch.rand(n, 2, generator=g) < 0.6).double()
     adv = torch.randn(n, 1, generator=g, dtype=torch.float64)
     got = two_level_policy_terms(new, old, ent, mask, adv, clip, s)
-    pol = ent_l = 0.0
-    kl, cnt = [0.0, 0.0], [0, 0]
-    for i in range(n):
-        a = float(adv[i, 0])
-        for h in range(2):
-            if mask[i, h] == 0:
-                continue
-            r = math.exp(float(new[i, h] - old[i, h]))
-            pol -= min(a * r, a * min(max(r, 1 - clip), 1 + clip)) / n
-            ent_l -= s[h] * float(ent[i, h]) / n
-            kl[h] += (r - 1) - math.log(r)
-            cnt[h] += 1
+    pol, ent_l, kl = _hand_terms(new, old, ent, mask, adv, clip, s)
     assert float(got["policy_loss"]) == pytest.approx(pol, rel=1e-12, abs=1e-12)
     assert float(got["entropy_loss"]) == pytest.approx(ent_l, rel=1e-12, abs=1e-12)
     for h in range(2):
-        assert float(got["kl"][h]) == pytest.approx(kl[h] / cnt[h], rel=1e-12, abs=1e-12)
+        assert float(got["kl"][h]) == pytest.approx(kl[h], rel=1e-12, abs=1e-12)
     clipped = ((new - old).exp() - 1).abs() > clip
     assert bool((clipped & (mask > 0)).any()) and bool((~clipped & (mask > 0)).any())
 
@@ -562,3 +570,152 @@ def test_a_velocity_checkpoint_still_loads_and_a_two_level_one_is_refused_by_the
     two = tl_learner(gates, "guard", n=4)
     with pytest.raises(ValueError, match="skill_team_from_modules"):
         exploit_train.team_from_modules("guard", two.saved(), hidden, "cpu")
+
+
+# ======================================================================================== test 11: training = scoring
+class _FixedTrainGame(exploit.FixedStartsGame):
+    restart = exploit_train.TrainGame.restart
+
+
+@pytest.mark.parametrize("side", SIDES)
+def test_the_training_path_and_the_scoring_path_play_the_same_games_with_learned_choices(gates, side):
+    """The two-level extension of slice 1's parity test: the same scrambled two-level networks from T44's starts,
+    (1) through ``decision_env`` with skrl's own logits (each head's argmax, one choice per 12 ticks, the skills closed
+    loop) and (2) through ``play_cells`` with ``HeldPlayer`` + ``Learner.team()``: the same outcome and end step in
+    every game. Power: the team head switches between "free" and a strategy inside games, and the leader changes."""
+    ref = exploit.load_reference(exploit.ROOT / gates.reference["file"])
+    n, seed, ticks = 16, 7, 600
+    learner = tl_learner(gates, side, n=4)
+    torch.manual_seed(5)
+    with torch.no_grad():
+        for a in learner.names:
+            for p in learner.agent.policies[a].net.parameters():
+                p.normal_(0.0, 0.5)
+            learner.agent._observation_preprocessor[a](torch.randn(64, OBS_DIM) * 2.0 + 0.5, train=True)
+    cfg = exploit.variant_cfg(gates, "base")
+    opp = exploit.opponent_of(gates, "base", side)
+    off = exploit.GUARD_SEED_OFFSET if other(side) == "guard" else exploit.STRIKE_SEED_OFFSET
+    game = _FixedTrainGame(cfg, 1, torch.as_tensor(ref.starts_m[:n]), torch.as_tensor(ref.start_miss[:n]), 3, 3,
+                           "cpu", seed)
+    denv = exploit_train.decision_env(game, HOLD, side, make_strategy(opp, other(side), cfg, n, "cpu", seed + off),
+                                      spec(), gates.players, seed)
+    obs, _ = denv.reset()
+    learner.agent.enable_training_mode(False)
+    outcome = torch.zeros(n, dtype=torch.int8)
+    end = torch.zeros(n, dtype=torch.long)
+    done = torch.zeros(n, dtype=torch.bool)
+    free_switch = leader_switch = 0
+    prev_free = prev_lead = None
+    for d in range(ticks // HOLD):
+        with torch.no_grad():
+            _, out = learner.agent.act(obs, denv.state(), timestep=0, timesteps=1)
+        obs, _, _, _, info = denv.step({a: denv.skills.greedy(out[a]["net_output"]) for a in learner.names})
+        free = info["head_mask"][:, 0, 1] > 0
+        lead = info["head_mask"][..., 0].argmax(-1)
+        if prev_free is not None:
+            free_switch += int(((free != prev_free) & ~done).sum())
+            leader_switch += int(((lead != prev_lead) & ~done).sum())
+        prev_free, prev_lead = free, lead
+        new = info["decision_ended"] & ~done
+        outcome = torch.where(new, info["decision_outcome"], outcome)
+        end = torch.where(new, d * HOLD + info["decision_end_tick"], end)
+        done |= info["decision_ended"]
+        if bool(done.all()):
+            break
+    cell = (opp, exploit.EXPLOITER) if side == "strike" else (exploit.EXPLOITER, opp)
+    pg = exploit.play_cells(cfg, "3v3", ref, [cell], n, "cpu", seed, ticks, learner=learner.team(), hold_ticks=HOLD)
+    assert int(done.sum()) >= n // 4, f"only {int(done.sum())} of {n} games ended: the test has no power"
+    assert free_switch > 0, "the team head never switched between free and a strategy inside a game"
+    assert leader_switch > 0, "the leader never changed inside a game"
+    assert outcome.tolist() == pg["outcome"].tolist()
+    assert end.tolist() == pg["end_step"].tolist()
+
+
+# ================================================================== QC of step 2 (S2, N1, N2): end to end, T = 1, slots
+def test_update_end_to_end_with_partial_masks_matches_the_hand_reference_and_ignores_masked_samples(gates):
+    """QC S2: ``update()`` with partial masks on both heads (K_d = 4): every minibatch's policy loss, entropy loss and
+    per-head KLs equal the hand reference on the inputs the update used; each sample travels with its own mask; the
+    losses are finite; and changing the masked-out samples' stored actions and old log-probabilities changes no
+    weight (bit for bit)."""
+    from svg_training.ste import two_level
+    widths = (3, 4)
+    seen = []
+    real = two_level.two_level_policy_terms
+
+    def spy(*args):
+        out = real(*args)
+        seen.append(([a.detach().clone() if torch.is_tensor(a) else a for a in args], out))
+        return out
+
+    def trained(alter):
+        agent = synth_agent(gates, widths, n=8, rollouts=4, seed=12, learning_epochs=2, mini_batches=2)
+        inject(agent, fake_batch(widths, 8, 4, seed=13))
+        mem = agent.memories["guard_0"]
+        if alter:
+            m = mem.get_tensor_by_name("head_mask")
+            act, old = mem.get_tensor_by_name("actions"), mem.get_tensor_by_name("head_log_prob")
+            act[..., 0] = torch.where(m[..., 0] == 0, (act[..., 0] + 1) % widths[0], act[..., 0])
+            act[..., 1] = torch.where(m[..., 1] == 0, (act[..., 1] + 1) % widths[1], act[..., 1])
+            old.copy_(torch.where(m == 0, old - 3.0, old))
+        stored = {(tuple(o.tolist()), tuple(k.tolist())) for o, k in
+                  zip(mem.get_tensor_by_name("head_log_prob").reshape(-1, 2),
+                      mem.get_tensor_by_name("head_mask").reshape(-1, 2))}
+        seen.clear()
+        two_level.two_level_policy_terms = spy
+        try:
+            run_update(agent)
+        finally:
+            two_level.two_level_policy_terms = real
+        return agent, stored
+
+    agent, stored = trained(False)
+    assert len(seen) == 4                                         # 2 epochs x 2 minibatches
+    for (new, old, ent, mask, adv, clip, scales), out in seen:
+        assert 0 < float(mask[:, 0].sum()) < mask.shape[0] and 0 < float(mask[:, 1].sum()) < mask.shape[0]
+        assert {(tuple(o.tolist()), tuple(k.tolist())) for o, k in zip(old, mask)} <= stored
+        pol, ent_l, kl = _hand_terms(new.double(), old.double(), ent.double(), mask.double(), adv.double(), clip,
+                                     scales)
+        assert float(out["policy_loss"]) == pytest.approx(pol, rel=1e-5, abs=1e-6)
+        assert float(out["entropy_loss"]) == pytest.approx(ent_l, rel=1e-5, abs=1e-7)
+        for h in range(2):
+            assert float(out["kl"][h]) == pytest.approx(kl[h], rel=1e-4, abs=1e-6)
+    td = agent.tracking_data
+    assert all(math.isfinite(td[k][-1]) for k in td if k.startswith(("Loss", "Policy")))
+    other_agent, _ = trained(True)
+    for a, b in zip(agent.policies["guard_0"].parameters(), other_agent.policies["guard_0"].parameters()):
+        assert torch.equal(a, b)
+    for a, b in zip(agent.values["guard_0"].parameters(), other_agent.values["guard_0"].parameters()):
+        assert torch.equal(a, b)
+
+
+def test_with_one_team_strategy_the_start_ties_and_argmax_picks_free():
+    """QC N1: T = 1 gives the free bias ln 1 = 0, a tie with the one strategy: p(free) = 0.5 still, and the argmax
+    (first index on a tie) plays "free"."""
+    from svg_training.opponents.learned import TwoLevelPolicy
+    from svg_training.ste.exploit import zero_mean_head
+    from svg_training.ste.two_level import free_start_bias
+    pol = TwoLevelPolicy([16, 16], (2, 3), "cpu")
+    zero_mean_head(pol)
+    free_start_bias(pol, 1)
+    logits = pol.net(torch.randn(6, OBS_DIM))
+    p = torch.softmax(logits[:, :2].double(), -1)
+    assert torch.allclose(p[:, 0], torch.full((6,), 0.5, dtype=torch.float64))
+    d = skills.TwoLevelDispatch.__new__(skills.TwoLevelDispatch)
+    d.team_strategies, d.drone_skills = ["guard_field"], ["a", "b", "c"]
+    assert d.greedy(logits).tolist() == [[skills.FREE, 0]] * 6
+
+
+def test_record_transition_refuses_agents_out_of_slot_order(gates):
+    """QC N2: head_mask's drone axis is in slot order; agents named out of that order are refused."""
+    agent = synth_agent(gates, (3, 4), n=4, rollouts=2, names=("guard_1", "guard_0"))
+    agent.enable_training_mode(True)
+    obs = {a: torch.randn(4, OBS_DIM) for a in agent.possible_agents}
+    states = {a: torch.zeros(4, 1) for a in agent.possible_agents}
+    with torch.no_grad():
+        actions, _ = agent.act(obs, states, timestep=0, timesteps=1)
+    with pytest.raises(ValueError, match="slot order"):
+        agent.record_transition(observations=obs, states=states, actions=actions,
+                                rewards={a: torch.zeros(4, 1) for a in obs}, next_observations=obs,
+                                next_states=states, terminated={a: torch.zeros(4, 1, dtype=torch.bool) for a in obs},
+                                truncated={a: torch.zeros(4, 1, dtype=torch.bool) for a in obs},
+                                infos={"head_mask": torch.ones(4, 2, 2)}, timestep=0, timesteps=1)

@@ -33,7 +33,7 @@ task cap covers its first run's expected use plus its last run's ask, as the lau
 | L3.2 | velocity pilot (rates at 8 k / 16 k / 32 k games, the 4 Strike probes, timing) | 1 × 0.4 | 0.27 / 0.1 | 0.4 |
 | L3.3 | skills pilot (the same, two-level learner) | 1 × 0.6 | 0.4 / 0.15 | 0.6 |
 | L3.4 | velocity run 0 v the parked Guard (L0.12's rule: reach ≥ strike_straight's − 0.05, first passing read) | 1 × 1.0 | ≤ 0.6 / ≤ 0.25 (T67: 0.031) | 1.0 |
-| L3.5 | skills run 0 v the parked Guard (PASS: reach ≥ 900 of 1,000 at the **final** checkpoint; the full budget) | 1 × 1.5 | 0.9 / 0.35 | 1.5 |
+| L3.5 | skills run 0 v the parked Guard (PASS: reach ≥ the mark at the **final** checkpoint; the full budget; mark re-set 25 Nov 2026, §2, was 900 of 1,000; the CPU ceiling run of the mark goes in this task's folder, 0 GPU-h) | 1 × 1.5 | 0.9 / 0.35 | 1.5 |
 | L4.1 | held-command arm (`scripts/ste_l3_held_arm.py`, every script held 12 ticks v closed loop, both teams) | CPU | 0 | 0.0 |
 | L4.2 | scoring suite on known players (the pooled row, best single choice and choice share on scripted teams) | CPU | 0 | 0.0 |
 | L5.1 | velocity route, pool + mask, Guard then Strike | 2 × 1.0 | 0.6 + 0.9 / 0.23 + 0.40 | 1.8 |
@@ -79,6 +79,18 @@ the Guard side only: a Guard run needs no run 0 (the Guard recipe is T41's), so 
     and the comment that a `kl_threshold`, if ever set, is for the sum of the two per-head KLs.
   - The mask is on in the main files and off in the pool-only controls.
 - **Skills run 0 mark:** `[run0] skills_reach_min = 0.90` (it loads only with `eval_games = 1000`).
+  **Addendum, 25 Nov 2026 (DRAFT, before the ceiling run): 0.90 is wrong and is re-set.** It came from the 1v1 screen
+  (T66). In the 3v3 base game on T44's starts the parked-centre Guard holds against every Strike script (T70: straight
+  534, flank 450, high 466, low 430, sacrifice 525, converge 986 of 1,000), so no constant choice reaches 900.
+  - The new mark is `skills_reach_min = (k_best − 0.05 × 1,000) / 1,000`, where k_best is the most reaches of any
+    constant choice of the two-level Strike team (2 team strategies + 4^3 free combinations, each held for the whole
+    game).
+  - k_best comes from `scripts/ste_l3_run0_ceiling.py` (CPU of record, 1,000 games, controls: the one-script choices
+    replay T44, the choice log, plumbing).
+  - The mark must lie above the untrained team's Wilson upper bound (free + strike_straight, 466 of 1,000: 0.497),
+    else the lead re-plans run 0 and no skills run 0 is launched.
+  - The number: `____` (the lead fills it after the full run, in both skills gate files, before any skills run 0).
+  - Full text: [L3_SLICE2_DESIGN.md](L3_SLICE2_DESIGN.md), "Addendum, 25 Nov 2026".
 - **The fill step** (each file's header): the fill rule of section 2b.
 
 ## 2b. What differs between the routes (fairness), and the fill rule
@@ -122,8 +134,9 @@ are not part of a route's word; they are separate reads, below. The words:
 - **PIPELINE WORKS:** every required task as above. The final phase writes the cells against every script of the
   other team, the pooled row, the best single fixed choice and (skills) the choice share. The export reloads in a
   fresh process with its golden rows matching (section 5).
-- **PIPELINE WORKS, RUN 0 FAILED:** run 0 reads FAIL at the full budget. The trainer did not learn the easy Strike task
-  at this budget. The Strike run is not launched; the Guard run, its scoring and its export and reload must hold as
+- **PIPELINE WORKS, RUN 0 FAILED:** run 0 reads FAIL at the full budget. The trainer did not learn the Strike task
+  against the parked Guard (the word "easy" dropped 25 Nov 2026: in 3v3 no constant choice is near 1,000, §2) at this
+  budget. The Strike run is not launched; the Guard run, its scoring and its export and reload must hold as
   above.
 - **PIPELINE WORKS, RUN 0 INCONCLUSIVE:** run 0 stopped at its cap reserve before the budget. This is not a failure to
   learn: the run did not get its time.

@@ -390,12 +390,15 @@ gate files are not edited after their results).
   1.6 m game, T44's starts) at the run's step budget and cap (`[trainer] game_steps_per_run`, `num_games`, the runs'
   `--cap-h`), the gate's Strike recipe, its own `train_seed`.
 - **Known answer:** the untrained skills team plays free + strike_straight for every drone, about 466 reaches of 1,000
-  against the parked Guard (T70: it holds 534); a learner that picks strike_high or strike_low reaches near 1,000
-  (T44 / T70: the parked Guard holds 0 against them). Controls before training: the untrained team equals the
-  strike_straight cell game for game (`ctl_untrained_is_first_skill`), and it is below the mark
+  against the parked Guard (T70: it holds 534); ~~a learner that picks strike_high or strike_low reaches near 1,000
+  (T44 / T70: the parked Guard holds 0 against them)~~ **[corrected 25 Nov 2026: wrong; that was the 1v1 screen (T66).
+  In this 3v3 game the parked Guard holds 466 against strike_high and 430 against strike_low (T70, which replays T44);
+  no Strike script reaches above 570 of 1,000. See the addendum below.]** Controls before training: the untrained team
+  equals the strike_straight cell game for game (`ctl_untrained_is_first_skill`), and it is below the mark
   (`ctl_untrained_below_mark`: otherwise run 0 could PASS without learning), besides the reference replay, paired
   starts, one for one and non-finite checks.
-- **Mark:** `[run0] skills_reach_min = 0.90` of the evaluation games (point estimate; no Wilson rule), all games
+- **Mark:** `[run0] skills_reach_min = 0.90` **[superseded 25 Nov 2026: re-set by the addendum below]** of the
+  evaluation games (point estimate; no Wilson rule), all games
   counted (an unfinished game is no reach). **PASS** when the read at the FINAL checkpoint (the budget's last update)
   is at the mark; **FAIL** when the full budget ends below it (an earlier read at the mark does not count: reads at the
   other pre-listed checkpoints are INFO, and the run does not stop at them); **INCONCLUSIVE** when training stops at the
@@ -413,3 +416,55 @@ gate files are not edited after their results).
   the same pre-registered rule (`exploit.strike_recipe` over the pilot's Strike probes) applied to the skills pilot,
   whose probes train the two-level learner; run 0 and the Strike runs use the gate's `side_overrides.strike` filled
   from it (`recipe_problem`).
+
+### Addendum, 25 Nov 2026: the mark re-set from the 3v3 game (DRAFT; pre-registered before the ceiling run)
+
+Found by the advisor, confirmed by the lead. Built on branch `l3-run0-mark`. This addendum, the rule and the script are
+committed before the full ceiling run; no number below is chosen after it is seen.
+
+- **What was wrong.** The mark 0.90 was set from the 1v1 screen (T66), where the parked Guard holds 0 against
+  strike_high and strike_low. Run 0 plays the 3v3 base game on T44's starts, where the parked-centre Guard holds
+  against every Strike script: straight 534, flank 450, high 466, low 430, sacrifice 525, converge 986 of 1,000 (T70,
+  `runs/2026-11-24_ste_l25_screen/results.json`, group `ctl_reference_replay`, which replays T44 game for game;
+  [record](../../records/2026-11-24_ste_l25_screen_record.md)). No script reaches above 570. A mark of 900 is out of
+  reach of every constant choice, so run 0 would FAIL for a reason unrelated to learning, and a FAIL is never
+  overridden: it would block the skills Strike run.
+- **The ceiling (CPU, no training; task L3.5's folder, 0 GPU-h).** `scripts/ste_l3_run0_ceiling.py` plays every
+  constant choice of the two-level Strike team against `[run0] opponent` on T44's first 1,000 starts (run 0's
+  evaluation games). That is each team strategy (2) and, under "free", each per-drone combination of the drone skills
+  (4^3 = 64 under list A), 66 choices. Each is held for the whole game through the path run 0's reads use:
+  `exploit.play_cells`, with `HeldPlayer` holding the choice of a `SkillTeam` over the `TwoLevelDispatch`, every
+  12-tick decision.
+  Controls (exit 6 on a failure, nothing published):
+  - the 6 choices that fly one script on every drone equal T44's cells game for game;
+  - the choice log shows only each choice's players;
+  - paired starts, one for one, no non-finite action.
+
+  It reports each choice's reaches with Wilson 95 % intervals, the best, the untrained team and the mark below.
+  **Device of record: CPU** (it replays T44 exactly; CUDA only within tolerance). The ceiling of record is that run's
+  `results.json` with `of_record: true` (1,000 games).
+- **The rule.** It mirrors the velocity route's run 0 rule (L0.12: reach ≥ strike_straight's − 0.05):
+  `skills_reach_min = (k_best − 0.05 × 1,000) / 1,000`. Here k_best is the most reaches of any constant choice (a
+  point estimate, as run 0's read is), 0.05 is `[run0] margin`, and the mark is a whole count of the 1,000 games (no float
+  edge in the read `k / n ≥ mark`). PASS then means the learner reaches at least as often as the best constant choice
+  less 0.05: it found that choice, or a play that changes with the state and is as good. It no longer means "near
+  1,000". The spec's "the easy Strike task" (§3, RUN 0 FAILED) reads "the Strike task against the parked Guard".
+- **The requirement: the untrained team sits below the mark.** The untrained team plays free + strike_straight on
+  every drone: 466 of 1,000, Wilson upper bound 0.497. The mark must be **above 0.497** (k_best ≥ 547). At run time
+  `ctl_untrained_below_mark` checks the point estimate against the mark, unchanged; it needs no change for a mark below
+  0.90 (tests in `tests/test_ste_l3_run0.py`).
+- **If the mark is not above 0.497** (k_best ≤ 546; the script writes `LEAD_RE_PLANS`): the rule sets no mark, no
+  skills run 0 is launched, and the lead re-plans run 0 before any skills run 0. Options include another run 0
+  opponent, or a criterion relative to the best constant choice with an interval rule. The re-plan is recorded here
+  before any run.
+- **The number (the lead fills it after the full ceiling run):**
+  - best constant choice `____`: k_best = `____` of 1,000 (Wilson `____`–`____`);
+  - `skills_reach_min = ____` (mark count `____` of 1,000);
+  - above the untrained team's upper bound 0.497: `____`;
+  - ceiling run: `runs/____` (T`__`), device `____`, gate sha256 `____`.
+
+  Then the lead writes the value and its comment into `configs/ste_l3/skills_gates.toml` and
+  `skills_poolonly_gates.toml` before any skills run 0. Each comment still says "a learner that picks high or low near
+  1,000". The lead also updates the one test that pins the files' 0.90 (`tests/test_ste_l3_pipeline_gates.py`, the
+  skills route's run 0 mark). The files carry no result yet, so this is not a moved mark. Their sha256 changes; the
+  pilot's `pilot.json` is checked by its `[learner]` table, not by the sha.

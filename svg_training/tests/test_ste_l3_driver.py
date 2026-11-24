@@ -50,10 +50,18 @@ def gate_file(folder: Path, table: str = TWO_LEVEL) -> Path:
 
 
 def pilot_json(folder):
+    """A velocity-style pilot.json stand-in (no gate sha, no learner): a skills run of record must refuse it."""
     path = Path(folder) / "pilot.json"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps({"strike_recipe": {"recipe": exploit.RECIPE_BARE, "side_overrides_strike": {}}}))
     return path
+
+
+def skills_pilot(folder, gates):
+    """The real two-level pilot of ``gates`` (QC S1: a skills run of record follows a skills pilot of its gate file)."""
+    r = Path(folder) / "pilot"
+    assert driver.main(["--pilot", "--gates", str(gates), "--run-dir", str(r), "--cap-h", "1"]) == 0
+    return r / "pilot.json"
 
 
 def run0_json(folder, gates):
@@ -63,11 +71,15 @@ def run0_json(folder, gates):
     return path
 
 
-def run(gates, run_dir, side, *extra):
-    pj = pilot_json(Path(run_dir).parent)
+def run(gates, run_dir, side, *extra, pilot=None):
+    pj = pilot or pilot_json(Path(run_dir).parent)
     r0 = ["--run0-json", str(run0_json(Path(run_dir).parent, gates))] if side == "strike" else []
     return driver.main(["--gates", str(gates), "--variant", "base", "--side", side, "--run-dir", str(run_dir),
                         "--cap-h", "1", "--pilot-json", str(pj), *r0, *extra])
+
+
+def sides(runs):
+    return [(s, runs[s]) for s in ("strike", "guard")]
 
 
 @pytest.fixture(autouse=True)
@@ -83,12 +95,19 @@ def two_runs(tmp_path_factory):
     mp = pytest.MonkeyPatch()
     mp.setenv(shared.SHARED_ENV, str(tmp / "shared"))
     mp.setenv(shared.LEGACY_LOGS_ENV, "")
-    g = gate_file(tmp / "g")
-    out = {}
+    a = gate_file(tmp / "a")                     # the pilot runs on gate file A ...
+    pilot = skills_pilot(tmp, a)
+    fill = json.loads(pilot.read_text())["strike_recipe"]["side_overrides_strike"]
+    g = gate_file(tmp / "g")                     # ... and the gate file is filled from it (B), as in L0.12's FILL steps
+    inline = "{ " + ", ".join(f"{k} = {v!r}" for k, v in fill.items()) + " }" if fill else "{}"
+    g.write_text(g.read_text().replace("side_overrides = { strike = {}, guard = {} }",
+                                       f"side_overrides = {{ strike = {inline}, guard = {{}} }}", 1))
+    assert exploit.load_gates(g).trainer["side_overrides"]["strike"] == fill
+    out = {"pilot": pilot.parent, "pilot_gates": a}
     for side in ("strike", "guard"):
         r = tmp / side
         extra = () if side == "guard" else ("--no-videos",)
-        assert run(g, r, side, *extra) == 0, side
+        assert run(g, r, side, *extra, pilot=pilot) == 0, side
         out[side] = r
     mp.undo()
     return g, out
@@ -97,7 +116,7 @@ def two_runs(tmp_path_factory):
 # ================================================================================================ test 9: the driver
 def test_a_two_level_run_on_each_side_passes_its_controls_and_writes_every_file(two_runs):
     g, runs = two_runs
-    for side, r in runs.items():
+    for side, r in sides(runs):
         for name in ("controls.json", "curve.json", "train_log.jsonl", "results.json", "results.md", "agent_final.pt",
                      "eval_final.npz"):
             assert (r / name).is_file(), (side, name)
@@ -121,7 +140,7 @@ def test_the_untrained_two_level_team_equals_its_first_drone_skill_cell_game_for
     g, runs = two_runs
     gates = exploit.load_gates(g)
     n = int(gates.run["eval_games"])
-    for side, r in runs.items():
+    for side, r in sides(runs):
         before = np.load(r / "eval_before.npz")
         cells = exploit.eval_cells(gates, "base", side)
         first = gates.learner.drone_skills[side][0]
@@ -138,7 +157,7 @@ def test_the_final_networks_reloaded_on_their_own_replay_the_scored_games(two_ru
     gates = exploit.load_gates(g)
     ref = exploit.load_reference(exploit.ROOT / gates.reference["file"])
     cfg = exploit.variant_cfg(gates, "base")
-    for side, r in runs.items():
+    for side, r in sides(runs):
         n = json.loads((r / "results.json").read_text())["eval_games"]
         d = skills.two_level_dispatch(gates.learner, gates.players, side, cfg, n, "cpu", 0)
         team = exploit_train.skill_team_from_modules(side, torch.load(r / "agent_final.pt", weights_only=False),
@@ -161,17 +180,15 @@ def test_the_guard_run_made_its_clip_with_the_skills_team(two_runs):
 def test_the_same_command_on_a_finished_two_level_run_does_nothing_new(two_runs):
     g, runs = two_runs
     before = (runs["strike"] / "results.json").read_text()
-    assert run(g, runs["strike"], "strike", "--no-videos") == 0
+    assert run(g, runs["strike"], "strike", "--no-videos", pilot=runs["pilot"] / "pilot.json") == 0
     assert (runs["strike"] / "results.json").read_text() == before
 
 
 # ================================================================================================ test 18: still refused
-def test_run0_pilot_and_verdict_refuse_a_two_level_gate_file(two_runs, tmp_path, capsys):
+def test_run0_and_verdict_refuse_a_two_level_gate_file(two_runs, tmp_path, capsys):
     g, runs = two_runs
     code = driver.main(["--run0", "--gates", str(g), "--run-dir", str(tmp_path / "r0"), "--cap-h", "1", "--no-videos",
                         "--pilot-json", str(pilot_json(tmp_path))])
-    assert code == 2 and WHY in capsys.readouterr().err
-    code = driver.main(["--pilot", "--gates", str(g), "--run-dir", str(tmp_path / "p"), "--cap-h", "1"])
     assert code == 2 and WHY in capsys.readouterr().err
     code = driver.main(["verdict", "--gates", str(g), "--runs", f"{runs['strike']},{runs['guard']}", "--out",
                         str(tmp_path / "v")])
@@ -191,3 +208,56 @@ def test_build_learner_builds_the_two_level_learner(tmp_path):
     from svg_training.ste.two_level import TwoLevelIPPO
     learner = driver.build_learner(exploit.load_gates(gate_file(tmp_path)), "base", "strike", 2, 1)
     assert isinstance(learner.agent, TwoLevelIPPO) and learner.env.skills.widths == (3, 4)
+
+
+# ================================================================================================ QC of step 4
+def test_the_skills_pilot_records_its_gate_file_and_route_and_its_controls_pass(two_runs):
+    """--pilot is wired for the two-level route: pilot.json names the gate file it ran under (sha256) and the
+    [learner] table; the untrained skills team's controls pass on both sides (free + first drone skill = that script's
+    cell). The runs followed it on the gate file filled from it (another sha256, the same [learner] table)."""
+    g, runs = two_runs
+    p = json.loads((runs["pilot"] / "pilot.json").read_text())
+    assert p["gates_sha256"] == exploit.load_gates(runs["pilot_gates"]).sha256 != exploit.load_gates(g).sha256
+    assert p["learner"] == driver.learner_block(exploit.load_gates(g))["learner"]
+    assert p["learner"]["choice"] == "two_level"
+    for side in ("strike", "guard"):
+        ctl = p["eval"]["per_side"][side]["controls"]
+        assert ctl["ctl_untrained_is_first_skill"]["status"] == "PASS" and "ctl_untrained_is_still" not in ctl
+    assert {pt["side"] for pt in p["points"]} == {"strike", "guard"}
+
+
+def test_a_skills_run_of_record_refuses_a_pilot_of_another_gate_file_or_route(two_runs, tmp_path, capsys):
+    """QC S1: a velocity pilot.json (no route), one without the skills route, of another route, or of other skill lists
+    or entropy scales is refused (exit 2): the run's budget and final reserve would come from another learner's
+    rates."""
+    g, runs = two_runs
+    real = json.loads((runs["pilot"] / "pilot.json").read_text())
+    other_lists = {**real["learner"], "drone_skills": {**real["learner"]["drone_skills"],
+                                                       "guard": ["guard_parked_centre", "guard_mark_edge"]}}
+    for name, data in (("velocity", {"strike_recipe": real["strike_recipe"], "gates_sha256": real["gates_sha256"]}),
+                       ("no_route", {k: v for k, v in real.items() if k != "learner"}),
+                       ("other_route", {**real, "learner": {**real["learner"], "choice": "team"}}),
+                       ("other_lists", {**real, "learner": other_lists}),
+                       ("other_scales", {**real, "learner": {**real["learner"],
+                                                             "entropy_scale": {"team": 0.02, "drone": 0.01}}})):
+        pj = tmp_path / f"{name}.json"
+        pj.write_text(json.dumps(data))
+        for side in ("strike", "guard"):
+            assert run(g, tmp_path / f"{name}_{side}", side, "--no-videos", pilot=pj) == 2, (name, side)
+            assert "skills pilot" in capsys.readouterr().err, (name, side)
+
+
+def test_a_velocity_run_still_follows_a_hand_made_pilot(tmp_path):
+    """The velocity route's preflight is unchanged (the L0.12 driver tests' stand-in pilot.json still passes it)."""
+    args = driver.parse(["--gates", str(SMOKE), "--variant", "base", "--side", "guard", "--run-dir",
+                         str(tmp_path / "r"), "--cap-h", "1", "--pilot-json", str(pilot_json(tmp_path))])
+    assert driver.preflight(args, exploit.load_gates(SMOKE)) is None
+
+
+def test_make_videos_refuses_a_skills_gate_file_with_a_learner_without_skills(tmp_path):
+    """QC N1: the clip path follows the gate file's route; a skills gate file with a velocity learner fails loudly."""
+    from types import SimpleNamespace
+    g = exploit.load_gates(gate_file(tmp_path))
+    stand_in = SimpleNamespace(modules=lambda: {}, saved=lambda: {})
+    with pytest.raises(ValueError, match="skills"):
+        driver.make_videos(g, "base", "guard", exploit.variant_cfg(g, "base"), stand_in, tmp_path)

@@ -359,9 +359,23 @@ replaced methods and tracking keys, estimate 4-5 days (E).
   `ctl_untrained_is_still`). The `zero` twin cell stays in the evaluation batch for both routes (INFO for the skills
   route). `agent_final.pt` is `Learner.saved()`; the clips load it through `skill_team_from_modules`; `results.json`
   gains a `learner` block (skills route only).
-- **Deviation: `--pilot` still refuses the skills route** (as `--run0`, `verdict`, slice 1's single-head modes and the
-  other drivers). §4 had the pilot wired; it is the next small step (an untrained skills team for its timing batches),
-  and it is needed before a run of record can be launched, since a run names its pilot.
+- **`--pilot` is wired for the skills route** (QC S1 of step 4; it refused in `4d482437`): its timing batches use the
+  untrained two-level team (`exploit_train.untrained_skill_team`: p(free) = 0.5, so it plays free + the first drone
+  skill and passes the same untrained control), its probes and rate points the two-level learner; pilot.json records
+  the `[learner]` table (`learner`) beside the gate sha it ran under. `--run0`, `verdict`, slice 1's single-head modes
+  and the other drivers still refuse.
+- **A skills run of record follows a skills pilot (QC S1 of step 4), checked by the `[learner]` table, not the gate
+  file's sha256 (deviation from QC's wording).** The gate file is filled FROM the pilot (`side_overrides.strike` as the
+  pilot's Strike recipe says, `recipe_problem`; `game_steps_per_run` from its rates), so its sha256 always changes
+  after the pilot and a same-sha rule would refuse every properly filled run. The check refuses a velocity pilot.json
+  (no `learner`), another route, other skill lists and other entropy scales; the velocity route's preflight is
+  unchanged. The tests run the real workflow: pilot on gate file A, A filled from it (B), both runs on B.
+- **Open: a skills Strike run of record cannot launch yet.** `exploit.pilot_problem` asks every Strike run for a run 0
+  (the learner positive control, `[run0]`) that reads PASS under its gate file, and `--run0` refuses the skills route
+  (its known answer is the velocity learner's). The tests give a run 0 stand-in. What run 0 means for the skills route
+  (or a gate rule that waives it for that route) is the lead's call before the pipeline-check run. The Strike recipe
+  probes run on the two-level learner as they are; whether the velocity route's pre-registered recipe rule fits the
+  skills route is part of the same call.
 - **Deviation: the held-command arm (`scripts/ste_l3_held_arm.py`) is not under the run contract** (no cap, no resume):
   a CPU job or a short GPU batch the lead launches. Its control (hold 1 = the reference, every cell) and its result
   files are as §4 says.

@@ -62,3 +62,22 @@ def test_a_failed_hold_1_control_publishes_nothing_exit_6(tmp_path, monkeypatch)
     assert arm.main(["--variant", "base", "--games", "2", "--out", str(out)]) == 6
     assert not (out / "results.json").exists()
     assert json.loads((out / "controls.json").read_text())["hold1_replay"]["status"] == "FAIL"
+
+
+def test_the_arm_checks_its_inputs_against_the_gate_file_pins(tmp_path, capsys):
+    """QC S2: the same input checks as the L0.12 preflight: a missing reference file, a reference of another sha256 or
+    a game file that differs from its pin exits 2 with a message (no traceback), nothing played."""
+    text = exploit.GATES_FILE.read_text()
+    ref_file = exploit.load_gates().reference["file"]
+    cases = {"missing": text.replace(f'file = "{ref_file}"', 'file = "configs/ste_l012/no_such_reference.npz"', 1),
+             "ref_sha": text.replace(exploit.load_gates().reference["sha256"], "0" * 64, 1)}
+    game = next(iter(exploit.load_gates().games.values()))
+    cases["game_sha"] = text.replace(game.sha256, "1" * 64, 1)
+    for name, body in cases.items():
+        assert body != text, name
+        g = tmp_path / f"{name}.toml"
+        g.write_text(body)
+        assert arm.main(["--gates", str(g), "--variant", "base", "--games", "2", "--out", str(tmp_path / name)]) == 2
+        err = capsys.readouterr().err
+        assert err.startswith("refused:") and "Traceback" not in err, (name, err)
+        assert not (tmp_path / name / "controls.json").exists()

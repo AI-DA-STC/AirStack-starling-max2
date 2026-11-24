@@ -60,11 +60,33 @@ def play(gates, variant: str, side: str, n: int, hold: int, device: str, ref) ->
     cfg = exploit.variant_cfg(gates, variant)
     seed = int(ref.meta["seed"])
     mine = skills.team_skills(gates.players, side)
+    # One stateless script object per held script, shared by its cells (each cell wraps its own HeldPlayer, so the
+    # hold counters are per cell); seeded without the team offset play_cells adds for named scripts: no script of
+    # these lists draws random numbers, so the seed does not change a game (QC N2 of step 4).
     players = {HELD + s: make_strategy(s, side, cfg, n, device, seed) for s in mine}
     cells = [(s, o) for s in mine for o in skills.team_skills(gates.players, other(side))]
     pg = exploit.play_cells(cfg, gates.run["size"], ref, [cell_of(side, HELD + s, o) for s, o in cells], n, device,
                             seed, int(gates.run["ticks_cap"]), hold_ticks=hold, players=players)
     return cells, pg
+
+
+def input_problems(gates) -> str | None:
+    """The L0.12 preflight's input checks (QC S2 of step 4): the game files and the reference file against the gate
+    file's pins. The reason to refuse, or None."""
+    problems = exploit.game_file_problems(gates)
+    if problems:
+        return "game file(s) differ from the gate file: " + "; ".join(problems)
+    ref_file = exploit.ROOT / gates.reference["file"]
+    if not ref_file.is_file():
+        return f"the reference file {ref_file} is missing"
+    if exploit.sha256_file(ref_file) != gates.reference["sha256"]:
+        return (f"the reference file {ref_file} has sha256 {exploit.sha256_file(ref_file)}, the gate file pins "
+                f"{gates.reference['sha256']}")
+    ref = exploit.load_reference(ref_file)
+    if ref.start_sha256 != gates.reference["start_sha256"]:
+        return (f"the reference starts have sha256 {ref.start_sha256}, the gate file pins "
+                f"{gates.reference['start_sha256']}")
+    return None
 
 
 def wins(outcome, side: str) -> np.ndarray:
@@ -85,9 +107,12 @@ def main(argv: list[str] | None = None) -> int:
     except (OSError, ValueError) as err:
         print(f"refused: gate file {a.gates}: {err}", file=sys.stderr)
         return EXIT_REFUSED
+    problem = input_problems(gates)
+    if problem:
+        print(f"refused: {problem}", file=sys.stderr)
+        return EXIT_REFUSED
     ref = exploit.load_reference(exploit.ROOT / gates.reference["file"])
     hold = int(a.hold if a.hold is not None else gates.trainer["decision_ticks"])
-    problem = None
     if a.variant not in gates.variants:
         problem = f"--variant must be one of {list(gates.variants)}, got {a.variant!r}"
     elif not 1 <= a.games <= ref.games:

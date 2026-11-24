@@ -159,3 +159,14 @@ saved in the checkpoint (or the gates sha checked at load) so a changed `[player
 absent-drone mask (v2 list); one scoring-path equality check of the velocity route against the old tree (e.g. an
 `eval_final.npz` replay); the drivers wired (they refuse "skills" until then); the held-command arm; the export; the
 tier-2 dispatch-equality test.
+
+**Owner's ruling R30 (24 Nov 2026, ~15:35): "Team strategy, with individual drone skills which can adapt to the
+opponent's strategy."** Lead's reading, said to the owner: two choice heads in one learner. A **team head** chooses each
+decision among the team strategies (Strike: sacrifice, converge; Guard: field, parked on a ring) and "free"; under
+"free", a **drone head** per drone chooses among the skills that do not coordinate (Strike: straight, flank, high, low;
+Guard: mark the edge, mirror, parked at centre), reading the opponents in its observation. Team scripts always run as
+written for the whole team, so no team script is mixed per drone (the reviewers' concern). Slice 1's per-team and
+per-drone modes are the two building blocks; slice 2 builds the two-level choice. Open design points for slice 2's
+design review: whether mark the edge and mirror (they pair drones by rank among the live drones, `scripted.py:97`)
+count as non-coordinating under "free"; the PPO set-up for two heads (joint log-probability; the drone heads' samples are
+ignored when the team head picks a team strategy); the leader rule for the team head (lowest-index live drone).

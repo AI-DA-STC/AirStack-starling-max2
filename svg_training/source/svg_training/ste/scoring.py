@@ -306,3 +306,65 @@ def check_plumbing_only(pg: dict, ref, n: int, phase: str = "matrix") -> dict:
     parts = plumbing_controls(pg, ref, n, phase)
     return {"status": control_status(parts, True), "plumbing": parts, "reference_compared": False,
             "detail": f"{NO_REFERENCE}; " + "; ".join(f"{key} {v['status']}" for key, v in parts.items())}
+
+
+# ------------------------------------------------------------------ STE L3 slice 3: the pooled row and the choice log
+POOLED_Z = 1.96                                   # the stratified interval's 95 % normal quantile (Wilson's own z)
+CHOICE_BINS = ((0, 0), (1, 1), (2, 2), (3, 5), (6, 11), (12, None))   # decision index bins of the choice share
+
+
+def pooled_row(cells: dict) -> dict:
+    """The pooled-opponent row (design note L3_SLICE3_DESIGN.md, revision A5): ``cells`` {opponent: (wins, games)} on
+    the shared starts -> the exact mean of the K cell rates (equal weights), a stratified interval (each cell's
+    Wilson half-width read as 1.96 standard errors, the K variances summed with weights 1/K^2), the worst cell (the
+    headline, as every L1 score matrix), and the trivial cells (rate 0 or 1), which pull the mean without telling the
+    learner from anything: they are flagged, not dropped."""
+    members = list(cells)
+    rows = {}
+    for o, (k, n) in cells.items():
+        r = rate(k, n)
+        rows[o] = {**r, "rate": k / n if n else float("nan")}
+    kk = len(members)
+    mean = sum(rows[o]["rate"] for o in members) / kk
+    var = sum(((rows[o]["ci"][1] - rows[o]["ci"][0]) / (2 * POOLED_Z)) ** 2 for o in members)
+    half = POOLED_Z * math.sqrt(var) / kk
+    worst = min(members, key=lambda o: rows[o]["rate"])
+    return {"members": members, "rate": mean, "ci": [max(0.0, mean - half), min(1.0, mean + half)],
+            "cells": rows, "worst": {"opponent": worst, "k": rows[worst]["k"], "n": rows[worst]["n"],
+                                     "rate": rows[worst]["rate"]},
+            "headline": "worst cell", "trivial_cells": [o for o in members if rows[o]["rate"] in (0.0, 1.0)],
+            "note": "the pooled mean is an equal-weight mean of the cells; trivial cells (rate 0 or 1) are flagged"}
+
+
+def best_single_choice(ref, variant: str, side: str, choices: list, members: list, n: int) -> dict:
+    """The best single fixed choice over the pool (revision A5 (a)): each script of the trained team played every
+    decision (its reference cell against each pool member, the first ``n`` starts, all games), pooled as
+    :func:`pooled_row`; the best by the pooled rate (first on a tie)."""
+    won = STRIKE_WIN if side == "strike" else GUARD_WIN
+    per = {}
+    for s in choices:
+        cells = {}
+        for o in members:
+            cell = (o, s) if side == "strike" else (s, o)
+            outcome = np.asarray(ref.cell(variant, *cell)["outcome"][:n])
+            cells[o] = (int(np.sum(outcome == won)), int(len(outcome)))
+        per[s] = pooled_row(cells)
+    best = max(choices, key=lambda s: per[s]["rate"])
+    return {"per_choice": per, "best": best, "source": "the reference cells (each script played every decision)"}
+
+
+def choice_share(log: np.ndarray, names: list) -> dict:
+    """The choice share by decision index (revision A5 (b)): ``log`` [decisions, players] counts of the flown player of
+    live drones (``exploit.HeldPlayer.choice_log``) -> per decision-index bin, the share of each player (None for an
+    empty bin) and the counts."""
+    log = np.asarray(log)
+    labels, counts, share = [], [], {nm: [] for nm in names}
+    for lo, hi in CHOICE_BINS:
+        part = log[lo:] if hi is None else log[lo:hi + 1]
+        labels.append(f"{lo}+" if hi is None else (f"{lo}" if lo == hi else f"{lo}-{hi}"))
+        tot = part.sum(axis=0)
+        all_ = int(tot.sum())
+        counts.append(all_)
+        for j, nm in enumerate(names):
+            share[nm].append(float(tot[j]) / all_ if all_ else None)
+    return {"bins": labels, "counts": counts, "share": share}

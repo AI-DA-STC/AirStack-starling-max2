@@ -70,3 +70,67 @@ def pool_draw(seed: int, slot: Tensor, k: Tensor, choices: int) -> Tensor:
     x = _mix(x ^ slot)
     x = _mix(x ^ k)
     return torch.remainder(x, choices)
+
+
+# ------------------------------------------------------------------ step 2: the pool itself
+EXCLUDED = ("random",)        # RandomActions draws from its own stateful generator (lead's answer 2, 24 Nov 2026)
+TEAM_PLAYERS = {"guard": "guards", "strike": "strikes"}
+
+
+def pool_members(players: dict, team: str) -> list[str]:
+    """The pool of ``team``: the gate file's ``[players]`` list of that team, in order, without ``random``."""
+    return [p for p in players[TEAM_PLAYERS[team]] if p not in EXCLUDED]
+
+
+class OpponentPool:
+    """The other team as a pool of its scripts (design §2): game slot g plays script ``names[draw[g]]``, ``draw[g] =
+    pool_draw(seed, g, k[g], K)``, k[g] its game counter. k = 0 is drawn at construction; ``redraw(games)`` (called by
+    ``exploit_train.DecisionEnv`` after its decision-boundary restart) advances the counter of those games and draws
+    again; ``reset(games)`` (the core's tick-level reset of a stale game, the scoring helpers) keeps the draw. ``act``
+    runs every script on the batch and gathers each game's (no per-game loop). ``name`` is
+    ``OpponentPool(<names>)``, what the train log and ``trained_against`` report.
+
+    team: the pool's team; names: K scripted-player names (``opponents/scripted.REGISTRY``), not ``random``; cfg,
+    num_games, device: as ``make_strategy``; seed: the pool seed (``[pool] seed``)."""
+
+    def __init__(self, team: str, names: list[str], cfg, num_games: int, device, seed: int):
+        from ..opponents.scripted import make_strategy
+        if not names:
+            raise ValueError("an opponent pool needs at least one script (empty list)")
+        bad = [n for n in names if n in EXCLUDED]
+        if bad:
+            raise ValueError(f"{bad} cannot be in an opponent pool: random draws from its own stateful generator")
+        self.team, self.names, self.seed = team, list(names), int(seed)
+        self.name = "OpponentPool(" + ",".join(self.names) + ")"
+        self.scripts = [make_strategy(n, team, cfg, num_games, device, seed) for n in self.names]
+        dev = torch.device(device)
+        self._slot = torch.arange(int(num_games), dtype=torch.long, device=dev)
+        self.k = torch.zeros(int(num_games), dtype=torch.long, device=dev)
+        self.draw = pool_draw(self.seed, self._slot, self.k, len(self.names))
+
+    def reset(self, games: Tensor) -> None:
+        """games [N] bool: the scripts are stateless; the draw is kept (a stale game, not trained)."""
+        for s in self.scripts:
+            s.reset(games)
+
+    def redraw(self, games: Tensor) -> None:
+        """games [N] bool: a new game starts in these slots (the decision-boundary restart): k + 1, a new draw."""
+        self.k = self.k + games.to(torch.long)
+        self.draw = torch.where(games, pool_draw(self.seed, self._slot, self.k, len(self.names)), self.draw)
+
+    def act(self, obs: Tensor) -> Tensor:
+        """obs [N, M, D] -> each game's own script's command [N, M, 4] (every script runs; gathered by ``draw``)."""
+        every = torch.stack([s.act(obs) for s in self.scripts], dim=2)                 # [N, M, K, 4]
+        idx = self.draw[:, None, None, None].expand(-1, every.shape[1], 1, every.shape[-1])
+        return torch.gather(every, 2, idx)[:, :, 0]
+
+    def state(self) -> dict:
+        """What a checkpoint keeps: the game counters (the draws follow from them)."""
+        return {"names": list(self.names), "seed": self.seed, "k": self.k.clone()}
+
+    def load_state(self, state: dict) -> None:
+        if state["names"] != self.names or int(state["seed"]) != self.seed:
+            raise ValueError(f"the checkpoint's pool {state['names']} (seed {state['seed']}) is not this pool "
+                             f"{self.names} (seed {self.seed})")
+        self.k = state["k"].to(self.k.device)
+        self.draw = pool_draw(self.seed, self._slot, self.k, len(self.names))

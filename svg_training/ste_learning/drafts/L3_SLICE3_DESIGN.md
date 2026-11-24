@@ -234,3 +234,29 @@ the Guard-side arms and the dispatch-equality tests (answer 4).
    gradient level, off = bit for bit. About 2 days.
 5. Tier 2: the tables, the L0.13 file of record unchanged, the dispatch-equality tests, the L0.13 driver on
    `--dry-cpu`. About 1.5 days.
+
+## Step 2 as built (24 Nov 2026)
+
+- `ste/pool.OpponentPool` and `pool_members` as the revision says (every script of the other team without `random`,
+  refused if named; k = 0 drawn at construction; `redraw` only at `DecisionEnv`'s decision-boundary restart;
+  `name` = `OpponentPool(<names>)`, what `trained_against` reports). Gate file: an optional `[pool]` table
+  (`enabled`, `seed`; the seed refused if it is another seed of the gate file); absent = off. Off: `build_learner`
+  makes today's fixed opponent and nothing else changes (a one-script pool trains bit for bit as that fixed opponent,
+  tested).
+- `DecisionEnv.step` returns `info["opponent_draw"]` (each game's opponent for that decision); `Learner.update`'s
+  stats and the train log carry `opponent_share` (share of decisions per member, per update, per route). The pool's
+  counters are in `Learner.state()`; a resume restores them and its fresh games take the saved game numbers (a
+  resume is not bit-identical anyway).
+- **Deviation:** the pilot's Strike-recipe probes keep their named opponent (g* by default) with the pool on: the
+  pre-registered recipe rule reads their reaches against g*. The pilot's rate points train on the pool (their speed
+  includes the K scripts). With the pool off, the probes' opponent is the one they had.
+- The pooled row (`scoring.pooled_row`) is read from the final INFO batch (the trained team against every script of
+  the other team on the scoring starts): the exact mean of the K cell rates, the stratified interval (each cell's
+  Wilson half-width as 1.96 standard errors, weights 1/K^2), the worst cell as the headline and the trivial cells
+  (rate 0 or 1) flagged. The best single fixed choice over the pool (`scoring.best_single_choice`) is read from the
+  reference cells (each script of the trained team played every decision, the same starts). Both in `results.json`
+  for a run on the pool (`pooled`, `best_single_choice`).
+- The choice share by decision index (`choice_by_decision`, skills route): `exploit.HeldPlayer` counts the flown
+  player of each live drone at each decision of a slot's first game (`choice_log`, decision index capped at 255);
+  `play_cells` returns the logs per cell; `scoring.choice_share` bins them (0, 1, 2, 3-5, 6-11, 12+). The velocity
+  route's `HeldPlayer` keeps no log (its path is unchanged).

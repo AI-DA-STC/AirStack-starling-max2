@@ -20,6 +20,8 @@ import numpy as np
 import pytest
 import torch
 
+from _torch_threads import default_torch_threads  # noqa: F401  (autouse: goldens at the default thread count)
+
 from _proc import child_env, child_python
 from svg_training.core.observations import OBS_DIM, ObsView
 from svg_training.envs.skrl_adapter import SvgSkrlEnv

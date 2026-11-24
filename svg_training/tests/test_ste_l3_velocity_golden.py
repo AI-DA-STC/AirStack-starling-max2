@@ -25,6 +25,8 @@ import sys
 import pytest
 import torch
 
+from _torch_threads import default_torch_threads  # noqa: F401  (autouse: goldens at the default thread count)
+
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 if "--write-golden" not in sys.argv:
     sys.path.insert(0, str(ROOT / "source"))

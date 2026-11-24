@@ -250,4 +250,4 @@ python scripts/cf_reports_summary.py ~/AirStack-starling-max2/svg_training/fligh
 unset PYTHONPATH; CUDA_VISIBLE_DEVICES="" PYTHONPATH=source ~/miniconda3/envs/env_isaaclab/bin/python -m pytest -q -p no:cacheprovider tests/test_cf_reports_summary.py
 ```
 
-Reviewed by: none yet (draft). Per ruling R22 a result on a reader page needs two reviewers; this is an internal note.
+Reviewed by: one independent reviewer (24 Nov 2026; every number recomputed from the reports; fixes in d549661f), as R22 asks for an internal note.

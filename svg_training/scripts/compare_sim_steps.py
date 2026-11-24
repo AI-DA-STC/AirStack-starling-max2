@@ -42,6 +42,11 @@ Arms: ``off`` (the SIM-ONLY file as flown), ``delay`` (L1.1's residual delay at 
 (L1.1b's estimate error at T63's nominal values, ``params/starling_physics_v1_nominal.toml``); each over the same
 steps x replicas batch (game g = step g // R, replica g % R).
 
+The trace scored for tier 2 is its ESTIMATE (``PhysicsDrone.est_vel_mps``, what its cascade saw), because the
+AirStack trace is PX4's EKF2 estimate: with the delay or the error on, tier 2's truth and estimate differ (the true
+velocity is kept beside it, INFO). With the route's position gains at 0, ``state_error_pos_*`` acts on nothing: the
+error arm tests the velocity and attitude errors only.
+
 Metrics (per step, the speed along the command, onset-aligned; levels shared by every trace of the step, taken from
 the input): level0 = input mean over the last 1 s before the onset; level_peak = the input's extreme in the first
 2.5 s (the delivered setpoint peaks then sags, so it is not a step). delay_s = the trace's 10 % crossing minus the
@@ -93,6 +98,9 @@ LAG_SHIFTS_S = np.round(np.arange(-0.10, 0.6001, 0.01), 2)
 VELOCITY_ONLY_MASK = 0x7 | 0x1C0 | 0x400     # IGNORE_PX|PY|PZ, IGNORE_AFX|AFY|AFZ, IGNORE_YAW (mavros PositionTarget)
 DELAY_ARM_S = STATE_DELAY_MAX_S     # L1.1's residual delay at its FIXED limit, 0.05 s
 ARMS = ("off", "delay", "error")
+SLOTS = 2                           # drones per game: slot 0 flies the step, slot 1 holds still out of the way
+FAR_SLOT_M = (-15.0, -15.0, 0.0)    # slot 1 from slot 0's start: > 15 m from any point a step reaches (<= 11.3 m on one
+                                    # axis); with Isaac Lab's 40 m game spacing, > 8 m from the neighbouring games' drones
 METRICS = ("delay_s", "rise_s", "rise_own_s", "t63_s", "overshoot_pct", "ss_error_mps", "lag_s")
 FLOORS = {"delay_s": 0.05, "rise_s": 0.05, "rise_own_s": 0.05, "t63_s": 0.05, "lag_s": 0.05,       # one tick: tier 2's input grid
           "overshoot_pct": 5.0, "ss_error_mps": 0.02}                          # spec: resolution floors (fixed)
@@ -416,10 +424,13 @@ def extract_from_streams(streams: dict) -> dict:
 
 
 # =================================================================================================== parameters and arms
-def load_sim_only_params(path: Path, out_dir: Path):
+def load_sim_only_params(path: Path):
     """The SIM-ONLY comparison file: header and label checked, its [sim_only] table dropped (the table is what makes
-    the trainer's loader refuse the file), the rest loaded with ``load_physics_params`` from a copy in out_dir.
-    Returns (PhysicsParams, provenance)."""
+    the trainer's loader refuse the file), the rest loaded with ``load_physics_params`` from a copy in a temporary
+    folder that is deleted at once (no loadable copy without the guard is left anywhere). Returns (PhysicsParams,
+    provenance)."""
+    import tempfile
+
     from svg_training.models.physics_params import load_physics_params
 
     raw = Path(path).read_bytes()
@@ -436,11 +447,10 @@ def load_sim_only_params(path: Path, out_dir: Path):
             skipping = line.strip() == "[sim_only]"
         if not skipping:
             keep.append(line)
-    out_dir = Path(out_dir)
-    out_dir.mkdir(parents=True, exist_ok=True)
-    copy = out_dir / "airstack_sim_physics_loaded.toml"
-    copy.write_text("".join(keep))
-    p = load_physics_params(copy)
+    with tempfile.TemporaryDirectory() as tmp:
+        copy = Path(tmp) / "airstack_sim_physics_loaded.toml"
+        copy.write_text("".join(keep))
+        p = load_physics_params(copy)
     try:
         rel = str(Path(path).resolve().relative_to(ROOT))
     except ValueError:
@@ -479,30 +489,41 @@ def batch_inputs(steps: list[dict], replicas: int) -> tuple[dict, dict]:
 
 
 def fly(world, params, inputs: dict, device, seed: int) -> dict:
-    """Fly the batch through one PhysicsDrone (N games x 1 drone) on ``world``: a velocity setpoint per tick, position
-    setpoint = the drone's own position (inert with the route's zero position gains), heading held, no feed-forward
-    acceleration. Returns numpy vel_mps / pos_m [K+1, N, 3] (sample 0 = the start), max_tilt_deg [N], upsets, nonfinite."""
+    """Fly the batch through one PhysicsDrone on ``world`` (N games x 2 slots, the layout of every other tier-2 script:
+    slot 0 flies the step, slot 1 holds still at ``FAR_SLOT_M`` from slot 0's start). Per tick: a velocity setpoint,
+    position setpoint = the drone's own position (inert with the route's zero position gains), heading held, no
+    feed-forward acceleration. Returns numpy, slot 0 only: est_vel_mps (what the cascade saw: tier 2's counterpart of
+    PX4's EKF2 estimate, the primary trace), true_vel_mps and pos_m [K+1, N, 3] (sample 0 = the start),
+    max_tilt_deg [N], upsets and nonfinite (both slots)."""
     import torch
 
     from svg_training.models.physics_drone import PhysicsDrone
 
     dev = torch.device(device)
     tt = lambda x: torch.as_tensor(np.asarray(x), dtype=torch.float32, device=dev)       # noqa: E731
+    if world.drones != SLOTS:
+        raise ValueError(f"the world holds {world.drones} drones per game; this script flies {SLOTS}")
     drone = PhysicsDrone(world, params, dev, noise_seed=seed)
     n = world.num_games
-    mask = torch.ones(n, 1, dtype=torch.bool, device=dev)
-    pos0, yaw0 = tt(inputs["pos0_m"])[:, None, :], tt(inputs["yaw0_rad"])[:, None]
+    mask = torch.ones(n, SLOTS, dtype=torch.bool, device=dev)
+    p0 = tt(inputs["pos0_m"])
+    pos0 = torch.stack([p0, p0 + tt(FAR_SLOT_M)], dim=1)                                 # [N, 2, 3]
+    yaw0 = tt(inputs["yaw0_rad"])[:, None].expand(n, SLOTS).contiguous()
+    vel0 = torch.stack([tt(inputs["vel0_mps"]), torch.zeros(n, 3, device=dev)], dim=1)
     drone.reset(mask, pos0, yaw0)
-    drone.write_clamped(mask, pos0, tt(inputs["vel0_mps"])[:, None, :])
-    sp = tt(inputs["sp_mps"])[:, :, None, :]                                            # [K, N, 1, 3]
-    zero3 = torch.zeros(n, 1, 3, device=dev)
-    zero1 = torch.zeros(n, 1, device=dev)
-    vel, pos = [drone.vel_mps.clone()], [drone.pos_m.clone()]
-    for k in range(sp.shape[0]):                     # ticks; every game of the batch at once
-        drone.step_setpoint(drone.pos_m.clone(), sp[k], zero3, yaw0, zero1)
-        vel.append(drone.vel_mps.clone())
+    drone.write_clamped(mask, pos0, vel0)
+    sp_all = torch.zeros(tt(inputs["sp_mps"]).shape[0], n, SLOTS, 3, device=dev)
+    sp_all[:, :, 0] = tt(inputs["sp_mps"])                                              # [K, N, 2, 3]; slot 1: zero
+    zero3 = torch.zeros(n, SLOTS, 3, device=dev)
+    zero1 = torch.zeros(n, SLOTS, device=dev)
+    est, true, pos = [drone.est_vel_mps.clone()], [drone.vel_mps.clone()], [drone.pos_m.clone()]
+    for k in range(sp_all.shape[0]):                 # ticks; every game of the batch at once
+        drone.step_setpoint(drone.pos_m.clone(), sp_all[k], zero3, yaw0, zero1)
+        est.append(drone.est_vel_mps.clone())
+        true.append(drone.vel_mps.clone())
         pos.append(drone.pos_m.clone())
-    return {"vel_mps": torch.stack(vel)[:, :, 0].cpu().numpy(), "pos_m": torch.stack(pos)[:, :, 0].cpu().numpy(),
+    s0 = lambda xs: torch.stack(xs)[:, :, 0].cpu().numpy()                              # noqa: E731
+    return {"est_vel_mps": s0(est), "true_vel_mps": s0(true), "pos_m": s0(pos),
             "max_tilt_deg": torch.rad2deg(drone.max_tilt_rad)[:, 0].cpu().numpy(),
             "upsets": int(drone.upset.sum()), "nonfinite": int(drone.nonfinite_count)}
 
@@ -576,7 +597,8 @@ def analyse(ext: dict, out: dict, layout: dict) -> dict:
         row["airstack"], row["setpoint"] = response_metrics(t, as_u, sp_u, hold), response_metrics(t, sp_u, sp_u, hold)
         row["tier2"] = {}
         for arm, res in out.items():
-            vel = res["vel_mps"][: len(t), i * reps:(i + 1) * reps]                     # [T, R, 3]
+            vel = res["est_vel_mps"][: len(t), i * reps:(i + 1) * reps]                 # [T, R, 3] the estimate
+            true = res["true_vel_mps"][: len(t), i * reps:(i + 1) * reps]               # INFO: the true state
             per = [response_metrics(t, vel[:, r] @ u, sp_u, hold) for r in range(reps)]
             mean = {m: _nanmean([p[m] for p in per]) for m in METRICS}
             mean.update({f"{m}_range": [float(np.nanmin([p[m] for p in per])) if np.isfinite([p[m] for p in per]).any()
@@ -585,6 +607,8 @@ def analyse(ext: dict, out: dict, layout: dict) -> dict:
                                         else math.nan] for m in METRICS})
             mean["reached_90pct"] = sum(math.isfinite(p["rise_s"]) for p in per)
             mean["rms_vs_airstack_mps"] = float(np.sqrt(np.mean((vel @ u - as_u[:, None]) ** 2)))
+            mean["rms_true_vs_airstack_mps"] = float(np.sqrt(np.mean((true @ u - as_u[:, None]) ** 2)))
+            mean["replica_spread_max_mps"] = float(np.max(np.ptp(vel, axis=1))) if reps > 1 else 0.0
             row["tier2"][arm] = mean
             tier2_rows[arm].append(mean)
         rows.append(row)
@@ -607,15 +631,26 @@ def analyse(ext: dict, out: dict, layout: dict) -> dict:
     for arm in out:
         summary[arm] = {m: {"within": sum(c["reading"][arm][m] == "within" for c in cell_rows), "cells": len(cell_rows),
                             "mean_abs_diff_to_airstack_median": _nanmean(dist[arm][m])} for m in METRICS}
-        rms = [r["tier2"][arm]["rms_vs_airstack_mps"] for r in rows]                    # INFO: trace against trace
-        summary[arm]["rms_vs_airstack_mps"] = {"mean": _nanmean(rms), "max": _nanmax(rms)}
+        for key in ("rms_vs_airstack_mps", "rms_true_vs_airstack_mps"):              # trace against trace
+            vals = [r["tier2"][arm][key] for r in rows]
+            summary[arm][key] = {"mean": _nanmean(vals), "max": _nanmax(vals)}
     change = {arm: {m: arm_change(summary[arm][m]["mean_abs_diff_to_airstack_median"],
                                   summary["off"][m]["mean_abs_diff_to_airstack_median"], FLOORS[m]) for m in METRICS}
               for arm in out if arm != "off"} if "off" in out else {}
     return {"steps": rows, "cells": cell_rows, "summary": summary, "arm_change": change,
-            "confounds": confounds(ext), "health": {arm: {"upsets": r["upsets"], "nonfinite": r["nonfinite"],
-                                                          "max_tilt_deg": float(np.max(r["max_tilt_deg"]))}
-                                                    for arm, r in out.items()}}
+            "confounds": confounds(ext), "health": health(rows, out)}
+
+
+def health(rows: list[dict], out: dict) -> dict:
+    """Reported, not gated (spec section 5): upsets, non-finite counts and the largest tilt per arm; the replicas'
+    largest spread per arm (in ``off`` and ``delay``: a determinism check); the clock alignment per step."""
+    h = {arm: {"upsets": r["upsets"], "nonfinite": r["nonfinite"], "max_tilt_deg": float(np.max(r["max_tilt_deg"])),
+               "replica_spread_max_mps": max(row["tier2"][arm]["replica_spread_max_mps"] for row in rows)}
+         for arm, r in out.items()}
+    h["alignment"] = {"residual_rms_max_mps": max(r["align_residual_rms_mps"] for r in rows),
+                      "onset_spread_max_s": max(r["align_onset_spread_s"] for r in rows),
+                      "per_step": {r["index"]: [r["align_residual_rms_mps"], r["align_onset_spread_s"]] for r in rows}}
+    return h
 
 
 def _nanmin(x) -> float:
@@ -719,9 +754,15 @@ def results_md(res: dict, meta: dict) -> str:
     for arm, d in res["arm_change"].items():
         lines.append(f"| {arm} | " + " | ".join(d[m] for m in METRICS) + " |")
     lines += ["", "## Trace against trace (INFO): RMS of tier 2 - AirStack along the command, over each step's window",
-              "", "| arm | mean over steps (m/s) | worst step (m/s) |", "|---|---|---|"]
+              "(tier 2's estimate, the primary trace; its true state beside it, INFO)", "",
+              "| arm | mean over steps (m/s) | worst step (m/s) | true state: mean | true state: worst |",
+              "|---|---|---|---|---|"]
     for arm, d in res["summary"].items():
-        lines.append(f"| {arm} | {_f(d['rms_vs_airstack_mps']['mean'])} | {_f(d['rms_vs_airstack_mps']['max'])} |")
+        e, tr = d["rms_vs_airstack_mps"], d["rms_true_vs_airstack_mps"]
+        lines.append(f"| {arm} | {_f(e['mean'])} | {_f(e['max'])} | {_f(tr['mean'])} | {_f(tr['max'])} |")
+    lines += ["", "## Health (reported, not gated)", "", "```", json.dumps(_jsonable(
+        {k: v for k, v in res["health"].items() if k != "alignment"}), indent=1),
+        json.dumps(_jsonable({k: v for k, v in res["health"]["alignment"].items() if k != "per_step"})), "```"]
     lines += ["", "## Confounds", ""]
     for k, v in res["confounds"].items():
         lines.append(f"- **{k}**: {v['text'] if isinstance(v, dict) else v}")
@@ -753,8 +794,8 @@ def figure(ext: dict, res: dict, out: dict, layout: dict, path: Path) -> None:
         ax.step(t, s["setpoint_mps"] @ u, where="post", color="#52514e", lw=1, label="setpoint PX4 got")
         ax.plot(t, s["response_mps"] @ u, color="#2a78d6", lw=2, label="AirStack (EKF2 estimate)")
         for arm, r in out.items():
-            v = r["vel_mps"][: len(t), i * layout["replicas"]:(i + 1) * layout["replicas"]] @ u
-            ax.plot(t, v.mean(axis=1), color=colors.get(arm, "k"), lw=1.2, label=f"tier 2 {arm}")
+            v = r["est_vel_mps"][: len(t), i * layout["replicas"]:(i + 1) * layout["replicas"]] @ u
+            ax.plot(t, v.mean(axis=1), color=colors.get(arm, "k"), lw=1.2, label=f"tier 2 {arm} (estimate)")
         ax.axvline(0, color="#e4e3df")
         ax.axvline(s["hold_end_s"], color="#e4e3df")
         ax.set_title(f"step {s['index']}: {axis} {s['sign']:+d} x {speed:g} m/s (clock x{s['clock_scale']:.2f})")
@@ -814,11 +855,11 @@ def _world_factory(args, airframe, dt):
     def make(p):
         if args.world == "torch":
             from svg_training.models.rigid_body import TorchRigidBodyWorld
-            return TorchRigidBodyWorld(make.n, 1, p.airframe, p.physics_dt_s, args.device)
+            return TorchRigidBodyWorld(make.n, SLOTS, p.airframe, p.physics_dt_s, args.device)
         if "w" not in cache:
             from svg_training.compat import isaaclab_232 as isaac
             sim = isaac.make_physics_sim(dt, args.device)
-            cache["w"] = isaac.IsaacWorld(sim, make.n, 1, airframe, dt)
+            cache["w"] = isaac.IsaacWorld(sim, make.n, SLOTS, airframe, dt)
             isaac.physics_play(sim, cache["w"])
         return cache["w"]
     return make
@@ -836,7 +877,7 @@ def replay_phase(args) -> int:
         return 2
     t0 = time.time()
     ext = load_extract(run_dir)
-    base, prov = load_sim_only_params(SIM_PARAMS, run_dir)
+    base, prov = load_sim_only_params(SIM_PARAMS)
     arms = arm_params(base)
     inputs, layout = batch_inputs(ext["steps"], args.replicas)
     torch.manual_seed(0)
@@ -846,7 +887,7 @@ def replay_phase(args) -> int:
     np.savez_compressed(run_dir / "tier2.npz", layout=np.asarray(json.dumps(layout)),
                         **{f"{a}_{k}": np.asarray(v) for a, r in out.items() for k, v in r.items()})
     meta = {"world": args.world, "device": str(args.device), "replicas": args.replicas, "seed": args.seed,
-            "games": layout["games"], "drones_per_game": 1, "ticks": layout["ticks"], "params": prov,
+            "games": layout["games"], "drones_per_game": SLOTS, "ticks": layout["ticks"], "params": prov,
             "arms": {a: {"state_delay_s": p.state_delay_s, **{k: getattr(p, k) for k in ERROR_KEYS},
                          "mpc_xy_p": p.gains.mpc_xy_p, "mpc_z_p": p.gains.mpc_z_p} for a, p in arms.items()},
             "gpu": torch.cuda.get_device_name() if str(args.device).startswith("cuda") else "cpu",

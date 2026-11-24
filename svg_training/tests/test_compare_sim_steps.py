@@ -153,7 +153,7 @@ def test_sim_only_file_is_refused_by_the_trainers_loader_and_read_by_the_script(
     assert "SIM-ONLY" in tomllib.loads(text)["sim_only"]["label"]
     with pytest.raises(ValueError, match="unknown section"):
         load_physics_params(SIM_PARAMS)
-    p, prov = cs.load_sim_only_params(SIM_PARAMS, tmp_path)
+    p, prov = cs.load_sim_only_params(SIM_PARAMS)
     assert p.motor_lag is False
     assert (p.drag_x_n_per_mps, p.drag_y_n_per_mps, p.drag_z_n_per_mps) == (0.5, 0.3, 0.0)
     assert p.gains.mc_rollrate_p == 0.032 and p.gains.mpc_z_vel_max_dn == 4.0 and p.gains.mc_yaw_cutoff == 15.0
@@ -201,7 +201,7 @@ def test_every_gain_equals_the_simulators_ulog_parameter():
 
 # =========================================================================================== the arms
 def test_arms_differ_only_by_their_named_keys(tmp_path):
-    base, _ = cs.load_sim_only_params(SIM_PARAMS, tmp_path)
+    base, _ = cs.load_sim_only_params(SIM_PARAMS)
     arms = cs.arm_params(base)
     assert list(arms) == list(cs.ARMS)
     off = arms["off"]
@@ -219,13 +219,13 @@ def test_arms_differ_only_by_their_named_keys(tmp_path):
 # =========================================================================================== tier 2 on the CPU
 def _torch_world(p, n):
     from svg_training.models.rigid_body import TorchRigidBodyWorld
-    return TorchRigidBodyWorld(n, 1, p.airframe, p.physics_dt_s, "cpu")
+    return TorchRigidBodyWorld(n, cs.SLOTS, p.airframe, p.physics_dt_s, "cpu")
 
 
 def test_zero_position_gains_fly_a_constant_climb_at_the_sent_speed(tmp_path):
     """The speed-only route: PX4 (position NaN) flies v_ff. Tier 2 holds a position setpoint over the tick, which pulls
     back about K_p v dt / 2; with the position gains at 0 the climb settles at the sent speed."""
-    base, _ = cs.load_sim_only_params(SIM_PARAMS, tmp_path)
+    base, _ = cs.load_sim_only_params(SIM_PARAMS)
     ticks = 100
     sp = np.zeros((ticks, 1, 3))
     sp[:, 0, 2] = 1.5
@@ -234,13 +234,13 @@ def test_zero_position_gains_fly_a_constant_climb_at_the_sent_speed(tmp_path):
     vel = {}
     for name, p in (("route", cs.arm_params(base)["off"]), ("held", base)):
         out = cs.fly(_torch_world(p, 1), p, inputs, "cpu", seed=0)
-        vel[name] = out["vel_mps"][-20:, 0, 2].mean()
+        vel[name] = out["true_vel_mps"][-20:, 0, 2].mean()
     assert vel["route"] == pytest.approx(1.5, abs=0.03)
     assert vel["held"] < 1.4                                             # the held position setpoint's pull
 
 
 def test_fly_arms_batch_shapes_determinism_and_noise(tmp_path):
-    base, _ = cs.load_sim_only_params(SIM_PARAMS, tmp_path)
+    base, _ = cs.load_sim_only_params(SIM_PARAMS)
     arms = cs.arm_params(base)
     steps, reps, ticks = 2, 2, 40
     sp = np.zeros((ticks, steps * reps, 3))
@@ -250,12 +250,41 @@ def test_fly_arms_batch_shapes_determinism_and_noise(tmp_path):
     out = cs.fly_arms(lambda p: _torch_world(p, steps * reps), arms, inputs, "cpu", seed=3)
     assert set(out) == set(cs.ARMS)
     for name in cs.ARMS:
-        assert out[name]["vel_mps"].shape == (ticks + 1, steps * reps, 3)
+        for key in ("est_vel_mps", "true_vel_mps", "pos_m"):
+            assert out[name][key].shape == (ticks + 1, steps * reps, 3)
         assert out[name]["upsets"] == 0 and out[name]["nonfinite"] == 0
-    off = out["off"]["vel_mps"]
+    off = out["off"]["est_vel_mps"]
     assert np.array_equal(off[:, 0], off[:, 1])                          # deterministic on the CPU
-    assert not np.array_equal(out["error"]["vel_mps"][:, 0], out["error"]["vel_mps"][:, 1])   # noise per game
-    assert not np.array_equal(out["delay"]["vel_mps"], off)
+    assert not np.array_equal(out["error"]["est_vel_mps"][:, 0], out["error"]["est_vel_mps"][:, 1])   # noise per game
+    assert not np.array_equal(out["delay"]["true_vel_mps"], out["off"]["true_vel_mps"])
+
+
+def test_the_scored_trace_is_the_estimate(tmp_path):
+    """AirStack's trace is PX4's EKF2 estimate, so tier 2 is scored on what its cascade saw: off = the truth exactly;
+    delay = the truth one tick (10 physics steps = 0.05 s) earlier; error = truth plus the correlated error."""
+    base, _ = cs.load_sim_only_params(SIM_PARAMS)
+    arms = cs.arm_params(base)
+    ticks = 60
+    sp = np.zeros((ticks, 1, 3))
+    sp[10:, 0, 0] = 0.8
+    inputs = {"sp_mps": sp, "pos0_m": np.array([[0.0, 0.0, 2.0]]), "vel0_mps": np.zeros((1, 3)),
+              "yaw0_rad": np.zeros(1)}
+    out = cs.fly_arms(lambda p: _torch_world(p, 1), arms, inputs, "cpu", seed=1)
+    assert np.array_equal(out["off"]["est_vel_mps"], out["off"]["true_vel_mps"])
+    d = out["delay"]
+    assert round(cs.DELAY_ARM_S / base.physics_dt_s) == 10
+    np.testing.assert_allclose(d["est_vel_mps"][2:], d["true_vel_mps"][1:-1], atol=1e-6)
+    e = out["error"]
+    assert 0.0 < np.abs(e["est_vel_mps"] - e["true_vel_mps"]).max() < 0.2
+
+
+def test_the_sim_only_loader_leaves_no_loadable_copy(tmp_path, monkeypatch):
+    import tempfile
+
+    monkeypatch.setattr(tempfile, "tempdir", str(tmp_path))         # the loader's temporary folder goes here
+    monkeypatch.chdir(tmp_path)
+    cs.load_sim_only_params(SIM_PARAMS)
+    assert list(tmp_path.rglob("*")) == []
 
 
 # =========================================================================================== the recorded fixture
@@ -300,7 +329,7 @@ def test_fixture_metrics_and_cells(fixture_steps):
 
 def test_fixture_end_to_end_on_the_cpu(fixture_steps, tmp_path):
     """extract -> tier 2 (torch world, CPU, 1 replica) -> per-step metrics and reading words; never of record."""
-    base, prov = cs.load_sim_only_params(SIM_PARAMS, tmp_path)
+    base, prov = cs.load_sim_only_params(SIM_PARAMS)
     arms = cs.arm_params(base)
     inputs, layout = cs.batch_inputs(fixture_steps["steps"], replicas=1)
     out = cs.fly_arms(lambda p: _torch_world(p, layout["games"]), arms, inputs, "cpu", seed=0)

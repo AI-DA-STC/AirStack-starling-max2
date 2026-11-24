@@ -45,8 +45,15 @@ PX4's own input against PX4's own estimate, on PX4's clock: the velocity setpoin
 Tier 2 input: the AirStack setpoint at each tick's midpoint, held over the 0.05 s tick (a change reaches tier 2
 within ±0.025 s); start state = the AirStack drone's estimated position, velocity and heading 2 s before the onset,
 level, fresh integrators; window from 2 s before the onset to 2.5 s after the hold ends (PX4 time; the hold is
-3 s wall, about 7.5 s PX4). One batch for all arms: 35 steps x 4 replicas = 140 games x 1 drone, one Isaac Lab world,
+3 s wall, about 7.5 s PX4). One batch for all arms: 35 steps x 4 replicas = 140 games x 2 drone slots (slot 0 flies
+the step; slot 1 holds still 15 m off in x and y, the two-slot layout of the other tier-2 scripts), one Isaac Lab world,
 the arms flown one after the other on it.
+
+**The trace scored for tier 2 is its estimate** (`PhysicsDrone.est_vel_mps`, what its cascade saw), because the
+AirStack trace is PX4's EKF2 estimate; tier 2's true velocity is kept beside it (INFO). In `off` the two are equal; in
+`delay` the estimate is the truth 0.05 s earlier; in `error` the truth plus the correlated error (pinned by a test).
+With the position gains at 0, `state_error_pos_*` acts on nothing: the error arm tests the velocity and attitude
+errors only.
 
 | Arm | Change from the SIM-ONLY file (all arms: position gains 0) |
 |---|---|
@@ -70,8 +77,15 @@ input's mean over the last 1 s before the onset, level_peak = the input's extrem
 | `ss_error_mps` | mean(trace - input) over the hold's last 1 s; positive = faster than sent | 0.02 m/s |
 | `lag_s` | the shift of the input in [-0.10, 0.60] s that minimises the RMS to the trace from 0.5 s before the onset to the hold's end | 0.05 s |
 
-The floors are the resolution: one tick of tier 2's input grid for times (the clock alignment's onset spread is at most
-0.075 s, section 6); about the replica-to-replica spread for overshoot and steady-state error.
+The floors are a choice (the builder's, PROPOSED to the lead): one tick of tier 2's input grid for times (the clock
+alignment's onset spread is at most 0.075 s, section 6); for overshoot and steady-state error, values of the order of
+the error arm's replica-to-replica range in the CPU dry run (overshoot median 1.9, largest 8.6 points; steady-state
+error median 0.018, largest 0.047 m/s; delay median 0.026, largest 0.10 s).
+
+**Limits of these words, stated before the run.** The arm-against-`off` floor for times (0.05 s) equals the delay
+arm's size, so on the time metrics the delay arm can hardly register by construction; the trace RMS (INFO, below) is
+the sensitive read of the two arms. Four steps per cell (three for z 0.5 m/s) make a narrow AirStack spread; the floor
+is what keeps "within" from meaning "identical".
 
 **Cells**: axis x speed (9 cells; 4 steps each, z 0.5 m/s 3 steps: step 6 was not flown). AirStack spread of a cell =
 the min to max of its steps' values. Tier 2's cell value = the mean over the cell's steps of the replica mean.
@@ -84,11 +98,12 @@ the min to max of its steps' values. Tier 2's cell value = the mean over the cel
 **closer** if that is smaller than `off`'s by more than the floor, **further** if larger by more than the floor, else
 **no change (within the floor)**.
 
-INFO beside it: the RMS of tier 2 - AirStack along the command over each step's window (mean and worst step per arm).
+INFO beside it: the RMS of tier 2 - AirStack along the command over each step's window (mean and worst step per arm;
+tier 2's estimate, and its true state beside it).
 
 **Health (reported, not gated)**: upsets and non-finite counts per arm (expected 0); largest tilt; per step the
-alignment residual (worst 0.076 m/s) and onset spread (worst 0.075 s); the `off` arm's replica spread (a determinism
-check of PhysX on the GPU).
+alignment residual (worst 0.076 m/s) and onset spread (worst 0.075 s); each arm's largest replica-to-replica spread
+(in `off` and `delay` a determinism check of PhysX on the GPU; 0 on the CPU). All in `results.json` `health`.
 
 **How the result will be read** (no gate): if `off` is within in most cells and metrics, tier 2 with the simulator's
 airframe reproduces the simulator's PX4 + EKF2 at these floors, and the simulator cannot resolve an estimator effect
@@ -112,19 +127,33 @@ EKF2 adds that effect; **further** is evidence against that arm's size in the si
 - The simulator's drag is visible: at a 1.5 m/s setpoint x settles about 0.15-0.18 m/s slow, y 0.06-0.09, z none,
   the order of Pegasus's 0.5 / 0.3 / 0 drag on a drone facing +x.
 
-## 7. CPU dry run (torch world, 2 replicas; NOT of record)
+## 7. CPU dry run (torch world, 4 replicas; NOT of record)
 
 Run to check the pipeline end to end before the GPU run (`runs/2026-11-24_ste_l15_cpu_dry` in the builder's worktree,
-11 s on the CPU). PyTorch reference world, not PhysX. Seen: `off` within in 9 of 9 cells for every metric but
-`rise_s` and `overshoot_pct` (8 of 9: z 0.5 m/s, tier 2 rises slower and does not overshoot, AirStack +3 to +7 %);
-`delay` and `error` no change against `off` on every metric; trace RMS against AirStack 0.022 m/s mean (off), 0.029
-(delay), 0.030 (error). After it: `rise_own_s` and the trace RMS line were added (section 5); nothing else changed.
+about 15 s on the CPU). PyTorch reference world, not PhysX. Seen, after the addendum below: `off` within in 9 of 9
+cells for every metric but `rise_s` and `overshoot_pct` (8 of 9: z 0.5 m/s, tier 2 rises slower and does not
+overshoot, AirStack +3 to +7 %); `delay` within everywhere but `lag_s` y 0.5 m/s (0.50 s against 0.42-0.43, outside
+above), and within on z 0.5 m/s overshoot (+2.5 %); `error` outside on x 0.5 m/s `rise_own_s` and `t63_s` (slower) and
+the same two z 0.5 m/s cells as `off`; both arms "no change (within the floor)" against `off` on every metric. Trace
+RMS against AirStack (tier 2's estimate): 0.022 m/s mean (off), 0.024 (delay), 0.027 (error); worst step 0.084, 0.091,
+0.084. Health: no upsets, no non-finite values, largest tilt 12.9 deg; replica spread 0 in `off` and `delay`, at most
+0.10 m/s in `error`.
+
+**Addendum (24 Nov 2026, after the first dry run, before any GPU run; advisor's review):** (1) `rise_own_s` and the trace
+RMS line were added (section 5). (2) The first dry run scored tier 2's TRUE velocity against AirStack's EKF2 estimate;
+the scored trace is now tier 2's estimate (section 4), which changed the delay arm's z readings (its `lag_s`, `t63_s`
+and `delay_s` on z had read "outside (below)": an artefact of comparing truth with an estimate). (3) Two drone slots
+per game instead of one, as every other tier-2 script (a one-drone Isaac world has never been built here). (4) The
+health block gained the replica spreads and the alignment. Nothing else in sections 4 and 5 changed.
 
 ## 8. GPU, cost and launch
 
 Projection: Isaac Lab start and world about 2 min, three arms of 140 games x about 250 ticks about 1 min; **about
 0.05 GPU-h, cap 0.3 GPU-h** (task L1.5's cap in `configs/ste_learning.toml`). Alone on the GPU or side by side
-(small: 140 games x 1 drone). The lead launches it; nothing here ran on the GPU.
+(small: 140 games x 2 drones). The lead launches it; nothing here ran on the GPU. **The Isaac branch of the script
+(`--world isaac`, `_isaac_main`, the Isaac world factory) has not been executed: the first launch is its smoke.** It
+follows `scripts/physics_step_tests.py`'s pattern (Isaac started headless before torch, `make_physics_sim`,
+`IsaacWorld(sim, n, 2, ...)`, `physics_play`, `os._exit`).
 
 ```
 cd ~/AirStack-starling-max2-dev/svg_training     # after l15-build is merged

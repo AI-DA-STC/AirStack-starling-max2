@@ -533,7 +533,10 @@ def test_a_pilot_under_the_gate_file_before_the_fill_step_is_read(tmp_path, fake
 def test_a_pilot_under_a_gate_file_that_differs_beyond_the_fill_fields_is_refused(tmp_path, fake_reload):
     import re
     other = lambda t: re.sub(r"(?m)^train_seed = (\d+)", lambda m: f"train_seed = {int(m.group(1)) + 1}", _unfill(t), 1)
+    guard = lambda t: _unfill(t).replace("guard = {} }", "guard = { shaping_weight = 1.0 } }", 1)   # not a fill field
+    assert guard("side_overrides = { strike = {}, guard = {} }") != "side_overrides = { strike = {}, guard = {} }"
     for name, folder in (("seed", _pre_fill_pilot(tmp_path / "seed", "velocity", other)),
+                         ("guard", _pre_fill_pilot(tmp_path / "guard", "velocity", guard)),
                          ("nocopy", _pre_fill_pilot(tmp_path / "nocopy", "velocity", _unfill))):
         if name == "nocopy":
             (folder / "gates.toml").unlink()

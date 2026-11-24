@@ -148,14 +148,19 @@ def check_sha(got, gates, stage: str) -> None:
 
 # The fill step (spec section 2b, and the skills run 0 mark of the slice-2 addendum, 25 Nov 2026) writes these values
 # AFTER the pilots, by design: a pilot ran under the gate file as it stood before the fill.
-FILL_FIELDS = (("trainer", "side_overrides"), ("trainer", "game_steps_per_run"), ("run0", "skills_reach_min"))
+FILL_FIELDS = (("trainer", "side_overrides", "strike"), ("trainer", "game_steps_per_run"),
+               ("run0", "skills_reach_min"))
 
 
 def without_fill(doc: dict) -> dict:
-    doc = {k: (dict(v) if isinstance(v, dict) else v) for k, v in doc.items()}
-    for table, key in FILL_FIELDS:
-        if isinstance(doc.get(table), dict):
-            doc[table].pop(key, None)
+    import copy
+    doc = copy.deepcopy(doc)
+    for *path, key in FILL_FIELDS:
+        node = doc
+        for part in path:
+            node = node.get(part) if isinstance(node, dict) else None
+        if isinstance(node, dict):
+            node.pop(key, None)
     return doc
 
 

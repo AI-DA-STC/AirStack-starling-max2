@@ -15,13 +15,17 @@ Spec `ste_learning/drafts/L2_5_SPEC.md`, frozen before the run (reading words, p
 
 ## Commit and config
 
-Commit `3103d4d0` on `development`. Gate file `configs/ste_l2/l25_screen_gates.toml`, sha256
-`bc5a585dcdc49ef2dac711cf4af1d7d661a1dffef9abe914702edf83ecca02ba` (pinned at launch; copy in the evidence folder).
+Commit `3103d4d0` on `development` (the run folder's `code.json`, pinned at launch, clean tree). `results.json` names
+`5442c06c`: likely the branch head when the results were written at 12:41:12 (5442c06c was committed at 12:40:19; the
+commits between the two touch L1.5 files only, and the running process had loaded its code at launch). Gate file
+`configs/ste_l2/l25_screen_gates.toml`, sha256 `bc5a585dcdc49ef2dac711cf4af1d7d661a1dffef9abe914702edf83ecca02ba`
+(pinned at launch; copy in the evidence folder).
 `scripts/ste_sweep_l011.py`, device CPU, seed 110000, 1,000 games per cell on T44's own 1,000 3v3 starts (loaded from
 `configs/ste_l012/t44_reference.npz`), up to 2,400 ticks (120 s); fitted PX4 response (`params/real_exploratory_v0.toml`).
 Main game: 3v3, tag 1.6 m one for one at 3-D centres, zone 1.6 m, 6.5 m lab arena. Launched by `scripts/ste_job.py
 launch --task L2.5 --gpu-h 0` at 11:54:57, ended 12:41:12 (+08:00), exit 0; effective time 2,774 s (46 min) of the
-4.5 h cap (the launcher does not record the thread count). Read by `scripts/ste_l25_read.py` (this record's commit; tests
+4.5 h cap. The thread count is not known: the launcher records only PYTHONPATH, CUDA_VISIBLE_DEVICES,
+PYTORCH_CUDA_ALLOC_CONF and its two shared-folder variables (`ste/jobs.py` RECORDED_ENV), not OMP_NUM_THREADS. Read by `scripts/ste_l25_read.py` (this record's commit; tests
 `tests/test_ste_l25_read.py`), which applies the spec to the run's per-game arrays.
 
 | Group | Landing | Filter share | Tag | Cells |
@@ -49,10 +53,10 @@ set, no non-finite action. Table in `results.md`.
 
 | Check | Compared | Games that differ | Result |
 |---|---|---|---|
-| P-b | tag off: even split v option B (outcome, end step or closest approach) | 11,429 of 12,000 | option B shown to reach the game |
+| P-b | tag off: even split v option B (outcome, end step or closest approach) | 11,429 of 12,000 | option B shown to reach the game (with the tag off only) |
 | P-c | landing v base (end step or closest approach) | 6,978 of 30,000 | landing shown to reach the game |
 
-Nothing is withheld.
+Nothing is withheld. Option B reaching the game is shown with the tag off only; with the tag on, see reading 3.
 
 ## Result (INFO), in the spec's words
 
@@ -69,9 +73,10 @@ see (about 40–60 games in 1,000), not "no effect".
 | landing_gy | 432 (40.2–46.3 %) v low | 426 v low | 803 (77.7–82.6 %) v straight | 798 | 716 | **still Guard below mark_edge** |
 
 Both parked scripts are also below mirror and field in every rule set. Cell by cell, the still Guard is below
-mark_edge against five of the six Strike scripts in every rule set; against strike_converge it holds 986 against
-mark_edge's 972 (landing: not distinguishable) and 963 / 965 (gy, landing_gy: **still Guard above mark_edge**). The
-driver's g* is guard_mark_edge in every tag-on group (H 0.802 landing, 0.808 gy, 0.803 landing_gy).
+mark_edge against five of the six Strike scripts in every rule set. Against strike_converge it holds 986 against
+mark_edge's 972 (landing: not distinguishable) and 963 / 965 (gy, landing_gy: "still Guard above mark_edge"): one cell,
+and the worst-cell reading above is unchanged (likely because converge sends every Strike drone to one point, where
+parked Guards trade them away; not tested). The driver's g* is guard_mark_edge in every tag-on group (H 0.802 landing, 0.808 gy, 0.803 landing_gy).
 
 **Reading 2, with and without the tag (parked Guards):**
 
@@ -91,7 +96,11 @@ cell holds 86 without the tag (still Guard v flank: 331 even split, 171 option B
 Strikes in this rule set** (the tag raises the still Guard's hold, but it stays below mark_edge).
 
 **Reading 3, option B on and off (P2):** landing_gy v landing and gy v base: **no change detected** in all 30 cells of
-both pairs. Paired readout (30,000 paired games each):
+both pairs. **At this tag size option B is not testable with scripted play:** the tag fires at 1.6 m, before the
+filter (which keeps pairs 1.10 m apart and starts acting head-on at about 1.32–1.57 m) acts on most Guard–Strike pairs
+(likely, not tested). With the tag off, where the filter does act, option B changes 11,429 of 12,000 games, and the
+parked Guards' holds against strike_flank drop from 331 to 171 (still Guard) and from 752 to 86 (ring Guard). Paired
+readout (30,000 paired games each):
 
 | Pair | hold → reach | reach → hold | same outcome, end step changed |
 |---|---|---|---|
@@ -105,9 +114,10 @@ most cells; share of tags with the filter active on the tag's tick 0.11–0.39 f
 Guards, either way; breach rate 0 and closest 3-D approach 1.600 m in every cell.
 
 **Reading 4, landing on and off (P7, landing part):** landing v base and landing_gy v gy: **no change detected** in 28
-of 30 cells; **landing raises the Guard team's hold** in the other two, both against strike_low: mark_edge 895 v 844
+of 30 cells; **landing raises the Guard team's hold** in two cells only, both against strike_low: mark_edge 895 v 844
 (51 reach → hold, 0 hold → reach) and mirror 898 v 847 (52 / 1) with the even split; 902 v 847 and 899 v 846 with option
-B. Paired readout:
+B. field against strike_low is unchanged (no change detected), as are the parked Guards. Tier 1's vertical response is
+not fitted, and strike_low is a height script, so these two cells are read with care. Paired readout:
 
 | Pair | hold → reach | reach → hold | same outcome, end step changed |
 |---|---|---|---|
@@ -119,21 +129,23 @@ With landing on, the filter corrects live drones more often in the moving-Guard 
 
 **Plain reading.** Tested: whether, under the 1.6 m tag, a Guard team that stands still does as well as one that
 plays, with the new landing and option-B rules, 1,000 scripted games per pairing. What happened: standing still holds
-43 % at worst against 80 % for the best named moving script, so the risk is not seen with scripted Strikes; the tag is
-what makes standing still hold at all (0 % without it); landing and option B moved no hold rate beyond resolution, except
-landing adding about 5 points for moving Guards against the low Strike. Why it matters: P2 and P7 can be ruled knowing
-that, in scripted play at 1.6 m, option B and landing barely change who wins; how a trained team uses them is not
-measured.
+43 % at worst against 80 % for the named moving script (mark_edge), so the risk is **not seen with scripted Strikes**;
+the tag is what makes standing still hold at all (it raises the parked hold in 23 of 24 cells; 0 % at worst without
+it). Landing moved the hold rate in two cells only (moving Guards against the low Strike, about 5 points more; tier 1's
+vertical response is not fitted, so read with care). Option B is not testable at this tag size: the tag fires before
+the filter acts (likely, not tested); with the tag off it changes 11,429 of 12,000 games and removes most of the parked
+Guards' blocking holds against the flank Strike (331 → 171, 752 → 86). Why it matters: landing barely changes scripted
+play at 1.6 m (P7, landing part); option B (P2) is not measured by this screen in the main game and needs the 1.15 m
+tag or a trained team; how a trained team uses either rule is not measured.
 
 ![still Guard v straight, landing + option B](evidence/2026-11-24_ste_l25_screen/guard_parked_centre_v_strike_straight.gif)
 
 ## For the owner's P2 and P7 rulings
 
-**P2 (filter option B), what the data show.** In the main game (tag 1.6 m) option B changed no scripted cell's hold
-rate by more than this test can see, with or without landing; 168 of 30,000 paired outcomes changed with landing on, in
-both directions (71 against the Guard team, 97 for it). Likely reason, not tested: at 1.6 m the tag usually fires before
-the filter acts on a Guard–Strike pair (the filter starts head-on at about 1.32–1.57 m), so the share rule rarely
-matters. With the tag off, option B changed 11,429 of 12,000 games and took away most of the parked Guards' blocking
+**P2 (filter option B), what the data show.** At the 1.6 m tag option B is not testable with scripted play: it changed
+no scripted cell's hold rate by more than this test can see, with or without landing (168 of 30,000 paired outcomes
+changed with landing on, 71 against the Guard team, 97 for it), likely because the tag fires at 1.6 m before the
+filter (1.10 m apart, acting head-on from about 1.32–1.57 m) acts on most Guard–Strike pairs; not tested. With the tag off, option B changed 11,429 of 12,000 games and took away most of the parked Guards' blocking
 holds against the flank Strike (still Guard 331 → 171, ring Guard 752 → 86): likely because the Strike drone no longer
 gives way, so the filter no longer works as a wall for the Guard team. **What they do not show:** a trained team (one
 that learned to use the even split as a wall, as the STE Guard policy likely does, DISCUSSION §2.14, would lose more);
@@ -142,24 +154,29 @@ before a tag (not recorded); how close a Strike drone gets to a wall-pinned Guar
 tier 1): the closest-approach column reads 1.600 m everywhere because a pair closer than 1.6 m is tagged out first;
 anything about flight.
 
+**P2, cost.** Option B was slower on the CPU wherever the filter stayed busy: the tag-off pair took 1,597 s with option
+B against 301 s with the even split (5.3 ×, same cells, same games). The 0.05 m tag control (landing + option B, play
+that does not end) took 256 s against 26 s for the stand-still control (about 10 ×; both are option B games, the
+second with still Strike drones, so this pair shows a busy option B filter against an idle one, not option B against
+the even split). Likely the option B filter path and its emergency fallback pass (L2.1 measured the fallback doubling
+filter cost). If option B is chosen it would raise training cost; not measured on a trained run or on the GPU.
+
 **P7 (drone loss), landing part only, what the data show.** Landing on changed 6,978 of 30,000 games in end step or
 closest approach and 254 outcomes (90 against the Guard team, 164 for it); hold rates are unchanged beyond resolution
-except against the low Strike, where the moving Guards hold about 5 points more. Likely reason, not tested: the low
-Strike flies under the Guards' height and meets the descending pair in the filter; tier 1's vertical response is not
-fitted, so this cell is read with care. **What they do not show:** scheduled drop-outs and drawn team sizes (not in
-this screen), sizes other than 3v3, how close a live drone comes to a landing one (the closeness columns count live
-drones only; L2.3's own tests cover it), a real descent.
+in 28 of 30 cells; in two cells only (mark_edge 895 v 844, mirror 898 v 847, both against the low Strike; field
+unchanged) the moving Guards hold about 5 points more. Likely reason, not tested: the low Strike flies near the bottom of
+the height band and meets the descending pair in the filter; tier 1's vertical response is not fitted, so these two
+cells are read with care. **What they do not show:** scheduled drop-outs and drawn team sizes (not in this screen),
+sizes other than 3v3, how close a live drone comes to a landing one (the closeness columns count live drones only;
+L2.3's own tests cover it), the L2.3 shortfall (a drone landing onto a drone held at the height-band floor closes to
+0.95–1.05 m, a builder's test scene), L2.4's absent slots, which still get the team reward (the learner must mask them,
+an L3 item), a real descent.
 
 ## What the spec did not anticipate
 
-- **Option B with the tag off is about 5 times slower per tick on the CPU** (ctl_tag_off_landing_gy 1,597 s against
-  301 s for the even split; ctl_tiny_tag, also landing + option B with play that does not end, 256 s against 26 s for
-  stand-still). Likely the option B filter path and its emergency fallback pass when the filter is busy (L2.1 measured
-  the fallback doubling filter cost); not measured further. It is why the run took 46 min against the 27 min projected.
+- **Option B's CPU cost** (figures in "P2, cost" above): it is why the run took 46 min against the 27 min projected.
 - **The closest-approach and breach columns cannot show the L2.1 shortfall at a 1.6 m tag** (above): 1.600 m and 0 in
   every cell by construction.
-- **A parked script holds above mark_edge against strike_converge** under option B (986 v 963 / 965): converge sends
-  every Strike drone to one point, where parked Guards trade them away; one cell, the worst-cell reading is unchanged.
 
 ## What this does not show
 

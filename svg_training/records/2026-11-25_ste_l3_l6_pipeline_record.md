@@ -2,7 +2,7 @@ Simulator: training simulator, tier 1 (fast engine; Starling layer: commander co
 
 # 2026-11-25 STE L3-L6 pipeline check record
 
-**Reviewed by two independent reviewers (R22), 25 Nov 2026:** a numbers/source check against the run folders (ACCEPT, no discrepancy) and a completeness check against the spec (ACCEPT AFTER FIXES; fixes applied in `66123a92`). The numbers are copied from the run folders'
+**Reviewed by two independent reviewers (R22), 25 Nov 2026:** a numbers/source check against the run folders (ACCEPT, no discrepancy; re-checked after the fix round, ACCEPT) and a completeness check against the spec (ACCEPT AFTER FIXES; fixes applied in `66123a92`). The numbers are copied from the run folders'
 own pages (listed per task below); the reader's comparison is quoted as `read.md` states it.
 
 ## Purpose
@@ -177,7 +177,7 @@ smoke on failure. Values from `results.json` and `controls.json` of the smoke (`
 
 | Spec section 4 check | Control | Measured |
 |---|---|---|
-| 1. CUDA replay tolerance (holds and reaches within 10 games of T44's, at most 20 games with another outcome) | `ctl_replay_guard`, `ctl_replay_strike` PASS | 17 cells (8 Guard, 9 Strike): 11 cells with 0 of 1,000 games differing; the 6 mixed-choice cells differ in 2 to 5 games in outcome (largest count gap to T44: 3 holds, 668 v 671 and 866 v 864) |
+| 1. CUDA replay tolerance (holds and reaches within 10 games of T44's, at most 20 games with another outcome) | `ctl_replay_guard`, `ctl_replay_strike` PASS | 17 cells (8 Guard, 9 Strike): 11 cells with 0 of 1,000 games differing; the 6 mixed-choice cells differ in 2 to 5 games in outcome (largest count gap to T44: 3 holds, 668 v 671; next 866 v 864, 2) |
 | 2. Device placement and no host read inside a tick | `ctl_device_placement` PASS | 9 tensors on cuda; 0 host syncs inside the dispatch (choose, command) in the replay batches, measured with torch's CUDA sync debug mode, which the smoke page calls a prototype that does not see every sync |
 | 3. Snapshot reload across devices | `ctl_reload_across_devices` PASS | cuda to cpu: largest absolute logit difference 5.96e-08 (tolerance 1e-05), greedy choices equal |
 | 4. Two tier-2 clips that play | `ctl_clips` PASS | 2 clips of 2 (games 0 and 1, both a reach) |

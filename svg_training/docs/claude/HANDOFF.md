@@ -23,7 +23,7 @@ note disagree, this file wins.
   run's own driver word is INCONCLUSIVE (176 v best script 192 v guard_mark_edge; all controls PASS; a real result, not
   re-run). Guard: velocity above skills on the pooled row (0.963 v 0.895). Strike: pooled rows level.
 - **Built and merged tonight:** `scripts/ste_l3_run0_ceiling.py --oracle-check`; `scripts/ste_l5_clips3d.py` (3-D clips of a
-  finished L5 run, 68 clips over six runs in `runs/2026-11-25_ste_l5_*/videos3d/`); the reader accepts a pilot that ran
+  finished L5 run, launched by hand; 68 clips over six runs in `runs/2026-11-25_ste_l5_*/videos3d/`); the reader accepts a pilot that ran
   before the fill step (`026fc00c`); the suite-flake fix (SIGINT ignored in background-launched suites). Each had one
   reviewer.
 - **L2.6 tier-2 clips** rendered on the fixed path: both tiers agree game for game; T71's record updated.
@@ -31,7 +31,13 @@ note disagree, this file wins.
   byte-identical); the full suite's first run tripped on a merge made while it ran (`test_timing` read HEAD twice).
 - **Rules learned:** launch L4.1/L4.2/L6.2 with `--run-dir` equal to the script's `--out` (the reader reads `exit_code`
   beside the output); never merge into `development` while the full suite or a run is going.
-- **Main track:** L3–L6 pipeline check done · **Side track:** none open.
+- **Owed (small, no ruling needed):** the automatic post-run 3-D clip hook (the owner asked for "automatically"; today
+  `scripts/ste_l5_clips3d.py` is launched by hand per finished run); the stale "0.90" in the error string of
+  `scripts/ste_exploit_l012.py` (~line 188; shown only when a skills gate file has no mark; left so the driver's code
+  stamp did not change mid-route); `scripts/ste_job.py status` prints only `budget_l1_l2`, not `[budget_l3_l4_l5_l6]`
+  (tonight's L3–L6 hours were summed from `runs/shared/gpu_hours.log`). Keep the worktree `~/AirStack-starling-max2-run0mark`:
+  the ceiling of record and its oracle check (T79) live in its `runs/`.
+- **Main track:** L3–L6 pipeline check done · **Side track:** the automatic 3-D clip hook (owed).
 - **Waiting on the owner:** the read of the pipeline check (which route(s) next, budget; L7 is the owner's gate); the
   planned-pushes flight NEAR-962; the Crazyflie commanded gaps. Nothing is running.
 

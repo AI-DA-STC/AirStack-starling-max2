@@ -20,7 +20,7 @@ steps at 0.75 and 1.0 m/s (4), the config file name, laptop time-sync state, PX4
 filter-off flight for one drone (7).
 
 **Verdict:** L1.3's run of record still waits on the planned-pushes flight (NEAR-962). For that flight, in its own bag:
-one drone with the safety filter off; single-axis pushes from rest at 0.25, 0.5, 0.75 and 1.0 m/s, held 3–4 s (some
+one drone flown alone with the safety filter on (owner, R33: no filter-off flight; with the other drone disarmed on the ground the filter has no pair to act on); single-axis pushes from rest at 0.25, 0.5, 0.75 and 1.0 m/s, held 3–4 s (some
 5 s), 3 s rest; record the stick-command topics; write down the config file, PX4 build, `MPC_XY_VEL_MAX` and the ledger
 number.
 

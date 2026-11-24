@@ -78,14 +78,17 @@ drone = 0.01
 (Checked with `tomllib.loads`, 24 Nov 2026.)
 
 Checks at load (ValueError, exit 2): every name a player of that team's `[players]` list; the two lists disjoint, their
-union the whole `[players]` list (no player silently dropped); the drone list non-empty; the order inside each list =
+union the whole `[players]` list (no player silently dropped); both lists non-empty (as built: a team list of zero names would leave the team head "free" only and the start bias ln 0 undefined); the order inside each list =
 its `[players]` order (so one order rule exists); the lists or scales with `choice` "team" or "drone" refused.
 
-**Dispatch.** Slice 1's `SkillDispatch` (`skills.py:104-149`) is reused unchanged with K = the whole `[players]` list
-(Strike 6, Guard 5 scripts run every tick, as in slice 1). A new `resolve_two_level(team_a [N, M], drone_a [N, M],
-obs [N, M, D]) -> (flown [N, M] long, head_mask [N, M, 2])` maps the leader's team index (t ≥ 1 → its player index;
-0 → each drone's drone-skill player index) and returns the masks of §2. The leader rule is slice 1's (`skills.py:146-149`):
-the lowest-index **live** drone at the decision's first tick.
+**Dispatch (as built, step 1).** A subclass `TwoLevelDispatch(SkillDispatch)` (`ste/skills.py`) runs, as slice 1,
+every player of the whole `[players]` list every tick (Strike 6, Guard 5) and gathers per drone.
+`resolve_two_level(action [N, M, 2], obs [N, M, D]) -> (flown [N, M] long, head_mask [N, M, 2])` maps the leader's
+team index (t ≥ 1 → its player index; 0 → each drone's drone-skill player index) and returns the masks of §2. Slice 1's
+`SkillDispatch` gains one method, `greedy(logits)` (the argmax that `SkillTeam.choose` used inline; the subclass
+splits it per head); its behaviour is unchanged (slice 1's tests pass). The leader rule is slice 1's
+(`skills.py:146-149`): the lowest-index **live** drone at the decision's first tick; with no live drone the code
+gives the **last** slot (slice 1's comment says drone 0; such a game has ended and restarts at the boundary).
 
 ## 2. Networks, masks, log-probability, entropy, action space
 
@@ -119,7 +122,8 @@ clip range):
 - r_team,i = exp(log p_team,i(t_i) − old_team,i), r_drone,i = exp(log p_drone,i(d_i) − old_drone,i);
 - policy loss = − mean[ L_i · min(A r_team, A clip(r_team, 1 ± ε)) ] − mean[ F · min(A r_drone, A clip(r_drone, 1 ± ε)) ],
   ε = `ratio_clip`, means over all samples of the minibatch (masked samples add zero and no gradient);
-- approx KL per head, kl_h = mean over the samples with that head's mask on of ((r − 1) − log r), logged as
+- approx KL per head, kl_h = mean over the samples with that head's mask on of ((r − 1) − log r), **0 when no sample
+  of the minibatch has that head's mask on** (slots 1-2 often lead in none), logged as
   `Policy / KL team (<agent>)` and `Policy / KL drone (<agent>)`. The KL early stop (`kl_threshold`) and `KLAdaptiveLR`
   use kl_team + kl_drone: the heads are independent, so the sum is the KL of the joint policy over the heads in play.
   The pinned recipe sets neither (both off), but both paths are tested under masking.
@@ -228,7 +232,9 @@ decision elects the next live drone.
 5. Masked loss against a hand-written reference: random masks, s_team ≠ s_drone (e.g. 0.01 and 0.03), random advantages;
    policy loss, entropy loss and per-head KLs of one minibatch equal a plain-torch computation written in the test from
    the formulas of §2.
-6. Update copy guard: two updates of `TwoLevelIPPO` against stock IPPO on the same batches, under `set_seed`. A
+6. Update copy guard: two updates of `TwoLevelIPPO` against stock IPPO on the same batches, under `set_seed`. The
+   transitions are **injected** into both agents' memories (not re-sampled: the K_d = 1 drone draw and the minibatch
+   shuffle consume random numbers), and the shuffle indices are taken from one generator for both. A
    per-head ratio is not stock's joint ratio, so the comparison is made where the two coincide: a one-skill drone head
    (K_d = 1, list B's Guard; its log-probability is 0, its ratio 1, its entropy 0, so it adds no gradient) with every
    head mask 1, against stock IPPO with a `CategoricalMixin` policy over the team head, its network initialised from

@@ -86,7 +86,8 @@ def test_the_velocity_scoring_path_plays_as_before_the_l3_slices(side):
     assert now["whole"] == record["whole"]
     games = len(record["whole"]["outcome"])
     assert games == GAMES * len(record["cells"])
-    assert len(set(record["whole"]["outcome"])) > 1, "every game ended the same way: the golden has no power"
+    end = record["whole"]["end_step"]           # power: the held velocity team (cell 0) plays other games than its
+    assert end[:GAMES] != end[GAMES:2 * GAMES]  # zero twin (cell 1), so the held command path is exercised
     if torch.backends.cpu.get_cpu_capability() == data["_capability"]:
         assert now["decimal"] == record["decimal"]                      # bit for bit on the recording's capability
         return

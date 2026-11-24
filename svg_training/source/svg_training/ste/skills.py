@@ -231,7 +231,7 @@ def check_two_level(spec: LearnerSpec, players: dict) -> None:
 
 class TwoLevelDispatch(SkillDispatch):
     """The team's skills for the two-level choice: every player of ``players`` (the gate file's list of the team, in
-    order) runs every tick, as in slice 1, and each drone flies the one its two heads resolve to (``resolve_heads``).
+    order) runs every tick, as in slice 1, and each drone flies the one its two heads resolve to (``resolve_two_level``).
 
     Network action per drone: [team index, drone index] (the action space ``MultiDiscrete([T+1, K_d])``); team index 0
     = "free", t >= 1 = ``team_strategies[t - 1]``; drone index d = ``drone_skills[d]``."""
@@ -261,7 +261,7 @@ class TwoLevelDispatch(SkillDispatch):
         t, _ = self.widths
         return torch.stack((logits[..., :t].argmax(-1), logits[..., t:].argmax(-1)), dim=-1)
 
-    def resolve_heads(self, action: Tensor, obs: Tensor) -> tuple[Tensor, Tensor]:
+    def resolve_two_level(self, action: Tensor, obs: Tensor) -> tuple[Tensor, Tensor]:
         """action [N, M, 2] (each drone's [team, drone] sample), obs [N, M, D] -> (flown [N, M] long: the player index
         each drone flies, head_mask [N, M, 2] float 0/1). The leader is the lowest-index live drone in ``obs`` (with no
         live drone, the last one: the rule of slice 1's ``resolve``, whose comment says drone 0; such a game has ended
@@ -283,8 +283,8 @@ class TwoLevelDispatch(SkillDispatch):
         return flown, mask
 
     def resolve(self, choice: Tensor, obs: Tensor) -> Tensor:
-        """choice [N, M, 2] -> flown [N, M] (``resolve_heads`` without the masks)."""
-        return self.resolve_heads(choice, obs)[0]
+        """choice [N, M, 2] -> flown [N, M] (``resolve_two_level`` without the masks)."""
+        return self.resolve_two_level(choice, obs)[0]
 
 
 def two_level_dispatch(spec: LearnerSpec, players: dict, team: str, cfg: GameCfg, num_games: int, device,

@@ -369,7 +369,7 @@ def test_the_leader_is_the_lowest_index_live_drone_and_only_it_and_free_count_in
     obs = torch.zeros(4, 3, OBS_DIM)
     obs[..., V.alive] = torch.tensor([[1.0, 1.0, 1.0], [0.0, 1.0, 1.0], [0.0, 0.0, 1.0], [0.0, 0.0, 0.0]])
     action = torch.tensor([[1, 0], [2, 1], [0, 3]]).expand(4, 3, 2)          # slot 0: sacrifice, 1: converge, 2: free
-    flown, mask = d.resolve_heads(action, obs)
+    flown, mask = d.resolve_two_level(action, obs)
     names = d.names
     sac, conv = names.index("strike_sacrifice"), names.index("strike_converge")
     drone = [names.index(n) for n in ("strike_straight", "strike_flank", "strike_high", "strike_low")]

@@ -80,3 +80,51 @@ def test_refusals_exit_2(tmp_path):
     assert smoke.main(["--gates", str(GATES), "--run-dir", str(tmp_path / "b"), "--cap-h", "0.3"]) == 2   # --headless
     assert run(tmp_path / "c", "--games", "0") == 2
     assert smoke.main(["--gates", str(GATES), "--run-dir", str(tmp_path / "d"), "--cap-h", "0", "--dry-cpu"]) == 2
+
+
+# ------------------------------------------------------------------------------------------- QC round (S5, S6)
+def test_the_smoke_records_two_clips_upsets_syncs_and_is_not_of_record_on_the_cpu(done):
+    res = json.loads((done / "results.json").read_text())
+    assert len(res["clips"]) == 2 and all((done / v.split(":")[0]).is_file() for v in res["clips"])
+    assert res["of_record"] is False
+    assert set(res["upsets"]) == {"guard", "strike"}
+    assert all(isinstance(v, int) for side in res["upsets"].values() for v in side.values())
+    assert "not checked" in res["host_syncs_in_dispatch"] and "CPU" in res["host_syncs_in_dispatch"]
+    assert "Isaac" in res["cuda_replay_tolerance"]
+    controls = json.loads((done / "controls.json").read_text())
+    assert "host syncs" in controls["ctl_device_placement"]["detail"]
+    assert "2 clips" in controls["ctl_clips"]["detail"]
+
+
+def test_of_record_only_on_isaac_at_the_full_size():
+    g = exploit.load_gates(GATES)
+    n, t = int(g.run["eval_games"]), int(g.run["ticks_cap"])
+    assert smoke.of_record(g, dry_cpu=False, games=n, ticks=t)
+    assert not smoke.of_record(g, dry_cpu=True, games=n, ticks=t)
+    assert not smoke.of_record(g, dry_cpu=False, games=n - 1, ticks=t)
+    assert not smoke.of_record(g, dry_cpu=False, games=n, ticks=t - 1)
+
+
+def test_a_small_isaac_smoke_needs_its_test_flag(tmp_path, capsys):
+    args = ["--gates", str(GATES), "--run-dir", str(tmp_path / "r"), "--cap-h", "0.3", "--headless", "--games", "4"]
+    assert smoke.main(args) == 2
+    assert "--small-test" in capsys.readouterr().err
+    assert smoke.main(args + ["--small-test"]) == 2                            # then the run folder rule (not runs/)
+    assert "--small-test" not in capsys.readouterr().err
+
+
+def test_the_sync_counter_passes_the_dispatch_through():
+    import torch
+
+    class Inner:
+        team, name, holds_choice, dispatch = "guard", "inner", True, "d"
+
+        def choose(self, obs):
+            return obs + 1
+
+        def command(self, obs, held):
+            return obs * held
+    w = smoke.SyncCount(Inner(), "cpu")
+    x = torch.ones(2)
+    assert torch.equal(w.choose(x), x + 1) and torch.equal(w.command(x, x), x)
+    assert w.holds_choice and w.dispatch == "d" and w.team == "guard" and w.syncs == 0 and w.checked is False

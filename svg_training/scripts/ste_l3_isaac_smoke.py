@@ -14,13 +14,18 @@ The six checks (QC's list), each a control; a FAIL ends the smoke (exit 6, termi
    equals that script on tier 2, and three mixed "free" combinations equal the composite player, against the run's
    opponent, on T44's first starts (``exploit.replay_ok``: game for game on the CPU, the gate's CUDA tolerances on
    CUDA).
-2. ``ctl_device_placement``: the dispatch maps, the networks, the observations and a decision's outputs on the device.
+2. ``ctl_device_placement``: the dispatch maps, the networks, the observations and a decision's outputs on the device;
+   on CUDA, no host sync inside the dispatch (``SyncCount``: torch's sync debug mode, a prototype); not checked on the
+   CPU. HeldPlayer's choice log (a boolean-mask index) and the game step are not covered.
 3. ``ctl_reload_across_devices``: a two-level learner (one update on tier 2) saved on the device reloads on the CPU
    (``skill_team_from_modules``) with logits within 1e-5 and the same greedy choices on recorded tier-2 observations.
-4. ``ctl_clips``: two clips of a fixed two-level team on tier 2 (the CPU clip starts, as CLIP-T2).
+4. ``ctl_clips``: exactly two clips of a fixed two-level team on tier 2 (the CPU clip starts, as CLIP-T2).
 5. ``ctl_nonfinite_stale``: no non-finite action and no non-finite physics value in any batch or the update; the
    decision loop's stale-tick share is recorded (INFO).
 6. ``throughput`` (INFO): game-steps per second of a two-level team against one script, same size (spec B1).
+
+Upsets are recorded per side (INFO). The CUDA replay tolerances are exercised only by the Isaac run. ``of_record`` in
+results.json: true only on Isaac at the gate file's games and tick cap; on Isaac a smaller smoke needs --small-test.
 
 Exit codes: 0 done; 2 refused; 3 cap; 4 stopped; 5 a non-finite value; 6 a control failed. ``results.json`` last."""
 from __future__ import annotations
@@ -68,9 +73,55 @@ def parser(isaac: bool = False) -> argparse.ArgumentParser:
     ap.add_argument("--games", type=int)
     ap.add_argument("--max-ticks", type=int)
     ap.add_argument("--dry-cpu", action="store_true", help="tests only: CPU, the PyTorch reference world")
+    ap.add_argument("--small-test", action="store_true",
+                    help="tests only on Isaac: allow --games / --max-ticks below the gate file's (never of record)")
     if not isaac:
         ap.add_argument("--headless", action="store_true", help="required without --dry-cpu (Isaac Lab)")
     return ap
+
+
+def of_record(gates, dry_cpu: bool, games: int, ticks: int) -> bool:
+    """A smoke of record: on Isaac (not --dry-cpu) with the gate file's evaluation games and tick cap."""
+    return (not dry_cpu) and games == int(gates.run["eval_games"]) and ticks == int(gates.run["ticks_cap"])
+
+
+class SyncCount:
+    """A two-level team whose dispatch calls (``choose``, ``command``, ``act``) run under
+    ``torch.cuda.set_sync_debug_mode("warn")`` on CUDA, counting the host syncs they cause (check 2: no host read
+    inside a tick, for the dispatch; HeldPlayer's choice log and the game step are outside it). Not checked on the
+    CPU (no host/device boundary); the PyTorch sync debug mode is a prototype that does not see every sync."""
+
+    def __init__(self, inner, device: str):
+        self.inner, self.checked, self.syncs = inner, str(device).startswith("cuda"), 0
+
+    def __getattr__(self, name):
+        return getattr(self.inner, name)
+
+    def _counted(self, fn, *args):
+        if not self.checked:
+            return fn(*args)
+        import warnings
+
+        import torch
+        prev = torch.cuda.get_sync_debug_mode()
+        torch.cuda.set_sync_debug_mode("warn")
+        try:
+            with warnings.catch_warnings(record=True) as caught:
+                warnings.simplefilter("always")
+                out = fn(*args)
+        finally:
+            torch.cuda.set_sync_debug_mode(prev)
+        self.syncs += sum(1 for w in caught if "synchroniz" in str(w.message))
+        return out
+
+    def choose(self, obs):
+        return self._counted(self.inner.choose, obs)
+
+    def command(self, obs, held):
+        return self._counted(self.inner.command, obs, held)
+
+    def act(self, obs):
+        return self._counted(self.inner.act, obs)
 
 
 def pre_isaac_problem(argv: list[str]) -> tuple[int, str] | None:
@@ -108,6 +159,11 @@ def run(a: argparse.Namespace, world_factory=None) -> int:
         return refuse(f"--cap-h must be a finite number of hours above 0, got {a.cap_h!r}")
     if not a.dry_cpu and not getattr(a, "headless", True):
         return refuse("the smoke starts Isaac Lab: --headless")
+    sizes = (("--games", a.games, gates.run["eval_games"]), ("--max-ticks", a.max_ticks, gates.run["ticks_cap"]))
+    small = [f for f, v, full in sizes if v is not None and v < int(full)]
+    if small and not a.dry_cpu and not a.small_test:
+        return refuse(f"{', '.join(small)} below the gate file's on Isaac: a smoke of record plays the full size; a "
+                      f"smaller one needs --small-test (never of record)")
     if not a.dry_cpu and (ROOT / "runs").resolve() not in a.run_dir.parents:
         return refuse(f"{a.run_dir} is not under {ROOT / 'runs'}")
     problem = held.input_problems(gates)
@@ -210,7 +266,7 @@ class Smoke:
         self.world = self.factory(max(largest, TRAIN_GAMES), 6, self.params, self.device)
         say(f"world: {getattr(self.world, 'label', type(self.world).__name__)}, {max(largest, TRAIN_GAMES)} games, "
             f"device {self.device}")
-        replay_rows, nonfinite, throughput = [], 0, {}
+        replay_rows, nonfinite, throughput, upsets, syncs, checked = [], 0, {}, {}, 0, False
         for side in ("guard", "strike"):
             other = "strike" if side == "guard" else "guard"
             opp = self.ex.opponent_of(g, "base", side)
@@ -219,7 +275,7 @@ class Smoke:
             fixed = [(nm, [(t + 1, 0)] * 3, "team strategy") for t, nm in enumerate(ts)]
             fixed += [(nm, [(skills.FREE, k)] * 3, "uniform drone skill") for k, nm in enumerate(ds)]
             mixed = [(f"mix{c}", [(skills.FREE, k) for k in c], "mixed") for c in MIXED]
-            mine = {f"tl:{nm}": self.team(side, heads, d) for nm, heads, _ in fixed + mixed}
+            mine = {f"tl:{nm}": SyncCount(self.team(side, heads, d), self.device) for nm, heads, _ in fixed + mixed}
             cell = (lambda me: (opp, me)) if side == "strike" else (lambda me: (me, opp))
             started = time.perf_counter()
             pg = self.batch([cell(k) for k in mine], mine, HOLD)
@@ -248,14 +304,27 @@ class Smoke:
                                                    "detail": f"v {opp}, tier 2: " + "; ".join(details)}
             nonfinite += sum(int(x["nonfinite_actions"].sum()) + int(x["physics_nonfinite"])
                              for x in (pg, want, got_comp))
+            upsets[side] = {k: int(x["upset"].sum()) if "upset" in x else 0
+                            for k, x in (("two_level", pg), ("scripts", want), ("composite", got_comp))}
+            syncs += sum(w.syncs for w in mine.values())
+            checked = all(w.checked for w in mine.values())
             if not ok:
                 return self.fail()
         checks, extra = self.device_and_reload()
+        sync_text = (f"host syncs inside the dispatch (choose, command) in the replay batches: {syncs} "
+                     f"(torch.cuda sync debug mode, a prototype that does not see every sync)" if checked else
+                     "host syncs inside the dispatch: not checked (CPU: no host/device boundary)")
+        place = checks["ctl_device_placement"]
+        place["detail"] += f"; {sync_text}"
+        if checked and syncs:
+            place["status"] = FAIL
         self.controls.update(checks)
         if any(v["status"] != PASS for v in self.controls.values()):
             return self.fail()
         clips = self.clips()
-        self.controls["ctl_clips"] = {"status": PASS if len(clips) >= 1 else FAIL, "detail": "; ".join(clips)}
+        have = [c for c in clips if (self.a.run_dir / c.split(":")[0]).is_file()]
+        self.controls["ctl_clips"] = {"status": PASS if len(have) == CLIP_GAMES else FAIL,
+                                      "detail": f"{len(have)} clips of {CLIP_GAMES} (spec: two): " + "; ".join(clips)}
         stale = extra["stale"]
         nonfinite += int(extra["update_nonfinite"])
         self.controls["ctl_nonfinite_stale"] = {"status": PASS if nonfinite == 0 else NONFINITE,
@@ -270,7 +339,11 @@ class Smoke:
                   "tier": ("reference world (--dry-cpu, not of record)" if self.a.dry_cpu else
                            "tier 2, Isaac Lab rigid-body Starling"),
                   "device": self.device, "games": self.n, "ticks_cap": self.ticks, "gates_sha256": g.sha256,
-                  "replay": replay_rows, "throughput": throughput, "clips": clips,
+                  "replay": replay_rows, "throughput": throughput, "clips": clips, "upsets": upsets,
+                  "of_record": of_record(g, self.a.dry_cpu, self.n, self.ticks),
+                  "host_syncs_in_dispatch": sync_text,
+                  "cuda_replay_tolerance": ("exercised only by the Isaac run on CUDA (exploit.replay_ok's CUDA "
+                                            "tolerances); --dry-cpu plays the CPU game-for-game rule"),
                   "controls": {k: v["status"] for k, v in self.controls.items()}, "complete": True}
         from svg_training.ste import atomic
         atomic.write_text(self.a.run_dir / RESULTS, json.dumps(result, indent=1, sort_keys=True) + "\n")
@@ -322,7 +395,6 @@ class Smoke:
 
     def clips(self) -> list[str]:
         """Check 4: two clips of a fixed two-level Guard team (free + its first drone skill) on tier 2, CPU starts."""
-        import ste_exploit_l012 as l012
         from svg_training.opponents.scripted import make_strategy
         from svg_training.ste import skills
         from svg_training.viz.replay import cpu_starts, record_games, render_replay
@@ -337,16 +409,12 @@ class Smoke:
                             max_steps=min(int(v["max_ticks"]), self.ticks), device=self.device,
                             world=self.view(CLIP_GAMES), starts=starts)
         out = []
-        for rec in l012.pick_videos(recs, int(v["keep"])):
-            kind = "reach" if rec.outcome == self.ex.STRIKE_WIN else "hold"
+        for rec in recs[:CLIP_GAMES]:                 # the spec's two clips: every clip game, ended or not
+            kind = ("reach" if rec.outcome == self.ex.STRIKE_WIN else "hold" if rec.outcome == self.ex.GUARD_WIN
+                    else "running")
             path = render_replay(rec, self.a.run_dir / "videos" / f"l3_smoke_tier2_game{rec.game_index}_{kind}.gif",
                                  speed=int(v["speed"]), fps=int(v["fps"]), dpi=int(v["dpi"]))
             out.append(f"videos/{path.name}: tier 2, game {rec.game_index}, {kind}")
-        if not out and recs:                      # no game ended inside the clip length: draw the first anyway
-            rec = recs[0]
-            path = render_replay(rec, self.a.run_dir / "videos" / "l3_smoke_tier2_game0_running.gif",
-                                 speed=int(v["speed"]), fps=int(v["fps"]), dpi=int(v["dpi"]))
-            out.append(f"videos/{path.name}: tier 2, game 0, running at the clip's end")
         return out
 
 
@@ -375,7 +443,8 @@ def render(r: dict) -> str:
     th = r["throughput"]
     lines += ["", f"Throughput: two-level team {th['two_level_game_steps_per_s']:,.0f} game-steps/s, one script "
                   f"{th['one_script_game_steps_per_s']:,.0f}; ratio {th['ratio']:.3f} (spec B1)", "",
-              "Clips: " + "; ".join(r["clips"])]
+              "Clips: " + "; ".join(r["clips"]), "", f"Of record: {r['of_record']}. Upsets: {r['upsets']}.",
+              f"Device: {r['host_syncs_in_dispatch']}. CUDA replay tolerance: {r['cuda_replay_tolerance']}."]
     return "\n".join(lines) + "\n"
 
 

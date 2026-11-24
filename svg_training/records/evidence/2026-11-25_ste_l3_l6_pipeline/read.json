@@ -1,0 +1,2053 @@
+{
+ "what": "STE L6.1 per-route reads and route comparison (scripts/ste_l6_read.py); observed in the training simulator",
+ "status": "pipeline check, not for flight",
+ "label": "INFO",
+ "policies": "these two trained policies (one seed each; the intervals cover the sampling of the starts only)",
+ "review": "Draft until two independent reviewers have checked it (R22).",
+ "manifest": "runs/2026-11-25_ste_l61_manifest.toml",
+ "manifest_sha256": "b7b451088250e75593ecbb3e98f703d97dd7bbf98aa003e2bf0b52bf5fec2483",
+ "gates_sha256": {
+  "velocity": "c3c9c84845d65b42b80713f1d901fe6ee30f98e173ce3914a374a5bd43b986ba",
+  "skills": "e16e77298833ca1a74b8154a175f88fe5b71f87c9559e565994db1a881060f5e",
+  "velocity_poolonly": "0a1314e742cde46f03289422b7b417660fe2ed080d5860794adecb9c9329da64",
+  "skills_poolonly": "37e7dff182e5bb97e018f1ebe4a5cfaae9176b6a84a7e45e231bfcd5f4d18b19"
+ },
+ "routes": {
+  "velocity": {
+   "exports": {
+    "guard": {
+     "ok": true,
+     "runtimes": [
+      "onnxruntime",
+      "onnx.reference"
+     ],
+     "max_abs_diff": 2.384185791015625e-07,
+     "golden_rows": 24,
+     "route": "velocity",
+     "status": "pipeline check, not for flight",
+     "output_scale": 0.8358117341995239,
+     "tolerance": "1e-06 + 1e-06 * max |golden row|"
+    },
+    "strike": {
+     "ok": true,
+     "runtimes": [
+      "onnxruntime",
+      "onnx.reference"
+     ],
+     "max_abs_diff": 1.1920928955078125e-07,
+     "golden_rows": 24,
+     "route": "velocity",
+     "status": "pipeline check, not for flight",
+     "output_scale": 0.7300073504447937,
+     "tolerance": "1e-06 + 1e-06 * max |golden row|"
+    }
+   },
+   "run0": "PASS",
+   "word": "PIPELINE WORKS",
+   "why": "every required task as section 3 lists it"
+  },
+  "skills": {
+   "exports": {
+    "guard": {
+     "ok": true,
+     "runtimes": [
+      "onnxruntime",
+      "onnx.reference"
+     ],
+     "max_abs_diff": 1.9073486328125e-06,
+     "golden_rows": 24,
+     "route": "skills",
+     "status": "pipeline check, not for flight",
+     "output_scale": 9.992094039916992,
+     "tolerance": "1e-06 + 1e-06 * max |golden row|",
+     "choices_equal": true,
+     "skill_lists_equal": true,
+     "commands_max_abs_diff": 0.0
+    },
+    "strike": {
+     "ok": true,
+     "runtimes": [
+      "onnxruntime",
+      "onnx.reference"
+     ],
+     "max_abs_diff": 1.430511474609375e-06,
+     "golden_rows": 24,
+     "route": "skills",
+     "status": "pipeline check, not for flight",
+     "output_scale": 8.147356033325195,
+     "tolerance": "1e-06 + 1e-06 * max |golden row|",
+     "choices_equal": true,
+     "skill_lists_equal": true,
+     "commands_max_abs_diff": 0.0
+    }
+   },
+   "run0": "PASS",
+   "word": "PIPELINE WORKS",
+   "why": "every required task as section 3 lists it"
+  }
+ },
+ "attribution": {
+  "velocity": {
+   "word": "read",
+   "label": "INFO",
+   "what": "pool + mask minus pool only, Guard side, these two trained policies (one seed each; the intervals cover the sampling of the starts only)",
+   "paired_cells": [
+    {
+     "opponent": "strike_straight",
+     "diff": 0.014,
+     "se": 0.004881375608148571,
+     "ci": [
+      0.004432503808028801,
+      0.0235674961919712
+     ],
+     "n": 1000,
+     "word": "above",
+     "interval": "normal, the per-start standard error of the paired difference (sample sd / sqrt(n))"
+    },
+    {
+     "opponent": "strike_flank",
+     "diff": -0.001,
+     "se": 0.0026468860961526104,
+     "ci": [
+      -0.006187896748459116,
+      0.004187896748459116
+     ],
+     "n": 1000,
+     "word": "not distinguishable",
+     "interval": "normal, the per-start standard error of the paired difference (sample sd / sqrt(n))"
+    },
+    {
+     "opponent": "strike_high",
+     "diff": 0.006,
+     "se": 0.005656500331123123,
+     "ci": [
+      -0.005086740649001321,
+      0.01708674064900132
+     ],
+     "n": 1000,
+     "word": "not distinguishable",
+     "interval": "normal, the per-start standard error of the paired difference (sample sd / sqrt(n))"
+    },
+    {
+     "opponent": "strike_low",
+     "diff": 0.005,
+     "se": 0.005196345061868198,
+     "ci": [
+      -0.005184836321261667,
+      0.015184836321261667
+     ],
+     "n": 1000,
+     "word": "not distinguishable",
+     "interval": "normal, the per-start standard error of the paired difference (sample sd / sqrt(n))"
+    },
+    {
+     "opponent": "strike_sacrifice",
+     "diff": 0.011,
+     "se": 0.004990381138140042,
+     "ci": [
+      0.0012188529692455166,
+      0.020781147030754482
+     ],
+     "n": 1000,
+     "word": "above",
+     "interval": "normal, the per-start standard error of the paired difference (sample sd / sqrt(n))"
+    },
+    {
+     "opponent": "strike_converge",
+     "diff": -0.005,
+     "se": 0.004795622795633326,
+     "ci": [
+      -0.014399420679441319,
+      0.004399420679441319
+     ],
+     "n": 1000,
+     "word": "not distinguishable",
+     "interval": "normal, the per-start standard error of the paired difference (sample sd / sqrt(n))"
+    }
+   ],
+   "pooled_difference": {
+    "diff": 0.004999999999999999,
+    "se": 0.0021555307883781923,
+    "ci": [
+     0.0007751596547787426,
+     0.009224840345221256
+    ],
+    "n": 1000,
+    "word": "above",
+    "interval": "normal, the per-start standard error of the paired difference (sample sd / sqrt(n))"
+   }
+  },
+  "skills": {
+   "word": "read",
+   "label": "INFO",
+   "what": "pool + mask minus pool only, Guard side, these two trained policies (one seed each; the intervals cover the sampling of the starts only)",
+   "paired_cells": [
+    {
+     "opponent": "strike_straight",
+     "diff": 0.001,
+     "se": 0.005387766515730616,
+     "ci": [
+      -0.009560022370832005,
+      0.011560022370832007
+     ],
+     "n": 1000,
+     "word": "not distinguishable",
+     "interval": "normal, the per-start standard error of the paired difference (sample sd / sqrt(n))"
+    },
+    {
+     "opponent": "strike_flank",
+     "diff": 0.01,
+     "se": 0.007480371378210841,
+     "ci": [
+      -0.004661527901293247,
+      0.024661527901293247
+     ],
+     "n": 1000,
+     "word": "not distinguishable",
+     "interval": "normal, the per-start standard error of the paired difference (sample sd / sqrt(n))"
+    },
+    {
+     "opponent": "strike_high",
+     "diff": 0.006,
+     "se": 0.004470344951341449,
+     "ci": [
+      -0.002761876104629241,
+      0.014761876104629241
+     ],
+     "n": 1000,
+     "word": "not distinguishable",
+     "interval": "normal, the per-start standard error of the paired difference (sample sd / sqrt(n))"
+    },
+    {
+     "opponent": "strike_low",
+     "diff": -0.005,
+     "se": 0.006558812241406063,
+     "ci": [
+      -0.017855271993155883,
+      0.007855271993155884
+     ],
+     "n": 1000,
+     "word": "not distinguishable",
+     "interval": "normal, the per-start standard error of the paired difference (sample sd / sqrt(n))"
+    },
+    {
+     "opponent": "strike_sacrifice",
+     "diff": 0.009,
+     "se": 0.005740379077373894,
+     "ci": [
+      -0.002251142991652832,
+      0.02025114299165283
+     ],
+     "n": 1000,
+     "word": "not distinguishable",
+     "interval": "normal, the per-start standard error of the paired difference (sample sd / sqrt(n))"
+    },
+    {
+     "opponent": "strike_converge",
+     "diff": -0.008,
+     "se": 0.004467208967124322,
+     "ci": [
+      -0.01675572957556367,
+      0.0007557295755636698
+     ],
+     "n": 1000,
+     "word": "not distinguishable",
+     "interval": "normal, the per-start standard error of the paired difference (sample sd / sqrt(n))"
+    }
+   ],
+   "pooled_difference": {
+    "diff": 0.0021666666666666666,
+    "se": 0.0025769818159475186,
+    "ci": [
+     -0.00288421769259047,
+     0.007217551025923803
+    ],
+    "n": 1000,
+    "word": "not distinguishable",
+    "interval": "normal, the per-start standard error of the paired difference (sample sd / sqrt(n))"
+   }
+  }
+ },
+ "held_arm": {
+  "word": "read",
+  "label": "INFO",
+  "results": "/home/jeremychia/AirStack-starling-max2-dev/svg_training/runs/2026-11-25_ste_l41_held_arm_r/results.json",
+  "what": "per script and opponent, the held against the closed-loop wins (scripts/ste_l3_held_arm.py)"
+ },
+ "comparison": {
+  "word": "read",
+  "label": "INFO",
+  "guard": {
+   "compared": true,
+   "what": "velocity minus skills, Guard team, these two trained policies (one seed each; the intervals cover the sampling of the starts only)",
+   "k": 6,
+   "games": 1000,
+   "policies": {
+    "velocity": {
+     "headline": {
+      "worst": {
+       "opponent": "strike_straight",
+       "k": 903,
+       "n": 1000,
+       "ci": [
+        0.8830843992979197,
+        0.9198311204414497
+       ],
+       "rate": 0.903
+      },
+      "z_up_info_cells": {
+       "strike_high": {
+        "k": 953,
+        "n": 1000,
+        "ci": [
+         0.9380597525405758,
+         0.9644730773401544
+        ],
+        "rate": 0.953,
+        "label": "vertical response not fitted in tier 1"
+       },
+       "strike_low": {
+        "k": 969,
+        "n": 1000,
+        "ci": [
+         0.956334233864468,
+         0.9780761352614977
+        ],
+        "rate": 0.969,
+        "label": "vertical response not fitted in tier 1"
+       }
+      },
+      "cells": {
+       "strike_straight": {
+        "k": 903,
+        "n": 1000,
+        "ci": [
+         0.8830843992979197,
+         0.9198311204414497
+        ],
+        "rate": 0.903
+       },
+       "strike_flank": {
+        "k": 988,
+        "n": 1000,
+        "ci": [
+         0.9791425260718425,
+         0.9931224209078404
+        ],
+        "rate": 0.988
+       },
+       "strike_high": {
+        "k": 953,
+        "n": 1000,
+        "ci": [
+         0.9380597525405758,
+         0.9644730773401544
+        ],
+        "rate": 0.953
+       },
+       "strike_low": {
+        "k": 969,
+        "n": 1000,
+        "ci": [
+         0.956334233864468,
+         0.9780761352614977
+        ],
+        "rate": 0.969
+       },
+       "strike_sacrifice": {
+        "k": 981,
+        "n": 1000,
+        "ci": [
+         0.9705153112972965,
+         0.9878032122625958
+        ],
+        "rate": 0.981
+       },
+       "strike_converge": {
+        "k": 985,
+        "n": 1000,
+        "ci": [
+         0.9753988052083976,
+         0.9908891031628037
+        ],
+        "rate": 0.985
+       }
+      },
+      "note": "the interval of a minimum over K cells is optimistic (biased low, not adjusted for K)"
+     },
+     "pooled": {
+      "members": [
+       "strike_straight",
+       "strike_flank",
+       "strike_high",
+       "strike_low",
+       "strike_sacrifice",
+       "strike_converge"
+      ],
+      "rate": 0.9631666666666666,
+      "se": 0.0032767935951405367,
+      "ci": [
+       0.9567441512201912,
+       0.969589182113142
+      ],
+      "cells": {
+       "strike_straight": {
+        "k": 903,
+        "n": 1000,
+        "ci": [
+         0.8830843992979197,
+         0.9198311204414497
+        ],
+        "rate": 0.903
+       },
+       "strike_flank": {
+        "k": 988,
+        "n": 1000,
+        "ci": [
+         0.9791425260718425,
+         0.9931224209078404
+        ],
+        "rate": 0.988
+       },
+       "strike_high": {
+        "k": 953,
+        "n": 1000,
+        "ci": [
+         0.9380597525405758,
+         0.9644730773401544
+        ],
+        "rate": 0.953
+       },
+       "strike_low": {
+        "k": 969,
+        "n": 1000,
+        "ci": [
+         0.956334233864468,
+         0.9780761352614977
+        ],
+        "rate": 0.969
+       },
+       "strike_sacrifice": {
+        "k": 981,
+        "n": 1000,
+        "ci": [
+         0.9705153112972965,
+         0.9878032122625958
+        ],
+        "rate": 0.981
+       },
+       "strike_converge": {
+        "k": 985,
+        "n": 1000,
+        "ci": [
+         0.9753988052083976,
+         0.9908891031628037
+        ],
+        "rate": 0.985
+       }
+      },
+      "worst": {
+       "opponent": "strike_straight",
+       "k": 903,
+       "n": 1000,
+       "rate": 0.903
+      },
+      "headline": "worst cell",
+      "trivial_cells": [],
+      "interval": "normal, the standard error of the per-start mean of the K win indicators over the shared starts (the cells are correlated; an unfinished game counts as no win); each cell's own Wilson interval in cells",
+      "interval_note": "",
+      "note": "the pooled mean is an equal-weight mean of the cells; trivial cells (rate 0 or 1) are flagged"
+     },
+     "against_best_single_choice": {
+      "best": "guard_mark_edge",
+      "diff": 0.076,
+      "se": 0.007043219453744641,
+      "ci": [
+       0.0621952898706605,
+       0.0898047101293395
+      ],
+      "n": 1000,
+      "word": "above",
+      "interval": "normal, the per-start standard error of the paired difference (sample sd / sqrt(n))"
+     }
+    },
+    "skills": {
+     "headline": {
+      "worst": {
+       "opponent": "strike_straight",
+       "k": 813,
+       "n": 1000,
+       "ci": [
+        0.787651777226964,
+        0.8359525842579556
+       ],
+       "rate": 0.813
+      },
+      "z_up_info_cells": {
+       "strike_high": {
+        "k": 865,
+        "n": 1000,
+        "ci": [
+         0.842417404170765,
+         0.88478895986117
+        ],
+        "rate": 0.865,
+        "label": "vertical response not fitted in tier 1"
+       },
+       "strike_low": {
+        "k": 854,
+        "n": 1000,
+        "ci": [
+         0.8307594766742207,
+         0.8745310791266149
+        ],
+        "rate": 0.854,
+        "label": "vertical response not fitted in tier 1"
+       }
+      },
+      "cells": {
+       "strike_straight": {
+        "k": 813,
+        "n": 1000,
+        "ci": [
+         0.787651777226964,
+         0.8359525842579556
+        ],
+        "rate": 0.813
+       },
+       "strike_flank": {
+        "k": 894,
+        "n": 1000,
+        "ci": [
+         0.8733891741189649,
+         0.9115952297949595
+        ],
+        "rate": 0.894
+       },
+       "strike_high": {
+        "k": 865,
+        "n": 1000,
+        "ci": [
+         0.842417404170765,
+         0.88478895986117
+        ],
+        "rate": 0.865
+       },
+       "strike_low": {
+        "k": 854,
+        "n": 1000,
+        "ci": [
+         0.8307594766742207,
+         0.8745310791266149
+        ],
+        "rate": 0.854
+       },
+       "strike_sacrifice": {
+        "k": 962,
+        "n": 1000,
+        "ci": [
+         0.9482727912457906,
+         0.9721911544603846
+        ],
+        "rate": 0.962
+       },
+       "strike_converge": {
+        "k": 981,
+        "n": 1000,
+        "ci": [
+         0.9705153112972965,
+         0.9878032122625958
+        ],
+        "rate": 0.981
+       }
+      },
+      "note": "the interval of a minimum over K cells is optimistic (biased low, not adjusted for K)"
+     },
+     "pooled": {
+      "members": [
+       "strike_straight",
+       "strike_flank",
+       "strike_high",
+       "strike_low",
+       "strike_sacrifice",
+       "strike_converge"
+      ],
+      "rate": 0.8948333333333333,
+      "se": 0.006267759774462337,
+      "ci": [
+       0.8825485241753871,
+       0.9071181424912794
+      ],
+      "cells": {
+       "strike_straight": {
+        "k": 813,
+        "n": 1000,
+        "ci": [
+         0.787651777226964,
+         0.8359525842579556
+        ],
+        "rate": 0.813
+       },
+       "strike_flank": {
+        "k": 894,
+        "n": 1000,
+        "ci": [
+         0.8733891741189649,
+         0.9115952297949595
+        ],
+        "rate": 0.894
+       },
+       "strike_high": {
+        "k": 865,
+        "n": 1000,
+        "ci": [
+         0.842417404170765,
+         0.88478895986117
+        ],
+        "rate": 0.865
+       },
+       "strike_low": {
+        "k": 854,
+        "n": 1000,
+        "ci": [
+         0.8307594766742207,
+         0.8745310791266149
+        ],
+        "rate": 0.854
+       },
+       "strike_sacrifice": {
+        "k": 962,
+        "n": 1000,
+        "ci": [
+         0.9482727912457906,
+         0.9721911544603846
+        ],
+        "rate": 0.962
+       },
+       "strike_converge": {
+        "k": 981,
+        "n": 1000,
+        "ci": [
+         0.9705153112972965,
+         0.9878032122625958
+        ],
+        "rate": 0.981
+       }
+      },
+      "worst": {
+       "opponent": "strike_straight",
+       "k": 813,
+       "n": 1000,
+       "rate": 0.813
+      },
+      "headline": "worst cell",
+      "trivial_cells": [],
+      "interval": "normal, the standard error of the per-start mean of the K win indicators over the shared starts (the cells are correlated; an unfinished game counts as no win); each cell's own Wilson interval in cells",
+      "interval_note": "",
+      "note": "the pooled mean is an equal-weight mean of the cells; trivial cells (rate 0 or 1) are flagged"
+     },
+     "against_best_single_choice": {
+      "best": "guard_mark_edge",
+      "diff": 0.007666666666666665,
+      "se": 0.003326168475898868,
+      "ci": [
+       0.0011473764539048845,
+       0.014185956879428446
+      ],
+      "n": 1000,
+      "word": "above",
+      "interval": "normal, the per-start standard error of the paired difference (sample sd / sqrt(n))"
+     },
+     "choice_share": {
+      "strike_straight": {
+       "overall": {
+        "guard_parked_centre": 0.0028634150997422928,
+        "guard_parked_ring": 0.0,
+        "guard_mark_edge": 0.704400114536604,
+        "guard_mirror": 0.1732366135344087,
+        "guard_field": 0.11949985682924501
+       },
+       "by_decision": {
+        "bins": [
+         "0",
+         "1",
+         "2",
+         "3-5",
+         "6-11",
+         "12+"
+        ],
+        "counts": [
+         3000,
+         3000,
+         2625,
+         1852,
+         0,
+         0
+        ],
+        "share": {
+         "guard_parked_centre": [
+          0.0,
+          0.003,
+          0.0064761904761904765,
+          0.0021598272138228943,
+          null,
+          null
+         ],
+         "guard_parked_ring": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          null,
+          null
+         ],
+         "guard_mark_edge": [
+          0.8046666666666666,
+          0.7566666666666667,
+          0.6887619047619048,
+          0.4794816414686825,
+          null,
+          null
+         ],
+         "guard_mirror": [
+          0.19533333333333333,
+          0.19033333333333333,
+          0.19847619047619047,
+          0.07397408207343413,
+          null,
+          null
+         ],
+         "guard_field": [
+          0.0,
+          0.05,
+          0.10628571428571429,
+          0.44438444924406045,
+          null,
+          null
+         ]
+        },
+        "note": "counts are live drone-decisions per bin; the late bins hold only the games still running at that decision (survivor-biased: long games)"
+       }
+      },
+      "strike_flank": {
+       "overall": {
+        "guard_parked_centre": 0.004024482267125011,
+        "guard_parked_ring": 0.0,
+        "guard_mark_edge": 0.686677286828205,
+        "guard_mirror": 0.16869288169699,
+        "guard_field": 0.14060534920768006
+       },
+       "by_decision": {
+        "bins": [
+         "0",
+         "1",
+         "2",
+         "3-5",
+         "6-11",
+         "12+"
+        ],
+        "counts": [
+         3000,
+         3000,
+         2808,
+         3070,
+         49,
+         0
+        ],
+        "share": {
+         "guard_parked_centre": [
+          0.0,
+          0.0036666666666666666,
+          0.00641025641025641,
+          0.006188925081433224,
+          0.0,
+          null
+         ],
+         "guard_parked_ring": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          null
+         ],
+         "guard_mark_edge": [
+          0.8046666666666666,
+          0.741,
+          0.7044159544159544,
+          0.5084690553745929,
+          0.2857142857142857,
+          null
+         ],
+         "guard_mirror": [
+          0.19533333333333333,
+          0.18633333333333332,
+          0.20512820512820512,
+          0.09478827361563517,
+          0.0,
+          null
+         ],
+         "guard_field": [
+          0.0,
+          0.069,
+          0.08404558404558404,
+          0.39055374592833875,
+          0.7142857142857143,
+          null
+         ]
+        },
+        "note": "counts are live drone-decisions per bin; the late bins hold only the games still running at that decision (survivor-biased: long games)"
+       }
+      },
+      "strike_high": {
+       "overall": {
+        "guard_parked_centre": 0.002282925293237818,
+        "guard_parked_ring": 0.0,
+        "guard_mark_edge": 0.761473667637566,
+        "guard_mirror": 0.13925844288750688,
+        "guard_field": 0.09698496418168936
+       },
+       "by_decision": {
+        "bins": [
+         "0",
+         "1",
+         "2",
+         "3-5",
+         "6-11",
+         "12+"
+        ],
+        "counts": [
+         3000,
+         3000,
+         3000,
+         3703,
+         0,
+         0
+        ],
+        "share": {
+         "guard_parked_centre": [
+          0.0,
+          0.0,
+          0.0033333333333333335,
+          0.005130974885228194,
+          null,
+          null
+         ],
+         "guard_parked_ring": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          null,
+          null
+         ],
+         "guard_mark_edge": [
+          0.8046666666666666,
+          0.8976666666666666,
+          0.8583333333333333,
+          0.5376721577099649,
+          null,
+          null
+         ],
+         "guard_mirror": [
+          0.19533333333333333,
+          0.06533333333333333,
+          0.13733333333333334,
+          0.15527950310559005,
+          null,
+          null
+         ],
+         "guard_field": [
+          0.0,
+          0.037,
+          0.001,
+          0.30191736429921684,
+          null,
+          null
+         ]
+        },
+        "note": "counts are live drone-decisions per bin; the late bins hold only the games still running at that decision (survivor-biased: long games)"
+       }
+      },
+      "strike_low": {
+       "overall": {
+        "guard_parked_centre": 0.001251288090681584,
+        "guard_parked_ring": 0.0,
+        "guard_mark_edge": 0.5457824230825851,
+        "guard_mirror": 0.33129692330340055,
+        "guard_field": 0.12166936552333284
+       },
+       "by_decision": {
+        "bins": [
+         "0",
+         "1",
+         "2",
+         "3-5",
+         "6-11",
+         "12+"
+        ],
+        "counts": [
+         3000,
+         3000,
+         3000,
+         4578,
+         8,
+         0
+        ],
+        "share": {
+         "guard_parked_centre": [
+          0.0,
+          0.0,
+          0.0,
+          0.003713411970292704,
+          0.0,
+          null
+         ],
+         "guard_parked_ring": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          null
+         ],
+         "guard_mark_edge": [
+          0.8046666666666666,
+          0.44866666666666666,
+          0.472,
+          0.4890782000873744,
+          0.0,
+          null
+         ],
+         "guard_mirror": [
+          0.19533333333333333,
+          0.5493333333333333,
+          0.526,
+          0.1505024027959808,
+          0.0,
+          null
+         ],
+         "guard_field": [
+          0.0,
+          0.002,
+          0.002,
+          0.3567059851463521,
+          1.0,
+          null
+         ]
+        },
+        "note": "counts are live drone-decisions per bin; the late bins hold only the games still running at that decision (survivor-biased: long games)"
+       }
+      },
+      "strike_sacrifice": {
+       "overall": {
+        "guard_parked_centre": 0.0034614818088083664,
+        "guard_parked_ring": 0.0,
+        "guard_mark_edge": 0.6394903520400648,
+        "guard_mirror": 0.13838562380321107,
+        "guard_field": 0.21866254234791574
+       },
+       "by_decision": {
+        "bins": [
+         "0",
+         "1",
+         "2",
+         "3-5",
+         "6-11",
+         "12+"
+        ],
+        "counts": [
+         3000,
+         3000,
+         2868,
+         4073,
+         637,
+         0
+        ],
+        "share": {
+         "guard_parked_centre": [
+          0.0,
+          0.0026666666666666666,
+          0.00801952580195258,
+          0.003928308372207218,
+          0.0,
+          null
+         ],
+         "guard_parked_ring": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          null
+         ],
+         "guard_mark_edge": [
+          0.8046666666666666,
+          0.7376666666666667,
+          0.6778242677824268,
+          0.4920206236189541,
+          0.1695447409733124,
+          null
+         ],
+         "guard_mirror": [
+          0.19533333333333333,
+          0.17966666666666667,
+          0.1799163179916318,
+          0.05843358703658237,
+          0.0,
+          null
+         ],
+         "guard_field": [
+          0.0,
+          0.08,
+          0.13423988842398885,
+          0.44561748097225634,
+          0.8304552590266876,
+          null
+         ]
+        },
+        "note": "counts are live drone-decisions per bin; the late bins hold only the games still running at that decision (survivor-biased: long games)"
+       }
+      },
+      "strike_converge": {
+       "overall": {
+        "guard_parked_centre": 0.0075072438317674945,
+        "guard_parked_ring": 0.2296953200456581,
+        "guard_mark_edge": 0.4499956097989288,
+        "guard_mirror": 0.11814031082623584,
+        "guard_field": 0.1946615154974098
+       },
+       "by_decision": {
+        "bins": [
+         "0",
+         "1",
+         "2",
+         "3-5",
+         "6-11",
+         "12+"
+        ],
+        "counts": [
+         3000,
+         3000,
+         2997,
+         6661,
+         5363,
+         1757
+        ],
+        "share": {
+         "guard_parked_centre": [
+          0.0,
+          0.0026666666666666666,
+          0.004004004004004004,
+          0.011860081068908573,
+          0.013238858847659891,
+          0.0005691519635742744
+         ],
+         "guard_parked_ring": [
+          0.0,
+          0.0,
+          0.0,
+          0.040534454286143225,
+          0.6175647958232333,
+          0.9391007398975526
+         ],
+         "guard_mark_edge": [
+          0.8046666666666666,
+          0.7256666666666667,
+          0.6873540206873541,
+          0.43506980933793726,
+          0.1280999440611598,
+          0.00796812749003984
+         ],
+         "guard_mirror": [
+          0.19533333333333333,
+          0.17566666666666667,
+          0.18952285618952286,
+          0.13316318871040383,
+          0.022561998881223195,
+          0.0011383039271485487
+         ],
+         "guard_field": [
+          0.0,
+          0.096,
+          0.11911911911911911,
+          0.3793724665966071,
+          0.21853440238672384,
+          0.05122367672168469
+         ]
+        },
+        "note": "counts are live drone-decisions per bin; the late bins hold only the games still running at that decision (survivor-biased: long games)"
+       }
+      }
+     },
+     "choice_share_note": "described, not worded; the late decision bins are survivor-biased; a share that changes with the opponent on the same starts is the only sign of adaptation this check can give"
+    }
+   },
+   "worst_cells": {
+    "velocity": {
+     "opponent": "strike_straight",
+     "k": 903,
+     "n": 1000,
+     "ci": [
+      0.8830843992979197,
+      0.9198311204414497
+     ],
+     "rate": 0.903
+    },
+    "skills": {
+     "opponent": "strike_straight",
+     "k": 813,
+     "n": 1000,
+     "ci": [
+      0.787651777226964,
+      0.8359525842579556
+     ],
+     "rate": 0.813
+    },
+    "word": "above",
+    "rule": "velocity's worst cell against skills' worst cell: above / below when the Wilson intervals are disjoint, else not distinguishable"
+   },
+   "paired_cells": [
+    {
+     "opponent": "strike_straight",
+     "z_up_info": false,
+     "diff": 0.09,
+     "se": 0.013714521066668284,
+     "ci": [
+      0.06311953870933015,
+      0.11688046129066984
+     ],
+     "n": 1000,
+     "word": "above",
+     "interval": "normal, the per-start standard error of the paired difference (sample sd / sqrt(n))"
+    },
+    {
+     "opponent": "strike_flank",
+     "z_up_info": false,
+     "diff": 0.094,
+     "se": 0.01035718452434209,
+     "ci": [
+      0.0736999183322895,
+      0.1143000816677105
+     ],
+     "n": 1000,
+     "word": "above",
+     "interval": "normal, the per-start standard error of the paired difference (sample sd / sqrt(n))"
+    },
+    {
+     "opponent": "strike_high",
+     "z_up_info": true,
+     "label": "vertical response not fitted in tier 1",
+     "diff": 0.088,
+     "se": 0.012345380043093386,
+     "ci": [
+      0.06380305511553697,
+      0.11219694488446302
+     ],
+     "n": 1000,
+     "word": "above",
+     "interval": "normal, the per-start standard error of the paired difference (sample sd / sqrt(n))"
+    },
+    {
+     "opponent": "strike_low",
+     "z_up_info": true,
+     "label": "vertical response not fitted in tier 1",
+     "diff": 0.115,
+     "se": 0.012325864145240565,
+     "ci": [
+      0.09084130627532849,
+      0.13915869372467152
+     ],
+     "n": 1000,
+     "word": "above",
+     "interval": "normal, the per-start standard error of the paired difference (sample sd / sqrt(n))"
+    },
+    {
+     "opponent": "strike_sacrifice",
+     "z_up_info": false,
+     "diff": 0.019,
+     "se": 0.007395518487144338,
+     "ci": [
+      0.004504783765197097,
+      0.0334952162348029
+     ],
+     "n": 1000,
+     "word": "above",
+     "interval": "normal, the per-start standard error of the paired difference (sample sd / sqrt(n))"
+    },
+    {
+     "opponent": "strike_converge",
+     "z_up_info": false,
+     "diff": 0.004,
+     "se": 0.005832496722503839,
+     "ci": [
+      -0.007431693576107524,
+      0.015431693576107524
+     ],
+     "n": 1000,
+     "word": "not distinguishable",
+     "interval": "normal, the per-start standard error of the paired difference (sample sd / sqrt(n))"
+    }
+   ],
+   "pooled_difference": {
+    "diff": 0.06833333333333334,
+    "se": 0.006752656969958693,
+    "ci": [
+     0.0550981256722143,
+     0.08156854099445238
+    ],
+    "n": 1000,
+    "word": "above",
+    "interval": "normal, the per-start standard error of the paired difference (sample sd / sqrt(n))",
+    "trivial_cells": [],
+    "flag": ""
+   },
+   "best_single_choice": {
+    "best": "guard_mark_edge",
+    "rate": 0.8871666666666668,
+    "per_choice_rate": {
+     "guard_parked_centre": 0.5651666666666667,
+     "guard_parked_ring": 0.5606666666666668,
+     "guard_mark_edge": 0.8871666666666668,
+     "guard_mirror": 0.875,
+     "guard_field": 0.7883333333333333
+    },
+    "source": "the reference cells: each script closed loop every tick (not a held command), the same starts"
+   }
+  },
+  "strike": {
+   "compared": true,
+   "what": "velocity minus skills, Strike team, these two trained policies (one seed each; the intervals cover the sampling of the starts only)",
+   "k": 5,
+   "games": 1000,
+   "policies": {
+    "velocity": {
+     "headline": {
+      "worst": {
+       "opponent": "guard_field",
+       "k": 79,
+       "n": 1000,
+       "ci": [
+        0.06384696504253543,
+        0.0973752835672054
+       ],
+       "rate": 0.079
+      },
+      "z_up_info_cells": {},
+      "cells": {
+       "guard_parked_centre": {
+        "k": 659,
+        "n": 1000,
+        "ci": [
+         0.6290598496719452,
+         0.6877231965775826
+        ],
+        "rate": 0.659
+       },
+       "guard_parked_ring": {
+        "k": 661,
+        "n": 1000,
+        "ci": [
+         0.6310938159758938,
+         0.6896739226792886
+        ],
+        "rate": 0.661
+       },
+       "guard_mark_edge": {
+        "k": 230,
+        "n": 1000,
+        "ci": [
+         0.20497925388093172,
+         0.25708727135571924
+        ],
+        "rate": 0.23
+       },
+       "guard_mirror": {
+        "k": 235,
+        "n": 1000,
+        "ci": [
+         0.20976514435033908,
+         0.26226311190044793
+        ],
+        "rate": 0.235
+       },
+       "guard_field": {
+        "k": 79,
+        "n": 1000,
+        "ci": [
+         0.06384696504253543,
+         0.0973752835672054
+        ],
+        "rate": 0.079
+       }
+      },
+      "note": "the interval of a minimum over K cells is optimistic (biased low, not adjusted for K)"
+     },
+     "pooled": {
+      "members": [
+       "guard_parked_centre",
+       "guard_parked_ring",
+       "guard_mark_edge",
+       "guard_mirror",
+       "guard_field"
+      ],
+      "rate": 0.3728,
+      "se": 0.007789790808541706,
+      "ci": [
+       0.35753201001525825,
+       0.3880679899847418
+      ],
+      "cells": {
+       "guard_parked_centre": {
+        "k": 659,
+        "n": 1000,
+        "ci": [
+         0.6290598496719452,
+         0.6877231965775826
+        ],
+        "rate": 0.659
+       },
+       "guard_parked_ring": {
+        "k": 661,
+        "n": 1000,
+        "ci": [
+         0.6310938159758938,
+         0.6896739226792886
+        ],
+        "rate": 0.661
+       },
+       "guard_mark_edge": {
+        "k": 230,
+        "n": 1000,
+        "ci": [
+         0.20497925388093172,
+         0.25708727135571924
+        ],
+        "rate": 0.23
+       },
+       "guard_mirror": {
+        "k": 235,
+        "n": 1000,
+        "ci": [
+         0.20976514435033908,
+         0.26226311190044793
+        ],
+        "rate": 0.235
+       },
+       "guard_field": {
+        "k": 79,
+        "n": 1000,
+        "ci": [
+         0.06384696504253543,
+         0.0973752835672054
+        ],
+        "rate": 0.079
+       }
+      },
+      "worst": {
+       "opponent": "guard_field",
+       "k": 79,
+       "n": 1000,
+       "rate": 0.079
+      },
+      "headline": "worst cell",
+      "trivial_cells": [],
+      "interval": "normal, the standard error of the per-start mean of the K win indicators over the shared starts (the cells are correlated; an unfinished game counts as no win); each cell's own Wilson interval in cells",
+      "interval_note": "",
+      "note": "the pooled mean is an equal-weight mean of the cells; trivial cells (rate 0 or 1) are flagged"
+     },
+     "against_best_single_choice": {
+      "best": "strike_low",
+      "diff": 0.029600000000000008,
+      "se": 0.01048970323097245,
+      "ci": [
+       0.009040181667294006,
+       0.05015981833270601
+      ],
+      "n": 1000,
+      "word": "above",
+      "interval": "normal, the per-start standard error of the paired difference (sample sd / sqrt(n))"
+     }
+    },
+    "skills": {
+     "headline": {
+      "worst": {
+       "opponent": "guard_mark_edge",
+       "k": 176,
+       "n": 1000,
+       "ci": [
+        0.15364903702878677,
+        0.2008307932551943
+       ],
+       "rate": 0.176
+      },
+      "z_up_info_cells": {},
+      "cells": {
+       "guard_parked_centre": {
+        "k": 654,
+        "n": 1000,
+        "ci": [
+         0.6239774579247238,
+         0.682843857310668
+        ],
+        "rate": 0.654
+       },
+       "guard_parked_ring": {
+        "k": 659,
+        "n": 1000,
+        "ci": [
+         0.6290598496719452,
+         0.6877231965775826
+        ],
+        "rate": 0.659
+       },
+       "guard_mark_edge": {
+        "k": 176,
+        "n": 1000,
+        "ci": [
+         0.15364903702878677,
+         0.2008307932551943
+        ],
+        "rate": 0.176
+       },
+       "guard_mirror": {
+        "k": 185,
+        "n": 1000,
+        "ci": [
+         0.16215440655759755,
+         0.2102565395518285
+        ],
+        "rate": 0.185
+       },
+       "guard_field": {
+        "k": 205,
+        "n": 1000,
+        "ci": [
+         0.18112966926299381,
+         0.23112820090297662
+        ],
+        "rate": 0.205
+       }
+      },
+      "note": "the interval of a minimum over K cells is optimistic (biased low, not adjusted for K)"
+     },
+     "pooled": {
+      "members": [
+       "guard_parked_centre",
+       "guard_parked_ring",
+       "guard_mark_edge",
+       "guard_mirror",
+       "guard_field"
+      ],
+      "rate": 0.37579999999999997,
+      "se": 0.00854677760371752,
+      "ci": [
+       0.3590483158967136,
+       0.39255168410328634
+      ],
+      "cells": {
+       "guard_parked_centre": {
+        "k": 654,
+        "n": 1000,
+        "ci": [
+         0.6239774579247238,
+         0.682843857310668
+        ],
+        "rate": 0.654
+       },
+       "guard_parked_ring": {
+        "k": 659,
+        "n": 1000,
+        "ci": [
+         0.6290598496719452,
+         0.6877231965775826
+        ],
+        "rate": 0.659
+       },
+       "guard_mark_edge": {
+        "k": 176,
+        "n": 1000,
+        "ci": [
+         0.15364903702878677,
+         0.2008307932551943
+        ],
+        "rate": 0.176
+       },
+       "guard_mirror": {
+        "k": 185,
+        "n": 1000,
+        "ci": [
+         0.16215440655759755,
+         0.2102565395518285
+        ],
+        "rate": 0.185
+       },
+       "guard_field": {
+        "k": 205,
+        "n": 1000,
+        "ci": [
+         0.18112966926299381,
+         0.23112820090297662
+        ],
+        "rate": 0.205
+       }
+      },
+      "worst": {
+       "opponent": "guard_mark_edge",
+       "k": 176,
+       "n": 1000,
+       "rate": 0.176
+      },
+      "headline": "worst cell",
+      "trivial_cells": [],
+      "interval": "normal, the standard error of the per-start mean of the K win indicators over the shared starts (the cells are correlated; an unfinished game counts as no win); each cell's own Wilson interval in cells",
+      "interval_note": "",
+      "note": "the pooled mean is an equal-weight mean of the cells; trivial cells (rate 0 or 1) are flagged"
+     },
+     "against_best_single_choice": {
+      "best": "strike_low",
+      "diff": 0.032600000000000004,
+      "se": 0.006031054104682997,
+      "ci": [
+       0.02077913395482133,
+       0.04442086604517868
+      ],
+      "n": 1000,
+      "word": "above",
+      "interval": "normal, the per-start standard error of the paired difference (sample sd / sqrt(n))"
+     },
+     "choice_share": {
+      "guard_parked_centre": {
+       "overall": {
+        "strike_straight": 0.0037943464238284954,
+        "strike_flank": 0.485486624928856,
+        "strike_high": 0.0001264782141276165,
+        "strike_low": 0.5102131157908051,
+        "strike_sacrifice": 0.0,
+        "strike_converge": 0.00037943464238284955
+       },
+       "by_decision": {
+        "bins": [
+         "0",
+         "1",
+         "2",
+         "3-5",
+         "6-11",
+         "12+"
+        ],
+        "counts": [
+         3000,
+         3000,
+         3000,
+         6109,
+         704,
+         0
+        ],
+        "share": {
+         "strike_straight": [
+          0.0,
+          0.0,
+          0.0,
+          0.008839417253232935,
+          0.008522727272727272,
+          null
+         ],
+         "strike_flank": [
+          0.3473333333333333,
+          0.992,
+          0.35033333333333333,
+          0.4269111147487314,
+          0.0,
+          null
+         ],
+         "strike_high": [
+          0.0,
+          0.0,
+          0.0,
+          0.0001636929120969062,
+          0.0014204545454545455,
+          null
+         ],
+         "strike_low": [
+          0.6526666666666666,
+          0.008,
+          0.6496666666666666,
+          0.5635946963496481,
+          0.9857954545454546,
+          null
+         ],
+         "strike_sacrifice": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          null
+         ],
+         "strike_converge": [
+          0.0,
+          0.0,
+          0.0,
+          0.0004910787362907187,
+          0.004261363636363636,
+          null
+         ]
+        },
+        "note": "counts are live drone-decisions per bin; the late bins hold only the games still running at that decision (survivor-biased: long games)"
+       }
+      },
+      "guard_parked_ring": {
+       "overall": {
+        "strike_straight": 0.004550182007280291,
+        "strike_flank": 0.45105304212168484,
+        "strike_high": 0.00013000520020800833,
+        "strike_low": 0.5429017160686428,
+        "strike_sacrifice": 6.500260010400417e-05,
+        "strike_converge": 0.0013000520020800832
+       },
+       "by_decision": {
+        "bins": [
+         "0",
+         "1",
+         "2",
+         "3-5",
+         "6-11",
+         "12+"
+        ],
+        "counts": [
+         3000,
+         3000,
+         3000,
+         5687,
+         697,
+         0
+        ],
+        "share": {
+         "strike_straight": [
+          0.0,
+          0.0,
+          0.0,
+          0.010726217689467205,
+          0.01291248206599713,
+          null
+         ],
+         "strike_flank": [
+          0.3473333333333333,
+          0.989,
+          0.3536666666666667,
+          0.32864427641990507,
+          0.0,
+          null
+         ],
+         "strike_high": [
+          0.0,
+          0.0,
+          0.0,
+          0.00017583963425356076,
+          0.0014347202295552368,
+          null
+         ],
+         "strike_low": [
+          0.6526666666666666,
+          0.011,
+          0.6463333333333333,
+          0.6588711095480921,
+          0.9684361549497847,
+          null
+         ],
+         "strike_sacrifice": [
+          0.0,
+          0.0,
+          0.0,
+          0.00017583963425356076,
+          0.0,
+          null
+         ],
+         "strike_converge": [
+          0.0,
+          0.0,
+          0.0,
+          0.001406717074028486,
+          0.01721664275466284,
+          null
+         ]
+        },
+        "note": "counts are live drone-decisions per bin; the late bins hold only the games still running at that decision (survivor-biased: long games)"
+       }
+      },
+      "guard_mark_edge": {
+       "overall": {
+        "strike_straight": 0.01866952789699571,
+        "strike_flank": 0.44470672389127325,
+        "strike_high": 0.0,
+        "strike_low": 0.5324034334763948,
+        "strike_sacrifice": 0.00021459227467811158,
+        "strike_converge": 0.004005722460658083
+       },
+       "by_decision": {
+        "bins": [
+         "0",
+         "1",
+         "2",
+         "3-5",
+         "6-11",
+         "12+"
+        ],
+        "counts": [
+         3000,
+         3000,
+         2923,
+         4757,
+         300,
+         0
+        ],
+        "share": {
+         "strike_straight": [
+          0.0,
+          0.0,
+          0.006842285323297981,
+          0.04834980029430313,
+          0.03666666666666667,
+          null
+         ],
+         "strike_flank": [
+          0.3473333333333333,
+          0.9603333333333334,
+          0.34040369483407457,
+          0.27307126340130333,
+          0.0,
+          null
+         ],
+         "strike_high": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          null
+         ],
+         "strike_low": [
+          0.6526666666666666,
+          0.03966666666666667,
+          0.6527540198426275,
+          0.6674374605844019,
+          0.9433333333333334,
+          null
+         ],
+         "strike_sacrifice": [
+          0.0,
+          0.0,
+          0.0,
+          0.0006306495690561278,
+          0.0,
+          null
+         ],
+         "strike_converge": [
+          0.0,
+          0.0,
+          0.0,
+          0.010510826150935463,
+          0.02,
+          null
+         ]
+        },
+        "note": "counts are live drone-decisions per bin; the late bins hold only the games still running at that decision (survivor-biased: long games)"
+       }
+      },
+      "guard_mirror": {
+       "overall": {
+        "strike_straight": 0.02258362332220723,
+        "strike_flank": 0.44499680420424687,
+        "strike_high": 0.0,
+        "strike_low": 0.5278744407357432,
+        "strike_sacrifice": 7.101768340316739e-05,
+        "strike_converge": 0.004474114054399545
+       },
+       "by_decision": {
+        "bins": [
+         "0",
+         "1",
+         "2",
+         "3-5",
+         "6-11",
+         "12+"
+        ],
+        "counts": [
+         3000,
+         3000,
+         2945,
+         4812,
+         324,
+         0
+        ],
+        "share": {
+         "strike_straight": [
+          0.0,
+          0.0,
+          0.007130730050933786,
+          0.05839567747298421,
+          0.04938271604938271,
+          null
+         ],
+         "strike_flank": [
+          0.3473333333333333,
+          0.9596666666666667,
+          0.35415959252971135,
+          0.27057356608478805,
+          0.0,
+          null
+         ],
+         "strike_high": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          null
+         ],
+         "strike_low": [
+          0.6526666666666666,
+          0.04033333333333333,
+          0.6387096774193548,
+          0.6579384871155445,
+          0.9475308641975309,
+          null
+         ],
+         "strike_sacrifice": [
+          0.0,
+          0.0,
+          0.0,
+          0.00020781379883624273,
+          0.0,
+          null
+         ],
+         "strike_converge": [
+          0.0,
+          0.0,
+          0.0,
+          0.012884455527847049,
+          0.0030864197530864196,
+          null
+         ]
+        },
+        "note": "counts are live drone-decisions per bin; the late bins hold only the games still running at that decision (survivor-biased: long games)"
+       }
+      },
+      "guard_field": {
+       "overall": {
+        "strike_straight": 0.012621614514856692,
+        "strike_flank": 0.4274695415899728,
+        "strike_high": 0.0,
+        "strike_low": 0.5385222193005522,
+        "strike_sacrifice": 0.0024542028223332453,
+        "strike_converge": 0.01893242177228504
+       },
+       "by_decision": {
+        "bins": [
+         "0",
+         "1",
+         "2",
+         "3-5",
+         "6-11",
+         "12+"
+        ],
+        "counts": [
+         3000,
+         3000,
+         2793,
+         2429,
+         187,
+         0
+        ],
+        "share": {
+         "strike_straight": [
+          0.0,
+          0.0,
+          0.005012531328320802,
+          0.05104981473857555,
+          0.03208556149732621,
+          null
+         ],
+         "strike_flank": [
+          0.3473333333333333,
+          0.9723333333333334,
+          0.3032581453634085,
+          0.029230135858377932,
+          0.0,
+          null
+         ],
+         "strike_high": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          null
+         ],
+         "strike_low": [
+          0.6526666666666666,
+          0.027666666666666666,
+          0.6917293233082706,
+          0.8192671881432688,
+          0.9679144385026738,
+          null
+         ],
+         "strike_sacrifice": [
+          0.0,
+          0.0,
+          0.0,
+          0.011527377521613832,
+          0.0,
+          null
+         ],
+         "strike_converge": [
+          0.0,
+          0.0,
+          0.0,
+          0.08892548373816385,
+          0.0,
+          null
+         ]
+        },
+        "note": "counts are live drone-decisions per bin; the late bins hold only the games still running at that decision (survivor-biased: long games)"
+       }
+      }
+     },
+     "choice_share_note": "described, not worded; the late decision bins are survivor-biased; a share that changes with the opponent on the same starts is the only sign of adaptation this check can give"
+    }
+   },
+   "worst_cells": {
+    "velocity": {
+     "opponent": "guard_field",
+     "k": 79,
+     "n": 1000,
+     "ci": [
+      0.06384696504253543,
+      0.0973752835672054
+     ],
+     "rate": 0.079
+    },
+    "skills": {
+     "opponent": "guard_mark_edge",
+     "k": 176,
+     "n": 1000,
+     "ci": [
+      0.15364903702878677,
+      0.2008307932551943
+     ],
+     "rate": 0.176
+    },
+    "word": "below",
+    "rule": "velocity's worst cell against skills' worst cell: above / below when the Wilson intervals are disjoint, else not distinguishable"
+   },
+   "paired_cells": [
+    {
+     "opponent": "guard_field",
+     "z_up_info": false,
+     "diff": -0.126,
+     "se": 0.010688228957046075,
+     "ci": [
+      -0.1469489287558103,
+      -0.10505107124418969
+     ],
+     "n": 1000,
+     "word": "below",
+     "interval": "normal, the per-start standard error of the paired difference (sample sd / sqrt(n))"
+    },
+    {
+     "opponent": "guard_mark_edge",
+     "z_up_info": false,
+     "diff": 0.054,
+     "se": 0.01787186065868362,
+     "ci": [
+      0.0189711531089801,
+      0.08902884689101989
+     ],
+     "n": 1000,
+     "word": "above",
+     "interval": "normal, the per-start standard error of the paired difference (sample sd / sqrt(n))"
+    },
+    {
+     "opponent": "guard_parked_centre",
+     "z_up_info": false,
+     "diff": 0.005,
+     "se": 0.01758648015619624,
+     "ci": [
+      -0.029469501106144633,
+      0.03946950110614463
+     ],
+     "n": 1000,
+     "word": "not distinguishable",
+     "interval": "normal, the per-start standard error of the paired difference (sample sd / sqrt(n))"
+    },
+    {
+     "opponent": "guard_parked_ring",
+     "z_up_info": false,
+     "diff": 0.002,
+     "se": 0.01750149428769733,
+     "ci": [
+      -0.032302928803886764,
+      0.03630292880388677
+     ],
+     "n": 1000,
+     "word": "not distinguishable",
+     "interval": "normal, the per-start standard error of the paired difference (sample sd / sqrt(n))"
+    },
+    {
+     "opponent": "guard_mirror",
+     "z_up_info": false,
+     "diff": 0.05,
+     "se": 0.016786357013413654,
+     "ci": [
+      0.017098740253709242,
+      0.08290125974629076
+     ],
+     "n": 1000,
+     "word": "above",
+     "interval": "normal, the per-start standard error of the paired difference (sample sd / sqrt(n))"
+    }
+   ],
+   "pooled_difference": {
+    "diff": -0.002999999999999995,
+    "se": 0.009849264338416753,
+    "ci": [
+     -0.02230455810329683,
+     0.01630455810329684
+    ],
+    "n": 1000,
+    "word": "not distinguishable",
+    "interval": "normal, the per-start standard error of the paired difference (sample sd / sqrt(n))",
+    "trivial_cells": [],
+    "flag": ""
+   },
+   "best_single_choice": {
+    "best": "strike_low",
+    "rate": 0.34320000000000006,
+    "per_choice_rate": {
+     "strike_straight": 0.3246,
+     "strike_flank": 0.3028,
+     "strike_high": 0.3296,
+     "strike_low": 0.34320000000000006,
+     "strike_sacrifice": 0.24459999999999996,
+     "strike_converge": 0.0436
+    },
+    "source": "the reference cells: each script closed loop every tick (not a held command), the same starts"
+   }
+  }
+ },
+ "cannot_show": [
+  "one seed per route and side (no seed spread; the intervals are over the starts only)",
+  "the 1.6 m tag only",
+  "tier 1 training only (tier 2 only through the scripted smoke)",
+  "no flight",
+  "the estimate error off",
+  "scripted opponents only (no self-play or league)",
+  "no held-out opponent: every scored script was in the training pool, so adaptation to an unseen opponent is not tested",
+  "the per-slot MLP and observation v0.1 of today (not the attention encoder or v0.3)",
+  "a policy without memory or opponent identity (it can adapt only to what it observes)",
+  "the skills route's closed-loop advantage (measured for the scripts by L4.1)",
+  "a 550 M budget, not a budget of record"
+ ],
+ "added_reads": "A second seed or any other read paid from the unallocated hours is labelled an added read; it never replaces a pre-registered one.",
+ "export_runtime_note": "the reload check (onnxruntime and onnx's reference evaluator) does not settle whether onnxruntime or torch runs in the AirStack ground container"
+}

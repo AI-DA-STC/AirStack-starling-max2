@@ -1,0 +1,277 @@
+{
+ "what": "STE L5: 3-D Isaac Lab clips of a finished run's key games (scripts/ste_l5_clips3d.py); observed in the training simulator, not a flight",
+ "run": "/home/jeremychia/AirStack-starling-max2-dev/svg_training/runs/2026-11-25_ste_l5_skills_strike",
+ "task": "L5.2",
+ "variant": "base",
+ "side": "strike",
+ "route": "skills (two-level)",
+ "gates_sha256": "e16e77298833ca1a74b8154a175f88fe5b71f87c9559e565994db1a881060f5e",
+ "device": "cuda",
+ "commit": "8d24c1ba00ca",
+ "rule": "Fixed in scripts/ste_l5_clips3d.py before rendering. (1) Worst cell: the opponent with the trained team's lowest win rate in the run's INFO batch (eval_info.npz; an unfinished game is not a win), the [players] z_up_info opponents left out when the gate file has that label (all kept if that leaves none), a tie to the first in [players] order; in that cell the lowest game index the trained team won and the lowest it lost (the other team's win), each if one exists. (2) The opponent met most in training: finished training games per opponent from pool_draw(seed, slot, k) for k below each slot's counter in checkpoint.latest (the pool off: the run's fixed opponent), a tie to the first in [players] order; its game: the lowest game index of its INFO cell that finished and is not already picked; none if it is the worst cell's opponent. (3) Fewer than two games: the next-worst cells in the same order, each its lowest-index game the trained team won if the worst cell gave a loss only, else lost, until two. A game is drawn only if its replay equals the recorded game (outcome, end step, tags, Strike drones left, start positions; closest approach within the same-seed tolerance).",
+ "cells": [
+  {
+   "cell_index": 0,
+   "cell": "guard_parked_centre v exploiter",
+   "opponent": "guard_parked_centre",
+   "games": 1000,
+   "wins": 654,
+   "losses": 346,
+   "unfinished": 0,
+   "rate": 0.654,
+   "z_up_info": false
+  },
+  {
+   "cell_index": 1,
+   "cell": "guard_parked_ring v exploiter",
+   "opponent": "guard_parked_ring",
+   "games": 1000,
+   "wins": 659,
+   "losses": 341,
+   "unfinished": 0,
+   "rate": 0.659,
+   "z_up_info": false
+  },
+  {
+   "cell_index": 2,
+   "cell": "guard_mark_edge v exploiter",
+   "opponent": "guard_mark_edge",
+   "games": 1000,
+   "wins": 176,
+   "losses": 824,
+   "unfinished": 0,
+   "rate": 0.176,
+   "z_up_info": false
+  },
+  {
+   "cell_index": 3,
+   "cell": "guard_mirror v exploiter",
+   "opponent": "guard_mirror",
+   "games": 1000,
+   "wins": 185,
+   "losses": 815,
+   "unfinished": 0,
+   "rate": 0.185,
+   "z_up_info": false
+  },
+  {
+   "cell_index": 4,
+   "cell": "guard_field v exploiter",
+   "opponent": "guard_field",
+   "games": 1000,
+   "wins": 205,
+   "losses": 795,
+   "unfinished": 0,
+   "rate": 0.205,
+   "z_up_info": false
+  }
+ ],
+ "worst": "guard_mark_edge",
+ "training": {
+  "source": "pool_draw over each slot's counter in checkpoint.latest (finished training games)",
+  "counts": {
+   "guard_parked_centre": 1495270,
+   "guard_parked_ring": 1490986,
+   "guard_mark_edge": 1496774,
+   "guard_mirror": 1492049,
+   "guard_field": 1495890
+  },
+  "most": "guard_mark_edge",
+  "games_total": 7470969,
+  "train_log_games_ended": 7470969,
+  "agrees_with_train_log": true
+ },
+ "picks": [
+  {
+   "pick": "worst_won",
+   "opponent": "guard_mark_edge",
+   "cell_index": 2,
+   "game_index": 6,
+   "global_index": 2006,
+   "check": {
+    "equal": true,
+    "mismatches": {
+     "outcome": 0,
+     "end_step": 0,
+     "tags": 0,
+     "strikes_left": 0,
+     "start_pos_m": 0,
+     "closest_3d_m": 0
+    }
+   },
+   "recorded": {
+    "outcome": 1,
+    "end_step": 76,
+    "tags": 2
+   },
+   "replayed": {
+    "outcome": 1,
+    "end_step": 76,
+    "tags": 2
+   },
+   "stem": "base_strike_worst_won_guard_mark_edge_game6",
+   "trajectory": "trajectories/base_strike_worst_won_guard_mark_edge_game6.npz",
+   "files": {
+    "top": {
+     "mp4": "base_strike_worst_won_guard_mark_edge_game6_top.mp4",
+     "mp4_mb": 0.41,
+     "crf": 23,
+     "mp4_speed_x": 0.5,
+     "mp4_frames": 97,
+     "gif": {
+      "width": 720,
+      "fps": 10,
+      "colours": 64,
+      "speed": 1.0,
+      "file": "base_strike_worst_won_guard_mark_edge_game6_top.gif",
+      "mb": 4.54,
+      "frames": 97,
+      "tick_step": 1,
+      "speed_x": 0.5,
+      "caption": "Training simulator: a tier-1 game of the L5.2 run's evaluation, skills (two-level) route, trained Strike team (base) replayed in Isaac Lab for drawing only, drones drawn level; 0.5x real time; not a flight"
+     }
+    },
+    "3d": {
+     "mp4": "base_strike_worst_won_guard_mark_edge_game6_3d.mp4",
+     "mp4_mb": 0.43,
+     "crf": 23,
+     "mp4_speed_x": 0.5,
+     "mp4_frames": 97,
+     "gif": {
+      "width": 800,
+      "fps": 10,
+      "colours": 64,
+      "speed": 1.0,
+      "file": "base_strike_worst_won_guard_mark_edge_game6_3d.gif",
+      "mb": 3.85,
+      "frames": 97,
+      "tick_step": 1,
+      "speed_x": 0.5,
+      "caption": "Training simulator: a tier-1 game of the L5.2 run's evaluation, skills (two-level) route, trained Strike team (base) replayed in Isaac Lab for drawing only, drones drawn level; 0.5x real time; not a flight"
+     }
+    }
+   },
+   "result": "Strike team reaches the zone at 3.8 s",
+   "caption": "Training simulator: a tier-1 game of the L5.2 run's evaluation, skills (two-level) route, trained Strike team (base) replayed in Isaac Lab for drawing only, drones drawn level; 0.5x real time; not a flight"
+  },
+  {
+   "pick": "worst_lost",
+   "opponent": "guard_mark_edge",
+   "cell_index": 2,
+   "game_index": 0,
+   "global_index": 2000,
+   "check": {
+    "equal": true,
+    "mismatches": {
+     "outcome": 0,
+     "end_step": 0,
+     "tags": 0,
+     "strikes_left": 0,
+     "start_pos_m": 0,
+     "closest_3d_m": 0
+    }
+   },
+   "recorded": {
+    "outcome": 2,
+    "end_step": 47,
+    "tags": 3
+   },
+   "replayed": {
+    "outcome": 2,
+    "end_step": 47,
+    "tags": 3
+   },
+   "stem": "base_strike_worst_lost_guard_mark_edge_game0",
+   "trajectory": "trajectories/base_strike_worst_lost_guard_mark_edge_game0.npz",
+   "files": {
+    "top": {
+     "mp4": "base_strike_worst_lost_guard_mark_edge_game0_top.mp4",
+     "mp4_mb": 0.28,
+     "crf": 23,
+     "mp4_speed_x": 0.5,
+     "mp4_frames": 68,
+     "gif": {
+      "width": 800,
+      "fps": 10,
+      "colours": 128,
+      "speed": 1.0,
+      "file": "base_strike_worst_lost_guard_mark_edge_game0_top.gif",
+      "mb": 4.99,
+      "frames": 68,
+      "tick_step": 1,
+      "speed_x": 0.5,
+      "caption": "Training simulator: a tier-1 game of the L5.2 run's evaluation, skills (two-level) route, trained Strike team (base) replayed in Isaac Lab for drawing only, drones drawn level; 0.5x real time; not a flight"
+     }
+    },
+    "3d": {
+     "mp4": "base_strike_worst_lost_guard_mark_edge_game0_3d.mp4",
+     "mp4_mb": 0.29,
+     "crf": 23,
+     "mp4_speed_x": 0.5,
+     "mp4_frames": 68,
+     "gif": {
+      "width": 800,
+      "fps": 10,
+      "colours": 128,
+      "speed": 1.0,
+      "file": "base_strike_worst_lost_guard_mark_edge_game0_3d.gif",
+      "mb": 3.31,
+      "frames": 68,
+      "tick_step": 1,
+      "speed_x": 0.5,
+      "caption": "Training simulator: a tier-1 game of the L5.2 run's evaluation, skills (two-level) route, trained Strike team (base) replayed in Isaac Lab for drawing only, drones drawn level; 0.5x real time; not a flight"
+     }
+    }
+   },
+   "result": "Guard team holds: 3-for-3 tags, no Guard left",
+   "caption": "Training simulator: a tier-1 game of the L5.2 run's evaluation, skills (two-level) route, trained Strike team (base) replayed in Isaac Lab for drawing only, drones drawn level; 0.5x real time; not a flight"
+  }
+ ],
+ "estimate": {
+  "ticks_to_render": 125,
+  "batch_ticks": 89,
+  "expected_s": 132.0,
+  "ask_gpu_h": 0.06,
+  "costs": {
+   "render_s_per_tick_camera": 0.1,
+   "render_s_per_game_camera": 1.0,
+   "capture_s_per_tick": 0.035,
+   "encode_s_per_frame": 0.03,
+   "fixed_s": 90.0,
+   "margin": 1.5
+  }
+ },
+ "complete": true,
+ "batch_check": {
+  "equal": true,
+  "mismatches": {
+   "outcome": 0,
+   "end_step": 0,
+   "tags": 0,
+   "strikes_left": 0,
+   "start_pos_m": 0,
+   "closest_3d_m": 0
+  },
+  "games_compared": 5000,
+  "tol_m": 1e-06,
+  "seconds": 3.3
+ },
+ "capture_s": 3.4,
+ "render": {
+  "exit": 0,
+  "seconds": 65.6,
+  "isaac": "isaaclab-2.3.2",
+  "starling_usd": "starling2max.usd",
+  "starling_usd_sha256": "ae57650efa56dfd32b551903c5126fe0219832800b160ab0b92231308b13a1a5",
+  "settings_file": "ste_video.toml",
+  "settings_sha256": "fe3dd822d1bf64de46602b6296153aaf17008f1a5ebc4aa854ffac73361581b3",
+  "working_tree": "clean",
+  "resolution": [
+   1280,
+   720
+  ]
+ },
+ "clip_failures": [],
+ "clips_made": 8,
+ "wall_s": 78.1
+}

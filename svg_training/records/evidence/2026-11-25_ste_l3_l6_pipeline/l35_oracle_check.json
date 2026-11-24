@@ -1,0 +1,53 @@
+{
+ "what": "STE L3 oracle check of the run 0 ceiling (scripts/ste_l3_run0_ceiling.py --oracle-check): the best and top choices through the dispatch v the hold-1 oracle without it; observed in the training simulator",
+ "status_note": "pipeline check, not for flight",
+ "folder": "runs/2026-11-25_ste_l3_run0_ceiling",
+ "games": 1000,
+ "device": "cpu",
+ "top": 3,
+ "ceiling_gates_sha256": "6c83762d689aa272804ab65d524ef6ed136b7a6a8d0a9e57ff05bb2f8191b9d3",
+ "of_record": true,
+ "status": "PASS",
+ "checked": [
+  {
+   "name": "free:strike_low+strike_low+strike_straight",
+   "flies": [
+    "strike_low",
+    "strike_low",
+    "strike_straight"
+   ],
+   "games": 1000,
+   "differ": 0,
+   "k_replay": 604,
+   "k_oracle": 604,
+   "k_ceiling": 604
+  },
+  {
+   "name": "free:strike_low+strike_low+strike_flank",
+   "flies": [
+    "strike_low",
+    "strike_low",
+    "strike_flank"
+   ],
+   "games": 1000,
+   "differ": 0,
+   "k_replay": 603,
+   "k_oracle": 603,
+   "k_ceiling": 603
+  },
+  {
+   "name": "free:strike_low+strike_flank+strike_flank",
+   "flies": [
+    "strike_low",
+    "strike_flank",
+    "strike_flank"
+   ],
+   "games": 1000,
+   "differ": 0,
+   "k_replay": 601,
+   "k_oracle": 601,
+   "k_ceiling": 601
+  }
+ ],
+ "complete": true
+}

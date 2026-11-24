@@ -1,0 +1,22 @@
+# STE L6.1 read manifest, 25 Nov 2026 (RTX 5090 night). Run folders under svg_training/runs/.
+suite_check = "runs/2026-11-25_ste_l42_suite_r/suite_check.json"
+held_arm = "runs/2026-11-25_ste_l41_held_arm_r"
+
+[velocity]
+pilot = "runs/2026-11-25_ste_l3_pilot_velocity"
+run0 = "runs/2026-11-25_ste_l3_run0_velocity"
+guard = "runs/2026-11-25_ste_l5_velocity_guard"
+export_guard = "runs/2026-11-25_ste_l62_export_velocity_guard_r"
+strike = "runs/2026-11-25_ste_l5_velocity_strike"
+export_strike = "runs/2026-11-25_ste_l62_export_velocity_strike_r"
+poolonly_guard = "runs/2026-11-25_ste_l5_velocity_poolonly_guard"
+
+[skills]
+pilot = "runs/2026-11-25_ste_l3_pilot_skills"
+run0 = "runs/2026-11-25_ste_l3_run0_skills"
+guard = "runs/2026-11-25_ste_l5_skills_guard"
+export_guard = "runs/2026-11-25_ste_l62_export_skills_guard_r"
+strike = "runs/2026-11-25_ste_l5_skills_strike"
+export_strike = "runs/2026-11-25_ste_l62_export_skills_strike_r"
+poolonly_guard = "runs/2026-11-25_ste_l5_skills_poolonly_guard"
+poolonly_pilot = "runs/2026-11-25_ste_l54_pilot_skills_poolonly"

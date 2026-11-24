@@ -1,0 +1,210 @@
+{
+ "what": "STE L4.2 scoring suite on known players (scripts/ste_l4_suite.py); observed in the training simulator",
+ "status_note": "pipeline check, not for flight",
+ "complete": true,
+ "status": "PASS",
+ "games": 1000,
+ "device": "cpu",
+ "gates_sha256": {
+  "velocity": "c3c9c84845d65b42b80713f1d901fe6ee30f98e173ce3914a374a5bd43b986ba",
+  "skills": "e16e77298833ca1a74b8154a175f88fe5b71f87c9559e565994db1a881060f5e"
+ },
+ "reference_sha256": {
+  "velocity": "4bc5e011071adced368b2a0025fc47499839e0bbc8d8d650207bd12c3da0f8b5",
+  "skills": "4bc5e011071adced368b2a0025fc47499839e0bbc8d8d650207bd12c3da0f8b5"
+ },
+ "checks": {
+  "velocity": {
+   "guard": {
+    "ctl_untrained_is_known": {
+     "status": "PASS",
+     "phase": "suite",
+     "detail": "untrained team v its twin zero (replay text: 'T44' = the twin): strike_straight ok (holds 534 v T44 534, reaches 466 v 466; 0 of 1000 games differ (0 in outcome)); strike_flank ok (holds 450 v T44 450, reaches 550 v 550; 0 of 1000 games differ (0 in outcome)); strike_high ok (holds 466 v T44 466, reaches 534 v 534; 0 of 1000 games differ (0 in outcome)); strike_low ok (holds 430 v T44 430, reaches 570 v 570; 0 of 1000 games differ (0 in outcome)); strike_sacrifice ok (holds 525 v T44 525, reaches 475 v 475; 0 of 1000 games differ (0 in outcome)); strike_converge ok (holds 986 v T44 986, reaches 14 v 14; 0 of 1000 games differ (0 in outcome))"
+    },
+    "ctl_script_cells_are_reference": {
+     "status": "PASS",
+     "phase": "suite",
+     "detail": "guard_parked_centre v each script: strike_straight ok (holds 534 v T44 534, reaches 466 v 466; 0 of 1000 games differ (0 in outcome)); strike_flank ok (holds 450 v T44 450, reaches 550 v 550; 0 of 1000 games differ (0 in outcome)); strike_high ok (holds 466 v T44 466, reaches 534 v 534; 0 of 1000 games differ (0 in outcome)); strike_low ok (holds 430 v T44 430, reaches 570 v 570; 0 of 1000 games differ (0 in outcome)); strike_sacrifice ok (holds 525 v T44 525, reaches 475 v 475; 0 of 1000 games differ (0 in outcome)); strike_converge ok (holds 986 v T44 986, reaches 14 v 14; 0 of 1000 games differ (0 in outcome))"
+    },
+    "ctl_pooled_row_of_the_script_team": {
+     "status": "PASS",
+     "phase": "suite",
+     "detail": "guard_parked_centre: pooled 0.565167 (se 0.011841) v T44's mean of cell rates 0.565167 (se 0.011841) over ['strike_straight', 'strike_flank', 'strike_high', 'strike_low', 'strike_sacrifice', 'strike_converge']"
+    },
+    "ctl_pooled_row_of_the_untrained_team": {
+     "status": "PASS",
+     "phase": "suite",
+     "detail": "final-scoring pooled row 0.5651666666666667 (se 0.011840568405751577) v the twin cells' 0.5651666666666667 (se 0.011840568405751577)"
+    },
+    "ctl_best_single_choice": {
+     "status": "PASS",
+     "phase": "suite",
+     "detail": "final-scoring best guard_mark_edge v T44's best guard_mark_edge (0.887167); T44's pooled rates guard_parked_centre 0.5652, guard_parked_ring 0.5607, guard_mark_edge 0.8872, guard_mirror 0.8750, guard_field 0.7883"
+    },
+    "ctl_choice_share": {
+     "status": "PASS",
+     "phase": "suite",
+     "detail": "velocity route: no choice share written (no skills)"
+    },
+    "ctl_paired_starts": {
+     "status": "PASS",
+     "phase": "suite",
+     "detail": "1 start set(s), reference 5aeba7ab2b58"
+    },
+    "tags_one_for_one": {
+     "status": "PASS",
+     "phase": "suite",
+     "detail": "0 games not one for one of 18000"
+    },
+    "no_nonfinite_actions": {
+     "status": "PASS",
+     "phase": "suite",
+     "detail": "0 non-finite actions"
+    }
+   },
+   "strike": {
+    "ctl_untrained_is_known": {
+     "status": "PASS",
+     "phase": "suite",
+     "detail": "untrained team v its twin zero (replay text: 'T44' = the twin): guard_parked_centre ok (holds 1000 v T44 1000, reaches 0 v 0; 0 of 1000 games differ (0 in outcome)); guard_parked_ring ok (holds 1000 v T44 1000, reaches 0 v 0; 0 of 1000 games differ (0 in outcome)); guard_mark_edge ok (holds 1000 v T44 1000, reaches 0 v 0; 0 of 1000 games differ (0 in outcome)); guard_mirror ok (holds 1000 v T44 1000, reaches 0 v 0; 0 of 1000 games differ (0 in outcome)); guard_field ok (holds 1000 v T44 1000, reaches 0 v 0; 0 of 1000 games differ (0 in outcome))"
+    },
+    "ctl_script_cells_are_reference": {
+     "status": "PASS",
+     "phase": "suite",
+     "detail": "strike_straight v each script: guard_parked_centre ok (holds 534 v T44 534, reaches 466 v 466; 0 of 1000 games differ (0 in outcome)); guard_parked_ring ok (holds 523 v T44 523, reaches 477 v 477; 0 of 1000 games differ (0 in outcome)); guard_mark_edge ok (holds 808 v T44 808, reaches 192 v 192; 0 of 1000 games differ (0 in outcome)); guard_mirror ok (holds 796 v T44 796, reaches 204 v 204; 0 of 1000 games differ (0 in outcome)); guard_field ok (holds 716 v T44 716, reaches 284 v 284; 0 of 1000 games differ (0 in outcome))"
+    },
+    "ctl_pooled_row_of_the_script_team": {
+     "status": "PASS",
+     "phase": "suite",
+     "detail": "strike_straight: pooled 0.324600 (se 0.010047) v T44's mean of cell rates 0.324600 (se 0.010047) over ['guard_parked_centre', 'guard_parked_ring', 'guard_mark_edge', 'guard_mirror', 'guard_field']"
+    },
+    "ctl_pooled_row_of_the_untrained_team": {
+     "status": "PASS",
+     "phase": "suite",
+     "detail": "final-scoring pooled row 0.0 (se 0.0) v the twin cells' 0.0 (se 0.0)"
+    },
+    "ctl_best_single_choice": {
+     "status": "PASS",
+     "phase": "suite",
+     "detail": "final-scoring best strike_low v T44's best strike_low (0.343200); T44's pooled rates strike_straight 0.3246, strike_flank 0.3028, strike_high 0.3296, strike_low 0.3432, strike_sacrifice 0.2446, strike_converge 0.0436"
+    },
+    "ctl_choice_share": {
+     "status": "PASS",
+     "phase": "suite",
+     "detail": "velocity route: no choice share written (no skills)"
+    },
+    "ctl_paired_starts": {
+     "status": "PASS",
+     "phase": "suite",
+     "detail": "1 start set(s), reference 5aeba7ab2b58"
+    },
+    "tags_one_for_one": {
+     "status": "PASS",
+     "phase": "suite",
+     "detail": "0 games not one for one of 15000"
+    },
+    "no_nonfinite_actions": {
+     "status": "PASS",
+     "phase": "suite",
+     "detail": "0 non-finite actions"
+    }
+   }
+  },
+  "skills": {
+   "guard": {
+    "ctl_untrained_is_known": {
+     "status": "PASS",
+     "phase": "suite",
+     "detail": "untrained team v its twin guard_parked_centre (replay text: 'T44' = the twin): strike_straight ok (holds 534 v T44 534, reaches 466 v 466; 0 of 1000 games differ (0 in outcome)); strike_flank ok (holds 450 v T44 450, reaches 550 v 550; 0 of 1000 games differ (0 in outcome)); strike_high ok (holds 466 v T44 466, reaches 534 v 534; 0 of 1000 games differ (0 in outcome)); strike_low ok (holds 430 v T44 430, reaches 570 v 570; 0 of 1000 games differ (0 in outcome)); strike_sacrifice ok (holds 525 v T44 525, reaches 475 v 475; 0 of 1000 games differ (0 in outcome)); strike_converge ok (holds 986 v T44 986, reaches 14 v 14; 0 of 1000 games differ (0 in outcome))"
+    },
+    "ctl_script_cells_are_reference": {
+     "status": "PASS",
+     "phase": "suite",
+     "detail": "guard_parked_centre v each script: strike_straight ok (holds 534 v T44 534, reaches 466 v 466; 0 of 1000 games differ (0 in outcome)); strike_flank ok (holds 450 v T44 450, reaches 550 v 550; 0 of 1000 games differ (0 in outcome)); strike_high ok (holds 466 v T44 466, reaches 534 v 534; 0 of 1000 games differ (0 in outcome)); strike_low ok (holds 430 v T44 430, reaches 570 v 570; 0 of 1000 games differ (0 in outcome)); strike_sacrifice ok (holds 525 v T44 525, reaches 475 v 475; 0 of 1000 games differ (0 in outcome)); strike_converge ok (holds 986 v T44 986, reaches 14 v 14; 0 of 1000 games differ (0 in outcome))"
+    },
+    "ctl_pooled_row_of_the_script_team": {
+     "status": "PASS",
+     "phase": "suite",
+     "detail": "guard_parked_centre: pooled 0.565167 (se 0.011841) v T44's mean of cell rates 0.565167 (se 0.011841) over ['strike_straight', 'strike_flank', 'strike_high', 'strike_low', 'strike_sacrifice', 'strike_converge']"
+    },
+    "ctl_pooled_row_of_the_untrained_team": {
+     "status": "PASS",
+     "phase": "suite",
+     "detail": "final-scoring pooled row 0.5651666666666667 (se 0.011840568405751577) v the twin cells' 0.5651666666666667 (se 0.011840568405751577)"
+    },
+    "ctl_best_single_choice": {
+     "status": "PASS",
+     "phase": "suite",
+     "detail": "final-scoring best guard_mark_edge v T44's best guard_mark_edge (0.887167); T44's pooled rates guard_parked_centre 0.5652, guard_parked_ring 0.5607, guard_mark_edge 0.8872, guard_mirror 0.8750, guard_field 0.7883"
+    },
+    "ctl_choice_share": {
+     "status": "PASS",
+     "phase": "suite",
+     "detail": "skills route: every logged decision (115399) flew guard_parked_centre, share 1 in every bin with decisions"
+    },
+    "ctl_paired_starts": {
+     "status": "PASS",
+     "phase": "suite",
+     "detail": "1 start set(s), reference 5aeba7ab2b58"
+    },
+    "tags_one_for_one": {
+     "status": "PASS",
+     "phase": "suite",
+     "detail": "0 games not one for one of 12000"
+    },
+    "no_nonfinite_actions": {
+     "status": "PASS",
+     "phase": "suite",
+     "detail": "0 non-finite actions"
+    }
+   },
+   "strike": {
+    "ctl_untrained_is_known": {
+     "status": "PASS",
+     "phase": "suite",
+     "detail": "untrained team v its twin strike_straight (replay text: 'T44' = the twin): guard_parked_centre ok (holds 534 v T44 534, reaches 466 v 466; 0 of 1000 games differ (0 in outcome)); guard_parked_ring ok (holds 523 v T44 523, reaches 477 v 477; 0 of 1000 games differ (0 in outcome)); guard_mark_edge ok (holds 808 v T44 808, reaches 192 v 192; 0 of 1000 games differ (0 in outcome)); guard_mirror ok (holds 796 v T44 796, reaches 204 v 204; 0 of 1000 games differ (0 in outcome)); guard_field ok (holds 716 v T44 716, reaches 284 v 284; 0 of 1000 games differ (0 in outcome))"
+    },
+    "ctl_script_cells_are_reference": {
+     "status": "PASS",
+     "phase": "suite",
+     "detail": "strike_straight v each script: guard_parked_centre ok (holds 534 v T44 534, reaches 466 v 466; 0 of 1000 games differ (0 in outcome)); guard_parked_ring ok (holds 523 v T44 523, reaches 477 v 477; 0 of 1000 games differ (0 in outcome)); guard_mark_edge ok (holds 808 v T44 808, reaches 192 v 192; 0 of 1000 games differ (0 in outcome)); guard_mirror ok (holds 796 v T44 796, reaches 204 v 204; 0 of 1000 games differ (0 in outcome)); guard_field ok (holds 716 v T44 716, reaches 284 v 284; 0 of 1000 games differ (0 in outcome))"
+    },
+    "ctl_pooled_row_of_the_script_team": {
+     "status": "PASS",
+     "phase": "suite",
+     "detail": "strike_straight: pooled 0.324600 (se 0.010047) v T44's mean of cell rates 0.324600 (se 0.010047) over ['guard_parked_centre', 'guard_parked_ring', 'guard_mark_edge', 'guard_mirror', 'guard_field']"
+    },
+    "ctl_pooled_row_of_the_untrained_team": {
+     "status": "PASS",
+     "phase": "suite",
+     "detail": "final-scoring pooled row 0.3246 (se 0.01004667983842303) v the twin cells' 0.3246 (se 0.01004667983842303)"
+    },
+    "ctl_best_single_choice": {
+     "status": "PASS",
+     "phase": "suite",
+     "detail": "final-scoring best strike_low v T44's best strike_low (0.343200); T44's pooled rates strike_straight 0.3246, strike_flank 0.3028, strike_high 0.3296, strike_low 0.3432, strike_sacrifice 0.2446, strike_converge 0.0436"
+    },
+    "ctl_choice_share": {
+     "status": "PASS",
+     "phase": "suite",
+     "detail": "skills route: every logged decision (53064) flew strike_straight, share 1 in every bin with decisions"
+    },
+    "ctl_paired_starts": {
+     "status": "PASS",
+     "phase": "suite",
+     "detail": "1 start set(s), reference 5aeba7ab2b58"
+    },
+    "tags_one_for_one": {
+     "status": "PASS",
+     "phase": "suite",
+     "detail": "0 games not one for one of 10000"
+    },
+    "no_nonfinite_actions": {
+     "status": "PASS",
+     "phase": "suite",
+     "detail": "0 non-finite actions"
+    }
+   }
+  }
+ }
+}

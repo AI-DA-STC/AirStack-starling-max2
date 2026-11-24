@@ -1,0 +1,128 @@
+{
+ "what": "STE L0.12 run 0, the learner positive control (gate [run0]; LEAD CALL 21 Nov 2026, QC N-1); observed in the training simulator",
+ "simulator": "training simulator, tier 1 (fast engine; Starling layer: commander copy, safety filter on every pair, fitted PX4 response, exploratory); study tag on (P1, PROPOSED)",
+ "status": "PASS",
+ "rule": "trained Strike v guard_parked_centre >= scripted strike_straight v guard_parked_centre - 0.05 (point estimates, the reference's first 1000 starts, all games), read at updates [10, 20, 30, 40, 50, 60, 70, 80, 88]; PASS at the first passing read, FAIL at the full budget, INCONCLUSIVE at the cap reserve",
+ "reads": [
+  {
+   "update": 10,
+   "game_steps": 62914560,
+   "trained": {
+    "k": 490,
+    "n": 1000,
+    "rate": 0.49,
+    "ci": [
+     0.4591134662984696,
+     0.5209630716732583
+    ]
+   },
+   "script": {
+    "k": 466,
+    "n": 1000,
+    "rate": 0.466,
+    "ci": [
+     0.43527046967989796,
+     0.4969897594239768
+    ]
+   },
+   "margin": 0.05,
+   "threshold": 0.41600000000000004,
+   "pass": true
+  }
+ ],
+ "script": {
+  "k": 466,
+  "n": 1000,
+  "rate": 0.466,
+  "ci": [
+   0.43527046967989796,
+   0.4969897594239768
+  ]
+ },
+ "margin": 0.05,
+ "variant": "base",
+ "opponent": "guard_parked_centre",
+ "trained_against": "GuardParkedCentre",
+ "train_game": "base",
+ "per_variant": false,
+ "recipe": "shaped Strike recipe",
+ "settings": {
+  "algorithm": "IPPO",
+  "decision_ticks": 12,
+  "num_games": 16384,
+  "game_steps_per_run": 550000000,
+  "rollouts": 32,
+  "learning_epochs": 5,
+  "mini_batches": 4,
+  "learning_rate": 0.0003,
+  "hidden": [
+   128,
+   128
+  ],
+  "init_log_std": -1.6,
+  "frozen_log_std_axes": [
+   "yaw"
+  ],
+  "zero_mean_init": true,
+  "discount_factor": 0.99,
+  "gae_lambda": 0.95,
+  "entropy_loss_scale": 0.0,
+  "value_loss_scale": 2.5,
+  "ratio_clip": 0.2,
+  "value_clip": 0.2,
+  "grad_norm_clip": 0.5,
+  "shaping_weight": 1.0,
+  "strike_fallback": {
+   "shaping_weight": 1.0
+  },
+  "strike_fallback_label": "shaped Strike recipe",
+  "checkpoint_every_updates": 1,
+  "curve_every_updates": 10,
+  "final_reserve_s": 600,
+  "final_reserve_factor": 2.0,
+  "clip_reserve_s": 120
+ },
+ "train_seed": 140203,
+ "num_games": 16384,
+ "game_steps_per_run": 550000000,
+ "planned_updates": 88,
+ "checkpoints": [
+  10,
+  20,
+  30,
+  40,
+  50,
+  60,
+  70,
+  80,
+  88
+ ],
+ "updates": 10,
+ "game_steps": 62914560,
+ "budget_reached": false,
+ "train_stop": "PASS at the checkpoint of update 10",
+ "train_s": 49.08620474700001,
+ "final_reserve_s": 600.0,
+ "controls_batch_s": 29.75108735899994,
+ "gates_sha256": "c3c9c84845d65b42b80713f1d901fe6ee30f98e173ce3914a374a5bd43b986ba",
+ "cap_h": 1.0,
+ "effective_s": 95.88090968132019,
+ "videos": [
+  "videos/base_strike_game3_reach.gif: game 3, reach at 14.6 s (0.16 MB)",
+  "videos/base_strike_game0_hold.gif: game 0, hold at 14.2 s (0.15 MB)"
+ ],
+ "machine": {
+  "host": "jeremychia-X870-EAGLE-WIFI7",
+  "gpu": "NVIDIA GeForce RTX 5090",
+  "torch": "2.7.0+cu128",
+  "python": "3.11.18"
+ },
+ "code": {
+  "first": {
+   "commit": "0f990ba8032c18e5c744dd0df18eab10f3f8fd12",
+   "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "changes": []
+ },
+ "complete": true
+}

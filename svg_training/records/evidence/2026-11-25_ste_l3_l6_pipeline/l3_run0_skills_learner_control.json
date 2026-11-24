@@ -1,0 +1,276 @@
+{
+ "what": "STE L0.12 run 0, the learner positive control (gate [run0]; LEAD CALL 21 Nov 2026, QC N-1); observed in the training simulator",
+ "simulator": "training simulator, tier 1 (fast engine; Starling layer: commander copy, safety filter on every pair, fitted PX4 response, exploratory); study tag on (P1, PROPOSED)",
+ "status": "PASS",
+ "rule": "trained two-level Strike v guard_parked_centre: reaches >= 0.55 of the reference's first 1000 starts (point estimate, all games) at the FINAL checkpoint (update 88); reads at [10, 20, 30, 40, 50, 60, 70, 80, 88], the earlier ones INFO; PASS / FAIL at the full budget, INCONCLUSIVE at the cap reserve; a FAIL is never overridden",
+ "reads": [
+  {
+   "update": 10,
+   "game_steps": 62914560,
+   "trained": {
+    "k": 665,
+    "n": 1000,
+    "rate": 0.665,
+    "ci": [
+     0.6351634928775167,
+     0.6935736305889746
+    ]
+   },
+   "threshold": 0.554,
+   "pass": true
+  },
+  {
+   "update": 20,
+   "game_steps": 125829120,
+   "trained": {
+    "k": 669,
+    "n": 1000,
+    "rate": 0.669,
+    "ci": [
+     0.6392355125320964,
+     0.6974709957457036
+    ]
+   },
+   "threshold": 0.554,
+   "pass": true
+  },
+  {
+   "update": 30,
+   "game_steps": 188743680,
+   "trained": {
+    "k": 667,
+    "n": 1000,
+    "rate": 0.667,
+    "ci": [
+     0.6371992085584995,
+     0.6955226073136461
+    ]
+   },
+   "threshold": 0.554,
+   "pass": true
+  },
+  {
+   "update": 40,
+   "game_steps": 251658240,
+   "trained": {
+    "k": 633,
+    "n": 1000,
+    "rate": 0.633,
+    "ci": [
+     0.6026700618124939,
+     0.6623119831635261
+    ]
+   },
+   "threshold": 0.554,
+   "pass": true
+  },
+  {
+   "update": 50,
+   "game_steps": 314572800,
+   "trained": {
+    "k": 461,
+    "n": 1000,
+    "rate": 0.461,
+    "ci": [
+     0.4303121575943916,
+     0.491986340495347
+    ]
+   },
+   "threshold": 0.554,
+   "pass": false
+  },
+  {
+   "update": 60,
+   "game_steps": 377487360,
+   "trained": {
+    "k": 620,
+    "n": 1000,
+    "rate": 0.62,
+    "ci": [
+     0.5895103176750073,
+     0.6495712266642589
+    ]
+   },
+   "threshold": 0.554,
+   "pass": true
+  },
+  {
+   "update": 70,
+   "game_steps": 440401920,
+   "trained": {
+    "k": 639,
+    "n": 1000,
+    "rate": 0.639,
+    "ci": [
+     0.6087515993621762,
+     0.6681845228308074
+    ]
+   },
+   "threshold": 0.554,
+   "pass": true
+  },
+  {
+   "update": 80,
+   "game_steps": 503316480,
+   "trained": {
+    "k": 639,
+    "n": 1000,
+    "rate": 0.639,
+    "ci": [
+     0.6087515993621762,
+     0.6681845228308074
+    ]
+   },
+   "threshold": 0.554,
+   "pass": true
+  },
+  {
+   "update": 88,
+   "game_steps": 553648128,
+   "trained": {
+    "k": 644,
+    "n": 1000,
+    "rate": 0.644,
+    "ci": [
+     0.6138233673784835,
+     0.673074485828636
+    ]
+   },
+   "threshold": 0.554,
+   "pass": true
+  }
+ ],
+ "script": {
+  "k": 466,
+  "n": 1000,
+  "rate": 0.466,
+  "ci": [
+   0.43527046967989796,
+   0.4969897594239768
+  ]
+ },
+ "margin": 0.05,
+ "variant": "base",
+ "opponent": "guard_parked_centre",
+ "trained_against": "GuardParkedCentre",
+ "train_game": "base",
+ "per_variant": false,
+ "recipe": "T41 recipe",
+ "settings": {
+  "algorithm": "IPPO",
+  "decision_ticks": 12,
+  "num_games": 16384,
+  "game_steps_per_run": 550000000,
+  "rollouts": 32,
+  "learning_epochs": 5,
+  "mini_batches": 4,
+  "learning_rate": 0.0003,
+  "hidden": [
+   128,
+   128
+  ],
+  "init_log_std": -1.6,
+  "frozen_log_std_axes": [
+   "yaw"
+  ],
+  "zero_mean_init": true,
+  "discount_factor": 0.99,
+  "gae_lambda": 0.95,
+  "entropy_loss_scale": 0.0,
+  "value_loss_scale": 2.5,
+  "ratio_clip": 0.2,
+  "value_clip": 0.2,
+  "grad_norm_clip": 0.5,
+  "shaping_weight": 0.0,
+  "strike_fallback": {
+   "shaping_weight": 1.0
+  },
+  "strike_fallback_label": "shaped Strike recipe",
+  "checkpoint_every_updates": 1,
+  "curve_every_updates": 10,
+  "final_reserve_s": 600,
+  "final_reserve_factor": 2.0,
+  "clip_reserve_s": 120
+ },
+ "train_seed": 140203,
+ "num_games": 16384,
+ "game_steps_per_run": 550000000,
+ "planned_updates": 88,
+ "checkpoints": [
+  10,
+  20,
+  30,
+  40,
+  50,
+  60,
+  70,
+  80,
+  88
+ ],
+ "updates": 88,
+ "game_steps": 553648128,
+ "budget_reached": true,
+ "train_stop": "budget: 553,648,128 of 550,000,000 game-steps",
+ "train_s": 856.4604383310002,
+ "final_reserve_s": 600.0,
+ "controls_batch_s": 46.645016904000386,
+ "gates_sha256": "e16e77298833ca1a74b8154a175f88fe5b71f87c9559e565994db1a881060f5e",
+ "cap_h": 1.5,
+ "effective_s": 1022.7379791736603,
+ "videos": [
+  "videos/base_strike_game1_reach.gif: game 1, reach at 10.9 s (0.13 MB)",
+  "videos/base_strike_game0_hold.gif: game 0, hold at 7.5 s (0.10 MB)"
+ ],
+ "machine": {
+  "host": "jeremychia-X870-EAGLE-WIFI7",
+  "gpu": "NVIDIA GeForce RTX 5090",
+  "torch": "2.7.0+cu128",
+  "python": "3.11.18"
+ },
+ "code": {
+  "first": {
+   "commit": "f7b4bcf0ceb6a8c6c81ce833fe25b43225c0f0f1",
+   "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "changes": []
+ },
+ "route": "skills",
+ "skills_reach_min": 0.554,
+ "learner": {
+  "action": "skills",
+  "choice": "two_level",
+  "team_strategies": {
+   "strike": [
+    "strike_sacrifice",
+    "strike_converge"
+   ],
+   "guard": [
+    "guard_parked_ring",
+    "guard_field"
+   ]
+  },
+  "drone_skills": {
+   "strike": [
+    "strike_straight",
+    "strike_flank",
+    "strike_high",
+    "strike_low"
+   ],
+   "guard": [
+    "guard_parked_centre",
+    "guard_mark_edge",
+    "guard_mirror"
+   ]
+  },
+  "entropy_scale": {
+   "team": 0.01,
+   "drone": 0.01
+  },
+  "mask_absent": true
+ },
+ "mask": {
+  "mask_absent": true,
+  "time_limit_bootstrap": false
+ },
+ "complete": true
+}

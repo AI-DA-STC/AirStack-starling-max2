@@ -2,7 +2,7 @@ Simulator: training simulator, tier 1 (fast engine; Starling layer: commander co
 
 # 2026-11-25 STE L3-L6 pipeline check record
 
-**DRAFT, two reviewers pending (R22).** Nothing here is reviewed yet. The numbers are copied from the run folders'
+**Reviewed by two independent reviewers (R22), 25 Nov 2026:** a numbers/source check against the run folders (ACCEPT, no discrepancy) and a completeness check against the spec (ACCEPT AFTER FIXES; fixes applied in `66123a92`). The numbers are copied from the run folders'
 own pages (listed per task below); the reader's comparison is quoted as `read.md` states it.
 
 ## Purpose
@@ -358,7 +358,6 @@ From the spec (section 3) and `read.md`:
 - a 550 M budget, not a budget of record;
 - the vertical response is not fitted in tier 1: cells against strike_high and strike_low carry that label;
 - a second seed or any other read paid from the unallocated hours would be an added read; none was run;
-- this record is DRAFT: two reviewers have not yet checked it.
 
 ## GPU-hours
 

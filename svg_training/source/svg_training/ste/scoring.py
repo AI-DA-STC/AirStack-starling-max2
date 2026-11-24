@@ -313,44 +313,52 @@ POOLED_Z = 1.96                                   # the stratified interval's 95
 CHOICE_BINS = ((0, 0), (1, 1), (2, 2), (3, 5), (6, 11), (12, None))   # decision index bins of the choice share
 
 
-def pooled_row(cells: dict) -> dict:
-    """The pooled-opponent row (design note L3_SLICE3_DESIGN.md, revision A5): ``cells`` {opponent: (wins, games)} on
-    the shared starts -> the exact mean of the K cell rates (equal weights), a stratified interval (each cell's
-    Wilson half-width read as 1.96 standard errors, the K variances summed with weights 1/K^2), the worst cell (the
-    headline, as every L1 score matrix), and the trivial cells (rate 0 or 1), which pull the mean without telling the
-    learner from anything: they are flagged, not dropped."""
-    members = list(cells)
-    rows = {}
-    for o, (k, n) in cells.items():
-        r = rate(k, n)
-        rows[o] = {**r, "rate": k / n if n else float("nan")}
-    kk = len(members)
-    mean = sum(rows[o]["rate"] for o in members) / kk
-    var = sum(((rows[o]["ci"][1] - rows[o]["ci"][0]) / (2 * POOLED_Z)) ** 2 for o in members)
-    half = POOLED_Z * math.sqrt(var) / kk
+def pooled_row(wins: dict) -> dict:
+    """The pooled-opponent row (design note L3_SLICE3_DESIGN.md, revision A5): ``wins`` {opponent: bool array [n]}, the
+    trained team's win indicator on each of the n SHARED starts (an unfinished game is no win) -> the exact mean of the
+    K cell rates, its interval, the worst cell (the headline, as every L1 score matrix) and the trivial cells (rate 0
+    or 1: flagged, not dropped; they pull the mean without telling the learner from anything).
+
+    The cells share their starts and the scoring is deterministic, so they are correlated (QC S1 of step 2): the
+    interval is the normal one around the mean of the per-start means y_j = (1/K) sum_k w_kj, with standard error
+    sd(y) / sqrt(n) over the starts (sample sd), clipped to [0, 1]. Each cell keeps its own Wilson interval."""
+    members = list(wins)
+    arrs = {o: np.asarray(v, dtype=bool).reshape(-1) for o, v in wins.items()}
+    sizes = {len(v) for v in arrs.values()}
+    if len(sizes) != 1:
+        raise ValueError(f"the pooled row needs the same starts in every cell, got games {sorted(sizes)}")
+    n = sizes.pop()
+    rows = {o: {**rate(int(v.sum()), n), "rate": float(v.mean()) if n else float("nan")} for o, v in arrs.items()}
+    y = np.mean([arrs[o].astype(float) for o in members], axis=0)
+    mean = float(y.mean())
+    se = float(np.std(y, ddof=1) / math.sqrt(n)) if n > 1 else float("nan")
     worst = min(members, key=lambda o: rows[o]["rate"])
-    return {"members": members, "rate": mean, "ci": [max(0.0, mean - half), min(1.0, mean + half)],
+    return {"members": members, "rate": mean, "se": se,
+            "ci": [max(0.0, mean - POOLED_Z * se), min(1.0, mean + POOLED_Z * se)],
             "cells": rows, "worst": {"opponent": worst, "k": rows[worst]["k"], "n": rows[worst]["n"],
                                      "rate": rows[worst]["rate"]},
             "headline": "worst cell", "trivial_cells": [o for o in members if rows[o]["rate"] in (0.0, 1.0)],
+            "interval": "normal, the standard error of the per-start mean of the K win indicators over the shared "
+                        "starts (the cells are correlated); each cell's own Wilson interval in cells",
             "note": "the pooled mean is an equal-weight mean of the cells; trivial cells (rate 0 or 1) are flagged"}
 
 
 def best_single_choice(ref, variant: str, side: str, choices: list, members: list, n: int) -> dict:
-    """The best single fixed choice over the pool (revision A5 (a)): each script of the trained team played every
-    decision (its reference cell against each pool member, the first ``n`` starts, all games), pooled as
-    :func:`pooled_row`; the best by the pooled rate (first on a tie)."""
+    """The best single fixed choice over the pool (revision A5 (a)): each script of the trained team (never
+    ``random``) played every tick closed loop, as the reference cells were made (not a command held 12 ticks), against
+    each pool member on the first ``n`` starts, pooled as :func:`pooled_row`; the best by the pooled rate (first on a
+    tie)."""
     won = STRIKE_WIN if side == "strike" else GUARD_WIN
     per = {}
-    for s in choices:
+    for s in [c for c in choices if c != "random"]:
         cells = {}
         for o in members:
             cell = (o, s) if side == "strike" else (s, o)
-            outcome = np.asarray(ref.cell(variant, *cell)["outcome"][:n])
-            cells[o] = (int(np.sum(outcome == won)), int(len(outcome)))
+            cells[o] = np.asarray(ref.cell(variant, *cell)["outcome"][:n]) == won
         per[s] = pooled_row(cells)
-    best = max(choices, key=lambda s: per[s]["rate"])
-    return {"per_choice": per, "best": best, "source": "the reference cells (each script played every decision)"}
+    best = max(per, key=lambda s: per[s]["rate"])
+    return {"per_choice": per, "best": best,
+            "source": "the reference cells: each script closed loop every tick (not a held command), the same starts"}
 
 
 def choice_share(log: np.ndarray, names: list) -> dict:
@@ -367,4 +375,6 @@ def choice_share(log: np.ndarray, names: list) -> dict:
         counts.append(all_)
         for j, nm in enumerate(names):
             share[nm].append(float(tot[j]) / all_ if all_ else None)
-    return {"bins": labels, "counts": counts, "share": share}
+    return {"bins": labels, "counts": counts, "share": share,
+            "note": "counts are live drone-decisions per bin; the late bins hold only the games still running at that "
+                    "decision (survivor-biased: long games)"}

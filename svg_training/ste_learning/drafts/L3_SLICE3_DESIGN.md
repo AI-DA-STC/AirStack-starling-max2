@@ -260,3 +260,17 @@ the Guard-side arms and the dispatch-equality tests (answer 4).
   player of each live drone at each decision of a slot's first game (`choice_log`, decision index capped at 255);
   `play_cells` returns the logs per cell; `scoring.choice_share` bins them (0, 1, 2, 3-5, 6-11, 12+). The velocity
   route's `HeldPlayer` keeps no log (its path is unchanged).
+
+## After QC of step 2 (24 Nov 2026)
+
+- **The pooled row's interval (QC S1).** The cells share their starts and the scoring is deterministic, so they are
+  correlated: the interval is now the normal one around the mean of the per-start means of the K win indicators
+  (y_j = (1/K) sum_k w_kj, standard error sd(y) / sqrt(n) over the starts), not the sum of independent Wilson
+  variances; the rates count every game (an unfinished game is no win). Each cell keeps its own Wilson interval.
+- **The recipe and run 0 are not on the pool (QC S2), recorded in results.json (`pool_notes`) and here:** the Strike
+  recipe (shaped or not) was probed against g* only, by the pre-registered rule; run 0 trains against a fixed
+  opponent (the parked Guard).
+- **Notes:** the best single fixed choice reads the reference cells, where each script ran closed loop every tick (not
+  a command held 12 ticks), and never offers `random`; the choice share reports its per-bin counts, and its late bins
+  hold only the games still running (survivor-biased); the choice logs are keyed (team, cell index), so a cell with a
+  skills team on each side cannot collide.

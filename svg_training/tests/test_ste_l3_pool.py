@@ -233,26 +233,34 @@ def test_build_learner_trains_on_the_pool_and_run0_keeps_its_fixed_opponent(tmp_
 
 
 # ================================================================================================ the pooled row
-def test_the_pooled_row_is_the_exact_mean_with_a_stratified_interval():
-    cells = {"a": (30, 40), "b": (0, 40), "c": (40, 40), "d": (12, 40)}
+def test_the_pooled_row_is_the_exact_mean_with_an_interval_over_the_shared_starts():
+    """QC S1 of step 2: the cells share their starts and the scoring is deterministic, so the cells are correlated;
+    the interval comes from the per-start mean of the K win indicators (sd / sqrt(n) over the starts), not from
+    independent cells. Hand computation on correlated cells (b repeats a on every start)."""
+    a = np.array([1, 1, 0, 1, 0, 0, 1, 1, 0, 1], dtype=bool)
+    cells = {"a": a, "b": a.copy(), "c": np.zeros(10, dtype=bool), "d": np.ones(10, dtype=bool)}
     row = scoring.pooled_row(cells)
-    rates = [30 / 40, 0.0, 1.0, 12 / 40]
-    assert row["rate"] == pytest.approx(sum(rates) / 4)
-    var = 0.0
-    for k, n in cells.values():
-        lo, hi = scoring.rate(k, n)["ci"]
-        var += ((hi - lo) / (2 * 1.96)) ** 2
-    half = 1.96 * math.sqrt(var) / 4
-    assert row["ci"] == pytest.approx([max(0.0, row["rate"] - half), min(1.0, row["rate"] + half)])
-    assert row["worst"] == {"opponent": "b", "k": 0, "n": 40, "rate": 0.0}
-    assert row["headline"] == "worst cell" and sorted(row["trivial_cells"]) == ["b", "c"]
-    assert row["members"] == ["a", "b", "c", "d"]
+    y = np.mean([cells[o].astype(float) for o in cells], axis=0)             # the per-start mean of the 4 indicators
+    assert row["rate"] == pytest.approx(float(np.mean([v.mean() for v in cells.values()])))
+    assert row["rate"] == pytest.approx(float(y.mean()))
+    se = float(np.std(y, ddof=1) / math.sqrt(10))
+    assert row["se"] == pytest.approx(se)
+    assert row["ci"] == pytest.approx([max(0.0, y.mean() - 1.96 * se), min(1.0, y.mean() + 1.96 * se)])
+    indep = math.sqrt(sum(v.mean() * (1 - v.mean()) / 10 for v in cells.values())) / 4
+    assert row["se"] > indep                                     # the correlation the independent formula misses
+    assert row["worst"] == {"opponent": "c", "k": 0, "n": 10, "rate": 0.0}
+    assert row["headline"] == "worst cell" and sorted(row["trivial_cells"]) == ["c", "d"]
+    assert row["members"] == ["a", "b", "c", "d"] and row["cells"]["a"]["k"] == 6
+    with pytest.raises(ValueError, match="starts"):
+        scoring.pooled_row({"a": a, "b": a[:5]})
 
 
 def test_the_best_single_fixed_choice_over_the_pool_is_read_from_the_reference(gates):
     ref = exploit.load_reference(exploit.ROOT / gates.reference["file"])
-    out = scoring.best_single_choice(ref, "base", "strike", skills.team_skills(gates.players, "strike"),
+    out = scoring.best_single_choice(ref, "base", "strike", skills.team_skills(gates.players, "strike") + ["random"],
                                      pool.pool_members(gates.players, "guard"), 50)
+    assert "random" not in out["per_choice"]                           # QC NIT: never a choice of the pool
+    assert "closed loop" in out["source"]
     for s, row in out["per_choice"].items():
         want = []
         for g in pool.pool_members(gates.players, "guard"):
@@ -290,6 +298,24 @@ def test_held_player_logs_the_flown_choice_by_decision_index_for_live_drones_of_
     assert int(log[1].sum()) == 2 + 3 + 3 and int(log[2:].sum()) == 0          # game 1 no longer counted
 
 
+def test_play_cells_keys_the_choice_logs_by_team_and_cell(gates):
+    """QC NIT: a log is keyed (team, cell index), so a cell with a skills team on each side cannot collide."""
+    ref = exploit.load_reference(exploit.ROOT / gates.reference["file"])
+    cfg = exploit.variant_cfg(gates, "base")
+    spec = skills.learner_spec({"action": "skills", "choice": "two_level",
+                                "team_strategies": {"strike": ["strike_sacrifice", "strike_converge"],
+                                                    "guard": ["guard_parked_ring", "guard_field"]},
+                                "drone_skills": {"strike": ["strike_straight", "strike_flank", "strike_high",
+                                                            "strike_low"],
+                                                 "guard": ["guard_parked_centre", "guard_mark_edge", "guard_mirror"]},
+                                "entropy_scale": {"team": 0.01, "drone": 0.01}})
+    d = skills.two_level_dispatch(spec, gates.players, "strike", cfg, 2, "cpu", 0)
+    team = exploit_train.untrained_skill_team("strike", d, 3, [16, 16], "cpu")
+    cells = [("guard_parked_centre", exploit.EXPLOITER), ("guard_field", exploit.EXPLOITER)]
+    pg = exploit.play_cells(cfg, "3v3", ref, cells, 2, "cpu", ref.meta["seed"], 300, learner=team, hold_ticks=HOLD)
+    assert sorted(pg["choice_log"]) == [("strike", 0), ("strike", 1)]
+
+
 def test_the_velocity_held_player_keeps_no_log(gates):
     team = exploit.LearnerTeam.untrained("guard", 3, [16, 16], "cpu")
     held = exploit.HeldPlayer(team, HOLD)
@@ -304,6 +330,7 @@ def test_choice_share_bins_the_decisions():
     log[1] = [1, 1, 1]
     log[4] = [0, 2, 0]
     out = scoring.choice_share(log, ["a", "b", "c"])
+    assert "survivor" in out["note"]                                    # QC NIT: late bins hold the long games only
     assert out["bins"][0] == "0" and out["share"]["a"][0] == 1.0
     assert out["share"]["b"][1] == pytest.approx(1 / 3)
     assert out["share"]["b"][out["bins"].index("3-5")] == 1.0
@@ -355,12 +382,16 @@ def test_a_pool_run_logs_the_mix_and_reports_the_pooled_row(pooled_runs):
         res = json.loads((r / "results.json").read_text())
         pooled = res["pooled"]
         assert pooled["members"] == members and pooled["headline"] == "worst cell"
-        info = res["info"]
+        ev = np.load(r / "eval_info.npz")
+        n = res["eval_games"]
+        cells = driver.info_cells(gates, side)
+        won = exploit.STRIKE_WIN if side == "strike" else exploit.GUARD_WIN
         rates = []
         for o in members:
-            c = info[f"{o} v exploiter" if side == "strike" else f"exploiter v {o}"]
-            rates.append((c["reaches"] if side == "strike" else c["holds"]) / c["games"])
+            k = [c[0] if side == "strike" else c[1] for c in cells].index(o)
+            rates.append(float(np.mean(ev["outcome"][k * n:(k + 1) * n] == won)))   # all games (unfinished: no win)
         assert pooled["rate"] == pytest.approx(sum(rates) / len(rates))
+        assert any("g*" in x for x in res["pool_notes"]) and any("run 0" in x for x in res["pool_notes"])
         assert res["best_single_choice"]["best"] in skills.team_skills(gates.players, side)
         assert ("choice_by_decision" in res) == (side == "strike")          # the skills route only
     cbd = json.loads((pooled_runs["strike"][1] / "results.json").read_text())["choice_by_decision"]

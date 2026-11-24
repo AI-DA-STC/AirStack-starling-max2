@@ -49,7 +49,7 @@ Four gate files, one template (`configs/ste_l3/`), sha256 of each run's `gates.s
 
 The two pilots (L3.2, L3.3) ran before the fill step, under the files' earlier shas (`8d8d5b9e523f1d2e`,
 `6c83762d689aa272`); the L5.4 pilot ran under the pool-only file. The skills file carries the run 0 mark
-`skills_reach_min = 0.554` (re-set 25 Nov 2026, pre-registered before the ceiling run; see L3.5).
+`skills_reach_min = 0.554` (re-set 25 Nov 2026: the rule was pre-registered before the ceiling run and the value 0.554 came from it; see L3.5).
 
 - Game: T44's `configs/ste_l011/base.toml` (3v3, the 1-for-1 nearest-pair tag at 1.6 m, zone 1.6 m), landing off (R32),
   the even filter split (R31), the estimate error off. T44's 1,000 starts and reference (reference sha256
@@ -58,8 +58,8 @@ The two pilots (L3.2, L3.3) ran before the fill step, under the files' earlier s
   routes (88 updates, 553,648,128 game-steps), pool of every script of the other team except `random` and the
   absent-drone mask on; the pool-only controls without the mask.
 - Fill step (pre-registered rule, applied after the pilots): the velocity route's `side_overrides.strike` is the
-  shaped Strike recipe (its pilot: no reach in either probe against `guard_mark_edge`, so the shaped fallback by
-  default); the skills route keeps T41's recipe (probes: 10,819 bare against 11,701 shaped reaches, rule picked the
+  shaped Strike recipe (its pilot: no reach in either probe against g*, `guard_mark_edge`, the rule's input, so the shaped fallback by
+  default; the probes against `guard_parked_centre` did reach, 0/4, 12/56, 98/190 reaches per update, `pilot.md`); the skills route keeps T41's recipe (probes: 10,819 bare against 11,701 shaped reaches, rule picked the
   T41 recipe). The step budget stays at 550 M.
 - Driver `scripts/ste_exploit_l012.py` (training and scoring), `scripts/ste_l3_isaac_smoke.py`,
   `scripts/ste_l3_run0_ceiling.py`, `scripts/ste_l3_held_arm.py`, `scripts/ste_l4_suite.py`,
@@ -125,7 +125,7 @@ every run (a failing control ends the run with exit 6).
 | Task | Run folder (`runs/`, dev worktree unless noted) | Exit | Controls | Headline | GPU-h |
 |---|---|---|---|---|---|
 | L3.1 smoke of the tier-2 skills fixed-choice replay | `2026-11-25_ste_l3_isaac_smoke` | 0 | 6 of 6 PASS | tier 2, 9,000 games in one Isaac world; upsets 0 in every cell; two tier-2 clips (reach); two-level team 2,312,729 v one script 2,994,698 game-steps/s | 0.027 |
-| L3.2 velocity pilot | `2026-11-25_ste_l3_pilot_velocity` | 0 | 12 of 12 PASS | rates above; Strike recipe by the rule: shaped (no reach in either probe, by default) | 0.064 |
+| L3.2 velocity pilot | `2026-11-25_ste_l3_pilot_velocity` | 0 | 12 of 12 PASS | rates above; Strike recipe by the rule: shaped (no reach in either probe v g*, the rule's input, by default; the probes v guard_parked_centre did reach) | 0.064 |
 | L3.3 skills pilot | `2026-11-25_ste_l3_pilot_skills` | 0 | 10 of 10 PASS | rates above; Strike recipe by the rule: T41 recipe; B1 met | 0.055 |
 | L3.4 velocity run 0 (Strike v parked Guard) | `2026-11-25_ste_l3_run0_velocity` | 0 | 9 of 9 PASS | **PASS**: 490/1000 reaches at update 10 of 88 against the threshold 0.416 (the scripted strike_straight's 466, less 0.05; first passing read, L0.12's rule) | 0.027 |
 | L3.5 skills run 0 (Strike v parked Guard) | `2026-11-25_ste_l3_run0_skills` | 0 | 10 of 10 PASS | **PASS**: 644/1000 [0.614, 0.673] at the final checkpoint (update 88, 553,648,128 game-steps) against the mark 0.554; best constant choice 604 | 0.284 |
@@ -139,7 +139,7 @@ every run (a failing control ends the run with exit 6).
 | L5.4 skills pool-only (control), Guard | `2026-11-25_ste_l5_skills_poolonly_guard` | 0 | 14 of 14 PASS | 812/1000 [0.787, 0.835] against strike_straight; driver word: weak (best script 808) | 0.274 (+ 0.024 clips) |
 | L6.2 export and reload, four policies | `2026-11-25_ste_l62_export_{velocity_guard,velocity_strike,skills_guard,skills_strike}_r` | 0 each | 1 of 1 PASS each | all four reload in a fresh process under onnxruntime and onnx's reference evaluator, 24 golden rows each (3 slots x 8); largest absolute difference 2.4e-07 and 1.2e-07 (velocity Guard, Strike), 1.9e-06 and 1.4e-06 (skills Guard, Strike) against the tolerance 1e-06 + 1e-06 x max abs golden row; the skills exports' choices, skill lists equal and commands difference 0.0 | 0 (CPU) |
 | L4.2 scoring suite on known players | `2026-11-25_ste_l42_suite_r` | 0 | 36 of 36 PASS | status PASS: the pooled row, best single choice and choice share of scripted and untrained teams equal the reference, both routes, both sides | 0 (CPU) |
-| L4.1 held-command arm | `2026-11-25_ste_l41_held_arm_r` | 0 | 1 of 1 PASS (60 cells equal the reference game for game at hold 1) | per script and opponent, held 12 ticks against closed loop (`held_arm_results.md`); INFO | 0 (CPU) |
+| L4.1 held-command arm | `2026-11-25_ste_l41_held_arm_r` | 0 | 1 of 1 PASS | no word given; per-cell counts only (`held_arm_results.md`). Headline: the hold-1 control holds in 60 of 60 cells (equal to the reference game for game); for strike_straight held and closed-loop counts are equal in all 5 cells | 0 (CPU) |
 | L6.1 per-route reads and the route comparison | `2026-11-25_ste_l61_read_r` (manifest `2026-11-25_ste_l61_manifest.toml`, sha256 `b7b451088250e75593ecbb3e98f703d97dd7bbf98aa003e2bf0b52bf5fec2483`) | 0 | not applicable (the reader refuses on any failed input) | velocity PIPELINE WORKS; skills PIPELINE WORKS; comparison INFO (below) | 0 (CPU) |
 
 Notes on the table:
@@ -165,9 +165,41 @@ last):
 
 The read at update 50 (461) is below the mark and does not count (INFO by the rule).
 
-The mark 0.554 was re-set on 25 Nov 2026, before the ceiling run, from 0.90 (the 1v1 screen's number; in the 3v3 game
-no constant choice reaches 900). The ceiling run and its oracle check are in the table
+The mark was re-set on 25 Nov 2026 from 0.90 (the 1v1 screen's number; in the 3v3 game no constant choice reaches
+900). The rule, (best constant choice - 50) / 1000, was pre-registered before the ceiling run; the value 0.554 came from
+it (the ceiling page itself shows the gate file's mark at that time as 0.9). The ceiling run and its oracle check are in the table
 (`l35_ceiling_results.md`, `l35_oracle_check.json`).
+
+### L3.1: the smoke's six controls, against spec section 4
+
+Tier 2 (Isaac Lab), 1,000 games per cell on T44's first 1,000 starts, 9,000 games in one world; each control ends the
+smoke on failure. Values from `results.json` and `controls.json` of the smoke (`l31_isaac_smoke_results.md`):
+
+| Spec section 4 check | Control | Measured |
+|---|---|---|
+| 1. CUDA replay tolerance (holds and reaches within 10 games of T44's, at most 20 games with another outcome) | `ctl_replay_guard`, `ctl_replay_strike` PASS | 17 cells (8 Guard, 9 Strike): 11 cells with 0 of 1,000 games differing; the 6 mixed-choice cells differ in 2 to 5 games in outcome (largest count gap to T44: 3 holds, 668 v 671 and 866 v 864) |
+| 2. Device placement and no host read inside a tick | `ctl_device_placement` PASS | 9 tensors on cuda; 0 host syncs inside the dispatch (choose, command) in the replay batches, measured with torch's CUDA sync debug mode, which the smoke page calls a prototype that does not see every sync |
+| 3. Snapshot reload across devices | `ctl_reload_across_devices` PASS | cuda to cpu: largest absolute logit difference 5.96e-08 (tolerance 1e-05), greedy choices equal |
+| 4. Two tier-2 clips that play | `ctl_clips` PASS | 2 clips of 2 (games 0 and 1, both a reach) |
+| 5. Non-finite and stale | `ctl_nonfinite_stale` PASS | 0 non-finite actions or physics values; stale share 0.0234 of the update's ticks; upsets 0 in every group |
+| 6. Throughput (INFO, no gate) | recorded | two-level team 2,312,729 game-steps/s against 2,994,698 for one script (ratio 0.772) |
+
+### L6.2: what the export and reload check does (spec section 5)
+
+From `export.py`'s reload check and `read.json`; the four exports all pass (table above).
+- The reload refuses a file whose sha256 differs from the one in `interface.toml`.
+- It refuses a file whose schema or status differs; `status = "pipeline check, not for flight"` is written in
+  `interface.toml` and in every ONNX file's metadata, and the reload reads both.
+- It runs in a fresh Python process (CPU), under onnxruntime and, separately, onnx's reference evaluator.
+- The golden rows (8 per slot, so 24 per export) must match within the exporter's tolerance, `1e-06 + 1e-06 * max
+  |golden row|` (an absolute plus a relative part; the spec said 1e-06 absolute, and the larger skills outputs, up to
+  9.99, make the bound about 1.1e-05).
+- For the skills exports each head's argmax, the leader's choice, the flown skill and the skill lists must be equal
+  exactly (`choices_equal`, `skill_lists_equal` true), and the final commands, computed from the pinned
+  `opponents/scripted.py` (its sha256 is checked), must match within the same tolerance (largest difference 0.0).
+- The reader additionally refuses an export whose `source_checkpoint_sha256` is not the sha256 of the run's
+  `agent_final.pt`.
+- At export, the run's own team (its route loader) equals the golden rows: largest difference 0.00e+00 in all four.
 
 ### L5: the six training runs
 
@@ -190,7 +222,8 @@ cell, 0.176 (against guard_mark_edge), against the velocity Strike policy's 0.07
 does not explain the difference.
 
 The velocity Strike run's own driver word is "weak (learned, not clearly above the script)": 230/1000 against
-guard_mark_edge, the untrained team 0.
+guard_mark_edge, the untrained team 0. The reader's worst cell for this policy is 0.079 against guard_field (the Strike
+team table below).
 
 ## Comparison and reads (L6.1), INFO, as `read.md` states them
 
@@ -205,9 +238,13 @@ copied from `read.md` (full text and `read.json` in evidence), not re-derived.
 | velocity | **PIPELINE WORKS** | every required task as section 3 of the spec lists it |
 | skills | **PIPELINE WORKS** | every required task as section 3 of the spec lists it |
 
+The spec's word asks for the budget reached, every control PASS, the final scoring and the export and reload of each main
+run. It does not use the driver's learned or INCONCLUSIVE word, so the skills route reads PIPELINE WORKS beside the skills
+Strike run's INCONCLUSIVE driver word.
+
 **Separate reads:**
-- Attribution, velocity: read; pooled row, pool + mask minus pool only: +0.005 [+0.001, +0.009], above.
-- Attribution, skills: read; pooled row, pool + mask minus pool only: +0.002 [-0.003, +0.007], not distinguishable.
+- Attribution, velocity (L5.3, Guard side; a control, not part of a route's word): pooled row, pool + mask minus pool only: +0.005 [+0.001, +0.009], above.
+- Attribution, skills (L5.4, Guard side; a control, not part of a route's word): pooled row, pool + mask minus pool only: +0.002 [-0.003, +0.007], not distinguishable.
 - Held-command arm: read (`held_arm_results.md`).
 
 **Guard team** (velocity minus skills; K = 6 opponent cells, 1,000 starts). The headline is the worst cell not among the
@@ -251,8 +288,12 @@ Worst cells, velocity against skills: **below**. Paired same-cell differences, v
 
 Pooled row, velocity minus skills: -0.003 [-0.022, +0.016], **not distinguishable**.
 
-**Choice shares of the skills policies** (described, not worded; per opponent cell, and by decision index) are in
-`read.md` and `read.json`. A share that changes with the opponent on the same starts is the only sign of adaptation
+**Choice shares of the skills policies** (described, not worded; per opponent cell, and by decision index, in `read.md`
+and `read.json`):
+- skills Strike team: in every Guard cell about 0.43-0.49 of decisions fly strike_flank and 0.51-0.54 strike_low;
+- skills Guard team: against strike_converge the share of guard_parked_ring is 0.23 (0.00 in the other five cells).
+
+No claim of adaptation is made here. A share that changes with the opponent on the same starts is the only sign of adaptation
 this check can give.
 
 **What the reader cannot show** is in the list below.

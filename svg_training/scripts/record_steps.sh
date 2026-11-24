@@ -68,11 +68,13 @@ SCENARIO=hover
 TELEOP=/svg/$DRONE/teleop_command
 NOISE='^(bash: cannot set terminal|bash: no job control|Sourcing|groups: cannot find name)'
 REAL_TOPICS='/fmu/|/poses|/pose$'                     # = stack.sh:90-92
-# Published topics that are the simulator's or our own, never a real drone (L1.4 first run, 24 Nov 2026): the
-# simulator's MAVROS (/drone_N/interface/mavros/...; the real drones fly uXRCE-DDS, /fmu/), and /fmu/in/ (a drone
-# subscribes there; our commander's mocap_bridge publishes the relay). A real drone publishes /fmu/out/*; a mocap bridge
-# publishes /drone_N/pose or /poses: both still stop the session. Topics with subscribers only are not counted.
-OWN_TOPICS='/interface/mavros/|/fmu/in/'
+# Published topics that are the simulator's own, never a real drone (L1.4 first run, 24 Nov 2026): the simulator's
+# MAVROS (/drone_N/interface/mavros/...; the real drones fly uXRCE-DDS, /fmu/). Topics with subscribers only are not
+# counted (our commander listens on /drone_N/pose). Our commander is launched with use_mocap:=false (the launch file's
+# default is true, ground_control.launch.py:210), so no mocap_bridge of ours publishes /fmu/in/: any /fmu/ publisher, a
+# real drone's /fmu/out/* or a mocap /drone_N/pose or /poses publisher still stops the session. A topic list without its
+# "Published topics:" header counts as a signal (fail closed).
+OWN_TOPICS='/interface/mavros/'
 
 usage() { echo "Usage: bash scripts/record_steps.sh [--dry-run] <name>   (--help for more)" >&2; exit 64; }
 refuse() { echo "record_steps.sh: refused: $*" >&2; exit 65; }
@@ -106,7 +108,7 @@ D=/tmp/svg_s1_$NAME                                   # this run's scratch dir i
 SENTINEL_NAME=${PREFIX}_00000000_000000               # empty dir: the svg_* name `down` picks when no bag of ours exists
 SENTINEL=$BAGS/$SENTINEL_NAME
 START=$(date +%s)
-CMD_LAUNCH='cd ~/AirStack/robot/ros_ws && ros2 launch svg_ground_control ground_control.launch.py config:=$(ros2 pkg prefix svg_ground_control)/share/svg_ground_control/config/'"$CONFIG_YAML"' scenario:='"$SCENARIO"' record_bag:=true bag_prefix:='"$PREFIX"
+CMD_LAUNCH='cd ~/AirStack/robot/ros_ws && ros2 launch svg_ground_control ground_control.launch.py config:=$(ros2 pkg prefix svg_ground_control)/share/svg_ground_control/config/'"$CONFIG_YAML"' scenario:='"$SCENARIO"' use_mocap:=false record_bag:=true bag_prefix:='"$PREFIX"
 CMD_STICK="cd ~/AirStack/robot/ros_ws && source install/setup.bash >/dev/null 2>&1; python3 $D/virtual_stick.py --config $D/s1.toml --drone $DRONE --flown-json $D/steps_flown.json"
 
 # bags_preflight: the bags folder may hold other people's recordings (svg_20261112_094546: the 12 November real flights).
@@ -205,9 +207,13 @@ realdrone_signal() {
     return 1; fi
   local p t
   p=$({ pgrep -x MicroXRCEAgent || pgrep -f '^(bash|sh) .*mocap\.sh' || pgrep -x natnet_ros2; } 2>/dev/null)
-  t=$(rx 'timeout 25 ros2 topic list -v --no-daemon --spin-time 5' \
-      | awk '/^Published topics:/{p=1; next} /^Subscribed topics:/{p=0} p && $1 == "*" {print $2}' \
-      | grep -E "$REAL_TOPICS" | grep -vE "$OWN_TOPICS")
+  local raw; raw=$(rx 'timeout 25 ros2 topic list -v --no-daemon --spin-time 5')
+  if ! grep -q '^Published topics:' <<<"$raw"; then
+    t="topic list unreadable (no 'Published topics:' header)"
+  else
+    t=$(awk '/^Published topics:/{p=1; next} /^Subscribed topics:/{p=0} p && $1 == "*" {print $2}' <<<"$raw" \
+        | grep -E "$REAL_TOPICS" | grep -vE "$OWN_TOPICS")
+  fi
   [ -n "$p$t" ] || return 1
   RD_WHAT="bridge pids: $(echo ${p:-none}); topics: $(echo ${t:-none})"
 }

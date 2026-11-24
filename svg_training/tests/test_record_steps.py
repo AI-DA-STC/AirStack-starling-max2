@@ -157,7 +157,8 @@ def shell(st, c, sh):
         os.makedirs(os.path.dirname(logp), exist_ok=True)
         open(logp, "w").write("\n".join(lines) + "\n")
         st["procs"][c].append("/usr/bin/python3 /opt/ros/jazzy/bin/ros2 launch svg_ground_control ground_control.launch.py "
-                              f"config:=x scenario:=hover record_bag:=true bag_prefix:={prefix}")
+                              f"config:=x scenario:=hover{' use_mocap:=false' if 'use_mocap:=false' in sh else ''} "
+                              f"record_bag:=true bag_prefix:={prefix}")
         save(st)
         return 0
     if "virtual_stick.py --config" in sh:
@@ -200,11 +201,16 @@ def shell(st, c, sh):
         save(st)
         real = st["topic_lists"] in SC.get("real_topics_on_call", [])
         mocap = st["topic_lists"] in SC.get("mocap_pub_on_call", [])
+        if st["topic_lists"] in SC.get("topic_list_empty_on_call", []):
+            return 0
         if "topic list -v" in sh:                     # the verbose form: publishers and subscribers apart
             print("Published topics:")
             print(" * /svg/commander_status [std_msgs/msg/String] 1 publisher")
-            if SC.get("sim_topics", True):            # the simulator's own MAVROS and our mocap_bridge relay
+            if SC.get("sim_topics", True):            # the simulator's own MAVROS
                 print(" * /drone_1/interface/mavros/local_position/pose [geometry_msgs/msg/PoseStamped] 1 publisher")
+            ours_with_bridge = any("bag_prefix:=" in p and "use_mocap:=false" not in p for p in st["procs"][R])
+            if ours_with_bridge or SC.get("mocap_bridge_relay"):
+                # a mocap_bridge (ours launched without use_mocap:=false, or a real session's) publishes the relay
                 print(" * /drone_1/fmu/in/vehicle_visual_odometry [px4_msgs/msg/VehicleOdometry] 1 publisher")
             if real:
                 print(" * /drone_1/fmu/out/vehicle_status [px4_msgs/msg/VehicleStatus] 1 publisher")
@@ -218,7 +224,7 @@ def shell(st, c, sh):
             return 0
         print("/svg/commander_status")
         if SC.get("sim_topics", True):
-            print("/drone_1/interface/mavros/local_position/pose\n/drone_1/fmu/in/vehicle_visual_odometry\n/drone_1/pose")
+            print("/drone_1/interface/mavros/local_position/pose\n/drone_1/pose")
         if real:
             print("/fmu/out/vehicle_status")
         return 0
@@ -533,7 +539,7 @@ def test_dry_run_prints_every_command_in_order(tmp_path):
         r"write .*runs/%s/preflight\.txt .*svg_20261112_094546" % NAME,
         r"tools/sim\.sh up --headless$",
         r"compare ls -1A .* with docker exec %s ls -1A %s" % (R, BAGS_C),
-        r"ground_control\.launch\.py config:=.*/teleop_single_ours\.yaml scenario:=hover record_bag:=true "
+        r"ground_control\.launch\.py config:=.*/teleop_single_ours\.yaml scenario:=hover use_mocap:=false record_bag:=true "
         r"bag_prefix:=svg_s1_%s" % NAME,
         r"wait .*SwarmCommander up \| scenario=hover",
         r"wait .*recording all topics to",
@@ -820,11 +826,33 @@ def test_moved_preexisting_bag_in_capitals(tmp_path):
 
 
 def test_sim_own_topics_are_not_a_real_drone_signal(tmp_path):
-    """L1.4 first run, 24 Nov 2026: the simulator's MAVROS pose, our mocap_bridge's /fmu/in relay and its unanswered
-    /drone_N/pose subscription (a subscriber only) are not a real drone: the session completes."""
+    """L1.4 first run, 24 Nov 2026: the simulator's MAVROS pose and the commander's unanswered /drone_N/pose
+    subscription (a subscriber only) are not a real drone: the session completes."""
     s = Session(tmp_path, {"sim_topics": True})
     assert s.r.returncode == 0, s.why()
     assert "REAL-DRONE/MOCAP SIGNAL" not in s.text("session.log")
+
+
+def test_commander_launched_without_mocap_bridge(tmp_path):
+    """L1.4 second run, 24 Nov 2026: use_mocap defaults to true (ground_control.launch.py:210), so our launch must say
+    use_mocap:=false, else its mocap_bridge publishes /fmu/in/ and both guards rightly refuse."""
+    s = Session(tmp_path, {})
+    assert s.r.returncode == 0, s.why()
+    assert s.has(r"ground_control\.launch\.py .*use_mocap:=false")
+
+
+def test_fmu_in_publisher_is_still_a_real_drone_signal(tmp_path):
+    """Any /fmu/in/ publisher (a mocap_bridge relay into a real PX4) stops the session before the flight, no down."""
+    s = Session(tmp_path, {"mocap_bridge_relay": True})
+    assert s.r.returncode == 67, s.why()
+    assert "/drone_1/fmu/in/vehicle_visual_odometry" in s.text("session.log") and not s.has(r"^sim down")
+
+
+def test_unreadable_topic_list_is_a_signal(tmp_path):
+    """No 'Published topics:' header (format change, docker error): fail closed, exit 67, no down."""
+    s = Session(tmp_path, {"topic_list_empty_on_call": [2]})
+    assert s.r.returncode == 67, s.why()
+    assert "topic list unreadable" in s.text("session.log") and not s.has(r"^sim down")
 
 
 @pytest.mark.parametrize("call,flew", [(1, False), (2, True)])

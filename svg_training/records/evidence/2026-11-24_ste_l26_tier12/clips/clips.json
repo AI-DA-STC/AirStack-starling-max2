@@ -1,0 +1,92 @@
+{
+ "what": "STE L2.6 follow-up clips: the same games on tier 1 and tier 2",
+ "seed": 260000,
+ "games": 8,
+ "max_ticks": 2400,
+ "dry_cpu": false,
+ "tier1_only": true,
+ "rule": "tier 1 only, the first reach and the first hold; tier 2 pending",
+ "gates_sha256": "7cf3fd28ced129f89982e44ebacd8568029fa33c0ba7bafd8a9789f033579a35",
+ "cells": [
+  {
+   "group": "landing_gy_1p15",
+   "guard": "guard_mark_edge",
+   "strike": "strike_low",
+   "games": [
+    0,
+    2
+   ],
+   "why": "tier 1 only: the first reach, the first hold",
+   "outcomes": {
+    "tier1": [
+     1,
+     1,
+     2,
+     2,
+     1,
+     2,
+     2,
+     1
+    ]
+   },
+   "gifs": [
+    {
+     "tier": 1,
+     "game": 0,
+     "outcome": "reach",
+     "end_s": 3.6,
+     "file": "l26_landing_gy_1p15_guard_mark_edge_v_strike_low_tier1_game0_reach.gif",
+     "bytes": 65540
+    },
+    {
+     "tier": 1,
+     "game": 2,
+     "outcome": "hold",
+     "end_s": 2.45,
+     "file": "l26_landing_gy_1p15_guard_mark_edge_v_strike_low_tier1_game2_hold.gif",
+     "bytes": 54457
+    }
+   ]
+  },
+  {
+   "group": "landing_gy_1p15",
+   "guard": "guard_mark_edge",
+   "strike": "strike_straight",
+   "games": [
+    0,
+    2
+   ],
+   "why": "tier 1 only: the first reach, the first hold",
+   "outcomes": {
+    "tier1": [
+     1,
+     1,
+     2,
+     2,
+     1,
+     2,
+     2,
+     1
+    ]
+   },
+   "gifs": [
+    {
+     "tier": 1,
+     "game": 0,
+     "outcome": "reach",
+     "end_s": 2.9000000000000004,
+     "file": "l26_landing_gy_1p15_guard_mark_edge_v_strike_straight_tier1_game0_reach.gif",
+     "bytes": 55047
+    },
+    {
+     "tier": 1,
+     "game": 2,
+     "outcome": "hold",
+     "end_s": 1.9000000000000001,
+     "file": "l26_landing_gy_1p15_guard_mark_edge_v_strike_straight_tier1_game2_hold.gif",
+     "bytes": 39918
+    }
+   ]
+  }
+ ]
+}

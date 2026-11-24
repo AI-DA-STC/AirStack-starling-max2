@@ -1,0 +1,98 @@
+{
+ "base_1p6": {
+  "played": true,
+  "worst_s": 254.06981781602371,
+  "effective_s_at_decision": 7.683403968811035,
+  "measured_s_per_tick": {
+   "tier1_equal": 0.02562581049001892,
+   "tier2_equal": 0.08023661359999096,
+   "tier1_guard_yields": 0.09435509679999086,
+   "tier2_guard_yields": 0.2238858173799963
+  },
+  "reason": "protected"
+ },
+ "landing_1p15": {
+  "played": true,
+  "worst_s": 254.06981781602371,
+  "effective_s_at_decision": 19.45628571510315,
+  "measured_s_per_tick": {
+   "tier1_equal": 0.02562581049001892,
+   "tier2_equal": 0.08023661359999096,
+   "tier1_guard_yields": 0.09435509679999086,
+   "tier2_guard_yields": 0.2238858173799963
+  },
+  "reason": "protected"
+ },
+ "landing_gy_1p15": {
+  "played": true,
+  "worst_s": 763.7781940319692,
+  "effective_s_at_decision": 44.36885333061218,
+  "measured_s_per_tick": {
+   "tier1_equal": 0.028065537590009626,
+   "tier2_equal": 0.08145364708499983,
+   "tier1_guard_yields": 0.09435509679999086,
+   "tier2_guard_yields": 0.2238858173799963
+  },
+  "reason": "protected"
+ },
+ "landing_1p6": {
+  "played": true,
+  "worst_s": 262.8460432200227,
+  "effective_s_at_decision": 140.72490429878235,
+  "measured_s_per_tick": {
+   "tier1_equal": 0.028065537590009626,
+   "tier2_equal": 0.08145364708499983,
+   "tier1_guard_yields": 0.17747028796500672,
+   "tier2_guard_yields": 0.2896418540200102
+  },
+  "reason": "protected"
+ },
+ "base_1p6_copy": {
+  "played": true,
+  "worst_s": 262.8460432200227,
+  "effective_s_at_decision": 154.99168944358826,
+  "measured_s_per_tick": {
+   "tier1_equal": 0.028065537590009626,
+   "tier2_equal": 0.08145364708499983,
+   "tier1_guard_yields": 0.17747028796500672,
+   "tier2_guard_yields": 0.2896418540200102
+  },
+  "reason": "fits what is left of the cap"
+ },
+ "landing_gy_1p15_err": {
+  "played": true,
+  "worst_s": 1121.0691407640406,
+  "effective_s_at_decision": 166.41492795944214,
+  "measured_s_per_tick": {
+   "tier1_equal": 0.028065537590009626,
+   "tier2_equal": 0.08145364708499983,
+   "tier1_guard_yields": 0.17747028796500672,
+   "tier2_guard_yields": 0.2896418540200102
+  },
+  "reason": "fits what is left of the cap"
+ },
+ "landing_1p15_err": {
+  "played": true,
+  "worst_s": 262.8460432200227,
+  "effective_s_at_decision": 264.2600073814392,
+  "measured_s_per_tick": {
+   "tier1_equal": 0.028065537590009626,
+   "tier2_equal": 0.08145364708499983,
+   "tier1_guard_yields": 0.17993549582002744,
+   "tier2_guard_yields": 0.29434677052500774
+  },
+  "reason": "fits what is left of the cap"
+ },
+ "landing_gy_1p6": {
+  "played": true,
+  "worst_s": 1138.2774392280844,
+  "effective_s_at_decision": 288.9471881389618,
+  "measured_s_per_tick": {
+   "tier1_equal": 0.02840895344001183,
+   "tier2_equal": 0.08145364708499983,
+   "tier1_guard_yields": 0.17993549582002744,
+   "tier2_guard_yields": 0.29434677052500774
+  },
+  "reason": "fits what is left of the cap"
+ }
+}

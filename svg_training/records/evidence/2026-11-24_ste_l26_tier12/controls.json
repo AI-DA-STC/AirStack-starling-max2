@@ -1,0 +1,977 @@
+{
+ "tag_fires_t2": {
+  "status": "PASS",
+  "seconds": 6.330151786001807,
+  "detail": "tier 2, l25_landing_gy_tag_10m: 7000 games: 3 tags each, all ended at step 1"
+ },
+ "condition_base_1p6": {
+  "status": "PASS",
+  "differs": [
+   "starling.backend",
+   "starling.physics_params"
+  ],
+  "params_differ_besides_error": [],
+  "state_error": {
+   "state_error_pos_m": 0.0,
+   "state_error_pos_tau_s": 0.0,
+   "state_error_vel_mps": 0.0,
+   "state_error_vel_tau_s": 0.0,
+   "state_error_att_rad": 0.0,
+   "state_error_att_tau_s": 0.0
+  },
+  "tier1_error": false,
+  "detail": "tier 2 v tier 1 game: ['starling.backend', 'starling.physics_params']; tier-1 estimate error off; tier-2 parameters differ from the off file besides state_error_* in []; flies its file (error off)"
+ },
+ "tier1_base_1p6": {
+  "status": "PASS",
+  "tier": 1,
+  "physics_nonfinite": 0,
+  "upsets": 0,
+  "plumbing": {
+   "ctl_paired_starts": {
+    "status": "PASS",
+    "phase": "base_1p6_t1",
+    "detail": "1 start set(s), reference 5aeba7ab2b58"
+   },
+   "tags_one_for_one": {
+    "status": "PASS",
+    "phase": "base_1p6_t1",
+    "detail": "0 games not one for one of 7000"
+   },
+   "no_nonfinite_actions": {
+    "status": "PASS",
+    "phase": "base_1p6_t1",
+    "detail": "0 non-finite actions"
+   }
+  },
+  "known": {
+   "guard_mark_edge v strike_straight (0)": {
+    "equal": true,
+    "detail": "holds 808 v T44 808, reaches 192 v 192; 0 of 1000 games differ (0 in outcome)"
+   },
+   "guard_parked_centre v strike_straight (1)": {
+    "equal": true,
+    "detail": "holds 534 v T44 534, reaches 466 v 466; 0 of 1000 games differ (0 in outcome)"
+   },
+   "guard_parked_ring v strike_flank (2)": {
+    "equal": true,
+    "detail": "holds 477 v T44 477, reaches 523 v 523; 0 of 1000 games differ (0 in outcome)"
+   },
+   "guard_field v strike_flank (3)": {
+    "equal": true,
+    "detail": "holds 808 v T44 808, reaches 192 v 192; 0 of 1000 games differ (0 in outcome)"
+   },
+   "guard_mark_edge v strike_low (4)": {
+    "equal": true,
+    "detail": "holds 844 v T44 844, reaches 156 v 156; 0 of 1000 games differ (0 in outcome)"
+   },
+   "guard_field v strike_straight (5)": {
+    "equal": true,
+    "detail": "holds 716 v T44 716, reaches 284 v 284; 0 of 1000 games differ (0 in outcome)"
+   },
+   "guard_mark_edge v strike_straight (6)": {
+    "equal": true,
+    "detail": "holds 808 v T44 808, reaches 192 v 192; 0 of 1000 games differ (0 in outcome)"
+   }
+  },
+  "detail": "ran starling (tier 1, want 1); non-finite wrench or setpoint 0; upset games 0 (INFO); T44 replay (CUDA tolerances {'replay_count_tol_cuda_games': 10, 'replay_differ_tol_cuda_games': 20}): EQUAL; ctl_paired_starts PASS; tags_one_for_one PASS; no_nonfinite_actions PASS",
+  "seconds": 1.78455066200695
+ },
+ "repeat_t1_base_1p6": {
+  "status": "PASS",
+  "info": false,
+  "holds": [
+   808,
+   808
+  ],
+  "outcome_differs": 0,
+  "outcome_or_end_differs": 0,
+  "detail": "('guard_mark_edge', 'strike_straight'): holds 808 / 808, 0 games end otherwise (0 in outcome or end step)",
+  "seconds": 1.78455066200695
+ },
+ "physics_agreement_base_1p6_launch1": {
+  "status": "PASS",
+  "games": 7000,
+  "drones": 6,
+  "ticks": 20,
+  "max_gap_m": 0.008960835635662079,
+  "limit_m": 0.02,
+  "world": "isaaclab-2.3.2",
+  "reference_world": "TorchRigidBodyWorld",
+  "ops": 81,
+  "pass": true,
+  "detail": "7000 games x 6 drones x 20 ticks on isaaclab-2.3.2: largest gap 0.00896 m (limit 0.02 m)"
+ },
+ "tier2_base_1p6": {
+  "status": "PASS",
+  "tier": 2,
+  "physics_nonfinite": 0,
+  "upsets": 0,
+  "plumbing": {
+   "ctl_paired_starts": {
+    "status": "PASS",
+    "phase": "base_1p6_t2",
+    "detail": "1 start set(s), reference 5aeba7ab2b58"
+   },
+   "tags_one_for_one": {
+    "status": "PASS",
+    "phase": "base_1p6_t2",
+    "detail": "0 games not one for one of 7000"
+   },
+   "no_nonfinite_actions": {
+    "status": "PASS",
+    "phase": "base_1p6_t2",
+    "detail": "0 non-finite actions"
+   }
+  },
+  "known": null,
+  "detail": "ran physics/isaaclab-2.3.2 (tier 2, want 2); non-finite wrench or setpoint 0; upset games 0 (INFO); no known answer; ctl_paired_starts PASS; tags_one_for_one PASS; no_nonfinite_actions PASS",
+  "seconds": 7.024158624000847
+ },
+ "repeat_t2_base_1p6": {
+  "status": "PASS",
+  "info": false,
+  "holds": [
+   801,
+   800
+  ],
+  "outcome_differs": 3,
+  "outcome_or_end_differs": 31,
+  "detail": "('guard_mark_edge', 'strike_straight'): holds 801 / 800, 3 games end otherwise (31 in outcome or end step)",
+  "seconds": 7.024158624000847
+ },
+ "known_t2": {
+  "status": "PASS",
+  "holds": 539,
+  "band": [
+   507,
+   569
+  ],
+  "detail": "guard_parked_centre v strike_straight holds 539 (band 507-569: T53 (L0.13) tier 2 guard_parked_centre v strike_straight 538/1000 (0.507-0.569), T44's first 1,000 starts; T64 (L1.8, v1 at 0) 541)",
+  "seconds": 7.024158624000847
+ },
+ "condition_landing_1p15": {
+  "status": "PASS",
+  "differs": [
+   "starling.backend",
+   "starling.physics_params"
+  ],
+  "params_differ_besides_error": [],
+  "state_error": {
+   "state_error_pos_m": 0.0,
+   "state_error_pos_tau_s": 0.0,
+   "state_error_vel_mps": 0.0,
+   "state_error_vel_tau_s": 0.0,
+   "state_error_att_rad": 0.0,
+   "state_error_att_tau_s": 0.0
+  },
+  "tier1_error": false,
+  "detail": "tier 2 v tier 1 game: ['starling.backend', 'starling.physics_params']; tier-1 estimate error off; tier-2 parameters differ from the off file besides state_error_* in []; flies its file (error off)"
+ },
+ "tier1_landing_1p15": {
+  "status": "PASS",
+  "tier": 1,
+  "physics_nonfinite": 0,
+  "upsets": 0,
+  "plumbing": {
+   "ctl_paired_starts": {
+    "status": "PASS",
+    "phase": "landing_1p15_t1",
+    "detail": "1 start set(s), reference 5aeba7ab2b58"
+   },
+   "tags_one_for_one": {
+    "status": "PASS",
+    "phase": "landing_1p15_t1",
+    "detail": "0 games not one for one of 7000"
+   },
+   "no_nonfinite_actions": {
+    "status": "PASS",
+    "phase": "landing_1p15_t1",
+    "detail": "0 non-finite actions"
+   }
+  },
+  "known": null,
+  "detail": "ran starling (tier 1, want 1); non-finite wrench or setpoint 0; upset games 0 (INFO); no known answer; ctl_paired_starts PASS; tags_one_for_one PASS; no_nonfinite_actions PASS",
+  "seconds": 5.613107518001925
+ },
+ "repeat_t1_landing_1p15": {
+  "status": "PASS",
+  "info": false,
+  "holds": [
+   442,
+   442
+  ],
+  "outcome_differs": 0,
+  "outcome_or_end_differs": 0,
+  "detail": "('guard_mark_edge', 'strike_straight'): holds 442 / 442, 0 games end otherwise (0 in outcome or end step)",
+  "seconds": 5.613107518001925
+ },
+ "physics_agreement_landing_1p15_launch1": {
+  "status": "PASS",
+  "games": 7000,
+  "drones": 6,
+  "ticks": 20,
+  "max_gap_m": 0.008960835635662079,
+  "limit_m": 0.02,
+  "world": "isaaclab-2.3.2",
+  "reference_world": "TorchRigidBodyWorld",
+  "ops": 81,
+  "pass": true,
+  "detail": "7000 games x 6 drones x 20 ticks on isaaclab-2.3.2: largest gap 0.00896 m (limit 0.02 m)"
+ },
+ "tier2_landing_1p15": {
+  "status": "PASS",
+  "tier": 2,
+  "physics_nonfinite": 0,
+  "upsets": 0,
+  "plumbing": {
+   "ctl_paired_starts": {
+    "status": "PASS",
+    "phase": "landing_1p15_t2",
+    "detail": "1 start set(s), reference 5aeba7ab2b58"
+   },
+   "tags_one_for_one": {
+    "status": "PASS",
+    "phase": "landing_1p15_t2",
+    "detail": "0 games not one for one of 7000"
+   },
+   "no_nonfinite_actions": {
+    "status": "PASS",
+    "phase": "landing_1p15_t2",
+    "detail": "0 non-finite actions"
+   }
+  },
+  "known": null,
+  "detail": "ran physics/isaaclab-2.3.2 (tier 2, want 2); non-finite wrench or setpoint 0; upset games 0 (INFO); no known answer; ctl_paired_starts PASS; tags_one_for_one PASS; no_nonfinite_actions PASS",
+  "seconds": 16.290729416999966
+ },
+ "repeat_t2_landing_1p15": {
+  "status": "PASS",
+  "info": false,
+  "holds": [
+   382,
+   382
+  ],
+  "outcome_differs": 4,
+  "outcome_or_end_differs": 21,
+  "detail": "('guard_mark_edge', 'strike_straight'): holds 382 / 382, 4 games end otherwise (21 in outcome or end step)",
+  "seconds": 16.290729416999966
+ },
+ "condition_landing_gy_1p15": {
+  "status": "PASS",
+  "differs": [
+   "starling.backend",
+   "starling.physics_params"
+  ],
+  "params_differ_besides_error": [],
+  "state_error": {
+   "state_error_pos_m": 0.0,
+   "state_error_pos_tau_s": 0.0,
+   "state_error_vel_mps": 0.0,
+   "state_error_vel_tau_s": 0.0,
+   "state_error_att_rad": 0.0,
+   "state_error_att_tau_s": 0.0
+  },
+  "tier1_error": false,
+  "detail": "tier 2 v tier 1 game: ['starling.backend', 'starling.physics_params']; tier-1 estimate error off; tier-2 parameters differ from the off file besides state_error_* in []; flies its file (error off)"
+ },
+ "tier1_landing_gy_1p15": {
+  "status": "PASS",
+  "tier": 1,
+  "physics_nonfinite": 0,
+  "upsets": 0,
+  "plumbing": {
+   "ctl_paired_starts": {
+    "status": "PASS",
+    "phase": "landing_gy_1p15_t1",
+    "detail": "1 start set(s), reference 5aeba7ab2b58"
+   },
+   "tags_one_for_one": {
+    "status": "PASS",
+    "phase": "landing_gy_1p15_t1",
+    "detail": "0 games not one for one of 7000"
+   },
+   "no_nonfinite_actions": {
+    "status": "PASS",
+    "phase": "landing_gy_1p15_t1",
+    "detail": "0 non-finite actions"
+   }
+  },
+  "known": null,
+  "detail": "ran starling (tier 1, want 1); non-finite wrench or setpoint 0; upset games 0 (INFO); no known answer; ctl_paired_starts PASS; tags_one_for_one PASS; no_nonfinite_actions PASS",
+  "seconds": 35.494057593001344
+ },
+ "repeat_t1_landing_gy_1p15": {
+  "status": "PASS",
+  "info": false,
+  "holds": [
+   368,
+   368
+  ],
+  "outcome_differs": 0,
+  "outcome_or_end_differs": 0,
+  "detail": "('guard_mark_edge', 'strike_straight'): holds 368 / 368, 0 games end otherwise (0 in outcome or end step)",
+  "seconds": 35.494057593001344
+ },
+ "physics_agreement_landing_gy_1p15_launch1": {
+  "status": "PASS",
+  "games": 7000,
+  "drones": 6,
+  "ticks": 20,
+  "max_gap_m": 0.008960835635662079,
+  "limit_m": 0.02,
+  "world": "isaaclab-2.3.2",
+  "reference_world": "TorchRigidBodyWorld",
+  "ops": 81,
+  "pass": true,
+  "detail": "7000 games x 6 drones x 20 ticks on isaaclab-2.3.2: largest gap 0.00896 m (limit 0.02 m)"
+ },
+ "tier2_landing_gy_1p15": {
+  "status": "PASS",
+  "tier": 2,
+  "physics_nonfinite": 0,
+  "upsets": 0,
+  "plumbing": {
+   "ctl_paired_starts": {
+    "status": "PASS",
+    "phase": "landing_gy_1p15_t2",
+    "detail": "1 start set(s), reference 5aeba7ab2b58"
+   },
+   "tags_one_for_one": {
+    "status": "PASS",
+    "phase": "landing_gy_1p15_t2",
+    "detail": "0 games not one for one of 7000"
+   },
+   "no_nonfinite_actions": {
+    "status": "PASS",
+    "phase": "landing_gy_1p15_t2",
+    "detail": "0 non-finite actions"
+   }
+  },
+  "known": null,
+  "detail": "ran physics/isaaclab-2.3.2 (tier 2, want 2); non-finite wrench or setpoint 0; upset games 0 (INFO); no known answer; ctl_paired_starts PASS; tags_one_for_one PASS; no_nonfinite_actions PASS",
+  "seconds": 57.92837080400204
+ },
+ "repeat_t2_landing_gy_1p15": {
+  "status": "PASS",
+  "info": false,
+  "holds": [
+   307,
+   307
+  ],
+  "outcome_differs": 0,
+  "outcome_or_end_differs": 29,
+  "detail": "('guard_mark_edge', 'strike_straight'): holds 307 / 307, 0 games end otherwise (29 in outcome or end step)",
+  "seconds": 57.92837080400204
+ },
+ "condition_landing_1p6": {
+  "status": "PASS",
+  "differs": [
+   "starling.backend",
+   "starling.physics_params"
+  ],
+  "params_differ_besides_error": [],
+  "state_error": {
+   "state_error_pos_m": 0.0,
+   "state_error_pos_tau_s": 0.0,
+   "state_error_vel_mps": 0.0,
+   "state_error_vel_tau_s": 0.0,
+   "state_error_att_rad": 0.0,
+   "state_error_att_tau_s": 0.0
+  },
+  "tier1_error": false,
+  "detail": "tier 2 v tier 1 game: ['starling.backend', 'starling.physics_params']; tier-1 estimate error off; tier-2 parameters differ from the off file besides state_error_* in []; flies its file (error off)"
+ },
+ "tier1_landing_1p6": {
+  "status": "PASS",
+  "tier": 1,
+  "physics_nonfinite": 0,
+  "upsets": 0,
+  "plumbing": {
+   "ctl_paired_starts": {
+    "status": "PASS",
+    "phase": "landing_1p6_t1",
+    "detail": "1 start set(s), reference 5aeba7ab2b58"
+   },
+   "tags_one_for_one": {
+    "status": "PASS",
+    "phase": "landing_1p6_t1",
+    "detail": "0 games not one for one of 7000"
+   },
+   "no_nonfinite_actions": {
+    "status": "PASS",
+    "phase": "landing_1p6_t1",
+    "detail": "0 non-finite actions"
+   }
+  },
+  "known": {
+   "holds": [
+    802,
+    534,
+    477,
+    807,
+    895,
+    716
+   ],
+   "expected": [
+    802,
+    534,
+    477,
+    807,
+    895,
+    716
+   ],
+   "tol": 10
+  },
+  "detail": "ran starling (tier 1, want 1); non-finite wrench or setpoint 0; upset games 0 (INFO); holds [802, 534, 477, 807, 895, 716] v T70 (L2.5) group landing, CPU, same starts and seed [802, 534, 477, 807, 895, 716] (+-10): within; ctl_paired_starts PASS; tags_one_for_one PASS; no_nonfinite_actions PASS",
+  "seconds": 4.301383705002081
+ },
+ "repeat_t1_landing_1p6": {
+  "status": "PASS",
+  "info": false,
+  "holds": [
+   802,
+   802
+  ],
+  "outcome_differs": 0,
+  "outcome_or_end_differs": 0,
+  "detail": "('guard_mark_edge', 'strike_straight'): holds 802 / 802, 0 games end otherwise (0 in outcome or end step)",
+  "seconds": 4.301383705002081
+ },
+ "physics_agreement_landing_1p6_launch1": {
+  "status": "PASS",
+  "games": 7000,
+  "drones": 6,
+  "ticks": 20,
+  "max_gap_m": 0.008960835635662079,
+  "limit_m": 0.02,
+  "world": "isaaclab-2.3.2",
+  "reference_world": "TorchRigidBodyWorld",
+  "ops": 81,
+  "pass": true,
+  "detail": "7000 games x 6 drones x 20 ticks on isaaclab-2.3.2: largest gap 0.00896 m (limit 0.02 m)"
+ },
+ "tier2_landing_1p6": {
+  "status": "PASS",
+  "tier": 2,
+  "physics_nonfinite": 0,
+  "upsets": 0,
+  "plumbing": {
+   "ctl_paired_starts": {
+    "status": "PASS",
+    "phase": "landing_1p6_t2",
+    "detail": "1 start set(s), reference 5aeba7ab2b58"
+   },
+   "tags_one_for_one": {
+    "status": "PASS",
+    "phase": "landing_1p6_t2",
+    "detail": "0 games not one for one of 7000"
+   },
+   "no_nonfinite_actions": {
+    "status": "PASS",
+    "phase": "landing_1p6_t2",
+    "detail": "0 non-finite actions"
+   }
+  },
+  "known": null,
+  "detail": "ran physics/isaaclab-2.3.2 (tier 2, want 2); non-finite wrench or setpoint 0; upset games 0 (INFO); no known answer; ctl_paired_starts PASS; tags_one_for_one PASS; no_nonfinite_actions PASS",
+  "seconds": 7.099608190001163
+ },
+ "repeat_t2_landing_1p6": {
+  "status": "PASS",
+  "info": false,
+  "holds": [
+   777,
+   776
+  ],
+  "outcome_differs": 1,
+  "outcome_or_end_differs": 32,
+  "detail": "('guard_mark_edge', 'strike_straight'): holds 777 / 776, 1 games end otherwise (32 in outcome or end step)",
+  "seconds": 7.099608190001163
+ },
+ "condition_base_1p6_copy": {
+  "status": "PASS",
+  "differs": [
+   "starling.backend",
+   "starling.physics_params"
+  ],
+  "params_differ_besides_error": [],
+  "state_error": {
+   "state_error_pos_m": 0.0,
+   "state_error_pos_tau_s": 0.0,
+   "state_error_vel_mps": 0.0,
+   "state_error_vel_tau_s": 0.0,
+   "state_error_att_rad": 0.0,
+   "state_error_att_tau_s": 0.0
+  },
+  "tier1_error": false,
+  "detail": "tier 2 v tier 1 game: ['starling.backend', 'starling.physics_params']; tier-1 estimate error off; tier-2 parameters differ from the off file besides state_error_* in []; flies its file (error off)"
+ },
+ "tier1_base_1p6_copy": {
+  "status": "PASS",
+  "tier": 1,
+  "physics_nonfinite": 0,
+  "upsets": 0,
+  "plumbing": {
+   "ctl_paired_starts": {
+    "status": "PASS",
+    "phase": "base_1p6_copy_t1",
+    "detail": "1 start set(s), reference 5aeba7ab2b58"
+   },
+   "tags_one_for_one": {
+    "status": "PASS",
+    "phase": "base_1p6_copy_t1",
+    "detail": "0 games not one for one of 7000"
+   },
+   "no_nonfinite_actions": {
+    "status": "PASS",
+    "phase": "base_1p6_copy_t1",
+    "detail": "0 non-finite actions"
+   }
+  },
+  "known": {
+   "guard_mark_edge v strike_straight (0)": {
+    "equal": true,
+    "detail": "holds 808 v T44 808, reaches 192 v 192; 0 of 1000 games differ (0 in outcome)"
+   },
+   "guard_parked_centre v strike_straight (1)": {
+    "equal": true,
+    "detail": "holds 534 v T44 534, reaches 466 v 466; 0 of 1000 games differ (0 in outcome)"
+   },
+   "guard_parked_ring v strike_flank (2)": {
+    "equal": true,
+    "detail": "holds 477 v T44 477, reaches 523 v 523; 0 of 1000 games differ (0 in outcome)"
+   },
+   "guard_field v strike_flank (3)": {
+    "equal": true,
+    "detail": "holds 808 v T44 808, reaches 192 v 192; 0 of 1000 games differ (0 in outcome)"
+   },
+   "guard_mark_edge v strike_low (4)": {
+    "equal": true,
+    "detail": "holds 844 v T44 844, reaches 156 v 156; 0 of 1000 games differ (0 in outcome)"
+   },
+   "guard_field v strike_straight (5)": {
+    "equal": true,
+    "detail": "holds 716 v T44 716, reaches 284 v 284; 0 of 1000 games differ (0 in outcome)"
+   },
+   "guard_mark_edge v strike_straight (6)": {
+    "equal": true,
+    "detail": "holds 808 v T44 808, reaches 192 v 192; 0 of 1000 games differ (0 in outcome)"
+   }
+  },
+  "detail": "ran starling (tier 1, want 1); non-finite wrench or setpoint 0; upset games 0 (INFO); T44 replay (CUDA tolerances {'replay_count_tol_cuda_games': 10, 'replay_differ_tol_cuda_games': 20}): EQUAL; ctl_paired_starts PASS; tags_one_for_one PASS; no_nonfinite_actions PASS",
+  "seconds": 1.7046564289994421
+ },
+ "repeat_t1_base_1p6_copy": {
+  "status": "PASS",
+  "info": false,
+  "holds": [
+   808,
+   808
+  ],
+  "outcome_differs": 0,
+  "outcome_or_end_differs": 0,
+  "detail": "('guard_mark_edge', 'strike_straight'): holds 808 / 808, 0 games end otherwise (0 in outcome or end step)",
+  "seconds": 1.7046564289994421
+ },
+ "physics_agreement_base_1p6_copy_launch1": {
+  "status": "PASS",
+  "games": 7000,
+  "drones": 6,
+  "ticks": 20,
+  "max_gap_m": 0.008960835635662079,
+  "limit_m": 0.02,
+  "world": "isaaclab-2.3.2",
+  "reference_world": "TorchRigidBodyWorld",
+  "ops": 81,
+  "pass": true,
+  "detail": "7000 games x 6 drones x 20 ticks on isaaclab-2.3.2: largest gap 0.00896 m (limit 0.02 m)"
+ },
+ "tier2_base_1p6_copy": {
+  "status": "PASS",
+  "tier": 2,
+  "physics_nonfinite": 0,
+  "upsets": 0,
+  "plumbing": {
+   "ctl_paired_starts": {
+    "status": "PASS",
+    "phase": "base_1p6_copy_t2",
+    "detail": "1 start set(s), reference 5aeba7ab2b58"
+   },
+   "tags_one_for_one": {
+    "status": "PASS",
+    "phase": "base_1p6_copy_t2",
+    "detail": "0 games not one for one of 7000"
+   },
+   "no_nonfinite_actions": {
+    "status": "PASS",
+    "phase": "base_1p6_copy_t2",
+    "detail": "0 non-finite actions"
+   }
+  },
+  "known": null,
+  "detail": "ran physics/isaaclab-2.3.2 (tier 2, want 2); non-finite wrench or setpoint 0; upset games 0 (INFO); no known answer; ctl_paired_starts PASS; tags_one_for_one PASS; no_nonfinite_actions PASS",
+  "seconds": 6.83189756199863
+ },
+ "repeat_t2_base_1p6_copy": {
+  "status": "PASS",
+  "info": false,
+  "holds": [
+   801,
+   800
+  ],
+  "outcome_differs": 3,
+  "outcome_or_end_differs": 31,
+  "detail": "('guard_mark_edge', 'strike_straight'): holds 801 / 800, 3 games end otherwise (31 in outcome or end step)",
+  "seconds": 6.83189756199863
+ },
+ "condition_landing_gy_1p15_err": {
+  "status": "PASS",
+  "differs": [
+   "starling.backend",
+   "starling.physics_params",
+   "estimate_error.enabled",
+   "estimate_error.pos_sigma_m",
+   "estimate_error.pos_tau_s",
+   "estimate_error.vel_sigma_mps",
+   "estimate_error.vel_tau_s"
+  ],
+  "params_differ_besides_error": [],
+  "state_error": {
+   "state_error_pos_m": 0.0099,
+   "state_error_pos_tau_s": 1.2,
+   "state_error_vel_mps": 0.022,
+   "state_error_vel_tau_s": 1.3,
+   "state_error_att_rad": 0.0027,
+   "state_error_att_tau_s": 2.0
+  },
+  "tier1_error": true,
+  "detail": "tier 2 v tier 1 game: ['starling.backend', 'starling.physics_params', 'estimate_error.enabled', 'estimate_error.pos_sigma_m', 'estimate_error.pos_tau_s', 'estimate_error.vel_sigma_mps', 'estimate_error.vel_tau_s']; tier-1 estimate error on; tier-2 parameters differ from the off file besides state_error_* in []; flies its file (error on)"
+ },
+ "tier1_landing_gy_1p15_err": {
+  "status": "PASS",
+  "tier": 1,
+  "physics_nonfinite": 0,
+  "upsets": 0,
+  "plumbing": {
+   "ctl_paired_starts": {
+    "status": "PASS",
+    "phase": "landing_gy_1p15_err_t1",
+    "detail": "1 start set(s), reference 5aeba7ab2b58"
+   },
+   "tags_one_for_one": {
+    "status": "PASS",
+    "phase": "landing_gy_1p15_err_t1",
+    "detail": "0 games not one for one of 7000"
+   },
+   "no_nonfinite_actions": {
+    "status": "PASS",
+    "phase": "landing_gy_1p15_err_t1",
+    "detail": "0 non-finite actions"
+   }
+  },
+  "known": null,
+  "detail": "ran starling (tier 1, want 1); non-finite wrench or setpoint 0; upset games 0 (INFO); no known answer; ctl_paired_starts PASS; tags_one_for_one PASS; no_nonfinite_actions PASS",
+  "seconds": 35.987099164005485
+ },
+ "repeat_t1_landing_gy_1p15_err": {
+  "status": "INFO",
+  "info": true,
+  "holds": [
+   379,
+   380
+  ],
+  "outcome_differs": 23,
+  "outcome_or_end_differs": 659,
+  "detail": "('guard_mark_edge', 'strike_straight'): holds 379 / 380, 23 games end otherwise (659 in outcome or end step) (INFO: each copy draws its own estimate error)",
+  "seconds": 35.987099164005485
+ },
+ "physics_agreement_landing_gy_1p15_err_launch1": {
+  "status": "PASS",
+  "games": 7000,
+  "drones": 6,
+  "ticks": 20,
+  "max_gap_m": 0.008085142821073532,
+  "limit_m": 0.02,
+  "world": "isaaclab-2.3.2",
+  "reference_world": "TorchRigidBodyWorld",
+  "ops": 81,
+  "pass": true,
+  "detail": "7000 games x 6 drones x 20 ticks on isaaclab-2.3.2: largest gap 0.00809 m (limit 0.02 m)"
+ },
+ "tier2_landing_gy_1p15_err": {
+  "status": "PASS",
+  "tier": 2,
+  "physics_nonfinite": 0,
+  "upsets": 0,
+  "plumbing": {
+   "ctl_paired_starts": {
+    "status": "PASS",
+    "phase": "landing_gy_1p15_err_t2",
+    "detail": "1 start set(s), reference 5aeba7ab2b58"
+   },
+   "tags_one_for_one": {
+    "status": "PASS",
+    "phase": "landing_gy_1p15_err_t2",
+    "detail": "0 games not one for one of 7000"
+   },
+   "no_nonfinite_actions": {
+    "status": "PASS",
+    "phase": "landing_gy_1p15_err_t2",
+    "detail": "0 non-finite actions"
+   }
+  },
+  "known": null,
+  "detail": "ran physics/isaaclab-2.3.2 (tier 2, want 2); non-finite wrench or setpoint 0; upset games 0 (INFO); no known answer; ctl_paired_starts PASS; tags_one_for_one PASS; no_nonfinite_actions PASS",
+  "seconds": 58.86935410500155
+ },
+ "repeat_t2_landing_gy_1p15_err": {
+  "status": "INFO",
+  "info": true,
+  "holds": [
+   300,
+   296
+  ],
+  "outcome_differs": 32,
+  "outcome_or_end_differs": 722,
+  "detail": "('guard_mark_edge', 'strike_straight'): holds 300 / 296, 32 games end otherwise (722 in outcome or end step) (INFO: each copy draws its own estimate error)",
+  "seconds": 58.86935410500155
+ },
+ "condition_landing_1p15_err": {
+  "status": "PASS",
+  "differs": [
+   "starling.backend",
+   "starling.physics_params",
+   "estimate_error.enabled",
+   "estimate_error.pos_sigma_m",
+   "estimate_error.pos_tau_s",
+   "estimate_error.vel_sigma_mps",
+   "estimate_error.vel_tau_s"
+  ],
+  "params_differ_besides_error": [],
+  "state_error": {
+   "state_error_pos_m": 0.0099,
+   "state_error_pos_tau_s": 1.2,
+   "state_error_vel_mps": 0.022,
+   "state_error_vel_tau_s": 1.3,
+   "state_error_att_rad": 0.0027,
+   "state_error_att_tau_s": 2.0
+  },
+  "tier1_error": true,
+  "detail": "tier 2 v tier 1 game: ['starling.backend', 'starling.physics_params', 'estimate_error.enabled', 'estimate_error.pos_sigma_m', 'estimate_error.pos_tau_s', 'estimate_error.vel_sigma_mps', 'estimate_error.vel_tau_s']; tier-1 estimate error on; tier-2 parameters differ from the off file besides state_error_* in []; flies its file (error on)"
+ },
+ "tier1_landing_1p15_err": {
+  "status": "PASS",
+  "tier": 1,
+  "physics_nonfinite": 0,
+  "upsets": 0,
+  "plumbing": {
+   "ctl_paired_starts": {
+    "status": "PASS",
+    "phase": "landing_1p15_err_t1",
+    "detail": "1 start set(s), reference 5aeba7ab2b58"
+   },
+   "tags_one_for_one": {
+    "status": "PASS",
+    "phase": "landing_1p15_err_t1",
+    "detail": "0 games not one for one of 7000"
+   },
+   "no_nonfinite_actions": {
+    "status": "PASS",
+    "phase": "landing_1p15_err_t1",
+    "detail": "0 non-finite actions"
+   }
+  },
+  "known": null,
+  "detail": "ran starling (tier 1, want 1); non-finite wrench or setpoint 0; upset games 0 (INFO); no known answer; ctl_paired_starts PASS; tags_one_for_one PASS; no_nonfinite_actions PASS",
+  "seconds": 5.681790688002366
+ },
+ "repeat_t1_landing_1p15_err": {
+  "status": "INFO",
+  "info": true,
+  "holds": [
+   429,
+   431
+  ],
+  "outcome_differs": 28,
+  "outcome_or_end_differs": 663,
+  "detail": "('guard_mark_edge', 'strike_straight'): holds 429 / 431, 28 games end otherwise (663 in outcome or end step) (INFO: each copy draws its own estimate error)",
+  "seconds": 5.681790688002366
+ },
+ "physics_agreement_landing_1p15_err_launch1": {
+  "status": "PASS",
+  "games": 7000,
+  "drones": 6,
+  "ticks": 20,
+  "max_gap_m": 0.008085142821073532,
+  "limit_m": 0.02,
+  "world": "isaaclab-2.3.2",
+  "reference_world": "TorchRigidBodyWorld",
+  "ops": 81,
+  "pass": true,
+  "detail": "7000 games x 6 drones x 20 ticks on isaaclab-2.3.2: largest gap 0.00809 m (limit 0.02 m)"
+ },
+ "tier2_landing_1p15_err": {
+  "status": "PASS",
+  "tier": 2,
+  "physics_nonfinite": 0,
+  "upsets": 0,
+  "plumbing": {
+   "ctl_paired_starts": {
+    "status": "PASS",
+    "phase": "landing_1p15_err_t2",
+    "detail": "1 start set(s), reference 5aeba7ab2b58"
+   },
+   "tags_one_for_one": {
+    "status": "PASS",
+    "phase": "landing_1p15_err_t2",
+    "detail": "0 games not one for one of 7000"
+   },
+   "no_nonfinite_actions": {
+    "status": "PASS",
+    "phase": "landing_1p15_err_t2",
+    "detail": "0 non-finite actions"
+   }
+  },
+  "known": null,
+  "detail": "ran physics/isaaclab-2.3.2 (tier 2, want 2); non-finite wrench or setpoint 0; upset games 0 (INFO); no known answer; ctl_paired_starts PASS; tags_one_for_one PASS; no_nonfinite_actions PASS",
+  "seconds": 16.046633867998025
+ },
+ "repeat_t2_landing_1p15_err": {
+  "status": "INFO",
+  "info": true,
+  "holds": [
+   380,
+   381
+  ],
+  "outcome_differs": 43,
+  "outcome_or_end_differs": 748,
+  "detail": "('guard_mark_edge', 'strike_straight'): holds 380 / 381, 43 games end otherwise (748 in outcome or end step) (INFO: each copy draws its own estimate error)",
+  "seconds": 16.046633867998025
+ },
+ "condition_landing_gy_1p6": {
+  "status": "PASS",
+  "differs": [
+   "starling.backend",
+   "starling.physics_params"
+  ],
+  "params_differ_besides_error": [],
+  "state_error": {
+   "state_error_pos_m": 0.0,
+   "state_error_pos_tau_s": 0.0,
+   "state_error_vel_mps": 0.0,
+   "state_error_vel_tau_s": 0.0,
+   "state_error_att_rad": 0.0,
+   "state_error_att_tau_s": 0.0
+  },
+  "tier1_error": false,
+  "detail": "tier 2 v tier 1 game: ['starling.backend', 'starling.physics_params']; tier-1 estimate error off; tier-2 parameters differ from the off file besides state_error_* in []; flies its file (error off)"
+ },
+ "tier1_landing_gy_1p6": {
+  "status": "PASS",
+  "tier": 1,
+  "physics_nonfinite": 0,
+  "upsets": 0,
+  "plumbing": {
+   "ctl_paired_starts": {
+    "status": "PASS",
+    "phase": "landing_gy_1p6_t1",
+    "detail": "1 start set(s), reference 5aeba7ab2b58"
+   },
+   "tags_one_for_one": {
+    "status": "PASS",
+    "phase": "landing_gy_1p6_t1",
+    "detail": "0 games not one for one of 7000"
+   },
+   "no_nonfinite_actions": {
+    "status": "PASS",
+    "phase": "landing_gy_1p6_t1",
+    "detail": "0 non-finite actions"
+   }
+  },
+  "known": {
+   "holds": [
+    803,
+    534,
+    477,
+    808,
+    902,
+    716
+   ],
+   "expected": [
+    803,
+    534,
+    477,
+    808,
+    902,
+    716
+   ],
+   "tol": 10
+  },
+  "detail": "ran starling (tier 1, want 1); non-finite wrench or setpoint 0; upset games 0 (INFO); holds [803, 534, 477, 808, 902, 716] v T70 (L2.5) group landing_gy, CPU, same starts and seed [803, 534, 477, 808, 902, 716] (+-10): within; ctl_paired_starts PASS; tags_one_for_one PASS; no_nonfinite_actions PASS",
+  "seconds": 4.333382718003122
+ },
+ "repeat_t1_landing_gy_1p6": {
+  "status": "PASS",
+  "info": false,
+  "holds": [
+   803,
+   803
+  ],
+  "outcome_differs": 0,
+  "outcome_or_end_differs": 0,
+  "detail": "('guard_mark_edge', 'strike_straight'): holds 803 / 803, 0 games end otherwise (0 in outcome or end step)",
+  "seconds": 4.333382718003122
+ },
+ "physics_agreement_landing_gy_1p6_launch1": {
+  "status": "PASS",
+  "games": 7000,
+  "drones": 6,
+  "ticks": 20,
+  "max_gap_m": 0.008960835635662079,
+  "limit_m": 0.02,
+  "world": "isaaclab-2.3.2",
+  "reference_world": "TorchRigidBodyWorld",
+  "ops": 81,
+  "pass": true,
+  "detail": "7000 games x 6 drones x 20 ticks on isaaclab-2.3.2: largest gap 0.00896 m (limit 0.02 m)"
+ },
+ "tier2_landing_gy_1p6": {
+  "status": "PASS",
+  "tier": 2,
+  "physics_nonfinite": 0,
+  "upsets": 0,
+  "plumbing": {
+   "ctl_paired_starts": {
+    "status": "PASS",
+    "phase": "landing_gy_1p6_t2",
+    "detail": "1 start set(s), reference 5aeba7ab2b58"
+   },
+   "tags_one_for_one": {
+    "status": "PASS",
+    "phase": "landing_gy_1p6_t2",
+    "detail": "0 games not one for one of 7000"
+   },
+   "no_nonfinite_actions": {
+    "status": "PASS",
+    "phase": "landing_gy_1p6_t2",
+    "detail": "0 non-finite actions"
+   }
+  },
+  "known": null,
+  "detail": "ran physics/isaaclab-2.3.2 (tier 2, want 2); non-finite wrench or setpoint 0; upset games 0 (INFO); no known answer; ctl_paired_starts PASS; tags_one_for_one PASS; no_nonfinite_actions PASS",
+  "seconds": 7.093343751999782
+ },
+ "repeat_t2_landing_gy_1p6": {
+  "status": "PASS",
+  "info": false,
+  "holds": [
+   781,
+   780
+  ],
+  "outcome_differs": 1,
+  "outcome_or_end_differs": 25,
+  "detail": "('guard_mark_edge', 'strike_straight'): holds 781 / 780, 1 games end otherwise (25 in outcome or end step)",
+  "seconds": 7.093343751999782
+ }
+}

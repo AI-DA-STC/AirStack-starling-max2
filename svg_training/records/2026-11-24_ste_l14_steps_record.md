@@ -28,8 +28,12 @@ simulated drones stay on the ground).
 36 of 36 planned steps reached (x, y and z; 0.5, 1.0 and 2.0 m/s; each + step followed by its − twin; 2.0 s of zero
 before each, 3.0 s hold, 20 Hz), landed (`drone_1 IDLE z=-0.05 m`), virtual stick exit 0, simulator brought down and
 checked down. Step 6 (−z) was not flown: the floor guard predicted a bottom of 0.52 m, below the 0.80 m floor
-(`FLOOR GUARD: step 6 not flown`); `steps_flown.json` marks it skipped. Height at step onset ranged 1.12–14.12 m: the
-z steps climbed faster than they descended, likely the airframe's descent speed limit (a hypothesis; L1.5 reads the logs).
+(`FLOOR GUARD: step 6 not flown`); `steps_flown.json` marks it skipped. Height at step onset ranged 1.12–14.12 m.
+**Correction (24 Nov 2026, L1.5 extraction on this bag):** the first reading here (climb faster than descent, a descent
+speed limit) is wrong. Climb and descent are symmetric (both settle at 1.5 m/s on PX4's side); the heights come from the
+simulator's PX4 clock running about 2.5 times the wall clock (2.38–2.57 per step), so each 3 s wall hold flies about
+7.5 s on PX4's clock (about 11 m at 1.5 m/s); the early 1.12 → 2.63 m shift is step 5 flown without its skipped twin.
+Source: `ste_learning/drafts/L1_5_SPEC.md` (branch `l15-build`); reviewed with L1.5.
 Files: the bag (`svg_s1_2026-11-24_ste_l14_steps_r3_20261124_034955`, mcap) and the drone_1 PX4 log
 (`drone_1_sysid2_03_49_17.ulg`) in `runs/2026-11-24_ste_l14_steps_r3/` (568 MB, not in git; sha256 in the evidence
 folder); a copy of the bag in `~/flight_logs/sim/_stack/`.

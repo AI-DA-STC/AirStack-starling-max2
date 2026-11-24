@@ -19,6 +19,7 @@ Record (from a tree of the commit before the slice; the archive goes outside the
     cd svg_training && PYTHONPATH=/tmp/l3_old/svg_training/source python tests/test_ste_l3_velocity_golden.py --write-golden
 """
 import json
+import os
 import pathlib
 import sys
 
@@ -77,11 +78,25 @@ def golden_values(side: str) -> dict:
 SIDES = ("guard", "strike")
 
 
+def fresh_process_values(side: str) -> dict:
+    """``golden_values`` computed in a fresh Python process (24 Nov 2026): in the full suite an earlier module leaves
+    global torch state behind (threads, and more than threads: a thread pin alone did not make the decimals equal), so
+    the bit-for-bit comparison runs where nothing else has run."""
+    import subprocess
+
+    from _proc import child_env, child_python
+    env = {**child_env("source" + os.pathsep + "tests"), "CUDA_VISIBLE_DEVICES": ""}
+    r = subprocess.run([child_python(), str(pathlib.Path(__file__)), "--print-values", side], cwd=ROOT, env=env,
+                       capture_output=True, text=True, timeout=600)
+    assert r.returncode == 0, r.stderr[-2000:]
+    return json.loads(r.stdout.strip().splitlines()[-1])
+
+
 @pytest.mark.parametrize("side", SIDES)
 def test_the_velocity_route_trains_as_before_the_l3_slice(side):
     data = json.loads(GOLDEN.read_text())
     record = data[side]
-    now = golden_values(side)
+    now = fresh_process_values(side)
     assert now["whole"] == record["whole"]
     assert set(now["decimal"]) == set(record["decimal"])
     if torch.backends.cpu.get_cpu_capability() == data["_capability"]:
@@ -90,6 +105,9 @@ def test_the_velocity_route_trains_as_before_the_l3_slice(side):
     for k, v in record["decimal"].items():
         assert now["decimal"][k] == pytest.approx(v, rel=RTOL, abs=ATOL), k
 
+
+if __name__ == "__main__" and "--print-values" in sys.argv:
+    print(json.dumps(golden_values(sys.argv[sys.argv.index("--print-values") + 1])))
 
 if __name__ == "__main__" and "--write-golden" in sys.argv:
     data = {side: golden_values(side) for side in SIDES}

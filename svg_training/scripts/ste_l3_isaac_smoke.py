@@ -264,8 +264,8 @@ class Smoke:
         if any(v["status"] != PASS for v in self.controls.values()):
             return self.fail(NONFINITE if nonfinite else FAIL)
         self.save_controls()
-        what = ("STE L3.1 Isaac smoke of the tier-2 skills fixed-choice replay (scripts/ste_l3_isaac_smoke.py); observed "
-                "in the training simulator")
+        what = ("STE L3.1 Isaac smoke of the tier-2 skills fixed-choice replay (scripts/ste_l3_isaac_smoke.py); "
+                "observed in the training simulator")
         result = {"what": what, "status": STATUS,
                   "tier": ("reference world (--dry-cpu, not of record)" if self.a.dry_cpu else
                            "tier 2, Isaac Lab rigid-body Starling"),

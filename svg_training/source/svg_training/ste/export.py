@@ -27,14 +27,16 @@ import numpy as np
 import torch
 from torch import nn
 
+from ..core.game_config import TICK_S
 from ..core.observations import INTERFACE_VERSION, OBS_DIM
-from . import exploit, skills
+from . import exploit, skills, sweep
 
 STATUS = "pipeline check, not for flight"
 SCHEMAS = {"velocity": "ste-check-velocity-0", "skills": "ste-check-skills-0"}
 GOLDEN_TOL = 1e-6                 # absolute: the ONNX runtimes round differently from torch (not bit for bit)
 OPSET = 17
 GOLDEN_GAMES = 8
+GOLDEN_SEED = 5                   # the scripted game's seed of the golden observations
 GOLDEN_TICKS = 30                 # ticks of scripted play before the golden observations are taken (some drones out)
 SCRIPTED = exploit.ROOT / "source" / "svg_training" / "opponents" / "scripted.py"
 
@@ -58,13 +60,14 @@ class FoldedPolicy(nn.Module):
         return self.net(x)
 
 
-def golden_observations(gates, side: str, games: int = GOLDEN_GAMES, seed: int = 5) -> torch.Tensor:
+def golden_observations(gates, side: str, games: int = GOLDEN_GAMES, seed: int = GOLDEN_SEED) -> torch.Tensor:
     """Real observations of ``side`` [games, M, 71] after ``GOLDEN_TICKS`` ticks of scripted play in the gate file's
     game (CPU), where some drones may be out."""
     from ..opponents.scripted import make_strategy
     from .exploit_train import TrainGame
     cfg = exploit.variant_cfg(gates, "base")
-    game = TrainGame(cfg, games, 3, 3, device="cpu", seed=seed)
+    guards, strikes = sweep.parse_size(gates.run["size"])
+    game = TrainGame(cfg, games, guards, strikes, device="cpu", seed=seed)
     obs = game.reset()
     g = make_strategy("guard_mark_edge", "guard", cfg, games, "cpu", 0)
     s = make_strategy("strike_straight", "strike", cfg, games, "cpu", 0)
@@ -139,6 +142,8 @@ def _interface(gates, side: str, route: str, files: list, golden: list, d) -> st
                                 text=True, check=True).stdout.strip()
     except (OSError, subprocess.CalledProcessError):
         commit = "unknown"
+    hold = int(gates.trainer["decision_ticks"])
+    guards, strikes = sweep.parse_size(gates.run["size"])
     lines = [f'# Exported by ste/export.py: {STATUS}. Observed in the training simulator; nothing here authorises '
              'a flight.',
              f'policy_schema = "{SCHEMAS[route]}"', f'status = "{STATUS}"',
@@ -150,7 +155,7 @@ def _interface(gates, side: str, route: str, files: list, golden: list, d) -> st
               if route == "velocity" else
               'action = "logits over [free, team strategies] then [drone skills]; the leader\'s team head, else each '
               'drone\'s drone skill (skills below)"'),
-             "decision_s = 0.6", "tick_s = 0.05", f"hold_ticks = {int(gates.trainer['decision_ticks'])}",
+             f"decision_s = {hold * TICK_S:g}", f"tick_s = {TICK_S:g}", f"hold_ticks = {hold}",
              f'team = "{side}"', f"slots = {len(files)}", f"tag_radius_m = {float(cfg.tag.radius_m)}",
              f'filter_share = "{cfg.filter.share}"', f'game_file = "{game.file}"', f'game_sha256 = "{game.sha256}"',
              f'drone_model_file = "{cfg.starling.params}"', f'drone_model_sha256 = "{sha256_file(params)}"',
@@ -163,8 +168,8 @@ def _interface(gates, side: str, route: str, files: list, golden: list, d) -> st
                   f"drone_skills = {_arr(meta['drone_skills'])}", f"free_index = {meta['free_index']}",
                   'leader_rule = "the lowest-index live drone at the decision tick chooses the team head (the last '
                   'slot when none is live)"',
-                  'hold_rule = "one choice every 12 ticks (0.6 s), held; the chosen skills run closed loop every '
-                  'tick"', "", "[team_size]", "guards = 3", "strikes = 3"]
+                  f'hold_rule = "one choice every {hold} ticks ({hold * TICK_S:g} s), held; the chosen skills run '
+                  'closed loop every tick"', "", "[team_size]", f"guards = {guards}", f"strikes = {strikes}"]
     for f in files:
         lines += ["", "[[files]]", f"slot = {f['slot']}", f'file = "{f["file"]}"', f'sha256 = "{f["sha256"]}"']
     for row in golden:

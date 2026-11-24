@@ -77,6 +77,7 @@ AGREE = "both tiers agree on the rule's effect"
 DISAGREE = "the tiers disagree on its direction"
 ONLY_T1, ONLY_T2 = "only tier 1 detects an effect", "only tier 2 detects an effect"
 NOT_SHOWN = "the rule not shown to reach this tier beyond copy noise: no word"
+COPY_RULE = "copy"            # a rule pair with no rule changed: the between-batch copy noise (no plumbing word)
 REASON_PROTECTED, REASON_FITS = "protected", "fits what is left of the cap"
 REASON_OVER_CAP = "not played (projected over the cap)"
 REASON_AFTER_DROP = "not played (an earlier group in the drop order was dropped)"
@@ -90,7 +91,7 @@ _KEYS = {
     "groups": {"name", "label", "tier1_game", "tier2_game", "arm", "protected", "tier1_known", "tier1_known_holds",
                "tier1_known_source"},
     "known": {"t1_count_tol_games", "t2_group", "t2_cell", "t2_holds_min", "t2_holds_max", "t2_source"},
-    "controls": {"repeat_count_tol_games", "repeat_differ_tol_games", "agree_guard", "agree_strike", "agree_ticks",
+    "controls": {"reach_margin_games", "repeat_count_tol_games", "repeat_differ_tol_games", "agree_guard", "agree_strike", "agree_ticks",
                  "agree_max_m", "agree_seed", "tag_fires_game", "tag_fires_ticks"},
     "projection": {"tier1_s_per_tick", "tier2_s_per_tick", "option_b_factor_tier1", "option_b_factor_tier2", "fixed_s",
                    "safety_factor"},
@@ -118,6 +119,9 @@ def parser(isaac: bool = False) -> argparse.ArgumentParser:
     ap.add_argument("--dry-cpu", action="store_true", help="tests only: CPU, the PyTorch reference world; never of record")
     ap.add_argument("--games", type=int, help="smoke: fewer starts per cell (stamped; known answers NOT_CHECKED)")
     ap.add_argument("--max-ticks", type=int, help="smoke: a shorter clock (stamped; known answers NOT_CHECKED)")
+    ap.add_argument("--rates-from", type=Path,
+                    help="the required Isaac smoke's run folder (1,000 games per cell): its seconds per batch tick feed "
+                         "the launch check and the drop decisions; needed by every run that is neither a smoke nor --dry-cpu")
     if not isaac:
         ap.add_argument("--headless", action="store_true", help="required without --dry-cpu (Isaac Lab)")
     return ap
@@ -272,15 +276,42 @@ def worst_seconds(s: dict, g: dict, measured: dict | None = None, ticks: int | N
     return out
 
 
-def launch_projection(s: dict, ticks: int | None = None) -> dict:
-    """The protected groups' and all groups' worst cases (s) plus the fixed seconds, against the cap."""
-    w = {g["name"]: sum(worst_seconds(s, g, ticks=ticks).values()) for g in s["groups"]}
+def launch_projection(s: dict, ticks: int | None = None, measured: dict | None = None) -> dict:
+    """The protected groups' and all groups' worst cases (s) plus the fixed seconds, against the cap; ``measured``
+    (tier, share) -> seconds per batch tick replaces the gate file's fallback rates where given."""
+    w = {g["name"]: sum(worst_seconds(s, g, measured, ticks=ticks).values()) for g in s["groups"]}
     fixed = float(s["projection"]["fixed_s"])
     prot = fixed + sum(w[g["name"]] for g in s["groups"] if g["protected"])
     cap = float(s["job"]["cap_h"]) * HOUR_S
     return {"per_group_s": w, "protected_s": prot, "total_s": fixed + sum(w.values()), "cap_s": cap,
             "safety_factor": float(s["projection"]["safety_factor"]),
             "fits": prot * float(s["projection"]["safety_factor"]) <= cap}
+
+
+def rates_from(run_dir: Path, s: dict) -> dict:
+    """Seconds per batch tick by (tier, filter share) from a finished or stopped Isaac smoke of this driver: the
+    largest over its group batches (the tag-fires batch left out). ValueError unless the smoke played on the GPU at the
+    run's games per cell (the per-tick cost depends on the games at once)."""
+    run_dir = Path(run_dir)
+    stamp = json.loads((run_dir / "run.json").read_text())
+    if stamp.get("dry_cpu"):
+        raise ValueError(f"{run_dir} is a --dry-cpu folder: rates must come from the Isaac smoke")
+    want = int(s["job"]["games"])
+    by = {g["name"]: g for g in s["groups"]}
+    out: dict = {}
+    for meta_path in sorted((run_dir / GAMES).glob("*_t[12].json")):
+        group, tier = meta_path.stem.rsplit("_t", 1)
+        if group not in by:
+            continue
+        meta = json.loads(meta_path.read_text())
+        if int(meta["games_per_cell"]) != want:
+            raise ValueError(f"{meta_path} played {meta['games_per_cell']} games per cell, the run plays {want}")
+        key = (int(tier), _share(s, by[group][f"tier{tier}_game"]))
+        rate = float(meta["seconds"]) / max(int(meta["steps_played"]), 1)
+        out[key] = max(rate, out.get(key, 0.0))
+    if int(stamp.get("games") or want) != want:
+        raise ValueError(f"{run_dir} was started with --games {stamp.get('games')}, the run plays {want}")
+    return out
 
 
 def should_play(protected: bool, effective_s: float, worst_s: float, cap_s: float, safety: float,
@@ -355,18 +386,20 @@ def copy_floor(noises: list[dict]) -> dict:
 
 
 def rule_reached(arm_change: bool, cells: int, differ_outcome: int, differ_any: int, noise_from: dict,
-                 noise_to: dict) -> bool:
-    """Did the rule reach this tier beyond copy noise? (spec, reading 5). ``noise_*``: the repeat cell's
-    outcome_differs and outcome_or_end_differs in each batch. The arm changes (the estimate error): the error's copies
-    differ more than the other arm's (adding the error and redrawing it cannot be told apart by changed games). Exact
-    copies in both batches: at least one game changed in outcome or end step (L2.5's rule). Otherwise outcomes only:
-    more than ``cells`` x the larger repeat outcome count (end-step jitter on CUDA is not measured; the x cells
-    extrapolates from one repeat cell)."""
+                 noise_to: dict, between: dict, margin: int) -> bool:
+    """Did the rule reach this tier beyond copy noise? (spec, reading 5). ``noise_from`` / ``noise_to``: within-batch
+    repeat-cell counts (outcome_differs, outcome_or_end_differs); for an arm change, ``noise_from`` is the tier's
+    off-arm floor and ``noise_to`` the error batch's repeat. ``between``: the between-batch copy pair's counts over the
+    main cells (zeros if it was not played). Arm change: the error's copies differ in more than 2 x the floor +
+    ``margin`` games. Exact copies within and between batches: one changed game (outcome or end step) is enough (L2.5).
+    Otherwise outcomes only, above both ``cells`` x the larger within-batch count and 2 x the between-batch count."""
     if arm_change:
-        return noise_to["outcome_or_end_differs"] > noise_from["outcome_or_end_differs"]
-    if noise_from["outcome_or_end_differs"] == 0 and noise_to["outcome_or_end_differs"] == 0:
+        return noise_to["outcome_or_end_differs"] > 2 * noise_from["outcome_or_end_differs"] + int(margin)
+    exact = all(int(x["outcome_or_end_differs"]) == 0 for x in (noise_from, noise_to, between))
+    if exact:
         return differ_any >= 1
-    return differ_outcome > cells * max(noise_from["outcome_differs"], noise_to["outcome_differs"]) and differ_outcome >= 1
+    floor = max(cells * max(noise_from["outcome_differs"], noise_to["outcome_differs"]), 2 * between["outcome_differs"])
+    return differ_outcome > floor and differ_outcome >= 1
 
 
 # ================================================================================================ the run
@@ -402,7 +435,18 @@ def run(a: argparse.Namespace, world_factory=None) -> int:
     problems = pin_problems(s)
     if problems:
         return refuse("pinned file(s): " + "; ".join(problems))
-    proj = launch_projection(s, ticks=a.max_ticks)
+    measured = None
+    if not a.smoke and not a.dry_cpu:
+        if a.rates_from is None:
+            return refuse("a run of record needs --rates-from <the Isaac smoke's run folder> (spec: the launch check "
+                          "uses its measured seconds per tick)")
+        try:
+            measured = rates_from(a.rates_from, s)
+        except (OSError, ValueError, KeyError) as err:
+            return refuse(f"--rates-from {a.rates_from}: {err}")
+    proj = launch_projection(s, ticks=a.max_ticks, measured=measured)
+    proj["rates_from"] = None if a.rates_from is None else str(a.rates_from)
+    proj["measured_s_per_tick"] = {f"tier{k[0]}_{k[1]}": v for k, v in (measured or {}).items()}
     if not a.smoke and not proj["fits"]:
         return refuse(f"the protected groups' worst case {proj['protected_s']:.0f} s x {proj['safety_factor']} does not "
                       f"fit the cap {proj['cap_s']:.0f} s")
@@ -439,6 +483,7 @@ def run(a: argparse.Namespace, world_factory=None) -> int:
         if not device.startswith("cuda"):
             return refuse("a launched job on the CPU: runs of record play on the GPU (--dry-cpu is for tests)")
     ctx = Context(s, a, device, world_factory, proj)
+    ctx.measured = dict(measured or {})          # the smoke's rates first; this run's own batches raise them
     a.run_dir.mkdir(parents=True, exist_ok=True)
     try:
         with RunGuard(a.run_dir, cap_s=a.cap_h * HOUR_S) as guard:
@@ -749,6 +794,14 @@ def results_of(ctx: Context, controls: dict, plan: dict, pgs: dict, guard) -> di
                        "word": group_word(words), "tier2_copy_agreement": floor2,
                        "t13_limit_met": all(x["gap"] is not None and abs(x["gap"]) <= gap + 1e-12 for x in cells)})
     played = {g["name"] for g in groups if g["played"]}
+    zero = {"outcome_differs": 0, "outcome_or_end_differs": 0}
+    between = {1: dict(zero), 2: dict(zero)}            # the between-batch copy pair's counts, main cells (spec, reading 5)
+    for p in s["reading"]["rule_pairs"]:
+        if p["rule"] == COPY_RULE and p["from"] in played and p["to"] in played:
+            for tier in (1, 2):
+                a, b = pgs[f"{p['from']}_t{tier}"], pgs[f"{p['to']}_t{tier}"]
+                between[tier] = {"outcome_differs": _differ(ctx, a, b, outcome_only=True),
+                                 "outcome_or_end_differs": _differ(ctx, a, b)}
     pairs = []
     for p in s["reading"]["rule_pairs"]:
         if not (p["from"] in played and p["to"] in played):
@@ -757,17 +810,20 @@ def results_of(ctx: Context, controls: dict, plan: dict, pgs: dict, guard) -> di
         reach = {}
         by = {g["name"]: g for g in s["groups"]}
         arm_change = by[p["from"]]["arm"] != by[p["to"]]["arm"]
+        is_copy = p["rule"] == COPY_RULE
         for tier in (1, 2):
             a, b = pgs[f"{p['from']}_t{tier}"], pgs[f"{p['to']}_t{tier}"]
-            if arm_change:                             # the error's own copies against the off arm's
-                na, nb = ctx.repeat_noise(a), ctx.repeat_noise(b)
+            floor = copy_floor([ctx.repeat_noise(pgs[f"{x}_t{tier}"]) for x in played if by[x]["arm"] == "off"])
+            if arm_change:                             # the error's own copies against the run's off-arm floor
+                na, nb = floor, ctx.repeat_noise(b)
             else:                                      # same arm: the tier's run-wide device jitter (spec, reading 5)
-                na = nb = copy_floor([ctx.repeat_noise(pgs[f"{x}_t{tier}"]) for x in played
-                                      if by[x]["arm"] == "off"])
+                na = nb = floor
             d_any, d_out = _differ(ctx, a, b), _differ(ctx, a, b, outcome_only=True)
             reach[tier] = {"games_differ": d_any, "outcomes_differ": d_out, "copy_noise_from": na, "copy_noise_to": nb,
-                           "arm_change": arm_change,
-                           "beyond_noise": rule_reached(arm_change, len(ctx.lay.main), d_out, d_any, na, nb)}
+                           "between_batches": between[tier], "arm_change": arm_change,
+                           "beyond_noise": None if is_copy else
+                           rule_reached(arm_change, len(ctx.lay.main), d_out, d_any, na, nb, between[tier],
+                                        int(s["controls"]["reach_margin_games"]))}
         cells = []
         for i, c in enumerate(ctx.lay.main):
             row = {"cell": list(c)}
@@ -776,7 +832,7 @@ def results_of(ctx: Context, controls: dict, plan: dict, pgs: dict, guard) -> di
                 ka, na = _cell_rate(ctx, a, i)["k"], _cell_rate(ctx, a, i)["n"]
                 kb, nb = _cell_rate(ctx, b, i)["k"], _cell_rate(ctx, b, i)["n"]
                 oa, ob = ctx.cell(a, i)["outcome"], ctx.cell(b, i)["outcome"]
-                word = effect_word(ka, na, kb, nb) if reach[tier]["beyond_noise"] else NOT_SHOWN
+                word = effect_word(ka, na, kb, nb) if reach[tier]["beyond_noise"] in (True, None) else NOT_SHOWN
                 row[f"tier{tier}"] = {"from": ka, "to": kb, "n": [na, nb], "word": word,
                                       "hold_to_reach": int(np.sum((oa == ctx.ex.GUARD_WIN) & (ob == ctx.ex.STRIKE_WIN))),
                                       "reach_to_hold": int(np.sum((oa == ctx.ex.STRIKE_WIN) & (ob == ctx.ex.GUARD_WIN)))}
@@ -840,7 +896,9 @@ def write_md(run_dir: Path, ctx: Context, controls: dict, plan: dict, result: di
             reach = "; ".join(f"{k}: {v['outcomes_differ']} outcomes and {v['games_differ']} outcomes or end steps changed, "
                               f"repeat copies {v['copy_noise_from']['outcome_differs']} / "
                               f"{v['copy_noise_to']['outcome_differs']} outcomes, "
-                              f"{'reached' if v['beyond_noise'] else 'NOT shown to reach'}" for k, v in p["reach"].items())
+                              f"between batches {v['between_batches']['outcome_differs']} outcomes, "
+                              f"{'copy pair (no plumbing word)' if v['beyond_noise'] is None else 'reached' if v['beyond_noise'] else 'NOT shown to reach'}"
+                              for k, v in p["reach"].items())
             lines += [f"**{p['name']}** ({p['rule']}, {p['from']} -> {p['to']}; {p['ruling']}): both tiers agree in "
                       f"{p['agree_cells']} of {len(p['cells'])} cells ({reach}).", "",
                       "| Cell | Tier 1 | Tier 1 word | Tier 2 | Tier 2 word | Across tiers |", "|---|---|---|---|---|---|"]

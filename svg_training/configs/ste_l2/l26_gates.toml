@@ -13,14 +13,15 @@
 # main cells below and one repeat copy of the first (the same-seed control and each batch's copy-noise floor). One
 # Isaac world of 7,000 games x 6 drones for the whole run. Each group = one rule set x one arm, played on tier 1 and on
 # tier 2 with the same starts and the same seed (T44's 110000). Groups run in the order below; "protected" groups must
-# fit the cap in the worst case (the driver refuses the launch otherwise); a droppable group is played only if its
-# worst case, re-timed from this run's own batches, fits what is left of the cap, else it is recorded "not played
-# (projected over the cap)". Labels: FIXED (copied from the record named), PROPOSED (L2.6 builder, for the lead).
+# fit the cap in the worst case at the Isaac smoke's measured rates (--rates-from; the driver refuses the launch
+# otherwise); a droppable group is played only if no earlier group was dropped and its worst case, at those rates
+# raised by this run's own batches, fits what is left of the cap, else it is recorded "not played". Labels: FIXED (copied from the record named), PROPOSED (L2.6 builder, for the lead).
 #
 # Delay and drag (the task row's words) are NOT arms: params/starling_physics_v1.toml has drag_* = 0 and state_delay_s =
 # 0, both OPEN and not fitted (L1.3 fitted the estimate error only, T63; L1.5, T69, could not see a 0.05 s residual
 # delay at its 0.1 s resolution). The estimate error (L1.1b in tier 2, L1.7 in tier 1; T63 nominal values) is the L1
-# arm that stands for the estimator. Spec, "What it cannot show".
+# arm that stands for the estimator. Spec, "What it cannot show". The lead accepted this as a gap against the task
+# text (24 Nov 2026): no delay or drag sensitivity arm now.
 #
 # Simulators: training simulator, tier 1 (fast engine; Starling layer: commander copy, safety filter on every pair,
 # fitted PX4 response, exploratory) and tier 2 (the same command chain driving the Isaac Lab 2.3.2 rigid-body Starling,
@@ -124,6 +125,17 @@ tier1_known_holds = [802, 534, 477, 807, 895, 716]   # FIXED: T70 group "landing
 tier1_known_source = "T70 (L2.5) group landing, CPU, same starts and seed"
 
 [[groups]]
+name = "base_1p6_copy"
+label = "base_1p6 played again, a later batch of the same launch: the between-batch copy noise (lead's review, 24 Nov 2026)"
+tier1_game = "base"
+tier2_game = "base"
+arm = "off"
+protected = false
+tier1_known = "t44"
+tier1_known_holds = []
+tier1_known_source = "T44 (L0.11 screen) per-game results, configs/ste_l012/t44_reference.npz variant base"
+
+[[groups]]
 name = "landing_gy_1p15_err"
 label = "landing on, option B, tag 1.15 m, estimate error nominal on both tiers (T63 values, EXPLORATORY)"
 tier1_game = "l26_landing_gy_tag_1p15_err"
@@ -166,6 +178,9 @@ t2_holds_max = 569
 t2_source = "T53 (L0.13) tier 2 guard_parked_centre v strike_straight 538/1000 (0.507-0.569), T44's first 1,000 starts; T64 (L1.8, v1 at 0) 541"
 
 [controls]
+# The arm-change reach margin (spec, reading 5): the error's repeat copies must differ in more than 2 x the run's off-arm
+# floor + reach_margin_games games (outcome or end step).
+reach_margin_games = 20            # PROPOSED = L0.13 replay_differ_tol_cuda_games (the CUDA copy tolerance)
 # A control not PASS (INFO where marked, NOT_CHECKED in a test-size run) stops the run before any reading: exit 6
 # CONTROL_FAILED (terminal; no number is reported), exit 5 on a non-finite value.
 repeat_count_tol_games = 10        # FIXED: L0.13 replay_count_tol_cuda_games: tier 2 "off" repeat copy, holds
@@ -185,11 +200,14 @@ tag_fires_ticks = 100              # every game 3 tags at step 1, a Guard win (s
 # (T48) scripted 3v3 0.162 s/tick at 4,096 and 0.200 at 8,192 games, T64 0.257 at 15,000: 0.19; tier 1 = L0.2 0.030 at
 # 4,096 and 0.035 at 8,192, T64's replay 0.082 at 15,000 with two learned players: 0.05. Option B (busy filter) factors:
 # tier 1 5.3 (T70: the tag-off pair 1,597 s v 301 s on the CPU); tier 2 2.5 (the builder's CPU probe at 1.15 m: torch
-# world 1.75x, tier 1 2.5x; spec). fixed_s: Isaac start, the world, one C-1a per tier-2 group, the tag-fires batch.
+# world 1.75x, tier 1 2.5x; scaled by T70's 5.3 / 2.5 for tier 1 at scale: 1.75 x 2.12 = 3.7; spec). fixed_s: Isaac
+# start, the world, one C-1a per tier-2 group, the tag-fires batch. THESE ARE FALLBACKS: a run of record takes its
+# rates from the required Isaac smoke at 1,000 games per cell (--rates-from; the driver refuses without it), and the
+# launch check and the drop decisions use those measured seconds per tick (spec).
 tier1_s_per_tick = 0.05
 tier2_s_per_tick = 0.19
 option_b_factor_tier1 = 5.3
-option_b_factor_tier2 = 2.5
+option_b_factor_tier2 = 3.7
 fixed_s = 300
 safety_factor = 1.1                # as L0.11 [cut]
 
@@ -197,7 +215,10 @@ safety_factor = 1.1                # as L0.11 [cut]
 [reading]
 t13_gap = 0.10                     # FIXED: T13's per-cell hold gap (configs/s2b.toml [compare_games_gates] max_cell_hold_gap); here a word, not a gate
 # The rule pairs (one rule changed between the two groups); a pair is read only when both groups were played.
+# rule = "copy": the same rule set twice (no rule changed): its counts are the between-batch noise, and its words are
+# expected "no change detected" / "both tiers agree"; no plumbing word.
 rule_pairs = [
+  { name = "copy_1p6", rule = "copy", ruling = "between-batch noise (no rule changed)", from = "base_1p6", to = "base_1p6_copy" },
   { name = "landing_1p6", rule = "landing", ruling = "P7 (landing part)", from = "base_1p6", to = "landing_1p6" },
   { name = "option_b_1p15", rule = "option B", ruling = "P2", from = "landing_1p15", to = "landing_gy_1p15" },
   { name = "option_b_1p15_err", rule = "option B", ruling = "P2", from = "landing_1p15_err", to = "landing_gy_1p15_err" },

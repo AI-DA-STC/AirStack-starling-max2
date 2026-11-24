@@ -110,6 +110,18 @@ def test_t44_replay_rule_is_exact_on_the_cpu_and_toleranced_on_cuda():
     assert tool.replay_controls(s) == {"replay_count_tol_cuda_games": 10, "replay_differ_tol_cuda_games": 20}
 
 
+def test_the_between_batch_copy_group_and_pair():
+    s = tool.load_settings(GATES)
+    by = {g["name"]: g for g in s["groups"]}
+    copy = by["base_1p6_copy"]
+    assert {k: v for k, v in copy.items() if k not in ("name", "label", "protected")} == \
+        {k: v for k, v in by["base_1p6"].items() if k not in ("name", "label", "protected")}
+    droppable = [g["name"] for g in s["groups"] if not g["protected"]]
+    assert droppable[0] == "base_1p6_copy"
+    pair = next(p for p in s["reading"]["rule_pairs"] if p["rule"] == tool.COPY_RULE)
+    assert (pair["from"], pair["to"]) == ("base_1p6", "base_1p6_copy")
+
+
 def test_counts_known_answers_are_t70s():
     s = tool.load_settings(GATES)
     by = {g["name"]: g for g in s["groups"]}
@@ -119,15 +131,54 @@ def test_counts_known_answers_are_t70s():
 
 
 # ================================================================================================ the projection
-def test_protected_groups_fit_the_cap_in_the_worst_case_and_the_rest_may_drop():
+def test_table_rates_are_the_conservative_fallback():
     s = tool.load_settings(GATES)
-    p = tool.launch_projection(s)
-    assert p["protected_s"] * s["projection"]["safety_factor"] <= p["cap_s"] == s["job"]["cap_h"] * 3600
-    assert p["fits"] is True
-    assert p["total_s"] * s["projection"]["safety_factor"] > p["cap_s"]   # in the worst case some droppable group drops
     w = {g["name"]: tool.worst_seconds(s, g) for g in s["groups"]}
-    assert w["landing_gy_1p15"]["tier2"] == pytest.approx(0.19 * 2400 * 2.5)
+    assert w["landing_gy_1p15"]["tier2"] == pytest.approx(0.19 * 2400 * 3.7)   # T70's 5.3 x the probe's 1.75 / 2.5
     assert w["landing_1p15"]["tier1"] == pytest.approx(0.05 * 2400)
+    p = tool.launch_projection(s)
+    assert p["cap_s"] == s["job"]["cap_h"] * 3600 and p["total_s"] * p["safety_factor"] > p["cap_s"]
+
+
+def test_the_launch_check_uses_the_smokes_measured_rates():
+    s = tool.load_settings(GATES)
+    fast = {(1, "equal"): 0.02, (1, "guard_yields"): 0.08, (2, "equal"): 0.10, (2, "guard_yields"): 0.25}
+    slow = {k: 5 * v for k, v in fast.items()}
+    assert tool.launch_projection(s, measured=fast)["fits"] is True
+    assert tool.launch_projection(s, measured=slow)["fits"] is False
+    p = tool.launch_projection(s, measured=fast)
+    prot = sum((fast[(1, tool._share(s, g["tier1_game"]))] + fast[(2, tool._share(s, g["tier2_game"]))]) * 2400
+               for g in s["groups"] if g["protected"])
+    assert p["protected_s"] == pytest.approx(prot + s["projection"]["fixed_s"])
+
+
+def _fake_smoke(rd: Path, games: int, dry: bool = False) -> Path:
+    (rd / "games").mkdir(parents=True)
+    (rd / "run.json").write_text(json.dumps({"dry_cpu": dry, "games": games, "max_ticks": 100, "device": "cuda"}))
+    rows = {"base_1p6_t1": 1.0, "base_1p6_t2": 10.0, "landing_gy_1p15_t1": 4.0, "landing_gy_1p15_t2": 30.0,
+            "landing_1p15_t2": 12.0, "tag_fires_t2": 99.0}
+    for name, sec in rows.items():
+        (rd / "games" / f"{name}.json").write_text(json.dumps({"seconds": sec, "steps_played": 100,
+                                                               "games_per_cell": games}))
+    return rd
+
+
+def test_rates_from_a_smoke_folder(tmp_path):
+    s = tool.load_settings(GATES)
+    got = tool.rates_from(_fake_smoke(tmp_path / "ok", 1000), s)
+    assert got == {(1, "equal"): pytest.approx(0.01), (2, "equal"): pytest.approx(0.12),
+                   (1, "guard_yields"): pytest.approx(0.04), (2, "guard_yields"): pytest.approx(0.30)}   # max per kind
+    with pytest.raises(ValueError, match="games"):
+        tool.rates_from(_fake_smoke(tmp_path / "small", 16), s)             # rates at another games-at-once
+    with pytest.raises(ValueError, match="dry"):
+        tool.rates_from(_fake_smoke(tmp_path / "dry", 1000, dry=True), s)
+
+
+def test_a_run_of_record_needs_measured_rates(tmp_path, capsys):
+    code = tool.main(["--settings", str(GATES), "--run-dir", str(ROOT / "runs" / "never_l26b"), "--cap-h", "1.3",
+                      "--headless"])
+    assert code == 2 and not (ROOT / "runs" / "never_l26b").exists()
+    assert "--rates-from" in capsys.readouterr().err
 
 
 def test_should_play_rule():
@@ -177,16 +228,20 @@ def test_effect_and_cross_words():
 
 def test_rule_reached_a_tier():
     exact, cuda = {"outcome_differs": 0, "outcome_or_end_differs": 0}, {"outcome_differs": 5, "outcome_or_end_differs": 400}
-    # exact copies (tier 1, CPU): one changed game, outcome or end step, is enough (L2.5's rule)
-    assert tool.rule_reached(False, 6, 0, 1, exact, exact) is True
-    assert tool.rule_reached(False, 6, 0, 0, exact, exact) is False
-    # copies not exact (CUDA tier 2): outcomes only, more than cells x the larger repeat's outcome count
-    assert tool.rule_reached(False, 6, 30, 5000, cuda, exact) is False          # 30 <= 6 x 5; end-step jitter ignored
-    assert tool.rule_reached(False, 6, 31, 31, exact, cuda) is True
-    # the arm changes (the estimate error): its copies differ more than the other arm's copies
-    err = {"outcome_differs": 40, "outcome_or_end_differs": 300}
-    assert tool.rule_reached(True, 6, 0, 0, exact, err) is True
-    assert tool.rule_reached(True, 6, 999, 999, err, err) is False
+    zero, between = dict(exact), {"outcome_differs": 50, "outcome_or_end_differs": 900}
+    # exact copies within and between batches (tier 1, CPU): one changed game, outcome or end step, is enough (L2.5)
+    assert tool.rule_reached(False, 6, 0, 1, exact, exact, zero, 20) is True
+    assert tool.rule_reached(False, 6, 0, 0, exact, exact, zero, 20) is False
+    # copies not exact: outcomes only, above cells x the within-batch floor AND 2 x the between-batch copy count
+    assert tool.rule_reached(False, 6, 30, 5000, cuda, exact, zero, 20) is False        # 30 <= 6 x 5
+    assert tool.rule_reached(False, 6, 31, 31, exact, cuda, zero, 20) is True
+    assert tool.rule_reached(False, 6, 99, 99, cuda, cuda, between, 20) is False        # 99 <= 2 x 50 between batches
+    assert tool.rule_reached(False, 6, 101, 101, cuda, cuda, between, 20) is True
+    # the arm changes (the error): its copies differ by more than 2 x the run's off-arm floor + the margin
+    floor = {"outcome_differs": 5, "outcome_or_end_differs": 40}
+    assert tool.rule_reached(True, 6, 0, 0, floor, {"outcome_differs": 9, "outcome_or_end_differs": 100}, zero, 20) is False
+    assert tool.rule_reached(True, 6, 0, 0, floor, {"outcome_differs": 9, "outcome_or_end_differs": 101}, zero, 20) is True
+    assert tool.rule_reached(True, 6, 0, 0, exact, {"outcome_differs": 0, "outcome_or_end_differs": 20}, zero, 20) is False
 
 
 def test_copy_floor_is_the_largest_off_arm_repeat():
@@ -272,6 +327,8 @@ def test_dry_run_results_hold_every_reading(dry_case):
             assert c["word"] in (tool.PREDICTS, tool.INSIDE_T13, tool.BEYOND_T13, tool.NO_GAMES)   # short test clock
             assert c["tier1"]["n"] + c["tier1"]["unfinished"] == N and "agreement" in c
     assert {p["name"] for p in res["rule_pairs"]} == {p["name"] for p in s["reading"]["rule_pairs"]}
+    copy = next(p for p in res["rule_pairs"] if p["rule"] == tool.COPY_RULE)
+    assert all(v["beyond_noise"] is None and "outcomes_differ" in v for v in copy["reach"].values())
     for p in res["rule_pairs"]:
         assert p["read"] is True and len(p["cells"]) == 6
         for c in p["cells"]:

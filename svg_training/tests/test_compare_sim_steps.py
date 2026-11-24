@@ -126,6 +126,41 @@ def test_align_step_recovers_a_known_clock_map():
     assert al["residual_rms_mps"] < 0.02
 
 
+def _synthetic_streams(response_lag_s: float, a=200.0, scale=2.5, t_on=1_000_000.0) -> dict:
+    """One +x 0.5 m/s step: the bag's 20 Hz setpoint (wall), PX4's 10 Hz logged setpoint and 100 Hz estimate (its
+    clock, t_px4 = a + scale (t_wall - t_on)); the estimate is the setpoint response_lag_s later (PX4 time)."""
+    hold_w = 3.0
+    t_w = t_on + np.arange(-12.0, 12.0, 0.05)
+    lvl = np.where((t_w >= t_on) & (t_w < t_on + hold_w), 0.5, 0.0)
+    v_bag = np.stack([lvl, 0 * lvl, 0 * lvl], 1)
+    to_w = lambda tp: t_on + (tp - a) / scale                                   # noqa: E731
+    held = lambda tw: v_bag[np.clip(np.searchsorted(t_w, tw, side="right") - 1, 0, len(t_w) - 1)]   # noqa: E731
+    t_sp = np.arange(a - 25.0, a + 25.0, 0.1) + 0.004
+    t_lp = np.arange(a - 25.0, a + 25.0, 0.01)
+    vel = held(to_w(t_lp - response_lag_s))
+    pos = np.cumsum(vel, axis=0) * 0.01 + np.array([0.0, 0.0, 2.0])
+    step = {"index": 1, "axis": "x", "sign": 1, "speed_mps": 0.5, "velocity_enu_mps": [0.5, 0.0, 0.0], "hold_s": hold_w}
+    return {"teleop_t": t_w, "teleop_v": v_bag, "sp_t": t_w, "sp_v": v_bag, "sp_mask": np.full(len(t_w), 1479),
+            "lp_t": t_lp, "lp_pos": pos, "lp_vel": vel, "lp_heading": np.zeros(len(t_lp)),
+            "lpsp_t": t_sp, "lpsp_v": held(to_w(t_sp)), "tsp_t": t_sp, "tsp_pos": np.full((len(t_sp), 3), np.nan),
+            "plan": [step], "flown": [{"index": 1, "onset_unix_s": t_on, "end_unix_s": t_on + hold_w, "skipped": False}],
+            "guess": {"wall_ref": t_on, "px4_ref": a + 1.7, "scale": 2.45}, "px4_params": {}, "px4_param_changes": 0,
+            "source": {"synthetic": True}}
+
+
+@pytest.mark.parametrize("lag_s", [0.0, 0.3])
+def test_a_response_lag_survives_the_clock_alignment(lag_s):
+    """The fit matches setpoint to setpoint only, so a lag between PX4's setpoint and its response cannot be absorbed:
+    an injected 0.3 s comes out as 0.3 s (and 0 as 0)."""
+    s = cs.extract_from_streams(_synthetic_streams(lag_s))["steps"][0]
+    assert s["clock_scale"] == pytest.approx(2.5, abs=0.03)
+    assert s["onset_px4_s"] == pytest.approx(200.0, abs=0.05)
+    m = s["metrics"]["airstack"]
+    assert m["lag_s"] == pytest.approx(lag_s, abs=0.06)
+    assert m["delay_s"] == pytest.approx(lag_s, abs=0.06)
+    assert s["px4_position_setpoint"]["samples"] > 0 and s["px4_position_setpoint"]["finite_position"] == 0
+
+
 # =========================================================================================== reading words
 def test_reading_words_with_the_floor():
     assert cs.reading(0.30, [0.25, 0.35], floor=0.05) == "within"
@@ -136,6 +171,19 @@ def test_reading_words_with_the_floor():
     assert cs.reading(math.nan, [math.nan, math.nan], floor=0.05) == "within"       # neither reaches it
     assert cs.reading(0.3, [math.nan, math.nan], floor=0.05) == "outside (AirStack not reached)"
     assert set(cs.FLOORS) == set(cs.METRICS)
+    # the honest time resolution (spec section 5): above the 0.05 s delay arm and the 0.075 s worst onset uncertainty
+    assert all(cs.FLOORS[m] == 0.1 for m in ("delay_s", "rise_s", "rise_own_s", "t63_s", "lag_s"))
+    assert cs.FLOORS["delay_s"] > cs.DELAY_ARM_S
+
+
+def test_trace_rms_reading():
+    off = [0.020] * 35
+    assert cs.rms_change([0.030] * 35, off)["word"] == "further"
+    assert cs.rms_change([0.010] * 35, off)["word"] == "closer"
+    assert cs.rms_change([0.023] * 35, off)["word"] == "no change"             # under 0.005 m/s
+    mixed = [0.040] * 20 + [0.015] * 15                                         # mean +0.0093, same sign in 20 < 24
+    r = cs.rms_change(mixed, off)
+    assert r["mean_diff_mps"] > cs.RMS_CHANGE_MPS and r["steps_same_sign"] == 20 and r["word"] == "no change"
 
 
 def test_arm_change_words():
@@ -158,14 +206,17 @@ def test_sim_only_file_is_refused_by_the_trainers_loader_and_read_by_the_script(
     assert (p.drag_x_n_per_mps, p.drag_y_n_per_mps, p.drag_z_n_per_mps) == (0.5, 0.3, 0.0)
     assert p.gains.mc_rollrate_p == 0.032 and p.gains.mpc_z_vel_max_dn == 4.0 and p.gains.mc_yaw_cutoff == 15.0
     assert prov["sha256"] and "SIM-ONLY" in prov["label"]
+    assert "SIM-ONLY" in p.source["sim_only"]                            # the loaded parameters carry the tag
 
 
-def test_no_config_or_source_file_names_the_sim_only_file():
-    """R21: the values stay a comparison file; no game file, trainer or model may load them."""
+def test_no_config_source_or_other_script_names_the_sim_only_file():
+    """R21: the values stay a comparison file; no game file, trainer, model or other script may load them."""
     hits = []
-    for top in ("configs", "source"):
+    for top in ("configs", "source", "scripts"):
         for f in (ROOT / top).rglob("*"):
-            if f.is_file() and f.suffix in (".py", ".toml") and "airstack_sim_physics" in f.read_text(errors="replace"):
+            if f.name == "compare_sim_steps.py":
+                continue
+            if f.is_file() and f.suffix in (".py", ".toml", ".sh") and "airstack_sim_physics" in f.read_text(errors="replace"):
                 hits.append(str(f.relative_to(ROOT)))
     assert hits == []
 
@@ -306,6 +357,8 @@ def test_fixture_steps_parse_with_the_right_signs_and_clock(fixture_steps):
         assert 2.2 <= s["clock_scale"] <= 2.9                          # the simulator's PX4 clock against the wall
         assert s["align_residual_rms_mps"] < 0.05
         assert s["setpoint_velocity_only"]
+        chk = s["px4_position_setpoint"]                                  # PX4's own log: no position setpoint
+        assert chk["samples"] > 10 and chk["finite_position"] == 0
         u = np.asarray(s["cmd_unit"])
         t = s["t_s"]
         hold = (t > 1.5) & (t < s["hold_end_s"])
@@ -341,6 +394,8 @@ def test_fixture_end_to_end_on_the_cpu(fixture_steps, tmp_path):
         for arm in cs.ARMS:
             assert set(cell["reading"][arm]) == set(cs.METRICS)
     assert set(res["confounds"]) == {"px4_version", "route", "clock", "estimator_source", "plant"}
+    assert {a: res["arm_change"][a]["trace_rms"]["steps"] for a in ("delay", "error")} == {"delay": 3, "error": 3}
+    assert set(res["within_most_cells"]["off"]) == set(cs.METRICS)
 
 
 @pytest.mark.skipif(not (L14_RUN / "steps_flown.json").is_file(), reason="the L1.4 run folder is not here")
@@ -349,3 +404,5 @@ def test_real_session_parses_35_steps_and_skips_step_6():
     idx = [s["index"] for s in ext["steps"]]
     assert len(idx) == 35 and 6 not in idx
     assert ext["skipped"] == [6]
+    assert all(s["px4_position_setpoint"]["finite_position"] == 0 for s in ext["steps"])     # speed only, every step
+    assert sum(s["px4_position_setpoint"]["samples"] for s in ext["steps"]) > 1000

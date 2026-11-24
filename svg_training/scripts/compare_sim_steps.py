@@ -22,9 +22,11 @@ here is a flight result.
 
 What is compared (the spec says why): the velocity setpoint PX4 itself received (``/<drone>/interface/mavros/
 setpoint_raw/local``: velocity and yaw rate only, type mask 1479), on PX4's own clock, and PX4's estimate of the
-velocity (ULog ``vehicle_local_position``). Replaying PX4's input on PX4's clock removes two confounds by construction:
-the simulator's PX4 clock running faster than the commander's wall clock (measured per step here, about 2.5x in this
-session), and the commander's reference-point sag that clock causes. The speed-only route is emulated in tier 2 by
+velocity (ULog ``vehicle_local_position``). Replaying PX4's input on PX4's clock measures and aligns out two
+confounds: the simulator's PX4 clock running faster than the commander's wall clock (measured per step here, about 2.5x
+in this session; onset uncertainty up to 0.075 s, which enters AirStack's times one for one), and the commander's
+reference-point sag that clock causes. The alignment matches setpoint to setpoint, so it cannot absorb a response lag;
+it does remove any commander -> PX4 link delay. PX4's own log shows no position setpoint in any step window. The speed-only route is emulated in tier 2 by
 zeroing its two position gains (``MPC_XY_P``, ``MPC_Z_P``): PX4 with a NaN position setpoint flies v_ff, while tier 2's
 ``PhysicsDrone`` holds a position setpoint over each tick (its docstring), which pulls back about K_p v dt / 2. The
 PX4 1.16.1 cascade (simulator) against the 1.14 port (tier 2) cannot be removed; it is named.
@@ -102,8 +104,15 @@ SLOTS = 2                           # drones per game: slot 0 flies the step, sl
 FAR_SLOT_M = (-15.0, -15.0, 0.0)    # slot 1 from slot 0's start: > 15 m from any point a step reaches (<= 11.3 m on one
                                     # axis); with Isaac Lab's 40 m game spacing, > 8 m from the neighbouring games' drones
 METRICS = ("delay_s", "rise_s", "rise_own_s", "t63_s", "overshoot_pct", "ss_error_mps", "lag_s")
-FLOORS = {"delay_s": 0.05, "rise_s": 0.05, "rise_own_s": 0.05, "t63_s": 0.05, "lag_s": 0.05,       # one tick: tier 2's input grid
-          "overshoot_pct": 5.0, "ss_error_mps": 0.02}                          # spec: resolution floors (fixed)
+# Floors (spec section 5, fixed before the Isaac run). Times: the honest time resolution of this comparison, about
+# 0.1 s = the clock alignment's onset uncertainty (worst 0.075 s; it enters AirStack's delay_s one for one) plus tier 2's
+# +-0.025 s input quantisation; it is above the 0.05 s delay arm, so the time metrics cannot see that arm by design.
+# Overshoot and steady state: sized from the CPU dry run on the real AirStack data (set after seeing data).
+FLOORS = {"delay_s": 0.1, "rise_s": 0.1, "rise_own_s": 0.1, "t63_s": 0.1, "lag_s": 0.1,
+          "overshoot_pct": 5.0, "ss_error_mps": 0.02}
+MOST_CELLS = 7                      # "most cells" = at least 7 of the 9 (spec section 5)
+RMS_CHANGE_MPS = 0.005              # trace RMS: an arm differs from off only if the paired mean difference over steps
+RMS_SIGN_STEPS = 24                 # is above this AND has the same sign in at least this many of the 35 steps
 ALIGN_COARSE = (0.05, 0.02)         # (onset step s, scale step) of the coarse grid
 ALIGN_FINE = (0.005, 0.002)
 ALIGN_HALF_S = 4.0                  # coarse onset search: guess +- this
@@ -210,7 +219,9 @@ def load_streams(l14_run: Path) -> dict:
         else:
             rows[kind].append((t, *decode_odometry_position(msg.data)[1]))
     arr = {k: np.asarray(v, dtype=float) for k, v in rows.items()}
-    data, params, changes = read_ulog_full(ulogs[0], ["vehicle_local_position", "vehicle_local_position_setpoint"])
+    data, params, changes = read_ulog_full(ulogs[0], ["vehicle_local_position", "vehicle_local_position_setpoint",
+                                                      "trajectory_setpoint"])
+    tsp = data["trajectory_setpoint"]
     lp, sp = data["vehicle_local_position"], data["vehicle_local_position_setpoint"]
     lpsp_v = ned_to_enu(np.stack([sp["vx"], sp["vy"], sp["vz"]], 1))
     ok = np.isfinite(lpsp_v).all(1)
@@ -221,6 +232,8 @@ def load_streams(l14_run: Path) -> dict:
         "lp_t": lp["timestamp"] * 1e-6, "lp_pos": ned_to_enu(np.stack([lp["x"], lp["y"], lp["z"]], 1)),
         "lp_vel": ned_to_enu(np.stack([lp["vx"], lp["vy"], lp["vz"]], 1)), "lp_heading": heading_ned_to_enu(lp["heading"]),
         "lpsp_t": sp["timestamp"][ok] * 1e-6, "lpsp_v": lpsp_v[ok],
+        "tsp_t": tsp["timestamp"] * 1e-6,                       # what offboard handed PX4: NaN position = speed only
+        "tsp_pos": np.stack([tsp["position[0]"], tsp["position[1]"], tsp["position[2]"]], 1),
         "plan": plan["steps"], "flown": flown["steps"],
         "guess": {"wall_ref": ts["takeoff_wall_s"], "px4_ref": ts["takeoff_vehicle_s"], "scale": ts["scale"],
                   "method": "fit_response.ulog_time_scale (takeoff -> touchdown)"},
@@ -232,7 +245,7 @@ def load_streams(l14_run: Path) -> dict:
 
 
 ARRAY_KEYS = ("teleop_t", "teleop_v", "sp_t", "sp_v", "sp_mask", "lp_t", "lp_pos", "lp_vel", "lp_heading", "lpsp_t",
-              "lpsp_v")
+              "lpsp_v", "tsp_t", "tsp_pos")
 META_KEYS = ("plan", "flown", "guess", "px4_params", "px4_param_changes", "source")
 
 
@@ -248,6 +261,7 @@ def cut_fixture(streams: dict, indices: list[int], out: Path) -> int:
     tel_keep = np.zeros(len(streams["teleop_t"]), bool)
     lp_keep = np.zeros(len(streams["lp_t"]), bool)
     sp_keep = np.zeros(len(streams["lpsp_t"]), bool)
+    tsp_keep = np.zeros(len(streams["tsp_t"]), bool)
     for i in indices:
         f = flown[i]
         lo, hi = f["onset_unix_s"] - 6.0, f["end_unix_s"] + 6.0      # the alignment reads up to ~5 s wall around
@@ -257,7 +271,8 @@ def cut_fixture(streams: dict, indices: list[int], out: Path) -> int:
         phi = guess_px4_time(streams, f["end_unix_s"]) + ALIGN_HALF_S + POST_S + 3.0
         lp_keep |= (streams["lp_t"] >= plo) & (streams["lp_t"] <= phi)
         sp_keep |= (streams["lpsp_t"] >= plo) & (streams["lpsp_t"] <= phi)
-    keep = {"teleop": tel_keep, "sp": wall_keep, "lp": lp_keep, "lpsp": sp_keep}
+        tsp_keep |= (streams["tsp_t"] >= plo) & (streams["tsp_t"] <= phi)
+    keep = {"teleop": tel_keep, "sp": wall_keep, "lp": lp_keep, "lpsp": sp_keep, "tsp": tsp_keep}
     arrays = {}
     for k in ARRAY_KEYS:
         mask = keep[k.split("_")[0]]
@@ -375,6 +390,13 @@ def _interp3(t_src, x_src, t):
     return np.stack([np.interp(t, t_src, x_src[:, i]) for i in range(3)], axis=-1)
 
 
+def _position_setpoint_check(streams: dict, t0: float, t1: float) -> dict:
+    """The speed-only route, checked on PX4's side: the trajectory setpoints PX4 logged in [t0, t1] (its clock) and how
+    many carried a finite position (0 = PX4 flew velocity only, as tier 2's zero position gains emulate)."""
+    m = (streams["tsp_t"] >= t0) & (streams["tsp_t"] <= t1)
+    return {"samples": int(m.sum()), "finite_position": int(np.isfinite(streams["tsp_pos"][m]).any(axis=1).sum())}
+
+
 def extract_from_streams(streams: dict) -> dict:
     """Per flown step: the clock map, the input and response on the vehicle-time grid, the start state, the AirStack
     metrics. Steps the session skipped are listed in ``skipped``."""
@@ -408,6 +430,7 @@ def extract_from_streams(streams: dict) -> dict:
                "clock_scale": sc, "onset_px4_s": a, "guess_error_s": a - guess,
                "align_residual_rms_mps": al["residual_rms_mps"], "align_onset_spread_s": al["onset_spread_s"],
                "align_samples": al["samples"],
+               "px4_position_setpoint": _position_setpoint_check(streams, a - PRE_S, a + hold_v + POST_S),
                "setpoint_velocity_only": bool(np.all([is_velocity_only(m) for m in streams["sp_mask"][in_win]])),
                "teleop_level_mps": float(np.mean(streams["teleop_v"][tel] @ u)) if tel.any() else math.nan,
                "setpoint_settled_mps": float(np.mean(sp_grid[settle] @ u)),
@@ -455,6 +478,7 @@ def load_sim_only_params(path: Path):
         rel = str(Path(path).resolve().relative_to(ROOT))
     except ValueError:
         rel = str(path)
+    p = dataclasses.replace(p, source={**p.source, "sim_only": label})       # every reader of p can see it
     return p, {"file": rel, "sha256": hashlib.sha256(raw).hexdigest(), "label": label}
 
 
@@ -554,6 +578,17 @@ def reading(value: float, airstack: list[float], floor: float) -> str:
     return "within"
 
 
+def rms_change(rms_arm: list[float], rms_off: list[float]) -> dict:
+    """The trace RMS reading (spec section 5): per step, RMS(arm) - RMS(off), paired. "closer" / "further" only if the
+    mean difference is beyond RMS_CHANGE_MPS AND at least RMS_SIGN_STEPS steps share its sign; else "no change"."""
+    d = np.asarray(rms_arm, float) - np.asarray(rms_off, float)
+    mean = float(d.mean())
+    same = int((np.sign(d) == np.sign(mean)).sum()) if mean else 0
+    need = math.ceil(RMS_SIGN_STEPS / 35 * len(d))          # 24 of the session's 35 steps (scaled for a subset)
+    word = ("further" if mean > 0 else "closer") if abs(mean) > RMS_CHANGE_MPS and same >= need else "no change"
+    return {"mean_diff_mps": mean, "steps_same_sign": same, "steps": int(len(d)), "word": word}
+
+
 def arm_change(dist_arm: float, dist_off: float, floor: float) -> str:
     """An arm against ``off``: the distance of its cell value to the AirStack cell median, against off's."""
     if not (math.isfinite(dist_arm) and math.isfinite(dist_off)):
@@ -637,7 +672,11 @@ def analyse(ext: dict, out: dict, layout: dict) -> dict:
     change = {arm: {m: arm_change(summary[arm][m]["mean_abs_diff_to_airstack_median"],
                                   summary["off"][m]["mean_abs_diff_to_airstack_median"], FLOORS[m]) for m in METRICS}
               for arm in out if arm != "off"} if "off" in out else {}
-    return {"steps": rows, "cells": cell_rows, "summary": summary, "arm_change": change,
+    for arm in change:
+        change[arm]["trace_rms"] = rms_change([r["tier2"][arm]["rms_vs_airstack_mps"] for r in rows],
+                                              [r["tier2"]["off"]["rms_vs_airstack_mps"] for r in rows])
+    most = {arm: {m: summary[arm][m]["within"] >= MOST_CELLS for m in METRICS} for arm in out}
+    return {"steps": rows, "cells": cell_rows, "summary": summary, "arm_change": change, "within_most_cells": most,
             "confounds": confounds(ext), "health": health(rows, out)}
 
 
@@ -753,6 +792,14 @@ def results_md(res: dict, meta: dict) -> str:
     lines += ["## Each arm against off", "", "| arm | " + " | ".join(METRICS) + " |", "|---|" + "---|" * len(METRICS)]
     for arm, d in res["arm_change"].items():
         lines.append(f"| {arm} | " + " | ".join(d[m] for m in METRICS) + " |")
+    lines += ["", "Trace RMS against off (paired over steps; the only read that can see the delay arm):", ""]
+    for arm, d in res["arm_change"].items():
+        r = d["trace_rms"]
+        lines.append(f"- {arm}: {r['word']} (mean difference {_f(r['mean_diff_mps'], 4)} m/s, same sign in "
+                     f"{r['steps_same_sign']} of {r['steps']} steps; counts beyond {RMS_CHANGE_MPS} m/s with the sign "
+                     f"in {RMS_SIGN_STEPS} of 35)")
+    lines += ["", f"Within in most cells (at least {MOST_CELLS} of 9): " + "; ".join(
+        f"{arm}: " + ", ".join(m for m, ok in d.items() if ok) for arm, d in res["within_most_cells"].items())]
     lines += ["", "## Trace against trace (INFO): RMS of tier 2 - AirStack along the command, over each step's window",
               "(tier 2's estimate, the primary trace; its true state beside it, INFO)", "",
               "| arm | mean over steps (m/s) | worst step (m/s) | true state: mean | true state: worst |",

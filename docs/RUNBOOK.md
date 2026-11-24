@@ -319,6 +319,11 @@ Already in the drone's own shell (adb or ssh)? Type `shutdown now` there instead
 
 ### B9 — Fly one real drone with the gamepad
 
+**Flying both drones this session (one hovering, one by hand)?** Use [B10](#b10--two-real-drones-one-flown-by-hand) from its step 1, not B9. B9's pane 2 and pane 3 lines start one drone only, so the other drone never shows on the panel. B10's pane 2 line (its step 10) is:
+```bash
+ros2 launch svg_ground_control real_interfaces.launch.py drones:=drone_1,drone_2 target_systems:=1,2
+```
+
 > **WORLD: REAL DRONE.** One Starling (`drone_2`), hand-flown with a Logitech F310 pad, motion-capture positioning (mocap). No Isaac Sim. [PREFLIGHT.md](PREFLIGHT.md) gates the takeoff.
 > **Panic:** the panel's **Hold All**, then **Safety Stop · Land All** (two clicks within 4 s), or `hold` then `land` in pane 4. Anything scary: KILL (ch8), then `land` once with the drone on the floor. `hold` is not flown on a hand-flown real drone: where it stops the drone is untested (NEAR-832).
 > Until DISARMED, press Ctrl-C in pane 4 only.
@@ -546,7 +551,12 @@ cd ~/AirStack-starling-max2/AirStack
 cd ~/AirStack-starling-max2 && tools/real.sh teleop drone_2
 ```
 Must see: `PAD CHECK: PASS — do not press MODE from now on`. Never press MODE after this.
-Use only its pane 5 line: its takeoff point and its other lines are for one drone, NOT used here. Do NOT launch pane 3 from that output: its commander line is for one drone.
+Use only its pane 5 line. Its takeoff point, pane 2 line and pane 3 line are for one drone, NOT used here: they leave `drone_1` off the panel.
+Pane 2 for this session is this line. Do not launch it now; it is step 10:
+```bash
+ros2 launch svg_ground_control real_interfaces.launch.py drones:=drone_1,drone_2 target_systems:=1,2
+```
+Already started the printed pane 2 or pane 3 line? Both drones on the floor and DISARMED in QGroundControl first (airborne: panel **Hold All**, then **Land All**). Then press Ctrl-C in pane 3, then in pane 2, and redo steps 10, 12 and 13.
 
 <!-- shared-opening -->
 

@@ -5,10 +5,12 @@ no training.
 
     ste_l3_run0_ceiling.py --out <folder> [--gates configs/ste_l3/skills_gates.toml] [--games <n>]
                            [--device cpu|cuda] [--chunk <choices per batch>]
+    ste_l3_run0_ceiling.py --oracle-check <finished ceiling folder> [--top 3] [--check-out <file>]
 
 Why: run 0's mark ``[run0] skills_reach_min`` was set at 0.90 from the 1v1 screen (T66). In the 3v3 base game on T44's
-starts the parked-centre Guard holds against every Strike script (L2.5 screen, group ctl_reference_replay: straight
-534, flank 450, high 466, low 430, sacrifice 525, converge 986 of 1,000), so no script reaches above 570. This script
+starts the parked-centre Guard holds against every Strike script (T70, the L2.5 screen, group ctl_reference_replay;
+the Guard's HOLDS of 1,000: straight 534, flank 450, high 466, low 430, sacrifice 525, converge 986), so no script
+reaches above 570 (reaches = 1,000 - holds; no game was unfinished). This script
 measures what the best CONSTANT choice of the two-level Strike team reaches, so the mark can be re-set by the rule
 fixed before this run: skills_reach_min = (best reaches - [run0] margin x n) / n, required above the untrained team's
 Wilson upper bound (else the lead re-plans).
@@ -32,11 +34,19 @@ the best; the untrained team; the mark rule's numbers; ``of_record``, true only 
 of record; ``complete`` last) and results.md. Exit codes: 0 done; 2 refused
 (bad arguments, a finished folder, a gate file that is not the two-level skills route, an input off its pin); 5 a
 non-finite action; 6 a control failed. Launched through scripts/ste_job.py (it records exit_code). Training simulator,
-tier 1: results are "observed in the training simulator"; a pipeline check, not for flight."""
+tier 1: results are "observed in the training simulator"; a pipeline check, not for flight.
+
+``--oracle-check`` (lead's QC S1, 25 Nov 2026), on a finished ceiling folder, before the mark is accepted: the best
+choice and the ``--top`` choices by reaches (choice order on a tie) are replayed on the CPU at the folder's n through the
+dispatch and against the hold-1 oracle written without the dispatch (``Composite``: drone m flies its script's own
+column, closed loop). PASS needs every game equal (outcome, end step, tags, Strike drones left) and the replay's reaches
+equal to the folder's. Writes <folder>/oracle_check.json (or ``--check-out``), ``complete`` last; exit 0 PASS, 6 FAIL,
+2 refused (no finished ceiling, a finished check, a gate file off the folder's sha256)."""
 from __future__ import annotations
 
 import argparse
 import itertools
+import json
 import sys
 from pathlib import Path
 
@@ -51,15 +61,19 @@ from torch import nn  # noqa: E402
 import ste_l3_held_arm as arm  # noqa: E402  (the input checks against the gate file's pins)
 import ste_sweep_l011 as l011  # noqa: E402  (the simulator label, JSON writing)
 from svg_training.core.metrics import wilson_interval  # noqa: E402
+from svg_training.opponents.scripted import make_strategy  # noqa: E402
 from svg_training.ste import atomic, exploit, scoring, skills, sweep  # noqa: E402
 
-EXIT_DONE, EXIT_REFUSED = 0, 2
+EXIT_DONE, EXIT_REFUSED, EXIT_CONTROL_FAILED = 0, 2, 6
 PASS, FAIL = scoring.PASS, scoring.FAIL
 SIDE = "strike"
 VARIANT = "base"                    # the gate file's [run0] variant is read; this is only the fallback name
 DEFAULT_GATES = ROOT / "configs" / "ste_l3" / "skills_gates.toml"
 TEAM_KIND, FREE_KIND = "team", "free"
-MARK_SET, LEAD_RE_PLANS = "MARK_SET", "LEAD_RE_PLANS"
+MARK_SET, LEAD_RE_PLANS, NOT_OF_RECORD = "MARK_SET", "LEAD_RE_PLANS", "NOT_OF_RECORD"
+ORACLE_FILE = "oracle_check.json"
+ORACLE = "oracle:"                  # the oracle's cell name (never a script's or a choice's name)
+TOP = 3                             # --oracle-check: the top choices replayed besides the best
 STATUS = "pipeline check, not for flight"
 
 
@@ -185,19 +199,20 @@ def controls_of(gates, ref, chs: list[dict], played: dict, n: int, device: str) 
     return out
 
 
-def mark_rule(k_best: int, k_untrained: int, n: int, margin: float) -> dict:
+def mark_rule(k_best: int, k_untrained: int, n: int, margin: float, *, of_record: bool) -> dict:
     """The mark rule fixed before the run (addendum of 25 Nov 2026): mark = best constant choice's reaches less
     ``margin`` x n, as a count of the n evaluation games (so the read ``k / n >= mark`` has no float edge); it must lie
-    above the untrained team's Wilson 95 % upper bound, else the lead re-plans (no mark is set by this rule)."""
+    above the untrained team's Wilson 95 % upper bound, else the lead re-plans (no mark is set by this rule).
+    ``of_record`` False (QC S4): status NOT_OF_RECORD and no ``toml_value``; the arithmetic is still shown."""
     mark_count = int(k_best) - int(round(float(margin) * n))
     hi = wilson_interval(int(k_untrained), n)[1]
     mark = mark_count / n
     above = bool(mark > hi)
     return {"rule": "skills_reach_min = (best constant-choice reaches - margin x n) / n, above the untrained team's "
                     "Wilson 95 % upper bound", "margin": float(margin), "n": int(n), "k_best": int(k_best),
-            "mark_count": mark_count, "skills_reach_min": mark, "toml_value": f"{mark:.3f}",
+            "mark_count": mark_count, "skills_reach_min": mark, "toml_value": f"{mark:.3f}" if of_record else None,
             "untrained_k": int(k_untrained), "untrained_ci_high": hi, "mark_above_untrained_high": above,
-            "status": MARK_SET if above else LEAD_RE_PLANS}
+            "status": (MARK_SET if above else LEAD_RE_PLANS) if of_record else NOT_OF_RECORD}
 
 
 def of_record(n: int, device: str) -> bool:
@@ -214,6 +229,84 @@ def row(c: dict, cell: dict, n: int) -> dict:
             "holds": int(np.sum(outcome == exploit.GUARD_WIN)), "unfinished": int(np.sum(outcome == exploit.RUNNING))}
 
 
+class Composite:
+    """The oracle, written without the dispatch: drone m flies script ``names[m]`` closed loop (its own column of that
+    script's command on the whole team's observation [N, M, D] -> [N, M, 4])."""
+
+    def __init__(self, names: list[str], cfg, n: int, device: str = "cpu", seed: int = 0):
+        self.team, self.name = SIDE, ORACLE + "+".join(names)
+        self.scripts = [make_strategy(nm, SIDE, cfg, n, device, seed) for nm in names]
+
+    def reset(self, games: torch.Tensor) -> None:
+        for s in self.scripts:
+            s.reset(games)
+
+    def act(self, obs: torch.Tensor) -> torch.Tensor:
+        return torch.stack([s.act(obs)[:, m] for m, s in enumerate(self.scripts)], dim=1)
+
+
+def oracle_check(folder: Path, out: Path | None, top: int) -> int:
+    """The oracle check of a finished ceiling folder (module docstring; QC S1)."""
+    res_file, out = folder / "results.json", (out if out is not None else folder / ORACLE_FILE)
+    try:
+        res = json.loads(res_file.read_text())
+    except (OSError, ValueError):
+        res = {}
+    if not res.get("complete"):
+        return refuse(f"{folder} holds no finished ceiling ({res_file} with complete: true)")
+    if out.exists():
+        return refuse(f"{out} exists: the check is done (a new check needs another --check-out)")
+    if top < 1:
+        return refuse(f"--top must be at least 1, got {top}")
+    gfile = Path(res["gates_file"])
+    gfile = gfile if gfile.is_absolute() or gfile.is_file() else ROOT / gfile
+    try:
+        gates = exploit.load_gates(gfile)
+    except (OSError, ValueError) as err:
+        return refuse(f"gate file {gfile}: {err}")
+    if gates.sha256 != res["gates_sha256"]:
+        return refuse(f"gate file {gfile} has sha256 {gates.sha256[:12]}, the ceiling ran under "
+                      f"{res['gates_sha256'][:12]}")
+    problem = arm.input_problems(gates)
+    if problem:
+        return refuse(problem)
+    ref = exploit.load_reference(exploit.ROOT / gates.reference["file"])
+    n, device = int(res["games"]), "cpu"
+    ranked = sorted(res["choices"], key=lambda c: -c["k"])          # stable: choice order on a tie
+    names = list(dict.fromkeys([res["best"]["name"]] + [c["name"] for c in ranked[:top]]))
+    by_name = {c["name"]: c for c in choices(gates)}
+    chs = [by_name[nm] for nm in names]
+    print(f"[oracle check] {folder}: {names}, {n} games each, {device}", flush=True)
+    replay = play(gates, ref, chs, n, device, chunk=len(chs))["cells"]
+    cfg = exploit.variant_cfg(gates, gates.run0.get("variant", VARIANT))
+    seed = int(ref.meta["seed"])
+    players = {ORACLE + c["name"]: Composite(c["flies"], cfg, n, device, seed + exploit.STRIKE_SEED_OFFSET)
+               for c in chs}
+    pg = exploit.play_cells(cfg, gates.run["size"], ref, [(gates.run0["opponent"], ORACLE + c["name"]) for c in chs],
+                            n, device, seed, int(gates.run["ticks_cap"]), hold_ticks=1, players=players)
+    k_ceiling = {c["name"]: c["k"] for c in res["choices"]}
+    rows = []
+    for i, c in enumerate(chs):
+        mine, oracle = replay[i], exploit.slice_cell(pg, i, n)
+        rows.append({"name": c["name"], "flies": c["flies"], "games": n,
+                     "differ": int(exploit.agreement(mine, oracle)["differ"]),
+                     "k_replay": int(np.sum(np.asarray(mine["outcome"]) == exploit.STRIKE_WIN)),
+                     "k_oracle": int(np.sum(np.asarray(oracle["outcome"]) == exploit.STRIKE_WIN)),
+                     "k_ceiling": int(k_ceiling[c["name"]])})
+    ok = all(r["differ"] == 0 and r["k_replay"] == r["k_ceiling"] for r in rows)
+    chk = {"what": "STE L3 oracle check of the run 0 ceiling (scripts/ste_l3_run0_ceiling.py --oracle-check): the best "
+                   "and top choices through the dispatch v the hold-1 oracle without it; observed in the training "
+                   "simulator", "status_note": STATUS, "folder": str(folder), "games": n, "device": device,
+           "top": top, "ceiling_gates_sha256": res["gates_sha256"], "of_record": bool(res.get("of_record")),
+           "status": PASS if ok else FAIL, "checked": rows}
+    chk["complete"] = True                                       # written last
+    l011.write_json(out, chk)
+    print(f"[oracle check] {chk['status']}: " + "; ".join(f"{r['name']} differ {r['differ']}, k {r['k_replay']} v "
+                                                          f"oracle {r['k_oracle']} v ceiling {r['k_ceiling']}"
+                                                          for r in rows), flush=True)
+    return EXIT_DONE if ok else EXIT_CONTROL_FAILED
+
+
 def refuse(why: str) -> int:
     print(f"refused: {why}", file=sys.stderr)
     return EXIT_REFUSED
@@ -221,12 +314,23 @@ def refuse(why: str) -> int:
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="ste_l3_run0_ceiling.py", description=__doc__.split("\n\n")[0])
-    ap.add_argument("--out", type=Path, required=True)
-    ap.add_argument("--gates", type=Path, default=DEFAULT_GATES)
+    ap.add_argument("--out", type=Path, help="the ceiling's folder (the ceiling run)")
+    ap.add_argument("--gates", type=Path)
     ap.add_argument("--games", type=int, help="T44's first n starts (default: the gate file's eval_games)")
-    ap.add_argument("--device", default="cpu")
+    ap.add_argument("--device")
     ap.add_argument("--chunk", type=int, help="choices per game batch (default: all in one batch)")
+    ap.add_argument("--oracle-check", type=Path, help="a finished ceiling folder: the oracle check (QC S1)")
+    ap.add_argument("--top", type=int, default=TOP, help="--oracle-check: top choices replayed besides the best")
+    ap.add_argument("--check-out", type=Path, help=f"--oracle-check: the result file (default <folder>/{ORACLE_FILE})")
     a = ap.parse_args(argv)
+    if a.oracle_check is not None:
+        if any(v is not None for v in (a.out, a.gates, a.games, a.device, a.chunk)):
+            return refuse("--oracle-check takes only --top and --check-out (it reads the rest from the folder)")
+        return oracle_check(a.oracle_check, a.check_out, a.top)
+    if a.out is None:
+        return refuse("--out <folder> (a ceiling run) or --oracle-check <folder> (the check of a finished one)")
+    a.gates = a.gates if a.gates is not None else DEFAULT_GATES
+    a.device = a.device if a.device is not None else "cpu"
     try:
         gates = exploit.load_gates(a.gates)
     except (OSError, ValueError) as err:
@@ -274,7 +378,8 @@ def main(argv: list[str] | None = None) -> int:
               "controls": controls, "choices": rows,
               "best": {k: best[k] for k in ("name", "flies", "k", "n", "rate", "ci")},
               "untrained": {k: unt[k] for k in ("name", "flies", "k", "n", "rate", "ci")},
-              "mark": mark_rule(best["k"], unt["k"], n, float(gates.run0["margin"]))}
+              "mark": mark_rule(best["k"], unt["k"], n, float(gates.run0["margin"]),
+                                of_record=of_record(n, a.device))}
     result["complete"] = True                                    # written last
     atomic.write_text(a.out / "results.md", render(result))
     l011.write_json(a.out / "results.json", result)

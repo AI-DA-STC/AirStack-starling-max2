@@ -417,7 +417,7 @@ gate files are not edited after their results).
   whose probes train the two-level learner; run 0 and the Strike runs use the gate's `side_overrides.strike` filled
   from it (`recipe_problem`).
 
-### Addendum, 25 Nov 2026: the mark re-set from the 3v3 game (DRAFT; pre-registered before the ceiling run)
+### Addendum, 25 Nov 2026: the mark re-set from the 3v3 game (pre-registered before the ceiling run; number filled after it)
 
 Found by the advisor, confirmed by the lead. Built on branch `l3-run0-mark`. This addendum, the rule and the script are
 committed before the full ceiling run; no number below is chosen after it is seen.
@@ -457,14 +457,33 @@ committed before the full ceiling run; no number below is chosen after it is see
   rule sets no mark, no skills run 0 is launched, and the lead re-plans run 0 before any skills run 0. Options include
   another run 0 opponent, or a criterion relative to the best constant choice with an interval rule. The re-plan is
   recorded here before any run.
-- **The number (the lead fills it after the full ceiling run):**
-  - best constant choice `____`: k_best = `____` of 1,000 (Wilson `____`–`____`);
-  - `skills_reach_min = ____` (mark count `____` of 1,000);
-  - above the untrained team's upper bound 0.49699 (mark count ≥ 497): `____`;
-  - ceiling run: `runs/____` (T`__`), device `____`, gate sha256 `____`.
+- **The number (filled by the lead 25 Nov 2026 after the full ceiling run and its oracle check):**
+  - best constant choice `free:strike_low+strike_low+strike_straight`: k_best = 604 of 1,000 (Wilson 0.573–0.634);
+  - `skills_reach_min = 0.554` (mark count 554 of 1,000);
+  - above the untrained team's upper bound 0.49699 (mark count ≥ 497): yes (`MARK_SET`);
+  - ceiling run: `runs/2026-11-25_ste_l3_run0_ceiling` (worktree `l3-run0-mark`, job `l3_run0_ceiling`, task L3.5,
+    0 GPU-h), device CPU, `of_record: true`, gate sha256 `6c83762d689a…` (the file unchanged on `development` up to
+    the fill), every control PASS.
+  - **Oracle check (QC S1), before the mark was accepted:** `--oracle-check` replayed the best and the top 3 choices
+    on the CPU at 1,000 games through the dispatch and against a hold-1 oracle written without it (each drone flies its
+    script's own column, closed loop): 0 games differ for each, and the reaches 604, 603, 601 reproduce the folder's
+    (`runs/2026-11-25_ste_l3_run0_oracle`, exit 0, `oracle_check.json` in the ceiling folder: PASS).
+- **What the mark does and does not say (QC's lines, 25 Nov 2026):**
+  - **A constant choice can pass.** A learner that settles on the best constant choice (604) passes (≥ 554); PASS
+    shows the trainer found a choice at least as good as the best fixed one less 0.05, not that its play changes with
+    the state. The choice shares (§3 of the spec) are what show that.
+  - **CPU mark, CUDA read.** The mark is set on the CPU, where the play replays T44 exactly; run 0's read plays on the
+    device of the run. On CUDA the same play is equal only within the replay tolerance (counts within 10 games,
+    `replay_count_tol_cuda_games`), so a learner at the mark may read a few games either side of it; the mark is not
+    moved for this.
+  - **A ceiling with a failed control sets no mark.** The script exits 6, writes no `MARK_SET`, and the lead re-plans
+    as for a mark below the bound. A ceiling not of record (fewer than 1,000 games, or CUDA) writes `NOT_OF_RECORD`
+    and no `toml_value` (QC S4).
+  - **Re-plan options**, should a later ceiling fall below the bound: another run 0 opponent (one the constant
+    choices beat by a margin), or a criterion relative to the best constant choice with an interval rule; recorded here
+    before any run.
 
   Then the lead writes the value and its comment into `configs/ste_l3/skills_gates.toml` and
-  `skills_poolonly_gates.toml` before any skills run 0. Each comment still says "a learner that picks high or low near
-  1,000". The lead also updates the one test that pins the files' 0.90 (`tests/test_ste_l3_pipeline_gates.py`, the
+  `skills_poolonly_gates.toml` before any skills run 0, replacing the comment "a learner that picks high or low near 1,000". The lead also updates the one test that pins the files' 0.90 (`tests/test_ste_l3_pipeline_gates.py`, the
   skills route's run 0 mark). The files carry no result yet, so this is not a moved mark. Their sha256 changes; the
   pilot's `pilot.json` is checked by its `[learner]` table, not by the sha.

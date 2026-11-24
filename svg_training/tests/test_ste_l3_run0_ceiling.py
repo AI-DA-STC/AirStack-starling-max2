@@ -80,7 +80,7 @@ def test_a_fixed_team_resolves_to_its_choice_every_decision(gates):
 
 # ================================================================================================ the mark rule
 def test_the_mark_is_the_best_count_less_the_margin_on_the_1000_grid():
-    r = ceiling.mark_rule(k_best=570, k_untrained=466, n=1000, margin=0.05)
+    r = ceiling.mark_rule(k_best=570, k_untrained=466, n=1000, margin=0.05, of_record=True)
     assert r["mark_count"] == 520 and r["skills_reach_min"] == 0.52
     hi = wilson_interval(466, 1000)[1]
     assert r["untrained_ci_high"] == hi and 0.496 < hi < 0.498
@@ -91,11 +91,20 @@ def test_the_mark_is_the_best_count_less_the_margin_on_the_1000_grid():
 
 
 def test_a_mark_not_above_the_untrained_teams_upper_bound_asks_the_lead_to_re_plan():
-    r = ceiling.mark_rule(k_best=540, k_untrained=466, n=1000, margin=0.05)
+    r = ceiling.mark_rule(k_best=540, k_untrained=466, n=1000, margin=0.05, of_record=True)
     assert r["mark_count"] == 490 and r["mark_above_untrained_high"] is False
     assert r["status"] == "LEAD_RE_PLANS"
-    edge = ceiling.mark_rule(k_best=547, k_untrained=466, n=1000, margin=0.05)    # 0.497 v the bound 0.49699
+    edge = ceiling.mark_rule(547, 466, 1000, 0.05, of_record=True)    # 0.497 v the bound 0.49699
     assert edge["mark_above_untrained_high"] is True
+
+
+
+def test_a_mark_not_of_record_has_no_status_to_set_and_no_toml_value():
+    """QC S4: only the ceiling of record (1,000 games, CPU) proposes a mark; any other run reads NOT_OF_RECORD."""
+    for k_best in (570, 540):
+        r = ceiling.mark_rule(k_best, 466, 1000, 0.05, of_record=False)
+        assert r["status"] == "NOT_OF_RECORD" and r["toml_value"] is None
+        assert r["mark_count"] == k_best - 50                 # the arithmetic is still shown
 
 
 # ================================================================================================ the small run
@@ -111,7 +120,9 @@ def test_every_choice_has_its_reaches_and_wilson_interval(done, gates):
     best = max(res["choices"], key=lambda c: c["k"])
     assert res["best"]["name"] == best["name"] and res["best"]["k"] == best["k"]
     assert res["untrained"]["name"] == ceiling.untrained_choice(ceiling.choices(gates), gates)["name"]
-    assert res["mark"] == ceiling.mark_rule(best["k"], res["untrained"]["k"], GAMES, float(gates.run0["margin"]))
+    assert res["mark"] == ceiling.mark_rule(best["k"], res["untrained"]["k"], GAMES, float(gates.run0["margin"]),
+                                            of_record=False)
+    assert res["mark"]["status"] == "NOT_OF_RECORD" and res["mark"]["toml_value"] is None
     assert res["of_record"] is False                         # 4 games, not the 1,000 the mark is set on
     assert all(v["status"] == "PASS" for v in res["controls"].values())
     assert (done / "results.md").read_text().startswith("Simulator: training simulator, tier 1")
@@ -197,3 +208,51 @@ def test_only_a_cpu_run_on_the_1000_evaluation_games_is_of_record():
     assert ceiling.of_record(1000, "cpu") is True
     assert ceiling.of_record(1000, "cuda") is False and ceiling.of_record(1000, "cuda:0") is False
     assert ceiling.of_record(999, "cpu") is False
+
+
+
+# ================================================================================================ the oracle check (QC S1)
+def test_the_oracle_check_replays_the_best_and_top_choices_against_the_oracle(done, tmp_path):
+    """On a finished ceiling folder: the best choice and the top 3 (by reaches, choice order on a tie), replayed at the
+    folder's n on the CPU through the dispatch, equal the hold-1 oracle written without the dispatch game for game, and
+    reproduce the folder's reaches."""
+    out = tmp_path / "check.json"
+    assert ceiling.main(["--oracle-check", str(done), "--check-out", str(out)]) == 0
+    chk = json.loads(out.read_text())
+    res = json.loads((done / "results.json").read_text())
+    ranked = sorted(res["choices"], key=lambda c: -c["k"])          # stable: choice order on a tie
+    want = list(dict.fromkeys([res["best"]["name"]] + [c["name"] for c in ranked[:3]]))
+    assert [c["name"] for c in chk["checked"]] == want
+    assert chk["status"] == "PASS" and chk["complete"] and chk["games"] == GAMES and chk["device"] == "cpu"
+    assert chk["ceiling_gates_sha256"] == res["gates_sha256"] and chk["of_record"] is False
+    for c in chk["checked"]:
+        assert c["differ"] == 0 and c["k_replay"] == c["k_oracle"] == c["k_ceiling"]
+
+
+def test_the_oracle_check_writes_oracle_check_json_in_the_folder_by_default(done, tmp_path):
+    import shutil
+    folder = tmp_path / "copy"
+    shutil.copytree(done, folder)
+    assert ceiling.main(["--oracle-check", str(folder)]) == 0
+    assert json.loads((folder / "oracle_check.json").read_text())["status"] == "PASS"
+    assert ceiling.main(["--oracle-check", str(folder)]) == 2          # a finished check is not redone
+
+
+def test_an_oracle_that_differs_fails_the_check_exit_6(done, tmp_path, monkeypatch):
+    real = ceiling.Composite
+
+    class Wrong(real):
+        def __init__(self, names, cfg, n, device="cpu", seed=0):
+            super().__init__(["strike_converge"] * len(names), cfg, n, device, seed)
+    monkeypatch.setattr(ceiling, "Composite", Wrong)
+    out = tmp_path / "check.json"
+    assert ceiling.main(["--oracle-check", str(done), "--check-out", str(out)]) == 6
+    chk = json.loads(out.read_text())
+    assert chk["status"] == "FAIL" and any(c["differ"] > 0 for c in chk["checked"])
+
+
+def test_the_oracle_check_refuses_an_unfinished_folder_and_mixed_modes(done, tmp_path):
+    (tmp_path / "half").mkdir()
+    assert ceiling.main(["--oracle-check", str(tmp_path / "half")]) == 2
+    assert ceiling.main(["--oracle-check", str(done), "--out", str(tmp_path / "x")]) == 2
+    assert ceiling.main([]) == 2

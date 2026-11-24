@@ -78,8 +78,8 @@ the Guard side only: a Guard run needs no run 0 (the Guard recipe is T41's), so 
   - Skills: `choice = "two_level"` with list A, `strike_straight` first (run 0's known answer), entropy 0.01 per head,
     and the comment that a `kl_threshold`, if ever set, is for the sum of the two per-head KLs.
   - The mask is on in the main files and off in the pool-only controls.
-- **Skills run 0 mark:** `[run0] skills_reach_min = 0.90` (it loads only with `eval_games = 1000`).
-  **Addendum, 25 Nov 2026 (DRAFT, before the ceiling run): 0.90 is wrong and is re-set.** It came from the 1v1 screen
+- **Skills run 0 mark:** `[run0] skills_reach_min = 0.554` (it loads only with `eval_games = 1000`; was 0.90).
+  **Addendum, 25 Nov 2026 (pre-registered before the ceiling run): 0.90 was wrong and is re-set.** It came from the 1v1 screen
   (T66). In the 3v3 base game on T44's starts the parked-centre Guard holds against every Strike script (T70: straight
   534, flank 450, high 466, low 430, sacrifice 525, converge 986 of 1,000), so no constant choice reaches 900.
   - The new mark is `skills_reach_min = (k_best − 0.05 × 1,000) / 1,000`, where k_best is the most reaches of any
@@ -89,7 +89,8 @@ the Guard side only: a Guard run needs no run 0 (the Guard recipe is T41's), so 
     replay T44, the choice log, plumbing).
   - The mark must lie above the untrained team's Wilson upper bound (free + strike_straight, 466 of 1,000: 0.49699;
     mark count ≥ 497 of 1,000, so k_best ≥ 547), else the lead re-plans run 0 and no skills run 0 is launched.
-  - The number: `____` (the lead fills it after the full run, in both skills gate files, before any skills run 0).
+  - The number: **0.554** (k_best 604 of 1,000, `free:strike_low+strike_low+strike_straight`; mark count 554 ≥ 497;
+    CPU ceiling of record and its oracle check PASS, 25 Nov 2026), in both skills gate files before any skills run 0.
   - Full text: [L3_SLICE2_DESIGN.md](L3_SLICE2_DESIGN.md), "Addendum, 25 Nov 2026".
 - **The fill step** (each file's header): the fill rule of section 2b.
 

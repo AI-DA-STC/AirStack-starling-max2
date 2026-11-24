@@ -7,6 +7,7 @@ worktree), the legacy log and ``GPU_PAUSE_LOG`` work as before, and the default 
 (``scripts/ste_*.py``) but never the track's own launcher, wrapper or waiter (``scripts/ste_job.py``)."""
 import json
 import os
+import signal
 import subprocess
 import sys
 import time
@@ -36,7 +37,9 @@ def _wait(predicate) -> bool:
 @pytest.fixture()
 def dummy(tmp_path):
     marker = f"gpu_pause_test_{uuid.uuid4().hex}"
-    proc = subprocess.Popen([sys.executable, "-c", "import time\nwhile True: time.sleep(0.05)", marker], stderr=subprocess.PIPE)
+    # its own SIGINT handler, as our jobs install one: Python installs none if SIGINT was ignored when it started
+    code = "import signal, time\nsignal.signal(signal.SIGINT, signal.default_int_handler)\nwhile True: time.sleep(0.05)"
+    proc = subprocess.Popen([sys.executable, "-c", code, marker], stderr=subprocess.PIPE)
     env = _safe_env(tmp_path, GPU_PAUSE_PATTERN=marker)
     yield proc, env, tmp_path / "pauses.log"
     if proc.poll() is None:
@@ -88,6 +91,21 @@ def test_stop_interrupts_a_paused_job(dummy):
     assert _wait(lambda: proc.poll() is not None)
     assert b"KeyboardInterrupt" in proc.stderr.read()
     assert [json.loads(line)["event"] for line in log.read_text().splitlines()] == ["pause", "stop"]
+
+
+@pytest.fixture()
+def sigint_ignored():
+    """The suite started as a background job of a non-interactive shell (``( pytest … & )``): SIGINT is ignored in pytest
+    and, an ignored signal surviving exec, in every child it starts. Three full runs of 24 Nov 2026 started that way."""
+    previous = signal.signal(signal.SIGINT, signal.SIG_IGN)
+    try:
+        yield
+    finally:
+        signal.signal(signal.SIGINT, previous)
+
+
+def test_stop_interrupts_a_paused_job_when_the_suite_ignores_sigint(sigint_ignored, dummy):
+    test_stop_interrupts_a_paused_job(dummy)
 
 
 def test_no_jobs_and_bad_command(tmp_path):

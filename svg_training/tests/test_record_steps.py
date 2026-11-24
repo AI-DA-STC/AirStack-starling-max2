@@ -431,8 +431,9 @@ class Session:
         env = dict(os.environ, PATH=f"{b}{os.pathsep}{os.environ['PATH']}", SVG_HOST_PY=child_python(),
                    SVG_TEST_HOST_BAGS=str(self.bags), SVG_TEST_SIM=str(b / "fakesim"), SVG_TEST_RUNS=str(self.runs),
                    SVG_TEST_POLL_S="0.05", HOME=str(self.home), FAKE_DIR=str(self.fd))
+        # SIGINT at its default in the script: a bash started with SIGINT ignored (a backgrounded suite) cannot trap it
         self.r = subprocess.run(["bash", str(SCRIPT), name], capture_output=True, text=True, cwd=ROOT, env=env,
-                                timeout=180)
+                                timeout=180, preexec_fn=lambda: signal.signal(signal.SIGINT, signal.SIG_DFL))
         self.calls = (self.fd / "calls.log").read_text().splitlines() if (self.fd / "calls.log").exists() else []
         self.bag = f"svg_s1_{name}_20991231_235959"
         self.sentinel = f"svg_s1_{name}_00000000_000000"
@@ -809,6 +810,16 @@ def test_trap_at_each_stage(tmp_path, on, sig, stage, landed, extra):
         assert land < s.idx(r"^sim down$") < s.idx(rf"docker exec {R} rm -rf {BAGS_C}/{s.bag}$")
         assert (s.out / s.bag / "metadata.yaml").is_file() and not (s.bags / s.bag).exists()
         assert s.idx(r"pkill -INT -f bag_prefix:=svg_s1_run1\( \|\$\)$") < s.idx(r"^sim down$")
+
+
+def test_int_trap_works_when_the_suite_ignores_sigint(tmp_path):
+    """The suite started as a background job of a non-interactive shell (``( pytest … & )``) ignores SIGINT, and a bash
+    started with SIGINT ignored cannot trap it: the script must still be started with SIGINT at its default."""
+    previous = signal.signal(signal.SIGINT, signal.SIG_IGN)
+    try:
+        test_trap_at_each_stage(tmp_path, r"mavros/state", "INT", 3, True, {})
+    finally:
+        signal.signal(signal.SIGINT, previous)
 
 
 def test_signal_during_collect_is_ignored(tmp_path):

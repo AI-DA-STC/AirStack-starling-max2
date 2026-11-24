@@ -468,6 +468,8 @@ committed before the full ceiling run; no number below is chosen after it is see
     on the CPU at 1,000 games through the dispatch and against a hold-1 oracle written without it (each drone flies its
     script's own column, closed loop): 0 games differ for each, and the reaches 604, 603, 601 reproduce the folder's
     (`runs/2026-11-25_ste_l3_run0_oracle`, exit 0, `oracle_check.json` in the ceiling folder: PASS).
+    The fill changed the skills gate file's sha256, so `--oracle-check` now refuses that folder (it checks the
+    ceiling's sha256); to repeat it, run it from a checkout of `0f990ba8`.
 - **What the mark does and does not say (QC's lines, 25 Nov 2026):**
   - **A constant choice can pass.** A learner that settles on the best constant choice (604) passes (≥ 554); PASS
     shows the trainer found a choice at least as good as the best fixed one less 0.05, not that its play changes with

@@ -174,10 +174,12 @@ def test_sim_only_yaw_values_live_only_in_the_override_file():
             if pat.search(f.read_text(errors="replace")):
                 found.add(f.relative_to(ROOT).as_posix())
     # v1 (STE L1.1) carries v0's [gains] verbatim (tests/test_estimator_effect.py checks they are equal); so do v1's two
-    # L1.8 error conditions (tests/test_ste_tier2_score_l18.py checks they differ from v1 in state_error_* only)
+    # L1.8 error conditions (tests/test_ste_tier2_score_l18.py checks they differ from v1 in state_error_* only);
+    # STE L1.5's SIM-ONLY comparison file holds the AirStack simulator's airframe (owner's ruling R21, 24 Nov 2026): the
+    # trainer's loader refuses it and no config or source file names it (tests/test_compare_sim_steps.py)
     assert found == {"params/starling_physics_v0.toml", "params/starling_physics_v1.toml",
                      "params/starling_physics_v1_nominal.toml", "params/starling_physics_v1_conservative.toml",
-                     "params/sim_only_yaw_v0.toml"}, found
+                     "params/sim_only_yaw_v0.toml", "params/airstack_sim_physics_v0.toml"}, found
     drone = load_physics_params(PARAMS).gains
     sim = tomllib.loads(SIM_ONLY_YAW.read_text())["gains"]
     assert (sim["mc_yawrate_p"], sim["mc_yawrate_i"]) != (drone.mc_yawrate_p, drone.mc_yawrate_i)

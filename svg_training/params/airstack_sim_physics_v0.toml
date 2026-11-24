@@ -1,0 +1,129 @@
+# SIM-ONLY: the AirStack simulator's airframe and plant, for the STE L1.5 comparison only. NEVER a training set, NEVER a
+# drone value, NEVER an AirStack change (repository iron rule 9; owner's ruling R21, 24 Nov 2026,
+# ste_learning/DISCUSSION_2026-11-19_20.md section 16; STANDARDS section 5 rule 2).
+# Read ONLY by scripts/compare_sim_steps.py (load_sim_only_params): the [sim_only] table below makes
+# models/physics_params.load_physics_params refuse this file ("unknown section"), so no game file or trainer can load it
+# by mistake; the script checks the header and the label, drops [sim_only] and loads the rest.
+# Written by hand on 2026-11-24 (STE L1.5). Same schema as params/starling_physics_v1.toml.
+# Sources, read only:
+#   A = the simulator's PX4 airframe ~/AirStack-starling-max2/AirStack/simulation/isaac-sim/px4/airframes/
+#       10090_pegasus_starling2max, sha256 ec74dd9aff860cef55e2982978b5b9aad17805b0abde88903ad007113a9b9875 (the file the
+#       L1.4 session flew, records/2026-11-24_ste_l14_steps_record.md); "A:77" = its line 77; "= real" and "SIM-ONLY" are
+#       the airframe's own labels.
+#   U = the parameter dump of the L1.4 session's PX4 log (runs/2026-11-24_ste_l14_steps_r3/drone_1_sysid2_03_49_17.ulg,
+#       PX4 v1.16.1 SITL): every [gains] value below equals it (float32); "U, PX4 default" = not set by the airframe, so
+#       the simulator flew PX4 v1.16.1's default (no parameter changed after logging started).
+#   P = the Pegasus plant AirStack/simulation/isaac-sim/extensions/PegasusSimulator/extensions/pegasus.simulator/pegasus/
+#       simulator/logic/vehicles/multirotors/starling2max.py, sha256 e63536b25b9da258ad35c6dc40abd0197d516635907a629ff479f01d98003434.
+# What tier 2 cannot match (named in the L1.5 spec, not hidden here): THR_MDL_FAC 0.9 (A:90; tier 2 maps u to thrust
+#   linearly), the hover-thrust estimator (MPC_USE_HTE 1), Pegasus's input scaling 1350 rad/s per unit command
+#   (launch_scripts/launch_env.py:14) against omega_max 1450, the PX4 1.16.1 cascade (tier 2 is a port of 1.14), and
+#   EKF2 itself (the simulator fuses simulated GPS: EKF2_GPS_CTRL 7, EKF2_HGT_REF 1; the drone fuses mocap).
+# Units: SI, except [gains], which keep PX4's own units (deg, deg/s, Hz) and names (lower case).
+
+[source]
+airframe = "AirStack/simulation/isaac-sim/px4/airframes/10090_pegasus_starling2max"
+airframe_sha256 = "ec74dd9aff860cef55e2982978b5b9aad17805b0abde88903ad007113a9b9875"
+ulog = "runs/2026-11-24_ste_l14_steps_r3/drone_1_sysid2_03_49_17.ulg"
+plant = "AirStack/simulation/isaac-sim/extensions/PegasusSimulator/extensions/pegasus.simulator/pegasus/simulator/logic/vehicles/multirotors/starling2max.py"
+plant_sha256 = "e63536b25b9da258ad35c6dc40abd0197d516635907a629ff479f01d98003434"
+live_clone_commit = "3b8bcf1d"
+date = "2026-11-24"
+label = "SIM-ONLY: AirStack simulator airframe 10090 + Pegasus plant, STE L1.5 comparison only (R21); never a training set or a drone value"
+
+[gains]                                   # as the simulator's PX4 v1.16.1 flew them (U); airframe line where one exists
+mpc_xy_p = 0.95                           # A:77 MPC_XY_P (= real)
+mpc_z_p = 5                               # A:78 MPC_Z_P (= real)
+mpc_xy_vel_p_acc = 1.8                    # A:79 MPC_XY_VEL_P_ACC (= real)
+mpc_xy_vel_i_acc = 0.4                    # U, PX4 default MPC_XY_VEL_I_ACC (the drone's file: 0.4)
+mpc_xy_vel_d_acc = 0.2                    # U, PX4 default MPC_XY_VEL_D_ACC (the drone's file: 0.2)
+mpc_z_vel_p_acc = 8                       # A:80 MPC_Z_VEL_P_ACC (= real)
+mpc_z_vel_i_acc = 2                       # U, PX4 default MPC_Z_VEL_I_ACC (the drone's file: 2)
+mpc_z_vel_d_acc = 0                       # U, PX4 default MPC_Z_VEL_D_ACC (the drone's file: 0)
+mpc_veld_lp = 5                           # U, PX4 default MPC_VELD_LP (the drone's file: 5)
+mpc_xy_vel_max = 20                       # A:84 MPC_XY_VEL_MAX SIM-ONLY (real 3)
+mpc_z_vel_max_up = 10                     # A:88 MPC_Z_VEL_MAX_UP SIM-ONLY (real 2)
+mpc_z_vel_max_dn = 4                      # A:89 MPC_Z_VEL_MAX_DN SIM-ONLY (real 0.6)
+mpc_tiltmax_air = 45                      # U, PX4 default MPC_TILTMAX_AIR (the drone's file: 45)
+mpc_thr_hover = 0.165                     # A:34 MPC_THR_HOVER (= real)
+mpc_thr_min = 0.12                        # U, PX4 default MPC_THR_MIN (the drone's file: 0.04)
+mpc_thr_max = 1                           # U, PX4 default MPC_THR_MAX (the drone's file: 0.6)
+mpc_thr_xy_marg = 0.3                     # U, PX4 default MPC_THR_XY_MARG (the drone's file: 0.3)
+mc_roll_p = 8                             # A:74 MC_ROLL_P (= real)
+mc_pitch_p = 8                            # A:75 MC_PITCH_P (= real)
+mc_yaw_p = 2.8                            # A:76 MC_YAW_P (= real)
+mc_yaw_weight = 0.4                       # U, PX4 default MC_YAW_WEIGHT (the drone's file: 0.4)
+mc_rollrate_p = 0.032                     # A:48 MC_ROLLRATE_P SIM-ONLY (real 0.064)
+mc_rollrate_i = 0.05                      # A:49 MC_ROLLRATE_I SIM-ONLY (real 0.1)
+mc_rollrate_d = 0.00065                   # A:50 MC_ROLLRATE_D SIM-ONLY (real 0.0013)
+mc_pitchrate_p = 0.032                    # A:52 MC_PITCHRATE_P SIM-ONLY (real 0.064)
+mc_pitchrate_i = 0.048                    # A:53 MC_PITCHRATE_I SIM-ONLY (real 0.096)
+mc_pitchrate_d = 0.00055                  # A:54 MC_PITCHRATE_D SIM-ONLY (real 0.0011)
+mc_yawrate_p = 0.25                       # A:64 MC_YAWRATE_P SIM-ONLY (real 0.07) CHG-0024
+mc_yawrate_i = 0.2                        # A:65 MC_YAWRATE_I SIM-ONLY (real 0.5) CHG-0024
+mc_yawrate_d = 0                          # A:66 MC_YAWRATE_D (= real)
+mc_rollrate_k = 1                         # A:51 MC_ROLLRATE_K (= real)
+mc_pitchrate_k = 1                        # A:55 MC_PITCHRATE_K (= real)
+mc_yawrate_k = 1                          # A:67 MC_YAWRATE_K (= real)
+mc_rollrate_ff = 0                        # U, PX4 default MC_ROLLRATE_FF (the drone's file: 0)
+mc_pitchrate_ff = 0                       # U, PX4 default MC_PITCHRATE_FF (the drone's file: 0)
+mc_yawrate_ff = 0                         # U, PX4 default MC_YAWRATE_FF (the drone's file: 0)
+mc_rollrate_max = 220                     # U, PX4 default MC_ROLLRATE_MAX (the drone's file: 130)
+mc_pitchrate_max = 220                    # U, PX4 default MC_PITCHRATE_MAX (the drone's file: 130)
+mc_yawrate_max = 200                      # U, PX4 default MC_YAWRATE_MAX (the drone's file: 150)
+mc_rr_int_lim = 0.3                       # U, PX4 default MC_RR_INT_LIM (the drone's file: 0.3)
+mc_pr_int_lim = 0.3                       # U, PX4 default MC_PR_INT_LIM (the drone's file: 0.3)
+mc_yr_int_lim = 0.3                       # U, PX4 default MC_YR_INT_LIM (the drone's file: 0.3)
+mc_yaw_cutoff = 15                        # A:73 MC_YAW_TQ_CUTOFF SIM-ONLY (v1.16's name; the drone's 1.14 fork: MC_YAW_CUTOFF 15)
+imu_dgyro_cutoff = 40                     # A:58 IMU_DGYRO_CUTOFF (= real)
+imu_gyro_ratemax = 800                    # U, PX4 default IMU_GYRO_RATEMAX (the drone's file: 800)
+mc_airmode = 0                            # U, PX4 default MC_AIRMODE (the drone's file: 0)
+ca_rotor0_px = 0.095                      # A:20 CA_ROTOR0_PX SIM-ONLY (real 0.085)
+ca_rotor0_py = 0.13                       # A:21 CA_ROTOR0_PY SIM-ONLY (real 0.0625)
+ca_rotor1_px = -0.095                     # A:23 CA_ROTOR1_PX SIM-ONLY (real -0.085)
+ca_rotor1_py = -0.13                      # A:24 CA_ROTOR1_PY SIM-ONLY (real -0.0625)
+ca_rotor2_px = 0.095                      # A:26 CA_ROTOR2_PX SIM-ONLY (real 0.085)
+ca_rotor2_py = -0.13                      # A:27 CA_ROTOR2_PY SIM-ONLY (real -0.0625)
+ca_rotor3_px = -0.095                     # A:29 CA_ROTOR3_PX SIM-ONLY (real -0.085)
+ca_rotor3_py = 0.13                       # A:30 CA_ROTOR3_PY SIM-ONLY (real 0.0625)
+ca_rotor0_km = 0.0136                     # A:22 CA_ROTOR0_KM SIM-ONLY (real 0.05)
+ca_rotor1_km = 0.0136                     # A:25 CA_ROTOR1_KM SIM-ONLY (real 0.05)
+ca_rotor2_km = -0.0136                    # A:28 CA_ROTOR2_KM SIM-ONLY (real -0.05)
+ca_rotor3_km = -0.0136                    # A:31 CA_ROTOR3_KM SIM-ONLY (real -0.05)
+
+[airframe]                                # the Pegasus plant (P); mass and inertia live in the simulator's USD
+mass_kg = 0.557                           # kg. P:3 docstring "Mass 0.557 kg" (the USD itself is binary, not read: NOT VERIFIED)
+inertia_kgm2 = [0.002943, 0.001857, 0.004649] # kg m^2. As params/starling_physics_v1.toml (CMU sys-ID); P says the USD holds them: NOT VERIFIED
+k_f = 3.964738e-6                         # N/(rad/s)^2. P:12 ROTOR_CONSTANT
+k_m = 5.38697e-8                          # N m/(rad/s)^2. P:13 ROLLING_MOMENT_COEFFICIENT
+omega_max_rad_s = 1450.0                  # rad/s. P:21 MAX_ROTOR_VELOCITY (input scaling 1350 not modelled, see header)
+tau_up_s = 0.055                          # s. Unused here (motor_lag = false below); P:14 quotes CMU's 55 up / 85 down
+tau_down_s = 0.085                        # s. Unused here (motor_lag = false below)
+rotor_xy_cad_m = [[0.095, 0.13], [-0.095, -0.13], [0.095, -0.13], [-0.095, 0.13]] # m, FRD, rotors 0..3. A:20-31 (= the simulator's CMU geometry)
+
+[model]
+physics_dt_s = 0.005                      # as tier 2 (D6: 200 Hz, 10 physics steps per 0.05 s tick)
+rotor_geometry = "cad"                    # plant rotor positions = A's CA_ROTOR* (the same numbers in the simulator)
+motor_lag = false                         # P:15 MOTOR_TIME_CONSTANT_S = 0.0 (STARLING_MOTOR_TAU unset in the L1.4 session) SIM-ONLY
+setpoint_delay_s = 0.0                    # D7
+upset_tilt_deg = 60.0                     # D10
+state_error_pos_m = 0.0                   # off here; compare_sim_steps.py sets the arms (L1.5 spec)
+state_error_pos_tau_s = 0.0
+state_error_vel_mps = 0.0
+state_error_vel_tau_s = 0.0
+state_error_att_rad = 0.0
+state_error_att_tau_s = 0.0
+state_delay_att_s = 0.0                   # FIXED at 0 (L1.1b)
+state_delay_s = 0.0                       # off here; compare_sim_steps.py sets the arms (L1.5 spec)
+state_noise_pos_m = 0.0
+state_noise_vel_mps = 0.0
+state_noise_att_rad = 0.0
+state_noise_rate_rad_s = 0.0
+drag_x_n_per_mps = 0.5                    # N per m/s, body x. P:41 LinearDrag([0.50, 0.30, 0.0]) (Pegasus's Iris default) SIM-ONLY
+drag_y_n_per_mps = 0.3                    # N per m/s, body y. P:41 SIM-ONLY
+drag_z_n_per_mps = 0.0                    # N per m/s, body z. P:41
+
+[sim_only]
+label = "SIM-ONLY: AirStack simulator values for the STE L1.5 comparison only (R21, 24 Nov 2026); never a training set, a drone value or an AirStack change"
+owner_ruling = "R21, 2026-11-24"
+read_by = "scripts/compare_sim_steps.py"

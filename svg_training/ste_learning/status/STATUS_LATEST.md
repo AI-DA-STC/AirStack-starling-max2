@@ -1,6 +1,6 @@
 INTERNAL · the latest status of STE's own learning track and the NUS port, overwritten at every update by the `train-status` skill · [../README.md](../README.md); the history: [LOG.md](LOG.md)
 
-**Status, 2026-11-25 05:00 (+08:00) (event: morning digest — L3–L6 pipeline check run end to end, both routes PIPELINE WORKS)** · RTX 5090 · GPU 0 % / 75 W / 1.2 of 32 GB · 0 training processes (0 paused)
+**Status, 2026-11-25 05:55 (+08:00) (event: morning digest — L3–L6 pipeline check run end to end, both routes PIPELINE WORKS)** · RTX 5090 · GPU 0 % / 75 W / 1.2 of 32 GB · 0 training processes (0 paused)
 
 **Main track:** L3–L6 pipeline check DONE: both routes **PIPELINE WORKS** (T73–T89, INFO, two reviewers) · **Side track:** 3-D clips of every L5 run (owner's ask): rendered for all six runs, automatic post-run hook still owed; L2.6 tier-2 clips (done); test-suite flakes fixed (done)
 
@@ -12,7 +12,7 @@ INTERNAL · the latest status of STE's own learning track and the NUS port, over
 
 Every L5 run now also has 3-D clips in its run folder (`runs/<run>/videos3d/`, top view and 3-D view, MP4 + GIF; 68 clips, 0 failures), rendered by `scripts/ste_l5_clips3d.py` launched by hand after each run; the automatic post-run hook the owner asked for is still owed. Tier-1 games drawn in Isaac Lab; not a flight.
 
-## Morning digest (work done overnight, 03:15–05:00)
+## Morning digest (work done overnight, 03:15–05:55)
 
 **Plain summary.** Tested: the whole training pipeline for both routes (pure RL "velocity" and the two-level "skills" route), from pilots through training, scoring, export and reload. Happened: every required stage passed its controls; both routes read **PIPELINE WORKS** (INFO, one seed each, 2.29 of 20 GPU-h). Why it matters: the pipeline can now train, score and export a policy on either route; it is a pipeline check, not a training budget of record and not for flight. [Record](../../records/2026-11-25_ste_l3_l6_pipeline_record.md).
 
@@ -79,7 +79,7 @@ GPU-h in L3–L6 so far: 2.291 of 20 (RTX 5090 ledger; includes 0.189 for the 3-
 | CLIP-T2 | L2.6 tier-2 clips on the fixed path | DONE: both tiers agree game for game (8 of 8, both cells); record T71 updated |
 | side task | three tests that failed only in background-launched suites | DONE (SIGINT ignored in background jobs; fixed, reviewed, merged) |
 | R34 | bug re-runs allowance (owner ruling) | recorded; not used |
-| Suite | full suite on the final code (`026fc00c`) | RUNNING (the earlier run tripped on its own merge mid-run: `test_timing` read HEAD twice; not a code fault) |
+| Suite | full suite on the final code (`026fc00c`) | PASS: 2,890 passed, 59 skipped, 0 failed (38 min). An earlier run tripped on a merge made while it ran (`test_timing` read HEAD twice; not a code fault) |
 
 **Next.** 1) The automatic post-run 3-D clip hook (the owner's ask; today a script launched by hand). 2) The owner's look at the pipeline-check read (record T73–T89). 3) What L7 should be (the owner's gate; nothing launches without it).
 
@@ -89,4 +89,4 @@ GPU-h in L3–L6 so far: 2.291 of 20 (RTX 5090 ledger; includes 0.189 for the 3-
 
 **Usage:** GPU 2.30 GPU-h overnight (L3–L6 2.291, L2.6 clips 0.008); CPU jobs: ceiling, oracle check, scoring suite, held arm, exports, read, two full test suites; agents: one Opus builder (3-D clips, ~0.29 M tokens), six Sonnet reviewers (~0.47 M tokens), one Sonnet writer (~0.22 M tokens); advisor (Fable 5.2) three times (start, before done, final).
 
-**Ready to push.** commits on `development` ahead of `origin/development` (count in the chat message); push from GitHub Desktop. `main` unchanged.
+**Ready to push.** 22 commits on `development` ahead of `origin/development` (this status commit included); mirror updated if clean; push from GitHub Desktop. `main` unchanged. They hold the run-0 mark fill, the oracle check, the flake fix, R34, the L2.6 tier-2 clips, the 3-D clip script, the reader fix, the L3–L6 record (T73–T89) and this status.

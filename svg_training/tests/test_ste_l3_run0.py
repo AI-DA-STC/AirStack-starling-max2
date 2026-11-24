@@ -3,10 +3,12 @@ ste_learning/drafts/L3_SLICE2_DESIGN.md "Run 0 for the skills route").
 
 Run 0 = a two-level Strike learner trained against ``guard_parked_centre`` ([run0] opponent; 3v3, the base game,
 T44's starts) at the run's step budget and cap. Known answer: the untrained skills team plays free + strike_straight
-(about 466 reaches of 1,000 against the parked Guard, T70), a learner that picks high or low reaches near 1,000 (T44 /
-T70: the parked Guard holds 0 against them). PASS = reaches >= [run0] skills_reach_min (0.90) of the evaluation games
-(point estimate) at the FINAL checkpoint; FAIL at the full budget below that; INCONCLUSIVE at the cap. A FAIL is never
-overridden; the skills Strike runs launch only on PASS.
+(466 reaches of 1,000 against the parked Guard, T70). Corrected 25 Nov 2026: in this 3v3 game the parked Guard holds
+against every Strike script (T70: high 466, low 430, no script reaches above 570); "holds 0 against high and low" was
+the 1v1 screen (T66). The mark is re-set by the design's addendum of 25 Nov 2026 (best constant choice - 0.05, from
+scripts/ste_l3_run0_ceiling.py); the tests here use their own marks. PASS = reaches >= [run0] skills_reach_min of the
+evaluation games (point estimate) at the FINAL checkpoint; FAIL at the full budget below that; INCONCLUSIVE at the cap.
+A FAIL is never overridden; the skills Strike runs launch only on PASS.
 
 The PASS mark is checked on synthetic results only; the tiny CPU run checks the plumbing (controls, reads, the
 final-checkpoint rule, learner_control.json, and that a Strike run of record reads its verdict). No GPU."""
@@ -97,6 +99,33 @@ def test_skills_reach_min_needs_the_1000_evaluation_games(tmp_path):
     with pytest.raises(ValueError, match="1000"):
         exploit.load_gates(write(tmp_path / "s.toml", gate_text("0.90")))          # smoke: eval_games = 8
     exploit.load_gates(write(tmp_path / "n.toml", gate_text(None)))               # without the mark: loads
+
+
+@pytest.mark.parametrize("v", ["0.52", "0.516", "0.497"])
+def test_a_mark_below_0_90_loads(tmp_path, monkeypatch, v):
+    """Addendum of 25 Nov 2026: the mark is re-set from the 3v3 ceiling, near 0.5; the loader takes any share in
+    (0, 1]."""
+    monkeypatch.setattr(exploit, "SKILLS_RUN0_EVAL_GAMES", 8)
+    g = exploit.load_gates(write(tmp_path / "a.toml", gate_text(v)))
+    assert g.run0["skills_reach_min"] == float(v)
+
+
+@pytest.mark.parametrize("k_u,status", [(466, "PASS"), (519, "PASS"), (520, "FAIL"), (521, "FAIL")])
+def test_the_untrained_control_reads_a_mark_below_0_90(tmp_path, monkeypatch, k_u, status):
+    """ctl_untrained_below_mark at a mark of 0.52 (addendum of 25 Nov 2026): the untrained team's point estimate must
+    be below the mark (at the mark: FAIL, run 0 could PASS without learning). The other controls are stubbed."""
+    monkeypatch.setattr(exploit, "SKILLS_RUN0_EVAL_GAMES", 8)
+    gates = exploit.load_gates(write(tmp_path / "g.toml", gate_text("0.52")))
+    n = 1000
+    cells = exploit.run0_cells(gates) + [(gates.run0["opponent"], gates.learner.drone_skills["strike"][0])]
+    monkeypatch.setattr(driver, "per_cell", lambda pg, cs, n: {c: {} for c in cs})
+    monkeypatch.setattr(exploit, "replay_ok", lambda *a, **k: (True, "stub"))
+    monkeypatch.setattr(driver, "plumbing_controls", lambda *a, **k: {})
+    monkeypatch.setattr(driver, "reaches", lambda pg, k, n: k_u if k == 0 else 0)
+    ref = type("Ref", (), {"cell": lambda self, *a: {"outcome": [0] * n}})()
+    out = driver.run0_controls(gates, ref, {}, cells, n, "before")
+    ctl = out["ctl_untrained_below_mark"]
+    assert ctl["status"] == status and f"{k_u}/{n}" in ctl["detail"] and "0.52" in ctl["detail"]
 
 
 # ================================================================================================ pilot_problem

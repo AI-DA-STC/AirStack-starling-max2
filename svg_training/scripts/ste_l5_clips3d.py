@@ -660,8 +660,8 @@ def main(argv=None) -> int:
     settings = a.settings or str(SETTINGS_FILE)
     run = a.run_dir.resolve()
     out = (a.out or run / DEFAULT_OUT).resolve()
-    if not a.plan_only and out != run / DEFAULT_OUT and run in out.parents:
-        say(f"refused: --out {out} is inside the run folder but not {run / DEFAULT_OUT}")
+    if not a.plan_only and out != run / DEFAULT_OUT and (out == run or run in out.parents or out in run.parents):
+        say(f"refused: --out {out} is the run folder, holds it, or is inside it but not {run / DEFAULT_OUT}")
         return EXIT_REFUSED
     try:
         d = load_run(run)

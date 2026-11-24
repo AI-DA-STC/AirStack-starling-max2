@@ -302,3 +302,13 @@ def test_a_gif_that_fails_keeps_the_mp4_and_the_other_clips(pooled_runs, tmp_pat
     assert cli.main(["--run-dir", str(run), "--out", str(out2), "--settings", small_settings]) == 3
     rep = json.loads((out2 / "clips3d.json").read_text())
     assert rep["clips_made"] == 0 and rep["clip_failures"]
+
+
+def test_out_may_not_be_the_run_folder_or_hold_it(pooled_runs, tmp_path):  # noqa: F811
+    """QC F1: --out equal to the run folder, a folder that holds it, or another folder inside it is refused before
+    anything is written."""
+    run = _copy(pooled_runs["guard"][1], tmp_path).resolve()
+    before = _tree(run)
+    for out in (run, run.parent, run / "results_copy"):
+        assert cli.main(["--run-dir", str(run), "--out", str(out)]) == 2
+    assert _tree(run) == before

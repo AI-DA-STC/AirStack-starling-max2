@@ -379,3 +379,32 @@ replaced methods and tracking keys, estimate 4-5 days (E).
 - **Deviation: the held-command arm (`scripts/ste_l3_held_arm.py`) is not under the run contract** (no cap, no resume):
   a CPU job or a short GPU batch the lead launches. Its control (hold 1 = the reference, every cell) and its result
   files are as §4 says.
+
+## Run 0 for the skills route (lead's call, 24 Nov 2026; pre-registered before any skills run 0)
+
+Built on branch `l3-run0`. The text below is the pre-registration; the skills gate file of the pipeline check carries
+it as the comment on `[run0] skills_reach_min` when it is written (no skills gate file of record exists yet; the L0.12
+gate files are not edited after their results).
+
+- **Run 0 = a two-level Strike learner** trained against `guard_parked_centre` (`[run0] opponent`; 3v3, the base
+  1.6 m game, T44's starts) at the run's step budget and cap (`[trainer] game_steps_per_run`, `num_games`, the runs'
+  `--cap-h`), the gate's Strike recipe, its own `train_seed`.
+- **Known answer:** the untrained skills team plays free + strike_straight for every drone, about 466 reaches of 1,000
+  against the parked Guard (T70: it holds 534); a learner that picks strike_high or strike_low reaches near 1,000
+  (T44 / T70: the parked Guard holds 0 against them). Controls before training: the untrained team equals the
+  strike_straight cell game for game (`ctl_untrained_is_first_skill`), and it is below the mark
+  (`ctl_untrained_below_mark`: otherwise run 0 could PASS without learning), besides the reference replay, paired
+  starts, one for one and non-finite checks.
+- **Mark:** `[run0] skills_reach_min = 0.90` of the evaluation games (point estimate; no Wilson rule), all games
+  counted (an unfinished game is no reach). **PASS** when the read at the FINAL checkpoint (the budget's last update)
+  is at the mark; **FAIL** when the full budget ends below it (an earlier read at the mark does not count: reads at the
+  other pre-listed checkpoints are INFO, and the run does not stop at them); **INCONCLUSIVE** when training stops at the
+  cap reserve. A FAIL is never overridden (`--accept-learner-control` is for INCONCLUSIVE only); the skills Strike runs
+  of record launch only on PASS, as for the velocity route. A skills gate file without `skills_reach_min` is refused
+  at `--run0`.
+- **The Strike run reads it:** `exploit.pilot_problem` asks a skills Strike run for a run 0 of the same `[learner]`
+  table (learner_control.json records it), complete, under its gate file, at its cap, reading PASS.
+- **Strike recipe:** the shaped / unshaped Strike recipe for the skills route is chosen by the skills pilot as built:
+  the same pre-registered rule (`exploit.strike_recipe` over the pilot's Strike probes) applied to the skills pilot,
+  whose probes train the two-level learner; run 0 and the Strike runs use the gate's `side_overrides.strike` filled
+  from it (`recipe_problem`).

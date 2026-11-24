@@ -303,3 +303,15 @@ def skills_meta(dispatch: SkillDispatch) -> dict:
     return {"team": dispatch.team, "players": list(dispatch.names), "choice": dispatch.choice,
             "team_strategies": list(dispatch.team_strategies) if two else None,
             "drone_skills": list(dispatch.drone_skills) if two else None, "free_index": FREE if two else None}
+
+
+def learner_table(spec: LearnerSpec) -> dict | None:
+    """The two-level ``[learner]`` table as plain data (route, both lists, entropy scales): what pilot.json and a skills
+    run 0's learner_control.json record, and what a run of record compares (L3 slice 2; run 0 for the skills route).
+    None for the velocity route and slice 1's single-head modes."""
+    if not spec.skills or spec.choice != TWO_LEVEL:
+        return None
+    return {"action": spec.action, "choice": spec.choice,
+            "team_strategies": {k: list(v) for k, v in spec.team_strategies.items()},
+            "drone_skills": {k: list(v) for k, v in spec.drone_skills.items()},
+            "entropy_scale": dict(spec.entropy_scale)}

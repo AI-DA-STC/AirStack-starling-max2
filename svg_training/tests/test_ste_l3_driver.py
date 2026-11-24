@@ -65,9 +65,11 @@ def skills_pilot(folder, gates):
 
 
 def run0_json(folder, gates):
+    """A skills run 0 stand-in (PASS, this gate file, its [learner] table: a skills Strike run reads it)."""
     path = Path(folder) / "run0.json"
-    path.write_text(json.dumps({"status": "PASS", "complete": True, "cap_h": 1.0,
-                                "gates_sha256": exploit.load_gates(gates).sha256}))
+    g = exploit.load_gates(gates)
+    path.write_text(json.dumps({"status": "PASS", "complete": True, "cap_h": 1.0, "gates_sha256": g.sha256,
+                                "learner": skills.learner_table(g.learner)}))
     return path
 
 
@@ -185,11 +187,13 @@ def test_the_same_command_on_a_finished_two_level_run_does_nothing_new(two_runs)
 
 
 # ================================================================================================ test 18: still refused
-def test_run0_and_verdict_refuse_a_two_level_gate_file(two_runs, tmp_path, capsys):
+def test_run0_needs_its_mark_and_verdict_refuses_a_two_level_gate_file(two_runs, tmp_path, capsys):
+    """--run0 takes the skills route since the lead's run 0 call (tests/test_ste_l3_run0.py); this gate file has no
+    [run0] skills_reach_min, so its run 0 is refused for that. verdict still refuses the skills route."""
     g, runs = two_runs
     code = driver.main(["--run0", "--gates", str(g), "--run-dir", str(tmp_path / "r0"), "--cap-h", "1", "--no-videos",
-                        "--pilot-json", str(pilot_json(tmp_path))])
-    assert code == 2 and WHY in capsys.readouterr().err
+                        "--pilot-json", str(runs["pilot"] / "pilot.json")])
+    assert code == 2 and "skills_reach_min" in capsys.readouterr().err
     code = driver.main(["verdict", "--gates", str(g), "--runs", f"{runs['strike']},{runs['guard']}", "--out",
                         str(tmp_path / "v")])
     assert code == 2 and WHY in capsys.readouterr().err

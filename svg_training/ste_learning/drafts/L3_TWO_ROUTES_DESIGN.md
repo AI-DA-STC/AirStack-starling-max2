@@ -84,10 +84,12 @@ evaluation player all change (B, `exploit_train.py:139-148,254-290`, `learned.py
 
 **Hold rule (A1, B1).** A choice is made every 0.6 s (12 ticks), as pure RL's action is. The chosen skill **runs closed
 loop every tick** for those 12 ticks (the scripts decide every 0.05 s; that is how a skill would fly). This gives the
-mixed route a reaction-speed advantage that is part of what the route is; it is declared, not hidden, and the controls
-below separate it. Training (`DecisionEnv.step`, `exploit_train.py:80-81`) and scoring (`HeldPlayer`,
-`exploit.py:508-526`) use the same rule, tested. A drone makes 3–6 choices in a typical game (games end in 36–78
-ticks, `exploit_train.py:10`): stated so the reader knows how few decisions the mixed learner gets.
+mixed route a reaction-speed advantage that is part of what the route is; it is declared, not hidden. The closed-loop
+controls below do not separate it, so one scoring-only arm does: each script with its command frozen for 12 ticks,
+against the same script closed loop, on the same starts (no training). Training (`DecisionEnv.step`, `exploit_train.py:80-81`) and scoring (`HeldPlayer`,
+`exploit.py:508-526`) use the same rule, tested. Tag games typically end in 36–78 ticks (`exploit_train.py:10`), with a long tail (about 220 ticks at the 90th
+percentile, L2.5 spec), so a drone makes about 3–18 choices per game: stated so the reader knows how few decisions the
+mixed learner gets.
 
 **Opponents (A3).** Both routes train against the **same pool**: every scripted player of the other team, one drawn per
 game, the same draw for both routes. Training against one fixed script (L0.12, L1.10) would teach the mixed learner
@@ -105,9 +107,11 @@ no hook): policy loss, entropy and value loss, GAE and advantage normalisation, 
 (`exploit_train.py:155`) and the value scaler, all masked by `alive` at the decision. For the categorical head the loss
 is masked, not the logits (a -inf logit with zero weight gives a NaN entropy).
 
-**Skill list for tier 1.** Strike: straight, flank, sacrifice, converge (K = 4); high and low are dropped in tier 1,
-where they equal straight (`scripted.py:363-365`, vertical response not fitted). Guard: parked at centre, parked on a
-ring, mark the edge, mirror, field (K = 5).
+**Skill list: unchanged from R26.** Strike K = 6 (straight, flank, high, low, sacrifice, converge), Guard K = 5. One
+reviewer proposed dropping high and low as equal to straight; that holds only in a 2-D game (`scripted.py:363`, `if not
+self.three_d`). With the Starling layer on, as in every STE game, they fly to the top or bottom of the height band, and
+T66 shows them scoring differently (parked at centre holds 68.3 % against straight, 0.0 % against high and low). They
+stay, labelled "vertical response not fitted in tier 1".
 
 **Per drone or per team (A Q3, B6): back to the owner.** R26 approved "per drone by default". The reviewers checked the
 scripts: several coordinate the team and break when drones mix skills. sacrifice makes Strike 0 the decoy and assumes
@@ -131,3 +135,9 @@ node, an L7 AirStack change that the owner gates** (`ARCHITECTURE.md:178`).
 MLP and value net; tests: a fixed choice j for all drones reproduces script j's T44 cell game for game; training and
 scoring use the same hold rule; two updates, then save, reload and golden rows match. Then the tier-2 equality test.
 Estimate 1–2 days for this slice only (the attention encoder and v0.3 are not in it).
+
+**What v2 changes from what the owner approved (R26), for the owner to see in one place:** (a) per team as the
+default instead of per drone (the one point asked); (b) both routes train against a pool of every scripted opponent,
+not one; (c) the pipeline check uses today's per-slot MLP and observation v0.2, with the attention encoder, shared actor
+and v0.3 after it; (d) the skills run closed loop under a 0.6 s choice, an advantage declared and measured by the
+held-command arm. The skill list is unchanged.

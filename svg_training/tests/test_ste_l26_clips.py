@@ -52,3 +52,45 @@ def test_tier1_only_draws_a_reach_and_a_hold_without_isaac(tmp_path):
         for g in cell["gifs"]:
             assert g["game"] == o.index(1 if g["outcome"] == "reach" else 2)
             assert (out / g["file"]).is_file()
+
+
+def test_both_tiers_play_the_same_cpu_drawn_starts(tmp_path, monkeypatch):
+    """CLIP-T2 (24 Nov 2026): tier 2 ran on CUDA, whose generator drew other starts than tier 1's CPU draw from the same
+    clip seed (diagnostic runs/2026-11-24_clip_t2_diag: up to 5.5 m apart; every path gave a reach on the CUDA starts, a
+    mix on the CPU ones). Both tiers must get the clip starts drawn once on the CPU, whatever the tier-2 device."""
+    from svg_training.viz import replay
+    real, seen = replay.record_games, []
+
+    def spy(cfg, *args, **kw):
+        seen.append((kw.get("device"), kw.get("starts")))
+        return real(cfg, *args, **kw)
+
+    monkeypatch.setattr(replay, "record_games", spy)
+    code = clips.main(["--out-dir", str(tmp_path / "c"), "--games", "2", "--max-ticks", "200", "--dry-cpu"])
+    assert code == 0 and len(seen) == 4                                         # 2 cells x 2 tiers
+    import ste_tier12_l26 as drv
+    s = drv.load_settings(clips.GATES)
+    g = {x["name"]: x for x in s["groups"]}["landing_gy_1p15"]
+    want = clips.clip_starts(drv.game_cfg(s, g["tier1_game"]), 2)
+    for _dev, st in seen:
+        assert st is not None, "a tier was recorded on its own device's start draw"
+        assert st[0].device.type == "cpu" and torch_equal(st[0], want[0]) and torch_equal(st[1], want[1])
+
+
+def test_clip_starts_are_tier1s_own_draw():
+    """The fix leaves tier 1 as published: the CPU clip starts equal record_games' own CPU draw from the clip seed."""
+    import ste_tier12_l26 as drv
+    from svg_training.viz.replay import record_games
+    s = drv.load_settings(clips.GATES)
+    cfg1 = drv.game_cfg(s, {x["name"]: x for x in s["groups"]}["landing_gy_1p15"]["tier1_game"])
+    pos, _miss = clips.clip_starts(cfg1, 3)
+    recs = record_games(cfg1, 3, 3, "guard_mark_edge", "strike_low", num_games=3, seed=clips.CLIP_SEED, band=0,
+                        max_steps=400)
+    assert recs
+    for r in recs:
+        assert (r.pos_m[0] == pos[r.game_index].numpy()).all()
+
+
+def torch_equal(a, b) -> bool:
+    import torch
+    return bool(torch.equal(a.cpu(), b.cpu()))

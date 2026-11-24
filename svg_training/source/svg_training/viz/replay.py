@@ -61,7 +61,17 @@ class RecordingStopped(RuntimeError):
 
 
 class _RecordingGame(SvgGame):
-    """SvgGame that remembers each game's last positions just before its auto-reset overwrites them."""
+    """SvgGame that remembers each game's last positions just before its auto-reset overwrites them. ``starts``
+    (starts_m [N, M, 3], miss [N]): every game starts there (``record_games``' ``starts``); None: the game's own draw."""
+
+    def __init__(self, *args, starts=None, **kw):
+        self._given_starts = starts          # set before SvgGame's constructor, whose reset draws the first starts
+        super().__init__(*args, **kw)
+
+    def _draw_starts(self, arenas):
+        if self._given_starts is None:
+            return super()._draw_starts(arenas)
+        return tuple(x.to(self.device) for x in self._given_starts)
 
     def _new_games(self, mask):
         if getattr(self, "_keep", False):
@@ -72,16 +82,20 @@ class _RecordingGame(SvgGame):
 
 def record_games(cfg: GameCfg, guards: int, strikes: int, guard_spec, strike_spec, num_games: int = 8,
                  seed: int = 0, band: int | None = 1, max_steps: int | None = None, device: str = "cpu",
-                 world=None, should_stop=None) -> list[Recording]:
+                 world=None, should_stop=None, starts=None) -> list[Recording]:
     """Play num_games games on ``device`` (each slot's first game) and return one Recording per slot. The game
     seed is ``seed``; strategy seeds are seed + 101 (Guard) and seed + 202 (Strike), as in scripts/score.py.
     ``guard_spec`` / ``strike_spec``: a strategy name (``make_strategy``) or a strategy object on the CPU for
     ``num_games`` games (STE L0.12: a trained team of either side); the recording carries the object's ``name``.
     STE L0.13: ``device`` and ``world`` (a rigid-body world of ``num_games`` games, for a physics-backend game file: tier
     2); every frame is copied to the host; ``should_stop()`` is asked before every step and True raises
-    :class:`RecordingStopped`."""
+    :class:`RecordingStopped`.
+    ``starts`` (CLIP-T2, 24 Nov 2026): (starts_m [num_games, M, 3] m, miss [num_games] bool) on any device: every game
+    starts there instead of the game's own draw, for a fixed-arena game file (the starts must fit its arena). The draw
+    depends on the device (a CUDA generator gives other starts than a CPU one from the same seed), so the same games on
+    two devices need starts drawn once and given to both. None (the default): the game's own draw, unchanged."""
     dev = device
-    game = _RecordingGame(cfg, num_games, guards, strikes, device=dev, seed=seed, band=band, world=world)
+    game = _RecordingGame(cfg, num_games, guards, strikes, device=dev, seed=seed, band=band, world=world, starts=starts)
     guard = make_strategy(guard_spec, "guard", cfg, num_games, dev, seed + 101) if isinstance(guard_spec, str) else guard_spec
     strike = (make_strategy(strike_spec, "strike", cfg, num_games, dev, seed + 202) if isinstance(strike_spec, str)
               else strike_spec)

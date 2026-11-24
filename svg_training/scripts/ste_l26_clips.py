@@ -2,16 +2,18 @@
 """STE task L2.6 follow-up clips (spec ste_learning/drafts/L2_6_SPEC.md, "Clips"; lead's decision 24 Nov 2026: a render
 after the run, not a driver step). 2-D replays with the height panel (viz/replay.py) of the SAME games on tier 1 and
 tier 2: the same game file (tier 2 = the physics backend and the off parameter file, as the driver plays it), the same
-clip seed, so game i starts the same on both tiers. Own starts from the clip seed (as L2.5's clips), never T44's
-scoring starts. The cells: landing + option B at 1.15 m, guard_mark_edge v strike_low (the one cell beyond T13's 0.10
-gap, T71) and guard_mark_edge v strike_straight (option B lowers its hold on both tiers).
+clip seed, and the same starts: drawn once on the CPU from the clip seed (``clip_starts``) and given to both tiers, so
+game i starts the same on both (CLIP-T2, 24 Nov 2026: tier 2 runs on CUDA, whose generator draws other starts from the
+same seed). Own starts from the clip seed (as L2.5's clips), never T44's scoring starts. The cells: landing + option B
+at 1.15 m, guard_mark_edge v strike_low (the one cell beyond T13's 0.10 gap, T71) and guard_mark_edge v strike_straight
+(option B lowers its hold on both tiers).
 
 Which game is drawn (fixed before rendering, in this code): the first game index whose outcome differs between the two
 tiers; if none, game 0. The same index on both tiers. Every game's outcome on both tiers goes to ``clips.json``.
 ``--tier1-only`` (CPU, no Isaac): the first reach and the first hold of each cell on tier 1. Used for T71 because the
-tier-2 path here (``record_games`` on an Isaac world) gave a reach in all 8 games of both cells, twice, while the run's
-own path (``exploit.play_cells``) on an 8-game Isaac world reproduced the run's first 8 games exactly (record T71): tier
-2 clips are pending until that is understood.
+tier-2 path here gave a reach in all 8 games of both cells (record T71). CLIP-T2 found the cause: tier 2 drew its own
+starts on CUDA (other games than tier 1's); on the CPU starts tier 2 gives the tier-1 mix, on the CUDA starts every path
+and both tiers give reaches (runs/2026-11-24_clip_t2_diag, clip worktree). Fixed here by ``clip_starts``.
 
     # after nvidia-smi and scripts/isaac_preflight.sh --approved-headless (exit 0), through the launcher (GPU-h logged):
     scripts/ste_job.py launch --task L2.6 --name l26_clips --run-dir runs/<date>_ste_l26_clips --min-s 30 --gpu-h 0.05 \\
@@ -54,7 +56,7 @@ def parser(isaac: bool = False) -> argparse.ArgumentParser:
     ap.add_argument("--dry-cpu", action="store_true", help="tests only: tier 2 on the PyTorch reference world, CPU")
     ap.add_argument("--tier1-only", action="store_true",
                     help="tier 1 only (CPU, no Isaac): the first reach and the first hold of each cell; tier 2 pending "
-                         "(record_games on an Isaac world disagreed with the run's own path, 24 Nov 2026: see the record)")
+                         "(T71; the tier-2 start draw was CUDA's, fixed by CLIP-T2: clip_starts)")
     if not isaac:
         ap.add_argument("--headless", action="store_true", help="required without --dry-cpu (Isaac Lab)")
     return ap
@@ -66,6 +68,16 @@ def choose(t1: list[int], t2: list[int]) -> tuple[int, str]:
         if a != RUNNING and b != RUNNING and a != b:
             return i, "first game whose outcome differs between the tiers"
     return 0, "no game differs between the tiers: game 0"
+
+
+def clip_starts(cfg, games: int):
+    """The clip games' starts (starts_m [games, 6, 3] m, miss [games] bool), drawn once on the CPU from CLIP_SEED exactly
+    as ``record_games`` draws them on the CPU (the constructor's draw, then ``reset()``'s), so tier 1 is unchanged and
+    tier 2 plays the same games whatever its device."""
+    from svg_training.core.game import SvgGame
+    game = SvgGame(cfg, games, 3, 3, device="cpu", seed=CLIP_SEED, band=0)
+    game.reset()
+    return game.pos_m.clone(), game.start_miss.clone()
 
 
 def pick_tier1(t1: list[int]) -> list[int]:
@@ -85,7 +97,7 @@ def run(a: argparse.Namespace) -> int:
 
     from svg_training.core.physics_layer import load_game_physics_params
     from svg_training.ste import atomic
-    from svg_training.viz.replay import record_games, render_replay
+    from svg_training.viz import replay
     import ste_tier12_l26 as drv
     from ste_tier2_score_l18 import isaac_world_factory, torch_world_factory
     s = drv.load_settings(GATES)
@@ -102,6 +114,7 @@ def run(a: argparse.Namespace) -> int:
                          "tier1_only": bool(a.tier1_only),
                          "rule": ("tier 1 only, the first reach and the first hold; tier 2 pending" if a.tier1_only
                                   else "the first game whose outcome differs between the tiers, else game 0"),
+                         "starts": "drawn once on the CPU from the seed, the same on both tiers (clip_starts, CLIP-T2)",
                          "gates_sha256": drv._sha(GATES), "cells": []}
     for group, guard, strike in CELLS:
         g = by[group]
@@ -111,11 +124,11 @@ def run(a: argparse.Namespace) -> int:
             world = factory(a.games, 6, load_game_physics_params(cfg2), dev2)
             say(f"tier-2 world: {getattr(world, 'label', type(world).__name__)}, {a.games} games x 6 drones "
                 f"({time.perf_counter() - t0:.0f} s)")
-        recs, outcomes = {}, {}
+        recs, outcomes, starts = {}, {}, clip_starts(cfg1, a.games)
         tiers = ((1, cfg1, "cpu", None),) if a.tier1_only else ((1, cfg1, "cpu", None), (2, cfg2, dev2, world))
         for tier, cfg, dev, w in tiers:
-            got = record_games(cfg, 3, 3, guard, strike, num_games=a.games, seed=CLIP_SEED, band=0,
-                               max_steps=a.max_ticks, device=dev, world=w)
+            got = replay.record_games(cfg, 3, 3, guard, strike, num_games=a.games, seed=CLIP_SEED, band=0,
+                                      max_steps=a.max_ticks, device=dev, world=w, starts=starts)
             recs[tier] = {r.game_index: r for r in got}
             outcomes[f"tier{tier}"] = [int(recs[tier][i].outcome) if i in recs[tier] else RUNNING
                                        for i in range(a.games)]
@@ -132,7 +145,7 @@ def run(a: argparse.Namespace) -> int:
                 continue
             kind = "reach" if rec.outcome == STRIKE_WIN else "hold"
             name = f"l26_{group}_{guard}_v_{strike}_tier{tier}_game{i}_{kind}.gif"
-            path = render_replay(rec, a.out_dir / name, speed=SPEED, fps=FPS, dpi=DPI,
+            path = replay.render_replay(rec, a.out_dir / name, speed=SPEED, fps=FPS, dpi=DPI,
                                  playback_label=f"{SPEED * FPS * 0.05:g}x real time, tier {tier}")
             gifs.append({"tier": tier, "game": i, "outcome": kind, "end_s": float(rec.end_time_s), "file": name,
                          "bytes": path.stat().st_size})

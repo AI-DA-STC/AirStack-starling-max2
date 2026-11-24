@@ -139,3 +139,23 @@ def test_new_clips_carry_a_height_panel_that_follows_the_game(recs):
     assert off.hax is None and off.heights == []
     off.plt.close(off.fig)
     assert recs[0].height_band_m == tuple(CFG.arena.height_band_m)       # recorded games carry the band
+
+
+def test_given_starts_are_played_by_every_slot_and_none_is_unchanged():
+    """CLIP-T2 (24 Nov 2026): ``starts`` (starts_m [N, M, 3], miss [N]) makes every slot start there, so two devices whose
+    generators draw differently (CPU v CUDA) can play the same games; None keeps the game's own draw, bit for bit."""
+    n, seed = 3, 5
+    other = SvgGame(CFG, n, 2, 1, device="cpu", seed=seed + 1000, band=1)       # a different draw than seed's own
+    given = (other.pos_m.clone(), other.start_miss.clone())
+    own = record_games(CFG, 2, 1, "guard_mark_inside", "strike_flank", num_games=n, seed=seed)
+    fixed = record_games(CFG, 2, 1, "guard_mark_inside", "strike_flank", num_games=n, seed=seed,
+                         starts=given)
+    assert fixed and own
+    for r in fixed:
+        assert np.array_equal(r.pos_m[0], given[0][r.game_index].numpy())
+    assert any(not np.array_equal(r.pos_m[0], given[0][r.game_index].numpy()) for r in own)
+    again = record_games(CFG, 2, 1, "guard_mark_inside", "strike_flank", num_games=n, seed=seed,
+                         starts=None)
+    assert [(r.game_index, r.outcome, r.end_step) for r in again] == [(r.game_index, r.outcome, r.end_step) for r in own]
+    for a, b in zip(again, own):
+        assert np.array_equal(a.pos_m, b.pos_m)

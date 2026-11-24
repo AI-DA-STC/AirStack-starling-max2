@@ -328,7 +328,9 @@ def pooled_row(wins: dict) -> dict:
     if len(sizes) != 1:
         raise ValueError(f"the pooled row needs the same starts in every cell, got games {sorted(sizes)}")
     n = sizes.pop()
-    rows = {o: {**rate(int(v.sum()), n), "rate": float(v.mean()) if n else float("nan")} for o, v in arrs.items()}
+    if n == 0:
+        raise ValueError("the pooled row needs at least one start (no start in the cells)")
+    rows = {o: {**rate(int(v.sum()), n), "rate": float(v.mean())} for o, v in arrs.items()}
     y = np.mean([arrs[o].astype(float) for o in members], axis=0)
     mean = float(y.mean())
     se = float(np.std(y, ddof=1) / math.sqrt(n)) if n > 1 else float("nan")
@@ -339,7 +341,10 @@ def pooled_row(wins: dict) -> dict:
                                      "rate": rows[worst]["rate"]},
             "headline": "worst cell", "trivial_cells": [o for o in members if rows[o]["rate"] in (0.0, 1.0)],
             "interval": "normal, the standard error of the per-start mean of the K win indicators over the shared "
-                        "starts (the cells are correlated); each cell's own Wilson interval in cells",
+                        "starts (the cells are correlated; an unfinished game counts as no win); each cell's own "
+                        "Wilson interval in cells",
+            "interval_note": ("zero width: the per-start mean is the same on every start" if se == 0.0 else
+                              "one start: no standard error" if n == 1 else ""),
             "note": "the pooled mean is an equal-weight mean of the cells; trivial cells (rate 0 or 1) are flagged"}
 
 

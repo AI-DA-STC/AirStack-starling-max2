@@ -253,6 +253,11 @@ def test_the_pooled_row_is_the_exact_mean_with_an_interval_over_the_shared_start
     assert row["members"] == ["a", "b", "c", "d"] and row["cells"]["a"]["k"] == 6
     with pytest.raises(ValueError, match="starts"):
         scoring.pooled_row({"a": a, "b": a[:5]})
+    assert "unfinished game counts as no win" in row["interval"]          # QC S of step 3
+    with pytest.raises(ValueError, match="no start"):
+        scoring.pooled_row({"a": np.zeros(0, dtype=bool)})
+    flat = scoring.pooled_row({"a": np.ones(6, dtype=bool), "b": np.zeros(6, dtype=bool)})
+    assert flat["se"] == 0.0 and flat["ci"] == [0.5, 0.5] and "zero width" in flat["interval_note"]
 
 
 def test_the_best_single_fixed_choice_over_the_pool_is_read_from_the_reference(gates):

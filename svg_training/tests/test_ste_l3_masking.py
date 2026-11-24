@@ -53,7 +53,7 @@ def hand_gae(r, term, v, last_v, alive, alive_next, tail, g=G, lam=LAM):
             nxt = last_v if alive_next else tail
         nv[i] = nxt
         if alive[i]:
-            a_next = adv[i + 1] if (i + 1 < t and alive[i + 1] and not term[i]) else 0.0
+            a_next = adv[i + 1] if (i + 1 < t and alive[i + 1]) else 0.0        # term[i] zeroes it below
             adv[i] = r[i] - v[i] + g * (0.0 if term[i] else 1.0) * (nxt + lam * a_next)
         else:
             veff[i] = r[i] + g * (0.0 if term[i] else 1.0) * nxt
@@ -226,6 +226,15 @@ def test_a_live_scaler_update_is_skrls_on_the_live_rows_bit_for_bit():
     assert all(torch.equal(p, q) for p, q in zip(_stats(c), _stats(d)))
 
 
+def test_a_3d_all_live_scaler_update_is_skrls_path_bit_for_bit():
+    """QC NIT of step 3: [T, N, D] inputs, every row live: skrl's own train path (its mean over dims (0, 1))."""
+    x = torch.randn(4, 3, 5, generator=torch.Generator().manual_seed(2))
+    a, b = _scaler(), _scaler()
+    masking.masked_scaler_update(a, x, torch.ones(4, 3, dtype=torch.bool))
+    b(x, train=True)
+    assert all(torch.equal(p, q) for p, q in zip(_stats(a), _stats(b)))
+
+
 @pytest.mark.parametrize("count", [0, 1])
 def test_a_scaler_update_with_fewer_than_two_live_rows_is_skipped(count):
     x = torch.randn(6, 5)
@@ -295,10 +304,13 @@ def test_the_masked_policy_and_entropy_terms_equal_the_stock_terms_on_the_live_r
     assert torch.allclose(_grad(got["policy_loss"], w), _grad(want_pol, w), rtol=1e-6, atol=1e-8)
     assert torch.allclose(_grad(got["entropy_loss"], w), _grad(want_ent, w), rtol=1e-6, atol=1e-8)
     old2, adv2 = old.clone(), adv.clone()
-    old2[~live], adv2[~live] = 9.0, -9.0                         # absent rows: nothing they hold reaches the loss
-    again = masking.masked_policy_terms(x @ w * 0.1, old2, (x @ w).abs(), adv2, live, 0.2, 0.01)
-    assert torch.equal(_grad(again["policy_loss"], w), _grad(masking.masked_policy_terms(
-        x @ w * 0.1, old, (x @ w).abs(), adv, live, 0.2, 0.01)["policy_loss"], w))
+    old2[~live], adv2[~live] = float("nan"), float("inf")        # absent rows: nothing they hold reaches the loss
+    ent2 = (x @ w).abs()
+    ent2 = torch.where(live[:, None], ent2, torch.full_like(ent2, float("nan")))
+    again = masking.masked_policy_terms(x @ w * 0.1, old2, ent2, adv2, live, 0.2, 0.01)
+    base = masking.masked_policy_terms(x @ w * 0.1, old, (x @ w).abs(), adv, live, 0.2, 0.01)
+    for k in ("policy_loss", "entropy_loss"):
+        assert torch.isfinite(again[k]) and torch.equal(_grad(again[k], w), _grad(base[k], w)), k
 
 
 def test_all_live_policy_terms_are_the_stock_expressions_bit_for_bit():
@@ -325,6 +337,10 @@ def test_the_masked_value_loss_equals_the_stock_loss_on_the_live_rows(clip):
     if clip > 0:
         p = old + torch.clip(p - old, -clip, clip)
     assert torch.equal(all_live, 2.0 * F.mse_loss(adv, p))
+    bad_r, bad_v = adv.clone(), old.clone()
+    bad_r[~live], bad_v[~live] = float("nan"), float("inf")      # absent rows' garbage stays out (QC NIT)
+    again = masking.masked_value_loss(bad_r, x @ w, bad_v, live, clip, 2.0)
+    assert torch.isfinite(again) and torch.allclose(_grad(again, w), _grad(got, w), rtol=0, atol=0)
 
 
 def test_the_two_level_terms_take_alive_into_the_head_masks_and_live_counts():

@@ -274,3 +274,26 @@ the Guard-side arms and the dispatch-equality tests (answer 4).
   a command held 12 ticks), and never offers `random`; the choice share reports its per-bin counts, and its late bins
   hold only the games still running (survivor-biased); the choice logs are keyed (team, cell index), so a cell with a
   skills team on each side cannot collide.
+
+## Step 4 as built (24 Nov 2026), with QC's step 3 notes
+
+- `[learner] mask_absent` (default false): accepted for the velocity route and `choice = "two_level"`, refused for
+  slice 1's flat modes (B2); `decision_env` passes it to `Learner`. On: the velocity route trains on
+  `ste/masked_ippo.MaskedIPPO` (built only then; a third copy of skrl's `IPPO.update` with the pieces of
+  `ste/masking.py`; `check_pins` at construction); the two-level route on `TwoLevelIPPO` with the same mixin
+  (`MaskMixin`) and its masked branch. Off: stock IPPO and `TwoLevelIPPO`'s merged path, untouched (tested bit for
+  bit).
+- The pre-pass (B1) runs in `MaskMixin.post_interaction` before the rollout's per-agent updates; `Learner.update`'s
+  stats and the train log carry `mask` (live share, live and total rows, the bootstrap counts: mates / own / none).
+  `results.json` and pilot.json record `mask` (`mask_absent`, `time_limit_bootstrap` false) when the mask is on.
+- **Deviation (A3):** the time-limit bootstrap is **refused** with the mask on (every gate keeps it off), instead of a
+  skip of absent slots in `record_transition` (which would be a fourth copy of skrl code for a setting nobody uses).
+- Checks: with every row live, `MaskedIPPO` trains exactly as stock IPPO and the masked two-level route exactly as
+  the unmasked one (games with the tag off, the live share asserted 1); with a forced tag, nothing an absent row
+  stores (action, old log-probabilities, value) changes a weight or a scaler statistic, and a velocity update equals
+  a hand-built masked update (one epoch, one minibatch) to float tolerance.
+- QC notes of step 3: `pooled_row` says "an unfinished game counts as no win", refuses zero starts and notes a
+  zero-width interval; `masked_scaler_update` takes skrl's own path whenever every row is live (any shape, a 3-D case
+  tested); `masked_policy_terms` blanks an absent row's entropy as its log-ratio and value (NaN and inf garbage
+  tested); `team_bootstrap`'s docstring calls the own-value fallback a heuristic (it values the state at the slot's
+  last live step, not at the rollout's end).

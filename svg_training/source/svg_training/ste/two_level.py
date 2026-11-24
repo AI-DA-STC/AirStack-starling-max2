@@ -43,6 +43,8 @@ from skrl.multi_agents.torch.ippo.ippo import compute_gae
 from skrl.resources.schedulers.torch import KLAdaptiveLR
 from torch import Tensor
 
+from . import masking
+from .masked_ippo import MaskMixin
 from .skills import FREE
 
 SKRL_VERSION = "2.1.0"
@@ -106,12 +108,12 @@ def free_start_bias(policy: nn.Module, strategies: int) -> None:
         last.bias[FREE] = math.log(strategies)
 
 
-class TwoLevelIPPO(IPPO):
+class TwoLevelIPPO(MaskMixin, IPPO):
     """skrl 2.1.0 IPPO for ``opponents/learned.TwoLevelPolicy`` (module docstring). ``entropy_scale``: {"team": s_team,
     "drone": s_drone}, both > 0. The trained team's agents must be ``possible_agents`` in slot order (the order of
     ``infos["head_mask"]``'s drone axis)."""
 
-    def __init__(self, *, entropy_scale: dict, **kwargs: Any) -> None:
+    def __init__(self, *, entropy_scale: dict, mask_absent: bool = False, **kwargs: Any) -> None:
         if skrl.__version__ != SKRL_VERSION or update_source_sha256() != IPPO_UPDATE_SHA256:
             raise RuntimeError(f"TwoLevelIPPO.update is a copy of skrl {SKRL_VERSION}'s IPPO.update; installed skrl "
                                f"{skrl.__version__} (update source sha256 {update_source_sha256()[:SHA_SHOWN_CHARS]}): re-read the "
@@ -123,6 +125,7 @@ class TwoLevelIPPO(IPPO):
         self.entropy_scale = scales
         self._current_head_log_prob: dict[str, Tensor] = {}
         self.last_kls: list[Tensor] = []          # [2] per minibatch of the last update (team, drone)
+        self._mask_init(mask_absent)                # L3 slice 3: the absent-drone mask (off: nothing changes)
 
     def init(self, *, trainer_cfg: dict[str, Any] | None = None) -> None:
         super().init(trainer_cfg=trainer_cfg)
@@ -181,6 +184,8 @@ class TwoLevelIPPO(IPPO):
         policy = self.policies[uid]
         value = self.values[uid]
         memory = self.memories[uid]
+        if self.mask_absent:            # L3 slice 3: the masked GAE and value scaler (masked_ippo.MaskMixin)
+            return self._update_after_returns(uid, policy, value, memory, masked=True)
 
         # compute returns and advantages (as skrl)
         with torch.no_grad(), torch.autocast(device_type=self._device_type, enabled=self.cfg.mixed_precision):
@@ -208,7 +213,15 @@ class TwoLevelIPPO(IPPO):
         memory.set_tensor_by_name("values", self._value_preprocessor[uid](values, train=True))
         memory.set_tensor_by_name("returns", self._value_preprocessor[uid](returns, train=True))
         memory.set_tensor_by_name("advantages", advantages)
+        return self._update_after_returns(uid, policy, value, memory, masked=False)
 
+    def _update_after_returns(self, uid: str, policy, value, memory, masked: bool) -> None:
+        """The epochs of the update (skrl's, with the two-level terms). ``masked`` (L3 slice 3): the returns came from
+        the masked GAE; the observation scaler is updated on the live rows, the terms take ``live`` (None when every
+        row of the minibatch is live, so they are the unmasked ones bit for bit), the value loss is over the live
+        rows, and a minibatch with no live row takes no step."""
+        if masked:
+            self._mask_returns(uid)
         cumulative_policy_loss = 0
         cumulative_entropy_loss = 0
         cumulative_value_loss = 0
@@ -233,15 +246,22 @@ class TwoLevelIPPO(IPPO):
             ):
 
                 with torch.autocast(device_type=self._device_type, enabled=self.cfg.mixed_precision):
-                    inputs = {
-                        "observations": self._observation_preprocessor[uid](sampled_observations, train=not epoch),
-                        "states": self._state_preprocessor[uid](sampled_states, train=not epoch),
-                    }
+                    if masked:
+                        inputs, live_rows = self._mask_inputs(uid, sampled_observations, sampled_states, epoch)
+                        n_live = int(live_rows.sum())
+                        live = None if n_live == live_rows.numel() else live_rows
+                    else:
+                        inputs = {
+                            "observations": self._observation_preprocessor[uid](sampled_observations, train=not epoch),
+                            "states": self._state_preprocessor[uid](sampled_states, train=not epoch),
+                        }
+                        live, n_live = None, None
 
                     _, outputs = policy.act({**inputs, "taken_actions": sampled_actions}, role="policy")
                     terms = two_level_policy_terms(outputs["head_log_prob"], sampled_head_log_prob,
                                                    policy.get_entropy(role="policy"), sampled_head_mask,
-                                                   sampled_advantages, self.cfg.ratio_clip[uid], self.entropy_scale)
+                                                   sampled_advantages, self.cfg.ratio_clip[uid], self.entropy_scale,
+                                                   live=live)
 
                     # approx KL: the sum of the per-head KLs (the KL of the joint policy over the heads in play)
                     kl_divergence = terms["kl"].sum()
@@ -258,14 +278,23 @@ class TwoLevelIPPO(IPPO):
                     # compute value loss (as skrl)
                     predicted_values, _ = value.act(inputs, role="value")
 
-                    if self.cfg.value_clip[uid] > 0:
-                        predicted_values = sampled_values + torch.clip(
-                            predicted_values - sampled_values,
-                            min=-self.cfg.value_clip[uid],
-                            max=self.cfg.value_clip[uid],
-                        )
-                    value_loss = self.cfg.value_loss_scale[uid] * F.mse_loss(sampled_returns, predicted_values)
+                    if masked:
+                        value_loss = masking.masked_value_loss(
+                            sampled_returns, predicted_values, sampled_values,
+                            torch.ones_like(live_rows) if live is None else live, self.cfg.value_clip[uid],
+                            self.cfg.value_loss_scale[uid])
+                    else:
+                        if self.cfg.value_clip[uid] > 0:
+                            predicted_values = sampled_values + torch.clip(
+                                predicted_values - sampled_values,
+                                min=-self.cfg.value_clip[uid],
+                                max=self.cfg.value_clip[uid],
+                            )
+                        value_loss = self.cfg.value_loss_scale[uid] * F.mse_loss(sampled_returns, predicted_values)
 
+                if masked and n_live == 0:                  # A2: no step on a minibatch with no live row
+                    self.optimizers[uid].zero_grad()
+                    continue
                 # optimization step (as skrl)
                 self.optimizers[uid].zero_grad()
                 self.scaler.scale(policy_loss + entropy_loss + value_loss).backward()

@@ -35,8 +35,6 @@ from skrl.multi_agents.torch.ippo.ippo import compute_gae
 from skrl.resources.preprocessors.torch.running_standard_scaler import RunningStandardScaler
 from torch import Tensor
 
-from . import two_level
-
 # sha256 of inspect.getsource(RunningStandardScaler._parallel_variance) at skrl 2.1.0, read when masked_scaler_update
 # was written (24 Nov 2026)
 PARALLEL_VARIANCE_SHA256 = "cfcb79ce6dcf2049812f0e96584a22a764c46ea4ffeb5ac7768e60e8fab99608"
@@ -47,6 +45,7 @@ MIN_SCALER_ROWS = 2                # an unbiased variance needs two rows; fewer 
 def check_pins() -> None:
     """RuntimeError unless the installed skrl is the one the masked copies were made from (version 2.1.0, its
     ``IPPO.update`` source, ``RunningStandardScaler._parallel_variance``'s source)."""
+    from . import two_level                     # here, not at import: two_level imports the mask's learner mixin
     vs = hashlib.sha256(inspect.getsource(RunningStandardScaler._parallel_variance).encode()).hexdigest()
     if (skrl.__version__ != two_level.SKRL_VERSION or two_level.update_source_sha256() != two_level.IPPO_UPDATE_SHA256
             or vs != PARALLEL_VARIANCE_SHA256):
@@ -131,7 +130,8 @@ def team_bootstrap(last_values: dict, alive_next: dict, own: dict, discount: flo
     (``last_values_prepass``), alive_next {agent: [N] bool}, own {agent: own_last_live(...)} -> {agent: (bootstrap
     [N, 1] raw, {"mates", "own", "none"}: the games, among those where the agent is absent after the rollout, that took
     each rule)}. Rule: the mean of the live mates' raw last values; else the own last live value * discount^gap; else 0.
-    """
+    The own-value fallback is a heuristic: V(s_L) * discount^(T - L) values the state at the slot's last live step L,
+    not the state at the rollout's end T (QC note of step 3); it fires only when no mate is live (Guard team only)."""
     names = list(last_values)
     out = {}
     for a in names:
@@ -165,7 +165,7 @@ def masked_scaler_update(scaler: RunningStandardScaler, x: Tensor, live: Tensor)
     if count < MIN_SCALER_ROWS:
         return
     with torch.no_grad():
-        if count == keep.numel() and x.dim() == 2:
+        if count == keep.numel():                        # every row live: skrl's own train path, any shape
             scaler(x, train=True)
             return
         sel = flat[keep]
@@ -215,8 +215,9 @@ def masked_policy_terms(log_prob: Tensor, old_log_prob: Tensor, entropy: Tensor,
     clipped = adv * torch.clip(ratio, 1.0 - ratio_clip, 1.0 + ratio_clip)
     we, _ = _live_weights(live, entropy)
     per_row = entropy[0].numel()
+    ent = torch.where(we > 0, entropy, torch.zeros_like(entropy))        # an absent row's entropy never reaches it
     return {"policy_loss": -(torch.min(surrogate, clipped) * w).sum() / count,
-            "entropy_loss": -entropy_scale * (entropy * we).sum() / (count * per_row)}
+            "entropy_loss": -entropy_scale * (ent * we).sum() / (count * per_row)}
 
 
 def masked_value_loss(returns: Tensor, predicted: Tensor, sampled_values: Tensor, live: Tensor, value_clip: float,

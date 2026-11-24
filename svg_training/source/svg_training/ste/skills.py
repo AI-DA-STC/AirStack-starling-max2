@@ -63,6 +63,7 @@ class LearnerSpec:
     team_strategies: dict | None = None
     drone_skills: dict | None = None
     entropy_scale: dict | None = None
+    mask_absent: bool = False                   # L3 slice 3: the absent-drone mask (velocity and two_level only)
 
     @property
     def skills(self) -> bool:
@@ -76,26 +77,32 @@ def learner_spec(table: dict | None) -> LearnerSpec:
         return LearnerSpec(VELOCITY, None)
     if not isinstance(table, dict):
         raise ValueError("[learner] must be a table")
-    unknown = sorted(set(table) - {"action", "choice", *TWO_LEVEL_KEYS})
+    unknown = sorted(set(table) - {"action", "choice", "mask_absent", *TWO_LEVEL_KEYS})
     if unknown:
         raise ValueError(f"unknown key(s) in [learner]: {unknown}")
     action = table.get("action", VELOCITY)
     if action not in ACTIONS:
         raise ValueError(f"[learner] action must be one of {ACTIONS}, got {action!r}")
+    mask = table.get("mask_absent", False)
+    if not isinstance(mask, bool):
+        raise ValueError(f"[learner] mask_absent: true or false, got {mask!r}")
     if action == VELOCITY:
         if "choice" in table:
             raise ValueError("[learner] choice belongs to the skills route only (action = \"skills\")")
         if any(k in table for k in TWO_LEVEL_KEYS):
             raise ValueError(f"[learner] {list(TWO_LEVEL_KEYS)} belong to choice = \"{TWO_LEVEL}\" only")
-        return LearnerSpec(VELOCITY, None)
+        return LearnerSpec(VELOCITY, None, mask_absent=mask)
     choice = table.get("choice")
     if choice not in LEARNER_CHOICES:
         raise ValueError(f"[learner] action = \"skills\" needs choice one of {LEARNER_CHOICES}, got {choice!r}")
     if choice != TWO_LEVEL:
         if any(k in table for k in TWO_LEVEL_KEYS):
             raise ValueError(f"[learner] {list(TWO_LEVEL_KEYS)} belong to choice = \"{TWO_LEVEL}\" only")
+        if "mask_absent" in table:              # L3 slice 3 (B2): not for slice 1's flat single-head modes
+            raise ValueError(f"[learner] mask_absent belongs to the velocity route and choice = \"{TWO_LEVEL}\" only")
         return LearnerSpec(SKILLS, choice)
-    return _two_level_spec(table)
+    spec = _two_level_spec(table)
+    return LearnerSpec(spec.action, spec.choice, spec.team_strategies, spec.drone_skills, spec.entropy_scale, mask)
 
 
 class LearnerNotWired(ValueError):
@@ -314,4 +321,4 @@ def learner_table(spec: LearnerSpec) -> dict | None:
     return {"action": spec.action, "choice": spec.choice,
             "team_strategies": {k: list(v) for k, v in spec.team_strategies.items()},
             "drone_skills": {k: list(v) for k, v in spec.drone_skills.items()},
-            "entropy_scale": dict(spec.entropy_scale)}
+            "entropy_scale": dict(spec.entropy_scale), "mask_absent": bool(spec.mask_absent)}

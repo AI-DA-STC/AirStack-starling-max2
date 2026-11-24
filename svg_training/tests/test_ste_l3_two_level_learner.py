@@ -642,8 +642,9 @@ def test_update_end_to_end_with_partial_masks_matches_the_hand_reference_and_ign
     seen = []
     real = two_level.two_level_policy_terms
 
-    def spy(*args):
-        out = real(*args)
+    def spy(*args, **kw):                      # the update also passes live= (None with the mask off)
+        assert kw.get("live") is None
+        out = real(*args, **kw)
         seen.append(([a.detach().clone() if torch.is_tensor(a) else a for a in args], out))
         return out
 

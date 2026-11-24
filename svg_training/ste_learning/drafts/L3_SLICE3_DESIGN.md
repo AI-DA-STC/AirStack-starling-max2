@@ -161,16 +161,76 @@ observation v0.3 (landing is off in the pipeline check, R32); drawn team sizes a
 R32; the mask is ready for them); the score-matrix, clip and cross-tag drivers for the skills route and the verdict
 (they still refuse); the pipeline-check runs themselves.
 
-## Open questions for the lead
+## Lead's answers (24 Nov 2026, after two reviewers, no blocking finding)
 
-1. **The critic under the mask:** v2's list masks the value loss and the value scaler, which needs the reward-to-go
-   pass-through and the mates' bootstrap above. The simpler alternative leaves the critic unmasked (it learns one
-   value for "absent") and masks only the policy, entropy, advantage statistics and observation scaler. Proposed: the
-   full v2 list as above.
-2. **Pool membership:** every script of the other team (proposed), or a subset named in `[pool] players`? And should
-   the run's named evaluation opponent stay the maximin pick (proposed, for continuity), or become the pooled row
-   only?
-3. **Pool draw:** uniform per game (proposed), or weighted (for example towards the opponents the learner currently
-   loses to, which is a curriculum, not a pool)?
-4. **Tier 2 scope in this slice:** the Guard-side L0.13 arms only (the tier-2 driver trains the Guard side, as built),
-   or also a Strike-side tier-2 arm for the skills route?
+1. The critic under the mask: **the full v2 list**, value loss and value scaler included (the pass-through and the
+   mates' bootstrap of §1).
+2. Pool membership: **every script of the other team except `random`** (`RandomActions` draws from its own stateful
+   generator, `opponents/scripted.py:73-83`, so it is not a pure function of the observation); the run's named
+   evaluation opponent stays the maximin pick.
+3. Pool draw: **uniform**.
+4. Tier 2 in this slice: **the Guard-side L0.13 arms and the skills dispatch-equality tests only**; a Strike-side
+   tier-2 arm later.
+
+## Revision after the review (24 Nov 2026): requirements that supersede §1-§4 where they differ
+
+**The mask (§1).**
+- **B1, the mates' bootstrap needs every agent's last values before any update.** skrl updates the agents one after
+  another (`ippo.py:349-366`), and an update changes that agent's value network and value scaler. So a pre-pass (a
+  third copy of skrl logic, beside the update copies) computes, for every agent, V(next observation at the rollout's
+  end) in the same order and under the same `torch.no_grad()` and autocast as the update's own last-value step
+  (`ippo.py:380-388`), before the first update; the updates then read those values. With the mask off the pre-pass does
+  not run (the stock path; tested bit for bit).
+- **A1, the bootstrap in raw units.** The mates' bootstrap is the mean over the live mates of V(next observation at T)
+  in **raw** reward units, each mate's value through its **own** value scaler (`inverse=True`), not a mean of scaled
+  values. With no live mate (Guard team only) the fallback is the slot's own value at its last live step, **discounted
+  by γ^gap** (gap = decisions from that step to the rollout's end); the train log counts how often each fallback fires.
+- **A2, the advantage statistics.** Normalise the advantages over the live rows first (mean and std of the live rows;
+  with one live row, mean only, std 1; with none, nothing), then set the absent rows to 0; no re-normalisation after.
+  The scaler update skips a minibatch with no live row (no `_parallel_variance` call with count 0); the optimiser step
+  is skipped for a minibatch with no live sample (no zero-gradient Adam step that would still move the moments).
+- **A3, time-limit bootstrap.** `record_transition`'s time-limit bootstrap (`ippo.py:318-326`) is skipped for absent
+  slots; the pipeline check's gates keep `time_limit_bootstrap` off as today, and the pilot records the setting.
+- **A4.** The per-head KL and entropy logs (slice 2) use h' = h·alive, as the loss does.
+- **B2.** `mask_absent` is accepted by `learner_spec` for the velocity route and `choice = "two_level"` only; slice 1's
+  flat single-head modes ("team", "drone") refuse it.
+- **B-S.** `MaskedIPPO` is built only when the mask is on; it reuses slice 2's pin (skrl 2.1.0 and the sha256 of
+  `IPPO.update`'s source, `ste/two_level.py`) and adds `RunningStandardScaler._parallel_variance` to what is pinned
+  (its source sha256, the same guard); it carries its own copy of `compute_gae` (masked). `LearnerSpec.mask_absent`
+  is a default-false field, accepted on the velocity branch. Step 2's tests check the update at gradient level against
+  a hand-built masked update on a small batch, not only end to end.
+
+**The pool (§2).**
+- **The hash.** splitmix64-style mixing in int64 tensor ops: the three 64-bit constants wrapped to signed int64,
+  logical right shifts emulated by an arithmetic shift and a mask, `torch.remainder` for the choice (non-negative for a
+  negative mixed value). A pure function `pool_draw(seed, slot, k, choices)`, tested against a pure-Python reference
+  on unsigned integers, with literal expected values, on the CPU and (when a GPU is free) CUDA with the same literals.
+  `OpponentPool` draws k = 0 for every slot at construction (no reset needed for the first games), forwards its `name`
+  (`OpponentPool(<names>)`) and is what `trained_against` reports.
+- **A6, fairness and reporting.** The train log carries the per-opponent sample share of each update, per route (the
+  two routes see the same draws per (slot, k), but not the same number of games). The pipeline check plans one
+  pool-only control per route (pool on, mask off) besides the pool-and-mask runs, so a difference can be attributed.
+- **A5, what "adapts" can mean (the R30 write-up).** The policy is memoryless (no previous choice, no recurrence) and
+  its observation has no opponent identity: it can adapt only to what the opponent's drones are doing in the current
+  observation, after the opponent reveals itself. The evidence plan: (a) the pool-trained policy against the best
+  single fixed choice over the pool (the best skill or strategy played every decision, scored on the same pooled
+  starts); (b) the choice share by decision index within a game (does the choice change once the opponent shows
+  itself?); (c) the pooled row = the exact mean of the K cell rates on the shared starts, with a stratified interval
+  (each cell's Wilson variance, equal weights), replacing the per-game assignment of §2; the worst cell stays the
+  headline, and the pooled mean is flagged where trivial cells (a script that never wins or always wins against the
+  learner) inflate it.
+
+**Tier 2 (§3).** `Tier2Gates` and `load_gates` accept `[players]`, `[learner]` and `[pool]` with None defaults (absent:
+the velocity route, as today); a test loads the L0.13 gate file of record and checks its sha256 is unchanged. Scope:
+the Guard-side arms and the dispatch-equality tests (answer 4).
+
+**Build order (replaces §4's), each step's tests first; estimate 7-8 days.**
+1. `pool_draw` (pure function) and its tests. About 0.5 day.
+2. `OpponentPool` and the driver's pool settings, logs and per-route mix; the pooled row (exact mean, stratified
+   interval) and the choice logs. About 1.5 days.
+3. The mask pieces: masked GAE with the pass-through, the pre-pass bootstrap (raw units, fallback γ^gap), the
+   advantage statistics and scaler rules of A2. About 1.5 days.
+4. The mask in the learners (`MaskedIPPO`, `TwoLevelIPPO`, the setting and its refusal for the flat modes), tests at
+   gradient level, off = bit for bit. About 2 days.
+5. Tier 2: the tables, the L0.13 file of record unchanged, the dispatch-equality tests, the L0.13 driver on
+   `--dry-cpu`. About 1.5 days.

@@ -2,7 +2,7 @@ Simulator: training simulator, tier 1 (fast engine; Starling layer: commander co
 
 # 2026-11-24_ste_l25_screen record
 
-DRAFT before review (owner ruling R22: one reviewer for an internal record; two if it goes on a reader page or to a gate).
+Reviewed 24 Nov 2026 by two independent reviewers (numbers: P-b, P-c, paired flips and holds recomputed from the per-game files, all matching; completeness: 2 MUST and 4 SHOULD fixes applied in `6e755636`), as R22 asks for a record that feeds the P2 and P7 rulings.
 
 ## Purpose
 

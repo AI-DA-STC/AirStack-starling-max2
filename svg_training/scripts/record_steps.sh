@@ -48,7 +48,9 @@ set -uo pipefail
 trap '' PIPE
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-REPO="$(cd "$ROOT/.." && pwd)"
+# SVG_STACK_REPO: the clone whose AirStack/ the containers mount (the live clone, docker-mounted) when this script runs
+# from another checkout (the development worktree); default: the checkout this script is in.
+REPO="${SVG_STACK_REPO:-$(cd "$ROOT/.." && pwd)}"
 SIM="${SVG_TEST_SIM:-$REPO/tools/sim.sh}"
 PY="${SVG_HOST_PY:-python3}"
 RUNS="${SVG_TEST_RUNS:-$ROOT/runs}"
@@ -66,6 +68,11 @@ SCENARIO=hover
 TELEOP=/svg/$DRONE/teleop_command
 NOISE='^(bash: cannot set terminal|bash: no job control|Sourcing|groups: cannot find name)'
 REAL_TOPICS='/fmu/|/poses|/pose$'                     # = stack.sh:90-92
+# Published topics that are the simulator's or our own, never a real drone (L1.4 first run, 24 Nov 2026): the
+# simulator's MAVROS (/drone_N/interface/mavros/...; the real drones fly uXRCE-DDS, /fmu/), and /fmu/in/ (a drone
+# subscribes there; our commander's mocap_bridge publishes the relay). A real drone publishes /fmu/out/*; a mocap bridge
+# publishes /drone_N/pose or /poses: both still stop the session. Topics with subscribers only are not counted.
+OWN_TOPICS='/interface/mavros/|/fmu/in/'
 
 usage() { echo "Usage: bash scripts/record_steps.sh [--dry-run] <name>   (--help for more)" >&2; exit 64; }
 refuse() { echo "record_steps.sh: refused: $*" >&2; exit 65; }
@@ -194,11 +201,13 @@ release_lock() { if [ "$LOCKED" = 1 ] && [ "$(cat "$SIM_LOCK" 2>/dev/null)" = "$
 realdrone_signal() {
   RD_WHAT=""
   if [ "$DRY" = 1 ]; then
-    echo "DRY: (real-drone check) pgrep -x MicroXRCEAgent || pgrep -f '^(bash|sh) .*mocap\\.sh' || pgrep -x natnet_ros2; docker exec $R bash -ic 'timeout 25 ros2 topic list --no-daemon --spin-time 5' | grep -E '$REAL_TOPICS'"
+    echo "DRY: (real-drone check) pgrep -x MicroXRCEAgent || pgrep -f '^(bash|sh) .*mocap\\.sh' || pgrep -x natnet_ros2; docker exec $R bash -ic 'timeout 25 ros2 topic list -v --no-daemon --spin-time 5' | published only | grep -E '$REAL_TOPICS' | grep -vE '$OWN_TOPICS'"
     return 1; fi
   local p t
   p=$({ pgrep -x MicroXRCEAgent || pgrep -f '^(bash|sh) .*mocap\.sh' || pgrep -x natnet_ros2; } 2>/dev/null)
-  t=$(rx 'timeout 25 ros2 topic list --no-daemon --spin-time 5' | grep -E "$REAL_TOPICS")
+  t=$(rx 'timeout 25 ros2 topic list -v --no-daemon --spin-time 5' \
+      | awk '/^Published topics:/{p=1; next} /^Subscribed topics:/{p=0} p && $1 == "*" {print $2}' \
+      | grep -E "$REAL_TOPICS" | grep -vE "$OWN_TOPICS")
   [ -n "$p$t" ] || return 1
   RD_WHAT="bridge pids: $(echo ${p:-none}); topics: $(echo ${t:-none})"
 }
@@ -493,7 +502,7 @@ if [ "$DRY" = 0 ]; then
   trap on_exit EXIT
   trap 'on_signal INT' INT; trap 'on_signal TERM' TERM; trap 'on_signal HUP' HUP
   mkdir -p "$OUT"
-  { echo "name=$NAME"; echo "pid=$$"; echo "started=$(date -Is)"; echo "start_epoch=$START"; echo "head=$(git -C "$REPO" rev-parse HEAD 2>/dev/null)"
+  { echo "name=$NAME"; echo "pid=$$"; echo "started=$(date -Is)"; echo "start_epoch=$START"; echo "head=$(git -C "$REPO" rev-parse HEAD 2>/dev/null)"; echo "script_head=$(git -C "$ROOT" rev-parse HEAD 2>/dev/null)"; echo "stack_repo=$REPO"
     echo "s1_toml_sha256=$(sha256sum "$ROOT/configs/s1.toml" | cut -d' ' -f1)"; echo "virtual_stick_sha256=$(sha256sum "$ROOT/scripts/virtual_stick.py" | cut -d' ' -f1)"
     echo "commander_config=$CONFIG_YAML scenario=$SCENARIO bag_prefix=$PREFIX drone=$DRONE"
     echo "gpu_before=$(nvidia-smi --query-gpu=name,memory.used --format=csv,noheader 2>/dev/null)"; } > "$OUT/session_meta.txt"

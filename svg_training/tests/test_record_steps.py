@@ -198,8 +198,28 @@ def shell(st, c, sh):
     if "ros2 topic list" in sh:
         st["topic_lists"] += 1
         save(st)
+        real = st["topic_lists"] in SC.get("real_topics_on_call", [])
+        mocap = st["topic_lists"] in SC.get("mocap_pub_on_call", [])
+        if "topic list -v" in sh:                     # the verbose form: publishers and subscribers apart
+            print("Published topics:")
+            print(" * /svg/commander_status [std_msgs/msg/String] 1 publisher")
+            if SC.get("sim_topics", True):            # the simulator's own MAVROS and our mocap_bridge relay
+                print(" * /drone_1/interface/mavros/local_position/pose [geometry_msgs/msg/PoseStamped] 1 publisher")
+                print(" * /drone_1/fmu/in/vehicle_visual_odometry [px4_msgs/msg/VehicleOdometry] 1 publisher")
+            if real:
+                print(" * /drone_1/fmu/out/vehicle_status [px4_msgs/msg/VehicleStatus] 1 publisher")
+            if mocap:
+                print(" * /drone_1/pose [geometry_msgs/msg/PoseStamped] 1 publisher")
+            print("")
+            print("Subscribed topics:")
+            if SC.get("sim_topics", True):            # our mocap_bridge listens for a mocap pose that never comes
+                print(" * /drone_1/pose [geometry_msgs/msg/PoseStamped] 1 subscriber")
+                print(" * /drone_1/fmu/out/vehicle_status [px4_msgs/msg/VehicleStatus] 1 subscriber")
+            return 0
         print("/svg/commander_status")
-        if st["topic_lists"] in SC.get("real_topics_on_call", []):
+        if SC.get("sim_topics", True):
+            print("/drone_1/interface/mavros/local_position/pose\n/drone_1/fmu/in/vehicle_visual_odometry\n/drone_1/pose")
+        if real:
             print("/fmu/out/vehicle_status")
         return 0
     if "ros2 topic info" in sh:
@@ -797,6 +817,24 @@ def test_moved_preexisting_bag_in_capitals(tmp_path):
     assert s.r.returncode == 0, s.why()
     assert "PRE-EXISTING BAG(S) NO LONGER IN" in s.r.stdout
     assert "svg_20261112_094546   PRE-EXISTING ENTRY NO LONGER IN PLACE" in s.text("outside_writes.txt")
+
+
+def test_sim_own_topics_are_not_a_real_drone_signal(tmp_path):
+    """L1.4 first run, 24 Nov 2026: the simulator's MAVROS pose, our mocap_bridge's /fmu/in relay and its unanswered
+    /drone_N/pose subscription (a subscriber only) are not a real drone: the session completes."""
+    s = Session(tmp_path, {"sim_topics": True})
+    assert s.r.returncode == 0, s.why()
+    assert "REAL-DRONE/MOCAP SIGNAL" not in s.text("session.log")
+
+
+@pytest.mark.parametrize("call,flew", [(1, False), (2, True)])
+def test_mocap_publisher_on_pose_is_a_real_drone_signal(tmp_path, call, flew):
+    """A mocap bridge publishing /drone_N/pose (another machine on the domain) still stops the session, no down."""
+    s = Session(tmp_path, {"mocap_pub_on_call": [call]})
+    assert s.r.returncode == 67, s.why()
+    assert not s.has(r"^sim down") and "REAL-DRONE/MOCAP SIGNAL" in s.text("session.log")
+    assert "/drone_1/pose" in s.text("session.log")
+    assert s.has(r"virtual_stick\.py --config") is flew
 
 
 @pytest.mark.parametrize("call,flew", [(1, False), (2, True)])

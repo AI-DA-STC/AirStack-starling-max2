@@ -223,11 +223,17 @@ descent.
   - A diagnostic (job `l26_clip_diag`, 0.011 GPU-h, a session scratch script, not committed): the run's own path
     (`exploit.play_cells` on T44's starts) on an 8-game Isaac world reproduced the run's first 8 tier-2 games exactly in
     both cells. The run's numbers are not in question.
-  - `record_games` on an Isaac world is. Cause not diagnosed. Those 4 tier-2 GIFs are not used.
-  - **Consequence:** every earlier tier-2 GIF made through `record_games` on an Isaac world is suspect until side task
-    CLIP-T2 (running now) reports. Among the records, that path drew the two tier-2 GIFs of T53 (L0.13,
-    `scripts/ste_tier2_l013.py`). Tier-2 clips drawn by other paths are not yet checked: L0.2's (T48, `ste/speed.py`
-    `record_clips`), L0.3's (T45) and the NUS port's tier-2 rows.
+  - **Cause found afterwards (side task CLIP-T2, 24 Nov 2026):** not `record_games` itself. The clip script called it on
+    the GPU, and `SvgGame` draws its starts from a generator on the game's device (`core/game.py:108-109`), so tier 2
+    played a CUDA draw of the same seed: different starts (up to 5.5 m per drone), not tier 1's games. With the same
+    CPU-drawn starts, `record_games` on Isaac gives tier 1's mix (4 holds of 8) in both cells. Fix on branch `clip-t2`
+    (`record_games(..., starts=...)`, the clip script draws once on the CPU). Those 4 tier-2 GIFs stay unused.
+  - **Consequence (CLIP-T2's check of every published clip):** only T53's clips (L0.13, `docs/media/ste_l013/`) are
+    partly affected: genuine games of their own tier, but drawn from the clip seed with the tier-2 draw on the GPU, so
+    the two tiers' clips are not the same games and their caption's "T44's starts" was wrong (corrected 24 Nov 2026).
+    L0.2 (T48), L0.3 (T49), the NUS port's Phase 4 and Isaac clips, S2b, VID-1 3-D and every tier-1 2-D clip are not
+    affected (their starts are loaded from file, or no tier pairing is claimed); NUS's `pairs`, `phase3` and `s51`
+    scripts were not traced one by one.
 - **The between-batch copy found no noise** (0 games on both tiers). The run-wide floor therefore came from the
   within-batch repeat alone.
 - **Option B's tier-2 cost** at 7,000 games was × 2.8 per tick, under the 3.7 fallback (smoke).

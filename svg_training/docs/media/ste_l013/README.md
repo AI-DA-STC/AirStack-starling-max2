@@ -1,6 +1,9 @@
 # 2-D clips of the tier 2 training check, L0.13 (record T53)
 
-Training simulator, the L0.11 base game (3v3, tag 1.6 m), T44's starts; not a flight. A Guard team trained on tier 1
+Training simulator, the L0.11 base game (3v3, tag 1.6 m); not a flight. **Correction (24 Nov 2026):** the clips' starts
+are drawn from the clip seed (130950), not T44's starts, and the tier-2 clips' draw is made on the GPU, so the tier-1
+and tier-2 clips do not show the same games; each clip is a genuine game of its own tier (side task CLIP-T2, recorded
+in the L2.6 record T71). The record's numbers (T53) used T44's starts and are not affected. A Guard team trained on tier 1
 (fast engine) and one trained on tier 2 (the Isaac Lab rigid-body Starling), each against straight Strikes, shown on its
 own tier at 4x real time. Each clip is the run's top-down view with a height panel under it. Strike team orange
 triangles, Guard team blue circles, a cross where a drone was tagged out. Numbers:

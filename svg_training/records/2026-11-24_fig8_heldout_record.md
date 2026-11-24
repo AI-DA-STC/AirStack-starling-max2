@@ -2,7 +2,7 @@ Observed in flight logs: real drones, 24 November 2026 rosbag (figure eight, two
 
 # 2026-11-24_fig8_heldout record
 
-Result: **INFO** (no gates). Ledger row: added with the results.
+Result: **INFO** (no gates). Ledger row T72. Draft until reviewed (one reviewer: an internal INFO record).
 
 ## Purpose
 
@@ -66,4 +66,103 @@ or speed cap (3.0 m/s); the measured horizontal acceleration (95th percentile). 
 
 ## Results
 
-Not yet run.
+In short: tier 1's model, fitted at up to 0.5 m/s, flies this 2 m/s figure eight at about half the real drones' speed
+(median 0.84 m/s against 1.51–1.61 m/s measured; peaks 1.59–1.62 against 2.35–2.69) and late. Its velocity error is
+0.77–0.84 m/s RMS, 6–7 times the 12 Nov check's worst leg, and 1.36–1.64 times the error of simply assuming the drone
+flies the setpoint speed. Every RMS number is outside the 12 Nov check's range (above). The shift search does not
+rescue it: the best shift sits on the search edge (−0.10 s) in every subset and still at or near the wide edge
+(−0.20 to −0.30 s): the gap is amplitude, not timing.
+
+Window: bag_check seconds 36.483–130.883 (commander `start` to `hold`; the survey's 36.9–131.3 s less its 0.39 s
+earlier zero), 94.4 s; 11,313 measured samples for drone_1, 9,476 for drone_2. The filter listed drone_1 54 % and
+drone_2 56 % of the window, in 20 stretches each (median 2.5–2.6 s, longest 3.1–3.2 s); no sample unknown.
+
+### Primary (pre-registered method), with the reading words
+
+RMS in m/s; "both" is bag_check's convention. 12 Nov ranges: model RMS 0.029–0.120; best shift −0.10 to +0.06 s;
+RMS after shift 0.028–0.085; model / setpoint 0.78–1.03.
+
+| Drone | Subset | Samples | Model RMS x / y / both | Reading (each RMS) | Best shift (s) | Reading | RMS after shift | Reading | Model / setpoint | Reading |
+|---|---|---|---|---|---|---|---|---|---|---|
+| drone_1 | all | 11,313 | 0.706 / 0.955 / 0.840 | outside (above) | −0.10, at search edge | inside | 0.792 | outside (above) | 1.64 | outside (above) |
+| drone_1 | filter on | 6,122 | 0.649 / 0.801 / 0.729 | outside (above) | −0.10, at search edge | inside | 0.694 | outside (above) | 1.33 | outside (above) |
+| drone_1 | filter off | 5,191 | 0.768 / 1.109 / 0.954 | outside (above) | −0.10, at search edge | inside | 0.895 | outside (above) | 2.06 | outside (above) |
+| drone_2 | all | 9,476 | 0.669 / 0.858 / 0.769 | outside (above) | −0.10, at search edge | inside | 0.722 | outside (above) | 1.36 | outside (above) |
+| drone_2 | filter on | 5,333 | 0.606 / 0.636 / 0.621 | outside (above) | −0.10, at search edge | inside | 0.590 | outside (above) | 0.97 | **inside** |
+| drone_2 | filter off | 4,143 | 0.741 / 1.078 / 0.925 | outside (above) | −0.10, at search edge | inside | 0.863 | outside (above) | 2.08 | outside (above) |
+
+"outside" and "inside" mean outside / inside the 12 Nov check's range. The "inside" best shifts are inside only
+because the 12 Nov range also ends on the search edge; with the wide search ([−0.30, 0.80] s, information) the best shift
+is −0.30 s (at its edge) for "all" and "filter off" on both drones, −0.24 s (drone_1) and −0.20 s (drone_2) with the
+filter on, and the RMS after it 0.58–0.80 m/s. The one ratio inside (drone_2, filter on, 0.97) comes from the
+baseline, not the model: the filter-shaped setpoint is itself a poor description of the drone there (setpoint RMS
+0.642 m/s against 0.445 with the filter off).
+
+Baselines (both axes, all samples): the setpoint speed itself 0.511 (drone_1) and 0.564 (drone_2) m/s; the setpoint
+0.15 s later 0.302 and 0.394 m/s. Both beat the model here; on 12 Nov the 0.15 s-later setpoint also beat it on
+drone_2 (0.066 against 0.093).
+
+### Information only (named before the run; they move no reading word)
+
+| Variant (all samples) | drone_1 model RMS | drone_2 model RMS | Best shift (s) | Model / setpoint |
+|---|---|---|---|---|
+| primary (held setpoint, derived acceleration) | 0.840 | 0.769 | −0.10 / −0.10 (edge) | 1.64 / 1.36 |
+| logged acceleration field (what PX4 received) | 0.577 | 0.487 | −0.06 / −0.06 | 1.13 / 0.86 |
+| setpoint joined by lines | 0.521 | 0.440 | −0.01 / −0.01 | 0.94 / 0.73 |
+| restarted every 5 s (19 windows, 1 s run-in) | 0.857 | 0.800 | −0.10 / −0.10 (edge) | 1.67 / 1.42 |
+
+- The model sits on its acceleration limit (1.72 m/s²) in 43 % of its 0.01 s steps on both drones, and its PX4
+  speed request on the 3.0 m/s cap in 31 %. The real drones' horizontal acceleration (slope over 0.1 s) has median
+  2.58 / 2.55 m/s² and 95th percentile 4.35 / 3.83 m/s²; the logged setpoint acceleration reaches its 3.0 m/s² cap
+  (95th percentile 3.00 on both).
+- Restarting every 5 s does not help (0.80–0.86 m/s), so the error is not a drift built up over the long open-loop
+  window: the model is too slow within each few seconds.
+
+![tier 1 model against the real drones, 24 Nov figure eight](evidence/2026-11-24_fig8_heldout/fig8_heldout.png)
+
+*Left: horizontal speed over the whole mission, setpoint (amber), real drone (blue, PX4's estimate) and tier 1's model
+(orange); shaded where the safety filter listed the drone. Right: east speed over 10 s. The model reaches about half the
+real drone's swing and lags it.*
+
+### What this likely means (mechanisms say "likely": no control run)
+
+- The model is likely too slow for this regime because of two fitted values that low-speed pushes could not pin: the
+  acceleration limit 1.72 m/s² (the real drones accelerate at a median 2.6 m/s² here) and the velocity lag 1.65 s (the
+  parameter file already notes it is poorly pinned: +25 % moved the fit's RMS by 0.0002 m/s). A first-order lag of
+  1.65 s alone, without the position term, would pass about 40 % of the 4.5 s east-speed swing in the figure's right
+  panels.
+- The derived acceleration (spiky from a held 20 Hz setpoint, then clipped by the limit) likely costs part of it: the
+  logged-acceleration and joined-by-lines variants cut the RMS by 31–43 %, but stay 3.7–4.8 times above the 12 Nov
+  check's worst leg.
+- With and without the filter the model misses in the same way; the error is lower with the filter on, likely because
+  the filter slows the setpoint there (the figure: shaded stretches sit on the setpoint dips).
+- Nothing here changes `params/`. It supports flying faster pushes (and turns) in the NEAR-962 flight, so the fit of
+  record sees the acceleration and lag the game will ask for (the simulator's 2–6 m/s, 12 Nov record Limits); the planned 0.25–1.0
+  m/s pushes alone would likely not pin them either.
+
+## Commit, config, parameter set
+
+- Code: `scripts/fig8_check.py` at this branch (`fig8-check`), reusing `scripts/bag_check.py` unchanged; tests
+  `tests/test_fig8_check.py` (10, synthetic bag, < 1 MB). The pre-registered reading above was committed (f095b440)
+  before the replay. One bug in an information variant was found and fixed after the first replay, test first: the
+  restarted-every-5 s windows took their baselines from the pre-delayed setpoint (ratio 2.87 for drone_1); the
+  primary numbers did not change. The model's own speed (median, peak) was added as information after the first
+  replay.
+- Command: `python scripts/fig8_check.py --bag <bag dir> --params params/real_exploratory_v0.toml --out
+  records/evidence/2026-11-24_fig8_heldout`.
+- Bag (read-only, owner's, not in git): `svg_20261124_073433_0.mcap`, sha256 `5fc12207ed159529…`, 196.3 MB.
+- Parameter set: `params/real_exploratory_v0.toml` (sha256 `4c93543f51ab…`), `[px4]` as written: lag1, delay 0.1482 s,
+  lag 1.6496 s, acceleration limit 1.7178 m/s², Kp 0.95, speed cap 3.0 m/s. Exploratory. Estimate error off.
+- Seeds: none (deterministic). Machine: CPU only, about 3 s; no GPU, no simulator. Games at once, steps per second: not
+  applicable.
+- Evidence: [metrics.json](evidence/2026-11-24_fig8_heldout/metrics.json) (every number above, per subset and
+  variant), [fig8_heldout.png](evidence/2026-11-24_fig8_heldout/fig8_heldout.png).
+
+## Limits
+
+- One flight, two drones, one manoeuvre (the figure eight at 2.0 m/s scenario speed); speeds 99 % of the time above the
+  fit range.
+- The setpoint already jumps to about 1.8 m/s at the `start` command while the drones hover, so the window starts with a
+  step from rest; the model starts from the measured (near-zero) speed.
+- Measured speed is PX4's estimate logged after the WiFi; its delay includes one network leg, as on 12 Nov.
+- The model's vertical channel and the commander copy are not exercised: the setpoint PX4 received is replayed directly.

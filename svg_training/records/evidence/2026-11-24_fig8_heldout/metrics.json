@@ -1,0 +1,1297 @@
+{
+ "what": "INFO held-out check, no refit, no gates; observed in flight logs",
+ "bag": "svg_20261124_073433_0.mcap",
+ "bag_sha256": "5fc12207ed159529b877148feb2eba5a15ba645c87ca2ec83bbe14e9a1178fd6",
+ "bag_mb": 196.3,
+ "params_file": "real_exploratory_v0.toml",
+ "params_sha256": "4c93543f51ab41ea5bb0f81e6d1b0512f662a3e10126ec2d85fc3bb008cecaa2",
+ "params": {
+  "family": "lag1",
+  "kp_xy": 0.95,
+  "tau_s": 1.6496,
+  "delay_s": 0.1482,
+  "acc_max_mps2": 1.7178,
+  "vel_max_mps": 3.0,
+  "ff_gain": 1.0,
+  "vel_p": 1.8,
+  "vel_i": 0.4,
+  "vel_d": 0.2
+ },
+ "time_zero_log_ns": 1795505673841986037,
+ "window_s": [
+  36.483,
+  130.883
+ ],
+ "window_epoch_s": [
+  1795505710.325,
+  1795505804.725
+ ],
+ "window_source": "commands start -> hold",
+ "commands": [
+  [
+   18.283,
+   "takeoff"
+  ],
+  [
+   36.483,
+   "start"
+  ],
+  [
+   130.883,
+   "hold"
+  ],
+  [
+   135.683,
+   "land"
+  ]
+ ],
+ "method": {
+  "setpoint": "held on 0.01 s grid",
+  "accel_ff": "derived (slope of held speed setpoint)",
+  "start": "measured position and speed at window start, one window",
+  "shift_search_s": [
+   -0.1,
+   0.3
+  ],
+  "wide_shift_search_s": [
+   -0.3,
+   0.8
+  ],
+  "estimate_error": "off",
+  "axes": "horizontal (x east, y north)",
+  "rms_both": "sqrt of mean over both components (bag_check)",
+  "cbf_stale_s": 0.25
+ },
+ "ref_12nov": {
+  "model_rms_mps": [
+   0.029,
+   0.12
+  ],
+  "best_shift_s": [
+   -0.1,
+   0.06
+  ],
+  "rms_after_shift_mps": [
+   0.028,
+   0.085
+  ],
+  "model_over_setpoint": [
+   0.78,
+   1.03
+  ]
+ },
+ "drones": {
+  "drone_1": {
+   "primary": {
+    "windows": 1,
+    "subsets": {
+     "all": {
+      "n_samples": 11313,
+      "model": {
+       "rms_x_mps": 0.70605,
+       "rms_y_mps": 0.95476,
+       "rms_both_mps": 0.83966
+      },
+      "sp": {
+       "rms_x_mps": 0.42399,
+       "rms_y_mps": 0.58549,
+       "rms_both_mps": 0.51116
+      },
+      "sp_delayed": {
+       "rms_x_mps": 0.2528,
+       "rms_y_mps": 0.34446,
+       "rms_both_mps": 0.30213
+      },
+      "model_over_setpoint": 1.64266,
+      "best_shift_s": -0.1,
+      "rms_after_shift_mps": 0.79227,
+      "best_shift_at_edge": true,
+      "after_shift_axes": {
+       "rms_x_mps": 0.65829,
+       "rms_y_mps": 0.90666,
+       "rms_both_mps": 0.79227
+      },
+      "wide_best_shift_s": -0.3,
+      "wide_rms_after_shift_mps": 0.73905,
+      "wide_best_shift_at_edge": true,
+      "measured_speed_median_mps": 1.60783,
+      "measured_speed_max_mps": 2.68764
+     },
+     "filter_on": {
+      "n_samples": 6122,
+      "model": {
+       "rms_x_mps": 0.64872,
+       "rms_y_mps": 0.80125,
+       "rms_both_mps": 0.72898
+      },
+      "sp": {
+       "rms_x_mps": 0.44037,
+       "rms_y_mps": 0.64025,
+       "rms_both_mps": 0.54948
+      },
+      "sp_delayed": {
+       "rms_x_mps": 0.25333,
+       "rms_y_mps": 0.39182,
+       "rms_both_mps": 0.32993
+      },
+      "model_over_setpoint": 1.32669,
+      "best_shift_s": -0.1,
+      "rms_after_shift_mps": 0.69372,
+      "best_shift_at_edge": true,
+      "after_shift_axes": {
+       "rms_x_mps": 0.60508,
+       "rms_y_mps": 0.77225,
+       "rms_both_mps": 0.69372
+      },
+      "wide_best_shift_s": -0.24,
+      "wide_rms_after_shift_mps": 0.67449,
+      "wide_best_shift_at_edge": false,
+      "measured_speed_median_mps": 1.55958,
+      "measured_speed_max_mps": 2.63801
+     },
+     "filter_off": {
+      "n_samples": 5191,
+      "model": {
+       "rms_x_mps": 0.76818,
+       "rms_y_mps": 1.10882,
+       "rms_both_mps": 0.95383
+      },
+      "sp": {
+       "rms_x_mps": 0.40383,
+       "rms_y_mps": 0.51345,
+       "rms_both_mps": 0.46191
+      },
+      "sp_delayed": {
+       "rms_x_mps": 0.25217,
+       "rms_y_mps": 0.27843,
+       "rms_both_mps": 0.26563
+      },
+      "model_over_setpoint": 2.06498,
+      "best_shift_s": -0.1,
+      "rms_after_shift_mps": 0.89465,
+      "best_shift_at_edge": true,
+      "after_shift_axes": {
+       "rms_x_mps": 0.71598,
+       "rms_y_mps": 1.04315,
+       "rms_both_mps": 0.89465
+      },
+      "wide_best_shift_s": -0.3,
+      "wide_rms_after_shift_mps": 0.8049,
+      "wide_best_shift_at_edge": true,
+      "measured_speed_median_mps": 1.62449,
+      "measured_speed_max_mps": 2.68764
+     }
+    }
+   },
+   "variants": {
+    "accel_logged": {
+     "windows": 1,
+     "subsets": {
+      "all": {
+       "n_samples": 11313,
+       "model": {
+        "rms_x_mps": 0.41938,
+        "rms_y_mps": 0.70027,
+        "rms_both_mps": 0.57717
+       },
+       "sp": {
+        "rms_x_mps": 0.42399,
+        "rms_y_mps": 0.58549,
+        "rms_both_mps": 0.51116
+       },
+       "sp_delayed": {
+        "rms_x_mps": 0.2528,
+        "rms_y_mps": 0.34446,
+        "rms_both_mps": 0.30213
+       },
+       "model_over_setpoint": 1.12914,
+       "best_shift_s": -0.06,
+       "rms_after_shift_mps": 0.5706,
+       "best_shift_at_edge": false,
+       "after_shift_axes": {
+        "rms_x_mps": 0.39658,
+        "rms_y_mps": 0.70277,
+        "rms_both_mps": 0.5706
+       },
+       "wide_best_shift_s": -0.06,
+       "wide_rms_after_shift_mps": 0.5706,
+       "wide_best_shift_at_edge": false,
+       "measured_speed_median_mps": 1.60783,
+       "measured_speed_max_mps": 2.68764
+      },
+      "filter_on": {
+       "n_samples": 6122,
+       "model": {
+        "rms_x_mps": 0.42402,
+        "rms_y_mps": 0.76095,
+        "rms_both_mps": 0.61597
+       },
+       "sp": {
+        "rms_x_mps": 0.44037,
+        "rms_y_mps": 0.64025,
+        "rms_both_mps": 0.54948
+       },
+       "sp_delayed": {
+        "rms_x_mps": 0.25333,
+        "rms_y_mps": 0.39182,
+        "rms_both_mps": 0.32993
+       },
+       "model_over_setpoint": 1.12101,
+       "best_shift_s": -0.1,
+       "rms_after_shift_mps": 0.59796,
+       "best_shift_at_edge": true,
+       "after_shift_axes": {
+        "rms_x_mps": 0.40409,
+        "rms_y_mps": 0.74285,
+        "rms_both_mps": 0.59796
+       },
+       "wide_best_shift_s": -0.11,
+       "wide_rms_after_shift_mps": 0.59788,
+       "wide_best_shift_at_edge": false,
+       "measured_speed_median_mps": 1.55958,
+       "measured_speed_max_mps": 2.63801
+      },
+      "filter_off": {
+       "n_samples": 5191,
+       "model": {
+        "rms_x_mps": 0.41384,
+        "rms_y_mps": 0.62114,
+        "rms_both_mps": 0.52776
+       },
+       "sp": {
+        "rms_x_mps": 0.40383,
+        "rms_y_mps": 0.51345,
+        "rms_both_mps": 0.46191
+       },
+       "sp_delayed": {
+        "rms_x_mps": 0.25217,
+        "rms_y_mps": 0.27843,
+        "rms_both_mps": 0.26563
+       },
+       "model_over_setpoint": 1.14258,
+       "best_shift_s": -0.01,
+       "rms_after_shift_mps": 0.52735,
+       "best_shift_at_edge": false,
+       "after_shift_axes": {
+        "rms_x_mps": 0.40763,
+        "rms_y_mps": 0.62452,
+        "rms_both_mps": 0.52735
+       },
+       "wide_best_shift_s": -0.01,
+       "wide_rms_after_shift_mps": 0.52735,
+       "wide_best_shift_at_edge": false,
+       "measured_speed_median_mps": 1.62449,
+       "measured_speed_max_mps": 2.68764
+      }
+     }
+    },
+    "setpoint_linear": {
+     "windows": 1,
+     "subsets": {
+      "all": {
+       "n_samples": 11313,
+       "model": {
+        "rms_x_mps": 0.41766,
+        "rms_y_mps": 0.60711,
+        "rms_both_mps": 0.52107
+       },
+       "sp": {
+        "rms_x_mps": 0.45966,
+        "rms_y_mps": 0.6373,
+        "rms_both_mps": 0.55563
+       },
+       "sp_delayed": {
+        "rms_x_mps": 0.27221,
+        "rms_y_mps": 0.37203,
+        "rms_both_mps": 0.32596
+       },
+       "model_over_setpoint": 0.9378,
+       "best_shift_s": -0.01,
+       "rms_after_shift_mps": 0.52093,
+       "best_shift_at_edge": false,
+       "after_shift_axes": {
+        "rms_x_mps": 0.41507,
+        "rms_y_mps": 0.60864,
+        "rms_both_mps": 0.52093
+       },
+       "wide_best_shift_s": -0.01,
+       "wide_rms_after_shift_mps": 0.52093,
+       "wide_best_shift_at_edge": false,
+       "measured_speed_median_mps": 1.60783,
+       "measured_speed_max_mps": 2.68764
+      },
+      "filter_on": {
+       "n_samples": 6122,
+       "model": {
+        "rms_x_mps": 0.41289,
+        "rms_y_mps": 0.63136,
+        "rms_both_mps": 0.53343
+       },
+       "sp": {
+        "rms_x_mps": 0.47875,
+        "rms_y_mps": 0.69176,
+        "rms_both_mps": 0.59487
+       },
+       "sp_delayed": {
+        "rms_x_mps": 0.27453,
+        "rms_y_mps": 0.4206,
+        "rms_both_mps": 0.35516
+       },
+       "model_over_setpoint": 0.89672,
+       "best_shift_s": -0.06,
+       "rms_after_shift_mps": 0.52788,
+       "best_shift_at_edge": false,
+       "after_shift_axes": {
+        "rms_x_mps": 0.40879,
+        "rms_y_mps": 0.62467,
+        "rms_both_mps": 0.52788
+       },
+       "wide_best_shift_s": -0.06,
+       "wide_rms_after_shift_mps": 0.52788,
+       "wide_best_shift_at_edge": false,
+       "measured_speed_median_mps": 1.55958,
+       "measured_speed_max_mps": 2.63801
+      },
+      "filter_off": {
+       "n_samples": 5191,
+       "model": {
+        "rms_x_mps": 0.42322,
+        "rms_y_mps": 0.5772,
+        "rms_both_mps": 0.5061
+       },
+       "sp": {
+        "rms_x_mps": 0.43609,
+        "rms_y_mps": 0.56637,
+        "rms_both_mps": 0.50544
+       },
+       "sp_delayed": {
+        "rms_x_mps": 0.26944,
+        "rms_y_mps": 0.30495,
+        "rms_both_mps": 0.28775
+       },
+       "model_over_setpoint": 1.0013,
+       "best_shift_s": 0.04,
+       "rms_after_shift_mps": 0.50256,
+       "best_shift_at_edge": false,
+       "after_shift_axes": {
+        "rms_x_mps": 0.44188,
+        "rms_y_mps": 0.55666,
+        "rms_both_mps": 0.50256
+       },
+       "wide_best_shift_s": 0.04,
+       "wide_rms_after_shift_mps": 0.50256,
+       "wide_best_shift_at_edge": false,
+       "measured_speed_median_mps": 1.62449,
+       "measured_speed_max_mps": 2.68764
+      }
+     }
+    },
+    "restarted_5s": {
+     "windows": 19,
+     "subsets": {
+      "all": {
+       "n_samples": 11313,
+       "model": {
+        "rms_x_mps": 0.82401,
+        "rms_y_mps": 0.88896,
+        "rms_both_mps": 0.8571
+       },
+       "sp": {
+        "rms_x_mps": 0.42597,
+        "rms_y_mps": 0.58823,
+        "rms_both_mps": 0.51355
+       },
+       "sp_delayed": {
+        "rms_x_mps": 0.23973,
+        "rms_y_mps": 0.34611,
+        "rms_both_mps": 0.29771
+       },
+       "model_over_setpoint": 1.66898,
+       "best_shift_s": -0.1,
+       "rms_after_shift_mps": 0.80632,
+       "best_shift_at_edge": true,
+       "after_shift_axes": {
+        "rms_x_mps": 0.76985,
+        "rms_y_mps": 0.84122,
+        "rms_both_mps": 0.80632
+       },
+       "wide_best_shift_s": -0.3,
+       "wide_rms_after_shift_mps": 0.74839,
+       "wide_best_shift_at_edge": true,
+       "measured_speed_median_mps": 1.60783,
+       "measured_speed_max_mps": 2.68764
+      },
+      "filter_on": {
+       "n_samples": 6122,
+       "model": {
+        "rms_x_mps": 0.74182,
+        "rms_y_mps": 0.74686,
+        "rms_both_mps": 0.74434
+       },
+       "sp": {
+        "rms_x_mps": 0.44229,
+        "rms_y_mps": 0.64232,
+        "rms_both_mps": 0.55146
+       },
+       "sp_delayed": {
+        "rms_x_mps": 0.2544,
+        "rms_y_mps": 0.39365,
+        "rms_both_mps": 0.33142
+       },
+       "model_over_setpoint": 1.34978,
+       "best_shift_s": -0.1,
+       "rms_after_shift_mps": 0.71453,
+       "best_shift_at_edge": true,
+       "after_shift_axes": {
+        "rms_x_mps": 0.69539,
+        "rms_y_mps": 0.73318,
+        "rms_both_mps": 0.71453
+       },
+       "wide_best_shift_s": -0.22,
+       "wide_rms_after_shift_mps": 0.70078,
+       "wide_best_shift_at_edge": false,
+       "measured_speed_median_mps": 1.55958,
+       "measured_speed_max_mps": 2.63801
+      },
+      "filter_off": {
+       "n_samples": 5191,
+       "model": {
+        "rms_x_mps": 0.91146,
+        "rms_y_mps": 1.03169,
+        "rms_both_mps": 0.97344
+       },
+       "sp": {
+        "rms_x_mps": 0.40587,
+        "rms_y_mps": 0.51721,
+        "rms_both_mps": 0.46489
+       },
+       "sp_delayed": {
+        "rms_x_mps": 0.22118,
+        "rms_y_mps": 0.27985,
+        "rms_both_mps": 0.25223
+       },
+       "model_over_setpoint": 2.09393,
+       "best_shift_s": -0.1,
+       "rms_after_shift_mps": 0.90266,
+       "best_shift_at_edge": true,
+       "after_shift_axes": {
+        "rms_x_mps": 0.84931,
+        "rms_y_mps": 0.95303,
+        "rms_both_mps": 0.90266
+       },
+       "wide_best_shift_s": -0.3,
+       "wide_rms_after_shift_mps": 0.79563,
+       "wide_best_shift_at_edge": true,
+       "measured_speed_median_mps": 1.62449,
+       "measured_speed_max_mps": 2.68764
+      }
+     }
+    }
+   },
+   "reading": {
+    "all.model.rms_both_mps": {
+     "value": 0.83966,
+     "range_12nov": [
+      0.029,
+      0.12
+     ],
+     "word": "outside the 12 Nov check's range (above)"
+    },
+    "all.model.rms_x_mps": {
+     "value": 0.70605,
+     "range_12nov": [
+      0.029,
+      0.12
+     ],
+     "word": "outside the 12 Nov check's range (above)"
+    },
+    "all.model.rms_y_mps": {
+     "value": 0.95476,
+     "range_12nov": [
+      0.029,
+      0.12
+     ],
+     "word": "outside the 12 Nov check's range (above)"
+    },
+    "all.best_shift_s": {
+     "value": -0.1,
+     "range_12nov": [
+      -0.1,
+      0.06
+     ],
+     "word": "inside the 12 Nov check's range"
+    },
+    "all.rms_after_shift_mps": {
+     "value": 0.79227,
+     "range_12nov": [
+      0.028,
+      0.085
+     ],
+     "word": "outside the 12 Nov check's range (above)"
+    },
+    "all.model_over_setpoint": {
+     "value": 1.64266,
+     "range_12nov": [
+      0.78,
+      1.03
+     ],
+     "word": "outside the 12 Nov check's range (above)"
+    },
+    "filter_on.model.rms_both_mps": {
+     "value": 0.72898,
+     "range_12nov": [
+      0.029,
+      0.12
+     ],
+     "word": "outside the 12 Nov check's range (above)"
+    },
+    "filter_on.model.rms_x_mps": {
+     "value": 0.64872,
+     "range_12nov": [
+      0.029,
+      0.12
+     ],
+     "word": "outside the 12 Nov check's range (above)"
+    },
+    "filter_on.model.rms_y_mps": {
+     "value": 0.80125,
+     "range_12nov": [
+      0.029,
+      0.12
+     ],
+     "word": "outside the 12 Nov check's range (above)"
+    },
+    "filter_on.best_shift_s": {
+     "value": -0.1,
+     "range_12nov": [
+      -0.1,
+      0.06
+     ],
+     "word": "inside the 12 Nov check's range"
+    },
+    "filter_on.rms_after_shift_mps": {
+     "value": 0.69372,
+     "range_12nov": [
+      0.028,
+      0.085
+     ],
+     "word": "outside the 12 Nov check's range (above)"
+    },
+    "filter_on.model_over_setpoint": {
+     "value": 1.32669,
+     "range_12nov": [
+      0.78,
+      1.03
+     ],
+     "word": "outside the 12 Nov check's range (above)"
+    },
+    "filter_off.model.rms_both_mps": {
+     "value": 0.95383,
+     "range_12nov": [
+      0.029,
+      0.12
+     ],
+     "word": "outside the 12 Nov check's range (above)"
+    },
+    "filter_off.model.rms_x_mps": {
+     "value": 0.76818,
+     "range_12nov": [
+      0.029,
+      0.12
+     ],
+     "word": "outside the 12 Nov check's range (above)"
+    },
+    "filter_off.model.rms_y_mps": {
+     "value": 1.10882,
+     "range_12nov": [
+      0.029,
+      0.12
+     ],
+     "word": "outside the 12 Nov check's range (above)"
+    },
+    "filter_off.best_shift_s": {
+     "value": -0.1,
+     "range_12nov": [
+      -0.1,
+      0.06
+     ],
+     "word": "inside the 12 Nov check's range"
+    },
+    "filter_off.rms_after_shift_mps": {
+     "value": 0.89465,
+     "range_12nov": [
+      0.028,
+      0.085
+     ],
+     "word": "outside the 12 Nov check's range (above)"
+    },
+    "filter_off.model_over_setpoint": {
+     "value": 2.06498,
+     "range_12nov": [
+      0.78,
+      1.03
+     ],
+     "word": "outside the 12 Nov check's range (above)"
+    }
+   },
+   "filter_runs": {
+    "count": 20,
+    "lengths_s": [
+     3.06,
+     2.35,
+     2.58,
+     2.45,
+     2.44,
+     2.39,
+     2.71,
+     2.45,
+     2.5,
+     2.43,
+     2.26,
+     2.54,
+     2.54,
+     2.44,
+     2.44,
+     2.55,
+     2.53,
+     2.48,
+     2.65,
+     2.42
+    ],
+    "median_s": 2.46,
+    "max_s": 3.06
+   },
+   "filter_share": 0.54115,
+   "unknown_share": 0.0,
+   "model_limits": {
+    "share_on_acc_limit": 0.43025,
+    "share_on_speed_cap": 0.31429,
+    "acc_limit_mps2": 1.7178,
+    "speed_cap_mps": 3.0
+   },
+   "speeds": {
+    "fit_range_mps": 0.5,
+    "setpoint_max_mps": 3.0,
+    "setpoint_median_mps": 1.78731,
+    "measured_max_mps": 2.68764,
+    "measured_median_mps": 1.60783,
+    "model_max_mps": 1.59496,
+    "model_median_mps": 0.83674,
+    "share_measured_above_fit_range": 0.99496,
+    "above_fit_range": true
+   },
+   "accel": {
+    "measured_acc_p50_mps2": 2.5823,
+    "measured_acc_p95_mps2": 4.34903,
+    "setpoint_acc_logged_p95_mps2": 2.99795,
+    "setpoint_acc_logged_max_mps2": 3.38888
+   }
+  },
+  "drone_2": {
+   "primary": {
+    "windows": 1,
+    "subsets": {
+     "all": {
+      "n_samples": 9476,
+      "model": {
+       "rms_x_mps": 0.66851,
+       "rms_y_mps": 0.85782,
+       "rms_both_mps": 0.76901
+      },
+      "sp": {
+       "rms_x_mps": 0.49785,
+       "rms_y_mps": 0.62369,
+       "rms_both_mps": 0.56429
+      },
+      "sp_delayed": {
+       "rms_x_mps": 0.30745,
+       "rms_y_mps": 0.46387,
+       "rms_both_mps": 0.39351
+      },
+      "model_over_setpoint": 1.3628,
+      "best_shift_s": -0.1,
+      "rms_after_shift_mps": 0.72187,
+      "best_shift_at_edge": true,
+      "after_shift_axes": {
+       "rms_x_mps": 0.62574,
+       "rms_y_mps": 0.80663,
+       "rms_both_mps": 0.72187
+      },
+      "wide_best_shift_s": -0.3,
+      "wide_rms_after_shift_mps": 0.6718,
+      "wide_best_shift_at_edge": true,
+      "measured_speed_median_mps": 1.50967,
+      "measured_speed_max_mps": 2.35166
+     },
+     "filter_on": {
+      "n_samples": 5333,
+      "model": {
+       "rms_x_mps": 0.60628,
+       "rms_y_mps": 0.63581,
+       "rms_both_mps": 0.62122
+      },
+      "sp": {
+       "rms_x_mps": 0.54135,
+       "rms_y_mps": 0.72831,
+       "rms_both_mps": 0.64168
+      },
+      "sp_delayed": {
+       "rms_x_mps": 0.30023,
+       "rms_y_mps": 0.56636,
+       "rms_both_mps": 0.45326
+      },
+      "model_over_setpoint": 0.96812,
+      "best_shift_s": -0.1,
+      "rms_after_shift_mps": 0.58955,
+      "best_shift_at_edge": true,
+      "after_shift_axes": {
+       "rms_x_mps": 0.56748,
+       "rms_y_mps": 0.61082,
+       "rms_both_mps": 0.58955
+      },
+      "wide_best_shift_s": -0.2,
+      "wide_rms_after_shift_mps": 0.57814,
+      "wide_best_shift_at_edge": false,
+      "measured_speed_median_mps": 1.46896,
+      "measured_speed_max_mps": 2.33931
+     },
+     "filter_off": {
+      "n_samples": 4143,
+      "model": {
+       "rms_x_mps": 0.74097,
+       "rms_y_mps": 1.07829,
+       "rms_both_mps": 0.92513
+      },
+      "sp": {
+       "rms_x_mps": 0.4355,
+       "rms_y_mps": 0.45489,
+       "rms_both_mps": 0.4453
+      },
+      "sp_delayed": {
+       "rms_x_mps": 0.3165,
+       "rms_y_mps": 0.28153,
+       "rms_both_mps": 0.29953
+      },
+      "model_over_setpoint": 2.07753,
+      "best_shift_s": -0.1,
+      "rms_after_shift_mps": 0.86283,
+      "best_shift_at_edge": true,
+      "after_shift_axes": {
+       "rms_x_mps": 0.69357,
+       "rms_y_mps": 1.00395,
+       "rms_both_mps": 0.86283
+      },
+      "wide_best_shift_s": -0.3,
+      "wide_rms_after_shift_mps": 0.76702,
+      "wide_best_shift_at_edge": true,
+      "measured_speed_median_mps": 1.52536,
+      "measured_speed_max_mps": 2.35166
+     }
+    }
+   },
+   "variants": {
+    "accel_logged": {
+     "windows": 1,
+     "subsets": {
+      "all": {
+       "n_samples": 9476,
+       "model": {
+        "rms_x_mps": 0.39324,
+        "rms_y_mps": 0.56612,
+        "rms_both_mps": 0.48741
+       },
+       "sp": {
+        "rms_x_mps": 0.49785,
+        "rms_y_mps": 0.62369,
+        "rms_both_mps": 0.56429
+       },
+       "sp_delayed": {
+        "rms_x_mps": 0.30745,
+        "rms_y_mps": 0.46387,
+        "rms_both_mps": 0.39351
+       },
+       "model_over_setpoint": 0.86376,
+       "best_shift_s": -0.06,
+       "rms_after_shift_mps": 0.47859,
+       "best_shift_at_edge": false,
+       "after_shift_axes": {
+        "rms_x_mps": 0.37382,
+        "rms_y_mps": 0.56423,
+        "rms_both_mps": 0.47859
+       },
+       "wide_best_shift_s": -0.06,
+       "wide_rms_after_shift_mps": 0.47859,
+       "wide_best_shift_at_edge": false,
+       "measured_speed_median_mps": 1.50967,
+       "measured_speed_max_mps": 2.35166
+      },
+      "filter_on": {
+       "n_samples": 5333,
+       "model": {
+        "rms_x_mps": 0.39741,
+        "rms_y_mps": 0.61675,
+        "rms_both_mps": 0.5188
+       },
+       "sp": {
+        "rms_x_mps": 0.54135,
+        "rms_y_mps": 0.72831,
+        "rms_both_mps": 0.64168
+       },
+       "sp_delayed": {
+        "rms_x_mps": 0.30023,
+        "rms_y_mps": 0.56636,
+        "rms_both_mps": 0.45326
+       },
+       "model_over_setpoint": 0.80851,
+       "best_shift_s": -0.1,
+       "rms_after_shift_mps": 0.49912,
+       "best_shift_at_edge": true,
+       "after_shift_axes": {
+        "rms_x_mps": 0.38254,
+        "rms_y_mps": 0.59321,
+        "rms_both_mps": 0.49912
+       },
+       "wide_best_shift_s": -0.1,
+       "wide_rms_after_shift_mps": 0.49912,
+       "wide_best_shift_at_edge": false,
+       "measured_speed_median_mps": 1.46896,
+       "measured_speed_max_mps": 2.33931
+      },
+      "filter_off": {
+       "n_samples": 4143,
+       "model": {
+        "rms_x_mps": 0.38782,
+        "rms_y_mps": 0.49338,
+        "rms_both_mps": 0.44375
+       },
+       "sp": {
+        "rms_x_mps": 0.4355,
+        "rms_y_mps": 0.45489,
+        "rms_both_mps": 0.4453
+       },
+       "sp_delayed": {
+        "rms_x_mps": 0.3165,
+        "rms_y_mps": 0.28153,
+        "rms_both_mps": 0.29953
+       },
+       "model_over_setpoint": 0.9965,
+       "best_shift_s": -0.02,
+       "rms_after_shift_mps": 0.44256,
+       "best_shift_at_edge": false,
+       "after_shift_axes": {
+        "rms_x_mps": 0.37709,
+        "rms_y_mps": 0.49953,
+        "rms_both_mps": 0.44256
+       },
+       "wide_best_shift_s": -0.02,
+       "wide_rms_after_shift_mps": 0.44256,
+       "wide_best_shift_at_edge": false,
+       "measured_speed_median_mps": 1.52536,
+       "measured_speed_max_mps": 2.35166
+      }
+     }
+    },
+    "setpoint_linear": {
+     "windows": 1,
+     "subsets": {
+      "all": {
+       "n_samples": 9476,
+       "model": {
+        "rms_x_mps": 0.39009,
+        "rms_y_mps": 0.48439,
+        "rms_both_mps": 0.43977
+       },
+       "sp": {
+        "rms_x_mps": 0.53142,
+        "rms_y_mps": 0.66026,
+        "rms_both_mps": 0.59931
+       },
+       "sp_delayed": {
+        "rms_x_mps": 0.3306,
+        "rms_y_mps": 0.47507,
+        "rms_both_mps": 0.40926
+       },
+       "model_over_setpoint": 0.73379,
+       "best_shift_s": -0.01,
+       "rms_after_shift_mps": 0.4395,
+       "best_shift_at_edge": false,
+       "after_shift_axes": {
+        "rms_x_mps": 0.38871,
+        "rms_y_mps": 0.485,
+        "rms_both_mps": 0.4395
+       },
+       "wide_best_shift_s": -0.01,
+       "wide_rms_after_shift_mps": 0.4395,
+       "wide_best_shift_at_edge": false,
+       "measured_speed_median_mps": 1.50967,
+       "measured_speed_max_mps": 2.35166
+      },
+      "filter_on": {
+       "n_samples": 5333,
+       "model": {
+        "rms_x_mps": 0.38535,
+        "rms_y_mps": 0.51444,
+        "rms_both_mps": 0.4545
+       },
+       "sp": {
+        "rms_x_mps": 0.58073,
+        "rms_y_mps": 0.76322,
+        "rms_both_mps": 0.67814
+       },
+       "sp_delayed": {
+        "rms_x_mps": 0.33261,
+        "rms_y_mps": 0.5799,
+        "rms_both_mps": 0.47271
+       },
+       "model_over_setpoint": 0.67022,
+       "best_shift_s": -0.04,
+       "rms_after_shift_mps": 0.44999,
+       "best_shift_at_edge": false,
+       "after_shift_axes": {
+        "rms_x_mps": 0.38562,
+        "rms_y_mps": 0.50624,
+        "rms_both_mps": 0.44999
+       },
+       "wide_best_shift_s": -0.04,
+       "wide_rms_after_shift_mps": 0.44999,
+       "wide_best_shift_at_edge": false,
+       "measured_speed_median_mps": 1.46896,
+       "measured_speed_max_mps": 2.33931
+      },
+      "filter_off": {
+       "n_samples": 4143,
+       "model": {
+        "rms_x_mps": 0.39611,
+        "rms_y_mps": 0.4427,
+        "rms_both_mps": 0.42005
+       },
+       "sp": {
+        "rms_x_mps": 0.46023,
+        "rms_y_mps": 0.49729,
+        "rms_both_mps": 0.47912
+       },
+       "sp_delayed": {
+        "rms_x_mps": 0.32799,
+        "rms_y_mps": 0.28867,
+        "rms_both_mps": 0.30895
+       },
+       "model_over_setpoint": 0.87672,
+       "best_shift_s": 0.03,
+       "rms_after_shift_mps": 0.41753,
+       "best_shift_at_edge": false,
+       "after_shift_axes": {
+        "rms_x_mps": 0.40561,
+        "rms_y_mps": 0.42911,
+        "rms_both_mps": 0.41753
+       },
+       "wide_best_shift_s": 0.03,
+       "wide_rms_after_shift_mps": 0.41753,
+       "wide_best_shift_at_edge": false,
+       "measured_speed_median_mps": 1.52536,
+       "measured_speed_max_mps": 2.35166
+      }
+     }
+    },
+    "restarted_5s": {
+     "windows": 19,
+     "subsets": {
+      "all": {
+       "n_samples": 9476,
+       "model": {
+        "rms_x_mps": 0.78873,
+        "rms_y_mps": 0.81077,
+        "rms_both_mps": 0.79983
+       },
+       "sp": {
+        "rms_x_mps": 0.49686,
+        "rms_y_mps": 0.62286,
+        "rms_both_mps": 0.56339
+       },
+       "sp_delayed": {
+        "rms_x_mps": 0.29874,
+        "rms_y_mps": 0.46366,
+        "rms_both_mps": 0.39001
+       },
+       "model_over_setpoint": 1.41967,
+       "best_shift_s": -0.1,
+       "rms_after_shift_mps": 0.75042,
+       "best_shift_at_edge": true,
+       "after_shift_axes": {
+        "rms_x_mps": 0.73926,
+        "rms_y_mps": 0.76141,
+        "rms_both_mps": 0.75042
+       },
+       "wide_best_shift_s": -0.3,
+       "wide_rms_after_shift_mps": 0.6971,
+       "wide_best_shift_at_edge": true,
+       "measured_speed_median_mps": 1.50967,
+       "measured_speed_max_mps": 2.35166
+      },
+      "filter_on": {
+       "n_samples": 5333,
+       "model": {
+        "rms_x_mps": 0.72516,
+        "rms_y_mps": 0.66167,
+        "rms_both_mps": 0.69414
+       },
+       "sp": {
+        "rms_x_mps": 0.53988,
+        "rms_y_mps": 0.72713,
+        "rms_both_mps": 0.64038
+       },
+       "sp_delayed": {
+        "rms_x_mps": 0.29898,
+        "rms_y_mps": 0.56599,
+        "rms_both_mps": 0.45262
+       },
+       "model_over_setpoint": 1.08395,
+       "best_shift_s": -0.1,
+       "rms_after_shift_mps": 0.66538,
+       "best_shift_at_edge": true,
+       "after_shift_axes": {
+        "rms_x_mps": 0.68285,
+        "rms_y_mps": 0.64744,
+        "rms_both_mps": 0.66538
+       },
+       "wide_best_shift_s": -0.21,
+       "wide_rms_after_shift_mps": 0.65424,
+       "wide_best_shift_at_edge": false,
+       "measured_speed_median_mps": 1.46896,
+       "measured_speed_max_mps": 2.33931
+      },
+      "filter_off": {
+       "n_samples": 4143,
+       "model": {
+        "rms_x_mps": 0.8637,
+        "rms_y_mps": 0.96951,
+        "rms_both_mps": 0.91813
+       },
+       "sp": {
+        "rms_x_mps": 0.43526,
+        "rms_y_mps": 0.4547,
+        "rms_both_mps": 0.44509
+       },
+       "sp_delayed": {
+        "rms_x_mps": 0.29843,
+        "rms_y_mps": 0.28168,
+        "rms_both_mps": 0.29017
+       },
+       "model_over_setpoint": 2.06282,
+       "best_shift_s": -0.1,
+       "rms_after_shift_mps": 0.84742,
+       "best_shift_at_edge": true,
+       "after_shift_axes": {
+        "rms_x_mps": 0.80609,
+        "rms_y_mps": 0.88682,
+        "rms_both_mps": 0.84742
+       },
+       "wide_best_shift_s": -0.3,
+       "wide_rms_after_shift_mps": 0.74178,
+       "wide_best_shift_at_edge": true,
+       "measured_speed_median_mps": 1.52536,
+       "measured_speed_max_mps": 2.35166
+      }
+     }
+    }
+   },
+   "reading": {
+    "all.model.rms_both_mps": {
+     "value": 0.76901,
+     "range_12nov": [
+      0.029,
+      0.12
+     ],
+     "word": "outside the 12 Nov check's range (above)"
+    },
+    "all.model.rms_x_mps": {
+     "value": 0.66851,
+     "range_12nov": [
+      0.029,
+      0.12
+     ],
+     "word": "outside the 12 Nov check's range (above)"
+    },
+    "all.model.rms_y_mps": {
+     "value": 0.85782,
+     "range_12nov": [
+      0.029,
+      0.12
+     ],
+     "word": "outside the 12 Nov check's range (above)"
+    },
+    "all.best_shift_s": {
+     "value": -0.1,
+     "range_12nov": [
+      -0.1,
+      0.06
+     ],
+     "word": "inside the 12 Nov check's range"
+    },
+    "all.rms_after_shift_mps": {
+     "value": 0.72187,
+     "range_12nov": [
+      0.028,
+      0.085
+     ],
+     "word": "outside the 12 Nov check's range (above)"
+    },
+    "all.model_over_setpoint": {
+     "value": 1.3628,
+     "range_12nov": [
+      0.78,
+      1.03
+     ],
+     "word": "outside the 12 Nov check's range (above)"
+    },
+    "filter_on.model.rms_both_mps": {
+     "value": 0.62122,
+     "range_12nov": [
+      0.029,
+      0.12
+     ],
+     "word": "outside the 12 Nov check's range (above)"
+    },
+    "filter_on.model.rms_x_mps": {
+     "value": 0.60628,
+     "range_12nov": [
+      0.029,
+      0.12
+     ],
+     "word": "outside the 12 Nov check's range (above)"
+    },
+    "filter_on.model.rms_y_mps": {
+     "value": 0.63581,
+     "range_12nov": [
+      0.029,
+      0.12
+     ],
+     "word": "outside the 12 Nov check's range (above)"
+    },
+    "filter_on.best_shift_s": {
+     "value": -0.1,
+     "range_12nov": [
+      -0.1,
+      0.06
+     ],
+     "word": "inside the 12 Nov check's range"
+    },
+    "filter_on.rms_after_shift_mps": {
+     "value": 0.58955,
+     "range_12nov": [
+      0.028,
+      0.085
+     ],
+     "word": "outside the 12 Nov check's range (above)"
+    },
+    "filter_on.model_over_setpoint": {
+     "value": 0.96812,
+     "range_12nov": [
+      0.78,
+      1.03
+     ],
+     "word": "inside the 12 Nov check's range"
+    },
+    "filter_off.model.rms_both_mps": {
+     "value": 0.92513,
+     "range_12nov": [
+      0.029,
+      0.12
+     ],
+     "word": "outside the 12 Nov check's range (above)"
+    },
+    "filter_off.model.rms_x_mps": {
+     "value": 0.74097,
+     "range_12nov": [
+      0.029,
+      0.12
+     ],
+     "word": "outside the 12 Nov check's range (above)"
+    },
+    "filter_off.model.rms_y_mps": {
+     "value": 1.07829,
+     "range_12nov": [
+      0.029,
+      0.12
+     ],
+     "word": "outside the 12 Nov check's range (above)"
+    },
+    "filter_off.best_shift_s": {
+     "value": -0.1,
+     "range_12nov": [
+      -0.1,
+      0.06
+     ],
+     "word": "inside the 12 Nov check's range"
+    },
+    "filter_off.rms_after_shift_mps": {
+     "value": 0.86283,
+     "range_12nov": [
+      0.028,
+      0.085
+     ],
+     "word": "outside the 12 Nov check's range (above)"
+    },
+    "filter_off.model_over_setpoint": {
+     "value": 2.07753,
+     "range_12nov": [
+      0.78,
+      1.03
+     ],
+     "word": "outside the 12 Nov check's range (above)"
+    }
+   },
+   "filter_runs": {
+    "count": 20,
+    "lengths_s": [
+     3.19,
+     2.53,
+     2.79,
+     2.6,
+     2.58,
+     2.49,
+     2.78,
+     2.64,
+     2.59,
+     2.64,
+     2.43,
+     2.64,
+     2.59,
+     2.53,
+     2.59,
+     2.58,
+     2.79,
+     2.56,
+     2.68,
+     2.54
+    ],
+    "median_s": 2.59,
+    "max_s": 3.19
+   },
+   "filter_share": 0.56279,
+   "unknown_share": 0.0,
+   "model_limits": {
+    "share_on_acc_limit": 0.43192,
+    "share_on_speed_cap": 0.31429,
+    "acc_limit_mps2": 1.7178,
+    "speed_cap_mps": 3.0
+   },
+   "speeds": {
+    "fit_range_mps": 0.5,
+    "setpoint_max_mps": 3.0,
+    "setpoint_median_mps": 1.76864,
+    "measured_max_mps": 2.35166,
+    "measured_median_mps": 1.50967,
+    "model_max_mps": 1.62054,
+    "model_median_mps": 0.84837,
+    "share_measured_above_fit_range": 0.98797,
+    "above_fit_range": true
+   },
+   "accel": {
+    "measured_acc_p50_mps2": 2.55161,
+    "measured_acc_p95_mps2": 3.83377,
+    "setpoint_acc_logged_p95_mps2": 2.99623,
+    "setpoint_acc_logged_max_mps2": 3.0
+   }
+  }
+ }
+}

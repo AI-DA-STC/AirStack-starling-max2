@@ -189,6 +189,7 @@ def test_reading_words_and_fit_range(tmp_path):
     assert mod.reading_word(0.120, (0.029, 0.120)) == "inside the 12 Nov check's range"
     sp = res["drones"]["drone_2"]["speeds"]
     assert sp["fit_range_mps"] == 0.5 and sp["measured_max_mps"] > 0.5 and sp["above_fit_range"]
+    assert 0.3 < sp["model_max_mps"] <= sp["setpoint_max_mps"] + 0.05 and sp["model_median_mps"] > 0
 
 
 def test_variants_present(tmp_path):
@@ -196,6 +197,11 @@ def test_variants_present(tmp_path):
     v = res["drones"]["drone_1"]["variants"]
     assert set(v) == {"accel_logged", "setpoint_linear", "restarted_5s"}
     assert v["restarted_5s"]["subsets"]["all"]["model"]["rms_both_mps"] < 5e-3
+    # the restarted windows carry an already-delayed setpoint for the model; their baselines must still use the
+    # setpoint as sent (same scored span as the primary window, so the same baseline to rounding)
+    prim = res["drones"]["drone_1"]["primary"]["subsets"]["all"]
+    for k in ("sp", "sp_delayed"):
+        assert v["restarted_5s"]["subsets"]["all"][k]["rms_both_mps"] == pytest.approx(prim[k]["rms_both_mps"], rel=0.02)
 
 
 def test_no_start_command_is_an_error(tmp_path):

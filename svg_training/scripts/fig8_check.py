@@ -201,25 +201,25 @@ def _predelayed(w: m.Window, tm: np.ndarray, pm: np.ndarray, t_start: float, del
     d = lambda x: m.delay_signal(x, DT_S, delay_s)[k0:]                              # noqa: E731
     w2 = m.Window(t_s=w.t_s[k0:], p_sp=d(w.p_sp), v_ff=d(w.v_ff), a_ff=d(w.a_ff), p0=pm[j0].copy(),
                   v0=w.v_meas[j0].copy(), meas_idx=w.meas_idx[j0:] - k0, v_meas=w.v_meas[j0:])
-    return w2, tm[j0:]
+    return w2, tm[j0:], w.v_ff[k0:]
 
 
 def make_parts(f: dict, lo: float, hi: float, variant: str, delay_s: float = 0.0) -> list[tuple]:
-    """[(Window, measured times, scored mask, predelayed)] for a variant: primary / accel_logged / setpoint_linear (one
+    """[(Window, measured times, scored mask, predelayed, setpoint speed as sent on the window's grid)] for a variant: primary / accel_logged / setpoint_linear (one
     window over [lo, hi]) or restarted_5s (a window every 5 s, each started 1 s early from the measured state, that 1 s
     unscored; its setpoint is delayed by delay_s on a grid that starts 0.5 s earlier still, see _predelayed)."""
     setpoint = "linear" if variant == "setpoint_linear" else "hold"
     accel = "logged" if variant == "accel_logged" else "derived"
     if variant != "restarted_5s":
         got = build_window(f, lo, hi, setpoint, accel)
-        return [] if got is None else [(got[0], got[1], np.ones(got[1].shape, bool), False)]
+        return [] if got is None else [(got[0], got[1], np.ones(got[1].shape, bool), False, got[0].v_ff)]
     parts = []
     for a in np.arange(lo, hi, SEGMENT_S):
         got = build_window(f, max(a - RUN_IN_S - 0.5, f["t_sp"][0]), min(a + SEGMENT_S, hi), setpoint, accel)
         if got is None:
             continue
-        w, tm = _predelayed(*got, max(a - RUN_IN_S, f["t_sp"][0]), delay_s)
-        parts.append((w, tm, (tm >= a) & (tm < min(a + SEGMENT_S, hi) + 1e-9), True))
+        w, tm, v_sent = _predelayed(*got, max(a - RUN_IN_S, f["t_sp"][0]), delay_s)
+        parts.append((w, tm, (tm >= a) & (tm < min(a + SEGMENT_S, hi) + 1e-9), True, v_sent))
     return parts
 
 
@@ -231,15 +231,15 @@ def _rms_axes(e: np.ndarray) -> dict:
 def score_parts(parts: list[tuple], params: m.TrajectoryParams, on_known) -> dict:
     """Errors pooled over the parts' scored samples, per subset. on_known(t) -> (on, known)."""
     no_delay = m.replace(params, delay_s=0.0)
-    vms = [m.simulate_window(no_delay if pre else params, w) for w, _tm, _sc, pre in parts]
+    vms = [m.simulate_window(no_delay if pre else params, w) for w, _tm, _sc, pre, _v in parts]
     rows = {k: [] for k in ("model", "sp", "sp_delayed", "meas", "t", "on", "known")}
     shifted = {float(s): [] for s in np.union1d(SHIFTS_S, WIDE_SHIFTS_S)}
-    for (w, tm, sc, _pre), vm in zip(parts, vms):
+    for (w, tm, sc, _pre, v_sent), vm in zip(parts, vms):
         meas = w.v_meas[sc]
         tq = tm[sc]
         rows["model"].append(bc._at(w.t_s, vm, tq) - meas)
-        rows["sp"].append(bc._at(w.t_s, w.v_ff, tq) - meas)
-        rows["sp_delayed"].append(bc._at(w.t_s, m.delay_signal(w.v_ff, DT_S, bc.DELAY_BASELINE_S), tq) - meas)
+        rows["sp"].append(bc._at(w.t_s, v_sent, tq) - meas)                  # baselines: the setpoint as sent
+        rows["sp_delayed"].append(bc._at(w.t_s, m.delay_signal(v_sent, DT_S, bc.DELAY_BASELINE_S), tq) - meas)
         rows["meas"].append(meas)
         rows["t"].append(tq)
         on, known = on_known(tq)
@@ -329,7 +329,7 @@ def score_drone(f: dict, params: m.TrajectoryParams, events: dict, drone: str, l
     out = {"primary": res.pop("primary"), "variants": res}
     out["reading"] = reading(out["primary"])
     if prim_parts:
-        w, tm, _, _ = prim_parts[0]
+        w, tm = prim_parts[0][:2]
         on, known = on_known(tm)
         out["filter_runs"] = runs_of(tm, on)
         out["filter_share"] = float(on.mean())
@@ -337,9 +337,11 @@ def score_drone(f: dict, params: m.TrajectoryParams, events: dict, drone: str, l
         out["model_limits"] = model_limits(w, params)
         sp = np.linalg.norm(w.v_ff, axis=1)
         meas = np.linalg.norm(w.v_meas, axis=1)
+        model = np.linalg.norm(m.simulate_window(params, w)[w.meas_idx], axis=1)
         out["speeds"] = {"fit_range_mps": FIT_RANGE_MPS, "setpoint_max_mps": float(sp.max()),
                          "setpoint_median_mps": float(np.median(sp)), "measured_max_mps": float(meas.max()),
                          "measured_median_mps": float(np.median(meas)),
+                         "model_max_mps": float(model.max()), "model_median_mps": float(np.median(model)),
                          "share_measured_above_fit_range": float(np.mean(meas > FIT_RANGE_MPS)),
                          "above_fit_range": bool(meas.max() > FIT_RANGE_MPS)}
         out["accel"] = accel_stats(f, lo, hi)
@@ -359,7 +361,7 @@ def make_figure(flights: dict, params: m.TrajectoryParams, events: dict, lo: flo
     if not drones:
         fig.text(0.02, 0.5, "no mission window found", color=INK2)
     for r, d in enumerate(drones):
-        w, tm, _, _ = make_parts(flights[d], lo, hi, "primary")[0]
+        w, tm = make_parts(flights[d], lo, hi, "primary")[0][:2]
         vm = m.simulate_window(params, w)
         on, _known = filter_state(events, d, tm)
         mid = lo + 0.5 * (hi - lo)

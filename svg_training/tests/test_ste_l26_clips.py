@@ -7,6 +7,8 @@ import json
 import sys
 from pathlib import Path
 
+import numpy as np
+
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 import ste_l26_clips as clips  # noqa: E402
@@ -77,18 +79,24 @@ def test_both_tiers_play_the_same_cpu_drawn_starts(tmp_path, monkeypatch):
         assert st[0].device.type == "cpu" and torch_equal(st[0], want[0]) and torch_equal(st[1], want[1])
 
 
-def test_clip_starts_are_tier1s_own_draw():
-    """The fix leaves tier 1 as published: the CPU clip starts equal record_games' own CPU draw from the clip seed."""
+def test_clip_starts_leave_tier1_games_unchanged():
+    """The fix leaves tier 1 as published: with the CPU clip starts given, every tier-1 game of both cells (every frame,
+    outcome and end step) equals record_games' own CPU draw from the clip seed."""
     import ste_tier12_l26 as drv
     from svg_training.viz.replay import record_games
     s = drv.load_settings(clips.GATES)
     cfg1 = drv.game_cfg(s, {x["name"]: x for x in s["groups"]}["landing_gy_1p15"]["tier1_game"])
-    pos, _miss = clips.clip_starts(cfg1, 3)
-    recs = record_games(cfg1, 3, 3, "guard_mark_edge", "strike_low", num_games=3, seed=clips.CLIP_SEED, band=0,
-                        max_steps=400)
-    assert recs
-    for r in recs:
-        assert (r.pos_m[0] == pos[r.game_index].numpy()).all()
+    n = 8
+    starts = clips.clip_starts(cfg1, n)
+    for _group, guard, strike in clips.CELLS:
+        kw = dict(num_games=n, seed=clips.CLIP_SEED, band=0, max_steps=400)
+        own = record_games(cfg1, 3, 3, guard, strike, **kw)
+        given = record_games(cfg1, 3, 3, guard, strike, starts=starts, **kw)
+        assert len(own) == n and [r.game_index for r in given] == [r.game_index for r in own]
+        for a, b in zip(given, own):
+            assert (a.outcome, a.end_step) == (b.outcome, b.end_step)
+            assert np.array_equal(a.pos_m, b.pos_m) and np.array_equal(a.alive, b.alive)
+            assert np.array_equal(a.pos_m[0], starts[0][a.game_index].numpy())
 
 
 def torch_equal(a, b) -> bool:

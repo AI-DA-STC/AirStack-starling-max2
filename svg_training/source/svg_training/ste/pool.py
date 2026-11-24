@@ -19,27 +19,31 @@ from __future__ import annotations
 import torch
 from torch import Tensor
 
-_MASK64 = (1 << 64) - 1
-_SIGN64 = 1 << 63
+_INT64_BITS = 64
+_MASK64 = (1 << _INT64_BITS) - 1
+_SIGN64 = 1 << (_INT64_BITS - 1)
 
 
 def _signed64(x: int) -> int:
     """An integer's low 64 bits read as a signed int64 (two's complement)."""
     x &= _MASK64
-    return x - (1 << 64) if x >= _SIGN64 else x
+    return x - (1 << _INT64_BITS) if x >= _SIGN64 else x
 
 
 # splitmix64's increment and finaliser multipliers, as signed int64
-_GOLDEN = _signed64(0x9E3779B97F4A7C15)
-_MUL1 = _signed64(0xBF58476D1CE4E5B9)
-_MUL2 = _signed64(0x94D049BB133111EB)
+_GOLDEN_U64 = 0x9E3779B97F4A7C15
+_MUL1_U64 = 0xBF58476D1CE4E5B9
+_MUL2_U64 = 0x94D049BB133111EB
+_GOLDEN = _signed64(_GOLDEN_U64)
+_MUL1 = _signed64(_MUL1_U64)
+_MUL2 = _signed64(_MUL2_U64)
 _SHIFTS = (30, 27, 31)
 
 
 def _shr(z: Tensor, s: int) -> Tensor:
     """Logical right shift of int64 ``z`` by ``s`` (1..63): the arithmetic shift with its sign-extended top bits
     cleared."""
-    return (z >> s) & ((1 << (64 - s)) - 1)
+    return (z >> s) & ((1 << (_INT64_BITS - s)) - 1)
 
 
 def _mix(z: Tensor) -> Tensor:

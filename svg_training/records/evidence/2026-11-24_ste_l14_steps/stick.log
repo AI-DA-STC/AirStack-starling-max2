@@ -1,0 +1,121 @@
+step  1/36 repeat 1 axis x sign +1 speed 0.50 m/s zero 2.0 s then hold 3.0 s onset    2.0 s end    5.0 s
+step  2/36 repeat 1 axis x sign -1 speed 0.50 m/s zero 2.0 s then hold 3.0 s onset    7.0 s end   10.0 s
+step  3/36 repeat 1 axis y sign +1 speed 0.50 m/s zero 2.0 s then hold 3.0 s onset   12.0 s end   15.0 s
+step  4/36 repeat 1 axis y sign -1 speed 0.50 m/s zero 2.0 s then hold 3.0 s onset   17.0 s end   20.0 s
+step  5/36 repeat 1 axis z sign +1 speed 0.50 m/s zero 2.0 s then hold 3.0 s onset   22.0 s end   25.0 s
+step  6/36 repeat 1 axis z sign -1 speed 0.50 m/s zero 2.0 s then hold 3.0 s onset   27.0 s end   30.0 s
+step  7/36 repeat 1 axis x sign +1 speed 1.00 m/s zero 2.0 s then hold 3.0 s onset   32.0 s end   35.0 s
+step  8/36 repeat 1 axis x sign -1 speed 1.00 m/s zero 2.0 s then hold 3.0 s onset   37.0 s end   40.0 s
+step  9/36 repeat 1 axis y sign +1 speed 1.00 m/s zero 2.0 s then hold 3.0 s onset   42.0 s end   45.0 s
+step 10/36 repeat 1 axis y sign -1 speed 1.00 m/s zero 2.0 s then hold 3.0 s onset   47.0 s end   50.0 s
+step 11/36 repeat 1 axis z sign +1 speed 1.00 m/s zero 2.0 s then hold 3.0 s onset   52.0 s end   55.0 s
+step 12/36 repeat 1 axis z sign -1 speed 1.00 m/s zero 2.0 s then hold 3.0 s onset   57.0 s end   60.0 s
+step 13/36 repeat 1 axis x sign +1 speed 2.00 m/s zero 2.0 s then hold 3.0 s onset   62.0 s end   65.0 s
+step 14/36 repeat 1 axis x sign -1 speed 2.00 m/s zero 2.0 s then hold 3.0 s onset   67.0 s end   70.0 s
+step 15/36 repeat 1 axis y sign +1 speed 2.00 m/s zero 2.0 s then hold 3.0 s onset   72.0 s end   75.0 s
+step 16/36 repeat 1 axis y sign -1 speed 2.00 m/s zero 2.0 s then hold 3.0 s onset   77.0 s end   80.0 s
+step 17/36 repeat 1 axis z sign +1 speed 2.00 m/s zero 2.0 s then hold 3.0 s onset   82.0 s end   85.0 s
+step 18/36 repeat 1 axis z sign -1 speed 2.00 m/s zero 2.0 s then hold 3.0 s onset   87.0 s end   90.0 s
+step 19/36 repeat 2 axis x sign +1 speed 0.50 m/s zero 2.0 s then hold 3.0 s onset   92.0 s end   95.0 s
+step 20/36 repeat 2 axis x sign -1 speed 0.50 m/s zero 2.0 s then hold 3.0 s onset   97.0 s end  100.0 s
+step 21/36 repeat 2 axis y sign +1 speed 0.50 m/s zero 2.0 s then hold 3.0 s onset  102.0 s end  105.0 s
+step 22/36 repeat 2 axis y sign -1 speed 0.50 m/s zero 2.0 s then hold 3.0 s onset  107.0 s end  110.0 s
+step 23/36 repeat 2 axis z sign +1 speed 0.50 m/s zero 2.0 s then hold 3.0 s onset  112.0 s end  115.0 s
+step 24/36 repeat 2 axis z sign -1 speed 0.50 m/s zero 2.0 s then hold 3.0 s onset  117.0 s end  120.0 s
+step 25/36 repeat 2 axis x sign +1 speed 1.00 m/s zero 2.0 s then hold 3.0 s onset  122.0 s end  125.0 s
+step 26/36 repeat 2 axis x sign -1 speed 1.00 m/s zero 2.0 s then hold 3.0 s onset  127.0 s end  130.0 s
+step 27/36 repeat 2 axis y sign +1 speed 1.00 m/s zero 2.0 s then hold 3.0 s onset  132.0 s end  135.0 s
+step 28/36 repeat 2 axis y sign -1 speed 1.00 m/s zero 2.0 s then hold 3.0 s onset  137.0 s end  140.0 s
+step 29/36 repeat 2 axis z sign +1 speed 1.00 m/s zero 2.0 s then hold 3.0 s onset  142.0 s end  145.0 s
+step 30/36 repeat 2 axis z sign -1 speed 1.00 m/s zero 2.0 s then hold 3.0 s onset  147.0 s end  150.0 s
+step 31/36 repeat 2 axis x sign +1 speed 2.00 m/s zero 2.0 s then hold 3.0 s onset  152.0 s end  155.0 s
+step 32/36 repeat 2 axis x sign -1 speed 2.00 m/s zero 2.0 s then hold 3.0 s onset  157.0 s end  160.0 s
+step 33/36 repeat 2 axis y sign +1 speed 2.00 m/s zero 2.0 s then hold 3.0 s onset  162.0 s end  165.0 s
+step 34/36 repeat 2 axis y sign -1 speed 2.00 m/s zero 2.0 s then hold 3.0 s onset  167.0 s end  170.0 s
+step 35/36 repeat 2 axis z sign +1 speed 2.00 m/s zero 2.0 s then hold 3.0 s onset  172.0 s end  175.0 s
+step 36/36 repeat 2 axis z sign -1 speed 2.00 m/s zero 2.0 s then hold 3.0 s onset  177.0 s end  180.0 s
+plan: 36 steps, 2.0 s zero before each and after the last, total 182.0 s wall (vehicle time = wall x the run's time scale, ~1.9)
+[1795492205.064027] simulator check: drone_1 mode sim, no /fmu/ topic on the domain
+[1795492205.064071] commander: scenario=hover teleop_max_speed_mps=2.0 (plan max 2.0 m/s); pinned pid/node (50471, '/swarm_commander')
+[1795492205.064610] pre-takeoff: drone_1 state=IDLE z=-0.04 m (odometry age 0.01 s); one commander: publishing from now on
+[1795492205.166606] takeoff: success=True message='takeoff: drone_1'
+[1795492208.972775] holding takeoff position: z=1.12 m
+[1795492209.025423] start: success=True message='scenario "hover" running'
+[1795492209.176005] steps: 36 steps start (t0); schedule in steps.json
+[1795492211.177941] step 1/36 onset axis=x sign=+1 speed=0.50 z=1.13
+[1795492214.184531] step 1/36 release z=1.13
+[1795492216.181992] step 2/36 onset axis=x sign=-1 speed=0.50 z=1.13
+[1795492219.176410] step 2/36 release z=1.12
+[1795492221.185034] step 3/36 onset axis=y sign=+1 speed=0.50 z=1.12
+[1795492224.185232] step 3/36 release z=1.12
+[1795492226.185658] step 4/36 onset axis=y sign=-1 speed=0.50 z=1.13
+[1795492229.179238] step 4/36 release z=1.13
+[1795492231.176493] step 5/36 onset axis=z sign=+1 speed=0.50 z=1.12
+[1795492234.177785] step 5/36 release z=2.90
+[1795492236.183934] FLOOR GUARD: step 6 not flown (z=2.62 m, predicted bottom 0.52 m < 0.80 m)
+[1795492241.181648] step 7/36 onset axis=x sign=+1 speed=1.00 z=2.63
+[1795492244.184321] step 7/36 release z=2.62
+[1795492246.178052] step 8/36 onset axis=x sign=-1 speed=1.00 z=2.62
+[1795492249.181675] step 8/36 release z=2.62
+[1795492251.176926] step 9/36 onset axis=y sign=+1 speed=1.00 z=2.62
+[1795492254.181810] step 9/36 release z=2.62
+[1795492256.182104] step 10/36 onset axis=y sign=-1 speed=1.00 z=2.63
+[1795492259.183291] step 10/36 release z=2.64
+[1795492261.180981] step 11/36 onset axis=z sign=+1 speed=1.00 z=2.62
+[1795492264.179217] step 11/36 release z=6.64
+[1795492266.186134] step 12/36 onset axis=z sign=-1 speed=1.00 z=6.33
+[1795492269.176730] step 12/36 release z=2.34
+[1795492271.177131] step 13/36 onset axis=x sign=+1 speed=2.00 z=2.64
+[1795492274.182781] step 13/36 release z=2.64
+[1795492276.181038] step 14/36 onset axis=x sign=-1 speed=2.00 z=2.63
+[1795492279.179261] step 14/36 release z=2.63
+[1795492281.176751] step 15/36 onset axis=y sign=+1 speed=2.00 z=2.62
+[1795492284.176386] step 15/36 release z=2.65
+[1795492286.179209] step 16/36 onset axis=y sign=-1 speed=2.00 z=2.62
+[1795492289.177768] step 16/36 release z=2.63
+[1795492291.180786] step 17/36 onset axis=z sign=+1 speed=2.00 z=2.64
+[1795492294.184076] step 17/36 release z=13.42
+[1795492296.184650] step 18/36 onset axis=z sign=-1 speed=2.00 z=13.88
+[1795492299.184179] step 18/36 release z=3.42
+[1795492301.177803] step 19/36 onset axis=x sign=+1 speed=0.50 z=3.01
+[1795492304.181744] step 19/36 release z=2.99
+[1795492306.179323] step 20/36 onset axis=x sign=-1 speed=0.50 z=3.00
+[1795492309.183519] step 20/36 release z=2.99
+[1795492311.182295] step 21/36 onset axis=y sign=+1 speed=0.50 z=3.00
+[1795492314.177854] step 21/36 release z=2.98
+[1795492316.178221] step 22/36 onset axis=y sign=-1 speed=0.50 z=3.00
+[1795492319.181872] step 22/36 release z=3.00
+[1795492321.179952] step 23/36 onset axis=z sign=+1 speed=0.50 z=2.97
+[1795492324.179663] step 23/36 release z=4.75
+[1795492326.183269] step 24/36 onset axis=z sign=-1 speed=0.50 z=4.50
+[1795492329.183939] step 24/36 release z=2.74
+[1795492331.185324] step 25/36 onset axis=x sign=+1 speed=1.00 z=3.00
+[1795492334.177965] step 25/36 release z=2.99
+[1795492336.182199] step 26/36 onset axis=x sign=-1 speed=1.00 z=2.99
+[1795492339.179511] step 26/36 release z=2.99
+[1795492341.178350] step 27/36 onset axis=y sign=+1 speed=1.00 z=3.01
+[1795492344.176392] step 27/36 release z=2.99
+[1795492346.183947] step 28/36 onset axis=y sign=-1 speed=1.00 z=2.99
+[1795492349.184059] step 28/36 release z=2.98
+[1795492351.178695] step 29/36 onset axis=z sign=+1 speed=1.00 z=3.00
+[1795492354.180279] step 29/36 release z=6.87
+[1795492356.176935] step 30/36 onset axis=z sign=-1 speed=1.00 z=6.55
+[1795492359.183592] step 30/36 release z=2.65
+[1795492361.186306] step 31/36 onset axis=x sign=+1 speed=2.00 z=2.99
+[1795492364.182505] step 31/36 release z=2.97
+[1795492366.178941] step 32/36 onset axis=x sign=-1 speed=2.00 z=2.97
+[1795492369.182691] step 32/36 release z=2.97
+[1795492371.177397] step 33/36 onset axis=y sign=+1 speed=2.00 z=2.96
+[1795492374.180970] step 33/36 release z=2.97
+[1795492376.179852] step 34/36 onset axis=y sign=-1 speed=2.00 z=2.97
+[1795492379.178573] step 34/36 release z=2.99
+[1795492381.179505] step 35/36 onset axis=z sign=+1 speed=2.00 z=2.97
+[1795492384.182009] step 35/36 release z=13.68
+[1795492386.178627] step 36/36 onset axis=z sign=-1 speed=2.00 z=14.12
+[1795492389.181960] step 36/36 release z=3.68
+[1795492391.184397] steps: done
+[1795492392.187764] zeros published
+[1795492392.240233] land: success=True message='landing: drone_1'
+[1795492398.750129] landed: drone_1 IDLE z=-0.05 m
+[1795492398.750153] steps reached: 36/36
+[1795492398.761144] virtual_stick: exit 0

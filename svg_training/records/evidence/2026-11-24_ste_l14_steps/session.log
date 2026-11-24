@@ -1,0 +1,54 @@
+[2026-11-24 11:48:58 +08] record_steps.sh 2026-11-24_ste_l14_steps_r3: AirStack simulator, sim only; plan: 36 steps, 2.0 s zero before each and after the last, total 182.0 s wall (vehicle time = wall x the run's time scale, ~1.9)
+[2026-11-24 11:49:56 +08] SwarmCommander up | scenario=hover (after 2 s)
+[2026-11-24 11:49:56 +08] bag recorder: recording all topics to /root/AirStack/robot/ros_ws/bags/svg_s1_2026-11-24_ste_l14_steps_r3_* (after 0 s)
+[2026-11-24 11:49:56 +08] bag: /root/AirStack/robot/ros_ws/bags/svg_s1_2026-11-24_ste_l14_steps_r3_20261124_034955
+[2026-11-24 11:50:06 +08] stick: [1795492205.166606] takeoff: success=True message='takeoff: drone_1'
+[2026-11-24 11:50:10 +08] stick: [1795492209.025423] start: success=True message='scenario "hover" running'
+[2026-11-24 11:50:12 +08] stick: [1795492211.177941] step 1/36 onset axis=x sign=+1 speed=0.50 z=1.13
+[2026-11-24 11:50:16 +08] stick: [1795492216.181992] step 2/36 onset axis=x sign=-1 speed=0.50 z=1.13
+[2026-11-24 11:50:23 +08] stick: [1795492221.185034] step 3/36 onset axis=y sign=+1 speed=0.50 z=1.12
+[2026-11-24 11:50:27 +08] stick: [1795492226.185658] step 4/36 onset axis=y sign=-1 speed=0.50 z=1.13
+[2026-11-24 11:50:31 +08] stick: [1795492231.176493] step 5/36 onset axis=z sign=+1 speed=0.50 z=1.12
+[2026-11-24 11:50:37 +08] stick: [1795492236.183934] FLOOR GUARD: step 6 not flown (z=2.62 m, predicted bottom 0.52 m < 0.80 m)
+[2026-11-24 11:50:41 +08] stick: [1795492241.181648] step 7/36 onset axis=x sign=+1 speed=1.00 z=2.63
+[2026-11-24 11:50:47 +08] stick: [1795492246.178052] step 8/36 onset axis=x sign=-1 speed=1.00 z=2.62
+[2026-11-24 11:50:51 +08] stick: [1795492251.176926] step 9/36 onset axis=y sign=+1 speed=1.00 z=2.62
+[2026-11-24 11:50:58 +08] stick: [1795492256.182104] step 10/36 onset axis=y sign=-1 speed=1.00 z=2.63
+[2026-11-24 11:51:02 +08] stick: [1795492261.180981] step 11/36 onset axis=z sign=+1 speed=1.00 z=2.62
+[2026-11-24 11:51:06 +08] stick: [1795492266.186134] step 12/36 onset axis=z sign=-1 speed=1.00 z=6.33
+[2026-11-24 11:51:12 +08] stick: [1795492271.177131] step 13/36 onset axis=x sign=+1 speed=2.00 z=2.64
+[2026-11-24 11:51:16 +08] stick: [1795492276.181038] step 14/36 onset axis=x sign=-1 speed=2.00 z=2.63
+[2026-11-24 11:51:22 +08] stick: [1795492281.176751] step 15/36 onset axis=y sign=+1 speed=2.00 z=2.62
+[2026-11-24 11:51:26 +08] stick: [1795492286.179209] step 16/36 onset axis=y sign=-1 speed=2.00 z=2.62
+[2026-11-24 11:51:33 +08] stick: [1795492291.180786] step 17/36 onset axis=z sign=+1 speed=2.00 z=2.64
+[2026-11-24 11:51:37 +08] stick: [1795492296.184650] step 18/36 onset axis=z sign=-1 speed=2.00 z=13.88
+[2026-11-24 11:51:41 +08] stick: [1795492301.177803] step 19/36 onset axis=x sign=+1 speed=0.50 z=3.01
+[2026-11-24 11:51:47 +08] stick: [1795492306.179323] step 20/36 onset axis=x sign=-1 speed=0.50 z=3.00
+[2026-11-24 11:51:51 +08] stick: [1795492311.182295] step 21/36 onset axis=y sign=+1 speed=0.50 z=3.00
+[2026-11-24 11:51:57 +08] stick: [1795492316.178221] step 22/36 onset axis=y sign=-1 speed=0.50 z=3.00
+[2026-11-24 11:52:01 +08] stick: [1795492321.179952] step 23/36 onset axis=z sign=+1 speed=0.50 z=2.97
+[2026-11-24 11:52:08 +08] stick: [1795492326.183269] step 24/36 onset axis=z sign=-1 speed=0.50 z=4.50
+[2026-11-24 11:52:12 +08] stick: [1795492331.185324] step 25/36 onset axis=x sign=+1 speed=1.00 z=3.00
+[2026-11-24 11:52:16 +08] stick: [1795492336.182199] step 26/36 onset axis=x sign=-1 speed=1.00 z=2.99
+[2026-11-24 11:52:22 +08] stick: [1795492341.178350] step 27/36 onset axis=y sign=+1 speed=1.00 z=3.01
+[2026-11-24 11:52:26 +08] stick: [1795492346.183947] step 28/36 onset axis=y sign=-1 speed=1.00 z=2.99
+[2026-11-24 11:52:32 +08] stick: [1795492351.178695] step 29/36 onset axis=z sign=+1 speed=1.00 z=3.00
+[2026-11-24 11:52:36 +08] stick: [1795492356.176935] step 30/36 onset axis=z sign=-1 speed=1.00 z=6.55
+[2026-11-24 11:52:43 +08] stick: [1795492361.186306] step 31/36 onset axis=x sign=+1 speed=2.00 z=2.99
+[2026-11-24 11:52:47 +08] stick: [1795492366.178941] step 32/36 onset axis=x sign=-1 speed=2.00 z=2.97
+[2026-11-24 11:52:51 +08] stick: [1795492371.177397] step 33/36 onset axis=y sign=+1 speed=2.00 z=2.96
+[2026-11-24 11:52:57 +08] stick: [1795492376.179852] step 34/36 onset axis=y sign=-1 speed=2.00 z=2.97
+[2026-11-24 11:53:01 +08] stick: [1795492381.179505] step 35/36 onset axis=z sign=+1 speed=2.00 z=2.97
+[2026-11-24 11:53:07 +08] stick: [1795492386.178627] step 36/36 onset axis=z sign=-1 speed=2.00 z=14.12
+[2026-11-24 11:53:14 +08] stick: [1795492392.240233] land: success=True message='landing: drone_1'
+[2026-11-24 11:53:20 +08] virtual_stick.py exit 0; [1795492398.750129] landed: drone_1 IDLE z=-0.05 m [1795492398.750153] steps reached: 36/36
+[2026-11-24 11:53:21 +08] drone_1 disarmed (MAVROS armed: false) (after 1 s)
+[2026-11-24 11:53:23 +08] our commander stopped (after 2 s)
+[2026-11-24 11:53:25 +08] drone_1 ulog copied (1 file(s))
+other-commander check: processes=[] /svg/commander_status publishers=0
+[2026-11-24 11:53:37 +08] tools/sim.sh down will pick /root/AirStack/robot/ros_ws/bags/svg_s1_2026-11-24_ste_l14_steps_r3_20261124_034955 (this run's)
+[2026-11-24 11:54:38 +08] tools/sim.sh down: exit 0, no Isaac launcher or px4 left in isaac-sim
+[2026-11-24 11:54:38 +08] bag copied and verified: runs/2026-11-24_ste_l14_steps_r3/svg_s1_2026-11-24_ste_l14_steps_r3_20261124_034955 (405M)
+[2026-11-24 11:54:38 +08] bag original removed: /root/AirStack/robot/ros_ws/bags/svg_s1_2026-11-24_ste_l14_steps_r3_20261124_034955
+[2026-11-24 11:54:38 +08] pre-existing entries of the bags folder all still in place: 
+[2026-11-24 11:54:38 +08] done: runs/2026-11-24_ste_l14_steps_r3/ (bag, drone_1 ulog, steps.json, steps_flown.json, logs, preflight.txt, outside_writes.txt)

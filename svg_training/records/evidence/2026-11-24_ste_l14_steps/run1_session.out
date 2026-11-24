@@ -1,0 +1,46 @@
+plan: 36 steps, 2.0 s zero before each and after the last, total 182.0 s wall (vehicle time = wall x the run's time scale, ~1.9)
+[2026-11-24 11:15:06 +08] record_steps.sh 2026-11-24_ste_l14_steps: AirStack simulator, sim only; plan: 36 steps, 2.0 s zero before each and after the last, total 182.0 s wall (vehicle time = wall x the run's time scale, ~1.9)
+[11:15:06 +08] == phase precheck ==
+[11:15:06 +08] precheck: no real-drone bridge on the laptop, port 8765 free, drone battery out (sim shares domain 1)
+[11:15:06 +08] WARN: Isaac start/stop can crash the WiFi firmware (iwlwifi) — use Ethernet or sit at the laptop
+NVIDIA GeForce RTX 5090, 1378 MiB
+[11:15:06 +08] == phase up ==
+[0;32m[INFO][0m Starting services...
+ Container isaac-sim  Running
+ Container airstack-robot-desktop-1  Running
+ Container airstack-gcs-1  Running
+[0;32m[INFO][0m Services brought up successfully
+head=3b8bcf1de4e651163716f0063169218105eae181
+head_short=3b8bcf1d
+dirty_tools=0
+started=2026-11-24T11:15:12+08:00
+tz=+08
+run=_stack
+steps_per_axis=
+num_robots=3
+fly_args=
+[11:15:12 +08] up: containers running, domain 1 clean
+[11:15:12 +08] == phase watch ==
+[11:15:15 +08] watch: running (pid 535531)
+[11:15:15 +08] == phase isaac ==
+[11:16:16 +08] Ready for takeoff: 3 (after 60s)
+model_line=1 starling_cfg=6 autostart=3 unknown_model=0 cooking=0 ready=3
+[11:16:16 +08] == phase interfaces ==
+[11:16:24 +08] drone_1 MAVROS connected (after ~8s)
+[11:16:28 +08] drone_2 MAVROS connected (after ~4s)
+[11:16:29 +08] drone_3 MAVROS connected (after ~1s)
+[11:16:30 +08] drone_1 odometry: ok (after 1 s)
+[11:16:33 +08] drone_2 odometry: ok (after 3 s)
+[11:16:34 +08] drone_3 odometry: ok (after 1 s)
+average rate: 80.136
+/clock
+/drone_1/interface/mavros/setpoint_raw/target_attitude
+/drone_2/interface/mavros/setpoint_raw/target_attitude
+/drone_3/interface/mavros/setpoint_raw/target_attitude
+clock_rc=0
+[11:16:51 +08] interfaces: 3 drones with odometry
+[2026-11-24 11:16:53 +08] SwarmCommander up | scenario=hover (after 2 s)
+[2026-11-24 11:16:53 +08] bag recorder: recording all topics to /root/AirStack/robot/ros_ws/bags/svg_s1_2026-11-24_ste_l14_steps_* (after 0 s)
+[2026-11-24 11:16:53 +08] bag: /root/AirStack/robot/ros_ws/bags/svg_s1_2026-11-24_ste_l14_steps_20261124_031651
+[2026-11-24 11:17:00 +08] our commander stopped (after 2 s)
+[2026-11-24 11:17:01 +08] !! SIMULATOR STILL UP — REAL-DRONE/MOCAP SIGNAL BEFORE THE FLIGHT (bridge pids: none; topics: /drone_1/fmu/in/vehicle_visual_odometry /drone_1/interface/mavros/local_position/pose /drone_1/pose /drone_2/fmu/in/vehicle_visual_odometry /drone_2/interface/mavros/local_position/pose /drone_2/pose /drone_3/fmu/in/vehicle_visual_odometry /drone_3/interface/mavros/local_position/pose /drone_3/pose) — NOTHING FLOWN, OUR COMMANDER STOPPED, tools/sim.sh down NOT RUN — NOTHING REMOVED (BAG ORIGINAL, SENTINEL). BRING IT DOWN BY HAND: tools/sim.sh down (NEVER --force)

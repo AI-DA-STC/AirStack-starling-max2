@@ -1,0 +1,40 @@
+step  1/36 repeat 1 axis x sign +1 speed 0.50 m/s zero 2.0 s then hold 3.0 s onset    2.0 s end    5.0 s
+step  2/36 repeat 1 axis x sign -1 speed 0.50 m/s zero 2.0 s then hold 3.0 s onset    7.0 s end   10.0 s
+step  3/36 repeat 1 axis y sign +1 speed 0.50 m/s zero 2.0 s then hold 3.0 s onset   12.0 s end   15.0 s
+step  4/36 repeat 1 axis y sign -1 speed 0.50 m/s zero 2.0 s then hold 3.0 s onset   17.0 s end   20.0 s
+step  5/36 repeat 1 axis z sign +1 speed 0.50 m/s zero 2.0 s then hold 3.0 s onset   22.0 s end   25.0 s
+step  6/36 repeat 1 axis z sign -1 speed 0.50 m/s zero 2.0 s then hold 3.0 s onset   27.0 s end   30.0 s
+step  7/36 repeat 1 axis x sign +1 speed 1.00 m/s zero 2.0 s then hold 3.0 s onset   32.0 s end   35.0 s
+step  8/36 repeat 1 axis x sign -1 speed 1.00 m/s zero 2.0 s then hold 3.0 s onset   37.0 s end   40.0 s
+step  9/36 repeat 1 axis y sign +1 speed 1.00 m/s zero 2.0 s then hold 3.0 s onset   42.0 s end   45.0 s
+step 10/36 repeat 1 axis y sign -1 speed 1.00 m/s zero 2.0 s then hold 3.0 s onset   47.0 s end   50.0 s
+step 11/36 repeat 1 axis z sign +1 speed 1.00 m/s zero 2.0 s then hold 3.0 s onset   52.0 s end   55.0 s
+step 12/36 repeat 1 axis z sign -1 speed 1.00 m/s zero 2.0 s then hold 3.0 s onset   57.0 s end   60.0 s
+step 13/36 repeat 1 axis x sign +1 speed 2.00 m/s zero 2.0 s then hold 3.0 s onset   62.0 s end   65.0 s
+step 14/36 repeat 1 axis x sign -1 speed 2.00 m/s zero 2.0 s then hold 3.0 s onset   67.0 s end   70.0 s
+step 15/36 repeat 1 axis y sign +1 speed 2.00 m/s zero 2.0 s then hold 3.0 s onset   72.0 s end   75.0 s
+step 16/36 repeat 1 axis y sign -1 speed 2.00 m/s zero 2.0 s then hold 3.0 s onset   77.0 s end   80.0 s
+step 17/36 repeat 1 axis z sign +1 speed 2.00 m/s zero 2.0 s then hold 3.0 s onset   82.0 s end   85.0 s
+step 18/36 repeat 1 axis z sign -1 speed 2.00 m/s zero 2.0 s then hold 3.0 s onset   87.0 s end   90.0 s
+step 19/36 repeat 2 axis x sign +1 speed 0.50 m/s zero 2.0 s then hold 3.0 s onset   92.0 s end   95.0 s
+step 20/36 repeat 2 axis x sign -1 speed 0.50 m/s zero 2.0 s then hold 3.0 s onset   97.0 s end  100.0 s
+step 21/36 repeat 2 axis y sign +1 speed 0.50 m/s zero 2.0 s then hold 3.0 s onset  102.0 s end  105.0 s
+step 22/36 repeat 2 axis y sign -1 speed 0.50 m/s zero 2.0 s then hold 3.0 s onset  107.0 s end  110.0 s
+step 23/36 repeat 2 axis z sign +1 speed 0.50 m/s zero 2.0 s then hold 3.0 s onset  112.0 s end  115.0 s
+step 24/36 repeat 2 axis z sign -1 speed 0.50 m/s zero 2.0 s then hold 3.0 s onset  117.0 s end  120.0 s
+step 25/36 repeat 2 axis x sign +1 speed 1.00 m/s zero 2.0 s then hold 3.0 s onset  122.0 s end  125.0 s
+step 26/36 repeat 2 axis x sign -1 speed 1.00 m/s zero 2.0 s then hold 3.0 s onset  127.0 s end  130.0 s
+step 27/36 repeat 2 axis y sign +1 speed 1.00 m/s zero 2.0 s then hold 3.0 s onset  132.0 s end  135.0 s
+step 28/36 repeat 2 axis y sign -1 speed 1.00 m/s zero 2.0 s then hold 3.0 s onset  137.0 s end  140.0 s
+step 29/36 repeat 2 axis z sign +1 speed 1.00 m/s zero 2.0 s then hold 3.0 s onset  142.0 s end  145.0 s
+step 30/36 repeat 2 axis z sign -1 speed 1.00 m/s zero 2.0 s then hold 3.0 s onset  147.0 s end  150.0 s
+step 31/36 repeat 2 axis x sign +1 speed 2.00 m/s zero 2.0 s then hold 3.0 s onset  152.0 s end  155.0 s
+step 32/36 repeat 2 axis x sign -1 speed 2.00 m/s zero 2.0 s then hold 3.0 s onset  157.0 s end  160.0 s
+step 33/36 repeat 2 axis y sign +1 speed 2.00 m/s zero 2.0 s then hold 3.0 s onset  162.0 s end  165.0 s
+step 34/36 repeat 2 axis y sign -1 speed 2.00 m/s zero 2.0 s then hold 3.0 s onset  167.0 s end  170.0 s
+step 35/36 repeat 2 axis z sign +1 speed 2.00 m/s zero 2.0 s then hold 3.0 s onset  172.0 s end  175.0 s
+step 36/36 repeat 2 axis z sign -1 speed 2.00 m/s zero 2.0 s then hold 3.0 s onset  177.0 s end  180.0 s
+plan: 36 steps, 2.0 s zero before each and after the last, total 182.0 s wall (vehicle time = wall x the run's time scale, ~1.9)
+[1795490732.432439] !! REFUSED: REAL DRONE MAY BE PRESENT: real-drone topic(s) on the domain: /drone_1/fmu/in/vehicle_visual_odometry, /drone_2/fmu/in/vehicle_visual_odometry, /drone_3/fmu/in/vehicle_visual_odometry — NOTHING SENT (NO PUBLISH, NO SERVICE CALL); exit 67. THIS TOOL IS SIMULATOR ONLY: REAL FLIGHTS FOLLOW docs/PREFLIGHT.md AND docs/RUNBOOK.md
+[1795490732.432488] steps reached: 0/36
+[1795490732.444168] virtual_stick: exit 67

@@ -1,0 +1,12 @@
+name=2026-11-24_ste_l14_steps_r3
+pid=648217
+started=2026-11-24T11:48:58+08:00
+start_epoch=1795492138
+head=3b8bcf1de4e651163716f0063169218105eae181
+script_head=452b260d250bcf20941fa18d3dfc277ee05a5185
+stack_repo=/home/jeremychia/AirStack-starling-max2
+s1_toml_sha256=996714a9cf0f1b27b6595da6758c3a30d2fb76e1e716a69f032a5489949e8e94
+virtual_stick_sha256=3b6f9c8c1b6da3c67add1aa09a84541ef736724e6fd2337cc358e50bf2201dc4
+commander_config=teleop_single_ours.yaml scenario=hover bag_prefix=svg_s1_2026-11-24_ste_l14_steps_r3 drone=drone_1
+gpu_before=NVIDIA GeForce RTX 5090, 1293 MiB
+finished=2026-11-24T11:54:38+08:00

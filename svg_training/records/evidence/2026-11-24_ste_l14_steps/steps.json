@@ -1,0 +1,605 @@
+{
+ "config": "/home/jeremychia/AirStack-starling-max2-dev/svg_training/configs/s1.toml",
+ "steps_table": {
+  "speeds_mps": [
+   0.5,
+   1.0,
+   2.0
+  ],
+  "axes": [
+   "x",
+   "y",
+   "z"
+  ],
+  "hold_s": 3.0,
+  "signs": [
+   1,
+   -1
+  ],
+  "repeats": 2
+ },
+ "zero_gap_s": 2.0,
+ "hold_s": 3.0,
+ "rate_hz": 20.0,
+ "frame": "world ENU (frame_id map), /svg/<drone>/teleop_command",
+ "time_base": "wall s from the first zero gap after start; vehicle time = wall x the run's time scale",
+ "total_s": 182.0,
+ "steps": [
+  {
+   "index": 1,
+   "repeat": 1,
+   "axis": "x",
+   "sign": 1,
+   "speed_mps": 0.5,
+   "velocity_enu_mps": [
+    0.5,
+    0.0,
+    0.0
+   ],
+   "zero_before_s": 2.0,
+   "hold_s": 3.0,
+   "onset_s": 2.0,
+   "end_s": 5.0
+  },
+  {
+   "index": 2,
+   "repeat": 1,
+   "axis": "x",
+   "sign": -1,
+   "speed_mps": 0.5,
+   "velocity_enu_mps": [
+    -0.5,
+    0.0,
+    0.0
+   ],
+   "zero_before_s": 2.0,
+   "hold_s": 3.0,
+   "onset_s": 7.0,
+   "end_s": 10.0
+  },
+  {
+   "index": 3,
+   "repeat": 1,
+   "axis": "y",
+   "sign": 1,
+   "speed_mps": 0.5,
+   "velocity_enu_mps": [
+    0.0,
+    0.5,
+    0.0
+   ],
+   "zero_before_s": 2.0,
+   "hold_s": 3.0,
+   "onset_s": 12.0,
+   "end_s": 15.0
+  },
+  {
+   "index": 4,
+   "repeat": 1,
+   "axis": "y",
+   "sign": -1,
+   "speed_mps": 0.5,
+   "velocity_enu_mps": [
+    0.0,
+    -0.5,
+    0.0
+   ],
+   "zero_before_s": 2.0,
+   "hold_s": 3.0,
+   "onset_s": 17.0,
+   "end_s": 20.0
+  },
+  {
+   "index": 5,
+   "repeat": 1,
+   "axis": "z",
+   "sign": 1,
+   "speed_mps": 0.5,
+   "velocity_enu_mps": [
+    0.0,
+    0.0,
+    0.5
+   ],
+   "zero_before_s": 2.0,
+   "hold_s": 3.0,
+   "onset_s": 22.0,
+   "end_s": 25.0
+  },
+  {
+   "index": 6,
+   "repeat": 1,
+   "axis": "z",
+   "sign": -1,
+   "speed_mps": 0.5,
+   "velocity_enu_mps": [
+    0.0,
+    0.0,
+    -0.5
+   ],
+   "zero_before_s": 2.0,
+   "hold_s": 3.0,
+   "onset_s": 27.0,
+   "end_s": 30.0
+  },
+  {
+   "index": 7,
+   "repeat": 1,
+   "axis": "x",
+   "sign": 1,
+   "speed_mps": 1.0,
+   "velocity_enu_mps": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "zero_before_s": 2.0,
+   "hold_s": 3.0,
+   "onset_s": 32.0,
+   "end_s": 35.0
+  },
+  {
+   "index": 8,
+   "repeat": 1,
+   "axis": "x",
+   "sign": -1,
+   "speed_mps": 1.0,
+   "velocity_enu_mps": [
+    -1.0,
+    0.0,
+    0.0
+   ],
+   "zero_before_s": 2.0,
+   "hold_s": 3.0,
+   "onset_s": 37.0,
+   "end_s": 40.0
+  },
+  {
+   "index": 9,
+   "repeat": 1,
+   "axis": "y",
+   "sign": 1,
+   "speed_mps": 1.0,
+   "velocity_enu_mps": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "zero_before_s": 2.0,
+   "hold_s": 3.0,
+   "onset_s": 42.0,
+   "end_s": 45.0
+  },
+  {
+   "index": 10,
+   "repeat": 1,
+   "axis": "y",
+   "sign": -1,
+   "speed_mps": 1.0,
+   "velocity_enu_mps": [
+    0.0,
+    -1.0,
+    0.0
+   ],
+   "zero_before_s": 2.0,
+   "hold_s": 3.0,
+   "onset_s": 47.0,
+   "end_s": 50.0
+  },
+  {
+   "index": 11,
+   "repeat": 1,
+   "axis": "z",
+   "sign": 1,
+   "speed_mps": 1.0,
+   "velocity_enu_mps": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "zero_before_s": 2.0,
+   "hold_s": 3.0,
+   "onset_s": 52.0,
+   "end_s": 55.0
+  },
+  {
+   "index": 12,
+   "repeat": 1,
+   "axis": "z",
+   "sign": -1,
+   "speed_mps": 1.0,
+   "velocity_enu_mps": [
+    0.0,
+    0.0,
+    -1.0
+   ],
+   "zero_before_s": 2.0,
+   "hold_s": 3.0,
+   "onset_s": 57.0,
+   "end_s": 60.0
+  },
+  {
+   "index": 13,
+   "repeat": 1,
+   "axis": "x",
+   "sign": 1,
+   "speed_mps": 2.0,
+   "velocity_enu_mps": [
+    2.0,
+    0.0,
+    0.0
+   ],
+   "zero_before_s": 2.0,
+   "hold_s": 3.0,
+   "onset_s": 62.0,
+   "end_s": 65.0
+  },
+  {
+   "index": 14,
+   "repeat": 1,
+   "axis": "x",
+   "sign": -1,
+   "speed_mps": 2.0,
+   "velocity_enu_mps": [
+    -2.0,
+    0.0,
+    0.0
+   ],
+   "zero_before_s": 2.0,
+   "hold_s": 3.0,
+   "onset_s": 67.0,
+   "end_s": 70.0
+  },
+  {
+   "index": 15,
+   "repeat": 1,
+   "axis": "y",
+   "sign": 1,
+   "speed_mps": 2.0,
+   "velocity_enu_mps": [
+    0.0,
+    2.0,
+    0.0
+   ],
+   "zero_before_s": 2.0,
+   "hold_s": 3.0,
+   "onset_s": 72.0,
+   "end_s": 75.0
+  },
+  {
+   "index": 16,
+   "repeat": 1,
+   "axis": "y",
+   "sign": -1,
+   "speed_mps": 2.0,
+   "velocity_enu_mps": [
+    0.0,
+    -2.0,
+    0.0
+   ],
+   "zero_before_s": 2.0,
+   "hold_s": 3.0,
+   "onset_s": 77.0,
+   "end_s": 80.0
+  },
+  {
+   "index": 17,
+   "repeat": 1,
+   "axis": "z",
+   "sign": 1,
+   "speed_mps": 2.0,
+   "velocity_enu_mps": [
+    0.0,
+    0.0,
+    2.0
+   ],
+   "zero_before_s": 2.0,
+   "hold_s": 3.0,
+   "onset_s": 82.0,
+   "end_s": 85.0
+  },
+  {
+   "index": 18,
+   "repeat": 1,
+   "axis": "z",
+   "sign": -1,
+   "speed_mps": 2.0,
+   "velocity_enu_mps": [
+    0.0,
+    0.0,
+    -2.0
+   ],
+   "zero_before_s": 2.0,
+   "hold_s": 3.0,
+   "onset_s": 87.0,
+   "end_s": 90.0
+  },
+  {
+   "index": 19,
+   "repeat": 2,
+   "axis": "x",
+   "sign": 1,
+   "speed_mps": 0.5,
+   "velocity_enu_mps": [
+    0.5,
+    0.0,
+    0.0
+   ],
+   "zero_before_s": 2.0,
+   "hold_s": 3.0,
+   "onset_s": 92.0,
+   "end_s": 95.0
+  },
+  {
+   "index": 20,
+   "repeat": 2,
+   "axis": "x",
+   "sign": -1,
+   "speed_mps": 0.5,
+   "velocity_enu_mps": [
+    -0.5,
+    0.0,
+    0.0
+   ],
+   "zero_before_s": 2.0,
+   "hold_s": 3.0,
+   "onset_s": 97.0,
+   "end_s": 100.0
+  },
+  {
+   "index": 21,
+   "repeat": 2,
+   "axis": "y",
+   "sign": 1,
+   "speed_mps": 0.5,
+   "velocity_enu_mps": [
+    0.0,
+    0.5,
+    0.0
+   ],
+   "zero_before_s": 2.0,
+   "hold_s": 3.0,
+   "onset_s": 102.0,
+   "end_s": 105.0
+  },
+  {
+   "index": 22,
+   "repeat": 2,
+   "axis": "y",
+   "sign": -1,
+   "speed_mps": 0.5,
+   "velocity_enu_mps": [
+    0.0,
+    -0.5,
+    0.0
+   ],
+   "zero_before_s": 2.0,
+   "hold_s": 3.0,
+   "onset_s": 107.0,
+   "end_s": 110.0
+  },
+  {
+   "index": 23,
+   "repeat": 2,
+   "axis": "z",
+   "sign": 1,
+   "speed_mps": 0.5,
+   "velocity_enu_mps": [
+    0.0,
+    0.0,
+    0.5
+   ],
+   "zero_before_s": 2.0,
+   "hold_s": 3.0,
+   "onset_s": 112.0,
+   "end_s": 115.0
+  },
+  {
+   "index": 24,
+   "repeat": 2,
+   "axis": "z",
+   "sign": -1,
+   "speed_mps": 0.5,
+   "velocity_enu_mps": [
+    0.0,
+    0.0,
+    -0.5
+   ],
+   "zero_before_s": 2.0,
+   "hold_s": 3.0,
+   "onset_s": 117.0,
+   "end_s": 120.0
+  },
+  {
+   "index": 25,
+   "repeat": 2,
+   "axis": "x",
+   "sign": 1,
+   "speed_mps": 1.0,
+   "velocity_enu_mps": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "zero_before_s": 2.0,
+   "hold_s": 3.0,
+   "onset_s": 122.0,
+   "end_s": 125.0
+  },
+  {
+   "index": 26,
+   "repeat": 2,
+   "axis": "x",
+   "sign": -1,
+   "speed_mps": 1.0,
+   "velocity_enu_mps": [
+    -1.0,
+    0.0,
+    0.0
+   ],
+   "zero_before_s": 2.0,
+   "hold_s": 3.0,
+   "onset_s": 127.0,
+   "end_s": 130.0
+  },
+  {
+   "index": 27,
+   "repeat": 2,
+   "axis": "y",
+   "sign": 1,
+   "speed_mps": 1.0,
+   "velocity_enu_mps": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "zero_before_s": 2.0,
+   "hold_s": 3.0,
+   "onset_s": 132.0,
+   "end_s": 135.0
+  },
+  {
+   "index": 28,
+   "repeat": 2,
+   "axis": "y",
+   "sign": -1,
+   "speed_mps": 1.0,
+   "velocity_enu_mps": [
+    0.0,
+    -1.0,
+    0.0
+   ],
+   "zero_before_s": 2.0,
+   "hold_s": 3.0,
+   "onset_s": 137.0,
+   "end_s": 140.0
+  },
+  {
+   "index": 29,
+   "repeat": 2,
+   "axis": "z",
+   "sign": 1,
+   "speed_mps": 1.0,
+   "velocity_enu_mps": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "zero_before_s": 2.0,
+   "hold_s": 3.0,
+   "onset_s": 142.0,
+   "end_s": 145.0
+  },
+  {
+   "index": 30,
+   "repeat": 2,
+   "axis": "z",
+   "sign": -1,
+   "speed_mps": 1.0,
+   "velocity_enu_mps": [
+    0.0,
+    0.0,
+    -1.0
+   ],
+   "zero_before_s": 2.0,
+   "hold_s": 3.0,
+   "onset_s": 147.0,
+   "end_s": 150.0
+  },
+  {
+   "index": 31,
+   "repeat": 2,
+   "axis": "x",
+   "sign": 1,
+   "speed_mps": 2.0,
+   "velocity_enu_mps": [
+    2.0,
+    0.0,
+    0.0
+   ],
+   "zero_before_s": 2.0,
+   "hold_s": 3.0,
+   "onset_s": 152.0,
+   "end_s": 155.0
+  },
+  {
+   "index": 32,
+   "repeat": 2,
+   "axis": "x",
+   "sign": -1,
+   "speed_mps": 2.0,
+   "velocity_enu_mps": [
+    -2.0,
+    0.0,
+    0.0
+   ],
+   "zero_before_s": 2.0,
+   "hold_s": 3.0,
+   "onset_s": 157.0,
+   "end_s": 160.0
+  },
+  {
+   "index": 33,
+   "repeat": 2,
+   "axis": "y",
+   "sign": 1,
+   "speed_mps": 2.0,
+   "velocity_enu_mps": [
+    0.0,
+    2.0,
+    0.0
+   ],
+   "zero_before_s": 2.0,
+   "hold_s": 3.0,
+   "onset_s": 162.0,
+   "end_s": 165.0
+  },
+  {
+   "index": 34,
+   "repeat": 2,
+   "axis": "y",
+   "sign": -1,
+   "speed_mps": 2.0,
+   "velocity_enu_mps": [
+    0.0,
+    -2.0,
+    0.0
+   ],
+   "zero_before_s": 2.0,
+   "hold_s": 3.0,
+   "onset_s": 167.0,
+   "end_s": 170.0
+  },
+  {
+   "index": 35,
+   "repeat": 2,
+   "axis": "z",
+   "sign": 1,
+   "speed_mps": 2.0,
+   "velocity_enu_mps": [
+    0.0,
+    0.0,
+    2.0
+   ],
+   "zero_before_s": 2.0,
+   "hold_s": 3.0,
+   "onset_s": 172.0,
+   "end_s": 175.0
+  },
+  {
+   "index": 36,
+   "repeat": 2,
+   "axis": "z",
+   "sign": -1,
+   "speed_mps": 2.0,
+   "velocity_enu_mps": [
+    0.0,
+    0.0,
+    -2.0
+   ],
+   "zero_before_s": 2.0,
+   "hold_s": 3.0,
+   "onset_s": 177.0,
+   "end_s": 180.0
+  }
+ ]
+}

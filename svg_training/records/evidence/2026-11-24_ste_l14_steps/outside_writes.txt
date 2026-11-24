@@ -1,0 +1,28 @@
+# Paths written outside svg_training/ by run 2026-11-24_ste_l14_steps_r3 (record_steps.sh, 2026-11-24T11:54:38+08:00). AirStack simulator, sim only.
+/home/jeremychia/flight_logs/sim/.sim_test.lock   the simulator's lock, held by this script (pid 648217) from before up to its exit, then removed
+/home/jeremychia/flight_logs/sim/_stack/   tools/sim.sh up/down: run.log commands.sh run_meta.txt res_watch.log isaac.log isaac_evidence.txt ulog lists, commander/interfaces logs, caveats.txt
+    /home/jeremychia/flight_logs/sim/_stack/run_meta.txt
+    /home/jeremychia/flight_logs/sim/_stack/caveats.txt
+    /home/jeremychia/flight_logs/sim/_stack/commands.sh
+    /home/jeremychia/flight_logs/sim/_stack/topics_of_interest.txt
+    /home/jeremychia/flight_logs/sim/_stack/run.log
+    /home/jeremychia/flight_logs/sim/_stack/odom_hz.txt
+    /home/jeremychia/flight_logs/sim/_stack/isaac.log
+    /home/jeremychia/flight_logs/sim/_stack/res_watch.log
+    /home/jeremychia/flight_logs/sim/_stack/interfaces.log
+    /home/jeremychia/flight_logs/sim/_stack/ulogs_copied.ok
+    /home/jeremychia/flight_logs/sim/_stack/clock_check.txt
+    /home/jeremychia/flight_logs/sim/_stack/isaac.log.start
+    /home/jeremychia/flight_logs/sim/_stack/isaac_evidence.txt
+    /home/jeremychia/flight_logs/sim/_stack/bag_path.txt
+    /home/jeremychia/flight_logs/sim/_stack/bag_evidence.txt
+/home/jeremychia/flight_logs/sim/uncollected_<date>/   tools/sim.sh down's ulog guard: every PX4 ulog of this session not under ~/flight_logs/sim (all 3 drones)
+    /home/jeremychia/flight_logs/sim/uncollected_2026-11-24/tmpfrr9h2mg_2026-11-24_03_49_17.ulg
+    /home/jeremychia/flight_logs/sim/uncollected_2026-11-24/tmpvqpwxwhx_2026-11-24_03_49_17.ulg
+    /home/jeremychia/flight_logs/sim/uncollected_2026-11-24/tmpg_xhqjq8_2026-11-24_03_49_17.ulg
+/home/jeremychia/AirStack-starling-max2/AirStack/robot/ros_ws/bags/svg_s1_2026-11-24_ste_l14_steps_r3_20261124_034955/   this run's bag (commander's bag recorder); copied into runs/2026-11-24_ste_l14_steps_r3/, original removed
+/home/jeremychia/flight_logs/sim/_stack/svg_s1_2026-11-24_ste_l14_steps_r3_20261124_034955/   tools/sim.sh down's copy of this run's bag (kept; same content as runs/2026-11-24_ste_l14_steps_r3/svg_s1_2026-11-24_ste_l14_steps_r3_20261124_034955)
+/home/jeremychia/AirStack-starling-max2/AirStack/robot/ros_ws/bags/svg_s1_2026-11-24_ste_l14_steps_r3_00000000_000000/   empty sentinel dir for tools/sim.sh down — removed: yes
+pre-existing entries of /home/jeremychia/AirStack-starling-max2/AirStack/robot/ros_ws/bags (preflight.txt): all still in place after tools/sim.sh down
+isaac-sim container: /tmp/svg_test/isaac.log (sim.sh), /tmp/tmp*/log/<date>/*.ulg (PX4 ulogs; gone when Isaac stops)
+airstack-robot-desktop-1 container: /tmp/svg_test/interfaces.log (sim.sh); /tmp/svg_s1_2026-11-24_ste_l14_steps_r3/ (stick, s1.toml, commander.log, stick.log, steps_flown.json)

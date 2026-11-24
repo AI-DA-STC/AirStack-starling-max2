@@ -28,6 +28,7 @@ Shapes: N games, M drones of the team, K skills, D observation width; choices ar
 """
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 
 import torch
@@ -40,7 +41,13 @@ from ..opponents.scripted import make_strategy
 VELOCITY, SKILLS = "velocity", "skills"
 ACTIONS = (VELOCITY, SKILLS)                    # [learner] action
 TEAM, DRONE = "team", "drone"
-CHOICES = (TEAM, DRONE)                         # [learner] choice (skills route only)
+CHOICES = (TEAM, DRONE)                         # SkillDispatch's own modes (slice 1)
+TWO_LEVEL = "two_level"                         # L3 slice 2 (owner ruling R30): a team head and a drone head per drone
+LEARNER_CHOICES = CHOICES + (TWO_LEVEL,)        # [learner] choice (skills route only)
+TWO_LEVEL_KEYS = ("team_strategies", "drone_skills", "entropy_scale")   # [learner] keys of choice = "two_level" only
+SIDE_KEYS = ("strike", "guard")
+HEADS = ("team", "drone")
+FREE = 0                                        # the team head's index of "free" (each drone flies its drone skill)
 TEAM_PLAYERS = {"guard": "guards", "strike": "strikes"}    # the gate file's [players] list of each team = its skills
 _V = ObsView()
 ALIVE_FLAG_MIN = 0.5                            # the observation's own-alive flag is 0 or 1 (scripted.py reads it so)
@@ -48,9 +55,14 @@ ALIVE_FLAG_MIN = 0.5                            # the observation's own-alive fl
 
 @dataclass(frozen=True)
 class LearnerSpec:
-    """The ``[learner]`` table as loaded: action (ACTIONS), choice (CHOICES for the skills route, None for velocity)."""
+    """The ``[learner]`` table as loaded: action (ACTIONS), choice (LEARNER_CHOICES for the skills route, None for
+    velocity). Choice "two_level" only (L3 slice 2): team_strategies and drone_skills {side: tuple of player names},
+    entropy_scale {"team": float, "drone": float}."""
     action: str
     choice: str | None
+    team_strategies: dict | None = None
+    drone_skills: dict | None = None
+    entropy_scale: dict | None = None
 
     @property
     def skills(self) -> bool:
@@ -64,7 +76,7 @@ def learner_spec(table: dict | None) -> LearnerSpec:
         return LearnerSpec(VELOCITY, None)
     if not isinstance(table, dict):
         raise ValueError("[learner] must be a table")
-    unknown = sorted(set(table) - {"action", "choice"})
+    unknown = sorted(set(table) - {"action", "choice", *TWO_LEVEL_KEYS})
     if unknown:
         raise ValueError(f"unknown key(s) in [learner]: {unknown}")
     action = table.get("action", VELOCITY)
@@ -73,11 +85,17 @@ def learner_spec(table: dict | None) -> LearnerSpec:
     if action == VELOCITY:
         if "choice" in table:
             raise ValueError("[learner] choice belongs to the skills route only (action = \"skills\")")
+        if any(k in table for k in TWO_LEVEL_KEYS):
+            raise ValueError(f"[learner] {list(TWO_LEVEL_KEYS)} belong to choice = \"{TWO_LEVEL}\" only")
         return LearnerSpec(VELOCITY, None)
     choice = table.get("choice")
-    if choice not in CHOICES:
-        raise ValueError(f"[learner] action = \"skills\" needs choice one of {CHOICES}, got {choice!r}")
-    return LearnerSpec(SKILLS, choice)
+    if choice not in LEARNER_CHOICES:
+        raise ValueError(f"[learner] action = \"skills\" needs choice one of {LEARNER_CHOICES}, got {choice!r}")
+    if choice != TWO_LEVEL:
+        if any(k in table for k in TWO_LEVEL_KEYS):
+            raise ValueError(f"[learner] {list(TWO_LEVEL_KEYS)} belong to choice = \"{TWO_LEVEL}\" only")
+        return LearnerSpec(SKILLS, choice)
+    return _two_level_spec(table)
 
 
 class LearnerNotWired(ValueError):
@@ -136,6 +154,10 @@ class SkillDispatch:
         idx = choice.to(torch.long)[:, :, None, None].expand(-1, -1, 1, every.shape[-1])
         return torch.gather(every, 2, idx)[:, :, 0]
 
+    def greedy(self, logits: Tensor) -> Tensor:
+        """logits [..., K] -> the argmax [...] long (first skill on a tie): the scoring play."""
+        return logits.argmax(dim=-1)
+
     def resolve(self, choice: Tensor, obs: Tensor) -> Tensor:
         """Each drone's network choice [N, M] -> the choice that flies [N, M] long: unchanged per drone; per team, the
         choice of the lowest-index live drone in ``obs`` [N, M, D], given to every drone of the team."""
@@ -147,3 +169,126 @@ class SkillDispatch:
         idx = torch.arange(m, device=obs.device)
         lead = torch.where(live, idx, m).amin(-1).clamp(max=m - 1)                  # [N]; drone 0 if none is live
         return torch.gather(choice, 1, lead[:, None]).expand(-1, m)
+
+
+# ------------------------------------------------------------------ STE phase L3, slice 2: the two-level choice (R30)
+# Design: ste_learning/drafts/L3_SLICE2_DESIGN.md. Per side, a team head (index 0 = "free", then the team strategies)
+# and, per drone, a drone head over the skills that do not read their team-mates; a team strategy flies as written for
+# every drone of the team, "free" lets each drone fly its own drone skill.
+
+def _two_level_spec(table: dict) -> LearnerSpec:
+    """The checks of choice = "two_level" that need no [players] list (``check_two_level`` does the rest)."""
+    missing = [k for k in TWO_LEVEL_KEYS if k not in table]
+    if missing:
+        raise ValueError(f"[learner] choice = \"{TWO_LEVEL}\" needs {missing}")
+    lists = {}
+    for key in ("team_strategies", "drone_skills"):
+        sub = table[key]
+        if not isinstance(sub, dict) or sorted(sub) != sorted(SIDE_KEYS):
+            raise ValueError(f"[learner.{key}] must have exactly the keys {list(SIDE_KEYS)}")
+        for side, names in sub.items():
+            if not isinstance(names, list) or not all(isinstance(n, str) for n in names):
+                raise ValueError(f"[learner.{key}] {side} must be a list of player names")
+        lists[key] = {side: tuple(sub[side]) for side in SIDE_KEYS}
+    scale = table["entropy_scale"]
+    if not isinstance(scale, dict) or sorted(scale) != sorted(HEADS):
+        raise ValueError(f"[learner.entropy_scale] must have exactly the keys {list(HEADS)}")
+    for head, v in scale.items():
+        if isinstance(v, bool) or not isinstance(v, (int, float)) or not math.isfinite(v) or v <= 0:
+            raise ValueError(f"[learner.entropy_scale] {head} must be a number > 0, got {v!r} (0 switches the entropy "
+                             f"term off and a zero-initialised categorical head can collapse onto one skill)")
+    return LearnerSpec(SKILLS, TWO_LEVEL, lists["team_strategies"], lists["drone_skills"],
+                       {h: float(scale[h]) for h in HEADS})
+
+
+def check_two_level(spec: LearnerSpec, players: dict) -> None:
+    """A two-level spec against the gate file's ``[players]`` (ValueError names the first problem): per side, every
+    name a player of that team; the two lists disjoint, without repeats, together the whole ``[players]`` list; neither
+    empty; each in ``[players]`` order. Nothing to check for another spec."""
+    if spec.choice != TWO_LEVEL:
+        return
+    for side in SIDE_KEYS:
+        plist = team_skills(players, side)
+        ts, ds = list(spec.team_strategies[side]), list(spec.drone_skills[side])
+        where = f"[learner] {side}"
+        bad = [n for n in ts + ds if n not in plist]
+        if bad:
+            raise ValueError(f"{where}: {bad} are not players of the {side} team {plist}")
+        if len(set(ts)) != len(ts) or len(set(ds)) != len(ds):
+            raise ValueError(f"{where}: a name is repeated inside a list")
+        both = sorted(set(ts) & set(ds))
+        if both:
+            raise ValueError(f"{where}: {both} are in both team_strategies and drone_skills")
+        left = [n for n in plist if n not in ts and n not in ds]
+        if left:
+            raise ValueError(f"{where}: {left} are in neither list (every [players] name must be in one)")
+        if not ts or not ds:
+            raise ValueError(f"{where}: team_strategies and drone_skills must both be non-empty")
+        for key, names in (("team_strategies", ts), ("drone_skills", ds)):
+            if names != [n for n in plist if n in names]:
+                raise ValueError(f"{where}: {key} must follow the [players] order {plist}")
+
+
+class TwoLevelDispatch(SkillDispatch):
+    """The team's skills for the two-level choice: every player of ``players`` (the gate file's list of the team, in
+    order) runs every tick, as in slice 1, and each drone flies the one its two heads resolve to (``resolve_heads``).
+
+    Network action per drone: [team index, drone index] (the action space ``MultiDiscrete([T+1, K_d])``); team index 0
+    = "free", t >= 1 = ``team_strategies[t - 1]``; drone index d = ``drone_skills[d]``."""
+
+    two_level = True
+
+    def __init__(self, team: str, players: list[str], team_strategies: list[str], drone_skills: list[str], cfg: GameCfg,
+                 num_games: int, device, seed: int):
+        super().__init__(team, players, cfg, num_games, device, seed, DRONE)   # the gather is per drone
+        self.choice = TWO_LEVEL
+        bad = [n for n in list(team_strategies) + list(drone_skills) if n not in self.names]
+        if bad or not team_strategies or not drone_skills:
+            raise ValueError(f"two-level lists must be non-empty and name players of {self.names}; got {bad}")
+        self.team_strategies, self.drone_skills = list(team_strategies), list(drone_skills)
+        dev = torch.device(device)
+        # index 0 of the team map is a placeholder: "free" never reads it (the drone map is used instead)
+        self._team_map = torch.tensor([0] + [self.names.index(n) for n in self.team_strategies], device=dev)
+        self._drone_map = torch.tensor([self.names.index(n) for n in self.drone_skills], device=dev)
+
+    @property
+    def widths(self) -> tuple[int, int]:
+        """(T + 1, K_d): the team head's and the drone head's number of choices."""
+        return len(self.team_strategies) + 1, len(self.drone_skills)
+
+    def greedy(self, logits: Tensor) -> Tensor:
+        """logits [..., T + 1 + K_d] -> each head's argmax [..., 2] long (first index on a tie)."""
+        t, _ = self.widths
+        return torch.stack((logits[..., :t].argmax(-1), logits[..., t:].argmax(-1)), dim=-1)
+
+    def resolve_heads(self, action: Tensor, obs: Tensor) -> tuple[Tensor, Tensor]:
+        """action [N, M, 2] (each drone's [team, drone] sample), obs [N, M, D] -> (flown [N, M] long: the player index
+        each drone flies, head_mask [N, M, 2] float 0/1). The leader is the lowest-index live drone in ``obs`` (with no
+        live drone, the last one: the rule of slice 1's ``resolve``, whose comment says drone 0; such a game has ended
+        and restarts); its team index is the team's. head_mask[..., 0] = 1 for the leader only (its team
+        sample counts), head_mask[..., 1] = 1 for every drone when the leader chose "free" (its drone sample counts)."""
+        a = action.to(torch.long)
+        team_a, drone_a = a[..., 0], a[..., 1]
+        m = obs.shape[1]
+        live = obs[..., _V.alive] > ALIVE_FLAG_MIN
+        idx = torch.arange(m, device=obs.device)
+        lead = torch.where(live, idx, m).amin(-1).clamp(max=m - 1)                   # [N]
+        t = torch.gather(team_a, 1, lead[:, None])[:, 0]                             # [N]
+        free = t == FREE
+        team_player = self._team_map.to(obs.device)[t]                               # [N]
+        drone_player = self._drone_map.to(obs.device)[drone_a]                       # [N, M]
+        flown = torch.where(free[:, None], drone_player, team_player[:, None].expand(-1, m))
+        leader = idx[None, :] == lead[:, None]                                       # [N, M]
+        mask = torch.stack((leader, free[:, None].expand(-1, m)), dim=-1).to(obs.dtype)
+        return flown, mask
+
+    def resolve(self, choice: Tensor, obs: Tensor) -> Tensor:
+        """choice [N, M, 2] -> flown [N, M] (``resolve_heads`` without the masks)."""
+        return self.resolve_heads(choice, obs)[0]
+
+
+def two_level_dispatch(spec: LearnerSpec, players: dict, team: str, cfg: GameCfg, num_games: int, device,
+                       seed: int) -> TwoLevelDispatch:
+    """The ``TwoLevelDispatch`` of ``team`` from a two-level spec and the gate file's ``[players]``."""
+    return TwoLevelDispatch(team, team_skills(players, team), list(spec.team_strategies[team]),
+                            list(spec.drone_skills[team]), cfg, num_games, device, seed)

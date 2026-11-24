@@ -229,7 +229,7 @@ and only when the owner is not flying or demoing.
 `params/airstack_sim_physics_v0.toml` (SIM-ONLY values, comparison only, never a training set), `scripts/
 compare_sim_steps.py`, tests on recorded fixtures. Known confounds to remove or name (STANDARDS §5 rules 1 and 8): PX4
 1.16.1 in the simulator against 1.14 in the cascade, the speed-only MAVROS route against the trajectory setpoint, and the
-simulator's PX4 clock running about 1.9 times the commander's. Done: INFO record: tier 2 with and without L1.1's delay
+simulator's PX4 clock running about 1.9 times the commander's (measured in L1.5, T69: 2.38–2.57 times the wall clock per step, aligned per step). Done: INFO record: tier 2 with and without L1.1's delay
 against the simulator's steps, each confound stated. 6 h; 0.3 GPU-h. Gate: owner, because tier 2 would fly SIM-ONLY
 airframe values (STANDARDS §5 rule 2 allows them only by owner ruling, precedent 16 Nov).
 

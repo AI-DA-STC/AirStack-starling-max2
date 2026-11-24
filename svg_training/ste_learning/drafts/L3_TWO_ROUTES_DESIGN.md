@@ -141,3 +141,13 @@ default instead of per drone (the one point asked); (b) both routes train agains
 not one; (c) the pipeline check uses today's per-slot MLP and observation v0.2, with the attention encoder, shared actor
 and v0.3 after it; (d) the skills run closed loop under a 0.6 s choice, an advantage declared and measured by the
 held-command arm. The skill list is unchanged.
+
+**Found by the first slice's build (24 Nov 2026, branch `l3-slice1`), against v2:** (1) the learner path runs
+observation **v0.1** (`OBS_DIM = 71`, interface "0.1"); v0.2 is opt-in and used by the NUS hangar games only, so the
+pipeline check runs on v0.1 for both routes. (2) Per team with per-slot networks: the lowest-index live drone at the
+decision tick chooses for the team, held for the decision; the other slots' samples are ignored by the game (valid PPO,
+noisier signal for those slots). (3) The step-0 row in scoring (argmax) is the first skill's cell (strike_straight /
+guard_parked_centre), not a uniform mix; the uniform-random control is a separate row. (4) No entropy setting of its own
+for the skills head yet (the recipe's single `entropy_loss_scale` is 0.0): to set in the L3 gate file. (5) Game lengths:
+converge cells run longer (T44 medians 102–162 ticks). (6) The drivers build `DecisionEnv` directly, so until they are
+wired they must refuse `action = "skills"` (added before merge).

@@ -38,6 +38,10 @@ from torch import Tensor
 # sha256 of inspect.getsource(RunningStandardScaler._parallel_variance) at skrl 2.1.0, read when masked_scaler_update
 # was written (24 Nov 2026)
 PARALLEL_VARIANCE_SHA256 = "cfcb79ce6dcf2049812f0e96584a22a764c46ea4ffeb5ac7768e60e8fab99608"
+# the pre-pass depends on IPPO.record_transition (what it stores) and IPPO.post_interaction (when the updates run, in
+# which order): their source sha256 at skrl 2.1.0 (QC of step 4)
+RECORD_TRANSITION_SHA256 = "acbb624f46c4556339162af9529348443d156dee7dbc84ecabbd40db1d79d7aa"
+POST_INTERACTION_SHA256 = "1c1b4113d893e670ad7cfb3becaa04eccc5bc9ee8a04029cbb6c628314925b5b"
 ADV_EPS = 1e-8                     # skrl's compute_gae: (A - mean) / (std + 1e-8) (ippo.py:62)
 MIN_SCALER_ROWS = 2                # an unbiased variance needs two rows; fewer live rows: no scaler update
 
@@ -45,10 +49,16 @@ MIN_SCALER_ROWS = 2                # an unbiased variance needs two rows; fewer 
 def check_pins() -> None:
     """RuntimeError unless the installed skrl is the one the masked copies were made from (version 2.1.0, its
     ``IPPO.update`` source, ``RunningStandardScaler._parallel_variance``'s source)."""
+    from skrl.multi_agents.torch.ippo import IPPO
+
     from . import two_level                     # here, not at import: two_level imports the mask's learner mixin
-    vs = hashlib.sha256(inspect.getsource(RunningStandardScaler._parallel_variance).encode()).hexdigest()
+
+    def sha(f) -> str:
+        return hashlib.sha256(inspect.getsource(f).encode()).hexdigest()
     if (skrl.__version__ != two_level.SKRL_VERSION or two_level.update_source_sha256() != two_level.IPPO_UPDATE_SHA256
-            or vs != PARALLEL_VARIANCE_SHA256):
+            or sha(RunningStandardScaler._parallel_variance) != PARALLEL_VARIANCE_SHA256
+            or sha(IPPO.record_transition) != RECORD_TRANSITION_SHA256
+            or sha(IPPO.post_interaction) != POST_INTERACTION_SHA256):
         raise RuntimeError(f"the absent-drone mask copies skrl {two_level.SKRL_VERSION}'s IPPO.update and "
                            f"RunningStandardScaler._parallel_variance; installed skrl {skrl.__version__}: re-read the "
                            f"copies before training")

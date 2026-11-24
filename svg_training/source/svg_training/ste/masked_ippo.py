@@ -45,6 +45,7 @@ class MaskMixin:
     def _mask_init(self, mask_absent: bool) -> None:
         self.mask_absent = bool(mask_absent)
         self.mask_stats: dict | None = None
+        self._mask: dict | None = None                # this rollout's pre-pass; cleared after its updates
         if not self.mask_absent:
             return
         masking.check_pins()
@@ -63,7 +64,10 @@ class MaskMixin:
         if (self.mask_absent and self.training and not (self._rollout + 1) % self.cfg.rollouts
                 and timestep >= self.cfg.learning_starts):
             self._mask_prepass()
-        super().post_interaction(timestep=timestep, timesteps=timesteps)
+        try:
+            super().post_interaction(timestep=timestep, timesteps=timesteps)
+        finally:
+            self._mask = None                          # never read by a later update (QC of step 4)
 
     def _mask_prepass(self) -> None:
         """B1, A1: before any agent's update: every agent's raw last value, its live rows, its own last live value,
@@ -90,6 +94,9 @@ class MaskMixin:
         own, ippo.py:393-404)."""
         memory = self.memories[uid]
         m = self._mask
+        if m is None:
+            raise RuntimeError("a masked update without its pre-pass: call it through post_interaction (B1: every "
+                               "agent's last values are taken before any agent's update)")
         values = memory.get_tensor_by_name("values")
         out = masking.masked_gae(memory.get_tensor_by_name("rewards"), memory.get_tensor_by_name("terminated"), values,
                                  m["last"][uid], m["alive"][uid], m["alive_next"][uid][:, None], m["tail"][uid],

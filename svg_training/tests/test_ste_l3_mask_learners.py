@@ -157,14 +157,22 @@ def test_nothing_an_absent_row_stores_reaches_a_weight_or_a_scaler(gates, table)
         if "head_log_prob" in mem.get_tensor_names():
             hlp = mem.get_tensor_by_name("head_log_prob")
             hlp[absent] = hlp[absent] - 4.0
+        g = torch.Generator().manual_seed(seen + 1)               # QC S1 of step 4: the absent rows' observation
+        noise = torch.randn(obs.shape, generator=g) * 3.0          # features too (all but the alive flag)
+        noise[..., V.alive] = 0.0
+        obs[absent] = torch.where(torch.arange(obs.shape[-1]) == V.alive, obs[absent], noise[absent])
     assert seen > 0, "no absent row: the test has no power"
     _update_all(base)
     _update_all(other)
     assert same_modules(base.modules(), other.modules())
     for ag in base.names:
-        for sc in ("_observation_preprocessor", "_value_preprocessor"):
+        for sc in ("_observation_preprocessor", "_value_preprocessor", "_state_preprocessor"):
+            a, b = getattr(base.agent, sc)[ag], getattr(other.agent, sc)[ag]
+            if not hasattr(a, "running_mean"):                      # the state preprocessor: none configured
+                assert sc == "_state_preprocessor"
+                continue
             for k in ("running_mean", "running_variance", "current_count"):
-                assert torch.equal(getattr(getattr(base.agent, sc)[ag], k), getattr(getattr(other.agent, sc)[ag], k))
+                assert torch.equal(getattr(a, k), getattr(b, k)), (sc, k)
 
 
 def test_a_velocity_update_with_absent_rows_equals_a_hand_built_masked_update(gates):
@@ -278,3 +286,54 @@ def test_a_driver_run_with_the_mask_logs_it_and_records_the_setting(tmp_path, mo
     assert log and all("mask" in x and 0 < x["mask"]["live_share"] <= 1 for x in log)
     res = json.loads((r / "results.json").read_text())
     assert res["mask"] == {"mask_absent": True, "time_limit_bootstrap": False}
+
+
+def _direct_agent(gates, two_level: bool, **cfg_over):
+    import gymnasium
+    from skrl.memories.torch import RandomMemory
+    from svg_training.opponents.learned import OBS_SPACE, make_models, make_two_level_models
+    from svg_training.ste.masked_ippo import MaskedIPPO
+    from svg_training.ste.two_level import TwoLevelIPPO
+    names = ["guard_0", "guard_1"]
+    settings = tiny(gates)
+    cfg = exploit_train.ippo_cfg(settings, names, "cpu", **cfg_over)
+    common = dict(possible_agents=names,
+                  memories={a: RandomMemory(memory_size=3, num_envs=2, device="cpu") for a in names},
+                  observation_spaces={a: OBS_SPACE for a in names},
+                  state_spaces={a: gymnasium.spaces.Box(-1.0, 1.0, (1,)) for a in names}, device="cpu", cfg=cfg)
+    if two_level:
+        return TwoLevelIPPO(models=make_two_level_models(names, [16, 16], (3, 3), "cpu"),
+                            action_spaces={a: gymnasium.spaces.MultiDiscrete([3, 3]) for a in names},
+                            entropy_scale={"team": 0.01, "drone": 0.01}, mask_absent=True, **common)
+    return MaskedIPPO(models=make_models(names, [16, 16], "cpu"),
+                      action_spaces={a: gymnasium.spaces.Box(-1.0, 1.0, (4,)) for a in names}, **common)
+
+
+@pytest.mark.parametrize("two_level", [False, True])
+def test_the_constructors_refuse_the_time_limit_bootstrap_with_the_mask(gates, two_level):
+    """QC S2 of step 4."""
+    with pytest.raises(ValueError, match="time_limit_bootstrap"):
+        _direct_agent(gates, two_level, time_limit_bootstrap=True)
+    _direct_agent(gates, two_level)                                   # off: builds
+
+
+def test_an_update_without_its_pre_pass_is_refused(gates):
+    """QC NIT of step 4: a direct update call (no pre-pass for this rollout) raises, never reads stale values."""
+    lrn = learner(gates, {"action": "velocity", "mask_absent": True})
+    _fill_rollout(lrn)
+    with pytest.raises(RuntimeError, match="pre-pass"):
+        lrn.agent.update(timestep=0, timesteps=1, uid=lrn.names[0])
+    _update_all(lrn)                                                   # through post_interaction: runs, then clears
+    assert lrn.agent._mask is None
+    with pytest.raises(RuntimeError, match="pre-pass"):
+        lrn.agent.update(timestep=0, timesteps=1, uid=lrn.names[0])
+
+
+def test_the_pins_cover_record_transition_and_post_interaction():
+    import hashlib
+    import inspect
+    from skrl.multi_agents.torch.ippo import IPPO
+    for f, want in ((IPPO.record_transition, masking.RECORD_TRANSITION_SHA256),
+                    (IPPO.post_interaction, masking.POST_INTERACTION_SHA256)):
+        assert hashlib.sha256(inspect.getsource(f).encode()).hexdigest() == want
+    masking.check_pins()

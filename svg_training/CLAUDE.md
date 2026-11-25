@@ -228,7 +228,7 @@ Other rows: AirStack simulator = Isaac Sim 5.1.0 + Pegasus + PX4 v1.16.1 in dock
 | `svg_training/configs/local/nus_*.toml` | NUS's rules, the deploy file (scale, hold), the hangar side: the files the NUS code reads | `scripts/nus_install_provisional.sh` installs the lab's copies from the PROVISIONAL bundle [nus_provisional/](nus_provisional/README.md) (owner decision 6, 18 Nov); or rebuild them with the commands in [TRAINING, NUS jobs](docs/TRAINING.md#nus-jobs) (needs NUS's code for the rules file) |
 | `svg_training/runs/nus_port/` | recordings, reference data, converted weights, Phase 4 rows (`scores.json`, videos) | weights, starts and recordings: the same installer; rows and videos: the records in `records/` and the figures (runs are not in git) |
 | `~/nus_jax_runs/` | logs and exact commands (`*.cmd.txt`) of every NUS job | TRAINING, NUS jobs |
-| the NUS-port worktree `~/AirStack-starling-max2-nus-port/` | branch `nus-port-phase2`, where Phase 4 runs (its `configs/local/` and `runs/` hold the data) | the merged `main` |
+| `svg_training/runs/nus_port/` in `~/AirStack-starling-max2-dev` | the Phase 4 and Phase 5 run data, moved there from the removed NUS-port worktrees (25 Nov 2026); NUS's `configs/local/` copies are in the same worktree | the merged `main` |
 
 Claude's user memory (`~/.claude/…`) and these private folders do **not** travel with git: everything a session
 needs is in this folder's committed files (HANDOFF first).

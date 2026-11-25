@@ -1,8 +1,8 @@
 INTERNAL · the latest status of STE's own learning track and the NUS port, overwritten at every update by the `train-status` skill · [../README.md](../README.md); the history: [LOG.md](LOG.md)
 
-**Status, 2026-11-25 05:55 (+08:00) (event: morning digest — L3–L6 pipeline check run end to end, both routes PIPELINE WORKS)** · RTX 5090 · GPU 0 % / 75 W / 1.2 of 32 GB · 0 training processes (0 paused)
+**Status, 2026-11-25 12:10 (+08:00) (event: automatic 3-D clip hook merged; owner: learner v2 before the route choice)** · RTX 5090 · GPU 0 % / 75 W / 1.2 of 32 GB · 0 training processes (0 paused)
 
-**Main track:** L3–L6 pipeline check DONE: both routes **PIPELINE WORKS** (T73–T89, INFO, two reviewers) · **Side track:** 3-D clips of every L5 run (owner's ask): rendered for all six runs, automatic post-run hook still owed; L2.6 tier-2 clips (done); test-suite flakes fixed (done)
+**Main track:** L3–L6 pipeline check DONE: both routes **PIPELINE WORKS** (T73–T89, INFO, two reviewers) · **Side track:** 3-D clips of every L5 run (owner's ask): rendered for all six runs; automatic post-run hook built and merged (on by default for training runs); L2.6 tier-2 clips (done); test-suite flakes fixed (done)
 
 ## Watch
 
@@ -10,7 +10,7 @@ INTERNAL · the latest status of STE's own learning track and the NUS port, over
 
 ![3-D view, Isaac Lab drawing of a tier-1 game: the trained skills Strike team reaches the zone against guard_mark_edge (L5.2, game 6)](../../records/evidence/2026-11-25_ste_l3_l6_pipeline/gifs3d/l52_skills_strike_worst_won_guard_mark_edge_game6_3d.gif)
 
-Every L5 run now also has 3-D clips in its run folder (`runs/<run>/videos3d/`, top view and 3-D view, MP4 + GIF; 68 clips, 0 failures), rendered by `scripts/ste_l5_clips3d.py` launched by hand after each run; the automatic post-run hook the owner asked for is still owed. Tier-1 games drawn in Isaac Lab; not a flight.
+Every L5 run now also has 3-D clips in its run folder (`runs/<run>/videos3d/`, top view and 3-D view, MP4 + GIF; 68 clips, 0 failures), rendered by `scripts/ste_l5_clips3d.py`. Since 25 Nov ~12:00 the job launcher starts it automatically after every finished training run of record (opt out `--no-post-clips3d`; state in `videos3d/HOOK_STATUS` and `ste_job.py status`); not yet run on the GPU with a real run. Tier-1 games drawn in Isaac Lab; not a flight.
 
 ## Morning digest (work done overnight, 03:15–05:55)
 
@@ -68,7 +68,7 @@ Worth a look:
 | L5.4 | Skills pool only: pilot + Guard (attribution) | DONE (T83, T85) | tier 1 | 812 |
 | L6.2 | Export and reload check | PASS (T86) | CPU | 4 exports |
 | L6.1 | Per-route reads and route comparison | INFO (T89) | CPU | both routes PIPELINE WORKS |
-| side task | 3-D clips of every L5 run (owner's ask) | rendered for all six runs; automatic post-run hook owed | tier-1 games drawn in Isaac Lab | 68 clips, `scripts/ste_l5_clips3d.py` |
+| side task | 3-D clips of every L5 run (owner's ask) | rendered for all six runs; automatic post-run hook merged (QC one reviewer, ACCEPT WITH FIXES, fixed) | tier-1 games drawn in Isaac Lab | 68 clips, `scripts/ste_l5_clips3d.py` |
 
 GPU-h in L3–L6 so far: 2.291 of 20 (RTX 5090 ledger; includes 0.189 for the 3-D clips, 0.138 renders + 0.051 smokes, charged to the L5 task caps). L1 + L2: 4.447 of 13 (incl. 0.008 for the L2.6 tier-2 clips tonight).
 
@@ -81,7 +81,7 @@ GPU-h in L3–L6 so far: 2.291 of 20 (RTX 5090 ledger; includes 0.189 for the 3-
 | R34 | bug re-runs allowance (owner ruling) | recorded; not used |
 | Suite | full suite on the final code (`026fc00c`) | PASS: 2,890 passed, 59 skipped, 0 failed (38 min). An earlier run tripped on a merge made while it ran (`test_timing` read HEAD twice; not a code fault) |
 
-**Next.** 1) The automatic post-run 3-D clip hook (the owner's ask; today a script launched by hand). 2) The owner's look at the pipeline-check read (record T73–T89). 3) What L7 should be (the owner's gate; nothing launches without it).
+**Next.** 1) The learner v2 note (observation v0.3, attention encoder, shared actor, team critic, league after NUS's archive self-play) for the owner, before any code: the owner chose to upgrade the learner before choosing a route (25 Nov). 2) A second short check on v2 from the 17.7 GPU-h left of the 20, announced with its cost before launch. 3) L7 waits on a chosen route and the runs of record (D4 open; nothing to decide now).
 
 **Waiting on you.**
 1. **The pipeline-check read** ([record](../../records/2026-11-25_ste_l3_l6_pipeline_record.md)): both routes work; which route(s) to take further, and with what budget.
@@ -89,4 +89,4 @@ GPU-h in L3–L6 so far: 2.291 of 20 (RTX 5090 ledger; includes 0.189 for the 3-
 
 **Usage:** GPU 2.30 GPU-h overnight (L3–L6 2.291, L2.6 clips 0.008); CPU jobs: ceiling, oracle check, scoring suite, held arm, exports, read, two full test suites; agents: one Opus builder (3-D clips, ~0.29 M tokens), six Sonnet reviewers (~0.47 M tokens), one Sonnet writer (~0.22 M tokens); advisor (Fable 5.2) three times (start, before done, final).
 
-**Ready to push.** 22 commits on `development` ahead of `origin/development` (this status commit included); mirror updated if clean; push from GitHub Desktop. `main` unchanged. They hold the run-0 mark fill, the oracle check, the flake fix, R34, the L2.6 tier-2 clips, the 3-D clip script, the reader fix, the L3–L6 record (T73–T89) and this status.
+**Ready to push.** The automatic 3-D clip hook and this status (commits after `3c51abe3`, which the owner pushed 25 Nov); mirror updated; push from GitHub Desktop. `main` unchanged.

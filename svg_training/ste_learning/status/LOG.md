@@ -13133,3 +13133,9 @@ GPU-h in L3–L6 so far: 2.291 of 20 (RTX 5090 ledger; includes 0.189 for the 3-
 **Usage:** GPU 2.30 GPU-h overnight (L3–L6 2.291, L2.6 clips 0.008); CPU jobs: ceiling, oracle check, scoring suite, held arm, exports, read, two full test suites; agents: one Opus builder (3-D clips, ~0.29 M tokens), six Sonnet reviewers (~0.47 M tokens), one Sonnet writer (~0.22 M tokens); advisor (Fable 5.2) three times (start, before done, final).
 
 **Ready to push.** 22 commits on `development` ahead of `origin/development` (this status commit included); mirror updated if clean; push from GitHub Desktop. `main` unchanged. They hold the run-0 mark fill, the oracle check, the flake fix, R34, the L2.6 tier-2 clips, the 3-D clip script, the reader fix, the L3–L6 record (T73–T89) and this status.
+
+## 2026-11-25 12:10
+
+**Status, 2026-11-25 12:10 (+08:00), event: automatic 3-D clip hook merged; owner chose learner v2 before the route choice** · RTX 5090 · nothing training
+
+Main track: L3–L6 pipeline check done; next the learner v2 note for the owner · Side track: automatic 3-D clip hook merged (on by default for training runs of record; QC one reviewer, fixes applied); clean-up of 45 worktrees and 52 branches (run data kept, copied by checksum into the dev worktree's `runs/`).

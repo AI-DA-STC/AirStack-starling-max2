@@ -4,13 +4,31 @@ INTERNAL · the lab's AI-assistant hand-over notes: where the work stands, what 
 
 > **How to use this file.** Read it at the start of a session, after [../../CLAUDE.md](../../CLAUDE.md).
 > §4 is the current state, §5 is what is waiting on people. Update both before you stop.
-> Last updated: 25 November 2026 ~05:00, on the home RTX 5090 (night: L3–L6 pipeline check done, both routes PIPELINE WORKS; before: 24 Nov ~18:20 late day: rulings R29–R33, L2.6 and the figure-eight check, L3 slice 2 merged; before: ~13:30 day: rulings R24–R28, AirStack set up, L1.4, L1.5, L2.5 done, L3 note v2; before: ~07:30 night run: L1 reads, L2.1/L2.3/L2.4; before: 23 Nov ~13:30 documentation clean-up), worktree `~/AirStack-starling-max2-dev` on branch `development`.
+> Last updated: 25 November 2026 ~12:10, on the home RTX 5090 (morning: clean-up, automatic 3-D clip hook, learner v2 first; before: night: L3–L6 pipeline check done, both routes PIPELINE WORKS; before: 24 Nov ~18:20 late day: rulings R29–R33, L2.6 and the figure-eight check, L3 slice 2 merged; before: ~13:30 day: rulings R24–R28, AirStack set up, L1.4, L1.5, L2.5 done, L3 note v2; before: ~07:30 night run: L1 reads, L2.1/L2.3/L2.4; before: 23 Nov ~13:30 documentation clean-up), worktree `~/AirStack-starling-max2-dev` on branch `development`.
 
 ## 0. Resume here (for a new session or another Claude account)
 
 Everything needed is in this folder; nothing depends on the previous chat. Claude's user memory (`~/.claude/…`) and
 the private NUS workspace (`~/ma_skills-self-play/`, 5090 only) do **not** travel with git: if this file and a memory
 note disagree, this file wins.
+
+### 25 November 2026 ~12:10 — RTX 5090 MORNING: CLEAN-UP, AUTOMATIC 3-D CLIP HOOK, OWNER CHOSE LEARNER v2 FIRST
+
+- **Owner's answers to the pipeline-check read:** upgrade the learner before choosing a route ("yes"); the 3-D clip hook
+  next. Next work: the learner v2 note (observation v0.3, attention encoder, shared actor, team critic, league after NUS's
+  archive self-play) brought to the owner before code; then a second short check on v2 from the 17.7 GPU-h left of the
+  20 (announced with its cost first). NEAR-962 is a gamepad data flight for the drone-model fit, needs no policy; L7 has
+  nothing to decide now (D4 open).
+- **Automatic 3-D clip hook merged** (branch `clips3d-hook`, `ste/post_run.py`): `ste_job.py launch` of the training
+  driver as a run of record (not `--pilot`, `--run0`, `verdict`) starts `scripts/ste_l5_clips3d.py` as its own recorded
+  job on exit 0 + complete run; opt out `--no-post-clips3d`; state in `<run>/videos3d/HOOK_STATUS` and `status`
+  (`clips3d=launched|pending|skipped|done|failed|missing`); retry `ste_job.py post-clips3d --run-dir <run>`. QC one
+  reviewer (ACCEPT WITH FIXES, all fixed). Not yet run on the GPU with a real run. Wait for `clips3d_<job>` before a
+  solo job (its preflight would exit 11).
+- **Clean-up (owner):** 45 worktrees and 52 local branches removed; GitHub branches `docs-5090-setup`,
+  `nus-port-phase2`, `docs/runbook-follow-through` deleted by the owner. All unique run data (1,849 files, ~3.2 GB,
+  incl. T79's ceiling and the NUS Phase 4/5 runs) copied by checksum into this worktree's `runs/` at the same paths
+  (one clash under `runs/_from_worktrees/`). Only `~/AirStack-starling-max2` (`main`) and `-dev` (`development`) remain.
 
 ### 25 November 2026 ~05:00 — RTX 5090 NIGHT: L3–L6 PIPELINE CHECK RUN END TO END, BOTH ROUTES PIPELINE WORKS (read this first)
 
@@ -23,7 +41,7 @@ note disagree, this file wins.
   run's own driver word is INCONCLUSIVE (176 v best script 192 v guard_mark_edge; all controls PASS; a real result, not
   re-run). Guard: velocity above skills on the pooled row (0.963 v 0.895). Strike: pooled rows level.
 - **Built and merged tonight:** `scripts/ste_l3_run0_ceiling.py --oracle-check`; `scripts/ste_l5_clips3d.py` (3-D clips of a
-  finished L5 run, launched by hand; 68 clips over six runs in `runs/2026-11-25_ste_l5_*/videos3d/`); the reader accepts a pilot that ran
+  finished L5 run, launched by hand that night (automatic since ~12:00); 68 clips over six runs in `runs/2026-11-25_ste_l5_*/videos3d/`); the reader accepts a pilot that ran
   before the fill step (`026fc00c`); the suite-flake fix (SIGINT ignored in background-launched suites). Each had one
   reviewer.
 - **L2.6 tier-2 clips** rendered on the fixed path: both tiers agree game for game; T71's record updated.
@@ -31,13 +49,12 @@ note disagree, this file wins.
   byte-identical); the full suite's first run tripped on a merge made while it ran (`test_timing` read HEAD twice).
 - **Rules learned:** launch L4.1/L4.2/L6.2 with `--run-dir` equal to the script's `--out` (the reader reads `exit_code`
   beside the output); never merge into `development` while the full suite or a run is going.
-- **Owed (small, no ruling needed):** the automatic post-run 3-D clip hook (the owner asked for "automatically"; today
-  `scripts/ste_l5_clips3d.py` is launched by hand per finished run); the stale "0.90" in the error string of
+- **Owed (small, no ruling needed):** (the automatic post-run 3-D clip hook: done ~12:00, entry above); the stale "0.90" in the error string of
   `scripts/ste_exploit_l012.py` (~line 188; shown only when a skills gate file has no mark; left so the driver's code
   stamp did not change mid-route); `scripts/ste_job.py status` prints only `budget_l1_l2`, not `[budget_l3_l4_l5_l6]`
   (tonight's L3–L6 hours were summed from `runs/shared/gpu_hours.log`). The ceiling of record and its oracle check
   (T79) now live in the dev worktree's `runs/`: the run0mark worktree was folded in and removed on 25 Nov (owner).
-- **Main track:** L3–L6 pipeline check done · **Side track:** the automatic 3-D clip hook (owed).
+- **Main track:** L3–L6 pipeline check done · **Side track:** the automatic 3-D clip hook (done ~12:00, entry above).
 - **Waiting on the owner:** the read of the pipeline check (which route(s) next, budget; L7 is the owner's gate); the
   planned-pushes flight NEAR-962; the Crazyflie commanded gaps. Nothing is running.
 

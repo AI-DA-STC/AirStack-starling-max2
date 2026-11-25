@@ -6,7 +6,7 @@ The STE learning track trains two drone teams for the area-denial game: the Guar
 Strike team tries to reach it. The *learned-skills route* is a way of training them in which the drones learn their own
 individual skills and their own team strategy, starting from the hand-written ones. It was adopted as the track's third
 route on 25 November 2026 ([DISCUSSION, R35](DISCUSSION_2026-11-19_20.md)). Its aim is a policy that is useful on
-the drones, not a pipeline check, and the plan sets no GPU-hour cap on it: each job states its hours before launch.
+the drones, not a pipeline check. No GPU-hour cap is ruled for the route; the settings file still carries 200 GPU-h for it because the launcher needs a number, each job is stopped at its own stated ask, and a single job above 5 GPU-h is announced before launch.
 The build was approved on 25 November 2026 and is in work. Nothing of it has been built, trained or flown yet.
 
 Terms used on this page:
@@ -19,6 +19,20 @@ Terms used on this page:
 - *Head*: the part of a policy that makes one choice. The *team head* chooses a team strategy or "free"; under "free",
   each drone's *drone head* chooses its own skill.
 - *Skill code*: a number that names one skill; the skill network reads it as an input.
+- *Skill network*: one learned network per team that flies any skill: it reads what the drone sees, its slot in the team
+  and a skill code, and outputs a velocity.
+- *Safety filter*: the hand-written step that keeps every pair of drones apart, the opponents' too, whatever the
+  policy asks.
+- *Tick*: one step of the game, 0.05 s.
+- *PPO*: the reinforcement-learning method the track uses; it makes the choices that came before wins more likely.
+- *ONNX*: a standard file format for a trained network, the one the export uses.
+- *Tier 1 / tier 2*: the fast training engine / the Isaac Lab drone simulator.
+- *Calibration read*: scripts played against deliberately changed scripts, to see which sizes of error a gate lets through.
+- *Equivalence read*: the copy played against the scripts on the same starts.
+- *Held-out*: not used in training, so a result on it is not a memorised one.
+- *Pipeline check (L3-L6)*: the earlier small run of the whole pipeline, to show that it works end to end; L7 and L8
+  are flight, in the AirStack simulator and on real drones.
+- *Run 0*: the first run of a head training, against a parked Guard team, used as the positive control.
 - *Gate*: a pass mark written before a run and never moved after it.
 - *Distil*: fit a network to imitate another behaviour.
 - *Self-play*: training a team against saved and present teams, not only against scripts (called LS4 on earlier
@@ -32,7 +46,7 @@ Terms used on this page:
 Read from top left to bottom right. The top band runs in every game, during training and after it; the middle band
 exists only in training; the bottom band is what comes out. Teal parts are learned, grey parts are hand-written and
 unchanged; the dashed arrow is teaching, used in training only. The learning step is a supervised copy of the
-scripts in LS1, then reinforcement learning (PPO) on the heads and, from LS2, on the skills.
+scripts in LS1, then reinforcement learning (PPO, see Terms) on the heads and, from LS2, on the skills.
 
 ## Three routes, one game
 
@@ -51,13 +65,14 @@ differ only in what turns a drone's view into a command.
 
 The skills route can never fly a movement that no script contains. Its ceiling is the best mix of scripts: in the
 L3–L6 pipeline check, the best fixed choice of the Strike team's skills reached the zone in 604 of 1,000 games against
-the parked Guard team, and the trained skills team reached it in 644 ([pipeline-check record](../records/2026-11-25_ste_l3_l6_pipeline_record.md),
-one seed, observed in the training simulator). The pure RL route can learn any movement but starts from random
+the parked Guard team. Run 0 (the positive control) reached 644 of 1,000 [0.614, 0.673] against 604 [0.573, 0.634]
+for the best fixed choice; the intervals overlap, and the Strike run of record did not learn (176 of 1,000)
+([pipeline-check record](../records/2026-11-25_ste_l3_l6_pipeline_record.md), one seed, observed in the training simulator). The pure RL route can learn any movement but starts from random
 flight and keeps no structure: its behaviour has no names to check, count or explain.
 
 The learned-skills route keeps the structure of the skills route (named skills, team strategies, two heads) and makes
-the skills themselves learnable. Every step starts from the exact behaviour of the step before, so no stage starts
-from random flight.
+the skills themselves learnable. Every step starts from the behaviour of the step before (for LS1, a copy within the gate's limits), so no
+stage starts from random flight.
 
 ## Five steps, in this order
 
@@ -69,7 +84,7 @@ LS3 are unchanged; self-play is the stage called LS4 League on earlier versions 
 | Step | What is learned | Starts from | Gate or expectation | GPU-hours |
 |---|---|---|---|---|
 | **LS1 Distil** | a copy of every script, as codes of one *skill network* per team | the scripts | the copy and the scripts play the same starts; the read counts the games that change, not only the difference in wins; the pass limits are set before the run from a calibration read | asks 0.9 |
-| **Head training** (job group LS1.4) | the heads again, on the skill network, for both teams | LS1 | scores about as the skills route's are the expected outcome; no new strategy is expected | asks 4.0 (two seeds per arm, clips included) |
+| **Head training** (job group LS1.4) | the heads again, on the skill network, for both teams | LS1 | scores about as the skills route's are the expected outcome; no new strategy is expected | asks 4.0 (two seeds per arm, clips included, a second seed of the skills route and a pilot) |
 | **LS2 Fine-tune** | the skills and the heads, in turns, with a tie that keeps each code near its script, weakened step by step | head training | to be written in its design note; proposed: above the best fixed mix of scripts, each code still recognisable | its design note |
 | **Self-play** | which code each drone gets, against saved and present teams | LS2 or, if the pilot shows room, head training | to be written in its design note; read against opponents never trained against, including new held-out scripts | its design note |
 | **LS3 Free codes** (last, an extension) | skill codes with no script, rewarded for being distinct and useful | self-play | to be written in its design note; proposed: the new codes are chosen and raise the worst result | its design note |
@@ -146,7 +161,7 @@ check both, against the best fixed mix of scripts and against opponents never tr
 - In the training simulator such a match is 1,000 games in seconds. A match against opponents the team never trained
   against is the held-out attacker test of the robustness suite. An opponent that wins can be added to the training
   pool of the next run.
-- Flight is phases L7 (AirStack simulator) and L8 (real drones), each gated by the owner. Nothing here has flown; real
+- Flight is phases L7 (AirStack simulator) and L8 (real drones), each needing a separate approval before flight. Nothing here has flown; real
   Starling games are one against one.
 
 ## What a useful policy still needs beyond this route
@@ -154,7 +169,7 @@ check both, against the best fixed mix of scripts and against opponents never tr
 | A useful policy needs | What this route gives | What is missing |
 |---|---|---|
 | Robustness to attackers it did not train against | the self-play step | a new build: the opponent pool takes script names only, so a saved team cannot be a training opponent today; the pool entry for saved teams does not exist yet |
-| A held-out test | nothing today: every Strike script is in the training pool | new scripts, two per side, written for it, outside the teachers' file and before self-play is designed |
+| A held-out test | nothing today: every Strike script is in the training pool | proposed: new scripts, two per side, written for it, outside the teachers' file and before self-play is designed |
 | Holding the team plan when a drone is lost | partly: one skill network is shared by a team's drones and is fitted with a drone absent | a shared actor (one policy shared by a team's drones) and training at drawn team sizes |
 | Training on the Isaac Lab drone (tier 2) | no: the route trains on the fast engine (tier 1) | a separate task: a tier-2 score of the trained team, then tier-2 training |
 
@@ -176,7 +191,7 @@ each skill network records a fingerprint of them.
 | Training driver's control | the control "the untrained team equals its first skill" compared on the skill network, not the script | head training |
 | Export and its reload check | the skill network as an ONNX file, and a reload check that accepts it | LS1, head training |
 | Reader | reads the head training: this route against the skills route, seed by seed | head training |
-| Pool entry for saved teams | a saved team as a training opponent | self-play (later) |
+| Pool entry for saved teams | a saved team as a training opponent | self-play pilot (built early) and the self-play stage |
 | Skill-level learner | trains the skills by the game reward, with the tie to the scripts | LS2 (later) |
 
 Self-play and LS2 are new builds; LS1 and the head training change existing pipeline files. Nothing in this table is
@@ -187,15 +202,16 @@ built yet.
 | Item | State |
 |---|---|
 | The route | adopted, 25 November 2026 |
-| GPU-hour cap | none; each job states its hours before launch |
-| Design review (two reviewers) | done, 25 November 2026 |
+| GPU-hour cap | no ruled cap; settings carry 200 GPU-h; per-job asks |
+| Independent design review | done, 25 November 2026 |
 | The build | approved, 25 November 2026; in work |
 | LS1 pass limits and the head-training margin | not set; set before any run, after the calibration read |
+| Held-out test: two new scripts per side | proposed; still an open question, asked with the self-play note |
 | Code and runs | none yet |
 | Execution workflow: what is added to the pipeline and which jobs run | third version, reviewed: [execution workflow](drafts/LS_EXECUTION_WORKFLOW.md) |
 
-Files: the workflow, [execution workflow](drafts/LS_EXECUTION_WORKFLOW.md); the task-level plan of LS1,
-[LS1 plan](drafts/LEARNED_SKILLS_BRIDGE_PLAN.md) (older than the workflow; where they differ the workflow applies);
+Files: the workflow, [execution workflow](drafts/LS_EXECUTION_WORKFLOW.md), and the older task-level
+[LS1 plan](drafts/LEARNED_SKILLS_BRIDGE_PLAN.md) (where they differ the workflow applies);
 the slides, [learned-skills route slides](figures/learned_skills_route.pptx) (editable PowerPoint flowcharts with
 speaker notes), drawn by [the deck script](../scripts/make_ste_learned_skills_deck.py), which also renders the
 pictures on this page.

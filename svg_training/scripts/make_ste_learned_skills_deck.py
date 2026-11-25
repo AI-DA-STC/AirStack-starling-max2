@@ -75,9 +75,10 @@ def slide_title(prs):
     s.notes_slide.notes_text_frame.text = (
         "The STE learning track trains Guard and Strike drone teams for the area-denial game. It has two routes "
         "today: pure RL and the skills route. This deck shows the third route, adopted on 25 November 2026: the "
-        "drones learn their own skills and their own team strategy, starting from the hand-written ones. The aim is "
-        "a policy that is useful on the drones, not a pipeline check, and the route has no GPU-hour cap: each job "
-        "states its hours before launch. The build was approved on 25 November 2026 and is in work; nothing has "
+        "drones learn their own skills and their own team strategy, starting from the hand-written ones. A skill "
+        "network is one learned network per team that flies any skill from a skill code; PPO is the "
+        "reinforcement-learning method; tier 1 is the fast training engine and tier 2 the Isaac Lab drone. The aim is "
+        "a policy that is useful on the drones, not a pipeline check. No GPU-hour cap is ruled for the route; the settings file still carries 200 GPU-h for it because the launcher needs a number, each job is stopped at its own stated ask, and a single job above 5 GPU-h is announced before launch. The build was approved on 25 November 2026 and is in work; nothing has "
         "been built, trained or flown yet.")
 
 
@@ -162,7 +163,7 @@ def slide_architecture(prs):
     link(s, gate, RIGHT, strike, LEFT)
     note(s, 9.0, 5.6, 3.8, 0.95, ["Each export: network files + a settings file;",
                                   "any opponent can face it. Real flight needs",
-                                  "the owner's approval. A proposed design:", "nothing built, trained or flown yet."],
+                                  "a separate approval. A proposed design:", "nothing built, trained or flown yet."],
          size=12, space_after=0)
     legend(s, 6.82)
     note(s, 4.3, 6.78, 8.6, 0.32, "Blue: Guard team · red: Strike team · amber: gate · dashed: teaching, in training only",
@@ -181,13 +182,13 @@ def slide_architecture(prs):
         "in LS2. It updates the heads' choices from the head training on and the skills from LS2; self-play adds "
         "saved teams as opponents, and LS3, last, adds new skill codes with no script. The bottom "
         "band is what comes out: when each team's gates pass, each team is exported on its own, heads plus skill "
-        "network, and any opponent that obeys the game's rules can face it. Real flight needs the owner's approval. "
+        "network, and any opponent that obeys the game's rules can face it. Real flight needs a separate approval. "
         "The build is approved and in work: nothing has been built, trained or flown yet.")
 
 
 def slide_routes(prs):
     s = new_slide(prs, "Three routes, one game")
-    lanes = [("Pure RL (velocity route)", 1.3), ("Skills route (built, L3)", 2.95), ("Learned-skills route (new)", 4.6)]
+    lanes = [("Pure RL (velocity route; built, L3)", 1.3), ("Skills route (built, L3)", 2.95), ("Learned-skills route (new)", 4.6)]
     for label, y in lanes:
         band(s, 0.45, y, 9.55, 1.5, label)
     w, h = 2.0, 0.8
@@ -281,12 +282,12 @@ def slide_stages(prs):
     note(s, 1.05, 5.95, 11.8, 0.9,
          ["Gate: pass marks written before the run. A step that fails stops the route there; every step before it is "
           "still a usable result.",
-          "Hours are asks, not results; no cap, each job states its hours before launch. LS1 and head training are "
-          "planned job by job."],
+          "Hours are asks, not results; no ruled cap (200 GPU-h in settings), each job stopped at its ask. LS1 and head "
+          "training are planned job by job."],
          size=12, color=DARK, space_after=0)
     s.notes_slide.notes_text_frame.text = (
-        "The order is LS1, head training, LS2, self-play, LS3. Each step starts from the exact behaviour of the one "
-        "before, so none starts from random flight. LS1 copies the hand-written scripts into one skill network per "
+        "The order is LS1, head training, LS2, self-play, LS3. Each step starts from the behaviour of the one "
+        "before (for LS1, a copy within the gate's limits), so none starts from random flight. LS1 copies the hand-written scripts into one skill network per "
         "team; its gate has the copy and the scripts play the same starts, counts the games that change and not "
         "only the difference in wins, and takes its pass limits from a calibration read made before the run. Head "
         "training, job group LS1.4, trains the heads again on the skill network, for both teams. The copy imitates "
@@ -294,9 +295,9 @@ def slide_stages(prs):
         "expected before LS2. LS2 trains the skills with the game reward while a tie keeps each skill near its "
         "script. Self-play is the stage called LS4 on earlier versions of the page. Its pool entry for saved teams "
         "is built early and a pilot runs right after head training; the full stage starts before LS2 only if the "
-        "pilot's three measurements show room, otherwise after LS2. LS3, free skill codes, comes last. The route has "
-        "no GPU-hour cap; each job states its hours before launch. LS1 asks 0.9 and head training asks 4.0, two "
-        "seeds per arm, clips included. These are asks, not results; later steps bring their own estimates.")
+        "pilot's three measurements show room, otherwise after LS2. LS3, free skill codes, comes last. "
+        "No GPU-hour cap is ruled for the route; the settings file still carries 200 GPU-h for it because the launcher needs a number, each job is stopped at its own stated ask, and a single job above 5 GPU-h is announced before launch. LS1 asks 0.9 and head training asks 4.0, two "
+        "seeds per arm, clips included, with a second seed of the skills route and a pilot. These are asks, not results; later steps bring their own estimates.")
 
 
 def slide_decision(prs):
@@ -372,8 +373,8 @@ def slide_strategy(prs):
         "Nobody writes the strategy. The team gives out skill codes, thousands of games are played, and the "
         "learning step makes the choices that came before wins more likely. Self-play closes the loop: when one "
         "team finds a pattern that wins, the other team's training adapts to it, which pushes the first team to "
-        "something new. Example: against a decoy attack, a Guard team that holds its ring while one Strike charges "
-        "alone wins more, so that rule grows; no script says it. A new strategy may also not appear, and the gates "
+        "something new. A possible example: against a decoy attack, a Guard team that holds its ring while one Strike "
+        "charges alone might win more, so that rule could grow; no script says it. A new strategy may also not appear, and the gates "
         "are there to tell.")
 
 
@@ -401,21 +402,21 @@ def slide_after(prs):
     note(s, 0.6, 6.0, 12.2, 0.95,
          ["The Strike team is exported the same way and is tested against hand-written Guards in the mirror match.",
           "A policy reads only positions and velocities: any player that obeys the game's rules can face it. "
-          "Flight is phases L7 and L8, gated by the owner; nothing here has flown."],
+          "Flight is phases L7 and L8, each needing a separate approval; nothing here has flown."],
          size=13, color=DARK, space_after=3)
     s.notes_slide.notes_text_frame.text = (
         "Training gives two separate exports, one per team, each the two heads plus the skill network as ONNX "
         "files. Either can be used alone. A policy reads only positions and velocities, so it does not know what "
         "flies the other team: a hand-written script, outside code, a trained team, or in flight a hand-flown "
         "drone. In the training simulator a match is a thousand games in seconds; an opponent that wins joins the "
-        "training pool for the next run. Flight stays gated by the owner.")
+        "training pool for the next run. Flight needs a separate approval for each phase.")
 
 
 def slide_needs(prs):
     s = new_slide(prs, "What a useful policy still needs beyond this route")
     rows = [
         ("Self-play against saved teams", "the opponent pool takes script names only: a pool entry for saved teams is a new build"),
-        ("A held-out test", "new scripts, two per side, written for it: every current Strike script is in the training pool"),
+        ("A held-out test", "proposed: new scripts, two per side, written for it: every current Strike script is in the training pool"),
         ("Holding the team plan when a drone is lost", "a shared actor and training at drawn team sizes"),
         ("Training on the Isaac Lab drone (tier 2)", "a separate task: this route trains on the fast engine (tier 1)"),
     ]
@@ -428,7 +429,7 @@ def slide_needs(prs):
          "the wider track goal.", size=13, color=DARK, bold=True)
     s.notes_slide.notes_text_frame.text = (
         "Four things a useful policy needs that the route does not give by itself. Self-play needs a pool that can "
-        "hold saved teams: today the pool takes script names only, so this is a new build. A held-out test needs new "
+        "hold saved teams: today the pool takes script names only, so this is a new build. A held-out test, still only proposed, needs new "
         "scripts written for it, because every current Strike script is in the training pool. Holding the team plan "
         "when a drone is lost needs a shared actor. Training on the Isaac Lab drone, tier 2, is a separate task.")
 
@@ -437,8 +438,8 @@ def slide_status(prs):
     s = new_slide(prs, "Where it stands")
     rows = [
         ("The route", "adopted, 25 November 2026"),
-        ("GPU-hours", "no cap; each job states its hours before launch"),
-        ("Design review", "done, two reviewers"),
+        ("GPU-hours", "no ruled cap; settings carry 200 GPU-h; per-job asks"),
+        ("Design review", "independent, done 25 November 2026"),
         ("The build", "approved 25 November 2026; in work"),
         ("Code and runs", "none yet"),
         ("Still to be set", "LS1 pass limits and the head-training margin, after the calibration read"),
@@ -449,8 +450,8 @@ def slide_status(prs):
         node(s, ALT, 3.9, y, 8.8, 0.66, body, fill=LIGHT, text_color=INK, size=14)
     note(s, 0.6, 6.4, 12.1, 0.5, "Nothing has been built, trained or flown.", size=15, color=DARK, bold=True)
     s.notes_slide.notes_text_frame.text = (
-        "The route was adopted on 25 November 2026. It has no GPU-hour cap; every job states its hours before "
-        "launch. The design review by two reviewers is done, and the build was approved the same day and is in work. "
+        "The route was adopted on 25 November 2026. "
+        "No GPU-hour cap is ruled for the route; the settings file still carries 200 GPU-h for it because the launcher needs a number, each job is stopped at its own stated ask, and a single job above 5 GPU-h is announced before launch. The independent design review is done, and the build was approved the same day and is in work. "
         "There is no code and there are no runs yet. The LS1 pass limits and the head-training margin are set after "
         "the calibration read, before any run. Nothing has been built, trained or flown.")
 

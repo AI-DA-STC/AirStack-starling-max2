@@ -731,9 +731,21 @@ def test_the_report_plays_its_own_seed_net_flown(dg, cfg, strike_report_rows):
     rows, seconds = strike_report_rows
     assert bool(rows.net_flown.all()) and seconds > 0
     # its starts are none of the rounds' (the report's seed, its own pool stream: design check of M2)
+    starts = rows.obs[(rows.tick == 0) & (rows.episode == 0)]        # first games only (later ones restart)
     for r in range(len(dg.dagger["script_share"])):
         other = _collect(dg, cfg, "strike", 1, seed=dg.data["seed"], pool_seed=dg.data["pool_seed"], round_index=r)
-        assert not torch.equal(other.obs, rows.obs[rows.tick == 0]), r
+        assert other.obs.shape == starts.shape and not torch.equal(other.obs, starts), r
     want = pool.pool_draw(distil.round_seed(dg.report["seed"], 0, "pool"), rows.game.long(), rows.episode.long(),
                           len(pool.pool_members(dg.skills_gates.players, "guard")))
     assert torch.equal(rows.opponent.long(), want), "the report's opponents come from [report] seed"
+
+
+def test_the_final_report_takes_the_gate_files_sizes(dg, cfg):
+    """``final_report`` under --smoke: [smoke] games and ticks, [report] seed and hold bins, the fit report's keys."""
+    rep = distil.final_report(dg, "guard", _tiny(dg, cfg, "guard"), "cpu", smoke=True)
+    assert set(rep) == FINAL_KEYS and tuple(distil.FINAL_KEYS) == tuple(rep)
+    edges = dg.report["hold_bins_ticks"]
+    assert list(rep["rmse_by_hold_bin"]) == [f"{lo}-{hi}" for lo, hi in zip(edges, edges[1:])]
+    assert all(rep["rmse_by_hold_bin"][f"{lo}-{hi}"] is None for lo, hi in zip(edges, edges[1:])
+               if lo >= dg.smoke["ticks"])
+    json.dumps(rep, allow_nan=False)

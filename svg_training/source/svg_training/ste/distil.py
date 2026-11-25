@@ -775,13 +775,27 @@ def row_error(net, rows: Rows, device) -> Tensor:
     return _per_chunk(net, rows, device, lambda cmd, label: ((cmd - label) ** 2).mean(dim=(1, 2)).sqrt(), ())
 
 
+def _mean_std(obs: Tensor) -> tuple[Tensor, Tensor]:
+    """obs [R, D] on the CPU -> its mean and population std [D] (float64 sums in chunks of :data:`EVAL_ROWS` rows, two
+    passes; no float64 copy of the whole aggregate on the device), as float32."""
+    r = obs.shape[0]
+    total = torch.zeros(obs.shape[1], dtype=torch.float64)
+    for start in range(0, r, EVAL_ROWS):
+        total += obs[start:start + EVAL_ROWS].double().sum(dim=0)
+    mean = total / r
+    sq = torch.zeros_like(total)
+    for start in range(0, r, EVAL_ROWS):
+        sq += ((obs[start:start + EVAL_ROWS].double() - mean) ** 2).sum(dim=0)
+    return mean.float(), (sq / r).sqrt().float()
+
+
 def fit(net, rows: Rows, epochs: int, lr: float, batch: int, seed: int, device,
         should_stop: Callable[[], bool] | None = None, check: Callable[..., None] | None = None, *,
         std_floor: float) -> dict:
     """Fit ``net`` (a :class:`skill_net.SkillNet`) to the rows' labels, in place; returns ``{"loss": [per epoch]}``.
 
     The rows (obs, slot, label) move to ``device`` once. The normaliser is the rows' mean and standard deviation
-    (population, float64, the std floored at ``std_floor``, the gate file's ``[net] std_floor``). Adam at ``lr``; each
+    (population, float64 sums on the CPU, the std floored at ``std_floor``, the gate file's ``[net] std_floor``). Adam at ``lr``; each
     epoch a shuffle from a CPU ``torch.Generator`` seeded ``seed`` (the order does not depend on the device), minibatches
     of ``batch`` rows, each expanded to rows x K codes; loss = mean squared error over the K codes x 4 channels of
     ``forward(..., clip=False)`` (a clamp gives zero gradient on overshoot). An epoch's loss is the row-weighted mean of
@@ -794,10 +808,10 @@ def fit(net, rows: Rows, epochs: int, lr: float, batch: int, seed: int, device,
     if rows.label.shape[1:] != (net.k, skill_net.COMMAND_DIM):
         raise ValueError(f"the labels are {tuple(rows.label.shape[1:])}, the net has {net.k} codes")
     dev = torch.device(device)
+    mean, std = _mean_std(rows.obs)
     obs, slot, label = rows.obs.to(dev), rows.slot.to(dev), rows.label.to(dev)
-    std, mean = torch.std_mean(obs.double(), dim=0, correction=0)
     net.to(dev)
-    net.set_normaliser(mean.float(), std.float(), std_floor)
+    net.set_normaliser(mean.to(dev), std.to(dev), std_floor)
     net.train()
     net.requires_grad_(True)
     opt = torch.optim.Adam(net.parameters(), lr=float(lr))

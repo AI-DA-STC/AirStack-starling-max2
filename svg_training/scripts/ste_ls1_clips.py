@@ -574,6 +574,9 @@ def main(argv=None) -> int:
             asks[k] = est["ask_gpu_h"]
             return est
         count, _, fits = fit_to_cap(a.picks_per_side, cap, ask_of)
+        for k in range(MIN_PICKS_PER_SIDE, a.picks_per_side + 1):
+            if k not in asks:                    # the ask at every count, for the lead (OQ-4)
+                ask_of(k)
         p = plan(reads, count)
     except Refused as err:
         say(f"refused: {err}")

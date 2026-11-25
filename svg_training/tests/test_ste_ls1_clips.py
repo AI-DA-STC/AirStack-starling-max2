@@ -310,6 +310,9 @@ def test_plan_only_writes_nothing_and_refusals_exit_2(oracle_reads, drawn, tmp_p
     text = "\n".join(lines)
     assert f"batch replays: {est['batch_replays']}" in text and f"ask --gpu-h {est['ask_gpu_h']:.2f}" in text
     assert "CPU" in text and f"cap {cli.task_cap_gpu_h():g}" in text
+    ask_line = next(x for x in lines if "ask by picks per side:" in x)
+    for k in range(cli.MIN_PICKS_PER_SIDE, cli.DEFAULT_PICKS_PER_SIDE + 1):
+        assert f"{k}: {cli.plan([cli.load_read(r['folder'], [r['net']]) for r in (guard, strike)], k)['estimate']['ask_gpu_h']:.2f}" in ask_line
 
     def refused(argv, where=None):
         code, _ = _main(argv)

@@ -78,7 +78,7 @@ def slide_title(prs):
         "drones learn their own skills and their own team strategy, starting from the hand-written ones. A skill "
         "network is one learned network per team that flies any skill from a skill code; PPO is the "
         "reinforcement-learning method; tier 1 is the fast training engine and tier 2 the Isaac Lab drone. The aim is "
-        "a policy that is useful on the drones, not a pipeline check. No GPU-hour cap is ruled for the route; the settings file still carries 200 GPU-h for it because the launcher needs a number, each job is stopped at its own stated ask, and a single job above 5 GPU-h is announced before launch. The build was approved on 25 November 2026 and is in work; nothing has "
+        "a policy that is useful on the drones, not a pipeline check. The route has no GPU-hour cap, by decision; the settings file still carries 200 GPU-h for it because the launcher needs a number, each job is stopped at its own stated ask, and a single job above 5 GPU-h is announced before launch. The build was approved on 25 November 2026 and is in work; nothing has "
         "been built, trained or flown yet.")
 
 
@@ -282,7 +282,7 @@ def slide_stages(prs):
     note(s, 1.05, 5.95, 11.8, 0.9,
          ["Gate: pass marks written before the run. A step that fails stops the route there; every step before it is "
           "still a usable result.",
-          "Hours are asks, not results; no ruled cap (200 GPU-h in settings), each job stopped at its ask. LS1 and head "
+          "Hours are asks, not results; no cap, by decision (200 GPU-h in settings), each job stopped at its ask. LS1 and head "
           "training are planned job by job."],
          size=12, color=DARK, space_after=0)
     s.notes_slide.notes_text_frame.text = (
@@ -296,7 +296,7 @@ def slide_stages(prs):
         "script. Self-play is the stage called LS4 on earlier versions of the page. Its pool entry for saved teams "
         "is built early and a pilot runs right after head training; the full stage starts before LS2 only if the "
         "pilot's three measurements show room, otherwise after LS2. LS3, free skill codes, comes last. "
-        "No GPU-hour cap is ruled for the route; the settings file still carries 200 GPU-h for it because the launcher needs a number, each job is stopped at its own stated ask, and a single job above 5 GPU-h is announced before launch. LS1 asks 0.9 and head training asks 4.0, two "
+        "The route has no GPU-hour cap, by decision; the settings file still carries 200 GPU-h for it because the launcher needs a number, each job is stopped at its own stated ask, and a single job above 5 GPU-h is announced before launch. LS1 asks 0.9 and head training asks 4.0, two "
         "seeds per arm, clips included, with a second seed of the skills route and a pilot. These are asks, not results; later steps bring their own estimates.")
 
 
@@ -438,7 +438,7 @@ def slide_status(prs):
     s = new_slide(prs, "Where it stands")
     rows = [
         ("The route", "adopted, 25 November 2026"),
-        ("GPU-hours", "no ruled cap; settings carry 200 GPU-h; per-job asks"),
+        ("GPU-hours", "none, by decision; settings carry 200 GPU-h; per-job asks"),
         ("Design review", "independent, done 25 November 2026"),
         ("The build", "approved 25 November 2026; in work"),
         ("Code and runs", "none yet"),
@@ -451,7 +451,7 @@ def slide_status(prs):
     note(s, 0.6, 6.4, 12.1, 0.5, "Nothing has been built, trained or flown.", size=15, color=DARK, bold=True)
     s.notes_slide.notes_text_frame.text = (
         "The route was adopted on 25 November 2026. "
-        "No GPU-hour cap is ruled for the route; the settings file still carries 200 GPU-h for it because the launcher needs a number, each job is stopped at its own stated ask, and a single job above 5 GPU-h is announced before launch. The independent design review is done, and the build was approved the same day and is in work. "
+        "The route has no GPU-hour cap, by decision; the settings file still carries 200 GPU-h for it because the launcher needs a number, each job is stopped at its own stated ask, and a single job above 5 GPU-h is announced before launch. The independent design review is done, and the build was approved the same day and is in work. "
         "There is no code and there are no runs yet. The LS1 pass limits and the head-training margin are set after "
         "the calibration read, before any run. Nothing has been built, trained or flown.")
 

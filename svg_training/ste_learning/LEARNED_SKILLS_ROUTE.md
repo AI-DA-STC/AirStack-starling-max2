@@ -6,7 +6,7 @@ The STE learning track trains two drone teams for the area-denial game: the Guar
 Strike team tries to reach it. The *learned-skills route* is a way of training them in which the drones learn their own
 individual skills and their own team strategy, starting from the hand-written ones. It was adopted as the track's third
 route on 25 November 2026 ([DISCUSSION, R35](DISCUSSION_2026-11-19_20.md)). Its aim is a policy that is useful on
-the drones, not a pipeline check. No GPU-hour cap is ruled for the route; the settings file still carries 200 GPU-h for it because the launcher needs a number, each job is stopped at its own stated ask, and a single job above 5 GPU-h is announced before launch.
+the drones, not a pipeline check. The route has no GPU-hour cap, by decision; the settings file still carries 200 GPU-h for it because the launcher needs a number, each job is stopped at its own stated ask, and a single job above 5 GPU-h is announced before launch.
 The build was approved on 25 November 2026 and is in work. Nothing of it has been built, trained or flown yet.
 
 Terms used on this page:
@@ -202,7 +202,7 @@ built yet.
 | Item | State |
 |---|---|
 | The route | adopted, 25 November 2026 |
-| GPU-hour cap | no ruled cap; settings carry 200 GPU-h; per-job asks |
+| GPU-hour cap | none, by decision; settings carry 200 GPU-h; per-job asks |
 | Independent design review | done, 25 November 2026 |
 | The build | approved, 25 November 2026; in work |
 | LS1 pass limits and the head-training margin | not set; set before any run, after the calibration read |

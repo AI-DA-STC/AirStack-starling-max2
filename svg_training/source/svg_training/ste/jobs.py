@@ -27,6 +27,12 @@ by hand: ``bash <run folder>/cmd.txt``; see :func:`relaunch_line`),
 (touched by the wrapper every beat: its modification time is when the job was last seen alive), ``launches.jsonl``
 (one line per launch and per end). A GPU job (``gpu_h`` above 0) also gets one line per beat in the GPU-hour ledger.
 
+**Post-run 3-D clips** (STE L5, ``ste/post_run.py``). A job launched with ``post_clips3d`` (``launch --post-clips3d``)
+has its wrapper start ``scripts/ste_l5_clips3d.py`` as its own recorded job after the command exited 0 and left a
+complete run (``results.json`` complete, ``agent_final.pt``); the outcome is in ``<run folder>/videos3d/HOOK_STATUS``.
+The hook runs after the exit code and the last ledger line are written and cannot change them; the clips job
+(``clips3d_for`` in its ``job.json``) writes its own end into that file. Both keys live in ``job.json`` only.
+
 **Wait.** Blocks until the job is no longer alive, by the test of ``ste/state.py`` (pid, start time, boot id, of the
 wrapper or of the command); it never looks at process names or command lines, so a waiter whose own command line
 names the job cannot match itself. Then one line::
@@ -163,13 +169,17 @@ def owner_pause_lines() -> list[str]:
 
 # ================================================================================================ launch
 def launch(task: str, name: str, run_dir: Path | str, cmd: list[str], expected_min_s: float, gpu_h: float,
-           settings: Path | str = SETTINGS_FILE, beat_s: float = BEAT_S, cwd: Path | str | None = None) -> dict[str, Any]:
+           settings: Path | str = SETTINGS_FILE, beat_s: float = BEAT_S, cwd: Path | str | None = None,
+           post_clips3d: bool = False, clips3d_for: Path | str | None = None) -> dict[str, Any]:
     """Start ``cmd`` detached behind the wrapper and record the job. Returns its ``state.json`` record.
 
     ``task``: the task ID the job belongs to. ``name``: the job's name (letters, digits, ``.``, ``_``, ``-``).
     ``run_dir``: its run folder. ``expected_min_s``: the shortest effective duration, in seconds, a real finish can
     have (the waiter flags a shorter one). ``gpu_h``: GPU-hours asked for; 0 for a CPU job. ``settings``: the track's
     settings file (caps). ``beat_s``: seconds between heartbeats. ``cwd``: where the command runs (default: here).
+    ``post_clips3d``: after a 0 exit and a complete run, start the run's 3-D clips as their own job (``ste/post_run.py``).
+    ``clips3d_for``: set by that hook on the clips job: the training run folder whose ``videos3d/HOOK_STATUS`` this
+    job's end updates. Both are kept in ``job.json`` and ``cmd.txt`` (``state.json`` keeps its fixed keys).
     """
     if not _NAME.fullmatch(name):
         raise LaunchRefused(f"job name {name!r}: use letters, digits, '.', '_' and '-' only")
@@ -179,6 +189,9 @@ def launch(task: str, name: str, run_dir: Path | str, cmd: list[str], expected_m
         raise LaunchRefused(f"the expected minimum duration must be 0 or more seconds, got {expected_min_s!r}")
     if not (math.isfinite(beat_s) and beat_s > 0):
         raise LaunchRefused(f"the beat must be above 0 seconds, got {beat_s!r}")
+    if post_clips3d and clips3d_for is not None:
+        raise LaunchRefused("a clips job (clips3d_for) never starts clips of its own (post_clips3d)")
+    clips_for = None if clips3d_for is None else str(Path(clips3d_for).resolve())
     run_dir = Path(run_dir).resolve()
     _check_shared_folder(run_dir)                                # before anything reads or makes the shared folder
     owners = owner_pause_lines()                                 # the session's own pauses (by "lead") do not block
@@ -225,10 +238,13 @@ def launch(task: str, name: str, run_dir: Path | str, cmd: list[str], expected_m
         environment = {key: os.environ[key] for key in RECORDED_ENV if key in os.environ}
         atomic.write_text(run_dir / JOB_FILE, json.dumps(dict(record, name=name, beat_s=float(beat_s),
                                                               settings=str(settings), env=environment,
-                                                              shared_dir=str(_shared_folder())), indent=1) + "\n")
+                                                              shared_dir=str(_shared_folder()),
+                                                              post_clips3d=bool(post_clips3d), clips3d_for=clips_for),
+                                                         indent=1) + "\n")
         again = [sys.executable, str(WRAPPER_SCRIPT), "launch", "--task", task, "--name", name, "--run-dir", str(run_dir),
                  "--min-s", repr(float(expected_min_s)), "--gpu-h", repr(float(gpu_h)), "--settings", str(settings),
-                 "--beat-s", repr(float(beat_s)), "--", *cmd]
+                 "--beat-s", repr(float(beat_s)), *(["--post-clips3d"] if post_clips3d else []),
+                 *(["--clips3d-for", clips_for] if clips_for is not None else []), "--", *cmd]
         atomic.write_text(run_dir / CMD_FILE, f"# launch {number} of job {name} (task {task}); run it with bash: it "
                                               f"sets or unsets {', '.join(RECORDED_ENV)} as at this launch\n"
                                               f"{relaunch_line(cwd, again, environment)}\n")
@@ -445,8 +461,22 @@ def run_wrapper(run_dir: Path | str) -> int:
             beat(clock())
     ended_s = clock()
     beat(ended_s)
-    record_end(code if code >= 0 else SIGNAL_EXIT_BASE - code, ended_s, signal.Signals(-code).name if code < 0 else None)
+    exit_code = code if code >= 0 else SIGNAL_EXIT_BASE - code
+    record_end(exit_code, ended_s, signal.Signals(-code).name if code < 0 else None)
+    _post_run(run_dir, record, exit_code)
     return EXIT_DONE
+
+
+def _post_run(run_dir: Path, record: dict[str, Any], exit_code: int) -> None:
+    """The post-run step (``ste/post_run.py``), after the exit code and the last ledger line are written. Any error is
+    said in ``job.log`` and swallowed: the job's exit code and results stand whatever the hook does."""
+    if not (record.get("post_clips3d") or record.get("clips3d_for")):
+        return
+    try:
+        from . import post_run                                   # here, not at the top: post_run imports this module
+        post_run.after_end(run_dir, record, exit_code, _say)
+    except Exception as err:                                     # noqa: BLE001  (never the job's outcome)
+        _say(f"[ste job] post-run clips3d FAILED: {type(err).__name__}: {err} (the job's exit code {exit_code} stands)")
 
 
 # ================================================================================================ wait
@@ -572,6 +602,17 @@ def status_lines() -> list[str]:
         began = datetime.datetime.fromtimestamp(job["started"]).astimezone().isoformat(timespec="seconds")
         count, _ = _faults(job)
         noted = f"  faults={count}" if count else ""
+        noted += _clips_note(job, recorded)
         lines.append(f"{name}  {job['task']}  {word}  exit={shown}{noted}  pid={job['pid']} launch={job['launch']} "
                      f"started={began} gpu_h={job['gpu_h']} run_dir={job['run_dir']}")
     return lines
+
+
+def _clips_note(job: dict[str, Any], recorded: dict[str, dict[str, Any]]) -> str:
+    """``  clips3d=<state>`` for a run with a post-run clips marker (``ste/post_run.py``), else nothing."""
+    try:
+        from . import post_run
+        found = post_run.hook_state(Path(job["run_dir"]), recorded)
+    except Exception:                                            # a note only: never the status's failure
+        return ""
+    return "" if found is None else f"  clips3d={found}"

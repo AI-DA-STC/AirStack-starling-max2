@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """Launch a job detached, wait for it, list jobs (STE learning track, task L0.7). Linux only, standard library only.
 
-    python scripts/ste_job.py launch --task L0.11 --name <job> --run-dir runs/<folder> --min-s <seconds> --gpu-h <hours> -- <command ...>
+    python scripts/ste_job.py launch --task L0.11 --name <job> --run-dir runs/<folder> --min-s <seconds> --gpu-h <hours> [--post-clips3d] -- <command ...>
     python scripts/ste_job.py wait <job>
     python scripts/ste_job.py status
     python scripts/ste_job.py carry --gpu-h <hours> --note "<machine> <date>"
     python scripts/ste_job.py owner-pauses
+    python scripts/ste_job.py post-clips3d --run-dir runs/<folder>
 
 launch   starts <command ...> detached (its own session; output appended to <run-dir>/job.log) behind a thin wrapper
          that records the command's own exit code in <run-dir>/exit_code, and records the job (pid, process start
@@ -21,6 +22,14 @@ launch   starts <command ...> detached (its own session; output appended to <run
          sets or unsets PYTHONPATH, CUDA_VISIBLE_DEVICES, PYTORCH_CUDA_ALLOC_CONF, SVG_SHARED_DIR and
          SVG_PAUSE_LEGACY_LOGS as at the first launch. A relaunch with another shared folder than the run folder
          recorded is refused.
+         --post-clips3d (STE L5 training runs; the logic: the ste package's post-run module): when the command
+         exits 0 and its run folder holds a complete results.json and agent_final.pt, the wrapper starts
+         scripts/ste_l5_clips3d.py --run-dir <run-dir> as its own recorded job (clips3d_<job>, run folder <run-dir>/videos3d, the same task and
+         settings, --gpu-h 0.1, --min-s 30), so its GPU-hours are logged against the run's task cap. It never waits:
+         an open owner pause, a busy GPU (scripts/isaac_preflight.sh --approved-headless --allow-siblings) or the cap
+         leave "pending" in <run-dir>/videos3d/HOOK_STATUS with the retry line; any hook error is a job.log line. The
+         job's own exit code and results are written first and never changed. --clips3d-for is set by the hook on the
+         clips job itself (it then writes its end into that run's HOOK_STATUS); not for hand use.
 wait     blocks until the job has ended, prints one line
              <task> <job> <VERDICT> exit=<code> duration=<s>s effective=<s>s
          and exits with the JOB'S exit code. Verdicts: DONE (0), REFUSED (2), CAP (3), INTERRUPTED (4), NONFINITE (5),
@@ -30,7 +39,8 @@ wait     blocks until the job has ended, prints one line
          the progress.json it saves with each checkpoint), not on its last launch; DIED when the job is gone and
          recorded no exit code (own status 21).
          An unknown job name: status 22, nothing on stdout. The waiter's own failure (state.json unreadable): 23.
-status   one line per job: alive | alive (paused) | alive (wrapper gone) | dead | dead (previous boot), the exit code.
+status   one line per job: alive | alive (paused) | alive (wrapper gone) | dead | dead (previous boot), the exit code;
+         clips3d=<launched/running/pending/skipped/done/failed> for a run with a post-run clips marker.
          faults=<n> (in wait's line and in status) counts bookkeeping writes the wrapper had to retry (a full disk,
          any error): the job was not harmed by them; details in <run-dir>/job.json and job.log. A last line gives the
          budget section in work: used (this machine's ledger rows + carried hours) of its cap.
@@ -42,6 +52,10 @@ carry    one ledger per machine, one cap for both (the 13.0 of L1 + L2 is shared
 owner-pauses  lists the open pauses that are not the lead's own (not tagged GPU_PAUSE_BY=lead), one line each; exit
          0 if there is none, 2 if there is one. scripts/gpu_pause.sh runs it before a resume or stop tagged
          GPU_PAUSE_BY=lead and refuses while an owner pause is open (never end a pause the session did not make).
+
+post-clips3d  the post-run 3-D clip hook again, by hand, for a finished run folder whose clips are pending (the line
+         HOOK_STATUS gives): the same checks (exit code 0, complete run, no owner pause, the preflight, the cap). Exit
+         0 if the clips job was launched, 2 otherwise (the reason is printed and written to HOOK_STATUS).
 
 A job is told apart by pid, process start time and boot id, never by its name or command line. To stop a job with a
 checkpoint, send SIGINT to the recorded pid (the wrapper passes it on) or use scripts/gpu_pause.sh stop. Logic and the
@@ -67,7 +81,7 @@ SEPARATOR = "--"
 def parse(argv: list[str] | None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     commands = parser.add_subparsers(dest="command", required=True,
-                                     metavar="{launch,wait,status,carry,owner-pauses}")
+                                     metavar="{launch,wait,status,carry,owner-pauses,post-clips3d}")
     launch = commands.add_parser("launch", help="start a command detached and record the job")
     launch.add_argument("--task", required=True, help="task ID, as in configs/ste_learning.toml (L1.9)")
     launch.add_argument("--name", required=True, help="job name: letters, digits, . _ -")
@@ -76,6 +90,9 @@ def parse(argv: list[str] | None) -> argparse.Namespace:
     launch.add_argument("--gpu-h", required=True, type=float, help="GPU-hours asked for; 0 for a CPU job")
     launch.add_argument("--settings", type=Path, default=SETTINGS_FILE, help="the track's settings file (caps)")
     launch.add_argument("--beat-s", type=float, default=jobs.BEAT_S, help="seconds between heartbeats")
+    launch.add_argument("--post-clips3d", action="store_true",
+                        help="after a 0 exit and a complete run, start its 3-D clips as their own job (STE L5 runs)")
+    launch.add_argument("--clips3d-for", type=Path, default=None, help=argparse.SUPPRESS)   # set by the hook only
     launch.add_argument("cmd", nargs=argparse.REMAINDER, help="-- then the command and its arguments")
     wait = commands.add_parser("wait", help="block until a job has ended; exit with its exit code")
     wait.add_argument("name")
@@ -87,6 +104,8 @@ def parse(argv: list[str] | None) -> argparse.Namespace:
     carry.add_argument("--note", required=True, help="the machine and the date, as \"rtx5090 2026-11-24\"")
     carry.add_argument("--settings", type=Path, default=SETTINGS_FILE, help="the track's settings file (caps)")
     commands.add_parser("owner-pauses", help="list the open owner pauses; exit 2 if there is one")
+    clips = commands.add_parser("post-clips3d", help="start a finished run's pending 3-D clips (the post-run hook)")
+    clips.add_argument("--run-dir", required=True, type=Path, help="the finished training run folder")
     wrapper = commands.add_parser(jobs.WRAPPER_COMMAND)             # the wrapper: started by launch, not by hand
     wrapper.add_argument("run_dir", type=Path)
     args = parser.parse_args(argv)                                  # a bad argument exits 2, which is EXIT_REFUSED
@@ -111,7 +130,7 @@ def run(args: argparse.Namespace) -> int:
         cmd = args.cmd[1:] if args.cmd[:1] == [SEPARATOR] else args.cmd
         try:
             job = jobs.launch(args.task, args.name, args.run_dir, cmd, args.min_s, args.gpu_h, settings=args.settings,
-                              beat_s=args.beat_s)
+                              beat_s=args.beat_s, post_clips3d=args.post_clips3d, clips3d_for=args.clips3d_for)
         except jobs.LaunchRefused as err:
             print(f"refused: {err}", file=sys.stderr)
             return EXIT_REFUSED
@@ -125,6 +144,9 @@ def run(args: argparse.Namespace) -> int:
             return jobs.EXIT_NO_SUCH_JOB
         print(outcome.line, flush=True)
         return outcome.status
+    if args.command == "post-clips3d":
+        from svg_training.ste import post_run
+        return post_run.retry(args.run_dir)
     if args.command == "owner-pauses":
         lines = jobs.owner_pause_lines()
         print("\n".join(lines or ["no owner pause is open"]))

@@ -184,7 +184,7 @@ Items 1 and 2 were built in L0.7 (20 Nov 2026); see §7. Kept for the record:
 ## 7. The tooling as built (task L0.7, 20 Nov 2026)
 
 Code: `source/svg_training/ste/` (`shared.py`, `pauses.py`, `state.py`, `atomic.py`, `run_contract.py`, `budget.py`,
-`jobs.py`), `scripts/ste_job.py`, `scripts/ste_dummy_job.py`, `scripts/gpu_pause.sh`. Tests: `tests/test_ste_*.py`,
+`jobs.py`, `post_run.py`), `scripts/ste_job.py`, `scripts/ste_dummy_job.py`, `scripts/gpu_pause.sh`. Tests: `tests/test_ste_*.py`,
 `tests/test_gpu_pause.py`. Linux only. Standard library only.
 
 | Piece | What it does |
@@ -195,6 +195,7 @@ Code: `source/svg_training/ste/` (`shared.py`, `pauses.py`, `state.py`, `atomic.
 | Trainer contract | the same command resumes from its last checkpoint; SIGINT or SIGTERM saves and exits; a non-finite value never overwrites the last good checkpoint; the cap counts effective time (time a pause stopped this job excluded) |
 | GPU-hour ledger | used GPU-hours per task and per phase from `gpu_hours.log` (CUDA intervals less the time a pause stopped that job); `launch` refuses a job over the task or phase cap of `configs/ste_learning.toml`; a relaunch of the same job in the same run folder is not charged again for hours it already logged, but a new run folder under an old job name is a new run and gets no credit |
 | Launcher and waiter | `scripts/ste_job.py launch / wait / status`; `launch` refuses while an owner pause is open (a pause tagged `GPU_PAUSE_BY=lead` is the session's own and does not block); `bash <run>/cmd.txt` relaunches with the first launch's `PYTHONPATH`, `CUDA_VISIBLE_DEVICES`, `PYTORCH_CUDA_ALLOC_CONF`, `SVG_SHARED_DIR` and `SVG_PAUSE_LEGACY_LOGS`, each set to the same value or unset as it was; a relaunch with another shared folder than the run folder recorded is refused |
+| Post-run 3-D clips (L5) | `launch --post-clips3d` (put it on every L5 training launch line): when the command exits 0 and its run folder holds a complete `results.json` and `agent_final.pt`, the wrapper launches `scripts/ste_l5_clips3d.py --run-dir <run>` as its own job `clips3d_<job>` (run folder `<run>/videos3d`, the run's task cap, `--gpu-h 0.1`, `--min-s 30`; ledger rows like any GPU job). It never waits and never changes the run's exit code: an open owner pause, a busy GPU (preflight) or the cap leave `pending` in `<run>/videos3d/HOOK_STATUS` with the retry line `scripts/ste_job.py post-clips3d --run-dir <run>`; `status` shows `clips3d=<state>`. Code: `ste/post_run.py`; tests: `tests/test_ste_post_clips3d.py` |
 
 **Exit codes** (`ste/run_contract.py`): 0 done; 2 refused to start; 3 stopped at its cap; 4 interrupted (SIGINT or
 SIGTERM); 5 non-finite value; 6 a control with a known answer failed (CONTROL_FAILED: terminal, never retried; a

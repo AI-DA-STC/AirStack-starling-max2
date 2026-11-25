@@ -9,9 +9,18 @@ ste_learning/drafts/LS1_TASK_PLAN.md, section 0 constraint 5; created in task LS
   float lies off the 0.001 grid and is written with two significant digits, so no round number (PROPOSED or the
   owner's) can coincide with one, and the partner-privacy value scan (three or more significant digits) never matches.
 * ``reading_block``: a ``[reading]`` TOML block filled from ``STAND_IN``.
+* ``net_gates_text`` (task LS1-M1-T4): the one writer of a net gate file's text in every route 3 test (C4's keys
+  added to a two-level gate file's text); ``READING_IN_NET_FILES`` says whether it appends ``reading_block()``
+  (False until LS1-M4-T1, which sets it True: until then the loaders refuse an unknown ``[reading]`` section).
+* ``TIER2_PLAYERS``, ``TIER2_TWO_LEVEL``: what makes ``configs/ste_l013/gates.toml`` a two-level tier-2 gate file (the
+  text of tests/test_ste_l3_tier2.py, copied: test modules are not imported).
+* ``tiny_learner_saved``: a tiny learner's ``saved()`` dict for whatever route the gate file holds (the recipe of
+  tests/test_ste_l3_export.py ``tiny_learner``, copied: that module skips itself without onnxruntime).
 
 CPU only."""
 import hashlib
+import json
+import re
 from pathlib import Path
 
 import torch
@@ -22,6 +31,32 @@ from svg_training.ste import exploit, exploit_train, skill_net, skills
 ROOT = Path(__file__).resolve().parents[1]
 SKILLS_GATES = ROOT / "configs" / "ste_l3" / "skills_gates.toml"
 STD_FLOOR = 0.0029                       # synthetic meta value (the real one is distil_gates.toml [net] std_floor)
+READING_IN_NET_FILES = False             # LS1-M4-T1 sets this True (its [reading] section is then required)
+CHOICE_ANCHOR = re.compile(r'^choice = "two_level".*$', re.MULTILINE)   # the whole line, its comment included
+HOLD = 12                                # the tiny learner's decision ticks (tests/test_ste_l3_export.py)
+
+TIER2_PLAYERS = """
+[players]
+guards = ["guard_parked_centre", "guard_parked_ring", "guard_mark_edge", "guard_mirror", "guard_field"]
+strikes = ["strike_straight", "strike_flank", "strike_high", "strike_low", "strike_sacrifice", "strike_converge"]
+"""
+TIER2_TWO_LEVEL = """
+[learner]
+action = "skills"
+choice = "two_level"
+
+[learner.team_strategies]
+strike = ["strike_sacrifice", "strike_converge"]
+guard = ["guard_parked_ring", "guard_field"]
+
+[learner.drone_skills]
+strike = ["strike_straight", "strike_flank", "strike_high", "strike_low"]
+guard = ["guard_parked_centre", "guard_mark_edge", "guard_mirror"]
+
+[learner.entropy_scale]
+team = 0.01
+drone = 0.01
+"""
 
 STAND_IN = {
     "limits": {                          # distil_gates.toml [limits] (LS1-M2-T1)
@@ -122,3 +157,40 @@ def reading_block() -> str:
     """A ``[reading]`` TOML block (LS1-M4-T1's keys) filled from ``STAND_IN``."""
     lines = ["[reading]"] + [f"{k} = {_toml_value(v)}" for k, v in STAND_IN["reading"].items()]
     return "\n".join(lines) + "\n"
+
+
+def after_choice_line(base_text: str, lines: str) -> str:
+    """``base_text`` with ``lines`` inserted after the whole line ``choice = "two_level"`` (which must occur exactly
+    once)."""
+    found = list(CHOICE_ANCHOR.finditer(base_text))
+    assert len(found) == 1, f'the line choice = "two_level" occurs {len(found)} times, not once'
+    end = found[0].end()
+    return base_text[:end] + "\n" + lines.rstrip("\n") + base_text[end:]
+
+
+def net_gates_text(base_text: str, nets: dict) -> str:
+    """A net gate file's text (C4): ``base_text`` (a two-level gate file's text) with ``skill_source = "net"`` after
+    its ``choice = "two_level"`` line and a ``[learner.skill_net]`` table of ``nets`` {side: (file, sha256)} appended
+    at the end (a table header after the choice line would take the keys that follow it, ``mask_absent`` in
+    skills_gates.toml); then ``reading_block()`` when ``READING_IN_NET_FILES``."""
+    text = after_choice_line(base_text, 'skill_source = "net"')
+    table = ["", "[learner.skill_net]"] + [f"{side} = {{ file = {json.dumps(str(f))}, sha256 = {json.dumps(str(s))} }}"
+                                           for side, (f, s) in nets.items()]
+    text = text.rstrip("\n") + "\n" + "\n".join(table) + "\n"
+    if READING_IN_NET_FILES:
+        text += "\n" + reading_block()
+    return text
+
+
+def tiny_learner_saved(gates, side) -> dict:
+    """``Learner.saved()`` of a tiny learner of ``side`` on ``gates`` (whatever route it holds: scripts or a net), after
+    one update: base variant, 6 games of 3v3, CPU (the recipe of tests/test_ste_l3_export.py ``tiny_learner``)."""
+    cfg = exploit.variant_cfg(gates, "base")
+    game = exploit_train.TrainGame(cfg, 6, 3, 3, device="cpu", seed=7)
+    opp = make_strategy(exploit.opponent_of(gates, "base", side), "strike" if side == "guard" else "guard", cfg, 6,
+                        "cpu", 8)
+    env = exploit_train.decision_env(game, HOLD, side, opp, gates.learner, gates.players, 7)
+    settings = {**gates.trainer, "num_games": 6, "rollouts": 2, "learning_epochs": 1, "mini_batches": 1}
+    learner = exploit_train.Learner(settings, env, "cpu", seed=11)
+    learner.update()
+    return learner.saved()

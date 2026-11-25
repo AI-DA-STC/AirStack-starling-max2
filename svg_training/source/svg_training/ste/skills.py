@@ -10,6 +10,11 @@ lists in that order). What flies is the chosen skill's own command.
 * :class:`SkillDispatch`: runs all K skills on the batch every tick and gathers the chosen one per drone.
 * :func:`require_velocity_learner`: what every driver that builds a ``DecisionEnv`` or a team directly calls on its gate
   file, so that a skills gate file is refused (exit 2) until that driver is wired, never trained as velocity silently.
+* Route 3, stage LS1 (task LS1-M1-T4; plan ste_learning/drafts/LS1_TASK_PLAN.md, contracts C4 and C5): ``[learner]
+  skill_source = "scripts" | "net"`` (absent: "scripts", every route as before) for ``choice = "two_level"`` only, and
+  with "net" a ``[learner.skill_net]`` table, ``{strike, guard} = {file, sha256}``. :func:`two_level_dispatch` then
+  returns a :class:`NetTwoLevelDispatch`: the same lists and heads, the commands from the team's skill network
+  (``ste/skill_net.py``) instead of the scripts.
 
 **Hold rule (v2, A1 / B1).** A choice is made every decision (12 ticks = 0.6 s); the chosen skill runs closed loop every
 tick in between (it reads the current observation and decides every 0.05 s, as a script does). Training
@@ -29,7 +34,9 @@ Shapes: N games, M drones of the team, K skills, D observation width; choices ar
 from __future__ import annotations
 
 import math
+import re
 from dataclasses import dataclass
+from pathlib import Path
 
 import torch
 from torch import Tensor
@@ -37,6 +44,7 @@ from torch import Tensor
 from ..core.game_config import GameCfg
 from ..core.observations import ObsView
 from ..opponents.scripted import make_strategy
+from . import skill_net
 
 VELOCITY, SKILLS = "velocity", "skills"
 ACTIONS = (VELOCITY, SKILLS)                    # [learner] action
@@ -51,6 +59,12 @@ FREE = 0                                        # the team head's index of "free
 TEAM_PLAYERS = {"guard": "guards", "strike": "strikes"}    # the gate file's [players] list of each team = its skills
 _V = ObsView()
 ALIVE_FLAG_MIN = 0.5                            # the observation's own-alive flag is 0 or 1 (scripted.py reads it so)
+SCRIPTS_SOURCE, NET_SOURCE = "scripts", "net"   # route 3 (LS1-M1-T4): what flies a chosen skill
+SKILL_SOURCES = (SCRIPTS_SOURCE, NET_SOURCE)    # [learner] skill_source (choice = "two_level" only; absent: "scripts")
+SOURCE_KEYS = ("skill_source", "skill_net")     # the [learner] keys of route 3
+NET_ENTRY_KEYS = ("file", "sha256")             # [learner.skill_net] <side> = { file, sha256 }
+FILL_PREFIX = "FILL_"                           # a sha256 not filled yet (= exploit.FILL_MARK, pinned by a test)
+_SHA256_HEX = re.compile(r"[0-9a-f]{64}")       # a sha256 as hashlib writes it
 
 
 @dataclass(frozen=True)
@@ -64,6 +78,8 @@ class LearnerSpec:
     drone_skills: dict | None = None
     entropy_scale: dict | None = None
     mask_absent: bool = False                   # L3 slice 3: the absent-drone mask (velocity and two_level only)
+    skill_source: str = SCRIPTS_SOURCE          # route 3 (LS1-M1-T4): SKILL_SOURCES; "net" for two_level only
+    skill_net: dict | None = None               # with "net": {side: {"file": str, "sha256": str}} (C4)
 
     @property
     def skills(self) -> bool:
@@ -77,7 +93,7 @@ def learner_spec(table: dict | None) -> LearnerSpec:
         return LearnerSpec(VELOCITY, None)
     if not isinstance(table, dict):
         raise ValueError("[learner] must be a table")
-    unknown = sorted(set(table) - {"action", "choice", "mask_absent", *TWO_LEVEL_KEYS})
+    unknown = sorted(set(table) - {"action", "choice", "mask_absent", *TWO_LEVEL_KEYS, *SOURCE_KEYS})
     if unknown:
         raise ValueError(f"unknown key(s) in [learner]: {unknown}")
     action = table.get("action", VELOCITY)
@@ -86,6 +102,8 @@ def learner_spec(table: dict | None) -> LearnerSpec:
     mask = table.get("mask_absent", False)
     if not isinstance(mask, bool):
         raise ValueError(f"[learner] mask_absent: true or false, got {mask!r}")
+    if any(k in table for k in SOURCE_KEYS) and (action == VELOCITY or table.get("choice") != TWO_LEVEL):
+        raise ValueError(f"[learner] skill_source and skill_net belong to choice = \"{TWO_LEVEL}\" only")
     if action == VELOCITY:
         if "choice" in table:
             raise ValueError("[learner] choice belongs to the skills route only (action = \"skills\")")
@@ -102,7 +120,39 @@ def learner_spec(table: dict | None) -> LearnerSpec:
             raise ValueError(f"[learner] mask_absent belongs to the velocity route and choice = \"{TWO_LEVEL}\" only")
         return LearnerSpec(SKILLS, choice)
     spec = _two_level_spec(table)
-    return LearnerSpec(spec.action, spec.choice, spec.team_strategies, spec.drone_skills, spec.entropy_scale, mask)
+    source, nets = _source_spec(table)
+    return LearnerSpec(spec.action, spec.choice, spec.team_strategies, spec.drone_skills, spec.entropy_scale, mask,
+                       skill_source=source, skill_net=nets)
+
+
+def _source_spec(table: dict) -> tuple[str, dict | None]:
+    """Route 3 (C4): ``skill_source`` (absent: "scripts") and, with "net" only, ``[learner.skill_net]``: exactly the
+    two sides, each exactly {file: a non-empty string, sha256: 64 lowercase hex or a ``FILL_`` mark}."""
+    source = table.get("skill_source", SCRIPTS_SOURCE)
+    if source not in SKILL_SOURCES:
+        raise ValueError(f"[learner] skill_source must be one of {SKILL_SOURCES}, got {source!r}")
+    if source == SCRIPTS_SOURCE:
+        if "skill_net" in table:
+            raise ValueError(f"[learner.skill_net] belongs to skill_source = \"{NET_SOURCE}\" only")
+        return source, None
+    if "skill_net" not in table:
+        raise ValueError(f"[learner] skill_source = \"{NET_SOURCE}\" needs [learner.skill_net] (both sides)")
+    sub = table["skill_net"]
+    if not isinstance(sub, dict) or sorted(sub) != sorted(SIDE_KEYS):
+        raise ValueError(f"[learner.skill_net] must have exactly the keys {list(SIDE_KEYS)}")
+    nets = {}
+    for side in SIDE_KEYS:
+        entry = sub[side]
+        if not isinstance(entry, dict) or sorted(entry) != sorted(NET_ENTRY_KEYS):
+            raise ValueError(f"[learner.skill_net] {side} must have exactly the keys file and sha256")
+        file, sha = entry["file"], entry["sha256"]
+        if not isinstance(file, str) or not file:
+            raise ValueError(f"[learner.skill_net] {side}: file must be a non-empty string, got {file!r}")
+        if not isinstance(sha, str) or not (_SHA256_HEX.fullmatch(sha) or sha.startswith(FILL_PREFIX)):
+            raise ValueError(f"[learner.skill_net] {side}: sha256 must be 64 lowercase hex or a {FILL_PREFIX} mark, "
+                             f"got {sha!r}")
+        nets[side] = {"file": file, "sha256": sha}
+    return source, nets
 
 
 class LearnerNotWired(ValueError):
@@ -296,29 +346,82 @@ class TwoLevelDispatch(SkillDispatch):
         return self.resolve_two_level(choice, obs)[0]
 
 
+class NetTwoLevelDispatch(TwoLevelDispatch):
+    """Route 3 (LS1-M1-T4, C5): the two-level dispatch flown by the team's skill network. The lists, heads, ``greedy``
+    and ``resolve`` are the parent's (the scripts are still built); the commands come from ``net``
+    (``skill_net.SkillNet`` of ``team``, its skills = this team's ``[players]`` list in order): ``commands`` = every
+    code for every drone, ``act`` = each drone's chosen code. The team size is checked at each call
+    (``obs.shape[1] == net.team_size``, ValueError "team size")."""
+
+    skill_source = NET_SOURCE
+
+    def __init__(self, team: str, players: list[str], team_strategies: list[str], drone_skills: list[str], cfg: GameCfg,
+                 num_games: int, device, seed: int, net, net_sha256: str | None):
+        super().__init__(team, players, team_strategies, drone_skills, cfg, num_games, device, seed)
+        if net.team != team:
+            raise ValueError(f"the skill network is the {net.team} team's, the dispatch the {team} team's")
+        if tuple(net.skills) != tuple(self.names):
+            raise ValueError(f"the skill network's skills {list(net.skills)} are not the [players] list {self.names}")
+        self.net, self.skill_net_sha256 = net, net_sha256
+
+    def commands(self, obs: Tensor) -> Tensor:
+        """obs [N, M, D] -> every code's command [N, M, K, 4] from the network."""
+        return skill_net.all_codes(self.net, obs)
+
+    def act(self, obs: Tensor, choice: Tensor) -> Tensor:
+        """obs [N, M, D], choice [N, M] (resolved) -> the chosen code's command [N, M, 4] from the network."""
+        return skill_net.one_code(self.net, obs, choice.to(torch.long))
+
+
+def net_file(entry: dict) -> Path:
+    """The file of a ``[learner.skill_net]`` entry: a relative path from the ``svg_training/`` root, an absolute one as
+    is (C4)."""
+    path = Path(entry["file"])
+    return path if path.is_absolute() else skill_net.ROOT / path
+
+
 def two_level_dispatch(spec: LearnerSpec, players: dict, team: str, cfg: GameCfg, num_games: int, device,
                        seed: int) -> TwoLevelDispatch:
-    """The ``TwoLevelDispatch`` of ``team`` from a two-level spec and the gate file's ``[players]``."""
-    return TwoLevelDispatch(team, team_skills(players, team), list(spec.team_strategies[team]),
-                            list(spec.drone_skills[team]), cfg, num_games, device, seed)
+    """The ``TwoLevelDispatch`` of ``team`` from a two-level spec and the gate file's ``[players]``; with
+    ``skill_source = "net"`` (route 3, C5) a :class:`NetTwoLevelDispatch` on the side's network, which is refused
+    (ValueError) when its sha256 is not filled yet, or when the file's sha256, format, team, skills, the scripts'
+    sha256 or the game constants of ``cfg`` differ (``skill_net.load_skill_net``)."""
+    lists = (team_skills(players, team), list(spec.team_strategies[team]), list(spec.drone_skills[team]))
+    if spec.skill_source != NET_SOURCE:
+        return TwoLevelDispatch(team, *lists, cfg, num_games, device, seed)
+    entry = spec.skill_net[team]
+    if entry["sha256"].startswith(FILL_PREFIX):
+        raise ValueError(f"[learner.skill_net] {team}: sha256 not filled yet ({entry['sha256']!r}); refused")
+    net, _ = skill_net.load_skill_net(net_file(entry), team=team, skills=lists[0], cfg=cfg, device=device,
+                                      file_sha256=entry["sha256"])
+    return NetTwoLevelDispatch(team, *lists, cfg, num_games, device, seed, net, entry["sha256"])
 
 
 def skills_meta(dispatch: SkillDispatch) -> dict:
     """What a mixed-route checkpoint carries so that a reload can refuse other skill lists (design §4): the team, the
-    ordered player list, the choice mode and, two-level only, the two lists and the index of "free"."""
+    ordered player list, the choice mode and, two-level only, the two lists and the index of "free". A net-flown
+    dispatch (route 3) adds ``skill_source`` "net" and the network file's sha256; the scripts route has neither key."""
     two = getattr(dispatch, "two_level", False)
-    return {"team": dispatch.team, "players": list(dispatch.names), "choice": dispatch.choice,
+    meta = {"team": dispatch.team, "players": list(dispatch.names), "choice": dispatch.choice,
             "team_strategies": list(dispatch.team_strategies) if two else None,
             "drone_skills": list(dispatch.drone_skills) if two else None, "free_index": FREE if two else None}
+    if getattr(dispatch, "skill_source", SCRIPTS_SOURCE) == NET_SOURCE:
+        meta.update(skill_source=NET_SOURCE, skill_net_sha256=dispatch.skill_net_sha256)
+    return meta
 
 
 def learner_table(spec: LearnerSpec) -> dict | None:
     """The two-level ``[learner]`` table as plain data (route, both lists, entropy scales): what pilot.json and a skills
     run 0's learner_control.json record, and what a run of record compares (L3 slice 2; run 0 for the skills route).
-    None for the velocity route and slice 1's single-head modes."""
+    None for the velocity route and slice 1's single-head modes. A net (route 3) adds ``skill_source`` "net" and
+    ``skill_net_sha256`` {"guard", "strike"}; the scripts route's dict is today's, key for key."""
     if not spec.skills or spec.choice != TWO_LEVEL:
         return None
-    return {"action": spec.action, "choice": spec.choice,
-            "team_strategies": {k: list(v) for k, v in spec.team_strategies.items()},
-            "drone_skills": {k: list(v) for k, v in spec.drone_skills.items()},
-            "entropy_scale": dict(spec.entropy_scale), "mask_absent": bool(spec.mask_absent)}
+    table = {"action": spec.action, "choice": spec.choice,
+             "team_strategies": {k: list(v) for k, v in spec.team_strategies.items()},
+             "drone_skills": {k: list(v) for k, v in spec.drone_skills.items()},
+             "entropy_scale": dict(spec.entropy_scale), "mask_absent": bool(spec.mask_absent)}
+    if spec.skill_source == NET_SOURCE:
+        table.update(skill_source=NET_SOURCE,
+                     skill_net_sha256={side: spec.skill_net[side]["sha256"] for side in ("guard", "strike")})
+    return table

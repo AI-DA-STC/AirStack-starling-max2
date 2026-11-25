@@ -140,6 +140,11 @@ def load_gates(path: str | Path = GATES_FILE) -> Tier2Gates:
     # STE L3: an optional [learner] table. Slice 3 (step 5) wires choice = "two_level" into the Guard-side L0.13 arms;
     # slice 1's flat modes are still refused here (velocity, or no table: as before)
     learner = exploit.skills.learner_spec(data.get("learner"))
+    if learner.skill_source == exploit.skills.NET_SOURCE:   # route 3 (LS1-M1-T4, OP-8): tier 2 flies the scripts only
+        raise exploit.skills.LearnerNotWired(
+            f"[learner] skill_source = \"{exploit.skills.NET_SOURCE}\" is not wired into ste/tier2_train.py "
+            f"(scripts/ste_tier2_l013.py) (route 3 stage LS1 flies a skill network in tier 1 only); refused, nothing "
+            f"trained or played")
     if learner.skills and learner.choice != exploit.skills.TWO_LEVEL:
         exploit.skills.require_velocity_learner(learner, "ste/tier2_train.py (scripts/ste_tier2_l013.py)")
     parts = {name: _exact(data.get(name), keys, name) for name, keys in _SECTIONS.items()}

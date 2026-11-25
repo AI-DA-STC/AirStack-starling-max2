@@ -673,6 +673,11 @@ def test_the_skill_net_export_refuses_exit_2(tiny_skill_net, tmp_path, capsys, m
     refused(_export_net(tmp_path / "none.pt", side, tmp_path / "o3"), "no skill network file", tmp_path / "o3")
     off_game = _resaved(net, meta, tmp_path / "off_game", game_sha256="0" * 64)      # the meta's game sha is off
     refused(_export_net(off_game, side, tmp_path / "o4"), "game_sha256", tmp_path / "o4")
+    with monkeypatch.context() as mp:           # the sha is compared before the game file is loaded at all
+        def no_load(path):
+            raise AssertionError("the game file was loaded before its sha256 was checked")
+        mp.setattr(exploit, "load_game_cfg_file", no_load)
+        refused(_export_net(off_game, side, tmp_path / "o4b"), "game_sha256", tmp_path / "o4b")
     off_scripts = _resaved(net, meta, tmp_path / "off_scripts", scripted_sha256="0" * 64)   # skill_net.net_problems
     refused(_export_net(off_scripts, side, tmp_path / "o5"), "scripted_sha256", tmp_path / "o5")
     refused(cli.main(["--skill-net", str(path), "--side", side, "--out", str(tmp_path / "o6"), "--games", "0"]),
@@ -685,6 +690,8 @@ def test_the_skill_net_export_refuses_exit_2(tiny_skill_net, tmp_path, capsys, m
         assert exc.value.code == 2
         assert why in capsys.readouterr().err
     assert not (tmp_path / "o7").exists()
+    refused(cli.main(["--run-dir", str(tmp_path), "--side", side, "--out", str(tmp_path / "o9")]),
+            "--side is for --skill-net only", tmp_path / "o9")
 
     def no_runtime(folder):
         raise reader.Refused("the reload check cannot run in this environment (no onnxruntime)")

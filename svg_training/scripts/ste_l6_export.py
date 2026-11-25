@@ -150,6 +150,9 @@ def export_skill_net(path: Path, side: str | None, out: Path, games: int) -> int
     if not game_path.is_file():
         return refuse(f"{path}: its game file {meta['game_file']} is missing")
     game_sha = exploit.sha256_file(game_path)
+    if game_sha != meta["game_sha256"]:         # before the file is loaded: a changed file may not load at all
+        return refuse(f"{path}: game_sha256: the network's {meta['game_sha256']}, its game file "
+                      f"{meta['game_file']} on disk {game_sha} (the game changed since the network was made)")
     cfg = exploit.load_game_cfg_file(game_path)
     team_size = int(meta["guards"] if side == "guard" else meta["strikes"])
     sha = exploit.sha256_file(path)

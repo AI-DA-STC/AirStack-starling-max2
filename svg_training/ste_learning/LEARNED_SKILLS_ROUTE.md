@@ -142,11 +142,12 @@ setting, `[learner] skill_source = "net"`, swaps the scripts for the skill netwo
 | Item | State |
 |---|---|
 | The route | adopted, 25 November 2026 (R35) |
-| LS1 budget (about 1 GPU-hour from the L3–L6 pipeline-check cap) | not decided |
-| Order against the next learner version | not decided; proposed: LS1 beside it, LS2 onwards on it |
-| Design review of the plan (two reviewers) | not started |
+| LS1 budget (1.0 GPU-hour from the L3–L6 pipeline-check cap) | approved, 25 November 2026 (R36) |
+| Order against the next learner version | LS1 is built first (R37); LS2 onwards proposed on the next learner version |
+| Design review of the plan and the workflow (two reviewers) | next; no code before it |
+| LS1 pass limits | set by the owner after a noise-floor read, before any run (R38) |
 | Code, runs | none |
-| Execution workflow: what is added to the pipeline and which jobs run | draft for the owner's review: [drafts/LS_EXECUTION_WORKFLOW.md](drafts/LS_EXECUTION_WORKFLOW.md) |
+| Execution workflow: what is added to the pipeline and which jobs run | draft, second version, checked against the code: [drafts/LS_EXECUTION_WORKFLOW.md](drafts/LS_EXECUTION_WORKFLOW.md) |
 
 Files: the plan, [drafts/LEARNED_SKILLS_BRIDGE_PLAN.md](drafts/LEARNED_SKILLS_BRIDGE_PLAN.md) (LS1 task by task, LS2 to
 LS4 as outlines); the slides, [figures/learned_skills_route.pptx](figures/learned_skills_route.pptx) (editable

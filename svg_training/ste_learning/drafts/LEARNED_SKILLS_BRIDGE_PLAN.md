@@ -3,7 +3,11 @@ INTERNAL · DRAFT plan for a third route of the STE learning track, the learned-
 # Learned-skills route ("the bridge"): execution plan (draft, 25 Nov 2026)
 
 Written 25 Nov 2026 by the lead (a Fable 5.2 session; the advisor tool was not available, so no second opinion yet).
-Not reviewed. Before any code: the owner's answers to 9.2 and 9.3, then a design review by two reviewers (R22).
+Not reviewed. Before any code: the owner's answers to 9.2 and 9.3 (given 25 Nov 2026, R36 and R37), then a design
+review by two reviewers (R22). **Corrections found against the code on 25 Nov 2026 are in
+[LS_EXECUTION_WORKFLOW.md](LS_EXECUTION_WORKFLOW.md) section 6 and take precedence over this file where they differ**
+(the budget table, the cell count of section 8, the device of the equivalence read, the per-team skill network file,
+the noise-floor read, the clips).
 
 > **For the builder (`ste-software-engineer`, in its own worktree cut from `development`):** stage LS1 below is
 > task by task, tests first, steps as checkboxes. It follows [PLAN §6](../PLAN.md) (design check, develop, gate
@@ -465,10 +469,12 @@ if the owner agrees (9.2). It does not take the hours planned for the second sho
 1. **Adopt the learned-skills route as a third route**, beside pure RL and today's skills route, with the name above?
    **RULED 25 Nov 2026 (R35): adopted.** The ruling covers the route only: no GPU hour and no later stage.
 2. **LS1 budget:** 1.0 GPU-h, charged to the L3–L6 cap as tasks LS1.1 to LS1.3?
+   **RULED 25 Nov 2026 (R36): yes.**
 3. **Order against learner v2:** recommended: LS1 now, beside the v2 note (it needs only the scripts and a
-   supervised fit); LS2 onwards on learner v2.
+   supervised fit); LS2 onwards on learner v2. **RULED 25 Nov 2026 (R37): LS1 now, route 3 first.**
 4. **The LS1 limits** (section 4) are the lead's proposal; the lead fixes them in the gate file unless the owner
-   wants to rule on them.
+   wants to rule on them. **RULED 25 Nov 2026 (R38): the owner sets them, on the lead's advice, after a
+   noise-floor read.**
 5. **LS2 to LS4** are not asked for now; each comes back with its own note and cost after the gate before it.
 
 ## 10. What comes out, and how it is used

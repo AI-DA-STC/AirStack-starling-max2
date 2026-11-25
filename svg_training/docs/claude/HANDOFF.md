@@ -4,13 +4,34 @@ INTERNAL · the lab's AI-assistant hand-over notes: where the work stands, what 
 
 > **How to use this file.** Read it at the start of a session, after [../../CLAUDE.md](../../CLAUDE.md).
 > §4 is the current state, §5 is what is waiting on people. Update both before you stop.
-> Last updated: 25 November 2026 ~12:10, on the home RTX 5090 (morning: clean-up, automatic 3-D clip hook, learner v2 first; before: night: L3–L6 pipeline check done, both routes PIPELINE WORKS; before: 24 Nov ~18:20 late day: rulings R29–R33, L2.6 and the figure-eight check, L3 slice 2 merged; before: ~13:30 day: rulings R24–R28, AirStack set up, L1.4, L1.5, L2.5 done, L3 note v2; before: ~07:30 night run: L1 reads, L2.1/L2.3/L2.4; before: 23 Nov ~13:30 documentation clean-up), worktree `~/AirStack-starling-max2-dev` on branch `development`.
+> Last updated: 25 November 2026 ~13:45, on the home RTX 5090 (afternoon: route 3 rulings R36–R38, execution workflow v2, waiting on the owner's alignment check; before: ~12:10 morning: clean-up, automatic 3-D clip hook, learner v2 first; before: night: L3–L6 pipeline check done, both routes PIPELINE WORKS; before: 24 Nov ~18:20 late day: rulings R29–R33, L2.6 and the figure-eight check, L3 slice 2 merged; before: ~13:30 day: rulings R24–R28, AirStack set up, L1.4, L1.5, L2.5 done, L3 note v2; before: ~07:30 night run: L1 reads, L2.1/L2.3/L2.4; before: 23 Nov ~13:30 documentation clean-up), worktree `~/AirStack-starling-max2-dev` on branch `development`.
 
 ## 0. Resume here (for a new session or another Claude account)
 
 Everything needed is in this folder; nothing depends on the previous chat. Claude's user memory (`~/.claude/…`) and
 the private NUS workspace (`~/ma_skills-self-play/`, 5090 only) do **not** travel with git: if this file and a memory
 note disagree, this file wins.
+
+### 25 November 2026 ~13:45 — RTX 5090 AFTERNOON: ROUTE 3 (LEARNED-SKILLS ROUTE), RULINGS R36–R38, WORKFLOW v2 (read this first)
+
+- **Owner's rulings (DISCUSSION §16):** R36 LS1 budget 1.0 GPU-h from the L3–L6 cap, yes; R37 "build LS1 now, lets try
+  route 3 first" (LS1 goes ahead of the learner v2 note; the build session runs on Opus 5.5 at high effort as a
+  multi-agent workflow); R38 the owner sets the LS1 pass limits on the lead's advice, after a noise-floor read.
+- **Workflow v2** ([LS_EXECUTION_WORKFLOW.md](../../ste_learning/drafts/LS_EXECUTION_WORKFLOW.md), its section 6): the
+  first version checked against the code, eight corrections. The ones a builder must not miss: the launcher refuses
+  `--task LS1.x` until `ste/config.py` `TASK_IDS`, `configs/ste_learning.toml`, PLAN §9 and `tests/test_ste_config.py`
+  carry the LS1 tasks; `scripts/ste_l5_clips3d.py` cannot draw an LS1 team (job LS1.6 needs a clip path); the
+  equivalence read runs on the CPU (its positive control against T44 is exact only there); the noise-floor read
+  (job LS1.5) comes before the limits; the skill network file is per team. Where the workflow and the plan
+  (LEARNED_SKILLS_BRIDGE_PLAN.md) differ, the workflow's section 6 wins.
+- **Order of work:** the owner's alignment check of the plan and architecture against LEARNED_SKILLS_ROUTE.md (asked
+  ~13:45; nothing starts before the owner's go) → the two-reviewer design review of the workflow and the plan (findings
+  to the owner, then the lead revises) → build M1 → noise-floor read → the owner sets the limits → gate hashed → the runs.
+  No code and no run before the design review is read (R35).
+- **Nothing built, nothing run, 0 GPU-h.** Documents only; the short document check ran, not the full suite.
+- **Main track:** route 3, stage LS1, waiting on the owner's go for the design review · **Side track:** none. The learner v2 note follows LS1 (R37).
+- **Waiting on the owner:** the optional job LS1.4 (0.5 GPU-h: skills run 0 on the skill network); later, the LS1
+  limits (R38). Unchanged: NEAR-962, the Crazyflie commanded gaps.
 
 ### 25 November 2026 ~12:10 — RTX 5090 MORNING: CLEAN-UP, AUTOMATIC 3-D CLIP HOOK, OWNER CHOSE LEARNER v2 FIRST
 
@@ -976,7 +997,7 @@ agents and skills for the work. Since then S0, S1 and S2 have been built and run
 
 ## 4. Current state
 
-**25 November 2026 ~05:00:** STE track: L0–L3 done, the L3–L6 pipeline check done (both routes PIPELINE WORKS, T73–T89); the owner's read of it is the next gate. The newest §0 entry is the current state; the table below is older.
+**25 November 2026 ~13:45:** STE track: L0–L3 done, the L3–L6 pipeline check done (both routes PIPELINE WORKS, T73–T89); route 3 (the learned-skills route) adopted (R35) and its stage LS1 approved to build (R36–R38): the workflow v2 waits on the owner's alignment check, then its design review; nothing built or run. The newest §0 entry is the current state; the table below is older.
 
 **State on 18 November 2026** (details in §0 and the results pages):
 
@@ -1076,7 +1097,7 @@ stay out of git; real flights of a contact policy should start with a virtual co
 
 ## 5. Open items
 
-**25 November 2026:** the owner's read of the L3–L6 pipeline check (which route(s) next, with what budget; L7 is the owner's gate); NEAR-962; the Crazyflie commanded gaps. Older items below.
+**25 November 2026:** the optional job LS1.4 of route 3 (0.5 GPU-h, not ruled); the LS1 pass limits, set by the owner after the noise-floor read (R38); the learner v2 note (after LS1, R37); L7 is the owner's gate; NEAR-962; the Crazyflie commanded gaps. Older items below.
 
 ### 5-phase5-2. Branch `nus-phase5-2` (19 Nov 2026): what stage 5.2 still needs
 

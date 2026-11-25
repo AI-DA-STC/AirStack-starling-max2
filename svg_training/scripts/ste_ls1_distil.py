@@ -314,8 +314,9 @@ def label_check(rows: distil.Rows, cfg, spec: cells.CellSpec, side: str, device,
     ``[data] label_check_atol``: the control fails on any), ``not_bit_equal`` (rows not equal to the last bit) and
     ``max_abs_diff``. Not bit for bit: the same script on the same row gives other last bits in another batch layout
     (plan constraint 8; measured 26 Nov 2026: ``guard_parked_ring`` on one game alone against the same game among 64
-    differed by 3.9e-7, the isolation itself changed nothing; at most 8.3e-7 over about 8.7 million rows). An absolute
-    tolerance: the commands are unitless in [-1, 1]. Batched over the rows in chunks of ``distil.EVAL_ROWS`` (memory
+    differed by 3.9e-7, the isolation itself changed nothing; at most 7.2e-7 over about 8.7 million rows of both
+    teams, 8.3e-7 in one smoke round of 4,858 rows; not measured on CUDA). An absolute tolerance: the commands are
+    unitless in [-1, 1]. Batched over the rows in chunks of ``distil.EVAL_ROWS`` (memory
     only); the loop runs over the K scripts."""
     dev = torch.device(device)
     r, differ, not_equal, worst = rows.obs.shape[0], 0, 0, 0.0

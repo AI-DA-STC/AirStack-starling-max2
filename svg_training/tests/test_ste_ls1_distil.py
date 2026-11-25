@@ -42,7 +42,9 @@ import importlib
 import itertools
 import json
 import math
+import os
 import re
+import signal
 import sys
 
 import pytest
@@ -51,8 +53,8 @@ import torch
 from svg_training.core.observations import OBS_DIM
 from svg_training.opponents.scripted import make_strategy
 from svg_training.ste import cells, distil, exploit, pool, post_run, scoring, skill_net, skills, sweep
-from svg_training.ste.run_contract import (CHECKPOINT_NAME, EXIT_CONTROL_FAILED, EXIT_DONE, EXIT_INTERRUPTED,
-                                           EXIT_NONFINITE, EXIT_REFUSED, PROGRESS_NAME)
+from svg_training.ste.run_contract import (CHECKPOINT_NAME, EXIT_CAP, EXIT_CONTROL_FAILED, EXIT_DONE,
+                                           EXIT_INTERRUPTED, EXIT_NONFINITE, EXIT_REFUSED, PROGRESS_NAME)
 from svg_training.viz import replay
 
 import _ste_ls1 as h
@@ -993,6 +995,50 @@ def test_a_run_stopped_after_round_0_resumes_at_round_1(drv, fast_gates, fast_ru
     a, b = _net_state(out, "guard"), _net_state(fast_run["dir"], "guard")
     assert list(a) == list(b) and all(torch.equal(a[k], b[k]) for k in a)  # the uninterrupted run's net
 
+
+
+@pytest.mark.parametrize("step_fn", ["round_rows", "refit"])
+def test_a_stop_inside_a_step_exits_4_and_resumes_to_the_same_net(drv, fast_gates, fast_run, tmp_path, monkeypatch,
+                                                                   step_fn):
+    """SIGTERM while a collection (before its first tick) or a fit (before its first epoch) runs: the step is dropped,
+    the last checkpoint saved again (exit 4), and the same command ends with the uninterrupted run's net."""
+    real, calls = getattr(distil, step_fn), []
+
+    def stop_first(*args, **kw):
+        calls.append(1)
+        if len(calls) == 1:
+            os.kill(os.getpid(), signal.SIGTERM)
+        return real(*args, **kw)
+
+    out = tmp_path / "run"
+    argv = _argv(fast_gates, out, "guard", "--smoke", "--no-clips")
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr(distil, step_fn, stop_first)
+        assert drv.main(argv) == EXIT_INTERRUPTED
+    assert _checkpoint_step(out) == (drv.NO_STEP if step_fn == "round_rows" else 0)
+    assert drv.main(argv) == EXIT_DONE
+    a, b = _net_state(out, "guard"), _net_state(fast_run["dir"], "guard")
+    assert list(a) == list(b) and all(torch.equal(a[k], b[k]) for k in a)
+
+
+def test_a_run_at_its_cap_exits_3_and_the_same_folder_finishes(drv, fast_gates, fast_run, tmp_path):
+    out = tmp_path / "run"
+    argv = _argv(fast_gates, out, "guard", "--smoke", "--no-clips")
+    assert drv.main(_argv(fast_gates, out, "guard", "--smoke", "--no-clips", cap_h="1e-12")) == EXIT_CAP
+    assert _checkpoint_step(out) == drv.NO_STEP and not (out / "data").exists()
+    assert drv.main(argv) == EXIT_DONE
+    a, b = _net_state(out, "guard"), _net_state(fast_run["dir"], "guard")
+    assert all(torch.equal(a[k], b[k]) for k in a)
+
+
+def test_a_changed_data_file_is_refused_on_resume(drv, fast_gates, tmp_path, capsys):
+    out = tmp_path / "run"
+    argv = _argv(fast_gates, out, "guard", "--smoke", "--no-clips")
+    assert drv.main(argv + ["--stop-after-step", "0"]) == EXIT_INTERRUPTED
+    data0 = out / "data" / "round_0.pt"
+    data0.write_bytes(data0.read_bytes() + b"x")
+    assert drv.main(argv) == EXIT_REFUSED
+    assert "round_0.pt" in capsys.readouterr().err and _checkpoint_step(out) == 0
 
 def test_a_nan_loss_exits_5_and_keeps_the_last_checkpoint(drv, fast_gates, tmp_path, monkeypatch):
     real, calls = distil.fit, []

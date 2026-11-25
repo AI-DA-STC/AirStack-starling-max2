@@ -48,7 +48,8 @@ seed = 150001                      # PROPOSED (C8): the data's games and schedul
 pool_seed = 150002                 # PROPOSED (C8): the opponent pool's draws
 # The control ctl_labels_are_the_scripts (task LS1-M2-T4) compares each kept row's labels with every script recomputed on
 # that row alone; not bit for bit: the batch layout moves the last bits (plan constraint 8). Measured on the CPU 26 Nov
-# 2026: at most 8.3e-07 over about 8.7 million rows of both teams, net-flown games included.
+# 2026: at most 7.2e-07 over about 8.7 million rows of both teams (net-flown games included), 8.3e-07 in one smoke round
+# of 4,858 rows; headroom, not a bound. Not measured on CUDA.
 label_check_atol = 1e-05           # PROPOSED (the builder's, from that measurement): the largest |difference| per channel
 
 [dagger]

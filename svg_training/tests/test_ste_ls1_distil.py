@@ -1,5 +1,7 @@
-"""Route 3, stage LS1, task LS1-M2-T2: the collection of the distillation (``ste/distil.py``: ``CodeSchedule``,
-``collect``, ``Rows``, ``keep``, ``round_seed``, ``mix_combos``; plan ste_learning/drafts/LS1_TASK_PLAN.md, section 3).
+"""Route 3, stage LS1, tasks LS1-M2-T2 and T3: the collection of the distillation (``ste/distil.py``: ``CodeSchedule``,
+``collect``, ``Rows``, ``keep``, ``round_seed``, ``mix_combos``), then the fit, the relabelling rounds and the report
+(``initial_net``, ``fit``, ``round_rows``, ``refit``, ``dagger``, ``report``, ``summarise``); plan
+ste_learning/drafts/LS1_TASK_PLAN.md, section 3.
 
 * Labels are every script's command on the state (the scripts are row-wise, so a row alone in a zero team tensor gives
   the same command); rows come from live drones of the side only.
@@ -13,9 +15,19 @@
 * ``keep``: exactly min(keep_rows, R) distinct rows, the absent quota met (at most the absent rows there are), uniform
   without weights, weighted by the keys log(1 - u) / w in float64, zero-weight rows filled at random when needed.
 
+* The fit (T3) lowers every skill's error below half that of the same net unfitted; it is seeded, asks the stop
+  before each epoch and reports each epoch's loss. The net starts from the [fit] seed without touching the global
+  generator. Round 0 needs no net, later rounds do; each round refits a fresh net on every round's kept rows.
+* The report (T3) has exactly the fit report's final keys, None for an empty stratum, the zero-command skill (Guard
+  ``guard_parked_centre``), the active channels of the Strike skills, and numbers that match a direct recomputation
+  with plain loops (per skill, by n_live, by hold bin, tick-to-tick change); it flies the net on its own seed.
+
 Sizes from the plan: 16 games, 24 to 120 ticks, the skills gate file's ``[players]``/``[learner]``; the data-mix
 values (shares, hold, switch jump and window) are read from the committed distil_gates.toml, never typed. CPU only."""
+import dataclasses
 import itertools
+import json
+import math
 
 import pytest
 import torch
@@ -401,3 +413,327 @@ def test_the_schedule_ticks_per_game_and_restarts_with_the_game(dg, cfg):
     with pytest.raises(ValueError, match="shares"):
         distil.CodeSchedule(spec, disp, (0.5, 0.0, 0.0), distil.mix_combos(spec, "cpu"), 1, 1.0, "cpu", 3)
     assert list(itertools.islice(distil.MODES, 3)) == ["uniform", "mix", "random"]
+
+
+# ================================================================================================ T3: the fit
+# Task LS1-M2-T3 (the fit, the relabelling rounds, the report). The plan's fit test: Guard rows of one round-0
+# collection on 16 games x 120 ticks, seed 7; hidden [64, 64]; fit seed 11; CPU; every skill's RMSE below 0.5 x the
+# unfitted net's. The plan's epochs 20, lr 1e-3, batch 512 do not reach 0.5 x (measured 25 Nov 2026, after / before per
+# skill: 1.36, 0.83, 0.48, 0.57, 0.74; the zero-command skill's unfitted error is already small), so the builder's
+# fixture fits longer (epochs 100, lr 3e-3, batch 256: 0.40, 0.30, 0.13, 0.14, 0.19, about 6 s); the factor is the plan's.
+FIT_TICKS = 120
+TINY_HIDDEN = [64, 64]
+FIT_EPOCHS, FIT_LR, FIT_BATCH, FIT_SEED = 100, 3e-3, 256, 11
+SMOKE_NET = {"hidden": [32, 32]}     # the dagger test's net and epochs: the committed [net] and [fit] take a minute
+SMOKE_EPOCHS = 3
+# the report's final keys and a round's summary keys (plan section 3, "The files M2 writes", fit_report.json)
+FINAL_KEYS = {"per_skill", "unused_max_abs", "zero_skill", "rmse_by_n_live", "rmse_by_hold_bin", "delta_cmd",
+              "game_steps_per_s"}
+ROUND_KEYS = ["round", "rows", "kept", "shares_by_mode", "absent_share", "near_switch_share", "prev_net_rmse", "loss",
+              "seconds"]
+
+
+def _tiny(dg, cfg, side, seed=FIT_SEED):
+    return distil.initial_net(dg.specs[side], cfg, {**dg.net, "hidden": TINY_HIDDEN}, seed)
+
+
+def _skill_rmse(net, rows) -> torch.Tensor:
+    """[K]: each skill's RMSE over its 4 channels on every row (every code, as the loss)."""
+    out = distil.code_outputs(net, rows, "cpu")
+    return ((out - rows.label) ** 2).mean(dim=(0, 2)).sqrt()
+
+
+def _report(dg, cfg, side, net, ticks, games=GAMES, seed=None):
+    d = dg.data
+    return distil.report(net, cfg, dg.specs[side], dg.skills_gates.players, side, games, ticks,
+                         dg.report["seed"] if seed is None else seed, dg.report["hold_bins_ticks"], "cpu",
+                         size=dg.skills_gates.run["size"], shares=(d["uniform_share"], d["mix_share"], d["random_share"]),
+                         hold=d["hold"], switch_jump=d["switch_jump"], switch_window_ticks=d["switch_window_ticks"])
+
+
+@pytest.fixture(scope="module")
+def guard_fit_rows(dg, cfg):
+    return _collect(dg, cfg, "guard", FIT_TICKS)
+
+
+def test_the_initial_net_is_seeded_and_leaves_the_global_rng_alone(dg, cfg):
+    before = torch.random.get_rng_state()
+    a, b = _tiny(dg, cfg, "guard"), _tiny(dg, cfg, "guard")
+    assert torch.equal(torch.random.get_rng_state(), before), "the initial net drew from the global generator"
+    for (ka, va), (kb, vb) in zip(a.state_dict().items(), b.state_dict().items()):
+        assert ka == kb and torch.equal(va, vb), ka
+    c = _tiny(dg, cfg, "guard", seed=FIT_SEED + 1)
+    assert not torch.equal(a.state_dict()["mlp.0.weight"], c.state_dict()["mlp.0.weight"])
+    spec = dg.specs["guard"]
+    assert (a.team, a.skills, a.team_size, a.slot_width, a.hidden, a.zeroed_inputs) == \
+        ("guard", tuple(spec.players), spec.drones, cfg.pad_guards, TINY_HIDDEN, dg.net["zeroed_inputs"])
+    s = distil.initial_net(dg.specs["strike"], cfg, dg.net, FIT_SEED)
+    assert s.slot_width == cfg.pad_strikes and s.hidden == dg.net["hidden"]
+
+
+def test_code_outputs_are_the_nets_every_code_on_each_row(dg, cfg, guard_rows):
+    net = _tiny(dg, cfg, "guard")
+    out = distil.code_outputs(net, guard_rows, "cpu")
+    r, k = guard_rows.obs.shape[0], net.k
+    assert out.shape == (r, k, 4) and out.dtype == torch.float32 and not out.requires_grad
+    sel = torch.arange(0, r, 7)
+    with torch.no_grad():
+        for z in range(k):
+            want = net(guard_rows.obs[sel], guard_rows.slot[sel], torch.full((sel.numel(),), z))
+            assert torch.allclose(out[sel, z], want, atol=1e-6), z          # another batch shape (constraint 8)
+    err = distil.row_error(net, guard_rows, "cpu")
+    want = ((out - guard_rows.label) ** 2).mean(dim=(1, 2)).sqrt()
+    assert err.shape == (r,) and torch.allclose(err, want)
+
+
+def test_fit_lowers_the_error_of_every_skill(dg, cfg, guard_fit_rows):
+    rows = guard_fit_rows
+    before = _skill_rmse(_tiny(dg, cfg, "guard"), rows)
+    net = _tiny(dg, cfg, "guard")
+    seen = []
+    out = distil.fit(net, rows, FIT_EPOCHS, FIT_LR, FIT_BATCH, FIT_SEED, "cpu", check=lambda **kw: seen.append(kw),
+                     std_floor=dg.net["std_floor"])
+    after = _skill_rmse(net, rows)
+    assert bool((after < 0.5 * before).all()), (before.tolist(), after.tolist())
+    assert list(out) == ["loss"] and len(out["loss"]) == FIT_EPOCHS and all(isinstance(x, float) for x in out["loss"])
+    assert out["loss"][-1] < out["loss"][0]
+    assert [list(kw) for kw in seen] == [["loss"]] * FIT_EPOCHS and [kw["loss"] for kw in seen] == out["loss"]
+    # the normaliser: the rows' mean and std, the std floored at the gate file's floor
+    std, mean = torch.std_mean(rows.obs.double(), dim=0, correction=0)
+    assert torch.allclose(net.in_mean, mean.float()) and torch.allclose(net.in_std, std.float().clamp(
+        min=dg.net["std_floor"]))
+    assert bool((net.in_std >= dg.net["std_floor"]).all())
+    # a fitted net flies without a graph
+    assert not any(p.requires_grad for p in net.parameters())
+
+
+def test_fit_is_seeded_and_stops_between_epochs(dg, cfg, guard_rows):
+    nets = [_tiny(dg, cfg, "guard") for _ in range(2)]
+    outs = [distil.fit(n, guard_rows, 2, FIT_LR, FIT_BATCH, FIT_SEED, "cpu", std_floor=dg.net["std_floor"])
+            for n in nets]
+    assert outs[0] == outs[1]
+    for (k, a), (_, b) in zip(nets[0].state_dict().items(), nets[1].state_dict().items()):
+        assert torch.equal(a, b), k
+    calls = []
+
+    def stop():
+        calls.append(1)
+        return len(calls) > 1
+
+    with pytest.raises(sweep.SweepStopped):
+        distil.fit(_tiny(dg, cfg, "guard"), guard_rows, 5, FIT_LR, FIT_BATCH, FIT_SEED, "cpu", should_stop=stop,
+                   std_floor=dg.net["std_floor"])
+    assert len(calls) == 2, "the stop is asked once before each epoch"
+    with pytest.raises(ValueError, match="rows"):
+        distil.fit(_tiny(dg, cfg, "guard"), distil.take_rows(guard_rows, torch.zeros(0, dtype=torch.long)), 1, FIT_LR,
+                   FIT_BATCH, FIT_SEED, "cpu", std_floor=dg.net["std_floor"])
+
+
+# ================================================================================================ T3: the rounds
+def test_net_flown_games_reach_other_states_and_stay_script_labelled(dg, cfg, guard_rows):
+    spec = dg.specs["guard"]
+    rows = _collect(dg, cfg, "guard", SHORT_TICKS, script_share=0.0, net=_tiny(dg, cfg, "guard"))
+    assert bool(rows.net_flown.all())
+    first, ref_first = (rows.tick == 0) & (rows.episode == 0), (guard_rows.tick == 0) & (guard_rows.episode == 0)
+    assert torch.equal(rows.obs[first], guard_rows.obs[ref_first]), "the same starts"
+    n = min(rows.obs.shape[0], guard_rows.obs.shape[0])
+    assert rows.obs.shape != guard_rows.obs.shape or not torch.equal(rows.obs[:n], guard_rows.obs[:n]), \
+        "the net-flown games must reach other states"
+    r = rows.obs.shape[0]
+    team = isolated(rows.obs, rows.slot, spec.drones)
+    for k, name in enumerate(spec.players):
+        want = make_strategy(name, "guard", cfg, r, "cpu", 0).act(team)[torch.arange(r), rows.slot]
+        assert torch.equal(rows.label[:, k], want), name
+
+
+@pytest.fixture(scope="module")
+def round0(dg):
+    """Round 0 of the smoke sizes, Guard team (no net: the scripts fly every game)."""
+    return distil.round_rows(dg, "guard", 0, None, "cpu", smoke=True)
+
+
+def test_round_zero_needs_no_net_and_later_rounds_do(dg, cfg, round0):
+    sizes = distil.run_sizes(dg, smoke=True)
+    kept, stats = round0
+    assert stats["round"] == 0 and stats["prev_net_rmse"] is None and bool((kept.round == 0).all())
+    assert stats["rows"] >= stats["kept"] == kept.obs.shape[0] > 0
+    assert stats["kept"] == min(dg.data["keep_rows"], stats["rows"])
+    with pytest.raises(ValueError, match="net"):
+        distil.round_rows(dg, "guard", 1, None, "cpu", smoke=True)
+    with pytest.raises(ValueError, match="round"):
+        distil.round_rows(dg, "guard", len(sizes["script_share"]), _tiny(dg, cfg, "guard"), "cpu", smoke=True)
+    # the same round, the same kept rows (seeded: the round's collection and its keep)
+    again, _ = distil.round_rows(dg, "guard", 0, None, "cpu", smoke=True)
+    for name in distil.ROW_FIELDS:
+        assert torch.equal(getattr(kept, name), getattr(again, name)), name
+
+
+def test_run_sizes_follow_the_smoke_rule(dg):
+    full, smoke = distil.run_sizes(dg, smoke=False), distil.run_sizes(dg, smoke=True)
+    assert full == {"games": dg.data["games"], "ticks": dg.data["ticks_per_round"],
+                    "script_share": dg.dagger["script_share"], "report_games": dg.report["games"],
+                    "report_ticks": dg.report["ticks"]}
+    assert smoke == {"games": dg.smoke["games"], "ticks": dg.smoke["ticks"],
+                     "script_share": dg.dagger["script_share"][:dg.smoke["rounds"]], "report_games": dg.smoke["games"],
+                     "report_ticks": dg.smoke["ticks"]}
+
+
+def test_the_keep_and_fit_seeds_are_new(dg):
+    data, script_share = dg.data, dg.dagger["script_share"]
+    others = {dg.fit["seed"], dg.report["seed"], dg.clips["seed"], data["pool_seed"], data["seed"]}
+    assert {"keep", "shuffle"} <= set(distil.SEED_PURPOSES)
+    derived = [distil.round_seed(s, r, p) for s in (data["seed"], data["pool_seed"], dg.fit["seed"], dg.report["seed"])
+               for r in range(len(script_share)) for p in distil.SEED_PURPOSES]
+    assert len(set(derived)) == len(derived) and not set(derived) & others
+    # T2's purposes keep their seeds (appended, not reordered)
+    assert distil.SEED_PURPOSES[:3] == ("game", "schedule", "pool")
+
+
+@pytest.fixture(scope="module")
+def small(dg):
+    """The committed gate file with a small [net] and few [fit] epochs (the rounds' logic, not the sizes, is tested)."""
+    return dataclasses.replace(dg, net={**dg.net, **SMOKE_NET}, fit={**dg.fit, "epochs": SMOKE_EPOCHS})
+
+
+@pytest.fixture(scope="module")
+def smoke_dagger(small):
+    return distil.dagger(small, "guard", "cpu", smoke=True)
+
+
+def test_dagger_refits_from_the_fit_seed_on_every_round_so_far(small, smoke_dagger, round0):
+    dg = small
+    net, rounds = smoke_dagger
+    sizes = distil.run_sizes(dg, smoke=True)
+    assert [s["round"] for s in rounds] == list(range(len(sizes["script_share"])))
+    for s in rounds:
+        assert list(s) == ROUND_KEYS
+        assert set(s["shares_by_mode"]) == set(distil.MODES) and math.isclose(sum(s["shares_by_mode"].values()), 1.0)
+        assert 0 <= s["absent_share"] <= 1 and 0 <= s["near_switch_share"] <= 1
+        assert len(s["loss"]) == dg.fit["epochs"] and s["seconds"] > 0 and s["kept"] <= s["rows"]
+    assert rounds[0]["prev_net_rmse"] is None and isinstance(rounds[1]["prev_net_rmse"], float)
+    json.dumps(rounds, allow_nan=False)
+    # the last net is the fit of a fresh [fit] seed net on every round's kept rows (OP-17), seeded
+    kept = [round0[0]]                                 # round 0 does not read [net] or [fit]
+    first, _ = distil.refit(dg, "guard", kept, "cpu")
+    kept.append(distil.round_rows(dg, "guard", 1, first, "cpu", smoke=True)[0])
+    again, fit_out = distil.refit(dg, "guard", kept, "cpu")
+    assert fit_out["loss"] == rounds[1]["loss"]
+    for (k, a), (_, b) in zip(net.state_dict().items(), again.state_dict().items()):
+        assert torch.equal(a, b), k
+    assert net.hidden == dg.net["hidden"] and net.zeroed_inputs == dg.net["zeroed_inputs"]
+
+
+# ================================================================================================ T3: the report
+@pytest.fixture(scope="module")
+def strike_report_rows(dg, cfg):
+    """A net-flown Strike collection on the report's seeds, long enough for games to end and restart."""
+    d = dg.data
+    rows, seconds = distil.report_collect(_tiny(dg, cfg, "strike"), cfg, dg.specs["strike"], dg.skills_gates.players,
+                                          "strike", GAMES, LONG_TICKS, dg.report["seed"], "cpu",
+                                          size=dg.skills_gates.run["size"],
+                                          shares=(d["uniform_share"], d["mix_share"], d["random_share"]),
+                                          hold=d["hold"], switch_jump=d["switch_jump"],
+                                          switch_window_ticks=d["switch_window_ticks"])
+    return rows, seconds
+
+
+def test_report_has_every_read_and_none_for_empty_strata(dg, cfg):
+    guard = _report(dg, cfg, "guard", _tiny(dg, cfg, "guard"), SHORT_TICKS)
+    strike = _report(dg, cfg, "strike", _tiny(dg, cfg, "strike"), SHORT_TICKS)
+    edges = dg.report["hold_bins_ticks"]
+    bins = [f"{lo}-{hi}" for lo, hi in zip(edges, edges[1:])]
+    for side, rep in (("guard", guard), ("strike", strike)):
+        players = dg.specs[side].players
+        assert set(rep) == FINAL_KEYS
+        json.dumps(rep, allow_nan=False)
+        assert list(rep["per_skill"]) == list(players) and list(rep["unused_max_abs"]) == list(players)
+        for name, s in rep["per_skill"].items():
+            assert set(s) == {"rmse", "p99_abs", "active", "rows"} and s["rows"] > 0
+            assert len(s["rmse"]) == len(s["p99_abs"]) == len(s["active"]) == 4
+            assert all(isinstance(a, bool) for a in s["active"])
+            assert all(0 <= p for p in s["p99_abs"])
+        assert set(rep["rmse_by_n_live"]) == {"1", "2", "3"}
+        assert list(rep["rmse_by_hold_bin"]) == bins
+        # ticks 24 < the upper bins' lower edges: those strata are empty, written None
+        assert all(rep["rmse_by_hold_bin"][b] is None for b, lo in zip(bins, edges) if lo >= SHORT_TICKS)
+        assert any(v is not None for v in rep["rmse_by_hold_bin"].values())
+        assert rep["rmse_by_n_live"]["3"] is not None
+        assert set(rep["delta_cmd"]) == {"net", "scripts"} and all(isinstance(v, float) for v in
+                                                                    rep["delta_cmd"].values())
+        assert isinstance(rep["game_steps_per_s"], float) and rep["game_steps_per_s"] > 0
+    assert guard["zero_skill"]["name"] == "guard_parked_centre" and set(guard["zero_skill"]) == {"name", "max_abs"}
+    assert guard["per_skill"]["guard_parked_centre"]["active"] == [False] * 4
+    assert guard["unused_max_abs"]["guard_parked_centre"] is None, "the zero-command skill is read in zero_skill"
+    for name, s in strike["per_skill"].items():
+        if name in ("strike_high", "strike_low"):
+            assert s["active"][2], name                   # vz (channel 2) active
+        else:
+            assert s["active"] == [True, True, False, False], name     # channels 0 and 1 only
+        assert isinstance(strike["unused_max_abs"][name], float)
+    assert strike["zero_skill"] is None
+
+
+def test_the_report_numbers_match_a_direct_recomputation(dg, cfg, strike_report_rows):
+    """Per skill, by n_live and by hold bin, from the rows and the net with plain loops (not the module's code)."""
+    rows, _ = strike_report_rows
+    net = _tiny(dg, cfg, "strike")
+    rep = distil.summarise(net, rows, dg.report["hold_bins_ticks"], "cpu")
+    out = distil.code_outputs(net, rows, "cpu").double()
+    err = out - rows.label.double()
+    players = dg.specs["strike"].players
+    active = {}
+    for k, name in enumerate(players):
+        a = [bool((rows.label[:, k, c] != 0).any()) for c in range(4)]
+        active[k] = a
+        s = rep["per_skill"][name]
+        assert s["active"] == a and s["rows"] == rows.obs.shape[0]
+        for c in range(4):
+            assert math.isclose(s["rmse"][c], float((err[:, k, c] ** 2).mean().sqrt()), rel_tol=1e-6)
+            col = err[:, k, c].abs().sort().values
+            assert math.isclose(s["p99_abs"][c], float(col[math.ceil(0.99 * col.numel()) - 1]), rel_tol=1e-6)
+    for j in ("1", "2", "3"):
+        sq = [float(err[i, k, c]) ** 2 for i in range(rows.obs.shape[0]) if int(rows.n_live[i]) == int(j)
+              for k in range(len(players)) for c in range(4) if active[k][c]]
+        want = math.sqrt(sum(sq) / len(sq)) if sq else None
+        got = rep["rmse_by_n_live"][j]
+        assert (got is None) == (want is None) and (want is None or math.isclose(got, want, rel_tol=1e-6)), j
+    edges = dg.report["hold_bins_ticks"]
+    for lo, hi in zip(edges, edges[1:]):
+        sq = [float(err[i, int(rows.flown[i]), c]) ** 2 for i in range(rows.obs.shape[0])
+              if lo <= int(rows.held[i]) < hi for c in range(4) if active[int(rows.flown[i])][c]]
+        want = math.sqrt(sum(sq) / len(sq)) if sq else None
+        got = rep["rmse_by_hold_bin"][f"{lo}-{hi}"]
+        assert (got is None) == (want is None) and (want is None or math.isclose(got, want, rel_tol=1e-6)), (lo, hi)
+    assert rep["rmse_by_n_live"]["3"] is not None and rep["rmse_by_hold_bin"][f"{edges[0]}-{edges[1]}"] is not None
+
+
+def test_scripts_tick_to_tick_change_matches_a_direct_recomputation(dg, cfg, strike_report_rows):
+    rows, _ = strike_report_rows
+    assert bool((rows.episode > 0).any()), "no game restarted (the same-game rule is not exercised)"
+    net = _tiny(dg, cfg, "strike")
+    rep = distil.summarise(net, rows, dg.report["hold_bins_ticks"], "cpu")
+    flown_net = distil.code_outputs(net, rows, "cpu")[torch.arange(rows.obs.shape[0]), rows.flown]
+    flown_scr = rows.label[torch.arange(rows.obs.shape[0]), rows.flown]
+    d_net, d_scr, pairs = 0.0, 0.0, 0
+    for idx in _sequences(rows).values():                 # one live drone of one game, in tick order
+        for a, b in zip(idx, idx[1:]):
+            if int(rows.tick[b]) != int(rows.tick[a]) + 1:
+                continue                                  # not live both ticks
+            d_net += float((flown_net[b] - flown_net[a]).abs().sum())
+            d_scr += float((flown_scr[b] - flown_scr[a]).abs().sum())
+            pairs += 1
+    assert pairs > 0
+    assert math.isclose(rep["delta_cmd"]["scripts"], d_scr / (4 * pairs), rel_tol=1e-6)
+    assert math.isclose(rep["delta_cmd"]["net"], d_net / (4 * pairs), rel_tol=1e-5)
+
+
+def test_the_report_plays_its_own_seed_net_flown(dg, cfg, strike_report_rows):
+    rows, seconds = strike_report_rows
+    assert bool(rows.net_flown.all()) and seconds > 0
+    # its starts are none of the rounds' (the report's seed, its own pool stream: design check of M2)
+    for r in range(len(dg.dagger["script_share"])):
+        other = _collect(dg, cfg, "strike", 1, seed=dg.data["seed"], pool_seed=dg.data["pool_seed"], round_index=r)
+        assert not torch.equal(other.obs, rows.obs[rows.tick == 0]), r
+    want = pool.pool_draw(distil.round_seed(dg.report["seed"], 0, "pool"), rows.game.long(), rows.episode.long(),
+                          len(pool.pool_members(dg.skills_gates.players, "guard")))
+    assert torch.equal(rows.opponent.long(), want), "the report's opponents come from [report] seed"

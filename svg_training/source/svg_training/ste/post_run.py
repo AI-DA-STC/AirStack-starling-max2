@@ -74,9 +74,11 @@ CLIPS_SCRIPT = jobs.WRAPPER_SCRIPT.parent / "ste_l5_clips3d.py"
 PREFLIGHT_SCRIPT = jobs.WRAPPER_SCRIPT.parent / "isaac_preflight.sh"
 PREFLIGHT_ARGS = ("--approved-headless", "--allow-siblings")
 PREFLIGHT_TIMEOUT_S = 120.0
+PREFLIGHT_TIMEOUT_EXIT = 124            # the exit code recorded when the preflight gives no answer in time (as timeout(1))
 EXIT_GPU_BUSY = 11                       # the preflight's and the clip script's "GPU busy"
 RETRYABLE = {EXIT_GPU_BUSY: "the GPU was busy", EXIT_INTERRUPTED: "interrupted",
-             jobs.SIGNAL_EXIT_BASE + 2: "interrupted (SIGINT)", jobs.SIGNAL_EXIT_BASE + 15: "stopped (SIGTERM)"}
+             jobs.SIGNAL_EXIT_BASE + signal.SIGINT: "interrupted (SIGINT)",
+             jobs.SIGNAL_EXIT_BASE + signal.SIGTERM: "stopped (SIGTERM)"}
 LAUNCHED, PENDING, SKIPPED, DONE, FAILED = "launched", "pending", "skipped", "done", "failed"
 RUNNING, MISSING = "running", "missing"            # status only, never written to HOOK_STATUS
 TRAINING_DRIVER = "ste_exploit_l012.py"           # the driver whose runs the clip script draws
@@ -158,7 +160,7 @@ def preflight(log: Path) -> int:
         except ProcessLookupError:
             pass
         proc.communicate()
-        text, code = f"no answer within {PREFLIGHT_TIMEOUT_S:.0f} s\n", 124
+        text, code = f"no answer within {PREFLIGHT_TIMEOUT_S:.0f} s\n", PREFLIGHT_TIMEOUT_EXIT
     atomic.write_text(log, text)
     return code
 

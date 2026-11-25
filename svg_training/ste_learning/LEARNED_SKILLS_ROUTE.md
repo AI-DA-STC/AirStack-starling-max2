@@ -70,12 +70,13 @@ LS3 are unchanged; self-play is the stage called LS4 League on earlier versions 
 |---|---|---|---|---|
 | **LS1 Distil** | a copy of every script, as codes of one *skill network* per team | the scripts | the copy and the scripts play the same starts; the read counts the games that change, not only the difference in wins; the pass limits are set before the run from a calibration read | asks 0.9 |
 | **Head training** (job group LS1.4) | the heads again, on the skill network, for both teams | LS1 | scores about as the skills route's are the expected outcome; no new strategy is expected | asks 4.0 (two seeds per arm, clips included) |
-| **LS2 Fine-tune** | the skills and the heads, in turns, with a tie that keeps each code near its script, weakened step by step | head training | above the best fixed mix of scripts; each code still recognisable | its design note |
-| **Self-play** | which code each drone gets, against saved and present teams | LS2 or, if the pilot shows room, head training | the robustness suite: opponents never trained against, drone loss | its design note |
-| **LS3 Free codes** (last, an extension) | skill codes with no script, rewarded for being distinct and useful | self-play | the new codes are chosen and raise the worst result | its design note |
+| **LS2 Fine-tune** | the skills and the heads, in turns, with a tie that keeps each code near its script, weakened step by step | head training | to be written in its design note; proposed: above the best fixed mix of scripts, each code still recognisable | its design note |
+| **Self-play** | which code each drone gets, against saved and present teams | LS2 or, if the pilot shows room, head training | to be written in its design note; read against opponents never trained against, including new held-out scripts | its design note |
+| **LS3 Free codes** (last, an extension) | skill codes with no script, rewarded for being distinct and useful | self-play | to be written in its design note; proposed: the new codes are chosen and raise the worst result | its design note |
 
-A step that fails its gate stops the route there, and every step before it is still a usable result: LS1 alone gives a
-skills team that exports as two network files, with no port of the scripts into the flight software. LS1 and the head
+A step that fails its gate stops the route there, and every step before it is still a usable result. After LS1 alone,
+each team's skill network exports as an ONNX file, with no port of the scripts into the flight software; a complete
+team, heads and skill network trained together, comes from the head training. LS1 and the head
 training are planned job by job; LS2, self-play and LS3 come back with their own design notes and hours. The GPU-hour
 figures are asks, not results.
 

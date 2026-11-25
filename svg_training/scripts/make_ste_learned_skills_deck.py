@@ -255,14 +255,14 @@ def slide_stages(prs):
          "Asks 4.0 GPU-h (job group LS1.4)"],
         ["Learned: skills and heads, in turns",
          "A tie keeps each code near its script, weakened step by step",
-         "Gate: above the best fixed mix",
+         "Gate: to be written in its note; proposed: above the best fixed mix, each code still recognisable",
          "Hours: its own note"],
         ["Learned: choices against saved and present teams",
-         "Pool entry and pilot right after head training",
-         "Full stage before LS2 only if the pilot shows room",
+         "Pool entry and pilot right after head training; full stage before LS2 only if the pilot shows room",
+         "Gate: in its note; read on opponents never trained against, held-out scripts too",
          "Hours: its own note"],
         ["Learned: skill codes with no script, rewarded for being distinct and useful",
-         "Gate: new codes chosen; worst result up",
+         "Gate: to be written in its note; proposed: new codes chosen; worst result up",
          "Hours: its own note"],
     ]
     stages = []

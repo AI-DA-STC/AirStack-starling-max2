@@ -15,6 +15,14 @@ ste_learning/drafts/L3_L6_PIPELINE_SPEC.md section 5; lead's answer 3: schemas `
   :func:`within` (``GOLDEN_ATOL + GOLDEN_RTOL * max |golden row|``) of the golden rows; for the skills
   route each head's argmax, the flown skills and the skill lists exactly and the final commands (the pinned
   ``opponents/scripted.py``) within :func:`within`.
+* Route 3 (stage LS1), task LS1-M3-T2: :func:`skill_net_onnx` exports a skill network (``ste/skill_net.SkillNet``) as
+  one ONNX graph (inputs ``obs`` f32 [B, OBS_DIM], ``slot`` and ``z`` i64 [B]; output ``command`` [B, 4]; the input
+  scale, the one-hots, the clamp and the alive multiply inside the graph); :func:`export_skill_net` writes a stand-alone
+  folder (schema ``ste-check-skillnet-0``: ``skill_net_<side>.onnx`` and ``interface.toml`` with a ``[skill_net]``
+  section and ``[[skill_net_golden]]`` rows, every code for every drone); :func:`reload_check` reads it back on both
+  runtimes (:func:`_skill_net_check`). :func:`run_skill_net` is the one door to the runtimes for a skill network: it
+  refuses a slot outside [0, slot_width) or a code outside [0, k) before any runtime runs (onnxruntime's OneHot runs
+  them without an error).
 
 Every file carries ``status = "pipeline check, not for flight"`` (in ``interface.toml`` and in each ONNX file's
 metadata). This does not settle whether onnxruntime or torch runs in the AirStack ground container (ARCHITECTURE
@@ -33,11 +41,15 @@ import torch
 from torch import nn
 
 from ..core.game_config import TICK_S
-from ..core.observations import INTERFACE_VERSION, OBS_DIM
-from . import exploit, skills, sweep
+from ..core.observations import INTERFACE_VERSION, OBS_DIM, ObsView
+from . import exploit, skill_net, skills, sweep
 
 STATUS = "pipeline check, not for flight"
 SCHEMAS = {"velocity": "ste-check-velocity-0", "skills": "ste-check-skills-0"}
+SKILL_NET_SCHEMA = "ste-check-skillnet-0"         # a stand-alone skill network folder (route 3, LS1-M3-T2; OP-23)
+# Every schema the reload reads -> (route, skill source): the two pipeline-check routes, and the skill network
+ROUTE_OF_SCHEMA: dict[str, tuple[str, str | None]] = {**{schema: (route, None) for route, schema in SCHEMAS.items()},
+                                                      SKILL_NET_SCHEMA: ("skill_net", None)}
 GOLDEN_ATOL = 1e-6                # the ONNX runtimes round differently from torch (not bit for bit): absolute part
 GOLDEN_RTOL = 1e-6                # and relative part (float32 rounding grows with the logit scale)
 OPSET = 17
@@ -56,6 +68,24 @@ def within(got, want) -> tuple[bool, float, float]:
     row = np.abs(want).max(axis=-1, keepdims=True) if want.ndim else np.abs(want)
     ok = bool(np.all(diff <= GOLDEN_ATOL + GOLDEN_RTOL * row))
     return ok, float(diff.max()) if diff.size else 0.0, float(np.abs(want).max()) if want.size else 0.0
+
+
+def repo_relative(path) -> str:
+    """``path`` relative to the ``svg_training/`` root when it lies inside it (a net of record, C9); otherwise the
+    resolved path as given (a test's temporary folder)."""
+    p = Path(path).resolve()
+    try:
+        return str(p.relative_to(exploit.ROOT.resolve()))
+    except ValueError:
+        return str(p)
+
+
+def _git_commit() -> str:
+    try:
+        return subprocess.run(["git", "-C", str(exploit.ROOT), "rev-parse", "HEAD"], capture_output=True, text=True,
+                              check=True).stdout.strip()
+    except (OSError, subprocess.CalledProcessError):
+        return "unknown"
 
 
 def tolerance_text() -> str:
@@ -181,11 +211,7 @@ def _interface(gates, side: str, route: str, files: list, golden: list, d, sourc
     cfg = exploit.variant_cfg(gates, variant)
     game = gates.games[gates.variants[variant]["game"]]
     params = exploit.ROOT / cfg.starling.params
-    try:
-        commit = subprocess.run(["git", "-C", str(exploit.ROOT), "rev-parse", "HEAD"], capture_output=True,
-                                text=True, check=True).stdout.strip()
-    except (OSError, subprocess.CalledProcessError):
-        commit = "unknown"
+    commit = _git_commit()
     hold = int(gates.trainer["decision_ticks"])
     guards, strikes = sweep.parse_size(gates.run["size"])
     lines = [f'# Exported by ste/export.py: {STATUS}. Observed in the training simulator; nothing here authorises '
@@ -233,6 +259,161 @@ def _interface(gates, side: str, route: str, files: list, golden: list, d, sourc
     return "\n".join(lines) + "\n"
 
 
+def skill_net_onnx(net: skill_net.SkillNet, side: str, skills_list: list[str]):
+    """``net`` (team ``side``, skills ``skills_list`` in code order, both checked against the network) as an ONNX
+    graph: inputs ``obs`` f32 [B, OBS_DIM], ``slot`` i64 [B], ``z`` i64 [B]; output ``command`` f32 [B, COMMAND_DIM];
+    dynamic B; the input scale, the one-hots, the clamp and the alive multiply inside the graph (C2); metadata status,
+    schema, team, skills (JSON), slot_width, k; checked by ``onnx.checker``. Returns the ``onnx.ModelProto``."""
+    import warnings
+
+    import onnx
+    if side != net.team:
+        raise ValueError(f"team: the skill network is the {net.team} team's, not {side!r}")
+    if list(skills_list) != list(net.skills):
+        raise ValueError(f"skills: the network's {list(net.skills)} are not {list(skills_list)}")
+    args = (torch.zeros(1, OBS_DIM), torch.zeros(1, dtype=torch.int64), torch.zeros(1, dtype=torch.int64))
+    names = ["obs", "slot", "z"]
+    buf = io.BytesIO()
+    with warnings.catch_warnings():     # forward's "if clip": the default clip=True is traced in as a constant
+        warnings.simplefilter("ignore", torch.jit.TracerWarning)
+        torch.onnx.export(net.eval(), args, buf, input_names=names, output_names=["command"],
+                          dynamic_axes={**{n: {0: "B"} for n in names}, "command": {0: "B"}}, opset_version=OPSET)
+    m = onnx.load_from_string(buf.getvalue())
+    for key, value in (("status", STATUS), ("policy_schema", SKILL_NET_SCHEMA), ("team", side),
+                       ("skills", json.dumps(list(net.skills))), ("slot_width", str(net.slot_width)),
+                       ("k", str(net.k))):
+        entry = m.metadata_props.add()
+        entry.key, entry.value = key, value
+    onnx.checker.check_model(m)
+    return m
+
+
+def skill_net_golden(net: skill_net.SkillNet, obs: torch.Tensor) -> list[dict]:
+    """Golden rows of ``net`` on ``obs`` [G, M, OBS_DIM]: one batched forward over every code for every drone
+    (``skill_net.all_codes``) -> per game {"game", "obs" [M, OBS_DIM], "commands" [M, K, COMMAND_DIM]}; the rows of a
+    drone that is out are zero (C2)."""
+    commands = skill_net.all_codes(net, obs)
+    return [{"game": gi, "obs": obs[gi].tolist(), "commands": commands[gi].tolist()} for gi in range(obs.shape[0])]
+
+
+def export_skill_net(net: skill_net.SkillNet, meta: dict, side: str, out_dir, obs: torch.Tensor,
+                     source: dict | None = None, *, net_file) -> Path:
+    """A stand-alone skill network folder in ``out_dir``: ``skill_net_<side>.onnx`` (:func:`skill_net_onnx`) and
+    ``interface.toml`` (schema ``SKILL_NET_SCHEMA``, status, interface, observation layout, team, tick, game file and
+    sha256, ``scripted_sha256`` as provenance, commit, tolerance, ``source_*`` from ``source``, a ``[skill_net]``
+    section and ``[[skill_net_golden]]`` rows on ``obs`` [G, M, OBS_DIM]). ``meta``: the network file's meta
+    (``skill_net.load_skill_net``); ``net_file``: that file (written repository-relative when inside ``svg_training/``,
+    with its sha256; it is not copied into the folder). The game file named in ``meta`` must have the meta's sha256.
+    Returns the folder."""
+    import onnx
+    if meta["team"] != net.team or list(meta["skills"]) != list(net.skills):
+        raise ValueError(f"the meta (team {meta['team']!r}, skills {list(meta['skills'])}) is not the network's "
+                         f"({net.team!r}, {list(net.skills)})")
+    game_path = exploit.ROOT / meta["game_file"]
+    if sha256_file(game_path) != meta["game_sha256"]:
+        raise ValueError(f"{meta['game_file']}: sha256 {sha256_file(game_path)} is not the network's "
+                         f"{meta['game_sha256']}")
+    cfg = exploit.load_game_cfg_file(game_path)
+    model = skill_net_onnx(net, side, list(net.skills))
+    golden = skill_net_golden(net, obs)
+    out = Path(out_dir)
+    out.mkdir(parents=True, exist_ok=True)
+    path = out / f"skill_net_{side}.onnx"
+    onnx.save(model, str(path))
+    alive = ObsView().alive
+    lines = [f'# Exported by ste/export.py: {STATUS}. Observed in the training simulator; nothing here authorises '
+             'a flight.',
+             f'policy_schema = "{SKILL_NET_SCHEMA}"', f'status = "{STATUS}"',
+             f'interface_version = "{INTERFACE_VERSION}"', f"obs_dim = {OBS_DIM}",
+             f'obs_layout = "{_obs_layout(cfg)}"', f'team = "{side}"', f"tick_s = {TICK_S:g}",
+             f'game_file = "{meta["game_file"]}"', f'game_sha256 = "{meta["game_sha256"]}"',
+             f'scripted_sha256 = "{meta["scripted_sha256"]}"', f'git_commit = "{_git_commit()}"',
+             f'golden_tolerance = "{tolerance_text()}"']
+    for key, value in (source or {}).items():
+        lines.append(f'source_{key} = "{value}"')
+    lines += ["", "[skill_net]", f'file = "{path.name}"', f'sha256 = "{sha256_file(path)}"',
+              f'net_file = "{repo_relative(net_file)}"', f'net_sha256 = "{sha256_file(net_file)}"',
+              f"skills = {_arr(list(net.skills))}", f"slot_width = {net.slot_width}", f"k = {net.k}",
+              f"team_size = {net.team_size}", f"zeroed_inputs = {_arr(list(net.zeroed_inputs))}",
+              f'alive_rule = "inside the graph: command times obs[{alive}]"',
+              'code_rule = "z = index in skills; a two-level team\'s flown index is z"',
+              'input_check = "the consumer refuses slot outside [0, slot_width) and z outside [0, k)"']
+    for row in golden:
+        lines += ["", "[[skill_net_golden]]"] + [f"{k} = {_arr(v) if isinstance(v, list) else v}"
+                                                 for k, v in row.items()]
+    (out / "interface.toml").write_text("\n".join(lines) + "\n")
+    return out
+
+
+def inputs_problem(slot: np.ndarray, z: np.ndarray, slot_width: int, k: int) -> str | None:
+    """Why the skill network must not run on ``slot`` [B] and ``z`` [B] (int64, slot in [0, slot_width), z in
+    [0, k)), or None when they are good. onnxruntime refuses int32 but runs a code out of range without an error."""
+    slot, z = np.asarray(slot), np.asarray(z)
+    out = [f"{name} must be int64, is {a.dtype}" for name, a in (("slot", slot), ("z", z)) if a.dtype != np.int64]
+    for name, a, top in (("slot", slot, slot_width), ("z", z, k)):
+        bad = (a < 0) | (a >= top)
+        if bad.any():
+            out.append(f"{name} outside [0, {top}) in {int(bad.sum())} rows (first {a[bad][0]})")
+    return "; ".join(out) or None
+
+
+def run_skill_net(onnx_file, obs: np.ndarray, slot: np.ndarray, z: np.ndarray, slot_width: int, k: int) -> dict:
+    """The skill network's graph in ``onnx_file`` on rows ``obs`` [B, OBS_DIM] f32, ``slot`` [B], ``z`` [B] (int64) on
+    onnxruntime and ``onnx.reference.ReferenceEvaluator`` -> {runtime name: command [B, COMMAND_DIM]}. The inputs are
+    checked (:func:`inputs_problem`, ValueError) before any runtime is built."""
+    problem = inputs_problem(slot, z, slot_width, k)
+    if problem is not None:
+        raise ValueError(f"skill network inputs: {problem}")
+    import onnx
+    import onnxruntime as ort
+    from onnx.reference import ReferenceEvaluator
+    feed = {"obs": np.asarray(obs, dtype=np.float32), "slot": slot, "z": z}
+    sess = ort.InferenceSession(str(onnx_file), providers=["CPUExecutionProvider"])
+    ref = ReferenceEvaluator(onnx.load(str(onnx_file)))
+    return {"onnxruntime": sess.run(None, feed)[0], "onnx.reference": ref.run(None, feed)[0]}
+
+
+def _skill_net_check(folder, meta: dict) -> dict:
+    """The skill network of a folder (its ``[skill_net]`` section and ``[[skill_net_golden]]`` rows; a stand-alone
+    folder's, and later a route 3 team folder's): the file's sha256; its ONNX metadata (status, ``SKILL_NET_SCHEMA``,
+    team, slot_width, k); its skill list equal to ``[skill_net].skills``; the golden rows (every code for every drone,
+    range-checked before any runtime) within :func:`within` on both runtimes. Returns {"skill_net_max_abs_diff",
+    "skill_net_golden_rows"}; ValueError on a refusal."""
+    import onnx
+    sn = meta["skill_net"]
+    path = Path(folder) / sn["file"]
+    if sha256_file(path) != sn["sha256"]:
+        raise ValueError(f"{sn['file']}: sha256 {sha256_file(path)} is not the interface's {sn['sha256']}")
+    props = {p.key: p.value for p in onnx.load(str(path)).metadata_props}
+    want = {"status": STATUS, "policy_schema": SKILL_NET_SCHEMA, "team": meta["team"],
+            "slot_width": str(sn["slot_width"]), "k": str(sn["k"])}
+    differ = {key: (props.get(key), value) for key, value in want.items() if props.get(key) != value}
+    if differ:
+        raise ValueError(f"{sn['file']}: ONNX metadata (file, interface) differs: {differ}")
+    if json.loads(props.get("skills", "null")) != list(sn["skills"]) or len(sn["skills"]) != sn["k"]:
+        raise ValueError(f"{sn['file']}: the skills of interface.toml [skill_net] {list(sn['skills'])} (k {sn['k']}) "
+                         f"are not the file's own {props.get('skills')}")
+    obs = np.asarray([row["obs"] for row in meta["skill_net_golden"]], dtype=np.float32)        # [G, M, OBS_DIM]
+    want_cmd = np.asarray([row["commands"] for row in meta["skill_net_golden"]], dtype=np.float32)  # [G, M, K, 4]
+    g, m = obs.shape[:2]
+    k = int(sn["k"])
+    if want_cmd.shape != (g, m, k, skill_net.COMMAND_DIM):
+        raise ValueError(f"golden rows: commands of shape {want_cmd.shape}, expected "
+                         f"{(g, m, k, skill_net.COMMAND_DIM)}")
+    rows = np.repeat(obs.reshape(g * m, OBS_DIM), k, axis=0)                     # the row order of all_codes
+    slot = np.repeat(np.tile(np.arange(m, dtype=np.int64), g), k)
+    z = np.tile(np.arange(k, dtype=np.int64), g * m)
+    got = run_skill_net(path, rows, slot, z, int(sn["slot_width"]), k)
+    worst = 0.0
+    for name, commands in got.items():
+        ok, diff, scale = within(commands, want_cmd.reshape(g * m * k, skill_net.COMMAND_DIM))
+        worst = max(worst, diff)
+        if not ok:
+            raise ValueError(f"skill network golden rows: {name} differs by up to {diff:.2e} (tolerance "
+                             f"{tolerance_text()}, commands up to {scale:.3g})")
+    return {"skill_net_max_abs_diff": worst, "skill_net_golden_rows": int(g * m * k)}
+
+
 def _obs_layout(cfg) -> str:
     """The observation's index layout, from ``core.observations.ObsView`` (interface v0.1)."""
     from ..core.observations import SLOT, ObsView
@@ -267,9 +448,12 @@ def reload_check(folder) -> dict:
     meta = tomllib.loads((folder / "interface.toml").read_text())
     if meta.get("status") != STATUS:
         raise ValueError(f"interface.toml status {meta.get('status')!r}: must be {STATUS!r}")
-    route = {v: k for k, v in SCHEMAS.items()}.get(meta.get("policy_schema"))
+    route = ROUTE_OF_SCHEMA.get(meta.get("policy_schema"), (None, None))[0]
     if route is None:
-        raise ValueError(f"unknown policy_schema {meta.get('policy_schema')!r} (known: {sorted(SCHEMAS.values())})")
+        raise ValueError(f"unknown policy_schema {meta.get('policy_schema')!r} (known: {sorted(ROUTE_OF_SCHEMA)})")
+    if route == "skill_net":                    # a stand-alone skill network folder: no [[files]], no heads
+        return {"ok": True, "runtimes": ["onnxruntime", "onnx.reference"], "route": route, "status": STATUS,
+                "tolerance": tolerance_text(), **_skill_net_check(folder, meta)}
     runners = []
     for f in meta["files"]:
         path = folder / f["file"]

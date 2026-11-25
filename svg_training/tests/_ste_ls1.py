@@ -24,6 +24,8 @@ ste_learning/drafts/LS1_TASK_PLAN.md, section 0 constraint 5; created in task LS
   takes a network only with a complete ``fit_report.json`` beside it whose shas name the network and the gate file,
   and whose provenance names the same gate file; ``read_net`` saves a tiny network distilled, by its meta, from a given
   gate file and writes that report (no fit is run: the read's checks, not the network's quality, are under test).
+* ``tiny_skill_net`` (task LS1-M3-T2): ``save_tiny_net`` loaded back with ``skill_net.load_skill_net``, as the export of
+  the skill network takes it: (net, meta, path, sha256).
 
 CPU only."""
 import copy
@@ -283,3 +285,14 @@ def read_net(folder, side, gates_file, of_record: bool = False, gates=None, **ti
     path, sha = save_tiny_net(folder, side, cfg, gates=gates, provenance=provenance, **tiny_kw)
     write_fit_report(path, sha, gates_sha, of_record=of_record)
     return path, sha
+
+
+def tiny_skill_net(tmp_path, side, gates=None, **tiny_kw) -> tuple[skill_net.SkillNet, dict, Path, str]:
+    """``save_tiny_net(tmp_path, side, cfg)`` (the base variant's game of ``gates``, default the skills gate file)
+    loaded back as the export takes it (task LS1-M3-T2): (net in ``eval()``, its meta, absolute path, sha256)."""
+    gates = _gates(gates)
+    cfg = exploit.variant_cfg(gates, "base")
+    path, sha = save_tiny_net(tmp_path, side, cfg, gates=gates, **tiny_kw)
+    net, meta = skill_net.load_skill_net(path, team=side, skills=skills.team_skills(gates.players, side), cfg=cfg,
+                                         device="cpu", file_sha256=sha)
+    return net, meta, path, sha

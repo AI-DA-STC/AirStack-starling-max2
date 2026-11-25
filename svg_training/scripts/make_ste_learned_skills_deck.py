@@ -12,7 +12,9 @@ Usage, from ``svg_training/``:
     python3 scripts/make_ste_learned_skills_deck.py            # the .pptx only
     python3 scripts/make_ste_learned_skills_deck.py --png      # the .pptx and the PNG renders
 
-The content follows ``ste_learning/LEARNED_SKILLS_ROUTE.md`` and ``ste_learning/drafts/LEARNED_SKILLS_BRIDGE_PLAN.md``.
+The content follows ``ste_learning/LEARNED_SKILLS_ROUTE.md`` and ``ste_learning/drafts/LS_EXECUTION_WORKFLOW.md`` (v3,
+rulings R39 to R45). Slides 8 and 9 (what a useful policy still needs; where it stands) are not rendered to PNG: the page
+carries them as tables.
 """
 import argparse
 import importlib.util
@@ -68,13 +70,15 @@ def slide_title(prs):
     for r in sub.text_frame.paragraphs[0].runs:
         set_run(r, 22, False, LIGHT)
     note(s, 0.8, 6.3, 11.7, 0.5,
-         "Third route of the STE learning track · adopted 25 November 2026 · a design: nothing built, trained or flown",
+         "Third route of the STE learning track · adopted 25 November 2026 · build approved: nothing built, trained or flown yet",
          size=14, color=LIGHT)
     s.notes_slide.notes_text_frame.text = (
         "The STE learning track trains Guard and Strike drone teams for the area-denial game. It has two routes "
         "today: pure RL and the skills route. This deck shows the third route, adopted on 25 November 2026: the "
-        "drones learn their own skills and their own team strategy, starting from the hand-written ones. It is a "
-        "design; nothing has been built, trained or flown.")
+        "drones learn their own skills and their own team strategy, starting from the hand-written ones. The aim is "
+        "a policy that is useful on the drones, not a pipeline check, and the route has no GPU-hour cap: each job "
+        "states its hours before launch. The build was approved on 25 November 2026 and is in work; nothing has "
+        "been built, trained or flown yet.")
 
 
 
@@ -114,7 +118,7 @@ def slide_architecture(prs):
                                              "\"free\": each drone picks"], fill=LEARN, size=12, name="heads")
     net = node(s, P, 6.2, 2.55, 2.2, 1.0, [("Skill network", {"bold": True}), "flies the chosen skill:",
                                            "a velocity every 0.05 s"], fill=LEARN, size=12, name="skill_net")
-    opp = node(s, DISK, 8.8, 1.62, 1.9, 0.72, [("Opponent team", {"bold": True}), "scripts; LS4: a league"],
+    opp = node(s, DISK, 8.8, 1.62, 1.9, 0.72, [("Opponent team", {"bold": True}), "scripts; later: saved teams"],
                fill=HAND, size=11, name="opponents")
     filt = node(s, P, 8.8, 2.55, 1.9, 1.0, [("Safety filter", {"bold": True}), "keeps every pair", "of drones apart"],
                 fill=HAND, size=12, name="filter")
@@ -135,7 +139,7 @@ def slide_architecture(prs):
                    fill=HAND, size=12, name="teacher scripts")
     learn = node(s, P, 3.0, 4.45, 5.4, 0.85,
                  [("Learning step", {"bold": True}),
-                  "LS1 copies the scripts; from LS2, reinforcement learning (PPO)"],
+                  "LS1 copies the scripts; then heads, later skills: PPO"],
                  fill=LEARN, size=12, name="learning step")
     out = node(s, P, 11.0, 4.45, 1.8, 0.85, [("Outcome", {"bold": True}), "reward"], fill=HAND, size=12,
                name="outcome")
@@ -172,12 +176,13 @@ def slide_architecture(prs):
         "drone it is and its code into a velocity. The hand-written safety filter keeps every pair of drones apart, "
         "the opponents' too, and the game step applies tags, the zone and the clock; the next observation starts "
         "the next tick. The middle band exists only in training. In LS1 the learning step copies the hand-written "
-        "scripts into the skill network with a supervised fit; from LS2 it is reinforcement learning (PPO) on the "
-        "game's reward, with a tie that keeps each skill near its script. It updates the heads' choices from today "
-        "and the skills from LS2; LS3 adds new skill codes with no script, LS4 adds a league of opponents. The bottom "
+        "scripts into the skill network with a supervised fit; the head training that follows, and LS2 and later, "
+        "use reinforcement learning (PPO) on the game's reward, with a tie that keeps each skill near its script "
+        "in LS2. It updates the heads' choices from the head training on and the skills from LS2; self-play adds "
+        "saved teams as opponents, and LS3, last, adds new skill codes with no script. The bottom "
         "band is what comes out: when each team's gates pass, each team is exported on its own, heads plus skill "
         "network, and any opponent that obeys the game's rules can face it. Real flight needs the owner's approval. "
-        "All of this is a proposed design: nothing has been built, trained or flown.")
+        "The build is approved and in work: nothing has been built, trained or flown yet.")
 
 
 def slide_routes(prs):
@@ -235,53 +240,63 @@ def slide_routes(prs):
 
 
 def slide_stages(prs):
-    s = new_slide(prs, "Four stages, each starting from the one before")
-    w = 2.65
-    xs = [0.5, 3.75, 7.0, 10.25]
-    heads = [("LS1 Distil", "copy the scripts"), ("LS2 Fine-tune", "improve the skills"),
-             ("LS3 Free codes", "skills no script has"), ("LS4 League", "team strategy emerges")]
+    s = new_slide(prs, "Five steps, each starting from the one before")
+    w = 2.0
+    xs = [0.45 + i * 2.5 for i in range(5)]
+    heads = [("LS1 Distil", "copy the scripts"), ("Head training", "heads on the skill network"),
+             ("LS2 Fine-tune", "improve the skills"), ("Self-play", "teams against teams"),
+             ("LS3 Free codes", "last: an extension")]
     cards = [
-        ["Learned: a copy of every script as codes of one network per team",
-         "Hand-written: the scripts, as teachers",
-         "Gate: plays like the scripts, cell by cell",
-         "Estimate: about 1 GPU-h"],
-        ["Learned: the choices and the skills",
-         "Hand-written: a tie to each script, weakened step by step",
-         "Gate: beats the best fixed mix of scripts",
-         "Estimate: 5 to 8 GPU-h"],
-        ["Learned: new skill codes, rewarded for being distinct and useful",
-         "Hand-written: nothing for the new codes",
-         "Gate: new codes are chosen and raise the worst cell",
-         "Estimate: 10 to 20 GPU-h"],
-        ["Learned: which code each drone gets, against past and present opponents",
-         "Opponents: scripts, past teams, saved exploits",
-         "Gate: the robustness suite",
-         "Estimate: open"],
+        ["Learned: a copy of every script, as codes of one skill network per team",
+         "Gate: same starts; games that change are counted; limits set from a calibration read",
+         "Asks 0.9 GPU-h"],
+        ["Learned: the heads again, on the skill network; both teams",
+         "Expected: scores about as the skills route's; no new strategy",
+         "Asks 4.0 GPU-h (job group LS1.4)"],
+        ["Learned: skills and heads, in turns",
+         "A tie keeps each code near its script, weakened step by step",
+         "Gate: above the best fixed mix",
+         "Hours: its own note"],
+        ["Learned: choices against saved and present teams",
+         "Pool entry and pilot right after head training",
+         "Full stage before LS2 only if the pilot shows room",
+         "Hours: its own note"],
+        ["Learned: skill codes with no script, rewarded for being distinct and useful",
+         "Gate: new codes chosen; worst result up",
+         "Hours: its own note"],
     ]
     stages = []
     for x, (t, sub), lines in zip(xs, heads, cards):
-        st = node(s, ALT, x, 1.4, w, 0.95, [(t, {"bold": True, "size": 17}), sub], fill=LEARN, size=13)
+        st = node(s, ALT, x, 1.4, w, 0.95, [(t, {"bold": True, "size": 14}), sub], fill=LEARN, size=11)
         stages.append(st)
-        card = node(s, ALT, x, 2.6, w, 3.0, "", fill=LIGHT, text_color=INK)
+        card = node(s, ALT, x, 2.6, w, 3.2, "", fill=LIGHT, text_color=INK)
         card.name = f"Card: {t}"
-        note(s, x + 0.15, 2.75, w - 0.3, 2.8, lines, size=13, space_after=8)
+        note(s, x + 0.1, 2.7, w - 0.2, 3.0, lines, size=12, space_after=6)
     for a, b in zip(stages, stages[1:]):
         mid = (a.left + a.width + b.left) / 2 / 914400
-        dm = node(s, D, mid - 0.26, 1.61, 0.52, 0.52, "", fill=GATE)
+        dm = node(s, D, mid - 0.2, 1.67, 0.4, 0.4, "", fill=GATE)
         link(s, a, RIGHT, dm, LEFT)
         link(s, dm, RIGHT, b, LEFT)
-    node(s, D, 0.6, 5.95, 0.32, 0.32, "", fill=GATE)
-    note(s, 1.05, 5.9, 11.8, 0.8,
-         ["Gate: pass marks written before the run. A stage that fails stops the route there; every stage before it",
-          "is still a usable result. Only LS1 is planned task by task; LS2 to LS4 return with their own notes and costs."],
-         size=13, color=DARK, space_after=0)
+    node(s, D, 0.6, 6.05, 0.32, 0.32, "", fill=GATE)
+    note(s, 1.05, 5.95, 11.8, 0.9,
+         ["Gate: pass marks written before the run. A step that fails stops the route there; every step before it is "
+          "still a usable result.",
+          "Hours are asks, not results; no cap, each job states its hours before launch. LS1 and head training are "
+          "planned job by job."],
+         size=12, color=DARK, space_after=0)
     s.notes_slide.notes_text_frame.text = (
-        "Each stage starts from the exact behaviour of the stage before, so no stage starts from random flight. "
-        "LS1 copies the hand-written scripts into one skill network per team: same behaviour, but now trainable. "
-        "LS2 trains those skills with the game reward while a penalty keeps each skill near its script. LS3 adds "
-        "skill codes with no script, rewarded for being distinct and useful. LS4 puts both teams in a league of past "
-        "and present opponents, where a team strategy is the pattern of codes the team gives its drones. GPU hours "
-        "after LS1 are estimates; LS1 itself is the only stage planned in detail.")
+        "The order is LS1, head training, LS2, self-play, LS3. Each step starts from the exact behaviour of the one "
+        "before, so none starts from random flight. LS1 copies the hand-written scripts into one skill network per "
+        "team; its gate has the copy and the scripts play the same starts, counts the games that change and not "
+        "only the difference in wins, and takes its pass limits from a calibration read made before the run. Head "
+        "training, job group LS1.4, trains the heads again on the skill network, for both teams. The copy imitates "
+        "the scripts, so scores about as the skills route's are the expected outcome; a new strategy is not "
+        "expected before LS2. LS2 trains the skills with the game reward while a tie keeps each skill near its "
+        "script. Self-play is the stage called LS4 on earlier versions of the page. Its pool entry for saved teams "
+        "is built early and a pilot runs right after head training; the full stage starts before LS2 only if the "
+        "pilot's three measurements show room, otherwise after LS2. LS3, free skill codes, comes last. The route has "
+        "no GPU-hour cap; each job states its hours before launch. LS1 asks 0.9 and head training asks 4.0, two "
+        "seeds per arm, clips included. These are asks, not results; later steps bring their own estimates.")
 
 
 def slide_decision(prs):
@@ -327,7 +342,7 @@ def slide_strategy(prs):
     w, h = 2.6, 1.05
     a = node(s, P, 0.6, 1.5, w, h, [("Team gives out codes", {"bold": True}), "a pattern over its drones"],
              fill=LEARN, size=13)
-    b = node(s, P, 3.85, 1.5, w, h, [("Thousands of games", {"bold": True}), "against a league that adapts"],
+    b = node(s, P, 3.85, 1.5, w, h, [("Thousands of games", {"bold": True}), "against opponents that adapt"],
              fill=HAND, size=13)
     c = node(s, P, 3.85, 4.1, w, h, [("Outcome", {"bold": True}), "zone held or reached, tags"], fill=HAND,
              size=13)
@@ -342,7 +357,7 @@ def slide_strategy(prs):
     items = [
         ("1  A new mix", "two Guards mark, one holds the centre: no script does this"),
         ("2  A new switching rule", "hold the ring while one Strike charges alone; mark when two close in"),
-        ("3  New skills, then new roles", "LS2 changes how a skill flies; LS3 adds skills no script has"),
+        ("3  New skills, then new roles", "LS2 changes how a skill flies; LS3, last, adds skills no script has"),
     ]
     for i, (t, body) in enumerate(items):
         y = 1.95 + i * 1.22
@@ -355,8 +370,8 @@ def slide_strategy(prs):
          size=13, color=DARK, space_after=3)
     s.notes_slide.notes_text_frame.text = (
         "Nobody writes the strategy. The team gives out skill codes, thousands of games are played, and the "
-        "learning step makes the choices that came before wins more likely. The league closes the loop: when one "
-        "team finds a pattern that wins, the other team's opponents adapt to it, which pushes the first team to "
+        "learning step makes the choices that came before wins more likely. Self-play closes the loop: when one "
+        "team finds a pattern that wins, the other team's training adapts to it, which pushes the first team to "
         "something new. Example: against a decoy attack, a Guard team that holds its ring while one Strike charges "
         "alone wins more, so that rule grows; no script says it. A new strategy may also not appear, and the gates "
         "are there to tell.")
@@ -396,6 +411,50 @@ def slide_after(prs):
         "training pool for the next run. Flight stays gated by the owner.")
 
 
+def slide_needs(prs):
+    s = new_slide(prs, "What a useful policy still needs beyond this route")
+    rows = [
+        ("Self-play against saved teams", "the opponent pool takes script names only: a pool entry for saved teams is a new build"),
+        ("A held-out test", "new scripts, two per side, written for it: every current Strike script is in the training pool"),
+        ("Holding the team plan when a drone is lost", "a shared actor and training at drawn team sizes"),
+        ("Training on the Isaac Lab drone (tier 2)", "a separate task: this route trains on the fast engine (tier 1)"),
+    ]
+    for i, (t, body) in enumerate(rows):
+        y = 1.45 + i * 1.15
+        node(s, ALT, 0.6, y, 12.1, 0.95, "", fill=LIGHT, text_color=INK)
+        note(s, 0.8, y + 0.08, 11.7, 0.85, [(t, {"bold": True, "size": 15}), body], size=14, space_after=2)
+    note(s, 0.6, 6.15, 12.1, 0.6,
+         "The aim is a policy that is useful on the drones. The route covers the learning; these four items come from "
+         "the wider track goal.", size=13, color=DARK, bold=True)
+    s.notes_slide.notes_text_frame.text = (
+        "Four things a useful policy needs that the route does not give by itself. Self-play needs a pool that can "
+        "hold saved teams: today the pool takes script names only, so this is a new build. A held-out test needs new "
+        "scripts written for it, because every current Strike script is in the training pool. Holding the team plan "
+        "when a drone is lost needs a shared actor. Training on the Isaac Lab drone, tier 2, is a separate task.")
+
+
+def slide_status(prs):
+    s = new_slide(prs, "Where it stands")
+    rows = [
+        ("The route", "adopted, 25 November 2026"),
+        ("GPU-hours", "no cap; each job states its hours before launch"),
+        ("Design review", "done, two reviewers"),
+        ("The build", "approved 25 November 2026; in work"),
+        ("Code and runs", "none yet"),
+        ("Still to be set", "LS1 pass limits and the head-training margin, after the calibration read"),
+    ]
+    for i, (t, body) in enumerate(rows):
+        y = 1.4 + i * 0.82
+        node(s, ALT, 0.6, y, 3.2, 0.66, t, fill=LEARN, size=14)
+        node(s, ALT, 3.9, y, 8.8, 0.66, body, fill=LIGHT, text_color=INK, size=14)
+    note(s, 0.6, 6.4, 12.1, 0.5, "Nothing has been built, trained or flown.", size=15, color=DARK, bold=True)
+    s.notes_slide.notes_text_frame.text = (
+        "The route was adopted on 25 November 2026. It has no GPU-hour cap; every job states its hours before "
+        "launch. The design review by two reviewers is done, and the build was approved the same day and is in work. "
+        "There is no code and there are no runs yet. The LS1 pass limits and the head-training margin are set after "
+        "the calibration read, before any run. Nothing has been built, trained or flown.")
+
+
 def render_pngs(deck: Path) -> None:
     """deck -> PDF (LibreOffice, headless) -> one PNG per flowchart slide (pdftoppm, 110 dpi)."""
     with tempfile.TemporaryDirectory() as tmp:
@@ -423,6 +482,8 @@ def main() -> None:
     slide_decision(prs)
     slide_strategy(prs)
     slide_after(prs)
+    slide_needs(prs)
+    slide_status(prs)
     prs.core_properties.title = "The learned-skills route: drone teams that learn their own skills and team strategy"
     prs.core_properties.author = "NEAR Lab, ST Engineering"
     OUT_DIR.mkdir(parents=True, exist_ok=True)

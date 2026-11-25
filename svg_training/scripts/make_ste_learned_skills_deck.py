@@ -23,14 +23,16 @@ from pathlib import Path
 
 from pptx import Presentation
 from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
-from pptx.util import Inches
+from lxml import etree
+from pptx.oxml.ns import qn
+from pptx.util import Inches, Pt
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT_DIR = ROOT / "ste_learning" / "figures"
 DECK = OUT_DIR / "learned_skills_route.pptx"
 # slide number (1-based) -> PNG name; slide 1 is the title and is not rendered
-PNGS = {2: "ls_three_routes.png", 3: "ls_four_stages.png", 4: "ls_one_decision.png",
-        5: "ls_new_strategy.png", 6: "ls_after_training.png"}
+PNGS = {2: "ls_architecture.png", 3: "ls_three_routes.png", 4: "ls_four_stages.png", 5: "ls_one_decision.png",
+        6: "ls_new_strategy.png", 7: "ls_after_training.png"}
 
 _spec = importlib.util.spec_from_file_location("build_deck", ROOT / "docs" / "pipeline" / "build_deck.py")
 bd = importlib.util.module_from_spec(_spec)
@@ -73,6 +75,109 @@ def slide_title(prs):
         "today: pure RL and the skills route. This deck shows the third route, adopted on 25 November 2026: the "
         "drones learn their own skills and their own team strategy, starting from the hand-written ones. It is a "
         "design; nothing has been built, trained or flown.")
+
+
+
+def poly(s, pts, color=INK, dashed=False, arrow=True, width=1.75, name=None):
+    """A free-form arrow through points (inches); for loops and bypasses a glued connector cannot route."""
+    ff = s.shapes.build_freeform(Inches(pts[0][0]), Inches(pts[0][1]), scale=1.0)
+    ff.add_line_segments([(Inches(x), Inches(y)) for x, y in pts[1:]], close=False)
+    shp = ff.convert_to_shape()
+    shp.fill.background()
+    shp.line.color.theme_color = color
+    shp.line.width = Pt(width)
+    shp.shadow.inherit = False
+    ln = shp.line._get_or_add_ln()
+    if dashed:
+        etree.SubElement(ln, qn("a:prstDash")).set("val", "dash")
+    if arrow:
+        etree.SubElement(ln, qn("a:tailEnd")).attrib.update({"type": "triangle", "w": "med", "len": "med"})
+    if name:
+        shp.name = name
+    return shp
+
+
+def label(s, x, y, w, text, color=INK, align=PP_ALIGN.LEFT):
+    return note(s, x, y, w, 0.28, (text, {"bold": True}), size=11, color=color, align=align, anchor=MSO_ANCHOR.MIDDLE)
+
+
+def slide_architecture(prs):
+    """The whole route on one slide: every game (top band), training only (middle), after training (bottom)."""
+    s = new_slide(prs, "Strategy architecture at a glance")
+    band(s, 0.45, 1.25, 12.45, 2.75, "Every game, in training and after", label_bottom=True)
+    band(s, 0.45, 4.1, 12.45, 1.3, "Training only")
+    band(s, 0.45, 5.5, 12.45, 1.15, "After training", label_bottom=True)
+    # every game: see -> decide -> fly -> stay safe -> play
+    obs = node(s, P, 0.6, 1.75, 2.0, 1.7, [("What each drone sees", {"bold": True}), "itself, team-mates,",
+                                           "opponents, zone, clock"], fill=HAND, size=12, name="obs")
+    heads = node(s, P, 3.0, 2.55, 2.4, 1.0, [("Heads, every 0.6 s", {"bold": True}), "team strategy for all, or",
+                                             "\"free\": each drone picks"], fill=LEARN, size=12, name="heads")
+    net = node(s, P, 6.2, 2.55, 2.2, 1.0, [("Skill network", {"bold": True}), "flies the chosen skill:",
+                                           "a velocity every 0.05 s"], fill=LEARN, size=12, name="skill_net")
+    opp = node(s, DISK, 8.8, 1.62, 1.9, 0.72, [("Opponent team", {"bold": True}), "scripts; LS4: a league"],
+               fill=HAND, size=11, name="opponents")
+    filt = node(s, P, 8.8, 2.55, 1.9, 1.0, [("Safety filter", {"bold": True}), "keeps every pair", "of drones apart"],
+                fill=HAND, size=12, name="filter")
+    game = node(s, P, 11.0, 2.55, 1.8, 1.0, [("Game step", {"bold": True}), "tags, zone, clock"], fill=HAND, size=12,
+                name="game")
+    link(s, obs, RIGHT, heads, LEFT, kind="elbow3")
+    link(s, heads, RIGHT, net, LEFT)
+    label(s, 5.42, 3.12, 0.78, "code", align=PP_ALIGN.CENTER)
+    link(s, net, RIGHT, filt, LEFT)
+    link(s, filt, RIGHT, game, LEFT)
+    link(s, opp, BOTTOM, filt, TOP)
+    poly(s, [(2.6, 1.98), (7.3, 1.98), (7.3, 2.55)], name="obs to skill network")
+    label(s, 3.0, 2.02, 3.2, "what it sees + which drone it is, every tick")
+    poly(s, [(11.9, 2.55), (11.9, 1.45), (1.6, 1.45), (1.6, 1.75)], name="next tick")
+    label(s, 3.0, 1.5, 2.4, "next observation, every tick")
+    # training only: score and learn
+    scripts = node(s, PRE, 0.6, 4.5, 2.0, 0.78, [("Teacher scripts", {"bold": True}), "hand-written skills"],
+                   fill=HAND, size=12, name="teacher scripts")
+    learn = node(s, P, 3.0, 4.45, 5.4, 0.85,
+                 [("Learning step", {"bold": True}),
+                  "LS1 copies the scripts; from LS2, reinforcement learning (PPO)"],
+                 fill=LEARN, size=12, name="learning step")
+    out = node(s, P, 11.0, 4.45, 1.8, 0.85, [("Outcome", {"bold": True}), "reward"], fill=HAND, size=12,
+               name="outcome")
+    link(s, scripts, RIGHT, learn, LEFT, dashed=True, color=HAND)
+    link(s, game, BOTTOM, out, TOP)
+    link(s, out, LEFT, learn, RIGHT, label="zone held or reached", label_at=(9.7, 4.68), label_w=2.0)
+    poly(s, [(4.2, 4.45), (4.2, 3.55)], name="updates the heads")
+    poly(s, [(7.3, 4.45), (7.3, 3.55)], name="updates the skills")
+    label(s, 4.3, 3.82, 1.6, "updates choices")
+    label(s, 7.4, 3.82, 1.4, "updates skills")
+    # after training: one export per team
+    gate = node(s, D, 5.42, 5.82, 0.56, 0.52, "", fill=GATE, name="gates")
+    link(s, learn, BOTTOM, gate, TOP)
+    label(s, 5.85, 5.48, 2.4, "each team's gates pass")
+    guard = node(s, DOC, 2.75, 5.72, 2.3, 0.78, [("Guard team export", {"bold": True}), "heads + skill network"],
+                 fill=GUARD, size=12, name="guard export")
+    strike = node(s, DOC, 6.35, 5.72, 2.3, 0.78, [("Strike team export", {"bold": True}), "heads + skill network"],
+                  fill=STRIKE, size=12, name="strike export")
+    link(s, gate, LEFT, guard, RIGHT)
+    link(s, gate, RIGHT, strike, LEFT)
+    note(s, 9.0, 5.6, 3.8, 0.95, ["Each export: network files + a settings file;",
+                                  "any opponent can face it. Real flight needs",
+                                  "the owner's approval. A proposed design:", "nothing built, trained or flown yet."],
+         size=12, space_after=0)
+    legend(s, 6.82)
+    note(s, 4.3, 6.78, 8.6, 0.32, "Blue: Guard team · red: Strike team · amber: gate · dashed: teaching, in training only",
+         size=12)
+    s.notes_slide.notes_text_frame.text = (
+        "Read from top left to bottom right. The top band runs in every game, in training and after it. Each drone "
+        "sees itself, its team-mates, the opponents, the zone and the clock. Every 0.6 seconds the heads decide: the "
+        "team head (the lowest-index live drone's choice counts for the team) picks a named team strategy for all "
+        "drones, or 'free', in which case each drone's own head picks a skill. Either way every drone gets a skill "
+        "code, held for 0.6 seconds. Every tick, 0.05 seconds, the skill network turns what the drone sees, which "
+        "drone it is and its code into a velocity. The hand-written safety filter keeps every pair of drones apart, "
+        "the opponents' too, and the game step applies tags, the zone and the clock; the next observation starts "
+        "the next tick. The middle band exists only in training. In LS1 the learning step copies the hand-written "
+        "scripts into the skill network with a supervised fit; from LS2 it is reinforcement learning (PPO) on the "
+        "game's reward, with a tie that keeps each skill near its script. It updates the heads' choices from today "
+        "and the skills from LS2; LS3 adds new skill codes with no script, LS4 adds a league of opponents. The bottom "
+        "band is what comes out: when each team's gates pass, each team is exported on its own, heads plus skill "
+        "network, and any opponent that obeys the game's rules can face it. Real flight needs the owner's approval. "
+        "All of this is a proposed design: nothing has been built, trained or flown.")
 
 
 def slide_routes(prs):
@@ -312,6 +417,7 @@ def main() -> None:
     bd.apply_theme(prs)
     bd.style_layouts(prs)
     slide_title(prs)
+    slide_architecture(prs)
     slide_routes(prs)
     slide_stages(prs)
     slide_decision(prs)

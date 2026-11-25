@@ -20,6 +20,15 @@ Terms used on this page:
 - *Skill code*: a number that names one skill; the skill network reads it as an input.
 - *Gate*: a pass mark written before a run and never moved after it.
 
+## Architecture at a glance
+
+![The whole route on one picture, in three bands. Every game: what each drone sees goes to the heads (every 0.6 s: a team strategy for all drones, or "free" and each drone picks), which pass a skill code to the skill network; the skill network also reads what the drone sees and which drone it is, every tick, and outputs a velocity; the safety filter, which also takes the opponent team, and the game step follow, and the next observation closes the loop. Training only: the game outcome becomes the reward of the learning step, which copies the teacher scripts in LS1 and is reinforcement learning from LS2, and updates the heads and the skills. After training: when each team's gates pass, a Guard team export and a Strike team export, each heads plus skill network](figures/ls_architecture.png)
+
+Read from top left to bottom right. The top band runs in every game, during training and after it; the middle band
+exists only in training; the bottom band is what comes out. Teal parts are learned, grey parts are hand-written and
+unchanged; the dashed arrow is teaching, used in training only. The learning step is a supervised copy of the
+scripts in LS1 and reinforcement learning (PPO) from LS2.
+
 ## Three routes, one game
 
 ![Three lanes, one per route, each from what a drone sees to a velocity command and then into one shared box, the safety filter and the game. Pure RL: a learned policy network outputs the velocity. Skills route: learned team and drone heads choose which hand-written script flies. Learned-skills route: the same learned heads choose a skill code and a learned skill network flies it. Learned boxes are teal, hand-written boxes grey](figures/ls_three_routes.png)
@@ -137,6 +146,7 @@ setting, `[learner] skill_source = "net"`, swaps the scripts for the skill netwo
 | Order against the next learner version | not decided; proposed: LS1 beside it, LS2 onwards on it |
 | Design review of the plan (two reviewers) | not started |
 | Code, runs | none |
+| Execution workflow: what is added to the pipeline and which jobs run | draft for the owner's review: [drafts/LS_EXECUTION_WORKFLOW.md](drafts/LS_EXECUTION_WORKFLOW.md) |
 
 Files: the plan, [drafts/LEARNED_SKILLS_BRIDGE_PLAN.md](drafts/LEARNED_SKILLS_BRIDGE_PLAN.md) (LS1 task by task, LS2 to
 LS4 as outlines); the slides, [figures/learned_skills_route.pptx](figures/learned_skills_route.pptx) (editable

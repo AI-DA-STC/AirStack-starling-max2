@@ -16,11 +16,18 @@ ste_learning/drafts/LS1_TASK_PLAN.md, section 0 constraint 5; created in task LS
   text of tests/test_ste_l3_tier2.py, copied: test modules are not imported).
 * ``tiny_learner_saved``: a tiny learner's ``saved()`` dict for whatever route the gate file holds (the recipe of
   tests/test_ste_l3_export.py ``tiny_learner``, copied: that module skips itself without onnxruntime).
+* ``toml_text``, ``filled_distil``, ``write_distil_gates`` (task LS1-M2-T5, moved here from
+  tests/test_ste_ls1_distil_gates.py so the distillation gate file has one writer in every test): a gate file's text
+  from its parsed dict, the committed ``distil_gates.toml`` with the owner's keys filled from ``STAND_IN``, and that
+  text written under ``tmp_path`` (relative ``[source]`` paths still resolve from the ``svg_training/`` root).
 
 CPU only."""
+import copy
 import hashlib
 import json
+import math
 import re
+import tomllib
 from pathlib import Path
 
 import torch
@@ -30,6 +37,7 @@ from svg_training.ste import exploit, exploit_train, skill_net, skills
 
 ROOT = Path(__file__).resolve().parents[1]
 SKILLS_GATES = ROOT / "configs" / "ste_l3" / "skills_gates.toml"
+DISTIL_GATES = ROOT / "configs" / "ste_ls1" / "distil_gates.toml"
 STD_FLOOR = 0.0029                       # synthetic meta value (the real one is distil_gates.toml [net] std_floor)
 READING_IN_NET_FILES = False             # LS1-M4-T1 sets this True (its [reading] section is then required)
 CHOICE_ANCHOR = re.compile(r'^choice = "two_level".*$', re.MULTILINE)   # the whole line, its comment included
@@ -194,3 +202,49 @@ def tiny_learner_saved(gates, side) -> dict:
     learner = exploit_train.Learner(settings, env, "cpu", seed=11)
     learner.update()
     return learner.saved()
+
+
+def toml_value(v) -> str:
+    """A TOML value: strings as JSON strings (the escapes agree), dicts as inline tables, lists element by element."""
+    if isinstance(v, bool):
+        return "true" if v else "false"
+    if isinstance(v, str):
+        return json.dumps(v)
+    if isinstance(v, dict):
+        return "{ " + ", ".join(f"{k} = {toml_value(x)}" for k, x in v.items()) + " }"
+    if isinstance(v, list):
+        return "[" + ", ".join(toml_value(x) for x in v) + "]"
+    if isinstance(v, float) and math.isnan(v):
+        return "nan"
+    return repr(v)
+
+
+def toml_text(data: dict) -> str:
+    """A gate file's text from its parsed dict: one ``[section]`` per top-level table, nested tables inline."""
+    out = []
+    for section, table in data.items():
+        out.append(f"[{section}]")
+        out += [f"{k} = {toml_value(v)}" for k, v in table.items()]
+        out.append("")
+    return "\n".join(out)
+
+
+def committed_distil() -> dict:
+    """The committed ``distil_gates.toml``, parsed."""
+    return tomllib.loads(DISTIL_GATES.read_text())
+
+
+def filled_distil(data: dict | None = None) -> dict:
+    """The committed distillation gate file's dict (or ``data``) with the owner's keys filled from ``STAND_IN``
+    (synthetic, constraint 5)."""
+    data = copy.deepcopy(data if data is not None else committed_distil())
+    data["limits"] = dict(STAND_IN["limits"])
+    data["controls"] = copy.deepcopy(STAND_IN["controls"])
+    return data
+
+
+def write_distil_gates(tmp_path, data: dict | None = None, name: str = "distil_gates.toml") -> Path:
+    """``toml_text(data)`` (default: ``filled_distil()``, the ``STAND_IN`` gate file) written under ``tmp_path``."""
+    path = Path(tmp_path) / name
+    path.write_text(toml_text(filled_distil() if data is None else data))
+    return path

@@ -90,7 +90,8 @@ SECTIONS = {
     "report": ("games", "ticks", "seed", "hold_bins_ticks"),
     "clips": ("games", "keep", "codes", "seed", "max_ticks", "speed", "fps", "dpi"),
     "smoke": ("games", "rounds", "ticks", "read_games", "device"),
-    "read": ("alpha", "interval", "correction", "path_times_s", "chunk_cells", "device", "near_miss_cells"),
+    "read": ("alpha", "interval", "correction", "path_times_s", "chunk_cells", "device", "noise_seed",
+             "near_miss_cells"),
     "limits": LIMIT_KEYS,
     "controls": COUNT_KEYS + ("near_miss",),
     "stop": STOP_KEYS,
@@ -367,7 +368,7 @@ def load_distil_gates(path: str | Path) -> DistilGates:
     _check_smoke(parts["smoke"], parts["dagger"])
     seeds = {"[data] seed": parts["data"]["seed"], "[data] pool_seed": parts["data"]["pool_seed"],
              "[fit] seed": parts["fit"]["seed"], "[report] seed": parts["report"]["seed"],
-             "[clips] seed": parts["clips"]["seed"]}
+             "[clips] seed": parts["clips"]["seed"], "[read] noise_seed": parts["read"]["noise_seed"]}
     for what, s in seeds.items():
         _whole(s, what, 0)
     if len(set(seeds.values())) != len(seeds):

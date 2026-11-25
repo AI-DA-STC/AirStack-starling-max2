@@ -18,7 +18,6 @@ Synthetic owner values come from ``_ste_ls1.STAND_IN`` (constraint 5): no limit 
 import copy
 import hashlib
 import inspect
-import json
 import math
 import sys
 import tomllib
@@ -45,47 +44,14 @@ SIDES = ("guard", "strike")
 
 
 # ================================================================================================ helpers
-def _value(v) -> str:
-    """A TOML value: strings as JSON strings (the escapes agree), dicts as inline tables, lists element by element."""
-    if isinstance(v, bool):
-        return "true" if v else "false"
-    if isinstance(v, str):
-        return json.dumps(v)
-    if isinstance(v, dict):
-        return "{ " + ", ".join(f"{k} = {_value(x)}" for k, x in v.items()) + " }"
-    if isinstance(v, list):
-        return "[" + ", ".join(_value(x) for x in v) + "]"
-    if isinstance(v, float) and math.isnan(v):
-        return "nan"
-    return repr(v)
-
-
-def toml_text(data: dict) -> str:
-    """A gate file's text from its parsed dict: one ``[section]`` per top-level table, nested tables inline."""
-    out = []
-    for section, table in data.items():
-        out.append(f"[{section}]")
-        out += [f"{k} = {_value(v)}" for k, v in table.items()]
-        out.append("")
-    return "\n".join(out)
-
-
-def committed() -> dict:
-    return tomllib.loads(GATES.read_text())
+# the gate file's writer lives in tests/_ste_ls1.py (task LS1-M2-T5: one writer for every test of the file)
+toml_text = h.toml_text
+committed = h.committed_distil
+filled = h.filled_distil
 
 
 def write(tmp_path: Path, data: dict, name: str = "distil_gates.toml") -> Path:
-    path = tmp_path / name
-    path.write_text(toml_text(data))
-    return path
-
-
-def filled(data: dict | None = None) -> dict:
-    """The committed file's dict with the owner's keys filled from ``STAND_IN`` (synthetic, constraint 5)."""
-    data = copy.deepcopy(data if data is not None else committed())
-    data["limits"] = dict(h.STAND_IN["limits"])
-    data["controls"] = copy.deepcopy(h.STAND_IN["controls"])
-    return data
+    return h.write_distil_gates(tmp_path, data, name)
 
 
 def key_paths(table: dict, prefix: tuple = ()) -> list[tuple]:
@@ -316,7 +282,8 @@ def test_the_mix_rules(tmp_path):
 
 def test_the_seeds_are_new():
     g = distil.load_distil_gates(GATES)
-    mine = [g.data["seed"], g.data["pool_seed"], g.fit["seed"], g.report["seed"], g.clips["seed"]]
+    mine = [g.data["seed"], g.data["pool_seed"], g.fit["seed"], g.report["seed"], g.clips["seed"],
+            g.read["noise_seed"]]
     assert len(set(mine)) == len(mine) and all(isinstance(s, int) and not isinstance(s, bool) for s in mine)
     assert _seeds(GATES.read_text()) == set(mine)          # the regex of the other tests sees exactly these
     used = set()

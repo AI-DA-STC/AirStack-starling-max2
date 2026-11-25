@@ -112,6 +112,9 @@ correction = "bonferroni_per_side" # PROPOSED (OP-11): the only correction built
 path_times_s = [1, 3, 10]          # PROPOSED (workflow section 5): flight-path distance marks
 chunk_cells = 6                    # PROPOSED (calibration.toml [run] chunk_cells, measured on the CPU 25 Nov 2026)
 device = "cpu"
+# The near-miss noise arm (C7) draws cell i, drone slot m from its own generator seeded noise_seed + i x team size + m,
+# i the cell's index in the side's full cell list (the calibration's rule; design check of M2, task LS1-M2-T5).
+noise_seed = 150007                # PROPOSED (C8 block, the next free number)
 
 [read.near_miss_cells]
 # The cells of the near-miss controls C6 (systematic: bias, turn and one arm per switch player of the side) and C7

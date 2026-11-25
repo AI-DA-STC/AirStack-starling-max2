@@ -28,6 +28,8 @@ NOT_FROM_PIP = {
     "the flight stack in this repository (read from ../AirStack by path)": {"svg_ground_control"},
     "the Crazyflie repository's planner (read only; a scratch copy put on sys.path by scripts/ste_l014_arena_fit.py, L0.14)":
         {"crazyflie_shows"},
+    "slide-deck drawing with the system python3 (python-pptx and lxml; scripts/make_ste_learned_skills_deck.py, as docs/pipeline/build_deck.py)":
+        {"pptx", "lxml"},
 }
 
 

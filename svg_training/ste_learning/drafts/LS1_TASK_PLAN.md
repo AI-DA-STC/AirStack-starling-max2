@@ -79,11 +79,10 @@ One commit per task, tests first, on the merge's branch in its own worktree cut 
 
 Later merges cite these; a builder never re-derives them.
 
-**C1. Phase key and budget section.** `TASK_IDS["LS1"] = ("LS1.0", …, "LS1.6")` and `[budget_ls1]`, as workflow v3
-section 3 names them. Open point OP-1 offers `"LS"` / `[budget_ls]`. **M1-T1 does not start until the lead has
-settled OP-1** (B-9); if (b) is picked, every `"LS1"` key, `budget_ls1` string, `later_budgets[2]` section name and
-test name in M1-T1, M1-T2, M4-T4 and section 6 becomes `"LS"` / `budget_ls` before the builder starts (the task IDs
-stay `LS1.x`).
+**C1. Phase key and budget section.** `TASK_IDS["LS"] = ("LS1.0", …, "LS1.6")` and `[budget_ls]`: one phase key for
+every stage of route 3 (the lead settled OP-1 as option (b), 25 Nov 2026; R43 gives the route 200 GPU-h for all
+stages). The task IDs stay `LS1.x`; a later stage adds its task IDs to the same key and section, with no rename.
+Workflow v3 section 3 wrote `"LS1"` / `[budget_ls1]`; this plan supersedes it there.
 
 **C2. The skill network** (`ste/skill_net.py`, M1-T3). `SkillNet(team: str, skills: list[str], team_size: int,
 slot_width: int, hidden: list[int], zeroed_inputs: list[int])`; attributes `team`, `skills` (tuple), `k`
@@ -185,22 +184,22 @@ Lets run: the calibration read LS1.5. Stands alone on today's `development`.
   through `_table` at `:193`, which calls `_exact` (`:172`); decimal sum ≤ phase cap); `_later_phases` (`:204-223`, section name must spell the phases,
   `:220-222`); `SteLearningCfg.budget_of` (`:107-113`), `budget_in_work` (`:103-105`); `phase_of` (`:127-132`);
   `budget.check_launch` (`ste/budget.py:232-271`, uses `cfg.budget_of(task)` at `:252`).
-- **Produces:** `TASK_IDS["LS1"] = ("LS1.0", "LS1.1", "LS1.2", "LS1.3", "LS1.4", "LS1.5", "LS1.6")` after `"L6"`; the
-  `[budget_ls1]` section of section 6 appended after `[budget_l3_l4_l5_l6]` (so `later_budgets[0]` and `[1]` keep their
+- **Produces:** `TASK_IDS["LS"] = ("LS1.0", "LS1.1", "LS1.2", "LS1.3", "LS1.4", "LS1.5", "LS1.6")` after `"L6"`; the
+  `[budget_ls]` section of section 6 appended after `[budget_l3_l4_l5_l6]` (so `later_budgets[0]` and `[1]` keep their
   indices; the new one is `later_budgets[2]`); a PLAN §9 row `| **Route 3 (learned skills)** | **200 GPU-h** |
   **FIXED: owner, R39 as read by the lead, confirmed R43, 25 Nov 2026** …|` after the L3–L6 row.
 - **Tests first** (`tests/test_ste_config.py`): constants `LS1_CAP_GPU_H = 200.0` and `LS1_TASK_CAP_GPU_H` (this
-  file types its caps on purpose, `:25`); `:90` section set gains `"budget_ls1"`; `:107` tuple gains
+  file types its caps on purpose, `:25`); `:90` section set gains `"budget_ls"`; `:107` tuple gains
   `cfg.later_budgets[2]`; **`:514-515` value-line count gains `+ 3 + len(LS1_TASK_CAP_GPU_H)`**;
-  `test_the_route_3_budget`: `later_budgets[2] == BudgetCfg(section="budget_ls1", phases=("LS1",), closed=False,
-  phase_cap_gpu_h=200.0, task_cap_gpu_h=tuple(LS1_TASK_CAP_GPU_H.items()))`, `TASK_IDS["LS1"] ==
-  tuple(LS1_TASK_CAP_GPU_H)`, `task_caps_total_gpu_h() == 4.9` (the number that moves, with `LS1_TASK_CAP_GPU_H`,
+  `test_the_route_3_budget`: `later_budgets[2] == BudgetCfg(section="budget_ls", phases=("LS",), closed=False,
+  phase_cap_gpu_h=200.0, task_cap_gpu_h=tuple(LS1_TASK_CAP_GPU_H.items()))`, `TASK_IDS["LS"] ==
+  tuple(LS1_TASK_CAP_GPU_H)`, `task_caps_total_gpu_h() == 5.1` (the number that moves, with `LS1_TASK_CAP_GPU_H`,
   when the owner moves a cap, section 6), `budget_of("LS1.4") is later_budgets[2]`,
-  `phase_of("LS1.4") == "LS1"`, `budget_in_work().section == "budget_l1_l2"`; `test_plan_names_the_route_3_cap`:
+  `phase_of("LS1.4") == "LS"`, `budget_in_work().section == "budget_l1_l2"`; `test_plan_names_the_route_3_cap`:
   PLAN §9 matches `^\| \*\*Route 3[^|]*\*\* \| \*\*(\d+(?:\.\d+)?) GPU-h\*\*` and equals 200.0 (pattern of
   `:248-254`). `tests/test_ste_budget.py::test_the_committed_route_3_caps` (autouse `made_up_machine`, helper `ran`,
   `:23, :41`): `check_launch("LS1.1", 0.8) == Usage(0.8, 0.0, 200.0, 0.0)`; `check_launch("LS1.5", 0.1)` raises
-  `BudgetError` matching `task LS1\.5.*cap 0\.0 GPU-h.*budget_ls1\.task_cap_gpu_h`; a row `ran("LS1.1", …)` leaves
+  `BudgetError` matching `task LS1\.5.*cap 0\.0 GPU-h.*budget_ls\.task_cap_gpu_h`; a row `ran("LS1.1", …)` leaves
   the L1+L2 section's `budget_gpu_h` unchanged.
 - **Implementation:** the TASK_IDS comment names route 3 and R43. Every value line labelled (`test_ste_config.py:504`).
   The labels name their source: 200 and 4.0 the owner's R43 row (`DISCUSSION_2026-11-19_20.md:758`, workflow v3 §1
@@ -223,7 +222,7 @@ Lets run: the calibration read LS1.5. Stands alone on today's `development`.
 - **Consumes:** `budget_summary` (`ste/budget.py:223-229`, pinned string at `tests/test_ste_budget.py:230`);
   `own_gpu_h` (`:173`), `carried_gpu_h` (`:183`); `ste_job.run` status `:174`, carry `:164-173`.
 - **Produces:** `section_summary(budget: BudgetCfg) -> str` (today's text format, any section);
-  `ROUTE_SECTION = "budget_ls1"`; `budget_summaries(settings=SETTINGS_FILE) -> list[str]`: the section in work first,
+  `ROUTE_SECTION = "budget_ls"`; `budget_summaries(settings=SETTINGS_FILE) -> list[str]`: the section in work first,
   then the route's section when it exists and is not the one in work (R2 OA-10: R43 asks for the route's hours only;
   OP-3 now recommends that, and every open section only if the owner asks). `budget_summary` returns exactly today's
   string. Status prints one `budget <line>` per entry, after today's lines: **existing lines unchanged, one line
@@ -233,9 +232,9 @@ Lets run: the calibration read LS1.5. Stands alone on today's `development`.
   work, so a call without it is today's call; an unknown or closed section is refused (status 2, nothing written).
 - **Tests first:** `budget_summaries(SETTINGS_FILE)[0] == budget_summary(SETTINGS_FILE)` and `len == 2` on the
   committed file; the list contains
-  `"budget_ls1 (phase LS1): used 0.000 of 200.0 GPU-h (own rows 0.000, carried 0.000)"` under `made_up_machine`; a
+  `"budget_ls (phase LS): used 0.000 of 200.0 GPU-h (own rows 0.000, carried 0.000)"` under `made_up_machine`; a
   settings file without the section gives no route line; `tests/test_ste_job.py`: that string is in `bench.status()`
-  (`:69-72`) and `status().splitlines()[0]` is unchanged (`:627`); `carry --section budget_ls1 --gpu-h 0.25 --note …`
+  (`:69-72`) and `status().splitlines()[0]` is unchanged (`:627`); `carry --section budget_ls --gpu-h 0.25 --note …`
   adds 0.25 to the route line's `carried` and leaves the in-work section's line unchanged; `carry` without
   `--section` writes the same row as today (group `carried:L1+L2`); `--section budget_nope` and a closed section exit 2.
 - **Implementation:** `section_summary` is the body of `budget_summary` (`ste/budget.py:223-229`) for a given section; `budget_summary`
@@ -1109,9 +1108,9 @@ Lets run: LS1.3 (export, CPU) and LS1.6 (3-D clips, GPU). Needs M1 and M2 merged
   2 to 4.5 s each for the scripted arm, the net arm at the read's measured rate) and writes nothing. Two clips per pick, shown side by side
   on the record page. **The minimum pick count (R2 RC-5, OA-8):** `MIN_PICKS_PER_SIDE = 2` (one fixed-cell game and
   one mixed-cell game per side, both arms each: 4 picks, 8 trajectories), below the workflow's 3 to 6 games per side;
-  `--picks-per-side` below it exits 2. If `--plan-only` gives an ask above 0.1 GPU-h even at the minimum, nothing is
-  launched and the lead asks the owner (OQ-4; the lead never moves a cap). The workflow's 3 to 6 per side may not fit
-  in 0.1 (W4, unmeasured estimate 0.18 to 0.24 GPU-h for 12 trajectories): the owner is told this before M3-T6 builds
+  `--picks-per-side` below it exits 2. If `--plan-only` gives an ask above the LS1.6 cap (0.3 GPU-h, section 6) even at the minimum, nothing is
+  launched and the lead decides the cap under R39, announced to the owner (OQ-4). The workflow's 3 to 6 per side at
+  0.1 did not fit (W4, unmeasured estimate 0.18 to 0.24 GPU-h for 12 trajectories), hence the 0.3; the owner is told before M3-T6 builds
   the pick rule (OQ-4), and the measured `--plan-only` figure, with how many games per side fit at 0.1, before LS1.6
   is launched. The record states the number of games per side drawn.
 - **Tests first** (CPU; `test_make_ste_3d.FakeIsaac`, `small_settings` as `tests/test_ste_l5_clips3d.py:30-37`; helper
@@ -1322,7 +1321,7 @@ its named-keys test; nothing else in M4 changes but the Strike read's count (M4-
   per_variant`); the rest equal, including `side_overrides.strike == {}`,
   `game_steps_per_run`, `[pool]`, `[controls]`, `[pilot]`); `test_seed2_differs_in_task_and_seeds_only`;
   `test_seeds_pair_across_arms`; `test_both_load_and_name_only_the_fills` (`unfilled(heads)` within the named fill
-  keys; `unfilled(seed2) == []`); `test_the_task_is_in_the_route_budget` (`budget_of("LS1.4").section == "budget_ls1"`);
+  keys; `unfilled(seed2) == []`); `test_the_task_is_in_the_route_budget` (`budget_of("LS1.4").section == "budget_ls"`);
   `test_route2_pilot_table_equals_seed2_table` (and the heads table differs);
   `test_heads_has_reading_with_every_key` (F8: the four keys present, values `FILL_` until the owner sets them);
   `test_each_run0_seed_pairs_across_arms` (heads run 0 = route 2 seed 1's 140203; `skills_seed2`'s run 0 140213 is
@@ -1433,24 +1432,24 @@ its named-keys test; nothing else in M4 changes but the Strike read's count (M4-
 All in merge M1 (M1-T1, M1-T2). The section is appended after `[budget_l3_l4_l5_l6]`:
 
 ```toml
-[budget_ls1]
-phases = ["LS1"]          # FIXED (owner, R39 and R43, 25 Nov 2026): route 3's GPU-hours, all stages, outside R23's 20
+[budget_ls]
+phases = ["LS"]          # FIXED (owner, R39 and R43, 25 Nov 2026): route 3's GPU-hours, all stages, outside R23's 20
 closed = false            # FIXED (owner, R42, 25 Nov 2026): the word for the build
 phase_cap_gpu_h = 200.0   # FIXED (owner, R43, 25 Nov 2026): the number the launcher needs for route 3 (PLAN.md section 9)
 
-[budget_ls1.task_cap_gpu_h]
+[budget_ls.task_cap_gpu_h]
 "LS1.0" = 0.0             # PROPOSED (workflow v3 section 5; CPU): smoke of the distillation and the read
 "LS1.1" = 0.8             # PROPOSED (lead, 25 Nov 2026: the split of R36's 1.0 GPU-h; route 3 has no cap, R39 and R43): distil both teams
 "LS1.2" = 0.0             # PROPOSED (workflow v3 section 5; CPU): equivalence read, both teams
 "LS1.3" = 0.0             # PROPOSED (workflow v3 section 5; CPU): export and reload of both skill networks
 "LS1.4" = 4.0             # FIXED (owner, R43, 25 Nov 2026): head training on the skill network, both arms, clips included
 "LS1.5" = 0.0             # PROPOSED (workflow v3 section 5; CPU): calibration read
-"LS1.6" = 0.1             # PROPOSED (lead, 25 Nov 2026: the split of R36's 1.0 GPU-h; route 3 has no cap, R39 and R43): 3-D clips of the copy beside the scripts
+"LS1.6" = 0.3             # PROPOSED (lead, 25 Nov 2026, under R39: L5's cost constants put 12 trajectories at 0.18 to 0.24 GPU-h, W4): 3-D clips of the copy beside the scripts
 ```
 
-Task caps add to 4.9 ≤ 200.0. Workflow v3 section 3 attributes 0.8 and 0.1 to R43; the owner's R43 row
+Task caps add to 5.1 ≤ 200.0. Workflow v3 section 3 attributes 0.8 and 0.1 to R43; the owner's R43 row
 (`ste_learning/DISCUSSION_2026-11-19_20.md:758`) names 200 and 4.0 only. The plan follows the workflow (the source of
-truth on the what) and labels them FIXED with that source named; the difference is kept as W6 and OP-40. Other changes: `ste/config.py:37-48` `TASK_IDS["LS1"]`; `tests/test_ste_config.py`
+truth on the what) and labels them FIXED with that source named; the difference is kept as W6 and OP-40. Other changes: `ste/config.py:37-48` `TASK_IDS["LS"]`; `tests/test_ste_config.py`
 `:90`, `:107`, `:514-515` and the new test; `tests/test_ste_budget.py` new test; `ste/budget.py` `section_summary`,
 `budget_summaries`; `scripts/ste_job.py:174` status lines and `carry --section` (`:164-173`; OP-4 yes, R2 OA-10); PLAN §9 row. Nothing in
 `ste/budget.check_launch` or `ste/jobs.py` changes. Every LS1.4 job still states its ask at launch; an ask above
@@ -1462,11 +1461,11 @@ restart is not counted twice). The caps are the owner's (R38, R43); the lead nev
 
 - **LS1.1 (0.8 = two fits at 0.4).** The one announced fix round of workflow §5 can launch only if the two first fits
   used less than they asked by at least the re-fit's ask; otherwise it needs an owner-announced cap change in
-  `configs/ste_learning.toml`, and `LS1_TASK_CAP_GPU_H` and `task_caps_total_gpu_h() == 4.9` (M1-T1's test) move with
+  `configs/ste_learning.toml`, and `LS1_TASK_CAP_GPU_H` and `task_caps_total_gpu_h() == 5.1` (M1-T1's test) move with
   it in the same commit.
-- **LS1.6 (0.1).** Kept at 0.1 by cutting the number of picks until `--plan-only` gives an ask ≤ 0.1 (OP-27), never by
-  moving the cap; never below `MIN_PICKS_PER_SIDE` (M3-T6): if the minimum does not fit, the owner is asked (OQ-4;
-  R2 RC-5, OA-8).
+- **LS1.6 (0.3).** Set by the lead under R39 (no cap on the route) from W4's estimate; picks are cut only if
+  `--plan-only` gives an ask above 0.3 (OP-27), never below `MIN_PICKS_PER_SIDE` (M3-T6); the game count is announced
+  to the owner before LS1.6 is launched (OQ-4; R2 RC-5, OA-8).
 - **LS1.4 (4.0).** The jobs and their asks under A, the default (workflow §6, "One run 0 serves both Strike seeds";
   R2 OA-1), with OP-28's asks and option B beside, both the **owner's** choice at OQ-1, not the lead's:
 
@@ -1558,7 +1557,7 @@ the builder, in this order:
 with these settled: **OP-1 (b)**, the phase key `"LS"` and the section `[budget_ls]` for every stage of route 3 (the
 builder applies the substitution list of C1 in M1-T1); **OP-3** the in-work line plus route 3's; **OP-4** `carry
 --section` built in M1-T2; **OP-40** settled: the owner's R43 names 200 GPU-h and LS1.4's 4.0 only, so LS1.1 = 0.8 and
-LS1.6 = 0.1 are labelled PROPOSED (the lead's split of R36's 1.0; the route has no cap, R39) and W6 is closed; **OP-41**
+LS1.6 are labelled PROPOSED (the lead's, under R39; LS1.6 raised to 0.3 from W4's estimate, so the task caps add to 5.1) and W6 is closed; **OP-41**
 confirmed. OQ-1 and OQ-2 were put to the owner on 25 Nov 2026 (answers recorded in DISCUSSION §16 when given); OQ-3 is
 asked with the limits after LS1.5 (R38); OQ-4 before LS1.6 is launched.
 
@@ -1588,9 +1587,9 @@ them, and the lead does not either)**
   near-miss values (`bias`, `rotate_deg`, `noise` and the four switch values, each in its player's unit).
 - **OQ-4 The LS1.6 game count, before M3-T6 builds its pick rule (R2 RC-5, OA-8; OP-27, W4).** Workflow §5 says 3 to 6
   games per side at 0.1 GPU-h; the unmeasured estimate puts 12 trajectories (3 per side, both arms) at 0.18 to 0.24
-  GPU-h. The plan keeps the cap and cuts picks, never below one fixed and one mixed game per side
-  (`MIN_PICKS_PER_SIDE = 2`); the measured `--plan-only` figure, with how many games per side fit, goes to the owner
-  before LS1.6 is launched, and if even the minimum does not fit, the owner decides (a cap change or fewer clips).
+  GPU-h. Settled by the lead under R39: the LS1.6 cap is 0.3; picks are cut only above it, never below one fixed and
+  one mixed game per side (`MIN_PICKS_PER_SIDE = 2`); the measured `--plan-only` figure and the game count are
+  announced to the owner before LS1.6 is launched.
 
 **Before M1**
 - **OP-1 Phase key.** (a) `"LS1"` / `[budget_ls1]` as workflow v3 (a later stage needs `phases = ["LS1", "LS2"]` and
@@ -1667,9 +1666,9 @@ them, and the lead does not either)**
 - **OP-27 LS1.6 pick rule and ask.** PROPOSED rule per side: the fixed cell with the most flips (its lowest b game and
   lowest c game), the mixed cell with the most flips (lowest changed game), filled to 3 with an agreeing game; both
   arms each. L5's cost constants (`scripts/ste_l5_clips3d.py:105-110`) give an ask near 0.18 to 0.24 GPU-h for 12
-  trajectories (scout and architect arithmetic, unmeasured) against the 0.1 cap. *Recommend* `--plan-only` first; if
-  above 0.1, fewer picks per side until the ask is ≤ 0.1, never below `MIN_PICKS_PER_SIDE` (M3-T6); the cap is the
-  owner's and is not moved (F4); the shrinking game count goes to the owner (OQ-4). **Confirmed before M3-T6 starts**
+  trajectories (scout and architect arithmetic, unmeasured) against the old 0.1. *Settled:* the cap is 0.3 (the lead, under R39); `--plan-only` first; if
+  above 0.3, fewer picks per side until the ask is ≤ 0.3, never below `MIN_PICKS_PER_SIDE` (M3-T6); the game count is
+  announced to the owner (OQ-4). **Confirmed before M3-T6 starts**
   (its `test_the_pick_rule` pins the rule, B-5).
 
 **Before M4**

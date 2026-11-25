@@ -4,13 +4,33 @@ INTERNAL · the lab's AI-assistant hand-over notes: where the work stands, what 
 
 > **How to use this file.** Read it at the start of a session, after [../../CLAUDE.md](../../CLAUDE.md).
 > §4 is the current state, §5 is what is waiting on people. Update both before you stop.
-> Last updated: 25 November 2026 ~14:45, on the home RTX 5090 (afternoon: route 3 build has the owner's word, R42–R45; before: ~14:00 rulings R36–R41, execution workflow v3, its design review done and folded in; before: ~12:10 morning: clean-up, automatic 3-D clip hook, learner v2 first; before: night: L3–L6 pipeline check done, both routes PIPELINE WORKS; before: 24 Nov ~18:20 late day: rulings R29–R33, L2.6 and the figure-eight check, L3 slice 2 merged; before: ~13:30 day: rulings R24–R28, AirStack set up, L1.4, L1.5, L2.5 done, L3 note v2; before: ~07:30 night run: L1 reads, L2.1/L2.3/L2.4; before: 23 Nov ~13:30 documentation clean-up), worktree `~/AirStack-starling-max2-dev` on branch `development`.
+> Last updated: 25 November 2026 ~17:00, on the home RTX 5090 (LS1 task plan merged, merge M1 building; before: ~14:45 route 3 build has the owner's word, R42–R45; before: ~14:00 rulings R36–R41, execution workflow v3, its design review done and folded in; before: ~12:10 morning: clean-up, automatic 3-D clip hook, learner v2 first; before: night: L3–L6 pipeline check done, both routes PIPELINE WORKS; before: 24 Nov ~18:20 late day: rulings R29–R33, L2.6 and the figure-eight check, L3 slice 2 merged; before: ~13:30 day: rulings R24–R28, AirStack set up, L1.4, L1.5, L2.5 done, L3 note v2; before: ~07:30 night run: L1 reads, L2.1/L2.3/L2.4; before: 23 Nov ~13:30 documentation clean-up), worktree `~/AirStack-starling-max2-dev` on branch `development`.
 
 ## 0. Resume here (for a new session or another Claude account)
 
 Everything needed is in this folder; nothing depends on the previous chat. Claude's user memory (`~/.claude/…`) and
 the private NUS workspace (`~/ma_skills-self-play/`, 5090 only) do **not** travel with git: if this file and a memory
 note disagree, this file wins.
+
+### 25 November 2026 ~17:00 — RTX 5090: LS1 TASK PLAN MERGED; MERGE M1 BUILDING (read this first)
+
+- **Task plan merged** ([LS1_TASK_PLAN.md](../../ste_learning/drafts/LS1_TASK_PLAN.md), 1,800 lines): written by an Opus
+  architect from four Opus scouts' code readings, then two check rounds (four Sonnet lenses: code accuracy, review
+  coverage, buildability, the owner's rulings; a Sonnet skeptic per serious finding): round 1, 36 findings, 8 serious
+  survived and fixed; round 2, 30 findings, 4 serious survived and fixed. **Round 2's fixes were not checked again.**
+  Lead's decisions in its section 8: every recommendation adopted; OP-1 (b) one phase key `LS`, section `[budget_ls]`
+  (substituted in the plan text); LS1.1 = 0.8 and LS1.6 = 0.3 are the lead's (PROPOSED, under R39; the owner's R43
+  names 200 and LS1.4's 4.0 only); task caps add to 5.1. Asks per LS1.4 training job 0.6, not 0.4 (W1: a 0.4 job
+  cannot reach 550 M game-steps with the 600 s reserve).
+- **Route page, figures and slides merged** (R45), reviewed by one Sonnet reviewer, fixes applied; "no cap, by decision".
+- **Merge M1 building (started ~16:55):** worktree `~/AirStack-starling-max2-ls1m1`, branch `ls1-m1` (NUS bundle
+  installed there). A workflow runs the design check, then tasks T1–T4 one at a time (Opus builder, Sonnet QC, one fix
+  attempt), and stops. **Before T5 the lead loads the six real `agent_final.pt` and runs `reload_check` on the four
+  L6.2 exports in the dev worktree's `runs/` with M1's source** (review B2 is about those files), then T5–T7, then the
+  full suite on the rebased tip, then ff into `development`.
+- **Waiting on the owner:** OQ-1 (LS1.4 run 0s: one per arm, or one per Strike seed; blocks M4 only) and OQ-2 (two
+  stop rules shortened; blocks M2-T1 only). Later: the limits (R38, after LS1.5).
+- **Main track:** route 3, merge M1 · **Side track:** none.
 
 ### 25 November 2026 ~14:45 — RTX 5090 AFTERNOON: ROUTE 3 BUILD HAS THE OWNER'S WORD (R42–R45) (read this first)
 

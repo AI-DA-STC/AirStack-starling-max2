@@ -26,6 +26,8 @@ ste_learning/drafts/LS1_TASK_PLAN.md, section 0 constraint 5; created in task LS
   gate file and writes that report (no fit is run: the read's checks, not the network's quality, are under test).
 * ``tiny_skill_net`` (task LS1-M3-T2): ``save_tiny_net`` loaded back with ``skill_net.load_skill_net``, as the export of
   the skill network takes it: (net, meta, path, sha256).
+* ``net_gates_file`` (task LS1-M3-T3): a net gate file (the skills gate file through ``net_gates_text``) written under
+  ``tmp_path``, with a tiny network of each side saved beside it (OP-35: both sides), for a route 3 team's export.
 
 CPU only."""
 import copy
@@ -296,3 +298,17 @@ def tiny_skill_net(tmp_path, side, gates=None, **tiny_kw) -> tuple[skill_net.Ski
     net, meta = skill_net.load_skill_net(path, team=side, skills=skills.team_skills(gates.players, side), cfg=cfg,
                                          device="cpu", file_sha256=sha)
     return net, meta, path, sha
+
+
+def net_gates_file(tmp_path, nets: dict | None = None, base=SKILLS_GATES, name="net_gates.toml") -> tuple[Path, dict]:
+    """A net gate file under ``tmp_path``: ``net_gates_text(base text, nets)`` (task LS1-M3-T3). ``nets`` {side: (file,
+    sha256)}; when None, a tiny network of each side (``save_tiny_net`` on the base variant's game of ``base``) is saved
+    under ``tmp_path`` first. Returns (the gate file's path, nets)."""
+    tmp_path = Path(tmp_path)
+    if nets is None:
+        gates = exploit.load_gates(base)
+        cfg = exploit.variant_cfg(gates, "base")
+        nets = {side: save_tiny_net(tmp_path, side, cfg, gates=gates) for side in ("guard", "strike")}
+    path = tmp_path / name
+    path.write_text(net_gates_text(Path(base).read_text(), nets))
+    return path, nets

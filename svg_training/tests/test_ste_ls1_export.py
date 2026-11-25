@@ -17,6 +17,15 @@ drone); ``reload_check`` reads such a folder in a fresh process on onnxruntime a
 refuses damage. Codes and slots out of range are refused before any runtime runs (``run_skill_net``), because
 onnxruntime's OneHot runs z = k and z = -1 without an error.
 
+LS1-M3-T3, a route 3 team's folder: a two-level team flown by its skill network (``skill_source = "net"``) exports its
+heads files (schema ``ste-check-skills-net-0`` in ``interface.toml`` and in every heads file, the skill lists with
+``skill_source`` and ``skill_net_sha256``), its skill network's graph (``skill_net_<side>.onnx``, ``[skill_net]``,
+``[[skill_net_golden]]``) and golden commands that are the network's. The reload checks the heads as for the scripts
+route (its skill lists with the two keys more), then ``_skills_net_reload``: the network's own golden rows, the lists,
+the team size, the game, the heads and flown codes exactly (scripts dispatch for ``greedy`` and ``resolve`` only) and
+the commands from the ONNX skill network on the flown codes (range-checked first), on both runtimes. A scripts team's
+export and reload are as before.
+
 CPU only; needs onnxruntime (the file skips itself without it, as tests/test_ste_l3_export.py does)."""
 import json
 import sys
@@ -290,7 +299,8 @@ def test_the_skill_net_folder_holds_the_graph_and_its_interface(tiny_skill_net, 
     assert np.asarray([row["commands"] for row in golden], dtype=np.float32).tobytes() == want.numpy().tobytes()
     assert np.asarray([row["obs"] for row in golden], dtype=np.float32).tobytes() == obs.numpy().tobytes()
     assert export.ROUTE_OF_SCHEMA == {**{v: (k, None) for k, v in export.SCHEMAS.items()},
-                                      export.SKILL_NET_SCHEMA: ("skill_net", None)}
+                                      export.SKILL_NET_SCHEMA: ("skill_net", None),
+                                      export.SKILLS_NET_SCHEMA: ("skills", "net")}         # + LS1-M3-T3's entry
     assert export.SCHEMAS == {"velocity": "ste-check-velocity-0", "skills": "ste-check-skills-0"}
 
 
@@ -361,3 +371,224 @@ def test_codes_out_of_range_are_refused_before_the_runtime(tiny_skill_net, skill
         zz[0] = bad_z
         with pytest.raises(ValueError, match="z outside"):
             export.run_skill_net(onnx_file, rows, slot, zz, width, k)
+
+
+# ------------------------------------------------------------------ LS1-M3-T3: a route 3 team's folder and its reload
+SIX_KEYS = {"team", "players", "choice", "team_strategies", "drone_skills", "free_index"}      # the scripts route's JSON
+SCRIPTS_RELOAD_KEYS = {"ok", "runtimes", "max_abs_diff", "golden_rows", "route", "status", "output_scale", "tolerance",
+                       "choices_equal", "skill_lists_equal", "commands_max_abs_diff"}             # reload_check today
+EVIDENCE = exploit.ROOT / "records" / "evidence" / "2026-11-25_ste_l3_l6_pipeline" / "exports"
+NET_MESSAGE = r"skills golden rows \(skill network\)"          # the net branch's own refusal of the golden rows
+
+
+def _props(path) -> dict:
+    import onnx
+    return {p.key: p.value for p in onnx.load(str(path)).metadata_props}
+
+
+@pytest.fixture(scope="module")
+def net_gates(tmp_path_factory):
+    """(gates, nets {side: (file, sha256)}): the skills gate file flown by a tiny skill network of each side (OP-35)."""
+    path, nets = _ste_ls1.net_gates_file(tmp_path_factory.mktemp("ls1_net_gates"))
+    return exploit.load_gates(path), nets
+
+
+@pytest.fixture(scope="module", params=["guard", "strike"])
+def route3_folder(request, net_gates, tmp_path_factory):
+    """(side, gates, nets, folder, obs [4, 3, OBS_DIM]): a route 3 team's export (a tiny learner on the net gate file;
+    golden observations with a hand-made out drone)."""
+    side = request.param
+    gates, nets = net_gates
+    obs = _with_an_out_drone(export.golden_observations(gates, side, games=4))
+    folder = export.export_policy(_ste_ls1.tiny_learner_saved(gates, side), gates, side,
+                                  tmp_path_factory.mktemp(f"route3_{side}") / "team", obs)
+    return side, gates, nets, folder, obs
+
+
+@pytest.fixture(scope="module")
+def route3_reload(route3_folder):
+    r = tx.reload_in_a_fresh_process(route3_folder[3])
+    assert r.returncode == 0, r.stderr[-2000:]
+    return json.loads(r.stdout.strip().splitlines()[-1])
+
+
+def _net_of(gates, side):
+    """The side's network as the export flew it (the net dispatch's own)."""
+    return export._dispatch(gates, side, 1).net
+
+
+def test_a_route3_team_folder_holds_heads_and_its_skill_net(route3_folder):
+    side, gates, nets, folder, obs = route3_folder
+    g, m = obs.shape[:2]
+    heads = [f"policy_{side}_{slot}.onnx" for slot in range(m)]
+    assert sorted(p.name for p in folder.iterdir()) == sorted(heads + [f"skill_net_{side}.onnx", "interface.toml"])
+    data = tomllib.loads((folder / "interface.toml").read_text())
+    assert data["policy_schema"] == export.SKILLS_NET_SCHEMA == "ste-check-skills-net-0"
+    d = export._dispatch(gates, side, g)
+    want_json = export.skills.skills_meta(d)
+    assert want_json["skill_source"] == "net" and want_json["skill_net_sha256"] == nets[side][1]
+    assert [f["file"] for f in data["files"]] == heads                      # the net file is not a heads file
+    for name in heads:
+        props = _props(folder / name)
+        assert json.loads(props["skills"]) == want_json, name
+        assert props["policy_schema"] == export.SKILLS_NET_SCHEMA
+    sk = data["skills"]
+    assert sk["skill_source"] == "net" and sk["skill_net_sha256"] == nets[side][1]
+    assert sk["players"] == list(d.names)
+    net = d.net
+    sn = data["skill_net"]
+    assert sn["file"] == f"skill_net_{side}.onnx" and sn["sha256"] == export.sha256_file(folder / sn["file"])
+    assert sn["net_file"] == str(Path(nets[side][0]).resolve()) and sn["net_sha256"] == nets[side][1]
+    assert sn["skills"] == sk["players"] and sn["k"] == net.k and sn["slot_width"] == net.slot_width
+    assert sn["team_size"] == net.team_size == data["slots"] == m
+    assert sn["alive_rule"] == f"inside the graph: command times obs[{ALIVE}]"
+    assert _props(folder / sn["file"])["policy_schema"] == export.SKILL_NET_SCHEMA    # the graph's own schema
+    golden = data["skill_net_golden"]
+    assert np.asarray([r["commands"] for r in golden], dtype=np.float32).tobytes() == \
+        skill_net.all_codes(net, obs).numpy().tobytes()
+    flown = torch.tensor([r["flown"] for r in data["golden"]])
+    command = torch.tensor([r["command"] for r in data["golden"]], dtype=torch.float32)
+    assert torch.equal(command, skill_net.one_code(net, obs, flown))       # the golden commands are the network's
+
+
+def test_the_route3_reload_passes_in_a_fresh_process(route3_folder, route3_reload):
+    side, gates, nets, folder, obs = route3_folder
+    out = route3_reload
+    g, m = obs.shape[:2]
+    assert out["ok"] and out["choices_equal"] and out["skill_lists_equal"] and out["scripted_sha256_now_equal"]
+    assert out["golden_rows"] == g * m and out["skill_net_golden_rows"] == g * m * _net_of(gates, side).k
+    for key in ("max_abs_diff", "commands_max_abs_diff", "skill_net_max_abs_diff"):
+        assert out[key] <= export.GOLDEN_ATOL + export.GOLDEN_RTOL * max(out["output_scale"], 1.0), key
+
+
+def test_the_route3_reload_returns_route_skills_and_source_net(route3_folder, route3_reload):
+    side, gates, nets, folder, obs = route3_folder
+    assert route3_reload["route"] == "skills" and route3_reload["skill_source"] == "net"
+    data = tomllib.loads((folder / "interface.toml").read_text())
+    assert data["policy_schema"] == "ste-check-skills-net-0"
+    for f in data["files"]:
+        assert _props(folder / f["file"])["policy_schema"] == "ste-check-skills-net-0", f["file"]
+    assert export.schema_of("skills", True) == "ste-check-skills-net-0"
+    assert export.schema_of("skills", False) == "ste-check-skills-0"
+    assert export.schema_of("velocity", False) == "ste-check-velocity-0"
+
+
+def test_the_route3_reload_flies_the_onnx_net_not_the_scripts(route3_folder, monkeypatch):
+    side, gates, nets, folder, obs = route3_folder
+
+    def no(*args, **kwargs):
+        raise AssertionError("the reload flew the scripts or the torch network")
+    for owner, name in ((export.skills.SkillDispatch, "commands"), (export.skills.SkillDispatch, "act"),
+                        (export.skills.NetTwoLevelDispatch, "commands"), (export.skills.NetTwoLevelDispatch, "act"),
+                        (skill_net, "one_code"), (skill_net, "all_codes")):
+        monkeypatch.setattr(owner, name, no)
+    out = export.reload_check(folder)
+    assert out["ok"] and out["skill_source"] == "net" and out["choices_equal"]
+
+
+def test_a_scripts_team_export_is_unchanged_by_the_net_branch(tmp_path):
+    gates = SKILLS_GATES
+    side = SIDE
+    obs = export.golden_observations(gates, side, games=4)
+    folder = export.export_policy(_ste_ls1.tiny_learner_saved(gates, side), gates, side, tmp_path / "scripts", obs)
+    data = tomllib.loads((folder / "interface.toml").read_text())
+    evidence = tomllib.loads((EVIDENCE / f"skills_{side}_interface.toml").read_text())
+    source_keys = {"source_run", "source_checkpoint", "source_checkpoint_sha256"}    # the evidence came from a run
+    assert set(data) == set(evidence) - source_keys
+    assert set(data["skills"]) == set(evidence["skills"]) and "skill_source" not in data["skills"]
+    assert "skill_net" not in data and "skill_net_golden" not in data
+    assert set(data["golden"][0]) == set(evidence["golden"][0])
+    assert data["policy_schema"] == evidence["policy_schema"] == "ste-check-skills-0"
+    assert sorted(p.name for p in folder.iterdir()) == sorted([f["file"] for f in data["files"]] + ["interface.toml"])
+    for f in data["files"]:
+        props = _props(folder / f["file"])
+        assert set(json.loads(props["skills"])) == SIX_KEYS and props["policy_schema"] == "ste-check-skills-0"
+    out = export.reload_check(folder)
+    assert set(out) == SCRIPTS_RELOAD_KEYS and out["route"] == "skills"
+    assert not any(k.startswith("skill_net") or k == "skill_source" for k in out)
+
+
+def _set_first(folder, key, value):
+    """The first ``key = [...]`` line of interface.toml (golden row 0) with its first element set to ``value``."""
+    tx.tamper(folder, key, lambda v: [value] + v[1:])
+
+
+def _copy(folder, tmp_path):
+    import shutil
+    copy = tmp_path / "copy"
+    shutil.copytree(folder, copy)
+    return copy
+
+
+@pytest.mark.parametrize("how", ["command", "flown_other", "flown_k", "flown_minus_1", "skills", "team_size",
+                                 "no_skill_net_section"])
+def test_the_route3_reload_refuses_tampering(route3_folder, tmp_path, how):
+    side, gates, nets, folder, obs = route3_folder
+    copy = _copy(folder, tmp_path)
+    data = tomllib.loads((copy / "interface.toml").read_text())
+    k = data["skill_net"]["k"]
+    first = data["golden"][0]["flown"][0]
+    if how == "command":                       # the heads pass; the net branch's golden commands refuse it
+        tx.tamper(copy, "command", lambda v: tx._bump(v, 1e-3))
+        why = NET_MESSAGE + ".*commands"
+    elif how == "flown_other":                 # another code in range: the choices differ
+        _set_first(copy, "flown", (first + 1) % k)
+        why = NET_MESSAGE + ".*choices equal False"
+    elif how == "flown_k":                     # flown feeds z: out of range, refused before any runtime
+        _set_first(copy, "flown", k)
+        why = "z outside"
+    elif how == "flown_minus_1":
+        _set_first(copy, "flown", -1)
+        why = "z outside"
+    elif how == "skills":                      # [skill_net].skills reversed (the first "skills = " line)
+        tx.tamper(copy, "skills", lambda v: v[::-1])
+        why = "skills"
+    elif how == "team_size":                   # [skill_net].team_size = 2
+        tx.tamper(copy, "team_size", lambda v: 2)
+        why = "team size"
+    else:                                      # the [skill_net] section left out: a refusal, not a KeyError
+        path = copy / "interface.toml"
+        text = path.read_text()
+        start, stop = text.index("\n[skill_net]\n"), text.index("\n[[files]]\n")
+        path.write_text(text[:start] + text[stop:])
+        why = "has no"
+    with pytest.raises(ValueError, match=why):
+        export.reload_check(copy)
+
+
+@pytest.mark.parametrize("where", ["heads_file", "interface"])
+def test_a_route3_heads_file_with_tampered_skills_json_is_refused_by_the_heads_loop(route3_folder, tmp_path,
+                                                                                   monkeypatch, where):
+    import onnx
+    side, gates, nets, folder, obs = route3_folder
+    copy = _copy(folder, tmp_path)
+    interface = copy / "interface.toml"
+    if where == "heads_file":                  # a heads file carrying the scripts route's six keys, its sha rewritten
+        data = tomllib.loads(interface.read_text())
+        f = data["files"][1]
+        m = onnx.load(str(copy / f["file"]))
+        for p in m.metadata_props:
+            if p.key == "skills":
+                p.value = json.dumps({k: v for k, v in json.loads(p.value).items() if k in SIX_KEYS}, sort_keys=True)
+        onnx.save(m, str(copy / f["file"]))
+        interface.write_text(interface.read_text().replace(f["sha256"], export.sha256_file(copy / f["file"])))
+    else:                                      # interface.toml's [skills] names another network
+        tx.tamper(copy, "skill_net_sha256", lambda v: "0" * len(v))
+
+    def not_reached(*args, **kwargs):
+        raise AssertionError("_skills_net_reload ran")
+    monkeypatch.setattr(export, "_skills_net_reload", not_reached)
+    with pytest.raises(ValueError, match="skill lists in interface.toml"):
+        export.reload_check(copy)
+
+
+def test_a_drone_that_is_out_has_a_zero_command(route3_folder):
+    side, gates, nets, folder, obs = route3_folder
+    data = tomllib.loads((folder / "interface.toml").read_text())
+    alive = np.asarray([r["obs"] for r in data["golden"]])[..., ALIVE]                       # [G, M]
+    out = alive == 0
+    assert out[0, 1] and out.sum() >= 1                                    # the hand-made out drone (and any other)
+    command = np.asarray([r["command"] for r in data["golden"]])                             # [G, M, 4]
+    commands = np.asarray([r["commands"] for r in data["skill_net_golden"]])                 # [G, M, K, 4]
+    assert np.all(command[out] == 0.0) and np.all(commands[out] == 0.0)
+    assert np.any(command[~out] != 0.0)

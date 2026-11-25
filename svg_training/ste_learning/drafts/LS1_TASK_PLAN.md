@@ -1558,7 +1558,7 @@ with these settled: **OP-1 (b)**, the phase key `"LS"` and the section `[budget_
 builder applies the substitution list of C1 in M1-T1); **OP-3** the in-work line plus route 3's; **OP-4** `carry
 --section` built in M1-T2; **OP-40** settled: the owner's R43 names 200 GPU-h and LS1.4's 4.0 only, so LS1.1 = 0.8 and
 LS1.6 are labelled PROPOSED (the lead's, under R39; LS1.6 raised to 0.3 from W4's estimate, so the task caps add to 5.1) and W6 is closed; **OP-41**
-confirmed. OQ-1 and OQ-2 were put to the owner on 25 Nov 2026 (answers recorded in DISCUSSION §16 when given); OQ-3 is
+confirmed. **OQ-1 answered B and OQ-2 acknowledged by the owner on 25 Nov 2026 (R46, R47):** M4 is built for option B (M4-T1b built after M4-T1, its two keys in M4-T4's file; the Strike read two seeds against two); the shorter stop rules of OQ-2 go into `[stop]`; OQ-3 is
 asked with the limits after LS1.5 (R38); OQ-4 before LS1.6 is launched.
 
 **Questions for the owner (R2; the lead brings each with its cost and a recommendation; the builder never decides

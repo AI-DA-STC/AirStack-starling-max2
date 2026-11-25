@@ -48,6 +48,8 @@ owner's words.
 | R43 | the lead's reading of R39 is confirmed | merge M1 writes 200 GPU-h for the route and 4.0 for LS1.4 |
 | R44 | self-play: the pool entry early, a pilot after LS1.4, the full stage before LS2 only if the pilot shows room | section 7 |
 | R45 | the route page, its figures and the slides are redrawn for R39 to R41 | a writer's task beside the build |
+| R46 | LS1.4: a run 0 per Strike seed on both arms (option B of the task plan's OQ-1) | the Strike read is two seeds against two; training jobs ask 0.6 GPU-h each |
+| R47 | the LS1 fix round cannot add network inputs, and both sides must be DISTILLED before head training | added inputs are a later build if the first fit fails |
 
 ## 2. What "useful on the drones" asks, and what route 3 gives
 

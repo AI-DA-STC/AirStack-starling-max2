@@ -1,0 +1,73 @@
+# Route 3, stage LS1: the cells of the reads (task LS1-M1-T7; plan ste_learning/drafts/LS1_TASK_PLAN.md, contract C6).
+# Shared by the calibration read (LS1.5, scripts/ste_ls1_calibration.py, pinned by configs/ste_ls1/calibration.toml
+# [source] cells_sha256) and the equivalence read (LS1.2, pinned by distil_gates.toml [source] cells_sha256): one ruler.
+# A cell = one choice of the team (a fixed choice: every drone flies code k of the skills gate file's [players]; or a
+# mixed combination below) against one script of the other team, on T44's starts. All values PROPOSED (plan section 1
+# table, C6, C8), not the owner's; the lead records this file's sha256 before LS1.5 (plan section 7, lead step 1).
+
+[mixed]
+# 20 explicit "free" combinations per side (one drone skill per slot, slot 0 first, at least two distinct skills),
+# drawn once by ste/cells.draw_mixed(spec, 20, seed) with this seed (C8, R2 B7(e)) and written here as data, so no read
+# relies on a random stream (tests/test_ste_ls1_calibration.py checks they still equal the draw).
+seed = 150006
+guard = [
+    ["guard_mark_edge", "guard_mark_edge", "guard_mirror"],
+    ["guard_parked_centre", "guard_mirror", "guard_mirror"],
+    ["guard_mark_edge", "guard_mirror", "guard_mirror"],
+    ["guard_mark_edge", "guard_mirror", "guard_parked_centre"],
+    ["guard_mirror", "guard_mirror", "guard_parked_centre"],
+    ["guard_parked_centre", "guard_mirror", "guard_parked_centre"],
+    ["guard_mark_edge", "guard_parked_centre", "guard_mirror"],
+    ["guard_mark_edge", "guard_parked_centre", "guard_parked_centre"],
+    ["guard_mirror", "guard_mirror", "guard_mark_edge"],
+    ["guard_parked_centre", "guard_parked_centre", "guard_mark_edge"],
+    ["guard_mirror", "guard_parked_centre", "guard_mark_edge"],
+    ["guard_mark_edge", "guard_parked_centre", "guard_mark_edge"],
+    ["guard_parked_centre", "guard_mark_edge", "guard_mark_edge"],
+    ["guard_mirror", "guard_parked_centre", "guard_parked_centre"],
+    ["guard_mirror", "guard_mark_edge", "guard_parked_centre"],
+    ["guard_mark_edge", "guard_mirror", "guard_mark_edge"],
+    ["guard_parked_centre", "guard_parked_centre", "guard_mirror"],
+    ["guard_parked_centre", "guard_mirror", "guard_mark_edge"],
+    ["guard_mirror", "guard_parked_centre", "guard_mirror"],
+    ["guard_mirror", "guard_mark_edge", "guard_mark_edge"],
+]
+strike = [
+    ["strike_flank", "strike_high", "strike_high"],
+    ["strike_straight", "strike_low", "strike_low"],
+    ["strike_high", "strike_straight", "strike_flank"],
+    ["strike_flank", "strike_low", "strike_flank"],
+    ["strike_flank", "strike_straight", "strike_straight"],
+    ["strike_low", "strike_straight", "strike_low"],
+    ["strike_low", "strike_straight", "strike_straight"],
+    ["strike_straight", "strike_low", "strike_straight"],
+    ["strike_flank", "strike_flank", "strike_low"],
+    ["strike_flank", "strike_straight", "strike_high"],
+    ["strike_high", "strike_flank", "strike_high"],
+    ["strike_high", "strike_low", "strike_straight"],
+    ["strike_low", "strike_high", "strike_straight"],
+    ["strike_flank", "strike_high", "strike_low"],
+    ["strike_straight", "strike_straight", "strike_flank"],
+    ["strike_low", "strike_high", "strike_flank"],
+    ["strike_high", "strike_flank", "strike_low"],
+    ["strike_straight", "strike_low", "strike_high"],
+    ["strike_high", "strike_straight", "strike_high"],
+    ["strike_flank", "strike_low", "strike_high"],
+]
+
+[permutation]
+# The permuted codes of the negative control (R2 OA-6, moved here from distil_gates.toml [controls]): code k flies the
+# skill of code perm[k] (indices into each side's [players] list). An explicit derangement (no fixed point): each code
+# moved one place on, the last to the first. The calibration reads it from T44 alone, with no play (LS1.5).
+guard = [1, 2, 3, 4, 0]
+strike = [1, 2, 3, 4, 5, 0]
+
+[info_opponents]
+# Scripts of the other team played as INFO only (not gated, not in m, not in the permuted read; no T44 cell, so the
+# scripts' reference arm is played on them). guard_mark_inside has no cell in T44's base variant.
+strike = ["guard_mark_inside"]
+guard = []
+
+[read]
+# The one place the cell size is written (B-6): the calibration and the equivalence read both take it from here.
+games_per_cell = 1000

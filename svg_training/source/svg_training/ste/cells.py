@@ -13,6 +13,13 @@ A read plays a team's skills, one code per drone, against every script of the ot
 * cell player names carry a prefix (:data:`PREFIXES`) so they never shadow a script name in
   ``exploit._team_split``; each recording or stateful player is one object per cell.
 
+The paired statistics (C7, task LS1-M1-T7; used by the calibration read LS1.5 and the equivalence read alike, so the
+owner's limits are set on the gate's own ruler): :func:`paired_cell` (b, c, flips, n, the difference with Newcombe's
+paired hybrid score interval, the exact sign test), :func:`adjusted_z` (Bonferroni over the side's gated cells),
+:func:`pooled_difference` (the mean of the per-start means over cells, its interval at the z given), :func:`end_time`
+(end-step differences), and the command-error table of M2's shape (:func:`active_rule`, the one rule M2 reuses;
+:func:`command_errors`, :func:`error_summary`). Empty strata are None, never NaN (results are JSON, ``allow_nan=False``).
+
 The players: :func:`fixed_team` (constant heads over ANY two-level dispatch: the scripts', the skill network's or a
 stand-in's), :class:`Composite` (drone m flies member m closed loop, no dispatch: the oracle of a choice), and
 :class:`ScriptOracle` (a stand-in for the skill network, C2, built from the scripts: exact because the scripts are
@@ -24,16 +31,22 @@ No tuned number lives here (tests/test_ste_literals.py)."""
 from __future__ import annotations
 
 import itertools
+import math
 import random
 from dataclasses import dataclass
+from statistics import NormalDist
 
+import numpy as np
 import torch
 from torch import Tensor, nn
 
 from ..core.game_config import GameCfg
+from ..core.metrics import wilson_interval
 from ..core.observations import OBS_DIM
+from ..core.rewards import GUARD_WIN, RUNNING, STRIKE_WIN
 from ..opponents.scripted import REGISTRY, make_strategy
-from . import exploit, skills, sweep
+from . import compare, exploit, skills, sweep
+from .transfer import sign_test_p
 
 SIDES = ("guard", "strike")
 TEAM_KIND, FREE_KIND = "team", "free"           # a choice's kind (the run 0 ceiling's names)
@@ -47,6 +60,11 @@ CAL_PREFIX = "cal:"                             # a calibration arm (changed scr
 PREFIXES = (NET_PREFIX, SCR_PREFIX, ORC_PREFIX, UNF_PREFIX, PERM_PREFIX, CAL_PREFIX)
 MIN_DISTINCT = 2                                # a mixed cell flies at least this many distinct drone skills
 _ALIVE = slice(skills._V.alive, skills._V.alive + 1)   # the own-alive flag's column (C2: commands times the flag)
+# C7: the interval and the correction built here (OP-11, PROPOSED until the owner confirms them with the limits)
+NEWCOMBE = "newcombe_hybrid"                    # Newcombe 1998 method 10, paired hybrid score, no continuity correction
+BONFERRONI = "bonferroni_per_side"              # adjusted_z(alpha, m), m the side's gated cells
+DEGENERATE = "phi = 0: a zero margin total (degenerate cell)"
+END_TIME_PCT = 90                               # end_time's upper percentile of |end-step difference|
 
 
 @dataclass(frozen=True)
@@ -228,3 +246,135 @@ class ScriptOracle(nn.Module):
         if clip:
             out = out.clamp(-1, 1)
         return out * obs[:, _ALIVE]
+
+
+# ================================================================================================ C7: the paired statistics
+def _side_wins(outcome, side: str) -> np.ndarray:
+    """The win indicator of ``side`` per game; ValueError on an unfinished game (as ``scoring.paired_wins``)."""
+    outcome = np.asarray(outcome)
+    if (outcome == RUNNING).any():
+        raise ValueError("a game did not finish: paired counts need finished games")
+    other(side)
+    return outcome == (GUARD_WIN if side == SIDES[0] else STRIKE_WIN)
+
+
+def newcombe_phi(both: int, b: int, c: int, neither: int) -> float:
+    """The phi coefficient of the paired 2 x 2 table (``both`` won by both, ``b`` by the reference only, ``c`` by the arm
+    only, ``neither``): (both x neither - b x c) / sqrt of the product of the four margin totals; 0 when one is zero."""
+    denom = (both + b) * (c + neither) * (both + c) * (b + neither)
+    return (both * neither - b * c) / math.sqrt(denom) if denom > 0 else 0.0
+
+
+def newcombe_interval(both: int, b: int, c: int, neither: int, z: float) -> tuple[list[float], bool]:
+    """Newcombe's paired hybrid score interval (1998, method 10, no continuity correction) of the arm's win share less
+    the reference's, (c - b) / n: the Wilson intervals at ``z`` of the two shares (l_a, u_a) and (l_r, u_r), and
+    lower = d - sqrt((p_a - l_a)^2 - 2 phi (p_a - l_a)(u_r - p_r) + (u_r - p_r)^2),
+    upper = d + sqrt((u_a - p_a)^2 - 2 phi (u_a - p_a)(p_r - l_r) + (p_r - l_r)^2).
+    Returns ([lower, upper], degenerate) (degenerate: phi set to 0, a zero margin total)."""
+    n = both + b + c + neither
+    p_a, p_r = (both + c) / n, (both + b) / n
+    l_a, u_a = wilson_interval(both + c, n, z)
+    l_r, u_r = wilson_interval(both + b, n, z)
+    phi = newcombe_phi(both, b, c, neither)
+    degenerate = (both + b) * (c + neither) * (both + c) * (b + neither) == 0
+    d = p_a - p_r
+    lo = d - math.sqrt(max(0.0, (p_a - l_a) ** 2 - 2 * phi * (p_a - l_a) * (u_r - p_r) + (u_r - p_r) ** 2))
+    hi = d + math.sqrt(max(0.0, (u_a - p_a) ** 2 - 2 * phi * (u_a - p_a) * (p_r - l_r) + (p_r - l_r) ** 2))
+    return [lo, hi], degenerate
+
+
+def paired_cell(arm_pg: dict, ref_pg: dict, side: str, z: float) -> dict:
+    """One cell, paired by start (the same starts, game for game): ``b`` games the arm lost that the reference won,
+    ``c`` the reverse, ``flips`` = b + c, ``n``, ``diff`` = (c - b) / n (the arm's win share less the reference's) with
+    ``ci`` (:func:`newcombe_interval` at ``z``), ``sign_test_p`` (exact two-sided, ``transfer.sign_test_p``) and
+    ``method``. Wins of ``side`` (holds for the Guard team, reaches for the Strike team); every game must be finished
+    (ValueError). n = 0: diff, ci and sign_test_p None."""
+    arm, ref = _side_wins(arm_pg["outcome"], side), _side_wins(ref_pg["outcome"], side)
+    if arm.shape != ref.shape:
+        raise ValueError(f"paired games differ in number: {arm.shape} v {ref.shape}")
+    n = int(arm.size)
+    both, neither = int((arm & ref).sum()), int((~arm & ~ref).sum())
+    b, c = int((ref & ~arm).sum()), int((arm & ~ref).sum())
+    if n == 0:
+        return {"b": 0, "c": 0, "flips": 0, "n": 0, "diff": None, "ci": None, "sign_test_p": None, "method": NEWCOMBE}
+    ci, degenerate = newcombe_interval(both, b, c, neither, z)
+    return {"b": b, "c": c, "flips": b + c, "n": n, "diff": (c - b) / n, "ci": ci, "sign_test_p": sign_test_p(b, c),
+            "method": NEWCOMBE + (f" ({DEGENERATE})" if degenerate else "")}
+
+
+def adjusted_z(alpha: float, m: int) -> float:
+    """The two-sided normal quantile at alpha / m (Bonferroni over ``m`` cells): NormalDist().inv_cdf(1 - alpha / (2 m)).
+    m = 1: the plain z (1.959964 at alpha 0.05)."""
+    alpha = float(alpha)
+    if not (0 < alpha < 1) or int(m) != m or m < 1:
+        raise ValueError(f"adjusted_z needs 0 < alpha < 1 and a whole m >= 1, got alpha {alpha!r}, m {m!r}")
+    return NormalDist().inv_cdf(1 - alpha / (2 * int(m)))
+
+
+def pooled_difference(arm_wins: dict, ref_wins: dict, z: float) -> dict | None:
+    """The pooled difference over cells: ``arm_wins`` and ``ref_wins`` {cell: win indicator [n]} on the same n starts
+    (the same keys); the difference of the per-start means over cells (``compare.per_start_mean``, the y of
+    ``scoring.pooled_row``), its standard error by ``compare.paired_difference`` and the interval recomputed at ``z``
+    (``compare`` and ``scoring`` hard-wire 1.96: their ci is never used). None for no cell; se and ci None for one
+    start. Returns {"diff", "se", "ci", "cells", "n"}."""
+    if set(arm_wins) != set(ref_wins):
+        raise ValueError(f"the pooled difference needs the same cells, got {sorted(arm_wins)} and {sorted(ref_wins)}")
+    members = list(arm_wins)
+    if not members:
+        return None
+    r = compare.paired_difference(compare.per_start_mean(arm_wins, members), compare.per_start_mean(ref_wins, members))
+    se = r["se"] if math.isfinite(r["se"]) else None
+    ci = [r["diff"] - z * se, r["diff"] + z * se] if se is not None else None
+    return {"diff": r["diff"], "se": se, "ci": ci, "cells": len(members), "n": r["n"]}
+
+
+def end_time(arm_pg: dict, ref_pg: dict) -> dict:
+    """End-step differences, arm less reference, over the cell's n paired games (ticks): ``differ_games`` (games that
+    ended on another tick), the mean, the median, the mean of |d| and its ``END_TIME_PCT``-th percentile. n = 0: None."""
+    d = np.asarray(arm_pg["end_step"], dtype=np.int64) - np.asarray(ref_pg["end_step"], dtype=np.int64)
+    if d.size == 0:
+        return {"differ_games": 0, "mean_ticks": None, "median_ticks": None, "mean_abs_ticks": None,
+                "p90_abs_ticks": None}
+    return {"differ_games": int((d != 0).sum()), "mean_ticks": float(d.mean()), "median_ticks": float(np.median(d)),
+            "mean_abs_ticks": float(np.abs(d).mean()), "p90_abs_ticks": float(np.percentile(np.abs(d), END_TIME_PCT))}
+
+
+# ------------------------------------------------------------------------------------------------ the command error
+def active_rule(label_max_abs) -> list[bool]:
+    """M2-T3's rule, one function for the calibration and the distillation: per channel, active where any script label
+    on that channel is not 0.0 on the same rows, i.e. where the largest |label| is above 0."""
+    return [bool(float(v) > 0) for v in label_max_abs]
+
+
+def command_errors(acc: dict) -> dict:
+    """The command-error table of M2's shape from per-skill accumulators ``acc`` {skill: {"sum_sq" [4], "max_abs" [4],
+    "count" (rows), "label_max_abs" [4] (the scripts' own labels on the same rows)}}: {"skills": {skill: {"rmse" [4]
+    or None, "max_abs" [4] or None, "active" [4] (:func:`active_rule`), "rows"}}, "zero_skill"} (the first skill, in
+    ``acc`` order, with rows and every label exactly 0; None if none)."""
+    skills_out, zero = {}, None
+    for name, a in acc.items():
+        rows = int(a["count"])
+        active = active_rule(a["label_max_abs"]) if rows else [False] * len(a["label_max_abs"])
+        skills_out[name] = {"rmse": [math.sqrt(float(s) / rows) for s in a["sum_sq"]] if rows else None,
+                            "max_abs": [float(v) for v in a["max_abs"]] if rows else None,
+                            "active": active, "rows": rows}
+        if rows and not any(active) and zero is None:
+            zero = name
+    return {"skills": skills_out, "zero_skill": zero}
+
+
+def error_summary(errors: dict) -> dict:
+    """The three numbers the command-error limits read (C7): ``rmse_active_max`` (the largest RMSE on an active channel
+    of any skill), ``unused_max_abs`` (the largest |error| on a channel a skill never uses, the zero-command skill
+    excluded) and ``zero_skill_max_abs`` (the zero-command skill's largest |error|); None where nothing was seen."""
+    rmse, unused, zero = [], [], None
+    for name, s in errors["skills"].items():
+        if not s["rows"]:
+            continue
+        if name == errors["zero_skill"]:
+            zero = max(s["max_abs"])
+            continue
+        rmse += [r for r, act in zip(s["rmse"], s["active"]) if act]
+        unused += [m for m, act in zip(s["max_abs"], s["active"]) if not act]
+    return {"rmse_active_max": max(rmse) if rmse else None, "unused_max_abs": max(unused) if unused else None,
+            "zero_skill_max_abs": zero}

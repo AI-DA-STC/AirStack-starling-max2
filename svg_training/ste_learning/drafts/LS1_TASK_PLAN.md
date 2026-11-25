@@ -553,9 +553,13 @@ Lets run: the calibration read LS1.5. Stands alone on today's `development`.
   `scripts/ste_score_matrix.py:622-632`); `save_batch` per chunk; resume skips saved chunks.
 - **Keep green:** `test_ste_l19_l110.py`, `test_ste_l1side.py` (seed scans), `test_drone_loss.py` (`:148`, no
   `[team_size]` or dropout in new configs), `test_ste_job.py` (scripts scan `:318`), `test_ste_literals.py`.
-- **Cost (estimate from review B's 2 to 4.5 s per 1,000-game cell-play, unmeasured here):** about 150 Guard and
-  130 + 26 Strike cells x (reference + about 9 full arms, the three bias sizes included) plus switch arms and the
-  zero-skill bias arms on their cells: roughly 50 to 115 min per side on an idle CPU, double beside other work.
+- **Cost (measured by the builder, 25 Nov 2026, CPU of the RTX 5090 workstation, 16 threads, 1,000 games per cell; was
+  review B's unmeasured 2 to 4.5 s):** a batch runs to its longest game, so a chunk holds one opponent's cells. Identity
+  arm on the fixed cells, 5 or 6 per batch: 1.9 s per cell (Guard), 3.5 s (Strike), 5 s against guard_mark_inside; a
+  noise arm on Guard mixed cells, 6 per batch: 1.1 s (v strike_straight) to 6.2 s (v strike_converge) per cell
+  (`calibration.toml [run]`). About 2,100 Guard and 2,300 Strike cell-plays (13 arms on every cell, the reference on
+  the mixed and info cells, the zero-skill and switch arms on theirs): about 2 to 3 h per side, 4 to 5.5 h for both,
+  double beside other work; LS1.5 is a several-hour CPU job.
 - **Commit:** `svg_training: paired statistics and the LS1 calibration read (job LS1.5)`.
 
 ## 3. Merge M2: distillation, its driver, its gate file, the equivalence read

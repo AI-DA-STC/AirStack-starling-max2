@@ -602,6 +602,8 @@ def test_carry_adds_the_other_machines_hours_to_the_l1_and_l2_cap(bench):
     done = run_py([TOOL, "carry", "--gpu-h", 2.5, "--note", "rtx5090 2026-11-24"], bench.env)
     assert done.returncode == 0, done.stderr
     assert "carried 2.5 GPU-h" in done.stdout and "budget_l1_l2" in done.stdout
+    assert done.stdout == ("carried 2.5 GPU-h to [budget_l1_l2] (rtx5090 2026-11-24); budget_l1_l2 (phases L1 + L2): "
+                           "used 2.500 of 13.0 GPU-h (own rows 0.000, carried 2.500)\n")       # without --section: as today
     (row,) = [json.loads(line) for line in shared.gpu_hours_log().read_text().splitlines()]
     assert row["group"] == "carried:L1+L2" and row["device"] == budget.CARRIED_DEVICE and row["carried_gpu_h"] == 2.5
     assert row["note"] == "rtx5090 2026-11-24"
@@ -612,6 +614,34 @@ def test_carry_adds_the_other_machines_hours_to_the_l1_and_l2_cap(bench):
         assert refused.returncode == rc.EXIT_REFUSED and "carried" in refused.stderr, bad
     assert run_py([TOOL, "carry", "--gpu-h", 1.0, "--note", " "], bench.env).returncode == rc.EXIT_REFUSED
     assert run_py([TOOL, "carry", "--gpu-h", 1.0], bench.env).returncode == rc.EXIT_REFUSED       # --note is required
+    assert len(shared.gpu_hours_log().read_text().splitlines()) == 1                             # nothing more written
+
+
+IN_WORK_LINE = "budget budget_l1_l2 (phases L1 + L2): used 0.000 of 13.0 GPU-h (own rows 0.000, carried 0.000)"
+ROUTE_LINE = "budget budget_ls (phase LS): used 0.000 of 200.0 GPU-h (own rows 0.000, carried 0.000)"
+
+
+def test_status_shows_the_routes_hours_after_todays_lines(bench):
+    """Task LS1-M1-T2 (R39 as read by the lead, R43): status keeps today's lines and adds one, route 3's hours."""
+    assert bench.status().splitlines() == ["no job has been launched", IN_WORK_LINE, ROUTE_LINE]
+
+
+def test_carry_takes_a_section_and_refuses_an_unknown_or_closed_one(bench):
+    """``carry --section budget_ls`` counts the other machine's hours toward the route's cap only; an unknown section or
+    a closed one is refused (status 2) and nothing is written."""
+    done = run_py([TOOL, "carry", "--section", "budget_ls", "--gpu-h", 0.25, "--note", "rtx5090 2026-11-25"], bench.env)
+    assert done.returncode == 0, done.stderr
+    assert done.stdout == ("carried 0.25 GPU-h to [budget_ls] (rtx5090 2026-11-25); budget_ls (phase LS): "
+                           "used 0.250 of 200.0 GPU-h (own rows 0.000, carried 0.250)\n")
+    (row,) = [json.loads(line) for line in shared.gpu_hours_log().read_text().splitlines()]
+    assert row["group"] == "carried:LS" and row["device"] == budget.CARRIED_DEVICE and row["carried_gpu_h"] == 0.25
+    assert bench.status().splitlines() == ["no job has been launched", IN_WORK_LINE,
+                                           ROUTE_LINE.replace("used 0.000", "used 0.250").replace("carried 0.000",
+                                                                                                  "carried 0.250")]
+    for section, why in (("budget_nope", "budget_nope"), ("budget", "closed")):          # [budget] is L0's, closed at G0
+        refused = run_py([TOOL, "carry", "--section", section, "--gpu-h", 1.0, "--note", "x"], bench.env)
+        assert refused.returncode == rc.EXIT_REFUSED, (section, refused.stderr)
+        assert refused.stderr.startswith("refused:") and why in refused.stderr, (section, refused.stderr)
     assert len(shared.gpu_hours_log().read_text().splitlines()) == 1                             # nothing more written
 
 

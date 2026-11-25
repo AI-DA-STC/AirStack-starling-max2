@@ -220,13 +220,31 @@ def log_carried(budget: BudgetCfg, gpu_h: float, note: str) -> dict:
     return row
 
 
+def section_summary(budget: BudgetCfg) -> str:
+    """One line on a budget section: used (this ledger's rows + carried) of its cap."""
+    own, carried = own_gpu_h(budget), carried_gpu_h(budget)
+    phases = f"phase {budget.phases[0]}" if len(budget.phases) == 1 else f"phases {' + '.join(budget.phases)}"
+    return (f"{budget.section} ({phases}): used {own + carried:.3f} of {budget.phase_cap_gpu_h!r} GPU-h "
+            f"(own rows {own:.3f}, carried {carried:.3f})")
+
+
 def budget_summary(settings: Path | str = SETTINGS_FILE) -> str:
     """One line on the budget section in work: used (this ledger's rows + carried) of its cap."""
-    in_work = load_ste_learning(settings)[0].budget_in_work()
-    own, carried = own_gpu_h(in_work), carried_gpu_h(in_work)
-    phases = f"phase {in_work.phases[0]}" if len(in_work.phases) == 1 else f"phases {' + '.join(in_work.phases)}"
-    return (f"{in_work.section} ({phases}): used {own + carried:.3f} of {in_work.phase_cap_gpu_h!r} GPU-h "
-            f"(own rows {own:.3f}, carried {carried:.3f})")
+    return section_summary(load_ste_learning(settings)[0].budget_in_work())
+
+
+# Route 3, learned skills (owner, R39 as read by the lead, confirmed R43, 25 Nov 2026): its one budget section, whose
+# hours ``ste_job.py status`` shows on every call next to the section in work (ste_learning/drafts/LS1_TASK_PLAN.md, C1).
+ROUTE_SECTION = "budget_ls"
+
+
+def budget_summaries(settings: Path | str = SETTINGS_FILE) -> list[str]:
+    """The status lines of the budgets: the section in work first (:func:`budget_summary`'s line), then route 3's
+    section (:data:`ROUTE_SECTION`) when the settings have it and it is not the section in work."""
+    cfg = load_ste_learning(settings)[0]
+    in_work = cfg.budget_in_work()
+    route = [each for each in cfg.budgets() if each.section == ROUTE_SECTION != in_work.section]
+    return [section_summary(each) for each in (in_work, *route)]
 
 
 def check_launch(task: str, requested_gpu_h: float, settings: Path | str = SETTINGS_FILE, job: str | None = None,

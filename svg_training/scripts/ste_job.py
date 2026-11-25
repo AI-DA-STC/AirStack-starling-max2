@@ -4,7 +4,7 @@
     python scripts/ste_job.py launch --task L0.11 --name <job> --run-dir runs/<folder> --min-s <seconds> --gpu-h <hours> [--post-clips3d | --no-post-clips3d] -- <command ...>
     python scripts/ste_job.py wait <job>
     python scripts/ste_job.py status
-    python scripts/ste_job.py carry --gpu-h <hours> --note "<machine> <date>"
+    python scripts/ste_job.py carry [--section <budget section>] --gpu-h <hours> --note "<machine> <date>"
     python scripts/ste_job.py owner-pauses
     python scripts/ste_job.py post-clips3d --run-dir runs/<folder>
 
@@ -47,12 +47,17 @@ status   one line per job: alive | alive (paused) | alive (wrapper gone) | dead 
          exit-0 run with the hook on whose clips are not complete and whose clips job is not alive (a killed wrapper,
          a reboot): run the post-clips3d line.
          faults=<n> (in wait's line and in status) counts bookkeeping writes the wrapper had to retry (a full disk,
-         any error): the job was not harmed by them; details in <run-dir>/job.json and job.log. A last line gives the
-         budget section in work: used (this machine's ledger rows + carried hours) of its cap.
-carry    one ledger per machine, one cap for both (the 13.0 of L1 + L2 is shared by the laptop and the RTX 5090):
-         appends one marked row (group "carried:L1+L2") of GPU-hours the other machine used, which counts toward the
-         cap of the budget section in work, never toward a task. --gpu-h: a finite number, 0 or more. --note: the
-         machine and the date. Refused (status 2, nothing written) otherwise.
+         any error): the job was not harmed by them; details in <run-dir>/job.json and job.log. Then one line per
+         budget, each "budget <section> ...: used (this machine's ledger rows + carried hours) of its cap": first the
+         budget section in work, then route 3's section [budget_ls] (learned skills; R39 as read by the lead, R43)
+         when the settings have it and it is not the one in work.
+carry    one ledger per machine, one cap for both (the 13.0 of L1 + L2, or the 200 of route 3, is shared by the laptop
+         and the RTX 5090): appends one marked row (group "carried:" + the section's phases, as "carried:L1+L2") of
+         GPU-hours the other machine used, which counts toward the cap of that budget section, never toward a task.
+         --section: the budget section, as named in the settings file (budget_ls); default: the section in work, so a
+         call without it is the same call as before. --gpu-h: a finite number, 0 or more. --note: the machine and the
+         date. Refused (status 2, nothing written) otherwise, and for a section the settings do not have or a closed
+         one. Prints the row and that section's budget line.
 
 owner-pauses  lists the open pauses that are not the lead's own (not tagged GPU_PAUSE_BY=lead), one line each; exit
          0 if there is none, 2 if there is one. scripts/gpu_pause.sh runs it before a resume or stop tagged
@@ -107,9 +112,13 @@ def parse(argv: list[str] | None) -> argparse.Namespace:
     wait = commands.add_parser("wait", help="block until a job has ended; exit with its exit code")
     wait.add_argument("name")
     wait.add_argument("--poll-s", type=float, default=jobs.POLL_S, help="seconds between looks")
-    status = commands.add_parser("status", help="list the jobs and the budget in work")
+    status = commands.add_parser("status", help="list the jobs, the budget in work and route 3's budget")
     status.add_argument("--settings", type=Path, default=SETTINGS_FILE, help="the track's settings file (caps)")
-    carry = commands.add_parser("carry", help="add GPU-hours another machine used to the budget in work")
+    carry = commands.add_parser("carry", help="add GPU-hours another machine used to a budget section (default: the "
+                                              "one in work)")
+    carry.add_argument("--section", default=None,
+                       help="the budget section, as named in the settings file (budget_ls); default: the section in "
+                            "work")
     carry.add_argument("--gpu-h", required=True, type=float, help="GPU-hours the other machine used SINCE ITS LAST CARRY (an increment of its own ledger rows only, never a running total; the ledger is append-only)")
     carry.add_argument("--note", required=True, help="the machine and the date, as \"rtx5090 2026-11-24\"")
     carry.add_argument("--settings", type=Path, default=SETTINGS_FILE, help="the track's settings file (caps)")
@@ -162,16 +171,22 @@ def run(args: argparse.Namespace) -> int:
         print("\n".join(lines or ["no owner pause is open"]))
         return EXIT_REFUSED if lines else EXIT_DONE
     if args.command == "carry":
-        in_work = load_ste_learning(args.settings)[0].budget_in_work()
+        cfg = load_ste_learning(args.settings)[0]
+        named = [each for each in cfg.budgets() if each.section == args.section]       # names from the settings file
+        if args.section is not None and not named:
+            print(f"refused: no budget section [{args.section}] in {Path(args.settings).name} (known: "
+                  f"{[each.section for each in cfg.budgets()]}); nothing written", file=sys.stderr)
+            return EXIT_REFUSED
+        section = named[0] if named else cfg.budget_in_work()
         try:
-            row = budget.log_carried(in_work, args.gpu_h, args.note)
+            row = budget.log_carried(section, args.gpu_h, args.note)
         except budget.BudgetError as err:
             print(f"refused: {err}", file=sys.stderr)
             return EXIT_REFUSED
-        print(f"carried {row['carried_gpu_h']!r} GPU-h to [{in_work.section}] ({row['note']}); "
-              f"{budget.budget_summary(args.settings)}")
+        print(f"carried {row['carried_gpu_h']!r} GPU-h to [{section.section}] ({row['note']}); "
+              f"{budget.section_summary(section)}")
         return EXIT_DONE
-    print("\n".join([*jobs.status_lines(), f"budget {budget.budget_summary(args.settings)}"]))
+    print("\n".join([*jobs.status_lines(), *(f"budget {line}" for line in budget.budget_summaries(args.settings))]))
     return EXIT_DONE
 
 

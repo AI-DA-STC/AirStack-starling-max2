@@ -245,6 +245,37 @@ def test_carried_hours_count_toward_the_l1_and_l2_cap_only(tmp_path):
                                            "(own rows 1.000, carried 1.500)")
 
 
+ROUTE_LINE = "budget_ls (phase LS): used 0.000 of 200.0 GPU-h (own rows 0.000, carried 0.000)"
+
+
+def test_the_summaries_give_the_section_in_work_then_the_routes_hours():
+    """Task LS1-M1-T2 (R39 as read by the lead, R43): ``budget_summaries`` is today's line first, then one line for
+    route 3's section [budget_ls], in the same format (``section_summary``); its own rows and carried rows count there
+    and not in the section in work."""
+    summaries = budget.budget_summaries(SETTINGS_FILE)
+    assert len(summaries) == 2 and summaries[0] == budget.budget_summary(SETTINGS_FILE)
+    assert summaries == ["budget_l1_l2 (phases L1 + L2): used 0.000 of 13.0 GPU-h (own rows 0.000, carried 0.000)",
+                         ROUTE_LINE]
+    assert budget.ROUTE_SECTION == "budget_ls"
+    cfg = load_ste_learning()[0]
+    assert [budget.section_summary(each) for each in (cfg.budget_in_work(), cfg.budget_of("LS1.1"))] == summaries
+    ran("LS1.4", "heads", 0.0, 1.5)
+    budget.log_carried(cfg.budget_of("LS1.4"), 0.25, "rtx5090 2026-11-25")
+    assert budget.budget_summaries() == [summaries[0], "budget_ls (phase LS): used 1.750 of 200.0 GPU-h "
+                                                       "(own rows 1.500, carried 0.250)"]
+
+
+def test_no_route_line_without_the_section_or_when_it_is_the_one_in_work(tmp_path):
+    """A settings file without [budget_ls] gives today's one line; with route 3 in work its line is not given twice."""
+    l0_only = settings(tmp_path, 19.0, L0_11=3.0)
+    assert budget.budget_summaries(l0_only) == [budget.budget_summary(l0_only)]
+    l1 = l1_settings(tmp_path, 3.0)
+    assert budget.budget_summaries(l1) == [budget.budget_summary(l1)]
+    route_in_work = tmp_path / "route_in_work.toml"
+    route_in_work.write_text(SETTINGS_FILE.read_text().replace('phase = "L1"', 'phase = "LS"'))
+    assert budget.budget_summaries(route_in_work) == [budget.budget_summary(route_in_work)] == [ROUTE_LINE]
+
+
 @pytest.mark.parametrize("hours", [-0.1, float("nan"), float("inf"), float("-inf"), True, "1.0", None])
 def test_a_senseless_carry_is_refused_and_writes_nothing(tmp_path, hours):
     in_work = load_ste_learning(l1_settings(tmp_path, 3.0))[0].budget_in_work()

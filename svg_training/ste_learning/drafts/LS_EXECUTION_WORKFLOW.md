@@ -82,7 +82,7 @@ Self-play and LS2 are new builds. Every figure is the lead's estimate, with noth
 | `configs/ste_ls1/distil_gates.toml` | new | sizes, rounds, network size, the limits the owner sets (R38), controls, seed, the game file's sha256; hashed before any run | — | its own load test (the limits are read from the file, not typed into the test) |
 | `configs/ste_ls1/heads_gates.toml` | new | the gate file of LS1.4's route 3 arm: the skills gate file of the pipeline check with `skill_source = "net"`, the two skill network files, two seeds as two variants, the reading rule. Route 2's recipe and game-steps are pinned in it (section 6) | — | a test that it differs from `configs/ste_l3/skills_gates.toml` in the named keys only |
 | `configs/ste_ls1/skills_seed2_gates.toml` | **new (review)** | route 2's second seed. A variant cannot be added to `configs/ste_l3/skills_gates.toml`: its sha256 is pinned in six run folders and in `tests/test_ste_l3_pipeline_gates.py`. A new gate file needs its own run 0 (`ste/exploit.py:933-939`) | — | as above |
-| `source/svg_training/ste/config.py`, `configs/ste_learning.toml`, `ste/budget.py`, `scripts/ste_job.py`, `ste_learning/PLAN.md` §9, `tests/test_ste_config.py` | changed | the route's tasks and hours (the exact list is in section 9, B6). `TASK_IDS` gains the LS1 tasks; a section `[budget_ls1]` after the L3–L6 one, every task with a cap entry, CPU tasks at 0.0. `ste_job.py status` prints only the section "in work" (`ste/budget.py:223-229`): it also prints route 3's hours, as R39's reading promises | every existing task, cap and status line unchanged | `tests/test_ste_config.py` (its section set at line 90 and the tuple at line 107 name three sections today) |
+| `source/svg_training/ste/config.py`, `configs/ste_learning.toml`, `ste/budget.py`, `scripts/ste_job.py`, `ste_learning/PLAN.md` §9, `tests/test_ste_config.py` | changed | the route's tasks and hours (the exact list is in section 9, B6). `TASK_IDS` gains the LS1 tasks; a section `[budget_ls1]` after the L3–L6 one, every task with a cap entry, CPU tasks at 0.0. **Merge M1 writes R36's numbers (1.0 for the section, 0.8 for LS1.1, 0.1 for LS1.6, 0.0 for LS1.4) unless the owner has confirmed the reading of R39; the 200 and LS1.4's 4.0 are written only after that confirmation**, so the launcher itself refuses a launch beyond what is approved. `ste_job.py status` prints only the section "in work" (`ste/budget.py:223-229`): it also prints route 3's hours, as R39's reading promises | every existing task, cap and status line unchanged | `tests/test_ste_config.py` (its section set at line 90 and the tuple at line 107 name three sections today) |
 
 **Not touched:** the game engine and its rules, the safety filter, the scripts (they are the teachers; **the file
 `opponents/scripted.py` is frozen from the first distillation on**: its sha256 is pinned in every skill network, so
@@ -95,6 +95,8 @@ Lab.
 ```
 design review of this file and the plan (two reviewers, R22): DONE 25 Nov 2026, folded in
   -> the owner reads the rulings and this file, and gives the word for the build
+  -> the task plan rewritten from this file and the two review reports (the plan's Tasks 1 to 7 are older than the
+     review and must not be built as written); one reviewer reads it
   -> design check (ste-architect, read-only)
   -> build in its own worktree, tests first (ste-software-engineer, Opus)
   -> QC review of the build (ste-test-qc-engineer, Sonnet)
@@ -170,8 +172,10 @@ from T44 (CPU; T44's games are equal game for game only there, `ste/exploit.py:5
 network that returns the scripts' own commands through the new slot and code path differs in 0 games: it proves the
 new path, which positive 1 does not touch. Negative, gross: an unfitted network and a network with its codes permuted
 must miss (the permutation is first shown to miss with the scripts themselves, and "at least N cells miss" is fixed
-from that). Negative, near miss (review): scripts with a 0.05 systematic bias, a 3-degree turn and a moved switch must
-FAIL; scripts with random error 0.02 must PASS. Without the near-miss controls the gate is only known to stop a
+from that). Negative, near miss (review): scripts changed by a systematic error just above the owner's limits must
+FAIL, and scripts with a random error just below them must PASS (PROPOSED sizes: a 0.05 bias, a 3-degree turn and a
+moved switch to FAIL; random error 0.02 to PASS; the sizes are set with the limits, from the calibration read, so
+that the two cannot contradict each other). Without the near-miss controls the gate is only known to stop a
 network that learned nothing.
 
 **CPU time of the read (estimate from measurements):** about 50 to 75 minutes for both sides on an idle machine,
@@ -200,7 +204,7 @@ Strike 0.284, 3-D clips 0.016 to 0.043 per run.
 |---|---|---|---|---|---|
 | — | Both gate files and the reading rule written and hashed | — | 0 | LS1 DISTILLED, M4, the owner's margin | `heads_gates.toml`, `skills_seed2_gates.toml` |
 | LS1.4-P | Skills pilot on the skill network (covers both sides) | GPU | 0.1 | gate hashed | rates and controls. It is read as a check: if its rule would choose another Strike recipe or another number of game-steps than route 2's, nothing is launched and it comes back |
-| LS1.4-0 | Run 0 on the skill network: Strike against the parked Guard | GPU | 0.4 | LS1.4-P | PASS or FAIL against the mark 0.554 (the mark is the scripts' ceiling less 0.05; using it for the network is written into the gate file as a choice). One run 0 serves both Strike seeds |
+| LS1.4-0 | Run 0 on the skill network: Strike against the parked Guard | GPU | 0.4 | LS1.4-P | PASS or FAIL against its mark. Route 2's mark 0.554 is the scripts' best fixed choice (604 of 1,000) less 0.05; for the network the same rule is applied to the network's own best fixed choice, read on the CPU before the gate is hashed (a FAIL of run 0 cannot be overridden and would stop both Strike seeds). One run 0 serves both Strike seeds |
 | LS1.4-G1, -G2 | Head training on the network, Guard, two seeds | GPU, side by side | 0.4 each | LS1.4-P | two Guard teams of route 3, scored against every Strike script; clips by the post-run hook (0.1 asked each) |
 | LS1.4-S1, -S2 | Head training on the network, Strike, two seeds | GPU, side by side | 0.4 each | LS1.4-0 | two Strike teams of route 3, scored against every Guard script; clips |
 | LS1.4-R0 | Run 0 of route 2's second-seed gate file | GPU | 0.4 | — | needed before its Strike run (review) |
@@ -225,7 +229,7 @@ strategy is not expected before LS2. Three limits on the reading, from the pipel
 
 **Reading rule, written before the runs (PROPOSED; the owner sets the margin with the LS1 limits).** A seed's score is
 the mean of its last three reads (a single read can land on a dip: run 0 read 461 once between 633 and 620). Both arms
-are scored on the same starts with the same pool draws and compared start by start. With a margin Δ fixed beforehand
+use the same training seeds and the same pool draws, and are scored on the same starts and compared start by start. With a margin Δ fixed beforehand
 (PROPOSED 0.04 on the pooled row, 0.08 per cell): **"no drop beyond Δ"** when the mean of route 3's seeds is at least
 route 2's mean less Δ and each route 3 seed is at least route 2's lower seed less Δ; **"below"** when route 3's mean
 is under route 2's by more than 2Δ; otherwise INCONCLUSIVE, and a third seed per arm is announced (0.4 GPU-h each).
@@ -279,7 +283,9 @@ stage's design note.
 Two independent reviewers, read-only, given the files and not the lead's conclusions. A read every line of
 `opponents/scripted.py`; B traced every call site and ran two small CPU checks (the budget loader with an LS1 section
 in a scratch copy; an ONNX export of a test network). The lead checked their file references by grep before folding
-them in. Neither reviewer ran a test suite or a GPU job.
+them in. Neither reviewer ran a test suite or a GPU job. **The full reports, with the file and line of every change a
+builder needs: [LS_DESIGN_REVIEW_A.md](LS_DESIGN_REVIEW_A.md), [LS_DESIGN_REVIEW_B.md](LS_DESIGN_REVIEW_B.md).** The
+table below is the summary.
 
 | # | Finding | Severity | What changed here |
 |---|---|---|---|

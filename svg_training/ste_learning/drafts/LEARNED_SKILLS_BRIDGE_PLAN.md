@@ -10,6 +10,14 @@ take precedence over this file where they differ**
 (the budget table, the cell count of section 8, the device of the equivalence read, the per-team skill network file,
 the noise-floor read, the clips).
 
+> **DO NOT BUILD FROM THE TASKS BELOW AS WRITTEN (25 Nov 2026).** They are older than the design review. Built as
+> written, Task 2 breaks the load of every existing checkpoint and export (it adds a key to the scripts' dictionary),
+> Task 1 uses a tanh output, Task 4 types the limits into a test (the owner sets them, R38), and nothing here covers
+> the training driver's control, the cell module, the calibration read, the reload branch or the LS1.4 reader. The
+> source for a build is [LS_EXECUTION_WORKFLOW.md](LS_EXECUTION_WORKFLOW.md) v3 with the two review reports
+> ([A](LS_DESIGN_REVIEW_A.md), [B](LS_DESIGN_REVIEW_B.md)); the first step after the owner's word is a task plan
+> rewritten from them, read by one reviewer. This file is kept for the design (sections 1 to 4) and the history.
+>
 > **For the builder (`ste-software-engineer`, in its own worktree cut from `development`):** stage LS1 below is
 > task by task, tests first, steps as checkboxes. It follows [PLAN §6](../PLAN.md) (design check, develop, gate
 > written, test run, validate, QC, document, merge) and [STANDARDS §3](../STANDARDS.md). Independent QC by

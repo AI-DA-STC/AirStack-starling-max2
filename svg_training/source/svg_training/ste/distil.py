@@ -1,6 +1,7 @@
 """Route 3, stage LS1: the distillation of the scripts into one skill network per team (plan
 ste_learning/drafts/LS1_TASK_PLAN.md, merge M2). Task LS1-M2-T1: the gate file ``configs/ste_ls1/distil_gates.toml``
-and its loader; collection, fit and report follow in tasks LS1-M2-T2 and T3.
+and its loader; task LS1-M2-T2: the collection (``CodeSchedule``, ``collect``, ``Rows``, ``keep``, ``round_seed``; see
+"The collection" below); the fit and the report follow in task LS1-M2-T3.
 
 :func:`load_distil_gates` reads the file's bytes once (its sha256 is of the same bytes, as ``exploit.load_gates``) and
 checks it: every section and key of :data:`SECTIONS` required, none unknown (ValueError naming it), each value of its
@@ -18,6 +19,18 @@ each switch player of ``opponents/perturbed.SWITCHES`` included).
 The smoke rule (:data:`SMOKE_RULE`) is the design check's: under ``--smoke`` the drivers take their sizes from
 ``[smoke]``, so the file needs no smoke copy of any other key.
 
+The collection (task LS1-M2-T2). One relabelling round plays ``games`` games of the skills gate file's base game for
+``ticks`` ticks: the side flies a code schedule (:class:`CodeSchedule`), the other team the opponent pool of its
+``[players]`` scripts (``pool.OpponentPool``, redrawn after each game). Each game draws a mode (uniform: one code on
+every drone all game; mix: one free combination of ``cells.mixed_pool`` all game; random: a two-level choice drawn
+every ``hold`` ticks from the game's own start, resolved by ``resolve_two_level``) and whether the network flies it
+(``net_flown``, probability 1 - script_share). Every live drone of the side gives one row per tick (:class:`Rows`): its
+observation and every script's command on it (the labels, always the scripts', also in net-flown games), the code it
+flew, how long that code has been held, and whether a label jumped near that tick (``near_switch``). :func:`keep`
+draws the rows a round keeps, weighted, without replacement, with a quota of rows that have a mate absent.
+Per-round seeds come from :func:`round_seed` (a mixing function, never ``seed + round``: that would give round 3 the
+``[report] seed``). Batched: the loops run over ticks, the K skills and the M drones only, never over games.
+
 No tuned number lives here (tests/test_ste_literals.py): every value comes from the gate file."""
 from __future__ import annotations
 
@@ -26,12 +39,17 @@ import math
 import re
 import tomllib
 from dataclasses import dataclass
+from fractions import Fraction
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
+import torch
+from torch import Tensor
+
+from ..core.game import SvgGame
 from ..core.observations import OBS_DIM
 from ..opponents.perturbed import SWITCHES
-from . import cells, exploit
+from . import cells, exploit, pool, skill_net, skills, sweep
 from .config import TASK_IDS
 
 ROUTE = "LS"                                     # the route's phase key (C1): [run] task is one of its task IDs
@@ -361,3 +379,316 @@ def unfilled_limits(g: DistilGates) -> list[str]:
     ``controls.<key>`` in :data:`CONTROL_SIZE_KEYS` order (``controls.near_miss.switch.<key>`` for a switch)."""
     out = [f"limits.{k}" for k in LIMIT_KEYS if is_fill(g.limits[k])]
     return out + [f"controls.{k}" for k in CONTROL_SIZE_KEYS if is_fill(_owner_value(g.controls, k))]
+
+
+# ================================================================================================ the collection (T2)
+MODES = ("uniform", "mix", "random")             # a game's mode; Rows.mode and CodeSchedule.mode hold the index
+UNIFORM, MIX, RANDOM = 0, 1, 2
+SEED_PURPOSES = ("game", "schedule", "pool")     # round_seed's purposes: the game's starts, the schedule, the pool
+_SEED_BITS = 63
+SEED_RANGE = (1 << _SEED_BITS) - 1               # round seeds lie in [0, SEED_RANGE): non-negative, below 2^63
+HOST_COPY_TICKS = 64                             # ticks of rows copied to the CPU at once (memory only, not a result)
+ROW_FIELDS = ("obs", "slot", "label", "flown", "n_live", "held", "mode", "net_flown", "near_switch", "round", "game",
+              "episode", "tick", "opponent")
+
+
+def round_seed(seed: int, round_index: int, purpose: str) -> int:
+    """The seed of one purpose (:data:`SEED_PURPOSES`) of relabelling round ``round_index`` under ``seed``: the
+    splitmix64 mixing of ``pool.pool_draw`` keyed by (seed, round, purpose), in [0, SEED_RANGE). Never ``seed + round``
+    (design check of M2: four rounds from [data] seed 150001 would reach [report] seed 150004)."""
+    if purpose not in SEED_PURPOSES:
+        raise ValueError(f"purpose must be one of {SEED_PURPOSES}, got {purpose!r}")
+    r = torch.tensor([int(round_index)], dtype=torch.long)
+    p = torch.tensor([SEED_PURPOSES.index(purpose)], dtype=torch.long)
+    return int(pool.pool_draw(int(seed), r, p, SEED_RANGE)[0])
+
+
+def mix_combos(spec: cells.CellSpec, device) -> Tensor:
+    """The mix mode's combinations [C, M] long: every free combination of ``cells.mixed_pool(spec)`` (at least two
+    distinct drone skills; Guard 24, Strike 60 in 3v3) as code indices of ``spec.players``."""
+    rows = [[spec.players.index(s) for s in c] for c in cells.mixed_pool(spec)]
+    return torch.tensor(rows, dtype=torch.long, device=torch.device(device)).reshape(len(rows), spec.drones)
+
+
+@dataclass(frozen=True)
+class Rows:
+    """The rows of a collection, on the CPU, one per live drone of the side per tick (R rows, time-major):
+    ``obs`` [R, OBS_DIM] f32; ``slot`` [R] i64 (the drone's index in its team); ``label`` [R, K, 4] f32 (every script's
+    command on that state, code order); ``flown`` [R] i64 (the code the drone flew); ``n_live`` [R] i8 (live drones of
+    the side at that tick); ``held`` [R] i16 (ticks the flown code had been flown before this tick, in this game: 0 on
+    the game's first tick and on the tick it changed); ``mode`` [R] i8 (:data:`MODES` index); ``net_flown`` [R] bool;
+    ``near_switch`` [R] bool; ``round`` [R] i8; and, for the checks and the report: ``game`` [R] i32 (the game slot),
+    ``episode`` [R] i32 (the slot's game counter, 0 first, the opponent pool's counter), ``tick`` [R] i16 (the game's
+    tick), ``opponent`` [R] i8 (the index of the game's opponent in the pool's list). ``team_size``: M, the side's
+    drones per game (a row has a mate absent when ``n_live < team_size``)."""
+    obs: Tensor
+    slot: Tensor
+    label: Tensor
+    flown: Tensor
+    n_live: Tensor
+    held: Tensor
+    mode: Tensor
+    net_flown: Tensor
+    near_switch: Tensor
+    round: Tensor
+    game: Tensor
+    episode: Tensor
+    tick: Tensor
+    opponent: Tensor
+    team_size: int
+
+    def absent(self) -> Tensor:
+        """[R] bool: a mate of the drone was absent (out of the game) at that tick."""
+        return self.n_live.to(torch.long) < self.team_size
+
+
+class CodeSchedule:
+    """The codes the side flies, per game and drone (task LS1-M2-T2; plan M2-T2 with the design check's changes).
+
+    spec: the side's ``cells.CellSpec``; dispatch: the side's ``skills.TwoLevelDispatch`` (its ``widths`` and
+    ``resolve_two_level``); shares: (uniform, mix, random), each in [0, 1], summing to 1; combos: [C, M] long code
+    indices (:func:`mix_combos`); hold: the random mode's decision ticks (>= 1); script_share: the probability a game is
+    flown by the scripts (``net_flown`` ~ Bernoulli(1 - script_share)); device; seed: the schedule's own
+    ``torch.Generator`` seed (:func:`round_seed` of the round, purpose "schedule").
+
+    State, per game [N] and per drone [N, M] (allocated by the first ``new_games``, N = its mask's length): ``mode``,
+    ``net_flown``, ``tick`` (the game's own tick: ``SvgGame.step`` restarts an ended game itself, so one scalar tick
+    cannot phase from each game's start), ``current`` [N, M] (the code each drone flies), ``held`` [N, M].
+    :meth:`new_games` (mask [N] bool) draws a game's mode, code, combination row and ``net_flown``, and restarts its
+    tick; the draws are made for every game and kept where ``mask`` (no per-game loop; the stream does not depend on
+    which games end). :meth:`flown` (obs [N, M, D]) returns the codes of this tick [N, M] long and advances the tick: a
+    random game draws a (team index, drone index) per drone at ``tick % hold == 0`` and resolves it on that tick's
+    observation (the leader is the lowest-index live drone); the resolved code is held to the next decision."""
+
+    def __init__(self, spec: cells.CellSpec, dispatch: skills.TwoLevelDispatch, shares, combos: Tensor, hold: int,
+                 script_share: float, device, seed: int):
+        shares = tuple(float(x) for x in shares)
+        if len(shares) != len(MODES) or any(not 0 <= x <= 1 for x in shares) or not math.isclose(sum(shares), 1.0):
+            raise ValueError(f"shares must be {len(MODES)} shares {MODES} summing to 1, got {shares!r}")
+        if isinstance(hold, bool) or not isinstance(hold, int) or hold < 1:
+            raise ValueError(f"hold must be a whole number >= 1, got {hold!r}")
+        if not 0 <= float(script_share) <= 1:
+            raise ValueError(f"script_share must be a share in [0, 1], got {script_share!r}")
+        if combos.dim() != 2 or combos.shape[1] != spec.drones or (shares[MIX] > 0 and combos.shape[0] == 0):
+            raise ValueError(f"combos must be [C, {spec.drones}] with C >= 1 when the mix share is above 0, got "
+                             f"{tuple(combos.shape)}")
+        if dispatch.team != spec.side:
+            raise ValueError(f"the dispatch is the {dispatch.team} team's, the schedule the {spec.side} team's")
+        self.spec, self.dispatch, self.hold, self.script_share = spec, dispatch, hold, float(script_share)
+        self.device = torch.device(device)
+        self.combos = combos.to(self.device, torch.long)
+        self.cum = (shares[UNIFORM], shares[UNIFORM] + shares[MIX])
+        self.gen = torch.Generator(device=self.device)
+        self.gen.manual_seed(int(seed))
+        self.mode = self.net_flown = self.tick = self.current = self.held = None
+
+    def _alloc(self, n: int) -> None:
+        m, dev = self.spec.drones, self.device
+        self.mode = torch.zeros(n, dtype=torch.long, device=dev)
+        self.net_flown = torch.zeros(n, dtype=torch.bool, device=dev)
+        self.tick = torch.zeros(n, dtype=torch.long, device=dev)
+        self.current = torch.zeros(n, m, dtype=torch.long, device=dev)
+        self.held = torch.zeros(n, m, dtype=torch.long, device=dev)
+
+    def new_games(self, mask: Tensor) -> None:
+        """mask [N] bool: new games start in these slots (draws for every game, kept where ``mask``)."""
+        if self.tick is None:
+            self._alloc(mask.shape[0])
+        n, dev, g = mask.shape[0], self.device, self.gen
+        u_mode = torch.rand(n, generator=g, device=dev)
+        code = torch.randint(len(self.spec.players), (n,), generator=g, device=dev)
+        row = torch.randint(max(self.combos.shape[0], 1), (n,), generator=g, device=dev)
+        u_net = torch.rand(n, generator=g, device=dev)
+        mode = (u_mode >= self.cum[0]).long() + (u_mode >= self.cum[1]).long()
+        mixed = self.combos[row] if self.combos.shape[0] else self.current
+        start = torch.where((mode == UNIFORM)[:, None], code[:, None].expand(-1, self.spec.drones), mixed)
+        self.mode = torch.where(mask, mode, self.mode)
+        self.net_flown = torch.where(mask, u_net < 1.0 - self.script_share, self.net_flown)
+        self.current = torch.where(mask[:, None], start, self.current)
+        self.tick = torch.where(mask, torch.zeros_like(self.tick), self.tick)
+        self.held = torch.where(mask[:, None], torch.zeros_like(self.held), self.held)
+
+    def flown(self, obs: Tensor) -> Tensor:
+        """obs [N, M, D] (the side's, this tick) -> the codes flown this tick [N, M] long; advances each game's tick."""
+        n, m = obs.shape[:2]
+        t_width, d_width = self.dispatch.widths
+        team_a = torch.randint(t_width, (n, m), generator=self.gen, device=self.device)
+        drone_a = torch.randint(d_width, (n, m), generator=self.gen, device=self.device)
+        drawn, _ = self.dispatch.resolve_two_level(torch.stack((team_a, drone_a), dim=-1), obs)
+        decide = (self.mode == RANDOM) & (self.tick % self.hold == 0)
+        new = torch.where(decide[:, None], drawn, self.current)
+        restart = (self.tick == 0)[:, None] | (new != self.current)
+        self.held = torch.where(restart, torch.zeros_like(self.held), self.held + 1)
+        self.current = new
+        self.tick = self.tick + 1
+        return new
+
+
+def _check_net(net, side: str, spec: cells.CellSpec, script_share: float) -> None:
+    if net is None:
+        if float(script_share) != 1.0:
+            raise ValueError(f"net=None needs script_share 1.0 (every game flown by the scripts), got {script_share!r}")
+        return
+    if net.team != side:
+        raise ValueError(f"the network is the {net.team} team's, the collection the {side} team's")
+    if tuple(net.skills) != tuple(spec.players):
+        raise ValueError(f"the network's skills {list(net.skills)} are not the {side} team's [players] "
+                         f"{list(spec.players)}")
+
+
+def _host_rows(chunk: list[dict]) -> dict:
+    """One chunk of ticks (each a dict of [N, M, ...] tensors with ``live`` [N, M]) -> its live rows on the CPU (one
+    selection and one host copy per field per chunk)."""
+    live = torch.stack([c["live"] for c in chunk])                                    # [T, N, M]
+    return {k: torch.stack([c[k] for c in chunk])[live].cpu() for k in chunk[0] if k != "live"}
+
+
+def collect(cfg, spec: cells.CellSpec, players: dict, side: str, net, script_share: float, games: int, ticks: int,
+            hold: int, seed: int, pool_seed: int, device, should_stop: Callable[[], bool] | None = None, *,
+            size: str, shares, switch_jump: float, switch_window_ticks: int, round_index: int) -> Rows:
+    """One relabelling round's rows (module docstring, "The collection").
+
+    cfg: the game (``exploit.variant_cfg(skills_gates, "base")``); spec: the side's ``cells.CellSpec``; players: the
+    skills gate file's ``[players]``; side: the team that flies the codes; net: the side's ``skill_net.SkillNet`` (or a
+    stand-in of C2's call), None only with ``script_share`` 1.0 (ValueError); games, ticks: the batch and its length;
+    hold: the random mode's decision ticks; seed, pool_seed: the round's base seeds (the game's starts and the schedule
+    from ``seed``, the pool from ``pool_seed``, each through :func:`round_seed` of ``round_index``); device;
+    should_stop: asked before every tick, yes raises ``sweep.SweepStopped``. Keyword-only (the design check's additions
+    to the plan's signature): size ("3v3", the skills gate file's ``[run] size``), shares (uniform, mix, random),
+    switch_jump, switch_window_ticks, round_index.
+
+    Per tick: the codes (``CodeSchedule.flown``), every script's command on the side's observation (the labels), the
+    action (script-flown games ``gather(label, flown)``, net-flown games ``skill_net.one_code(net, obs, flown)``, one
+    ``torch.where``), the near-switch countdown, the rows; then ``SvgGame.step``, and for the games that ended
+    (``out.done``, restarted by the step) a new schedule draw, a pool redraw, and the switch state cleared."""
+    _check_net(net, side, spec, script_share)
+    guards, strikes = sweep.parse_size(size)
+    if (guards if side == cells.SIDES[0] else strikes) != spec.drones:
+        raise ValueError(f"size {size!r} does not give the {side} team its {spec.drones} drones")
+    if isinstance(switch_window_ticks, bool) or not isinstance(switch_window_ticks, int) or switch_window_ticks < 1:
+        raise ValueError(f"switch_window_ticks must be a whole number >= 1, got {switch_window_ticks!r}")
+    dev, other = torch.device(device), cells.other(side)
+    game_seed = round_seed(seed, round_index, "game")
+    game = SvgGame(cfg, games, guards, strikes, device=str(dev), seed=game_seed)
+    dispatch = skills.TwoLevelDispatch(side, list(spec.players), list(spec.team_strategies), list(spec.drone_skills),
+                                       cfg, games, dev, game_seed)
+    opponents = pool.OpponentPool(other, pool.pool_members(players, other), cfg, games, dev,
+                                  round_seed(pool_seed, round_index, "pool"))
+    sched = CodeSchedule(spec, dispatch, shares, mix_combos(spec, dev), hold, script_share, dev,
+                         round_seed(seed, round_index, "schedule"))
+    m = spec.drones
+    obs = game.reset()
+    every = torch.ones(games, dtype=torch.bool, device=dev)
+    sched.new_games(every)
+    opponents.reset(every)
+    dispatch.reset(every)
+    flies_net = net is not None and float(script_share) < 1.0
+    game_idx = torch.arange(games, device=dev)[:, None].expand(-1, m)
+    slot = torch.arange(m, device=dev)[None, :].expand(games, -1)
+    episode = torch.zeros(games, dtype=torch.long, device=dev)
+    countdown = torch.zeros(games, m, dtype=torch.long, device=dev)
+    prev_live = torch.zeros(games, m, dtype=torch.bool, device=dev)
+    prev_label = None
+    parts, chunk = [], []
+    for _ in range(int(ticks)):
+        if should_stop is not None and should_stop():
+            raise sweep.SweepStopped("stop requested before a tick")
+        own = obs[side]
+        tick = sched.tick.clone()
+        flown = sched.flown(own)                                                   # [N, M]
+        label = dispatch.commands(own)                                             # [N, M, K, 4]
+        idx = flown[:, :, None, None].expand(-1, -1, 1, label.shape[-1])
+        action = torch.gather(label, 2, idx)[:, :, 0]
+        if flies_net:
+            action = torch.where(sched.net_flown[:, None, None], skill_net.one_code(net, own, flown), action)
+        live = own[..., skills._V.alive] > skills.ALIVE_FLAG_MIN                   # [N, M]
+        if prev_label is not None:
+            jump = (label - prev_label).abs().amax(dim=(-1, -2)) > switch_jump
+            countdown = torch.where(prev_live & live & jump, torch.full_like(countdown, switch_window_ticks),
+                                    (countdown - 1).clamp(min=0))
+        n_live = live.sum(dim=1, keepdim=True).expand(-1, m)
+        chunk.append({"live": live, "obs": own, "slot": slot, "label": label, "flown": flown,
+                      "n_live": n_live.to(torch.int8), "held": sched.held.to(torch.int16),
+                      "mode": sched.mode[:, None].expand(-1, m).to(torch.int8),
+                      "net_flown": sched.net_flown[:, None].expand(-1, m), "near_switch": countdown > 0,
+                      "game": game_idx.to(torch.int32), "episode": episode[:, None].expand(-1, m).to(torch.int32),
+                      "tick": tick[:, None].expand(-1, m).to(torch.int16),
+                      "opponent": opponents.draw[:, None].expand(-1, m).to(torch.int8)})
+        if len(chunk) == HOST_COPY_TICKS:
+            parts.append(_host_rows(chunk))
+            chunk = []
+        out = game.step({side: action, other: opponents.act(obs[other])})
+        done = out.done
+        opponents.redraw(done)
+        sched.new_games(done)
+        episode = episode + done.to(torch.long)
+        countdown = torch.where(done[:, None], torch.zeros_like(countdown), countdown)
+        prev_live = live & ~done[:, None]
+        prev_label = label
+        obs = out.obs
+    if chunk:
+        parts.append(_host_rows(chunk))
+    k = len(spec.players)
+    empty = {"obs": torch.zeros(0, OBS_DIM), "label": torch.zeros(0, k, skill_net.COMMAND_DIM)}
+    cat = {}
+    for name in ROW_FIELDS:
+        if name == "round":
+            continue
+        cat[name] = torch.cat([p[name] for p in parts]) if parts else empty.get(name, torch.zeros(0, dtype=torch.long))
+    r = cat["obs"].shape[0]
+    return Rows(**cat, round=torch.full((r,), int(round_index), dtype=torch.int8), team_size=m)
+
+
+def _weighted(mask: Tensor, count: int, w: Tensor, log_u: Tensor, u: Tensor) -> Tensor:
+    """``count`` distinct row indices among ``mask`` [R] bool: weighted without replacement by the keys
+    ``log(1 - u) / w`` (Efraimidis and Spirakis 2006, in logs, float64) among the rows of positive weight; when these are
+    fewer than ``count``, all of them and then the rest among the zero-weight rows of ``mask``, uniform (by ``u``)."""
+    if count <= 0:
+        return torch.zeros(0, dtype=torch.long)
+    neg_inf = torch.tensor(float("-inf"), dtype=torch.float64)
+    positive = mask & (w > 0)
+    take = min(count, int(positive.sum()))
+    keys = torch.where(positive, log_u / torch.where(positive, w, torch.ones_like(w)), neg_inf)
+    out = torch.topk(keys, take).indices if take else torch.zeros(0, dtype=torch.long)
+    if count > take:
+        zero = mask & ~positive
+        fill = torch.where(zero, u, neg_inf)
+        out = torch.cat((out, torch.topk(fill, count - take).indices))
+    return out
+
+
+def keep(rows: Rows, err: Tensor | None, keep_rows: int, absent_min_share: float, switch_floor: float,
+         gen: torch.Generator) -> Tensor:
+    """The rows a round keeps: ``k = min(keep_rows, R)`` distinct indices [k] i64, ascending, drawn without replacement
+    with weights ``w = err / mean(err)`` (err [R], each row's error under the previous round's network, >= 0 and
+    finite; None in round 0: w = 1; a zero mean: w = 1), raised to at least ``switch_floor`` on ``near_switch`` rows;
+    stratified so that the rows with a mate absent are ``ceil(max(absent_min_share, their natural share) x k)``, at most
+    the absent rows there are and at least what the other rows cannot fill (the smoke rule, :data:`SMOKE_RULE`). Each
+    stratum is drawn by Efraimidis and Spirakis's keys in logs and float64 (``log(1 - u) / w``, ``topk``: no underflow
+    of ``u ** (1 / w)``, no ``torch.multinomial`` limit of 2^24 categories); zero-weight rows only fill a stratum whose
+    positive-weight rows are too few, and then at random. ``gen``: a CPU ``torch.Generator``."""
+    r = rows.obs.shape[0]
+    if isinstance(keep_rows, bool) or not isinstance(keep_rows, int) or keep_rows < 1:
+        raise ValueError(f"keep_rows must be a whole number >= 1, got {keep_rows!r}")
+    if not 0 <= absent_min_share <= 1:
+        raise ValueError(f"absent_min_share must be a share in [0, 1], got {absent_min_share!r}")
+    if not switch_floor > 0:
+        raise ValueError(f"switch_floor must be above 0, got {switch_floor!r}")
+    w = torch.ones(r, dtype=torch.float64)
+    if err is not None:
+        e = err.detach().to("cpu", torch.float64)
+        if e.shape != (r,) or not bool(torch.isfinite(e).all()) or bool((e < 0).any()):
+            raise ValueError(f"err must be [{r}] finite errors >= 0, got shape {tuple(e.shape)}")
+        mean = e.mean() if r else e.new_zeros(())
+        if float(mean) > 0:
+            w = e / mean
+    w = torch.where(rows.near_switch, w.clamp(min=float(switch_floor)), w)
+    k = min(keep_rows, r)
+    absent = rows.absent()
+    n_abs = int(absent.sum())
+    share = max(Fraction(str(absent_min_share)), Fraction(n_abs, r)) if r else Fraction(0)
+    quota = min(n_abs, max(math.ceil(share * k), k - (r - n_abs)))
+    u = torch.rand(r, generator=gen, dtype=torch.float64)
+    log_u = torch.log1p(-u)
+    idx = torch.cat((_weighted(absent, quota, w, log_u, u), _weighted(~absent, k - quota, w, log_u, u)))
+    return idx.sort().values

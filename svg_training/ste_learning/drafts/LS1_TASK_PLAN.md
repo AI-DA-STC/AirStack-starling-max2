@@ -10,7 +10,9 @@ proposed sizes only. Paths are relative to `svg_training/`; `ste/` is `source/sv
 at `d70b4e01`; re-check with `grep -n` before editing. Task IDs: `LS1-M<merge>-T<n>`. Values that are not the owner's
 are labelled PROPOSED with their source; the limits and margins are the owner's (R38) and appear nowhere as numbers a
 test types. **Review round 1 applied (25 Nov 2026):** each change names its finding (C1 to C9, B-1 to B-11, F1 to F9,
-CA-1 to CA-7); code re-checked as section 10 says.
+CA-1 to CA-7); code re-checked as section 10 says. **Review round 2 applied (25 Nov 2026):** each change names its
+finding with an `R2` prefix (R2 RC-1 to RC-5, R2 B1 to B9, R2 OA-1 to OA-11, R2 CA-1 to CA-5), so the round-2 IDs do
+not collide with round 1's or with review B's; the owner's questions this round raises are OQ-1 to OQ-4 (section 8).
 
 Each task gives: **Files**; **Consumes** (real names, file:line); **Produces** (signatures, shapes, dtypes, keys);
 **Tests first** (name, assertion, fixtures, helpers to write); **Implementation**; **Keep green**; **Commit**.
@@ -32,7 +34,9 @@ One commit per task, tests first, on the merge's branch in its own worktree cut 
    `records/evidence/2026-11-25_ste_l3_l6_pipeline/exports/skills_{guard,strike}_interface.toml`.
 3. **Batched.** No per-game or per-drone Python loop in anything that runs during training, data collection or
    scoring (STANDARDS §6.1). Allowed loops: the tick loop, the K skills (stacked once, as `SkillDispatch.commands`,
-   `ste/skills.py:153-155`), cells and arms of a read, epochs and minibatches of a fit, rounds.
+   `ste/skills.py:153-155`), the M (at most 3) drones of a team, as the existing `SkillTeam` and the ceiling's
+   `Composite` already do (`scripts/ste_l3_run0_ceiling.py:243-245`; R2 B6), cells and arms of a read, epochs and
+   minibatches of a fit, rounds.
 4. **Literal scan.** In `ste/` a numeric literal other than 0, 1, −1, 2 only as a module-level UPPER_CASE constant,
    default arguments included (`tests/test_ste_literals.py`); every tuned number comes from a gate file.
 5. **Gates before runs (R38).** Limits, margins and control sizes are REQUIRED keys of the gate files with no code
@@ -41,9 +45,18 @@ One commit per task, tests first, on the merge's branch in its own worktree cut 
    round 1: C5, B-10, F6):** a test that checks a committed file reads its values from that file; a test of the verdict
    arithmetic (`limit_failures`, `verdict`, the LS1.4 rule) **always** writes its own synthetic gate file under
    `tmp_path` from a dict named `STAND_IN` and passes the values in as arguments; it never switches source on whether the
-   committed file is filled. `STAND_IN` values are synthetic and are none of the PROPOSED starting points (0.05,
-   0.005, 0.03, 0.04, 0.08); `test_stand_in_mirrors_no_limit` (M2-T5, M4-T5) fails if a `STAND_IN` value equals a
-   PROPOSED starting point or a filled numeric value of the committed `[limits]`, `[controls]` or `[reading]`.
+   committed file is filled. `STAND_IN` lives in one place, `tests/_ste_ls1.py` (created in M1-T3, R2 B2 and B7(f)),
+   with the one helper that writes a net gate file's text (M1-T4). Its float values are synthetic and lie off the
+   0.001 grid (for example 0.0437), so no round number, PROPOSED or the owner's, can coincide with one;
+   `test_stand_in_mirrors_no_limit` (M2-T5, M4-T5) types no PROPOSED value (R2 B8): it asserts each float `STAND_IN`
+   value is not a multiple of 0.001, the values differ from each other, and each differs from the filled numeric
+   values of the committed `[limits]`, `[controls]` and `[reading]`, **read from the file**. **The owner's own numbers
+   are exercised too (R2 RC-2, OA-4):** one test per gate file (`test_the_committed_limits_run_through_the_rule` in
+   M2-T5 for `distil_gates.toml`, `test_the_committed_margins_run_through_the_rule` in M4-T5 for `heads_gates.toml`)
+   is skipped while any owner key holds `FILL_` and, once filled, loads the committed file and runs `limit_failures`
+   (or the LS1.4 rule) on synthetic results built from the file's own values (each limit just crossed and just met),
+   so every limit key is reached and none is typed. This is the plan's reading of R38 (synthetic values for the
+   arithmetic, the file's values for the committed rule); **the lead confirms it** (OP-41).
    **Under `--smoke` with `FILL_` values (F1):** the limit-dependent steps (`limit_failures`, controls C6 and C7, the
    verdict) are not run and are written `NOT_RUN`; a `FILL_` string never reaches an arithmetic comparison, and a smoke
    never writes DISTILLED or NOT DISTILLED (M2-T5, M2-T6). No typed fallback in code or script (R38).
@@ -77,7 +90,9 @@ slot_width: int, hidden: list[int], zeroed_inputs: list[int])`; attributes `team
 (= `len(skills)`), `team_size`, `slot_width`, `hidden`, `zeroed_inputs`; buffers `in_mean [71]`, `in_std [71]`,
 `keep [71]` (float32). `forward(obs [B, 71] f32, slot [B] i64, z [B] i64, clip: bool = True) -> [B, 4] f32`:
 `x = (obs - in_mean) / in_std * keep`; `h = cat(x, one_hot(slot, slot_width), one_hot(z, k))` (float);
-Linear+ELU per hidden size, `Linear(-> 4)`; `clamp(-1, 1)` when `clip`; **times `obs[:, 12:13]`**. The alive rule is
+Linear+ELU per hidden size, `Linear(-> 4)`; `clamp(-1, 1)` when `clip`; **times `obs[:, _V.alive:_V.alive + 1]`**
+with `_V = ObsView()` (`core/observations.py`), as `scripted.py:16, 35` write it; the widths `[71]` and `[B, 71]` here
+are `OBS_DIM` (`core/observations.py:19`) in code, never the literal (the literal scan, constraint 4; R2 B4). The alive rule is
 inside `forward`, the same rule as `_pack` (`opponents/scripted.py:32-35`, multiply by the flag), so it is in the
 ONNX graph too and every path (one code, all codes, export, reload) gets it once. Any stand-in flown in its place
 (M1-T5 `ScriptOracle`, M2-T5 `PermutedNet`) has the same signature, attributes and alive rule.
@@ -119,19 +134,27 @@ never shadow a script name (`ste/exploit.py:691-692`), and each recording or sta
 limits are set on the gate's own ruler): per cell `b` (games the arm lost that the reference won), `c` (the
 reverse), `flips = b + c`, `n`, `diff = (c - b) / n` with an interval, `sign_test_p`; the pooled difference (mean of
 per-start means over cells, `ste/scoring.py:316-348` style); end-step differences. b, c and n are always stored, so
-the interval method (OP-11) can be changed after the calibration without replaying a game.
+the interval method (OP-11) can be changed after the calibration without replaying a game. **Which z (R2 RC-1):** a
+per-cell `ci` that a limit reads is computed at `z_cell = adjusted_z(alpha, m)`, m = the number of gated cells of
+that side (fixed plus mixed, R1's count: Guard 150, Strike 130), and the pooled `ci` at `z_pooled = adjusted_z(alpha,
+1)` (plain alpha); the same `z_cell` serves R1 and the near-miss controls C6 and C7 (which play a subset of cells but
+are judged on the gate's own ruler), and the calibration reports both z, so the owner sets `cell_margin` on the
+interval the gate applies.
 
 **C8. Seeds (PROPOSED, a fresh block; used today: 110000 to 140950; a grep of `configs/` and `ste_provisional/` finds none in
 140210-140299 or 15xxxx).**
 Calibration noise 150101+; distillation `[data] seed` 150001, `pool_seed` 150002, `[fit] seed` 150003, `[report]
-seed` 150004, `[clips] seed` 150005; LS1.4 140211/140212 (second training seed pair, both arms), 140213 (the second seed's run 0,
+seed` 150004, `[clips] seed` 150005, `draw_mixed`'s seed for `cells.toml` 150006 (R2 B7(e); written in
+`cells.toml` `[mixed] seed`); LS1.4 140211/140212 (second training seed pair, both arms), 140213 (the second seed's run 0,
 both arms: route 2's `skills_seed2` run 0 and, only under OP-29 B, route 3's `base_s2` run 0, so the arms stay paired). New `configs/ste_*/*.toml` are scanned by
 `tests/test_ste_l19_l110.py:186-198` and `tests/test_ste_l1side.py:369-380`.
 
 **C9. Net files of record** live under `ste_provisional/skill_nets/<date>_ls1_<side>/` (committed, about 0.6 MB per
 3 x 256 net; `runs/` is git-ignored, `.gitignore:1`), added to `ste_provisional/SHA256SUMS` (OP-7).
 
-**PROPOSED sizes** (not the owner's; each lives in a gate file):
+**PROPOSED sizes** (not the owner's). The data, network, fit, smoke and calibration sizes live in a gate or
+config file (`distil_gates.toml`, `calibration.toml`, `cells.toml`); the limit and margin starting points (the last
+two rows) appear only in the lead's advice to the owner: the gate files hold `FILL_` until he sets them (R38; R2 OA-11):
 
 | Value | PROPOSED | Source |
 |---|---|---|
@@ -200,20 +223,29 @@ Lets run: the calibration read LS1.5. Stands alone on today's `development`.
 - **Consumes:** `budget_summary` (`ste/budget.py:223-229`, pinned string at `tests/test_ste_budget.py:230`);
   `own_gpu_h` (`:173`), `carried_gpu_h` (`:183`); `ste_job.run` status `:174`, carry `:164-173`.
 - **Produces:** `section_summary(budget: BudgetCfg) -> str` (today's text format, any section);
-  `budget_summaries(settings=SETTINGS_FILE) -> list[str]`: the section in work first, then every section not closed,
-  in file order (OP-3). `budget_summary` returns exactly today's string. Status prints one `budget <line>` per entry,
-  after today's lines: **existing lines unchanged, lines added** (B-8; under OP-3's recommendation one added line is the
-  open `budget_l3_l4_l5_l6` section's, besides the route's). Only if OP-4 is yes: `carry --section <name>` (default the section in work).
-- **Tests first:** `budget_summaries(SETTINGS_FILE)[0] == budget_summary(SETTINGS_FILE)`; the list contains
+  `ROUTE_SECTION = "budget_ls1"`; `budget_summaries(settings=SETTINGS_FILE) -> list[str]`: the section in work first,
+  then the route's section when it exists and is not the one in work (R2 OA-10: R43 asks for the route's hours only;
+  OP-3 now recommends that, and every open section only if the owner asks). `budget_summary` returns exactly today's
+  string. Status prints one `budget <line>` per entry, after today's lines: **existing lines unchanged, one line
+  added** (B-8). **`carry --section <name>` is built here (OP-4 yes, R2 OA-10):** R39's reading promises the route's
+  hours on every status and the owner works on two machines, whose hours meet only through `carry`
+  (`scripts/ste_job.py:164-173` carries to the section in work only today); `--section` defaults to the section in
+  work, so a call without it is today's call; an unknown or closed section is refused (status 2, nothing written).
+- **Tests first:** `budget_summaries(SETTINGS_FILE)[0] == budget_summary(SETTINGS_FILE)` and `len == 2` on the
+  committed file; the list contains
   `"budget_ls1 (phase LS1): used 0.000 of 200.0 GPU-h (own rows 0.000, carried 0.000)"` under `made_up_machine`; a
   settings file without the section gives no route line; `tests/test_ste_job.py`: that string is in `bench.status()`
-  (`:69-72`) and `status().splitlines()[0]` is unchanged (`:627`).
+  (`:69-72`) and `status().splitlines()[0]` is unchanged (`:627`); `carry --section budget_ls1 --gpu-h 0.25 --note …`
+  adds 0.25 to the route line's `carried` and leaves the in-work section's line unchanged; `carry` without
+  `--section` writes the same row as today (group `carried:L1+L2`); `--section budget_nope` and a closed section exit 2.
 - **Implementation:** `section_summary` is the body of `budget_summary` (`ste/budget.py:223-229`) for a given section; `budget_summary`
-  calls it on `budget_in_work()`; `budget_summaries` walks `cfg.budgets()` skipping closed sections; `ste_job.py:174`
-  prints one line per entry; docstring `:45-51` updated.
+  calls it on `budget_in_work()`; `budget_summaries` adds the `ROUTE_SECTION` budget from `cfg.budgets()`;
+  `ste_job.py:174` prints one line per entry; `carry` (`:164-173`) passes the named section's `BudgetCfg` to
+  `budget.log_carried(budget, gpu_h, note)` (`ste/budget.py:206`, which already takes any section); docstring `:45-51`
+  updated (status and carry).
 - **Keep green:** `test_ste_job.py` (regex/`in` asserts at `:345, :361, :473, :495, :518, :597, :603, :627, :741`),
   `test_ste_budget.py`.
-- **Commit:** `svg_training ste budget: status shows every open budget section (R39 as read, R43)`.
+- **Commit:** `svg_training ste budget: status shows the route's hours, carry takes a section (R39 as read, R43)`.
 
 ### LS1-M1-T3 `ste/skill_net.py`: the network, its two paths, save and load
 
@@ -250,27 +282,39 @@ Lets run: the calibration read LS1.5. Stands alone on today's `development`.
      `all_codes`, for a net with non-zero biases.
   5. `test_one_code_is_the_gathered_all_codes`: shapes; `allclose(one_code, gather(all_codes), rtol=0, atol=TOL)`
      with `TOL = 1e-6` a named test constant (constraint 8).
-  6. `test_slot_and_code_change_the_command`.
+  6. `test_slot_and_code_change_the_command` (R2 B7(a)): a `tiny_net` with `torch.manual_seed(5)` weights and biases;
+     on the same 64 live rows, slot 0 against slot 1 (code 0) and code 0 against code 1 (slot 0) each give
+     `not torch.equal` outputs, and `forward` twice on the same inputs gives `torch.equal` outputs.
   7. `test_flying_builds_no_graph`: outputs of `one_code`/`all_codes` have `requires_grad False` with parameters
      requiring grad.
   8. `test_round_trip_and_refusals`: returned sha == `hashlib.sha256(path.read_bytes())`; `torch.load(path,
      weights_only=True)` works; reloaded net `torch.equal`; one `pytest.raises(ValueError, match=...)` per refusal (a
      changed config by `dataclasses.replace(cfg, rules=dataclasses.replace(cfg.rules, keepout_strike_m=...))`); no
      `*.tmp.*` file left; `net_problems` returns one string per fault and `[]` for a good file.
-  9. `test_game_constants_are_read_from_the_config`.
-  Helpers to write in `tests/_ste_ls1.py`: `team_obs(gates, side, n=64, ticks=40, seed=5)` (the recipe of the private
+  9. `test_game_constants_are_read_from_the_config` (R2 B7(a)): `game_constants(cfg)` equals the dict built in the
+     test from the named fields (`cfg.pad_guards`, `cfg.pad_strikes`, `cfg.rules.keepout_strike_m`,
+     `cfg.rules.keepout_guard_m`, `cfg.arena.wall_margin_m`, `list(cfg.arena.height_band_m)`,
+     `cfg.starling.enabled`, `cfg.team_speed_mps("guard")`, `cfg.team_speed_mps("strike")`), its keys are exactly
+     those nine, and a `dataclasses.replace` of `keepout_strike_m` changes that one value only.
+  Helpers to write in `tests/_ste_ls1.py` (created here; the shared home of the route 3 test helpers and of
+  `STAND_IN`, constraint 5, R2 B2): `team_obs(gates, side, n=64, ticks=40, seed=5)` (the recipe of the private
   `_team_obs`, `tests/test_ste_l3_two_level.py:180-189`); `tiny_net(side, hidden=(16,))`; `save_tiny_net(tmp_path,
-  side, cfg)`.
+  side, cfg)`; `STAND_IN` (synthetic limits, control sizes and margins, every owner key of M2-T1 and M4-T1) and
+  `reading_block() -> str` (a `[reading]` TOML block filled from `STAND_IN`).
 - **Implementation:** input zeroing multiplies after normalising, so stale buffers cannot leak a zeroed input. Slot
   width = the team's pad (`pad_guards` 5 / `pad_strikes` 3; OP-6); team size stored separately. No import from
   `skills`, `exploit` or `export` (import direction: `exploit` imports `skills`, `export` imports `exploit`). Tolerance,
-  floor and sizes are arguments (literal scan).
+  floor and sizes are arguments (literal scan); the alive index is `ObsView().alive` and every width `OBS_DIM`, never
+  `12` or `71` written in `ste/skill_net.py` (`tests/test_ste_literals.py:57-73` allows other numbers only as
+  module-level UPPER_CASE constants; R2 B4).
 - **Keep green:** `test_ste_literals.py`, `test_dependencies.py`.
 - **Commit:** `svg_training ste: the skill network module (route 3 LS1, no caller yet)`.
 
 ### LS1-M1-T4 The `skill_source` setting, the net-backed dispatch, the meta rules (`ste/skills.py`)
 
-- **Files:** `ste/skills.py`; `ste/tier2_train.py` (one refusal, OP-8); new `tests/test_ste_ls1_dispatch.py`.
+- **Files:** `ste/skills.py`; `ste/tier2_train.py` (one refusal, OP-8); `scripts/ste_exploit_l012.py` (one refusal in
+  `require_wired`, removed in M4-T2; R2 B9); `tests/_ste_ls1.py` (the net-gate-file helper, R2 B2); new
+  `tests/test_ste_ls1_dispatch.py`.
 - **Consumes:** `LearnerSpec` (`ste/skills.py:56-70`, frozen); `learner_spec` (`:73-105`: allowed keys `:80`, velocity
   refusals `:89-94`, slice-1 refusals `:98-103`, **positional rebuild `:105` drops new fields**); `TWO_LEVEL_KEYS`
   (`:47`, required at `:189`; do not add to it); `_two_level_spec` (`:187-209`); `TwoLevelDispatch` (`:240-296`);
@@ -301,37 +345,59 @@ Lets run: the calibration read LS1.5. Stands alone on today's `development`.
   2. `test_new_keys_are_refused_where_they_do_not_belong`: velocity with either key; choice team or drone with
      `"net"`; an unknown source; `"net"` without `skill_net`; `skill_net` with `"scripts"`; one side missing or extra;
      an entry key other than file/sha256; a sha neither 64 hex nor `FILL_…`.
-  3. `test_learner_spec_keeps_the_new_fields`: through `exploit.load_gates` of a `tmp_path` copy of `skills_gates.toml`
-     with the keys inserted after `mask_absent = true`.
+  3. `test_learner_spec_keeps_the_new_fields`: through `exploit.load_gates` of a `tmp_path` file written by
+     `tests/_ste_ls1.net_gates_text(...)` (a copy of `skills_gates.toml` with the keys inserted after `mask_absent =
+     true`; every net gate file of every route 3 test goes through this one helper, R2 B2).
   4. `test_net_dispatch_from_the_factory` (tiny net saved under `tmp_path`, absolute path): type, `act == one_code`,
      `commands == all_codes`, out drones zero on both, `act` with M = 2 raises "team size"; a wrong sha, a Guard net
      under the strike key, a changed `cfg`, a `FILL_` sha each refused.
   5. `test_meta_and_table_differ_only_for_a_net`: `skills_meta(net) == {**scripts_meta, "skill_source": "net",
      "skill_net_sha256": sha}`, likewise `learner_table`; `exploit_train.skill_team_from_modules`
      (`ste/exploit_train.py:448-473`, check `:455`) refuses a scripts-saved checkpoint with the net dispatch and the
-     reverse (CA-7: the scripts-saved dict is `test_ste_l3_export.tiny_learner("skills", side).saved()`,
-     `tests/test_ste_l3_export.py:29`, `ste/exploit_train.py:381`; the net-saved one is the same learner built on the
-     tiny net dispatch, helper to write `tests/_ste_ls1.tiny_net_learner_saved(gates, side, net_path)`).
+     reverse (CA-7, corrected by R2 CA-1 and B3: the scripts-saved dict is built in `tests/_ste_ls1.py` by
+     `tiny_learner_saved(gates, side, net_path=None)`, which copies the recipe of `tests/test_ste_l3_export.py:30-40`
+     (`tiny_learner` returns the pair `(gates, learner)`, so its dict is `[1].saved()`, `ste/exploit_train.py:381`)
+     without importing that test module: it runs `pytest.importorskip("onnxruntime")` at import (`:17`), which would
+     skip this whole M1 file on a machine without the export extra; with `net_path` the same learner is built on the
+     tiny net dispatch).
   6. `test_fill_prefix_is_the_gate_files_mark`: `skills.FILL_PREFIX == exploit.FILL_MARK`.
   7. `test_tier2_loader_refuses_a_net`.
+  8. `test_the_training_driver_refuses_a_net_until_m4` (R2 B9): `ste_exploit_l012.main([...])` on a
+     `net_gates_text` file exits 2 with "wired in M4", for a run, `--pilot` and `--run0`; deleted in M4-T2.
 - **Implementation:** `skills.py` imports `skill_net` at the top (C2 imports nothing from `skills`). The factory gets
   no team size: `NetTwoLevelDispatch` checks `obs.shape[1] == net.team_size` inside `one_code`/`all_codes`.
+  `require_wired` (`scripts/ste_exploit_l012.py:84-95`, called in `main` right after `load_gates`, `:265`) gains one
+  line refusing `skill_source = "net"` ("skill_source = \"net\" is wired in M4"), raised as its other refusals
+  (exit 2); M4-T2 removes the line and test 8 (R2 B9: without it a net gate file passes `require_wired`, which checks
+  `choice` only, and the driver would build the learner and then fail its untrained-team control).
   **Half-wired between merges, and why that is safe (B-8):** from M1, `learner_spec` accepts `skill_source = "net"`,
-  so `exploit.load_gates` loads it; only `tier2_train` and the slice-1 modes refuse it. The other `two_level_dispatch`
-  callers (`scripts/ste_l3_isaac_smoke.py:273, 385, 403`, `ste_l4_suite.py:70`, `ste_l5_clips3d.py:338`,
-  `ste_l6_export.py:49`, `ste_exploit_l012.py:802, 1183`) would take the net path without a check of their own until
-  M3 and M4 add theirs. Nothing committed sets `"net"` before M4-T4 (only `tmp_path` test files do), and the M4
-  preflights (M4-T2, M4-T3) are the first runtime checks. M4-T1 later requires `[reading]` in a net gate file (review round 1,
-  finding C4); test 3 here and every helper that writes a net gate file then gain a `[reading]` block filled
-  from `STAND_IN` (M4-T1 edits them).
+  so `exploit.load_gates` loads it; `tier2_train`, the slice-1 modes and (until M4-T2) the training driver's
+  `require_wired` refuse it. The other `two_level_dispatch` callers (12 calls in 9 files; R2 CA-2 completes the list):
+  `source/svg_training/ste/exploit_train.py:168` (`decision_env`, the training path itself: from M1 every training run
+  built on a net gate file builds the net dispatch there, checked only by the factory until M4-T2's preflight),
+  `ste/export.py:98` (`_dispatch`, until M3-T3), `scripts/ste_l3_isaac_smoke.py:273, 385, 403`, `ste_l4_suite.py:70`,
+  `ste_l5_clips3d.py:338`, `ste_l6_export.py:49`, `ste_exploit_l012.py:802, 1183` (behind `require_wired` until M4-T2),
+  `scripts/ste_l3_run0_ceiling.py:126` (`fixed_team`, until M4-T3), and `scripts/ste_tier2_l013.py:382` (behind
+  `tier2_train.load_gates`, which refuses `"net"` from this task on, `ste/tier2_train.py:142-144`, OP-8). Those without
+  a refusal (`ste_l4_suite`, `ste_l3_isaac_smoke`, `ste_l5_clips3d`, `ste_l6_export`, the ceiling) take the net path
+  with the factory's checks only until M3 and M4 add theirs: an accepted risk, since nothing committed sets `"net"`
+  before M4-T4 (only `tmp_path` test files do), and the M4 preflights (M4-T2, M4-T3) are the first runtime checks.
+  **The `[reading]` block (R2 B2):** M4-T1 later requires `[reading]` in a net gate file (review round 1, finding C4),
+  but until M4-T1 `load_gates` refuses an unknown section (`ste/exploit.py:155-157`), so no helper can write it from
+  M1. Every net gate file in the tests is therefore written by the one helper `tests/_ste_ls1.net_gates_text(base_text,
+  nets)`, which appends `reading_block()` when the module flag `READING_IN_NET_FILES` is True; this task sets it False,
+  M4-T1 sets it True (one line in one file, listed in M4-T1's Files), and no older test file is edited.
 - **Keep green:** `test_ste_l3_skills.py`, `test_ste_l3_two_level.py`, `test_ste_l3_two_level_learner.py`,
   `test_ste_l3_mask_learners.py` (`:85` compares with `LearnerSpec("skills", "team")`), `test_ste_l3_refuse.py`,
   `test_ste_l3_masking.py`, `test_ste_l3_pipeline_gates.py`, `test_ste_l3_driver.py`, `test_ste_l3_run0.py`,
   `test_ste_l3_pool.py`, `test_ste_l3_export.py`, `test_ste_l6_export.py`, `test_ste_l3_tier2.py`,
   `test_ste_l4_suite.py`, `test_ste_l5_clips3d.py`, `test_ste_l3_run0_ceiling.py`, `test_ste_literals.py`;
   for `tier2_train.py` (B-7) `test_ste_tier2_score_l18.py`, `test_ste_l013.py`, `test_ste_l013_driver.py`,
-  `test_ste_l26.py`; for `skills.py` also `test_ste_l3_velocity_golden.py` (the velocity learner unchanged). Rule:
-  every test file that names a changed file (`grep -l "tier2_train\|skills" tests/*.py`).
+  `test_ste_l26.py`; for `skills.py` also `test_ste_l3_velocity_golden.py` (the velocity learner unchanged); also
+  `test_ste_l3_held_arm.py`, `test_ste_l3_isaac_smoke.py` (it drives `scripts/ste_l3_isaac_smoke.py`, a factory caller)
+  and `test_ste_l6_read.py`, which the grep below finds (R2 B5); for `ste_exploit_l012.py` (R2 B9) `test_ste_l012_driver.py`.
+  Rule, and it wins over the list: every test file that names a changed file (`grep -l
+  "tier2_train\|skills\|ste_exploit_l012" tests/*.py`).
 - **Commit:** `svg_training ste skills: skill_source setting and net-backed dispatch (default scripts, unchanged)`.
 
 ### LS1-M1-T5 `ste/cells.py`: the cells of the reads, either team
@@ -390,7 +456,9 @@ Lets run: the calibration read LS1.5. Stands alone on today's `development`.
   turn leaves at 0)**; scale multiplies the channels; turn rotates xy by `size` degrees; it accumulates, as tensors, the command error against the inner command over live drones (per-channel sum
   of squares, max |Δ|, count). Moved-switch players `SacrificeMovedEntry(entry_half_angle_rad)`,
   `ConvergeMovedGather(gather_angle_rad)`, `FieldMovedRange(range_m)` (copies of `act` that read an instance value)
-  and `FlankMoved(margin_m)` (a subclass attribute).
+  and `FlankMoved(margin_m)` (a subclass attribute). By team (R2 OA-3; `scripted.py:125, 175, 382, 421`, all four in
+  the skills gate file's `[players]`): Strike `SacrificeMovedEntry` (rad), `ConvergeMovedGather` (rad), `FlankMoved`
+  (m); Guard `FieldMovedRange` (m).
 - **Tests first:** at today's values each moved player and each wrapper at size 0 / scale 1 / turn 0 is `torch.equal`
   to its script on `team_obs`, both teams, out rows included; scale gives exactly `0.95 × script` on the chosen
   channels; bias gives exactly `clamp(script + size)` on the chosen channels of live drones, the other channels and
@@ -421,8 +489,11 @@ Lets run: the calibration read LS1.5. Stands alone on today's `development`.
   `pooled_difference(arm_wins: dict, ref_wins: dict, z) -> {"diff", "se", "ci", "cells"}`; `end_time(arm_pg, ref_pg)
   -> {"differ_games", "mean_ticks", "median_ticks", "mean_abs_ticks", "p90_abs_ticks"}`. Empty strata are `None`,
   never NaN.
-- **Produces (configs):** `cells.toml`: `[mixed] guard = [[…], …]`, `strike = [[…], …]` (20 explicit combinations per
-  side, drawn once by `draw_mixed` with a named seed, written as data so no RNG stream is relied on);
+- **Produces (configs):** `cells.toml`: `[mixed] seed = 150006` (C8, R2 B7(e)), `guard = [[…], …]`, `strike = [[…],
+  …]` (20 explicit combinations per side, drawn once by `draw_mixed` with that seed, written as data so no RNG stream
+  is relied on); `[permutation] guard = [...]`, `strike = [...]` (an explicit derangement of code indices per side;
+  moved here from M2-T1's `[controls]` so the calibration can report the permuted scripts before the owner sets the
+  limits, R2 OA-6; the read takes it through `cells_sha256`);
   `[info_opponents] strike = ["guard_mark_inside"]`, `guard = []`; `[read] games_per_cell = 1000` (**the one place
   the cell size is written**, B-6: the calibration and the equivalence read both take it from here through their
   `cells_sha256` pin, so the owner's limits are set on the gate's own n; alpha is not needed to match, because b, c
@@ -432,8 +503,10 @@ Lets run: the calibration read LS1.5. Stands alone on today's `development`.
   zero-command skill, so the owner can set `cmd_zero_skill_max_abs` from the read); `[scale] size`, `channels`; `[turn]
   degrees`; `[switch] sacrifice_entry_rad`, `converge_gather_rad`, `field_range_m`, `flank_margin_m` (each a ladder);
   `[run] chunk_cells`, `device = "cpu"` (no game count of its own: `cells.toml [read] games_per_cell`; `--games` is a
-  test-only override and writes `of_record: false`); `[source] skills_gates`, `skills_gates_sha256`, `cells`,
-  `cells_sha256`, `scripted_sha256`. All PROPOSED (section 1 table); the lead hashes it before LS1.5.
+  test-only override and writes `of_record: false`); `[intervals] alpha` (PROPOSED 0.05; the calibration's intervals
+  at the same z rule as the gate, C7, R2 RC-1); `[source] skills_gates`, `skills_gates_sha256`, `cells`,
+  `cells_sha256`, `scripted_sha256`. All PROPOSED (section 1 table); the lead hashes it before LS1.5, and records
+  `cells.toml`'s hash before LS1.5 too (section 7, lead step 1; R2 OA-9).
 - **Produces (script):** `ste_ls1_calibration.py --calibration <toml> --side guard|strike --out <folder>
   --expect-sha256 <hash> [--games N] [--chunk K]`; launched as `ste_job.py launch --task LS1.5 --gpu-h 0`. Exit 0 done,
   2 refused (finished folder, pin off, bad arguments), 5 non-finite, 6 control failed. Writes `controls.json` (first),
@@ -443,8 +516,17 @@ Lets run: the calibration read LS1.5. Stands alone on today's `development`.
   its cells, scale, turn, each moved switch, the active-only noise arm): command error on the states the arm reached (RMSE and max per active channel, max on the
   others); per cell b, c, flips, diff with interval, sign-test p, end-step statistics; across cells median and max of
   flips, max |b − c|, pooled difference over all, fixed-only and mixed-only cells; the count of cells with p < 0.05.
-  No pass or fail column: the owner sets the limits from this read (R38). Moved-switch arms play only the cells where
-  their code flies (team strategies: their fixed cells; flank: its fixed cells and the mixed cells that contain it).
+  Every per-cell interval is written twice, at plain alpha and at `adjusted_z(alpha, m)` with m that side's gated
+  cell count (C7), with `alpha`, `m` and both z in `results.json` (R2 RC-1). **The permuted scripts (R2 OA-6), no
+  play:** per side, the permuted-codes arm built from T44 alone (cell (k, opp) = T44 cell (`perm[k]`, opp), `cells.toml
+  [permutation]`) against T44 on the fixed cells: per cell b, c, flips, diff and both intervals, and in `results.md`
+  the cells sorted by flips and by |diff| with the count whose adjusted interval excludes 0, so the owner can read how
+  many cells miss at any limits he considers and set `permuted_min_miss_cells` with them; the unfitted-net count
+  (`unfitted_min_miss_cells`) has no such read and is a threshold chosen without data (said in the advice).
+  No pass or fail column: the owner sets the limits from this read (R38); the lead's advice also lists `alpha`, the
+  interval method and the correction over cells (OP-11) for the owner's yes (R2 OA-5). Moved-switch arms play only
+  the cells where their code flies (team strategies: their fixed cells; flank: its fixed cells and the mixed cells
+  that contain it).
 - **Tests first:** `test_paired_cell_counts_match_paired_wins` (synthetic arrays, both sides);
   `test_interval_contains_the_difference_and_narrows_with_n`; `test_a_worked_paired_example` (B-5; n = 1,000 with
   both won 500, b = 30, c = 20, both lost 450, z = 1.959964: `diff == -0.010`, `flips == 50`, `sign_test_p` =
@@ -457,7 +539,12 @@ Lets run: the calibration read LS1.5. Stands alone on today's `development`.
   (`json.dumps(allow_nan=False)`); a tiny run (8 games, one opponent, two arms, `tmp_path`) writes the documented keys,
   controls PASS, the identity arm has b = c = 0, `complete` last; a finished folder exits 2; a forced control failure
   (monkeypatch, as `tests/test_ste_l3_run0_ceiling.py:195`) writes `controls.json` only and exits 6; chunking does not
-  change a game; `cells.toml` combinations are 20 distinct members of `mixed_pool` per side.
+  change a game; `cells.toml` combinations are 20 distinct members of `mixed_pool` per side and equal
+  `draw_mixed(spec, 20, cells.toml [mixed] seed)`; `test_the_permutation_is_a_derangement` (moved from M2-T1, R2
+  OA-6: each side's `[permutation]` is a permutation of `range(K)` with no fixed point);
+  `test_the_permuted_scripts_are_read_without_play` (the tiny run's permuted arm equals T44 cell (`perm[k]`, opp) per
+  game, and `play_cells` is not called for it, monkeypatched counter); `test_both_intervals_are_written` (each cell's
+  `ci_plain` and `ci_adjusted`, `alpha`, `m`, `z_cell`, `z_pooled` present; the adjusted interval contains the plain one).
 - **Implementation:** `input_problems` first (exit 2); per side and chunk of cells one `play_cells` call per arm with `players` (C6
   prefixes), hold 1, seed `ref.meta["seed"]`, `ticks_cap` = the pinned skills gate file's `gates.run["ticks_cap"]` (2,400
   today; read, not typed, CA-3); the reference arm is T44 for fixed cells, the played
@@ -491,32 +578,47 @@ Lets run: LS1.0 (smoke), LS1.1 (distil, GPU), LS1.2 (equivalence read, CPU). Nee
     `keep_rows`, `switch_jump`, `switch_window_ticks`, `switch_floor`, `seed`, `pool_seed`; `[dagger]`
     `script_share` (list, first entry 1.0); `[net]` `hidden`, `zeroed_inputs`, `std_floor`; `[fit]` `epochs`, `lr`,
     `batch`, `seed`; `[report]` `games`, `ticks`, `seed`, `hold_bins_ticks`; `[clips]` `games`, `keep`, `codes`,
-    `seed`, `max_ticks`, `speed`, `fps`, `dpi`; `[smoke]` `games`, `rounds`, `ticks`, `read_games` (OP-15);
-  - `[read]` `alpha`, `path_times_s` (1, 3, 10), `chunk_cells`, `device`, `control_games`, `near_miss_cells` (no
-    `games_per_cell`: the read takes `cells.toml [read] games_per_cell` through `cells_sha256`, B-6; nor `ticks_cap`,
-    `cap_check_every_ticks` or the seed: the read takes `gates.run["ticks_cap"]`, `gates.run["cap_check_every_ticks"]`
-    and `ref.meta["seed"]` from the skills gate file it pins, CA-3);
+    `seed`, `max_ticks`, `speed`, `fps`, `dpi`; `[smoke]` `games`, `rounds`, `ticks`, `read_games`, `device` (OP-15;
+    `device = "cpu"`, R2 B1: LS1.0 is a CPU job on this same file, whose `[run] device` is the GPU job LS1.1's);
+  - `[read]` `alpha`, `interval`, `correction`, `path_times_s` (1, 3, 10), `chunk_cells`, `device`, `near_miss_cells`
+    (R2 RC-1, OA-5: `alpha` a number in (0, 1), `interval` and `correction` strings whose only accepted values are the
+    ones M1-T7 builds, `"newcombe_hybrid"` and `"bonferroni_per_side"` (OP-11); all three are confirmed by the owner
+    with the limits before the file is hashed, section 7 lead step 3. No `control_games` (R2 B7(d): the controls play
+    `cells.toml [read] games_per_cell`, OP-20, the one ruler); no `games_per_cell`: the read takes `cells.toml [read]
+    games_per_cell` through `cells_sha256`, B-6; nor `ticks_cap`, `cap_check_every_ticks` or the seed: the read takes
+    `gates.run["ticks_cap"]`, `gates.run["cap_check_every_ticks"]` and `ref.meta["seed"]` from the skills gate file it
+    pins, CA-3);
   - `[limits]` (owner, R38; `FILL_…` until set): `cmd_rmse_max`, `cmd_unused_max_abs`, `cmd_zero_skill_max_abs`,
     `flips_max_games`, `cell_margin`, `pooled_margin`, `end_time_gated` (bool), `end_time_max_ticks` (OP-18);
-  - `[controls]` `permutation = {guard = [...], strike = [...]}` (an explicit derangement of code indices),
-    `permuted_min_miss_cells`, `unfitted_min_miss_cells` (owner, OP-21), `near_miss = {bias, rotate_deg, switch,
-    noise}` (owner, set with the limits; `bias` is played as `CommandPerturbation(kind="bias")` on xy, `rotate_deg` as
-    `kind="turn"`, `switch` as the moved-switch players at that size, `noise` as `kind="noise"`, M2-T5 `arms()`);
+  - `[controls]` (the permutation itself is in `cells.toml [permutation]`, M1-T7, R2 OA-6) `permuted_min_miss_cells`,
+    `unfitted_min_miss_cells` (owner, OP-21), `near_miss = {bias, rotate_deg, noise, switch = {sacrifice_entry_rad,
+    converge_gather_rad, flank_margin_m, field_range_m}}` (owner, every value `FILL_` until set with the limits from the
+    LS1.5 read; `bias` is played as `CommandPerturbation(kind="bias")` on xy, `rotate_deg` as `kind="turn"`, `noise` as
+    `kind="noise"`, and **each `switch` key as its own moved-switch player at that value, in that player's unit** (R2
+    OA-3): Strike `SacrificeMovedEntry(sacrifice_entry_rad)`, `ConvergeMovedGather(converge_gather_rad)`,
+    `FlankMoved(flank_margin_m)`; Guard `FieldMovedRange(field_range_m)`; M2-T5 `arms()`);
   - `[stop]` the stop rules of workflow §5 as text (control fails, NOT DISTILLED, one side only), with two notes the
     code imposes: added inputs need a new build (section 7, A F1) and a one-side-only continuation needs a gate-file
-    variant (section 7, C7).
+    variant (section 7, C7). **This text is written only after the owner's answer to OQ-2** (R2 RC-3, OA-7: the
+    workflow's pre-registered stop rules shrink by these two notes, so the owner acknowledges them, or names the later
+    build that keeps them, before M2-T1 commits the file).
 - **Tests first:** `test_the_committed_file_loads_and_its_pins_hold` (file sha == sha of bytes; `skills_gates_sha256`,
   `cells_sha256`, `scripted_sha256` and `game_sha256` equal the files' now; `game_sha256 ==
   load_gates(skills_gates).games["base"].sha256`); `test_every_key_is_required` (for each key of each section a
   `tmp_path` copy without it raises `ValueError` naming it; an unknown key raises); `test_limits_are_numbers_or_fill`
   (each `[limits]` value is a `FILL_` string or a finite number > 0, bool refused except `end_time_gated`;
   `unfilled_limits` lists exactly the `FILL_` ones of `[limits]` and of the owner's `[controls]` keys,
-  `permuted_min_miss_cells`, `unfitted_min_miss_cells` and `near_miss`); `test_the_mix_rules` (`uniform_share >= 0.5`; the three shares
+  `permuted_min_miss_cells`, `unfitted_min_miss_cells`, `near_miss.bias`, `near_miss.rotate_deg`, `near_miss.noise`
+  and the four `near_miss.switch.<key>` by name, R2 OA-3); `test_the_near_miss_switch_names_one_value_per_moved_player`
+  (exactly the four keys; each side's keys map to a player of that side's `[players]`);
+  `test_the_read_alpha_and_method_are_the_built_ones` (`0 < alpha < 1`, `interval` and `correction` the accepted
+  strings); `test_the_mix_rules` (`uniform_share >= 0.5`; the three shares
   sum to 1 by `math.isclose`; `script_share[0] == 1.0`; `hold == skills_gates.trainer["decision_ticks"]`);
   `test_the_seeds_are_new` (every seed ≠ 110000, ≠ 140001 and not among the other `configs/ste_*/*.toml` seeds, regex
   of `_seeds`, `tests/test_ste_l1side.py:366-368`, which `tests/test_ste_l19_l110.py` imports);
-  `test_the_permutation_is_a_derangement`; `test_one_ruler` (B-6: neither `distil_gates.toml` nor `calibration.toml`
-  holds a game count per cell; both pin the same `cells_sha256`).
+  `test_the_smoke_device_is_the_cpu` (`[smoke] device == "cpu"`, R2 B1); `test_one_ruler` (B-6: neither
+  `distil_gates.toml` nor `calibration.toml` holds a game count per cell, and `[read]` has no `control_games`; both pin
+  the same `cells_sha256`).
 - **Implementation:** `tomllib` on the file's bytes, sha256 of the same bytes (`ste/exploit.py:153-154, 229`); a per-section exact-key
   check in the `_exact` style (copied, the helper is private); numbers reject bool; shares by `math.isclose`;
   `DistilGates` builds `cells.CellSpec` from the pinned skills gate file.
@@ -560,7 +662,11 @@ Lets run: LS1.0 (smoke), LS1.1 (distil, GPU), LS1.2 (equivalence read, CPU). Nee
   `test_same_seed_same_rows` (`torch.equal`; another round seed differs); `test_net_none_needs_script_share_1`;
   `test_near_switch_flag_follows_label_jumps` (helper `jumps(labels_t, labels_prev, same_game)`; never on a game's first
   tick or across a restart); `test_keep_is_exact_meets_the_absent_quota_and_is_uniform_without_weights` (stratum share
-  ±1 row); `test_the_opponent_is_redrawn_after_each_game`.
+  ±1 row; R2 B7(b), uniformity: synthetic `Rows` of R = 1,000 rows, no absent mate, no `near_switch`, `err=None`,
+  `absent_min_share = 0`, `keep_rows = 100`, 400 draws with `torch.Generator` seeds 0 to 399: each draw returns 100
+  distinct indices, and every row's inclusion share over the 400 draws lies in 0.1 ± 0.075 (five binomial standard
+  deviations));
+  `test_the_opponent_is_redrawn_after_each_game`.
 - **Implementation:** label on the obs **before** `step`; reset the schedule, `held` and the switch countdown for
   `out.done` games after it. `near_switch` = any code's max-channel |label_t − label_{t−1}| > `switch_jump`, same game,
   live both ticks, held `switch_window_ticks` by a per-`[N, M]` countdown. Move live rows to the CPU in chunks of
@@ -583,21 +689,23 @@ JSON floats are finite or `null` (an empty stratum); `[4]` is a list over the co
 | | `gates_sha256`, `net_sha256` (str), `of_record` (bool), `complete` (true, last) | | the lead (a net goes to LS1.2 only from a complete, of-record report) |
 | `results.json` (M2-T6) | `controls` | `{name: {"status": "PASS" \| "FAIL" \| "NOT_RUN", "detail": str}}` (equal to `controls.json`) | `verdict()`, the lead |
 | | `cells` | list of `{"batch": str, "arm": str, "side": str, "kind": "fixed" \| "mixed" \| "info", "codes": [M] str, "opponent": str, "n": int, "b": int, "c": int, "flips": int, "diff": float, "ci": [2] float, "sign_test_p": float, "method": str, "end_time": end_time dict (M1-T7) \| null, "path_distance": {"1", "3", "10": path_distance entry \| null}, "games": {"file": "games/<batch>.npz", "start": int, "stop": int}}` | `limit_failures`, M3-T6 (picks), the record |
-| | `pooled` | `{"all", "fixed", "mixed": pooled_difference dict (M1-T7)}` | `limit_failures` (`all`) |
+| | `intervals` | `{"alpha": float, "interval": str, "correction": str, "m": {"guard" or "strike": int}, "z_cell": float, "z_pooled": float}`: every `cells[].ci` is at `z_cell = adjusted_z(alpha, m)`, m the side's gated cells (R1's fixed plus mixed); every `pooled.*.ci` at `z_pooled = adjusted_z(alpha, 1)`; C6 and C7 cells use the same `z_cell` (C7, R2 RC-1) | `limit_failures`, the record |
+| | `pooled` | `{"all", "fixed", "mixed": pooled_difference dict (M1-T7)}` (ci at `z_pooled`) | `limit_failures` (`all`) |
 | | `errors` | the command-error table of R1's fixed cells, and the `errors` argument of `limit_failures`: `{"skills": {skill: {"rmse": [4] float \| null, "max_abs": [4] float \| null, "active": [4] bool, "rows": int, "rmse_by_n_live": {"1", "2", "3": float \| null}}}, "zero_skill": str \| null}` (`active` from the scripts' labels on the same rows, as M2-T3) | `limit_failures` |
 | | `failures` | list of str, or the string `"NOT_RUN"` (smoke with `FILL_`) | the lead |
 | | `verdict`, `reasons`, `of_record`, `gates_sha256`, `net_sha256`, `skill_net_file`, `complete` | str (`"DISTILLED"`, `"NOT DISTILLED"`, `"INCONCLUSIVE"`, or `"NOT_RUN"` for a smoke), list of str, bool, str, str, repository-relative str, true (last) | M3-T6, M4-T3 (F7), the lead |
 | `layout.json` (M2-T6) | `batches` | list, in play order, of `{"name": str, "arm": str, "side": str, "device": str, "seed": int, "ticks_cap": int, "hold_ticks": int, "n": int, "gates_sha256": str, "net_sha256": str \| null, "seconds": float \| null (null until played), "cells": [{"index": int, "arm": str, "codes": [M] str, "opponent": str, "player": str}]}` | M3-T6 (rebuilds each batch; its CPU estimate) |
-| `games/<batch>.npz` (M2-T6) | `save_batch` arrays | `exploit.PER_GAME` keys, `[G]` with G = cells x n, as `scoring.save_batch` writes them | M3-T6 (replay check) |
+| `games/<batch>.npz` (M2-T6) | `save_batch` arrays | every host array of the batch as `scoring.save_batch` writes them (`ste/scoring.py:163-166`: each `np.ndarray` of `play_cells`' result, `ste/exploit.py:703, 721`): `exploit.PER_GAME` plus `start_pos_m`, `closest_3d_m`, `nonfinite_actions`, `guards_tagged`, the tag arrays (`tag_pair_m`, `tag_filtered`, `tag_pushed`) and `upset` when present, `[G, …]` with G = cells x n, plus `start_sha256` and `game_ticks` (R2 CA-4) | M3-T6 (replay check; `check_against_record`'s default `EXACT_KEYS` reads `start_pos_m`, `viz/replay3d.py:33`) |
 | | `pos_at`, `alive_at` | f32 `[G, M, T, 3]`, bool `[G, M, T]`, T = `len(path_times_s)` | `path_distance`, M3-T6 |
 | | `pair_class` | int8 `[G]`: 0 same, 1 `b`, 2 `c` (constants `PAIR_SAME`, `PAIR_B`, `PAIR_C` of the script); arm batches only | M3-T6 (picks) |
 
 `limit_failures(cells, pooled, errors, limits)` takes `results["cells"]` (the net arm's fixed and mixed cells),
 `results["pooled"]["all"]`, `results["errors"]` and the `[limits]` dict. One string per miss, naming the key: an active
 channel's `rmse` above `cmd_rmse_max`; an inactive channel's `max_abs` above `cmd_unused_max_abs`; the zero-command
-skill's largest `max_abs` above `cmd_zero_skill_max_abs`; a cell's `flips` above `flips_max_games` or its `ci` not
-inside ±`cell_margin`; the pooled `ci` not inside ±`pooled_margin`; with `end_time_gated`, a cell's
-`end_time.mean_abs_ticks` above `end_time_max_ticks`.
+skill's largest `max_abs` above `cmd_zero_skill_max_abs`; a cell's `flips` above `flips_max_games` or its `ci` (at
+`z_cell`) not inside ±`cell_margin`; the pooled `ci` (at `z_pooled`) not inside ±`pooled_margin`; with
+`end_time_gated`, a cell's `end_time.mean_abs_ticks` above `end_time_max_ticks`. The z are fixed where the intervals
+are computed (M2-T6, R2 RC-1), so `limit_failures` reads the stored `ci` and never recomputes one.
 
 ### LS1-M2-T3 The fit, the relabelling rounds, the report (`ste/distil.py`)
 
@@ -616,7 +724,10 @@ inside ±`cell_margin`; the pooled `ci` not inside ±`pooled_margin`; with `end_
   `guard_parked_centre` in 3v3, `scripted.py:297-299`); RMSE on active channels by `n_live` 1/2/3; flown-code RMSE
   by hold bin; mean |Δcommand| tick to tick for the net beside the scripts (same game, live both ticks, accumulated
   online); net game-steps per second (review A F9.6). Empty strata `None`.
-- **Tests first:** `test_fit_lowers_the_error_of_every_skill` (hidden [64, 64]; each skill's RMSE < 0.5 x before);
+- **Tests first:** `test_fit_lowers_the_error_of_every_skill` (R2 B7(c): Guard rows of one round-0 `collect` on 16
+  games x 120 ticks, `skills_gates.toml` `[players]`/`[learner]`, seed 7; hidden [64, 64]; `fit` with epochs 20, lr
+  1e-3, batch 512, seed 11, CPU; each skill's RMSE over its 4 channels on the same rows after the fit < 0.5 x the RMSE
+  of the same net, seeded identically, before the fit);
   `test_report_has_every_read_and_none_for_empty_strata` (exactly the `final` keys of the table above;
   `json.dumps(allow_nan=False)`; Guard `zero_skill ==
   "guard_parked_centre"`; Strike: `strike_high`/`strike_low` have channel 2 active, the other skills channels 0 and 1
@@ -652,7 +763,13 @@ inside ±`cell_margin`; the pooled `ci` not inside ±`pooled_margin`; with `end_
   `results.md`, `videos/*.gif` (2-D, height panel: each `[clips] codes` code flown by the net beside the same start
   flown by the scripts). Checkpoint step `2r + phase` (0 collected, 1 fitted). Refusals (exit 2): schema error; `FILL_`
   limits outside `--smoke`; expected sha; any pin (skills gates, cells, scripted, game); data seed 110000; job.json and
-  device mismatch; CUDA asked and absent; `RunBusyError`; a data file whose sha differs on resume. A done folder exits 0
+  device mismatch; CUDA asked and absent; `RunBusyError`; a data file whose sha differs on resume. **The device the
+  checks use (R2 B1):** without `--smoke` it is `[run] device` (cuda on the committed file), and job.json `gpu_h = 0`
+  with a cuda device is refused, as the copied driver does (`scripts/ste_exploit_l012.py:170-181`); under `--smoke` it
+  is `[smoke] device`, which must be `"cpu"` with job.json `gpu_h = 0` (exit 2 otherwise): `--smoke` at 0 GPU-h is the
+  only CPU launch of this driver, and the job LS1.0 is `ste_job.py launch --task LS1.0 --gpu-h 0 -- … --smoke` on the
+  committed file. The driver does not compare `[run] task` with the launched task (the copied driver compares only
+  `gpu_h` and the device), so LS1.0 runs on LS1.1's file. A done folder exits 0
   at once. Stops: collection checks `stop_reason()` in the tick loop, the fit between epochs; the partial round is
   redone (seeded by seed and round). Control `ctl_labels_are_the_scripts` (the isolation check of M2-T2 on a seeded
   sample of each round's kept rows; failure → `controls.json`, exit 6).
@@ -662,7 +779,12 @@ inside ±`cell_margin`; the pooled `ci` not inside ±`pooled_margin`; with `end_
   (mtime and sha of the net unchanged); `test_a_run_stopped_after_round_0_resumes_at_round_1` (hidden
   `--stop-after-step 1`, above; first launch exit 4; `data/round_0.pt`
   not rewritten); `test_a_nan_loss_exits_5_and_keeps_the_last_checkpoint`; `test_clips_are_written_with_the_height_panel`;
-  `test_a_cpu_job_with_a_cuda_gate_device_is_refused`; `test_gpu_h_must_equal_cap_h`.
+  `test_a_cpu_job_with_a_cuda_gate_device_is_refused` (without `--smoke`: a job.json at `gpu_h` 0 and `[run] device`
+  cuda exits 2); `test_a_smoke_on_a_copy_of_the_committed_file_runs_on_the_cpu` (R2 B1: a byte copy of the committed
+  `distil_gates.toml` under `tmp_path`, `[smoke]` sizes as committed, the owner's keys left `FILL_` and the pins as
+  committed (rewritten only if a pinned path must be absolute under `tmp_path`), a job.json with `gpu_h` 0, `--smoke`:
+  exit 0, job.json `gpu_h == 0`, the net and `fit_report.json` written, `of_record` false); `test_a_smoke_with_a_cuda_smoke_device_is_refused`;
+  `test_gpu_h_must_equal_cap_h`.
 - **Implementation:** `main`: parse, then load and pins (exit 2), `pin_code`, `RunGuard`, resume; per round collect, write
   `data/round_<r>.pt` (`atomic.temporary_path` + `torch.save` + `commit`), checkpoint, fit, checkpoint; then the final
   report, `save_skill_net`, clips (CPU), `fit_report.json` last. State loads with `weights_only=False`.
@@ -686,8 +808,10 @@ inside ±`cell_margin`; the pooled `ci` not inside ±`pooled_margin`; with `end_
   no `holds_choice`); `PermutedNet(net, perm)` (`forward(obs, slot, z) = net(obs, slot, perm[z])`, C2 attributes);
   `unfitted_net(spec, gates, seed)` (fresh `SkillNet` with the gate's sizes); `arms(side, kind, ...) -> dict[name,
   player]` (one object per cell, C6 prefixes; the near-miss kinds map as M2-T1 says: `near_miss.bias` to
-  `CommandPerturbation(kind="bias", channels=xy)`, `rotate_deg` to `kind="turn"`, `switch` to the moved-switch players,
-  `noise` to `kind="noise"`); `path_distance(pos_a, pos_b, alive_a, alive_b) -> {mark: {"games",
+  `CommandPerturbation(kind="bias", channels=xy)`, `rotate_deg` to `kind="turn"`, `noise` to `kind="noise"`, and each
+  `near_miss.switch.<key>` to its own player at its own value (R2 OA-3): Strike three switch arms
+  (`SacrificeMovedEntry`, `ConvergeMovedGather`, `FlankMoved`), Guard one (`FieldMovedRange`); a switch arm plays only
+  the `near_miss_cells` where its code flies, as in the calibration, M1-T7); `path_distance(pos_a, pos_b, alive_a, alive_b) -> {mark: {"games",
   "median_m", "p90_m", "max_m"} | None}`; `limit_failures(cells, pooled, errors, limits) -> list[str]` (arguments and rule:
   the M2 file table above; it raises `ValueError` if any limit it reads is a `FILL_` string, so a `FILL_` never reaches
   a comparison); `verdict(controls, failures, unfilled: list[str]) -> "DISTILLED" | "NOT DISTILLED" | "INCONCLUSIVE" |
@@ -704,7 +828,16 @@ inside ±`cell_margin`; the pooled `ci` not inside ±`pooled_margin`; with `end_
   file); `test_a_fill_limit_never_reaches_a_comparison` (`limit_failures` with one `FILL_` value raises; `verdict(...,
   unfilled=[...])` is `"NOT_RUN"`, never DISTILLED or NOT DISTILLED; the C3 to C5 miss counts and the C6/C7 judgments
   raise likewise on a `FILL_` control size or limit); `test_stand_in_mirrors_no_limit`
-  (constraint 5); `test_each_near_miss_kind_maps_to_its_player` (bias, turn, switch, noise).
+  (constraint 5, R2 B8: no typed PROPOSED value); `test_each_near_miss_kind_maps_to_its_player` (bias, turn, noise,
+  and the four switch keys: Strike's three switch arms are `SacrificeMovedEntry`, `ConvergeMovedGather`, `FlankMoved`
+  at their `STAND_IN` values, Guard's one is `FieldMovedRange`, and each switch arm's cells are only those where its
+  code flies); `test_a_cell_inside_the_margin_at_plain_alpha_but_outside_at_the_adjusted_z_is_not_distilled` (R2 RC-1:
+  b, c, n chosen so the plain-alpha interval lies inside ±`STAND_IN` `cell_margin` and the interval at
+  `adjusted_z(alpha, m)` does not; the cells built through M2-T6's interval step, `limit_failures` names
+  `cell_margin`, `verdict` is NOT DISTILLED); `test_the_committed_limits_run_through_the_rule` (constraint 5, R2 RC-2,
+  OA-4: skipped while `distil.unfilled_limits(g)` is non-empty; once filled, every limit and control-size key of the
+  committed file is read from it and each one, just crossed in a synthetic result, gives a failure naming it, just met
+  gives none; no number typed).
 - **Implementation:** these live in the script (not literal-scanned; OP-12); `RecordingSkillTeam.reset` marks a slot's later games as
   `HeldPlayer._first` does (`ste/exploit.py:566-569`); one name per cell because `_team_split` reuses
   `players[name]` for every cell naming it (`:691-692`).
@@ -731,10 +864,16 @@ inside ±`cell_margin`; the pooled `ci` not inside ±`pooled_margin`; with `end_
   C1 `ctl_scripts_equal_t44` (fixed cells through `fixed_team` + scripts dispatch; `replay_ok` on the CPU; doubles as
   the scripted arm); C1m (scripted mixed arm, `Composite` via `RecordingPlayer`; plumbing); C2
   `ctl_oracle_net_equals_scripts` (`ScriptOracle`, differ 0 per game against C1/C1m); C3 `ctl_permuted_scripts_miss`
-  (from T44, ≥ `permuted_min_miss_cells`); C4 `ctl_unfitted_net_misses`; C5 `ctl_permuted_net_misses`; C6
-  `ctl_near_miss_systematic_fails` (one per kind, `limit_failures` non-empty); C7 `ctl_near_miss_random_passes`
+  (from T44, ≥ `permuted_min_miss_cells`; the permutation of `cells.toml [permutation]`, as C5's `PermutedNet`, R2
+  OA-6); C4 `ctl_unfitted_net_misses`; C5 `ctl_permuted_net_misses`; C6
+  `ctl_near_miss_systematic_fails` (one per kind and one per switch player of the side, `limit_failures` non-empty);
+  C7 `ctl_near_miss_random_passes`
   (`limit_failures` empty); then R1 (the net arm on fixed and mixed cells, with the command-error accumulators) and R2
-  (INFO: Strike side against `guard_mark_inside`, both arms, not gated). `results.json`, `layout.json` and the
+  (INFO: Strike side against `guard_mark_inside`, both arms, not gated). **Intervals (R2 RC-1):** R1 computes every
+  per-cell `ci` by `paired_cell(..., z=adjusted_z(read.alpha, m))`, m the number of gated cells of that side (fixed
+  plus mixed), and the pooled `ci` by `pooled_difference(..., z=adjusted_z(read.alpha, 1))`, both from `[read]
+  alpha`; C3 to C7 use the same `z_cell` for their cells; `results.json` `intervals` records alpha, the method, the
+  correction, m and both z (M2 file table). `results.json`, `layout.json` and the
   `games/*.npz` arrays: exactly the keys of the M2 file table (per cell b, c, flips, diff, ci, sign p, end time, path
   distance per mark, the per-game b/c class as `pair_class` in the batch file; pooled difference; the command-error
   table from R1's fixed cells, OP-16); `complete: true` last; `results.md`; last stdout line the verdict word.
@@ -752,7 +891,11 @@ inside ±`cell_margin`; the pooled `ci` not inside ±`pooled_margin`; with `end_
   `STAND_IN`);
   `test_a_failed_control_exits_6_and_again_6_on_the_same_folder` (oracle monkeypatched to change one command);
   `test_resume_skips_done_batches` (mtimes unchanged); `test_a_net_from_another_gate_file_or_side_is_refused`;
-  `test_layout_names_every_batch_and_cell`.
+  `test_layout_names_every_batch_and_cell`; `test_the_batch_file_serves_the_replay_check` (R2 CA-4: `scoring.load_batch`
+  of a smoke's `games/<batch>.npz` holds `start_pos_m` `[G, M, 3]` and every `replay3d.EXACT_KEYS` key, and
+  `replay3d.check_against_record` of the batch against itself passes); `test_the_intervals_use_the_adjusted_z` (each
+  stored cell `ci` equals `paired_cell` at `results["intervals"]["z_cell"]`, the pooled at `z_pooled`, and `z_cell ==
+  adjusted_z(alpha, m)` with m the side's gated cell count).
 - **Implementation:** batches in the order C1, C1m, C2, C3 (no play), C4, C5, C6, C7, R1, R2; every call hold 1, seed
   `ref.meta["seed"]` (110000 today) and `ticks_cap` `gates.run["ticks_cap"]` (2,400 today) of the pinned skills gate
   file, read, never typed (CA-3; `paired_wins` raises on an unfinished game); `controls.json` settled before R1; `layout.json`
@@ -782,11 +925,16 @@ Lets run: LS1.3 (export, CPU) and LS1.6 (3-D clips, GPU). Needs M1 and M2 merged
   as `tests/test_ste_l6_read.py:402`; ONNX bytes and interface text equal); `test_a_second_variant_exports_with_its_own_seed_and_game`
   (`configs/ste_l012/smoke_gates.toml` + `test_ste_l3_pool.POOL + TWO_LEVEL` in `tmp_path`, pattern of
   `test_ste_l3_pool.py:362-365`; variant `tag_1p2`: seed 120201, game sha and tag radius of that variant; helper to
-  write `tiny_learner_from(gates, side, variant)`); `test_an_unknown_variant_is_refused`;
-  `test_the_export_command_takes_the_runs_variant`.
-- **Implementation:** thread the keyword; every existing caller is positional (`tests/test_ste_l3_export.py:55-56, 199-200`,
-  `tests/test_ste_l6_read.py:406-407`, `scripts/ste_l6_export.py:85, 91`), so the default keeps them; golden
-  opponents stay fixed (`ste/export.py:90-91`).
+  write `tiny_learner_from(gates, side, variant) -> (gates, learner)`, the same pair shape as `tx.tiny_learner`
+  (`tests/test_ste_l3_export.py:30-40`; its dict is `[1].saved()`, R2 CA-1)); `test_an_unknown_variant_is_refused`;
+  `test_the_export_command_takes_the_runs_variant`. The new file `tests/test_ste_ls1_export.py` begins with
+  `pytest.importorskip("onnxruntime")`, as `tests/test_ste_l3_export.py:17` and `tests/test_ste_l6_export.py:17` do
+  (R2 B3; the file serves M3-T1 to M3-T4).
+- **Implementation:** thread the keyword; the existing callers pass `gates, side` positionally and the rest
+  positionally or by keyword (`tests/test_ste_l3_export.py:55-56, 199-200`, `tests/test_ste_l6_read.py:406-407`,
+  `scripts/ste_l6_export.py:85, 91`; for example `golden_observations(gates, side, games=8, seed=5)`): a defaulted
+  trailing `variant` breaks neither style (R2 CA-3), so it comes after every existing parameter (after `seed` in
+  `golden_observations`); golden opponents stay fixed (`ste/export.py:90-91`).
 - **Keep green:** `test_ste_l3_export.py`, `test_ste_l6_export.py`, `test_ste_l6_read.py`. After the merge the lead
   re-runs `export.reload_check` on the four L6.2 export folders (in `runs/`, not in git; a recorded check).
 - **Commit:** `svg_training ste export: the variant is an argument (a second seed exports with its own seed)`.
@@ -824,10 +972,13 @@ Lets run: LS1.3 (export, CPU) and LS1.6 (3-D clips, GPU). Needs M1 and M2 merged
   (`tx.reload_in_a_fresh_process`, `tests/test_ste_l3_export.py:42-47`); `test_the_skill_net_reload_refuses_damage`
   (parametrised: bytes changed → "sha256"; status removed → "status"; skills reversed → "skills"; a command bumped 1e-3
   → "golden", `tx.tamper`/`tx._bump` `:140-154`); `test_codes_out_of_range_are_refused_before_the_runtime` (z = k, z =
-  −1). Helper to write: `tiny_skill_net(tmp_path, side)` (reuse `tests/_ste_ls1.save_tiny_net`).
-- **Implementation:** `torch.onnx.export(net.eval(), (zeros(1, 71), zeros(1, int64), zeros(1, int64)), ...)` in the pattern of
+  −1). Helper to write: `tiny_skill_net(tmp_path, side)` (reuse `tests/_ste_ls1.save_tiny_net`). The file keeps its
+  `pytest.importorskip("onnxruntime")` at the top (M3-T1; R2 B3).
+- **Implementation:** `torch.onnx.export(net.eval(), (zeros(1, OBS_DIM), zeros(1, int64), zeros(1, int64)), ...)` in the pattern of
   `ste/export.py:129-141`; files written with `onnx.save` and `Path.write_text` (`:141, :156`); the stand-alone
-  branch of `reload_check` returns right after `:248-250`. No new dependency.
+  branch of `reload_check` returns right after `:248-250`. No new dependency. In `ste/export.py` (literal-scanned) the
+  widths are `OBS_DIM` and the alive index `ObsView().alive`, never `71` or `12` written (R2 B4); the `interface.toml`
+  text `alive_rule` names the index from `ObsView().alive` too.
 - **Gotchas (scout runs, torch 2.7.0, onnx 1.23.2, onnxruntime 1.20.1, test nets only):** onnxruntime's OneHot runs
   z = k and z = −1 without error (hence the range check); onnxruntime refuses int32 slot/z (golden arrays int64);
   differences 2.4e-7 / 1.2e-7 small net, about 5e-7 for a random 3 x 256 net against a tolerance near 1.8e-6. A
@@ -874,8 +1025,9 @@ Lets run: LS1.3 (export, CPU) and LS1.6 (3-D clips, GPU). Needs M1 and M2 merged
   interface.toml", before `_skills_net_reload` runs); `test_the_route3_reload_returns_route_skills_and_source_net`
   (`out["route"] == "skills"`, `out["skill_source"] == "net"`, `policy_schema` `ste-check-skills-net-0` in
   `interface.toml` and in every heads file's metadata); `test_a_drone_that_is_out_has_a_zero_command` (golden after 30 ticks, or a
-  hand-made row). Helpers to write: `net_gates_file(tmp_path, side, net_paths)` (skills gate text with C4 keys);
-  `tiny_net_learner(gates, side)`.
+  hand-made row). Helpers to write: `net_gates_file(tmp_path, side, net_paths)` (through
+  `tests/_ste_ls1.net_gates_text`, M1-T4, R2 B2); `tiny_net_learner(gates, side) -> (gates, learner)`, the pair shape of
+  `tx.tiny_learner` (R2 CA-1). `pytest.importorskip("onnxruntime")` stays at the top of the file (R2 B3).
 - **Implementation:** the net branch sits in `export_policy` after the dispatch (`:120`); the schema string is chosen by
   `schema_of`, apart from `route`, so the about 12 `route == "skills"` tests (writer and reader) are untouched;
   `reload_check` calls `_skills_net_reload` at `:287` when `source == "net"`.
@@ -947,14 +1099,21 @@ Lets run: LS1.3 (export, CPU) and LS1.6 (3-D clips, GPU). Needs M1 and M2 merged
   `atomic.write_text`); `--plan-only` prints the GPU-h ask, the number of batch replays and their CPU estimate (the sum
   of the read's own `seconds` of those batches in `layout.json`; about 12 picks x 2 arms x `chunk_cells` cell-plays at
   2 to 4.5 s each for the scripted arm, the net arm at the read's measured rate) and writes nothing. Two clips per pick, shown side by side
-  on the record page.
+  on the record page. **The minimum pick count (R2 RC-5, OA-8):** `MIN_PICKS_PER_SIDE = 2` (one fixed-cell game and
+  one mixed-cell game per side, both arms each: 4 picks, 8 trajectories), below the workflow's 3 to 6 games per side;
+  `--picks-per-side` below it exits 2. If `--plan-only` gives an ask above 0.1 GPU-h even at the minimum, nothing is
+  launched and the lead asks the owner (OQ-4; the lead never moves a cap). The workflow's 3 to 6 per side may not fit
+  in 0.1 (W4, unmeasured estimate 0.18 to 0.24 GPU-h for 12 trajectories): the owner is told this before M3-T6 builds
+  the pick rule (OQ-4), and the measured `--plan-only` figure, with how many games per side fit at 0.1, before LS1.6
+  is launched. The record states the number of games per side drawn.
 - **Tests first** (CPU; `test_make_ste_3d.FakeIsaac`, `small_settings` as `tests/test_ste_l5_clips3d.py:30-37`; helper
   to write `tiny_equivalence_read(tmp, side, net)` using M2's script at N = 2):
   `test_both_arms_are_replayed_on_the_same_start_and_drawn` (with `ScriptOracle` as the net the two trajectories are
   equal frame for frame); `test_a_replay_that_differs_from_the_read_is_not_drawn` (one end_step tampered → exit 1);
   `test_picks_of_one_batch_share_one_replay` (B-11; a counter on `capture_trained`);
   `test_the_pick_rule` (hand-made `pair_class` arrays; written only after the lead confirms OP-27's rule, which is a
-  start condition of this task, B-5); `test_plan_only_writes_nothing_and_refusals_exit_2`.
+  start condition of this task, B-5); `test_plan_only_writes_nothing_and_refusals_exit_2` (including
+  `--picks-per-side 1`, below `MIN_PICKS_PER_SIDE`).
 - **Implementation:** picks from M2's per-game `pair_class` (the batch file named by each cell's `games` entry); each replay rebuilds its whole batch from `layout.json`;
   `l5.render_stage` called as a module attribute so tests monkeypatch it (`tests/test_ste_l5_clips3d.py:40-51`); a
   CUDA-recorded read on a CPU-only machine is refused as `scripts/ste_l5_clips3d.py:358-360`.
@@ -965,14 +1124,20 @@ Lets run: LS1.3 (export, CPU) and LS1.6 (3-D clips, GPU). Needs M1 and M2 merged
 ## 5. Merge M4: head training on the skill network (LS1.4)
 
 Lets run: LS1.4 (pilot, run 0, Guard and Strike runs of both arms, export, unseen scores, the read). Needs M1 to M3.
-**Start condition (B-3): the lead confirms OP-29 before M4-T1.** This section is written for option B (recommended):
-M4-T1b is built, and both LS1.4 gate files carry `[run0] per_variant` and the run 0 seeds as M4-T4 says. If A is
-chosen instead, M4-T1b is deleted, `heads_gates.toml` keeps `[run0] per_variant` absent and no `run0_seed`, and the
-two keys leave M4-T4's named-keys test; nothing else in M4 changes.
+**Written for option A, what workflow v3 §6 says (R2 OA-1):** one run 0 per arm ("One run 0 serves both Strike
+seeds"), so the Strike read is n = 1 per arm, M4-T1b is not built, and `heads_gates.toml` has no `[run0] per_variant`
+and no `run0_seed`. Option B (a run 0 per Strike seed, M4-T1b, a second route 3 run 0) and the size of the LS1.4 asks
+are the **owner's** question OQ-1 (section 8), put to him as a cost before M4 starts: B adds a job and M4-T1b, and
+neither option fits route 2's 550 M game-steps at the workflow's 0.4 GPU-h per training job (W1), so the asks that
+would (0.6 each) sum above the 4.0 task cap (section 6). The build of A goes ahead; **no LS1.4 GPU job is launched
+before the owner answers OQ-1.** If he picks B, M4-T1b is built after M4-T1 and the two keys join M4-T4's file and
+its named-keys test; nothing else in M4 changes but the Strike read's count (M4-T5).
 
 ### LS1-M4-T1 The gate loader takes the reading rule and lists the new fills
 
-- **Files:** `ste/exploit.py`; new `tests/test_ste_ls1_gates_loader.py`.
+- **Files:** `ste/exploit.py`; new `tests/test_ste_ls1_gates_loader.py`; `tests/_ste_ls1.py` (one line:
+  `READING_IN_NET_FILES = True`, so every net gate file written by `net_gates_text` from M1-T4 on, M3-T3's
+  `net_gates_file` included, gains the `[reading]` block; no older test file is edited, R2 B2).
 - **Consumes:** `_SECTIONS` (`ste/exploit.py:68-85`), `_SECTION_OPTIONAL` (`:93-94`), `_exact` (`:138-146`),
   `load_gates` (`:149-231`; unknown sections `:155-157`; `[run0] skills_reach_min` typed `:207-213`; `verdict.order`
   `:223-224`), `ExploitGates` (`:116-135`, defaulted `learner`, `pool`), `unfilled` (`:292-295`, `[reference]` only);
@@ -994,16 +1159,17 @@ two keys leave M4-T4's named-keys test; nothing else in M4 changes.
   `tomllib.loads(text)["reading"]`).
 - **Implementation:** `"reading"` joins the allow-list at `ste/exploit.py:155`; `_reading_table(data.get("reading"),
   learner)` beside `_pool_table` (`:234-247`), after `learner_spec` (`:226-227`) so it knows the source; `unfilled`
-  extended with the same message format and only these named keys (it is also L0.12b's screen rule). The test helpers
-  that write a net gate file (`tests/_ste_ls1.py`, M1-T4 test 3, M3-T3 `net_gates_file`) gain a `[reading]`
-  block filled from `STAND_IN` in this task.
+  extended with the same message format and only these named keys (it is also L0.12b's screen rule). The net gate
+  files of the tests gain a `[reading]` block filled from `STAND_IN` through the one flag in `tests/_ste_ls1.py`
+  (Files above; M1-T4, R2 B2). `test_a_fill_placeholder_loads_and_is_listed` calls `driver.preflight` directly, so
+  M1-T4's `require_wired` refusal (in `main`, before `preflight`) does not stop it before M4-T2 removes that refusal.
 - **Keep green (B-7; rule: every test file that names a changed file, `grep -l "load_gates\|exploit" tests/*.py`):**
   `test_ste_l3_pipeline_gates.py`, `test_ste_l3_run0.py`, `test_ste_l1side.py`, `test_ste_l012.py`,
   `test_ste_l3_skills.py`, `test_ste_l012_driver.py`, `test_ste_l012b.py`, `test_ste_l012c.py`, `test_ste_l19_l110.py`,
   `test_ste_l3_driver.py`, and the M1 to M3 net tests (`test_ste_ls1_dispatch.py`, `test_ste_ls1_export.py`).
 - **Commit:** `svg_training ste exploit: the LS1.4 reading section and fill markers in the gate loader`.
 
-### LS1-M4-T1b A run 0 seed per variant (OP-29 option B; deleted if the lead picks A)
+### LS1-M4-T1b A run 0 seed per variant (built only if the owner picks OP-29 option B at OQ-1; not built under A, the default)
 
 - **Files:** `ste/exploit.py`, `scripts/ste_exploit_l012.py`, `tests/test_ste_ls1_gates_loader.py`.
 - **Consumes:** `_VARIANT_OPTIONAL` (`ste/exploit.py:108`), `_check_variant_options` (`:250-268`), seed checks
@@ -1024,7 +1190,8 @@ two keys leave M4-T4's named-keys test; nothing else in M4 changes.
 
 ### LS1-M4-T2 The training driver's untrained-team control under a network
 
-- **Files:** `scripts/ste_exploit_l012.py`; new `tests/test_ste_ls1_driver.py`.
+- **Files:** `scripts/ste_exploit_l012.py` (also removes M1-T4's `require_wired` line refusing `"net"`);
+  `tests/test_ste_ls1_dispatch.py` (deletes M1-T4's test 8, R2 B9); new `tests/test_ste_ls1_driver.py`.
 - **Consumes:** `evaluate_controls` (`scripts/ste_exploit_l012.py:367-401`, twin branch `:379-388`); `run0_controls`
   (`:912-944`, twin `:924-930`); `run_exploit` (`:421-596`: `play` `:467-469`, before batch `:486`, final `:570`, INFO
   `:571-573`, `end_on_controls` `:471-480`); `run_run0` (`:952-1143`: twin cell appended `:966-968`, `play`
@@ -1058,7 +1225,8 @@ two keys leave M4-T4's named-keys test; nothing else in M4 changes.
 - **Tests first:** helper to write `net_gate_file(folder, *, twin_code=0)` (SMOKE text `configs/ste_l012/smoke_gates.toml`
   + the TWO_LEVEL table of `tests/test_ste_l3_driver.py:24-40` + C4 keys pointing at tiny untrained nets saved with
   `save_skill_net`; drops variants `tag_1p2`, `tag_1p4`, sets `verdict.order = ["base"]` and the pilot's timing batches
-  to base; a `[reading]` filled from `STAND_IN`, so `unfilled()` is empty and preflight passes, since M4-T1 requires
+  to base; written through `tests/_ste_ls1.net_gates_text`, so it carries the `[reading]` block filled from `STAND_IN`
+  (R2 B2), `unfilled()` is empty and preflight passes, since M4-T1 requires
   the section in a net file and lists a `FILL_` in it); helper to write `distilled_read(folder, side, net_sha256)` (a
   fake LS1.2 `results.json`: complete, of record, DISTILLED, that net's sha; M4-T3 and M4-T7 use it); `test_net_untrained_team_equals_its_net_twin_and_every_control_passes` (Guard and Strike on the CPU, the
   `run()`/`run0_json()`/`skills_pilot()` patterns of `tests/test_ste_l3_driver.py:60-80`; every control PASS; the
@@ -1128,27 +1296,30 @@ two keys leave M4-T4's named-keys test; nothing else in M4 changes.
   `:974-975`).
 - **Produces:** `skills_seed2_gates.toml` (complete at M4): `skills_gates.toml` with `[run] task = "LS1.4"`, variant
   base seeds 140211/140212 (C8), `[run0] train_seed` 140213, the same `[learner]` (so the L3.3 pilot's table is
-  accepted; its own run 0 because the gate sha differs); one variant only, so `[run0] per_variant` stays absent there
-  and its run 0 pairs with route 3's `base_s2` run 0 by seed (140213 both). `heads_gates.toml` (template, `FILL_` until LS1.1, LS1.5 and
+  accepted; its own run 0 because the gate sha differs: job LS1.4-R0, needed before its Strike run); one variant only.
+  Under A (the default, R2 OA-1) route 2 seed 2's run 0 has no route 3 partner and is INFO in the read; only under B
+  would it pair with route 3's `base_s2` run 0 by seed (140213 both). `heads_gates.toml` (template, `FILL_` until LS1.1, LS1.5 and
   M4-T3): `[run] task = "LS1.4"`; `[learner] skill_source = "net"` and C4 entries (sha `FILL_`); `[variants] base`
   (140201/140202, paired with route 2 seed 1) and `base_s2` (`game = "base"`, same g*/s*, 140211/140212, paired with
   route 2 seed 2, `reference_variant = "base"`, no extra opponents); `[verdict] order = ["base", "base_s2"]`;
-  `[run0]` variant base, `train_seed` 140203 (base's run 0, paired with route 2 seed 1's), **`per_variant = true`**
-  (OP-29 B; M4-T1b), and **`variants.base_s2.run0_seed = 140213`** (base has none, so it trains `[run0] train_seed`),
-  `skills_reach_min` `FILL_` (from M4-T3); `[reading]` `FILL_` (owner, R38), with a TOML comment, hashed with the
+  `[run0]` variant base, `train_seed` 140203 (route 3's one run 0, paired with route 2 seed 1's, and serving both
+  Strike seeds, workflow §6), no `per_variant` and no `run0_seed` (under B only, M4-T1b: `per_variant = true` and
+  `variants.base_s2.run0_seed = 140213`), `skills_reach_min` `FILL_` (from M4-T3); `[reading]` `FILL_` (owner, R38), with a TOML comment, hashed with the
   file, that records the departure from workflow §6 (C3: the last three reads of a run of record are `curve.json`
   reads, not paired per start, W3; the Guard score is OP-30's); route 2's recipe pinned as filled
   (`side_overrides.strike = {}`, 550 M), so the pilot is a check, not a fill (M4-T2 `net_pilot_problem`).
 - **Tests first:** `test_heads_differs_from_skills_gates_in_the_named_keys_only` (style of
-  `tests/test_ste_l3_pipeline_gates.py:33-50`: pop `[run] task`, the two learner keys, variant `base_s2` (with its
-  `run0_seed`), `[verdict] order`, `[run0] skills_reach_min`, `[run0] per_variant`, `[reading]`; the rest equal, including `side_overrides.strike == {}`,
+  `tests/test_ste_l3_pipeline_gates.py:33-50`: pop `[run] task`, the two learner keys, variant `base_s2`,
+  `[verdict] order`, `[run0] skills_reach_min`, `[reading]` (under B also `base_s2`'s `run0_seed` and `[run0]
+  per_variant`); the rest equal, including `side_overrides.strike == {}`,
   `game_steps_per_run`, `[pool]`, `[controls]`, `[pilot]`); `test_seed2_differs_in_task_and_seeds_only`;
   `test_seeds_pair_across_arms`; `test_both_load_and_name_only_the_fills` (`unfilled(heads)` within the named fill
   keys; `unfilled(seed2) == []`); `test_the_task_is_in_the_route_budget` (`budget_of("LS1.4").section == "budget_ls1"`);
   `test_route2_pilot_table_equals_seed2_table` (and the heads table differs);
   `test_heads_has_reading_with_every_key` (F8: the four keys present, values `FILL_` until the owner sets them);
-  `test_each_run0_seed_pairs_across_arms` (heads base run 0 = route 2 seed 1's 140203; heads `base_s2` run 0 =
-  `skills_seed2`'s 140213). The pilot check itself (C8, F9) is tested in M4-T2.
+  `test_each_run0_seed_pairs_across_arms` (heads run 0 = route 2 seed 1's 140203; `skills_seed2`'s run 0 140213 is
+  distinct from every heads seed; under B also heads `base_s2` run 0 = 140213). The pilot check itself (C8, F9) is
+  tested in M4-T2.
 - **Implementation:** copy `skills_gates.toml`'s text and change only the named keys, each with a labelled comment; route 2's L3.3
   pilot (`runs/2026-11-25_ste_l3_pilot_skills/pilot.json`) is then accepted by `skills_seed2` (learner table equal)
   and refused by `heads_gates` (the table carries the net).
@@ -1167,11 +1338,18 @@ two keys leave M4-T4's named-keys test; nothing else in M4 changes.
   `scripts/ste_exploit_l012.py:606-621`: 256 games on the curve starts against g*/s*), `learner_control.json`
   (`reads`, `status`, `train_seed`, `cap_h`, `learner`).
 - **Produces:** `ste_ls1_read.py --manifest <toml> --out <folder>` → `read.json`, `read.md`; exit 0 or 2. The
-  manifest names per arm (route2, route3) and seed (s1, s2) the pilot, run 0, Guard and Strike folders. Rule (margins
+  manifest names per arm (route2, route3) and seed (s1, s2) the pilot, Guard and Strike folders, and per arm its run 0
+  folders (under A, the default: route 3 one, `[run0] train_seed` 140203; route 2 two, seed 1's 140203 and seed 2's
+  140213). Rule (margins
   from `gates.reading`, never typed): per seed a score; "no drop beyond Δ" when mean(route 3) ≥ mean(route 2) − Δ and
   every route 3 seed ≥ min(route 2) − Δ; "below" when mean(route 3) < mean(route 2) − 2Δ; otherwise INCONCLUSIVE and a
-  third seed per arm is named. **Which Δ applies where (C3):** Strike: the run 0 cell (one run 0 per seed and arm
-  under OP-29 B), score = the mean of its last `last_reads` reads, Δ = `margin_cell` (OP-34); Guard: the pooled row of
+  third seed per arm is named. **Which Δ applies where (C3):** Strike: the run 0 cell, score = the mean of its last
+  `last_reads` reads, Δ = `margin_cell` (OP-34). **Under A (R2 OA-1)** the Strike read has n = 1 per arm: route 3's
+  one run 0 against route 2 seed 1's run 0 (both trained on seed 140203, so paired by seed), with the rule's two-seed
+  terms reduced to that one pair ("no drop" when route 3 ≥ route 2 − Δ, "below" when route 3 < route 2 − 2Δ,
+  otherwise INCONCLUSIVE); route 2 seed 2's run 0 (140213) has no route 3 partner and is written as INFO; under B
+  (OQ-1) each seed's route 3 run 0 pairs with route 2's run 0 of the same seed and the two-seed rule applies as
+  written. Guard: the pooled row of
   the final INFO batch, paired per start (OP-30 (a)), Δ = `margin_pooled`; the Guard per-cell differences against
   `margin_cell` are written per cell as INFO, not gated (two seeds carry no per-cell verdict; OP-30). `read.json`
   carries per seed and arm, beside each score, `min_last_reads` (the lowest of the last `last_reads` reads: run 0 reads
@@ -1189,8 +1367,12 @@ two keys leave M4-T4's named-keys test; nothing else in M4 changes.
   the verdict; the paired difference uses `same_starts`; `min_last_reads` is the minimum and is reported for every seed
   and arm; a Guard per-cell miss never changes the verdict; `test_a_gate_file_without_reading_or_with_a_fill_margin_exits_2`
   (F8: a net gate file without `[reading]` is refused by the loader, a `FILL_` margin by the reader, both exit 2);
-  `test_stand_in_mirrors_no_limit` (constraint 5; the synthetic Δ come from `STAND_IN` through a `tmp_path` gate
-  file).
+  `test_stand_in_mirrors_no_limit` (constraint 5, R2 B8; the synthetic Δ come from `STAND_IN` through a `tmp_path` gate
+  file); `test_the_strike_read_under_a_is_one_pair_by_seed` (R2 OA-1: route 3's run 0 is read against route 2's run 0
+  of seed 140203, route 2's 140213 run 0 is INFO only, and a route 3 run 0 of another seed exits 2);
+  `test_the_committed_margins_run_through_the_rule` (constraint 5, R2 RC-2, OA-4: skipped while `heads_gates.toml`
+  `[reading]` holds a `FILL_`; once filled, `margin_pooled`, `margin_cell` and `last_reads` are read from the committed
+  file and each margin, just crossed and just met on the count grid, moves the verdict as the rule says; no number typed).
 - **Implementation:** import `ste_l6_read` as the driver imports `ste_sweep_l011` (`sys.path`); `read_main` needs each folder launched
   through `ste_job.py` (an `exit_code` file; route 2's folders have one, scout-checked).
 - **Keep green:** `test_ste_l6_read.py`.
@@ -1262,7 +1444,7 @@ Task caps add to 4.9 ≤ 200.0. Workflow v3 section 3 attributes 0.8 and 0.1 to 
 (`ste_learning/DISCUSSION_2026-11-19_20.md:758`) names 200 and 4.0 only. The plan follows the workflow (the source of
 truth on the what) and labels them FIXED with that source named; the difference is kept as W6 and OP-40. Other changes: `ste/config.py:37-48` `TASK_IDS["LS1"]`; `tests/test_ste_config.py`
 `:90`, `:107`, `:514-515` and the new test; `tests/test_ste_budget.py` new test; `ste/budget.py` `section_summary`,
-`budget_summaries`; `scripts/ste_job.py:174` status lines (and `carry --section` if OP-4); PLAN §9 row. Nothing in
+`budget_summaries`; `scripts/ste_job.py:174` status lines and `carry --section` (`:164-173`; OP-4 yes, R2 OA-10); PLAN §9 row. Nothing in
 `ste/budget.check_launch` or `ste/jobs.py` changes. Every LS1.4 job still states its ask at launch; an ask above
 5 GPU-h is announced first (R39 as read).
 
@@ -1275,30 +1457,35 @@ restart is not counted twice). The caps are the owner's (R38, R43); the lead nev
   `configs/ste_learning.toml`, and `LS1_TASK_CAP_GPU_H` and `task_caps_total_gpu_h() == 4.9` (M1-T1's test) move with
   it in the same commit.
 - **LS1.6 (0.1).** Kept at 0.1 by cutting the number of picks until `--plan-only` gives an ask ≤ 0.1 (OP-27), never by
-  moving the cap.
-- **LS1.4 (4.0).** The jobs and their asks (workflow §6; OP-28's asks beside; route 3's second run 0 under OP-29 B):
+  moving the cap; never below `MIN_PICKS_PER_SIDE` (M3-T6): if the minimum does not fit, the owner is asked (OQ-4;
+  R2 RC-5, OA-8).
+- **LS1.4 (4.0).** The jobs and their asks under A, the default (workflow §6, "One run 0 serves both Strike seeds";
+  R2 OA-1), with OP-28's asks and option B beside, both the **owner's** choice at OQ-1, not the lead's:
 
 | Job | Count | Ask each, workflow §6 | Ask each, OP-28 | Note |
 |---|---|---|---|---|
 | LS1.4-P pilot (route 3) | 1 | 0.1 | 0.1 | the check of M4-T2 (`net_pilot_problem`) |
-| LS1.4-0 run 0 (route 3) | 2 under B (1 under A) | 0.4 | 0.6 | at the cap of its Strike runs (`ste/exploit.py:974-975`) |
+| LS1.4-0 run 0 (route 3) | 1 (2 only if the owner picks B) | 0.4 | 0.6 | at the cap of its Strike runs (`ste/exploit.py:974-975`) |
 | LS1.4-G1, -G2, -S1, -S2 (route 3) | 4 | 0.4 | 0.6 | post-run clips: a replay that differs leaves its game undrawn, the run stands (M4-T7); risk: GPU results at equal batch shape |
 | LS1.4-R0 run 0 (route 2 seed 2) | 1 | 0.4 | 0.6 | |
 | LS1.4-RG, -RS (route 2 seed 2) | 2 | 0.4 | 0.6 | post-run clips as today |
 | post-run clips jobs | 6 | 0.1 | 0.1 | charged to LS1.4 (`ste/post_run.py:71`) |
-| **Sum of asks** | | **4.3 under B (3.9 under A)** | **6.1 under B (5.5 under A)** | expected use about 2.5 to 2.8 (workflow §1, §6; estimate) |
+| **Sum of asks** | | **3.9 under A (4.3 under B)** | **5.5 under A (6.1 under B)** | expected use about 2.5 to 2.8 (workflow §1, §6; estimate) |
 
-  The sum of asks is not what binds; each launch's used + ask is. The lead tracks used + the next ask before every
-  LS1.4 launch and asks the owner before any launch whose ask would take the task over 4.0 (no launch is made to be
-  refused).
+  At the workflow's 0.4 per training job the asks fit the 4.0 cap (3.9 under A; the workflow's own sum of 4.0 adds a
+  0.1 spare), but a 0.4 h job cannot reach route 2's pinned 550 M game-steps (W1), so M4-T2's pilot check would refuse
+  the launch. At 0.6 the asks sum above 4.0 (5.5 under A, 6.1 under B), and only each launch's used + ask binds
+  (`check_launch`). Both the asks and A or B are put to the owner as one question before M4 starts (OQ-1); **no LS1.4
+  GPU job is launched before he answers.** After that, the lead tracks used + the next ask before every LS1.4 launch
+  and asks the owner before any launch whose ask would take the task over 4.0 (no launch is made to be refused).
 
 ## 7. Review findings and where each is built
 
 | Finding | Task(s) | Not built here (and why) |
 |---|---|---|
-| A F1 data coverage | M2-T1 `[data]` shares; M2-T2 schedule (uniform ≥ 0.5, fixed mixes, random), weighted keep, switch floor; M2-T3 error by hold bin and `n_live` | engineered polar/zone inputs (each drone's and its team-mates' bearing and distance from the zone): **not in LS1** (C2). The input is fixed at obs 71 + slot + code (C2), and `zeroed_inputs` is the only knob; added inputs need a new build (`SkillNet.forward`, the normaliser, the C3 file, the ONNX graph `[B, 71]` of M3-T2, the reload and the golden rows), so the fix round of workflow §5 can change the data mix, the rounds and the network size from the gate file, but not the inputs; `[stop]` says so (M2-T1); OP-14 |
+| A F1 data coverage | M2-T1 `[data]` shares; M2-T2 schedule (uniform ≥ 0.5, fixed mixes, random), weighted keep, switch floor; M2-T3 error by hold bin and `n_live` | engineered polar/zone inputs (each drone's and its team-mates' bearing and distance from the zone): **not in LS1** (C2). The input is fixed at obs 71 + slot + code (C2), and `zeroed_inputs` is the only knob; added inputs need a new build (`SkillNet.forward`, the normaliser, the C3 file, the ONNX graph `[B, 71]` of M3-T2, the reload and the golden rows), so the fix round of workflow §5 can change the data mix, the rounds and the network size from the gate file, but not the inputs; `[stop]` says so (M2-T1); OP-14. The owner is told before M2-T1 hashes `[stop]` that the fix round cannot add inputs and acknowledges it, or names it as a later build (OQ-2; R2 RC-3, OA-7); an in-graph feature switch in M1-T3 is not built (R2 RC-3 declined: a new network input design the workflow does not ask for in LS1) |
 | A F2 paired read, systematic error | M1-T6 changed scripts (noise, bias, scale, turn, moved switches); M1-T7 calibration and C7 (b, c, flips, interval, sign test, end step); M2-T6 flips limit, end time, path distance at 1/3/10 s | final distance to the zone: OP-14 |
-| A F3 LS1.4 rule, Strike cell | M4-T1 `[reading]`; M4-T4 seeds paired, recipe pinned; M4-T5 rule, run 0 as the Strike read | how many run 0s per arm: OP-29; Guard score: OP-30 |
+| A F3 LS1.4 rule, Strike cell | M4-T1 `[reading]`; M4-T4 seeds paired, recipe pinned; M4-T5 rule, run 0 as the Strike read | how many run 0s per arm: OP-29, the owner's at OQ-1 (A built until he answers, R2 OA-1); Guard score: OP-30 |
 | A F4 controls | M1-T5 oracle in miniature; M2-T6 C1 to C7 (C6 includes the 0.05-bias near miss, `kind="bias"`); M2-T1 `[controls]`; M1-T7 bias ladder | — |
 | A F5 what the net cannot see | M1-T3 game constants in meta and refused, zeroed inputs, std floor, slot one-hot; M2-T3 per-channel and zero-skill reads; M2-T1 limits; M1-T7 zero-skill bias arms (the calibration behind `cmd_zero_skill_max_abs`) | which further inputs to zero: OP-5 |
 | A F6 switches, ±1, losses | M1-T3 clipped linear; M2-T2 near-switch floor and absent quota; M2-T3 by `n_live` | a gate cell that starts with a drone removed: OP-14 |
@@ -1323,21 +1510,67 @@ restart is not counted twice). The caps are the owner's (R38, R43); the lead nev
 | B Q4, B Q6 | report B has no section for them (A answers Q6 in F8) | — |
 | B Q5 clips | M3-T5, M3-T6; M2-T6 per-game arrays and `layout.json` | — |
 | B Q7 names, off-means-identical tests | M1-T4 literal-key tests; M4-T4 named-keys test | — |
-| Workflow §5 stop rule 3 (one side only) | — | **not in LS1** (C7): `[learner.skill_net]` needs both sides (OP-35) and a `FILL_` sha is refused when a dispatch is built, so a Guard-only or Strike-only continuation needs a gate-file variant (one side's heads only, the other side's entry optional), decided by the lead after LS1.2 |
+| Workflow §5 stop rule 3 (one side only) | — | **not in LS1** (C7): `[learner.skill_net]` needs both sides (OP-35) and a `FILL_` sha is refused when a dispatch is built, so a Guard-only or Strike-only continuation needs a gate-file variant (one side's heads only, the other side's entry optional), decided by the lead after LS1.2; the owner acknowledges this change to the pre-registered stop rules before M2-T1 hashes `[stop]` (OQ-2; R2 OA-7) |
 
-**Lead steps outside the build tasks (C9).** Done by the lead, each recorded, none by the builder:
+**Lead steps outside the build tasks (C9; completed by R2 RC-4 and OA-9).** Done by the lead, each recorded, none by
+the builder, in this order:
 
-1. After LS1.2 reads DISTILLED: copy the two nets to `ste_provisional/skill_nets/<date>_ls1_<side>/` (C9), add them to
-   `ste_provisional/SHA256SUMS`, fill their sha256 into `configs/ste_ls1/heads_gates.toml` `[learner.skill_net]`, run
-   the net ceiling (M4-T3) and fill `skills_reach_min`, then hash the file.
-2. The pointers: the README row of the two review reports ("the builder's task plan (to be written)") and workflow v3
+1. **Before LS1.5:** record `configs/ste_ls1/cells.toml`'s sha256 and hash `configs/ste_ls1/calibration.toml` (M1-T7),
+   before any run (OA-9).
+2. **After LS1.0 (the smoke):** set `--min-s` for LS1.1 and LS1.2 from the smoke's timings (`fit_report.json`
+   `rounds[].seconds` and `final.game_steps_per_s`; `layout.json` `batches[].seconds`), as workflow §5 says, and
+   record them.
+3. **After LS1.5 and the owner's limits (R38):** fill `configs/ste_ls1/distil_gates.toml` with the owner's `[limits]`,
+   `[controls]` `permuted_min_miss_cells` and `unfitted_min_miss_cells` and the seven `near_miss` values (the four
+   switch keys each in its player's unit), with the owner's yes to `[read] alpha`, `interval` and `correction` (OA-5)
+   and to the `[stop]` text (OQ-2); QC reads it; hash it before LS1.1 (workflow §5 row "Gate file written and
+   hashed").
+4. **After LS1.2 reads DISTILLED on both sides:** copy the two nets to `ste_provisional/skill_nets/<date>_ls1_<side>/`
+   (C9), add them to `ste_provisional/SHA256SUMS`, fill their sha256 into `configs/ste_ls1/heads_gates.toml`
+   `[learner.skill_net]`, run the net ceiling (M4-T3) and fill `skills_reach_min`.
+5. **After the owner sets the LS1.4 margin (R38) and answers OQ-1:** fill `heads_gates.toml` `[reading]`
+   (`margin_pooled`, `margin_cell` and the rest), then hash `heads_gates.toml` and `skills_seed2_gates.toml` together
+   with the reading rule, before LS1.4-P (workflow §6 first row; OA-9).
+6. **R1 (after LS1.2 and LS1.6):** `records/<date>_ste_ls1_distil_record.md`, the ledger rows and two reviewers
+   (workflow §5 row R1).
+7. **LS1.4-X (after the runs, M3):** run `ste_l6_export.py --run-dir <run>` for every route 3 run of record and record
+   its fresh-process reload (workflow §6 row LS1.4-X; tested by M4-T7, run here).
+8. **R2 (after LS1.4):** `ste_ls1_read.py`, the record, the ledger rows and two reviewers (workflow §6 row R2).
+9. The pointers: the README row of the two review reports ("the builder's task plan (to be written)") and workflow v3
    line 1 (it names the bridge plan as the task-level plan) are pointed at this file.
-3. R45's writer's task (the route page, its figures and the slides redrawn for R39 to R41; workflow §8 item 6) runs
-   beside the build; no task here touches it.
-4. `[verdict] follow_up_seeds` (required by `ste/exploit.py:80`, read by nothing in `source/` or `scripts/`, review B
-   finding 10) is copied unchanged into both LS1.4 gate files.
+10. R45's writer's task (the route page, its figures and the slides redrawn for R39 to R41; workflow §8 item 6) runs
+    beside the build; no task here touches it.
+11. `[verdict] follow_up_seeds` (required by `ste/exploit.py:80`, read by nothing in `source/` or `scripts/`, review B
+    finding 10) is copied unchanged into both LS1.4 gate files.
 
 ## 8. Open points the builder must NOT decide (for the lead; recommendation last)
+
+**Questions for the owner (R2; the lead brings each with its cost and a recommendation; the builder never decides
+them, and the lead does not either)**
+- **OQ-1 The LS1.4 run 0s and asks, before M4 starts (R2 OA-1; OP-28, OP-29, W1).** (A) one run 0 per arm, as
+  workflow v3 §6 says: the Strike read is n = 1 per arm, M4-T1b is not built; (B) a run 0 per Strike seed: M4-T1b
+  built, one more route 3 job (+0.4 or +0.6 GPU-h), the Strike read n = 2 per arm. And the asks: 0.4 GPU-h per
+  training job (workflow §6; sum 3.9 under A, 4.3 under B) cannot reach route 2's 550 M game-steps (W1), so the pilot
+  check (M4-T2) would refuse those launches; 0.6 per job reaches them but the asks sum to 5.5 under A and 6.1 under B,
+  above the 4.0 task cap (R43), with only each launch's used + ask binding and the expected use about 2.5 to 2.8.
+  *Recommend* A with 0.6 asks, the lead asking again before any launch that would take used + ask over 4.0. **M4 is
+  built for A until he answers; no LS1.4 GPU job is launched before he does.**
+- **OQ-2 Two of workflow §5's stop rules the code cannot keep, before M2-T1 hashes `[stop]` (R2 RC-3, OA-7; OP-14,
+  OP-35).** The one fix round cannot add inputs (they need a new network build, section 7 row A F1), and "DISTILLED on
+  one side only: that side may go on" needs a gate-file variant (section 7, last row). The owner acknowledges the
+  shorter pre-registered text, or names the later build that keeps either rule. The likeliest NOT DISTILLED (review
+  A F1: the converge skill's least covered state) is the one added inputs would address, so the owner hears that too.
+  *Recommend* acknowledging both, with added inputs a named later build if the first fit fails.
+- **OQ-3 With the limits after LS1.5 (R38; workflow §8 item 3), the owner also sets or confirms (R2 OA-3, OA-5,
+  OA-6):** `[read] alpha` (PROPOSED 0.05), the interval method and the correction over cells (OP-11: Newcombe paired
+  hybrid, Bonferroni over a side's gated cells, the pooled row at plain alpha); `permuted_min_miss_cells` from the
+  LS1.5 permuted-scripts read (M1-T7); `unfitted_min_miss_cells`, a threshold with no data behind it; and the seven
+  near-miss values (`bias`, `rotate_deg`, `noise` and the four switch values, each in its player's unit).
+- **OQ-4 The LS1.6 game count, before M3-T6 builds its pick rule (R2 RC-5, OA-8; OP-27, W4).** Workflow §5 says 3 to 6
+  games per side at 0.1 GPU-h; the unmeasured estimate puts 12 trajectories (3 per side, both arms) at 0.18 to 0.24
+  GPU-h. The plan keeps the cap and cuts picks, never below one fixed and one mixed game per side
+  (`MIN_PICKS_PER_SIDE = 2`); the measured `--plan-only` figure, with how many games per side fit, goes to the owner
+  before LS1.6 is launched, and if even the minimum does not fit, the owner decides (a cap change or fewer clips).
 
 **Before M1**
 - **OP-1 Phase key.** (a) `"LS1"` / `[budget_ls1]` as workflow v3 (a later stage needs `phases = ["LS1", "LS2"]` and
@@ -1347,9 +1580,11 @@ restart is not counted twice). The caps are the owner's (R38, R43); the lead nev
 - **OP-2 Where the game-file sha is refused.** (a) In `exploit.load_gates` when the source is net (reads the `.pt`;
   breaks the `FILL_` template); (b) a factory argument at 12 call sites; (c) constants in the factory, file sha in
   each driver's preflight via `net_problems`. *Recommend (c)* (as planned, C5).
-- **OP-3 Status lines.** Route 3 only, or every section not closed. *Recommend every open section, in-work first.*
-- **OP-4 `carry --section`.** *Recommend yes* (two machines share the 200 GPU-h); else route 3 hours from the other
-  machine cannot be carried (`scripts/ste_job.py:165`).
+- **OP-3 Status lines.** Route 3 only, or every section not closed. *Recommend the in-work line plus route 3's only*
+  (R2 OA-10: R43 asks for the route's hours; every open section only if the owner asks); M1-T2 is written so.
+- **OP-4 `carry --section`.** **Built in M1-T2** (R2 OA-10): R39's reading promises the route's hours on every status,
+  and without it route 3 hours from the other machine cannot be carried (`scripts/ste_job.py:165`). The lead may still
+  reverse it before M1-T2.
 - **OP-5 Zeroed inputs.** Workflow's four (6, 7, 10, 11) or every input no script reads (scout: also own vz 5, every
   slot's relative z and vz; per team more). *Recommend the four*, as a `[net]` key so a fix round can change it.
 - **OP-6 Slot one-hot width.** The team's pad (5/3) or the team size. *Recommend the pad*; team size pinned apart.
@@ -1361,10 +1596,6 @@ restart is not counted twice). The caps are the owner's (R38, R43); the lead nev
 - **OP-10 Perturbed channels.** *Recommend* noise on all 4 channels as the main ladder plus one active-only arm; bias
   on xy (a constant drift, the near miss of workflow §5), and on the zero-command skill's cells xy as its finer ladder;
   scale on xyz; turn on xy (vz and yaw rate act on the game, `core/game.py:271, 290-292`).
-- **OP-11 Interval and correction.** Newcombe paired hybrid / Wald with continuity / exact conditional; Bonferroni /
-  Holm / max-|z|; fixed and mixed cells one family or two. *Recommend* Newcombe, Bonferroni over all gated cells of a
-  side, the pooled row at plain alpha; decidable after LS1.5 since b, c, n are stored. M1-T7 builds Newcombe with a
-  worked example (B-5); another method, if chosen, is added with its own worked numbers before the gate is hashed.
 - **OP-12 Where the statistics live.** `ste/cells.py` (planned; no new module) or a fourth module `ste/paired.py`
   (workflow's table names three). *Recommend `cells.py`.*
 - **OP-13 Limits before R38.** `FILL_` strings refused outside `--smoke` (planned); a separate smoke gate file; keys
@@ -1376,9 +1607,15 @@ restart is not counted twice). The caps are the owner's (R38, R43); the lead nev
   (the labels are in its committed lines).
 
 **Before M2**
+- **OP-11 Interval and correction (moved here from "Before M1", R2 RC-1).** Newcombe paired hybrid / Wald with
+  continuity / exact conditional; Bonferroni / Holm / max-|z|; fixed and mixed cells one family or two. *Recommend*
+  Newcombe, Bonferroni over all gated cells of a side, the pooled row at plain alpha (the z rule of C7). M1-T7 builds
+  Newcombe and `adjusted_z` with a worked example (B-5) and reports both z; **settled before M2-T1** (its keys `[read]
+  interval` and `correction` accept only the settled method, and M2-T5/M2-T6 tests pin it), and confirmed by the
+  owner with the limits (OQ-3). Another method, if chosen, is added to M1-T7 with its own worked numbers before M2.
 - **OP-14 Review A items workflow v3 did not adopt.** Engineered inputs (A F1), final distance to the zone (A F2), a gate
   cell starting with a drone removed (A F6). *Recommend:* inputs not in LS1 (they need a new build, section 7 row
-  A F1; the fix round cannot add them from the gate file); distance as INFO in the read if cheap; the removed-drone
+  A F1; the fix round cannot add them from the gate file; the owner acknowledges this at OQ-2); distance as INFO in the read if cheap; the removed-drone
   cell needs the owner (it changes the read's cells).
 - **OP-15 The LS1.0 smoke.** `[smoke]` table and `--smoke` (planned, labelled not of record); size flags; a second file.
   *Recommend the table.*
@@ -1393,7 +1630,8 @@ restart is not counted twice). The caps are the owner's (R38, R43); the lead nev
 - **OP-20 Cells and n of controls C4 to C7.** All gated cells (about 4 x 150 cell-plays more per side), fixed only, or
   fixed plus a few mixed. *Recommend fixed plus a few mixed at 1,000 games, cost stated.*
 - **OP-21 N of "at least N cells miss".** An owner key with the limits, the read checking the permuted scripts reach
-  it; or derived in the read from T44. *Recommend the owner key.*
+  it; or derived in the read from T44. *Recommend the owner key*, set from LS1.5's permuted-scripts read (M1-T7, the
+  permutation in `cells.toml`, R2 OA-6); the unfitted-net N has no such read (OQ-3).
 - **OP-22 Rows with a mate absent.** Quota on kept rows (planned; natural share 22–27 % already) or dropped; scheduled
   drop-outs (`core/game.py:250`). *Recommend the quota, no scheduled drop-outs.*
 
@@ -1410,19 +1648,21 @@ restart is not counted twice). The caps are the owner's (R38, R43); the lead nev
   lowest c game), the mixed cell with the most flips (lowest changed game), filled to 3 with an agreeing game; both
   arms each. L5's cost constants (`scripts/ste_l5_clips3d.py:105-110`) give an ask near 0.18 to 0.24 GPU-h for 12
   trajectories (scout and architect arithmetic, unmeasured) against the 0.1 cap. *Recommend* `--plan-only` first; if
-  above 0.1, fewer picks per side until the ask is ≤ 0.1; the cap is the owner's and is not moved (F4). **Confirmed
-  before M3-T6 starts** (its `test_the_pick_rule` pins the rule, B-5).
+  above 0.1, fewer picks per side until the ask is ≤ 0.1, never below `MIN_PICKS_PER_SIDE` (M3-T6); the cap is the
+  owner's and is not moved (F4); the shrinking game count goes to the owner (OQ-4). **Confirmed before M3-T6 starts**
+  (its `test_the_pick_rule` pins the rule, B-5).
 
 **Before M4**
-- **OP-28 LS1.4 asks.** 0.4 per training job (workflow §6) cannot reach 550 M game-steps (section 9, W1). *Recommend*
-  asks of at least 0.6 per job, every run 0 at the same cap as its Strike runs (`ste/exploit.py:974-975`); the sum of
-  asks is then 6.1 GPU-h under OP-29 B (5.5 under A; section 6's LS1.4 table, 16 jobs under B) against the 4.0 cap row, but
-  `check_launch` counts used hours (`ste/budget.py:262-270`) and the expected use is about 2.5 to 2.8; the lead asks
-  the owner before any launch whose ask would take used + ask over 4.0 (F4).
-- **OP-29 Run 0 seeds.** One `train_seed` per gate file (`scripts/ste_exploit_l012.py:976`): (A) one run 0 per arm, the
-  Strike read n = 1 per arm; (B) M4-T1b, a run 0 per seed variant (+0.3 to 0.4 GPU-h); (C) one heads gate file per
-  seed. *Recommend B* (owner's call: cost). **Confirmed before M4 starts** (B-3): M4 is written in B; choosing A
-  deletes M4-T1b and two keys from M4-T4 (section 5's start condition).
+- **OP-28 LS1.4 asks: the owner's, at OQ-1 (R2 OA-1).** 0.4 per training job (workflow §6) cannot reach 550 M
+  game-steps (section 9, W1). The lead's recommendation to the owner: asks of at least 0.6 per job, every run 0 at the
+  same cap as its Strike runs (`ste/exploit.py:974-975`); the sum of asks is then 5.5 GPU-h under A (6.1 under B;
+  section 6's LS1.4 table) against the 4.0 cap row, but `check_launch` counts used hours (`ste/budget.py:262-270`) and
+  the expected use is about 2.5 to 2.8. Not a lead default: no LS1.4 GPU job is launched before the owner answers.
+- **OP-29 Run 0 seeds: the owner's, at OQ-1 (R2 OA-1).** One `train_seed` per gate file
+  (`scripts/ste_exploit_l012.py:976`): (A) one run 0 per arm, the Strike read n = 1 per arm (workflow v3 §6, "One run 0
+  serves both Strike seeds"); (B) M4-T1b, a run 0 per seed variant (+0.4 or +0.6 GPU-h); (C) one heads gate file per
+  seed. M4 is written for A and builds A until the owner answers; choosing B adds M4-T1b and two keys to M4-T4 (section
+  5's opening).
 - **OP-30 The Guard score.** (a) Final INFO batch, pooled and per cell, paired per start, with the last-three curve
   mean as INFO; (b) the last-three `curve.json` mean (256 games, curve starts, one opponent, not paired); (c) a new
   driver option saving checkpoints or INFO batches at the last three reads (route 2 seed 1 re-run). *Recommend (a)*,
@@ -1438,7 +1678,7 @@ restart is not counted twice). The caps are the owner's (R38, R43); the lead nev
 - **OP-34 Δ of the Strike run 0 read** (one cell, counts only). *Recommend `margin_cell`.*
 - **OP-35 Both sides required in `[learner.skill_net]`.** *Recommend both* (LS1.4 starts after DISTILLED on both).
   Consequence (C7): workflow §5's "DISTILLED on one side only: that side may go on" is not possible in LS1 without a
-  gate-file variant (section 7); the lead decides one if it arises.
+  gate-file variant (section 7); the lead decides one if it arises, after the owner's acknowledgment at OQ-2.
 
 **Choices this plan made that differ from a scout or from workflow v3's file table (the lead confirms or reverses)**
 - **OP-36 The alive rule inside `SkillNet.forward` and the ONNX graph** (C2). The M3 scout recommended it outside the
@@ -1451,6 +1691,14 @@ restart is not counted twice). The caps are the owner's (R38, R43); the lead nev
   LS1.5, so the calibration would run on an unhashed file). *Recommend the two files.*
 - **OP-38 LS1.6 "beside":** two clips per pick shown side by side on the record page (planned; no new compositing) or
   one composited frame (new code in the renderer). *Recommend two clips.*
+- **OP-41 The reading of R38 in the tests (R2 RC-2, OA-4, B8; constraint 5).** Verdict-arithmetic tests use the
+  synthetic `STAND_IN` (off the 0.001 grid, never a typed PROPOSED value); the committed files' own limits and margins
+  run through the rule in `test_the_committed_limits_run_through_the_rule` (M2-T5) and
+  `test_the_committed_margins_run_through_the_rule` (M4-T5), skipped while `FILL_`. *Recommend as planned*; the lead
+  confirms this reading before M2-T5.
+- **OP-42 `[reading]` in the test helpers (R2 B2).** One helper `tests/_ste_ls1.net_gates_text` with a module flag that
+  M4-T1 turns on (planned; `load_gates` refuses the section until M4-T1), or move the `[reading]` requirement from
+  `load_gates` to the driver preflight and the reader (undoes round 1's C4/F8). *Recommend the flag.*
 - **OP-39 The statistics and the near-miss players land in M1** (C7, M1-T6) although workflow §4 lists the
   equivalence read in M2, so the calibration and the gate share one ruler. *Recommend as planned.*
 
@@ -1511,7 +1759,8 @@ restart is not counted twice). The caps are the owner's (R38, R43); the lead nev
 
 **Re-read for review round 1 (same commit):** `ste/export.py:37, 133, 173, 240-292` (route derived by reverse lookup
 at `:248`, tested at `:261` and `:287`) and every consumer of `SCHEMAS` and of the returned `route`
-(`scripts/ste_l6_read.py:61, 284`; `tests/test_ste_l3_run0.py:207`, `tests/test_ste_l5_clips3d.py:76`; no test asserts
+(`scripts/ste_l6_read.py:61, 284`, the only reader of the returned route besides `reload_check`'s callers in
+`tests/test_ste_l3_export.py`; no test reads `export.SCHEMAS`, R2 CA-5; no test asserts
 the unknown-schema message); `ste/budget.py:255-271`; `ste/config.py:160-200`; `ste/run_contract.py:165-195`;
 `ste/post_run.py:60-100`; `ste/jobs.py:34`; `ste/exploit.py:69-70, 80, 108, 200-220, 920-980`;
 `scripts/ste_exploit_l012.py:84-96, 190-250, 258-270, 791-810, 970-980, 1120-1126, 1280-1332`;
@@ -1522,6 +1771,18 @@ the unknown-schema message); `ste/budget.py:255-271`; `ste/config.py:160-200`; `
 `scripts/ste_cross_tag_l012d.py:205, 252`; `tests/test_ste_l3_export.py:29`, `ste/exploit_train.py:381`; workflow v3
 §5 (`:175-198`) and §6 (`:200-240`). M1-T7's worked interval numbers: architect-computed (Newcombe 1998 hybrid score,
 no continuity correction), not yet re-derived by a reviewer.
+
+**Re-read for review round 2 (same commit):** `scripts/ste_exploit_l012.py:84-96, 160-185, 258-272` (`require_wired`
+by `choice` only; the 0-GPU-h refusal on a cuda gate file; `require_wired` in `main` before `preflight`; no check of
+`[run] task` against the launched task); `tests/test_ste_l3_export.py:14-48` (`importorskip("onnxruntime")` at `:17`;
+`tiny_learner` returns `(gates, learner)`); a grep of `two_level_dispatch(` (12 calls in 9 files);
+`scripts/ste_tier2_l013.py` (`T.load_gates`); `ste/tier2_train.py:138-146`; `ste/scoring.py:160-170`;
+`ste/exploit.py:50-58, 150-158, 700-740`; `viz/replay3d.py:30-35`; `tests/test_ste_literals.py:55-75`;
+`core/observations.py:15-20`; `core/game_config.py:398-406`; `opponents/scripted.py:16, 30-40, 125, 175, 382, 421`;
+`configs/ste_l3/skills_gates.toml` `[players]`; `scripts/ste_l3_run0_ceiling.py:240-246`;
+`tests/test_ste_l3_run0.py:205-209`, `tests/test_ste_l5_clips3d.py:74-78` and a grep of `SCHEMAS` in `tests/`;
+`ste/budget.py` (`log_carried(budget, …)` takes any section, `:206`); `scripts/ste_job.py:40-55, 160-180`;
+workflow v3 §5, §6 and §8 (`:145-240, :269-283`).
 
 **Read by the scouts only (file:line as they reported, two scouts agreeing where both read it):** the rest of
 `ste/exploit.py`, `ste/exploit_train.py`, `ste/export.py`, `scripts/ste_exploit_l012.py`, `ste/scoring.py`,

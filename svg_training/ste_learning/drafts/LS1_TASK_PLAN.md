@@ -496,8 +496,10 @@ Lets run: the calibration read LS1.5. Stands alone on today's `development`.
   limits, R2 OA-6; the read takes it through `cells_sha256`);
   `[info_opponents] strike = ["guard_mark_inside"]`, `guard = []`; `[read] games_per_cell = 1000` (**the one place
   the cell size is written**, B-6: the calibration and the equivalence read both take it from here through their
-  `cells_sha256` pin, so the owner's limits are set on the gate's own n; alpha is not needed to match, because b, c
-  and n are stored and an interval at any alpha is recomputed without a replay).
+  `cells_sha256` pin, so the owner's limits are set on the gate's own n; b, c and n are stored, so an interval at any
+  alpha is recomputed without a replay, and the gate's `[read] alpha` must equal `calibration.toml [intervals] alpha`
+  unless the lead recomputes LS1.5's intervals at the gate's alpha before the owner sets the limits (M2-T1 test,
+  section 7 lead step 3; R2 RC-1)).
   `calibration.toml`: `[noise] sizes`, `channels`, `active_only_arm`, `seed`; `[bias] sizes`, `channels`,
   `zero_skill_sizes` (C1: the xy ladder on every cell, and a finer ladder played only on the fixed cells of the
   zero-command skill, so the owner can set `cmd_zero_skill_max_abs` from the read); `[scale] size`, `channels`; `[turn]
@@ -587,7 +589,10 @@ Lets run: LS1.0 (smoke), LS1.1 (distil, GPU), LS1.2 (equivalence read, CPU). Nee
     `cells.toml [read] games_per_cell`, OP-20, the one ruler); no `games_per_cell`: the read takes `cells.toml [read]
     games_per_cell` through `cells_sha256`, B-6; nor `ticks_cap`, `cap_check_every_ticks` or the seed: the read takes
     `gates.run["ticks_cap"]`, `gates.run["cap_check_every_ticks"]` and `ref.meta["seed"]` from the skills gate file it
-    pins, CA-3);
+    pins, CA-3). `near_miss_cells` (R2 OA-3): per side an explicit list of cells (`{codes = [...], opponent = "..."}`,
+    fixed cells by their code and mixed cells by their `cells.toml` combination) on which C6 and C7 play; the loader
+    refuses a list in which any near-miss arm of the side, each of the four switch players included, has no cell
+    where its code flies (an empty arm would pass the build and fail C6 at run time);
   - `[limits]` (owner, R38; `FILL_…` until set): `cmd_rmse_max`, `cmd_unused_max_abs`, `cmd_zero_skill_max_abs`,
     `flips_max_games`, `cell_margin`, `pooled_margin`, `end_time_gated` (bool), `end_time_max_ticks` (OP-18);
   - `[controls]` (the permutation itself is in `cells.toml [permutation]`, M1-T7, R2 OA-6) `permuted_min_miss_cells`,
@@ -612,7 +617,10 @@ Lets run: LS1.0 (smoke), LS1.1 (distil, GPU), LS1.2 (equivalence read, CPU). Nee
   and the four `near_miss.switch.<key>` by name, R2 OA-3); `test_the_near_miss_switch_names_one_value_per_moved_player`
   (exactly the four keys; each side's keys map to a player of that side's `[players]`);
   `test_the_read_alpha_and_method_are_the_built_ones` (`0 < alpha < 1`, `interval` and `correction` the accepted
-  strings); `test_the_mix_rules` (`uniform_share >= 0.5`; the three shares
+  strings; `alpha` equals `calibration.toml [intervals] alpha`, R2 RC-1);
+  `test_every_near_miss_arm_has_a_cell` (R2 OA-3: on the committed file each side's switch players each fly in at
+  least one `near_miss_cells` entry, and a `tmp_path` copy without the flank cells of the Strike list raises
+  `ValueError` naming `flank_margin_m`); `test_the_mix_rules` (`uniform_share >= 0.5`; the three shares
   sum to 1 by `math.isclose`; `script_share[0] == 1.0`; `hold == skills_gates.trainer["decision_ticks"]`);
   `test_the_seeds_are_new` (every seed ≠ 110000, ≠ 140001 and not among the other `configs/ste_*/*.toml` seeds, regex
   of `_seeds`, `tests/test_ste_l1side.py:366-368`, which `tests/test_ste_l19_l110.py` imports);
@@ -1474,7 +1482,7 @@ restart is not counted twice). The caps are the owner's (R38, R43); the lead nev
 
   At the workflow's 0.4 per training job the asks fit the 4.0 cap (3.9 under A; the workflow's own sum of 4.0 adds a
   0.1 spare), but a 0.4 h job cannot reach route 2's pinned 550 M game-steps (W1), so M4-T2's pilot check would refuse
-  the launch. At 0.6 the asks sum above 4.0 (5.5 under A, 6.1 under B), and only each launch's used + ask binds
+  the route 3 launches (route 2's seed-2 jobs would run short and be refused by the reader, W1). At 0.6 the asks sum above 4.0 (5.5 under A, 6.1 under B), and only each launch's used + ask binds
   (`check_launch`). Both the asks and A or B are put to the owner as one question before M4 starts (OQ-1); **no LS1.4
   GPU job is launched before he answers.** After that, the lead tracks used + the next ask before every LS1.4 launch
   and asks the owner before any launch whose ask would take the task over 4.0 (no launch is made to be refused).
@@ -1523,7 +1531,8 @@ the builder, in this order:
 3. **After LS1.5 and the owner's limits (R38):** fill `configs/ste_ls1/distil_gates.toml` with the owner's `[limits]`,
    `[controls]` `permuted_min_miss_cells` and `unfitted_min_miss_cells` and the seven `near_miss` values (the four
    switch keys each in its player's unit), with the owner's yes to `[read] alpha`, `interval` and `correction` (OA-5)
-   and to the `[stop]` text (OQ-2); QC reads it; hash it before LS1.1 (workflow §5 row "Gate file written and
+   and to the `[stop]` text (OQ-2); if the owner's alpha differs from `calibration.toml [intervals] alpha`, the lead
+   first recomputes LS1.5's intervals at it from the stored b, c, n (no replay) and brings those (R2 RC-1); QC reads it; hash it before LS1.1 (workflow §5 row "Gate file written and
    hashed").
 4. **After LS1.2 reads DISTILLED on both sides:** copy the two nets to `ste_provisional/skill_nets/<date>_ls1_<side>/`
    (C9), add them to `ste_provisional/SHA256SUMS`, fill their sha256 into `configs/ste_ls1/heads_gates.toml`
@@ -1553,6 +1562,9 @@ them, and the lead does not either)**
   training job (workflow §6; sum 3.9 under A, 4.3 under B) cannot reach route 2's 550 M game-steps (W1), so the pilot
   check (M4-T2) would refuse those launches; 0.6 per job reaches them but the asks sum to 5.5 under A and 6.1 under B,
   above the 4.0 task cap (R43), with only each launch's used + ask binding and the expected use about 2.5 to 2.8.
+  At 0.4 the route 3 jobs are refused at launch by the pilot check (M4-T2), and route 2's seed-2 jobs, which have no
+  such check, would run and end short of budget, then be refused by the reader (`scripts/ste_l6_read.py:228-229`,
+  W1): GPU-hours spent for no read.
   *Recommend* A with 0.6 asks, the lead asking again before any launch that would take used + ask over 4.0. **M4 is
   built for A until he answers; no LS1.4 GPU job is launched before he does.**
 - **OQ-2 Two of workflow §5's stop rules the code cannot keep, before M2-T1 hashes `[stop]` (R2 RC-3, OA-7; OP-14,

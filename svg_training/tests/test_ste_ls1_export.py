@@ -26,6 +26,12 @@ the team size, the game, the heads and flown codes exactly (scripts dispatch for
 the commands from the ONNX skill network on the flown codes (range-checked first), on both runtimes. A scripts team's
 export and reload are as before.
 
+LS1-M3-T4, ``ste_l6_export.py --skill-net`` (job LS1.3): ``export.golden_observations_cfg`` (no gate file; equal to
+``golden_observations``) and the command's stand-alone branch: the network's own game file and team sizes, its
+preflight (``--side`` given and the network's team, the game file's sha256, ``skill_net.net_problems``), the folder and
+its two controls (``ctl_net_equals_export``, ``ctl_reload_fresh_process``); refusals exit 2 (the parser's mutually
+exclusive group exits through SystemExit 2), a failed control exits 6.
+
 CPU only; needs onnxruntime (the file skips itself without it, as tests/test_ste_l3_export.py does)."""
 import json
 import sys
@@ -592,3 +598,107 @@ def test_a_drone_that_is_out_has_a_zero_command(route3_folder):
     commands = np.asarray([r["commands"] for r in data["skill_net_golden"]])                 # [G, M, K, 4]
     assert np.all(command[out] == 0.0) and np.all(commands[out] == 0.0)
     assert np.any(command[~out] != 0.0)
+
+
+# ------------------------------------------------------------------ LS1-M3-T4: ste_l6_export.py --skill-net (LS1.3)
+import ste_l6_read as reader  # noqa: E402  (its reload_in_a_fresh_process is the command's second control)
+
+CLI_GAMES = 3
+
+
+def _export_net(path, side, out, games=CLI_GAMES) -> int:
+    argv = ["--skill-net", str(path), "--out", str(out), "--games", str(games)]
+    return cli.main(argv + (["--side", side] if side is not None else []))
+
+
+def _resaved(net, meta, where, **changed) -> Path:
+    """``net`` saved again under ``where`` with its C3 meta (``skill_net.META_KEYS`` only) and ``changed`` values."""
+    path = Path(where) / f"skill_net_{net.team}.pt"
+    skill_net.save_skill_net(path, net, {**{k: meta[k] for k in skill_net.META_KEYS}, **changed})
+    return path
+
+
+def test_golden_observations_cfg_equals_golden_observations(two_level):
+    from svg_training.ste import sweep
+    _, gates, _ = two_level
+    guards, strikes = sweep.parse_size(gates.run["size"])
+    for variant in ("base", OTHER):
+        cfg = exploit.variant_cfg(gates, variant)
+        for side in ("guard", "strike"):
+            want = export.golden_observations(gates, side, games=3, seed=7, variant=variant)
+            assert torch.equal(export.golden_observations_cfg(cfg, guards, strikes, side, 3, 7), want), (variant, side)
+
+
+def test_the_skill_net_export_command_writes_a_reloading_folder(tiny_skill_net, tmp_path):
+    side, net, meta, path, sha, _ = tiny_skill_net
+    out = tmp_path / "export"
+    out.mkdir()
+    (out / "job.json").write_text("{}")                          # ste_job.py's own files do not count as an export
+    assert _export_net(path, side, out) == 0
+    controls = json.loads((out / "controls.json").read_text())
+    assert sorted(controls) == ["ctl_net_equals_export", "ctl_reload_fresh_process"]
+    assert all(c["status"] == "PASS" for c in controls.values()), controls
+    assert sorted(p.name for p in out.iterdir()) == ["controls.json", "interface.toml", "job.json",
+                                                     f"skill_net_{side}.onnx"]
+    data = tomllib.loads((out / "interface.toml").read_text())
+    assert data["policy_schema"] == export.SKILL_NET_SCHEMA and data["team"] == side
+    assert data["skill_net"]["net_sha256"] == sha == data["source_checkpoint_sha256"]
+    assert data["skill_net"]["net_file"] == export.repo_relative(path) == data["source_checkpoint"]
+    assert data["game_file"] == meta["game_file"] and data["game_sha256"] == meta["game_sha256"]
+    # the game file and the team sizes are the network's own (OP-26): the golden observations of its game
+    cfg = exploit.load_game_cfg_file(exploit.ROOT / meta["game_file"])
+    obs = export.golden_observations_cfg(cfg, meta["guards"], meta["strikes"], side, CLI_GAMES, export.GOLDEN_SEED)
+    golden = data["skill_net_golden"]
+    assert len(golden) == CLI_GAMES
+    assert np.asarray([r["obs"] for r in golden], dtype=np.float32).tobytes() == obs.numpy().tobytes()
+    assert export.reload_check(out)["ok"]
+
+
+def test_the_skill_net_export_refuses_exit_2(tiny_skill_net, tmp_path, capsys, monkeypatch):
+    side, net, meta, path, sha, _ = tiny_skill_net
+    other = "guard" if side == "strike" else "strike"
+
+    def refused(code, why, out):
+        assert code == 2
+        assert why in capsys.readouterr().err
+        assert not (out / "interface.toml").exists() and not (out / "controls.json").exists()
+
+    done = tmp_path / "done"
+    done.mkdir()
+    (done / "interface.toml").write_text("")
+    assert _export_net(path, side, done) == 2                                      # a finished --out
+    assert "holds an export already" in capsys.readouterr().err
+    refused(_export_net(path, None, tmp_path / "o1"), "--side", tmp_path / "o1")     # --skill-net without --side
+    refused(_export_net(path, other, tmp_path / "o2"), "team", tmp_path / "o2")      # the other team's side
+    refused(_export_net(tmp_path / "none.pt", side, tmp_path / "o3"), "no skill network file", tmp_path / "o3")
+    off_game = _resaved(net, meta, tmp_path / "off_game", game_sha256="0" * 64)      # the meta's game sha is off
+    refused(_export_net(off_game, side, tmp_path / "o4"), "game_sha256", tmp_path / "o4")
+    off_scripts = _resaved(net, meta, tmp_path / "off_scripts", scripted_sha256="0" * 64)   # skill_net.net_problems
+    refused(_export_net(off_scripts, side, tmp_path / "o5"), "scripted_sha256", tmp_path / "o5")
+    refused(cli.main(["--skill-net", str(path), "--side", side, "--out", str(tmp_path / "o6"), "--games", "0"]),
+            "--games", tmp_path / "o6")
+    for argv, why in (([  # both modes given, and neither: the parser's mutually exclusive, required group
+            "--skill-net", str(path), "--side", side, "--run-dir", str(tmp_path), "--out", str(tmp_path / "o7")],
+            "not allowed with"), (["--out", str(tmp_path / "o7")], "one of the arguments")):
+        with pytest.raises(SystemExit) as exc:
+            cli.main(argv)
+        assert exc.value.code == 2
+        assert why in capsys.readouterr().err
+    assert not (tmp_path / "o7").exists()
+
+    def no_runtime(folder):
+        raise reader.Refused("the reload check cannot run in this environment (no onnxruntime)")
+    monkeypatch.setattr(reader, "reload_in_a_fresh_process", no_runtime)    # the environment, not a failed control
+    assert _export_net(path, side, tmp_path / "o8") == 2
+    assert "cannot run in this environment" in capsys.readouterr().err
+    assert not (tmp_path / "o8" / "controls.json").exists()
+
+
+def test_a_failed_skill_net_control_exits_6(tiny_skill_net, tmp_path, monkeypatch):
+    side, net, meta, path, sha, _ = tiny_skill_net
+    monkeypatch.setattr(reader, "reload_in_a_fresh_process", lambda folder: {"ok": False, "error": "golden rows"})
+    assert _export_net(path, side, tmp_path / "out") == 6
+    controls = json.loads((tmp_path / "out" / "controls.json").read_text())
+    assert controls["ctl_reload_fresh_process"]["status"] == "FAIL"
+    assert controls["ctl_net_equals_export"]["status"] == "PASS"
+    assert "golden rows" in controls["ctl_reload_fresh_process"]["detail"]

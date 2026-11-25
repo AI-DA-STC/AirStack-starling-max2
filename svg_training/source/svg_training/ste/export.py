@@ -136,11 +136,17 @@ def golden_observations(gates, side: str, games: int = GOLDEN_GAMES, seed: int =
                         variant: str = "base") -> torch.Tensor:
     """Real observations of ``side`` [games, M, 71] after ``GOLDEN_TICKS`` ticks of scripted play in the game of the
     gate file's ``variant`` (CPU), where some drones may be out. The scripted players stay fixed."""
+    check_variant(gates, variant)
+    guards, strikes = sweep.parse_size(gates.run["size"])
+    return golden_observations_cfg(exploit.variant_cfg(gates, variant), guards, strikes, side, games, seed)
+
+
+def golden_observations_cfg(cfg, guards: int, strikes: int, side: str, games: int, seed: int) -> torch.Tensor:
+    """:func:`golden_observations` without a gate file: real observations of ``side`` [games, M, OBS_DIM] after
+    ``GOLDEN_TICKS`` ticks of scripted play in the game ``cfg`` with ``guards`` and ``strikes`` drones (CPU; a
+    stand-alone skill network export takes its game file and team sizes from the network's meta, LS1-M3-T4)."""
     from ..opponents.scripted import make_strategy
     from .exploit_train import TrainGame
-    check_variant(gates, variant)
-    cfg = exploit.variant_cfg(gates, variant)
-    guards, strikes = sweep.parse_size(gates.run["size"])
     game = TrainGame(cfg, games, guards, strikes, device="cpu", seed=seed)
     obs = game.reset()
     g = make_strategy("guard_mark_edge", "guard", cfg, games, "cpu", 0)

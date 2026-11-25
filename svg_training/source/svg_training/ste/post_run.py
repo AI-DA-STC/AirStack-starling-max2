@@ -101,6 +101,14 @@ def clips_complete(out: Path) -> bool:
         return False
 
 
+def _exit_code(folder: Path) -> int | None:
+    """The exit code a job's wrapper recorded in ``folder`` (``exit_code``), or None."""
+    try:
+        return int((folder / jobs.EXIT_FILE).read_text())
+    except (OSError, ValueError):
+        return None
+
+
 def preflight(log: Path) -> int:
     """``scripts/isaac_preflight.sh --approved-headless --allow-siblings``; its output to ``log``; its exit code (124 if
     it did not answer within PREFLIGHT_TIMEOUT_S)."""
@@ -158,6 +166,10 @@ def fire(run: Path, record: dict[str, Any], exit_code: int | None, say: Say) -> 
         return word
 
     if clips_complete(out):
+        drawn = _exit_code(out)
+        if drawn not in (None, 0):          # a clips job that finished with exit 1 or 3: its marker stays a failure
+            return mark(FAILED, f"{out / CLIPS_JSON} is complete but its clips job exited {drawn}; the clip script "
+                                f"refuses a finished folder: new clips need a new --out")
         return mark(SKIPPED, f"the 3-D clips are complete already ({out / CLIPS_JSON})")
     owners = jobs.owner_pause_lines()
     if owners:
@@ -207,11 +219,7 @@ def retry(run: Path, say: Say = print) -> int:
     if live is not None and Path(live["run_dir"]) == run and state.job_alive(live):
         say(f"refused: job {record['name']} is still {state.job_status(live)}")
         return EXIT_REFUSED
-    try:
-        exit_code: int | None = int((run / jobs.EXIT_FILE).read_text())
-    except (OSError, ValueError):
-        exit_code = None
-    word = fire(run, record, exit_code, say)
+    word = fire(run, record, _exit_code(run), say)
     return EXIT_DONE if word == LAUNCHED else EXIT_REFUSED
 
 

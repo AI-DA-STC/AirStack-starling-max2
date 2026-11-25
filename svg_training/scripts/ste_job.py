@@ -40,7 +40,7 @@ wait     blocks until the job has ended, prints one line
          recorded no exit code (own status 21).
          An unknown job name: status 22, nothing on stdout. The waiter's own failure (state.json unreadable): 23.
 status   one line per job: alive | alive (paused) | alive (wrapper gone) | dead | dead (previous boot), the exit code;
-         clips3d=<launched/running/pending/skipped/done/failed> for a run with a post-run clips marker.
+         clips3d=<running/pending/skipped/done/failed> for a run with a post-run clips marker.
          faults=<n> (in wait's line and in status) counts bookkeeping writes the wrapper had to retry (a full disk,
          any error): the job was not harmed by them; details in <run-dir>/job.json and job.log. A last line gives the
          budget section in work: used (this machine's ledger rows + carried hours) of its cap.

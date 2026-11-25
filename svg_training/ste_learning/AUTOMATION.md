@@ -79,7 +79,8 @@ All must hold:
 - `scripts/isaac_preflight.sh --approved-headless` exits 0 (`--allow-siblings` for sibling tasks only).
 - No open **owner** pause (he is using the PC: wait).
 - Disk free ≥ 50 GB.
-- Command: `unset PYTHONPATH`, `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True`, videos on, own run folder.
+- Command: `unset PYTHONPATH`, `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True`, videos on, own run folder;
+  an L5 training run also gets `--post-clips3d` on its `ste_job.py launch` line (its 3-D clips follow on their own, §7).
 
 **Solo vs side by side.** Short pilots and speed measurements (L0.2) run alone (starved runs say nothing). Multi-seed
 training shares (memory fraction set; ≥ 8 GB free; ≤ 3 GPU processes, PROPOSED). A solo task next to siblings: wait,

@@ -90,6 +90,22 @@ def test_both_routes_draw_the_recorded_key_games_into_videos3d_only(pooled_runs,
     assert len(fake_render) == 1 and len(fake_render[0]) == len(rep["picks"])
 
 
+def test_the_launchers_files_in_videos3d_do_not_disturb_the_clips(pooled_runs, tmp_path, fake_render,  # noqa: F811
+                                                                    small_settings):
+    """The post-run hook (ste/post_run.py) launches this script with its job folder = ``<run>/videos3d`` (the clips'
+    own folder): the launcher's and the hook's files are there before the script starts and must survive it."""
+    run = _copy(pooled_runs["guard"][1], tmp_path)
+    out = run / "videos3d"
+    out.mkdir()
+    seeded = {"job.json": "{}\n", "job.log": "[ste job] log\n", "heartbeat": "", "cmd.txt": "# launch 1\n",
+              "launches.jsonl": "{}\n", "HOOK_STATUS": "launched: job clips3d_x\n", "hook_preflight.txt": "ok\n"}
+    for name, text in seeded.items():
+        (out / name).write_text(text)
+    assert cli.main(["--run-dir", str(run), "--settings", small_settings]) == 0
+    assert {name: (out / name).read_text() for name in seeded} == seeded
+    assert json.loads((out / "clips3d.json").read_text())["complete"] is True
+
+
 def test_the_rule_on_the_driver_runs(pooled_runs):  # noqa: F811
     for side in ("guard", "strike"):
         d = cli.load_run(pooled_runs[side][1])

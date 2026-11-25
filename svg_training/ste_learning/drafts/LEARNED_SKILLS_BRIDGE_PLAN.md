@@ -4,8 +4,9 @@ INTERNAL · DRAFT plan for a third route of the STE learning track, the learned-
 
 Written 25 Nov 2026 by the lead (a Fable 5.2 session; the advisor tool was not available, so no second opinion yet).
 Not reviewed. Before any code: the owner's answers to 9.2 and 9.3 (given 25 Nov 2026, R36 and R37), then a design
-review by two reviewers (R22). **Corrections found against the code on 25 Nov 2026 are in
-[LS_EXECUTION_WORKFLOW.md](LS_EXECUTION_WORKFLOW.md) section 6 and take precedence over this file where they differ**
+review by two reviewers (R22). **Corrections found against the code on 25 Nov 2026 and the changes of R39 to R41 (no cap, the heads trained on the
+skill network, self-play before LS3) are in [LS_EXECUTION_WORKFLOW.md](LS_EXECUTION_WORKFLOW.md) (its section 8) and
+take precedence over this file where they differ**
 (the budget table, the cell count of section 8, the device of the equivalence read, the per-team skill network file,
 the noise-floor read, the clips).
 

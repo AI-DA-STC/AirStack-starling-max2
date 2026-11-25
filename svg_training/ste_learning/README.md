@@ -123,6 +123,15 @@ merge. The AirStack simulator runs the real PX4 code.
 
 Each result is reported as "observed in the training simulator" until it has flown.
 
+## Three routes
+
+![Three routes, one game: pure RL, the skills route and the learned-skills route share the game, the safety filter, the scoring and the export, and differ only in what turns a drone's view into a command](figures/ls_three_routes.png)
+
+Phase L3 built two ways of training a team: *pure RL*, where a network outputs the velocity, and the *skills route*,
+where learned heads choose which hand-written script flies. A third, the *learned-skills route*, was adopted on
+25 November 2026: the scripts are copied into one network per team, which is then trained, given skills no script has,
+and played in a league. It is a design, not yet built: [the learned-skills route](LEARNED_SKILLS_ROUTE.md).
+
 ## Phase L0, done
 
 ![Phase L0 by task, every task done, and the gate G0 that closed it](figures/l0_progress.png)
@@ -154,9 +163,10 @@ its task list, the questions it set out to answer and the review that shaped it,
 | 13 | [agents/](agents/) | the definitions of the agents named in HOW_THE_WORK_RUNS |
 | — | [L0_HISTORY.md](L0_HISTORY.md) | phase L0's task list and the review that shaped it, kept for the record |
 | — | [G0_REPORT.md](G0_REPORT.md), [G0_DECISION.md](G0_DECISION.md) | gate G0: the report on L0's results, and the decision page |
+| — | [LEARNED_SKILLS_ROUTE.md](LEARNED_SKILLS_ROUTE.md) | the learned-skills route, the third route (adopted 25 November 2026): its stages, how a new team strategy appears, how a trained team is used; slides in [figures/learned_skills_route.pptx](figures/learned_skills_route.pptx) |
 | — | [CRAZYFLIE_ROUTE.md](CRAZYFLIE_ROUTE.md) | task L0.14: could the game be flown on the lab's Crazyflies |
 | — | [GAME_SPEC.md](GAME_SPEC.md) | the game spec sheet: every value of the game the track trains, with its status and source (task L0.8); the same values in `configs/ste_game.toml` |
-| — | [figures/](figures/) | the flowcharts, drawn by [make_ste_learning_figures.py](../scripts/make_ste_learning_figures.py), and the L0.14 figures |
+| — | [figures/](figures/) | the flowcharts, drawn by [make_ste_learning_figures.py](../scripts/make_ste_learning_figures.py); the L0.14 figures; the learned-skills slides and their pictures, drawn by [make_ste_learned_skills_deck.py](../scripts/make_ste_learned_skills_deck.py) |
 
 PLAN.md wins where it and a reference page (5 to 10) differ. [drafts/](drafts/README.md) holds the pre-registered specs that runs and
 tests read; superseded pages are in [archive/](archive/README.md).

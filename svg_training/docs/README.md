@@ -71,6 +71,7 @@ The pages most often needed:
 | [../ste_learning/status/STATUS_LATEST.md](../ste_learning/status/STATUS_LATEST.md) | **Internal.** Where each task stands today; history in [LOG.md](../ste_learning/status/LOG.md) |
 | [../ste_learning/GAME_SPEC.md](../ste_learning/GAME_SPEC.md) | **Internal.** Every value of STE's game with its label and source |
 | [../ste_learning/G0_REPORT.md](../ste_learning/G0_REPORT.md), [../ste_learning/G0_DECISION.md](../ste_learning/G0_DECISION.md) | **Internal.** What phase L0 found and what the owner ruled at gate G0 (22 November 2026) |
+| [../ste_learning/LEARNED_SKILLS_ROUTE.md](../ste_learning/LEARNED_SKILLS_ROUTE.md) | **Read.** The learned-skills route, the third route (adopted 25 November 2026): stages, how a new team strategy appears, how a trained team is used; slides in [learned_skills_route.pptx](../ste_learning/figures/learned_skills_route.pptx) |
 | [../ste_learning/PLAN.md](../ste_learning/PLAN.md) | **Internal.** The master plan: phases L0 to L9 with their tasks and gates |
 | [../ste_learning/DISCUSSION_2026-11-19_20.md](../ste_learning/DISCUSSION_2026-11-19_20.md) | **Internal.** The record of the discussion that set the direction (decisions D1 to D9, questions P1 to P13, the G0 rulings in §14) |
 | [../ste_learning/HOW_THE_WORK_RUNS.md](../ste_learning/HOW_THE_WORK_RUNS.md), [../ste_learning/L0_HISTORY.md](../ste_learning/L0_HISTORY.md) | **Internal.** How a task moves through the team and the gates; phase L0 step by step |

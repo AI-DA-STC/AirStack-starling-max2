@@ -58,3 +58,29 @@ def test_trained_capture_skips_unfinished_kept_games_only_when_asked(setup):
     still = make_strategy("strike_straight", "strike", cfg, N, "cpu", 7)
     with pytest.raises(RuntimeError, match="did not finish"):
         r3.capture_trained(cfg, "3v3", ref, cells, N, "cpu", int(ref.meta["seed"]), 2, still, 12, [0])
+
+
+def test_capture_with_players_equals_play_cells_with_players():
+    """LS1-M3-T5: ``capture_trained`` passes named ``players`` through to both teams' split as ``play_cells`` does
+    (no learner when no cell names the exploiter). A script flown under a prefixed name equals the same script by
+    name."""
+    gates = exploit.load_gates()
+    ref = exploit.load_reference(exploit.ROOT / gates.reference["file"])
+    cfg = exploit.variant_cfg(gates, "base")
+    seed = int(ref.meta["seed"])
+    cells = [("guard_mark_edge", "scr:strike_flank"), ("guard_mark_edge", "strike_flank")]
+
+    def named():                                                  # one object per call: a player keeps state
+        return {"scr:strike_flank": make_strategy("strike_flank", "strike", cfg, N, "cpu",
+                                                  seed + exploit.STRIKE_SEED_OFFSET)}
+
+    keep = [0, N]                                                 # game 0 of each cell
+    cap = r3.capture_trained(cfg, "3v3", ref, cells, N, "cpu", seed, TICKS, None, 1, keep, players=named())
+    oracle = exploit.play_cells(cfg, "3v3", ref, cells, N, "cpu", seed, TICKS, learner=None, hold_ticks=1,
+                                players=named())
+    for key in ("outcome", "end_step", "tags", "strikes_left", "start_pos_m", "closest_3d_m"):
+        np.testing.assert_array_equal(cap.per_game[key], oracle[key], err_msg=key)
+        a = np.asarray(cap.per_game[key])
+        np.testing.assert_array_equal(a[:N], a[N:2 * N], err_msg=f"{key}: the named cell and the script's cell")
+    assert cap.trajectories[0].end_step == cap.trajectories[1].end_step
+    np.testing.assert_array_equal(cap.trajectories[0].pos_m, cap.trajectories[1].pos_m)

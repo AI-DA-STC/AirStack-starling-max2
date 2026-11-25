@@ -196,17 +196,18 @@ def capture_batch(cfg: GameCfg, size: str, cells: tuple, run: dict, keep: list[i
 
 
 def capture_trained(cfg: GameCfg, size: str, ref, cells: list, n: int, device: str, seed: int, ticks_cap: int,
-                    learner, hold_ticks: int, keep: list[int]) -> Capture:
+                    learner, hold_ticks: int, keep: list[int], players: dict | None = None) -> Capture:
     """Play an L0.12 evaluation batch as ``exploit.play_cells`` does (T44's first ``n`` starts, the same cells, the
     learner behind every exploiter cell held ``hold_ticks`` ticks, mean actions) and keep every step of the games
-    ``keep``. Refuses a game where a tagged Guard may survive."""
+    ``keep``. Refuses a game where a tagged Guard may survive. ``players``: more players by cell name, each held like
+    the learner, as ``play_cells`` takes them (LS1.6); ``learner`` may be None when no cell names the exploiter."""
     _refuse_surviving_guard(cfg)
     guards, strikes = sweep.parse_size(size)
     starts = torch.as_tensor(ref.starts_m[:n])
     miss = torch.as_tensor(ref.start_miss[:n])
     game = _CaptureFixedGame(cfg, len(cells), starts, miss, guards, strikes, device, seed, keep=list(keep))
-    g = exploit._team_split(cells, "guard", cfg, n, device, seed, learner, hold_ticks)
-    s = exploit._team_split(cells, "strike", cfg, n, device, seed, learner, hold_ticks)
+    g = exploit._team_split(cells, "guard", cfg, n, device, seed, learner, hold_ticks, players)
+    s = exploit._team_split(cells, "strike", cfg, n, device, seed, learner, hold_ticks, players)
     res = play_match(game, g, s, max_steps=int(ticks_cap))
     return _collect(game, res, cfg, guards, strikes, keep, int(ticks_cap), len(cells) * n)
 

@@ -35,8 +35,8 @@ note disagree, this file wins.
   `scripts/ste_l5_clips3d.py` is launched by hand per finished run); the stale "0.90" in the error string of
   `scripts/ste_exploit_l012.py` (~line 188; shown only when a skills gate file has no mark; left so the driver's code
   stamp did not change mid-route); `scripts/ste_job.py status` prints only `budget_l1_l2`, not `[budget_l3_l4_l5_l6]`
-  (tonight's L3–L6 hours were summed from `runs/shared/gpu_hours.log`). Keep the worktree `~/AirStack-starling-max2-run0mark`:
-  the ceiling of record and its oracle check (T79) live in its `runs/`.
+  (tonight's L3–L6 hours were summed from `runs/shared/gpu_hours.log`). The ceiling of record and its oracle check
+  (T79) now live in the dev worktree's `runs/`: the run0mark worktree was folded in and removed on 25 Nov (owner).
 - **Main track:** L3–L6 pipeline check done · **Side track:** the automatic 3-D clip hook (owed).
 - **Waiting on the owner:** the read of the pipeline check (which route(s) next, budget; L7 is the owner's gate); the
   planned-pushes flight NEAR-962; the Crazyflie commanded gaps. Nothing is running.

@@ -409,4 +409,5 @@ workstation's absolute paths, as earlier records' evidence does):
 - `gifs3d/` (two 3-D GIFs and their `clips3d.json`).
 
 Run folders (not in git): `runs/2026-11-25_ste_l3_*`, `..._l41_*`, `..._l42_*`, `..._l5_*`, `..._l54_*`, `..._l61_*`,
-`..._l62_*` in the dev worktree, and the ceiling and its oracle check in the run0mark worktree.
+`..._l62_*` in the dev worktree, and the ceiling and its oracle check in the run0mark worktree (copied, checksums
+matching, to the dev worktree's `runs/` under the same names on 25 Nov, when the run0mark worktree was removed).

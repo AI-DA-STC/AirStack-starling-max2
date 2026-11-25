@@ -25,7 +25,7 @@ from svg_training.core.observations import OBS_DIM
 from svg_training.core.rewards import GUARD_WIN, STRIKE_WIN
 from svg_training.opponents import perturbed
 from svg_training.opponents.scripted import REGISTRY
-from svg_training.ste import cells, distil, exploit, skills
+from svg_training.ste import cells, distil, exploit, skill_net, skills
 
 import _ste_ls1 as h
 from _ste_tools import SCRIPTS
@@ -199,6 +199,76 @@ def test_the_net_arm_command_carries_no_graph(g, side):
             player.reset(torch.ones(8, dtype=torch.bool))
             out = player.command(obs, player.choose(obs))
             assert out.shape == (8, spec.drones, 4) and not out.requires_grad and out.grad_fn is None, kind
+
+
+@pytest.mark.parametrize("side", SIDES)
+def test_the_error_accumulators_match_a_direct_recomputation(g, side):
+    """R1's command-error accumulators (the numbers cmd_rmse_max reads), no play: an unfitted net with the scripts as
+    labeller on real observations with out drones, a random code per drone; per code the sums of squares, max |error|,
+    rows and label max equal a direct recomputation on the live rows of first games, and the live-drone bins add up to
+    the totals. A game marked ended by ``reset`` is not counted afterwards."""
+    cfg, obs = h.team_obs(g.skills_gates, side, n=64, ticks=40)
+    spec = g.specs[side]
+    n, m = obs.shape[:2]
+    live = obs[..., skills._V.alive] > skills.ALIVE_FLAG_MIN
+    assert live.any() and (~live).any()
+    lists = (list(spec.players), list(spec.team_strategies), list(spec.drone_skills))
+    net = eq.unfitted_net(spec, g)
+    team = eq.recording_team(spec, cells.fixed_choices(spec)[0],
+                             skills.NetTwoLevelDispatch(side, *lists, cfg, n, "cpu", 0, net, None), "net:x",
+                             path_times_s=(0.0,), labeller=skills.TwoLevelDispatch(side, *lists, cfg, n, "cpu", 0))
+    scripts = skills.TwoLevelDispatch(side, *lists, cfg, n, "cpu", 0)
+    gen = torch.Generator().manual_seed(9)
+    team.reset(torch.ones(n, dtype=torch.bool))
+    ended = torch.zeros(n, dtype=torch.bool)
+    ended[: n // 4] = True
+    want = {s: {"sum_sq": torch.zeros(4, dtype=torch.float64), "max_abs": torch.zeros(4), "label": torch.zeros(4),
+                "count": 0, "nl_sq": torch.zeros(m, 4, dtype=torch.float64), "nl_n": torch.zeros(m, dtype=torch.long)}
+            for s in spec.players}
+    for step in range(2):
+        choice = torch.randint(len(spec.players), (n, m), generator=gen)
+        out = team.command(obs, choice)
+        flown = skill_net.one_code(net, obs, choice)
+        assert torch.equal(out, flown)
+        label = scripts.act(obs, choice)
+        rows = live & (~ended[:, None] if step else torch.ones_like(live))
+        n_live = live.sum(1).clamp(min=1)
+        for k, s in enumerate(spec.players):
+            mask = rows & (choice == k)
+            d = (flown - label)[mask]
+            w = want[s]
+            w["sum_sq"] += (d.double() ** 2).sum(0)
+            if mask.any():
+                w["max_abs"] = torch.maximum(w["max_abs"], d.abs().amax(0))
+                w["label"] = torch.maximum(w["label"], label[mask].abs().amax(0))
+            w["count"] += int(mask.sum())
+            for j in range(m):
+                sel = mask & (n_live == j + 1)[:, None]
+                w["nl_sq"][j] += ((flown - label)[sel].double() ** 2).sum(0)
+                w["nl_n"][j] += int(sel.sum())
+        team.reset(ended)                         # those games end now: their later rows are not counted
+    got = team.errors()
+    assert list(got) == list(spec.players)
+    for s in spec.players:
+        e, w = got[s], want[s]
+        assert e["count"] == w["count"] > 0 and sum(e["count_by_n_live"]) == e["count"]
+        assert torch.allclose(torch.tensor(e["sum_sq"], dtype=torch.float64), w["sum_sq"], rtol=1e-12, atol=0)
+        assert torch.equal(torch.tensor(e["max_abs"], dtype=torch.float32), w["max_abs"])
+        assert torch.equal(torch.tensor(e["label_max_abs"], dtype=torch.float32), w["label"])
+        assert e["count_by_n_live"] == w["nl_n"].tolist()
+        assert torch.allclose(torch.tensor(e["sum_sq_by_n_live"], dtype=torch.float64), w["nl_sq"], rtol=1e-12,
+                              atol=0)
+        assert torch.allclose(torch.tensor(e["sum_sq_by_n_live"], dtype=torch.float64).sum(0),
+                              torch.tensor(e["sum_sq"], dtype=torch.float64), rtol=1e-12, atol=0)
+    table = eq.error_table(got)
+    for s in spec.players:
+        t = table["skills"][s]
+        on = t["active"]
+        if any(on) and t["rows"]:
+            num = sum(v for row in got[s]["sum_sq_by_n_live"] for v, a in zip(row, on) if a)
+            pooled = math.sqrt(num / (t["rows"] * sum(on)))
+            parts = [(v, c) for v, c in zip(t["rmse_by_n_live"].values(), got[s]["count_by_n_live"]) if c]
+            assert math.isclose(math.sqrt(sum(v * v * c for v, c in parts) / t["rows"]), pooled, rel_tol=1e-9)
 
 
 def test_the_unfitted_net_is_the_fit_start(g):

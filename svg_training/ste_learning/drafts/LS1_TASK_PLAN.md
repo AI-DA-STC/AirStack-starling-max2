@@ -154,7 +154,7 @@ both arms: route 2's `skills_seed2` run 0 and, only under OP-29 B, route 3's `ba
 
 **PROPOSED sizes** (not the owner's). The data, network, fit, smoke and calibration sizes live in a gate or
 config file (`distil_gates.toml`, `calibration.toml`, `cells.toml`); the limit and margin starting points (the last
-two rows) appear only in the lead's advice to the owner: the gate files hold `FILL_` until he sets them (R38; R2 OA-11):
+two rows) appear only in the lead's advice to the owner: the gate files hold `FILL_` until the owner sets them (R38; R2 OA-11):
 
 | Value | PROPOSED | Source |
 |---|---|---|
@@ -523,7 +523,7 @@ Lets run: the calibration read LS1.5. Stands alone on today's `development`.
   play:** per side, the permuted-codes arm built from T44 alone (cell (k, opp) = T44 cell (`perm[k]`, opp), `cells.toml
   [permutation]`) against T44 on the fixed cells: per cell b, c, flips, diff and both intervals, and in `results.md`
   the cells sorted by flips and by |diff| with the count whose adjusted interval excludes 0, so the owner can read how
-  many cells miss at any limits he considers and set `permuted_min_miss_cells` with them; the unfitted-net count
+  many cells miss at any limits the owner considers and set `permuted_min_miss_cells` with them; the unfitted-net count
   (`unfitted_min_miss_cells`) has no such read and is a threshold chosen without data (said in the advice).
   No pass or fail column: the owner sets the limits from this read (R38); the lead's advice also lists `alpha`, the
   interval method and the correction over cells (OP-11) for the owner's yes (R2 OA-5). Moved-switch arms play only
@@ -1135,10 +1135,10 @@ Lets run: LS1.4 (pilot, run 0, Guard and Strike runs of both arms, export, unsee
 **Written for option A, what workflow v3 §6 says (R2 OA-1):** one run 0 per arm ("One run 0 serves both Strike
 seeds"), so the Strike read is n = 1 per arm, M4-T1b is not built, and `heads_gates.toml` has no `[run0] per_variant`
 and no `run0_seed`. Option B (a run 0 per Strike seed, M4-T1b, a second route 3 run 0) and the size of the LS1.4 asks
-are the **owner's** question OQ-1 (section 8), put to him as a cost before M4 starts: B adds a job and M4-T1b, and
+are the **owner's** question OQ-1 (section 8), put to the owner as a cost before M4 starts: B adds a job and M4-T1b, and
 neither option fits route 2's 550 M game-steps at the workflow's 0.4 GPU-h per training job (W1), so the asks that
 would (0.6 each) sum above the 4.0 task cap (section 6). The build of A goes ahead; **no LS1.4 GPU job is launched
-before the owner answers OQ-1.** If he picks B, M4-T1b is built after M4-T1 and the two keys join M4-T4's file and
+before the owner answers OQ-1.** If the owner picks B, M4-T1b is built after M4-T1 and the two keys join M4-T4's file and
 its named-keys test; nothing else in M4 changes but the Strike read's count (M4-T5).
 
 ### LS1-M4-T1 The gate loader takes the reading rule and lists the new fills
@@ -1440,12 +1440,12 @@ phase_cap_gpu_h = 200.0   # FIXED (owner, R43, 25 Nov 2026): the number the laun
 
 [budget_ls1.task_cap_gpu_h]
 "LS1.0" = 0.0             # PROPOSED (workflow v3 section 5; CPU): smoke of the distillation and the read
-"LS1.1" = 0.8             # FIXED (owner, R43, as workflow v3 section 3 records it; two distillations at 0.4): distil both teams
+"LS1.1" = 0.8             # PROPOSED (lead, 25 Nov 2026: the split of R36's 1.0 GPU-h; route 3 has no cap, R39 and R43): distil both teams
 "LS1.2" = 0.0             # PROPOSED (workflow v3 section 5; CPU): equivalence read, both teams
 "LS1.3" = 0.0             # PROPOSED (workflow v3 section 5; CPU): export and reload of both skill networks
 "LS1.4" = 4.0             # FIXED (owner, R43, 25 Nov 2026): head training on the skill network, both arms, clips included
 "LS1.5" = 0.0             # PROPOSED (workflow v3 section 5; CPU): calibration read
-"LS1.6" = 0.1             # FIXED (owner, R43, as workflow v3 section 3 records it): 3-D clips of the copy beside the scripts
+"LS1.6" = 0.1             # PROPOSED (lead, 25 Nov 2026: the split of R36's 1.0 GPU-h; route 3 has no cap, R39 and R43): 3-D clips of the copy beside the scripts
 ```
 
 Task caps add to 4.9 ≤ 200.0. Workflow v3 section 3 attributes 0.8 and 0.1 to R43; the owner's R43 row
@@ -1484,7 +1484,7 @@ restart is not counted twice). The caps are the owner's (R38, R43); the lead nev
   0.1 spare), but a 0.4 h job cannot reach route 2's pinned 550 M game-steps (W1), so M4-T2's pilot check would refuse
   the route 3 launches (route 2's seed-2 jobs would run short and be refused by the reader, W1). At 0.6 the asks sum above 4.0 (5.5 under A, 6.1 under B), and only each launch's used + ask binds
   (`check_launch`). Both the asks and A or B are put to the owner as one question before M4 starts (OQ-1); **no LS1.4
-  GPU job is launched before he answers.** After that, the lead tracks used + the next ask before every LS1.4 launch
+  GPU job is launched before the owner answers.** After that, the lead tracks used + the next ask before every LS1.4 launch
   and asks the owner before any launch whose ask would take the task over 4.0 (no launch is made to be refused).
 
 ## 7. Review findings and where each is built
@@ -1493,7 +1493,7 @@ restart is not counted twice). The caps are the owner's (R38, R43); the lead nev
 |---|---|---|
 | A F1 data coverage | M2-T1 `[data]` shares; M2-T2 schedule (uniform ≥ 0.5, fixed mixes, random), weighted keep, switch floor; M2-T3 error by hold bin and `n_live` | engineered polar/zone inputs (each drone's and its team-mates' bearing and distance from the zone): **not in LS1** (C2). The input is fixed at obs 71 + slot + code (C2), and `zeroed_inputs` is the only knob; added inputs need a new build (`SkillNet.forward`, the normaliser, the C3 file, the ONNX graph `[B, 71]` of M3-T2, the reload and the golden rows), so the fix round of workflow §5 can change the data mix, the rounds and the network size from the gate file, but not the inputs; `[stop]` says so (M2-T1); OP-14. The owner is told before M2-T1 hashes `[stop]` that the fix round cannot add inputs and acknowledges it, or names it as a later build (OQ-2; R2 RC-3, OA-7); an in-graph feature switch in M1-T3 is not built (R2 RC-3 declined: a new network input design the workflow does not ask for in LS1) |
 | A F2 paired read, systematic error | M1-T6 changed scripts (noise, bias, scale, turn, moved switches); M1-T7 calibration and C7 (b, c, flips, interval, sign test, end step); M2-T6 flips limit, end time, path distance at 1/3/10 s | final distance to the zone: OP-14 |
-| A F3 LS1.4 rule, Strike cell | M4-T1 `[reading]`; M4-T4 seeds paired, recipe pinned; M4-T5 rule, run 0 as the Strike read | how many run 0s per arm: OP-29, the owner's at OQ-1 (A built until he answers, R2 OA-1); Guard score: OP-30 |
+| A F3 LS1.4 rule, Strike cell | M4-T1 `[reading]`; M4-T4 seeds paired, recipe pinned; M4-T5 rule, run 0 as the Strike read | how many run 0s per arm: OP-29, the owner's at OQ-1 (A built until the owner answers, R2 OA-1); Guard score: OP-30 |
 | A F4 controls | M1-T5 oracle in miniature; M2-T6 C1 to C7 (C6 includes the 0.05-bias near miss, `kind="bias"`); M2-T1 `[controls]`; M1-T7 bias ladder | — |
 | A F5 what the net cannot see | M1-T3 game constants in meta and refused, zeroed inputs, std floor, slot one-hot; M2-T3 per-channel and zero-skill reads; M2-T1 limits; M1-T7 zero-skill bias arms (the calibration behind `cmd_zero_skill_max_abs`) | which further inputs to zero: OP-5 |
 | A F6 switches, ±1, losses | M1-T3 clipped linear; M2-T2 near-switch floor and absent quota; M2-T3 by `n_live` | a gate cell that starts with a drone removed: OP-14 |
@@ -1554,6 +1554,14 @@ the builder, in this order:
 
 ## 8. Open points the builder must NOT decide (for the lead; recommendation last)
 
+**Lead's decisions on the open points (25 Nov 2026, before M1).** Every recommendation below is adopted as written,
+with these settled: **OP-1 (b)**, the phase key `"LS"` and the section `[budget_ls]` for every stage of route 3 (the
+builder applies the substitution list of C1 in M1-T1); **OP-3** the in-work line plus route 3's; **OP-4** `carry
+--section` built in M1-T2; **OP-40** settled: the owner's R43 names 200 GPU-h and LS1.4's 4.0 only, so LS1.1 = 0.8 and
+LS1.6 = 0.1 are labelled PROPOSED (the lead's split of R36's 1.0; the route has no cap, R39) and W6 is closed; **OP-41**
+confirmed. OQ-1 and OQ-2 were put to the owner on 25 Nov 2026 (answers recorded in DISCUSSION §16 when given); OQ-3 is
+asked with the limits after LS1.5 (R38); OQ-4 before LS1.6 is launched.
+
 **Questions for the owner (R2; the lead brings each with its cost and a recommendation; the builder never decides
 them, and the lead does not either)**
 - **OQ-1 The LS1.4 run 0s and asks, before M4 starts (R2 OA-1; OP-28, OP-29, W1).** (A) one run 0 per arm, as
@@ -1566,7 +1574,7 @@ them, and the lead does not either)**
   such check, would run and end short of budget, then be refused by the reader (`scripts/ste_l6_read.py:228-229`,
   W1): GPU-hours spent for no read.
   *Recommend* A with 0.6 asks, the lead asking again before any launch that would take used + ask over 4.0. **M4 is
-  built for A until he answers; no LS1.4 GPU job is launched before he does.**
+  built for A until the owner answers; no LS1.4 GPU job is launched before the owner does.**
 - **OQ-2 Two of workflow §5's stop rules the code cannot keep, before M2-T1 hashes `[stop]` (R2 RC-3, OA-7; OP-14,
   OP-35).** The one fix round cannot add inputs (they need a new network build, section 7 row A F1), and "DISTILLED on
   one side only: that side may go on" needs a gate-file variant (section 7, last row). The owner acknowledges the

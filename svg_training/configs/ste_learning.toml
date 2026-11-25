@@ -96,3 +96,22 @@ phase_cap_gpu_h = 20.0   # FIXED (owner, R23, 24 Nov 2026): GPU-hour cap of the 
 "L5.4" = 2.1             # PROPOSED (spec section 1; its own skills pilot 0.6 + the Guard run's ask 1.5): skills route, pool only, Guard side
 "L6.1" = 0.0             # PROPOSED (spec section 1; CPU): the per-route reads and the route comparison (INFO)
 "L6.2" = 0.1             # PROPOSED (spec section 1; CPU, a GPU reload check at most): export and reload check of both routes
+
+# Route 3, learned skills (owner, R39 as read by the lead, confirmed R43, 25 Nov 2026): no GPU-hour cap on the route, so
+# the 200 here is the number the launcher needs, for all stages of the route (one phase key, LS); every job still states
+# its hours at launch, and a job above 5 GPU-h is announced first. The task caps are safety stops per job group: LS1.4's
+# is the owner's (R43), LS1.1's and LS1.6's the lead's (under R39), the CPU tasks ask nothing. The build plan:
+# ste_learning/drafts/LS1_TASK_PLAN.md section 6. L1 stays the phase in work; a launch is checked against this section.
+[budget_ls]
+phases = ["LS"]          # FIXED (owner, R39 and R43, 25 Nov 2026): route 3's GPU-hours, all stages, outside R23's 20
+closed = false            # FIXED (owner, R42, 25 Nov 2026): the word for the build
+phase_cap_gpu_h = 200.0   # FIXED (owner, R43, 25 Nov 2026): the number the launcher needs for route 3 (PLAN.md section 9)
+
+[budget_ls.task_cap_gpu_h]
+"LS1.0" = 0.0             # PROPOSED (workflow v3 section 5; CPU): smoke of the distillation and the read
+"LS1.1" = 0.8             # PROPOSED (lead, 25 Nov 2026: the split of R36's 1.0 GPU-h; route 3 has no cap, R39 and R43): distil both teams
+"LS1.2" = 0.0             # PROPOSED (workflow v3 section 5; CPU): equivalence read, both teams
+"LS1.3" = 0.0             # PROPOSED (workflow v3 section 5; CPU): export and reload of both skill networks
+"LS1.4" = 4.0             # FIXED (owner, R43, 25 Nov 2026): head training on the skill network, both arms, clips included
+"LS1.5" = 0.0             # PROPOSED (workflow v3 section 5; CPU): calibration read
+"LS1.6" = 0.3             # PROPOSED (lead, 25 Nov 2026, under R39: L5's cost constants put 12 trajectories at 0.18 to 0.24 GPU-h, W4): 3-D clips of the copy beside the scripts

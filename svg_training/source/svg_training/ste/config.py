@@ -45,6 +45,10 @@ TASK_IDS: dict[str, tuple[str, ...]] = {
     "L4": ("L4.1", "L4.2"),
     "L5": ("L5.1", "L5.2", "L5.3", "L5.4"),
     "L6": ("L6.1", "L6.2"),
+    # Route 3, learned skills (owner, R39 as read by the lead, confirmed R43, 25 Nov 2026): one phase key for every stage
+    # of the route and one budget section, [budget_ls] (ste_learning/drafts/LS1_TASK_PLAN.md, contract C1). The task IDs
+    # stay "LS1.x"; a later stage adds its IDs here, with no rename.
+    "LS": ("LS1.0", "LS1.1", "LS1.2", "LS1.3", "LS1.4", "LS1.5", "LS1.6"),
 }
 BUDGET_PHASES: tuple[str, ...] = ("L0",)    # the phases [budget] covers (its first name, kept for the L0 tools)
 _FIRST_BUDGET = "budget"

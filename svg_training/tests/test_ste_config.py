@@ -45,6 +45,12 @@ L2_TASK_CAP_GPU_H = {"L2.5": 0.5, "L2.6": 1.5}
 L3_L6_CAP_GPU_H = 20.0
 L3_L6_TASK_CAP_GPU_H = {"L3.1": 0.3, "L3.2": 0.4, "L3.3": 0.6, "L3.4": 1.0, "L3.5": 1.5, "L4.1": 0.0, "L4.2": 0.0,
                         "L5.1": 1.8, "L5.2": 2.6, "L5.3": 1.0, "L5.4": 2.1, "L6.1": 0.0, "L6.2": 0.1}
+# Route 3, learned skills (owner, R39 as read by the lead, confirmed R43, 25 Nov 2026): one phase key "LS" and one section
+# [budget_ls] for every stage of the route, 200 GPU-h because the launcher needs a number. LS1.4's 4.0 is the owner's
+# (R43); LS1.1's 0.8 and LS1.6's 0.3 are the lead's (PROPOSED, under R39); the CPU tasks ask nothing. A cap the owner
+# moves changes this dict and the 5.1 of test_the_route_3_budget in the same commit (LS1_TASK_PLAN.md section 6).
+LS1_CAP_GPU_H = 200.0
+LS1_TASK_CAP_GPU_H = {"LS1.0": 0.0, "LS1.1": 0.8, "LS1.2": 0.0, "LS1.3": 0.0, "LS1.4": 4.0, "LS1.5": 0.0, "LS1.6": 0.3}
 
 GOOD = SETTINGS_FILE.read_text()
 
@@ -87,7 +93,7 @@ def test_committed_file_loads_with_the_plans_numbers():
 
 def test_l01_holds_process_settings_only():
     """No game section here (L0.8 created configs/ste_game.toml; L0.9 added [tag] there)."""
-    assert set(tomllib.loads(GOOD)) == {"track", "budget", "budget_l1_l2", "budget_l3_l4_l5_l6"}
+    assert set(tomllib.loads(GOOD)) == {"track", "budget", "budget_l1_l2", "budget_l3_l4_l5_l6", "budget_ls"}
     assert [f.name for f in dataclasses.fields(SteLearningCfg)] == ["track", "budget", "later_budgets"]
 
 
@@ -104,7 +110,8 @@ def test_the_l1_and_l2_budget_of_gate_g0():
     assert later.task_caps_total_gpu_h() == 11.1 <= later.phase_cap_gpu_h   # in decimal (L1 9.1 + L2.5 0.5 + L2.6 1.5)
     assert cfg.budget_of("L2.6") is later and cfg.cap_gpu_h("L2.6") == 1.5 and phase_of("L2.6") == "L2"
     assert cfg.budget_of("L2.5") is later and cfg.cap_gpu_h("L2.5") == 0.5 and phase_of("L2.5") == "L2"
-    assert cfg.budget_in_work() is later and cfg.budgets() == (cfg.budget, later, cfg.later_budgets[1])
+    assert cfg.budget_in_work() is later and cfg.budgets() == (cfg.budget, later, cfg.later_budgets[1],
+                                                               cfg.later_budgets[2])
     assert cfg.budget_of("L1.9") is later and cfg.budget_of("L0.12") is cfg.budget
     assert cfg.cap_gpu_h("L1.9") == 1.6 and cfg.cap_gpu_h("L1.3") == 0.0 and cfg.cap_gpu_h("L0.12") == 13.0
     assert cfg.budget.cap_gpu_h("L0.11") == 0.5                                 # L0's caps stay readable
@@ -512,7 +519,8 @@ def leaves(table: dict) -> int:
 def test_every_value_line_carries_a_status_label_and_source():
     lines = value_lines(GOOD)
     assert len(lines) == leaves(tomllib.loads(GOOD)) == (4 + len(L0_TASK_CAP_GPU_H) + 3 + len(L1_TASK_CAP_GPU_H)
-                                                        + len(L2_TASK_CAP_GPU_H) + 3 + len(L3_L6_TASK_CAP_GPU_H))
+                                                        + len(L2_TASK_CAP_GPU_H) + 3 + len(L3_L6_TASK_CAP_GPU_H)
+                                                        + 3 + len(LS1_TASK_CAP_GPU_H))
     assert unlabelled(GOOD) == []
 
 
@@ -598,3 +606,33 @@ def test_the_l3_to_l6_pipeline_check_budget():
     assert cfg.budget_of("L5.2") is pipe and cfg.cap_gpu_h("L5.2") == 2.6 and phase_of("L5.2") == "L5"
     assert cfg.budget_of("L3.1") is pipe and phase_of("L6.2") == "L6"
     assert cfg.track.phase == "L1" and cfg.budget_in_work().section == "budget_l1_l2"
+
+
+def test_the_route_3_budget():
+    """[budget_ls]: route 3 (learned skills), one phase key "LS" for all its stages, 200 GPU-h (owner, R39 as read by the
+    lead, confirmed R43, 25 Nov 2026), the task caps in TASK_IDS order; appended after [budget_l3_l4_l5_l6], so the two
+    earlier later sections keep their indices. L1 stays the phase in work; an LS1 task takes its cap from this section."""
+    cfg, _ = load_ste_learning()
+    route = cfg.later_budgets[2]
+    assert route == BudgetCfg(section="budget_ls", phases=("LS",), closed=False, phase_cap_gpu_h=LS1_CAP_GPU_H,
+                              task_cap_gpu_h=tuple(LS1_TASK_CAP_GPU_H.items()))
+    assert type(route.phase_cap_gpu_h) is float and all(type(cap) is float for _, cap in route.task_cap_gpu_h)
+    assert TASK_IDS["LS"] == tuple(LS1_TASK_CAP_GPU_H)
+    assert list(tomllib.loads(GOOD)["budget_ls"]["task_cap_gpu_h"]) == list(TASK_IDS["LS"])      # the file's order
+    assert route.task_caps_total_gpu_h() == 5.1 <= route.phase_cap_gpu_h       # moves with LS1_TASK_CAP_GPU_H (section 6)
+    assert cfg.budget_of("LS1.4") is route and cfg.cap_gpu_h("LS1.4") == 4.0 and phase_of("LS1.4") == "LS"
+    assert cfg.budget_of("LS1.0") is route and phase_of("LS1.6") == "LS"
+    assert cfg.later_budgets[0].section == "budget_l1_l2" and cfg.later_budgets[1].section == "budget_l3_l4_l5_l6"
+    assert cfg.track.phase == "L1" and cfg.budget_in_work().section == "budget_l1_l2"
+    for unknown in ("LS1.7", "LS1", "LS2.0"):
+        with pytest.raises(KeyError, match=re.escape(unknown)):
+            cfg.budget_of(unknown)
+
+
+def test_plan_names_the_route_3_cap():
+    """PLAN.md section 9, the budgets table: the row "**Route 3 …**" states the route's 200 GPU-h (owner, R43)."""
+    section = plan_section(PLAN.read_text(), 9)
+    found = re.search(r"^\| \*\*Route 3[^|]*\*\* \| \*\*(\d+(?:\.\d+)?) GPU-h\*\*", section, re.MULTILINE)
+    assert found, "PLAN.md section 9: expected a row starting '| **Route 3 <name>** | **<number> GPU-h**'"
+    route = load_ste_learning()[0].later_budgets[2]
+    assert route.phases == ("LS",) and float(found.group(1)) == route.phase_cap_gpu_h == LS1_CAP_GPU_H

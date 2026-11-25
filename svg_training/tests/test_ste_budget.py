@@ -181,6 +181,20 @@ def test_the_committed_l1_caps():
         budget.check_launch("L1.4", 0.1)                                              # simulator time, not GPU-h
 
 
+def test_the_committed_route_3_caps():
+    """Route 3 (owner, R39 as read by the lead, confirmed R43, 25 Nov 2026): its tasks launch against [budget_ls], 200
+    GPU-h for the route; a CPU task's cap of 0.0 refuses any GPU hours; route 3's rows do not count toward L1 + L2."""
+    assert budget.check_launch("LS1.1", 0.8) == budget.Usage(0.8, 0.0, 200.0, 0.0)
+    with pytest.raises(budget.BudgetError, match=r"task LS1\.5.*cap 0\.0 GPU-h.*budget_ls\.task_cap_gpu_h"):
+        budget.check_launch("LS1.5", 0.1)
+    cfg = load_ste_learning()[0]
+    in_work, route = cfg.budget_in_work(), cfg.budget_of("LS1.1")
+    before = budget.budget_gpu_h(in_work)
+    ran("LS1.1", "distil", 0.0, 0.5)
+    assert budget.budget_gpu_h(route) == pytest.approx(0.5) and budget.task_gpu_h("LS1.1") == pytest.approx(0.5)
+    assert budget.budget_gpu_h(in_work) == before == 0.0 and in_work.section == "budget_l1_l2"
+
+
 def l1_settings(tmp_path, cap: float, **caps: float):
     """The L0-shaped file of ``settings`` with phase L1 in work, L0 closed, and [budget_l1_l2]: the given cap, the given
     L1 caps."""

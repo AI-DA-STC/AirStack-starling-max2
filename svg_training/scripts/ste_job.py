@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Launch a job detached, wait for it, list jobs (STE learning track, task L0.7). Linux only, standard library only.
 
-    python scripts/ste_job.py launch --task L0.11 --name <job> --run-dir runs/<folder> --min-s <seconds> --gpu-h <hours> [--post-clips3d] -- <command ...>
+    python scripts/ste_job.py launch --task L0.11 --name <job> --run-dir runs/<folder> --min-s <seconds> --gpu-h <hours> [--post-clips3d | --no-post-clips3d] -- <command ...>
     python scripts/ste_job.py wait <job>
     python scripts/ste_job.py status
     python scripts/ste_job.py carry --gpu-h <hours> --note "<machine> <date>"
@@ -22,12 +22,15 @@ launch   starts <command ...> detached (its own session; output appended to <run
          sets or unsets PYTHONPATH, CUDA_VISIBLE_DEVICES, PYTORCH_CUDA_ALLOC_CONF, SVG_SHARED_DIR and
          SVG_PAUSE_LEGACY_LOGS as at the first launch. A relaunch with another shared folder than the run folder
          recorded is refused.
-         --post-clips3d (STE L5 training runs; the logic: the ste package's post-run module): when the command
-         exits 0 and its run folder holds a complete results.json and agent_final.pt, the wrapper starts
+         The post-run 3-D clips (the logic: the ste package's post-run module) are ON by default when the command
+         runs scripts/ste_exploit_l012.py as a run of record (not --pilot, --run0 or verdict); --post-clips3d turns
+         them on for any other command, --no-post-clips3d off; the choice is kept in job.json and cmd.txt. When the
+         command exits 0 and its run folder holds a complete results.json and agent_final.pt, the wrapper starts
          scripts/ste_l5_clips3d.py --run-dir <run-dir> as its own recorded job (clips3d_<job>, run folder <run-dir>/videos3d, the same task and
          settings, --gpu-h 0.1, --min-s 30), so its GPU-hours are logged against the run's task cap. It never waits:
          an open owner pause, a busy GPU (scripts/isaac_preflight.sh --approved-headless --allow-siblings) or the cap
-         leave "pending" in <run-dir>/videos3d/HOOK_STATUS with the retry line; any hook error is a job.log line. The
+         leave "pending" in <run-dir>/videos3d/HOOK_STATUS with the retry line; exit 0 without a finished run leaves
+         "skipped"; a non-zero exit only a job.log line; any hook error is a job.log line. The
          job's own exit code and results are written first and never changed. --clips3d-for is set by the hook on the
          clips job itself (it then writes its end into that run's HOOK_STATUS); not for hand use.
 wait     blocks until the job has ended, prints one line
@@ -40,7 +43,9 @@ wait     blocks until the job has ended, prints one line
          recorded no exit code (own status 21).
          An unknown job name: status 22, nothing on stdout. The waiter's own failure (state.json unreadable): 23.
 status   one line per job: alive | alive (paused) | alive (wrapper gone) | dead | dead (previous boot), the exit code;
-         clips3d=<running/pending/skipped/done/failed> for a run with a post-run clips marker.
+         clips3d=<running/pending/skipped/done/failed> for a run with a post-run clips marker; clips3d=missing for an
+         exit-0 run with the hook on whose clips are not complete and whose clips job is not alive (a killed wrapper,
+         a reboot): run the post-clips3d line.
          faults=<n> (in wait's line and in status) counts bookkeeping writes the wrapper had to retry (a full disk,
          any error): the job was not harmed by them; details in <run-dir>/job.json and job.log. A last line gives the
          budget section in work: used (this machine's ledger rows + carried hours) of its cap.
@@ -53,9 +58,10 @@ owner-pauses  lists the open pauses that are not the lead's own (not tagged GPU_
          0 if there is none, 2 if there is one. scripts/gpu_pause.sh runs it before a resume or stop tagged
          GPU_PAUSE_BY=lead and refuses while an owner pause is open (never end a pause the session did not make).
 
-post-clips3d  the post-run 3-D clip hook again, by hand, for a finished run folder whose clips are pending (the line
-         HOOK_STATUS gives): the same checks (exit code 0, complete run, no owner pause, the preflight, the cap). Exit
-         0 if the clips job was launched, 2 otherwise (the reason is printed and written to HOOK_STATUS).
+post-clips3d  the post-run 3-D clip hook again, by hand, for a finished run folder whose clips are pending or missing
+         (the line HOOK_STATUS gives): the same checks (exit code 0, complete run, no owner pause, the preflight, the
+         cap). Exit 0 if the clips job was launched, 2 otherwise (the reason is printed and, except while a clips job of
+         the run is already running, written to HOOK_STATUS).
 
 A job is told apart by pid, process start time and boot id, never by its name or command line. To stop a job with a
 checkpoint, send SIGINT to the recorded pid (the wrapper passes it on) or use scripts/gpu_pause.sh stop. Logic and the
@@ -90,8 +96,12 @@ def parse(argv: list[str] | None) -> argparse.Namespace:
     launch.add_argument("--gpu-h", required=True, type=float, help="GPU-hours asked for; 0 for a CPU job")
     launch.add_argument("--settings", type=Path, default=SETTINGS_FILE, help="the track's settings file (caps)")
     launch.add_argument("--beat-s", type=float, default=jobs.BEAT_S, help="seconds between heartbeats")
-    launch.add_argument("--post-clips3d", action="store_true",
-                        help="after a 0 exit and a complete run, start its 3-D clips as their own job (STE L5 runs)")
+    hook = launch.add_mutually_exclusive_group()
+    hook.add_argument("--post-clips3d", dest="post_clips3d", action="store_const", const=True, default=None,
+                      help="after a 0 exit and a complete run, start its 3-D clips as their own job (default: on when "
+                           "the command runs scripts/ste_exploit_l012.py as a run of record)")
+    hook.add_argument("--no-post-clips3d", dest="post_clips3d", action="store_const", const=False,
+                      help="no post-run 3-D clips for this job")
     launch.add_argument("--clips3d-for", type=Path, default=None, help=argparse.SUPPRESS)   # set by the hook only
     launch.add_argument("cmd", nargs=argparse.REMAINDER, help="-- then the command and its arguments")
     wait = commands.add_parser("wait", help="block until a job has ended; exit with its exit code")

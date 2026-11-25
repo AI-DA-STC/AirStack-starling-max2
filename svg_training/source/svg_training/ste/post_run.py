@@ -1,25 +1,34 @@
 """The automatic post-run step of a training job: its 3-D Isaac Lab clips (STE L5; owner, 25 Nov 2026: "make the L5 clips
 render in 3D isaac lab automatically along with the 2D top view"). Linux only, standard library only.
 
-**Opt in per launch.** ``scripts/ste_job.py launch --post-clips3d ...`` records ``post_clips3d: true`` in the job's
-``job.json`` (and in ``cmd.txt``, so a relaunch keeps it). Opt in, not on by default for a task: the launcher also
-starts jobs that are not training runs of the exploit driver (evaluations, pilots, run 0, the clips jobs themselves,
-which share the run's task), and a default by task would fire on all of them. The flag goes on every L5 training
-launch line (``ste_learning/AUTOMATION.md`` section 7).
+**On by default for the training driver's runs, by command** (lead's decision, 25 Nov 2026; never by task ID: the
+clips jobs, pilots and evaluations share the run's task). ``scripts/ste_job.py launch`` turns the hook on when the
+launched command runs ``scripts/ste_exploit_l012.py`` as a run of record (:func:`drives_training`: not ``--pilot``,
+which writes ``pilot.json`` only; not ``--run0``, which writes no ``results.json`` and no INFO batch; not the
+``verdict`` sub-command). It is the one training driver whose run folder the clip script draws (``results.json``,
+``agent_final.pt`` and the INFO batch ``eval_info.npz``); ``scripts/ste_tier2_l013.py`` also writes
+``results.json`` and ``agent_final.pt`` but no ``eval_info.npz``, so it is left off. ``--post-clips3d`` turns the hook
+on for any other command, ``--no-post-clips3d`` turns it off. The decision is recorded as ``post_clips3d`` in
+``job.json`` and replayed by ``cmd.txt``. A clips job (``clips3d_for``) never has it: the launcher refuses the two
+together, and a job carrying ``clips3d_for`` only reports its end.
 
 **When it fires.** The training job's wrapper (``ste/jobs.py`` :func:`~svg_training.ste.jobs.run_wrapper`) calls
 :func:`after_end` after the command's exit code and its last GPU-hour line are written. It starts the clips only if
-the command exited 0 and the run folder holds a complete ``results.json`` (``complete: true``) and ``agent_final.pt``;
-otherwise one line in the run's ``job.log`` says why nothing was started, and nothing is written in the run folder.
-Clips already complete (``videos3d/clips3d.json``) are not drawn again.
+the command exited 0 and the run folder holds a complete ``results.json`` (``complete: true``) and ``agent_final.pt``.
+A non-zero exit: one line in the run's ``job.log``, nothing written in the run folder (a failed run owes no clips).
+Exit 0 without a finished run: ``skipped: <why>`` in ``HOOK_STATUS``. Clips already complete
+(``videos3d/clips3d.json``) are not drawn again. While a clips job of the run is alive (its run folder
+``<run>/videos3d`` or its name), nothing is done and ``HOOK_STATUS`` is left as it is ("clips job already running").
 
 **What it starts.** ``<the training command's python> scripts/ste_l5_clips3d.py --run-dir <run>`` as its own recorded
 job through :func:`~svg_training.ste.jobs.launch`: name ``clips3d_<training job>``, run folder ``<run>/videos3d`` (the
 clip script's default ``--out``: its job files sit beside the clips), the run's task, settings file and beat,
 ``--gpu-h`` :data:`CLIPS3D_GPU_H` and ``--min-s`` :data:`CLIPS3D_MIN_S` (as the six hand launches of 25 Nov 2026; one
 clips job measured 0.02-0.03 GPU-h). So its GPU-hours land in the ledger and count against the run's task cap and phase
-cap, and the launcher's own refusals hold (an open owner pause, the cap). The python is the training command's first
-word when it is a python (the clip script needs torch), else this process's interpreter.
+cap, and the launcher's own refusals hold (an open owner pause, the cap). The python (the clip script needs torch) is
+the interpreter the launch recorded in its command (``job.json`` ``cmd``: the first word that names a python, so
+``env ... nice <python> ...`` works too); if the command names none, the fallback is this process's interpreter, which
+is the one that ran ``scripts/ste_job.py launch`` (the wrapper is started with it).
 
 **Never waits, never fails the run.** The hook makes one attempt and records the outcome in ``<run>/videos3d/
 HOOK_STATUS``; it never sleeps (the waiter of the training job blocks while the wrapper lives) and never resumes a
@@ -32,8 +41,11 @@ the GPU is free or the owner has resumed). The clips job's own wrapper rewrites 
 and are never touched by it.
 
 ``HOOK_STATUS`` is plain text, first line ``<state>: <why>`` with state ``launched``, ``pending``, ``skipped``,
-``done`` or ``failed``; then the time, the jobs and the retry line. ``scripts/ste_job.py status`` shows the state as
-``clips3d=<state>`` on the training job's line.
+``done`` or ``failed``; then the time, the jobs and the retry line. ``scripts/ste_job.py status`` shows
+``clips3d=<state>`` on the training job's line (:func:`hook_state`): ``running`` while the clips job lives; the
+marker's word; ``missing`` for an exit-0 run with the hook on whose clips are not complete and whose clips job is not
+alive and left no word (the wrapper was killed or the machine rebooted before the hook ran, or the clips job died).
+Nothing is retried on its own: the retry line does it.
 """
 from __future__ import annotations
 
@@ -43,6 +55,10 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import Any, Callable
+
+import os
+import re
+import signal
 
 from . import atomic, jobs, state
 from .run_contract import EXIT_DONE, EXIT_INTERRUPTED, EXIT_REFUSED
@@ -62,6 +78,10 @@ EXIT_GPU_BUSY = 11                       # the preflight's and the clip script's
 RETRYABLE = {EXIT_GPU_BUSY: "the GPU was busy", EXIT_INTERRUPTED: "interrupted",
              jobs.SIGNAL_EXIT_BASE + 2: "interrupted (SIGINT)", jobs.SIGNAL_EXIT_BASE + 15: "stopped (SIGTERM)"}
 LAUNCHED, PENDING, SKIPPED, DONE, FAILED = "launched", "pending", "skipped", "done", "failed"
+RUNNING, MISSING = "running", "missing"            # status only, never written to HOOK_STATUS
+TRAINING_DRIVER = "ste_exploit_l012.py"           # the driver whose runs the clip script draws
+NOT_A_RUN = ("--pilot", "--run0")                  # its modes that leave no run of record
+_PYTHON = re.compile(r"python[0-9.]*")
 TAG = "[ste job] post-run clips3d"
 
 Say = Callable[[str], None]
@@ -72,12 +92,27 @@ def clips_name(training_name: str) -> str:
     return f"clips3d_{training_name}"
 
 
+def drives_training(cmd: list[str]) -> bool:
+    """True when ``cmd`` runs the training driver (``scripts/ste_exploit_l012.py``) as a run of record: the default of
+    ``launch``'s hook. Not its ``--pilot`` or ``--run0`` modes, not its ``verdict`` sub-command."""
+    words = [str(word) for word in cmd]
+    at = next((k for k, word in enumerate(words) if Path(word).name == TRAINING_DRIVER), None)
+    if at is None:
+        return False
+    rest = words[at + 1:]
+    return not (rest[:1] == ["verdict"] or any(word in NOT_A_RUN for word in rest))
+
+
+def clips_python(record: dict[str, Any]) -> str:
+    """The interpreter recorded in the launch's command (the first word naming a python), else this process's: the one
+    that ran ``scripts/ste_job.py launch``, since the wrapper is started with it."""
+    return next((str(word) for word in record.get("cmd", []) if _PYTHON.fullmatch(Path(str(word)).name)),
+                sys.executable)
+
+
 def clips_command(record: dict[str, Any], run: Path) -> list[str]:
-    """``<python> scripts/ste_l5_clips3d.py --run-dir <run>``: the training command's python when its first word is one,
-    else this process's interpreter."""
-    first = str(record["cmd"][0])
-    python = first if Path(first).name.startswith("python") else sys.executable
-    return [python, str(CLIPS_SCRIPT), "--run-dir", str(run)]
+    """``<python> scripts/ste_l5_clips3d.py --run-dir <run>`` (:func:`clips_python`)."""
+    return [clips_python(record), str(CLIPS_SCRIPT), "--run-dir", str(run)]
 
 
 def run_problem(run: Path) -> str | None:
@@ -112,11 +147,17 @@ def _exit_code(folder: Path) -> int | None:
 def preflight(log: Path) -> int:
     """``scripts/isaac_preflight.sh --approved-headless --allow-siblings``; its output to ``log``; its exit code (124 if
     it did not answer within PREFLIGHT_TIMEOUT_S)."""
+    proc = subprocess.Popen(["bash", str(PREFLIGHT_SCRIPT), *PREFLIGHT_ARGS], stdin=subprocess.DEVNULL,
+                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, start_new_session=True)
     try:
-        done = subprocess.run(["bash", str(PREFLIGHT_SCRIPT), *PREFLIGHT_ARGS], capture_output=True, text=True,
-                              timeout=PREFLIGHT_TIMEOUT_S, stdin=subprocess.DEVNULL)
-        text, code = done.stdout + done.stderr, done.returncode
+        text, _ = proc.communicate(timeout=PREFLIGHT_TIMEOUT_S)
+        code = proc.returncode
     except subprocess.TimeoutExpired:
+        try:
+            os.killpg(proc.pid, signal.SIGKILL)       # the script and anything it started (a stuck nvidia-smi)
+        except ProcessLookupError:
+            pass
+        proc.communicate()
         text, code = f"no answer within {PREFLIGHT_TIMEOUT_S:.0f} s\n", 124
     atomic.write_text(log, text)
     return code
@@ -149,21 +190,26 @@ def after_end(run_dir: Path, record: dict[str, Any], exit_code: int, say: Say) -
 
 def fire(run: Path, record: dict[str, Any], exit_code: int | None, say: Say) -> str:
     """One attempt to start the clips of the finished run ``run`` whose training job is ``record`` (its ``job.json``)
-    and ended with ``exit_code``. Returns the state word; never waits."""
+    and ended with ``exit_code``. Returns the state word (``running`` if a clips job of the run is alive: nothing
+    done); never waits."""
+    out = run / CLIPS3D_DIR
+    name = clips_name(record["name"])
+    alive = live_clips_job(run, name)
+    if alive is not None:
+        say(f"{TAG}: clips job already running ({alive}); nothing done")
+        return RUNNING
     if exit_code != 0:
         say(f"{TAG}: not started (the training job exited {exit_code}, not 0)")
         return SKIPPED
-    problem = run_problem(run)
-    if problem is not None:
-        say(f"{TAG}: not started ({problem})")
-        return SKIPPED
-    out = run / CLIPS3D_DIR
-    name = clips_name(record["name"])
 
     def mark(word: str, why: str) -> str:
         write_status(run, word, why, record, name)
         say(f"{TAG}: {word}: {why} ({out / HOOK_STATUS})")
         return word
+
+    problem = run_problem(run)
+    if problem is not None:
+        return mark(SKIPPED, f"the training job exited 0 but the run is not finished: {problem}")
 
     if clips_complete(out):
         drawn = _exit_code(out)
@@ -189,6 +235,15 @@ def fire(run: Path, record: dict[str, Any], exit_code: int | None, say: Say) -> 
                                 f"scripts/ste_job.py wait {name}", record, name)
     say(f"{TAG}: launched {name} (task {record['task']}, --gpu-h {CLIPS3D_GPU_H}, pid {job['pid']}, run folder {out})")
     return LAUNCHED
+
+
+def live_clips_job(run: Path, name: str | None = None) -> str | None:
+    """The name of a live job whose run folder is ``<run>/videos3d`` or whose name is ``name``, else None."""
+    out = Path(run) / CLIPS3D_DIR
+    for other, job in state.read()["jobs"].items():
+        if (Path(job["run_dir"]) == out or other == name) and state.job_alive(job):
+            return other
+    return None
 
 
 def clips_ended(run: Path, record: dict[str, Any], exit_code: int, say: Say) -> str:
@@ -224,16 +279,27 @@ def retry(run: Path, say: Say = print) -> int:
 
 
 def hook_state(run: Path, recorded: dict[str, dict[str, Any]]) -> str | None:
-    """The clips state of a training run for ``status``: the first word of ``HOOK_STATUS`` (None without one);
-    ``launched`` reads ``running`` while the clips job lives, else ``pending`` (it ended without a word)."""
-    out = Path(run) / CLIPS3D_DIR
+    """The clips state of a training run for ``status`` (None: nothing to show). ``running`` while a clips job of the
+    run lives; else the word of ``HOOK_STATUS`` (``pending``, ``skipped``, ``done``, ``failed``); ``missing`` when the
+    marker says ``launched`` but the clips job is gone without a word, or when there is no marker for an exit-0 run
+    with the hook on (``job.json`` ``post_clips3d``) whose ``clips3d.json`` is not complete: the wrapper was killed
+    or the machine rebooted before the hook ran."""
+    run = Path(run)
+    out = run / CLIPS3D_DIR
+    if any(Path(job["run_dir"]) == out and state.job_alive(job) for job in recorded.values()):
+        return RUNNING
     try:
-        first = (out / HOOK_STATUS).read_text().splitlines()[0]
+        word: str | None = (out / HOOK_STATUS).read_text().splitlines()[0].split(":", 1)[0]
     except (OSError, IndexError):
-        return None
-    word = first.split(":", 1)[0]
+        word = None
     if word == LAUNCHED:
-        job = next((each for each in recorded.values() if Path(each["run_dir"]) == out), None)
-        alive = job is not None and state.job_alive(job)
-        return "running" if alive else f"{PENDING} (the clips job ended without a result; {out / 'job.log'})"
-    return word
+        return MISSING
+    if word is not None:
+        return word
+    try:
+        hooked = json.loads((run / jobs.JOB_FILE).read_text()).get("post_clips3d") is True
+    except (OSError, ValueError, AttributeError):
+        hooked = False
+    if hooked and _exit_code(run) == 0 and not clips_complete(out):
+        return MISSING
+    return None

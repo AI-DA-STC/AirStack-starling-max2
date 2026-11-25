@@ -20,6 +20,7 @@ from _proc import child_python
 from svg_training.ste import budget, jobs, post_run, shared, state
 
 TOOL = SCRIPTS / "ste_job.py"
+REAL_PREFLIGHT = post_run.preflight
 TASK = "L0.11"                     # the test settings' open task (the committed caps close phase by phase)
 BEAT_S = 0.05
 
@@ -148,6 +149,7 @@ def test_the_hook_fires_on_exit_0_and_a_complete_run_and_records_the_clips_job(h
     outcome = wait_clips()
     assert outcome.exit_code == 0
     assert status_line(run).startswith("done:")                       # updated by the clips job's own wrapper
+    assert shared.gpu_hours_log() == hook.tmp / "shared" / "gpu_hours.log"   # runs/shared/gpu_hours.log, here private
     rows = [json.loads(line) for line in shared.gpu_hours_log().read_text().splitlines()]
     mine = [row for row in rows if row["job"] == "clips3d_train"]
     assert mine and all(row["group"] == TASK and row["run_dir"] == str(out) for row in mine)
@@ -160,8 +162,10 @@ def test_the_clips_command_is_the_clip_script_on_the_training_python(tmp_path):
     py = "/opt/envs/env_isaaclab/bin/python3.11"
     cmd = post_run.clips_command({"cmd": [py, "scripts/ste_exploit_l012.py"]}, run)
     assert cmd == [py, str(SCRIPTS / "ste_l5_clips3d.py"), "--run-dir", str(run)]
+    wrapped = post_run.clips_command({"cmd": ["env", "X=1", "nice", "/opt/py/bin/python3", "-u", "train.py"]}, run)
+    assert wrapped[0] == "/opt/py/bin/python3"                       # the interpreter the launch recorded in its cmd
     other = post_run.clips_command({"cmd": ["bash", "train.sh"]}, run)
-    assert other[0] == sys.executable and other[1:] == cmd[1:]
+    assert other[0] == sys.executable and other[1:] == cmd[1:]       # fallback: the launcher's own interpreter
     assert post_run.clips_name("l5_velocity_guard") == "clips3d_l5_velocity_guard"
 
 
@@ -179,13 +183,15 @@ def test_a_non_zero_exit_starts_nothing_and_keeps_its_code(hook, capsys, code):
 
 @pytest.mark.parametrize("complete, final, missing", [(False, True, "results.json"), (True, False, "agent_final.pt")],
                          ids=["results_not_complete", "no_agent_final"])
-def test_an_incomplete_run_starts_nothing(hook, capsys, complete, final, missing):
+def test_an_incomplete_run_starts_nothing_and_says_skipped(hook, capsys, complete, final, missing):
     run = hook.run(complete=complete, final=final)
     assert jobs.run_wrapper(run) == 0
     assert (run / "exit_code").read_text() == "0\n"
     assert clips_job(run) is None and not hook.calls["launch"] and not hook.calls["preflight"]
     printed = capsys.readouterr().out
-    assert "post-run clips3d: not started" in printed and missing in printed
+    assert "post-run clips3d: skipped" in printed and missing in printed
+    line = status_line(run)
+    assert line.startswith("skipped:") and missing in line            # exit 0 but no finished run: said in the marker
 
 
 def test_without_the_flag_the_wrapper_is_unchanged(hook, capsys):
@@ -264,11 +270,19 @@ def test_the_clips_jobs_end_is_written_to_the_marker(hook, clips_code, complete,
 
 
 def test_a_failing_hook_never_changes_the_training_jobs_exit_code(hook, monkeypatch, capsys):
-    def broken(*args, **kwargs):
+    seen = {}
+
+    def broken(run, *args, **kwargs):                  # what was recorded when the hook started, then it breaks
+        seen["exit_code"] = (run / "exit_code").read_text()
+        seen["ledger"] = shared.gpu_hours_log().read_text()
         raise RuntimeError("the hook broke")
     monkeypatch.setattr(post_run, "fire", broken)
-    run = hook.run()
+    run = hook.run(gpu_h=0.3)
     assert jobs.run_wrapper(run) == 0
+    assert seen["exit_code"] == (run / "exit_code").read_text() == "0\n"
+    assert shared.gpu_hours_log().read_text() == seen["ledger"]       # the run's ledger rows: not one changed or added
+    assert [json.loads(row)["job"] for row in seen["ledger"].splitlines()] and \
+        {json.loads(row)["job"] for row in seen["ledger"].splitlines()} == {"train"}
     assert (run / "exit_code").read_text() == "0\n"
     job = state.read()["jobs"]["train"]
     assert job["exit_code"] == 0 and job["ended"] is not None
@@ -315,6 +329,69 @@ def test_a_failed_clips_job_with_complete_clips_stays_failed_on_retry(hook):
     assert line.startswith("failed:") and "exited 3" in line and len(hook.calls["launch"]) == 1
 
 
+def test_a_retry_while_the_clips_job_runs_touches_nothing(hook, capsys):
+    hook.clips_sleep_s = 3.0
+    run = hook.run()
+    assert jobs.run_wrapper(run) == 0
+    wrapper_gone()
+    before = (run / post_run.CLIPS3D_DIR / post_run.HOOK_STATUS).read_text()
+    capsys.readouterr()
+    assert post_run.retry(run) == post_run.EXIT_REFUSED
+    assert "clips job already running" in capsys.readouterr().out
+    assert (run / post_run.CLIPS3D_DIR / post_run.HOOK_STATUS).read_text() == before
+    assert len(hook.calls["launch"]) == 1 and len(hook.calls["preflight"]) == 1
+    assert wait_clips().exit_code == 0 and status_line(run).startswith("done:")
+
+
+def test_a_partial_clips_json_after_a_failure_is_drawn_again_on_retry(hook):
+    hook.clips_code, hook.clips_complete = 3, False                    # the render failed: clips3d.json complete: false
+    run = hook.run()
+    assert jobs.run_wrapper(run) == 0
+    assert wait_clips().exit_code == 3 and status_line(run).startswith("failed:")
+    assert json.loads((run / post_run.CLIPS3D_DIR / "clips3d.json").read_text()) == {"complete": False}
+    wrapper_gone()
+    hook.clips_code, hook.clips_complete = 0, True                     # the second try works
+    assert post_run.retry(run) == 0
+    assert status_line(run).startswith("launched:")
+    assert wait_clips().exit_code == 0 and status_line(run).startswith("done:")
+    assert json.loads((run / post_run.CLIPS3D_DIR / "job.json").read_text())["launch"] == 2   # the same job, relaunched
+
+
+def test_a_clips_job_never_fires_clips_of_its_own(hook, tmp_path):
+    """Even a hand-edited job.json carrying both keys: a job with clips3d_for only reports its end; and the launcher
+    refuses the two together."""
+    other = tmp_path / "runs" / "the_run"
+    run = hook.run(name="clipsjob")                                    # finishes 0 with a complete run of its own
+    record = json.loads((run / "job.json").read_text())
+    (run / "job.json").write_text(json.dumps(dict(record, post_clips3d=True, clips3d_for=str(other))))
+    assert jobs.run_wrapper(run) == 0
+    assert not hook.calls["launch"] and not hook.calls["preflight"]
+    assert status_line(other).startswith("failed:")                    # its end went to the run it drew for
+    assert not (run / post_run.CLIPS3D_DIR).exists()
+    with pytest.raises(jobs.LaunchRefused, match="never starts clips of its own"):
+        jobs.launch(TASK, "both", tmp_path / "both", ["true"], 0.0, 0.0, settings=hook.caps, post_clips3d=True,
+                    clips3d_for=other)
+
+
+def test_a_preflight_that_does_not_answer_leaves_clips_pending(hook, monkeypatch, tmp_path):
+    """The real preflight() with a script that hangs (a child that keeps its output open, as a stuck nvidia-smi
+    would): cut at PREFLIGHT_TIMEOUT_S, its whole process group killed, the hook says pending."""
+    slow = tmp_path / "slow_preflight.sh"
+    slow.write_text("#!/bin/bash\necho checking\nsleep 60\n")
+    monkeypatch.setattr(post_run, "preflight", REAL_PREFLIGHT)
+    monkeypatch.setattr(post_run, "PREFLIGHT_SCRIPT", slow)
+    monkeypatch.setattr(post_run, "PREFLIGHT_TIMEOUT_S", 1.0)
+    run = hook.run()
+    started = time.monotonic()
+    assert jobs.run_wrapper(run) == 0
+    assert time.monotonic() - started < 15.0
+    assert clips_job(run) is None and not hook.calls["launch"]
+    line = status_line(run)
+    assert line.startswith("pending:") and "preflight exit 124" in line
+    assert "no answer within 1 s" in (run / post_run.CLIPS3D_DIR / post_run.PREFLIGHT_LOG).read_text()
+    assert (run / "exit_code").read_text() == "0\n"
+
+
 def test_the_status_reads_running_while_the_clips_job_lives_and_done_after(hook):
     hook.clips_sleep_s = 3.0
     run = hook.run()
@@ -324,14 +401,45 @@ def test_the_status_reads_running_while_the_clips_job_lives_and_done_after(hook)
     assert post_run.hook_state(run, state.read()["jobs"]) == "done"
 
 
-def test_a_launched_marker_whose_clips_job_is_gone_reads_pending(tmp_path, monkeypatch):
-    """A clips command that could not start (or a wrapper killed with it) never writes its end: status says pending."""
+def test_a_launched_marker_whose_clips_job_is_gone_reads_missing(tmp_path, monkeypatch):
+    """A clips command that could not start (or a wrapper killed with it) never writes its end: status says missing."""
     monkeypatch.setenv(shared.SHARED_ENV, str(tmp_path / "shared"))
     run = tmp_path / "runs" / "train"
     (run / post_run.CLIPS3D_DIR).mkdir(parents=True)
     (run / post_run.CLIPS3D_DIR / post_run.HOOK_STATUS).write_text("launched: job clips3d_train\n")
-    assert post_run.hook_state(run, {}).startswith("pending (the clips job ended without a result")
+    assert post_run.hook_state(run, {}) == post_run.MISSING
     assert post_run.hook_state(tmp_path / "runs" / "other", {}) is None
+
+
+@pytest.mark.parametrize("post, exit_code, clips, expected", [
+    (True, "0\n", None, "missing"),                  # the wrapper was killed (or the machine rebooted) before the hook
+    (True, "0\n", {"complete": False}, "missing"),   # a partial clips3d.json, nothing alive
+    (True, "0\n", {"complete": True}, None),         # clips made (by hand): nothing to flag
+    (True, "3\n", None, None),                       # the run failed: no clips owed
+    (True, None, None, None),                        # no exit code yet: still running
+    (False, "0\n", None, None),                      # the hook was off
+], ids=["no_marker", "partial_clips", "clips_complete", "run_failed", "no_exit_code", "hook_off"])
+def test_an_exit_0_run_with_the_hook_on_and_no_clips_reads_missing(tmp_path, monkeypatch, post, exit_code, clips,
+                                                                   expected):
+    monkeypatch.setenv(shared.SHARED_ENV, str(tmp_path / "shared"))
+    run = tmp_path / "runs" / "train"
+    run.mkdir(parents=True)
+    (run / "job.json").write_text(json.dumps({"name": "train", "post_clips3d": post}))
+    if exit_code is not None:
+        (run / "exit_code").write_text(exit_code)
+    if clips is not None:
+        (run / post_run.CLIPS3D_DIR).mkdir()
+        (run / post_run.CLIPS3D_DIR / "clips3d.json").write_text(json.dumps(clips))
+    assert post_run.hook_state(run, {}) == expected
+
+
+def test_the_status_line_says_missing_after_a_killed_wrapper(hook, monkeypatch):
+    run = hook.run()
+    monkeypatch.setattr(jobs, "_post_run", lambda *args: None)        # the wrapper died before its hook ran
+    assert jobs.run_wrapper(run) == 0
+    wrapper_gone()
+    lines = [line for line in jobs.status_lines() if line.startswith("train ")]
+    assert len(lines) == 1 and "clips3d=missing" in lines[0]
 
 
 def test_the_status_shows_the_clips_state(hook):
@@ -371,6 +479,47 @@ def test_the_flag_is_recorded_and_replayed_and_a_failed_run_keeps_its_code(tmp_p
     assert "post-run clips3d: not started (the training job exited 3, not 0)" in log
     retried = run_py([TOOL, "post-clips3d", "--run-dir", tmp_path / "runs" / "flagged"], env)
     assert retried.returncode == 2 and "exited 3" in retried.stdout + retried.stderr
+
+
+@pytest.mark.parametrize("cmd, on", [
+    (["/x/python", "scripts/ste_exploit_l012.py", "--variant", "base", "--side", "guard", "--run-dir", "r"], True),
+    (["/x/python", "-u", "/abs/svg_training/scripts/ste_exploit_l012.py", "--side", "strike"], True),
+    (["/x/python", "scripts/ste_exploit_l012.py", "--pilot", "--run-dir", "r"], False),       # writes pilot.json only
+    (["/x/python", "scripts/ste_exploit_l012.py", "--run0", "--run-dir", "r"], False),        # run 0: no INFO batch
+    (["/x/python", "scripts/ste_exploit_l012.py", "verdict", "--runs", "a,b"], False),
+    (["/x/python", "scripts/ste_l5_clips3d.py", "--run-dir", "r"], False),
+    (["/x/python", "scripts/ste_tier2_l013.py", "--run-dir", "r"], False),                    # no eval_info.npz
+    (["/x/python", "scripts/ste_dummy_job.py"], False),
+], ids=["run", "run_abs", "pilot", "run0", "verdict", "clips", "tier2", "dummy"])
+def test_the_hook_is_on_by_default_for_the_training_drivers_runs(cmd, on):
+    assert post_run.drives_training(cmd) is on
+
+
+def test_the_default_is_recorded_and_no_post_clips3d_opts_out(tmp_path, monkeypatch):
+    """Through scripts/ste_job.py: a command running scripts/ste_exploit_l012.py gets the hook with no flag (job.json,
+    cmd.txt); --no-post-clips3d turns it off. The stand-in exits 0 without a finished run: the hook says skipped."""
+    shared_dir = tmp_path / "shared"
+    env = tool_env(shared_dir)
+    monkeypatch.setenv(shared.SHARED_ENV, str(shared_dir))
+    monkeypatch.setenv(shared.LEGACY_LOGS_ENV, "")
+    caps = settings(tmp_path, phase_cap=5.0, L0_11=1.0)
+    for name, extra, on in (("auto", [], True), ("optout", ["--no-post-clips3d"], False)):
+        run = tmp_path / "runs" / name
+        cmd = [child_python(), "-c", "import sys\nsys.exit(0)", "scripts/ste_exploit_l012.py", "--side", "guard"]
+        done = run_py([TOOL, "launch", "--task", TASK, "--name", name, "--run-dir", run, "--min-s", 0, "--gpu-h", 0,
+                       "--settings", caps, "--beat-s", BEAT_S, *extra, "--", *cmd], env)
+        assert done.returncode == 0, done.stderr
+        assert json.loads((run / "job.json").read_text())["post_clips3d"] is on
+        replay = (run / "cmd.txt").read_text()
+        assert ("--post-clips3d" in replay) is on and ("--no-post-clips3d" in replay) is not on
+        assert run_py([TOOL, "wait", name, "--poll-s", "0.02"], env).returncode == 0
+        marker = run / post_run.CLIPS3D_DIR / post_run.HOOK_STATUS
+        assert marker.exists() is on
+        if on:
+            assert marker.read_text().startswith("skipped:") and "results.json" in marker.read_text()
+    both = run_py([TOOL, "launch", "--task", TASK, "--name", "x", "--run-dir", tmp_path / "x", "--min-s", 0, "--gpu-h",
+                   0, "--post-clips3d", "--no-post-clips3d", "--", "true"], env)
+    assert both.returncode == 2 and "not allowed with" in both.stderr
 
 
 def test_end_to_end_the_real_preflight_and_the_real_clip_script_on_a_stub_run(tmp_path, monkeypatch):

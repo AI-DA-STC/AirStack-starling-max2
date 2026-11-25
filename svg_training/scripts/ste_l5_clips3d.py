@@ -4,12 +4,15 @@
 the driver (``scripts/ste_exploit_l012.py``) and the gate files are not touched, and nothing is written in the run
 folder except ``--out`` (default ``<run>/videos3d``).
 
-**Started automatically** after a training run (``source/svg_training/ste/post_run.py``): launch the run with
-``scripts/ste_job.py launch --post-clips3d ...``; when its command exits 0 and the run folder holds a complete
-``results.json`` and ``agent_final.pt``, the job's wrapper launches this script as its own recorded job
+**Started automatically** after a training run (``source/svg_training/ste/post_run.py``): ``scripts/ste_job.py
+launch`` turns the post-run hook on by default when the command runs ``scripts/ste_exploit_l012.py`` as a run of record
+(``--no-post-clips3d`` opts out, ``--post-clips3d`` opts any other command in); when its command exits 0 and the run
+folder holds a complete ``results.json`` and ``agent_final.pt``, the job's wrapper launches this script as its own
+recorded job
 (``clips3d_<job>``, run folder ``<run>/videos3d``, the run's task and settings, ``--gpu-h 0.1``, ``--min-s 30``), so its
 GPU-hours count against the run's task cap. An open owner pause, a busy GPU or the cap leave ``pending`` in
-``<run>/videos3d/HOOK_STATUS`` (never a failure of the run); the retry line is in that file:
+``<run>/videos3d/HOOK_STATUS`` (never a failure of the run; ``scripts/ste_job.py status`` shows ``clips3d=<state>``,
+``missing`` after a killed wrapper or a reboot); the retry line is in that file:
 
     scripts/ste_job.py post-clips3d --run-dir <run>
 

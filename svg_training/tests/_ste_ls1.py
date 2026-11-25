@@ -20,6 +20,10 @@ ste_learning/drafts/LS1_TASK_PLAN.md, section 0 constraint 5; created in task LS
   tests/test_ste_ls1_distil_gates.py so the distillation gate file has one writer in every test): a gate file's text
   from its parsed dict, the committed ``distil_gates.toml`` with the owner's keys filled from ``STAND_IN``, and that
   text written under ``tmp_path`` (relative ``[source]`` paths still resolve from the ``svg_training/`` root).
+* ``save_tiny_net(..., provenance=...)``, ``write_fit_report``, ``read_net`` (task LS1-M2-T6): the equivalence read
+  takes a network only with a complete ``fit_report.json`` beside it whose shas name the network and the gate file,
+  and whose provenance names the same gate file; ``read_net`` saves a tiny network distilled, by its meta, from a given
+  gate file and writes that report (no fit is run: the read's checks, not the network's quality, are under test).
 
 CPU only."""
 import copy
@@ -122,10 +126,10 @@ def tiny_net(side, gates=None, team_size=3, hidden=(16,), zeroed_inputs=(6, 7, 1
                                   list(hidden), list(zeroed_inputs))
 
 
-def save_tiny_net(tmp_path, side, cfg, gates=None, **tiny_kw) -> tuple[Path, str]:
+def save_tiny_net(tmp_path, side, cfg, gates=None, provenance: dict | None = None, **tiny_kw) -> tuple[Path, str]:
     """``tiny_net(side, gates, **tiny_kw)`` saved under ``tmp_path`` with a complete C3 meta: the base variant's game
     file (repository-relative) and its sha256, ``game_constants(cfg)``, the scripts' sha256 today, synthetic
-    provenance. Returns (absolute path, the sha256 ``save_skill_net`` returned)."""
+    provenance (or ``provenance``, as given). Returns (absolute path, the sha256 ``save_skill_net`` returned)."""
     gates = _gates(gates)
     net = tiny_net(side, gates=gates, **tiny_kw)
     game_file = gates.games[gates.variants["base"]["game"]].file
@@ -133,8 +137,9 @@ def save_tiny_net(tmp_path, side, cfg, gates=None, **tiny_kw) -> tuple[Path, str
             "scripted_sha256": skill_net.scripted_sha256(), "game_file": str(game_file),
             "game_sha256": hashlib.sha256((ROOT / game_file).read_bytes()).hexdigest(),
             "game_constants": skill_net.game_constants(cfg),
-            "provenance": {"distil_gates_file": "synthetic (tests/_ste_ls1.py)", "distil_gates_sha256": "synthetic",
-                           "rounds": 0, "seed": int(tiny_kw.get("seed", 5)), "git_commit": "synthetic"}}
+            "provenance": provenance if provenance is not None else
+            {"distil_gates_file": "synthetic (tests/_ste_ls1.py)", "distil_gates_sha256": "synthetic",
+             "rounds": 0, "seed": int(tiny_kw.get("seed", 5)), "git_commit": "synthetic"}}
     path = (Path(tmp_path) / f"skill_net_{side}.pt").resolve()
     return path, skill_net.save_skill_net(path, net, meta)
 
@@ -248,3 +253,33 @@ def write_distil_gates(tmp_path, data: dict | None = None, name: str = "distil_g
     path = Path(tmp_path) / name
     path.write_text(toml_text(filled_distil() if data is None else data))
     return path
+
+
+def write_fit_report(net_path, net_sha256: str, gates_sha256: str, of_record: bool = False,
+                     complete: bool = True) -> Path:
+    """A ``fit_report.json`` beside the network file (the M2 file table's keys, synthetic: no round, an empty final
+    read): ``gates_sha256``, ``net_sha256``, ``of_record`` and, last, ``complete`` (left out when ``complete`` is
+    False, as a report still being written)."""
+    report = {"rounds": [], "final": {}, "gates_sha256": gates_sha256, "net_sha256": net_sha256,
+              "of_record": bool(of_record)}
+    if complete:
+        report["complete"] = True
+    path = Path(net_path).parent / "fit_report.json"
+    path.write_text(json.dumps(report, indent=1) + "\n")
+    return path
+
+
+def read_net(folder, side, gates_file, of_record: bool = False, gates=None, **tiny_kw) -> tuple[Path, str]:
+    """A tiny network of ``side`` saved in ``folder`` as if distilled from ``gates_file``: its provenance names that file
+    and its sha256 (``of_record`` as given), and a complete ``fit_report.json`` beside it names both shas. Returns
+    (path, the network's sha256)."""
+    gates = _gates(gates)
+    cfg = exploit.variant_cfg(gates, "base")
+    gates_sha = hashlib.sha256(Path(gates_file).read_bytes()).hexdigest()
+    folder = Path(folder)
+    folder.mkdir(parents=True, exist_ok=True)
+    provenance = {"distil_gates_file": Path(gates_file).name, "distil_gates_sha256": gates_sha, "rounds": 0,
+                  "seed": int(tiny_kw.get("seed", 5)), "git_commit": "synthetic", "of_record": bool(of_record)}
+    path, sha = save_tiny_net(folder, side, cfg, gates=gates, provenance=provenance, **tiny_kw)
+    write_fit_report(path, sha, gates_sha, of_record=of_record)
+    return path, sha

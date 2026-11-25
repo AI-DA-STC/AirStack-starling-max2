@@ -13,6 +13,9 @@
   controls are read first; a cell inside the margin at plain alpha but outside at the adjusted z is NOT DISTILLED.
 * ``test_the_committed_limits_run_through_the_rule`` is the one designed skip of M2 until the lead fills the file (R38).
 """
+import contextlib
+import io
+import json
 import math
 import sys
 
@@ -25,7 +28,9 @@ from svg_training.core.observations import OBS_DIM
 from svg_training.core.rewards import GUARD_WIN, STRIKE_WIN
 from svg_training.opponents import perturbed
 from svg_training.opponents.scripted import REGISTRY
-from svg_training.ste import cells, distil, exploit, skill_net, skills
+from svg_training.ste import cells, distil, exploit, scoring, skill_net, skills
+from svg_training.ste.run_contract import EXIT_CONTROL_FAILED, EXIT_DONE, EXIT_INTERRUPTED, EXIT_REFUSED
+from svg_training.viz import replay3d
 
 import _ste_ls1 as h
 from _ste_tools import SCRIPTS
@@ -681,3 +686,331 @@ def test_a_cell_inside_the_margin_at_plain_alpha_but_outside_at_the_adjusted_z_i
     assert eq.verdict({"c": {"status": eq.PASS, "detail": ""}}, failures, []) == eq.NOT_DISTILLED
     plain_read = eq.interval_step({"x": arm}, {"x": ref}, {"x": cells.FIXED}, side, alpha, 1)
     assert eq.limit_failures([plain_read["cells"]["x"]], {"ci": [0.0, 0.0]}, clean["errors"], lenient) == []
+
+
+# ================================================================================================ the read (task LS1-M2-T6)
+# Tiny reads on the CPU: the Guard team, one or two opponents (the first is the side's near-miss opponent, so the
+# near-miss cells are played), no mixed combination of the gated cells (the near-miss mixed cell is still played: the
+# scripted arms always hold the near-miss cells), [smoke] read_games starts (24) unless --games says fewer. The network
+# is a tiny one whose meta and fit_report.json name the gate file read (tests/_ste_ls1.read_net): the read's checks,
+# controls and files are under test, not a fit.
+READ_SIDE = "guard"
+READ_OPPONENT = "strike_straight"          # the Guard team's near-miss opponent (distil_gates.toml [read])
+STRIKE_GATED_OPPONENT = "guard_field"      # the Strike team's read test: an opponent whose games end soon (T44: <= 81 ticks)
+VERDICT_WORDS = (eq.DISTILLED, eq.NOT_DISTILLED, eq.INCONCLUSIVE)
+
+
+def _read_argv(gates_file, net, run_dir, side=READ_SIDE, opponents=(READ_OPPONENT,), mixed=0, games=None, smoke=True,
+               extra=()):
+    argv = ["--gates", str(gates_file), "--side", side, "--skill-net", str(net), "--run-dir", str(run_dir),
+            "--cap-h", "1", "--opponents", *opponents, "--mixed", str(mixed)]
+    if games is not None:
+        argv += ["--games", str(games)]
+    if smoke:
+        argv.append("--smoke")
+    return argv + list(extra)
+
+
+def _launch(argv) -> tuple[int, list[str]]:
+    """eq.main in this process (the hidden stop flag signals this process; RunGuard's handler takes it); stdout lines."""
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        code = eq.main(argv)
+    return code, buf.getvalue().splitlines()
+
+
+def _files(run_dir):
+    return {p.name: p.stat().st_mtime_ns for p in sorted((run_dir / eq.GAMES_DIR).glob("*.npz"))}
+
+
+def _json(path):
+    return json.loads(path.read_text())
+
+
+@pytest.fixture(scope="module")
+def fill_read(tmp_path_factory):
+    """The committed gate file (the owner's keys FILL_) under --smoke: a first launch stopped (hidden flag) after the
+    last control batch, then the same command to the end. Returns the snapshot between the two and the end state."""
+    tmp = tmp_path_factory.mktemp("fill_read")
+    net, net_sha = h.read_net(tmp / "net", READ_SIDE, h.DISTIL_GATES)
+    run_dir = tmp / "run"
+    last_control = eq.batch_name(eq.STAGE_C5, f"{READ_OPPONENT}_00")
+    first, first_lines = _launch(_read_argv(h.DISTIL_GATES, net, run_dir,
+                                            extra=("--stop-after-batch", last_control)))
+    snap = {"code": first, "lines": first_lines, "files": _files(run_dir),
+            "controls": _json(run_dir / eq.CONTROLS_FILE), "results": (run_dir / eq.RESULTS).exists()}
+    code, lines = _launch(_read_argv(h.DISTIL_GATES, net, run_dir))
+    return {"snap": snap, "code": code, "lines": lines, "run_dir": run_dir, "net": net, "net_sha": net_sha,
+            "last_control": last_control}
+
+
+def test_controls_are_written_before_any_result_batch(g, fill_read):
+    """Every control (C1 to C7) is in controls.json before the first R1 batch is played; a stop after the last control
+    batch is the contract's own stop (exit 4) and writes no results.json."""
+    snap = fill_read["snap"]
+    assert snap["code"] == EXIT_INTERRUPTED and not snap["results"]
+    assert set(eq.control_names(READ_SIDE)) <= set(snap["controls"])
+    assert f"{fill_read['last_control']}.npz" in snap["files"]
+    assert not [f for f in snap["files"] if f.startswith(eq.STAGE_R1)]
+    for name in eq.control_names(READ_SIDE):
+        assert snap["controls"][name]["status"] in eq.STATUSES
+
+
+def test_resume_skips_done_batches(fill_read):
+    """The same command resumes at the first batch not done: every batch file of the first launch is untouched (mtime),
+    and the result batches are played."""
+    assert fill_read["code"] == EXIT_DONE
+    now = _files(fill_read["run_dir"])
+    for name, mtime in fill_read["snap"]["files"].items():
+        assert now[name] == mtime, name
+    assert [f for f in now if f.startswith(eq.STAGE_R1)]
+
+
+def test_a_resumed_read_writes_the_uninterrupted_reads_results(tmp_path, fill_read):
+    """results.json is built from the batch files only: the stopped and resumed read gives the very file of a read run
+    through in one launch (same network, same command)."""
+    net, _ = h.read_net(tmp_path / "net", READ_SIDE, h.DISTIL_GATES)
+    whole = tmp_path / "whole"
+    assert _launch(_read_argv(h.DISTIL_GATES, net, whole))[0] == EXIT_DONE
+    assert (whole / eq.RESULTS).read_bytes() == (fill_read["run_dir"] / eq.RESULTS).read_bytes()
+
+
+def test_the_strike_read_plays_the_info_cells_beside_the_scripts(g, tmp_path):
+    """R2 (INFO): the Strike team's cells against cells.toml [info_opponents] (guard_mark_inside, no T44 cell) are
+    played by the scripted arm and then the network, paired with each other; they are in results' cells as kind info,
+    not in the pooled rows or m, and no limit reads them."""
+    net, _ = h.read_net(tmp_path / "net", "strike", h.DISTIL_GATES)
+    info = g.cells["info_opponents"]["strike"]
+    run_dir = tmp_path / "run"
+    code, lines = _launch(_read_argv(h.DISTIL_GATES, net, run_dir, side="strike", games=2,
+                                     opponents=(STRIKE_GATED_OPPONENT, *info)))
+    assert code == EXIT_DONE and lines[-1] == eq.NOT_RUN
+    res = _json(run_dir / eq.RESULTS)
+    stages = {eq.stage_of(b["name"]) for b in _json(run_dir / eq.LAYOUT_FILE)["batches"]}
+    assert {eq.STAGE_R2S, eq.STAGE_R2N} <= stages
+    rows = [c for c in res["cells"] if c["kind"] == cells.INFO]
+    assert rows and {c["arm"] for c in rows} == {eq.NET} and {c["opponent"] for c in rows} == set(info)
+    gated = [c for c in res["cells"] if c["arm"] == eq.NET and c["kind"] != cells.INFO]
+    assert res["pooled"]["all"]["cells"] == len(gated)
+    assert res["intervals"]["m"] == {"strike": cells.gated_m(g.specs["strike"], g.cells, g.skills_gates)}
+
+
+def test_a_filled_read_past_its_controls_reads_the_network_through_the_rule(tmp_path, monkeypatch):
+    """The R1 path with the owner's keys filled (STAND_IN, synthetic): with C3 to C7 forced to PASS (24 starts cannot
+    meet the STAND_IN margins; the controls' own arithmetic is tested above), the network's gated cells, the pooled row
+    and R1's command-error table go through limit_failures; each failure names a [limits] key and the verdict is the
+    rule's (verdict(controls, failures, [])), exit 0."""
+    gates = h.write_distil_gates(tmp_path)
+    net, _ = h.read_net(tmp_path / "net", READ_SIDE, gates)
+    forced = {"status": eq.PASS, "detail": "forced by the test"}
+    monkeypatch.setattr(eq, "gross_control", lambda *a, **k: dict(forced))
+    monkeypatch.setattr(eq, "near_miss_control", lambda *a, **k: dict(forced))
+    run_dir = tmp_path / "run"
+    code, lines = _launch(_read_argv(gates, net, run_dir, games=8))
+    res = _json(run_dir / eq.RESULTS)
+    assert code == EXIT_DONE and lines[-1] == res["verdict"] in (eq.DISTILLED, eq.NOT_DISTILLED)
+    assert isinstance(res["failures"], list)
+    assert all(f.split(":")[0] in distil.LIMIT_KEYS for f in res["failures"])
+    gated = [c for c in res["cells"] if c["arm"] == eq.NET and c["kind"] != cells.INFO]
+    limits = distil.load_distil_gates(gates).limits
+    assert res["failures"] == eq.limit_failures(gated, res["pooled"]["all"], res["errors"], limits)
+    assert res["verdict"] == eq.verdict(res["controls"], res["failures"], [])
+    skills_seen = {s for s, e in res["errors"]["skills"].items() if e["rows"]}
+    assert skills_seen == set(distil.load_distil_gates(gates).specs[READ_SIDE].players)
+    assert all(set(e["rmse_by_n_live"]) == {"1", "2", "3"} for e in res["errors"]["skills"].values())
+
+
+def test_a_smoke_on_24_starts_ends_with_not_run_and_per_game_arrays(g, fill_read):
+    """F1: with the owner's keys FILL_, C3 to C7, the failures and the verdict are NOT_RUN; C1, C1m and C2 PASS; no
+    DISTILLED or NOT DISTILLED anywhere; results.json has exactly the file table's keys (complete last); each batch file
+    holds the per-game arrays (save_batch's, pos_at, alive_at, and pair_class on an arm batch)."""
+    run_dir = fill_read["run_dir"]
+    assert fill_read["lines"][-1] == eq.NOT_RUN
+    res = _json(run_dir / eq.RESULTS)
+    assert list(res) == list(eq.RESULT_KEYS) and res["complete"] is True
+    assert res["verdict"] == eq.NOT_RUN and res["failures"] == eq.NOT_RUN and res["of_record"] is False
+    assert res["net_sha256"] == fill_read["net_sha"] and res["gates_sha256"] == g.sha256
+    named = eq.control_names(READ_SIDE)
+    for name in named:
+        want = eq.PASS if name in (eq.CTL_C1, eq.CTL_C1M, eq.CTL_C2) else eq.NOT_RUN
+        assert res["controls"][name]["status"] == want, (name, res["controls"][name])
+    assert res["controls"] == _json(run_dir / eq.CONTROLS_FILE)
+    text = "\n".join([(run_dir / eq.RESULTS).read_text(), (run_dir / eq.RESULTS_MD).read_text(),
+                      (run_dir / eq.CONTROLS_FILE).read_text()] + fill_read["lines"] + fill_read["snap"]["lines"])
+    assert eq.DISTILLED not in text                              # NOT DISTILLED contains it too
+    drones, marks = g.specs[READ_SIDE].drones, len(g.read["path_times_s"])
+    assert res["cells"] and all(set(c) == set(eq.CELL_KEYS) for c in res["cells"])
+    assert {c["n"] for c in res["cells"]} == {g.smoke["read_games"]}
+    for batch in _json(run_dir / eq.LAYOUT_FILE)["batches"]:
+        pg = scoring.load_batch(run_dir / eq.GAMES_DIR / f"{batch['name']}.npz")
+        games = len(batch["cells"]) * batch["n"]
+        assert pg["pos_at"].shape == (games, drones, marks, 3) and pg["pos_at"].dtype == np.float32
+        assert pg["alive_at"].shape == (games, drones, marks) and pg["alive_at"].dtype == bool
+        assert set(exploit.PER_GAME) <= set(pg) and pg["outcome"].shape == (games,)
+        if batch["arm"] == eq.SCRIPTS:
+            assert "pair_class" not in pg
+        else:
+            assert pg["pair_class"].shape == (games,) and pg["pair_class"].dtype == np.int8
+            assert set(np.unique(pg["pair_class"])) <= {eq.PAIR_SAME, eq.PAIR_B, eq.PAIR_C}
+
+
+def test_layout_names_every_batch_and_cell(g, ref, fill_read):
+    """layout.json lists every batch in play order with its cells (index, arm, codes, opponent, player) and how it was
+    played (device, seed, tick cap, hold, n, the gate file's and, for the network's own arms, the network's sha256)."""
+    run_dir = fill_read["run_dir"]
+    layout = _json(run_dir / eq.LAYOUT_FILE)
+    assert list(layout) == ["batches"]
+    names = [b["name"] for b in layout["batches"]]
+    assert sorted(f"{n}.npz" for n in names) == sorted(_files(run_dir)) and len(set(names)) == len(names)
+    stages = [eq.stage_of(n) for n in names]
+    assert stages == sorted(stages, key=eq.STAGES.index)          # play order
+    sg = g.skills_gates
+    for b in layout["batches"]:
+        assert set(b) == set(eq.LAYOUT_BATCH_KEYS), b
+        assert (b["side"], b["device"], b["seed"], b["ticks_cap"], b["hold_ticks"], b["n"], b["gates_sha256"]) == (
+            READ_SIDE, g.read["device"], int(ref.meta["seed"]), int(sg.run["ticks_cap"]), eq.HOLD_TICKS,
+            g.smoke["read_games"], g.sha256)
+        assert b["net_sha256"] == (fill_read["net_sha"] if b["arm"] in (eq.NET, eq.PERMUTED) else None)
+        assert isinstance(b["seconds"], float) and b["seconds"] > 0
+        assert b["cells"] and all(set(c) == set(eq.LAYOUT_CELL_KEYS) for c in b["cells"])
+        assert {c["arm"] for c in b["cells"]} == {b["arm"]}
+        assert {c["opponent"] for c in b["cells"]} == {READ_OPPONENT}
+        assert all(c["player"].startswith(cells.PREFIXES) for c in b["cells"])
+
+
+def test_the_batch_file_serves_the_replay_check(g, fill_read):
+    """R2 CA-4: a batch file holds start_pos_m [G, M, 3] (both teams) and every replay3d.EXACT_KEYS key, and the replay
+    check of the batch against itself passes."""
+    run_dir = fill_read["run_dir"]
+    guards, strikes = g.specs["guard"].drones, g.specs["strike"].drones
+    for path in sorted((run_dir / eq.GAMES_DIR).glob("*.npz")):
+        pg = scoring.load_batch(path)
+        assert pg["start_pos_m"].shape == (len(pg["outcome"]), guards + strikes, 3)
+        assert set(replay3d.EXACT_KEYS) <= set(pg)
+        assert replay3d.check_against_record(pg, pg)["equal"]
+
+
+def _reference_slices(run_dir):
+    """{(codes, opponent): the scripted arm's per-game record of that cell} from layout.json and the batch files."""
+    out = {}
+    for b in _json(run_dir / eq.LAYOUT_FILE)["batches"]:
+        if b["arm"] != eq.SCRIPTS:
+            continue
+        pg = scoring.load_batch(run_dir / eq.GAMES_DIR / f"{b['name']}.npz")
+        for i, c in enumerate(b["cells"]):
+            out[(tuple(c["codes"]), c["opponent"])] = exploit.slice_cell(pg, i, b["n"])
+    return out
+
+
+def test_the_intervals_use_the_adjusted_z(g, fill_read):
+    """R2 RC-1: every stored cell ci is paired_cell at results' z_cell, z_cell = adjusted_z(alpha, m) with m the side's
+    gated cells of the committed layout; the pooled ci at z_pooled = adjusted_z(alpha, 1)."""
+    run_dir = fill_read["run_dir"]
+    res = _json(run_dir / eq.RESULTS)
+    iv = res["intervals"]
+    m = cells.gated_m(g.specs[READ_SIDE], g.cells, g.skills_gates)
+    alpha = g.read["alpha"]
+    assert iv["m"] == {READ_SIDE: m} and iv["alpha"] == alpha
+    assert iv["z_cell"] == cells.adjusted_z(alpha, m) and iv["z_pooled"] == cells.adjusted_z(alpha, 1)
+    assert (iv["interval"], iv["correction"]) == (g.read["interval"], g.read["correction"])
+    refs = _reference_slices(run_dir)
+    arm_wins, ref_wins = {}, {}
+    for c in res["cells"]:
+        with np.load(run_dir / c["games"]["file"]) as z:
+            mine = {k: z[k][c["games"]["start"]:c["games"]["stop"]] for k in ("outcome", "end_step")}
+        base = refs[(tuple(c["codes"]), c["opponent"])]
+        want = cells.paired_cell(mine, base, READ_SIDE, iv["z_cell"])
+        assert (c["b"], c["c"], c["n"], c["ci"]) == (want["b"], want["c"], want["n"], want["ci"]), c
+        if c["arm"] == eq.NET and c["kind"] in (cells.FIXED, cells.MIXED):
+            key = (tuple(c["codes"]), c["opponent"])
+            arm_wins[key], ref_wins[key] = eq._wins(mine, READ_SIDE), eq._wins(base, READ_SIDE)
+    assert arm_wins
+    assert res["pooled"]["all"] == cells.pooled_difference(arm_wins, ref_wins, iv["z_pooled"])
+
+
+def test_a_smoke_with_stand_in_limits_ends_with_a_verdict_word(tmp_path):
+    """Constraint 5 (design check of M2): a smoke on a gate file filled from STAND_IN judges the controls and writes a
+    verdict word (which one depends on 24 starts and a tiny network, so it is not asserted): the last line, results'
+    verdict and the exit agree, no control is NOT_RUN, the failures are a list."""
+    gates = h.write_distil_gates(tmp_path)
+    net, _ = h.read_net(tmp_path / "net", READ_SIDE, gates)
+    opps = cells.gated_opponents(distil.load_distil_gates(gates).skills_gates, READ_SIDE)
+    second = next(o for o in opps if o != READ_OPPONENT)
+    run_dir = tmp_path / "run"
+    code, lines = _launch(_read_argv(gates, net, run_dir, opponents=(READ_OPPONENT, second)))
+    res = _json(run_dir / eq.RESULTS)
+    assert lines[-1] in VERDICT_WORDS and lines[-1] == res["verdict"]
+    assert code == (EXIT_CONTROL_FAILED if res["verdict"] == eq.INCONCLUSIVE else EXIT_DONE)
+    assert isinstance(res["failures"], list) and res["of_record"] is False
+    assert eq.NOT_RUN not in {v["status"] for v in res["controls"].values()}
+
+
+class _ChangedOracle(cells.ScriptOracle):
+    """The oracle with one command changed: vx moved on every live drone (C2 must catch it)."""
+
+    def forward(self, obs, slot, z, clip=True):
+        out = super().forward(obs, slot, z, clip=clip).clone()
+        alive = obs[:, skills._V.alive]
+        out[:, 0] = (out[:, 0] + 0.5 * alive).clamp(-1, 1)
+        return out
+
+
+def test_a_failed_control_exits_6_and_again_6_on_the_same_folder(tmp_path, monkeypatch):
+    """OP-19: a control not PASS writes INCONCLUSIVE (exit 6) and plays no result batch; the same command on the folder
+    exits 6 again (terminal)."""
+    net, _ = h.read_net(tmp_path / "net", READ_SIDE, h.DISTIL_GATES)
+    run_dir = tmp_path / "run"
+    argv = _read_argv(h.DISTIL_GATES, net, run_dir, games=4)
+    monkeypatch.setattr(cells, "ScriptOracle", _ChangedOracle)
+    code, lines = _launch(argv)
+    assert code == EXIT_CONTROL_FAILED and lines[-1] == eq.INCONCLUSIVE
+    controls = _json(run_dir / eq.CONTROLS_FILE)
+    assert controls[eq.CTL_C2]["status"] == eq.FAIL
+    res = _json(run_dir / eq.RESULTS)
+    assert res["verdict"] == eq.INCONCLUSIVE and res["complete"] is True and eq.CTL_C2 in " ".join(res["reasons"])
+    assert not [f for f in _files(run_dir) if f.startswith(eq.STAGE_R1)]
+    monkeypatch.undo()
+    assert _launch(argv)[0] == EXIT_CONTROL_FAILED
+
+
+def test_a_net_from_another_gate_file_or_side_is_refused(tmp_path):
+    """Exit 2 before anything is written: a network distilled from another gate file, the other side's network, no
+    complete fit_report.json beside it or one naming another network or gate file, a smoke network outside --smoke, the
+    owner's keys FILL_ outside --smoke, a GPU job."""
+    filled = h.write_distil_gates(tmp_path)
+
+    def refused(argv, run_dir):
+        assert _launch(argv)[0] == EXIT_REFUSED
+        assert not run_dir.exists()
+
+    other, _ = h.read_net(tmp_path / "other", READ_SIDE, filled)
+    refused(_read_argv(h.DISTIL_GATES, other, tmp_path / "r1"), tmp_path / "r1")
+    strike, _ = h.read_net(tmp_path / "strike", "strike", h.DISTIL_GATES)
+    refused(_read_argv(h.DISTIL_GATES, strike, tmp_path / "r2"), tmp_path / "r2")
+    good, sha = h.read_net(tmp_path / "good", READ_SIDE, h.DISTIL_GATES)
+    h.write_fit_report(good, sha, g_sha := exploit.sha256_file(h.DISTIL_GATES), complete=False)
+    refused(_read_argv(h.DISTIL_GATES, good, tmp_path / "r3"), tmp_path / "r3")
+    h.write_fit_report(good, "0" * 64, g_sha)
+    refused(_read_argv(h.DISTIL_GATES, good, tmp_path / "r4"), tmp_path / "r4")
+    h.write_fit_report(good, sha, exploit.sha256_file(filled))
+    refused(_read_argv(h.DISTIL_GATES, good, tmp_path / "r5"), tmp_path / "r5")
+    (good.parent / "fit_report.json").unlink()
+    refused(_read_argv(h.DISTIL_GATES, good, tmp_path / "r6"), tmp_path / "r6")
+    mixed_up, mixed_sha = h.read_net(tmp_path / "mixed_up", READ_SIDE, filled)
+    h.write_fit_report(mixed_up, mixed_sha, g_sha)                   # the report names this file, the network does not
+    refused(_read_argv(h.DISTIL_GATES, mixed_up, tmp_path / "r6b"), tmp_path / "r6b")
+    smoke_net, _ = h.read_net(tmp_path / "smoke_net", READ_SIDE, filled, of_record=False)
+    refused(_read_argv(filled, smoke_net, tmp_path / "r7", smoke=False), tmp_path / "r7")
+    fill_net, _ = h.read_net(tmp_path / "fill_net", READ_SIDE, h.DISTIL_GATES, of_record=True)
+    refused(_read_argv(h.DISTIL_GATES, fill_net, tmp_path / "r8", smoke=False), tmp_path / "r8")
+    record_net, _ = h.read_net(tmp_path / "record_net", READ_SIDE, filled, of_record=True)
+    full = ["--gates", str(filled), "--side", READ_SIDE, "--skill-net", str(record_net), "--run-dir",
+            str(tmp_path / "r10"), "--cap-h", "1"]
+    ctx, why = eq.prepare(eq.parse(full))                            # the positive case: a read of record would start
+    assert why is None and ctx.of_record and ctx.n == ctx.g.cells["read"]["games_per_cell"]
+    assert ctx.m == len(ctx.gated) and not (tmp_path / "r10").exists()
+    job_dir = tmp_path / "r9"
+    job_dir.mkdir()
+    (job_dir / "job.json").write_text(json.dumps({"gpu_h": 0.5}))
+    assert _launch(_read_argv(h.DISTIL_GATES, fill_net, job_dir))[0] == EXIT_REFUSED
+    assert sorted(p.name for p in job_dir.iterdir()) == ["job.json"]

@@ -46,6 +46,10 @@ switch_window_ticks = 12           # PROPOSED (the builder's: one decision): tic
 switch_floor = 1.0                 # PROPOSED (the builder's: the mean weight): the least keep weight of a near-switch row
 seed = 150001                      # PROPOSED (C8): the data's games and schedule
 pool_seed = 150002                 # PROPOSED (C8): the opponent pool's draws
+# The control ctl_labels_are_the_scripts (task LS1-M2-T4) compares each kept row's labels with every script recomputed on
+# that row alone; not bit for bit: the batch layout moves the last bits (plan constraint 8). Measured on the CPU 26 Nov
+# 2026: at most 8.3e-07 over about 8.7 million rows of both teams, net-flown games included.
+label_check_atol = 1e-05           # PROPOSED (the builder's, from that measurement): the largest |difference| per channel
 
 [dagger]
 # The script-flown share of each relabelling round, round 0 first (bridge plan): round 0 is flown by the scripts only.

@@ -82,7 +82,8 @@ SECTIONS = {
     "source": ("skills_gates", "skills_gates_sha256", "cells", "cells_sha256", "scripted_sha256", "game_file",
                "game_sha256"),
     "data": ("games", "ticks_per_round", "hold", "uniform_share", "mix_share", "random_share", "absent_min_share",
-             "keep_rows", "switch_jump", "switch_window_ticks", "switch_floor", "seed", "pool_seed"),
+             "keep_rows", "switch_jump", "switch_window_ticks", "switch_floor", "seed", "pool_seed",
+             "label_check_atol"),
     "dagger": ("script_share",),
     "net": ("hidden", "zeroed_inputs", "std_floor"),
     "fit": ("epochs", "lr", "batch", "seed"),
@@ -205,6 +206,7 @@ def _check_data(d: dict, dagger: dict, skills_gates: exploit.ExploitGates) -> No
     _share(d["absent_min_share"], "[data] absent_min_share")
     _positive(d["switch_jump"], "[data] switch_jump")
     _positive(d["switch_floor"], "[data] switch_floor")
+    _positive(d["label_check_atol"], "[data] label_check_atol")
     decision = skills_gates.trainer["decision_ticks"]
     if d["hold"] != decision:
         raise ValueError(f"[data] hold must be the skills gate file's [trainer] decision_ticks ({decision}), got "

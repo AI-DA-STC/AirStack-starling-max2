@@ -22,21 +22,41 @@ ste_learning/drafts/LS1_TASK_PLAN.md, section 3.
   ``guard_parked_centre``), the active channels of the Strike skills, and numbers that match a direct recomputation
   with plain loops (per skill, by n_live, by hold bin, tick-to-tick change); it flies the net on its own seed.
 
+* The driver (T4, ``scripts/ste_ls1_distil.py``, jobs LS1.0 and LS1.1) under the run contract: every refusal (exit 2,
+  its reason on stderr, nothing written) before the run folder is touched: a gate file off its expected sha256, a
+  changed pin (skills gate file, cells, scripts, game), the owner's ``FILL_`` keys outside ``--smoke``, a seed that is
+  the scoring starts', a job.json at 0 GPU-h with a cuda device, GPU-h not equal to the cap, a cuda ``[smoke]
+  device``; a CPU smoke writes the net (loadable, its provenance names the gate sha256, not of record), the fit report
+  (exactly its documented keys, ``complete`` last), progress and the clips with the height panel; a done folder exits 0
+  without refitting; a run stopped after round 0 (the hidden ``--stop-after-step``, a real SIGTERM) resumes at round 1
+  without rewriting round 0's data and ends with the uninterrupted run's net; a NaN loss exits 5 and keeps the last
+  checkpoint (a relaunch exits 5 again); a label that is not the scripts' fails ``ctl_labels_are_the_scripts`` (exit 6,
+  terminal); a smoke on a byte copy of the committed file runs on the CPU at 0 GPU-h.
+
 Sizes from the plan: 16 games, 24 to 120 ticks, the skills gate file's ``[players]``/``[learner]``; the data-mix
-values (shares, hold, switch jump and window) are read from the committed distil_gates.toml, never typed. CPU only."""
+values (shares, hold, switch jump and window) are read from the committed distil_gates.toml, never typed. The driver's
+tests run the committed ``[smoke]`` sizes; all but one on a tmp copy with the small ``[net]`` and few ``[fit]`` epochs
+of the dagger test (the committed sizes take about 15 s per side). CPU only."""
 import dataclasses
+import importlib
 import itertools
 import json
 import math
+import re
+import sys
 
 import pytest
 import torch
 
 from svg_training.core.observations import OBS_DIM
 from svg_training.opponents.scripted import make_strategy
-from svg_training.ste import cells, distil, exploit, pool, skills, sweep
+from svg_training.ste import cells, distil, exploit, pool, post_run, scoring, skill_net, skills, sweep
+from svg_training.ste.run_contract import (CHECKPOINT_NAME, EXIT_CONTROL_FAILED, EXIT_DONE, EXIT_INTERRUPTED,
+                                           EXIT_NONFINITE, EXIT_REFUSED, PROGRESS_NAME)
+from svg_training.viz import replay
 
 import _ste_ls1 as h
+from _ste_tools import SCRIPTS
 
 ROOT = exploit.ROOT
 DISTIL_GATES = ROOT / "configs" / "ste_ls1" / "distil_gates.toml"
@@ -749,3 +769,298 @@ def test_the_final_report_takes_the_gate_files_sizes(dg, cfg):
     assert all(rep["rmse_by_hold_bin"][f"{lo}-{hi}"] is None for lo, hi in zip(edges, edges[1:])
                if lo >= dg.smoke["ticks"])
     json.dumps(rep, allow_nan=False)
+
+
+# ================================================================================================ T4: the driver
+DRIVER_FIT_REPORT_KEYS = ["rounds", "final", "gates_sha256", "net_sha256", "of_record", "complete"]
+PROVENANCE_KEYS = {"distil_gates_file", "distil_gates_sha256", "rounds", "seed", "git_commit", "of_record"}
+PIN_KEYS = ("skills_gates_sha256", "cells_sha256", "scripted_sha256", "game_sha256")
+OTHER_SHA = "0" * 64                                   # a well-formed sha256 that no file has
+
+
+@pytest.fixture(scope="module")
+def drv():
+    """The driver, imported here so that a missing script fails only the driver's tests."""
+    if str(SCRIPTS) not in sys.path:
+        sys.path.insert(0, str(SCRIPTS))
+    return importlib.import_module("ste_ls1_distil")
+
+
+def _argv(gates, run_dir, side, *extra, cap_h="1"):
+    return ["--gates", str(gates), "--run-dir", str(run_dir), "--side", side, "--cap-h", cap_h, *extra]
+
+
+def _sub(text: str, pattern: str, repl: str) -> str:
+    """``text`` with the one line matching ``pattern`` (multiline) replaced."""
+    out, n = re.subn(pattern, repl, text, flags=re.MULTILINE)
+    assert n == 1, pattern
+    return out
+
+
+def _fast_text() -> str:
+    """The committed file with the dagger test's small [net] hidden and few [fit] epochs (everything else as committed:
+    the [smoke] sizes, the seeds, the pins)."""
+    text = _sub(DISTIL_GATES.read_text(), r"^hidden = \[[^\]]*\]", f"hidden = {SMOKE_NET['hidden']}")
+    return _sub(text, r"^epochs = \d+", f"epochs = {SMOKE_EPOCHS}")
+
+
+def _filled_text(text: str) -> str:
+    """``text`` with every owner key's ``FILL_`` value replaced by its synthetic ``h.STAND_IN`` value (the arithmetic is
+    not run here: a filled file only lets a refusal test reach the step after the ``FILL_`` refusal)."""
+    c = h.STAND_IN["controls"]
+    values = {**h.STAND_IN["limits"], **{k: c[k] for k in distil.COUNT_KEYS},
+              **{k: c["near_miss"][k] for k in distil.NEAR_MISS_KINDS}, **c["near_miss"]["switch"]}
+    out, n = re.subn(r'^(\w+) = "FILL_\w*"', lambda m: f"{m.group(1)} = {h._toml_value(values[m.group(1)])}", text,
+                     flags=re.MULTILINE)
+    assert n == len(values)
+    return out
+
+
+def _smoke_device(text: str, device: str) -> str:
+    head, sep, rest = text.partition("\n[smoke]\n")
+    assert sep and 'device = "cpu"' in rest
+    return head + sep + rest.replace('device = "cpu"', f'device = "{device}"', 1)
+
+
+def _write(folder, text: str, name: str = "distil_gates.toml"):
+    path = folder / name
+    path.write_text(text)
+    return path
+
+
+def _job(run_dir, gpu_h):
+    """A run folder as ``ste_job.py launch`` leaves it: job.json with the GPU-hours asked for."""
+    run_dir.mkdir(parents=True)
+    (run_dir / "job.json").write_text(json.dumps({"gpu_h": gpu_h}))
+    return run_dir
+
+
+def _checkpoint_step(run_dir) -> int:
+    return torch.load(run_dir / CHECKPOINT_NAME, weights_only=False)["step"]
+
+
+def _net_state(run_dir, side):
+    return torch.load(run_dir / f"skill_net_{side}.pt", weights_only=True)["state_dict"]
+
+
+@pytest.fixture(scope="module")
+def fast_gates(tmp_path_factory):
+    return _write(tmp_path_factory.mktemp("fast_gates"), _fast_text())
+
+
+@pytest.fixture(scope="module")
+def fast_run(drv, fast_gates, tmp_path_factory):
+    """One uninterrupted CPU smoke of the Guard team on the fast file, clips on; every ``render_replay`` call's
+    keywords recorded (the real function still writes the clip)."""
+    out = tmp_path_factory.mktemp("fast_run") / "run"
+    calls, real = [], replay.render_replay
+
+    def spy(*args, **kw):
+        calls.append(kw)
+        return real(*args, **kw)
+
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr(replay, "render_replay", spy)
+        code = drv.main(_argv(fast_gates, out, "guard", "--smoke"))
+    return {"dir": out, "code": code, "render": calls}
+
+
+def test_a_gate_file_off_its_expected_sha256_is_refused(drv, tmp_path, capsys):
+    out = tmp_path / "run"
+    assert drv.main(_argv(DISTIL_GATES, out, "guard", "--smoke", "--expect-gates-sha256", OTHER_SHA)) == EXIT_REFUSED
+    assert OTHER_SHA in capsys.readouterr().err
+    assert not out.exists()                                                  # nothing written
+
+
+@pytest.mark.parametrize("key", PIN_KEYS)
+def test_a_changed_teacher_pin_is_refused(drv, key, tmp_path, capsys):
+    gates = _write(tmp_path, _sub(DISTIL_GATES.read_text(), rf'^{key} = "[0-9a-f]{{64}}"', f'{key} = "{OTHER_SHA}"'))
+    out = tmp_path / "run"
+    assert drv.main(_argv(gates, out, "strike", "--smoke")) == EXIT_REFUSED
+    assert key in capsys.readouterr().err
+    assert not out.exists()
+
+
+def test_an_unfilled_file_is_refused_outside_the_smoke(drv, dg, tmp_path, capsys):
+    out = tmp_path / "run"
+    assert distil.unfilled_limits(dg)                                        # the committed file waits for the owner
+    assert drv.main(_argv(DISTIL_GATES, out, "guard")) == EXIT_REFUSED
+    err = capsys.readouterr().err
+    assert all(key in err for key in distil.unfilled_limits(dg)) and not out.exists()
+
+
+def test_a_seed_that_is_the_scoring_starts_is_refused(drv, dg, tmp_path, capsys):
+    t44_seed = exploit.load_reference(ROOT / dg.skills_gates.reference["file"]).meta["seed"]
+    gates = _write(tmp_path, _sub(DISTIL_GATES.read_text(), rf"^seed = {dg.data['seed']}\b", f"seed = {t44_seed}"))
+    out = tmp_path / "run"
+    assert drv.main(_argv(gates, out, "guard", "--smoke")) == EXIT_REFUSED
+    assert str(t44_seed) in capsys.readouterr().err and not out.exists()
+
+
+def test_a_cpu_job_with_a_cuda_gate_device_is_refused(drv, dg, tmp_path, capsys):
+    assert dg.run["device"].startswith("cuda")
+    gates = _write(tmp_path, _filled_text(DISTIL_GATES.read_text()))
+    out = _job(tmp_path / "run", 0)
+    assert drv.main(_argv(gates, out, "guard")) == EXIT_REFUSED
+    assert "0 GPU-h" in capsys.readouterr().err
+    assert sorted(p.name for p in out.iterdir()) == ["job.json"]
+
+
+def test_gpu_h_must_equal_cap_h(drv, tmp_path, capsys):
+    gates = _write(tmp_path, _filled_text(DISTIL_GATES.read_text()))
+    out = _job(tmp_path / "run", 2)
+    assert drv.main(_argv(gates, out, "guard", cap_h="1")) == EXIT_REFUSED
+    assert "keep the two equal" in capsys.readouterr().err
+    assert sorted(p.name for p in out.iterdir()) == ["job.json"]
+
+
+def test_a_smoke_with_a_cuda_smoke_device_is_refused(drv, tmp_path, capsys):
+    gates = _write(tmp_path, _smoke_device(DISTIL_GATES.read_text(), "cuda"))
+    out = _job(tmp_path / "run", 0)
+    assert drv.main(_argv(gates, out, "guard", "--smoke")) == EXIT_REFUSED
+    assert "[smoke] device" in capsys.readouterr().err
+    assert sorted(p.name for p in out.iterdir()) == ["job.json"]
+
+
+def test_a_cpu_smoke_writes_the_net_report_progress_and_exits_0(fast_run, fast_gates, dg, cfg):
+    out = fast_run["dir"]
+    assert fast_run["code"] == EXIT_DONE
+    rounds = dg.smoke["rounds"]
+    rep = json.loads((out / "fit_report.json").read_text())
+    assert list(rep) == DRIVER_FIT_REPORT_KEYS and rep["complete"] is True and rep["of_record"] is False
+    assert rep["gates_sha256"] == exploit.sha256_file(fast_gates) == (out / "gates.sha256").read_text().strip()
+    assert [r["round"] for r in rep["rounds"]] == list(range(rounds))
+    assert all(list(r) == ROUND_KEYS for r in rep["rounds"])
+    assert all(len(r["loss"]) == SMOKE_EPOCHS for r in rep["rounds"]) and set(rep["final"]) == FINAL_KEYS
+    net_file = out / "skill_net_guard.pt"
+    assert exploit.sha256_file(net_file) == rep["net_sha256"]
+    net, meta = skill_net.load_skill_net(net_file, team="guard", skills=list(dg.specs["guard"].players), cfg=cfg,
+                                         device="cpu", file_sha256=rep["net_sha256"],
+                                         game_sha256=dg.source["game_sha256"])
+    prov = meta["provenance"]
+    assert set(prov) == PROVENANCE_KEYS and prov["distil_gates_sha256"] == rep["gates_sha256"]
+    assert prov["of_record"] is False and prov["rounds"] == rounds and prov["seed"] == dg.data["seed"]
+    assert meta["game_file"] == dg.source["game_file"] and meta["std_floor"] == dg.net["std_floor"]
+    assert net.hidden == SMOKE_NET["hidden"] and net.zeroed_inputs == dg.net["zeroed_inputs"]
+    assert json.loads((out / PROGRESS_NAME).read_text())["step"] == _checkpoint_step(out) == 2 * rounds
+    for name in ("gates.toml", "code.json", "run.json", "results.md", "controls.json"):
+        assert (out / name).is_file(), name
+    assert (out / "gates.toml").read_bytes() == fast_gates.read_bytes()
+    assert sorted(p.name for p in (out / "data").iterdir()) == [f"round_{r}.pt" for r in range(rounds)]
+    controls = json.loads((out / "controls.json").read_text())
+    assert controls["ctl_labels_are_the_scripts"]["status"] == scoring.PASS
+
+
+def test_clips_are_written_with_the_height_panel(fast_run, dg):
+    out, calls = fast_run["dir"], fast_run["render"]
+    code = dg.clips["codes"]["guard"][0]                                     # the smoke flies one code
+    gifs = sorted((out / "videos").glob("*.gif"))
+    assert len(gifs) == 2 * dg.clips["keep"] == len(calls)                   # each kept start: the net and the scripts
+    assert {p.name.rsplit("_", 1)[1] for p in gifs} == {"net.gif", "scripts.gif"}
+    assert all(p.name.startswith(f"guard_{code}_") and p.read_bytes()[:4] == b"GIF8" for p in gifs)
+    assert all(kw["height_panel"] is True for kw in calls)
+    assert all((kw["speed"], kw["fps"], kw["dpi"]) == (dg.clips["speed"], dg.clips["fps"], dg.clips["dpi"])
+               for kw in calls)
+
+
+def test_a_done_folder_exits_0_without_refitting(drv, fast_run, fast_gates):
+    out = fast_run["dir"]
+    net_file, rep_file = out / "skill_net_guard.pt", out / "fit_report.json"
+    before = (net_file.stat().st_mtime_ns, exploit.sha256_file(net_file), rep_file.read_bytes())
+    assert drv.main(_argv(fast_gates, out, "guard", "--smoke")) == EXIT_DONE
+    assert (net_file.stat().st_mtime_ns, exploit.sha256_file(net_file), rep_file.read_bytes()) == before
+
+
+def test_a_folder_refuses_another_side(drv, fast_run, fast_gates, capsys):
+    assert drv.main(_argv(fast_gates, fast_run["dir"], "strike", "--smoke")) == EXIT_REFUSED
+    assert "side" in capsys.readouterr().err
+
+
+def test_a_run_stopped_after_round_0_resumes_at_round_1(drv, fast_gates, fast_run, tmp_path):
+    out = tmp_path / "run"
+    argv = _argv(fast_gates, out, "guard", "--smoke", "--no-clips")
+    assert drv.main(argv + ["--stop-after-step", "1"]) == EXIT_INTERRUPTED  # a real SIGTERM after step 1 is saved
+    assert _checkpoint_step(out) == 1 == json.loads((out / PROGRESS_NAME).read_text())["step"]
+    data0 = out / "data" / "round_0.pt"
+    before = (data0.stat().st_mtime_ns, exploit.sha256_file(data0))
+    assert not (out / "data" / "round_1.pt").exists() and not (out / "fit_report.json").exists()
+    assert drv.main(argv) == EXIT_DONE
+    assert (data0.stat().st_mtime_ns, exploit.sha256_file(data0)) == before  # round 0 not collected again
+    rep = json.loads((out / "fit_report.json").read_text())
+    whole = json.loads((fast_run["dir"] / "fit_report.json").read_text())
+    assert [r["loss"] for r in rep["rounds"]] == [r["loss"] for r in whole["rounds"]]
+    assert [r["rows"] for r in rep["rounds"]] == [r["rows"] for r in whole["rounds"]]
+    a, b = _net_state(out, "guard"), _net_state(fast_run["dir"], "guard")
+    assert list(a) == list(b) and all(torch.equal(a[k], b[k]) for k in a)  # the uninterrupted run's net
+
+
+def test_a_nan_loss_exits_5_and_keeps_the_last_checkpoint(drv, fast_gates, tmp_path, monkeypatch):
+    real, calls = distil.fit, []
+
+    def nan_in_round_1(*args, **kw):
+        calls.append(1)
+        if len(calls) == 2:                                                  # round 1's fit
+            check = args[8] if len(args) > 8 else kw["check"]
+            check(loss=float("nan"))
+        return real(*args, **kw)
+
+    monkeypatch.setattr(distil, "fit", nan_in_round_1)
+    out = tmp_path / "run"
+    argv = _argv(fast_gates, out, "guard", "--smoke", "--no-clips")
+    assert drv.main(argv) == EXIT_NONFINITE
+    assert _checkpoint_step(out) == 2                                        # round 1 collected, its fit not saved
+    saved = (out / CHECKPOINT_NAME).stat().st_mtime_ns
+    assert not (out / "fit_report.json").exists() and not (out / "skill_net_guard.pt").exists()
+    controls = json.loads((out / "controls.json").read_text())
+    assert scoring.ending(controls) == EXIT_NONFINITE
+    assert drv.main(argv) == EXIT_NONFINITE and len(calls) == 2              # never retried silently
+    assert (out / CHECKPOINT_NAME).stat().st_mtime_ns == saved
+
+
+def test_a_label_that_is_not_the_scripts_exits_6_terminal(drv, fast_gates, tmp_path, monkeypatch):
+    real = distil.round_rows
+
+    def one_wrong_label(*args, **kw):
+        rows, stats = real(*args, **kw)
+        label = rows.label.clone()
+        label[0, 0, 0] = label[0, 0, 0] + 1.0
+        return dataclasses.replace(rows, label=label), stats
+
+    monkeypatch.setattr(distil, "round_rows", one_wrong_label)
+    out = tmp_path / "run"
+    argv = _argv(fast_gates, out, "guard", "--smoke", "--no-clips")
+    assert drv.main(argv) == EXIT_CONTROL_FAILED
+    control = json.loads((out / "controls.json").read_text())["ctl_labels_are_the_scripts"]
+    assert control["status"] == scoring.FAIL and "1 of" in control["detail"]
+    assert not (out / "data" / "round_0.pt").exists()
+    assert drv.main(argv) == EXIT_CONTROL_FAILED                             # terminal
+
+
+def test_a_smoke_on_a_copy_of_the_committed_file_runs_on_the_cpu(drv, dg, tmp_path):
+    gates = tmp_path / "distil_gates.toml"
+    gates.write_bytes(DISTIL_GATES.read_bytes())                             # the pins as committed (relative paths)
+    out = _job(tmp_path / "run", 0)
+    assert drv.main(_argv(gates, out, "strike", "--smoke", "--no-clips")) == EXIT_DONE
+    assert json.loads((out / "job.json").read_text())["gpu_h"] == 0
+    rep = json.loads((out / "fit_report.json").read_text())
+    assert rep["complete"] is True and rep["of_record"] is False and rep["gates_sha256"] == dg.sha256
+    meta = skill_net.read_skill_net_meta(out / "skill_net_strike.pt")
+    assert meta["provenance"]["of_record"] is False and meta["hidden"] == dg.net["hidden"]
+    assert meta["provenance"]["distil_gates_sha256"] == dg.sha256
+
+
+def test_the_driver_is_not_the_training_driver_of_post_run():
+    assert not post_run.drives_training(["python", "scripts/ste_ls1_distil.py", "--side", "guard", "--smoke"])
+
+
+def test_the_label_check_allows_the_last_bits_only(drv, dg, cfg, guard_rows):
+    """``ctl_labels_are_the_scripts`` passes the scripts' own labels, tolerates a change within ``[data]
+    label_check_atol`` (the batch layout moves the last bits, plan constraint 8) and fails one beyond it."""
+    atol, spec = dg.data["label_check_atol"], dg.specs["guard"]
+    clean = drv.label_check(guard_rows, cfg, spec, "guard", "cpu", atol)
+    assert clean["checked"] == guard_rows.obs.shape[0] and clean["differ"] == 0
+    for size, differ in ((atol / 2, 0), (atol * 2, 1)):
+        label = guard_rows.label.clone()
+        label[0, 0, 0] = label[0, 0, 0] + size
+        out = drv.label_check(dataclasses.replace(guard_rows, label=label), cfg, spec, "guard", "cpu", atol)
+        assert out["differ"] == differ and out["not_bit_equal"] == 1

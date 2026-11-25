@@ -1,4 +1,4 @@
-INTERNAL · DRAFT v3 for the owner's review: how route 3 (the learned-skills route) is executed towards a policy that is useful on the drones: what is added to the pipeline, which jobs run, in what order, on which machine, at what cost, and where the owner is asked · rulings R35 to R41 recorded; design review done (two reviewers, 25 Nov 2026) and folded in; nothing is built or run; the build waits for the owner's word · the route explained: [../LEARNED_SKILLS_ROUTE.md](../LEARNED_SKILLS_ROUTE.md) (its stage order is older than R41); the task-level plan of LS1: [LEARNED_SKILLS_BRIDGE_PLAN.md](LEARNED_SKILLS_BRIDGE_PLAN.md)
+INTERNAL · DRAFT v3 for the owner's review: how route 3 (the learned-skills route) is executed towards a policy that is useful on the drones: what is added to the pipeline, which jobs run, in what order, on which machine, at what cost, and where the owner is asked · rulings R35 to R45 recorded; design review done (two reviewers, 25 Nov 2026) and folded in; **the owner gave the word for the build on 25 Nov 2026 (R42)**; nothing is built or run yet · the route explained: [../LEARNED_SKILLS_ROUTE.md](../LEARNED_SKILLS_ROUTE.md) (its stage order is older than R41); the task-level plan of LS1: [LEARNED_SKILLS_BRIDGE_PLAN.md](LEARNED_SKILLS_BRIDGE_PLAN.md)
 
 # Route 3 execution workflow (draft v3, reviewed, 25 Nov 2026)
 
@@ -22,7 +22,7 @@ questions; each comes back with its own design note before code. Where this file
 | Changes existing behaviour | no: a new setting whose default keeps today's behaviour bit for bit; existing checkpoints and exports load as before | the same rule |
 | GPU-hours | no cap (R39). Asked per job: LS1 0.9, LS1.4 4.0 (two seeds per arm, clips included); expected use about 2.8 (estimate) | each note brings its hours |
 | Build | four merges, about 2 to 4 days of agent work (estimate; the review added four pieces) | self-play and LS2 are new builds, 3 to 5 days each (estimate) |
-| Owner asked | the word for the build; the reading of R39; the limits and margins after the calibration read (R38) | each stage's design note; the held-out scripts |
+| Owner asked | the limits and margins after the calibration read (R38) | each stage's design note; the held-out scripts |
 
 "Distil" means fitting a network to imitate a behaviour. LS1 does not copy any pipeline code: the game, the trainer,
 the scoring and the export of phases L1 to L6 are used as they are. What is copied is the **behaviour** of the eleven
@@ -38,12 +38,16 @@ owner's words.
 | # | Ruling | What it means here |
 |---|---|---|
 | R35 | the learned-skills route is adopted as the third route | no code and no run before the two-reviewer design review (done 25 Nov, section 9) |
-| R36 | LS1 may use 1.0 GPU-h from the L3–L6 cap | superseded in its charging by R39; until the lead's reading of R39 is confirmed, GPU launches stay inside this 1.0 |
+| R36 | LS1 may use 1.0 GPU-h from the L3–L6 cap | superseded by R39 (confirmed, R43) |
 | R37 | LS1 is built now, route 3 first | the learner v2 note follows; the build session runs on Opus 5.5, high effort, as a multi-agent workflow |
 | R38 | the owner sets the LS1 pass limits, on the lead's advice | asked after the calibration read (job LS1.5), before the gate file is hashed; the margin of LS1.4 is asked at the same time |
-| R39 | no GPU-hour cap on route 3; the aim is a useful policy | **lead's reading, PROPOSED until the owner confirms:** all stages of route 3; hours no longer charged to the 20 of R23; every job still states its hours before launch; every status shows the route's hours so far; a single job above 5 GPU-h is announced before launch. In the code a number is still needed: the route's budget section carries 200 GPU-h, and each job group keeps a task cap (a cap per task is how the launcher stops a job that hangs) |
+| R39 | no GPU-hour cap on route 3; the aim is a useful policy | **the lead's reading, confirmed by the owner (R43):** all stages of route 3; hours no longer charged to the 20 of R23; every job still states its hours before launch; every status shows the route's hours so far; a single job above 5 GPU-h is announced before launch. In the code a number is still needed: the route's budget section carries 200 GPU-h, and each job group keeps a task cap (a cap per task is how the launcher stops a job that hangs) |
 | R40 | the heads are trained again on the skill network, on both sides | job group LS1.4; a team of route 3 is a set of heads and a skill network trained together |
-| R41 | self-play is brought forward | order LS1 → LS1.4 → LS2 → self-play → LS3. After the review: the pool entry for saved teams is built early and a self-play pilot runs right after LS1.4; whether the full stage starts before LS2 is decided by three measurements (section 7) |
+| R41 | self-play is brought forward | order LS1 → LS1.4 → LS2 → self-play → LS3. After the review, and agreed by the owner (R44): the pool entry for saved teams is built early and a self-play pilot runs right after LS1.4; the full stage starts before LS2 only if the pilot's three measurements show room (section 7) |
+| R42 | the word for the build | merges M1 to M4, then the jobs of sections 5 and 6; the first step is the task plan rewritten from this file and the two review reports |
+| R43 | the lead's reading of R39 is confirmed | merge M1 writes 200 GPU-h for the route and 4.0 for LS1.4 |
+| R44 | self-play: the pool entry early, a pilot after LS1.4, the full stage before LS2 only if the pilot shows room | section 7 |
+| R45 | the route page, its figures and the slides are redrawn for R39 to R41 | a writer's task beside the build |
 
 ## 2. What "useful on the drones" asks, and what route 3 gives
 
@@ -82,7 +86,7 @@ Self-play and LS2 are new builds. Every figure is the lead's estimate, with noth
 | `configs/ste_ls1/distil_gates.toml` | new | sizes, rounds, network size, the limits the owner sets (R38), controls, seed, the game file's sha256; hashed before any run | — | its own load test (the limits are read from the file, not typed into the test) |
 | `configs/ste_ls1/heads_gates.toml` | new | the gate file of LS1.4's route 3 arm: the skills gate file of the pipeline check with `skill_source = "net"`, the two skill network files, two seeds as two variants, the reading rule. Route 2's recipe and game-steps are pinned in it (section 6) | — | a test that it differs from `configs/ste_l3/skills_gates.toml` in the named keys only |
 | `configs/ste_ls1/skills_seed2_gates.toml` | **new (review)** | route 2's second seed. A variant cannot be added to `configs/ste_l3/skills_gates.toml`: its sha256 is pinned in six run folders and in `tests/test_ste_l3_pipeline_gates.py`. A new gate file needs its own run 0 (`ste/exploit.py:933-939`) | — | as above |
-| `source/svg_training/ste/config.py`, `configs/ste_learning.toml`, `ste/budget.py`, `scripts/ste_job.py`, `ste_learning/PLAN.md` §9, `tests/test_ste_config.py` | changed | the route's tasks and hours (the exact list is in section 9, B6). `TASK_IDS` gains the LS1 tasks; a section `[budget_ls1]` after the L3–L6 one, every task with a cap entry, CPU tasks at 0.0. **Merge M1 writes R36's numbers (1.0 for the section, 0.8 for LS1.1, 0.1 for LS1.6, 0.0 for LS1.4) unless the owner has confirmed the reading of R39; the 200 and LS1.4's 4.0 are written only after that confirmation**, so the launcher itself refuses a launch beyond what is approved. `ste_job.py status` prints only the section "in work" (`ste/budget.py:223-229`): it also prints route 3's hours, as R39's reading promises | every existing task, cap and status line unchanged | `tests/test_ste_config.py` (its section set at line 90 and the tuple at line 107 name three sections today) |
+| `source/svg_training/ste/config.py`, `configs/ste_learning.toml`, `ste/budget.py`, `scripts/ste_job.py`, `ste_learning/PLAN.md` §9, `tests/test_ste_config.py` | changed | the route's tasks and hours (the exact list is in section 9, B6). `TASK_IDS` gains the LS1 tasks; a section `[budget_ls1]` after the L3–L6 one, every task with a cap entry, CPU tasks at 0.0. The owner confirmed the reading of R39 (R43): merge M1 writes 200 for the section, 0.8 for LS1.1, 0.1 for LS1.6 and 4.0 for LS1.4. `ste_job.py status` prints only the section "in work" (`ste/budget.py:223-229`): it also prints route 3's hours, as R39's reading promises | every existing task, cap and status line unchanged | `tests/test_ste_config.py` (its section set at line 90 and the tuple at line 107 name three sections today) |
 
 **Not touched:** the game engine and its rules, the safety filter, the scripts (they are the teachers; **the file
 `opponents/scripted.py` is frozen from the first distillation on**: its sha256 is pinned in every skill network, so
@@ -266,15 +270,15 @@ team, the strongest test.
 
 | # | Question | State |
 |---|---|---|
-| 1 | The word for the build (merges M1 to M4, then the jobs of sections 5 and 6) | **asked now** |
-| 2 | The lead's reading of R39 (row R39 of section 1): all stages; the 5 GPU-h announce rule; 200 in the settings file; a task cap per job group kept as a safety stop | **open.** Until confirmed, GPU launches stay inside R36's 1.0 GPU-h (the distillation and its clips) |
+| 1 | The word for the build (merges M1 to M4, then the jobs of sections 5 and 6) | **given (R42), 25 Nov 2026** |
+| 2 | The lead's reading of R39 (row R39 of section 1) | **confirmed (R43)** |
 | 3 | The LS1 limits and the LS1.4 margin | the owner sets them after job LS1.5 (R38); the lead brings the calibration read, options and a recommendation |
-| 4 | Self-play: the pool entry built early and a pilot after LS1.4; the full stage before LS2 only if the pilot's three measurements show room | the lead's recommendation after the review: yes or no |
+| 4 | Self-play: the pool entry built early and a pilot after LS1.4; the full stage before LS2 only if the pilot's three measurements show room | **yes (R44)** |
 | 5 | Two new held-out scripts per side, written before self-play is designed | proposed; asked with the self-play note |
-| 6 | The route page [LEARNED_SKILLS_ROUTE.md](../LEARNED_SKILLS_ROUTE.md), its figures and the slides still show the order LS1, LS2, LS3, LS4 and "LS1 budget about 1 GPU-hour" | redraw them for R39 to R41: yes or no. Its "Where it stands" table was already brought up to R36 to R38 on 25 Nov (`a133ba25`) |
+| 6 | The route page [LEARNED_SKILLS_ROUTE.md](../LEARNED_SKILLS_ROUTE.md), its figures and the slides redrawn for R39 to R41 | **yes (R45)**; in work |
 
-What runs without asking once the build has the owner's word: the builds, the CPU jobs, the GPU jobs as listed here
-(inside R36's 1.0 until question 2 is answered), the records. What always comes back: the limits and margins (R38), a
+What runs without asking once the build has the owner's word: the builds, the CPU jobs, the GPU jobs as listed here,
+the records. What always comes back: the limits and margins (R38), a
 failed gate, a pilot that disagrees with route 2's recipe, a single job above 5 GPU-h (announced), every later
 stage's design note.
 

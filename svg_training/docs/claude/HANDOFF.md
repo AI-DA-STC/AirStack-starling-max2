@@ -4,13 +4,29 @@ INTERNAL · the lab's AI-assistant hand-over notes: where the work stands, what 
 
 > **How to use this file.** Read it at the start of a session, after [../../CLAUDE.md](../../CLAUDE.md).
 > §4 is the current state, §5 is what is waiting on people. Update both before you stop.
-> Last updated: 25 November 2026 ~14:00, on the home RTX 5090 (afternoon: route 3 rulings R36–R41, execution workflow v3, its design review done and folded in; before: ~12:10 morning: clean-up, automatic 3-D clip hook, learner v2 first; before: night: L3–L6 pipeline check done, both routes PIPELINE WORKS; before: 24 Nov ~18:20 late day: rulings R29–R33, L2.6 and the figure-eight check, L3 slice 2 merged; before: ~13:30 day: rulings R24–R28, AirStack set up, L1.4, L1.5, L2.5 done, L3 note v2; before: ~07:30 night run: L1 reads, L2.1/L2.3/L2.4; before: 23 Nov ~13:30 documentation clean-up), worktree `~/AirStack-starling-max2-dev` on branch `development`.
+> Last updated: 25 November 2026 ~14:45, on the home RTX 5090 (afternoon: route 3 build has the owner's word, R42–R45; before: ~14:00 rulings R36–R41, execution workflow v3, its design review done and folded in; before: ~12:10 morning: clean-up, automatic 3-D clip hook, learner v2 first; before: night: L3–L6 pipeline check done, both routes PIPELINE WORKS; before: 24 Nov ~18:20 late day: rulings R29–R33, L2.6 and the figure-eight check, L3 slice 2 merged; before: ~13:30 day: rulings R24–R28, AirStack set up, L1.4, L1.5, L2.5 done, L3 note v2; before: ~07:30 night run: L1 reads, L2.1/L2.3/L2.4; before: 23 Nov ~13:30 documentation clean-up), worktree `~/AirStack-starling-max2-dev` on branch `development`.
 
 ## 0. Resume here (for a new session or another Claude account)
 
 Everything needed is in this folder; nothing depends on the previous chat. Claude's user memory (`~/.claude/…`) and
 the private NUS workspace (`~/ma_skills-self-play/`, 5090 only) do **not** travel with git: if this file and a memory
 note disagree, this file wins.
+
+### 25 November 2026 ~14:45 — RTX 5090 AFTERNOON: ROUTE 3 BUILD HAS THE OWNER'S WORD (R42–R45) (read this first)
+
+- **Owner, ~14:40: "1. go 2. confirm 3. yes 4. yes"** (DISCUSSION §16, R42–R45): the build of route 3's LS1 and LS1.4
+  starts; the lead's reading of R39 is confirmed (no cap; jobs state their hours; a job above 5 GPU-h announced; M1
+  writes 200 GPU-h for the route, 4.0 for LS1.4); self-play: pool entry early, pilot after LS1.4, the full stage
+  before LS2 only if the pilot shows room; the route page, figures and slides are redrawn for R39–R41. The owner
+  pushed `development` at `f6d90924`.
+- **In work (started ~14:45):** (1) the task plan rewritten from the workflow v3 and the two review reports (an Opus
+  agent, worktree `~/AirStack-starling-max2-ls1plan`, branch `ls1-taskplan`), then one Sonnet reviewer, then merge M1
+  (worktree and branch named in the task plan); (2) the route page, figures and slides redrawn (a Sonnet writer,
+  worktree `~/AirStack-starling-max2-lsroute`, branch `ls-route-page`). Both fast-forward into `development` after
+  their checks. **The plan's old Tasks 1–7 (LEARNED_SKILLS_BRIDGE_PLAN.md) are not to be built as written.**
+- **Still the owner's:** the LS1 limits and the LS1.4 margin (R38), after the calibration read LS1.5; the held-out
+  scripts, with the self-play note. Nothing on the GPU before the gate file is hashed.
+- **Main track:** route 3, stage LS1, build · **Side track:** the route page redraw (R45).
 
 ### 25 November 2026 ~14:00 — RTX 5090 AFTERNOON: ROUTE 3 (LEARNED-SKILLS ROUTE), RULINGS R36–R41, WORKFLOW v3, DESIGN REVIEW (read this first)
 

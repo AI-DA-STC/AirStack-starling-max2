@@ -1323,7 +1323,8 @@ def judge(ctx: Ctx, stage_batches: dict, controls: dict, reader: Reader, active:
     if STAGE_C1 in stage_batches:
         out[CTL_C1] = _aggregate(CTL_C1, [controls[b.name]["status"] for b in stage_batches[STAGE_C1]],
                                  "the scripts through the dispatch equal T44 game for game on the fixed cells")
-        out[CTL_C1M] = _aggregate(CTL_C1M, [controls[b.name]["status"] for b in stage_batches.get(STAGE_C1M, [])],
+    if STAGE_C1M in stage_batches:
+        out[CTL_C1M] = _aggregate(CTL_C1M, [controls[b.name]["status"] for b in stage_batches[STAGE_C1M]],
                                   "the scripted mixed cells (Composite) play cleanly")
     if STAGE_C2 in stage_batches:
         out[CTL_C2] = _aggregate(CTL_C2, [controls[b.name]["status"] for b in stage_batches[STAGE_C2]],

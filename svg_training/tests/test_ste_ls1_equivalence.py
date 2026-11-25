@@ -696,6 +696,7 @@ def test_a_cell_inside_the_margin_at_plain_alpha_but_outside_at_the_adjusted_z_i
 # controls and files are under test, not a fit.
 READ_SIDE = "guard"
 READ_OPPONENT = "strike_straight"          # the Guard team's near-miss opponent (distil_gates.toml [read])
+READ_MIXED = 1                             # the FILL_ read plays one gated mixed combination (R1 on a mixed cell)
 STRIKE_GATED_OPPONENT = "guard_field"      # the Strike team's read test: an opponent whose games end soon (T44: <= 81 ticks)
 VERDICT_WORDS = (eq.DISTILLED, eq.NOT_DISTILLED, eq.INCONCLUSIVE)
 
@@ -735,11 +736,11 @@ def fill_read(tmp_path_factory):
     net, net_sha = h.read_net(tmp / "net", READ_SIDE, h.DISTIL_GATES)
     run_dir = tmp / "run"
     last_control = eq.batch_name(eq.STAGE_C5, f"{READ_OPPONENT}_00")
-    first, first_lines = _launch(_read_argv(h.DISTIL_GATES, net, run_dir,
+    first, first_lines = _launch(_read_argv(h.DISTIL_GATES, net, run_dir, mixed=READ_MIXED,
                                             extra=("--stop-after-batch", last_control)))
     snap = {"code": first, "lines": first_lines, "files": _files(run_dir),
             "controls": _json(run_dir / eq.CONTROLS_FILE), "results": (run_dir / eq.RESULTS).exists()}
-    code, lines = _launch(_read_argv(h.DISTIL_GATES, net, run_dir))
+    code, lines = _launch(_read_argv(h.DISTIL_GATES, net, run_dir, mixed=READ_MIXED))
     return {"snap": snap, "code": code, "lines": lines, "run_dir": run_dir, "net": net, "net_sha": net_sha,
             "last_control": last_control}
 
@@ -771,7 +772,7 @@ def test_a_resumed_read_writes_the_uninterrupted_reads_results(tmp_path, fill_re
     through in one launch (same network, same command)."""
     net, _ = h.read_net(tmp_path / "net", READ_SIDE, h.DISTIL_GATES)
     whole = tmp_path / "whole"
-    assert _launch(_read_argv(h.DISTIL_GATES, net, whole))[0] == EXIT_DONE
+    assert _launch(_read_argv(h.DISTIL_GATES, net, whole, mixed=READ_MIXED))[0] == EXIT_DONE
     assert (whole / eq.RESULTS).read_bytes() == (fill_read["run_dir"] / eq.RESULTS).read_bytes()
 
 
@@ -926,6 +927,7 @@ def test_the_intervals_use_the_adjusted_z(g, fill_read):
             arm_wins[key], ref_wins[key] = eq._wins(mine, READ_SIDE), eq._wins(base, READ_SIDE)
     assert arm_wins
     assert res["pooled"]["all"] == cells.pooled_difference(arm_wins, ref_wins, iv["z_pooled"])
+    assert res["pooled"]["mixed"] is not None and res["pooled"]["mixed"]["cells"] == READ_MIXED
 
 
 def test_a_smoke_with_stand_in_limits_ends_with_a_verdict_word(tmp_path):
